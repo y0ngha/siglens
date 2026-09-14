@@ -57,6 +57,7 @@ vi.mock('@/shared/db/client', () => ({
 
 import { TIER_CONFIG } from '@y0ngha/siglens-core';
 import { getCachedAnalysisTool } from '@/app/api/ai/chat/tools/getCachedAnalysis';
+import { CACHED_ANALYSIS_MAX_CHARS } from '@/app/api/ai/chat/tools/truncate';
 
 const ctx = {
     userId: 'u1',
@@ -117,6 +118,171 @@ describe('getCachedAnalysisTool', () => {
         expect(r.source).toBe('redis');
         expect(r.analysis.summary).toBe('sum');
         expect(r.personalized).toBe(false);
+    });
+
+    it('technical: redis peek hit → 감지된 패턴/전략/캔들패턴이 analysis에 함께 노출된다', async () => {
+        peekAnalysis.mockResolvedValue({
+            result: {
+                summary: 'sum',
+                trend: 'bullish',
+                riskLevel: 'low',
+                keyLevels: {},
+                priceTargets: {},
+                analyzedAt: '2026-09-01T00:00:00.000Z',
+                patternSummaries: [
+                    {
+                        id: 'p1',
+                        patternName: 'head_and_shoulders',
+                        skillName: 'chart-pattern',
+                        detected: true,
+                        trend: 'bearish',
+                        summary: '헤드앤숄더 패턴이 감지되었습니다.',
+                        confidenceWeight: 0.9,
+                    },
+                    {
+                        id: 'p2',
+                        patternName: 'undetected',
+                        skillName: 'chart-pattern',
+                        detected: false,
+                        trend: 'bullish',
+                        summary: 'n/a',
+                        confidenceWeight: 0.99,
+                    },
+                ],
+                strategyResults: [
+                    {
+                        id: 's1',
+                        strategyName: 'trend-following',
+                        trend: 'bullish',
+                        summary: '추세 추종 전략 매수 우위.',
+                        confidenceWeight: 0.7,
+                    },
+                ],
+                candlePatterns: [
+                    {
+                        id: 'c1',
+                        patternName: 'bullish_engulfing',
+                        detected: true,
+                        trend: 'bullish',
+                        summary: '상승 장악형 캔들이 감지되었습니다.',
+                    },
+                ],
+            },
+            lockedInfoDepth: [],
+        });
+        const r = (await getCachedAnalysisTool(
+            { symbol: 'AAPL', tab: 'technical' },
+            ctx,
+            rt
+        )) as {
+            analysis: {
+                patterns: { name: string }[];
+                strategies: { name: string }[];
+                candlePatterns: { name: string }[];
+            };
+        };
+        expect(r.analysis.patterns).toEqual([
+            {
+                name: 'head_and_shoulders',
+                trend: 'bearish',
+                confidence: 0.9,
+                summary: '헤드앤숄더 패턴이 감지되었습니다.',
+            },
+        ]);
+        expect(r.analysis.strategies).toEqual([
+            {
+                name: 'trend-following',
+                trend: 'bullish',
+                summary: '추세 추종 전략 매수 우위.',
+            },
+        ]);
+        expect(r.analysis.candlePatterns).toEqual([
+            {
+                name: 'bullish_engulfing',
+                trend: 'bullish',
+                summary: '상승 장악형 캔들이 감지되었습니다.',
+            },
+        ]);
+    });
+
+    it('technical: redis peek hit → 예산 초과 시 registry의 front-cut preview로 뭉개지지 않고 구조화된 채로 절단된다', async () => {
+        // 패턴/전략/캔들패턴 각각을 5개(캡 상한)까지, 각각 긴 한글 요약을
+        // 실어 CACHED_ANALYSIS_MAX_CHARS(16,000)를 확실히 넘긴다 —
+        // `fitTechnicalAnalysis`가 이 Redis 경로에도 적용되지 않으면
+        // registry의 `truncateToolResult`가 전체 페이로드를
+        // `{truncated, preview}`로 뭉개 keyLevels/priceTargets까지 잃는다.
+        const longSummary = (label: string) =>
+            `${label} 패턴/전략에 대한 상세한 한글 해설이 이어집니다. `.repeat(
+                40
+            );
+        peekAnalysis.mockResolvedValue({
+            result: {
+                summary: '요약. '.repeat(200),
+                trend: 'bullish',
+                riskLevel: 'low',
+                keyLevels: { support: [100, 95, 90], resistance: [110, 115] },
+                priceTargets: { bullish: 130, bearish: 85 },
+                analyzedAt: '2026-09-01T00:00:00.000Z',
+                patternSummaries: Array.from({ length: 5 }, (_, i) => ({
+                    id: `p${i}`,
+                    patternName: `pattern-${i}`,
+                    skillName: 'chart-pattern',
+                    detected: true,
+                    trend: 'bullish',
+                    summary: longSummary(`패턴${i}`),
+                    confidenceWeight: 0.9 - i * 0.1,
+                })),
+                strategyResults: Array.from({ length: 5 }, (_, i) => ({
+                    id: `s${i}`,
+                    strategyName: `strategy-${i}`,
+                    trend: 'bullish',
+                    summary: longSummary(`전략${i}`),
+                    confidenceWeight: 0.8 - i * 0.1,
+                })),
+                candlePatterns: Array.from({ length: 5 }, (_, i) => ({
+                    id: `c${i}`,
+                    patternName: `candle-${i}`,
+                    detected: true,
+                    trend: 'bullish',
+                    summary: longSummary(`캔들${i}`),
+                })),
+            },
+            lockedInfoDepth: [],
+        });
+
+        const r = (await getCachedAnalysisTool(
+            { symbol: 'AAPL', tab: 'technical' },
+            ctx,
+            rt
+        )) as {
+            found: boolean;
+            analysis: {
+                keyLevels: unknown;
+                priceTargets: unknown;
+                patterns: unknown[];
+                strategies: unknown[];
+                candlePatterns: unknown[];
+            };
+        };
+
+        expect(r).not.toMatchObject({ truncated: true });
+        expect(r).not.toHaveProperty('preview');
+        expect(JSON.stringify(r).length).toBeLessThanOrEqual(
+            CACHED_ANALYSIS_MAX_CHARS
+        );
+        expect(r.found).toBe(true);
+        expect(r.analysis.keyLevels).toEqual({
+            support: [100, 95, 90],
+            resistance: [110, 115],
+        });
+        expect(r.analysis.priceTargets).toEqual({
+            bullish: 130,
+            bearish: 85,
+        });
+        // The fit drops trailing list items whole rather than truncating
+        // mid-string once the payload can't fit all 5 of each.
+        expect(r.analysis.patterns.length).toBeLessThan(5);
+        expect(r.analysis.patterns.length).toBeGreaterThan(0);
     });
 
     it('technical: 보유 종목이면 positionBucket 계산 후 personalized:true, peekAnalysisCache가 버킷 문자열을 받는다', async () => {

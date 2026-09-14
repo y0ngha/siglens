@@ -843,3 +843,30 @@
 - Violation: Implementation lesson — External package `@y0ngha/siglens-core` creates its own Upstash clients from `process.env.UPSTASH_REDIS_REST_*` in `readUpstashConfig()`, bypassing the app-level offline gate.
   - Rule: When implementing a service gate, grep all dependencies for direct env readers of that service and ensure env blanking/override reaches them. External packages may initialize clients from env without routing through app gates.
   - Context: Fixed by blanking `UPSTASH_REDIS_REST_*` environment variables in pre-push build command. Verified Next.js `loadEnvConfig` does not override preset-empty env vars.
+
+## [feat/agent-tool-analysis-context Round 2 | Agent tool analysis context | 2026-09-14]
+- Violation: getCachedAnalysis.ts Redis technical analysis path returned enlarged TechnicalAnalysis projection without applying the budget fitting that runFreshAnalysis applies to the identical shape, causing overflow to collapse into front-cut preview and lose keyLevels/priceTargets
+  - Rule: (new) Same guard rule must be applied to all sibling call sites that return the same data shape; when duplicate paths diverge (one guarded, one unguarded), the guarded version masks the defect in the other
+  - Context: Identified that both getCachedAnalysis (Redis path) and runFreshAnalysis (fresh path) returned TechnicalAnalysis, but only fresh path applied fitTechnicalAnalysis budget fitting. Shared helper fitProse.ts + fitTechnicalAnalysis now used by both call sites. Added unit test for overflow case on technical projection.
+- Violation: Missing unit test for overflow/fitting logic on the Redis-cached technical analysis path
+  - Rule: Core analysis functions must include unit tests for all significant code paths; new paths added to existing functions need parity test coverage
+  - Context: Added test for overflow fitting scenario on the technical analysis projection retrieved from Redis cache.
+- Violation: Comment claimed runFreshAnalysis getAssetInfo failure was cosmetic while Promise.all actually rejected the whole operation, masking the actual Promise semantics to future readers
+  - Rule: Comments must accurately describe actual behavior; Promise.all rejection semantics must be correctly documented to prevent misunderstanding in future maintenance
+  - Context: Downgraded getAssetInfo failure to return null instead of throwing, corrected the comment to accurately describe Promise.all behavior, added test verifying null degradation.
+
+## [PR #813 | feat/agent-tool-analysis-context | Post-approval suggestions | 2026-09-14]
+- Violation: getDescriptor(profile) computed twice in one object literal
+  - Rule: MISTAKES.md Rule 2 — Identical values queried or computed multiple times in a single function
+  - Context: Hoisted duplicate computation outside object literal.
+- Violation: Agent bars tool sliced raw detectCandlePatternEntries instead of using core selectLastCandlePatternEntries like the chart markers and analysis prompt
+  - Rule: (new) Sibling consumers must use identical data selection logic; inconsistent data selectors cause derived systems to diverge
+  - Context: Updated agent bars tool to use selectLastCandlePatternEntries, aligning with chart markers and analysis prompt.
+
+## [PR #814 | feat/agent-data-tools-wiring | Post-approval suggestions | 2026-09-14]
+- Violation: Magic number 13 (ISO date-hour slice end) duplicated in three files
+  - Rule: MISTAKES.md Rule 15 — Hardcoded literals in function names or calculations
+  - Context: Centralized ISO_DATE_HOUR_SLICE_END constant to shared/config/time.ts, updated all three call sites.
+- Violation: countsBySector object mutation with for...of
+  - Rule: MISTAKES.md Rule 104 — Array/object mutation via push/splice or direct property assignment
+  - Context: Rewrote with Object.groupBy + Object.fromEntries for immutable construction.

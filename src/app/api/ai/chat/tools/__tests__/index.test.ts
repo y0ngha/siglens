@@ -1,17 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { inspect } from 'node:util';
 
-const { search, getOptionsSummary, getCachedAnalysis } = vi.hoisted(() => ({
-    search: vi.fn(),
-    getOptionsSummary: vi.fn(),
-    getCachedAnalysis: vi.fn(),
-}));
+const { search, getOptionsSummary, getCachedAnalysis, getBarsIndicators } =
+    vi.hoisted(() => ({
+        search: vi.fn(),
+        getOptionsSummary: vi.fn(),
+        getCachedAnalysis: vi.fn(),
+        getBarsIndicators: vi.fn(),
+    }));
 vi.mock('@/app/api/ai/chat/tools/searchTicker', () => ({
     searchTickerTool: search,
 }));
 vi.mock('@/app/api/ai/chat/tools/getQuote', () => ({ getQuoteTool: vi.fn() }));
 vi.mock('@/app/api/ai/chat/tools/getBarsIndicators', () => ({
-    getBarsIndicatorsTool: vi.fn(),
+    getBarsIndicatorsTool: getBarsIndicators,
 }));
 vi.mock('@/app/api/ai/chat/tools/getCachedAnalysis', () => ({
     getCachedAnalysisTool: getCachedAnalysis,
@@ -46,6 +48,12 @@ import {
     createToolExecutor,
 } from '@/app/api/ai/chat/tools';
 import { guestSubject } from '@/app/api/ai/chat/guestSubject';
+import {
+    BARS_RESULT_MAX_CHARS,
+    CACHED_ANALYSIS_MAX_CHARS,
+    CACHED_ANALYSIS_TURN_BUDGET_CHARS,
+    TOOL_RESULT_MAX_CHARS,
+} from '@/app/api/ai/chat/tools/truncate';
 
 function makeCtx(aborted = false) {
     const controller = new AbortController();
@@ -266,7 +274,9 @@ describe('tool registry', () => {
             )
         ).toBe(analysis);
         // The ceiling still exists.
-        getCachedAnalysis.mockResolvedValue({ analysis: 'a'.repeat(20_000) });
+        getCachedAnalysis.mockResolvedValue({
+            analysis: 'a'.repeat(CACHED_ANALYSIS_MAX_CHARS + 5_000),
+        });
         expect(
             await exec(
                 'get_cached_analysis',
@@ -285,7 +295,9 @@ describe('tool registry', () => {
             plain: 'p'.repeat(2_000),
         };
         vi.mocked(runFreshAnalysisTool).mockResolvedValue(fresh);
-        getCachedAnalysis.mockResolvedValue({ analysis: 'c'.repeat(12_000) });
+        getCachedAnalysis.mockResolvedValue({
+            analysis: 'c'.repeat(CACHED_ANALYSIS_MAX_CHARS),
+        });
         const exec = createToolExecutor({
             analysisModel: 'deepseek-v4.1-flash',
         });
@@ -297,7 +309,8 @@ describe('tool registry', () => {
             )
         ).toBe(fresh);
         // The fresh result drew on the same per-turn allowance: after it, one
-        // more 12,000-char stored analysis still fits, the next one does not.
+        // more `CACHED_ANALYSIS_MAX_CHARS`-sized stored analysis still fits,
+        // the next one does not.
         await exec(
             'get_cached_analysis',
             { symbol: 'AAPL', tab: 'overall' },
@@ -312,8 +325,10 @@ describe('tool registry', () => {
         ).toMatchObject({ truncated: true });
     });
 
-    it('get_cached_analysis의 큰 한도는 턴당 예산 안에서만 — 소진 뒤 조회는 기본 4,000자로 잘린다', async () => {
-        const big = () => ({ analysis: 'a'.repeat(11_000) });
+    it('get_cached_analysis의 큰 한도는 턴당 예산 안에서만 — 소진 뒤 조회는 기본 TOOL_RESULT_MAX_CHARS로 잘린다', async () => {
+        const big = () => ({
+            analysis: 'a'.repeat(CACHED_ANALYSIS_MAX_CHARS - 1_000),
+        });
         getCachedAnalysis.mockImplementation(async () => big());
         const exec = createToolExecutor({
             analysisModel: 'deepseek-v4.1-flash',
@@ -328,7 +343,9 @@ describe('tool registry', () => {
         expect(await call()).not.toHaveProperty('truncated');
         const third = await call();
         expect(third).toMatchObject({ truncated: true });
-        expect(JSON.stringify(third).length).toBeLessThanOrEqual(4_000);
+        expect(JSON.stringify(third).length).toBeLessThanOrEqual(
+            TOOL_RESULT_MAX_CHARS
+        );
         // A new turn gets a fresh allowance.
         const next = createToolExecutor({
             analysisModel: 'deepseek-v4.1-flash',
@@ -342,7 +359,7 @@ describe('tool registry', () => {
         ).not.toHaveProperty('truncated');
     });
 
-    it('경계값: 남은 예산이 정확히 12,000자면 12,000자 결과가 통과, 예산이 바닥이어도 4,000자까지는 온전하다', async () => {
+    it('경계값: 남은 예산이 정확히 CACHED_ANALYSIS_MAX_CHARS면 그 크기 결과가 통과, 예산이 바닥이어도 TOOL_RESULT_MAX_CHARS까지는 온전하다', async () => {
         const sized = (n: number) => ({ a: 'x'.repeat(n - '{"a":""}'.length) });
         const exec = createToolExecutor({
             analysisModel: 'deepseek-v4.1-flash',
@@ -353,15 +370,58 @@ describe('tool registry', () => {
                 { symbol: 'AAPL', tab: 'overall' },
                 makeCtx()
             );
-        // 24,000 − 12,000 = exactly 12,000 left.
-        getCachedAnalysis.mockResolvedValueOnce(sized(12_000));
-        expect(JSON.stringify(await call())).toHaveLength(12_000);
-        getCachedAnalysis.mockResolvedValueOnce(sized(12_000));
+        // CACHED_ANALYSIS_TURN_BUDGET_CHARS − CACHED_ANALYSIS_MAX_CHARS =
+        // exactly CACHED_ANALYSIS_MAX_CHARS left (turn budget is 2×).
+        getCachedAnalysis.mockResolvedValueOnce(
+            sized(CACHED_ANALYSIS_MAX_CHARS)
+        );
+        expect(JSON.stringify(await call())).toHaveLength(
+            CACHED_ANALYSIS_MAX_CHARS
+        );
+        getCachedAnalysis.mockResolvedValueOnce(
+            sized(CACHED_ANALYSIS_MAX_CHARS)
+        );
         expect(await call()).not.toHaveProperty('truncated');
-        // Budget is now 0: the floor is the default 4,000.
-        getCachedAnalysis.mockResolvedValueOnce(sized(4_000));
+        // Budget is now 0: the floor is the default TOOL_RESULT_MAX_CHARS.
+        getCachedAnalysis.mockResolvedValueOnce(sized(TOOL_RESULT_MAX_CHARS));
         expect(await call()).not.toHaveProperty('truncated');
-        getCachedAnalysis.mockResolvedValueOnce(sized(4_001));
+        getCachedAnalysis.mockResolvedValueOnce(
+            sized(TOOL_RESULT_MAX_CHARS + 1)
+        );
         expect(await call()).toMatchObject({ truncated: true });
+        // Sanity: the turn budget really is 2× the per-call ceiling — this
+        // boundary math only holds while that invariant does.
+        expect(CACHED_ANALYSIS_TURN_BUDGET_CHARS).toBe(
+            2 * CACHED_ANALYSIS_MAX_CHARS
+        );
+    });
+
+    it('get_bars_indicators만 BARS_RESULT_MAX_CHARS 한도 — 4,000자 초과·6,000자 이내는 온전히, 6,000자 초과는 절단된다', async () => {
+        const sized = (n: number) => ({ a: 'x'.repeat(n - '{"a":""}'.length) });
+        const exec = createToolExecutor({
+            analysisModel: 'deepseek-v4.1-flash',
+        });
+        const call = () =>
+            exec('get_bars_indicators', { symbol: 'AAPL' }, makeCtx());
+        // Regression guard for `ceilingFor` ignoring the bars ceiling: a
+        // result strictly between TOOL_RESULT_MAX_CHARS (4,000) and
+        // BARS_RESULT_MAX_CHARS (6,000) would be collapsed into a
+        // `{truncated, preview}` blob by the shared 4,000 default.
+        const midSize = Math.floor(
+            (TOOL_RESULT_MAX_CHARS + BARS_RESULT_MAX_CHARS) / 2
+        );
+        getBarsIndicators.mockResolvedValueOnce(sized(midSize));
+        const mid = await call();
+        expect(mid).not.toHaveProperty('truncated');
+        expect(JSON.stringify(mid).length).toBe(midSize);
+
+        getBarsIndicators.mockResolvedValueOnce(
+            sized(BARS_RESULT_MAX_CHARS + 500)
+        );
+        const over = await call();
+        expect(over).toMatchObject({ truncated: true });
+        expect(JSON.stringify(over).length).toBeLessThanOrEqual(
+            BARS_RESULT_MAX_CHARS
+        );
     });
 });

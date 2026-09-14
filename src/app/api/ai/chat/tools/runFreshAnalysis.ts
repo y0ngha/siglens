@@ -10,7 +10,6 @@ import {
 import { runOverallAnalysisAction } from '@/entities/analysis/actions';
 import { submitNewsAnalysisAction } from '@/entities/news-article/actions';
 import { submitOptionsAnalysisAction } from '@/entities/options-chain/actions';
-import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
@@ -18,8 +17,13 @@ import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { getDescriptor } from '@/shared/config/marketProfile';
 import { registerActiveStream } from '@/shared/lib/sse/activeStreams';
 import { AGENT_BUSY_LOG } from '../busyLog';
+import { fitProse, type ProseSpec } from './fitProse';
 import type { ToolExecutor } from './index';
-import { CACHED_ANALYSIS_MAX_CHARS, fitToEscapedBudget } from './truncate';
+import {
+    fitTechnicalAnalysis,
+    projectTechnicalAnalysis,
+} from './projectTechnicalAnalysis';
+import { resolveAssetInfoOrNull } from './resolveAssetInfo';
 
 /**
  * Per-instance concurrency cap — distinct from core's per-turn cap. Each run
@@ -54,95 +58,6 @@ function errorObjectCode(outcome: Outcome): string | undefined {
     if (typeof err !== 'object' || err === null) return undefined;
     const code = (err as { code?: unknown }).code;
     return typeof code === 'string' ? code : undefined;
-}
-
-/**
- * Reserves room for envelope JSON punctuation/escaping when splitting the
- * remaining truncation budget across prose leaves. Mirrors
- * `BODY_BUDGET_SAFETY_MARGIN` in getNews.ts.
- */
-const PROSE_BUDGET_SAFETY_MARGIN = 200;
-
-type ProseSpec =
-    | { kind: 'text'; value: string | null | undefined }
-    // `unknown` (not `string`) — a `list` leaf may be an array of plain
-    // strings (overall's bullets) or of objects (options' `perExpiration`
-    // commentary entries); either way each item is dropped or kept whole.
-    | { kind: 'list'; value: readonly unknown[] | undefined };
-
-/**
- * Fits variable-length prose/bullet leaves of an already-built `envelope`
- * into whatever is left of `CACHED_ANALYSIS_MAX_CHARS` — the same ceiling a
- * stored analysis gets from the executor (`tools/index.ts`). Only invoked when the
- * full envelope (with the untouched leaves) overflows the budget — a
- * realistic technical/overall analysis usually fits as-is once
- * `indicatorResults`/`patternSummaries`/etc. have been dropped by the
- * caller's projection, so this only shaves what's actually over.
- *
- * Splits the overflow evenly across `fields`. `text` fields are cut with
- * `fitToEscapedBudget` (mirrors getNews.ts's body-fitting). `list` fields
- * keep bullets in original order and DROP trailing ones that don't fit
- * whole rather than truncating a bullet mid-sentence — the same "keep the
- * top, drop the tail" rule webSearch uses for its top-N results.
- */
-function fitProse(
-    envelope: unknown,
-    fields: Record<string, ProseSpec>
-): Record<string, string | unknown[]> {
-    const keys = Object.keys(fields);
-    const out: Record<string, string | unknown[]> = {};
-    const asIs = (spec: ProseSpec): string | unknown[] =>
-        spec.kind === 'text' ? (spec.value ?? '') : [...(spec.value ?? [])];
-    const overflow =
-        JSON.stringify(envelope).length - CACHED_ANALYSIS_MAX_CHARS;
-    if (overflow <= 0 || keys.length === 0) {
-        for (const key of keys) out[key] = asIs(fields[key]!);
-        return out;
-    }
-    let currentLeavesSize = 0;
-    for (const key of keys)
-        currentLeavesSize += JSON.stringify(asIs(fields[key]!)).length;
-    const targetLeavesSize = Math.max(
-        0,
-        currentLeavesSize - overflow - PROSE_BUDGET_SAFETY_MARGIN
-    );
-    const share = Math.floor(targetLeavesSize / keys.length);
-    for (const key of keys) {
-        const field = fields[key]!;
-        if (field.kind === 'text') {
-            out[key] = fitToEscapedBudget(field.value ?? '', share);
-            continue;
-        }
-        const kept: unknown[] = [];
-        let used = 2; // '[' + ']'
-        for (const item of field.value ?? []) {
-            const cost = JSON.stringify(item).length + 1; // + separating comma
-            if (used + cost > share) break;
-            kept.push(item);
-            used += cost;
-        }
-        out[key] = kept;
-    }
-    return out;
-}
-
-/**
- * Projects a technical `AnalysisResponse` to the same fields
- * `get_cached_analysis` returns, so the model sees one consistent shape
- * regardless of which tool produced it. Drops `indicatorResults`,
- * `patternSummaries`, `strategyResults`, `candlePatterns`, `trendlines` —
- * the bulk of the payload and never needed by the model, which only reads
- * the summarized verdict.
- */
-function projectTechnical(a: AnalysisResponse) {
-    return {
-        summary: a.summary,
-        trend: a.trend,
-        riskLevel: a.riskLevel,
-        keyLevels: a.keyLevels,
-        priceTargets: a.priceTargets,
-        actionRecommendation: a.actionRecommendation ?? null,
-    };
 }
 
 /** Projects an `OverallAnalysisResponse` to the same fields `get_cached_analysis` returns. */
@@ -209,16 +124,26 @@ function unwrap(
         outcome.result !== undefined
     ) {
         if (kind === 'technical') {
-            const projected = projectTechnical(
+            const projected = projectTechnicalAnalysis(
                 outcome.result as AnalysisResponse
             );
-            // Only `summary` is a free-form prose leaf here — `keyLevels`,
-            // `priceTargets` and `actionRecommendation` are bounded
-            // structured objects (numbers + a handful of short fields), the
-            // same shape `get_cached_analysis` returns untouched.
-            return buildFreshResult(kind, timeframe, projected, {
-                summary: { kind: 'text', value: projected.summary },
-            });
+            // Budget-fit via the SAME shared helper `get_cached_analysis`
+            // uses for its Redis peek path (`fitTechnicalAnalysis`), so an
+            // oversized technical payload is protected identically
+            // regardless of which tool produced it. `buildFreshResult` here
+            // only assembles the raw envelope (empty `prose` skips its own
+            // generic fit); the technical-specific fit runs after.
+            const envelope = buildFreshResult(kind, timeframe, projected, {});
+            // Safe: `buildFreshResult` returns `{ ...envelope, analysis }`
+            // untouched (bar the `unknown`-typed signature) whenever `prose`
+            // is `{}` — see its `if (Object.keys(prose).length === 0) return
+            // envelope` branch just above, taken here. So `envelope.analysis`
+            // really is `projected` (a `ProjectedTechnicalAnalysis`), and this
+            // cast just recovers the type erased by that shared function's
+            // loose `unknown` return type.
+            return fitTechnicalAnalysis(
+                envelope as { analysis: typeof projected }
+            );
         }
         if (kind === 'overall') {
             const projected = projectOverall(
@@ -311,7 +236,7 @@ export const runFreshAnalysisTool: ToolExecutor = async (
             (args.timeframe as Timeframe | undefined) ?? DEFAULT_TIMEFRAME;
         const [profile, asset] = await Promise.all([
             resolveMarketProfile(symbol),
-            getAssetInfo(symbol),
+            resolveAssetInfoOrNull(symbol, 'run_fresh_analysis'),
         ]);
         const companyName = asset?.name ?? symbol;
         const descriptor = getDescriptor(profile);

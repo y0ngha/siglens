@@ -8,6 +8,7 @@ import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { naverAiCredentials } from '@/entities/news-article/api';
 import { isE2E } from '@/shared/api/e2eEnv';
 import {
+    BARS_RESULT_MAX_CHARS,
     CACHED_ANALYSIS_MAX_CHARS,
     CACHED_ANALYSIS_TURN_BUDGET_CHARS,
     TOOL_RESULT_MAX_CHARS,
@@ -116,6 +117,12 @@ export function createToolExecutor(runtime: ToolRuntime): ExecuteTool {
     const isAnalysis = (name: string): boolean =>
         name === 'get_cached_analysis' || name === 'run_fresh_analysis';
     const ceilingFor = (name: string): number => {
+        // `get_bars_indicators` already fits itself against
+        // `BARS_RESULT_MAX_CHARS` (`getBarsIndicators.ts`'s
+        // `fitBarsToBudget`) — routing it through the shared 4,000 default
+        // here would re-cut an already-fit 6,000-char result down to 4,000
+        // and collapse it into a front-cut preview blob.
+        if (name === 'get_bars_indicators') return BARS_RESULT_MAX_CHARS;
         if (!isAnalysis(name)) return TOOL_RESULT_MAX_CHARS;
         return Math.max(
             TOOL_RESULT_MAX_CHARS,

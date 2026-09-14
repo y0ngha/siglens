@@ -4,10 +4,16 @@ import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarket
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { getDescriptor } from '@/shared/config/marketProfile';
 import type { ToolExecutor } from './index';
+import { resolveAssetInfoOrNull } from './resolveAssetInfo';
 
 const MAX_SYMBOLS = 3;
 
-/** Per-symbol profile → session spec (KR = Yahoo, US/crypto = FMP). */
+/**
+ * Per-symbol profile → session spec (KR = Yahoo, US/crypto = FMP), quoted
+ * through `fmpSymbol` when the canonical symbol differs from the one the
+ * provider expects (e.g. indices). `quoteDelayMinutes` is surfaced so the
+ * model doesn't present a 20-minute-delayed KR quote as real-time.
+ */
 export const getQuoteTool: ToolExecutor = async args => {
     const symbols = (args.symbols as string[])
         .slice(0, MAX_SYMBOLS)
@@ -17,18 +23,23 @@ export const getQuoteTool: ToolExecutor = async args => {
     // quote in the same call.
     const settled = await Promise.allSettled(
         symbols.map(async symbol => {
-            const profile = await resolveMarketProfile(symbol);
+            const [profile, asset] = await Promise.all([
+                resolveMarketProfile(symbol),
+                resolveAssetInfoOrNull(symbol, 'get_quote'),
+            ]);
             const quote = await getCachedMarketDataProvider(
                 sessionSpecFor(profile)
-            ).getQuote(symbol);
+            ).getQuote(asset?.fmpSymbol ?? symbol);
             if (quote === null) return { symbol, found: false };
+            const descriptor = getDescriptor(profile);
             return {
                 symbol,
                 found: true,
                 price: quote.price,
                 changesPercentage: quote.changesPercentage,
-                currency: getDescriptor(profile).priceFormat.currency,
+                currency: descriptor.priceFormat.currency,
                 marketProfile: profile,
+                quoteDelayMinutes: descriptor.quoteDelayMinutes,
             };
         })
     );

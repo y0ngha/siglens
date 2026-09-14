@@ -19,6 +19,10 @@ import { getDatabaseClient } from '@/shared/db/client';
 import { resolvePositionBucket } from '@/shared/lib/byokGate';
 import { isGuestSubject } from '../guestSubject';
 import type { ToolExecutor } from './index';
+import {
+    fitTechnicalAnalysis,
+    projectTechnicalAnalysis,
+} from './projectTechnicalAnalysis';
 
 const STALE_AFTER_MS: Record<string, number> = {
     technical: MS_PER_DAY,
@@ -118,7 +122,13 @@ export const getCachedAnalysisTool: ToolExecutor = async (
             const generatedAt = a.analyzedAt
                 ? new Date(a.analyzedAt)
                 : new Date();
-            return {
+            // Budget-fit via the SAME shared helper `run_fresh_analysis`
+            // uses (`fitTechnicalAnalysis`) — without it, an oversized
+            // `patterns`/`candlePatterns`/`strategies` slice would fall
+            // through to the registry-level `truncateToolResult`, which
+            // collapses the WHOLE payload into a front-cut preview blob
+            // (losing `keyLevels`/`priceTargets` too).
+            return fitTechnicalAnalysis({
                 found: true,
                 source: 'redis',
                 tab,
@@ -126,15 +136,8 @@ export const getCachedAnalysisTool: ToolExecutor = async (
                 generatedAt: generatedAt.toISOString(),
                 stale: stale(tab, generatedAt),
                 personalized: positionBucket !== undefined,
-                analysis: {
-                    summary: a.summary,
-                    trend: a.trend,
-                    riskLevel: a.riskLevel,
-                    keyLevels: a.keyLevels,
-                    priceTargets: a.priceTargets,
-                    actionRecommendation: a.actionRecommendation ?? null,
-                },
-            };
+                analysis: projectTechnicalAnalysis(a),
+            });
         }
     }
     if (tab === 'overall') {
