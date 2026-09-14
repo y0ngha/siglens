@@ -85,9 +85,14 @@ export default async function AiHomePage({
     const sp = await searchParams;
     await maybeHandoffRedirect(locale, '/', sp);
     const user = await getCurrentUser();
-    const [conversations, suggestions, copy] = await Promise.all([
+    // Suggestions are handed down unawaited: a cache miss generates them with an
+    // LLM (up to 8s), and awaiting here held back the whole landing — the body then
+    // streamed in a hidden chunk behind a skeleton, which non-JS crawlers never see.
+    const suggestions = user
+        ? loadSuggestions(user.id, locale).catch(() => null)
+        : null;
+    const [conversations, copy] = await Promise.all([
         user ? listConversationsAction() : Promise.resolve([]),
-        user ? loadSuggestions(user.id, locale) : Promise.resolve(null),
         seoCopy(locale),
     ]);
     const localePrefix = localePath(locale, '').replace(/\/$/, '');

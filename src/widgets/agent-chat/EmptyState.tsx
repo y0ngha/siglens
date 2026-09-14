@@ -1,5 +1,5 @@
 import { useTranslations } from 'next-intl';
-import type { ComponentType } from 'react';
+import { Suspense, use, type ComponentType } from 'react';
 import { BetaBadge } from '@/shared/ui/BetaBadge';
 import {
     ArrowUpRightIcon,
@@ -18,8 +18,81 @@ interface Props {
     readonly onPick: (text: string) => void;
     readonly signedIn: boolean;
     readonly loginHref: string;
-    /** AI-generated suggestions for this hour (spec §4-3); `null`/empty falls back to the static six. */
-    readonly suggestions?: readonly string[] | null;
+    /**
+     * AI-generated suggestions for this hour (spec §4-3), still in flight — the
+     * page does not await them. Generating on a cache miss takes up to 8 seconds,
+     * and awaiting it held back the whole landing (the SSR body went into a hidden
+     * streaming chunk behind a skeleton). `null`/empty falls back to the static six.
+     */
+    readonly suggestions?: Promise<readonly string[] | null> | null;
+}
+
+interface SuggestionCardsProps {
+    readonly label: string;
+    readonly items: readonly string[];
+    readonly onPick: (text: string) => void;
+}
+
+function SuggestionCards({ label, items, onPick }: SuggestionCardsProps) {
+    return (
+        <ul aria-label={label} className="grid w-full gap-2 sm:grid-cols-2">
+            {items.map((s, i) => (
+                // Index in the key: AI-generated strings carry no uniqueness
+                // guarantee at this boundary, and a collision would silently
+                // drop a card.
+                <li key={`${i}-${s}`}>
+                    <button
+                        type="button"
+                        onClick={() => onPick(s)}
+                        className={CARD}
+                    >
+                        <span className="line-clamp-2 min-w-0 break-words">
+                            {s}
+                        </span>
+                        <ArrowUpRightIcon className="size-4 shrink-0 text-secondary-400 transition-colors group-hover:text-primary-400 motion-reduce:transition-none" />
+                    </button>
+                </li>
+            ))}
+        </ul>
+    );
+}
+
+interface PendingSuggestionCardsProps extends Omit<
+    SuggestionCardsProps,
+    'items'
+> {
+    readonly pending: Promise<readonly string[] | null>;
+    readonly fallback: readonly string[];
+}
+
+function PendingSuggestionCards({
+    pending,
+    fallback,
+    ...rest
+}: PendingSuggestionCardsProps) {
+    const suggestions = use(pending);
+    return (
+        <SuggestionCards
+            {...rest}
+            items={
+                suggestions && suggestions.length > 0 ? suggestions : fallback
+            }
+        />
+    );
+}
+
+/** Same footprint as six cards, so the page does not jump when they land. */
+function SuggestionCardsSkeleton({ count }: { readonly count: number }) {
+    return (
+        <ul aria-hidden="true" className="grid w-full gap-2 sm:grid-cols-2">
+            {Array.from({ length: count }, (_, i) => (
+                <li
+                    key={i}
+                    className="min-h-14 animate-pulse rounded-lg border border-secondary-700 bg-secondary-800 motion-reduce:animate-none"
+                />
+            ))}
+        </ul>
+    );
 }
 
 interface CapabilityItem {
@@ -65,10 +138,6 @@ export function EmptyState({
         t('EmptyState.suggestionNvda'),
         t('EmptyState.suggestionBtc'),
     ];
-    const items =
-        signedIn && suggestions && suggestions.length > 0
-            ? suggestions
-            : fallback;
     const capabilities: readonly CapabilityItem[] = [
         { Icon: QuoteIcon, label: t('EmptyState.capQuotes') },
         { Icon: CandlesIcon, label: t('EmptyState.capIndicators') },
@@ -136,32 +205,30 @@ export function EmptyState({
                         ? t('EmptyState.suggestionsLabel')
                         : t('EmptyState.examplesLabel')}
                 </h2>
-                <ul
-                    aria-label={
-                        signedIn
-                            ? t('EmptyState.suggestionsLabel')
-                            : t('EmptyState.examplesLabel')
-                    }
-                    className="grid w-full gap-2 sm:grid-cols-2"
-                >
-                    {items.map((s, i) => (
-                        // Index in the key: AI-generated strings carry no uniqueness
-                        // guarantee at this boundary, and a collision would silently
-                        // drop a card.
-                        <li key={`${i}-${s}`}>
-                            <button
-                                type="button"
-                                onClick={() => onPick(s)}
-                                className={CARD}
-                            >
-                                <span className="line-clamp-2 min-w-0 break-words">
-                                    {s}
-                                </span>
-                                <ArrowUpRightIcon className="size-4 shrink-0 text-secondary-400 transition-colors group-hover:text-primary-400 motion-reduce:transition-none" />
-                            </button>
-                        </li>
-                    ))}
-                </ul>
+                {signedIn && suggestions ? (
+                    <Suspense
+                        fallback={
+                            <SuggestionCardsSkeleton count={fallback.length} />
+                        }
+                    >
+                        <PendingSuggestionCards
+                            label={t('EmptyState.suggestionsLabel')}
+                            pending={suggestions}
+                            fallback={fallback}
+                            onPick={onPick}
+                        />
+                    </Suspense>
+                ) : (
+                    <SuggestionCards
+                        label={
+                            signedIn
+                                ? t('EmptyState.suggestionsLabel')
+                                : t('EmptyState.examplesLabel')
+                        }
+                        items={fallback}
+                        onPick={onPick}
+                    />
+                )}
                 <AiLanding siteUrl={siteUrl} localePrefix={localePrefix} />
             </div>
         </div>
