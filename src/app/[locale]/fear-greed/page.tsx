@@ -44,7 +44,8 @@ export async function generateMetadata({
     const view = await getMarketFearGreedStatic().catch((e: unknown) => {
         console.error(
             // 접두사를 페이지 본문 로그와 통일한다 — CloudWatch 메트릭 필터
-            // (`siglens-fear-greed-loader-failed`)가 이 문자열 하나만 본다.
+            // (`siglens-market-data-loader-failed`, 2026-09-14부터 fear-greed
+            // us/kr + market-kr 통합)가 이 문자열을 본다.
             '[FearGreedRoute] getMarketFearGreedStatic failed (metadata):',
             e
         );

@@ -263,25 +263,14 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-seo-prewarm-batch-failed \
 # 감사)는 acquirePrewarmLock 자체가 던지는 경우(Upstash 장애/타임아웃)도 같은
 # '[seo-prewarm] redis unavailable' 접두로 '... — lock acquire threw:'를 남기고 204를
 # 반환한다 — 두 경로 다 route가 2xx를 반환하므로 EventBridge FailedInvocations도,
-# batch-failed 로그도 안 남는다(cron이 조용히 죽어있어도 알람이 없는 사각지대). 이
-# 필터+알람으로 두 경로를 한 번에 잡는다.
+# batch-failed 로그도 안 남는다(cron이 조용히 죽어있어도 알람이 없는 사각지대).
 #
-# FIX F(감사) — 필터 패턴은 로그 문자열 전체가 아니라 ASCII만 남긴 접두
-# '[seo-prewarm] redis unavailable'로 자른다. 원문 로그의 em-dash(—)는 CloudWatch
-# Logs 필터 패턴의 따옴표 안 non-ASCII 토큰 매칭이 검증되지 않은 동작이라 신뢰하지
-# 않는다. 이 접두는 grep 기준 이 저장소에서 두 로그 라인(lock.ts/route.ts)에만
-# 등장하므로 여전히 유일하다.
-aws logs put-metric-filter --log-group-name /siglens/app \
-  --filter-name siglens-seo-prewarm-redis-unavailable \
-  --filter-pattern '"[seo-prewarm] redis unavailable"' \
-  --metric-transformations metricName=SeoPrewarmRedisUnavailable,metricNamespace=Siglens/SeoPrewarm,metricValue=1,defaultValue=0 \
-  --region "$REGION" || true
-# 1시간에 1회라도 발생하면 신호(락 자체를 못 잡는 상태라 배치가 전혀 안 돈다).
-aws cloudwatch put-metric-alarm --alarm-name siglens-seo-prewarm-redis-unavailable \
-  --namespace Siglens/SeoPrewarm --metric-name SeoPrewarmRedisUnavailable \
-  --statistic Sum --period 3600 --evaluation-periods 1 --threshold 0 \
-  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching \
-  --region "$REGION" $ACTIONS
+# 2026-09-14 알람 통합: 이 필터/알람은 여기서 만들지 않는다 — 같은 "0 초과 =
+# 즉시 알람, 1시간 주기" 모양의 다른 설정/자격증명 신호(네이버 뉴스, KR 캘린더
+# 지평선)와 합쳐 `infra/aws/07-alarms.sh`의 `siglens-config-signal`
+# 필터+알람(namespace Siglens/Config)으로 승격했다. `$ACTIONS`(=`$ALARM_SNS_LOW`)와
+# 07의 `$P2`가 같은 토픽이라 알림 등급은 그대로다. 원문 로그 문자열은 바뀌지
+# 않았으니 이 주석은 유지한다 — 왜 이 리터럴을 골랐는지는 여전히 여기서 설명해야 한다.
 
 # FMP 429 버스트: best-effort/placeholder. fmpRetry.ts(isFmpTransientError)가 429를
 # 자동 재시도(10s/15s/20s)하지만, withRetry.ts는 재시도 시도 자체를 로그로 남기지
@@ -339,4 +328,4 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-seo-prewarm-deadline-reache
 
 log "skipped fmp-429 alarm: no stable log marker exists yet (see comment above) — batch-failed alarm covers structural failure in the meantime"
 
-log "seo-prewarm alarms ready (batch-failed, redis-unavailable; fmp-429 skipped, see log above)"
+log "seo-prewarm alarms ready (batch-failed, unit-error, deadline-reached; fmp-429 skipped, see log above). redis-unavailable is monitored by siglens-config-signal — run 07-alarms.sh too"

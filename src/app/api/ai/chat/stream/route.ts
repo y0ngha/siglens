@@ -581,11 +581,21 @@ export async function POST(request: Request): Promise<Response> {
                             toolResults
                         );
                         if (ungrounded.length > 0) {
-                            console.warn('[agent] ungrounded numbers', {
-                                count: ungrounded.length,
-                                sample: ungrounded.slice(0, 5),
-                                promptVersion: result.promptVersion,
-                            });
+                            // Serialize before logging: passing a plain object lets
+                            // Node's util.inspect pretty-print it over several lines,
+                            // and CloudWatch stores each line as its own event
+                            // (observed 2026-09-14), breaking Logs Insights parsing.
+                            // Same single-JSON shape as `[Usage]`; `[Agent]` passes a
+                            // pre-stringified second argument, which also stays on
+                            // one line.
+                            console.warn(
+                                JSON.stringify({
+                                    tag: '[agent] ungrounded numbers',
+                                    count: ungrounded.length,
+                                    sample: ungrounded.slice(0, 5),
+                                    promptVersion: result.promptVersion,
+                                })
+                            );
                         }
                     } catch (error) {
                         console.error('[agent] grounding check failed:', error);

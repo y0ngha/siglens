@@ -642,7 +642,8 @@ interface Body {
 
 성공한 턴마다 `stream/route.ts`가 core의 `findUngroundedNumbers(answer, toolResults)`로
 최종 답변의 숫자가 그 턴의 tool 결과 어디에도 없는지 확인하고, 있으면 로그만 남긴다:
-`[agent] ungrounded numbers` JSON 라인(`count`·`sample`(최대 5개)·`promptVersion`).
+`tag: "[agent] ungrounded numbers"`의 단일 JSON 라인(`count`·`sample`(최대 5개)·`promptVersion`) —
+객체를 그대로 넘기면 Node가 여러 줄로 예쁘게 출력해 CloudWatch가 줄마다 별도 이벤트로 저장하므로(2026-09-14 실측) 직렬화한 한 줄로 남긴다. `[Usage]`와 같은 형태이고, `[Agent]`는 이미 직렬화한 문자열을 두 번째 인자로 넘겨 역시 한 줄이다.
 답변 자체는 절대 바꾸지 않고, 이 확인이 실패해도(예외) 턴은 그대로 성공 처리된다
 (try/catch로 감쌈). 비용 때문에 CloudWatch 메트릭 필터·알람은 의도적으로 만들지
 않았다 — 로그 검색으로만 확인한다.
