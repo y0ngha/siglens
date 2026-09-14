@@ -2213,6 +2213,7 @@
                 "newChat": "새 대화",
                 "noMatch": "검색 결과가 없습니다.",
                 "privacy": "개인정보처리방침",
+                "renameCancel": "이름 변경 취소",
                 "terms": "이용약관"
             },
             "ToolActivity": {

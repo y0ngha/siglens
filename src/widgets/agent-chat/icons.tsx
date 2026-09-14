@@ -47,6 +47,11 @@ export const PencilIcon = (p: IconProps) => (
         <path d="M13.5 6.5l4 4" />
     </Icon>
 );
+export const CloseIcon = (p: IconProps) => (
+    <Icon {...p}>
+        <path d="M6 6l12 12M18 6L6 18" />
+    </Icon>
+);
 export const TrashIcon = (p: IconProps) => (
     <Icon {...p}>
         <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />
