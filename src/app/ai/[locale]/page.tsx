@@ -21,6 +21,16 @@ import {
 } from './aiSeo';
 import { maybeHandoffRedirect } from './handoffRedirect';
 
+/**
+ * Deliberately no `loading.tsx` for this route. With one, the streamed
+ * response's visible HTML was only the `ChatSkeleton` — the whole landing
+ * body (guide, FAQ, examples) sat in a hidden `<div hidden id="S:…">` chunk
+ * that JS swapped in later, so non-JS crawlers and `curl` only ever saw a
+ * skeleton (verified 2026-09-14 on production). The remaining awaits below
+ * (session, conversation list, SEO copy) are fast; the slow part (AI
+ * suggestions, LLM up to 8s) streams inside `EmptyState`'s own Suspense
+ * boundary instead.
+ */
 export const dynamic = 'force-dynamic';
 
 /** Entry links from siglens.io prefill the composer with `?q=`. */
@@ -85,9 +95,17 @@ export default async function AiHomePage({
     const sp = await searchParams;
     await maybeHandoffRedirect(locale, '/', sp);
     const user = await getCurrentUser();
-    const [conversations, suggestions, copy] = await Promise.all([
+    // Suggestions are handed down unawaited: a cache miss generates them with an
+    // LLM (up to 8s), and awaiting here held back the whole landing — the body then
+    // streamed in a hidden chunk behind a skeleton, which non-JS crawlers never see.
+    const suggestions = user
+        ? loadSuggestions(user.id, locale).catch(error => {
+              console.error('[AiHomePage] loadSuggestions failed:', error);
+              return null;
+          })
+        : null;
+    const [conversations, copy] = await Promise.all([
         user ? listConversationsAction() : Promise.resolve([]),
-        user ? loadSuggestions(user.id, locale) : Promise.resolve(null),
         seoCopy(locale),
     ]);
     const localePrefix = localePath(locale, '').replace(/\/$/, '');

@@ -1,9 +1,8 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Drawer } from 'vaul';
-import { useRouter } from 'next/navigation';
 import type { ChatMessageView } from '@/entities/chat-conversation';
 import type { ConversationListItem } from '@/entities/chat-conversation/actions';
 import {
@@ -12,7 +11,7 @@ import {
 } from '@/features/agent-chat';
 import { Composer } from './Composer';
 import { AGENT_ERROR_RETRYABLE } from './errorCopy';
-import { EmptyState } from './EmptyState';
+import { EmptyState, type PendingSuggestions } from './EmptyState';
 import { GUEST_TURNS_PER_DAY } from './guestTurnLimit';
 import { MenuIcon } from './icons';
 import { loginHref } from './loginHref';
@@ -27,8 +26,8 @@ interface Props {
     readonly localePrefix: string;
     readonly siteUrl: string;
     readonly currentPath: string;
-    /** AI-generated suggestions for this hour (spec §4-3); `null`/undefined falls back to `EmptyState`'s static six. */
-    readonly suggestions?: readonly string[] | null;
+    /** AI-generated suggestions for this hour (spec §4-3), still in flight; `null`/undefined falls back to `EmptyState`'s static six. */
+    readonly suggestions?: PendingSuggestions | null;
     /** Question prefilled from an entry link (`?q=`); never sent automatically. */
     readonly initialDraft?: string;
 }
@@ -45,34 +44,30 @@ export function ChatShell({
     initialDraft,
 }: Props) {
     const t = useTranslations('widgets.agent-chat');
-    const router = useRouter();
     const [drawerOpen, setDrawerOpen] = useState(false);
     /**
-     * `replaceState` moves the URL to `/c/<id>`, which is a DIFFERENT route segment
-     * than the page that rendered this shell. Refreshing while the turn is still
-     * streaming makes Next unmount this ChatShell and mount the `/c/[id]` one: the
-     * stream hook's unmount cleanup aborts the in-flight request (the server sees the
-     * client disconnect and logs `turn failed: aborted`) and the fresh instance
-     * re-initializes from server rows that do not hold the answer yet — so the
-     * streaming bubble disappears and no reply ever lands. Defer the refresh (which
-     * exists to pull the new conversation into the sidebar list) until the turn
-     * settles.
+     * The sidebar list is client state seeded from the server, not re-read with
+     * `router.refresh()`. `replaceState` moves the URL to `/c/<id>`, a DIFFERENT
+     * route segment than the page that rendered this shell, so a refresh makes Next
+     * swap in the `/c/[id]` tree: its `loading.tsx` skeleton flashes over a
+     * conversation that was already on screen, and a refresh mid-stream would also
+     * unmount this shell and abort the turn. Every change the list needs is known
+     * here already — the created conversation's id and title arrive on the stream,
+     * rename/delete come from the rail — so apply them locally instead.
      */
-    const pendingRefreshRef = useRef(false);
+    const [conversationItems, setConversationItems] = useState(conversations);
     const stream = useAgentStream({
         conversationId,
         initialMessages,
         guest: !signedIn,
-        onConversationCreated: id => {
+        onConversationCreated: (id, title) => {
             window.history.replaceState(null, '', `${localePrefix}/c/${id}`);
-            pendingRefreshRef.current = true;
+            setConversationItems(items => [
+                { id, title, lastMessageAt: new Date().toISOString() },
+                ...items.filter(item => item.id !== id),
+            ]);
         },
     });
-    useEffect(() => {
-        if (stream.status === 'streaming' || !pendingRefreshRef.current) return;
-        pendingRefreshRef.current = false;
-        router.refresh();
-    }, [stream.status, router]);
 
     // A session that expired mid-visit surfaces as a 401 on the stream route —
     // bounce through the same handoff flow the login CTA uses instead of
@@ -90,7 +85,19 @@ export function ChatShell({
     const login = loginHref(siteUrl, localePrefix, currentPath);
     const sidebar = (
         <Sidebar
-            items={conversations}
+            items={conversationItems}
+            onRenamed={(id, title) =>
+                setConversationItems(items =>
+                    items.map(item =>
+                        item.id === id ? { ...item, title } : item
+                    )
+                )
+            }
+            onDeleted={id =>
+                setConversationItems(items =>
+                    items.filter(item => item.id !== id)
+                )
+            }
             activeId={stream.conversationId}
             localePrefix={localePrefix}
             signedIn={signedIn}
@@ -137,7 +144,8 @@ export function ChatShell({
     /** A guest out of turns has one way forward, and it is not "retry". */
     const offerLogin = !signedIn && errorCode === 'turn_limit';
     const activeTitle =
-        conversations.find(c => c.id === stream.conversationId)?.title ?? '';
+        conversationItems.find(c => c.id === stream.conversationId)?.title ??
+        '';
     return (
         <div className="flex min-h-[calc(100dvh-3.5rem)]">
             {/* Pinned under the sticky site header at viewport height: a long

@@ -3571,6 +3571,7 @@
                 "newChat": "New chat",
                 "noMatch": "No matches.",
                 "privacy": "Privacy Policy",
+                "renameCancel": "Cancel rename",
                 "terms": "Terms of Service"
             },
             "ToolActivity": {

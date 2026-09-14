@@ -14,7 +14,14 @@ import {
 } from '@/features/agent-chat';
 import { cn } from '@/shared/lib/cn';
 import { LABEL_KO } from '@/shared/lib/typographyStyles';
-import { ArrowUpRightIcon, PencilIcon, PlusIcon, TrashIcon } from './icons';
+import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
+import {
+    ArrowUpRightIcon,
+    CloseIcon,
+    PencilIcon,
+    PlusIcon,
+    TrashIcon,
+} from './icons';
 
 interface Props {
     readonly items: ConversationListItem[];
@@ -24,6 +31,10 @@ interface Props {
     readonly loginHref: string;
     /** Main-site origin, for the legal links and the way back to siglens.io. */
     readonly siteUrl: string;
+    /** Applies a rename to the list the parent owns (also used to roll back a failed one). */
+    readonly onRenamed: (id: string, title: string) => void;
+    /** Drops a deleted conversation from the list the parent owns. */
+    readonly onDeleted: (id: string) => void;
 }
 
 interface RailFooterProps {
@@ -77,6 +88,8 @@ export function Sidebar({
     signedIn,
     loginHref,
     siteUrl,
+    onRenamed,
+    onDeleted,
 }: Props) {
     const t = useTranslations('widgets.agent-chat');
     const router = useRouter();
@@ -90,6 +103,8 @@ export function Sidebar({
     );
     const renameInputRef = useRef<HTMLInputElement>(null);
     const renameTriggerRef = useRef<HTMLButtonElement | null>(null);
+    const renameRowRef = useRef<HTMLLIElement>(null);
+    const renamingId = renaming?.id ?? null;
     const visible = items.filter(i =>
         i.title.toLowerCase().includes(filter.toLowerCase())
     );
@@ -110,6 +125,16 @@ export function Sidebar({
         // caret), so depending on the whole `renaming` object — not just its
         // `id` — is safe and keeps `react-hooks/exhaustive-deps` honest.
     }, [renaming]);
+
+    // A press anywhere outside the row being renamed cancels the rename. Listens
+    // for `pointerdown`, not the input's `blur`: blur also fires when focus moves
+    // for reasons the user did not choose (a screen reader's virtual cursor), and
+    // a real press outside is the only signal that means "I'm done here". The row
+    // itself is excluded so the ✕ toggle and the input keep their own behaviour.
+    // No focus return here — the press already put focus where the user wanted it.
+    useOnClickOutside(renameRowRef, () => setRenaming(null), {
+        enabled: renamingId !== null,
+    });
 
     function closeRename(): void {
         setRenaming(null);
@@ -190,6 +215,11 @@ export function Sidebar({
                             {group.items.map(item => (
                                 <li
                                     key={item.id}
+                                    ref={
+                                        renamingId === item.id
+                                            ? renameRowRef
+                                            : undefined
+                                    }
                                     className={cn(
                                         'group relative flex min-h-9 items-center gap-0.5 rounded-lg pr-1 pl-2.5 text-sm',
                                         item.id === activeId
@@ -202,12 +232,27 @@ export function Sidebar({
                                             className="flex-1"
                                             onSubmit={async e => {
                                                 e.preventDefault();
-                                                await renameConversationAction(
-                                                    item.id,
-                                                    renaming.title
-                                                );
+                                                const title =
+                                                    renaming.title.trim();
                                                 closeRename();
-                                                router.refresh();
+                                                if (
+                                                    title.length === 0 ||
+                                                    title === item.title
+                                                )
+                                                    return;
+                                                // Optimistic: the new title shows at once and
+                                                // rolls back only if the server refuses it.
+                                                onRenamed(item.id, title);
+                                                const { ok } =
+                                                    await renameConversationAction(
+                                                        item.id,
+                                                        title
+                                                    );
+                                                if (!ok)
+                                                    onRenamed(
+                                                        item.id,
+                                                        item.title
+                                                    );
                                             }}
                                         >
                                             <input
@@ -255,14 +300,16 @@ export function Sidebar({
                                                 type="button"
                                                 onClick={async () => {
                                                     setConfirmingDeleteId(null);
-                                                    await deleteConversationAction(
-                                                        item.id
-                                                    );
+                                                    const { ok } =
+                                                        await deleteConversationAction(
+                                                            item.id
+                                                        );
+                                                    if (!ok) return;
                                                     if (item.id === activeId)
                                                         router.push(
                                                             `${localePrefix}/`
                                                         );
-                                                    else router.refresh();
+                                                    else onDeleted(item.id);
                                                 }}
                                                 className="rounded px-1 font-medium underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                                             >
@@ -280,10 +327,25 @@ export function Sidebar({
                                         </span>
                                     ) : (
                                         <>
+                                            {/* One button that toggles, not two that swap: the
+                                                element stays mounted, so `closeRename` can hand
+                                                focus back to it. */}
                                             <button
                                                 type="button"
-                                                aria-label={t('Sidebar.73e5a8')}
+                                                aria-label={
+                                                    renamingId === item.id
+                                                        ? t(
+                                                              'Sidebar.renameCancel'
+                                                          )
+                                                        : t('Sidebar.73e5a8')
+                                                }
                                                 onClick={e => {
+                                                    if (
+                                                        renamingId === item.id
+                                                    ) {
+                                                        closeRename();
+                                                        return;
+                                                    }
                                                     renameTriggerRef.current =
                                                         e.currentTarget;
                                                     setRenaming({
@@ -291,9 +353,19 @@ export function Sidebar({
                                                         title: item.title,
                                                     });
                                                 }}
-                                                className={ROW_ACTION}
+                                                // Stays visible while renaming: it is the only
+                                                // on-screen way out besides Escape.
+                                                className={cn(
+                                                    ROW_ACTION,
+                                                    renamingId === item.id &&
+                                                        'sm:opacity-100'
+                                                )}
                                             >
-                                                <PencilIcon className="size-3.5" />
+                                                {renamingId === item.id ? (
+                                                    <CloseIcon className="size-3.5" />
+                                                ) : (
+                                                    <PencilIcon className="size-3.5" />
+                                                )}
                                             </button>
                                             <button
                                                 type="button"

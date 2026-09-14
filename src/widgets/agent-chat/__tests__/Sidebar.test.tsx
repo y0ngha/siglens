@@ -1,9 +1,9 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ko from '../../../../messages/ko.json';
 
-const router = { refresh: vi.fn(), push: vi.fn() };
+const router = { push: vi.fn() };
 vi.mock('next/navigation', () => ({ useRouter: () => router }));
 
 const { deleteConversationAction, renameConversationAction } = vi.hoisted(
@@ -27,11 +27,13 @@ const wrap = (ui: React.ReactElement) =>
     );
 
 const items = [{ id: 'c1', title: 'My chat', lastMessageAt: '2026-01-01' }];
+const handlers = { onRenamed: vi.fn(), onDeleted: vi.fn() };
 
 describe('Sidebar', () => {
     beforeEach(() => {
-        router.refresh.mockClear();
         router.push.mockClear();
+        handlers.onRenamed.mockClear();
+        handlers.onDeleted.mockClear();
         deleteConversationAction.mockClear();
         renameConversationAction.mockClear();
     });
@@ -39,6 +41,7 @@ describe('Sidebar', () => {
     it('focuses the rename input when entering rename mode, and returns focus to the ✎ button on Escape', () => {
         wrap(
             <Sidebar
+                {...handlers}
                 signedIn
                 loginHref="/login"
                 siteUrl="https://siglens.io"
@@ -60,6 +63,7 @@ describe('Sidebar', () => {
     it('does not cancel the rename when focus merely moves away (no onBlur cancel)', () => {
         wrap(
             <Sidebar
+                {...handlers}
                 signedIn
                 loginHref="/login"
                 siteUrl="https://siglens.io"
@@ -81,6 +85,7 @@ describe('Sidebar', () => {
     it('requires a confirmation click before deleting (does not delete on the first click)', () => {
         wrap(
             <Sidebar
+                {...handlers}
                 signedIn
                 loginHref="/login"
                 siteUrl="https://siglens.io"
@@ -97,6 +102,7 @@ describe('Sidebar', () => {
     it('deletes only after the confirmation click', async () => {
         wrap(
             <Sidebar
+                {...handlers}
                 signedIn
                 loginHref="/login"
                 siteUrl="https://siglens.io"
@@ -111,11 +117,133 @@ describe('Sidebar', () => {
         await vi.waitFor(() =>
             expect(deleteConversationAction).toHaveBeenCalledWith('c1')
         );
+        // Not the open conversation: drop it from the list in place — no refresh.
+        await vi.waitFor(() =>
+            expect(handlers.onDeleted).toHaveBeenCalledWith('c1')
+        );
+        expect(router.push).not.toHaveBeenCalled();
+    });
+
+    it('leaves the list alone when the server refuses the delete', async () => {
+        deleteConversationAction.mockResolvedValueOnce({ ok: false });
+        wrap(
+            <Sidebar
+                {...handlers}
+                signedIn
+                loginHref="/login"
+                siteUrl="https://siglens.io"
+                items={items}
+                activeId={null}
+                localePrefix=""
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: '삭제' }));
+        const confirmButtons = screen.getAllByRole('button', { name: '삭제' });
+        await act(async () => {
+            fireEvent.click(confirmButtons[confirmButtons.length - 1]!);
+        });
+        expect(deleteConversationAction).toHaveBeenCalledWith('c1');
+        expect(handlers.onDeleted).not.toHaveBeenCalled();
+    });
+
+    describe('rename', () => {
+        const renderRail = () =>
+            wrap(
+                <Sidebar
+                    {...handlers}
+                    signedIn
+                    loginHref="/login"
+                    siteUrl="https://siglens.io"
+                    items={items}
+                    activeId={null}
+                    localePrefix=""
+                />
+            );
+
+        it('saves on Enter: applies the title at once, then persists it', async () => {
+            renderRail();
+            fireEvent.click(screen.getByRole('button', { name: '이름 변경' }));
+            const input = screen.getByRole('textbox', { name: '대화 이름' });
+            fireEvent.change(input, { target: { value: '  Renamed  ' } });
+            await act(async () => {
+                fireEvent.submit(input);
+            });
+            expect(handlers.onRenamed).toHaveBeenCalledWith('c1', 'Renamed');
+            expect(renameConversationAction).toHaveBeenCalledWith(
+                'c1',
+                'Renamed'
+            );
+            expect(screen.queryByRole('textbox')).toBeNull();
+        });
+
+        it('rolls the title back when the server refuses the rename', async () => {
+            renameConversationAction.mockResolvedValueOnce({ ok: false });
+            renderRail();
+            fireEvent.click(screen.getByRole('button', { name: '이름 변경' }));
+            fireEvent.change(
+                screen.getByRole('textbox', { name: '대화 이름' }),
+                { target: { value: 'Renamed' } }
+            );
+            await act(async () => {
+                fireEvent.submit(
+                    screen.getByRole('textbox', { name: '대화 이름' })
+                );
+            });
+            expect(handlers.onRenamed.mock.calls).toEqual([
+                ['c1', 'Renamed'],
+                ['c1', 'My chat'],
+            ]);
+        });
+
+        it('does not call the server for an empty or unchanged title', async () => {
+            renderRail();
+            fireEvent.click(screen.getByRole('button', { name: '이름 변경' }));
+            fireEvent.change(
+                screen.getByRole('textbox', { name: '대화 이름' }),
+                { target: { value: '   ' } }
+            );
+            await act(async () => {
+                fireEvent.submit(
+                    screen.getByRole('textbox', { name: '대화 이름' })
+                );
+            });
+            expect(renameConversationAction).not.toHaveBeenCalled();
+            expect(handlers.onRenamed).not.toHaveBeenCalled();
+        });
+
+        it('turns the ✎ button into a ✕ that cancels, and focus stays on it', () => {
+            renderRail();
+            fireEvent.click(screen.getByRole('button', { name: '이름 변경' }));
+            const cancel = screen.getByRole('button', {
+                name: '이름 변경 취소',
+            });
+            fireEvent.click(cancel);
+            expect(screen.queryByRole('textbox')).toBeNull();
+            expect(renameConversationAction).not.toHaveBeenCalled();
+            expect(
+                screen.getByRole('button', { name: '이름 변경' })
+            ).toHaveFocus();
+        });
+
+        it('cancels when the user presses outside the row, but not inside it', () => {
+            renderRail();
+            fireEvent.click(screen.getByRole('button', { name: '이름 변경' }));
+            const input = screen.getByRole('textbox', { name: '대화 이름' });
+            fireEvent.pointerDown(input);
+            expect(
+                screen.getByRole('textbox', { name: '대화 이름' })
+            ).toBeInTheDocument();
+
+            fireEvent.pointerDown(document.body);
+            expect(screen.queryByRole('textbox')).toBeNull();
+            expect(renameConversationAction).not.toHaveBeenCalled();
+        });
     });
 
     it('cancelling the delete confirmation does not call the action', () => {
         wrap(
             <Sidebar
+                {...handlers}
                 signedIn
                 loginHref="/login"
                 siteUrl="https://siglens.io"
@@ -147,6 +275,7 @@ describe('Sidebar', () => {
             try {
                 wrap(
                     <Sidebar
+                        {...handlers}
                         signedIn
                         loginHref="/login"
                         siteUrl="https://siglens.io"
@@ -178,6 +307,7 @@ describe('Sidebar', () => {
         it('shows an empty message with no conversations and a no-match message when the filter hits nothing', () => {
             const { unmount } = wrap(
                 <Sidebar
+                    {...handlers}
                     signedIn
                     loginHref="/login"
                     siteUrl="https://siglens.io"
@@ -192,6 +322,7 @@ describe('Sidebar', () => {
             unmount();
             wrap(
                 <Sidebar
+                    {...handlers}
                     signedIn
                     loginHref="/login"
                     siteUrl="https://siglens.io"
@@ -216,6 +347,7 @@ describe('Sidebar', () => {
     it('guest: no list or search — a sign-in panel, plus legal links back to siglens.io', () => {
         wrap(
             <Sidebar
+                {...handlers}
                 signedIn={false}
                 loginHref="https://siglens.io/login?next=x"
                 siteUrl="https://siglens.io"

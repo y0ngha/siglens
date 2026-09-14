@@ -70,6 +70,25 @@ describe('AuthSessionHeaderClient', () => {
         mockPathname.mockReturnValue('/');
     });
 
+    /**
+     * 조회 실패는 "로그아웃"이 아니다 — 죽은 세션은 액션이 `null`로 돌려준다. 에러는
+     * 네트워크나 배포 직후 옛 빌드 탭의 Server Action 불일치다. 게스트 CTA를 그리면
+     * 로그인한 회원에게 로그아웃된 것처럼 보인다(2026-09-14 사용자 제보).
+     */
+    it('조회 에러면 게스트로 떨어뜨리지 않고 hint 기반 로딩 셸을 유지한다', () => {
+        mockAuthHint.mockReturnValue(true);
+        mockCurrentUser.mockReturnValue({
+            data: undefined,
+            isPending: false,
+            isError: true,
+        } as never);
+        render(<AuthSessionHeaderClient />);
+        expect(lastHeaderProps()).toMatchObject({
+            currentUser: null,
+            loadingUserMenu: true,
+        });
+    });
+
     it('Happy: 로그인 사용자 → Header에 currentUser 전달', () => {
         mockAuthHint.mockReturnValue(true);
         mockCurrentUser.mockReturnValue({

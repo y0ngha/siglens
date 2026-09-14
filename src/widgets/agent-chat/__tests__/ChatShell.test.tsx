@@ -173,7 +173,7 @@ describe('ChatShell error banner', () => {
     });
 });
 
-describe('ChatShell new-conversation refresh', () => {
+describe('ChatShell new-conversation list update', () => {
     beforeAll(() => {
         Element.prototype.scrollIntoView = vi.fn();
     });
@@ -181,23 +181,27 @@ describe('ChatShell new-conversation refresh', () => {
         router.refresh.mockClear();
         captured.options = null;
         mockStream.error = null;
+        mockStream.status = 'idle';
     });
 
     /**
      * `/c/[id]` is a different route segment than the page that rendered this shell,
-     * so a refresh mid-turn remounts ChatShell: the stream hook's unmount cleanup
-     * aborts the live request and the answer never arrives. Asserting only the final
-     * refresh would pass even if it fired immediately — the point is that it does NOT
-     * fire while `status === 'streaming'`.
+     * so any `router.refresh()` swaps in that tree — its `loading.tsx` skeleton
+     * flashes over the conversation already on screen, and mid-stream it would also
+     * abort the turn. The new conversation must reach the sidebar (and the header
+     * title) from the stream event alone, with no refresh at any point.
      */
-    it('holds router.refresh() until the turn stops streaming', () => {
+    it('adds the created conversation to the sidebar without refreshing', () => {
         mockStream.status = 'streaming';
+        mockStream.conversationId = 'c2';
         const { rerender } = renderShell();
         act(() => {
-            captured.options?.onConversationCreated?.('c2', 't');
+            captured.options?.onConversationCreated?.('c2', '새 대화 제목');
         });
         expect(window.location.pathname).toBe('/c/c2');
-        expect(router.refresh).not.toHaveBeenCalled();
+        expect(
+            screen.getAllByRole('link', { name: '새 대화 제목' }).length
+        ).toBeGreaterThan(0);
 
         mockStream.status = 'idle';
         rerender(
@@ -205,19 +209,10 @@ describe('ChatShell new-conversation refresh', () => {
                 {shellTree()}
             </NextIntlClientProvider>
         );
-        expect(router.refresh).toHaveBeenCalledTimes(1);
-    });
-
-    it('does not refresh when no conversation was created', () => {
-        mockStream.status = 'streaming';
-        const { rerender } = renderShell();
-        mockStream.status = 'idle';
-        rerender(
-            <NextIntlClientProvider locale="ko" messages={ko}>
-                {shellTree()}
-            </NextIntlClientProvider>
-        );
+        // Regression guard: a prior version called router.refresh() here, which
+        // swapped in the /c/[id] tree and flashed its loading skeleton.
         expect(router.refresh).not.toHaveBeenCalled();
+        mockStream.conversationId = 'c1';
     });
 });
 
@@ -279,21 +274,23 @@ describe('ChatShell suggestions passthrough (Task S4)', () => {
         mockStream.messages = originalMessages;
     });
 
-    it('renders the AI-generated suggestions as buttons', () => {
-        wrap(
-            <ChatShell
-                conversationId="c1"
-                initialMessages={[]}
-                conversations={[]}
-                signedIn
-                localePrefix=""
-                siteUrl="https://siglens.io"
-                currentPath="/c1"
-                suggestions={['질문 하나', '질문 둘']}
-            />
-        );
+    it('renders the AI-generated suggestions as buttons', async () => {
+        await act(async () => {
+            wrap(
+                <ChatShell
+                    conversationId="c1"
+                    initialMessages={[]}
+                    conversations={[]}
+                    signedIn
+                    localePrefix=""
+                    siteUrl="https://siglens.io"
+                    currentPath="/c1"
+                    suggestions={Promise.resolve(['질문 하나', '질문 둘'])}
+                />
+            );
+        });
         expect(
-            screen.getByRole('button', { name: /질문 하나/ })
+            await screen.findByRole('button', { name: /질문 하나/ })
         ).toBeInTheDocument();
         expect(
             screen.getByRole('button', { name: /질문 둘/ })

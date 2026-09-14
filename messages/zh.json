@@ -3571,6 +3571,7 @@
                 "newChat": "新对话",
                 "noMatch": "没有匹配的对话。",
                 "privacy": "隐私政策",
+                "renameCancel": "取消重命名",
                 "terms": "服务条款"
             },
             "ToolActivity": {

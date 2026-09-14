@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { describe, expect, it, vi } from 'vitest';
 import { EmptyState } from '@/widgets/agent-chat/EmptyState';
@@ -12,24 +12,71 @@ const wrap = (ui: React.ReactElement) =>
     );
 
 describe('EmptyState', () => {
-    it('prefers AI suggestions and sends the clicked one', () => {
+    it('prefers AI suggestions and sends the clicked one', async () => {
         const onPick = vi.fn();
-        wrap(
-            <EmptyState
-                siteUrl="https://siglens.io"
-                localePrefix=""
-                onPick={onPick}
-                signedIn
-                loginHref="/login"
-                suggestions={['오늘 시장 어때?', 'NVDA 뉴스 요약']}
-            />
-        );
-        const list = screen.getByRole('list', {
+        await act(async () => {
+            wrap(
+                <EmptyState
+                    siteUrl="https://siglens.io"
+                    localePrefix=""
+                    onPick={onPick}
+                    signedIn
+                    loginHref="/login"
+                    suggestions={Promise.resolve([
+                        '오늘 시장 어때?',
+                        'NVDA 뉴스 요약',
+                    ])}
+                />
+            );
+        });
+        const list = await screen.findByRole('list', {
             name: '이렇게 물어볼 수 있어요',
         });
         expect(list.querySelectorAll('li')).toHaveLength(2);
         fireEvent.click(screen.getByRole('button', { name: /NVDA 뉴스 요약/ }));
         expect(onPick).toHaveBeenCalledWith('NVDA 뉴스 요약');
+    });
+
+    /**
+     * The landing must not wait for generation (up to 8s on a cache miss): the
+     * rest of the page renders while six same-size placeholders hold the spot.
+     */
+    it('renders the page with placeholders while suggestions are still generating', () => {
+        wrap(
+            <EmptyState
+                siteUrl="https://siglens.io"
+                localePrefix=""
+                onPick={vi.fn()}
+                signedIn
+                loginHref="/login"
+                suggestions={new Promise(() => {})}
+            />
+        );
+        expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
+        expect(screen.getByText('자주 묻는 질문')).toBeInTheDocument();
+        expect(
+            screen.queryByRole('button', { name: /내 보유 종목 지금 어때/ })
+        ).toBeNull();
+    });
+
+    it('falls back to the static six when generation yields nothing', async () => {
+        await act(async () => {
+            wrap(
+                <EmptyState
+                    siteUrl="https://siglens.io"
+                    localePrefix=""
+                    onPick={vi.fn()}
+                    signedIn
+                    loginHref="/login"
+                    suggestions={Promise.resolve(null)}
+                />
+            );
+        });
+        expect(
+            await screen.findByRole('button', {
+                name: /내 보유 종목 지금 어때/,
+            })
+        ).toBeInTheDocument();
     });
 
     it('falls back to the six static suggestions when none are provided', () => {
@@ -58,7 +105,7 @@ describe('EmptyState', () => {
                 onPick={onPick}
                 signedIn={false}
                 loginHref="https://siglens.io/login?next=x"
-                suggestions={['무시돼야 할 개인화 제안']}
+                suggestions={Promise.resolve(['무시돼야 할 개인화 제안'])}
             />
         );
         expect(

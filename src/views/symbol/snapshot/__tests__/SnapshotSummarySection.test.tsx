@@ -324,6 +324,25 @@ describe('평이화 연동', () => {
         ).toBeInTheDocument();
     });
 
+    /**
+     * 표식은 라이브 위젯의 평이화만 세운다. 이 섹션의 스위치가 세우면 자기 자신을
+     * 숨겨, 라이브 위젯에 서사가 없을 때 쉽게보기 화면이 통째로 빈다(2026-09-14 제보).
+     */
+    it('duplicatesLiveWidget이면 쉽게보기여도 스스로 숨기는 표식을 세우지 않는다', () => {
+        render(
+            <SnapshotSummarySection
+                displayName="Apple Inc."
+                marketProfile="us-equity"
+                plain="애플 주가는 지금 오르는 흐름입니다."
+                duplicatesLiveWidget
+            >
+                <p>전문 원문</p>
+            </SnapshotSummarySection>
+        );
+
+        expect(document.documentElement.dataset.analysisView).toBeUndefined();
+    });
+
     it('일반 탭에는 표식을 달지 않는다 — 스스로 숨으면 안 된다', () => {
         const { container } = render(
             <SnapshotSummarySection
