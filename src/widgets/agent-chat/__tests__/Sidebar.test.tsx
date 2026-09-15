@@ -307,6 +307,53 @@ describe('Sidebar', () => {
             expect(onNavigate).toHaveBeenCalledTimes(1);
         });
 
+        /**
+         * Clicking the conversation already on screen pushes the same URL: Next does
+         * not remount ChatShell, so nothing else would close the mobile drawer —
+         * the settle-time `onNavigate` must still fire.
+         */
+        it('still calls onNavigate for the conversation already open (same URL, no remount)', () => {
+            wrap(
+                <Sidebar
+                    {...handlers}
+                    onNavigate={onNavigate}
+                    signedIn
+                    loginHref="/login"
+                    siteUrl="https://siglens.io"
+                    items={items}
+                    activeId="c1"
+                    localePrefix="/en"
+                />
+            );
+            const active = screen.getByRole('link', { name: 'My chat' });
+            expect(active).toHaveAttribute('aria-current', 'page');
+            fireEvent.click(active);
+            expect(router.push).toHaveBeenCalledWith('/en/c/c1');
+            expect(onNavigate).toHaveBeenCalledTimes(1);
+        });
+
+        it('calls onNavigate only once the transition settles, keeping the status announcement up while pending', async () => {
+            // A promise-returning push turns the transition into an async action,
+            // so `isNavigating` stays true until it resolves — the window in which
+            // the mobile drawer used to close and unmount the live region.
+            let finish!: () => void;
+            router.push.mockReturnValueOnce(
+                new Promise<void>(resolve => {
+                    finish = resolve;
+                })
+            );
+            renderRail();
+            fireEvent.click(screen.getByRole('link', { name: 'My chat' }));
+            expect(screen.getByRole('status')).toHaveTextContent(
+                '불러오는 중…'
+            );
+            expect(onNavigate).not.toHaveBeenCalled();
+
+            await act(async () => finish());
+            expect(screen.getByRole('status')).toHaveTextContent('');
+            expect(onNavigate).toHaveBeenCalledTimes(1);
+        });
+
         it('starts a new chat the same way', () => {
             renderRail();
             fireEvent.click(screen.getByRole('link', { name: '새 대화' }));

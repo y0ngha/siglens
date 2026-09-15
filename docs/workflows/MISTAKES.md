@@ -391,6 +391,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ❌ useQuery(...); useCallback(...); const derived = ...; useRef(...)  // useRef after derived violates ordering
     ✅ useQuery(...); const rebuildQueue = rebuildQueueSrc; useNoticePopup(...);  // derived const between query + custom hook is OK; custom hook last
     ✅ useState(...); useRef(...); useQuery(...); useCallback(...); useMemo(...); const derived = ...; handlers; useEffect(...)  // complete strict order
+    → Recurring: feat/agent-confluence-sr-tests (useEffectEvent after derived values), PR #823 R2 (setState/custom hook ordering), ChatShell violations on same feature branch — 4+ occurrences this session
 
 17.5. for loop with .push() inside useMemo, reduce, or other functional expressions
     → Loop accumulation must use spread, map, filter, flatMap, or reduce — never direct mutation

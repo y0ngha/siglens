@@ -258,19 +258,6 @@
   - Rule: FF.md Cohesion 2-C — when adding an env-gate or feature-flag helper, search for siblings in the same category and colocate in the same file. Placing duplicates of the same category in different directories obscures their relationship and makes future changes diverge.
   - Context: Moved `isOfflineBuild` to new `src/shared/api/offlineBuild.ts` alongside the existing `e2eEnv.ts` pattern.
 
-## [PR #799 | chore/core-1.0.4-prompt-currency | 2026-09-11]
-- Violation: BLOCKER — `YahooFinancialStatementsProvider` added a new `reportedCurrency` field and threaded it through three mapper functions (`mapIncome`, `mapBalance`, `mapCashFlow`). Only the income-statement test asserted `reportedCurrency: 'KRW'`; the balance-sheet and cash-flow tests used `toMatchObject` without including the new field. Dropping the field or hardcoding `'USD'` in a Korean symbol test stayed green.
-  - Rule: When a new field is threaded through sibling mapper functions, every sibling's unit test must assert it with a value that differs from the default. Tests using structural matchers (`toMatchObject`) without the new field silently tolerate omission bugs — the field may not be passed at all, and the test cannot tell.
-  - Context: Fixed by asserting `reportedCurrency: 'KRW'` in both balance-sheet and cash-flow test cases. Verified by hardcoding `'USD'` in the `mapBalance` implementation and seeing the test fail as expected. Ensures all three mappers now have explicit currency field assertions.
-
-- Violation: SUGGESTION — `value?.trim() || null` reported-currency normalization was implemented three times: once in `reportedCurrencyOf` (financialStatementsClient.ts), once inline in `fundamentalClient.ts`, and once inline in `yahooFundamentalMap.ts`. Reuse was impractical due to different module dependencies.
-  - Rule: MISTAKES §1 — Extract repeated normalization patterns into a shared helper in `src/shared/lib/`; do not repeat the same pattern across three files, even if each site has slightly different dependencies.
-  - Context: Extracted `normalizeReportedCurrency` to `src/shared/lib/reportedCurrency.ts` with unit tests covering null/whitespace/uppercase normalization. Updated all three call sites to use the helper. Verified: `yarn test src/shared/lib` passes, all consumers green.
-
-- Violation: SUGGESTION — `submitNewsAnalysisAction` computed `assetClass` via `resolveAssetClass` and `currency` via a separate `currencyForSymbol` call. Sibling actions (`runFundamentalAnalysisAction`, `runOverallAnalysisAction`, `chatAction`) all use `resolveMarketProfile` to fetch both descriptor values atomically via `getDescriptor`.
-  - Rule: Derive related descriptor values (asset class, currency, region, etc.) from one resolution path; separate resolution calls may drift if the underlying mappings diverge.
-  - Context: Unified `submitNewsAnalysisAction` to use `resolveMarketProfile` + `getDescriptor`, matching the pattern of siblings. Single resolution point reduces risk of state divergence.
-
 ## [PR #800 | chore/offline-build | 2026-09-11]
 - Violation: BLOCKER — Offline/kill-switch gate covered FMP, Neon, and Upstash but not Yahoo Finance (KR market data via `createYahooClient`). Disabling the app Redis client made `getOrSetCache` call the live Yahoo fetcher on every local build.
   - Rule: (new) Offline/kill-switch gate must cover every external host reachable from the guarded code path, not only the services explicitly named in the task description. Incomplete coverage creates silent fallbacks to live services during offline builds.
@@ -349,3 +336,8 @@
 - Violation: src/widgets/CLAUDE.md cross-widget dependency edge list omitted agent-chat → layout entry
   - Rule: CONVENTIONS.md — Architecture documentation must mirror implementation; cross-widget dependency edges must be registered
   - Context: Added agent-chat → layout edge to documented cross-widget dependency graph.
+
+## [feat/agent-confluence-sr-tests | siglens-wt-confluence | 2026-09-15]
+- Violation: `useEffectEvent` (notifyNavigated) in src/widgets/agent-chat/Sidebar.tsx declared after derived values and handlers
+  - Rule: MISTAKES.md Components Rule 17 — All hook calls must be declared before derived variables and handlers. Strict ordering: useState/useRef → useQuery/useMutation/custom hooks → useCallback/useMemo → derived variables → handlers → useEffect
+  - Context: Moved `useEffectEvent` to correct position right after `useOnClickOutside`. Part of recurring pattern on this feature: ChatShell useState placement, Sidebar hook ordering, handlers positioning.

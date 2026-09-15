@@ -3,7 +3,9 @@ import {
     classifyTrend,
     detectCandlePatternEntries,
     detectSignals,
+    evaluateConfluence,
     getDetectionBars,
+    scoreConfluence,
     selectLastCandlePatternEntries,
     type Bar,
     type BollingerResult,
@@ -19,7 +21,10 @@ import {
     type TrendDirection,
 } from '@y0ngha/siglens-core';
 import { getCachedBarsWithIndicators } from '@/entities/bars/lib/barsDataCache';
-import { roundIndicators } from '@/entities/bars/lib/roundIndicators';
+import {
+    roundIndicators,
+    roundNumber,
+} from '@/entities/bars/lib/roundIndicators';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
@@ -206,6 +211,53 @@ function latestCandlePatterns(bars: Bar[]): BarCandlePattern[] {
     }));
 }
 
+/** Compact view of core's `ConfluenceSnapshot` — drops `timeframe`/`barTime`/`close` (already in the output) and `params`. */
+interface BarsConfluenceView {
+    score: number;
+    entryTrigger: boolean;
+    exitTrigger: boolean;
+    bullish: string[];
+    bearish: string[];
+    freshBullish: string[];
+    freshBearish: string[];
+    ma50: number | null;
+    htfGate: 'off';
+}
+
+/**
+ * Rule-based indicator-family confluence (no AI) — the same entry/exit
+ * trigger siglens-trader acts on — computed from the full cached series.
+ *
+ * The higher-timeframe gate is deliberately OFF: this tool loads exactly one
+ * timeframe, and a second bars fetch on every call just to feed the gate
+ * isn't worth it for a chat read-out. `entryTrigger` therefore omits the HTF
+ * alignment clause (so it can fire where the trader's gated rule would not);
+ * `htfGate: 'off'` tells the model that. `exitTrigger` is unaffected — core
+ * keeps the HTF gate entry-only by design.
+ *
+ * `null` when core abstains (fewer than `CONFLUENCE_MIN_BARS` bars or a
+ * non-finite last close) — an abstention, not a neutral 50.
+ */
+function confluenceView(
+    bars: Bar[],
+    timeframe: Timeframe
+): BarsConfluenceView | null {
+    const snapshot = evaluateConfluence(bars, { timeframe });
+    if (!snapshot) return null;
+    return {
+        score: scoreConfluence(snapshot),
+        entryTrigger: snapshot.entryTrigger,
+        exitTrigger: snapshot.exitTrigger,
+        bullish: snapshot.bullish,
+        bearish: snapshot.bearish,
+        freshBullish: snapshot.freshBullish,
+        freshBearish: snapshot.freshBearish,
+        // Same significant-digit rounding `roundIndicators` applies to `latest`.
+        ma50: snapshot.ma50 === null ? null : roundNumber(snapshot.ma50),
+        htfGate: 'off',
+    };
+}
+
 export const getBarsIndicatorsTool: ToolExecutor = async args => {
     const symbol = String(args.symbol).toUpperCase();
     const timeframe = args.timeframe as Timeframe;
@@ -244,6 +296,7 @@ export const getBarsIndicatorsTool: ToolExecutor = async args => {
     }));
     // Client-serialization-boundary rounding only, same as
     // `getBarsAction.ts` — the cache still holds full-precision values.
+    const confluence = confluenceView(bars, timeframe);
     const latest = latestIndicators(roundIndicators(indicators));
     const candlePatterns = latestCandlePatterns(bars);
     const asOf = new Date(bars[bars.length - 1]!.time * 1000).toISOString();
@@ -257,6 +310,7 @@ export const getBarsIndicatorsTool: ToolExecutor = async args => {
             currency,
             trend,
             signals,
+            confluence,
             latest,
             candlePatterns,
             barsReturned: barsForOutput.length,
