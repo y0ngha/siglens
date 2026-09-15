@@ -60,6 +60,21 @@ describe('Sidebar', () => {
         expect(screen.getByRole('button', { name: '이름 변경' })).toHaveFocus();
     });
 
+    it('renders a status live region for the navigating state (empty while idle)', () => {
+        wrap(
+            <Sidebar
+                {...handlers}
+                signedIn
+                loginHref="/login"
+                siteUrl="https://siglens.io"
+                items={items}
+                activeId={null}
+                localePrefix=""
+            />
+        );
+        expect(screen.getByRole('status')).toHaveTextContent('');
+    });
+
     it('does not cancel the rename when focus merely moves away (no onBlur cancel)', () => {
         wrap(
             <Sidebar

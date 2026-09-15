@@ -3565,6 +3565,7 @@
                 "guestBody": "Guest conversations disappear when you close this tab. Log in to keep them and to analyze your own holdings.",
                 "guestCta": "Log in",
                 "guestTitle": "Conversation history",
+                "navigating": "Loading…",
                 "newChat": "New chat",
                 "noMatch": "No matches.",
                 "privacy": "Privacy Policy",

@@ -3565,6 +3565,7 @@
                 "guestBody": "关闭此标签页后，访客对话将会消失。登录后可保存对话，并使用持仓分析。",
                 "guestCta": "登录",
                 "guestTitle": "对话记录",
+                "navigating": "加载中…",
                 "newChat": "新对话",
                 "noMatch": "没有匹配的对话。",
                 "privacy": "隐私政策",

@@ -231,6 +231,9 @@ export function Sidebar({
                 <PlusIcon className="size-4 text-primary-400" />
                 {t('Sidebar.newChat')}
             </a>
+            <p role="status" className="sr-only">
+                {isNavigating ? t('Sidebar.navigating') : ''}
+            </p>
             <input
                 type="search"
                 value={filter}

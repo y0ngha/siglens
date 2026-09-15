@@ -2744,5 +2744,6 @@
     "widgets.overall.OverallFactualFallback.ab960a": "ab960ae1d4f7",
     "widgets.portfolio-position.PositionBuilding.305967": "305967b37ce2",
     "widgets.portfolio-position.PositionCta.2bf3cd": "2bf3cd42152b",
-    "widgets.agent-chat.Sidebar.renameCancel": "2d09a8ab3070"
+    "widgets.agent-chat.Sidebar.renameCancel": "2d09a8ab3070",
+    "widgets.agent-chat.Sidebar.navigating": "c78656b44510"
 }

@@ -323,4 +323,12 @@
   - Rule: MISTAKES.md Cohesion — Extract repeated navigation patterns into a shared handler to eliminate duplication.
   - Context: Extracted `startNavigationTo(href)` helper. Both redirect and navigate paths now call it instead of duplicating navigate logic.
 
+## [PR #823 | feat/ai-conversation-switch-no-skeleton | Post-approval suggestions | 2026-09-15]
+- Violation: SUGGESTION (accepted) — pending navigation signalled only visually via `aria-busy` state; no announcement to screen readers
+  - Rule: WCAG 2.1 — Dynamic state changes that affect application state must announce to assistive technology; visual-only signalling creates screen-reader blind spot
+  - Context: Added always-mounted `role="status"` sr-only live region in Sidebar with i18n key `widgets.agent-chat.Sidebar.navigating` (4 locales + hash). Live region now announces navigation state to assistive technology.
+
+- Finding: Review suggested using LocaleLink instead of raw `<a>` + `router.push` for in-app navigation
+  - Status: REJECTED — false positive; LocaleProvider's `hrefBase=SITE_URL` makes LocaleLink emit absolute siglens.io URLs (cross-origin full navigation), breaking ai.siglens.io in-app conversation switching pattern
+
 
