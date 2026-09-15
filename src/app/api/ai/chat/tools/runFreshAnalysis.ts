@@ -253,6 +253,8 @@ export const runFreshAnalysisTool: ToolExecutor = async (
                     reasoning: false,
                     locale: ctx.locale,
                     skipEnqueueIfMiss: false,
+                    // ai.siglens.io has no model picker: a DeepSeek outage retries once on Gemini (core 1.7.0).
+                    providerFallback: true,
                 };
                 return unwrap(
                     kind,
@@ -267,6 +269,8 @@ export const runFreshAnalysisTool: ToolExecutor = async (
                     )) as Outcome
                 );
             }
+            // overall/news/options go through server actions shared with siglens.io's
+            // user-chosen model paths, which must not fall back — no providerFallback there.
             case 'overall':
                 return unwrap(
                     kind,

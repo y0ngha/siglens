@@ -41,6 +41,7 @@ import {
 import { getNextEarningsReport } from '@/entities/earnings-report';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import { getDescriptor } from '@/shared/config/marketProfile';
+import { PREWARM_PROVIDER_FALLBACK } from '@/shared/config/prewarm';
 
 /** Domain-level row returned from the `news` table; extends the display projection with persistence-only fields. */
 export interface NewsRow extends NewsDisplayItem {
@@ -469,6 +470,7 @@ export async function prewarmNews(
         upcomingCalendar: next !== null ? [next] : [],
         tier: 'free',
         reasoning: false,
+        providerFallback: PREWARM_PROVIDER_FALLBACK,
         skipEnqueueIfMiss: false,
         assetClass,
         // 방문자 경로(submitNewsAnalysisAction)와 같은 값을 넘겨야 prewarm이 채운

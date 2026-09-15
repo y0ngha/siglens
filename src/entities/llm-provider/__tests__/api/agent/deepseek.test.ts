@@ -116,7 +116,67 @@ describe('callDeepseekAgent', () => {
             },
         });
         expect(params.stream).toBe(true);
-        expect(mockCreate.mock.lastCall![1]).toEqual({ signal: o.signal });
+        // The call gets an internal signal (stall watchdog) linked to the caller's.
+        expect(mockCreate.mock.lastCall![1].signal).toBeInstanceOf(AbortSignal);
+    });
+
+    it('요청 본문 필드 순서·메시지 페이로드가 리팩터 전과 동일하다(extra_content 없음)', async () => {
+        mockCreate.mockResolvedValue(chunks(TOOL_STREAM));
+        await callDeepseekAgent(
+            opts({
+                messages: [
+                    { role: 'user', content: 'q' },
+                    {
+                        role: 'assistant',
+                        content: '',
+                        toolCalls: [
+                            { id: 'c1', name: 'get_quote', args: { a: 1 } },
+                        ],
+                    },
+                    {
+                        role: 'tool',
+                        content: '{}',
+                        toolCallId: 'c1',
+                        toolName: 'get_quote',
+                    },
+                ],
+            })
+        );
+        const params = mockCreate.mock.lastCall![0];
+        expect(Object.keys(params)).toEqual([
+            'model',
+            'messages',
+            'tools',
+            'tool_choice',
+            'max_tokens',
+            'temperature',
+            'thinking',
+            'stream',
+            'stream_options',
+        ]);
+        expect(JSON.stringify(params.messages)).toBe(
+            JSON.stringify([
+                { role: 'system', content: 'sys' },
+                { role: 'user', content: 'q' },
+                {
+                    role: 'assistant',
+                    content: null,
+                    tool_calls: [
+                        {
+                            id: 'c1',
+                            type: 'function',
+                            function: {
+                                name: 'get_quote',
+                                arguments: '{"a":1}',
+                            },
+                        },
+                    ],
+                },
+                { role: 'tool', tool_call_id: 'c1', content: '{}' },
+            ])
+        );
+        expect(params.stream_options).toEqual({ include_usage: true });
+        expect(params.temperature).toBe(0);
     });
 
     it('텍스트 델타 스트림 → end', async () => {

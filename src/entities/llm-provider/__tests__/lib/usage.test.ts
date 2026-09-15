@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
     CHAT_JOB_ID,
     extractClaudeUsage,
-    extractDeepSeekUsage,
+    extractOpenAiCompatibleUsage,
     extractGeminiUsage,
     extractOpenAIUsage,
     logUsage,
@@ -101,10 +101,10 @@ describe('extractOpenAIUsage', () => {
     });
 });
 
-describe('extractDeepSeekUsage', () => {
+describe('extractOpenAiCompatibleUsage', () => {
     it('DeepSeek 고유 cache-hit 필드를 우선 사용한다', () => {
         expect(
-            extractDeepSeekUsage({
+            extractOpenAiCompatibleUsage({
                 prompt_tokens: 1000,
                 prompt_cache_hit_tokens: 700,
                 prompt_tokens_details: { cached_tokens: 1 },
@@ -120,7 +120,7 @@ describe('extractDeepSeekUsage', () => {
 
     it('고유 필드가 없으면 OpenAI 호환 필드로 폴백한다', () => {
         expect(
-            extractDeepSeekUsage({
+            extractOpenAiCompatibleUsage({
                 prompt_tokens: 90,
                 prompt_tokens_details: { cached_tokens: 30 },
             })

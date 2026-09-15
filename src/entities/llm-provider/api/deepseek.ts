@@ -2,8 +2,12 @@ import 'server-only';
 import { resolveReasoningConfig } from '@y0ngha/siglens-core';
 import { toProviderTurns, findSpecByApiModelId } from '../lib/utils';
 import type { ProviderCallOptions } from '../model';
-import type { DeepSeekUsageLike } from '../lib/usage';
-import { CHAT_JOB_ID, extractDeepSeekUsage, logUsage } from '../lib/usage';
+import type { OpenAiCompatibleUsageLike } from '../lib/usage';
+import {
+    CHAT_JOB_ID,
+    extractOpenAiCompatibleUsage,
+    logUsage,
+} from '../lib/usage';
 import OpenAI from 'openai';
 
 /**
@@ -95,14 +99,14 @@ export async function callDeepseekChat({
     // DeepSeek adds on top of the OpenAI-compatible shape; the cast narrows to
     // the superset our extractor understands.
     let text = '';
-    let usage: DeepSeekUsageLike | undefined;
+    let usage: OpenAiCompatibleUsageLike | undefined;
     for await (const chunk of stream) {
         const delta = chunk.choices[0]?.delta?.content;
         if (delta) {
             text += delta;
         }
         if (chunk.usage) {
-            usage = chunk.usage as DeepSeekUsageLike;
+            usage = chunk.usage as OpenAiCompatibleUsageLike;
         }
     }
 
@@ -110,7 +114,7 @@ export async function callDeepseekChat({
         jobId,
         model,
         latencyMs: Date.now() - startedAt,
-        ...extractDeepSeekUsage(usage),
+        ...extractOpenAiCompatibleUsage(usage),
     });
 
     if (text === '') {

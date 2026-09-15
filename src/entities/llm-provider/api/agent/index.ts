@@ -2,9 +2,10 @@ import 'server-only';
 import type { CallAgentProvider } from '@y0ngha/siglens-core';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { fakeAgentProvider } from './fake';
-import { createAgentProvider } from './router';
+import { createAgentProvider, type AgentProviderState } from './router';
 
-export { AGENT_MODEL } from './router';
+export { AGENT_MODEL, AGENT_FALLBACK_MODEL } from './router';
+export type { AgentProviderState } from './router';
 
 /**
  * E2E → fake; otherwise the fixed-model DeepSeek provider.
@@ -16,7 +17,9 @@ export { AGENT_MODEL } from './router';
  * round-trip could only be exercised against the production database. CI never
  * sets it, so the e2e suite keeps the deterministic fake.
  */
-export function getAgentProvider(): CallAgentProvider {
+export function getAgentProvider(
+    state?: AgentProviderState
+): CallAgentProvider {
     const fake = isE2E() && process.env.AGENT_REAL_PROVIDER !== '1';
-    return fake ? fakeAgentProvider : createAgentProvider();
+    return fake ? fakeAgentProvider : createAgentProvider(state);
 }

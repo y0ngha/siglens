@@ -20,6 +20,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
+import { PREWARM_PROVIDER_FALLBACK } from '@/shared/config/prewarm';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import {
     currencyForSymbol,
@@ -108,6 +109,14 @@ async function persistPrewarmAnalysis(input: {
             symbol: input.symbol,
             timeframe: input.timeframe,
             tab: input.tab,
+            // The requested model, not necessarily the one that generated: core
+            // 1.7.0's opt-in provider fallback can answer with Gemini instead
+            // when DeepSeek fails, but its result never reports which model
+            // actually ran, so there is nothing else to record here. This
+            // matches core's own usage-row policy (same limitation on its
+            // side); the fallback is still visible via the
+            // `[callAnalysisAi] DeepSeek failed; retrying once on fallback
+            // model` warn and the provider's `[Usage]` telemetry.
             modelId: DEEPSEEK_V4_1_FLASH_MODEL,
             // 프리웜은 현재 한국어로만 생성한다(harvest.ts의 `resolveHarvest`가
             // 같은 이유로 스냅샷에 `DEFAULT_LOCALE`을 적는 것과 동일한 근거).
@@ -194,6 +203,7 @@ export async function prewarmTechnical(
             currency: descriptor.priceFormat.currency,
             tierContext: { userId: null, tier: 'free' },
             reasoning: false,
+            providerFallback: PREWARM_PROVIDER_FALLBACK,
             positionBucket: undefined,
             priorAnalyses,
             marketEvents,
@@ -237,6 +247,7 @@ export async function prewarmFundamental(
         currency: currencyForSymbol(symbol),
         tier: 'free',
         reasoning: false,
+        providerFallback: PREWARM_PROVIDER_FALLBACK,
         skipEnqueueIfMiss: false,
         ...(force ? { force: true } : {}),
     });
@@ -256,6 +267,7 @@ export async function prewarmFinancials(
         dataProvider: getFinancialStatementsProvider(symbol),
         tier: 'free',
         reasoning: false,
+        providerFallback: PREWARM_PROVIDER_FALLBACK,
         skipEnqueueIfMiss: false,
         ...(force ? { force: true } : {}),
     });
@@ -278,6 +290,7 @@ export async function prewarmCongress(
         dataProvider: getCongressTradesProvider(),
         skipEnqueueIfMiss: false,
         reasoning: false,
+        providerFallback: PREWARM_PROVIDER_FALLBACK,
         tier: 'free',
         ...(force ? { force: true } : {}),
     });
@@ -369,6 +382,7 @@ export async function prewarmOverall(
         technical: { tierContext: { userId: null, tier: 'free' } },
         tier: 'free',
         reasoning: false,
+        providerFallback: PREWARM_PROVIDER_FALLBACK,
         skipEnqueueIfMiss: false,
         assetClass,
         currency: descriptor.priceFormat.currency,

@@ -10,6 +10,9 @@ const { m, RepoCtor, PortfolioCtor } = vi.hoisted(() => {
         canAccept: vi.fn(() => true),
         guestId: vi.fn(async (): Promise<string | null> => 'g-uuid-1'),
         guestIpConsume: vi.fn(async () => true),
+        // When true, the mocked `getAgentProvider` flips the `AgentProviderState`
+        // it receives, simulating a turn that fell back to Gemini mid-flight.
+        forceFallback: false,
         repo: {
             create: vi.fn(),
             findForUser: vi.fn(),
@@ -58,8 +61,12 @@ vi.mock('@/app/api/ai/chat/tools', () => ({
     availableToolNames: () => new Set(['get_quote']),
 }));
 vi.mock('@/entities/llm-provider', () => ({
-    getAgentProvider: () => vi.fn(),
+    getAgentProvider: (state?: { fallbackUsed: boolean }) => {
+        if (state && m.forceFallback) state.fallbackUsed = true;
+        return vi.fn();
+    },
     AGENT_MODEL: 'deepseek-v4.1-flash',
+    AGENT_FALLBACK_MODEL: 'gemini-3.6-flash',
 }));
 vi.mock('@/entities/chat-conversation/api', () => ({
     DrizzleChatConversationRepository: RepoCtor,
@@ -146,6 +153,7 @@ describe('POST /api/ai/chat/stream', () => {
         m.canAccept.mockReturnValue(true);
         m.guestId.mockResolvedValue('g-uuid-1');
         m.guestIpConsume.mockResolvedValue(true);
+        m.forceFallback = false;
         m.lock.mockResolvedValue({ release: vi.fn() });
         m.repo.create.mockResolvedValue({ id: 'c-new', title: '제목' });
         m.repo.findForUser.mockResolvedValue({ id: 'c1', title: 't' });
@@ -885,6 +893,55 @@ describe('POST /api/ai/chat/stream', () => {
             expect.objectContaining({ modelId: 'deepseek-v4.1-flash' })
         );
         expect(m.runTurn.mock.lastCall![0].model).toBe('deepseek-v4.1-flash');
+    });
+
+    it('턴이 Gemini로 폴백되면 성공 assistant 행과 [Agent] 로그가 AGENT_FALLBACK_MODEL을 쓴다', async () => {
+        const info = vi.spyOn(console, 'info').mockImplementation(() => {});
+        m.forceFallback = true;
+        await frames(await POST(post({ conversationId: 'c1', message: 'x' })));
+        const assistantCall = m.repo.appendMessages.mock.calls.find(
+            c =>
+                Array.isArray(c[1]) &&
+                (c[1] as { role: string }[]).at(-1)?.role === 'assistant'
+        );
+        expect(assistantCall?.[1].at(-1)).toMatchObject({
+            modelId: 'gemini-3.6-flash',
+        });
+        const line = info.mock.calls.find(
+            c => c[0] === '[Agent]'
+        )![1] as string;
+        expect(JSON.parse(line)).toMatchObject({
+            model: 'gemini-3.6-flash',
+            fallbackUsed: true,
+        });
+        info.mockRestore();
+    });
+
+    it('턴이 폴백된 채로 중단되면 partial assistant 행도 AGENT_FALLBACK_MODEL로 저장된다', async () => {
+        m.forceFallback = true;
+        m.runTurn.mockResolvedValue({
+            ok: false,
+            error: 'aborted',
+            partialText: '중간 답변',
+        });
+        await frames(await POST(post({ conversationId: 'c1', message: 'x' })));
+        const call = m.repo.appendMessages.mock.calls.find(
+            c => Array.isArray(c[1]) && c[1][0]?.content === '중간 답변'
+        );
+        expect(call?.[1][0]).toMatchObject({ modelId: 'gemini-3.6-flash' });
+    });
+
+    it('폴백 없이 성공하면 여전히 AGENT_MODEL을 쓴다', async () => {
+        const info = vi.spyOn(console, 'info').mockImplementation(() => {});
+        await frames(await POST(post({ conversationId: 'c1', message: 'x' })));
+        const line = info.mock.calls.find(
+            c => c[0] === '[Agent]'
+        )![1] as string;
+        expect(JSON.parse(line)).toMatchObject({
+            model: 'deepseek-v4.1-flash',
+            fallbackUsed: false,
+        });
+        info.mockRestore();
     });
 
     it('[Agent] 로그에 tool_end 타이밍이 실린다', async () => {

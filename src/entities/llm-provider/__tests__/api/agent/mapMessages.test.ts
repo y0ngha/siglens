@@ -46,3 +46,28 @@ describe('toOpenAiChatMessages', () => {
         ).toThrow(/missing toolCallId/);
     });
 });
+
+describe('toOpenAiChatMessages toolCallExtra', () => {
+    it('extra를 넘기면 각 tool call에 펼치고, 생략하면 페이로드가 그대로다', () => {
+        const extra = { extra_content: { google: { thought_signature: 'x' } } };
+        const withExtra = toOpenAiChatMessages(history, extra);
+        expect(withExtra[1]).toEqual({
+            role: 'assistant',
+            content: null,
+            tool_calls: [
+                {
+                    id: 'c1',
+                    type: 'function',
+                    function: {
+                        name: 'get_quote',
+                        arguments: '{"symbols":["AAPL"]}',
+                    },
+                    ...extra,
+                },
+            ],
+        });
+        expect(JSON.stringify(toOpenAiChatMessages(history)[1])).toBe(
+            '{"role":"assistant","content":null,"tool_calls":[{"id":"c1","type":"function","function":{"name":"get_quote","arguments":"{\\"symbols\\":[\\"AAPL\\"]}"}}]}'
+        );
+    });
+});

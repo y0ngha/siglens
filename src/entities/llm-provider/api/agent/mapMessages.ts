@@ -3,10 +3,16 @@ import type { AgentMessage } from '@y0ngha/siglens-core';
 
 /**
  * Maps core's provider-neutral `AgentMessage` transcript to the OpenAI
- * Chat Completions message shape DeepSeek's OpenAI-compatible endpoint expects.
+ * Chat Completions message shape the OpenAI-compatible endpoints (DeepSeek,
+ * Gemini) expect.
+ *
+ * `toolCallExtra` is spread onto every replayed assistant tool call. Gemini
+ * needs `extra_content.google.thought_signature` there; omitting the argument
+ * (DeepSeek) leaves the payload exactly as before.
  */
 export function toOpenAiChatMessages(
-    messages: readonly AgentMessage[]
+    messages: readonly AgentMessage[],
+    toolCallExtra?: Record<string, unknown>
 ): OpenAI.Chat.ChatCompletionMessageParam[] {
     return messages.map(m => {
         if (m.role === 'tool') {
@@ -30,6 +36,9 @@ export function toOpenAiChatMessages(
                         name: c.name,
                         arguments: JSON.stringify(c.args),
                     },
+                    // Provider-specific fields (e.g. Gemini `extra_content`) the openai SDK
+                    // types don't declare; spread keeps the cast-free literal type.
+                    ...toolCallExtra,
                 })),
             };
         }

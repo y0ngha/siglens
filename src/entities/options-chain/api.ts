@@ -7,6 +7,7 @@ import {
     type SlotMapping,
 } from '@y0ngha/siglens-core';
 import { fetchOptionsSnapshot } from './lib/optionsDataCache';
+import { PREWARM_PROVIDER_FALLBACK } from '@/shared/config/prewarm';
 
 const isSlotMapping = (s: SlotMapping | null): s is SlotMapping => s !== null;
 
@@ -53,6 +54,7 @@ export async function prewarmOptions(
         snapshot,
         tier: 'free',
         reasoning: false,
+        providerFallback: PREWARM_PROVIDER_FALLBACK,
         skipEnqueueIfMiss: false,
         ...(force ? { force: true } : {}),
     });
