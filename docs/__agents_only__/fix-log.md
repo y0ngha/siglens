@@ -314,4 +314,13 @@
   - Context: Added `to` parameter to FMP economic-indicators fetch, ensuring fresh data is returned. Issue discovered during production verification of /economy route.
 - Status: APPROVED (Round 2, zero findings)
 
+## [PR #823 | feat/ai-conversation-switch-no-skeleton Round 1 | 2026-09-15]
+- Violation: SUGGESTION — `aria-busy:opacity-60` state styling incomplete. Missing cursor and text color indicators for busy state.
+  - Rule: DESIGN.md mistake 4 — aria-busy state must include all three visual indicators: opacity, cursor, and secondary text color.
+  - Context: Enhanced to `aria-busy:cursor-progress aria-busy:text-secondary-400` alongside existing opacity.
+
+- Violation: SUGGESTION — delete-active redirect handler and navigation handler both called navigate(), duplicating responsibility.
+  - Rule: MISTAKES.md Cohesion — Extract repeated navigation patterns into a shared handler to eliminate duplication.
+  - Context: Extracted `startNavigationTo(href)` helper. Both redirect and navigate paths now call it instead of duplicating navigate logic.
+
 

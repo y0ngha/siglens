@@ -153,9 +153,16 @@ export function Sidebar({
      * `<a href>` reloaded the whole document, and the streamed response showed a
      * loading skeleton before the conversation — a flash on every switch
      * (2026-09-15 사용자 요청). `router.push` inside a transition keeps the
-     * current screen until the next one is ready; the clicked row dims meanwhile.
-     * The `href` stays on the anchor so middle-click / ⌘-click still open a tab.
+     * current screen until the next one is ready; the clicked row is muted meanwhile.
      */
+    function startNavigationTo(href: string): void {
+        onNavigate?.();
+        setPendingHref(href);
+        startNavigation(() => router.push(href));
+    }
+
+    // The `href` stays on the anchor so middle-click / ⌘-click still open a tab —
+    // only a plain left click is intercepted into the transition above.
     function navigate(
         event: MouseEvent<HTMLAnchorElement>,
         href: string
@@ -170,9 +177,7 @@ export function Sidebar({
         )
             return;
         event.preventDefault();
-        onNavigate?.();
-        setPendingHref(href);
-        startNavigation(() => router.push(href));
+        startNavigationTo(href);
     }
     const isPending = (href: string): boolean =>
         isNavigating && pendingHref === href;
@@ -221,7 +226,7 @@ export function Sidebar({
                 href={`${localePrefix}/`}
                 onClick={e => navigate(e, `${localePrefix}/`)}
                 aria-busy={isPending(`${localePrefix}/`) || undefined}
-                className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border-control bg-secondary-800 px-3 text-sm font-medium text-secondary-100 hover:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none aria-busy:opacity-60"
+                className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border-control bg-secondary-800 px-3 text-sm font-medium text-secondary-100 hover:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none aria-busy:cursor-progress aria-busy:text-secondary-400"
             >
                 <PlusIcon className="size-4 text-primary-400" />
                 {t('Sidebar.newChat')}
@@ -342,7 +347,7 @@ export function Sidebar({
                                                     `${localePrefix}/c/${item.id}`
                                                 ) || undefined
                                             }
-                                            className="min-w-0 flex-1 truncate py-1.5 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none aria-busy:opacity-60"
+                                            className="min-w-0 flex-1 truncate py-1.5 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none aria-busy:cursor-progress aria-busy:text-secondary-400"
                                         >
                                             {item.title}
                                         </a>
@@ -360,11 +365,8 @@ export function Sidebar({
                                                         );
                                                     if (!ok) return;
                                                     if (item.id === activeId) {
-                                                        onNavigate?.();
-                                                        startNavigation(() =>
-                                                            router.push(
-                                                                `${localePrefix}/`
-                                                            )
+                                                        startNavigationTo(
+                                                            `${localePrefix}/`
                                                         );
                                                     } else onDeleted(item.id);
                                                 }}

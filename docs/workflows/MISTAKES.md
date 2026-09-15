@@ -982,6 +982,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ Fixture values differ from assertion literals; mutation test (revert prop to hardcoded string) fails both test cases
     ✅ When one fixture is derived from another, explicitly override each property: { ...base, specificProp: differentValue }
     → Recurring: feat/asset-class-navigation R4 (fixture parity trap, spread inheritance) — 2 occurrences
+
+24. Consumer wiring of a callback/option must be asserted where the consumer lives, not only where the callee is tested with a mock
+    → Testing the callee with an injected mock proves the callee calls it, not that the real consumer passes the right thing
+    → Mocking the library that receives the options (e.g. constructors that swallow their args) hides the wiring entirely
+    → Mutation-verify: replace the consumer's wiring with a no-op; a test must fail
+    ❌ Sidebar.test.tsx injects a mock `onNavigate`; deleting ChatShell's `onNavigate={() => setDrawerOpen(false)}` still passed
+    ❌ providers.test.tsx mocked @tanstack/react-query with classes discarding constructor args; deleting the QueryCache/MutationCache onError + retry wiring still passed
+    ✅ ChatShell.test.tsx: open the mobile drawer, click a conversation link inside it → router.push called and drawer aria-expanded=false
+    ✅ providers.test.tsx: real QueryClient; call getQueryCache().config.onError / getMutationCache().config.onError / defaultOptions.queries.retry and assert the helper spies
+    → Recurring: PR #823 (ChatShell onNavigate wiring), PR #820 (providers.tsx version-skew reload wiring) — 2 occurrences
 ```
 
 ---

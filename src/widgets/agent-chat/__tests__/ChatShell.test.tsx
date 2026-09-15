@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import {
     afterEach,
@@ -251,6 +251,34 @@ describe('ChatShell chrome', () => {
         expect(screen.getAllByText('대화 목록').length).toBeGreaterThanOrEqual(
             2
         ); // mobile-bar button label + drawer title
+    });
+
+    it('clicking a conversation link in the mobile drawer navigates and closes the drawer', () => {
+        router.push.mockClear();
+        wrap(
+            <ChatShell
+                conversationId="c1"
+                initialMessages={[]}
+                conversations={[
+                    { id: 'c9', title: '대화 아홉', lastMessageAt: '' },
+                ]}
+                signedIn
+                localePrefix=""
+                siteUrl="https://siglens.io"
+                currentPath="/c1"
+            />
+        );
+        const trigger = screen.getByRole('button', { name: /대화 목록/ });
+        fireEvent.click(trigger);
+        expect(trigger).toHaveAttribute('aria-expanded', 'true');
+        // Scope to the drawer's own content, not the desktop `aside` copy of
+        // the same rail — both render the link, but only the drawer's is the
+        // one under test here.
+        const drawer = document.getElementById('agent-chat-sidebar-drawer')!;
+        const link = within(drawer).getByRole('link', { name: '대화 아홉' });
+        fireEvent.click(link, { button: 0 });
+        expect(router.push).toHaveBeenCalledWith('/c/c9');
+        expect(trigger).toHaveAttribute('aria-expanded', 'false');
     });
 });
 
