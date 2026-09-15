@@ -336,3 +336,8 @@
 - Violation: src/widgets/CLAUDE.md cross-widget dependency edge list omitted agent-chat → layout entry
   - Rule: CONVENTIONS.md — Architecture documentation must mirror implementation; cross-widget dependency edges must be registered
   - Context: Added agent-chat → layout edge to documented cross-widget dependency graph.
+
+## [feat/agent-confluence-sr-tests | siglens-wt-confluence | 2026-09-15]
+- Violation: `useEffectEvent` (notifyNavigated) in src/widgets/agent-chat/Sidebar.tsx declared after derived values and handlers
+  - Rule: MISTAKES.md Components Rule 17 — All hook calls must be declared before derived variables and handlers. Strict ordering: useState/useRef → useQuery/useMutation/custom hooks → useCallback/useMemo → derived variables → handlers → useEffect
+  - Context: Moved `useEffectEvent` to correct position right after `useOnClickOutside`. Part of recurring pattern on this feature: ChatShell useState placement, Sidebar hook ordering, handlers positioning.

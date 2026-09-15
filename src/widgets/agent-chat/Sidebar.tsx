@@ -129,6 +129,10 @@ export function Sidebar({
         enabled: renaming !== null,
     });
 
+    // Wrapped so the parent's inline `onNavigate` arrow (new identity every
+    // render) never has to sit in the effect's deps.
+    const notifyNavigated = useEffectEvent(() => onNavigate?.());
+
     const renamingId = renaming?.id ?? null;
     const visible = items.filter(i =>
         i.title.toLowerCase().includes(filter.toLowerCase())
@@ -173,10 +177,6 @@ export function Sidebar({
     }
     const isPending = (href: string): boolean =>
         isNavigating && pendingHref === href;
-
-    // Wrapped so the parent's inline `onNavigate` arrow (new identity every
-    // render) never has to sit in the effect's deps.
-    const notifyNavigated = useEffectEvent(() => onNavigate?.());
 
     function closeRename(): void {
         setRenaming(null);
