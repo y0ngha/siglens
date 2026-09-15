@@ -195,7 +195,11 @@ describe('callDeepseekAgent', () => {
         const r = await callDeepseekAgent(o);
         expect(r.text).toBe('231.42');
         expect(r.stopReason).toBe('end');
-        expect(o.onEvent).toHaveBeenCalledWith({ type: 'text', delta: '231' });
+        // Tools are offered, so a short answer is held and emitted once at the end.
+        expect(o.onEvent).toHaveBeenCalledWith({
+            type: 'text',
+            delta: '231.42',
+        });
     });
 
     it('length → max_tokens, 깨진 인자 JSON은 {}', async () => {
