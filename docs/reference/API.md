@@ -635,10 +635,25 @@ interface Body {
 | `get_my_portfolio` | 회원 보유종목(DB) — 회원 전용 |
 | `web_search` | Brave/네이버 검색(키 있을 때만 노출) |
 
-**관측**: 턴마다 `[Agent]` JSON 라인 1건(`conversationId`·`userId`·`steps`·
-`toolCalls: [{name, ms, status}]`·`ms`·`stopReason`), 프로바이더 호출마다 `[Usage]` JSON
-라인(`jobId: "agent"`) — 자세한 필드는 `src/entities/llm-provider/lib/usage.ts`. 킬
-스위치·알람은 `docs/architecture/DEPLOY_RUNBOOK.md` §3.5.
+**프로바이더 폴백 (2026-09-15)**: 에이전트 모델은 `AGENT_MODEL`(DeepSeek)이다.
+DeepSeek 호출이 실패하면 `createAgentProvider`(`src/entities/llm-provider/api/agent/router.ts`)가
+`AGENT_FALLBACK_MODEL`(`gemini-3.6-flash`, Gemini OpenAI 호환 엔드포인트)로 한 번 넘긴다. 조건은
+전부 충족해야 한다: 호출자 abort가 아님 · 그 스텝에서 `text`/`tool_call` 이벤트가 아직 나가지 않음 ·
+HTTP 429/5xx, 상태 없는 네트워크 오류, 또는 90초 무응답(`AGENT_PROVIDER_STALLED`, 공용
+스트림 루프의 watchdog) · `GEMINI_CHAT_API_KEY` 존재. 한 턴에서 한 번 폴백하면 남은 스텝은
+DeepSeek을 건너뛰고 Gemini로 간다. 그래서 DeepSeek 장애가 늘 `server_busy`/`server_error`로
+보이지는 않고, 조용히 성공할 수 있다. Gemini 3는 재전송하는 tool call에 `thought_signature`가
+없으면 400이라, 어댑터가 문서화된 더미 값(`skip_thought_signature_validator`)을 붙인다.
+사용자가 모델을 고를 수 없는 이 호스트에만 적용한다 — siglens.io 챗봇·분석은 폴백하지 않고
+모델 변경을 안내한다.
+
+**관측**: 턴마다 `[Agent]` JSON 라인 1건(`conversationId`·`userId`·`model`(실제로 답한
+모델 — 폴백 턴은 `gemini-3.6-flash`)·`fallbackUsed`·`steps`·
+`toolCalls: [{name, ms, status}]`·`ms`·`stopReason`), 폴백 시 `[agent-router] deepseek failed,
+falling back` JSON 라인, 프로바이더 호출마다 `[Usage]` JSON 라인(`jobId: "agent"`, `model`은
+실제 API 모델) — 자세한 필드는 `src/entities/llm-provider/lib/usage.ts`. 폴백 턴의 assistant
+메시지 `modelId`도 실제 모델로 저장되고, 대화 생성 시 `modelId`와 `meta.model`은 턴 시작 전이라
+`AGENT_MODEL`이다. 킬 스위치·알람은 `docs/architecture/DEPLOY_RUNBOOK.md` §3.5.
 
 성공한 턴마다 `stream/route.ts`가 core의 `findUngroundedNumbers(answer, toolResults)`로
 최종 답변의 숫자가 그 턴의 tool 결과 어디에도 없는지 확인하고, 있으면 로그만 남긴다:
