@@ -39,7 +39,7 @@ export const INDICATOR_SIGNIFICANT_DIGITS = 6;
  * `NaN`/`Infinity`는 `toPrecision`이 문자열로 뱉어 `Number()` 왕복 시 의미가 흔들릴 수
  * 있어 그대로 통과시킨다.
  */
-function roundNumber(value: number): number {
+export function roundNumber(value: number): number {
     if (!Number.isFinite(value) || Number.isInteger(value)) return value;
     return Number(value.toPrecision(INDICATOR_SIGNIFICANT_DIGITS));
 }
