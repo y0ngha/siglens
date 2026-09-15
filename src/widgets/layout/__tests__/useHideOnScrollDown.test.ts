@@ -55,6 +55,35 @@ describe('useHideOnScrollDown', () => {
         expect(result.current).toBe(false);
     });
 
+    /**
+     * ChatShell remounts on every conversation switch while the site header
+     * stays mounted; a late caller must see the current state, not its own
+     * fresh `false` (2026-09-15: conversation bar floated under a hidden header).
+     */
+    it('a caller mounted after the chrome hid reads the same hidden state', () => {
+        const header = renderHook(() => useHideOnScrollDown());
+        scrollTo(300);
+        expect(header.result.current).toBe(true);
+
+        const bar = renderHook(() => useHideOnScrollDown());
+        expect(bar.result.current).toBe(true);
+
+        scrollTo(280);
+        expect(header.result.current).toBe(false);
+        expect(bar.result.current).toBe(false);
+    });
+
+    /** When the last caller leaves, the next session must not inherit "hidden". */
+    it('resets to visible once every caller has unmounted', () => {
+        const first = renderHook(() => useHideOnScrollDown());
+        scrollTo(300);
+        expect(first.result.current).toBe(true);
+        first.unmount();
+
+        const next = renderHook(() => useHideOnScrollDown());
+        expect(next.result.current).toBe(false);
+    });
+
     it('ignores movement smaller than the jitter threshold', () => {
         const { result } = renderHook(() => useHideOnScrollDown());
         scrollTo(300);
