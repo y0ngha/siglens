@@ -3,8 +3,13 @@ import type { AnalysisGateErrorCode } from './types';
 
 /**
  * siglens-core 1.7.0의 DeepSeek 스트림 정지 코드 — 90초간 토큰이 없으면 provider가
- * 중단하고 `code: 'DEEPSEEK_STALLED'`인 Error를 던진다. 이 브랜치는 아직 core
- * 1.6.1에 고정돼 있어 상수를 import하지 않고 문자열로 맞춘다.
+ * 중단하고 `code: 'DEEPSEEK_STALLED'`인 Error를 던진다.
+ *
+ * import하지 않고 문자열로 맞추는 이유: core에서 `DEEPSEEK_STALLED_CODE`는
+ * `@internal`이라 `src/index.ts`로 재노출되지 않는다(1.7.0 기준). core 버전을 올려도
+ * 그대로 두되, core가 이 코드를 공개 export로 올리면 그때 이 상수를 지우고
+ * `@y0ngha/siglens-core`에서 import한다. 값이 바뀌면 `aiProviderFailure.test.ts`의
+ * 정지 코드 케이스로 함께 맞춘다.
  */
 const DEEPSEEK_STALLED_CODE = 'DEEPSEEK_STALLED';
 
