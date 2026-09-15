@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Drawer } from 'vaul';
 import type { ChatMessageView } from '@/entities/chat-conversation';
 import type { ConversationListItem } from '@/entities/chat-conversation/actions';
@@ -9,6 +9,9 @@ import {
     useAgentStream,
     type AgentClientErrorCode,
 } from '@/features/agent-chat';
+import { useHideOnScrollDown } from '@/shared/hooks/useHideOnScrollDown';
+import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
+import { cn } from '@/shared/lib/cn';
 import { Composer } from './Composer';
 import { AGENT_ERROR_RETRYABLE } from './errorCopy';
 import { EmptyState, type PendingSuggestions } from './EmptyState';
@@ -56,6 +59,21 @@ export function ChatShell({
      * rename/delete come from the rail — so apply them locally instead.
      */
     const [conversationItems, setConversationItems] = useState(conversations);
+    const drawerRef = useRef<HTMLDivElement>(null);
+    const drawerTriggerRef = useRef<HTMLButtonElement>(null);
+    // The drawer is non-modal (a modal vaul drawer trapped focus away from mobile
+    // inputs), and non-modal vaul ignores presses outside it — so close it here.
+    // The trigger is excluded: its own click toggles the drawer open.
+    useOnClickOutside(
+        [drawerRef, drawerTriggerRef],
+        () => setDrawerOpen(false),
+        {
+            enabled: drawerOpen,
+        }
+    );
+    // Same hook as the site header (AuthSessionHeaderClient) so the header and
+    // this bar leave and return together on a phone.
+    const chromeHidden = useHideOnScrollDown();
     const stream = useAgentStream({
         conversationId,
         initialMessages,
@@ -163,6 +181,7 @@ export function ChatShell({
             >
                 <Drawer.Portal>
                     <Drawer.Content
+                        ref={drawerRef}
                         id="agent-chat-sidebar-drawer"
                         className="fixed inset-y-0 left-0 z-[60] w-72 border-r border-secondary-700 bg-secondary-950"
                     >
@@ -178,8 +197,17 @@ export function ChatShell({
                     vaul drawer instead. The shared main `Header` above this shell
                     already carries the site chrome, so this bar's only job is the
                     drawer trigger + the active conversation's title. */}
-                <div className="flex h-11 items-center gap-2 border-b border-secondary-700 px-2 lg:hidden">
+                <div
+                    className={cn(
+                        // Sticky under the site header (h-14) so the drawer trigger stays
+                        // reachable mid-conversation; slides up with the header while
+                        // scrolling down (11 + 14 = 6.25rem clears both).
+                        'sticky top-14 z-40 flex h-11 items-center gap-2 border-b border-secondary-700 bg-secondary-900 px-2 transition-transform duration-200 motion-reduce:transition-none lg:hidden',
+                        chromeHidden && '-translate-y-[6.25rem]'
+                    )}
+                >
                     <button
+                        ref={drawerTriggerRef}
                         type="button"
                         onClick={() => setDrawerOpen(true)}
                         // vaul unmounts the drawer content while closed, so the id only

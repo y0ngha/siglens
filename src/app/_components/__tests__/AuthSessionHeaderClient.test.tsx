@@ -30,7 +30,7 @@ vi.mock('@tanstack/react-query', () => ({
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render } from '@testing-library/react';
+import { act, render } from '@testing-library/react';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import { AuthSessionHeaderClient } from '@/app/_components/AuthSessionHeaderClient';
 import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
@@ -55,6 +55,7 @@ interface CapturedHeaderProps {
     authNext?: string;
     currentUser: unknown;
     loadingUserMenu?: boolean;
+    hiddenOnMobile?: boolean;
 }
 
 function lastHeaderProps(): CapturedHeaderProps {
@@ -87,6 +88,41 @@ describe('AuthSessionHeaderClient', () => {
             currentUser: null,
             loadingUserMenu: true,
         });
+    });
+
+    /** ai 호스트에서만 스크롤 방향에 따라 헤더를 숨긴다 — 메인 호스트 헤더는 항상 고정. */
+    it('ai 호스트에서 아래로 스크롤하면 hiddenOnMobile을 켜고, 메인 호스트는 끄지 않는다', () => {
+        vi.spyOn(window, 'requestAnimationFrame').mockImplementation(cb => {
+            cb(0);
+            return 1;
+        });
+        mockAuthHint.mockReturnValue(false);
+        mockCurrentUser.mockReturnValue({
+            data: null,
+            isPending: false,
+        } as never);
+        const scroll = (y: number) => {
+            Object.defineProperty(window, 'scrollY', {
+                value: y,
+                configurable: true,
+            });
+            act(() => {
+                // A user gesture first — the hook ignores programmatic scrolls.
+                window.dispatchEvent(new Event('touchmove'));
+                window.dispatchEvent(new Event('scroll'));
+            });
+        };
+        scroll(0);
+        const main = render(<AuthSessionHeaderClient />);
+        scroll(400);
+        expect(lastHeaderProps().hiddenOnMobile).toBe(false);
+        main.unmount();
+
+        scroll(0);
+        render(<AuthSessionHeaderClient authReturn="ai" />);
+        scroll(400);
+        expect(lastHeaderProps().hiddenOnMobile).toBe(true);
+        vi.restoreAllMocks();
     });
 
     it('Happy: 로그인 사용자 → Header에 currentUser 전달', () => {

@@ -253,6 +253,36 @@ describe('ChatShell chrome', () => {
         ); // mobile-bar button label + drawer title
     });
 
+    /** The drawer is non-modal, so vaul itself ignores outside presses (2026-09-15 사용자 요청). */
+    it('closes the mobile drawer when the user presses outside it', () => {
+        wrap(
+            <ChatShell
+                conversationId="c1"
+                initialMessages={[]}
+                conversations={[]}
+                signedIn
+                localePrefix=""
+                siteUrl="https://siglens.io"
+                currentPath="/c1"
+            />
+        );
+        const trigger = screen.getByRole('button', { name: /대화 목록/ });
+        fireEvent.pointerDown(trigger);
+        fireEvent.click(trigger);
+        expect(trigger).toHaveAttribute('aria-expanded', 'true');
+
+        const drawer = document.getElementById('agent-chat-sidebar-drawer')!;
+        // vaul starts a drag on pointerdown inside the drawer and captures the
+        // pointer; jsdom has no pointer capture API.
+        drawer.setPointerCapture = vi.fn();
+        drawer.releasePointerCapture = vi.fn();
+        fireEvent.pointerDown(drawer);
+        expect(trigger).toHaveAttribute('aria-expanded', 'true');
+
+        fireEvent.pointerDown(document.body);
+        expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    });
+
     it('clicking a conversation link in the mobile drawer navigates and closes the drawer', () => {
         router.push.mockClear();
         wrap(

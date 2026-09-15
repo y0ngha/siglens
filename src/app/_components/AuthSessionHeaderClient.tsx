@@ -7,6 +7,7 @@ import { Header, type HeaderUserMenuUser } from '@/widgets/layout';
 import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import { useAuthHint } from '@/entities/auth/hooks/useAuthHint';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import { useHideOnScrollDown } from '@/shared/hooks/useHideOnScrollDown';
 
 /**
  * Root layout 헤더를 클라이언트에서 렌더한다.
@@ -47,6 +48,12 @@ export function AuthSessionHeaderClient({
     const { data: user, isPending, isError } = useCurrentUser();
     const queryClient = useQueryClient();
     const pathname = usePathname();
+    // ai host only: on a phone the conversation needs the height, so the header
+    // leaves while scrolling down and returns on the way up. ChatShell's own
+    // mobile bar follows the same hook so both move together.
+    const hiddenOnMobile = useHideOnScrollDown({
+        enabled: authReturn === 'ai',
+    });
     const authNext =
         authReturn === 'ai'
             ? `/api/auth/handoff?to=ai&next=${encodeURIComponent(pathname)}`
@@ -79,6 +86,7 @@ export function AuthSessionHeaderClient({
                 currentUser={null}
                 loadingUserMenu={hasHint}
                 authNext={authNext}
+                hiddenOnMobile={hiddenOnMobile}
             />
         );
     }
@@ -91,5 +99,11 @@ export function AuthSessionHeaderClient({
               avatarUrl: user.avatarUrl,
           }
         : null;
-    return <Header currentUser={currentUser} authNext={authNext} />;
+    return (
+        <Header
+            currentUser={currentUser}
+            authNext={authNext}
+            hiddenOnMobile={hiddenOnMobile}
+        />
+    );
 }
