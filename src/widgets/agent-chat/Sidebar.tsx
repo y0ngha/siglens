@@ -2,6 +2,7 @@
 
 import {
     useEffect,
+    useEffectEvent,
     useRef,
     useState,
     useTransition,
@@ -42,7 +43,7 @@ interface Props {
     readonly onRenamed: (id: string, title: string) => void;
     /** Drops a deleted conversation from the list the parent owns. */
     readonly onDeleted: (id: string) => void;
-    /** Called when the rail starts an in-app navigation (the mobile drawer closes on it). */
+    /** Called when an in-app navigation the rail started settles (the mobile drawer closes on it). */
     readonly onNavigate?: () => void;
 }
 
@@ -116,6 +117,7 @@ export function Sidebar({
     const renameInputRef = useRef<HTMLInputElement>(null);
     const renameTriggerRef = useRef<HTMLButtonElement | null>(null);
     const renameRowRef = useRef<HTMLLIElement>(null);
+    const wasNavigatingRef = useRef(false);
 
     // A press anywhere outside the row being renamed cancels the rename. Listens
     // for `pointerdown`, not the input's `blur`: blur also fires when focus moves
@@ -147,7 +149,6 @@ export function Sidebar({
      * current screen until the next one is ready; the clicked row is muted meanwhile.
      */
     function startNavigationTo(href: string): void {
-        onNavigate?.();
         setPendingHref(href);
         startNavigation(() => router.push(href));
     }
@@ -173,6 +174,10 @@ export function Sidebar({
     const isPending = (href: string): boolean =>
         isNavigating && pendingHref === href;
 
+    // Wrapped so the parent's inline `onNavigate` arrow (new identity every
+    // render) never has to sit in the effect's deps.
+    const notifyNavigated = useEffectEvent(() => onNavigate?.());
+
     function closeRename(): void {
         setRenaming(null);
         // Return focus to the ✎ button that opened rename mode instead of
@@ -189,6 +194,19 @@ export function Sidebar({
         // caret), so depending on the whole `renaming` object — not just its
         // `id` — is safe and keeps `react-hooks/exhaustive-deps` honest.
     }, [renaming]);
+
+    // `onNavigate` fires when the transition SETTLES, not when it starts. The
+    // mobile drawer closes on it, and closing the vaul drawer unmounts this rail
+    // at once — calling it up front took the `role="status"` announcement and
+    // the `aria-busy` row down with it before a screen reader could speak them.
+    // Deferring is safe: switching to a different conversation remounts
+    // ChatShell (keyed), which closes the drawer anyway, so the pending row and
+    // announcement stay until the next screen is ready; a same-URL click (no
+    // remount) still closes the drawer here once the transition settles.
+    useEffect(() => {
+        if (wasNavigatingRef.current && !isNavigating) notifyNavigated();
+        wasNavigatingRef.current = isNavigating;
+    }, [isNavigating]);
 
     if (!signedIn) {
         // A guest has no history to list; say what signing in gets them
