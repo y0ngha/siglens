@@ -14,6 +14,14 @@ import ko from '../../../../messages/ko.json';
 
 const router = vi.hoisted(() => ({ refresh: vi.fn(), push: vi.fn() }));
 vi.mock('next/navigation', () => ({ useRouter: () => router }));
+// `useHideOnScrollDown` now comes from the `@/widgets/layout` barrel, which
+// eagerly re-exports `LocaleSwitcher` too — that module reads next-intl's
+// navigation helpers at import time, which need a `redirect` export this
+// file's `next/navigation` mock (above) doesn't provide. Stubbing it here
+// avoids pulling that chain in (same pattern as `HeaderMobileMenu.test.tsx`).
+vi.mock('@/widgets/layout/LocaleSwitcher', () => ({
+    LocaleSwitcher: () => null,
+}));
 
 const mockStream = vi.hoisted(() => ({
     messages: [

@@ -96,6 +96,17 @@ describe('AuthSessionHeaderClient', () => {
             cb(0);
             return 1;
         });
+        // useHideOnScrollDown only ever reports hidden below `lg` — stub the
+        // viewport as mobile so the scroll-driven assertions below are reachable.
+        vi.stubGlobal(
+            'matchMedia',
+            vi.fn().mockImplementation((query: string) => ({
+                matches: true,
+                media: query,
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn(),
+            }))
+        );
         mockAuthHint.mockReturnValue(false);
         mockCurrentUser.mockReturnValue({
             data: null,
@@ -123,6 +134,7 @@ describe('AuthSessionHeaderClient', () => {
         scroll(400);
         expect(lastHeaderProps().hiddenOnMobile).toBe(true);
         vi.restoreAllMocks();
+        vi.unstubAllGlobals();
     });
 
     it('Happy: 로그인 사용자 → Header에 currentUser 전달', () => {

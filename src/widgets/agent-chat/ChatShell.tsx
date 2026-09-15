@@ -9,7 +9,7 @@ import {
     useAgentStream,
     type AgentClientErrorCode,
 } from '@/features/agent-chat';
-import { useHideOnScrollDown } from '@/shared/hooks/useHideOnScrollDown';
+import { useHideOnScrollDown } from '@/widgets/layout';
 import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import { cn } from '@/shared/lib/cn';
 import { Composer } from './Composer';
@@ -198,6 +198,12 @@ export function ChatShell({
                     already carries the site chrome, so this bar's only job is the
                     drawer trigger + the active conversation's title. */}
                 <div
+                    // `chromeHidden` only ever comes back `true` below `lg`
+                    // (`useHideOnScrollDown`'s own media-query gate), so
+                    // `inert` here never fires on a desktop viewport — this
+                    // bar is `lg:hidden` there anyway. See Header.tsx for the
+                    // same pattern on the site header.
+                    inert={chromeHidden}
                     className={cn(
                         // Sticky under the site header (h-14) so the drawer trigger stays
                         // reachable mid-conversation; slides up with the header while

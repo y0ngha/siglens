@@ -3,11 +3,14 @@
 import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import { Header, type HeaderUserMenuUser } from '@/widgets/layout';
+import {
+    Header,
+    useHideOnScrollDown,
+    type HeaderUserMenuUser,
+} from '@/widgets/layout';
 import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import { useAuthHint } from '@/entities/auth/hooks/useAuthHint';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import { useHideOnScrollDown } from '@/shared/hooks/useHideOnScrollDown';
 
 /**
  * Root layout 헤더를 클라이언트에서 렌더한다.

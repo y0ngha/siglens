@@ -45,6 +45,15 @@ export function Header({
 }: HeaderProps) {
     return (
         <header
+            // `inert` makes the offscreen header (and its focusable controls)
+            // unreachable by tab/click/screen-reader while `hiddenOnMobile` is
+            // true — without it, `-translate-y-full` only hides it visually
+            // and leaves a focus trap behind. `hiddenOnMobile` itself only
+            // ever comes back `true` below `lg` (`useHideOnScrollDown`'s own
+            // media-query gate), matching the `max-lg:` variant below — so a
+            // desktop user who scrolls down never gets an `inert` header that
+            // the CSS is still pinning fully in view.
+            inert={hiddenOnMobile}
             className={cn(
                 'sticky top-0 z-50 border-b border-secondary-700 bg-secondary-900/90 backdrop-blur-md transition-transform duration-200 supports-backdrop-filter:bg-secondary-900/75 motion-reduce:transition-none',
                 hiddenOnMobile && 'max-lg:-translate-y-full'

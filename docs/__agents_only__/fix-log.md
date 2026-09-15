@@ -331,4 +331,17 @@
 - Finding: Review suggested using LocaleLink instead of raw `<a>` + `router.push` for in-app navigation
   - Status: REJECTED — false positive; LocaleProvider's `hrefBase=SITE_URL` makes LocaleLink emit absolute siglens.io URLs (cross-origin full navigation), breaking ai.siglens.io in-app conversation switching pattern
 
+## [PR #823 | feat/ai-conversation-switch-no-skeleton | Round 2 | 2026-09-15]
+- Violation: scroll-hidden Header and ChatShell mobile bar were only translated off-screen, leaving focusable controls in tab order. Inert attribute not applied, only visual hiding via transform.
+  - Rule: WCAG 2.4.7 focus — Hidden interactive elements must be removed from tab order using inert attribute; visual hiding alone leaves controls focusable
+  - Context: Applied `inert` to scrollable header container; verified with responsive testing that controls are unreachable at all breakpoints when header is hidden. Desktop header kept outside inert scope below lg breakpoint.
+
+- Violation: useHideOnScrollDown hook had only 2 consumers but was placed in shared/hooks, creating maintenance overhead for a single-feature pattern
+  - Rule: MISTAKES.md Components Rule 15 — Shared hooks must serve generic/cross-feature patterns; feature-specific hooks with 2 or fewer consumers must live in their feature/widget layer
+  - Context: Moved useHideOnScrollDown to widgets/layout/hooks and exported via widgets/layout barrel. Verified consumers import from new location.
+
+- Violation: setState called directly in effect body for disabled branch condition without early return for non-disabled path
+  - Rule: MISTAKES.md Components Rule 10 — Derived state updates in effect must either branch conditionally before effect runs, or return from effect body before setState; avoid setState in effect main body
+  - Context: Refactored to add early return when disabled flag is true; setState now only executes for enabled state path.
+
 

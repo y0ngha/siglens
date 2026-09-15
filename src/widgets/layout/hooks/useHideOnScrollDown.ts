@@ -19,6 +19,22 @@ const USER_INPUT_EVENTS = [
 ] as const;
 
 /**
+ * Matches the `lg` breakpoint the callers already hide their chrome at
+ * (`Header.tsx`'s `max-lg:-translate-y-full`, `ChatShell.tsx`'s `lg:hidden`
+ * bar). Callers apply `inert` to the whole element when this hook reports
+ * `true`, and `inert` cannot be scoped to a media query the way those
+ * translate/display classes are — so the hook itself must never report
+ * "hidden" on a viewport where the CSS keeps the chrome pinned in place.
+ * Without this, a desktop user scrolling down on the ai host would get a
+ * header that still looks fully visible but is silently non-interactive.
+ *
+ * Not `MOBILE_VIEWPORT_MEDIA_QUERY` (`shared/config/viewport.ts`) — that one
+ * is the Tailwind `md` (768px) boundary used elsewhere; this hook needs `lg`
+ * (1024px) to match the breakpoint its own callers hide at.
+ */
+const BELOW_LG_MEDIA_QUERY = '(max-width: 1023.98px)';
+
+/**
  * `true` while the window is being scrolled down, `false` once it scrolls back up
  * (or sits near the top). Drives "hide the header on the way down, bring it back
  * on the way up" so a phone keeps its height for the conversation but a small
@@ -31,17 +47,26 @@ const USER_INPUT_EVENTS = [
  * to the bottom with `scrollIntoView` on every streamed token, which moves the
  * window too; counting that as "scrolling down" would yank the header away on
  * every answer.
+ *
+ * Always `false` at `lg` and above — see `BELOW_LG_MEDIA_QUERY`.
  */
 export function useHideOnScrollDown({
     enabled = true,
 }: { enabled?: boolean } = {}): boolean {
     const [hidden, setHidden] = useState(false);
+    const [belowLg, setBelowLg] = useState(false);
 
     useEffect(() => {
-        if (!enabled) {
-            setHidden(false);
-            return;
-        }
+        const mediaQueryList = window.matchMedia(BELOW_LG_MEDIA_QUERY);
+        const syncBreakpoint = () => setBelowLg(mediaQueryList.matches);
+        syncBreakpoint();
+        mediaQueryList.addEventListener('change', syncBreakpoint);
+        return () =>
+            mediaQueryList.removeEventListener('change', syncBreakpoint);
+    }, []);
+
+    useEffect(() => {
+        if (!enabled) return;
         let anchorY = window.scrollY;
         let frame = 0;
         let scheduled = false;
@@ -84,5 +109,5 @@ export function useHideOnScrollDown({
         };
     }, [enabled]);
 
-    return hidden;
+    return enabled && hidden && belowLg;
 }

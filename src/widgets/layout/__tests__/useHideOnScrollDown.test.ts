@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useHideOnScrollDown } from '@/shared/hooks/useHideOnScrollDown';
+import { useHideOnScrollDown } from '../hooks/useHideOnScrollDown';
 
 function scrollTo(
     y: number,
@@ -17,8 +17,22 @@ function scrollTo(
     });
 }
 
+/** Stubs `matchMedia` for the hook's own `lg` breakpoint check (below-`lg` by default). */
+function stubBelowLg(matches: boolean): void {
+    vi.stubGlobal(
+        'matchMedia',
+        vi.fn().mockImplementation((query: string) => ({
+            matches,
+            media: query,
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+        }))
+    );
+}
+
 describe('useHideOnScrollDown', () => {
     beforeEach(() => {
+        stubBelowLg(true);
         scrollTo(0);
         vi.spyOn(window, 'requestAnimationFrame').mockImplementation(cb => {
             cb(0);
@@ -27,6 +41,7 @@ describe('useHideOnScrollDown', () => {
     });
     afterEach(() => {
         vi.restoreAllMocks();
+        vi.unstubAllGlobals();
     });
 
     it('hides while scrolling down and shows again on the way up', () => {
@@ -75,6 +90,14 @@ describe('useHideOnScrollDown', () => {
             useHideOnScrollDown({ enabled: false })
         );
         scrollTo(500);
+        expect(result.current).toBe(false);
+    });
+
+    /** `inert` (applied by callers) can't be media-query scoped — the hook itself must gate. */
+    it('never reports hidden at lg and above, even while scrolling down', () => {
+        stubBelowLg(false);
+        const { result } = renderHook(() => useHideOnScrollDown());
+        scrollTo(300);
         expect(result.current).toBe(false);
     });
 });

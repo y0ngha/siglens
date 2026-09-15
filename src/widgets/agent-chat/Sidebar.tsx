@@ -116,6 +116,17 @@ export function Sidebar({
     const renameInputRef = useRef<HTMLInputElement>(null);
     const renameTriggerRef = useRef<HTMLButtonElement | null>(null);
     const renameRowRef = useRef<HTMLLIElement>(null);
+
+    // A press anywhere outside the row being renamed cancels the rename. Listens
+    // for `pointerdown`, not the input's `blur`: blur also fires when focus moves
+    // for reasons the user did not choose (a screen reader's virtual cursor), and
+    // a real press outside is the only signal that means "I'm done here". The row
+    // itself is excluded so the ✕ toggle and the input keep their own behaviour.
+    // No focus return here — the press already put focus where the user wanted it.
+    useOnClickOutside(renameRowRef, () => setRenaming(null), {
+        enabled: renaming !== null,
+    });
+
     const renamingId = renaming?.id ?? null;
     const visible = items.filter(i =>
         i.title.toLowerCase().includes(filter.toLowerCase())
@@ -137,16 +148,6 @@ export function Sidebar({
         // caret), so depending on the whole `renaming` object — not just its
         // `id` — is safe and keeps `react-hooks/exhaustive-deps` honest.
     }, [renaming]);
-
-    // A press anywhere outside the row being renamed cancels the rename. Listens
-    // for `pointerdown`, not the input's `blur`: blur also fires when focus moves
-    // for reasons the user did not choose (a screen reader's virtual cursor), and
-    // a real press outside is the only signal that means "I'm done here". The row
-    // itself is excluded so the ✕ toggle and the input keep their own behaviour.
-    // No focus return here — the press already put focus where the user wanted it.
-    useOnClickOutside(renameRowRef, () => setRenaming(null), {
-        enabled: renamingId !== null,
-    });
 
     /**
      * In-app navigation between conversations (and to a new chat). A plain
