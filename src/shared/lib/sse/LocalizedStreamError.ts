@@ -25,13 +25,8 @@ export class LocalizedStreamError extends Error {
 }
 
 /**
- * core가 재시도를 소진했을 때 쓰는 ASCII sentinel. 클라이언트가 자체 문구로
- * 매핑하므로(`useAnalysis`의 catch) 교체하지 않고 그대로 통과시킨다.
+ * AI provider 장애를 클라이언트에 알리는 ASCII sentinel. core가 재시도를 소진하면
+ * 이 메시지로 던지고, `heartbeatStream`은 그 밖의 provider 장애(`isAiProviderFailure`)도
+ * 이 값으로 바꿔 보낸다. 클라이언트가 자체 문구로 매핑한다(`useAnalysis`의 catch).
  */
 export const AI_SERVER_UNSTABLE = 'AI_SERVER_UNSTABLE';
-
-export function isPassThroughStreamError(error: unknown): boolean {
-    if (error instanceof LocalizedStreamError) return true;
-    const message = error instanceof Error ? error.message : String(error);
-    return message === AI_SERVER_UNSTABLE;
-}

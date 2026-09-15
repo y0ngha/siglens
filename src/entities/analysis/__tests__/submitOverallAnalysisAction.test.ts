@@ -378,6 +378,25 @@ describe('runOverallAnalysisAction 함수는', () => {
         expect(result).toBe(SUBMITTED_RESULT);
     });
 
+    it('returns ai_server_unstable when the AI provider fails (retry exhausted)', async () => {
+        mockRunOverallAnalysis.mockRejectedValueOnce(
+            new Error('AI_SERVER_UNSTABLE')
+        );
+
+        const result = await runOverallAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            '1Day',
+            MODEL_ID,
+            'ko'
+        );
+
+        expect(result).toMatchObject({
+            status: 'error',
+            error: expect.objectContaining({ code: 'ai_server_unstable' }),
+        });
+    });
+
     it('내부에서 예외가 발생하면 status: error를 반환한다', async () => {
         mockRunOverallAnalysis.mockRejectedValueOnce(new Error('unexpected'));
 

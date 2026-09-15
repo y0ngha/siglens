@@ -14,6 +14,7 @@ import {
     resolveReasoning,
     buildGateError,
 } from '@/shared/lib/byokGate';
+import { caughtAnalysisErrorCode } from '@/shared/lib/aiProviderFailure';
 import { isBot } from '@/shared/api/isBot';
 import { isE2E } from '@/shared/api/e2eEnv';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
@@ -89,7 +90,7 @@ export async function runFinancialsAnalysisAction(
         console.error('[runFinancialsAnalysisAction] unexpected error:', err);
         return {
             status: 'error',
-            error: await buildGateError('unexpected_error', locale),
+            error: await buildGateError(caughtAnalysisErrorCode(err), locale),
         };
     }
 }

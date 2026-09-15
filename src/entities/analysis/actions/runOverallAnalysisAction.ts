@@ -34,6 +34,7 @@ import {
     resolveReasoning,
     buildGateError,
 } from '@/shared/lib/byokGate';
+import { caughtAnalysisErrorCode } from '@/shared/lib/aiProviderFailure';
 import { isBot } from '@/shared/api/isBot';
 import { isE2E } from '@/shared/api/e2eEnv';
 // Cross-entity: options-chain fetchOptionsSnapshot 필요. Phase 9에서 features 레이어 도입 시 해소.
@@ -223,7 +224,7 @@ export async function runOverallAnalysisAction(
         console.error('[runOverallAnalysisAction] unexpected error:', err);
         return {
             status: 'error',
-            error: await buildGateError('unexpected_error', locale),
+            error: await buildGateError(caughtAnalysisErrorCode(err), locale),
         };
     }
 }

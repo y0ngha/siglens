@@ -167,6 +167,13 @@ describe('buildGateError', () => {
         );
         expect(err.message).not.toBe('tier_premium_blocked');
     });
+
+    it('ai_server_unstable은 모델을 바꾸라는 안내 문구다', async () => {
+        const err = await buildGateError('ai_server_unstable', 'ko');
+        expect(err.message).toBe(
+            'AI 서버가 불안정해 분석하지 못했습니다. 우측 상단 톱니바퀴에서 모델을 변경해 주세요.'
+        );
+    });
 });
 
 describe('resolveTierOnly', () => {

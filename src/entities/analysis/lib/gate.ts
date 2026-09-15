@@ -30,6 +30,7 @@ const GATE_ERROR_CODE_KEYS: Record<AnalysisGateErrorCode, true> = {
     tier_premium_blocked: true,
     invalid_model: true,
     api_key_corrupted: true,
+    ai_server_unstable: true,
     unexpected_error: true,
 };
 

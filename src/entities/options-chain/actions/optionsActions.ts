@@ -15,6 +15,7 @@ import {
     resolveReasoning,
     buildGateError,
 } from '@/shared/lib/byokGate';
+import { caughtAnalysisErrorCode } from '@/shared/lib/aiProviderFailure';
 import { isBot } from '@/shared/api/isBot';
 import { isE2E } from '@/shared/api/e2eEnv';
 import type {
@@ -127,7 +128,7 @@ export async function submitOptionsAnalysisAction(
         console.error('[submitOptionsAnalysisAction] unexpected error:', err);
         return {
             status: 'error',
-            error: await buildGateError('unexpected_error', locale),
+            error: await buildGateError(caughtAnalysisErrorCode(err), locale),
         };
     }
 }

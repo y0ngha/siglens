@@ -44,7 +44,7 @@
                 "timeout": "The analysis timed out. Please try again.",
                 "unexpected": "An unexpected error occurred.",
                 "unreadable": "Could not read the analysis result. Please try again.",
-                "unstable": "An unexpected error occurred. Please try again shortly."
+                "unstable": "The AI server is unstable, so the analysis couldn't finish. Change the model from the gear icon at the top right."
             }
         },
         "backtesting": {
@@ -1354,6 +1354,7 @@
         },
         "lib": {
             "byokGate": {
+                "ai_server_unstable": "The AI server is unstable, so the analysis couldn't finish. Change the model from the gear icon at the top right.",
                 "api_key_corrupted": "Could not decrypt the stored API key. Please register it again.",
                 "invalid_model": "Unknown model.",
                 "tier_premium_blocked": "The selected model is available on the Premium tier only. Register an API key or upgrade your tier.",
@@ -2377,6 +2378,7 @@
             },
             "useChat": {
                 "modelNotAllowed": "The selected model is not available on your current plan. Please pick another model.",
+                "providerUnstable": "The AI server is unstable, so I couldn't answer. Change the model in the chatbot.",
                 "rateLimited": "The AI server is busy right now. Please try again in a moment.",
                 "serverBusy": "The AI server is busy. Try switching to another model and retrying.",
                 "serverError": "Something went wrong. Please try again.",

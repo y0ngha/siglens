@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import * as OpenAI from 'openai';
 import { LocalizedStreamError } from '../LocalizedStreamError';
 import { heartbeatStream, HEARTBEAT_INTERVAL_MS } from '../heartbeatStream';
 import {
@@ -461,6 +462,67 @@ describe('heartbeatStream', () => {
                 message: string;
             };
             expect(parsed.message).toBe('AI_SERVER_UNSTABLE');
+        });
+
+        /**
+         * core 재시도를 거치지 않고 올라오는 provider 장애(DeepSeek 스트림 정지,
+         * SDK 연결 실패)도 sentinel로 바뀌어야 클라이언트가 "모델을 변경해 주세요"
+         * 안내를 띄운다. 원시 메시지는 흘리지 않는다.
+         */
+        it.each([
+            [
+                'DEEPSEEK_STALLED',
+                Object.assign(new Error('DeepSeek stream stalled for 90s'), {
+                    code: 'DEEPSEEK_STALLED',
+                }),
+            ],
+            [
+                'SDK 연결 실패',
+                new OpenAI.APIConnectionError({ message: 'Connection error.' }),
+            ],
+        ])('%s는 AI_SERVER_UNSTABLE sentinel로 보낸다', async (_label, err) => {
+            vi.spyOn(console, 'error').mockImplementation(() => {});
+
+            const { promise, reject } = deferred<never>();
+            const stream = heartbeatStream(promise, {
+                genericErrorMessage: GENERIC,
+            });
+            const reader = stream.getReader();
+
+            await reader.read(); // open
+            reject(err);
+
+            const { value } = await readString(reader);
+            const parsed = JSON.parse(value!.split('data: ')[1]!) as {
+                message: string;
+            };
+            expect(parsed.message).toBe('AI_SERVER_UNSTABLE');
+        });
+
+        it('BYOK 키의 401은 provider 장애가 아니라 제네릭 문구로 교체된다', async () => {
+            vi.spyOn(console, 'error').mockImplementation(() => {});
+
+            const { promise, reject } = deferred<never>();
+            const stream = heartbeatStream(promise, {
+                genericErrorMessage: GENERIC,
+            });
+            const reader = stream.getReader();
+
+            await reader.read(); // open
+            reject(
+                new OpenAI.AuthenticationError(
+                    401,
+                    undefined,
+                    'Incorrect API key',
+                    new Headers()
+                )
+            );
+
+            const { value } = await readString(reader);
+            const parsed = JSON.parse(value!.split('data: ')[1]!) as {
+                message: string;
+            };
+            expect(parsed.message).toBe(GENERIC);
         });
 
         it('LocalizedStreamError는 그대로 전달된다', async () => {
