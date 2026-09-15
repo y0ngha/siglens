@@ -7,9 +7,9 @@ import type {
     CallAgentProviderOptions,
 } from '@y0ngha/siglens-core';
 import {
-    extractDeepSeekUsage,
+    extractOpenAiCompatibleUsage,
     logUsage,
-    type DeepSeekUsageLike,
+    type OpenAiCompatibleUsageLike,
 } from '../../lib/usage';
 
 export const AGENT_JOB_ID = 'agent';
@@ -108,7 +108,7 @@ export async function streamOpenAiCompatibleAgent(
     const startedAt = Date.now();
     let text = '';
     let finish: string | null | undefined;
-    let usage: DeepSeekUsageLike | undefined;
+    let usage: OpenAiCompatibleUsageLike | undefined;
     const partial = new Map<
         number,
         { id: string; name: string; args: string }
@@ -170,7 +170,7 @@ export async function streamOpenAiCompatibleAgent(
                 partial.set(tc.index, slot);
             }
             if (choice?.finish_reason) finish = choice.finish_reason;
-            if (chunk.usage) usage = chunk.usage as DeepSeekUsageLike;
+            if (chunk.usage) usage = chunk.usage as OpenAiCompatibleUsageLike;
         }
         // The openai SDK ends `for await` quietly when the signal aborts mid-stream; the
         // port contract says upstream errors propagate, so don't resolve a partial result.
@@ -198,7 +198,7 @@ export async function streamOpenAiCompatibleAgent(
         for (const call of toolCalls) o.onEvent({ type: 'tool_call', call });
     }
 
-    const normalized = extractDeepSeekUsage(usage);
+    const normalized = extractOpenAiCompatibleUsage(usage);
     logUsage({
         jobId: AGENT_JOB_ID,
         model: o.apiModelId,

@@ -241,4 +241,38 @@ describe('createAgentProvider fallback → Gemini 3.6 Flash', () => {
         await createAgentProvider(state)(input());
         expect(state.fallbackUsed).toBe(false);
     });
+
+    it('같은 턴의 다음 스텝에서 state.fallbackUsed가 true면 DeepSeek을 부르지 않고 바로 Gemini로 간다', async () => {
+        const state = { fallbackUsed: true };
+        const o = input();
+        const r = await createAgentProvider(state)(o);
+        expect(r).toBe(OK);
+        expect(mockDeepseek).not.toHaveBeenCalled();
+        expect(mockGemini).toHaveBeenCalledTimes(1);
+        expect(mockGemini.mock.lastCall![0]).toMatchObject({
+            model: 'gemini-3.6-flash',
+            apiKey: 'gm',
+            apiModelId: MODEL_SPECS['gemini-3.6-flash'].apiModelId,
+        });
+    });
+
+    it('state 없이 호출하면(undefined) 기존 동작대로 매번 DeepSeek을 먼저 시도한다', async () => {
+        mockDeepseek.mockRejectedValue(
+            Object.assign(new Error('busy'), { status: 503 })
+        );
+        const r = await createAgentProvider(undefined)(input());
+        expect(r).toBe(OK);
+        expect(mockDeepseek).toHaveBeenCalledTimes(1);
+        expect(mockGemini).toHaveBeenCalledTimes(1);
+    });
+
+    it('state.fallbackUsed가 true인데 Gemini 서버 키가 없으면 명확한 에러를 던진다', async () => {
+        vi.stubEnv('GEMINI_CHAT_API_KEY', '');
+        const state = { fallbackUsed: true };
+        await expect(createAgentProvider(state)(input())).rejects.toThrow(
+            /No API key/
+        );
+        expect(mockDeepseek).not.toHaveBeenCalled();
+        expect(mockGemini).not.toHaveBeenCalled();
+    });
 });

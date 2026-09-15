@@ -118,23 +118,27 @@ export function extractOpenAIUsage(
 }
 
 /**
- * DeepSeek `chat.completions` usage — the classic Chat Completions shape, not
- * the Responses shape above (`deepseek.ts` calls `chat.completions.create`).
+ * OpenAI-compatible `chat.completions` usage — the classic Chat Completions
+ * shape, not the Responses shape above. Covers every provider whose adapter
+ * calls `chat.completions.create` on this repo's OpenAI-compatible client:
+ * DeepSeek (`deepseek.ts`, `prompt_cache_hit_tokens`) and Gemini's
+ * OpenAI-compat endpoint (`agent/openAiCompatibleStream.ts`,
+ * `prompt_tokens_details.cached_tokens`).
  *
  * Cache reads arrive either as DeepSeek's own `prompt_cache_hit_tokens` (where
  * `prompt_tokens = hit + miss`) or the OpenAI-compatible
  * `prompt_tokens_details.cached_tokens`; both are subtracted out of the
  * standard-price bucket.
  */
-export interface DeepSeekUsageLike {
+export interface OpenAiCompatibleUsageLike {
     prompt_tokens?: number;
     completion_tokens?: number;
     prompt_cache_hit_tokens?: number;
     prompt_tokens_details?: { cached_tokens?: number };
 }
 
-export function extractDeepSeekUsage(
-    usage: DeepSeekUsageLike | undefined | null
+export function extractOpenAiCompatibleUsage(
+    usage: OpenAiCompatibleUsageLike | undefined | null
 ): NormalizedUsage {
     if (!usage) return { ...ZERO_USAGE };
     const cached =

@@ -60,6 +60,12 @@ function isFallbackEligible(error: unknown): boolean {
  * provider reasons before anything user-visible streamed, the same turn is
  * retried once on `AGENT_FALLBACK_MODEL` (Gemini) with the server key.
  *
+ * The fallback is sticky per turn: once `state.fallbackUsed` is `true` (set by
+ * an earlier step of the same multi-step turn), every later step goes
+ * straight to Gemini and DeepSeek is never called again. Without this, a
+ * stalling DeepSeek would burn the full stall timeout again on every
+ * remaining step of the turn even though the turn already fell back.
+ *
  * No fallback when: the caller aborted; a `text`/`tool_call` event was already
  * forwarded (a retry would duplicate output); the error is a non-429 4xx; or
  * no Gemini server key is configured. Those rethrow the DeepSeek error, which
@@ -72,6 +78,21 @@ export function createAgentProvider(
     return async (
         o: CallAgentProviderOptions
     ): Promise<AgentProviderResult> => {
+        if (state?.fallbackUsed) {
+            const fallbackKey = getServerPrimaryKey(
+                getProviderForModel(AGENT_FALLBACK_MODEL)
+            );
+            if (!fallbackKey)
+                throw new Error(
+                    `[agent-router] No API key for model: ${AGENT_FALLBACK_MODEL}`
+                );
+            return callGeminiAgent({
+                ...o,
+                model: AGENT_FALLBACK_MODEL,
+                apiKey: fallbackKey,
+                apiModelId: MODEL_SPECS[AGENT_FALLBACK_MODEL].apiModelId,
+            });
+        }
         const apiKey = getServerPrimaryKey(getProviderForModel(AGENT_MODEL));
         if (apiKey === undefined)
             throw new Error(

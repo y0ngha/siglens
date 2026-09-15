@@ -41,6 +41,7 @@ import {
 import { getNextEarningsReport } from '@/entities/earnings-report';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import { getDescriptor } from '@/shared/config/marketProfile';
+import { PREWARM_PROVIDER_FALLBACK } from '@/shared/config/prewarm';
 
 /** Domain-level row returned from the `news` table; extends the display projection with persistence-only fields. */
 export interface NewsRow extends NewsDisplayItem {
@@ -469,8 +470,7 @@ export async function prewarmNews(
         upcomingCalendar: next !== null ? [next] : [],
         tier: 'free',
         reasoning: false,
-        // 프리웜은 사용자가 모델을 고르지 않는다 — DeepSeek 장애 시 Gemini로 1회 폴백(core 1.7.0).
-        providerFallback: true,
+        providerFallback: PREWARM_PROVIDER_FALLBACK,
         skipEnqueueIfMiss: false,
         assetClass,
         // 방문자 경로(submitNewsAnalysisAction)와 같은 값을 넘겨야 prewarm이 채운

@@ -7,6 +7,7 @@ import {
     type SlotMapping,
 } from '@y0ngha/siglens-core';
 import { fetchOptionsSnapshot } from './lib/optionsDataCache';
+import { PREWARM_PROVIDER_FALLBACK } from '@/shared/config/prewarm';
 
 const isSlotMapping = (s: SlotMapping | null): s is SlotMapping => s !== null;
 
@@ -53,8 +54,7 @@ export async function prewarmOptions(
         snapshot,
         tier: 'free',
         reasoning: false,
-        // 프리웜은 사용자가 모델을 고르지 않는다 — DeepSeek 장애 시 Gemini로 1회 폴백(core 1.7.0).
-        providerFallback: true,
+        providerFallback: PREWARM_PROVIDER_FALLBACK,
         skipEnqueueIfMiss: false,
         ...(force ? { force: true } : {}),
     });

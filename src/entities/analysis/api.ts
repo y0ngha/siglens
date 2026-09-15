@@ -20,6 +20,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
+import { PREWARM_PROVIDER_FALLBACK } from '@/shared/config/prewarm';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import {
     currencyForSymbol,
@@ -202,8 +203,7 @@ export async function prewarmTechnical(
             currency: descriptor.priceFormat.currency,
             tierContext: { userId: null, tier: 'free' },
             reasoning: false,
-            // 프리웜은 사용자가 모델을 고르지 않는다 — DeepSeek 장애 시 Gemini로 1회 폴백(core 1.7.0).
-            providerFallback: true,
+            providerFallback: PREWARM_PROVIDER_FALLBACK,
             positionBucket: undefined,
             priorAnalyses,
             marketEvents,
@@ -247,8 +247,7 @@ export async function prewarmFundamental(
         currency: currencyForSymbol(symbol),
         tier: 'free',
         reasoning: false,
-        // 프리웜은 사용자가 모델을 고르지 않는다 — DeepSeek 장애 시 Gemini로 1회 폴백(core 1.7.0).
-        providerFallback: true,
+        providerFallback: PREWARM_PROVIDER_FALLBACK,
         skipEnqueueIfMiss: false,
         ...(force ? { force: true } : {}),
     });
@@ -268,8 +267,7 @@ export async function prewarmFinancials(
         dataProvider: getFinancialStatementsProvider(symbol),
         tier: 'free',
         reasoning: false,
-        // 프리웜은 사용자가 모델을 고르지 않는다 — DeepSeek 장애 시 Gemini로 1회 폴백(core 1.7.0).
-        providerFallback: true,
+        providerFallback: PREWARM_PROVIDER_FALLBACK,
         skipEnqueueIfMiss: false,
         ...(force ? { force: true } : {}),
     });
@@ -292,8 +290,7 @@ export async function prewarmCongress(
         dataProvider: getCongressTradesProvider(),
         skipEnqueueIfMiss: false,
         reasoning: false,
-        // 프리웜은 사용자가 모델을 고르지 않는다 — DeepSeek 장애 시 Gemini로 1회 폴백(core 1.7.0).
-        providerFallback: true,
+        providerFallback: PREWARM_PROVIDER_FALLBACK,
         tier: 'free',
         ...(force ? { force: true } : {}),
     });
@@ -385,8 +382,7 @@ export async function prewarmOverall(
         technical: { tierContext: { userId: null, tier: 'free' } },
         tier: 'free',
         reasoning: false,
-        // 프리웜은 사용자가 모델을 고르지 않는다 — DeepSeek 장애 시 Gemini로 1회 폴백(core 1.7.0).
-        providerFallback: true,
+        providerFallback: PREWARM_PROVIDER_FALLBACK,
         skipEnqueueIfMiss: false,
         assetClass,
         currency: descriptor.priceFormat.currency,
