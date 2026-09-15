@@ -16,8 +16,6 @@ import {
     VALID_CHAT_MODELS,
     getProviderForModel,
     type AnalysisResponse,
-    type ChatActionResult,
-    type ChatErrorCode,
     type ChatLoadingPhase,
     type ChatMessage,
     type ModelId,
@@ -28,7 +26,11 @@ import {
     getRemainingTokensAction,
 } from '@/entities/chat-message/actions';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
-import { CHAT_NON_CHART_BASELINE_ANALYSIS } from '@/entities/chat-message';
+import {
+    CHAT_NON_CHART_BASELINE_ANALYSIS,
+    type SymbolChatActionResult,
+    type SymbolChatErrorCode,
+} from '@/entities/chat-message';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { useTranslations } from 'next-intl';
 import { usePageContextLabel } from './usePageContextLabel';
@@ -69,11 +71,12 @@ const DAILY_CHAT_LIMIT = 5;
  * 남는다 — 같은 대화창 안에서 언어가 갈린다(`localeEnvelope`가 답변 언어를
  * 사용자 로케일로 고정하기 때문에 더 도드라진다).
  */
-const ERROR_MESSAGE_KEYS: Record<ChatErrorCode, string> = {
+const ERROR_MESSAGE_KEYS: Record<SymbolChatErrorCode, string> = {
     token_exhausted: 'useChat.tokenExhausted',
     rate_limited: 'useChat.rateLimited',
     server_busy: 'useChat.serverBusy',
     server_error: 'useChat.serverError',
+    ai_server_unstable: 'useChat.providerUnstable',
     model_not_allowed: 'useChat.modelNotAllowed',
     // TODO(byok-adapter): BYOK 어댑터 구현 후 chatAction에서 이 코드가 반환됩니다
     user_api_key_required: 'useChat.userApiKeyRequired',
@@ -84,7 +87,7 @@ function isValidChatModel(value: string): value is ModelId {
 }
 
 function resolveAiContent(
-    result: ChatActionResult,
+    result: SymbolChatActionResult,
     t: (key: string, values?: Record<string, string | number>) => string
 ): string {
     if (result.ok) {
