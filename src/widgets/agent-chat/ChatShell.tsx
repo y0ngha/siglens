@@ -198,6 +198,7 @@ export function ChatShell({
                     already carries the site chrome, so this bar's only job is the
                     drawer trigger + the active conversation's title. */}
                 <div
+                    data-scroll-chrome=""
                     // `chromeHidden` only ever comes back `true` below `lg`
                     // (`useHideOnScrollDown`'s own media-query gate), so
                     // `inert` here never fires on a desktop viewport — this

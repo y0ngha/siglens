@@ -1141,6 +1141,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ <h2 className="HEADING_SECTION">{title}</h2>  // semantic token applied
    ✅ <h3 className={cn(HEADING_SUBSECTION, 'text-xs')}>{subtitle}</h3>  // colour via token, size via utility
    → Recurring: /[symbol]/overall route (9 colourless h2), /[symbol]/news route (2+ colourless headings) — W6c + W6d
+
+10. Visually hidden interactive elements remain focusable without inert attribute
+   → When moving interactive elements off-screen with transform/opacity (display:none and visibility:hidden already drop them from tab order), remove them from tab order using inert attribute (WCAG 2.4.7 Focus Visible)
+   → Inert prevents keyboard users from tabbing into hidden controls and experiencing invisible focus indicators
+   → Edge case: inert applied unconditionally to a container may blur focus mid-interaction if document.activeElement is inside the hidden scope; add conditional skip when active focus is within hidden container
+   ❌ <header className={hidden ? '-translate-y-full' : ''}>  // visual hide only, controls stay in tab order
+   ❌ <header inert>  // inert applied unconditionally, blurs focus if user was interacting inside the hidden container
+   ✅ <header inert={isHidden} className={isHidden ? 'translate-x-full' : ''}>  // inert synchronized with visibility state
+   ✅ useHideOnScroll hook: skip hiding if document.activeElement is inside `[data-scroll-chrome]`, preserving focus during interaction
+   → Recurring: PR #823 (Round 2: inert omission; Round 5: inert edge case with focus mid-interaction) — 2 occurrences same PR, same feature
 ```
 
 ---

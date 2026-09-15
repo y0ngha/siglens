@@ -45,6 +45,7 @@ export function Header({
 }: HeaderProps) {
     return (
         <header
+            data-scroll-chrome=""
             // `inert` makes the offscreen header (and its focusable controls)
             // unreachable by tab/click/screen-reader while `hiddenOnMobile` is
             // true — without it, `-translate-y-full` only hides it visually

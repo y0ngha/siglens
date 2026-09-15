@@ -227,7 +227,7 @@ export function Sidebar({
                 href={`${localePrefix}/`}
                 onClick={e => navigate(e, `${localePrefix}/`)}
                 aria-busy={isPending(`${localePrefix}/`) || undefined}
-                className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border-control bg-secondary-800 px-3 text-sm font-medium text-secondary-100 hover:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none aria-busy:cursor-progress aria-busy:text-secondary-400"
+                className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border-control bg-secondary-800 px-3 text-sm font-medium text-secondary-100 hover:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none aria-[busy=true]:cursor-progress aria-[busy=true]:text-secondary-400"
             >
                 <PlusIcon className="size-4 text-primary-400" />
                 {t('Sidebar.newChat')}
@@ -351,7 +351,7 @@ export function Sidebar({
                                                     `${localePrefix}/c/${item.id}`
                                                 ) || undefined
                                             }
-                                            className="min-w-0 flex-1 truncate py-1.5 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none aria-busy:cursor-progress aria-busy:text-secondary-400"
+                                            className="min-w-0 flex-1 truncate py-1.5 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none aria-[busy=true]:cursor-progress aria-[busy=true]:text-secondary-400"
                                         >
                                             {item.title}
                                         </a>

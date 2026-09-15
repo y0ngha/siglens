@@ -100,4 +100,36 @@ describe('useHideOnScrollDown', () => {
         scrollTo(300);
         expect(result.current).toBe(false);
     });
+
+    /** `inert` would blur a control the user is mid-interaction with, so hiding
+     *  is skipped while focus sits inside the chrome. */
+    it('does not hide while a focused control lives inside [data-scroll-chrome]', () => {
+        const chrome = document.createElement('div');
+        chrome.setAttribute('data-scroll-chrome', '');
+        const button = document.createElement('button');
+        chrome.appendChild(button);
+        document.body.appendChild(chrome);
+        button.focus();
+
+        const { result } = renderHook(() => useHideOnScrollDown());
+        scrollTo(300);
+        expect(result.current).toBe(false);
+
+        document.body.removeChild(chrome);
+    });
+
+    it('hides on the same scroll once focus leaves the chrome', () => {
+        const chrome = document.createElement('div');
+        chrome.setAttribute('data-scroll-chrome', '');
+        const button = document.createElement('button');
+        chrome.appendChild(button);
+        document.body.appendChild(chrome);
+        // No focus() call — activeElement stays document.body.
+
+        const { result } = renderHook(() => useHideOnScrollDown());
+        scrollTo(300);
+        expect(result.current).toBe(true);
+
+        document.body.removeChild(chrome);
+    });
 });

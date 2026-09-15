@@ -90,6 +90,16 @@ export function useHideOnScrollDown({
             }
             const delta = y - anchorY;
             if (Math.abs(delta) < SCROLL_DIRECTION_THRESHOLD_PX) return;
+            // `inert` blurs focus when it lands on the element it's applied to.
+            // Hiding while the user is mid-interaction with a control inside the
+            // chrome (the drawer trigger, a header link) would yank focus away
+            // under them — so a downward scroll only hides while focus is
+            // elsewhere.
+            if (
+                delta > 0 &&
+                document.activeElement?.closest('[data-scroll-chrome]')
+            )
+                return;
             setHidden(delta > 0);
             anchorY = y;
         };

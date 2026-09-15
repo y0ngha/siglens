@@ -18,6 +18,7 @@ cross-widget import는 현재 허용되지만, `symbol-page` 슬라이스는 Spe
 
 - **`fear-greed → chart`**: `FearGreedPage.tsx`가 `@/widgets/chart/FearGreedHistoricalChart`를 deep import (barrel 미포함 heavy component)
 - **`overall → news`**: `OverallContent.tsx`가 `@/widgets/news` barrel에서 `useNewsAnalysisTrigger`, `useWaitForNewsCards`를 소비
+- **`agent-chat → layout`**: `ChatShell.tsx`가 `@/widgets/layout`의 `useHideOnScrollDown`을 소비 (모바일 대화 바를 사이트 헤더와 같은 스크롤-숨김 패턴으로 맞춤)
 
 두 엣지 모두 symbol-page와 무관(symbol-page는 PR-B2에서 `src/views/symbol/`로 이관). 규칙 완전 제거는 위 두 컴포넌트의 이전을 선행해야 하므로 보류.
 
