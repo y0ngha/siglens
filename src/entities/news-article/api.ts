@@ -469,6 +469,8 @@ export async function prewarmNews(
         upcomingCalendar: next !== null ? [next] : [],
         tier: 'free',
         reasoning: false,
+        // 프리웜은 사용자가 모델을 고르지 않는다 — DeepSeek 장애 시 Gemini로 1회 폴백(core 1.7.0).
+        providerFallback: true,
         skipEnqueueIfMiss: false,
         assetClass,
         // 방문자 경로(submitNewsAnalysisAction)와 같은 값을 넘겨야 prewarm이 채운

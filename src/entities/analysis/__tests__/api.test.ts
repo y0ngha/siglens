@@ -240,6 +240,8 @@ describe('prewarmTechnical', () => {
                 currency: 'USD',
                 tierContext: { userId: null, tier: 'free' },
                 reasoning: false,
+                // 프리웜은 사용자가 모델을 고르지 않아 core 1.7.0 폴백을 켠다.
+                providerFallback: true,
                 positionBucket: undefined,
                 // Task S3 (prior-analysis-context, PR #784 review) — the SSE
                 // route's non-bot branch always supplies both; prewarm must
@@ -409,6 +411,8 @@ describe('prewarmFundamental', () => {
             dataProvider: mockFundamentalProvider,
             tier: 'free',
             reasoning: false,
+            // 프리웜은 사용자가 모델을 고르지 않아 core 1.7.0 폴백을 켠다.
+            providerFallback: true,
             skipEnqueueIfMiss: false,
             currency: 'USD',
         });
@@ -461,6 +465,8 @@ describe('prewarmFinancials', () => {
             dataProvider: mockFinancialsProvider,
             tier: 'free',
             reasoning: false,
+            // 프리웜은 사용자가 모델을 고르지 않아 core 1.7.0 폴백을 켠다.
+            providerFallback: true,
             skipEnqueueIfMiss: false,
         });
     });
@@ -502,6 +508,8 @@ describe('prewarmCongress', () => {
             dataProvider: mockCongressProvider,
             skipEnqueueIfMiss: false,
             reasoning: false,
+            // 프리웜은 사용자가 모델을 고르지 않아 core 1.7.0 폴백을 켠다.
+            providerFallback: true,
             tier: 'free',
         });
     });

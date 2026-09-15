@@ -53,6 +53,8 @@ export async function prewarmOptions(
         snapshot,
         tier: 'free',
         reasoning: false,
+        // 프리웜은 사용자가 모델을 고르지 않는다 — DeepSeek 장애 시 Gemini로 1회 폴백(core 1.7.0).
+        providerFallback: true,
         skipEnqueueIfMiss: false,
         ...(force ? { force: true } : {}),
     });
