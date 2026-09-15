@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.77.1](https://github.com/y0ngha/siglens/compare/v0.77.0...v0.77.1) (2026-09-15)
+
+
+### Bug Fixes
+
+* **ai:** 대화 전환 후 모바일 대화 바가 숨은 헤더 아래 떠 있던 문제 수정 ([80c9b3b](https://github.com/y0ngha/siglens/commit/80c9b3bbc9ad5e66c100c711767a11ef4cecb19c))
+
 # [0.77.0](https://github.com/y0ngha/siglens/compare/v0.76.0...v0.77.0) (2026-09-15)
 
 
