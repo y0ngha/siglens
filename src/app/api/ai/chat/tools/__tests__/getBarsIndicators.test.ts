@@ -52,7 +52,13 @@ vi.mock('@/shared/config/marketProfile', () => ({
     getDescriptor: () => ({ priceFormat: { currency: 'USD' } }),
 }));
 
+import {
+    CONFLUENCE_MIN_BARS,
+    evaluateConfluence,
+    scoreConfluence,
+} from '@y0ngha/siglens-core';
 import { getBarsIndicatorsTool } from '@/app/api/ai/chat/tools/getBarsIndicators';
+import { roundNumber } from '@/entities/bars/lib/roundIndicators';
 
 const ctx = {
     userId: 'u',
@@ -366,6 +372,62 @@ describe('getBarsIndicatorsTool', () => {
         const newestClose = 100 + SOURCE_BARS - 1;
         expect(r.bars.at(-1)?.c).toBe(newestClose);
         expect(serialized).toContain(String(newestClose));
+    });
+
+    it('confluence: 전체 캐시 봉(요청 bars 아님)으로 core evaluateConfluence를 돌려 압축 형태로 싣는다(HTF 게이트 off)', async () => {
+        profile.mockResolvedValue('us-equity');
+        // Oscillating uptrend — the real detector catalogue lights several
+        // signals on it and ma50 comes out non-integer (exercises rounding).
+        const bars = Array.from({ length: 150 }, (_, i) =>
+            bar(
+                1_700_000_000 + i * 86_400,
+                100 + 10 * Math.sin(i / 8) + i * 0.1
+            )
+        );
+        getCachedBars.mockResolvedValue({ bars, indicators });
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+
+        const r = (await getBarsIndicatorsTool(
+            // bars:10 < CONFLUENCE_MIN_BARS — confluence must still read the full series.
+            { symbol: 'AAPL', timeframe: '1Day', bars: 10 },
+            ctx,
+            rt
+        )) as { confluence: Record<string, unknown> | null };
+
+        // `evaluateConfluence`/`scoreConfluence` are core's real exports (the
+        // module mock spreads `...actual`), so this is the real computation.
+        const snapshot = evaluateConfluence(bars, { timeframe: '1Day' });
+        expect(snapshot).not.toBeNull();
+        expect(snapshot!.bullish.length).toBeGreaterThan(0);
+        expect(r.confluence).toEqual({
+            score: scoreConfluence(snapshot),
+            entryTrigger: snapshot!.entryTrigger,
+            exitTrigger: snapshot!.exitTrigger,
+            bullish: snapshot!.bullish,
+            bearish: snapshot!.bearish,
+            freshBullish: snapshot!.freshBullish,
+            freshBearish: snapshot!.freshBearish,
+            ma50: roundNumber(snapshot!.ma50!),
+            htfGate: 'off',
+        });
+    });
+
+    it('confluence: CONFLUENCE_MIN_BARS 미만이면 null(기권)', async () => {
+        profile.mockResolvedValue('us-equity');
+        const bars = Array.from({ length: CONFLUENCE_MIN_BARS - 1 }, (_, i) =>
+            bar(1_700_000_000 + i * 86_400, 100 + i)
+        );
+        getCachedBars.mockResolvedValue({ bars, indicators });
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+
+        const r = (await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '1Day' },
+            ctx,
+            rt
+        )) as Record<string, unknown>;
+        expect(r).toHaveProperty('confluence', null);
     });
 
     it('모델이 준 bars는 1..200으로 제한된다(0은 slice(-0) 전체 반환 함정)', async () => {
