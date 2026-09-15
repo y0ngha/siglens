@@ -236,6 +236,7 @@ describe('runFreshAnalysisTool', () => {
             tierContext: { userId: 'u', tier: 'member' },
             locale: 'ko',
             reasoning: false,
+            providerFallback: true,
         });
         expect(options.signal).toBeUndefined();
         expect(__activeStreamCount()).toBe(0);

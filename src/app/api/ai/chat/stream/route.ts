@@ -16,7 +16,12 @@ import {
     toAgentHistory,
     type NewChatMessage,
 } from '@/entities/chat-conversation';
-import { AGENT_MODEL, getAgentProvider } from '@/entities/llm-provider';
+import {
+    AGENT_FALLBACK_MODEL,
+    AGENT_MODEL,
+    getAgentProvider,
+    type AgentProviderState,
+} from '@/entities/llm-provider';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { getClientIp } from '@/shared/api/getClientIp';
@@ -267,6 +272,9 @@ async function prepareMemberTurn(
             userId: userId,
             firstMessage: body.message,
             locale,
+            // Always AGENT_MODEL, never the fallback: no turn has run yet at
+            // conversation-create time, so whether DeepSeek or Gemini answers
+            // this turn isn't known here.
             modelId: AGENT_MODEL,
         });
         conversationId = created.id;
@@ -501,12 +509,17 @@ export async function POST(request: Request): Promise<Response> {
             ms: number;
             status: string;
         }> = [];
+        // Shared across every provider call this turn makes; the router flips
+        // `fallbackUsed` if/when DeepSeek fails and Gemini answers instead.
+        const providerState: AgentProviderState = { fallbackUsed: false };
 
         const stream = agentEventStream({
             meta: {
                 conversationId,
                 userMessageId,
                 userMessageSeq,
+                // Always AGENT_MODEL: this frame goes out before the turn runs,
+                // so the fallback state isn't known yet.
                 model: AGENT_MODEL,
                 ...(title !== undefined ? { title } : {}),
             },
@@ -530,7 +543,7 @@ export async function POST(request: Request): Promise<Response> {
                             signal: controller.signal,
                         },
                         {
-                            callAgentProvider: getAgentProvider(),
+                            callAgentProvider: getAgentProvider(providerState),
                             executeTool,
                             counters: createAgentCounters(),
                             maxOutputTokens: AGENT_MAX_OUTPUT_TOKENS,
@@ -545,6 +558,10 @@ export async function POST(request: Request): Promise<Response> {
                             },
                         }
                     );
+                    // Known only after the turn ran: which model actually answered.
+                    const effectiveModel = providerState.fallbackUsed
+                        ? AGENT_FALLBACK_MODEL
+                        : AGENT_MODEL;
                     if (!result.ok) {
                         const partial = result.partialText?.trim();
                         if (partial && repo && conversationId) {
@@ -553,7 +570,7 @@ export async function POST(request: Request): Promise<Response> {
                                     {
                                         role: 'assistant',
                                         content: partial,
-                                        modelId: AGENT_MODEL,
+                                        modelId: effectiveModel,
                                         status: persistedStatusFor(
                                             result.error
                                         ),
@@ -611,7 +628,7 @@ export async function POST(request: Request): Promise<Response> {
                         {
                             role: 'assistant',
                             content: result.assistant.content,
-                            modelId: AGENT_MODEL,
+                            modelId: effectiveModel,
                             usage: {
                                 ...result.usage,
                                 toolsUsed: result.toolsUsed,
@@ -639,7 +656,8 @@ export async function POST(request: Request): Promise<Response> {
                             conversationId,
                             userId: subject,
                             guest: user === null,
-                            model: AGENT_MODEL,
+                            model: effectiveModel,
+                            fallbackUsed: providerState.fallbackUsed,
                             steps: result.usage.steps,
                             toolCalls: toolTimings,
                             promptVersion: result.promptVersion,
