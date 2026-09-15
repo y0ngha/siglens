@@ -58,6 +58,7 @@ import {
     scoreConfluence,
 } from '@y0ngha/siglens-core';
 import { getBarsIndicatorsTool } from '@/app/api/ai/chat/tools/getBarsIndicators';
+import { roundNumber } from '@/entities/bars/lib/roundIndicators';
 
 const ctx = {
     userId: 'u',
@@ -407,7 +408,7 @@ describe('getBarsIndicatorsTool', () => {
             bearish: snapshot!.bearish,
             freshBullish: snapshot!.freshBullish,
             freshBearish: snapshot!.freshBearish,
-            ma50: Number(snapshot!.ma50!.toPrecision(6)),
+            ma50: roundNumber(snapshot!.ma50!),
             htfGate: 'off',
         });
     });

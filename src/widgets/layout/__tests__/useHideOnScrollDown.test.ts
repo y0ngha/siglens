@@ -39,7 +39,12 @@ function stubBelowLg(matches: boolean): void {
  */
 const mounted = new Set<() => void>();
 
-function mount(options?: { enabled?: boolean }) {
+interface MountedHook {
+    result: { current: boolean };
+    unmount: () => void;
+}
+
+function mount(options?: { enabled?: boolean }): MountedHook {
     const rendered = renderHook(() => useHideOnScrollDown(options));
     const unmount = () => {
         if (!mounted.delete(unmount)) return;
