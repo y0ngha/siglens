@@ -139,16 +139,6 @@ export function Sidebar({
         older: t('Sidebar.groupOlder'),
     };
 
-    // Focus the rename input exactly once when entering rename mode for a
-    // given item — not on every render (an inline `ref={el => el.focus()}`
-    // re-fires after each keystroke and steals the caret position).
-    useEffect(() => {
-        if (renaming) renameInputRef.current?.focus();
-        // Refocusing an already-focused input is a no-op (doesn't move the
-        // caret), so depending on the whole `renaming` object — not just its
-        // `id` — is safe and keeps `react-hooks/exhaustive-deps` honest.
-    }, [renaming]);
-
     /**
      * In-app navigation between conversations (and to a new chat). A plain
      * `<a href>` reloaded the whole document, and the streamed response showed a
@@ -189,6 +179,16 @@ export function Sidebar({
         // letting it fall to <body> — the input is about to unmount.
         renameTriggerRef.current?.focus();
     }
+
+    // Focus the rename input exactly once when entering rename mode for a
+    // given item — not on every render (an inline `ref={el => el.focus()}`
+    // re-fires after each keystroke and steals the caret position).
+    useEffect(() => {
+        if (renaming) renameInputRef.current?.focus();
+        // Refocusing an already-focused input is a no-op (doesn't move the
+        // caret), so depending on the whole `renaming` object — not just its
+        // `id` — is safe and keeps `react-hooks/exhaustive-deps` honest.
+    }, [renaming]);
 
     if (!signedIn) {
         // A guest has no history to list; say what signing in gets them
