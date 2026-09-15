@@ -1,5 +1,22 @@
 # Changelog
 
+# [0.78.0](https://github.com/y0ngha/siglens/compare/v0.77.1...v0.78.0) (2026-09-15)
+
+
+### Bug Fixes
+
+* **ai:** 모바일 드로어가 이동 완료 후 닫혀 스크린리더 안내가 유지되게 ([2c56dec](https://github.com/y0ngha/siglens/commit/2c56deca64d6ca36f73694013bd3fa8597f1c097))
+* **ai:** PR [#827](https://github.com/y0ngha/siglens/issues/827) 리뷰 반영 — 턴 내 폴백 고정, 사용량 추출 이름 중립화, 프리웜 폴백 상수화 ([c01b958](https://github.com/y0ngha/siglens/commit/c01b9584355ec70acab42685ea2cf70fb44bab05))
+
+
+### Features
+
+* **ai:** 에이전트 get_bars_indicators에 규칙 기반 컨플루언스 추가 ([d48f8c5](https://github.com/y0ngha/siglens/commit/d48f8c5b5febd1351f5dbc95e16732304e65b289))
+* **ai:** ai.siglens.io 에이전트 DeepSeek 장애 시 Gemini 3.6 폴백 ([b813efa](https://github.com/y0ngha/siglens/commit/b813efa624dc09e30d299653288d68d2fdde9a64))
+* **analysis:** AI 공급자 장애 시 분석 탭에 모델 변경 안내 ([344fd6c](https://github.com/y0ngha/siglens/commit/344fd6ca409bb4471d9f5abb889dd357f6b8cb27))
+* **chat:** AI 공급자 장애 시 챗봇에 모델 변경 안내 ([6c552aa](https://github.com/y0ngha/siglens/commit/6c552aa94ec5c95a29687efebdcc64aa4cbfd770))
+* **prewarm:** SEO 프리웜 분석에 공급자 폴백 켜기 ([3f2eb45](https://github.com/y0ngha/siglens/commit/3f2eb45270378fee01afa9b066b3a20daefeb32b))
+
 ## [0.77.1](https://github.com/y0ngha/siglens/compare/v0.77.0...v0.77.1) (2026-09-15)
 
 
