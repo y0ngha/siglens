@@ -18,6 +18,7 @@ import {
     requestChatCompletion,
 } from '@y0ngha/siglens-core';
 import { headers } from 'next/headers';
+import * as OpenAI from 'openai';
 import { getOrCreateGuestId } from '@/shared/api/guestId';
 
 const GUEST_ID = '11111111-1111-1111-1111-111111111111';
@@ -60,10 +61,10 @@ vi.mock('@/shared/api/guestId', () => ({
 }));
 
 vi.mock('@/entities/llm-provider', async () => {
-    // chatAction resolves the provider via getLlmProvider() (barrel re-export).
-    // Outside E2E it returns callAiProviderRouter, so the mocked getLlmProvider
-    // returns the same mocked router instance the assertions reference by
-    // identity ({ callAiProvider: callAiProviderRouter }).
+    // chatAction resolves the provider via getLlmProvider() (barrel re-export)
+    // and wraps it to classify raw provider errors, so core receives a wrapper,
+    // not this instance — the wrapper's delegation is asserted in
+    // 'AI provider 장애 판정'.
     const callAiProviderRouter = vi.fn();
     // getServerPrimaryKey moved to lib/serverKeys — import the real
     // implementation (not the whole barrel, to avoid loading SDK adapters)
@@ -189,7 +190,7 @@ describe('chatAction 함수는', () => {
                     userApiKey: undefined,
                     model: 'gemini-3.6-flash',
                 }),
-                { callAiProvider: callAiProviderRouter }
+                { callAiProvider: expect.any(Function) }
             );
         });
     });
@@ -215,7 +216,7 @@ describe('chatAction 함수는', () => {
                     userApiKey: undefined,
                     model: 'claude-haiku-4-5',
                 }),
-                { callAiProvider: callAiProviderRouter }
+                { callAiProvider: expect.any(Function) }
             );
         });
     });
@@ -241,7 +242,7 @@ describe('chatAction 함수는', () => {
                     userApiKey: undefined,
                     model: 'gpt-5.6-luna',
                 }),
-                { callAiProvider: callAiProviderRouter }
+                { callAiProvider: expect.any(Function) }
             );
         });
     });
@@ -267,8 +268,120 @@ describe('chatAction 함수는', () => {
                     userApiKey: undefined,
                     model: 'deepseek-v4.1-flash',
                 }),
-                { callAiProvider: callAiProviderRouter }
+                { callAiProvider: expect.any(Function) }
             );
+        });
+    });
+
+    /**
+     * core는 provider 에러를 `server_busy`/`server_error`/`rate_limited`로만 돌려줘
+     * 원시 에러가 사라진다. chatAction이 호출을 감싸 원시 에러를 판정하는지를
+     * core를 흉내 낸 mock으로 끝까지 돌려 확인한다.
+     */
+    describe('AI provider 장애 판정', () => {
+        const mockRouter = callAiProviderRouter as unknown as Mock;
+
+        function simulateCore(coreErrorCode: 'server_busy' | 'server_error') {
+            mockRequestChatCompletion.mockImplementation(
+                async (params, deps) => {
+                    try {
+                        const message = await deps.callAiProvider({
+                            model: params.model,
+                            contents: [],
+                        } as never);
+                        return { ok: true, message, remainingTokens: 3 };
+                    } catch {
+                        return { ok: false, error: coreErrorCode };
+                    }
+                }
+            );
+        }
+
+        async function send(): Promise<unknown> {
+            return chatAction(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'gemini-3.6-flash'
+            );
+        }
+
+        it('감싼 provider는 라우터에 그대로 위임한다', async () => {
+            simulateCore('server_error');
+            mockRouter.mockResolvedValueOnce('답변');
+
+            await expect(send()).resolves.toEqual({
+                ok: true,
+                message: '답변',
+                remainingTokens: 3,
+            });
+            expect(mockRouter).toHaveBeenCalledWith(
+                expect.objectContaining({ model: 'gemini-3.6-flash' })
+            );
+        });
+
+        it('provider 503은 ai_server_unstable로 바꾼다', async () => {
+            simulateCore('server_busy');
+            mockRouter.mockRejectedValueOnce(
+                new OpenAI.InternalServerError(
+                    503,
+                    undefined,
+                    'overloaded',
+                    new Headers()
+                )
+            );
+
+            await expect(send()).resolves.toEqual({
+                ok: false,
+                error: 'ai_server_unstable',
+            });
+        });
+
+        it('DEEPSEEK_STALLED는 ai_server_unstable로 바꾼다', async () => {
+            simulateCore('server_error');
+            mockRouter.mockRejectedValueOnce(
+                Object.assign(new Error('stalled'), {
+                    code: 'DEEPSEEK_STALLED',
+                })
+            );
+
+            await expect(send()).resolves.toEqual({
+                ok: false,
+                error: 'ai_server_unstable',
+            });
+        });
+
+        it('BYOK 키의 401은 core 코드를 그대로 둔다', async () => {
+            simulateCore('server_error');
+            mockRouter.mockRejectedValueOnce(
+                new OpenAI.AuthenticationError(
+                    401,
+                    undefined,
+                    'Incorrect API key',
+                    new Headers()
+                )
+            );
+
+            await expect(send()).resolves.toEqual({
+                ok: false,
+                error: 'server_error',
+            });
+        });
+
+        it('provider를 부르기 전의 core 실패는 그대로 둔다', async () => {
+            mockRequestChatCompletion.mockResolvedValueOnce({
+                ok: false,
+                error: 'server_busy',
+            });
+
+            await expect(send()).resolves.toEqual({
+                ok: false,
+                error: 'server_busy',
+            });
+            expect(mockRouter).not.toHaveBeenCalled();
         });
     });
 
@@ -594,7 +707,7 @@ describe('chatAction 함수는', () => {
                     model: DEEPSEEK_V4_1_FLASH_MODEL,
                 }),
                 expect.objectContaining({
-                    callAiProvider: callAiProviderRouter,
+                    callAiProvider: expect.any(Function),
                 })
             );
         });

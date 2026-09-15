@@ -164,6 +164,8 @@ export type AnalysisGateErrorCode =
     | 'tier_premium_blocked'
     | 'invalid_model'
     | 'api_key_corrupted'
+    /** AI provider 장애(5xx·429·연결 실패·스트림 정지). `isAiProviderFailure` 참고. */
+    | 'ai_server_unstable'
     | 'unexpected_error';
 
 /** Structured gate error returned from action layer. */

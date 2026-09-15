@@ -11,7 +11,7 @@ import { DrizzleUserRepository } from '@/entities/auth/api';
 import { getUserTier } from '@/entities/user-tier';
 import type {
     AnalysisResponse,
-    ChatActionResult,
+    CallAiProvider,
     ChatMessage,
     CounterStore,
     CurrentAnalysisContext,
@@ -39,6 +39,8 @@ import {
 } from '@/shared/config/marketProfile';
 import { getClientIp } from '@/shared/api/getClientIp';
 import { getOrCreateGuestId } from '@/shared/api/guestId';
+import { isAiProviderFailure } from '@/shared/lib/aiProviderFailure';
+import type { SymbolChatActionResult } from '../model';
 
 /**
  * Resolve the user's tier and BYOK key for the given model.
@@ -138,7 +140,7 @@ export async function chatAction(
      */
     currentAnalysisContext: CurrentAnalysisContext | null = null,
     assetClass: AssetClass = getDescriptor(DEFAULT_MARKET_PROFILE).assetClass
-): Promise<ChatActionResult> {
+): Promise<SymbolChatActionResult> {
     try {
         const provider = getProviderForModel(model);
         // 답변 언어 지시. core의 system prompt는 한국어를 요구하므로, 호출자의
@@ -208,6 +210,23 @@ export async function chatAction(
             }
         }
 
+        /**
+         * core는 provider 에러를 `rate_limited`/`server_busy`/`server_error`로만
+         * 돌려줘 원시 에러가 사라진다. 호출을 감싸 원시 에러를 여기서 판정해 두고,
+         * 실패 결과일 때만 `ai_server_unstable`로 바꾼다. 에러는 그대로 다시 던져
+         * core의 토큰 환불 정책은 건드리지 않는다.
+         */
+        const llm = getLlmProvider();
+        let providerFailed = false;
+        const callAiProvider: CallAiProvider = async options => {
+            try {
+                return await llm(options);
+            } catch (error) {
+                providerFailed = isAiProviderFailure(error);
+                throw error;
+            }
+        };
+
         const r = await requestChatCompletion(
             {
                 clientIp: clientKey,
@@ -230,10 +249,11 @@ export async function chatAction(
                 // core는 심볼에서 통화를 추론하지 않는다 — 한국 종목이면 원화 표기·프레이밍.
                 currency: currencyForSymbol(symbol),
             },
-            {
-                callAiProvider: getLlmProvider(),
-            }
+            { callAiProvider }
         );
+        if (!r.ok && providerFailed) {
+            return { ok: false, error: 'ai_server_unstable' };
+        }
         return r;
     } catch {
         return { ok: false, error: 'server_error' };

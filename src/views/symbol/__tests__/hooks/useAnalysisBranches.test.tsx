@@ -223,7 +223,7 @@ describe('useAnalysis — branch coverage', () => {
             });
         });
 
-        it('maps AI_SERVER_UNSTABLE thrown error to a Korean user message', async () => {
+        it('maps AI_SERVER_UNSTABLE thrown error to the change-model guidance', async () => {
             // core's withRetry throws new Error('AI_SERVER_UNSTABLE') when the
             // AI provider stays unavailable after all retry attempts. The SSE
             // heartbeatStream re-emits this as an SSE error event, runAnalysisStream
@@ -236,8 +236,8 @@ describe('useAnalysis — branch coverage', () => {
             );
 
             await waitFor(() => {
-                expect(result.current.analysisError).toContain(
-                    '예상치 못한 오류가 발생했습니다'
+                expect(result.current.analysisError).toBe(
+                    'AI 서버가 불안정해 분석하지 못했습니다. 우측 상단 톱니바퀴에서 모델을 변경해 주세요.'
                 );
             });
         });

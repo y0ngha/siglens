@@ -44,7 +44,7 @@
                 "timeout": "分析已超时，请重试。",
                 "unexpected": "发生意外错误。",
                 "unreadable": "无法读取分析结果，请重试。",
-                "unstable": "发生意外错误，请稍后再试。"
+                "unstable": "AI 服务器不稳定，未能完成分析。请通过右上角的齿轮图标更换模型。"
             }
         },
         "backtesting": {
@@ -1354,6 +1354,7 @@
         },
         "lib": {
             "byokGate": {
+                "ai_server_unstable": "AI 服务器不稳定，未能完成分析。请通过右上角的齿轮图标更换模型。",
                 "api_key_corrupted": "无法解密已保存的 API 密钥，请重新注册。",
                 "invalid_model": "未知模型。",
                 "tier_premium_blocked": "所选模型仅在高级等级可用。请注册 API 密钥或升级等级。",
@@ -2377,6 +2378,7 @@
             },
             "useChat": {
                 "modelNotAllowed": "所选模型在当前会员等级下不可用，请选择其他模型。",
+                "providerUnstable": "AI 服务器不稳定，未能回答。请在聊天机器人中更换模型。",
                 "rateLimited": "AI 服务器正忙，请稍后再试。",
                 "serverBusy": "AI 服务器正忙，请换一个模型后重试。",
                 "serverError": "发生临时错误，请重试。",
