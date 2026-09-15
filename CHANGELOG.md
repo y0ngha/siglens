@@ -1,5 +1,21 @@
 # Changelog
 
+# [0.77.0](https://github.com/y0ngha/siglens/compare/v0.76.0...v0.77.0) (2026-09-15)
+
+
+### Bug Fixes
+
+* **ai:** 대화 간 이동을 클라이언트 전환으로 바꿔 스켈레톤 깜빡임 제거 ([721c41b](https://github.com/y0ngha/siglens/commit/721c41bd9434e1ff2e80e81aca65c1fa30e2c742))
+* **ai:** PR [#823](https://github.com/y0ngha/siglens/issues/823) 리뷰 반영 — 드로어 닫힘 배선 테스트, opacity 대신 텍스트 토큰, 내비게이션 헬퍼 통합 ([60f9165](https://github.com/y0ngha/siglens/commit/60f9165e7dffeb08f8db3e7f5577b0332a653c44))
+* **ai:** PR [#823](https://github.com/y0ngha/siglens/issues/823) 리뷰 반영 — 숨긴 헤더·대화 바 inert 처리, 스크롤 훅 widgets/layout로 이동, 훅 순서 정리 ([dbc7187](https://github.com/y0ngha/siglens/commit/dbc7187e16e12eb5055718ac83b484ac7d3f4fff))
+* **ai:** PR [#823](https://github.com/y0ngha/siglens/issues/823) 리뷰 반영 — 헤더 내부 포커스 중에는 숨기지 않음, aria-busy 변형 명시, 위젯 import 엣지 문서화 ([101eac9](https://github.com/y0ngha/siglens/commit/101eac9c25b9996b672892e0158ac54cbf615ad2))
+
+
+### Features
+
+* **ai:** 모바일 대화 목록 드로어 바깥 터치로 닫기, 스크롤 방향에 따라 헤더·대화 바 숨김/표시 ([0d13aaa](https://github.com/y0ngha/siglens/commit/0d13aaaff58dafbee1310bcdb01dc87bf4366497))
+* **ai:** PR [#823](https://github.com/y0ngha/siglens/issues/823) 제안 반영 — 대화 전환 중 스크린리더 상태 알림 ([f1ef66f](https://github.com/y0ngha/siglens/commit/f1ef66f5adfd029b0dc806a02ad2efbf4823bfbc))
+
 # [0.76.0](https://github.com/y0ngha/siglens/compare/v0.75.3...v0.76.0) (2026-09-14)
 
 
