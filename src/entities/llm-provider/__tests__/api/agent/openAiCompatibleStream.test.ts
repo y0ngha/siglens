@@ -10,11 +10,12 @@ const { mockCreate, MockOpenAI } = vi.hoisted(() => {
 vi.mock('openai', () => ({ default: MockOpenAI }));
 
 import {
+    AGENT_NARRATION_HOLD_CHARS,
     AGENT_PROVIDER_STALLED,
     AGENT_STALL_TIMEOUT_MS,
     streamOpenAiCompatibleAgent,
 } from '@/entities/llm-provider/api/agent/openAiCompatibleStream';
-import type { AgentStreamEvent } from '@y0ngha/siglens-core';
+import { AGENT_TOOL_SPECS, type AgentStreamEvent } from '@y0ngha/siglens-core';
 
 const REQ = { baseURL: 'https://x', messages: [], extraBody: {} };
 
@@ -139,5 +140,107 @@ describe('streamOpenAiCompatibleAgent stall watchdog', () => {
             REQ
         );
         expect(vi.getTimerCount()).toBe(0);
+    });
+});
+
+describe('streamOpenAiCompatibleAgent pre-tool narration hold', () => {
+    const TOOLS = AGENT_TOOL_SPECS.filter(t => t.name === 'get_quote');
+
+    function streamOf(chunks: unknown[]) {
+        mockCreate.mockImplementation(async () =>
+            (async function* () {
+                yield* chunks;
+            })()
+        );
+    }
+
+    function withTools() {
+        return { ...opts(new AbortController().signal), tools: TOOLS };
+    }
+
+    function textDeltas(o: ReturnType<typeof withTools>): string {
+        return o.onEvent.mock.calls
+            .map(([e]) => (e.type === 'text' ? e.delta : ''))
+            .join('');
+    }
+
+    const toolCallChunk = {
+        choices: [
+            {
+                delta: {
+                    tool_calls: [
+                        {
+                            index: 0,
+                            id: 'c1',
+                            function: { name: 'get_quote', arguments: '{}' },
+                        },
+                    ],
+                },
+            },
+        ],
+    };
+
+    beforeEach(() => vi.clearAllMocks());
+
+    it('도구 호출 앞의 안내 문장은 스트리밍하지 않고 결과 text에서도 뺀다', async () => {
+        streamOf([
+            { choices: [{ delta: { content: "I'll check SIGLENS " } }] },
+            { choices: [{ delta: { content: 'data for AAPL.' } }] },
+            toolCallChunk,
+            { choices: [{ delta: {}, finish_reason: 'tool_calls' }] },
+        ]);
+        const o = withTools();
+        const result = await streamOpenAiCompatibleAgent(o, REQ);
+        expect(textDeltas(o)).toBe('');
+        expect(result.text).toBe('');
+        expect(result.stopReason).toBe('tool_use');
+        expect(result.toolCalls).toHaveLength(1);
+    });
+
+    it('도구 없이 끝난 짧은 답은 스트림 끝에서 한 번에 내보낸다', async () => {
+        streamOf([
+            { choices: [{ delta: { content: '짧은 ' } }] },
+            {
+                choices: [
+                    { delta: { content: '답입니다.' }, finish_reason: 'stop' },
+                ],
+            },
+        ]);
+        const o = withTools();
+        const result = await streamOpenAiCompatibleAgent(o, REQ);
+        expect(textDeltas(o)).toBe('짧은 답입니다.');
+        expect(result.text).toBe('짧은 답입니다.');
+    });
+
+    it('보류 한도를 넘은 답은 그때부터 그대로 스트리밍한다', async () => {
+        const head = 'a'.repeat(AGENT_NARRATION_HOLD_CHARS);
+        streamOf([
+            { choices: [{ delta: { content: head } }] },
+            {
+                choices: [
+                    { delta: { content: 'tail' }, finish_reason: 'stop' },
+                ],
+            },
+        ]);
+        const o = withTools();
+        const result = await streamOpenAiCompatibleAgent(o, REQ);
+        const deltas = o.onEvent.mock.calls.flatMap(([e]) =>
+            e.type === 'text' ? [e.delta] : []
+        );
+        expect(deltas).toEqual([head, 'tail']);
+        expect(result.text).toBe(`${head}tail`);
+    });
+
+    it('도구를 주지 않은 스텝은 보류 없이 바로 스트리밍한다', async () => {
+        streamOf([
+            { choices: [{ delta: { content: 'a' } }] },
+            { choices: [{ delta: { content: 'b' }, finish_reason: 'stop' }] },
+        ]);
+        const o = opts(new AbortController().signal);
+        await streamOpenAiCompatibleAgent(o, REQ);
+        const deltas = o.onEvent.mock.calls.flatMap(([e]) =>
+            e.type === 'text' ? [e.delta] : []
+        );
+        expect(deltas).toEqual(['a', 'b']);
     });
 });
