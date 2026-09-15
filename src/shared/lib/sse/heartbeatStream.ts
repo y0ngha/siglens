@@ -1,4 +1,8 @@
-import { isPassThroughStreamError } from './LocalizedStreamError';
+import { isAiProviderFailure } from '../aiProviderFailure';
+import {
+    AI_SERVER_UNSTABLE,
+    LocalizedStreamError,
+} from './LocalizedStreamError';
 import { registerActiveStream } from './activeStreams';
 
 /**
@@ -65,6 +69,25 @@ interface HeartbeatStreamOptions {
      * 빠졌을 때 다시 한국어가 고정되고 타입체커가 잡지 못한다.
      */
     readonly genericErrorMessage: string;
+}
+
+/**
+ * 브라우저로 보낼 `error` 이벤트 문구.
+ *
+ * 이미 현지화된 메시지(`LocalizedStreamError`)는 그대로, AI provider 장애는
+ * `AI_SERVER_UNSTABLE` sentinel로 보낸다 — 클라이언트가 "모델을 변경해 주세요"
+ * 안내로 매핑한다. 원시 SDK 메시지를 흘리지 않고 sentinel로 바꾸는 건 그 메시지에
+ * 요청 ID·키 힌트가 섞일 수 있어서다. 나머지는 내부 오류이므로 호출자가 준
+ * **로케일별** 제네릭 문구로 교체한다 — 환경변수·내부 스택 노출도 함께 막는다.
+ * 문자열 생김새(한글 포함 여부)로 판정하지 않는 이유는 `LocalizedStreamError` JSDoc 참고.
+ */
+function toClientErrorMessage(
+    err: unknown,
+    genericErrorMessage: string
+): string {
+    if (err instanceof LocalizedStreamError) return err.message;
+    if (isAiProviderFailure(err)) return AI_SERVER_UNSTABLE;
+    return genericErrorMessage;
 }
 
 export function heartbeatStream<T>(
@@ -150,17 +173,10 @@ export function heartbeatStream<T>(
                     if (logFailures) {
                         console.error('[analysis-stream] failed:', err);
                     }
-                    const rawMessage =
-                        err instanceof Error ? err.message : String(err);
-                    // 이미 현지화된 메시지(`LocalizedStreamError`)와 core의
-                    // ASCII sentinel만 그대로 전달한다. 나머지는 내부 오류이므로
-                    // 호출자가 준 **로케일별** 제네릭 문구로 교체한다 — 환경변수·
-                    // 내부 스택이 브라우저에 노출되는 것도 함께 막는다.
-                    // 문자열 생김새(한글 포함 여부)로 판정하지 않는 이유는
-                    // `LocalizedStreamError` JSDoc 참고.
-                    const message = isPassThroughStreamError(err)
-                        ? rawMessage
-                        : genericErrorMessage;
+                    const message = toClientErrorMessage(
+                        err,
+                        genericErrorMessage
+                    );
                     send(
                         `event: error\ndata: ${JSON.stringify({ message })}\n\n`
                     );

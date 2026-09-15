@@ -170,6 +170,29 @@ describe('useChat — branch coverage', () => {
             expect(aiMsg?.content).toContain('무료 질문');
         });
 
+        it('ai_server_unstable은 챗봇에서 모델을 바꾸라는 안내를 띄운다', async () => {
+            mockChatAction.mockResolvedValue({
+                ok: false,
+                error: 'ai_server_unstable',
+            });
+
+            const { Wrapper } = makeWrapper();
+            const { result } = renderHook(() => useChat({ symbol: 'AAPL' }), {
+                wrapper: Wrapper,
+            });
+
+            await act(async () => {
+                await result.current.sendMessage('hello');
+            });
+
+            const aiMsg = result.current.messages
+                .filter(isChatMessage)
+                .find(m => m.role === 'model');
+            expect(aiMsg?.content).toBe(
+                'AI 서버가 불안정해 답변하지 못했습니다. 챗봇에서 모델을 변경해 주세요.'
+            );
+        });
+
         it('falls back to server_error for unknown error code', async () => {
             mockChatAction.mockResolvedValue({
                 ok: false,

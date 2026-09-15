@@ -361,6 +361,24 @@ describe('submitNewsAnalysisAction 함수는', () => {
         );
     });
 
+    it('returns ai_server_unstable when the AI provider fails (retry exhausted)', async () => {
+        mockRunNewsAnalysis.mockRejectedValueOnce(
+            new Error('AI_SERVER_UNSTABLE')
+        );
+
+        const result = await submitNewsAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            MODEL_ID,
+            'ko'
+        );
+
+        expect(result).toMatchObject({
+            status: 'error',
+            error: expect.objectContaining({ code: 'ai_server_unstable' }),
+        });
+    });
+
     it('returns unexpected_error result when an unexpected error is thrown', async () => {
         mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
         mockResolveTierAndByok.mockRejectedValue(

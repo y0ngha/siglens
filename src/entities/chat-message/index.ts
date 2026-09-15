@@ -6,3 +6,4 @@ export {
 } from './lib/fallbackAnalysis';
 
 // actions are imported from @/entities/chat-message/actions
+export type { SymbolChatActionResult, SymbolChatErrorCode } from './model';
