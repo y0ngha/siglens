@@ -1,6 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import {
+    useEffect,
+    useRef,
+    useState,
+    useTransition,
+    type KeyboardEvent,
+    type MouseEvent,
+} from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import {
@@ -35,6 +42,8 @@ interface Props {
     readonly onRenamed: (id: string, title: string) => void;
     /** Drops a deleted conversation from the list the parent owns. */
     readonly onDeleted: (id: string) => void;
+    /** Called when the rail starts an in-app navigation (the mobile drawer closes on it). */
+    readonly onNavigate?: () => void;
 }
 
 interface RailFooterProps {
@@ -90,9 +99,12 @@ export function Sidebar({
     siteUrl,
     onRenamed,
     onDeleted,
+    onNavigate,
 }: Props) {
     const t = useTranslations('widgets.agent-chat');
     const router = useRouter();
+    const [isNavigating, startNavigation] = useTransition();
+    const [pendingHref, setPendingHref] = useState<string | null>(null);
     const [filter, setFilter] = useState('');
     const [renaming, setRenaming] = useState<{
         id: string;
@@ -136,6 +148,35 @@ export function Sidebar({
         enabled: renamingId !== null,
     });
 
+    /**
+     * In-app navigation between conversations (and to a new chat). A plain
+     * `<a href>` reloaded the whole document, and the streamed response showed a
+     * loading skeleton before the conversation — a flash on every switch
+     * (2026-09-15 사용자 요청). `router.push` inside a transition keeps the
+     * current screen until the next one is ready; the clicked row dims meanwhile.
+     * The `href` stays on the anchor so middle-click / ⌘-click still open a tab.
+     */
+    function navigate(
+        event: MouseEvent<HTMLAnchorElement>,
+        href: string
+    ): void {
+        if (
+            event.defaultPrevented ||
+            event.button !== 0 ||
+            event.metaKey ||
+            event.ctrlKey ||
+            event.shiftKey ||
+            event.altKey
+        )
+            return;
+        event.preventDefault();
+        onNavigate?.();
+        setPendingHref(href);
+        startNavigation(() => router.push(href));
+    }
+    const isPending = (href: string): boolean =>
+        isNavigating && pendingHref === href;
+
     function closeRename(): void {
         setRenaming(null);
         // Return focus to the ✎ button that opened rename mode instead of
@@ -178,7 +219,9 @@ export function Sidebar({
         >
             <a
                 href={`${localePrefix}/`}
-                className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border-control bg-secondary-800 px-3 text-sm font-medium text-secondary-100 hover:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                onClick={e => navigate(e, `${localePrefix}/`)}
+                aria-busy={isPending(`${localePrefix}/`) || undefined}
+                className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border-control bg-secondary-800 px-3 text-sm font-medium text-secondary-100 hover:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none aria-busy:opacity-60"
             >
                 <PlusIcon className="size-4 text-primary-400" />
                 {t('Sidebar.newChat')}
@@ -283,12 +326,23 @@ export function Sidebar({
                                     ) : (
                                         <a
                                             href={`${localePrefix}/c/${item.id}`}
+                                            onClick={e =>
+                                                navigate(
+                                                    e,
+                                                    `${localePrefix}/c/${item.id}`
+                                                )
+                                            }
                                             aria-current={
                                                 item.id === activeId
                                                     ? 'page'
                                                     : undefined
                                             }
-                                            className="min-w-0 flex-1 truncate py-1.5 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                            aria-busy={
+                                                isPending(
+                                                    `${localePrefix}/c/${item.id}`
+                                                ) || undefined
+                                            }
+                                            className="min-w-0 flex-1 truncate py-1.5 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none aria-busy:opacity-60"
                                         >
                                             {item.title}
                                         </a>
@@ -305,11 +359,14 @@ export function Sidebar({
                                                             item.id
                                                         );
                                                     if (!ok) return;
-                                                    if (item.id === activeId)
-                                                        router.push(
-                                                            `${localePrefix}/`
+                                                    if (item.id === activeId) {
+                                                        onNavigate?.();
+                                                        startNavigation(() =>
+                                                            router.push(
+                                                                `${localePrefix}/`
+                                                            )
                                                         );
-                                                    else onDeleted(item.id);
+                                                    } else onDeleted(item.id);
                                                 }}
                                                 className="rounded px-1 font-medium underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                                             >

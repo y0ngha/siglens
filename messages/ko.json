@@ -2108,9 +2108,6 @@
                 "loginCta": "로그인",
                 "openConversations": "대화 목록"
             },
-            "ChatSkeleton": {
-                "loading": "불러오는 중…"
-            },
             "Composer": {
                 "4077ce": "전송",
                 "betaNotice": "Beta · 답변에 오류가 있을 수 있으며 투자 조언이 아닙니다.",

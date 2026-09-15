@@ -258,6 +258,57 @@ describe('Sidebar', () => {
         expect(deleteConversationAction).not.toHaveBeenCalled();
     });
 
+    /**
+     * Switching conversations is a client transition, not a document reload: the
+     * reload streamed a loading skeleton before every conversation (2026-09-15).
+     * Modified clicks keep the browser's own behaviour (new tab / window).
+     */
+    describe('in-app navigation', () => {
+        const renderRail = () =>
+            wrap(
+                <Sidebar
+                    {...handlers}
+                    onNavigate={onNavigate}
+                    signedIn
+                    loginHref="/login"
+                    siteUrl="https://siglens.io"
+                    items={items}
+                    activeId={null}
+                    localePrefix="/en"
+                />
+            );
+        const onNavigate = vi.fn();
+
+        beforeEach(() => {
+            onNavigate.mockClear();
+        });
+
+        it('opens a conversation with router.push instead of reloading the page', () => {
+            renderRail();
+            const link = screen.getByRole('link', { name: 'My chat' });
+            const notPrevented = fireEvent.click(link);
+            expect(notPrevented).toBe(false);
+            expect(router.push).toHaveBeenCalledWith('/en/c/c1');
+            expect(onNavigate).toHaveBeenCalledTimes(1);
+        });
+
+        it('starts a new chat the same way', () => {
+            renderRail();
+            fireEvent.click(screen.getByRole('link', { name: '새 대화' }));
+            expect(router.push).toHaveBeenCalledWith('/en/');
+        });
+
+        it('leaves ⌘/Ctrl/middle clicks to the browser', () => {
+            renderRail();
+            const link = screen.getByRole('link', { name: 'My chat' });
+            expect(fireEvent.click(link, { metaKey: true })).toBe(true);
+            expect(fireEvent.click(link, { ctrlKey: true })).toBe(true);
+            expect(fireEvent.click(link, { button: 1 })).toBe(true);
+            expect(router.push).not.toHaveBeenCalled();
+            expect(onNavigate).not.toHaveBeenCalled();
+        });
+    });
+
     describe('grouping and navigation', () => {
         const day = (d: number, h = 9) =>
             new Date(2026, 8, 12 - d, h).toISOString();

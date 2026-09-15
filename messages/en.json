@@ -3466,9 +3466,6 @@
                 "loginCta": "Log in",
                 "openConversations": "Conversations"
             },
-            "ChatSkeleton": {
-                "loading": "Loading…"
-            },
             "Composer": {
                 "4077ce": "Send",
                 "d2e7e7": "Stop",

@@ -10,6 +10,12 @@ import { SITE_URL } from '@/shared/lib/seo';
 import { ChatShell } from '@/widgets/agent-chat';
 import { maybeHandoffRedirect } from '../../handoffRedirect';
 
+/**
+ * No `loading.tsx` here on purpose. The rail switches conversations with a
+ * client transition that keeps the current screen until this page is ready, and
+ * a route-level skeleton would replace that with a flash on every switch
+ * (2026-09-15 사용자 요청). Direct loads just wait for the two fast reads below.
+ */
 export const dynamic = 'force-dynamic';
 
 export default async function ConversationPage({
@@ -35,6 +41,12 @@ export default async function ConversationPage({
     const localePrefix = localePath(locale, '').replace(/\/$/, '');
     return (
         <ChatShell
+            // One instance per conversation. The rail now switches conversations
+            // with a client transition, and ChatShell/useAgentStream seed their
+            // state (transcript, conversation id, sidebar list) once on mount —
+            // the key guarantees a fresh instance instead of relying on the
+            // router's segment keys to remount it.
+            key={conversation.id}
             conversationId={conversation.id}
             initialMessages={conversation.messages}
             conversations={conversations}

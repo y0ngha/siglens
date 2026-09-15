@@ -3466,9 +3466,6 @@
                 "loginCta": "登录",
                 "openConversations": "对话列表"
             },
-            "ChatSkeleton": {
-                "loading": "加载中…"
-            },
             "Composer": {
                 "4077ce": "发送",
                 "d2e7e7": "停止",

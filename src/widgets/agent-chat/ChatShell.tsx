@@ -103,6 +103,7 @@ export function ChatShell({
             signedIn={signedIn}
             loginHref={login}
             siteUrl={siteUrl}
+            onNavigate={() => setDrawerOpen(false)}
         />
     );
 
