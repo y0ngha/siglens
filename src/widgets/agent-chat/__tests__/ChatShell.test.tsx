@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import {
     afterEach,
@@ -14,6 +14,14 @@ import ko from '../../../../messages/ko.json';
 
 const router = vi.hoisted(() => ({ refresh: vi.fn(), push: vi.fn() }));
 vi.mock('next/navigation', () => ({ useRouter: () => router }));
+// `useHideOnScrollDown` now comes from the `@/widgets/layout` barrel, which
+// eagerly re-exports `LocaleSwitcher` too — that module reads next-intl's
+// navigation helpers at import time, which need a `redirect` export this
+// file's `next/navigation` mock (above) doesn't provide. Stubbing it here
+// avoids pulling that chain in (same pattern as `HeaderMobileMenu.test.tsx`).
+vi.mock('@/widgets/layout/LocaleSwitcher', () => ({
+    LocaleSwitcher: () => null,
+}));
 
 const mockStream = vi.hoisted(() => ({
     messages: [
@@ -251,6 +259,64 @@ describe('ChatShell chrome', () => {
         expect(screen.getAllByText('대화 목록').length).toBeGreaterThanOrEqual(
             2
         ); // mobile-bar button label + drawer title
+    });
+
+    /** The drawer is non-modal, so vaul itself ignores outside presses (2026-09-15 사용자 요청). */
+    it('closes the mobile drawer when the user presses outside it', () => {
+        wrap(
+            <ChatShell
+                conversationId="c1"
+                initialMessages={[]}
+                conversations={[]}
+                signedIn
+                localePrefix=""
+                siteUrl="https://siglens.io"
+                currentPath="/c1"
+            />
+        );
+        const trigger = screen.getByRole('button', { name: /대화 목록/ });
+        fireEvent.pointerDown(trigger);
+        fireEvent.click(trigger);
+        expect(trigger).toHaveAttribute('aria-expanded', 'true');
+
+        const drawer = document.getElementById('agent-chat-sidebar-drawer')!;
+        // vaul starts a drag on pointerdown inside the drawer and captures the
+        // pointer; jsdom has no pointer capture API.
+        drawer.setPointerCapture = vi.fn();
+        drawer.releasePointerCapture = vi.fn();
+        fireEvent.pointerDown(drawer);
+        expect(trigger).toHaveAttribute('aria-expanded', 'true');
+
+        fireEvent.pointerDown(document.body);
+        expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('clicking a conversation link in the mobile drawer navigates and closes the drawer', () => {
+        router.push.mockClear();
+        wrap(
+            <ChatShell
+                conversationId="c1"
+                initialMessages={[]}
+                conversations={[
+                    { id: 'c9', title: '대화 아홉', lastMessageAt: '' },
+                ]}
+                signedIn
+                localePrefix=""
+                siteUrl="https://siglens.io"
+                currentPath="/c1"
+            />
+        );
+        const trigger = screen.getByRole('button', { name: /대화 목록/ });
+        fireEvent.click(trigger);
+        expect(trigger).toHaveAttribute('aria-expanded', 'true');
+        // Scope to the drawer's own content, not the desktop `aside` copy of
+        // the same rail — both render the link, but only the drawer's is the
+        // one under test here.
+        const drawer = document.getElementById('agent-chat-sidebar-drawer')!;
+        const link = within(drawer).getByRole('link', { name: '대화 아홉' });
+        fireEvent.click(link, { button: 0 });
+        expect(router.push).toHaveBeenCalledWith('/c/c9');
+        expect(trigger).toHaveAttribute('aria-expanded', 'false');
     });
 });
 

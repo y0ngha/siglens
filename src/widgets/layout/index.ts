@@ -10,3 +10,4 @@ export { ContactDialog } from './ContactDialog';
 export { CurrentYear } from './CurrentYear';
 export { SiteJsonLd } from './SiteJsonLd';
 export { LocaleSwitcher } from './LocaleSwitcher';
+export { useHideOnScrollDown } from './hooks/useHideOnScrollDown';

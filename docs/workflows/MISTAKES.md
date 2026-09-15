@@ -982,6 +982,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ Fixture values differ from assertion literals; mutation test (revert prop to hardcoded string) fails both test cases
     ✅ When one fixture is derived from another, explicitly override each property: { ...base, specificProp: differentValue }
     → Recurring: feat/asset-class-navigation R4 (fixture parity trap, spread inheritance) — 2 occurrences
+
+24. Consumer wiring of a callback/option must be asserted where the consumer lives, not only where the callee is tested with a mock
+    → Testing the callee with an injected mock proves the callee calls it, not that the real consumer passes the right thing
+    → Mocking the library that receives the options (e.g. constructors that swallow their args) hides the wiring entirely
+    → Mutation-verify: replace the consumer's wiring with a no-op; a test must fail
+    ❌ Sidebar.test.tsx injects a mock `onNavigate`; deleting ChatShell's `onNavigate={() => setDrawerOpen(false)}` still passed
+    ❌ providers.test.tsx mocked @tanstack/react-query with classes discarding constructor args; deleting the QueryCache/MutationCache onError + retry wiring still passed
+    ✅ ChatShell.test.tsx: open the mobile drawer, click a conversation link inside it → router.push called and drawer aria-expanded=false
+    ✅ providers.test.tsx: real QueryClient; call getQueryCache().config.onError / getMutationCache().config.onError / defaultOptions.queries.retry and assert the helper spies
+    → Recurring: PR #823 (ChatShell onNavigate wiring), PR #820 (providers.tsx version-skew reload wiring) — 2 occurrences
 ```
 
 ---
@@ -1131,6 +1141,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ <h2 className="HEADING_SECTION">{title}</h2>  // semantic token applied
    ✅ <h3 className={cn(HEADING_SUBSECTION, 'text-xs')}>{subtitle}</h3>  // colour via token, size via utility
    → Recurring: /[symbol]/overall route (9 colourless h2), /[symbol]/news route (2+ colourless headings) — W6c + W6d
+
+10. Visually hidden interactive elements remain focusable without inert attribute
+   → When moving interactive elements off-screen with transform/opacity (display:none and visibility:hidden already drop them from tab order), remove them from tab order using inert attribute (WCAG 2.4.7 Focus Visible)
+   → Inert prevents keyboard users from tabbing into hidden controls and experiencing invisible focus indicators
+   → Edge case: inert applied unconditionally to a container may blur focus mid-interaction if document.activeElement is inside the hidden scope; add conditional skip when active focus is within hidden container
+   ❌ <header className={hidden ? '-translate-y-full' : ''}>  // visual hide only, controls stay in tab order
+   ❌ <header inert>  // inert applied unconditionally, blurs focus if user was interacting inside the hidden container
+   ✅ <header inert={isHidden} className={isHidden ? 'translate-x-full' : ''}>  // inert synchronized with visibility state
+   ✅ useHideOnScroll hook: skip hiding if document.activeElement is inside `[data-scroll-chrome]`, preserving focus during interaction
+   → Recurring: PR #823 (Round 2: inert omission; Round 5: inert edge case with focus mid-interaction) — 2 occurrences same PR, same feature
 ```
 
 ---

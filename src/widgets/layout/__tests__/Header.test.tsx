@@ -80,6 +80,14 @@ describe('Header', () => {
         expect(screen.getByRole('banner')).toBeInTheDocument();
     });
 
+    it('is inert while hiddenOnMobile, and interactive otherwise', () => {
+        const { rerender } = render(<Header currentUser={null} />);
+        expect(screen.getByRole('banner')).not.toHaveAttribute('inert');
+
+        rerender(<Header currentUser={null} hiddenOnMobile />);
+        expect(screen.getByRole('banner')).toHaveAttribute('inert');
+    });
+
     it('forwards authNext to the mobile drawer auth CTA login href', () => {
         // HeaderUserMenu is stubbed above, so the SSO handoff pass-through is
         // observed via HeaderMobileMenu (not mocked in this file) instead.

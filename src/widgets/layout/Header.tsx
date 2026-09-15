@@ -9,6 +9,7 @@ import { NAV_TREE } from './headerNavTree';
 import { HeaderSearch } from '@/features/ticker-search';
 import { LogoLockup } from './LogoLockup';
 import { Suspense } from 'react';
+import { cn } from '@/shared/lib/cn';
 
 interface HeaderProps {
     /** Resolved current user (server-fetched in `app/layout.tsx`); null for guests. */
@@ -27,6 +28,11 @@ interface HeaderProps {
      * leaves auth hrefs unchanged (main host behaviour).
      */
     readonly authNext?: string;
+    /**
+     * Slides the header out of view below `lg` (ai host, while scrolling down).
+     * Desktop keeps it pinned — there is room for it there.
+     */
+    readonly hiddenOnMobile?: boolean;
 }
 
 /** Presentational shell; receives resolved current user as a prop so layer rules forbid direct infrastructure access here. */
@@ -35,9 +41,25 @@ export function Header({
     currentUser,
     loadingUserMenu,
     authNext,
+    hiddenOnMobile = false,
 }: HeaderProps) {
     return (
-        <header className="sticky top-0 z-50 border-b border-secondary-700 bg-secondary-900/90 backdrop-blur-md supports-backdrop-filter:bg-secondary-900/75">
+        <header
+            data-scroll-chrome=""
+            // `inert` makes the offscreen header (and its focusable controls)
+            // unreachable by tab/click/screen-reader while `hiddenOnMobile` is
+            // true — without it, `-translate-y-full` only hides it visually
+            // and leaves a focus trap behind. `hiddenOnMobile` itself only
+            // ever comes back `true` below `lg` (`useHideOnScrollDown`'s own
+            // media-query gate), matching the `max-lg:` variant below — so a
+            // desktop user who scrolls down never gets an `inert` header that
+            // the CSS is still pinning fully in view.
+            inert={hiddenOnMobile}
+            className={cn(
+                'sticky top-0 z-50 border-b border-secondary-700 bg-secondary-900/90 backdrop-blur-md transition-transform duration-200 supports-backdrop-filter:bg-secondary-900/75 motion-reduce:transition-none',
+                hiddenOnMobile && 'max-lg:-translate-y-full'
+            )}
+        >
             {/* 전역 크롬은 **뷰포트에** 맞춘다(전폭 `px-4`). 심볼 페이지의
                 브레드크럼·탭·차트 제목이 모두 16px에 서 있으므로 헤더 로고도
                 같은 선에 둬야 제품의 주 표면에서 좌측이 하나로 읽힌다.

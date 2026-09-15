@@ -23,7 +23,7 @@ import { maybeHandoffRedirect } from './handoffRedirect';
 
 /**
  * Deliberately no `loading.tsx` for this route. With one, the streamed
- * response's visible HTML was only the `ChatSkeleton` — the whole landing
+ * response's visible HTML was only a loading skeleton — the whole landing
  * body (guide, FAQ, examples) sat in a hidden `<div hidden id="S:…">` chunk
  * that JS swapped in later, so non-JS crawlers and `curl` only ever saw a
  * skeleton (verified 2026-09-14 on production). The remaining awaits below

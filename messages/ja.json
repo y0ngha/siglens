@@ -3466,9 +3466,6 @@
                 "loginCta": "ログイン",
                 "openConversations": "会話一覧"
             },
-            "ChatSkeleton": {
-                "loading": "読み込み中…"
-            },
             "Composer": {
                 "4077ce": "送信",
                 "d2e7e7": "中断",
@@ -3568,6 +3565,7 @@
                 "guestBody": "ゲストの会話はこのタブを閉じると消えます。ログインすると会話が保存され、保有銘柄の分析も使えます。",
                 "guestCta": "ログインする",
                 "guestTitle": "会話履歴",
+                "navigating": "読み込み中…",
                 "newChat": "新しい会話",
                 "noMatch": "一致する会話がありません。",
                 "privacy": "プライバシーポリシー",

@@ -3466,9 +3466,6 @@
                 "loginCta": "Log in",
                 "openConversations": "Conversations"
             },
-            "ChatSkeleton": {
-                "loading": "Loading…"
-            },
             "Composer": {
                 "4077ce": "Send",
                 "d2e7e7": "Stop",
@@ -3568,6 +3565,7 @@
                 "guestBody": "Guest conversations disappear when you close this tab. Log in to keep them and to analyze your own holdings.",
                 "guestCta": "Log in",
                 "guestTitle": "Conversation history",
+                "navigating": "Loading…",
                 "newChat": "New chat",
                 "noMatch": "No matches.",
                 "privacy": "Privacy Policy",
