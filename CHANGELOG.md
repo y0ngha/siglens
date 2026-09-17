@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.79.3](https://github.com/y0ngha/siglens/compare/v0.79.2...v0.79.3) (2026-09-17)
+
+
+### Bug Fixes
+
+* **seo:** 기울임 마크다운 정규식 경계 수정과 회귀 테스트를 커밋에 포함한다 ([6e3a48d](https://github.com/y0ngha/siglens/commit/6e3a48dc3e200f820e97bb145da4a076dd54203b)), closes [#840](https://github.com/y0ngha/siglens/issues/840)
+* **seo:** 스냅샷 meta description에서 마크다운 기호를 뗀다 ([a57c4e6](https://github.com/y0ngha/siglens/commit/a57c4e6c0139379128ddda89c94d49e23a319534))
+
 ## [0.79.2](https://github.com/y0ngha/siglens/compare/v0.79.1...v0.79.2) (2026-09-17)
 
 
