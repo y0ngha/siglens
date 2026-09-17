@@ -1880,7 +1880,7 @@
                 "flatChange": "0.00% 보합",
                 "holdingAverage": "평단 {v0} · {v1}주",
                 "lastNDays": "최근 {v0}일",
-                "liveCrossRef": "실시간 AI 분석 결과는 분석 패널에서 따로 제공됩니다.",
+                "liveCrossRef": "실시간 AI 분석은 분석 패널에서 제공됩니다. 캐시가 없으면 다음 갱신 후 표시됩니다.",
                 "naverNews": "네이버뉴스",
                 "noticeWrittenOn": "{v0}.{v1}.{v2} 작성",
                 "openingChat": "채팅을 여는 중…",

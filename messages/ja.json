@@ -1880,7 +1880,7 @@
                 "flatChange": "0.00% 横ばい",
                 "holdingAverage": "平均取得 {v0}・{v1}株",
                 "lastNDays": "直近{v0}日",
-                "liveCrossRef": "リアルタイムのAI分析結果は分析パネルで別途提供されます。",
+                "liveCrossRef": "リアルタイムのAI分析は分析パネルで提供されます。キャッシュがない場合は次回更新後に表示されます。",
                 "naverNews": "ネイバーニュース",
                 "noticeWrittenOn": "{v0}.{v1}.{v2} 作成",
                 "openingChat": "チャットを開いています…",

@@ -2821,13 +2821,34 @@ describe('POST /api/analysis/stream', () => {
         });
 
         /**
-         * 회귀(감사): 봇 가드가 없어 크롤러가 매 크롤마다 DeepSeek을 태웠다.
-         * 비용·동시성·SEO 세 문제가 이 한 줄에 달려 있다 — 특히 robots.txt가
-         * 이 라우트를 크롤러에 열어 두었으므로, 봇이 받는 본문이 압축 산문으로
-         * 바뀌면 thin 콘텐츠 리스크가 생긴다.
+         * PR-E(클로킹): 본문은 User-Agent에 의존하면 안 된다. 예전엔 봇만 평이화를
+         * 건너뛰었는데, 기본값이 쉽게보기라 봇이 받는 DOM과 기본 사람이 받는 DOM이
+         * 서로 다른 본문이 됐다 — Google의 클로킹 패턴과 구분되지 않는다.
+         * 비용 근거였던 "크롤마다 DeepSeek 왕복"은 평이화 30일 캐시가 이미 잡는다.
          */
-        it('봇 요청에는 평이화를 호출하지 않는다', async () => {
+        it('같은 캐시 분석이면 봇과 사람의 plain이 동일하다', async () => {
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'cached',
+                result: { summary: 's' },
+                lockedInfoDepth: [],
+            } as never);
+
+            vi.mocked(isBot).mockReturnValue(false);
+            const humanEvents = await collectSseEvents(
+                await POST(makeRequest())
+            );
             vi.mocked(isBot).mockReturnValue(true);
+            const botEvents = await collectSseEvents(await POST(makeRequest()));
+
+            const doneOf = (events: string[]): string | undefined =>
+                events.find(e => e.includes('event: done'));
+            expect(doneOf(botEvents)).toContain('쉽게 쓴 분석문입니다');
+            expect(doneOf(botEvents)).toBe(doneOf(humanEvents));
+        });
+
+        /** `plainEnabled`는 UA가 아니라 symbol·type에만 의존한다. */
+        it.each([true, false])('isBot=%s 여도 평이화를 호출한다', async bot => {
+            vi.mocked(isBot).mockReturnValue(bot);
             vi.mocked(runAnalysis).mockResolvedValue({
                 status: 'cached',
                 result: { summary: 's' },
@@ -2836,10 +2857,16 @@ describe('POST /api/analysis/stream', () => {
 
             await collectSseEvents(await POST(makeRequest()));
 
-            expect(rewriteToPlainLanguage).not.toHaveBeenCalled();
+            expect(rewriteToPlainLanguage).toHaveBeenCalledWith(
+                expect.objectContaining({ summary: 's' }),
+                'AAPL',
+                'ko',
+                'USD',
+                undefined
+            );
         });
 
-        it('DISPATCH 경로의 봇 요청에도 호출하지 않는다', async () => {
+        it('DISPATCH 경로의 봇 요청에도 평이화를 호출한다', async () => {
             vi.mocked(isBot).mockReturnValue(true);
             vi.mocked(runOverallAnalysisAction).mockResolvedValue({
                 status: 'cached',
@@ -2855,9 +2882,14 @@ describe('POST /api/analysis/stream', () => {
                 },
             });
 
-            await collectSseEvents(await POST(makeRequest(undefined, body)));
+            const events = await collectSseEvents(
+                await POST(makeRequest(undefined, body))
+            );
 
-            expect(rewriteToPlainLanguage).not.toHaveBeenCalled();
+            expect(rewriteToPlainLanguage).toHaveBeenCalled();
+            expect(events.find(e => e.includes('event: done'))).toContain(
+                '쉽게 쓴 분석문입니다'
+            );
         });
 
         /**
