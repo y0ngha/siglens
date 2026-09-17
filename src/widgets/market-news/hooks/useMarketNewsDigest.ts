@@ -55,7 +55,15 @@ function useMarketNewsAnalysisTrigger(category: NewsFeedCategoryId): void {
  */
 export function useMarketNewsDigest(
     category: NewsFeedCategoryId,
-    hasEnrichedNews: boolean
+    hasEnrichedNews: boolean,
+    /**
+     * SSR-peeked cached digest (`peekMarketNewsDigestStatic`), or `null`/`undefined`
+     * on a miss. Mirrors `useMarketBriefing`'s `peekSeed` priority: seed wins over
+     * every failure branch (wait error, query error, still-loading) so the SSR
+     * HTML's digest text is never replaced by a skeleton or error card in the
+     * rendered DOM — a fresh successful fetch still replaces it.
+     */
+    peekSeed?: NewsAnalysisResponse | null
 ): MarketNewsDigestState {
     const tError = useTranslations('shared.ui.analysisError');
     const locale = useCurrentLocale();
@@ -98,12 +106,19 @@ export function useMarketNewsDigest(
         startTransition(() => setIsHydrated(true));
     }, []);
 
+    // seed 우선은 실패 분기 전부에 적용한다 — SSR HTML의 다이제스트 본문이
+    // 렌더된 DOM에서 스켈레톤/에러 카드로 교체되지 않도록 (useMarketBriefing과
+    // 동일한 이유). 신선한 fetch 성공(`query.data`)만 seed를 대체한다.
+    const seedResult: NewsAnalysisResponse | undefined = peekSeed ?? undefined;
+
     // Surface wait errors (cards enrichment polling failure) as a digest error.
     if (waitError !== null) {
+        if (seedResult) return { status: 'done', result: seedResult };
         return { status: 'error', error: waitError, retry };
     }
 
     if (query.isError) {
+        if (seedResult) return { status: 'done', result: seedResult };
         return {
             status: 'error',
             error:
@@ -114,13 +129,16 @@ export function useMarketNewsDigest(
         };
     }
 
-    if (query.isFetching) {
-        return { status: 'loading' };
-    }
-
     if (query.data !== undefined) {
         return { status: 'done', result: query.data };
     }
+
+    if (query.isFetching) {
+        if (seedResult) return { status: 'done', result: seedResult };
+        return { status: 'loading' };
+    }
+
+    if (seedResult) return { status: 'done', result: seedResult };
 
     return { status: 'loading' };
 }
