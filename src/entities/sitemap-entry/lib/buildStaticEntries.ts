@@ -73,19 +73,25 @@ function latestOf(
  *
  * **`lastmod`에 요청 시각(`now`)을 그대로 쓰지 않는다.** sitemap 라우트가
  * `force-dynamic`이라 그렇게 하면 크롤러가 가져갈 때마다 값이 바뀌어, 실제로는
- * 바뀌지 않은 페이지에도 매번 freshness 신호를 보내게 된다. 세 등급으로 나눈다:
+ * 바뀌지 않은 페이지에도 매번 freshness 신호를 보내게 된다. 네 등급으로 나눈다:
  *
  *  1. **콘텐츠 자체의 갱신 시각** — 그 값을 알 수 있는 페이지. `/about`은
  *     `ABOUT_UPDATED_AT`(본문 상수), `/privacy`·`/terms`는 활성 약관 버전의
  *     발효일(`legalEffectiveDates`), news 계열은 그 버킷의 최신 기사
- *     `publishedAt`(`newsLatestPublishedAt`)이다. 주입되지 않으면 아래 등급으로
+ *     `publishedAt`(`newsLatestPublishedAt`), `/backtesting`은 정적 데이터셋의
+ *     마지막 진입일(`backtestingDataDate`)이다. 주입되지 않으면 4등급으로
  *     떨어진다 — 이 빌더는 I/O를 하지 않는다.
  *  2. **직전 마감 세션**(`lastClosedSessionCloseUtc`) — 거래 세션 단위로 값이
  *     바뀌는 페이지. `/fear-greed*`와 `/market*`이 여기 해당한다: 입력이 봉이라
  *     "내용이 마지막으로 바뀐 시점"이 곧 직전 마감이다. 주말·휴장·DST는 헬퍼가
  *     처리한다. 거래소가 다르므로 지역별로 따로 계산한다.
- *  3. **빌드 시점 고정**(`SITE_BUILD_DATE`) — 배포로만 바뀌는 페이지.
- *     home, backtesting, economy.
+ *  3. **UTC 일 경계**(`todayUtc`) — 하루 주기로 갱신되는 페이지. `/economy*`가
+ *     여기 해당한다(지표가 24시간마다 새로 들어오고 페이지 FAQ도 그렇게 밝힌다).
+ *     배포 시각을 쓰면 하루에 세 번 배포한 날 세 번 바뀌었다고 주장하게 된다
+ *     (2026-09-17 감사). 최신 기사 시각이 주입되지 않은 news 카테고리도 여기로
+ *     떨어진다.
+ *  4. **빌드 시점 고정**(`SITE_BUILD_DATE`) — 배포로만 바뀌는 페이지(home), 그리고
+ *     1등급 값이 주입되지 않았을 때의 폴백(`/backtesting`·legal).
  *
  * `/market*`은 예전에 "1시간 슬라이딩, 정시로 내림"이었다. ISR revalidate가 1h라
  * 갱신 *주기*와는 맞았지만 lastmod가 주장하는 것은 주기가 아니라 **마지막 변경
