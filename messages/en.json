@@ -1880,7 +1880,7 @@
                 "flatChange": "0.00% flat",
                 "holdingAverage": "Avg {v0} · {v1} shares",
                 "lastNDays": "Last {v0} days",
-                "liveCrossRef": "Live AI analysis is provided separately in the analysis panel.",
+                "liveCrossRef": "Live AI analysis appears in the analysis panel; if none is cached it shows after the next refresh.",
                 "naverNews": "Naver News",
                 "noticeWrittenOn": "Written {v0}.{v1}.{v2}",
                 "openingChat": "Opening chat…",

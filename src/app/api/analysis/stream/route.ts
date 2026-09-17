@@ -70,6 +70,12 @@ import { submitOptionsAnalysisAction } from '@/entities/options-chain/actions';
 import { submitMarketBriefingAction } from '@/entities/market-summary/actions/submitMarketBriefingAction';
 import { submitMacroBriefingAction } from '@/entities/economy/actions/submitMacroBriefingAction';
 
+/**
+ * 불변식: **응답 본문은 User-Agent에 의존하지 않는다.** 봇과 사람은 같은 요청에
+ * 같은 본문(원문 + 평이화)을 받는다. UA로 갈라도 되는 것은 생성·동시성 정책뿐이다
+ * (`skipEnqueueIfMiss`, `canAcceptAnalysisStream`의 봇 천장). UA 조건부 **본문**은
+ * Google의 클로킹 패턴과 구분되지 않는다.
+ */
 export const dynamic = 'force-dynamic';
 
 /**
@@ -760,37 +766,29 @@ async function withPlainLanguage<T>(
  *
  * `symbol`이 없으면(종목과 무관한 분석) 평이화를 건너뛴다 — `facts.symbol`이
  * 프롬프트의 사실 블록에 들어가므로 빈 값을 넘기면 안 된다.
+ *
+ * ## 봇과 사람은 같은 리더 뷰를 받는다 (UA 분기 없음)
+ *
+ * 예전엔 `isBotRequest`로 봇의 평이화를 건너뛰었다. 제거한 이유:
+ *
+ * - **클로킹.** 기본값이 쉽게보기라(localStorage가 빈 크롤러는 항상 기본값)
+ *   봇만 원문을 받으면 봇이 보는 DOM과 기본 사람이 보는 DOM이 서로 다른 본문이
+ *   된다. 의도와 무관하게 Google의 클로킹 패턴과 구분되지 않는다.
+ * - **비용은 이미 캐시가 잡는다.** 평이화 결과는 원문 해시 키로 30일 캐시된다
+ *   (`entities/analysis-plain/api.ts`의 `CACHE_TTL_SECONDS`). 비용은 크롤 1회당이
+ *   아니라 **분석 텍스트 1건당** 발생하고, 화이트리스트 심볼은
+ *   `seo_analysis_snapshots.plain`이 이미 채워져 있다.
+ *
+ * 생성 비용·동시성 정책은 그대로 UA로 갈라도 된다(`skipEnqueueIfMiss`,
+ * `canAcceptAnalysisStream`의 봇 천장) — 그건 본문이 아니다.
  */
 function withReaderViews<T>(
     work: Promise<T>,
     locale: Locale,
     type: AnalysisType,
-    symbol: unknown,
-    /**
-     * 봇 요청이면 평이화를 건너뛴다.
-     *
-     * ## 세 가지 이유가 같은 한 줄로 해결된다
-     *
-     * 1. **비용.** `skipEnqueueIfMiss`가 크롤러의 LLM 지출을 막는 장치인데 평이화는
-     *    그 뒤에 붙어 커버되지 않았다. 캐시 HIT를 받은 봇이 매 크롤마다 DeepSeek
-     *    왕복을 태운다 — prewarm이 평이화 캐시를 채우지 않으므로 롱테일 종목은
-     *    항상 미스다.
-     * 2. **동시성.** 봇에 2배 천장을 주는 근거가 "봇의 캐시 미스는 즉시 끝나므로
-     *    슬롯을 밀리초만 붙든다"인데(아래 `canAcceptAnalysisStream` 주석), 평이화가
-     *    붙으면 봇이 슬롯을 최대 15초 붙든다. 그 전제가 깨진다.
-     * 3. **SEO.** robots.txt가 이 라우트를 크롤러에 일부러 열어 두었다 — 즉
-     *    **크롤러는 라이브 분석을 실제로 렌더한다.** 설계 문서 §11이 "SEO 영향 0"의
-     *    근거로 삼은 "라이브 분석은 색인되지 않는다"는 전제가 사실이 아니었다.
-     *    기본값이 쉽게보기이므로(localStorage가 빈 크롤러는 항상 기본값) 봇이 받는
-     *    본문이 지표·패턴 이름이 제거된 37% 압축 산문으로 바뀐다. 2026-07 thin
-     *    콘텐츠 절벽에서 회복한 상태를 되돌릴 수 있다.
-     *
-     * 사람 트래픽에는 영향이 없고, 봇은 지금까지와 똑같은 원본을 받는다.
-     */
-    isBotRequest: boolean
+    symbol: unknown
 ): Promise<T> {
     const plainEnabled =
-        !isBotRequest &&
         typeof symbol === 'string' &&
         symbol.length > 0 &&
         PLAIN_ENABLED_TYPES.has(type);
@@ -1101,6 +1099,8 @@ export async function POST(request: Request): Promise<Response> {
              * 봇은 상한에서 제외한다. `skipEnqueueIfMiss`(위) 때문에 봇의 캐시 미스는
              * LLM을 태우지 않고 즉시 `miss_no_trigger`로 끝나므로, 봇 요청이 슬롯을
              * 붙드는 시간은 밀리초 단위다 — 상한이 막으려는 부하가 아니다.
+             * (캐시 HIT는 이제 봇도 평이화 조회를 거친다 — 대부분 캐시 HIT라 밀리초,
+             * 드문 평이화 미스만 LLM 왕복이다. 배수 유지 근거는 `activeStreams.ts`.)
              *
              * 반대로 막으면 손해가 크다: 이 브랜치는 크롤러 렌더러가 분석을 받게
              * 하려고 robots.txt에 `/api/analysis/stream`을 일부러 열었는데, 사람
@@ -1249,8 +1249,7 @@ export async function POST(request: Request): Promise<Response> {
                         work,
                         requestLocale,
                         'technical',
-                        body.params.symbol,
-                        skipEnqueueIfMiss
+                        body.params.symbol
                     ),
                     {
                         genericErrorMessage: t('generic'),
@@ -1303,9 +1302,10 @@ export async function POST(request: Request): Promise<Response> {
     // await가 들어가면 원자성이 깨진다(위 technical 분기 주석 참고).
     const locale = resolveRequestLocale(request);
     const t = await streamMessages(locale);
-    // 한 번만 계산해 동시성 상한·DISPATCH(overall의 히스토리 읽기 skip)·
-    // withReaderViews 세 곳에서 재사용한다 — 각자 다시 계산해도 값은 같지만
-    // (Headers read, side-effect 없음) 하나로 묶는 게 더 명확하다.
+    // 한 번만 계산해 동시성 상한·DISPATCH(overall의 히스토리 읽기 skip) 두 곳에서
+    // 재사용한다 — 각자 다시 계산해도 값은 같지만(Headers read, side-effect 없음)
+    // 하나로 묶는 게 더 명확하다. 본문 생성(`withReaderViews`)에는 넘기지 않는다:
+    // 파일 상단의 "본문은 UA에 의존하지 않는다" 불변식 참고.
     const isBotRequest = isBot(request.headers);
 
     // 동시 분석 상한. 봇은 더 높은 천장 — 근거는 `canAcceptAnalysisStream` 주석.
@@ -1325,13 +1325,7 @@ export async function POST(request: Request): Promise<Response> {
         );
         return new Response(
             heartbeatStream(
-                withReaderViews(
-                    work,
-                    locale,
-                    body.type,
-                    body.params.symbol,
-                    isBotRequest
-                ),
+                withReaderViews(work, locale, body.type, body.params.symbol),
                 { genericErrorMessage: t('generic') }
             ),
             { headers: SSE_HEADERS }

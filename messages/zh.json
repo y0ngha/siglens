@@ -1880,7 +1880,7 @@
                 "flatChange": "0.00% 持平",
                 "holdingAverage": "成本价 {v0} · {v1} 股",
                 "lastNDays": "最近 {v0} 天",
-                "liveCrossRef": "实时 AI 分析结果在分析面板中单独提供。",
+                "liveCrossRef": "实时 AI 分析在分析面板中提供。若无缓存，将在下次更新后显示。",
                 "naverNews": "Naver 新闻",
                 "noticeWrittenOn": "撰写于 {v0}.{v1}.{v2}",
                 "openingChat": "正在打开聊天…",
