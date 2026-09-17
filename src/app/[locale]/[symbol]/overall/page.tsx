@@ -207,7 +207,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         tab: 'overall',
     });
     if (blockedMetadata) return blockedMetadata;
-    if (!assetInfo) return noindexSymbolMetadata(upper, tSeo, locale);
+    if (!assetInfo)
+        return noindexSymbolMetadata(upper, tSeo, locale, { tab: 'overall' });
 
     // `displayName`을 가드보다 위에서 계산한다 — 아래 `!cachedOverall` noindex
     // 분기도 `noindexSymbolMetadata`에 넘겨야 차단된 페이지가 티커가 아니라 사명까지
@@ -269,6 +270,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         });
         if (!cachedOverall) {
             return noindexSymbolMetadata(upper, tSeo, locale, {
+                tab: 'overall',
                 displayName,
                 koreanName: assetInfo.koreanName,
             });

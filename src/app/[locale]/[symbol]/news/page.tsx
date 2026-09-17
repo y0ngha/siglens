@@ -103,7 +103,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         tab: 'news',
     });
     if (blockedMetadata) return blockedMetadata;
-    if (!assetInfo) return noindexSymbolMetadata(upper, tSeo, locale);
+    if (!assetInfo)
+        return noindexSymbolMetadata(upper, tSeo, locale, { tab: 'news' });
 
     const displayName = buildDisplayName(assetInfo, upper, locale);
     const assetClass = getDescriptor(marketProfileOf(assetInfo)).assetClass;

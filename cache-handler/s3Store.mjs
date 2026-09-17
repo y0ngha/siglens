@@ -59,6 +59,8 @@ function s3Key(key, kind) {
 }
 
 export async function getEntry(key, kind) {
+    // 빌드(prerender) 중에는 자격증명이 없어 모든 호출이 실패한다 — config.buildPhase 참고.
+    if (config.buildPhase) return null;
     try {
         const res = await s3().send(
             new GetObjectCommand({
@@ -79,6 +81,7 @@ export async function getEntry(key, kind) {
 }
 
 export async function setEntry(key, kind, entry) {
+    if (config.buildPhase) return;
     try {
         await s3().send(
             new PutObjectCommand({

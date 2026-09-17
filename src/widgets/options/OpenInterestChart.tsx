@@ -271,12 +271,10 @@ export function OpenInterestChart({
             <svg
                 viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
                 role="img"
-                aria-labelledby="oi-chart-title oi-chart-desc"
+                aria-label={t('OpenInterestChart.4948b9')}
+                aria-describedby="oi-chart-desc"
                 className="block w-full"
             >
-                <title id="oi-chart-title">
-                    {t('OpenInterestChart.4948b9')}
-                </title>
                 <desc id="oi-chart-desc">{t('OpenInterestChart.c9d602')}</desc>
 
                 <line

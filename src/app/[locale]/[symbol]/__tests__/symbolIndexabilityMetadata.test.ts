@@ -17,6 +17,7 @@ vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { NOINDEX_SYMBOL_METADATA } from '@/shared/lib/seo';
+import type { SymbolSeoTab } from '@/shared/lib/seo';
 import type { AssetInfo } from '@/shared/lib/types';
 import type { Metadata } from 'next';
 
@@ -33,7 +34,13 @@ const ASSET_INFO = { symbol: 'AAPL', name: 'Apple Inc.' } as AssetInfo;
  */
 function expectBlockedWithOwnIdentity(
     result: Metadata | null,
-    symbol: string
+    symbol: string,
+    /**
+     * 탭을 넘긴 호출은 그 탭의 카피를 쓰므로 `og:url`도 탭 경로를 가리킨다 —
+     * 차단된 형제 탭들이 심볼 루트와 같은 제목·설명을 반복하지 않게 한 변경
+     * (2026-09-17 네이버 중복 title/description 리포트)의 의도된 귀결이다.
+     */
+    tabPath = ''
 ): void {
     expect(result).not.toBeNull();
     expect(result!.robots).toEqual(NOINDEX_SYMBOL_METADATA.robots);
@@ -42,7 +49,9 @@ function expectBlockedWithOwnIdentity(
         absolute: expect.stringContaining(symbol) as unknown as string,
     });
     expect(result!.description).toEqual(expect.any(String));
-    expect(result!.openGraph?.url).toBe(`https://siglens.io/${symbol}`);
+    expect(result!.openGraph?.url).toBe(
+        `https://siglens.io/${symbol}${tabPath}`
+    );
 }
 
 describe('getBlockedSymbolMetadata', () => {
@@ -74,6 +83,48 @@ describe('getBlockedSymbolMetadata', () => {
             hasSnapshot: undefined,
         });
         expect(result).toBeNull();
+    });
+
+    it('차단된 탭은 탭별 title/description을 쓴다 — 형제 탭끼리 중복되지 않는다', async () => {
+        mockEvaluateSymbolIndexability.mockReturnValue({
+            indexable: false,
+            reason: 'longtail-default-blocked',
+        });
+        const ALL_TABS = [
+            'technical',
+            'overall',
+            'fundamental',
+            'financials',
+            'congress',
+            'news',
+            'options',
+        ] as const satisfies readonly SymbolSeoTab[];
+        const blockedFor = async (tab: SymbolSeoTab): Promise<Metadata> =>
+            (await getBlockedSymbolMetadata({
+                symbol: 'QQQ',
+                assetInfo: ASSET_INFO,
+                degraded: false,
+                locale: 'ko',
+                revalidateSeconds: 21600,
+                tab,
+            }))!;
+
+        const results = await Promise.all(ALL_TABS.map(blockedFor));
+        const titleOf = (m: Metadata): string =>
+            (m.title as { absolute: string }).absolute;
+        const titles = results.map(titleOf);
+        expect(new Set(titles).size).toBe(titles.length);
+        const descriptions = results.map(m => m.description);
+        expect(new Set(descriptions).size).toBe(descriptions.length);
+        // 탭 없는 라우트(fear-greed/position)는 기존대로 기본 심볼 카피를 쓴다.
+        const tabless = (await getBlockedSymbolMetadata({
+            symbol: 'QQQ',
+            assetInfo: ASSET_INFO,
+            degraded: false,
+            locale: 'ko',
+            revalidateSeconds: 21600,
+        }))!;
+        expect(titleOf(tabless)).toBe(titles[0]);
     });
 
     it('does not read snapshots on the non-degraded path and returns noindex when blocked', async () => {
@@ -201,7 +252,7 @@ describe('getBlockedSymbolMetadata', () => {
             locale: 'ko',
             hasSnapshot: false,
         });
-        expectBlockedWithOwnIdentity(result, 'AAPL');
+        expectBlockedWithOwnIdentity(result, 'AAPL', '/congress');
     });
 
     // FIX 1 (audit): a same-tab row whose `content` is malformed (fails the

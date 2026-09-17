@@ -196,12 +196,10 @@ export function StrikeVolumeChart({
             <svg
                 viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
                 role="img"
-                aria-labelledby="volume-chart-title volume-chart-desc"
+                aria-label={t('StrikeVolumeChart.75cc47')}
+                aria-describedby="volume-chart-desc"
                 className="block w-full"
             >
-                <title id="volume-chart-title">
-                    {t('StrikeVolumeChart.75cc47')}
-                </title>
                 <desc id="volume-chart-desc">
                     {t('StrikeVolumeChart.2156df')}
                 </desc>
