@@ -1,7 +1,7 @@
 // Public barrel for the market-news entity.
 //
 // EXCLUDED (server-only — would break client bundle if re-exported here):
-//   - api.ts  (DrizzleMarketNewsRepository, getMarketNewsList — uses DB client + React.cache)
+//   - api/index.ts  (DrizzleMarketNewsRepository, getMarketNewsList — uses DB client + React.cache)
 //   - actions/ and actions.ts (Server Actions — consumed via @/entities/market-news/actions)
 //
 // See entities/CLAUDE.md §barrel 제외 대상 for the general rule.

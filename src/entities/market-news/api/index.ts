@@ -18,7 +18,7 @@ import { marketNews } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { withRetry } from '@/shared/lib/withRetry';
-import type { MarketNewsCardItem } from './lib/toCardItem';
+import type { MarketNewsCardItem } from '../lib/toCardItem';
 import type { Locale } from '@/shared/i18n/locales';
 import { TRANSLATABLE_ENTITY } from '@/shared/db/contentTranslationFields';
 // 종목 뉴스 슬라이스와 같은 강제 변환을 쓴다 — 두 벌을 두면 core가 enum 값을
@@ -31,9 +31,9 @@ import {
 import { toLocalizedDisplayItems } from '@/shared/lib/news/toLocalizedDisplayItems';
 import { createRedisFlag } from '@/shared/cache/createRedisFlag';
 import { SECONDS_PER_MINUTE } from '@/shared/config/time';
-import type { MarketNewsItem } from './lib/marketNewsClientPort';
-import { MARKET_NEWS_LOOKBACK_MS } from './lib/marketNewsConstants';
-import type { MarketNewsRow } from './model';
+import type { MarketNewsItem } from '../lib/marketNewsClientPort';
+import { MARKET_NEWS_LOOKBACK_MS } from '../lib/marketNewsConstants';
+import type { MarketNewsRow } from '../model';
 
 export class DrizzleMarketNewsRepository {
     constructor(private readonly db: SiglensDatabase) {}

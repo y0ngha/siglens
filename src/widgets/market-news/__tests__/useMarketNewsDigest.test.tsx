@@ -216,4 +216,116 @@ describe('useMarketNewsDigest', () => {
 
         expect(mockFetchMarketNewsDigest).toHaveBeenCalledTimes(2);
     });
+
+    // peekSeed priority — mirrors useMarketBriefing's seed-wins-over-every-
+    // failure-branch coverage. Seed must win over loading, waitError, and
+    // query.isError; only a fresh query.data resolution replaces it.
+    const PEEK_SEED: NewsAnalysisResponse = {
+        overallSentiment: 'neutral',
+        currentDriverKo: '시드로 노출된 다이제스트입니다.',
+        keyEventsKo: [],
+        upcomingEventsKo: [],
+    };
+
+    it('(Happy) peekSeed 있음 + 아직 로딩 중 → status: done with seed (스켈레톤 대신)', async () => {
+        mockFetchMarketNewsDigest.mockImplementation(
+            () => new Promise(() => {})
+        );
+
+        const { result, unmount } = renderHook(
+            () => useMarketNewsDigest('articles', true, PEEK_SEED),
+            { wrapper: makeWrapper() }
+        );
+
+        await act(async () => {
+            await new Promise(resolve => setTimeout(resolve, 0));
+        });
+
+        expect(result.current.status).toBe('done');
+        if (result.current.status !== 'done') throw new Error('expected done');
+        expect(result.current.result).toEqual(PEEK_SEED);
+
+        unmount();
+    });
+
+    it('(Worst) waitError가 나도 peekSeed가 있으면 seed를 계속 보여 준다', async () => {
+        mockGetMarketNewsCardsAction.mockResolvedValue({
+            ok: false,
+            error: 'DB unavailable',
+        });
+        vi.useFakeTimers();
+
+        const { result } = renderHook(
+            () => useMarketNewsDigest('general', false, PEEK_SEED),
+            { wrapper: makeWrapper() }
+        );
+
+        for (let i = 0; i < 3; i++) {
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(3000);
+            });
+        }
+
+        expect(result.current.status).toBe('done');
+        if (result.current.status !== 'done') throw new Error('expected done');
+        expect(result.current.result).toEqual(PEEK_SEED);
+
+        vi.useRealTimers();
+    });
+
+    it('(Worst) React Query isError여도 peekSeed가 있으면 seed를 계속 보여 준다', async () => {
+        mockFetchMarketNewsDigest.mockRejectedValue(
+            new Error('network failure')
+        );
+
+        const { result } = renderHook(
+            () => useMarketNewsDigest('stock', true, PEEK_SEED),
+            { wrapper: makeWrapper() }
+        );
+
+        await waitFor(() => {
+            expect(mockFetchMarketNewsDigest).toHaveBeenCalled();
+        });
+
+        expect(result.current.status).toBe('done');
+        if (result.current.status !== 'done') throw new Error('expected done');
+        expect(result.current.result).toEqual(PEEK_SEED);
+    });
+
+    it('(Happy) peekSeed 없음 → 기존과 동일하게 loading/error 상태를 그대로 노출', async () => {
+        mockFetchMarketNewsDigest.mockImplementation(
+            () => new Promise(() => {})
+        );
+
+        const { result, unmount } = renderHook(
+            () => useMarketNewsDigest('articles', true),
+            { wrapper: makeWrapper() }
+        );
+
+        await act(async () => {
+            await new Promise(resolve => setTimeout(resolve, 0));
+        });
+
+        expect(result.current.status).toBe('loading');
+
+        unmount();
+    });
+
+    it('(Happy) 신선한 fetch 성공은 peekSeed를 대체한다', async () => {
+        mockFetchMarketNewsDigest.mockResolvedValue(DIGEST_RESULT);
+
+        const { result } = renderHook(
+            () => useMarketNewsDigest('crypto', true, PEEK_SEED),
+            { wrapper: makeWrapper() }
+        );
+
+        // seed shows as 'done' immediately (isFetching transiently true), so
+        // wait for the *fresh* result body specifically, not just any 'done'.
+        await waitFor(() => {
+            expect(result.current.status).toBe('done');
+            if (result.current.status !== 'done')
+                throw new Error('expected done');
+            expect(result.current.result).toEqual(DIGEST_RESULT);
+        });
+    });
 });
