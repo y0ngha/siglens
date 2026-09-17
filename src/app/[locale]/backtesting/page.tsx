@@ -22,13 +22,20 @@ import {
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { TERMS_PATH } from '@/shared/lib/legal';
 import { BacktestHero } from '@/widgets/backtesting/BacktestHero';
+import { BacktestMethodology } from '@/widgets/backtesting/BacktestMethodology';
 import { BacktestTabs } from '@/widgets/backtesting/BacktestTabs';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import backtestData from '@/app/[locale]/backtesting/data.json';
-import { validateBacktestData } from '@/entities/backtest-case';
+import {
+    deriveBacktestStats,
+    validateBacktestData,
+} from '@/entities/backtest-case';
 
 // JSON import typed as any; validateBacktestData ensures shape at load time
 const data = validateBacktestData(backtestData as unknown);
+// Derived once at module load, same as TICKERS below — data.json is replaced
+// only by the (local, gitignored) generator script, never at request time.
+const STATS = deriveBacktestStats(data.cases);
 
 /**
  * 클라이언트로 넘길 케이스의 프로젝션.
@@ -208,7 +215,8 @@ export default async function BacktestingPage({
                 landmark가 페이지 주제와 일치한다. 이전엔 BacktestHero가 main
                 바깥에 있어 h1이 landmark 밖으로 빠지는 문제가 있었다. */}
             <main className="min-h-screen bg-secondary-900">
-                <BacktestHero meta={data.meta} />
+                <BacktestHero stats={STATS} />
+                <BacktestMethodology />
                 {/* BacktestTabs는 더 이상 useSearchParams()를 렌더 중 호출하지
                     않으므로(useBacktestFilter 참고) Suspense 경계가 필요 없다 —
                     전체 케이스 목록이 그대로 SSR 정적 HTML에 포함된다. */}
@@ -218,7 +226,7 @@ export default async function BacktestingPage({
                     aria-label={t('page.693b62')}
                     className="border-t border-secondary-700 px-6 py-4"
                 >
-                    <p className="text-center text-[11px] text-secondary-600">
+                    <p className="text-center text-sm text-secondary-400">
                         {t('page.8e0330')}
                     </p>
                 </div>

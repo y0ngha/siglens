@@ -1,14 +1,25 @@
 import { useTranslations } from 'next-intl';
-import type { BacktestMeta } from '@y0ngha/siglens-core';
+import type { BacktestStats } from '@/entities/backtest-case';
 
 interface BacktestHeroProps {
-    meta: BacktestMeta;
+    stats: BacktestStats;
 }
 
 interface StatCardProps {
     value: string;
     label: string;
     valueClassName: string;
+    subLabel?: string;
+}
+
+/**
+ * `YYYY-MM-DD` → `YYYY.MM`. Deliberately not run through next-intl — the
+ * `BACKTESTING RESULTS ·` kicker above it is itself an untranslated Latin
+ * label in every locale, so the date segment stays in the same plain,
+ * locale-invariant format.
+ */
+function formatPeriodMonth(isoDate: string): string {
+    return isoDate.slice(0, 7).replace('-', '.');
 }
 
 /*
@@ -25,7 +36,7 @@ interface StatCardProps {
  * 단위에만 다른 서체를 주는 방법도 있지만, 텍스트 노드가 갈리면 봇이 읽는
  * 문자열이 `100개`에서 `100 개`로 바뀐다.
  */
-function StatCard({ value, label, valueClassName }: StatCardProps) {
+function StatCard({ value, label, valueClassName, subLabel }: StatCardProps) {
     return (
         <div className="text-center">
             <div
@@ -34,18 +45,26 @@ function StatCard({ value, label, valueClassName }: StatCardProps) {
                 {value}
             </div>
             <div className="mt-2 text-xs text-secondary-400">{label}</div>
+            {subLabel !== undefined ? (
+                <div className="mt-0.5 text-[0.6875rem] text-secondary-500">
+                    {subLabel}
+                </div>
+            ) : null}
         </div>
     );
 }
 
-export function BacktestHero({ meta }: BacktestHeroProps) {
+export function BacktestHero({ stats }: BacktestHeroProps) {
     const t = useTranslations('widgets.backtesting');
     const tHero = useTranslations('widgets.backtesting.hero');
+    const period = `${formatPeriodMonth(stats.periodStart)} – ${formatPeriodMonth(stats.periodEnd)}`;
+    const meanReturnDisplay = `${stats.meanReturnPct >= 0 ? '+' : ''}${stats.meanReturnPct}%`;
+
     return (
         <header className="border-b border-secondary-700 py-10 text-center">
             <div className="page-container">
                 <p className="mb-2 font-mono text-[0.6875rem] tracking-[0.14em] text-secondary-400 uppercase">
-                    BACKTESTING RESULTS · {meta.period}
+                    BACKTESTING RESULTS · {period}
                 </p>
                 <h1 className="mb-3 text-2xl font-bold text-balance text-secondary-50 sm:text-3xl">
                     {t('BacktestHero.d8b543')}
@@ -62,26 +81,48 @@ export function BacktestHero({ meta }: BacktestHeroProps) {
                     768px 이상에서 세 개가 통째로 둘째 줄로 밀린다(둘 다 실측).
                     애초에 대비가 다크 1.34:1 · 라이트 1.23:1로 3:1에 한참 못 미쳐
                     사실상 보이지 않는 장식이었다. 값마다 색이 다르고 아래에 라벨이
-                    붙으며 최소 32px 간격이 있어, 구분선 없이도 넷은 각각 읽힌다. */}
+                    붙으며 최소 32px 간격이 있어, 구분선 없이도 여섯은 각각 읽힌다. */}
                 <div className="inline-flex flex-wrap items-center justify-center gap-x-8 gap-y-6 rounded-lg border border-secondary-700 bg-secondary-800 px-8 py-6">
                     <StatCard
-                        value={`${meta.winRate}%`}
+                        value={`${stats.indicatorWinRate}%`}
                         label={t('BacktestHero.394fff')}
                         valueClassName="text-ui-success-text"
+                        subLabel={`${stats.indicatorWins}/${stats.totalCases}`}
                     />
                     <StatCard
-                        value={`${meta.aiWinRate}%`}
+                        value={`${stats.aiWinRateDecisive}%`}
                         label={t('BacktestHero.5a254c')}
                         valueClassName="text-primary-400"
+                        subLabel={tHero('aiSubLabel', {
+                            v0: stats.aiWins,
+                            v1: stats.aiDecisiveCount,
+                            v2: stats.aiNeutralCount,
+                        })}
                     />
                     <StatCard
-                        value={tHero('caseCount', { v0: meta.totalCases })}
+                        value={`${stats.aiTrendHitRate}%`}
+                        label={t('BacktestHero.aiTrendHitRateLabel')}
+                        valueClassName="text-primary-300"
+                    />
+                    <StatCard
+                        value={meanReturnDisplay}
+                        label={t('BacktestHero.meanReturnLabel')}
+                        valueClassName={
+                            stats.meanReturnPct >= 0
+                                ? 'text-ui-success-text'
+                                : 'text-ui-danger-text'
+                        }
+                    />
+                    <StatCard
+                        value={tHero('caseCount', { v0: stats.totalCases })}
                         label={t('BacktestHero.f92294')}
                         valueClassName="text-ui-warning-text"
                     />
                     <StatCard
-                        value={tHero('tickerCount', { v0: meta.tickerCount })}
-                        label={t('BacktestHero.530709')}
+                        value={tHero('medianHoldingDays', {
+                            v0: stats.medianHoldingDays,
+                        })}
+                        label={t('BacktestHero.medianHoldingDaysLabel')}
                         valueClassName="text-secondary-300"
                     />
                 </div>

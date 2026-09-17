@@ -1456,8 +1456,8 @@
             "accountDeleteFullTitle": "{v0} — delete account",
             "accountDeleteTitle": "Delete account",
             "backtesting": {
-                "description": "A 2-year backtest across 10 stocks including AAPL, NVDA, and TSLA. RSI, MACD, and Supertrend technical signals and AI scenarios are back-tested against historical data. Results are based on past data and do not guarantee future performance.",
-                "title": "AAPL, NVDA, TSLA 2-Year Backtest — Signal Review"
+                "description": "A historical backtest across 10 stocks including AAPL, NVDA, and TSLA. RSI, MACD, and Supertrend technical signals and AI scenarios are checked against past data. Results are based on historical data and do not guarantee future performance.",
+                "title": "AAPL, NVDA, TSLA Backtest — Signal Review"
             },
             "backtestingOgAlt": "{v0} AI backtesting results",
             "economy": {
@@ -2273,19 +2273,31 @@
             },
             "BacktestHero": {
                 "116858": "Backtesting results verified with actual market data.",
-                "530709": "Mag7 + Leading Stocks",
                 "394fff": "Indicator Signal Hit Rate (Historical)",
                 "5a254c": "AI Scenario Hit Rate (Historical)",
                 "caee31": "Shows what happened when the AI analysis Siglens provides today is applied, as-is, to past data. Based on historical data; it does not guarantee future results.",
-                "d8b543": "2-Year Backtest — Verified Against Historical Data",
-                "f92294": "Total Cases"
+                "d8b543": "Backtest — Verified Against Historical Data",
+                "f92294": "Total Cases",
+                "aiTrendHitRateLabel": "AI Trend Direction Hit Rate (Historical)",
+                "meanReturnLabel": "Average Return (All Cases)",
+                "medianHoldingDaysLabel": "Median Holding Days"
             },
             "BacktestTabs": {
                 "7425e7": "Ticker Filter"
             },
             "hero": {
                 "caseCount": "{v0}",
-                "tickerCount": "{v0} tickers"
+                "tickerCount": "{v0} tickers",
+                "aiSubLabel": "Decisive cases {v0}/{v1} · excludes {v2} neutral",
+                "medianHoldingDays": "{v0} days"
+            },
+            "methodology": {
+                "heading": "Backtest Methodology",
+                "winDefinition": "Win definition: a case counts as a win when its return at exit is 0% or higher.",
+                "exitRule": "Exit rule: positions are held for up to 10 trading days. If the stop loss or take profit level is hit first, the position exits then (stop loss takes priority on same-day ties). Otherwise, it exits at the close of day 10.",
+                "noCosts": "Transaction costs and slippage are not modeled.",
+                "universe": "Limited to a fixed set of 10 large-cap tickers (AAPL, NVDA, TSLA, and others) chosen after the fact — results may reflect selection bias.",
+                "dataSource": "Price data source: Financial Modeling Prep (FMP)."
             }
         },
         "chart": {
@@ -3535,8 +3547,8 @@
                 "sourcesTitle": "Where the answers come from"
             },
             "MessageList": {
-                "19b2d1": "Cancel",
                 "259976": "The response was cut off. Please ask a follow-up question.",
+                "19b2d1": "Cancel",
                 "43da5e": "Regenerate",
                 "6523ca": "Resend",
                 "96adfe": "This response was stopped.",
