@@ -13,19 +13,12 @@ vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
         <div data-testid="model-provider">{children}</div>
     ),
 }));
-vi.mock('next/navigation', () => ({
-    useSelectedLayoutSegment: vi.fn(),
-}));
-
 import { render, screen } from '@testing-library/react';
-import { useSelectedLayoutSegment } from 'next/navigation';
 import {
     SymbolLayoutProviders,
     SymbolLayoutFloatingChat,
     SymbolLayoutJail,
 } from '@/app/[locale]/[symbol]/SymbolLayoutClient';
-
-const mockSegment = vi.mocked(useSelectedLayoutSegment);
 
 describe('SymbolLayoutProviders', () => {
     it('renders children inside SymbolChatProvider and SymbolModelProvider', () => {
@@ -49,38 +42,25 @@ describe('SymbolLayoutFloatingChat', () => {
     });
 });
 
-// "AI 분석이 길어지면 차트도 길어진다" 회귀 가드 — 차트 높이 고정 부분.
+// 단일 문서 스크롤 회귀 가드.
 //
-// jsdom에는 레이아웃 엔진이 없어 차트가 실제로 고정 픽셀 높이를 유지하는지 측정할 수
-// 없다. 대신 그 동작을 만들어내는 CSS 계약을 검증한다: 차트(index) 라우트에서 jail은
-// definite height로 고정되고 overflow-hidden으로 클립되므로, 긴 AI 분석은 차트 행을
-// 늘리지 못하고 패널 자체의 overflow-y-auto 영역 안에서 스크롤된다. 이 계약은 분석이
-// 길든 짧든 동일해야 한다 — 그 불변성이 바로 회귀 가드다(버그의 본질은 "분석 길이가
-// 레이아웃 높이를 바꾼다"였다). 형제 탭은 반대로 min-h를 유지해 콘텐츠 길이에 따라
-// 자라고 페이지가 스크롤된다.
-describe('SymbolLayoutJail (차트 높이 고정)', () => {
-    /**
-     * 차트 라우트의 확정 높이는 **데스크톱 전용**이다. 이 높이가 필요한 이유는
-     * `ChartContent`의 aside(`md:h-full` + 자체 스크롤)가 조상의 확정 높이 없이는
-     * 해석되지 않아서인데, 그 aside는 `hidden md:flex`라 모바일에 없다.
-     * 모바일에 걸면 jail이 뷰포트에 고정되고 그 안의 `<main>`이 따로 스크롤해
-     * **이중 스크롤**이 된다("지난 AI 분석"에 닿으려면 두 번 스크롤).
-     */
-    const DEFINITE_HEIGHT =
-        'md:h-[calc(100dvh-var(--header-h,3.5rem)-var(--pwa-banner-h,0px))]';
+// jsdom에는 레이아웃 엔진이 없어 스크롤러가 몇 개인지 측정할 수 없다. 대신 그 동작을
+// 만들어내는 CSS 계약을 검증한다: jail은 **어느 라우트에서도** growable `min-h` 박스이며
+// 자체 클립·스크롤을 갖지 않는다. 예전에는 차트(index) 라우트만 예외로
+// `md:h-[calc(...)] + md:overflow-hidden`이었고, 그래서 그 안의 `<main>`이 자기
+// `overflow-y-auto`로 아래 콘텐츠를 노출해야 했다 — 데스크톱에 스크롤바가 셋이 됐다
+// (main, AI 패널, body). 차트의 확정 높이는 이제 차트 컬럼 자신이 `--symbol-chart-h`로
+// 들고 있으므로(ChartContent) jail이 높이를 확정할 이유가 없다.
+//
+// "AI 분석이 길어져도 차트는 늘어나지 않는다"는 원래의 불변성은 그대로다. 다만 그것을
+// 지키는 지점이 jail이 아니라 차트 컬럼으로 옮겨졌고, 그쪽 계약은
+// `views/symbol/__tests__/ChartContent.test.tsx`가 고정한다.
+describe('SymbolLayoutJail (단일 문서 스크롤)', () => {
     const MIN_HEIGHT =
         'min-h-[calc(100dvh-var(--header-h,3.5rem)-var(--pwa-banner-h,0px))]';
-    const SIBLING_SEGMENTS = [
-        'news',
-        'fundamental',
-        'options',
-        'overall',
-        'fear-greed',
-    ];
 
-    // 긴 AI 분석 패널과 짧은 패널의 대역. 콘텐츠 길이는 의도적으로 단언 결과에 영향을
+    // 긴 콘텐츠와 짧은 콘텐츠의 대역. 콘텐츠 길이는 의도적으로 단언 결과에 영향을
     // 주지 않는다 — 그 무관함(불변성)이 바로 이 테스트가 지키려는 핵심이다.
-    // 긴 패널을 시뮬레이션하기에 충분한 문단 수.
     const LONG_PARAGRAPH_COUNT = 80;
     const LONG_ANALYSIS = (
         <div data-testid="analysis">
@@ -98,60 +78,28 @@ describe('SymbolLayoutJail (차트 높이 고정)', () => {
         return container.firstElementChild as HTMLElement;
     };
 
-    describe('차트(index) 라우트', () => {
-        beforeEach(() => {
-            mockSegment.mockReturnValue(null);
+    describe.each([
+        ['긴', LONG_ANALYSIS],
+        ['짧은', SHORT_ANALYSIS],
+    ])('콘텐츠가 %s 때', (_label, child) => {
+        it('growable min-height를 유지해 짧은 페이지도 viewport를 채우고 긴 페이지는 문서가 스크롤한다', () => {
+            const jail = renderJail(child);
+
+            expect(jail.className).toContain(MIN_HEIGHT);
         });
 
-        describe('AI 분석 패널이 길 때', () => {
-            it('jail이 definite height + overflow-hidden을 유지해 패널이 내부 스크롤되고 차트는 늘어나지 않는다', () => {
-                const jail = renderJail(LONG_ANALYSIS);
+        it('확정 높이를 걸지 않는다 — 걸면 그 안에서 또 스크롤해야 한다', () => {
+            const jail = renderJail(child);
 
-                expect(jail.className).toContain(DEFINITE_HEIGHT);
-                expect(jail.className).toContain('md:overflow-hidden');
-                // 모바일은 성장한다 — 페이지가 한 번만 스크롤해야 한다.
-                expect(jail.className).toContain(MIN_HEIGHT);
-            });
+            // `min-h-[...]`는 포함되므로 `h-[`로 좁혀 확정 높이만 잡는다.
+            expect(jail.className).not.toMatch(/(?:^|\s)(?:md:)?h-\[/);
         });
 
-        describe('AI 분석 패널이 짧을 때', () => {
-            it('콘텐츠가 짧아도 동일한 definite height(min-height 아님)를 유지해 차트가 viewport를 채운다', () => {
-                const jail = renderJail(SHORT_ANALYSIS);
+        it('자체 스크롤 컨테이너가 아니다 (클립도 내부 스크롤도 없다)', () => {
+            const jail = renderJail(child);
 
-                expect(jail.className).toContain(DEFINITE_HEIGHT);
-                expect(jail.className).toContain('md:overflow-hidden');
-                expect(jail.className).toContain(MIN_HEIGHT);
-            });
-        });
-    });
-
-    describe('형제 탭 라우트', () => {
-        describe('콘텐츠가 길 때', () => {
-            it.each(SIBLING_SEGMENTS)(
-                '"%s" 라우트는 overflow-hidden 없이 growable min-height라 긴 콘텐츠가 페이지를 스크롤한다',
-                segment => {
-                    mockSegment.mockReturnValue(segment);
-
-                    const jail = renderJail(LONG_ANALYSIS);
-
-                    expect(jail.className).toContain(MIN_HEIGHT);
-                    expect(jail.className).not.toContain('overflow-hidden');
-                }
-            );
-        });
-
-        describe('콘텐츠가 짧을 때', () => {
-            it.each(SIBLING_SEGMENTS)(
-                '"%s" 라우트는 min-height를 유지해 짧은 페이지도 viewport를 채우고 sticky footer가 하단에 남는다',
-                segment => {
-                    mockSegment.mockReturnValue(segment);
-
-                    const jail = renderJail(SHORT_ANALYSIS);
-
-                    expect(jail.className).toContain(MIN_HEIGHT);
-                    expect(jail.className).not.toContain('overflow-hidden');
-                }
-            );
+            expect(jail.className).not.toContain('overflow-hidden');
+            expect(jail.className).not.toContain('overflow-y-auto');
         });
     });
 });

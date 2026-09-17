@@ -1964,7 +1964,8 @@
                 "asOfKrEquity": "Korean market close",
                 "asOfKrEquityFallback": "As of the previous Korean close",
                 "asOfUsEquity": "U.S. market close",
-                "asOfUsEquityFallback": "As of the previous U.S. close"
+                "asOfUsEquityFallback": "As of the previous U.S. close",
+                "disclosureSummary": "View previous AI analysis"
             },
             "SymbolPageClient": {
                 "ddb88e": "View AI Analysis"

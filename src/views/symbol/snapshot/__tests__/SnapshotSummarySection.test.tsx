@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, afterEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 
 describe('SnapshotSummarySection', () => {
@@ -356,5 +356,92 @@ describe('평이화 연동', () => {
 
         expect(container.querySelector('[data-snapshot-prose]')).toBeNull();
         expect(screen.getByRole('radiogroup')).toBeInTheDocument();
+    });
+
+    /**
+     * 라이브 분석이 뜨면 이 섹션을 **감추지 않고 접는다**.
+     *
+     * 예전에는 `[data-analysis-view='plain'] [data-snapshot-prose]`가
+     * `display: none`이었다. 그 섹션은 2026-07 thin 콘텐츠 절벽 대응으로 넣은
+     * SEO 자산인데, 구글은 `display:none` 텍스트를 감가하고 접힌 아코디언 안의
+     * 텍스트는 동등하게 취급한다. 그래서 텍스트가 **DOM에 그대로 남아 있는지**가
+     * 이 묶음의 핵심 단언이다 — 접힘 여부가 아니라.
+     */
+    describe('지난 AI 분석 접기(아코디언)', () => {
+        afterEach(() => {
+            delete document.documentElement.dataset.analysisView;
+        });
+
+        const renderChartTab = () =>
+            render(
+                <SnapshotSummarySection
+                    displayName="Apple Inc."
+                    marketProfile="us-equity"
+                    asOf={new Date('2026-09-16T20:00:00Z')}
+                    plain="애플 주가는 지금 오르는 흐름입니다."
+                    duplicatesLiveWidget
+                >
+                    <p>전문 원문</p>
+                </SnapshotSummarySection>
+            );
+
+        const detailsOf = (container: HTMLElement) => {
+            const details = container.querySelector('details');
+            expect(details).not.toBeNull();
+            return details as HTMLDetailsElement;
+        };
+
+        it('라이브 분석이 없으면 펼쳐진 채로 렌더된다 (SSR·JS 미실행과 동일)', () => {
+            const { container } = renderChartTab();
+
+            expect(detailsOf(container).open).toBe(true);
+            expect(
+                screen.getByText('애플 주가는 지금 오르는 흐름입니다.')
+            ).toBeInTheDocument();
+        });
+
+        it('라이브 분석이 떠 있으면 접히지만 본문은 DOM에 남는다', async () => {
+            document.documentElement.dataset.analysisView = 'plain';
+
+            const { container } = renderChartTab();
+
+            await waitFor(() => expect(detailsOf(container).open).toBe(false));
+            // display:none이 아니라 접기다 — 텍스트는 그대로 색인 대상이다.
+            expect(
+                screen.getByText('애플 주가는 지금 오르는 흐름입니다.')
+            ).toBeInTheDocument();
+        });
+
+        it('렌더 이후에 라이브 분석이 떠도 접힌다 (표식 변화를 관찰한다)', async () => {
+            const { container } = renderChartTab();
+            expect(detailsOf(container).open).toBe(true);
+
+            document.documentElement.dataset.analysisView = 'plain';
+
+            await waitFor(() => expect(detailsOf(container).open).toBe(false));
+        });
+
+        it('summary가 "지난 AI 분석 보기 · 기준일 캡션"을 읽는다', () => {
+            renderChartTab();
+
+            const summary = screen.getByText(/지난 AI 분석 보기/);
+            expect(summary.tagName).toBe('SUMMARY');
+            expect(summary).toHaveTextContent('Apple Inc.');
+            expect(summary).toHaveTextContent('미국 장마감 기준');
+        });
+
+        it('일반 탭은 접기 자체를 두지 않는다 — 접을 라이브 위젯이 없다', () => {
+            const { container } = render(
+                <SnapshotSummarySection
+                    displayName="Apple Inc."
+                    marketProfile="us-equity"
+                    plain="애플 주가는 지금 오르는 흐름입니다."
+                >
+                    <p>전문 원문</p>
+                </SnapshotSummarySection>
+            );
+
+            expect(container.querySelector('details')).toBeNull();
+        });
     });
 });

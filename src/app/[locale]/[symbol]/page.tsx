@@ -367,28 +367,21 @@ export default async function SymbolPage({ params }: Props) {
             {/* 차트 페이지는 CrossLinkCards를 본문에 두지 않는다 — cross-link 역할은
                 layout header의 SymbolTabs가 충분히 수행한다 (탭으로 sibling 페이지
                 전환 가능; anchor 기반이라 crawler도 follow 가능). TechnicalSnapshotProse는
-                아래에서 별도 처리한다 (overflow-y-auto 참고). */}
-            {/* audit fix FIX 1: SymbolLayout의 sticky-footer jail(SymbolLayoutClient.tsx)은
-                차트 라우트에서 definite height + overflow-hidden으로 고정된다 — AI 분석
-                패널이 길어져도 차트 행이 늘어나지 않게 하는 회귀 가드(SymbolLayoutClient
-                .test.tsx)라 그 계약은 건드리지 않는다. 대신 이 <main> 자체가
-                overflow-y-auto를 갖는 스크롤 컨테이너가 된다: 아래 wrapper div는
-                `h-full shrink-0`으로 잡아 main의 전체 높이를 항상 그대로 차지하므로
-                (basis 100%, shrink 금지) chart+AI 영역은 TechnicalSnapshotProse의
-                존재 여부와 무관하게 절대 압축되지 않는다. 프로즈는 그 wrapper 뒤에
-                오는 sibling이라 총 콘텐츠 높이가 main의 고정 높이를 넘으면(즉, 프로즈가
-                실제로 존재하면) main 자신이 내부 스크롤로 노출한다 — 이전처럼
-                overflow-hidden에 잘려 사라지지 않는다. h1(SymbolPageClient 또는
-                fallback 안)이 프로즈보다 DOM에서 먼저 오므로 heading 위계(WCAG 1.3.1)도
-                함께 해결된다. */}
-            {/* 내부 스크롤은 데스크톱 전용이다 — jail이 모바일에서 높이를
-                    고정하지 않으므로 여기서 스크롤을 잡으면 페이지 스크롤과
-                    겹쳐 이중 스크롤이 된다. */}
-            <main className="flex min-h-0 flex-1 flex-col md:overflow-y-auto">
-                {/* h-full + shrink-0: main의 전체 높이를 basis로 고정하고 shrink를
-                    금지해, 뒤따르는 TechnicalSnapshotProse가 있어도 이 chart+AI
-                    영역은 절대 압축되지 않는다(위 audit fix FIX 1 주석 참고). */}
-                <div className="flex h-[calc(100dvh-var(--header-h,3.5rem)-var(--pwa-banner-h,0px)-var(--symbol-chrome-h,7.75rem))] shrink-0 flex-col md:h-full">
+                아래에서 별도 처리한다. */}
+            {/* 이 라우트의 스크롤러는 **문서 하나뿐**이다. 예전에는 jail이 첫 뷰포트에
+                고정(definite height + overflow-hidden)돼 있어서 이 <main>이 자기
+                overflow-y-auto로 아래 콘텐츠를 노출해야 했는데, 그 결과 데스크톱에
+                스크롤바가 셋이 됐다 — main, AI 패널, body(사용자 제보, v0.79.0).
+                이제 jail도 main도 스크롤 컨테이너가 아니다. 차트 높이만 차트 컬럼이
+                `--symbol-chart-h`로 직접 잡고(ChartContent), 그 위 모든 단은 콘텐츠만큼
+                자란다. h1(SymbolPageClient 또는 아래 fallback 안)이 프로즈보다 DOM에서
+                먼저 오므로 heading 위계(WCAG 1.3.1)는 그대로 유지된다. */}
+            <main className="flex flex-1 flex-col">
+                {/* 모바일에서는 이 wrapper가 첫 뷰포트 높이를 확정하고 안쪽 flex
+                    체인(SymbolPageClient → 차트 행)이 그 잔여를 나눈다 — 기존 동작
+                    그대로다. 데스크톱(md+)에서는 높이를 놓아 AI 패널이 내용만큼
+                    자라게 하고, 차트는 자기 확정 높이를 스스로 들고 있다. */}
+                <div className="flex h-(--symbol-chart-h) shrink-0 flex-col md:h-auto">
                     <HydrationBoundary state={dehydrate(queryClient)}>
                         {/* fallback은 두 역할을 겸한다:
                             1. CLS 방지 — 차트 영역(flex-1)을 미리 차지해 useSearchParams
@@ -411,22 +404,29 @@ export default async function SymbolPage({ params }: Props) {
                                             v0: displayName,
                                         })}
                                     </h1>
-                                    {quantizedFactBars &&
-                                    quantizedFactBars.bars.length > 0 ? (
-                                        <TechnicalFactsSummary
-                                            symbol={ticker}
-                                            bars={quantizedFactBars.bars}
-                                            indicators={
-                                                quantizedFactBars.indicators
-                                            }
-                                            marketProfile={marketProfile}
-                                        />
-                                    ) : (
-                                        <div
-                                            className="flex min-h-0 flex-1 flex-col overflow-hidden bg-secondary-900"
-                                            aria-hidden="true"
-                                        />
-                                    )}
+                                    {/* md+에서는 바깥 wrapper가 높이를 놓았으므로(md:h-auto)
+                                        이 래퍼가 두 분기(사실 요약 / 자리표시자) 공통으로
+                                        차트 높이를 예약한다 — 분기 하나만 예약하면 다른
+                                        분기가 0으로 접혀 CLS가 난다(둘 다 같은 래퍼를
+                                        쓰게 해 재발을 구조적으로 막는다). */}
+                                    <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:h-(--symbol-chart-h) md:flex-none">
+                                        {quantizedFactBars &&
+                                        quantizedFactBars.bars.length > 0 ? (
+                                            <TechnicalFactsSummary
+                                                symbol={ticker}
+                                                bars={quantizedFactBars.bars}
+                                                indicators={
+                                                    quantizedFactBars.indicators
+                                                }
+                                                marketProfile={marketProfile}
+                                            />
+                                        ) : (
+                                            <div
+                                                className="h-full bg-secondary-900"
+                                                aria-hidden="true"
+                                            />
+                                        )}
+                                    </div>
                                 </>
                             }
                         >

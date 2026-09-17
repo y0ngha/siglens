@@ -79,6 +79,32 @@ describe('BacktestHero', () => {
         expect(screen.getByRole('banner')).toBeInTheDocument();
     });
 
+    // 사용자 제보: 값이 카드마다 다른 x에 떠 "표"로 읽히지 않았다. 정렬을 만드는
+    // CSS 계약(왼쪽 정렬 + 자릿수 정렬 + 항상 그려지는 서브라벨 슬롯)을 고정한다.
+    describe('표처럼 정렬되는 스탯 그리드', () => {
+        it('값은 왼쪽 정렬 + tabular-nums로 열마다 같은 선에서 시작한다', () => {
+            render(<BacktestHero stats={STATS} />);
+
+            const value = screen.getByText('62%');
+            expect(value).toHaveClass('tabular-nums');
+            // 정렬은 그리드 컨테이너가 한 번만 정한다(카드 루트에는 중복하지 않는다) —
+            // 값은 그 안에서 블록으로 흐른다.
+            expect(value.closest('.text-left')).not.toBeNull();
+        });
+
+        it('서브라벨이 없는 카드도 슬롯을 그려 바닥선을 맞춘다', () => {
+            render(<BacktestHero stats={STATS} />);
+
+            const slots = screen.getAllByTestId('stat-sub-label');
+            // 카드 6개 = 슬롯 6개. 서브라벨이 있는 건 둘뿐이다.
+            expect(slots).toHaveLength(6);
+            expect(slots.filter(slot => slot.textContent !== '')).toHaveLength(
+                2
+            );
+            for (const slot of slots) expect(slot).toHaveClass('min-h-4');
+        });
+    });
+
     it('colors a negative mean return with the danger token', () => {
         render(<BacktestHero stats={{ ...STATS, meanReturnPct: -1.2 }} />);
 

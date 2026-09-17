@@ -504,7 +504,11 @@ export function ChartContent({
     ]);
 
     return (
-        <div className="flex h-full w-full flex-col md:flex-row">
+        // md+: `items-start`로 AI 패널이 차트보다 길어질 수 있게 한다. 예전에는
+        // 행이 확정 높이였고 패널이 그 안에서 `overflow-y-auto`로 스크롤했는데,
+        // 그게 데스크톱 스크롤바 셋 중 하나였다(사용자 제보). 이제 행 높이는
+        // 차트와 패널 중 큰 쪽이 정하고, 차트는 자기 `--symbol-chart-h`를 지킨다.
+        <div className="flex h-full w-full flex-col md:h-auto md:flex-row md:items-start">
             {/* 차트 영역 — 바텀시트는 fixed 오버레이라 콘텐츠를 밀어내지 않는다.
                  **그래서** 아래를 직접 비워 둬야 Peek 상태에서 거래량 차트와 면책 문구가
                  띠 밑으로 들어가지 않는다(실측: 예약을 0으로 두면 pane 3개가 전부 가려지고
@@ -515,18 +519,21 @@ export function ChartContent({
                  갈리기 때문이다(jail=dvh, 시트=svh, vaul 오프셋=innerHeight). 툴바가 접혀
                  `dvh > svh`가 되면 띠는 줄어드는데 예약만 남아 그 차이가 검은 빈 공간이 됐다.
                  근거와 식은 `constants/mobileSheet`에 있다.
-                 sizing: `h-full` 대신 `flex-1 min-h-0`을 사용한다. 부모 ChartContent outer가 flex-row(md+)일 때
-                 h-full(= height:100%)이 부모의 stretch-결과 height를 percentage resolution용 "definite"로 못 읽고
-                 자식 컨텐츠 height(24~54px)로 fallback해 차트가 30px로 그려지는 Chrome flex spec 회색-영역 이슈가 있었다.
-                 flex-1은 데스크탑에서 main-axis(width) grow + cross-axis stretch로 height를 자동으로 받고,
-                 모바일(flex-col)에서는 main-axis(height) grow로 부모 height를 채운다. */}
+                 sizing(모바일): `flex-1 min-h-0`으로 부모(page wrapper가 확정한 첫 뷰포트
+                 높이)의 잔여를 채운다 — 기존 동작 그대로다.
+                 sizing(md+): `--symbol-chart-h`로 **자기 높이를 직접 확정한다**. 부모 행은
+                 이제 `items-start`라 stretch로 높이를 받지 못하고, 애초에 그 행의 높이는
+                 AI 패널 길이에 따라 변한다. 차트가 패널 길이를 따라 늘어나면 안 되므로
+                 확정 높이의 소유권이 여기로 내려왔다. `flex-1`은 md+에서 main-axis가
+                 width라 폭 배분만 담당한다(높이와 무관). lightweight-charts 컨테이너는
+                 percentage height를 쓰므로 이 확정 높이가 그 체인의 시작점이다. */}
             <div
                 style={
                     {
                         '--peek-reserve': PEEK_RESERVE_CSS,
                     } as React.CSSProperties
                 }
-                className="flex min-h-0 flex-1 shrink-0 flex-col overflow-hidden pb-[var(--peek-reserve)] md:pb-0"
+                className="flex min-h-0 flex-1 shrink-0 flex-col overflow-hidden pb-[var(--peek-reserve)] md:h-(--symbol-chart-h) md:pb-0"
             >
                 {/* 캔들 차트 */}
                 <div className="relative flex-3">
@@ -593,18 +600,23 @@ export function ChartContent({
                 aria-valuemin={PANEL_MIN_WIDTH}
                 aria-valuemax={PANEL_MAX_WIDTH}
                 className={cn(
-                    'border-secondary-700 hover:border-primary-600 focus-visible:border-primary-600 hidden w-1 cursor-col-resize border-l transition-colors outline-none md:block',
+                    // `self-stretch`: 부모 행이 `items-start`라 이게 없으면 높이 0으로
+                    // 접혀 잡을 것이 사라진다. 행의 높이(= 차트와 패널 중 큰 쪽)를 그대로
+                    // 덮어, 패널이 길어져도 어디서든 잡아 폭을 조절할 수 있다.
+                    'border-secondary-700 hover:border-primary-600 focus-visible:border-primary-600 hidden w-1 cursor-col-resize border-l transition-colors outline-none md:block md:self-stretch',
                     isDragging && 'border-primary-500'
                 )}
                 onMouseDown={handleDragStart}
                 onKeyDown={handleKeyDown}
             />
 
-            {/* overflow-y-auto로 내부 스크롤을 유지해 긴 분석이 차트 높이를 밀어내지
-                않게 하되, scrollbar-none으로 스크롤바 자체는 감춰 페이지 스크롤과
-                시각적으로 겹쳐 보이지 않게 한다. */}
+            {/* 자체 스크롤러가 아니다. 예전에는 `md:h-full` + `overflow-y-auto`로
+                차트 행 높이에 갇혀 내부 스크롤했는데, 그게 데스크톱 스크롤바 셋 중
+                하나였다(사용자 제보, v0.79.0). 이제 패널은 내용만큼 자라고 문서가
+                한 번만 스크롤한다 — 차트는 자기 `--symbol-chart-h`를 지키므로 패널이
+                길어져도 늘어나지 않는다. */}
             <aside
-                className="relative hidden min-h-0 flex-none scrollbar-none overflow-y-auto border-l border-secondary-700 p-4 md:flex md:h-full md:w-(--panel-width) md:flex-col"
+                className="relative hidden flex-none border-l border-secondary-700 p-4 md:flex md:w-(--panel-width) md:flex-col"
                 style={
                     {
                         // panelWidth는 드래그 상태에서 런타임에 결정되므로 정적 Tailwind 클래스로 표현 불가

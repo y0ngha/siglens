@@ -129,14 +129,16 @@ export function SymbolPageClient({
             indicatorCount={indicatorCount}
             skillCount={skillCount}
         >
-            {/* Chart page fills the first viewport via SymbolLayout's sticky-footer
-                jail: site header(3.5rem)를 viewport에서 뺀 jail 컨테이너 안에서
-                SymbolLayoutHeader가 자기 자리 + page main(flex-1)이 잔여를 차지하고,
-                이 outer div가 그 main 안에서 flex-1로 chart+AI 영역을 채운다. footer는
-                jail 형제로 push되어 스크롤 내려야 보인다. */}
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-secondary-900 text-secondary-200">
-                {/* Chart-only timeframe controls live inside this overflow-hidden chart
-                    container so the layout header can stay free of useSearchParams
+            {/* 모바일: page의 wrapper가 확정한 첫 뷰포트 높이를 flex-1로 받아
+                타임프레임 바와 차트 행이 나눈다.
+                데스크톱(md+): 높이를 놓는다(`md:flex-none`). 이 라우트의 스크롤러는
+                문서 하나뿐이라 AI 패널이 내용만큼 자라야 하고, `overflow-hidden`이
+                남아 있으면 그 성장분이 잘린다. 차트 높이는 ChartContent의 차트
+                컬럼이 `--symbol-chart-h`로 직접 들고 있으므로 여기서 확정할 필요가
+                없다. footer는 jail 형제로 push되어 스크롤 내려야 보인다. */}
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-secondary-900 text-secondary-200 md:flex-none md:overflow-visible">
+                {/* Chart-only timeframe controls live inside this chart container
+                    so the layout header can stay free of useSearchParams
                     (which would force PPR to mark the whole route as dynamic). */}
                 {/* 이 바는 아래의 차트/AI 레일 2-pane에 정렬한다 — 자기가 제어하는
                     대상이 그쪽이기 때문이다. 한때 `symbol-container`(1024px 중앙)를
@@ -149,7 +151,7 @@ export function SymbolPageClient({
                     (`SymbolLayoutHeader` JSDoc). */}
                 <div className="border-b border-secondary-700 px-4 py-2 sm:py-1.5">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-                        {/* 차트 페이지 가시 h1: jail(first-viewport 고정 + overflow-hidden)이라
+                        {/* 차트 페이지 가시 h1: 차트+AI가 첫 뷰포트를 채우는 구성이라
                         본문에 별도 블록을 얹으면 chart 가시 영역이 침범된다. 그래서
                         timeframe bar 행에 짧은 한 줄로 둔다(truncate로 좁은 화면에서
                         TimeframeSelector와 한 줄 공존). 단 이 컴포넌트는 useSearchParams로
@@ -175,7 +177,8 @@ export function SymbolPageClient({
                              * 높이와 무관하게 살아 있다.
                              *
                              * 세로 공간을 새로 쓰지 않도록 h1과 같은 행의 남는 폭에 둔다 —
-                             * 이 영역은 first-viewport jail이라 한 줄이 늘면 차트가 그만큼 줄어든다.
+                             * 이 버튼은 모바일 전용이고, 모바일에서는 첫 뷰포트 높이를
+                             * 차트 행과 나눠 쓰므로 한 줄이 늘면 차트가 그만큼 줄어든다.
                              */}
                             <button
                                 type="button"
@@ -193,7 +196,11 @@ export function SymbolPageClient({
                         />
                     </div>
                 </div>
-                <div className="relative flex min-h-0 flex-1 overflow-hidden">
+                {/* md+: 높이를 놓고(`md:flex-none`) 클립을 풀어 AI 패널이 자라게
+                    한다. 대신 `md:min-h-(--symbol-chart-h)`를 남긴다 — Suspense
+                    중에는 자식이 `absolute inset-0` 스켈레톤뿐이라 이 행이 0으로
+                    접히고, 그러면 차트가 도착할 때 통째로 CLS가 난다. */}
+                <div className="relative flex min-h-0 flex-1 overflow-hidden md:min-h-(--symbol-chart-h) md:flex-none md:overflow-visible">
                     <ErrorBoundary
                         FallbackComponent={ChartErrorFallback}
                         resetKeys={[timeframe, symbol]}

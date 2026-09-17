@@ -1964,7 +1964,8 @@
                 "asOfKrEquity": "국내 장마감 기준",
                 "asOfKrEquityFallback": "전일 국내 장마감 기준",
                 "asOfUsEquity": "미국 장마감 기준",
-                "asOfUsEquityFallback": "전일 장마감 기준"
+                "asOfUsEquityFallback": "전일 장마감 기준",
+                "disclosureSummary": "지난 AI 분석 보기"
             },
             "SymbolPageClient": {
                 "ddb88e": "AI 분석 보기"

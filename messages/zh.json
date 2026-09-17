@@ -1964,7 +1964,8 @@
                 "asOfKrEquity": "韩股收盘时点",
                 "asOfKrEquityFallback": "按前一交易日韩股收盘",
                 "asOfUsEquity": "美股收盘时点",
-                "asOfUsEquityFallback": "按前一交易日美股收盘"
+                "asOfUsEquityFallback": "按前一交易日美股收盘",
+                "disclosureSummary": "查看上次AI分析"
             },
             "SymbolPageClient": {
                 "ddb88e": "查看AI分析"

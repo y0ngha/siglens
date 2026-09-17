@@ -1964,7 +1964,8 @@
                 "asOfKrEquity": "韓国市場終値時点",
                 "asOfKrEquityFallback": "前営業日の韓国終値時点",
                 "asOfUsEquity": "米国市場終値時点",
-                "asOfUsEquityFallback": "前営業日の米国終値時点"
+                "asOfUsEquityFallback": "前営業日の米国終値時点",
+                "disclosureSummary": "前回のAI分析を見る"
             },
             "SymbolPageClient": {
                 "ddb88e": "AI分析を見る"
