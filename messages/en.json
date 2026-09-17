@@ -120,10 +120,6 @@
                         "answer": "Enter a US ticker and it lays out the chart (indicators, candlestick patterns, support and resistance), earnings and valuation, financial statements, recent news flow, options market data, congressional trade disclosures, and short-term buying mood (the Fear & Greed Index) — then an overall analysis that ties them together. It is free. For KOSPI and KOSDAQ listings it covers chart, earnings, financial statements, news, Fear & Greed and the overall analysis (Korea has no congressional disclosure regime and no single-stock options market, so those two are omitted). For crypto such as Bitcoin and Ethereum it covers chart, news, Fear & Greed and the overall analysis. No sign-up needed.",
                         "question": "What is {v0}?"
                     },
-                    "q1": {
-                        "answer": "The Siglens chatbot answers with the chart and indicator data of the ticker you are viewing as context — reading the trend, scenario interpretation, what an indicator means, comparing patterns, discussing strategy. Answers are grounded in the analysis shown on screen.",
-                        "question": "What can I ask the AI chat?"
-                    },
                     "q10": {
                         "answer": "It is free today and needs no sign-up. Advanced features will move to a paid plan later; the core analysis stays free.",
                         "question": "Is there a fee to use the service?"
@@ -136,32 +132,12 @@
                         "answer": "The /market page scans the leading names across 11 sectors every day and lists the tickers where technical signals were caught — golden cross, death cross, RSI divergence, Bollinger squeeze. Click one to open its detailed AI analysis page.",
                         "question": "What signals does the market overview show?"
                     },
-                    "q3": {
-                        "answer": "The Fundamentals tab on a ticker page carries valuation and profitability metrics — PER, PBR, ROE, operating margin — alongside a peer-average comparison. For Apple that is /AAPL/fundamental.",
-                        "question": "Where do I find Earnings metrics like PER or ROE for a ticker?"
-                    },
-                    "q4": {
-                        "answer": "The News tab on a ticker page gathers recent earnings results, guidance and key events together with news sentiment (the spread of positive, neutral and negative). For Tesla that is /TSLA/news — useful when price moves are not explained by the chart alone.",
-                        "question": "Where do I check earnings and news sentiment?"
-                    },
-                    "q5": {
-                        "answer": "The Fear & Greed tab on each ticker page (e.g. /AAPL/fear-greed) combines volume flow and price position into a 0–100 score for the short-term mood. Closer to 0 means selling pressure dominates; closer to 100 means buying does. Five labels run from extreme fear to extreme greed.",
-                        "question": "Can I tell whether buying pressure is strong right now?"
-                    },
-                    "q6": {
-                        "answer": "The market-wide Fear & Greed page (/fear-greed) combines five factors — the S&P 500, VIX, long-dated Treasuries, high-yield versus investment-grade corporates, and the equal-weight index — into a 0–100 score for short-term sentiment across US equities. Where the per-ticker index reads one name’s supply and demand, this page reads whether the market as a whole is overheated or fearful.",
-                        "question": "Where do I see the mood of the whole US market?"
-                    },
-                    "q7": {
-                        "answer": "The Options tab on each ticker page (e.g. /AAPL/options) shows Max Pain by expiry, the Put/Call ratio, ATM IV, implied move and the open-interest distribution by strike. The AI reads this dense options data back to you and explains which way the market is leaning.",
-                        "question": "Can I see where institutions are betting in the options market?"
-                    },
                     "q8": {
                         "answer": "The Overall Analysis tab on a ticker page ties chart, earnings, news, the options market and Fear & Greed into one analysis — bull and bear scenarios, the key things to check, and the risks. For Nvidia that is /NVDA/overall.",
                         "question": "Where is the overall analysis that combines chart, earnings, news and options?"
                     },
                     "q9": {
-                        "answer": "The /backtesting page publishes two years of technical signals and AI scenarios for major tickers, back-tested against historical data. Results are based on past data and do not guarantee future performance.",
+                        "answer": "The /backtesting page publishes technical signals and AI scenarios for major tickers, back-tested against historical data. Results are based on past data and do not guarantee future performance.",
                         "question": "Where can I see how the AI analysis held up on past data?"
                     }
                 },
@@ -1459,7 +1435,6 @@
             "backtestingOgAlt": "{v0} AI backtesting results",
             "economy": {
                 "kr": {
-                    "datasetVariableMeasured": "Korean macroeconomic indicators ({v0} series incl. the policy rate, CPI, GDP and unemployment)",
                     "description": "See Korea's economic indicators on one page — policy rate, CPI, employment rate, and GDP growth, plus government bond yields and export growth, along with upcoming release dates.",
                     "faq0a": "The Bank of Korea’s Monetary Policy Board meets eight times a year to set the base rate. The “Korea policy rate” card on this page shows the most recent decision.",
                     "faq0q": "Who sets the Korean policy rate?",
@@ -1470,7 +1445,6 @@
                     "title": "Korea Economy — Indicators & Calendar at a Glance"
                 },
                 "us": {
-                    "datasetVariableMeasured": "US macroeconomic indicators ({v0} series incl. the federal funds rate, CPI, GDP and unemployment, plus {v1} Treasury yields)",
                     "description": "See US interest rates, inflation, employment, and growth indicators plus upcoming economic releases on one page. AI summarizes the current macro picture.",
                     "faq0a": "The gap between 2-year and 10-year US Treasury yields — the 10-year minus the 2-year. A negative value means the curve has inverted, which is sometimes read as a recession signal.",
                     "faq0q": "What is the 2s10s spread?",
@@ -1500,15 +1474,15 @@
                 "optionsExpirations": " There are {v0} tradable expirations right now, and the nearest one is {v1}.",
                 "optionsScope": "What does the {v0} options market analysis cover?",
                 "overallAxes": "Which angles does the {v0} overall analysis combine?",
-                "overallAxesAnswerCrypto": "It combines the chart trend, recent news sentiment and buying mood (the Fear & Greed Index) for {v0} to lay out bull and bear scenarios, price levels worth considering for entry, and the risks that would break each scenario.",
-                "overallAxesAnswerKrEquity": "It combines three angles for {v0} — the chart trend, quarterly earnings and fundamentals, and recent news sentiment — then adds market mood (the Fear & Greed Index) to lay out bull and bear scenarios, price levels worth considering for entry, and the risks that would break each scenario.",
-                "overallAxesAnswerUsEquity": "It combines four angles for {v0} — the chart trend, the short-term direction the options market is pricing in, quarterly earnings and fundamentals, and recent news sentiment — then adds market mood (the Fear & Greed Index) to lay out bull and bear scenarios, price levels worth considering for entry, and the risks that would break each scenario.",
-                "overallBrokenAnswerCrypto": "A scenario is treated as broken once a risk factor undermines its premise — a macro event, a regulatory development, major news, or a sharp sentiment reversal. Those factors are listed separately, so they are worth a look before you buy.",
-                "overallBrokenAnswerEquity": "A scenario is treated as broken once a risk factor undermines its premise — an earnings result, a guidance change, a macro event, or a sharp sentiment reversal. Those factors are listed separately, so they are worth a look before you buy.",
+                "overallAxesAnswerCrypto": "It combines the chart trend, recent news sentiment and buying mood (the Fear & Greed Index) for {v0} to lay out bull and bear scenarios, the price levels where the scenario holds, and the risks that would break each scenario.",
+                "overallAxesAnswerKrEquity": "It combines three angles for {v0} — the chart trend, quarterly earnings and fundamentals, and recent news sentiment — then adds market mood (the Fear & Greed Index) to lay out bull and bear scenarios, the price levels where the scenario holds, and the risks that would break each scenario.",
+                "overallAxesAnswerUsEquity": "It combines four angles for {v0} — the chart trend, the short-term direction the options market is pricing in, quarterly earnings and fundamentals, and recent news sentiment — then adds market mood (the Fear & Greed Index) to lay out bull and bear scenarios, the price levels where the scenario holds, and the risks that would break each scenario.",
+                "overallBrokenAnswerCrypto": "A scenario is treated as broken once a risk factor undermines its premise — a macro event, a regulatory development, major news, or a sharp sentiment reversal. Those factors are listed separately, so read them before you read the scenarios.",
+                "overallBrokenAnswerEquity": "A scenario is treated as broken once a risk factor undermines its premise — an earnings result, a guidance change, a macro event, or a sharp sentiment reversal. Those factors are listed separately, so read them before you read the scenarios.",
                 "overallBrokenQuestion": "Which signals mean the scenario has broken down?",
-                "overallScenarioAnswerCrypto": "It weighs the chart trend, recent news flow and buying mood to judge whether upward or downward pressure has the upper hand. For each scenario it also sets out the price levels worth considering for entry and the signals that would break it.",
-                "overallScenarioAnswerKrEquity": "It weighs the chart trend, the earnings and guidance trajectory, and news sentiment to judge whether upward or downward pressure has the upper hand. For each scenario it also sets out the price levels worth considering for entry and the signals that would break it.",
-                "overallScenarioAnswerUsEquity": "It weighs the chart trend, call/put positioning in the options market, the earnings and guidance trajectory, and news sentiment to judge whether upward or downward pressure has the upper hand. For each scenario it also sets out the price levels worth considering for entry and the signals that would break it.",
+                "overallScenarioAnswerCrypto": "It weighs the chart trend, recent news flow and buying mood to judge whether upward or downward pressure has the upper hand. For each scenario it also sets out the price levels where the scenario holds and the signals that would break it.",
+                "overallScenarioAnswerKrEquity": "It weighs the chart trend, the earnings and guidance trajectory, and news sentiment to judge whether upward or downward pressure has the upper hand. For each scenario it also sets out the price levels where the scenario holds and the signals that would break it.",
+                "overallScenarioAnswerUsEquity": "It weighs the chart trend, call/put positioning in the options market, the earnings and guidance trajectory, and news sentiment to judge whether upward or downward pressure has the upper hand. For each scenario it also sets out the price levels where the scenario holds and the signals that would break it.",
                 "overallScenarioQuestion": "What separates the bullish scenario from the bearish one?"
             },
             "faqHeading": {
@@ -1516,6 +1490,7 @@
                 "fear-greed": "{v0} Fear & Greed Index FAQ",
                 "financials": "{v0} financial statements FAQ",
                 "fundamental": "{v0} fundamental analysis FAQ",
+                "home": "Frequently Asked Questions",
                 "options": "{v0} options analysis FAQ",
                 "overall": "{v0} overall analysis FAQ"
             },
@@ -1587,11 +1562,11 @@
                 "titleTemplate": "{label} News — Latest Updates & AI Summary"
             },
             "newsHub": {
-                "description": "See market news in one place. Latest news from US, Korean, and crypto markets, sorted by category, with AI summaries that surface the key points from dense articles at a glance.",
+                "description": "Pick a market — US stocks, Korean stocks or crypto — and reach its category listings, headlines previewed up front.",
                 "title": "Market News Hub — US & Korean Stocks, Crypto"
             },
             "newsUs": {
-                "description": "See US market news by category in one place — general, stocks, forex, and market articles, all covered. AI summaries help you grasp dense original articles at a glance.",
+                "description": "The category chooser for US market news: stocks, forex, research and crypto, each with AI summaries of the originals.",
                 "title": "US Market News — Latest by Category"
             },
             "oauthConsentFullTitle": "{v0} — social sign-up terms consent",
@@ -1631,7 +1606,7 @@
                 "chart": {
                     "description": "AI analyzes {subject}'s price chart — RSI, MACD, Bollinger Bands, candlestick patterns, and key support/resistance — to map the trend and key price levels.",
                     "descriptionWithSector": "AI analyzes {sector}-sector {subject}'s price chart — RSI, MACD, Bollinger Bands, candlestick patterns, and key support/resistance — to map the trend and key price levels.",
-                    "titleCore": "Stock Forecast",
+                    "titleCore": "Stock Analysis",
                     "titleTail": "Chart & Technical Signals"
                 },
                 "congress": {
@@ -1641,7 +1616,7 @@
                 },
                 "crypto": {
                     "description": "AI analyzes {subject}'s price chart — RSI, MACD, Bollinger Bands, candlestick patterns, and key support/resistance — to map the trend and key price levels.",
-                    "titleCore": "Price Forecast"
+                    "titleCore": "Price Analysis"
                 },
                 "cryptoNews": {
                     "description": "See the bullish and bearish catalysts moving {subject}'s price in the latest news. AI summarizes crypto market mood and key issues.",
@@ -1824,6 +1799,9 @@
                 "2040a8": "If you are a real user, please refresh or try a different browser.",
                 "90ee5f": "Detected as bot traffic, analysis results are not displayed."
             },
+            "Breadcrumb": {
+                "46c31f": "Breadcrumb"
+            },
             "ConsentCheckboxGroup": {
                 "1f835a": "Consent Items",
                 "337a9a": "View Terms of Service",
@@ -2005,11 +1983,11 @@
             },
             "TechnicalSnapshotProse": {
                 "938737": "Technical Analysis Summary",
-                "3d874f": "Strategy Signals",
                 "4195b7": "{v0} Technical Direction: {v1}",
+                "aeeaee": "Technical Signal Summary",
                 "bdeea2": "Chart Patterns",
                 "patternListLabel": "{v0} chart pattern list",
-                "strategyListLabel": "{v0} strategy signal list"
+                "strategyListLabel": "{v0} technical signal list"
             },
             "chartPageHeading": {
                 "heading": "{v0} Chart Analysis"
@@ -2954,7 +2932,6 @@
             "HeroIllustration": {
                 "018ed1": "Illustration of an analysis dashboard displaying a candlestick chart, indicator trendlines, Golden Cross signal markers, and an RSI sub-panel"
             },
-            "HowItWorks": {},
             "SkillsShowcase": {
                 "158954": "AI Analysis Skills",
                 "0d2c24": "Collapse",

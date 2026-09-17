@@ -211,7 +211,6 @@ function buildPositionKeywords(ticker: string, koreanName?: string): string[] {
         `${ticker} 평단`,
         `${ticker} 평단 계산`,
         `${ticker} 내 위치`,
-        `${ticker} 매수 가격대`,
         `${ticker} 52주 범위`,
         ...(koreanName ? [`${koreanName} 평단`, `${koreanName} 내 위치`] : []),
         '평단 확인',

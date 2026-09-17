@@ -75,8 +75,11 @@ vi.mock('@/shared/config/dashboard-tickers', () => ({
     SECTOR_STOCKS: [
         { symbol: 'AAPL', koreanName: '애플', sectorSymbol: 'XLK' },
     ],
+    // 실제 설정과 같은 모양 — 스캐너 탭 목록에는 ETF가 없는 가상 테마가 더 붙는다.
+    // 목에서 이걸 빼면 "ItemList가 sectorEtfs만 싣는다" 단언이 판별력을 잃는다.
     SIGNAL_SECTORS: [
         { symbol: 'XLK', koreanName: 'AI 반도체', sectorName: 'Technology' },
+        { symbol: 'QNTM', koreanName: '양자', sectorName: 'Quantum' },
     ],
 }));
 
@@ -93,7 +96,7 @@ vi.mock('@/shared/config/queryConfig', () => ({
 }));
 
 vi.mock('@/shared/lib/seo', () => ({
-    buildWebPageJsonLd: () => ({}),
+    buildWebPageJsonLd: () => ({ '@type': 'WebPage' }),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
     clampSeoDescription: (text: string) => text,
     ROOT_KEYWORDS: ['주식'],
@@ -424,7 +427,7 @@ describe('Market page', () => {
             ).resolves.toBeDefined();
             expect(consoleSpy).toHaveBeenCalledWith(
                 expect.stringContaining(
-                    '[MarketContent:us] getMarketSummaryStatic failed:'
+                    '[loadMarketSignals:us] getMarketSummaryStatic failed:'
                 ),
                 expect.any(Error)
             );
@@ -447,7 +450,7 @@ describe('Market page', () => {
             ).resolves.toBeDefined();
             expect(consoleSpy).toHaveBeenCalledWith(
                 expect.stringContaining(
-                    '[MarketContent:us] getSectorSignalsStatic failed:'
+                    '[loadMarketSignals:us] getSectorSignalsStatic failed:'
                 ),
                 expect.any(Error)
             );
@@ -482,10 +485,116 @@ describe('/market BreadcrumbList 이름', () => {
         // 렌더될 때 만들어지므로 본문을 직접 호출해야 관측된다.
         const { MarketRouteBody } = await import('../MarketRouteBody');
         vi.mocked(buildBreadcrumbJsonLd).mockClear();
-        await MarketRouteBody({ locale: 'ko', scope: US_DASHBOARD_SCOPE });
+        const tree = await MarketRouteBody({
+            locale: 'ko',
+            scope: US_DASHBOARD_SCOPE,
+        });
         expect(buildBreadcrumbJsonLd).toHaveBeenCalledWith(
             [expect.objectContaining({ name: '미국 시장 현황' })],
             'ko'
         );
+
+        // 화면 마디도 같은 문자열이어야 한다 — 구글은 둘이 다르면 마크업을 무시한다.
+        const { expectVisibleBreadcrumbLabels } =
+            await import('@/__tests__/utils/expectVisibleBreadcrumb');
+        expectVisibleBreadcrumbLabels(tree, ['미국 시장 현황']);
+    });
+});
+
+/**
+ * degrade 상태에서 구조화데이터를 내보내면 `generateMetadata`가 건 noindex와
+ * 정면으로 어긋난다 — "색인하지 말라"면서 "이 URL은 정식 WebPage이고 섹터
+ * ETF 목록을 담고 있다"고 주장하는 상태다. metadata와 **같은 술어**
+ * (`loadMarketSignals`)를 본다.
+ */
+describe('/market 구조화데이터 degrade 게이트', () => {
+    async function bodyJsonLd() {
+        const { MarketRouteBody } = await import('../MarketRouteBody');
+        const { collectJsonLdData } =
+            await import('@/__tests__/utils/collectJsonLdData');
+        return collectJsonLdData(
+            await MarketRouteBody({ locale: 'ko', scope: US_DASHBOARD_SCOPE })
+        );
+    }
+
+    function withData() {
+        mockGetMarketSummaryStatic.mockResolvedValue({
+            indices: [{ symbol: 'GSPC' }],
+            sectors: [{ symbol: 'XLK' }],
+        });
+        mockGetSectorSignalsStatic.mockResolvedValue({
+            computedAt: '2026-06-04T14',
+            stocks: [{ symbol: 'AAPL' }],
+        });
+    }
+
+    it('두 loader가 모두 비면 JSON-LD를 하나도 내지 않는다', async () => {
+        mockGetMarketSummaryStatic.mockResolvedValue({
+            indices: [],
+            sectors: [],
+        });
+        mockGetSectorSignalsStatic.mockResolvedValue({
+            computedAt: '',
+            stocks: [],
+        });
+
+        expect(await bodyJsonLd()).toEqual([]);
+    });
+
+    it('데이터가 있으면 세 블록을 낸다', async () => {
+        withData();
+
+        const types = (await bodyJsonLd()).map(d => d['@type']);
+        // breadcrumb 빌더는 이 파일에서 `{}`로 목킹돼 `@type`이 없다 —
+        // 개수로 세 블록이 전부 나갔음을 확인한다.
+        expect(types).toContain('WebPage');
+        expect(types).toContain('ItemList');
+        expect(types).toHaveLength(3);
+    });
+
+    /**
+     * ItemList는 **실제 조회되는 섹터 ETF**만 싣는다. `signalSectors`는 스캐너 탭
+     * 목록이라 ETF가 없는 가상 테마(QNTM·SPACE)까지 들어 있는데, 존재하지 않는
+     * 티커를 ListItem으로 선언하면 마크업이 실물과 어긋난다.
+     */
+    it('ItemList는 가상 테마가 아니라 sectorEtfs만 싣는다', async () => {
+        withData();
+
+        const itemList = (await bodyJsonLd()).find(
+            d => d['@type'] === 'ItemList'
+        ) as { itemListElement: Array<{ name: string }> };
+
+        // 개수는 scope 설정에서 파생한다 — 숫자를 하드코딩하면 설정이 바뀌어도 통과한다.
+        expect(itemList.itemListElement).toHaveLength(
+            US_DASHBOARD_SCOPE.sectorEtfs.length
+        );
+        for (const virtual of ['QNTM', 'SPACE']) {
+            expect(
+                itemList.itemListElement.some(i => i.name.includes(virtual))
+            ).toBe(false);
+        }
+    });
+});
+
+describe('/market/kr 가시 브레드크럼', () => {
+    it('BreadcrumbList와 같은 마디를 그린다', async () => {
+        const { buildBreadcrumbJsonLd } = await import('@/shared/lib/seo');
+        const { MarketRouteBody } = await import('../MarketRouteBody');
+        const { expectVisibleBreadcrumbLabels } =
+            await import('@/__tests__/utils/expectVisibleBreadcrumb');
+        const { koMessage } = await import('@/shared/test-utils/koMessage');
+        vi.mocked(buildBreadcrumbJsonLd).mockClear();
+
+        const tree = await MarketRouteBody({
+            locale: 'ko',
+            scope: KR_DASHBOARD_SCOPE,
+        });
+
+        const expected = koMessage('shared.seo.market.kr.breadcrumb');
+        expect(buildBreadcrumbJsonLd).toHaveBeenCalledWith(
+            [expect.objectContaining({ name: expected })],
+            'ko'
+        );
+        expectVisibleBreadcrumbLabels(tree, [expected]);
     });
 });

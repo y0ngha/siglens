@@ -106,3 +106,24 @@ describe('/news/us hub', () => {
         expect(names.slice(-2)).toEqual(['시장 뉴스 허브', '미국 시장 뉴스']);
     });
 });
+
+/**
+ * 가시 브레드크럼과 `BreadcrumbList` 마크업은 **같은 문자열**이어야 한다 —
+ * 구글은 둘이 다르면 마크업을 무시하고, 그 어긋남은 화면에 표시가 나지 않는다.
+ */
+describe('/news/us 가시 브레드크럼', () => {
+    it('BreadcrumbList와 같은 마디를 그린다', async () => {
+        const { expectVisibleBreadcrumbMatchesJsonLdDom } =
+            await import('@/__tests__/utils/expectVisibleBreadcrumb');
+        const { koMessage } = await import('@/shared/test-utils/koMessage');
+
+        const { container } = render(
+            await UsNewsHubPage({ params: Promise.resolve({ locale: 'ko' }) })
+        );
+
+        expectVisibleBreadcrumbMatchesJsonLdDom(
+            container,
+            koMessage('shared.ui.Breadcrumb.46c31f')
+        );
+    });
+});

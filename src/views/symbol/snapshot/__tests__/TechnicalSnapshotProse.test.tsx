@@ -162,7 +162,7 @@ describe('TechnicalSnapshotProse', () => {
         expect(screen.getByText(/head_and_shoulders/)).toBeInTheDocument();
     });
 
-    it('strategyResults를 전략 시그널 라벨 붙은 목록으로 렌더한다 (FIX 3)', () => {
+    it('strategyResults를 기술적 신호 요약 라벨 붙은 목록으로 렌더한다 (FIX 3)', () => {
         render(
             <TechnicalSnapshotProse
                 content={buildFixture({
@@ -183,11 +183,46 @@ describe('TechnicalSnapshotProse', () => {
             />
         );
 
-        expect(screen.getByText('전략 시그널')).toBeInTheDocument();
+        expect(screen.getByText('기술적 신호 요약')).toBeInTheDocument();
         expect(
             screen.getByText('추세추종 전략이 매수 신호를 발생시켰습니다.')
         ).toBeInTheDocument();
         expect(screen.getByText(/trend-following/)).toBeInTheDocument();
+    });
+
+    // MISTAKES Accessibility 1.7 — 목록의 aria-label은 보이는 헤딩과 같은
+    // 용어("기술적 신호")를 써야 한다. 헤딩이 "전략"에서 "기술적 신호"로
+    // 바뀌었는데 aria-label만 "전략 시그널"로 남으면 스크린리더 사용자에게
+    // 같은 섹션이 두 개의 다른 이름으로 들린다.
+    it('strategyResults 목록의 접근 가능한 이름이 헤딩과 같은 용어를 쓴다 (Accessibility 1.7)', () => {
+        render(
+            <TechnicalSnapshotProse
+                content={buildFixture({
+                    strategyResults: [
+                        {
+                            id: 's1',
+                            strategyName: 'trend-following',
+                            trend: 'bullish',
+                            summary:
+                                '추세추종 전략이 매수 신호를 발생시켰습니다.',
+                            confidenceWeight: 0,
+                        },
+                    ] as never,
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+                marketProfile="us-equity"
+            />
+        );
+
+        const heading = screen.getByRole('heading', {
+            name: '기술적 신호 요약',
+        });
+        const list = screen.getByRole('list', {
+            name: /기술적 신호/,
+        });
+        expect(heading).toBeInTheDocument();
+        expect(list).toBeInTheDocument();
     });
 
     it('patternSummaries/strategyResults가 null이거나 빈 배열이면 두 섹션 다 렌더하지 않는다 (FIX 3)', () => {
@@ -204,7 +239,7 @@ describe('TechnicalSnapshotProse', () => {
         );
 
         expect(screen.queryByText('차트 패턴')).not.toBeInTheDocument();
-        expect(screen.queryByText('전략 시그널')).not.toBeInTheDocument();
+        expect(screen.queryByText('기술적 신호 요약')).not.toBeInTheDocument();
     });
 
     it('patternSummaries 항목의 summary가 비어있으면 해당 항목은 건너뛴다 (FIX 3)', () => {

@@ -15,7 +15,6 @@ import {
     EconomyMacroFacts,
     EconomySkeleton,
     MacroBriefing,
-    TREASURY_CARD_META,
 } from '@/widgets/economy';
 // entities/economy/api/*는 server-only(`@upstash/redis` + `next/cache`) 의존이라
 // entities/CLAUDE.md "barrel 제외 대상" 일반 규칙대로 슬라이스 barrel(index.ts)에서
@@ -33,24 +32,20 @@ import {
     buildFaqJsonLd,
     buildWebPageJsonLd,
     clampSeoDescription,
-    localizedAbsoluteUrl,
-    ROOT_KEYWORDS,
     SITE_NAME,
     SITE_URL,
     type FaqItem,
     type SeoTranslator,
 } from '@/shared/lib/seo';
-import { TERMS_PATH } from '@/shared/lib/legal';
 import {
     ISO_DATE_HOUR_SLICE_END,
     SECONDS_PER_HOUR,
 } from '@/shared/config/time';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { JsonLd } from '@/shared/ui/JsonLd';
+import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { FaqSection } from '@/shared/ui/FaqSection';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
-
-import { ECONOMY_INDICATORS } from '@/shared/config/economyIndicators';
 
 import { economyTitle } from './constants';
 import { EconomyDegraded } from './EconomyDegraded';
@@ -81,8 +76,8 @@ function economyDescription(t: SeoTranslator): string {
     return clampSeoDescription(t('economy.us.description'));
 }
 const ECONOMY_URL = `${SITE_URL}/economy`;
+// 루트 레이아웃이 `ROOT_KEYWORDS`를 선언한다 — 여기엔 페이지 고유 목록만 둔다.
 const ECONOMY_KEYWORDS = [
-    ...ROOT_KEYWORDS,
     '미국 경제 지표',
     '미국 기준금리',
     'FOMC 일정',
@@ -237,7 +232,6 @@ async function EconomyContent() {
         <div className="space-y-6">
             <JsonLd data={buildEconomyWebPageJsonLd(tSeo, locale)} />
             <JsonLd data={buildEconomyBreadcrumbJsonLd(tSeo, locale)} />
-            <JsonLd data={buildEconomyDatasetJsonLd(tSeo, locale)} />
             {/* SSR 크롤 텍스트 — MacroBriefing은 'use client'라 크롤러에 빈 HTML을
                 반환한다. EconomyMacroFacts가 서버사이드에서 핵심 수치를 텍스트로
                 노출해 검색 엔진이 수치 데이터를 색인할 수 있도록 한다. */}
@@ -252,42 +246,6 @@ async function EconomyContent() {
             />
         </div>
     );
-}
-
-/**
- * Dataset 구조화 데이터 — 검색 엔진이 페이지의 데이터셋 성격을 인식할 수 있도록 한다.
- * Schema.org/Dataset 타입으로 레지스트리 지표 N종 + 국채금리 2종을 명시.
- *
- * `as const`를 제거한 이유: 문자열이 런타임에 `ECONOMY_INDICATORS.length`로 파생되므로
- * 객체 리터럴 내 `as const`로는 좁혀지지 않는다. JsonLd 사용 측이 타입을 요구하지
- * 않으므로 plain const로 충분하다.
- */
-/** ISO 8601 기간 — 데이터셋의 시간적 범위(1년 lookback). */
-const DATASET_TEMPORAL_COVERAGE = 'P1Y'; // ISO 8601 — 1년 lookback
-// TREASURY_CARD_META의 키 수에서 파생 — EconomicIndicatorGrid와 동기.
-const TREASURY_MATURITY_COUNT = Object.keys(TREASURY_CARD_META).length;
-/**
- * `license`는 GSC "license 누락" 경고를 없애려고 넣은 필드다. 렌더 위치는
- * degrade 게이팅 때문에 `EconomyContent` 안으로 옮겨졌지만, 계약 자체는
- * 페이로드에 있으므로 테스트가 함수를 직접 호출해 확인한다 — 그래서 export한다.
- * `description`만 로케일에 따라 바뀌고 나머지 필드는 고정이다.
- */
-export function buildEconomyDatasetJsonLd(t: SeoTranslator, locale: Locale) {
-    return {
-        '@context': 'https://schema.org',
-        '@type': 'Dataset',
-        name: 'US Macroeconomic Indicators — Federal Funds, CPI, Unemployment, etc.',
-        description: economyDescription(t),
-        variableMeasured: t('economy.us.datasetVariableMeasured', {
-            v0: ECONOMY_INDICATORS.length,
-            v1: TREASURY_MATURITY_COUNT,
-        }),
-        temporalCoverage: DATASET_TEMPORAL_COVERAGE,
-        creator: { '@type': 'Organization', name: SITE_NAME },
-        license: `${SITE_URL}${TERMS_PATH}`,
-        // 로케일별 URL — 네 언어가 같은 주소를 선언하면 한 문서로 접힌다.
-        url: localizedAbsoluteUrl(ECONOMY_URL, locale),
-    };
 }
 
 /**
@@ -364,6 +322,9 @@ export default async function EconomyPage({
                     active="us"
                     currentPath="/economy"
                 />
+                {/* 가시 브레드크럼 — 텍스트가 BreadcrumbList JSON-LD의 `name`과
+                    같아야 구글이 마크업을 무시하지 않는다. */}
+                <Breadcrumb trail={[{ label: economyTitle(tSeo) }]} />
                 <EconomyHeroH1 title={economyTitle(tSeo)} />
                 <Suspense fallback={<EconomySkeleton />}>
                     <EconomyContent />

@@ -39,13 +39,13 @@ describe('buildSymbolSeoContent', () => {
         const content = buildSymbolSeoContent('aapl', t);
 
         expect(content.ticker).toBe('AAPL');
-        // core(주가 전망)만 단언한다 — tail(차트·기술적 신호)은
+        // core(주가 분석)만 단언한다 — tail(차트·기술적 신호)은
         // composeSymbolTitle이 예산 압박 시 가장 먼저 버리는 서술이라,
         // 전체 문자열을 고정하면 카피 문구만 바뀌어도 이 테스트가 깨진다.
         // 알고리즘 자체(어떤 조건에서 tail/한국어명이 버려지는지)를 고정하는
         // 리터럴 단언은 seo.composeSymbolTitle.test.ts의 책임이다.
         expect(content.title).toContain('AAPL');
-        expect(content.title).toContain('주가 전망');
+        expect(content.title).toContain('주가 분석');
         expect(content.fullTitle).toBe(`${content.title} | Siglens`);
         expect(content.description).toContain('AAPL');
         expect(content.url).toBe('https://siglens.io/AAPL');
@@ -64,8 +64,33 @@ describe('buildSymbolSeoContent', () => {
         expect(content.description).toContain('Technology 섹터');
         expect(content.description).toContain('애플');
         expect(content.keywords).toContain('애플 주가');
-        expect(content.keywords).toContain('애플 매수');
-        expect(content.keywords).toContain('애플 매매 시점');
+        expect(content.keywords).toContain('애플 차트 분석');
+    });
+
+    /**
+     * 회귀 가드: 차트 탭 키워드에서 매매 조언·가격 예측 질의를 뺐다. 그 문구들은
+     * 페이지가 하지 않는 약속(매수/매도 시점 제시, 가격 전망)을 검색엔진에 선언해
+     * YMYL 판정에서 불리하다. 표면 카피는 "분석"으로 통일돼 있으므로 키워드만
+     * 남으면 둘이 서로 다른 말을 한다.
+     */
+    it('차트 키워드에 매매 조언·가격 전망 질의가 없다', () => {
+        const content = buildSymbolSeoContent('AAPL', t, {
+            displayName: '애플, Apple Inc. (AAPL)',
+            koreanName: '애플',
+        });
+
+        for (const banned of [
+            'AAPL 주가 전망',
+            'AAPL 매수',
+            'AAPL 매도',
+            'AAPL 매매 시점',
+            '애플 주가 전망',
+            '애플 매수',
+            '애플 매도',
+            '애플 매매 시점',
+        ]) {
+            expect(content.keywords).not.toContain(banned);
+        }
     });
 });
 
@@ -143,7 +168,9 @@ describe('buildSymbolFundamentalSeoContent', () => {
         expect(content.keywords).toContain('PER');
         expect(content.keywords).toContain('애널리스트 컨센서스');
         expect(content.keywords).toContain('AAPL 펀더멘털 분석');
-        expect(content.keywords).toContain('AAPL 목표 주가');
+        // 목표 주가는 애널리스트 예측이지 이 페이지가 내는 값이 아니다 — 제거됨.
+        expect(content.keywords).not.toContain('AAPL 목표 주가');
+        expect(content.keywords).not.toContain('목표 주가');
     });
 
     it('koreanName이 있으면 keywords에 한글 변형이 추가된다', () => {
@@ -153,7 +180,7 @@ describe('buildSymbolFundamentalSeoContent', () => {
         });
         expect(content.keywords).toContain('애플 펀더멘털');
         expect(content.keywords).toContain('애플 재무 분석');
-        expect(content.keywords).toContain('애플 목표 주가');
+        expect(content.keywords).not.toContain('애플 목표 주가');
     });
 
     it('sector가 있으면 keywords에 섹터 펀더멘털 키워드가 추가된다', () => {
@@ -303,7 +330,7 @@ describe('buildSymbolNewsSeoContent', () => {
         expect(content.keywords).toContain('AAPL 분석 의견');
         expect(content.keywords).toContain('AAPL 어닝 일정');
         expect(content.keywords).toContain('AAPL 실적 발표');
-        expect(content.keywords).toContain('AAPL 목표 주가');
+        expect(content.keywords).not.toContain('AAPL 목표 주가');
         expect(content.keywords).toContain('뉴스 분석');
         expect(content.keywords).toContain('뉴스 분위기');
         expect(content.keywords).toContain('실적 발표');
@@ -324,7 +351,7 @@ describe('buildSymbolNewsSeoContent', () => {
         });
         expect(content.keywords).toContain('애플 뉴스');
         expect(content.keywords).toContain('애플 어닝');
-        expect(content.keywords).toContain('애플 목표 주가');
+        expect(content.keywords).not.toContain('애플 목표 주가');
     });
 
     it('[SYMBOL] 플레이스홀더가 결과에 포함되지 않는다', () => {
@@ -385,7 +412,8 @@ describe('buildSymbolOverallSeoContent', () => {
         expect(content.keywords).toContain('AAPL AI 종합 분석');
         expect(content.keywords).toContain('AAPL 시나리오 분석');
         expect(content.keywords).toContain('AAPL 시나리오');
-        expect(content.keywords).toContain('AAPL 진입 타이밍');
+        // 진입 타이밍은 매매 조언 질의다 — 제거됨.
+        expect(content.keywords).not.toContain('AAPL 진입 타이밍');
         expect(content.keywords).toContain('AAPL 위험 요인');
         expect(content.keywords).toContain('AI 종합 분석');
         expect(content.keywords).toContain('시나리오 분석');
@@ -721,7 +749,7 @@ describe('buildSnapshotMetaDescription', () => {
     // FIX 5 (audit): every templated builder (buildSymbol*SeoContent) leads
     // with the subject (ticker/company name) — losing it here forfeits the
     // bolded query-term match in the SERP snippet for queries like
-    // "AAPL 주가 전망".
+    // "AAPL 주가 분석".
     it('starts with the subject (FIX 5)', () => {
         const content = { summary: '상승 추세를 이어가고 있습니다.' };
         const result = buildSnapshotMetaDescription(

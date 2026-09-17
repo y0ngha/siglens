@@ -22,63 +22,24 @@ import { LABEL_GROUP } from '@/shared/lib/typographyStyles';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
 /**
- * 푸터 링크 하나. `visible`만 눈에 보이고 `srPrefix`/`srSuffix`는 화면에서 숨는다.
+ * 푸터 링크 하나. 화면에는 짧은 라벨만 보이고, 전체 이름은 `aria-label`이 진다.
  *
- * **왜 쪼개는가**: 카테고리 열로 묶으면 `시장 분석` 아래에 `미국 시장 분석`을
- * 다시 적는 게 시각적으로 군더더기다 — 헤더 드롭다운도 이 자리에서 `미국`만
- * 쓴다. 그런데 보이는 글자를 그냥 짧게 줄이면 **앵커 텍스트가 9개 바뀐다.**
- * 푸터는 전 페이지에 렌더되는 전역 링크 집합이라 그 변경의 사정거리가 사이트
- * 전체다. 그래서 눈에는 짧은 라벨만 보이되 크롤러가 읽는 텍스트는 `fullLabel`
- * 그대로 남긴다.
+ * **왜 짧은 라벨인가**: 카테고리 열로 묶으면 `시장 분석` 아래에 `미국 시장 분석`을
+ * 다시 적는 게 시각적으로 군더더기다 — 헤더 드롭다운도 이 자리에서 `미국`만 쓴다.
+ *
+ * **숨김 텍스트는 두지 않는다.** 예전에는 `fullLabel`에서 잘라낸 앞뒤 조각을
+ * `sr-only` span으로 링크 안에 넣어 크롤러가 읽는 앵커 텍스트만 길게 유지했다.
+ * 그건 목적이 "검색엔진에게만 보이는 텍스트"였고, 전 페이지에 렌더되는 전역
+ * 링크 집합에서 그 형태는 구글의 숨김 텍스트 정책에 정면으로 걸린다. 접근성은
+ * `aria-label`로 충족되고(보조기술이 전체 이름을 읽는다), WCAG 2.5.3(Label in
+ * Name)도 이름이 보이는 글자를 포함하므로 그대로 만족한다.
  */
-interface FooterLabelParts {
-    readonly srPrefix: string;
-    readonly visible: string;
-    readonly srSuffix: string;
-}
-
-interface FooterLink extends FooterLabelParts {
+interface FooterLink {
     readonly href: string;
-    /**
-     * 접근성 이름으로 그대로 건다.
-     *
-     * 쪼갠 조각만으로는 이름이 붙지 않는다 — `computeAccessibleName`이 텍스트
-     * 노드를 **각각 trim한 뒤 이어붙여서** 조각 사이의 공백이 사라진다
-     * (`미국` + `sr-only(" 시장 분석")` → `미국시장 분석`). 공백을 어느 조각에
-     * 넣어도 그 조각의 끝/앞이라 똑같이 잘린다. 그래서 이름은 쪼개기와 무관하게
-     * `aria-label`로 못박는다.
-     *
-     * 앵커 텍스트는 이것과 별개다 — 크롤러는 접근성 트리가 아니라 DOM 텍스트를
-     * 읽으므로 `sr-only` 조각이 계속 제 일을 한다. WCAG 2.5.3(Label in Name)도
-     * 이름이 보이는 글자를 포함하므로 충족한다.
-     */
+    /** 화면에 보이는 짧은 라벨. */
+    readonly visible: string;
+    /** 보조기술이 읽는 전체 이름. */
     readonly fullLabel: string;
-}
-
-/**
- * `fullLabel` 안에서 `visible` 토큰의 앞뒤를 갈라낸다.
- *
- * 조합이 규칙적이지 않아 문자열 연결로는 못 만든다 — `미국` + `뉴스`는
- * `미국 뉴스`지만 실제 `fullLabel`은 `미국 시장 뉴스`이고, 상위 허브는
- * 토큰이 뒤가 아니라 **앞**에 붙는다(`뉴스 전체`). 그래서 만들지 않고 **자른다.**
- * 자르는 방식이면 `assetClassNav`가 라벨을 바꿔도 여기가 따라온다.
- *
- * 토큰이 없으면(있어선 안 되지만) 전체를 그대로 보여준다 — 라벨을 잃는 것보다
- * 군더더기가 낫다.
- */
-export function splitFooterLabel(
-    fullLabel: string,
-    visible: string
-): FooterLabelParts {
-    const at = fullLabel.indexOf(visible);
-    if (at < 0) {
-        return { srPrefix: '', visible: fullLabel, srSuffix: '' };
-    }
-    return {
-        srPrefix: fullLabel.slice(0, at),
-        visible,
-        srSuffix: fullLabel.slice(at + visible.length),
-    };
 }
 
 interface FooterColumn {
@@ -102,26 +63,17 @@ function columnOf(
     const allLabel = tNav('shared.config.nav.overviewAll', { v0: label });
     const overview: readonly FooterLink[] = hasRegionForRoot(vertical)
         ? []
-        : [
-              {
-                  href: vertical.rootHref,
-                  fullLabel: allLabel,
-                  ...splitFooterLabel(allLabel, token),
-              },
-          ];
+        : [{ href: vertical.rootHref, fullLabel: allLabel, visible: token }];
     return {
         id: vertical.id,
         label,
         links: [
             ...overview,
-            ...vertical.regions.map(region => {
-                const full = tNav(region.fullLabelKey);
-                return {
-                    href: region.href,
-                    fullLabel: full,
-                    ...splitFooterLabel(full, tNav(region.labelKey)),
-                };
-            }),
+            ...vertical.regions.map(region => ({
+                href: region.href,
+                fullLabel: tNav(region.fullLabelKey),
+                visible: tNav(region.labelKey),
+            })),
         ],
     };
 }
@@ -160,13 +112,7 @@ function FooterNavColumn({ column }: FooterNavColumnProps) {
                             prefetch={false}
                             className={LINK_CLASSES}
                         >
-                            {link.srPrefix && (
-                                <span className="sr-only">{link.srPrefix}</span>
-                            )}
                             {link.visible}
-                            {link.srSuffix && (
-                                <span className="sr-only">{link.srSuffix}</span>
-                            )}
                         </Link>
                     </li>
                 ))}

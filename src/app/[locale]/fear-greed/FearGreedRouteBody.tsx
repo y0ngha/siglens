@@ -6,6 +6,7 @@ import { MarketFearGreedPage } from '@/widgets/market-fear-greed';
 import type { MarketFearGreedView } from '@/entities/market-fear-greed';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
 import { JsonLd } from '@/shared/ui/JsonLd';
+import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
@@ -105,9 +106,14 @@ export function FearGreedRouteBody({
                         currentPath={copy.path}
                     />
                 </div>
-                <h1 className="page-container pt-6 text-2xl font-bold tracking-tight text-balance text-secondary-50 sm:text-3xl">
-                    {copy.title}
-                </h1>
+                <div className="page-container pt-6">
+                    {/* 가시 브레드크럼 — 텍스트가 BreadcrumbList JSON-LD의 `name`
+                        (`copy.heading`)과 같아야 마크업이 무시되지 않는다. */}
+                    <Breadcrumb trail={[{ label: copy.heading }]} />
+                    <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-50 sm:text-3xl">
+                        {copy.title}
+                    </h1>
+                </div>
                 <section className="page-container space-y-3 pt-4 text-sm leading-relaxed text-secondary-400 sm:text-base">
                     {copy.intro.map(paragraph => (
                         <p key={paragraph}>{paragraph}</p>

@@ -7,13 +7,11 @@ import {
     localeOpenGraph,
     localeRobots,
 } from '@/shared/lib/seoAlternates';
-import { getMarketSummaryStatic } from '@/entities/market-summary/api/marketSummaryStaticCache';
-import { getSectorSignalsStatic } from '@/entities/sector-signal/api/sectorSignalsStaticCache';
-import { DEFAULT_DASHBOARD_TIMEFRAME } from '@/shared/config/dashboard-tickers';
 import { KR_DASHBOARD_SCOPE } from '@/shared/config/dashboardScope';
 import { SITE_NAME } from '@/shared/lib/seo';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { marketCopyFor } from '../copy';
+import { loadMarketSignals } from '../loadMarketSignals';
 import { MarketRouteBody } from '../MarketRouteBody';
 
 // 1h — 미국 라우트와 동일. 장중 섹터 신호 신선도를 위해 짧게 유지한다.
@@ -40,28 +38,8 @@ export async function generateMetadata({
     const ogLocale = localeOpenGraph(resolvedLocale);
     // og:url도 로케일별이어야 한다 — 소셜 언퍼널이 ko URL로 되돌린다.
     const localizedUrl = localeCanonical(resolvedLocale, COPY.path);
-    // 본문과 동일한 catch 패턴으로 두 loader를 독립 병렬 조회한다 — metadata의 degrade
-    // 판정이 실제 렌더 degrade와 어긋나지 않도록.
-    const [summary, sectorData] = await Promise.all([
-        getMarketSummaryStatic(SCOPE).catch(e => {
-            console.error(
-                '[market.kr.generateMetadata] getMarketSummaryStatic failed:',
-                e
-            );
-            return { indices: [], sectors: [] };
-        }),
-        getSectorSignalsStatic(SCOPE, DEFAULT_DASHBOARD_TIMEFRAME).catch(e => {
-            console.error(
-                '[market.kr.generateMetadata] getSectorSignalsStatic failed:',
-                e
-            );
-            return { computedAt: '', stocks: [] };
-        }),
-    ]);
-    const degraded =
-        summary.indices.length === 0 &&
-        summary.sectors.length === 0 &&
-        sectorData.stocks.length === 0;
+    // metadata·본문·구조화데이터가 **같은 술어**를 본다 — `loadMarketSignals` JSDoc 참조.
+    const { degraded } = await loadMarketSignals(SCOPE);
 
     return {
         title: COPY.title,

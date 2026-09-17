@@ -249,22 +249,25 @@ describe('/economy page.tsx integration', () => {
         });
     });
 
-    describe('buildEconomyDatasetJsonLd — license field', () => {
-        it('Dataset JSON-LD에 license 필드가 있다', async () => {
-            const { buildEconomyDatasetJsonLd } =
-                await import('@/app/[locale]/economy/page');
+    describe('구조화데이터 게이팅', () => {
+        /**
+         * `Dataset` 노드는 제거됐다. `/economy`는 지표 카드와 캘린더를 **읽는**
+         * 페이지이지 내려받을 데이터셋을 배포하는 페이지가 아니다 — 구조화데이터가
+         * 페이지의 실제 성격과 어긋나면 마크업 자체가 신뢰를 잃는다. 배포 가능한
+         * `Dataset`은 `/backtesting`(`data.json`을 `distribution`으로 노출)만 남는다.
+         */
+        it('Dataset 빌더가 더 이상 존재하지 않는다', async () => {
+            const mod = await import('@/app/[locale]/economy/page');
 
-            // license는 t와 무관한 고정 필드 — description만 로케일에 따라 바뀐다.
-            const datasetJsonLd = buildEconomyDatasetJsonLd(key => key, 'ko');
-
-            // GSC "license 누락" 경고 해소 — backtesting 페이지와 동일한 SITE_URL+TERMS_PATH 형식.
-            expect(datasetJsonLd.license).toBe('https://siglens.io/terms');
+            expect(
+                (mod as Record<string, unknown>).buildEconomyDatasetJsonLd
+            ).toBeUndefined();
         });
 
         /**
-         * Dataset/WebPage/Breadcrumb은 데이터가 있을 때만 나간다. 셸이 무조건
-         * 내보내면 `generateMetadata`가 noindex를 건 렌더에서도 "이 URL은 1년치
-         * 거시 지표 데이터셋"이라고 주장하게 된다. FAQ는 화면에 그대로 있으므로 예외.
+         * WebPage/Breadcrumb은 데이터가 있을 때만 나간다. 셸이 무조건 내보내면
+         * `generateMetadata`가 noindex를 건 렌더에서도 "이 URL이 정식 문서"라고
+         * 주장하게 된다. FAQ는 화면에 그대로 있으므로 예외.
          */
         it('셸에서는 FAQ 구조화데이터만 낸다', async () => {
             const mockJsonLdComponent = vi.mocked(JsonLd);
@@ -298,6 +301,33 @@ describe('/economy page.tsx integration', () => {
 
         expectFaqSingleSource(
             await EconomyPage({ params: Promise.resolve({ locale: 'ko' }) })
+        );
+    });
+});
+
+/**
+ * 허브는 오랫동안 `BreadcrumbList` 마크업만 내보내고 화면에는 경로가 없었다 —
+ * 구글은 마크업이 페이지에 보이는 것을 반영할 것을 요구한다. 두 표면의 문자열이
+ * 같은 소스(`economyTitle`)에서 나오는지 못 박는다.
+ */
+describe('/economy 가시 브레드크럼', () => {
+    it('BreadcrumbList와 같은 마디를 그린다', async () => {
+        const { default: EconomyPage } =
+            await import('@/app/[locale]/economy/page');
+        const { economyTitle } =
+            await import('@/app/[locale]/economy/constants');
+        const { getTranslations } = await import('next-intl/server');
+        const { expectVisibleBreadcrumbLabels } =
+            await import('@/__tests__/utils/expectVisibleBreadcrumb');
+
+        const tSeo = await getTranslations({
+            locale: 'ko',
+            namespace: 'shared.seo',
+        });
+
+        expectVisibleBreadcrumbLabels(
+            await EconomyPage({ params: Promise.resolve({ locale: 'ko' }) }),
+            [economyTitle(tSeo)]
         );
     });
 });

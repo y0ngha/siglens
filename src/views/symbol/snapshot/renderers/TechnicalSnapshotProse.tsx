@@ -43,7 +43,7 @@ export { hasTechnicalProse } from './technicalContent';
  * 첫 패턴(spec 2026-07-24 Task 4). `summary`(Korean 멀티토픽 요약, `\n`으로
  * 토픽 구분)를 문단으로, `trend`가 있으면 방향성 리드 문구를 렌더한다.
  *
- * `patternSummaries`/`strategyResults`를 각각 "차트 패턴"/"전략 시그널"
+ * `patternSummaries`/`strategyResults`를 각각 "차트 패턴"/"기술적 신호 요약"
  * 라벨 붙은 목록으로 렌더한다(audit fix FIX 3) — 항목마다 패턴/전략 이름과
  * 방향성(있으면), Korean `summary`를 보여준다.
  *
@@ -133,7 +133,7 @@ export function TechnicalSnapshotProse({
                 {narrowed.strategyResults.length > 0 && (
                     <div>
                         <h3 className={cn('mb-1.5', HEADING_SUBSECTION)}>
-                            {t('TechnicalSnapshotProse.3d874f')}
+                            {t('TechnicalSnapshotProse.aeeaee')}
                         </h3>
                         <ul
                             role="list"

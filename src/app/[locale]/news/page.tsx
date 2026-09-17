@@ -15,6 +15,7 @@ import {
     type NewsFeedCategoryId,
 } from '@/entities/market-news';
 import { CategoryCard } from '@/widgets/news-hub';
+import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { regionsOf, type NavRegionId } from '@/shared/config/assetClassNav';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
@@ -215,6 +216,9 @@ export default async function NewsHubPage({
             <JsonLd data={webPageJsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
+                {/* 가시 브레드크럼 — 텍스트가 BreadcrumbList JSON-LD의 `name`과
+                    같아야 구글이 마크업을 무시하지 않는다. */}
+                <Breadcrumb trail={[{ label: t('page.dc06c4') }]} />
                 <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-50 sm:text-3xl">
                     {t('page.dc06c4')}
                 </h1>

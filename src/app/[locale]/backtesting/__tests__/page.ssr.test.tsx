@@ -92,3 +92,26 @@ describe('/backtesting SSR output', () => {
         expect(html).toContain(otherTickerCase!.ticker);
     });
 });
+
+/**
+ * 가시 브레드크럼과 `BreadcrumbList` 마크업은 같은 문자열이어야 한다 — 이 파일은
+ * 빌더를 `{}`로 목킹하므로, 빌더에 넘어간 이름과 화면 마디를 직접 대조한다.
+ */
+describe('/backtesting 가시 브레드크럼', () => {
+    it('BreadcrumbList와 같은 마디를 그린다', async () => {
+        const { buildBreadcrumbJsonLd } = await import('@/shared/lib/seo');
+        const { expectVisibleBreadcrumbLabels } =
+            await import('@/__tests__/utils/expectVisibleBreadcrumb');
+        vi.mocked(buildBreadcrumbJsonLd).mockClear();
+
+        const tree = await BacktestingPage({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
+
+        expect(buildBreadcrumbJsonLd).toHaveBeenCalledWith(
+            [expect.objectContaining({ name: 'AI 백테스팅' })],
+            'ko'
+        );
+        expectVisibleBreadcrumbLabels(tree, ['AI 백테스팅']);
+    });
+});

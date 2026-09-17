@@ -11,6 +11,7 @@ import {
 } from '@/shared/lib/seoAlternates';
 import { CATEGORY_CONFIG, categoriesInRegion } from '@/entities/market-news';
 import { CategoryCard } from '@/widgets/news-hub';
+import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
 import { fetchCategoryPreviews } from '../_lib/categoryPreviews';
@@ -170,6 +171,13 @@ export default async function UsNewsHubPage({
             <JsonLd data={breadcrumbJsonLd} />
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <RegionTabs vertical="news" active="us" currentPath={PATH} />
+                {/* 가시 브레드크럼 — 위 BreadcrumbList와 같은 마디·같은 텍스트. */}
+                <Breadcrumb
+                    trail={[
+                        { label: t('page.dc06c4'), href: '/news' },
+                        { label: t('page.d311d2') },
+                    ]}
+                />
                 <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-50 sm:text-3xl">
                     {t('page.d311d2')}
                 </h1>

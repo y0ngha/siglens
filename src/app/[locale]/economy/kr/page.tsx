@@ -34,16 +34,14 @@ import {
     buildBreadcrumbJsonLd,
     buildWebPageJsonLd,
     clampSeoDescription,
-    ROOT_KEYWORDS,
     SITE_NAME,
     SITE_URL,
     type SeoTranslator,
 } from '@/shared/lib/seo';
-import { TERMS_PATH } from '@/shared/lib/legal';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
+import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { KR_ECONOMY_INDICATORS } from '@/shared/config/economyIndicatorsKr';
 
 import { economyKrTitle } from '../constants';
 
@@ -56,8 +54,8 @@ const ECONOMY_KR_URL = `${SITE_URL}/economy/kr`;
 function economyKrDescription(t: SeoTranslator): string {
     return clampSeoDescription(t('economy.kr.description'));
 }
+// 루트 레이아웃이 `ROOT_KEYWORDS`를 선언한다 — 여기엔 페이지 고유 목록만 둔다.
 const ECONOMY_KR_KEYWORDS = [
-    ...ROOT_KEYWORDS,
     '한국 경제 지표',
     '한국은행 기준금리',
     '국내 소비자물가',
@@ -227,8 +225,8 @@ async function KrEconomyContent() {
      * 구조화데이터를 **여기서** 낸다.
      *
      * 지표도 캘린더도 없는 상태에서는 `generateMetadata`가 canonical을 비우고
-     * noindex를 건다. 그때 Dataset/WebPage를 그대로 내보내면 "색인하지 말라"면서
-     * "이 URL은 지표 N종을 6개월치 담은 데이터셋"이라고 주장하는 모순이 된다.
+     * noindex를 건다. 그때 WebPage를 그대로 내보내면 "색인하지 말라"면서
+     * "이 URL이 정식 문서"라고 주장하는 모순이 된다.
      * `/news/[category]`가 같은 상태에서 JSON-LD를 빼는 규칙을 이미 쓴다.
      *
      * 페이지 최상단이 아니라 이 컴포넌트에 두는 이유: 여기가 데이터를 가진 유일한
@@ -242,7 +240,6 @@ async function KrEconomyContent() {
                 <>
                     <JsonLd data={buildEconomyKrWebPageJsonLd(tSeo, locale)} />
                     <JsonLd data={buildEconomyBreadcrumbJsonLd(tSeo, locale)} />
-                    <JsonLd data={buildEconomyKrDatasetJsonLd(tSeo)} />
                 </>
             )}
             {cards.length === 0 ? (
@@ -280,27 +277,6 @@ function KrEconomyDegraded() {
             <p className="text-sm text-secondary-400">{t('page.99ee99')}</p>
         </section>
     );
-}
-
-/**
- * Dataset 구조화 데이터 — 검색 엔진이 페이지의 데이터셋 성격을 인식하도록 한다.
- * `temporalCoverage`를 미국판(P1Y)보다 짧게 잡은 것은 사실 반영이다: FMP 캘린더
- * 조회 상한이 과거 ~180일이라 초기 이력이 그만큼이다.
- */
-function buildEconomyKrDatasetJsonLd(t: SeoTranslator) {
-    return {
-        '@context': 'https://schema.org',
-        '@type': 'Dataset',
-        name: 'Korean Macroeconomic Indicators — Policy Rate, CPI, Unemployment, etc.',
-        description: economyKrDescription(t),
-        variableMeasured: t('economy.kr.datasetVariableMeasured', {
-            v0: KR_ECONOMY_INDICATORS.length,
-        }),
-        temporalCoverage: 'P6M',
-        creator: { '@type': 'Organization', name: SITE_NAME },
-        license: `${SITE_URL}${TERMS_PATH}`,
-        url: ECONOMY_KR_URL,
-    };
 }
 
 /**
@@ -378,6 +354,9 @@ export default async function EconomyKrPage({
                     active="kr"
                     currentPath="/economy/kr"
                 />
+                {/* 가시 브레드크럼 — 텍스트가 BreadcrumbList JSON-LD의 `name`과
+                    같아야 구글이 마크업을 무시하지 않는다. */}
+                <Breadcrumb trail={[{ label: economyKrTitle(tSeo) }]} />
                 <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-50 sm:text-3xl">
                     {economyKrTitle(tSeo)}
                 </h1>

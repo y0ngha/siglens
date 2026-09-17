@@ -24,6 +24,7 @@ import { TERMS_PATH } from '@/shared/lib/legal';
 import { BacktestHero } from '@/widgets/backtesting/BacktestHero';
 import { BacktestMethodology } from '@/widgets/backtesting/BacktestMethodology';
 import { BacktestTabs } from '@/widgets/backtesting/BacktestTabs';
+import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import backtestData from '@/app/[locale]/backtesting/data.json';
 import {
@@ -215,6 +216,11 @@ export default async function BacktestingPage({
                 landmark가 페이지 주제와 일치한다. 이전엔 BacktestHero가 main
                 바깥에 있어 h1이 landmark 밖으로 빠지는 문제가 있었다. */}
             <main className="min-h-screen bg-secondary-900">
+                <div className="px-6 pt-6">
+                    {/* 가시 브레드크럼 — 텍스트가 BreadcrumbList JSON-LD의 `name`과
+                        같아야 구글이 마크업을 무시하지 않는다. */}
+                    <Breadcrumb trail={[{ label: backtestingTitle(tSeo) }]} />
+                </div>
                 <BacktestHero stats={STATS} />
                 <BacktestMethodology />
                 {/* BacktestTabs는 더 이상 useSearchParams()를 렌더 중 호출하지
