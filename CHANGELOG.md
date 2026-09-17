@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.78.1](https://github.com/y0ngha/siglens/compare/v0.78.0...v0.78.1) (2026-09-17)
+
+
+### Bug Fixes
+
+* **agent:** 도구 호출 전 안내 문장을 스트리밍하지 않는다 ([c6c84d6](https://github.com/y0ngha/siglens/commit/c6c84d6eb4b8957f3a44ebf0b3789d547de36e6b))
+* **seo:** 중복 title·description을 없애고 빌드 중 ISR S3 호출을 건너뛴다 ([bf58a4c](https://github.com/y0ngha/siglens/commit/bf58a4c9bda3405596a077919bb2c51a738ebe1e))
+
 # [0.78.0](https://github.com/y0ngha/siglens/compare/v0.77.1...v0.78.0) (2026-09-15)
 
 
