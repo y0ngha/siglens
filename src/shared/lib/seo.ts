@@ -181,17 +181,63 @@ export const NOINDEX_SYMBOL_METADATA: Metadata = {
  * `opts`는 호출부가 이미 `assetInfo`를 들고 있을 때만 넘긴다 — 안 넘겨도
  * displayName이 티커로 폴백해 동작은 같고, 있으면 description이 사명까지 담는다.
  */
+/**
+ * Tabs that have their own SEO copy builder. Mirrors `SeoSnapshotTab`
+ * (`entities/seo-snapshot`), which `shared` may not import — the builders live
+ * here, so the union is declared here and the entity's values flow in.
+ * `technical` is the chart route (the symbol root), whose copy is the base
+ * {@link buildSymbolSeoContent}.
+ */
+export type SymbolSeoTab =
+    | 'technical'
+    | 'overall'
+    | 'fundamental'
+    | 'financials'
+    | 'congress'
+    | 'news'
+    | 'options';
+
+const SYMBOL_SEO_TAB_BUILDERS: Record<
+    SymbolSeoTab,
+    (
+        symbol: string,
+        t: SeoTranslator,
+        opts: BuildSymbolSeoOptions
+    ) => SymbolSeoContent
+> = {
+    technical: buildSymbolSeoContent,
+    overall: buildSymbolOverallSeoContent,
+    fundamental: buildSymbolFundamentalSeoContent,
+    financials: buildSymbolFinancialsSeoContent,
+    congress: buildSymbolCongressSeoContent,
+    news: buildSymbolNewsSeoContent,
+    options: buildSymbolOptionsSeoContent,
+};
+
+export interface NoindexSymbolMetadataOptions extends BuildSymbolSeoOptions {
+    /**
+     * The tab this route renders. Without it every blocked tab of one symbol
+     * repeats the chart page's title and description, which Naver Search
+     * Advisor reports as duplicate `<title>`/`<meta name="description">`
+     * documents (2026-09-17: `/QQQ/financials` carried the `/QQQ` title).
+     * Omit on routes with no tab copy (`fear-greed`, `position`) — they keep
+     * the base symbol copy.
+     */
+    tab?: SymbolSeoTab;
+}
+
 export function noindexSymbolMetadata(
     symbol: string,
     t: SeoTranslator,
     locale: Locale,
-    opts: BuildSymbolSeoOptions = {}
+    opts: NoindexSymbolMetadataOptions = {}
 ): Metadata {
+    const build =
+        opts.tab === undefined
+            ? buildSymbolSeoContent
+            : SYMBOL_SEO_TAB_BUILDERS[opts.tab];
     return {
-        ...symbolMetadataFromSeo(
-            buildSymbolSeoContent(symbol, t, opts),
-            locale
-        ),
+        ...symbolMetadataFromSeo(build(symbol, t, opts), locale),
         // 스프레드 순서가 중요하다 — robots(noindex)와 canonical:null이
         // symbolMetadataFromSeo의 index 기본값·self-canonical을 덮어야 한다.
         ...NOINDEX_SYMBOL_METADATA,

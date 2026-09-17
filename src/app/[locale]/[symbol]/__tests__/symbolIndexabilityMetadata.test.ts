@@ -33,7 +33,13 @@ const ASSET_INFO = { symbol: 'AAPL', name: 'Apple Inc.' } as AssetInfo;
  */
 function expectBlockedWithOwnIdentity(
     result: Metadata | null,
-    symbol: string
+    symbol: string,
+    /**
+     * 탭을 넘긴 호출은 그 탭의 카피를 쓰므로 `og:url`도 탭 경로를 가리킨다 —
+     * 차단된 형제 탭들이 심볼 루트와 같은 제목·설명을 반복하지 않게 한 변경
+     * (2026-09-17 네이버 중복 title/description 리포트)의 의도된 귀결이다.
+     */
+    tabPath = ''
 ): void {
     expect(result).not.toBeNull();
     expect(result!.robots).toEqual(NOINDEX_SYMBOL_METADATA.robots);
@@ -42,7 +48,9 @@ function expectBlockedWithOwnIdentity(
         absolute: expect.stringContaining(symbol) as unknown as string,
     });
     expect(result!.description).toEqual(expect.any(String));
-    expect(result!.openGraph?.url).toBe(`https://siglens.io/${symbol}`);
+    expect(result!.openGraph?.url).toBe(
+        `https://siglens.io/${symbol}${tabPath}`
+    );
 }
 
 describe('getBlockedSymbolMetadata', () => {
@@ -74,6 +82,48 @@ describe('getBlockedSymbolMetadata', () => {
             hasSnapshot: undefined,
         });
         expect(result).toBeNull();
+    });
+
+    it('차단된 탭은 탭별 title/description을 쓴다 — 형제 탭끼리 중복되지 않는다', async () => {
+        mockEvaluateSymbolIndexability.mockReturnValue({
+            indexable: false,
+            reason: 'longtail-default-blocked',
+        });
+        const blockedFor = async (
+            tab: 'technical' | 'financials' | 'congress' | 'news'
+        ): Promise<Metadata> =>
+            (await getBlockedSymbolMetadata({
+                symbol: 'QQQ',
+                assetInfo: ASSET_INFO,
+                degraded: false,
+                locale: 'ko',
+                revalidateSeconds: 21600,
+                tab,
+            }))!;
+
+        const [technical, financials, congress, news] = await Promise.all([
+            blockedFor('technical'),
+            blockedFor('financials'),
+            blockedFor('congress'),
+            blockedFor('news'),
+        ]);
+        const titleOf = (m: Metadata): string =>
+            (m.title as { absolute: string }).absolute;
+        const titles = [technical, financials, congress, news].map(titleOf);
+        expect(new Set(titles).size).toBe(titles.length);
+        const descriptions = [technical, financials, congress, news].map(
+            m => m.description
+        );
+        expect(new Set(descriptions).size).toBe(descriptions.length);
+        // 탭 없는 라우트(fear-greed/position)는 기존대로 기본 심볼 카피를 쓴다.
+        const tabless = (await getBlockedSymbolMetadata({
+            symbol: 'QQQ',
+            assetInfo: ASSET_INFO,
+            degraded: false,
+            locale: 'ko',
+            revalidateSeconds: 21600,
+        }))!;
+        expect(titleOf(tabless)).toBe(titles[0]);
     });
 
     it('does not read snapshots on the non-degraded path and returns noindex when blocked', async () => {
@@ -201,7 +251,7 @@ describe('getBlockedSymbolMetadata', () => {
             locale: 'ko',
             hasSnapshot: false,
         });
-        expectBlockedWithOwnIdentity(result, 'AAPL');
+        expectBlockedWithOwnIdentity(result, 'AAPL', '/congress');
     });
 
     // FIX 1 (audit): a same-tab row whose `content` is malformed (fails the

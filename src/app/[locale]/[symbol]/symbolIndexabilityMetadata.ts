@@ -103,5 +103,8 @@ export async function getBlockedSymbolMetadata({
             ? buildDisplayName(assetInfo, symbol, locale)
             : undefined,
         koreanName: assetInfo?.koreanName,
+        // 탭별 카피를 쓴다 — 없으면 한 심볼의 차단된 탭들이 차트 페이지와 같은
+        // title/description을 반복해 중복 문서로 잡힌다(2026-09-17 네이버 리포트).
+        tab,
     });
 }

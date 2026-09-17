@@ -16,7 +16,14 @@ describe('config (real module, env defaults)', () => {
         expect(config.buildId).toBe('dev');
         expect(config.keyPrefix).toBe('siglens-isr');
         expect(config.disabled).toBe(false);
+        expect(config.buildPhase).toBe(false);
         expect(config.bucket).toBe('');
+    });
+
+    it('NEXT_PHASE=phase-production-build면 buildPhase가 켜진다', async () => {
+        vi.stubEnv('NEXT_PHASE', 'phase-production-build');
+        const { config } = await import('../config.mjs');
+        expect(config.buildPhase).toBe(true);
     });
 
     it('env가 설정되면 그 값을 사용한다', async () => {

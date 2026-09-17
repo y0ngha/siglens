@@ -106,7 +106,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // generateMetadata도 동일 조건에서 NOINDEX로 반환한다. 가드 없이 계속 진행하면
     // 본문은 notFound()(noindex)인데 메타데이터는 canonical + index:true인 soft-404가 만들어진다.
     if (!(await isTabAllowedForSymbol(upper, 'fundamental'))) {
-        return noindexSymbolMetadata(upper, tSeo, locale);
+        return noindexSymbolMetadata(upper, tSeo, locale, {
+            tab: 'fundamental',
+        });
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(upper);
     const blockedMetadata = await getBlockedSymbolMetadata({
@@ -136,6 +138,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         await getProfileResilient(upper);
     if (profileDegraded || profile === null) {
         return noindexSymbolMetadata(upper, tSeo, locale, {
+            tab: 'fundamental',
             displayName,
             koreanName: assetInfo?.koreanName,
         });

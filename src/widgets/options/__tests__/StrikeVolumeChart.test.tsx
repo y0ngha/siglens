@@ -110,6 +110,16 @@ describe('StrikeVolumeChart', () => {
         expect(screen.getByText('현재가')).toBeInTheDocument();
     });
 
+    it('차트 SVG는 <title> 없이 aria-label로 이름을 준다(크롤러 중복 제목 방지)', () => {
+        const { container } = render(
+            <StrikeVolumeChart underlyingPrice={150} chain={CHAIN} />
+        );
+        const svg = container.querySelector('svg')!;
+        expect(svg.querySelector('title')).toBeNull();
+        expect(svg).toHaveAttribute('aria-label', 'Strike별 거래량 분포');
+        expect(svg).toHaveAttribute('aria-describedby', 'volume-chart-desc');
+    });
+
     it('renders sr-only table', () => {
         render(<StrikeVolumeChart underlyingPrice={150} chain={CHAIN} />);
         const table = screen.getByRole('table', { hidden: true });

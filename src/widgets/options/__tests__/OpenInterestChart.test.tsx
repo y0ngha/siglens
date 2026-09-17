@@ -177,6 +177,23 @@ describe('OpenInterestChart', () => {
         ).toBeInTheDocument();
     });
 
+    it('차트 SVG는 <title> 없이 aria-label로 이름을 준다(크롤러 중복 제목 방지)', () => {
+        const { container } = render(
+            <OpenInterestChart
+                underlyingPrice={150}
+                chain={CHAIN}
+                metrics={METRICS}
+            />
+        );
+        const svg = container.querySelector('svg')!;
+        expect(svg.querySelector('title')).toBeNull();
+        expect(svg).toHaveAttribute(
+            'aria-label',
+            'Strike별 Open Interest 분포'
+        );
+        expect(svg).toHaveAttribute('aria-describedby', 'oi-chart-desc');
+    });
+
     it('renders accessible sr-only table with strike data', () => {
         render(
             <OpenInterestChart
