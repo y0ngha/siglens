@@ -1447,8 +1447,8 @@
             "accountDeleteFullTitle": "{v0} 注销账户",
             "accountDeleteTitle": "注销账户",
             "backtesting": {
-                "description": "涵盖AAPL、NVDA、TSLA等10只个股的两年回测。基于历史数据对RSI、MACD、Supertrend技术信号与AI情景进行事后验证，结果不保证未来表现。",
-                "title": "AAPL、NVDA、TSLA 两年回测 — 技术信号事后验证"
+                "description": "涵盖AAPL、NVDA、TSLA等10只个股的历史数据事后验证回测。基于历史数据对RSI、MACD、Supertrend技术信号与AI情景进行验证，结果不保证未来表现。",
+                "title": "AAPL、NVDA、TSLA 回测 — 技术信号事后验证"
             },
             "backtestingOgAlt": "{v0} AI 回测结果",
             "economy": {
@@ -2291,19 +2291,31 @@
             },
             "BacktestHero": {
                 "116858": "这是通过实际市场数据验证的回测结果。",
-                "530709": "Mag7 + 领涨股",
                 "394fff": "指标信号命中率（历史）",
                 "5a254c": "AI 情景命中率（历史）",
                 "caee31": "展示将 Siglens 当前提供的 AI 分析原样应用于过去数据时的结果。基于历史数据，不保证未来表现。",
-                "d8b543": "2年回测 — 基于历史数据的事后验证",
-                "f92294": "总案例"
+                "d8b543": "回测 — 基于历史数据的事后验证",
+                "f92294": "总案例",
+                "aiTrendHitRateLabel": "AI 趋势方向命中率（历史）",
+                "meanReturnLabel": "平均收益率（全部案例）",
+                "medianHoldingDaysLabel": "持有天数中位数"
             },
             "BacktestTabs": {
                 "7425e7": "股票代码筛选"
             },
             "hero": {
                 "caseCount": "{v0} 例",
-                "tickerCount": "{v0} 只"
+                "tickerCount": "{v0} 只",
+                "aiSubLabel": "决定性案例 {v0}/{v1} · 排除中立 {v2} 例",
+                "medianHoldingDays": "{v0}天"
+            },
+            "methodology": {
+                "heading": "回测方法论",
+                "winDefinition": "获胜定义：平仓时收益率达到0%或以上即计为获胜。",
+                "exitRule": "平仓规则：入场后最多持有10个交易日。若先触及止损价或目标价，则在该时点平仓（同日同时触及时止损优先）。若未触及，则在第10个交易日收盘价平仓。",
+                "noCosts": "未计入交易手续费与滑点。",
+                "universe": "仅覆盖AAPL、NVDA、TSLA等固定的10只大盘股，且为事后选定，可能存在选择偏差。",
+                "dataSource": "价格数据来源：Financial Modeling Prep（FMP）。"
             }
         },
         "chart": {

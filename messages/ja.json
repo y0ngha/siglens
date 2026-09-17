@@ -1447,8 +1447,8 @@
             "accountDeleteFullTitle": "{v0} 退会",
             "accountDeleteTitle": "退会",
             "backtesting": {
-                "description": "AAPL・NVDA・TSLAなど10銘柄の2年間バックテストです。RSI・MACD・SupertrendのテクニカルシグナルとAIシナリオを過去データで事後検証した結果であり、将来の成果を保証するものではありません。",
-                "title": "AAPL・NVDA・TSLA 2年間バックテスト — シグナル事後検証"
+                "description": "AAPL・NVDA・TSLAなど10銘柄の過去データに基づく事後検証バックテストです。RSI・MACD・SupertrendのテクニカルシグナルとAIシナリオを検証した結果であり、将来の成果を保証するものではありません。",
+                "title": "AAPL・NVDA・TSLA バックテスト — シグナル事後検証"
             },
             "backtestingOgAlt": "{v0} AIバックテスト結果",
             "economy": {
@@ -2291,19 +2291,31 @@
             },
             "BacktestHero": {
                 "116858": "実際の市場データで検証したバックテスト結果です。",
-                "530709": "Mag7 + リーディング銘柄",
                 "394fff": "指標シグナル的中率（過去）",
                 "5a254c": "AIシナリオ的中率（過去）",
                 "caee31": "いま Siglens が提供している AI 分析をそのまま過去に適用したとき、どのような結果になったかをお見せします。過去データに基づくもので、将来の成果を保証するものではありません。",
-                "d8b543": "2年間バックテスト — 過去データによる事後検証",
-                "f92294": "総ケース数"
+                "d8b543": "バックテスト — 過去データによる事後検証",
+                "f92294": "総ケース数",
+                "aiTrendHitRateLabel": "AIトレンド方向的中率（過去）",
+                "meanReturnLabel": "平均リターン（全ケース）",
+                "medianHoldingDaysLabel": "中央値保有日数"
             },
             "BacktestTabs": {
                 "7425e7": "ティッカーフィルター"
             },
             "hero": {
                 "caseCount": "{v0}件",
-                "tickerCount": "{v0}銘柄"
+                "tickerCount": "{v0}銘柄",
+                "aiSubLabel": "決定的ケース {v0}/{v1}・中立 {v2}件を除く",
+                "medianHoldingDays": "{v0}日"
+            },
+            "methodology": {
+                "heading": "バックテストの方法論",
+                "winDefinition": "勝敗の定義: 決済時点のリターンが0%以上であれば勝ちとして集計します。",
+                "exitRule": "決済ルール: エントリー後最大10営業日保有します。損切りまたは利確ラインに先に達した場合はその時点で決済します（同日に両方到達した場合は損切りを優先）。到達しなければ10営業日目の終値で決済します。",
+                "noCosts": "取引手数料とスリッページは反映していません。",
+                "universe": "AAPL・NVDA・TSLAなど固定された10銘柄の大型株のみを対象としており、事後的に選ばれた銘柄のため生存バイアスが生じる可能性があります。",
+                "dataSource": "価格データの出典: Financial Modeling Prep（FMP）。"
             }
         },
         "chart": {
