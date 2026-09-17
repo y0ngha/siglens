@@ -28,6 +28,16 @@ export type AgentAdapterOptions = CallAgentProviderOptions & {
 export const AGENT_STALL_TIMEOUT_MS = 90_000;
 export const AGENT_PROVIDER_STALLED = 'AGENT_PROVIDER_STALLED';
 
+/**
+ * While tools are offered, the first this-many characters of a step's text are
+ * held back instead of streamed. DeepSeek sometimes announces its tool calls
+ * ("I'll check SIGLENS's latest analysis…", 2026-09-15 production) despite the
+ * prompt forbidding it; a held announcement is dropped once a tool call
+ * arrives. A real answer outgrows the hold within a second and streams on.
+ * Announcements observed were under 100 characters.
+ */
+export const AGENT_NARRATION_HOLD_CHARS = 200;
+
 /** Provider-specific bits of an OpenAI-compatible chat.completions request. */
 export interface OpenAiCompatibleRequest {
     baseURL: string;
@@ -107,6 +117,12 @@ export async function streamOpenAiCompatibleAgent(
 
     const startedAt = Date.now();
     let text = '';
+    // Held text not yet emitted; `null` once the hold is released for this step.
+    let held: string | null = o.tools.length > 0 ? '' : null;
+    const emitText = (delta: string): void => {
+        text += delta;
+        o.onEvent({ type: 'text', delta });
+    };
     let finish: string | null | undefined;
     let usage: OpenAiCompatibleUsageLike | undefined;
     const partial = new Map<
@@ -154,9 +170,18 @@ export async function streamOpenAiCompatibleAgent(
             const choice = chunk.choices[0];
             const delta = choice?.delta;
             if (delta?.content) {
-                text += delta.content;
-                o.onEvent({ type: 'text', delta: delta.content });
+                if (held === null) {
+                    emitText(delta.content);
+                } else {
+                    held += delta.content;
+                    if (held.length >= AGENT_NARRATION_HOLD_CHARS) {
+                        emitText(held);
+                        held = null;
+                    }
+                }
             }
+            // Text held before a tool call is an announcement, not an answer.
+            if (held !== null && delta?.tool_calls?.length) held = '';
             for (const tc of delta?.tool_calls ?? []) {
                 const slot = partial.get(tc.index) ?? {
                     id: '',
@@ -193,6 +218,7 @@ export async function streamOpenAiCompatibleAgent(
             args: parseArgs(s.args),
         }));
     const stopReason = mapStopReason(finish, toolCalls.length > 0);
+    if (held && stopReason !== 'tool_use') emitText(held);
     // Core only executes calls on `tool_use`; announcing others would show chips for calls that never run.
     if (stopReason === 'tool_use') {
         for (const call of toolCalls) o.onEvent({ type: 'tool_call', call });
