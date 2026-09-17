@@ -365,15 +365,11 @@
                 "094886": "It is divided into 5 stages from Extreme Fear to Extreme Greed (Extreme Fear · Fear · Neutral · Greed · Extreme Greed). If the sample size is less than 60 days, reliability is marked as \"Limited,\" and it is safer to recheck the label after more data has accumulated.",
                 "128c11": "Financial Statements",
                 "1a9e0a": "The U.S. STOCK Act mandates that members of the Senate and House of Representatives and their family members disclose stock trades within 45 days. Trades by members of Congress are one of the signals market participants pay attention to in terms of access to industry and policy information. Political trading trends are used as a supplementary indicator of market sentiment, not for quantitative valuation.",
-                "1af282": "{v0} Congressional Member Trading Disclosure Overview",
-                "1b54b3": "Analyzes {v0}'s Income Statement (Revenue, Operating Profit, Net Income, EPS), Balance Sheet (Assets, Liabilities, Equity), and Cash Flow Statement (Operating Cash Flow, Free Cash Flow) over a 5-year trend. It also provides a comprehensive financial score across four axes: Growth, Profitability & Quality, Stability, and Cash Generation, along with key financial ratios.",
                 "2141f2": "News Analysis",
-                "24d5a2": "Stability score is calculated based on debt-to-equity ratio and current ratio. A higher score indicates lower debt burden and excellent short-term repayment ability. Checking the total debt-to-total assets ratio on the balance sheet together can provide a more accurate understanding of financial health.",
-                "2659c6": "{v0} News Analysis Overview",
+                "24d5a2": "Stability score is calculated based on debt-to-equity ratio and current ratio. A higher score indicates lower debt burden and excellent short-term repayment ability. Checking the total debt-to-total assets ratio on the balance sheet together can provide a more accurate understanding of financial health. This page shows the income statement, balance sheet, and cash flow statement over a five-year trend, together with a composite score across four axes: growth, profitability, stability, and cash generation.",
                 "2ab959": "which floor of this building is the price on?",
                 "2c1d31": "A net buying dominance by members of Congress for a specific stock does not directly translate into a bullish signal. There are limitations such as disclosure delays, amount by range, and trades under family members' names, so it should be interpreted as a supplementary indicator. The AI trend interpretation on this page is the result of deterministically summarizing transaction counts and congressional distribution, then adding LLM comments. Please consider buy/sell decisions in conjunction with other Fundamentals and technical signals.",
                 "3c87a9": "Could not load Earnings schedule.",
-                "42ddbe": "Summarizes {v0} trading details disclosed by U.S. Senate and House members under the STOCK Act. It shows the transaction date, disclosure date, buy/sell classification, and estimated amount range. Considering the disclosure delay of approximately 45 days, AI summarizes recent Congressional trading trends.",
                 "465a63": "{v0} Financial Statements",
                 "4e7e6f": "While <link>{v1}</link> blends many assets to show sentiment across {v0}, this page scores {v2} alone by mapping its volume flow, order flow and price position against that stock’s own distribution.",
                 "5c38df": "Could not load analyst trends.",
@@ -401,13 +397,10 @@
                 "e607c1": "{v0} Congressional Trades",
                 "e70f2d": "Max Pain is the price to which the stock price is drawn as Options expiration approaches. Open Interest is the number of currently active Options contracts, meaning many people are betting on thick price levels.",
                 "ec648e": "What happens if my stock does not have Options?",
-                "f07882": "{v0} Chart Analysis Overview",
-                "f07925": "This is the chart page where you can check {v0}'s price movement and technical indicator summaries.",
                 "f1b01b": "Options Analysis",
                 "f865a7": "For stocks without an Options market, the Options analysis page will display an empty message and redirect to other analysis pages such as Chart/Fundamentals/News.",
                 "f9482c": "Fear & Greed Index",
                 "faa62c": "How are Max Pain and Open Interest interpreted?",
-                "fec645": "{v0} Financial Statements Analysis Overview",
                 "marketFearGreedLinkAll": "Market-wide Fear & Greed Index",
                 "marketFearGreedLinkKr": "Korean Market Fear & Greed Index",
                 "marketLabelKr": "the Korean stock market",
@@ -416,8 +409,6 @@
                 "newsArticleDescEquity": "Bullish and bearish sentiment plus the key issues in the latest {v0} news.",
                 "newsHeadingCrypto": "{v0} Latest Crypto News",
                 "newsHeadingEquity": "{v0} Latest News and Earnings Calendar",
-                "newsSrOnlyCrypto": "A rundown of {v0} news sentiment and the key issues driving it.",
-                "newsSrOnlyEquity": "A rundown of {v0} news sentiment, the next earnings date, recent results and analyst rating changes.",
                 "overallGuideCryptoP1": "A single page on where {v0} stands right now. It brings together three axes: the chart trend and the main support and resistance levels, what the latest news is moving on, and buying sentiment (the Fear & Greed Index).",
                 "overallGuideCryptoP2": "The three axes are combined into bullish and bearish scenarios, with the price zones worth considering for entry and the signals that would break each scenario.",
                 "overallGuideCryptoP3": "Risk factors that could flip the scenario — macro events, regulatory issues, major news — are flagged separately, so a quick scan before buying helps.",
@@ -2060,6 +2051,33 @@
             "mobileSheet": {
                 "aiAnalysis": "AI analysis"
             },
+            "relatedGroup": {
+                "aiSemiValueChain": "AI semiconductor value chain",
+                "aiSoftware": "AI software",
+                "bioPharma": "Biotech & pharma",
+                "crypto": {
+                    "altcoin": "Altcoins",
+                    "major": "Major cryptocurrencies"
+                },
+                "evBattery": "EVs & batteries",
+                "internetPlatform": "Internet & platforms",
+                "leveragedEtf": "Leveraged & inverse ETFs",
+                "sameMarket": "Same market",
+                "sector": {
+                    "XLB": "Materials sector",
+                    "XLC": "Communication services sector",
+                    "XLE": "Energy sector",
+                    "XLF": "Financials sector",
+                    "XLI": "Industrials sector",
+                    "XLK": "Technology sector",
+                    "XLP": "Consumer staples sector",
+                    "XLRE": "Real estate sector",
+                    "XLU": "Utilities sector",
+                    "XLV": "Healthcare sector",
+                    "XLY": "Consumer discretionary sector"
+                },
+                "spaceDefense": "Space, aerospace & defense"
+            },
             "snapshot": {
                 "prose": {
                     "expectedRange": "Expected range: {v0}",
@@ -3534,8 +3552,8 @@
                 "sourcesTitle": "Where the answers come from"
             },
             "MessageList": {
-                "19b2d1": "Cancel",
                 "259976": "The response was cut off. Please ask a follow-up question.",
+                "19b2d1": "Cancel",
                 "43da5e": "Regenerate",
                 "6523ca": "Resend",
                 "96adfe": "This response was stopped.",

@@ -195,6 +195,20 @@ describe('CongressPage — SEO snapshot prose (Task 7b)', () => {
         expect(findElementByType(tree, CongressTrendSummary)).not.toBeNull();
     });
 
+    /**
+     * 크롤러 전용 `sr-only` 개요는 제거했다(2026-09-17 정책 감사 M3 — Google
+     * "숨겨진 텍스트"). 화면에 보이는 FAQ·표가 같은 내용을 이미 말한다.
+     */
+    it('sr-only 개요 섹션을 렌더하지 않는다', async () => {
+        mockGetSeoSnapshotsStatic.mockResolvedValue([]);
+
+        const tree = await CongressPage({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+
+        expect(JSON.stringify(tree)).not.toContain('sr-only');
+    });
+
     it('getSeoSnapshotsStatic은 페이지의 revalidate 리터럴(86400)로 호출된다', async () => {
         mockGetSeoSnapshotsStatic.mockResolvedValue([]);
 

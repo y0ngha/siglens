@@ -32,12 +32,6 @@ export function evaluateSymbolIndexability({
         return { indexable: false, reason: 'locale-not-ready' };
     }
 
-    // 로케일 게이트는 **가장 먼저** 본다. 아래 화이트리스트(popular 등)보다
-    // 뒤에 두면 인기 티커의 비-ko 페이지가 한국어 본문 그대로 색인된다.
-    if (!SYMBOL_INDEXABLE_LOCALES.includes(locale)) {
-        return { indexable: false, reason: 'locale-not-ready' };
-    }
-
     if (!assetInfo) {
         return { indexable: false, reason: 'asset-missing' };
     }

@@ -157,6 +157,11 @@ const BARS_WITH_DATA = {
         { time: 2, open: 1.5, high: 2.5, low: 1, close: 2, volume: 120 },
     ],
     indicators: {
+        // 실제 `getSeedBarsStatic` 산출물은 `EMPTY_INDICATOR_RESULT` 스프레드라
+        // rsi·macd가 항상 배열이다. 게이트(`buildTechnicalFacts`)가 그 둘을 읽으므로
+        // 픽스처도 같은 모양이어야 한다.
+        rsi: [50, 55],
+        macd: [{ histogram: 0.1 }, { histogram: 0.2 }],
         buySellVolume: [
             { buyVolume: 60, sellVolume: 40 },
             { buyVolume: 70, sellVolume: 50 },

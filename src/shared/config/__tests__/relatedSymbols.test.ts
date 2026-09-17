@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import {
     RELATED_SYMBOL_COUNT,
+    RING_GROUP_LABEL_KEY,
     relatedSymbolsFor,
     ringNeighbors,
     roundRobinMerge,
@@ -427,6 +429,76 @@ describe('relatedSymbolsFor', () => {
                     }
                 }
             }
+        });
+    });
+
+    /**
+     * 칩 캡션(`label`)은 **메시지 키**다. 키를 틀리거나 카탈로그에 넣는 걸 잊으면
+     * 화면에 키 문자열이 그대로 찍히는데, 서버 컴포넌트 렌더 테스트만으로는
+     * 전 그룹을 다 밟지 못한다 — 유니버스 전체가 내보내는 키를 카탈로그와 직접
+     * 대조한다. `views.symbol.relatedGroup.*`(신규)와 홈이 이미 쓰는
+     * `widgets.home.tickerCategory.*`(재사용) 둘 다 여기서 검증된다.
+     */
+    describe('그룹 캡션', () => {
+        const ko: unknown = JSON.parse(
+            readFileSync('messages/ko.json', 'utf8')
+        );
+        const lookup = (path: string): unknown =>
+            path
+                .split('.')
+                .reduce<unknown>(
+                    (node, seg) =>
+                        node === null || typeof node !== 'object'
+                            ? undefined
+                            : (node as Record<string, unknown>)[seg],
+                    ko
+                );
+
+        it('모든 라벨이 ko 카탈로그에 존재하는 키다', () => {
+            const labels = new Set(
+                UNIVERSE.flatMap(symbol =>
+                    relatedSymbolsFor(symbol).map(r => r.label)
+                )
+            );
+            expect(labels.size).toBeGreaterThan(1);
+            const missing = [...labels].filter(
+                label => typeof lookup(label) !== 'string'
+            );
+            expect(missing).toEqual([]);
+        });
+
+        it('링 이웃은 "같은 시장 종목" 캡션을, 테마 피어는 그 그룹 캡션을 단다', () => {
+            for (const symbol of UNIVERSE) {
+                for (const related of relatedSymbolsFor(symbol)) {
+                    if (related.reason === 'ring') {
+                        expect(related.label).toBe(RING_GROUP_LABEL_KEY);
+                    } else {
+                        expect(related.label).not.toBe(RING_GROUP_LABEL_KEY);
+                    }
+                }
+            }
+        });
+
+        it('섹터 ETF의 구성종목은 그 섹터 캡션으로 묶인다', () => {
+            const etf = SECTOR_ETFS[0];
+            const peer = relatedSymbolsFor(etf.symbol).find(
+                r => r.reason === 'category'
+            );
+            expect(peer?.label).toBe(
+                `views.symbol.relatedGroup.sector.${etf.symbol}`
+            );
+        });
+
+        it('교차시장 테마 피어는 reason=theme로 표시된다', () => {
+            // 삼성전자는 `CROSS_MARKET_THEME_GROUPS`(AI 반도체 밸류체인)로만
+            // NVDA와 이어진다 — 링은 시장을 넘지 않는다.
+            const nvda = relatedSymbolsFor('005930.KS').find(
+                r => r.symbol === 'NVDA'
+            );
+            expect(nvda?.reason).toBe('theme');
+            expect(nvda?.label).toBe(
+                'views.symbol.relatedGroup.aiSemiValueChain'
+            );
         });
     });
 });

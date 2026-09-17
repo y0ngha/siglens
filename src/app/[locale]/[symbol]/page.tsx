@@ -4,6 +4,8 @@ import { setRequestLocale } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import { MobileSheetPlaceholder, TechnicalFactsSummary } from '@/views/symbol';
 import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
+import { hasTechnicalProse } from '@/views/symbol/snapshot/renderers/technicalContent';
+import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import { buildTechnicalFacts } from '@/views/symbol/utils/technicalFacts';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { buildFallbackAnalysis } from '@/entities/chat-message';
@@ -34,7 +36,6 @@ import { MS_PER_SECOND } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
     buildSnapshotMetaDescription,
-    buildWebPageJsonLd,
     resolveSymbolSeoContent,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
@@ -96,12 +97,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         locale,
         symbol: ticker,
         assetInfo,
-        degraded,
+        // 봉 조회가 **실패**했으면(`null`) 이 렌더는 degrade다. 그러면 기존 규칙
+        // ("degraded → 이 탭의 렌더 가능한 스냅샷이 있을 때만 색인")이 그대로
+        // 적용된다: 일시 장애 중에 330자짜리 껍데기가 색인되지 않고, 저장된
+        // technical 스냅샷이 있으면 본문이 실제로 서술을 그리므로 색인은 유지된다.
+        // 조회가 회복되면 다음 ISR 재생성에서 자동으로 원래 판정으로 돌아간다.
+        // (예전에는 `hasPriceData: undefined`로만 남겨, 장애 중 crawl이 빈 페이지를
+        //  `index, follow`로 받아갔다 — 2026-09-17 정책 감사 M6.)
+        degraded: degraded || metadataBars === null,
         revalidateSeconds: revalidate,
         tab: 'technical',
         // 조회가 **실패**한 경우(`null`)와 조회 결과 봉이 **없는** 경우를 구분한다.
-        // 인프라 장애로 null이 온 것까지 noindex로 밀면 일시 장애가 전 종목
-        // 색인 해제로 번진다 — 그 경우는 `undefined`로 남겨 기존 판정을 따른다.
+        // 실패는 위 `degraded`가 받으므로 여기서는 `undefined`로 남긴다 — 봉이
+        // 정말 없는 것("no-price-data", 스냅샷이 있어도 색인 불가)과 섞지 않는다.
         //
         // 술어는 **본문과 동일하게** `buildTechnicalFacts`로 판정한다. `bars.length > 0`
         // 으로 두었더니 CTK(상장폐지, 봉 1개)가 새어 나갔다 — 그 헬퍼는 등락률 분모로
@@ -166,8 +174,7 @@ export default async function SymbolPage({ params }: Props) {
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
     // 셋은 서로 독립이다.
-    const [t, tViews, tSeo] = await Promise.all([
-        getTranslations('app.symbol'),
+    const [tViews, tSeo] = await Promise.all([
         getTranslations('views.symbol'),
         getTranslations('shared.seo'),
     ]);
@@ -249,12 +256,17 @@ export default async function SymbolPage({ params }: Props) {
         assetInfo.fmpSymbol,
         assetClass
     );
-    const jsonLd = buildWebPageJsonLd({
+    const jsonLd = buildSymbolWebPageJsonLd({
         url,
         name: fullTitle,
         description,
         about: aboutNode,
         locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        // 아래 `TechnicalSnapshotProse`가 **실제로 그리는** 스냅샷일 때만
+        // 신선도를 주장한다(렌더 불가한 행은 본문에 한 글자도 남기지 않는다).
+        generatedAt: hasTechnicalProse(technicalSnapshot?.content)
+            ? technicalSnapshot?.generatedAt
+            : null,
     });
 
     // 차트 페이지는 ticker landing이므로 [Siglens, displayName] 2단계로 통일한다.
@@ -350,7 +362,7 @@ export default async function SymbolPage({ params }: Props) {
             {/* main 랜드마크: 다른 5개 sibling 페이지는 본문에 <main>이 있는데
                 차트 페이지만 빠져 있어 의미론적 일관성이 깨졌었다. SymbolPageClient
                 outer div는 flex-1로 viewport를 채우는 구조라 그 위 한 단을 main으로
-                감싸 sr-only 보조 설명과 chart 본문을 하나의 랜드마크로 묶는다.
+                감싸 chart 본문을 하나의 랜드마크로 묶는다.
                 가시 h1은 jail 제약상 SymbolPageClient의 timeframe bar 안에 둔다. */}
             {/* 차트 페이지는 CrossLinkCards를 본문에 두지 않는다 — cross-link 역할은
                 layout header의 SymbolTabs가 충분히 수행한다 (탭으로 sibling 페이지
@@ -373,13 +385,6 @@ export default async function SymbolPage({ params }: Props) {
                     고정하지 않으므로 여기서 스크롤을 잡으면 페이지 스크롤과
                     겹쳐 이중 스크롤이 된다. */}
             <main className="flex min-h-0 flex-1 flex-col md:overflow-y-auto">
-                <section className="sr-only">
-                    {/* 차트 h1은 SymbolPageClient(이 section보다 DOM 뒤)에 있어,
-                        여기에 heading을 두면 h1보다 먼저 나와 위계가 역전된다
-                        (WCAG 1.3.1). 보조 설명은 heading 없이 p로만 노출한다. */}
-                    <p>{t('page.f07882', { v0: displayName })}</p>
-                    <p>{t('page.f07925', { v0: displayName })}</p>
-                </section>
                 {/* h-full + shrink-0: main의 전체 높이를 basis로 고정하고 shrink를
                     금지해, 뒤따르는 TechnicalSnapshotProse가 있어도 이 chart+AI
                     영역은 절대 압축되지 않는다(위 audit fix FIX 1 주석 참고). */}
