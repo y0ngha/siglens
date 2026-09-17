@@ -333,6 +333,11 @@
   - Rule: CONVENTIONS.md — Architecture documentation must mirror implementation; cross-widget dependency edges must be registered
   - Context: Added agent-chat → layout edge to documented cross-widget dependency graph.
 
+## [fix/node24-icu-hydration Round 1 | Node.js 24 ICU hydration | 2026-09-17]
+- Violation: JSDoc claimed the Dockerfile ICU build guard verified formatter's ICU behavior (year/month-long/day and other locales), but the guard only checks ko-KR hour12 time and compact currency formatting
+  - Rule: CONVENTIONS.md — JSDoc and code comments must match code behavior; documentation claiming verification for capabilities that are unverified is misleading
+  - Context: Fixed by softening the wording to state that the guard is a strong locale-data-level signal, not a per-format verification guarantee. Build verification is infrastructure-level (Dockerfile isolation), not API-level (per-formatter) proof.
+
 ## [feat/agent-confluence-sr-tests | siglens-wt-confluence | 2026-09-15]
 - Violation: `useEffectEvent` (notifyNavigated) in src/widgets/agent-chat/Sidebar.tsx declared after derived values and handlers
   - Rule: MISTAKES.md Components Rule 17 — All hook calls must be declared before derived variables and handlers. Strict ordering: useState/useRef → useQuery/useMutation/custom hooks → useCallback/useMemo → derived variables → handlers → useEffect

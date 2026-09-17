@@ -17,8 +17,9 @@ import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
  * `Record<MarketProfileId, …>`로 세 값을 모두 채워야 컴파일이 통과한다 — 새
  * market profile이 추가되면 여기를 반드시 고치게 된다.
  *
- * 프로덕션 `node:22-alpine` 이미지의 full-ICU가 사전 검증되어 있어(Intl 옵션이
- * 로케일/월 이름을 항상 완전히 지원) `formatToParts`로 재작성할 필요는 없다.
+ * 프로덕션 이미지의 ICU는 `Dockerfile`의 빌드 가드가 ko-KR 시각·compact 통화 출력을
+ * 브라우저와 대조한다. 이 포맷(연·월 이름·일)을 직접 확인하지는 않지만 ICU 회귀는
+ * 로케일 데이터 단위로 오므로 강한 신호다 — `formatToParts`로 재작성하지 않는다.
  */
 const SNAPSHOT_TIME_ZONE_BY_PROFILE: Record<MarketProfileId, string> = {
     'us-equity': 'America/New_York',
