@@ -333,6 +333,11 @@
   - Rule: CONVENTIONS.md — Architecture documentation must mirror implementation; cross-widget dependency edges must be registered
   - Context: Added agent-chat → layout edge to documented cross-widget dependency graph.
 
+## [fix/node24-icu-hydration Round 1 | Node.js 24 ICU hydration | 2026-09-17]
+- Violation: JSDoc claimed the Dockerfile ICU build guard verified formatter's ICU behavior (year/month-long/day and other locales), but the guard only checks ko-KR hour12 time and compact currency formatting
+  - Rule: CONVENTIONS.md — JSDoc and code comments must match code behavior; documentation claiming verification for capabilities that are unverified is misleading
+  - Context: Fixed by softening the wording to state that the guard is a strong locale-data-level signal, not a per-format verification guarantee. Build verification is infrastructure-level (Dockerfile isolation), not API-level (per-formatter) proof.
+
 ## [feat/agent-confluence-sr-tests | siglens-wt-confluence | 2026-09-15]
 - Violation: `useEffectEvent` (notifyNavigated) in src/widgets/agent-chat/Sidebar.tsx declared after derived values and handlers
   - Rule: MISTAKES.md Components Rule 17 — All hook calls must be declared before derived variables and handlers. Strict ordering: useState/useRef → useQuery/useMutation/custom hooks → useCallback/useMemo → derived variables → handlers → useEffect
@@ -342,3 +347,11 @@
 - Violation: RECOMMENDED — loadMarketSignals loaded CachedMarketDataProvider 3 times per request without request-scope deduplication → redundant Data Cache reads
   - Rule: (new) RSC data loaders used in multiple places within one request must wrap with React cache() to eliminate redundant fetches from the same provider call
   - Context: Server-cached providers like CachedMarketDataProvider return the same data; calling them multiple times per request wastes the cache boundary. Fixed by wrapping loader in React cache(). Scope parameter removed (was defeating cache key). Verified: getMarketSummary, getMarketNotice, getMarketCalendar now deduplicate to single provider call per request.
+
+## [PR #838 | fix/node24-icu-hydration | Post-approval suggestions | 2026-09-18]
+- Violation: ~300-char ICU hydration guard logic duplicated in Dockerfile builder and runner stages; risk of updating only one during maintenance
+  - Rule: CONVENTIONS.md — Extract duplicated logic/constants to a single source; both stages must call the same script
+  - Context: Extracted to `scripts/assert-icu-locale.mjs` and called from both stages. Added `.gitignore` allowlist entry for `/scripts/**` exception.
+- Violation: JSDoc stated the guard verifies "Intl option combo `src/shared/lib/formatSnapshotAsOf.ts` uses (year numeric / month long / day numeric)" but the check did not verify that combo
+  - Rule: CONVENTIONS.md — JSDoc and code comments must match code behavior; explicit verification claims require matching checks
+  - Context: Added exact Intl option verification to `scripts/assert-icu-locale.mjs` (year/month/day), updated JSDoc to match the code.

@@ -1,9 +1,12 @@
 # syntax=docker/dockerfile:1
 
 # ---- builder ----
-FROM node:22-alpine AS builder
+FROM node:24-alpine AS builder
 RUN corepack enable && corepack prepare yarn@4.18.0 --activate
 WORKDIR /app
+# ICU 회귀 가드 — scripts/assert-icu-locale.mjs 참고. yarn install/COPY . . 전에 실행해 빨리 실패시킨다.
+COPY scripts/assert-icu-locale.mjs ./scripts/assert-icu-locale.mjs
+RUN node scripts/assert-icu-locale.mjs
 COPY .yarnrc.yml package.json yarn.lock ./
 COPY .yarn ./.yarn
 RUN --mount=type=secret,id=SIGLENS_GITHUB_TOKEN,required=true \
@@ -59,8 +62,11 @@ RUN --mount=type=secret,id=SIGLENS_GITHUB_TOKEN,required=true \
 RUN node scripts/assert-standalone-skills.mjs
 
 # ---- runner ----
-FROM node:22-alpine AS runner
+FROM node:24-alpine AS runner
 RUN apk add --no-cache tini
+# builder와 같은 ICU 가드 — 런타임(ISR 재생성)이 실제로 쓰는 이미지라 여기서도 확인한다.
+COPY --from=builder /app/scripts/assert-icu-locale.mjs /tmp/assert-icu-locale.mjs
+RUN node /tmp/assert-icu-locale.mjs && rm /tmp/assert-icu-locale.mjs
 WORKDIR /app
 # GIT_SHA must be re-declared in the runner stage — ARG scope is per-stage in Docker.
 # Without this, process.env.GIT_SHA is unset at runtime and cache-handler/config.mjs
