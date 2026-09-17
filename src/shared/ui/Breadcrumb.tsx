@@ -52,7 +52,7 @@ export function Breadcrumb({ trail }: BreadcrumbProps) {
                 {trail.map((crumb, index) => {
                     const isLast = index === trail.length - 1;
                     return (
-                        <Fragment key={crumb.label}>
+                        <Fragment key={crumb.href ?? crumb.label}>
                             <li aria-hidden="true">/</li>
                             <li
                                 {...(isLast
