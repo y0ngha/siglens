@@ -1,4 +1,4 @@
-import { stripSnapshotMarkdown } from './stripSnapshotMarkdown';
+import { stripSnapshotMarkdown } from '@/shared/lib/stripSnapshotMarkdown';
 
 /**
  * Narrows an `unknown` field to a trimmed, markdown-stripped string array —

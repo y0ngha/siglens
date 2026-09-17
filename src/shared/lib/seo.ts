@@ -12,6 +12,7 @@ import {
     type AssetClass,
 } from '@/shared/config/marketProfile';
 import { KR_EXCHANGE_SUFFIX_RE } from '@/shared/config/ticker';
+import { stripSnapshotMarkdown } from '@/shared/lib/stripSnapshotMarkdown';
 
 export interface BreadcrumbItem {
     name: string;
@@ -549,9 +550,15 @@ const SNAPSHOT_META_DESCRIPTION_FIELD: Record<string, string> = {
     news: 'currentDriverKo',
 };
 
-/** Collapses `\n`-separated topic lines into a single space-joined line (mirrors the renderers' paragraph-split convention, but for a one-line `<meta description>` excerpt). */
+/**
+ * Collapses `\n`-separated topic lines into a single space-joined line (mirrors the renderers' paragraph-split convention, but for a one-line `<meta description>` excerpt).
+ *
+ * 마크다운 기호를 먼저 뗀다 — 스냅샷 필드는 화면에서 `MarkdownText`로 그리는 마크다운이라,
+ * 그대로 두면 SERP 스니펫에 `**종합 진단**:`이 글자로 나간다(v0.79.2 배포 후 운영 크롤).
+ * 줄 머리 기호(`- `·`#`)를 줄 단위로 인식해야 하므로 줄을 합치기 **전에** 적용한다.
+ */
 function collapseToSingleLine(text: string): string {
-    return text
+    return stripSnapshotMarkdown(text)
         .split('\n')
         .map(line => line.trim())
         .filter(line => line.length > 0)

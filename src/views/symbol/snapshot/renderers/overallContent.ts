@@ -1,5 +1,5 @@
 import type { OverallScenarioName } from '@y0ngha/siglens-core';
-import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
+import { stripSnapshotMarkdown } from '@/shared/lib/stripSnapshotMarkdown';
 import { createEnumGuard } from '../lib/createEnumGuard';
 import { narrowStringArray } from '../lib/narrowStringArray';
 

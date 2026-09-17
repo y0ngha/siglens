@@ -360,3 +360,8 @@
 - Violation: JSDoc stated the guard verifies "Intl option combo `src/shared/lib/formatSnapshotAsOf.ts` uses (year numeric / month long / day numeric)" but the check did not verify that combo
   - Rule: CONVENTIONS.md — JSDoc and code comments must match code behavior; explicit verification claims require matching checks
   - Context: Added exact Intl option verification to `scripts/assert-icu-locale.mjs` (year/month/day), updated JSDoc to match the code.
+
+## [fix/seo-meta-description-markdown Round 2 | fix/seo-meta-description-markdown | 2026-09-18]
+- Violation: single-marker italic regexes (`/\*(.+?)\*/g`, `/_(.+?)_/g`) lacked lookaround boundaries, so two unrelated `*` or `_` in a sentence were treated as a pair and the text between them was deleted (e.g., `BRK_A와 BRK_B` → `BRKA와 BRKB`, `250*2 … 100*3` → `2502 … 1003`). The function's output feeds `<meta name="description">`, making the truncation visible to search engines.
+  - Rule: MISTAKES.md Pattern Matching #20.5 — regex patterns must use lookaround boundaries to match intended text only; unguarded inline delimiters across multiple potential markers cause false phrase boundaries and unwanted deletions
+  - Context: Fixed with lookaround boundaries (non-whitespace inside, no word char / same marker outside) plus regression tests in `src/shared/lib/stripSnapshotMarkdown.ts`.
