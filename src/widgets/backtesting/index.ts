@@ -3,4 +3,5 @@
 export { BacktestCaseCard } from './BacktestCaseCard';
 export { BacktestCaseList } from './BacktestCaseList';
 export { BacktestHero } from './BacktestHero';
+export { BacktestMethodology } from './BacktestMethodology';
 export { BacktestTabs } from './BacktestTabs';

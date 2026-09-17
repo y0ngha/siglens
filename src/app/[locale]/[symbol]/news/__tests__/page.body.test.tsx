@@ -104,9 +104,6 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     SITE_URL: 'https://siglens.io',
 }));
 
-vi.mock('@/shared/lib/getTodayIsoDay', () => ({
-    getTodayIsoDay: () => '2026-06-22',
-}));
 vi.mock('@/shared/lib/dateKey', () => ({
     todayKstIsoDate: () => '2026-06-22',
 }));
@@ -120,11 +117,13 @@ import { Suspense, isValidElement, type ReactNode } from 'react';
 import NewsPage from '@/app/[locale]/[symbol]/news/page';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { getNewsList } from '@/entities/news-article/api';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import { NewsFactsSummary } from '@/widgets/news';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
 import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';
 import { NEWS_LIST_PAGE_SIZE } from '@/shared/config/newsSerialization';
+import { ORGANIZATION_JSON_LD_ID } from '@/shared/lib/seo';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 
 const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);
@@ -351,6 +350,15 @@ describe('NewsPage — aiArticleJsonLd headline/description isEquity branch', ()
     beforeEach(() => {
         vi.clearAllMocks();
         mockGetNewsList.mockResolvedValue([]);
+        // Article JSON-LD는 화면에 보이는 AI 산문이 있을 때만 실린다(2026-09-17
+        // 정책 감사 M5). headline 분기를 보려면 산문 스냅샷이 있어야 한다.
+        vi.mocked(getSeoSnapshotsStatic).mockResolvedValue([
+            {
+                tab: 'news',
+                content: { currentDriverKo: '테스트용 뉴스 동인' },
+                generatedAt: new Date('2026-09-01'),
+            },
+        ] as unknown as Awaited<ReturnType<typeof getSeoSnapshotsStatic>>);
     });
 
     it('crypto → aiArticleJsonLd headline uses 최근 코인 뉴스 AI 요약', async () => {
@@ -443,5 +451,116 @@ describe('NewsPage — BreadcrumbList 이름', () => {
         });
 
         expectSymbolBreadcrumbName('Apple Inc.');
+    });
+});
+
+/**
+ * Article JSON-LD의 노출 조건과 `dateModified` 출처(2026-09-17 정책 감사 M2·M5).
+ *
+ * - 화면에 보이는 AI 산문이 없으면 Article 노드 자체를 싣지 않는다(마크업이
+ *   페이지에 없는 콘텐츠를 주장하지 않는다).
+ * - `dateModified`는 **이 페이지에 실제로 실린 것**의 시각이다. 예전에는
+ *   `getTodayIsoDay()`(오늘 0시)라 전 종목이 매일 갱신된다고 주장했다.
+ */
+describe('NewsPage — Article JSON-LD 게이트와 dateModified', () => {
+    const PROSE_SNAPSHOT = [
+        {
+            tab: 'news',
+            content: { currentDriverKo: '실적 기대가 가격을 끌고 있다.' },
+            generatedAt: new Date('2026-09-01T03:04:05.000Z'),
+        },
+    ] as unknown as Awaited<ReturnType<typeof getSeoSnapshotsStatic>>;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
+        mockGetNewsList.mockResolvedValue([]);
+        vi.mocked(getSeoSnapshotsStatic).mockResolvedValue([]);
+    });
+
+    const findArticle = (tree: ReactNode) =>
+        collectJsonLdData(tree).find(d => d['@type'] === 'Article');
+
+    it('산문이 없으면 Article 노드를 싣지 않는다', async () => {
+        mockGetNewsList.mockResolvedValue(READY_NEWS);
+
+        const tree = await NewsPage({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+
+        expect(findArticle(tree)).toBeUndefined();
+    });
+
+    it('산문이 있으면 최신 뉴스 발행 시각을 dateModified로 쓴다', async () => {
+        vi.mocked(getSeoSnapshotsStatic).mockResolvedValue(PROSE_SNAPSHOT);
+        mockGetNewsList.mockResolvedValue(READY_NEWS);
+
+        const tree = await NewsPage({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+
+        expect(findArticle(tree)?.dateModified).toBe(READY_NEWS[0].publishedAt);
+    });
+
+    it('뉴스가 없으면 스냅샷 생성 시각으로 폴백한다', async () => {
+        vi.mocked(getSeoSnapshotsStatic).mockResolvedValue(PROSE_SNAPSHOT);
+
+        const tree = await NewsPage({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+
+        expect(findArticle(tree)?.dateModified).toBe(
+            '2026-09-01T03:04:05.000Z'
+        );
+    });
+
+    it('WebPage 노드는 산문이 있을 때만 dateModified를 주장하고, publisher는 항상 @id 참조다', async () => {
+        vi.mocked(getSeoSnapshotsStatic).mockResolvedValue(PROSE_SNAPSHOT);
+
+        // 이 파일은 `buildWebPageJsonLd`를 `{}`로 스텁하므로 `@type`이 없다 —
+        // `buildSymbolWebPageJsonLd`가 얹는 `publisher`로 그 노드를 집는다.
+        const findWebPage = (tree: ReactNode) =>
+            collectJsonLdData(tree).find(d => 'publisher' in d);
+
+        const withProse = findWebPage(
+            await NewsPage({
+                params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+            })
+        );
+        expect(withProse?.dateModified).toBe('2026-09-01T03:04:05.000Z');
+        expect(withProse?.publisher).toEqual({
+            '@type': 'Organization',
+            '@id': ORGANIZATION_JSON_LD_ID,
+        });
+
+        vi.mocked(getSeoSnapshotsStatic).mockResolvedValue([]);
+        const withoutProse = findWebPage(
+            await NewsPage({
+                params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+            })
+        );
+        expect(withoutProse).toBeDefined();
+        expect('dateModified' in withoutProse!).toBe(false);
+    });
+});
+
+/**
+ * 크롤러 전용 `sr-only` 개요 제거(2026-09-17 정책 감사 M3 — Google "숨겨진 텍스트").
+ * 같은 사실은 `NewsFactsSummary`가 화면에 보이는 텍스트로 이미 말한다.
+ */
+describe('NewsPage — sr-only 개요 부재', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
+        mockGetNewsList.mockResolvedValue([]);
+        vi.mocked(getSeoSnapshotsStatic).mockResolvedValue([]);
+    });
+
+    it('sr-only 섹션을 렌더하지 않는다', async () => {
+        const tree = await NewsPage({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+
+        expect(JSON.stringify(tree)).not.toContain('sr-only');
     });
 });

@@ -36,10 +36,22 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn().mockReturnValue({ db: {} }),
 }));
-vi.mock('@/entities/terms', () => ({
-    DrizzleTermsRepository: vi.fn().mockImplementation(() => ({
-        findActive: vi.fn().mockResolvedValue(null),
-    })),
+/**
+ * 활성 약관이 **있는** 상태를 목한다. 없으면 `generateMetadata`가 noindex +
+ * canonical null을 내는 것이 맞는 동작이라(soft-404 방지), 아래 "index + canonical"
+ * 단언은 활성 행이 있는 전제에서만 의미가 있다. 행이 없는 분기는
+ * `__tests__/legalSoft404.test.tsx`가 본다.
+ */
+vi.mock('@/entities/terms/api', () => ({
+    getActiveTerms: vi.fn().mockResolvedValue({
+        id: 'row-1',
+        kind: 'privacy',
+        version: 1,
+        effectiveDate: new Date('2025-01-01T00:00:00.000Z'),
+        body: '# 본문',
+        bodyLocale: 'ko',
+        isTranslationFallback: false,
+    }),
 }));
 vi.mock('next/link', () => ({ default: () => null }));
 vi.mock('next/navigation', () => ({

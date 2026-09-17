@@ -33,12 +33,12 @@ import {
     buildSnapshotMetaDescription,
     buildSymbolCongressSeoContent,
     buildSymbolSeoContent,
-    buildWebPageJsonLd,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
     noindexSymbolMetadata,
     type FaqItem,
 } from '@/shared/lib/seo';
+import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
@@ -296,12 +296,15 @@ export default async function CongressPage({ params }: Props) {
         assetInfo?.fmpSymbol
     );
 
-    const jsonLd = buildWebPageJsonLd({
+    const jsonLd = buildSymbolWebPageJsonLd({
         url,
         name: fullTitle,
         description,
         about: aboutNode,
         locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        // 화면에 실제로 그려지는 스냅샷일 때만 신선도를 주장한다 —
+        // 렌더 불가한 행은 본문에 한 글자도 남기지 않는다.
+        generatedAt: showCongressProse ? congressSnapshot?.generatedAt : null,
     });
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd(
@@ -313,8 +316,10 @@ export default async function CongressPage({ params }: Props) {
     );
 
     // FAQ — 화면 `FaqSection`과 FAQPage 구조화데이터의 단일 소스.
-    // 아래 sr-only 개요는 공시 항목(거래일·공시일·매수/매도·금액 범위)을 설명하는
-    // 다른 내용이라 남겨 둔다.
+    //
+    // 예전에 있던 `sr-only` 개요(STOCK Act 공시 설명)는 지웠다 — 숨긴 텍스트로만
+    // 크롤러에게 말하는 형태였고, 내용은 아래 첫 답변이 이미 화면에 보이는
+    // 텍스트로 말한다(공시 항목 자체는 `CongressTradesTable` 헤더가 보여 준다).
     const faq: readonly FaqItem[] = [
         {
             question: tSeo('faq.congressMeaning', { v0: displayName }),
@@ -340,11 +345,6 @@ export default async function CongressPage({ params }: Props) {
                 <SymbolPageHeading>
                     {t('page.e607c1', { v0: displayName })}
                 </SymbolPageHeading>
-                <section className="sr-only">
-                    <h2>{t('page.1af282', { v0: displayName })}</h2>
-                    <p>{t('page.42ddbe', { v0: displayName })}</p>
-                </section>
-
                 {/* audit fix FIX 2: XOR — CongressTrendSummary (client widget) and
                     CongressSnapshotProse (SSR prose) both render the same AI
                     conclusion (summaryKo/notableMembersKo/riskNoteKo). Showing

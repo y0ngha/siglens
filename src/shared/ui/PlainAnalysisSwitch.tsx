@@ -96,9 +96,11 @@ export function PlainAnalysisSwitch({
      *
      * 조건부 렌더가 아니라 루트 속성 + CSS로 감추는 이유는 그 섹션이 SEO 자산이기
      * 때문이다(2026-07 thin 콘텐츠 절벽 대응으로 넣었고, Suspense fallback 안에
-     * 두면 크롤러 렌더러에서 사라진다는 사실이 이미 한 번 관측됐다). 숨김은
-     * `hasPlain`을 조건으로 하므로 봇에게는 발동하지 않는다 — 봇은
-     * `withReaderViews`에서 평이화를 건너뛰어 `plain`이 항상 `null`이다.
+     * 두면 크롤러 렌더러에서 사라진다는 사실이 이미 한 번 관측됐다).
+     *
+     * 이 숨김은 **모든 방문자에게 동일하게** 적용된다 — 봇도 사람과 같은 `plain`을
+     * 받으므로(`api/analysis/stream/route.ts`의 UA 불변식) 예외가 없다. 조건은
+     * 오직 `hasPlain && mode === 'plain'`, 즉 UA가 아니라 뷰 상태다.
      */
     useEffect(() => {
         if (!showPlain || hideToggle) return;

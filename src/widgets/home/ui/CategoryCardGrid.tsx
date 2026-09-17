@@ -22,6 +22,8 @@ export interface CategoryCard extends CardStyle {
      * 등록 없이 들어와도 화면이 비지 않는다.
      */
     labelKey?: string;
+    /** 카드 제목 아래 한 줄 설명의 메시지 키. 없으면 설명을 그리지 않는다. */
+    descriptionKey?: string;
     items: readonly TickerItem[];
 }
 
@@ -65,6 +67,11 @@ export function CategoryCardGrid({
                         >
                             {card.labelKey ? t(card.labelKey) : card.label}
                         </h3>
+                        {card.descriptionKey && (
+                            <p className="mb-3 text-xs leading-relaxed text-secondary-400">
+                                {t(card.descriptionKey)}
+                            </p>
+                        )}
                         <ul
                             className="flex touch-manipulation flex-wrap gap-2"
                             aria-label={t('CategoryCardGrid.tickerListLabel', {

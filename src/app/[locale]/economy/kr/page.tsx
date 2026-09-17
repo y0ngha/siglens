@@ -13,6 +13,7 @@ import { Suspense } from 'react';
 
 import {
     EconomicCalendar,
+    EconomyKrMacroFacts,
     EconomySkeleton,
     KrEconomicIndicatorGrid,
 } from '@/widgets/economy';
@@ -244,7 +245,12 @@ async function KrEconomyContent() {
             {cards.length === 0 ? (
                 <KrEconomyDegraded />
             ) : (
-                <KrEconomicIndicatorGrid cards={cards} />
+                <>
+                    {/* 그리드 위에 둔다 — 크롤러와 사람이 숫자표보다 먼저 읽는 요약이다
+                        (미국 라우트에서 `EconomyMacroFacts`가 있는 자리와 같다). */}
+                    <EconomyKrMacroFacts cards={cards} />
+                    <KrEconomicIndicatorGrid cards={cards} />
+                </>
             )}
             <EconomicCalendar
                 events={calendarEvents}

@@ -17,11 +17,11 @@ import { E2E_FORCE_ANALYSIS_ERROR_COOKIE } from '@/shared/api/e2eAnalysisStub';
  *      /[symbol]/* route. Asserting via aria-label "분석 결과 공유".
  *
  *   2. /share/<nonexistent-id> → empty-state — REAL TEST.
- *      The page renders the expired/not-found empty state for any unknown id.
+ *      The route returns HTTP 404 and the 404 page renders the expired-link copy.
  *      Copy: "이 공유 링크는 만료됐어요" (page.tsx renders the same UI for
  *      both expired and not_found per the current implementation).
  *
- *   3. /share/<expired-id> → expired empty-state — SKIPPED.
+ *   3. /share/<expired-id> → expired copy on the 404 page — SKIPPED.
  *      Reason: no DB seeding helper exists for the shared_analyses table in
  *      this E2E suite (seed.ts only seeds asset rows). Seeding an expired row
  *      directly would require DB access inside setup/seed.ts, which is out of
@@ -93,22 +93,25 @@ test.describe('share button: visible on symbol tabs', () => {
     });
 });
 
-test.describe('share: /share/[id] not-found empty state', () => {
+test.describe('share: /share/[id] not-found → real 404', () => {
     /**
-     * /share/<nonexistent-id> should render the empty-state UI, distinct from
-     * a normal 404. The share page (app/share/[id]/page.tsx) calls
-     * getSharedAnalysis which returns { status: 'not_found' } for an unknown id,
-     * and the page renders the empty-state branch:
-     *   - h1 "이 공유 링크는 만료됐어요"
-     *   - a CTA link back to the home page
+     * /share/<unknown-id>는 **상태 코드 404**여야 한다. 예전에는 200 + 만료 안내였고,
+     * 그 조합이 GSC에서 soft-404로 분류돼 품질 신호를 깎았다(2026-09 구글 정책 감사).
+     * 문구는 잃지 않는다 — `[locale]/NotFoundMessage`가 `/share/` 경로를 보고 같은
+     * 만료 안내를 그린다(그래서 h1 단언이 그대로다).
      *
-     * NOTE: The page renders the same empty-state UI for both 'not_found' and
-     * 'expired' (per page.tsx: `if (lookup.status !== 'found')`), so this test
-     * also exercises the expired empty-state render path.
+     * NOTE: 페이지는 'not_found'와 'expired'를 같은 분기로 처리하므로
+     * (`if (lookup.status !== 'found')`) 이 테스트가 만료 경로도 함께 덮는다.
      */
-    test('renders the empty-state for a nonexistent share id', async ({
-        page,
-    }) => {
+    test('unknown share id returns HTTP 404', async ({ page }) => {
+        const response = await page.goto(
+            '/share/nonexistent-id-that-does-not-exist-xyz123'
+        );
+
+        expect(response?.status()).toBe(404);
+    });
+
+    test('renders the expired-link copy on the 404 page', async ({ page }) => {
         await page.goto('/share/nonexistent-id-that-does-not-exist-xyz123');
 
         await expect(
@@ -118,7 +121,6 @@ test.describe('share: /share/[id] not-found empty state', () => {
             })
         ).toBeVisible();
 
-        // Home CTA link is present and correctly targeted
         const homeLink = page.getByRole('link', {
             name: /홈으로 돌아가기/,
         });

@@ -58,6 +58,20 @@ vi.mock('@/app/[locale]/backtesting/data.json', () => ({
 }));
 vi.mock('@/entities/backtest-case', () => ({
     validateBacktestData: vi.fn().mockImplementation((data: unknown) => data),
+    deriveBacktestStats: vi.fn().mockReturnValue({
+        totalCases: 0,
+        indicatorWins: 0,
+        indicatorWinRate: 0,
+        aiDecisiveCount: 0,
+        aiWins: 0,
+        aiWinRateDecisive: 0,
+        aiNeutralCount: 0,
+        aiTrendHitRate: 0,
+        meanReturnPct: 0,
+        medianHoldingDays: 0,
+        periodStart: '',
+        periodEnd: '',
+    }),
 }));
 
 import { generateMetadata } from '@/app/[locale]/backtesting/page';

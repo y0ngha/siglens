@@ -37,12 +37,12 @@ import {
     buildSnapshotMetaDescription,
     buildSymbolOptionsSeoContent,
     buildSymbolSeoContent,
-    buildWebPageJsonLd,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
     noindexSymbolMetadata,
     type FaqItem,
 } from '@/shared/lib/seo';
+import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import {
     dehydrate,
     HydrationBoundary,
@@ -324,12 +324,15 @@ export default async function OptionsPage({ params }: Props) {
         ),
         assetInfo.fmpSymbol
     );
-    const jsonLd = buildWebPageJsonLd({
+    const jsonLd = buildSymbolWebPageJsonLd({
         url,
         name: fullTitle,
         description,
         about: aboutNode,
         locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        // 화면에 실제로 그려지는 스냅샷일 때만 신선도를 주장한다 —
+        // 렌더 불가한 행은 본문에 한 글자도 남기지 않는다.
+        generatedAt: showOptionsProse ? optionsSnapshot?.generatedAt : null,
     });
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd(

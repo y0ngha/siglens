@@ -11,6 +11,9 @@ import {
     TRANSLATION_SOURCE,
 } from '@/shared/db/contentTranslationFields';
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
+import { cache } from 'react';
+import { getDatabaseClient } from '@/shared/db/client';
+import { isOfflineBuild } from '@/shared/api/offlineBuild';
 
 /** Public-facing record returned by the repository. */
 export interface TermsRecord {
@@ -205,3 +208,24 @@ export class DrizzleTermsRepository implements TermsRepository {
         );
     }
 }
+
+/**
+ * 활성 약관 한 건 — `generateMetadata`와 페이지 본문이 **같은 행**을 보게 하는
+ * 요청 스코프 메모.
+ *
+ * 두 곳이 각자 조회하면 왕복이 두 번인 것보다, 한쪽만 `null`을 보는 상태가 더
+ * 나쁘다: 메타데이터는 index를 주장하는데 본문은 404로 떨어지는 조합이 나온다.
+ * 두 legal 라우트가 같은 함수를 부르므로 한쪽만 고쳐지는 표류도 막는다.
+ *
+ * 로컬 pre-push 오프라인 빌드(`SIGLENS_OFFLINE_BUILD=1`)에서는 DB에 닿지 않고
+ * `null`이다 — 산출물이 버려지므로 404로 구워져도 무해하다. 운영(Docker) 빌드는
+ * 이 분기를 타지 않고, DB를 못 읽으면 throw해서 빌드를 실패시킨다(빈 약관이
+ * 구워지는 것을 막는다).
+ */
+export const getActiveTerms = cache(
+    async (kind: TermsKind, locale: Locale): Promise<TermsRecord | null> => {
+        if (isOfflineBuild()) return null;
+        const { db } = getDatabaseClient();
+        return new DrizzleTermsRepository(db).findActive(kind, locale);
+    }
+);

@@ -109,6 +109,19 @@ describe('/news/[category] CategoryNewsPage default export는', () => {
         );
     });
 
+    it('유효 카테고리이면 h1 아래 카테고리 설명 문단을 렌더한다 (D2)', async () => {
+        render(
+            await CategoryNewsPage({
+                params: Promise.resolve({ locale: 'ko', category: 'crypto' }),
+            })
+        );
+        expect(
+            screen.getByText(
+                '비트코인·이더리움 등 주요 암호화폐 시장 동향을 모았습니다.'
+            )
+        ).toBeInTheDocument();
+    });
+
     it('유효 카테고리이면 JSON-LD ItemList 스크립트를 렌더한다', async () => {
         const { container } = render(
             await CategoryNewsPage({
@@ -128,10 +141,11 @@ describe('/news/[category] CategoryNewsPage default export는', () => {
         });
         expect(itemListScript).toBeDefined();
 
-        // I4: Article.image should use the per-category OG URL, not the generic site OG
+        // D5 (M-10): no per-article image exists, so the shared category OG image
+        // must not be backfilled onto every article — the field should be absent.
         const itemListData = JSON.parse(itemListScript!.textContent ?? '');
         const firstArticle = itemListData.itemListElement?.[0]?.item;
-        expect(firstArticle?.image).toContain('/news/crypto/opengraph-image');
+        expect(firstArticle?.image).toBeUndefined();
 
         // C-3 R2: publisher.name should be the original article source, not SITE_NAME
         expect(firstArticle?.publisher?.name).toBe('CoinWire');

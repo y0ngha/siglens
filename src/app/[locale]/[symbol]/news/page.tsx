@@ -48,14 +48,12 @@ import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 // 배럴(`@/widgets/news`)이 아니라 원본에서 직접 가져온다 — `NewsList`와 이 페이지가
 // 같은 모듈 인스턴스를 보게 해서, 테스트가 배럴을 목킹해도 두 값이 갈리지 않는다.
 import { NEWS_LIST_PAGE_SIZE } from '@/shared/config/newsSerialization';
-import { getTodayIsoDay } from '@/shared/lib/getTodayIsoDay';
 import { todayKstIsoDate } from '@/shared/lib/dateKey';
 import { translateFmpError } from '@/shared/api/fmp/fmpUserMessage';
 import {
     buildBreadcrumbJsonLd,
     buildSnapshotMetaDescription,
     buildSymbolSeoContent,
-    buildWebPageJsonLd,
     localizedAbsoluteUrl,
     resolveSymbolNewsSeoContent,
     symbolMetadataFromSeo,
@@ -64,6 +62,7 @@ import {
     SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
+import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
@@ -134,6 +133,45 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
               locale
           )
         : null;
+
+    // **thin-content 게이트** — `congress/page.tsx`와 같은 모양이다.
+    //
+    // 뉴스 탭의 종목 고유 텍스트는 두 군데서만 나온다: 렌더 가능한 AI 스냅샷
+    // 산문(`NewsSnapshotProse`)과, 감정이 채워진 뉴스 카드(`NewsFactsSummary`가
+    // 그 분포를 문장으로 요약한다). 둘 다 없으면 남는 건 제목·FAQ·크롬뿐이라
+    // 2026-08 실측의 thin 대역(실콘텐츠 300~400자)으로 떨어진다.
+    //
+    // 술어는 **본문과 동일**해야 한다(MISTAKES §2): 아래 본문의 `showNewsProse`가
+    // 쓰는 `hasNewsProse`, `hasEnrichedNews`가 쓰는 `sentiment !== null` 그대로다.
+    // 존재 여부(`snap !== undefined`)로 판정하면 내용이 빈 스냅샷 행이 남아 있을 때
+    // 본문은 산문을 안 그리는데 메타만 색인 가능이 되어 갈라진다.
+    //
+    // `getNewsList`는 본문과 **같은 캐시 키**로 읽으므로 왕복이 늘지 않는다.
+    // 읽기 실패는 `[]`로 degrade한다 — 본문도 같은 실패를 보므로 그 렌더는 실제로
+    // thin이고, noindex가 맞는 판정이다.
+    //
+    // `NOINDEX_SYMBOL_METADATA`(canonical:null)는 쓰지 않는다. 페이지는 멀쩡히
+    // 살아 있으므로 self-canonical과 제목은 그대로 둔다.
+    const newsItemsForGate = await staticSymbolCache(
+        [NEWS_LIST_CACHE_KEY, upper, ...contentLocaleKeyPart(locale)],
+        upper,
+        () => getNewsList(upper, locale),
+        [`news:${upper}`],
+        SECONDS_PER_HALF_DAY
+    ).catch((e: unknown) => {
+        console.error(
+            '[NewsPage] generateMetadata getNewsList failed, degrading to []:',
+            e
+        );
+        return [] as Awaited<ReturnType<typeof getNewsList>>;
+    });
+    if (
+        !hasNewsProse(snap?.content) &&
+        !newsItemsForGate.some(item => item.sentiment !== null)
+    ) {
+        return { ...metadata, robots: { index: false, follow: true } };
+    }
+
     return snapshotDescription
         ? { ...metadata, description: snapshotDescription }
         : metadata;
@@ -313,14 +351,6 @@ export default async function NewsPage({ params }: Props) {
         assetInfo.fmpSymbol,
         assetClass
     );
-    const jsonLd = buildWebPageJsonLd({
-        url,
-        name: fullTitle,
-        description,
-        about: aboutNode,
-        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
-    });
-
     const breadcrumbJsonLd = buildBreadcrumbJsonLd(
         [
             { name: displayName, url: buildSymbolSeoContent(upper, tSeo).url },
@@ -328,58 +358,6 @@ export default async function NewsPage({ params }: Props) {
         ],
         isLocale(locale) ? locale : DEFAULT_LOCALE
     );
-
-    // datePublished는 의도적으로 생략한다 — ticker별 최초 뉴스 ingestion 시각
-    // fetch 없이는 정확한 datePublished를 알 수 없어 SITE_BUILD_DATE를 쓰면 모든
-    // ticker가 동일 시점으로 표기되는 오류 신호가 된다. Article schema에서
-    // datePublished는 옵션이라 생략 가능. dateModified는 getTodayIsoDay()로
-    // 일 단위 양자화 (rationale은 helper JSDoc 참고).
-    const todayIsoDay = getTodayIsoDay();
-    // headline/description은 자산 유형별로 분기한다 — 크립토 페이지에 주식 특유의
-    // "어닝·실적·애널리스트" 문구가 등장하면 실제로 없는 콘텐츠를 약속하는 허위 신호가 된다.
-    const aiArticleJsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'Article',
-        headline: isEquity
-            ? tSeo('faq.newsArticleHeadlineEquity', { v0: displayName })
-            : tSeo('faq.newsArticleHeadlineCrypto', { v0: displayName }),
-        description: t(
-            isEquity
-                ? 'page.newsArticleDescEquity'
-                : 'page.newsArticleDescCrypto',
-            { v0: displayName }
-        ),
-        inLanguage: LOCALE_HREFLANG[isLocale(locale) ? locale : DEFAULT_LOCALE],
-        dateModified: todayIsoDay,
-        // `@id`는 `buildWebPageJsonLd`가 로케일 접두사를 붙인 값과 **같아야**
-        // 한다 — 로케일화 이후 이 back-reference만 기본 로케일 URL을 가리켜
-        // 같은 문서 안에 존재하지 않는 노드를 참조하고 있었다.
-        isPartOf: {
-            '@type': 'WebPage',
-            '@id': `${localizedAbsoluteUrl(url, isLocale(locale) ? locale : DEFAULT_LOCALE)}#webpage`,
-        },
-        // Article schema는 image를 명시할 때 Rich Results 자격이 강해진다.
-        // 정적 og-image.png를 사용해 hashless permanent URL을 보장 — Next.js의
-        // file-based opengraph-image route는 빌드 시 `?<hash>` cache-buster를
-        // URL에 부여하기 때문에, schema에서 그 URL을 hardcode하면 빌드마다
-        // schema image와 OG meta가 불일치하는 회귀가 발생한다. 정적 자원은
-        // 영구 URL이라 schema image 신뢰도 측면에서 더 유리.
-        image: [`${SITE_URL}/og-image.png`],
-        author: {
-            '@type': 'Organization',
-            name: SITE_NAME,
-            url: SITE_URL,
-        },
-        publisher: {
-            '@type': 'Organization',
-            name: SITE_NAME,
-            url: SITE_URL,
-            logo: {
-                '@type': 'ImageObject',
-                url: `${SITE_URL}/icon512.png`,
-            },
-        },
-    };
 
     // ISR degrade guard: getNewsList(Postgres)가 throw하면 ISR 캐시에 0-byte 빈 결과가
     // 굳는 것을 막으려면 여기서 흡수해야 한다. [] 로 degrade → newsListJsonLd가 null이
@@ -417,6 +395,81 @@ export default async function NewsPage({ params }: Props) {
     // At least one AI-enriched card means aggregate analysis can start immediately.
     const hasEnrichedNews = newsItems.some(item => item.sentiment !== null);
 
+    const jsonLd = buildSymbolWebPageJsonLd({
+        url,
+        name: fullTitle,
+        description,
+        about: aboutNode,
+        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        // 화면에 실제로 그려지는 스냅샷일 때만 신선도를 주장한다 —
+        // 렌더 불가한 행은 본문에 한 글자도 남기지 않는다.
+        generatedAt: showNewsProse ? newsSnapshot?.generatedAt : null,
+    });
+
+    // 뉴스 목록은 최신순(`orderBy desc(publishedAt)`)이라 [0]이 가장 최근 발행분이다.
+    // `publishedAt`은 이미 ISO 문자열, `generatedAt`은 Date(캐시 왕복 후에는
+    // 문자열)라 `new Date(...)`로 한 번 정규화한다.
+    const articleModifiedSource =
+        newsItems[0]?.publishedAt ?? newsSnapshot?.generatedAt ?? null;
+    const articleModifiedAt =
+        articleModifiedSource === null
+            ? null
+            : new Date(articleModifiedSource).toISOString();
+    // headline/description은 자산 유형별로 분기한다 — 크립토 페이지에 주식 특유의
+    // "어닝·실적·애널리스트" 문구가 등장하면 실제로 없는 콘텐츠를 약속하는 허위 신호가 된다.
+    const aiArticleJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        headline: isEquity
+            ? tSeo('faq.newsArticleHeadlineEquity', { v0: displayName })
+            : tSeo('faq.newsArticleHeadlineCrypto', { v0: displayName }),
+        description: t(
+            isEquity
+                ? 'page.newsArticleDescEquity'
+                : 'page.newsArticleDescCrypto',
+            { v0: displayName }
+        ),
+        inLanguage: LOCALE_HREFLANG[isLocale(locale) ? locale : DEFAULT_LOCALE],
+        // datePublished는 의도적으로 생략한다 — ticker별 최초 뉴스 ingestion 시각을
+        // 알 수 없어 SITE_BUILD_DATE를 쓰면 전 ticker가 같은 시점으로 표기된다.
+        // Article schema에서 datePublished는 옵션이다.
+        //
+        // dateModified는 **이 페이지에 실제로 실린 것**의 시각이다: 가장 최신 뉴스의
+        // 발행 시각, 없으면 스냅샷 생성 시각, 둘 다 없으면 필드를 생략한다.
+        // 예전에는 `getTodayIsoDay()`(오늘 0시)였는데, 그건 "크롤된 날"이지
+        // 내용이 바뀐 날이 아니라 전 종목이 매일 갱신된다고 주장하는 거짓 신선도
+        // 신호였다(2026-09-17 정책 감사 M2).
+        ...(articleModifiedAt !== null && { dateModified: articleModifiedAt }),
+        // `@id`는 `buildWebPageJsonLd`가 로케일 접두사를 붙인 값과 **같아야**
+        // 한다 — 로케일화 이후 이 back-reference만 기본 로케일 URL을 가리켜
+        // 같은 문서 안에 존재하지 않는 노드를 참조하고 있었다.
+        isPartOf: {
+            '@type': 'WebPage',
+            '@id': `${localizedAbsoluteUrl(url, isLocale(locale) ? locale : DEFAULT_LOCALE)}#webpage`,
+        },
+        // Article schema는 image를 명시할 때 Rich Results 자격이 강해진다.
+        // 정적 og-image.png를 사용해 hashless permanent URL을 보장 — Next.js의
+        // file-based opengraph-image route는 빌드 시 `?<hash>` cache-buster를
+        // URL에 부여하기 때문에, schema에서 그 URL을 hardcode하면 빌드마다
+        // schema image와 OG meta가 불일치하는 회귀가 발생한다. 정적 자원은
+        // 영구 URL이라 schema image 신뢰도 측면에서 더 유리.
+        image: [`${SITE_URL}/og-image.png`],
+        author: {
+            '@type': 'Organization',
+            name: SITE_NAME,
+            url: SITE_URL,
+        },
+        publisher: {
+            '@type': 'Organization',
+            name: SITE_NAME,
+            url: SITE_URL,
+            logo: {
+                '@type': 'ImageObject',
+                url: `${SITE_URL}/icon512.png`,
+            },
+        },
+    };
+
     const newsListJsonLd =
         newsItems.length > 0
             ? {
@@ -449,7 +502,10 @@ export default async function NewsPage({ params }: Props) {
         <>
             <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
-            <JsonLd data={aiArticleJsonLd} />
+            {/* Article은 화면에 보이는 AI 산문이 있을 때만 싣는다 — 산문이 없으면
+                이 노드가 주장하는 "분석 기사"가 페이지에 존재하지 않는다(FAQPage를
+                가시 `FaqSection`에만 붙이는 것과 같은 규칙). */}
+            {showNewsProse ? <JsonLd data={aiArticleJsonLd} /> : null}
             {newsListJsonLd ? <JsonLd data={newsListJsonLd} /> : null}
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <SymbolPageHeading>
@@ -481,17 +537,6 @@ export default async function NewsPage({ params }: Props) {
                     generatedAt={newsSnapshot?.generatedAt}
                     plain={newsSnapshot?.plain}
                 />
-                <section className="sr-only">
-                    <h2>{t('page.2659c6', { v0: displayName })}</h2>
-                    <p>
-                        {t(
-                            isEquity
-                                ? 'page.newsSrOnlyEquity'
-                                : 'page.newsSrOnlyCrypto',
-                            { v0: displayName }
-                        )}
-                    </p>
-                </section>
                 {/* audit fix FIX 2: XOR — NewsAiSummary (client widget) and
                     NewsSnapshotProse (SSR prose, above) both render the same AI
                     conclusion (currentDriverKo/keyEventsKo/upcomingEventsKo).

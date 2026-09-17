@@ -9,7 +9,11 @@ import {
     localeOpenGraph,
     localeRobots,
 } from '@/shared/lib/seoAlternates';
-import { CATEGORY_CONFIG, categoriesInRegion } from '@/entities/market-news';
+import {
+    CATEGORY_CONFIG,
+    categoriesInRegion,
+    type NewsFeedCategoryId,
+} from '@/entities/market-news';
 import { CategoryCard } from '@/widgets/news-hub';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
@@ -131,14 +135,16 @@ export async function generateMetadata({
 }
 
 /**
- * 지역 카드의 미리보기는 그 지역의 **첫 카테고리**에서 가져온다.
+ * 지역 카드의 미리보기는 그 지역의 **첫 카테고리**에서 가져온다 — 단, 미국은 예외.
  *
- * 미국은 카테고리가 4개라 어느 하나를 골라야 하는데, `categoriesInRegion`이
- * `CATEGORY_CONFIG` 선언 순서를 그대로 주므로 첫 항목(`general` = 미국 일반 시장)이
- * 가장 넓은 피드다. 한국·암호화폐는 카테고리가 하나뿐이라 선택의 여지가 없다.
- * 별도 상수를 두지 않는 이유: 상수를 두면 카테고리를 추가할 때 두 곳을 맞춰야 한다.
+ * 미국은 카테고리가 4개인데, `categoriesInRegion`의 선언 순서상 첫 항목은
+ * `general`이다. `/news/us` 카테고리 목록의 첫 카드도 똑같이 `general`이라,
+ * 그대로 두면 허브 카드와 `/news/us`의 첫 카드가 같은 피드를 미리보기로
+ * 중복 노출한다(D6, thin/duplicate content). 그래서 미국만 `stock`으로
+ * 고정한다 — 한국·암호화폐는 카테고리가 하나뿐이라 선택의 여지가 없다.
  */
-function previewCategoryOf(region: NavRegionId) {
+function previewCategoryOf(region: NavRegionId): NewsFeedCategoryId {
+    if (region === 'us') return 'stock';
     const categories = categoriesInRegion(region);
     const first = categories[0];
     if (first === undefined) {

@@ -74,7 +74,7 @@ test.describe('symbol SEO + ISR (crawler-facing)', () => {
         expect(types).not.toContain('FAQPage');
     });
 
-    test('/AAPL/news embeds valid inline JSON-LD (Article + BreadcrumbList)', async ({
+    test('/AAPL/news embeds valid inline JSON-LD (WebPage + BreadcrumbList, no Article without prose)', async ({
         page,
     }) => {
         const response = await page.request.get('/AAPL/news');
@@ -83,8 +83,13 @@ test.describe('symbol SEO + ISR (crawler-facing)', () => {
         const types = rootJsonLdTypes(await response.text());
         // Same rationale as the /AAPL test: assert the specific page-level
         // @types (the falsifiable guard), not the global block total.
-        expect(types).toContain('Article');
+        expect(types).toContain('WebPage');
         expect(types).toContain('BreadcrumbList');
+        // The AI-summary `Article` node is emitted only when the matching
+        // news snapshot prose actually renders (Google: structured data must
+        // describe visible content). The e2e DB seeds no `news` snapshot for
+        // AAPL, so the page must NOT claim an Article here.
+        expect(types).not.toContain('Article');
     });
 
     test('/AAPL/news exposes SSR factual summary text before hydration', async ({

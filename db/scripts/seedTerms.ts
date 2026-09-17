@@ -4,7 +4,7 @@ import { glob } from 'glob';
 import matter from 'gray-matter';
 import { z } from 'zod';
 import { TERMS_KIND_VALUES, type TermsKind } from '@/shared/db/constants';
-import { DrizzleTermsRepository } from '@/entities/terms';
+import { DrizzleTermsRepository } from '@/entities/terms/api';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DEFAULT_LOCALE, LOCALES, type Locale } from '@/shared/i18n/locales';
 

@@ -5,9 +5,35 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { DrizzleTermsRepository } from '@/entities/terms';
+// getActiveTerms의 정상 경로가 부르는 getDatabaseClient — 실제 Neon 연결을
+// 만들지 않도록 fake db로 대체한다. findActive 자체는 프로토타입을 spy해서
+// 검증하므로 이 db 값은 어떤 쿼리도 실행하지 않는다.
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: vi.fn(() => ({ db: {} })),
+}));
+
+// React의 `cache()`는 RSC 렌더 스코프(dispatcher) 밖에서는 메모이즈하지
+// 않는다 — 실측: plain vitest(node) 환경에서 동일 인자로 두 번 부르면
+// 그대로 두 번 다 실행된다. 이 파일은 렌더 트리 없이 함수를 직접 호출하므로
+// 실제 dedup 동작을 관찰할 방법이 없다. `getActiveTerms`가 여전히
+// `cache()`로 감싸져 있다는 계약(같은 인자 → 구현 1회 호출)을 검증하기 위해
+// 결정적인 Map 기반 메모이제이션으로 `cache`를 대체한다.
+vi.mock('react', async importOriginal => ({
+    ...(await importOriginal<typeof import('react')>()),
+    cache: <T extends (...args: never[]) => unknown>(fn: T): T => {
+        const memo = new Map<string, ReturnType<T>>();
+        return ((...args: Parameters<T>) => {
+            const key = JSON.stringify(args);
+            if (!memo.has(key)) memo.set(key, fn(...args) as ReturnType<T>);
+            return memo.get(key);
+        }) as T;
+    },
+}));
+
+import { DrizzleTermsRepository, getActiveTerms } from '@/entities/terms/api';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type { TermsKind } from '@/shared/db/constants';
+import type { TermsRecord } from '@/entities/terms';
 
 interface InsertedRow {
     id: string;
@@ -221,5 +247,67 @@ describe('DrizzleTermsRepository.upsertTranslation', () => {
             })
         );
         expect(onConflictDoUpdate).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('getActiveTerms', () => {
+    const ORIGINAL_OFFLINE_BUILD = process.env.SIGLENS_OFFLINE_BUILD;
+    const RECORD: TermsRecord = {
+        id: 'terms-1',
+        kind: 'tos',
+        version: 1,
+        effectiveDate: new Date('2026-04-30T00:00:00+09:00'),
+        body: '## body',
+        bodyLocale: 'ko',
+        isTranslationFallback: false,
+    };
+
+    afterEach(() => {
+        if (ORIGINAL_OFFLINE_BUILD === undefined) {
+            delete process.env.SIGLENS_OFFLINE_BUILD;
+        } else {
+            process.env.SIGLENS_OFFLINE_BUILD = ORIGINAL_OFFLINE_BUILD;
+        }
+        vi.restoreAllMocks();
+    });
+
+    it('오프라인 빌드에서는 DB를 보지 않고 null을 돌려준다', async () => {
+        process.env.SIGLENS_OFFLINE_BUILD = '1';
+        const findActive = vi.spyOn(
+            DrizzleTermsRepository.prototype,
+            'findActive'
+        );
+
+        const result = await getActiveTerms('tos', 'ko');
+
+        expect(result).toBeNull();
+        expect(findActive).not.toHaveBeenCalled();
+    });
+
+    it('정상 경로에서는 repository.findActive를 요청한 kind/locale로 호출한다', async () => {
+        delete process.env.SIGLENS_OFFLINE_BUILD;
+        const findActive = vi
+            .spyOn(DrizzleTermsRepository.prototype, 'findActive')
+            .mockResolvedValue(RECORD);
+
+        const result = await getActiveTerms('privacy', 'en');
+
+        expect(findActive).toHaveBeenCalledWith('privacy', 'en');
+        expect(result).toBe(RECORD);
+    });
+
+    it('cache()로 감싸져 있어 같은 인자 호출은 repository를 한 번만 부른다', async () => {
+        delete process.env.SIGLENS_OFFLINE_BUILD;
+        const findActive = vi
+            .spyOn(DrizzleTermsRepository.prototype, 'findActive')
+            .mockResolvedValue(RECORD);
+
+        // mock한 cache()는 파일 전체에서 인자별로 메모이즈하므로, 다른 테스트가
+        // 이미 쓴 kind/locale 조합('tos'+'ko', 'privacy'+'en')과 겹치지 않는
+        // 조합을 쓴다.
+        await getActiveTerms('privacy', 'ja');
+        await getActiveTerms('privacy', 'ja');
+
+        expect(findActive).toHaveBeenCalledTimes(1);
     });
 });

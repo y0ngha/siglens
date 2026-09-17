@@ -39,12 +39,12 @@ import {
     buildSnapshotMetaDescription,
     buildSymbolFinancialsSeoContent,
     buildSymbolSeoContent,
-    buildWebPageJsonLd,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
     noindexSymbolMetadata,
     type FaqItem,
 } from '@/shared/lib/seo';
+import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
@@ -293,12 +293,17 @@ export default async function FinancialsPage({ params }: Props) {
         assetInfo?.fmpSymbol
     );
 
-    const jsonLd = buildWebPageJsonLd({
+    const jsonLd = buildSymbolWebPageJsonLd({
         url,
         name: fullTitle,
         description,
         about: aboutNode,
         locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        // 화면에 실제로 그려지는 스냅샷일 때만 신선도를 주장한다 —
+        // 렌더 불가한 행은 본문에 한 글자도 남기지 않는다.
+        generatedAt: showFinancialsProse
+            ? financialsSnapshot?.generatedAt
+            : null,
     });
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd(
@@ -310,7 +315,11 @@ export default async function FinancialsPage({ params }: Props) {
     );
 
     // FAQ — 화면 `FaqSection`과 FAQPage 구조화데이터의 단일 소스.
-    // 아래 sr-only 개요는 재무제표 3종과 4개 축을 나열하는 다른 내용이라 남겨 둔다.
+    //
+    // 첫 답변이 페이지 범위(재무제표 3종 5년 추이 + 4개 축 점수)를 함께 말한다.
+    // 예전에는 같은 내용이 화면에 보이지 않는 `sr-only` 개요로 따로 있었는데,
+    // 숨긴 텍스트로만 크롤러에게 말하는 형태라 지우고 여기로 합쳤다
+    // (`options/page.tsx`가 같은 이유로 먼저 그렇게 했다).
     const faq: readonly FaqItem[] = [
         {
             question: tSeo('faq.financialsHealthy', { v0: displayName }),
@@ -336,11 +345,6 @@ export default async function FinancialsPage({ params }: Props) {
                 <SymbolPageHeading>
                     {t('page.465a63', { v0: displayName })}
                 </SymbolPageHeading>
-                <section className="sr-only">
-                    <h2>{t('page.fec645', { v0: displayName })}</h2>
-                    <p>{t('page.1b54b3', { v0: displayName })}</p>
-                </section>
-
                 <FinancialsScorecard
                     scorecard={scorecard}
                     currency={statementCurrencyOf(upper)}

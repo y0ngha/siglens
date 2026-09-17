@@ -26,14 +26,7 @@ describe('validateBacktestData', () => {
     };
 
     const validData = {
-        meta: {
-            period: '2025.04 – 2026.04',
-            totalCases: 1,
-            winRate: 100,
-            aiWinRate: 100,
-            aiTrendHitRate: 100,
-            tickerCount: 1,
-        },
+        meta: {},
         cases: [validCase],
     };
 
@@ -98,26 +91,6 @@ describe('validateBacktestData', () => {
             expect(() =>
                 validateBacktestData({ meta: null, cases: [] })
             ).toThrow('meta must be an object');
-        });
-
-        it('throws when meta.aiTrendHitRate is missing', () => {
-            const bad = {
-                ...validData,
-                meta: { ...validData.meta, aiTrendHitRate: undefined },
-            };
-            expect(() => validateBacktestData(bad)).toThrow(
-                'meta.aiTrendHitRate must be a number'
-            );
-        });
-
-        it('throws when meta.aiTrendHitRate is not a number', () => {
-            const bad = {
-                ...validData,
-                meta: { ...validData.meta, aiTrendHitRate: '100' },
-            };
-            expect(() => validateBacktestData(bad)).toThrow(
-                'meta.aiTrendHitRate must be a number'
-            );
         });
 
         it('throws when cases is not an array', () => {

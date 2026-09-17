@@ -97,6 +97,16 @@
             }
         },
         "home": {
+            "NotFoundContent": {
+                "4d8d9f": "Search for a ticker, or keep browsing below.",
+                "91dd85": "Market News",
+                "ade95e": "Market Dashboard"
+            },
+            "NotFoundMessage": {
+                "0658dd": "Share Link Expired",
+                "365a70": "This share link has expired.",
+                "7c95d5": "The shared analysis snapshot has expired or the link does not exist. Check the latest analysis directly on {v0}."
+            },
             "error": {
                 "729779": "Temporary Error",
                 "0c767c": "Try Again",
@@ -274,12 +284,8 @@
                 "ce34e2": "Expired Share"
             },
             "page": {
-                "0658dd": "Share Link Expired",
-                "365a70": "This share link has expired.",
                 "693b62": "Investment Disclaimer",
                 "69aebc": "Analyze {v1} directly on {v0}",
-                "7c95d5": "The shared analysis snapshot has expired or the link does not exist. Check the latest analysis directly on {v0}.",
-                "ba81f0": "Return to {v0} Home",
                 "de8fc6": "This is {v0} data and may differ from current market prices."
             }
         },
@@ -341,15 +347,11 @@
                 "094886": "It is divided into 5 stages from Extreme Fear to Extreme Greed (Extreme Fear · Fear · Neutral · Greed · Extreme Greed). If the sample size is less than 60 days, reliability is marked as \"Limited,\" and it is safer to recheck the label after more data has accumulated.",
                 "128c11": "Financial Statements",
                 "1a9e0a": "The U.S. STOCK Act mandates that members of the Senate and House of Representatives and their family members disclose stock trades within 45 days. Trades by members of Congress are one of the signals market participants pay attention to in terms of access to industry and policy information. Political trading trends are used as a supplementary indicator of market sentiment, not for quantitative valuation.",
-                "1af282": "{v0} Congressional Member Trading Disclosure Overview",
-                "1b54b3": "Analyzes {v0}'s Income Statement (Revenue, Operating Profit, Net Income, EPS), Balance Sheet (Assets, Liabilities, Equity), and Cash Flow Statement (Operating Cash Flow, Free Cash Flow) over a 5-year trend. It also provides a comprehensive financial score across four axes: Growth, Profitability & Quality, Stability, and Cash Generation, along with key financial ratios.",
                 "2141f2": "News Analysis",
-                "24d5a2": "Stability score is calculated based on debt-to-equity ratio and current ratio. A higher score indicates lower debt burden and excellent short-term repayment ability. Checking the total debt-to-total assets ratio on the balance sheet together can provide a more accurate understanding of financial health.",
-                "2659c6": "{v0} News Analysis Overview",
+                "24d5a2": "Stability score is calculated based on debt-to-equity ratio and current ratio. A higher score indicates lower debt burden and excellent short-term repayment ability. Checking the total debt-to-total assets ratio on the balance sheet together can provide a more accurate understanding of financial health. This page shows the income statement, balance sheet, and cash flow statement over a five-year trend, together with a composite score across four axes: growth, profitability, stability, and cash generation.",
                 "2ab959": "which floor of this building is the price on?",
                 "2c1d31": "A net buying dominance by members of Congress for a specific stock does not directly translate into a bullish signal. There are limitations such as disclosure delays, amount by range, and trades under family members' names, so it should be interpreted as a supplementary indicator. The AI trend interpretation on this page is the result of deterministically summarizing transaction counts and congressional distribution, then adding LLM comments. Please consider buy/sell decisions in conjunction with other Fundamentals and technical signals.",
                 "3c87a9": "Could not load Earnings schedule.",
-                "42ddbe": "Summarizes {v0} trading details disclosed by U.S. Senate and House members under the STOCK Act. It shows the transaction date, disclosure date, buy/sell classification, and estimated amount range. Considering the disclosure delay of approximately 45 days, AI summarizes recent Congressional trading trends.",
                 "465a63": "{v0} Financial Statements",
                 "4e7e6f": "While <link>{v1}</link> blends many assets to show sentiment across {v0}, this page scores {v2} alone by mapping its volume flow, order flow and price position against that stock’s own distribution.",
                 "5c38df": "Could not load analyst trends.",
@@ -377,13 +379,10 @@
                 "e607c1": "{v0} Congressional Trades",
                 "e70f2d": "Max Pain is the price to which the stock price is drawn as Options expiration approaches. Open Interest is the number of currently active Options contracts, meaning many people are betting on thick price levels.",
                 "ec648e": "What happens if my stock does not have Options?",
-                "f07882": "{v0} Chart Analysis Overview",
-                "f07925": "This is the chart page where you can check {v0}'s price movement and technical indicator summaries.",
                 "f1b01b": "Options Analysis",
                 "f865a7": "For stocks without an Options market, the Options analysis page will display an empty message and redirect to other analysis pages such as Chart/Fundamentals/News.",
                 "f9482c": "Fear & Greed Index",
                 "faa62c": "How are Max Pain and Open Interest interpreted?",
-                "fec645": "{v0} Financial Statements Analysis Overview",
                 "marketFearGreedLinkAll": "Market-wide Fear & Greed Index",
                 "marketFearGreedLinkKr": "Korean Market Fear & Greed Index",
                 "marketLabelKr": "the Korean stock market",
@@ -392,8 +391,6 @@
                 "newsArticleDescEquity": "Bullish and bearish sentiment plus the key issues in the latest {v0} news.",
                 "newsHeadingCrypto": "{v0} Latest Crypto News",
                 "newsHeadingEquity": "{v0} Latest News and Earnings Calendar",
-                "newsSrOnlyCrypto": "A rundown of {v0} news sentiment and the key issues driving it.",
-                "newsSrOnlyEquity": "A rundown of {v0} news sentiment, the next earnings date, recent results and analyst rating changes.",
                 "overallGuideCryptoP1": "A single page on where {v0} stands right now. It brings together three axes: the chart trend and the main support and resistance levels, what the latest news is moving on, and buying sentiment (the Fear & Greed Index).",
                 "overallGuideCryptoP2": "The three axes are combined into bullish and bearish scenarios, with the price zones worth considering for entry and the signals that would break each scenario.",
                 "overallGuideCryptoP3": "Risk factors that could flip the scenario — macro events, regulatory issues, major news — are flagged separately, so a quick scan before buying helps.",
@@ -1432,8 +1429,8 @@
             "accountDeleteFullTitle": "{v0} — delete account",
             "accountDeleteTitle": "Delete account",
             "backtesting": {
-                "description": "A 2-year backtest across 10 stocks including AAPL, NVDA, and TSLA. RSI, MACD, and Supertrend technical signals and AI scenarios are back-tested against historical data. Results are based on past data and do not guarantee future performance.",
-                "title": "AAPL, NVDA, TSLA 2-Year Backtest — Signal Review"
+                "description": "A historical backtest across 10 stocks including AAPL, NVDA, and TSLA. RSI, MACD, and Supertrend technical signals and AI scenarios are checked against past data. Results are based on historical data and do not guarantee future performance.",
+                "title": "AAPL, NVDA, TSLA Backtest — Signal Review"
             },
             "backtestingOgAlt": "{v0} AI backtesting results",
             "economy": {
@@ -1858,7 +1855,7 @@
                 "flatChange": "0.00% flat",
                 "holdingAverage": "Avg {v0} · {v1} shares",
                 "lastNDays": "Last {v0} days",
-                "liveCrossRef": "Live AI analysis is provided separately in the analysis panel.",
+                "liveCrossRef": "Live AI analysis appears in the analysis panel; if none is cached it shows after the next refresh.",
                 "naverNews": "Naver News",
                 "noticeWrittenOn": "Written {v0}.{v1}.{v2}",
                 "openingChat": "Opening chat…",
@@ -2037,6 +2034,33 @@
             },
             "mobileSheet": {
                 "aiAnalysis": "AI analysis"
+            },
+            "relatedGroup": {
+                "aiSemiValueChain": "AI semiconductor value chain",
+                "aiSoftware": "AI software",
+                "bioPharma": "Biotech & pharma",
+                "crypto": {
+                    "altcoin": "Altcoins",
+                    "major": "Major cryptocurrencies"
+                },
+                "evBattery": "EVs & batteries",
+                "internetPlatform": "Internet & platforms",
+                "leveragedEtf": "Leveraged & inverse ETFs",
+                "sameMarket": "Same market",
+                "sector": {
+                    "XLB": "Materials sector",
+                    "XLC": "Communication services sector",
+                    "XLE": "Energy sector",
+                    "XLF": "Financials sector",
+                    "XLI": "Industrials sector",
+                    "XLK": "Technology sector",
+                    "XLP": "Consumer staples sector",
+                    "XLRE": "Real estate sector",
+                    "XLU": "Utilities sector",
+                    "XLV": "Healthcare sector",
+                    "XLY": "Consumer discretionary sector"
+                },
+                "spaceDefense": "Space, aerospace & defense"
             },
             "snapshot": {
                 "prose": {
@@ -2251,19 +2275,31 @@
             },
             "BacktestHero": {
                 "116858": "Backtesting results verified with actual market data.",
-                "530709": "Mag7 + Leading Stocks",
                 "394fff": "Indicator Signal Hit Rate (Historical)",
                 "5a254c": "AI Scenario Hit Rate (Historical)",
                 "caee31": "Shows what happened when the AI analysis Siglens provides today is applied, as-is, to past data. Based on historical data; it does not guarantee future results.",
-                "d8b543": "2-Year Backtest — Verified Against Historical Data",
-                "f92294": "Total Cases"
+                "d8b543": "Backtest — Verified Against Historical Data",
+                "f92294": "Total Cases",
+                "aiTrendHitRateLabel": "AI Trend Direction Hit Rate (Historical)",
+                "meanReturnLabel": "Average Return (All Cases)",
+                "medianHoldingDaysLabel": "Median Holding Days"
             },
             "BacktestTabs": {
                 "7425e7": "Ticker Filter"
             },
             "hero": {
                 "caseCount": "{v0}",
-                "tickerCount": "{v0} tickers"
+                "tickerCount": "{v0} tickers",
+                "aiSubLabel": "Decisive cases {v0}/{v1} · excludes {v2} neutral",
+                "medianHoldingDays": "{v0} days"
+            },
+            "methodology": {
+                "heading": "Backtest Methodology",
+                "winDefinition": "Win definition: a case counts as a win when its return at exit is 0% or higher.",
+                "exitRule": "Exit rule: positions are held for up to 10 trading days. If the stop loss or take profit level is hit first, the position exits then (stop loss takes priority on same-day ties). Otherwise, it exits at the close of day 10.",
+                "noCosts": "Transaction costs and slippage are not modeled.",
+                "universe": "Limited to a fixed set of 10 large-cap tickers (AAPL, NVDA, TSLA, and others) chosen after the fact — results may reflect selection bias.",
+                "dataSource": "Price data source: Financial Modeling Prep (FMP)."
             }
         },
         "chart": {
@@ -2561,6 +2597,9 @@
                 "58c098": "vs. Previous Period {v0}{v1}{v2}",
                 "c2a5bf": "Economic Indicators"
             },
+            "EconomyKrMacroFacts": {
+                "59ed20": "Macro at a Glance"
+            },
             "EconomyMacroFacts": {
                 "59ed20": "Macro Economy at a Glance"
             },
@@ -2584,6 +2623,14 @@
                 "b5f759": "Macro Economic Briefing Information"
             },
             "dayCellAriaImpacts": " — impact {v0}",
+            "krMacroFacts": {
+                "cpiAndUnemployment": "The latest consumer price inflation is {v0}% and the unemployment rate is {v1}%.",
+                "cpiChange": "Consumer price inflation moved {v0}pp from the previous release.",
+                "cpiOnly": "The latest consumer price inflation is {v0}%.",
+                "ratesOnly": "The Bank of Korea base rate is currently {v0}%.",
+                "ratesWithKtb": "The Bank of Korea base rate is currently {v0}%, and the 10-year KTB auction yield is {v1}%.",
+                "unemploymentOnly": "The latest unemployment rate is {v0}%."
+            },
             "macroFacts": {
                 "cpiAndUnemployment": "The latest Consumer Price Index reads {v0}pt and unemployment is {v1}%.",
                 "cpiOnly": "The latest Consumer Price Index reads {v0}pt.",
@@ -2905,6 +2952,26 @@
                 "bc06f5": "Explore Popular Korean Stocks by Sector",
                 "f6087a": "Popular US Stocks by Sector"
             },
+            "categoryDescription": {
+                "AIsemiconductors": "Companies building the chips and servers behind AI compute — they track the data-center investment cycle.",
+                "Altcoins": "Major cryptocurrencies outside the top tier — their swings widen with Bitcoin moves.",
+                "Autosbatteries": "Automakers and battery-material suppliers — EV demand and the exchange rate drive earnings.",
+                "Biotechhealthcare": "Korean pharma and biotech firms — licensing deals and trial news move them sharply.",
+                "EVmobility": "Electric-vehicle and autonomous-driving firms — sensitive to delivery numbers and subsidy policy.",
+                "Energyindustrials": "Oil, power and heavy-equipment firms — they follow commodity prices and the business cycle.",
+                "Financialsholdings": "Banks, brokerages and holding companies — rate direction and dividend policy are the key variables.",
+                "Fintechcrypto": "Payments, brokerage and crypto-trading firms — they react to both interest rates and coin prices.",
+                "Healthcarebiotech": "Pharma, medical-device and drug-development firms — trial results and regulatory approvals move the price.",
+                "Internetplatforms": "Korean portal, commerce and gaming firms — watched through ad spending and user metrics.",
+                "KOSDAQ": "The biggest KOSDAQ names by market cap — higher volatility than the KOSPI market.",
+                "LeveragedETFs": "ETFs that track 2–3x the daily index return — high volatility, with compounding decay when held long.",
+                "Major": "The largest cryptocurrencies by market cap — the benchmark for the whole market.",
+                "Megacapsindices": "The largest US tech companies by market cap plus benchmark index ETFs — the stocks that set the market direction.",
+                "Quantumcomputing": "Quantum computing hardware and software firms — pre-commercial, so sentiment drives large swings.",
+                "SemiconductorsIT": "Leading KOSPI semiconductor and electronic-component names — tied to memory prices and export data.",
+                "Softwarecloud": "Subscription software and cloud infrastructure names — judged on revenue growth and margins.",
+                "Spaceaerospace": "Satellite, launch and defense names — government budgets and contract awards are the key variables."
+            },
             "skillBadge": {
                 "candlestick": "Candle",
                 "indicator_guide": "Indicator",
@@ -3016,7 +3083,6 @@
             "MarketNewsCard": {
                 "3ea27a": "Summary",
                 "adb2bb": "View Original",
-                "c67b87": "Body",
                 "d12df8": "AI Analyzing...",
                 "goToSymbol": "Go to the {v0} page"
             },
@@ -3512,8 +3578,8 @@
                 "sourcesTitle": "Where the answers come from"
             },
             "MessageList": {
-                "19b2d1": "Cancel",
                 "259976": "The response was cut off. Please ask a follow-up question.",
+                "19b2d1": "Cancel",
                 "43da5e": "Regenerate",
                 "6523ca": "Resend",
                 "96adfe": "This response was stopped.",

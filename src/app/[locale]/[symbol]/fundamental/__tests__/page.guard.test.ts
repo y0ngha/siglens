@@ -255,6 +255,16 @@ describe('Fundamental generateMetadata crypto NOINDEX guard', () => {
             degraded: false,
         } as Awaited<ReturnType<typeof getProfileResilient>>);
 
+        // 2026-09-17 thin 게이트: 렌더 가능한 스냅샷 산문이 없으면 이 탭은
+        // noindex다. 여기서 검증하려는 건 크립토 가드라 산문 픽스처를 준다.
+        vi.mocked(getSeoSnapshotsStatic).mockResolvedValue([
+            {
+                tab: 'fundamental',
+                content: { overallConclusionKo: '테스트용 펀더멘털 결론' },
+                generatedAt: new Date('2026-09-01'),
+            },
+        ] as unknown as Awaited<ReturnType<typeof getSeoSnapshotsStatic>>);
+
         const result = await generateMetadata({
             params: Promise.resolve({ locale: 'ko', symbol: 'AAPL' }),
         });
@@ -337,5 +347,74 @@ describe('Fundamental generateMetadata snapshot-derived description', () => {
         // return description: '' — asserting that value confirms the templated
         // path (not the snapshot path) was taken.
         expect(result.description).toBe('');
+    });
+});
+
+/**
+ * thin-content 게이트(2026-09-17 정책 감사 M6 · `SEO_RECOVERY_2026_09.md` §5 A3).
+ *
+ * 프로필·지표 카드는 전 종목이 같은 표를 채우는 수치라, 이 탭의 종목 고유 텍스트는
+ * 사실상 스냅샷 산문뿐이다. 산문이 없으면 noindex(단 follow·self-canonical 유지).
+ */
+describe('Fundamental generateMetadata thin-content 게이트', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockIsTabAllowed.mockResolvedValue(true);
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: {
+                symbol: 'AAPL',
+                name: 'Apple Inc.',
+                koreanName: '애플',
+                fmpSymbol: 'AAPL',
+            },
+            degraded: false,
+        } as Awaited<ReturnType<typeof getAssetInfoResilient>>);
+        mockGetProfileResilient.mockResolvedValue({
+            profile: { sector: 'Technology', description: '' },
+            degraded: false,
+        } as Awaited<ReturnType<typeof getProfileResilient>>);
+    });
+
+    const params = Promise.resolve({ locale: 'ko', symbol: 'AAPL' });
+
+    it('산문 스냅샷이 없으면 noindex — self-canonical과 제목은 유지한다', async () => {
+        vi.mocked(getSeoSnapshotsStatic).mockResolvedValue([]);
+
+        const result = await generateMetadata({ params });
+
+        expect(result.robots).toEqual({ index: false, follow: true });
+        // `NOINDEX_SYMBOL_METADATA`(canonical:null)와 다른 점: 페이지는 멀쩡히
+        // 살아 있으므로 self-canonical을 유지한다. 이 파일의 seo 목은 url을 ''로
+        // 스텁하므로 사이트 루트로 해석된다 — null이 아님이 계약이다.
+        expect(result.alternates?.canonical).not.toBeNull();
+        expect(result.title).toBeDefined();
+    });
+
+    it('스냅샷 행은 있지만 내용이 비면 여전히 thin이다', async () => {
+        vi.mocked(getSeoSnapshotsStatic).mockResolvedValue([
+            {
+                tab: 'fundamental',
+                content: {},
+                generatedAt: new Date('2026-09-01'),
+            },
+        ] as unknown as Awaited<ReturnType<typeof getSeoSnapshotsStatic>>);
+
+        const result = await generateMetadata({ params });
+
+        expect(result.robots).toEqual({ index: false, follow: true });
+    });
+
+    it('렌더 가능한 산문이 있으면 색인한다', async () => {
+        vi.mocked(getSeoSnapshotsStatic).mockResolvedValue([
+            {
+                tab: 'fundamental',
+                content: { overallConclusionKo: '이익의 질이 개선되고 있다.' },
+                generatedAt: new Date('2026-09-01'),
+            },
+        ] as unknown as Awaited<ReturnType<typeof getSeoSnapshotsStatic>>);
+
+        const result = await generateMetadata({ params });
+
+        expect(result.robots).toBeUndefined();
     });
 });

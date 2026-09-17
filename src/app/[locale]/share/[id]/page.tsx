@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
 import { setRequestLocale } from 'next-intl/server';
+import { notFound } from 'next/navigation';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { getCachedSharedAnalysis } from '@/entities/shared-analysis/actions/getCachedSharedAnalysis';
 import { resolveAsOf } from '@/entities/shared-analysis/lib/resolveAsOf';
@@ -51,30 +52,11 @@ export default async function SharePage({ params }: Props) {
     const lookup = await getCachedSharedAnalysis(id);
 
     if (lookup.status !== 'found') {
-        // Intentional: returns HTTP 200 (not notFound()) so the user sees a
-        // friendly expired-link page instead of a generic 404. The noindex
-        // metadata in buildShareMetadata() prevents search engines from
-        // indexing this expired/not-found state.
-        return (
-            <main className="page-container flex flex-1 flex-col items-center py-20 text-center">
-                <p className="text-sm font-semibold tracking-[0.01em] text-primary-400">
-                    {t('page.0658dd')}
-                </p>
-                <h1 className="mt-4 text-2xl font-bold text-secondary-50 sm:text-3xl">
-                    {t('page.365a70')}
-                </h1>
-                <p className="mt-3 max-w-md text-sm leading-relaxed text-secondary-400">
-                    {t('page.7c95d5', { v0: SITE_NAME })}
-                </p>
-                <Link
-                    href="/"
-                    prefetch={false}
-                    className="mt-8 rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                >
-                    {t('page.ba81f0', { v0: SITE_NAME })}
-                </Link>
-            </main>
-        );
+        // 진짜 404를 낸다. 예전에는 200 + 친절한 만료 안내였는데, 그 조합이
+        // GSC에서 soft-404로 분류돼(2026-09 구글 정책 감사) 색인 품질 신호를 깎았다.
+        // 문구는 잃지 않는다 — `[locale]/NotFoundMessage`가 `/share/` 경로를 보고
+        // 같은 만료 안내를 그린다.
+        notFound();
     }
 
     const { snapshot, createdAt } = lookup;

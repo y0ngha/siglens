@@ -29,11 +29,6 @@ export function validateBacktestData(data: unknown): BacktestData {
     if (typeof d['meta'] !== 'object' || d['meta'] === null) {
         throw new Error('meta must be an object');
     }
-    // meta confirmed non-null object above; cast to access named fields for validation
-    const meta = d['meta'] as Record<string, unknown>;
-    if (typeof meta['aiTrendHitRate'] !== 'number') {
-        throw new Error('meta.aiTrendHitRate must be a number');
-    }
 
     if (!Array.isArray(d['cases'])) {
         throw new Error('cases must be an array');
