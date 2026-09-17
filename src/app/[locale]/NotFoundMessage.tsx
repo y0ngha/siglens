@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import { useTranslations } from 'next-intl';
 import { SITE_NAME } from '@/shared/lib/seo';
 
@@ -14,13 +14,15 @@ const SHARE_PATH_SEGMENT = '/share/';
 
 /**
  * 404 헤드라인. **클라이언트 컴포넌트다** — 경로에 따라 문구가 갈리는데, 그 판단에
- * 필요한 `usePathname()`이 클라이언트 훅이라서다. `NotFoundContent`의 나머지(링크·
+ * 필요한 경로 훅이 클라이언트 훅이라서다. `NotFoundContent`의 나머지(링크·
  * 연락처)는 서버 렌더를 유지한다.
  */
 export function NotFoundMessage() {
     const t = useTranslations('app.home');
-    const pathname = usePathname();
-    // 로케일 접두사(`/ja/share/xxx`)가 붙을 수 있어 앞부분을 고정하지 않는다.
+    // 접두사를 뗀 경로(`/share/xxx`) — 비교용 경로는 항상 `useAppPathname`으로 받는다
+    // (`useAppPathname.ts` JSDoc). 세그먼트 포함 검사라 접두사 유무와 무관하지만
+    // 레포 가드(`useAppPathname.test.ts`)가 직접 사용을 막는다.
+    const pathname = useAppPathname();
     const isExpiredShare = pathname.includes(SHARE_PATH_SEGMENT);
 
     return (
