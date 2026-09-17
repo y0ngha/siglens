@@ -61,13 +61,13 @@
     },
     {
         "file": "src/app/[locale]/backtesting/page.tsx",
-        "line": 173,
+        "line": 176,
         "reason": "seo-keywords-ko-only",
         "text": "주식 기술적 분석 백테스팅"
     },
     {
         "file": "src/app/[locale]/backtesting/page.tsx",
-        "line": 174,
+        "line": 177,
         "reason": "seo-keywords-ko-only",
         "text": "AI 주식 분석 백테스트"
     },
