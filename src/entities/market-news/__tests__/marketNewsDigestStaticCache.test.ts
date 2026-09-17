@@ -1,7 +1,10 @@
 // 1. vi.mock 선언 — Vitest가 정적 import 전에 호이스팅한다.
 
 vi.mock('next/cache', () => ({
-    unstable_cache: (fn: () => unknown) => fn,
+    unstable_cache: (fn: () => unknown, _keys: unknown, opts: unknown) => {
+        (globalThis as Record<string, unknown>).__lastUnstableCacheOpts = opts;
+        return fn;
+    },
 }));
 
 const { mockPeekMarketNewsDigestCache } = vi.hoisted(() => ({
@@ -53,6 +56,7 @@ vi.mock('@/entities/news-article', async orig => ({
 // 2. 정적 import — vi.mock 선언 이후에 배치한다.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
+import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import { DEFAULT_DIGEST_MODEL_ID } from '../lib/marketNewsConstants';
 import { peekMarketNewsDigestStatic } from '../api/marketNewsDigestStaticCache';
 
@@ -67,6 +71,7 @@ describe('peekMarketNewsDigestStatic', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockGetMarketNewsList.mockResolvedValue([FIXTURE_ROW]);
+        delete (globalThis as Record<string, unknown>).__lastUnstableCacheOpts;
     });
 
     it('(Happy) 캐시 hit → digest 그대로 반환', async () => {
@@ -75,6 +80,19 @@ describe('peekMarketNewsDigestStatic', () => {
         const result = await peekMarketNewsDigestStatic('crypto', 'ko');
 
         expect(result).toEqual(DIGEST_RESULT);
+    });
+
+    it('(Happy) unstable_cache opts: revalidate=SECONDS_PER_HALF_DAY, tags=[market-news:digest:crypto]', async () => {
+        mockPeekMarketNewsDigestCache.mockResolvedValue(DIGEST_RESULT);
+
+        await peekMarketNewsDigestStatic('crypto', 'ko');
+
+        expect(
+            (globalThis as Record<string, unknown>).__lastUnstableCacheOpts
+        ).toEqual({
+            revalidate: SECONDS_PER_HALF_DAY,
+            tags: ['market-news:digest:crypto'],
+        });
     });
 
     it('(Worst) 캐시 miss → null 반환', async () => {

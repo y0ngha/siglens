@@ -14,7 +14,7 @@ FSD 정석으로는 같은 레이어 안의 다른 슬라이스끼리 import 금
 |---|---|---|
 | `entities/analysis/actions/*` | `entities/news-article`, `entities/earnings-report`, `entities/options-chain` | submitOverallAnalysisAction이 여러 entity 데이터를 조합하는 multi-entity orchestration. FSD에서는 features 레이어가 담당해야 하나, Next.js Server Action 구조상 entity에 위치 |
 | `entities/news-article/actions/*` | `entities/analysis` | submitNewsAnalysisAction이 byokGate(shared/lib) 경유로 analysis 의존 |
-| `entities/agent-suggestions/api.ts` | `entities/market-news/api` (`DrizzleMarketNewsRepository`), `entities/llm-provider` | `getAgentSuggestions`이 카테고리 헤드라인(market-news)과 agent LLM provider(llm-provider)를 조합하는 multi-entity orchestration — `entities/analysis/actions/*` → `news-article` 예외와 동일한 사유. `market-news`는 barrel(`CATEGORY_CONFIG`)과 `api.ts`(`DrizzleMarketNewsRepository`) 양쪽 다 사용 |
+| `entities/agent-suggestions/api.ts` | `entities/market-news/api` (`DrizzleMarketNewsRepository`), `entities/llm-provider` | `getAgentSuggestions`이 카테고리 헤드라인(market-news)과 agent LLM provider(llm-provider)를 조합하는 multi-entity orchestration — `entities/analysis/actions/*` → `news-article` 예외와 동일한 사유. `market-news`는 barrel(`CATEGORY_CONFIG`)과 `api/index.ts`(`DrizzleMarketNewsRepository`) 양쪽 다 사용 |
 | `entities/sitemap-entry/server.ts` | `entities/market-news/api` (`DrizzleMarketNewsRepository`), `entities/terms/api` (`DrizzleTermsRepository`) | `loadStaticSitemapInputs`이 sitemap `lastmod`를 채우려 뉴스 최신 게시일(market-news)과 활성 약관 발효일(terms)을 조합하는 multi-entity orchestration — 두 슬라이스 모두 barrel 제외 대상인 `api.ts`에서 직접 import |
 
 이 예외들은 ESLint `boundaries/element-types`에서 `entities → entities` 허용으로 관리됨.

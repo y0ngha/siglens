@@ -8,7 +8,7 @@ import {
 import type { Locale } from '@/shared/i18n/locales';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import { selectAggregateNewsItems } from '@/entities/news-article';
-import { getMarketNewsList } from '../api';
+import { getMarketNewsList } from './index';
 import {
     CATEGORY_CONFIG,
     type NewsFeedCategoryId,
