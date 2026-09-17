@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.79.1](https://github.com/y0ngha/siglens/compare/v0.79.0...v0.79.1) (2026-09-17)
+
+
+### Bug Fixes
+
+* **ui:** 리뷰 반영 — 차트 fallback 두 분기에 공통 높이 예약, 스냅샷 마커 주석 정정 ([0f83ed1](https://github.com/y0ngha/siglens/commit/0f83ed1ff25c4078d27cab0084c7de0002860915))
+* **ui:** 차트 라우트 단일 스크롤, 백테스팅 스탯 표 정렬, 지난 AI 분석 아코디언 ([74dd9b3](https://github.com/y0ngha/siglens/commit/74dd9b36437384b75fae9a10dffc087a625674ff))
+
 # [0.79.0](https://github.com/y0ngha/siglens/compare/v0.78.1...v0.79.0) (2026-09-17)
 
 
