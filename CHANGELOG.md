@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.79.2](https://github.com/y0ngha/siglens/compare/v0.79.1...v0.79.2) (2026-09-17)
+
+
+### Bug Fixes
+
+* **infra:** 컨테이너를 node:24-alpine으로 올려 ko-KR Intl 하이드레이션 불일치를 없앤다 ([8a814d6](https://github.com/y0ngha/siglens/commit/8a814d66f895235763ca708c03a81369b595b47c))
+* **seo:** 봇 UA 브리핑 차단 제거, 종목 공포탐욕 탭 noindex, sitemap noindex URL 정리 ([649edb0](https://github.com/y0ngha/siglens/commit/649edb0a1184837dbb65588991bd140846cbc58c))
+
 ## [0.79.1](https://github.com/y0ngha/siglens/compare/v0.79.0...v0.79.1) (2026-09-17)
 
 
