@@ -338,6 +338,11 @@
   - Rule: CONVENTIONS.md — JSDoc and code comments must match code behavior; documentation claiming verification for capabilities that are unverified is misleading
   - Context: Fixed by softening the wording to state that the guard is a strong locale-data-level signal, not a per-format verification guarantee. Build verification is infrastructure-level (Dockerfile isolation), not API-level (per-formatter) proof.
 
+## [PR #839 Round 2 | fix/seo-live-audit | 2026-09-18]
+- Violation: New derived value in component prop composition lacking unit test. Dataset JSON-LD `temporalCoverage` field changed from hardcoded literal to computed value derived from stats (`${periodStart}/${periodEnd}`). Composition logic inside a private builder function `buildJsonLdNode()`, but no test verified the composed value with distinct start/end values or the removal of `dateModified` field.
+  - Rule: (new) Derived values computed and composed into component props must be tested at the composition point, not left to visual rendering tests. When a prop receives a computed value, unit tests must verify the computation and its effects (field additions, removals, transformations).
+  - Context: Added `src/app/[locale]/backtesting/__tests__/page.jsonld.test.tsx` which spies on the JsonLd component's `data` prop, locates the Dataset node by `@type`, and asserts: 1) composed temporalCoverage value matches expected start/end, 2) dateModified field was removed. Test catches both the computation correctness and field deletion without running visual renders.
+
 ## [feat/agent-confluence-sr-tests | siglens-wt-confluence | 2026-09-15]
 - Violation: `useEffectEvent` (notifyNavigated) in src/widgets/agent-chat/Sidebar.tsx declared after derived values and handlers
   - Rule: MISTAKES.md Components Rule 17 — All hook calls must be declared before derived variables and handlers. Strict ordering: useState/useRef → useQuery/useMutation/custom hooks → useCallback/useMemo → derived variables → handlers → useEffect
