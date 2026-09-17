@@ -213,9 +213,9 @@
     --header-h: 3.5rem;
 
     /* `/[symbol]` 크롬(브레드크럼 행 + 탭 행) 높이. site Header와 달리 jail
-       **안쪽**에 있어 `--header-h`로는 뺄 수 없다. 차트 블록이 모바일에서
-       자기 높이를 직접 계산할 때 쓴다 — jail의 확정 높이에 기대던 `h-full`을
-       버려야 페이지가 한 번만 스크롤한다(SymbolLayoutClient JSDoc 참고).
+       **안쪽**에 있어 `--header-h`로는 뺄 수 없다. 아래 `--symbol-chart-h`가
+       이 값을 빼서 차트 블록의 첫 뷰포트 높이를 만든다 — 차트가 자기 높이를
+       직접 들고 있어야 페이지가 한 번만 스크롤한다.
        `SymbolLayoutChrome`의 `py-3` 헤더 + 탭 행 실측값(124px)이다. */
     --symbol-chrome-h: 7.75rem;
 
@@ -386,8 +386,8 @@
      * 1280px에서는 반대로 여백이 부족해진다. 헤더만 전체 폭을 쓰고 있어 초광폭에서
      * 로고가 본문보다 한참 왼쪽에 떨어지는 문제도 있었다.
      *
-     * Tailwind `@utility` 대신 일반 클래스로 두는 이유는 `.scrollbar-none`과 같다 —
-     * 변형 조합이 필요 없고 stylelint의 `@utility` 미인식 경고를 피한다.
+     * Tailwind `@utility` 대신 일반 클래스로 둔다 — 변형 조합(`md:` 등)이 필요
+     * 없고 stylelint의 `@utility` 미인식 경고를 피한다.
      * 유틸리티 클래스와 함께 쓸 때 패딩이 겹치지 않도록 여기서 좌우 패딩까지 소유한다.
      *
      * 차트 페이지(`/[symbol]`)는 예외다 — 캔들이 충분히 보이려면 전체 폭이 필요하다.
@@ -427,20 +427,6 @@
     }
 }
 
-/* 스크롤은 유지하되 시각적 스크롤바만 감춘다. 차트 페이지 AI 분석 패널처럼
-   페이지 스크롤(footer 도달용)과 패널 내부 스크롤이 공존할 때, 내부 스크롤바가
-   같이 보이면 스크롤바가 둘로 겹쳐 보여 산만하다. 패널은 여전히 내부 스크롤로
-   콘텐츠를 담아 차트 높이를 고정하므로 overflow-y-auto는 그대로 두고 바만 숨긴다.
-   (Tailwind v4 @utility 대신 일반 클래스로 둔다 — 변형 조합이 필요 없고
-   stylelint의 @utility 미인식 + & 스코핑 경고를 피한다.) */
-.scrollbar-none {
-    scrollbar-width: none; /* Firefox */
-}
-
-.scrollbar-none::-webkit-scrollbar {
-    display: none; /* WebKit (Chrome/Safari/Edge) */
-}
-
 /*
  * `color-scheme` 폴백. 인라인 스크립트가 `style.colorScheme`을 직접 세팅하지만,
  * JS가 꺼진 환경(크롤러, 일부 접근성 도구)에서는 그 경로가 없다. 예전에는
@@ -449,6 +435,25 @@
  */
 :root {
     color-scheme: dark;
+
+    /*
+     * 차트 블록(캔들 + 거래량)의 높이. 첫 뷰포트에서 site header · PWA 배너 ·
+     * `/[symbol]` 크롬을 뺀 잔여다.
+     *
+     * 이 값이 **차트에만** 붙는 게 핵심이다. `/[symbol]` 차트 라우트는 문서
+     * 하나만 스크롤한다 — jail도 `<main>`도 AI 패널도 자체 스크롤 컨테이너가
+     * 아니다(사용자 제보: 데스크톱에서 스크롤바가 셋이었다). 그래서 AI 패널은
+     * 내용만큼 자라고, 차트는 패널 길이와 무관하게 이 확정 높이를 유지해야 한다.
+     * lightweight-charts 컨테이너는 percentage height를 쓰므로 조상 어딘가에
+     * definite height가 반드시 있어야 하는데, 이제 그 지점이 차트 컬럼 자신이다.
+     *
+     * `@theme`이 아니라 여기 둔다 — Tailwind가 미사용 theme 변수를 떨어뜨릴 수
+     * 있는데, 이 변수는 `h-(--symbol-chart-h)` 형태로만 참조된다.
+     */
+    --symbol-chart-h: calc(
+        100dvh - var(--header-h, 3.5rem) - var(--pwa-banner-h, 0px) -
+            var(--symbol-chrome-h, 7.75rem)
+    );
 }
 
 body {
@@ -637,16 +642,4 @@ body:has([data-vaul-drawer]) [data-mobile-sheet-placeholder] {
     100% {
         transform: translateX(300%);
     }
-}
-
-/*
- * 쉽게보기가 켜져 있으면 SSR 스냅샷 산문을 감춘다.
- *
- * 그 섹션은 크롤러에게 본문을 노출하려고 넣은 SEO 자산이라 DOM에서 지우지 않고
- * CSS로만 감춘다. 루트의 `data-analysis-view`는 `PlainAnalysisSwitch`가 평이화
- * 산문이 **실제로 있을 때만** 세우므로, 평이화를 받지 않는 봇에게는 이 규칙이
- * 발동하지 않는다.
- */
-[data-analysis-view='plain'] [data-snapshot-prose] {
-    display: none;
 }

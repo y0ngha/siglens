@@ -141,6 +141,7 @@ import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/Techni
 import { RelatedSymbols } from '@/views/symbol';
 import { getBarsAction } from '@/entities/bars/actions';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
+import { isValidElement, type ReactNode } from 'react';
 import { notFound } from 'next/navigation';
 import type { MockedFunction } from 'vitest';
 
@@ -626,9 +627,10 @@ describe('Symbol page', () => {
         // <main>, sharing the fixed-height jail's flex budget with the chart —
         // it visually squeezed/clipped the chart and rendered before the
         // (fallback) h1 in DOM order (heading-order inversion, WCAG 1.3.1). The
-        // fix moves it to the LAST child of <main>, after the chart wrapper,
-        // and makes <main> itself the scroll container (overflow-y-auto) so
-        // the chart wrapper (h-full + shrink-0) never competes for height.
+        // fix moves it after the chart wrapper. <main> is no longer a scroll
+        // container (single document scroll); the chart wrapper reserves the
+        // first viewport on mobile via --symbol-chart-h and the chart column
+        // owns that definite height on desktop, so the prose never competes.
         it('mounts TechnicalSnapshotProse after the chart wrapper, never as the first flex child (FIX 1)', async () => {
             mockPeekAnalysisCache.mockResolvedValue(null);
 
@@ -658,14 +660,15 @@ describe('Symbol page', () => {
                     TechnicalSnapshotProse
             );
             expect(proseIndex).toBeGreaterThan(-1);
-            // 차트 wrapper = h-full shrink-0 div (Suspense 경계를 품는 자식).
+            // 차트 wrapper = 뷰포트 높이를 예약하는 shrink-0 div (Suspense 경계를
+            // 품는 자식). 높이는 `--symbol-chart-h`가 들고 있다.
             const chartWrapperIndex = mainChildren.findIndex(child => {
                 const className = (
                     child as { props?: { className?: unknown } } | null
                 )?.props?.className;
                 return (
                     typeof className === 'string' &&
-                    className.includes('h-full') &&
+                    className.includes('h-(--symbol-chart-h)') &&
                     className.includes('shrink-0')
                 );
             });
@@ -675,10 +678,11 @@ describe('Symbol page', () => {
 
         /**
          * 칩은 이제 **레이아웃**이 jail 밖에서 렌더한다(`[symbol]/layout.tsx`).
-         * 이 `<main>`은 차트 라우트에서 자체 `overflow-y-auto` 스크롤 컨테이너라,
-         * 여기 두면 칩이 중첩 스크롤러 안쪽에 깔려 사용자가 페이지를 내려 푸터를
-         * 봐도 도달하지 못한다 — DOM에는 있어 크롤러는 보지만 사람은 못 보는
-         * 상태가 된다(2026-08-25 사용자 제보로 발견).
+         * 예전에 이 `<main>`이 차트 라우트에서 자체 `overflow-y-auto` 스크롤
+         * 컨테이너였을 때, 여기 두면 칩이 중첩 스크롤러 안쪽에 깔려 사용자가
+         * 페이지를 내려 푸터를 봐도 도달하지 못했다 — DOM에는 있어 크롤러는 보지만
+         * 사람은 못 보는 상태(2026-08-25 사용자 제보로 발견). 중첩 스크롤러는
+         * 걷어냈지만 위치 계약은 그대로 유지한다.
          *
          * 되돌아오는 회귀를 막는다. 위치 계약은 layout.test.tsx가 고정한다.
          */
@@ -704,11 +708,12 @@ describe('Symbol page', () => {
             ).toBe(false);
         });
 
-        // UI audit FIX 1: <main> must be the scroll container so content
-        // below the chart wrapper is reachable (not permanently clipped by
-        // the sticky-footer jail's overflow-hidden, which the definite-height
-        // regression guard in SymbolLayoutClient.test.tsx forbids changing).
-        it('gives <main> overflow-y-auto so below-chart content is reachable, not clipped (FIX 1)', async () => {
+        // 단일 문서 스크롤: <main>은 더 이상 스크롤 컨테이너가 아니다. 예전에는
+        // jail이 첫 뷰포트에 고정돼 있어 main이 자기 overflow-y-auto로 아래
+        // 콘텐츠를 노출해야 했는데, 그 결과 데스크톱 스크롤바가 셋이 됐다
+        // (main · AI 패널 · body — 사용자 제보, v0.79.0). jail이 growable min-h로
+        // 바뀌어(SymbolLayoutClient) 이 중첩 스크롤러가 불필요해졌다.
+        it('<main>을 스크롤 컨테이너로 만들지 않는다 (문서 하나만 스크롤)', async () => {
             mockPeekAnalysisCache.mockResolvedValue(null);
 
             const tree = await SymbolPage({
@@ -719,7 +724,44 @@ describe('Symbol page', () => {
             if (main === null) throw new Error('<main> not found in tree');
 
             const className = (main.props as { className: string }).className;
-            expect(className).toContain('overflow-y-auto');
+            expect(className).not.toContain('overflow-y-auto');
+            expect(className).not.toContain('overflow-hidden');
+        });
+
+        // 위 단언은 <main> 한 단만 본다. 스크롤 컨테이너는 그 아래 어느 단에
+        // 다시 생겨도 같은 증상(중첩 스크롤바)을 만들므로, 서버가 그리는 트리
+        // 전체를 훑는다 — Suspense `fallback` prop 안쪽까지 포함해서.
+        // ChartContent 아래(클라이언트 서브트리)는 ChartContent.test.tsx가
+        // 렌더된 DOM에서 같은 불변성을 확인한다.
+        it('차트 라우트 트리 어디에도 overflow-y-auto가 없다', async () => {
+            mockPeekAnalysisCache.mockResolvedValue(null);
+
+            const tree = await SymbolPage({
+                params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+            });
+
+            const collectClassNames = (node: ReactNode): string[] => {
+                if (Array.isArray(node)) return node.flatMap(collectClassNames);
+                if (!isValidElement(node)) return [];
+                const props = node.props as {
+                    className?: unknown;
+                    children?: ReactNode;
+                    fallback?: ReactNode;
+                };
+                return [
+                    ...(typeof props.className === 'string'
+                        ? [props.className]
+                        : []),
+                    ...collectClassNames(props.children),
+                    ...collectClassNames(props.fallback),
+                ];
+            };
+
+            expect(
+                collectClassNames(tree).filter(c =>
+                    c.includes('overflow-y-auto')
+                )
+            ).toEqual([]);
         });
 
         it('does not render hidden keyword stuffing copy', async () => {

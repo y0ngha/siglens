@@ -1,5 +1,7 @@
 import { useTranslations } from 'next-intl';
 import type { BacktestStats } from '@/entities/backtest-case';
+import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 interface BacktestHeroProps {
     stats: BacktestStats;
@@ -35,21 +37,32 @@ function formatPeriodMonth(isoDate: string): string {
  * `tabular-nums`가 본문 서체에서 그대로 해 준다. 값을 숫자와 단위로 쪼개
  * 단위에만 다른 서체를 주는 방법도 있지만, 텍스트 노드가 갈리면 봇이 읽는
  * 문자열이 `100개`에서 `100 개`로 바뀐다.
+ *
+ * 정렬은 가운데가 아니라 **왼쪽**이다. 서브라벨 길이가 카드마다 크게 달라
+ * (`93/150` 대 `결정 케이스 14/20 · 중립 130건 제외`) 가운데 정렬에서는 값이
+ * 카드마다 다른 x에 떠 표처럼 읽히지 않았다(사용자 제보). 왼쪽 정렬 + 그리드면
+ * 값·라벨·서브라벨이 열마다 같은 선에서 시작한다.
  */
 function StatCard({ value, label, valueClassName, subLabel }: StatCardProps) {
     return (
-        <div className="text-center">
+        <div className="text-left">
             <div
-                className={`text-3xl leading-none font-bold tabular-nums sm:text-4xl ${valueClassName}`}
+                className={cn(
+                    'text-3xl leading-none font-bold tabular-nums sm:text-4xl',
+                    valueClassName
+                )}
             >
                 {value}
             </div>
             <div className="mt-2 text-xs text-secondary-400">{label}</div>
-            {subLabel !== undefined ? (
-                <div className="mt-0.5 text-[0.6875rem] text-secondary-500">
-                    {subLabel}
-                </div>
-            ) : null}
+            {/* 서브라벨이 없는 카드도 이 슬롯을 그대로 그린다 — 있는 카드와
+                바닥선을 맞추려면 한 줄치 높이를 항상 예약해야 한다. */}
+            <div
+                data-testid="stat-sub-label"
+                className="mt-0.5 min-h-4 text-[0.6875rem] text-secondary-500"
+            >
+                {subLabel}
+            </div>
         </div>
     );
 }
@@ -74,15 +87,21 @@ export function BacktestHero({ stats }: BacktestHeroProps) {
                     <br />
                     {t('BacktestHero.caee31')}
                 </p>
-                {/* 구분선(`w-px` 세로 규칙)을 두지 않는다. 구분선은 이 wrap
-                    컨테이너의 flex 아이템이라 자기도 줄바꿈 대상이 되고, 그러면
-                    어느 브레이크포인트를 잡아도 고아가 생긴다 — `sm`에 걸면
-                    640~734px에서 줄 끝에 규칙 하나가 매달리고, `md`로 올리면
-                    768px 이상에서 세 개가 통째로 둘째 줄로 밀린다(둘 다 실측).
-                    애초에 대비가 다크 1.34:1 · 라이트 1.23:1로 3:1에 한참 못 미쳐
-                    사실상 보이지 않는 장식이었다. 값마다 색이 다르고 아래에 라벨이
-                    붙으며 최소 32px 간격이 있어, 구분선 없이도 여섯은 각각 읽힌다. */}
-                <div className="inline-flex flex-wrap items-center justify-center gap-x-8 gap-y-6 rounded-lg border border-secondary-700 bg-secondary-800 px-8 py-6">
+                {/* wrap flex가 아니라 **그리드**다. flex는 카드를 내용 폭대로
+                    흘려보내 열이 줄마다 어긋났고, `items-center`가 카드 높이를
+                    서로 다르게 잡아 값이 위아래로 떴다. 그리드는 열 폭과 각 셀의
+                    시작선을 고정해 여섯 지표가 표처럼 읽힌다.
+
+                    구분선(`w-px` 세로 규칙)은 여전히 두지 않는다. 대비가 다크
+                    1.34:1 · 라이트 1.23:1로 3:1에 한참 못 미쳐 사실상 보이지 않는
+                    장식이었다. 값마다 색이 다르고 아래에 라벨이 붙으며 최소 32px
+                    간격이 있어, 구분선 없이도 여섯은 각각 읽힌다. */}
+                <div
+                    className={cn(
+                        SURFACE_CARD,
+                        'grid grid-cols-2 gap-x-8 gap-y-6 px-8 py-6 text-left sm:grid-cols-3 lg:grid-cols-6'
+                    )}
+                >
                     <StatCard
                         value={`${stats.indicatorWinRate}%`}
                         label={t('BacktestHero.394fff')}

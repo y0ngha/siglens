@@ -2,6 +2,7 @@ import { useTranslations } from 'next-intl';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { useId, type ReactNode } from 'react';
 import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
+import { SnapshotProseDisclosure } from './SnapshotProseDisclosure';
 import { formatSnapshotAsOf } from '@/shared/lib/formatSnapshotAsOf';
 import type { MarketProfileId } from '@/shared/config/marketProfile';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
@@ -43,9 +44,9 @@ interface SnapshotSummarySectionProps {
      *
      * 참이면 두 가지가 달라진다.
      *  - 자체 토글을 그리지 않는다(한 화면에 쉽게보기 두 개 방지)
-     *  - `data-snapshot-prose` 표식을 단다 → 라이브 위젯의 평이화가 뜨는 순간
-     *    CSS로 숨는다. 봇은 그 위젯의 평이화를 받지 못하므로(봇 가드) 표식이
-     *    서지 않고, 이 섹션이 그대로 보인다.
+     *  - 본문을 `<details>`로 감싸고 `data-snapshot-prose` 표식을 단다 →
+     *    라이브 위젯의 평이화가 뜨는 순간 **접힌다**(숨지 않는다).
+     *    봇은 그 위젯의 평이화를 받지 못하므로(봇 가드) 접히지도 않는다.
      */
     duplicatesLiveWidget?: boolean;
     children: ReactNode;
@@ -145,27 +146,8 @@ export function SnapshotSummarySection({
             ? `${displayName} · ${t(captionKey.fallback)}`
             : `${displayName} · ${formattedAsOf} ${t(captionKey.suffix)}`;
 
-    return (
-        <section
-            aria-labelledby={headingId}
-            /*
-             * `data-snapshot-prose`는 쉽게보기가 이 섹션을 숨길 때 쓰는 표식이다.
-             *
-             * 이 섹션은 크롤러에게 본문을 노출하려고 넣은 SSR 형제 노드라
-             * (2026-07 thin 콘텐츠 절벽 대응) **DOM에서 지우면 안 된다.** 그래서
-             * 조건부 렌더가 아니라 CSS로만 감춘다. 숨김 조건은 "평이화 산문이
-             * 실제로 존재하고 사용자가 쉽게보기를 켰을 때"뿐이고, 봇은 평이화를
-             * 아예 받지 않으므로(`withReaderViews`의 `isBotRequest` 분기) 이
-             * 섹션이 봇에게 숨겨지는 경우는 없다.
-             */
-            /*
-             * 자기 평이화를 가진 섹션은 표식을 달지 않는다 — 달면 쉽게보기일 때
-             * 스스로를 숨겨 토글째 사라진다. 표식은 "쉽게보기 위젯이 따로 있고
-             * 이 섹션은 같은 내용을 원문으로 중복 노출한다"는 뜻이다(차트 탭).
-             */
-            {...(duplicatesLiveWidget ? { 'data-snapshot-prose': '' } : {})}
-            className="flex flex-col gap-4 rounded-lg border border-secondary-700 bg-secondary-800 p-6"
-        >
+    const body = (
+        <>
             <div className="flex flex-col gap-1">
                 {/*
                  * audit fix FIX 5: 헤딩 램프가 역전돼 있었다 — 이 h2가
@@ -202,6 +184,37 @@ export function SnapshotSummarySection({
             >
                 {children}
             </PlainAnalysisSwitch>
+        </>
+    );
+
+    return (
+        <section
+            aria-labelledby={headingId}
+            /*
+             * `data-snapshot-prose`는 라이브 위젯이 이 섹션을 **접을** 때 쓰는 표식이다.
+             *
+             * 이 섹션은 크롤러에게 본문을 노출하려고 넣은 SSR 형제 노드라
+             * (2026-07 thin 콘텐츠 절벽 대응) **DOM에서 지우면 안 된다.** 예전에는
+             * `display: none`으로 감췄는데, 구글은 그 텍스트를 감가하고 접힌
+             * `<details>` 안의 텍스트는 동등하게 취급한다 — 그래서 숨김이 아니라
+             * 아코디언이다(`SnapshotProseDisclosure`).
+             *
+             * 자기 평이화를 가진 섹션(나머지 다섯 탭)은 표식도 접기도 없다 —
+             * 달면 쉽게보기일 때 스스로를 접어 토글째 사라진다. 표식은 "쉽게보기
+             * 위젯이 따로 있고 이 섹션은 같은 내용을 중복 노출한다"는 뜻이다(차트 탭).
+             */
+            {...(duplicatesLiveWidget ? { 'data-snapshot-prose': '' } : {})}
+            className="flex flex-col gap-4 rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+        >
+            {duplicatesLiveWidget ? (
+                <SnapshotProseDisclosure
+                    summaryLabel={`${t('SnapshotSummarySection.disclosureSummary')} · ${caption}`}
+                >
+                    {body}
+                </SnapshotProseDisclosure>
+            ) : (
+                body
+            )}
         </section>
     );
 }
