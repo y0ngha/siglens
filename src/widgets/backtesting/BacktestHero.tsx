@@ -45,7 +45,7 @@ function formatPeriodMonth(isoDate: string): string {
  */
 function StatCard({ value, label, valueClassName, subLabel }: StatCardProps) {
     return (
-        <div className="text-left">
+        <div>
             <div
                 className={cn(
                     'text-3xl leading-none font-bold tabular-nums sm:text-4xl',

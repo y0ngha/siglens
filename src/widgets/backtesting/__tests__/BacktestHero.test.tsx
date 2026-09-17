@@ -87,8 +87,9 @@ describe('BacktestHero', () => {
 
             const value = screen.getByText('62%');
             expect(value).toHaveClass('tabular-nums');
-            // 정렬은 카드 루트가 정한다 — 값은 그 안에서 블록으로 흐른다.
-            expect(value.parentElement).toHaveClass('text-left');
+            // 정렬은 그리드 컨테이너가 한 번만 정한다(카드 루트에는 중복하지 않는다) —
+            // 값은 그 안에서 블록으로 흐른다.
+            expect(value.closest('.text-left')).not.toBeNull();
         });
 
         it('서브라벨이 없는 카드도 슬롯을 그려 바닥선을 맞춘다', () => {
