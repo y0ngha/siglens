@@ -23,4 +23,5 @@ export { toRemovalUrlSetXml } from './lib/removalXml';
 export { buildPopularEntries } from './lib/buildPopularEntries';
 export { buildCryptoPopularEntries } from './lib/buildCryptoPopularEntries';
 export { buildStaticEntries } from './lib/buildStaticEntries';
+export { backtestingDataDate } from './lib/backtestingDataDate';
 export type { BuildStaticEntriesOptions } from './lib/buildStaticEntries';

@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { buildStaticEntries, toUrlSetXml } from '@/entities/sitemap-entry';
-import { loadStaticSitemapInputs } from '@/entities/sitemap-entry/server';
 import {
-    deriveBacktestStats,
-    validateBacktestData,
-} from '@/entities/backtest-case';
+    backtestingDataDate,
+    buildStaticEntries,
+    toUrlSetXml,
+} from '@/entities/sitemap-entry';
+import { loadStaticSitemapInputs } from '@/entities/sitemap-entry/server';
+import { validateBacktestData } from '@/entities/backtest-case';
 import backtestData from '@/app/[locale]/backtesting/data.json';
 import { SITEMAP_CACHE_CONTROL } from '@/app/api/sitemap/_shared/constants';
 import { rejectAiHost } from '@/app/api/sitemap/_shared/aiHostGuard';
@@ -22,7 +23,9 @@ export async function GET(request: Request): Promise<Response> {
             ...inputs,
             // 화면이 쓰는 것과 같은 파생값 — `/backtesting` 본문은 이 정적 데이터가
             // 전부라 마지막 케이스 진입일이 곧 콘텐츠 갱신 시각이다.
-            backtestingDataDate: backtestingDataDate(),
+            backtestingDataDate: backtestingDataDate(
+                validateBacktestData(backtestData).cases
+            ),
         })
     );
     return new NextResponse(xml, {
@@ -31,17 +34,4 @@ export async function GET(request: Request): Promise<Response> {
             'Cache-Control': SITEMAP_CACHE_CONTROL,
         },
     });
-}
-
-/**
- * `data.json`의 마지막 진입일(`YYYY-MM-DD`)을 Date로. 비어 있으면 `undefined`를
- * 돌려 빌더가 `SITE_BUILD_DATE`로 폴백한다.
- */
-function backtestingDataDate(): Date | undefined {
-    const { periodEnd } = deriveBacktestStats(
-        validateBacktestData(backtestData).cases
-    );
-    if (periodEnd === '') return undefined;
-    const parsed = new Date(`${periodEnd}T00:00:00.000Z`);
-    return Number.isNaN(parsed.getTime()) ? undefined : parsed;
 }
