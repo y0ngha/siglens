@@ -360,6 +360,26 @@ describe('OverallContent done branch', () => {
         expect(fundIdx).toBeGreaterThan(optsIdx);
     });
 
+    // 옵션이 있는 종목에서 AI가 옵션 bullet만 비운 경우 — 예전 빈 상태는 "옵션이
+    // 상장되어 있지 않다"고 사실과 반대로 단정했다(2026-09-17 운영 `/AAPL/overall`).
+    it('options bullets가 비면 옵션 섹션을 렌더하지 않는다', () => {
+        mockDoneState(makeDoneResult({ optionsBulletsKo: [] }));
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={true}
+                hasOptions={true}
+            />
+        );
+        expect(
+            screen.queryByRole('heading', { name: /옵션 시장/ })
+        ).not.toBeInTheDocument();
+        expect(
+            screen.queryByText(/옵션이 상장되어 있지 않거나/)
+        ).not.toBeInTheDocument();
+    });
+
     it('IntegratedConclusion("통합 결론") 헤딩을 렌더한다 (3축 종합 결론 X)', () => {
         mockDoneState(makeDoneResult());
         render(

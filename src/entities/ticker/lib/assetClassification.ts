@@ -95,6 +95,40 @@ const KNOWN_ETF_TICKERS: ReadonlySet<string> = new Set([
     'FBTC',
     'BITB',
     'ETHA',
+    // `POPULAR_TICKERS` [14](GSC 실측 수요)로 들어온 ETF·ETN·뮤추얼펀드.
+    // 여기 없으면 `stock`으로 떨어져 sitemap이 재무제표 없는 `/financials`를 싣고
+    // (2026-09-17 운영 크롤: 27개 전부 noindex인데 sitemap에 실림) JSON-LD에
+    // `Corporation` 노드가 붙는다. 뮤추얼펀드도 "재무제표·법인 노드가 없다"는
+    // 판정이 같아 이 분류를 쓴다.
+    'SOXX',
+    'QQQM',
+    'SCHD',
+    'SOXQ',
+    'AGQ',
+    'SPYG',
+    'FTEC',
+    'UCO',
+    'SGOL',
+    'QLD',
+    'ROM',
+    'NLR',
+    'EWY',
+    'QSPT',
+    'MRVU',
+    'MUU',
+    'MVLL',
+    'MSTY',
+    'ORCX',
+    'RKLZ',
+    'RKLX',
+    'RGTX',
+    'PLTY',
+    'IONZ',
+    'QTOP',
+    'NOWL',
+    'XDIV',
+    'FFFVX',
+    'TRPSX',
 ]);
 
 /**
@@ -178,7 +212,7 @@ export function classifyAsset(
     if (fmpSymbol?.startsWith('^')) return 'index';
     if (KNOWN_ETF_TICKERS.has(symbol.toUpperCase())) return 'etf';
     if (isKrEquitySymbol(symbol) && isKrEtfName(name)) return 'etf';
-    // KNOWN_ETF_TICKERS(60종 allowlist)를 비켜 간 미상장 펀드에 대한 안전망 —
+    // KNOWN_ETF_TICKERS allowlist를 비켜 간 미상장 펀드에 대한 안전망 —
     // SPCX("SPAC and New Issue ETF")가 그 allowlist 밖에서 stock으로 떨어져
     // Corporation 노드를 받았던 사례(SEO 감사 라운드 2 finding 1)의 재발 방지.
     if (isFundShapedName(name)) return 'etf';

@@ -14,7 +14,6 @@ import { MarketDataErrorNotice } from './MarketDataErrorNotice';
 import { useMarketSummary } from './hooks/useMarketSummary';
 import { useMarketBriefing } from './hooks/useMarketBriefing';
 import { MarketSummaryPanelSkeleton } from './MarketSummaryPanelSkeleton';
-import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 import type { ClientDashboardScope } from '@/shared/config/dashboardScope';
 import type {
     MarketBriefingResponse,
@@ -23,13 +22,12 @@ import type {
 } from '@y0ngha/siglens-core';
 
 interface BriefingRegionProps {
-    input: RunBriefingResult | null | 'error' | undefined;
+    input: RunBriefingResult | 'error' | undefined;
     scope: ClientDashboardScope;
 }
 
 function BriefingRegion({ input, scope }: BriefingRegionProps) {
     if (input === undefined) return null;
-    if (input === null) return <BotBlockedNotice />;
     if (input === 'error') return <BriefingErrorCard />;
     // Both 'cached' and 'done' have briefing + generatedAt — no Suspense needed
     // because run* is blocking and always returns a complete result.

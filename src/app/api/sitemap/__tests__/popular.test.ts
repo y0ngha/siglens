@@ -7,6 +7,10 @@ vi.mock('@/entities/sitemap-entry', () => ({
     buildPopularEntries: vi.fn().mockReturnValue([]),
     toUrlSetXml: vi.fn().mockReturnValue('<?xml version="1.0"?><urlset/>'),
 }));
+const PROSE_INPUTS = { symbolTabsWithProse: new Set(['AAPL:overall']) };
+vi.mock('@/entities/sitemap-entry/server', () => ({
+    loadPopularSitemapInputs: vi.fn(async () => PROSE_INPUTS),
+}));
 
 import { GET } from '@/app/api/sitemap/popular/route';
 import { buildPopularEntries, toUrlSetXml } from '@/entities/sitemap-entry';
@@ -34,11 +38,14 @@ describe('GET /api/sitemap/popular', () => {
         );
     });
 
-    it('passes a Date to buildPopularEntries', async () => {
+    it('passes a Date and the loaded prose inputs to buildPopularEntries', async () => {
         await GET(mainHostRequest());
 
         expect(mockBuildPopularEntries).toHaveBeenCalledTimes(1);
-        expect(mockBuildPopularEntries.mock.calls[0][0]).toBeInstanceOf(Date);
+        expect(mockBuildPopularEntries).toHaveBeenCalledWith(
+            expect.any(Date),
+            PROSE_INPUTS
+        );
     });
 
     it('passes built entries to toUrlSetXml', async () => {

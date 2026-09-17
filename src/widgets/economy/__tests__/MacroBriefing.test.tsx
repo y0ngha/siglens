@@ -30,14 +30,6 @@ describe('MacroBriefing', () => {
         ).toBeInTheDocument();
     });
 
-    it('input=null → 봇 차단 안내', () => {
-        mockUseBriefing.mockReturnValue({ input: null, refetch: noop });
-        render(<MacroBriefing peekSeed={null} />);
-        expect(
-            screen.getByText('크롤러 접근으로 분석을 생성하지 않았어요.')
-        ).toBeInTheDocument();
-    });
-
     it("input='error' → 오류 inline notice (role=alert)", () => {
         mockUseBriefing.mockReturnValue({ input: 'error', refetch: noop });
         render(<MacroBriefing peekSeed={null} />);

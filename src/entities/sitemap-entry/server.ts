@@ -13,12 +13,18 @@ import {
 } from '@/entities/market-news';
 import { DrizzleMarketNewsRepository } from '@/entities/market-news/api';
 import { DrizzleTermsRepository } from '@/entities/terms/api';
+import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
+import { SNAPSHOT_MAX_AGE_MS } from '@/entities/seo-snapshot';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { TERMS_KIND_VALUES, type TermsKind } from '@/shared/db/constants';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
 
 import { DrizzleRemovalSitemapCandidateSource } from './api';
 import type { BuildStaticEntriesOptions } from './lib/buildStaticEntries';
+import {
+    PROSE_GATED_SITEMAP_TABS,
+    type BuildPopularEntriesOptions,
+} from './lib/buildPopularEntries';
 import { buildRemovalEntries } from './lib/buildRemovalEntries';
 import {
     REMOVAL_CHART_CUTOFF_ISO,
@@ -218,6 +224,43 @@ export async function loadStaticSitemapInputs(): Promise<BuildStaticEntriesOptio
         };
     } catch (error) {
         console.error('[staticSitemapInputs] load failed:', error);
+        return {};
+    }
+}
+
+const POPULAR_SITEMAP_INPUT_CACHE_KEY = 'popular-sitemap-inputs:v1';
+
+async function loadUncachedSymbolTabsWithProse(): Promise<string[]> {
+    const rows = await new DrizzleSeoSnapshotRepository(
+        getDatabaseClient().db
+    ).listFreshSymbolTabs(
+        PROSE_GATED_SITEMAP_TABS,
+        DEFAULT_LOCALE,
+        new Date(Date.now() - SNAPSHOT_MAX_AGE_MS)
+    );
+    return rows.map(row => `${row.symbol}:${row.tab}`);
+}
+
+/**
+ * `/congress`·`/overall`은 스냅샷 산문이 없으면 페이지가 noindex다(각 `page.tsx`
+ * generateMetadata). sitemap이 그걸 모르고 전부 실었더니 2026-09-17 운영 크롤에서
+ * congress 108·overall 49개가 "sitemap에 있는데 noindex"였다. 페이지 게이트와 같은
+ * 신선도 상한(`SNAPSHOT_MAX_AGE_MS`)으로 행 존재만 읽는다.
+ *
+ * **실패하면 필터를 끈다**(`{}`) — 스냅샷을 못 읽었다고 sitemap에서 수백 URL을
+ * 빼는 것보다, 예전처럼 전부 싣는 편이 안전하다. 한 시간 캐시: 프리웜은 하룻밤에
+ * 한 바퀴라 그보다 자주 읽을 이유가 없다.
+ */
+export async function loadPopularSitemapInputs(): Promise<BuildPopularEntriesOptions> {
+    try {
+        const keys = await unstable_cache(
+            loadUncachedSymbolTabsWithProse,
+            [POPULAR_SITEMAP_INPUT_CACHE_KEY],
+            { revalidate: SECONDS_PER_HOUR }
+        )();
+        return { symbolTabsWithProse: new Set(keys) };
+    } catch (error) {
+        console.error('[popularSitemapInputs] load failed:', error);
         return {};
     }
 }

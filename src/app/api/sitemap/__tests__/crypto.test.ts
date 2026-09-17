@@ -8,6 +8,10 @@ vi.mock('@/entities/sitemap-entry', () => ({
     buildCryptoPopularEntries: vi.fn().mockReturnValue([]),
     toUrlSetXml: vi.fn().mockReturnValue('<?xml version="1.0"?><urlset/>'),
 }));
+const PROSE_INPUTS = { symbolTabsWithProse: new Set(['BTCUSD:overall']) };
+vi.mock('@/entities/sitemap-entry/server', () => ({
+    loadPopularSitemapInputs: vi.fn(async () => PROSE_INPUTS),
+}));
 
 import { GET } from '@/app/api/sitemap/crypto/route';
 import {
@@ -40,6 +44,15 @@ describe('GET /api/sitemap/crypto', () => {
         );
         expect(res.headers.get('Cache-Control')).toBe(
             'public, max-age=3600, stale-while-revalidate=3600'
+        );
+    });
+
+    it('passes the loaded prose inputs to buildCryptoPopularEntries', async () => {
+        await GET(mainHostRequest());
+
+        expect(mockBuildCryptoPopularEntries).toHaveBeenCalledWith(
+            expect.any(Date),
+            PROSE_INPUTS
         );
     });
 

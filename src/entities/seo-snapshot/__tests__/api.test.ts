@@ -1,4 +1,4 @@
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, gte, inArray } from 'drizzle-orm';
 import { seoAnalysisSnapshots } from '@/shared/db/schema';
 import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
 import type { SiglensDatabase } from '@/shared/db/types';
@@ -220,6 +220,40 @@ describe('DrizzleSeoSnapshotRepository.findGeneratedAtMap', () => {
         );
         expect(where.mock.calls[0]?.[0]).toEqual(
             inArray(seoAnalysisSnapshots.symbol, ['AAPL', 'MSFT'])
+        );
+    });
+});
+
+describe('DrizzleSeoSnapshotRepository.listFreshSymbolTabs', () => {
+    it('탭·독자 로케일 폴백·신선도로 거르고 본문 없이 (symbol, tab)만 읽는다', async () => {
+        const where = vi
+            .fn()
+            .mockResolvedValue([{ symbol: 'AAPL', tab: 'overall' }]);
+        const from = vi.fn(() => ({ where }));
+        const selectDistinct = vi.fn(() => ({ from }));
+        const repo = new DrizzleSeoSnapshotRepository({
+            selectDistinct,
+        } as unknown as SiglensDatabase);
+        const since = new Date('2026-09-10T00:00:00.000Z');
+
+        const result = await repo.listFreshSymbolTabs(
+            ['congress', 'overall'],
+            'ko',
+            since
+        );
+
+        expect(result).toEqual([{ symbol: 'AAPL', tab: 'overall' }]);
+        // 본문(JSONB)을 끌어오지 않는다 — sitemap 한 번에 수십 MB가 된다.
+        expect(selectDistinct).toHaveBeenCalledWith({
+            symbol: seoAnalysisSnapshots.symbol,
+            tab: seoAnalysisSnapshots.tab,
+        });
+        expect(where.mock.calls[0]?.[0]).toEqual(
+            and(
+                inArray(seoAnalysisSnapshots.tab, ['congress', 'overall']),
+                inArray(seoAnalysisSnapshots.locale, ['ko', 'en']),
+                gte(seoAnalysisSnapshots.generatedAt, since)
+            )
         );
     });
 });

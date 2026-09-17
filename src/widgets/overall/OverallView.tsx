@@ -61,7 +61,14 @@ export function OverallView({
         <div className="space-y-6">
             <OverallSummary headline={r.headlineKo} />
             <TechnicalSummary bullets={r.technicalBulletsKo} />
-            {isEquity && hasOptions && (
+            {/*
+                bullet이 비면 섹션째 뺀다. 예전엔 빈 상태로 "이 종목은 옵션이 상장되어
+                있지 않거나 분석할 데이터가 없어요"를 보였는데, `hasOptions`가 참인
+                종목에서 AI가 옵션 bullet만 비운 경우라 **사실과 반대인 단정**이었다
+                (2026-09-17 운영 렌더: `/AAPL/overall`이 같은 화면의 요약에서 풋콜비율을
+                인용하면서 옵션이 없다고 말했다).
+            */}
+            {isEquity && hasOptions && r.optionsBulletsKo.length > 0 && (
                 <OptionsSummary
                     bullets={r.optionsBulletsKo}
                     oiStale={optionsOiStale}

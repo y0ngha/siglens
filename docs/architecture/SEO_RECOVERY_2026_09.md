@@ -163,3 +163,62 @@ refresh 크롤로 돌아간다. 라우트는 남겨 둔다(재제출이 필요�
 - 롱테일 `noindex` 해제. 6월의 클릭은 강등 직전의 일시적 상태였다.
 - 82K URL짜리 removal sitemap 재제출. 발견 큐만 키운다.
 - 순위가 안 오른다고 인기 종목 목록을 늘리는 것 — `SITEMAP_SCOPE.md` §2 순서(prewarm → 용량 → 깊이 실측 → sitemap)가 먼저다.
+
+## 9. 2026-09-17 운영 렌더 감사 — 크롤·렌더 실측
+
+v0.79.1 배포 직후 운영을 **밖에서** 다시 봤다. 코드가 아니라 Google이 받는 응답이 기준이다.
+
+- 원시 HTML: sitemap 3,166 URL + 비색인 샘플 22개 전수, Googlebot 스마트폰 UA, `Accept-Encoding: gzip, br`.
+- JS 렌더: Playwright(Chromium)로 31개 페이지를 Googlebot 스마트폰 UA와 사람 UA로 각각 렌더해 DOM·콘솔·네트워크를 비교.
+- 종목 간 고유도: 탭별로 본문을 숫자·종목명 정규화한 뒤 12자 shingle을 만들고, 같은 탭 페이지의 30% 이상에 나오는 shingle을 "공통"으로 셌다.
+- Google 공식 기록: Search Status Dashboard 순위 사건, 스팸 정책 문서(2026-08-28 개정).
+
+### 9-1. Google 쪽 — 기다릴 업데이트가 없다
+
+| 사건 | 기간 |
+|---|---|
+| March 2026 spam / core | 03-24~25 / 03-27~04-08 |
+| May 2026 core | 05-21~06-02 |
+| June 2026 spam | 06-24~06-26 (절벽 직전) |
+| August 2026 spam | 08-18~08-20 |
+
+09-17 기준 진행 중인 롤아웃은 없고, 5월 이후 core update도 없다. 사이트 단위 재평가는 다음 core update가
+계기가 될 가능성이 크다. 그때 색인 코퍼스가 "산문이 있는 페이지"만 남아 있어야 한다.
+
+### 9-2. 깨끗했던 것 (수정 불필요)
+
+| 항목 | 실측 |
+|---|---|
+| 상태 코드 | 3,185 중 200이 3,180. 404 3건(가짜 티커·만료 공유·없는 카테고리)과 307 1건(`/portfolio`→로그인)은 의도 |
+| 리다이렉트 | http→https·www→apex 301, 끝 슬래시 308, 소문자 티커 301, `/ko/*` 301 |
+| canonical | 색인 대상 2,918개 전부 자기 참조 1개. `?utm_*`·`?tab=`은 깨끗한 URL로 정규화. `og:url` = canonical |
+| robots | 메타와 JS 렌더 후 값이 같다(렌더가 title·description·robots를 바꾸지 않음). 비-ko 로케일 noindex |
+| title | 중복 0, SERP 폭 55 이하, "종목명(티커) 주가 분석 — …" 형태 |
+| 헤딩·랜드마크 | 페이지당 h1 정확히 1개, header·nav·main·footer 존재, 이미지 alt 누락 0 |
+| 구조화 데이터 | JSON-LD 파싱 오류 0 |
+| 내부 링크 | 색인 대상 차트 페이지 전부 다른 종목 페이지에서 1개 이상(중앙값 56) 링크됨 |
+| 보안 헤더 | HSTS preload·nosniff·X-Frame-Options·frame-ancestors |
+
+### 9-3. 발견과 조치
+
+| # | 발견 | 규모 | 조치 |
+|---|---|---|---|
+| F1 | **UA별 본문 차이**: Googlebot 렌더의 `/market`·`/market/kr`에 "봇 트래픽으로 보여 분석 결과를 표시하지 않았어요…" 안내문. 사람 UA는 같은 시각에 브리핑 산문 약 400자 | 허브 2개 | 브리핑 액션 두 개에서 봇 분기 제거 (`fix/seo-live-audit`) |
+| F2 | **하이드레이션 실패**: React #418이 모든 방문자·Googlebot에게. 서버(node:22-alpine, ICU 78.2)가 "PM 6:30"·"US$1952.0억", 브라우저가 "오후 6:30"·"US$1952억" | 뉴스·재무제표·경제·뉴스 허브 | node:24-alpine + ICU 빌드 가드 (#838) |
+| F3 | **숫자만 바뀌는 탭**: `/{종목}/fear-greed` 공통 문장 92%, 고유 문자 중앙값 300자(차트 30%, 뉴스 26%) | 431 URL | 항상 noindex + sitemap 제외 (`fix/seo-live-audit`) |
+| F4 | **sitemap에 noindex URL 254개**: 봉 없는 상장폐지 15종, ETF·펀드를 `stock`으로 분류해 실린 `/financials`, 산문 없는 `/congress` 108·`/overall` 49 | 254 URL | 15종 제거, ETF 목록 보강, congress·overall은 신선한 스냅샷 보유 종목만 (`fix/seo-live-audit`) |
+| F5 | **얇은 meta description**: 평이화 첫 문장("애플 주가는 지금 332.41달러입니다.")만 담겨 70자 미만 | 차트 118·종합 104, 탭 간 중복 23쌍 | 평이화가 40자 미만이면 원문 필드로 (`fix/seo-live-audit`) |
+| F6 | **사실과 반대인 빈 상태**: `/AAPL/overall`이 요약에서 풋콜비율을 인용하면서 옵션 섹션은 "옵션이 상장되어 있지 않거나…" | 옵션 bullet이 빈 종합 탭 | 빈 섹션은 렌더하지 않음 (`fix/seo-live-audit`) |
+| F7 | **백테스팅 기간 표기**: 홈 카드·매니페스트 "2년", Dataset `temporalCoverage` 2024-04/2026-04 하드코딩, `dateModified`=배포 시각 | 전 페이지(매니페스트) | 기간 파생, 가짜 갱신일 제거 (`fix/seo-live-audit`) |
+
+### 9-4. 남긴 것과 이유
+
+| # | 발견 | 판단 |
+|---|---|---|
+| R1 | **AI 산문이 직접 매매 조언을 한다** — "지금 사기에는 위치가 불리합니다", "나눠서 사는 편이 낫습니다", "손절 기준은 …" (차트·종합 전 종목). `/about`의 "매수·매도를 권유하지 않습니다"와 정면으로 어긋나는 YMYL 신뢰 문제 | **siglens-core 프롬프트 작업**(SCOPE.md 가드). 여기서 고치지 않는다. 우선순위 1순위 후속 |
+| R2 | 배포마다 ISR 캐시가 비워진다(`siglens-isr/{GIT_SHA}/`). 배포 직후 Googlebot이 받는 원시 HTML 88%가 CF·ISR 둘 다 MISS, 응답 p50 1.05초·p99 4.5초, 동시 5요청에서 p50 3.3초 | 크롤 용량 신호. 배포 후 sitemap 상위 URL 프리웜 또는 배포 빈도 조절을 별건으로 |
+| R3 | 종목 탭 7종의 FAQ 3문항이 종목명만 바뀌는 템플릿(FAQ 리치 결과는 2023년부터 정부·보건 사이트 한정) | 공통 문장 비율을 올리는 주범 중 하나. 제거 여부는 다음 측정 후 |
+| R4 | `/news/forex`가 빈 카테고리라 noindex인데 sitemap·전역 내비에 있다. `/economy*`·`/backtesting` lastmod가 여전히 배포 시각 | 낮음 |
+| R5 | 원시 HTML에서 Suspense fallback과 본문이 `<main>`을 두 번 갖고, 차트 탭 h1이 sr-only로 먼저 온다(렌더 후엔 정상) | Google은 렌더 DOM을 본다. 비렌더 크롤러만 영향 |
+| R6 | 관련 종목에 무관한 링 이웃(AAPL → LENZ·UNBX), 백테스팅 표의 12px 미만 텍스트 1,117개, 경제 지표 "159075천명" 같은 미포맷 숫자 | 낮음 |
+| R7 | CWV: PSI 익명 할당량 소진으로 이번엔 미측정 | GSC › 코어 웹 바이탈에서 확인 |

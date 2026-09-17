@@ -434,18 +434,18 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
         });
     });
 
+    // 종목별 공포·탐욕 탭은 항상 noindex라 canonical이 없다(2026-09-17 운영 렌더 감사).
+    // 공유 카드의 og:url은 대문자 정규화된 주소로 남아야 한다.
     describe('[symbol]/fear-greed 페이지 (/AAPL/fear-greed)', () => {
-        it('소문자 aapl → canonical이 /AAPL/fear-greed', async () => {
+        it('소문자 aapl → noindex(canonical null), og:url은 /AAPL/fear-greed', async () => {
             const metadata = await generateFearGreedMetadata(
                 makeParams('aapl')
             );
-            expect(metadata.alternates?.canonical).toBe(
-                'https://siglens.io/AAPL/fear-greed'
-            );
-            expect(metadata.alternates?.canonical).not.toMatch(/\[symbol\]/i);
+            expect(metadata.alternates?.canonical).toBeNull();
+            expect(metadata.robots).toEqual({ index: false, follow: true });
             expect(String(metadata.title)).not.toMatch(/\[SYMBOL\]/i);
             expect(metadata.openGraph?.url).toBe(
-                metadata.alternates?.canonical
+                'https://siglens.io/AAPL/fear-greed'
             );
         });
     });
@@ -475,7 +475,8 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
             {
                 name: 'fear-greed',
                 fn: () => generateFearGreedMetadata(makeParams('tsla')),
-                expectedCanonical: 'https://siglens.io/TSLA/fear-greed',
+                // 항상 noindex — canonical을 내지 않는다.
+                expectedCanonical: null,
             },
         ] as const;
 

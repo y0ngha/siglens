@@ -111,8 +111,8 @@ test.describe('crypto symbol page', () => {
         // 아니다. 그래서 이 경로만 200 + 404 UI로 남는다.
         //
         // 노출은 제한적이다 — sitemap-crypto.xml은 `CRYPTO_DESCRIPTOR.tabs` 중 색인
-        // 가능한 `/`,`/overall`,`/news`,`/fear-greed`만 싣고(`/position`은 항상
-        // noindex라 제외, 2026-09-11) 탭 바도 크립토에선 이 탭들을 숨기므로 내부
+        // 가능한 `/`,`/overall`,`/news`만 싣고(`/position`·`/fear-greed`는 항상
+        // noindex라 제외, 2026-09-11·09-17) 탭 바도 크립토에선 이 탭들을 숨기므로 내부
         // 링크가 없다. 게다가 이 응답은
         // noindex 메타를 달고 나가므로 색인 위험이 아니라 크롤 예산 비용에 가깝다.
         //

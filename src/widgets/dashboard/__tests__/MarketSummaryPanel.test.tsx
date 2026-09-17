@@ -80,10 +80,6 @@ vi.mock('@/widgets/dashboard/BriefingCard', () => ({
     BriefingErrorCard: () => <div data-testid="briefing-error" />,
 }));
 
-vi.mock('@/shared/ui/BotBlockedNotice', () => ({
-    BotBlockedNotice: () => <div data-testid="bot-blocked" />,
-}));
-
 vi.mock('@/shared/lib/cn', () => ({
     cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
 }));
@@ -331,14 +327,6 @@ describe('MarketSummaryPanel', () => {
         mockUseMarketSummary.mockReturnValue(defaultSummaryReturn);
         render(<MarketSummaryPanel scope={TEST_SCOPE} />);
         expect(screen.queryByTestId('briefing')).not.toBeInTheDocument();
-        expect(screen.queryByTestId('bot-blocked')).not.toBeInTheDocument();
-    });
-
-    it('briefing null이면 봇 차단 안내를 렌더한다', () => {
-        mockUseMarketBriefing.mockReturnValue({ input: null });
-        mockUseMarketSummary.mockReturnValue(defaultSummaryReturn);
-        render(<MarketSummaryPanel scope={TEST_SCOPE} />);
-        expect(screen.getByTestId('bot-blocked')).toBeInTheDocument();
     });
 
     it('grid-cols-3 when sector group has 3 items', () => {

@@ -1,9 +1,7 @@
 'use server';
 
-import { headers } from 'next/headers';
 import { runMacroBriefing } from '@y0ngha/siglens-core';
 
-import { isBot } from '@/shared/api/isBot';
 import type { MacroBriefingActionResult } from '@/shared/lib/types';
 
 import { getEconomySnapshot } from '../api/economySnapshotCache';
@@ -11,14 +9,16 @@ import { getEconomySnapshot } from '../api/economySnapshotCache';
 /**
  * /economy 거시 브리핑 클라 트리거 — `submitMarketBriefingAction` 미러.
  *
- * 봇이면 즉시 차단(잡 미제출, 비용 0). 아니면 캐시된 EconomySnapshot을 입력으로
- * core `runMacroBriefing`에 위임(redis HIT 시 cached, miss 시 jobId).
+ * 캐시된 EconomySnapshot을 입력으로 core `runMacroBriefing`에 위임한다(redis HIT 시
+ * cached, miss 시 생성). **User-Agent로 가르지 않는다** — Googlebot WRS의 `/economy`
+ * 렌더가 브리핑 대신 차단 안내문을 색인하던 문제의 근거와 비용 판단은
+ * `submitMarketBriefingAction` JSDoc과 같다.
  *
  * ## 서버사이드 rate-limit 없음 (known risk, documented)
  *
  * 현재 이 action에는 IP 기반 서버사이드 rate-limit이 없다. 기본 dedup은 두 계층으로
  * 제공된다:
- * 1. **봇 UA 차단**: `isBot(requestHeaders)`로 크롤러/스캐너를 초기 차단한다.
+ * 1. **core 캐시 키**: 같은 시각 버킷·같은 입력이면 생성은 한 번뿐이고 이후는 cached다.
  * 2. **클라 mount-only 호출**: `useMacroBriefing` hook이 `useQuery` + `staleTime: Infinity`로
  *    마운트 1회만 호출한다(QueryClient 캐시가 살아있는 한 재호출 없음).
  *
@@ -31,13 +31,9 @@ export async function submitMacroBriefingAction(
     signal?: AbortSignal
 ): Promise<MacroBriefingActionResult> {
     try {
-        const requestHeaders = await headers();
-        if (isBot(requestHeaders)) {
-            return { briefing: null, botBlocked: true };
-        }
         const snapshot = await getEconomySnapshot();
         const briefing = await runMacroBriefing(snapshot, { signal });
-        return { briefing, botBlocked: false };
+        return { briefing };
     } catch (e) {
         console.error('[submitMacroBriefingAction] failed:', e);
         return { ok: false, error: 'server_error' };

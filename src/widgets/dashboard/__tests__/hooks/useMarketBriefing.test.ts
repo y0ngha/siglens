@@ -41,7 +41,6 @@ const CACHED_BRIEFING_RESULT: MarketBriefingActionResult = {
         } as unknown as MarketBriefingResponse,
         generatedAt: '2025-01-01T10:00:00Z',
     },
-    botBlocked: false,
 };
 
 const DONE_BRIEFING_RESULT: MarketBriefingActionResult = {
@@ -54,7 +53,6 @@ const DONE_BRIEFING_RESULT: MarketBriefingActionResult = {
         } as unknown as MarketBriefingResponse,
         generatedAt: '2025-01-01T11:00:00Z',
     },
-    botBlocked: false,
 };
 
 const PEEK_SEED: MarketBriefingResponse = {
@@ -142,11 +140,14 @@ describe('useMarketBriefing', () => {
         client.clear();
     });
 
-    it('(Worst) botBlocked인데 seed가 있으면 seed를 보여 준다 (색인 텍스트 보존)', async () => {
-        // Googlebot WRS 렌더에서 이 fetch는 봇으로 판정된다. seed를 버리면 SSR HTML에
-        // 있던 브리핑이 렌더된 DOM에서 안내문으로 교체돼 색인 대상 텍스트가 사라진다.
+    // 롤링 배포 중 구 컨테이너는 봇에게 `{ briefing: null, botBlocked: true }`를 보낸다.
+    // 타입에서는 사라진 모양이라 `as never`로 주입한다.
+    it('(Worst) 구 컨테이너의 botBlocked 응답인데 seed가 있으면 seed를 보여 준다 (색인 텍스트 보존)', async () => {
         const PEEK = { headlineKo: '시드 브리핑' } as never;
-        mockAction.mockResolvedValue({ briefing: null, botBlocked: true });
+        mockAction.mockResolvedValue({
+            briefing: null,
+            botBlocked: true,
+        } as never);
         const { client, wrapper } = makeWrapper();
         const { result } = renderHook(() => useMarketBriefing('us', PEEK), {
             wrapper,
@@ -157,20 +158,19 @@ describe('useMarketBriefing', () => {
         client.clear();
     });
 
-    it('(Worst) botBlocked → input null', async () => {
-        const botResult: MarketBriefingActionResult = {
+    it('(Worst) 구 컨테이너의 botBlocked 응답(seed 없음) → input undefined, 크래시 없음', async () => {
+        mockAction.mockResolvedValue({
             briefing: null,
             botBlocked: true,
-        };
-        mockAction.mockResolvedValue(botResult);
+        } as never);
         const { client, wrapper } = makeWrapper();
         const { result } = renderHook(() => useMarketBriefing('us'), {
             wrapper,
         });
 
-        await waitFor(() => {
-            expect(result.current.input).toBeNull();
-        });
+        await waitFor(() => expect(mockAction).toHaveBeenCalled());
+        await waitFor(() => expect(client.isFetching()).toBe(0));
+        expect(result.current.input).toBeUndefined();
         client.clear();
     });
 

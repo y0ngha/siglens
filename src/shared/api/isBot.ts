@@ -12,12 +12,15 @@ import { userAgent } from 'next/server';
  * robots.txt에 토큰을 추가할 때 여기도 같이 보는 것을 권한다.
  *
  * ⚠️ 이 함수 자체는 콘텐츠를 감추지 않는다 — 반환값만 준다. 다만 호출부
- * (SSE 분석 라우트, 게이트된 entity actions)가 이 값으로 **AI 생성 트리거를
- * 건너뛴다**(`skipEnqueueIfMiss` 등). 그래서 검색 색인 봇(Googlebot·Bingbot·
- * Yeti·Daumoa)이 캐시가 비어 있는 페이지를 크롤하면 생성이 트리거되지 않고
- * 안내문(BotBlockedNotice 등)을 그대로 본다 — 색인되는 건 그 렌더된 DOM이다.
- * 이것이 봇이 보게 되는 페이지에 SSR 캐시 시드(`peekBriefingStatic` 패턴)를
- * 두는 이유다: 시드가 있으면 캐시가 비어도 실제 콘텐츠가 먼저 노출된다.
+ * (SSE 분석 라우트의 종목 분석, 종목 탭 entity actions)가 이 값으로 **AI 생성
+ * 트리거를 건너뛴다**(`skipEnqueueIfMiss` 등). 그래서 검색 색인 봇(Googlebot·
+ * Bingbot·Yeti·Daumoa)이 캐시가 비어 있는 종목 페이지를 크롤하면 생성이 트리거되지
+ * 않고 안내문(BotBlockedNotice 등)을 그대로 본다 — 색인되는 건 그 렌더된 DOM이다.
+ * 이것이 봇이 보게 되는 페이지에 SSR 캐시 시드를 두는 이유다.
+ *
+ * 시장·거시 브리핑(`submitMarketBriefingAction`·`submitMacroBriefingAction`)은 이
+ * 값을 쓰지 않는다 — 생성이 시각 버킷당 한 번으로 접혀 비용이 작고, 봇 분기가
+ * `/market`·`/economy` 렌더에 차단 안내문을 색인시키고 있었다(2026-09-17 운영 감사).
  */
 const BOT_UA_RE = new RegExp(
     [

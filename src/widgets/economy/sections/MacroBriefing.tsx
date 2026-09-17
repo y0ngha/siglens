@@ -46,7 +46,7 @@ interface MacroBriefingErrorProps {
  *
  * 흐름:
  * 1. mount → `useMacroBriefing` — peekSeed가 있으면 그걸 먼저 표시.
- * 2. cached/done이면 briefing 본문 표시. error/봇 차단/미정 시 안내.
+ * 2. cached/done이면 briefing 본문 표시. error/미정 시 안내.
  *
  * error는 위젯이 inline notice로 처리한다 — throw로 라우트 단위 boundary에
  * 빠지면 indicator grid·calendar까지 unmount되므로 회피.
@@ -55,7 +55,6 @@ export function MacroBriefing({ peekSeed }: MacroBriefingProps) {
     const { input, refetch } = useMacroBriefing(peekSeed);
 
     if (input === undefined) return <MacroBriefingSkeleton />;
-    if (input === null) return <MacroBriefingBotBlocked />;
     if (input === 'error') return <MacroBriefingError onRetry={refetch} />;
     // `cached`와 `done`은 둘 다 briefing 본문을 들고 온다 — 구 구조에서는 `done`이
     // jobId만 주고 별도 폴링 뷰가 결과를 받아왔지만, 이제 한 번의 호출로 완결된다.
@@ -126,18 +125,6 @@ function MacroBriefingSkeleton() {
             <div className="mb-3 h-6 w-32 rounded bg-secondary-700" />
             <div className="mb-2 h-4 w-full rounded bg-secondary-700" />
             <div className="h-4 w-4/5 rounded bg-secondary-700" />
-        </section>
-    );
-}
-
-function MacroBriefingBotBlocked() {
-    const t = useTranslations('widgets.economy');
-    return (
-        <section
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6 text-sm text-secondary-300"
-            aria-label={t('MacroBriefing.b5f759')}
-        >
-            {t('MacroBriefing.903a71')}
         </section>
     );
 }
