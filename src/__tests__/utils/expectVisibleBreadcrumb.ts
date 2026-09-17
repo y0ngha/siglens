@@ -21,6 +21,9 @@ interface ListItemNode {
 export function expectVisibleBreadcrumbMatchesJsonLd(tree: ReactNode): void {
     const navs = findAllElementsByType(tree, Breadcrumb);
     expect(navs, '가시 브레드크럼은 한 번만 렌더돼야 한다').toHaveLength(1);
+    // findAllElementsByType은 ReactElement.props를 unknown으로 돌려준다 — 위에서
+    // toHaveLength(1)로 걸러 이 트리의 유일한 Breadcrumb 엘리먼트임을 보장했으므로
+    // props가 BreadcrumbProps({ trail })임이 컴포넌트 정의상 확실하다.
     const trail = (navs[0]?.props as { trail: readonly BreadcrumbCrumb[] })
         .trail;
 
@@ -46,6 +49,8 @@ export function expectVisibleBreadcrumbLabels(
 ): void {
     const navs = findAllElementsByType(tree, Breadcrumb);
     expect(navs, '가시 브레드크럼은 한 번만 렌더돼야 한다').toHaveLength(1);
+    // 위와 동일한 근거: toHaveLength(1)로 좁힌 유일한 Breadcrumb 엘리먼트라
+    // props shape(BreadcrumbProps)이 보장된다.
     const trail = (navs[0]?.props as { trail: readonly BreadcrumbCrumb[] })
         .trail;
     expect(trail.map(c => c.label)).toEqual(names);

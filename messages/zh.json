@@ -1987,7 +1987,7 @@
                 "aeeaee": "技术信号摘要",
                 "bdeea2": "K线形态",
                 "patternListLabel": "{v0} 图表形态列表",
-                "strategyListLabel": "{v0} 策略信号列表"
+                "strategyListLabel": "{v0} 技术信号列表"
             },
             "chartPageHeading": {
                 "heading": "{v0} 图表分析"

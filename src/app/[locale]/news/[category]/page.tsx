@@ -73,12 +73,20 @@ const REGION_KEYWORDS: Record<NavRegionId, readonly string[]> = {
  * JSON-LD와 화면 `<Breadcrumb>` 양쪽을 만든다 — 구글은 둘의 텍스트가 다르면
  * 마크업을 무시하므로 두 벌로 두면 한쪽만 고쳐져 자격을 잃는다.
  */
+/** `categoryBreadcrumbTrail`의 마디 하나. `BreadcrumbCrumb`(label/href)과는
+ * 필드명이 달라 재사용하지 않는다 — 이 마디는 JSON-LD와 화면 렌더 양쪽의
+ * 원본 자료이고, `Breadcrumb.tsx` shape 변환은 호출부에서 한다. */
+interface BreadcrumbTrailNode {
+    name: string;
+    path: string;
+}
+
 function categoryBreadcrumbTrail(
     cfg: CategoryConfig,
     categoryPath: string,
     /** `shared.config` 번역자. 이 헬퍼는 순수 함수라 훅을 부를 수 없어 주입받는다. */
     tNav: (key: string) => string
-): Array<{ name: string; path: string }> {
+): BreadcrumbTrailNode[] {
     const regionLink = regionsOf('news').find(r => r.region === cfg.region);
     const trail = [{ name: tNav('app.news.page.dc06c4'), path: '/news' }];
     if (regionLink && regionLink.href !== categoryPath) {

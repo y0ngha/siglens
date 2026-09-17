@@ -1987,7 +1987,7 @@
                 "aeeaee": "기술적 신호 요약",
                 "bdeea2": "차트 패턴",
                 "patternListLabel": "{v0} 차트 패턴 목록",
-                "strategyListLabel": "{v0} 전략 시그널 목록"
+                "strategyListLabel": "{v0} 기술적 신호 목록"
             },
             "chartPageHeading": {
                 "heading": "{v0} 차트 분석"

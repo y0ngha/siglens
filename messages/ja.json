@@ -1987,7 +1987,7 @@
                 "aeeaee": "テクニカルシグナル要約",
                 "bdeea2": "チャートパターン",
                 "patternListLabel": "{v0} チャートパターン一覧",
-                "strategyListLabel": "{v0} 戦略シグナル一覧"
+                "strategyListLabel": "{v0} テクニカルシグナル一覧"
             },
             "chartPageHeading": {
                 "heading": "{v0} チャート分析"

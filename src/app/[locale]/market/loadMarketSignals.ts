@@ -1,8 +1,18 @@
 import { cache } from 'react';
+import type {
+    MarketSummaryData,
+    SectorSignalsResult,
+} from '@y0ngha/siglens-core';
 import { getMarketSummaryStatic } from '@/entities/market-summary/api/marketSummaryStaticCache';
 import { getSectorSignalsStatic } from '@/entities/sector-signal/api/sectorSignalsStaticCache';
 import { DEFAULT_DASHBOARD_TIMEFRAME } from '@/shared/config/dashboard-tickers';
 import type { DashboardScope } from '@/shared/config/dashboardScope';
+
+export interface LoadMarketSignalsResult {
+    summary: MarketSummaryData;
+    sectorData: SectorSignalsResult;
+    degraded: boolean;
+}
 
 /**
  * `/market`·`/market/kr`의 두 로더를 한 번에 읽고 **degrade 판정까지 여기서 내린다.**
@@ -40,7 +50,7 @@ export async function loadMarketSignals(
     scope: DashboardScope,
     /** 섹터 신호 폴백의 `computedAt`. 본문은 dateHour를, metadata는 빈 값을 쓴다. */
     computedAtFallback = ''
-) {
+): Promise<LoadMarketSignalsResult> {
     const { summary, sectorData: loaded } = await loadMarketSignalsOnce(scope);
     // 섹터 로더가 실패했을 때만 호출부의 폴백 `computedAt`을 적용한다 — 캐시된
     // 결과는 호출부 간에 공유되므로 성공 결과의 `computedAt`은 건드리지 않는다.

@@ -32,7 +32,10 @@ import {
 } from '@/shared/lib/seo';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { marketCopyFor } from './copy';
-import { loadMarketSignals } from './loadMarketSignals';
+import {
+    loadMarketSignals,
+    type LoadMarketSignalsResult,
+} from './loadMarketSignals';
 
 /**
  * SSR seed를 만들어 dehydrate한다.
@@ -47,12 +50,10 @@ import { loadMarketSignals } from './loadMarketSignals';
  * 매 ISR 재생성마다 다른 timestamp가 HTML에 박혀 ISR write churn이 생긴다.
  * dateHour 버킷의 시작 시각으로 고정해 같은 시간 안에서는 결정적이 되게 한다.
  */
-type MarketSignals = Awaited<ReturnType<typeof loadMarketSignals>>;
-
 function buildDehydratedSeed(
     scope: DashboardScope,
-    summary: MarketSignals['summary'],
-    sectorDataSeed: MarketSignals['sectorData'],
+    summary: LoadMarketSignalsResult['summary'],
+    sectorDataSeed: LoadMarketSignalsResult['sectorData'],
     dateHour: string
 ): DehydratedState {
     const stableUpdatedAt = new Date(`${dateHour}:00:00.000Z`).getTime();
