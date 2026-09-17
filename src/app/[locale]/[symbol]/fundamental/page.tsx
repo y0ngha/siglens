@@ -58,12 +58,12 @@ import {
     buildSnapshotMetaDescription,
     buildSymbolFundamentalSeoContent,
     buildSymbolSeoContent,
-    buildWebPageJsonLd,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
     noindexSymbolMetadata,
     type FaqItem,
 } from '@/shared/lib/seo';
+import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import { getProfileResilient } from './getProfileResilient';
 import { FundamentalDegraded } from './FundamentalDegraded';
 import type { Metadata } from 'next';
@@ -172,6 +172,24 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
               locale
           )
         : null;
+
+    // **thin-content 게이트** — `congress/page.tsx`와 같은 모양이다.
+    //
+    // 회복 문서(`SEO_RECOVERY_2026_09.md` §5 A3)의 "산문 없는 탭은 noindex"를
+    // 이 탭에 적용한다. 프로필·지표 카드는 전 종목이 같은 표를 채우는 수치라
+    // 종목 고유 텍스트는 사실상 이 스냅샷 산문뿐이다.
+    //
+    // 지금 비용은 0이다(2026-09-17 실측: 주식 402종 전부 fresh 스냅샷 보유).
+    // 목적은 미래 회귀 방어다 — 2026-08 KR 대장주 프리웜 미도달 같은 사고 때
+    // 얇아진 페이지가 자동으로 색인에서 빠지고, 프리웜이 따라잡으면 자가치유된다.
+    //
+    // 술어는 본문 `showFundamentalProse`와 **같은** `hasFundamentalProse`다
+    // (MISTAKES §2). 존재 여부로 판정하면 내용이 빈 행에서 메타와 본문이 갈라진다.
+    // self-canonical·제목은 유지한다 — 페이지는 멀쩡히 살아 있다.
+    if (!hasFundamentalProse(snap?.content)) {
+        return { ...metadata, robots: { index: false, follow: true } };
+    }
+
     return snapshotDescription
         ? { ...metadata, description: snapshotDescription }
         : metadata;
@@ -644,12 +662,17 @@ export default async function FundamentalPage({ params }: Props) {
             : upper,
         assetInfo?.fmpSymbol
     );
-    const jsonLd = buildWebPageJsonLd({
+    const jsonLd = buildSymbolWebPageJsonLd({
         url,
         name: fullTitle,
         description,
         about: aboutNode,
         locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        // 화면에 실제로 그려지는 스냅샷일 때만 신선도를 주장한다 —
+        // 렌더 불가한 행은 본문에 한 글자도 남기지 않는다.
+        generatedAt: showFundamentalProse
+            ? fundamentalSnapshot?.generatedAt
+            : null,
     });
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd(

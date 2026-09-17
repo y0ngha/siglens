@@ -1,6 +1,9 @@
 import { getTranslations } from 'next-intl/server';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import { relatedSymbolsFor } from '@/shared/config/relatedSymbols';
+import {
+    relatedSymbolsFor,
+    type RelatedSymbol,
+} from '@/shared/config/relatedSymbols';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
@@ -105,9 +108,19 @@ async function resolveKoreanNames(
  */
 export async function RelatedSymbols({ symbol }: RelatedSymbolsProps) {
     const t = await getTranslations('views.symbol');
+    // 그룹 캡션 키는 네임스페이스가 갈린다 — 큐레이션 카테고리는 홈 카탈로그를
+    // 재사용한다(`RelatedSymbol.label` JSDoc). 그래서 루트 번역자로 전체 경로를 부른다.
+    const tRoot = await getTranslations();
     const related = relatedSymbolsFor(symbol);
     if (related.length === 0) return null;
     const koreanNames = await resolveKoreanNames(related.map(r => r.symbol));
+
+    // 선정 순서(테마 → 링)를 유지한 채 캡션별로 묶는다 — `Map`이 삽입 순서를
+    // 지키므로 관련성이 높은 그룹이 먼저 온다.
+    const groups = new Map<string, RelatedSymbol[]>();
+    for (const item of related) {
+        groups.set(item.label, [...(groups.get(item.label) ?? []), item]);
+    }
 
     return (
         <nav
@@ -117,37 +130,45 @@ export async function RelatedSymbols({ symbol }: RelatedSymbolsProps) {
             <h2 id="related-symbols-heading" className={HEADING_SECTION}>
                 {t('RelatedSymbols.c35191')}
             </h2>
-            <ul className="mt-3 flex flex-wrap gap-2">
-                {related.map(item => {
-                    // DB 이름이 우선 — 링크 대상 페이지의 제목과 같은 소스다.
-                    // 큐레이션 이름은 DB가 비었을 때의 폴백.
-                    const koreanName =
-                        koreanNames.get(item.symbol) ?? item.koreanName;
-                    return (
-                        <li key={item.symbol}>
-                            <Link
-                                href={`/${item.symbol}`}
-                                // prefetch={false}: 칩이 8개라 기본 prefetch면 뷰포트
-                                // 진입 시 RSC 페이로드 8벌(심볼당 ~35KB gzip)을 한꺼번에
-                                // 당긴다. 이 스트립은 탐색 보조라 즉시성이 필요 없다.
-                                prefetch={false}
-                                className="inline-flex items-baseline gap-1.5 rounded-full border border-border-control bg-secondary-900/60 px-3 py-1.5 text-sm text-secondary-300 transition-colors hover:border-primary-500 hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                            >
-                                {koreanName !== undefined && (
-                                    <span>{koreanName}</span>
-                                )}
-                                {/* href는 canonical `symbol`, 표기는 접미사를 뗀
-                                    `displayTicker` — 국내 종목의 `.KS`/`.KQ`는
-                                    검색량이 0이고 사이트의 title 표기도 이미 떼고
-                                    있다(RelatedSymbol JSDoc). */}
-                                <span className="font-mono text-xs text-secondary-400">
-                                    {item.displayTicker}
-                                </span>
-                            </Link>
-                        </li>
-                    );
-                })}
-            </ul>
+            {[...groups].map(([label, items]) => (
+                <div key={label} className="mt-3">
+                    {/* 칩만 나열하면 왜 관련 종목인지 알 수 없다 — 그룹의 근거를
+                        한 줄로 밝힌다(테마명 · 섹터명 · "같은 시장 종목"). */}
+                    <p className="text-xs text-secondary-500">{tRoot(label)}</p>
+                    <ul className="mt-1.5 flex flex-wrap gap-2">
+                        {items.map(item => {
+                            // DB 이름이 우선 — 링크 대상 페이지의 제목과 같은 소스다.
+                            // 큐레이션 이름은 DB가 비었을 때의 폴백.
+                            const koreanName =
+                                koreanNames.get(item.symbol) ?? item.koreanName;
+                            return (
+                                <li key={item.symbol}>
+                                    <Link
+                                        href={`/${item.symbol}`}
+                                        // prefetch={false}: 칩이 8개라 기본 prefetch면
+                                        // 뷰포트 진입 시 RSC 페이로드 8벌(심볼당 ~35KB
+                                        // gzip)을 한꺼번에 당긴다. 이 스트립은 탐색
+                                        // 보조라 즉시성이 필요 없다.
+                                        prefetch={false}
+                                        className="inline-flex items-baseline gap-1.5 rounded-full border border-border-control bg-secondary-900/60 px-3 py-1.5 text-sm text-secondary-300 transition-colors hover:border-primary-500 hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                    >
+                                        {koreanName !== undefined && (
+                                            <span>{koreanName}</span>
+                                        )}
+                                        {/* href는 canonical `symbol`, 표기는 접미사를
+                                            뗀 `displayTicker` — 국내 종목의 `.KS`/`.KQ`는
+                                            검색량이 0이고 사이트의 title 표기도 이미
+                                            떼고 있다(RelatedSymbol JSDoc). */}
+                                        <span className="font-mono text-xs text-secondary-400">
+                                            {item.displayTicker}
+                                        </span>
+                                    </Link>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </div>
+            ))}
         </nav>
     );
 }

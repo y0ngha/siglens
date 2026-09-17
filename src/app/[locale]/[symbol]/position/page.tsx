@@ -34,7 +34,6 @@ import {
 import {
     buildBreadcrumbJsonLd,
     buildSymbolSeoContent,
-    buildWebPageJsonLd,
     clampSeoDescription,
     NOINDEX_SYMBOL_METADATA,
     noindexSymbolMetadata,
@@ -44,6 +43,7 @@ import {
     type SeoTranslator,
     type SymbolSeoContent,
 } from '@/shared/lib/seo';
+import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -407,7 +407,7 @@ export default async function PositionPage({ params }: Props) {
         assetInfo.koreanName,
         tSeo
     );
-    const webPageJsonLd = buildWebPageJsonLd({
+    const webPageJsonLd = buildSymbolWebPageJsonLd({
         url: seo.url,
         name: seo.fullTitle,
         description: seo.description,

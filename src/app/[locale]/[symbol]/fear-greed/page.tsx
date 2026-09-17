@@ -22,6 +22,7 @@ import {
     getAssetInfoResilient,
 } from '@/entities/ticker';
 import { getSeedBarsStatic } from '@/entities/bars';
+import { buildTechnicalFacts } from '@/views/symbol/utils/technicalFacts';
 import { getDescriptor, marketProfileOf } from '@/shared/config/marketProfile';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { MS_PER_SECOND } from '@/shared/config/time';
@@ -29,13 +30,13 @@ import {
     buildBreadcrumbJsonLd,
     buildFaqJsonLd,
     buildSymbolSeoContent,
-    buildWebPageJsonLd,
     resolveSymbolFearGreedSeoContent,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
     noindexSymbolMetadata,
     type FaqItem,
 } from '@/shared/lib/seo';
+import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import {
     dehydrate,
     HydrationBoundary,
@@ -105,12 +106,51 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return NOINDEX_SYMBOL_METADATA;
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(ticker);
+    // 봉 유무를 게이트에 넘기기 위해 metadata 단계에서 먼저 확정한다. 본문이
+    // **같은 헬퍼·같은 인자**로 부르는 `getSeedBarsStatic`은 `React.cache`라 요청
+    // 스코프에서 접히므로 왕복이 늘지 않는다(차트 라우트와 같은 패턴).
+    // assetInfo가 없으면 marketProfile을 유도할 수 없어 조회를 건너뛴다 — 그 경우는
+    // 아래 `asset-missing` 분기가 이미 noindex로 처리한다.
+    const metadataBars = assetInfo
+        ? await getSeedBarsStatic(
+              ticker,
+              DEFAULT_TIMEFRAME,
+              marketProfileOf(assetInfo),
+              assetInfo.fmpSymbol
+          ).catch((e: unknown) => {
+              console.error(
+                  '[FearGreedPage] generateMetadata getSeedBarsStatic failed:',
+                  e
+              );
+              return null;
+          })
+        : null;
     const blockedMetadata = await getBlockedSymbolMetadata({
         locale,
         symbol: ticker,
         assetInfo,
         degraded,
         revalidateSeconds: revalidate,
+        // 이 탭의 본문은 사실상 봉에서 나온다 — `FearGreedFactsSummary`(SSR 수치
+        // 요약)와 클라 게이지가 전부 같은 봉을 읽는다. 봉이 없으면 크롤러가 받는
+        // 건 제목과 정적 FAQ뿐이라, 차트 탭과 같은 근거로 콘텐츠 게이트를 건다
+        // (2026-09-17 정책 감사 M1).
+        //
+        // 술어는 **본문과 동일하게** `buildTechnicalFacts`다. `bars.length > 0`은
+        // 봉 1개짜리 상장폐지 종목을 통과시키는데(등락률 분모로 직전 봉이 필요해
+        // 그 헬퍼는 2개 미만이면 null), 그러면 본문 요약 블록이 통째로 안 그려져
+        // 페이지가 껍데기가 된다. 게이트와 본문이 다른 조건을 쓰면 조용히
+        // 어긋난다(MISTAKES §2).
+        //
+        // 조회 **실패**(`null`)는 봉이 **없는** 것과 구분해 `undefined`로 남긴다 —
+        // 일시 장애가 전 종목 색인 해제로 번지지 않게 한다.
+        hasPriceData:
+            metadataBars === null
+                ? undefined
+                : buildTechnicalFacts(
+                      metadataBars.bars,
+                      metadataBars.indicators
+                  ) !== null,
     });
     if (blockedMetadata) return blockedMetadata;
     if (!assetInfo) return noindexSymbolMetadata(ticker, tSeo, locale);
@@ -181,7 +221,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
         assetInfo.fmpSymbol,
         assetClass
     );
-    const webPageJsonLd = buildWebPageJsonLd({
+    const webPageJsonLd = buildSymbolWebPageJsonLd({
         url,
         name: fullTitle,
         description,
@@ -278,6 +318,17 @@ export default async function SymbolFearGreedPage({ params }: Props) {
         );
     }
 
+    // 게이트(generateMetadata)와 **같은 술어**로 요약 렌더를 결정한다 — 봉이 1개뿐인
+    // 상장폐지 종목처럼 `buildTechnicalFacts`가 null을 내는 경우 색인은 막혔는데
+    // 화면만 요약을 그리면 둘이 어긋난다(MISTAKES §2).
+    const fearGreedFacts =
+        quantizedFgBars === null
+            ? null
+            : buildTechnicalFacts(
+                  quantizedFgBars.bars,
+                  quantizedFgBars.indicators
+              );
+
     return (
         <>
             <JsonLd data={webPageJsonLd} />
@@ -318,7 +369,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                     이미 로드된 quantizedFgBars(bars+indicators)로 동일 수치를
                     SSR HTML에 박아 크롤 가능하게 한다(결정적, AI/pre-warm 무관).
                     사용자에게도 동일하게 보이므로 클로킹 아님. */}
-                {quantizedFgBars && quantizedFgBars.bars.length > 0 && (
+                {fearGreedFacts !== null && quantizedFgBars !== null && (
                     <FearGreedFactsSummary
                         symbol={ticker}
                         bars={quantizedFgBars.bars}

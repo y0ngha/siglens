@@ -5,6 +5,7 @@ import {
     TICKER_CATEGORIES,
 } from '@/shared/config/popular-tickers';
 import { CRYPTO_CATEGORIES } from '@/shared/config/crypto-categories';
+import { TICKER_CATEGORY_LABEL_KEY } from '@/shared/config/tickerCategoryLabel';
 import { KR_EXCHANGE_SUFFIX_RE, KR_SYMBOL_RE } from '@/shared/config/ticker';
 import {
     MARKET_INDICES,
@@ -31,6 +32,22 @@ const GUARANTEED_RING_REACH = 1;
 /** 테마 피어가 모자랄 때 링을 넓혀 채우는 최대 반경(한쪽당). */
 const MAX_RING_REACH = 4;
 
+/**
+ * 이 링크가 **왜** 관련 종목인지.
+ *
+ * - `category` — 큐레이션 카테고리(홈 디스커버리 카드)나 GICS 섹터 구성종목.
+ * - `theme` — 사람이 적은 교차시장·보강 테마({@link CROSS_MARKET_THEME_GROUPS}).
+ * - `ring` — 관련성 데이터가 없어 배열 인접성으로 이은 같은 시장 이웃.
+ *
+ * 화면(`RelatedSymbols`)은 이 값 자체를 쓰지 않고 {@link RelatedSymbol.label}로
+ * 묶는다. 근거를 필드로 남기는 건 테스트와 다음 사람을 위해서다 — 링 이웃은
+ * "같은 시장"이라는 약한 근거라 캡션에서 테마 피어와 구분돼야 한다.
+ */
+export type RelatedSymbolReason = 'theme' | 'category' | 'ring';
+
+/** 링 이웃(관련성 데이터 없음)의 캡션 — "같은 시장 종목". */
+export const RING_GROUP_LABEL_KEY = 'views.symbol.relatedGroup.sameMarket';
+
 export interface RelatedSymbol {
     /** canonical 심볼 — **URL에 쓰는 값**. 거래소 접미사를 그대로 유지한다. */
     symbol: string;
@@ -49,6 +66,18 @@ export interface RelatedSymbol {
     displayTicker: string;
     /** 큐레이션 소스에 한글명이 있으면 앵커 텍스트에 함께 쓴다. 없으면 티커만. */
     koreanName?: string;
+    /** 이 링크가 뽑힌 근거. {@link RelatedSymbolReason} 참고. */
+    reason: RelatedSymbolReason;
+    /**
+     * 칩 그룹 캡션의 **메시지 키**(전체 경로).
+     *
+     * 문자열이 아니라 키인 이유: 이 모듈은 순수 config라 번역자를 부를 수 없고,
+     * 라벨을 한국어 리터럴로 들고 있으면 `/en/AAPL`의 칩 캡션만 한국어로 나간다
+     * (`tickerCategoryLabel.ts`가 같은 이유로 만들어졌다). 큐레이션 카테고리는
+     * 홈이 이미 쓰는 키를 **재사용**하고, 나머지만 `views.symbol.relatedGroup.*`에
+     * 새로 둔다 — 같은 라벨을 두 벌로 두면 조용히 갈라진다.
+     */
+    label: string;
 }
 
 /**
@@ -101,64 +130,87 @@ const KOREAN_NAMES: ReadonlyMap<string, string> = new Map<string, string>([
  * 근거가 못 되지만, 여기 적힌 관계는 사람이 판단한 근거다 —
  * `relatedSymbols.test.ts`의 "테마 근거 없이 시장을 넘지 않는다"가 그 구분을 고정한다.
  */
-const CROSS_MARKET_THEME_GROUPS: readonly (readonly string[])[] = [
+/** 라벨을 단 심볼 그룹. `label`은 메시지 키(전체 경로)다. */
+interface LabeledGroup {
+    label: string;
+    reason: Exclude<RelatedSymbolReason, 'ring'>;
+    symbols: readonly string[];
+}
+
+const CROSS_MARKET_THEME_GROUPS: readonly LabeledGroup[] = [
     // AI 반도체 밸류체인 — GPU/설계 → HBM/메모리 → 후공정 장비.
-    [
-        'NVDA',
-        '005930.KS', // 삼성전자
-        '000660.KS', // SK하이닉스
-        'AMD',
-        'AVGO',
-        'TSM',
-        'ASML',
-        'MU',
-        'AMAT',
-        '058470.KQ', // 리노공업
-        '403870.KQ', // HPSP
-    ],
+    {
+        label: 'views.symbol.relatedGroup.aiSemiValueChain',
+        reason: 'theme',
+        symbols: [
+            'NVDA',
+            '005930.KS', // 삼성전자
+            '000660.KS', // SK하이닉스
+            'AMD',
+            'AVGO',
+            'TSM',
+            'ASML',
+            'MU',
+            'AMAT',
+            '058470.KQ', // 리노공업
+            '403870.KQ', // HPSP
+        ],
+    },
     // 전기차·2차전지 — 완성차 → 배터리셀 → 소재.
-    [
-        'TSLA',
-        '005380.KS', // 현대차
-        '000270.KS', // 기아
-        '373220.KS', // LG에너지솔루션
-        '006400.KS', // 삼성SDI
-        'RIVN',
-        'LCID',
-        'NIO',
-        'XPEV',
-        'GM',
-        'F',
-        '012330.KS', // 현대모비스
-        '051910.KS', // LG화학
-        '247540.KQ', // 에코프로비엠
-        '086520.KQ', // 에코프로
-    ],
+    {
+        label: 'views.symbol.relatedGroup.evBattery',
+        reason: 'theme',
+        symbols: [
+            'TSLA',
+            '005380.KS', // 현대차
+            '000270.KS', // 기아
+            '373220.KS', // LG에너지솔루션
+            '006400.KS', // 삼성SDI
+            'RIVN',
+            'LCID',
+            'NIO',
+            'XPEV',
+            'GM',
+            'F',
+            '012330.KS', // 현대모비스
+            '051910.KS', // LG화학
+            '247540.KQ', // 에코프로비엠
+            '086520.KQ', // 에코프로
+        ],
+    },
     // 인터넷·플랫폼 — 검색/메신저/콘텐츠.
-    [
-        'GOOGL',
-        '035420.KS', // 네이버
-        '035720.KS', // 카카오
-        'META',
-        'NFLX',
-    ],
+    {
+        label: 'views.symbol.relatedGroup.internetPlatform',
+        reason: 'theme',
+        symbols: [
+            'GOOGL',
+            '035420.KS', // 네이버
+            '035720.KS', // 카카오
+            'META',
+            'NFLX',
+        ],
+    },
     // 바이오·제약 — 오리지널 신약 → 바이오시밀러/CDMO.
     //
     // 큐레이션 `healthcare-bio`가 5종뿐이라 링이 4칸을 채웠고, 그 자리에 FDX·UPS
     // (물류)가 붙었다. 같은 XLV 섹터의 대형 제약을 더해 8칸을 실제 피어로 메운다.
-    [
-        'LLY',
-        '207940.KS', // 삼성바이오로직스
-        '068270.KS', // 셀트리온
-        'ABBV',
-        'AMGN',
-        '196170.KQ', // 알테오젠
-        'JNJ',
-        'PFE',
-        'MRK',
-        'GILD',
-        'BMY',
-    ],
+    {
+        label: 'views.symbol.relatedGroup.bioPharma',
+        reason: 'theme',
+        symbols: [
+            'LLY',
+            '207940.KS', // 삼성바이오로직스
+            '068270.KS', // 셀트리온
+            'ABBV',
+            'AMGN',
+            '196170.KQ', // 알테오젠
+            'JNJ',
+            'PFE',
+            'MRK',
+            'GILD',
+            'BMY',
+        ],
+    },
 ];
 
 /**
@@ -179,17 +231,39 @@ const CROSS_MARKET_THEME_GROUPS: readonly (readonly string[])[] = [
  * 그 상수는 홈 디스커버리 카드에 그대로 렌더되는 **제품 카피**다. 관련종목
  * 스트립 품질을 이유로 홈 화면 구성을 바꾸는 건 범위를 넘는다.
  */
-const SUPPLEMENTAL_THEME_GROUPS: readonly (readonly string[])[] = [
+const SUPPLEMENTAL_THEME_GROUPS: readonly LabeledGroup[] = [
     // AI 소프트웨어·애플리케이션 — 반도체(하드웨어) 층과 구분되는 응용 층.
     // `PLTR`이 `software-cloud`에만 속해 CRWD·SNOW·NOW만 나왔다. 한국 투자자가
     // 팔란티어를 찾는 맥락은 SaaS가 아니라 AI다(사용자 제보).
-    ['PLTR', 'NVDA', 'BBAI', 'AI', 'SOUN', 'MSFT', 'GOOGL'],
+    {
+        label: 'views.symbol.relatedGroup.aiSoftware',
+        reason: 'theme',
+        symbols: ['PLTR', 'NVDA', 'BBAI', 'AI', 'SOUN', 'MSFT', 'GOOGL'],
+    },
 
     // 우주·항공우주·방산 — 큐레이션 `space` 6종에 eVTOL·방산을 더한다.
-    ['RKLB', 'ASTS', 'LUNR', 'RDW', 'PL', 'SPCE', 'ACHR', 'RTX', 'BA'],
+    {
+        label: 'views.symbol.relatedGroup.spaceDefense',
+        reason: 'theme',
+        symbols: [
+            'RKLB',
+            'ASTS',
+            'LUNR',
+            'RDW',
+            'PL',
+            'SPCE',
+            'ACHR',
+            'RTX',
+            'BA',
+        ],
+    },
 
     // 레버리지·인버스 ETF — 짝(롱/숏)이 같이 보여야 뜻이 통한다.
-    ['TQQQ', 'SQQQ', 'SOXL', 'SOXS', 'TSLL', 'NVDL', 'LABU'],
+    {
+        label: 'views.symbol.relatedGroup.leveragedEtf',
+        reason: 'theme',
+        symbols: ['TQQQ', 'SQQQ', 'SOXL', 'SOXS', 'TSLL', 'NVDL', 'LABU'],
+    },
 ];
 
 /**
@@ -204,18 +278,39 @@ const SUPPLEMENTAL_THEME_GROUPS: readonly (readonly string[])[] = [
  *   같은 섹터의 다른 종목"으로 타고 들어가는 동선이 생긴다.
  * - `CRYPTO_CATEGORIES` — 메이저/알트코인.
  */
-const THEME_GROUPS: readonly (readonly string[])[] = [
-    ...TICKER_CATEGORIES.map(c => c.items.map(i => i.symbol)),
-    ...SECTOR_ETFS.map(etf => [
-        etf.symbol,
-        ...SECTOR_STOCKS.filter(s => s.sectorSymbol === etf.symbol).map(
-            s => s.symbol
-        ),
-    ]),
-    ...CRYPTO_CATEGORIES.map(c => c.items.map(i => i.symbol)),
+const THEME_GROUPS: readonly LabeledGroup[] = [
+    ...TICKER_CATEGORIES.map(c => ({
+        // 홈 디스커버리 카드가 쓰는 키를 그대로 재사용한다 — 같은 카테고리가
+        // 화면마다 다른 이름으로 불리지 않게.
+        label: `widgets.home.${TICKER_CATEGORY_LABEL_KEY[c.label]}`,
+        reason: 'category' as const,
+        symbols: c.items.map(i => i.symbol),
+    })),
+    ...SECTOR_ETFS.map(etf => ({
+        label: `views.symbol.relatedGroup.sector.${etf.symbol}`,
+        reason: 'category' as const,
+        symbols: [
+            etf.symbol,
+            ...SECTOR_STOCKS.filter(s => s.sectorSymbol === etf.symbol).map(
+                s => s.symbol
+            ),
+        ],
+    })),
+    ...CRYPTO_CATEGORIES.map(c => ({
+        label: `views.symbol.relatedGroup.crypto.${c.id}`,
+        reason: 'category' as const,
+        symbols: c.items.map(i => i.symbol),
+    })),
     ...CROSS_MARKET_THEME_GROUPS,
     ...SUPPLEMENTAL_THEME_GROUPS,
 ];
+
+/** 테마 피어 한 건 — 어떤 그룹에서 왔는지(캡션 키·근거)를 달고 다닌다. */
+interface ThemePeer {
+    symbol: string;
+    label: string;
+    reason: Exclude<RelatedSymbolReason, 'ring'>;
+}
 
 /**
  * symbol → 그 심볼이 속한 **그룹별** 피어 목록(평탄화하지 않는다).
@@ -226,18 +321,26 @@ const THEME_GROUPS: readonly (readonly string[])[] = [
  * 만든 이유가 통째로 사라진다. 그래서 그룹을 나눠 두고 {@link themePeersOf}가
  * 라운드로빈으로 섞는다.
  */
-const THEME_PEER_GROUPS: ReadonlyMap<string, readonly (readonly string[])[]> =
-    (() => {
-        const acc = new Map<string, readonly (readonly string[])[]>();
-        for (const group of THEME_GROUPS) {
-            for (const symbol of group) {
-                const peers = group.filter(peer => peer !== symbol);
-                if (peers.length === 0) continue;
-                acc.set(symbol, [...(acc.get(symbol) ?? []), peers]);
-            }
+const THEME_PEER_GROUPS: ReadonlyMap<
+    string,
+    readonly (readonly ThemePeer[])[]
+> = (() => {
+    const acc = new Map<string, readonly (readonly ThemePeer[])[]>();
+    for (const group of THEME_GROUPS) {
+        for (const symbol of group.symbols) {
+            const peers = group.symbols
+                .filter(peer => peer !== symbol)
+                .map(peer => ({
+                    symbol: peer,
+                    label: group.label,
+                    reason: group.reason,
+                }));
+            if (peers.length === 0) continue;
+            acc.set(symbol, [...(acc.get(symbol) ?? []), peers]);
         }
-        return acc;
-    })();
+    }
+    return acc;
+})();
 
 /**
  * 그룹들을 **라운드로빈**으로 하나의 목록에 편다 — 각 그룹의 1번째 → 각 그룹의
@@ -252,19 +355,24 @@ const THEME_PEER_GROUPS: ReadonlyMap<string, readonly (readonly string[])[]> =
  * 도달하지 않는 경우(그룹 길이가 서로 다른 조합, 그룹 간 중복 피어)를 작은 입력으로
  * 직접 고정하기 위해서다.
  */
-export function roundRobinMerge(
-    groups: readonly (readonly string[])[]
-): string[] {
+export function roundRobinMerge<T>(
+    groups: readonly (readonly T[])[],
+    // 문자열 목록(테스트·단순 호출)은 항목 자체가 키다. 테마 피어처럼 객체를
+    // 넣을 때만 심볼 추출자를 넘긴다.
+    keyOf: (item: T) => string = String
+): T[] {
     const longest = groups.reduce((max, g) => Math.max(max, g.length), 0);
-    return [
-        ...new Set(
-            Array.from({ length: longest }, (_, rank) => rank).flatMap(rank =>
-                groups
-                    .map(group => group[rank])
-                    .filter((peer): peer is string => peer !== undefined)
-            )
-        ),
-    ];
+    const merged = new Map<string, T>();
+    for (const rank of Array.from({ length: longest }, (_, i) => i)) {
+        for (const group of groups) {
+            const peer = group[rank];
+            if (peer === undefined) continue;
+            const key = keyOf(peer);
+            // 첫 등장 위치를 유지한 채 접는다(`Map`도 삽입 순서를 지킨다).
+            if (!merged.has(key)) merged.set(key, peer);
+        }
+    }
+    return [...merged.values()];
 }
 
 /**
@@ -277,7 +385,15 @@ export function roundRobinMerge(
  * ({@link CROSS_MARKET_THEME_GROUPS})은 정당한 관련 종목이다.
  */
 export function themePeersOf(symbol: string): readonly string[] {
-    return roundRobinMerge(THEME_PEER_GROUPS.get(symbol.toUpperCase()) ?? []);
+    return themePeerEntriesOf(symbol).map(peer => peer.symbol);
+}
+
+/** {@link themePeersOf}와 같은 순서 — 그룹 캡션 키를 함께 돌려준다. */
+function themePeerEntriesOf(symbol: string): readonly ThemePeer[] {
+    return roundRobinMerge(
+        THEME_PEER_GROUPS.get(symbol.toUpperCase()) ?? [],
+        peer => peer.symbol
+    );
 }
 
 /**
@@ -388,32 +504,42 @@ export function relatedSymbolsFor(symbol: string): RelatedSymbol[] {
     const [ring, index] = position;
 
     const guaranteed = ringNeighbors(ring, index, GUARANTEED_RING_REACH);
+    const asRingPeer = (peer: string) => ({
+        symbol: peer,
+        label: RING_GROUP_LABEL_KEY,
+        reason: 'ring' as const,
+    });
     // 테마 피어가 8개를 넘어도 링 ±1 자리를 남겨 둔다 — 남기지 않으면 그 심볼이
     // 이웃에게 주던 인바운드 링크가 사라져 고아 0 보장이 깨진다.
     const themeBudget = Math.max(
         0,
         RELATED_SYMBOL_COUNT - new Set(guaranteed).size
     );
-    const theme = themePeersOf(upper).slice(0, themeBudget);
+    const theme = themePeerEntriesOf(upper).slice(0, themeBudget);
 
     const ordered = [
         ...theme,
-        ...guaranteed,
-        ...ringNeighbors(ring, index, MAX_RING_REACH),
+        ...guaranteed.map(asRingPeer),
+        ...ringNeighbors(ring, index, MAX_RING_REACH).map(asRingPeer),
     ];
 
     const seen = new Set<string>([upper]);
     const picked: RelatedSymbol[] = [];
     for (const candidate of ordered) {
-        if (seen.has(candidate)) continue;
-        seen.add(candidate);
-        const koreanName = KOREAN_NAMES.get(candidate);
-        const displayTicker = candidate.replace(KR_EXCHANGE_SUFFIX_RE, '');
-        picked.push(
-            koreanName === undefined
-                ? { symbol: candidate, displayTicker }
-                : { symbol: candidate, displayTicker, koreanName }
+        if (seen.has(candidate.symbol)) continue;
+        seen.add(candidate.symbol);
+        const koreanName = KOREAN_NAMES.get(candidate.symbol);
+        const displayTicker = candidate.symbol.replace(
+            KR_EXCHANGE_SUFFIX_RE,
+            ''
         );
+        picked.push({
+            symbol: candidate.symbol,
+            displayTicker,
+            reason: candidate.reason,
+            label: candidate.label,
+            ...(koreanName !== undefined && { koreanName }),
+        });
         if (picked.length === RELATED_SYMBOL_COUNT) break;
     }
     return picked;

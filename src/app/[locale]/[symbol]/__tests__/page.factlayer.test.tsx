@@ -250,6 +250,25 @@ describe('SymbolPage — FactLayer SSR integration', () => {
         );
     });
 
+    /**
+     * 크롤러 전용 `sr-only` **개요 문단**은 제거했다(2026-09-17 정책 감사 M3 —
+     * Google "숨겨진 텍스트"). 같은 내용은 가시 h1·`TechnicalFactsSummary`·FAQ가
+     * 이미 말한다. 반면 위 `sr-only` **h1**은 접근성 폴백이라 남는다 — 가시 h1과
+     * 텍스트가 동일하고 하이드레이션 후 교체되므로 정책 예외에 해당한다.
+     */
+    it('sr-only 개요 섹션은 없고, sr-only는 h1 하나뿐이다', async () => {
+        mockBarsStatic.mockResolvedValue({ bars: [], indicators: {} } as never);
+
+        const tree = await SymbolPage({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+
+        expect(findElementByType(tree, 'section')).toBeNull();
+        const srOnlyCount = (JSON.stringify(tree).match(/sr-only/g) ?? [])
+            .length;
+        expect(srOnlyCount).toBe(1);
+    });
+
     it('SSR 크롤용 h1: bars 빈 결과(cold)에서도 fallback h1은 존재한다(데이터 유무와 무관)', async () => {
         mockBarsStatic.mockResolvedValue({ bars: [], indicators: {} } as never);
 

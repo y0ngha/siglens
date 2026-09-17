@@ -125,9 +125,6 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     SITE_URL: 'https://siglens.io',
 }));
 
-vi.mock('@/shared/lib/getTodayIsoDay', () => ({
-    getTodayIsoDay: () => '2026-06-22',
-}));
 vi.mock('@/shared/lib/dateKey', () => ({
     todayKstIsoDate: () => '2026-06-22',
 }));

@@ -172,6 +172,30 @@ vi.mock('@/entities/bars/actions', () => ({
     getBarsAction: vi.fn(),
 }));
 
+/**
+ * 차트·fear-greed의 `generateMetadata`는 봉을 읽어 콘텐츠 게이트에 넘긴다.
+ * 조회가 실패하면(목이 없으면) 그 렌더는 degrade로 간주돼 noindex + canonical
+ * null이 된다 — 이 파일의 관심사는 canonical URL이므로 정상 봉을 준다.
+ */
+vi.mock('@/entities/bars', () => {
+    // vi.mock은 hoist되므로 픽스처를 팩토리 **안**에 둔다.
+    const barsFixture = {
+        bars: [
+            { time: 1, open: 1, high: 2, low: 1, close: 1, volume: 10 },
+            { time: 2, open: 1, high: 3, low: 1, close: 2, volume: 10 },
+        ],
+        indicators: {
+            rsi: [50, 55],
+            macd: [{ histogram: 0.2 }],
+            buySellVolume: [],
+        },
+    };
+    return {
+        getQuantizedBarsStatic: vi.fn().mockResolvedValue(barsFixture),
+        getSeedBarsStatic: vi.fn().mockResolvedValue(barsFixture),
+    };
+});
+
 vi.mock('@/entities/skill', () => ({
     countSkillFiles: vi.fn(() => Promise.resolve({ indicators: 13 })),
 }));
@@ -190,6 +214,24 @@ vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
             symbol: 'AAPL',
             tab: 'overall',
             content: { headlineKo: '테스트용 종합 결론' },
+            model: 'deepseek-v4.1-flash',
+            generatedAt: new Date(),
+            updatedAt: new Date(),
+        },
+        // `/fundamental`도 산문 없이는 noindex다(2026-09-17 thin 게이트).
+        {
+            symbol: 'AAPL',
+            tab: 'fundamental',
+            content: { overallConclusionKo: '테스트용 펀더멘털 결론' },
+            model: 'deepseek-v4.1-flash',
+            generatedAt: new Date(),
+            updatedAt: new Date(),
+        },
+        // `/news`도 산문·감정 카드가 둘 다 없으면 noindex다.
+        {
+            symbol: 'AAPL',
+            tab: 'news',
+            content: { currentDriverKo: '테스트용 뉴스 동인' },
             model: 'deepseek-v4.1-flash',
             generatedAt: new Date(),
             updatedAt: new Date(),
