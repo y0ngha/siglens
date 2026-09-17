@@ -17,7 +17,7 @@ vi.mock('@/entities/oauth-account', () => ({
     createPendingOAuthSignupStore: vi.fn(),
     createPendingOAuthSignupStoreFromEnv: vi.fn(),
 }));
-vi.mock('@/entities/terms');
+vi.mock('@/entities/terms/api');
 vi.mock('@/entities/agreement');
 vi.mock('@/entities/auth', () => ({
     applyAuthCookie: vi.fn((c: unknown) => c),
@@ -73,7 +73,7 @@ vi.mock('next/navigation', () => ({
 import { finalizeOAuthSignupAction } from '@/features/auth-oauth-consent/actions/finalizeOAuthSignupAction';
 import { redirect } from 'next/navigation';
 import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account';
-import { DrizzleTermsRepository } from '@/entities/terms';
+import { DrizzleTermsRepository } from '@/entities/terms/api';
 import { DrizzleUserRepository } from '@/entities/auth/api';
 import { DrizzleAgreementRepository } from '@/entities/agreement';
 import { createAuthSession } from '@/entities/auth';

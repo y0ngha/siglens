@@ -1,6 +1,16 @@
 import 'server-only';
 import { cache } from 'react';
-import { and, desc, eq, gte, isNotNull, isNull, sql } from 'drizzle-orm';
+import {
+    and,
+    desc,
+    eq,
+    gte,
+    inArray,
+    isNotNull,
+    isNull,
+    max,
+    sql,
+} from 'drizzle-orm';
 import type { NewsCardAnalysis } from '@y0ngha/siglens-core';
 import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
 import { getDatabaseClient } from '@/shared/db/client';
@@ -229,6 +239,38 @@ export class DrizzleMarketNewsRepository {
             ...item,
             tickers: rows[index]!.tickers,
         }));
+    }
+
+    /**
+     * 센티널 버킷별 **최신 기사 `publishedAt`**. sitemap의 news lastmod가 유일한
+     * 소비자다 — 행을 받아 와서 최댓값을 고르면 7일치를 통째로 전송하게 되므로
+     * 집계를 SQL로 내린다(`listCardsByCategory`가 컬럼을 줄인 것과 같은 이유).
+     *
+     * 발표가 없는 버킷은 결과에서 빠진다(빈 `MAX`는 행 자체가 없다).
+     */
+    async listLatestPublishedAt(
+        sentinels: readonly string[]
+    ): Promise<Map<string, Date>> {
+        if (sentinels.length === 0) return new Map();
+
+        const rows = await withRetry(
+            () =>
+                this.db
+                    .select({
+                        symbol: marketNews.symbol,
+                        latest: max(marketNews.publishedAt),
+                    })
+                    .from(marketNews)
+                    .where(inArray(marketNews.symbol, [...sentinels]))
+                    .groupBy(marketNews.symbol),
+            NEON_TRANSIENT_RETRY
+        );
+
+        return new Map(
+            rows.flatMap(row =>
+                row.latest === null ? [] : [[row.symbol, row.latest] as const]
+            )
+        );
     }
 
     /**

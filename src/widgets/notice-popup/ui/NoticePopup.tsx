@@ -8,6 +8,8 @@ import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { formatNoticeDate } from '@/entities/notice';
 import { toSafeHttpUrl } from '@/shared/lib/safeUrl';
+import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { useNoticePopup } from '../hooks/useNoticePopup';
 
 const MODAL_TITLE_ID = 'notice-modal-title';
@@ -67,7 +69,11 @@ export function NoticePopup() {
         <div
             role="presentation"
             data-testid="notice-modal-backdrop"
-            className="fixed inset-0 z-9999 flex items-center justify-center bg-secondary-950/80 px-4 backdrop-blur-sm"
+            // 모바일(<640px)은 전체 화면을 덮지 않는다 — 검색 유입의 첫 화면을
+            // 가리는 오버레이가 구글의 모바일 인터스티셜 판정 대상이다(2026-09
+            // 구글 정책 감사 L21). 화면 아래에 붙는 시트라 뒤 콘텐츠가 보인다.
+            // 데스크톱은 기존 중앙 오버레이 그대로(딤 + blur는 sm 이상에서만).
+            className="fixed inset-x-0 bottom-0 z-9999 sm:inset-0 sm:flex sm:items-center sm:justify-center sm:bg-secondary-950/80 sm:px-4 sm:backdrop-blur-sm"
             // 배경 클릭 닫기는 편의 기능(닫기 경로는 Escape + 닫기 버튼). target 비교로
             // 처리해 내부 컨테이너에 stopPropagation 핸들러를 달지 않는다 — role="dialog"에
             // 마우스 핸들러를 붙이면 a11y 린트가 "비인터랙티브 요소 인터랙션"으로 잡는다.
@@ -82,7 +88,15 @@ export function NoticePopup() {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={MODAL_TITLE_ID}
-                className="flex max-h-[85dvh] w-full max-w-md flex-col rounded-lg border border-secondary-700 bg-secondary-800 p-5"
+                // 바텀시트 토큰은 `MobileAnalysisSheet`과 맞춘다(상단 라운드,
+                // secondary-700 보더, safe-area 여백). sm 이상에서 중앙 카드로 돌아간다.
+                // SURFACE_CARD가 모든 모서리를 lg로 둥글리므로, 모바일 바텀시트는
+                // 하단만 명시적으로 되돌린다(`rounded-b-none`) — sm 이상에서
+                // `sm:rounded-b-lg`로 다시 카드 모양을 완성한다.
+                className={cn(
+                    SURFACE_CARD,
+                    'flex max-h-[85dvh] w-full flex-col rounded-b-none p-5 pb-[calc(env(safe-area-inset-bottom,0px)+1.25rem)] sm:max-w-md sm:rounded-b-lg sm:pb-5'
+                )}
             >
                 <div className="mb-3 flex shrink-0 items-start justify-between gap-3">
                     <h2

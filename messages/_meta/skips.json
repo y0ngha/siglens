@@ -73,49 +73,49 @@
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 60,
+        "line": 61,
         "reason": "seo-keywords-ko-only",
         "text": "한국 경제 지표"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 61,
+        "line": 62,
         "reason": "seo-keywords-ko-only",
         "text": "한국은행 기준금리"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 62,
+        "line": 63,
         "reason": "seo-keywords-ko-only",
         "text": "국내 소비자물가"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 63,
+        "line": 64,
         "reason": "seo-keywords-ko-only",
         "text": "한국 실업률"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 64,
+        "line": 65,
         "reason": "seo-keywords-ko-only",
         "text": "한국 GDP 성장률"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 65,
+        "line": 66,
         "reason": "seo-keywords-ko-only",
         "text": "국고채 금리"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 66,
+        "line": 67,
         "reason": "seo-keywords-ko-only",
         "text": "국내 경제 캘린더"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 67,
+        "line": 68,
         "reason": "seo-keywords-ko-only",
         "text": "수출 증가율"
     },
@@ -2125,121 +2125,121 @@
     },
     {
         "file": "src/shared/config/economyIndicatorsKr.ts",
-        "line": 47,
+        "line": 60,
         "reason": "catalog-backed-data",
         "text": "한국 기준금리"
     },
     {
         "file": "src/shared/config/economyIndicatorsKr.ts",
-        "line": 51,
+        "line": 64,
         "reason": "catalog-backed-data",
         "text": "한국은행 금융통화위원회가 정하는 기준금리예요. 높을수록 돈을 빌리는 비용이 커져 경기를 식혀요."
     },
     {
         "file": "src/shared/config/economyIndicatorsKr.ts",
-        "line": 56,
+        "line": 69,
         "reason": "catalog-backed-data",
         "text": "국고채 3년 낙찰금리"
     },
     {
         "file": "src/shared/config/economyIndicatorsKr.ts",
-        "line": 60,
+        "line": 73,
         "reason": "catalog-backed-data",
         "text": "정부가 3년 만기 국고채를 발행할 때 정해진 금리예요. 단기 시장금리의 기준으로 읽혀요."
     },
     {
         "file": "src/shared/config/economyIndicatorsKr.ts",
-        "line": 65,
+        "line": 78,
         "reason": "catalog-backed-data",
         "text": "국고채 10년 낙찰금리"
     },
     {
         "file": "src/shared/config/economyIndicatorsKr.ts",
-        "line": 69,
+        "line": 82,
         "reason": "catalog-backed-data",
         "text": "정부가 10년 만기 국고채를 발행할 때 정해진 금리예요. 장기 성장·물가 기대를 반영해요."
     },
     {
         "file": "src/shared/config/economyIndicatorsKr.ts",
-        "line": 74,
+        "line": 87,
         "reason": "catalog-backed-data",
         "text": "소비자물가 상승률"
     },
     {
         "file": "src/shared/config/economyIndicatorsKr.ts",
-        "line": 78,
+        "line": 91,
         "reason": "catalog-backed-data",
         "text": "1년 전과 비교한 소비자물가 상승 폭이에요. 한국은행 물가안정목표는 2%예요."
     },
     {
         "file": "src/shared/config/economyIndicatorsKr.ts",
-        "line": 83,
+        "line": 96,
         "reason": "catalog-backed-data",
         "text": "생산자물가 상승률"
     },
     {
         "file": "src/shared/config/economyIndicatorsKr.ts",
-        "line": 87,
+        "line": 100,
         "reason": "catalog-backed-data",
         "text": "기업이 파는 물건 가격의 1년 전 대비 상승 폭이에요. 보통 소비자물가보다 먼저 움직여요."
     },
     {
         "file": "src/shared/config/economyIndicatorsKr.ts",
-        "line": 92,
+        "line": 105,
         "reason": "catalog-backed-data",
         "text": "GDP 성장률(전년비)"
     },
     {
         "file": "src/shared/config/economyIndicatorsKr.ts",
-        "line": 95,
+        "line": 108,
         "reason": "catalog-backed-data",
         "text": "1년 전 같은 분기와 비교한 실질 국내총생산 증가율이에요."
     },
     {
         "file": "src/shared/config/economyIndicatorsKr.ts",
-        "line": 100,
+        "line": 113,
         "reason": "catalog-backed-data",
         "text": "산업생산(전년비)"
     },
     {
         "file": "src/shared/config/economyIndicatorsKr.ts",
-        "line": 104,
+        "line": 117,
         "reason": "catalog-backed-data",
         "text": "광공업 생산량의 1년 전 대비 증감이에요. 제조업 경기를 가장 빠르게 보여줘요."
     },
     {
         "file": "src/shared/config/economyIndicatorsKr.ts",
-        "line": 109,
+        "line": 122,
         "reason": "catalog-backed-data",
         "text": "수출(전년비)"
     },
     {
         "file": "src/shared/config/economyIndicatorsKr.ts",
-        "line": 113,
+        "line": 126,
         "reason": "catalog-backed-data",
         "text": "수출액의 1년 전 대비 증감이에요. 수출 비중이 큰 한국 경제에서 가장 중요한 선행 지표예요."
     },
     {
         "file": "src/shared/config/economyIndicatorsKr.ts",
-        "line": 118,
+        "line": 131,
         "reason": "catalog-backed-data",
         "text": "소비자심리지수"
     },
     {
         "file": "src/shared/config/economyIndicatorsKr.ts",
-        "line": 122,
+        "line": 135,
         "reason": "catalog-backed-data",
         "text": "소비자가 느끼는 경기 체감이에요. 100보다 크면 낙관, 작으면 비관이 우세하다는 뜻이에요."
     },
     {
         "file": "src/shared/config/economyIndicatorsKr.ts",
-        "line": 127,
+        "line": 140,
         "reason": "catalog-backed-data",
         "text": "실업률"
     },
     {
         "file": "src/shared/config/economyIndicatorsKr.ts",
-        "line": 130,
+        "line": 143,
         "reason": "catalog-backed-data",
         "text": "일할 의사가 있는 사람 중 일자리를 찾지 못한 비율이에요."
     },
@@ -3008,6 +3008,12 @@
     {
         "file": "src/shared/config/tickerCategoryLabel.ts",
         "line": 16,
+        "reason": "catalog-backed-data",
+        "text": "레버리지 ETF"
+    },
+    {
+        "file": "src/shared/config/tickerCategoryLabel.ts",
+        "line": 44,
         "reason": "catalog-backed-data",
         "text": "레버리지 ETF"
     },

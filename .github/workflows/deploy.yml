@@ -73,6 +73,13 @@ jobs:
                   IMAGE_TAG="${GITHUB_REF_NAME#v}"
                   echo "IMAGE_TAG=${IMAGE_TAG}" >> "$GITHUB_ENV"
 
+            # 태그 커밋 시각 = 이 릴리스의 "콘텐츠가 마지막으로 바뀐 시점". 빌드가
+            # 도는 시각(=재실행하면 달라짐)이 아니라 커밋 시각이어야 같은 태그를
+            # 다시 빌드해도 sitemap lastmod가 움직이지 않는다.
+            - name: Derive NEXT_BUILD_DATE (tag commit time)
+              run: |
+                  echo "NEXT_BUILD_DATE=$(git log -1 --format=%cI)" >> "$GITHUB_ENV"
+
             - name: Configure AWS credentials (OIDC)
               uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
               with:
@@ -174,6 +181,7 @@ jobs:
                       `# GIT_SHA carries the release version (IMAGE_TAG), not a commit SHA. It is baked as buildId and used as the per-release S3 cache prefix (siglens-isr/<GIT_SHA>/...).` \
                       --build-arg PRERENDER_LOCALES=${{ vars.PRERENDER_LOCALES }} \
                       --build-arg GIT_SHA=${IMAGE_TAG} \
+                      --build-arg NEXT_BUILD_DATE=${NEXT_BUILD_DATE} \
                       `# ⚠️ 버킷 이름은 infra/aws/12-isr-cache.sh, infra/aws/deploy.sh, .github/workflows/deploy.yml 3곳에서 동기화되어야 한다.` \
                       --build-arg ISR_CACHE_BUCKET=siglens-isr-cache \
                       --load \

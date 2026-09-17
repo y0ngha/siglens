@@ -18,6 +18,12 @@ ARG NEXT_PUBLIC_ADSENSE_SLOT_PANEL_BOTTOM
 ARG NEXT_PUBLIC_ADSENSE_SLOT_PROGRESS
 ARG GIT_SHA
 ENV GIT_SHA=$GIT_SHA
+# 릴리스 태그 커밋 시각(ISO 8601). `SITE_BUILD_DATE`(shared/lib/seo.ts)가 이 값을
+# 읽어 배포로만 바뀌는 페이지의 sitemap lastmod와 JSON-LD 날짜를 만든다. 없으면
+# 모듈 로드 시각으로 떨어져 **프로세스가 재기동될 때마다** lastmod가 앞으로 뛴다
+# (sitemap 라우트가 force-dynamic이라 그대로 크롤러에 나간다).
+ARG NEXT_BUILD_DATE
+ENV NEXT_BUILD_DATE=$NEXT_BUILD_DATE
 # ISR_CACHE_BUCKET을 빌드 타임에 노출해야 next.config.ts의 cacheHandler 게이트
 # (NODE_ENV==='production' && ISR_CACHE_BUCKET)가 빌드 시 true로 평가되어 핸들러가
 # standalone server.js에 baked된다. 런타임 값은 runner가 SSM/--env-file로 별도 주입한다
@@ -62,6 +68,11 @@ WORKDIR /app
 # siglens-isr/dev/ S3 prefix and breaking per-release cache isolation.
 ARG GIT_SHA
 ENV GIT_SHA=$GIT_SHA
+# NEXT_BUILD_DATE도 스테이지마다 다시 선언해야 한다 — `SITE_BUILD_DATE`는 모듈
+# 로드 시점(=런타임 서버 기동)에 평가되므로, 빌더 스테이지에만 두면 prerender된
+# 페이지만 맞고 force-dynamic인 sitemap은 기동 시각을 계속 쓴다.
+ARG NEXT_BUILD_DATE
+ENV NEXT_BUILD_DATE=$NEXT_BUILD_DATE
 ENV NODE_ENV=production \
     PORT=3000 \
     HOSTNAME=0.0.0.0

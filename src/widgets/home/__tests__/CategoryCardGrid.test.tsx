@@ -82,3 +82,43 @@ describe('CategoryCardGrid', () => {
         expect(screen.queryByRole('heading', { level: 3 })).toBeNull();
     });
 });
+
+/**
+ * 카드가 티커 칩만 나열하면 크롤러가 받는 것은 링크 묶음뿐이다(2026-09 구글 정책
+ * 감사 L20). 카테고리가 무엇을 묶은 것인지 한 문장이 h3 아래 있어야 한다.
+ */
+describe('CategoryCardGrid 카테고리 설명', () => {
+    it('descriptionKey가 있으면 h3 아래 한 줄 설명을 렌더한다', () => {
+        render(
+            <CategoryCardGrid
+                heading="암호화폐 인기 종목"
+                ariaLabel="암호화폐 인기 종목 탐색"
+                cards={[
+                    {
+                        ...CARDS[0],
+                        descriptionKey: 'categoryDescription.Major',
+                    },
+                ]}
+            />
+        );
+
+        const description = screen.getByText(
+            /시가총액 상위 암호화폐 — 시장 전체 흐름의 기준이 됩니다\./
+        );
+        expect(description.tagName).toBe('P');
+        expect(
+            screen.getByRole('heading', { level: 3 }).nextElementSibling
+        ).toBe(description);
+    });
+
+    it('descriptionKey가 없으면 설명 단락을 만들지 않는다', () => {
+        const { container } = render(
+            <CategoryCardGrid
+                heading="암호화폐 인기 종목"
+                ariaLabel="암호화폐 인기 종목 탐색"
+                cards={CARDS}
+            />
+        );
+        expect(container.querySelectorAll('p')).toHaveLength(0);
+    });
+});

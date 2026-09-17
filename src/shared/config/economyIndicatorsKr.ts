@@ -40,9 +40,22 @@ export function normalizeKrEventName(event: string): string {
     return event.replace(/\s*\([^)]*\)\s*$/, '').trim();
 }
 
+/**
+ * 사실 문단(`EconomyKrMacroFacts`)이 **이름으로 집어 오는** 지표들.
+ *
+ * 레지스트리 항목이 이 상수를 그대로 쓰므로 이벤트명을 고쳐도 둘이 갈라지지 않는다 —
+ * 문자열을 양쪽에 따로 적으면 한쪽만 바뀌었을 때 문단이 조용히 사라진다.
+ */
+export const KR_INDICATOR_EVENT = {
+    baseRate: 'Interest Rate Decision',
+    ktb10y: '10-Year KTB Auction',
+    cpi: 'Inflation Rate YoY',
+    unemployment: 'Unemployment Rate',
+} as const;
+
 export const KR_ECONOMY_INDICATORS: readonly KrEconomyIndicatorMeta[] = [
     {
-        event: 'Interest Rate Decision',
+        event: KR_INDICATOR_EVENT.baseRate,
         category: 'rates',
         label: '한국 기준금리',
         unit: '%',
@@ -60,7 +73,7 @@ export const KR_ECONOMY_INDICATORS: readonly KrEconomyIndicatorMeta[] = [
             '정부가 3년 만기 국고채를 발행할 때 정해진 금리예요. 단기 시장금리의 기준으로 읽혀요.',
     },
     {
-        event: '10-Year KTB Auction',
+        event: KR_INDICATOR_EVENT.ktb10y,
         category: 'rates',
         label: '국고채 10년 낙찰금리',
         unit: '%',
@@ -69,7 +82,7 @@ export const KR_ECONOMY_INDICATORS: readonly KrEconomyIndicatorMeta[] = [
             '정부가 10년 만기 국고채를 발행할 때 정해진 금리예요. 장기 성장·물가 기대를 반영해요.',
     },
     {
-        event: 'Inflation Rate YoY',
+        event: KR_INDICATOR_EVENT.cpi,
         category: 'inflation',
         label: '소비자물가 상승률',
         unit: '%',
@@ -122,7 +135,7 @@ export const KR_ECONOMY_INDICATORS: readonly KrEconomyIndicatorMeta[] = [
             '소비자가 느끼는 경기 체감이에요. 100보다 크면 낙관, 작으면 비관이 우세하다는 뜻이에요.',
     },
     {
-        event: 'Unemployment Rate',
+        event: KR_INDICATOR_EVENT.unemployment,
         category: 'labor',
         label: '실업률',
         unit: '%',
