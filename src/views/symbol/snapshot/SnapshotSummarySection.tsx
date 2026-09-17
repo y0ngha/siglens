@@ -44,8 +44,10 @@ interface SnapshotSummarySectionProps {
      *
      * 참이면 두 가지가 달라진다.
      *  - 자체 토글을 그리지 않는다(한 화면에 쉽게보기 두 개 방지)
-     *  - 본문을 `<details>`로 감싸고 `data-snapshot-prose` 표식을 단다 →
-     *    라이브 위젯의 평이화가 뜨는 순간 **접힌다**(숨지 않는다).
+     *  - 본문을 `SnapshotProseDisclosure`(`<details>`)로 감싸고 식별용
+     *    `data-snapshot-prose` 표식을 단다. 접기는 그 컴포넌트가 루트의
+     *    `data-analysis-view`를 관찰해 하는 것이라(표식 자체엔 CSS 규칙이
+     *    없다) 라이브 위젯의 평이화가 뜨는 순간 **접힌다**(숨지 않는다).
      *    봇은 그 위젯의 평이화를 받지 못하므로(봇 가드) 접히지도 않는다.
      */
     duplicatesLiveWidget?: boolean;
@@ -191,7 +193,10 @@ export function SnapshotSummarySection({
         <section
             aria-labelledby={headingId}
             /*
-             * `data-snapshot-prose`는 라이브 위젯이 이 섹션을 **접을** 때 쓰는 표식이다.
+             * `data-snapshot-prose`는 이 섹션을 접지 않는다 — 식별/테스트용 표식일
+             * 뿐이다. 실제 접기는 `SnapshotProseDisclosure`가 루트의
+             * `data-analysis-view`를 `MutationObserver`로 관찰해 `<details>`의
+             * `open`을 토글하는 방식으로 한다(CSS 규칙 없음).
              *
              * 이 섹션은 크롤러에게 본문을 노출하려고 넣은 SSR 형제 노드라
              * (2026-07 thin 콘텐츠 절벽 대응) **DOM에서 지우면 안 된다.** 예전에는

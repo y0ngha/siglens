@@ -404,25 +404,29 @@ export default async function SymbolPage({ params }: Props) {
                                             v0: displayName,
                                         })}
                                     </h1>
-                                    {quantizedFactBars &&
-                                    quantizedFactBars.bars.length > 0 ? (
-                                        <TechnicalFactsSummary
-                                            symbol={ticker}
-                                            bars={quantizedFactBars.bars}
-                                            indicators={
-                                                quantizedFactBars.indicators
-                                            }
-                                            marketProfile={marketProfile}
-                                        />
-                                    ) : (
-                                        // md+에서는 wrapper가 높이를 놓았으므로
-                                        // 자리표시자가 직접 차트 높이를 예약한다
-                                        // (안 그러면 0으로 접혀 CLS가 난다).
-                                        <div
-                                            className="flex min-h-0 flex-1 flex-col overflow-hidden bg-secondary-900 md:h-(--symbol-chart-h) md:flex-none"
-                                            aria-hidden="true"
-                                        />
-                                    )}
+                                    {/* md+에서는 바깥 wrapper가 높이를 놓았으므로(md:h-auto)
+                                        이 래퍼가 두 분기(사실 요약 / 자리표시자) 공통으로
+                                        차트 높이를 예약한다 — 분기 하나만 예약하면 다른
+                                        분기가 0으로 접혀 CLS가 난다(둘 다 같은 래퍼를
+                                        쓰게 해 재발을 구조적으로 막는다). */}
+                                    <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:h-(--symbol-chart-h) md:flex-none">
+                                        {quantizedFactBars &&
+                                        quantizedFactBars.bars.length > 0 ? (
+                                            <TechnicalFactsSummary
+                                                symbol={ticker}
+                                                bars={quantizedFactBars.bars}
+                                                indicators={
+                                                    quantizedFactBars.indicators
+                                                }
+                                                marketProfile={marketProfile}
+                                            />
+                                        ) : (
+                                            <div
+                                                className="h-full bg-secondary-900"
+                                                aria-hidden="true"
+                                            />
+                                        )}
+                                    </div>
                                 </>
                             }
                         >
