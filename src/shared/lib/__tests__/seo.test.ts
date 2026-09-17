@@ -1401,6 +1401,27 @@ describe('buildSnapshotMetaDescription — 평이화 우선', () => {
         expect(result?.includes('이중천장')).toBe(!usesPlain);
     });
 
+    // v0.79.2 배포 후 운영 크롤: 평이화가 짧아 원문 `summary`로 폴백한 차트 설명이
+    // `**종합 진단**:`으로 시작했다. 스냅샷 필드는 화면용 마크다운이다.
+    it('원문 필드의 마크다운 기호는 설명에 남기지 않는다', () => {
+        const result = buildSnapshotMetaDescription(
+            'technical',
+            {
+                summary:
+                    '**종합 진단**: 애플은 일봉 기준 `견조한` 상승 추세를 유지하고 있습니다.\n- 지지선은 320달러입니다.',
+            },
+            subject,
+            null,
+            'ko'
+        );
+
+        expect(result).toContain(
+            '종합 진단: 애플은 일봉 기준 견조한 상승 추세'
+        );
+        expect(result).toContain('지지선은 320달러입니다.');
+        expect(result).not.toMatch(/\*\*|`|- 지지선/);
+    });
+
     it('한 문장도 예산에 안 들어가면 원문으로 떨어진다', () => {
         const result = buildSnapshotMetaDescription(
             'technical',
