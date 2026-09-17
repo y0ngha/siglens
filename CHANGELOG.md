@@ -1,5 +1,26 @@
 # Changelog
 
+# [0.79.0](https://github.com/y0ngha/siglens/compare/v0.78.1...v0.79.0) (2026-09-17)
+
+
+### Bug Fixes
+
+* **404:** 공유 만료 안내가 useAppPathname을 쓰도록 가드 준수 ([6abbce3](https://github.com/y0ngha/siglens/commit/6abbce3f2c7f837f3ac01f6849160920fd1478db))
+* **backtesting:** 리뷰 반영 — 디자인 토큰 상수 재사용, toSorted, 합성 픽스처 테스트 ([3a6db2c](https://github.com/y0ngha/siglens/commit/3a6db2cce571ed6d4a82f8e6dae1fc02a346f9a7))
+* **seo:** 뉴스 카테고리 페이지에서 기사 본문 재게시 제거, 카테고리 설명 추가 ([ab405cd](https://github.com/y0ngha/siglens/commit/ab405cdd32d912d89d394d616ffd9af35036718f))
+* **seo:** 리뷰 반영 — 신호 목록 aria-label 용어 통일, loadMarketSignals 명시 타입 ([bea173e](https://github.com/y0ngha/siglens/commit/bea173ee792f8601cf6998bcebe52e2a17e83aa2))
+* **seo:** 백테스팅 통계를 케이스에서 파생해 분모·기간·방법론을 화면에 공개 ([b7e7fd0](https://github.com/y0ngha/siglens/commit/b7e7fd06f30fdb7d28b95293ed849bcc57e09553))
+* **seo:** 분석 본문의 User-Agent 분기 제거 — 봇도 사람과 같은 평이화 뷰를 받는다 ([8d83d29](https://github.com/y0ngha/siglens/commit/8d83d2972b024678bba3f49afe33c60146f2968a))
+* **seo:** 심볼 탭 색인 게이트·JSON-LD·sr-only·신선도 정리 ([9937b29](https://github.com/y0ngha/siglens/commit/9937b2947b99d20a5ecd0795ee6961127d328871))
+* **seo:** 홈 FAQ 가시화, "주가 전망" 타이틀·매매 키워드 제거, 허브 JSON-LD·브레드크럼·푸터 정리 ([df5881d](https://github.com/y0ngha/siglens/commit/df5881d11c19c4d3ce8d736596c4d98f1748edd0))
+* **seo:** sitemap 캐시 경계 Date 복원, terms barrel 정리, 리뷰 반영 ([121fafc](https://github.com/y0ngha/siglens/commit/121fafca9aefe965cfd6fb6f6408cd3d5323d2b3))
+* **seo:** sitemap lastmod 정직화, 약관·공유 soft-404 제거, 공지 지연, 경제 KR 사실 문단, 홈 카드 설명 ([9938442](https://github.com/y0ngha/siglens/commit/9938442f0bf0916fb3a5a18b78135e4a70db729e))
+
+
+### Features
+
+* **news:** 카테고리 다이제스트를 캐시에서 SSR로 시드 (core 1.9.0) ([79f1f45](https://github.com/y0ngha/siglens/commit/79f1f45624eb1aa4be37d8a0ca47f2f30515b7af)), closes [#831](https://github.com/y0ngha/siglens/issues/831)
+
 ## [0.78.1](https://github.com/y0ngha/siglens/compare/v0.78.0...v0.78.1) (2026-09-17)
 
 
