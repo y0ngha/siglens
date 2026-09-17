@@ -1,4 +1,7 @@
 import { useTranslations } from 'next-intl';
+import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 
 /**
  * Always-visible methodology card, directly below `BacktestHero`.
@@ -27,10 +30,10 @@ export function BacktestMethodology() {
             aria-labelledby="backtest-methodology-heading"
             className="page-container py-6"
         >
-            <div className="rounded-lg border border-secondary-700 bg-secondary-800 px-6 py-5">
+            <div className={cn(SURFACE_CARD, 'px-6 py-5')}>
                 <h2
                     id="backtest-methodology-heading"
-                    className="mb-3 text-sm font-semibold text-secondary-200"
+                    className={cn(HEADING_SUBSECTION, 'mb-3')}
                 >
                     {t('heading')}
                 </h2>

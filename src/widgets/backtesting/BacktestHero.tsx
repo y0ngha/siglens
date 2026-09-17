@@ -102,7 +102,7 @@ export function BacktestHero({ stats }: BacktestHeroProps) {
                     <StatCard
                         value={`${stats.aiTrendHitRate}%`}
                         label={t('BacktestHero.aiTrendHitRateLabel')}
-                        valueClassName="text-primary-300"
+                        valueClassName="text-secondary-300"
                     />
                     <StatCard
                         value={meanReturnDisplay}

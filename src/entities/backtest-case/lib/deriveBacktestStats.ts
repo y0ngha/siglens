@@ -35,7 +35,7 @@ function percent(count: number, total: number): number {
 
 function median(values: readonly number[]): number {
     if (values.length === 0) return 0;
-    const sorted = [...values].sort((a, b) => a - b);
+    const sorted = values.toSorted((a, b) => a - b);
     const mid = Math.floor(sorted.length / 2);
     return sorted.length % 2 !== 0
         ? sorted[mid]
@@ -58,7 +58,7 @@ export function deriveBacktestStats(
                   ).toFixed(2)
               )
             : 0;
-    const entryDates = cases.map(c => c.entryDate).sort();
+    const entryDates = cases.map(c => c.entryDate).toSorted();
 
     return {
         totalCases: total,
