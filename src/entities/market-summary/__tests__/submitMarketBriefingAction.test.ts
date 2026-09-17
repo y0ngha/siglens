@@ -5,7 +5,7 @@ import {
     type MarketSummaryData,
     type RunBriefingResult,
 } from '@y0ngha/siglens-core';
-import { isBot } from '@/shared/api/isBot';
+import { headers } from 'next/headers';
 import { getCachedMarketSummary } from '../api/marketSummaryCache';
 import {
     KR_DASHBOARD_SCOPE,
@@ -27,10 +27,6 @@ vi.mock('next/headers', () => ({
     headers: vi.fn().mockResolvedValue(new Headers()),
 }));
 
-vi.mock('@/shared/api/isBot', () => ({
-    isBot: vi.fn(),
-}));
-
 const mockProvider = {} as import('@y0ngha/siglens-core').MarketDataProvider;
 vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
     getMarketDataProvider: vi.fn(() => mockProvider),
@@ -43,7 +39,7 @@ const mockGetCachedMarketSummary = getCachedMarketSummary as MockedFunction<
     typeof getCachedMarketSummary
 >;
 const mockRunBriefing = runBriefing as MockedFunction<typeof runBriefing>;
-const mockIsBot = isBot as MockedFunction<typeof isBot>;
+const mockHeaders = headers as MockedFunction<typeof headers>;
 
 const summaryData: MarketSummaryData = {
     indices: [
@@ -89,18 +85,16 @@ describe('submitMarketBriefingAction 함수는', () => {
         mockGetCachedMarketSummary.mockResolvedValue(summaryData);
     });
 
-    describe('비봇 요청 시', () => {
+    describe('일반 요청 시', () => {
         beforeEach(() => {
-            mockIsBot.mockReturnValue(false);
             mockRunBriefing.mockResolvedValue(briefingResult);
         });
 
-        it('(Happy) runBriefing 결과와 botBlocked: false를 반환한다', async () => {
+        it('(Happy) runBriefing 결과를 scope와 함께 반환한다', async () => {
             const result = await submitMarketBriefingAction('us');
 
             expect(result).toEqual({
                 briefing: briefingResult,
-                botBlocked: false,
                 scope: 'us',
             });
         });
@@ -125,27 +119,31 @@ describe('submitMarketBriefingAction 함수는', () => {
         });
     });
 
+    // UA로 가르지 않는다 — Googlebot 렌더가 `/market`에서 브리핑 대신 차단
+    // 안내문을 색인하던 회귀를 막는다(2026-09-17 운영 렌더 감사).
     describe('봇 요청 시', () => {
         beforeEach(() => {
-            mockIsBot.mockReturnValue(true);
+            // `isBot`은 목하지 않는다 — 진짜 판정기에 Googlebot UA를 넘겨, 누가 UA
+            // 분기를 되살리면 이 테스트가 실패하게 한다.
+            mockHeaders.mockResolvedValueOnce(
+                new Headers({
+                    'user-agent':
+                        'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+                }) as never
+            );
+            mockRunBriefing.mockResolvedValue(briefingResult);
         });
 
-        it('(Worst) briefing: null과 botBlocked: true를 반환한다', async () => {
+        it('(Happy) 사람과 같은 브리핑 결과를 반환한다', async () => {
             const result = await submitMarketBriefingAction('us');
 
-            expect(result).toEqual({ briefing: null, botBlocked: true });
-        });
-
-        it('(Worst) runBriefing을 호출하지 않는다', async () => {
-            await submitMarketBriefingAction('us');
-
-            expect(mockRunBriefing).not.toHaveBeenCalled();
+            expect(result).toEqual({ briefing: briefingResult, scope: 'us' });
+            expect(mockRunBriefing).toHaveBeenCalledTimes(1);
         });
     });
 
     describe('에러 발생 시', () => {
         it('(Worst) runBriefing이 throw하면 에러 결과를 반환한다', async () => {
-            mockIsBot.mockReturnValue(false);
             mockRunBriefing.mockRejectedValueOnce(new Error('briefing failed'));
 
             const result = await submitMarketBriefingAction('us');
@@ -154,7 +152,6 @@ describe('submitMarketBriefingAction 함수는', () => {
         });
 
         it('(Worst) getCachedMarketSummary throw 시 에러 결과를 반환한다', async () => {
-            mockIsBot.mockReturnValue(false);
             mockGetCachedMarketSummary.mockRejectedValueOnce(
                 new Error('redis down')
             );
@@ -167,7 +164,6 @@ describe('submitMarketBriefingAction 함수는', () => {
 
     describe('scope 배선', () => {
         it("'kr'이면 KR 요약으로 브리핑을 만들고 응답에 scope를 실어 준다", async () => {
-            mockIsBot.mockReturnValue(false);
             mockRunBriefing.mockResolvedValue(briefingResult);
             mockGetCachedMarketSummary.mockResolvedValue(summaryData);
 
@@ -187,7 +183,6 @@ describe('submitMarketBriefingAction 함수는', () => {
             );
             expect(result).toEqual({
                 briefing: briefingResult,
-                botBlocked: false,
                 scope: 'kr',
             });
         });
@@ -196,7 +191,6 @@ describe('submitMarketBriefingAction 함수는', () => {
             const errSpy = vi
                 .spyOn(console, 'error')
                 .mockImplementation(() => {});
-            mockIsBot.mockReturnValue(false);
             mockGetCachedMarketSummary.mockClear();
 
             const result = await submitMarketBriefingAction('jp');

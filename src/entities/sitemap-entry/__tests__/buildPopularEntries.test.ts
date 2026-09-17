@@ -12,17 +12,40 @@ const NOW = new Date('2026-05-23T21:00:00.000Z');
 const LAST_SESSION_CLOSE = new Date('2026-05-22T20:00:00.000Z');
 
 describe('buildPopularEntries', () => {
-    it('모든 POPULAR_TICKERS에 대해 7축 기본 라우트를 생성하고 options/financials는 자산 분류에 맞춘다', () => {
+    // 2026-09-17 운영 크롤: congress 108·overall 49개가 sitemap에 실렸는데 noindex였다.
+    // 두 페이지는 스냅샷 산문이 없으면 noindex라, 산문 보유 집합이 있으면 거기 맞춘다.
+    it('산문 스냅샷 집합이 주어지면 congress·overall은 그 종목만 싣고 다른 탭은 그대로 둔다', () => {
+        const urls = buildPopularEntries(NOW, {
+            symbolTabsWithProse: new Set(['AAPL:overall']),
+        }).map(e => e.url);
+
+        expect(urls).toContain(`${SITE_URL}/AAPL/overall`);
+        expect(urls).not.toContain(`${SITE_URL}/AAPL/congress`);
+        expect(urls).not.toContain(`${SITE_URL}/MSFT/overall`);
+        expect(urls).not.toContain(`${SITE_URL}/MSFT/congress`);
+        expect(urls).toContain(`${SITE_URL}/MSFT`);
+        expect(urls).toContain(`${SITE_URL}/MSFT/news`);
+        expect(urls).toContain(`${SITE_URL}/MSFT/fundamental`);
+    });
+
+    it('산문 집합이 없으면(로더 실패) congress·overall을 전부 싣는다', () => {
+        const urls = buildPopularEntries(NOW).map(e => e.url);
+
+        expect(urls).toContain(`${SITE_URL}/MSFT/overall`);
+        expect(urls).toContain(`${SITE_URL}/MSFT/congress`);
+    });
+
+    it('모든 POPULAR_TICKERS에 대해 6축 기본 라우트를 생성하고 options/financials는 자산 분류에 맞춘다', () => {
         const entries = buildPopularEntries(NOW);
 
-        // 한국 종목은 `/congress`가 없어(국내에 공직자 매매 공시 제도가 없다) 6축이다.
+        // 한국 종목은 `/congress`가 없어(국내에 공직자 매매 공시 제도가 없다) 5축이다.
         const krCount = POPULAR_TICKERS.filter(t => /\.K[SQ]$/.test(t)).length;
         // ETF/지수는 재무제표가 없어 `/financials`가 빠진다(SPY, TQQQ 등).
         const nonStockCount = POPULAR_TICKERS.filter(
             t => classifyAsset(t) !== 'stock'
         ).length;
         expect(entries).toHaveLength(
-            POPULAR_TICKERS.length * 7 -
+            POPULAR_TICKERS.length * 6 -
                 krCount -
                 nonStockCount +
                 POPULAR_OPTIONS_TICKERS.length
@@ -38,10 +61,11 @@ describe('buildPopularEntries', () => {
                 `${base}/fundamental`,
                 `${base}/financials`,
                 `${base}/overall`,
-                `${base}/fear-greed`,
                 `${base}/congress`,
             ])
         );
+        // 종목별 공포·탐욕 탭은 항상 noindex라 싣지 않는다(2026-09-17 운영 렌더 감사).
+        expect(urls).not.toContain(`${base}/fear-greed`);
 
         // 한국 종목은 존재하지 않는 `/congress`가 sitemap에 실리면 안 된다 —
         // 404 URL은 크롤 예산을 태우고 색인 품질 신호를 떨어뜨린다.

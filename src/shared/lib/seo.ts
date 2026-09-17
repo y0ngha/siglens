@@ -563,6 +563,17 @@ function collapseToSingleLine(text: string): string {
 // boundary near the START of an over-length string would clamp far shorter
 // than necessary, wasting most of the SERP snippet budget.
 const SENTENCE_BOUNDARY_SEARCH_WINDOW = 40;
+
+/**
+ * 평이화 설명이 이보다 짧으면(주어 접두 제외, 코드포인트) 원문 필드로 폴백한다.
+ *
+ * 2026-09-17 운영 크롤: 차트 탭 420개 중 118개, 종합 탭 382개 중 104개의 설명이
+ * 70자 미만이었다. 평이화 첫 문장이 "애플 주가는 지금 332.41달러입니다."(22자) 같은
+ * 가격 한 줄이고 둘째 문장이 예산을 넘어 거기서 멈춘 것이다. 가격은 SERP에서 곧
+ * 낡고, 두 탭의 평이화가 같은 문장으로 시작해 차트·종합 설명이 23쌍 중복됐다.
+ * 원문 필드는 탭마다 다르고 내용이 있다.
+ */
+const PLAIN_DESCRIPTION_MIN_LENGTH = 40;
 const SENTENCE_TERMINATORS = new Set(['.', '!', '?']);
 
 /** True when `codePoints[index]` is a `.` sitting between two digits (a decimal point, e.g. "3.5%"), not a sentence-ending period. */
@@ -711,8 +722,10 @@ export function buildSnapshotMetaDescription(
 
     if (typeof plain === 'string' && plain.trim().length > 0) {
         const whole = takeWholeSentences(collapseToSingleLine(plain), budget);
-        if (whole !== null) return `${prefix}${whole}`;
-        // 한 문장도 예산에 안 들어간다 — 아래 원문 경로로 떨어진다.
+        if (whole !== null && [...whole].length >= PLAIN_DESCRIPTION_MIN_LENGTH)
+            return `${prefix}${whole}`;
+        // 한 문장도 예산에 안 들어가거나, 들어간 게 가격 한 줄처럼 너무 짧다 —
+        // 아래 원문 경로로 떨어진다(`PLAIN_DESCRIPTION_MIN_LENGTH`).
     }
 
     const raw = (content as Record<string, unknown>)[field];

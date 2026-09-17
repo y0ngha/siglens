@@ -69,7 +69,6 @@ describe('useMacroBriefing', () => {
                 briefing: PEEK,
                 generatedAt: '2026-06-17T00:00:00Z',
             },
-            botBlocked: false,
         });
         const { result } = renderHook(() => useMacroBriefing(null), {
             wrapper: makeWrapper(),
@@ -94,7 +93,6 @@ describe('useMacroBriefing', () => {
                 briefing: PEEK,
                 generatedAt: '2026-06-17T00:00:00Z',
             },
-            botBlocked: false,
         });
         const { result } = renderHook(() => useMacroBriefing(null), {
             wrapper: makeWrapper(),
@@ -106,14 +104,6 @@ describe('useMacroBriefing', () => {
                 generatedAt: '2026-06-17T00:00:00Z',
             })
         );
-    });
-
-    it('botBlocked → input=null', async () => {
-        mockSubmit.mockResolvedValue({ briefing: null, botBlocked: true });
-        const { result } = renderHook(() => useMacroBriefing(null), {
-            wrapper: makeWrapper(),
-        });
-        await waitFor(() => expect(result.current.input).toBeNull());
     });
 
     it('action ok=false → input="error" (silent skeleton 회귀 방지)', async () => {
@@ -132,7 +122,6 @@ describe('useMacroBriefing', () => {
                 briefing: PEEK,
                 generatedAt: '2026-06-17T00:00:00Z',
             },
-            botBlocked: false,
         });
         const { result, rerender } = renderHook(() => useMacroBriefing(null), {
             wrapper: makeWrapper(),
@@ -166,8 +155,13 @@ describe('useMacroBriefing', () => {
         expect(result.current.input).toMatchObject({ status: 'cached' });
     });
 
-    it('봇 차단 응답이어도 seed가 있으면 seed를 보여 준다 (색인 텍스트 보존)', async () => {
-        mockSubmit.mockResolvedValue({ briefing: null, botBlocked: true });
+    // 롤링 배포 중 구 컨테이너는 봇에게 `{ briefing: null, botBlocked: true }`를 보낸다.
+    // 타입에서는 사라진 모양이라 `as never`로 주입한다.
+    it('구 컨테이너의 봇 차단 응답이어도 seed가 있으면 seed를 보여 준다 (색인 텍스트 보존)', async () => {
+        mockSubmit.mockResolvedValue({
+            briefing: null,
+            botBlocked: true,
+        } as never);
         const { result } = renderHook(() => useMacroBriefing(PEEK), {
             wrapper: makeWrapper(),
         });
@@ -176,13 +170,20 @@ describe('useMacroBriefing', () => {
         expect(result.current.input).toMatchObject({ status: 'cached' });
     });
 
-    it('봇 차단이고 seed도 없으면 봇 안내를 노출한다', async () => {
-        mockSubmit.mockResolvedValue({ briefing: null, botBlocked: true });
+    it('구 컨테이너의 봇 차단 응답이고 seed도 없으면 undefined(크래시 없음)', async () => {
+        mockSubmit.mockResolvedValue({
+            briefing: null,
+            botBlocked: true,
+        } as never);
         const { result } = renderHook(() => useMacroBriefing(null), {
             wrapper: makeWrapper(),
         });
 
-        await waitFor(() => expect(result.current.input).toBeNull());
+        await waitFor(() => expect(mockSubmit).toHaveBeenCalled());
+        // 응답 처리가 끝날 때까지 한 틱 더 흘린다 — 호출 직후엔 원래 undefined라
+        // 이 단언만으로는 "처리 뒤에도 undefined"를 증명하지 못한다.
+        await new Promise(resolve => setTimeout(resolve, 0));
+        expect(result.current.input).toBeUndefined();
     });
 
     // 스트림 throw(SSE error 이벤트) — data가 없어 seed로 떨어지면 스켈레톤이 영원히 남는다.

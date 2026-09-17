@@ -1332,7 +1332,7 @@ describe('buildSnapshotMetaDescription — 평이화 우선', () => {
             'technical',
             content,
             subject,
-            '애플 주가는 현재 325.13달러입니다. 최근에는 오르내림이 반복됩니다.',
+            '애플 주가는 현재 325.13달러입니다. 최근 한 달은 오르내림이 좁은 범위에서 반복됩니다.',
             'ko'
         );
 
@@ -1351,7 +1351,7 @@ describe('buildSnapshotMetaDescription — 평이화 우선', () => {
             'technical',
             content,
             subject,
-            `애플 주가는 오르고 있습니다. ${long}`,
+            `애플 주가는 5일·20일·60일 평균을 모두 웃돌며 완만하게 오르고 있습니다. ${long}`,
             'ko'
         );
 
@@ -1364,6 +1364,43 @@ describe('buildSnapshotMetaDescription — 평이화 우선', () => {
      * 첫 문장조차 예산을 넘으면 평이화를 포기하고 원문으로 간다 — 잘린 평이화를
      * 내보내느니 온전한 원문이 낫다.
      */
+    /**
+     * 운영에서 차트·종합 탭 설명 222개가 이 모양이었다 — 가격 한 줄만 담기고
+     * 둘째 문장이 예산을 넘어 멈췄다. 두 탭 평이화가 같은 문장으로 시작해
+     * 설명이 탭 간에 중복되기도 했다(2026-09-17 운영 크롤).
+     */
+    it('담긴 평이화가 가격 한 줄처럼 짧으면 원문으로 떨어진다', () => {
+        const result = buildSnapshotMetaDescription(
+            'technical',
+            content,
+            subject,
+            `애플 주가는 지금 332.41달러입니다. ${'가'.repeat(120)}입니다.`,
+            'ko'
+        );
+
+        expect(result).toContain('이중천장');
+        expect(result).not.toContain('332.41달러');
+    });
+
+    // 경계: 담긴 평이화가 정확히 40자면 쓰고, 39자면 원문으로 간다
+    // (`PLAIN_DESCRIPTION_MIN_LENGTH`). 둘째 문장은 예산을 넘겨 첫 문장만 담기게 한다.
+    it.each([
+        [40, true],
+        [39, false],
+    ])('담긴 평이화가 %i자면 평이화 사용=%s', (length, usesPlain) => {
+        const first = `${'가'.repeat(length - 2)}다.`;
+        const result = buildSnapshotMetaDescription(
+            'technical',
+            content,
+            subject,
+            `${first} ${'나'.repeat(150)}다.`,
+            'ko'
+        );
+
+        expect(result?.includes(first)).toBe(usesPlain);
+        expect(result?.includes('이중천장')).toBe(!usesPlain);
+    });
+
     it('한 문장도 예산에 안 들어가면 원문으로 떨어진다', () => {
         const result = buildSnapshotMetaDescription(
             'technical',

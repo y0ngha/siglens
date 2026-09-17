@@ -115,13 +115,15 @@ test.describe('economy overview', () => {
     });
 
     /**
-     * 봇 UA → MacroBriefingBotBlocked 안내 표시.
+     * 봇 UA도 사람과 같은 MacroBriefing을 받는다(2026-09-17 UA 중립화).
      *
-     * submitMacroBriefingAction은 User-Agent 헤더를 isBot()으로 검사한다. Googlebot UA를
-     * 설정하면 botBlocked=true를 반환해 "크롤러 접근으로 분석을 생성하지 않았어요."가 렌더된다.
+     * 예전엔 submitMacroBriefingAction이 Googlebot UA에 botBlocked를 돌려줘 "크롤러 접근으로
+     * 분석을 생성하지 않았어요."가 렌더됐고, Googlebot WRS가 그 안내문을 색인했다.
      * 지표 그리드·캘린더는 SSR이라 봇 UA와 무관하게 항상 렌더된다.
      */
-    test('봇 UA에서 MacroBriefing은 차단 안내 노출', async ({ page }) => {
+    test('봇 UA에서도 MacroBriefing은 차단 안내 없이 렌더', async ({
+        page,
+    }) => {
         await page.setExtraHTTPHeaders({
             'User-Agent':
                 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
@@ -129,12 +131,17 @@ test.describe('economy overview', () => {
 
         await page.goto('/economy');
 
-        // 봇 차단 안내 — MacroBriefingBotBlocked 컴포넌트의 복사본.
+        // 사람 UA 테스트와 같은 판정 — heading(cached/done) 또는 skeleton.
+        const briefingHeading = page.getByRole('heading', {
+            name: /거시 브리핑/,
+        });
+        const skeleton = page.locator('[aria-busy="true"]');
+        await expect(briefingHeading.or(skeleton).first()).toBeVisible({
+            timeout: 15_000,
+        });
         await expect(
-            page.getByText(/크롤러 접근으로 분석을 생성하지 않았어요/, {
-                exact: false,
-            })
-        ).toBeVisible({ timeout: 15_000 });
+            page.getByText(/크롤러 접근으로 분석을 생성하지 않았어요/)
+        ).toHaveCount(0);
 
         // SSR 섹션(indicator grid·calendar)은 봇 UA와 무관하게 항상 렌더.
         await expect(

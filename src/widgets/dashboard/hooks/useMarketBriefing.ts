@@ -15,15 +15,13 @@ import type { DashboardScopeId } from '@/shared/config/dashboardScope';
 
 export interface UseMarketBriefingReturn {
     /**
-     * BriefingRegion input — undefined=미정, null=봇, 'error'=실패,
-     * cached/done=정상.
+     * BriefingRegion input — undefined=미정, 'error'=실패, cached/done=정상.
      */
-    input: RunBriefingResult | null | 'error' | undefined;
+    input: RunBriefingResult | 'error' | undefined;
 }
 
 /**
  * 마운트 후 briefing을 트리거한다. peekSeed가 있으면 초기 표시에 쓰고, 결과로 교체한다.
- * 봇이면 null(BotBlockedNotice).
  *
  * 서버 액션이 아니라 SSE를 거치는 이유 — 액션도 결국 단일 POST이고, LLM을 기다리는
  * 동안 바이트가 흐르지 않아 ALB `idle_timeout` 60초에 잘린다(실측: 침묵 61.1초 절단).
@@ -70,18 +68,16 @@ export function useMarketBriefing(
     // 실패하는 게 기본값에 가깝다 — robots.txt가 /api/를 막고 있었다). seed가
     // 없을 때만 명시적 error를 노출한다.
     //
-    // ⚠️ seed 우선은 **실패 분기 전부**에 적용해야 한다. 특히 `botBlocked`가 중요하다:
-    // Googlebot의 WRS가 페이지를 렌더하면 이 fetch가 봇으로 판정돼 botBlocked로 돌아오는데,
-    // 여기서 seed를 버리면 SSR HTML에 있던 브리핑 본문이 **렌더된 DOM에서 안내문으로
-    // 교체된다**. 색인되는 건 렌더된 DOM이므로 그 페이지의 유일한 AI 서술이 사라진다
-    // (종목 차트 페이지가 같은 이유로 이미 "교체가 아니라 추가"로 고쳐져 있다 —
-    // `ChartContent`의 봇 안내 처리 참고).
+    // ⚠️ seed 우선은 **실패 분기 전부**에 적용해야 한다. 색인되는 건 렌더된 DOM이라,
+    // 실패로 seed를 버리면 SSR HTML에 있던 브리핑 본문이 렌더 뒤에 사라진다.
     if (isError) return { input: seedInput ?? 'error' };
     if (!data) {
         return { input: seedInput };
     }
     if ('ok' in data) return { input: seedInput ?? 'error' };
-    if (data.botBlocked) return { input: seedInput ?? null };
+    // 롤링 배포 중 구 컨테이너는 봇에게 `{ briefing: null, botBlocked: true }`를 보낸다
+    // (`MarketBriefingActionResult` JSDoc). 타입에는 더 없는 모양이라 여기서만 막는다.
+    if (!data.briefing) return { input: seedInput };
     /*
      * 롤링 배포 중 구 컨테이너가 답하면 `scope`가 없다 — 그 브리핑은 정의상
      * 미국 것이다(구 액션은 인자를 안 받는다). 한국 페이지에서 그대로 그리면

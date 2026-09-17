@@ -169,7 +169,7 @@
                 "f8a2cd": "It might be a system error. Please let us know, and we will check."
             },
             "page": {
-                "167f34": "Check the results of 2 years of Backtesting technical analysis and AI scenarios for 10 major stocks.",
+                "167f34": "See how technical analysis and AI scenarios held up when checked against past data for 10 major stocks.",
                 "1d43d2": "SIGLENS: Analyzed and Completed by AI",
                 "24e60c": "Skip to Search",
                 "2f20c8": "A new standard for investing in stocks and crypto",
@@ -1533,7 +1533,7 @@
                 "title": "Log In"
             },
             "manifest": {
-                "description": "AI analysis for US and Korean equities and crypto. Chart, fundamentals and news combined into one indicator-backed Overall Analysis, with two-year Backtesting.",
+                "description": "AI analysis for US and Korean equities and crypto. Chart, fundamentals and news combined into one indicator-backed Overall Analysis, with Backtesting against past data.",
                 "name": "{v0} — AI analysis for US and Korean equities and crypto",
                 "shortcutMarket": "Market overview",
                 "shortcutSearch": "Search tickers"
@@ -2619,7 +2619,6 @@
                 "0c767c": "Try Again",
                 "15d863": "Could not generate macro briefing at this time. Please try again\n                later.",
                 "62f15d": "Generated At: {v0}",
-                "903a71": "Analysis was not generated due to crawler access.",
                 "a0f763": "Loading Macro Economic Briefing",
                 "b5f759": "Macro Economic Briefing Information"
             },
@@ -3345,7 +3344,6 @@
             "OptionsSummary": {
                 "859330": "Options Market",
                 "56f3e5": "Options Analysis Items",
-                "bf366f": "Options are not listed for this stock, or there is no data to analyze.",
                 "dac637": "Snapshot collected outside US Options regular trading hours; Open Interest may be based on the previous session.",
                 "e55475": "OI Data Delay"
             },

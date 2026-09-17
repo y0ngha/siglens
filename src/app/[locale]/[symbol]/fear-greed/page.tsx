@@ -106,51 +106,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return NOINDEX_SYMBOL_METADATA;
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(ticker);
-    // 봉 유무를 게이트에 넘기기 위해 metadata 단계에서 먼저 확정한다. 본문이
-    // **같은 헬퍼·같은 인자**로 부르는 `getSeedBarsStatic`은 `React.cache`라 요청
-    // 스코프에서 접히므로 왕복이 늘지 않는다(차트 라우트와 같은 패턴).
-    // assetInfo가 없으면 marketProfile을 유도할 수 없어 조회를 건너뛴다 — 그 경우는
-    // 아래 `asset-missing` 분기가 이미 noindex로 처리한다.
-    const metadataBars = assetInfo
-        ? await getSeedBarsStatic(
-              ticker,
-              DEFAULT_TIMEFRAME,
-              marketProfileOf(assetInfo),
-              assetInfo.fmpSymbol
-          ).catch((e: unknown) => {
-              console.error(
-                  '[FearGreedPage] generateMetadata getSeedBarsStatic failed:',
-                  e
-              );
-              return null;
-          })
-        : null;
     const blockedMetadata = await getBlockedSymbolMetadata({
         locale,
         symbol: ticker,
         assetInfo,
         degraded,
         revalidateSeconds: revalidate,
-        // 이 탭의 본문은 사실상 봉에서 나온다 — `FearGreedFactsSummary`(SSR 수치
-        // 요약)와 클라 게이지가 전부 같은 봉을 읽는다. 봉이 없으면 크롤러가 받는
-        // 건 제목과 정적 FAQ뿐이라, 차트 탭과 같은 근거로 콘텐츠 게이트를 건다
-        // (2026-09-17 정책 감사 M1).
-        //
-        // 술어는 **본문과 동일하게** `buildTechnicalFacts`다. `bars.length > 0`은
-        // 봉 1개짜리 상장폐지 종목을 통과시키는데(등락률 분모로 직전 봉이 필요해
-        // 그 헬퍼는 2개 미만이면 null), 그러면 본문 요약 블록이 통째로 안 그려져
-        // 페이지가 껍데기가 된다. 게이트와 본문이 다른 조건을 쓰면 조용히
-        // 어긋난다(MISTAKES §2).
-        //
-        // 조회 **실패**(`null`)는 봉이 **없는** 것과 구분해 `undefined`로 남긴다 —
-        // 일시 장애가 전 종목 색인 해제로 번지지 않게 한다.
-        hasPriceData:
-            metadataBars === null
-                ? undefined
-                : buildTechnicalFacts(
-                      metadataBars.bars,
-                      metadataBars.indicators
-                  ) !== null,
     });
     if (blockedMetadata) return blockedMetadata;
     if (!assetInfo) return noindexSymbolMetadata(ticker, tSeo, locale);
@@ -163,7 +124,26 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         englishName: assetInfo.name,
         locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
     });
-    return symbolMetadataFromSeo(seo, locale);
+    /*
+     * 종목별 공포·탐욕 탭은 **항상 noindex**다 (2026-09-17 운영 렌더 감사).
+     *
+     * 실측: 색인되던 416개 페이지를 서로 비교하면(숫자·종목명 정규화 후 12자 shingle,
+     * 30% 이상 페이지에 나오면 공통) 본문의 92%(중앙값)가 공통 문장이고, 종목 고유
+     * 문자는 중앙값 300자다. 같은 방식으로 차트 탭은 30%, 뉴스 탭은 26%다.
+     * "현재 N점(탐욕)은 1주 전 M점 대비…", "최근 1년 동안 최저 A점에서 최고 B점…"처럼
+     * **숫자만 바뀌는 템플릿**이라, 2026-07 강등 사유(`SEO_RECOVERY_2026_09.md` §3)와
+     * 형태가 같다. 산문 스냅샷이 없는 탭이고 회복 전략 A3("산문 없는 탭은 색인 금지")에
+     * 해당한다. 같은 날 오전의 가격 데이터 게이트(M1)는 이 결정으로 쓸모가 없어져 뺐다.
+     *
+     * `/position`과 같은 모양이다 — 훅 카피(title/OG/Twitter)는 공유 카드에 필요하므로
+     * 두고, `NOINDEX_SYMBOL_METADATA`를 뒤에 스프레드해 robots와 `canonical: null`만
+     * 덮는다. `follow`는 유지돼 형제 탭으로 가는 크롤 경로는 끊기지 않는다.
+     * 사이트 단위 `/fear-greed`·`/fear-greed/kr` 허브는 색인 대상 그대로다.
+     */
+    return {
+        ...symbolMetadataFromSeo(seo, locale),
+        ...NOINDEX_SYMBOL_METADATA,
+    };
 }
 
 export default async function SymbolFearGreedPage({ params }: Props) {

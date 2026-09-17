@@ -6,6 +6,7 @@ import { MS_PER_HOUR } from '@/shared/config/time';
 import { SITE_URL } from '@/shared/lib/seo';
 import { floorToHour } from './floorToHour';
 import type { SitemapEntry } from '../model';
+import type { BuildPopularEntriesOptions } from './buildPopularEntries';
 
 /**
  * Quantize `now` down to the most-recent 6h boundary (UTC midnight, 06:00, 12:00, 18:00).
@@ -56,9 +57,8 @@ function withSymbolAlternates(entries: SitemapEntry[]): SitemapEntry[] {
  *
  * lastmod uses the chart ISR period (6h, `CRYPTO_CHART_ISR_PERIOD_HOURS`) as a
  * conservative common baseline for all tabs via `quantizeTo6hBoundary`. This is
- * shorter than fear-greed (revalidate=86400/24h) and overall (revalidate=43200/12h)
- * actual cadences — meaning lastmod conservatively under-claims freshness rather than
- * over-claiming it. Googlebot may recrawl those tabs less often than their true cadence
+ * shorter than the overall tab's actual cadence (revalidate=43200/12h) — meaning lastmod conservatively under-claims freshness rather than
+ * over-claiming it. Googlebot may recrawl that tab less often than their true cadence
  * would allow, but we never send a false "this page is newer than it is" signal.
  *
  * `changeFrequency` per tab reflects editorial intent and is independent of lastmod:
@@ -67,17 +67,20 @@ function withSymbolAlternates(entries: SitemapEntry[]): SitemapEntry[] {
  *     floored to the hour (`floorToHour`) so repeated calls within the same hour agree
  *     (news is the most dynamic tab; 1h rolling accounts for on-demand revalidateTag that
  *     can refresh the page inside the ISR window).
- *   - fear-greed (`revalidate=86400`, 24h) → `changeFrequency: 'daily'`, 6h-boundary lastmod
- *     (actual cadence is 24h; lastmod baseline under-claims by 4×, which is conservative).
  *   - overall (`revalidate=43200`, 12h) → `changeFrequency: 'weekly'`, 6h-boundary lastmod
  *     (AI analysis cache is slow-moving; weekly matches the stock overall convention).
  *
- * Only the crypto-applicable, indexable tabs are advertised (chart/news/fear-greed/overall)
+ * Only the crypto-applicable, indexable tabs are advertised (chart/news/overall)
  * — fundamental/financials/options/congress are not rendered for crypto, and `/position`
- * (in `CRYPTO_DESCRIPTOR.tabs`) is always noindex, so listing it would only burn crawl
- * budget.
+ * and `/fear-greed` (both in `CRYPTO_DESCRIPTOR.tabs`) are always noindex, so listing
+ * them would only burn crawl budget.
  */
-export function buildCryptoPopularEntries(now: Date): SitemapEntry[] {
+export function buildCryptoPopularEntries(
+    now: Date,
+    // `buildPopularEntries`와 같은 산문 게이트 — 종합 탭은 자산군과 무관하게
+    // `hasOverallProse`가 없으면 noindex다. 없으면(로더 실패) 필터를 끈다.
+    { symbolTabsWithProse }: BuildPopularEntriesOptions = {}
+): SitemapEntry[] {
     const boundary6h = quantizeTo6hBoundary(now);
     // floorToHour: rolling `now - 1h`를 그대로 쓰면 매 호출마다 값이 달라져
     // sitemap index lastmod의 freshness 신호가 무력화된다 — `buildPopularEntries`의
@@ -97,21 +100,21 @@ export function buildCryptoPopularEntries(now: Date): SitemapEntry[] {
                 changeFrequency: 'daily',
                 priority: 0.75,
             },
-            {
-                url: `${SITE_URL}/${sym}/fear-greed`,
-                lastModified: boundary6h,
-                changeFrequency: 'daily',
-                priority: 0.72,
-            },
-            {
-                url: `${SITE_URL}/${sym}/overall`,
-                lastModified: boundary6h,
-                changeFrequency: 'weekly',
-                priority: 0.82,
-            },
-            // `/position` is deliberately absent — the page is always noindex
-            // (2026-09-11 SEO recovery audit; see `buildPopularEntries` and the
-            // position page's generateMetadata comment).
+            ...(symbolTabsWithProse === undefined ||
+            symbolTabsWithProse.has(`${sym}:overall`)
+                ? [
+                      {
+                          url: `${SITE_URL}/${sym}/overall`,
+                          lastModified: boundary6h,
+                          changeFrequency: 'weekly' as const,
+                          priority: 0.82,
+                      },
+                  ]
+                : []),
+            // `/fear-greed` and `/position` are deliberately absent — both pages
+            // are always noindex (fear-greed: 2026-09-17 live render audit, the
+            // per-symbol body is a numbers-only template; position: 2026-09-11
+            // SEO recovery audit). See `buildPopularEntries`.
         ])
     );
 }

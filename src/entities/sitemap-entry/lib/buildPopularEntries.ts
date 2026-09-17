@@ -14,6 +14,26 @@ import { isKrEquitySymbol } from '@/shared/config/marketProfile';
 import { classifyAsset } from '@/entities/ticker';
 import { floorToHour } from './floorToHour';
 import type { SitemapEntry } from '../model';
+import type { SeoSnapshotTab } from '@/entities/seo-snapshot';
+
+/**
+ * 스냅샷 산문이 없으면 페이지 자체가 noindex인 탭(`hasCongressProse`·
+ * `hasOverallProse` 게이트). sitemap은 이 탭들을 산문 보유 종목에만 싣는다.
+ * 스냅샷 탭 이름 기준이다 — 두 탭은 URL 세그먼트와 같다.
+ */
+export const PROSE_GATED_SITEMAP_TABS = [
+    'congress',
+    'overall',
+] as const satisfies readonly SeoSnapshotTab[];
+
+export interface BuildPopularEntriesOptions {
+    /**
+     * `"${SYMBOL}:${tab}"` — {@link PROSE_GATED_SITEMAP_TABS} 탭에 신선한 스냅샷이
+     * 있는 조합. **없으면(`undefined`) 필터를 끈다** — 로더가 DB를 못 읽었을 때
+     * 예전처럼 전부 싣는다(`loadPopularSitemapInputs`).
+     */
+    readonly symbolTabsWithProse?: ReadonlySet<string>;
+}
 
 const POPULAR_OPTIONS_SET = new Set<string>(POPULAR_OPTIONS_TICKERS);
 
@@ -38,8 +58,10 @@ function withSymbolAlternates(entries: SitemapEntry[]): SitemapEntry[] {
 }
 
 /**
- * POPULAR_TICKERS의 모든 sub-route(차트/뉴스/펀더멘털/재무제표/옵션/종합/공포탐욕/내위치/의회거래)에
- * 대한 sitemap 엔트리를 반환한다. 재무제표는 stock으로 분류된 티커만(ETF는 재무제표가
+ * POPULAR_TICKERS의 색인 대상 sub-route(차트/뉴스/펀더멘털/재무제표/옵션/종합/의회거래)에
+ * 대한 sitemap 엔트리를 반환한다. 공포탐욕·내위치 탭은 항상 noindex라 싣지 않는다.
+ * 종합·의회거래는 스냅샷 산문이 있는 종목만 싣는다({@link BuildPopularEntriesOptions}) —
+ * 산문이 없으면 두 페이지가 noindex다. 재무제표는 stock으로 분류된 티커만(ETF는 재무제표가
  * 없어 noindex), 옵션 페이지는 generated static list에 포함된 미국 티커만 포함 —
  * noindex인 종목 페이지를 sitemap에 두면 품질 신호가 약해진다.
  *
@@ -59,7 +81,13 @@ function withSymbolAlternates(entries: SitemapEntry[]): SitemapEntry[] {
  * 매 호출(=매 크롤)마다 값이 달라져 `maxLastModified`가 고르는 sitemap index
  * lastmod가 끝없이 "방금 바뀜"으로 나가 freshness 신호가 무력화된다.
  */
-export function buildPopularEntries(now: Date): SitemapEntry[] {
+export function buildPopularEntries(
+    now: Date,
+    { symbolTabsWithProse }: BuildPopularEntriesOptions = {}
+): SitemapEntry[] {
+    const hasProse = (ticker: string, tab: 'congress' | 'overall'): boolean =>
+        symbolTabsWithProse === undefined ||
+        symbolTabsWithProse.has(`${ticker}:${tab}`);
     const usClose = lastClosedSessionCloseUtc(US_EQUITY_SESSION, now);
     const krClose = lastClosedSessionCloseUtc(KR_EQUITY_SESSION, now);
     const oneHourAgo = floorToHour(new Date(now.getTime() - MS_PER_HOUR));
@@ -133,18 +161,21 @@ export function buildPopularEntries(now: Date): SitemapEntry[] {
                           },
                       ]
                     : []),
-                {
-                    url: `${SITE_URL}/${ticker}/overall`,
-                    lastModified: todayClose,
-                    changeFrequency: 'weekly',
-                    priority: 0.85,
-                },
-                {
-                    url: `${SITE_URL}/${ticker}/fear-greed`,
-                    lastModified: todayClose,
-                    changeFrequency: 'daily',
-                    priority: 0.78,
-                },
+                ...(hasProse(ticker, 'overall')
+                    ? [
+                          {
+                              url: `${SITE_URL}/${ticker}/overall`,
+                              lastModified: todayClose,
+                              // 아래 options/congress 분기와 같은 이유로 `as const`가 필요하다.
+                              changeFrequency: 'weekly' as const,
+                              priority: 0.85,
+                          },
+                      ]
+                    : []),
+                // `/fear-greed`는 싣지 않는다 — 종목별 공포·탐욕 탭은 항상 noindex다
+                // (2026-09-17 운영 렌더 감사: 종목 간 본문의 92%가 숫자만 바뀌는 공통
+                // 문장, `[symbol]/fear-greed/page.tsx` generateMetadata 주석 참고).
+                //
                 // `/position`은 싣지 않는다 — 페이지가 항상 noindex다(2026-09-11 SEO
                 // 회복 감사, `[symbol]/position/page.tsx` generateMetadata 주석 참고).
                 // PR #791이 "index인데 sitemap에 없다"며 402 URL을 더했는데, 그 탭의 SSR
@@ -165,7 +196,7 @@ export function buildPopularEntries(now: Date): SitemapEntry[] {
                 // 내용이 충분하다 — 의원들이 광범위 ETF를 실제로 매매하므로 공시가 존재한다.
                 // thin한 건 레버리지·인버스 6종(LABU/NVDL/SOXL/SOXS/SQQQ/TSLL, 1,095~1,171자)
                 // 뿐이다. 자산 분류로는 그 둘을 가를 수 없으므로 `isStock`을 걸지 않는다.
-                ...(isKr
+                ...(isKr || !hasProse(ticker, 'congress')
                     ? []
                     : [
                           {

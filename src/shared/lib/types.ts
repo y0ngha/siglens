@@ -296,7 +296,7 @@ export type DisplayMessage = (ChatMessage | ContextSwitchMessage) & {
 };
 
 /**
- * summary 전용 결과 — briefing/botBlocked는 별도 경로(MarketBriefingActionResult).
+ * summary 전용 결과 — briefing은 별도 경로(MarketBriefingActionResult).
  *
  * `scope`는 **응답이 자기가 어느 시장인지 밝히는 필드**다. 롤링 배포 중 새 클라이언트가
  * 구 컨테이너에 닿으면 그쪽 액션은 인자가 없어 `'kr'`을 무시하고 미국 요약을 준다 —
@@ -308,20 +308,21 @@ export type MarketSummaryActionResult =
     | { ok: false; error: string };
 
 /**
- * briefing 클라 경로 결과 — 봇 차단 또는 cached/done.
+ * briefing 클라 경로 결과 — cached/done 또는 실패.
  * `scope`의 용도는 {@link MarketSummaryActionResult}와 같다(롤링 배포 불일치 탐지).
+ *
+ * 예전엔 봇에게 `{ briefing: null, botBlocked: true }`를 돌려줬다(2026-09-17 제거,
+ * `submitMarketBriefingAction` JSDoc). 롤링 배포 중 구 컨테이너는 아직 그 모양을
+ * 보낼 수 있어 소비 훅이 `briefing` 부재를 방어한다.
  */
 export type MarketBriefingActionResult =
     | {
           briefing: RunBriefingResult;
-          botBlocked: false;
           scope?: DashboardScopeId;
       }
-    | { briefing: null; botBlocked: true }
     | { ok: false; error: string };
 
 /** /economy 거시 브리핑 클라 경로 결과 — market briefing 패턴 미러. */
 export type MacroBriefingActionResult =
-    | { briefing: RunMacroBriefingResult; botBlocked: false }
-    | { briefing: null; botBlocked: true }
+    | { briefing: RunMacroBriefingResult }
     | { ok: false; error: string };

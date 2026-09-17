@@ -13,7 +13,6 @@ import {
     BACKTESTING_URL,
     buildBreadcrumbJsonLd,
     buildWebPageJsonLd,
-    SITE_BUILD_DATE,
     SITE_NAME,
     SITE_URL,
     type SeoTranslator,
@@ -165,11 +164,13 @@ function buildBacktestingJsonLd(
                 url: SITE_URL,
             },
             license: `${SITE_URL}${TERMS_PATH}`,
-            temporalCoverage: '2024-04/2026-04',
+            // 손으로 적은 `2024-04/2026-04`는 실제 진입일 범위(2024-11~2026-03)보다
+            // 넓었다 — 화면 통계와 같은 파생값을 쓴다(2026-09-17 운영 감사).
+            temporalCoverage: `${STATS.periodStart}/${STATS.periodEnd}`,
             spatialCoverage: 'US',
             variableMeasured: tPage('variableMeasured'),
             keywords: [
-                'AI stock prediction backtesting',
+                'AI stock analysis backtesting',
                 'US stock technical analysis backtest',
                 'RSI MACD signal backtest results',
                 'Magnificent 7 backtest',
@@ -182,7 +183,6 @@ function buildBacktestingJsonLd(
                     '@type': 'DataDownload',
                     encodingFormat: 'application/json',
                     contentUrl: `${SITE_URL}/backtesting/data.json`,
-                    dateModified: SITE_BUILD_DATE.toISOString(),
                 },
             ],
         },

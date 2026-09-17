@@ -29,7 +29,6 @@ export interface SeedMacroBriefingCached extends Omit<
 /**
  * 브리핑 위젯의 단일 union 상태 — 위젯이 단일 switch로 분기한다.
  * - `undefined`(loading): 트리거 전(미하이드레이션 또는 fetching 중).
- * - `null`(botBlocked): 봇 차단 안내.
  * - `'error'`: server action이 ok=false를 반환했을 때 inline notice 렌더.
  * - `RunMacroBriefingResult`: 정상 — cached/done 모두 본문 렌더.
  *
@@ -40,7 +39,6 @@ export interface SeedMacroBriefingCached extends Omit<
 export type MacroBriefingInput =
     | RunMacroBriefingResult
     | SeedMacroBriefingCached
-    | null
     | 'error'
     | undefined;
 
@@ -53,7 +51,7 @@ export interface UseMacroBriefingReturn {
 /**
  * 마운트 후 SSE 스트림으로 거시 브리핑을 트리거한다.
  * peekSeed가 있으면 초기 표시(generatedAt이 null) 후 action 결과로 교체.
- * 봇이면 null, server action 실패면 'error'(inline notice). market briefing 훅과
+ * server action 실패면 'error'(inline notice). market briefing 훅과
  * 동일한 골격이되 silent infinite skeleton 회귀 방지를 위해 error variant 명시.
  */
 export function useMacroBriefing(
@@ -97,9 +95,8 @@ export function useMacroBriefing(
     // 이때 그냥 떨어지면 스켈레톤이 영원히 남는다. 단 seed가 있으면 seed가 이긴다 —
     // 서버가 peek로 읽어 온 실제 캐시 본문이라 에러 카드보다 낫다(MarketBriefing 동일).
     //
-    // seed 우선은 실패 분기 **전부**에 적용한다 — 특히 `botBlocked`. Googlebot WRS의
-    // 렌더에서 이 fetch는 봇으로 판정되므로, 여기서 seed를 버리면 SSR HTML의 거시
-    // 브리핑이 렌더된 DOM에서 안내문으로 교체돼 색인 대상 텍스트가 사라진다.
+    // seed 우선은 실패 분기 **전부**에 적용한다 — 색인되는 건 렌더된 DOM이라, 여기서
+    // seed를 버리면 SSR HTML의 거시 브리핑이 렌더 뒤에 사라진다.
     // ⚠️ 귀결 하나를 분명히 해 둔다: seed가 있으면 `input`이 'error'가 되지 않으므로
     // `MacroBriefingError`의 "다시 시도" 버튼은 그 세션에서 도달할 수 없다. `staleTime:
     // Infinity` + `retry:false`라 새 요청도 자동으로 나가지 않는다 — 즉 사용자는 페이지를
@@ -111,6 +108,8 @@ export function useMacroBriefing(
     if (isError) return { input: seedInput ?? 'error', refetch };
     if (!data) return { input: seedInput, refetch };
     if ('ok' in data) return { input: seedInput ?? 'error', refetch };
-    if (data.botBlocked) return { input: seedInput ?? null, refetch };
+    // 롤링 배포 중 구 컨테이너는 봇에게 `{ briefing: null, botBlocked: true }`를 보낸다
+    // (`MarketBriefingActionResult` JSDoc). 타입에는 더 없는 모양이라 여기서만 막는다.
+    if (!data.briefing) return { input: seedInput, refetch };
     return { input: data.briefing, refetch };
 }

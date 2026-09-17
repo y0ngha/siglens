@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, gte, inArray } from 'drizzle-orm';
 import { seoAnalysisSnapshots } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type {
@@ -145,6 +145,40 @@ export class DrizzleSeoSnapshotRepository {
         return options.anyLocale
             ? pickFreshestPerTab(snapshots, anyLocaleChain(locale))
             : pickSnapshotPerTab(snapshots, CONTENT_LOCALE_FALLBACK[locale]);
+    }
+
+    /**
+     * sitemap용: `tabs` 중 하나에 `since` 이후 생성된 스냅샷이 있는 `(symbol, tab)`.
+     *
+     * 로케일은 `locale`의 독자 폴백(`CONTENT_LOCALE_FALLBACK`)과 같은 범위로 본다 —
+     * 페이지가 `findBySymbol(symbol, locale)`로 읽을 수 있는 행이어야 색인 게이트를
+     * 통과한다. **본문(`content`)은 읽지 않는다** — 수백 행의 JSONB를 끌어오면
+     * sitemap 한 번에 수십 MB다.
+     */
+    async listFreshSymbolTabs(
+        tabs: readonly SeoSnapshotTab[],
+        locale: Locale,
+        since: Date
+    ): Promise<Array<{ symbol: string; tab: SeoSnapshotTab }>> {
+        const rows = await this.db
+            .selectDistinct({
+                symbol: seoAnalysisSnapshots.symbol,
+                tab: seoAnalysisSnapshots.tab,
+            })
+            .from(seoAnalysisSnapshots)
+            .where(
+                and(
+                    inArray(seoAnalysisSnapshots.tab, [...tabs]),
+                    inArray(seoAnalysisSnapshots.locale, [
+                        ...CONTENT_LOCALE_FALLBACK[locale],
+                    ]),
+                    gte(seoAnalysisSnapshots.generatedAt, since)
+                )
+            );
+        return rows.map(row => ({
+            symbol: row.symbol,
+            tab: row.tab as SeoSnapshotTab,
+        }));
     }
 
     async findGeneratedAtMap(symbols: string[]): Promise<Map<string, Date>> {

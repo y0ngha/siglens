@@ -25,6 +25,14 @@ describe('classifyAsset', () => {
             expect(classifyAsset('TSLL')).toBe('etf');
         });
 
+        // sitemap은 이름 없이 티커만으로 분류한다 — 여기서 stock으로 떨어지면
+        // 재무제표 없는 `/financials`가 sitemap에 실린다(2026-09-17 운영 크롤).
+        it('POPULAR_TICKERS의 GSC 수요 구간 ETF·뮤추얼펀드도 이름 없이 etf로 분류한다', () => {
+            expect(classifyAsset('SOXX')).toBe('etf');
+            expect(classifyAsset('MSTY')).toBe('etf');
+            expect(classifyAsset('FFFVX')).toBe('etf');
+        });
+
         it('소문자/혼합 대소문자 ETF 심볼도 toUpperCase로 정규화해 매칭한다', () => {
             expect(classifyAsset('spy')).toBe('etf');
             expect(classifyAsset('Qqq')).toBe('etf');
