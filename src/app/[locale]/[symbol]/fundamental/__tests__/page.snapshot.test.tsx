@@ -128,7 +128,7 @@ import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { getProfileResilient } from '@/app/[locale]/[symbol]/fundamental/getProfileResilient';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
-import { expectFaqSingleSource } from '@/__tests__/utils/expectFaqSingleSource';
+import { expectVisibleFaqWithoutJsonLd } from '@/__tests__/utils/expectFaqSingleSource';
 import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';
 
 const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);
@@ -216,13 +216,13 @@ describe('FundamentalPage — SEO snapshot prose (Task 7b)', () => {
      * 페이지에 보일 것을 요구하며, 없으면 리치 결과 자격을 잃는다. JSON-LD가
      * 유효한지만 보는 테스트로는 이 결함이 잡히지 않는다.
      */
-    it('FAQPage 구조화데이터가 화면 FaqSection과 같은 질문·답변을 쓴다', async () => {
+    it('화면 FAQ는 렌더하고 FAQPage 구조화데이터는 싣지 않는다', async () => {
         mockGetSeoSnapshotsStatic.mockResolvedValue([]);
         const tree = await FundamentalPage({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        expectFaqSingleSource(tree);
+        expectVisibleFaqWithoutJsonLd(tree);
     });
 
     /**

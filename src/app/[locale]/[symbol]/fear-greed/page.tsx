@@ -28,7 +28,6 @@ import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
-    buildFaqJsonLd,
     buildSymbolSeoContent,
     resolveSymbolFearGreedSeoContent,
     symbolMetadataFromSeo,
@@ -245,7 +244,6 @@ export default async function SymbolFearGreedPage({ params }: Props) {
             answer: t('page.094886'),
         },
     ];
-    const faqJsonLd = buildFaqJsonLd(faq);
 
     const queryClient = new QueryClient({
         defaultOptions: { queries: { staleTime: QUERY_STALE_TIME_MS } },
@@ -313,7 +311,6 @@ export default async function SymbolFearGreedPage({ params }: Props) {
         <>
             <JsonLd data={webPageJsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
-            <JsonLd data={faqJsonLd} />
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <SymbolPageHeading>
                     {t('page.6cd32e', { v0: displayName })}
@@ -367,6 +364,13 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                         />
                     </ErrorBoundary>
                 </HydrationBoundary>
+                {/*
+                    FAQ는 화면에만 둔다 — FAQPage 구조화데이터는 싣지 않는다.
+                    Google은 2023-08부터 FAQ 리치 결과를 정부·보건 등 권위 사이트로
+                    한정했고, 이 문답은 종목명만 바뀌는 템플릿이라 색인 대상 1,900여
+                    URL에 같은 마크업을 1,900번 복제하는 셈이었다(2026-09-17 감사).
+                    화면 문답은 독자에게 쓸모가 있으므로 그대로 둔다.
+                */}
                 <FaqSection
                     heading={tSeo('faqHeading.fear-greed', { v0: displayName })}
                     items={faq}

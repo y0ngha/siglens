@@ -33,7 +33,6 @@ import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
-    buildFaqJsonLd,
     buildSnapshotMetaDescription,
     buildSymbolOptionsSeoContent,
     buildSymbolSeoContent,
@@ -371,13 +370,11 @@ export default async function OptionsPage({ params }: Props) {
             answer: t('page.f865a7'),
         },
     ];
-    const faqJsonLd = buildFaqJsonLd(faq);
 
     return (
         <>
             <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
-            <JsonLd data={faqJsonLd} />
             {/* main 랜드마크: 다른 5개 sibling 페이지와 일관성. options-empty
                 상태(OptionsEmptyState)는 자체적으로 <main>을 가지지만, 옵션
                 데이터가 있는 정상 path도 동일하게 main으로 감싸야 sibling 일관성
@@ -425,6 +422,13 @@ export default async function OptionsPage({ params }: Props) {
                         hasSnapshotProse={showOptionsProse}
                     />
                 </HydrationBoundary>
+                {/*
+                    FAQ는 화면에만 둔다 — FAQPage 구조화데이터는 싣지 않는다.
+                    Google은 2023-08부터 FAQ 리치 결과를 정부·보건 등 권위 사이트로
+                    한정했고, 이 문답은 종목명만 바뀌는 템플릿이라 색인 대상 1,900여
+                    URL에 같은 마크업을 1,900번 복제하는 셈이었다(2026-09-17 감사).
+                    화면 문답은 독자에게 쓸모가 있으므로 그대로 둔다.
+                */}
                 <FaqSection
                     heading={tSeo('faqHeading.options', { v0: displayName })}
                     items={faq}

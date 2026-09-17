@@ -27,7 +27,7 @@ export const SITE_OPERATOR = {
 } as const;
 
 /** `/about` 본문 마지막 갱신일 — 본문(`about/content.ts`)을 고치면 함께 올린다. */
-export const ABOUT_UPDATED_AT = new Date('2026-09-11T00:00:00+09:00');
+export const ABOUT_UPDATED_AT = new Date('2026-09-18T00:00:00+09:00');
 
 /**
  * `/about`의 `Person` 노드와 홈 `Organization.founder`가 공유하는 `@id`.
