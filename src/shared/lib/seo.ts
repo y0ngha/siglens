@@ -456,7 +456,7 @@ export interface ComposeSymbolTitleArgs {
  * 2. `한국어명(TICKER) core`            tail을 버린다
  * 3. `TICKER core — tail` 또는 `TICKER core`   한국어명을 버린다
  *
- * **버리는 순서가 설계의 핵심이다.** 검색 매칭을 만드는 건 `주가 전망`·`공포 탐욕 지수`
+ * **버리는 순서가 설계의 핵심이다.** 검색 매칭을 만드는 건 `주가 분석`·`공포 탐욕 지수`
  * 같은 core이지 뒤의 서술이 아니다. 단순 클램프(뒤에서 자르기)를 쓰면 긴 한국어명을 가진
  * 종목에서 core가 통째로 날아간다 — 실측상 264개 중 90개(34%)가 그 경우였다.
  *
@@ -656,8 +656,11 @@ function clampAtSentenceBoundary(text: string, maxLength: number): string {
  * matching the value each of the 7 `generateMetadata` call sites already
  * resolves) is prefixed BEFORE clamping — every templated builder
  * (`buildSymbol*SeoContent`) leads with the subject, and the target queries
- * ("AAPL 주가 전망") need it for the bolded query-term match in the SERP
- * snippet; raw prose alone was losing that.
+ * ("AAPL 주가 분석") need it for the bolded query-term match in the SERP
+ * snippet; raw prose alone was losing that. The title no longer promises a
+ * forecast — "전망" was replaced with "분석" across every `titleCore` because a
+ * YMYL page must not claim to predict prices; the query-term match now rides
+ * on the "주가"/"시세" prefix, which is the half the query actually carries.
  *
  * `content` is deliberately `unknown` — the same defensive-narrowing contract
  * as the `*SnapshotProse` renderers (storage type is `unknown`, tab-specific
@@ -837,12 +840,8 @@ function buildSymbolKeywords(
 ): string[] {
     return [
         `${ticker} 주가`,
-        `${ticker} 주가 전망`,
         `${ticker} 차트`,
         `${ticker} 차트 분석`,
-        `${ticker} 매수`,
-        `${ticker} 매도`,
-        `${ticker} 매매 시점`,
         `${ticker} 기술적 신호`,
         `${ticker} 기술적 분석`,
         `${ticker} AI 분석`,
@@ -850,14 +849,7 @@ function buildSymbolKeywords(
         `${displayName} 차트 분석`,
         `${ticker} chart analysis`,
         ...(koreanName
-            ? [
-                  `${koreanName} 주가`,
-                  `${koreanName} 주가 전망`,
-                  `${koreanName} 매수`,
-                  `${koreanName} 매도`,
-                  `${koreanName} 매매 시점`,
-                  `${koreanName} 차트 분석`,
-              ]
+            ? [`${koreanName} 주가`, `${koreanName} 차트 분석`]
             : []),
     ];
 }
@@ -1062,8 +1054,9 @@ export function backtestingTitle(t: SeoTranslator): string {
 export function backtestingDescription(t: SeoTranslator): string {
     return t('backtesting.description');
 }
+// 루트 레이아웃이 이미 `ROOT_KEYWORDS`를 선언한다 — 하위 페이지가 그걸 다시
+// 펼치면 모든 페이지가 같은 일반 키워드 뭉치를 반복 선언하게 된다.
 export const BACKTESTING_KEYWORDS = [
-    ...ROOT_KEYWORDS,
     '주식 AI 백테스팅',
     '기술적 분석 백테스팅',
     'AI 주식 분석 백테스트',
@@ -1266,13 +1259,11 @@ function buildSymbolFundamentalKeywords(
         `${ticker} 재무 분석`,
         `${ticker} 밸류에이션`,
         `${ticker} 애널리스트 컨센서스`,
-        `${ticker} 목표 주가`,
         ...(koreanName
             ? [
                   `${koreanName} 펀더멘털`,
                   `${koreanName} 재무 분석`,
                   `${koreanName} 밸류에이션`,
-                  `${koreanName} 목표 주가`,
               ]
             : []),
         ...(sector ? [`${sector} 섹터 펀더멘털`] : []),
@@ -1283,7 +1274,6 @@ function buildSymbolFundamentalKeywords(
         'ROE',
         '재무 건전성',
         '애널리스트 컨센서스',
-        '목표 주가',
     ];
 }
 
@@ -1411,14 +1401,12 @@ function buildSymbolNewsKeywords(
         `${ticker} 어닝 일정`,
         `${ticker} 실적 발표`,
         `${ticker} 애널리스트 등급`,
-        `${ticker} 목표 주가`,
         ...(koreanName
             ? [
                   `${koreanName} 뉴스`,
                   `${koreanName} 호재`,
                   `${koreanName} 어닝`,
                   `${koreanName} 실적`,
-                  `${koreanName} 목표 주가`,
               ]
             : []),
         '뉴스 분석',
@@ -1481,7 +1469,6 @@ function buildSymbolOverallKeywords(
         `${ticker} 종합 분석`,
         `${ticker} 시나리오 분석`,
         `${ticker} 시나리오`,
-        `${ticker} 진입 타이밍`,
         `${ticker} 위험 요인`,
         `${ticker} 매수 분위기`,
         `${ticker} 4축 분석`,
@@ -1516,11 +1503,8 @@ function buildCryptoSymbolKeywords(
     return [
         `${ticker} 시세`,
         `${ticker} 가격`,
-        `${ticker} 시세 전망`,
         `${ticker} 차트`,
         `${ticker} 차트 분석`,
-        `${ticker} 매수`,
-        `${ticker} 매도`,
         `${ticker} 기술적 신호`,
         `${ticker} 기술적 분석`,
         `${ticker} AI 분석`,
@@ -1580,8 +1564,8 @@ export interface ResolveSymbolSeoOpts {
 /**
  * Resolves the correct chart-page SEO content for a symbol based on its asset
  * class. Crypto pages use `buildCryptoSymbolSeoContent` (price-framed copy:
- * "시세 전망"); stock/ETF/Index pages use `buildSymbolSeoContent` (equity-framed
- * copy: "주가 전망"). Both branches forward `koreanName` — `composeSymbolTitle`
+ * "시세 분석"); stock/ETF/Index pages use `buildSymbolSeoContent` (equity-framed
+ * copy: "주가 분석"). Both branches forward `koreanName` — `composeSymbolTitle`
  * (spec 2026-07-26 title surgery) injects the Korean name for either asset
  * class when one is available.
  *
@@ -1724,7 +1708,6 @@ function buildCryptoSymbolOverallKeywords(ticker: string): string[] {
         `${ticker} 코인 종합 분석`,
         `${ticker} 시나리오 분석`,
         `${ticker} 시나리오`,
-        `${ticker} 진입 타이밍`,
         `${ticker} 위험 요인`,
         `${ticker} 매수 분위기`,
         `AI 종합 분석`,

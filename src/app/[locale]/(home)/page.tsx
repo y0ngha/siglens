@@ -13,6 +13,7 @@ import {
 } from '@/shared/lib/legal';
 import { SymbolSearchPanel } from '@/features/ticker-search';
 import {
+    buildFaqJsonLd,
     buildWebPageJsonLd,
     GITHUB_URL,
     localizedAbsoluteUrl,
@@ -27,9 +28,10 @@ import {
     localePath,
 } from '@/shared/i18n/locales';
 import { JsonLd } from '@/shared/ui/JsonLd';
+import { FaqSection } from '@/shared/ui/FaqSection';
 import { BetaBadge } from '@/shared/ui/BetaBadge';
 import { aiAskUrl } from '@/shared/config/aiHost';
-import { buildHomeFaqJsonLd } from '../homeJsonLd';
+import { buildHomeFaq } from '../homeJsonLd';
 import {
     CryptoShowcase,
     HeroIllustration,
@@ -171,6 +173,9 @@ export default async function Home({
     // `@id`와 `inLanguage`가 로케일을 따른다 — 예전에는 네 로케일이 같은
     // `@id`를 쓰면서 전부 `ko`를 자처했고, 형제 `WebPage`는 `inLanguage: en`을
     // 선언해 **같은 문서가 두 언어를 주장**했다.
+    // JSON-LD와 화면 `<FaqSection>`의 단일 소스 — 두 번 만들지 않는다.
+    const homeFaq = buildHomeFaq(tJsonLd);
+
     const webApplicationId = `${localizedAbsoluteUrl(SITE_URL, resolved)}#webapplication`;
     const jsonLd = {
         '@context': 'https://schema.org',
@@ -225,7 +230,10 @@ export default async function Home({
         url: SITE_URL,
         logo: `${SITE_URL}/icon512.png`,
         description: tSeo('root.description'),
-        sameAs: [GITHUB_URL],
+        // 운영자 개인 저장소와 서비스 저장소 둘 다 — `founder.sameAs`가 이미
+        // 전자를 가리키는데 Organization이 후자만 주장하면 두 프로필이 같은
+        // 주체로 묶이지 않는다.
+        sameAs: [SITE_OPERATOR.githubUrl, GITHUB_URL],
         // 운영 주체를 그래프에 붙인다 — `/about`의 `Person` 노드와 같은 `@id`라
         // 두 페이지의 사람이 하나로 합쳐진다. 값은 `SITE_OPERATOR` 단일 소스.
         founder: {
@@ -242,7 +250,7 @@ export default async function Home({
             <JsonLd data={jsonLd} />
             <JsonLd data={webPageJsonLd} />
             <JsonLd data={organizationJsonLd} />
-            <JsonLd data={buildHomeFaqJsonLd(tJsonLd)} />
+            <JsonLd data={buildFaqJsonLd(homeFaq)} />
             <a
                 href="#search"
                 className="sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:top-4 focus-visible:left-4 focus-visible:z-50 focus-visible:rounded focus-visible:bg-primary-600 focus-visible:px-4 focus-visible:py-2 focus-visible:text-white"
@@ -408,6 +416,14 @@ export default async function Home({
                 </Suspense>
                 <TickerCategories />
                 <CryptoShowcase />
+                {/* FAQPage 구조화데이터의 가시 표면. `/economy`·`/fear-greed`가
+                    쓰는 같은 컴포넌트이고, 같은 배열이 위 JSON-LD를 만든다. */}
+                <section className="page-container pb-12">
+                    <FaqSection
+                        heading={tSeo('faqHeading.home')}
+                        items={homeFaq}
+                    />
+                </section>
             </main>
         </>
     );

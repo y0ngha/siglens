@@ -164,3 +164,23 @@ describe('/economy/kr Suspense 자리표는', () => {
         expect(skeletonVariants).toContain('kr');
     });
 });
+
+describe('/economy/kr 가시 브레드크럼', () => {
+    it('BreadcrumbList와 같은 마디를 그린다', async () => {
+        const { economyKrTitle } =
+            await import('@/app/[locale]/economy/constants');
+        const { getTranslations } = await import('next-intl/server');
+        const { expectVisibleBreadcrumbLabels } =
+            await import('@/__tests__/utils/expectVisibleBreadcrumb');
+
+        const tSeo = await getTranslations({
+            locale: 'ko',
+            namespace: 'shared.seo',
+        });
+
+        expectVisibleBreadcrumbLabels(
+            await EconomyKrPage({ params: Promise.resolve({ locale: 'ko' }) }),
+            [economyKrTitle(tSeo)]
+        );
+    });
+});

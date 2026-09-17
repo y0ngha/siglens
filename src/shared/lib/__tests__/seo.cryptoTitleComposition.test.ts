@@ -28,7 +28,7 @@ type CryptoBuilder = (
 ) => { title: string };
 
 const CRYPTO_BUILDERS: readonly (readonly [string, CryptoBuilder, string])[] = [
-    ['chart', buildCryptoSymbolSeoContent, '시세 전망'],
+    ['chart', buildCryptoSymbolSeoContent, '시세 분석'],
     ['news', buildCryptoSymbolNewsSeoContent, '코인 뉴스'],
     ['overall', buildCryptoSymbolOverallSeoContent, '코인 종합 분석'],
     ['fear-greed', buildCryptoSymbolFearGreedSeoContent, '공포 탐욕 지수'],

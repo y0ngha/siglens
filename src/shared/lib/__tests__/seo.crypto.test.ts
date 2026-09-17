@@ -29,9 +29,9 @@ describe('buildCryptoSymbolSeoContent', () => {
             displayName: 'Bitcoin USD',
         });
         expect(c.ticker).toBe('BTCUSD');
-        // core(시세 전망)만 단언한다 — tail(차트·기술적 신호)은 composeSymbolTitle이
+        // core(시세 분석)만 단언한다 — tail(차트·기술적 신호)은 composeSymbolTitle이
         // 예산 압박 시 가장 먼저 버리는 서술이라 전체 문자열을 고정하지 않는다.
-        expect(c.title).toContain('시세 전망');
+        expect(c.title).toContain('시세 분석');
         expect(c.title).not.toContain('주가');
         expect(c.description).toContain('Bitcoin USD');
         expect(c.url).toBe('https://siglens.io/BTCUSD');
@@ -48,7 +48,7 @@ describe('buildCryptoSymbolSeoContent', () => {
         // 시세 분석 — ${displayName} 차트와 매매 신호`)은 64 폭단위까지 오버플로우
         // 했었다 — 이 displayName 누수 제거를 검증하는 전용 테스트는
         // seo.cryptoTitleComposition.test.ts에 있다.
-        expect(c.title).toMatch(/^BTCUSD 시세 전망/);
+        expect(c.title).toMatch(/^BTCUSD 시세 분석/);
     });
 
     it('falls back to ticker as display name', () => {
@@ -71,11 +71,11 @@ describe('resolveSymbolSeoContent', () => {
         const c = resolveSymbolSeoContent('BTCUSD', 'crypto', t, {
             displayName: 'Bitcoin USD',
         });
-        // buildCryptoSymbolSeoContent produces "BTCUSD 시세 전망 — 차트·기술적 신호" 형태.
-        // core(시세 전망)만 단언한다 — tail은 예산 압박 시 가장 먼저 버려진다.
-        expect(c.title).toContain('시세 전망');
+        // buildCryptoSymbolSeoContent produces "BTCUSD 시세 분석 — 차트·기술적 신호" 형태.
+        // core(시세 분석)만 단언한다 — tail은 예산 압박 시 가장 먼저 버려진다.
+        expect(c.title).toContain('시세 분석');
         expect(c.title).not.toContain('주가');
-        // crypto keywords use 시세/가격, not 주가/주가 전망
+        // crypto keywords use 시세/가격, not 주가
         expect(c.keywords).toContain('BTCUSD 시세');
         expect(c.keywords).not.toContain('BTCUSD 주가');
         expect(c.url).toBe('https://siglens.io/BTCUSD');
@@ -86,11 +86,11 @@ describe('resolveSymbolSeoContent', () => {
             displayName: 'Apple Inc.',
             koreanName: '애플',
         });
-        // buildSymbolSeoContent produces "애플(AAPL) 주가 전망 — 차트·기술적 신호" 형태.
-        // core(주가 전망)만 단언한다 — tail은 composeSymbolTitle이 예산 압박 시
+        // buildSymbolSeoContent produces "애플(AAPL) 주가 분석 — 차트·기술적 신호" 형태.
+        // core(주가 분석)만 단언한다 — tail은 composeSymbolTitle이 예산 압박 시
         // 가장 먼저 버리는 서술이라 전체 문자열을 고정하지 않는다.
         expect(c.title).toContain('AAPL');
-        expect(c.title).toContain('주가 전망');
+        expect(c.title).toContain('주가 분석');
         expect(c.title).not.toContain('시세');
         // stock keywords use 주가, not 시세
         expect(c.keywords).toContain('AAPL 주가');

@@ -34,7 +34,7 @@ vi.mock('@/shared/lib/legal', () => ({
 import React from 'react';
 import { render, screen, within } from '@testing-library/react';
 
-import { Footer, splitFooterLabel } from '../Footer';
+import { Footer } from '../Footer';
 import {
     ALL_NAV_REGION_LINKS,
     NAV_VERTICALS,
@@ -243,7 +243,25 @@ describe('Footer', () => {
             within(marketList)
                 .getAllByRole('link')
                 .map(a => a.textContent)
-        ).toEqual(['미국 시장 분석', '한국 시장 분석']);
+        ).toEqual(['미국', '한국']);
+    });
+
+    /**
+     * 회귀 가드: 예전에는 링크 안에 `sr-only` span 두 개로 전체 이름을 숨겨 넣어
+     * 크롤러가 읽는 앵커 텍스트만 길게 유지했다. 전 페이지에 렌더되는 전역 링크
+     * 집합에서 그건 "검색엔진에게만 보이는 텍스트"이고, 구글 숨김 텍스트 정책에
+     * 정면으로 걸린다. 접근성 이름은 `aria-label`이 그대로 책임진다.
+     */
+    it('링크 안에 숨김 텍스트가 없다 — 이름은 aria-label이 진다', () => {
+        const { container } = render(<Footer />);
+
+        const sitemap = screen.getByRole('navigation', { name: '사이트맵' });
+        expect(sitemap.querySelectorAll('.sr-only')).toHaveLength(0);
+        expect(container.querySelectorAll('a .sr-only')).toHaveLength(0);
+
+        expect(
+            screen.getByRole('link', { name: '미국 시장 분석' })
+        ).toHaveTextContent('미국');
     });
 
     it('exposes both market regions', () => {
@@ -255,47 +273,6 @@ describe('Footer', () => {
         expect(
             screen.getByRole('link', { name: '한국 시장 분석' })
         ).toHaveAttribute('href', '/market/kr');
-    });
-});
-
-describe('splitFooterLabel', () => {
-    /**
-     * 조합이 규칙적이지 않아 문자열 연결로는 못 만든다 — 그래서 만들지 않고
-     * 자른다. 이 표가 그 불규칙을 그대로 담는다.
-     */
-    it('토큰 앞뒤로 갈라 낸다', () => {
-        // 접미 — 가장 흔한 형태.
-        expect(splitFooterLabel('미국 시장 분석', '미국')).toEqual({
-            srPrefix: '',
-            visible: '미국',
-            srSuffix: ' 시장 분석',
-        });
-        // 접미인데 버티컬 라벨(`뉴스`)과 fullLabel(`미국 시장 뉴스`)이 어긋난다.
-        expect(splitFooterLabel('미국 시장 뉴스', '미국')).toEqual({
-            srPrefix: '',
-            visible: '미국',
-            srSuffix: ' 시장 뉴스',
-        });
-        // 상위 허브는 토큰이 **앞**이 아니라 뒤에 온다.
-        expect(splitFooterLabel('뉴스 전체', '전체')).toEqual({
-            srPrefix: '뉴스 ',
-            visible: '전체',
-            srSuffix: '',
-        });
-        // fullLabel이 토큰 하나뿐인 경우.
-        expect(splitFooterLabel('암호화폐 뉴스', '암호화폐')).toEqual({
-            srPrefix: '',
-            visible: '암호화폐',
-            srSuffix: ' 뉴스',
-        });
-    });
-
-    it('토큰이 없으면 전체를 보여준다 (라벨을 잃지 않는다)', () => {
-        expect(splitFooterLabel('미국 시장 분석', '없는토큰')).toEqual({
-            srPrefix: '',
-            visible: '미국 시장 분석',
-            srSuffix: '',
-        });
     });
 });
 

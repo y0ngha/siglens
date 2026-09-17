@@ -7,13 +7,11 @@ import {
     localeOpenGraph,
     localeRobots,
 } from '@/shared/lib/seoAlternates';
-import { getMarketSummaryStatic } from '@/entities/market-summary/api/marketSummaryStaticCache';
-import { getSectorSignalsStatic } from '@/entities/sector-signal/api/sectorSignalsStaticCache';
-import { DEFAULT_DASHBOARD_TIMEFRAME } from '@/shared/config/dashboard-tickers';
 import { US_DASHBOARD_SCOPE } from '@/shared/config/dashboardScope';
 import { SITE_NAME } from '@/shared/lib/seo';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { marketCopyFor } from './copy';
+import { loadMarketSignals } from './loadMarketSignals';
 import { MarketRouteBody } from './MarketRouteBody';
 
 // 1h — ISR. 단일 페이지라 재생성 비용이 작아, 장중 섹터 신호 신선도를 위해 짧게 유지한다
@@ -41,30 +39,8 @@ export async function generateMetadata({
     const ogLocale = localeOpenGraph(resolvedLocale);
     // og:url도 로케일별이어야 한다 — 소셜 언퍼널이 ko URL로 되돌린다.
     const localizedUrl = localeCanonical(resolvedLocale, COPY.path);
-    // MarketContent와 동일한 catch 패턴으로 두 loader를 독립 병렬 조회한다 — metadata의
-    // degrade 판정이 실제 렌더 degrade와 어긋나지 않도록 한다(economy/fear-greed와 동일 원칙).
-    const [summary, sectorData] = await Promise.all([
-        getMarketSummaryStatic(SCOPE).catch(e => {
-            console.error(
-                '[market.generateMetadata] getMarketSummaryStatic failed:',
-                e
-            );
-            return { indices: [], sectors: [] };
-        }),
-        getSectorSignalsStatic(SCOPE, DEFAULT_DASHBOARD_TIMEFRAME).catch(e => {
-            console.error(
-                '[market.generateMetadata] getSectorSignalsStatic failed:',
-                e
-            );
-            return { computedAt: '', stocks: [] };
-        }),
-    ]);
-    // 두 loader가 모두 빈 값으로 떨어진 경우만 degrade로 본다. 한쪽만 비어도 다른 쪽에
-    // 콘텐츠가 있으면 페이지는 여전히 비어있지 않은 렌더다.
-    const degraded =
-        summary.indices.length === 0 &&
-        summary.sectors.length === 0 &&
-        sectorData.stocks.length === 0;
+    // metadata·본문·구조화데이터가 **같은 술어**를 본다 — `loadMarketSignals` JSDoc 참조.
+    const { degraded } = await loadMarketSignals(SCOPE);
 
     return {
         title: COPY.title,

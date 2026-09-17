@@ -358,3 +358,29 @@ describe('/fear-greed page', () => {
         });
     });
 });
+
+/**
+ * 가시 브레드크럼은 `BreadcrumbList`의 `name`(`copy.heading`)과 **같은 문자열**을
+ * 그려야 한다 — 여기는 h1(`copy.title`)이 그것과 다르므로, 브레드크럼이 h1을
+ * 따라가면 마크업과 화면이 조용히 갈린다.
+ */
+describe('/fear-greed 가시 브레드크럼', () => {
+    it('BreadcrumbList와 같은 마디를 그린다', async () => {
+        mockGetMarketFearGreedStatic.mockResolvedValue(SAMPLE_SNAPSHOT);
+
+        const { expectVisibleBreadcrumbMatchesJsonLdDom } =
+            await import('@/__tests__/utils/expectVisibleBreadcrumb');
+        const { koMessage } = await import('@/shared/test-utils/koMessage');
+
+        const { container } = render(
+            await FearGreedRoutePage({
+                params: Promise.resolve({ locale: 'ko' }),
+            })
+        );
+
+        expectVisibleBreadcrumbMatchesJsonLdDom(
+            container,
+            koMessage('shared.ui.Breadcrumb.46c31f')
+        );
+    });
+});

@@ -24,6 +24,7 @@ import {
     MARKET_NEWS_ROW_SERIALIZATION_LIMIT,
 } from '@/widgets/market-news';
 import { NewsCategoryTabs } from '@/widgets/news-hub';
+import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
 import { regionsOf, type NavRegionId } from '@/shared/config/assetClassNav';
@@ -62,31 +63,32 @@ const REGION_KEYWORDS: Record<NavRegionId, readonly string[]> = {
 };
 
 /**
- * 카테고리 페이지의 breadcrumb — 허브 → 지역 허브 → 카테고리.
+ * 카테고리 페이지의 breadcrumb 마디 — 허브 → 지역 허브 → 카테고리.
  *
  * 지역에 카테고리가 하나뿐이면(한국·암호화폐) 지역 허브와 카테고리 페이지가
  * 같은 URL이라 2단계로 줄인다. 같은 URL을 두 단계로 넣으면 breadcrumb가
  * 자기 자신을 부모로 갖는다.
+ *
+ * **마디를 돌려주고 마크업은 만들지 않는다.** 같은 배열이 `BreadcrumbList`
+ * JSON-LD와 화면 `<Breadcrumb>` 양쪽을 만든다 — 구글은 둘의 텍스트가 다르면
+ * 마크업을 무시하므로 두 벌로 두면 한쪽만 고쳐져 자격을 잃는다.
  */
-function buildCategoryBreadcrumb(
+function categoryBreadcrumbTrail(
     cfg: CategoryConfig,
-    categoryUrl: string,
+    categoryPath: string,
     /** `shared.config` 번역자. 이 헬퍼는 순수 함수라 훅을 부를 수 없어 주입받는다. */
-    tNav: (key: string) => string,
-    locale: Locale
-): Record<string, unknown> {
+    tNav: (key: string) => string
+): Array<{ name: string; path: string }> {
     const regionLink = regionsOf('news').find(r => r.region === cfg.region);
-    const trail = [
-        { name: tNav('app.news.page.dc06c4'), url: `${SITE_URL}/news` },
-    ];
-    if (regionLink && `${SITE_URL}${regionLink.href}` !== categoryUrl) {
+    const trail = [{ name: tNav('app.news.page.dc06c4'), path: '/news' }];
+    if (regionLink && regionLink.href !== categoryPath) {
         trail.push({
             name: tNav(regionLink.fullLabelKey),
-            url: `${SITE_URL}${regionLink.href}`,
+            path: regionLink.href,
         });
     }
-    trail.push({ name: tNav(cfg.labelKey), url: categoryUrl });
-    return buildBreadcrumbJsonLd(trail, locale);
+    trail.push({ name: tNav(cfg.labelKey), path: categoryPath });
+    return trail;
 }
 
 interface Props {
@@ -260,11 +262,18 @@ export default async function CategoryNewsPage({ params }: Props) {
           }
         : null;
 
+    // JSON-LD와 화면 브레드크럼의 단일 소스.
+    const breadcrumbTrail = categoryBreadcrumbTrail(
+        cfg,
+        `/news/${cfg.slug}`,
+        tNav
+    );
     const breadcrumbJsonLd = !isEmpty
-        ? buildCategoryBreadcrumb(
-              cfg,
-              categoryUrl,
-              tNav,
+        ? buildBreadcrumbJsonLd(
+              breadcrumbTrail.map(({ name, path }) => ({
+                  name,
+                  url: `${SITE_URL}${path}`,
+              })),
               isLocale(locale) ? locale : DEFAULT_LOCALE
           )
         : null;
@@ -335,6 +344,15 @@ export default async function CategoryNewsPage({ params }: Props) {
                     currentPath={`/news/${cfg.slug}`}
                 />
                 <NewsCategoryTabs activeCategory={cat} />
+                {/* 마지막 마디는 현재 페이지라 링크를 걸지 않는다. */}
+                <Breadcrumb
+                    trail={breadcrumbTrail.map(({ name, path }, index) => ({
+                        label: name,
+                        ...(index === breadcrumbTrail.length - 1
+                            ? {}
+                            : { href: path }),
+                    }))}
+                />
                 <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-50 sm:text-3xl">
                     {cfg.koLabel} {t('page.3a465d')}
                 </h1>

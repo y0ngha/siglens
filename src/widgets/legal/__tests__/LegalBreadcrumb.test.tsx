@@ -13,33 +13,43 @@ vi.mock('next/link', () => ({
         </a>
     ),
 }));
-vi.mock('@/shared/lib/seo', () => ({
-    SITE_NAME: 'Siglens',
-}));
 
 import React from 'react';
 import { render, screen } from '@testing-library/react';
+import { NextIntlClientProvider } from 'next-intl';
 
+import messages from '../../../../messages/ko.json';
 import { LegalBreadcrumb } from '../LegalBreadcrumb';
+import { SITE_NAME } from '@/shared/lib/seo';
+
+const NAV_LABEL = messages.shared.ui.Breadcrumb['46c31f'];
+
+function renderCrumb(pageTitle: string) {
+    render(
+        <NextIntlClientProvider locale="ko" messages={messages}>
+            <LegalBreadcrumb pageTitle={pageTitle} />
+        </NextIntlClientProvider>
+    );
+}
 
 describe('LegalBreadcrumb', () => {
     it('renders a breadcrumb navigation', () => {
-        render(<LegalBreadcrumb pageTitle="개인정보처리방침" />);
+        renderCrumb('개인정보처리방침');
 
         expect(
-            screen.getByRole('navigation', { name: /breadcrumb/ })
+            screen.getByRole('navigation', { name: NAV_LABEL })
         ).toBeInTheDocument();
     });
 
     it('renders the site name as a link to home', () => {
-        render(<LegalBreadcrumb pageTitle="이용약관" />);
+        renderCrumb('이용약관');
 
-        const homeLink = screen.getByRole('link', { name: /Siglens/ });
+        const homeLink = screen.getByRole('link', { name: SITE_NAME });
         expect(homeLink).toHaveAttribute('href', '/');
     });
 
     it('renders the current page title with aria-current', () => {
-        render(<LegalBreadcrumb pageTitle="이용약관" />);
+        renderCrumb('이용약관');
 
         const currentItem = screen.getByText('이용약관');
         expect(currentItem.closest('li')).toHaveAttribute(
@@ -49,7 +59,7 @@ describe('LegalBreadcrumb', () => {
     });
 
     it('renders a separator between items', () => {
-        render(<LegalBreadcrumb pageTitle="개인정보처리방침" />);
+        renderCrumb('개인정보처리방침');
 
         expect(screen.getByText('/')).toBeInTheDocument();
     });

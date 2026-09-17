@@ -162,7 +162,7 @@ describe('TechnicalSnapshotProse', () => {
         expect(screen.getByText(/head_and_shoulders/)).toBeInTheDocument();
     });
 
-    it('strategyResults를 전략 시그널 라벨 붙은 목록으로 렌더한다 (FIX 3)', () => {
+    it('strategyResults를 기술적 신호 요약 라벨 붙은 목록으로 렌더한다 (FIX 3)', () => {
         render(
             <TechnicalSnapshotProse
                 content={buildFixture({
@@ -183,7 +183,7 @@ describe('TechnicalSnapshotProse', () => {
             />
         );
 
-        expect(screen.getByText('전략 시그널')).toBeInTheDocument();
+        expect(screen.getByText('기술적 신호 요약')).toBeInTheDocument();
         expect(
             screen.getByText('추세추종 전략이 매수 신호를 발생시켰습니다.')
         ).toBeInTheDocument();
@@ -204,7 +204,7 @@ describe('TechnicalSnapshotProse', () => {
         );
 
         expect(screen.queryByText('차트 패턴')).not.toBeInTheDocument();
-        expect(screen.queryByText('전략 시그널')).not.toBeInTheDocument();
+        expect(screen.queryByText('기술적 신호 요약')).not.toBeInTheDocument();
     });
 
     it('patternSummaries 항목의 summary가 비어있으면 해당 항목은 건너뛴다 (FIX 3)', () => {

@@ -341,3 +341,8 @@
 - Violation: `useEffectEvent` (notifyNavigated) in src/widgets/agent-chat/Sidebar.tsx declared after derived values and handlers
   - Rule: MISTAKES.md Components Rule 17 — All hook calls must be declared before derived variables and handlers. Strict ordering: useState/useRef → useQuery/useMutation/custom hooks → useCallback/useMemo → derived variables → handlers → useEffect
   - Context: Moved `useEffectEvent` to correct position right after `useOnClickOutside`. Part of recurring pattern on this feature: ChatShell useState placement, Sidebar hook ordering, handlers positioning.
+
+## [fix/seo-b-copy-jsonld Round 1 | seo/index-footprint-recovery | 2026-09-15]
+- Violation: RECOMMENDED — loadMarketSignals loaded CachedMarketDataProvider 3 times per request without request-scope deduplication → redundant Data Cache reads
+  - Rule: (new) RSC data loaders used in multiple places within one request must wrap with React cache() to eliminate redundant fetches from the same provider call
+  - Context: Server-cached providers like CachedMarketDataProvider return the same data; calling them multiple times per request wastes the cache boundary. Fixed by wrapping loader in React cache(). Scope parameter removed (was defeating cache key). Verified: getMarketSummary, getMarketNotice, getMarketCalendar now deduplicate to single provider call per request.

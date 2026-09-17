@@ -33,7 +33,7 @@ type EquityBuilder = (
 ) => { title: string };
 
 const EQUITY_BUILDERS: readonly (readonly [string, EquityBuilder, string])[] = [
-    ['chart', buildSymbolSeoContent, '주가 전망'],
+    ['chart', buildSymbolSeoContent, '주가 분석'],
     ['financials', buildSymbolFinancialsSeoContent, '재무제표'],
     ['congress', buildSymbolCongressSeoContent, '의회 거래'],
     ['fundamental', buildSymbolFundamentalSeoContent, '펀더멘털'],

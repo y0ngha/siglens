@@ -50,6 +50,7 @@ vi.mock('@/entities/skill', () => ({
     FileSkillsLoader: vi.fn(),
 }));
 vi.mock('@/shared/lib/seo', () => ({
+    buildFaqJsonLd: () => ({}),
     buildWebPageJsonLd: () => ({}),
     GITHUB_URL: 'https://github.com/y0ngha/siglens',
     localizedAbsoluteUrl: (url: string) => url,

@@ -1,5 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import { LegalBreadcrumb } from '@/widgets/legal/LegalBreadcrumb';
+import messages from '../../messages/ko.json';
+
+// 브레드크럼 랜드마크 이름은 `shared.ui.Breadcrumb` 카탈로그 값이다 — 리터럴로
+// 두면 번역 한 줄에 통합 테스트가 깨진다(LegalBreadcrumb.test.tsx와 같은 방식).
+const NAV_LABEL = messages.shared.ui.Breadcrumb['46c31f'];
 
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ push: vi.fn(), prefetch: vi.fn() }),
@@ -37,7 +42,7 @@ describe('Legal Page Navigation', () => {
         it('has accessible breadcrumb navigation landmark', () => {
             render(<LegalBreadcrumb pageTitle="개인정보 처리방침" />);
             expect(
-                screen.getByRole('navigation', { name: 'breadcrumb' })
+                screen.getByRole('navigation', { name: NAV_LABEL })
             ).toBeInTheDocument();
         });
 

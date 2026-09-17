@@ -54,6 +54,7 @@ import { render, screen } from '@testing-library/react';
 import { generateMetadata } from '../page';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import CategoryNewsPage from '../page';
+import { koMessage } from '@/shared/test-utils/koMessage';
 
 describe('/news/[category] generateMetadata는', () => {
     it('유효 카테고리면 canonical /news/<slug>를 설정한다', async () => {
@@ -220,16 +221,44 @@ describe('/news/kr 카테고리 페이지는', () => {
     });
 
     it('지역 탭에서 한국만 현재 페이지로 표시한다', async () => {
-        const { container } = render(
+        render(
             await CategoryNewsPage({
                 params: Promise.resolve({ locale: 'ko', category: 'kr' }),
             })
         );
 
+        // 지역 탭 안으로 좁힌다 — 브레드크럼의 마지막 마디도 `aria-current="page"`를
+        // 달고(둘 다 정당한 용법), 문서 전체로 긁으면 두 컴포넌트가 섞인다.
+        const tabs = screen.getByRole('navigation', {
+            name: koMessage('shared.ui.RegionTabs.1eafbd'),
+        });
         const current = Array.from(
-            container.querySelectorAll('[aria-current="page"]')
+            tabs.querySelectorAll('[aria-current="page"]')
         ).map(el => el.textContent?.trim());
 
         expect(current).toEqual(['한국']);
+    });
+});
+
+/**
+ * 가시 브레드크럼과 `BreadcrumbList` 마크업은 **같은 문자열**이어야 한다 —
+ * 구글은 둘이 다르면 마크업을 무시하고, 그 어긋남은 화면에 표시가 나지 않는다.
+ */
+describe('/news/[category] 가시 브레드크럼', () => {
+    it('BreadcrumbList와 같은 마디를 그린다', async () => {
+        const { expectVisibleBreadcrumbMatchesJsonLdDom } =
+            await import('@/__tests__/utils/expectVisibleBreadcrumb');
+        const { koMessage } = await import('@/shared/test-utils/koMessage');
+
+        const { container } = render(
+            await CategoryNewsPage({
+                params: Promise.resolve({ locale: 'ko', category: 'stock' }),
+            })
+        );
+
+        expectVisibleBreadcrumbMatchesJsonLdDom(
+            container,
+            koMessage('shared.ui.Breadcrumb.46c31f')
+        );
     });
 });
