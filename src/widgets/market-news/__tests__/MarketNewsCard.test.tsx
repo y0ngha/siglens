@@ -114,7 +114,7 @@ describe('MarketNewsCard는', () => {
     });
 
     /** 회귀 가드 — NewsList와 같은 사고. 제목만 로케일을 타면 안 된다. */
-    it('사이드카 번역이 있으면 요약·본문을 그 언어로 렌더한다', () => {
+    it('사이드카 번역이 있으면 요약을 그 언어로 렌더한다', () => {
         render(
             <MarketNewsCard
                 category="general"
@@ -128,9 +128,29 @@ describe('MarketNewsCard는', () => {
             />
         );
         expect(screen.getByText('BTC summary here.')).toBeInTheDocument();
-        expect(screen.getByText('BTC body here.')).toBeInTheDocument();
         expect(screen.queryByText('BTC 요약이에요.')).not.toBeInTheDocument();
+    });
+
+    /** H-3 — 카드가 원문 전문을 재게시하지 않는다. bodyKo가 있어도 렌더하지 않는다. */
+    it('bodyKo가 있어도 본문 섹션을 렌더하지 않는다', () => {
+        render(
+            <MarketNewsCard
+                category="general"
+                item={{ ...BASE, bodyKo: 'BTC 본문이에요.' }}
+            />
+        );
         expect(screen.queryByText('BTC 본문이에요.')).not.toBeInTheDocument();
+    });
+
+    it('summaryKo와 출처가 함께 렌더된다', () => {
+        render(
+            <MarketNewsCard
+                category="general"
+                item={{ ...BASE, summaryKo: 'BTC 요약이에요.' }}
+            />
+        );
+        expect(screen.getByText('BTC 요약이에요.')).toBeInTheDocument();
+        expect(screen.getByText('CoinWire')).toBeInTheDocument();
     });
 
     it('sentiment === "bullish"이면 배지에 "긍정" 레이블과 bullish 클래스가 있다', () => {

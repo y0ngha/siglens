@@ -8,7 +8,6 @@ import { cn } from '@/shared/lib/cn';
 import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
 import { NewsCardShell } from '@/shared/ui/NewsCardShell';
 import {
-    resolveNewsBody,
     resolveNewsSummary,
     resolveNewsTitle,
 } from '@/shared/lib/news/resolveNewsTitle';
@@ -182,8 +181,7 @@ export function MarketNewsCard({ category, item }: MarketNewsCardProps) {
     const pending = isPending(item);
     const isHighImpact = !pending && item.priceImpact === 'high';
     const publishedDate = formatNewsPublishedAt(item.publishedAt, locale);
-    // 제목만 로케일을 타면 번역된 헤드라인 아래 한국어 본문이 붙는다.
-    const body = resolveNewsBody(item);
+    // 카드는 요약만 노출한다 — 전문 스크랩 방지(H-3). 원문은 "원문 보기" 링크로.
     const summary = resolveNewsSummary(item);
 
     return (
@@ -224,28 +222,16 @@ export function MarketNewsCard({ category, item }: MarketNewsCardProps) {
                 ) : undefined
             }
             bodySection={
-                <>
-                    {body !== null && (
-                        <section className="mt-3 border-t border-secondary-700/70 pt-3">
-                            <h4 className="mb-1 text-xs font-medium text-secondary-300">
-                                {t('MarketNewsCard.c67b87')}
-                            </h4>
-                            <p className="text-sm leading-relaxed wrap-break-word text-secondary-400">
-                                {body}
-                            </p>
-                        </section>
-                    )}
-                    {summary !== null && (
-                        <section className="mt-3 border-t border-secondary-700/70 pt-3">
-                            <h4 className="mb-1 text-xs font-medium text-secondary-300">
-                                {t('MarketNewsCard.3ea27a')}
-                            </h4>
-                            <p className="text-sm leading-relaxed wrap-break-word text-secondary-400">
-                                {summary}
-                            </p>
-                        </section>
-                    )}
-                </>
+                summary !== null && (
+                    <section className="mt-3 border-t border-secondary-700/70 pt-3">
+                        <h4 className="mb-1 text-xs font-medium text-secondary-300">
+                            {t('MarketNewsCard.3ea27a')}
+                        </h4>
+                        <p className="text-sm leading-relaxed wrap-break-word text-secondary-400">
+                            {summary}
+                        </p>
+                    </section>
+                )
             }
             linkChildren={
                 <>

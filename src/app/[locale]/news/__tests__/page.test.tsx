@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
+import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 
 // staticSymbolCache: return a few headlines per category so CategoryCards render previews.
 vi.mock('@/shared/cache/staticSymbolCache', () => ({
@@ -49,6 +50,24 @@ describe('/news hub page는', () => {
         ]) {
             expect(hrefs).toContain(`/news/${slug}`);
         }
+    });
+
+    /**
+     * D6 — 미국 지역 카드 미리보기는 `stock` 센티널을 읽어야 한다. `general`을
+     * 그대로 쓰면 이 카드가 `/news/us` 첫 카드(`general`)와 같은 피드를
+     * 미리보기로 중복 노출한다.
+     */
+    it('미국 지역 카드 미리보기는 general이 아니라 stock 센티널을 조회한다 (D6)', async () => {
+        render(
+            await NewsHubPage({ params: Promise.resolve({ locale: 'ko' }) })
+        );
+
+        const sentinelsQueried = vi
+            .mocked(staticSymbolCache)
+            .mock.calls.map(call => call[1]);
+
+        expect(sentinelsQueried).toContain('__NEWS_STOCK__');
+        expect(sentinelsQueried).not.toContain('__NEWS_GENERAL__');
     });
 });
 
