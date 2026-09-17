@@ -2,14 +2,11 @@
 
 # ---- builder ----
 FROM node:24-alpine AS builder
-# ICU 회귀 가드 — 서버 Intl 출력이 브라우저(Chrome)와 다르면 하이드레이션이 깨진다.
-# 2026-09-17 운영 실측: node:22-alpine(v22.23, ICU 78.2)이 ko-KR 오전/오후를 "PM"으로,
-# compact 통화를 "US$1952.0억"으로 냈다. 브라우저는 "오후"·"US$1952억"이라 뉴스·재무제표·
-# 경제 페이지 전부에서 React #418(서버 텍스트 불일치)이 나고 SSR 트리를 클라에서 다시 그렸다.
-# 태그가 떠다니는 이미지라 같은 회귀가 조용히 돌아올 수 있어 빌드에서 막는다.
-RUN node -e "const d=new Intl.DateTimeFormat('ko-KR',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:'UTC'}).format(Date.UTC(2020,0,1,15,30));const n=new Intl.NumberFormat('ko-KR',{notation:'compact',style:'currency',currency:'USD',maximumFractionDigits:1}).format(1952e8);if(d!=='오후 3:30'||n!=='US\$1952억'){console.error('FAIL: ICU ko-KR 출력이 브라우저와 다름',d,n);process.exit(1)}"
 RUN corepack enable && corepack prepare yarn@4.18.0 --activate
 WORKDIR /app
+# ICU 회귀 가드 — scripts/assert-icu-locale.mjs 참고. yarn install/COPY . . 전에 실행해 빨리 실패시킨다.
+COPY scripts/assert-icu-locale.mjs ./scripts/assert-icu-locale.mjs
+RUN node scripts/assert-icu-locale.mjs
 COPY .yarnrc.yml package.json yarn.lock ./
 COPY .yarn ./.yarn
 RUN --mount=type=secret,id=SIGLENS_GITHUB_TOKEN,required=true \
@@ -68,7 +65,8 @@ RUN node scripts/assert-standalone-skills.mjs
 FROM node:24-alpine AS runner
 RUN apk add --no-cache tini
 # builder와 같은 ICU 가드 — 런타임(ISR 재생성)이 실제로 쓰는 이미지라 여기서도 확인한다.
-RUN node -e "const d=new Intl.DateTimeFormat('ko-KR',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:'UTC'}).format(Date.UTC(2020,0,1,15,30));const n=new Intl.NumberFormat('ko-KR',{notation:'compact',style:'currency',currency:'USD',maximumFractionDigits:1}).format(1952e8);if(d!=='오후 3:30'||n!=='US\$1952억'){console.error('FAIL: ICU ko-KR 출력이 브라우저와 다름',d,n);process.exit(1)}"
+COPY --from=builder /app/scripts/assert-icu-locale.mjs /tmp/assert-icu-locale.mjs
+RUN node /tmp/assert-icu-locale.mjs && rm /tmp/assert-icu-locale.mjs
 WORKDIR /app
 # GIT_SHA must be re-declared in the runner stage — ARG scope is per-stage in Docker.
 # Without this, process.env.GIT_SHA is unset at runtime and cache-handler/config.mjs

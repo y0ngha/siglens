@@ -347,3 +347,11 @@
 - Violation: RECOMMENDED — loadMarketSignals loaded CachedMarketDataProvider 3 times per request without request-scope deduplication → redundant Data Cache reads
   - Rule: (new) RSC data loaders used in multiple places within one request must wrap with React cache() to eliminate redundant fetches from the same provider call
   - Context: Server-cached providers like CachedMarketDataProvider return the same data; calling them multiple times per request wastes the cache boundary. Fixed by wrapping loader in React cache(). Scope parameter removed (was defeating cache key). Verified: getMarketSummary, getMarketNotice, getMarketCalendar now deduplicate to single provider call per request.
+
+## [PR #838 | fix/node24-icu-hydration | Post-approval suggestions | 2026-09-18]
+- Violation: ~300-char ICU hydration guard logic duplicated in Dockerfile builder and runner stages; risk of updating only one during maintenance
+  - Rule: CONVENTIONS.md — Extract duplicated logic/constants to a single source; both stages must call the same script
+  - Context: Extracted to `scripts/assert-icu-locale.mjs` and called from both stages. Added `.gitignore` allowlist entry for `/scripts/**` exception.
+- Violation: JSDoc stated the guard verifies "Intl option combo `src/shared/lib/formatSnapshotAsOf.ts` uses (year numeric / month long / day numeric)" but the check did not verify that combo
+  - Rule: CONVENTIONS.md — JSDoc and code comments must match code behavior; explicit verification claims require matching checks
+  - Context: Added exact Intl option verification to `scripts/assert-icu-locale.mjs` (year/month/day), updated JSDoc to match the code.
