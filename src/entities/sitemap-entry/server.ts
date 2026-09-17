@@ -12,7 +12,7 @@ import {
     type NewsFeedCategoryId,
 } from '@/entities/market-news';
 import { DrizzleMarketNewsRepository } from '@/entities/market-news/api';
-import { DrizzleTermsRepository } from '@/entities/terms';
+import { DrizzleTermsRepository } from '@/entities/terms/api';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { TERMS_KIND_VALUES, type TermsKind } from '@/shared/db/constants';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
@@ -107,13 +107,50 @@ const STATIC_SITEMAP_INPUT_CACHE_KEY = 'static-sitemap-inputs:v1';
  * 한 시간 캐시: 두 sitemap 라우트(index + static)가 같은 값을 쓰고, 뉴스 인제스션
  * 주기보다 잦게 읽을 이유가 없다.
  */
-async function loadUncachedStaticSitemapInputs(): Promise<BuildStaticEntriesOptions> {
+/**
+ * `unstable_cache`가 반환값을 JSON으로 직렬화하므로, 여기서 넘기는 `Date`는
+ * 캐시를 한 번 거치면 ISO 문자열로 돌아온다. 그 계약을 타입으로 명시해
+ * 캐시 경계 너머(`loadStaticSitemapInputs`)에서만 다시 `Date`로 복원한다 —
+ * 그렇지 않으면 `buildStaticEntries`가 문자열에 `.getTime()`을 불러 죽는다
+ * (`maxLastModified`의 reduce에서 `TypeError: r.getTime is not a function`).
+ */
+interface SerializedStaticSitemapInputs {
+    readonly newsLatestPublishedAt: Partial<Record<NewsFeedCategoryId, string>>;
+    readonly legalEffectiveDates: Partial<Record<TermsKind, string>>;
+}
+
+function toIsoRecord<K extends string>(
+    record: Partial<Record<K, Date>>
+): Partial<Record<K, string>> {
+    return Object.fromEntries(
+        Object.entries(record).map(([key, value]) => [
+            key,
+            (value as Date).toISOString(),
+        ])
+    ) as Partial<Record<K, string>>;
+}
+
+function fromIsoRecord<K extends string>(
+    record: Partial<Record<K, string>>
+): Partial<Record<K, Date>> {
+    return Object.fromEntries(
+        Object.entries(record).map(([key, value]) => [
+            key,
+            new Date(value as string),
+        ])
+    ) as Partial<Record<K, Date>>;
+}
+
+async function loadUncachedStaticSitemapInputs(): Promise<SerializedStaticSitemapInputs> {
     const { db } = getDatabaseClient();
     const [newsLatestPublishedAt, legalEffectiveDates] = await Promise.all([
         loadNewsLatestPublishedAt(db),
         loadLegalEffectiveDates(db),
     ]);
-    return { newsLatestPublishedAt, legalEffectiveDates };
+    return {
+        newsLatestPublishedAt: toIsoRecord(newsLatestPublishedAt),
+        legalEffectiveDates: toIsoRecord(legalEffectiveDates),
+    };
 }
 
 type DatabaseClient = ReturnType<typeof getDatabaseClient>['db'];
@@ -168,11 +205,17 @@ async function loadLegalEffectiveDates(
 
 export async function loadStaticSitemapInputs(): Promise<BuildStaticEntriesOptions> {
     try {
-        return await unstable_cache(
+        const serialized = await unstable_cache(
             loadUncachedStaticSitemapInputs,
             [STATIC_SITEMAP_INPUT_CACHE_KEY],
             { revalidate: SECONDS_PER_HOUR }
         )();
+        return {
+            newsLatestPublishedAt: fromIsoRecord(
+                serialized.newsLatestPublishedAt
+            ),
+            legalEffectiveDates: fromIsoRecord(serialized.legalEffectiveDates),
+        };
     } catch (error) {
         console.error('[staticSitemapInputs] load failed:', error);
         return {};

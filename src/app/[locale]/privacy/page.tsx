@@ -31,7 +31,7 @@ import {
 } from '@/shared/lib/seo';
 import type { Locale } from '@/shared/i18n/locales';
 import type { SeoTranslator } from '@/shared/lib/seo';
-import { getActiveTerms, type TermsRecord } from '@/entities/terms';
+import { getActiveTerms, type TermsRecord } from '@/entities/terms/api';
 import type { Metadata } from 'next';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { notFound } from 'next/navigation';

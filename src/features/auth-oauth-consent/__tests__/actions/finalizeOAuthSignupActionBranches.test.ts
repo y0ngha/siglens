@@ -25,7 +25,7 @@ vi.mock('@/entities/oauth-account', () => ({
     createPendingOAuthSignupStore: vi.fn(),
     createPendingOAuthSignupStoreFromEnv: vi.fn(),
 }));
-vi.mock('@/entities/terms');
+vi.mock('@/entities/terms/api');
 vi.mock('@/entities/agreement');
 vi.mock('@/entities/auth', () => ({
     applyAuthCookie: vi.fn((c: unknown) => c),

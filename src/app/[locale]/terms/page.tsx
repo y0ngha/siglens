@@ -31,7 +31,7 @@ import {
 import type { SeoTranslator } from '@/shared/lib/seo';
 import type { Locale } from '@/shared/i18n/locales';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
-import { getActiveTerms, type TermsRecord } from '@/entities/terms';
+import { getActiveTerms, type TermsRecord } from '@/entities/terms/api';
 
 const PAGE_URL = `${SITE_URL}${TERMS_PATH}`;
 

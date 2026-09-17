@@ -16,7 +16,7 @@ const { mockGetActiveTerms, mockNotFound } = vi.hoisted(() => ({
     }),
 }));
 
-vi.mock('@/entities/terms', () => ({
+vi.mock('@/entities/terms/api', () => ({
     getActiveTerms: mockGetActiveTerms,
 }));
 vi.mock('next/navigation', () => ({ notFound: mockNotFound }));

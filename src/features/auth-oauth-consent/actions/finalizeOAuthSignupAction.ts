@@ -23,7 +23,7 @@ import {
 import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
 import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account';
 import { DrizzleAgreementRepository } from '@/entities/agreement';
-import { DrizzleTermsRepository } from '@/entities/terms';
+import { DrizzleTermsRepository } from '@/entities/terms/api';
 import { cookies } from 'next/headers';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 

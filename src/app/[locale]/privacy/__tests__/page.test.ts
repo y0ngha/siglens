@@ -42,7 +42,7 @@ vi.mock('@/shared/db/client', () => ({
  * 단언은 활성 행이 있는 전제에서만 의미가 있다. 행이 없는 분기는
  * `__tests__/legalSoft404.test.tsx`가 본다.
  */
-vi.mock('@/entities/terms', () => ({
+vi.mock('@/entities/terms/api', () => ({
     getActiveTerms: vi.fn().mockResolvedValue({
         id: 'row-1',
         kind: 'privacy',

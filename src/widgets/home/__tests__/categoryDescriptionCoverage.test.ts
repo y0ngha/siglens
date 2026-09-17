@@ -8,7 +8,7 @@
 import { CRYPTO_CATEGORIES } from '@/shared/config/crypto-categories';
 import { TICKER_CATEGORIES } from '@/shared/config/popular-tickers';
 import { TICKER_CATEGORY_DESCRIPTION_KEY } from '@/shared/config/tickerCategoryLabel';
-import koMessages from '../../../../messages/ko.json';
+import koMessages from '@/../messages/ko.json';
 
 const ALL_LABELS = [
     ...TICKER_CATEGORIES.map(c => c.label),

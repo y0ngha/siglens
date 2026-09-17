@@ -8,6 +8,40 @@ interface EconomyKrMacroFactsProps {
     readonly cards: readonly KrIndicatorCard[];
 }
 
+type KrMacroFactsTranslator = ReturnType<
+    typeof useTranslations<'widgets.economy.krMacroFacts'>
+>;
+
+/** 기준금리·국고채 10년 문장. 둘 다 있으면 합쳐서, 기준금리만 있으면 단독으로. */
+function buildRatesSentence(
+    tFacts: KrMacroFactsTranslator,
+    baseRateValue: string | null,
+    ktb10yValue: string | null
+): string | null {
+    if (baseRateValue === null) return null;
+    if (ktb10yValue === null) return tFacts('ratesOnly', { v0: baseRateValue });
+    return tFacts('ratesWithKtb', { v0: baseRateValue, v1: ktb10yValue });
+}
+
+/** CPI·실업률 문장. 둘 다/하나만 있는 경우를 모두 표현한다. */
+function buildMacroSentence(
+    tFacts: KrMacroFactsTranslator,
+    cpiValue: string | null,
+    unemploymentValue: string | null
+): string | null {
+    if (cpiValue !== null && unemploymentValue !== null) {
+        return tFacts('cpiAndUnemployment', {
+            v0: cpiValue,
+            v1: unemploymentValue,
+        });
+    }
+    if (cpiValue !== null) return tFacts('cpiOnly', { v0: cpiValue });
+    if (unemploymentValue !== null) {
+        return tFacts('unemploymentOnly', { v0: unemploymentValue });
+    }
+    return null;
+}
+
 /**
  * `/economy/kr`의 SSR 사실 문단 — 미국판 `EconomyMacroFacts`와 같은 역할·같은 톤.
  *
@@ -41,24 +75,16 @@ export function EconomyKrMacroFacts({ cards }: EconomyKrMacroFactsProps) {
     const cpiValue = format(cpi);
     const unemploymentValue = format(unemployment);
 
-    const ratesSentence =
-        baseRateValue !== null && ktb10yValue !== null
-            ? tFacts('ratesWithKtb', { v0: baseRateValue, v1: ktb10yValue })
-            : baseRateValue !== null
-              ? tFacts('ratesOnly', { v0: baseRateValue })
-              : null;
-
-    const macroSentence =
-        cpiValue !== null && unemploymentValue !== null
-            ? tFacts('cpiAndUnemployment', {
-                  v0: cpiValue,
-                  v1: unemploymentValue,
-              })
-            : cpiValue !== null
-              ? tFacts('cpiOnly', { v0: cpiValue })
-              : unemploymentValue !== null
-                ? tFacts('unemploymentOnly', { v0: unemploymentValue })
-                : null;
+    const ratesSentence = buildRatesSentence(
+        tFacts,
+        baseRateValue,
+        ktb10yValue
+    );
+    const macroSentence = buildMacroSentence(
+        tFacts,
+        cpiValue,
+        unemploymentValue
+    );
 
     const cpiChange = cpi?.changeFromPrevious ?? null;
     const changeSentence =

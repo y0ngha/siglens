@@ -3013,63 +3013,9 @@
     },
     {
         "file": "src/shared/config/tickerCategoryLabel.ts",
-        "line": 41,
-        "reason": "catalog-backed-data",
-        "text": "AI·반도체"
-    },
-    {
-        "file": "src/shared/config/tickerCategoryLabel.ts",
         "line": 44,
         "reason": "catalog-backed-data",
         "text": "레버리지 ETF"
-    },
-    {
-        "file": "src/shared/config/tickerCategoryLabel.ts",
-        "line": 47,
-        "reason": "catalog-backed-data",
-        "text": "우주·항공우주"
-    },
-    {
-        "file": "src/shared/config/tickerCategoryLabel.ts",
-        "line": 48,
-        "reason": "catalog-backed-data",
-        "text": "EV·모빌리티"
-    },
-    {
-        "file": "src/shared/config/tickerCategoryLabel.ts",
-        "line": 49,
-        "reason": "catalog-backed-data",
-        "text": "에너지·산업재"
-    },
-    {
-        "file": "src/shared/config/tickerCategoryLabel.ts",
-        "line": 50,
-        "reason": "catalog-backed-data",
-        "text": "반도체·IT"
-    },
-    {
-        "file": "src/shared/config/tickerCategoryLabel.ts",
-        "line": 51,
-        "reason": "catalog-backed-data",
-        "text": "자동차·2차전지"
-    },
-    {
-        "file": "src/shared/config/tickerCategoryLabel.ts",
-        "line": 52,
-        "reason": "catalog-backed-data",
-        "text": "바이오·헬스케어"
-    },
-    {
-        "file": "src/shared/config/tickerCategoryLabel.ts",
-        "line": 53,
-        "reason": "catalog-backed-data",
-        "text": "인터넷·플랫폼"
-    },
-    {
-        "file": "src/shared/config/tickerCategoryLabel.ts",
-        "line": 54,
-        "reason": "catalog-backed-data",
-        "text": "금융·지주"
     },
     {
         "file": "src/shared/i18n/locales.ts",

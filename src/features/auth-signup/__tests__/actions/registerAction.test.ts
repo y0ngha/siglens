@@ -59,7 +59,7 @@ vi.mock('@/entities/auth/lib/db', () => ({
 vi.mock('@/entities/agreement', () => ({
     DrizzleAgreementRepository: vi.fn(),
 }));
-vi.mock('@/entities/terms', () => ({
+vi.mock('@/entities/terms/api', () => ({
     DrizzleTermsRepository: vi.fn(),
 }));
 vi.mock('@/entities/email-token', () => ({
@@ -75,7 +75,7 @@ import {
 } from '@/entities/auth';
 import { createEmailTokenStore } from '@/entities/email-token';
 import { DrizzleAgreementRepository } from '@/entities/agreement';
-import { DrizzleTermsRepository } from '@/entities/terms';
+import { DrizzleTermsRepository } from '@/entities/terms/api';
 import { registerAction } from '@/features/auth-signup/actions/registerAction';
 import {
     getAuthDatabaseClient,

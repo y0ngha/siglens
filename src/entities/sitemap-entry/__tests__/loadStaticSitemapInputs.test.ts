@@ -14,8 +14,11 @@ const { mockListLatest, mockFindActive, mockGetDatabaseClient } = vi.hoisted(
 );
 
 vi.mock('next/cache', () => ({
-    // 캐시 래퍼는 이 테스트의 관심사가 아니다 — 그대로 호출한다.
-    unstable_cache: (fn: () => unknown) => fn,
+    // real `unstable_cache` JSON-serializes its return value, which turns every
+    // `Date` into an ISO string — round-trip through JSON so this test catches
+    // that class of bug instead of passing the value through untouched.
+    unstable_cache: (fn: () => Promise<unknown>) => async () =>
+        JSON.parse(JSON.stringify(await fn())),
 }));
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: mockGetDatabaseClient,
@@ -25,7 +28,7 @@ vi.mock('@/entities/market-news/api', () => ({
         listLatestPublishedAt = mockListLatest;
     },
 }));
-vi.mock('@/entities/terms', () => ({
+vi.mock('@/entities/terms/api', () => ({
     DrizzleTermsRepository: class {
         findActive = mockFindActive;
     },
@@ -33,6 +36,8 @@ vi.mock('@/entities/terms', () => ({
 
 import { loadStaticSitemapInputs } from '../server';
 import { CATEGORY_CONFIG } from '@/entities/market-news';
+import { buildStaticEntries } from '../lib/buildStaticEntries';
+import { maxLastModified } from '../lib/maxLastModified';
 
 const CRYPTO_AT = new Date('2026-05-23T11:00:00.000Z');
 const TOS_AT = new Date('2026-09-14T00:00:00.000Z');
@@ -51,6 +56,9 @@ describe('loadStaticSitemapInputs', () => {
 
         const inputs = await loadStaticSitemapInputs();
 
+        // 캐시(JSON 직렬화)를 거쳐도 Date로 복원돼야 한다 — 문자열이면
+        // buildStaticEntries가 `.getTime()`을 호출하다 터진다.
+        expect(inputs.newsLatestPublishedAt?.crypto).toBeInstanceOf(Date);
         expect(inputs.newsLatestPublishedAt).toEqual({ crypto: CRYPTO_AT });
     });
 
@@ -61,7 +69,22 @@ describe('loadStaticSitemapInputs', () => {
 
         const inputs = await loadStaticSitemapInputs();
 
+        expect(inputs.legalEffectiveDates?.tos).toBeInstanceOf(Date);
         expect(inputs.legalEffectiveDates).toEqual({ tos: TOS_AT });
+    });
+
+    it('캐시를 거친 값도 buildStaticEntries + maxLastModified가 그대로 받는다', async () => {
+        mockListLatest.mockResolvedValue(
+            new Map([[CATEGORY_CONFIG.crypto.sentinel, CRYPTO_AT]])
+        );
+        mockFindActive.mockImplementation(async (kind: string) =>
+            kind === 'tos' ? { effectiveDate: TOS_AT } : null
+        );
+
+        const inputs = await loadStaticSitemapInputs();
+
+        const entries = buildStaticEntries(new Date(), inputs);
+        expect(() => maxLastModified(entries, new Date())).not.toThrow();
     });
 
     it('뉴스 조회가 실패해도 약관 값은 살아남는다', async () => {

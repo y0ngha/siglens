@@ -8,6 +8,8 @@ import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { formatNoticeDate } from '@/entities/notice';
 import { toSafeHttpUrl } from '@/shared/lib/safeUrl';
+import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { useNoticePopup } from '../hooks/useNoticePopup';
 
 const MODAL_TITLE_ID = 'notice-modal-title';
@@ -88,7 +90,13 @@ export function NoticePopup() {
                 aria-labelledby={MODAL_TITLE_ID}
                 // 바텀시트 토큰은 `MobileAnalysisSheet`과 맞춘다(상단 라운드,
                 // secondary-700 보더, safe-area 여백). sm 이상에서 중앙 카드로 돌아간다.
-                className="flex max-h-[85dvh] w-full flex-col rounded-t-lg border border-secondary-700 bg-secondary-800 p-5 pb-[calc(env(safe-area-inset-bottom,0px)+1.25rem)] sm:max-w-md sm:rounded-lg sm:pb-5"
+                // SURFACE_CARD가 모든 모서리를 lg로 둥글리므로, 모바일 바텀시트는
+                // 하단만 명시적으로 되돌린다(`rounded-b-none`) — sm 이상에서
+                // `sm:rounded-b-lg`로 다시 카드 모양을 완성한다.
+                className={cn(
+                    SURFACE_CARD,
+                    'flex max-h-[85dvh] w-full flex-col rounded-b-none p-5 pb-[calc(env(safe-area-inset-bottom,0px)+1.25rem)] sm:max-w-md sm:rounded-b-lg sm:pb-5'
+                )}
             >
                 <div className="mb-3 flex shrink-0 items-start justify-between gap-3">
                     <h2
