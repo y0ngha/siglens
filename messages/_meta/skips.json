@@ -385,73 +385,73 @@
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 59,
+        "line": 60,
         "reason": "seo-keywords-ko-only",
         "text": "미국 시장 뉴스"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 59,
+        "line": 60,
         "reason": "seo-keywords-ko-only",
         "text": "미국 마켓 뉴스"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 60,
+        "line": 61,
         "reason": "seo-keywords-ko-only",
         "text": "한국 증시 뉴스"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 60,
+        "line": 61,
         "reason": "seo-keywords-ko-only",
         "text": "코스피 뉴스"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 60,
+        "line": 61,
         "reason": "seo-keywords-ko-only",
         "text": "코스닥 뉴스"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 61,
+        "line": 62,
         "reason": "seo-keywords-ko-only",
         "text": "암호화폐 뉴스"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 61,
+        "line": 62,
         "reason": "seo-keywords-ko-only",
         "text": "비트코인 뉴스"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 183,
+        "line": 184,
         "reason": "seo-keywords-ko-only",
         "text": "`${cfg.koLabel} 뉴스`"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 184,
+        "line": 185,
         "reason": "seo-keywords-ko-only",
         "text": "`${cfg.koLabel} 최신 뉴스`"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 185,
+        "line": 186,
         "reason": "seo-keywords-ko-only",
         "text": "`${cfg.koLabel} 뉴스 분석`"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 189,
+        "line": 190,
         "reason": "seo-keywords-ko-only",
         "text": "시장 뉴스 한국어"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 190,
+        "line": 191,
         "reason": "seo-keywords-ko-only",
         "text": "AI 뉴스 다이제스트"
     },

@@ -193,6 +193,12 @@ export interface MarketNewsDigestProps {
      * the digest to avoid a `no_news` error being locked into the query cache.
      */
     hasEnrichedNews: boolean;
+    /**
+     * SSR-peeked cached digest (`peekMarketNewsDigestStatic`), or `null` on a
+     * cache miss. Rendered immediately in SSR HTML when present — no skeleton —
+     * and wins over every client failure branch (see `useMarketNewsDigest`).
+     */
+    peekSeed?: NewsAnalysisResponse | null;
 }
 
 /**
@@ -208,8 +214,9 @@ export interface MarketNewsDigestProps {
 export function MarketNewsDigest({
     category,
     hasEnrichedNews,
+    peekSeed,
 }: MarketNewsDigestProps) {
-    const digest = useMarketNewsDigest(category, hasEnrichedNews);
+    const digest = useMarketNewsDigest(category, hasEnrichedNews, peekSeed);
 
     if (digest.status === 'error') {
         return <DigestErrorView error={digest.error} onRetry={digest.retry} />;

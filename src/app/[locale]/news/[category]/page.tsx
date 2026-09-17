@@ -17,6 +17,7 @@ import {
     type NewsFeedCategoryId,
 } from '@/entities/market-news';
 import { getMarketNewsCards } from '@/entities/market-news/api';
+import { peekMarketNewsDigestStatic } from '@/entities/market-news/api/marketNewsDigestStaticCache';
 import {
     MarketNewsDigest,
     MarketNewsList,
@@ -235,18 +236,14 @@ export default async function CategoryNewsPage({ params }: Props) {
     }
 
     const cfg = CATEGORY_CONFIG[cat];
-    // BLOCKED(D3, PR-D plan): bots only see the digest's CSR loading/degrade
-    // state because ensureMarketNewsCardsAnalyzedAction + the digest submit
-    // are client-triggered — no SSR seed like /market's peekBriefingStatic or
-    // /economy's peekMacroBriefingStatic exists for this widget. Blocked on a
-    // siglens-core release: unlike runBriefing/runMacroBriefing, core exposes
-    // no `peekMarketNewsDigestCache`, and `buildMarketNewsDigestCacheKey` /
-    // the digest's input hash are explicitly `@internal` ("Consumer cannot
-    // construct inputHash themselves ... Do not depend on this function from
-    // outside the core library" — core's own JSDoc). Reconstructing the cache
-    // key in siglens would duplicate core's analysis-cache logic, which the
-    // cross-repo scope guard exists to prevent. See PR #598 Phase B audit.
-    const { items, isEmpty } = await loadCategorySnapshot(cat, resolved);
+    // D3 follow-up: SSR seed for the digest via peekMarketNewsDigestStatic
+    // (core 1.9.0's peekMarketNewsDigestCache), same pattern as /market's
+    // peekBriefingStatic and /economy's peekMacroBriefingStatic. See
+    // src/entities/market-news/api/marketNewsDigestStaticCache.ts.
+    const [{ items, isEmpty }, digestPeekSeed] = await Promise.all([
+        loadCategorySnapshot(cat, resolved),
+        peekMarketNewsDigestStatic(cat, resolved),
+    ]);
 
     const hasEnrichedNews = items.some(item => item.sentiment !== null);
 
@@ -353,6 +350,7 @@ export default async function CategoryNewsPage({ params }: Props) {
                     <MarketNewsDigest
                         category={cat}
                         hasEnrichedNews={hasEnrichedNews}
+                        peekSeed={digestPeekSeed}
                     />
                 </Suspense>
                 {isEmpty ? (
