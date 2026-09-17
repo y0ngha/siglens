@@ -98,6 +98,52 @@ function makeSelectDb(rows: unknown[]): {
     };
 }
 
+/** `listLatestPublishedAt`용 — `where()` 뒤에 `groupBy()`를 await하는 형태. */
+function makeGroupBySelectDb(rows: unknown[]): {
+    db: SiglensDatabase;
+    groupBy: ReturnType<typeof vi.fn>;
+} {
+    const groupBy = vi.fn().mockResolvedValue(rows);
+    const where = vi.fn(() => ({ groupBy }));
+    const from = vi.fn(() => ({ where }));
+    const select = vi.fn(() => ({ from }));
+    return { db: { select } as unknown as SiglensDatabase, groupBy };
+}
+
+describe('DrizzleMarketNewsRepository.listLatestPublishedAt는', () => {
+    it('센티널별 최신 publishedAt을 Map으로 돌려준다', async () => {
+        const latest = new Date('2026-06-15T10:00:00.000Z');
+        const { db } = makeGroupBySelectDb([
+            { symbol: '__NEWS_CRYPTO__', latest },
+        ]);
+        const repo = new DrizzleMarketNewsRepository(db);
+
+        const result = await repo.listLatestPublishedAt(['__NEWS_CRYPTO__']);
+
+        expect(result.get('__NEWS_CRYPTO__')).toEqual(latest);
+    });
+
+    /** 발표가 없는 버킷은 `MAX`가 null이다 — 없는 것으로 다뤄야 sitemap이 오늘로 폴백한다. */
+    it('MAX가 null인 버킷은 결과에서 뺀다', async () => {
+        const { db } = makeGroupBySelectDb([
+            { symbol: '__NEWS_FOREX__', latest: null },
+        ]);
+        const repo = new DrizzleMarketNewsRepository(db);
+
+        expect(await repo.listLatestPublishedAt(['__NEWS_FOREX__'])).toEqual(
+            new Map()
+        );
+    });
+
+    it('센티널이 없으면 쿼리를 보내지 않는다', async () => {
+        const { db, groupBy } = makeGroupBySelectDb([]);
+        const repo = new DrizzleMarketNewsRepository(db);
+
+        expect(await repo.listLatestPublishedAt([])).toEqual(new Map());
+        expect(groupBy).not.toHaveBeenCalled();
+    });
+});
+
 describe('DrizzleMarketNewsRepository.upsertMarketNewsItem은', () => {
     it('row가 삽입/변경되면 true를 반환한다', async () => {
         const repo = new DrizzleMarketNewsRepository(

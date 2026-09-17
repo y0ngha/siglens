@@ -253,6 +253,7 @@
                 "src/entities/analysis/api.ts",
                 "src/entities/news-article/api.ts",
                 "src/entities/agent-suggestions/api.ts",
+                "src/entities/sitemap-entry/server.ts",
                 "src/instrumentation.ts",
                 "src/instrumentation.node.ts"
             ],

@@ -26,3 +26,33 @@ export const TICKER_CATEGORY_LABEL_KEY: Record<string, string> = {
     금융·지주: 'tickerCategory.Financialsholdings',
     코스닥: 'tickerCategory.KOSDAQ',
 };
+
+/**
+ * 같은 카테고리 라벨 → **한 줄 설명** 메시지 키.
+ *
+ * 홈 카드가 티커 칩만 나열하면 크롤러가 받는 것은 링크 묶음뿐이다(2026-09 구글
+ * 정책 감사 L20 — 홈의 산문 비율). 카테고리가 무엇을 묶은 것인지 한 문장으로
+ * 말한다. 라벨 맵과 키 이름을 맞춰 두면 둘 중 하나만 추가하는 실수가 눈에 띈다.
+ *
+ * 표에 없는 라벨은 설명을 렌더하지 않는다(카드가 비지 않는다).
+ */
+export const TICKER_CATEGORY_DESCRIPTION_KEY: Record<string, string> = {
+    메가캡·지수: 'categoryDescription.Megacapsindices',
+    AI·반도체: 'categoryDescription.AIsemiconductors',
+    소프트웨어·클라우드: 'categoryDescription.Softwarecloud',
+    핀테크·크립토: 'categoryDescription.Fintechcrypto',
+    '레버리지 ETF': 'categoryDescription.LeveragedETFs',
+    헬스케어·바이오: 'categoryDescription.Healthcarebiotech',
+    양자컴퓨팅: 'categoryDescription.Quantumcomputing',
+    우주·항공우주: 'categoryDescription.Spaceaerospace',
+    EV·모빌리티: 'categoryDescription.EVmobility',
+    에너지·산업재: 'categoryDescription.Energyindustrials',
+    반도체·IT: 'categoryDescription.SemiconductorsIT',
+    자동차·2차전지: 'categoryDescription.Autosbatteries',
+    바이오·헬스케어: 'categoryDescription.Biotechhealthcare',
+    인터넷·플랫폼: 'categoryDescription.Internetplatforms',
+    금융·지주: 'categoryDescription.Financialsholdings',
+    코스닥: 'categoryDescription.KOSDAQ',
+    메이저: 'categoryDescription.Major',
+    알트코인: 'categoryDescription.Altcoins',
+};

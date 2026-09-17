@@ -31,9 +31,7 @@ import {
 import type { SeoTranslator } from '@/shared/lib/seo';
 import type { Locale } from '@/shared/i18n/locales';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
-import { getDatabaseClient } from '@/shared/db/client';
-import { isOfflineBuild } from '@/shared/api/offlineBuild';
-import { DrizzleTermsRepository } from '@/entities/terms';
+import { getActiveTerms, type TermsRecord } from '@/entities/terms';
 
 const PAGE_URL = `${SITE_URL}${TERMS_PATH}`;
 
@@ -91,11 +89,19 @@ export async function generateMetadata({
         namespace: 'shared.seo',
     });
     const ogLocale = localeOpenGraph(resolved);
+    // 활성 버전이 없으면 이 URL은 404다(`TermsPage`가 `notFound()`를 던진다).
+    // 그 상태를 색인 후보로 광고하지 않는다 — canonical을 비우고 noindex.
+    const terms = await getActiveTerms('tos', resolved);
     return {
         title: termsTitle(tSeo),
         description: termsDescription(tSeo),
-        robots: localeRobots(resolved),
-        alternates: await localeAlternatesFrom(params, TERMS_PATH),
+        robots:
+            terms === null
+                ? { index: false, follow: true }
+                : localeRobots(resolved),
+        alternates: await localeAlternatesFrom(params, TERMS_PATH, {
+            canonical: terms === null ? null : undefined,
+        }),
         openGraph: {
             type: 'article',
             siteName: SITE_NAME,
@@ -139,24 +145,17 @@ const topNoticeFor = (t: SeoTranslator, tLegal: SeoTranslator) => (
     </div>
 );
 
-async function TermsContent({ locale }: { readonly locale: Locale }) {
+interface TermsContentProps {
+    readonly locale: Locale;
+    readonly terms: TermsRecord;
+}
+
+async function TermsContent({ locale, terms }: TermsContentProps) {
     const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     const tLegal = await getTranslations({
         locale,
         namespace: 'shared.lib.legal',
     });
-    // 로컬 pre-push 오프라인 빌드(`SIGLENS_OFFLINE_BUILD=1`)에서는 DB에 닿지 않는다.
-    // 산출물은 버려지므로 404로 구워져도 무해하다. 운영(Docker) 빌드는 이 분기를
-    // 타지 않고, DB를 못 읽으면 지금처럼 빌드를 실패시켜 빈 약관이 구워지는 것을 막는다.
-    if (isOfflineBuild()) notFound();
-    const { db } = getDatabaseClient();
-    const repo = new DrizzleTermsRepository(db);
-    const terms = await repo.findActive('tos', locale);
-
-    if (!terms) {
-        notFound();
-    }
-
     const toc = extractToc(terms.body);
 
     return (
@@ -197,10 +196,14 @@ export default async function TermsPage({
     // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
     setRequestLocale(locale);
     const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
-    const tSeo = await getTranslations({
-        locale: resolved,
-        namespace: 'shared.seo',
-    });
+    // **`<Suspense>` 밖에서** 조회하고 `notFound()`를 던진다. 안에서 던지면 셸이
+    // 이미 스트리밍을 시작한 뒤라 Next가 응답을 200으로 확정해 버려, 화면은 404인데
+    // 상태 코드는 200인 soft-404가 된다(2026-09 구글 정책 감사 M7).
+    const [terms, tSeo] = await Promise.all([
+        getActiveTerms('tos', resolved),
+        getTranslations({ locale: resolved, namespace: 'shared.seo' }),
+    ]);
+    if (terms === null) notFound();
     return (
         <>
             <JsonLd data={buildTermsJsonLd(tSeo, resolved)} />
@@ -208,7 +211,7 @@ export default async function TermsPage({
             <Suspense
                 fallback={<div className="animate-pulse" aria-hidden="true" />}
             >
-                <TermsContent locale={resolved} />
+                <TermsContent locale={resolved} terms={terms} />
             </Suspense>
         </>
     );

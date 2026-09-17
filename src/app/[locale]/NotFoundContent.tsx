@@ -10,55 +10,80 @@
  * 스코프 로케일이 잡혀 있으므로 next-intl이 `headers()`로 폴백하지 않는다.
  * `loading.tsx`와 다른 점이 여기다 — 그쪽은 Suspense fallback이라 레이아웃보다
  * 먼저 그려질 수 있어 `DYNAMIC_SERVER_USAGE`가 났다.
+ *
+ * 헤드라인만 클라이언트 아일랜드(`NotFoundMessage`)다 — 경로별 문구 분기에
+ * `usePathname()`이 필요하다.
  */
 import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { SITE_NAME } from '@/shared/lib/seo';
 import { ContactDialog } from '@/widgets/layout/ContactDialog';
-// 배럴(`@/widgets/home`)이 아니라 파일을 직접 가리킨다. 배럴을 타면 홈 전체가
-// 이 404 경계의 모듈 폐포에 들어오고, 그러면 홈 전용 스킬 카탈로그(8.4KB)가
-// **크롬 페이로드**에 실려 `/login`·`/terms`까지 따라다닌다(실측: 크롬이
-// 카탈로그의 23.8%). 프로덕션 코드의 배럴-only 규칙에 대한 의도적 예외다.
-import { TickerCategories } from '@/widgets/home/TickerCategories';
+import { SymbolSearchPanel } from '@/features/ticker-search';
+import { cn } from '@/shared/lib/cn';
+import { NotFoundMessage } from './NotFoundMessage';
+
+const CONTINUE_LINK_CLASSES = cn(
+    'rounded-full border border-border-control px-4 py-1.5 text-xs text-secondary-300',
+    'transition-colors hover:border-primary-500 hover:text-primary-400',
+    'focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none'
+);
 
 export function NotFoundContent() {
     const t = useTranslations('app.home');
     return (
-        <>
-            <main className="flex flex-1 flex-col">
-                <div className="flex flex-col items-center px-6 py-20 text-center">
-                    <p className="font-mono text-sm tracking-widest text-primary-400">
-                        404
-                    </p>
-                    <h1 className="mt-4 text-2xl font-bold text-secondary-100 sm:text-3xl">
-                        {t('not-found.6cbd6d')}
-                    </h1>
-                    <p className="mt-3 max-w-md text-sm leading-relaxed text-secondary-400">
-                        {t('not-found.03ecab')}
-                    </p>
+        <main className="flex flex-1 flex-col">
+            <div className="flex flex-col items-center px-6 py-20 text-center">
+                <NotFoundMessage />
 
+                <Link
+                    href="/"
+                    className="mt-8 rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700"
+                >
+                    {t('not-found.ba81f0', { v0: SITE_NAME })}
+                </Link>
+
+                <p className="mt-10 text-sm text-secondary-400">
+                    {t('NotFoundContent.4d8d9f')}
+                </p>
+                <SymbolSearchPanel className="mt-4 max-w-md" />
+                {/*
+                    카테고리 그리드(`TickerCategories`, 링크 85개)를 대신한다 — 404는
+                    "여기엔 없다"를 말하는 페이지인데 그 아래 사이트 전체 링크 묶음을
+                    두면 크롤러에게는 404가 허브처럼 보이고(2026-09 구글 정책 감사
+                    L19), 사용자에게는 원래 찾던 것과 무관한 벽이 된다. 허브 둘만 남긴다.
+                    키는 리터럴로 적는다 — 동적 키를 쓰면 추출기가 `app.home`
+                    네임스페이스를 통째로 넓혀 홈 FAQ 카탈로그까지 딸려 온다.
+                */}
+                <div className="mt-4 flex flex-wrap justify-center gap-3">
                     <Link
-                        href="/"
-                        className="mt-8 rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700"
+                        href="/market"
+                        prefetch={false}
+                        className={CONTINUE_LINK_CLASSES}
                     >
-                        {t('not-found.ba81f0', { v0: SITE_NAME })}
+                        {t('NotFoundContent.ade95e')}
                     </Link>
-
-                    <div className="mt-10 border-t border-secondary-700 pt-8">
-                        <p className="text-sm text-secondary-400">
-                            {t('not-found.f4b235')}
-                        </p>
-                        <p className="mt-1 text-xs text-secondary-600">
-                            {t('not-found.f8a2cd')}
-                        </p>
-                        <ContactDialog
-                            triggerLabel={t('not-found.4da438')}
-                            triggerClassName="text-primary-400 hover:text-primary-300 mt-3 inline-block text-xs transition-colors"
-                        />
-                    </div>
+                    <Link
+                        href="/news"
+                        prefetch={false}
+                        className={CONTINUE_LINK_CLASSES}
+                    >
+                        {t('NotFoundContent.91dd85')}
+                    </Link>
                 </div>
-                <TickerCategories />
-            </main>
-        </>
+
+                <div className="mt-10 border-t border-secondary-700 pt-8">
+                    <p className="text-sm text-secondary-400">
+                        {t('not-found.f4b235')}
+                    </p>
+                    <p className="mt-1 text-xs text-secondary-600">
+                        {t('not-found.f8a2cd')}
+                    </p>
+                    <ContactDialog
+                        triggerLabel={t('not-found.4da438')}
+                        triggerClassName="text-primary-400 hover:text-primary-300 mt-3 inline-block text-xs transition-colors"
+                    />
+                </div>
+            </div>
+        </main>
     );
 }

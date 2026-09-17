@@ -1,3 +1,4 @@
+import type { Page } from '@playwright/test';
 import { test, expect } from '../support/fixtures';
 import { seedNotices } from '../support/noticeSeeder';
 
@@ -60,6 +61,19 @@ const LONG_BODY = Array.from(
 const DISMISSED_KEY = 'siglens_dismissed_notices_v1';
 const LEGACY_DISMISSED_KEY = 'siglens_dismissed_notices';
 
+/**
+ * 공지 팝업은 **첫 상호작용 또는 8초 뒤**에야 마운트된다(`useDeferredReveal`) —
+ * 검색 유입의 첫 화면을 가리는 인터스티셜이 되지 않기 위해서다(2026-09 구글 정책
+ * 감사 L21). E2E는 그 상호작용을 명시적으로 만들어 준다. 그냥 기다리면 테스트마다
+ * 8초를 버리고, 더 나쁘게는 "표시되지 않는다" 단언이 지연 때문에 통과해 버린다.
+ */
+async function gotoAndReveal(page: Page, path: string): Promise<void> {
+    await page.goto(path);
+    await page.evaluate(() => {
+        window.dispatchEvent(new Event('pointerdown'));
+    });
+}
+
 test.describe('공지 팝업', () => {
     // localStorage를 초기화해 이전 테스트의 dismiss 상태가 남지 않도록 함.
     test.beforeEach(async ({ page }) => {
@@ -97,7 +111,7 @@ test.describe('공지 팝업', () => {
         test('활성 공지가 시딩되면 / 방문 시 모달이 표시된다', async ({
             page,
         }) => {
-            await page.goto('/');
+            await gotoAndReveal(page, '/');
 
             const modal = page.getByTestId('notice-modal-content');
             await expect(modal).toBeVisible();
@@ -130,7 +144,7 @@ test.describe('공지 팝업', () => {
         test('"다시 보지 않기" 클릭 시 모달이 닫히고, 새로고침 후 재표시되지 않는다', async ({
             page,
         }) => {
-            await page.goto('/');
+            await gotoAndReveal(page, '/');
 
             const modal = page.getByTestId('notice-modal-content');
             await expect(modal).toBeVisible();
@@ -182,7 +196,7 @@ test.describe('공지 팝업', () => {
         test('"닫기" 클릭 시 모달이 닫히고, 새로고침 후 다시 표시된다', async ({
             page,
         }) => {
-            await page.goto('/');
+            await gotoAndReveal(page, '/');
 
             const modal = page.getByTestId('notice-modal-content');
             await expect(modal).toBeVisible();
@@ -236,7 +250,7 @@ test.describe('공지 팝업', () => {
         test('pathPattern="/market" 공지는 / 에서 표시되지 않는다', async ({
             page,
         }) => {
-            await page.goto('/');
+            await gotoAndReveal(page, '/');
             await expect(
                 page.getByTestId('notice-modal-content')
             ).not.toBeVisible();
@@ -245,7 +259,7 @@ test.describe('공지 팝업', () => {
         test('pathPattern="/market" 공지는 /market 에서 표시된다', async ({
             page,
         }) => {
-            await page.goto('/market');
+            await gotoAndReveal(page, '/market');
 
             const modal = page.getByTestId('notice-modal-content');
             await expect(modal).toBeVisible();
@@ -283,7 +297,7 @@ test.describe('공지 팝업', () => {
                 },
             ]);
 
-            await page.goto('/');
+            await gotoAndReveal(page, '/');
             await expect(
                 page.getByTestId('notice-modal-content')
             ).not.toBeVisible();
@@ -303,7 +317,7 @@ test.describe('공지 팝업', () => {
                 },
             ]);
 
-            await page.goto('/');
+            await gotoAndReveal(page, '/');
             await expect(
                 page.getByTestId('notice-modal-content')
             ).not.toBeVisible();
@@ -323,7 +337,7 @@ test.describe('공지 팝업', () => {
                 },
             ]);
 
-            await page.goto('/');
+            await gotoAndReveal(page, '/');
             await expect(
                 page.getByTestId('notice-modal-content')
             ).not.toBeVisible();
@@ -361,7 +375,7 @@ test.describe('공지 팝업', () => {
         test('@webkit 긴 본문 공지에서 모달은 뷰포트를 넘지 않고, 본문만 스크롤되며, "닫기" 버튼이 뷰포트 안에 보인다', async ({
             page,
         }) => {
-            await page.goto('/');
+            await gotoAndReveal(page, '/');
 
             const modal = page.getByTestId('notice-modal-content');
             await expect(modal).toBeVisible();
