@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { stripSnapshotMarkdown } from '../stripSnapshotMarkdown';
+import { stripSnapshotMarkdown } from '@/shared/lib/stripSnapshotMarkdown';
 
 describe('stripSnapshotMarkdown', () => {
     it('strips **bold** markers and keeps the inner text', () => {
@@ -68,5 +68,21 @@ describe('stripSnapshotMarkdown', () => {
 
     it('returns an empty string unchanged', () => {
         expect(stripSnapshotMarkdown('')).toBe('');
+    });
+
+    // 경계 없는 기울임 식이 무관한 두 기호 사이 글자를 지우던 회귀(2026-09-17 리뷰).
+    it('does not treat unrelated bare * or _ as an italic pair', () => {
+        expect(
+            stripSnapshotMarkdown(
+                'BRK_A와 BRK_B를 비교하면 BRK_B가 더 저렴합니다.'
+            )
+        ).toBe('BRK_A와 BRK_B를 비교하면 BRK_B가 더 저렴합니다.');
+        expect(stripSnapshotMarkdown('250*2와 100*3을 곱한 값입니다.')).toBe(
+            '250*2와 100*3을 곱한 값입니다.'
+        );
+    });
+
+    it('still strips italic markers directly attached to Korean text', () => {
+        expect(stripSnapshotMarkdown('*강조*입니다')).toBe('강조입니다');
     });
 });
