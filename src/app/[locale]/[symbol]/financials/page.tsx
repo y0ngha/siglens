@@ -109,15 +109,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const displayName = assetInfo
         ? buildDisplayName(assetInfo, upper, locale)
         : upper;
-    const noindexOpts = { displayName, koreanName: assetInfo?.koreanName };
+    const noindexOpts = {
+        displayName,
+        koreanName: assetInfo?.koreanName,
+        tab: 'financials' as const,
+    };
 
     const { profile, degraded: profileDegraded } =
         await getProfileResilient(upper);
     if (profileDegraded || profile === null) {
-        return noindexSymbolMetadata(upper, tSeo, locale, {
-            ...noindexOpts,
-            tab: 'financials',
-        });
+        return noindexSymbolMetadata(upper, tSeo, locale, noindexOpts);
     }
     // profile은 있으나 6종 재무 fetch가 모두 비면(FMP 일시 장애 등) 본문은 degrade를
     // 렌더하므로(아래 default export 참조) 메타도 noindex로 일치시킨다.
@@ -127,10 +128,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // 정적화는 staticSymbolCache(unstable_cache), 빈 경로의 cross-request dedup은 Redis가 담당.
     const snapshot = await getFinancialsSnapshot(upper);
     if (isEmptyFinancialsSnapshot(snapshot)) {
-        return noindexSymbolMetadata(upper, tSeo, locale, {
-            ...noindexOpts,
-            tab: 'financials',
-        });
+        return noindexSymbolMetadata(upper, tSeo, locale, noindexOpts);
     }
     const seo = buildSymbolFinancialsSeoContent(upper, tSeo, {
         displayName,

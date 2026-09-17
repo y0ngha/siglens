@@ -97,15 +97,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const displayName = assetInfo
         ? buildDisplayName(assetInfo, upper, locale)
         : upper;
-    const noindexOpts = { displayName, koreanName: assetInfo?.koreanName };
+    const noindexOpts = {
+        displayName,
+        koreanName: assetInfo?.koreanName,
+        tab: 'congress' as const,
+    };
 
     const { profile, degraded: profileDegraded } =
         await getProfileResilient(upper);
     if (profileDegraded || profile === null) {
-        return noindexSymbolMetadata(upper, tSeo, locale, {
-            ...noindexOpts,
-            tab: 'congress',
-        });
+        return noindexSymbolMetadata(upper, tSeo, locale, noindexOpts);
     }
     // **financials와의 의도적 차이점**: 0건 자체는 정상(sparse 종목)이라, 그것만으로
     // noindex하지 않는다. `degraded === true`(FMP 인프라 실패)는 noindex.
@@ -113,10 +114,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { trades, degraded: tradesDegraded } =
         await getCongressTradesResilient(upper);
     if (tradesDegraded) {
-        return noindexSymbolMetadata(upper, tSeo, locale, {
-            ...noindexOpts,
-            tab: 'congress',
-        });
+        return noindexSymbolMetadata(upper, tSeo, locale, noindexOpts);
     }
     const seo = buildSymbolCongressSeoContent(upper, tSeo, {
         displayName,

@@ -17,6 +17,7 @@ vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { NOINDEX_SYMBOL_METADATA } from '@/shared/lib/seo';
+import type { SymbolSeoTab } from '@/shared/lib/seo';
 import type { AssetInfo } from '@/shared/lib/types';
 import type { Metadata } from 'next';
 
@@ -89,9 +90,16 @@ describe('getBlockedSymbolMetadata', () => {
             indexable: false,
             reason: 'longtail-default-blocked',
         });
-        const blockedFor = async (
-            tab: 'technical' | 'financials' | 'congress' | 'news'
-        ): Promise<Metadata> =>
+        const ALL_TABS = [
+            'technical',
+            'overall',
+            'fundamental',
+            'financials',
+            'congress',
+            'news',
+            'options',
+        ] as const satisfies readonly SymbolSeoTab[];
+        const blockedFor = async (tab: SymbolSeoTab): Promise<Metadata> =>
             (await getBlockedSymbolMetadata({
                 symbol: 'QQQ',
                 assetInfo: ASSET_INFO,
@@ -101,19 +109,12 @@ describe('getBlockedSymbolMetadata', () => {
                 tab,
             }))!;
 
-        const [technical, financials, congress, news] = await Promise.all([
-            blockedFor('technical'),
-            blockedFor('financials'),
-            blockedFor('congress'),
-            blockedFor('news'),
-        ]);
+        const results = await Promise.all(ALL_TABS.map(blockedFor));
         const titleOf = (m: Metadata): string =>
             (m.title as { absolute: string }).absolute;
-        const titles = [technical, financials, congress, news].map(titleOf);
+        const titles = results.map(titleOf);
         expect(new Set(titles).size).toBe(titles.length);
-        const descriptions = [technical, financials, congress, news].map(
-            m => m.description
-        );
+        const descriptions = results.map(m => m.description);
         expect(new Set(descriptions).size).toBe(descriptions.length);
         // 탭 없는 라우트(fear-greed/position)는 기존대로 기본 심볼 카피를 쓴다.
         const tabless = (await getBlockedSymbolMetadata({
