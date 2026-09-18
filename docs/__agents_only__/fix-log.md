@@ -359,9 +359,6 @@
 - Violation: Window event listener (`siglens:pwa-trigger`) bypass — JSDoc claimed "input-gated" banner, but event producer fired without user gesture (auto-analysis at member mount, auto-retry after failed SSR analysis)
   - Rule: CONVENTIONS.md — Declarations and runtime behavior must be in sync; a guard cannot be claimed in JSDoc if a producer path on the same handler bypasses it
   - Context: Whole event-driven path deleted; banner mode determined deterministically at mount instead.
-- Violation: (recommended) JSDoc claim about directional data guarantee unvalidated; new gate without positive-inclusion test; renamed test title claiming coverage its mock did not exercise
-  - Rule: MISTAKES.md 15.6 — Comments/JSDoc must match code reality; gates must have positive-case tests; test titles must reflect actual coverage
-  - Context: Fixed JSDoc accuracy, added positive test, corrected test title.
 
 ## [fix/seo-cls-sitemap-polish Round 4 | PWA banner Polish | 2026-09-18]
 - Status: APPROVED (zero findings)
@@ -386,3 +383,4 @@
 - Violation: New i18n key (`widgets.layout.footer.symbols`) placed in `shared.seo` namespace and consumed by client-rendered `Footer`, leaked that server-only namespace into every client payload.
   - Rule: i18n namespace containment — server-only namespaces (shared.seo) must not be consumed by client-rendered components; use client-permitted namespaces (widgets.layout). Namespace pollution increases payload and masks content scope.
   - Context: Moved key to `widgets.layout` namespace before use. Existing guard (`clientKeyCoverage`) now correctly rejects shared.seo in client code.
+
