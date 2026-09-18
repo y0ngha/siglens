@@ -18,6 +18,7 @@ const mocks = vi.hoisted(() => ({
     getMarketNewsList: vi.fn(),
     selectAggregateNewsItems: vi.fn(),
     marketBriefingContextOf: vi.fn(),
+    writeHubSsrSeed: vi.fn(),
 }));
 
 vi.mock('next/cache', () => ({ revalidateTag: mocks.revalidateTag }));
@@ -49,11 +50,18 @@ vi.mock('@/entities/news-article', async importOriginal => ({
     ...(await importOriginal<typeof import('@/entities/news-article')>()),
     selectAggregateNewsItems: mocks.selectAggregateNewsItems,
 }));
+vi.mock('@/shared/cache/hubSsrSeed', () => ({
+    writeHubSsrSeed: mocks.writeHubSsrSeed,
+}));
+// 부분 목 — 키 이름은 엔티티가 소유하므로 실제 구현을 그대로 쓴다(이름이 바뀌면
+// 프리웜과 페이지가 같이 따라가야 하고, 그 일치를 여기서 검증한다).
 vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
     marketDataProviderFor: vi.fn(() => ({})),
 }));
 
 import { CATEGORY_CONFIG } from '@/entities/market-news';
+import { MACRO_BRIEFING_SEED_SURFACE } from '@/entities/economy/api/macroBriefingStaticCache';
+import { marketBriefingSeedSurface } from '@/entities/market-summary/api/briefingStaticCache';
 import { DASHBOARD_SCOPES } from '@/shared/config/dashboardScope';
 import {
     HUB_DEADLINE_MS,
@@ -320,6 +328,63 @@ describe('runHubPrewarm', () => {
         expect(mocks.runMarketNewsDigest).toHaveBeenCalledWith(
             expect.objectContaining({ reasoning: true, locale: 'ko' })
         );
+    });
+
+    /**
+     * core 캐시 키가 시세에서 파생되는 탓에, 프리웜이 쓴 값을 페이지가 나중에 같은 키로
+     * 읽지 못한다(2026-09-18 실측: 15분 뒤 miss). 그래서 확인한 본문을 표면 단위 고정
+     * 키에 한 벌 더 둔다 — 이게 없으면 /market·/economy는 계속 빈 채로 색인된다.
+     */
+    it('브리핑은 새로 구웠을 때 SSR seed를 쓴다', async () => {
+        await runHubPrewarm();
+
+        for (const scope of Object.values(DASHBOARD_SCOPES)) {
+            expect(mocks.writeHubSsrSeed).toHaveBeenCalledWith(
+                marketBriefingSeedSurface(scope),
+                { briefing: 'x' }
+            );
+        }
+        expect(mocks.writeHubSsrSeed).toHaveBeenCalledWith(
+            MACRO_BRIEFING_SEED_SURFACE,
+            { briefing: 'y' }
+        );
+    });
+
+    it('이미 캐시에 있어도 seed는 갱신한다 — 값이 이미 손에 있다', async () => {
+        mocks.peekBriefingCache.mockResolvedValue({ briefing: 'x' });
+        mocks.peekMacroBriefingCache.mockResolvedValue({ briefing: 'y' });
+        mocks.peekMarketNewsDigestCache.mockResolvedValue({
+            currentDriverKo: 'z',
+        });
+
+        const result = await runHubPrewarm();
+
+        expect(result.alreadyFresh).toBe(hubTargets().length);
+        // 시장 브리핑도 같은 분기를 탄다 — macro만 단언하면 그쪽 회귀를 놓친다.
+        for (const scope of Object.values(DASHBOARD_SCOPES)) {
+            expect(mocks.writeHubSsrSeed).toHaveBeenCalledWith(
+                marketBriefingSeedSurface(scope),
+                { briefing: 'x' }
+            );
+        }
+        expect(mocks.writeHubSsrSeed).toHaveBeenCalledWith(
+            MACRO_BRIEFING_SEED_SURFACE,
+            { briefing: 'y' }
+        );
+    });
+
+    /**
+     * 다이제스트는 입력이 DB 행 목록이라 정적 peek이 같은 입력을 다시 만들어 키가 맞는다.
+     * seed까지 두면 색인된 본문의 출처가 둘이 되어 진단이 어려워진다.
+     */
+    it('다이제스트에는 seed를 쓰지 않는다', async () => {
+        await runHubPrewarm();
+
+        const surfaces = mocks.writeHubSsrSeed.mock.calls.map(c => c[0]);
+        expect(surfaces.some(x => String(x).includes('news-digest'))).toBe(
+            false
+        );
+        expect(surfaces).toHaveLength(Object.keys(DASHBOARD_SCOPES).length + 1);
     });
 
     /**
