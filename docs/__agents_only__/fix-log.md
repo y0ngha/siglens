@@ -50,11 +50,6 @@
   - Rule: Repository tooling must not depend on contributor-specific absolute paths.
   - Context: Replaced the hook command with a repository-relative path so the checked-in hook works outside the author's machine.
 
-## [PR #678 | agent/seo-index-quality-gate | 2026-07-08]
-- Violation: The checked-in exit-signal hook allowlist omitted newly added agent names.
-  - Rule: Tooling allowlists must be updated atomically with the agents they validate.
-  - Context: Added `issue-agent` and `mistake-managing-agent` to `KNOWN_AGENTS` so their valid exit signals are accepted.
-
 
 ## [PR #690 | claude/mobile-ai-analysis-ui-42kyji | 2026-07-17]
 - Violation: 첫 분석(서사 없음) 로딩을 AnalyzingBanner(광고 없음)에서 AnalysisProgress로 교체하면서 `isFreeUser`를 전달하지 않아, 기본값 `true`로 인해 Pro 사용자에게도 로딩 중 AdBanner가 노출됐다. 같은 파일의 기존 AnalysisPanel 호출도 동일하게 미전달 상태였다.
@@ -119,9 +114,6 @@
   - Context: Added `variant` prop (`'partial' | 'total'`) to MarketDataErrorNotice; renders appropriate message for each failure mode.
 
 ## [feat/asset-class-navigation Round 3 | 3-asset navigation architecture | 2026-08-19]
-- Violation: `MarketSummaryPanel.test.tsx` mock of `MarketDataErrorNotice` destructured only `onClose` prop, swallowing the new `variant` prop added in R2
-  - Rule: Test mocks must mirror the full component API; destructuring only-used props masks regressions when new props are added
-  - Context: Updated mock to destructure both `onClose` and `variant`, preventing future prop additions from silently passing broken mocks.
 - Violation: Seed script's `failed` counter accumulated per attempt across all passes; closing tally counted attempts, not failing rows, and could exceed table size
   - Rule: Counters that track mutable state must reset per iteration/pass; accumulated totals hide actual state and make diagnostics unreliable
   - Context: Reset `failed = 0` at start of each pass; now final tally reflects actual failing rows processed, not cumulative attempts.
@@ -228,9 +220,6 @@
   - Context: Added `plain.trim().length > 0` check in `assertValidInput.ts`. Server now rejects whitespace-only strings before they reach business logic.
 
 ## [PR #796 Round 3 review fix | seo/index-footprint-recovery | 2026-09-11]
-- Violation: BLOCKER — Two new asset-coverage surfaces (`/about` ko body text and `messages/ko.json` `shared.seo.about.description`) added but not registered in the existing sync guard `src/app/__tests__/supportedAssets.test.ts` `SURFACES` constant.
-  - Rule: New route surfaces and canonical content strings must be added to per-surface guard lists (SURFACES, legal route e2e, proxy allowlists) before merge; omission creates silent drift between guard scope and actual surfaces.
-  - Context: Added both to SURFACES; verified test fails if removed.
 - Violation: SUGGESTION — Unreachable `throw` in `resolveAboutContent` due to incomplete type enforcement on markdown map keys.
   - Rule: Maps with enum discriminant keys should enforce all cases; dead code throws indicate type-safety gap.
   - Context: Typed map with required default-locale key instead of dead-code throw.
@@ -384,3 +373,16 @@
 - Violation: SUGGESTION — `providerFallback: true` comment repeated identically at 7 prewarm configuration sites; configuration intent is explicit but duplication hides the shared policy.
   - Rule: CONVENTIONS.md — repeated hardcoded patterns must be extracted to shared constants; duplication obscures intent and creates consistency drift.
   - Context: Extracted shared constant `PREWARM_PROVIDER_FALLBACK = true` in `src/shared/config/prewarm.ts`; all 7 sites now reference it. Single source of truth for fallback policy.
+
+## [fix/seo-internal-links Round 1 | SEO internal linking strategy | 2026-09-18]
+- Violation: New nullable `Date` column (`seo_analysis_snapshots.first_generated_at`) was threaded through read path but `unstable_cache` JSON round-trip rehydration in `getSnapshotStatic.ts` was not extended to it — sibling fields `generatedAt`/`updatedAt` are rehydrated there with JSDoc explaining exactly this failure mode. On cache hit, field was a string while declared type said `Date | null`.
+  - Rule: (new) When adding new Date fields to cached query results, extend JSON round-trip rehydration logic alongside all sibling Date fields; cache round-trip creates type mismatches if rehydration is selective. JSDoc on sibling fields already documents the failure mode.
+  - Context: Fixed by rehydrating new field and adding unit test covering both populated row and `null` row on cache hit.
+
+- Violation: New crawl-path wiring (a `/symbols` directory link added to shared `MarketRouteBody`, rendered by `/market` and `/market/kr`) shipped without any test, so deleting it would silently regress the crawl-depth fix the branch exists to deliver.
+  - Rule: MISTAKES.md Rule 22 — New features affecting external systems (crawl paths, SEO signals, guard scopes) must include unit tests verifying the feature presence before merge; omission creates silent regression risk.
+  - Context: Added `it.each` over both scopes asserting the href and the i18n label.
+
+- Violation: New i18n key (`widgets.layout.footer.symbols`) placed in `shared.seo` namespace and consumed by client-rendered `Footer`, leaked that server-only namespace into every client payload.
+  - Rule: i18n namespace containment — server-only namespaces (shared.seo) must not be consumed by client-rendered components; use client-permitted namespaces (widgets.layout). Namespace pollution increases payload and masks content scope.
+  - Context: Moved key to `widgets.layout` namespace before use. Existing guard (`clientKeyCoverage`) now correctly rejects shared.seo in client code.

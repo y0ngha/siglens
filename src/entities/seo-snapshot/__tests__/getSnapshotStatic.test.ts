@@ -65,6 +65,7 @@ function snapshotAt(generatedAt: Date, tab = 'technical'): SeoAnalysisSnapshot {
         plain: null,
         model: 'deepseek-v4.1-flash',
         generatedAt,
+        firstGeneratedAt: generatedAt,
         updatedAt: generatedAt,
     };
 }
@@ -240,6 +241,65 @@ describe('getSeoSnapshotsStatic', () => {
                     day: 'numeric',
                 }).format(result[0].generatedAt)
             ).not.toThrow();
+        });
+
+        it('firstGeneratedAt도 Date로 되살리고, null은 null로 둔다', async () => {
+            // 이 필드는 뉴스 탭 `Article`의 `datePublished` 소스다. 히트 렌더에서
+            // 문자열이 흘러가면 `.getTime()`을 부르는 다음 소비자가 캐시 상태에
+            // 따라서만 깨진다 — 형제 필드와 같은 왕복을 타므로 같이 고정한다.
+            const base = {
+                symbol: 'AAPL',
+                tab: 'technical' as const,
+                content: {},
+                model: 'test-model',
+                generatedAt: new Date('2026-07-31T20:00:00Z'),
+                updatedAt: new Date('2026-07-31T20:00:00Z'),
+            };
+            const rows = [
+                { ...base, firstGeneratedAt: new Date('2026-06-02T03:00:00Z') },
+                { ...base, tab: 'news' as const, firstGeneratedAt: null },
+            ];
+            mockStaticSymbolCache.mockImplementationOnce(() =>
+                Promise.resolve(JSON.parse(JSON.stringify(rows)))
+            );
+
+            const result = await getSeoSnapshotsStatic('AAPL', 3600, 'ko');
+
+            const technical = result.find(r => r.tab === 'technical');
+            const news = result.find(r => r.tab === 'news');
+            expect(technical?.firstGeneratedAt).toBeInstanceOf(Date);
+            expect(technical?.firstGeneratedAt?.toISOString()).toBe(
+                '2026-06-02T03:00:00.000Z'
+            );
+            // 백필 소스가 없는 탭은 `null`로 남는다 — 그 상태가 `new Date(null)`로
+            // 1970년이 되면 페이지가 없는 발행일을 주장하게 된다.
+            expect(news?.firstGeneratedAt).toBeNull();
+        });
+
+        /**
+         * **컬럼이 생기기 전 코드가 채운 캐시 항목**에는 필드 자체가 없다. 히트 시
+         * `undefined`로 돌아오는데, 엄격 비교로 되살리면 `new Date(undefined)` =
+         * Invalid Date가 되고 그건 `null`이 아니라서 소비처의 `?? null`도 통과해
+         * `toISOString()`에서 `RangeError`로 렌더가 죽는다. 배포 직후 캐시
+         * TTL(최대 86400s) 동안만 나타나므로 로컬에서는 절대 재현되지 않는다.
+         */
+        it('필드가 없는 옛 캐시 항목은 null로 되살린다 — Invalid Date를 렌더로 흘리지 않는다', async () => {
+            const legacyRow = {
+                symbol: 'AAPL',
+                tab: 'news' as const,
+                content: {},
+                model: 'test-model',
+                generatedAt: new Date('2026-07-31T20:00:00Z'),
+                updatedAt: new Date('2026-07-31T20:00:00Z'),
+                // firstGeneratedAt 키 자체가 없다(옛 배포가 직렬화한 형태).
+            };
+            mockStaticSymbolCache.mockImplementationOnce(() =>
+                Promise.resolve(JSON.parse(JSON.stringify([legacyRow])))
+            );
+
+            const result = await getSeoSnapshotsStatic('AAPL', 3600, 'ko');
+
+            expect(result[0].firstGeneratedAt).toBeNull();
         });
 
         // A1(감사): 캐시-히트 rehydrate가 malformed generatedAt(예: 손상된

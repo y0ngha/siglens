@@ -76,6 +76,21 @@ describe('Footer', () => {
         expect(link).toHaveAttribute('href', '/about');
     });
 
+    /**
+     * 종목 디렉터리 링크는 **크롤 구조물**이다. 2026-09-18 실측에서 sitemap 심볼
+     * 416개 중 147개가 홈에서 3클릭 안에 닿지 않았고, 푸터는 전 라우트에 렌더되므로
+     * 이 한 줄이 디렉터리를 1클릭·모든 종목을 2클릭으로 만든다. 지워지면 그 구조가
+     * 조용히 사라지므로 존재와 목적지를 함께 고정한다.
+     */
+    it('renders the symbol directory link on every page', () => {
+        render(<Footer />);
+
+        const link = screen.getByRole('link', {
+            name: koMessage('widgets.layout.Footer.symbolsLink'),
+        });
+        expect(link).toHaveAttribute('href', '/symbols');
+    });
+
     it('renders a link to ai.siglens.io named "SIGLENS AI"', () => {
         render(<Footer />);
 

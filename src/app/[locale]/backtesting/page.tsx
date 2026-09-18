@@ -167,6 +167,16 @@ function buildBacktestingJsonLd(
             // 손으로 적은 `2024-04/2026-04`는 실제 진입일 범위(2024-11~2026-03)보다
             // 넓었다 — 화면 통계와 같은 파생값을 쓴다(2026-09-17 운영 감사).
             temporalCoverage: `${STATS.periodStart}/${STATS.periodEnd}`,
+            /*
+             * Dataset은 신선도를 `dateModified`로 읽는다. 정적 데이터셋이라 값은
+             * "언제 배포했는지"가 아니라 **데이터의 마지막 진입일**이다.
+             *
+             * `periodEnd` 문자열을 그대로 쓴다 — `Date`로 바꾸면 연-월(`2026-03`)이
+             * 3월 1일로 파싱돼 우리가 모르는 날짜를 주장하게 된다. schema.org의
+             * Date는 `YYYY-MM`도 허용하므로 통계가 말하는 정밀도 그대로 내보낸다.
+             * 값이 없으면(`''`) 필드를 싣지 않는다.
+             */
+            ...(STATS.periodEnd !== '' && { dateModified: STATS.periodEnd }),
             spatialCoverage: 'US',
             variableMeasured: tPage('variableMeasured'),
             keywords: [

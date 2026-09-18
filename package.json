@@ -63,6 +63,7 @@
         "update-popular-tickers": "npx tsx update-popular-tickers.ts",
         "update-popular-cryptos": "npx tsx scripts/update-popular-cryptos.ts",
         "db:backfill:content-locale": "dotenv -e .env.local -- node_modules/.bin/tsx db/scripts/backfillContentLocale.ts",
+        "db:backfill:snapshot-first-gen": "dotenv -e .env.local -- node_modules/.bin/tsx db/scripts/backfillSnapshotFirstGeneratedAt.ts",
         "db:verify:content-locale": "dotenv -e .env.local -- node_modules/.bin/tsx db/scripts/verifyContentLocale.ts",
         "db:translate:content-locale": "dotenv -e .env.local -- node_modules/.bin/tsx db/scripts/translateContentLocale.ts"
     },

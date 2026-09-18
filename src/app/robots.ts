@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { SITE_URL } from '@/shared/lib/seo';
+import { LOCALES } from '@/shared/i18n/locales';
 
 /**
  * AI 크롤러 공통 crawl-delay(초). 차단 대신 빈도만 낮추는 그룹이 재사용하므로
@@ -132,6 +133,31 @@ const AI_USAGE_CONTROL_TOKENS = ['Google-Extended', 'Applebot-Extended'];
 const BASELINE_ALLOW = ['/', '/api/analysis/stream'];
 const BASELINE_DISALLOW = ['/api/'];
 
+/**
+ * 뉴스 **허브**의 OG/twitter 이미지만 Googlebot에 되돌려 준다.
+ *
+ * 아래 Googlebot 그룹이 `/*​/opengraph-image`를 통째로 막은 근거는 종목 OG PNG의
+ * 물량이다 — 9탭 × 400여 심볼 × 4로케일 ≈ 1.5만 URL. 반면 뉴스 허브는
+ * `/news`와 `/news/{category}` 6개뿐이라 로케일을 곱해도 약 28 URL이고, 이쪽은
+ * Discover·이미지 검색에서 이미지가 없으면 카드가 텅 빈다. 비용이 거의 없는
+ * 구간만 열어 둔다.
+ *
+ * **로케일을 리터럴로 적는 이유**: robots.txt의 `*`는 `/`까지 먹는다. 즉
+ * `/*​/news/opengraph-image`는 `/ko/AAPL/news/opengraph-image`에도 일치해 종목
+ * 뉴스 탭 OG(400여 × 4)를 그대로 다시 열어 버린다. 접두사가 로케일에서 끝나야
+ * 심볼 경로가 끼어들 수 없다.
+ *
+ * Allow가 Disallow를 이기는 근거는 "더 긴 일치가 우선"이라는 표준 규칙이다
+ * (`/ko/news/opengraph-image` 24자 > `/*​/opengraph-image` 18자). 파서 동작에
+ * 의존하는 규칙이라 `robots.test.ts`가 두 방향(허브 허용·심볼 차단)을 고정한다.
+ */
+const HUB_SOCIAL_IMAGE_ALLOW = LOCALES.flatMap(locale =>
+    ['opengraph-image', 'twitter-image'].flatMap(image => [
+        `/${locale}/news/${image}`,
+        `/${locale}/news/*/${image}`,
+    ])
+);
+
 export default function robots(): MetadataRoute.Robots {
     return {
         rules: [
@@ -187,7 +213,7 @@ export default function robots(): MetadataRoute.Robots {
                 // 굳이 확대하려면 `*`가 아니라 Bingbot/Yeti/Daumoa 전용 그룹을 만들어야
                 // 하고, 그 그룹들도 baseline을 복제해야 한다.
                 userAgent: 'Googlebot',
-                allow: BASELINE_ALLOW,
+                allow: [...BASELINE_ALLOW, ...HUB_SOCIAL_IMAGE_ALLOW],
                 disallow: [
                     ...BASELINE_DISALLOW,
                     '/*/opengraph-image',

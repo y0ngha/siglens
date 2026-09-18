@@ -136,6 +136,10 @@ const RESERVED_FIRST_SEGMENTS = new Set([
     'economy',
     'market',
     'news',
+    // 종목 디렉터리. `isAdmissibleSymbolShape('symbols')`가 참이라 여기 없으면
+    // `/SYMBOLS` 티커로 301된다 — 푸터가 전 라우트에서 그 링크를 내보내므로
+    // 사이트 전체가 깨진 링크를 갖게 된다.
+    'symbols',
     'onboarding',
     'portfolio',
     'share',

@@ -415,6 +415,23 @@ export default async function NewsPage({ params }: Props) {
         articleModifiedSource === null
             ? null
             : new Date(articleModifiedSource).toISOString();
+    // 발행일은 이 종목의 뉴스 요약이 **처음** 만들어진 시각(`firstGeneratedAt`)이다.
+    // 값이 없는 행(컬럼 도입 전 + 백필이 소스를 못 찾은 경우)은 필드를 생략한다 —
+    // 모르는 발행일을 지어내는 대신 아무 말도 하지 않는다.
+    //
+    // `> dateModified`면 함께 생략한다: 발행이 최종 수정보다 늦다고 주장하는
+    // 마크업은 스스로 모순이고, 뉴스가 끊긴 종목(dateModified가 옛 기사 발행일)에서
+    // 실제로 나올 수 있는 조합이다.
+    const firstGeneratedAt = newsSnapshot?.firstGeneratedAt ?? null;
+    const articlePublishedAt =
+        firstGeneratedAt === null
+            ? null
+            : new Date(firstGeneratedAt).toISOString();
+    const articlePublishedAtForJsonLd =
+        articlePublishedAt !== null &&
+        (articleModifiedAt === null || articlePublishedAt <= articleModifiedAt)
+            ? articlePublishedAt
+            : null;
     // headline/description은 자산 유형별로 분기한다 — 크립토 페이지에 주식 특유의
     // "어닝·실적·애널리스트" 문구가 등장하면 실제로 없는 콘텐츠를 약속하는 허위 신호가 된다.
     const aiArticleJsonLd = {
@@ -430,15 +447,19 @@ export default async function NewsPage({ params }: Props) {
             { v0: displayName }
         ),
         inLanguage: LOCALE_HREFLANG[isLocale(locale) ? locale : DEFAULT_LOCALE],
-        // datePublished는 의도적으로 생략한다 — ticker별 최초 뉴스 ingestion 시각을
-        // 알 수 없어 SITE_BUILD_DATE를 쓰면 전 ticker가 같은 시점으로 표기된다.
-        // Article schema에서 datePublished는 옵션이다.
+        // datePublished/dateModified 계산 근거는 위 `articlePublishedAtForJsonLd`
+        // 주석 참고. 예전에는 datePublished를 통째로 생략했는데, 그 근거였던
+        // "ticker별 최초 시각을 알 수 없다"가 사실이 아니었다 — `first_generated_at`
+        // 컬럼과 1회 백필(뉴스 탭은 심볼별 `min(news.fetched_at)`)로 확보했다.
         //
         // dateModified는 **이 페이지에 실제로 실린 것**의 시각이다: 가장 최신 뉴스의
         // 발행 시각, 없으면 스냅샷 생성 시각, 둘 다 없으면 필드를 생략한다.
         // 예전에는 `getTodayIsoDay()`(오늘 0시)였는데, 그건 "크롤된 날"이지
         // 내용이 바뀐 날이 아니라 전 종목이 매일 갱신된다고 주장하는 거짓 신선도
         // 신호였다(2026-09-17 정책 감사 M2).
+        ...(articlePublishedAtForJsonLd !== null && {
+            datePublished: articlePublishedAtForJsonLd,
+        }),
         ...(articleModifiedAt !== null && { dateModified: articleModifiedAt }),
         // `@id`는 `buildWebPageJsonLd`가 로케일 접두사를 붙인 값과 **같아야**
         // 한다 — 로케일화 이후 이 back-reference만 기본 로케일 URL을 가리켜

@@ -100,4 +100,20 @@ describe('seo_analysis_snapshots upsert SQL', () => {
             expect(await upsertSql()).toContain('"locale"');
         }
     );
+
+    /**
+     * `first_generated_at`은 INSERT에만 들어가고 `DO UPDATE SET`에는 없어야 한다.
+     *
+     * `set`에 끼면 매 프리웜이 "처음"을 덮어써 `generated_at`과 같은 값이 되고,
+     * 뉴스 탭 `Article`의 `datePublished`가 "매일 새로 발행됨"이라는 거짓 신선도
+     * 신호로 바뀐다. 컬럼 하나 추가로 조용히 깨질 수 있는 불변식이라 SQL로 고정한다.
+     */
+    it('first_generated_at은 INSERT에만 있고 DO UPDATE SET에는 없다', async () => {
+        const sql = await upsertSql();
+        const [insertPart, updatePart] = sql.split('do update set');
+
+        expect(insertPart).toContain('"first_generated_at"');
+        expect(updatePart).toBeDefined();
+        expect(updatePart).not.toContain('first_generated_at');
+    });
 });

@@ -1,0 +1,1 @@
+ALTER TABLE "seo_analysis_snapshots" ADD COLUMN "first_generated_at" timestamp with time zone;

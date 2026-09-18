@@ -41,6 +41,10 @@ export class DrizzleSeoSnapshotRepository {
                 plain: input.plain,
                 model: input.model,
                 generatedAt: input.generatedAt,
+                // 최초 생성 시각. INSERT에서만 값이 들어가고 아래 `set`에는
+                // 일부러 넣지 않는다 — 넣으면 매 프리웜이 "처음"을 덮어써
+                // `generatedAt`과 같은 값이 되고 발행일 신호가 무의미해진다.
+                firstGeneratedAt: input.generatedAt,
                 updatedAt: new Date(),
                 // 플래그로 가리지 않는다 — Drizzle이 스키마 컬럼을 값에서 빼도
                 // `default`로 항상 INSERT에 넣기 때문이다(§shared-analysis/api.ts).
@@ -126,6 +130,7 @@ export class DrizzleSeoSnapshotRepository {
                 plain: seoAnalysisSnapshots.plain,
                 model: seoAnalysisSnapshots.model,
                 generatedAt: seoAnalysisSnapshots.generatedAt,
+                firstGeneratedAt: seoAnalysisSnapshots.firstGeneratedAt,
                 updatedAt: seoAnalysisSnapshots.updatedAt,
                 locale: seoAnalysisSnapshots.locale,
             })
@@ -139,6 +144,7 @@ export class DrizzleSeoSnapshotRepository {
             plain: row.plain,
             model: row.model,
             generatedAt: row.generatedAt,
+            firstGeneratedAt: row.firstGeneratedAt,
             updatedAt: row.updatedAt,
             locale: toContentLocale(row.locale) ?? LEGACY_CONTENT_LOCALE,
         }));
