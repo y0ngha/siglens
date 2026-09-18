@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.79.5](https://github.com/y0ngha/siglens/compare/v0.79.4...v0.79.5) (2026-09-18)
+
+
+### Bug Fixes
+
+* **cls:** PWA 설치 배너를 첫 사용자 입력까지 미뤄 모바일 CLS를 없앤다 ([ce11636](https://github.com/y0ngha/siglens/commit/ce11636aa1a3a57f97649eb2c514495b3e9c8dce))
+* **review:** 산문 게이트 재수출을 없애고 makeProseGate 단위 테스트를 추가한다 ([1caae1e](https://github.com/y0ngha/siglens/commit/1caae1e7b58957e476144cab57aa2886d9c500ac))
+* **review:** FAQ 가드 JSDoc 위치를 바로잡고 산문 게이트를 공유 헬퍼로 뺀다 ([8a4a3fd](https://github.com/y0ngha/siglens/commit/8a4a3fde521c64bb611067e06f722487347fcfbc))
+* **seo:** 뉴스 탭 sitemap 게이트와 FAQ 근거 주석을 정리한다 ([b50b218](https://github.com/y0ngha/siglens/commit/b50b218de8b2130137728ba2c7e987543f80449d))
+
 ## [0.79.4](https://github.com/y0ngha/siglens/compare/v0.79.3...v0.79.4) (2026-09-18)
 
 
