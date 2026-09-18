@@ -6,7 +6,7 @@ import { MS_PER_HOUR } from '@/shared/config/time';
 import { SITE_URL } from '@/shared/lib/seo';
 import { floorToHour } from './floorToHour';
 import type { SitemapEntry } from '../model';
-import type { BuildPopularEntriesOptions } from './buildPopularEntries';
+import { makeProseGate, type BuildPopularEntriesOptions } from './proseGate';
 
 /**
  * Quantize `now` down to the most-recent 6h boundary (UTC midnight, 06:00, 12:00, 18:00).
@@ -81,6 +81,7 @@ export function buildCryptoPopularEntries(
     // 산문이 없으면 noindex다. 없으면(로더 실패) 필터를 끈다.
     { symbolTabsWithProse }: BuildPopularEntriesOptions = {}
 ): SitemapEntry[] {
+    const hasProse = makeProseGate({ symbolTabsWithProse });
     const boundary6h = quantizeTo6hBoundary(now);
     // floorToHour: rolling `now - 1h`를 그대로 쓰면 매 호출마다 값이 달라져
     // sitemap index lastmod의 freshness 신호가 무력화된다 — `buildPopularEntries`의
@@ -94,8 +95,7 @@ export function buildCryptoPopularEntries(
                 changeFrequency: 'daily',
                 priority: 0.8,
             },
-            ...(symbolTabsWithProse === undefined ||
-            symbolTabsWithProse.has(`${sym}:news`)
+            ...(hasProse(sym, 'news')
                 ? [
                       {
                           url: `${SITE_URL}/${sym}/news`,
@@ -105,8 +105,7 @@ export function buildCryptoPopularEntries(
                       },
                   ]
                 : []),
-            ...(symbolTabsWithProse === undefined ||
-            symbolTabsWithProse.has(`${sym}:overall`)
+            ...(hasProse(sym, 'overall')
                 ? [
                       {
                           url: `${SITE_URL}/${sym}/overall`,

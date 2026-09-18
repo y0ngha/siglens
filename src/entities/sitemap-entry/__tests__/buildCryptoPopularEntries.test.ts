@@ -28,7 +28,7 @@ describe('buildCryptoPopularEntries', () => {
     });
 
     // 종합 탭은 산문 스냅샷이 없으면 noindex다 — 주식 sitemap과 같은 게이트.
-    it('with a prose set, emits /overall only for cryptos that have overall prose', () => {
+    it('with a prose set, emits /overall and /news only for cryptos that have prose', () => {
         const entries = buildCryptoPopularEntries(now, {
             symbolTabsWithProse: new Set(['BTCUSD:overall', 'BTCUSD:news']),
         });

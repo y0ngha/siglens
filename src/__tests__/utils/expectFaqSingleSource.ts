@@ -11,13 +11,6 @@ interface FaqQuestionNode {
 }
 
 /**
- * FAQPage 구조화데이터가 **화면에 렌더된 것과 같은 배열**에서 나왔는지 못 박는다.
- *
- * JSON-LD가 파싱된다는 것만 확인하는 테스트는 이 결함을 못 잡는다 — 종목 탭 5개가
- * 오랫동안 마크업만 내보내고 화면에는 Q&A가 없었고, 그 상태로도 스키마는 유효했다.
- * 그래서 `FaqSection`에 넘어간 items와 마크업의 `mainEntity`를 **순서까지** 대조한다.
- */
-/**
  * 두 가드가 공유하는 부분 — 화면 FAQ가 **한 벌** 있고 항목이 비어 있지 않은지.
  * 어느 쪽이든 여기서 실패하면 마크업 유무를 따질 필요가 없다.
  */
@@ -29,6 +22,13 @@ function expectSingleVisibleFaq(tree: ReactNode): readonly FaqItem[] {
     return items;
 }
 
+/**
+ * FAQPage 구조화데이터가 **화면에 렌더된 것과 같은 배열**에서 나왔는지 못 박는다.
+ *
+ * JSON-LD가 파싱된다는 것만 확인하는 테스트는 이 결함을 못 잡는다 — 종목 탭 5개가
+ * 오랫동안 마크업만 내보내고 화면에는 Q&A가 없었고, 그 상태로도 스키마는 유효했다.
+ * 그래서 `FaqSection`에 넘어간 items와 마크업의 `mainEntity`를 **순서까지** 대조한다.
+ */
 export function expectFaqSingleSource(tree: ReactNode): void {
     const items = expectSingleVisibleFaq(tree);
 
