@@ -1560,7 +1560,6 @@
             },
             "newsCategory": {
                 "descriptionSuffix": "AI reads each story as bullish or bearish and sums the category up in one digest.",
-                "descriptionTemplate": "See the latest {label} news, organized for you. AI analyzes each article's bullish/bearish sentiment and summarizes the overall category trend in a digest.",
                 "emptyDescriptionTemplate": "We couldn't load the latest {label} news.",
                 "emptyTitleTemplate": "{label} News",
                 "itemListName": "Latest {label} news",

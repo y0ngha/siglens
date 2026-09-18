@@ -36,6 +36,12 @@ export async function fetchCategoryDigestLines(
                 return firstSentence(digest?.currentDriverKo);
             } catch {
                 // 다이제스트는 부가 정보다 — 실패가 허브를 깨뜨리지 않는다.
+                //
+                // 지금은 `peekMarketNewsDigestStatic`이 내부에서 모든 에러를 잡아
+                // `null`로 수렴시키므로 **이 분기는 도달하지 않는다.** 그래도 두는
+                // 이유는 경계가 여기이기 때문이다 — 그 함수가 언젠가 던지게 바뀌면
+                // 허브 전체가 500이 되고, 그 사고는 이 페이지의 존재 이유(내부 링크)를
+                // 통째로 날린다. 값이 없어도 카드가 렌더되는 쪽이 항상 옳다.
                 return null;
             }
         })
