@@ -517,13 +517,13 @@
     },
     {
         "file": "src/app/[locale]/symbols/loadSymbolNames.ts",
-        "line": 66,
+        "line": 85,
         "reason": "developer-diagnostic",
         "text": "[symbols] 이름을 하나도 읽지 못했다"
     },
     {
         "file": "src/app/[locale]/symbols/loadSymbolNames.ts",
-        "line": 70,
+        "line": 89,
         "reason": "developer-diagnostic",
         "text": "[symbols] 이름 조회 실패 — 티커만 표시한다"
     },

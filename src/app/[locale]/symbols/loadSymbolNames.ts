@@ -2,11 +2,17 @@ import { unstable_cache } from 'next/cache';
 import { getTickerDisplayNames } from '@/entities/ticker/lib/koreanNameStore';
 import { getCryptoAsset } from '@/entities/ticker/lib/cryptoAssetStore';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
-
-/** 크립토 판정용 — 매 렌더마다 배열을 훑지 않는다. */
-const CRYPTO_SET = new Set<string>(POPULAR_CRYPTOS);
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
+
+/** 크립토 판정용 — 매 호출마다 배열을 훑지 않는다. */
+const CRYPTO_SET = new Set<string>(POPULAR_CRYPTOS);
+
+/** 이름 두 갈래. 주식(`korean_tickers`)과 크립토(`crypto_assets`)가 같은 모양을 쓴다. */
+interface NameCandidate {
+    readonly koreanName: string | null;
+    readonly name: string | null;
+}
 
 const NAMES_CACHE_KEY = 'symbols-directory-names';
 /**
@@ -36,11 +42,15 @@ async function readSymbolNames(
         const [displayNames, cryptoRows] = await Promise.all([
             // 크립토는 `korean_tickers`에 없다 — 조회 대상에서 빼 의도를 분명히 한다.
             getTickerDisplayNames(symbols.filter(s => !CRYPTO_SET.has(s))),
+            // 모듈 상수가 아니라 **인자**에서 파생한다 — 캐시 키에 들어가는 것이
+            // `symbols`라, 상수를 직접 보면 키와 실제 조회 대상이 갈린다.
             Promise.all(
-                POPULAR_CRYPTOS.map(async symbol => ({
-                    symbol,
-                    record: await getCryptoAsset(symbol),
-                }))
+                symbols
+                    .filter(symbol => CRYPTO_SET.has(symbol))
+                    .map(async symbol => ({
+                        symbol,
+                        record: await getCryptoAsset(symbol),
+                    }))
             ),
         ]);
 
@@ -50,11 +60,7 @@ async function readSymbolNames(
         // 이름을 모르면 티커만 찍는 편이 낫다. 아래 크립토 분기와 같은 규칙이다.
         // `||`다(`??` 아님). 빈 문자열도 "이름 없음"으로 봐야 한다 — `??`로 두면
         // `''`가 통과해 화면에 `" (BTCUSD)"` 같은 라벨이 찍힌다(테스트가 잡았다).
-        const pickName = (
-            entry:
-                | { koreanName: string | null; name: string | null }
-                | undefined
-        ): string | null =>
+        const pickName = (entry: NameCandidate | undefined): string | null =>
             (wantsKorean ? entry?.koreanName || entry?.name : entry?.name) ||
             null;
 
