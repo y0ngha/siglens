@@ -1,5 +1,18 @@
 # Changelog
 
+# [0.81.0](https://github.com/y0ngha/siglens/compare/v0.80.2...v0.81.0) (2026-09-18)
+
+
+### Bug Fixes
+
+* **seo:** 허브 단계를 포함한 배치 wall-clock을 락 예산 안으로 자른다 ([a2e35a4](https://github.com/y0ngha/siglens/commit/a2e35a4c42e6949e037a57d553ac0dc9da3cdb36))
+* **seo:** 허브 프리웜이 새로 구웠을 때만 ISR 태그를 턼다 ([23d8990](https://github.com/y0ngha/siglens/commit/23d899071498cbb132f8317c8f55ee6f84529351))
+
+
+### Features
+
+* **seo:** 허브 페이지 AI 콘텐츠를 프리웜 크론에서 미리 굽는다 ([6fe6817](https://github.com/y0ngha/siglens/commit/6fe6817358059e15c598ce32281f87ecddebd042))
+
 ## [0.80.2](https://github.com/y0ngha/siglens/compare/v0.80.1...v0.80.2) (2026-09-18)
 
 
