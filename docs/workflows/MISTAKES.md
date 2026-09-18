@@ -755,6 +755,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ❌ Manual markdown-notice seed (priority 100) left in DB; 3 existing notice specs (seed priority 99) fail seeing the wrong notice
    ✅ Delete manual seeds after verification; re-run → specs pass (see docs/qa/QA_ENV_SETUP.md §7 cleanup)
    → Recurring risk whenever manual verification shares the e2e DB (PR #562 R2)
+
+3. Stale premise in E2E spec when source behavior trigger is removed or narrowed
+   → When a behavior trigger is removed/narrowed in source (e.g., removed timer, deleted event producer, narrowed condition), every Playwright spec premise depending on that trigger must be re-verified
+   → Typecheck, oxlint, and vitest do not execute Playwright specs; stale premises surface only in CI as timeout/failure
+   → After any source-side trigger change, grep all e2e/specs/ for mentions of the removed/narrowed trigger and re-test sibling specs that may depend on timing or condition changes
+   ❌ PWA_BANNER_FALLBACK_DELAY_MS timer removed from source; Playwright spec still expected it to fire at the delay, timed out in CI
+   ❌ Event producer `siglens:pwa-trigger` refactored; 2 sibling specs still expected banner mount on first gesture, mounting mid-gesture instead
+   ✅ Removed stale timer reference from spec when timer was deleted from source
+   ✅ Re-checked all sibling specs for stale assumptions after narrowing event producer condition
+   → Recurring: fix/seo-cls-sitemap-polish R2 + R3 (2 instances within same PR review cycle)
 ```
 
 ---

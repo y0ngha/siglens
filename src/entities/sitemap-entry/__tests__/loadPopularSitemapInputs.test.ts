@@ -34,22 +34,23 @@ describe('loadPopularSitemapInputs', () => {
         vi.clearAllMocks();
     });
 
-    it('congress·overall 스냅샷이 있는 조합을 "SYMBOL:tab" 집합으로 돌려준다', async () => {
+    it('congress·overall·news 스냅샷이 있는 조합을 "SYMBOL:tab" 집합으로 돌려준다', async () => {
         mockListFreshSymbolTabs.mockResolvedValue([
             { symbol: 'AAPL', tab: 'overall' },
             { symbol: 'AAPL', tab: 'congress' },
+            { symbol: 'MSFT', tab: 'news' },
         ]);
         const before = Date.now();
 
         const inputs = await loadPopularSitemapInputs();
 
         expect(inputs.symbolTabsWithProse).toEqual(
-            new Set(['AAPL:overall', 'AAPL:congress'])
+            new Set(['AAPL:overall', 'AAPL:congress', 'MSFT:news'])
         );
         const [tabs, locale, since] = mockListFreshSymbolTabs.mock.calls.find(
             call => Array.isArray(call[0])
         )!;
-        expect(tabs).toEqual(['congress', 'overall']);
+        expect(tabs).toEqual(['congress', 'overall', 'news']);
         expect(locale).toBe('ko');
         // 페이지 읽기 경로(getSeoSnapshotsStatic)와 같은 신선도 상한이어야 한다.
         expect((since as Date).getTime()).toBeGreaterThanOrEqual(

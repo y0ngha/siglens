@@ -166,10 +166,6 @@ vi.mock('@/views/symbol/utils/buildChatState', () => ({
     })),
 }));
 
-vi.mock('@/shared/lib/pwaEvents', () => ({
-    PWA_TRIGGER_EVENT: 'pwa-trigger',
-}));
-
 // "내 포지션" 요약(PositionStatusSummary)의 소스. 실제 구현은 react-query 기반이라
 // QueryClientProvider 없는 이 테스트 트리에서 그대로 렌더하면 크래시한다. 이
 // 파일의 관심사(ChartContent 레이아웃/분석 상태)와 무관하므로 "홀딩 없음"으로

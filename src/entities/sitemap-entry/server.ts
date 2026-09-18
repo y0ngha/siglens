@@ -24,7 +24,7 @@ import type { BuildStaticEntriesOptions } from './lib/buildStaticEntries';
 import {
     PROSE_GATED_SITEMAP_TABS,
     type BuildPopularEntriesOptions,
-} from './lib/buildPopularEntries';
+} from './lib/proseGate';
 import { buildRemovalEntries } from './lib/buildRemovalEntries';
 import {
     REMOVAL_CHART_CUTOFF_ISO,
@@ -242,10 +242,12 @@ async function loadUncachedSymbolTabsWithProse(): Promise<string[]> {
 }
 
 /**
- * `/congress`·`/overall`은 스냅샷 산문이 없으면 페이지가 noindex다(각 `page.tsx`
- * generateMetadata). sitemap이 그걸 모르고 전부 실었더니 2026-09-17 운영 크롤에서
- * congress 108·overall 49개가 "sitemap에 있는데 noindex"였다. 페이지 게이트와 같은
- * 신선도 상한(`SNAPSHOT_MAX_AGE_MS`)으로 행 존재만 읽는다.
+ * `/congress`·`/overall`·`/news`는 스냅샷 산문이 없으면 페이지가 noindex다(각
+ * `page.tsx` generateMetadata). 대상 탭은 {@link PROSE_GATED_SITEMAP_TABS}가 쥐고
+ * 있고 이 함수는 그것을 그대로 순회한다. sitemap이 그걸 모르고 전부 실었더니
+ * 2026-09-17 운영 크롤에서 congress 108·overall 49개가 "sitemap에 있는데
+ * noindex"였고, `news`는 2026-09-18 표본에서 같은 형태로 남아 있어 뒤늦게 합류했다.
+ * 페이지 게이트와 같은 신선도 상한(`SNAPSHOT_MAX_AGE_MS`)으로 행 존재만 읽는다.
  *
  * **실패하면 필터를 끈다**(`{}`) — 스냅샷을 못 읽었다고 sitemap에서 수백 URL을
  * 빼는 것보다, 예전처럼 전부 싣는 편이 안전하다. 한 시간 캐시: 프리웜은 하룻밤에

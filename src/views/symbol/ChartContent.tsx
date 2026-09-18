@@ -5,7 +5,6 @@ import { isFallbackAnalysis } from '@/entities/chat-message';
 import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { useSymbolHolding } from '@/features/portfolio-holding';
 import { cn } from '@/shared/lib/cn';
-import { PWA_TRIGGER_EVENT } from '@/shared/lib/pwaEvents';
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 import { AnalysisPanel, AnalysisProgress } from '@/widgets/analysis';
 import { ChartSkeleton, useChartSync } from '@/widgets/chart';
@@ -468,12 +467,6 @@ export function ChartContent({
     useEffect(() => {
         notifyMobileContent(mobileContent);
     }, [mobileContent]);
-
-    useEffect(() => {
-        if (analysisResult) {
-            window.dispatchEvent(new CustomEvent(PWA_TRIGGER_EVENT));
-        }
-    }, [analysisResult]);
 
     // 비회원 3-심볼 회원가입 유도(Part B) — 실제 서사가 렌더된 시점("완료/렌더")에
     // 카운트한다. 캐시 HIT으로 즉시 나타나든 새로 생성됐든 동일하게 "봤으면" 카운트한다

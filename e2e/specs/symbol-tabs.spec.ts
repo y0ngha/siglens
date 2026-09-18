@@ -1,4 +1,5 @@
 import { test, expect } from '../support/fixtures';
+import { settlePwaBanner } from '../support/pwaBanner';
 import { freezeClock } from '../support/clock';
 
 /**
@@ -112,6 +113,9 @@ test.describe('@webkit symbol tabs', () => {
         const isMobile = test.info().project.name === 'webkit';
 
         await page.goto('/AAPL');
+        // 첫 입력을 미리 소진한다 — webkit(모바일)에서는 첫 탭 링크 클릭이 PWA
+        // 배너를 띄워 클릭 도중에 탭 바가 밀린다(`settlePwaBanner` JSDoc).
+        await settlePwaBanner(page);
 
         const tabNav = page.getByRole('navigation', { name: TAB_NAV_NAME });
         if (!isMobile) await expect(tabNav).toBeVisible();

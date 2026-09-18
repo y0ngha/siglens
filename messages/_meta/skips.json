@@ -1021,7 +1021,7 @@
     },
     {
         "file": "src/features/pwa-install/hooks/usePwaInstall.ts",
-        "line": 69,
+        "line": 87,
         "reason": "developer-diagnostic",
         "text": "[PWA] prompt 실패"
     },

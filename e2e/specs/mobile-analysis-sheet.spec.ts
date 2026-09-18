@@ -1,4 +1,5 @@
 import { test, expect } from '../support/fixtures';
+import { settlePwaBanner } from '../support/pwaBanner';
 import { ANALYSIS_READY_TIMEOUT_MS } from '../support/constants';
 
 /**
@@ -47,6 +48,9 @@ test.describe('@webkit mobile analysis sheet', () => {
         );
 
         await page.goto(`/${SYMBOL}`);
+        // 첫 입력을 미리 소진한다 — 안 그러면 첫 탭·드래그가 PWA 배너를 띄워
+        // 제스처 도중에 헤더가 밀린다(`settlePwaBanner` JSDoc).
+        await settlePwaBanner(page);
 
         // The vaul drag handle proves the MobileAnalysisSheet mounted on mobile.
         const handle = page.locator(HANDLE);
@@ -89,6 +93,9 @@ test.describe('@webkit mobile analysis sheet', () => {
         );
 
         await page.goto(`/${SYMBOL}`);
+        // 첫 입력을 미리 소진한다 — 안 그러면 첫 탭·드래그가 PWA 배너를 띄워
+        // 제스처 도중에 헤더가 밀린다(`settlePwaBanner` JSDoc).
+        await settlePwaBanner(page);
         await expect(page.locator('[data-vaul-drawer]')).toBeVisible();
 
         // 모바일(`lg` 미만)에서 헤더의 검색 표면은 인라인 입력이 아니라 돋보기
@@ -114,6 +121,9 @@ test.describe('@webkit mobile analysis sheet', () => {
         );
 
         await page.goto(`/${SYMBOL}`);
+        // 첫 입력을 미리 소진한다 — 안 그러면 첫 탭·드래그가 PWA 배너를 띄워
+        // 제스처 도중에 헤더가 밀린다(`settlePwaBanner` JSDoc).
+        await settlePwaBanner(page);
         await expect(page.locator('[data-vaul-drawer]')).toBeVisible();
 
         // FloatingChatButton의 접근 가능한 이름은 'AI 채팅 열기'(닫힌 상태) /

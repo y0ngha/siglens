@@ -13,27 +13,10 @@ import { SITE_URL } from '@/shared/lib/seo';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile';
 import { classifyAsset } from '@/entities/ticker';
 import { floorToHour } from './floorToHour';
+// 게이트 정의(탭 목록·옵션 타입)는 `proseGate.ts`가 소유한다 — 크립토 빌더와
+// `server.ts`도 거기서 직접 가져온다.
+import { makeProseGate, type BuildPopularEntriesOptions } from './proseGate';
 import type { SitemapEntry } from '../model';
-import type { SeoSnapshotTab } from '@/entities/seo-snapshot';
-
-/**
- * 스냅샷 산문이 없으면 페이지 자체가 noindex인 탭(`hasCongressProse`·
- * `hasOverallProse` 게이트). sitemap은 이 탭들을 산문 보유 종목에만 싣는다.
- * 스냅샷 탭 이름 기준이다 — 두 탭은 URL 세그먼트와 같다.
- */
-export const PROSE_GATED_SITEMAP_TABS = [
-    'congress',
-    'overall',
-] as const satisfies readonly SeoSnapshotTab[];
-
-export interface BuildPopularEntriesOptions {
-    /**
-     * `"${SYMBOL}:${tab}"` — {@link PROSE_GATED_SITEMAP_TABS} 탭에 신선한 스냅샷이
-     * 있는 조합. **없으면(`undefined`) 필터를 끈다** — 로더가 DB를 못 읽었을 때
-     * 예전처럼 전부 싣는다(`loadPopularSitemapInputs`).
-     */
-    readonly symbolTabsWithProse?: ReadonlySet<string>;
-}
 
 const POPULAR_OPTIONS_SET = new Set<string>(POPULAR_OPTIONS_TICKERS);
 
@@ -60,8 +43,9 @@ function withSymbolAlternates(entries: SitemapEntry[]): SitemapEntry[] {
 /**
  * POPULAR_TICKERS의 색인 대상 sub-route(차트/뉴스/펀더멘털/재무제표/옵션/종합/의회거래)에
  * 대한 sitemap 엔트리를 반환한다. 공포탐욕·내위치 탭은 항상 noindex라 싣지 않는다.
- * 종합·의회거래는 스냅샷 산문이 있는 종목만 싣는다({@link BuildPopularEntriesOptions}) —
- * 산문이 없으면 두 페이지가 noindex다. 재무제표는 stock으로 분류된 티커만(ETF는 재무제표가
+ * 종합·뉴스·의회거래는 스냅샷 산문이 있는 종목만 싣는다({@link BuildPopularEntriesOptions}) —
+ * 세 탭 모두 산문이 없으면 noindex다(대상 탭은 `lib/proseGate.ts`의
+ * `PROSE_GATED_SITEMAP_TABS`). 재무제표는 stock으로 분류된 티커만(ETF는 재무제표가
  * 없어 noindex), 옵션 페이지는 generated static list에 포함된 미국 티커만 포함 —
  * noindex인 종목 페이지를 sitemap에 두면 품질 신호가 약해진다.
  *
@@ -85,9 +69,7 @@ export function buildPopularEntries(
     now: Date,
     { symbolTabsWithProse }: BuildPopularEntriesOptions = {}
 ): SitemapEntry[] {
-    const hasProse = (ticker: string, tab: 'congress' | 'overall'): boolean =>
-        symbolTabsWithProse === undefined ||
-        symbolTabsWithProse.has(`${ticker}:${tab}`);
+    const hasProse = makeProseGate({ symbolTabsWithProse });
     const usClose = lastClosedSessionCloseUtc(US_EQUITY_SESSION, now);
     const krClose = lastClosedSessionCloseUtc(KR_EQUITY_SESSION, now);
     const oneHourAgo = floorToHour(new Date(now.getTime() - MS_PER_HOUR));
@@ -120,12 +102,17 @@ export function buildPopularEntries(
                     changeFrequency: 'daily',
                     priority: 0.8,
                 },
-                {
-                    url: `${SITE_URL}/${ticker}/news`,
-                    lastModified: oneHourAgo,
-                    changeFrequency: 'hourly',
-                    priority: 0.78,
-                },
+                ...(hasProse(ticker, 'news')
+                    ? [
+                          {
+                              url: `${SITE_URL}/${ticker}/news`,
+                              lastModified: oneHourAgo,
+                              // 아래 options/congress 분기와 같은 이유로 `as const`가 필요하다.
+                              changeFrequency: 'hourly' as const,
+                              priority: 0.78,
+                          },
+                      ]
+                    : []),
                 {
                     url: `${SITE_URL}/${ticker}/fundamental`,
                     lastModified: todayClose,
