@@ -78,6 +78,37 @@ describe('loadSymbolNames', () => {
         );
     });
 
+    /**
+     * 정본 한글명은 저장된 행이 없어도 나온다(`getTickerDisplayNames` JSDoc). 그때
+     * 비-ko 화면이 한글로 폴백하면 `/en/symbols`에 한국어가 섞인다 — 이름을 모르면
+     * 티커만 찍는 편이 낫다.
+     */
+    it('비-ko 로케일은 한글명으로 폴백하지 않는다 — 영문명이 없으면 이름 자체를 뺀다', async () => {
+        mockDisplayNames.mockResolvedValue({
+            AAPL: { koreanName: '애플', name: 'Apple Inc.' },
+            KONLY: { koreanName: '정본한글', name: null },
+        });
+
+        const en = await loadSymbolNames(['AAPL', 'KONLY'], 'en');
+
+        expect(en.get('AAPL')).toBe('Apple Inc.');
+        expect(en.has('KONLY')).toBe(false);
+        // ko 화면에서는 그대로 쓰인다.
+        const ko = await loadSymbolNames(['AAPL', 'KONLY'], 'ko');
+        expect(ko.get('KONLY')).toBe('정본한글');
+    });
+
+    it('비-ko 로케일은 크립토도 한글명으로 폴백하지 않는다', async () => {
+        mockDisplayNames.mockResolvedValue({});
+        mockCryptoAsset.mockResolvedValue({
+            symbol: 'BTCUSD',
+            name: '',
+            koreanName: '비트코인',
+        });
+
+        expect((await loadSymbolNames(['BTCUSD'], 'en')).size).toBe(0);
+    });
+
     it('하나도 못 읽으면 캐시에 넣지 않고(던지고) 빈 맵으로 떨어진다', async () => {
         mockDisplayNames.mockResolvedValue({});
 

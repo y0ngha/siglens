@@ -8,10 +8,7 @@
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { buildPrewarmUniverse } from '@/entities/seo-snapshot/lib/applicability';
-import {
-    buildSymbolDirectory,
-    symbolDirectoryCount,
-} from '@/shared/lib/symbolDirectory';
+import { buildSymbolDirectory } from '@/shared/lib/symbolDirectory';
 
 const allItems = () => buildSymbolDirectory().flatMap(s => s.items);
 
@@ -22,9 +19,6 @@ describe('buildSymbolDirectory', () => {
 
         expect([...new Set(listed)]).toHaveLength(listed.length);
         expect(new Set(listed)).toEqual(new Set(expected));
-        expect(symbolDirectoryCount(buildSymbolDirectory())).toBe(
-            expected.length
-        );
     });
 
     /**

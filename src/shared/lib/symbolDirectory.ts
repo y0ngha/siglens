@@ -77,10 +77,3 @@ export function buildSymbolDirectory(
         },
     ];
 }
-
-/** 디렉터리가 링크하는 심볼 수 — 화면 캡션과 테스트가 같은 값을 쓴다. */
-export function symbolDirectoryCount(
-    sections: readonly SymbolDirectorySection[]
-): number {
-    return sections.reduce((sum, section) => sum + section.items.length, 0);
-}

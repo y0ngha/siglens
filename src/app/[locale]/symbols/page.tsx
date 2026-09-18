@@ -38,7 +38,7 @@ import { loadSymbolNames } from './loadSymbolNames';
  * 이름은 DB에서 온다(`korean_tickers`·`crypto_assets`). DB가 본문을 쥔 정적 페이지는
  * `revalidate` 없이는 응답이 사실상 영구 캐시로 굳어 이름을 고쳐도 화면이 안 바뀐다.
  */
-export const revalidate = 86400;
+export const revalidate = 86400; // 24h — 이름 캐시 TTL과 같다
 
 const PATH = SYMBOLS_PATH;
 

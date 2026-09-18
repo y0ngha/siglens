@@ -2,6 +2,9 @@ import { unstable_cache } from 'next/cache';
 import { getTickerDisplayNames } from '@/entities/ticker/lib/koreanNameStore';
 import { getCryptoAsset } from '@/entities/ticker/lib/cryptoAssetStore';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
+
+/** 크립토 판정용 — 매 렌더마다 배열을 훑지 않는다. */
+const CRYPTO_SET = new Set<string>(POPULAR_CRYPTOS);
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 
@@ -31,7 +34,8 @@ async function readSymbolNames(
     const wantsKorean = locale === DEFAULT_LOCALE;
     try {
         const [displayNames, cryptoRows] = await Promise.all([
-            getTickerDisplayNames(symbols),
+            // 크립토는 `korean_tickers`에 없다 — 조회 대상에서 빼 의도를 분명히 한다.
+            getTickerDisplayNames(symbols.filter(s => !CRYPTO_SET.has(s))),
             Promise.all(
                 POPULAR_CRYPTOS.map(async symbol => ({
                     symbol,
@@ -40,21 +44,30 @@ async function readSymbolNames(
             ),
         ]);
 
-        const pairs: [string, string][] = [];
-        for (const symbol of symbols) {
-            const entry = displayNames[symbol];
-            const name = wantsKorean
-                ? (entry?.koreanName ?? entry?.name)
-                : (entry?.name ?? entry?.koreanName);
-            if (name) pairs.push([symbol, name]);
-        }
-        for (const { symbol, record } of cryptoRows) {
-            if (record === null) continue;
-            const name = wantsKorean
-                ? (record.koreanName ?? record.name)
-                : record.name;
-            if (name) pairs.push([symbol, name]);
-        }
+        // **비-ko 로케일은 한글명으로 폴백하지 않는다.** `getTickerDisplayNames`는
+        // 저장된 행이 없어도 정본 한글명을 내보내고 영문명은 `null`로 둘 수 있다
+        // (그 함수 JSDoc). 거기서 한글로 떨어지면 `/en/symbols`에 한국어가 섞인다 —
+        // 이름을 모르면 티커만 찍는 편이 낫다. 아래 크립토 분기와 같은 규칙이다.
+        // `||`다(`??` 아님). 빈 문자열도 "이름 없음"으로 봐야 한다 — `??`로 두면
+        // `''`가 통과해 화면에 `" (BTCUSD)"` 같은 라벨이 찍힌다(테스트가 잡았다).
+        const pickName = (
+            entry:
+                | { koreanName: string | null; name: string | null }
+                | undefined
+        ): string | null =>
+            (wantsKorean ? entry?.koreanName || entry?.name : entry?.name) ||
+            null;
+
+        const pairs: readonly (readonly [string, string])[] = [
+            ...symbols.flatMap(symbol => {
+                const name = pickName(displayNames[symbol]);
+                return name === null ? [] : [[symbol, name] as const];
+            }),
+            ...cryptoRows.flatMap(({ symbol, record }) => {
+                const name = pickName(record ?? undefined);
+                return name === null ? [] : [[symbol, name] as const];
+            }),
+        ];
         // **빈 결과는 던진다 — 캐시에 넣지 않기 위해서다.**
         // 하위 리더(`getTickerDisplayNames`·`getCryptoAsset`)는 DB 실패를 자체적으로
         // 삼키고 빈 값을 돌려준다. 그 빈 값을 그대로 반환하면 `unstable_cache`가
