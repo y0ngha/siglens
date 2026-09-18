@@ -367,6 +367,18 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ Number.isFinite(tp) && tp > 0 && tp !== entryPrice; return early if invalid
     ✅ if (tp <= entryPrice) return ''; // meaningless result, prevent display
 
+24. Guards, allowlists, and enumerations must be updated atomically when adding new items
+    → When a new route, feature flag, export, or external service is added, all corresponding guard lists (RESERVED_FIRST_SEGMENTS, SURFACES, KNOWN_AGENTS, allowlists, enums) must be updated in the same commit
+    → Incomplete registration creates silent drift: the new item exists in code but is not guarded/allowed, leading to proxy 301s, permission errors, or orphaned code paths
+    → Verify by: 1) finding all existing guards that enumerate similar items, 2) checking that each enumeration includes the new item, 3) adding a test that would fail if the item is removed from the guard
+    ❌ Add new route `/symbols` to source but forget RESERVED_FIRST_SEGMENTS → proxy 301s `/symbols` to ticker `/SYMBOLS`
+    ❌ Add `mistake-managing-agent` to agent system but forget KNOWN_AGENTS → exit signal validation rejects the agent's signals
+    ❌ Add new i18n surface but forget SURFACES guard → guard enumerates old surfaces, test passes, new surface is unguarded
+    ✅ Add route → update RESERVED_FIRST_SEGMENTS + update proxy test to assert route is in list
+    ✅ Add agent → update KNOWN_AGENTS allowlist + add to agent dispatch logic + update exit signal guard
+    ✅ Add surface → update SURFACES + add to route enumeration test + verify cross-surface guard tests pass
+    → Recurring: PR #678 (exit-signal allowlist), PR #796 R3 (SURFACES), fix/seo-internal-links (RESERVED_FIRST_SEGMENTS) — 3 occurrences
+
 16. Temporary API stub modules left in codebase after external library release
     → When an external package (e.g. @y0ngha/siglens-core) exports the API previously stubbed locally, immediately delete the stub and unify all imports to the real export
     → Keeping stubs after release creates split dependencies and defeats the purpose of modularization
@@ -646,6 +658,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ❌ <div role="button" onKeyDown={handleKeyDown}> <button>{icon}</button> </div>  // parent preventDefault blocks nested button's Enter/Space
     ✅ <div role="button" onKeyDown={(e) => { if (e.target !== e.currentTarget) return; handleKeyDown(e); }}> <button>{icon}</button> </div>
     → Recurring: feat/skill-card-expand-description R1, perf/aws-cost-reduction Round 3 UI audit (2 occurrences)
+
+18.5. Test mocks must be updated when component/module API expands
+    → Component props, module exports, and function signatures must match the mocks used in tests
+    → When a new prop is added to a component or export to a module, all tests mocking that component/module must be updated to mirror the new API
+    → Mocks using `vi.mock(..., { spy: true })` or destructuring only-used props can silently ignore new props, breaking when consumers change
+    → Full module mocks should use `importOriginal` to preserve real exports unless explicitly overriding
+    ❌ vi.mock('@/shared/lib/seo', () => ({ createMetadata: vi.fn(...) }))  // new SYMBOLS_PATH export ignored, test breaks when other file adds it
+    ❌ const mockData = vi.spyOn(component, 'method'); // fails to mirror when new method added to component
+    ✅ vi.mock('@/shared/lib/seo', async () => ({ ...await vi.importActual('@/shared/lib/seo'), createMetadata: vi.fn(...) }))
+    ✅ Test mock of MarketDataErrorNotice destructures both onClose AND variant props when variant is added
+    → Recurring: feat/asset-class-navigation R3 (component prop mocking), fix/seo-internal-links (module export mocking) — 2 occurrences
 
 17. Duplicate user-facing text rendered in multiple places simultaneously
     → User-facing strings (warnings, status messages, labels) must not appear in multiple DOM locations at the same time
