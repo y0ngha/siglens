@@ -1,14 +1,24 @@
-import {
-    CURATED_KOREAN_NAMES,
-    POPULAR_TICKERS,
-} from '@/shared/config/popular-tickers';
+import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile';
 
-/** 디렉터리 한 줄. `koreanName`은 큐레이션 목록에 있을 때만 채워진다. */
+/**
+ * 디렉터리 한 줄. `label`은 화면에 그대로 찍히는 최종 문자열이다.
+ *
+ * 이름을 아는 종목은 `자산명 (티커)`, 모르면 티커만이다 — 옛 판(`티커 한글명`)은
+ * 이름이 있는 줄과 없는 줄이 서로 다른 모양이 돼 목록이 들쭉날쭉했다.
+ */
 export interface SymbolDirectoryItem {
     readonly symbol: string;
-    readonly koreanName: string | null;
+    readonly label: string;
+}
+
+/** 심볼 → 표기 이름. 호출부(페이지)가 DB에서 읽어 넘긴다. */
+export type SymbolNameMap = ReadonlyMap<string, string>;
+
+function labelFor(symbol: string, names: SymbolNameMap): string {
+    const name = names.get(symbol);
+    return name === undefined || name === '' ? symbol : `${name} (${symbol})`;
 }
 
 /** 자산군 한 묶음. `labelKey`는 내비가 이미 네 로케일로 갖고 있는 지역 이름이다. */
@@ -33,21 +43,18 @@ export interface SymbolDirectorySection {
  * 라벨을 새로 번역할 것이 없고(내비의 지역 이름 재사용), 크롤러가 얻는 것은
  * 동일하다 — 링크의 존재 자체다.
  *
- * **한글명을 `ko`에서만 보여주는 이유**: `CURATED_KOREAN_NAMES`는 한국어 표기라
- * `/en/symbols`에 그대로 두면 영어 화면에 한국어가 섞인다. 심볼만 남겨도 링크
- * 목적에는 충분하다.
+ * **이름은 호출부가 넘긴다**: 416개 중 상수로 이름을 아는 건 84개뿐이고 나머지는
+ * DB(`korean_tickers`·`crypto_assets`)에 있다. 이 모듈은 순수하게 두고, 페이지가
+ * 로케일에 맞는 이름(한국어/영문)을 읽어 맵으로 넘긴다 — 여기서 DB를 읽으면
+ * 순수 함수 테스트가 통째로 DB에 묶인다.
  */
 export function buildSymbolDirectory(
-    options: { readonly withKoreanNames: boolean } = { withKoreanNames: true }
+    names: SymbolNameMap = new Map()
 ): readonly SymbolDirectorySection[] {
-    const toItem = (symbol: string): SymbolDirectoryItem => ({
-        symbol,
-        koreanName: options.withKoreanNames
-            ? (CURATED_KOREAN_NAMES.get(symbol) ?? null)
-            : null,
-    });
     const sorted = (symbols: readonly string[]) =>
-        [...symbols].sort((a, b) => a.localeCompare(b)).map(toItem);
+        [...symbols]
+            .sort((a, b) => a.localeCompare(b))
+            .map(symbol => ({ symbol, label: labelFor(symbol, names) }));
 
     const krTickers = POPULAR_TICKERS.filter(isKrEquitySymbol);
     const usTickers = POPULAR_TICKERS.filter(t => !isKrEquitySymbol(t));
@@ -69,11 +76,4 @@ export function buildSymbolDirectory(
             items: sorted(POPULAR_CRYPTOS),
         },
     ];
-}
-
-/** 디렉터리가 링크하는 심볼 수 — 화면 캡션과 테스트가 같은 값을 쓴다. */
-export function symbolDirectoryCount(
-    sections: readonly SymbolDirectorySection[]
-): number {
-    return sections.reduce((sum, section) => sum + section.items.length, 0);
 }

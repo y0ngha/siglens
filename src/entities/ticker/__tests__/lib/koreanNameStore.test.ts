@@ -1,6 +1,7 @@
 import type { CacheProvider } from '@y0ngha/siglens-core';
 import type { KoreanTickerEntry } from '@/shared/lib/types';
 import type { KoreanTickerRepository } from '@/shared/db/types';
+import { CANONICAL_KOREAN_NAMES } from '@/shared/config/canonical-korean-names';
 
 const {
     mockCache,
@@ -45,6 +46,7 @@ vi.mock('../../api', () => ({
 
 import {
     getKoreanNames,
+    getTickerDisplayNames,
     invalidateKoreanTickerCache,
     searchByKoreanName,
     setKoreanTickers,
@@ -253,6 +255,82 @@ describe('searchByKoreanName', () => {
         mockCache.set.mockRejectedValue(new Error('cache write down'));
         const result = await searchByKoreanName('애');
         expect(result[0].symbol).toBe('AAPL');
+    });
+});
+
+describe('getTickerDisplayNames', () => {
+    beforeEach(resetMocks);
+    afterEach(() => vi.clearAllMocks());
+
+    it('빈 입력은 캐시·DB를 건드리지 않는다', async () => {
+        await expect(getTickerDisplayNames([])).resolves.toEqual({});
+        expect(mockCache.get).not.toHaveBeenCalled();
+    });
+
+    it('저장된 행의 한글명과 영문명을 함께 돌려준다', async () => {
+        mockCache.get.mockResolvedValue([apple, microsoft]);
+
+        await expect(getTickerDisplayNames(['AAPL', 'MSFT'])).resolves.toEqual({
+            AAPL: { koreanName: '애플', name: 'Apple Inc.' },
+            MSFT: {
+                koreanName: '마이크로소프트',
+                name: 'Microsoft Corporation',
+            },
+        });
+    });
+
+    it('행이 없는 심볼은 결과에서 빠진다 — 없는 이름을 지어내지 않는다', async () => {
+        mockCache.get.mockResolvedValue([apple]);
+
+        const result = await getTickerDisplayNames(['AAPL', 'TSLA']);
+
+        expect(Object.keys(result)).toEqual(['AAPL']);
+    });
+
+    /**
+     * 정본 한글명은 **행이 없어도** 나와야 한다. 이 함수가 `loadEntriesBySymbols`를
+     * 재사용하는 이유가 그것인데, 재사용만으로는 "행이 아예 없는 심볼"을 못 덮어서
+     * `getKoreanNames`와 같은 폴백을 하나 더 갖는다(그 함수 주석 참고).
+     */
+    it('저장된 행이 없어도 정본 한글명은 내보낸다', async () => {
+        const [canonicalSymbol, canonicalName] = [
+            ...CANONICAL_KOREAN_NAMES.entries(),
+        ][0];
+        mockCache.get.mockResolvedValue([]);
+
+        const result = await getTickerDisplayNames([canonicalSymbol]);
+
+        expect(result[canonicalSymbol]).toEqual({
+            koreanName: canonicalName,
+            name: null,
+        });
+    });
+
+    it('정본 한글명이 저장된 행의 이름을 이긴다', async () => {
+        const [canonicalSymbol, canonicalName] = [
+            ...CANONICAL_KOREAN_NAMES.entries(),
+        ][0];
+        mockCache.get.mockResolvedValue([
+            {
+                symbol: canonicalSymbol,
+                name: 'Stored English',
+                koreanName: '옛이름',
+                exchange: 'NASDAQ',
+                exchangeFullName: 'NASDAQ Global Select',
+            },
+        ]);
+
+        const result = await getTickerDisplayNames([canonicalSymbol]);
+
+        expect(result[canonicalSymbol].koreanName).toBe(canonicalName);
+        expect(result[canonicalSymbol].name).toBe('Stored English');
+    });
+
+    it('DB가 죽어도 던지지 않고 빈 객체로 떨어진다', async () => {
+        mockCache.get.mockResolvedValue(null);
+        mockRepository.findBySymbols.mockRejectedValue(new Error('db down'));
+
+        await expect(getTickerDisplayNames(['MSFT'])).resolves.toEqual({});
     });
 });
 

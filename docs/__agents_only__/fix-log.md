@@ -384,3 +384,30 @@
   - Rule: i18n namespace containment — server-only namespaces (shared.seo) must not be consumed by client-rendered components; use client-permitted namespaces (widgets.layout). Namespace pollution increases payload and masks content scope.
   - Context: Moved key to `widgets.layout` namespace before use. Existing guard (`clientKeyCoverage`) now correctly rejects shared.seo in client code.
 
+## [fix/symbols-copy-and-names Round 1 | /symbols 표기·문구 | 2026-09-18]
+- Violation: 새 인프라 헬퍼 `getTickerDisplayNames`(`src/entities/ticker/lib/koreanNameStore.ts`)를 테스트 없이 올렸다. 같은 파일의 형제 함수들은 전부 커버돼 있다.
+  - Rule: MISTAKES.md §22 — 새 순수/인프라 헬퍼는 전용 단위 테스트와 함께 머지한다.
+  - Context: `__tests__/lib/koreanNameStore.test.ts`에 describe 블록 추가 — 빈 입력, 두 이름 반환, 행 없는 심볼 제외, 행이 없어도 정본 한글명 방출, 정본이 저장된 한글명을 이기되 영문명은 유지, DB 실패 시 빈 객체.
+
+- Violation: `as Record<string, TickerDisplayName>` 캐스트에 보증 주석이 없었다. 몇 줄 아래 형제 함수 `getKoreanNames`의 동일한 캐스트에는 있다.
+  - Rule: MISTAKES.md TypeScript §7 + §6.7 — safe-cast 보증 주석은 필수이고, 같은 규칙이 형제 호출부 중 한쪽에만 적용되면 안 된다.
+  - Context: `flatMap`이 `readonly [string, TickerDisplayName][]`만 만든다는 근거를 주석으로 남겼다.
+
+- Violation: `unstable_cache`가 빈 결과를 24시간 캐시할 수 있었다. 하위 리더(`getTickerDisplayNames`·`getCryptoAsset`)가 DB 실패를 삼키고 빈 값을 성공처럼 돌려주기 때문에, 순간적인 실패 한 번이 하루짜리 품질 저하가 된다(stale-while-revalidate라 만료 후 첫 요청도 옛 값).
+  - Rule: (신규) 캐시 래퍼는 "정상적으로 비어 있음"과 "실패해서 비어 있음"을 구분해야 한다. 하위 리더가 에러를 삼키면 캐시 경계에서 던져야 한다 — 거부된 promise는 캐시되지 않는다.
+  - Context: `readSymbolNames`가 이름을 하나도 못 모으면 던지고, `loadSymbolNames`가 그것을 잡아 빈 맵으로 떨어뜨린다. 이름은 사라져도 링크는 남는다.
+
+- Violation: 페이지 `<h1>`이 `<title>` 문자열을 그대로 써서 검색용 꼬리표(`— 미국·한국 주식과 암호화폐`)가 화면에 찍혔다.
+  - Rule: (신규) 검색 결과용으로 쓴 제목 문자열을 화면 헤딩으로 재사용하지 않는다.
+  - Context: `app.symbols.page.heading` 키를 따로 두고 h1·가시 브레드크럼·BreadcrumbList `name`이 그것을 쓴다. `<title>`만 꼬리표를 유지한다.
+
+- Violation: (recommended) TTL 리터럴이 `24 * SECONDS_PER_HOUR`로 재계산돼 있었고 페이지는 같은 값을 `86400`으로 하드코딩했다. `SECONDS_PER_DAY`가 이미 있다.
+  - Rule: MISTAKES.md §15 — 같이 움직여야 하는 두 값에 공통 출처가 없으면 드리프트한다.
+  - Context: TTL은 `SECONDS_PER_DAY`에서 파생하고, 페이지의 `revalidate` 리터럴과의 일치는 소스를 읽는 parity 테스트가 고정한다(Next가 `revalidate`를 정적 분석해 import를 못 쓴다).
+
+- Violation: (recommended) 캐시 함수가 심볼 목록을 클로저로만 잡아 캐시 키에 들어가지 않았다.
+  - Rule: 결과를 바꾸는 인자는 전부 캐시 키에 들어가야 한다.
+  - Context: 목록을 래핑된 함수의 **인자**로 넘겨 `unstable_cache`가 키에 포함하게 했다.
+
+## [fix/symbols-copy-and-names Round 2 | /symbols 표기·문구 | 2026-09-18]
+- Status: APPROVED (지적 없음)

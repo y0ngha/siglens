@@ -4,6 +4,18 @@
  * 링크 집합을 본다: 목록의 모든 심볼이 실제 `<a href="/{symbol}">`로 나가는지,
  * 로케일별 색인 지시가 다른 정적 페이지와 같은지.
  */
+// 이름 조회는 DB를 탄다 — 이 파일의 관심사는 링크 집합과 표기 형태라 고정 맵으로 막는다.
+vi.mock('@/app/[locale]/symbols/loadSymbolNames', () => ({
+    loadSymbolNames: (symbols: readonly string[], locale: string) =>
+        Promise.resolve(
+            new Map(
+                symbols
+                    .slice(0, 2)
+                    .map(s => [s, locale === 'ko' ? `한글:${s}` : `Name:${s}`])
+            )
+        ),
+}));
+
 vi.mock('@/shared/ui/JsonLd', () => ({
     JsonLd: ({ data }: { data: Record<string, unknown> }) => {
         jsonLdSpy(data);
@@ -61,13 +73,15 @@ describe('/symbols 디렉터리 페이지', () => {
         expect(html).not.toContain('/AAPL/news');
     });
 
-    it('ko에서는 한글명을 함께 보여주고, en에서는 심볼만 남긴다', async () => {
+    it('이름을 아는 종목은 `자산명 (티커)`로, 로케일에 맞는 이름으로 찍는다', async () => {
         const ko = await renderPage('ko');
         const en = await renderPage('en');
 
-        expect(ko).toContain('애플');
-        expect(en).not.toContain('애플');
-        expect(en).toContain('>AAPL<');
+        const first = POPULAR_TICKERS[0];
+        expect(ko).toContain(`한글:${first} (${first})`);
+        expect(en).toContain(`Name:${first} (${first})`);
+        // 이름을 못 받은 종목은 티커만 — 링크는 그대로 남는다.
+        expect(ko).toContain(`>${POPULAR_TICKERS[5]}<`);
     });
 
     it('h1은 하나고 자산군 섹션마다 h2가 붙는다', async () => {
@@ -109,6 +123,6 @@ describe('/symbols 디렉터리 페이지', () => {
         });
 
         const claim = `${String(meta.title)} ${String(meta.description)}`;
-        expect(claim).not.toMatch(/전체 종목|모든 종목/);
+        expect(claim).not.toMatch(/전체 종목|모든 종목|분석 가능한/);
     });
 });
