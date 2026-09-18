@@ -222,6 +222,52 @@ export async function searchByKoreanName(
     );
 }
 
+/** 디렉터리 표기용 이름 한 벌 — 한글명이 없으면 영문명으로 떨어진다. */
+export interface TickerDisplayName {
+    readonly koreanName: string | null;
+    /** `korean_tickers.name` — 영문 정식 명칭. */
+    readonly name: string | null;
+}
+
+/**
+ * 심볼 목록의 **표기용 이름**을 한 번에 읽는다(`/symbols` 디렉터리).
+ *
+ * `getKoreanNames`는 한글명만 돌려주므로 비-ko 화면에서 쓸 이름이 없다. 여기서는
+ * 같은 로더(`loadEntriesBySymbols` — 캐시 → DB, 정본 오버라이드 포함)를 그대로
+ * 쓰되 두 이름을 함께 내보낸다. 로더를 재사용하는 것이 핵심이다: 새 리더를 따로
+ * 만들면 정본 한글명 오버라이드가 이 표면에만 빠져 화면마다 이름이 갈린다(이
+ * 파일 상단 주석의 사고가 정확히 그 형태였다).
+ *
+ * 암호화폐는 `korean_tickers`가 아니라 `crypto_assets`에 있어 여기서 안 나온다 —
+ * 호출부가 `getCryptoAsset`으로 보강한다.
+ */
+export async function getTickerDisplayNames(
+    symbols: readonly string[]
+): Promise<Record<string, TickerDisplayName>> {
+    if (symbols.length === 0) return {};
+
+    const entries = await loadEntriesBySymbols(symbols);
+    const bySymbol = new Map(entries.map(e => [e.symbol, e]));
+
+    return Object.fromEntries(
+        symbols.flatMap<readonly [string, TickerDisplayName]>(symbol => {
+            const entry = bySymbol.get(symbol);
+            // 저장된 행이 없어도 정본 한글명은 내보낸다 — `getKoreanNames`가
+            // 같은 이유로 같은 폴백을 갖는다(위 주석 참고).
+            const koreanName =
+                CANONICAL_KOREAN_NAMES.get(symbol) ?? entry?.koreanName ?? null;
+            const name = entry?.name ?? null;
+            return koreanName === null && name === null
+                ? []
+                : [[symbol, { koreanName, name }]];
+        })
+        // `Object.fromEntries`는 반환 타입을 `{ [k: string]: TickerDisplayName }`로
+        // 넓히지만, 위 `flatMap`이 `readonly [string, TickerDisplayName][]`만
+        // 만들어 넣으므로 이 캐스트는 안전하다(`getKoreanNames`의 같은 캐스트와
+        // 같은 이유).
+    ) as Record<string, TickerDisplayName>;
+}
+
 /** Resolve Korean names for a list of canonical ticker symbols. */
 export async function getKoreanNames(
     symbols: string[]

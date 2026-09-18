@@ -516,6 +516,18 @@
         "text": "Siglens 뉴스"
     },
     {
+        "file": "src/app/[locale]/symbols/loadSymbolNames.ts",
+        "line": 66,
+        "reason": "developer-diagnostic",
+        "text": "[symbols] 이름을 하나도 읽지 못했다"
+    },
+    {
+        "file": "src/app/[locale]/symbols/loadSymbolNames.ts",
+        "line": 70,
+        "reason": "developer-diagnostic",
+        "text": "[symbols] 이름 조회 실패 — 티커만 표시한다"
+    },
+    {
         "file": "src/entities/analysis/lib/reanalyzeCooldown.ts",
         "line": 26,
         "reason": "developer-diagnostic",

@@ -18,10 +18,10 @@ import {
     SYMBOLS_PATH,
     type SeoTranslator,
 } from '@/shared/lib/seo';
-import {
-    buildSymbolDirectory,
-    symbolDirectoryCount,
-} from '@/shared/lib/symbolDirectory';
+import { buildSymbolDirectory } from '@/shared/lib/symbolDirectory';
+import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
+import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
+import { loadSymbolNames } from './loadSymbolNames';
 
 /**
  * 종목 디렉터리 — **내부 링크 고아를 없애는 페이지**다.
@@ -34,9 +34,12 @@ import {
  * **문구는 "더 보기"다 — "전체/모든 종목"이 아니다.** 상장 종목 전체가 아니라
  * 우리가 분석을 제공하는 목록이라, 전체라고 쓰면 페이지가 지키지 못하는 약속이 된다.
  *
- * 데이터는 상수(`POPULAR_TICKERS`·`POPULAR_CRYPTOS`)뿐이라 DB·fetch가 없다. 그래서
- * `revalidate`도 두지 않는다 — 목록은 배포로만 바뀐다.
+ * 목록 자체는 상수(`POPULAR_TICKERS`·`POPULAR_CRYPTOS`)라 배포로만 바뀌지만, 표기
+ * 이름은 DB에서 온다(`korean_tickers`·`crypto_assets`). DB가 본문을 쥔 정적 페이지는
+ * `revalidate` 없이는 응답이 사실상 영구 캐시로 굳어 이름을 고쳐도 화면이 안 바뀐다.
  */
+export const revalidate = 86400;
+
 const PATH = SYMBOLS_PATH;
 
 export function symbolsTitle(t: SeoTranslator): string {
@@ -102,12 +105,13 @@ export default async function SymbolsDirectoryPage({
         getTranslations('shared.seo'),
     ]);
 
-    // 한글 종목명은 ko 화면에서만 보여준다 — 영어·일본어·중국어 화면에 한국어
-    // 표기가 섞이는 것을 막는다(`buildSymbolDirectory` JSDoc).
-    const sections = buildSymbolDirectory({
-        withKoreanNames: resolvedLocale === DEFAULT_LOCALE,
-    });
-    const total = symbolDirectoryCount(sections);
+    // 이름은 로케일에 맞는 것을 읽는다(ko는 한글명, 나머지는 영문명). 못 읽으면
+    // 빈 맵이 와서 티커만 찍힌다 — 링크는 어떤 경우에도 남는다.
+    const names = await loadSymbolNames(
+        [...POPULAR_TICKERS, ...POPULAR_CRYPTOS],
+        resolvedLocale
+    );
+    const sections = buildSymbolDirectory(names);
 
     const webPageJsonLd = buildWebPageJsonLd({
         url: `${SITE_URL}${PATH}`,
@@ -115,8 +119,13 @@ export default async function SymbolsDirectoryPage({
         description: symbolsDescription(tSeo),
         locale: resolvedLocale,
     });
+    // 브레드크럼·h1은 짧은 제목을 쓴다. `<title>`의 자산군 꼬리표
+    // (`— 미국·한국 주식과 암호화폐`)는 검색 결과용이라 화면에 반복하면 군더더기고,
+    // BreadcrumbList의 `name`은 **화면에 보이는 마디와 같아야** 구글이 마크업을
+    // 무시하지 않는다.
+    const heading = t('page.heading');
     const breadcrumbJsonLd = buildBreadcrumbJsonLd(
-        [{ name: symbolsTitle(tSeo), url: `${SITE_URL}${PATH}` }],
+        [{ name: heading, url: `${SITE_URL}${PATH}` }],
         resolvedLocale
     );
 
@@ -130,13 +139,13 @@ export default async function SymbolsDirectoryPage({
              * 그건 이미 `<a>`로 있다.
              */}
             <main className="mx-auto w-full max-w-5xl space-y-8 px-4 py-8">
-                <Breadcrumb trail={[{ label: symbolsTitle(tSeo) }]} />
+                <Breadcrumb trail={[{ label: heading }]} />
                 <header className="space-y-2">
                     <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-50 sm:text-3xl">
-                        {symbolsTitle(tSeo)}
+                        {heading}
                     </h1>
                     <p className="text-sm text-secondary-400">
-                        {t('page.intro', { v0: String(total) })}
+                        {t('page.intro')}
                     </p>
                 </header>
                 {sections.map(section => (
@@ -158,20 +167,13 @@ export default async function SymbolsDirectoryPage({
                                 <li key={item.symbol} className="min-w-0">
                                     <Link
                                         href={`/${item.symbol}`}
-                                        // 416개 링크에 prefetch가 붙으면 진입만으로
+                                        // 400여 개 링크에 prefetch가 붙으면 진입만으로
                                         // 수백 개 `_rsc` 요청이 나간다
                                         // (docs/architecture/CDN_CACHING.md §1).
                                         prefetch={false}
                                         className="block truncate rounded text-sm text-secondary-300 transition-colors hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                                     >
-                                        <span className="font-medium text-secondary-200">
-                                            {item.symbol}
-                                        </span>
-                                        {item.koreanName !== null && (
-                                            <span className="ml-1.5 text-secondary-400">
-                                                {item.koreanName}
-                                            </span>
-                                        )}
+                                        {item.label}
                                     </Link>
                                 </li>
                             ))}

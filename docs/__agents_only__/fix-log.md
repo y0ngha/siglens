@@ -386,3 +386,31 @@
 - Violation: New i18n key (`widgets.layout.footer.symbols`) placed in `shared.seo` namespace and consumed by client-rendered `Footer`, leaked that server-only namespace into every client payload.
   - Rule: i18n namespace containment — server-only namespaces (shared.seo) must not be consumed by client-rendered components; use client-permitted namespaces (widgets.layout). Namespace pollution increases payload and masks content scope.
   - Context: Moved key to `widgets.layout` namespace before use. Existing guard (`clientKeyCoverage`) now correctly rejects shared.seo in client code.
+
+## [fix/symbols-copy-and-names Round 1 | Symbol display names and SEO copy handling | 2026-09-18]
+- Violation: New exported infra helper `getTickerDisplayNames` in `src/entities/ticker/lib/koreanNameStore.ts` shipped without unit tests, while all sibling functions in the file are fully covered
+  - Rule: MISTAKES.md Rule 22 — New core/helper functions must include unit tests before merge
+  - Context: Added dedicated unit test file for `getTickerDisplayNames` covering both successful lookups and missing symbol fallback cases.
+
+- Violation: `as Record<...>` type cast on line N lacked a guarantee comment, while identical cast on line N+few lines below carried one — same type-safety assumption applied inconsistently to sibling call sites
+  - Rule: Type assertion guarantee comments must be applied consistently to identical casts across the same function/file scope. Siblings with identical casts indicate shared risk; omitting one hides the contractual assumption
+  - Context: Added guarantee comment to first cast: `// Object.keys(data) guarantees all keys are TickerIds`
+
+- Violation: `unstable_cache` wrapper around `getTickerDisplayNames` would persist an empty result (returned by error-swallowing readers on transient DB failure) for a 24h TTL. A single read error would degrade the page's display names for an entire day (plus stale-while-revalidate extension). Error-swallowing readers return empty array as success, indistinguishable from cache perspective.
+  - Rule: (new) Cache wrappers must distinguish transient failures from valid-but-empty results. When underlying readers swallow errors and return empty, the cache layer must detect this degradation (e.g., throw on empty result) so rejections are not cached. Rejections escape the cache; only real results are cached.
+  - Context: Added guard: `if (result.length === 0) throw new Error('empty result')` before returning, absorbed at the call site with `.catch(() => [])`. Cache now rejects on any error; page degrades gracefully on DB hiccup instead of serving stale data for 24 hours.
+
+- Violation: Page `<h1>` reused the `<title>` SEO string ("종목명 복사 - 미국·한국 주식과 암호화폐"), appending the common tail ("— 미국·한국 주식과 암호화폐") on-screen after the copy feature was renamed
+  - Rule: (new) SEO title strings (written for search results, constrained to ~60 chars + tail) must not be reused as page headings. Copy optimized for search engines (with trailing descriptors) leaks into user-facing text when the same string is rendered in both contexts. SEO and UI heading must be independent.
+  - Context: Added separate i18n key for page `<h1>` ("종목명 복사"), distinct from SEO `<title>`. Page heading no longer includes the search-engine-optimized tail.
+
+- Violation: (RECOMMENDED) TTL literal `86400` was hardcoded in both the cache wrapper and the page load handler, while module already exports `SECONDS_PER_DAY = 86400`. Hardcoded use creates drift risk if constant changes.
+  - Rule: MISTAKES.md Rule 15 — Hardcoded literals must reference shared constants when they exist in the same module
+  - Context: Replaced hardcoded `86400` with imported `SECONDS_PER_DAY` in both locations. Single source of truth maintained with parity test asserting both values match.
+
+- Violation: (RECOMMENDED) Cached function captured `symbolList` parameter by closure, so the cache key (built from computed hash) never included the list itself. Different callers with different symbol lists would collision on the same cache entry if all other params matched.
+  - Rule: Cache keys must include all result-affecting function parameters, including those that could be captured by closure. When a parameter influences the result, it must enter the cache key.
+  - Context: Removed closure capture; passed `symbolList` as an explicit cache key component in the hash calculation. Now `getTickerDisplayNames([a,b])` and `getTickerDisplayNames([a,b,c])` produce distinct cache entries.
+
+## [fix/symbols-copy-and-names Round 2 | Symbol display names and SEO copy handling | 2026-09-18]
+- Status: APPROVED (zero findings)

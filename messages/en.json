@@ -429,7 +429,8 @@
         },
         "symbols": {
             "page": {
-                "intro": "Grouped by asset class. Pick a symbol to open its chart and AI analysis. {v0} symbols covered right now."
+                "heading": "Most-viewed symbols",
+                "intro": "The symbols people look up most. Anything not listed still works — type its ticker in the search box and it is analyzed the same way."
             }
         }
     },
@@ -1667,8 +1668,8 @@
                 }
             },
             "symbols": {
-                "description": "Browse the US and Korean stocks and crypto that Siglens covers with AI analysis and technical signals. Pick one to open its chart, fundamentals, news and overall analysis.",
-                "title": "More symbols — tickers we analyze"
+                "description": "The US and Korean stocks and crypto people look up most on Siglens. Pick one to open its chart, fundamentals, news and overall AI analysis.",
+                "title": "Most-viewed symbols — US and Korean stocks and crypto"
             },
             "terms": {
                 "description": "Read Siglens's Terms of Service — sign-up and usage conditions, disclaimers for AI analysis and backtesting, account and content rules, and the rights and obligations of users and the company.",
@@ -3026,7 +3027,7 @@
                 "531f6a": "Contact Us",
                 "5f5d12": "Site Information",
                 "693b62": "Investment Disclaimer",
-                "symbolsLink": "More symbols"
+                "symbolsLink": "Most-viewed symbols"
             },
             "Header": {
                 "1ebe53": "SIGLENS Logo",

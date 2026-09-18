@@ -61,18 +61,25 @@ describe('buildSymbolDirectory', () => {
         }
     });
 
-    it('withKoreanNames=false면 한글명을 싣지 않는다 — 비-ko 화면에 한국어가 새지 않게', () => {
-        const withNames = buildSymbolDirectory({ withKoreanNames: true });
-        const withoutNames = buildSymbolDirectory({ withKoreanNames: false });
+    it('이름을 알면 `자산명 (티커)`, 모르면 티커만 찍는다', () => {
+        const [us] = buildSymbolDirectory(
+            new Map([[POPULAR_TICKERS[0], '애플']])
+        );
 
-        // 큐레이션 목록에 있는 종목은 ko에서 한글명을 받는다(표본이 비면 이 단언이
-        // 공허해지므로 개수부터 확인한다).
-        const named = withNames
-            .flatMap(s => s.items)
-            .filter(i => i.koreanName !== null);
-        expect(named.length).toBeGreaterThan(50);
-        expect(
-            withoutNames.flatMap(s => s.items).every(i => i.koreanName === null)
-        ).toBe(true);
+        const named = us.items.find(i => i.symbol === POPULAR_TICKERS[0]);
+        expect(named?.label).toBe(`애플 (${POPULAR_TICKERS[0]})`);
+
+        // 이름 맵에 없는 종목은 티커만 — 링크는 어떤 경우에도 남아야 한다.
+        const unnamed = us.items.find(i => i.symbol !== POPULAR_TICKERS[0]);
+        expect(unnamed?.label).toBe(unnamed?.symbol);
+    });
+
+    it('이름 맵이 비어도(조회 실패) 전 종목을 그대로 링크한다', () => {
+        const items = buildSymbolDirectory(new Map()).flatMap(s => s.items);
+
+        expect(items).toHaveLength(
+            POPULAR_TICKERS.length + POPULAR_CRYPTOS.length
+        );
+        expect(items.every(i => i.label === i.symbol)).toBe(true);
     });
 });
