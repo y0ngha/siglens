@@ -69,6 +69,8 @@ Closed loops (approved, kept for pattern recall only — see file for detail):
 - [siglens-core agent-tool-routing R1](project-siglens-core-agent-tool-routing-r1.md) — Korean-unit tool-number fix, 63/63 green
 - [trader alerts-topic reroute](project-trader-alerts-topic-reroute.md) — provision.sh → shared siglens-alerts topic
 
+- [feat/agent-precomputed-data R1](project-agent-precomputed-data-r1.md) — UTC-midnight daily bars break bar-count staleness; core Fib labels are `50.0%`; weekly HTF dead at 500 daily bars
+- [core precomputed-prompt-data R1](project-core-precomputed-prompt-data-r1.md) — date-only Math.round off-by-one, NaN%p sector spread, keyPrices/geometry prompt contradictions; mutation-in-scratch-copy technique
 - [feat/hub-ai-prewarm R2-R4 closed](project-hub-ai-prewarm-r2.md) — R3 reorder broke durationMs (dropped hub-phase time), R4 fixed via independent batchStartedAt, sim-clock mutation-verified
 
 ## Reference
