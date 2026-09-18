@@ -16,16 +16,20 @@ describe('buildPopularEntries', () => {
     // 두 페이지는 스냅샷 산문이 없으면 noindex라, 산문 보유 집합이 있으면 거기 맞춘다.
     it('산문 스냅샷 집합이 주어지면 congress·overall은 그 종목만 싣고 다른 탭은 그대로 둔다', () => {
         const urls = buildPopularEntries(NOW, {
-            symbolTabsWithProse: new Set(['AAPL:overall']),
+            symbolTabsWithProse: new Set(['AAPL:overall', 'AAPL:news']),
         }).map(e => e.url);
 
         expect(urls).toContain(`${SITE_URL}/AAPL/overall`);
+        // 집합에 든 조합은 실제로 실린다 — 키 형식이 어긋나면 이 단언이 깨진다.
+        expect(urls).toContain(`${SITE_URL}/AAPL/news`);
         expect(urls).not.toContain(`${SITE_URL}/AAPL/congress`);
         expect(urls).not.toContain(`${SITE_URL}/MSFT/overall`);
         expect(urls).not.toContain(`${SITE_URL}/MSFT/congress`);
         expect(urls).toContain(`${SITE_URL}/MSFT`);
-        expect(urls).toContain(`${SITE_URL}/MSFT/news`);
         expect(urls).toContain(`${SITE_URL}/MSFT/fundamental`);
+        // 뉴스 탭도 같은 게이트를 탄다(2026-09-18: 산문 없는 종목의 /news가
+        // sitemap에 noindex로 남아 있었다).
+        expect(urls).not.toContain(`${SITE_URL}/MSFT/news`);
     });
 
     it('산문 집합이 없으면(로더 실패) congress·overall을 전부 싣는다', () => {
@@ -33,6 +37,7 @@ describe('buildPopularEntries', () => {
 
         expect(urls).toContain(`${SITE_URL}/MSFT/overall`);
         expect(urls).toContain(`${SITE_URL}/MSFT/congress`);
+        expect(urls).toContain(`${SITE_URL}/MSFT/news`);
     });
 
     it('모든 POPULAR_TICKERS에 대해 6축 기본 라우트를 생성하고 options/financials는 자산 분류에 맞춘다', () => {

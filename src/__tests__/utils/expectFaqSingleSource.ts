@@ -17,13 +17,20 @@ interface FaqQuestionNode {
  * 오랫동안 마크업만 내보내고 화면에는 Q&A가 없었고, 그 상태로도 스키마는 유효했다.
  * 그래서 `FaqSection`에 넘어간 items와 마크업의 `mainEntity`를 **순서까지** 대조한다.
  */
-export function expectFaqSingleSource(tree: ReactNode): void {
+/**
+ * 두 가드가 공유하는 부분 — 화면 FAQ가 **한 벌** 있고 항목이 비어 있지 않은지.
+ * 어느 쪽이든 여기서 실패하면 마크업 유무를 따질 필요가 없다.
+ */
+function expectSingleVisibleFaq(tree: ReactNode): readonly FaqItem[] {
     const sections = findAllElementsByType(tree, FaqSection);
     expect(sections, 'FaqSection은 한 번만 렌더돼야 한다').toHaveLength(1);
-    const section = sections[0];
-
-    const items = (section?.props as { items: readonly FaqItem[] }).items;
+    const items = (sections[0]?.props as { items: readonly FaqItem[] }).items;
     expect(items.length).toBeGreaterThan(0);
+    return items;
+}
+
+export function expectFaqSingleSource(tree: ReactNode): void {
+    const items = expectSingleVisibleFaq(tree);
 
     // **개수까지 본다.** 예전엔 첫 일치만 집어서, 같은 페이지에 `FaqSection`이나
     // FAQPage 블록이 두 벌 있어도 통과했다 — 이 레포가 리디자인 브랜치와
@@ -54,10 +61,7 @@ export function expectFaqSingleSource(tree: ReactNode): void {
  * 단언한다. 허브(홈·경제·공포탐욕)는 그대로 {@link expectFaqSingleSource}를 쓴다.
  */
 export function expectVisibleFaqWithoutJsonLd(tree: ReactNode): void {
-    const sections = findAllElementsByType(tree, FaqSection);
-    expect(sections, 'FaqSection은 한 번만 렌더돼야 한다').toHaveLength(1);
-    const items = (sections[0]?.props as { items: readonly FaqItem[] }).items;
-    expect(items.length).toBeGreaterThan(0);
+    expectSingleVisibleFaq(tree);
 
     const faqBlocks = collectJsonLdData(tree).filter(
         d => d['@type'] === 'FAQPage'

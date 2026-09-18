@@ -77,8 +77,8 @@ function withSymbolAlternates(entries: SitemapEntry[]): SitemapEntry[] {
  */
 export function buildCryptoPopularEntries(
     now: Date,
-    // `buildPopularEntries`와 같은 산문 게이트 — 종합 탭은 자산군과 무관하게
-    // `hasOverallProse`가 없으면 noindex다. 없으면(로더 실패) 필터를 끈다.
+    // `buildPopularEntries`와 같은 산문 게이트 — 종합·뉴스 탭은 자산군과 무관하게
+    // 산문이 없으면 noindex다. 없으면(로더 실패) 필터를 끈다.
     { symbolTabsWithProse }: BuildPopularEntriesOptions = {}
 ): SitemapEntry[] {
     const boundary6h = quantizeTo6hBoundary(now);
@@ -94,12 +94,17 @@ export function buildCryptoPopularEntries(
                 changeFrequency: 'daily',
                 priority: 0.8,
             },
-            {
-                url: `${SITE_URL}/${sym}/news`,
-                lastModified: oneHourAgo,
-                changeFrequency: 'daily',
-                priority: 0.75,
-            },
+            ...(symbolTabsWithProse === undefined ||
+            symbolTabsWithProse.has(`${sym}:news`)
+                ? [
+                      {
+                          url: `${SITE_URL}/${sym}/news`,
+                          lastModified: oneHourAgo,
+                          changeFrequency: 'daily' as const,
+                          priority: 0.75,
+                      },
+                  ]
+                : []),
             ...(symbolTabsWithProse === undefined ||
             symbolTabsWithProse.has(`${sym}:overall`)
                 ? [

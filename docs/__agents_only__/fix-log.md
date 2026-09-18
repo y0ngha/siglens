@@ -366,3 +366,14 @@
   - Rule: MISTAKES.md Pattern Matching #20.5 — regex patterns must use lookaround boundaries to match intended text only; unguarded inline delimiters across multiple potential markers cause false phrase boundaries and unwanted deletions
   - Context: Fixed with lookaround boundaries (non-whitespace inside, no word char / same marker outside) plus regression tests in `src/shared/lib/stripSnapshotMarkdown.ts`.
 
+## [fix/seo-cls-sitemap-polish Round 1 | PWA banner input gating | 2026-09-18]
+- Violation: Window event listener (`siglens:pwa-trigger`) bypass — JSDoc claimed "input-gated" banner, but event producer fired without user gesture (auto-analysis at member mount, auto-retry after failed SSR analysis)
+  - Rule: CONVENTIONS.md — Declarations and runtime behavior must be in sync; a guard cannot be claimed in JSDoc if a producer path on the same handler bypasses it
+  - Context: Whole event-driven path deleted; banner mode determined deterministically at mount instead.
+- Violation: (recommended) JSDoc claim about directional data guarantee unvalidated; new gate without positive-inclusion test; renamed test title claiming coverage its mock did not exercise
+  - Rule: MISTAKES.md 15.6 — Comments/JSDoc must match code reality; gates must have positive-case tests; test titles must reflect actual coverage
+  - Context: Fixed JSDoc accuracy, added positive test, corrected test title.
+
+## [fix/seo-cls-sitemap-polish Round 4 | PWA banner Polish | 2026-09-18]
+- Status: APPROVED (zero findings)
+
