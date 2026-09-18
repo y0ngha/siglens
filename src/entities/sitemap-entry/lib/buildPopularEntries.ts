@@ -43,8 +43,9 @@ function withSymbolAlternates(entries: SitemapEntry[]): SitemapEntry[] {
 /**
  * POPULAR_TICKERS의 색인 대상 sub-route(차트/뉴스/펀더멘털/재무제표/옵션/종합/의회거래)에
  * 대한 sitemap 엔트리를 반환한다. 공포탐욕·내위치 탭은 항상 noindex라 싣지 않는다.
- * 종합·의회거래는 스냅샷 산문이 있는 종목만 싣는다({@link BuildPopularEntriesOptions}) —
- * 산문이 없으면 두 페이지가 noindex다. 재무제표는 stock으로 분류된 티커만(ETF는 재무제표가
+ * 종합·뉴스·의회거래는 스냅샷 산문이 있는 종목만 싣는다({@link BuildPopularEntriesOptions}) —
+ * 세 탭 모두 산문이 없으면 noindex다(대상 탭은 `lib/proseGate.ts`의
+ * `PROSE_GATED_SITEMAP_TABS`). 재무제표는 stock으로 분류된 티커만(ETF는 재무제표가
  * 없어 noindex), 옵션 페이지는 generated static list에 포함된 미국 티커만 포함 —
  * noindex인 종목 페이지를 sitemap에 두면 품질 신호가 약해진다.
  *
