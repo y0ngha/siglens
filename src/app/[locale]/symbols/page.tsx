@@ -6,6 +6,7 @@ import {
     localeOpenGraph,
     localeRobots,
 } from '@/shared/lib/seoAlternates';
+import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
@@ -80,11 +81,23 @@ export async function generateMetadata({
             description: symbolsDescription(tSeo),
             url: `${SITE_URL}${PATH}`,
             ...localeOpenGraph(resolvedLocale),
+            // 정적 이미지를 쓴다 — 이 페이지에는 종목별 동적 OG를 만들 근거가 없고,
+            // 이미지를 아예 안 주면 공유 카드가 텅 빈 채로 나간다(2026-09-18 실측:
+            // 이 라우트만 `og:image`가 없었다).
+            images: [
+                {
+                    url: '/og-image.png',
+                    width: OG_IMAGE_WIDTH,
+                    height: OG_IMAGE_HEIGHT,
+                    alt: symbolsFullTitle(tSeo),
+                },
+            ],
         },
         twitter: {
             card: 'summary_large_image',
             title: symbolsFullTitle(tSeo),
             description: symbolsDescription(tSeo),
+            images: ['/og-image.png'],
         },
     };
 }

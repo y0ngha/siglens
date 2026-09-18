@@ -49,12 +49,19 @@ export function buildCategoryPageTitle(
  * Single source for the category page description.
  * `clampSeoDescription` is applied here so every consumer (metadata, JSON-LD)
  * receives the already-clamped form — no risk of differing truncation.
+ *
+ * **앞머리는 카테고리 고유 문장이다.** 예전에는 템플릿 하나에 라벨만 갈아 끼워서
+ * 색인 대상 5개의 설명이 사실상 같았다(2026-09-18 운영 실측: `{라벨} 분야의 최신
+ * 뉴스를…`로 시작하는 문장이 5개 카테고리에 동일). 화면 본문이 이미 카테고리마다
+ * 다른 소개 문장(`CATEGORY_CONFIG.descriptionKey`)을 네 로케일로 갖고 있으므로,
+ * 새 문구를 쓰지 않고 그것을 앞에 둔다 — 설명이 서로 달라지고, 화면과 메타가 같은
+ * 말을 하게 된다.
  */
 export function buildCategoryPageDescription(
-    label: string,
+    categoryIntro: string,
     t: SeoTranslator
 ): string {
     return clampSeoDescription(
-        t('newsCategory.descriptionTemplate', { label })
+        `${categoryIntro} ${t('newsCategory.descriptionSuffix')}`
     );
 }

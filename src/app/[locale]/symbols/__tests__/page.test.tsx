@@ -117,6 +117,21 @@ describe('/symbols 디렉터리 페이지', () => {
         expect(ja.robots).toMatchObject({ index: false });
     });
 
+    /**
+     * 이미지를 안 주면 공유 카드가 텅 빈 채로 나간다 — 배포 직후 실측에서 이 라우트만
+     * `og:image`가 없었다. 종목별 동적 OG를 만들 근거가 없어 정적 자산을 쓴다.
+     */
+    it('OG·트위터 카드 이미지를 싣는다', async () => {
+        const meta = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
+
+        expect(meta.openGraph?.images).toEqual([
+            expect.objectContaining({ url: '/og-image.png' }),
+        ]);
+        expect(meta.twitter?.images).toEqual(['/og-image.png']);
+    });
+
     it('제목·설명이 "전체/모든 종목"이라고 주장하지 않는다 — 상장 종목 전체가 아니다', async () => {
         const meta = await generateMetadata({
             params: Promise.resolve({ locale: 'ko' }),

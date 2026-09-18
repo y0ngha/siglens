@@ -15,6 +15,7 @@ import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
 import { fetchCategoryPreviews } from '../_lib/categoryPreviews';
+import { fetchCategoryDigestLines } from '../_lib/categoryDigests';
 import {
     buildBreadcrumbJsonLd,
     buildWebPageJsonLd,
@@ -137,14 +138,20 @@ export default async function UsNewsHubPage({
         getTranslations('shared.seo'),
     ]);
     const categories = categoriesInRegion('us');
-    const previewsByCategory = await Promise.all(
-        categories.map(cat =>
-            fetchCategoryPreviews(
-                cat,
-                isLocale(locale) ? locale : DEFAULT_LOCALE
+    const [previewsByCategory, digestLines] = await Promise.all([
+        Promise.all(
+            categories.map(cat =>
+                fetchCategoryPreviews(
+                    cat,
+                    isLocale(locale) ? locale : DEFAULT_LOCALE
+                )
             )
-        )
-    );
+        ),
+        fetchCategoryDigestLines(
+            categories,
+            isLocale(locale) ? locale : DEFAULT_LOCALE
+        ),
+    ]);
 
     const url = `${SITE_URL}${PATH}`;
 
@@ -202,6 +209,7 @@ export default async function UsNewsHubPage({
                                 href={`/news/${cfg.slug}`}
                                 description={tNav(cfg.descriptionKey)}
                                 previewHeadlines={previewsByCategory[i]}
+                                digestLine={digestLines[i]}
                             />
                         );
                     })}

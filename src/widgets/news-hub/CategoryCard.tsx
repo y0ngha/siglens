@@ -28,6 +28,13 @@ export interface CategoryCardProps {
      * Caller must pass ≤ `PREVIEW_HEADLINE_LIMIT` entries.
      */
     previewHeadlines: string[];
+    /**
+     * 그 카테고리 다이제스트의 첫 문장 — **우리가 쓴 문장**이다. 없으면 생략한다.
+     *
+     * 카드가 제3자 헤드라인만 나열하면 허브가 남의 제목 모음이 된다. 자체 서술을
+     * 한 줄 얹어 이 페이지가 스스로 말하는 몫을 갖게 한다.
+     */
+    digestLine?: string | null;
 }
 
 /**
@@ -44,6 +51,7 @@ export function CategoryCard({
     href,
     description,
     previewHeadlines,
+    digestLine = null,
 }: CategoryCardProps) {
     const t = useTranslations('widgets.news-hub');
     return (
@@ -67,6 +75,11 @@ export function CategoryCard({
             <p className="mb-3 text-xs leading-relaxed text-secondary-400">
                 {description}
             </p>
+            {digestLine !== null && (
+                <p className="mb-3 text-sm leading-relaxed text-secondary-300">
+                    {digestLine}
+                </p>
+            )}
 
             {previewHeadlines.length > 0 ? (
                 <ul
