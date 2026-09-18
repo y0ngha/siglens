@@ -63,6 +63,8 @@ vi.mock('../hubs', () => ({
     runHubPrewarm: vi.fn().mockResolvedValue({
         attempted: 0,
         generated: 0,
+        alreadyFresh: 0,
+        noData: 0,
         keyMismatch: 0,
         failed: 0,
         skippedByDeadline: 0,
@@ -1454,6 +1456,8 @@ describe('runPrewarmBatch', () => {
             return {
                 attempted: 1,
                 generated: 1,
+                alreadyFresh: 0,
+                noData: 0,
                 keyMismatch: 0,
                 failed: 0,
                 skippedByDeadline: 0,
@@ -1522,6 +1526,8 @@ describe('runPrewarmBatch', () => {
             return {
                 attempted: 9,
                 generated: 9,
+                alreadyFresh: 0,
+                noData: 0,
                 keyMismatch: 0,
                 failed: 0,
                 skippedByDeadline: 0,

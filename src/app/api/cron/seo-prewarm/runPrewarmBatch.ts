@@ -369,6 +369,7 @@ export async function runPrewarmBatch(
     if (hubs !== null) {
         console.log(
             `[hub-prewarm] 생성 ${hubs.generated}/${hubs.attempted}` +
+                `, 캐시신선 ${hubs.alreadyFresh}, 데이터없음 ${hubs.noData}` +
                 `, 키불일치 ${hubs.keyMismatch}, 실패 ${hubs.failed}` +
                 `, 마감초과 건너뜀 ${hubs.skippedByDeadline}`
         );

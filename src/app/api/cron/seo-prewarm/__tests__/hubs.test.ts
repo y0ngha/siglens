@@ -64,6 +64,26 @@ import {
 
 const NEWS_ROW = { id: 'n1' };
 
+/**
+ * 캐시의 **실제 계약**을 흉내 낸다 — 생성 전에는 비어 있고, 생성 뒤에 값이 보인다.
+ *
+ * peek가 처음부터 값을 주게 두면 프리웜이 전부 `alreadyFresh`로 빠져, 생성 경로를
+ * 검증한다고 믿는 테스트가 실은 아무것도 굽지 않는 상태가 된다.
+ */
+function fillsAfterRun(run: { mock: { calls: unknown[] } }, value: unknown) {
+    // 대상마다 `peek(사전) → run → peek(되읽기)` 순서다. 시장 브리핑처럼 대상 둘이
+    // 같은 `run` 목을 공유하므로 "run이 한 번이라도 불렸나"로는 두 번째 대상의
+    // 사전 peek이 값을 보게 된다 — 이미 준 횟수와 비교해 대상별로 갈라 준다.
+    let given = 0;
+    return async () => {
+        if (run.mock.calls.length > given) {
+            given += 1;
+            return value;
+        }
+        return null;
+    };
+}
+
 function allSucceed(): void {
     mocks.getCachedMarketSummary.mockResolvedValue({ summary: true });
     mocks.marketBriefingContextOf.mockReturnValue({ ctx: true });
@@ -73,11 +93,15 @@ function allSucceed(): void {
     mocks.runBriefing.mockResolvedValue({ briefing: 'x' });
     mocks.runMacroBriefing.mockResolvedValue({ briefing: 'y' });
     mocks.runMarketNewsDigest.mockResolvedValue({ currentDriverKo: 'z' });
-    mocks.peekBriefingCache.mockResolvedValue({ briefing: 'x' });
-    mocks.peekMacroBriefingCache.mockResolvedValue({ briefing: 'y' });
-    mocks.peekMarketNewsDigestCache.mockResolvedValue({
-        currentDriverKo: 'z',
-    });
+    mocks.peekBriefingCache.mockImplementation(
+        fillsAfterRun(mocks.runBriefing, { briefing: 'x' })
+    );
+    mocks.peekMacroBriefingCache.mockImplementation(
+        fillsAfterRun(mocks.runMacroBriefing, { briefing: 'y' })
+    );
+    mocks.peekMarketNewsDigestCache.mockImplementation(
+        fillsAfterRun(mocks.runMarketNewsDigest, { currentDriverKo: 'z' })
+    );
 }
 
 describe('hubTargets', () => {
@@ -179,13 +203,21 @@ describe('runHubPrewarm', () => {
      */
     it('첫 되읽기가 비어도 뒤이어 값이 보이면 성공으로 센다', async () => {
         mocks.peekMacroBriefingCache
+            // ① 사전 peek(캐시 미스) ② 첫 되읽기(아직 안 착지한 SET과 경합)
+            .mockResolvedValueOnce(null)
             .mockResolvedValueOnce(null)
             .mockResolvedValue({ briefing: 'y' });
+        // 실제 타이머로 두면 재시도 간격만큼 진짜로 대기한다. 가짜 타이머로 넘긴다.
+        vi.useFakeTimers();
 
-        const result = await runHubPrewarm();
+        const pending = runHubPrewarm();
+        // 재시도 간격 전부를 덮는 여유값(간격 상수는 모듈 내부라 넉넉히 준다).
+        await vi.advanceTimersByTimeAsync(5_000);
+        const result = await pending;
 
         expect(result.keyMismatch).toBe(0);
         expect(result.generated).toBe(hubTargets().length);
+        vi.useRealTimers();
     });
 
     /**
@@ -234,7 +266,7 @@ describe('runHubPrewarm', () => {
      * 기사가 없는 카테고리는 다이제스트를 만들 수 없다. 그건 고장이 아니라 할 일이
      * 없는 것이라, 생성도 경보도 하지 않는다.
      */
-    it('뉴스가 없는 카테고리는 생성 없이 통과시킨다', async () => {
+    it('뉴스가 없는 카테고리는 생성이 아니라 noData로 세고 태그도 안 턴다', async () => {
         mocks.selectAggregateNewsItems.mockReturnValue([]);
 
         const result = await runHubPrewarm();
@@ -242,6 +274,40 @@ describe('runHubPrewarm', () => {
         expect(mocks.runMarketNewsDigest).not.toHaveBeenCalled();
         expect(result.failed).toBe(0);
         expect(result.keyMismatch).toBe(0);
+        // "할 일 없음"을 generated에 합치면, getMarketNewsList가 버그로 빈 배열을
+        // 주는 진짜 장애도 로그에 100% 성공으로 찍힌다.
+        expect(result.noData).toBe(Object.keys(CATEGORY_CONFIG).length);
+        expect(result.generated).toBe(
+            hubTargets().length - Object.keys(CATEGORY_CONFIG).length
+        );
+        for (const category of Object.keys(CATEGORY_CONFIG)) {
+            expect(mocks.revalidateTag).not.toHaveBeenCalledWith(
+                `market-news:digest:${category}`,
+                'max'
+            );
+        }
+    });
+
+    /**
+     * 이 크론은 하룻밤 126번 돈다. core 캐시가 살아 있으면 `run*`은 즉시 캐시값을
+     * 돌려주므로, 그때도 태그를 털면 데이터가 하나도 안 변했는데 무효화만 9 × 126회
+     * 나간다 — 이 레포가 이미 겪은 ISR 과금 패턴이다(MISTAKES.md "ISR & Caching #1").
+     */
+    it('이미 캐시에 있으면 생성도 무효화도 하지 않는다', async () => {
+        mocks.peekBriefingCache.mockResolvedValue({ briefing: 'x' });
+        mocks.peekMacroBriefingCache.mockResolvedValue({ briefing: 'y' });
+        mocks.peekMarketNewsDigestCache.mockResolvedValue({
+            currentDriverKo: 'z',
+        });
+
+        const result = await runHubPrewarm();
+
+        expect(result.alreadyFresh).toBe(hubTargets().length);
+        expect(result.generated).toBe(0);
+        expect(mocks.runBriefing).not.toHaveBeenCalled();
+        expect(mocks.runMacroBriefing).not.toHaveBeenCalled();
+        expect(mocks.runMarketNewsDigest).not.toHaveBeenCalled();
+        expect(mocks.revalidateTag).not.toHaveBeenCalled();
     });
 
     /**

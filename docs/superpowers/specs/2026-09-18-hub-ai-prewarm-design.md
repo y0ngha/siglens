@@ -23,7 +23,7 @@
 
 `src/app/api/cron/seo-prewarm`은 이미 필요한 배선을 전부 갖고 있다: Redis 루트 락,
 `after()` 백그라운드 실행, 배치 마감(`BATCH_DEADLINE_MS` 10분), SIGTERM 드레인 등록,
-`revalidateTag`. 허브 대상은 10개뿐이라 회전 커서도 필요 없다 — 매 tick 전부 처리된다.
+`revalidateTag`. 허브 대상은 아홉 개뿐이라 회전 커서도 필요 없다 — 매 tick 전부 처리된다.
 
 - 새 모듈 `src/app/api/cron/seo-prewarm/hubs.ts`가 허브 단계를 소유한다.
   `runPrewarmBatch`는 심볼 루프 **앞에서** 이 모듈을 한 번 부르고 결과를 로그에 남긴다.
@@ -48,7 +48,7 @@
 | 대상 | 입력 빌더 | 생성 | 검증(core peek) |
 |---|---|---|---|
 | 시장 브리핑 ×2 | `getCachedMarketSummary` + `marketBriefingContextOf` | `runBriefing` | `peekBriefingCache` |
-| 거시 브리핑 ×2 | `getEconomySnapshot` | `runMacroBriefing` | `peekMacroBriefingCache` |
+| 거시 브리핑 ×1 | `getEconomySnapshot` | `runMacroBriefing` | `peekMacroBriefingCache` |
 | 뉴스 다이제스트 ×6 | `getMarketNewsList` → `toEnrichedMarketNewsItem` → `selectAggregateNewsItems` | `runMarketNewsDigest`(+`providerFallback`) | `peekMarketNewsDigestCache` |
 
 다이제스트에는 `providerFallback: true`를 켠다. 캐시 키 성분이 아니고, 이 레포의 모든
@@ -99,20 +99,30 @@ TTL(1h·24h·12h) 동안 이전의 `null`을 들고 있으므로, 태그를 안 
 페이지는 그 TTL 내내 "생성 중" 플레이스홀더를 계속 렌더한다 — 지금 상태와 똑같다.
 태그가 곧 ISR 재생성 트리거이기도 해서, 무효화가 다음 크롤에 새 HTML을 보장한다.
 
+⚠️ 단 **새로 구웠을 때만** 턴다. 각 대상은 생성 전에 `peek`을 한 번 해 캐시가 이미
+살아 있으면 생성도 무효화도 건너뛴다(`alreadyFresh`). 크론은 하룻밤 126번 돌고
+(EventBridge 규칙 4개, `docs/reference/CRON.md`) core 캐시는 TTL 안에서 `run*`이 즉시
+캐시값을 돌려주므로, 무조건 털면 데이터가 하나도 안 바뀐 채 무효화만 9 × 126 =
+1,134회 나간다 — MISTAKES.md "ISR & Caching #1"에서 이미 겪은 과금 패턴이다.
+기사가 0건이라 만들 게 없는 카테고리(`noData`)도 같은 이유로 태그를 털지 않고,
+`generated`와 갈라 센다 — 합치면 `getMarketNewsList`가 빈 배열을 주는 진짜 장애가
+로그에 100% 성공으로 찍힌다.
+
 ## 비용
 
-하루 1회, 10회 생성. 프리웜 크론이 이미 종목 수백 건을 굽고 있어 증분은 미미하다.
-다이제스트는 core 캐시 TTL이 24h라 그보다 자주 돌 이유가 없고, 브리핑 peek의
-`unstable_cache`는 1h지만 그것은 읽기 캐시일 뿐 생성 주기가 아니다.
+생성은 core 캐시 TTL당 1회다(브리핑 1h, 거시·다이제스트 24h). tick마다 도는 것은
+`peek` 9회(Redis 읽기)뿐이고, 캐시가 살아 있으면 LLM 호출도 ISR 무효화도 없다.
+프리웜 크론이 이미 종목 수백 건을 굽고 있어 증분은 미미하다.
 
-시장 브리핑은 입력(`MarketSummaryData`)이 장중에 바뀌므로 하루 1회면 장 마감 이후
-값이 그대로 남는다. 그래도 지금(아무것도 없음)보다 낫고, 더 잦게 굽는 것은 비용이
-선형으로 늘어난다. 우선 1회로 두고 GSC에서 효과를 본 뒤 조정한다.
+시장 브리핑은 입력(`MarketSummaryData`)이 장중에 바뀌어 키가 갈리므로, 캐시 TTL이
+아니라 입력 변화가 생성 주기를 정한다 — 장이 움직이는 동안은 tick마다 새로 굽힐 수
+있다. 비용이 문제가 되면 이 단계에 자체 쿨다운을 두는 쪽이 맞다(지금은 두지 않는다:
+허브는 9개뿐이고, 종목 프리웜이 같은 tick에 수백 건을 굽는다).
 
 ## 하지 않는 것
 
 - **별도 크론 라우트 신설**: 락·드레인·마감 로직을 복제하거나 공유 추출해야 하고,
-  EventBridge 규칙·IAM·CloudWatch 필터까지 따라온다. 허브 10개에는 과한 비용이다.
+  EventBridge 규칙·IAM·CloudWatch 필터까지 따라온다. 허브 아홉 개에는 과한 비용이다.
 - **ISR 콜드젠에서 생성(peek → generate 폴백)**: 코드 변경은 가장 작지만 크롤러가
   LLM 왕복을 기다리게 된다. 크롤 예산 관점에서 최악이고 동시 요청이 겹치면 중복 생성한다.
 - **비-ko 로케일 프리웜**: 색인 대상이 아니다.
