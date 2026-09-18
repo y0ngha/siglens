@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.80.1](https://github.com/y0ngha/siglens/compare/v0.80.0...v0.80.1) (2026-09-18)
+
+
+### Bug Fixes
+
+* **seo:** /symbols 문구를 "많이 찾는 종목"으로 바꾸고 자산명 (티커)로 표기한다 ([ce1a62b](https://github.com/y0ngha/siglens/commit/ce1a62ba0b7f758fcf84c6e87d0943eccebfb3d4))
+* **seo:** 비-ko 로케일에서 한글명 폴백을 막고 빈 이름을 이름 없음으로 본다 ([1706b4e](https://github.com/y0ngha/siglens/commit/1706b4e4cc3dc115f66bbe0c996b0226a9e8a9e7))
+* **symbols:** import 순서를 바로잡고 i18n skips 산출물을 재생성한다 ([e3cbca7](https://github.com/y0ngha/siglens/commit/e3cbca70584f4c2958239c34c0ec46c0b965f9fd))
+
 # [0.80.0](https://github.com/y0ngha/siglens/compare/v0.79.5...v0.80.0) (2026-09-18)
 
 
