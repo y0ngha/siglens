@@ -1,4 +1,5 @@
 import { test, expect } from '../support/fixtures';
+import { settlePwaBanner } from '../support/pwaBanner';
 
 /**
  * 모바일 차트 페이지에서 분석 바텀시트가 마운트된 상태로도 시트 **밖** UI가
@@ -15,6 +16,9 @@ import { test, expect } from '../support/fixtures';
 test.describe('모바일 차트 페이지 입력 도달성 (authed, 시트 마운트 상태)', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/AAPL');
+        // 첫 입력을 미리 소진한다 — 안 그러면 첫 `.tap()`이 PWA 배너를 띄워
+        // 탭 도중에 헤더가 밀린다(`settlePwaBanner` JSDoc).
+        await settlePwaBanner(page);
         // 시트는 rAF + 50ms 뒤에 열린다. 열리기 전에 단언하면 공허하게 통과한다.
         await expect(page.locator('[data-vaul-drawer]')).toBeVisible();
     });

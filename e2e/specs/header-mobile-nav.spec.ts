@@ -1,5 +1,5 @@
 import { test, expect } from '../support/fixtures';
-import type { Page } from '@playwright/test';
+import { settlePwaBanner } from '../support/pwaBanner';
 
 /**
  * Mobile nav drawer (`@webkit`) — HeaderMobileMenu hydration + interaction guard.
@@ -31,24 +31,6 @@ import type { Page } from '@playwright/test';
 /** Raw locator for the drawer — works regardless of aria-hidden state. */
 const drawerSelector = '[role="dialog"][aria-label="메뉴"]';
 
-/**
- * Dismiss the PWA install banner if it is present.
- *
- * `usePwaInstall.ts` sets showBanner=true via a ~100ms setTimeout on mobile
- * viewports, so the banner can mount after page.goto('/') and intercept the
- * first 메뉴 열기 hamburger click before the drawer registers the event.
- * Calling this helper right after goto() ensures the banner is gone before
- * any hamburger interaction. The .catch swallows the no-op case where the
- * banner either hasn't appeared yet or is already absent.
- */
-async function dismissPwaBannerIfPresent(page: Page): Promise<void> {
-    await page
-        .locator('[data-testid="pwa-banner-shell"]')
-        .getByRole('button', { name: '배너 닫기' })
-        .click()
-        .catch(() => {});
-}
-
 test.describe('@webkit 모바일 햄버거 내비게이션', () => {
     /**
      * 1. 햄버거 클릭 시 드로어가 실제로 열린다.
@@ -63,7 +45,7 @@ test.describe('@webkit 모바일 햄버거 내비게이션', () => {
         );
 
         await page.goto('/');
-        await dismissPwaBannerIfPresent(page);
+        await settlePwaBanner(page);
 
         const trigger = page.getByRole('button', { name: '메뉴 열기' });
         await expect(trigger).toBeVisible();
@@ -97,7 +79,7 @@ test.describe('@webkit 모바일 햄버거 내비게이션', () => {
         );
 
         await page.goto('/');
-        await dismissPwaBannerIfPresent(page);
+        await settlePwaBanner(page);
 
         await page.getByRole('button', { name: '메뉴 열기' }).click();
         await expect(page.getByRole('dialog', { name: '메뉴' })).toBeVisible();
@@ -125,7 +107,7 @@ test.describe('@webkit 모바일 햄버거 내비게이션', () => {
         );
 
         await page.goto('/');
-        await dismissPwaBannerIfPresent(page);
+        await settlePwaBanner(page);
 
         await page.getByRole('button', { name: '메뉴 열기' }).click();
         await expect(page.getByRole('dialog', { name: '메뉴' })).toBeVisible();
@@ -153,7 +135,7 @@ test.describe('@webkit 모바일 햄버거 내비게이션', () => {
         );
 
         await page.goto('/');
-        await dismissPwaBannerIfPresent(page);
+        await settlePwaBanner(page);
 
         await page.getByRole('button', { name: '메뉴 열기' }).click();
         const drawer = page.getByRole('dialog', { name: '메뉴' });
@@ -184,7 +166,7 @@ test.describe('@webkit 모바일 햄버거 내비게이션', () => {
         );
 
         await page.goto('/');
-        await dismissPwaBannerIfPresent(page);
+        await settlePwaBanner(page);
 
         // (a) 백드롭 클릭으로 닫기.
         await page.getByRole('button', { name: '메뉴 열기' }).click();
@@ -228,7 +210,7 @@ test.describe('@webkit 모바일 햄버거 내비게이션', () => {
         );
 
         await page.goto('/');
-        await dismissPwaBannerIfPresent(page);
+        await settlePwaBanner(page);
 
         await page.getByRole('button', { name: '메뉴 열기' }).click();
         await expect(page.getByRole('dialog', { name: '메뉴' })).toBeVisible();

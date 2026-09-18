@@ -1,11 +1,7 @@
 // @vitest-environment jsdom
 import { renderHook, act } from '@testing-library/react';
-import {
-    usePwaInstall,
-    PWA_BANNER_FALLBACK_DELAY_MS,
-} from '@/features/pwa-install/hooks/usePwaInstall';
+import { usePwaInstall } from '@/features/pwa-install/hooks/usePwaInstall';
 import { _resetRegisterServiceWorkerForTests } from '@/features/pwa-install/lib/registerServiceWorker';
-import { PWA_TRIGGER_EVENT } from '@/shared/lib/pwaEvents';
 
 describe('usePwaInstall', () => {
     beforeAll(() => {
@@ -48,10 +44,10 @@ describe('usePwaInstall', () => {
         expect(result.current.showIosModal).toBe(false);
     });
 
-    it('siglens:pwa-trigger 이벤트 → iPhone이면 showBanner=true', () => {
+    it('첫 pointerdown → iPhone이면 showBanner=true', () => {
         const { result } = renderHook(() => usePwaInstall());
         act(() => {
-            window.dispatchEvent(new CustomEvent(PWA_TRIGGER_EVENT));
+            window.dispatchEvent(new Event('pointerdown'));
         });
         expect(result.current.showBanner).toBe(true);
     });
@@ -59,7 +55,7 @@ describe('usePwaInstall', () => {
     it('handleDismiss → showBanner=false', () => {
         const { result } = renderHook(() => usePwaInstall());
         act(() => {
-            window.dispatchEvent(new CustomEvent(PWA_TRIGGER_EVENT));
+            window.dispatchEvent(new Event('pointerdown'));
         });
         expect(result.current.showBanner).toBe(true);
         act(() => {
@@ -71,7 +67,7 @@ describe('usePwaInstall', () => {
     it('iOS에서 handleInstall → showIosModal=true', () => {
         const { result } = renderHook(() => usePwaInstall());
         act(() => {
-            window.dispatchEvent(new CustomEvent(PWA_TRIGGER_EVENT));
+            window.dispatchEvent(new Event('pointerdown'));
         });
         act(() => {
             void result.current.handleInstall();
@@ -82,7 +78,7 @@ describe('usePwaInstall', () => {
     it('handleModalClose → showIosModal=false', () => {
         const { result } = renderHook(() => usePwaInstall());
         act(() => {
-            window.dispatchEvent(new CustomEvent(PWA_TRIGGER_EVENT));
+            window.dispatchEvent(new Event('pointerdown'));
         });
         act(() => {
             void result.current.handleInstall();
@@ -94,14 +90,14 @@ describe('usePwaInstall', () => {
         expect(result.current.showIosModal).toBe(false);
     });
 
-    it('데스크탑 UA → pwa-trigger 이후에도 showBanner=false', () => {
+    it('데스크탑 UA → pointerdown 이후에도 showBanner=false', () => {
         Object.defineProperty(navigator, 'userAgent', {
             value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
             configurable: true,
         });
         const { result } = renderHook(() => usePwaInstall());
         act(() => {
-            window.dispatchEvent(new CustomEvent(PWA_TRIGGER_EVENT));
+            window.dispatchEvent(new Event('pointerdown'));
         });
         expect(result.current.showBanner).toBe(false);
     });
@@ -150,7 +146,7 @@ describe('usePwaInstall', () => {
             window.dispatchEvent(promptEvent);
         });
         act(() => {
-            window.dispatchEvent(new CustomEvent(PWA_TRIGGER_EVENT));
+            window.dispatchEvent(new Event('pointerdown'));
         });
 
         await act(async () => {
@@ -161,12 +157,27 @@ describe('usePwaInstall', () => {
         expect(result.current.showBanner).toBe(true);
     });
 
-    it('30초 폴백 타이머 → 모바일에서 showBanner=true', () => {
+    /**
+     * 타이머가 아니라 첫 입력이 방아쇠다 — 하이드레이션 직후 타이머로 띄우면
+     * 배너 삽입이 그대로 CLS가 된다(2026-09-18 모바일 실측 0.0605). 입력 500ms
+     * 안의 이동은 CLS에서 제외되므로 첫 `pointerdown`까지 기다린다.
+     */
+    it('첫 pointerdown 전에는 배너를 띄우지 않는다', () => {
         vi.useFakeTimers();
         const { result } = renderHook(() => usePwaInstall());
-        expect(result.current.showBanner).toBe(false);
         act(() => {
-            vi.advanceTimersByTime(PWA_BANNER_FALLBACK_DELAY_MS);
+            // 분석 완료 방아쇠(`siglens:pwa-trigger`)는 제거됐다 — 회원은 입력
+            // 없이도 마운트 직후 분석이 돌아 배너가 삽입됐다.
+            window.dispatchEvent(new CustomEvent('siglens:pwa-trigger'));
+            vi.advanceTimersByTime(30_000);
+        });
+        expect(result.current.showBanner).toBe(false);
+    });
+
+    it('키보드 사용자도 첫 keydown으로 배너를 받는다', () => {
+        const { result } = renderHook(() => usePwaInstall());
+        act(() => {
+            window.dispatchEvent(new Event('keydown'));
         });
         expect(result.current.showBanner).toBe(true);
     });

@@ -4,8 +4,12 @@ import { test, expect } from '../support/fixtures';
  * PWA install surface (`@webkit`) — Tier 3 mobile interactive outcome.
  *
  * The install banner is MOBILE-ONLY: usePwaInstall renders it only when
- * `isMobile && !isStandalone && !isInAppBrowser`, and auto-shows it via a short
- * fallback timer (PWA_BANNER_FALLBACK_DELAY_MS) so no synthetic event is needed.
+ * `isMobile && !isStandalone && !isInAppBrowser`, and it now waits for the
+ * FIRST user input (`pointerdown`/`keydown`) instead of a post-mount timer —
+ * inserting it on a timer shifted the page well outside the CLS input-exclusion
+ * window (2026-09-18 mobile measurement: 0.0605 on symbol pages). So the test
+ * has to produce a real input event first; `keyboard.press('Tab')` is used
+ * because a tap would land on whatever element sits at those coordinates.
  * On desktop (chromium) `isMobile` is false → the banner never appears, so this
  * spec is skipped outside the webkit (iPhone 14) project. Layout IS the feature
  * here, hence the real mobile WebKit assertion.
@@ -32,6 +36,8 @@ test.describe('@webkit pwa install', () => {
         );
 
         await page.goto('/');
+        // 첫 입력이 배너의 방아쇠다 — 입력 전에는 배너가 존재하지 않는다.
+        await page.keyboard.press('Tab');
 
         const installButton = page.getByRole('button', { name: '설치하기' });
         await expect(installButton).toBeVisible();
