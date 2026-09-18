@@ -411,3 +411,30 @@
 
 ## [fix/symbols-copy-and-names Round 2 | /symbols 표기·문구 | 2026-09-18]
 - Status: APPROVED (지적 없음)
+
+## [feat/hub-ai-prewarm Round 1 | SEO prewarm hub phase | 2026-09-18]
+- Violation: Fire-and-forget cache write race — core's `run*` does not await its cache SET, so a single immediate read-back could report a false "key mismatch"
+  - Rule: (new) When verifying a write whose SET is fire-and-forget (core does not expose the promise, so it cannot be awaited), the read-back must retry — a single immediate read races the pending SET and reports a false mismatch
+  - Context: Fixed with a retry read-back (4 attempts, 400ms apart) to ensure the cache write is complete before proceeding
+- Violation: No per-target timeout — the phase deadline is only checked BETWEEN targets, so one hung target holds the Redis lock past TTL
+  - Rule: (new) Long-running loops must have per-iteration timeouts; deadline checks between iterations allow a single hung iteration to hold resource locks past their TTL
+  - Context: Fixed with `HUB_UNIT_TIMEOUT_MS` (45s) via `Promise.race` on individual target operations
+
+## [feat/hub-ai-prewarm Round 2 | SEO prewarm hub phase | 2026-09-18]
+- Violation: Three sibling test files exercised the real LLM/Redis hub path, protected only accidentally by a global fetch stub
+  - Rule: (new) Test isolation — test files must explicitly mock external dependencies; accidental global stubs provide false isolation
+  - Context: Fixed by adding `vi.mock('../hubs', ...)` to all three sibling test files
+- Violation: The hub phase `batchDeadline` was computed BEFORE the hub phase, so the deadline slice did not account for hub phase latency
+  - Rule: (new) Order-of-operations — Derived deadlines/budgets must be computed AFTER dependent phases complete; pre-computing a deadline before a consuming phase makes that phase erode its own budget
+  - Context: Fixed by computing `batchDeadline` after the hub phase returns
+
+## [feat/hub-ai-prewarm Round 3 | SEO prewarm hub phase | 2026-09-18]
+- Violation: `counts.durationMs` calculation silently broke after moving `batchDeadline` computation. It had been back-derived as `clock.now() - (batchDeadline - BATCH_DEADLINE_MS)` and now measured only the symbol loop, while the Redis lock is held for hub+symbol combined
+  - Rule: (new) Code-movement regression — derived values that depend on moved code must be re-derived or tracked independently; back-derived calculations break silently when their source moves
+  - Context: Fixed by introducing a separate `batchStartedAt` timestamp, making `durationMs` a direct `clock.now() - batchStartedAt` calculation
+- Violation: Regression test for `durationMs` was vacuous — it asserted `durationMs >= HUB_ELAPSED_MS` (90s), but the symbol loop alone consumed 120s of simulated clock, so it passed even with the broken expression
+  - Rule: (new) Regression tests — regression tests must assert equality or tight bounds, not >= checks; loose bounds can be satisfied by unrelated setup, masking the bug being tested
+  - Context: Rewritten to assert equality with total elapsed time, verified against old code via revert-check
+
+## [feat/hub-ai-prewarm Round 4 | SEO prewarm hub phase | 2026-09-18]
+- Status: APPROVED (zero findings)

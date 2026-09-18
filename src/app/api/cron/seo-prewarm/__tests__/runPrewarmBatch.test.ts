@@ -56,6 +56,19 @@ const {
     mockBuildPrewarmUniverse: vi.fn(),
 }));
 
+vi.mock('../hubs', () => ({
+    // 이 함수는 LLM·Redis를 실제로 친다. 목하지 않으면 이 파일의 모든
+    // `runPrewarmBatch()` 호출이 그 경로를 타고, 전역 fetch 스텁이 **우연히**
+    // 막아 주는 상태에 의존하게 된다(MISTAKES.md §8.6).
+    runHubPrewarm: vi.fn().mockResolvedValue({
+        attempted: 0,
+        generated: 0,
+        keyMismatch: 0,
+        failed: 0,
+        skippedByDeadline: 0,
+    }),
+}));
+
 vi.mock('../lock', () => ({
     markInFlight: mockMarkInFlight,
     getInFlightMarker: mockGetInFlightMarker,
@@ -146,6 +159,9 @@ import {
     shouldDeferPrewarmWhileOpen as shouldDeferPrewarmWhileOpenReal,
 } from '@/entities/seo-snapshot/lib/freshness';
 import { runPrewarmBatch, type PrewarmClock } from '../runPrewarmBatch';
+import { runHubPrewarm } from '../hubs';
+
+const mockRunHubPrewarm = vi.mocked(runHubPrewarm);
 
 const FIXED_NOW = new Date('2026-07-25T13:00:00.000Z');
 const BOUNDARY = lastCompletedEtCloseWithBuffer(FIXED_NOW);
@@ -1407,6 +1423,48 @@ describe('runPrewarmBatch', () => {
         // durationMs는 배치 시작 시각과 종료 시각의 차이다.
         // makeSimClock에서 sleep 호출마다 t가 advance되므로 0보다 크다.
         expect(counts.durationMs).toBeGreaterThan(0);
+    });
+
+    /**
+     * `durationMs`는 **락을 쥔 전체 시간**이다 — 허브 단계를 포함한다.
+     *
+     * 이 필드는 심볼 마감(`BATCH_DEADLINE_MS`)에서 역산해 구했었는데, 허브 단계를
+     * 넣으면서 그 마감이 허브 뒤로 옮겨져 값이 조용히 "심볼 루프만"으로 줄었다.
+     * 운영에서 이 지표를 보는 이유가 정확히 "허브가 심볼 예산을 잠식하는가"라서,
+     * 허브 시간이 빠지면 그 사고만 안 보이는 지표가 된다.
+     */
+    it('durationMs는 허브 단계에 쓴 시간까지 포함한다', async () => {
+        universe({ symbol: 'ONE', tabs: ['technical'] });
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: { symbol: 'ONE', name: 'One Co.', fmpSymbol: undefined },
+            degraded: false,
+        });
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+
+        const HUB_ELAPSED_MS = 90_000;
+        const clock = makeSimClock(FIXED_NOW.getTime());
+        // 허브 단계가 실제로 시계를 소모한 것처럼 만든다.
+        mockRunHubPrewarm.mockImplementationOnce(async () => {
+            await clock.sleep(HUB_ELAPSED_MS);
+            return {
+                attempted: 1,
+                generated: 1,
+                keyMismatch: 0,
+                failed: 0,
+                skippedByDeadline: 0,
+            };
+        });
+
+        const counts = await runPrewarmBatch(clock);
+
+        // 총 경과와 **같아야** 한다. `>= HUB_ELAPSED_MS`로는 부족하다 —
+        // 심볼 루프만 재도 그 값을 넘겨서 회귀가 통과해 버린다(실측 120s).
+        const totalElapsedMs = clock.now() - FIXED_NOW.getTime();
+        expect(totalElapsedMs).toBeGreaterThan(HUB_ELAPSED_MS);
+        expect(counts.durationMs).toBe(totalElapsedMs);
     });
 
     // ── 2026-08 감사 — starvation watch(회전에서 구조적으로 빠진 심볼을 로그로 노출) ──

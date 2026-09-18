@@ -1,5 +1,6 @@
 import 'server-only';
 import { revalidateTag } from 'next/cache';
+import { runHubPrewarm } from './hubs';
 import {
     buildPrewarmUniverse,
     isSnapshotFresh,
@@ -297,8 +298,53 @@ function logStarvationWatch(
 export async function runPrewarmBatch(
     clock: PrewarmClock = DEFAULT_CLOCK
 ): Promise<PrewarmBatchCounts> {
+    /*
+     * `durationMs`의 기준점. **마감(`batchDeadline`)과 분리해 둔다.**
+     *
+     * 예전에는 `batchDeadline - BATCH_DEADLINE_MS`로 역산했는데, 마감을 허브 단계
+     * 뒤로 옮기면서 그 역산이 심볼 루프만 재게 됐다. 그런데 이 값의 존재 이유는
+     * (`PrewarmBatchCounts` 주석) "배치 실측 시간이 tick 주기를 넘겨 다음 tick이
+     * 락에 막히는" 구간을 보는 것이고, **락은 허브 + 심볼을 합쳐 잡혀 있다.**
+     * 역산을 그대로 뒀다면 운영자가 보는 숫자는 tick 주기 아래인데 실제 락 보유는
+     * 이미 넘긴 상태가 될 수 있다 — 이 필드가 잡으라고 만든 바로 그 상황이다.
+     */
+    const batchStartedAt = clock.now();
+
+    /*
+     * 마감은 **허브 단계가 끝난 뒤** 잡는다.
+     *
+     * 먼저 잡으면 허브가 쓴 시간이 심볼 예산에서 그대로 빠진다 — 최악 165초
+     * (단계 마감 120초 + 이미 시작된 대상의 유닛 타임아웃 45초)가 깎여
+     * `BATCH_DEADLINE_MS`가 "심볼에 10분"이라는 뜻을 잃는다. 대신 락 보유
+     * 시간은 두 단계의 합이 되므로, 합계가 `LOCK_TTL_SECONDS`(900초) 아래인지가
+     * 지켜야 할 조건이다: 165 + 600 = 765초 < 900초.
+     */
+
+    /*
+     * 허브 AI 콘텐츠를 **먼저** 굽는다(열 개, 자체 마감 120초).
+     *
+     * 앞에 두는 이유는 물량 차이다 — 심볼 루프는 마감까지 계속 돌므로 뒤에 두면
+     * 허브가 매번 굶는다. 반대로 허브는 열 개로 끝나 심볼 예산을 거의 안 먹는다.
+     *
+     * 실패해도 심볼 배치는 그대로 진행한다. 허브는 이 크론의 부가 임무고,
+     * 종목 스냅샷이 이 크론의 본래 계약이다.
+     */
+    const hubs = await runHubPrewarm(clock.now).catch(error => {
+        console.error(
+            '[hub-prewarm] 단계 전체 실패 — 심볼 배치는 계속한다',
+            error
+        );
+        return null;
+    });
     const batchDeadline = clock.now() + BATCH_DEADLINE_MS;
     const isPastDeadline = () => clock.now() > batchDeadline;
+    if (hubs !== null) {
+        console.log(
+            `[hub-prewarm] 생성 ${hubs.generated}/${hubs.attempted}` +
+                `, 키불일치 ${hubs.keyMismatch}, 실패 ${hubs.failed}` +
+                `, 마감초과 건너뜀 ${hubs.skippedByDeadline}`
+        );
+    }
     // **의도적으로 `clock.now()`가 아니다.** `PrewarmClock`은 경과 시간 예산
     // (데드라인·sleep)을 테스트가 조작하기 위한 것이고, 그 테스트들은 epoch에서
     // 파생한 임의의 값을 넣는다. 반면 여기 두 판정(마감 경계, 장중 여부)은 **달력**이
@@ -412,7 +458,7 @@ export async function runPrewarmBatch(
     }
 
     counts.fmpBudgetUsed = await getFmpBudgetUsed();
-    counts.durationMs = clock.now() - (batchDeadline - BATCH_DEADLINE_MS);
+    counts.durationMs = clock.now() - batchStartedAt;
     return counts;
 }
 
