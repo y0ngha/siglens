@@ -118,6 +118,12 @@ export const SITE_URL = resolveSiteUrl();
 export const SITE_NAME = 'Siglens';
 
 /**
+ * 종목 디렉터리 경로. 페이지·푸터·sitemap이 같은 상수를 본다 — 한 곳만 바뀌면
+ * 푸터가 404로 가는데 빌드도 테스트도 조용하다.
+ */
+export const SYMBOLS_PATH = '/symbols';
+
+/**
  * 홈 `Organization` 노드의 `@id`. 홈 페이지(`(home)/page.tsx`)와 `/about`
  * 페이지가 각자 `${SITE_URL}#organization` 리터럴을 조립해 크롤러가 두 문서를
  * 같은 개체로 묶는 참조가 오타 하나로 갈릴 수 있었다 — 상수 하나로 묶는다.

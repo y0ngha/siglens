@@ -24,6 +24,20 @@
                 "fa7c86": "Proceed with Account Withdrawal"
             }
         },
+        "ai": {
+            "layout": {
+                "9401e4": "SIGLENS AI is under maintenance right now. Please try again shortly."
+            },
+            "not-found": {
+                "04598e": "Start a new chat",
+                "047c35": "Conversation not found"
+            },
+            "seo": {
+                "title": "AI Stock & Crypto Chatbot — Ask About Quotes, Charts & News | SIGLENS AI",
+                "description": "Ask an AI about Samsung, Apple, Bitcoin and more. It looks up live quotes, chart indicators and the latest news and answers with sources. US stocks, Korean stocks and crypto, no login needed to start.",
+                "ogLabel": "Ask AI about stocks & crypto · Beta"
+            }
+        },
         "api": {
             "stream": {
                 "analysisFailed": "Something went wrong during the analysis.",
@@ -413,18 +427,9 @@
                 }
             }
         },
-        "ai": {
-            "layout": {
-                "9401e4": "SIGLENS AI is under maintenance right now. Please try again shortly."
-            },
-            "not-found": {
-                "04598e": "Start a new chat",
-                "047c35": "Conversation not found"
-            },
-            "seo": {
-                "title": "AI Stock & Crypto Chatbot — Ask About Quotes, Charts & News | SIGLENS AI",
-                "description": "Ask an AI about Samsung, Apple, Bitcoin and more. It looks up live quotes, chart indicators and the latest news and answers with sources. US stocks, Korean stocks and crypto, no login needed to start.",
-                "ogLabel": "Ask AI about stocks & crypto · Beta"
+        "symbols": {
+            "page": {
+                "intro": "Grouped by asset class. Pick a symbol to open its chart and AI analysis. {v0} symbols covered right now."
             }
         }
     },
@@ -1414,13 +1419,13 @@
             }
         },
         "seo": {
-            "about": {
-                "description": "Siglens is an AI stock and crypto analysis service built and run by independent developer y0ngha. Learn where the data comes from, how each analysis is produced, how often it refreshes, its limits, and how to get in touch.",
-                "title": "About Siglens"
-            },
             "a11y": {
                 "investmentDisclaimer": "Investment disclaimer",
                 "investmentDisclaimerSummary": "Investment disclaimer summary"
+            },
+            "about": {
+                "description": "Siglens is an AI stock and crypto analysis service built and run by independent developer y0ngha. Learn where the data comes from, how each analysis is produced, how often it refreshes, its limits, and how to get in touch.",
+                "title": "About Siglens"
             },
             "account": {
                 "description": "Siglens account settings page",
@@ -1660,6 +1665,10 @@
                     "titleCore": "Overall Analysis",
                     "titleTail": "Bull & Bear Scenarios"
                 }
+            },
+            "symbols": {
+                "description": "Browse the US and Korean stocks and crypto that Siglens covers with AI analysis and technical signals. Pick one to open its chart, fundamentals, news and overall analysis.",
+                "title": "More symbols — tickers we analyze"
             },
             "terms": {
                 "description": "Read Siglens's Terms of Service — sign-up and usage conditions, disclaimers for AI analysis and backtesting, account and content rules, and the rights and obligations of users and the company.",
@@ -3016,7 +3025,8 @@
                 "40df0a": "Sitemap",
                 "531f6a": "Contact Us",
                 "5f5d12": "Site Information",
-                "693b62": "Investment Disclaimer"
+                "693b62": "Investment Disclaimer",
+                "symbolsLink": "More symbols"
             },
             "Header": {
                 "1ebe53": "SIGLENS Logo",

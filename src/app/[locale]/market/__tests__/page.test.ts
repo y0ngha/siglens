@@ -102,6 +102,7 @@ vi.mock('@/shared/lib/seo', () => ({
     ROOT_KEYWORDS: ['주식'],
     SITE_NAME: 'Siglens',
     SITE_URL: 'https://siglens.io',
+    SYMBOLS_PATH: '/symbols',
 }));
 
 vi.mock('@/shared/lib/og', () => ({
@@ -577,6 +578,31 @@ describe('/market 구조화데이터 degrade 게이트', () => {
 });
 
 describe('/market/kr 가시 브레드크럼', () => {
+    /**
+     * 종목 디렉터리 링크는 이 페이지의 **크롤 경로**다. `/market`은 신호가 잡힌
+     * 종목만 보여주므로 조용한 장에는 목록이 짧아지는데, 그때도 다른 종목으로
+     * 가는 길이 남아야 한다(2026-09-18 실측: sitemap 심볼 416개 중 147개가 홈에서
+     * 3클릭 밖). 지워져도 아무 테스트가 깨지지 않으면 그 경로가 조용히 사라진다.
+     */
+    it.each([
+        ['us', US_DASHBOARD_SCOPE],
+        ['kr', KR_DASHBOARD_SCOPE],
+    ])(
+        '%s 본문이 /symbols 디렉터리로 가는 링크를 그린다',
+        async (_id, scope) => {
+            const { MarketRouteBody } = await import('../MarketRouteBody');
+            const { koMessage } = await import('@/shared/test-utils/koMessage');
+
+            const tree = await MarketRouteBody({ locale: 'ko', scope });
+            const html = JSON.stringify(tree);
+
+            expect(html).toContain('/symbols');
+            expect(html).toContain(
+                koMessage('widgets.layout.Footer.symbolsLink')
+            );
+        }
+    );
+
     it('BreadcrumbList와 같은 마디를 그린다', async () => {
         const { buildBreadcrumbJsonLd } = await import('@/shared/lib/seo');
         const { MarketRouteBody } = await import('../MarketRouteBody');

@@ -41,6 +41,25 @@ describe('buildStaticEntries', () => {
         );
     });
 
+    /**
+     * `/symbols`(종목 디렉터리)는 sitemap에 실려야 한다 — 이 페이지 자체가 색인
+     * 대상이라서가 아니라, 크롤러가 여기서 종목 링크를 받아 가기 때문이다.
+     * 목록은 상수라 배포로만 바뀌므로 lastmod가 빌드 시각인 것이 정직하다.
+     */
+    it('/symbols는 monthly·priority 0.6, 빌드 시각을 lastmod로 쓴다', () => {
+        const entry = buildStaticEntries(NOW).find(
+            e => e.url === `${SITE_URL}/symbols`
+        );
+
+        expect(entry).toBeDefined();
+        expect(entry?.changeFrequency).toBe('monthly');
+        // 허브(0.8)보다 낮다 — 값이 자기 본문이 아니라 내보내는 링크에 있다.
+        expect(entry?.priority).toBe(0.6);
+        expect(entry?.lastModified).toEqual(
+            new Date('2025-01-01T00:00:00.000Z')
+        );
+    });
+
     it('/fear-greed는 daily·priority 0.8, 직전 마감 세션을 lastmod로 사용한다', () => {
         const entries = buildStaticEntries(NOW);
         const fearGreed = entries.find(e => e.url.endsWith('/fear-greed'));

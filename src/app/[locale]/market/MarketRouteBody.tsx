@@ -22,6 +22,7 @@ import {
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { ISO_DATE_HOUR_SLICE_END } from '@/shared/config/time';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import type { Locale } from '@/shared/i18n/locales';
 import {
@@ -29,6 +30,7 @@ import {
     buildWebPageJsonLd,
     SITE_NAME,
     SITE_URL,
+    SYMBOLS_PATH,
 } from '@/shared/lib/seo';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { marketCopyFor } from './copy';
@@ -184,6 +186,9 @@ export async function MarketRouteBody({
     // `MarketRouteBody({ scope })`의 반환 트리를 `JSON.stringify`로 검사).
     // `useTranslations`는 훅 디스패처가 없는 그 호출 경로에서 즉시 throw한다.
     const t = await getTranslations('shared.seo');
+    // 디렉터리 링크 문구는 푸터와 **같은 키**를 쓴다 — `shared.seo`에 두면
+    // 클라이언트 페이로드 금지 네임스페이스에 걸린다(clientKeyCoverage 가드).
+    const tLayout = await getTranslations('widgets.layout');
     const copy = marketCopyFor(scope.id, t);
     // 스켈레톤도 클라이언트 컴포넌트다 — `MarketContent`와 같은 이유로 좁힌다.
     const clientScope = toClientScope(scope);
@@ -267,6 +272,20 @@ export async function MarketRouteBody({
                 >
                     <MarketContent scope={scope} />
                 </Suspense>
+                {/*
+                 * 디렉터리 진입 — 이 페이지는 섹터 신호가 잡힌 종목만 보여주므로
+                 * 조용한 장에는 목록이 짧다. 그때 다른 종목으로 가는 길이 사라지지
+                 * 않게 둔다(푸터에도 있지만, 여기가 문맥상 훨씬 가깝다).
+                 */}
+                <div className="mx-auto w-full max-w-6xl px-4 pb-8">
+                    <Link
+                        href={SYMBOLS_PATH}
+                        prefetch={false}
+                        className="text-sm text-secondary-400 transition-colors hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                    >
+                        {tLayout('Footer.symbolsLink')} →
+                    </Link>
+                </div>
             </main>
         </>
     );

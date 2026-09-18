@@ -17,7 +17,7 @@ import {
     TERMS_PATH,
     termsTitle,
 } from '@/shared/lib/legal';
-import { GITHUB_URL, SITE_NAME } from '@/shared/lib/seo';
+import { GITHUB_URL, SITE_NAME, SYMBOLS_PATH } from '@/shared/lib/seo';
 import { LABEL_GROUP } from '@/shared/lib/typographyStyles';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
@@ -191,6 +191,20 @@ export function Footer() {
                                     SITE_NAME,
                                     SITE_NAME.toUpperCase()
                                 )}
+                            </Link>
+                            {/*
+                             * 종목 디렉터리 — 이 링크가 있는 이유는 크롤 구조다.
+                             * 2026-09-18 실측에서 sitemap 심볼 416개 중 147개가
+                             * 홈에서 3클릭 안에 닿지 않았다. 푸터는 전 라우트에
+                             * 렌더되므로 이 한 줄로 디렉터리가 1클릭, 목록의 모든
+                             * 종목이 2클릭이 된다.
+                             */}
+                            <Link
+                                href={SYMBOLS_PATH}
+                                prefetch={false}
+                                className={LINK_CLASSES}
+                            >
+                                {t('Footer.symbolsLink')}
                             </Link>
                             <AiNavLink
                                 variant="text"

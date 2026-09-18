@@ -229,6 +229,19 @@ export function buildStaticEntries(
             ),
         },
         {
+            /**
+             * 종목 디렉터리. 목록은 상수(`POPULAR_TICKERS`·`POPULAR_CRYPTOS`)라
+             * **배포로만** 바뀌므로 lastmod가 배포 시각인 것이 정직하다.
+             * priority는 허브(0.8)보다 낮게 둔다 — 이 페이지의 값은 자기 본문이
+             * 아니라 종목 페이지로 내보내는 링크에 있다.
+             */
+            url: `${SITE_URL}/symbols`,
+            lastModified: SITE_BUILD_DATE,
+            changeFrequency: 'monthly',
+            priority: 0.6,
+            alternates: sitemapAlternates('/symbols', STATIC_INDEXABLE_LOCALES),
+        },
+        {
             url: `${SITE_URL}/news`,
             lastModified: newsHubLastModified,
             changeFrequency: 'daily',
