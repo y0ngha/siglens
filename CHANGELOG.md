@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.80.2](https://github.com/y0ngha/siglens/compare/v0.80.1...v0.80.2) (2026-09-18)
+
+
+### Bug Fixes
+
+* **seo:** 뉴스 허브에 자체 다이제스트 한 줄을 얹고 카테고리 메타 설명을 차별화한다 ([bb47f85](https://github.com/y0ngha/siglens/commit/bb47f857e8ae14ffd0048040f42ecda0fa244768))
+* **seo:** SearchAction 제거 후 남은 주석·고아 키를 정리하고 허브 테스트에 새 의존성을 목한다 ([c4af932](https://github.com/y0ngha/siglens/commit/c4af9320966a08836bd5506381e7db1856b46d45))
+
 ## [0.80.1](https://github.com/y0ngha/siglens/compare/v0.80.0...v0.80.1) (2026-09-18)
 
 
