@@ -110,4 +110,28 @@ describe('/backtesting Dataset JSON-LD', () => {
         expect(dataset.temporalCoverage).toBe('2024-11/2026-03');
         expect(dataset.distribution[0]).not.toHaveProperty('dateModified');
     });
+
+    /**
+     * `dateModified`는 **데이터의 마지막 진입일**이다 — 배포 시각이 아니다.
+     *
+     * 통계의 `periodEnd` 문자열을 그대로 쓴다. `Date`로 정규화하면 연-월(`2026-03`)이
+     * 3월 1일로 파싱돼(V8 실측) 모르는 날짜를 주장하게 되므로, 정밀도를 바꾸지 않는
+     * 것이 정직하다. 값이 비면 필드를 싣지 않는다(`page.test.ts`의 `periodEnd: ''` 모의).
+     */
+    it('dateModified가 periodEnd 문자열 그대로다 — 정밀도를 올리지 않는다', async () => {
+        renderToStaticMarkup(
+            <IntlTestProvider>
+                {await BacktestingPage({
+                    params: Promise.resolve({ locale: 'ko' }),
+                })}
+            </IntlTestProvider>
+        );
+
+        const dataset = jsonLdSpy.mock.calls.find(
+            ([data]) => data['@type'] === 'Dataset'
+        )![0] as Record<string, unknown>;
+
+        expect(dataset.dateModified).toBe('2026-03');
+        expect(dataset.temporalCoverage).toBe('2024-11/2026-03');
+    });
 });

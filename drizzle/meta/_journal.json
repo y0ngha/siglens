@@ -253,6 +253,13 @@
       "when": 1789176356041,
       "tag": "0035_agent_chat",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1789706470792,
+      "tag": "0036_snapshot_first_generated_at",
+      "breakpoints": true
     }
   ]
 }

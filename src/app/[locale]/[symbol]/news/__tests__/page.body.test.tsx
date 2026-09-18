@@ -514,6 +514,73 @@ describe('NewsPage — Article JSON-LD 게이트와 dateModified', () => {
         );
     });
 
+    /**
+     * `datePublished`는 `firstGeneratedAt`(이 조합의 본문이 처음 만들어진 시각)에서만
+     * 온다. 예전에는 필드를 통째로 생략했는데, 근거였던 "ticker별 최초 시각을 알 수
+     * 없다"가 사실이 아니었다(`first_generated_at` 컬럼 + 1회 백필).
+     */
+    it('firstGeneratedAt이 있으면 datePublished로 싣는다', async () => {
+        vi.mocked(getSeoSnapshotsStatic).mockResolvedValue([
+            {
+                ...PROSE_SNAPSHOT[0],
+                // 픽스처의 최신 기사(2026-05-06)보다 **앞선** 시각이어야 한다 —
+                // 뒤면 아래 클램프 규칙에 걸려 필드가 생략된다.
+                firstGeneratedAt: new Date('2026-04-02T03:00:00.000Z'),
+            },
+        ] as unknown as Awaited<ReturnType<typeof getSeoSnapshotsStatic>>);
+        mockGetNewsList.mockResolvedValue(READY_NEWS);
+
+        const article = findArticle(
+            await NewsPage({
+                params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+            })
+        );
+
+        expect(article?.datePublished).toBe('2026-04-02T03:00:00.000Z');
+        expect(article?.dateModified).toBe(READY_NEWS[0].publishedAt);
+    });
+
+    it('firstGeneratedAt이 없으면 datePublished를 생략한다 — 모르는 발행일을 지어내지 않는다', async () => {
+        vi.mocked(getSeoSnapshotsStatic).mockResolvedValue(PROSE_SNAPSHOT);
+        mockGetNewsList.mockResolvedValue(READY_NEWS);
+
+        const article = findArticle(
+            await NewsPage({
+                params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+            })
+        );
+
+        expect(article).toBeDefined();
+        expect('datePublished' in article!).toBe(false);
+    });
+
+    /**
+     * 뉴스가 끊긴 종목에서 실제로 나올 수 있는 조합이다: `dateModified`는 마지막
+     * 기사 발행일이라 백필된 최초 생성 시각보다 **앞설** 수 있다. 발행이 수정보다
+     * 늦다고 주장하는 마크업은 스스로 모순이라 그때는 함께 생략한다.
+     */
+    it('datePublished가 dateModified보다 늦으면 생략한다', async () => {
+        vi.mocked(getSeoSnapshotsStatic).mockResolvedValue([
+            {
+                ...PROSE_SNAPSHOT[0],
+                firstGeneratedAt: new Date('2026-09-10T00:00:00.000Z'),
+            },
+        ] as unknown as Awaited<ReturnType<typeof getSeoSnapshotsStatic>>);
+        // 마지막 기사가 firstGeneratedAt보다 오래된 상황.
+        mockGetNewsList.mockResolvedValue([
+            { ...READY_NEWS[0], publishedAt: '2026-08-01T00:00:00.000Z' },
+        ]);
+
+        const article = findArticle(
+            await NewsPage({
+                params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+            })
+        );
+
+        expect(article?.dateModified).toBe('2026-08-01T00:00:00.000Z');
+        expect('datePublished' in article!).toBe(false);
+    });
+
     it('WebPage 노드는 산문이 있을 때만 dateModified를 주장하고, publisher는 항상 @id 참조다', async () => {
         vi.mocked(getSeoSnapshotsStatic).mockResolvedValue(PROSE_SNAPSHOT);
 

@@ -40,6 +40,12 @@ export interface SeoAnalysisSnapshot {
     plain: string | null;
     model: string;
     generatedAt: Date;
+    /**
+     * 이 조합의 본문이 **처음** 만들어진 시각. 컬럼이 생기기 전 행이거나 백필이
+     * 진실한 소스를 못 찾은 탭은 `null`이다 — 소비자는 `null`이면 발행일 주장을
+     * 아예 하지 않는다(`datePublished` 생략).
+     */
+    firstGeneratedAt: Date | null;
     updatedAt: Date;
 }
 

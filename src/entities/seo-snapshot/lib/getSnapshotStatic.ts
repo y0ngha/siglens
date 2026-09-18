@@ -96,6 +96,13 @@ export async function getSeoSnapshotsStatic(
         ...row,
         generatedAt: new Date(row.generatedAt),
         updatedAt: new Date(row.updatedAt),
+        // `firstGeneratedAt`도 같은 왕복을 탄다. 선언 타입이 `Date | null`이라
+        // 히트 렌더에서 문자열이 흘러가면 `.getTime()`을 부르는 다음 소비자가
+        // 캐시 상태에 따라서만 깨진다 — 재현이 가장 어려운 형태의 결함이다.
+        firstGeneratedAt:
+            row.firstGeneratedAt === null
+                ? null
+                : new Date(row.firstGeneratedAt),
     }));
 
     /*

@@ -735,6 +735,22 @@ export const seoAnalysisSnapshots = pgTable(
         generatedAt: timestamp('generated_at', {
             withTimezone: true,
         }).notNull(),
+        /**
+         * 이 (symbol, tab, locale) 조합의 본문이 **처음** 만들어진 시각.
+         *
+         * `generatedAt`은 매 프리웜마다 덮이는 "최신 생성"이라 발행일로 쓸 수 없다.
+         * 뉴스 탭 페이지의 `Article` 구조화데이터가 `datePublished`를 필요로 하는데,
+         * 최신 생성 시각을 발행일이라 주장하면 전 종목이 매일 새로 발행된다는 거짓
+         * 신선도 신호가 된다(2026-09-17 정책 감사 M2와 같은 종류의 문제).
+         *
+         * upsert는 INSERT에서만 채우고 `onConflictDoUpdate`에서는 건드리지 않는다.
+         * 컬럼이 생기기 전 행은 `NULL`이고, 1회 백필
+         * (`db/scripts/backfillSnapshotFirstGeneratedAt.ts`)이 진실한 소스가 있는
+         * 탭만 채운다 — 없으면 `NULL`로 남기고 소비자가 필드를 생략한다.
+         */
+        firstGeneratedAt: timestamp('first_generated_at', {
+            withTimezone: true,
+        }),
         updatedAt: timestamp('updated_at', { withTimezone: true })
             .notNull()
             .defaultNow(),
