@@ -51,10 +51,13 @@ import { PREWARM_PROVIDER_FALLBACK } from '@/shared/config/prewarm';
 /**
  * 허브 단계 전체의 wall-clock 상한.
  *
- * 심볼 배치의 10분은 이 단계가 끝난 **뒤** 다시 잡히므로(`runPrewarmBatch`) 예산이
- * 깎이지 않는다. 대신 락 보유 시간이 두 단계의 합이 되니, 지켜야 할 조건은
- * `허브 + 심볼 < LOCK_TTL_SECONDS(900초)`다 — 최악 165초(이 마감 120초 + 이미
- * 시작된 대상의 유닛 타임아웃 45초) + 600초 = 765초로 여유가 있다.
+ * 심볼 배치의 10분은 이 단계가 끝난 **뒤** 다시 잡히므로(`runPrewarmBatch`) 평소에는
+ * 예산이 깎이지 않는다. 대신 락 보유 시간이 두 단계의 합이 되고, 두 마감 모두 유닛
+ * **사이**에서만 검사되므로 실제 최악은 `마감 + 그 단계의 유닛 상한`이다:
+ * 이 단계 120 + 45, 심볼 600 + 120 = 885초. `LOCK_TTL_SECONDS`(900초)에 15초 차라
+ * 그대로 두면 락 오버랩 여유가 사라진다 — 그래서 `runPrewarmBatch`가 심볼 마감을
+ * `BATCH_WALL_CLOCK_BUDGET_MS`(840초) 안으로 자른다. 이 상수를 올리면 잘리는 쪽은
+ * 심볼 배치다.
  */
 export const HUB_DEADLINE_MS = 120_000;
 
@@ -147,6 +150,8 @@ function macroBriefingTarget(): HubTarget {
 }
 
 function newsDigestTargets(): HubTarget[] {
+    // safe: CATEGORY_CONFIG is Record<NewsFeedCategoryId, CategoryConfig>, so
+    // Object.keys is exactly the union members — TS just widens to string[].
     return (Object.keys(CATEGORY_CONFIG) as NewsFeedCategoryId[]).map(
         category => ({
             label: `news-digest:${category}`,
@@ -181,6 +186,11 @@ function newsDigestTargets(): HubTarget[] {
                     ...options,
                     providerFallback: PREWARM_PROVIDER_FALLBACK,
                 });
+                // `options`를 peek에도 그대로 넘긴다. `categoryLabel`은 키 성분이
+                // 아니지만(`marketNewsDigestStaticCache.ts`의 peek 헬퍼는 그래서
+                // 아예 빼 둔다), 여기서는 **run과 완전히 같은 객체**를 쓰는 것이
+                // 목적이다 — 되읽기가 잡으려는 사고가 바로 "run과 peek의 입력이
+                // 갈려 키가 어긋나는 것"이라, 한쪽만 손질하면 그 검증이 약해진다.
                 return readBackWithRetry(() =>
                     peekMarketNewsDigestCache(options)
                 );

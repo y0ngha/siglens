@@ -90,6 +90,8 @@ vi.mock('../lock', () => ({
     clearStructurallyUnavailable: vi.fn(),
     // 구현과 동일한 값(lock.ts). 일시적 실패 backoff TTL.
     TRANSIENT_SKIP_TTL_SECONDS: 1800,
+    // 구현과 동일한 값(lock.ts). 배치 wall-clock 예산이 여기서 파생된다.
+    LOCK_TTL_SECONDS: 900,
 }));
 
 vi.mock('next/cache', () => ({
@@ -1465,6 +1467,71 @@ describe('runPrewarmBatch', () => {
         const totalElapsedMs = clock.now() - FIXED_NOW.getTime();
         expect(totalElapsedMs).toBeGreaterThan(HUB_ELAPSED_MS);
         expect(counts.durationMs).toBe(totalElapsedMs);
+    });
+
+    /**
+     * 락 예산 — 허브가 자기 마감을 다 써도 배치 전체가 `LOCK_TTL_SECONDS`(900초)
+     * 안에서 끝나야 한다.
+     *
+     * 두 단계의 마감은 유닛 **사이**에서만 검사되므로 최악은 각 마감 + 그 단계의 유닛
+     * 상한이다: 허브 120+45, 심볼 600+120 = 885초. 900초까지 15초뿐이라, 심볼 마감을
+     * `BATCH_WALL_CLOCK_BUDGET_MS`(840초)로 자르지 않으면 FIX G가 막으려던
+     * "락 만료 → 다음 tick이 새 락 → 배치 2개 동시 실행"이 다시 열린다.
+     */
+    it('허브가 마감을 다 써도 배치 전체가 락 예산(840초) 안에서 끝난다', async () => {
+        // 심볼 하나 × 전 탭. 탭 루프는 **직렬**이라 시뮬 시계가 유닛당
+        // UNIT_TIMEOUT_MS씩 전진한다 — 심볼을 늘리면 청크가 병렬이라
+        // "sleep 합" 모델이 실제 wall-clock보다 과장된다.
+        universe({
+            symbol: 'BUDGET',
+            tabs: [
+                'technical',
+                'fundamental',
+                'financials',
+                'congress',
+                'news',
+                'options',
+                'overall',
+            ],
+        });
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: {
+                symbol: 'BUDGET',
+                name: 'Budget Co.',
+                fmpSymbol: undefined,
+            },
+            degraded: false,
+        });
+        for (const seam of [
+            mockPrewarmTechnical,
+            mockPrewarmFundamental,
+            mockPrewarmFinancials,
+            mockPrewarmCongress,
+            mockPrewarmNews,
+            mockPrewarmOptions,
+            mockPrewarmOverall,
+        ]) {
+            seam.mockResolvedValue({ status: 'cached', result: {} });
+        }
+
+        // 허브가 자기 최악(단계 마감 120초 + 유닛 타임아웃 45초)을 다 쓴 상황.
+        const HUB_WORST_MS = 165_000;
+        const clock = makeSimClock(FIXED_NOW.getTime());
+        mockRunHubPrewarm.mockImplementationOnce(async () => {
+            await clock.sleep(HUB_WORST_MS);
+            return {
+                attempted: 9,
+                generated: 9,
+                keyMismatch: 0,
+                failed: 0,
+                skippedByDeadline: 0,
+            };
+        });
+
+        await runPrewarmBatch(clock);
+
+        // 840초 = LOCK_TTL_SECONDS(900) - 안전마진(60). 자르지 않으면 885초까지 간다.
+        expect(clock.now() - FIXED_NOW.getTime()).toBeLessThanOrEqual(840_000);
     });
 
     // ── 2026-08 감사 — starvation watch(회전에서 구조적으로 빠진 심볼을 로그로 노출) ──

@@ -22,6 +22,7 @@ import {
     getInFlightMarker,
     isSkipped,
     loadStructurallyUnavailable,
+    LOCK_TTL_SECONDS,
     markInFlight,
     markSkipped,
     prewarmUnitKey,
@@ -109,6 +110,23 @@ const BATCH_DEADLINE_MS = 600_000; // 10min
  * AbortSignal threading은 별도 작업으로 대응한다.
  */
 const UNIT_TIMEOUT_MS = 120_000; // 2min
+
+/**
+ * 배치 전체(허브 + 심볼)가 끝나 있어야 하는 wall-clock 예산.
+ *
+ * 락은 두 단계에 걸쳐 하나로 잡혀 있고, 각 단계의 마감은 유닛 **사이**에서만
+ * 검사되므로 실제 최악은 `마감 + 그 단계의 유닛 상한`이다:
+ * 허브 `HUB_DEADLINE_MS` 120s + `HUB_UNIT_TIMEOUT_MS` 45s,
+ * 심볼 `BATCH_DEADLINE_MS` 600s + `UNIT_TIMEOUT_MS` 120s = 885s.
+ * `LOCK_TTL_SECONDS`(900s)까지 15s밖에 안 남는다 — FIX G가 막으려던 락 오버랩에
+ * 그건 여유가 아니다. 이 예산으로 심볼 마감을 잘라 최악을 840s로 묶는다.
+ *
+ * `LOCK_TTL_SECONDS`를 lock.ts에서 import하는 이유: 여기 숫자를 다시 적으면 한쪽만
+ * 바뀌어도 아무도 모르게 오버랩이 열린다.
+ */
+const LOCK_SAFETY_MARGIN_MS = 60_000; // 1min
+const BATCH_WALL_CLOCK_BUDGET_MS =
+    LOCK_TTL_SECONDS * 1000 - LOCK_SAFETY_MARGIN_MS;
 // overall을 마지막에 둬 bars/scorecard 등 다른 축이 이미 채운 Redis 캐시를 HIT로 재활용한다.
 const TAB_ORDER: readonly SeoSnapshotTab[] = [
     'technical',
@@ -311,13 +329,18 @@ export async function runPrewarmBatch(
     const batchStartedAt = clock.now();
 
     /*
-     * 마감은 **허브 단계가 끝난 뒤** 잡는다.
+     * 마감은 **허브 단계가 끝난 뒤** 잡되, 락 예산으로 한 번 더 자른다.
      *
-     * 먼저 잡으면 허브가 쓴 시간이 심볼 예산에서 그대로 빠진다 — 최악 165초
-     * (단계 마감 120초 + 이미 시작된 대상의 유닛 타임아웃 45초)가 깎여
-     * `BATCH_DEADLINE_MS`가 "심볼에 10분"이라는 뜻을 잃는다. 대신 락 보유
-     * 시간은 두 단계의 합이 되므로, 합계가 `LOCK_TTL_SECONDS`(900초) 아래인지가
-     * 지켜야 할 조건이다: 165 + 600 = 765초 < 900초.
+     * 허브 뒤에 잡는 이유: 먼저 잡으면 허브가 쓴 시간이 심볼 예산에서 그대로 빠져
+     * `BATCH_DEADLINE_MS`가 "심볼에 10분"이라는 뜻을 잃는다.
+     *
+     * 자르는 이유: 두 단계의 마감은 모두 **유닛 사이에서만** 검사되므로 실제 최악은
+     * 각 마감 + 그 단계의 유닛 상한이다 — 허브 120 + 45, 심볼 600 + 120 = 885초.
+     * `LOCK_TTL_SECONDS`(900초)까지 15초밖에 안 남는데, 이 여유가 곧 FIX G가 막으려던
+     * "락 만료 → 다음 tick이 새 락 획득 → 배치 2개 동시 실행"의 안전장치다.
+     * 그래서 심볼 마감을 `BATCH_WALL_CLOCK_BUDGET_MS` 안으로 자른다. 허브가 평소처럼
+     * 빨리 끝나면(실측 1분 내외) 잘림이 없고, 허브가 마감을 다 쓴 최악에서만
+     * 심볼 쪽이 줄어든다 — 줄어드는 쪽이 락 오버랩보다 낫다.
      */
 
     /*
@@ -336,7 +359,12 @@ export async function runPrewarmBatch(
         );
         return null;
     });
-    const batchDeadline = clock.now() + BATCH_DEADLINE_MS;
+    const batchDeadline = Math.min(
+        clock.now() + BATCH_DEADLINE_MS,
+        // 마지막 유닛은 마감 검사를 통과한 직후 시작해 `UNIT_TIMEOUT_MS`만큼 더
+        // 돌 수 있다. 그 오버슈트까지 예산 안에 들어오도록 미리 빼 둔다.
+        batchStartedAt + BATCH_WALL_CLOCK_BUDGET_MS - UNIT_TIMEOUT_MS
+    );
     const isPastDeadline = () => clock.now() > batchDeadline;
     if (hubs !== null) {
         console.log(
