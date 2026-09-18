@@ -1,5 +1,20 @@
 # Changelog
 
+# [0.80.0](https://github.com/y0ngha/siglens/compare/v0.79.5...v0.80.0) (2026-09-18)
+
+
+### Bug Fixes
+
+* **i18n:** 푸터 디렉터리 라벨 이동 후 clientKeys 산출물을 다시 생성한다 ([0215f4d](https://github.com/y0ngha/siglens/commit/0215f4d36ade5353d02fa0b4aa4c4d934f4bf929))
+* **seo:** 뉴스 허브 OG 이미지만 Googlebot에 되돌린다 ([a5adbbe](https://github.com/y0ngha/siglens/commit/a5adbbed8b8fe7ac1405f660c3f94542e3b30191))
+* **seo:** 옛 캐시 항목의 firstGeneratedAt 누락을 null로 되살린다 ([35bc87d](https://github.com/y0ngha/siglens/commit/35bc87d9e1f30f92ffe2e3e53c1404ff1fb68925))
+
+
+### Features
+
+* **seo:** 뉴스 탭 Article에 실제 최초 생성 시각을 발행일로 싣는다 ([723bee1](https://github.com/y0ngha/siglens/commit/723bee14d63d98a7de466b497de9f874abb5810f))
+* **seo:** 종목 디렉터리 /symbols로 내부 링크 고아를 없앤다 ([a902bb9](https://github.com/y0ngha/siglens/commit/a902bb9077ff07c75d17a66dab06c2fce851f2eb))
+
 ## [0.79.5](https://github.com/y0ngha/siglens/compare/v0.79.4...v0.79.5) (2026-09-18)
 
 
