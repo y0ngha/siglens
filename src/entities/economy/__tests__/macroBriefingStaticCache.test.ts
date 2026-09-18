@@ -22,7 +22,10 @@ import type {
 } from '@y0ngha/siglens-core';
 
 import { readHubSsrSeed } from '@/shared/cache/hubSsrSeed';
-import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingStaticCache';
+import {
+    MACRO_BRIEFING_SEED_SURFACE,
+    peekMacroBriefingStatic,
+} from '@/entities/economy/api/macroBriefingStaticCache';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 const mockUnstableCache = vi.mocked(unstable_cache);
@@ -76,7 +79,7 @@ describe('peekMacroBriefingStatic', () => {
             .calls[0][0] as () => Promise<unknown>;
 
         await expect(fetcher()).resolves.toEqual(macro('seed'));
-        expect(mockReadSeed).toHaveBeenCalledWith('macro-briefing');
+        expect(mockReadSeed).toHaveBeenCalledWith(MACRO_BRIEFING_SEED_SURFACE);
     });
 
     it('core peek이 hit면 seed를 읽지 않는다', async () => {

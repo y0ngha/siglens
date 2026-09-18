@@ -30,7 +30,16 @@ import { getRedisClient } from '@/shared/cache/redisClient';
  * 반나절로 묶는다. 더 늘리면 시각 표시도 없는 하루 지난 내용이 색인될 수 있고, 더 줄이면
  * 정상 운영 중에도 공백에서 seed가 만료돼 페이지가 다시 빈다.
  */
-const SEED_TTL_SECONDS = SECONDS_PER_HALF_DAY;
+export const SEED_TTL_SECONDS = SECONDS_PER_HALF_DAY;
+
+/**
+ * 이 seed가 덮어야 하는 프리웜 크론의 최대 공백(09:55→20:30 UTC).
+ *
+ * `SECONDS_PER_HALF_DAY`는 원래 "뉴스/옵션/종합 페이지 캐시 TTL"로 도입된 값이라,
+ * 그 정의부만 보고 줄이면 여기 불변식이 조용히 깨진다 — 페이지가 다시 빈 채로 색인되는,
+ * 이 기능이 고치려던 증상 그대로다. 그 회귀를 테스트가 잡도록 상한을 상수로 남긴다.
+ */
+export const HUB_SEED_MAX_CRON_GAP_SECONDS = 10 * 60 * 60 + 35 * 60;
 
 const KEY_PREFIX = 'hub-ssr-seed';
 

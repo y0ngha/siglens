@@ -36,7 +36,10 @@ vi.mock('@y0ngha/siglens-core', async () => ({
     peekBriefingCache: mockPeekBriefingCache,
 }));
 
-import { peekBriefingStatic } from '../api/briefingStaticCache';
+import {
+    marketBriefingSeedSurface,
+    peekBriefingStatic,
+} from '../api/briefingStaticCache';
 
 const sampleSummary: MarketSummaryData = {
     indices: [],
@@ -170,7 +173,9 @@ describe('peekBriefingStatic', () => {
 
         expect(result).toBe(sampleBriefing);
         // scope를 안 섞어야 한다 — 미국 브리핑이 한국 페이지에 나가는 사고가 이 레포에 있었다.
-        expect(mockReadHubSsrSeed).toHaveBeenCalledWith('market-briefing:kr');
+        expect(mockReadHubSsrSeed).toHaveBeenCalledWith(
+            marketBriefingSeedSurface(KR_DASHBOARD_SCOPE)
+        );
     });
 
     it('(Happy) core peek이 hit면 seed를 읽지 않는다', async () => {

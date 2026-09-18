@@ -16,7 +16,12 @@ vi.mock('@/shared/cache/redisClient', () => ({
 
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import { getRedisClient } from '@/shared/cache/redisClient';
-import { readHubSsrSeed, writeHubSsrSeed } from '../hubSsrSeed';
+import {
+    HUB_SEED_MAX_CRON_GAP_SECONDS,
+    readHubSsrSeed,
+    SEED_TTL_SECONDS,
+    writeHubSsrSeed,
+} from '../hubSsrSeed';
 
 type RedisLike = import('@upstash/redis').Redis;
 
@@ -51,6 +56,15 @@ describe('hubSsrSeed', () => {
             { briefing: 'y' },
             { ex: SECONDS_PER_HALF_DAY }
         );
+    });
+
+    /**
+     * `SECONDS_PER_HALF_DAY`는 원래 페이지 캐시 TTL 용도로 도입된 값이다. 그 정의부만
+     * 보고 줄이면(예: 8h) 이 seed가 크론 공백을 못 덮어 /market·/economy가 다시 빈 채로
+     * 색인된다 — 값 자체를 import해 비교하는 위 테스트로는 안 잡히는 회귀다.
+     */
+    it('TTL은 크론 최대 공백(10시간 35분)보다 커야 한다', () => {
+        expect(SEED_TTL_SECONDS).toBeGreaterThan(HUB_SEED_MAX_CRON_GAP_SECONDS);
     });
 
     it('Redis가 없으면 읽기는 null, 쓰기는 조용히 넘어간다', async () => {

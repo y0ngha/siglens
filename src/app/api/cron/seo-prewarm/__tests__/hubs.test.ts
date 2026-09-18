@@ -60,6 +60,8 @@ vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
 }));
 
 import { CATEGORY_CONFIG } from '@/entities/market-news';
+import { MACRO_BRIEFING_SEED_SURFACE } from '@/entities/economy/api/macroBriefingStaticCache';
+import { marketBriefingSeedSurface } from '@/entities/market-summary/api/briefingStaticCache';
 import { DASHBOARD_SCOPES } from '@/shared/config/dashboardScope';
 import {
     HUB_DEADLINE_MS,
@@ -336,13 +338,16 @@ describe('runHubPrewarm', () => {
     it('브리핑은 새로 구웠을 때 SSR seed를 쓴다', async () => {
         await runHubPrewarm();
 
+        for (const scope of Object.values(DASHBOARD_SCOPES)) {
+            expect(mocks.writeHubSsrSeed).toHaveBeenCalledWith(
+                marketBriefingSeedSurface(scope),
+                { briefing: 'x' }
+            );
+        }
         expect(mocks.writeHubSsrSeed).toHaveBeenCalledWith(
-            'market-briefing:us',
-            { briefing: 'x' }
+            MACRO_BRIEFING_SEED_SURFACE,
+            { briefing: 'y' }
         );
-        expect(mocks.writeHubSsrSeed).toHaveBeenCalledWith('macro-briefing', {
-            briefing: 'y',
-        });
     });
 
     it('이미 캐시에 있어도 seed는 갱신한다 — 값이 이미 손에 있다', async () => {
@@ -355,9 +360,17 @@ describe('runHubPrewarm', () => {
         const result = await runHubPrewarm();
 
         expect(result.alreadyFresh).toBe(hubTargets().length);
-        expect(mocks.writeHubSsrSeed).toHaveBeenCalledWith('macro-briefing', {
-            briefing: 'y',
-        });
+        // 시장 브리핑도 같은 분기를 탄다 — macro만 단언하면 그쪽 회귀를 놓친다.
+        for (const scope of Object.values(DASHBOARD_SCOPES)) {
+            expect(mocks.writeHubSsrSeed).toHaveBeenCalledWith(
+                marketBriefingSeedSurface(scope),
+                { briefing: 'x' }
+            );
+        }
+        expect(mocks.writeHubSsrSeed).toHaveBeenCalledWith(
+            MACRO_BRIEFING_SEED_SURFACE,
+            { briefing: 'y' }
+        );
     });
 
     /**
