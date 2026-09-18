@@ -8,6 +8,12 @@
 ## Feedback
 
 - [File can change mid-review](feedback-file-can-change-mid-review.md) — implementer may still edit while I read; check mtime vs sibling files, re-read+re-test before finalizing findings
+- [Cross-repo resolution claims need a consumer check](feedback-cross-repo-resolution-claims-need-consumer-check.md) — when a core-repo fix claims a specific consumer already handles the new contract, grep that consumer's real source before trusting it
+- [Round-1: check untracked files too](feedback-check-untracked-files.md) — `git diff --name-only` misses new `??` files in a worktree; also run `git status -uall`
+- [Read tool can silently drop lines on large files](feedback-read-tool-silent-line-loss.md) — no truncation warning; cross-check `wc -l` before concluding content is missing
+- [Green tsc says nothing about scripts/ or worker/](feedback-scripts-excluded-from-tsc.md) — tsconfig excludes them; core breaking bumps leave write-once callers silently broken
+- [Added LIMIT breaks "seed ALL" callers](feedback-limit-added-breaks-seed-all-contract.md) — new `.limit()` on a shared repo read turns backfill scripts into "first N" silently; grep callers, look for "all/전부" in their prose
+- [Audit the slice, not the diff list](feedback-audit-enumerate-slice-not-difflist.md) — for "thread X through N call sites" fixes, grep the symptom repo-wide and subtract; the miss is the unlisted file
 
 ## Project
 
@@ -30,8 +36,6 @@
 - [prompt-region-context R6](project-prompt-region-context-r6.md) — green-suite traps: surviving duplicate under wrong describe, forward-scanning few-shot helper, vacuous not.toContain; scratchpad vitest recipe
 - [core 0.48.0 briefing-context wiring](project-core-048-briefing-context.md) — verified in core dist: hash folds context, prompt (not hash) drops `price:0`, sectors come from sectorEtfs only; miss was outside src/
 - [fix-tests2 mutation audit](project-fix-tests2-mutation-audit.md) — 6/7 mutations + 2 E2E deletions re-verified live; approved R1. `initialAnalysisFailed={true}` hardcode makes share-flow 'idle' unreachable; SITE_DESCRIPTION embeds "한국" project-wide (JSON-LD tautology trap)
-- [rsc-flight-fear-greed R3 tailAligned](project-rsc-flight-fear-greed-r3-tailaligned.md) — approved: seriesDataUtils left→tail alignment math-verified all shapes, 3 changed test assertions confirmed real fixes not laundering, computeFearGreedIndex core-source-verified bars+buySellVolume only
-- [rsc-flight-fear-greed R6 client-error](project-rsc-flight-fear-greed-r6-clienterror.md) — stripQueryStrings O(n²) unbounded before length-cap (reachable via unhandledrejection); mutation-test method confirmed ESM namespace-import spy + module-load-time env const are real, not tautological
 - [perf/aws-cost-reduction memStore fix (R2)](project-perf-aws-cost-memstore-fix.md) — approved: MAX_ENTRY_BYTES check moved before delete/budget mutation, as-cast guarantee comment added; cache-handler/shared-cache tests use flat describe+module-level beforeEach by convention, don't flag
 - [perf/rsc-flight-fear-greed seed-helper fix (R1)](project-fear-greed-page-seed-helper-fix.md) — approved: getSeedBarsStatic passes bars/buySellVolume through by reference so SSR output unchanged; mutation-verified live (8/14 red on revert, 14/14 green restored), tsc+oxlint EXIT:0 captured directly
 - [feat/i18n-multilingual R1](project-i18n-multilingual-r1.md) — 9x locale-invariant canonical (explicit arg bypasses self-ref auto-derive), setRequestLocale only in root layout, extract.mjs --apply can emit undefined-`t` code, scripts/i18n gitignored, nav usePathname locale-prefix mismatch
@@ -58,11 +62,33 @@
 - [feat/share-plain-language R2 — CLOSED, approved](project-share-plain-language-r2-closed.md) — both R1 findings verified fixed exactly per chartBars precedent; contentHash 6th param, whitespace-plain rejected server-side, no trim mismatch
 - [fix/sitemap-position-tab R1 — APPROVED](project-fix-position-sitemap-r1.md) — /position added to both builders, lowest priority (0.7) coherent, count arithmetic + non-tautological tests verified, no stale hardcoded counts elsewhere
 - [seo/index-footprint-recovery R1](project-seo-index-footprint-recovery-r1.md) — reverts the above PR #791; metadata spread-order + tests all correct; caught SITEMAP_SCOPE.md §3-3 documenting the exact mistake being undone as still-live guidance (would cause the same regression again), stale e2e comment
+- [fix/seo-meta-description-markdown R1](project-seo-meta-description-markdown-r1.md) — stripSnapshotMarkdown move to shared/lib verified layer-legal+complete; found latent (not required) false-pair `*`/`_` corruption in single-marker regexes
+- [fix/seo-live-audit R1 — crypto/overall sitemap gap](project-seo-live-audit-r1-crypto-overall-gap.md) — 6-finding live-crawl fix, all verified correct (UA-neutral briefings, fear-greed noindex, sitemap prose gate w/ correct Set-after-cache serialization, thin-desc floor, YMYL span, empty options gate); only miss is buildCryptoPopularEntries not wired to the new prose gate (MISTAKES 6.7 shape, low risk)
+- [fix/seo-warm-and-boilerplate R1](project-fix-seo-warm-and-boilerplate-r1.md) — deploy warm script + sitemap lastmod honesty + FAQ boilerplate removal all sound; mid-review uncommitted core 1.9.0→1.10.1 bump (unrelated, flagged required), warm-isr job-timeout risk, boundary-test gap
+- [fix/seo-warm-and-boilerplate R2 — CLOSED, approved](project-fix-seo-warm-and-boilerplate-r2-closed.md) — all 5 R1 findings verified fixed live (tsc+tests, yarn.lock diff scoped, core dist grep confirms prompt claim); loop ends
+- [fix/seo-cls-sitemap-polish R2 — pwa-trigger removal clean, e2e fallback-timer gap](project-seo-cls-sitemap-polish-r2-e2e-fallback-gap.md) — src/ fully clean of pwaEvents refs; e2e/specs/pwa-install.spec.ts still asserts the now-deleted PWA_BANNER_FALLBACK_DELAY_MS fallback timer with no synthetic tap — will fail in CI webkit project
+- [fix/seo-cls-sitemap-polish R4 — settlePwaBanner, CLOSED](project-seo-cls-sitemap-polish-r4-pwa-settle-closed.md) — approved; fixed-position-target + synthetic-event-decoupling immunity patterns; test.info() cross-module singleton verified via playwright source
+- [siglens-core agent-analyst-voice prompt R1](project-agent-analyst-voice-prompt-r1.md) — directional-read rewrite, no internal contradiction, tests non-vacuous; only miss = no PUBLIC_API.md changelog row despite strict repo precedent
+- [fix/ai-chat-sidebar-ux R2](project-ai-chat-sidebar-r2-suspense-promise.md) — plain-mode empty panel fix + unrecognized-action reload + suggestions-as-unawaited-Promise/use() SSR fix, all approved
+- [feat/ai-guest-brand-polish R1](project-ai-guest-brand-polish-r1-core-quota-gap.md) — guest chat is fully non-functional against currently-pinned core@1.2.1 (AGENT_LIMITS.turnsPerDay.free=0); everything else (font consolidation, LocaleLink hrefBase, session-cookie clear, tool guest-gating, i18n) verified clean
+- [feat/ai-guest-cookie-polish R1](project-ai-guest-cookie-polish-r1.md) — core bumped to 1.3.1 (turnsPerDay.free=10, resolving prior R1 core-quota gap); cookie-based guest identity + per-IP backstops both verified sound, zero findings
+- [chore/core-1.0.4-prompt-currency branch in siglens-core103](project-core-1.0.4-prompt-currency-plain-language-r4.md) — round 4 closed guardPlainText length-floor comment drift
+- [siglens-core deepseek-stall-gemini-fallback R1](project-deepseek-stall-gemini-fallback-r1.md) — usage attribution silently wrong after internal fallback (modelUsed persisted as DeepSeek), roundsTo epsilon scales with raw magnitude not half-step (±3500 tolerance at market-cap scale), 3 new exports missing @internal
+- [siglens-core deepseek-stall-gemini-fallback R2 — approved](project-deepseek-stall-gemini-fallback-r2-closed.md) — all 4 R1 findings verified fixed live (dispatch bug, epsilon, @internal); modelUsed consumer-checked safe; new gap: runMarketNewsDigest DeepSeek call has no providerFallback field
+- [fix/seo-a-symbol-gates R1 — APPROVED](project-fix-seo-a-symbol-gates-r1.md) — 11-item gate/JSON-LD/RelatedSymbols overhaul, gate/body predicate parity verified for all 3 new content gates, React.cache dedup confirmed, roundRobinMerge order-preservation diffed, 21 i18n keys x4 locales checked, guard test proven non-vacuous, 168 tests green
+- [fix/seo-c-backtesting R1](project-fix-seo-c-backtesting-r1.md) — stat math independently recomputed and matches exactly; JSDoc/test-title mischaracterize meta.aiWinRate as "mixing" neutral into denominator when generator source shows it was already decisive-only; new hashes.json orphan (530709)
+- [fix/seo-e-ua-neutral R1 — APPROVED](project-fix-seo-e-ua-neutral-r1.md) — UA branch removal from withReaderViews math/reference-verified; tests falsifiable (revert-would-fail); hashes.json gap investigated and found pre-existing, not a new defect
+- [fix/seo-f-freshness-ux R1 — APPROVED](project-fix-seo-f-freshness-ux-r1.md) — sitemap lastmod session-close math, fail-soft cached DB read, legal soft-404→real 404 w/ React cache dedup, share notFound(), i18n 4-locale parity, oxlint allowlist justified, offline-build NEXT_BUILD_DATE fallback safe
+- [siglens-core PR #205 (fix/grounded-numbers-false-positives) round 4 post-claude-review fix](project-groundnumbers-pr205-r4-closed.md) — approved, closes loop
+- [feat/i18n-locale-switcher R1](project-i18n-locale-switcher-visibility-r1.md) — LOCALE_SWITCHER_VISIBLE flip false->true, ai-host non-issue confirmed
+- [chore/offline-build R2](project-offline-build-r2-closed.md) — closed, approved; both R1 recommended findings verified fixed
+- [siglens-core fix/prompt-numeric-audit R3](project-prompt-numeric-audit-r3-closed.md) — APPROVED, closes loop on formatSignedPercent near-zero test
+- [siglens-core fix/prompt-precision-currency R2](project-prompt-precision-currency-r2-currency-thread-gap.md) — core-side resolution correct, but siglens consumer doesn't actually thread currency yet
+- [fix/seo-d-news-category R1 — APPROVED](project-seo-d-news-category-r1.md) — MarketNewsCard body-section removal, category description paragraph, JSON-LD per-article image omitted, /news hub `stock` preview sentinel mutation-verified live, hashes.json orphan confirmed pre-existing (~1717 total)
+- [fix/seo-duplicate-titles R1 — APPROVED](project-seo-duplicate-titles-r1.md) — SVG title→aria-label a11y-name preserved, tab-threading verified across all 9+17 call sites (MISTAKES 6.7 sibling rule satisfied), buildPhase guard can't leak to runtime (distinct PHASE_PRODUCTION_SERVER const)
+- [fix/seo-duplicate-titles R2 — CLOSED, approved](project-seo-duplicate-titles-r2-closed.md) — StrikeVolumeChart test verified: real ko catalog (not mock) makes the literal-string assertion load-bearing, 6/6 pass
+- [siglens-core agent-tool-routing R1 — APPROVED](project-siglens-core-agent-tool-routing-r1.md) — Korean-unit tool-number fix math-verified, ROUTING_ROWS tool names all grepped against AGENT_TOOL_SPECS, 63/63 tests green
+- [siglens-trader chore/reuse-siglens-alerts-topic](project-trader-alerts-topic-reroute.md) — provision.sh now publishes to shared siglens-alerts topic
+## Reference
 
-## Feedback
-
-- [Round-1: check untracked files too](feedback-check-untracked-files.md) — `git diff --name-only` misses new `??` files in a worktree; also run `git status -uall`
-- [Read tool can silently drop lines on large files](feedback-read-tool-silent-line-loss.md) — no truncation warning; cross-check `wc -l` before concluding content is missing
-- [Green tsc says nothing about scripts/ or worker/](feedback-scripts-excluded-from-tsc.md) — tsconfig excludes them; core breaking bumps leave write-once callers silently broken
-- [Added LIMIT breaks "seed ALL" callers](feedback-limit-added-breaks-seed-all-contract.md) — new `.limit()` on a shared repo read turns backfill scripts into "first N" silently; grep callers, look for "all/전부" in their prose
-- [Audit the slice, not the diff list](feedback-audit-enumerate-slice-not-difflist.md) — for "thread X through N call sites" fixes, grep the symptom repo-wide and subtract; the miss is the unlisted file
+- [hashes.json misc-namespace gap](reference-hashes-json-misc-namespace-gap.md) — hand-authored i18n keys (e.g. liveCrossRef) were never tracked in hashes.json; not a new-PR defect unless key already had an entry

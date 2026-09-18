@@ -376,4 +376,11 @@
 
 ## [fix/seo-cls-sitemap-polish Round 4 | PWA banner Polish | 2026-09-18]
 - Status: APPROVED (zero findings)
+## [PR #827 | feat/ai-provider-fallback-core-170 | 2026-09-15]
+- Violation: BLOCKER — agent provider fallback decided per turn, not per step. Stalling DeepSeek re-costs the 90s stall timeout every step of a multi-step turn, creating cascading retries within a single inference request.
+  - Rule: Core logic — retry/fallback state must be sticky across all steps of a multi-step operation; re-evaluating fallback on every step doubles timeout costs.
+  - Context: Changed fallback decision to set `state.fallbackUsed` on first timeout, then skip re-evaluation on subsequent steps. Fallback now remains sticky for the entire inference session.
 
+- Violation: SUGGESTION — `providerFallback: true` comment repeated identically at 7 prewarm configuration sites; configuration intent is explicit but duplication hides the shared policy.
+  - Rule: CONVENTIONS.md — repeated hardcoded patterns must be extracted to shared constants; duplication obscures intent and creates consistency drift.
+  - Context: Extracted shared constant `PREWARM_PROVIDER_FALLBACK = true` in `src/shared/config/prewarm.ts`; all 7 sites now reference it. Single source of truth for fallback policy.
