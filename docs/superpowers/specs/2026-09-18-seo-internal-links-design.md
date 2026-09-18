@@ -66,8 +66,16 @@
   건드려 멱등):
   - `tab='news'` → 심볼별 `min(news.fetched_at)`
   - `tab='technical'` → `(symbol, tab)`별 `min(analysis_history.created_at)`
-  - 나머지 탭 → NULL 유지. 진실한 소스가 없고 소비하는 곳도 없다. 새로 굽히는 행부터
-    자연히 채워진다.
+  - 나머지 다섯 탭(`fundamental`·`financials`·`overall`·`congress`·`options`) →
+    **처음에는 NULL로 뒀다가, 운영 적용 후 심볼별 `min(news.fetched_at)` 근사치로
+    채웠다**(2026-09-18). 자기 최초 시각을 아는 테이블이 없어 보류했는데, 실측에서
+    그 값이 대상 1,687행 **전부** 해당 행의 `generated_at`보다 이르다는 것을 확인했다
+    — 발행일을 실제보다 오래된 쪽으로 말하므로 거짓 신선도 신호가 되지 않는다.
+    `analysis_history`(2026-09-05~)는 쓰지 않는다: 8월에 이미 있던 페이지를 "9월
+    발행"이라 주장하게 되는 반대 방향이다.
+  - 기존 행은 재생성(UPDATE)으로 채워지지 않는다 — upsert가 이 컬럼을 `set`에서
+    빼기 때문이다. 이 스크립트가 유일한 경로이고, 그래서 탭 커버리지를 테스트로
+    고정한다.
 - JSON-LD: `firstGeneratedAt`이 있을 때만 `datePublished`를 싣는다. `datePublished >
   dateModified`면 생략한다 — 발행이 수정보다 늦다고 주장하는 마크업은 내보내지 않는다.
 - 운영 절차는 **2패스**다: ① 마이그레이션 적용 → ② 백필 1회 → ③ 코드 배포 → ④ 백필 1회.

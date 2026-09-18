@@ -19,10 +19,15 @@
  * - `tab='technical'` → `(symbol, tab)`별 `min(analysis_history.created_at)`.
  *   분석 1건당 1행이라 최초 생성 시각이 그대로 남아 있다(2026-09-05 이후 행만
  *   존재하므로 그보다 오래된 스냅샷은 커버되지 않는다).
- * - 나머지 탭(`fundamental`·`financials`·`overall`·`congress`·`options`) → **건드리지
- *   않는다.** 진실한 소스가 없고, 소비하는 마크업도 없다. 모르는 값을 지어내는 대신
- *   `NULL`로 남기면 소비자가 발행일 주장을 생략하고, 다음 프리웜이 그 행을 다시 구울
- *   때 정확한 값이 들어온다.
+ * - 나머지 탭(`fundamental`·`financials`·`overall`·`congress`·`options`) → 심볼별
+ *   `min(news.fetched_at)`의 **근사치**. 자기 최초 시각을 아는 테이블이 없어서
+ *   처음에는 `NULL`로 뒀는데, 그 값이 실측상 항상 `generated_at`보다 이르다는 것을
+ *   확인하고(대상 1,687행 전부) 채우기로 했다 — 발행일을 실제보다 오래된 쪽으로
+ *   말하는 것은 거짓 신선도 신호를 만들지 않는 안전한 방향이다. 자세한 근거는 아래
+ *   해당 plan의 주석 참고.
+ *
+ * 기존 행은 재생성(UPDATE)으로는 채워지지 않는다 — upsert가 이 컬럼을 `set`에서
+ * 빼기 때문이다. 그래서 이 스크립트가 유일한 경로다.
  *
  * **멱등하다** — `WHERE first_generated_at IS NULL`만 건드린다. 그래서 운영 절차는
  * 2패스다: ① 마이그레이션 적용 후 1회 → ② 코드 배포 → ③ 다시 1회. ②~③ 사이(또는
@@ -44,19 +49,31 @@ const TECHNICAL_TAB = 'technical';
 interface Plan {
     /** 로그에 찍히는 이름. */
     readonly label: string;
-    /** 채울 대상 탭. */
-    readonly tab: string;
+    /** 채울 대상 탭들. */
+    readonly tabs: readonly string[];
     /**
-     * `(symbol, tab)` → 최초 시각을 주는 SELECT. `first_at`이 `NULL`인 조합은
+     * `symbol` → 최초 시각을 주는 SELECT. `first_at`이 `NULL`인 심볼은
      * UPDATE에서 자동으로 빠진다(아래 `AND src.first_at IS NOT NULL`).
      */
     readonly sourceSql: (sql: postgres.Sql) => postgres.PendingQuery<never[]>;
 }
 
+/**
+ * 진실한 소스가 없는 탭들. 자기 최초 생성 시각을 말해 주는 테이블이 하나도 없다
+ * (`analysis_history`는 `technical`만, `news.fetched_at`은 뉴스 수집 시각).
+ */
+const APPROXIMATED_TABS = [
+    'fundamental',
+    'financials',
+    'overall',
+    'congress',
+    'options',
+] as const;
+
 const PLANS: readonly Plan[] = [
     {
         label: 'news ← min(news.fetched_at)',
-        tab: NEWS_TAB,
+        tabs: [NEWS_TAB],
         sourceSql: sql => sql`
             SELECT symbol, MIN(fetched_at) AS first_at
             FROM news
@@ -65,11 +82,33 @@ const PLANS: readonly Plan[] = [
     },
     {
         label: 'technical ← min(analysis_history.created_at)',
-        tab: TECHNICAL_TAB,
+        tabs: [TECHNICAL_TAB],
         sourceSql: sql => sql`
             SELECT symbol, MIN(created_at) AS first_at
             FROM analysis_history
             WHERE tab = ${TECHNICAL_TAB}
+            GROUP BY symbol
+        `,
+    },
+    {
+        /**
+         * 나머지 다섯 탭 — **근사치**다. 자기 최초 시각을 아는 테이블이 없다.
+         *
+         * 심볼별 `min(news.fetched_at)`(그 종목 데이터를 우리가 처음 들인 시각)을
+         * 쓴다. 2026-09-18 운영 실측에서 이 값은 대상 1,687행 **전부** 해당 행의
+         * `generated_at`보다 이르다 — 즉 실제 최초 굽기보다 **오래된** 쪽으로
+         * 말한다. 발행일을 과소로 말하는 것은 "매일 새로 발행된다"는 거짓 신선도
+         * 신호를 만들지 않는 안전한 방향이다.
+         *
+         * `analysis_history`는 쓰지 않는다 — 그 테이블은 2026-09-05부터라 8월에
+         * 이미 있던 페이지를 "9월 발행"이라고 주장하게 된다(정확히 이 컬럼이
+         * 없애려는 종류의 거짓말이다).
+         */
+        label: `${APPROXIMATED_TABS.join('·')} ← min(news.fetched_at) (근사)`,
+        tabs: APPROXIMATED_TABS,
+        sourceSql: sql => sql`
+            SELECT symbol, MIN(fetched_at) AS first_at
+            FROM news
             GROUP BY symbol
         `,
     },
@@ -98,7 +137,7 @@ async function main(): Promise<void> {
                 SELECT COUNT(*)::int AS affected
                 FROM seo_analysis_snapshots s
                 JOIN (${plan.sourceSql(sql)}) src ON src.symbol = s.symbol
-                WHERE s.tab = ${plan.tab}
+                WHERE s.tab = ANY(${plan.tabs as string[]})
                   AND s.first_generated_at IS NULL
                   AND src.first_at IS NOT NULL
             `;
@@ -110,7 +149,7 @@ async function main(): Promise<void> {
                 SET first_generated_at = src.first_at
                 FROM (${plan.sourceSql(sql)}) src
                 WHERE src.symbol = s.symbol
-                  AND s.tab = ${plan.tab}
+                  AND s.tab = ANY(${plan.tabs as string[]})
                   AND s.first_generated_at IS NULL
                   AND src.first_at IS NOT NULL
             `;
@@ -125,7 +164,9 @@ async function main(): Promise<void> {
         console.log(
             `[backfill] 남은 NULL: ${remaining}` +
                 (apply
-                    ? ' (소스가 없는 탭은 의도적으로 NULL로 남긴다)'
+                    ? ' (그 탭의 plan이 보는 소스 테이블에 해당 심볼 행이 없어' +
+                      ' 값을 만들지 못한 경우다 — news 계열은 `news`, technical은' +
+                      ' `analysis_history`를 본다)'
                     : ' — dry-run이라 아무것도 쓰지 않았다. --apply로 실행할 것.')
         );
     } finally {
