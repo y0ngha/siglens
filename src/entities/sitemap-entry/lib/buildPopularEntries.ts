@@ -13,13 +13,9 @@ import { SITE_URL } from '@/shared/lib/seo';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile';
 import { classifyAsset } from '@/entities/ticker';
 import { floorToHour } from './floorToHour';
-import { makeProseGate } from './proseGate';
-// 게이트 정의는 `proseGate.ts`가 소유한다 — 크립토 빌더도 같은 것을 쓴다.
-export {
-    PROSE_GATED_SITEMAP_TABS,
-    type BuildPopularEntriesOptions,
-} from './proseGate';
-import type { BuildPopularEntriesOptions } from './proseGate';
+// 게이트 정의(탭 목록·옵션 타입)는 `proseGate.ts`가 소유한다 — 크립토 빌더와
+// `server.ts`도 거기서 직접 가져온다.
+import { makeProseGate, type BuildPopularEntriesOptions } from './proseGate';
 import type { SitemapEntry } from '../model';
 
 const POPULAR_OPTIONS_SET = new Set<string>(POPULAR_OPTIONS_TICKERS);

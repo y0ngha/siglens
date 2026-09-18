@@ -24,7 +24,7 @@ import type { BuildStaticEntriesOptions } from './lib/buildStaticEntries';
 import {
     PROSE_GATED_SITEMAP_TABS,
     type BuildPopularEntriesOptions,
-} from './lib/buildPopularEntries';
+} from './lib/proseGate';
 import { buildRemovalEntries } from './lib/buildRemovalEntries';
 import {
     REMOVAL_CHART_CUTOFF_ISO,
