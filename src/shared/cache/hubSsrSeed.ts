@@ -1,5 +1,6 @@
 import 'server-only';
-import { getRedisClient } from './redisClient';
+import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
+import { getRedisClient } from '@/shared/cache/redisClient';
 
 /**
  * 프리웜이 만든 값을 **키가 흔들리지 않는 자리**에 보관하는 작은 read/write 쌍.
@@ -25,11 +26,11 @@ import { getRedisClient } from './redisClient';
  * 시각이 falsy면 그 행을 아예 숨긴다. 즉 seed로 그려진 내용은 나이를 드러내지 않는다.
  *
  * 그래서 프리웜 크론 창 사이 최대 공백(09:55→20:30 UTC ≈ 10시간 35분,
- * `docs/reference/CRON.md`) 바로 위로만 잡는다. 12h면 그 공백을 덮으면서 최악 노출을
+ * `docs/reference/CRON.md`) 바로 위로만 잡는다. 반나절(12h)이면 그 공백을 덮으면서 최악 노출을
  * 반나절로 묶는다. 더 늘리면 시각 표시도 없는 하루 지난 내용이 색인될 수 있고, 더 줄이면
  * 정상 운영 중에도 공백에서 seed가 만료돼 페이지가 다시 빈다.
  */
-const SEED_TTL_SECONDS = 12 * 60 * 60;
+const SEED_TTL_SECONDS = SECONDS_PER_HALF_DAY;
 
 const KEY_PREFIX = 'hub-ssr-seed';
 

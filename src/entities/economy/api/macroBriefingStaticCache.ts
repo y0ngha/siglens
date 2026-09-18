@@ -9,6 +9,9 @@ import {
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { readHubSsrSeed } from '@/shared/cache/hubSsrSeed';
 
+/** 프리웜이 쓰고 이 모듈이 읽는 SSR seed의 키. 거시 브리핑은 시장 구분이 없어 하나다. */
+export const MACRO_BRIEFING_SEED_SURFACE = 'macro-briefing';
+
 /**
  * /economy SSR seed — 캐시된 macro briefing을 read-only로 surface한다.
  *
@@ -26,9 +29,6 @@ import { readHubSsrSeed } from '@/shared/cache/hubSsrSeed';
  * `dateHour` 키는 여전히 regen 경계에서 브리핑 seed를 새 시간 버킷으로 전환하나,
  * TTL 자체는 페이지 ISR 주기(24h)에 맞춰 clamp 원인을 제거한다.
  */
-/** 프리웜이 쓰고 이 모듈이 읽는 SSR seed의 키. 거시 브리핑은 시장 구분이 없어 하나다. */
-export const MACRO_BRIEFING_SEED_SURFACE = 'macro-briefing';
-
 export function peekMacroBriefingStatic(
     snapshot: EconomySnapshot,
     dateHour: string

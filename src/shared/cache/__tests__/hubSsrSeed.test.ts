@@ -14,6 +14,7 @@ vi.mock('@/shared/cache/redisClient', () => ({
     getRedisClient: vi.fn(() => mockRedis),
 }));
 
+import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import { getRedisClient } from '@/shared/cache/redisClient';
 import { readHubSsrSeed, writeHubSsrSeed } from '../hubSsrSeed';
 
@@ -42,13 +43,13 @@ describe('hubSsrSeed', () => {
      * 않는다(`hubSsrSeed.ts` 상수 주석). 12h는 크론 창 사이 최대 공백(≈10시간 35분)
      * 바로 위 값이다.
      */
-    it('TTL 12시간으로 쓴다', async () => {
+    it('TTL은 반나절(SECONDS_PER_HALF_DAY)이다', async () => {
         await writeHubSsrSeed('macro-briefing', { briefing: 'y' });
 
         expect(mockSet).toHaveBeenCalledWith(
             expect.any(String),
             { briefing: 'y' },
-            { ex: 12 * 60 * 60 }
+            { ex: SECONDS_PER_HALF_DAY }
         );
     });
 

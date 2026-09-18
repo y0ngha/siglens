@@ -11,12 +11,6 @@ import { marketBriefingContextOf } from '../lib/marketBriefingContext';
 import { readHubSsrSeed } from '@/shared/cache/hubSsrSeed';
 
 /**
- * ISR static-safe peek of the cached briefing. core peekBriefingCache(읽기전용)를 Next
- * data cache로 감싼다. 키는 date-hour(매시 자연 무효화)로 충분 — 같은 시간대면 같은
- * cached briefing. revalidate=1h, `market:briefing` tag.
- * 태그는 summary/sector와 분리한다(공유 시 한 무효화가 셋 다 날리는 blast-radius 방지).
- */
-/**
  * 프리웜이 쓰고 이 모듈이 읽는 SSR seed의 키. **시장별로 갈라야 한다** — 한 키를
  * 공유하면 먼저 구워진 쪽 브리핑이 다른 시장 페이지에 그대로 나간다(이 파일의
  * `unstable_cache` 키가 `scope.id`를 포함하는 이유와 같다).
@@ -25,6 +19,12 @@ export function marketBriefingSeedSurface(scope: DashboardScope): string {
     return `market-briefing:${scope.id}`;
 }
 
+/**
+ * ISR static-safe peek of the cached briefing. core peekBriefingCache(읽기전용)를 Next
+ * data cache로 감싼다. 키는 date-hour(매시 자연 무효화)로 충분 — 같은 시간대면 같은
+ * cached briefing. revalidate=1h, `market:briefing` tag.
+ * 태그는 summary/sector와 분리한다(공유 시 한 무효화가 셋 다 날리는 blast-radius 방지).
+ */
 export function peekBriefingStatic(
     summary: MarketSummaryData,
     dateHour: string,
