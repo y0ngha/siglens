@@ -25,6 +25,7 @@ import { toEnrichedMarketNewsItem } from '@/entities/market-news/lib/toEnrichedM
 import { DEFAULT_DIGEST_MODEL_ID } from '@/entities/market-news/lib/marketNewsConstants';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { PREWARM_PROVIDER_FALLBACK } from '@/shared/config/prewarm';
+import { writeHubSsrSeed } from '@/shared/cache/hubSsrSeed';
 
 /**
  * 허브 페이지의 AI 콘텐츠를 **서버에서 미리 굽는다**.
@@ -90,18 +91,22 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
- * `peek`가 값을 돌려줄 때까지 짧게 재시도한다. 끝내 비면 `false`.
+ * `peek`가 값을 돌려줄 때까지 짧게 재시도한다. 끝내 비면 `null`.
+ *
+ * 값을 그대로 돌려주는 이유: 브리핑은 이 값을 SSR seed로 한 벌 더 저장한다
+ * (`writeHubSsrSeed`). 불린만 돌려주면 호출부가 방금 읽은 본문을 다시 읽어야 한다.
  */
-async function readBackWithRetry(
-    peek: () => Promise<unknown>
-): Promise<boolean> {
+async function readBackWithRetry<T>(
+    peek: () => Promise<T | null>
+): Promise<T | null> {
     for (let attempt = 0; attempt < READ_BACK_ATTEMPTS; attempt += 1) {
-        if ((await peek()) !== null) return true;
+        const value = await peek();
+        if (value !== null) return value;
         if (attempt < READ_BACK_ATTEMPTS - 1) {
             await sleep(READ_BACK_INTERVAL_MS);
         }
     }
-    return false;
+    return null;
 }
 
 /**
@@ -150,12 +155,19 @@ function marketBriefingTargets(): HubTarget[] {
             );
             // context는 캐시 키에 접힌다 — 액션·peek와 **같은 헬퍼**여야 한다.
             const context = marketBriefingContextOf(scope, summary);
+            const surface = `market-briefing:${scope.id}` as const;
             const peek = () => peekBriefingCache(summary, context);
-            if ((await peek()) !== null) return 'alreadyFresh';
+            const cached = await peek();
+            if (cached !== null) {
+                // 이미 손에 있는 값이다 — seed를 최신으로 유지하는 비용은 SET 한 번.
+                await writeHubSsrSeed(surface, cached);
+                return 'alreadyFresh';
+            }
             await runBriefing(summary, context);
-            return (await readBackWithRetry(peek))
-                ? 'generated'
-                : 'keyMismatch';
+            const readBack = await readBackWithRetry(peek);
+            if (readBack === null) return 'keyMismatch';
+            await writeHubSsrSeed(surface, readBack);
+            return 'generated';
         },
     }));
 }
@@ -167,11 +179,16 @@ function macroBriefingTarget(): HubTarget {
         run: async () => {
             const snapshot = await getEconomySnapshot();
             const peek = () => peekMacroBriefingCache(snapshot);
-            if ((await peek()) !== null) return 'alreadyFresh';
+            const cached = await peek();
+            if (cached !== null) {
+                await writeHubSsrSeed('macro-briefing', cached);
+                return 'alreadyFresh';
+            }
             await runMacroBriefing(snapshot);
-            return (await readBackWithRetry(peek))
-                ? 'generated'
-                : 'keyMismatch';
+            const readBack = await readBackWithRetry(peek);
+            if (readBack === null) return 'keyMismatch';
+            await writeHubSsrSeed('macro-briefing', readBack);
+            return 'generated';
         },
     };
 }
@@ -221,7 +238,9 @@ function newsDigestTargets(): HubTarget[] {
                     ...options,
                     providerFallback: PREWARM_PROVIDER_FALLBACK,
                 });
-                return (await readBackWithRetry(peek))
+                // 다이제스트는 seed를 두지 않는다 — 입력이 DB 행 목록이라 분 단위로
+                // 안 움직이고, 정적 peek이 같은 쿼리로 입력을 다시 만들어 키가 맞는다.
+                return (await readBackWithRetry(peek)) !== null
                     ? 'generated'
                     : 'keyMismatch';
             },

@@ -209,7 +209,6 @@
 
 ## [fix/visitor-diagnostics-effective-now Round 2 | privacy policy effective date sync | 2026-09-10]
 - Status: APPROVED (round 2, zero findings)
-  - Round 1 finding (fixed): `docs/superpowers/specs/2026-09-02-visitor-metrics-design.md` §14.3–14.5 described the removed privacy-policy effective-date gate as the current design. Specification documented behaviour that implementation no longer contained — stale documentation left after the gate code was deleted. Fixed by retitling §14.4 "(철회됨)" with explicit "do not reintroduce" warning, correcting §14.5's deletion steps, and adding §14.6 recording the archival of the gate.
   - Development note: Two self-inflicted errors caught in this round, neither shipped.
     1. `git checkout -- <file>` destroyed uncommitted work. While falsification-testing (forcing three columns back to null to test the fixture), reverted the scratch edit with `git checkout --`, which restored the file to HEAD. That silently discarded the actual feature edit too, since it was uncommitted. Detected by grepping for the removed constant afterwards; the edit had to be re-applied. Lesson: save intended content first (stash/copy) rather than assuming `git checkout --` only undoes the most recent tweak.
     2. Anchored-replace assert used a string that did not match the text just written (missing backticks around an identifier). The assert fired before the file write, so nothing was corrupted — assert doing its job. Worth logging as evidence that the "anchor + assert, never line-slice" rule prevents data corruption.
@@ -322,11 +321,6 @@
   - Rule: CONVENTIONS.md — Architecture documentation must mirror implementation; cross-widget dependency edges must be registered
   - Context: Added agent-chat → layout edge to documented cross-widget dependency graph.
 
-## [fix/node24-icu-hydration Round 1 | Node.js 24 ICU hydration | 2026-09-17]
-- Violation: JSDoc claimed the Dockerfile ICU build guard verified formatter's ICU behavior (year/month-long/day and other locales), but the guard only checks ko-KR hour12 time and compact currency formatting
-  - Rule: CONVENTIONS.md — JSDoc and code comments must match code behavior; documentation claiming verification for capabilities that are unverified is misleading
-  - Context: Fixed by softening the wording to state that the guard is a strong locale-data-level signal, not a per-format verification guarantee. Build verification is infrastructure-level (Dockerfile isolation), not API-level (per-formatter) proof.
-
 ## [PR #839 Round 2 | fix/seo-live-audit | 2026-09-18]
 - Violation: New derived value in component prop composition lacking unit test. Dataset JSON-LD `temporalCoverage` field changed from hardcoded literal to computed value derived from stats (`${periodStart}/${periodEnd}`). Composition logic inside a private builder function `buildJsonLdNode()`, but no test verified the composed value with distinct start/end values or the removal of `dateModified` field.
   - Rule: (new) Derived values computed and composed into component props must be tested at the composition point, not left to visual rendering tests. When a prop receives a computed value, unit tests must verify the computation and its effects (field additions, removals, transformations).
@@ -346,21 +340,16 @@
 - Violation: ~300-char ICU hydration guard logic duplicated in Dockerfile builder and runner stages; risk of updating only one during maintenance
   - Rule: CONVENTIONS.md — Extract duplicated logic/constants to a single source; both stages must call the same script
   - Context: Extracted to `scripts/assert-icu-locale.mjs` and called from both stages. Added `.gitignore` allowlist entry for `/scripts/**` exception.
-- Violation: JSDoc stated the guard verifies "Intl option combo `src/shared/lib/formatSnapshotAsOf.ts` uses (year numeric / month long / day numeric)" but the check did not verify that combo
-  - Rule: CONVENTIONS.md — JSDoc and code comments must match code behavior; explicit verification claims require matching checks
-  - Context: Added exact Intl option verification to `scripts/assert-icu-locale.mjs` (year/month/day), updated JSDoc to match the code.
 
 ## [fix/seo-meta-description-markdown Round 2 | fix/seo-meta-description-markdown | 2026-09-18]
 - Violation: single-marker italic regexes (`/\*(.+?)\*/g`, `/_(.+?)_/g`) lacked lookaround boundaries, so two unrelated `*` or `_` in a sentence were treated as a pair and the text between them was deleted (e.g., `BRK_A와 BRK_B` → `BRKA와 BRKB`, `250*2 … 100*3` → `2502 … 1003`). The function's output feeds `<meta name="description">`, making the truncation visible to search engines.
   - Rule: MISTAKES.md Pattern Matching #20.5 — regex patterns must use lookaround boundaries to match intended text only; unguarded inline delimiters across multiple potential markers cause false phrase boundaries and unwanted deletions
   - Context: Fixed with lookaround boundaries (non-whitespace inside, no word char / same marker outside) plus regression tests in `src/shared/lib/stripSnapshotMarkdown.ts`.
 
-## [fix/seo-cls-sitemap-polish Round 1 | PWA banner input gating | 2026-09-18]
-- Violation: Window event listener (`siglens:pwa-trigger`) bypass — JSDoc claimed "input-gated" banner, but event producer fired without user gesture (auto-analysis at member mount, auto-retry after failed SSR analysis)
-  - Rule: CONVENTIONS.md — Declarations and runtime behavior must be in sync; a guard cannot be claimed in JSDoc if a producer path on the same handler bypasses it
-  - Context: Whole event-driven path deleted; banner mode determined deterministically at mount instead.
-
 ## [fix/seo-cls-sitemap-polish Round 4 | PWA banner Polish | 2026-09-18]
+- Status: APPROVED (zero findings)
+
+## [feat/hub-briefing-ssr-seed Round 3 | briefing cache surface stability | 2026-09-18]
 - Status: APPROVED (zero findings)
 ## [PR #827 | feat/ai-provider-fallback-core-170 | 2026-09-15]
 - Violation: BLOCKER — agent provider fallback decided per turn, not per step. Stalling DeepSeek re-costs the 90s stall timeout every step of a multi-step turn, creating cascading retries within a single inference request.
@@ -437,4 +426,18 @@
   - Context: Rewritten to assert equality with total elapsed time, verified against old code via revert-check
 
 ## [feat/hub-ai-prewarm Round 4 | SEO prewarm hub phase | 2026-09-18]
+- Status: APPROVED (zero findings)
+
+## [feat/hub-briefing-ssr-seed Round 1 | 허브 브리핑 SSR seed | 2026-09-18]
+- Violation: `SEED_TTL_SECONDS` JSDoc claimed the seed's `generatedAt` is rendered by `BriefingCard`, so a stale seed would disclose its age. Neither core briefing response type has `generatedAt`, the seed/peek path passes `generatedAt: ''`, and `BriefingCard` hides the timestamp row when it is falsy — the actual behavior is the opposite of the claim, and the claim was load-bearing for the TTL argument.
+  - Rule: MISTAKES.md §15.6 — comments must match the code they describe
+  - Context: Comment corrected to state that seed-sourced briefings render with no timestamp (TTL is the only staleness bound), and the TTL shortened 18h → 12h, just above the largest cron gap (09:55→20:30 UTC ≈ 10h35m).
+
+## [feat/hub-briefing-ssr-seed Round 2 | 허브 브리핑 SSR seed | 2026-09-18]
+- Violation: after the TTL change the design doc's ASCII flow diagram still read `SET(TTL 18h)` while the section below it documented 12h — the same stale-value defect migrating from the code comment into the doc during its own fix.
+  - Rule: MISTAKES.md §15.6 — the same file must not contradict itself after a value change
+  - Context: Diagram updated to 12h; grepped the doc, module and test for `18h`/`18 * 60` — zero remaining.
+- Development note (self-inflicted, caught before commit): wrote `src/entities/market-summary/__tests__/briefingStaticCache.test.ts` with the Write tool without checking whether it existed. It did — the overwrite deleted 7 existing tests (150 lines) and the review approved that diff without flagging the deletion. Caught afterwards by reading `git status` (the file showed `M`, not `??`). Restored with `git checkout --` and the 2 new seed tests appended in the existing file's style. Lesson: a `M` in `git status` for a file believed to be new means something was overwritten — and "tests still pass" does not detect deleted tests.
+
+## [feat/hub-briefing-ssr-seed Round 3 | 허브 브리핑 SSR seed | 2026-09-18]
 - Status: APPROVED (zero findings)

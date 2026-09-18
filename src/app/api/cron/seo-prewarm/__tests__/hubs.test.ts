@@ -18,6 +18,7 @@ const mocks = vi.hoisted(() => ({
     getMarketNewsList: vi.fn(),
     selectAggregateNewsItems: vi.fn(),
     marketBriefingContextOf: vi.fn(),
+    writeHubSsrSeed: vi.fn(),
 }));
 
 vi.mock('next/cache', () => ({ revalidateTag: mocks.revalidateTag }));
@@ -48,6 +49,9 @@ vi.mock('@/entities/market-news/api', async importOriginal => ({
 vi.mock('@/entities/news-article', async importOriginal => ({
     ...(await importOriginal<typeof import('@/entities/news-article')>()),
     selectAggregateNewsItems: mocks.selectAggregateNewsItems,
+}));
+vi.mock('@/shared/cache/hubSsrSeed', () => ({
+    writeHubSsrSeed: mocks.writeHubSsrSeed,
 }));
 vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
     marketDataProviderFor: vi.fn(() => ({})),
@@ -320,6 +324,52 @@ describe('runHubPrewarm', () => {
         expect(mocks.runMarketNewsDigest).toHaveBeenCalledWith(
             expect.objectContaining({ reasoning: true, locale: 'ko' })
         );
+    });
+
+    /**
+     * core 캐시 키가 시세에서 파생되는 탓에, 프리웜이 쓴 값을 페이지가 나중에 같은 키로
+     * 읽지 못한다(2026-09-18 실측: 15분 뒤 miss). 그래서 확인한 본문을 표면 단위 고정
+     * 키에 한 벌 더 둔다 — 이게 없으면 /market·/economy는 계속 빈 채로 색인된다.
+     */
+    it('브리핑은 새로 구웠을 때 SSR seed를 쓴다', async () => {
+        await runHubPrewarm();
+
+        expect(mocks.writeHubSsrSeed).toHaveBeenCalledWith(
+            'market-briefing:us',
+            { briefing: 'x' }
+        );
+        expect(mocks.writeHubSsrSeed).toHaveBeenCalledWith('macro-briefing', {
+            briefing: 'y',
+        });
+    });
+
+    it('이미 캐시에 있어도 seed는 갱신한다 — 값이 이미 손에 있다', async () => {
+        mocks.peekBriefingCache.mockResolvedValue({ briefing: 'x' });
+        mocks.peekMacroBriefingCache.mockResolvedValue({ briefing: 'y' });
+        mocks.peekMarketNewsDigestCache.mockResolvedValue({
+            currentDriverKo: 'z',
+        });
+
+        const result = await runHubPrewarm();
+
+        expect(result.alreadyFresh).toBe(hubTargets().length);
+        expect(mocks.writeHubSsrSeed).toHaveBeenCalledWith('macro-briefing', {
+            briefing: 'y',
+        });
+    });
+
+    /**
+     * 다이제스트는 입력이 DB 행 목록이라 정적 peek이 같은 입력을 다시 만들어 키가 맞는다.
+     * seed까지 두면 색인된 본문의 출처가 둘이 되어 진단이 어려워진다.
+     */
+    it('다이제스트에는 seed를 쓰지 않는다', async () => {
+        await runHubPrewarm();
+
+        const surfaces = mocks.writeHubSsrSeed.mock.calls.map(c => c[0]);
+        expect(surfaces.some(x => String(x).includes('news-digest'))).toBe(
+            false
+        );
+        expect(surfaces).toHaveLength(Object.keys(DASHBOARD_SCOPES).length + 1);
     });
 
     /**

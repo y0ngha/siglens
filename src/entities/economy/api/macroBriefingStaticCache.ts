@@ -7,6 +7,7 @@ import {
 } from '@y0ngha/siglens-core';
 
 import { SECONDS_PER_DAY } from '@/shared/config/time';
+import { readHubSsrSeed } from '@/shared/cache/hubSsrSeed';
 
 /**
  * /economy SSR seed — 캐시된 macro briefing을 read-only로 surface한다.
@@ -30,7 +31,11 @@ export function peekMacroBriefingStatic(
     dateHour: string
 ): Promise<MacroBriefingResponse | null> {
     return unstable_cache(
-        () => peekMacroBriefingCache(snapshot),
+        async () =>
+            // 이유는 `briefingStaticCache`와 같다 — 입력 파생 키라 프리웜이 쓴 값을
+            // 나중에 같은 키로 읽지 못한다. SSR seed가 그 공백을 메운다.
+            (await peekMacroBriefingCache(snapshot)) ??
+            (await readHubSsrSeed<MacroBriefingResponse>('macro-briefing')),
         ['economy-briefing-peek-static', dateHour],
         { revalidate: SECONDS_PER_DAY, tags: ['economy:briefing'] }
     )();

@@ -8,6 +8,7 @@ import {
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import type { DashboardScope } from '@/shared/config/dashboardScope';
 import { marketBriefingContextOf } from '../lib/marketBriefingContext';
+import { readHubSsrSeed } from '@/shared/cache/hubSsrSeed';
 
 /**
  * ISR static-safe peek of the cached briefing. core peekBriefingCache(읽기전용)를 Next
@@ -24,7 +25,13 @@ export function peekBriefingStatic(
     // **같은 헬퍼**로 만들어야 peek이 실제로 쓰인 키를 읽는다.
     const context = marketBriefingContextOf(scope, summary);
     return unstable_cache(
-        () => peekBriefingCache(summary, context),
+        async () =>
+            // core 캐시 키는 시세에서 파생돼 갱신마다 바뀐다. 프리웜이 쓴 값을 여기서
+            // 같은 키로 다시 읽을 보장이 없어(실측: 15분 뒤 miss) SSR seed로 물러난다.
+            (await peekBriefingCache(summary, context)) ??
+            (await readHubSsrSeed<MarketBriefingResponse>(
+                `market-briefing:${scope.id}`
+            )),
         // `scope`가 키에 **반드시** 있어야 한다. 예전 키는 `dateHour` 하나뿐이라
         // 미국·한국이 같은 시간대에 같은 엔트리를 공유했다 — 먼저 렌더된 쪽의
         // 브리핑이 다른 시장 페이지에 그대로 나간다.
