@@ -1,5 +1,6 @@
 import 'server-only';
 import { revalidateTag } from 'next/cache';
+import { runHubPrewarm } from './hubs';
 import {
     buildPrewarmUniverse,
     isSnapshotFresh,
@@ -21,6 +22,7 @@ import {
     getInFlightMarker,
     isSkipped,
     loadStructurallyUnavailable,
+    LOCK_TTL_SECONDS,
     markInFlight,
     markSkipped,
     prewarmUnitKey,
@@ -108,6 +110,23 @@ const BATCH_DEADLINE_MS = 600_000; // 10min
  * AbortSignal threading은 별도 작업으로 대응한다.
  */
 const UNIT_TIMEOUT_MS = 120_000; // 2min
+
+/**
+ * 배치 전체(허브 + 심볼)가 끝나 있어야 하는 wall-clock 예산.
+ *
+ * 락은 두 단계에 걸쳐 하나로 잡혀 있고, 각 단계의 마감은 유닛 **사이**에서만
+ * 검사되므로 실제 최악은 `마감 + 그 단계의 유닛 상한`이다:
+ * 허브 `HUB_DEADLINE_MS` 120s + `HUB_UNIT_TIMEOUT_MS` 45s,
+ * 심볼 `BATCH_DEADLINE_MS` 600s + `UNIT_TIMEOUT_MS` 120s = 885s.
+ * `LOCK_TTL_SECONDS`(900s)까지 15s밖에 안 남는다 — FIX G가 막으려던 락 오버랩에
+ * 그건 여유가 아니다. 이 예산으로 심볼 마감을 잘라 최악을 840s로 묶는다.
+ *
+ * `LOCK_TTL_SECONDS`를 lock.ts에서 import하는 이유: 여기 숫자를 다시 적으면 한쪽만
+ * 바뀌어도 아무도 모르게 오버랩이 열린다.
+ */
+const LOCK_SAFETY_MARGIN_MS = 60_000; // 1min
+const BATCH_WALL_CLOCK_BUDGET_MS =
+    LOCK_TTL_SECONDS * 1000 - LOCK_SAFETY_MARGIN_MS;
 // overall을 마지막에 둬 bars/scorecard 등 다른 축이 이미 채운 Redis 캐시를 HIT로 재활용한다.
 const TAB_ORDER: readonly SeoSnapshotTab[] = [
     'technical',
@@ -297,8 +316,64 @@ function logStarvationWatch(
 export async function runPrewarmBatch(
     clock: PrewarmClock = DEFAULT_CLOCK
 ): Promise<PrewarmBatchCounts> {
-    const batchDeadline = clock.now() + BATCH_DEADLINE_MS;
+    /*
+     * `durationMs`의 기준점. **마감(`batchDeadline`)과 분리해 둔다.**
+     *
+     * 예전에는 `batchDeadline - BATCH_DEADLINE_MS`로 역산했는데, 마감을 허브 단계
+     * 뒤로 옮기면서 그 역산이 심볼 루프만 재게 됐다. 그런데 이 값의 존재 이유는
+     * (`PrewarmBatchCounts` 주석) "배치 실측 시간이 tick 주기를 넘겨 다음 tick이
+     * 락에 막히는" 구간을 보는 것이고, **락은 허브 + 심볼을 합쳐 잡혀 있다.**
+     * 역산을 그대로 뒀다면 운영자가 보는 숫자는 tick 주기 아래인데 실제 락 보유는
+     * 이미 넘긴 상태가 될 수 있다 — 이 필드가 잡으라고 만든 바로 그 상황이다.
+     */
+    const batchStartedAt = clock.now();
+
+    /*
+     * 마감은 **허브 단계가 끝난 뒤** 잡되, 락 예산으로 한 번 더 자른다.
+     *
+     * 허브 뒤에 잡는 이유: 먼저 잡으면 허브가 쓴 시간이 심볼 예산에서 그대로 빠져
+     * `BATCH_DEADLINE_MS`가 "심볼에 10분"이라는 뜻을 잃는다.
+     *
+     * 자르는 이유: 두 단계의 마감은 모두 **유닛 사이에서만** 검사되므로 실제 최악은
+     * 각 마감 + 그 단계의 유닛 상한이다 — 허브 120 + 45, 심볼 600 + 120 = 885초.
+     * `LOCK_TTL_SECONDS`(900초)까지 15초밖에 안 남는데, 이 여유가 곧 FIX G가 막으려던
+     * "락 만료 → 다음 tick이 새 락 획득 → 배치 2개 동시 실행"의 안전장치다.
+     * 그래서 심볼 마감을 `BATCH_WALL_CLOCK_BUDGET_MS` 안으로 자른다. 허브가 평소처럼
+     * 빨리 끝나면(실측 1분 내외) 잘림이 없고, 허브가 마감을 다 쓴 최악에서만
+     * 심볼 쪽이 줄어든다 — 줄어드는 쪽이 락 오버랩보다 낫다.
+     */
+
+    /*
+     * 허브 AI 콘텐츠를 **먼저** 굽는다(열 개, 자체 마감 120초).
+     *
+     * 앞에 두는 이유는 물량 차이다 — 심볼 루프는 마감까지 계속 돌므로 뒤에 두면
+     * 허브가 매번 굶는다. 반대로 허브는 열 개로 끝나 심볼 예산을 거의 안 먹는다.
+     *
+     * 실패해도 심볼 배치는 그대로 진행한다. 허브는 이 크론의 부가 임무고,
+     * 종목 스냅샷이 이 크론의 본래 계약이다.
+     */
+    const hubs = await runHubPrewarm(clock.now).catch(error => {
+        console.error(
+            '[hub-prewarm] 단계 전체 실패 — 심볼 배치는 계속한다',
+            error
+        );
+        return null;
+    });
+    const batchDeadline = Math.min(
+        clock.now() + BATCH_DEADLINE_MS,
+        // 마지막 유닛은 마감 검사를 통과한 직후 시작해 `UNIT_TIMEOUT_MS`만큼 더
+        // 돌 수 있다. 그 오버슈트까지 예산 안에 들어오도록 미리 빼 둔다.
+        batchStartedAt + BATCH_WALL_CLOCK_BUDGET_MS - UNIT_TIMEOUT_MS
+    );
     const isPastDeadline = () => clock.now() > batchDeadline;
+    if (hubs !== null) {
+        console.log(
+            `[hub-prewarm] 생성 ${hubs.generated}/${hubs.attempted}` +
+                `, 캐시신선 ${hubs.alreadyFresh}, 데이터없음 ${hubs.noData}` +
+                `, 키불일치 ${hubs.keyMismatch}, 실패 ${hubs.failed}` +
+                `, 마감초과 건너뜀 ${hubs.skippedByDeadline}`
+        );
+    }
     // **의도적으로 `clock.now()`가 아니다.** `PrewarmClock`은 경과 시간 예산
     // (데드라인·sleep)을 테스트가 조작하기 위한 것이고, 그 테스트들은 epoch에서
     // 파생한 임의의 값을 넣는다. 반면 여기 두 판정(마감 경계, 장중 여부)은 **달력**이
@@ -412,7 +487,7 @@ export async function runPrewarmBatch(
     }
 
     counts.fmpBudgetUsed = await getFmpBudgetUsed();
-    counts.durationMs = clock.now() - (batchDeadline - BATCH_DEADLINE_MS);
+    counts.durationMs = clock.now() - batchStartedAt;
     return counts;
 }
 
