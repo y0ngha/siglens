@@ -267,7 +267,11 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     /**
      * 랜딩 검색 redirect.
      *
-     * `/?q=AAPL` 형태의 WebSite SearchAction 요청을 종목 페이지로 즉시 redirect한다.
+     * `/?q=AAPL` 형태의 **딥링크**를 종목 페이지로 즉시 redirect한다. 예전에는
+     * `WebSite` SearchAction 마크업과 짝이었는데 그 선언은 지웠다 — 구글이
+     * 사이트링크 검색창을 2023-11에 폐기했고 이 경로는 검색 결과 페이지도
+     * 아니었다(`SiteJsonLd.tsx` 주석). 리다이렉트 자체는 티커를 아는 사용자의
+     * 진입 경로로 계속 쓰인다.
      * 이 처리를 page.tsx가 아닌 proxy에 두는 이유는, page.tsx에서 `searchParams`를
      * 소비하면 Next.js가 해당 라우트를 dynamic으로 분류해 ISR/`x-vercel-cache: HIT`을
      * 받을 수 없기 때문이다. proxy는 모든 요청에 대해 항상 실행되므로 redirect 처리는

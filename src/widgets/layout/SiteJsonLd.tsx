@@ -10,16 +10,19 @@ export function SiteJsonLd() {
         '@id': `${SITE_URL}#website`,
         name: SITE_NAME,
         url: SITE_URL,
-        // urlTemplate은 홈의 `?q=` 핸들러(src/app/page.tsx)와 짝을 이룬다.
-        // SearchAction이 광고됐는데 핸들러가 빠지면 sitelinks searchbox 신호가 깨진다.
-        potentialAction: {
-            '@type': 'SearchAction',
-            target: {
-                '@type': 'EntryPoint',
-                urlTemplate: `${SITE_URL}/?q={search_term_string}`,
-            },
-            'query-input': 'required name=search_term_string',
-        },
+        /*
+         * `potentialAction`(SearchAction)은 뺐다.
+         *
+         * 그 마크업의 유일한 용도였던 **사이트링크 검색창**을 구글이 2023-11에
+         * 폐기했다 — 지금은 어떤 검색 기능도 만들지 않는 장식이다. 게다가 우리
+         * 구현은 사실과 어긋나 있었다: `urlTemplate`이 가리키는 `/?q=apple`은
+         * 검색 결과 페이지가 아니라 `/APPLE`로 307 리다이렉트되고, 그 심볼이
+         * 없으면 404다(2026-09-18 운영 실측). 아무것도 못 얻는 마크업이 거짓
+         * 주장까지 하고 있던 셈이다.
+         *
+         * ⚠️ `?q=` 핸들러 자체는 남긴다(`proxy.ts`) — 티커를 아는 사용자가 쓰는
+         * 딥링크로 여전히 동작한다. 지우는 것은 "검색 엔드포인트가 있다"는 **선언**뿐이다.
+         */
     };
     return <JsonLd data={data} />;
 }

@@ -1,6 +1,14 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+vi.mock('@/app/[locale]/news/_lib/categoryDigests', () => ({
+    // 새 의존성 — mock하지 않으면 실제 peek가 테스트 DB를 건드려
+    // `[MarketNewsDigest/PeekStatic] failed:` 로그가 매 실행마다 찍힌다.
+    fetchCategoryDigestLines: vi.fn(async (categories: readonly string[]) =>
+        categories.map(() => null)
+    ),
+}));
+
 vi.mock('@/app/[locale]/news/_lib/categoryPreviews', () => ({
     fetchCategoryPreviews: vi.fn(async () => ['헤드라인 1']),
 }));

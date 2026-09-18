@@ -1559,7 +1559,7 @@
                 }
             },
             "newsCategory": {
-                "descriptionTemplate": "为您整理{label}领域的最新新闻。AI分析每篇文章的利好/利空氛围,并以摘要形式概括该类别的整体动态。",
+                "descriptionSuffix": "AI 判断每条新闻偏多还是偏空，并把该类别的整体走向汇总成摘要。",
                 "emptyDescriptionTemplate": "无法加载{label}的最新新闻。",
                 "emptyTitleTemplate": "{label}新闻",
                 "itemListName": "{label}最新新闻",

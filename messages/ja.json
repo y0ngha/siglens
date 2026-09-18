@@ -1559,7 +1559,7 @@
                 }
             },
             "newsCategory": {
-                "descriptionTemplate": "{label}分野の最新ニュースを整理してお届けします。各記事の好材料・悪材料の分位をAIが分析し、カテゴリー全体の動向をダイジェストで要約します。",
+                "descriptionSuffix": "各記事の強気・弱気のトーンをAIが判定し、カテゴリー全体の流れをダイジェストにまとめます。",
                 "emptyDescriptionTemplate": "{label}の最新ニュースを読み込めませんでした。",
                 "emptyTitleTemplate": "{label}ニュース",
                 "itemListName": "{label}の最新ニュース",

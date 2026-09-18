@@ -37,16 +37,19 @@ describe('SiteJsonLd', () => {
         expect(data.url).toBe('https://siglens.io');
     });
 
-    it('includes SearchAction with urlTemplate', () => {
+    /**
+     * 사이트링크 검색창은 구글이 2023-11에 폐기했고, 우리 `urlTemplate`이 가리키던
+     * `/?q=`는 검색 결과가 아니라 심볼 리다이렉트(없으면 404)였다. 아무 기능도
+     * 만들지 않으면서 사실과 어긋나는 선언이라 지웠다 — 되살아나지 않게 고정한다.
+     */
+    it('SearchAction을 광고하지 않는다', () => {
         render(<SiteJsonLd />);
 
         const script = screen.getByTestId('json-ld');
         const data = JSON.parse(script.innerHTML);
 
-        expect(data.potentialAction['@type']).toBe('SearchAction');
-        expect(data.potentialAction.target.urlTemplate).toContain(
-            '?q={search_term_string}'
-        );
+        expect('potentialAction' in data).toBe(false);
+        expect(script.innerHTML).not.toContain('SearchAction');
     });
 
     it('includes @id for entity graph referencing', () => {

@@ -54,4 +54,26 @@ describe('buildCategoryPageDescription', () => {
     it('빈 label이어도 throw하지 않는다', () => {
         expect(() => buildCategoryPageDescription('', t)).not.toThrow();
     });
+
+    /**
+     * **카테고리마다 설명이 달라야 한다.** 예전에는 템플릿 하나에 라벨만 갈아 끼워서
+     * 색인 대상 5개의 설명이 사실상 같았다(2026-09-18 운영 실측). 앞머리를 카테고리
+     * 고유 소개 문장으로 바꾼 것이 이 변경의 전부이므로, 되돌아가면 여기서 깨진다.
+     */
+    it('카테고리 소개가 다르면 설명도 서로 다르다', async () => {
+        const tRoot = await getTranslations({ locale: 'ko' });
+        const { CATEGORY_CONFIG } = await import('@/entities/market-news');
+
+        // 설정 전체를 훑는다 — 카테고리가 늘면 그 설명도 자동으로 검사 대상이 된다.
+        const descriptions = Object.values(CATEGORY_CONFIG).map(cfg =>
+            buildCategoryPageDescription(tRoot(cfg.descriptionKey), t)
+        );
+
+        expect(descriptions.length).toBeGreaterThan(1);
+        expect(new Set(descriptions).size).toBe(descriptions.length);
+        // 공통 꼬리표는 그대로 붙는다 — 차별화는 앞머리로만 한다.
+        for (const desc of descriptions) {
+            expect(desc).toContain('AI');
+        }
+    });
 });

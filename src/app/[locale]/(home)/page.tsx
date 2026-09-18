@@ -134,8 +134,13 @@ async function SkillsShowcaseServer() {
     return <SkillsShowcase skills={toSkillShowcaseItems(skills)} />;
 }
 
-// WebSite SearchAction(urlTemplate=`?q={search_term_string}`)의 ?q= 처리는 proxy.ts가 담당한다.
-// page.tsx에서 searchParams를 소비하면 라우트가 dynamic으로 바뀌어 ISR 캐싱이 불가능하기 때문이다.
+// `?q=` 딥링크(티커를 아는 사용자가 `/?q=AAPL`로 바로 들어오는 경로) 처리는 proxy.ts가
+// 담당한다. page.tsx에서 searchParams를 소비하면 라우트가 dynamic으로 바뀌어 ISR 캐싱이
+// 불가능하기 때문이다.
+//
+// 예전에는 이 핸들러가 `WebSite` SearchAction 마크업과 짝이었는데, 그 마크업은 지웠다 —
+// 구글이 사이트링크 검색창을 2023-11에 폐기했고 `?q=`는 검색 결과 페이지도 아니었다
+// (`SiteJsonLd.tsx` 주석). 핸들러는 딥링크로 여전히 쓰이므로 남는다.
 export default async function Home({
     params,
 }: {

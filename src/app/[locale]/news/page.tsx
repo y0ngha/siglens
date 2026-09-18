@@ -20,6 +20,7 @@ import { JsonLd } from '@/shared/ui/JsonLd';
 import { regionsOf, type NavRegionId } from '@/shared/config/assetClassNav';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { fetchCategoryPreviews } from './_lib/categoryPreviews';
+import { fetchCategoryDigestLines } from './_lib/categoryDigests';
 import {
     buildBreadcrumbJsonLd,
     buildWebPageJsonLd,
@@ -186,14 +187,25 @@ export default async function NewsHubPage({
         getTranslations('shared.seo'),
     ]);
     const regions = regionsOf('news');
-    const previews = await Promise.all(
-        regions.map(region =>
-            fetchCategoryPreviews(
-                previewCategoryOf(region.region),
-                isLocale(locale) ? locale : DEFAULT_LOCALE
-            )
-        )
+    const previewCategories = regions.map(region =>
+        previewCategoryOf(region.region)
     );
+    // 미리보기 헤드라인(제3자 제목)과 다이제스트 한 줄(우리 서술)을 함께 싣는다 —
+    // 허브가 남의 제목 모음이 되지 않도록(`categoryDigests` JSDoc).
+    const [previews, digestLines] = await Promise.all([
+        Promise.all(
+            previewCategories.map(category =>
+                fetchCategoryPreviews(
+                    category,
+                    isLocale(locale) ? locale : DEFAULT_LOCALE
+                )
+            )
+        ),
+        fetchCategoryDigestLines(
+            previewCategories,
+            isLocale(locale) ? locale : DEFAULT_LOCALE
+        ),
+    ]);
 
     const hubUrl = `${SITE_URL}${NEWS_HUB_PATH}`;
 
@@ -236,6 +248,7 @@ export default async function NewsHubPage({
                                 REGION_DESCRIPTION_KEY[region.region]
                             )}
                             previewHeadlines={previews[i]}
+                            digestLine={digestLines[i]}
                         />
                     ))}
                 </div>

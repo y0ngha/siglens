@@ -27,6 +27,29 @@ const DEFAULTS = {
 };
 
 describe('CategoryCard', () => {
+    /**
+     * 허브가 남의 기사 제목만 나열하면 스크랩 콘텐츠 쪽으로 기운다. 우리가 쓴
+     * 다이제스트 한 줄이 그 페이지가 스스로 말하는 몫이다 — 없으면(다이제스트 미생성)
+     * 조용히 생략되고 카드는 예전 모양 그대로다.
+     */
+    it('다이제스트 줄이 있으면 렌더하고, 없으면 생략한다', () => {
+        const { unmount } = render(
+            <CategoryCard
+                {...DEFAULTS}
+                digestLine="비트코인이 기관 매수에 힘입어 올랐습니다."
+            />
+        );
+        expect(
+            screen.getByText('비트코인이 기관 매수에 힘입어 올랐습니다.')
+        ).toBeInTheDocument();
+        unmount();
+
+        render(<CategoryCard {...DEFAULTS} />);
+        expect(
+            screen.queryByText('비트코인이 기관 매수에 힘입어 올랐습니다.')
+        ).not.toBeInTheDocument();
+    });
+
     it('koLabel을 heading으로 렌더한다', () => {
         render(<CategoryCard {...DEFAULTS} />);
         expect(

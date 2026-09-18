@@ -409,109 +409,109 @@
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 194,
+        "line": 197,
         "reason": "seo-keywords-ko-only",
         "text": "`${cfg.koLabel} 뉴스`"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 195,
+        "line": 198,
         "reason": "seo-keywords-ko-only",
         "text": "`${cfg.koLabel} 최신 뉴스`"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 196,
+        "line": 199,
         "reason": "seo-keywords-ko-only",
         "text": "`${cfg.koLabel} 뉴스 분석`"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 200,
+        "line": 203,
         "reason": "seo-keywords-ko-only",
         "text": "시장 뉴스 한국어"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 201,
+        "line": 204,
         "reason": "seo-keywords-ko-only",
         "text": "AI 뉴스 다이제스트"
-    },
-    {
-        "file": "src/app/[locale]/news/page.tsx",
-        "line": 106,
-        "reason": "seo-keywords-ko-only",
-        "text": "시장 뉴스"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
         "line": 107,
         "reason": "seo-keywords-ko-only",
-        "text": "주식 뉴스"
+        "text": "시장 뉴스"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
         "line": 108,
         "reason": "seo-keywords-ko-only",
-        "text": "시장 뉴스 한국어"
+        "text": "주식 뉴스"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
         "line": 109,
         "reason": "seo-keywords-ko-only",
-        "text": "AI 뉴스 다이제스트"
+        "text": "시장 뉴스 한국어"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
         "line": 110,
         "reason": "seo-keywords-ko-only",
+        "text": "AI 뉴스 다이제스트"
+    },
+    {
+        "file": "src/app/[locale]/news/page.tsx",
+        "line": 111,
+        "reason": "seo-keywords-ko-only",
         "text": "Siglens 뉴스"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 82,
+        "line": 83,
         "reason": "seo-keywords-ko-only",
         "text": "미국 시장 뉴스"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 84,
+        "line": 85,
         "reason": "seo-keywords-ko-only",
         "text": "미국 마켓 뉴스"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 85,
+        "line": 86,
         "reason": "seo-keywords-ko-only",
         "text": "미국 주식 뉴스"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 86,
+        "line": 87,
         "reason": "seo-keywords-ko-only",
         "text": "미국 외환 뉴스"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 87,
+        "line": 88,
         "reason": "seo-keywords-ko-only",
         "text": "시장 뉴스 한국어"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 88,
+        "line": 89,
         "reason": "seo-keywords-ko-only",
         "text": "미국 주식 뉴스 요약"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 89,
+        "line": 90,
         "reason": "seo-keywords-ko-only",
         "text": "AI 뉴스 다이제스트"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 90,
+        "line": 91,
         "reason": "seo-keywords-ko-only",
         "text": "Siglens 뉴스"
     },

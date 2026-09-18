@@ -1559,7 +1559,7 @@
                 }
             },
             "newsCategory": {
-                "descriptionTemplate": "{label} 분야의 최신 뉴스를 한국어로 정리해 드려요. 각 기사의 호재·악재 분위기를 AI가 분석하고, 카테고리 전반의 흐름을 다이제스트로 요약해 드려요.",
+                "descriptionSuffix": "각 기사의 호재·악재 분위기를 AI가 분석하고, 카테고리 전반의 흐름을 다이제스트로 요약해 드려요.",
                 "emptyDescriptionTemplate": "{label} 최신 뉴스를 불러오지 못했어요.",
                 "emptyTitleTemplate": "{label} 뉴스",
                 "itemListName": "{label} 최신 뉴스",

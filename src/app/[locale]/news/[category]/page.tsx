@@ -189,7 +189,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const canonicalPath = `/news/${cfg.slug}`;
     const title = buildCategoryPageTitle(tRoot(cfg.labelKey), tSeo);
     const fullTitle = `${title} | ${SITE_NAME}`;
-    const description = buildCategoryPageDescription(tRoot(cfg.labelKey), tSeo);
+    const description = buildCategoryPageDescription(
+        tRoot(cfg.descriptionKey),
+        tSeo
+    );
     const keywords = [
         `${cfg.koLabel} 뉴스`,
         `${cfg.koLabel} 최신 뉴스`,
@@ -267,7 +270,7 @@ export default async function CategoryNewsPage({ params }: Props) {
                   url: categoryUrl,
                   name: `${buildCategoryPageTitle(tNav(cfg.labelKey), tSeo)} | ${SITE_NAME}`,
                   description: buildCategoryPageDescription(
-                      tNav(cfg.labelKey),
+                      tNav(cfg.descriptionKey),
                       tSeo
                   ),
                   locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
