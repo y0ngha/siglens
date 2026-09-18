@@ -95,14 +95,19 @@ vi.mock('@/shared/config/queryConfig', () => ({
     },
 }));
 
-vi.mock('@/shared/lib/seo', () => ({
+/**
+ * **부분 목이다.** 전체 목이면 이 모듈에 export가 하나 생길 때마다 이 파일이
+ * `No "x" export is defined on the mock`으로 깨진다 — 실제로 `SYMBOLS_PATH`를
+ * 추가했을 때 이 파일의 테스트 5건이 그렇게 깨졌다(MISTAKES.md §18.5).
+ */
+vi.mock('@/shared/lib/seo', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
     buildWebPageJsonLd: () => ({ '@type': 'WebPage' }),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
     clampSeoDescription: (text: string) => text,
     ROOT_KEYWORDS: ['주식'],
     SITE_NAME: 'Siglens',
     SITE_URL: 'https://siglens.io',
-    SYMBOLS_PATH: '/symbols',
 }));
 
 vi.mock('@/shared/lib/og', () => ({

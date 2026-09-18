@@ -99,8 +99,14 @@ export async function getSeoSnapshotsStatic(
         // `firstGeneratedAt`도 같은 왕복을 탄다. 선언 타입이 `Date | null`이라
         // 히트 렌더에서 문자열이 흘러가면 `.getTime()`을 부르는 다음 소비자가
         // 캐시 상태에 따라서만 깨진다 — 재현이 가장 어려운 형태의 결함이다.
+        //
+        // **`== null`이어야 한다(`=== null` 아님).** 이 컬럼이 생기기 전 코드가 채운
+        // 캐시 항목에는 필드 자체가 없어 히트 시 `undefined`로 돌아온다. 엄격 비교면
+        // `new Date(undefined)` = Invalid Date가 되고, 그건 `null`이 아니라서 소비처의
+        // `?? null`도 통과해 `toISOString()`에서 `RangeError`로 렌더가 죽는다 —
+        // 배포 직후 캐시 TTL(최대 86400s) 동안만 나타나는 형태다.
         firstGeneratedAt:
-            row.firstGeneratedAt === null
+            row.firstGeneratedAt == null
                 ? null
                 : new Date(row.firstGeneratedAt),
     }));

@@ -148,7 +148,7 @@ const BASELINE_DISALLOW = ['/api/'];
  * 심볼 경로가 끼어들 수 없다.
  *
  * Allow가 Disallow를 이기는 근거는 "더 긴 일치가 우선"이라는 표준 규칙이다
- * (`/ko/news/opengraph-image` 23자 > `/*​/opengraph-image` 18자). 파서 동작에
+ * (`/ko/news/opengraph-image` 24자 > `/*​/opengraph-image` 18자). 파서 동작에
  * 의존하는 규칙이라 `robots.test.ts`가 두 방향(허브 허용·심볼 차단)을 고정한다.
  */
 const HUB_SOCIAL_IMAGE_ALLOW = LOCALES.flatMap(locale =>
