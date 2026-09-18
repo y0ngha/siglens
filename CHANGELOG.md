@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.79.4](https://github.com/y0ngha/siglens/compare/v0.79.3...v0.79.4) (2026-09-18)
+
+
+### Bug Fixes
+
+* **seo:** 배포 후 캐시 예열, 종목 탭 FAQ 마크업 제거, lastmod 정직화, core 1.10.1 ([0f6d96a](https://github.com/y0ngha/siglens/commit/0f6d96af44d4a5002cbde7a9f978188081736e57))
+* **seo:** 백테스팅 lastmod 파싱을 순수 함수로 분리해 테스트하고 e2e를 맞춘다 ([775b098](https://github.com/y0ngha/siglens/commit/775b09892689944aade768217362dd4f6ef41cff)), closes [#841](https://github.com/y0ngha/siglens/issues/841)
+
 ## [0.79.3](https://github.com/y0ngha/siglens/compare/v0.79.2...v0.79.3) (2026-09-17)
 
 
