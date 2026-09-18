@@ -290,7 +290,18 @@ describe('robots', () => {
             expect(wildcardGroup).toBeDefined();
             expect(googlebotGroup).toBeDefined();
 
-            expect(googlebotGroup?.allow).toEqual(wildcardGroup?.allow);
+            // superset 단언이다 — 등호가 아니다. Googlebot 그룹은 뉴스 허브 OG를
+            // 되돌리는 Allow를 **더** 갖는다(`HUB_SOCIAL_IMAGE_ALLOW`). parity가
+            // 지켜야 하는 방향은 "`*`에 있는 규칙이 Googlebot에도 있다"이므로
+            // 포함 관계로 고정한다.
+            const wildcardAllow = Array.isArray(wildcardGroup?.allow)
+                ? wildcardGroup.allow
+                : wildcardGroup?.allow
+                  ? [wildcardGroup.allow]
+                  : [];
+            expect(googlebotGroup?.allow).toEqual(
+                expect.arrayContaining(wildcardAllow)
+            );
 
             const wildcardDisallow = Array.isArray(wildcardGroup?.disallow)
                 ? wildcardGroup.disallow
@@ -306,6 +317,77 @@ describe('robots', () => {
             for (const rule of wildcardDisallow) {
                 expect(googlebotDisallow).toContain(rule);
             }
+        });
+
+        /**
+         * 허브 OG만 되돌린 규칙(`HUB_SOCIAL_IMAGE_ALLOW`)을 **경로 판정**으로 고정한다.
+         *
+         * 규칙 문자열만 단언하면 의미를 못 잡는다 — robots.txt의 `*`는 `/`까지 먹어서
+         * `/*​/news/opengraph-image` 같은 패턴 하나로 종목 뉴스 탭 OG(400여 심볼 ×
+         * 4로케일)가 함께 열린다. 그래서 표준 판정(패턴 일치 중 **가장 긴 것**이 이김)을
+         * 그대로 구현해 두 방향을 검사한다: 허브는 열리고 종목은 계속 막힌다.
+         */
+        const patternToRegExp = (pattern: string) =>
+            new RegExp(
+                '^' +
+                    pattern
+                        .split('*')
+                        .map(part => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&'))
+                        .join('.*')
+            );
+
+        const isAllowedForGooglebot = (path: string): boolean => {
+            const group = findGroupByUserAgent(robots().rules, 'Googlebot');
+            const asArray = (v: string | string[] | undefined) =>
+                Array.isArray(v) ? v : v ? [v] : [];
+            const longestMatch = (patterns: readonly string[]) =>
+                patterns
+                    .filter(p => patternToRegExp(p).test(path))
+                    .reduce((max, p) => Math.max(max, p.length), -1);
+
+            const allow = longestMatch(asArray(group?.allow));
+            const disallow = longestMatch(asArray(group?.disallow));
+            // 동률이면 Allow가 이긴다(구글 파서 동작).
+            return allow >= disallow;
+        };
+
+        it('뉴스 허브 OG/twitter-image는 Googlebot에 허용된다', () => {
+            for (const locale of ['ko', 'en', 'ja', 'zh']) {
+                expect(
+                    isAllowedForGooglebot(`/${locale}/news/opengraph-image`)
+                ).toBe(true);
+                expect(
+                    isAllowedForGooglebot(
+                        `/${locale}/news/stock/opengraph-image`
+                    )
+                ).toBe(true);
+                expect(
+                    isAllowedForGooglebot(`/${locale}/news/twitter-image`)
+                ).toBe(true);
+            }
+        });
+
+        it('종목 OG/twitter-image는 여전히 차단된다 — 크롤 예산 61GB를 회수한 근거가 살아 있어야 한다', () => {
+            expect(isAllowedForGooglebot('/ko/AAPL/opengraph-image')).toBe(
+                false
+            );
+            // 허브 패턴이 `*`로 `/AAPL`을 삼켜 열리는 회귀를 정확히 겨냥한다.
+            expect(isAllowedForGooglebot('/ko/AAPL/news/opengraph-image')).toBe(
+                false
+            );
+            expect(
+                isAllowedForGooglebot('/ko/AAPL/options/twitter-image')
+            ).toBe(false);
+            expect(isAllowedForGooglebot('/ko/share/abc/opengraph-image')).toBe(
+                false
+            );
+        });
+
+        it('일반 콘텐츠 경로는 그대로 허용된다', () => {
+            expect(isAllowedForGooglebot('/ko/AAPL')).toBe(true);
+            expect(isAllowedForGooglebot('/ko/news/stock')).toBe(true);
+            expect(isAllowedForGooglebot('/api/analysis/stream')).toBe(true);
+            expect(isAllowedForGooglebot('/api/anything-else')).toBe(false);
         });
     });
 
