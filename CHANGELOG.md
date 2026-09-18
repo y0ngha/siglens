@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.81.1](https://github.com/y0ngha/siglens/compare/v0.81.0...v0.81.1) (2026-09-18)
+
+
+### Bug Fixes
+
+* **seo:** 허브 브리핑을 표면 고정 키에 보관해 크롤러에게 노출한다 ([ce4e207](https://github.com/y0ngha/siglens/commit/ce4e20734f6a50ceb4b43fe09b1aa7ce0a39244c))
+* **seo:** SSR seed TTL을 공용 상수로 바꾸고 밀려난 JSDoc을 되돌린다 ([94fd090](https://github.com/y0ngha/siglens/commit/94fd09002a11c3eff2c971bfe9a8e635e85ef2be))
+
 # [0.81.0](https://github.com/y0ngha/siglens/compare/v0.80.2...v0.81.0) (2026-09-18)
 
 
