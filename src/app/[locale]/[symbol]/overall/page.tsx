@@ -29,7 +29,6 @@ import { getNewsList } from '@/entities/news-article/api';
 import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article';
 import {
     buildBreadcrumbJsonLd,
-    buildFaqJsonLd,
     buildSnapshotMetaDescription,
     buildSymbolSeoContent,
     resolveSymbolOverallSeoContent,
@@ -58,11 +57,11 @@ import { notFound } from 'next/navigation';
 /**
  * H1과 FAQ가 market profile별로 갈라 쓰는 카피 번들.
  *
- * `faq`는 화면 `<dl>`(FaqSection)과 FAQPage 구조화데이터(buildFaqJsonLd) **양쪽의
- * 단일 소스**다. 예전에는 같은 내용이 "안내 문단 3개"와 "FAQ 답변 3개"로 두 벌
- * 있었고, 문단만 화면에 보이고 답변은 마크업에만 있었다 — 구글이 요구하는
- * "마크업한 Q&A가 페이지에 보일 것"을 어기면서 동시에 같은 말을 두 번 하는
- * 중복 콘텐츠이기도 했다. 문단의 고유한 내용은 답변에 흡수했다.
+ * `faq`는 화면 `<dl>`(FaqSection)이 쓰는 문답이다. 예전에는 같은 내용이 "안내 문단
+ * 3개"와 "FAQ 답변 3개"로 두 벌 있었고, 문단만 화면에 보이고 답변은 마크업에만
+ * 있었다 — 구글이 요구하는 "마크업한 Q&A가 페이지에 보일 것"을 어기면서 동시에
+ * 같은 말을 두 번 하는 중복 콘텐츠이기도 했다. 문단의 고유한 내용은 답변에 흡수했다.
+ * FAQPage 구조화데이터는 2026-09-17에 종목 탭에서 뺐다(아래 `FaqSection` 위 주석).
  */
 interface OverallCopy {
     heading: string;
@@ -73,7 +72,7 @@ interface OverallCopy {
 // 미국·한국 주식이 같은 답을 쓰므로(실적·가이던스가 둘 다 있다) 리터럴을 하나만 둔다.
 /**
  * 카피는 `t`로 해석해 번들에 **문자열로** 담는다 — 키만 담으면 소비 지점
- * (H1·FaqSection·buildFaqJsonLd)마다 네임스페이스를 알아야 하고, FAQ 항목은
+ * (H1·FaqSection)마다 네임스페이스를 알아야 하고, FAQ 항목은
  * `{question, answer}` 쌍이라 키 배열로는 짝을 표현할 수 없다.
  */
 type OverallTranslator = (
@@ -469,13 +468,11 @@ export default async function OverallPage({ params }: Props) {
     // 노출하면 실재하지 않는 콘텐츠를 약속하게 된다. `copy`(buildOverallCopy)가
     // marketProfile 하나로 세 답변을 모두 판별한다 — 판별식·가드 이유는 그 함수 JSDoc 참고.
     // 아래 `FaqSection`이 같은 `copy.faq`를 화면에 그린다.
-    const faqJsonLd = buildFaqJsonLd(copy.faq);
 
     return (
         <>
             <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
-            <JsonLd data={faqJsonLd} />
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <SymbolPageHeading>{copy.heading}</SymbolPageHeading>
                 {/* AI 스냅샷 프로즈는 Suspense fallback이 아니라 PERSISTENT server
@@ -538,6 +535,13 @@ export default async function OverallPage({ params }: Props) {
                         hasOptions={hasOptions}
                     />
                 </Suspense>
+                {/*
+                    FAQ는 화면에만 둔다 — FAQPage 구조화데이터는 싣지 않는다.
+                    Google은 2023-08부터 FAQ 리치 결과를 정부·보건 등 권위 사이트로
+                    한정했고, 이 문답은 종목명만 바뀌는 템플릿이라 색인 대상 1,900여
+                    URL에 같은 마크업을 1,900번 복제하는 셈이었다(2026-09-17 감사).
+                    화면 문답은 독자에게 쓸모가 있으므로 그대로 둔다.
+                */}
                 <FaqSection
                     heading={tSeo('faqHeading.overall', { v0: displayName })}
                     items={copy.faq}

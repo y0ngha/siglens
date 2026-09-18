@@ -111,7 +111,7 @@ import { getAssetInfoResilient } from '@/entities/ticker';
 import { OverallContent } from '@/widgets/overall/OverallContent';
 import { OverallFactualFallback } from '@/widgets/overall';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
-import { expectFaqSingleSource } from '@/__tests__/utils/expectFaqSingleSource';
+import { expectVisibleFaqWithoutJsonLd } from '@/__tests__/utils/expectFaqSingleSource';
 import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';
 
 const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);
@@ -248,13 +248,13 @@ describe('OverallPage — isEquity body branching', () => {
      * 예전에는 답변이 JSON-LD 리터럴 안에만 있어 화면 어디에도 없었다 — 구글은
      * 대응하는 내용이 페이지에 보일 것을 요구한다.
      */
-    it('FAQPage 구조화데이터가 화면 FaqSection과 같은 질문·답변을 쓴다', async () => {
+    it('화면 FAQ는 렌더하고 FAQPage 구조화데이터는 싣지 않는다', async () => {
         mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
         const tree = await OverallPage({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        expectFaqSingleSource(tree);
+        expectVisibleFaqWithoutJsonLd(tree);
     });
 
     /**

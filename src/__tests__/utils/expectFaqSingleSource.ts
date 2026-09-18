@@ -43,3 +43,26 @@ export function expectFaqSingleSource(tree: ReactNode): void {
         expect(entities[index].acceptedAnswer.text).toBe(item.answer);
     });
 }
+
+/**
+ * 종목 탭용 가드 — 화면 FAQ는 있고 FAQPage 구조화데이터는 **없어야** 한다.
+ *
+ * Google은 2023-08부터 FAQ 리치 결과를 정부·보건 등 권위 사이트로 한정했다.
+ * 종목 탭의 문답은 종목명만 바뀌는 템플릿이라, 색인 대상 1,900여 URL에 같은
+ * 마크업을 복제하면서 얻는 것이 없었다(2026-09-17 운영 감사). 화면 문답은
+ * 독자에게 쓸모가 있으므로 남긴다 — 그래서 "둘 다 없음"이 아니라 "화면만 있음"을
+ * 단언한다. 허브(홈·경제·공포탐욕)는 그대로 {@link expectFaqSingleSource}를 쓴다.
+ */
+export function expectVisibleFaqWithoutJsonLd(tree: ReactNode): void {
+    const sections = findAllElementsByType(tree, FaqSection);
+    expect(sections, 'FaqSection은 한 번만 렌더돼야 한다').toHaveLength(1);
+    const items = (sections[0]?.props as { items: readonly FaqItem[] }).items;
+    expect(items.length).toBeGreaterThan(0);
+
+    const faqBlocks = collectJsonLdData(tree).filter(
+        d => d['@type'] === 'FAQPage'
+    );
+    expect(faqBlocks, '종목 탭에는 FAQPage JSON-LD를 싣지 않는다').toHaveLength(
+        0
+    );
+}

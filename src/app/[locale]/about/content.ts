@@ -40,7 +40,7 @@ ${SITE_NAME}는 개인 개발자 ${SITE_OPERATOR.name}가 혼자 개발하고 �
 
 ## 한계
 
-AI가 만든 서술은 사실 오류나 수치 오독을 포함할 수 있습니다. 과거 데이터를 기반으로 하므로 미래를 보장하지 않습니다. 실시간 데이터가 아니며, 개인의 재무 상황을 반영하지 않습니다. 모델이나 프롬프트가 바뀌면 같은 입력에도 다른 서술이 나올 수 있습니다.
+AI가 만든 서술은 사실 오류나 수치 오독을 포함할 수 있습니다. 과거 데이터를 기반으로 하므로 미래를 보장하지 않습니다. 실시간 데이터가 아니며, 개인의 재무 상황을 반영하지 않습니다. 모델이나 프롬프트가 바뀌면 같은 입력에도 다른 서술이 나올 수 있습니다. 분석에는 차트 구조에서 산출한 진입·손절·목표 가격대가 포함되지만, 이는 그 가격대에서 무엇이 확인되는지를 설명하기 위한 참고 수치이지 특정 매매를 지시하는 것이 아닙니다.
 
 ## 면책
 
@@ -67,7 +67,7 @@ The static analysis used for search and sharing is regenerated daily after the U
 
 ## Limits
 
-AI-generated prose can contain factual errors or misread numbers. It is based on historical data, so it does not guarantee future outcomes. It is not real-time, and it does not account for your personal financial situation. Changing the model or prompt can produce different prose for the same input.
+AI-generated prose can contain factual errors or misread numbers. It is based on historical data, so it does not guarantee future outcomes. It is not real-time, and it does not account for your personal financial situation. Changing the model or prompt can produce different prose for the same input. An analysis can include entry, stop-loss, and target levels derived from chart structure; those are reference numbers explaining what each level would confirm, not instructions to trade.
 
 ## Disclaimer
 

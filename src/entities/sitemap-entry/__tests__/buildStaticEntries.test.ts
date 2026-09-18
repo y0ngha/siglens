@@ -276,6 +276,79 @@ describe('buildStaticEntries — 주입된 콘텐츠 갱신 시각', () => {
         expect(us!.lastModified.getTime()).toBe(STOCK_NEWS_AT.getTime());
     });
 
+    /**
+     * 2026-09-17 운영 크롤: `/news/forex`가 3주째 기사 없는 빈 카테고리라 페이지는
+     * noindex인데 sitemap에는 실려 있었다. sitemap은 색인 대상만 실어야 한다.
+     */
+    it('마지막 기사가 14일보다 오래된 카테고리는 싣지 않는다', () => {
+        const staleAt = new Date('2026-05-01T00:00:00.000Z'); // NOW - 22일
+        const entries = buildStaticEntries(NOW, {
+            newsLatestPublishedAt: {
+                forex: staleAt,
+                crypto: CRYPTO_NEWS_AT,
+            },
+        });
+        const urls = entries.map(e => e.url);
+        expect(urls).not.toContain(`${SITE_URL}/news/forex`);
+        expect(urls).toContain(`${SITE_URL}/news/crypto`);
+    });
+
+    // 경계: 정확히 14일이면 뺀다(`<` 비교), 1초 모자라면 싣는다.
+    it.each([
+        ['14일 정각', 14 * 24 * 60 * 60 * 1000, false],
+        ['14일에서 1초 모자람', 14 * 24 * 60 * 60 * 1000 - 1000, true],
+    ])('%s 지난 카테고리 포함 여부=%s', (_label, ageMs, included) => {
+        const entries = buildStaticEntries(NOW, {
+            newsLatestPublishedAt: {
+                forex: new Date(NOW.getTime() - (ageMs as number)),
+            },
+        });
+        expect(entries.map(e => e.url).includes(`${SITE_URL}/news/forex`)).toBe(
+            included
+        );
+    });
+
+    it('최신 기사 시각을 못 읽은 카테고리는 그대로 싣는다 (로더 장애로 sitemap이 비지 않게)', () => {
+        const entries = buildStaticEntries(NOW, {
+            newsLatestPublishedAt: { crypto: CRYPTO_NEWS_AT },
+        });
+        expect(entries.map(e => e.url)).toContain(`${SITE_URL}/news/forex`);
+    });
+
+    /**
+     * `/backtesting` 본문은 고정 데이터라 배포로 바뀌지 않는다 — 릴리스 시각을
+     * lastmod로 쓰면 매 배포마다 "방금 바뀜"을 주장하게 된다.
+     */
+    it('/backtesting은 주입된 데이터 날짜를 쓰고, 없으면 빌드 시각으로 떨어진다', () => {
+        const dataAt = new Date('2026-03-31T00:00:00.000Z');
+        const withData = buildStaticEntries(NOW, {
+            backtestingDataDate: dataAt,
+        });
+        const withoutData = buildStaticEntries(NOW);
+        expect(
+            withData
+                .find(e => e.url === `${SITE_URL}/backtesting`)!
+                .lastModified.getTime()
+        ).toBe(dataAt.getTime());
+        expect(
+            withoutData
+                .find(e => e.url === `${SITE_URL}/backtesting`)!
+                .lastModified.getTime()
+        ).toBe(new Date('2025-01-01T00:00:00.000Z').getTime());
+    });
+
+    /**
+     * `/economy*`의 지표는 하루 주기로 갱신된다(페이지 FAQ가 그렇게 밝힌다).
+     * 배포 시각을 쓰면 하루 세 번 배포한 날 세 번 바뀌었다고 주장하게 된다.
+     */
+    it('/economy는 배포 시각이 아니라 UTC 일 경계를 쓴다', () => {
+        const entries = buildStaticEntries(NOW);
+        const economy = entries.find(e => e.url === `${SITE_URL}/economy`);
+        expect(economy!.lastModified.getTime()).toBe(
+            new Date('2026-05-23T00:00:00.000Z').getTime()
+        );
+    });
+
     it('legal 엔트리는 활성 약관 발효일을 쓰고, 없으면 빌드 시각으로 떨어진다', () => {
         const tosAt = new Date('2026-09-14T00:00:00.000Z');
         const entries = buildStaticEntries(NOW, {

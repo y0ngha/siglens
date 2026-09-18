@@ -241,3 +241,17 @@ jobs:
                     echo "⚠️ Cloudflare purge failed — verify CF_API_TOKEN secret (Zone:Cache Purge) and CF_ZONE_ID"
                     exit 1
                   fi
+
+            # 퍼지 **뒤에** 예열한다. ISR 캐시는 배포마다 `siglens-isr/{GIT_SHA}/`로
+            # 갈리고 CF는 방금 통째로 비웠으므로, 이 단계가 없으면 배포 직후 크롤·방문이
+            # 전부 콜드 렌더를 맞는다(2026-09-17 실측: 응답 중앙값 1.05초, p99 4.5초).
+            # continue-on-error: 예열 실패가 이미 끝난 롤아웃을 실패로 만들면 안 된다.
+            #
+            # `timeout-minutes`가 필요하다: `continue-on-error`는 스텝의 종료 코드만
+            # 삼키고 **잡 전체의 45분 예산에서 빼 주지는 않는다.** 오리진이 전부
+            # 무응답이면 150개 × 30초 / 동시 4 ≈ 19분이라, 이미 끝난 롤아웃이 잡 타임아웃에
+            # 걸려 실패로 표시될 수 있다(위 ASG 폴링 주석이 경고하는 바로 그 형태).
+            - name: Warm ISR and edge cache
+              continue-on-error: true
+              timeout-minutes: 8
+              run: bash scripts/warm-isr.sh https://siglens.io 150

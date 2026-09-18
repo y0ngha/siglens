@@ -7,6 +7,7 @@ import {
     TERMS_PATH,
 } from '@/shared/lib/legal';
 import { SITE_BUILD_DATE, SITE_URL } from '@/shared/lib/seo';
+import { MS_PER_DAY } from '@/shared/config/time';
 import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
@@ -36,7 +37,25 @@ export interface BuildStaticEntriesOptions {
     readonly newsLatestPublishedAt?: Partial<Record<NewsFeedCategoryId, Date>>;
     /** 활성 약관·방침 버전의 발효일. 없으면 `SITE_BUILD_DATE`로 떨어진다. */
     readonly legalEffectiveDates?: Partial<Record<TermsKind, Date>>;
+    /**
+     * `/backtesting`이 싣는 데이터의 마지막 케이스 진입일.
+     *
+     * 이 페이지의 본문은 `src/app/[locale]/backtesting/data.json` 고정 산출물이라
+     * 배포로 바뀌지 않는다(같은 내용의 사본이 `public/`에도 있고 손으로 맞춘다 —
+     * 화면과 이 lastmod는 둘 다 `src/` 쪽을 읽는다). `SITE_BUILD_DATE`를 쓰면 릴리스마다 "방금 바뀜"을 주장하게 되고,
+     * lastmod가 부정확하면 Google은 그 sitemap의 lastmod 전체를 무시한다.
+     */
+    readonly backtestingDataDate?: Date;
 }
+
+/**
+ * 뉴스 카테고리를 sitemap에서 빼는 정체 기준.
+ *
+ * 카테고리 페이지는 카드가 하나도 없으면 noindex다(`news/[category]/page.tsx`).
+ * 2026-09-17 운영 크롤에서 `/news/forex`가 정확히 그 상태로 sitemap에 실려 있었다 —
+ * 마지막 기사가 3주 전이었다. sitemap은 색인 대상만 실어야 한다.
+ */
+const STALE_NEWS_CATEGORY_MS = 14 * MS_PER_DAY;
 
 /** 후보 중 가장 최근 값. 후보가 없으면 `fallback`. */
 function latestOf(
@@ -54,19 +73,25 @@ function latestOf(
  *
  * **`lastmod`에 요청 시각(`now`)을 그대로 쓰지 않는다.** sitemap 라우트가
  * `force-dynamic`이라 그렇게 하면 크롤러가 가져갈 때마다 값이 바뀌어, 실제로는
- * 바뀌지 않은 페이지에도 매번 freshness 신호를 보내게 된다. 세 등급으로 나눈다:
+ * 바뀌지 않은 페이지에도 매번 freshness 신호를 보내게 된다. 네 등급으로 나눈다:
  *
  *  1. **콘텐츠 자체의 갱신 시각** — 그 값을 알 수 있는 페이지. `/about`은
  *     `ABOUT_UPDATED_AT`(본문 상수), `/privacy`·`/terms`는 활성 약관 버전의
  *     발효일(`legalEffectiveDates`), news 계열은 그 버킷의 최신 기사
- *     `publishedAt`(`newsLatestPublishedAt`)이다. 주입되지 않으면 아래 등급으로
+ *     `publishedAt`(`newsLatestPublishedAt`), `/backtesting`은 정적 데이터셋의
+ *     마지막 진입일(`backtestingDataDate`)이다. 주입되지 않으면 4등급으로
  *     떨어진다 — 이 빌더는 I/O를 하지 않는다.
  *  2. **직전 마감 세션**(`lastClosedSessionCloseUtc`) — 거래 세션 단위로 값이
  *     바뀌는 페이지. `/fear-greed*`와 `/market*`이 여기 해당한다: 입력이 봉이라
  *     "내용이 마지막으로 바뀐 시점"이 곧 직전 마감이다. 주말·휴장·DST는 헬퍼가
  *     처리한다. 거래소가 다르므로 지역별로 따로 계산한다.
- *  3. **빌드 시점 고정**(`SITE_BUILD_DATE`) — 배포로만 바뀌는 페이지.
- *     home, backtesting, economy.
+ *  3. **UTC 일 경계**(`todayUtc`) — 하루 주기로 갱신되는 페이지. `/economy*`가
+ *     여기 해당한다(지표가 24시간마다 새로 들어오고 페이지 FAQ도 그렇게 밝힌다).
+ *     배포 시각을 쓰면 하루에 세 번 배포한 날 세 번 바뀌었다고 주장하게 된다
+ *     (2026-09-17 감사). 최신 기사 시각이 주입되지 않은 news 카테고리도 여기로
+ *     떨어진다.
+ *  4. **빌드 시점 고정**(`SITE_BUILD_DATE`) — 배포로만 바뀌는 페이지(home), 그리고
+ *     1등급 값이 주입되지 않았을 때의 폴백(`/backtesting`·legal).
  *
  * `/market*`은 예전에 "1시간 슬라이딩, 정시로 내림"이었다. ISR revalidate가 1h라
  * 갱신 *주기*와는 맞았지만 lastmod가 주장하는 것은 주기가 아니라 **마지막 변경
@@ -84,7 +109,11 @@ export function buildStaticEntries(
     now: Date,
     options: BuildStaticEntriesOptions = {}
 ): SitemapEntry[] {
-    const { newsLatestPublishedAt = {}, legalEffectiveDates = {} } = options;
+    const {
+        newsLatestPublishedAt = {},
+        legalEffectiveDates = {},
+        backtestingDataDate,
+    } = options;
     const todayUtc = startOfUtcDay(now);
     // `/fear-greed`·`/market`은 봉이 입력이라 "직전 마감"이 곧 lastmod다. 두 지역이
     // 서로 다른 거래소를 보므로 세션도 따로 계산한다 — KRX는 06:30 UTC, NYSE는
@@ -97,7 +126,18 @@ export function buildStaticEntries(
         now
     );
     // safe: CATEGORY_CONFIG is Record<NewsFeedCategoryId, CategoryConfig>, so Object.keys is exactly the union — TS just widens to string[].
-    const newsCategories = Object.keys(CATEGORY_CONFIG) as NewsFeedCategoryId[];
+    const allNewsCategories = Object.keys(
+        CATEGORY_CONFIG
+    ) as NewsFeedCategoryId[];
+    // 최신 기사 시각을 못 읽었으면(주입 실패) 싣는다 — 로더 장애로 sitemap에서
+    // 카테고리가 통째로 사라지는 쪽이 더 나쁘다.
+    const newsCategories = allNewsCategories.filter(cat => {
+        const latest = newsLatestPublishedAt[cat];
+        return (
+            latest === undefined ||
+            now.getTime() - latest.getTime() < STALE_NEWS_CATEGORY_MS
+        );
+    });
     const newsCategoryEntries: SitemapEntry[] = newsCategories.map(cat => ({
         url: `${SITE_URL}/news/${CATEGORY_CONFIG[cat].slug}`,
         lastModified: newsLatestPublishedAt[cat] ?? todayUtc,
@@ -114,8 +154,13 @@ export function buildStaticEntries(
         newsCategories.map(cat => newsLatestPublishedAt[cat]),
         todayUtc
     );
+    // `/news/us`도 **싣는 카테고리만** 본다. 정체돼 sitemap에서 빠진 카테고리의
+    // 시각을 쓰면, 허브가 자기가 더 이상 나열하지 않는 글을 근거로 신선도를 주장한다.
+    const freshUsCategories = categoriesInRegion('us').filter(cat =>
+        newsCategories.includes(cat)
+    );
     const newsUsLastModified = latestOf(
-        categoriesInRegion('us').map(cat => newsLatestPublishedAt[cat]),
+        freshUsCategories.map(cat => newsLatestPublishedAt[cat]),
         todayUtc
     );
 
@@ -138,7 +183,9 @@ export function buildStaticEntries(
             !link.href.startsWith('/market') &&
             !link.href.startsWith('/fear-greed')
         ) {
-            return SITE_BUILD_DATE;
+            // `/economy*`는 지표가 하루 주기로 갱신된다(페이지 FAQ가 그렇게 밝힌다).
+            // 배포 시각을 쓰면 하루에 세 번 배포한 날 세 번 "바뀌었다"고 주장하게 된다.
+            return todayUtc;
         }
         return link.region === 'kr' ? lastKrSessionClose : lastSessionClose;
     }
@@ -173,7 +220,7 @@ export function buildStaticEntries(
         ...regionEntries,
         {
             url: `${SITE_URL}/backtesting`,
-            lastModified: SITE_BUILD_DATE,
+            lastModified: backtestingDataDate ?? SITE_BUILD_DATE,
             changeFrequency: 'monthly',
             priority: 0.9,
             alternates: sitemapAlternates(

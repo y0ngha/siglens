@@ -159,7 +159,7 @@ test.describe('symbol SEO + ISR (crawler-facing)', () => {
         expect(response.headers()['x-nextjs-cache']).toBe('HIT');
     });
 
-    test('/AAPL/financials embeds valid inline JSON-LD (WebPage + BreadcrumbList + FAQPage)', async ({
+    test('/AAPL/financials embeds valid inline JSON-LD (WebPage + BreadcrumbList, no FAQPage)', async ({
         page,
     }) => {
         // 런타임 HTML을 크롤러처럼 fetch해 inline JSON-LD 블록을 파싱한다.
@@ -171,10 +171,14 @@ test.describe('symbol SEO + ISR (crawler-facing)', () => {
         const types = rootJsonLdTypes(await response.text());
         expect(types).toContain('WebPage');
         expect(types).toContain('BreadcrumbList');
-        expect(types).toContain('FAQPage');
+        // 종목 탭은 FAQPage 마크업을 싣지 않는다 — 화면 FAQ만 남긴다(2026-09-17 감사:
+        // FAQ 리치 결과는 2023-08부터 권위 사이트 한정이라, 색인 대상 1,900여 URL에
+        // 같은 마크업을 복제할 이유가 없다). 화면 쪽은 단위 테스트가 지킨다
+        // (`expectVisibleFaqWithoutJsonLd`).
+        expect(types).not.toContain('FAQPage');
     });
 
-    test('/AAPL/congress embeds valid inline JSON-LD (WebPage + BreadcrumbList + FAQPage)', async ({
+    test('/AAPL/congress embeds valid inline JSON-LD (WebPage + BreadcrumbList, no FAQPage)', async ({
         page,
     }) => {
         // 런타임 HTML을 크롤러처럼 fetch해 inline JSON-LD 블록을 파싱한다.
@@ -185,7 +189,11 @@ test.describe('symbol SEO + ISR (crawler-facing)', () => {
         const types = rootJsonLdTypes(await response.text());
         expect(types).toContain('WebPage');
         expect(types).toContain('BreadcrumbList');
-        expect(types).toContain('FAQPage');
+        // 종목 탭은 FAQPage 마크업을 싣지 않는다 — 화면 FAQ만 남긴다(2026-09-17 감사:
+        // FAQ 리치 결과는 2023-08부터 권위 사이트 한정이라, 색인 대상 1,900여 URL에
+        // 같은 마크업을 복제할 이유가 없다). 화면 쪽은 단위 테스트가 지킨다
+        // (`expectVisibleFaqWithoutJsonLd`).
+        expect(types).not.toContain('FAQPage');
     });
 
     test('an unapproved but well-formed ticker degrades to 200 + noindex (never 500)', async ({

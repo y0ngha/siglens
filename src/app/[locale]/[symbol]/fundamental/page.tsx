@@ -54,7 +54,6 @@ import {
 } from '@/entities/ticker';
 import {
     buildBreadcrumbJsonLd,
-    buildFaqJsonLd,
     buildSnapshotMetaDescription,
     buildSymbolFundamentalSeoContent,
     buildSymbolSeoContent,
@@ -714,13 +713,11 @@ export default async function FundamentalPage({ params }: Props) {
             answer: t('page.6e94dd'),
         },
     ];
-    const faqJsonLd = buildFaqJsonLd(faq);
 
     return (
         <>
             <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
-            <JsonLd data={faqJsonLd} />
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <SymbolPageHeading>
                     {t('page.9e0659', { v0: displayName })}
@@ -789,6 +786,13 @@ export default async function FundamentalPage({ params }: Props) {
                 <Suspense fallback={<SectionSkeleton />}>
                     <FutureDirectionSection symbol={upper} />
                 </Suspense>
+                {/*
+                    FAQ는 화면에만 둔다 — FAQPage 구조화데이터는 싣지 않는다.
+                    Google은 2023-08부터 FAQ 리치 결과를 정부·보건 등 권위 사이트로
+                    한정했고, 이 문답은 종목명만 바뀌는 템플릿이라 색인 대상 1,900여
+                    URL에 같은 마크업을 1,900번 복제하는 셈이었다(2026-09-17 감사).
+                    화면 문답은 독자에게 쓸모가 있으므로 그대로 둔다.
+                */}
 
                 <FaqSection
                     heading={tSeo('faqHeading.fundamental', {

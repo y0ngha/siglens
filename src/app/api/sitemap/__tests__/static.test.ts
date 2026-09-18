@@ -3,9 +3,11 @@ vi.mock('next/server', async () => {
         await vi.importActual<typeof import('next/server')>('next/server');
     return { ...actual };
 });
+const BACKTESTING_DATA_AT = new Date('2026-03-31T00:00:00.000Z');
 vi.mock('@/entities/sitemap-entry', () => ({
     buildStaticEntries: vi.fn().mockReturnValue([]),
     toUrlSetXml: vi.fn().mockReturnValue('<?xml version="1.0"?><urlset/>'),
+    backtestingDataDate: vi.fn(() => BACKTESTING_DATA_AT),
 }));
 
 import { GET } from '@/app/api/sitemap/static/route';
@@ -31,6 +33,17 @@ describe('GET /api/sitemap/static', () => {
 
         expect(res.headers.get('Content-Type')).toBe(
             'application/xml; charset=utf-8'
+        );
+    });
+
+    it('passes the backtesting data date through to buildStaticEntries', async () => {
+        await GET(mainHostRequest());
+
+        expect(mockBuildStaticEntries).toHaveBeenCalledWith(
+            expect.any(Date),
+            expect.objectContaining({
+                backtestingDataDate: BACKTESTING_DATA_AT,
+            })
         );
     });
 

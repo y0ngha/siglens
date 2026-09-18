@@ -11,6 +11,24 @@ const entries = [
 const facts = { symbol: 'AAPL', trend: 'bullish', numbers: [1, 2] };
 
 describe('buildPlainPrompt', () => {
+    /**
+     * 2026-09-17 운영 크롤: 평이화 산문이 "나눠서 사는 편이 낫습니다"처럼 독자에게
+     * 매매를 지시했다. `/about`은 "매수·매도를 권유하지 않습니다"라고 밝히고 있어
+     * 고지와 산출물이 어긋난 상태였다. 규칙은 원본이 조언형이어도 조건형으로
+     * 바꿔 쓰라고 지시한다(core 프롬프트의 같은 원칙과 짝).
+     */
+    it('독자에게 행동을 지시하지 말라는 규칙과 관측된 금지 문형을 담는다', () => {
+        const prompt = buildPlainPrompt({
+            entries: [{ path: 'summary', text: '테스트 산문' }],
+            facts: { symbol: 'AAPL', numbers: [] },
+            locale: 'ko',
+        });
+
+        expect(prompt).toContain('독자에게 무엇을 하라고 말하지 마세요');
+        expect(prompt).toContain('나눠서 사는 편이 낫습니다');
+        expect(prompt).toContain('아래로 내려가면');
+    });
+
     it('경로를 키로 하는 prose 맵을 싣는다', () => {
         const prompt = buildPlainPrompt({ entries, facts, locale: 'ko' });
         expect(prompt).toContain('"keyLevels.support.0.reason"');
