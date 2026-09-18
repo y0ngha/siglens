@@ -53,6 +53,8 @@ vi.mock('@/entities/news-article', async importOriginal => ({
 vi.mock('@/shared/cache/hubSsrSeed', () => ({
     writeHubSsrSeed: mocks.writeHubSsrSeed,
 }));
+// 부분 목 — 키 이름은 엔티티가 소유하므로 실제 구현을 그대로 쓴다(이름이 바뀌면
+// 프리웜과 페이지가 같이 따라가야 하고, 그 일치를 여기서 검증한다).
 vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
     marketDataProviderFor: vi.fn(() => ({})),
 }));

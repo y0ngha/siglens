@@ -15,7 +15,9 @@ import { selectAggregateNewsItems } from '@/entities/news-article';
 import { marketDataProviderFor } from '@/shared/api/market/getMarketDataProvider';
 import { getCachedMarketSummary } from '@/entities/market-summary/api/marketSummaryCache';
 import { marketBriefingContextOf } from '@/entities/market-summary/lib/marketBriefingContext';
+import { marketBriefingSeedSurface } from '@/entities/market-summary/api/briefingStaticCache';
 import { getEconomySnapshot } from '@/entities/economy/api/economySnapshotCache';
+import { MACRO_BRIEFING_SEED_SURFACE } from '@/entities/economy/api/macroBriefingStaticCache';
 import { getMarketNewsList } from '@/entities/market-news/api';
 import {
     CATEGORY_CONFIG,
@@ -155,7 +157,7 @@ function marketBriefingTargets(): HubTarget[] {
             );
             // context는 캐시 키에 접힌다 — 액션·peek와 **같은 헬퍼**여야 한다.
             const context = marketBriefingContextOf(scope, summary);
-            const surface = `market-briefing:${scope.id}` as const;
+            const surface = marketBriefingSeedSurface(scope);
             const peek = () => peekBriefingCache(summary, context);
             const cached = await peek();
             if (cached !== null) {
@@ -181,13 +183,13 @@ function macroBriefingTarget(): HubTarget {
             const peek = () => peekMacroBriefingCache(snapshot);
             const cached = await peek();
             if (cached !== null) {
-                await writeHubSsrSeed('macro-briefing', cached);
+                await writeHubSsrSeed(MACRO_BRIEFING_SEED_SURFACE, cached);
                 return 'alreadyFresh';
             }
             await runMacroBriefing(snapshot);
             const readBack = await readBackWithRetry(peek);
             if (readBack === null) return 'keyMismatch';
-            await writeHubSsrSeed('macro-briefing', readBack);
+            await writeHubSsrSeed(MACRO_BRIEFING_SEED_SURFACE, readBack);
             return 'generated';
         },
     };

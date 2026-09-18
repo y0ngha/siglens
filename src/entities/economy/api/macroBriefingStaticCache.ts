@@ -26,6 +26,9 @@ import { readHubSsrSeed } from '@/shared/cache/hubSsrSeed';
  * `dateHour` 키는 여전히 regen 경계에서 브리핑 seed를 새 시간 버킷으로 전환하나,
  * TTL 자체는 페이지 ISR 주기(24h)에 맞춰 clamp 원인을 제거한다.
  */
+/** 프리웜이 쓰고 이 모듈이 읽는 SSR seed의 키. 거시 브리핑은 시장 구분이 없어 하나다. */
+export const MACRO_BRIEFING_SEED_SURFACE = 'macro-briefing';
+
 export function peekMacroBriefingStatic(
     snapshot: EconomySnapshot,
     dateHour: string
@@ -35,7 +38,9 @@ export function peekMacroBriefingStatic(
             // 이유는 `briefingStaticCache`와 같다 — 입력 파생 키라 프리웜이 쓴 값을
             // 나중에 같은 키로 읽지 못한다. SSR seed가 그 공백을 메운다.
             (await peekMacroBriefingCache(snapshot)) ??
-            (await readHubSsrSeed<MacroBriefingResponse>('macro-briefing')),
+            (await readHubSsrSeed<MacroBriefingResponse>(
+                MACRO_BRIEFING_SEED_SURFACE
+            )),
         ['economy-briefing-peek-static', dateHour],
         { revalidate: SECONDS_PER_DAY, tags: ['economy:briefing'] }
     )();
