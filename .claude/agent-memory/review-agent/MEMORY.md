@@ -70,7 +70,22 @@ Closed loops (approved, kept for pattern recall only — see file for detail):
 - [trader alerts-topic reroute](project-trader-alerts-topic-reroute.md) — provision.sh → shared siglens-alerts topic
 
 - [feat/agent-precomputed-data R1](project-agent-precomputed-data-r1.md) — UTC-midnight daily bars break bar-count staleness; core Fib labels are `50.0%`; weekly HTF dead at 500 daily bars
+- [feat/agent-precomputed-data R2](project-agent-precomputed-data-r2.md) — source fixes right, tests vacuous: fixed dates vs 7-day hard cap (KR test fails 2026-09-24), tz tests at instants where local==UTC date
+- [feat/agent-precomputed-data R3](project-agent-precomputed-data-r3.md) — 2 real-clock staleness tests outside frozen block fail 01–04Z; MessageList `{ px }` repeat-height untested
+- [feat/agent-precomputed-data R4](project-agent-precomputed-data-r4.md) — R3 fixes mutation-verified; recommended only: wrong getQuote-failure contract JSDoc, localDate dup, orphan comment
+- [feat/agent-precomputed-data R5](project-agent-precomputed-data-r5.md) — R4 closed; zonedDate pasted between zoneOffsetMs and its JSDoc; getFundamentals' new quote bypasses quoteWithTimeout
+- [feat/agent-precomputed-data R6](project-agent-precomputed-data-r6.md) — R5 closed; only nit: quote comment claims "every other agent-tool quote" bounded, get_quote is raw
+- [feat/agent-precomputed-data R7](project-agent-precomputed-data-r7.md) — approved; comment nit closed, sibling claims grep-verified
+- [feat/agent-range-windows-ma50 R3](project-agent-range-windows-ma50-r3.md) — MA50_PERIOD decoupled from CONFLUENCE_TREND_MA_PERIOD, same-value-but-different-purpose constants, approved
 - [core precomputed-prompt-data R1](project-core-precomputed-prompt-data-r1.md) — date-only Math.round off-by-one, NaN%p sector spread, keyPrices/geometry prompt contradictions; mutation-in-scratch-copy technique
+- [core precomputed-prompt-data R2](project-core-precomputed-prompt-data-r2.md) — raw-vs-printed target mismatch, 8dp conservative, PUBLIC_API claims nonexistent PivotPoint export
+- [core precomputed-prompt-data R3](project-core-precomputed-prompt-data-r3.md) — R2 fixed; PUBLIC_API "index.client only PivotTables" now false; negative measured targets; uniform-high fixture can't pin rim span
+- [core precomputed-prompt-data R4](project-core-precomputed-prompt-data-r4.md) — R3 mutation-verified; LlmStrikeOpenInterest undocumented in both barrels; rim bounds pinned only 2 bars out
+- [core precomputed-prompt-data R5](project-core-precomputed-prompt-data-r5.md) — R4 fixes mutation-verified; recommended only: n=0 target boundary untested, changelog stops at round 2
+- [core precomputed-prompt-data R6](project-core-precomputed-prompt-data-r6.md) — approved; n>=0 + all-or-nothing mutations killed; scratch copy needs `./node_modules/.bin/vitest` not yarn
+- [trader precomputed-core-1.11 R1](project-trader-precomputed-core-1.11-r1.md) — single-row fixture = unfalsifiable "latest past row" fallback; old-vs-new core d.ts diff via main checkout node_modules
+- [trader precomputed-core-1.11 R2](project-trader-precomputed-core-1.11-r2.md) — approved; 4 fallback mutations killed; trader scratch-copy mutation recipe
+- [trader core-1.11.1 bump R1](project-trader-core-1.11.1-bump-r1.md) — approved; pure version bump, riskReward-text prepend-condition change confirmed inert for trader
 - [feat/hub-ai-prewarm R2-R4 closed](project-hub-ai-prewarm-r2.md) — R3 reorder broke durationMs (dropped hub-phase time), R4 fixed via independent batchStartedAt, sim-clock mutation-verified
 
 ## Reference
