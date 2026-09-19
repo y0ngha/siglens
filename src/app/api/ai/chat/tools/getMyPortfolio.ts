@@ -10,6 +10,7 @@ import {
     type MarketProfileId,
 } from '@/shared/config/marketProfile';
 import { getDatabaseClient } from '@/shared/db/client';
+import { currencyFractionDigits } from '@/shared/lib/priceFormat';
 import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';
 import type { ToolExecutor } from './index';
 import { logToolDegrade } from './logToolDegrade';
@@ -149,8 +150,11 @@ async function fetchRawHolding(r: {
 }
 
 /**
- * Decimal places for a money AMOUNT, keyed by the holding's settlement
- * currency — not `roundNumber`'s significant-digit rule.
+ * Round a money field (`marketValue`/`costBasis`/`pnl`, per-holding or per-
+ * currency total) to its currency's minor unit — decimal places come from
+ * `currencyFractionDigits` (`shared/lib/priceFormat.ts`), not `roundNumber`'s
+ * significant-digit rule — using half-away-from-zero rounding (150.005 →
+ * 150.01, -150.005 → -150.01).
  *
  * `roundNumber` (`roundIndicators.ts`) was built for indicator VALUES, where
  * digit count should track magnitude. Money is a currency amount, not a
@@ -160,15 +164,6 @@ async function fetchRawHolding(r: {
  * sig-figs), and a $1,234,567.89 total would come back as `1234570` (rounded
  * to the TENS place). USD/crypto keep cents (2dp); KRW has no minor unit
  * (원화 호가 관례, matches `KR_EQUITY_DESCRIPTOR.priceFormat.precision`).
- */
-function moneyDecimals(currency: string): number {
-    return currency === 'KRW' ? 0 : 2;
-}
-
-/**
- * Round a money field (`marketValue`/`costBasis`/`pnl`, per-holding or per-
- * currency total) to its currency's minor unit — see {@link moneyDecimals} —
- * using half-away-from-zero rounding (150.005 → 150.01, -150.005 → -150.01).
  *
  * NOT `Number(value.toFixed(d))` — binary floats make `toFixed` inconsistent
  * exactly at the half-cent boundary a user-entered `averagePrice` can land
@@ -184,7 +179,7 @@ function moneyDecimals(currency: string): number {
  * pnl) is normalized to `0` so the model never reports a "-0 pnl".
  */
 function roundMoney(value: number, currency: string): number {
-    const factor = 10 ** moneyDecimals(currency);
+    const factor = 10 ** currencyFractionDigits(currency);
     const magnitude =
         Math.round(Math.abs(value) * (1 + Number.EPSILON) * factor) / factor;
     const rounded = Math.sign(value) * magnitude;
@@ -223,9 +218,9 @@ function rawCurrencyTotal(
  * are built via two straight `.map` passes over already-fully-computed raw
  * data, never mutated afterward. Money fields (costBasis/marketValue/pnl,
  * per-holding and per-currency total) use `roundMoney` (currency minor
- * unit — see {@link moneyDecimals}); percent fields (dayChangePct/pnlPct/
- * weightPct) keep `roundNumber`/`pctVs`/`ratioPct` as before — only the
- * money path changed.
+ * unit — see `currencyFractionDigits` in `shared/lib/priceFormat.ts`);
+ * percent fields (dayChangePct/pnlPct/weightPct) keep
+ * `roundNumber`/`pctVs`/`ratioPct` as before — only the money path changed.
  */
 export const getMyPortfolioTool: ToolExecutor = async (_args, ctx) => {
     const rows = await new DrizzlePortfolioRepository(

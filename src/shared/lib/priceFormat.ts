@@ -25,6 +25,16 @@ export function formatUsdPrice(price: number): string {
     return price.toLocaleString('en-US', { maximumFractionDigits: 2 });
 }
 
+/**
+ * Fraction digits for a currency amount. KRW has no minor unit (원화는
+ * 소수점을 쓰지 않는다); every other currency in this app is priced in USD
+ * cents (2 decimals). Single source for the `currency === 'KRW' ? 0 : 2`
+ * rule — promoted here after it was duplicated across 5+ call sites.
+ */
+export function currencyFractionDigits(currency: string): number {
+    return currency === 'KRW' ? 0 : 2;
+}
+
 // "$123.45" 형식 (Intl currency style, 소수점 2자리 고정).
 const USD_CURRENCY_FORMATTER = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -101,7 +111,7 @@ export function formatCurrencyForSymbol(
             style: 'currency',
             currency,
             // 원화는 소수점을 쓰지 않는다.
-            maximumFractionDigits: currency === 'KRW' ? 0 : 2,
+            maximumFractionDigits: currencyFractionDigits(currency),
         });
         CURRENCY_FORMATTER_CACHE.set(cacheKey, formatter);
     }
@@ -225,7 +235,7 @@ export function formatSignedAmount(value: number, symbol: string): string {
     if (currencyForSymbol(symbol) === 'KRW') {
         const sign = value >= 0 ? '+' : '-';
         const magnitude = Math.abs(value).toLocaleString('en-US', {
-            maximumFractionDigits: 0,
+            maximumFractionDigits: currencyFractionDigits('KRW'),
         });
         return `${sign}₩${magnitude}`;
     }
