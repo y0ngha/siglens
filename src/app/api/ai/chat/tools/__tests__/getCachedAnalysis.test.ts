@@ -365,19 +365,32 @@ describe('getCachedAnalysisTool', () => {
         expect(getQuote).toHaveBeenCalledWith('AAPL34.SA');
     });
 
-    it('시세 조회가 throw해도 캐시된 분석은 (개인화 없이) 그대로 반환된다', async () => {
-        findByUserAndSymbol.mockResolvedValue({ averagePrice: '100' });
-        profile.mockResolvedValue('us-equity');
-        getQuote.mockRejectedValue(new Error('FMP 429'));
-        peekAnalysis.mockResolvedValue(technicalCachedResult);
+    it('시세 조회가 throw해도 캐시된 분석은 (개인화 없이) 그대로 반환되고, degrade가 로그된다', async () => {
+        const consoleErrorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        try {
+            findByUserAndSymbol.mockResolvedValue({ averagePrice: '100' });
+            profile.mockResolvedValue('us-equity');
+            getQuote.mockRejectedValue(new Error('FMP 429'));
+            peekAnalysis.mockResolvedValue(technicalCachedResult);
 
-        const r = (await getCachedAnalysisTool(
-            { symbol: 'AAPL', tab: 'technical' },
-            ctx,
-            rt
-        )) as { found: boolean; personalized: boolean };
-        expect(r.found).toBe(true);
-        expect(r.personalized).toBe(false);
+            const r = (await getCachedAnalysisTool(
+                { symbol: 'AAPL', tab: 'technical' },
+                ctx,
+                rt
+            )) as { found: boolean; personalized: boolean };
+            expect(r.found).toBe(true);
+            expect(r.personalized).toBe(false);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                '[AgentTool]',
+                'get_cached_analysis',
+                'quote lookup failed, degrading',
+                { errorName: 'Error', code: undefined }
+            );
+        } finally {
+            consoleErrorSpy.mockRestore();
+        }
     });
 
     it('시세 조회가 멈춰도 타임아웃 내에 버킷 없이 진행된다 (fake timers)', async () => {
@@ -760,26 +773,45 @@ describe('getCachedAnalysisTool', () => {
             expect(getCachedBars).not.toHaveBeenCalled();
         });
 
-        it('bars 로드 실패 시 나이 기반 규칙으로 폴백한다', async () => {
-            const now = new Date('2026-09-19T00:00:00.000Z');
-            vi.setSystemTime(now);
-            const generatedAt = new Date(
-                now.getTime() - 2 * 24 * 60 * 60 * 1000
-            ); // 2 days — beyond the 24h age rule, within the 7-day cap
-            peekAnalysis.mockResolvedValue({
-                result: {
-                    ...technicalCachedResult.result,
-                    analyzedAt: generatedAt.toISOString(),
-                },
-                lockedInfoDepth: [],
-            });
-            getCachedBars.mockRejectedValue(new Error('bars cache down'));
-            const r = (await getCachedAnalysisTool(
-                { symbol: 'AAPL', tab: 'technical' },
-                ctx,
-                rt
-            )) as { stale: boolean };
-            expect(r.stale).toBe(true); // 24h age fallback rule
+        it('bars 로드 실패 시 나이 기반 규칙으로 폴백하고, 두 degrade(stale-by-bars/last-close)가 모두 로그된다', async () => {
+            const consoleErrorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            try {
+                const now = new Date('2026-09-19T00:00:00.000Z');
+                vi.setSystemTime(now);
+                const generatedAt = new Date(
+                    now.getTime() - 2 * 24 * 60 * 60 * 1000
+                ); // 2 days — beyond the 24h age rule, within the 7-day cap
+                peekAnalysis.mockResolvedValue({
+                    result: {
+                        ...technicalCachedResult.result,
+                        analyzedAt: generatedAt.toISOString(),
+                    },
+                    lockedInfoDepth: [],
+                });
+                getCachedBars.mockRejectedValue(new Error('bars cache down'));
+                const r = (await getCachedAnalysisTool(
+                    { symbol: 'AAPL', tab: 'technical' },
+                    ctx,
+                    rt
+                )) as { stale: boolean };
+                expect(r.stale).toBe(true); // 24h age fallback rule
+                expect(consoleErrorSpy).toHaveBeenCalledWith(
+                    '[AgentTool]',
+                    'get_cached_analysis',
+                    'stale-by-bars check failed, degrading',
+                    { errorName: 'Error', code: undefined }
+                );
+                expect(consoleErrorSpy).toHaveBeenCalledWith(
+                    '[AgentTool]',
+                    'get_cached_analysis',
+                    'last-close lookup failed, degrading',
+                    { errorName: 'Error', code: undefined }
+                );
+            } finally {
+                consoleErrorSpy.mockRestore();
+            }
         });
 
         it("timeframe '1Day': 봉이 빈 배열이면 나이 기반 규칙으로 폴백한다", async () => {

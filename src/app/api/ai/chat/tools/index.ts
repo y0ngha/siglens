@@ -28,6 +28,7 @@ import { getFundamentalsTool } from './getFundamentals';
 import { getMarketOverviewTool } from './getMarketOverview';
 import { getEconomyTool } from './getEconomy';
 import { getCongressTradesTool } from './getCongressTrades';
+import { safeErrorFields } from './logToolDegrade';
 import { isGuestSubject } from '../guestSubject';
 
 export interface ToolRuntime {
@@ -92,11 +93,7 @@ export function availableToolNames(): Set<string> {
  * `cause.code` are safe, non-sensitive diagnostics.
  */
 function logToolError(name: string, error: unknown): void {
-    const errorName = error instanceof Error ? error.name : 'unknown';
-    const rawCode = (error as { cause?: { code?: unknown } } | null)?.cause
-        ?.code;
-    const code = typeof rawCode === 'string' ? rawCode : undefined;
-    console.error('[AgentTool]', name, { errorName, code });
+    console.error('[AgentTool]', name, safeErrorFields(error));
 }
 
 function symbolsIn(args: Record<string, unknown>): string[] {

@@ -116,34 +116,47 @@ describe('getMyPortfolioTool', () => {
         expect(r.totals).toEqual([]);
     });
 
-    it('시세 조회 실패 시 price/marketValue/pnl/pnlPct/weightPct는 null이지만 보유 종목은 그대로 나열된다', async () => {
-        findByUser.mockResolvedValue([
-            {
-                symbol: 'TSLA',
-                companyName: 'Tesla',
-                quantity: '5',
-                averagePrice: '200',
-            },
-        ]);
-        profile.mockResolvedValue('us-equity');
-        getQuote.mockRejectedValue(new Error('FMP down'));
+    it('시세 조회 실패 시 price/marketValue/pnl/pnlPct/weightPct는 null이지만 보유 종목은 그대로 나열되고, degrade가 로그된다', async () => {
+        const consoleErrorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        try {
+            findByUser.mockResolvedValue([
+                {
+                    symbol: 'TSLA',
+                    companyName: 'Tesla',
+                    quantity: '5',
+                    averagePrice: '200',
+                },
+            ]);
+            profile.mockResolvedValue('us-equity');
+            getQuote.mockRejectedValue(new Error('FMP down'));
 
-        const r = (await getMyPortfolioTool({}, ctxFor('u1'), rt)) as {
-            holdings: Array<{
-                price: number | null;
-                marketValue: number | null;
-                pnl: number | null;
-                pnlPct: number | null;
-                weightPct: number | null;
-                costBasis: number;
-            }>;
-        };
-        expect(r.holdings[0]!.price).toBeNull();
-        expect(r.holdings[0]!.marketValue).toBeNull();
-        expect(r.holdings[0]!.pnl).toBeNull();
-        expect(r.holdings[0]!.pnlPct).toBeNull();
-        expect(r.holdings[0]!.weightPct).toBeNull();
-        expect(r.holdings[0]!.costBasis).toBe(1000); // always known — no quote needed
+            const r = (await getMyPortfolioTool({}, ctxFor('u1'), rt)) as {
+                holdings: Array<{
+                    price: number | null;
+                    marketValue: number | null;
+                    pnl: number | null;
+                    pnlPct: number | null;
+                    weightPct: number | null;
+                    costBasis: number;
+                }>;
+            };
+            expect(r.holdings[0]!.price).toBeNull();
+            expect(r.holdings[0]!.marketValue).toBeNull();
+            expect(r.holdings[0]!.pnl).toBeNull();
+            expect(r.holdings[0]!.pnlPct).toBeNull();
+            expect(r.holdings[0]!.weightPct).toBeNull();
+            expect(r.holdings[0]!.costBasis).toBe(1000); // always known — no quote needed
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                '[AgentTool]',
+                'get_my_portfolio',
+                'quote lookup failed, degrading',
+                { errorName: 'Error', code: undefined }
+            );
+        } finally {
+            consoleErrorSpy.mockRestore();
+        }
     });
 
     it('통화가 섞이면 weightPct는 같은 통화 그룹 내 비중이고 weightScope:currency가 붙는다', async () => {

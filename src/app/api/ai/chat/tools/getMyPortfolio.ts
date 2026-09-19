@@ -11,6 +11,7 @@ import {
 } from '@/shared/config/marketProfile';
 import { getDatabaseClient } from '@/shared/db/client';
 import type { ToolExecutor } from './index';
+import { logToolDegrade } from './logToolDegrade';
 import { pctVs, ratioPct } from './percent';
 
 interface HoldingView {
@@ -90,7 +91,8 @@ async function fetchValidatedQuote(
                 ? quote.changesPercentage
                 : null,
         };
-    } catch {
+    } catch (error) {
+        logToolDegrade('get_my_portfolio', 'quote lookup', error);
         // Quote failure → price/dayChangePct/marketValue/pnl/pnlPct stay
         // null; the holding is still listed (spec §3.3).
         return null;

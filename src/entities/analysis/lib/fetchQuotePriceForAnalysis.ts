@@ -39,7 +39,17 @@ export async function fetchQuotePriceForAnalysis(
         return quote && Number.isFinite(quote.price) && quote.price > 0
             ? quote.price
             : undefined;
-    } catch {
+    } catch (error) {
+        // Same privacy rule as `logToolError`/`logToolDegrade`
+        // (`app/api/ai/chat/tools/logToolDegrade.ts`): never the error
+        // object, `.message`, or `.stack` — only its `name` — a
+        // `DrizzleQueryError`'s message can embed bound params. This
+        // entities-layer module can't import that app-layer helper, so the
+        // name-only extraction is inlined here.
+        console.error(
+            '[fetchQuotePriceForAnalysis] quote lookup failed, degrading to undefined:',
+            { errorName: error instanceof Error ? error.name : 'unknown' }
+        );
         return undefined;
     }
 }

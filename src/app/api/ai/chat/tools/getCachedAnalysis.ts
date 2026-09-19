@@ -28,6 +28,7 @@ import { getDatabaseClient } from '@/shared/db/client';
 import { resolvePositionBucket } from '@/shared/lib/byokGate';
 import { isGuestSubject } from '../guestSubject';
 import type { ToolExecutor } from './index';
+import { logToolDegrade } from './logToolDegrade';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
 import { pctVs } from './percent';
 import {
@@ -126,7 +127,8 @@ async function isStaleByBars(
         const generatedAtSec = generatedAt.getTime() / 1000;
         const newerBars = bars.filter(b => b.time > generatedAtSec).length;
         return newerBars >= STALE_NEW_BARS[timeframe];
-    } catch {
+    } catch (error) {
+        logToolDegrade('get_cached_analysis', 'stale-by-bars check', error);
         return stale(tab, generatedAt);
     }
 }
@@ -175,7 +177,12 @@ async function resolveSessionOrUndefined(
 ): Promise<ReturnType<typeof sessionSpecFor> | undefined> {
     try {
         return sessionSpecFor(await resolveMarketProfile(symbol));
-    } catch {
+    } catch (error) {
+        logToolDegrade(
+            'get_cached_analysis',
+            'market profile resolution',
+            error
+        );
         return undefined;
     }
 }
@@ -200,7 +207,8 @@ async function priceNowFor(
         // data — both mean "unknown", never a real price.
         if (quote && Number.isFinite(quote.price) && quote.price > 0)
             return quote.price;
-    } catch {
+    } catch (error) {
+        logToolDegrade('get_cached_analysis', 'quote lookup', error);
         // fall through to last close
     }
     try {
@@ -217,7 +225,8 @@ async function priceNowFor(
             lastClose > 0
             ? lastClose
             : null;
-    } catch {
+    } catch (error) {
+        logToolDegrade('get_cached_analysis', 'last-close lookup', error);
         return null;
     }
 }

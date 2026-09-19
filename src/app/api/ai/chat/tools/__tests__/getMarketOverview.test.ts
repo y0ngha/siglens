@@ -150,6 +150,35 @@ describe('getMarketOverviewTool', () => {
         ]);
     });
 
+    it('섹터 이름 번역 로드가 throw하면 koreanName으로 폴백하고 degrade가 로그된다', async () => {
+        const consoleErrorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        try {
+            fgUs.mockResolvedValue({ snapshot: null, comparisons: [] });
+            sectorSignals.mockResolvedValue({ computedAt: 'x', stocks: [] });
+            getTranslationsMock.mockRejectedValue(new Error('catalog down'));
+
+            const r = (await getMarketOverviewTool(
+                { market: 'us' },
+                ctx,
+                rt
+            )) as { sectors: Array<{ symbol: string; name: string }> };
+
+            expect(r.sectors).toContainEqual(
+                expect.objectContaining({ symbol: 'XLK', name: '기술' })
+            );
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                '[AgentTool]',
+                'get_market_overview',
+                'sector name translation failed, degrading',
+                { errorName: 'Error', code: undefined }
+            );
+        } finally {
+            consoleErrorSpy.mockRestore();
+        }
+    });
+
     it('알 수 없는 market 값은 us로 취급한다', async () => {
         fgUs.mockResolvedValue({ snapshot: null, comparisons: [] });
         sectorSignals.mockResolvedValue({ computedAt: 'x', stocks: [] });

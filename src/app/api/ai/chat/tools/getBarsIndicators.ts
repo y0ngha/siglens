@@ -36,6 +36,7 @@ import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarket
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { getDescriptor } from '@/shared/config/marketProfile';
 import type { ToolExecutor } from './index';
+import { logToolDegrade } from './logToolDegrade';
 import { pctVs, ratioPct } from './percent';
 import { resolveAssetInfoOrNull } from './resolveAssetInfo';
 import { BARS_RESULT_MAX_CHARS } from './truncate';
@@ -346,7 +347,12 @@ async function loadHigherTimeframe(
                 bars: weeklyBars,
                 indicators: calculateIndicators(weeklyBars),
             };
-        } catch {
+        } catch (error) {
+            logToolDegrade(
+                'get_bars_indicators',
+                'weekly higher-timeframe aggregation',
+                error
+            );
             return null;
         }
     }
@@ -362,7 +368,12 @@ async function loadHigherTimeframe(
         );
         if (bars.length === 0) return null;
         return { timeframe: htfTimeframe, bars, indicators };
-    } catch {
+    } catch (error) {
+        logToolDegrade(
+            'get_bars_indicators',
+            'higher-timeframe bars fetch',
+            error
+        );
         return null;
     }
 }

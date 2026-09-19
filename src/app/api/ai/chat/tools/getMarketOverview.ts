@@ -9,6 +9,7 @@ import { DEFAULT_DASHBOARD_TIMEFRAME } from '@/shared/config/dashboard-tickers';
 import { dashboardScopeOf } from '@/shared/config/dashboardScope';
 import type { Locale } from '@/shared/i18n/locales';
 import type { ToolExecutor } from './index';
+import { logToolDegrade } from './logToolDegrade';
 import { ppDelta } from './percent';
 
 /** Capped so a busy signal scan (dozens of flagged stocks) stays inside the tool's budget. */
@@ -76,7 +77,8 @@ async function sectorDisplayNames(
                 return [s.symbol, t.has(key) ? t(key) : s.koreanName] as const;
             })
         );
-    } catch {
+    } catch (error) {
+        logToolDegrade('get_market_overview', 'sector name translation', error);
         return Object.fromEntries(
             sectors.map(s => [s.symbol, s.koreanName] as const)
         );

@@ -975,31 +975,44 @@ describe('getBarsIndicatorsTool', () => {
             expect(r.higherTimeframe!.rsi).toBeNull();
         });
 
-        it('상위 timeframe 캐시 로드가 빈 배열이거나 throw하면 null로 내려가고 도구 자체는 죽지 않는다', async () => {
-            profile.mockResolvedValue('us-equity');
-            const bars = [bar(1_700_000_000, 100)];
-            classify.mockReturnValue('uptrend');
-            detect.mockReturnValue([]);
+        it('상위 timeframe 캐시 로드가 빈 배열이거나 throw하면 null로 내려가고 도구 자체는 죽지 않는다, throw는 degrade로 로그된다', async () => {
+            const consoleErrorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            try {
+                profile.mockResolvedValue('us-equity');
+                const bars = [bar(1_700_000_000, 100)];
+                classify.mockReturnValue('uptrend');
+                detect.mockReturnValue([]);
 
-            getCachedBars
-                .mockResolvedValueOnce({ bars, indicators })
-                .mockResolvedValueOnce({ bars: [], indicators });
-            let r = (await getBarsIndicatorsTool(
-                { symbol: 'AAPL', timeframe: '4Hour' },
-                ctx,
-                rt
-            )) as { higherTimeframe: unknown };
-            expect(r.higherTimeframe).toBeNull();
+                getCachedBars
+                    .mockResolvedValueOnce({ bars, indicators })
+                    .mockResolvedValueOnce({ bars: [], indicators });
+                let r = (await getBarsIndicatorsTool(
+                    { symbol: 'AAPL', timeframe: '4Hour' },
+                    ctx,
+                    rt
+                )) as { higherTimeframe: unknown };
+                expect(r.higherTimeframe).toBeNull();
 
-            getCachedBars
-                .mockResolvedValueOnce({ bars, indicators })
-                .mockRejectedValueOnce(new Error('provider down'));
-            r = (await getBarsIndicatorsTool(
-                { symbol: 'AAPL', timeframe: '4Hour' },
-                ctx,
-                rt
-            )) as { higherTimeframe: unknown };
-            expect(r.higherTimeframe).toBeNull();
+                getCachedBars
+                    .mockResolvedValueOnce({ bars, indicators })
+                    .mockRejectedValueOnce(new Error('provider down'));
+                r = (await getBarsIndicatorsTool(
+                    { symbol: 'AAPL', timeframe: '4Hour' },
+                    ctx,
+                    rt
+                )) as { higherTimeframe: unknown };
+                expect(r.higherTimeframe).toBeNull();
+                expect(consoleErrorSpy).toHaveBeenCalledWith(
+                    '[AgentTool]',
+                    'get_bars_indicators',
+                    'higher-timeframe bars fetch failed, degrading',
+                    { errorName: 'Error', code: undefined }
+                );
+            } finally {
+                consoleErrorSpy.mockRestore();
+            }
         });
     });
 
