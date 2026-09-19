@@ -10,9 +10,22 @@ import {
     type MarketProfileId,
 } from '@/shared/config/marketProfile';
 import { getDatabaseClient } from '@/shared/db/client';
+import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';
 import type { ToolExecutor } from './index';
 import { logToolDegrade } from './logToolDegrade';
 import { pctVs, ratioPct } from './percent';
+
+/**
+ * Max concurrent quote lookups per `getMyPortfolioTool` call (MISTAKES.md
+ * §0.8) — `fetchRawHolding` does one external quote lookup per holding and
+ * `findByUser` has no holdings cap, so an unbounded fan-out would send one
+ * request per row at once. Each lookup goes through `getCachedMarketDataProvider`'s
+ * Redis cache, so most calls are cache hits and this only bounds the worst
+ * case (cold cache / large portfolio). Set below the prewarm batch's peer
+ * chunk size (`SYMBOL_CONCURRENCY` = 6 in
+ * `src/app/api/cron/seo-prewarm/runPrewarmBatch.ts`).
+ */
+const QUOTE_CONCURRENCY = 5;
 
 interface HoldingView {
     symbol: string;
@@ -172,7 +185,25 @@ export const getMyPortfolioTool: ToolExecutor = async (_args, ctx) => {
         getDatabaseClient().db
     ).findByUser(ctx.userId);
 
-    const rawHoldings = await Promise.all(rows.map(fetchRawHolding));
+    // withConcurrencyLimit settles every call rather than rejecting on the
+    // first failure, so the previous Promise.all semantics are rebuilt by
+    // hand: throw the first rejection in input order, otherwise unwrap the
+    // fulfilled values. A quote failure never lands here — it already
+    // degrades to null inside `fetchValidatedQuote`; what rejects is a
+    // non-quote per-holding step such as `resolveMarketProfile`, which fails
+    // the whole tool call as before (the dispatcher's `logToolError` logs it).
+    const settled = await withConcurrencyLimit(
+        rows,
+        QUOTE_CONCURRENCY,
+        fetchRawHolding
+    );
+    const rejected = settled.find(
+        (s): s is PromiseRejectedResult => s.status === 'rejected'
+    );
+    if (rejected) throw rejected.reason;
+    const rawHoldings = settled.map(
+        (s): RawHolding => (s as PromiseFulfilledResult<RawHolding>).value
+    );
 
     const currencies = [...new Set(rawHoldings.map(h => h.currency))];
     const rawTotalByCurrency = new Map(

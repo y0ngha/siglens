@@ -326,4 +326,68 @@ describe('getMyPortfolioTool', () => {
             vi.useRealTimers();
         }
     });
+
+    it('시세 조회는 QUOTE_CONCURRENCY(5)를 넘지 않게 청크로 제한되고, 순서와 값은 그대로 유지된다 (MISTAKES.md §0.8)', async () => {
+        const holdings = Array.from({ length: 12 }, (_, i) => ({
+            symbol: `SYM${i}`,
+            companyName: `Company ${i}`,
+            quantity: '1',
+            averagePrice: '10',
+        }));
+        findByUser.mockResolvedValue(holdings);
+        profile.mockResolvedValue('us-equity');
+
+        let inFlight = 0;
+        let maxInFlight = 0;
+        getQuote.mockImplementation(async (symbol: string) => {
+            inFlight++;
+            maxInFlight = Math.max(maxInFlight, inFlight);
+            // Real delay (not just a microtask hop) so all concurrently
+            // dispatched lookups are genuinely in-flight at once, instead
+            // of relying on exact microtask-scheduling order.
+            await new Promise(resolve => setTimeout(resolve, 10));
+            inFlight--;
+            const index = Number(symbol.slice(3));
+            return { price: 100 + index, changesPercentage: index };
+        });
+
+        const r = (await getMyPortfolioTool({}, ctxFor('u1'), rt)) as {
+            holdings: Array<{ symbol: string; price: number | null }>;
+        };
+
+        expect(maxInFlight).toBeLessThanOrEqual(5);
+        expect(r.holdings.map(h => h.symbol)).toEqual(
+            holdings.map(h => h.symbol)
+        );
+        r.holdings.forEach((h, i) => {
+            expect(h.price).toBe(100 + i);
+        });
+    });
+
+    it('보유 종목 하나라도 resolveMarketProfile이 reject하면 tool 호출 전체가 reject된다 (동시성 제한 도입 전과 동일한 실패 시맨틱)', async () => {
+        findByUser.mockResolvedValue([
+            {
+                symbol: 'AAPL',
+                companyName: 'Apple',
+                quantity: '1',
+                averagePrice: '1',
+            },
+            {
+                symbol: 'BAD',
+                companyName: 'Bad',
+                quantity: '1',
+                averagePrice: '1',
+            },
+        ]);
+        profile.mockImplementation(async (symbol: string) =>
+            symbol === 'BAD'
+                ? Promise.reject(new Error('profile resolve failed'))
+                : 'us-equity'
+        );
+        getQuote.mockResolvedValue({ price: 100, changesPercentage: 1 });
+
+        await expect(getMyPortfolioTool({}, ctxFor('u1'), rt)).rejects.toThrow(
+            'profile resolve failed'
+        );
+    });
 });

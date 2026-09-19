@@ -445,3 +445,7 @@
 
 ## [PR #849 Round 2 | feat/agent-precomputed-data | 2026-09-19]
 - Status: fixed (both findings already documented in MISTAKES.md §0.5 and Coding Paradigm #17)
+
+## [PR #849 Round 3 | feat/agent-precomputed-data | 2026-09-19]
+- Status: fixed (finding already documented in MISTAKES.md §0.8)
+- Rejected: [Suggestion] move getBarsIndicators derived-metric helpers to entities/bars/lib — reviewer marked non-blocking and pre-existing pattern in the same directory; a ~300-line move is a separate refactor, out of this PR's scope.
