@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.84.0](https://github.com/y0ngha/siglens/compare/v0.83.0...v0.84.0) (2026-09-19)
+
+
+### Features
+
+* **agent-chat:** core 1.12.0 — 도구 결과 없는 이어 묻기는 첫 스텝에서 도구 호출을 강제한다 ([0e37f8f](https://github.com/y0ngha/siglens/commit/0e37f8f3998cecb646834c351196d38a74ada74b))
+
 # [0.83.0](https://github.com/y0ngha/siglens/compare/v0.82.2...v0.83.0) (2026-09-19)
 
 
