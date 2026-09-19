@@ -10,7 +10,10 @@ import {
 import { fmpGet } from '@/shared/api/fmp/httpClient';
 import { normalizeCalendarForCountry } from './normalizeCalendarForCountry';
 import type { EconomyProvider } from '@/shared/api/economy/EconomyProvider';
-import { INDICATOR_TREND_LENGTH } from '@/shared/config/economyIndicators';
+import {
+    ECONOMY_INDICATORS,
+    INDICATOR_TREND_LENGTH,
+} from '@/shared/config/economyIndicators';
 import { ISO_DATE_LENGTH, SECONDS_PER_DAY } from '@/shared/config/time';
 
 /**
@@ -34,10 +37,18 @@ export class FmpEconomyProvider implements EconomyProvider {
             { name, to },
             { revalidate: ECONOMY_REVALIDATE_SECONDS }
         );
+        // Only '%'-unit (rate-type) registry entries are forwarded — core's
+        // `unit` param drives the macro-briefing prompt's pp-delta vs
+        // level-delta formatting, and only cares about the '%' case
+        // (anything else, including omitting it, renders as level-type).
+        // Passing e.g. `'pt'`/`'B$'` verbatim would be harmless but is not
+        // what core's formatting switch checks for.
+        const meta = ECONOMY_INDICATORS.find(m => m.name === name);
         return normalizeEconomicIndicatorSeries(
             name,
             raw,
-            INDICATOR_TREND_LENGTH
+            INDICATOR_TREND_LENGTH,
+            meta?.unit === '%' ? '%' : undefined
         );
     }
 

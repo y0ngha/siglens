@@ -20,7 +20,16 @@ import { etDateOf } from '../lib/calendarWindow';
  * static/runtime 캐시 양 계층이 import해 동일 fingerprint를 공유(드리프트 방지).
  */
 export const ECONOMY_CONFIG_FINGERPRINT = createCacheConfigFingerprint(
-    JSON.stringify({ indicators: ECONOMY_INDICATORS.map(i => i.name) })
+    // The unit is part of the snapshot shape since core 1.11 (rate-type series
+    // carry `unit: '%'` for pp formatting), so it is part of the fingerprint:
+    // otherwise a snapshot cached before the change keeps serving unit-less
+    // series for up to a day after deploy.
+    JSON.stringify({
+        indicators: ECONOMY_INDICATORS.map(i => ({
+            name: i.name,
+            unit: i.unit === '%' ? '%' : null,
+        })),
+    })
 );
 const CACHE_KEY = `economy:snapshot:${ECONOMY_CONFIG_FINGERPRINT}`;
 
