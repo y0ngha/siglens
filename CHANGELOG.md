@@ -1,5 +1,23 @@
 # Changelog
 
+# [0.82.0](https://github.com/y0ngha/siglens/compare/v0.81.1...v0.82.0) (2026-09-19)
+
+
+### Bug Fixes
+
+* **agent-chat:** 도구의 폴백 catch에서 에러 이름·코드를 로깅한다 ([f9fdb19](https://github.com/y0ngha/siglens/commit/f9fdb19bb5e4002d0bfa8b8e6c2d2c410684e780))
+* **agent-chat:** 스트리밍 중 콘텐츠 성장에도 맨 아래로 버튼을 갱신한다 ([de35198](https://github.com/y0ngha/siglens/commit/de351986bab90295907020422e852be8ba65aac2))
+* **agent-chat:** 포트폴리오 도구의 시세 조회 동시성을 5개로 제한한다 ([b53eac7](https://github.com/y0ngha/siglens/commit/b53eac7300c7bbbeea83f6368c8cc97af8b1e480))
+* FMP 애널리스트 추정이 fiscal year in progress를 읽도록 고친다 (arrears 5년 앞 읽음 → currentFiscalYearRow, cache key v2) ([e74525f](https://github.com/y0ngha/siglens/commit/e74525fe15fe92f186b7a6e9cf6a3faca7124a58))
+
+
+### Features
+
+* 경제 지표 단위·지문을 통과시키고 스냅샷 fingerprint 캐시 검증을 추가한다 ([2c0c7f9](https://github.com/y0ngha/siglens/commit/2c0c7f91cf59e71fa0de075b1c1d174d2bd6b5b2))
+* 에이전트 도구가 도출된 수치를 계산해서 넘긴다 (bars HTF·derived, cached-analysis staleness·sinceAnalysis, portfolio PnL, fundamentals units·upside, market rank·breadth, economy deltas, news tally, options DTE, percent 헬퍼) ([a34e088](https://github.com/y0ngha/siglens/commit/a34e0888e0552bfc84fba4c334db9a17c9d841bb))
+* 채팅 스크롤을 '전송 시 뷰포트 상단에 고정, 하단 버튼 표시, 대화 전환 시 바닥, 리듀스드 모션 적용'으로 설계한다 ([ac4310f](https://github.com/y0ngha/siglens/commit/ac4310fe02ad3667c547bebb2ecfff67e2772abb))
+* **agent-chat:** 막대 도구에 20·60봉 고저 구간과 50봉 이평 괴리율을 넣는다 ([bff0f43](https://github.com/y0ngha/siglens/commit/bff0f43bf77e96013676bae69feb57da9aac7c34))
+
 ## [0.81.1](https://github.com/y0ngha/siglens/compare/v0.81.0...v0.81.1) (2026-09-18)
 
 
