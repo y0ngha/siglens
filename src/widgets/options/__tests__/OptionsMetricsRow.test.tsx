@@ -28,7 +28,10 @@ vi.mock('@/entities/options-chain', () => ({
 
 const METRICS: OptionsExpirationMetrics = {
     expirationDate: '2025-06-20',
+    daysToExpiration: 30,
     maxPain: 150,
+    maxPainDistancePct: null,
+    impliedMoveRange: null,
     putCallRatio: 0.8,
     atmImpliedVolatility: 0.35,
     impliedMovePercent: 4.2,

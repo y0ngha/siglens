@@ -5,7 +5,10 @@ import type {
 } from '@y0ngha/siglens-core';
 
 import type { EconomyProvider } from '@/shared/api/economy/EconomyProvider';
-import { INDICATOR_TREND_LENGTH } from '@/shared/config/economyIndicators';
+import {
+    ECONOMY_INDICATORS,
+    INDICATOR_TREND_LENGTH,
+} from '@/shared/config/economyIndicators';
 
 /** 지표 시리즈 시드 — 결정적 fixture 생성의 입력 형태. */
 export interface IndicatorSeed {
@@ -73,8 +76,13 @@ export function buildSeries(
     seed?: IndicatorSeed
 ): EconomicIndicatorSeries {
     const resolvedSeed = seed ?? INDICATOR_SEEDS[name];
+    // Mirrors FmpEconomyProvider's '%'-only forwarding rule so E2E/test
+    // fixtures exercise the same rate-type vs level-type formatting path
+    // as production.
+    const meta = ECONOMY_INDICATORS.find(m => m.name === name);
+    const unit = meta?.unit === '%' ? { unit: '%' as const } : {};
     if (resolvedSeed === undefined) {
-        return { name, latest: null, previous: null, trend: [] };
+        return { name, latest: null, previous: null, trend: [], ...unit };
     }
     const points = resolvedSeed.values.map((value, i) => ({
         date: shiftDate(resolvedSeed.startDate, i),
@@ -85,6 +93,7 @@ export function buildSeries(
         latest: points[0],
         previous: points[1] ?? null,
         trend: points.slice(0, INDICATOR_TREND_LENGTH),
+        ...unit,
     };
 }
 

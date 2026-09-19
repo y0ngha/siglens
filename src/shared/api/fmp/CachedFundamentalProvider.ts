@@ -145,7 +145,10 @@ export class CachedFundamentalProvider implements FundamentalProviderWithRawPeer
 
     getAnalystEstimates = cache(
         (symbol: string): Promise<FundamentalAnalystEstimateInput | null> =>
-            getOrSetCache(`fundamental:estimates:${sym(symbol)}`, TTL, () =>
+            // `v2`: the provider now picks the fiscal year in progress instead
+            // of FMP's first (five-years-ahead) row; a new key keeps rows
+            // cached under the old selection from being served after deploy.
+            getOrSetCache(`fundamental:estimates:v2:${sym(symbol)}`, TTL, () =>
                 this.inner.getAnalystEstimates(symbol)
             )
     );

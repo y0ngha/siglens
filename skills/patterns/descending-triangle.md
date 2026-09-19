@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [descending_triangle]
-token_cost: 569
-digest_hash: "cefa142d"
+token_cost: 607
+digest_hash: "856fdd3f"
 ---
 
 ## Detection Criteria
@@ -66,11 +66,9 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Target price calculation**: Measure the height of the triangle at its widest point (the vertical distance from the highest point of the descending trendline at the pattern start to the horizontal support). Project this distance downward from the breakdown point. Example: if support is at $50 and the triangle starts with a high of $60, the target is $40 ($50 - $10).
-- **Risk/reward assessment**: The distance from current price to target versus the distance from current price to the descending trendline defines the risk/reward ratio. A ratio of at least 2:1 is analytically favorable.
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the horizontal support level; `extremeLevel` = the descending resistance trendline's value at the pattern's start (its widest point); `direction` = 'down'; `invalidationLevel` = the descending resistance trendline's current (last-bar) value — the most recent lower high. When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Stop-loss reference level**: The most recent lower high on the descending trendline or the trendline itself serves as the invalidation level. A close above this negates the bearish pattern.
-- **Partial target**: 50% of the triangle height serves as a conservative initial target.
-- **Breakout scenario**: If price closes above the descending trendline, the bullish target is the full triangle height projected upward from the breakout point — this can produce a strong move as it traps bearish participants.
+- **Breakout scenario**: If price closes above the descending trendline instead, treat the pattern as having failed/reversed to bullish (a bear trap) — this alternate scenario is not in `## Chart Pattern Candidates (computed)`, so do not compute a target for it yourself; describe the reversal qualitatively.
 
 Note: These are analytical reference points for technical analysis, not trading recommendations.
 
@@ -78,11 +76,11 @@ Note: These are analytical reference points for technical analysis, not trading 
 
 When this pattern is detected, include the following in the analysis response:
 
-- **keyPrices**: Include the horizontal support level, the current descending trendline value, the projected apex price, and the breakdown target price if support is broken.
+- **keyPrices**: Include the horizontal support level, the current descending trendline value, and the projected apex price.
 - **patternSummaries**: Describe the pattern status (forming / approaching apex / support broken / trendline broken upward), the number of touches on support and resistance, the breakdown position relative to the apex (early, mid, late), and the prior trend direction.
 - **Volume context**: State whether volume is contracting as expected during formation and whether a volume surge accompanied any breakdown or breakout.
 - **Completion status**: Clearly indicate whether the triangle is still forming or confirmed by a decisive close below the horizontal support.
-- **Target projection**: Calculate and state the measured move target using the triangle height projected from the breakdown point.
+- **geometry**: Fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
 ### Descending Triangle (bearish continuation)
@@ -104,14 +102,14 @@ False positives / invalidation:
 - Breakdown without volume surge may be false.
 - Support at major historical level tested first time → higher bounce odds.
 
-Target: triangle height = vertical distance from highest point of descending trendline at pattern start to horizontal support; project DOWN from breakdown point (e.g., support $50, start high $60 → target $40). Partial = 50% of height. Breakout scenario: close above descending trendline → bullish target = full height projected UP (traps bears, can be strong).
-Stop/invalidation: most recent lower high on descending trendline (or the trendline); close above negates. R/R ≥ 2:1 favorable.
+### Geometry (do not calculate targets)
+`geometry` = { breakoutLevel: the horizontal support level, extremeLevel: the descending resistance trendline's value at the pattern's start (its widest point), direction: 'down', invalidationLevel: the descending resistance trendline's current (last-bar) value — the most recent lower high }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 Output:
-- keyPrices: horizontal support, current descending trendline value, projected apex price, breakdown target (if broken).
+- keyPrices: horizontal support, current descending trendline value, projected apex price.
 - patternSummaries: status (forming / approaching apex / support broken / trendline broken upward), touch counts on support & resistance, breakdown position vs apex (early/mid/late), prior trend direction.
 - Volume context: contraction during formation; volume surge on breakdown/breakout.
 - Completion status: forming vs confirmed (decisive close below support).
-- Target projection: triangle height from breakdown point.
+- geometry: `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the definition above — never a computed target or R:R.
 - Include analytical-reference (not trading-recommendation) framing.
 <!-- PROMPT_DIGEST:END -->

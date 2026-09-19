@@ -101,6 +101,21 @@ describe('FakeEconomyProvider', () => {
         expect(dates).toEqual(sorted);
     });
 
+    it('레지스트리 unit이 "%"인 지표(federalFunds)는 unit: "%"를 싣는다', async () => {
+        const series = await provider.getIndicator('federalFunds');
+        expect(series.unit).toBe('%');
+    });
+
+    it('레지스트리 unit이 "%"가 아닌 지표(CPI, level-type)는 unit을 싣지 않는다', async () => {
+        const series = await provider.getIndicator('CPI');
+        expect(series.unit).toBeUndefined();
+    });
+
+    it('레지스트리에 없는(미지정) 지표는 unit도 없다', async () => {
+        const series = await provider.getIndicator('unknownIndicator');
+        expect(series.unit).toBeUndefined();
+    });
+
     it('trend 배열은 INDICATOR_TREND_LENGTH를 초과하면 정확히 잘라낸다', () => {
         /**
          * buildSeries가 INDICATOR_TREND_LENGTH(12)를 초과하는 값 배열을 받았을 때

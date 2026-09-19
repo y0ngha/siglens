@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [descending_wedge]
-token_cost: 526
-digest_hash: "9df7321e"
+token_cost: 610
+digest_hash: "c6a024a7"
 ---
 
 ## Detection Criteria
@@ -63,10 +63,8 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Target price calculation**: Measure the height of the wedge at its widest point (the vertical distance between the upper and lower trendlines at the pattern start). Project this distance upward from the breakout point. Example: if the wedge starts with a $10 range and breaks at $95, the target is $105.
-- **Risk/reward assessment**: The distance from current price to target versus the distance from current price to the lower trendline defines the risk/reward ratio. A ratio of at least 2:1 is analytically favorable.
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the upper (resistance) trendline's value at the breakout bar; `extremeLevel` = the lower (support) trendline's value at the pattern's start (its widest point); `direction` = 'up'; `invalidationLevel` = the lower trendline's current (last-bar) value — the most recent swing low within the wedge. When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Stop-loss reference level**: The most recent swing low within the wedge or the lower trendline serves as the invalidation level. A close below this level negates the bullish pattern.
-- **Partial target**: 50% of the wedge height serves as a conservative initial target.
 - **Breakout timing**: Breaks that occur in the first half to two-thirds of the wedge (before reaching the apex) tend to produce stronger moves.
 
 Note: These are analytical reference points for technical analysis, not trading recommendations.
@@ -75,11 +73,11 @@ Note: These are analytical reference points for technical analysis, not trading 
 
 When this pattern is detected, include the following in the analysis response:
 
-- **keyPrices**: Include the current upper and lower trendline values, the projected apex price and bar, and the breakout target price if the upper trendline is broken.
+- **keyPrices**: Include the current upper and lower trendline values, and the projected apex price and bar.
 - **patternSummaries**: Describe the pattern status (forming / approaching apex / upper trendline broken), the convergence rate, number of trendline touches, and position within the wedge (early, mid, late).
 - **Volume context**: State whether volume is declining as expected within the wedge and whether a volume surge accompanied any trendline break.
 - **Completion status**: Clearly indicate whether the wedge is still forming or confirmed by a close above the upper trendline.
-- **Target projection**: Calculate and state the measured move target using the widest wedge height projected from the breakout point.
+- **geometry**: Fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
 ### Descending Wedge (bullish reversal)
@@ -103,14 +101,14 @@ False positives / invalidation:
 - Strong bearish catalyst may break downward.
 - Break in last 10% (near apex) = minimal target.
 
-Target: wedge height = vertical distance between upper & lower trendlines at pattern start; project UP from breakout point (e.g., $10 range, break at $95 → target $105). Partial = 50% of height.
-Stop/invalidation: most recent swing low within wedge (or lower trendline); close below negates. R/R ≥ 2:1 favorable.
+### Geometry (do not calculate targets)
+`geometry` = { breakoutLevel: the upper (resistance) trendline's value at the breakout bar, extremeLevel: the lower (support) trendline's value at the pattern's start (its widest point), direction: 'up', invalidationLevel: the lower trendline's current (last-bar) value — the most recent swing low within the wedge }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 Output:
-- keyPrices: current upper & lower trendline values, projected apex price & bar, breakout target (if upper trendline broken).
+- keyPrices: current upper & lower trendline values, projected apex price & bar.
 - patternSummaries: status (forming / approaching apex / upper trendline broken), convergence rate, touch counts, position (early/mid/late).
 - Volume context: declining within wedge; surge on break.
 - Completion status: forming vs confirmed (close above upper trendline).
-- Target projection: widest wedge height from breakout point.
+- geometry: `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the definition above — never a computed target or R:R.
 - Include analytical-reference (not trading-recommendation) framing.
 <!-- PROMPT_DIGEST:END -->

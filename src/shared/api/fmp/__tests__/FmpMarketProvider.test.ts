@@ -103,7 +103,27 @@ describe('FmpMarketProvider', () => {
             price: 10,
             changesPercentage: 1.2,
             name: 'Apple',
+            // core `MarketQuote.timestamp` — passed through
+            // from the raw FMP row's own `timestamp` field.
+            timestamp: 1700000000,
         });
+    });
+
+    it('getQuote: raw timestamp가 비유한값이면 timestamp 필드를 아예 싣지 않는다', async () => {
+        mockFmpGet.mockResolvedValueOnce([
+            {
+                price: 10,
+                open: 9,
+                dayHigh: 11,
+                dayLow: 8,
+                volume: 5,
+                timestamp: Number.NaN,
+                changePercentage: 1.2,
+                name: 'Apple',
+            },
+        ]);
+        const q = await provider.getQuote('AAPL');
+        expect(q).not.toHaveProperty('timestamp');
     });
 
     describe('getBars("1Day")', () => {

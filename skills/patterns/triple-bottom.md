@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [triple_bottom]
-token_cost: 673
-digest_hash: "8c28f23b"
+token_cost: 704
+digest_hash: "f991f66d"
 ---
 
 ## Detection Criteria
@@ -66,10 +66,8 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Target price calculation**: Measure the vertical distance from the neckline to the average of the three troughs. Project this distance upward from the neckline break point. Example: if neckline is at $57 and troughs average $50, the target is $64 ($57 + $7).
-- **Risk/reward assessment**: The distance from current price to target versus the distance from current price to the lowest trough defines the risk/reward ratio. A ratio of at least 2:1 is analytically favorable.
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the neckline price; `extremeLevel` = the average of the three trough prices; `direction` = 'up'; `invalidationLevel` = the lowest of the three troughs (a close below it negates the pattern). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Stop-loss reference level**: The lowest of the three troughs serves as the invalidation level. A close below this level negates the bullish pattern.
-- **Partial target**: 50% of the full projected distance serves as a conservative initial target.
 - **Time factor**: Triple Bottoms that take longer to form (> 40 bars) tend to produce larger moves due to greater accumulation.
 
 Note: These are analytical reference points for technical analysis, not trading recommendations.
@@ -78,11 +76,11 @@ Note: These are analytical reference points for technical analysis, not trading 
 
 When this pattern is detected, include the following in the analysis response:
 
-- **keyPrices**: Include all three trough prices, the neckline price level (connecting the two peaks), and the projected target price if the neckline is broken.
+- **keyPrices**: Include all three trough prices and the neckline price level (connecting the two peaks).
 - **patternSummaries**: Describe the pattern status (first/second/third trough formed / completed / neckline broken), the price difference percentage among the three troughs, the spacing between them, and how it differs from Double Bottom or Inverse Head and Shoulders.
 - **Volume context**: State whether volume behavior confirms the pattern (declining volume across troughs, volume surge on neckline break). Note volume comparison between each successive trough.
 - **Completion status**: Clearly indicate whether the pattern is still forming (which trough is in progress) or fully confirmed by a neckline break.
-- **Target projection**: Calculate and state the measured move target using neckline-to-trough distance projected above the neckline.
+- **geometry**: Fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
 삼중바닥 (Triple Bottom) — bullish reversal, confidence_weight 0.78. Three troughs at ~equal support; neckline = line connecting the two peaks between troughs.
@@ -110,17 +108,14 @@ When this pattern is detected, include the following in the analysis response:
 - Intraday wick above neckline without closing break = not confirmed.
 - Middle trough significantly LOWER than the other two → Inverse Head & Shoulders, not Triple Bottom.
 
-### Target (measured move)
-- Vertical distance neckline → average of three troughs, projected UP from neckline break. E.g. neckline $57, troughs avg $50 → target $64 ($57+$7).
-- Conservative first target = 50% of full projected distance.
-- Invalidation/stop = lowest of the three troughs; close below negates.
-- Risk/reward = (price→target) vs (price→lowest trough); ≥2:1 favorable. Patterns >40 bars → larger moves.
+### Geometry (do not calculate targets)
+`geometry` = { breakoutLevel: the neckline price, extremeLevel: the average of the three trough prices, direction: 'up', invalidationLevel: the lowest of the three troughs (a close below it negates the pattern) }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 ### Output
-- keyPrices: all three trough prices, neckline price, projected target if neckline broken.
+- keyPrices: all three trough prices, neckline price.
 - patternSummaries: status (first/second/third trough formed / completed / neckline broken); price-diff % among troughs; spacing; how it differs from Double Bottom or Inverse H&S.
 - Volume context: declining volume across troughs; surge on break; compare successive troughs.
 - Completion status: forming (which trough) vs confirmed by neckline break.
-- Target projection: neckline-to-trough-average projected above neckline.
+- geometry: `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the definition above — never a computed target or R:R.
 - trend: bullish when confirmed.
 <!-- PROMPT_DIGEST:END -->

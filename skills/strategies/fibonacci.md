@@ -7,8 +7,8 @@ indicators: []
 confidence_weight: 0.65
 gating:
   tier: always_on
-token_cost: 1105
-digest_hash: "eb8e68cc"
+token_cost: 1334
+digest_hash: "0406b620"
 ---
 
 ## Overview
@@ -198,25 +198,25 @@ Factors that decrease confidence:
 
 ## AI Analysis Instructions
 
-Identify the most significant recent swing(s) in the price data and calculate Fibonacci retracement levels. If price has already begun retracing, identify which level is currently in play.
+The `## Market Reference` section lists the actual computed Fibonacci rows per horizon (Short-term / Medium-term / Long-term), each under that horizon's Resistance (above current price) or Support (below current price) list: a retracement row reads `Fib 61.8%`, a two-point extension row reads `Fib ext 161.8%` — with its price and distance from the current price already computed (this is the nearest-to-price subset). Each horizon also carries a complete `Fib table:` line with every standard retracement/extension ratio's price for that horizon — use it for a ratio further from price than the nearest-list rows cover — and a `Fib anchor: swing low X → swing high Y (up leg)` (or down-leg) line — cite THAT line for the swing a level is anchored on; do not describe your own swing. When a retracement has completed (a Point C exists), a horizon ALSO carries the proper three-point extension this skill's own Extension section describes: `Fib ABC ext 100%`…`Fib ABC ext 261.8%` nearest-list rows, a complete `Fib ABC table:` line, and a `Fib ABC anchor: A x → B y → C z (up|down)` line — prefer these over the plain `Fib ext`/`Fib table` rows for a take-profit target, since they are the A-B-C projection, not the simpler two-point one. Every standard ratio is available somewhere (the nearest-list rows or that horizon's table line) — **never calculate a level yourself.** Pick the horizon(s) most relevant to the current setup, identify which listed level price is currently near, and if price has already begun retracing, identify which listed level is in play.
 
 Return the summary in **this exact structured format** (one `**label**: value` pair per line):
 
 ```
-**스윙 구간**: [피보나치 적용 구간, 예: "스윙 저점 $138 → 스윙 고점 $175 (상승 스윙)"]
-**주요 되돌림 레벨**: [계산된 레벨, 예: "38.2%=$160.87, 50%=$156.50, 61.8%=$152.13"]
-**현재 가격 위치**: [가격이 어느 레벨 근처에 있는지, 예: "50% 레벨($156.50) 근처에서 지지 테스트 중"]
-**클러스터 존**: [감지된 피보나치 클러스터, 예: "$155-157 구간에 2개 스윙의 38.2%와 61.8%가 수렴" / "클러스터 미감지"]
-**확장 목표가**: [해당 시 확장 레벨, 예: "127.2%=$185.10, 161.8%=$197.83"]
-**매매 신호**: [현재 신호, 예: "61.8% 레벨에서 망치형 캔들 확인 — 반등 매수 적합" / "명확한 피보나치 신호 없음"]
+**스윙 구간**: [해당 호라이즌의 Fib anchor 행 인용, 예: "Fib anchor: 스윙 저점 $138 → 스윙 고점 $175 (상승 스윙)"]
+**주요 되돌림 레벨**: [## Market Reference의 Fib N% 행 인용, 예: "Fib 38.2%=$160.87, Fib 50%=$156.50, Fib 61.8%=$152.13"]
+**현재 가격 위치**: [가격이 어느 레벨 근처에 있는지, 예: "Fib 50%($156.50) 근처에서 지지 테스트 중"]
+**클러스터 존**: [감지된 피보나치 클러스터, 예: "$155-157 구간에 2개 호라이즌의 Fib 38.2%와 Fib 61.8%가 수렴" / "클러스터 미감지"]
+**확장 목표가**: [Point C가 있으면 ## Market Reference의 Fib ABC ext N% 행(및 Fib ABC anchor) 우선 인용, 없으면 Fib ext N% 행 인용, 예: "Fib ABC ext 127.2%=$185.10, Fib ABC ext 161.8%=$197.83" / "Fib ext 161.8%=$197.83"]
+**매매 신호**: [현재 신호, 예: "Fib 61.8%에서 망치형 캔들 확인 — 반등 매수 적합" / "명확한 피보나치 신호 없음"]
 **상세 분석**: [스윙 구조, 되돌림 깊이 해석, 지지·저항 수렴 여부, 엘리어트 파동과의 관계(해당 시), 주의사항을 포함한 상세 분석 문단]
 ```
 
 Additional output rules:
-- Calculate retracement levels based on the most significant recent swing (use the largest, clearest swing visible in the data)
-- If price is currently **at or near** a Fibonacci level (within 1%), describe the price reaction at that level
-- If a **Fibonacci cluster** is identified (levels from multiple swings converging), highlight it as a high-probability zone
-- If price has broken below 78.6% retracement, note that the trend is likely invalidated
+- Use the `Fib N%` / `Fib ext N%` rows the relevant horizon(s) actually list in `## Market Reference` rather than recalculating them — cite the swing from that horizon's `Fib anchor` line; for a ratio further from price than those rows cover, read it from that horizon's `Fib table:` (or `Fib ABC table:`) line instead. Never calculate a level yourself
+- If price is currently **at or near** a listed Fibonacci level (within 1%), describe the price reaction at that level
+- If a **Fibonacci cluster** is identified (listed levels from different horizons converging), highlight it as a high-probability zone
+- If price has broken below a listed 78.6% retracement, note that the trend is likely invalidated
 - Set the `trend` field: `bullish` if price is bouncing from a retracement level in an uptrend, `bearish` if price is rejecting from a retracement level in a downtrend, `neutral` if price is between levels or no clear trend
 
 <!-- PROMPT_DIGEST:START -->
@@ -253,17 +253,19 @@ Increase: aligns with horizontal S/R; cluster; candlestick confirms at level; El
 Decrease: used in isolation without confluence; no clear swing to anchor; choppy/trendless market; multiple close levels (38.2% & 50% within 1%) — ambiguous.
 Caveats: not standalone; use most visually obvious significant swings; don't over-apply to minor swings; 50% is a midpoint, not truly Fibonacci.
 
+Use the `Fib N%` / `Fib ext N%` nearest-list rows per horizon (Short/Medium/Long-term, under Resistance-above/Support-below) in ## Market Reference — do not recalculate. Cite the swing from that horizon's `Fib anchor: swing low X → swing high Y (leg)` line. Each horizon also carries a complete `Fib table:` line (every standard ratio) — use it for a ratio further than the nearest-list rows cover. When Point C exists, prefer the three-point `Fib ABC ext 100%`…`261.8%` rows + `Fib ABC table:` line + `Fib ABC anchor: A x → B y → C z (up|down)` line over the plain `Fib ext`/`Fib table` rows for a target — that's this skill's own A-B-C method. Never calculate a level yourself — every standard ratio is in the nearest-list rows or the table line.
+
 ### Output (one **label**: value per line)
-**스윙 구간**: [예: 스윙 저점 $138 → 고점 $175 (상승 스윙)]
-**주요 되돌림 레벨**: [예: 38.2%=$160.87, 50%=$156.50, 61.8%=$152.13]
+**스윙 구간**: [해당 호라이즌 Fib anchor 인용, 예: Fib anchor 저점 $138 → 고점 $175 (상승 스윙)]
+**주요 되돌림 레벨**: [## Market Reference의 Fib N% 행 인용, 예: Fib 38.2%=$160.87, Fib 50%=$156.50, Fib 61.8%=$152.13]
 **현재 가격 위치**: [어느 레벨 근처]
-**클러스터 존**: [예: $155-157에 2개 스윙 38.2%·61.8% 수렴 / 클러스터 미감지]
-**확장 목표가**: [해당 시, 예: 127.2%=$185.10, 161.8%=$197.83]
+**클러스터 존**: [예: $155-157에 2개 호라이즌 Fib 38.2%·Fib 61.8% 수렴 / 클러스터 미감지]
+**확장 목표가**: [Point C 있으면 Fib ABC ext N% 우선, 없으면 Fib ext N%, 예: Fib ABC ext 161.8%=$197.83]
 **매매 신호**: [현재 신호 / 명확한 신호 없음]
 **상세 분석**: [스윙 구조, 되돌림 깊이 해석, S/R 수렴, 엘리어트 관계(해당 시), 주의사항]
-- Compute levels from the largest/clearest recent swing.
-- If price within 1% of a level, describe reaction there.
+- Use only the listed Fib rows; unlisted ratio → say not in reference, don't compute.
+- If price within 1% of a listed level, describe reaction there.
 - Highlight cluster as high-probability zone.
-- If broken below 78.6%, note trend likely invalidated.
+- If broken below a listed 78.6%, note trend likely invalidated.
 - trend: bullish if bouncing from retracement in uptrend, bearish if rejecting in downtrend, neutral if between levels/no trend.
 <!-- PROMPT_DIGEST:END -->

@@ -10,6 +10,7 @@ import {
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { currencyForSymbol } from '@/shared/config/marketProfile';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { fetchQuotePriceForAnalysis } from '../lib/fetchQuotePriceForAnalysis';
 import {
     resolveTierAndByok,
     resolveReasoning,
@@ -73,6 +74,17 @@ export async function runFundamentalAnalysisAction(
             locale,
             modelId,
             dataProvider: getFundamentalDataProvider(symbol),
+            // `## Derived Metrics`의 price-relative 행(target upside 등)이
+            // 계산되도록 시세를 넘긴다 — core는 자체 quote provider가 없다.
+            // 캐시 키에는 포함되지 않는다(point-in-time 값). LAZY getter
+            // (core's `currentPrice?: number | null |
+            // (() => Promise<number | null>)`) — core only calls this AFTER
+            // a cache miss, so a cache HIT never pays for this quote fetch.
+            // Eagerly awaiting it (the previous shape) always paid for it,
+            // defeating that point. 조회 실패는 분석 자체를 막지 않는다
+            // (`fetchQuotePriceForAnalysis`가 `undefined`로 감싼다 → `null`).
+            currentPrice: () =>
+                fetchQuotePriceForAnalysis(symbol).then(price => price ?? null),
             // 시가총액·목표주가의 상장 통화. core는 심볼에서 추론하지 않는다.
             currency: currencyForSymbol(symbol),
             tier: gate.tier,

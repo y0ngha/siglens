@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [rectangle]
-token_cost: 777
-digest_hash: "7179d8c5"
+token_cost: 822
+digest_hash: "18b63a1c"
 ---
 
 ## Detection Criteria
@@ -72,10 +72,8 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Target price calculation**: Measure the height of the rectangle (the vertical distance from support to resistance). Project this distance in the breakout direction from the breakout point. Example: if support is at $90 and resistance is at $100, an upward breakout targets $110 ($100 + $10) and a downward breakdown targets $80 ($90 - $10).
-- **Risk/reward assessment**: The distance from current price to target versus the distance from current price to the opposite boundary defines the risk/reward ratio. Rectangles often provide favorable ratios because the stop level (opposite boundary) is well-defined.
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the broken boundary (resistance for an upside breakout, support for a downside breakdown); `extremeLevel` = the opposite boundary; `direction` = 'up' or 'down', matching the breakout side; `invalidationLevel` = the opposite boundary — the same level used as extremeLevel; a close back across it negates the breakout. When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Stop-loss reference level**: The opposite boundary of the rectangle from the breakout direction serves as the invalidation level. For an upward breakout, support is the stop reference. For a downward breakdown, resistance is the stop reference.
-- **Partial target**: 50% of the rectangle height serves as a conservative initial target.
 - **Multiple targets**: Bulkowski's data shows that Rectangle Top breakouts often exceed the measured move target — consider using the full target as a minimum expectation.
 
 Note: These are analytical reference points for technical analysis, not trading recommendations.
@@ -84,11 +82,11 @@ Note: These are analytical reference points for technical analysis, not trading 
 
 When this pattern is detected, include the following in the analysis response:
 
-- **keyPrices**: Include the support level, resistance level, and the projected target prices in both breakout directions.
+- **keyPrices**: Include the support level and resistance level.
 - **patternSummaries**: Describe the rectangle type (Top or Bottom based on prior trend), the pattern status (forming / support broken / resistance broken), the number of touches on each boundary, the rectangle height as a percentage of price, and the pattern duration. Note the prior trend direction and its implication for breakout bias.
 - **Volume context**: State whether volume is declining during formation, whether volume favors one direction (accumulation or distribution), and whether a volume surge confirmed the breakout. Note any false breakout attempts.
 - **Completion status**: Clearly indicate whether the rectangle is still forming or confirmed by a decisive close outside a boundary with volume confirmation.
-- **Target projection**: Calculate and state the measured move target in both directions using the rectangle height projected from each boundary.
+- **geometry**: Fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
 직사각형 (Rectangle) — continuation-or-reversal, confidence_weight 0.65. Horizontal support/resistance range; breakout direction ~equal probability.
@@ -120,17 +118,14 @@ When this pattern is detected, include the following in the analysis response:
 - Weakening bounces over time → boundary about to fail.
 - No prior trend → range-bound, reduced predictive value.
 
-### Target (measured move)
-- Rectangle height (support→resistance), projected in breakout direction from breakout point.
-- E.g. support $90, resistance $100 ($10): up-breakout → $110; down-breakdown → $80.
-- Conservative first target = 50% of height. Stop = opposite boundary (up→support, down→resistance).
-- Bulkowski: Rectangle Top breakouts often EXCEED measured target — treat full target as minimum. (Rectangle Tops avg ~51% profit, most profitable pattern by avg return.)
+### Geometry (do not calculate targets)
+`geometry` = { breakoutLevel: the broken boundary (resistance for an upside breakout, support for a downside breakdown), extremeLevel: the opposite boundary, direction: 'up' or 'down', matching the breakout side, invalidationLevel: the opposite boundary — the same level used as extremeLevel; a close back across it negates the breakout }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 ### Output
-- keyPrices: support, resistance, projected targets in BOTH breakout directions.
+- keyPrices: support, resistance.
 - patternSummaries: type (Top/Bottom by prior trend); status (forming / support broken / resistance broken); touches per boundary; height as % of price; duration; prior trend + breakout bias.
 - Volume context: declining during formation? favors accumulation/distribution? break surge? note false-breakout attempts.
 - Completion status: forming vs confirmed by decisive close outside a boundary with volume.
-- Target projection: measured move in both directions from each boundary.
+- geometry: `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the definition above — never a computed target or R:R.
 - trend: set by realized breakout direction (bullish up-break, bearish down-break); neutral while forming.
 <!-- PROMPT_DIGEST:END -->

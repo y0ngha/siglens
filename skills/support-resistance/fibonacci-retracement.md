@@ -7,8 +7,8 @@ indicators: []
 confidence_weight: 0.7
 gating:
   tier: always_on
-token_cost: 561
-digest_hash: "922c365e"
+token_cost: 649
+digest_hash: "b8b90665"
 ---
 
 ## Overview
@@ -99,18 +99,20 @@ The core principle: after a significant price swing (impulse move), prices tend 
 
 ## AI Analysis Instructions
 
+The `## Market Reference` section already lists the computed Fibonacci retracement rows per horizon (Short-term / Medium-term / Long-term), labeled `Fib 23.6%`…`Fib 78.6%`, each with its price and distance from the current price — this is the nearest-to-price subset. Each horizon also carries a complete `Fib table:` line with every standard ratio's price for that horizon (use it for a ratio further from price than the nearest-list rows cover) and a `Fib anchor: swing low X → swing high Y (leg)` line — cite THAT line for the swing a level is anchored on. Use those numbers directly; never calculate a retracement level yourself from the bars.
+
 When analyzing with Fibonacci Retracement:
 
-1. Identify the most significant recent swing points (Swing High and Swing Low) from the provided bar data.
-2. Apply Fibonacci retracement levels (23.6%, 38.2%, 50%, 61.8%, 78.6%) between the identified swing points.
-3. Determine which retracement levels are nearest to the current price.
-4. Assess the depth of the current retracement to evaluate trend strength:
+1. Read the swing each horizon's levels are anchored on from that horizon's `Fib anchor` line — do not identify your own swing points.
+2. Cite the `Fib N%` rows (23.6%, 38.2%, 50%, 61.8%, 78.6%) already listed for the relevant horizon(s); for a ratio further from price than those rows cover, read it from that horizon's `Fib table:` line instead. Never calculate a retracement level yourself.
+3. Determine which LISTED retracement levels are nearest to the current price.
+4. Assess the depth of the current retracement (based on which listed level price is nearest to/has broken) to evaluate trend strength:
    - Below 38.2%: very strong trend
    - 38.2%–50%: healthy correction
    - 50%–61.8%: deep correction, trend still intact
    - Above 61.8%: trend weakening, reversal risk
-5. Check for confluence with other indicators (MAs, Bollinger Bands, pivot points) at Fibonacci levels.
-6. Include significant Fibonacci levels in the keyLevels response field with the retracement percentage and context as the reason.
+5. Check for confluence with other indicators (MAs, Bollinger Bands, pivot points) at the listed Fibonacci levels.
+6. Include the relevant LISTED Fibonacci levels in the keyLevels response field, citing the ratio and horizon as the reason.
 
 **Caveats:**
 - Swing point selection is subjective — different traders may choose different reference points on the same chart
@@ -133,6 +135,7 @@ Application:
 - Multi-swing: cluster/overlap of levels from different swings = exceptionally strong S/R zone.
 Signals: bounce at level + bullish reversal candle → long; retracement staying above 38.2% → very strong uptrend; Fib + MA convergence → high-confidence support. Rejection at level + bearish candle → short; retracement exceeding 61.8% → weakening / reversal risk; Fib + Bollinger → high-confidence resistance.
 Elliott Wave: Wave 2 retraces 50%–61.8% of Wave 1; Wave 4 retraces 38.2% of Wave 3; Wave 3 (not shortest) projects to 161.8% extension of Wave 1.
-AI instructions: (1) identify most significant recent swing high & low from bars. (2) apply 23.6/38.2/50/61.8/78.6% between them. (3) find levels nearest current price. (4) assess depth for trend strength: <38.2% very strong; 38.2–50% healthy correction; 50–61.8% deep but intact; >61.8% weakening/reversal risk. (5) check confluence (MAs, Bollinger, pivots). (6) include significant levels in keyLevels with retracement % + context as reason.
+## Market Reference already lists `Fib 23.6%`…`Fib 78.6%` nearest-list rows per horizon + a complete `Fib table:` line per horizon (every standard ratio) + a `Fib anchor: swing low X → swing high Y (leg)` line per horizon — cite these, never calculate.
+AI instructions: (1) read the swing from that horizon's Fib anchor line, don't identify your own. (2) cite listed Fib N% rows; a ratio further than those rows cover → read it from that horizon's Fib table line instead. (3) find LISTED levels nearest current price. (4) assess depth for trend strength: <38.2% very strong; 38.2–50% healthy correction; 50–61.8% deep but intact; >61.8% weakening/reversal risk. (5) check confluence (MAs, Bollinger, pivots) at listed levels. (6) include listed levels in keyLevels citing ratio + horizon as reason.
 Caveats: swing selection is subjective. Limited standalone predictive power — always combine with confirmation. Reacts in a zone around the level, not exact price. Short timeframes → most recent intraday swing; daily → most prominent multi-day swing.
 <!-- PROMPT_DIGEST:END -->

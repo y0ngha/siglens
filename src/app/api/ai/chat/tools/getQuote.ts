@@ -1,4 +1,5 @@
 import 'server-only';
+import type { MarketQuote } from '@y0ngha/siglens-core';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
@@ -7,6 +8,23 @@ import type { ToolExecutor } from './index';
 import { resolveAssetInfoOrNull } from './resolveAssetInfo';
 
 const MAX_SYMBOLS = 3;
+
+/**
+ * `MarketQuote.timestamp` (core, unix seconds) is the provider's own quote
+ * time, when the adapter reports one — `FmpMarketProvider`/`YahooMarketProvider`
+ * both pass it through now (spec §3.8, audit B10). Falls
+ * back to fetch time + `asOfIsFetchTime: true` only when the field is
+ * absent, so a provider outage/degraded row that genuinely has no quote time
+ * still gets an honest `asOf`.
+ */
+function quoteAsOf(quote: MarketQuote): {
+    asOf: string;
+    asOfIsFetchTime?: true;
+} {
+    if (quote.timestamp !== undefined && Number.isFinite(quote.timestamp))
+        return { asOf: new Date(quote.timestamp * 1000).toISOString() };
+    return { asOf: new Date().toISOString(), asOfIsFetchTime: true };
+}
 
 /**
  * Per-symbol profile → session spec (KR = Yahoo, US/crypto = FMP), quoted
@@ -40,6 +58,7 @@ export const getQuoteTool: ToolExecutor = async args => {
                 currency: descriptor.priceFormat.currency,
                 marketProfile: profile,
                 quoteDelayMinutes: descriptor.quoteDelayMinutes,
+                ...quoteAsOf(quote),
             };
         })
     );

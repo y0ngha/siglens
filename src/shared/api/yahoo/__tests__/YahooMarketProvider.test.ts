@@ -199,6 +199,31 @@ describe('YahooMarketProvider', () => {
             });
         });
 
+        it('maps regularMarketTime to core MarketQuote.timestamp in unix seconds', async () => {
+            quote.mockResolvedValue({
+                regularMarketPrice: 274500,
+                regularMarketChangePercent: 2.425373,
+                longName: 'Samsung Electronics Co., Ltd.',
+                shortName: 'SamsungElec',
+                regularMarketTime: new Date('2026-08-14T06:30:24.000Z'),
+            });
+
+            const q = await new YahooMarketProvider().getQuote('005930.KS');
+            expect(q).toMatchObject({ timestamp: 1786689024 });
+        });
+
+        it('regularMarketTime이 없으면 timestamp 필드를 싣지 않는다', async () => {
+            quote.mockResolvedValue({
+                regularMarketPrice: 274500,
+                regularMarketChangePercent: 2.425373,
+                longName: 'Samsung Electronics Co., Ltd.',
+                shortName: 'SamsungElec',
+            });
+
+            const q = await new YahooMarketProvider().getQuote('005930.KS');
+            expect(q).not.toHaveProperty('timestamp');
+        });
+
         it('returns null when yahoo returns undefined for an unlisted symbol', async () => {
             // 실측: yahoo는 미상장 심볼에 throw가 아니라 undefined를 반환한다.
             quote.mockResolvedValue(undefined);

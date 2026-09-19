@@ -148,6 +148,17 @@ export class YahooMarketProvider implements SiglensMarketProvider {
             changesPercentage: q.regularMarketChangePercent ?? 0,
             // 일부 KRX 종목은 사명 대신 코드 나열이 온다 — `displayName.ts` 참조.
             name: pickYahooDisplayName(symbol, q.longName, q.shortName),
+            // core `MarketQuote.timestamp` — yahoo reports
+            // the quote time as a `Date` (`regularMarketTime`), converted to
+            // unix seconds. Same field `getTodayBar` below already reads for
+            // its own KST trading-date derivation.
+            ...(q.regularMarketTime instanceof Date
+                ? {
+                      timestamp: Math.floor(
+                          q.regularMarketTime.getTime() / MS_PER_SECOND
+                      ),
+                  }
+                : {}),
         };
     }
 

@@ -97,7 +97,39 @@ describe('getQuoteTool', () => {
         expect(r.quotes[0]).toEqual({ symbol: 'AAPL', found: false });
     });
 
-    it('일부 심볼 조회가 실패해도 나머지는 정상 반환한다 (item 9, Promise.allSettled)', async () => {
+    describe('asOf/asOfIsFetchTime (spec §3.8, B10)', () => {
+        it('provider quote에 timestamp가 없으면 fetch 시각을 쓰고 asOfIsFetchTime:true를 붙인다', async () => {
+            profile.mockResolvedValue('us-equity');
+            getQuote.mockResolvedValue({ price: 100, changesPercentage: 0 }); // no `timestamp`
+            const r = (await getQuoteTool({ symbols: ['AAPL'] }, ctx, rt)) as {
+                quotes: Array<{
+                    asOf: string;
+                    asOfIsFetchTime?: boolean;
+                }>;
+            };
+            expect(r.quotes[0]!.asOfIsFetchTime).toBe(true);
+            expect(typeof r.quotes[0]!.asOf).toBe('string');
+            expect(Number.isNaN(Date.parse(r.quotes[0]!.asOf))).toBe(false);
+        });
+
+        it('provider quote에 timestamp가 있으면 그 시각을 쓰고 asOfIsFetchTime을 붙이지 않는다', async () => {
+            profile.mockResolvedValue('us-equity');
+            getQuote.mockResolvedValue({
+                price: 100,
+                changesPercentage: 0,
+                timestamp: 1_700_000_000, // Unix seconds
+            });
+            const r = (await getQuoteTool({ symbols: ['AAPL'] }, ctx, rt)) as {
+                quotes: Array<{ asOf: string; asOfIsFetchTime?: boolean }>;
+            };
+            expect(r.quotes[0]!.asOf).toBe(
+                new Date(1_700_000_000 * 1000).toISOString()
+            );
+            expect(r.quotes[0]!.asOfIsFetchTime).toBeUndefined();
+        });
+    });
+
+    it('일부 심볼 조회가 실패해도 나머지는 정상 반환한다 (Promise.allSettled)', async () => {
         profile.mockResolvedValue('us-equity');
         getQuote.mockImplementation(async (symbol: string) => {
             if (symbol === 'BAD') throw new Error('FMP 429');

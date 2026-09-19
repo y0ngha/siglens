@@ -264,6 +264,7 @@ import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import { getDescriptor } from '@/shared/config/marketProfile';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
+import { QUOTE_LOOKUP_TIMEOUT_MS } from '@/shared/api/market/quoteTimeout';
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 
 const decoder = new TextDecoder();
@@ -1165,7 +1166,7 @@ describe('POST /api/analysis/stream', () => {
             } as never);
 
             const responsePromise = POST(makeRequest(undefined, MEMBER_BODY));
-            await vi.advanceTimersByTimeAsync(5_000);
+            await vi.advanceTimersByTimeAsync(QUOTE_LOOKUP_TIMEOUT_MS);
             const response = await responsePromise;
             await collectSseEvents(response);
 

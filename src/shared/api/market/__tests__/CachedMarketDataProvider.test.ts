@@ -56,6 +56,11 @@ const SAMPLE_QUOTE: MarketQuote = {
     price: 1.5,
     changesPercentage: 1.2,
     name: 'Apple',
+    // core `MarketQuote.timestamp` — included here so the
+    // existing `toEqual(SAMPLE_QUOTE)` round-trip assertions below already
+    // prove the Redis JSON envelope preserves it, not just the pre-existing
+    // fields.
+    timestamp: 1_700_000_000,
 };
 
 function makeInner(

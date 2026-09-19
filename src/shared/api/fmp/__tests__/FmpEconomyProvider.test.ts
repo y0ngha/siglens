@@ -31,6 +31,24 @@ describe('FmpEconomyProvider', () => {
         expect(series.previous).toEqual({ date: '2026-04-01', value: 3.58 });
     });
 
+    it('getIndicator: 레지스트리 unit이 "%"인 지표는 unit을 "%"로 넘긴다(매크로 브리핑 pp 포맷)', async () => {
+        mockFmpGet.mockResolvedValueOnce([
+            { name: 'federalFunds', date: '2026-05-01', value: 3.63 },
+        ] as unknown[]);
+        const series = await new FmpEconomyProvider().getIndicator(
+            'federalFunds'
+        );
+        expect(series.unit).toBe('%');
+    });
+
+    it('getIndicator: 레지스트리 unit이 "%"가 아닌(level-type) 지표는 unit을 넘기지 않는다', async () => {
+        mockFmpGet.mockResolvedValueOnce([
+            { name: 'CPI', date: '2026-05-01', value: 330.1 },
+        ] as unknown[]);
+        const series = await new FmpEconomyProvider().getIndicator('CPI');
+        expect(series.unit).toBeUndefined();
+    });
+
     it('getIndicator: economic-indicators?name+to(오늘) 호출 + 24h revalidate', async () => {
         mockFmpGet.mockResolvedValueOnce([] as unknown[]);
         await new FmpEconomyProvider().getIndicator('CPI');

@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [pennant]
-token_cost: 764
-digest_hash: "d59b6e3d"
+token_cost: 842
+digest_hash: "6905e8e4"
 ---
 
 ## Detection Criteria
@@ -85,10 +85,8 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Target price calculation**: Measure the length of the flagpole. Project this distance from the breakout point in the direction of the breakout. Example (Bull Pennant): if the flagpole runs from $50 to $70 ($20) and the upward breakout occurs at $67, the target is $87 ($67 + $20). Example (Bear Pennant): if the flagpole runs from $100 to $80 ($20) and the downward breakdown occurs at $83, the target is $63 ($83 - $20).
-- **Risk/reward assessment**: The distance from current price to target versus the distance from current price to the opposite side of the pennant defines the risk/reward ratio. A ratio of at least 2:1 is analytically favorable.
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the pennant trendline value at the breakout/breakdown point (the upper trendline for a bull pennant, the lower for a bear pennant); `extremeLevel` = the flagpole's start price; `direction` = 'up' for a bull pennant, 'down' for a bear pennant; `invalidationLevel` = the opposite pennant trendline, or the most recent swing high/low within the pennant. When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Stop-loss reference level**: The opposite trendline of the pennant from the breakout direction, or the most recent swing high/low within the pennant, serves as the invalidation level.
-- **Partial target**: 50% of the flagpole length serves as a conservative initial target.
 - **Speed**: Pennants that resolve quickly (within 1-2 weeks) with strong volume tend to produce the best continuation moves.
 
 Note: These are analytical reference points for technical analysis, not trading recommendations.
@@ -97,11 +95,11 @@ Note: These are analytical reference points for technical analysis, not trading 
 
 When this pattern is detected, include the following in the analysis response:
 
-- **keyPrices**: Include the flagpole base price, flagpole end price, pennant upper trendline, pennant lower trendline, and the projected target price if the pennant is broken.
+- **keyPrices**: Include the flagpole base price, flagpole end price, pennant upper trendline, and pennant lower trendline.
 - **patternSummaries**: Describe the pennant type (Bull or Bear), the pattern status (flagpole formed / pennant forming / breakout confirmed), the flagpole move percentage, the pennant retracement depth relative to the flagpole, the convergence tightness, and the pennant duration. Note how the pattern is distinguished from a Symmetrical Triangle.
 - **Volume context**: State whether volume confirms the pattern — high volume on flagpole, dramatic volume decline during the pennant, and volume surge on breakout. Quantify the volume decline percentage.
 - **Completion status**: Clearly indicate whether the pennant is still forming or confirmed by a close outside the trendline in the flagpole direction.
-- **Target projection**: Calculate and state the measured move target using the flagpole length projected from the breakout point.
+- **geometry**: Fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
 페넌트 (Pennant) — continuation, confidence_weight 0.72. Flagpole + converging symmetrical-triangle consolidation. Bull (up flagpole) or Bear (down flagpole).
@@ -133,17 +131,14 @@ When this pattern is detected, include the following in the analysis response:
 - Counter-flagpole breakout → treat skeptically, needs very strong volume.
 - Clearly asymmetric trendlines (one much steeper) → may be flag or wedge.
 
-### Target (measured move)
-- Project flagpole LENGTH from breakout point in breakout direction.
-- Bull e.g. flagpole $50→$70 ($20), breakout $67 → target $87. Bear e.g. $100→$80 ($20), breakdown $83 → target $63.
-- Conservative first target = 50% of flagpole length.
-- Risk/reward = (price→target) vs (price→opposite pennant side); ≥2:1 favorable. Stop = opposite trendline or recent swing high/low within pennant.
+### Geometry (do not calculate targets)
+`geometry` = { breakoutLevel: the pennant trendline value at the breakout/breakdown point (the upper trendline for a bull pennant, the lower for a bear pennant), extremeLevel: the flagpole's start price, direction: 'up' for a bull pennant, 'down' for a bear pennant, invalidationLevel: the opposite pennant trendline, or the most recent swing high/low within the pennant }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 ### Output
-- keyPrices: flagpole base, flagpole end, pennant upper trendline, pennant lower trendline, projected target if broken.
+- keyPrices: flagpole base, flagpole end, pennant upper trendline, pennant lower trendline.
 - patternSummaries: type (Bull/Bear); status (flagpole formed / pennant forming / breakout confirmed); flagpole move %; retracement depth vs flagpole; convergence tightness; duration; note distinction from Symmetrical Triangle.
 - Volume context: high on flagpole, dramatic decline during pennant (quantify % drop), surge on breakout.
 - Completion status: forming vs confirmed by close outside trendline in flagpole direction.
-- Target projection: flagpole length from breakout point.
+- geometry: `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the definition above — never a computed target or R:R.
 - trend: bullish (Bull) / bearish (Bear) when confirmed.
 <!-- PROMPT_DIGEST:END -->

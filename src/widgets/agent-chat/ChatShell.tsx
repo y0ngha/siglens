@@ -243,6 +243,19 @@ export function ChatShell({
                     />
                 ) : (
                     <MessageList
+                        // Remounts the transcript on an actual conversation
+                        // switch, so its mount-only "jump to bottom
+                        // instantly" effect fires exactly then (spec §3.9).
+                        // Keyed off the ROUTE-level `conversationId` PROP,
+                        // not `stream.conversationId` — a brand-new chat's
+                        // first send assigns `stream.conversationId` mid-turn
+                        // (the SSE `meta` frame, see `useAgentStream.ts`),
+                        // and keying off that would remount MessageList
+                        // right as the first answer starts streaming,
+                        // breaking the anchor-on-send scroll for every
+                        // conversation's first turn. The prop only changes
+                        // on a real navigation to a different conversation.
+                        key={conversationId}
                         messages={stream.messages}
                         streaming={stream.status === 'streaming'}
                         onRegenerate={() => void stream.regenerate()}

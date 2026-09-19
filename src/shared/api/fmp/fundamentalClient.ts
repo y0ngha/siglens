@@ -98,6 +98,32 @@ function toEarningsDate(value: RawFmpEarningsReport): string | null {
           : null;
 }
 
+/**
+ * Picks the consensus row for the fiscal year in progress: the earliest
+ * period end on or after today. FMP returns annual rows newest-first reaching
+ * about five years ahead, so taking `arr[0]` (the previous behaviour) served
+ * e.g. NVDA's FY2031 consensus (EPS 20, revenue $1.1T) as if it were current —
+ * in the fundamental tab, the fundamental-analysis prompt and the agent tool.
+ * Falls back to the most recent past row when no future row exists, and to
+ * `arr[0]` when rows carry no parsable date.
+ */
+export function currentFiscalYearRow(
+    arr: readonly RawFmpAnalystEstimate[],
+    now: Date
+): RawFmpAnalystEstimate | undefined {
+    const today = now.toISOString().slice(0, 10);
+    const dated = arr
+        .filter(
+            (r): r is RawFmpAnalystEstimate & { date: string } =>
+                typeof r.date === 'string' && /^\d{4}-\d{2}-\d{2}/.test(r.date)
+        )
+        .toSorted((a, b) => a.date.localeCompare(b.date));
+    if (dated.length === 0) return arr[0];
+    return (
+        dated.find(r => r.date.slice(0, 10) >= today) ?? dated[dated.length - 1]
+    );
+}
+
 /** FMP adapter implementing `FundamentalDataProvider`. Uses `fmpGet` for all HTTP calls. */
 export class FmpFundamentalClient implements FundamentalDataProvider {
     /** Fetch company profile; returns `null` when FMP returns an empty array. */
@@ -302,7 +328,7 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
             page: ANALYST_ESTIMATES_PAGE,
             limit: ANALYST_ESTIMATES_LIMIT,
         });
-        const r = arr[0];
+        const r = currentFiscalYearRow(arr, new Date());
         if (!r) return null;
         return {
             estimatedEpsAvg: toFiniteNumber(r.epsAvg ?? r.estimatedEpsAvg),

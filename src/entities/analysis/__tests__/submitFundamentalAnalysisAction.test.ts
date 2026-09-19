@@ -34,6 +34,22 @@ vi.mock('@/shared/lib/byokGate', () => ({
     })),
 }));
 
+const { getAssetInfo, resolveMarketProfile, getQuote } = vi.hoisted(() => ({
+    getAssetInfo: vi.fn(),
+    resolveMarketProfile: vi.fn(),
+    getQuote: vi.fn(),
+}));
+vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({ getAssetInfo }));
+vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
+    resolveMarketProfile,
+}));
+vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
+    getCachedMarketDataProvider: () => ({ getQuote }),
+}));
+vi.mock('@/shared/api/market/sessionSpecFor', () => ({
+    sessionSpecFor: vi.fn(),
+}));
+
 import { headers } from 'next/headers';
 import {
     runFundamentalAnalysis,
@@ -87,6 +103,10 @@ describe('runFundamentalAnalysisAction 함수는', () => {
             tier: 'free' as never,
         });
         mockRunFundamentalAnalysis.mockResolvedValue(DONE_RESULT);
+
+        getAssetInfo.mockReset().mockResolvedValue(null);
+        resolveMarketProfile.mockReset().mockResolvedValue('us-equity');
+        getQuote.mockReset().mockResolvedValue({ price: 150 });
     });
 
     it('siglens-core runFundamentalAnalysis에 symbol과 modelId를 전달한다', async () => {
@@ -331,5 +351,82 @@ describe('runFundamentalAnalysisAction 함수는', () => {
         expect(mockRunFundamentalAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ skipEnqueueIfMiss: false })
         );
+    });
+
+    describe('currentPrice (lazy getter, core only calls it on a cache miss)', () => {
+        /** `currentPrice` is now `number | null | (() => Promise<number | null>)` — narrow to the function variant this action always passes. */
+        function currentPriceGetter(
+            callArg: unknown
+        ): () => Promise<number | null> {
+            const cp = (callArg as { currentPrice?: unknown })?.currentPrice;
+            if (typeof cp !== 'function')
+                throw new Error(
+                    'expected currentPrice to be a lazy getter function'
+                );
+            return cp as () => Promise<number | null>;
+        }
+
+        it('currentPrice는 사전 조회된 값이 아니라 함수로 전달된다 — 액션 호출 자체는 시세를 조회하지 않는다', async () => {
+            getQuote.mockResolvedValue({ price: 234.5 });
+
+            await runFundamentalAnalysisAction('AAPL', MODEL_ID, 'ko');
+
+            const callArg = mockRunFundamentalAnalysis.mock.calls[0]?.[0];
+            expect(
+                typeof (callArg as { currentPrice?: unknown })?.currentPrice
+            ).toBe('function');
+            // The action never awaits/calls the getter itself — only core
+            // does, and only on a cache miss. Calling the ACTION must not
+            // have triggered a quote fetch on its own.
+            expect(getQuote).not.toHaveBeenCalled();
+        });
+
+        it('getter를 호출하면(=core의 cache-miss 경로) 유효한 시세를 반환한다', async () => {
+            getQuote.mockResolvedValue({ price: 234.5 });
+            await runFundamentalAnalysisAction('AAPL', MODEL_ID, 'ko');
+            const callArg = mockRunFundamentalAnalysis.mock.calls[0]?.[0];
+            await expect(currentPriceGetter(callArg)()).resolves.toBe(234.5);
+        });
+
+        it('fmpSymbol이 있으면(get_quote/get_fundamentals와 같은 경로) getter 호출 시에만 그 값으로 시세를 조회한다', async () => {
+            getAssetInfo.mockResolvedValue({
+                symbol: '^SPX',
+                fmpSymbol: '^GSPC',
+            });
+            getQuote.mockResolvedValue({ price: 100 });
+
+            await runFundamentalAnalysisAction('^SPX', MODEL_ID, 'ko');
+            const callArg = mockRunFundamentalAnalysis.mock.calls[0]?.[0];
+            expect(getQuote).not.toHaveBeenCalled();
+
+            await currentPriceGetter(callArg)();
+            expect(getQuote).toHaveBeenCalledWith('^GSPC');
+        });
+
+        it('getter 호출 시 시세 조회가 실패해도(non-blocking) null로 degrade하고, 분석 자체는 그대로 진행된다', async () => {
+            getQuote.mockRejectedValue(new Error('FMP down'));
+
+            const result = await runFundamentalAnalysisAction(
+                'AAPL',
+                MODEL_ID,
+                'ko'
+            );
+
+            expect(result).toBe(DONE_RESULT);
+            const callArg = mockRunFundamentalAnalysis.mock.calls[0]?.[0];
+            await expect(currentPriceGetter(callArg)()).resolves.toBeNull();
+        });
+
+        it('getter 호출 시 price가 0 이하면(시세 실패를 0으로 표현) null로 degrade한다', async () => {
+            getQuote.mockResolvedValue({ price: 0 });
+            await runFundamentalAnalysisAction('AAPL', MODEL_ID, 'ko');
+            let callArg = mockRunFundamentalAnalysis.mock.calls.at(-1)?.[0];
+            await expect(currentPriceGetter(callArg)()).resolves.toBeNull();
+
+            getQuote.mockResolvedValue({ price: -10 });
+            await runFundamentalAnalysisAction('AAPL', MODEL_ID, 'ko');
+            callArg = mockRunFundamentalAnalysis.mock.calls.at(-1)?.[0];
+            await expect(currentPriceGetter(callArg)()).resolves.toBeNull();
+        });
     });
 });

@@ -185,4 +185,147 @@ describe('getEconomyTool', () => {
         expect(r.available).toBe(true);
         expect(r.briefing).toBeNull();
     });
+
+    describe('indicator change/direction, treasury spread, calendar hoursUntil (spec §3.6, B8)', () => {
+        it('latest-previous로 change/direction을 계산한다', async () => {
+            snapshot.mockResolvedValue({
+                indicators: [
+                    {
+                        name: 'federalFunds',
+                        unit: '%',
+                        latest: { date: '2026-09-01', value: 4.5 },
+                        previous: { date: '2026-08-01', value: 4.25 },
+                        trend: [],
+                    },
+                    {
+                        name: 'unemploymentRate',
+                        unit: '%',
+                        latest: { date: '2026-09-01', value: 4.0 },
+                        previous: { date: '2026-08-01', value: 4.2 },
+                        trend: [],
+                    },
+                    {
+                        name: 'cpi',
+                        latest: { date: '2026-09-01', value: 3.0 },
+                        previous: { date: '2026-08-01', value: 3.0 },
+                        trend: [],
+                    },
+                    {
+                        name: 'newIndicator',
+                        latest: { date: '2026-09-01', value: 1 },
+                        previous: null,
+                        trend: [],
+                    },
+                ],
+                treasury: null,
+                calendar: [],
+            });
+            briefing.mockResolvedValue(null);
+            const r = (await getEconomyTool({}, ctx, rt)) as {
+                indicators: Array<{
+                    name: string;
+                    unit: string | null;
+                    change: number | null;
+                    changeUnit: 'pp' | 'level';
+                    direction: string | null;
+                }>;
+            };
+            expect(r.indicators[0]).toMatchObject({
+                unit: '%',
+                change: expect.closeTo(0.25, 6),
+                changeUnit: 'pp',
+                direction: 'up',
+            });
+            expect(r.indicators[1]).toMatchObject({
+                unit: '%',
+                change: expect.closeTo(-0.2, 6),
+                changeUnit: 'pp',
+                direction: 'down',
+            });
+            expect(r.indicators[2]).toMatchObject({
+                unit: null,
+                change: 0,
+                changeUnit: 'level',
+                direction: 'unchanged',
+            });
+            expect(r.indicators[3]).toMatchObject({
+                unit: null,
+                change: null,
+                // No previous value at all (null change) — the series is
+                // still level-type (no `unit`), so changeUnit stays
+                // descriptive metadata rather than depending on `change`
+                // being non-null.
+                changeUnit: 'level',
+                direction: null,
+            });
+        });
+
+        it('treasury.spread2s10s/curveInverted을 core computeYieldSpread로 계산한다', async () => {
+            snapshot.mockResolvedValue({
+                indicators: [],
+                treasury: { date: '2026-09-12', year2: 4.1, year10: 3.9 }, // inverted
+                calendar: [],
+            });
+            briefing.mockResolvedValue(null);
+            const r = (await getEconomyTool({}, ctx, rt)) as {
+                treasury: {
+                    spread2s10s: number | null;
+                    curveInverted: boolean | null;
+                };
+            };
+            expect(r.treasury.spread2s10s).toBeCloseTo(3.9 - 4.1, 6);
+            expect(r.treasury.curveInverted).toBe(true);
+        });
+
+        it('rounds the 2s10s spread instead of passing binary-float noise to the model', async () => {
+            // Real data: 10y 4.10 − 2y 3.70 came out as 0.39999999999999947.
+            snapshot.mockResolvedValue({
+                indicators: [],
+                treasury: { date: '2026-09-12', year2: 3.7, year10: 4.1 },
+                calendar: [],
+            });
+            briefing.mockResolvedValue(null);
+            const r = (await getEconomyTool({}, ctx, rt)) as {
+                treasury: { spread2s10s: number | null };
+            };
+            expect(r.treasury.spread2s10s).toBe(0.4);
+        });
+
+        it('treasury가 null이면 그대로 null', async () => {
+            snapshot.mockResolvedValue({
+                indicators: [],
+                treasury: null,
+                calendar: [],
+            });
+            briefing.mockResolvedValue(null);
+            const r = (await getEconomyTool({}, ctx, rt)) as {
+                treasury: unknown;
+            };
+            expect(r.treasury).toBeNull();
+        });
+
+        it('캘린더 이벤트에 hoursUntil이 붙는다', async () => {
+            const inThreeDays = new Date(Date.now() + 3 * DAY_MS).toISOString();
+            snapshot.mockResolvedValue({
+                indicators: [],
+                treasury: null,
+                calendar: [
+                    {
+                        date: inThreeDays,
+                        event: 'CPI YoY',
+                        impact: 'High',
+                        actual: null,
+                        estimate: 3.1,
+                        previous: 3.0,
+                        unit: '%',
+                    },
+                ],
+            });
+            briefing.mockResolvedValue(null);
+            const r = (await getEconomyTool({}, ctx, rt)) as {
+                upcomingCalendar: Array<{ hoursUntil: number }>;
+            };
+            expect(r.upcomingCalendar[0]!.hoursUntil).toBe(3 * 24);
+        });
+    });
 });

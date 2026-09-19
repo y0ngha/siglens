@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [inverse_head_and_shoulders]
-token_cost: 674
-digest_hash: "5c002a4f"
+token_cost: 716
+digest_hash: "f136b1a1"
 ---
 
 ## Detection Criteria
@@ -63,10 +63,8 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Target price calculation**: Measure the vertical distance from the neckline to the head. Project this distance upward from the neckline break point. Example: if neckline is at $100 and head is at $90, the target is $110 ($100 + $10).
-- **Risk/reward assessment**: The distance from current price to target versus the distance from current price to the right shoulder low defines the risk/reward ratio. A ratio of at least 2:1 is analytically favorable.
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the neckline price at the break point; `extremeLevel` = the head price; `direction` = 'up'; `invalidationLevel` = the right shoulder low (a close below it negates the pattern). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Stop-loss reference level**: The right shoulder low serves as the invalidation level. A close below this level negates the bullish pattern.
-- **Partial target**: A conservative first target is 50% of the full projected distance, where partial profit-taking is commonly observed.
 - **Time factor**: Patterns that take longer to form (> 40 bars) tend to produce larger projected moves.
 
 Note: These are analytical reference points for technical analysis, not trading recommendations.
@@ -75,11 +73,11 @@ Note: These are analytical reference points for technical analysis, not trading 
 
 When this pattern is detected, include the following in the analysis response:
 
-- **keyPrices**: Include the neckline price level, head price, left shoulder price, and right shoulder price. If the neckline is broken, include the projected target price.
+- **keyPrices**: Include the neckline price level, head price, left shoulder price, and right shoulder price.
 - **patternSummaries**: Describe the pattern status (forming / right shoulder in progress / completed / neckline broken), the neckline slope direction, and shoulder symmetry assessment.
 - **Volume context**: State whether volume behavior confirms or contradicts the pattern (increasing volume on right shoulder, volume surge on break).
 - **Completion status**: Clearly indicate whether the pattern is still forming or fully confirmed by a neckline break with a closing price above.
-- **Target projection**: Calculate and state the measured move target using neckline-to-head distance projected above the neckline.
+- **geometry**: Fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
 역헤드앤숄더 (Inverse Head & Shoulders) — bullish reversal, confidence_weight 0.8. Three troughs: left shoulder, head (center), right shoulder.
@@ -110,17 +108,14 @@ When this pattern is detected, include the following in the analysis response:
 - Three-trough bounce within a strong downtrend that is mere consolidation before further decline.
 - Volume keeps declining through right shoulder & break with no surge (lacks conviction).
 
-### Target (measured move)
-- Vertical distance neckline→head, projected UP from neckline break point. E.g. neckline $100, head $90 → target $110 ($100+$10).
-- Conservative first target = 50% of full projected distance.
-- Risk/reward = (price→target) vs (price→right shoulder low); ≥2:1 favorable.
-- Patterns >40 bars tend to produce larger moves.
+### Geometry (do not calculate targets)
+`geometry` = { breakoutLevel: the neckline price at the break point, extremeLevel: the head price, direction: 'up', invalidationLevel: the right shoulder low (a close below it negates the pattern) }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 ### Output
-- keyPrices: neckline, head, left shoulder, right shoulder prices; projected target if neckline broken.
+- keyPrices: neckline, head, left shoulder, right shoulder prices.
 - patternSummaries: status (forming / right shoulder in progress / completed / neckline broken), neckline slope direction, shoulder symmetry.
 - Volume context: whether volume confirms (increasing right-shoulder volume, break surge) or contradicts.
 - Completion status: forming vs confirmed by close above neckline.
-- Target projection: measured-move target (neckline-to-head projected above neckline).
+- geometry: `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the definition above — never a computed target or R:R.
 - trend: bullish when pattern confirmed.
 <!-- PROMPT_DIGEST:END -->

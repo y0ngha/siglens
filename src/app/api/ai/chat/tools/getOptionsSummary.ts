@@ -5,6 +5,7 @@ import {
     fetchOptionsSnapshot,
     hasOptionsMarket,
 } from '@/entities/options-chain/lib/optionsDataCache';
+import { roundNumbersDeep } from '@/entities/bars/lib/roundIndicators';
 import type { ToolExecutor } from './index';
 
 export const getOptionsSummaryTool: ToolExecutor = async args => {
@@ -20,7 +21,12 @@ export const getOptionsSummaryTool: ToolExecutor = async args => {
     const snapshot = await fetchOptionsSnapshot(symbol);
     if (snapshot === null || snapshot.chains.length === 0)
         return { symbol, available: false, reason: 'no_snapshot' };
-    const chain = snapshot.chains[0]!;
+    // chains[0] can be a same-day (daysToExpiration 0) expiry, which makes
+    // the implied-move metric null — prefer the first chain with at least
+    // one day left, falling back to chains[0] if every chain expires today.
+    const chosenIndex = snapshot.chains.findIndex(c => c.daysToExpiration >= 1);
+    const chainIndex = chosenIndex >= 0 ? chosenIndex : 0;
+    const chain = snapshot.chains[chainIndex]!;
     return {
         asOf: snapshot.capturedAt,
         source: 'options snapshot (cached)',
@@ -30,9 +36,14 @@ export const getOptionsSummaryTool: ToolExecutor = async args => {
         underlyingPrice: snapshot.underlyingPrice,
         expiration: chain.expirationDate,
         daysToExpiration: chain.daysToExpiration,
-        metrics: summarizeChainForLlm(chain, snapshot.underlyingPrice),
+        // Core returns raw floats (implied move range, spreads, IV); trim them
+        // to significant digits like the options analysis prompt does.
+        metrics: roundNumbersDeep(
+            summarizeChainForLlm(chain, snapshot.underlyingPrice)
+        ),
         otherExpirations: snapshot.chains
-            .slice(1, 4)
+            .filter((_, i) => i !== chainIndex)
+            .slice(0, 3)
             .map(c => c.expirationDate),
     };
 };

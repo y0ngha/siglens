@@ -7,8 +7,8 @@ indicators: []
 confidence_weight: 0.75
 gating:
   tier: always_on
-token_cost: 588
-digest_hash: "a946a9fd"
+token_cost: 818
+digest_hash: "329c08d9"
 ---
 
 ## Overview
@@ -102,17 +102,23 @@ Uses a conditional X value based on the relationship between the previous Open a
 
 ## AI Analysis Instructions
 
+The `## Market Reference` section already lists the computed pivot levels under these exact labels (the nearest-to-price subset — Standard and Camarilla only) — use those numbers directly; never calculate a pivot level yourself from the previous bar's High/Low/Close:
+- Standard: `Pivot PP`, `Pivot R1`–`Pivot R3`, `Pivot S1`–`Pivot S3`
+- Camarilla: `Camarilla R3`, `Camarilla R4`, `Camarilla S3`, `Camarilla S4` (only these four most-watched Camarilla levels are computed; R1/R2/S1/S2 are not)
+
+The section also carries a complete `Pivot table:` line, pipe-separated by method: `Standard PP x R1 x … | Pivot Fib PP x R1 x … S3 x | Woodie PP x R1 x R2 x S1 x S2 x | DeMark PP x R1 x S1 x | Camarilla R3 x R4 x S3 x S4 x`. This is the ONLY place Fibonacci Pivot, Woodie, and DeMark levels appear — they have no nearest-list rows of their own. Use the table for those three methods' levels, and for a Standard/Camarilla level further from price than the nearest-list rows above cover.
+
 When analyzing with Pivot Points:
 
-1. Prioritize Standard and Fibonacci Pivot calculations using the previous bar's High, Low, Close from the provided bar data. Woodie, Camarilla, and DeMark are secondary — include them only when the market context favors their use (e.g., Camarilla for scalping setups, Woodie when close-weighted analysis is relevant).
-2. Determine the current price position relative to PP, R1, R2, R3, S1, S2, S3.
-3. Identify which pivot levels are nearest to the current price as immediate support/resistance.
-4. Note any pivot levels that converge with other technical levels (moving averages, Bollinger Bands, Fibonacci levels) — convergence increases reliability.
-5. Assess the session's directional bias based on price position relative to PP.
-6. Include relevant pivot levels in the keyLevels response field with calculation basis as the reason.
+1. Prioritize the Standard rows (nearest-list) and the Fibonacci Pivot segment of the `Pivot table:` line — Fibonacci Pivot has no nearest-list rows of its own. Woodie, Camarilla, and DeMark are secondary — cite them (Camarilla from its nearest-list rows or the table; Woodie/DeMark from the table only) when the market context favors their use (e.g., Camarilla for scalping setups, Woodie when close-weighted analysis is relevant).
+2. Determine the current price position relative to the listed `Pivot PP`, R1–R3, S1–S3 values.
+3. Identify which LISTED pivot levels are nearest to the current price as immediate support/resistance.
+4. Note any listed pivot levels that converge with other technical levels (moving averages, Bollinger Bands, Fibonacci levels) — convergence increases reliability.
+5. Assess the session's directional bias based on price position relative to the listed `Pivot PP`.
+6. Include the relevant pivot levels in the keyLevels response field, citing the pivot method as the reason — Standard/Camarilla from the nearest-list rows (or the `Pivot table:` line for a further level), Fibonacci/Woodie/DeMark from the `Pivot table:` line. Never calculate a pivot level yourself.
 
 **Caveats:**
-- Pivot points are primarily designed for daily timeframe analysis. For intraday timeframes (1Min, 5Min, 15Min, 1Hour), use the most recent daily bar for calculation.
+- Pivot points are primarily designed for daily timeframe analysis. For intraday timeframes (1Min, 5Min, 15Min, 1Hour), the listed levels are based on the most recent daily bar.
 - On gap-open days, pivot levels may have reduced accuracy.
 - Weekly/monthly pivots can be used for swing trading context but are secondary to daily pivots for intraday analysis.
 
@@ -139,6 +145,7 @@ DeMark — conditional X:
 Bullish signals: open above PP = bullish session bias; bounce off S1 + rising volume = long; break above R1 + volume = continuation long; first touch of PP from below + bullish candle = strong support.
 Bearish signals: open below PP = bearish bias; reject R1 + bearish candle = short; break below S1 + volume = continuation short; first touch of PP from above + bearish candle = resistance confirmation.
 Key rules: R1–S1 = primary session activity zone; FIRST touch of any level = highest reliability; repeated touches weaken the level; gap opens may invalidate pivots (reduced reliability on gap days).
-AI instructions: (1) prioritize Standard + Fibonacci pivots from previous bar H/L/C; Woodie/Camarilla/DeMark secondary (Camarilla for scalping, Woodie for close-weighted). (2) determine price position vs PP, R1–R3, S1–S3. (3) find nearest levels as immediate S/R. (4) note convergence with MAs, Bollinger, Fib levels (↑ reliability). (5) assess directional bias vs PP. (6) include levels in keyLevels with calculation basis as reason.
+## Market Reference already lists these exact nearest-list rows (Standard + Camarilla ONLY) — cite, never calculate: Standard `Pivot PP`/`Pivot R1..R3`/`Pivot S1..S3`; Camarilla `Camarilla R3`/`Camarilla R4`/`Camarilla S3`/`Camarilla S4` (only these four are computed). It also carries a complete `Pivot table:` line, pipe-separated by method: `Standard PP x R1 x … | Pivot Fib PP x R1 x … S3 x | Woodie PP x R1 x R2 x S1 x S2 x | DeMark PP x R1 x S1 x | Camarilla R3 x R4 x S3 x S4 x`. Fibonacci Pivot/Woodie/DeMark have NO nearest-list rows — the table is their only source. Use the table for those three methods, and for a Standard/Camarilla level further from price than the nearest-list rows cover.
+AI instructions: (1) prioritize listed Standard rows + the Fibonacci Pivot table segment (no nearest-list rows of its own); Woodie/Camarilla/DeMark secondary (Camarilla from rows or table, Woodie/DeMark from table only; Camarilla for scalping, Woodie for close-weighted). (2) determine price position vs listed PP, R1–R3, S1–S3. (3) find nearest LISTED levels as immediate S/R. (4) note convergence with MAs, Bollinger, Fib levels (↑ reliability). (5) assess directional bias vs listed PP. (6) include levels in keyLevels citing the pivot method as reason — Standard/Camarilla from rows (or table for a further level), Fib/Woodie/DeMark from the table.
 Caveats: designed for daily timeframe — for intraday (1Min/5Min/15Min/1Hour) use most recent daily bar. Gap-open days = reduced accuracy. Weekly/monthly pivots for swing context, secondary to daily for intraday.
 <!-- PROMPT_DIGEST:END -->

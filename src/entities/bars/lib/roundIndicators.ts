@@ -45,6 +45,20 @@ export function roundNumber(value: number): number {
 }
 
 /**
+ * Recursively applies {@link roundNumber} to every number in a JSON-like
+ * value, preserving keys and array lengths. A type-generic public wrapper
+ * around the same private `roundDeep` traversal `roundIndicators` (below)
+ * also calls — NOT layered on top of `roundIndicators`, a sibling of it —
+ * for agent tool results that pass core metrics straight through (binary-
+ * float noise such as `0.050000000000000266` otherwise reaches the model
+ * verbatim).
+ */
+export function roundNumbersDeep<T>(value: T): T {
+    // safe: roundDeep only swaps numbers for numbers, so the runtime shape is T.
+    return roundDeep(value) as T;
+}
+
+/**
  * 임의 깊이의 지표 구조를 순회하며 실수만 축소한다.
  *
  * `IndicatorResult`는 필드마다 모양이 다르다 — 평면 배열(`rsi`), 객체 배열(`macd`),

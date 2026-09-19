@@ -93,6 +93,15 @@ function zoneOffsetMs(at: Date, timeZone: string): number {
 }
 
 /**
+ * `date`의 IANA `timeZone` 현지 달력 날짜 `YYYY-MM-DD`. `formatToParts`로 필드를
+ * 타입별로 꺼내므로 ICU 버전에 따른 로케일 표기 순서 차이에 영향받지 않는다.
+ * (에이전트 도구가 일봉 신선도·실적까지 남은 날짜를 시장 달력으로 계산할 때 쓴다.)
+ */
+export function zonedDate(date: Date, timeZone: string): string {
+    return zonedParts(date, timeZone).date;
+}
+
+/**
  * 현지 달력 날짜 + 현지 분(minutes-of-day)을 UTC 순간으로 환산한다.
  *
  * 오프셋을 두 번 재는 이유: 첫 추정은 "현지 벽시계를 UTC로 읽은 값"이라 DST 전환일에는

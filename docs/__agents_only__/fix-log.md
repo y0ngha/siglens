@@ -428,16 +428,24 @@
 ## [feat/hub-ai-prewarm Round 4 | SEO prewarm hub phase | 2026-09-18]
 - Status: APPROVED (zero findings)
 
-## [feat/hub-briefing-ssr-seed Round 1 | 허브 브리핑 SSR seed | 2026-09-18]
-- Violation: `SEED_TTL_SECONDS` JSDoc claimed the seed's `generatedAt` is rendered by `BriefingCard`, so a stale seed would disclose its age. Neither core briefing response type has `generatedAt`, the seed/peek path passes `generatedAt: ''`, and `BriefingCard` hides the timestamp row when it is falsy — the actual behavior is the opposite of the claim, and the claim was load-bearing for the TTL argument.
-  - Rule: MISTAKES.md §15.6 — comments must match the code they describe
-  - Context: Comment corrected to state that seed-sourced briefings render with no timestamp (TTL is the only staleness bound), and the TTL shortened 18h → 12h, just above the largest cron gap (09:55→20:30 UTC ≈ 10h35m).
-
 ## [feat/hub-briefing-ssr-seed Round 2 | 허브 브리핑 SSR seed | 2026-09-18]
-- Violation: after the TTL change the design doc's ASCII flow diagram still read `SET(TTL 18h)` while the section below it documented 12h — the same stale-value defect migrating from the code comment into the doc during its own fix.
-  - Rule: MISTAKES.md §15.6 — the same file must not contradict itself after a value change
-  - Context: Diagram updated to 12h; grepped the doc, module and test for `18h`/`18 * 60` — zero remaining.
 - Development note (self-inflicted, caught before commit): wrote `src/entities/market-summary/__tests__/briefingStaticCache.test.ts` with the Write tool without checking whether it existed. It did — the overwrite deleted 7 existing tests (150 lines) and the review approved that diff without flagging the deletion. Caught afterwards by reading `git status` (the file showed `M`, not `??`). Restored with `git checkout --` and the 2 new seed tests appended in the existing file's style. Lesson: a `M` in `git status` for a file believed to be new means something was overwritten — and "tests still pass" does not detect deleted tests.
 
 ## [feat/hub-briefing-ssr-seed Round 3 | 허브 브리핑 SSR seed | 2026-09-18]
 - Status: APPROVED (zero findings)
+
+## [PR #849 | feat/agent-precomputed-data | 2026-09-19]
+- Violation: `showScrollButton` (`MessageList.tsx`) was only ever updated from the `onScroll` handler. A streaming answer grows `scrollHeight` continuously without firing any scroll event, so a user who had scrolled away from the bottom never saw the ↓ scroll-to-bottom button appear during streaming.
+  - Rule: (new) A piece of UI state derived from container geometry (scroll distance) must react to every geometry-changing cause, not just the one event type (`scroll`) that happens to be wired up — content growth from streaming is a geometry change with no accompanying scroll event.
+  - Context: Added a mount-only `useEffect` that attaches a `ResizeObserver` to the content wrapper div; its callback (not the effect body — this is an external subscription, matching `react-hooks/set-state-in-effect`) calls `setShowScrollButton` via a shared `isAwayFromBottom(el)` helper also used by `handleScroll`, so the two paths can't drift apart. Follows the existing `useIsClamped.ts` observer pattern (create in effect, `observer.disconnect()` on cleanup).
+
+- Violation: Three `[...messages].reverse().find(...)` calls in `MessageList.tsx` mutated a spread copy to find the last matching message, instead of the non-mutating ES2023 method that does the same lookup directly.
+  - Rule: `docs/conventions/CONVENTIONS.md` — prefer immutable array methods (`arr.toReversed()` over `arr.reverse()`, etc.); `.findLast()` is already established in the repo (`src/views/symbol/utils/technicalFacts.ts`).
+  - Context: Replaced all three call sites with `messages.findLast(m => m.role === ...)`.
+
+## [PR #849 Round 2 | feat/agent-precomputed-data | 2026-09-19]
+- Status: fixed (both findings already documented in MISTAKES.md §0.5 and Coding Paradigm #17)
+
+## [PR #849 Round 3 | feat/agent-precomputed-data | 2026-09-19]
+- Status: fixed (finding already documented in MISTAKES.md §0.8)
+- Rejected: [Suggestion] move getBarsIndicators derived-metric helpers to entities/bars/lib — reviewer marked non-blocking and pre-existing pattern in the same directory; a ~300-line move is a separate refactor, out of this PR's scope.

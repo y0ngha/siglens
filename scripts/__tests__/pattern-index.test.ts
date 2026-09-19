@@ -5,15 +5,18 @@
  * 5be1e11d) — every one of the 17 `PATTERN_TRIGGER_CATALOG` chart-pattern
  * pre-screener ids (the same catalog validate-skills.ts cross-checks
  * `type: pattern` skill triggers against) must have a one-line entry here
- * carrying both a measured-move Target and an invalidation/stop hint, so the
- * model can still name a visible pattern even when its detailed skill wasn't
- * gated in this run. Before this test, pattern-index.md had zero automated
- * assertions — a future catalog addition (or an edit that dropped a Target/
- * invalidation phrase) would silently ship un-caught.
+ * carrying a compact `geom:` definition (B=breakoutLevel, E=extremeLevel,
+ * dir=direction, inv=invalidationLevel), so the model can fill
+ * `patternSummaries[].geometry` for a visible pattern even when its detailed
+ * skill wasn't gated in this run (the model never computes a measured target
+ * or risk/reward itself — the app derives those from `geometry`). Before
+ * this test, pattern-index.md had zero automated assertions — a future
+ * catalog addition (or an edit that dropped a `geom:` clause) would silently
+ * ship un-caught.
  *
  * The bullet format below was read directly off the real file, not guessed:
- *   - **{id}:** ... Target: ...; invalidated by ...
- *   - **{id} (alias):** ... Target: ...; stop = ...
+ *   - **{id}:** ... geom: B=..., E=..., dir=..., inv=....
+ *   - **{id} (alias):** ... geom: B=..., E=..., dir=..., inv=....
  * (`ascending_wedge (rising wedge)` / `descending_wedge (falling wedge)` are
  * the only entries with a parenthetical alias before the closing `:**`.) The
  * digest section at the bottom of the file (between PROMPT_DIGEST:START/END)
@@ -70,16 +73,16 @@ describe('skills/_core/pattern-index.md content consistency', () => {
     });
 
     describe.each(PATTERN_TRIGGER_CATALOG)('%s entry', id => {
-        it('states a measured-move Target', () => {
+        it('states a geom: definition with breakoutLevel/extremeLevel', () => {
             const match = bulletRegex(id).exec(content);
             expect(match).not.toBeNull();
-            expect(match?.[1]).toMatch(/Target:/);
+            expect(match?.[1]).toMatch(/geom: B=.+, E=.+,/);
         });
 
-        it('states an invalidation/stop hint', () => {
+        it('states a direction and an invalidation level', () => {
             const match = bulletRegex(id).exec(content);
             expect(match).not.toBeNull();
-            expect(match?.[1]).toMatch(/invalidated by|stop =/);
+            expect(match?.[1]).toMatch(/dir=[^,]+, inv=/);
         });
     });
 });

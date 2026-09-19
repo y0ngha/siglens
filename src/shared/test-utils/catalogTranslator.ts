@@ -10,11 +10,18 @@ const CATALOGS: Record<string, unknown> = {
     zh: zhMessages,
 };
 
-/** 서버 액션·메일 템플릿이 받는 번역자와 같은 시그니처. */
-export type CatalogTranslator = (
-    key: string,
-    values?: Record<string, string | number>
-) => string;
+/**
+ * 서버 액션·메일 템플릿이 받는 번역자와 같은 시그니처, `+ .has()` — 실제
+ * next-intl 번역자와 마찬가지로 `t.has(key)`로 존재 여부를 먼저 확인할 수
+ * 있다. next-intl의 `t(key)`는 기본적으로 없는 키에서 throw하지 않고(키
+ * 경로 문자열을 그대로 반환) 에러 핸들러에만 보고하므로, "없으면 폴백"
+ * 로직은 `t.has(key)`로 판단해야 한다 — 이 스텁이 `.has` 없이 함수만
+ * 노출하면 그 실제 동작 차이를 테스트가 못 잡는다.
+ */
+export interface CatalogTranslator {
+    (key: string, values?: Record<string, string | number>): string;
+    has: (key: string) => boolean;
+}
 
 function resolve(node: unknown, path: string): unknown {
     return path
@@ -41,7 +48,7 @@ export function catalogTranslator(
     locale: keyof typeof CATALOGS | string = 'ko'
 ): CatalogTranslator {
     const group = resolve(CATALOGS[locale] ?? koMessages, namespace);
-    return (key, values) => {
+    const t = ((key, values) => {
         const template = resolve(group, key);
         if (typeof template !== 'string') {
             throw new Error(
@@ -53,7 +60,9 @@ export function catalogTranslator(
                 text.replaceAll(`{${name}}`, String(value)),
             template
         );
-    };
+    }) as CatalogTranslator;
+    t.has = key => typeof resolve(group, key) === 'string';
+    return t;
 }
 
 /**

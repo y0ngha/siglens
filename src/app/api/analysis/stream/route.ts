@@ -1,5 +1,6 @@
 import type {
     AssembledPromptRecord,
+    MarketDataProvider,
     ModelId,
     PositionBucket,
     Timeframe,
@@ -18,6 +19,7 @@ import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
+import { quoteWithTimeout } from '@/shared/api/market/quoteTimeout';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { isBot } from '@/shared/api/isBot';
 import {
@@ -177,12 +179,6 @@ const SSE_HEADERS: HeadersInit = {
  * in-flight analysis calls use the same model-tier cap.
  */
 const STREAM_DEADLINE_MS = 10 * 60 * 1_000;
-
-/**
- * 포지션 버킷 파생용 시세 조회 상한. 이 조회는 첫 SSE 바이트 이전에 일어나 heartbeat의
- * 보호를 받지 못하므로, 침묵 벽(cloudflared 경유 실측 125.9초)보다 훨씬 짧게 잡는다.
- */
-const QUOTE_LOOKUP_TIMEOUT_MS = 5_000;
 
 /**
  * ⚠️ `request.signal`을 core `run*`에 **의도적으로 전달하지 않는다.** 누락이 아니다.
@@ -536,9 +532,7 @@ async function resolveHoldingPositionBucket(
     tier: 'free' | 'member' | 'pro',
     symbol: string,
     fmpSymbol: string | undefined,
-    marketDataProvider: {
-        getQuote: (sym: string) => Promise<{ price?: number } | null>;
-    }
+    marketDataProvider: Pick<MarketDataProvider, 'getQuote'>
 ): Promise<PositionBucket | undefined> {
     if (tier === 'free' || userId === null) return undefined;
     try {
@@ -548,22 +542,14 @@ async function resolveHoldingPositionBucket(
         ).findByUserAndSymbol(userId, symbol.toUpperCase());
         if (holding === null) return undefined;
         const avgPrice = Number(holding.averagePrice);
-        /**
-         * 이 조회는 **첫 SSE 바이트가 나가기 전**에 일어난다 — heartbeat가 아직 시작되지
-         * 않았으므로 여기서 오래 끌면 침묵 벽(실측 125.9초)이 연결을 끊는다. FMP 429
-         * 폭풍에서는 요청 타임아웃 10초 + 백오프 10/15/20초로 한 번의 getQuote가 85초까지
-         * 갈 수 있다. 개인화는 있으면 좋은 것이지 분석의 전제가 아니므로, 짧은 상한을
-         * 두고 넘기면 버킷 없이 진행한다.
-         */
-        const quote = await Promise.race([
-            marketDataProvider.getQuote(fmpSymbol ?? symbol),
-            new Promise<null>(resolve => {
-                setTimeout(
-                    () => resolve(null),
-                    QUOTE_LOOKUP_TIMEOUT_MS
-                ).unref();
-            }),
-        ]);
+        // This lookup happens BEFORE the first SSE byte goes out, so it
+        // must stay well inside the silence wall (measured: 125.9s) —
+        // bound enforced by `quoteWithTimeout` (see its own JSDoc for the
+        // FMP-429-storm math behind the bound).
+        const quote = await quoteWithTimeout(
+            marketDataProvider,
+            fmpSymbol ?? symbol
+        );
         const currentPrice = quote?.price ?? null;
         return resolvePositionBucket(tier, avgPrice, currentPrice ?? null);
     } catch (err) {
