@@ -209,7 +209,6 @@
 
 ## [fix/visitor-diagnostics-effective-now Round 2 | privacy policy effective date sync | 2026-09-10]
 - Status: APPROVED (round 2, zero findings)
-  - Round 1 finding (fixed): `docs/superpowers/specs/2026-09-02-visitor-metrics-design.md` §14.3–14.5 described the removed privacy-policy effective-date gate as the current design. Specification documented behaviour that implementation no longer contained — stale documentation left after the gate code was deleted. Fixed by retitling §14.4 "(철회됨)" with explicit "do not reintroduce" warning, correcting §14.5's deletion steps, and adding §14.6 recording the archival of the gate.
   - Development note: Two self-inflicted errors caught in this round, neither shipped.
     1. `git checkout -- <file>` destroyed uncommitted work. While falsification-testing (forcing three columns back to null to test the fixture), reverted the scratch edit with `git checkout --`, which restored the file to HEAD. That silently discarded the actual feature edit too, since it was uncommitted. Detected by grepping for the removed constant afterwards; the edit had to be re-applied. Lesson: save intended content first (stash/copy) rather than assuming `git checkout --` only undoes the most recent tweak.
     2. Anchored-replace assert used a string that did not match the text just written (missing backticks around an identifier). The assert fired before the file write, so nothing was corrupted — assert doing its job. Worth logging as evidence that the "anchor + assert, never line-slice" rule prevents data corruption.
@@ -347,12 +346,10 @@
   - Rule: MISTAKES.md Pattern Matching #20.5 — regex patterns must use lookaround boundaries to match intended text only; unguarded inline delimiters across multiple potential markers cause false phrase boundaries and unwanted deletions
   - Context: Fixed with lookaround boundaries (non-whitespace inside, no word char / same marker outside) plus regression tests in `src/shared/lib/stripSnapshotMarkdown.ts`.
 
-## [fix/seo-cls-sitemap-polish Round 1 | PWA banner input gating | 2026-09-18]
-- Violation: Window event listener (`siglens:pwa-trigger`) bypass — JSDoc claimed "input-gated" banner, but event producer fired without user gesture (auto-analysis at member mount, auto-retry after failed SSR analysis)
-  - Rule: CONVENTIONS.md — Declarations and runtime behavior must be in sync; a guard cannot be claimed in JSDoc if a producer path on the same handler bypasses it
-  - Context: Whole event-driven path deleted; banner mode determined deterministically at mount instead.
-
 ## [fix/seo-cls-sitemap-polish Round 4 | PWA banner Polish | 2026-09-18]
+- Status: APPROVED (zero findings)
+
+## [feat/hub-briefing-ssr-seed Round 3 | briefing cache surface stability | 2026-09-18]
 - Status: APPROVED (zero findings)
 ## [PR #827 | feat/ai-provider-fallback-core-170 | 2026-09-15]
 - Violation: BLOCKER — agent provider fallback decided per turn, not per step. Stalling DeepSeek re-costs the 90s stall timeout every step of a multi-step turn, creating cascading retries within a single inference request.
@@ -403,6 +400,47 @@
 
 ## [fix/symbols-copy-and-names Round 2 | /symbols 표기·문구 | 2026-09-18]
 - Status: APPROVED (지적 없음)
+
+## [feat/hub-ai-prewarm Round 1 | SEO prewarm hub phase | 2026-09-18]
+- Violation: Fire-and-forget cache write race — core's `run*` does not await its cache SET, so a single immediate read-back could report a false "key mismatch"
+  - Rule: (new) When verifying a write whose SET is fire-and-forget (core does not expose the promise, so it cannot be awaited), the read-back must retry — a single immediate read races the pending SET and reports a false mismatch
+  - Context: Fixed with a retry read-back (4 attempts, 400ms apart) to ensure the cache write is complete before proceeding
+- Violation: No per-target timeout — the phase deadline is only checked BETWEEN targets, so one hung target holds the Redis lock past TTL
+  - Rule: (new) Long-running loops must have per-iteration timeouts; deadline checks between iterations allow a single hung iteration to hold resource locks past their TTL
+  - Context: Fixed with `HUB_UNIT_TIMEOUT_MS` (45s) via `Promise.race` on individual target operations
+
+## [feat/hub-ai-prewarm Round 2 | SEO prewarm hub phase | 2026-09-18]
+- Violation: Three sibling test files exercised the real LLM/Redis hub path, protected only accidentally by a global fetch stub
+  - Rule: (new) Test isolation — test files must explicitly mock external dependencies; accidental global stubs provide false isolation
+  - Context: Fixed by adding `vi.mock('../hubs', ...)` to all three sibling test files
+- Violation: The hub phase `batchDeadline` was computed BEFORE the hub phase, so the deadline slice did not account for hub phase latency
+  - Rule: (new) Order-of-operations — Derived deadlines/budgets must be computed AFTER dependent phases complete; pre-computing a deadline before a consuming phase makes that phase erode its own budget
+  - Context: Fixed by computing `batchDeadline` after the hub phase returns
+
+## [feat/hub-ai-prewarm Round 3 | SEO prewarm hub phase | 2026-09-18]
+- Violation: `counts.durationMs` calculation silently broke after moving `batchDeadline` computation. It had been back-derived as `clock.now() - (batchDeadline - BATCH_DEADLINE_MS)` and now measured only the symbol loop, while the Redis lock is held for hub+symbol combined
+  - Rule: (new) Code-movement regression — derived values that depend on moved code must be re-derived or tracked independently; back-derived calculations break silently when their source moves
+  - Context: Fixed by introducing a separate `batchStartedAt` timestamp, making `durationMs` a direct `clock.now() - batchStartedAt` calculation
+- Violation: Regression test for `durationMs` was vacuous — it asserted `durationMs >= HUB_ELAPSED_MS` (90s), but the symbol loop alone consumed 120s of simulated clock, so it passed even with the broken expression
+  - Rule: (new) Regression tests — regression tests must assert equality or tight bounds, not >= checks; loose bounds can be satisfied by unrelated setup, masking the bug being tested
+  - Context: Rewritten to assert equality with total elapsed time, verified against old code via revert-check
+
+## [feat/hub-ai-prewarm Round 4 | SEO prewarm hub phase | 2026-09-18]
+- Status: APPROVED (zero findings)
+
+## [feat/hub-briefing-ssr-seed Round 1 | 허브 브리핑 SSR seed | 2026-09-18]
+- Violation: `SEED_TTL_SECONDS` JSDoc claimed the seed's `generatedAt` is rendered by `BriefingCard`, so a stale seed would disclose its age. Neither core briefing response type has `generatedAt`, the seed/peek path passes `generatedAt: ''`, and `BriefingCard` hides the timestamp row when it is falsy — the actual behavior is the opposite of the claim, and the claim was load-bearing for the TTL argument.
+  - Rule: MISTAKES.md §15.6 — comments must match the code they describe
+  - Context: Comment corrected to state that seed-sourced briefings render with no timestamp (TTL is the only staleness bound), and the TTL shortened 18h → 12h, just above the largest cron gap (09:55→20:30 UTC ≈ 10h35m).
+
+## [feat/hub-briefing-ssr-seed Round 2 | 허브 브리핑 SSR seed | 2026-09-18]
+- Violation: after the TTL change the design doc's ASCII flow diagram still read `SET(TTL 18h)` while the section below it documented 12h — the same stale-value defect migrating from the code comment into the doc during its own fix.
+  - Rule: MISTAKES.md §15.6 — the same file must not contradict itself after a value change
+  - Context: Diagram updated to 12h; grepped the doc, module and test for `18h`/`18 * 60` — zero remaining.
+- Development note (self-inflicted, caught before commit): wrote `src/entities/market-summary/__tests__/briefingStaticCache.test.ts` with the Write tool without checking whether it existed. It did — the overwrite deleted 7 existing tests (150 lines) and the review approved that diff without flagging the deletion. Caught afterwards by reading `git status` (the file showed `M`, not `??`). Restored with `git checkout --` and the 2 new seed tests appended in the existing file's style. Lesson: a `M` in `git status` for a file believed to be new means something was overwritten — and "tests still pass" does not detect deleted tests.
+
+## [feat/hub-briefing-ssr-seed Round 3 | 허브 브리핑 SSR seed | 2026-09-18]
+- Status: APPROVED (zero findings)
 
 ## [PR #849 | feat/agent-precomputed-data | 2026-09-19]
 - Violation: `showScrollButton` (`MessageList.tsx`) was only ever updated from the `onScroll` handler. A streaming answer grows `scrollHeight` continuously without firing any scroll event, so a user who had scrolled away from the bottom never saw the ↓ scroll-to-bottom button appear during streaming.

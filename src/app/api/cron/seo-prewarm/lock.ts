@@ -9,7 +9,10 @@ const RELEASE_LOCK_SCRIPT =
     "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
 
 const LOCK_KEY = 'seo-prewarm:lock';
-const LOCK_TTL_SECONDS = 900; // 15min ≥ 최대 배치 시간 (spec §6 락 라이프사이클)
+// 15min ≥ 최대 배치 시간 (spec §6 락 라이프사이클).
+// export하는 이유: `runPrewarmBatch`가 이 값에서 배치 wall-clock 예산을 계산한다.
+// 거기서 숫자를 다시 적으면 한쪽만 바뀌어도 아무도 모르게 락 오버랩이 열린다.
+export const LOCK_TTL_SECONDS = 900;
 const INFLIGHT_TTL_SECONDS = 1800; // 30min
 const FMP_BUDGET_TTL_SECONDS = 172800; // 2d — 날짜 키 자연 롤오버, TTL은 청소용
 // 2026-08 감사(KR 5종목 prewarm 미도달) — 회전 커서. TTL을 두지 않는다: 값 자체가 단조 증가하는

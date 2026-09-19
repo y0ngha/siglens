@@ -17,78 +17,62 @@
 
 ## Project
 
-- [audit/fix-r4 KRcal + overall degrade gate](project-audit-fix-r4-krcal-overall-degrade.md) — R1 approved: horizon extension math-verified, peek cache-hit verified, 8th file caught via file-count mismatch
-- [Coverage-PR review patterns](project-coverage-pr-patterns.md) — test-only coverage PRs: focus on falsifiability not %; next/dynamic mock soundness, weak handler-coverage tests, comment line-refs
-- [Crypto assetClass/session threading](project-crypto-assetclass-session.md) — crypto epic: resolveAssetClass/sessionSpecFor/dual-singleton provider; equity=default; hotspots: lossy assetClass→profileId ternary 3x, 4x tab-guard dup, removed-symbol comment drift
-- [CDN cache RSC guard dead code](project-cdn-cache-rsc-guard-dead-code.md) — proxy.ts `_rsc` guard unreachable (adapter.js strips param+header pre-middleware); flag any middleware branching on RSC signals, demand prod-build evidence
-- [eslint-disable-next-line line mismatch](project-eslint-disable-line-mismatch.md) — disable above deps array doesn't suppress exhaustive-deps (anchors to hook call line); verify round-summary lint claims by re-running eslint yourself
-- [market-fg percentile window-slice fix](project-market-fg-percentile-window-slice.md) — siglens-core: O(n²)→window-slice arithmetically identical; for-loop+push mirrors sibling fearGreed/walkForward.ts (approved pattern per MISTAKES 15.5)
-- [market-fg spec error-handling mismatch](project-market-fg-spec-error-handling-mismatch.md) — RESOLVED round 4: fetchDailyCloses now throws on 0 usable rows, comment/tests match Promise.all all-or-nothing reality
-- [market-fg round 4 deployment-audit fixes](project-market-fg-round4-audit-fixes.md) — proxy fear-greed 301 fix, EOD to-bound, alarm+runbook, generateMetadata degrade, FactorBar h3, E2E fixture — all verified correct
-- [position-tab currency fix (audit/fix-currency)](project-position-tab-currency-fix.md) — R1 found sub-$1 "$0" bug (4x dup formatAmount); R2 approved after independent mutation-test + origin/master diff re-verification
-- [seo-perf-bars-seed R1](project-seo-perf-bars-seed-r1.md) — layout bars-seed→server fearGreedSnapshot prop; nesting/cache-fold claims verified true; mutation-verified 0 coverage for the new computation+threading, stale suspend-comment (15.6)
-- [seo-perf-bars-seed R2 — CLOSED, approved](project-seo-perf-bars-seed-r2-closed.md) — all 4 R1 findings verified fixed via live double-mutation re-test; headerPropsOf coupling worry disproved empirically (fails loudly, not vacuous)
-- [seo-prewarm rotation-cursor fix (audit/fix-prewarm)](project-seo-prewarm-rotation-mutation-verify.md) — R2 approved after live re-run of author's mutation claims (shadow-model test, 2 deadline-check tests, lock.ts comment vs route.ts); KRX has no holiday calendar at all in this codebase
-- [OverallView hasOptions audit (audit/fix-seo)](project-overall-hasoptions-audit-fix-seo.md) — R1/R2/R3 recurred (fail-open default, `?? ''`, 3rd derivation); R4 fixed all via `profileIdForSymbol`, approved w/ 1 stale-comment recommendation
-- [audit/fix-seo ROOT_TITLE/SPCX (R6)](project-audit-fix-seo-root-title-spcx.md) — approved: ROOT_FULL_TITLE fixes OG/Twitter brand loss, SPCX purged from SECTOR_STOCKS; both mutation-verified live
-- [kr-release audit R2-R3](project-kr-release-audit-round2.md) — R2 found `$`-on-KRW in PositionStatusSummary; R3 verified all fixes, only `isFundShapedName` trust-name regression + long non-findings list
-- [asset-class-nav R5 closing check](project-asset-class-nav-r5.md) — spread-inherited fixture = unfalsifiable assertion; seed-loop dual exit + exitCode; `/market/kr` 0.9 is derived, not literal
-- [prompt-region-context R6](project-prompt-region-context-r6.md) — green-suite traps: surviving duplicate under wrong describe, forward-scanning few-shot helper, vacuous not.toContain; scratchpad vitest recipe
-- [core 0.48.0 briefing-context wiring](project-core-048-briefing-context.md) — verified in core dist: hash folds context, prompt (not hash) drops `price:0`, sectors come from sectorEtfs only; miss was outside src/
-- [fix-tests2 mutation audit](project-fix-tests2-mutation-audit.md) — 6/7 mutations + 2 E2E deletions re-verified live; approved R1. `initialAnalysisFailed={true}` hardcode makes share-flow 'idle' unreachable; SITE_DESCRIPTION embeds "한국" project-wide (JSON-LD tautology trap)
-- [perf/aws-cost-reduction memStore fix (R2)](project-perf-aws-cost-memstore-fix.md) — approved: MAX_ENTRY_BYTES check moved before delete/budget mutation, as-cast guarantee comment added; cache-handler/shared-cache tests use flat describe+module-level beforeEach by convention, don't flag
-- [perf/rsc-flight-fear-greed seed-helper fix (R1)](project-fear-greed-page-seed-helper-fix.md) — approved: getSeedBarsStatic passes bars/buySellVolume through by reference so SSR output unchanged; mutation-verified live (8/14 red on revert, 14/14 green restored), tsc+oxlint EXIT:0 captured directly
-- [feat/i18n-multilingual R1](project-i18n-multilingual-r1.md) — 9x locale-invariant canonical (explicit arg bypasses self-ref auto-derive), setRequestLocale only in root layout, extract.mjs --apply can emit undefined-`t` code, scripts/i18n gitignored, nav usePathname locale-prefix mismatch
-- [feat/i18n-multilingual R2](project-i18n-multilingual-r2.md) — all 8 R1 findings verified fixed; new miss: header nav `<Link>` hrefs still unprefixed (plain next/link) so clicking drops locale to ko silently, fix only touched usePathname not Link
-- [feat/i18n-multilingual R3](project-i18n-multilingual-r3.md) — LocaleLink fix verified airtight (52 files, 0 raw next/link). New: window.history.replaceState locale-loss in useTimeframeChange.ts; whole unaddressed class of hardcoded-unprefixed redirect() in 7+ Server Action files (logout/delete-account/oauth/password-reset/api-key)
-- [feat/i18n-multilingual R4](project-i18n-multilingual-r4.md) — R3's 2 findings verified fixed correctly (15 redirect() sites, window.history). New: resolvePostSignupDestination's `next==='/'`  exact-match breaks post-signup onboarding redirect for en/ja/zh (localized next is `/en` not `/`); test mocks reimplement the same bug so it's invisible
-- [feat/i18n-multilingual R5](project-i18n-multilingual-r5.md) — relayed only: SymbolTabs/NoticePopup/usePageContextLabel path-compare broke on prefix; fixed via new useAppPathname.ts + allowlist audit test
-- [feat/i18n-multilingual R6 — APPROVED, closes epic](project-i18n-multilingual-r6.md) — verified useAppPathname consolidation + all 6 allowlist entries + audit-test soundness (import-line-based, not module-aware) + repo-wide locale-loss sweep, zero findings
-- [feat/mobile-search-overlay R3 — dismissForNavigation gap](project-mobile-search-overlay-r3.md) — pending-nav UI removal genuinely fixes R2's 3 findings; but onNavigate has zero test coverage (mutation-verified) + JSDoc overclaims HistoryUpdater race eliminated (verified live against Next 16.2.12 source)
-- [seo-internal-links relatedSymbols.ts R4 — APPROVED, closes loop](project-seo-internal-links-relatedsymbols-r4.md) — themePeersOf JSDoc relocated correctly, stale phrases now {@link}-referenced; file is untracked so `git diff master --` shows nothing, check `git status`
-- [seo-internal-links RelatedSymbols.tsx R5](project-seo-internal-links-relatedsymbols-r5.md) — new async server component swallows rethrown DYNAMIC_SERVER_USAGE (sole outlier of 20+ getAssetInfoResilient callers); Suspense-shell timing is recommended only
-- [seo-internal-links RelatedSymbols.tsx R6 — APPROVED, closes loop](project-seo-internal-links-relatedsymbols-r6.md) — DSU rethrow mutation-verified live; Suspense-decline judged sound (streaming byte-order ≠ resolution completeness, rebuts R5's own assumption)
-- [canonical-korean-names R2 — searchByKoreanName gap](project-canonical-korean-names-r2-searchbykorean-gap.md) — getKoreanNames fix verified via mutation; missed 3rd consumer of korean_tickers (searchByKoreanName), and "always truthy" broke unmapped-filter self-heal in searchTicker.ts
-- [canonical-korean-names R3 — choke-point verified, 2 recommended](project-canonical-korean-names-r3-choke-point.md) — loader-level withCanonical confirmed complete via grep+live mutation; DB-fetch branch of loadAllEntries untested (mutation survives), getKoreanNames still double-applies override
-- [canonical-korean-names R4 — CLOSED, approved](project-canonical-korean-names-r4-closed.md) — both R3 recommended findings verified fixed via live mutation re-test; loop ends
-- [related-visibility-footer R2 — APPROVED, closes loop](project-related-visibility-footer-r2.md) — soft-404 TickerCategories claim + SECTOR_ETFS-membership test tightening both mutation/source verified true
-- [redesign/p1-dark-tokens R2 — APPROVED](project-redesign-p1-heading-section-r2.md) — HEADING_SECTION swept to 3 more shells; undisclosed rounded-xl→rounded-lg was legit documented FIX 4, not scope creep; twMerge/import/FSD all verified clean
-- [redesign/p1-dark-tokens W6d /news R1](project-redesign-p1-heading-section-w6d-news.md) — 8 h2 sites + shell h3 + h4 weight all correct; missed 2 colorless h3 in same already-touched file (NewsAiSummary.tsx) — same bug class, passes contrast so sweep didn't catch it
-- [redesign/p1-dark-tokens fear-greed score coercion R3 — APPROVED, closes loop](project-redesign-p1-fear-greed-score-coercion-r3.md) — 15-case exhaustive audit of kindServerRegistry.ts score coercion, no 3rd defect; only strings get Number()-coerced, everything else safely falls back
-- [redesign/p1-dark-tokens toggle border-contrast R6](project-redesign-p1-toggle-contrast-r6.md) — R5 math re-verified exactly; WCAG 1.4.11 exempts `disabled` (inactive), Math.max fill-or-border reading is sound; found latent (not live) NaN vacuous-pass hole in guard's own hex parser
-- [redesign/p1-dark-tokens toggle border-contrast R7 — CLOSED, approved](project-redesign-p1-toggle-contrast-r7-closed.md) — R6's NaN vacuous-pass hole verified fixed via live mutation (`#7d838f80` throws, reverted byte-identical); loop ends
-- [feat/visitor-user-agent R2 — privacy v3 seed + effective-date gate, approved](project-visitor-metrics-privacy-v3-r2.md) — R1's onConflictDoNothing-frozen-v2 fix verified: v3 seed diff-clean across 4 locales, gate constant == effectiveDate instant, no other hardcoded version
-- [feat/share-plain-language R1](project-share-plain-language-r1.md) — contentHash omits `plain` (chartBars precedent shows it should be included); onConflictDoUpdate only bumps expiresAt so dedupe silently freezes first sharer's (possibly missing) plain for 7 days
-- [feat/share-plain-language R2 — CLOSED, approved](project-share-plain-language-r2-closed.md) — both R1 findings verified fixed exactly per chartBars precedent; contentHash 6th param, whitespace-plain rejected server-side, no trim mismatch
-- [fix/sitemap-position-tab R1 — APPROVED](project-fix-position-sitemap-r1.md) — /position added to both builders, lowest priority (0.7) coherent, count arithmetic + non-tautological tests verified, no stale hardcoded counts elsewhere
-- [seo/index-footprint-recovery R1](project-seo-index-footprint-recovery-r1.md) — reverts the above PR #791; metadata spread-order + tests all correct; caught SITEMAP_SCOPE.md §3-3 documenting the exact mistake being undone as still-live guidance (would cause the same regression again), stale e2e comment
-- [fix/seo-meta-description-markdown R1](project-seo-meta-description-markdown-r1.md) — stripSnapshotMarkdown move to shared/lib verified layer-legal+complete; found latent (not required) false-pair `*`/`_` corruption in single-marker regexes
-- [fix/seo-live-audit R1 — crypto/overall sitemap gap](project-seo-live-audit-r1-crypto-overall-gap.md) — 6-finding live-crawl fix, all verified correct (UA-neutral briefings, fear-greed noindex, sitemap prose gate w/ correct Set-after-cache serialization, thin-desc floor, YMYL span, empty options gate); only miss is buildCryptoPopularEntries not wired to the new prose gate (MISTAKES 6.7 shape, low risk)
-- [fix/seo-warm-and-boilerplate R1](project-fix-seo-warm-and-boilerplate-r1.md) — deploy warm script + sitemap lastmod honesty + FAQ boilerplate removal all sound; mid-review uncommitted core 1.9.0→1.10.1 bump (unrelated, flagged required), warm-isr job-timeout risk, boundary-test gap
-- [fix/seo-warm-and-boilerplate R2 — CLOSED, approved](project-fix-seo-warm-and-boilerplate-r2-closed.md) — all 5 R1 findings verified fixed live (tsc+tests, yarn.lock diff scoped, core dist grep confirms prompt claim); loop ends
-- [fix/seo-cls-sitemap-polish R2 — pwa-trigger removal clean, e2e fallback-timer gap](project-seo-cls-sitemap-polish-r2-e2e-fallback-gap.md) — src/ fully clean of pwaEvents refs; e2e/specs/pwa-install.spec.ts still asserts the now-deleted PWA_BANNER_FALLBACK_DELAY_MS fallback timer with no synthetic tap — will fail in CI webkit project
-- [fix/seo-cls-sitemap-polish R4 — settlePwaBanner, CLOSED](project-seo-cls-sitemap-polish-r4-pwa-settle-closed.md) — approved; fixed-position-target + synthetic-event-decoupling immunity patterns; test.info() cross-module singleton verified via playwright source
-- [siglens-core agent-analyst-voice prompt R1](project-agent-analyst-voice-prompt-r1.md) — directional-read rewrite, no internal contradiction, tests non-vacuous; only miss = no PUBLIC_API.md changelog row despite strict repo precedent
-- [fix/ai-chat-sidebar-ux R2](project-ai-chat-sidebar-r2-suspense-promise.md) — plain-mode empty panel fix + unrecognized-action reload + suggestions-as-unawaited-Promise/use() SSR fix, all approved
-- [feat/ai-guest-brand-polish R1](project-ai-guest-brand-polish-r1-core-quota-gap.md) — guest chat is fully non-functional against currently-pinned core@1.2.1 (AGENT_LIMITS.turnsPerDay.free=0); everything else (font consolidation, LocaleLink hrefBase, session-cookie clear, tool guest-gating, i18n) verified clean
-- [feat/ai-guest-cookie-polish R1](project-ai-guest-cookie-polish-r1.md) — core bumped to 1.3.1 (turnsPerDay.free=10, resolving prior R1 core-quota gap); cookie-based guest identity + per-IP backstops both verified sound, zero findings
-- [chore/core-1.0.4-prompt-currency branch in siglens-core103](project-core-1.0.4-prompt-currency-plain-language-r4.md) — round 4 closed guardPlainText length-floor comment drift
-- [siglens-core deepseek-stall-gemini-fallback R1](project-deepseek-stall-gemini-fallback-r1.md) — usage attribution silently wrong after internal fallback (modelUsed persisted as DeepSeek), roundsTo epsilon scales with raw magnitude not half-step (±3500 tolerance at market-cap scale), 3 new exports missing @internal
-- [siglens-core deepseek-stall-gemini-fallback R2 — approved](project-deepseek-stall-gemini-fallback-r2-closed.md) — all 4 R1 findings verified fixed live (dispatch bug, epsilon, @internal); modelUsed consumer-checked safe; new gap: runMarketNewsDigest DeepSeek call has no providerFallback field
-- [fix/seo-a-symbol-gates R1 — APPROVED](project-fix-seo-a-symbol-gates-r1.md) — 11-item gate/JSON-LD/RelatedSymbols overhaul, gate/body predicate parity verified for all 3 new content gates, React.cache dedup confirmed, roundRobinMerge order-preservation diffed, 21 i18n keys x4 locales checked, guard test proven non-vacuous, 168 tests green
-- [fix/seo-c-backtesting R1](project-fix-seo-c-backtesting-r1.md) — stat math independently recomputed and matches exactly; JSDoc/test-title mischaracterize meta.aiWinRate as "mixing" neutral into denominator when generator source shows it was already decisive-only; new hashes.json orphan (530709)
-- [fix/seo-e-ua-neutral R1 — APPROVED](project-fix-seo-e-ua-neutral-r1.md) — UA branch removal from withReaderViews math/reference-verified; tests falsifiable (revert-would-fail); hashes.json gap investigated and found pre-existing, not a new defect
-- [fix/seo-f-freshness-ux R1 — APPROVED](project-fix-seo-f-freshness-ux-r1.md) — sitemap lastmod session-close math, fail-soft cached DB read, legal soft-404→real 404 w/ React cache dedup, share notFound(), i18n 4-locale parity, oxlint allowlist justified, offline-build NEXT_BUILD_DATE fallback safe
-- [siglens-core PR #205 (fix/grounded-numbers-false-positives) round 4 post-claude-review fix](project-groundnumbers-pr205-r4-closed.md) — approved, closes loop
-- [feat/i18n-locale-switcher R1](project-i18n-locale-switcher-visibility-r1.md) — LOCALE_SWITCHER_VISIBLE flip false->true, ai-host non-issue confirmed
-- [chore/offline-build R2](project-offline-build-r2-closed.md) — closed, approved; both R1 recommended findings verified fixed
-- [siglens-core fix/prompt-numeric-audit R3](project-prompt-numeric-audit-r3-closed.md) — APPROVED, closes loop on formatSignedPercent near-zero test
-- [siglens-core fix/prompt-precision-currency R2](project-prompt-precision-currency-r2-currency-thread-gap.md) — core-side resolution correct, but siglens consumer doesn't actually thread currency yet
-- [fix/seo-d-news-category R1 — APPROVED](project-seo-d-news-category-r1.md) — MarketNewsCard body-section removal, category description paragraph, JSON-LD per-article image omitted, /news hub `stock` preview sentinel mutation-verified live, hashes.json orphan confirmed pre-existing (~1717 total)
-- [fix/seo-duplicate-titles R1 — APPROVED](project-seo-duplicate-titles-r1.md) — SVG title→aria-label a11y-name preserved, tab-threading verified across all 9+17 call sites (MISTAKES 6.7 sibling rule satisfied), buildPhase guard can't leak to runtime (distinct PHASE_PRODUCTION_SERVER const)
-- [fix/seo-duplicate-titles R2 — CLOSED, approved](project-seo-duplicate-titles-r2-closed.md) — StrikeVolumeChart test verified: real ko catalog (not mock) makes the literal-string assertion load-bearing, 6/6 pass
-- [siglens-core agent-tool-routing R1 — APPROVED](project-siglens-core-agent-tool-routing-r1.md) — Korean-unit tool-number fix math-verified, ROUTING_ROWS tool names all grepped against AGENT_TOOL_SPECS, 63/63 tests green
-- [siglens-trader chore/reuse-siglens-alerts-topic](project-trader-alerts-topic-reroute.md) — provision.sh now publishes to shared siglens-alerts topic
+Closed loops (approved, kept for pattern recall only — see file for detail):
+- [audit/fix-r4 KRcal+overall degrade](project-audit-fix-r4-krcal-overall-degrade.md) — 8th file caught via file-count mismatch
+- [Coverage-PR patterns](project-coverage-pr-patterns.md) — test-only PRs: judge falsifiability not %
+- [Crypto assetClass/session](project-crypto-assetclass-session.md) — lossy assetClass→profileId ternary hotspot
+- [CDN RSC guard dead code](project-cdn-cache-rsc-guard-dead-code.md) — proxy.ts `_rsc` guard unreachable, demand prod-build evidence
+- [eslint-disable line mismatch](project-eslint-disable-line-mismatch.md) — verify round-summary lint claims yourself
+- [market-fg fixes](project-market-fg-percentile-window-slice.md) — window-slice O(n²) fix; see also -spec-error-handling-mismatch.md, -round4-audit-fixes.md
+- [position-tab currency](project-position-tab-currency-fix.md) — sub-$1 "$0" bug, 4x dup formatAmount
+- [seo-perf-bars-seed](project-seo-perf-bars-seed-r2-closed.md) — R1 found 0-coverage+stale comment; R2 closed via mutation re-test
+- [seo-prewarm rotation-cursor](project-seo-prewarm-rotation-mutation-verify.md) — shadow-model mutation test; KRX has no holiday calendar in this codebase
+- [OverallView hasOptions](project-overall-hasoptions-audit-fix-seo.md) — same bug recurred R1-R3 (fail-open/`?? ''`/3rd derivation), R4 fixed via profileIdForSymbol
+- [ROOT_TITLE/SPCX](project-audit-fix-seo-root-title-spcx.md) — OG/Twitter brand loss + stale SECTOR_STOCKS entry
+- [kr-release currency](project-kr-release-audit-round2.md) — `$`-on-KRW bug; `isFundShapedName` trust-name regression
+- [asset-class-nav R5](project-asset-class-nav-r5.md) — spread-inherited fixture = unfalsifiable assertion trap
+- [prompt-region-context R6](project-prompt-region-context-r6.md) — green-suite traps: wrong-describe dup, vacuous not.toContain
+- [core briefing-context](project-core-048-briefing-context.md) — verify claims in core dist, not just siglens src/
+- [fix-tests2 mutation audit](project-fix-tests2-mutation-audit.md) — hardcoded prop makes a UI state unreachable
+- [aws-cost memStore R2](project-perf-aws-cost-memstore-fix.md) — order-of-check-vs-mutation bug
+- [fear-greed seed-helper](project-fear-greed-page-seed-helper-fix.md) — pass-by-reference SSR-output-unchanged claim, mutation-verified
+- [i18n-multilingual epic R1-R6](project-i18n-multilingual-r6.md) — recurring locale-loss bug class across 6 rounds (nav Link, history.replaceState, Server Action redirect(), post-signup exact-match) — R6 closed via useAppPathname consolidation + repo-wide sweep; earlier-round files hold each variant's detail
+- [mobile-search-overlay R3](project-mobile-search-overlay-r3.md) — onNavigate zero test coverage, JSDoc overclaim vs Next source
+- [seo-internal-links relatedSymbols R4-R6](project-seo-internal-links-relatedsymbols-r6.md) — DSU-rethrow mutation-verified; untracked file needs `git status` not `git diff`
+- [canonical-korean-names R2-R4](project-canonical-korean-names-r4-closed.md) — missed 3rd consumer (searchByKoreanName); closed after live mutation re-test
+- [related-visibility-footer R2](project-related-visibility-footer-r2.md) — soft-404 + SECTOR_ETFS claims mutation-verified
+- [redesign/p1-dark-tokens](project-redesign-p1-toggle-contrast-r7-closed.md) — multi-round epic (heading sweep, fear-greed coercion, toggle contrast); toggle-contrast R6 found latent NaN vacuous-pass, R7 closed it
+- [visitor-metrics privacy v3 R2](project-visitor-metrics-privacy-v3-r2.md) — effective-date gate + 4-locale seed verified
+- [share-plain-language R1-R2](project-share-plain-language-r2-closed.md) — contentHash must include new field (chartBars precedent)
+- [sitemap-position-tab R1](project-fix-position-sitemap-r1.md) — approved, no stale hardcoded counts
+- [seo index-footprint-recovery R1](project-seo-index-footprint-recovery-r1.md) — reverts a bad PR; caught doc (SITEMAP_SCOPE.md) still recommending the undone mistake
+- [seo-meta-description-markdown R1](project-seo-meta-description-markdown-r1.md) — latent `*`/`_` false-pair regex corruption
+- [seo-live-audit R1 crypto/overall](project-seo-live-audit-r1-crypto-overall-gap.md) — buildCryptoPopularEntries not wired to new prose gate
+- [seo-warm-and-boilerplate R1-R2](project-fix-seo-warm-and-boilerplate-r2-closed.md) — uncommitted mid-review core bump caught; closed after full re-verify
+- [seo-cls-sitemap-polish R2, R4](project-seo-cls-sitemap-polish-r4-pwa-settle-closed.md) — e2e asserted a deleted timer; R4 closed via settlePwaBanner
+- [agent-analyst-voice prompt R1](project-agent-analyst-voice-prompt-r1.md) — missing PUBLIC_API.md changelog row
+- [ai-chat-sidebar-ux R2](project-ai-chat-sidebar-r2-suspense-promise.md) — unawaited-Promise/use() SSR fix, approved
+- [ai-guest-brand/cookie-polish](project-ai-guest-cookie-polish-r1.md) — guest chat blocked by pinned core version (turnsPerDay.free=0→10 after bump)
+- [core-1.0.4 prompt-currency R4](project-core-1.0.4-prompt-currency-plain-language-r4.md) — closed guardPlainText length-floor comment drift
+- [deepseek-stall-gemini-fallback R1-R2](project-deepseek-stall-gemini-fallback-r2-closed.md) — usage attribution wrong after fallback; closed, new gap noted (news digest missing providerFallback)
+- [seo-a-symbol-gates R1](project-fix-seo-a-symbol-gates-r1.md) — 11-item overhaul, gate/body predicate parity across 3 gates
+- [seo-c-backtesting R1](project-fix-seo-c-backtesting-r1.md) — JSDoc mischaracterized aiWinRate composition vs generator source
+- [seo-e-ua-neutral R1](project-fix-seo-e-ua-neutral-r1.md) — UA branch removal math-verified
+- [seo-f-freshness-ux R1](project-fix-seo-f-freshness-ux-r1.md) — sitemap lastmod + soft-404→404 + i18n parity
+- [groundnumbers PR#205 R4](project-groundnumbers-pr205-r4-closed.md) — closed
+- [i18n-locale-switcher R1](project-i18n-locale-switcher-visibility-r1.md) — flag flip, ai-host non-issue
+- [offline-build R2](project-offline-build-r2-closed.md) — closed
+- [prompt-numeric-audit R3](project-prompt-numeric-audit-r3-closed.md) — closed
+- [prompt-precision-currency R2](project-prompt-precision-currency-r2-currency-thread-gap.md) — core fixed but siglens consumer doesn't thread currency yet
+- [seo-d-news-category R1](project-seo-d-news-category-r1.md) — hashes.json orphan confirmed pre-existing
+- [seo-duplicate-titles R1-R2](project-seo-duplicate-titles-r2-closed.md) — tab-threading across 9+17 sites; closed via real-catalog test
+- [siglens-core agent-tool-routing R1](project-siglens-core-agent-tool-routing-r1.md) — Korean-unit tool-number fix, 63/63 green
+- [trader alerts-topic reroute](project-trader-alerts-topic-reroute.md) — provision.sh → shared siglens-alerts topic
+
+- [feat/agent-precomputed-data R1](project-agent-precomputed-data-r1.md) — UTC-midnight daily bars break bar-count staleness; core Fib labels are `50.0%`; weekly HTF dead at 500 daily bars
+- [core precomputed-prompt-data R1](project-core-precomputed-prompt-data-r1.md) — date-only Math.round off-by-one, NaN%p sector spread, keyPrices/geometry prompt contradictions; mutation-in-scratch-copy technique
+- [feat/hub-ai-prewarm R2-R4 closed](project-hub-ai-prewarm-r2.md) — R3 reorder broke durationMs (dropped hub-phase time), R4 fixed via independent batchStartedAt, sim-clock mutation-verified
+
 ## Reference
 
 - [hashes.json misc-namespace gap](reference-hashes-json-misc-namespace-gap.md) — hand-authored i18n keys (e.g. liveCrossRef) were never tracked in hashes.json; not a new-PR defect unless key already had an entry

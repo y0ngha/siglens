@@ -38,6 +38,21 @@ const {
 
 // 의도적으로 '../lock'은 mock하지 않는다 — 이 테스트의 핵심은 실제 lock.ts
 // 구현을 통과하는 것이다. 그 아래 redis 클라이언트만 가짜로 대체한다.
+vi.mock('../hubs', () => ({
+    // 이 함수는 LLM·Redis를 실제로 친다. 목하지 않으면 이 파일의 모든
+    // `runPrewarmBatch()` 호출이 그 경로를 타고, 전역 fetch 스텁이 **우연히**
+    // 막아 주는 상태에 의존하게 된다(MISTAKES.md §8.6).
+    runHubPrewarm: vi.fn().mockResolvedValue({
+        attempted: 0,
+        generated: 0,
+        alreadyFresh: 0,
+        noData: 0,
+        keyMismatch: 0,
+        failed: 0,
+        skippedByDeadline: 0,
+    }),
+}));
+
 vi.mock('@/shared/cache/redisClient', () => ({
     getRedisClient: () => ({
         get: mockRedisGet,

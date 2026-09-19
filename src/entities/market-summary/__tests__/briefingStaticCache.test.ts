@@ -22,8 +22,13 @@ vi.mock('next/cache', () => ({
     },
 }));
 
-const { mockPeekBriefingCache } = vi.hoisted(() => ({
+const { mockPeekBriefingCache, mockReadHubSsrSeed } = vi.hoisted(() => ({
     mockPeekBriefingCache: vi.fn(),
+    mockReadHubSsrSeed: vi.fn(),
+}));
+
+vi.mock('@/shared/cache/hubSsrSeed', () => ({
+    readHubSsrSeed: mockReadHubSsrSeed,
 }));
 
 vi.mock('@y0ngha/siglens-core', async () => ({
@@ -31,7 +36,10 @@ vi.mock('@y0ngha/siglens-core', async () => ({
     peekBriefingCache: mockPeekBriefingCache,
 }));
 
-import { peekBriefingStatic } from '../api/briefingStaticCache';
+import {
+    marketBriefingSeedSurface,
+    peekBriefingStatic,
+} from '../api/briefingStaticCache';
 
 const sampleSummary: MarketSummaryData = {
     indices: [],
@@ -51,6 +59,7 @@ describe('peekBriefingStatic', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         delete (globalThis as Record<string, unknown>).__lastUnstableCacheOpts;
+        mockReadHubSsrSeed.mockResolvedValue(null);
     });
 
     it('(Happy) peekBriefingCache를 summary와 함께 호출하고 결과를 반환한다', async () => {
@@ -135,7 +144,7 @@ describe('peekBriefingStatic', () => {
         });
     });
 
-    it('(Worst) briefing 미존재(캐시 miss) 시 null을 그대로 반환한다', async () => {
+    it('(Worst) briefing 미존재(캐시 miss + seed 없음) 시 null을 그대로 반환한다', async () => {
         mockPeekBriefingCache.mockResolvedValue(null);
 
         const result = await peekBriefingStatic(
@@ -145,6 +154,41 @@ describe('peekBriefingStatic', () => {
         );
 
         expect(result).toBeNull();
+    });
+
+    /**
+     * core 캐시 키는 **시세에서 파생**된다. 시세가 갱신되면 프리웜이 쓴 값을 같은 키로
+     * 다시 읽지 못한다(2026-09-18 실측: 생성 15분 뒤 miss). 그 공백에서 페이지가
+     * 플레이스홀더로 남지 않도록 프리웜이 따로 보관한 seed로 물러난다.
+     */
+    it('(Happy) core peek이 miss면 scope별 SSR seed로 물러난다', async () => {
+        mockPeekBriefingCache.mockResolvedValue(null);
+        mockReadHubSsrSeed.mockResolvedValue(sampleBriefing);
+
+        const result = await peekBriefingStatic(
+            sampleSummary,
+            '2026-06-04T10',
+            KR_DASHBOARD_SCOPE
+        );
+
+        expect(result).toBe(sampleBriefing);
+        // scope를 안 섞어야 한다 — 미국 브리핑이 한국 페이지에 나가는 사고가 이 레포에 있었다.
+        expect(mockReadHubSsrSeed).toHaveBeenCalledWith(
+            marketBriefingSeedSurface(KR_DASHBOARD_SCOPE)
+        );
+    });
+
+    it('(Happy) core peek이 hit면 seed를 읽지 않는다', async () => {
+        mockPeekBriefingCache.mockResolvedValue(sampleBriefing);
+
+        const result = await peekBriefingStatic(
+            sampleSummary,
+            '2026-06-04T10',
+            US_DASHBOARD_SCOPE
+        );
+
+        expect(result).toBe(sampleBriefing);
+        expect(mockReadHubSsrSeed).not.toHaveBeenCalled();
     });
 
     it('(Worst) peekBriefingCache가 throw하면 에러가 전파된다', async () => {
