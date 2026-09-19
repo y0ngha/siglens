@@ -22,8 +22,8 @@ vi.mock('@/widgets/options/ExpirationSelector', () => ({
 }));
 
 // 실제 위젯과 동일하게 `hideView`에서 UI를 내지 않되 **마운트는 유지**한다.
-// 마운트 유지가 계약의 핵심 — 트리에서 빠지면 usePublishSymbolChat이 돌지 않아
-// 챗봇 분석 컨텍스트가 비고 입력이 잠긴다.
+// 마운트 유지가 계약의 핵심 — 트리에서 빠지면 useRegisterShareable이 돌지
+// 않아 헤더 공유 버튼이 이 탭의 분석 결과를 등록받지 못한다.
 vi.mock('@/widgets/options/OptionsAiAnalysis', () => ({
     OptionsAiAnalysis: ({ hideView = false }: { hideView?: boolean }) =>
         hideView ? (
@@ -144,7 +144,7 @@ describe('OptionsPageClient', () => {
     // already showing the same AI conclusion (summary/perExpiration/signals)
     // — mounting the widget too would duplicate that text for sighted users
     // and screen readers.
-    it('keeps the AI analysis widget mounted but view-less when hasSnapshotProse is true (chat context must keep publishing)', () => {
+    it('keeps the AI analysis widget mounted but view-less when hasSnapshotProse is true (Share registration must keep running)', () => {
         render(
             <OptionsPageClient
                 symbol="AAPL"
@@ -160,9 +160,9 @@ describe('OptionsPageClient', () => {
     });
 
     /**
-     * 정규장 밖에는 활발히 거래되는 종목 대부분이 `oiStale`이 된다. 예전에는 이
-     * 조합에서 위젯을 통째로 언마운트해, 스냅샷 프로즈로 완료된 분석이 보이는데도
-     * 챗이 "분석이 완료된 후 질문할 수 있어요"로 잠겼다.
+     * 정규장 밖에는 활발히 거래되는 종목 대부분이 `oiStale`이 된다. 이
+     * 조합에서 위젯을 통째로 언마운트하면, 스냅샷 프로즈로 완료된 분석이
+     * 보이는데도 헤더 공유 버튼이 이 탭의 분석 결과를 등록받지 못한다.
      */
     it('keeps the widget mounted (cacheOnly, view-less) when oiStale and a snapshot exists', () => {
         setOiStale();

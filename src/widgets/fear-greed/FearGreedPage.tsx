@@ -9,8 +9,6 @@ import { FearGreedGroupBar } from './FearGreedGroupBar';
 import { FearGreedHistoricalChart } from '@/widgets/chart/FearGreedHistoricalChart';
 import { SelfNormWarningBadge } from './SelfNormWarningBadge';
 import { confidenceLabelKey } from '@/shared/lib/fearGreedLabels';
-import { usePublishSymbolChat } from '@/features/symbol-chat';
-import { buildChatState } from './utils/buildChatState';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { useRegisterShareable } from '@/features/share';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
@@ -28,8 +26,7 @@ interface FearGreedPageProps {
      *
      * 서버 쪽을 지울 수는 없다 — 이 컴포넌트는 `useHydrated` 게이트라
      * 크롤러에게는 아무것도 안 보이고, 그 문구가 크롤 텍스트에 남는 유일한 경로가
-     * 서버 쪽이다. 그래서 XOR 방향이 "클라이언트를 끈다"로 정해진다
-     * (`congress`의 `hideView` 패턴과 같은 모양).
+     * 서버 쪽이다. 그래서 XOR 방향이 "클라이언트를 끈다"로 정해진다.
      */
     hideSelfNormWarning?: boolean;
 }
@@ -89,8 +86,6 @@ export function FearGreedPage({
     const isHydrated = useHydrated();
     const { snapshot, history } = useFearGreedFromSymbol({ symbol, fmpSymbol });
 
-    const chatState = buildChatState(snapshot);
-    usePublishSymbolChat(chatState);
     useRegisterShareable({
         kind: 'fear-greed',
         status: snapshot ? 'success' : 'unavailable',

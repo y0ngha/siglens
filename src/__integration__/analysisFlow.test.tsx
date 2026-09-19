@@ -44,8 +44,14 @@ vi.mock('@/shared/hooks/useCopyToClipboard', () => ({
 vi.mock('@/shared/lib/formatAnalyzedAt', () => ({
     formatAnalyzedAt: () => '1시간 전',
 }));
-vi.mock('@/entities/analysis', () => ({
+vi.mock('@/entities/analysis', async () => ({
     isAnalysisStale: () => false,
+    // AnalysisPanel reads this from the barrel since fallbackAnalysis moved into
+    // entities/analysis; keep the real implementation so the panel's fallback
+    // branch behaves as in production.
+    isFallbackAnalysis: (
+        await import('@/entities/analysis/lib/fallbackAnalysis')
+    ).isFallbackAnalysis,
 }));
 // personalized-analysis 투명성 배지(§FIX 2)가 소비하는 홀딩 소스. 실제
 // `useSymbolHolding`은 react-query + 서버 액션 체인을 거치는데, 이 통합 테스트는

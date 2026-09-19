@@ -34,7 +34,6 @@ import type {
 import { HIGH_CONFIDENCE_WEIGHT } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { LABEL_KO } from '@/shared/lib/typographyStyles';
-import { isFallbackAnalysis } from '@/entities/chat-message';
 import {
     parseStructuredSummary,
     type SkillSummarySection,
@@ -51,7 +50,7 @@ import { TRENDLINE_DIRECTION_LABEL_KEY } from '@/shared/lib/trendline';
 import { MS_PER_SECOND, SECONDS_PER_MINUTE } from '@/shared/config/time';
 import { DEFAULT_RESET_MS as COPY_RESET_MS } from '@/shared/hooks/useCopyToClipboard';
 import { formatAnalyzedAt } from '@/shared/lib/formatAnalyzedAt';
-import { isAnalysisStale } from '@/entities/analysis';
+import { isAnalysisStale, isFallbackAnalysis } from '@/entities/analysis';
 import { StaleAnalysisBanner } from './StaleAnalysisBanner';
 import { PlanCheckBlock } from './PlanCheckBlock';
 
@@ -860,9 +859,8 @@ export function AnalysisPanel({
     const tReport = useTranslations('widgets.analysis.expertReport');
     const skillLabel = useSkillLabel();
     // 폴백 판정의 sentinel — `buildFallbackAnalysis`와 같은 문구여야 한다.
-    const fallbackSummary = useTranslations('entities.chat-message.fallback')(
-        'unavailable'
-    );
+    const tFallback = useTranslations('entities.analysis.fallback');
+    const fallbackSummary = tFallback('unavailable');
     const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>(
         'idle'
     );

@@ -36,4 +36,9 @@ export {
 
 export { peekAnalysisStatic } from './lib/peekAnalysisStaticCache';
 
+export {
+    buildFallbackAnalysis,
+    isFallbackAnalysis,
+} from './lib/fallbackAnalysis';
+
 // actions are imported from @/entities/analysis/actions

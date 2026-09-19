@@ -38,9 +38,9 @@ interface OptionsPageClientProps {
      * Hides the client widget's **view** (`hideView`) and its stale-data notice
      * so summary/perExpiration/signals are not rendered twice — but the widget
      * itself stays mounted, because it is the only caller of
-     * `usePublishSymbolChat` on this tab and unmounting it locks the chat input
-     * with "분석이 완료된 후 질문할 수 있어요" on exactly the symbols that DO
-     * have a finished analysis.
+     * `useRegisterShareable` on this tab and unmounting it means the header's
+     * Share button never gets this tab's analysis data on exactly the symbols
+     * that DO have a finished analysis.
      *
      * So this is no longer a true XOR: it selects which of {prose, live view} is
      * visible, not whether the widget runs. Defaults to `false` so callers that
@@ -128,15 +128,15 @@ export function OptionsPageClient({
                 위에 렌더하는 SSR 프로즈)는 같은 AI 결론(summary/perExpiration/
                 signals)을 그린다. 둘 다 보이면 사용자·스크린리더에 중복이고
                 중복 콘텐츠 SEO 리스크라, 프로즈가 있으면 위젯은 `hideView`로
-                **뷰만** 끈다. 마운트는 유지한다 — 이 탭에서 usePublishSymbolChat을
+                **뷰만** 끈다. 마운트는 유지한다 — 이 탭에서 useRegisterShareable을
                 호출하는 곳이 여기뿐이라, 언마운트하면 완료된 분석이 있는 종목일수록
-                챗이 잠긴다.
+                헤더 공유 버튼이 데이터를 등록받지 못한다.
 
                 OI/호가가 stale하면(정규장 밖 + 스냅샷 stale) 핵심 지표(Max Pain,
                 P/C, top OI/IV/mid·spread)가 무력화되므로 그 입력으로 **새** 분석을
                 만들지는 않는다. 대신 프로즈가 보이는 상황이면 장중에 만들어둔 캐시가
-                있다는 뜻이므로 `cacheOnly`로 그것만 읽어 챗 컨텍스트를 채운다(미스면
-                아무것도 만들지 않고 챗은 잠긴 채로 둔다).
+                있다는 뜻이므로 `cacheOnly`로 그것만 읽어 공유 데이터를 채운다(미스면
+                아무것도 만들지 않는다).
 
                 따라서 안내 카드는 "stale인데 보여줄 프로즈도 없는" 경우에만 띄운다.
                 ErrorBoundary 분기는 위젯이 실제로 도는 경로에만 필요하다. */}

@@ -18,7 +18,7 @@ Siglens는 미국 주식 분석의 전 워크플로우를 AI로 자동화합니�
 - **AI 6개 분석 페이지 자동화** — 티커만 입력하면 기술적·펀더멘털·뉴스·공포 탐욕 지수·옵션 시장·종합 6개 분석을 모두 받습니다
 - **통합 결론(/[symbol]/overall)** — 4축(기술·펀더·뉴스·옵션) 분석 결과에 단기 매수 분위기(공포 탐욕 지수)까지 묶은 **AI 5축 종합 결론**과 시나리오 분석·위험 요인 도출
 - **옵션 시장을 한국어로(/[symbol]/options)** — Max Pain, Put/Call, ATM IV, Implied Move, Strike별 Open Interest 분포를 AI가 만기별로 해석. 옵션 시장이 형성된 종목만 노출
-- **컨텍스트 인식 AI 챗봇** — 차트·뉴스·펀더·옵션 어떤 페이지에 있어도 현재 페이지 데이터를 컨텍스트로 답변
+- **SIGLENS AI 바로가기** — 어떤 분석 페이지에서든 플로팅 버튼 하나로 종목명이 미리 채워진 질문과 함께 `ai.siglens.io`(도구 호출·출처·대화 저장을 갖춘 별도 에이전트 챗)로 이동
 - **시장 전체 신호 스캐너(/market)** — 11개 섹터에서 골든크로스·RSI 다이버전스·볼린저 스퀴즈 종목을 한눈에
 - **회원가입은 옵션** — 비회원도 모든 기본 기능 사용. 회원이 되면 분석 한도·BYOK 등 추가 혜택
 - **Skills 시스템** — 신규 분석 기법은 마크다운 파일만 추가하면 끝. 코드 변경 불필요
@@ -56,9 +56,9 @@ Siglens는 미국 주식 분석의 전 워크플로우를 AI로 자동화합니�
 ### 시장 대시보드
 - **Market Dashboard (`/market`)** — 11개 섹터 신호 스캐너. 200+ 인기 티커에서 골든크로스·RSI 다이버전스·볼린저 스퀴즈 신호 검색. 섹터·타임프레임 쿼리 파라미터 지원
 
-### AI & 챗봇
+### AI & SIGLENS AI
 - **3개 AI 프로바이더 모델 선택** — Claude(Haiku 4.5 / Sonnet 4.6 / Opus 4.7), Gemini(2.5 Flash-Lite / 2.5 Flash / 2.5 Pro / 3 Flash Preview / 3.1 Pro Preview), ChatGPT(GPT-5 Mini / 5.4 / 5.5) 중 분석 페이지마다 사용자가 직접 선택. Free 모델은 누구나 사용 가능하고 Pro 모델은 회원 게이트(`useModelGate`)로 잠금 해제 모달 표시
-- **컨텍스트 인식 챗봇** — `usePathname` 감지로 차트→뉴스→펀더→옵션 페이지 이동 시 시스템 메시지 자동 추가, 대화 히스토리 보존, 현재 페이지 컨텍스트만 LLM 프롬프트에 주입
+- **SIGLENS AI로 바로가기** — 종목 페이지의 자체 챗봇은 폐지됐다. 대신 플로팅 버튼이 종목명이 담긴 질문을 미리 채운 채 별도 제품인 `ai.siglens.io`(도구 호출·출처 링크·대화 저장을 갖춘 에이전트)로 새 탭에서 이동한다
 - **BYOK (Bring Your Own Key)** — 회원이 본인 API Key(Anthropic / Google / OpenAI)를 등록하면 사용량 한도 우회. 키는 `LLM_API_KEY_ENCRYPTION_KEY`로 암호화 저장
 
 ### 백테스팅 (`/backtesting`)
@@ -77,7 +77,7 @@ Siglens는 미국 주식 분석의 전 워크플로우를 AI로 자동화합니�
 - **계정 관리** — `/account`, `/account/delete` (회원 탈퇴 시 데이터 즉시 파기)
 - **세션** — 암호화 쿠키 (`OAUTH_TOKEN_ENCRYPTION_KEY`)
 - **모델 게이트** — `useModelGate` 훅이 Free 모델은 비회원에게도 노출, Pro 모델은 비회원/free tier에 잠금 해제 모달 표시
-- **분석 한도** — 비회원: IP당 챗봇 5회/일 등 IP 단위 rate limit / 회원: 사용자 단위 한도, BYOK 등록 시 한도 우회
+- **분석 한도** — 비회원: IP 단위 rate limit / 회원: 사용자 단위 한도, BYOK 등록 시 한도 우회
 - **로그인/회원가입 페이지는 robots noindex** — SEO 인덱스 대상 아님
 
 ### 인프라 & 자동화
@@ -105,7 +105,7 @@ Siglens는 미국 주식 분석의 전 워크플로우를 AI로 자동화합니�
 - FMP `/stable` API (티커·재무·뉴스·어닝)
 - yahoo-finance2 (옵션 체인 스냅샷)
 - Anthropic Claude (Haiku 4.5 / Sonnet 4.6 / Opus 4.7) — 분석 리포트 옵션
-- Google Gemini (2.5 Flash-Lite / 2.5 Flash / 2.5 Pro / 3 Flash Preview / 3.1 Pro Preview) — 분석 리포트·챗봇·뉴스 카드 sentiment·옵션 시장 해석
+- Google Gemini (2.5 Flash-Lite / 2.5 Flash / 2.5 Pro / 3 Flash Preview / 3.1 Pro Preview) — 분석 리포트·뉴스 카드 sentiment·옵션 시장 해석
 - OpenAI ChatGPT (GPT-5 Mini / 5.4 / 5.5) — 분석 리포트 옵션 (Pro tier 모델 포함)
 - Drizzle ORM + Postgres (news / earnings)
 - Upstash Redis (asset info 캐시)
@@ -148,7 +148,7 @@ Siglens는 미국 주식 분석의 전 워크플로우를 AI로 자동화합니�
 
 - **AI 5축 통합 분석** — TradingView·Thinkorswim 등 차트 도구는 기술 분석만, Seeking Alpha는 펀더 중심. Siglens는 기술+펀더+뉴스+공포탐욕+옵션을 묶은 한국어 종합 결론을 한 화면에서 제공
 - **옵션 시장을 한국어로 해석** — 한국 투자자가 접근하기 어려웠던 미국 옵션 시장(Max Pain·OI·IV·Greeks)을 AI가 만기별로 자연어 해석. 무료 한국어 도구 중 사실상 부재
-- **컨텍스트 인식 AI 챗봇** — 분석 리포트 후 자연어 후속 질문, 페이지 이동에 따라 컨텍스트 자동 전환
+- **SIGLENS AI 바로가기** — 분석 리포트를 본 그 자리에서 종목명이 채워진 질문으로 별도 에이전트 챗(`ai.siglens.io`)에 바로 이어갈 수 있다
 - **시장 전체 신호 스캐너** — 무료 한국어 도구 중 섹터 단위 기술적 신호 스캐너는 사실상 부재
 - **AI 백테스팅 투명성** — `/backtesting`에서 실제 예측 정확도를 데이터셋으로 공개 (Schema.org Dataset)
 - **Skills 시스템** — 비개발자도 마크다운 파일로 분석 기법 기여 가능

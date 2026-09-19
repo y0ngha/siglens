@@ -20,7 +20,7 @@ export function getOAuthAdapter(
     // Under E2E_TEST the fake adapter returns a deterministic fixture profile
     // for any code and contacts no real OAuth provider (see E2eFakeOAuthAdapter).
     // Static-imported (not require-gated) so this branch stays unit-testable —
-    // mirrors getLlmProvider's FakeChatProvider rationale.
+    // mirrors createEmailDispatcher's E2eEmailDispatcher rationale.
     if (isE2E()) return e2eFakeOAuthAdapter;
     return ADAPTERS[provider];
 }

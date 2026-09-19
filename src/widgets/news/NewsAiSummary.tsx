@@ -1,14 +1,9 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import {
-    usePublishSymbolChat,
-    type SymbolChatState,
-} from '@/features/symbol-chat';
 import { useNewsAnalysis } from './hooks/useNewsAnalysis';
 import { useNewsAnalysisTrigger } from './hooks/useNewsAnalysisTrigger';
 import { useWaitForNewsCards } from './hooks/useWaitForNewsCards';
-import { buildChatState } from './utils/buildChatState';
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 import {
     useDefaultModelId,
@@ -256,20 +251,12 @@ interface NewsAiSummaryProps {
     /**
      * SSR 스냅샷 프로즈가 같은 AI 결론을 이미 렌더 중일 때 `true`.
      *
-     * UI만 숨기고 마운트는 유지한다 — 페이지가 위젯을 렌더하지 않으면
-     * `usePublishSymbolChat`이 돌지 않아 챗봇 컨텍스트가 비고 입력이 잠긴다.
+     * UI만 숨기고 마운트는 유지한다 — `useRegisterShareable`이 여기서만 불리므로,
+     * 페이지가 위젯을 렌더하지 않으면 헤더의 공유 버튼이 이 탭의 분석 결과를
+     * 등록받지 못한다.
      */
     hideView?: boolean;
 }
-
-// cards 대기/poll error 동안 publish할 stale-safe chatState.
-// 모듈 스코프 상수라 매 렌더마다 새 객체가 만들어지지 않아 useMemo 없이도
-// publish의 prev 비교가 동일 reference로 dedupe된다.
-const WAITING_CHAT_STATE: SymbolChatState = {
-    context: null,
-    timeframe: null,
-    isAnalysisReady: false,
-};
 
 export function NewsAiSummary({
     symbol,
@@ -296,21 +283,6 @@ export function NewsAiSummary({
         isSettingsHydrated,
     });
 
-    // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생 변수)를
-    // 인자로 받기 때문에 useMemo 뒤에 위치해야 한다.
-    //
-    // cards 준비 전에는 분석 결과가 아직 없으므로 WAITING_CHAT_STATE를 publish하여
-    // 이전 페이지의 stale context가 그대로 남지 않게 한다. cards ready 후에는
-    // analysis 상태 기반 chatState로 takeover한다. 단일 publish 사이트를 유지하여
-    // parent/child 이중 publish로 인한 race condition을 막는다.
-    //
-    // `analysis`는 discriminated union이라 deps에는 객체 전체를 둔다. React Query가
-    // `query.data`를 memoize하므로 동일 분석에 대한 reference는 안정적 — 실제
-    // 데이터가 바뀔 때만 재계산된다.
-    const chatState = isCardsReady
-        ? buildChatState(analysis)
-        : WAITING_CHAT_STATE;
-    usePublishSymbolChat(chatState);
     // When enriched news cards are not yet ready the analysis query is disabled
     // (enabled: false → useNewsAnalysis returns status 'loading' immediately).
     // Mapping that 'loading' to 'pending' misleads the share system into showing
@@ -338,7 +310,7 @@ export function NewsAiSummary({
         throw pollError;
     }
 
-    // 훅과 pollError 전파는 그대로 두고 렌더만 건너뛴다 — publish는 유지된다.
+    // 훅과 pollError 전파는 그대로 두고 렌더만 건너뛴다 — 공유 데이터 등록은 유지된다.
     if (hideView) return null;
 
     if (!isCardsReady) {

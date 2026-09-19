@@ -1,12 +1,10 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { useNewsAnalysisTrigger, useWaitForNewsCards } from '@/widgets/news';
 import { useOverallAnalysis } from './hooks/useOverallAnalysis';
 import { OverallTriggerCta } from './OverallTriggerCta';
 import { ReanalyzeButton } from './ReanalyzeButton';
-import { buildChatState } from './utils/buildChatState';
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 import {
     useDefaultModelId,
@@ -100,9 +98,6 @@ export function OverallContent({
         isSettingsHydrated
     );
 
-    // usePublishSymbolChat은 chatState(useMemo 반환값)를 인자로 받으므로 useMemo 뒤에 둔다(§17 의존 순서).
-    const chatState = buildChatState(state, timeframe);
-    usePublishSymbolChat(chatState);
     useRegisterShareable({
         kind: 'overall',
         status: mapAnalysisStatus(state.status),

@@ -11,7 +11,7 @@ import { headers } from 'next/headers';
  * 덮어쓰지 않고 **뒤에 덧붙인다.** 호출자가 `X-Forwarded-For: 1.2.3.4`를 담아
  * 보내면 앱에는 `1.2.3.4, <진짜 IP>`가 도착하고, 첫 값은 호출자가 심은 값이다.
  * 이 함수의 소비자는 방문자 집계(`/api/presence`)와 사용량 제한
- * (`chatAction`·`getRemainingTokensAction`·`createShareSnapshotAction`)이라,
+ * (SIGLENS AI 에이전트의 게스트-IP 백스톱·`createShareSnapshotAction`)이라,
  * 위조가 통하면 통계가 부풀려지고 제한이 우회된다.
  *
  * ⚠️ **폴백은 여전히 위조 가능하다.** `cf-connecting-ip`가 없다는 것은

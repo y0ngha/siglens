@@ -41,7 +41,7 @@ const SearchOverlayContext = createContext<SearchOverlayContextValue | null>(
  *
  * `features/symbol-model/model/SymbolModelContext`가 회원가입 넛지 모달을 단 하나만
  * 호스팅하는 것과 같은 이유·같은 형태다. 이 슬라이스의 context도 그 관행대로 `model/`에 둔다
- * (`features/share/model`, `features/symbol-chat/model`도 동일).
+ * (`features/share/model`도 동일).
  *
  * ## 왜 `next/dynamic`으로 미루지 않는가
  *

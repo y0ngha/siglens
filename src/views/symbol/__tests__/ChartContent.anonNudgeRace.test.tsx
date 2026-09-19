@@ -141,18 +141,6 @@ vi.mock('@/widgets/analysis/hooks/useAnalysisProgress', () => ({
     })),
 }));
 
-vi.mock('@/features/symbol-chat', () => ({
-    usePublishSymbolChat: vi.fn(),
-}));
-
-vi.mock('@/views/symbol/utils/buildChatState', () => ({
-    buildChatState: vi.fn(() => ({
-        context: null,
-        timeframe: '1Day',
-        isAnalysisReady: false,
-    })),
-}));
-
 // "내 포지션" 요약(PositionStatusSummary)의 소스 — react-query 기반이라
 // QueryClientProvider 없는 이 트리에서 그대로 렌더하면 크래시한다. 이 파일의
 // 관심사(비회원 넛지 race)와 무관하므로 "홀딩 없음"으로 고정한다.

@@ -551,10 +551,10 @@ import type { AuthFormState } from '@/features/auth/model/types'; // 차단됨
 
 // ❌ 다른 slice의 internal path — no-restricted-imports 위반
 // src/features/auth/ui/LoginForm.tsx
-import type { ChatState } from '@/features/symbol-chat/model/types'; // 차단됨
+import type { SymbolModelState } from '@/features/symbol-model/model/types'; // 차단됨
 
 // ✅ 다른 slice는 public API(barrel)로만 접근
-import { useChatActions } from '@/features/symbol-chat';
+import { useSymbolModel } from '@/features/symbol-model';
 ```
 
 > "Import Path Rules"의 path-alias 규칙은 **cross-slice** import 기준이며, 같은 슬라이스 내부 segment 간 참조는 relative import를 사용한다.

@@ -378,11 +378,14 @@ GEMINI_API_KEY=
 OPENAI_API_KEY=
 DEEPSEEK_API_KEY=
 
-# AI — 챗봇 키
+# AI — SIGLENS AI 에이전트 + analysis-plain(쉽게보기) 서버 키
+# siglens.io 종목 챗봇은 폐지됐다(플로팅 버튼은 ai.siglens.io 링크로 대체) — 이 네 키의
+# 소비자는 이제 SiglensAI 에이전트(entities/llm-provider/api/agent/router.ts)와
+# analysis-plain(entities/analysis-plain/lib/plainModel.ts)뿐이다.
 GEMINI_CHAT_API_KEY=
 ANTHROPIC_CHAT_API_KEY=
 OPENAI_CHAT_API_KEY=
-GEMINI_CHAT_FREE_API_KEY=
+DEEPSEEK_CHAT_API_KEY=
 
 # AI — 번역 모델(키는 GEMINI_API_KEY 공유)
 TRANSLATE_MODEL=
@@ -644,8 +647,8 @@ HTTP 429/5xx, 상태 없는 네트워크 오류, 또는 90초 무응답(`AGENT_P
 DeepSeek을 건너뛰고 Gemini로 간다. 그래서 DeepSeek 장애가 늘 `server_busy`/`server_error`로
 보이지는 않고, 조용히 성공할 수 있다. Gemini 3는 재전송하는 tool call에 `thought_signature`가
 없으면 400이라, 어댑터가 문서화된 더미 값(`skip_thought_signature_validator`)을 붙인다.
-사용자가 모델을 고를 수 없는 이 호스트에만 적용한다 — siglens.io 챗봇·분석은 폴백하지 않고
-모델 변경을 안내한다.
+사용자가 모델을 고를 수 없는 이 호스트에만 적용한다 — siglens.io의 분석은 폴백하지 않고
+모델 변경을 안내한다(종목 챗봇은 폐지됐다).
 
 **관측**: 턴마다 `[Agent]` JSON 라인 1건(`conversationId`·`userId`·`model`(실제로 답한
 모델 — 폴백 턴은 `gemini-3.6-flash`)·`fallbackUsed`·`steps`·

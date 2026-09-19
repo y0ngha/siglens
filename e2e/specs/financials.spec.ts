@@ -33,11 +33,6 @@ import { E2E_FORCE_FINANCIALS_ERROR_COOKIE } from '@/shared/api/e2eAnalysisStub'
  *     Overall is user-triggered (idle CTA), so we only assert the CTA exists;
  *     after triggering we wait for the cached fixture to render.
  *
- *   - Chat: the financials page publishes a chatState via `usePublishSymbolChat`.
- *     Full chat interaction testing is covered by `symbol-chat.spec.ts` on the
- *     chart page. We omit the chat E2E here to avoid duplicating the vaul/aria
- *     complexity; a comment below explains the decision.
- *
  * Fixture anchors:
  *   - Scorecard h2: "재무 종합 점수"
  *   - 4 axis titles: "성장성", "수익성·질", "안정성", "현금창출력"
@@ -441,12 +436,3 @@ test.describe('financials: overall page integration', () => {
         ).toBeVisible({ timeout: 10_000 });
     });
 });
-
-// Chat integration note:
-// The financials page publishes chatState via usePublishSymbolChat (via
-// buildChatState in FinancialsAiSummary). Testing the full chat round-trip
-// (open panel → type → send → assert echo reply) is already covered by
-// `symbol-chat.spec.ts` on the chart page, which exercises the FloatingChatButton
-// layout-level component. Duplicating that complex test here (with the vaul
-// aria-hidden workaround) would add test surface without additional coverage:
-// the chat component does not change behavior per-tab. Skipped intentionally.

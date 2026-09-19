@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { usePublishSymbolChat } from '@/features/symbol-chat';
+import { ShareableAnalysisProvider, useShareable } from '@/features/share';
 import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 
@@ -19,18 +19,6 @@ vi.mock('@/widgets/news/hooks/useWaitForNewsCards', () => ({
 
 vi.mock('@/widgets/news/hooks/useNewsAnalysis', () => ({
     useNewsAnalysis: () => mockAnalysisResult(),
-}));
-
-vi.mock('@/features/symbol-chat', () => ({
-    usePublishSymbolChat: vi.fn(),
-}));
-
-vi.mock('@/widgets/news/utils/buildChatState', () => ({
-    buildChatState: () => ({
-        context: null,
-        timeframe: null,
-        isAnalysisReady: false,
-    }),
 }));
 
 vi.mock('@/shared/ui/BotBlockedNotice', () => ({
@@ -67,7 +55,9 @@ describe('NewsAiSummary', () => {
 
     /**
      * 스냅샷 프로즈가 보이는 동안에도 위젯은 마운트된 채 `hideView`로 UI만 끈다.
-     * 언마운트하면 `usePublishSymbolChat`이 돌지 않아 챗 입력이 잠긴다.
+     * 언마운트하면 `useRegisterShareable`이 돌지 않아 헤더 공유 버튼이 이 탭의
+     * 분석 결과를 등록받지 못한다 (review round 2 fix — 이전 XOR 마운트 버전은
+     * 이 테스트가 실패했다).
      */
     describe('hideView', () => {
         it('UI를 렌더하지 않는다', () => {
@@ -90,7 +80,7 @@ describe('NewsAiSummary', () => {
             expect(container).toBeEmptyDOMElement();
         });
 
-        it('UI를 숨겨도 챗 컨텍스트 publish는 계속된다', () => {
+        it('UI를 숨겨도 공유 데이터 등록은 계속된다', () => {
             mockWaitResult.mockReturnValue({ isReady: true, pollError: null });
             mockAnalysisResult.mockReturnValue({
                 status: 'done',
@@ -98,16 +88,28 @@ describe('NewsAiSummary', () => {
                 trigger: vi.fn(),
             });
 
+            function Probe() {
+                const reg = useShareable();
+                return (
+                    <div data-testid="probe">
+                        {reg === null ? 'NULL' : reg.kind}
+                    </div>
+                );
+            }
+
             render(
-                <NewsAiSummary
-                    symbol="AAPL"
-                    companyName="Apple"
-                    hasEnrichedNews
-                    hideView
-                />
+                <ShareableAnalysisProvider>
+                    <NewsAiSummary
+                        symbol="AAPL"
+                        companyName="Apple"
+                        hasEnrichedNews
+                        hideView
+                    />
+                    <Probe />
+                </ShareableAnalysisProvider>
             );
 
-            expect(vi.mocked(usePublishSymbolChat)).toHaveBeenCalled();
+            expect(screen.getByTestId('probe').textContent).toBe('news');
         });
 
         /** pollError는 hideView와 무관하게 에러 바운더리로 전파돼야 한다. */

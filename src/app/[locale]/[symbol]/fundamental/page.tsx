@@ -579,8 +579,9 @@ export default async function FundamentalPage({ params }: Props) {
     const fundamentalSnapshot = snapshots.find(s => s.tab === 'fundamental');
     // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasFundamentalProse)
     // 그것만 보여준다. 클라이언트 AI 위젯은 계속 마운트하되 `hideView`로 UI만 끈다 —
-    // 위젯을 아예 렌더하지 않으면 `usePublishSymbolChat`이 돌지 않아 챗봇의 분석
-    // 컨텍스트가 비어 입력이 잠긴다(스냅샷이 있을수록 챗이 막히는 역전).
+    // 위젯을 아예 렌더하지 않으면 `useRegisterShareable`이 돌지 않아 헤더 공유
+    // 버튼이 이 탭의 분석 결과를 등록받지 못한다(review round 2 fix: 챗 발행이
+    // 아니라 공유 등록이 이 마운트를 필요로 한다).
     // 두 소스가 동일 필드(overallConclusionKo/categoryAssessments/riskFactorsKo)를
     // 같은 순서로 중복 렌더하던 문제(같은 결론을 사용자에게 두 번, 스크린리더에
     // 두 번, 중복 콘텐츠 SEO 리스크)를 해소한다. `OverallSnapshotProse
@@ -732,12 +733,13 @@ export default async function FundamentalPage({ params }: Props) {
                     riskFactorsKo). Showing both duplicated the text for sighted
                     users and screen readers and doubled as a duplicate-content
                     SEO risk. When the snapshot is renderable, show the prose
-                    only; the widget stays mounted with `hideView` so it keeps publishing chat
-                    context, and renders its own view only when no snapshot
-                    exists — FundamentalAiSummary ('use client') fetches its
-                    analysis via a client-side hook, so during ISR generation it
-                    has no data yet and bakes its loading skeleton into the
-                    static HTML (no crawlable AI text) until it hydrates. */}
+                    only; the widget stays mounted with `hideView` so
+                    `useRegisterShareable` keeps registering Share data, and
+                    renders its own view only when no snapshot exists —
+                    FundamentalAiSummary ('use client') fetches its analysis via
+                    a client-side hook, so during ISR generation it has no data
+                    yet and bakes its loading skeleton into the static HTML (no
+                    crawlable AI text) until it hydrates. */}
                 {showFundamentalProse && (
                     <FundamentalSnapshotProse
                         content={fundamentalSnapshot?.content}

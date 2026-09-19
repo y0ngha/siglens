@@ -488,16 +488,9 @@
                 "verificationFailed": "邮箱验证过程中发生错误。请稍后重试。"
             }
         },
-        "chat-message": {
+        "analysis": {
             "fallback": {
                 "unavailable": "AI 分析暂时不可用。"
-            },
-            "pageContext": {
-                "chart": "图表分析",
-                "fear-greed": "恐惧贪婪指数",
-                "fundamental": "基本面分析",
-                "news": "新闻分析",
-                "overall": "AI 综合分析"
             }
         },
         "economy": {
@@ -2529,56 +2522,11 @@
                 "volume": "成交量"
             }
         },
-        "chat": {
-            "ChatPanel": {
-                "408331": "输入问题… (按Enter发送)",
-                "0b63e2": "分析完成后即可提问",
-                "1ca3c2": "仅在分析结果范围内回答",
-                "1dbde9": "关闭分析更新通知",
-                "4077ce": "发送",
-                "50071e": "💬 询问AI",
-                "cce9f7": "今日剩余 {v0} 次",
-                "d7fb24": "分析已更新 — 请基于最新结果继续提问",
-                "f292ff": "请基于分析结果提问。您可以询问趋势解读、指标含义、\n                            情景等。",
-                "f4ca4c": "关闭聊天",
-                "askSiglensAi": "向 SIGLENS AI 聊天助手继续提问",
-                "askSiglensAiQuestion": "综合介绍一下 {symbol} 现在的情况"
-            },
-            "ContextSwitchSystemMessage": {
-                "aa779e": "已切换至 {v0} 页面。上一页的分析上下文不再适用。"
-            },
-            "FloatingChatButton": {
-                "318233": "如果您对分析内容有任何疑问，请随时向我\n                        提问。",
-                "14d856": "关闭AI聊天",
-                "21f255": "关闭提示",
-                "75d660": "打开AI聊天"
-            },
-            "ModelSelect": {
-                "43807f": "AI模型列表",
-                "fb54aa": "选择AI模型"
-            },
-            "UserApiKeyRequiredModal": {
-                "378180": "注册API密钥即可使用此模型。",
-                "017c94": "注册并绑定您的API密钥即可使用此模型。",
-                "16ec45": "注册",
-                "94b7db": "关闭",
-                "e790ae": "注册API密钥",
-                "f77cc9": "需要注册 {v0} API 密钥",
-                "f85b06": "继续使用免费模型"
-            },
-            "thinking": {
-                "reading": "正在阅读您的问题…",
-                "writing": "正在撰写回答…"
-            },
-            "useChat": {
-                "modelNotAllowed": "所选模型在当前会员等级下不可用，请选择其他模型。",
-                "providerUnstable": "AI 服务器不稳定，未能回答。请在聊天机器人中更换模型。",
-                "rateLimited": "AI 服务器正忙，请稍后再试。",
-                "serverBusy": "AI 服务器正忙，请换一个模型后重试。",
-                "serverError": "发生临时错误，请重试。",
-                "tokenExhausted": "今天的 {v0} 次免费提问已用完，请明天再来。",
-                "userApiKeyRequired": "该模型需要你自己的 API 密钥，注册密钥后即可使用。"
-            }
+        "ask-ai-fab": {
+            "label": "向 SIGLENS AI 提问",
+            "ariaLabel": "向 SIGLENS AI 提问（新标签页）",
+            "question": "综合说说{name}现在的情况",
+            "shortLabel": "问 AI"
         },
         "congress": {
             "CongressTradesEmpty": {
