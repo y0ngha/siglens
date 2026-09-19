@@ -23,6 +23,14 @@ import { ToolActivity } from './ToolActivity';
 /** "Near the bottom" cutoff (px) for both the scroll-to-bottom button (spec §3.9) and the removed auto-follow it replaces. */
 const SCROLL_BOTTOM_THRESHOLD_PX = 80;
 
+/** Shared by the scroll handler and the content-growth observer below — one formula, not two copies that can drift. */
+function isAwayFromBottom(el: HTMLElement): boolean {
+    return (
+        el.scrollHeight - el.scrollTop - el.clientHeight >
+        SCROLL_BOTTOM_THRESHOLD_PX
+    );
+}
+
 /** `true` unless the browser reports a reduced-motion preference; `matchMedia` is absent in some test/SSR environments. */
 function prefersReducedMotion(): boolean {
     return (
@@ -171,6 +179,7 @@ export function MessageList({
      */
     const pendingAnchorIdRef = useRef<string | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const contentRef = useRef<HTMLDivElement>(null);
     const endRef = useRef<HTMLDivElement>(null);
     const userNodeRefs = useRef(new Map<string, HTMLElement>());
     const seenLastUserIdRef = useRef<string | null>(null);
@@ -186,6 +195,23 @@ export function MessageList({
         endRef.current?.scrollIntoView({ block: 'end' });
     }, []);
 
+    // `showScrollButton` otherwise only updates from the `onScroll` handler
+    // below — but a streaming answer grows `scrollHeight` with no scroll
+    // event at all, so a user who scrolled up would never see the ↓ button
+    // appear (spec §3.9). Observing the content wrapper's size catches that
+    // growth directly; the callback (not the effect body) sets state, since
+    // this is an external subscription, not a render-time computation.
+    useEffect(() => {
+        const content = contentRef.current;
+        const container = containerRef.current;
+        if (!content || !container) return;
+        const observer = new ResizeObserver(() => {
+            setShowScrollButton(isAwayFromBottom(container));
+        });
+        observer.observe(content);
+        return () => observer.disconnect();
+    }, []);
+
     // Anchor-on-send, detection half (spec §3.9, ChatGPT/Gemini pattern):
     // when a NEW user message appears, grow the active turn's min-height and
     // record it as the pending scroll target — the actual scroll happens in
@@ -194,7 +220,7 @@ export function MessageList({
     // on first render, but that case is the mount-effect's job (jump to
     // bottom) — skipped here via `isFirstRenderRef`.
     useEffect(() => {
-        const lastUser = [...messages].reverse().find(m => m.role === 'user');
+        const lastUser = messages.findLast(m => m.role === 'user');
         if (isFirstRenderRef.current) {
             isFirstRenderRef.current = false;
             seenLastUserIdRef.current = lastUser?.id ?? null;
@@ -228,10 +254,8 @@ export function MessageList({
         },
         []
     );
-    const lastAssistant = [...messages]
-        .reverse()
-        .find(m => m.role === 'assistant');
-    const lastUser = [...messages].reverse().find(m => m.role === 'user');
+    const lastAssistant = messages.findLast(m => m.role === 'assistant');
+    const lastUser = messages.findLast(m => m.role === 'user');
 
     const copy = (m: AgentUiMessage): void => {
         void navigator.clipboard?.writeText(m.content);
@@ -244,11 +268,7 @@ export function MessageList({
     };
 
     const handleScroll = (e: UIEvent<HTMLDivElement>): void => {
-        const el = e.currentTarget;
-        setShowScrollButton(
-            el.scrollHeight - el.scrollTop - el.clientHeight >
-                SCROLL_BOTTOM_THRESHOLD_PX
-        );
+        setShowScrollButton(isAwayFromBottom(e.currentTarget));
     };
 
     const scrollToBottom = (): void => {
@@ -268,7 +288,10 @@ export function MessageList({
                 className="absolute inset-0 overflow-y-auto"
                 onScroll={handleScroll}
             >
-                <div className="mx-auto flex w-full max-w-3xl flex-col gap-7 px-4 py-8">
+                <div
+                    ref={contentRef}
+                    className="mx-auto flex w-full max-w-3xl flex-col gap-7 px-4 py-8"
+                >
                     {messages.map((m, i) => {
                         const isUser = m.role === 'user';
                         const isEditing =

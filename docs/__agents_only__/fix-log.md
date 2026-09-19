@@ -403,3 +403,12 @@
 
 ## [fix/symbols-copy-and-names Round 2 | /symbols 표기·문구 | 2026-09-18]
 - Status: APPROVED (지적 없음)
+
+## [PR #849 | feat/agent-precomputed-data | 2026-09-19]
+- Violation: `showScrollButton` (`MessageList.tsx`) was only ever updated from the `onScroll` handler. A streaming answer grows `scrollHeight` continuously without firing any scroll event, so a user who had scrolled away from the bottom never saw the ↓ scroll-to-bottom button appear during streaming.
+  - Rule: (new) A piece of UI state derived from container geometry (scroll distance) must react to every geometry-changing cause, not just the one event type (`scroll`) that happens to be wired up — content growth from streaming is a geometry change with no accompanying scroll event.
+  - Context: Added a mount-only `useEffect` that attaches a `ResizeObserver` to the content wrapper div; its callback (not the effect body — this is an external subscription, matching `react-hooks/set-state-in-effect`) calls `setShowScrollButton` via a shared `isAwayFromBottom(el)` helper also used by `handleScroll`, so the two paths can't drift apart. Follows the existing `useIsClamped.ts` observer pattern (create in effect, `observer.disconnect()` on cleanup).
+
+- Violation: Three `[...messages].reverse().find(...)` calls in `MessageList.tsx` mutated a spread copy to find the last matching message, instead of the non-mutating ES2023 method that does the same lookup directly.
+  - Rule: `docs/conventions/CONVENTIONS.md` — prefer immutable array methods (`arr.toReversed()` over `arr.reverse()`, etc.); `.findLast()` is already established in the repo (`src/views/symbol/utils/technicalFacts.ts`).
+  - Context: Replaced all three call sites with `messages.findLast(m => m.role === ...)`.

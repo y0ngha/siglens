@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NextIntlClientProvider } from 'next-intl';
 import {
@@ -703,6 +703,113 @@ describe('MessageList', () => {
             } finally {
                 window.matchMedia = originalMatchMedia;
             }
+        });
+
+        describe('스트리밍 중 콘텐츠가 자라면(스크롤 이벤트 없이) 버튼 상태도 따라간다', () => {
+            // `handleScroll`만으로는 버튼을 못 채운다 — 스트리밍은 스크롤
+            // 이벤트를 발생시키지 않고 `scrollHeight`만 키운다. `MessageList`가
+            // 콘텐츠 래퍼에 붙이는 ResizeObserver를 가로채, 그 콜백만으로
+            // 버튼이 반응하는지 본다(usePaneLabels.test.ts의 목 패턴).
+            let resizeCallback: (() => void) | null = null;
+
+            class MockResizeObserver {
+                observe = vi.fn();
+                unobserve = vi.fn();
+                disconnect = vi.fn();
+                constructor(callback: () => void) {
+                    resizeCallback = callback;
+                }
+            }
+
+            beforeEach(() => {
+                resizeCallback = null;
+                vi.stubGlobal('ResizeObserver', MockResizeObserver);
+            });
+
+            afterEach(() => {
+                vi.unstubAllGlobals();
+            });
+
+            const setLogGeometry = (
+                log: HTMLElement,
+                geometry: {
+                    scrollHeight: number;
+                    scrollTop: number;
+                    clientHeight: number;
+                }
+            ): void => {
+                Object.defineProperty(log, 'scrollHeight', {
+                    value: geometry.scrollHeight,
+                    configurable: true,
+                });
+                Object.defineProperty(log, 'scrollTop', {
+                    value: geometry.scrollTop,
+                    configurable: true,
+                });
+                Object.defineProperty(log, 'clientHeight', {
+                    value: geometry.clientHeight,
+                    configurable: true,
+                });
+            };
+
+            it('스크롤 이벤트 없이 콘텐츠가 자라 80px 넘게 멀어지면 버튼이 나타난다', () => {
+                wrap(
+                    <MessageList
+                        siteUrl="https://siglens.io"
+                        localePrefix=""
+                        messages={[
+                            userMsg('1', 'q1', 1),
+                            assistantMsg('2', '', 'streaming'),
+                        ]}
+                        streaming
+                        onRegenerate={vi.fn()}
+                        onEdit={vi.fn()}
+                    />
+                );
+                const log = screen.getByRole('log');
+                // 거리 = 1000-100-400 = 500 > 80.
+                setLogGeometry(log, {
+                    scrollHeight: 1000,
+                    scrollTop: 100,
+                    clientHeight: 400,
+                });
+
+                expect(resizeCallback).not.toBeNull();
+                act(() => resizeCallback?.());
+
+                expect(
+                    screen.getByRole('button', { name: /최신 메시지로 이동/ })
+                ).toBeInTheDocument();
+            });
+
+            it('콘텐츠가 자라도 거리가 80px 이하면 버튼은 숨겨진 채 유지된다', () => {
+                wrap(
+                    <MessageList
+                        siteUrl="https://siglens.io"
+                        localePrefix=""
+                        messages={[
+                            userMsg('1', 'q1', 1),
+                            assistantMsg('2', '', 'streaming'),
+                        ]}
+                        streaming
+                        onRegenerate={vi.fn()}
+                        onEdit={vi.fn()}
+                    />
+                );
+                const log = screen.getByRole('log');
+                // 거리 = 440-20-400 = 20 <= 80.
+                setLogGeometry(log, {
+                    scrollHeight: 440,
+                    scrollTop: 20,
+                    clientHeight: 400,
+                });
+
+                act(() => resizeCallback?.());
+
+                expect(
+                    screen.queryByRole('button', { name: /최신 메시지로 이동/ })
+                ).toBeNull();
+            });
         });
     });
 });
