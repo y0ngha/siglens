@@ -82,6 +82,8 @@ export interface RawFmpStockPeer {
 
 /** Raw FMP analyst estimate (annual averages). */
 export interface RawFmpAnalystEstimate {
+    /** Fiscal period end (`YYYY-MM-DD`). FMP returns rows newest-first, years ahead. */
+    date?: string | null;
     estimatedEpsAvg?: number | null;
     epsAvg?: number | null;
     estimatedRevenueAvg?: number | null;

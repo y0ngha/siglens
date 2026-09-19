@@ -184,7 +184,7 @@ describe('CachedFundamentalProvider — simple cached methods', () => {
         expect(store.has('fundamental:key-metrics:AAPL')).toBe(true);
         expect(store.has('fundamental:ratios:AAPL')).toBe(true);
         expect(store.has('fundamental:growth:AAPL')).toBe(true);
-        expect(store.has('fundamental:estimates:AAPL')).toBe(true);
+        expect(store.has('fundamental:estimates:v2:AAPL')).toBe(true);
         expect(store.has('fundamental:grades-consensus:AAPL')).toBe(true);
         expect(store.has('fundamental:price-target-consensus:AAPL')).toBe(true);
         expect(store.has('fundamental:price-target-summary:AAPL')).toBe(true);

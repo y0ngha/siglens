@@ -222,6 +222,12 @@ export class FmpMarketProvider implements SiglensMarketProvider {
                 price: quote.price,
                 changesPercentage: quote.changePercentage,
                 name: quote.name ?? symbol,
+                // core `MarketQuote.timestamp` — the raw
+                // FMP row already carries this (used above in
+                // `fetchTodayQuoteBar`), just not previously passed through.
+                ...(Number.isFinite(quote.timestamp)
+                    ? { timestamp: quote.timestamp }
+                    : {}),
             };
         } catch (error) {
             console.warn('[FmpMarketProvider] getQuote failed:', symbol, error);
