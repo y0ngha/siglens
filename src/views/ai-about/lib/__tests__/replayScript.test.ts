@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+    groupLines,
     lineLength,
     parseReplayLine,
     pickNextIndex,
@@ -97,6 +98,24 @@ describe('revealLines', () => {
         expect(revealLines(lines, 99, false)).toEqual([
             { shown: 3, caret: false },
             { shown: 2, caret: false },
+        ]);
+    });
+});
+
+describe('groupLines', () => {
+    it('folds consecutive same-kind lines into one group, and splits on a kind change', () => {
+        const p1 = parseReplayLine('p', 'intro');
+        const li1 = parseReplayLine('li', 'one');
+        const li2 = parseReplayLine('li', 'two');
+        const p2 = parseReplayLine('p', 'outro');
+
+        const groups = groupLines([p1, li1, li2, p2]);
+
+        expect(groups.map(g => g.kind)).toEqual(['p', 'li', 'p']);
+        expect(groups.map(g => g.items.map(i => i.index))).toEqual([
+            [0],
+            [1, 2],
+            [3],
         ]);
     });
 });

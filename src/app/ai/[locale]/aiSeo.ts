@@ -1,5 +1,9 @@
 import type { Metadata } from 'next';
-import { AI_SITE_URL, type AiIndexablePath } from '@/shared/config/aiHost';
+import {
+    AI_SITE_URL,
+    type AiIndexablePath,
+    type AiSeoCopy,
+} from '@/shared/config/aiHost';
 import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 import {
     DEFAULT_LOCALE,
@@ -15,11 +19,7 @@ import { ORGANIZATION_JSON_LD_ID, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 /** Product name as it appears in titles, cards and structured data. */
 export const AI_PRODUCT_NAME = 'SIGLENS AI';
 
-export interface AiSeoCopy {
-    readonly title: string;
-    readonly description: string;
-    readonly ogLabel: string;
-}
+export type { AiSeoCopy };
 
 /** Absolute ai-host URL of `path` in `locale` (`/` is the chat home). */
 export function aiUrl(locale: Locale, path: string): string {

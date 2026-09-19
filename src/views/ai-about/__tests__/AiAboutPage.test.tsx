@@ -13,18 +13,6 @@ vi.mock('next-intl/server', () => ({
 import { AiAboutPage } from '../AiAboutPage';
 import { getAboutFaq } from '../lib/aboutContent';
 
-beforeAll(() => {
-    // ChatReplay checks this on mount; stay still so the rendered frame is stable.
-    vi.stubGlobal(
-        'matchMedia',
-        vi.fn().mockReturnValue({
-            matches: true,
-            addEventListener: vi.fn(),
-            removeEventListener: vi.fn(),
-        })
-    );
-});
-
 async function renderPage(localePrefix = '') {
     const locale = localePrefix === '/en' ? 'en' : 'ko';
     render(
@@ -38,6 +26,18 @@ async function renderPage(localePrefix = '') {
 }
 
 describe('AiAboutPage', () => {
+    beforeAll(() => {
+        // ChatReplay checks this on mount; stay still so the rendered frame is stable.
+        vi.stubGlobal(
+            'matchMedia',
+            vi.fn().mockReturnValue({
+                matches: true,
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn(),
+            })
+        );
+    });
+
     it('lays out the approved sections in order', async () => {
         await renderPage();
         expect(

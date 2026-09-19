@@ -87,6 +87,22 @@ export function sliceSegments(
     return out;
 }
 
+export interface LineGroup {
+    readonly kind: ReplayLine['kind'];
+    readonly items: { readonly line: ReplayLine; readonly index: number }[];
+}
+
+/** Consecutive lines of the same kind render as one `<ul>` or one run of `<p>`. */
+export function groupLines(lines: readonly ReplayLine[]): LineGroup[] {
+    const groups: LineGroup[] = [];
+    lines.forEach((line, index) => {
+        const last = groups.at(-1);
+        if (last && last.kind === line.kind) last.items.push({ line, index });
+        else groups.push({ kind: line.kind, items: [{ line, index }] });
+    });
+    return groups;
+}
+
 /** A random index other than `prev`, so the same question never plays twice in a row. */
 export function pickNextIndex(
     length: number,

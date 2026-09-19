@@ -454,3 +454,29 @@
 - Violation: Running `yarn i18n:translate --locale X` to translate ~140 new keys re-translated 1,633 existing en keys on master branch (1,612 ko keys lack hash entries in messages/_meta/hashes.json, causing re-translation when hash lookup fails)
   - Rule: (new) Do not run `yarn i18n:translate` on branches adding only new keys; instead add en/ja/zh translations by hand (following recent commit patterns) and verify with `yarn i18n:verify`, or check `--dry-run` count first to avoid cascading re-translation of approved keys
   - Context: Learned when attempting to batch-translate new keys; the hash cache is incomplete on master, making re-translation too risky. Used manual additions for this batch.
+
+## [PR #852 claude-review R1 | ai.siglens.io/about | 2026-09-19]
+- Violation: Function return type written as inline object type duplicating existing interface AiSeoCopy
+  - Rule: CONVENTIONS.md — named return types + MISTAKES.md TypeScript §5 — reuse existing interfaces instead of duplicating shape inline
+  - Context: Moved AiSeoCopy to shared/config/aiHost.ts and reused it in the return type annotation
+- Violation: Four small components in one file declared inline prop types without named interfaces
+  - Rule: CONVENTIONS.md — Props interface must be declared above each component, not inline on the component parameter
+  - Context: Extracted *Props interfaces (AboutCopyBlockProps, AboutCtaProps, AboutStatProps, AboutHeroProps) and declared above their respective components
+- Violation: Playback state machine (wait/play) defined inside useEffect instead of at module level
+  - Rule: MISTAKES.md Components §14.5 — State enums and state machines must be module-level, not inside hooks; useEffect is for effects, not state definitions
+  - Context: Extracted to module-level lib/replayPlayer.ts with explicit PlaybackContext enum and unit tests
+- Violation: Hook order violation — useRef declared after a custom hook, and derived values declared after an effect
+  - Rule: MISTAKES.md Components §17 — Strict hook order: useState/useRef → useQuery/custom hooks → useCallback/useMemo → derived variables → handlers → useEffect
+  - Context: Reordered all hooks and derived values in the component to match the established order
+- Violation: Module-level beforeAll outside describe block in test file
+  - Rule: MISTAKES.md Tests §3 — All setup functions must be inside describe() scope, never at module level
+  - Context: Wrapped beforeAll and test suite in a describe() block
+- Violation: Decorative accent colour on ~10 elements (icon boxes, arrows, chip borders, source tags, caret, labels) across 2 components
+  - Rule: DESIGN.md accent-color guidelines — accent colour reserved for primary actions, links, focus states, and active indicators only; max 2 per viewport. Decorative accents weaken visual hierarchy and waste the primary-action signal
+  - Context: Removed primary-* classes from decorative elements (icon boxes, arrows, chip borders, source tags, caret, labels). Added UI review checklist item: grep new .tsx files for `primary-` and justify each use against DESIGN.md rules
+- Violation: New pure/helper module lib/aboutContent.ts with no colocated unit test
+  - Rule: MISTAKES.md Components §22 / DESIGN.md checklist §6 — All new pure/helper modules must include colocated unit test file
+  - Context: Added lib/aboutContent.test.ts with tests covering the module's exports and edge cases
+- Suggestion (fixed): Magic delay numbers (200ms, 500ms) in animation logic had no constant names
+  - Rule: MISTAKES.md §15 — Hardcoded numbers in function bodies must be named constants with clear intent
+  - Context: Defined ANIMATION_DELAY_MS=500, FADE_DELAY_MS=200 as module-level constants and replaced inline literals

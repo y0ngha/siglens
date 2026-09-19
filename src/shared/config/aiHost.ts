@@ -15,6 +15,13 @@ export type AiIndexablePath = (typeof AI_INDEXABLE_PATHS)[number];
 export const AI_SITE_URL =
     process.env.NEXT_PUBLIC_AI_SITE_URL ?? 'https://ai.siglens.io';
 
+/** Title, description and OG label for an ai-host page's metadata. */
+export interface AiSeoCopy {
+    readonly title: string;
+    readonly description: string;
+    readonly ogLabel: string;
+}
+
 /**
  * SiglensAI home for a locale, optionally with a question prefilled in the
  * composer (`?q=`). The question is never sent on its own — the user still

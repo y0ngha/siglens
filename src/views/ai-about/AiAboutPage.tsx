@@ -45,7 +45,7 @@ type IconComponent = ComponentType<{ className?: string }>;
 const Arrow = () => (
     <span
         aria-hidden="true"
-        className="relative h-6 w-0.5 bg-linear-to-b from-primary-500 to-ui-success after:absolute after:-bottom-px after:-left-1 after:border-x-[5px] after:border-t-[7px] after:border-x-transparent after:border-t-ui-success"
+        className="relative h-6 w-0.5 bg-secondary-600 after:absolute after:-bottom-px after:-left-1 after:border-x-[5px] after:border-t-[7px] after:border-x-transparent after:border-t-secondary-600"
     />
 );
 
@@ -218,7 +218,7 @@ export async function AiAboutPage({
                                     </div>
                                     <div className="px-4 py-3.5">
                                         <p
-                                            className="text-xs font-medium text-primary-400"
+                                            className="text-xs font-semibold text-secondary-100"
                                             translate="no"
                                         >
                                             SIGLENS AI
@@ -257,7 +257,7 @@ export async function AiAboutPage({
                                             'grid grid-cols-[2.5rem_minmax(0,1fr)] grid-rows-[auto_1fr_auto] gap-x-3.5 gap-y-1 p-4 sm:p-5'
                                         )}
                                     >
-                                        <span className="row-span-3 flex size-10 items-center justify-center rounded-lg bg-primary-500/10 text-primary-400">
+                                        <span className="row-span-3 flex size-10 items-center justify-center rounded-lg bg-secondary-700/40 text-secondary-200">
                                             <Icon className="size-5" />
                                         </span>
                                         <h3 className="text-base font-semibold text-secondary-50">
@@ -273,7 +273,7 @@ export async function AiAboutPage({
                                 ))}
                             </ul>
                             <Arrow />
-                            <div className="max-w-sm rounded-lg border border-primary-500 bg-secondary-800 px-4 py-3 text-sm leading-6 text-secondary-200">
+                            <div className="max-w-sm rounded-lg border border-secondary-600 bg-secondary-800 px-4 py-3 text-sm leading-6 text-secondary-200">
                                 {t('data.exampleA')}
                                 <p className="mt-2 flex flex-wrap gap-1 text-xs">
                                     {[
@@ -283,7 +283,7 @@ export async function AiAboutPage({
                                     ].map(label => (
                                         <span
                                             key={label}
-                                            className="rounded bg-primary-500/10 px-1.5 py-0.5 text-primary-400"
+                                            className="rounded bg-secondary-700/40 px-1.5 py-0.5 text-secondary-300"
                                         >
                                             {label}
                                         </span>

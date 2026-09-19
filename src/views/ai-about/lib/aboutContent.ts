@@ -1,5 +1,6 @@
 import 'server-only';
 import { getTranslations } from 'next-intl/server';
+import type { AiSeoCopy } from '@/shared/config/aiHost';
 import type { Locale } from '@/shared/i18n/locales';
 import type { FaqItem } from '@/shared/lib/seo';
 import { GUEST_TURNS_PER_DAY } from '@/widgets/agent-chat';
@@ -12,9 +13,7 @@ import {
 type AboutT = Awaited<ReturnType<typeof getTranslations>>;
 
 /** Title, description and OG label for `/about`'s metadata. */
-export async function getAboutSeoCopy(
-    locale: Locale
-): Promise<{ title: string; description: string; ogLabel: string }> {
+export async function getAboutSeoCopy(locale: Locale): Promise<AiSeoCopy> {
     const t = await getTranslations({ locale, namespace: 'views.ai-about' });
     return {
         title: t('seo.title'),

@@ -1,16 +1,16 @@
 'use client';
 
-import {
-    useEffect,
-    useRef,
-    useState,
-    useSyncExternalStore,
-    type ReactNode,
-} from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { cn } from '@/shared/lib/cn';
+import { useCanAnimate } from '../hooks/useCanAnimate';
 import {
-    lineLength,
-    pickNextIndex,
+    completeFrame,
+    runPlayback,
+    type Frame,
+    type PlaybackContext,
+} from '../lib/replayPlayer';
+import {
+    groupLines,
     revealLines,
     sliceSegments,
     type LineReveal,
@@ -39,34 +39,6 @@ interface Props {
     readonly doneIcon: ReactNode;
 }
 
-/** What is on screen at one instant of the replay. */
-interface Frame {
-    readonly index: number;
-    readonly typed: number;
-    readonly toolsShown: number;
-    readonly toolsDone: number;
-    readonly summary: boolean;
-    readonly chars: number;
-    readonly sources: boolean;
-}
-
-const COMPLETE = Number.MAX_SAFE_INTEGER;
-const completeFrame = (index: number): Frame => ({
-    index,
-    typed: COMPLETE,
-    toolsShown: COMPLETE,
-    toolsDone: COMPLETE,
-    summary: true,
-    chars: COMPLETE,
-    sources: true,
-});
-
-const TYPE_MS = 38;
-const STREAM_STEP = 3;
-const STREAM_MS = 28;
-const HOLD_MS = 5200;
-const TICK_MS = 40;
-
 const TONE_CLASS: Readonly<Record<Segment['tone'], string | null>> = {
     plain: null,
     strong: 'font-semibold text-secondary-50 tabular-nums',
@@ -74,7 +46,11 @@ const TONE_CLASS: Readonly<Record<Segment['tone'], string | null>> = {
     down: 'font-semibold text-ui-danger-text tabular-nums',
 };
 
-function Segments({ segments }: { readonly segments: readonly Segment[] }) {
+interface SegmentsProps {
+    readonly segments: readonly Segment[];
+}
+
+function Segments({ segments }: SegmentsProps) {
     return segments.map((segment, i) => {
         const cls = TONE_CLASS[segment.tone];
         return cls === null ? (
@@ -87,24 +63,10 @@ function Segments({ segments }: { readonly segments: readonly Segment[] }) {
     });
 }
 
-const REDUCED_MOTION = '(prefers-reduced-motion: reduce)';
-const subscribeMotion = (onChange: () => void) => {
-    const query = window.matchMedia(REDUCED_MOTION);
-    query.addEventListener('change', onChange);
-    return () => query.removeEventListener('change', onChange);
-};
-/** Playback runs only on the client and only without a reduced-motion preference. */
-const useCanAnimate = () =>
-    useSyncExternalStore(
-        subscribeMotion,
-        () => !window.matchMedia(REDUCED_MOTION).matches,
-        () => false
-    );
-
 const Caret = () => (
     <span
         aria-hidden="true"
-        className="ml-px inline-block h-[1em] w-[7px] translate-y-[2px] bg-primary-400 motion-safe:animate-pulse"
+        className="ml-px inline-block h-[1em] w-[7px] translate-y-[2px] bg-secondary-300 motion-safe:animate-pulse"
     />
 );
 
@@ -123,11 +85,20 @@ const Caret = () => (
 export function ChatReplay({ scenarios, labels, avatar, doneIcon }: Props) {
     const [frame, setFrame] = useState<Frame>(() => completeFrame(0));
     const [paused, setPaused] = useState(false);
-    const animated = useCanAnimate();
     const pausedRef = useRef(false);
     const visibleRef = useRef(true);
     const rootRef = useRef<HTMLDivElement>(null);
     const threadRef = useRef<HTMLDivElement>(null);
+    const animated = useCanAnimate();
+
+    const scenario = scenarios[frame.index]!;
+    const typing = frame.typed < scenario.question.length;
+    const streaming = frame.summary && !frame.sources;
+    const reveal = revealLines(
+        scenario.lines,
+        frame.summary ? frame.chars : 0,
+        streaming
+    );
 
     useEffect(() => {
         pausedRef.current = paused;
@@ -147,81 +118,18 @@ export function ChatReplay({ scenarios, labels, avatar, doneIcon }: Props) {
         if (!animated) return;
         let cancelled = false;
         const timers = new Set<ReturnType<typeof setTimeout>>();
-
-        // Real time only counts while playing and on screen.
-        const wait = (ms: number) =>
-            new Promise<void>((resolve, reject) => {
-                let left = ms;
-                let last = Date.now();
-                const tick = () => {
-                    if (cancelled) return reject(new Error('cancelled'));
-                    const now = Date.now();
-                    if (!pausedRef.current && visibleRef.current)
-                        left -= now - last;
-                    last = now;
-                    if (left <= 0) return resolve();
-                    const id = setTimeout(tick, Math.min(left, TICK_MS));
-                    timers.add(id);
-                };
-                tick();
-            });
-
-        const play = async (index: number, firstRun: boolean) => {
-            const scenario = scenarios[index]!;
-            const base: Frame = {
-                index,
-                typed: 0,
-                toolsShown: 0,
-                toolsDone: 0,
-                summary: false,
-                chars: 0,
-                sources: false,
-            };
-            await wait(firstRun ? 300 : 900);
-            setFrame(base);
-            for (let i = 1; i <= scenario.question.length; i++) {
-                setFrame({ ...base, typed: i });
-                await wait(TYPE_MS * (0.6 + Math.random() * 0.8));
-            }
-            await wait(350);
-            const typed = scenario.question.length;
-            for (let t = 0; t < scenario.tools.length; t++) {
-                setFrame({ ...base, typed, toolsShown: t + 1, toolsDone: t });
-                await wait(scenario.tools[t]!.ms);
-                setFrame({
-                    ...base,
-                    typed,
-                    toolsShown: t + 1,
-                    toolsDone: t + 1,
-                });
-                await wait(120);
-            }
-            await wait(350);
-            const total = scenario.lines.reduce(
-                (sum, line) => sum + lineLength(line),
-                0
-            );
-            for (let c = 0; c <= total; c += STREAM_STEP) {
-                setFrame({ ...base, typed, summary: true, chars: c });
-                await wait(STREAM_MS);
-            }
-            setFrame({ ...completeFrame(index) });
-            await wait(HOLD_MS);
+        const ctx: PlaybackContext = {
+            scenarios,
+            setFrame,
+            isCancelled: () => cancelled,
+            isRunning: () => !pausedRef.current && visibleRef.current,
+            addTimer: id => {
+                timers.add(id);
+            },
+            random: Math.random,
         };
 
-        void (async () => {
-            let index = Math.floor(Math.random() * scenarios.length);
-            let firstRun = true;
-            try {
-                while (!cancelled) {
-                    await play(index, firstRun);
-                    firstRun = false;
-                    index = pickNextIndex(scenarios.length, index);
-                }
-            } catch {
-                // cancelled on unmount
-            }
-        })();
+        void runPlayback(ctx);
 
         return () => {
             cancelled = true;
@@ -234,15 +142,6 @@ export function ChatReplay({ scenarios, labels, avatar, doneIcon }: Props) {
         const thread = threadRef.current;
         if (thread) thread.scrollTop = thread.scrollHeight;
     }, [frame]);
-
-    const scenario = scenarios[frame.index]!;
-    const typing = frame.typed < scenario.question.length;
-    const streaming = frame.summary && !frame.sources;
-    const reveal = revealLines(
-        scenario.lines,
-        frame.summary ? frame.chars : 0,
-        streaming
-    );
 
     return (
         <div
@@ -320,14 +219,13 @@ export function ChatReplay({ scenarios, labels, avatar, doneIcon }: Props) {
     );
 }
 
-function ToolChips({
-    tools,
-    done,
-}: {
+interface ToolChipsProps {
     readonly tools: readonly ReplayTool[];
     /** How many of `tools` have finished. */
     readonly done: number;
-}) {
+}
+
+function ToolChips({ tools, done }: ToolChipsProps) {
     return (
         <ul className="flex flex-wrap gap-1.5">
             {tools.map((tool, t) => {
@@ -339,7 +237,7 @@ function ToolChips({
                             'inline-flex min-h-7 items-center gap-1.5 rounded-full border px-2.5 text-xs',
                             finished
                                 ? 'border-secondary-700 text-secondary-400'
-                                : 'border-primary-500 text-secondary-200'
+                                : 'border-border-control text-secondary-200'
                         )}
                     >
                         <span
@@ -348,7 +246,7 @@ function ToolChips({
                                 'size-1.5 rounded-full',
                                 finished
                                     ? 'bg-ui-success'
-                                    : 'bg-primary-400 motion-safe:animate-pulse'
+                                    : 'bg-secondary-300 motion-safe:animate-pulse'
                             )}
                         />
                         {finished ? tool.label : tool.pendingLabel}
@@ -362,13 +260,12 @@ function ToolChips({
     );
 }
 
-function AnswerLines({
-    lines,
-    reveal,
-}: {
+interface AnswerLinesProps {
     readonly lines: readonly ReplayLine[];
     readonly reveal: readonly LineReveal[];
-}) {
+}
+
+function AnswerLines({ lines, reveal }: AnswerLinesProps) {
     return (
         <div className="flex flex-col gap-2">
             {groupLines(lines).map(group => {
@@ -410,22 +307,20 @@ function AnswerLines({
     );
 }
 
-function SourcesLine({
-    label,
-    sources,
-    asOf,
-}: {
+interface SourcesLineProps {
     readonly label: string;
     readonly sources: readonly string[];
     readonly asOf: string;
-}) {
+}
+
+function SourcesLine({ label, sources, asOf }: SourcesLineProps) {
     return (
         <p className="flex flex-wrap items-center gap-1.5 border-t border-dashed border-secondary-700 pt-2.5 text-xs text-secondary-400">
             {label}
             {sources.map(source => (
                 <span
                     key={source}
-                    className="rounded bg-primary-500/10 px-2 py-0.5 font-medium text-primary-400"
+                    className="rounded bg-secondary-700/40 px-2 py-0.5 font-medium text-secondary-300"
                 >
                     {source}
                 </span>
@@ -433,20 +328,4 @@ function SourcesLine({
             <span className="tabular-nums">· {asOf}</span>
         </p>
     );
-}
-
-interface LineGroup {
-    readonly kind: ReplayLine['kind'];
-    readonly items: { readonly line: ReplayLine; readonly index: number }[];
-}
-
-/** Consecutive lines of the same kind render as one `<ul>` or one run of `<p>`. */
-function groupLines(lines: readonly ReplayLine[]): LineGroup[] {
-    const groups: LineGroup[] = [];
-    lines.forEach((line, index) => {
-        const last = groups.at(-1);
-        if (last && last.kind === line.kind) last.items.push({ line, index });
-        else groups.push({ kind: line.kind, items: [{ line, index }] });
-    });
-    return groups;
 }
