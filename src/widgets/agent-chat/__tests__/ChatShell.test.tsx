@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import {
+    afterAll,
     afterEach,
     beforeAll,
     beforeEach,
@@ -92,6 +93,17 @@ const shellTree = () => (
 function renderShell() {
     return wrap(shellTree());
 }
+
+// Four separate `describe`s below each patch
+// `Element.prototype.scrollIntoView` in their own `beforeAll`/`beforeEach`
+// with no restore of their own — captured ONCE here (before any of them
+// runs) and restored ONCE after the whole file finishes, so this file
+// doesn't leak a stale scrollIntoView stub into a LATER test file running
+// in the same worker process.
+const originalScrollIntoView = Element.prototype.scrollIntoView;
+afterAll(() => {
+    Element.prototype.scrollIntoView = originalScrollIntoView;
+});
 
 describe('ChatShell error banner', () => {
     beforeAll(() => {
@@ -361,5 +373,109 @@ describe('ChatShell suggestions passthrough (Task S4)', () => {
         expect(
             screen.getByRole('button', { name: /질문 둘/ })
         ).toBeInTheDocument();
+    });
+});
+
+/**
+ * spec §3.9: `MessageList` is keyed off the route-level `conversationId`
+ * PROP (not `stream.conversationId`, which mutates mid-turn on a brand-new
+ * chat's first send — see the comment in `ChatShell.tsx`) so a navigation
+ * to a DIFFERENT conversation remounts the transcript and its mount-only
+ * "jump to bottom instantly" effect fires again.
+ */
+describe('ChatShell — MessageList key (spec §3.9)', () => {
+    const originalMessages = mockStream.messages;
+    let scrollIntoViewSpy: ReturnType<typeof vi.fn>;
+    beforeAll(() => {
+        const spy = vi.fn();
+        scrollIntoViewSpy = spy;
+        Element.prototype.scrollIntoView =
+            spy as unknown as typeof Element.prototype.scrollIntoView;
+    });
+    beforeEach(() => {
+        mockStream.error = null;
+        mockStream.status = 'idle';
+        mockStream.messages = [
+            {
+                id: '1',
+                role: 'user' as const,
+                content: 'q',
+                tools: [],
+                status: 'complete' as const,
+            },
+        ];
+    });
+    afterEach(() => {
+        mockStream.messages = originalMessages;
+        // The `stream.conversationId만 바뀌는...` test below mutates this
+        // shared hoisted mock directly — restore it explicitly rather than
+        // relying on that test happening to leave it
+        // at the same value the module-level mock started with.
+        mockStream.conversationId = 'c1';
+    });
+
+    it('conversationId prop이 바뀌면 MessageList가 리마운트되어 다시 맨 아래로 점프한다', () => {
+        const { rerender } = wrap(
+            <ChatShell
+                conversationId="c1"
+                initialMessages={[]}
+                conversations={[]}
+                signedIn
+                localePrefix=""
+                siteUrl="https://siglens.io"
+                currentPath="/c1"
+            />
+        );
+        expect(scrollIntoViewSpy).toHaveBeenCalledWith({ block: 'end' });
+        scrollIntoViewSpy.mockClear();
+
+        rerender(
+            <NextIntlClientProvider locale="ko" messages={ko}>
+                <ChatShell
+                    conversationId="c2"
+                    initialMessages={[]}
+                    conversations={[]}
+                    signedIn
+                    localePrefix=""
+                    siteUrl="https://siglens.io"
+                    currentPath="/c2"
+                />
+            </NextIntlClientProvider>
+        );
+        // Remounted → the mount-only effect fires again.
+        expect(scrollIntoViewSpy).toHaveBeenCalledWith({ block: 'end' });
+    });
+
+    it('stream.conversationId만 바뀌는 경우(새 대화 첫 전송)는 리마운트하지 않는다', () => {
+        mockStream.conversationId = null as unknown as string;
+        const { rerender } = wrap(
+            <ChatShell
+                conversationId={null}
+                initialMessages={[]}
+                conversations={[]}
+                signedIn
+                localePrefix=""
+                siteUrl="https://siglens.io"
+                currentPath="/"
+            />
+        );
+        scrollIntoViewSpy.mockClear();
+        // The SSE `meta` frame assigns `stream.conversationId` mid-turn —
+        // the ChatShell `conversationId` PROP (route-level) is unchanged.
+        mockStream.conversationId = 'c1';
+        rerender(
+            <NextIntlClientProvider locale="ko" messages={ko}>
+                <ChatShell
+                    conversationId={null}
+                    initialMessages={[]}
+                    conversations={[]}
+                    signedIn
+                    localePrefix=""
+                    siteUrl="https://siglens.io"
+                    currentPath="/"
+                />
+            </NextIntlClientProvider>
+        );
+        expect(scrollIntoViewSpy).not.toHaveBeenCalled();
     });
 });
