@@ -9,8 +9,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [bollinger_upper_breakout, keltner_upper_breakout, keltner_lower_breakout, ichimoku_cloud_breakout, ichimoku_cloud_breakdown]
-token_cost: 975
-digest_hash: "111a0413"
+token_cost: 1167
+digest_hash: "c8726e81"
 ---
 
 ## Overview
@@ -40,7 +40,7 @@ A recognized chart pattern (triangle, flag, pennant, wedge, rectangle, head and 
 
 - **Continuation patterns** (flag, pennant, ascending triangle): breakout in the direction of the prior trend
 - **Reversal patterns** (head and shoulders, double top/bottom): breakout against the prior trend
-- Pattern-measured targets provide objective profit targets (e.g., head-and-shoulders target = head height projected from neckline)
+- The matching pattern skill's app-computed measured-move target (측정 목표가, e.g. from a head-and-shoulders' head-to-neckline geometry) provides an objective profit target — cite it, never re-derive it
 
 ### 3. Moving Average Breakout
 
@@ -73,7 +73,7 @@ False breakouts are the primary risk. Apply these filters to reduce false signal
 
 ### Filter 2: Volume Confirmation
 
-- Genuine breakouts are accompanied by a volume increase of **50% or more** above the recent average (20-bar volume average)
+- `## Indicator State (computed)` already lists a `Volume: last bar x× 20-bar average` line — cite `x` directly; never compute the ratio yourself from raw volume bars. Genuine breakouts show `x ≥ 1.5` (50%+ above the 20-bar average)
 - Volume should expand on the breakout bar and remain elevated for the next 2-3 bars
 - Breakouts on declining volume are highly suspect
 
@@ -99,12 +99,14 @@ False breakouts are the primary risk. Apply these filters to reduce false signal
 
 ## Entry Rules
 
+ATR-based stop levels below may be described as an ATR multiple **in words only** (e.g. "진입가 아래 ATR의 1.5배") — never convert a multiple into an actual price or percentage; `atr`'s raw value is a companion for the app's own thresholds, not arithmetic for you to redo into a dollar figure.
+
 ### Aggressive Entry
 
 1. Price closes beyond the breakout boundary
 2. Volume is 50%+ above the 20-bar average
 3. Enter at the close of the breakout bar or on the next open
-4. Stop loss: opposite side of the range, or 1.5 × ATR from entry
+4. Stop loss: opposite side of the range, or ATR × 1.5 described in words (never a computed price)
 
 ### Standard Entry
 
@@ -113,7 +115,7 @@ False breakouts are the primary risk. Apply these filters to reduce false signal
 3. RSI/MACD align with breakout direction
 4. Wait for 2nd consecutive close beyond the boundary
 5. Enter at the close of the 2nd bar
-6. Stop loss: midpoint of the prior range, or 2 × ATR from entry
+6. Stop loss: midpoint of the prior range, or ATR × 2 described in words (never a computed price)
 
 ### Conservative Entry (Retest)
 
@@ -121,7 +123,7 @@ False breakouts are the primary risk. Apply these filters to reduce false signal
 2. Price pulls back toward the broken boundary (retest)
 3. Price holds the boundary as new support/resistance (closes back in breakout direction)
 4. Enter on the hold confirmation
-5. Stop loss: below the retest low (long) or above the retest high (short), or 1.5 × ATR
+5. Stop loss: below the retest low (long) or above the retest high (short), or ATR × 1.5 described in words (never a computed price)
 
 ---
 
@@ -129,21 +131,20 @@ False breakouts are the primary risk. Apply these filters to reduce false signal
 
 ### Profit Targets
 
-- **Range breakout target**: range height projected from the breakout point
-- **Pattern breakout target**: pattern-specific measured move (e.g., triangle height, flag pole length)
-- **Donchian exit**: opposite channel boundary (20-bar high entry → exit at 10-bar low)
-- **ATR-based target**: 3-4 × ATR from entry for trending breakouts
+- **Range/Pattern breakout target**: a horizontal range is itself the rectangle pattern, so both cases follow the same rule — when the setup matches a detected chart pattern (rectangle for a range, or triangle/flag/head-and-shoulders/etc. for a pattern breakout), cite that pattern's app-computed 측정 목표가/보수 목표가(50%) keyPrices (derived from its `geometry`) — never compute a measured move (range height, triangle height, flagpole length, …) yourself. If no chart pattern is detected for the setup, describe the target zone qualitatively (e.g. "이전 고점 부근까지 여지") without a number.
+- **Donchian exit**: opposite channel boundary (20-bar high entry → exit at 10-bar low) — a structural rule, not a computed value.
+- **ATR-based target**: may be described as an ATR multiple in words (e.g. "진입가 위 ATR의 3~4배") for trending breakouts — never convert it to an actual price or percentage.
 
 ### Stop Loss
 
-- **Initial stop**: 1.5-2 × ATR below entry (long) or above entry (short)
-- **Alternative**: opposite side of the breakout range
-- **Trailing stop**: After 2 × ATR profit, trail stop at 2 × ATR behind highest close (long) or lowest close (short)
+- **Initial stop**: may be described as an ATR multiple in words (e.g. "진입가 아래 ATR의 1.5~2배") — never a computed price or percentage.
+- **Alternative**: opposite side of the breakout range — a structural rule, not a computed value.
+- **Trailing stop**: may be described as trailing behind the highest/lowest close by an ATR multiple in words (e.g. "고점 대비 ATR의 2배 아래로 추적") — never a computed price.
 
 ### Position Management
 
 - Consider scaling in: 50% on initial breakout, 50% on successful retest
-- Scale out: 50% at 1:1 risk-reward, 50% at pattern target or 3 × ATR
+- Scale out: describe partial profit-taking qualitatively (e.g. "1차 목표 근접 시 일부 청산, 잔여분은 패턴 목표가까지 보유") — never state a numeric risk-reward ratio
 
 ---
 
@@ -206,26 +207,27 @@ Enter when price decisively closes beyond a defined support/resistance boundary.
 
 ### Breakout Types
 - Range: close beyond horizontal range → long above resistance / short below support. Longer range = more significant. Volume should increase substantially on breakout bar.
-- Pattern: continuation (flag, pennant, ascending triangle) → breakout in prior-trend direction; reversal (H&S, double top/bottom) → against prior trend. Measured targets (e.g. H&S target = head height from neckline).
+- Pattern: continuation (flag, pennant, ascending triangle) → breakout in prior-trend direction; reversal (H&S, double top/bottom) → against prior trend. Cite the matching pattern skill's app-computed measured target (측정 목표가) — never re-derive it (e.g. H&S head-to-neckline).
 - Moving Average: MA200 breakout most significant (bull/bear divide); MA50 = intermediate trend change. Requires price to remain above/below MA for 2-3 closes to confirm.
 - Donchian (Turtle): break above highest-high / below lowest-low of past N bars. Classic = 20-bar entry, 10-bar exit. ATR-based position sizing. Best in trends, bad in ranges.
 
 ### False-Breakout Filters
 1. Closing price: only count when CLOSE (not intraday) is beyond boundary.
-2. Volume: genuine breakout has volume ≥50% above 20-bar average; stays elevated 2-3 bars. Declining-volume breakouts are suspect.
+2. Volume: cite `## Indicator State (computed)`'s `Volume: last bar x× 20-bar average` line — never compute the ratio yourself. Genuine breakout has x≥1.5 (≥50% above average); stays elevated 2-3 bars. Declining-volume breakouts are suspect.
 3. Multi-bar (conservative): require 2 consecutive closes beyond boundary.
 4. Momentum: RSI must not be in extreme opposite zone (e.g. RSI>70 for downside breakout is contradictory); MACD trending in breakout direction; ADX rising above 25 confirms trending environment.
 5. Retest (most conservative): after breakout, wait for pullback to broken boundary; enter if it holds (support↔resistance flip).
 
 ### Entry Rules
-- Aggressive: close beyond boundary + volume 50%+ above 20-bar avg → enter at close/next open. Stop = opposite side of range or 1.5×ATR.
-- Standard: close beyond + volume confirms + RSI/MACD align + wait 2nd consecutive close → enter at 2nd bar close. Stop = midpoint of prior range or 2×ATR.
-- Conservative (retest): breakout + close beyond → pullback retest → boundary holds (closes back in breakout dir) → enter on hold. Stop = below retest low (long)/above retest high (short) or 1.5×ATR.
+ATR stop levels below: describe as an ATR multiple in words only (e.g. "ATR의 1.5배") — never convert to a computed price or percentage.
+- Aggressive: close beyond boundary + volume 50%+ above 20-bar avg → enter at close/next open. Stop = opposite side of range or ATR×1.5 (words only).
+- Standard: close beyond + volume confirms + RSI/MACD align + wait 2nd consecutive close → enter at 2nd bar close. Stop = midpoint of prior range or ATR×2 (words only).
+- Conservative (retest): breakout + close beyond → pullback retest → boundary holds (closes back in breakout dir) → enter on hold. Stop = below retest low (long)/above retest high (short) or ATR×1.5 (words only).
 
 ### Exit
-- Targets: range height projected from breakout point; pattern measured move; Donchian = opposite channel boundary (20-bar-high entry → exit 10-bar low); ATR target 3-4×ATR for trending.
-- Stop: initial 1.5-2×ATR, or opposite side of range. Trailing: after 2×ATR profit, trail stop 2×ATR behind highest close (long)/lowest close (short).
-- Scale in 50% initial + 50% on retest; scale out 50% at 1:1 R:R + 50% at pattern target or 3×ATR.
+- Targets: a range breakout IS the rectangle pattern — same rule as pattern breakout. Setup matches a detected chart pattern (rectangle/triangle/flag/H&S/etc.) → cite that pattern's app-computed 측정 목표가/보수 목표가(50%) keyPrices (from its `geometry`), never compute a measured move yourself. No pattern detected → describe the target zone qualitatively, no number. Donchian = opposite channel boundary (20-bar-high entry → exit 10-bar low), a structural rule. ATR target: describe as ATR×3-4 in words for trending, never a computed price.
+- Stop: describe as ATR×1.5-2 in words, or opposite side of range (structural). Trailing: describe as trailing behind highest/lowest close by an ATR multiple in words, never a computed price.
+- Scale in 50% initial + 50% on retest; scale out described qualitatively (e.g. "1차 목표 근접 시 일부 청산") — never a numeric risk-reward ratio.
 
 ### Confidence
 Increase: volume expansion 50%+; breakout after long consolidation; multi-TF aligned; ADX>25; pattern with clear measured target.

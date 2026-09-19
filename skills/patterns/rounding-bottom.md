@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [rounding_bottom]
-token_cost: 702
-digest_hash: "07429977"
+token_cost: 754
+digest_hash: "bc7a0065"
 ---
 
 ## Detection Criteria
@@ -67,10 +67,8 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Target price calculation**: Measure the depth of the saucer (the vertical distance from the rim level to the bottom). Project this distance upward from the rim breakout point. Example: if the rim is at $50 and the bottom is at $35, the target is $65 ($50 + $15).
-- **Risk/reward assessment**: The distance from current price to target versus the distance from current price to the most recent swing low defines the risk/reward ratio. Rounding Bottoms typically offer favorable risk/reward due to their large measured move potential.
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the rim price (the breakout level); `extremeLevel` = the saucer bottom price; `direction` = 'up'; `invalidationLevel` = the most recent right-side trough (the saucer bottom itself is a wider alternative stop). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Stop-loss reference level**: The most recent trough within the right side of the saucer, or the bottom of the saucer for a wider stop, serves as the invalidation level.
-- **Partial target**: 50% of the saucer depth serves as a conservative initial target.
 - **Extended targets**: Rounding Bottoms confirmed at higher timeframes (weekly/monthly) often produce moves that significantly exceed the measured target, as they represent major trend reversals.
 - **Patience**: The pattern's long formation period means confirmation can take months. Early positioning before rim breakout carries higher risk.
 
@@ -80,11 +78,11 @@ Note: These are analytical reference points for technical analysis, not trading 
 
 When this pattern is detected, include the following in the analysis response:
 
-- **keyPrices**: Include the left rim price, right rim price (current or projected), the bottom price, and the projected target price if the rim is broken.
+- **keyPrices**: Include the left rim price, right rim price (current or projected), and the bottom price.
 - **patternSummaries**: Describe the pattern status (left side forming / bottom stabilizing / right side developing / rim reached / breakout confirmed), the saucer depth as a percentage of the rim price, the formation duration, the symmetry between left and right sides, and the shape assessment (smooth U vs irregular).
 - **Volume context**: State whether volume follows the expected U-shape — declining on the left side, minimum at the bottom, and increasing on the right side. Note the volume level at the breakout relative to the average.
 - **Completion status**: Clearly indicate which phase the pattern is in and how far along the right side has developed. Note whether the right rim has reached the left rim level.
-- **Target projection**: Calculate and state the measured move target using the saucer depth projected upward from the rim breakout point.
+- **geometry**: Fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
 원형바닥 (Rounding Bottom / Saucer) — long-term bullish reversal, confidence_weight 0.78, documented success rate 75–82%. Often coincides with sector/market rotation into the stock.
@@ -111,16 +109,14 @@ When this pattern is detected, include the following in the analysis response:
 - Right rim >5% below left rim → lower high, continued weakness.
 - Premature identification before right side develops → frequent false signals.
 
-### Target (measured move)
-- Saucer depth (rim level→bottom), projected UP from rim breakout point. E.g. rim $50, bottom $35 → target $65 ($50+$15).
-- Conservative first target = 50% of saucer depth. Stop = recent right-side trough, or saucer bottom for wider stop.
-- Higher-timeframe (weekly/monthly) confirmations often exceed measured target (major reversals).
+### Geometry (do not calculate targets)
+`geometry` = { breakoutLevel: the rim price (the breakout level), extremeLevel: the saucer bottom price, direction: 'up', invalidationLevel: the most recent right-side trough (the saucer bottom itself is a wider alternative stop) }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 ### Output
-- keyPrices: left rim, right rim (current/projected), bottom, projected target if rim broken.
+- keyPrices: left rim, right rim (current/projected), bottom.
 - patternSummaries: status (left side forming / bottom stabilizing / right side developing / rim reached / breakout confirmed); saucer depth as % of rim; formation duration; left/right symmetry; shape (smooth U vs irregular).
 - Volume context: whether volume follows U-shape (decline left, min bottom, increase right); breakout volume vs average.
 - Completion status: which phase; how far right side developed; whether right rim reached left-rim level.
-- Target projection: saucer depth projected up from rim breakout.
+- geometry: `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the definition above — never a computed target or R:R.
 - trend: bullish when confirmed.
 <!-- PROMPT_DIGEST:END -->

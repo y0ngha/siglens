@@ -8,8 +8,8 @@ confidence_weight: 0.8
 usage_roles: [signal, confirmation, regime]
 gating:
   tier: always_on
-token_cost: 1502
-digest_hash: "b51bed10"
+token_cost: 1589
+digest_hash: "2c9a9a6b"
 smc_full_guide: true
 ---
 
@@ -30,7 +30,7 @@ SMC pre-computed values available in the `smc` indicator field:
 | `equilibriumZone` | Middle 50% of the recent swing range |
 | `discountZone` | Lower 25% of the recent swing range |
 
-Note: `atr` is listed in the `indicators` frontmatter as a **companion indicator** used for proximity thresholds (e.g., EQH/EQL tolerance `0.5 × ATR`, key-level distance filters `2–3 × ATR`). ATR is not part of the `smc` field itself — it is supplied separately and referenced from SMC logic for normalization.
+Note: `atr` is listed in the `indicators` frontmatter as a **companion indicator** used for proximity thresholds (e.g., EQH/EQL tolerance `0.5 × ATR`, key-level distance filters `2–3 × ATR`) — these are detection criteria the app applies when building the SMC data, not arithmetic for you to redo. Each order block / FVG / EQH-EQL entry in the SMC section already carries its own computed `(±x% / y ATR from price)` distance, with the nearest unmitigated level above and below price marked — cite those distances directly.
 
 ---
 
@@ -182,9 +182,10 @@ Use the pre-computed `smc` indicator values and the last 30 bars of OHLCV data.
 - State: bullish / bearish / mixed (transitioning).
 
 **Step 2 — Identify active key levels**
-- List unmitigated order blocks closest to current price (both bullish and bearish OBs).
-- List unmitigated FVGs nearest to current price.
-- Note any EQH or EQL within 2 × ATR of current price.
+- Each order block, FVG, and EQH/EQL entry in the SMC section already carries a computed `(±x% / y ATR from price)` distance, with the nearest unmitigated level above and below price marked — cite those distances directly; never compute `x × ATR` proximity yourself from the raw zone price and the ATR value.
+- List the unmitigated order blocks closest to current price (both bullish and bearish OBs), citing their marked distance.
+- List the unmitigated FVGs nearest to current price, citing their marked distance.
+- Note any EQH or EQL marked as nearby, citing its distance.
 - State which zone (premium / equilibrium / discount) the current price occupies.
 
 **Step 3 — Build confluence**
@@ -206,7 +207,7 @@ Return the analysis in **this exact structured format** (one `**label**: value` 
 ```
 
 Additional output rules:
-- If no unmitigated OBs or FVGs are within 3 × ATR of current price, state "근처 미완료 레벨 없음" and focus analysis on zone + structure alone.
+- If the SMC section's marked nearest-unmitigated levels show none within roughly 3 × ATR of current price (read from the cited `(±x% / y ATR from price)` distances — do not compute this yourself), state "근처 미완료 레벨 없음" and focus analysis on zone + structure alone.
 - If CHoCH occurred within the last 10 bars, flag it explicitly as a high-priority reversal watch.
 - If price swept EQH or EQL within the last 5 bars without follow-through, flag it as a potential liquidity grab reversal.
 - Set `trend` field: `bullish` if structure is bullish and price is in Discount near an OB/FVG, `bearish` if structure is bearish and price is in Premium near an OB/FVG, `neutral` otherwise.
@@ -215,7 +216,7 @@ Additional output rules:
 <!-- PROMPT_DIGEST:START -->
 ### Smart Money Concepts (SMC / ICT) — institutional footprint analysis
 
-Pre-computed `smc` fields: `swingHighs`/`swingLows` (pivots), `structureBreaks` (BOS/CHoCH w/ direction+type), `orderBlocks` (w/ mitigation), `fairValueGaps` (w/ mitigation), `equalHighs`/`equalLows`, `premiumZone` (top 25% of swing range), `equilibriumZone` (middle 50%), `discountZone` (bottom 25%). `atr` is a **companion** for proximity thresholds (EQH/EQL tolerance `0.5×ATR`; key-level distance `2–3×ATR`), supplied separately.
+Pre-computed `smc` fields: `swingHighs`/`swingLows` (pivots), `structureBreaks` (BOS/CHoCH w/ direction+type), `orderBlocks` (w/ mitigation), `fairValueGaps` (w/ mitigation), `equalHighs`/`equalLows`, `premiumZone` (top 25% of swing range), `equilibriumZone` (middle 50%), `discountZone` (bottom 25%). `atr` is a **companion** for the app's own proximity thresholds (EQH/EQL tolerance `0.5×ATR`; key-level distance `2–3×ATR`) — not arithmetic for you to redo. Each OB/FVG/EQH-EQL entry already carries a computed `(±x% / y ATR from price)` distance with the nearest unmitigated level above/below marked — cite these, never compute `x×ATR` proximity yourself.
 
 **1. Market Structure — BOS / CHoCH**
 - Bullish structure = higher highs (HH) + higher lows (HL). Bearish = lower highs (LH) + lower lows (LL).
@@ -250,7 +251,7 @@ Disconfirming (reduce confidence): OB/FVG already mitigated; mixed structure (no
 
 **Failure modes:** CHoCH reversed within 1–3 bars back to original trend = false (was liquidity sweep) — wait for OB/FVG retest before treating valid. OB entered and passed straight through without rejection wick/reaction = institutions not defending, drop it. FVG filled and closed beyond far edge = loses significance. SMC is discretionary/visual — treat programmatic output as shortlist, not standalone. Trend-strength-blind — cross-check ADX/trend filter before acting on breaks. Premium/Discount range is heuristic (built from single most recent high + low from independent arrays; may mismatch after CHoCH/chop) — cross-check actual BOS/CHoCH sequence before using as triggers.
 
-**AI Analysis steps:** (1) Determine structure bias — count consecutive bullish vs bearish BOS, identify most recent CHoCH + confirmation → state bullish/bearish/mixed. (2) Identify active levels — unmitigated OBs & FVGs nearest price, EQH/EQL within 2×ATR, current zone. (3) Build confluence per level → low(1)/moderate(2)/high(3+). (4) Combine structure bias + levels → continuation vs reversal + primary reason.
+**AI Analysis steps:** (1) Determine structure bias — count consecutive bullish vs bearish BOS, identify most recent CHoCH + confirmation → state bullish/bearish/mixed. (2) Identify active levels — cite the marked `(±x% / y ATR from price)` distances for the nearest unmitigated OBs/FVGs/EQH/EQL above and below price (never compute proximity yourself), current zone. (3) Build confluence per level → low(1)/moderate(2)/high(3+). (4) Combine structure bias + levels → continuation vs reversal + primary reason.
 
 Return in this EXACT format (one `**label**: value` per line):
 ```
@@ -260,5 +261,5 @@ Return in this EXACT format (one `**label**: value` per line):
 **유동성 대상**: [근접한 EQH/EQL]
 **방향 의견**: [강세 / 약세 / 중립]
 ```
-Output rules: if no unmitigated OB/FVG within 3×ATR of price, state "근처 미완료 레벨 없음" and use zone+structure alone. If CHoCH within last 10 bars, flag as high-priority reversal watch. If EQH/EQL swept within last 5 bars without follow-through, flag as potential liquidity grab reversal. Set `trend`: `bullish` if bullish structure + price in Discount near OB/FVG; `bearish` if bearish structure + price in Premium near OB/FVG; else `neutral`. Set `strength` as separate JSON field (NOT in description): confluence count → `weak`(1)/`moderate`(2)/`strong`(3+).
+Output rules: if the marked distances show no unmitigated OB/FVG within ~3×ATR of price, state "근처 미완료 레벨 없음" and use zone+structure alone. If CHoCH within last 10 bars, flag as high-priority reversal watch. If EQH/EQL swept within last 5 bars without follow-through, flag as potential liquidity grab reversal. Set `trend`: `bullish` if bullish structure + price in Discount near OB/FVG; `bearish` if bearish structure + price in Premium near OB/FVG; else `neutral`. Set `strength` as separate JSON field (NOT in description): confluence count → `weak`(1)/`moderate`(2)/`strong`(3+).
 <!-- PROMPT_DIGEST:END -->

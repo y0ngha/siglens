@@ -7,8 +7,8 @@ indicators: []
 confidence_weight: 0.68
 gating:
   tier: always_on
-token_cost: 1340
-digest_hash: "105c3716"
+token_cost: 1637
+digest_hash: "3a9cbf71"
 ---
 
 ## Absolute Rules
@@ -120,6 +120,8 @@ Three absolute rules govern all Elliott Wave counts. Any count that violates the
 
 ## Fibonacci Guidelines
 
+Ratio reference only — which ratio a wave is EXPECTED to relate to. As with the target formulas above, a numeric price is only valid when that ratio is listed in `## Market Reference` — either a nearest-list row or that horizon's complete `Fib table:` / `Fib ABC table:` line; never compute one from these ratios yourself. The standard Key Ratios in the table below (23.6/38.2/50/61.8/78.6/100/127.2/161.8/200/261.8%) are always available one of those two ways. The Deep/Extreme column's 76.4%/85.4% are Elliott-specific, not part of that standard set, and may still be genuinely absent — only for those, fall back to a qualitative description with no number.
+
 | Wave | Type | Key Ratios | Deep/Extreme | Reference |
 |---|---|---|---|---|
 | Wave 2 | Retracement | 38.2%, 50%, 61.8% | 76.4%, 85.4% | Wave 1 length |
@@ -127,9 +129,9 @@ Three absolute rules govern all Elliott Wave counts. Any count that violates the
 | Wave 4 | Retracement | 23.6%, 38.2% | 50% | Wave 3 length |
 | Wave 5 | Extension | 61.8%, 100%, 161.8% | — | Wave 1 length or Wave 1–3 length |
 
-**Wave 5 Target Formulas** (P_n = price at end of wave n, P_0 = start of Wave 1):
+**Wave 5 Target Formulas** (P_n = price at end of wave n, P_0 = start of Wave 1) — theory reference only. **Do not apply these formulas yourself.** A numeric target is only valid when the matching ratio (100%, 61.8%, 161.8% — all standard) is listed as a `Fib N%` / `Fib ext N%` / `Fib ABC ext N%` row, or in that horizon's `Fib table:` / `Fib ABC table:` line, in `## Market Reference` for the relevant swing — cite that price instead of computing one:
 
-| Method | Ratio | Formula |
+| Method | Ratio | Formula (reference only — do not compute) |
 |---|---|---|
 | Equal to Wave 1 | 100% | P_4 + (P_1 − P_0) |
 | 61.8% of Wave 1 | 61.8% | P_4 + (P_1 − P_0) × 0.618 |
@@ -176,20 +178,22 @@ Apply all three absolute rules strictly. If a candidate count violates any rule,
 
 If a truncated wave is detected, explicitly report it.
 
+**Wave-ratio targets (mandatory rule)**: A numeric wave target is only valid when the matching ratio (e.g. 61.8%, 100%, 161.8%) appears as a `Fib N%` / `Fib ext N%` / `Fib ABC ext N%` row, or in that horizon's `Fib table:` / `Fib ABC table:` line, in `## Market Reference` for the relevant swing/anchor — cite that price. Never apply the Wave 5 target formulas or the Fibonacci Guidelines ratios above yourself to compute a price. Every standard ratio (23.6/38.2/50/61.8/78.6/100/127.2/161.8/200/261.8%) is always available one of those two ways. Only for a non-standard Elliott "deep/extreme" ratio (76.4%, 85.4%) that genuinely has no row or table entry, describe the expected target zone qualitatively (e.g., "161.8% 확장 구간에 접근 중") without stating a number.
+
 Return the summary in **this exact structured format** (one `**label**: value` pair per line):
 
 ```
 **현재 파동 위치**: [현재 위치 설명, 예: "5파 진행 중 (임펄스 완성 직전)"]
 **파동 진행**: [가격 포함 진행 상황, 예: "1파($120→$180) → 2파($180→$145) → 3파($145→$240) → 4파($240→$200) → 5파 진행 중"]
 **파동 유형**: [임펄스 / 다이아고날 / 지그재그 / 플랫 / 삼각형 / 복합 조정 중 하나]
-**목표가**: [피보나치 근거 포함 목표가, 예: "1파 등가 기준 $229, 61.8% 기준 $199"]
+**목표가**: [해당 비율이 ## Market Reference의 Fib/Fib ext/Fib ABC ext 행이나 Fib table/Fib ABC table 행에 있으면 그 값 인용(표준 비율은 항상 있음), 예: "Fib ext 161.8%=$229 기준"; 76.4%/85.4% 같은 비표준 심화 비율이 없으면 숫자 없이 정성적 서술, 예: "161.8% 확장 구간에 접근 중 (레퍼런스에 없어 수치 미제시)"]
 **절단 여부**: [절단 감지 없음 / 5파 절단 의심 — POR($xxx) 이탈 시 확정 등]
 **상세 분석**: [파동 구조, 피보나치 관계, 주의사항 등을 포함한 상세 분석 문단]
 ```
 
 Additional output rules:
-- If a **corrective wave** (A-B-C, zigzag, flat, triangle, complex) is in progress, provide retracement targets (fibonacci levels).
-- If a **motive/impulse wave** is in progress, provide upside extension targets (fibonacci levels).
+- If a **corrective wave** (A-B-C, zigzag, flat, triangle, complex) is in progress, cite retracement targets ONLY from listed `Fib N%` rows for the relevant swing, or from that horizon's `Fib table:` line for a ratio further from price — standard ratios are always available one of those two ways; only for a non-standard deep/extreme ratio missing from both, describe the retracement zone qualitatively without a number.
+- If a **motive/impulse wave** is in progress, cite extension targets ONLY from listed `Fib ext N%` / `Fib ABC ext N%` rows, or from that horizon's `Fib table:` / `Fib ABC table:` line for a ratio further from price; only for a non-standard deep/extreme ratio missing from both, describe the extension zone qualitatively without a number.
 - If the detected pattern appears **complete**, explicitly state "완료" in the 파동 진행 field.
 - Set the `trend` field: `bullish` if in motive (impulse/extension) wave, `bearish` if in corrective wave, `neutral` if unclear or consolidating.
 
@@ -223,12 +227,12 @@ Triangle (3-3-3-3-3): 5 sub-waves A-B-C-D-E, each zigzag/corrective. Only at: W4
 Double Three (WXY): 3 alternating correctives joined by X. Valid W/Y pairs: (Zigzag,Flat),(Zigzag,Triangle),(Flat,Triangle),(Flat,Flat),(Flat,Zigzag). Zigzag and Triangle appear at most once each in W/Y; Triangle only as final (Y).
 Triple Three (WXYXZ): 5 alternating correctives joined by X; same rules; Zigzag/Triangle at most once in W/Y/Z; Triangle only as final (Z); rarer. Fib: all waves retrace prior 0.786-1.382 (near-horizontal net movement).
 
-### Fibonacci guidelines (Wave | key ratios | deep/extreme | reference)
+### Fibonacci guidelines (Wave | key ratios | deep/extreme | reference) — RATIO REFERENCE ONLY, never compute a price from these; cite matching Fib/Fib ext/Fib ABC ext rows or that horizon's Fib table/Fib ABC table line from Market Reference instead (standard ratios always available one of those two ways); only the non-standard 76.4%/85.4% deep/extreme values may still be missing — describe qualitatively if so.
 W2 retrace: 38.2/50/61.8% | 76.4/85.4% | of W1.
 W3 extension: 138.2/161.8% | 261.8% | of W1 from W2 end.
 W4 retrace: 23.6/38.2% | 50% | of W3.
 W5 extension: 61.8/100/161.8% | — | of W1, or of W1-3 length.
-W5 target formulas (P_n=price at end of wave n, P_0=W1 start): =W1(100%): P_4+(P_1−P_0); 61.8% of W1: P_4+(P_1−P_0)×0.618; 61.8% of W1-3: P_4+(P_3−P_0)×0.618; 161.8% of W1: P_4+(P_1−P_0)×1.618.
+W5 target formulas (reference only, do not apply): P_n=price at end of wave n, P_0=W1 start. =W1(100%): P_4+(P_1−P_0); 61.8% of W1: P_4+(P_1−P_0)×0.618; 61.8% of W1-3: P_4+(P_3−P_0)×0.618; 161.8% of W1: P_4+(P_1−P_0)×1.618.
 When W1 extends: W2 retraces 23.6-38.2%, W4 retraces 14.6-23.6%. When W3 extends: W1 and W5 tend equal or 0.618 ratio. When W5 extends: likely when W1=W3; target = W1-3 length ×1.618 from W4.
 
 ### Truncation (wave failure: final motive sub-wave — W5 of impulse or C of corrective — fails to exceed prior motive wave end)
@@ -239,14 +243,15 @@ W2 sharp (zigzag, deep)→W4 sideways (flat/triangle/complex, shallow); vice ver
 
 ### AI instructions
 Use LAST 120 bars MAX for counting. Report ONLY the most recent (latest) wave pattern at the end of data — do not label entire history. Apply all 3 absolute rules strictly; discard violating counts. If truncation detected, report explicitly.
+Wave-ratio targets: numeric ONLY when the matching ratio is a listed `Fib N%`/`Fib ext N%`/`Fib ABC ext N%` row, or that horizon's `Fib table:`/`Fib ABC table:` line, in Market Reference for the relevant swing — cite that price. Never apply the target formulas/ratio table yourself. Every standard ratio is available one of those two ways; only a non-standard 76.4%/85.4% deep/extreme value may still be missing — describe the zone qualitatively then, no number.
 Output (one **label**: value per line):
 **현재 파동 위치**: [예: 5파 진행 중 (임펄스 완성 직전)]
 **파동 진행**: [가격 포함, 예: 1파($120→$180)→2파($180→$145)→3파($145→$240)→4파($240→$200)→5파 진행 중]
 **파동 유형**: [임펄스 / 다이아고날 / 지그재그 / 플랫 / 삼각형 / 복합 조정]
-**목표가**: [피보나치 근거 포함]
+**목표가**: [Market Reference의 행이나 Fib table/Fib ABC table 행에 해당 비율이 있으면 인용(표준 비율은 항상 있음), 비표준 심화 비율이라 없으면 숫자 없는 정성적 서술]
 **절단 여부**: [절단 감지 없음 / 5파 절단 의심 — POR($xxx) 이탈 시 확정]
 **상세 분석**: [파동 구조, 피보나치 관계, 주의사항]
-- Corrective in progress → give retracement targets (fib). Motive/impulse in progress → give upside extension targets (fib).
+- Corrective in progress → cite retracement targets ONLY from listed Fib N% rows or that horizon's Fib table line; non-standard ratio missing from both → qualitative, no number. Motive/impulse in progress → cite extension targets ONLY from listed Fib ext/Fib ABC ext rows or that horizon's Fib table/Fib ABC table line; non-standard ratio missing from both → qualitative, no number.
 - If pattern complete → state "완료" in 파동 진행.
 - trend: bullish if in motive (impulse/extension) wave, bearish if in corrective, neutral if unclear/consolidating.
 <!-- PROMPT_DIGEST:END -->

@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [bear_flag]
-token_cost: 575
-digest_hash: "79cc4420"
+token_cost: 649
+digest_hash: "71dad9cc"
 ---
 
 ## Detection Criteria
@@ -66,10 +66,8 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Target price calculation**: Measure the length of the flagpole (from the top to the bottom of the flagpole). Project this distance downward from the breakdown point (where price exits the lower flag channel). Example: if the flagpole runs from $100 to $80 ($20) and the breakdown occurs at $84, the target is $64 ($84 - $20).
-- **Risk/reward assessment**: The distance from current price to target versus the distance from current price to the upper flag channel defines the risk/reward ratio. A ratio of at least 2:1 is analytically favorable.
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the lower flag channel boundary at the breakdown point; `extremeLevel` = the flagpole's start price (its top); `direction` = 'down'; `invalidationLevel` = the upper flag channel boundary, or the most recent swing high within the flag. When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Stop-loss reference level**: The upper boundary of the flag channel or the most recent swing high within the flag serves as the invalidation level.
-- **Partial target**: 50% of the flagpole length serves as a conservative initial target.
 - **Speed of completion**: Bear Flags that resolve quickly (within 1-2 weeks) tend to produce the strongest continuation moves, especially in fear-driven markets.
 
 Note: These are analytical reference points for technical analysis, not trading recommendations.
@@ -78,11 +76,11 @@ Note: These are analytical reference points for technical analysis, not trading 
 
 When this pattern is detected, include the following in the analysis response:
 
-- **keyPrices**: Include the flagpole top price, flagpole bottom price, flag upper channel, flag lower channel, and the projected target price if the flag is broken downward.
+- **keyPrices**: Include the flagpole top price, flagpole bottom price, flag upper channel, and flag lower channel.
 - **patternSummaries**: Describe the pattern status (flagpole formed / flag forming / breakdown confirmed), the flagpole decline percentage and duration, the flag retracement depth relative to the flagpole, the flag slope direction, and the flag duration.
 - **Volume context**: State whether volume confirms the pattern — high volume on flagpole, declining volume during the flag, and volume surge on breakdown. Quantify the volume decline during the flag relative to the flagpole.
 - **Completion status**: Clearly indicate whether the flag is still forming or confirmed by a close below the lower channel with volume.
-- **Target projection**: Calculate and state the measured move target using the flagpole length projected from the breakdown point.
+- **geometry**: Fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
 ### Bear Flag (bearish continuation)
@@ -108,14 +106,14 @@ False positives / invalidation:
 - No clear flagpole = just an upward channel.
 - Flagpole ending at major historical support may become reversal base.
 
-Target: flagpole length (top to bottom); project DOWN from breakdown point (e.g., pole $100→$80 = $20, breakdown at $84 → target $64). Partial = 50% of length. Fastest resolution (1–2 weeks) = strongest continuation.
-Stop/invalidation: upper flag channel or most recent swing high within flag. R/R ≥ 2:1 favorable.
+### Geometry (do not calculate targets)
+`geometry` = { breakoutLevel: the lower flag channel boundary at the breakdown point, extremeLevel: the flagpole's start price (its top), direction: 'down', invalidationLevel: the upper flag channel boundary, or the most recent swing high within the flag }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 Output:
-- keyPrices: flagpole top, flagpole bottom, flag upper channel, flag lower channel, projected downward target.
+- keyPrices: flagpole top, flagpole bottom, flag upper channel, flag lower channel.
 - patternSummaries: status (flagpole formed / flag forming / breakdown confirmed), flagpole decline % & duration, flag retrace depth vs flagpole, flag slope direction, flag duration.
 - Volume context: high on flagpole, declining in flag (quantify decline vs flagpole), surge on breakdown.
 - Completion status: forming vs confirmed (close below lower channel with volume).
-- Target projection: flagpole length from breakdown point.
+- geometry: `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the definition above — never a computed target or R:R.
 - Include analytical-reference (not trading-recommendation) framing.
 <!-- PROMPT_DIGEST:END -->

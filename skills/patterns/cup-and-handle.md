@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [cup_and_handle]
-token_cost: 613
-digest_hash: "0e23aabf"
+token_cost: 684
+digest_hash: "0d12c3a1"
 ---
 
 ## Detection Criteria
@@ -69,10 +69,8 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Target price calculation**: Measure the depth of the cup (from rim to cup bottom). Project this distance upward from the breakout point (handle resistance). Example: if the cup rim is at $110 and the cup bottom is at $85, the target is $135 ($110 + $25).
-- **Risk/reward assessment**: The distance from current price to target versus the distance from current price to the bottom of the handle defines the risk/reward ratio. A ratio of at least 2:1 is analytically favorable.
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the handle resistance (the breakout level); `extremeLevel` = the cup bottom price; `direction` = 'up'; `invalidationLevel` = the handle low (a close below it negates the pattern; the cup midpoint is a wider alternative stop). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Stop-loss reference level**: The bottom of the handle serves as the primary invalidation level. A close below this negates the bullish pattern. For a wider stop, the cup's midpoint can be used.
-- **Partial target**: 50% of the cup depth serves as a conservative initial target.
 - **Extended targets**: Cup and Handle patterns in strong uptrends often exceed their measured move targets. The initial target serves as a minimum expectation.
 
 Note: These are analytical reference points for technical analysis, not trading recommendations.
@@ -81,11 +79,11 @@ Note: These are analytical reference points for technical analysis, not trading 
 
 When this pattern is detected, include the following in the analysis response:
 
-- **keyPrices**: Include the left rim price, right rim price, cup bottom price, handle resistance price, handle bottom price, and the projected target price if the handle is broken.
+- **keyPrices**: Include the left rim price, right rim price, cup bottom price, handle resistance price, and handle bottom price.
 - **patternSummaries**: Describe the pattern status (cup forming / right rim reached / handle forming / handle breakout), the cup depth as a percentage of the prior advance, the handle depth as a percentage of the cup, the cup shape assessment (U vs V), and the handle position within the cup (upper third, upper half, lower half).
 - **Volume context**: State whether volume follows the expected U-shape during the cup, declines during the handle, and surges on the breakout. Quantify the breakout volume relative to the average.
 - **Completion status**: Clearly indicate which phase the pattern is in — cup formation, handle formation, or confirmed breakout.
-- **Target projection**: Calculate and state the measured move target using the cup depth projected upward from the breakout point.
+- **geometry**: Fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
 ### Cup and Handle (bullish continuation)
@@ -112,14 +110,14 @@ False positives / invalidation:
 - No volume surge on breakout.
 - Right rim > 5% below left rim = weakening momentum.
 
-Target: cup depth (rim to cup bottom); project UP from breakout point (handle resistance) (e.g., rim $110, bottom $85 → target $135). Partial = 50% of depth. Strong uptrends often exceed target (treat as minimum).
-Stop/invalidation: bottom of handle (close below negates); wider stop = cup midpoint. R/R ≥ 2:1 favorable.
+### Geometry (do not calculate targets)
+`geometry` = { breakoutLevel: the handle resistance (the breakout level), extremeLevel: the cup bottom price, direction: 'up', invalidationLevel: the handle low (a close below it negates the pattern; the cup midpoint is a wider alternative stop) }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 Output:
-- keyPrices: left rim, right rim, cup bottom, handle resistance, handle bottom, projected target.
+- keyPrices: left rim, right rim, cup bottom, handle resistance, handle bottom.
 - patternSummaries: status (cup forming / right rim reached / handle forming / handle breakout), cup depth % of prior advance, handle depth % of cup, cup shape (U vs V), handle position (upper third / upper half / lower half).
 - Volume context: U-shape in cup, decline in handle, surge on breakout (quantify vs average).
 - Completion status: cup formation / handle formation / confirmed breakout.
-- Target projection: cup depth projected up from breakout point.
+- geometry: `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the definition above — never a computed target or R:R.
 - Include analytical-reference (not trading-recommendation) framing.
 <!-- PROMPT_DIGEST:END -->

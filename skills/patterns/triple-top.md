@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [triple_top]
-token_cost: 689
-digest_hash: "a52a74a6"
+token_cost: 721
+digest_hash: "1cad7207"
 ---
 
 ## Detection Criteria
@@ -66,10 +66,8 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Target price calculation**: Measure the vertical distance from the average of the three peaks to the neckline. Project this distance downward from the neckline break point. Example: if peaks average $150 and neckline is at $143, the target is $136 ($143 - $7).
-- **Risk/reward assessment**: The distance from current price to target versus the distance from current price to the highest peak defines the risk/reward ratio. A ratio of at least 2:1 is analytically favorable.
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the neckline price; `extremeLevel` = the average of the three peak prices; `direction` = 'down'; `invalidationLevel` = the highest of the three peaks (a close above it negates the pattern). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Stop-loss reference level**: The highest of the three peaks serves as the invalidation level. A close above this level negates the bearish pattern.
-- **Partial target**: 50% of the full projected distance serves as a conservative initial target.
 - **Time factor**: Triple Tops that take longer to form (> 40 bars) tend to produce larger projected moves due to greater distribution.
 
 Note: These are analytical reference points for technical analysis, not trading recommendations.
@@ -78,11 +76,11 @@ Note: These are analytical reference points for technical analysis, not trading 
 
 When this pattern is detected, include the following in the analysis response:
 
-- **keyPrices**: Include all three peak prices, the neckline price level (connecting the two troughs), and the projected target price if the neckline is broken.
+- **keyPrices**: Include all three peak prices and the neckline price level (connecting the two troughs).
 - **patternSummaries**: Describe the pattern status (first/second/third peak formed / completed / neckline broken), the price difference percentage among the three peaks, the spacing between them, and how it differs from Double Top or Head and Shoulders.
 - **Volume context**: State whether volume behavior confirms the pattern (progressive decline across peaks, volume surge on neckline break). Note volume comparison between each successive peak.
 - **Completion status**: Clearly indicate whether the pattern is still forming (which peak is in progress) or fully confirmed by a neckline break.
-- **Target projection**: Calculate and state the measured move target using peak-to-neckline distance projected below the neckline.
+- **geometry**: Fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
 삼중천장 (Triple Top) — bearish reversal, confidence_weight 0.8 (Bulkowski ~88% success). Three peaks at ~equal resistance; neckline = line connecting the two troughs between peaks.
@@ -110,17 +108,14 @@ When this pattern is detected, include the following in the analysis response:
 - Intraday wick below neckline without closing break = not confirmed.
 - Middle peak significantly HIGHER than the other two → Head & Shoulders, not Triple Top.
 
-### Target (measured move)
-- Vertical distance average of three peaks → neckline, projected DOWN from neckline break. E.g. peaks avg $150, neckline $143 → target $136 ($143−$7).
-- Conservative first target = 50% of full projected distance.
-- Invalidation/stop = highest of the three peaks; close above negates.
-- Risk/reward = (price→target) vs (price→highest peak); ≥2:1 favorable. Patterns >40 bars → larger moves.
+### Geometry (do not calculate targets)
+`geometry` = { breakoutLevel: the neckline price, extremeLevel: the average of the three peak prices, direction: 'down', invalidationLevel: the highest of the three peaks (a close above it negates the pattern) }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 ### Output
-- keyPrices: all three peak prices, neckline price, projected target if neckline broken.
+- keyPrices: all three peak prices, neckline price.
 - patternSummaries: status (first/second/third peak formed / completed / neckline broken); price-diff % among peaks; spacing; how it differs from Double Top or Head & Shoulders.
 - Volume context: progressive decline across peaks; surge on break; compare successive peaks.
 - Completion status: forming (which peak) vs confirmed by neckline break.
-- Target projection: peak-average-to-neckline projected below neckline.
+- geometry: `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the definition above — never a computed target or R:R.
 - trend: bearish when confirmed.
 <!-- PROMPT_DIGEST:END -->

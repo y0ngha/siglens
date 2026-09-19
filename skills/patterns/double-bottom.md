@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [double_bottom]
-token_cost: 509
-digest_hash: "f7b71b09"
+token_cost: 558
+digest_hash: "6c792a88"
 ---
 
 ## Detection Criteria
@@ -61,10 +61,8 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Target price calculation**: Measure the vertical distance from the neckline to the average of the two troughs. Project this distance upward from the neckline break point. Example: if troughs average $80 and neckline is at $85, the target is $90 ($85 + $5).
-- **Risk/reward assessment**: The distance from current price to target versus the distance from current price to the second trough low defines the risk/reward ratio. A ratio of at least 2:1 is analytically favorable.
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the neckline price; `extremeLevel` = the average of the two trough prices; `direction` = 'up'; `invalidationLevel` = the lower of the two troughs (a close below it negates the pattern). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Stop-loss reference level**: The lower of the two troughs serves as the invalidation level. A close below this level negates the bullish pattern.
-- **Partial target**: 50% of the full projected distance serves as a conservative initial target.
 - **Time symmetry**: Patterns where the two troughs are roughly equidistant in time from the neckline tend to be more reliable.
 
 Note: These are analytical reference points for technical analysis, not trading recommendations.
@@ -73,11 +71,11 @@ Note: These are analytical reference points for technical analysis, not trading 
 
 When this pattern is detected, include the following in the analysis response:
 
-- **keyPrices**: Include both trough prices, the neckline price level, and the projected target price if the neckline is broken.
+- **keyPrices**: Include both trough prices and the neckline price level.
 - **patternSummaries**: Describe the pattern status (first trough formed / second trough in progress / completed / neckline broken), the price difference percentage between the two troughs, and spacing between them.
 - **Volume context**: State whether volume behavior confirms the pattern (increasing volume on second trough, volume increase on neckline break).
 - **Completion status**: Clearly indicate whether the pattern is still forming (second trough in progress) or fully confirmed by a neckline break.
-- **Target projection**: Calculate and state the measured move target using neckline-to-trough distance projected above the neckline.
+- **geometry**: Fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
 ### Double Bottom (bullish reversal)
@@ -101,14 +99,14 @@ False positives / invalidation:
 - Peak < 3% of trough price = invalid neckline.
 - Intraday wick above neckline without close = not confirmed.
 
-Target: vertical distance neckline − average of two troughs; project UP from neckline break point (e.g., troughs avg $80, neckline $85 → target $90). Partial = 50% of projected distance.
-Stop/invalidation: the LOWER of the two troughs; close below negates. R/R ≥ 2:1 favorable. Time-symmetric troughs (equidistant from neckline) more reliable.
+### Geometry (do not calculate targets)
+`geometry` = { breakoutLevel: the neckline price, extremeLevel: the average of the two trough prices, direction: 'up', invalidationLevel: the lower of the two troughs (a close below it negates the pattern) }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 Output:
-- keyPrices: both trough prices, neckline price, projected target (if broken).
+- keyPrices: both trough prices, neckline price.
 - patternSummaries: status (first trough formed / second trough in progress / completed / neckline broken), price difference % between troughs, spacing.
 - Volume context: increasing on second trough, increase on neckline break.
 - Completion status: forming (second trough in progress) vs confirmed (neckline break).
-- Target projection: neckline-to-trough distance projected above neckline.
+- geometry: `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the definition above — never a computed target or R:R.
 - Include analytical-reference (not trading-recommendation) framing.
 <!-- PROMPT_DIGEST:END -->

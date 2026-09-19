@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [symmetrical_triangle]
-token_cost: 688
-digest_hash: "5f404a2b"
+token_cost: 758
+digest_hash: "33b3f763"
 ---
 
 ## Detection Criteria
@@ -66,10 +66,8 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Target price calculation**: Measure the height of the triangle at its widest point (the vertical distance between the upper and lower trendlines at the pattern start). Project this distance in the breakout direction from the breakout point. Example: if the triangle starts with a $15 range and breaks upward at $105, the target is $120.
-- **Risk/reward assessment**: The distance from current price to target versus the distance from current price to the opposite trendline defines the risk/reward ratio. A ratio of at least 2:1 is analytically favorable.
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the broken trendline's value at the breakout bar (the upper trendline for an upside break, the lower for a downside break); `extremeLevel` = the opposite trendline's value at the pattern's start (its widest point); `direction` = 'up' or 'down', matching the breakout side; `invalidationLevel` = the opposite trendline's current (last-bar) value. When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Stop-loss reference level**: The opposite trendline from the breakout direction serves as the invalidation level. For an upward breakout, the ascending support trendline is the stop reference. For a downward breakdown, the descending resistance trendline is the stop reference.
-- **Partial target**: 50% of the triangle height serves as a conservative initial target.
 - **Direction uncertainty**: When the breakout direction is uncertain, the triangle itself signals an impending volatility expansion — prepare for both scenarios.
 
 Note: These are analytical reference points for technical analysis, not trading recommendations.
@@ -78,11 +76,11 @@ Note: These are analytical reference points for technical analysis, not trading 
 
 When this pattern is detected, include the following in the analysis response:
 
-- **keyPrices**: Include the current upper trendline value, current lower trendline value, the projected apex price, and the target price in both breakout directions.
+- **keyPrices**: Include the current upper trendline value, current lower trendline value, and the projected apex price.
 - **patternSummaries**: Describe the pattern status (forming / approaching apex / broken upward / broken downward), the convergence rate, number of trendline touches on each side, position within the triangle (early, mid, late), and the prior trend direction that informs the likely breakout direction.
 - **Volume context**: State whether volume is declining as expected during formation and whether a volume surge confirmed the breakout. Note the volume level relative to the recent average.
 - **Completion status**: Clearly indicate whether the triangle is still forming, which breakout direction is more likely based on the prior trend, or confirmed by a close outside a trendline.
-- **Target projection**: Calculate and state the measured move target in both directions using the triangle height projected from the breakout point.
+- **geometry**: Fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
 대칭삼각형 (Symmetrical Triangle) — neutral continuation, confidence_weight 0.65. Breaks in prior-trend direction ~65–70% of the time.
@@ -109,16 +107,14 @@ When this pattern is detected, include the following in the analysis response:
 - Narrow-range whipsaw: intraday breach without close → wait for closing break.
 - One trendline much steeper than the other → wedge, not symmetrical triangle (should converge at ~equal rates).
 
-### Target (measured move)
-- Triangle height at widest point (upper−lower trendline at pattern start), projected in breakout direction from breakout point. E.g. $15 range, up-break at $105 → target $120.
-- Conservative first target = 50% of triangle height. Stop = opposite trendline (up→ascending support, down→descending resistance).
-- Risk/reward = (price→target) vs (price→opposite trendline); ≥2:1 favorable.
+### Geometry (do not calculate targets)
+`geometry` = { breakoutLevel: the broken trendline's value at the breakout bar (the upper trendline for an upside break, the lower for a downside break), extremeLevel: the opposite trendline's value at the pattern's start (its widest point), direction: 'up' or 'down', matching the breakout side, invalidationLevel: the opposite trendline's current (last-bar) value }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 ### Output
-- keyPrices: current upper trendline, current lower trendline, projected apex, target in BOTH breakout directions.
+- keyPrices: current upper trendline, current lower trendline, projected apex.
 - patternSummaries: status (forming / approaching apex / broken up / broken down); convergence rate; touches per side; position in triangle (early/mid/late); prior trend direction (informs likely breakout).
 - Volume context: declining during formation? surge confirmed breakout? volume vs recent average.
 - Completion status: forming vs which direction more likely (prior trend) vs confirmed by close outside a trendline.
-- Target projection: triangle height projected both directions from breakout.
+- geometry: `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the definition above — never a computed target or R:R.
 - trend: neutral until breakout; set by realized breakout direction.
 <!-- PROMPT_DIGEST:END -->

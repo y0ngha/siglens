@@ -7,8 +7,8 @@ indicators: []
 confidence_weight: 0.7
 gating:
   tier: always_on
-token_cost: 601
-digest_hash: "05bde548"
+token_cost: 721
+digest_hash: "0c965c82"
 ---
 
 ## Overview
@@ -92,16 +92,16 @@ The tool uses a three-point method (A-B-C) where Point A is the swing start, Poi
 
 ## AI Analysis Instructions
 
+The `## Market Reference` section already lists the computed three-point extension rows, labeled `Fib ABC ext 100%`…`Fib ABC ext 261.8%`, each with its price — the nearest-to-price subset — but ONLY when a Point C (retracement completion) exists for that horizon. When it exists, that horizon also carries a complete `Fib ABC table:` line with every standard extension ratio's price (use it for a ratio further from price than the nearest-list rows cover) and a `Fib ABC anchor: A x → B y → C z (up|down)` line naming the three points. Use those numbers directly; never calculate an extension level yourself from the bars. (The simpler two-point `Fib ext N%` rows + `Fib table:`/`Fib anchor:` lines, covered by the Fibonacci Retracement/`strategies/fibonacci.md` skills, are a different projection — this skill is specifically the three-point A-B-C method.)
+
 When analyzing with Fibonacci Extension:
 
-1. First confirm that a retracement has completed (Point C is established) — extension targets are only valid after a retracement completes.
-2. Identify the three reference points (A, B, C) from the provided bar data:
-   - In an uptrend: A = recent significant Swing Low, B = subsequent Swing High, C = retracement low
-   - In a downtrend: A = recent significant Swing High, B = subsequent Swing Low, C = retracement high
-3. Calculate extension levels (100%, 127.2%, 161.8%, 200%, 261.8%) projected from Point C.
-4. Include relevant extension levels in the priceTargets response field as bullish or bearish targets with the Fibonacci extension ratio as the basis.
-5. Use extension levels to validate or strengthen the risk-reward assessment in actionRecommendation.
-6. Note any confluence between extension levels and other technical levels (pivot points, prior swing levels, moving averages).
+1. Check whether `Fib ABC ext`/`Fib ABC anchor` rows are present for the relevant horizon — they only appear once a Point C (retracement completion) is established. If they are not present, state that no A-B-C extension is available yet; do not identify your own A/B/C points or compute one.
+2. When present, read the three reference points from that horizon's `Fib ABC anchor: A x → B y → C z (up|down)` line — do not identify your own.
+3. Cite the listed `Fib ABC ext 100%`…`Fib ABC ext 261.8%` rows; for a ratio further from price than those rows cover, read it from that horizon's `Fib ABC table:` line instead. Never calculate an extension level yourself.
+4. Include the relevant LISTED extension levels in the priceTargets response field as bullish or bearish targets, citing the ratio as the basis.
+5. Use the LISTED extension levels (not a self-computed one) to discuss risk-reward in actionRecommendation.
+6. Note any confluence between the listed extension levels and other technical levels (pivot points, prior swing levels, moving averages).
 
 **Caveats:**
 - Extension levels are only valid after Point C (retracement completion) is confirmed — do not apply during an active retracement
@@ -124,6 +124,7 @@ Point identification: A = impulse start, B = impulse end (swing high in uptrend,
 Take-profit signals: 127.2% → partial profit 25–33%; 161.8% → primary target, exit 50%+; 200% → strong profit-taking, trend maturing; 261.8% → full exit, exhaustion likely.
 Confluence: extension + other S/R (pivots, prior swings) = stronger confidence; extension + volume climax = high reversal prob; multiple projections converging = cluster target zone.
 Risk mgmt: compute R:R before entry; entry at C, stop below A (uptrend) / above A (downtrend); target 161.8% (risk = C-to-A, reward = C-to-161.8%); only enter if target gives ≥1:2 R:R.
-AI instructions: (1) confirm retracement completed (C established) — targets only valid after completion. (2) identify A,B,C from bars (uptrend: A recent significant swing low, B subsequent swing high, C retracement low; downtrend inverse). (3) compute 100/127.2/161.8/200/261.8% from C. (4) include relevant levels in priceTargets as bullish/bearish with Fib ratio basis. (5) use levels to validate R:R in actionRecommendation. (6) note confluence with pivots, prior swings, MAs.
+## Market Reference lists `Fib ABC ext 100%`…`Fib ABC ext 261.8%` nearest-list rows + a complete `Fib ABC table:` line (every standard ratio) + a `Fib ABC anchor: A x → B y → C z (up|down)` line — ONLY when Point C exists for that horizon. Cite these, never calculate. (Different from the simpler `Fib ext`/`Fib table`/`Fib anchor` two-point rows used by the retracement skill.)
+AI instructions: (1) check Fib ABC ext/anchor rows are present for the horizon (need Point C) — absent → say no A-B-C extension available yet, don't identify your own points. (2) present → read A/B/C from that horizon's Fib ABC anchor line. (3) cite listed Fib ABC ext N% rows; a ratio further than those rows cover → read it from that horizon's Fib ABC table line instead. (4) include listed levels in priceTargets as bullish/bearish with ratio as basis. (5) use listed levels (not self-computed) for R:R in actionRecommendation. (6) note confluence with pivots, prior swings, MAs.
 Caveats: only valid after C confirmed — do NOT apply during active retracement. Treat levels as zones, not exact prices. Levels are profit targets, NOT entry signals. Too small/unclear A-B swing → unreliable.
 <!-- PROMPT_DIGEST:END -->

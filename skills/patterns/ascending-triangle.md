@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [ascending_triangle]
-token_cost: 601
-digest_hash: "1b764299"
+token_cost: 645
+digest_hash: "e8682266"
 ---
 
 ## Detection Criteria
@@ -67,11 +67,9 @@ Factors that decrease confidence:
 
 ## Entry/Exit Considerations
 
-- **Target price calculation**: Measure the height of the triangle at its widest point (the vertical distance from the horizontal resistance to the lowest point of the ascending trendline at the pattern start). Project this distance upward from the breakout point. Example: if resistance is at $100 and the triangle starts with a low of $90, the target is $110 ($100 + $10).
-- **Risk/reward assessment**: The distance from current price to target versus the distance from current price to the ascending trendline defines the risk/reward ratio. A ratio of at least 2:1 is analytically favorable.
+- **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the horizontal resistance level; `extremeLevel` = the ascending support trendline's value at the pattern's start (its widest point); `direction` = 'up'; `invalidationLevel` = the ascending support trendline's current (last-bar) value — the most recent higher low. When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Stop-loss reference level**: The most recent higher low on the ascending trendline or the trendline itself serves as the invalidation level. A close below this negates the bullish pattern.
-- **Partial target**: 50% of the triangle height serves as a conservative initial target.
-- **Breakdown scenario**: If price closes below the ascending trendline, the bearish target is the full triangle height projected downward from the breakdown point.
+- **Breakdown scenario**: If price closes below the ascending trendline instead, treat the pattern as having failed/reversed to bearish — this alternate scenario is not in `## Chart Pattern Candidates (computed)`, so do not compute a target for it yourself; describe the reversal qualitatively.
 
 Note: These are analytical reference points for technical analysis, not trading recommendations.
 
@@ -79,11 +77,11 @@ Note: These are analytical reference points for technical analysis, not trading 
 
 When this pattern is detected, include the following in the analysis response:
 
-- **keyPrices**: Include the horizontal resistance level, the current ascending trendline value, the projected apex price, and the breakout target price if resistance is broken.
+- **keyPrices**: Include the horizontal resistance level, the current ascending trendline value, and the projected apex price.
 - **patternSummaries**: Describe the pattern status (forming / approaching apex / resistance broken / trendline broken), the number of touches on resistance and support, the breakout position relative to the apex (early, mid, late), and the prior trend direction.
 - **Volume context**: State whether volume is contracting as expected during formation and whether a volume surge accompanied any breakout or breakdown.
 - **Completion status**: Clearly indicate whether the triangle is still forming or confirmed by a decisive close above the horizontal resistance.
-- **Target projection**: Calculate and state the measured move target using the triangle height projected from the breakout point.
+- **geometry**: Fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
 ### Ascending Triangle (bullish continuation)
@@ -104,14 +102,14 @@ False positives / invalidation:
 - Apex/near-apex breakout = reduced reliability & target.
 - Breakout without volume surge may be false.
 
-Target: triangle height = vertical distance from horizontal resistance to lowest point of ascending trendline at pattern start; project UP from breakout point (e.g., resistance $100, start low $90 → target $110). Partial target = 50% of height. Breakdown scenario: close below ascending trendline → bearish target = full height projected DOWN from breakdown.
-Stop/invalidation: most recent higher low on ascending trendline (or the trendline). R/R ≥ 2:1 favorable.
+### Geometry (do not calculate targets)
+`geometry` = { breakoutLevel: the horizontal resistance level, extremeLevel: the ascending support trendline's value at the pattern's start (its widest point), direction: 'up', invalidationLevel: the ascending support trendline's current (last-bar) value — the most recent higher low }. Copy from `## Chart Pattern Candidates (computed)` when this instance is listed there; else identify from the bars. Never compute a measured target, conservative target, or R:R yourself — the app derives them from `geometry` into keyPrices (측정 목표가, 보수 목표가(50%)).
 
 Output:
-- keyPrices: horizontal resistance, current ascending trendline value, projected apex price, breakout target (if broken).
+- keyPrices: horizontal resistance, current ascending trendline value, projected apex price.
 - patternSummaries: status (forming / approaching apex / resistance broken / trendline broken), touch counts on resistance & support, breakout position vs apex (early/mid/late), prior trend direction.
 - Volume context: contraction during formation; volume surge on breakout/breakdown.
 - Completion status: forming vs confirmed (decisive close above resistance).
-- Target projection: measured move from breakout point.
+- geometry: `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the definition above — never a computed target or R:R.
 - Include analytical-reference (not trading-recommendation) framing.
 <!-- PROMPT_DIGEST:END -->

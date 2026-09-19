@@ -9,8 +9,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [rsi_oversold, rsi_overbought, bollinger_lower_bounce]
-token_cost: 1078
-digest_hash: "4bba64c5"
+token_cost: 1120
+digest_hash: "6e0cf3a8"
 ---
 
 ## Overview
@@ -52,8 +52,7 @@ The primary mean reversion tool. Bollinger Bands (20-period MA ± 2 standard dev
 | Band width contracting (squeeze) | Low volatility | Caution — breakout likely, mean reversion may fail |
 | Band width expanding | High volatility | Extreme moves may continue before reverting |
 
-**Bollinger Band %B**:
-- %B = (Price − Lower Band) / (Upper Band − Lower Band)
+**Bollinger Band %B**: `## Indicator State (computed)` already lists a `Bollinger %B: x (BandWidth y%)` line — cite `x` directly; never compute `(Price − Lower Band) / (Upper Band − Lower Band)` yourself. (Definition, for reference only: that IS the formula %B represents.)
 - %B < 0: Price below lower band (extreme oversold)
 - %B > 1: Price above upper band (extreme overbought)
 - %B = 0.5: Price at middle band (mean)
@@ -71,9 +70,8 @@ The primary mean reversion tool. Bollinger Bands (20-period MA ± 2 standard dev
 
 ### Moving Average Deviation
 
-When price deviates more than 2 standard deviations from a key moving average, mean reversion probability increases:
+When price deviates more than 2 standard deviations from a key moving average, mean reversion probability increases. `## Indicator State (computed)` already lists the `Price vs MA/EMA` distance — cite that percentage directly; never compute `(Current Price − MA) / MA × 100` yourself:
 
-- Distance from MA = (Current Price − MA) / MA × 100
 - Deviation > +10% from MA → overbought
 - Deviation < −10% from MA → oversold
 - Adjust thresholds based on the asset's historical volatility
@@ -166,7 +164,7 @@ Factors that decrease confidence:
 
 ## AI Analysis Instructions
 
-Evaluate the current price relative to its statistical mean using Bollinger Bands and RSI. Determine whether the market environment is suitable for mean reversion (ADX assessment).
+Evaluate the current price relative to its statistical mean by citing the `Bollinger %B` and `Price vs MA/EMA` lines already computed in `## Indicator State (computed)`, together with RSI — never compute %B or MA deviation yourself. Determine whether the market environment is suitable for mean reversion (ADX assessment).
 
 Return the summary in **this exact structured format** (one `**label**: value` pair per line):
 
@@ -194,9 +192,9 @@ Mean = MA20/MA50, middle Bollinger Band (MA20), VWAP, or statistical mean. Overs
 ### Signal indicators
 Bollinger Bands (20-MA ± 2 SD, ~95% of price action):
 - touches/penetrates lower band = oversold buy; upper band = overbought sell; middle (MA20) = mean/target; width contracting (squeeze) = low vol, breakout likely, reversion may fail; width expanding = extreme moves may continue before reverting.
-- %B = (Price − Lower)/(Upper − Lower); %B<0 = below lower (extreme oversold); %B>1 = above upper (extreme overbought); %B=0.5 = middle (mean).
+- %B: cite `## Indicator State (computed)`'s `Bollinger %B: x (BandWidth y%)` line — never compute (Price−Lower)/(Upper−Lower) yourself. %B<0 = below lower (extreme oversold); %B>1 = above upper (extreme overbought); %B=0.5 = middle (mean).
 RSI: <30 oversold buy; <20 extremely oversold strong buy; >70 overbought sell; >80 extremely overbought strong sell; crossing 50 from below = bullish mean cross (upward reversion in progress); from above = bearish mean cross.
-MA deviation: Distance = (Price − MA)/MA ×100; >+10% = overbought; <−10% = oversold; adjust by historical volatility.
+MA deviation: cite `## Indicator State (computed)`'s `Price vs MA/EMA` % — never compute (Price−MA)/MA×100 yourself. >+10% = overbought; <−10% = oversold; adjust by historical volatility.
 
 ### Entry
 Buy (oversold) standard: (1) ADX<25; (2) price touches/penetrates lower Bollinger; (3) RSI<30 simultaneously; (4) enter long on bullish reversal candle (hammer, bullish engulfing, or close in upper half of range); (5) stop below lowest point of move or 2×ATR below entry; (6) target middle band (MA20), aggressive = upper band.
