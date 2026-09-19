@@ -477,6 +477,23 @@
 - Violation: New pure/helper module lib/aboutContent.ts with no colocated unit test
   - Rule: MISTAKES.md Components §22 / DESIGN.md checklist §6 — All new pure/helper modules must include colocated unit test file
   - Context: Added lib/aboutContent.test.ts with tests covering the module's exports and edge cases
-- Suggestion (fixed): Magic delay numbers (200ms, 500ms) in animation logic had no constant names
+- Suggestion (fixed): Magic delay numbers (300, 900, 350, 120 ms) in the replay playback steps had no constant names
   - Rule: MISTAKES.md §15 — Hardcoded numbers in function bodies must be named constants with clear intent
-  - Context: Defined ANIMATION_DELAY_MS=500, FADE_DELAY_MS=200 as module-level constants and replaced inline literals
+  - Context: Named FIRST_START_MS, NEXT_START_MS, AFTER_TYPING_MS, TOOL_GAP_MS, BEFORE_ANSWER_MS in src/views/ai-about/lib/replayPlayer.ts
+
+## [PR #852 claude-review R2 | ai.siglens.io/about | 2026-09-19]
+- Violation: A render test listed in the implementation plan (AboutCtaBar, plan Task 3) was never written; the plan task was silently skipped
+  - Rule: (new) Before requesting review, diff the plan's test list against the test files actually created
+  - Context: Added src/views/ai-about/ui/__tests__/AboutCtaBar.test.tsx (title, href, header-hidden translate class)
+- Violation: Pure helper `groupLines` mutated objects already stored in its result (`last.items.push`); `parseReplayLine` built its result with push
+  - Rule: MISTAKES.md Coding Paradigm §21 — pure calculations use reduce/flatMap, not imperative push
+  - Context: groupLines rewritten with reduce; parseReplayLine rewritten with split + flatMap (src/views/ai-about/lib/replayScript.ts)
+- Violation: `isLocale(x) ? x : DEFAULT_LOCALE` repeated across three ai route files
+  - Rule: MISTAKES.md §1 — check for / extract a shared helper instead of repeating logic
+  - Context: Added resolveLocale() to src/shared/i18n/locales.ts and used it in app/ai/[locale]/{page,about/page,c/[id]/page}.tsx
+- Violation: New content width (max-w-4xl) on the ai host with no entry in the DESIGN.md width convention
+  - Rule: DESIGN.md §폭 규약 — a new width value must be documented with its reason
+  - Context: Added a row for ai host /about (max-w-4xl, 2-column card grid; chat surfaces stay max-w-3xl)
+- Violation: The sticky CTA bar repeated the hero h1 sentence on the same first screen
+  - Rule: (guideline) Chrome copy that sits next to a headline should add information, not echo it
+  - Context: Bar copy changed to "로그인 없이 무료로 바로 물어볼 수 있어요" (views.ai-about.cta.title, all four locales)

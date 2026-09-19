@@ -1,18 +1,10 @@
 import type { Metadata } from 'next';
 import { setRequestLocale } from 'next-intl/server';
-import {
-    DEFAULT_LOCALE,
-    isLocale,
-    localePath,
-    type Locale,
-} from '@/shared/i18n/locales';
+import { localePath, resolveLocale } from '@/shared/i18n/locales';
 import { buildFaqJsonLd, SITE_URL } from '@/shared/lib/seo';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { AiAboutPage, getAboutFaq, getAboutSeoCopy } from '@/views/ai-about';
 import { buildAiAboutMetadata } from '../aiSeo';
-
-const resolveLocale = (raw: string): Locale =>
-    isLocale(raw) ? raw : DEFAULT_LOCALE;
 
 export async function generateMetadata({
     params,

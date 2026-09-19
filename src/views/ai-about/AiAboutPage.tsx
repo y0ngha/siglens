@@ -42,6 +42,13 @@ const SECTION_SUB =
 
 type IconComponent = ComponentType<{ className?: string }>;
 
+interface DataTile {
+    readonly Icon: IconComponent;
+    readonly title: string;
+    readonly body: string;
+    readonly scope: string;
+}
+
 const Arrow = () => (
     <span
         aria-hidden="true"
@@ -77,12 +84,7 @@ export async function AiAboutPage({
         [t('pain.chartOnly'), t('pain.chartOnlyFix')],
     ] as const;
 
-    const tiles: readonly {
-        Icon: IconComponent;
-        title: string;
-        body: string;
-        scope: string;
-    }[] = [
+    const tiles: readonly DataTile[] = [
         {
             Icon: QuoteIcon,
             title: t('data.quote'),

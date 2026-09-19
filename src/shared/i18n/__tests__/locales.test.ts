@@ -6,6 +6,7 @@ import {
     LOCALE_NATIVE_LABEL,
     LOCALE_OG,
     localePath,
+    resolveLocale,
     resolvePrerenderLocales,
     splitLocalePath,
 } from '../locales';
@@ -122,5 +123,15 @@ describe('로케일 메타데이터', () => {
         expect(isLocale('en')).toBe(true);
         expect(isLocale('EN')).toBe(false);
         expect(isLocale('unknown.txt')).toBe(false);
+    });
+});
+
+describe('resolveLocale', () => {
+    it('유효한 로케일은 그대로 돌려준다', () => {
+        expect(resolveLocale('en')).toBe('en');
+    });
+
+    it('로케일이 아닌 값은 기본 로케일로 떨어진다', () => {
+        expect(resolveLocale('unknown.txt')).toBe(DEFAULT_LOCALE);
     });
 });

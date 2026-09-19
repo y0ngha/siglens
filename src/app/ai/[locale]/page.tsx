@@ -5,12 +5,7 @@ import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { listConversationsAction } from '@/entities/chat-conversation/actions';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { getDatabaseClient } from '@/shared/db/client';
-import {
-    DEFAULT_LOCALE,
-    isLocale,
-    localePath,
-    type Locale,
-} from '@/shared/i18n/locales';
+import { localePath, resolveLocale, type Locale } from '@/shared/i18n/locales';
 import { SITE_URL } from '@/shared/lib/seo';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { ChatShell } from '@/widgets/agent-chat';
@@ -58,7 +53,7 @@ export async function generateMetadata({
     readonly params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
     const { locale: raw } = await params;
-    const locale = isLocale(raw) ? raw : DEFAULT_LOCALE;
+    const locale = resolveLocale(raw);
     return buildAiHomeMetadata(locale, await seoCopy(locale));
 }
 
@@ -90,7 +85,7 @@ export default async function AiHomePage({
     >;
 }) {
     const { locale: raw } = await params;
-    const locale = isLocale(raw) ? raw : DEFAULT_LOCALE;
+    const locale = resolveLocale(raw);
     setRequestLocale(locale);
     const sp = await searchParams;
     await maybeHandoffRedirect(locale, '/', sp);

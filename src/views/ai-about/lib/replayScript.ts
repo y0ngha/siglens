@@ -50,18 +50,21 @@ const TONE_BY_TAG: Readonly<Record<string, SegmentTone>> = {
 
 const TAG = /<(b|up|down)>([^<]*)<\/\1>/g;
 
+/**
+ * `split` on a 2-capture-group pattern interleaves the plain runs between
+ * matches with the captures themselves: `[plain, tag, inner, plain, tag,
+ * inner, …, plain]` — index mod 3 tells the three apart (0 = plain run,
+ * 1 = tag name, 2 = the tagged text), so a single `flatMap` turns that flat
+ * list into segments without ever mutating an array in place.
+ */
 export function parseReplayLine(kind: 'p' | 'li', raw: string): ReplayLine {
-    const segments: Segment[] = [];
-    let last = 0;
-    for (const match of raw.matchAll(TAG)) {
-        const start = match.index;
-        if (start > last)
-            segments.push({ text: raw.slice(last, start), tone: 'plain' });
-        segments.push({ text: match[2]!, tone: TONE_BY_TAG[match[1]!]! });
-        last = start + match[0].length;
-    }
-    if (last < raw.length)
-        segments.push({ text: raw.slice(last), tone: 'plain' });
+    const parts = raw.split(TAG);
+    const segments = parts.flatMap((part, i): Segment[] => {
+        if (i % 3 === 1) return []; // tag name — read alongside the next part
+        if (i % 3 === 2)
+            return [{ text: part, tone: TONE_BY_TAG[parts[i - 1]!]! }];
+        return part ? [{ text: part, tone: 'plain' }] : [];
+    });
     return { kind, segments };
 }
 
@@ -94,13 +97,16 @@ export interface LineGroup {
 
 /** Consecutive lines of the same kind render as one `<ul>` or one run of `<p>`. */
 export function groupLines(lines: readonly ReplayLine[]): LineGroup[] {
-    const groups: LineGroup[] = [];
-    lines.forEach((line, index) => {
+    return lines.reduce<LineGroup[]>((groups, line, index) => {
         const last = groups.at(-1);
-        if (last && last.kind === line.kind) last.items.push({ line, index });
-        else groups.push({ kind: line.kind, items: [{ line, index }] });
-    });
-    return groups;
+        const item = { line, index };
+        return last && last.kind === line.kind
+            ? [
+                  ...groups.slice(0, -1),
+                  { kind: last.kind, items: [...last.items, item] },
+              ]
+            : [...groups, { kind: line.kind, items: [item] }];
+    }, []);
 }
 
 /** A random index other than `prev`, so the same question never plays twice in a row. */
