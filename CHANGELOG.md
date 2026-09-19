@@ -1,5 +1,17 @@
 # Changelog
 
+# [0.83.0](https://github.com/y0ngha/siglens/compare/v0.82.2...v0.83.0) (2026-09-19)
+
+
+### Bug Fixes
+
+* **ai:** PR [#852](https://github.com/y0ngha/siglens/issues/852) 3차 리뷰 제안 반영 — 재생 취소 외 예외 로깅, 주석 정정, 미사용 export 제거 ([0a8e01c](https://github.com/y0ngha/siglens/commit/0a8e01c1a3af4a081be2a553760c510d73019ace))
+
+
+### Features
+
+* **ai:** ai.siglens.io/about 소개 페이지를 추가하고 첫 화면의 소개 섹션을 옮긴다 ([718e302](https://github.com/y0ngha/siglens/commit/718e302559a14534deaf27925b53e48523272c6e))
+
 ## [0.82.2](https://github.com/y0ngha/siglens/compare/v0.82.1...v0.82.2) (2026-09-19)
 
 ## [0.82.1](https://github.com/y0ngha/siglens/compare/v0.82.0...v0.82.1) (2026-09-19)
