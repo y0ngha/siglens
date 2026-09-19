@@ -80,10 +80,13 @@ const CHAIN: OptionsChain = {
 
 const METRICS: OptionsExpirationMetrics = {
     expirationDate: '2025-06-20',
+    daysToExpiration: 30,
     maxPain: 150,
+    maxPainDistancePct: null,
     putCallRatio: 0.8,
     atmImpliedVolatility: 0.35,
     impliedMovePercent: 4.2,
+    impliedMoveRange: null,
     topOpenInterestStrikes: [],
     topVolumeStrikes: [],
     topOiBidAskSummary: [],
