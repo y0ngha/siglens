@@ -86,8 +86,11 @@ Closed loops (approved, kept for pattern recall only — see file for detail):
 - [trader precomputed-core-1.11 R1](project-trader-precomputed-core-1.11-r1.md) — single-row fixture = unfalsifiable "latest past row" fallback; old-vs-new core d.ts diff via main checkout node_modules
 - [trader precomputed-core-1.11 R2](project-trader-precomputed-core-1.11-r2.md) — approved; 4 fallback mutations killed; trader scratch-copy mutation recipe
 - [trader core-1.11.1 bump R1](project-trader-core-1.11.1-bump-r1.md) — approved; pure version bump, riskReward-text prepend-condition change confirmed inert for trader
+- [feat/agent-adaptive-depth R2](project-core-agent-adaptive-depth-r2.md) — approved; null-confluence Plain-level fallback + PUBLIC_API row, mutation-verified
 - [feat/hub-ai-prewarm R2-R4 closed](project-hub-ai-prewarm-r2.md) — R3 reorder broke durationMs (dropped hub-phase time), R4 fixed via independent batchStartedAt, sim-clock mutation-verified
+- [feat/ai-about-page R1-R2 closed](project-ai-about-page-r1-r2.md) — tRaw helper name avoids extract.mjs regex miss; key-set-equality flatten script; R2 saw unlisted unstaged files
 
 ## Reference
 
 - [hashes.json misc-namespace gap](reference-hashes-json-misc-namespace-gap.md) — hand-authored i18n keys (e.g. liveCrossRef) were never tracked in hashes.json; not a new-PR defect unless key already had an entry
+- [agent-require-refetch R2](project-agent-require-refetch-r2.md) — PUBLIC_API changelog row closed, toolChoice/reconciledLevels claims verified in source
