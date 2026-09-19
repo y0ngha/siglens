@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.82.1](https://github.com/y0ngha/siglens/compare/v0.82.0...v0.82.1) (2026-09-19)
+
+
+### Bug Fixes
+
+* **agent-chat:** 포트폴리오 금액을 통화 최소 단위로 반올림한다 ([087b1f3](https://github.com/y0ngha/siglens/commit/087b1f3f53017566162088b2a63c4ba17a12e36b))
+
 # [0.82.0](https://github.com/y0ngha/siglens/compare/v0.81.1...v0.82.0) (2026-09-19)
 
 
