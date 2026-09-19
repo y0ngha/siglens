@@ -1,5 +1,5 @@
 import type { MockedClass, Mock } from 'vitest';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
@@ -48,6 +48,10 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
 
 vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
     resolveMarketProfile: vi.fn().mockResolvedValue('us-equity'),
+}));
+
+vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
+    getAssetInfo: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock('@/shared/api/fmp/getFundamentalDataProvider', () => ({
@@ -142,6 +146,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
+import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
 import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
@@ -178,6 +183,7 @@ const mockIsRegularSession = vi.mocked(isEtRegularSessionOpen);
 const mockComputeFinancialsScorecard = vi.mocked(computeFinancialsScorecard);
 const mockGetCachedMarketDataProvider = vi.mocked(getCachedMarketDataProvider);
 const mockResolveMarketProfile = vi.mocked(resolveMarketProfile);
+const mockGetAssetInfo = vi.mocked(getAssetInfo);
 const mockGetFundamentalDataProvider = vi.mocked(getFundamentalDataProvider);
 const mockGetFinancialStatementsProvider = vi.mocked(
     getFinancialStatementsProvider
@@ -415,6 +421,10 @@ describe('prewarmFundamental', () => {
             providerFallback: true,
             skipEnqueueIfMiss: false,
             currency: 'USD',
+            // Lazy getter — always present now, core calls
+            // it only on a cache miss. Dedicated `currentPrice` describe
+            // block below covers its resolved value.
+            currentPrice: expect.any(Function),
         });
     });
 
@@ -439,6 +449,85 @@ describe('prewarmFundamental', () => {
 
         const callArg = mockRunFundamentalAnalysis.mock.calls[0]?.[0];
         expect(callArg).not.toHaveProperty('force');
+    });
+
+    describe('currentPrice — prewarm must fill it too', () => {
+        afterEach(() => {
+            // Each `it` below directly reassigns
+            // `mockProvider.getQuote` (a plain object property, not
+            // `vi.mocked(...)`), and `mockGetAssetInfo.mockResolvedValue`
+            // is NOT cleared by the outer `beforeEach`'s `vi.clearAllMocks()`
+            // (that only resets call history, not the resolved-value
+            // implementation) — both leak into every OTHER test in this
+            // file (and later describes below) that runs afterward without
+            // this restore.
+            mockProvider.getQuote = vi.fn();
+            mockGetAssetInfo.mockResolvedValue(null);
+        });
+
+        /** `currentPrice` is now `number | null | (() => Promise<number | null>)` — narrow to the function variant `prewarmFundamental` always passes. */
+        function currentPriceGetter(
+            callArg: unknown
+        ): () => Promise<number | null> {
+            const cp = (callArg as { currentPrice?: unknown })?.currentPrice;
+            if (typeof cp !== 'function')
+                throw new Error(
+                    'expected currentPrice to be a lazy getter function'
+                );
+            return cp as () => Promise<number | null>;
+        }
+
+        it('currentPrice는 사전 조회된 값이 아니라 함수로 전달된다 — prewarm 호출 자체는 시세를 조회하지 않는다', async () => {
+            mockProvider.getQuote = vi.fn().mockResolvedValue({ price: 234.5 });
+            mockGetCachedMarketDataProvider.mockReturnValue(mockProvider);
+
+            await prewarmFundamental('AAPL', false);
+
+            const callArg = mockRunFundamentalAnalysis.mock.calls[0]?.[0];
+            expect(
+                typeof (callArg as { currentPrice?: unknown })?.currentPrice
+            ).toBe('function');
+            expect(mockProvider.getQuote).not.toHaveBeenCalled();
+        });
+
+        it('getter를 호출하면(=core의 cache-miss 경로) 유효한 시세를 반환한다', async () => {
+            mockProvider.getQuote = vi.fn().mockResolvedValue({ price: 234.5 });
+            mockGetCachedMarketDataProvider.mockReturnValue(mockProvider);
+
+            await prewarmFundamental('AAPL', false);
+
+            const callArg = mockRunFundamentalAnalysis.mock.calls[0]?.[0];
+            await expect(currentPriceGetter(callArg)()).resolves.toBe(234.5);
+        });
+
+        it('fmpSymbol이 있으면 getter 호출 시에만 그 값으로 시세를 조회한다', async () => {
+            mockGetAssetInfo.mockResolvedValue({
+                symbol: '^SPX',
+                fmpSymbol: '^GSPC',
+            } as never);
+            const getQuoteSpy = vi.fn().mockResolvedValue({ price: 100 });
+            mockProvider.getQuote = getQuoteSpy;
+            mockGetCachedMarketDataProvider.mockReturnValue(mockProvider);
+
+            await prewarmFundamental('^SPX', false);
+            const callArg = mockRunFundamentalAnalysis.mock.calls[0]?.[0];
+            expect(getQuoteSpy).not.toHaveBeenCalled();
+
+            await currentPriceGetter(callArg)();
+            expect(getQuoteSpy).toHaveBeenCalledWith('^GSPC');
+        });
+
+        it('getter 호출 시 시세 조회가 실패해도(non-blocking) null로 degrade하고, prewarm은 그대로 진행된다', async () => {
+            mockProvider.getQuote = vi
+                .fn()
+                .mockRejectedValue(new Error('FMP down'));
+            mockGetCachedMarketDataProvider.mockReturnValue(mockProvider);
+
+            await prewarmFundamental('AAPL', false);
+
+            const callArg = mockRunFundamentalAnalysis.mock.calls[0]?.[0];
+            await expect(currentPriceGetter(callArg)()).resolves.toBeNull();
+        });
     });
 });
 
