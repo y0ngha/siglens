@@ -1,14 +1,9 @@
 import 'server-only';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
+import { quoteWithTimeout } from '@/shared/api/market/quoteTimeout';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { collectNumbers } from './collectFacts';
-
-/**
- * 시세 조회 상한. `resolveHoldingPositionBucket`과 같은 값이다. 시세가 느릴 때
- * 평이화 마감(15초)을 잠식하면 안 된다.
- */
-const QUOTE_LOOKUP_TIMEOUT_MS = 5_000;
 
 /**
  * 평이화 프롬프트에 실을 현재 주가. 실패하면 `undefined`.
@@ -38,15 +33,7 @@ export async function resolveCurrentPrice(
     try {
         const profile = await resolveMarketProfile(symbol);
         const provider = getCachedMarketDataProvider(sessionSpecFor(profile));
-        const quote = await Promise.race([
-            provider.getQuote(symbol),
-            new Promise<null>(resolve => {
-                setTimeout(
-                    () => resolve(null),
-                    QUOTE_LOOKUP_TIMEOUT_MS
-                ).unref();
-            }),
-        ]);
+        const quote = await quoteWithTimeout(provider, symbol);
         const price = quote?.price;
         return typeof price === 'number' && Number.isFinite(price) && price > 0
             ? price
