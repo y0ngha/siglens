@@ -234,7 +234,6 @@ export function ChatShell({
                 </div>
                 {stream.messages.length === 0 ? (
                     <EmptyState
-                        siteUrl={siteUrl}
                         localePrefix={localePrefix}
                         signedIn={signedIn}
                         loginHref={login}

@@ -3,6 +3,15 @@ export const AI_HOSTS: ReadonlySet<string> = new Set([
     'ai.siglens.io',
     'ai.localhost',
 ]);
+/**
+ * Public, indexable pages of the ai host: the sitemap (`proxy.ts`) and the
+ * page metadata (`app/ai/[locale]/aiSeo.ts`) both read this list, so a page
+ * cannot be indexable without being in the sitemap or the other way round.
+ * Conversations (`/c/*`) are never here.
+ */
+export const AI_INDEXABLE_PATHS = ['/', '/about'] as const;
+export type AiIndexablePath = (typeof AI_INDEXABLE_PATHS)[number];
+
 export const AI_SITE_URL =
     process.env.NEXT_PUBLIC_AI_SITE_URL ?? 'https://ai.siglens.io';
 

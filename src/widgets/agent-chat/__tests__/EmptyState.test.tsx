@@ -17,7 +17,6 @@ describe('EmptyState', () => {
         await act(async () => {
             wrap(
                 <EmptyState
-                    siteUrl="https://siglens.io"
                     localePrefix=""
                     onPick={onPick}
                     signedIn
@@ -44,7 +43,6 @@ describe('EmptyState', () => {
     it('renders the page with placeholders while suggestions are still generating', () => {
         wrap(
             <EmptyState
-                siteUrl="https://siglens.io"
                 localePrefix=""
                 onPick={vi.fn()}
                 signedIn
@@ -53,7 +51,9 @@ describe('EmptyState', () => {
             />
         );
         expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
-        expect(screen.getByText('자주 묻는 질문')).toBeInTheDocument();
+        expect(
+            screen.getByRole('link', { name: /어떻게 답하는지/ })
+        ).toBeInTheDocument();
         expect(
             screen.queryByRole('button', { name: /내 보유 종목 지금 어때/ })
         ).toBeNull();
@@ -63,7 +63,6 @@ describe('EmptyState', () => {
         await act(async () => {
             wrap(
                 <EmptyState
-                    siteUrl="https://siglens.io"
                     localePrefix=""
                     onPick={vi.fn()}
                     signedIn
@@ -82,7 +81,6 @@ describe('EmptyState', () => {
     it('falls back to the six static suggestions when none are provided', () => {
         wrap(
             <EmptyState
-                siteUrl="https://siglens.io"
                 localePrefix=""
                 onPick={vi.fn()}
                 signedIn
@@ -100,7 +98,6 @@ describe('EmptyState', () => {
         const onPick = vi.fn();
         wrap(
             <EmptyState
-                siteUrl="https://siglens.io"
                 localePrefix=""
                 onPick={onPick}
                 signedIn={false}
@@ -132,7 +129,6 @@ describe('EmptyState', () => {
     it('carries the brand: Beta tag and what the assistant looks up', () => {
         wrap(
             <EmptyState
-                siteUrl="https://siglens.io"
                 localePrefix=""
                 onPick={vi.fn()}
                 signedIn
@@ -142,33 +138,27 @@ describe('EmptyState', () => {
         expect(screen.getByText('Beta')).toHaveAttribute('translate', 'no');
         expect(
             screen.getByRole('list', { name: 'SIGLENS AI가 찾아보는 데이터' })
-        ).toHaveTextContent('실시간 시세');
+        ).toHaveTextContent('최신 시세');
     });
 
-    it('carries the search-visitor sections: sources, access, FAQ and plain links into siglens.io', () => {
+    it('leaves how-it-works to /about: one link there, none of the old landing sections', () => {
         wrap(
             <EmptyState
-                siteUrl="https://siglens.io"
                 localePrefix="/en"
                 onPick={vi.fn()}
                 signedIn={false}
                 loginHref="/login"
             />
         );
-        for (const name of [
-            '답변은 어디서 오나요',
-            '로그인 없이도, 로그인하면 더',
-            '자주 묻는 질문',
-            'SIGLENS에서 더 보기',
-        ])
-            expect(
-                screen.getByRole('heading', { level: 2, name })
-            ).toBeInTheDocument();
-        expect(screen.getByText('하루 10번까지 질문')).toBeInTheDocument();
-        expect(screen.getByText('질문 횟수 제한 없음')).toBeInTheDocument();
         expect(
-            screen.getByRole('link', { name: /한국 주식 시장 분석/ })
-        ).toHaveAttribute('href', 'https://siglens.io/en/market/kr');
+            screen.getByRole('link', {
+                name: /SIGLENS AI가 어떻게 답하는지 보기/,
+            })
+        ).toHaveAttribute('href', '/en/about');
+        for (const name of ['답변은 어디서 오나요', '자주 묻는 질문'])
+            expect(
+                screen.queryByRole('heading', { level: 2, name })
+            ).toBeNull();
         // The h1's two parts read as two phrases, not one run-on word.
         expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(
             /요 \S/

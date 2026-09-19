@@ -23,7 +23,11 @@ import {
 } from '@/shared/i18n/locales';
 import { routing } from '@/shared/i18n/routing';
 import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
-import { AI_SITE_URL, isAiHost } from '@/shared/config/aiHost';
+import {
+    AI_INDEXABLE_PATHS,
+    AI_SITE_URL,
+    isAiHost,
+} from '@/shared/config/aiHost';
 import createIntlMiddleware from 'next-intl/middleware';
 import { NextResponse, type NextRequest } from 'next/server';
 
@@ -31,7 +35,7 @@ const intlMiddleware = createIntlMiddleware(routing);
 
 const AI_CSP = "frame-ancestors 'none'; img-src 'self' data:";
 /**
- * SiglensAI의 공개 면은 로케일별 홈(랜딩) 하나뿐이다. 대화(`/c/*`)는 회원 본인만
+ * SiglensAI의 공개 면은 로케일별 홈과 `/about`(`AI_INDEXABLE_PATHS`)이다. 대화(`/c/*`)는 회원 본인만
  * 볼 수 있는 사적 기록이라 크롤러에 열 이유가 없고, 게스트에게는 404다.
  * `/api/`는 크롤러가 쓸 이유가 아예 없는 SSE 엔드포인트라 함께 막는다 —
  * `POST /api/ai/chat/stream`은 어차피 Origin 검사로 브라우저 세션만 받는다.
@@ -39,12 +43,14 @@ const AI_CSP = "frame-ancestors 'none'; img-src 'self' data:";
 const AI_ROBOTS_BODY = `User-agent: *\nAllow: /\nDisallow: /c/\nDisallow: /*/c/\nDisallow: /api/\n\nSitemap: ${AI_SITE_URL}/sitemap.xml\n`;
 
 /**
- * 색인 가능한 로케일의 홈만 싣는다 — 메인 사이트 정적 페이지와 같은 게이트
+ * 색인 가능한 로케일의 공개 페이지(`AI_INDEXABLE_PATHS`: 홈·`/about`)만 싣는다 — 메인 사이트 정적 페이지와 같은 게이트
  * (`STATIC_INDEXABLE_LOCALES`). 대화 URL은 절대 싣지 않는다.
  */
 function aiSitemapXml(): string {
-    const urls = STATIC_INDEXABLE_LOCALES.map(
-        l => `<url><loc>${AI_SITE_URL}${localePath(l, '/')}</loc></url>`
+    const urls = STATIC_INDEXABLE_LOCALES.flatMap(l =>
+        AI_INDEXABLE_PATHS.map(
+            path => `<url><loc>${AI_SITE_URL}${localePath(l, path)}</loc></url>`
+        )
     ).join('');
     return `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}</urlset>`;
 }

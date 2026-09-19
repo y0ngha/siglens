@@ -437,3 +437,20 @@
 - Violation: `Number(x.toFixed(2))`로 반올림해 이진 부동소수 경계(150.005 → 150.00)에서 한 센트 틀림
   - Rule: (new) 금액 반올림에 `toFixed`를 쓰지 않는다 — 크기 기준 상대 엡실론 보정 후 `Math.round`(half-away-from-zero), 지수 문자열 왕복은 부동소수 잡음(1e-13)을 NaN으로 만들므로 금지
   - Context: 리뷰 라운드 1 지적. 부호 대칭·-0 정규화 포함
+
+## [feat/ai-about-page Round 1–2 | AI about page design spec | 2026-09-19]
+- Violation: Sibling JSDoc (`AI_ROBOTS_BODY` in src/proxy.ts) stated the locale home was the AI host's only public surface after `/about` became public; the neighbouring comment on `aiSitemapXml` had been updated but this one was missed
+  - Rule: MISTAKES.md Documentation §15.6 — Comment accuracy; when documentation neighbours are updated, all related neighbours must be checked for stale references
+  - Context: Corrected JSDoc to reflect that `/about` is now also public. Pattern of stale comment adjacent to updated one.
+
+- Violation: Page test suite covered only the default locale; failed to test /en route with non-default language href
+  - Rule: (new) i18n-enabled pages must test at least one non-default locale route to verify href and translations are not locale-specific
+  - Context: Added test covering /en locale with href assertions for the non-default language variant.
+
+- Violation: Helper function `raw` (forwarding i18n keys) did not start with `t`, so scripts/i18n/extract.mjs did not recognize calls — `yarn i18n:extract --write` silently deleted 25 keys only referenced through that helper
+  - Rule: (new) i18n helper functions forwarding i18n keys must be named `t…` (e.g. `tRaw`) for extract.mjs pattern match /\bt\w*(\.(rich|markup|raw))?\('key'/; any other naming defeats extract, causing deletion of "orphaned" keys when --write is run
+  - Context: Renamed `raw` → `tRaw`; re-ran `yarn i18n:extract --write` to restore deleted keys.
+
+- Violation: Running `yarn i18n:translate --locale X` to translate ~140 new keys re-translated 1,633 existing en keys on master branch (1,612 ko keys lack hash entries in messages/_meta/hashes.json, causing re-translation when hash lookup fails)
+  - Rule: (new) Do not run `yarn i18n:translate` on branches adding only new keys; instead add en/ja/zh translations by hand (following recent commit patterns) and verify with `yarn i18n:verify`, or check `--dry-run` count first to avoid cascading re-translation of approved keys
+  - Context: Learned when attempting to batch-translate new keys; the hash cache is incomplete on master, making re-translation too risky. Used manual additions for this batch.

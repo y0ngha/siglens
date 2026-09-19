@@ -9,14 +9,12 @@ import {
     QuoteIcon,
     SparkIcon,
 } from './icons';
-import { AiLanding } from './AiLanding';
 import { SiglensMark } from './SiglensMark';
 
 /** Member suggestions still being generated; resolves to null when there are none. */
 export type PendingSuggestions = Promise<readonly string[] | null>;
 
 interface Props {
-    readonly siteUrl: string;
     readonly localePrefix: string;
     readonly onPick: (text: string) => void;
     readonly signedIn: boolean;
@@ -134,7 +132,6 @@ const CARD =
  * fresh analyses, web search, saved conversations) instead of a login wall.
  */
 export function EmptyState({
-    siteUrl,
     localePrefix,
     onPick,
     signedIn,
@@ -243,7 +240,18 @@ export function EmptyState({
                         onPick={onPick}
                     />
                 )}
-                <AiLanding siteUrl={siteUrl} localePrefix={localePrefix} />
+                {/* How it works, the data it reads and the FAQ live on `/about`
+                    (spec 2026-09-19-ai-about-page-design): this screen stays a
+                    place to start typing. Same host, so a plain relative link. */}
+                <p className="mt-10 text-center">
+                    <a
+                        href={`${localePrefix}/about`}
+                        className="group inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-sm text-secondary-300 hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                    >
+                        {t('EmptyState.aboutLink')}
+                        <ArrowUpRightIcon className="size-4 text-secondary-400 group-hover:text-primary-400" />
+                    </a>
+                </p>
             </div>
         </div>
     );
