@@ -419,6 +419,14 @@ function higherTimeframeView(
     };
 }
 
+/** High/low over a window and the last close's distance from each — shared shape for `range` (which also carries `bars`, the window size actually used) and every entry of `ranges`. */
+interface RangeWindow {
+    high: number | null;
+    low: number | null;
+    fromHighPct: number | null;
+    fromLowPct: number | null;
+}
+
 interface DerivedView {
     lastClose: number | null;
     changePct: {
@@ -427,12 +435,17 @@ interface DerivedView {
         '20bars': number | null;
         '60bars': number | null;
     };
-    range: {
-        high: number | null;
-        low: number | null;
-        fromHighPct: number | null;
-        fromLowPct: number | null;
-        bars: number;
+    range: RangeWindow & { bars: number };
+    /**
+     * Fixed 20/60-bar high/low windows for ANY timeframe — added after a
+     * real-data eval asked "how far below its 60-day high" and got the
+     * 52-week `range` high back instead, since `range` is either capped at
+     * 252 daily bars or (intraday) every loaded bar, neither of which is a
+     * "60-bar high". `null` when fewer than 20 / 60 bars are loaded.
+     */
+    ranges: {
+        '20bars': RangeWindow | null;
+        '60bars': RangeWindow | null;
     };
     volumeVsAvg20: number | null;
     atrPct: number | null;
@@ -457,9 +470,51 @@ const CHANGE_PCT_BARS_BACK: Record<keyof DerivedView['changePct'], number> = {
 /** Max daily bars `range` looks back over; intraday uses every loaded bar instead (spec §3.1). */
 const RANGE_MAX_DAILY_BARS = 252;
 
+/** Bars back for each `ranges` window — a fixed bar count for every timeframe, same convention as `CHANGE_PCT_BARS_BACK`. */
+const RANGES_BARS_BACK: Record<keyof DerivedView['ranges'], number> = {
+    '20bars': 20,
+    '60bars': 60,
+};
+
+/**
+ * Period behind `priceVsMa.ma50Pct`. The key name is the contract (core's
+ * `get_bars_indicators` description documents `ma50Pct`), so this is its own
+ * constant rather than `CONFLUENCE_TREND_MA_PERIOD` — that one is a confluence
+ * tuning knob, and retuning it must not silently turn `ma50Pct` into some
+ * other period. (`higherTimeframeView`'s `priceVsMa50Pct` deliberately DOES
+ * use the confluence constant, to match the gate it explains.)
+ */
+export const MA50_PERIOD = 50;
+
+/**
+ * High/low over `window` and the last close's distance from each. Only
+ * finite highs/lows count — a single bad bar (NaN/Infinity from an upstream
+ * data glitch) must not poison the whole window's max/min. Shared by `range`
+ * (the 252-bar-on-1Day / all-loaded-intraday window) and `ranges` (fixed
+ * 20/60-bar windows) so this filtering logic lives once.
+ */
+function computeRangeWindow(
+    window: readonly Bar[],
+    lastClose: number | null
+): RangeWindow {
+    const finiteHighs = window.map(b => b.high).filter(Number.isFinite);
+    const finiteLows = window.map(b => b.low).filter(Number.isFinite);
+    const high = finiteHighs.length > 0 ? Math.max(...finiteHighs) : null;
+    const low = finiteLows.length > 0 ? Math.min(...finiteLows) : null;
+    return {
+        high,
+        low,
+        fromHighPct: pctVs(lastClose, high),
+        fromLowPct: pctVs(lastClose, low),
+    };
+}
+
 /**
  * Values the LLM used to compute itself from raw `bars`/`latest` — returns,
- * 52-week position, volume ratio, MA/EMA distance, ATR% (spec §3.1, audit
+ * 52-week position (plus fixed 20/60-bar high/low windows — `ranges` — for
+ * "N-day high/low" questions `range` alone can't answer), volume ratio,
+ * MA/EMA distance (plus a fixed 50-bar MA distance — `ma50Pct` — even when
+ * 50 isn't one of the caller-configured MA periods), ATR% (spec §3.1, audit
  * B1). Every field follows the null rule (spec §0): computed only when every
  * input is finite and (for a percentage) the base is positive.
  */
@@ -481,19 +536,19 @@ function computeDerived(
 
     const rangeWindow =
         timeframe === '1Day' ? bars.slice(-RANGE_MAX_DAILY_BARS) : bars;
-    // Only finite highs/lows count — a single bad bar (NaN/Infinity from an
-    // upstream data glitch) must not poison the whole window's max/min.
-    const finiteHighs = rangeWindow.map(b => b.high).filter(Number.isFinite);
-    const finiteLows = rangeWindow.map(b => b.low).filter(Number.isFinite);
-    const high = finiteHighs.length > 0 ? Math.max(...finiteHighs) : null;
-    const low = finiteLows.length > 0 ? Math.min(...finiteLows) : null;
     const range = {
-        high,
-        low,
-        fromHighPct: pctVs(lastClose, high),
-        fromLowPct: pctVs(lastClose, low),
+        ...computeRangeWindow(rangeWindow, lastClose),
         bars: rangeWindow.length,
     };
+
+    const ranges = Object.fromEntries(
+        Object.entries(RANGES_BARS_BACK).map(([key, n]) => [
+            key,
+            bars.length >= n
+                ? computeRangeWindow(bars.slice(-n), lastClose)
+                : null,
+        ])
+    ) as DerivedView['ranges'];
 
     const prevVolumes = bars.slice(-21, -1).map(b => b.volume);
     const lastVolume = last(bars.map(b => b.volume));
@@ -514,7 +569,18 @@ function computeDerived(
     // `(atr - price) / price` instead.
     const atrPct = ratioPct(last(indicators.atr), lastClose);
 
+    // `calculateMA` needs a mutable array; `bars` stays `readonly` at the
+    // param boundary so `.slice()` here is a defensive copy, not a weakened
+    // contract.
+    const ma50 = last(calculateMA(bars.slice(), MA50_PERIOD));
     const priceVsMa: Record<string, number | null> = {
+        // Computed directly (not read from `indicators.ma`, which only
+        // carries the caller-configured MA periods and may not include 50)
+        // so a 50-bar MA distance is ALWAYS available — spread first so a
+        // real `indicators.ma['50']`, if 50 IS one of the configured
+        // periods, overwrites this fallback rather than the other way
+        // around.
+        ma50Pct: pctVs(lastClose, ma50),
         ...Object.fromEntries(
             Object.entries(indicators.ma).map(([period, series]) => [
                 `ma${period}Pct`,
@@ -535,6 +601,7 @@ function computeDerived(
         lastClose,
         changePct,
         range,
+        ranges,
         volumeVsAvg20,
         atrPct,
         priceVsMa,
