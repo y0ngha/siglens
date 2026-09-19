@@ -37,6 +37,7 @@ import {
     buildAnalysisNewsItems,
 } from '@/entities/news-article';
 import { getNextEarningsReport } from '@/entities/earnings-report';
+import { fetchQuotePriceForAnalysis } from './lib/fetchQuotePriceForAnalysis';
 // Cross-entity: overall이 options-chain 스냅샷을 조합한다. submitOverallAnalysisAction과
 // 동일한 의도적 예외(entities/CLAUDE.md).
 import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
@@ -239,12 +240,21 @@ export async function prewarmFundamental(
     symbol: string,
     force: boolean
 ): Promise<RunFundamentalAnalysisResult> {
+    // LAZY getter (core's `currentPrice?: number | null |
+    // (() => Promise<number | null>)`) — core only calls this on a cache
+    // MISS, so a cache hit never pays for this quote fetch. Same seam as
+    // `runFundamentalAnalysisAction`'s request path, so prewarm fills
+    // `## Derived Metrics`'s target-upside row too instead of leaving it
+    // out of most of the cache — but without the round-trip on every hit
+    // the previous eagerly-awaited shape always paid for.
     return runFundamentalAnalysis({
         symbol,
         modelId: DEEPSEEK_V4_1_FLASH_MODEL,
         dataProvider: getFundamentalDataProvider(symbol),
         // 방문자 경로와 같은 통화를 넘겨야 prewarm이 채운 캐시의 산출 텍스트가 갈리지 않는다.
         currency: currencyForSymbol(symbol),
+        currentPrice: () =>
+            fetchQuotePriceForAnalysis(symbol).then(price => price ?? null),
         tier: 'free',
         reasoning: false,
         providerFallback: PREWARM_PROVIDER_FALLBACK,
