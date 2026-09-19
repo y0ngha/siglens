@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { bySymbol, byCategory } = vi.hoisted(() => ({
     bySymbol: vi.fn(),
@@ -64,14 +64,14 @@ describe('getNewsTool', () => {
         });
     });
 
-    it('since가 유효하지 않은 날짜면 invalid_args (item 5)', async () => {
+    it('since가 유효하지 않은 날짜면 invalid_args', async () => {
         expect(
             await getNewsTool({ symbol: 'AAPL', since: 'not-a-date' }, ctx, rt)
         ).toMatchObject({ error: 'invalid_args' });
         expect(bySymbol).not.toHaveBeenCalled();
     });
 
-    it('오래된 since는 30일로 클램프된다 (item 5)', async () => {
+    it('오래된 since는 30일로 클램프된다', async () => {
         bySymbol.mockResolvedValue([]);
         await getNewsTool({ symbol: 'AAPL', since: '2000-01-01' }, ctx, rt);
         const sinceMsArg = bySymbol.mock.calls[0]![1] as number;
@@ -119,7 +119,7 @@ describe('getNewsTool', () => {
         expect(r.items[0]!.title).toBe('t1');
     });
 
-    it('locale이 ja면 사이드카 titleLocalized를 우선한다 (item 7)', async () => {
+    it('locale이 ja면 사이드카 titleLocalized를 우선한다', async () => {
         bySymbol.mockResolvedValue([
             { ...row(1), titleLocalized: 'ニュース1' },
         ]);
@@ -130,7 +130,7 @@ describe('getNewsTool', () => {
         expect(r.items[0]!.title).toBe('ニュース1');
     });
 
-    it('locale이 en이고 사이드카가 없으면 titleEn으로 폴백한다 (item 7)', async () => {
+    it('locale이 en이고 사이드카가 없으면 titleEn으로 폴백한다', async () => {
         bySymbol.mockResolvedValue([row(1)]);
         const enCtx = { ...ctx, locale: 'en' as const };
         const r = (await getNewsTool(
@@ -183,5 +183,71 @@ describe('getNewsTool', () => {
         expect(await count(Number.NaN)).toBe(5);
         expect(await count('3')).toBe(5);
         expect(await count(999)).toBe(20);
+    });
+
+    describe('tally/ageHours (spec §3.7, B9)', () => {
+        beforeEach(() => {
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2026-09-14T12:00:00.000Z'));
+        });
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it('반환된 items 기준으로 tally를 센다', async () => {
+            bySymbol.mockResolvedValue([
+                { ...row(1), sentiment: 'bullish', priceImpact: 'high' },
+                { ...row(2), sentiment: 'bullish', priceImpact: 'low' },
+                { ...row(3), sentiment: 'bearish', priceImpact: 'high' },
+                { ...row(4), sentiment: 'neutral', priceImpact: 'medium' },
+            ]);
+            const r = (await getNewsTool({ symbol: 'AAPL' }, ctx, rt)) as {
+                tally: {
+                    bullish: number;
+                    bearish: number;
+                    neutral: number;
+                    highImpact: number;
+                };
+            };
+            expect(r.tally).toEqual({
+                bullish: 2,
+                bearish: 1,
+                neutral: 1,
+                highImpact: 2,
+            });
+        });
+
+        it('limit으로 잘린 뒤의 items만 tally에 들어간다', async () => {
+            bySymbol.mockResolvedValue([
+                { ...row(1), sentiment: 'bullish', priceImpact: 'low' },
+                { ...row(2), sentiment: 'bearish', priceImpact: 'low' },
+            ]);
+            const r = (await getNewsTool(
+                { symbol: 'AAPL', limit: 1 },
+                ctx,
+                rt
+            )) as { tally: { bullish: number; bearish: number } };
+            expect(r.tally).toMatchObject({ bullish: 1, bearish: 0 });
+        });
+
+        it('ageHours: publishedAt으로부터 경과 시간(시간 단위, 반올림)', async () => {
+            bySymbol.mockResolvedValue([
+                { ...row(1), publishedAt: '2026-09-14T09:00:00.000Z' }, // 3h ago
+            ]);
+            const r = (await getNewsTool({ symbol: 'AAPL' }, ctx, rt)) as {
+                items: Array<{ ageHours: number | null }>;
+            };
+            expect(r.items[0]!.ageHours).toBe(3);
+        });
+
+        it('publishedAt이 파싱 불가하면 ageHours는 null (null rule)', async () => {
+            bySymbol.mockResolvedValue([
+                { ...row(1), publishedAt: 'not-a-date' },
+            ]);
+            const r = (await getNewsTool({ symbol: 'AAPL' }, ctx, rt)) as {
+                items: Array<{ ageHours: number | null }>;
+            };
+            expect(r.items[0]!.ageHours).toBeNull();
+        });
     });
 });

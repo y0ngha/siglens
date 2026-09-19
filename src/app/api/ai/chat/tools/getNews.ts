@@ -8,10 +8,35 @@ import {
     resolveNewsSummary,
     resolveNewsTitle,
 } from '@/shared/lib/news/resolveNewsTitle';
-import { MS_PER_DAY } from '@/shared/config/time';
+import { MS_PER_DAY, MS_PER_HOUR } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import type { ToolExecutor } from './index';
 import { fitToEscapedBudget, TOOL_RESULT_MAX_CHARS } from './truncate';
+
+/** `get_news`'s `tally` field shape — sentiment/impact counts over the RETURNED page. */
+interface NewsTallyView {
+    bullish: number;
+    bearish: number;
+    neutral: number;
+    highImpact: number;
+}
+
+/** `{ bullish, bearish, neutral, highImpact }` over the RETURNED items (spec §3.7, audit B9) — the same set the model sees, not the whole unpaginated match. */
+function tallyOf(page: readonly NewsDisplayItem[]): NewsTallyView {
+    return {
+        bullish: page.filter(r => r.sentiment === 'bullish').length,
+        bearish: page.filter(r => r.sentiment === 'bearish').length,
+        neutral: page.filter(r => r.sentiment === 'neutral').length,
+        highImpact: page.filter(r => r.priceImpact === 'high').length,
+    };
+}
+
+/** Hours since `publishedAt`, rounded; `null` on an unparseable date (spec §0 null rule). */
+function ageHoursOf(publishedAt: string): number | null {
+    const t = Date.parse(publishedAt);
+    if (Number.isNaN(t)) return null;
+    return Math.round((Date.now() - t) / MS_PER_HOUR);
+}
 
 const DEFAULT_LOOKBACK_MS = 14 * MS_PER_DAY;
 // The model fully controls `since`; without a ceiling it can force an
@@ -103,9 +128,11 @@ export const getNewsTool: ToolExecutor = async (args, ctx) => {
         sentiment: r.sentiment,
         priceImpact: r.priceImpact,
         publishedAt: r.publishedAt,
+        ageHours: ageHoursOf(r.publishedAt),
         source: r.source,
         url: r.url,
     }));
+    const tally = tallyOf(page);
 
     if (args.includeBody === true) {
         const bodyItemCount = Math.min(page.length, BODY_ITEMS);
@@ -115,6 +142,7 @@ export const getNewsTool: ToolExecutor = async (args, ctx) => {
                 source: 'SIGLENS news',
                 count: items.length,
                 coverageLimited: items.length === 0,
+                tally,
                 items,
             }).length;
             const remaining = Math.max(
@@ -140,6 +168,7 @@ export const getNewsTool: ToolExecutor = async (args, ctx) => {
         source: 'SIGLENS news',
         count: items.length,
         coverageLimited: items.length === 0,
+        tally,
         items,
     };
 };

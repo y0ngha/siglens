@@ -1,11 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { fgUs, fgKr, summary, sectorSignals } = vi.hoisted(() => ({
-    fgUs: vi.fn(),
-    fgKr: vi.fn(),
-    summary: vi.fn(),
-    sectorSignals: vi.fn(),
-}));
+const { fgUs, fgKr, summary, sectorSignals, getTranslationsMock } = vi.hoisted(
+    () => ({
+        fgUs: vi.fn(),
+        fgKr: vi.fn(),
+        summary: vi.fn(),
+        sectorSignals: vi.fn(),
+        getTranslationsMock: vi.fn(),
+    })
+);
 vi.mock('@/entities/market-fear-greed/api/marketFearGreedStaticCache', () => ({
     getMarketFearGreedStatic: fgUs,
 }));
@@ -19,8 +22,16 @@ vi.mock('@/entities/market-summary/api/marketSummaryStaticCache', () => ({
 vi.mock('@/entities/sector-signal/api/sectorSignalsStaticCache', () => ({
     getSectorSignalsStatic: sectorSignals,
 }));
+// `getTranslations` is a controllable mock (not the fixed `nextIntlServerStub`
+// export) so ONE test below can swap in a translator that mimics real
+// next-intl's actual "missing key returns the key path, never throws"
+// behavior — the exact gap a `try { t(key) } catch {}` fallback misses.
+vi.mock('next-intl/server', () => ({
+    getTranslations: getTranslationsMock,
+}));
 
 import { getMarketOverviewTool } from '@/app/api/ai/chat/tools/getMarketOverview';
+import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 
 const ctx = {
     userId: 'u',
@@ -33,9 +44,40 @@ const rt = { analysisModel: 'deepseek-v4.1-flash' as const };
 describe('getMarketOverviewTool', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        getTranslationsMock.mockImplementation(
+            async ({
+                namespace,
+                locale,
+            }: {
+                namespace: string;
+                locale: string;
+            }) => catalogTranslator(namespace, locale)
+        );
         summary.mockResolvedValue({
             indices: [{ symbol: 'SPY', price: 500, changesPercentage: 0.5 }],
-            sectors: [{ symbol: 'XLK', price: 200, changesPercentage: -0.2 }],
+            sectors: [
+                {
+                    symbol: 'XLK',
+                    sectorName: 'Technology',
+                    koreanName: '기술',
+                    price: 200,
+                    changesPercentage: -0.2,
+                },
+                {
+                    symbol: 'XLE',
+                    sectorName: 'Energy',
+                    koreanName: '에너지',
+                    price: 90,
+                    changesPercentage: 1.4,
+                },
+                {
+                    symbol: 'XLF',
+                    sectorName: 'Financials',
+                    koreanName: '금융',
+                    price: 45,
+                    changesPercentage: 0,
+                },
+            ],
         });
     });
 
@@ -116,5 +158,195 @@ describe('getMarketOverviewTool', () => {
         };
         expect(r.market).toBe('us');
         expect(fgUs).toHaveBeenCalled();
+    });
+
+    describe('sectors 정렬·이름·sectorBreadth·spread (spec §3.5, B7)', () => {
+        it('changesPercentage 내림차순으로 정렬되고 rank·카탈로그 이름이 붙는다', async () => {
+            fgUs.mockResolvedValue({ snapshot: null, comparisons: [] });
+            sectorSignals.mockResolvedValue({ computedAt: 'x', stocks: [] });
+            const r = (await getMarketOverviewTool(
+                { market: 'us' },
+                ctx,
+                rt
+            )) as {
+                sectors: Array<{
+                    symbol: string;
+                    name: string;
+                    rank: number;
+                    changesPercentage: number;
+                }>;
+            };
+            expect(r.sectors.map(s => s.symbol)).toEqual([
+                'XLE', // 1.4
+                'XLF', // 0
+                'XLK', // -0.2
+            ]);
+            expect(r.sectors.map(s => s.rank)).toEqual([1, 2, 3]);
+            // Catalog-backed display name — same source as the dashboard's
+            // `useAssetLabel` (ko catalog has XLK → '기술' etc).
+            expect(r.sectors.find(s => s.symbol === 'XLK')!.name).toBe('기술');
+        });
+
+        it('카탈로그에 없는 심볼은 koreanName으로 폴백한다 (useAssetLabel과 동일)', async () => {
+            fgUs.mockResolvedValue({ snapshot: null, comparisons: [] });
+            sectorSignals.mockResolvedValue({ computedAt: 'x', stocks: [] });
+            summary.mockResolvedValue({
+                indices: [],
+                sectors: [
+                    {
+                        symbol: 'XX-NOT-IN-CATALOG',
+                        sectorName: 'Unknown',
+                        koreanName: '알수없음',
+                        price: 1,
+                        changesPercentage: 0,
+                    },
+                ],
+            });
+            const r = (await getMarketOverviewTool(
+                { market: 'us' },
+                ctx,
+                rt
+            )) as { sectors: Array<{ name: string }> };
+            expect(r.sectors[0]!.name).toBe('알수없음');
+        });
+
+        it('sectorBreadth: up/down/flat 섹터 개수를 센다 (breadth → sectorBreadth)', async () => {
+            fgUs.mockResolvedValue({ snapshot: null, comparisons: [] });
+            sectorSignals.mockResolvedValue({ computedAt: 'x', stocks: [] });
+            const r = (await getMarketOverviewTool(
+                { market: 'us' },
+                ctx,
+                rt
+            )) as {
+                sectorBreadth: { up: number; down: number; flat: number };
+            };
+            // XLE +1.4 (up), XLF 0 (flat), XLK -0.2 (down)
+            expect(r.sectorBreadth).toEqual({ up: 1, down: 1, flat: 1 });
+        });
+
+        it('bestWorstSpreadPp: 1등-꼴찌 changesPercentage 차이(pp)', async () => {
+            fgUs.mockResolvedValue({ snapshot: null, comparisons: [] });
+            sectorSignals.mockResolvedValue({ computedAt: 'x', stocks: [] });
+            const r = (await getMarketOverviewTool(
+                { market: 'us' },
+                ctx,
+                rt
+            )) as { bestWorstSpreadPp: number | null };
+            expect(r.bestWorstSpreadPp).toBeCloseTo(1.4 - -0.2, 6);
+        });
+
+        it('실제 next-intl처럼 없는 키에서 throw하지 않고 키 경로를 반환하는 번역자에서도 koreanName 폴백이 동작한다 (t.has 사용)', async () => {
+            fgUs.mockResolvedValue({ snapshot: null, comparisons: [] });
+            sectorSignals.mockResolvedValue({ computedAt: 'x', stocks: [] });
+            // Mimics real next-intl: `t(key)` on a missing key returns the
+            // key path itself (never throws); only `t.has(key)` tells you
+            // it was missing. A `try { t(key) } catch {}` fallback never
+            // fires against this shape — only `t.has()` does.
+            const nonThrowingTranslator = Object.assign(
+                (key: string) => key, // "returns the key path" — never throws
+                { has: (_key: string) => false }
+            );
+            getTranslationsMock.mockResolvedValue(nonThrowingTranslator);
+            summary.mockResolvedValue({
+                indices: [],
+                sectors: [
+                    {
+                        symbol: 'XLK',
+                        sectorName: 'Technology',
+                        koreanName: '기술',
+                        price: 200,
+                        changesPercentage: -0.2,
+                    },
+                ],
+            });
+            const r = (await getMarketOverviewTool(
+                { market: 'us' },
+                ctx,
+                rt
+            )) as { sectors: Array<{ name: string }> };
+            expect(r.sectors[0]!.name).toBe('기술');
+        });
+
+        it('changesPercentage가 비유한값이거나 price<=0인 섹터는 순위·sectorBreadth·spread에서 제외되고 rank:null로 뒤에 붙는다', async () => {
+            fgUs.mockResolvedValue({ snapshot: null, comparisons: [] });
+            sectorSignals.mockResolvedValue({ computedAt: 'x', stocks: [] });
+            summary.mockResolvedValue({
+                indices: [],
+                sectors: [
+                    {
+                        symbol: 'XLK',
+                        sectorName: 'Technology',
+                        koreanName: '기술',
+                        price: 200,
+                        changesPercentage: 1,
+                    },
+                    {
+                        symbol: 'XLE',
+                        sectorName: 'Energy',
+                        koreanName: '에너지',
+                        price: 0, // failed quote → unrankable
+                        changesPercentage: 2,
+                    },
+                    {
+                        symbol: 'XLF',
+                        sectorName: 'Financials',
+                        koreanName: '금융',
+                        price: -5, // corrupt → unrankable
+                        changesPercentage: 0.5,
+                    },
+                    {
+                        symbol: 'XLY',
+                        sectorName: 'Consumer',
+                        koreanName: '소비재',
+                        price: 50,
+                        changesPercentage: Number.NaN, // unrankable
+                    },
+                ],
+            });
+            const r = (await getMarketOverviewTool(
+                { market: 'us' },
+                ctx,
+                rt
+            )) as {
+                sectors: Array<{ symbol: string; rank: number | null }>;
+                sectorBreadth: { up: number; down: number; flat: number };
+                bestWorstSpreadPp: number | null;
+            };
+            // Only XLK is rankable — sole ranked row.
+            const ranked = r.sectors.filter(s => s.rank !== null);
+            expect(
+                ranked.map(s => ({ symbol: s.symbol, rank: s.rank }))
+            ).toEqual([{ symbol: 'XLK', rank: 1 }]);
+            // The unrankable rows still exist in the output, with rank:null —
+            // not silently dropped.
+            expect(
+                r.sectors
+                    .filter(s => s.rank === null)
+                    .map(s => s.symbol)
+                    .toSorted()
+            ).toEqual(['XLE', 'XLF', 'XLY']);
+            expect(r.sectors).toHaveLength(4);
+            // sectorBreadth/spread only ever see the one rankable sector.
+            expect(r.sectorBreadth).toEqual({ up: 1, down: 0, flat: 0 });
+            expect(r.bestWorstSpreadPp).toBe(0); // single rankable sector → spread 0
+        });
+
+        it('섹터가 없으면 sectorBreadth/bestWorstSpreadPp는 null', async () => {
+            fgUs.mockResolvedValue({ snapshot: null, comparisons: [] });
+            sectorSignals.mockResolvedValue({ computedAt: 'x', stocks: [] });
+            summary.mockResolvedValue({ indices: [], sectors: [] });
+            const r = (await getMarketOverviewTool(
+                { market: 'us' },
+                ctx,
+                rt
+            )) as {
+                sectorBreadth: unknown;
+                bestWorstSpreadPp: unknown;
+                sectors: unknown[];
+            };
+            expect(r.sectorBreadth).toBeNull();
+            expect(r.bestWorstSpreadPp).toBeNull();
+            expect(r.sectors).toEqual([]);
+        });
     });
 });
