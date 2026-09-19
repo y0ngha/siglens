@@ -31,8 +31,8 @@ export function aiHomeUrl(locale: Locale): string {
 }
 
 /**
- * Metadata for the SiglensAI landing (`/`, per locale) — the only public,
- * indexable surface of the ai host. Uses the same locale gate as the main
+ * Metadata for the SiglensAI landing (`/`, per locale) — one of the ai host's
+ * public, indexable pages (`AI_INDEXABLE_PATHS`: `/` and `/about`). Uses the same locale gate as the main
  * site's static pages, so an un-gated locale is `noindex` and gets no hreflang
  * cluster (a cluster of one is not a cluster).
  *
