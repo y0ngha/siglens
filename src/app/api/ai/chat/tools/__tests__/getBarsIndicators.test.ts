@@ -61,7 +61,10 @@ import {
     evaluateConfluence,
     scoreConfluence,
 } from '@y0ngha/siglens-core';
-import { getBarsIndicatorsTool } from '@/app/api/ai/chat/tools/getBarsIndicators';
+import {
+    getBarsIndicatorsTool,
+    MA50_PERIOD,
+} from '@/app/api/ai/chat/tools/getBarsIndicators';
 import { pctVs } from '@/app/api/ai/chat/tools/percent';
 import { roundNumber } from '@/entities/bars/lib/roundIndicators';
 
@@ -571,9 +574,31 @@ describe('getBarsIndicatorsTool', () => {
             });
             expect(r.derived.volumeVsAvg20).toBe(roundNumber(300 / 100));
             expect(r.derived.atrPct).toBe(roundNumber((3 / 159) * 100)); // ATR is atr/price, not a "vs base" diff
+            // Mean of the last MA50_PERIOD closes of this
+            // fixture, computed independently of core's calculateMA.
+            const maWindow = bars.slice(-MA50_PERIOD).map(b => b.close);
+            const ma50 =
+                maWindow.reduce((sum, c) => sum + c, 0) / maWindow.length;
             expect(r.derived.priceVsMa).toEqual({
+                ma50Pct: roundNumber(((159 - ma50) / ma50) * 100),
                 ma20Pct: roundNumber(((159 - 2) / 2) * 100),
                 ema20Pct: roundNumber(((159 - 2) / 2) * 100),
+            });
+            // Last 20 bars (i=40..59): closes 140..159, highs 141..160, lows 139..158.
+            // Last 60 bars = the whole fixture, same window `range` already used.
+            expect(r.derived.ranges).toEqual({
+                '20bars': {
+                    high: 160,
+                    low: 139,
+                    fromHighPct: roundNumber(((159 - 160) / 160) * 100),
+                    fromLowPct: roundNumber(((159 - 139) / 139) * 100),
+                },
+                '60bars': {
+                    high: 160,
+                    low: 99,
+                    fromHighPct: roundNumber(((159 - 160) / 160) * 100),
+                    fromLowPct: roundNumber(((159 - 99) / 99) * 100),
+                },
             });
         });
 
@@ -599,6 +624,7 @@ describe('getBarsIndicatorsTool', () => {
             )) as { derived: Record<string, unknown> };
 
             expect(r.derived.priceVsMa).toEqual({
+                ma50Pct: null, // only 2 bars loaded — far under the 50-bar MA period
                 ma20Pct: null, // base === 0
                 ma60Pct: null, // base < 0
                 ma120Pct: null, // base === null
@@ -749,6 +775,128 @@ describe('getBarsIndicatorsTool', () => {
                 rt
             )) as { derived: { range: { bars: number } } };
             expect(r.derived.range.bars).toBe(30);
+        });
+
+        it('ranges: 20bars/60bars는 timeframe과 무관하게 고정 봉 수 윈도우이고, 모자란 쪽만 null이다', async () => {
+            profile.mockResolvedValue('us-equity');
+            // 45 bars: enough for the 20bars window, not enough for 60bars.
+            const bars = Array.from({ length: 45 }, (_, i) =>
+                barV(1_700_000_000 + i * 3_600, 100 + i)
+            );
+            getCachedBars.mockResolvedValue({ bars, indicators });
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+            const r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Hour' },
+                ctx,
+                rt
+            )) as { derived: { ranges: Record<string, unknown> } };
+
+            // Last 20 bars (i=25..44): closes 125..144, highs 126..145, lows 124..143.
+            expect(r.derived.ranges).toEqual({
+                '20bars': {
+                    high: 145,
+                    low: 124,
+                    fromHighPct: roundNumber(((144 - 145) / 145) * 100),
+                    fromLowPct: roundNumber(((144 - 124) / 124) * 100),
+                },
+                '60bars': null, // only 45 bars loaded
+            });
+        });
+
+        it('ranges: 윈도우 안의 NaN high 하나는 나머지 유한값으로 무시된다(Math.max가 NaN에 전부 오염되지 않는다)', async () => {
+            profile.mockResolvedValue('us-equity');
+            // Exactly 20 bars so the whole fixture IS the 20bars window.
+            // Closes 100..119, highs 101..120 — the LAST bar (i=19) would be
+            // the natural max high; forcing it to NaN proves the filter, not
+            // just a coincidental non-max NaN.
+            const bars = Array.from({ length: 20 }, (_, i) =>
+                barV(1_700_000_000 + i * 3_600, 100 + i)
+            );
+            bars[19] = { ...bars[19]!, high: Number.NaN };
+            getCachedBars.mockResolvedValue({ bars, indicators });
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+            const r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Day' },
+                ctx,
+                rt
+            )) as {
+                derived: { ranges: { '20bars': { high: number | null } } };
+            };
+
+            // Without the finite filter, Math.max(...highs) would be NaN —
+            // the next-highest finite high (bar 18's 119) must survive instead.
+            expect(r.derived.ranges['20bars'].high).toBe(119);
+        });
+
+        it('priceVsMa.ma50Pct: core calculateMA로 직접 계산되어 기간보다 1봉 모자라면 null, intraday에서도 채워진다', async () => {
+            profile.mockResolvedValue('us-equity');
+            const oneShort = Array.from({ length: MA50_PERIOD - 1 }, (_, i) =>
+                barV(1_700_000_000 + i * 86_400, 100 + i)
+            );
+            getCachedBars.mockResolvedValue({
+                bars: oneShort,
+                indicators: { ...indicators, ma: {}, ema: {} },
+            });
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+            let r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Day' },
+                ctx,
+                rt
+            )) as { derived: { priceVsMa: Record<string, unknown> } };
+            expect(r.derived.priceVsMa.ma50Pct).toBeNull(); // one close short of the MA period
+
+            // Intraday timeframe, a few bars past the period — the expected
+            // mean is taken straight from the fixture's last-period closes.
+            const pastPeriod = Array.from({ length: MA50_PERIOD + 5 }, (_, i) =>
+                barV(1_700_000_000 + i * 3_600, 100 + i)
+            );
+            const intradayWindow = pastPeriod
+                .slice(-MA50_PERIOD)
+                .map(b => b.close);
+            const intradayMa =
+                intradayWindow.reduce((sum, c) => sum + c, 0) /
+                intradayWindow.length;
+            const intradayLast = pastPeriod[pastPeriod.length - 1]!.close;
+            getCachedBars.mockResolvedValue({
+                bars: pastPeriod,
+                indicators: { ...indicators, ma: {}, ema: {} },
+            });
+            r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Hour' },
+                ctx,
+                rt
+            )) as { derived: { priceVsMa: Record<string, unknown> } };
+            expect(r.derived.priceVsMa.ma50Pct).toBe(
+                roundNumber(((intradayLast - intradayMa) / intradayMa) * 100)
+            );
+        });
+
+        it('priceVsMa.ma50Pct: indicators.ma에 period 50이 있으면 그 값이 core 계산값을 덮어쓴다', async () => {
+            profile.mockResolvedValue('us-equity');
+            const bars = Array.from({ length: 60 }, (_, i) =>
+                barV(1_700_000_000 + i * 86_400, 100 + i)
+            );
+            getCachedBars.mockResolvedValue({
+                bars,
+                indicators: {
+                    ...indicators,
+                    ma: { [MA50_PERIOD]: [999] },
+                    ema: {},
+                },
+            });
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+            const r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Day' },
+                ctx,
+                rt
+            )) as { derived: { priceVsMa: Record<string, unknown> } };
+            // indicators.ma['50'] must win over the fallback `calculateMA`
+            // computation (lastClose = 159, i=59).
+            expect(r.derived.priceVsMa.ma50Pct).toBe(pctVs(159, 999));
         });
     });
 
