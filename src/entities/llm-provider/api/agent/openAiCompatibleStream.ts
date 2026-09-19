@@ -154,7 +154,7 @@ export async function streamOpenAiCompatibleAgent(
                                       >,
                               },
                           })),
-                          tool_choice: 'auto' as const,
+                          tool_choice: o.toolChoice ?? 'auto',
                       }
                     : {}),
                 max_tokens: o.maxOutputTokens,
