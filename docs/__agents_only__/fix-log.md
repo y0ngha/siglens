@@ -322,11 +322,6 @@
   - Rule: CONVENTIONS.md — Architecture documentation must mirror implementation; cross-widget dependency edges must be registered
   - Context: Added agent-chat → layout edge to documented cross-widget dependency graph.
 
-## [fix/node24-icu-hydration Round 1 | Node.js 24 ICU hydration | 2026-09-17]
-- Violation: JSDoc claimed the Dockerfile ICU build guard verified formatter's ICU behavior (year/month-long/day and other locales), but the guard only checks ko-KR hour12 time and compact currency formatting
-  - Rule: CONVENTIONS.md — JSDoc and code comments must match code behavior; documentation claiming verification for capabilities that are unverified is misleading
-  - Context: Fixed by softening the wording to state that the guard is a strong locale-data-level signal, not a per-format verification guarantee. Build verification is infrastructure-level (Dockerfile isolation), not API-level (per-formatter) proof.
-
 ## [PR #839 Round 2 | fix/seo-live-audit | 2026-09-18]
 - Violation: New derived value in component prop composition lacking unit test. Dataset JSON-LD `temporalCoverage` field changed from hardcoded literal to computed value derived from stats (`${periodStart}/${periodEnd}`). Composition logic inside a private builder function `buildJsonLdNode()`, but no test verified the composed value with distinct start/end values or the removal of `dateModified` field.
   - Rule: (new) Derived values computed and composed into component props must be tested at the composition point, not left to visual rendering tests. When a prop receives a computed value, unit tests must verify the computation and its effects (field additions, removals, transformations).
@@ -346,9 +341,6 @@
 - Violation: ~300-char ICU hydration guard logic duplicated in Dockerfile builder and runner stages; risk of updating only one during maintenance
   - Rule: CONVENTIONS.md — Extract duplicated logic/constants to a single source; both stages must call the same script
   - Context: Extracted to `scripts/assert-icu-locale.mjs` and called from both stages. Added `.gitignore` allowlist entry for `/scripts/**` exception.
-- Violation: JSDoc stated the guard verifies "Intl option combo `src/shared/lib/formatSnapshotAsOf.ts` uses (year numeric / month long / day numeric)" but the check did not verify that combo
-  - Rule: CONVENTIONS.md — JSDoc and code comments must match code behavior; explicit verification claims require matching checks
-  - Context: Added exact Intl option verification to `scripts/assert-icu-locale.mjs` (year/month/day), updated JSDoc to match the code.
 
 ## [fix/seo-meta-description-markdown Round 2 | fix/seo-meta-description-markdown | 2026-09-18]
 - Violation: single-marker italic regexes (`/\*(.+?)\*/g`, `/_(.+?)_/g`) lacked lookaround boundaries, so two unrelated `*` or `_` in a sentence were treated as a pair and the text between them was deleted (e.g., `BRK_A와 BRK_B` → `BRKA와 BRKB`, `250*2 … 100*3` → `2502 … 1003`). The function's output feeds `<meta name="description">`, making the truncation visible to search engines.
