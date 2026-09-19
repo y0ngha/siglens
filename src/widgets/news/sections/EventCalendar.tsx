@@ -1,6 +1,9 @@
 'use client';
 
-import { formatCompactAmount } from '@/shared/lib/priceFormat';
+import {
+    currencyFractionDigits,
+    formatCompactAmount,
+} from '@/shared/lib/priceFormat';
 import { useTranslations } from 'next-intl';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { currencyForSymbol } from '@/shared/config/marketProfile';
@@ -50,12 +53,12 @@ const MONEY_FORMATTERS: Record<'USD' | 'KRW', Intl.NumberFormat> = {
     USD: new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'USD',
-        maximumFractionDigits: 2,
+        maximumFractionDigits: currencyFractionDigits('USD'),
     }),
     KRW: new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'KRW',
-        maximumFractionDigits: 0,
+        maximumFractionDigits: currencyFractionDigits('KRW'),
     }),
 };
 

@@ -21,14 +21,6 @@
   - Review: Fixed non-deterministic CI vitest flake under `pool: 'vmThreads'`. vi.stubEnv() with default `unstubEnvs: false` leaked `E2E_TEST=1` into env-agnostic factory tests. Fix: `unstubEnvs: true` in vitest.config + global `afterEach` in vitest.setup.base.ts restoring `process.env.E2E_TEST` to its worker-start value.
   - Result: Clean merge — no violations logged
 
-## [PR #564 | fix/fmp-cache-and-earnings-gate | 2026-06-04]
-- Violation: Redis 캐시 키(buildBarsRawKey)가 GetBarsOptions의 일부 필드만 포함(limit 누락) → 옵션 확장 시 서로 다른 요청이 같은 캐시를 반환할 충돌 위험
-  - Rule: (신규) 캐시 키는 결과에 영향을 줄 수 있는 모든 입력 필드를 포함해야 한다 (cache key must cover every result-affecting input field)
-  - Context: CachedMarketDataProvider.buildBarsRawKey에 limit 포함(Gemini 리뷰 반영). limit은 timeframe 종속이라 분할 없이 미래 충돌만 방지. (B1 entities/lib Date.now() 순수함수 위반은 MISTAKES §Architecture #0.7 / Tests #14에 이미 문서화되어 기록 생략.)
-- Violation: getNextEarningsReport가 entities/lib에서 side effect(Date.now/DB/FMP) 포함 — 순수 함수 레이어 위반 (pre-existing, R3 Blocker)
-  - Rule: MISTAKES §Architecture #0.7 — entities/{slice}/lib/는 순수 함수 전용
-  - Context: PR #564 R3 claude 리뷰에서 Blocker로 지적. pre-existing이라 별도 PR로 분리(이슈 #565). nextEarningsReport.ts JSDoc에 TODO(#565) 링크를 남겨 추적. 이번 PR diff엔 미수정(scope = 캐시/gate).
-
 ## [feat/aws-infra Round 1 | feat/aws-infra | 2026-06-24]
 - Violation: workflow_dispatch trigger on restricted GitHub Actions OIDC trust (scoped to refs/tags/v*) → fails with 403
   - Rule: OIDC trust scope must match all intended workflow trigger patterns; workflow_dispatch incompatible with tag-scoped trust
@@ -365,19 +357,11 @@
   - Rule: (new) When adding new Date fields to cached query results, extend JSON round-trip rehydration logic alongside all sibling Date fields; cache round-trip creates type mismatches if rehydration is selective. JSDoc on sibling fields already documents the failure mode.
   - Context: Fixed by rehydrating new field and adding unit test covering both populated row and `null` row on cache hit.
 
-- Violation: New crawl-path wiring (a `/symbols` directory link added to shared `MarketRouteBody`, rendered by `/market` and `/market/kr`) shipped without any test, so deleting it would silently regress the crawl-depth fix the branch exists to deliver.
-  - Rule: MISTAKES.md Rule 22 — New features affecting external systems (crawl paths, SEO signals, guard scopes) must include unit tests verifying the feature presence before merge; omission creates silent regression risk.
-  - Context: Added `it.each` over both scopes asserting the href and the i18n label.
-
 - Violation: New i18n key (`widgets.layout.footer.symbols`) placed in `shared.seo` namespace and consumed by client-rendered `Footer`, leaked that server-only namespace into every client payload.
   - Rule: i18n namespace containment — server-only namespaces (shared.seo) must not be consumed by client-rendered components; use client-permitted namespaces (widgets.layout). Namespace pollution increases payload and masks content scope.
   - Context: Moved key to `widgets.layout` namespace before use. Existing guard (`clientKeyCoverage`) now correctly rejects shared.seo in client code.
 
 ## [fix/symbols-copy-and-names Round 1 | /symbols 표기·문구 | 2026-09-18]
-- Violation: 새 인프라 헬퍼 `getTickerDisplayNames`(`src/entities/ticker/lib/koreanNameStore.ts`)를 테스트 없이 올렸다. 같은 파일의 형제 함수들은 전부 커버돼 있다.
-  - Rule: MISTAKES.md §22 — 새 순수/인프라 헬퍼는 전용 단위 테스트와 함께 머지한다.
-  - Context: `__tests__/lib/koreanNameStore.test.ts`에 describe 블록 추가 — 빈 입력, 두 이름 반환, 행 없는 심볼 제외, 행이 없어도 정본 한글명 방출, 정본이 저장된 한글명을 이기되 영문명은 유지, DB 실패 시 빈 객체.
-
 - Violation: `as Record<string, TickerDisplayName>` 캐스트에 보증 주석이 없었다. 몇 줄 아래 형제 함수 `getKoreanNames`의 동일한 캐스트에는 있다.
   - Rule: MISTAKES.md TypeScript §7 + §6.7 — safe-cast 보증 주석은 필수이고, 같은 규칙이 형제 호출부 중 한쪽에만 적용되면 안 된다.
   - Context: `flatMap`이 `readonly [string, TickerDisplayName][]`만 만든다는 근거를 주석으로 남겼다.
@@ -393,10 +377,6 @@
 - Violation: (recommended) TTL 리터럴이 `24 * SECONDS_PER_HOUR`로 재계산돼 있었고 페이지는 같은 값을 `86400`으로 하드코딩했다. `SECONDS_PER_DAY`가 이미 있다.
   - Rule: MISTAKES.md §15 — 같이 움직여야 하는 두 값에 공통 출처가 없으면 드리프트한다.
   - Context: TTL은 `SECONDS_PER_DAY`에서 파생하고, 페이지의 `revalidate` 리터럴과의 일치는 소스를 읽는 parity 테스트가 고정한다(Next가 `revalidate`를 정적 분석해 import를 못 쓴다).
-
-- Violation: (recommended) 캐시 함수가 심볼 목록을 클로저로만 잡아 캐시 키에 들어가지 않았다.
-  - Rule: 결과를 바꾸는 인자는 전부 캐시 키에 들어가야 한다.
-  - Context: 목록을 래핑된 함수의 **인자**로 넘겨 `unstable_cache`가 키에 포함하게 했다.
 
 ## [fix/symbols-copy-and-names Round 2 | /symbols 표기·문구 | 2026-09-18]
 - Status: APPROVED (지적 없음)
@@ -449,3 +429,11 @@
 ## [PR #849 Round 3 | feat/agent-precomputed-data | 2026-09-19]
 - Status: fixed (finding already documented in MISTAKES.md §0.8)
 - Rejected: [Suggestion] move getBarsIndicators derived-metric helpers to entities/bars/lib — reviewer marked non-blocking and pre-existing pattern in the same directory; a ~300-line move is a separate refactor, out of this PR's scope.
+
+## [fix/portfolio-money-rounding Round 1 | get_my_portfolio 금액 반올림 | 2026-09-19]
+- Violation: 금액(marketValue/costBasis/pnl)을 지표용 유효숫자 6자리 반올림(`roundNumber`)으로 처리해 1만 달러 이상에서 센트가, 100만 이상에서 일의 자리가 잘림 — value − cost ≠ pnl
+  - Rule: (new) 금액은 통화 최소 단위(USD 2자리, KRW 0자리)로 반올림한다. 유효숫자 반올림은 크기에 따라 자릿수가 바뀌어 금액에 쓰면 안 된다
+  - Context: 회원 실측에서 10,874.63달러가 10874.6으로 나와 모델이 "10,874.60달러"로 답함. `roundMoney`/`moneyDecimals` 추가
+- Violation: `Number(x.toFixed(2))`로 반올림해 이진 부동소수 경계(150.005 → 150.00)에서 한 센트 틀림
+  - Rule: (new) 금액 반올림에 `toFixed`를 쓰지 않는다 — 크기 기준 상대 엡실론 보정 후 `Math.round`(half-away-from-zero), 지수 문자열 왕복은 부동소수 잡음(1e-13)을 NaN으로 만들므로 금지
+  - Context: 리뷰 라운드 1 지적. 부호 대칭·-0 정규화 포함

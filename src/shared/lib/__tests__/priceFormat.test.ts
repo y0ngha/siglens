@@ -6,8 +6,20 @@ import {
     formatPrice,
     formatSignedUsd,
     dynamicDecimals,
+    currencyFractionDigits,
 } from '@/shared/lib/priceFormat';
 import type { PricePrecision } from '@/shared/config/marketProfile';
+
+describe('currencyFractionDigits', () => {
+    it('KRW는 0자리다', () => {
+        expect(currencyFractionDigits('KRW')).toBe(0);
+    });
+
+    it('KRW가 아니면 2자리다', () => {
+        expect(currencyFractionDigits('USD')).toBe(2);
+        expect(currencyFractionDigits('JPY')).toBe(2);
+    });
+});
 
 describe('formatUsdPrice', () => {
     it('정수를 쉼표 포맷으로 반환한다', () => {
