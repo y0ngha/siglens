@@ -43,7 +43,8 @@ export interface PlainModelConfig {
 }
 
 /**
- * 모델이 속한 provider의 서버 키. `chatAction`의 `getServerPrimaryKey`와 같은 매핑이다.
+ * 모델이 속한 provider의 서버 키. 에이전트 라우터(`api/agent/router.ts`)의
+ * `getServerPrimaryKey`와 같은 매핑이다.
  *
  * provider 판별은 core의 `getProviderForModel`에 맡긴다 — 모델 이름 접두사로
  * 직접 맞히면 이 레포에 provider 매핑이 세 벌 생기고, 어느 하나가 새 모델을

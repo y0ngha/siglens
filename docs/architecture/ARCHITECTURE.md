@@ -123,7 +123,6 @@ import { DrizzleUserRepository } from '@/entities/auth/api'; // server-only → 
     │   ├── api-key/      # BYOK API key CRUD
     │   ├── backtest-case/ # 백테스트 케이스
     │   ├── bars/         # 주가 데이터 fetch + indicators
-    │   ├── chat-message/ # AI 채팅
     │   ├── earnings-report/ # 실적 데이터
     │   ├── email-token/  # 이메일 인증/비밀번호 토큰
     │   ├── inquiry/      # 문의(contact) 저장
@@ -154,7 +153,6 @@ import { DrizzleUserRepository } from '@/entities/auth/api'; // server-only → 
     │   ├── premium-gate/
     │   ├── pwa-install/
     │   ├── share/        # 공유 컨텍스트 등록 (ShareableAnalysisContext, useShareable)
-    │   ├── symbol-chat/
     │   └── ticker-search/
     ├── shared
     │   ├── api/          # HTTP client, bot detection
@@ -171,9 +169,9 @@ import { DrizzleUserRepository } from '@/entities/auth/api'; // server-only → 
     │                    #   모바일 시트, snapshot 프로즈 렌더러
     └── widgets
         ├── analysis/
+        ├── ask-ai-fab/   # ai.siglens.io로 보내는 종목 페이지 플로팅 링크
         ├── backtesting/
         ├── chart/
-        ├── chat/
         ├── dashboard/
         ├── fear-greed/   # 종목별 공포탐욕지수 위젯
         ├── fundamental/

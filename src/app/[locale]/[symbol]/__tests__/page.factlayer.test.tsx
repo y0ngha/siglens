@@ -29,7 +29,7 @@ vi.mock('@/views/symbol/SymbolPageClient', () => ({
     SymbolPageClient: () => null,
 }));
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
-vi.mock('@/entities/chat-message', () => ({
+vi.mock('@/entities/analysis/lib/fallbackAnalysis', () => ({
     buildFallbackAnalysis: () => ({ summary: 'fallback' }),
 }));
 vi.mock('@y0ngha/siglens-core', () => ({

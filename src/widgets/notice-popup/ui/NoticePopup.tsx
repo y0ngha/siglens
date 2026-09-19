@@ -29,8 +29,7 @@ const MODAL_TITLE_ID = 'notice-modal-title';
  * (`hasSuspenseBoundary = !opts.ssr || !!opts.loading`). 따라서 청크를 기다리는 동안
  * 멈추는 것은 본문만이 아니라 팝업 전체이고, 대기 지점은 `NoticePopupLoader`가
  * `{ssr:false}`로 만든 바깥 경계(fallback `null`)다. 모달은 페이지 흐름 밖이라
- * 레이아웃을 밀지 않고, 원래도 비동기로 뜨는 화면이라 이 편이 단순하다 —
- * 형제인 `FloatingChatButton`은 반대로 `loading`을 줘서 자체 경계를 갖는다.
+ * 레이아웃을 밀지 않고, 원래도 비동기로 뜨는 화면이라 이 편이 단순하다.
  */
 const MarkdownText = dynamic(() =>
     import('@/shared/ui/MarkdownText').then(m => m.MarkdownText)

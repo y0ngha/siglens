@@ -398,7 +398,7 @@ export function useAnalysis({
                 // 롤링 배포 중 구버전 인스턴스가 lockedInfoDepth 필드 자체가 없는
                 // 레거시 응답을 돌려줄 수 있다. free 분기는 위에서 이미 처리했으므로
                 // 여기 도달하는 member/pro 호출자에게 undefined가 그대로 저장되면
-                // buildChatState 등 하위 소비자의 .length 접근이 크래시한다.
+                // AnalysisPanel 등 하위 소비자의 .length 접근이 크래시한다.
                 setLockedInfoDepth(data.lockedInfoDepth ?? []);
                 // force 경로는 정상 5분 쿨다운, 일반 캐시 히트/신규 LLM 결과는
                 // 짧은 쿨다운(30s) — 같은 결과 즉시 재호출로 인한 스팸 방지.

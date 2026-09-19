@@ -510,3 +510,15 @@
   - Context: removed
 - Suggestion (fixed): `useCanAnimate` reduced-motion change subscription had no test
   - Context: added src/views/ai-about/hooks/__tests__/useCanAnimate.test.tsx (initial value, change event, unsubscribe on unmount)
+
+## [feat/symbol-chat-to-ai-host Round 1–2 | 종목 챗봇 폐지 → ai.siglens.io | 2026-09-20]
+- Violation: Removed the `hideView` hidden mount on the news/fundamental/financials/congress/options tabs believing it existed only to publish chatbot context; it also kept `useRegisterShareable` running, so the header Share button would report "unavailable" whenever snapshot prose was shown
+  - Rule: (new) Before removing a "mounted but hidden" component, list every hook it runs before its early return (share registration, analytics, prefetch), not only the one its comment names
+  - Context: hidden mount restored; comments now name Share registration; tests assert the widget stays mounted with hideView and registers a shareable
+- Violation: Moving fallbackAnalysis into the `@/entities/analysis` barrel broke src/__integration__/analysisFlow.test.tsx, which partially mocks that barrel — only the full suite caught it
+  - Rule: (existing memory lesson) when adding exports to a barrel, grep for `vi.mock('<barrel>'` partial mocks
+  - Context: the mock now forwards the real isFallbackAnalysis
+- Violation: A test still mocked a deleted export (`SymbolLayoutFloatingChat`) and the new floating-link wiring had no composition-level test
+  - Context: mock removed; layout test asserts AskAiFab receives the asset name and locale prefix
+- Violation: The mobile floating button showed only a star icon, which reads as "favorite"
+  - Context: sparkle icon + short visible label ("AI에게 묻기") on mobile

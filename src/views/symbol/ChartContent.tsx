@@ -1,8 +1,7 @@
 'use client';
 
 import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
-import { isFallbackAnalysis } from '@/entities/chat-message';
-import { usePublishSymbolChat } from '@/features/symbol-chat';
+import { isFallbackAnalysis } from '@/entities/analysis';
 import { useSymbolHolding } from '@/features/portfolio-holding';
 import { cn } from '@/shared/lib/cn';
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
@@ -39,7 +38,6 @@ import { useSymbolPageContext } from './SymbolPageContext';
 import { TechnicalFactsSummary } from './TechnicalFactsSummary';
 import type { AnalysisStatus } from './utils/analysisStatus';
 import { getAnalysisStatus } from './utils/analysisStatus';
-import { buildChatState } from './utils/buildChatState';
 import { buildTechnicalFacts } from './utils/technicalFacts';
 import { useRegisterShareable, deriveChartStatus } from '@/features/share';
 import { useTranslations } from 'next-intl';
@@ -135,7 +133,7 @@ export function ChartContent({
     marketProfile = 'us-equity',
 }: ChartContentProps) {
     const t = useTranslations('views.symbol');
-    const tFallback = useTranslations('entities.chat-message.fallback');
+    const tFallback = useTranslations('entities.analysis.fallback');
     const fallbackSummary = tFallback('unavailable');
     const themeVersion = useThemeVersion();
     // 비회원 회원가입 유도(Part B) — 같은 심볼에 대한 중복 카운트 방지용.
@@ -404,32 +402,6 @@ export function ChartContent({
 
     const notifyMobileContent = useEffectEvent(onMobileSheetContent);
 
-    // Publish chart state to the layout-mounted FloatingChatButton so it survives
-    // navigation between the 4 symbol pages. Layout owns the button; we only feed it.
-    // bot_blocked/error 시 context는 null로 보내 stale technical payload가 챗봇에
-    // 흘러가지 않게 한다 — 다른 페이지(news/overall/options)의 buildChatState와 동일 규약.
-    // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생 변수)를
-    // 인자로 받기 때문에 useMemo 뒤에 위치해야 한다.
-    const chatState = useMemo(
-        () =>
-            buildChatState({
-                analysis,
-                timeframe,
-                displayAnalyzing,
-                isBotBlocked,
-                analysisError,
-                lockedInfoDepth,
-            }),
-        [
-            analysis,
-            timeframe,
-            displayAnalyzing,
-            isBotBlocked,
-            analysisError,
-            lockedInfoDepth,
-        ]
-    );
-    usePublishSymbolChat(chatState);
     useRegisterShareable({
         kind: 'chart',
         status: deriveChartStatus({

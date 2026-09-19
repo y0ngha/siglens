@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { buildFallbackAnalysis } from '@/entities/chat-message';
+import { buildFallbackAnalysis } from '@/entities/analysis';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 import { ChartContent } from '../ChartContent';
 import { PANEL_MAX_WIDTH, PANEL_MIN_WIDTH } from '../hooks/usePanelResize';
@@ -10,7 +10,7 @@ import type { UseAnalysisResult } from '../hooks/useAnalysis';
 // 폴백은 이제 로케일별 빌더다 — 예전 `FALLBACK_ANALYSIS` 상수는 한국어 요약을
 // 들고 있어 `/en/AAPL`이 영어 화면에 한국어 폴백을 렌더했다.
 const FALLBACK_ANALYSIS = buildFallbackAnalysis(
-    catalogTranslator('entities.chat-message.fallback', 'ko')('unavailable')
+    catalogTranslator('entities.analysis.fallback', 'ko')('unavailable')
 );
 
 // 무거운 차트/하위 훅은 stub. 단, usePanelResize/useDragListener는 실제 구현을
@@ -81,7 +81,6 @@ vi.mock('../hooks/useAnalysisDisplay', () => ({
 vi.mock('@/widgets/analysis/hooks/useAnalysisProgress', () => ({
     useAnalysisProgress: () => ({ phaseIndex: 0, tipIndex: 0 }),
 }));
-vi.mock('@/features/symbol-chat', () => ({ usePublishSymbolChat: vi.fn() }));
 vi.mock('@/widgets/analysis', () => ({
     // isFreeUser는 광고 게이팅 prop이다. Pro tier에서 false가 실제로 전달되는지
     // 검증할 수 있도록 data 속성으로 노출한다(회귀 방지 — fix-log PR #690).

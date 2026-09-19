@@ -488,16 +488,9 @@
                 "verificationFailed": "An error occurred during email verification. Please try again in a moment."
             }
         },
-        "chat-message": {
+        "analysis": {
             "fallback": {
                 "unavailable": "AI analysis is temporarily unavailable."
-            },
-            "pageContext": {
-                "chart": "Chart analysis",
-                "fear-greed": "Fear & Greed Index",
-                "fundamental": "Fundamental analysis",
-                "news": "News analysis",
-                "overall": "AI overall analysis"
             }
         },
         "economy": {
@@ -2529,56 +2522,11 @@
                 "volume": "Volume"
             }
         },
-        "chat": {
-            "ChatPanel": {
-                "408331": "Enter your question… (Press Enter to send)",
-                "0b63e2": "You can ask questions after the analysis is complete.",
-                "1ca3c2": "I only answer based on the analysis results.",
-                "1dbde9": "Close analysis update notification",
-                "4077ce": "Send",
-                "50071e": "💬 Ask AI",
-                "cce9f7": "{v0} remaining today",
-                "d7fb24": "Analysis has been updated — please continue asking questions based on the latest results",
-                "f292ff": "Ask questions based on the analysis results. You can ask about trend interpretation, indicator meaning,\n                            and scenarios.",
-                "f4ca4c": "Close Chat",
-                "askSiglensAi": "Ask the SIGLENS AI chatbot more",
-                "askSiglensAiQuestion": "Give me the full picture on {symbol} right now"
-            },
-            "ContextSwitchSystemMessage": {
-                "aa779e": "Switched to {v0} page. The analysis context from the previous page no longer applies."
-            },
-            "FloatingChatButton": {
-                "318233": "If you have any questions about the analysis, please ask me anytime.",
-                "14d856": "Close AI Chat",
-                "21f255": "Close tooltip",
-                "75d660": "Open AI Chat"
-            },
-            "ModelSelect": {
-                "43807f": "AI Model List",
-                "fb54aa": "Select AI Model"
-            },
-            "UserApiKeyRequiredModal": {
-                "378180": "You can use this model by registering your API key.",
-                "017c94": "You can use this model by signing up and registering your own API key.",
-                "16ec45": "Sign Up",
-                "94b7db": "Close",
-                "e790ae": "Register API Key",
-                "f77cc9": "{v0} API key registration is required.",
-                "f85b06": "Continue with Free Model"
-            },
-            "thinking": {
-                "reading": "Reading your question…",
-                "writing": "Writing an answer…"
-            },
-            "useChat": {
-                "modelNotAllowed": "The selected model is not available on your current plan. Please pick another model.",
-                "providerUnstable": "The AI server is unstable, so I couldn't answer. Change the model in the chatbot.",
-                "rateLimited": "The AI server is busy right now. Please try again in a moment.",
-                "serverBusy": "The AI server is busy. Try switching to another model and retrying.",
-                "serverError": "Something went wrong. Please try again.",
-                "tokenExhausted": "You’ve used all {v0} free questions for today. Please come back tomorrow.",
-                "userApiKeyRequired": "This model requires your own API key. Register a key to use it."
-            }
+        "ask-ai-fab": {
+            "label": "Ask SIGLENS AI",
+            "ariaLabel": "Ask SIGLENS AI (opens in a new tab)",
+            "question": "Give me an overall read on how {name} is doing right now",
+            "shortLabel": "Ask AI"
         },
         "congress": {
             "CongressTradesEmpty": {

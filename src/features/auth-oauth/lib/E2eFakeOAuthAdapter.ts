@@ -36,7 +36,7 @@ const FIXTURE_PROFILE = {
  * The plan defaults to loading fakes via a gated require (as with
  * FakeMarketProvider / FakeNewsClient, which pull in heavier postgres/fixtures).
  * This adapter is intentionally exempt and statically imported in
- * getOAuthAdapter, mirroring FakeChatProvider and E2eEmailDispatcher, because:
+ * getOAuthAdapter, mirroring E2eEmailDispatcher, because:
  *   (1) it has no heavy deps (only type-only imports), so its bundle footprint
  *       is negligible — require-gating buys nothing here; and
  *   (2) a static import keeps getOAuthAdapter's E2E branch unit-testable —

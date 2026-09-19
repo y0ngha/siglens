@@ -180,31 +180,6 @@ vi.mock('@/features/symbol-model', () => ({
     useDefaultReasoning: vi.fn(() => false),
     useSymbolModel: vi.fn(() => ({ tier: 'member', isTierHydrated: true })),
 }));
-vi.mock('@/features/symbol-chat', () => ({
-    usePublishSymbolChat: vi.fn(),
-}));
-vi.mock('@/widgets/congress/utils/buildChatState', () => ({
-    buildChatState: () => null,
-}));
-vi.mock('@/widgets/financials/utils/buildChatState', () => ({
-    buildChatState: () => null,
-}));
-vi.mock('@/widgets/fundamental/utils/buildChatState', () => ({
-    buildChatState: () => null,
-}));
-vi.mock('@/widgets/news/utils/buildChatState', () => ({
-    buildChatState: () => null,
-}));
-vi.mock('@/widgets/options/utils/buildChatState', () => ({
-    buildChatState: () => null,
-}));
-vi.mock('@/views/symbol/utils/buildChatState', () => ({
-    buildChatState: vi.fn(() => ({
-        context: null,
-        timeframe: '1Day',
-        isAnalysisReady: false,
-    })),
-}));
 vi.mock('@/shared/ui/BotBlockedNotice', () => ({
     BotBlockedNotice: () => <div data-testid="bot-blocked" />,
 }));
