@@ -82,6 +82,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Use ApiKeyActionState directly in both save and delete operations
    ✅ Export LocalInfraErrorCode, reference it directly without intermediate aliases
 
+1.2. Cache keys missing result-affecting inputs
+   → Cache keys must include every input parameter that can affect the output
+   → When options/parameters expand over time, incomplete keys create silent collisions where different requests return the same cached data
+   → Each time a function's parameters grow, audit all cache key construction sites — the key must adapt
+   ❌ buildBarsRawKey(symbol, timeframe) { return `bars:${symbol}:${timeframe}`; }  // omits limit parameter
+      → Later code adds limit support, requests with different limits return identical cached data
+   ❌ unstable_cache((symbols) => fetch(symbols), [])  // closure-captured symbols not in cache key
+      → Wrapper called with different symbol lists, but key stays the same, returning stale data
+   ✅ buildBarsRawKey(symbol, timeframe, limit) { return `bars:${symbol}:${timeframe}:${limit}`; }  // all result-affecting inputs
+   ✅ unstable_cache((symbols: readonly string[]) => fetch(symbols), [symbols])  // symbols passed as argument, included in key
+
 2. Identical values queried or computed multiple times in a single function
    → Extract to a local const or assign once before using repeatedly
    → Applies to loop boundaries, array calculations, and function returns
