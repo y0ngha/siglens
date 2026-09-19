@@ -89,6 +89,7 @@ Closed loops (approved, kept for pattern recall only — see file for detail):
 - [feat/agent-adaptive-depth R2](project-core-agent-adaptive-depth-r2.md) — approved; null-confluence Plain-level fallback + PUBLIC_API row, mutation-verified
 - [feat/hub-ai-prewarm R2-R4 closed](project-hub-ai-prewarm-r2.md) — R3 reorder broke durationMs (dropped hub-phase time), R4 fixed via independent batchStartedAt, sim-clock mutation-verified
 - [feat/ai-about-page R1-R2 closed](project-ai-about-page-r1-r2.md) — tRaw helper name avoids extract.mjs regex miss; key-set-equality flatten script; R2 saw unlisted unstaged files
+- [feat/symbol-chat-to-ai-host R1](project-symbol-chat-to-ai-host-r1-share-regression.md) — hideView removal killed Share button on 5 snapshot-gated tabs (useRegisterShareable ran pre-guard, hidden); rest of removal clean
 
 ## Reference
 
