@@ -94,6 +94,12 @@ describe('callGeminiAgent', () => {
         expect(params.tools[0].function.name).toBe('get_quote');
     });
 
+    it("core가 toolChoice 'required'를 주면 그대로 전달한다(도구 결과 없는 이어 묻기)", async () => {
+        mockCreate.mockResolvedValue(chunks(GEMINI_TOOL_STREAM));
+        await callGeminiAgent(opts({ toolChoice: 'required' }));
+        expect(mockCreate.mock.lastCall![0].tool_choice).toBe('required');
+    });
+
     it("finish_reason 'stop'이어도 tool call이 스트리밍됐으면 tool_use로 추론하고 tool_call 이벤트를 낸다", async () => {
         mockCreate.mockResolvedValue(chunks(GEMINI_TOOL_STREAM));
         const o = opts();
