@@ -158,7 +158,7 @@ export function MessageList({
     /**
      * The user message id waiting to be scrolled to the viewport top, set
      * by the detection effect below and consumed by the `useLayoutEffect`
-     * right after it. A REF, not state (react-hooks-js/set-state-in-effect)
+     * above it. A REF, not state (react-hooks-js/set-state-in-effect)
      * — this value never affects what gets RENDERED
      * (only which DOM node an effect scrolls to afterward), so setting it
      * via `useState` only bought an extra unnecessary render pass on every
@@ -186,74 +186,6 @@ export function MessageList({
     const isFirstRenderRef = useRef(true);
     const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Conversation open/switch jumps to the bottom instantly (spec §3.9) —
-    // the CALLER remounts this component via `key={conversationId}`
-    // (`ChatShell.tsx`), so a mount-only effect is exactly "on switch".
-    // `block: 'end'` with the default `behavior: 'auto'` is an instant jump,
-    // not a smooth scroll.
-    useEffect(() => {
-        endRef.current?.scrollIntoView({ block: 'end' });
-    }, []);
-
-    // `showScrollButton` otherwise only updates from the `onScroll` handler
-    // below — but a streaming answer grows `scrollHeight` with no scroll
-    // event at all, so a user who scrolled up would never see the ↓ button
-    // appear (spec §3.9). Observing the content wrapper's size catches that
-    // growth directly; the callback (not the effect body) sets state, since
-    // this is an external subscription, not a render-time computation.
-    useEffect(() => {
-        const content = contentRef.current;
-        const container = containerRef.current;
-        if (!content || !container) return;
-        const observer = new ResizeObserver(() => {
-            setShowScrollButton(isAwayFromBottom(container));
-        });
-        observer.observe(content);
-        return () => observer.disconnect();
-    }, []);
-
-    // Anchor-on-send, detection half (spec §3.9, ChatGPT/Gemini pattern):
-    // when a NEW user message appears, grow the active turn's min-height and
-    // record it as the pending scroll target — the actual scroll happens in
-    // the `useLayoutEffect` below, once that min-height is on screen. The
-    // conversation's initial load also introduces a "new" last user message
-    // on first render, but that case is the mount-effect's job (jump to
-    // bottom) — skipped here via `isFirstRenderRef`.
-    useEffect(() => {
-        const lastUser = messages.findLast(m => m.role === 'user');
-        if (isFirstRenderRef.current) {
-            isFirstRenderRef.current = false;
-            seenLastUserIdRef.current = lastUser?.id ?? null;
-            return;
-        }
-        if (!lastUser || lastUser.id === seenLastUserIdRef.current) return;
-        seenLastUserIdRef.current = lastUser.id;
-        if (containerRef.current)
-            setActiveMinHeight({ px: containerRef.current.clientHeight });
-        pendingAnchorIdRef.current = lastUser.id;
-    }, [messages]);
-
-    // Anchor-on-send, scroll half: the effect above writes the target id to
-    // a ref (not state — it never affects what renders) and makes exactly
-    // ONE state update, `setActiveMinHeight`. Keying this layout effect on
-    // that same `activeMinHeight` state means it fires on the very next
-    // commit after that state update lands, so the target node's layout
-    // already reflects the grown min-height by the time `scrollIntoView`
-    // runs.
-    useLayoutEffect(() => {
-        if (!pendingAnchorIdRef.current) return;
-        userNodeRefs.current
-            .get(pendingAnchorIdRef.current)
-            ?.scrollIntoView({ block: 'start' });
-        pendingAnchorIdRef.current = null;
-    }, [activeMinHeight]);
-
-    useEffect(
-        () => () => {
-            if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
-        },
-        []
-    );
     const lastAssistant = messages.findLast(m => m.role === 'assistant');
     const lastUser = messages.findLast(m => m.role === 'user');
 
@@ -279,6 +211,75 @@ export function MessageList({
             behavior: prefersReducedMotion() ? 'auto' : 'smooth',
         });
     };
+
+    // Anchor-on-send, scroll half: the effect below writes the target id to
+    // a ref (not state — it never affects what renders) and makes exactly
+    // ONE state update, `setActiveMinHeight`. Keying this layout effect on
+    // that same `activeMinHeight` state means it fires on the very next
+    // commit after that state update lands, so the target node's layout
+    // already reflects the grown min-height by the time `scrollIntoView`
+    // runs.
+    useLayoutEffect(() => {
+        if (!pendingAnchorIdRef.current) return;
+        userNodeRefs.current
+            .get(pendingAnchorIdRef.current)
+            ?.scrollIntoView({ block: 'start' });
+        pendingAnchorIdRef.current = null;
+    }, [activeMinHeight]);
+
+    // Conversation open/switch jumps to the bottom instantly (spec §3.9) —
+    // the CALLER remounts this component via `key={conversationId}`
+    // (`ChatShell.tsx`), so a mount-only effect is exactly "on switch".
+    // `block: 'end'` with the default `behavior: 'auto'` is an instant jump,
+    // not a smooth scroll.
+    useEffect(() => {
+        endRef.current?.scrollIntoView({ block: 'end' });
+    }, []);
+
+    // `showScrollButton` otherwise only updates from the `onScroll` handler
+    // above — but a streaming answer grows `scrollHeight` with no scroll
+    // event at all, so a user who scrolled up would never see the ↓ button
+    // appear (spec §3.9). Observing the content wrapper's size catches that
+    // growth directly; the callback (not the effect body) sets state, since
+    // this is an external subscription, not a render-time computation.
+    useEffect(() => {
+        const content = contentRef.current;
+        const container = containerRef.current;
+        if (!content || !container) return;
+        const observer = new ResizeObserver(() => {
+            setShowScrollButton(isAwayFromBottom(container));
+        });
+        observer.observe(content);
+        return () => observer.disconnect();
+    }, []);
+
+    // Anchor-on-send, detection half (spec §3.9, ChatGPT/Gemini pattern):
+    // when a NEW user message appears, grow the active turn's min-height and
+    // record it as the pending scroll target — the actual scroll happens in
+    // the `useLayoutEffect` above, once that min-height is on screen. The
+    // conversation's initial load also introduces a "new" last user message
+    // on first render, but that case is the mount-effect's job (jump to
+    // bottom) — skipped here via `isFirstRenderRef`.
+    useEffect(() => {
+        const lastUser = messages.findLast(m => m.role === 'user');
+        if (isFirstRenderRef.current) {
+            isFirstRenderRef.current = false;
+            seenLastUserIdRef.current = lastUser?.id ?? null;
+            return;
+        }
+        if (!lastUser || lastUser.id === seenLastUserIdRef.current) return;
+        seenLastUserIdRef.current = lastUser.id;
+        if (containerRef.current)
+            setActiveMinHeight({ px: containerRef.current.clientHeight });
+        pendingAnchorIdRef.current = lastUser.id;
+    }, [messages]);
+
+    useEffect(
+        () => () => {
+            if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+        },
+        []
+    );
 
     return (
         <div className="relative min-h-0 flex-1">
