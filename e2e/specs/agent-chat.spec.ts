@@ -242,7 +242,27 @@ test.describe('SiglensAI SEO', () => {
         expect(html).toMatch(/<h1[^>]*>/);
     });
 
-    test('robots.txt 는 대화를 막고 sitemap 은 홈만 싣는다, 대화 URL 은 noindex 헤더', async ({
+    test('/about 은 크롤러에게 색인 가능한 소개 페이지를 준다: canonical·FAQPage·전 섹션 텍스트', async ({
+        request,
+    }) => {
+        const res = await request.get(`${AI}/about`, {
+            headers: { 'user-agent': GOOGLEBOT },
+            maxRedirects: 0,
+        });
+        expect(res.status()).toBe(200);
+        const html = await res.text();
+        expect(html).toContain('<meta name="robots" content="index, follow"/>');
+        expect(html).toMatch(
+            new RegExp(`<link rel="canonical" href="${AI}/about"`)
+        );
+        expect(html).toContain('"@type":"FAQPage"');
+        expect(html).toMatch(/<h1[^>]*>/);
+        // The example conversation is in the server HTML, not only after JS runs.
+        expect(html).toContain('삼성전자 요즘 흐름 어때?');
+        expect(html).toContain('답하기 전에 이런 걸 찾아봐요');
+    });
+
+    test('robots.txt 는 대화를 막고 sitemap 은 홈과 /about 만 싣는다, 대화 URL 은 noindex 헤더', async ({
         request,
     }) => {
         const robots = await (await request.get(`${AI}/robots.txt`)).text();
@@ -252,6 +272,7 @@ test.describe('SiglensAI SEO', () => {
         expect(sitemap.headers()['content-type']).toMatch(/xml/);
         const xml = await sitemap.text();
         expect(xml).toContain(`<loc>${AI}/</loc>`);
+        expect(xml).toContain(`<loc>${AI}/about</loc>`);
         expect(xml).not.toContain('/c/');
         const conv = await request.get(
             `${AI}/c/00000000-0000-4000-8000-000000000000?sso=none`,

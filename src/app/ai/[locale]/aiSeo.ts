@@ -1,5 +1,9 @@
 import type { Metadata } from 'next';
-import { AI_SITE_URL } from '@/shared/config/aiHost';
+import {
+    AI_SITE_URL,
+    type AiIndexablePath,
+    type AiSeoCopy,
+} from '@/shared/config/aiHost';
 import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 import {
     DEFAULT_LOCALE,
@@ -15,14 +19,15 @@ import { ORGANIZATION_JSON_LD_ID, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 /** Product name as it appears in titles, cards and structured data. */
 export const AI_PRODUCT_NAME = 'SIGLENS AI';
 
-export interface AiSeoCopy {
-    readonly title: string;
-    readonly description: string;
-    readonly ogLabel: string;
+export type { AiSeoCopy };
+
+/** Absolute ai-host URL of `path` in `locale` (`/` is the chat home). */
+export function aiUrl(locale: Locale, path: string): string {
+    return `${AI_SITE_URL}${localePath(locale, path)}`;
 }
 
 export function aiHomeUrl(locale: Locale): string {
-    return `${AI_SITE_URL}${localePath(locale, '/')}`;
+    return aiUrl(locale, '/');
 }
 
 /**
@@ -34,14 +39,35 @@ export function aiHomeUrl(locale: Locale): string {
  * Conversations (`/c/*`) never go through here: they are private and `noindex`.
  */
 export function buildAiHomeMetadata(locale: Locale, copy: AiSeoCopy): Metadata {
+    return buildAiPageMetadata(locale, '/', copy);
+}
+
+/**
+ * Same as the landing, for `/about` (spec
+ * `docs/superpowers/specs/2026-09-19-ai-about-page-design.md`): the page
+ * explains how SIGLENS AI answers, so it targets "how it works" queries while
+ * the home keeps "stock AI chatbot" — two pages, two intents.
+ */
+export function buildAiAboutMetadata(
+    locale: Locale,
+    copy: AiSeoCopy
+): Metadata {
+    return buildAiPageMetadata(locale, '/about', copy);
+}
+
+function buildAiPageMetadata(
+    locale: Locale,
+    path: AiIndexablePath,
+    copy: AiSeoCopy
+): Metadata {
     const indexable = STATIC_INDEXABLE_LOCALES.includes(locale);
     const languages: Record<string, string> = {};
     if (STATIC_INDEXABLE_LOCALES.length > 1) {
         for (const l of LOCALES) {
             if (STATIC_INDEXABLE_LOCALES.includes(l))
-                languages[LOCALE_HREFLANG[l]] = aiHomeUrl(l);
+                languages[LOCALE_HREFLANG[l]] = aiUrl(l, path);
         }
-        languages['x-default'] = aiHomeUrl(DEFAULT_LOCALE);
+        languages['x-default'] = aiUrl(DEFAULT_LOCALE, path);
     }
     const image = {
         url: `${AI_SITE_URL}/api/ai/og?locale=${locale}`,
@@ -54,7 +80,7 @@ export function buildAiHomeMetadata(locale: Locale, copy: AiSeoCopy): Metadata {
         description: copy.description,
         applicationName: AI_PRODUCT_NAME,
         alternates: {
-            canonical: aiHomeUrl(locale),
+            canonical: aiUrl(locale, path),
             ...(Object.keys(languages).length > 0 ? { languages } : {}),
         },
         robots: indexable
@@ -65,7 +91,7 @@ export function buildAiHomeMetadata(locale: Locale, copy: AiSeoCopy): Metadata {
             siteName: AI_PRODUCT_NAME,
             title: copy.title,
             description: copy.description,
-            url: aiHomeUrl(locale),
+            url: aiUrl(locale, path),
             locale: LOCALE_OG[locale],
             images: [image],
         },

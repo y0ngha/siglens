@@ -206,12 +206,13 @@ describe('proxy — ai host', () => {
         );
         expect(mockRewrite).not.toHaveBeenCalled();
     });
-    it('sitemap.xml — 색인 가능한 로케일의 홈만, 대화 URL 없음', async () => {
+    it('sitemap.xml — 색인 가능한 로케일의 홈과 /about만, 대화 URL 없음', async () => {
         const res = (await proxy(
             makeRequest('ai.siglens.io', '/sitemap.xml')
         )) as unknown as { body: string; headers: Headers };
         expect(res.headers.get('content-type')).toMatch(/application\/xml/);
         expect(res.body).toContain('<loc>https://ai.siglens.io/</loc>');
+        expect(res.body).toContain('<loc>https://ai.siglens.io/about</loc>');
         expect(res.body).not.toContain('/c/');
         expect(mockRewrite).not.toHaveBeenCalled();
     });

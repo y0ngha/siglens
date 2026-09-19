@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+    buildAiAboutMetadata,
     buildAiHomeJsonLd,
     buildAiHomeMetadata,
 } from '@/app/ai/[locale]/aiSeo';
@@ -32,6 +33,21 @@ describe('buildAiHomeMetadata', () => {
         expect(m.alternates?.canonical).toBe(`${AI_SITE_URL}/en`);
         // A one-locale cluster is not a cluster: no hreflang map.
         expect(m.alternates?.languages).toBeUndefined();
+    });
+});
+
+describe('buildAiAboutMetadata', () => {
+    it('indexes /about with its own canonical and OG url, not the home', () => {
+        const m = buildAiAboutMetadata('ko', copy);
+        expect(m.robots).toEqual({ index: true, follow: true });
+        expect(m.alternates?.canonical).toBe(`${AI_SITE_URL}/about`);
+        expect(m.openGraph).toMatchObject({ url: `${AI_SITE_URL}/about` });
+    });
+
+    it('keeps the locale prefix and the same index gate as the home', () => {
+        const m = buildAiAboutMetadata('en', copy);
+        expect(m.robots).toEqual({ index: false, follow: true });
+        expect(m.alternates?.canonical).toBe(`${AI_SITE_URL}/en/about`);
     });
 });
 

@@ -51,6 +51,11 @@ export function isLocale(value: string): value is Locale {
     return (LOCALES as readonly string[]).includes(value);
 }
 
+/** `isLocale(raw) ? raw : DEFAULT_LOCALE` — the route-level fallback, in one place. */
+export function resolveLocale(raw: string): Locale {
+    return isLocale(raw) ? raw : DEFAULT_LOCALE;
+}
+
 /**
  * 언어 스위처에 노출하는 자국어 표기. **번역하지 않는다** —
  * 사용자는 자기 언어를 자기 문자로 찾는다(영어권 사용자가 "영어"를 못 읽는다).

@@ -5,7 +5,7 @@ import {
     getConversationAction,
     listConversationsAction,
 } from '@/entities/chat-conversation/actions';
-import { DEFAULT_LOCALE, isLocale, localePath } from '@/shared/i18n/locales';
+import { localePath, resolveLocale } from '@/shared/i18n/locales';
 import { SITE_URL } from '@/shared/lib/seo';
 import { ChatShell } from '@/widgets/agent-chat';
 import { maybeHandoffRedirect } from '../../handoffRedirect';
@@ -28,7 +28,7 @@ export default async function ConversationPage({
     >;
 }) {
     const { locale: raw, id } = await params;
-    const locale = isLocale(raw) ? raw : DEFAULT_LOCALE;
+    const locale = resolveLocale(raw);
     setRequestLocale(locale);
     await maybeHandoffRedirect(locale, `/c/${id}`, await searchParams);
     const user = await getCurrentUser();

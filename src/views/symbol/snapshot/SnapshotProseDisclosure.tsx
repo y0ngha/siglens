@@ -53,7 +53,7 @@ export function SnapshotProseDisclosure({
 
     return (
         <details className="group" open={!liveAnalysisShowing}>
-            {/* 접기 어포던스는 제품에 이미 있는 것(`AiLanding` FAQ)을 그대로 쓴다 —
+            {/* 접기 어포던스는 제품에 이미 있는 것(ai.siglens.io/about FAQ)을 그대로 쓴다 —
                 열리면 45° 도는 `+`. 새 아이콘을 들이지 않는다. */}
             <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded text-xs text-secondary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none [&::-webkit-details-marker]:hidden">
                 {summaryLabel}

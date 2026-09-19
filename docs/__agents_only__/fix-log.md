@@ -437,3 +437,76 @@
 - Violation: `Number(x.toFixed(2))`로 반올림해 이진 부동소수 경계(150.005 → 150.00)에서 한 센트 틀림
   - Rule: (new) 금액 반올림에 `toFixed`를 쓰지 않는다 — 크기 기준 상대 엡실론 보정 후 `Math.round`(half-away-from-zero), 지수 문자열 왕복은 부동소수 잡음(1e-13)을 NaN으로 만들므로 금지
   - Context: 리뷰 라운드 1 지적. 부호 대칭·-0 정규화 포함
+
+## [feat/ai-about-page Round 1–2 | AI about page design spec | 2026-09-19]
+- Violation: Sibling JSDoc (`AI_ROBOTS_BODY` in src/proxy.ts) stated the locale home was the AI host's only public surface after `/about` became public; the neighbouring comment on `aiSitemapXml` had been updated but this one was missed
+  - Rule: MISTAKES.md Documentation §15.6 — Comment accuracy; when documentation neighbours are updated, all related neighbours must be checked for stale references
+  - Context: Corrected JSDoc to reflect that `/about` is now also public. Pattern of stale comment adjacent to updated one.
+
+- Violation: Page test suite covered only the default locale; failed to test /en route with non-default language href
+  - Rule: (new) i18n-enabled pages must test at least one non-default locale route to verify href and translations are not locale-specific
+  - Context: Added test covering /en locale with href assertions for the non-default language variant.
+
+- Violation: Helper function `raw` (forwarding i18n keys) did not start with `t`, so scripts/i18n/extract.mjs did not recognize calls — `yarn i18n:extract --write` silently deleted 25 keys only referenced through that helper
+  - Rule: (new) i18n helper functions forwarding i18n keys must be named `t…` (e.g. `tRaw`) for extract.mjs pattern match /\bt\w*(\.(rich|markup|raw))?\('key'/; any other naming defeats extract, causing deletion of "orphaned" keys when --write is run
+  - Context: Renamed `raw` → `tRaw`; re-ran `yarn i18n:extract --write` to restore deleted keys.
+
+- Violation: Running `yarn i18n:translate --locale X` to translate ~140 new keys re-translated 1,633 existing en keys on master branch (1,612 ko keys lack hash entries in messages/_meta/hashes.json, causing re-translation when hash lookup fails)
+  - Rule: (new) Do not run `yarn i18n:translate` on branches adding only new keys; instead add en/ja/zh translations by hand (following recent commit patterns) and verify with `yarn i18n:verify`, or check `--dry-run` count first to avoid cascading re-translation of approved keys
+  - Context: Learned when attempting to batch-translate new keys; the hash cache is incomplete on master, making re-translation too risky. Used manual additions for this batch.
+
+## [PR #852 claude-review R1 | ai.siglens.io/about | 2026-09-19]
+- Violation: Function return type written as inline object type duplicating existing interface AiSeoCopy
+  - Rule: CONVENTIONS.md — named return types + MISTAKES.md TypeScript §5 — reuse existing interfaces instead of duplicating shape inline
+  - Context: Moved AiSeoCopy to shared/config/aiHost.ts and reused it in the return type annotation
+- Violation: Four small components in one file declared inline prop types without named interfaces
+  - Rule: CONVENTIONS.md — Props interface must be declared above each component, not inline on the component parameter
+  - Context: Extracted *Props interfaces (AboutCopyBlockProps, AboutCtaProps, AboutStatProps, AboutHeroProps) and declared above their respective components
+- Violation: Playback state machine (wait/play) defined inside useEffect instead of at module level
+  - Rule: MISTAKES.md Components §14.5 — State enums and state machines must be module-level, not inside hooks; useEffect is for effects, not state definitions
+  - Context: Extracted to module-level lib/replayPlayer.ts with explicit PlaybackContext enum and unit tests
+- Violation: Hook order violation — useRef declared after a custom hook, and derived values declared after an effect
+  - Rule: MISTAKES.md Components §17 — Strict hook order: useState/useRef → useQuery/custom hooks → useCallback/useMemo → derived variables → handlers → useEffect
+  - Context: Reordered all hooks and derived values in the component to match the established order
+- Violation: Module-level beforeAll outside describe block in test file
+  - Rule: MISTAKES.md Tests §3 — All setup functions must be inside describe() scope, never at module level
+  - Context: Wrapped beforeAll and test suite in a describe() block
+- Violation: Decorative accent colour on ~10 elements (icon boxes, arrows, chip borders, source tags, caret, labels) across 2 components
+  - Rule: DESIGN.md accent-color guidelines — accent colour reserved for primary actions, links, focus states, and active indicators only; max 2 per viewport. Decorative accents weaken visual hierarchy and waste the primary-action signal
+  - Context: Removed primary-* classes from decorative elements (icon boxes, arrows, chip borders, source tags, caret, labels). Added UI review checklist item: grep new .tsx files for `primary-` and justify each use against DESIGN.md rules
+- Violation: New pure/helper module lib/aboutContent.ts with no colocated unit test
+  - Rule: MISTAKES.md Components §22 / DESIGN.md checklist §6 — All new pure/helper modules must include colocated unit test file
+  - Context: Added lib/aboutContent.test.ts with tests covering the module's exports and edge cases
+- Suggestion (fixed): Magic delay numbers (300, 900, 350, 120 ms) in the replay playback steps had no constant names
+  - Rule: MISTAKES.md §15 — Hardcoded numbers in function bodies must be named constants with clear intent
+  - Context: Named FIRST_START_MS, NEXT_START_MS, AFTER_TYPING_MS, TOOL_GAP_MS, BEFORE_ANSWER_MS in src/views/ai-about/lib/replayPlayer.ts
+
+## [PR #852 claude-review R2 | ai.siglens.io/about | 2026-09-19]
+- Violation: A render test listed in the implementation plan (AboutCtaBar, plan Task 3) was never written; the plan task was silently skipped
+  - Rule: (new) Before requesting review, diff the plan's test list against the test files actually created
+  - Context: Added src/views/ai-about/ui/__tests__/AboutCtaBar.test.tsx (title, href, header-hidden translate class)
+- Violation: Pure helper `groupLines` mutated objects already stored in its result (`last.items.push`); `parseReplayLine` built its result with push
+  - Rule: MISTAKES.md Coding Paradigm §21 — pure calculations use reduce/flatMap, not imperative push
+  - Context: groupLines rewritten with reduce; parseReplayLine rewritten with split + flatMap (src/views/ai-about/lib/replayScript.ts)
+- Violation: `isLocale(x) ? x : DEFAULT_LOCALE` repeated across three ai route files
+  - Rule: MISTAKES.md §1 — check for / extract a shared helper instead of repeating logic
+  - Context: Added resolveLocale() to src/shared/i18n/locales.ts and used it in app/ai/[locale]/{page,about/page,c/[id]/page}.tsx
+- Violation: New content width (max-w-4xl) on the ai host with no entry in the DESIGN.md width convention
+  - Rule: DESIGN.md §폭 규약 — a new width value must be documented with its reason
+  - Context: Added a row for ai host /about (max-w-4xl, 2-column card grid; chat surfaces stay max-w-3xl)
+- Violation: The sticky CTA bar repeated the hero h1 sentence on the same first screen
+  - Rule: (guideline) Chrome copy that sits next to a headline should add information, not echo it
+  - Context: Bar copy changed to "로그인 없이 무료로 바로 물어볼 수 있어요" (views.ai-about.cta.title, all four locales)
+
+## [PR #852 claude-review R3 (APPROVED, suggestions) | ai.siglens.io/about | 2026-09-19]
+- Suggestion (fixed): `runPlayback` in src/views/ai-about/lib/replayPlayer.ts caught every error silently, not only cancellation
+  - Rule: MISTAKES.md — catch blocks must not swallow errors without logging
+  - Context: cancellation now rejects with a `PlaybackCancelled` Error subclass; other errors are logged with console.error; test added
+- Suggestion (fixed): JSDoc in src/app/ai/[locale]/about/page.tsx claimed every link out of the page leads to `/`, but the "more on SIGLENS" links go to siglens.io
+  - Rule: MISTAKES.md §15.6 — comment accuracy
+  - Context: reworded to the real reason (no account-specific content; ways into the chat go to `/`)
+- Suggestion (fixed): unused `BankIcon` re-export added to the widgets/agent-chat barrel
+  - Rule: do not widen a slice's public surface with exports nobody imports
+  - Context: removed
+- Suggestion (fixed): `useCanAnimate` reduced-motion change subscription had no test
+  - Context: added src/views/ai-about/hooks/__tests__/useCanAnimate.test.tsx (initial value, change event, unsubscribe on unmount)
