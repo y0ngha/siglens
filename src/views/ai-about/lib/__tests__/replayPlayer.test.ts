@@ -141,5 +141,40 @@ describe('replayPlayer', () => {
 
             expect(frames.length).toBe(countAtCancel);
         });
+
+        it('logs and resolves (does not throw) when setFrame throws a non-cancel error, but stays silent on cancellation', async () => {
+            const errorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            const scenarios = [makeScenario('x', 'Hi?')];
+            const { ctx } = makeContext(scenarios, {
+                setFrame: () => {
+                    throw new Error('boom');
+                },
+            });
+
+            const run = runPlayback(ctx);
+            await vi.runAllTimersAsync();
+            await expect(run).resolves.toBeUndefined();
+            expect(errorSpy).toHaveBeenCalledWith(
+                '[ChatReplay] playback stopped:',
+                expect.any(Error)
+            );
+
+            errorSpy.mockClear();
+
+            let cancelled = false;
+            const { ctx: cancelCtx } = makeContext(scenarios, {
+                isCancelled: () => cancelled,
+            });
+            const cancelRun = runPlayback(cancelCtx);
+            await vi.advanceTimersByTimeAsync(50);
+            cancelled = true;
+            await vi.runAllTimersAsync();
+            await expect(cancelRun).resolves.toBeUndefined();
+            expect(errorSpy).not.toHaveBeenCalled();
+
+            errorSpy.mockRestore();
+        });
     });
 });

@@ -3,7 +3,6 @@ export { loginHref } from './loginHref';
 export { SiglensMark } from './SiglensMark';
 export { GUEST_TURNS_PER_DAY } from './guestTurnLimit';
 export {
-    BankIcon,
     BuildingIcon,
     CandlesIcon,
     CheckIcon,

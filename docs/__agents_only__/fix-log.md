@@ -497,3 +497,16 @@
 - Violation: The sticky CTA bar repeated the hero h1 sentence on the same first screen
   - Rule: (guideline) Chrome copy that sits next to a headline should add information, not echo it
   - Context: Bar copy changed to "로그인 없이 무료로 바로 물어볼 수 있어요" (views.ai-about.cta.title, all four locales)
+
+## [PR #852 claude-review R3 (APPROVED, suggestions) | ai.siglens.io/about | 2026-09-19]
+- Suggestion (fixed): `runPlayback` in src/views/ai-about/lib/replayPlayer.ts caught every error silently, not only cancellation
+  - Rule: MISTAKES.md — catch blocks must not swallow errors without logging
+  - Context: cancellation now rejects with a `PlaybackCancelled` Error subclass; other errors are logged with console.error; test added
+- Suggestion (fixed): JSDoc in src/app/ai/[locale]/about/page.tsx claimed every link out of the page leads to `/`, but the "more on SIGLENS" links go to siglens.io
+  - Rule: MISTAKES.md §15.6 — comment accuracy
+  - Context: reworded to the real reason (no account-specific content; ways into the chat go to `/`)
+- Suggestion (fixed): unused `BankIcon` re-export added to the widgets/agent-chat barrel
+  - Rule: do not widen a slice's public surface with exports nobody imports
+  - Context: removed
+- Suggestion (fixed): `useCanAnimate` reduced-motion change subscription had no test
+  - Context: added src/views/ai-about/hooks/__tests__/useCanAnimate.test.tsx (initial value, change event, unsubscribe on unmount)

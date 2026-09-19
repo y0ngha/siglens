@@ -17,7 +17,7 @@ export async function generateMetadata({
 
 /**
  * `ai.siglens.io/about`. No SSO handoff here (unlike `/` and `/c/[id]`): the
- * page shows nothing account-specific, and every way out of it leads to `/`,
+ * page shows nothing account-specific. The ways into the chat lead to `/`,
  * which runs the handoff itself.
  */
 export default async function AiAboutRoute({

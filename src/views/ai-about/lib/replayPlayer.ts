@@ -53,6 +53,14 @@ export const HOLD_MS = 5200;
 /** Poll interval `waitPlaying` uses to notice pause/visibility changes. */
 export const TICK_MS = 40;
 
+/** Thrown by `waitPlaying` when playback was cancelled — never a real error. */
+export class PlaybackCancelled extends Error {
+    constructor() {
+        super('cancelled');
+        this.name = 'PlaybackCancelled';
+    }
+}
+
 export interface PlaybackContext {
     readonly scenarios: readonly ReplayScenario[];
     readonly setFrame: (frame: Frame) => void;
@@ -73,7 +81,7 @@ export function waitPlaying(ctx: PlaybackContext, ms: number): Promise<void> {
         let left = ms;
         let last = Date.now();
         const tick = () => {
-            if (ctx.isCancelled()) return reject(new Error('cancelled'));
+            if (ctx.isCancelled()) return reject(new PlaybackCancelled());
             const now = Date.now();
             if (ctx.isRunning()) left -= now - last;
             last = now;
@@ -131,7 +139,9 @@ export async function playScenario(
 /**
  * The endless loop: play a random scenario, then keep playing a different
  * random one forever. Swallows the rejection `waitPlaying` throws once
- * cancelled — that's the effect cleanup unmounting, not an error.
+ * cancelled — that's the effect cleanup unmounting, not an error. Any other
+ * error (e.g. `setFrame` throwing) is unexpected and gets logged instead of
+ * silently dropped.
  */
 export async function runPlayback(ctx: PlaybackContext): Promise<void> {
     let index = Math.floor(ctx.random() * ctx.scenarios.length);
@@ -142,7 +152,9 @@ export async function runPlayback(ctx: PlaybackContext): Promise<void> {
             firstRun = false;
             index = pickNextIndex(ctx.scenarios.length, index, ctx.random);
         }
-    } catch {
-        // cancelled on unmount
+    } catch (error) {
+        if (!(error instanceof PlaybackCancelled)) {
+            console.error('[ChatReplay] playback stopped:', error);
+        }
     }
 }
