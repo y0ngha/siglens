@@ -204,6 +204,57 @@ export type SymbolSeoTab =
     | 'news'
     | 'options';
 
+/**
+ * 탭별 `titleCore` 카탈로그 키 — 자산군 분기가 있는 탭만 `crypto`를 갖는다.
+ *
+ * `SYMBOL_SEO_TAB_BUILDERS`/`resolveSymbol*SeoContent`가 제목을 만들 때 쓰는
+ * 키와 **같은 값**이어야 한다. 어긋나면 description 프리픽스가 제목과 다른
+ * 말을 하게 되므로, `__tests__/symbolTabDescriptionLabel.test.ts`가 탭×자산군 전수로
+ * "제목이 라벨을 포함한다"를 단언해 드리프트를 막는다.
+ */
+const SYMBOL_TAB_LABEL_KEYS: Record<
+    SymbolSeoTab,
+    { readonly equity: string; readonly crypto?: string }
+> = {
+    technical: {
+        equity: 'symbol.chart.titleCore',
+        crypto: 'symbol.crypto.titleCore',
+    },
+    overall: {
+        equity: 'symbol.overall.titleCore',
+        crypto: 'symbol.cryptoOverall.titleCore',
+    },
+    fundamental: { equity: 'symbol.fundamental.titleCore' },
+    financials: { equity: 'symbol.financials.titleCore' },
+    congress: { equity: 'symbol.congress.titleCore' },
+    news: {
+        equity: 'symbol.news.titleCore',
+        crypto: 'symbol.cryptoNews.titleCore',
+    },
+    options: { equity: 'symbol.options.titleCore' },
+};
+
+/**
+ * `<meta name="description">` 프리픽스에 쓰는 탭 라벨 — `주가 분석`, `펀더멘털`처럼
+ * 제목의 `titleCore`와 같은 말이다.
+ *
+ * **왜 필요한가 (2026-09-20 네이버 중복 감지)**: 스냅샷 파생 description은 AI 산문의
+ * 앞머리를 잘라 쓰는데, 한 종목의 두 탭이 같은 도입 문장으로 시작하면(ETF·인버스처럼
+ * "이게 무슨 상품인지"로 여는 종목) 클램프 지점 전에 갈라지지 않아 **완전히 같은
+ * 문자열**이 된다. 실측: `/SOXS/overall`과 `/SOXS/fundamental`이 193자까지 동일했고
+ * 둘 다 `index, follow`였다. 프리픽스에 탭 라벨을 넣으면 충돌이 구조적으로 불가능하다.
+ */
+export function symbolTabDescriptionLabel(
+    tab: SymbolSeoTab,
+    assetClass: AssetClass,
+    t: SeoTranslator
+): string {
+    const keys = SYMBOL_TAB_LABEL_KEYS[tab];
+    return t(
+        assetClass === 'crypto' && keys.crypto ? keys.crypto : keys.equity
+    );
+}
+
 const SYMBOL_SEO_TAB_BUILDERS: Record<
     SymbolSeoTab,
     (
@@ -678,7 +729,8 @@ function clampAtSentenceBoundary(text: string, maxLength: number): string {
  *
  * `subject` (ticker or `"${koreanName}, ${name} (${ticker})"` display name,
  * matching the value each of the 7 `generateMetadata` call sites already
- * resolves) is prefixed BEFORE clamping — every templated builder
+ * resolves), followed by the tab `label`, is prefixed BEFORE clamping —
+ * every templated builder
  * (`buildSymbol*SeoContent`) leads with the subject, and the target queries
  * ("AAPL 주가 분석") need it for the bolded query-term match in the SERP
  * snippet; raw prose alone was losing that. The title no longer promises a
@@ -711,7 +763,15 @@ export function buildSnapshotMetaDescription(
     plain: string | null | undefined,
     // 기본값을 두지 않는다 — 두면 호출부에서 빠져도 컴파일이 통과하고,
     // 그 탭만 조용히 한국어 설명으로 되돌아간다(`buildDisplayName`과 같은 규약).
-    locale: Locale
+    locale: Locale,
+    /**
+     * 탭 라벨(`주가 분석`·`펀더멘털`…). {@link symbolTabDescriptionLabel}이 준다.
+     *
+     * 프리픽스를 `{subject} {label} — `로 만들어 **같은 종목의 두 탭이 같은
+     * description을 낼 수 없게** 한다(2026-09-20 네이버 중복 감지, `/SOXS`). 기본값을
+     * 두지 않는 이유는 `locale`과 같다 — 빠뜨린 탭만 조용히 충돌 가능 상태로 남는다.
+     */
+    label: string
 ): string | null {
     /**
      * 스냅샷은 **로케일 없이** 저장된다 — `getSeoSnapshotsStatic(ticker, …)`에
@@ -730,7 +790,7 @@ export function buildSnapshotMetaDescription(
     if (field === undefined) return null;
     if (typeof content !== 'object' || content === null) return null;
 
-    const prefix = `${subject} — `;
+    const prefix = `${subject} ${label} — `;
     const budget = SEO_DESCRIPTION_MAX_LENGTH - [...prefix].length;
 
     if (typeof plain === 'string' && plain.trim().length > 0) {

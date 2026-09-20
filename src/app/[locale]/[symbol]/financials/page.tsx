@@ -36,6 +36,7 @@ import {
 import {
     buildBreadcrumbJsonLd,
     buildSnapshotMetaDescription,
+    symbolTabDescriptionLabel,
     buildSymbolFinancialsSeoContent,
     buildSymbolSeoContent,
     symbolMetadataFromSeo,
@@ -152,7 +153,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
               snap.content,
               displayName,
               null,
-              locale
+              locale,
+              symbolTabDescriptionLabel('financials', 'equity', tSeo)
           )
         : null;
     return snapshotDescription

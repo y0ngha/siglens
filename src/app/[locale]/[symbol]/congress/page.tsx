@@ -30,6 +30,7 @@ import {
 import {
     buildBreadcrumbJsonLd,
     buildSnapshotMetaDescription,
+    symbolTabDescriptionLabel,
     buildSymbolCongressSeoContent,
     buildSymbolSeoContent,
     symbolMetadataFromSeo,
@@ -138,7 +139,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
               snap.content,
               displayName,
               null,
-              locale
+              locale,
+              symbolTabDescriptionLabel('congress', 'equity', tSeo)
           )
         : null;
     // **thin-content 게이트.** 거래 0건이면서 AI 스냅샷도 없으면 본문에 종목 고유

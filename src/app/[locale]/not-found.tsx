@@ -20,6 +20,21 @@ export async function generateMetadata({
     });
     return {
         title: t('not-found.6cbd6d'),
+        /**
+         * `description`을 비워 두면 Next가 **루트 레이아웃 값을 상속**시킨다 —
+         * 즉 존재하지 않는 모든 URL이 홈과 **똑같은** `<meta name="description">`을
+         * 달고 나간다(실측 2026-09-20: `/ZZZZZ`·`/nonexistent-page-xyz`·
+         * `/news/nosuchcat`·`/share/<없는id>`가 전부 홈 설명문). 404 URL은 수에
+         * 상한이 없어서 네이버 서치어드바이저의 "동일 설명문" 집계를 혼자 채운다.
+         * `noindex`는 색인만 막을 뿐 이 동일성 선언까지 막아 주지 않는다 —
+         * `NOINDEX_SYMBOL_METADATA`가 차단된 심볼에 대해 같은 이유로 자기 카피를
+         * 갖는 것과 같은 처방이다.
+         *
+         * 본문(`NotFoundContent`)이 이미 쓰는 안내 문구를 재사용한다 — 4개 로케일에
+         * 번역돼 있고, 페이지가 실제로 말하는 내용과 일치한다. JSX 들여쓰기에서 온
+         * 줄바꿈·연속 공백은 메타 태그에 그대로 실리면 안 되므로 한 줄로 접는다.
+         */
+        description: t('not-found.03ecab').replace(/\s+/gu, ' ').trim(),
         robots: { index: false, follow: true },
     };
 }

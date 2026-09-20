@@ -510,3 +510,13 @@
   - Context: removed
 - Suggestion (fixed): `useCanAnimate` reduced-motion change subscription had no test
   - Context: added src/views/ai-about/hooks/__tests__/useCanAnimate.test.tsx (initial value, change event, unsubscribe on unmount)
+
+## [fix/seo-snapshot-desc-tab-prefix Round 1 | SEO description collision across symbol tabs | 2026-09-20]
+- Violation: `buildSnapshotMetaDescription` in `src/shared/lib/seo.ts` prefixed only `${subject} — ` and clamped AI prose at `SEO_DESCRIPTION_MAX_LENGTH`. When two tabs' snapshots opened with the same long sentence, the clamp cut before they diverged, returning byte-identical descriptions across tabs. Measured in production 2026-09-20: `https://siglens.io/SOXS/overall` and `https://siglens.io/SOXS/fundamental` both returned 193-char descriptions.
+  - Rule: Metadata fields derived from dynamic content must include a route/view discriminator in the prefix to prevent collision across different routes serving the same subject.
+  - Context: Added `symbolTabDescriptionLabel(tab, assetClass, t)` helper with required `label` param; all 7 `generateMetadata` call sites under `src/app/[locale]/[symbol]/` now pass the tab-specific label, so prefix is `${subject} ${label} — `. Added unit test (`src/shared/lib/__tests__/symbolTabDescriptionLabel.test.ts`) asserting each tab's built title contains its label, because label key table and title builders pick catalog keys independently and both are `string` to the compiler.
+
+## [fix/seo-snapshot-desc-tab-prefix Round 2 | not-found page SEO metadata inheritance | 2026-09-20]
+- Violation: `src/app/[locale]/not-found.tsx` returned `generateMetadata` with only `title` and `robots`, so Next inherited the root layout's `description`: every non-existent URL shipped the home page's `<meta name="description">`. Measured on production 2026-09-20 on `/ZZZZZ`, `/nonexistent-page-xyz`, `/news/nosuchcat`.
+  - Rule: Every `generateMetadata` export must explicitly set all metadata fields; unset fields inherit from parent layout, causing search engines to crawl duplicate `<meta>` with identical content across error boundaries.
+  - Context: Fixed by populating `description` metadata field with already-translated 404 body copy (`app.home` key `not-found.03ecab`) with whitespace collapsed.

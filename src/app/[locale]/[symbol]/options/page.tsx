@@ -34,6 +34,7 @@ import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
     buildSnapshotMetaDescription,
+    symbolTabDescriptionLabel,
     buildSymbolOptionsSeoContent,
     buildSymbolSeoContent,
     symbolMetadataFromSeo,
@@ -140,7 +141,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
               snap.content,
               displayName,
               null,
-              locale
+              locale,
+              symbolTabDescriptionLabel('options', 'equity', tSeo)
           )
         : null;
     const description = snapshotDescription ?? metadata.description;

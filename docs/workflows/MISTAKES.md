@@ -1071,6 +1071,38 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Schema already includes WebPage about.Corporation (covers service metadata) — reusing FinancialProduct is redundant
    ❌ Article.datePublished set to request time instead of publication time
    ✅ Article.datePublished = original publication; Article.dateModified = current timestamp for background analysis updates
+
+2. generateMetadata must explicitly set all metadata fields; unset fields inherit from parent layout
+   → When a route's `generateMetadata` exports omit a field (description, robots, canonical, etc.), Next.js inherits it from the root layout
+   → Inherited fields create crawled duplicates: different routes' pages receive identical metadata, degrading search engine indexability and confusing crawlers about which version is canonical
+   → Solution: every route's `generateMetadata` must be complete and unique — each field that differs by route must be explicitly set
+   ❌ // not-found.tsx: missing description
+      export const generateMetadata = (): Metadata => ({
+        title: '404 Not Found',
+        robots: 'noindex'
+        // description omitted — inherits root layout's home description
+      });
+      // Result: /nonexistent-page-xyz appears in GSC with home description
+   ❌ // [symbol]/[tab]/page.tsx: description identical across tabs
+      export const generateMetadata = (): Metadata => ({
+        title: `${symbol} Analysis`,
+        description: `${symbol} — ${snapshot}`, // snapshot clamped at SEO_DESCRIPTION_MAX_LENGTH
+        robots: 'index'
+      });
+      // When snapshot is long, /SOXS/overall and /SOXS/fundamental both hit the clamp and return identical 193-char descriptions
+   ✅ // not-found.tsx: explicit description
+      export const generateMetadata = (): Metadata => ({
+        title: '404 Not Found',
+        description: 'Page not found — search for a symbol or check the URL',
+        robots: 'noindex'
+      });
+   ✅ // [symbol]/[tab]/page.tsx: tab-discriminated description
+      export const generateMetadata = (): Metadata => ({
+        title: `${symbol} ${tabLabel}`,
+        description: `${symbol} ${tabLabel} — ${snapshot}`, // tabLabel discriminator ensures different tabs differ even if snapshot is clamped
+        robots: 'index'
+      });
+   → Recurring: fix/seo-snapshot-desc-tab-prefix R1 (description collision across tabs) + R2 (not-found inherits home description)
 ```
 
 ## Accessibility (WAI-ARIA)

@@ -53,6 +53,7 @@ import { translateFmpError } from '@/shared/api/fmp/fmpUserMessage';
 import {
     buildBreadcrumbJsonLd,
     buildSnapshotMetaDescription,
+    symbolTabDescriptionLabel,
     buildSymbolSeoContent,
     localizedAbsoluteUrl,
     resolveSymbolNewsSeoContent,
@@ -130,7 +131,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
               snap.content,
               displayName,
               null,
-              locale
+              locale,
+              symbolTabDescriptionLabel('news', assetClass, tSeo)
           )
         : null;
 
