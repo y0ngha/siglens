@@ -14,7 +14,9 @@ describe('createYahooOptionsProbe', () => {
         const probe = createYahooOptionsProbe({ options });
 
         await expect(probe('BRK.B')).resolves.toBe(true);
-        expect(options).toHaveBeenCalledWith('BRK-B');
+        expect(options).toHaveBeenCalledWith('BRK-B', undefined, {
+            validateResult: false,
+        });
     });
 });
 
