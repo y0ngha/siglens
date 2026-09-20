@@ -745,4 +745,10 @@ export const POPULAR_TICKERS = [
     '247540.KQ', // 에코프로비엠
     '058470.KQ', // 리노공업
     '403870.KQ', // HPSP
+
+    // --- Trending (2026-09-20) ---
+    'VLO',
+    'BX',
+    'MPC',
+    'WELL',
 ] as const;

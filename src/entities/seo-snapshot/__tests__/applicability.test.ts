@@ -46,23 +46,25 @@ describe('buildPrewarmUniverse', () => {
     //   · GSC 실측 수요 상위 96종 (popular-tickers.ts `[14]` 블록)
     // 2027 + 119×6 = 2741.
     // 2026-09-17: 3주 넘게 봉이 0개였던 15종(전부 옵션 미상장 US)을 뺐다 → 2741 − 15×6 = 2651.
+    // 2026-09-20: 주간 틱커 스크린으로 옵션 상장 4종목(VLO, BX, MPC, WELL) 추가
+    // → 262 + 4 = 266, 2651 + 91 = 2742.
     //
     // ⚠️ 이 수치는 장식이 아니라 **용량 게이트**다. 야간 처리량은 틱 약 90회 ×
     // SYMBOLS_PER_TICK 6 ≈ 540 심볼-슬롯인데 유니버스가 431이 됐다(이론 가동률 80%).
     // 실제 처리량은 in-flight 점유·터미널 백오프 때문에 이론보다 낮으므로, 유니버스를
     // 더 키우기 전에 `[seo-prewarm] batch done`의 `remaining`이 매일 밤 0으로
     // 수렴하는지 먼저 확인해야 한다.
-    it('전체 유닛 수 = 262×7 + 105×6 + 20×5 + 29×3 = 2651 (spec §5 실측)', () => {
+    it('전체 유닛 수 = 266×7 + 105×6 + 20×5 + 29×3 = 2742 (spec §5 실측)', () => {
         const units = buildPrewarmUniverse().reduce(
             (n, u) => n + u.tabs.length,
             0
         );
-        expect(units).toBe(2651);
+        expect(units).toBe(2742);
     });
 
     // 실패 시 상수 목록 변경 — 스펙 §5 수치도 함께 갱신
-    it('심볼 수 = 416 (POPULAR_TICKERS 387 + POPULAR_CRYPTOS 29)', () => {
-        expect(buildPrewarmUniverse()).toHaveLength(416);
+    it('심볼 수 = 420 (POPULAR_TICKERS 391 + POPULAR_CRYPTOS 29)', () => {
+        expect(buildPrewarmUniverse()).toHaveLength(420);
     });
 
     it('한국 종목은 options·congress를 prewarm하지 않는다', () => {
