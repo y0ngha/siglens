@@ -17,6 +17,9 @@ import {
     type BollingerResult,
     type CandlePattern,
     type DMIResult,
+    type FearGreedGroupName,
+    type FearGreedLabel,
+    type FearGreedSnapshot,
     type IchimokuResult,
     type IndicatorResult,
     type MACDResult,
@@ -628,12 +631,23 @@ function maStackDirection(
     return bullish ? 'bullish' : bearish ? 'bearish' : 'mixed';
 }
 
-/** `get_bars_indicators`'s `fearGreed` field — the symbol's own index, not the market-wide one. */
+/** One Flow/Trend group of {@link SymbolFearGreedView}. */
+interface FearGreedGroupView {
+    name: FearGreedGroupName;
+    score: number;
+}
+
+/**
+ * `get_bars_indicators`'s `fearGreed` field — the symbol's own index, not the
+ * market-wide one. `label`/`confidence` keep core's literal unions rather than
+ * widening to `string`: the dashboard's own view type does the same, and a
+ * widened field lets a typo through the type checker.
+ */
 interface SymbolFearGreedView {
     score: number;
-    label: string;
-    confidence: string;
-    groups: { name: string; score: number }[];
+    label: FearGreedLabel;
+    confidence: FearGreedSnapshot['confidence'];
+    groups: FearGreedGroupView[];
 }
 
 /**

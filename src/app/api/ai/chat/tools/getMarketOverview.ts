@@ -158,14 +158,6 @@ function sectorBreadth(
     };
 }
 
-/** One entry of `fearGreed.comparisons` — the same past-session points the dashboard gauges show. */
-interface FearGreedComparisonView {
-    key: string;
-    date: string;
-    score: number;
-    label: string;
-}
-
 /**
  * The market's fear & greed view, or `null` for a market that has none.
  *
@@ -177,10 +169,24 @@ interface FearGreedComparisonView {
 function fearGreedFor(
     market: DashboardScopeId
 ): Promise<MarketFearGreedView | null> {
-    if (market === 'crypto') return Promise.resolve(null);
-    return market === 'kr'
-        ? getMarketFearGreedKrStatic()
-        : getMarketFearGreedStatic();
+    switch (market) {
+        case 'crypto':
+            return Promise.resolve(null);
+        case 'kr':
+            return getMarketFearGreedKrStatic();
+        case 'us':
+            return getMarketFearGreedStatic();
+        default: {
+            // 삼항으로 두면 네 번째 시장이 추가될 때 아무 결정도 하지 않은 채
+            // 미국 지수로 흘러간다 — 화면에는 숫자가 정상으로 보인다.
+            // `sessionSpecForDashboardScope`가 같은 유니온을 같은 방식으로 지킨다.
+            const _exhaustive: never = market;
+            console.error(
+                `[get_market_overview] Unhandled market: ${String(_exhaustive)}`
+            );
+            return Promise.resolve(null);
+        }
+    }
 }
 
 /**
@@ -249,8 +255,7 @@ export const getMarketOverviewTool: ToolExecutor = async (args, ctx) => {
             })),
             // 게이지 옆에 이미 그려지는 과거 대비 점수. 없으면 "지난주보다
             // 탐욕이 심해졌나" 류 질문에 오늘 점수 하나로만 답하게 된다.
-            comparisons: (fearGreedView?.comparisons ??
-                []) as readonly FearGreedComparisonView[],
+            comparisons: fearGreedView?.comparisons ?? [],
         },
         indices:
             summary?.indices.map(i => ({
