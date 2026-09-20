@@ -46,6 +46,13 @@ const SCREENER_MIN_VOLUME = 5_000_000;
 const EOD_LOOKBACK_DAYS = 10;
 const EOD_FETCH_CAP = 30;
 
+// 알려진 오탐 심볼 (SEO 감사 라운드 2 회귀 가드, popular-tickers.test.ts 참고).
+// 스크리너는 심볼 문자열만 보고 스캔하므로 이런 케이스를 자동으로 걸러내지 못한다.
+const EXCLUDED_TICKERS = new Set([
+    'SPCX', // SpaceX 아님 — SPAC/신규 발행 ETF
+    'SKHY', // 000660.KS(SK하이닉스)와 동일 회사인 OTC ADR
+]);
+
 const POPULAR_TICKERS_PATH = resolve(
     process.cwd(),
     'src/shared/config/popular-tickers.ts'
@@ -97,7 +104,11 @@ export interface DeduplicatePopularTickersResult {
 export type OptionsMarketProbe = (symbol: string) => Promise<boolean>;
 
 export interface YahooOptionsProbeClient {
-    options(symbol: string): Promise<unknown>;
+    options(
+        symbol: string,
+        queryOptions?: unknown,
+        moduleOptions?: { validateResult?: boolean }
+    ): Promise<unknown>;
 }
 
 export interface PopularTickerArtifactWriters {
@@ -225,13 +236,20 @@ export function createYahooOptionsProbe(
     return async (symbol: string): Promise<boolean> => {
         try {
             const yahooSymbol = toYahooSymbol(symbol);
-            const response = (await yahooFinance.options(yahooSymbol)) as {
-                expirationDates?: unknown;
-            };
-            if (!Array.isArray(response.expirationDates)) {
-                throw new Error(
-                    'Yahoo options response missing expirationDates'
-                );
+            const response = (await yahooFinance.options(
+                yahooSymbol,
+                undefined,
+                {
+                    validateResult: false,
+                }
+            )) as { expirationDates?: unknown } | undefined;
+
+            // validateResult:false lets Yahoo schema-validation failures through
+            // instead of throwing (e.g. malformed/incomplete quote data); an
+            // undefined or malformed response here means no options market data,
+            // not a probe failure.
+            if (!response || !Array.isArray(response.expirationDates)) {
+                return false;
             }
 
             return response.expirationDates.length > 0;
@@ -530,7 +548,7 @@ async function main(): Promise<void> {
 
     // 3. Exclude existing tickers
     const newCandidates = screenerResults.filter(
-        r => !existingTickers.has(r.symbol)
+        r => !existingTickers.has(r.symbol) && !EXCLUDED_TICKERS.has(r.symbol)
     );
     console.log(
         `New candidates (not in POPULAR_TICKERS): ${newCandidates.length}`
