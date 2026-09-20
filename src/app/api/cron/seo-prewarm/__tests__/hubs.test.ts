@@ -112,6 +112,12 @@ function allSucceed(): void {
     );
 }
 
+/**
+ * 브리핑 프리웜이 실제로 도는 대상. `DASHBOARD_SCOPES` 전체가 아니다 —
+ * 화면 없는 scope(`crypto`)는 생성 비용만 내고 읽는 쪽이 없어 제외된다.
+ */
+const PAGE_SCOPES = Object.values(DASHBOARD_SCOPES).filter(s => s.hasHubPage);
+
 describe('hubTargets', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -122,10 +128,9 @@ describe('hubTargets', () => {
      * 대상 목록을 손으로 적지 않는다 — 카테고리나 시장이 하나 늘 때마다 그 숫자만
      * 고치게 되고, 정작 "새로 생긴 표면이 프리웜에서 빠졌다"는 사실은 못 잡는다.
      */
-    it('실제 설정에서 파생된다 — 대시보드 스코프 + 거시 1 + 뉴스 카테고리 전부', () => {
+    it('실제 설정에서 파생된다 — 허브 페이지가 있는 스코프 + 거시 1 + 뉴스 카테고리 전부', () => {
         const labels = hubTargets().map(t => t.label);
-
-        for (const scope of Object.values(DASHBOARD_SCOPES)) {
+        for (const scope of PAGE_SCOPES) {
             expect(labels).toContain(`market-briefing:${scope.id}`);
         }
         expect(labels).toContain('macro-briefing');
@@ -133,10 +138,24 @@ describe('hubTargets', () => {
             expect(labels).toContain(`news-digest:${category}`);
         }
         expect(labels).toHaveLength(
-            Object.keys(DASHBOARD_SCOPES).length +
-                1 +
-                Object.keys(CATEGORY_CONFIG).length
+            PAGE_SCOPES.length + 1 + Object.keys(CATEGORY_CONFIG).length
         );
+    });
+
+    /**
+     * 이 순회는 브리핑을 **생성**한다(LLM 호출). 화면 없는 scope가 끼면 아무도 읽지
+     * 않는 결과를 매일 밤 굽는데, 비용 말고는 아무 신호도 나지 않는다 —
+     * `crypto`를 `DASHBOARD_SCOPES`에 넣었을 때 실제로 그랬다.
+     */
+    it('허브 페이지가 없는 스코프는 브리핑 프리웜에 들어가지 않는다', () => {
+        const pageless = Object.values(DASHBOARD_SCOPES).filter(
+            s => !s.hasHubPage
+        );
+        expect(pageless.length).toBeGreaterThan(0);
+        const labels = hubTargets().map(t => t.label);
+        for (const scope of pageless) {
+            expect(labels).not.toContain(`market-briefing:${scope.id}`);
+        }
     });
 
     it('대상마다 무효화 태그가 있다 — 안 털면 페이지가 옛 null을 계속 렌더한다', () => {
@@ -338,7 +357,7 @@ describe('runHubPrewarm', () => {
     it('브리핑은 새로 구웠을 때 SSR seed를 쓴다', async () => {
         await runHubPrewarm();
 
-        for (const scope of Object.values(DASHBOARD_SCOPES)) {
+        for (const scope of PAGE_SCOPES) {
             expect(mocks.writeHubSsrSeed).toHaveBeenCalledWith(
                 marketBriefingSeedSurface(scope),
                 { briefing: 'x' }
@@ -361,7 +380,7 @@ describe('runHubPrewarm', () => {
 
         expect(result.alreadyFresh).toBe(hubTargets().length);
         // 시장 브리핑도 같은 분기를 탄다 — macro만 단언하면 그쪽 회귀를 놓친다.
-        for (const scope of Object.values(DASHBOARD_SCOPES)) {
+        for (const scope of PAGE_SCOPES) {
             expect(mocks.writeHubSsrSeed).toHaveBeenCalledWith(
                 marketBriefingSeedSurface(scope),
                 { briefing: 'x' }
@@ -384,7 +403,7 @@ describe('runHubPrewarm', () => {
         expect(surfaces.some(x => String(x).includes('news-digest'))).toBe(
             false
         );
-        expect(surfaces).toHaveLength(Object.keys(DASHBOARD_SCOPES).length + 1);
+        expect(surfaces).toHaveLength(PAGE_SCOPES.length + 1);
     });
 
     /**

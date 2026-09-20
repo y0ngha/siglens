@@ -2,6 +2,7 @@ import 'server-only';
 import {
     aggregateBarsToWeekly,
     calculateIndicators,
+    computeFearGreedIndex,
     calculateMA,
     classifyTrend,
     CONFLUENCE_TREND_MA_PERIOD,
@@ -627,6 +628,49 @@ function maStackDirection(
     return bullish ? 'bullish' : bearish ? 'bearish' : 'mixed';
 }
 
+/** `get_bars_indicators`'s `fearGreed` field — the symbol's own index, not the market-wide one. */
+interface SymbolFearGreedView {
+    score: number;
+    label: string;
+    confidence: string;
+    groups: { name: string; score: number }[];
+}
+
+/**
+ * The symbol's own Fear & Greed reading — the same number `/{symbol}/fear-greed`
+ * shows, from the same core function over the same inputs the page uses
+ * (`useFearGreedFromSymbol`: daily bars + `indicators.buySellVolume`). Nothing
+ * extra is fetched; both were already in hand.
+ *
+ * **Daily only.** The page pins the index to `1Day` bars by spec, so computing
+ * it off a 4-hour or 30-minute series would hand the model a score that no
+ * screen shows and that cannot be compared with the one that does. Other
+ * timeframes get `null`.
+ *
+ * `null` also when core abstains — the walk-forward sample is too short for
+ * percentiles (a young listing, or a short loaded history).
+ */
+function fearGreedView(
+    bars: readonly Bar[],
+    indicators: IndicatorResult,
+    timeframe: Timeframe
+): SymbolFearGreedView | null {
+    if (timeframe !== '1Day') return null;
+    // core는 `buySellVolume`을 봉과 **1:1로 나란한 배열**로 전제하고 인덱스로 읽는다.
+    // 짧거나 없는 배열이 들어오면 거기서 throw가 나 도구 전체가 죽는다 — 공포·탐욕
+    // 한 필드 때문에 시세·지표 답변을 통째로 잃을 이유는 없다.
+    const flow = indicators.buySellVolume;
+    if (!Array.isArray(flow) || flow.length < bars.length) return null;
+    const snapshot = computeFearGreedIndex([...bars], flow);
+    if (!snapshot) return null;
+    return {
+        score: snapshot.score,
+        label: snapshot.label,
+        confidence: snapshot.confidence,
+        groups: snapshot.groups.map(g => ({ name: g.name, score: g.score })),
+    };
+}
+
 export const getBarsIndicatorsTool: ToolExecutor = async args => {
     const symbol = String(args.symbol).toUpperCase();
     const timeframe = args.timeframe as Timeframe;
@@ -684,6 +728,7 @@ export const getBarsIndicatorsTool: ToolExecutor = async args => {
     // `getBarsAction.ts` — the cache still holds full-precision values.
     const latest = latestIndicators(roundIndicators(indicators));
     const candlePatterns = latestCandlePatterns(bars, timeframe);
+    const fearGreed = fearGreedView(bars, indicators, timeframe);
     const asOf = isoTimestamp(bars[bars.length - 1]!.time, timeframe);
 
     return fitBarsToBudget(
@@ -700,6 +745,7 @@ export const getBarsIndicatorsTool: ToolExecutor = async args => {
             derived,
             latest,
             candlePatterns,
+            fearGreed,
             barsReturned: barsForOutput.length,
             barsTrimmed,
             bars: barsForOutput,

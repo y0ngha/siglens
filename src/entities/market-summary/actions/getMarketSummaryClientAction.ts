@@ -7,7 +7,7 @@ import { marketDataProviderFor } from '@/shared/api/market/getMarketDataProvider
 import { getCachedMarketSummary } from '../api/marketSummaryCache';
 import {
     dashboardScopeOf,
-    isDashboardScopeId,
+    isPageDashboardScopeId,
 } from '@/shared/config/dashboardScope';
 
 /**
@@ -31,7 +31,7 @@ export async function getMarketSummaryClientAction(
     try {
         // 직렬화를 건너온 값이라 런타임에서 좁힌다 — 미국으로 조용히 폴백하면
         // 한국 페이지가 미국 시세를 그리고도 아무 신호가 없다.
-        if (!isDashboardScopeId(scope)) {
+        if (!isPageDashboardScopeId(scope)) {
             console.error(
                 '[getMarketSummaryClientAction] unknown scope:',
                 scope

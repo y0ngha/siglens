@@ -1,11 +1,14 @@
 import {
+    CRYPTO_DASHBOARD_SCOPE,
     DASHBOARD_SCOPES,
     dashboardScopeOf,
     isDashboardScopeId,
+    isPageDashboardScopeId,
     KR_DASHBOARD_SCOPE,
     US_DASHBOARD_SCOPE,
 } from '../dashboardScope';
 import { POPULAR_TICKERS } from '../popular-tickers';
+import { CRYPTO_CATEGORIES } from '../crypto-categories';
 
 const SCOPES = [US_DASHBOARD_SCOPE, KR_DASHBOARD_SCOPE];
 
@@ -114,6 +117,62 @@ describe('tickerIsReadable', () => {
     it('미국만 티커를 읽을 수 있는 이름으로 취급한다', () => {
         expect(US_DASHBOARD_SCOPE.tickerIsReadable).toBe(true);
         expect(KR_DASHBOARD_SCOPE.tickerIsReadable).toBe(false);
+    });
+});
+
+/**
+ * 크립토 scope는 **화면이 없다** — `get_market_overview`의 `market: 'crypto'`만
+ * 쓴다. 스캔 대상이 비면 도구는 조용히 빈 결과를 내고, 그건 "신호가 없는 날"과
+ * 구분되지 않는다.
+ */
+describe('CRYPTO_DASHBOARD_SCOPE', () => {
+    it('스캔 대상과 묶음을 갖고, 카드용 필드는 비어 있다', () => {
+        expect(CRYPTO_DASHBOARD_SCOPE.sectorStocks.length).toBeGreaterThan(0);
+        expect(CRYPTO_DASHBOARD_SCOPE.signalSectors.length).toBeGreaterThan(0);
+        expect(CRYPTO_DASHBOARD_SCOPE.indices.length).toBeGreaterThan(0);
+        // 크립토에는 섹터 ETF가 없다 — 억지로 채우면 없는 시세를 조회한다.
+        expect(CRYPTO_DASHBOARD_SCOPE.sectorEtfs).toEqual([]);
+        expect(CRYPTO_DASHBOARD_SCOPE.sectorGroups).toEqual([]);
+        expect(CRYPTO_DASHBOARD_SCOPE.volatilityIndexSymbol).toBeNull();
+    });
+
+    it('모든 스캔 종목의 sectorSymbol이 signalSectors 안에 있다', () => {
+        const groups = new Set(
+            CRYPTO_DASHBOARD_SCOPE.signalSectors.map(s => s.symbol)
+        );
+        for (const stock of CRYPTO_DASHBOARD_SCOPE.sectorStocks)
+            expect(groups.has(stock.sectorSymbol)).toBe(true);
+    });
+
+    /**
+     * 같은 코인의 한국어명이 두 파일에 존재하면 한쪽만 고쳐도 아무 곳에서도
+     * 실패하지 않는다 — 이름의 출처는 `CRYPTO_CATEGORIES` 하나여야 한다.
+     */
+    it('지수 자리의 한국어명은 크립토 카탈로그에서 온다', () => {
+        const catalog = new Map(
+            CRYPTO_CATEGORIES.flatMap(c => c.items).map(i => [i.symbol, i.name])
+        );
+        expect(CRYPTO_DASHBOARD_SCOPE.indices.length).toBeGreaterThan(0);
+        for (const index of CRYPTO_DASHBOARD_SCOPE.indices) {
+            expect(catalog.get(index.symbol)).toBe(index.koreanName);
+        }
+    });
+
+    it('id로 되찾을 수 있고 런타임 가드도 통과한다', () => {
+        expect(dashboardScopeOf('crypto')).toBe(CRYPTO_DASHBOARD_SCOPE);
+        expect(isDashboardScopeId('crypto')).toBe(true);
+    });
+
+    /**
+     * 페이지용 Server Action은 네트워크로 직접 부를 수 있다. 화면 없는 scope가 그
+     * 입력으로 통과하면, 아무 페이지도 쓰지 않는 시장의 시세 조회와 브리핑 생성을
+     * 외부에서 시킬 수 있다.
+     */
+    it('허브 페이지가 없으므로 페이지용 scope 가드는 통과하지 못한다', () => {
+        expect(CRYPTO_DASHBOARD_SCOPE.hasHubPage).toBe(false);
+        expect(isPageDashboardScopeId('crypto')).toBe(false);
+        expect(isPageDashboardScopeId('us')).toBe(true);
+        expect(isPageDashboardScopeId('kr')).toBe(true);
     });
 });
 

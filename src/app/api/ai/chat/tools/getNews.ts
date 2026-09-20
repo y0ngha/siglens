@@ -1,5 +1,6 @@
 import 'server-only';
 import { DrizzleMarketNewsRepository } from '@/entities/market-news/api';
+import { peekMarketNewsDigestStatic } from '@/entities/market-news/api/marketNewsDigestStaticCache';
 import { CATEGORY_CONFIG, categoryFromSlug } from '@/entities/market-news';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import type { NewsDisplayItem } from '@/shared/lib/types';
@@ -88,6 +89,14 @@ export const getNewsTool: ToolExecutor = async (args, ctx) => {
     // via the shared `content_translations` sidecar (same helper the news
     // pages use) — no manual ko/en branching needed here.
     let rows: NewsDisplayItem[];
+    /**
+     * The category feed's own AI digest — the same one `/news/[category]`
+     * renders. `peek` is cache-read-only (zero LLM cost, no enqueue), so the
+     * agent gets the synthesis the page already has instead of re-deriving it
+     * from the item list. Stays `null` for a symbol query (the digest is
+     * per-category) and on a cold cache.
+     */
+    let digest: Awaited<ReturnType<typeof peekMarketNewsDigestStatic>> = null;
     if (typeof args.symbol === 'string') {
         rows = await new DrizzleNewsRepository(db).listCardsBySymbol(
             args.symbol.toUpperCase(),
@@ -101,11 +110,14 @@ export const getNewsTool: ToolExecutor = async (args, ctx) => {
                 error: 'invalid_args',
                 issues: [{ path: 'category', message: 'unknown category' }],
             };
-        rows = await new DrizzleMarketNewsRepository(db).listCardsByCategory(
-            CATEGORY_CONFIG[id].sentinel,
-            sinceMs,
-            ctx.locale
-        );
+        [rows, digest] = await Promise.all([
+            new DrizzleMarketNewsRepository(db).listCardsByCategory(
+                CATEGORY_CONFIG[id].sentinel,
+                sinceMs,
+                ctx.locale
+            ),
+            peekMarketNewsDigestStatic(id, ctx.locale).catch(() => null),
+        ]);
     } else {
         return {
             error: 'invalid_args',
@@ -133,6 +145,12 @@ export const getNewsTool: ToolExecutor = async (args, ctx) => {
         url: r.url,
     }));
     const tally = tallyOf(page);
+    const digestView = digest && {
+        driver: digest.currentDriverKo,
+        keyEvents: digest.keyEventsKo,
+        upcomingEvents: digest.upcomingEventsKo,
+        overallSentiment: digest.overallSentiment,
+    };
 
     if (args.includeBody === true) {
         const bodyItemCount = Math.min(page.length, BODY_ITEMS);
@@ -143,6 +161,7 @@ export const getNewsTool: ToolExecutor = async (args, ctx) => {
                 count: items.length,
                 coverageLimited: items.length === 0,
                 tally,
+                digest: digestView,
                 items,
             }).length;
             const remaining = Math.max(
@@ -169,6 +188,7 @@ export const getNewsTool: ToolExecutor = async (args, ctx) => {
         count: items.length,
         coverageLimited: items.length === 0,
         tally,
+        digest: digestView,
         items,
     };
 };

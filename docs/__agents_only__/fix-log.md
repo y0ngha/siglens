@@ -520,3 +520,18 @@
 - Violation: `src/app/[locale]/not-found.tsx` returned `generateMetadata` with only `title` and `robots`, so Next inherited the root layout's `description`: every non-existent URL shipped the home page's `<meta name="description">`. Measured on production 2026-09-20 on `/ZZZZZ`, `/nonexistent-page-xyz`, `/news/nosuchcat`.
   - Rule: Every `generateMetadata` export must explicitly set all metadata fields; unset fields inherit from parent layout, causing search engines to crawl duplicate `<meta>` with identical content across error boundaries.
   - Context: Fixed by populating `description` metadata field with already-translated 404 body copy (`app.home` key `not-found.03ecab`) with whitespace collapsed.
+
+## [feat/agent-discovery + feat/agent-kr-signal-scan R1–R5 | 에이전트 종목·코인 발굴 + 미연결 도구 배선 | 2026-09-20]
+- Violation (R1, required): `AGENT_PROMPT_VERSION` 범프와 `AGENT_TOOL_SPECS` 설명 변경에 `docs/PUBLIC_API.md` 변경 행을 추가하지 않았다 (siglens-core)
+  - Rule: core MISTAKES.md — 모든 공개 API·프롬프트 버전·툴 설명 변경은 같은 커밋에 날짜 행을 남긴다
+  - Context: 리뷰어가 같은 누락이 앞선 세 PR(refactor/cheap-jobs R1, feat/agent-adaptive-depth R1, feat/agent-require-refetch R2)에도 있었다고 지적. 2026-09-20 행 두 개 추가
+- Violation (R3, required): `DashboardScopeId`/`DASHBOARD_SCOPES`에 `'crypto'`를 추가하자 화면 없는 scope가 `src/app/api/cron/seo-prewarm/hubs.ts`의 `marketBriefingTargets()`에 자동 편입됐다. 그 함수는 `Object.values(DASHBOARD_SCOPES)`를 돌며 `runBriefing()`(실제 LLM 호출)을 부른다 — 아무도 읽지 않는 크립토 브리핑을 매일 밤 생성하는 비용 회귀
+  - Rule: (신규) 공유 유니온·레지스트리 레코드를 넓히면 그 레지스트리를 일반적으로 순회하는 **모든** 코드에 새 멤버가 조용히 편입된다. 순회 지점에서 id를 하드코딩해 거르지 말고, 레코드에 능력 플래그를 두어 다음 멤버가 **결정을 하도록** 강제한다
+  - Context: `DashboardScope.hasHubPage` 필드 신설(us·kr true, crypto false), 프리웜이 그걸로 필터. 기존 `hubs.test.ts`는 기대 개수를 `Object.keys(DASHBOARD_SCOPES).length`에서 **직접 파생**해 이 회귀에 구조적으로 눈이 멀어 있었다(그 테스트는 "빠진 표면"만 잡도록 의도된 것). 변경 파일만 대상으로 한 되돌림 검증도 이 파일을 건드리지 않아 못 잡았다 — 테스트를 `PAGE_SCOPES` 상수 기준으로 바꾸고 "화면 없는 scope는 프리웜에 없다"를 따로 단언
+- Violation (R3, recommended): 같은 확장으로 `'crypto'`가 페이지 전용 Server Action 3종(`getSectorSignalsAction`, `getMarketSummaryClientAction`, `submitMarketBriefingAction`)의 유효 입력이 됐다. 셋 다 `isDashboardScopeId`만으로 검증해, 네트워크로 직접 부르면 화면 없는 scope의 시세 조회·브리핑 생성을 시킬 수 있었다
+  - Rule: (신규) 네트워크에서 직접 호출 가능한 Server Action은 "앱이 아는 값인가"가 아니라 "이 진입점이 다루는 값인가"로 좁힌다
+  - Context: `isPageDashboardScopeId`(= `hasHubPage`) 신설 후 세 액션에 적용
+- Violation (R4, recommended): 가드를 좁히면서 다른 참조 지점의 주석이 낡았다 — `src/app/api/analysis/stream/route.ts`가 여전히 `isDashboardScopeId`를 가리켰다
+  - Rule: MISTAKES.md §15.6 — 주석 정확성. 가드·상수를 바꾸면 그것을 설명하는 다른 자리도 같은 커밋에서 갱신한다
+  - Context: 주석을 `isPageDashboardScopeId`로 정정
+- Note: 배선 4건(뉴스 카테고리 다이제스트, 시장 브리핑 peek, 공포·탐욕 `comparisons`, 종목 자체 공포·탐욕)과 R3 수정 2건은 각각 되돌림 검증을 거쳤다 — 소스를 원복하면 해당 테스트가 실패한다

@@ -115,6 +115,68 @@ describe('getBarsIndicatorsTool', () => {
         detectCandlePatternEntries.mockReturnValue([]);
     });
 
+    it('1Day에서는 종목 자체 공포·탐욕 지수를 함께 내고, 다른 타임프레임·짧은 흐름 데이터에서는 null', async () => {
+        profile.mockResolvedValue('us-equity');
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+        // 워크포워드 표본을 채우려면 긴 일봉이 필요하다 — 실제 core 함수를 그대로 태운다.
+        // `bar()` 헬퍼는 고가=저가=종가·거래량 고정이라 변동성·거래량 백분위가
+        // 서지 않는다 — 공포·탐욕은 그 표본으로는 기권(null)한다.
+        const longBars = Array.from({ length: 400 }, (_, i) => {
+            const close = 100 + Math.sin(i / 7) * 12 + i * 0.05;
+            return {
+                time: i * 86_400,
+                open: close - 0.5,
+                high: close + 1,
+                low: close - 1,
+                close,
+                volume: 100 + ((i * 37) % 50),
+            };
+        });
+        const withFlow = {
+            ...indicators,
+            buySellVolume: longBars.map((_, i) => ({
+                buyVolume: 60 + ((i * 13) % 20),
+                sellVolume: 40 + ((i * 7) % 20),
+            })),
+        };
+        getCachedBars.mockResolvedValue({
+            bars: longBars,
+            indicators: withFlow,
+        });
+        const daily = (await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '1Day' },
+            ctx,
+            rt
+        )) as { fearGreed: { score: number; groups: unknown[] } | null };
+        expect(daily.fearGreed).not.toBeNull();
+        expect(daily.fearGreed?.score).toBeGreaterThanOrEqual(0);
+        expect(daily.fearGreed?.score).toBeLessThanOrEqual(100);
+        expect(daily.fearGreed?.groups.length).toBeGreaterThan(0);
+
+        // 화면(`/{symbol}/fear-greed`)이 일봉에 고정돼 있다 — 다른 봉으로 계산하면
+        // 어느 화면에도 없는 점수를 내놓게 된다.
+        const intraday = (await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '4Hour' },
+            ctx,
+            rt
+        )) as { fearGreed: unknown };
+        expect(intraday.fearGreed).toBeNull();
+
+        // 흐름 배열이 봉보다 짧으면 core가 인덱스로 읽다 throw한다.
+        getCachedBars.mockResolvedValue({
+            bars: longBars,
+            indicators: { ...indicators, buySellVolume: [] },
+        });
+        const shortFlow = (await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '1Day' },
+            ctx,
+            rt
+        )) as { fearGreed: unknown; trend: string };
+        expect(shortFlow.fearGreed).toBeNull();
+        expect(shortFlow.trend).toBe('uptrend');
+    });
+
     it('봉이 없으면 found:false', async () => {
         profile.mockResolvedValue('us-equity');
         getCachedBars.mockResolvedValue({ bars: [], indicators });
