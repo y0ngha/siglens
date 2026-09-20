@@ -3,6 +3,7 @@ import type { MarketSectorData, StockSignalResult } from '@y0ngha/siglens-core';
 import { getTranslations } from 'next-intl/server';
 import { getMarketFearGreedStatic } from '@/entities/market-fear-greed/api/marketFearGreedStaticCache';
 import { getMarketFearGreedKrStatic } from '@/entities/market-fear-greed/api/marketFearGreedKrStaticCache';
+import type { MarketFearGreedView } from '@/entities/market-fear-greed';
 import { getMarketSummaryStatic } from '@/entities/market-summary/api/marketSummaryStaticCache';
 import { getSectorSignalsStatic } from '@/entities/sector-signal/api/sectorSignalsStaticCache';
 import { peekBriefingStatic } from '@/entities/market-summary/api/briefingStaticCache';
@@ -173,7 +174,9 @@ interface FearGreedComparisonView {
  * question would be a number from a different market with nothing marking it
  * as such.
  */
-function fearGreedFor(market: DashboardScopeId) {
+function fearGreedFor(
+    market: DashboardScopeId
+): Promise<MarketFearGreedView | null> {
     if (market === 'crypto') return Promise.resolve(null);
     return market === 'kr'
         ? getMarketFearGreedKrStatic()

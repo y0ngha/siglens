@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { bySymbol, byCategory, peekDigest } = vi.hoisted(() => ({
+const { bySymbol, byCategory, peekDigest, degradeSpy } = vi.hoisted(() => ({
     bySymbol: vi.fn(),
     byCategory: vi.fn(),
     peekDigest: vi.fn(),
+    degradeSpy: vi.fn(),
 }));
 vi.mock('@/entities/news-article/api', () => ({
     DrizzleNewsRepository: vi.fn(function () {
@@ -20,6 +21,9 @@ vi.mock('@/shared/db/client', () => ({
 }));
 vi.mock('@/entities/market-news/api/marketNewsDigestStaticCache', () => ({
     peekMarketNewsDigestStatic: peekDigest,
+}));
+vi.mock('@/app/api/ai/chat/tools/logToolDegrade', () => ({
+    logToolDegrade: degradeSpy,
 }));
 
 import { getNewsTool } from '@/app/api/ai/chat/tools/getNews';
@@ -97,15 +101,21 @@ describe('getNewsTool', () => {
         expect(bySym.digest).toBeNull();
     });
 
-    it('다이제스트 peek이 실패해도 뉴스 목록은 그대로 나간다', async () => {
+    it('다이제스트 peek이 실패해도 뉴스 목록은 그대로 나가고, 실패는 로그로 남는다', async () => {
         byCategory.mockResolvedValue([row(1)]);
         peekDigest.mockRejectedValue(new Error('redis down'));
+        degradeSpy.mockClear();
         const r = (await getNewsTool({ category: 'crypto' }, ctx, rt)) as {
             digest: unknown;
             items: unknown[];
         };
         expect(r.digest).toBeNull();
         expect(r.items).toHaveLength(1);
+        expect(degradeSpy).toHaveBeenCalledWith(
+            'get_news',
+            'digest peek',
+            expect.any(Error)
+        );
     });
 
     it('symbol·category 둘 다 없거나 미지 카테고리 → invalid_args', async () => {

@@ -12,6 +12,7 @@ import {
 import { MS_PER_DAY, MS_PER_HOUR } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import type { ToolExecutor } from './index';
+import { logToolDegrade } from './logToolDegrade';
 import { fitToEscapedBudget, TOOL_RESULT_MAX_CHARS } from './truncate';
 
 /** `get_news`'s `tally` field shape — sentiment/impact counts over the RETURNED page. */
@@ -116,7 +117,10 @@ export const getNewsTool: ToolExecutor = async (args, ctx) => {
                 sinceMs,
                 ctx.locale
             ),
-            peekMarketNewsDigestStatic(id, ctx.locale).catch(() => null),
+            peekMarketNewsDigestStatic(id, ctx.locale).catch(error => {
+                logToolDegrade('get_news', 'digest peek', error);
+                return null;
+            }),
         ]);
     } else {
         return {

@@ -112,6 +112,16 @@ describe('getSectorSignalsAction 함수는', () => {
         errSpy.mockRestore();
     });
 
+    it("'crypto'는 isDashboardScopeId는 통과하지만 hasHubPage가 false라 캐시를 부르지 않고 빈 결과로 떨어진다", async () => {
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+        const result = await getSectorSignalsAction('crypto');
+
+        expect(result.stocks).toEqual([]);
+        expect(mockGetCachedSectorSignals).not.toHaveBeenCalled();
+        errSpy.mockRestore();
+    });
+
     /**
      * 롤링 배포 호환 shim — 옛 번들은 `('1Day')`처럼 timeframe 하나만 보낸다.
      * 이 분기가 없으면 배포 30분 동안 `/market`(트래픽 1위 페이지)의 신호 패널이

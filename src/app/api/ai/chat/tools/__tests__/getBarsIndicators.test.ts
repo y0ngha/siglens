@@ -14,6 +14,7 @@ const {
     spec,
     detectCandlePatternEntries,
     getDetectionBars,
+    computeFearGreed,
 } = vi.hoisted(() => ({
     profile: vi.fn(),
     assetInfo: vi.fn(),
@@ -23,16 +24,22 @@ const {
     spec: vi.fn(),
     detectCandlePatternEntries: vi.fn(),
     getDetectionBars: vi.fn(),
+    computeFearGreed: vi.fn(),
 }));
 vi.mock('@y0ngha/siglens-core', async importOriginal => {
     const actual =
         await importOriginal<typeof import('@y0ngha/siglens-core')>();
+    // 기본은 실제 구현을 태운다 — 표본이 짧으면 core가 기권(null)하는지를 다른
+    // 테스트들이 실측 확률 계산으로 검증하기 때문이다. "기권" 자체를 고정하는
+    // 테스트에서만 mockReturnValueOnce로 null을 강제한다.
+    computeFearGreed.mockImplementation(actual.computeFearGreedIndex);
     return {
         ...actual,
         classifyTrend: classify,
         detectSignals: detect,
         detectCandlePatternEntries,
         getDetectionBars,
+        computeFearGreedIndex: computeFearGreed,
     };
 });
 vi.mock('@/entities/bars/lib/barsDataCache', () => ({
@@ -175,6 +182,38 @@ describe('getBarsIndicatorsTool', () => {
         )) as { fearGreed: unknown; trend: string };
         expect(shortFlow.fearGreed).toBeNull();
         expect(shortFlow.trend).toBe('uptrend');
+    });
+
+    it('core가 표본 부족으로 기권(null)하면 fearGreed만 null이고 나머지 페이로드는 그대로 나간다', async () => {
+        profile.mockResolvedValue('us-equity');
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+        computeFearGreed.mockReturnValueOnce(null);
+        const longBars = Array.from({ length: 400 }, (_, i) => ({
+            time: i * 86_400,
+            open: 100,
+            high: 101,
+            low: 99,
+            close: 100,
+            volume: 100,
+        }));
+        getCachedBars.mockResolvedValue({
+            bars: longBars,
+            indicators: {
+                ...indicators,
+                buySellVolume: longBars.map(() => ({
+                    buyVolume: 60,
+                    sellVolume: 40,
+                })),
+            },
+        });
+        const r = (await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '1Day' },
+            ctx,
+            rt
+        )) as { fearGreed: unknown; trend: string };
+        expect(r.fearGreed).toBeNull();
+        expect(r.trend).toBe('uptrend');
     });
 
     it('봉이 없으면 found:false', async () => {
