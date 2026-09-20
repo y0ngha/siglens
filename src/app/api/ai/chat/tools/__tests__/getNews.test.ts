@@ -101,6 +101,9 @@ describe('getNewsTool', () => {
         expect(bySym.digest).toBeNull();
     });
 
+    // peek 구현은 지금 자체 try/catch로 실패를 삼키지만, 그 계약이 바뀌면
+    // `Promise.all`의 형제가 통째로 무너져 기사 목록까지 잃는다 — 이 테스트는
+    // 그 경계가 유지되는지를 고정한다.
     it('다이제스트 peek이 실패해도 뉴스 목록은 그대로 나가고, 실패는 로그로 남는다', async () => {
         byCategory.mockResolvedValue([row(1)]);
         peekDigest.mockRejectedValue(new Error('redis down'));

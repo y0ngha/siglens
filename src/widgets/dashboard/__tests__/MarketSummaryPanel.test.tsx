@@ -120,6 +120,28 @@ describe('MarketSummaryPanel', () => {
         expect(screen.getByTestId('skeleton')).toBeInTheDocument();
     });
 
+    /**
+     * `DashboardScopeId`가 화면 없는 시장(`crypto`, 에이전트 도구 전용)까지 품게 되면서
+     * 헤딩 키 표가 `Partial`이 됐다. 키가 없는 scope가 오면 scope 자신의 라벨로
+     * 떨어지는데, 그 분기는 지금 어떤 페이지도 태우지 않는다 — 테스트가 없으면
+     * 한 번도 실행되지 않은 채 남는다.
+     */
+    it('헤딩 키가 없는 scope는 scope 자신의 marketLabel을 제목으로 쓴다', () => {
+        mockUseMarketSummary.mockReturnValue(defaultSummaryReturn);
+        render(
+            <MarketSummaryPanel
+                scope={{
+                    ...TEST_SCOPE,
+                    id: 'crypto',
+                    hasHubPage: false,
+                    marketLabel: 'Crypto market',
+                }}
+            />
+        );
+        expect(screen.getByText('Crypto market')).toBeInTheDocument();
+        expect(screen.queryByText('오늘의 미국 시장')).not.toBeInTheDocument();
+    });
+
     it('완전 실패(ok:false) 시 데이터 로드 실패 안내만 표시한다', () => {
         mockUseMarketSummary.mockReturnValue({
             ...defaultSummaryReturn,

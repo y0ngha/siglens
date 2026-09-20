@@ -117,6 +117,12 @@ export const getNewsTool: ToolExecutor = async (args, ctx) => {
                 sinceMs,
                 ctx.locale
             ),
+            // `peekMarketNewsDigestStatic`은 자체 try/catch로 실패를 삼켜
+            // `null`로 resolve한다(그쪽에서 이미 로그도 남긴다). 이 `.catch`는
+            // **그 계약이 바뀔 때를 위한 여분**이다 — `Promise.all`은 형제 하나가
+            // reject하면 통째로 무너지므로, 다이제스트 하나 때문에 기사 목록까지
+            // 잃는 경로를 만들지 않는다. 형제인 `getMarketOverview`의 브리핑 peek은
+            // 내부 try/catch가 없어 그쪽 `.catch`는 실제로 동작한다.
             peekMarketNewsDigestStatic(id, ctx.locale).catch(error => {
                 logToolDegrade('get_news', 'digest peek', error);
                 return null;
