@@ -14,8 +14,6 @@ import {
     useAnalysisSettingsHydrated,
 } from '@/features/symbol-model';
 import { useFundamentalAnalysis } from './hooks/useFundamentalAnalysis';
-import { usePublishSymbolChat } from '@/features/symbol-chat';
-import { buildChatState } from './utils/buildChatState';
 import { FundamentalAiSummaryError } from './FundamentalAiSummaryError';
 import { FundamentalAiSummarySkeleton } from './FundamentalAiSummarySkeleton';
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
@@ -146,12 +144,11 @@ interface FundamentalAiSummaryProps {
     /**
      * SSR 스냅샷 프로즈가 같은 AI 결론을 이미 렌더 중일 때 `true`.
      *
-     * 이 경우 위젯은 **UI만 숨기고 마운트는 유지**한다. 페이지가 위젯을 아예
-     * 렌더하지 않으면 `usePublishSymbolChat`이 돌지 않아 챗봇의 분석 컨텍스트가
-     * 비고, 그 결과 "분석이 완료된 후 질문할 수 있어요"로 입력이 잠긴다 —
-     * 스냅샷(=분석 결과)이 있을수록 챗이 막히는 역전이 생긴다. 중복 텍스트를
-     * 없애려던 원래 의도는 렌더만 건너뛰면 충족되므로, 훅은 그대로 돌려
-     * 타입 완전한 분석 결과를 챗 컨텍스트로 publish한다.
+     * 이 경우 위젯은 **UI만 숨기고 마운트는 유지**한다 — `useRegisterShareable`이
+     * 여기서만 불리므로, 페이지가 위젯을 아예 렌더하지 않으면 헤더의 공유
+     * 버튼이 이 탭의 분석 결과를 등록받지 못한다. 중복 텍스트를 없애려던
+     * 원래 의도는 렌더만 건너뛰면 충족되므로, 훅은 그대로 돌려 공유 데이터를
+     * 계속 등록한다.
      */
     hideView?: boolean;
 }
@@ -170,12 +167,6 @@ export function FundamentalAiSummary({
         isSettingsHydrated
     );
 
-    // bot_blocked/loading/error 시에도 chatState를 명시적으로 publish하여 챗봇이
-    // 이전 페이지의 stale context를 그대로 들고 가지 않게 한다.
-    // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생 변수)를
-    // 인자로 받기 때문에 useMemo 뒤에 위치해야 한다.
-    const chatState = buildChatState(state);
-    usePublishSymbolChat(chatState);
     useRegisterShareable({
         kind: 'fundamental',
         status: mapAnalysisStatus(state.status),
@@ -192,7 +183,7 @@ export function FundamentalAiSummary({
         trigger: state.trigger,
     });
 
-    // 훅은 모두 실행된 뒤에 렌더만 건너뛴다 — publish는 유지된다.
+    // 훅은 모두 실행된 뒤에 렌더만 건너뛴다 — 공유 데이터 등록은 유지된다.
     if (hideView) return null;
 
     if (state.status === 'loading') {

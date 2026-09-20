@@ -181,7 +181,8 @@ describe('NewsPage — SEO snapshot prose (Task 7b, dual-section with NewsFactsS
         // still renders alongside the AI prose.
         expect(findElementByType(tree, NewsFactsSummary)).not.toBeNull();
         // AI 위젯은 **마운트는 유지**하되 `hideView`로 자기 뷰만 내리지 않는다 —
-        // 중복 텍스트는 사라지고 챗 컨텍스트 publish는 계속된다.
+        // 중복 텍스트는 사라지고 `useRegisterShareable`은 계속 돌아 헤더 공유
+        // 버튼이 이 탭의 분석 결과를 등록받는다.
         const widget = findElementByType(tree, NewsAiSummary);
         expect(widget).not.toBeNull();
         expect(widget?.props).toMatchObject({ hideView: true });

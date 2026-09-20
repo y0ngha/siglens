@@ -44,7 +44,7 @@ interface SearchOverlayProps {
  *
  * ## z-70인 이유
  *
- * `/[symbol]`에는 `FloatingChatButton`이 `z-60`으로 상주한다. `z-50`이면 채팅 FAB이
+ * `/[symbol]`에는 `AskAiFab`이 `z-60`으로 상주한다. `z-50`이면 그 링크가
  * 오버레이 **위에** 뜬다. 헤더(50)·vaul 시트(50)·넛지 모달(50)·PopoverSurface(60)까지
  * 모두 넘으려면 70이 필요하다.
  *

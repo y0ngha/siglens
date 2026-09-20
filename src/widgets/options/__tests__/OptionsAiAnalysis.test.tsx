@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { usePublishSymbolChat } from '@/features/symbol-chat';
+import { ShareableAnalysisProvider, useShareable } from '@/features/share';
 import { OptionsAiAnalysis } from '@/widgets/options/OptionsAiAnalysis';
 import type { OptionsAnalysisResponse } from '@y0ngha/siglens-core';
 
@@ -7,18 +7,6 @@ const mockState = vi.fn();
 
 vi.mock('@/widgets/options/hooks/useOptionsAnalysis', () => ({
     useOptionsAnalysis: () => mockState(),
-}));
-
-vi.mock('@/features/symbol-chat', () => ({
-    usePublishSymbolChat: vi.fn(),
-}));
-
-vi.mock('@/widgets/options/utils/buildChatState', () => ({
-    buildChatState: () => ({
-        context: null,
-        timeframe: null,
-        isAnalysisReady: false,
-    }),
 }));
 
 vi.mock('@/shared/ui/BotBlockedNotice', () => ({
@@ -62,7 +50,8 @@ const RESULT: OptionsAnalysisResponse = {
 describe('OptionsAiAnalysis', () => {
     /**
      * 스냅샷 프로즈가 보이는 동안에도 위젯은 마운트된 채 `hideView`로 UI만 끈다.
-     * 언마운트하면 `usePublishSymbolChat`이 돌지 않아 챗 입력이 잠긴다.
+     * 언마운트하면 `useRegisterShareable`이 돌지 않아 헤더 공유 버튼이 이 탭의
+     * 분석 결과를 등록받지 못한다 (review round 2 fix).
      */
     describe('hideView', () => {
         it('UI를 렌더하지 않는다', () => {
@@ -81,24 +70,36 @@ describe('OptionsAiAnalysis', () => {
             expect(container).toBeEmptyDOMElement();
         });
 
-        it('UI를 숨겨도 챗 컨텍스트 publish는 계속된다', () => {
+        it('UI를 숨겨도 공유 데이터 등록은 계속된다', () => {
             mockState.mockReturnValue({
                 status: 'done',
                 result: RESULT,
                 trigger: vi.fn(),
             });
 
+            function Probe() {
+                const reg = useShareable();
+                return (
+                    <div data-testid="probe">
+                        {reg === null ? 'NULL' : reg.kind}
+                    </div>
+                );
+            }
+
             render(
-                <OptionsAiAnalysis
-                    symbol="AAPL"
-                    companyName="Apple"
-                    expirationDate="all"
-                    modelId="deepseek-v4.1-flash"
-                    hideView
-                />
+                <ShareableAnalysisProvider>
+                    <OptionsAiAnalysis
+                        symbol="AAPL"
+                        companyName="Apple"
+                        expirationDate="all"
+                        modelId="deepseek-v4.1-flash"
+                        hideView
+                    />
+                    <Probe />
+                </ShareableAnalysisProvider>
             );
 
-            expect(vi.mocked(usePublishSymbolChat)).toHaveBeenCalled();
+            expect(screen.getByTestId('probe').textContent).toBe('options');
         });
     });
 

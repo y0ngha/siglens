@@ -5,7 +5,6 @@ export { callGeminiChat } from './api/gemini';
 export { callOpenaiChat } from './api/openai';
 export { callDeepseekChat } from './api/deepseek';
 export { callAiProviderRouter } from './api/router';
-export { getLlmProvider } from './api/getLlmProvider';
 export {
     getAgentProvider,
     AGENT_MODEL,

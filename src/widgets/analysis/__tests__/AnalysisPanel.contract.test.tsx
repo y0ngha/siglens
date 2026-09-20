@@ -12,17 +12,14 @@
 
 // indicatorCount는 이제 AnalysisPanel에 prop으로 전달한다.
 // useSymbolPageContext mock이 더 이상 필요 없다.
-vi.mock('@/shared/config/time', () => ({
-    MS_PER_SECOND: 1000,
-    SECONDS_PER_MINUTE: 60,
-}));
 vi.mock('@/shared/hooks/useCopyToClipboard', () => ({
     DEFAULT_RESET_MS: 2000,
 }));
 vi.mock('@/shared/lib/formatAnalyzedAt', () => ({
     formatAnalyzedAt: () => '1시간 전',
 }));
-vi.mock('@/entities/analysis', () => ({
+vi.mock('@/entities/analysis', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/entities/analysis')>()),
     isAnalysisStale: () => false,
 }));
 // personalized-analysis 투명성 배지(§FIX 2)가 소비하는 홀딩 소스 — 실제 구현은
@@ -58,13 +55,13 @@ import type {
 } from '@y0ngha/siglens-core';
 
 import { AnalysisPanel } from '../AnalysisPanel';
-import { buildFallbackAnalysis } from '@/entities/chat-message';
+import { buildFallbackAnalysis } from '@/entities/analysis';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 
 // 폴백은 이제 로케일별 빌더다 — 예전 `FALLBACK_ANALYSIS` 상수는 한국어 요약을
 // 들고 있어 `/en/AAPL`이 영어 화면에 한국어 폴백을 렌더했다.
 const FALLBACK_ANALYSIS = buildFallbackAnalysis(
-    catalogTranslator('entities.chat-message.fallback', 'ko')('unavailable')
+    catalogTranslator('entities.analysis.fallback', 'ko')('unavailable')
 );
 
 // 타입에서 직접 구성한 완전한 응답. 모든 배열/객체 필드를 채운다.

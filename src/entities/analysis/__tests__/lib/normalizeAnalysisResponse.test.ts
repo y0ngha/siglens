@@ -1,15 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import type { AnalysisResponse } from '@y0ngha/siglens-core';
 import { normalizeAnalysisResponse } from '@/entities/analysis/lib/normalizeAnalysisResponse';
-import {
-    buildFallbackAnalysis,
-    isFallbackAnalysis,
-} from '@/entities/chat-message';
+import { buildFallbackAnalysis, isFallbackAnalysis } from '@/entities/analysis';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 
 // 폴백은 이제 로케일별 빌더다 — 예전 `FALLBACK_ANALYSIS` 상수는 한국어 요약을
 // 들고 있어 `/en/AAPL`이 영어 화면에 한국어 폴백을 렌더했다.
-const tFallback = catalogTranslator('entities.chat-message.fallback', 'ko');
+const tFallback = catalogTranslator('entities.analysis.fallback', 'ko');
 const FALLBACK_SUMMARY = tFallback('unavailable');
 const FALLBACK_ANALYSIS = buildFallbackAnalysis(FALLBACK_SUMMARY);
 

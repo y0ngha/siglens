@@ -28,9 +28,6 @@ vi.mock('@/entities/options-chain/actions', () => ({
 vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock('@/features/symbol-chat', () => ({
-    usePublishSymbolChat: vi.fn(),
-}));
 vi.mock('@/features/symbol-model', () => ({
     useDefaultModelId: vi.fn(() => 'gemini-3.5-flash-lite'),
     useDefaultReasoning: vi.fn(() => false),

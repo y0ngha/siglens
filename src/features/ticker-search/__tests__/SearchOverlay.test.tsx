@@ -507,8 +507,8 @@ describe('SearchOverlay', () => {
         expect(screen.getByRole('searchbox')).toHaveFocus();
     });
 
-    it('오버레이는 채팅 FAB보다 위에 뜨고, 목록은 항상 넘친다', () => {
-        // z-70: `/[symbol]`의 FloatingChatButton이 z-60이라 z-50이면 그 버튼이
+    it('오버레이는 AskAiFab보다 위에 뜨고, 목록은 항상 넘친다', () => {
+        // z-70: `/[symbol]`의 AskAiFab이 z-60이라 z-50이면 그 링크가
         // 오버레이 **위**에 뜬다. pb-[100dvh]: 이 여백이 없으면 콘텐츠가 컨테이너를
         // 넘지 않아 스크롤 자체가 불가능해지고, 키보드에 가린 행에 영영 못 닿는다.
         // 둘 다 실제로 겪고 고친 회귀라 클래스 자체를 못으로 박아 둔다.

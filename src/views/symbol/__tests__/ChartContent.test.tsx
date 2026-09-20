@@ -1,13 +1,13 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
-import { buildFallbackAnalysis } from '@/entities/chat-message';
+import { buildFallbackAnalysis } from '@/entities/analysis';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 import { ChartContent } from '@/views/symbol/ChartContent';
 
 // 폴백은 이제 로케일별 빌더다 — 예전 `FALLBACK_ANALYSIS` 상수는 한국어 요약을
 // 들고 있어 `/en/AAPL`이 영어 화면에 한국어 폴백을 렌더했다.
 const FALLBACK_ANALYSIS = buildFallbackAnalysis(
-    catalogTranslator('entities.chat-message.fallback', 'ko')('unavailable')
+    catalogTranslator('entities.analysis.fallback', 'ko')('unavailable')
 );
 
 vi.mock('next/dynamic', () => ({
@@ -151,18 +151,6 @@ vi.mock('@/widgets/analysis/hooks/useAnalysisProgress', () => ({
     useAnalysisProgress: vi.fn(() => ({
         phaseIndex: 0,
         tipIndex: 0,
-    })),
-}));
-
-vi.mock('@/features/symbol-chat', () => ({
-    usePublishSymbolChat: vi.fn(),
-}));
-
-vi.mock('@/views/symbol/utils/buildChatState', () => ({
-    buildChatState: vi.fn(() => ({
-        context: null,
-        timeframe: '1Day',
-        isAnalysisReady: false,
     })),
 }));
 

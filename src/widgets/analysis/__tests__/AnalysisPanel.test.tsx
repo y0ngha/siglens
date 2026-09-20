@@ -24,17 +24,14 @@ vi.mock('@/shared/lib/trendline', () => ({
         descending: 'descending',
     },
 }));
-vi.mock('@/shared/config/time', () => ({
-    MS_PER_SECOND: 1000,
-    SECONDS_PER_MINUTE: 60,
-}));
 vi.mock('@/shared/hooks/useCopyToClipboard', () => ({
     DEFAULT_RESET_MS: 2000,
 }));
 vi.mock('@/shared/lib/formatAnalyzedAt', () => ({
     formatAnalyzedAt: () => '1시간 전',
 }));
-vi.mock('@/entities/analysis', () => ({
+vi.mock('@/entities/analysis', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/entities/analysis')>()),
     isAnalysisStale: () => false,
 }));
 // indicatorCount는 이제 AnalysisPanel에 prop으로 전달한다.
@@ -75,7 +72,7 @@ import type {
     StrategyResult,
 } from '@y0ngha/siglens-core';
 
-import { buildFallbackAnalysis } from '@/entities/chat-message';
+import { buildFallbackAnalysis } from '@/entities/analysis';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 import { AnalysisPanel } from '../AnalysisPanel';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
@@ -83,7 +80,7 @@ import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 // 폴백은 이제 로케일별 빌더다 — 예전 `FALLBACK_ANALYSIS` 상수는 한국어 요약을
 // 들고 있어 `/en/AAPL`이 영어 화면에 한국어 폴백을 렌더했다.
 const FALLBACK_ANALYSIS = buildFallbackAnalysis(
-    catalogTranslator('entities.chat-message.fallback', 'ko')('unavailable')
+    catalogTranslator('entities.analysis.fallback', 'ko')('unavailable')
 );
 
 function makeAnalysis(

@@ -894,24 +894,6 @@
         "text": "`${quarter[1]}분기`"
     },
     {
-        "file": "src/entities/llm-provider/api/FakeChatProvider.ts",
-        "line": 37,
-        "reason": "e2e-stub",
-        "text": "방금 질문"
-    },
-    {
-        "file": "src/entities/llm-provider/api/FakeChatProvider.ts",
-        "line": 39,
-        "reason": "e2e-stub",
-        "text": "`[E2E ${options.model}] ${quoted}에 대한 테스트 답변입니다. `"
-    },
-    {
-        "file": "src/entities/llm-provider/api/FakeChatProvider.ts",
-        "line": 40,
-        "reason": "e2e-stub",
-        "text": "이 응답은 실제 LLM 호출 없이 생성된 결정적 응답입니다."
-    },
-    {
         "file": "src/entities/market-news/lib/categoryConfig.ts",
         "line": 76,
         "reason": "catalog-backed-data",

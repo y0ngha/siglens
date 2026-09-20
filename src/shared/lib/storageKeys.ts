@@ -12,37 +12,6 @@ export const LOCAL_STORAGE_ANALYSIS_MODEL_MIGRATION_KEY =
     'siglens_analysis_model_deepseek_migrated';
 
 /**
- * Canonical key `useChat` persists the selected CHAT model under. Defined here
- * (not in `useChat.ts`) so the one-time chat-model migration in
- * `features/symbol-model/lib/migrateChatModel.ts` and `useChat` share a single
- * source of truth instead of duplicating the string literal across layers.
- */
-export const LOCAL_STORAGE_CHAT_MODEL_KEY = 'siglens_chat_model';
-
-/**
- * One-time flag marking that the legacy chat-model migration has run in this
- * browser. Mirrors `LOCAL_STORAGE_ANALYSIS_MODEL_MIGRATION_KEY` but for the CHAT
- * model default, which also flipped (from `gemini-3.6-flash` to the DeepSeek
- * default). Once set, a later deliberate switch back to `gemini-3.6-flash` is
- * preserved forever.
- */
-export const LOCAL_STORAGE_CHAT_MODEL_MIGRATION_KEY =
-    'siglens_chat_model_deepseek_migrated';
-
-/**
- * Second one-time flag for the chat-model migration, covering
- * `gemini-3.5-flash-lite` in addition to the `gemini-3.6-flash` handled by
- * {@link LOCAL_STORAGE_CHAT_MODEL_MIGRATION_KEY}.
- *
- * A separate key is required, not optional: every browser that already ran the
- * first pass has that flag set, so widening the first pass's model list would
- * never execute for exactly the users who need it. The v2 flag re-opens the
- * migration exactly once more.
- */
-export const LOCAL_STORAGE_CHAT_MODEL_MIGRATION_V2_KEY =
-    'siglens_chat_model_deepseek_migrated_v2';
-
-/**
  * Member "깊은 생각"(reasoning) toggle — member-reasoning-toggle spec Part A.
  * Persists the user's opt-in intent across sessions. Default OFF. The
  * *effective* value sent to the server is still gated by tier (free/anon

@@ -51,7 +51,6 @@ function useMarketNewsAnalysisTrigger(category: NewsFeedCategoryId): void {
  *    result directly (run* is blocking — no poll loop needed).
  *
  * Output: discriminated union `loading | done | error`.
- * No `usePublishSymbolChat` — this is a category page, not a per-symbol page.
  */
 export function useMarketNewsDigest(
     category: NewsFeedCategoryId,
