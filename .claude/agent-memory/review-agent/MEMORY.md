@@ -53,6 +53,7 @@ Closed loops (approved, kept for pattern recall only — see file for detail):
 - [agent-analyst-voice prompt R1](project-agent-analyst-voice-prompt-r1.md) — missing PUBLIC_API.md changelog row
 - [ai-chat-sidebar-ux R2](project-ai-chat-sidebar-r2-suspense-promise.md) — unawaited-Promise/use() SSR fix, approved
 - [ai-guest-brand/cookie-polish](project-ai-guest-cookie-polish-r1.md) — guest chat blocked by pinned core version (turnsPerDay.free=0→10 after bump)
+- [analysis-plain orphan-recovery R1](project-analysis-plain-orphan-recovery-r1.md) — cache-write-in-attempt() fix verified exactly-once; prewarm benefit is really just the longer deadline, not cache reuse (6/7 tabs never re-read the key)
 - [core-1.0.4 prompt-currency R4](project-core-1.0.4-prompt-currency-plain-language-r4.md) — closed guardPlainText length-floor comment drift
 - [deepseek-stall-gemini-fallback R1-R2](project-deepseek-stall-gemini-fallback-r2-closed.md) — usage attribution wrong after fallback; closed, new gap noted (news digest missing providerFallback)
 - [seo-a-symbol-gates R1](project-fix-seo-a-symbol-gates-r1.md) — 11-item overhaul, gate/body predicate parity across 3 gates
