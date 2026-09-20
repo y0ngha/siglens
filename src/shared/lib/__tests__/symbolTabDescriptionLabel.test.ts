@@ -20,6 +20,9 @@ beforeAll(async () => {
     t = await getTranslations({ locale: 'ko', namespace: 'shared.seo' });
 });
 
+/** 짧은 주어 — title 예산에 밀려 `titleCore`가 잘리면 단언이 무의미해진다. */
+const opts = { displayName: 'AAPL', locale: 'ko' } as const;
+
 /**
  * 드리프트 가드.
  *
@@ -79,9 +82,6 @@ const CASES: ReadonlyArray<
     ],
     ['options', 'equity', tr => buildSymbolOptionsSeoContent('AAPL', tr, opts)],
 ];
-
-/** 짧은 주어 — title 예산에 밀려 `titleCore`가 잘리면 단언이 무의미해진다. */
-const opts = { displayName: 'AAPL', locale: 'ko' } as const;
 
 describe('symbolTabDescriptionLabel', () => {
     it.each(CASES)(
