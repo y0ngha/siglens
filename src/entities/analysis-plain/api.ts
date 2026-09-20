@@ -42,13 +42,26 @@ const CACHE_TTL_SECONDS = 60 * 60 * 24 * 30;
  * 실측 지연은 6.9~13.5초(346회 전수 실행)다. 15초면 정상 응답을 거의 다 담고,
  * 프로바이더가 매달릴 때 사용자가 기다리는 시간을 3분의 1로 줄인다.
  *
- * ⚠️ **마감을 넘기면 캐시도 비어 있다.** 레이스에서 진 `attempt()`의 결과는 버려지고
- * 캐시 쓰기는 승자 경로에만 있으므로, 어떤 입력이 지속적으로 15초를 넘기면 그
- * 입력은 **매 요청마다** 15초를 쓰고 `plain: null`로 끝난다. 손실이 일회성이라고
- * 적었던 이전 주석은 틀렸다(감사 지적). 그런 입력이 관측되면 마감을 올릴 게 아니라
- * 캐시 쓰기를 `attempt()` 안으로 옮겨 고아 응답도 다음 요청에 쓰이게 해야 한다.
+ * 레이스에서 진 `attempt()`도 캐시는 쓴다(`attempt()` 내부에서 직접 쓴다 — 아래
+ * `withDeadline` 주석 참고). 그래도 이 사용자 경로의 마감은 여전히 15초다 — 이
+ * 값이 지키는 것은 지출이 아니라 **첫 요청자가 기다리는 시간**이고, 마감을 넘기는
+ * 입력이 있으면 그 요청자는 여전히 `plain: null`을 받는다. 다음 요청부터 캐시를
+ * 맞는 것으로 지출 낭비만 없앨 뿐이다.
+ *
+ * ⚠️ **그 "다음 요청"은 사실상 이 사용자 경로에만 있다.** 프리웜 크론은 같은
+ * 프롬프트로 다시 부르지 않는다 — 캐시 키가 원문 산문의 해시인데 그 산문이 매일 밤
+ * 새로 생성되기 때문이고, 게다가 일곱 탭 중 여섯(overall·news·fundamental·
+ * financials·options·congress)은 스냅샷 행이 생기고 나면 클라이언트 위젯을 아예
+ * 마운트하지 않아 방문자도 이 함수를 다시 부르지 않는다(`harvest.ts`의 XOR 게이팅
+ * 주석). 즉 캐시 쓰기 이동이 프리웜에서 회수하는 돈은 사실상 없다 — 프리웜 쪽
+ * 이득은 전적으로 **마감 상향**(30초, `harvest.ts`)이 raw miss율을 낮추는 데서 온다.
+ * 이 문단이 있는 이유: 이 이동을 "프리웜 비용 절감"으로 읽고 다음 사람이 엉뚱한
+ * 기대를 세우지 않게 하려는 것이다.
  *
  * 예산은 시도 횟수가 아니라 **전체**다. 첫 시도가 예산을 다 쓰면 재시도 없이 끝난다.
+ *
+ * 프리웜 크론처럼 기다리는 사람이 없는 호출자는 `rewriteToPlainLanguage`의
+ * `deadlineMs` 인자로 이 값을 덮어쓸 수 있다 — 자세한 이유는 그쪽 호출부 주석 참고.
  */
 const PLAIN_DEADLINE_MS = 15_000;
 
@@ -75,11 +88,21 @@ function buildCacheKey(prompt: string, locale: Locale): string {
  * ⚠️ **레이스일 뿐 요청을 끊지는 못한다.** `callAiProviderRouter`가 넘겨받는
  * `ProviderCallOptions`에 `signal`이 없어(`entities/llm-provider/model.ts`)
  * 어댑터까지 취소를 전달할 방법이 없다. 그래서 마감을 넘긴 호출은 백그라운드에서
- * 계속 돌며 토큰을 청구하고, 레이스가 이미 끝났으므로 **캐시도 쓰지 않는다**.
+ * 계속 돌며 토큰을 청구한다 — 여기까지는 여전히 사실이다.
  *
- * 마감을 45초에서 15초로 줄인 이유 중 하나가 이것이다 — 고아 요청의 수명과
- * 사용자 대기 시간을 함께 줄인다. 근본 해결은 provider 어댑터 계약에 `signal`을
- * 추가하는 것이고, 그건 챗·번역 등 다른 호출자에도 영향을 주므로 별도 작업이다.
+ * **다만 그 돈이 완전히 버려지지는 않는다.** 예전에는 캐시 쓰기가 이 레이스의
+ * 승자 경로에만 있어서, 레이스에서 진 호출이 나중에 끝나도 그 결과는 버려지고
+ * 캐시도 비어 있었다 — 어떤 입력이 지속적으로 마감을 넘기면 **매 요청마다**
+ * 같은 돈을 다시 썼다(7일 감사: `deadline exceeded` 146건, 그만큼의 결과 전량
+ * 폐기). 지금은 캐시 쓰기가 `attempt()` 내부, 레이스 바깥에 있다 — 진 쪽이 나중에
+ * settle해도 `attempt()`가 스스로 캐시를 채우므로, 다음 요청은 그 결과를 그대로
+ * 맞는다. 이 함수가 반환하는 `null`은 그대로다 — 첫 요청자는 여전히 기다리지
+ * 않고 원본을 본다. 바뀐 것은 그 요청자 **다음**부터다.
+ *
+ * 마감을 45초에서 15초로 줄인 이유 중 하나가 고아 요청의 수명과 사용자 대기
+ * 시간을 함께 줄이는 것이었다 — 그건 여전히 유효하다. 근본 해결은 provider
+ * 어댑터 계약에 `signal`을 추가하는 것이고, 그건 챗·번역 등 다른 호출자에도
+ * 영향을 주므로 별도 작업이다.
  */
 function withDeadline<T>(work: Promise<T>, ms: number): Promise<T | null> {
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -124,7 +147,13 @@ export async function rewriteToPlainLanguage(
      */
     currency?: CurrencyCode,
     /** 현재 주가. payload에 값이 없는 분석 타입에서 특히 중요하다. */
-    currentPrice?: number
+    currentPrice?: number,
+    /**
+     * 마감(ms). 생략하면 `PLAIN_DEADLINE_MS`(15초) — 사용자가 화면 앞에서
+     * 기다리는 SSE 경로가 이 기본값을 쓴다. 기다리는 사람이 없는 호출자
+     * (프리웜 크론)만 더 긴 값을 넘긴다. 자세한 근거는 각 호출부 주석 참고.
+     */
+    deadlineMs: number = PLAIN_DEADLINE_MS
 ): Promise<string | null> {
     // E2E는 LLM을 태우지 않는다. 키 부재에만 기대면(`tryReadPlainModelConfig`가
     // null을 돌려주므로 결과는 같다) 어느 날 키가 주입되는 순간 조용히 과금과
@@ -176,6 +205,20 @@ export async function rewriteToPlainLanguage(
         const cached = await cache?.get<string>(key).catch(() => null);
         if (typeof cached === 'string' && cached.length > 0) return cached;
 
+        /**
+         * fire-and-forget 캐시 쓰기. `attempt()`가 성공을 확정하는 두 지점
+         * (가드 통과, 문장 도려내기로 살림) 각각에서 정확히 한 번 부른다.
+         *
+         * `withDeadline`의 `Promise.race` **바깥이 아니라 `attempt()` 안**에
+         * 두는 것이 이 함수의 핵심이다 — 레이스에서 진 호출이 나중에 settle해도
+         * 이 클로저가 여전히 살아 있어 캐시를 채운다. 응답을 늦추지 않도록
+         * await하지 않고, 실패는 삼킨다(캐시 장애가 평이화 성공을 무너뜨리면
+         * 안 된다). 자세한 배경은 `withDeadline` JSDoc 참고.
+         */
+        const writeCache = (text: string): void => {
+            cache?.set(key, text, CACHE_TTL_SECONDS).catch(() => undefined);
+        };
+
         const attempt = async (retryHint?: string): Promise<string | null> => {
             const prompt =
                 retryHint === undefined
@@ -200,7 +243,10 @@ export async function rewriteToPlainLanguage(
                 allowed,
                 locale,
             });
-            if (failure === null) return text;
+            if (failure === null) {
+                writeCache(text);
+                return text;
+            }
             console.warn('[analysisPlain] guard rejected', {
                 symbol,
                 locale,
@@ -233,16 +279,12 @@ export async function rewriteToPlainLanguage(
                     locale,
                     removedChars: text.length - salvaged.length,
                 });
+                writeCache(salvaged);
             }
             return salvaged;
         };
 
-        const text = await withDeadline(attempt(), PLAIN_DEADLINE_MS);
-        if (text === null) return null;
-
-        // fire-and-forget: 캐시 쓰기가 응답을 늦추지 않는다.
-        cache?.set(key, text, CACHE_TTL_SECONDS).catch(() => undefined);
-        return text;
+        return await withDeadline(attempt(), deadlineMs);
     } catch (error) {
         // 조용히 삼키지 않는다 — 키 오설정이나 모델 장애가 전 사용자에게 쉽게보기를
         // 없애는데 화면에는 아무 에러도 안 뜬다(원본이 나온다).
