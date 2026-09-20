@@ -497,8 +497,9 @@ const DISPATCH: Record<
      */
     briefing: (params, signal) =>
         // scope는 클라이언트가 보낸 문자열이다. 여기서 좁히지 않고 그대로 넘기는 것은
-        // 의도된 설계다 — 액션이 `isDashboardScopeId`로 검증하고 알 수 없는 값이면
-        // 에러를 돌려준다(라우트와 액션 양쪽에 검증을 두면 규칙이 갈린다).
+        // 의도된 설계다 — 액션이 `isPageDashboardScopeId`(허브 페이지가 있는 시장만)로
+        // 검증하고 그 밖의 값이면 에러를 돌려준다(라우트와 액션 양쪽에 검증을 두면
+        // 규칙이 갈린다).
         submitMarketBriefingAction(params.scope as string, signal),
 
     // 게이트를 쓰지 않아 사용자 문구를 만들지 않는다 — 로케일이 필요 없다.

@@ -17,9 +17,18 @@ import {
     KR_SECTOR_GROUPS,
     KR_SECTOR_STOCKS,
 } from './dashboard-tickers-kr';
+import {
+    CRYPTO_MARKET_INDICES,
+    CRYPTO_SECTOR_STOCKS,
+    CRYPTO_SIGNAL_SECTORS,
+} from './dashboard-tickers-crypto';
 
-/** 대시보드가 다루는 시장. `/market`(us)과 `/market/kr`(kr)이 각각 하나씩 쓴다. */
-export type DashboardScopeId = 'us' | 'kr';
+/**
+ * 대시보드가 다루는 시장. `/market`(us)과 `/market/kr`(kr)이 각각 하나씩 쓰고,
+ * `crypto`는 **페이지가 없다** — 에이전트의 `get_market_overview`가 크립토 신호
+ * 스캔을 돌릴 때만 쓴다(`CRYPTO_DASHBOARD_SCOPE` 주석 참고).
+ */
+export type DashboardScopeId = 'us' | 'kr' | 'crypto';
 
 /**
  * 한 시장의 대시보드 설정 묶음.
@@ -104,10 +113,23 @@ export interface DashboardScope {
      * 우선순위만 바꾸는 것이다. `$`를 원화에 붙였던 것과 같은 축의 미국 전제다.
      */
     readonly tickerIsReadable: boolean;
+    /**
+     * 이 시장을 **렌더하는 허브 페이지가 있는가**(`/market`, `/market/kr`).
+     *
+     * scope 목록을 통째로 도는 코드가 있다 — `seo-prewarm`의 `marketBriefingTargets`는
+     * `Object.values(DASHBOARD_SCOPES)`를 돌며 시장 브리핑을 **생성**한다(LLM 호출).
+     * 화면이 없는 scope가 그 순회에 끼면 아무도 읽지 않는 브리핑을 매일 밤 돈 주고
+     * 굽는다. `crypto`가 정확히 그런 scope다(에이전트 도구 전용).
+     *
+     * 불리언을 여기 두는 이유는 순회하는 쪽에서 id를 하드코딩해 거르면, 다음에
+     * 추가되는 scope가 **아무 결정도 하지 않은 채** 프리웜에 딸려 들어가기 때문이다.
+     */
+    readonly hasHubPage: boolean;
 }
 
 export const US_DASHBOARD_SCOPE: DashboardScope = {
     id: 'us',
+    hasHubPage: true,
     // 화면 문구가 아니라 **core 프롬프트로 가는 값**이다(§marketBriefingContext).
     // 영어로 두는 이유는 `CALENDAR_REGION_LABEL`과 같다 — 모델 지시문이
     // 로케일로 갈리면 프롬프트만 흔들린다. 화면은 `MarketDataErrorNotice`처럼
@@ -126,6 +148,7 @@ export const US_DASHBOARD_SCOPE: DashboardScope = {
 
 export const KR_DASHBOARD_SCOPE: DashboardScope = {
     id: 'kr',
+    hasHubPage: true,
     marketLabel: 'Korean market',
     currencySymbol: '₩',
     linkSectorCards: false,
@@ -141,9 +164,37 @@ export const KR_DASHBOARD_SCOPE: DashboardScope = {
     sectorStocks: KR_SECTOR_STOCKS,
 };
 
+/**
+ * 크립토 — **화면 없는 scope**. `/market/crypto` 페이지는 없고, 에이전트 도구
+ * (`get_market_overview`의 `market: 'crypto'`)만 이 scope로 신호 스캔과 시세를
+ * 읽는다. 페이지가 없으니 카드 표시용 필드(`sectorEtfs`·`sectorGroups`)는 비고,
+ * 그 결과 시장 요약의 `sectors`도 빈 배열이 된다 — 크립토에는 섹터 ETF가 없어
+ * 억지로 채울 대상 자체가 없다. 묶음은 `signalSectors`(메이저·알트코인)가 대신한다.
+ *
+ * `volatilityIndexSymbol`은 `null`이다. 한국과 같은 이유로, 입력에 없는 변동성
+ * 지수를 요구하면 모델이 숫자를 지어낸다.
+ */
+export const CRYPTO_DASHBOARD_SCOPE: DashboardScope = {
+    id: 'crypto',
+    // `/market/crypto`는 없다 — 프리웜·페이지용 Server Action이 이 scope를 건드리면 안 된다.
+    hasHubPage: false,
+    marketLabel: 'Crypto market',
+    currencySymbol: '$',
+    // 카드가 없으니 링크할 것도 없다.
+    linkSectorCards: false,
+    volatilityIndexSymbol: null,
+    tickerIsReadable: true,
+    indices: CRYPTO_MARKET_INDICES,
+    sectorEtfs: [],
+    sectorGroups: [],
+    signalSectors: CRYPTO_SIGNAL_SECTORS,
+    sectorStocks: CRYPTO_SECTOR_STOCKS,
+};
+
 export const DASHBOARD_SCOPES: Record<DashboardScopeId, DashboardScope> = {
     us: US_DASHBOARD_SCOPE,
     kr: KR_DASHBOARD_SCOPE,
+    crypto: CRYPTO_DASHBOARD_SCOPE,
 };
 
 /**
@@ -167,7 +218,21 @@ export function dashboardScopeOf(id: string): DashboardScope {
 
 /** 런타임 값이 유효한 scope id인지. Server Action 경계에서 좁힐 때 쓴다. */
 export function isDashboardScopeId(value: unknown): value is DashboardScopeId {
-    return value === 'us' || value === 'kr';
+    return value === 'us' || value === 'kr' || value === 'crypto';
+}
+
+/**
+ * **허브 페이지가 쓰는** scope id인지. 페이지에 붙은 Server Action은 이쪽으로 좁힌다.
+ *
+ * `isDashboardScopeId`는 "이 앱이 아는 시장인가"만 본다. 그 유니온이 넓어질 때마다
+ * 페이지용 액션의 입력도 같이 넓어지는데, 액션은 네트워크로 직접 부를 수 있으므로
+ * 화면이 없는 scope까지 시세 조회와 브리핑 생성을 시킬 수 있게 된다 —
+ * `crypto`를 추가했을 때 실제로 그랬다.
+ */
+export function isPageDashboardScopeId(
+    value: unknown
+): value is DashboardScopeId {
+    return isDashboardScopeId(value) && DASHBOARD_SCOPES[value].hasHubPage;
 }
 
 /**

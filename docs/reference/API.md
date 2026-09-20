@@ -623,13 +623,13 @@ interface Body {
 |---|---|
 | `search_ticker` | 종목 검색(자체 DB + FMP) |
 | `get_quote` | 시세 provider(FMP/yahoo, 세션별 캐시) |
-| `get_bars_indicators` | 봉 데이터 + core 지표 계산 |
+| `get_bars_indicators` | 봉 데이터 + core 지표 계산 (1Day는 종목 자체 공포·탐욕 지수 포함 — 시장 지수와 다름) |
 | `get_cached_analysis` | Redis peek → SEO 스냅샷 → 분석 이력(DB) |
 | `run_fresh_analysis` | core 분석 엔진 신규 실행(최대 250초) |
-| `get_news` | 뉴스 DB(`market-news`/`news-article`) |
+| `get_news` | 뉴스 DB(`market-news`/`news-article`) + 카테고리 요청 시 그 피드의 다이제스트 peek |
 | `get_options_summary` | 옵션 체인 스냅샷(yahoo, 캐시) |
 | `get_fundamentals` | FMP(미국)/yahoo(한국) 펀더멘털 provider — 밸류에이션·수익성·성장·재무건전성·애널리스트 컨센서스 |
-| `get_market_overview` | 시장 공포·탐욕 지수 + 지수/섹터 요약 + (미국만) 섹터 신호 스캔, 전부 1h 캐시 |
+| `get_market_overview` | 시장 공포·탐욕 지수(미국·한국 — 크립토는 지수 자체가 없어 `null`) + 지수/섹터 요약 + 섹터 신호 스캔(미국·한국·크립토) + 캐시된 시장 브리핑 peek, 전부 1h 캐시 |
 | `get_economy` | 매크로 지표·국채 금리·경제 캘린더(24h 캐시) + 매크로 브리핑 캐시 |
 | `get_congress_trades` | 의회 거래 공시(FMP) |
 | `get_my_portfolio` | 회원 보유종목(DB) — 회원 전용 |

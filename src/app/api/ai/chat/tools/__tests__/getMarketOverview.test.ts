@@ -1,14 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { fgUs, fgKr, summary, sectorSignals, getTranslationsMock } = vi.hoisted(
-    () => ({
-        fgUs: vi.fn(),
-        fgKr: vi.fn(),
-        summary: vi.fn(),
-        sectorSignals: vi.fn(),
-        getTranslationsMock: vi.fn(),
-    })
-);
+const {
+    fgUs,
+    fgKr,
+    summary,
+    sectorSignals,
+    peekBriefing,
+    getTranslationsMock,
+} = vi.hoisted(() => ({
+    fgUs: vi.fn(),
+    fgKr: vi.fn(),
+    summary: vi.fn(),
+    sectorSignals: vi.fn(),
+    peekBriefing: vi.fn(),
+    getTranslationsMock: vi.fn(),
+}));
 vi.mock('@/entities/market-fear-greed/api/marketFearGreedStaticCache', () => ({
     getMarketFearGreedStatic: fgUs,
 }));
@@ -21,6 +27,9 @@ vi.mock('@/entities/market-summary/api/marketSummaryStaticCache', () => ({
 }));
 vi.mock('@/entities/sector-signal/api/sectorSignalsStaticCache', () => ({
     getSectorSignalsStatic: sectorSignals,
+}));
+vi.mock('@/entities/market-summary/api/briefingStaticCache', () => ({
+    peekBriefingStatic: peekBriefing,
 }));
 // `getTranslations` is a controllable mock (not the fixed `nextIntlServerStub`
 // export) so ONE test below can swap in a translator that mimics real
@@ -44,6 +53,7 @@ const rt = { analysisModel: 'deepseek-v4.1-flash' as const };
 describe('getMarketOverviewTool', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        peekBriefing.mockResolvedValue(null);
         getTranslationsMock.mockImplementation(
             async ({
                 namespace,
@@ -122,19 +132,142 @@ describe('getMarketOverviewTool', () => {
         expect(r.sectorSignals.topSignals).toHaveLength(2);
     });
 
-    it('kr은 KR fear-greed를 쓰고 섹터신호는 조회하지 않는다', async () => {
+    it('kr도 KR fear-greed와 함께 KR 스코프의 섹터신호를 채운다', async () => {
         fgKr.mockResolvedValue({
             snapshot: { score: 40, label: 'fear', factors: [] },
             comparisons: [],
         });
+        sectorSignals.mockResolvedValue({
+            computedAt: '2026-09-19T00:00:00.000Z',
+            stocks: [
+                {
+                    symbol: '005930.KS',
+                    koreanName: '삼성전자',
+                    sectorSymbol: '091160.KS',
+                    price: 74000,
+                    changePercent: 1.2,
+                    trend: 'uptrend',
+                    signals: [{ type: 'golden_cross', direction: 'bullish' }],
+                },
+            ],
+        });
         const r = (await getMarketOverviewTool({ market: 'kr' }, ctx, rt)) as {
             market: string;
-            sectorSignals: unknown;
+            sectorSignals: {
+                countsBySector: Record<string, number>;
+                topSignals: { symbol: string }[];
+            };
         };
         expect(fgUs).not.toHaveBeenCalled();
-        expect(sectorSignals).not.toHaveBeenCalled();
         expect(r.market).toBe('kr');
-        expect(r.sectorSignals).toBeNull();
+        // 미국 종목 목록으로 한국 스캔이 돌면 결과는 조용히 엉뚱해진다 —
+        // 넘어간 스코프가 kr인지까지 확인한다.
+        expect(sectorSignals).toHaveBeenCalledWith(
+            expect.objectContaining({ id: 'kr' }),
+            expect.anything()
+        );
+        expect(r.sectorSignals.countsBySector).toEqual({ '091160.KS': 1 });
+        expect(r.sectorSignals.topSignals[0]?.symbol).toBe('005930.KS');
+    });
+
+    it('crypto는 공포·탐욕 없이 크립토 스코프로 스캔하고, 지수 자리엔 메이저 코인이 온다', async () => {
+        summary.mockResolvedValue({
+            indices: [
+                { symbol: 'BTCUSD', price: 64000, changesPercentage: 2.4 },
+            ],
+            // 크립토에는 섹터 ETF가 없다.
+            sectors: [],
+        });
+        sectorSignals.mockResolvedValue({
+            computedAt: '2026-09-19T00:00:00.000Z',
+            stocks: [
+                {
+                    symbol: 'SOLUSD',
+                    koreanName: '솔라나',
+                    sectorSymbol: 'major',
+                    price: 180,
+                    changePercent: 3.1,
+                    trend: 'uptrend',
+                    signals: [{ type: 'golden_cross', direction: 'bullish' }],
+                },
+            ],
+        });
+        const r = (await getMarketOverviewTool(
+            { market: 'crypto' },
+            ctx,
+            rt
+        )) as {
+            market: string;
+            fearGreed: unknown;
+            sectorBreadth: unknown;
+            bestWorstSpreadPp: unknown;
+            indices: { symbol: string }[];
+            sectorSignals: { countsBySector: Record<string, number> };
+        };
+        expect(r.market).toBe('crypto');
+        expect(fgUs).not.toHaveBeenCalled();
+        expect(fgKr).not.toHaveBeenCalled();
+        // 미국·한국 지수를 빌려 오면 다른 시장 숫자가 라벨 없이 섞인다.
+        expect(r.fearGreed).toBeNull();
+        expect(r.sectorBreadth).toBeNull();
+        expect(r.bestWorstSpreadPp).toBeNull();
+        expect(r.indices[0]?.symbol).toBe('BTCUSD');
+        expect(sectorSignals).toHaveBeenCalledWith(
+            expect.objectContaining({ id: 'crypto' }),
+            expect.anything()
+        );
+        expect(r.sectorSignals.countsBySector).toEqual({ major: 1 });
+        // 크립토 브리핑은 프리웜이 굽지 않아 확정 미스다 — 물어보는 것 자체가 낭비.
+        expect(peekBriefing).not.toHaveBeenCalled();
+    });
+
+    it('캐시된 시장 브리핑과 공포·탐욕 과거 대비 점수를 함께 싣는다', async () => {
+        fgUs.mockResolvedValue({
+            snapshot: { score: 62, label: 'greed', factors: [] },
+            comparisons: [
+                {
+                    key: 'weekAgo',
+                    date: '2026-09-12',
+                    score: 44,
+                    label: 'fear',
+                },
+            ],
+        });
+        sectorSignals.mockResolvedValue({ computedAt: '', stocks: [] });
+        peekBriefing.mockResolvedValue({
+            summary: '기술주가 지수를 끌어올렸다',
+            dominantThemes: ['AI 설비투자'],
+            riskSentiment: 'risk-on',
+            sectorAnalysis: { leaders: [], laggards: [], narrative: '' },
+            volatilityAnalysis: { vixLevel: 15, description: '' },
+        });
+        const r = (await getMarketOverviewTool({ market: 'us' }, ctx, rt)) as {
+            fearGreed: { comparisons: { key: string; score: number }[] };
+            briefing: { summary: string; riskSentiment: string } | null;
+        };
+        expect(r.fearGreed.comparisons).toEqual([
+            { key: 'weekAgo', date: '2026-09-12', score: 44, label: 'fear' },
+        ]);
+        expect(r.briefing).toEqual({
+            summary: '기술주가 지수를 끌어올렸다',
+            dominantThemes: ['AI 설비투자'],
+            riskSentiment: 'risk-on',
+        });
+    });
+
+    it('브리핑 peek이 실패해도 나머지 시장 데이터는 그대로 나간다', async () => {
+        fgUs.mockResolvedValue({
+            snapshot: { score: 50, label: 'neutral', factors: [] },
+            comparisons: [],
+        });
+        sectorSignals.mockResolvedValue({ computedAt: '', stocks: [] });
+        peekBriefing.mockRejectedValue(new Error('cache down'));
+        const r = (await getMarketOverviewTool({ market: 'us' }, ctx, rt)) as {
+            briefing: unknown;
+            fearGreed: { score: number };
+        };
+        expect(r.briefing).toBeNull();
+        expect(r.fearGreed.score).toBe(50);
     });
 
     it('fear-greed 조회가 실패해도(allSettled) 지수·섹터 데이터는 살아남는다', async () => {

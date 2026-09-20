@@ -14,6 +14,7 @@ const {
     spec,
     detectCandlePatternEntries,
     getDetectionBars,
+    computeFearGreed,
 } = vi.hoisted(() => ({
     profile: vi.fn(),
     assetInfo: vi.fn(),
@@ -23,16 +24,22 @@ const {
     spec: vi.fn(),
     detectCandlePatternEntries: vi.fn(),
     getDetectionBars: vi.fn(),
+    computeFearGreed: vi.fn(),
 }));
 vi.mock('@y0ngha/siglens-core', async importOriginal => {
     const actual =
         await importOriginal<typeof import('@y0ngha/siglens-core')>();
+    // 기본은 실제 구현을 태운다 — 표본이 짧으면 core가 기권(null)하는지를 다른
+    // 테스트들이 실측 확률 계산으로 검증하기 때문이다. "기권" 자체를 고정하는
+    // 테스트에서만 mockReturnValueOnce로 null을 강제한다.
+    computeFearGreed.mockImplementation(actual.computeFearGreedIndex);
     return {
         ...actual,
         classifyTrend: classify,
         detectSignals: detect,
         detectCandlePatternEntries,
         getDetectionBars,
+        computeFearGreedIndex: computeFearGreed,
     };
 });
 vi.mock('@/entities/bars/lib/barsDataCache', () => ({
@@ -113,6 +120,100 @@ describe('getBarsIndicatorsTool', () => {
             bars.slice(-15)
         );
         detectCandlePatternEntries.mockReturnValue([]);
+    });
+
+    it('1Day에서는 종목 자체 공포·탐욕 지수를 함께 내고, 다른 타임프레임·짧은 흐름 데이터에서는 null', async () => {
+        profile.mockResolvedValue('us-equity');
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+        // 워크포워드 표본을 채우려면 긴 일봉이 필요하다 — 실제 core 함수를 그대로 태운다.
+        // `bar()` 헬퍼는 고가=저가=종가·거래량 고정이라 변동성·거래량 백분위가
+        // 서지 않는다 — 공포·탐욕은 그 표본으로는 기권(null)한다.
+        const longBars = Array.from({ length: 400 }, (_, i) => {
+            const close = 100 + Math.sin(i / 7) * 12 + i * 0.05;
+            return {
+                time: i * 86_400,
+                open: close - 0.5,
+                high: close + 1,
+                low: close - 1,
+                close,
+                volume: 100 + ((i * 37) % 50),
+            };
+        });
+        const withFlow = {
+            ...indicators,
+            buySellVolume: longBars.map((_, i) => ({
+                buyVolume: 60 + ((i * 13) % 20),
+                sellVolume: 40 + ((i * 7) % 20),
+            })),
+        };
+        getCachedBars.mockResolvedValue({
+            bars: longBars,
+            indicators: withFlow,
+        });
+        const daily = (await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '1Day' },
+            ctx,
+            rt
+        )) as { fearGreed: { score: number; groups: unknown[] } | null };
+        expect(daily.fearGreed).not.toBeNull();
+        expect(daily.fearGreed?.score).toBeGreaterThanOrEqual(0);
+        expect(daily.fearGreed?.score).toBeLessThanOrEqual(100);
+        expect(daily.fearGreed?.groups.length).toBeGreaterThan(0);
+
+        // 화면(`/{symbol}/fear-greed`)이 일봉에 고정돼 있다 — 다른 봉으로 계산하면
+        // 어느 화면에도 없는 점수를 내놓게 된다.
+        const intraday = (await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '4Hour' },
+            ctx,
+            rt
+        )) as { fearGreed: unknown };
+        expect(intraday.fearGreed).toBeNull();
+
+        // 흐름 배열이 봉보다 짧으면 core가 인덱스로 읽다 throw한다.
+        getCachedBars.mockResolvedValue({
+            bars: longBars,
+            indicators: { ...indicators, buySellVolume: [] },
+        });
+        const shortFlow = (await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '1Day' },
+            ctx,
+            rt
+        )) as { fearGreed: unknown; trend: string };
+        expect(shortFlow.fearGreed).toBeNull();
+        expect(shortFlow.trend).toBe('uptrend');
+    });
+
+    it('core가 표본 부족으로 기권(null)하면 fearGreed만 null이고 나머지 페이로드는 그대로 나간다', async () => {
+        profile.mockResolvedValue('us-equity');
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+        computeFearGreed.mockReturnValueOnce(null);
+        const longBars = Array.from({ length: 400 }, (_, i) => ({
+            time: i * 86_400,
+            open: 100,
+            high: 101,
+            low: 99,
+            close: 100,
+            volume: 100,
+        }));
+        getCachedBars.mockResolvedValue({
+            bars: longBars,
+            indicators: {
+                ...indicators,
+                buySellVolume: longBars.map(() => ({
+                    buyVolume: 60,
+                    sellVolume: 40,
+                })),
+            },
+        });
+        const r = (await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '1Day' },
+            ctx,
+            rt
+        )) as { fearGreed: unknown; trend: string };
+        expect(r.fearGreed).toBeNull();
+        expect(r.trend).toBe('uptrend');
     });
 
     it('봉이 없으면 found:false', async () => {

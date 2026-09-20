@@ -147,31 +147,35 @@ interface HubTarget {
 }
 
 function marketBriefingTargets(): HubTarget[] {
-    return Object.values(DASHBOARD_SCOPES).map(scope => ({
-        label: `market-briefing:${scope.id}`,
-        tag: `market:briefing:${scope.id}`,
-        run: async () => {
-            const summary = await getCachedMarketSummary(
-                marketDataProviderFor(scope.id),
-                scope
-            );
-            // context는 캐시 키에 접힌다 — 액션·peek와 **같은 헬퍼**여야 한다.
-            const context = marketBriefingContextOf(scope, summary);
-            const surface = marketBriefingSeedSurface(scope);
-            const peek = () => peekBriefingCache(summary, context);
-            const cached = await peek();
-            if (cached !== null) {
-                // 이미 손에 있는 값이다 — seed를 최신으로 유지하는 비용은 SET 한 번.
-                await writeHubSsrSeed(surface, cached);
-                return 'alreadyFresh';
-            }
-            await runBriefing(summary, context);
-            const readBack = await readBackWithRetry(peek);
-            if (readBack === null) return 'keyMismatch';
-            await writeHubSsrSeed(surface, readBack);
-            return 'generated';
-        },
-    }));
+    // 화면이 없는 scope는 뺀다. 이 순회는 브리핑을 **생성**하므로(LLM 호출),
+    // 아무도 읽지 않는 시장이 끼면 매일 밤 그만큼 돈이 나간다.
+    return Object.values(DASHBOARD_SCOPES)
+        .filter(scope => scope.hasHubPage)
+        .map(scope => ({
+            label: `market-briefing:${scope.id}`,
+            tag: `market:briefing:${scope.id}`,
+            run: async () => {
+                const summary = await getCachedMarketSummary(
+                    marketDataProviderFor(scope.id),
+                    scope
+                );
+                // context는 캐시 키에 접힌다 — 액션·peek와 **같은 헬퍼**여야 한다.
+                const context = marketBriefingContextOf(scope, summary);
+                const surface = marketBriefingSeedSurface(scope);
+                const peek = () => peekBriefingCache(summary, context);
+                const cached = await peek();
+                if (cached !== null) {
+                    // 이미 손에 있는 값이다 — seed를 최신으로 유지하는 비용은 SET 한 번.
+                    await writeHubSsrSeed(surface, cached);
+                    return 'alreadyFresh';
+                }
+                await runBriefing(summary, context);
+                const readBack = await readBackWithRetry(peek);
+                if (readBack === null) return 'keyMismatch';
+                await writeHubSsrSeed(surface, readBack);
+                return 'generated';
+            },
+        }));
 }
 
 function macroBriefingTarget(): HubTarget {

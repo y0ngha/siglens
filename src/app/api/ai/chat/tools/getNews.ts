@@ -1,5 +1,6 @@
 import 'server-only';
 import { DrizzleMarketNewsRepository } from '@/entities/market-news/api';
+import { peekMarketNewsDigestStatic } from '@/entities/market-news/api/marketNewsDigestStaticCache';
 import { CATEGORY_CONFIG, categoryFromSlug } from '@/entities/market-news';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import type { NewsDisplayItem } from '@/shared/lib/types';
@@ -11,6 +12,7 @@ import {
 import { MS_PER_DAY, MS_PER_HOUR } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import type { ToolExecutor } from './index';
+import { logToolDegrade } from './logToolDegrade';
 import { fitToEscapedBudget, TOOL_RESULT_MAX_CHARS } from './truncate';
 
 /** `get_news`'s `tally` field shape — sentiment/impact counts over the RETURNED page. */
@@ -88,6 +90,14 @@ export const getNewsTool: ToolExecutor = async (args, ctx) => {
     // via the shared `content_translations` sidecar (same helper the news
     // pages use) — no manual ko/en branching needed here.
     let rows: NewsDisplayItem[];
+    /**
+     * The category feed's own AI digest — the same one `/news/[category]`
+     * renders. `peek` is cache-read-only (zero LLM cost, no enqueue), so the
+     * agent gets the synthesis the page already has instead of re-deriving it
+     * from the item list. Stays `null` for a symbol query (the digest is
+     * per-category) and on a cold cache.
+     */
+    let digest: Awaited<ReturnType<typeof peekMarketNewsDigestStatic>> = null;
     if (typeof args.symbol === 'string') {
         rows = await new DrizzleNewsRepository(db).listCardsBySymbol(
             args.symbol.toUpperCase(),
@@ -101,11 +111,23 @@ export const getNewsTool: ToolExecutor = async (args, ctx) => {
                 error: 'invalid_args',
                 issues: [{ path: 'category', message: 'unknown category' }],
             };
-        rows = await new DrizzleMarketNewsRepository(db).listCardsByCategory(
-            CATEGORY_CONFIG[id].sentinel,
-            sinceMs,
-            ctx.locale
-        );
+        [rows, digest] = await Promise.all([
+            new DrizzleMarketNewsRepository(db).listCardsByCategory(
+                CATEGORY_CONFIG[id].sentinel,
+                sinceMs,
+                ctx.locale
+            ),
+            // `peekMarketNewsDigestStatic`은 자체 try/catch로 실패를 삼켜
+            // `null`로 resolve한다(그쪽에서 이미 로그도 남긴다). 이 `.catch`는
+            // **그 계약이 바뀔 때를 위한 여분**이다 — `Promise.all`은 형제 하나가
+            // reject하면 통째로 무너지므로, 다이제스트 하나 때문에 기사 목록까지
+            // 잃는 경로를 만들지 않는다. 형제인 `getMarketOverview`의 브리핑 peek은
+            // 내부 try/catch가 없어 그쪽 `.catch`는 실제로 동작한다.
+            peekMarketNewsDigestStatic(id, ctx.locale).catch(error => {
+                logToolDegrade('get_news', 'digest peek', error);
+                return null;
+            }),
+        ]);
     } else {
         return {
             error: 'invalid_args',
@@ -133,6 +155,12 @@ export const getNewsTool: ToolExecutor = async (args, ctx) => {
         url: r.url,
     }));
     const tally = tallyOf(page);
+    const digestView = digest && {
+        driver: digest.currentDriverKo,
+        keyEvents: digest.keyEventsKo,
+        upcomingEvents: digest.upcomingEventsKo,
+        overallSentiment: digest.overallSentiment,
+    };
 
     if (args.includeBody === true) {
         const bodyItemCount = Math.min(page.length, BODY_ITEMS);
@@ -143,6 +171,7 @@ export const getNewsTool: ToolExecutor = async (args, ctx) => {
                 count: items.length,
                 coverageLimited: items.length === 0,
                 tally,
+                digest: digestView,
                 items,
             }).length;
             const remaining = Math.max(
@@ -169,6 +198,7 @@ export const getNewsTool: ToolExecutor = async (args, ctx) => {
         count: items.length,
         coverageLimited: items.length === 0,
         tally,
+        digest: digestView,
         items,
     };
 };
