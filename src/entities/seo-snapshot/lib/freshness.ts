@@ -54,12 +54,14 @@ export function snapshotCloseBoundaryFor(symbol: string, now: Date): Date {
 /**
  * 지금 그 심볼의 정규장이 열려 있으면 prewarm을 미룬다.
  *
- * prewarm 창은 **20:30~03:59 UTC**(미국 마감 창) + **07:00~09:55 UTC**(KR 마감 창,
- * `kr-boundary`)로 나뉜다(`docs/reference/CRON.md`). 미국 마감 창의 뒤쪽 4시간은
- * **KRX 장중**이다(00:00~03:59 UTC = 09:00~12:59 KST). 회전 오프셋은 Redis 영속
+ * prewarm 창은 **20:30~00:59 UTC + 04:05~05:55 UTC**(미국 마감 창) +
+ * **10:05~12:55 UTC**(KR 마감 창, `kr-boundary`)로 나뉜다
+ * (`docs/reference/CRON.md`. 2026-09 비용 감사로 DeepSeek peak 구간(평일
+ * 01~04·06~10 UTC)을 비우기 전에는 20:30~03:59 + 07:00~09:55였다). 미국 마감 창의
+ * **04:05~05:55 구간은 KRX 장중**이다(= 13:05~14:55 KST). 회전 오프셋은 Redis 영속
  * 커서에서 나온다(`runPrewarmBatch.ts`의 `advanceRotationCursor` 참고 — 2026-08
  * 감사 이전엔 epoch/tick 시각에서 파생했지만 지금은 그 시계와 무관하다). 그래도
- * 국내 종목이 미국 마감 창(뒤쪽 4시간이 KRX 장중과 겹침)의 어느 틱에 걸릴지는
+ * 국내 종목이 미국 마감 창(위 두 시간이 KRX 장중과 겹침)의 어느 틱에 걸릴지는
  * 여전히 회전마다 달라질 수 있고, 장중에 걸린 틱에는 **형성 중인 일봉으로 만든
  * 서술**이 스냅샷에 굳어 다음 마감까지 봇에게 나간다 — 이 가드가 여전히 필요한 이유다.
  *

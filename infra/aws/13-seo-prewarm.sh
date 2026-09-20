@@ -3,15 +3,46 @@
 # infra/aws/13-seo-prewarm.sh — SEO pre-warm cron EventBridge 스케줄 프로비저닝 (멱등)
 #
 # `PATCH /api/cron/seo-prewarm`(Task 8)를 AWS EventBridge → API Destination으로
-# 주기 호출하기 위한 IAM 역할·Connection·API Destination·Rule 4개·타겟 wiring을
+# 주기 호출하기 위한 IAM 역할·Connection·API Destination·Rule 5개·타겟 wiring을
 # 생성한다. 이 저장소에서 EventBridge를 사용하는 **첫 사례**다 — Vercel Cron/GitHub
 # Actions cron과 달리 classic Rules + API Destinations는 UTC 스케줄만 지원한다
 # (라우트가 ET 마감 기준 신선도로 자체 게이팅하므로 UTC로도 문제없다, spec §6/§11).
 #
-# 스케줄: 20:30–03:59 UTC(미국 마감 창) + 07:00–09:55 UTC(KR 마감 창), 5분 간격
-# (EST/EDT 양쪽에서 16:00 ET 마감을 커버). UTC 자정 + AWS cron의 "시간별로
-# 다른 분(minute) 표현" 제약 때문에 미국 마감 창을 3개 규칙으로 쪼갠다
-# (20:30-55시, 21-23시, 0-3시). KR 마감 창은 자정을 걸치지 않아 규칙 1개로 충분하다.
+# 스케줄: 20:30–00:59 UTC + 04:05–05:55 UTC(미국 마감 창) + 10:05–12:55 UTC
+# (KR 마감 창), 5분 간격 (EST/EDT 양쪽에서 16:00 ET 마감을 커버). UTC 자정 +
+# AWS cron의 "시간별로 다른 분(minute) 표현" 제약 때문에 미국 마감 창을 4개
+# 규칙으로 쪼갠다 (20:30-55시, 21-23시, 0시, 4-5시). KR 마감 창은 자정을
+# 걸치지 않아 규칙 1개로 충분하다.
+#
+# ⚠️ 2026-09 비용 감사 — 이 창 배치는 **DeepSeek peak/off-peak 요금**에 맞춰
+# 잡혀 있다. 프로젝트 DeepSeek 지출의 ~99%가 이 cron이고(프리웜 창 밖은 시간당
+# 2~15회), DeepSeek는 2026-08-16부터 peak를 평일 `01:00–04:00`·`06:00–10:00`
+# UTC로 정의하고 그 밖(주말·중국 공휴일 포함)을 **정확히 절반** 가격으로 매긴다.
+# 이전 스케줄(00:00–03:59 + 07:00–09:55)은 하필 그 두 구간을 정통으로 덮어,
+# 실측 하룻밤 출력 10.12M 토큰 중 2.93M(29%)이 2배 요금에 팔려 나갔다 —
+# 07:00–09:55 KR 창은 **전 구간**이 peak였다.
+#
+# 그래서 `early`를 00시만 남기고 04–05시를 `early-late`로 분리했고, KR 창을
+# 10–12시로 옮겼다. 창 총량은 10.5h → 9.5h로 1시간만 줄었고, peak 노출은 0이
+# 된다. **이 시각들을 옮길 때는 반드시 위 peak 구간을 피할 것** — 한 시간만
+# 밀려도 그 시간대 토큰이 조용히 2배로 청구되고, 어떤 알람도 울리지 않는다.
+#
+# 창을 좁힌 대가(처리량 −1h)는 같은 감사에서 함께 잡은 두 건 — overall 축의
+# technical 중복 생성 제거(core), 느린 3탭(fundamental·financials·congress)의
+# 주 2회 주기 — 가 되돌려준다. 배포 직후 며칠은 `[seo-prewarm] batch deadline
+# reached`와 `starvation watch`를 확인해 커버리지 침식이 없는지 볼 것.
+#
+# ⚠️ **정각을 피해 :05부터 시작한다.** DeepSeek 문서는 peak를 `01:00 - 04:00`,
+# `06:00 - 10:00`으로만 적고 끝점이 닫힌 구간인지 열린 구간인지는 말하지 않는다.
+# `early-late`(04시)와 `kr-boundary`(10시)는 하필 그 끝점에서 시작하므로, 닫힌
+# 구간이면 각 창의 첫 tick이 2배로 청구된다 — 이 파일이 없애려던 바로 그 모양이다.
+# 청구서로 확인하는 데만 하루가 걸리고 틀려도 알람이 없으니, 5분을 양보해 질문
+# 자체를 없앴다. 비용은 창당 tick 1개다.
+#
+# 남는 것: 창 **끝**의 straddle이다. `early`의 00:55 tick과 `early-late`의 05:55
+# tick이 띄운 배치는 각각 01:00·06:00 이후까지 돌 수 있다(`BATCH_DEADLINE_MS` 10분).
+# 이건 창을 더 자르는 것 말고는 못 막고, 자르면 처리량 손실이 straddle 손실보다
+# 크다 — 의도적으로 받아들인 잔여분이다.
 #
 # ⚠️ FIX Z(감사) — 20:00이 아니라 20:30 시작이다: technical 캐시(anonymous/free
 # 기준)는 KST 05:00 = UTC 20:00에 만료된다(infrastructure/cache/config.js).
@@ -26,9 +57,10 @@
 # 매번 미루므로, 국내 종목은 이 창의 **저녁 절반**(20:30–23:59 UTC = 05:30–08:59
 # KST, 이미 장 마감 이후)에서만 실질적으로 처리 가능했다 — 야간 배치가 이미
 # 포화 상태(remaining이 바닥나지 않음)라 그 절반 창 안에서도 순번이 자주
-# 밀렸다. `siglens-seo-prewarm-kr-boundary`(07:00–09:55 UTC = 16:00–18:55 KST)를
-# 더한 이유: KRX는 06:30 UTC(15:30 KST)에 마감하고 정착 버퍼(30min)도 07:00
-# UTC에 이미 지나 있어, 이 창은 시작하자마자 국내 종목이 즉시 선별 가능하다
+# 밀렸다. `siglens-seo-prewarm-kr-boundary`(10:00–12:55 UTC = 19:00–21:55 KST;
+# 2026-09 비용 감사로 off-peak로 옮기기 전에는 07:00–09:55 UTC였다)를
+# 더한 이유: KRX는 06:30 UTC(15:30 KST)에 마감하고 정착 버퍼(30min)도 그보다
+# 한참 전에 지나 있어, 이 창은 시작하자마자 국내 종목이 즉시 선별 가능하다
 # (`shouldDeferPrewarmWhileOpen`도 통과, 마감 경계도 이미 롤됨). 이 창에서
 # 뽑히는 미국·크립토 심볼은 전날 저녁 창에서 이미 fresh였을 것이므로 추가
 # 비용이 거의 없다 — `isSnapshotFresh`가 걸러 seam을 아예 안 부른다.
@@ -63,7 +95,11 @@ DESTINATION_NAME=siglens-seo-prewarm
 RULE_EVENING=siglens-seo-prewarm-evening
 RULE_EVENING_LATE=siglens-seo-prewarm-evening-late
 RULE_EARLY=siglens-seo-prewarm-early
-# 2026-08 감사(KR 5종목 prewarm 미도달) — KR 마감 경계 직후 창. 위 3개 규칙
+# 2026-09 비용 감사 — 04:00–05:59 UTC 창. `early`를 00–03시에서 00시만 남기고
+# 잘라내면서 잃은 처리량을 DeepSeek off-peak 구간에서 되찾는 조각이다
+# (01:00–04:00 UTC가 peak라 그 세 시간은 비워 둔다 — 파일 상단 doc-comment).
+RULE_EARLY_LATE=siglens-seo-prewarm-early-late
+# 2026-08 감사(KR 5종목 prewarm 미도달) — KR 마감 경계 직후 창. 위 규칙들
 # 상단의 doc-comment 참고.
 RULE_KR_BOUNDARY=siglens-seo-prewarm-kr-boundary
 ENDPOINT="https://siglens.io/api/cron/seo-prewarm"
@@ -148,10 +184,12 @@ fi
 DEST_ARN="$(aws events describe-api-destination --name "$DESTINATION_NAME" \
   --query ApiDestinationArn --output text --region "$REGION")"
 
-### 5) Rule 4개 (UTC) — EventBridge cron은 UTC 고정이라 20:30–03:59 미국 마감
-###    창을 자정 경계로 쪼개고, 20시대는 AWS cron이 "시간별로 다른 분(minute)
-###    필터"를 표현할 수 없어 21-23시(매시 0/5)와 별도 규칙으로 나눈다. 전부
-###    5분 간격. KR 마감 창(07:00–09:55 UTC)은 자정을 걸치지 않아 규칙 1개.
+### 5) Rule 5개 (UTC) — EventBridge cron은 UTC 고정이라 미국 마감 창을 자정
+###    경계로 쪼개고, 20시대는 AWS cron이 "시간별로 다른 분(minute) 필터"를
+###    표현할 수 없어 21-23시(매시 0/5)와 별도 규칙으로 나눈다. 거기에 2026-09
+###    비용 감사가 DeepSeek peak 구간(평일 01–04·06–10 UTC) 회피를 더해,
+###    미국 창은 20:30–00:59 + 04:05–05:59로 4개 규칙이 됐다. 전부 5분 간격.
+###    KR 마감 창(10:05–12:55 UTC)은 자정을 걸치지 않아 규칙 1개.
 ###
 ### ⚠️ 예전엔 여기 "5분 간격은 앱 코드와 묶인 계약"이라는 불변식(회전 오프셋이
 ### 스케줄 간격에서 파생돼, 배치 지연이 겹치면 회전 창을 건너뛸 수 있었다)이
@@ -173,24 +211,41 @@ aws events put-rule --name "$RULE_EVENING_LATE" \
   --state ENABLED --region "$REGION" >/dev/null
 log "rule $RULE_EVENING_LATE ready (21:00-23:59 UTC, every 5m)"
 
+# 00시만 돈다. 01:00–03:59 UTC는 DeepSeek peak 구간이라 의도적으로 비워 둔다
+# (파일 상단 2026-09 비용 감사 doc-comment 참고) — 여기에 시간을 되붙이면
+# 그 시간대 토큰이 조용히 2배 요금으로 청구된다.
 aws events put-rule --name "$RULE_EARLY" \
-  --schedule-expression "cron(0/5 0-3 * * ? *)" \
+  --schedule-expression "cron(0/5 0 * * ? *)" \
   --state ENABLED --region "$REGION" >/dev/null
-log "rule $RULE_EARLY ready (00:00-03:59 UTC, every 5m)"
+log "rule $RULE_EARLY ready (00:00-00:59 UTC, every 5m)"
+
+# peak(01–04 UTC)가 끝난 직후 재개해 06:00 UTC 다음 peak 전에 멈춘다.
+# 이 두 시간은 KRX 정규장(13:00–14:59 KST)과 겹치므로 국내 종목은
+# `shouldDeferPrewarmWhileOpen`에 걸려 미뤄진다 — 의도된 동작이다(국내는
+# kr-boundary 창이 받는다). 미국·크립토 심볼이 이 창의 실질 대상이다.
+aws events put-rule --name "$RULE_EARLY_LATE" \
+  --schedule-expression "cron(5/5 4-5 * * ? *)" \
+  --state ENABLED --region "$REGION" >/dev/null
+log "rule $RULE_EARLY_LATE ready (04:05-05:55 UTC, every 5m)"
 
 # 2026-08 감사(KR 5종목 prewarm 미도달) — KR 마감(15:30 KST = 06:30 UTC) +
-# 정착 버퍼(30min) 직후 창. 위 파일 상단 doc-comment 참고. 07:00부터라 UTC
-# 자정을 걸치지 않으므로 위 3개처럼 쪼갤 필요가 없다.
+# 정착 버퍼(30min) 이후 창. 위 파일 상단 doc-comment 참고. UTC 자정을 걸치지
+# 않으므로 미국 창처럼 쪼갤 필요가 없다.
+#
+# 2026-09 비용 감사로 07–09시에서 10–12시로 옮겼다: 06:00–10:00 UTC가 DeepSeek
+# peak 구간이라 옛 창은 전 구간이 2배 요금이었다. 10:00 UTC에는 KRX도 US 정규장도
+# 닫혀 있어(US는 13:30 UTC 개장) `shouldDeferPrewarmWhileOpen`을 그대로 통과하고,
+# KR 마감 경계도 한참 전에 롤돼 있어 이 창의 전제는 변하지 않는다.
 aws events put-rule --name "$RULE_KR_BOUNDARY" \
-  --schedule-expression "cron(0/5 7-9 * * ? *)" \
+  --schedule-expression "cron(5/5 10-12 * * ? *)" \
   --state ENABLED --region "$REGION" >/dev/null
-log "rule $RULE_KR_BOUNDARY ready (07:00-09:55 UTC = 16:00-18:55 KST, every 5m)"
+log "rule $RULE_KR_BOUNDARY ready (10:05-12:55 UTC = 19:05-21:55 KST, every 5m)"
 
 # 타겟 wiring: 각 rule → API Destination(+ 호출용 IAM role). 본문 없음(빈 body) —
 # 라우트는 PATCH + Authorization 헤더(Connection이 주입)만으로 충분하다.
 # ⚠️ put-targets의 HttpParameters 문법은 이 레포 최초 EventBridge 사용이라
 #    실전 검증이 안 된 상태다 — 배포 시 딜리버리 스파이크로 반드시 확인할 것.
-for RULE in "$RULE_EVENING" "$RULE_EVENING_LATE" "$RULE_EARLY" "$RULE_KR_BOUNDARY"; do
+for RULE in "$RULE_EVENING" "$RULE_EVENING_LATE" "$RULE_EARLY" "$RULE_EARLY_LATE" "$RULE_KR_BOUNDARY"; do
   aws events put-targets --rule "$RULE" --region "$REGION" \
     --targets "[{\"Id\":\"seo-prewarm\",\"Arn\":\"$DEST_ARN\",\"RoleArn\":\"$ROLE_ARN\",\"HttpParameters\":{\"HeaderParameters\":{},\"QueryStringParameters\":{},\"PathParameterValues\":[]}}]" \
     >/dev/null
@@ -221,11 +276,12 @@ ACTIONS="--alarm-actions $ALARM_SNS_LOW"
 # 딜리버리 부재 알람(OPS-1): 배치 내부 실패는 batch-failed가 잡지만, EventBridge가
 # 애초에 타겟 호출 자체를 실패하면(Connection 미인증, API Destination 오류, IAM 등)
 # 우리 앱 로그에는 아무 흔적도 안 남는다 — AWS/Events FailedInvocations로 그 공백을 잡는다.
-for RULE in "$RULE_EVENING" "$RULE_EVENING_LATE" "$RULE_EARLY" "$RULE_KR_BOUNDARY"; do
+for RULE in "$RULE_EVENING" "$RULE_EVENING_LATE" "$RULE_EARLY" "$RULE_EARLY_LATE" "$RULE_KR_BOUNDARY"; do
   case "$RULE" in
     "$RULE_EVENING") ALARM_SUFFIX="evening" ;;
     "$RULE_EVENING_LATE") ALARM_SUFFIX="evening-late" ;;
     "$RULE_EARLY") ALARM_SUFFIX="early" ;;
+    "$RULE_EARLY_LATE") ALARM_SUFFIX="early-late" ;;
     *) ALARM_SUFFIX="kr-boundary" ;;
   esac
   aws cloudwatch put-metric-alarm --alarm-name "siglens-seo-prewarm-${ALARM_SUFFIX}-failed" \
