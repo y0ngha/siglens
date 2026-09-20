@@ -1,5 +1,20 @@
 # Changelog
 
+# [0.85.0](https://github.com/y0ngha/siglens/compare/v0.84.1...v0.85.0) (2026-09-20)
+
+
+### Bug Fixes
+
+* **agent:** 시장 분기를 exhaustive switch로 바꾸고 공포·탐욕 타입을 core 유니온으로 되돌린다 ([fa12463](https://github.com/y0ngha/siglens/commit/fa12463ac81cee0f9842fbe85c9a7342387a589c)), closes [#858](https://github.com/y0ngha/siglens/issues/858)
+* **agent:** 좁힌 scope 가드에 crypto 거부 테스트를 붙이고 다이제스트 peek 실패를 로깅한다 ([8a948fd](https://github.com/y0ngha/siglens/commit/8a948fd9cec7cbc8e4137386c74ff97b37fa3538)), closes [#858](https://github.com/y0ngha/siglens/issues/858)
+* **scripts:** Yahoo 옵션 프로브 스키마 검증 실패 및 오탐 티커(SPCX/SKHY) 유입 방지 ([b5683fc](https://github.com/y0ngha/siglens/commit/b5683fcfe14a14182d4b6e017e6194605ff274cc))
+* **seo:** 중복 메타 설명문 두 경로를 막는다 ([d4eee02](https://github.com/y0ngha/siglens/commit/d4eee029b134b26fd18c1ab8ffbe85e553538a6c))
+
+
+### Features
+
+* **agent:** 한국·크립토 신호 스캔과 화면에만 있던 데이터 4종을 에이전트 도구에 연결한다 ([7426a39](https://github.com/y0ngha/siglens/commit/7426a390b6b72f91391720c766048a66f0cc6fa3))
+
 ## [0.84.1](https://github.com/y0ngha/siglens/compare/v0.84.0...v0.84.1) (2026-09-19)
 
 # [0.84.0](https://github.com/y0ngha/siglens/compare/v0.83.0...v0.84.0) (2026-09-19)
