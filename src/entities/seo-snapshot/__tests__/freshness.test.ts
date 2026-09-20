@@ -4,6 +4,7 @@ import {
     lastCompletedEtCloseWithBuffer,
     isSnapshotFresh,
     shouldDeferPrewarmWhileOpen,
+    snapshotBoundaryFor,
     snapshotCloseBoundaryFor,
 } from '../lib/freshness';
 
@@ -169,6 +170,91 @@ describe('snapshotCloseBoundaryFor — 시장별 경계', () => {
             lastCompletedEtCloseWithBuffer(now).getTime()
         );
     });
+});
+
+/**
+ * `snapshotBoundaryFor`의 주 2회 앵커(fundamental/financials/congress) — "가장 최근
+ * 수요일 또는 토요일 00:00 UTC". 앵커 자체는 export 안 된 내부 헬퍼라 이 exported
+ * 진입점을 통해서만 검증한다. 2026-09-13(일)~09-20(일) 한 주 전체를 훑어 7개 UTC
+ * 요일 전부를 고정한다(요일 룩업 테이블 오프바이원을 잡는 유일한 방법).
+ */
+describe('snapshotBoundaryFor — 주 2회 앵커(slow-refresh 탭)', () => {
+    it.each([
+        ['2026-09-13T12:00:00Z', '2026-09-12T00:00:00.000Z'], // 일 → 전 토요일
+        ['2026-09-14T12:00:00Z', '2026-09-12T00:00:00.000Z'], // 월 → 전 토요일
+        ['2026-09-15T12:00:00Z', '2026-09-12T00:00:00.000Z'], // 화 → 전 토요일
+        ['2026-09-16T12:00:00Z', '2026-09-16T00:00:00.000Z'], // 수 → 당일
+        ['2026-09-17T12:00:00Z', '2026-09-16T00:00:00.000Z'], // 목 → 전 수요일
+        ['2026-09-18T12:00:00Z', '2026-09-16T00:00:00.000Z'], // 금 → 전 수요일
+        ['2026-09-19T12:00:00Z', '2026-09-19T00:00:00.000Z'], // 토 → 당일
+        ['2026-09-20T12:00:00Z', '2026-09-19T00:00:00.000Z'], // 일 → 전 토요일
+    ])('now=%s → anchor=%s', (now, expected) => {
+        expect(
+            snapshotBoundaryFor(
+                'AAPL',
+                'fundamental',
+                new Date(now)
+            ).toISOString()
+        ).toBe(expected);
+    });
+
+    /**
+     * 앵커는 `setUTCDate`에 음수가 될 수 있는 값을 넘겨 달·해를 거슬러 올라간다.
+     * 네이티브 `Date`의 정상 동작이지만, `DAYS_BACK_TO_ANCHOR` 표가 틀리면 그 오류가
+     * 가장 먼저 드러나는 곳이 여기다 — 위 7요일 케이스는 한 주 안에 갇혀 있어
+     * 이 축을 못 본다.
+     */
+    it.each([
+        // 화요일 2026-12-01 → 전 토요일 2026-11-28 (달 경계)
+        ['2026-12-01T12:00:00Z', '2026-11-28T00:00:00.000Z'],
+        // 금요일 2027-01-01 → 전 수요일 2026-12-30 (해 경계)
+        ['2027-01-01T12:00:00Z', '2026-12-30T00:00:00.000Z'],
+        // 화요일 2027-03-02 → 전 토요일 2027-02-27 (28일짜리 2월을 거슬러 올라간다)
+        ['2027-03-02T12:00:00Z', '2027-02-27T00:00:00.000Z'],
+    ])('달/해 경계를 넘어간다: now=%s → anchor=%s', (now, expected) => {
+        expect(
+            snapshotBoundaryFor(
+                'AAPL',
+                'fundamental',
+                new Date(now)
+            ).toISOString()
+        ).toBe(expected);
+    });
+
+    it('수요일 00:00:00.000 UTC 정각이면 그 시점 자신이 앵커다', () => {
+        expect(
+            snapshotBoundaryFor(
+                'AAPL',
+                'financials',
+                new Date('2026-09-16T00:00:00.000Z')
+            ).toISOString()
+        ).toBe('2026-09-16T00:00:00.000Z');
+    });
+
+    it('slow-refresh 탭(fundamental/financials/congress) 셋 다 같은 앵커를 쓴다', () => {
+        const now = new Date('2026-09-17T05:00:00Z');
+        const expected = snapshotBoundaryFor(
+            'AAPL',
+            'fundamental',
+            now
+        ).getTime();
+        expect(snapshotBoundaryFor('AAPL', 'financials', now).getTime()).toBe(
+            expected
+        );
+        expect(snapshotBoundaryFor('AAPL', 'congress', now).getTime()).toBe(
+            expected
+        );
+    });
+
+    it.each(['technical', 'overall', 'news', 'options'] as const)(
+        '%s 탭은 시장 마감 경계(snapshotCloseBoundaryFor)로 위임한다',
+        tab => {
+            const now = new Date('2026-09-17T05:00:00Z');
+            expect(snapshotBoundaryFor('AAPL', tab, now).getTime()).toBe(
+                snapshotCloseBoundaryFor('AAPL', now).getTime()
+            );
+        }
+    );
 });
 
 /**

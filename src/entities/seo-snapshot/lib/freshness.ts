@@ -2,6 +2,7 @@ import { US_EQUITY_SESSION, isRegularSessionOpen } from '@y0ngha/siglens-core';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile';
 import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
+import type { SeoSnapshotTab } from '../model';
 import { prewarmSessionSpecFor } from './applicability';
 
 /** 30min — EOD 데이터 정착 대기 (spec §6). */
@@ -49,6 +50,83 @@ export function snapshotCloseBoundaryFor(symbol: string, now: Date): Date {
     return isKrEquitySymbol(symbol)
         ? lastCompletedKrCloseWithBuffer(now)
         : lastCompletedEtCloseWithBuffer(now);
+}
+
+/**
+ * 실적/의회거래처럼 분기 단위·불규칙 주기로만 바뀌는 탭 — 매일 재생성할 이유가 없다.
+ *
+ * (a) **왜 주 1회가 아니라 주 2회인가.** `SNAPSHOT_MAX_AGE_MS`(model.ts, 7일)는
+ * 소비자가 둘이다 — 페이지 렌더 게이트(`getSnapshotStatic.ts`)와 **사이트맵 포함
+ * 게이트**(`entities/sitemap-entry/server.ts`)다. `congress`는
+ * `PROSE_GATED_SITEMAP_TABS`에 속해 있어서, 행이 7일을 넘기면 그 페이지가 noindex로
+ * 빠지는 동시에 사이트맵에서도 URL이 빠진다. 주 1회(7일 주기)로 돌리면 행 나이가
+ * 항상 그 절벽 바로 앞에 걸려, 배치 지연 한 번만으로도 수백 개 URL이 사이트맵을
+ * 들락날락하게 된다 — 2026-09-17 운영 크롤 감사가 잡은 "사이트맵엔 있는데
+ * noindex"(congress 108건, overall 49건) 결함과 정확히 같은 모양이다. 수/토 앵커는
+ * 최대 간격을 4일로 묶어 여유를 남기고, `SNAPSHOT_MAX_AGE_MS`나 두 게이트 중
+ * 어느 쪽도 건드릴 필요가 없다.
+ *
+ * (b) **알고 받아들인 한계.** `fundamental`/`financials`는 실적 발표 시점에
+ * 바뀌므로, 이 주기에서는 발표 직후 최대 ~4일 묵은 수치를 낼 수 있다(기존엔
+ * 최대 ~1일). 실적 발표를 트리거로 즉시 무효화하는 안을 검토했지만 보류했다 —
+ * `earnings_reports` 테이블이 사용자가 그 심볼의 뉴스 탭을 방문할 때만 채워지는
+ * on-demand 캐시라 커버리지가 불완전하고, 그 상태로 가드를 걸면 조용히 오작동한다.
+ * 그 테이블이 전수 커버리지를 갖추면 재검토한다.
+ *
+ * 앵커 요일에 토요일을 넣은 것도 의도적이다 — 일별 마감 경계는 주말에 롤하지
+ * 않아 prewarm cron이 어차피 그 시간대엔 한가하고, LLM 프로바이더가 주말 시간대를
+ * 비피크 요금으로 매기기 때문에 그 창을 쓰는 편이 낫다.
+ */
+export const SLOW_REFRESH_TABS: ReadonlySet<SeoSnapshotTab> = new Set([
+    'fundamental',
+    'financials',
+    'congress',
+]);
+
+/**
+ * `now`(UTC) 시점에서 가장 최근에 지난(또는 지금인) 수요일 또는 토요일 00:00:00.000 UTC.
+ *
+ * 타임존 라이브러리 없이 `now.getUTCDay()`만으로 구한다 — 0=일 ~ 6=토.
+ * 각 요일에서 가장 최근 수(3) 또는 토(6)까지 거슬러 올라갈 일수:
+ * 일(0)→1(전날 토), 월(1)→2, 화(2)→3, 수(3)→0, 목(4)→1, 금(5)→2, 토(6)→0.
+ */
+function twiceWeeklyAnchorFor(now: Date): Date {
+    const DAYS_BACK_TO_ANCHOR: readonly number[] = [1, 2, 3, 0, 1, 2, 0];
+    const daysBack = DAYS_BACK_TO_ANCHOR[now.getUTCDay()];
+    const anchor = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+    );
+    anchor.setUTCDate(anchor.getUTCDate() - daysBack);
+    return anchor;
+}
+
+/**
+ * 탭별 신선도 경계. `SLOW_REFRESH_TABS`(fundamental/financials/congress)는 주 2회
+ * 앵커를, 나머지는 기존 시장 마감 경계(`snapshotCloseBoundaryFor`)를 그대로 쓴다.
+ *
+ * ⚠️ **느린 탭은 시장과 무관하게 전 심볼이 같은 순간 한꺼번에 stale이 된다.**
+ * 일별 경계는 심볼의 시장(US/KR)에 따라 어긋나 있어 stale 전환이 자연히 분산되지만,
+ * 주 2회 앵커는 UTC 절대시각이라 수/토 00:00 UTC에 유니버스 전체가 동시에 넘어간다.
+ * 이게 처리량 천장을 새로 만들지는 않는다 — technical/news/options/overall이 이미
+ * 매일 밤 사실상 전 유니버스를 stale로 만들고 회전 커서가 그걸 커버하도록 설계돼
+ * 있으므로, 느린 탭이 같은 밤에 합류해도 선별 대상 심볼 수는 그대로다(심볼당 탭
+ * 수만 는다). 그래도 "수·토 밤 배치가 다른 밤보다 무겁다"는 건 사실이고, 배포 후
+ * `[seo-prewarm] batch deadline reached`를 볼 때 요일을 함께 봐야 한다는 뜻이라
+ * 여기 명시해 둔다.
+ *
+ * 다만 그 무거운 밤도 **이 변경 이전의 매일 밤과 같은 무게일 뿐** 더 무겁지는
+ * 않다 — 세 탭이 원래 거래일마다 돌던 것이 주 2회로 줄어든 것이므로, 수·토는
+ * 종전 수준이고 나머지 닷새가 가벼워진다. 수·토에 처리량 경보가 뜬다면 그건 이
+ * 변경이 만든 새 천장이 아니라 원래 있던 천장이다.
+ */
+export function snapshotBoundaryFor(
+    symbol: string,
+    tab: SeoSnapshotTab,
+    now: Date
+): Date {
+    return SLOW_REFRESH_TABS.has(tab)
+        ? twiceWeeklyAnchorFor(now)
+        : snapshotCloseBoundaryFor(symbol, now);
 }
 
 /**
