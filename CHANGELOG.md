@@ -1,5 +1,18 @@
 # Changelog
 
+# [0.86.0](https://github.com/y0ngha/siglens/compare/v0.85.0...v0.86.0) (2026-09-20)
+
+
+### Bug Fixes
+
+* **analysis-plain:** 마감을 넘긴 평이화 호출의 결과를 버리지 않는다 ([f1d4883](https://github.com/y0ngha/siglens/commit/f1d4883c5dd92d5da82c0f90d2abc9ae619e0bf9))
+* **prewarm:** cron 창을 DeepSeek off-peak 구간으로 옮긴다 ([229d156](https://github.com/y0ngha/siglens/commit/229d156d3ff1a54ddc51d8e555d84c1966f91131))
+
+
+### Features
+
+* **prewarm:** fundamental·financials·congress를 주 2회 주기로 돌린다 ([6397403](https://github.com/y0ngha/siglens/commit/6397403b7c9943aee83d3e146f8ebf8b614d4e3a))
+
 # [0.85.0](https://github.com/y0ngha/siglens/compare/v0.84.1...v0.85.0) (2026-09-20)
 
 
