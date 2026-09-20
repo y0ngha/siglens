@@ -5,7 +5,7 @@ import {
     buildPrewarmUniverse,
     isSnapshotFresh,
     shouldDeferPrewarmWhileOpen,
-    snapshotCloseBoundaryFor,
+    snapshotBoundaryFor,
     type PrewarmSymbol,
     type SeoSnapshotTab,
 } from '@/entities/seo-snapshot';
@@ -203,11 +203,14 @@ function isTabPending(
     tab: SeoSnapshotTab,
     generatedAtMap: Map<string, Date>,
     structural: ReadonlySet<string>,
-    boundary: Date
+    now: Date
 ): boolean {
     const key = snapshotKey(symbol, tab);
     if (structural.has(key)) return false;
-    return !isSnapshotFresh(generatedAtMap.get(key), boundary);
+    return !isSnapshotFresh(
+        generatedAtMap.get(key),
+        snapshotBoundaryFor(symbol, tab, now)
+    );
 }
 
 interface StarvedSymbol {
@@ -383,11 +386,11 @@ export async function runPrewarmBatch(
     // 회전 오프셋은 더 이상 이 시계 어느 쪽과도 무관하다(2026-08 감사) — Redis
     // 영속 커서에서 나온다(`selectFairBatch` doc-comment 참고).
     const now = new Date();
-    // 심볼마다 자기 시장의 마감을 경계로 쓴다. 하나의 ET 경계를 전 심볼에 쓰면 국내
-    // 종목이 두 방향으로 다 어긋난다 — 미국 휴장일(KRX 개장)엔 하루 묵은 스냅샷이
-    // fresh로 통과하고, 한국 공휴일엔 바뀐 게 없는데 전 국내 종목을 재생성한다.
-    const boundaryFor = (symbol: string) =>
-        snapshotCloseBoundaryFor(symbol, now);
+    // 경계는 (심볼, 탭)마다 `isTabPending`(→ `snapshotBoundaryFor`) 안에서 고른다 —
+    // 하나의 ET 경계를 전 심볼에 쓰면 국내 종목이 두 방향으로 다 어긋나고(미국
+    // 휴장일엔 하루 묵은 스냅샷이 fresh로 통과, 한국 공휴일엔 전 국내 종목이
+    // 재생성), fundamental/financials/congress는 시장 마감이 아니라 주 2회 앵커를
+    // 써야 한다(`SLOW_REFRESH_TABS`).
     const universe = buildPrewarmUniverse();
     const repo = new DrizzleSeoSnapshotRepository(getDatabaseClient().db);
     const generatedAtMap = await repo.findGeneratedAtMap(
@@ -399,12 +402,11 @@ export async function runPrewarmBatch(
     // (`loadStructurallyUnavailable` JSDoc에 2026-08-30 실측). SMEMBERS 1회라
     // 심볼별 Redis 왕복이 늘지 않는다.
     const structural = await loadStructurallyUnavailable();
-    const staleSymbols = universe.filter(u => {
-        const boundary = boundaryFor(u.symbol);
-        return u.tabs.some(tab =>
-            isTabPending(u.symbol, tab, generatedAtMap, structural, boundary)
-        );
-    });
+    const staleSymbols = universe.filter(u =>
+        u.tabs.some(tab =>
+            isTabPending(u.symbol, tab, generatedAtMap, structural, now)
+        )
+    );
     // 2026-08 감사(starvation watch) — 회전에서 구조적으로 빠지고 있는 심볼을
     // 로그에 이름으로 남긴다. 이미 배치당 1회 읽은 `generatedAtMap`(DB)만
     // 재사용하므로 심볼당 Redis 왕복이 늘지 않는다(findStarvedSymbols 참고).
@@ -423,7 +425,7 @@ export async function runPrewarmBatch(
         selectable,
         generatedAtMap,
         structural,
-        boundaryFor
+        now
     );
     const counts: PrewarmBatchCounts = {
         harvested: 0,
@@ -456,7 +458,7 @@ export async function runPrewarmBatch(
             chunk.map(u =>
                 processSymbol(
                     u,
-                    boundaryFor(u.symbol),
+                    now,
                     generatedAtMap,
                     repo,
                     counts,
@@ -552,7 +554,7 @@ async function selectFairBatch(
     staleSymbols: PrewarmSymbol[],
     generatedAtMap: Map<string, Date>,
     structural: ReadonlySet<string>,
-    boundaryFor: (symbol: string) => Date
+    now: Date
 ): Promise<PrewarmSymbol[]> {
     if (staleSymbols.length === 0) return [];
 
@@ -574,12 +576,7 @@ async function selectFairBatch(
     // 같은(=원래 회전 순서) 인덱스로 되돌아온다.
     const classifications = await Promise.all(
         windowCandidates.map(candidate =>
-            classifySymbol(
-                candidate,
-                generatedAtMap,
-                structural,
-                boundaryFor(candidate.symbol)
-            )
+            classifySymbol(candidate, generatedAtMap, structural, now)
         )
     );
 
@@ -602,10 +599,10 @@ async function classifySymbol(
     u: PrewarmSymbol,
     generatedAtMap: Map<string, Date>,
     structural: ReadonlySet<string>,
-    boundary: Date
+    now: Date
 ): Promise<SymbolCandidacy> {
     const staleTabs = u.tabs.filter(tab =>
-        isTabPending(u.symbol, tab, generatedAtMap, structural, boundary)
+        isTabPending(u.symbol, tab, generatedAtMap, structural, now)
     );
     if (staleTabs.length === 0) return 'blocked'; // 이론상 도달 안 함(staleSymbols 필터로 보장).
 
@@ -620,7 +617,7 @@ async function classifySymbol(
 
 async function processSymbol(
     u: PrewarmSymbol,
-    boundary: Date,
+    now: Date,
     generatedAtMap: Map<string, Date>,
     repo: DrizzleSeoSnapshotRepository,
     counts: PrewarmBatchCounts,
@@ -654,7 +651,7 @@ async function processSymbol(
         //    지연된다. 신선도 판정은 로컬 맵 조회라 비용도 없다.
         const alreadyFresh = isSnapshotFresh(
             generatedAtMap.get(snapshotKey(u.symbol, tab)),
-            boundary
+            snapshotBoundaryFor(u.symbol, tab, now)
         );
         if (alreadyFresh) {
             freshTabCount++;
