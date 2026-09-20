@@ -252,7 +252,7 @@ describe('Symbol page', () => {
             // display name (subject; buildDisplayName is mocked to
             // 'Apple Inc.' in this suite) before clamping.
             expect(metadata.description).toBe(
-                'Apple Inc. — AAPL은 200일선 위에서 상승 추세입니다.'
+                'Apple Inc. 주가 분석 — AAPL은 200일선 위에서 상승 추세입니다.'
             );
             // og/twitter keep the templated copy — only the search-facing
             // <meta name="description"> is overridden (spec 2026-07-24 Task 8).

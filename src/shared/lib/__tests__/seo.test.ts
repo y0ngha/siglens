@@ -34,6 +34,13 @@ beforeAll(async () => {
     t = await getTranslations({ locale: 'ko', namespace: 'shared.seo' });
 });
 
+/**
+ * `buildSnapshotMetaDescription`의 탭 라벨. 프로덕션은
+ * `symbolTabDescriptionLabel`이 카탈로그에서 뽑아 넘기며, 여기서는 `technical`
+ * 라벨(`주가 분석`)을 대표값으로 고정한다 — 프리픽스 형태만 검증하면 되기 때문.
+ */
+const TAB_LABEL = '주가 분석';
+
 describe('buildSymbolSeoContent', () => {
     it('동적 세그먼트 플레이스홀더가 아닌 실제 티커로 심볼 메타데이터를 만든다', () => {
         const content = buildSymbolSeoContent('aapl', t);
@@ -723,8 +730,15 @@ describe('buildSnapshotMetaDescription', () => {
         (tab, field, prose) => {
             const content = { [field]: prose };
             expect(
-                buildSnapshotMetaDescription(tab, content, 'AAPL', null, 'ko')
-            ).toBe(clampSeoDescription(`AAPL — ${prose}`));
+                buildSnapshotMetaDescription(
+                    tab,
+                    content,
+                    'AAPL',
+                    null,
+                    'ko',
+                    TAB_LABEL
+                )
+            ).toBe(clampSeoDescription(`AAPL ${TAB_LABEL} — ${prose}`));
         }
     );
 
@@ -739,10 +753,11 @@ describe('buildSnapshotMetaDescription', () => {
                 content,
                 'AAPL',
                 null,
-                'ko'
+                'ko',
+                TAB_LABEL
             )
         ).toBe(
-            'AAPL — 첫 번째 문단입니다. 두 번째 문단입니다. 세 번째 문단입니다.'
+            `AAPL ${TAB_LABEL} — 첫 번째 문단입니다. 두 번째 문단입니다. 세 번째 문단입니다.`
         );
     });
 
@@ -757,9 +772,12 @@ describe('buildSnapshotMetaDescription', () => {
             content,
             '애플, Apple Inc. (AAPL)',
             null,
-            'ko'
+            'ko',
+            TAB_LABEL
         );
-        expect(result?.startsWith('애플, Apple Inc. (AAPL) — ')).toBe(true);
+        expect(
+            result?.startsWith(`애플, Apple Inc. (AAPL) ${TAB_LABEL} — `)
+        ).toBe(true);
     });
 
     // FIX 5 (audit): clamp at the last sentence boundary under the limit
@@ -772,14 +790,15 @@ describe('buildSnapshotMetaDescription', () => {
             content,
             'AAPL',
             null,
-            'ko'
+            'ko',
+            TAB_LABEL
         );
 
         expect(result).not.toBeNull();
         expect([...(result as string)].length).toBeLessThanOrEqual(
             SEO_DESCRIPTION_MAX_LENGTH
         );
-        expect(result?.startsWith('AAPL — ')).toBe(true);
+        expect(result?.startsWith(`AAPL ${TAB_LABEL} — `)).toBe(true);
         // A sentence boundary exists well within the search window (every
         // ~8 chars) — the clamp must land on it, not fall back to a
         // mid-sentence ellipsis cut.
@@ -795,7 +814,8 @@ describe('buildSnapshotMetaDescription', () => {
             content,
             'AAPL',
             null,
-            'ko'
+            'ko',
+            TAB_LABEL
         );
         expect(result).not.toBeNull();
         expect([...(result as string)].length).toBeLessThanOrEqual(
@@ -811,14 +831,22 @@ describe('buildSnapshotMetaDescription', () => {
                 { summary: 'x' },
                 'AAPL',
                 null,
-                'ko'
+                'ko',
+                TAB_LABEL
             )
         ).toBeNull();
     });
 
     it('returns null when content is not an object', () => {
         expect(
-            buildSnapshotMetaDescription('technical', null, 'AAPL', null, 'ko')
+            buildSnapshotMetaDescription(
+                'technical',
+                null,
+                'AAPL',
+                null,
+                'ko',
+                TAB_LABEL
+            )
         ).toBeNull();
         expect(
             buildSnapshotMetaDescription(
@@ -826,7 +854,8 @@ describe('buildSnapshotMetaDescription', () => {
                 undefined,
                 'AAPL',
                 null,
-                'ko'
+                'ko',
+                TAB_LABEL
             )
         ).toBeNull();
         expect(
@@ -835,11 +864,19 @@ describe('buildSnapshotMetaDescription', () => {
                 'a string',
                 'AAPL',
                 null,
-                'ko'
+                'ko',
+                TAB_LABEL
             )
         ).toBeNull();
         expect(
-            buildSnapshotMetaDescription('technical', 42, 'AAPL', null, 'ko')
+            buildSnapshotMetaDescription(
+                'technical',
+                42,
+                'AAPL',
+                null,
+                'ko',
+                TAB_LABEL
+            )
         ).toBeNull();
     });
 
@@ -850,7 +887,8 @@ describe('buildSnapshotMetaDescription', () => {
                 { trend: 'bullish' },
                 'AAPL',
                 null,
-                'ko'
+                'ko',
+                TAB_LABEL
             )
         ).toBeNull();
     });
@@ -862,7 +900,8 @@ describe('buildSnapshotMetaDescription', () => {
                 { summary: 123 },
                 'AAPL',
                 null,
-                'ko'
+                'ko',
+                TAB_LABEL
             )
         ).toBeNull();
         expect(
@@ -871,7 +910,8 @@ describe('buildSnapshotMetaDescription', () => {
                 { headlineKo: null },
                 'AAPL',
                 null,
-                'ko'
+                'ko',
+                TAB_LABEL
             )
         ).toBeNull();
     });
@@ -883,7 +923,8 @@ describe('buildSnapshotMetaDescription', () => {
                 { summary: '' },
                 'AAPL',
                 null,
-                'ko'
+                'ko',
+                TAB_LABEL
             )
         ).toBeNull();
         expect(
@@ -892,7 +933,8 @@ describe('buildSnapshotMetaDescription', () => {
                 { currentDriverKo: '   \n  ' },
                 'AAPL',
                 null,
-                'ko'
+                'ko',
+                TAB_LABEL
             )
         ).toBeNull();
     });
@@ -903,6 +945,40 @@ describe('buildSnapshotMetaDescription', () => {
     // page.tsx call sites via `snapshotDescription ?? metadata.description`.
     // Nothing in this function's own return value changes that contract; the
     // null-returning cases above are exactly the fallback trigger.
+
+    /**
+     * 2026-09-20 네이버 중복 감지 회귀.
+     *
+     * `/SOXS/overall`과 `/SOXS/fundamental`이 193자까지 **완전히 같은**
+     * description을 냈다 — 두 탭 스냅샷이 "이게 무슨 상품인지" 설명하는 같은
+     * 문장으로 시작했고, 그 문장이 클램프 지점보다 길어 갈라지기 전에 잘렸다.
+     * 둘 다 `index, follow`였다. 라벨 프리픽스를 되돌리면 이 단언이 깨진다.
+     */
+    it('같은 도입 문장을 공유해도 탭이 다르면 description이 다르다 (네이버 중복 회귀)', () => {
+        const shared =
+            'SOXS는 NYSE 반도체 지수의 일일 수익률을 3배 역방향으로 추종하는 레버리지 인버스 ETF로, 장기 보유 시 변동성 잠식이 누적됩니다.';
+        const subject = '반도체 -3배 ETF (SOXS)';
+        const overall = buildSnapshotMetaDescription(
+            'overall',
+            { headlineKo: shared },
+            subject,
+            null,
+            'ko',
+            '종합 분석'
+        );
+        const fundamental = buildSnapshotMetaDescription(
+            'fundamental',
+            { overallConclusionKo: shared },
+            subject,
+            null,
+            'ko',
+            '펀더멘털'
+        );
+
+        expect(overall).not.toBeNull();
+        expect(fundamental).not.toBeNull();
+        expect(overall).not.toBe(fundamental);
+    });
 });
 
 describe('buildWebPageJsonLd', () => {
@@ -1140,7 +1216,8 @@ describe('비-기본 로케일 SEO — 감사 실측 회귀', () => {
                 content,
                 'Apple Inc. (AAPL)',
                 null,
-                'ko'
+                'ko',
+                TAB_LABEL
             )
         ).toContain('애플');
         for (const locale of ['en', 'ja', 'zh'] as const) {
@@ -1150,7 +1227,8 @@ describe('비-기본 로케일 SEO — 감사 실측 회귀', () => {
                     content,
                     'Apple Inc. (AAPL)',
                     null,
-                    locale
+                    locale,
+                    TAB_LABEL
                 )
             ).toBeNull();
         }
@@ -1333,7 +1411,8 @@ describe('buildSnapshotMetaDescription — 평이화 우선', () => {
             content,
             subject,
             '애플 주가는 현재 325.13달러입니다. 최근 한 달은 오르내림이 좁은 범위에서 반복됩니다.',
-            'ko'
+            'ko',
+            TAB_LABEL
         );
 
         expect(result).toContain('325.13달러');
@@ -1352,7 +1431,8 @@ describe('buildSnapshotMetaDescription — 평이화 우선', () => {
             content,
             subject,
             `애플 주가는 5일·20일·60일 평균을 모두 웃돌며 완만하게 오르고 있습니다. ${long}`,
-            'ko'
+            'ko',
+            TAB_LABEL
         );
 
         expect(result).not.toContain('…');
@@ -1375,7 +1455,8 @@ describe('buildSnapshotMetaDescription — 평이화 우선', () => {
             content,
             subject,
             `애플 주가는 지금 332.41달러입니다. ${'가'.repeat(120)}입니다.`,
-            'ko'
+            'ko',
+            TAB_LABEL
         );
 
         expect(result).toContain('이중천장');
@@ -1394,7 +1475,8 @@ describe('buildSnapshotMetaDescription — 평이화 우선', () => {
             content,
             subject,
             `${first} ${'나'.repeat(150)}다.`,
-            'ko'
+            'ko',
+            TAB_LABEL
         );
 
         expect(result?.includes(first)).toBe(usesPlain);
@@ -1412,7 +1494,8 @@ describe('buildSnapshotMetaDescription — 평이화 우선', () => {
             },
             subject,
             null,
-            'ko'
+            'ko',
+            TAB_LABEL
         );
 
         expect(result).toContain(
@@ -1428,7 +1511,8 @@ describe('buildSnapshotMetaDescription — 평이화 우선', () => {
             content,
             subject,
             '가'.repeat(300) + '입니다.',
-            'ko'
+            'ko',
+            TAB_LABEL
         );
 
         expect(result).toContain('이중천장');
@@ -1446,14 +1530,22 @@ describe('buildSnapshotMetaDescription — 평이화 우선', () => {
                 content,
                 subject,
                 plain,
-                'ko'
+                'ko',
+                TAB_LABEL
             )
         ).toContain('이중천장');
     });
 
     it('원문도 평이화도 없으면 null이다', () => {
         expect(
-            buildSnapshotMetaDescription('technical', {}, subject, null, 'ko')
+            buildSnapshotMetaDescription(
+                'technical',
+                {},
+                subject,
+                null,
+                'ko',
+                TAB_LABEL
+            )
         ).toBeNull();
     });
 });

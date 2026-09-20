@@ -30,6 +30,7 @@ import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article';
 import {
     buildBreadcrumbJsonLd,
     buildSnapshotMetaDescription,
+    symbolTabDescriptionLabel,
     buildSymbolSeoContent,
     resolveSymbolOverallSeoContent,
     symbolMetadataFromSeo,
@@ -291,7 +292,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
               snap.content,
               displayName,
               snap.plain,
-              locale
+              locale,
+              symbolTabDescriptionLabel('overall', assetClass, tSeo)
           )
         : null;
     return snapshotDescription

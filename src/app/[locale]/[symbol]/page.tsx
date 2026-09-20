@@ -36,6 +36,7 @@ import { MS_PER_SECOND } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
     buildSnapshotMetaDescription,
+    symbolTabDescriptionLabel,
     resolveSymbolSeoContent,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
@@ -129,17 +130,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     const displayName = buildDisplayName(assetInfo, ticker, locale);
     const profile = marketProfileOf(assetInfo);
-    const seo = resolveSymbolSeoContent(
-        ticker,
-        getDescriptor(profile).assetClass,
-        tSeo,
-        {
-            displayName,
-            koreanName: assetInfo.koreanName,
-            englishName: assetInfo.name,
-            locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
-        }
-    );
+    const assetClass = getDescriptor(profile).assetClass;
+    const seo = resolveSymbolSeoContent(ticker, assetClass, tSeo, {
+        displayName,
+        koreanName: assetInfo.koreanName,
+        englishName: assetInfo.name,
+        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+    });
     const metadata = symbolMetadataFromSeo(seo, locale);
 
     // snapshot-derived unique description (spec 2026-07-24 Task 8). Same
@@ -157,7 +154,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
               snap.content,
               displayName,
               snap.plain,
-              locale
+              locale,
+              symbolTabDescriptionLabel('technical', assetClass, tSeo)
           )
         : null;
     return snapshotDescription
