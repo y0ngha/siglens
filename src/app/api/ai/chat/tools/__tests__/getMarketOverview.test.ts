@@ -217,6 +217,8 @@ describe('getMarketOverviewTool', () => {
             expect.anything()
         );
         expect(r.sectorSignals.countsBySector).toEqual({ major: 1 });
+        // 크립토 브리핑은 프리웜이 굽지 않아 확정 미스다 — 물어보는 것 자체가 낭비.
+        expect(peekBriefing).not.toHaveBeenCalled();
     });
 
     it('캐시된 시장 브리핑과 공포·탐욕 과거 대비 점수를 함께 싣는다', async () => {

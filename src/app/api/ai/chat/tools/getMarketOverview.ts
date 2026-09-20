@@ -220,12 +220,12 @@ export const getMarketOverviewTool: ToolExecutor = async (args, ctx) => {
     // 시장 브리핑은 `/market`·`/market/kr`이 이미 화면에 그리는 AI 요약이고,
     // peek은 **캐시 읽기 전용**이라 LLM 비용이 0이다(`get_economy`가 거시 브리핑을
     // 같은 방식으로 붙인다). 요약이 먼저 필요해 `allSettled`에 넣지 못한다 —
-    // core 캐시 키가 그 시세에서 파생된다. 크립토는 `hasHubPage: false`라
-    // 프리웜(`seo-prewarm/hubs.ts`)이 브리핑을 굽지 않으므로 캐시가 늘 비어 있고,
-    // 그때는 `null`이다 — 도구를 위해 굽게 만들면 아무도 읽지 않는 LLM 호출이
-    // 매일 밤 추가된다.
+    // core 캐시 키가 그 시세에서 파생된다. `hasHubPage`가 false인 scope는
+    // 아예 조회하지 않는다 — 프리웜(`seo-prewarm/hubs.ts`)이 그 시장의 브리핑을
+    // 굽지 않으므로 **확정 미스**이고, 호출해 봤자 Redis 왕복만 버린다. 도구를
+    // 위해 굽게 만드는 쪽은 더 나쁘다(아무도 읽지 않는 LLM 호출이 매일 밤 추가된다).
     const briefing =
-        summary === null
+        summary === null || !scope.hasHubPage
             ? null
             : await peekBriefingStatic(
                   summary,
