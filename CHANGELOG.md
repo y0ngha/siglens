@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.86.2](https://github.com/y0ngha/siglens/compare/v0.86.1...v0.86.2) (2026-09-21)
+
+
+### Bug Fixes
+
+* **chat:** 툴이 읽기 전에 심볼 데이터를 최신화하고 신선도를 정확히 보고한다 ([3bec491](https://github.com/y0ngha/siglens/commit/3bec491319bd9513a2b652d44f11c8dfc32086bc))
+
 ## [0.86.1](https://github.com/y0ngha/siglens/compare/v0.86.0...v0.86.1) (2026-09-21)
 
 
