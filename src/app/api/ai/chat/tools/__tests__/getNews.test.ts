@@ -39,7 +39,11 @@ const ctx = {
     locale: 'ko' as const,
     signal: new AbortController().signal,
 };
-const rt = { analysisModel: 'deepseek-v4.1-flash' as const };
+const ensureSymbolData = vi.fn(async (): Promise<void> => {});
+const rt = {
+    analysisModel: 'deepseek-v4.1-flash' as const,
+    ensureSymbolData,
+};
 const row = (i: number) => ({
     titleEn: `t${i}`,
     titleKo: `제목${i}`,
@@ -315,5 +319,42 @@ describe('getNewsTool', () => {
             };
             expect(r.items[0]!.ageHours).toBeNull();
         });
+    });
+});
+
+describe('get_news 수급 게이트', () => {
+    beforeEach(() => {
+        ensureSymbolData.mockClear();
+        ensureSymbolData.mockImplementation(async () => {});
+        bySymbol.mockResolvedValue([]);
+        byCategory.mockResolvedValue([]);
+    });
+
+    /**
+     * 이 툴은 DB만 읽는다. 적재를 트리거하는 다른 경로(뉴스 탭 방문·prewarm
+     * cron)가 최근에 안 돌았으면 며칠 묵은 목록이 그대로 답이 된다 —
+     * 실측(2026-09-21): 당일 보도자료가 FMP에는 있는데 챗은 "최신이 89시간
+     * 전"이라고 답했다.
+     */
+    it('심볼 질의는 DB를 읽기 전에 수급을 돌린다', async () => {
+        const order: string[] = [];
+        ensureSymbolData.mockImplementation(async () => {
+            order.push('refresh');
+        });
+        bySymbol.mockImplementation(async () => {
+            order.push('read');
+            return [];
+        });
+
+        await getNewsTool({ symbol: 'laes' }, ctx, rt);
+
+        expect(ensureSymbolData).toHaveBeenCalledWith('LAES');
+        expect(order).toEqual(['refresh', 'read']);
+    });
+
+    it('카테고리 질의는 심볼 수급 대상이 아니다', async () => {
+        await getNewsTool({ category: 'crypto' }, ctx, rt);
+
+        expect(ensureSymbolData).not.toHaveBeenCalled();
     });
 });

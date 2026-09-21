@@ -73,7 +73,7 @@ function resolveSinceMs(
     return { ok: true, sinceMs: Math.min(requestedMs, MAX_LOOKBACK_MS) };
 }
 
-export const getNewsTool: ToolExecutor = async (args, ctx) => {
+export const getNewsTool: ToolExecutor = async (args, ctx, runtime) => {
     const { db } = getDatabaseClient();
     const sinceResult = resolveSinceMs(args.since);
     if (!sinceResult.ok)
@@ -99,8 +99,16 @@ export const getNewsTool: ToolExecutor = async (args, ctx) => {
      */
     let digest: Awaited<ReturnType<typeof peekMarketNewsDigestStatic>> = null;
     if (typeof args.symbol === 'string') {
+        const symbol = args.symbol.toUpperCase();
+        // **읽기 전에** 적재한다. 이 툴은 DB만 읽으므로, 적재를 트리거하는 다른
+        // 경로(뉴스 탭 방문·prewarm cron)가 최근에 안 돌았으면 며칠 묵은 목록이
+        // 그대로 답이 된다 — 실측(2026-09-21): 당일 보도자료가 FMP에는 있는데
+        // 챗은 "최신이 89시간 전"이라고 답했다. `ensureSymbolData`는 Redis TTL로
+        // 10분에 1회로 접히고 절대 reject하지 않으므로, 실패해도 아래 DB 읽기로
+        // 그대로 진행된다.
+        await runtime.ensureSymbolData(symbol);
         rows = await new DrizzleNewsRepository(db).listCardsBySymbol(
-            args.symbol.toUpperCase(),
+            symbol,
             sinceMs,
             ctx.locale
         );

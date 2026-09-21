@@ -232,6 +232,17 @@ export const runFreshAnalysisTool: ToolExecutor = async (
     inFlight += 1;
     const release = registerActiveStream();
     try {
+        /*
+         * 여기서는 `ensureSymbolData`를 부르지 않는다 — **이번 턴의 답을 바꾸지
+         * 못하기 때문이다.** 적재는 원문 행만 넣고 카드 보강(번역·라벨)은 하지
+         * 않는데, `news`·`overall` 축은 `buildAnalysisNewsItems`의 `isEnrichedRow`가
+         * 미보강 행을 전부 걸러낸다. 즉 방금 넣은 행은 이번 분석에 한 건도 안
+         * 들어간다. 슬롯(`MAX_CONCURRENT_FRESH`)과 activeStream 핸들을 쥔 채
+         * FMP·Neon 왕복만 얹는 꼴이 된다.
+         *
+         * `get_news`는 다르다 — `listCardsBySymbol`이 미보강 행도 돌려주므로
+         * 제목·날짜·링크가 그 턴에 바로 보인다. 그래서 게이트는 그쪽에만 있다.
+         */
         const timeframe =
             (args.timeframe as Timeframe | undefined) ?? DEFAULT_TIMEFRAME;
         const [profile, asset] = await Promise.all([

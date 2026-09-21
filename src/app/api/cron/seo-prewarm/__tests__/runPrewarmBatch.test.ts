@@ -7,6 +7,7 @@ const {
     mockAddFmpBudget,
     mockGetFmpBudgetUsed,
     mockAdvanceRotationCursor,
+    mockLoadStructural,
     mockRevalidateTag,
     mockUpsert,
     mockFindGeneratedAtMap,
@@ -35,6 +36,7 @@ const {
     mockAddFmpBudget: vi.fn(),
     mockGetFmpBudgetUsed: vi.fn(),
     mockAdvanceRotationCursor: vi.fn(),
+    mockLoadStructural: vi.fn(),
     mockRevalidateTag: vi.fn(),
     mockUpsert: vi.fn(),
     mockFindGeneratedAtMap: vi.fn(),
@@ -87,7 +89,7 @@ vi.mock('../lock', () => ({
     // 실제 불일치를 못 잡으므로, 구현과 같은 식을 그대로 둔다.
     prewarmUnitKey: (symbol: string, tab: string) =>
         `${symbol.toUpperCase()}:${tab}`,
-    loadStructurallyUnavailable: vi.fn().mockResolvedValue(new Set<string>()),
+    loadStructurallyUnavailable: mockLoadStructural,
     markStructurallyUnavailable: vi.fn(),
     clearStructurallyUnavailable: vi.fn(),
     // 구현과 동일한 값(lock.ts). 일시적 실패 backoff TTL.
@@ -203,6 +205,10 @@ describe('runPrewarmBatch', () => {
         vi.setSystemTime(FIXED_NOW);
 
         mockFindGeneratedAtMap.mockResolvedValue(new Map());
+        // 이 스위트는 대부분 구조적 불가 집합을 다루지 않는다(= 수정 이전과 동일한
+        // 판정). 집합 자체의 계약은 `runPrewarmBatch.structuralUnavailable.test.ts`가
+        // 진짜 lock.ts로 검증한다.
+        mockLoadStructural.mockResolvedValue(new Set<string>());
         mockGetInFlightMarker.mockResolvedValue({
             present: false,
             jobId: null,
@@ -1556,7 +1562,7 @@ describe('runPrewarmBatch', () => {
 
         expect(warnSpy).toHaveBeenCalledWith(
             expect.stringContaining(
-                '[seo-prewarm] starvation watch: 1 symbol(s) stale > 48h — worst: NEVERWARMED(never)'
+                '[seo-prewarm] starvation watch: 1 symbol(s) stale > 48h — worst: NEVERWARMED(never: technical)'
             )
         );
 
@@ -1611,8 +1617,9 @@ describe('runPrewarmBatch', () => {
             String(c[0]).includes('starvation watch')
         );
         const message = String(call?.[0]);
-        const worstOffenderCount = (message.match(/NEVER\d\(never\)/g) ?? [])
-            .length;
+        const worstOffenderCount = (
+            message.match(/NEVER\d\(never: [^)]+\)/g) ?? []
+        ).length;
         expect(worstOffenderCount).toBe(5);
 
         warnSpy.mockRestore();
@@ -1842,7 +1849,7 @@ describe('runPrewarmBatch', () => {
         await runPrewarmBatch();
 
         expect(warnSpy).toHaveBeenCalledWith(
-            expect.stringContaining('PARTIALNEVER(never)')
+            expect.stringContaining('PARTIALNEVER(never: technical)')
         );
 
         warnSpy.mockRestore();

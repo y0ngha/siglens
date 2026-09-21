@@ -1,13 +1,24 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { inspect } from 'node:util';
 
-const { search, getOptionsSummary, getCachedAnalysis, getBarsIndicators } =
-    vi.hoisted(() => ({
-        search: vi.fn(),
-        getOptionsSummary: vi.fn(),
-        getCachedAnalysis: vi.fn(),
-        getBarsIndicators: vi.fn(),
-    }));
+const {
+    search,
+    getOptionsSummary,
+    getCachedAnalysis,
+    getBarsIndicators,
+    getNews,
+    ensureSymbolNewsFresh,
+} = vi.hoisted(() => ({
+    search: vi.fn(),
+    getOptionsSummary: vi.fn(),
+    getCachedAnalysis: vi.fn(),
+    getBarsIndicators: vi.fn(),
+    getNews: vi.fn(),
+    ensureSymbolNewsFresh: vi.fn(),
+}));
+vi.mock('@/app/api/ai/chat/tools/ensureSymbolDataFresh', () => ({
+    ensureSymbolNewsFresh,
+}));
 vi.mock('@/app/api/ai/chat/tools/searchTicker', () => ({
     searchTickerTool: search,
 }));
@@ -18,7 +29,7 @@ vi.mock('@/app/api/ai/chat/tools/getBarsIndicators', () => ({
 vi.mock('@/app/api/ai/chat/tools/getCachedAnalysis', () => ({
     getCachedAnalysisTool: getCachedAnalysis,
 }));
-vi.mock('@/app/api/ai/chat/tools/getNews', () => ({ getNewsTool: vi.fn() }));
+vi.mock('@/app/api/ai/chat/tools/getNews', () => ({ getNewsTool: getNews }));
 vi.mock('@/app/api/ai/chat/tools/getOptionsSummary', () => ({
     getOptionsSummaryTool: getOptionsSummary,
 }));
@@ -46,6 +57,7 @@ vi.mock('@/shared/api/e2eEnv', () => ({ isE2E: () => e2eState.on }));
 import {
     availableToolNames,
     createToolExecutor,
+    type ToolRuntime,
 } from '@/app/api/ai/chat/tools';
 import { guestSubject } from '@/app/api/ai/chat/guestSubject';
 import {
@@ -427,5 +439,89 @@ describe('tool registry', () => {
         expect(JSON.stringify(over).length).toBeLessThanOrEqual(
             BARS_RESULT_MAX_CHARS
         );
+    });
+    describe('심볼 데이터 수급(ensureSymbolData)은', () => {
+        /**
+         * 게이트는 실행부가 일괄로 걸지 않고 **툴이 직접 부른다**. 실행부의
+         * 책임은 "턴당 심볼별 1회로 접히고 절대 reject하지 않는" 함수를 만들어
+         * runtime에 실어 주는 것뿐이다.
+         */
+        function capture(): {
+            exec: ReturnType<typeof createToolExecutor>;
+            runtimes: ToolRuntime[];
+        } {
+            const runtimes: ToolRuntime[] = [];
+            search.mockImplementation(
+                async (_args: unknown, _ctx: unknown, runtime: ToolRuntime) => {
+                    runtimes.push(runtime);
+                    return { ok: true };
+                }
+            );
+            return {
+                exec: createToolExecutor({ analysisModel: 'm' as never }),
+                runtimes,
+            };
+        }
+
+        it('툴에 ensureSymbolData를 넘긴다', async () => {
+            const { exec, runtimes } = capture();
+
+            await exec('search_ticker', { query: 'a' }, makeCtx());
+
+            expect(typeof runtimes[0]!.ensureSymbolData).toBe('function');
+        });
+
+        it('같은 턴에서 같은 심볼은 한 번만 수급한다', async () => {
+            ensureSymbolNewsFresh.mockResolvedValue({
+                refreshed: true,
+                changedCount: 0,
+            });
+            const { exec, runtimes } = capture();
+            await exec('search_ticker', { query: 'a' }, makeCtx());
+
+            await runtimes[0]!.ensureSymbolData('LAES');
+            await runtimes[0]!.ensureSymbolData('laes');
+
+            expect(ensureSymbolNewsFresh).toHaveBeenCalledOnce();
+            expect(ensureSymbolNewsFresh).toHaveBeenCalledWith('LAES');
+        });
+
+        it('턴이 다르면 다시 수급한다', async () => {
+            ensureSymbolNewsFresh.mockResolvedValue({
+                refreshed: true,
+                changedCount: 0,
+            });
+            const a = capture();
+            await a.exec('search_ticker', { query: 'a' }, makeCtx());
+            const b = capture();
+            await b.exec('search_ticker', { query: 'a' }, makeCtx());
+
+            await a.runtimes[0]!.ensureSymbolData('LAES');
+            await b.runtimes[0]!.ensureSymbolData('LAES');
+
+            expect(ensureSymbolNewsFresh).toHaveBeenCalledTimes(2);
+        });
+
+        /**
+         * 거절을 캐시에 남기면 한 번의 실패가 그 턴의 해당 심볼 전체를 오염시켜,
+         * 이후 모든 툴이 같은 rejected promise를 다시 await한다.
+         */
+        it('수급이 실패해도 reject하지 않고, 같은 턴의 다음 호출도 오염되지 않는다', async () => {
+            const errorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            ensureSymbolNewsFresh.mockRejectedValue(new Error('boom'));
+            const { exec, runtimes } = capture();
+            await exec('search_ticker', { query: 'a' }, makeCtx());
+
+            await expect(
+                runtimes[0]!.ensureSymbolData('LAES')
+            ).resolves.toBeUndefined();
+            await expect(
+                runtimes[0]!.ensureSymbolData('LAES')
+            ).resolves.toBeUndefined();
+
+            errorSpy.mockRestore();
+        });
     });
 });

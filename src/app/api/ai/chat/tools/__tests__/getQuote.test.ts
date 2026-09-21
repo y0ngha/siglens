@@ -23,7 +23,11 @@ vi.mock('@/shared/config/marketProfile', () => ({
     }),
 }));
 
-import { getQuoteTool } from '@/app/api/ai/chat/tools/getQuote';
+import {
+    getQuoteTool,
+    QUOTE_MAX_AGE_MS,
+} from '@/app/api/ai/chat/tools/getQuote';
+import { MS_PER_DAY, MS_PER_HOUR, MS_PER_MINUTE } from '@/shared/config/time';
 
 const ctx = {
     userId: 'u',
@@ -31,7 +35,10 @@ const ctx = {
     locale: 'ko' as const,
     signal: new AbortController().signal,
 };
-const rt = { analysisModel: 'deepseek-v4.1-flash' as const };
+const rt = {
+    analysisModel: 'deepseek-v4.1-flash' as const,
+    ensureSymbolData: async (): Promise<void> => {},
+};
 
 describe('getQuoteTool', () => {
     beforeEach(() => {
@@ -126,6 +133,93 @@ describe('getQuoteTool', () => {
                 new Date(1_700_000_000 * 1000).toISOString()
             );
             expect(r.quotes[0]!.asOfIsFetchTime).toBeUndefined();
+        });
+
+        /**
+         * 실측 회귀 가드(2026-09-21): `SQ`가 `XYZ`로 개명된 뒤에도 FMP `quote`가
+         * 2025-02-13자 마지막 시세(83.46달러)를 계속 돌려줬고, 우리는 그걸 그대로
+         * "현재가"로 제시했다. 값이 정상 범위라 어떤 오류 처리에도 안 걸린다 —
+         * 나이를 싣는 것만이 유일한 방어다.
+         */
+        it('동결된 시세(개명·폐지 티커)는 freshness.stale로 표시한다', async () => {
+            profile.mockResolvedValue('us-equity');
+            const frozenSeconds = Math.floor(
+                Date.UTC(2025, 1, 13, 16, 8, 53) / 1000
+            );
+            getQuote.mockResolvedValue({
+                price: 83.46,
+                changesPercentage: 0.57,
+                timestamp: frozenSeconds,
+            });
+            const r = (await getQuoteTool({ symbols: ['SQ'] }, ctx, rt)) as {
+                quotes: Array<{ freshness?: { stale: boolean } }>;
+            };
+            expect(r.quotes[0]!.freshness?.stale).toBe(true);
+        });
+
+        it('정상 시세는 stale이 아니다', async () => {
+            profile.mockResolvedValue('us-equity');
+            getQuote.mockResolvedValue({
+                price: 100,
+                changesPercentage: 0,
+                timestamp: Math.floor(Date.now() / 1000),
+            });
+            const r = (await getQuoteTool({ symbols: ['AAPL'] }, ctx, rt)) as {
+                quotes: Array<{ freshness?: { stale: boolean } }>;
+            };
+            expect(r.quotes[0]!.freshness?.stale).toBe(false);
+        });
+
+        /**
+         * 임계값 양쪽 경계를 **상수 자체로부터** 계산해 고정한다. 값을 리터럴로
+         * 복제하면 상수를 줄여도(예: 14d → 1d) 테스트가 같이 줄어들어 아무것도
+         * 못 잡는다 — 실제로 첫 버전이 그 상태였고, 7d → 1d 변이가 초록으로
+         * 통과했다.
+         */
+        const staleFor = async (
+            ageMs: number
+        ): Promise<boolean | undefined> => {
+            profile.mockResolvedValue('us-equity');
+            getQuote.mockResolvedValue({
+                price: 100,
+                changesPercentage: 0,
+                timestamp: Math.floor((Date.now() - ageMs) / 1000),
+            });
+            const r = (await getQuoteTool({ symbols: ['AAPL'] }, ctx, rt)) as {
+                quotes: Array<{ freshness?: { stale: boolean } }>;
+            };
+            return r.quotes[0]!.freshness?.stale;
+        };
+
+        it('임계값 바로 아래는 stale이 아니다', async () => {
+            await expect(
+                staleFor(QUOTE_MAX_AGE_MS - MS_PER_MINUTE)
+            ).resolves.toBe(false);
+        });
+
+        it('임계값 바로 위는 stale이다', async () => {
+            await expect(
+                staleFor(QUOTE_MAX_AGE_MS + MS_PER_MINUTE)
+            ).resolves.toBe(true);
+        });
+
+        /**
+         * 회귀 가드 — 2025 추석·개천절·한글날 클러스터로 KRX가 약 7일 17시간
+         * 쉬었다. 임계값이 그보다 짧으면 정상 종가가 전부 stale로 찍힌다.
+         */
+        /**
+         * 상한도 함께 고정한다. 아래 경계 테스트는 입력을 상수에서 파생하므로
+         * 값을 키워도(예: 60일) 전부 초록이다 — 그러면 개명·폐지로 몇 주째 동결된
+         * 시세가 정상으로 통과한다. 관측된 동결은 월 단위(SQ는 19개월)라 30일이면
+         * 충분히 여유롭다.
+         */
+        it('임계값은 30일보다 짧게 유지한다', () => {
+            expect(QUOTE_MAX_AGE_MS).toBeLessThan(30 * MS_PER_DAY);
+        });
+
+        it('KRX 최장 연휴(약 7일 17시간)는 stale로 보지 않는다', async () => {
+            const krxLongestClosureMs = 7 * MS_PER_DAY + 17 * MS_PER_HOUR;
+            await expect(staleFor(krxLongestClosureMs)).resolves.toBe(false);
         });
     });
 

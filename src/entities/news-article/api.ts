@@ -362,7 +362,7 @@ export async function prewarmNews(
     symbol: string,
     companyName: string,
     force: boolean
-): Promise<RunNewsAnalysisResult> {
+): Promise<RunNewsAnalysisResult & { newsFetchFailed?: true }> {
     // 리뷰 지적(PR #700): resolveAssetClass()는 내부적으로
     // resolveMarketProfile() → getAssetInfo()를 호출하는데, 아래
     // ingestNewsForSymbol도 profileId를 안 넘기면 resolveMarketProfile을 다시
@@ -462,7 +462,16 @@ export async function prewarmNews(
     const enrichedNews: ReadonlyArray<EnrichedNewsItem> =
         buildAnalysisNewsItems(rows);
 
-    return runNewsAnalysis({
+    /**
+     * `newsFetchFailed`를 결과에 실어 보낸다.
+     *
+     * 적재는 fail-open이라(`ingested === null` = FMP 장애·402) 그 밤의 DB가
+     * 비어 있으면 core는 "뉴스가 없다"(`no_news`)와 "뉴스를 못 가져왔다"를
+     * 똑같이 본다. 호출부(`resolveHarvest`)가 그 둘에 서로 다른 backoff를
+     * 매기므로, 구분 가능한 유일한 지점인 여기서 신호를 붙인다 — 이게 없으면
+     * FMP 장애 중 신규·저커버리지 심볼이 30분이 아니라 24시간 묶인다.
+     */
+    const result = await runNewsAnalysis({
         symbol,
         companyName,
         modelId: DEEPSEEK_V4_1_FLASH_MODEL,
@@ -478,7 +487,21 @@ export async function prewarmNews(
         currency: descriptor.priceFormat.currency,
         ...(force ? { force: true } : {}),
     });
+    return ingested === null ? { ...result, newsFetchFailed: true } : result;
 }
+
+/**
+ * `server-only` 모듈의 슬라이스 진입점 재노출.
+ *
+ * 클라이언트 안전 barrel(`index.ts`)로는 내보낼 수 없다 — 그 파일의 헤더가
+ * 명시하듯 `server-only`가 client 번들에 섞이면 build가 깨진다. 그렇다고
+ * 소비자가 `lib/<file>`을 깊게 파고들면 슬라이스 경계가 흐려지므로, 서버
+ * 소비자용 진입점인 이 파일이 대신 재노출한다.
+ */
+export { hasAnalyzableNews } from './lib/hasAnalyzableNews';
+export { ingestNewsForSymbol } from './lib/ingestNewsForSymbol';
+export { isRecentlyFetched } from './lib/newsRefreshFlag';
+export { NEWS_ANALYSIS_LOOKBACK_MS } from './lib/newsLookback';
 
 // Naver news search, re-exported for server consumers outside this slice
 // (the agent's `web_search` tool blends it with Brave for Korean queries).
