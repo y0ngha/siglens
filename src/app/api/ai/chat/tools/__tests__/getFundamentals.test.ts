@@ -59,6 +59,8 @@ import {
     daysUntil,
     getFundamentalsTool,
 } from '@/app/api/ai/chat/tools/getFundamentals';
+import { FMP_FUNDAMENTAL_REVALIDATE_SECONDS } from '@/shared/api/fmp/fundamentalClient';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 
 const ctx = {
     userId: 'u',
@@ -487,5 +489,27 @@ describe('getFundamentalsTool', () => {
         expect(r.profile.currency).toBe('KRW');
         // The Korean provider (Yahoo) reports the CURRENT QUARTER consensus.
         expect(r.analyst.analystEstimate?.period).toBe('current_quarter');
+    });
+});
+
+describe('펀더멘털 나이 표기', () => {
+    /**
+     * 이 경로는 24시간 캐시를 읽으므로 `asOf: now`만 내보내면 모델이 "지금 P/E"라고
+     * 단정할 근거를 준다. 지연 자체가 아니라 **지연을 숨기는 것**이 문제다.
+     * (변이 검증: 이 단언이 없으면 두 필드를 지워도 전 스위트 초록이었다.)
+     */
+    it('조회 시각임을 밝히고 캐시 섹션의 나이 상한을 함께 싣는다', async () => {
+        const r = (await getFundamentalsTool({ symbol: 'AAPL' }, ctx, rt)) as {
+            asOfIsFetchTime?: boolean;
+            cachedSectionsMaxAgeHours?: number;
+        };
+
+        expect(r.asOfIsFetchTime).toBe(true);
+        // 상한은 펀더멘털 캐시 TTL에서 파생된다 — 리터럴을 복제하면 TTL이 바뀌어도
+        // 테스트가 같이 바뀌어 아무것도 못 잡는다.
+        // Redis + Next Data Cache 두 계층이 각각 같은 창을 쓰므로 합으로 센다.
+        expect(r.cachedSectionsMaxAgeHours).toBe(
+            (FMP_FUNDAMENTAL_REVALIDATE_SECONDS * 2) / SECONDS_PER_HOUR
+        );
     });
 });

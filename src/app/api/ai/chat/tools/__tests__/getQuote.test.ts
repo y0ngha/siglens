@@ -23,10 +23,8 @@ vi.mock('@/shared/config/marketProfile', () => ({
     }),
 }));
 
-import {
-    getQuoteTool,
-    QUOTE_MAX_AGE_MS,
-} from '@/app/api/ai/chat/tools/getQuote';
+import { getQuoteTool } from '@/app/api/ai/chat/tools/getQuote';
+import { QUOTE_MAX_AGE_MS } from '@/app/api/ai/chat/tools/freshness';
 import { MS_PER_DAY, MS_PER_HOUR, MS_PER_MINUTE } from '@/shared/config/time';
 
 const ctx = {

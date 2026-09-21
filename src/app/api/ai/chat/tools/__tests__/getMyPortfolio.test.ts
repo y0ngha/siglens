@@ -30,6 +30,7 @@ vi.mock('@/shared/db/client', () => ({
 
 import { getMyPortfolioTool } from '@/app/api/ai/chat/tools/getMyPortfolio';
 import { QUOTE_LOOKUP_TIMEOUT_MS } from '@/shared/api/market/quoteTimeout';
+import { MS_PER_DAY } from '@/shared/config/time';
 
 const rt = {
     analysisModel: 'deepseek-v4.1-flash' as const,
@@ -606,5 +607,162 @@ describe('getMyPortfolioTool', () => {
         await expect(getMyPortfolioTool({}, ctxFor('u1'), rt)).rejects.toThrow(
             'profile resolve failed'
         );
+    });
+});
+
+describe('보유종목 시세 나이', () => {
+    function seedHolding(): void {
+        findByUser.mockResolvedValue([
+            {
+                symbol: 'AAPL',
+                companyName: 'Apple',
+                quantity: '10',
+                averagePrice: '150.5',
+            },
+        ]);
+        profile.mockResolvedValue('us-equity');
+    }
+
+    /**
+     * 동결된 시세(상장폐지·티커 개명)가 아무 표시 없이 평가금액·손익에 반영되면
+     * 사용자의 수익률 자체가 틀린다 — 2026-09-21 `SQ`(→`XYZ`) 사례가 그 모양이다.
+     */
+    it('동결된 시세에만 나이를 실어 보낸다', async () => {
+        seedHolding();
+        getQuote.mockResolvedValue({
+            price: 83.46,
+            changesPercentage: 0.57,
+            timestamp: Math.floor(Date.UTC(2025, 1, 13, 16, 8, 53) / 1000),
+        });
+
+        const r = (await getMyPortfolioTool({}, ctxFor('u1'), rt)) as {
+            holdings: Array<{ priceFreshness: { stale: boolean } | null }>;
+        };
+
+        expect(r.holdings[0]!.priceFreshness?.stale).toBe(true);
+    });
+
+    /**
+     * 정상 시세에는 붙이지 않는다 — 전 종목에 실으면 종목당 ~83자가 늘어
+     * `TOOL_RESULT_MAX_CHARS`(4,000)를 넘기고, 그 순간 결과 **전체**가 preview
+     * 블롭으로 접혀 모든 종목·합계가 사라진다(막으려던 위험보다 나쁘다).
+     */
+    it('정상 시세에는 나이를 싣지 않는다 — 예산을 신호에만 쓴다', async () => {
+        seedHolding();
+        getQuote.mockResolvedValue({
+            price: 200,
+            changesPercentage: 1.5,
+            timestamp: Math.floor(Date.now() / 1000),
+        });
+
+        const r = (await getMyPortfolioTool({}, ctxFor('u1'), rt)) as {
+            holdings: Array<Record<string, unknown>>;
+        };
+
+        expect(r.holdings[0]).not.toHaveProperty('priceFreshness');
+    });
+
+    it('timestamp가 없으면 싣지 않는다 — 모르는 값을 지금으로 채우지 않는다', async () => {
+        seedHolding();
+        getQuote.mockResolvedValue({ price: 200, changesPercentage: 1.5 });
+
+        const r = (await getMyPortfolioTool({}, ctxFor('u1'), rt)) as {
+            holdings: Array<Record<string, unknown>>;
+        };
+
+        expect(r.holdings[0]).not.toHaveProperty('priceFreshness');
+    });
+
+    /** 나이순으로 섞어 심는다 — 입력 순서와 정렬 결과가 일부러 다르다. */
+    const STALE_DAYS: ReadonlyArray<readonly [string, number]> = [
+        ['NEWEST', 20],
+        ['OLDEST', 70],
+        ['MID', 40],
+        ['OLD', 60],
+        ['NEW', 30],
+        ['MIDOLD', 50],
+    ];
+
+    function seedStaleHoldings(): void {
+        findByUser.mockResolvedValue(
+            STALE_DAYS.map(([symbol]) => ({
+                symbol,
+                companyName: symbol,
+                quantity: '1',
+                averagePrice: '100',
+            }))
+        );
+        profile.mockResolvedValue('us-equity');
+        const ageBySymbol = new Map(STALE_DAYS);
+        getQuote.mockImplementation((symbol: string) =>
+            Promise.resolve({
+                price: 100,
+                changesPercentage: 0,
+                timestamp: Math.floor(
+                    (Date.now() - ageBySymbol.get(symbol)! * MS_PER_DAY) / 1000
+                ),
+            })
+        );
+    }
+
+    type StaleResult = {
+        stalePriceCount?: number;
+        holdings: Array<{ symbol: string; priceFreshness?: unknown }>;
+    };
+
+    /**
+     * 상세는 `STALE_FRESHNESS_DETAIL_LIMIT`(5)에서 잘리고, **가장 오래된 쪽이**
+     * 남는다. 전부 실으면 종목당 ~83자가 더해져 `TOOL_RESULT_MAX_CHARS`를
+     * 밀어내고, 그 순간 `truncateToolResult`가 결과 전체를 preview 블롭으로 접어
+     * 종목·합계·비중이 다 사라진다.
+     */
+    it('stale이 상한을 넘으면 가장 오래된 5건만 상세를 싣는다', async () => {
+        seedStaleHoldings();
+
+        const r = (await getMyPortfolioTool(
+            {},
+            ctxFor('u1'),
+            rt
+        )) as StaleResult;
+
+        const detailed = r.holdings
+            .filter(h => h.priceFreshness !== undefined)
+            .map(h => h.symbol);
+        expect(detailed).toHaveLength(5);
+        // 정렬이 뒤집히면 여기서 잡힌다 — 빠지는 건 **가장 최근** stale 하나다.
+        expect(new Set(detailed)).toEqual(
+            new Set(['OLDEST', 'OLD', 'MIDOLD', 'MID', 'NEW'])
+        );
+        expect(detailed).not.toContain('NEWEST');
+    });
+
+    /** 잘린 분량은 수로라도 알려야 한다 — 6건 중 5건만 보이면 오해한다. */
+    it('상세가 잘려도 stale 총수는 봉투에 남는다', async () => {
+        seedStaleHoldings();
+
+        const r = (await getMyPortfolioTool(
+            {},
+            ctxFor('u1'),
+            rt
+        )) as StaleResult;
+
+        expect(r.stalePriceCount).toBe(STALE_DAYS.length);
+    });
+
+    /** 정상 포트폴리오의 봉투에 상시 노이즈를 더하지 않는다. */
+    it('stale이 없으면 총수 필드 자체를 생략한다', async () => {
+        seedHolding();
+        getQuote.mockResolvedValue({
+            price: 200,
+            changesPercentage: 1.5,
+            timestamp: Math.floor(Date.now() / 1000),
+        });
+
+        const r = (await getMyPortfolioTool({}, ctxFor('u1'), rt)) as Record<
+            string,
+            unknown
+        >;
+
+        expect(r).not.toHaveProperty('stalePriceCount');
     });
 });
