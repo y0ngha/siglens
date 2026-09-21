@@ -574,25 +574,32 @@ describe('run_fresh_analysis 수급 게이트', () => {
     /**
      * 기준은 "수급을 돌리면 **이번 호출의 답**이 달라지는가"다.
      *
-     * 어느 kind도 해당하지 않는다. 적재는 원문 행만 넣고 보강(번역·라벨)은 하지
-     * 않는데, news·overall 축은 `isEnrichedRow`가 미보강 행을 전부 걸러내므로
-     * 방금 넣은 행이 이번 분석에 한 건도 안 들어간다. technical·options는 뉴스를
-     * 아예 읽지 않는다. 그래서 이 툴은 게이트를 부르지 않는다 — 부르면 슬롯을
-     * 쥔 채 FMP·Neon 왕복만 얹는다.
+     * news·overall 축만 DB의 뉴스를 읽는다. 그리고 `ensureSymbolNewsFresh`가
+     * 신규 기사를 **동기로** 보강하므로, 방금 넣은 기사가 `isEnrichedRow`를
+     * 통과해 실제로 이번 분석에 들어간다 — 그게 이 게이트의 근거다.
+     * technical·options는 뉴스를 아예 안 읽으므로 부르지 않는다.
      */
-    it.each(['news', 'overall', 'technical', 'options'] as const)(
-        'kind=%s는 수급을 부르지 않는다',
-        async kind => {
-            await runFreshAnalysisTool({ symbol: 'AAPL', kind }, ctx, rt);
+    it.each([
+        ['news', true],
+        ['overall', true],
+        ['technical', false],
+        ['options', false],
+    ] as const)('kind=%s → 수급 %s', async (kind, expected) => {
+        await runFreshAnalysisTool({ symbol: 'AAPL', kind }, ctx, rt);
 
+        if (expected) {
+            // 인자까지 고정한다 — 대문자화는 턴 메모 키(`index.ts`)와
+            // `news:${symbol}` 태그 양쪽에서 load-bearing이다.
+            expect(ensureSymbolData).toHaveBeenCalledExactlyOnceWith('AAPL');
+        } else {
             expect(ensureSymbolData).not.toHaveBeenCalled();
         }
-    );
+    });
 
     /**
      * 값싼 거절이 FMP 왕복과 Neon upsert를 먼저 지불하면 안 된다.
      */
-    it('알 수 없는 kind는 거절된다', async () => {
+    it('알 수 없는 kind는 수급 전에 거절된다', async () => {
         const result = await runFreshAnalysisTool(
             { symbol: 'AAPL', kind: 'nope' },
             ctx,
@@ -603,7 +610,7 @@ describe('run_fresh_analysis 수급 게이트', () => {
         expect(ensureSymbolData).not.toHaveBeenCalled();
     });
 
-    it('심볼 형태가 아니면 거절된다', async () => {
+    it('심볼 형태가 아니면 수급 전에 거절된다', async () => {
         const result = await runFreshAnalysisTool(
             { symbol: '!!', kind: 'news' },
             ctx,
@@ -612,5 +619,168 @@ describe('run_fresh_analysis 수급 게이트', () => {
 
         expect(result).toMatchObject({ error: 'invalid_args' });
         expect(ensureSymbolData).not.toHaveBeenCalled();
+    });
+});
+
+describe('캐시 히트를 fresh로 위장하지 않는다', () => {
+    /**
+     * 시스템 프롬프트는 `get_cached_analysis`가 `stale:true`를 돌려줬을 때 모델을
+     * 이 툴로 보낸다. 같은 저장 분석이 `source:'fresh'` + `stale:false`로 되돌아오면
+     * 모델은 자기가 방금 갱신했다고 믿고 단정적으로 말한다 — 그게 이 단언이 막는
+     * 회귀다(변이 검증: 이 단언이 없으면 옛 버그 코드로 되돌려도 전 스위트 초록).
+     */
+    it("status:'cached'면 source:'cached'와 stale:null을 싣는다", async () => {
+        m.overall.mockResolvedValue({
+            status: 'cached',
+            result: { headlineKo: 'h', analyzedAt: '2026-09-12T00:00:00.000Z' },
+        });
+
+        const r = (await runFreshAnalysisTool(
+            { symbol: 'AAPL', kind: 'overall' },
+            ctx,
+            rt
+        )) as { source: string; stale: unknown; generatedAt: string | null };
+
+        expect(r.source).toBe('cached');
+        expect(r.stale).toBeNull();
+    });
+
+    /**
+     * 투영(`projectOverall` 등)이 `analyzedAt`을 버리므로 **투영 전 원본**에서
+     * 읽어야 한다. 투영 결과에서 찾으면 항상 null이 되어 기능이 죽는다.
+     */
+    it('cached의 generatedAt은 투영 전 원본의 analyzedAt에서 온다', async () => {
+        m.overall.mockResolvedValue({
+            status: 'cached',
+            result: { headlineKo: 'h', analyzedAt: '2026-09-12T00:00:00.000Z' },
+        });
+
+        const r = (await runFreshAnalysisTool(
+            { symbol: 'AAPL', kind: 'overall' },
+            ctx,
+            rt
+        )) as { generatedAt: string | null };
+
+        expect(r.generatedAt).toBe('2026-09-12T00:00:00.000Z');
+    });
+
+    it('원본에 analyzedAt이 없으면 generatedAt은 null이다 — 지어내지 않는다', async () => {
+        m.overall.mockResolvedValue({
+            status: 'cached',
+            result: { headlineKo: 'h' },
+        });
+
+        const r = (await runFreshAnalysisTool(
+            { symbol: 'AAPL', kind: 'overall' },
+            ctx,
+            rt
+        )) as { generatedAt: string | null };
+
+        expect(r.generatedAt).toBeNull();
+    });
+
+    it("status:'done'은 그대로 fresh이고 stale:false다", async () => {
+        m.overall.mockResolvedValue({
+            status: 'done',
+            result: { headlineKo: 'h' },
+        });
+
+        const r = (await runFreshAnalysisTool(
+            { symbol: 'AAPL', kind: 'overall' },
+            ctx,
+            rt
+        )) as { source: string; stale: unknown; generatedAt: string | null };
+
+        expect(r.source).toBe('fresh');
+        expect(r.stale).toBe(false);
+        expect(typeof r.generatedAt).toBe('string');
+    });
+});
+
+describe('cached generatedAt은 kind마다 신뢰도가 다르다', () => {
+    const ANALYZED = '2026-09-12T00:00:00.000Z';
+
+    it('technical: core가 analyzedAt을 보존하므로 싣는다', async () => {
+        m.runAnalysis.mockResolvedValue({
+            status: 'cached',
+            result: {
+                summary: 's',
+                trend: 'bullish',
+                riskLevel: 'low',
+                keyLevels: { support: [], resistance: [] },
+                priceTargets: { bullish: null, bearish: null },
+                patternSummaries: [],
+                strategyResults: [],
+                candlePatterns: [],
+                trendlines: [],
+                indicatorResults: [],
+                analyzedAt: ANALYZED,
+            },
+        });
+
+        const r = (await runFreshAnalysisTool(
+            { symbol: 'AAPL', kind: 'technical' },
+            ctx,
+            rt
+        )) as { source: string; generatedAt: string | null };
+
+        expect(r.source).toBe('cached');
+        expect(r.generatedAt).toBe(ANALYZED);
+    });
+
+    /**
+     * core의 `runOptionsAnalysis`는 캐시 항목을
+     * `normalizeOptionsAnalysisResponse(cached, occurredAt)`로 다시 정규화하는데,
+     * 그 함수가 `analyzedAt`을 **조회 시각으로 덮어쓴다**. 그대로 실으면
+     * `source:'cached'` 옆에 지금 시각이 붙어, 이 수정이 없애려던 왜곡이 그대로
+     * 남는다.
+     */
+    it('options: core가 조회 시각으로 덮어쓰므로 싣지 않는다', async () => {
+        m.options.mockResolvedValue({
+            status: 'cached',
+            result: {
+                summary: 's',
+                signals: [],
+                perExpiration: [],
+                analyzedAt: new Date().toISOString(),
+            },
+        });
+
+        const r = (await runFreshAnalysisTool(
+            { symbol: 'AAPL', kind: 'options' },
+            ctx,
+            rt
+        )) as { source: string; generatedAt: string | null };
+
+        expect(r.source).toBe('cached');
+        expect(r.generatedAt).toBeNull();
+    });
+
+    /**
+     * `NewsAnalysisResponse`에는 `analyzedAt` 필드 자체가 없다. 그래도 픽스처에
+     * **계약에 없는** `analyzedAt`을 일부러 심는다 — 안 심으면 이 테스트는
+     * "필드가 없어서 null"만 증명하고, `news`를 신뢰 집합에 넣어도 그대로
+     * 통과해 게이트 자체를 검증하지 못한다.
+     */
+    it('news: kind가 신뢰 집합 밖이라 값이 있어도 싣지 않는다', async () => {
+        m.news.mockResolvedValue({
+            status: 'cached',
+            result: {
+                currentDriverKo: 'd',
+                keyEventsKo: [],
+                upcomingEventsKo: [],
+                overallSentiment: 'neutral',
+                analyzedAt: ANALYZED,
+            },
+        });
+
+        const r = (await runFreshAnalysisTool(
+            { symbol: 'AAPL', kind: 'news' },
+            ctx,
+            rt
+        )) as { source: string; generatedAt: string | null };
+
+        expect(r.source).toBe('cached');
+        expect(r.generatedAt).toBeNull();
     });
 });

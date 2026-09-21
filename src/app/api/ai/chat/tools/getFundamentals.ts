@@ -1,5 +1,8 @@
 import 'server-only';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
+import { FMP_FUNDAMENTAL_REVALIDATE_SECONDS } from '@/shared/api/fmp/fundamentalClient';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
+
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import {
@@ -17,6 +20,13 @@ import { zonedDate } from '@/shared/lib/marketSessionDate';
 import type { ToolExecutor } from './index';
 import { pctVs, ratioPct } from './percent';
 import { resolveAssetInfoOrNull } from './resolveAssetInfo';
+
+/**
+ * 펀더멘털 값이 지나는 캐시 계층 수 — Redis(`getOrSetCache`) + Next Data Cache.
+ * 둘 다 `FMP_FUNDAMENTAL_REVALIDATE_SECONDS`를 쓰지만 만료 시점이 독립이라
+ * 최악의 나이는 두 창의 합에 가깝다.
+ */
+const FUNDAMENTAL_CACHE_LAYERS = 2;
 
 function settledOrNull<T>(r: PromiseSettledResult<T>): T | null {
     return r.status === 'fulfilled' ? r.value : null;
@@ -179,7 +189,41 @@ export const getFundamentalsTool: ToolExecutor = async args => {
     // Provider ratios arrive as raw floats (P/E 27.622012578616346); trim them
     // to significant digits like every other number the agent quotes.
     return roundNumbersDeep({
+        /*
+         * `asOf`는 **조회 시각**이다 — 데이터가 그 시점 값이라는 뜻이 아니다.
+         *
+         * 이 경로는 전부 `getOrSetCache(key, FMP_FUNDAMENTAL_REVALIDATE_SECONDS, …)`
+         * 로 읽으므로 프로필·밸류에이션·성장·재무건전성·애널리스트 값이 최대
+         * 24시간 묵었을 수 있는데, 예전에는 그걸 `asOf: now`로만 내보내 모델이
+         * "지금 P/E"라고 단정할 근거를 줬다. 펀더멘털은 분기 단위로 바뀌므로
+         * 24시간 지연 자체는 문제가 아니지만, **지연을 숨기는 것**은 문제다.
+         *
+         * 실제 생성 시각은 캐시 계층이 돌려주지 않으므로 지어내지 않는다. 대신
+         * 나이의 **상한**을 명시해 모델이 "최대 하루 전 기준"으로 말할 수 있게 한다.
+         * (`get_quote`처럼 프로바이더가 타임스탬프를 주는 경로는 실제 시각을
+         * 싣는다 — 여기서 같은 걸 흉내 내면 그게 거짓이 된다.)
+         *
+         * 상한이 무엇을 덮고 무엇을 안 덮는지는 `cachedSectionsMaxAgeHours`의
+         * 이름과 그 옆 주석이 말한다.
+         */
         asOf: new Date().toISOString(),
+        asOfIsFetchTime: true as const,
+        // 이 상한이 덮는 것은 **캐시된 펀더멘털 섹션**뿐이다(profile·valuation·
+        // growth·health·analyst). 같은 봉투의 `price`는 별개의 창을 쓴다 —
+        // `computeBarsEffectiveTtl`이 장중에만 60초이고 장외에는
+        // `min(BARS_OFFHOURS_TTL_CEILING_SECONDS=86_400, 다음 정규장까지)`라
+        // 하루와 같은 자릿수가 된다(값 자체는 정확한 마지막 종가이므로 그게
+        // 문제는 아니다). `nextEarningsDate`/`daysToEarnings`는 DB 행이라 갱신이
+        // 실패하면 몇 주 묵을 수 있다 — 하나의 숫자로 전부를 덮는다고 말하면
+        // 그게 이 PR이 고치는 `asOf: now`와 같은 과장이 된다.
+        // **두 계층이 겹친다.** Redis(`getOrSetCache`)가 24h로 잡고, 그게 miss나면
+        // 안쪽 `fmpGet`이 Next Data Cache를 같은 24h `revalidate`로 읽는다
+        // (stale-while-revalidate). 두 창이 어긋나게 만료되면 실질 상한은 24h가
+        // 아니라 그 합에 가깝다 — 한 계층만 세면 이 PR이 고치는 `asOf: now`와
+        // 같은 과소평가가 된다.
+        cachedSectionsMaxAgeHours:
+            (FMP_FUNDAMENTAL_REVALIDATE_SECONDS * FUNDAMENTAL_CACHE_LAYERS) /
+            SECONDS_PER_HOUR,
         source: 'fundamental data provider (cached)',
         symbol,
         available: true,

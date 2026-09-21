@@ -34,6 +34,7 @@ import {
 import { buildAnalysisNewsItems } from './lib/buildAnalysisNewsItems';
 import { analyzeNewsCards } from './lib/analyzeNewsCards';
 import { PREWARM_NEWS_CARD_LIMIT } from './lib/newsAnalysisConstants';
+import { selectUnanalyzed } from './lib/selectUnanalyzed';
 import {
     ingestNewsForSymbol,
     NewsIngestWriteError,
@@ -437,18 +438,10 @@ export async function prewarmNews(
     // 창 전체를 매번 돌려주므로, 다음에 적재가 성공하면 남은 미보강 행이 그대로
     // 후보로 다시 잡힌다(자기 회복).
     //
-    // 후보를 DB에 **실제로 있는** 행으로 한 번 더 좁힌다. `ingestNewsForSymbol`은
-    // 과반 미만의 upsert 실패를 삼키고 진행하므로 `fresh`에는 있지만 DB에는 없는
-    // 항목이 남을 수 있다. 그대로 두면 LLM은 호출하고 `attachAnalysis`는 존재하지
-    // 않는 id에 no-op update를 날려, 비용만 쓰고 아무것도 남지 않는다.
-    const rowIds = new Set(rows.map(r => r.id));
-    const analyzedIds = new Set(
-        rows.filter(r => r.analyzedAt !== null).map(r => r.id)
-    );
+    // 후보 좁히기(미보강 ∩ DB 실재)는 `selectUnanalyzed`가 맡는다 — 근거는 그
+    // 함수의 주석에 있고, 챗 경로(`ensureSymbolNewsFresh`)와 같은 판단을 쓴다.
     const unanalyzed =
-        ingested?.fresh.filter(
-            item => rowIds.has(item.id) && !analyzedIds.has(item.id)
-        ) ?? [];
+        ingested === null ? [] : selectUnanalyzed(ingested.fresh, rows);
     if (unanalyzed.length > 0) {
         await analyzeNewsCards(unanalyzed, repo, {
             limit: PREWARM_NEWS_CARD_LIMIT,
@@ -499,6 +492,12 @@ export async function prewarmNews(
  * 소비자용 진입점인 이 파일이 대신 재노출한다.
  */
 export { hasAnalyzableNews } from './lib/hasAnalyzableNews';
+export { analyzeNewsCards } from './lib/analyzeNewsCards';
+export { selectUnanalyzed } from './lib/selectUnanalyzed';
+export {
+    CHAT_SYNC_NEWS_CARD_LIMIT,
+    VISITOR_NEWS_CARD_LIMIT,
+} from './lib/newsAnalysisConstants';
 export { ingestNewsForSymbol } from './lib/ingestNewsForSymbol';
 export { isRecentlyFetched } from './lib/newsRefreshFlag';
 export { NEWS_ANALYSIS_LOOKBACK_MS } from './lib/newsLookback';
