@@ -91,6 +91,9 @@ Closed loops (approved, kept for pattern recall only — see file for detail):
 - [feat/hub-ai-prewarm R2-R4 closed](project-hub-ai-prewarm-r2.md) — R3 reorder broke durationMs (dropped hub-phase time), R4 fixed via independent batchStartedAt, sim-clock mutation-verified
 - [feat/ai-about-page R1-R2 closed](project-ai-about-page-r1-r2.md) — tRaw helper name avoids extract.mjs regex miss; key-set-equality flatten script; R2 saw unlisted unstaged files
 - [feat/symbol-chat-to-ai-host R1](project-symbol-chat-to-ai-host-r1-share-regression.md) — hideView removal killed Share button on 5 snapshot-gated tabs (useRegisterShareable ran pre-guard, hidden); rest of removal clean
+- [prewarm-no-news-starvation R2](project-prewarm-no-news-starvation-r2.md) — 7 mutations killed; survivors: QUOTE_MAX_AGE_MS widening, gate-before-busy-check ordering
+- [prewarm-no-news-starvation R3](project-prewarm-no-news-starvation-r3.md) — core 1.14.0 no_news abstention verified in dist; all R2 fixes mutation-killed; 6 stale pre-1.14.0 comments remain
+- [core overall-optional-news-axis R4](project-core-overall-optional-news-axis-r4.md) — approved; R1-R3 defects were all doc-vs-source drift; snapshot key named an unexercised branch
 
 ## Reference
 
