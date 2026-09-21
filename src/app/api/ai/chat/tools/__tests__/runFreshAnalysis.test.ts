@@ -59,7 +59,11 @@ const ctx = {
     locale: 'ko' as const,
     signal: new AbortController().signal,
 };
-const rt = { analysisModel: 'deepseek-v4.1-flash' as const };
+const ensureSymbolData = vi.fn(async (): Promise<void> => {});
+const rt = {
+    analysisModel: 'deepseek-v4.1-flash' as const,
+    ensureSymbolData,
+};
 
 /**
  * Minimal-but-valid technical fixture for tests that don't care about the
@@ -559,5 +563,54 @@ describe('runFreshAnalysisTool', () => {
                 )
             )
         ).toBe(true);
+    });
+});
+
+describe('run_fresh_analysis 수급 게이트', () => {
+    beforeEach(() => {
+        ensureSymbolData.mockClear();
+    });
+
+    /**
+     * 기준은 "수급을 돌리면 **이번 호출의 답**이 달라지는가"다.
+     *
+     * 어느 kind도 해당하지 않는다. 적재는 원문 행만 넣고 보강(번역·라벨)은 하지
+     * 않는데, news·overall 축은 `isEnrichedRow`가 미보강 행을 전부 걸러내므로
+     * 방금 넣은 행이 이번 분석에 한 건도 안 들어간다. technical·options는 뉴스를
+     * 아예 읽지 않는다. 그래서 이 툴은 게이트를 부르지 않는다 — 부르면 슬롯을
+     * 쥔 채 FMP·Neon 왕복만 얹는다.
+     */
+    it.each(['news', 'overall', 'technical', 'options'] as const)(
+        'kind=%s는 수급을 부르지 않는다',
+        async kind => {
+            await runFreshAnalysisTool({ symbol: 'AAPL', kind }, ctx, rt);
+
+            expect(ensureSymbolData).not.toHaveBeenCalled();
+        }
+    );
+
+    /**
+     * 값싼 거절이 FMP 왕복과 Neon upsert를 먼저 지불하면 안 된다.
+     */
+    it('알 수 없는 kind는 거절된다', async () => {
+        const result = await runFreshAnalysisTool(
+            { symbol: 'AAPL', kind: 'nope' },
+            ctx,
+            rt
+        );
+
+        expect(result).toMatchObject({ error: 'invalid_args' });
+        expect(ensureSymbolData).not.toHaveBeenCalled();
+    });
+
+    it('심볼 형태가 아니면 거절된다', async () => {
+        const result = await runFreshAnalysisTool(
+            { symbol: '!!', kind: 'news' },
+            ctx,
+            rt
+        );
+
+        expect(result).toMatchObject({ error: 'invalid_args' });
+        expect(ensureSymbolData).not.toHaveBeenCalled();
     });
 });

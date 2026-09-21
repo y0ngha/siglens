@@ -14,6 +14,7 @@ const {
     mockPrewarmCongress,
     mockPrewarmNews,
     mockPrewarmOptions,
+    mockHasAnalyzableNews,
 } = vi.hoisted(() => ({
     mockMarkSkipped: vi.fn(),
     mockClearInFlight: vi.fn(),
@@ -26,6 +27,7 @@ const {
     mockPrewarmCongress: vi.fn(),
     mockPrewarmNews: vi.fn(),
     mockPrewarmOptions: vi.fn(),
+    mockHasAnalyzableNews: vi.fn(),
 }));
 
 vi.mock('../lock', () => ({
@@ -35,6 +37,8 @@ vi.mock('../lock', () => ({
     clearStructurallyUnavailable: mockClearStructural,
     // 구현과 동일한 값(lock.ts). 일시적 실패 backoff TTL.
     TRANSIENT_SKIP_TTL_SECONDS: 1800,
+    // 구현과 동일한 값(lock.ts). "최근 뉴스 없음" backoff TTL.
+    NO_RECENT_NEWS_SKIP_TTL_SECONDS: 86400,
 }));
 
 vi.mock('@/entities/analysis/api', () => ({
@@ -47,6 +51,12 @@ vi.mock('@/entities/analysis/api', () => ({
 
 vi.mock('@/entities/news-article/api', () => ({
     prewarmNews: mockPrewarmNews,
+    DrizzleNewsRepository: class {},
+    hasAnalyzableNews: mockHasAnalyzableNews,
+}));
+
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: () => ({ db: {} }),
 }));
 
 vi.mock('@/entities/options-chain/api', () => ({
@@ -241,6 +251,157 @@ describe('resolveHarvest', () => {
         expect(counts).toEqual(makeCounts());
 
         warnSpy.mockRestore();
+    });
+
+    describe('뉴스 의존 탭의 no_news 갈래는', () => {
+        it("news 탭이 code='no_news'이고 분석 가능한 뉴스가 0건이면 24h backoff", async () => {
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
+            mockHasAnalyzableNews.mockResolvedValue(false);
+
+            const ok = await resolveHarvest(
+                'SQQQ',
+                'news',
+                { status: 'error', code: 'no_news' },
+                repo as never,
+                counts
+            );
+
+            expect(ok).toBe(false);
+            expect(mockMarkSkipped).toHaveBeenCalledWith('SQQQ', 'news', 86400);
+            // 영구 확정은 하지 않는다 — 기사가 다시 나오면 복구돼야 한다.
+            expect(mockMarkStructural).not.toHaveBeenCalled();
+            expect(warnSpy).toHaveBeenCalledWith(
+                '[seo-prewarm] skip SQQQ:news — status=error code=no_news' +
+                    ' (no analyzable news in window — 24h backoff)'
+            );
+
+            warnSpy.mockRestore();
+        });
+
+        /**
+         * core 1.14.0부터 overall은 뉴스 축의 `no_news`를 abstain으로 처리하므로
+         * 뉴스가 없다고 실패하지 않는다. 즉 overall이 `axis:'news'`로 떨어지는 건
+         * 재시도하면 달라지는 실패(뉴스 LLM·사용량 한도)뿐이라 30분이 맞다.
+         */
+        it("overall 탭은 axis='news'여도 24h로 묶지 않는다", async () => {
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
+            mockHasAnalyzableNews.mockResolvedValue(false);
+
+            await resolveHarvest(
+                'SQQQ',
+                'overall',
+                { status: 'error', axis: 'news' },
+                repo as never,
+                counts
+            );
+
+            expect(mockMarkSkipped).toHaveBeenCalledWith(
+                'SQQQ',
+                'overall',
+                1800
+            );
+            // DB 조회 자체를 하지 않는다 — 배치 데드라인에 불필요한 왕복을 안 얹는다.
+            expect(mockHasAnalyzableNews).not.toHaveBeenCalled();
+
+            warnSpy.mockRestore();
+        });
+
+        it('뉴스가 실제로 있으면 news 탭 실패여도 30분 backoff를 유지한다', async () => {
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
+            // 재료는 있는데 실패했다 = 뉴스 LLM 일시 장애. 24h를 걸면 그날 밤을 날린다.
+            mockHasAnalyzableNews.mockResolvedValue(true);
+
+            await resolveHarvest(
+                'AAPL',
+                'news',
+                { status: 'error', code: 'no_news' },
+                repo as never,
+                counts
+            );
+
+            expect(mockMarkSkipped).toHaveBeenCalledWith('AAPL', 'news', 1800);
+
+            warnSpy.mockRestore();
+        });
+
+        /**
+         * 적재가 실패한 밤은 DB가 비어 있어도 "뉴스가 없다"의 증거가 아니다.
+         * 30분 티어가 지키려던 바로 그 상황(FMP 장애)이라 24h로 묶으면 안 된다.
+         */
+        it('적재 실패(newsFetchFailed)면 DB가 비어도 30분을 유지한다', async () => {
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
+            mockHasAnalyzableNews.mockResolvedValue(false);
+
+            await resolveHarvest(
+                'NEWSYM',
+                'news',
+                { status: 'error', code: 'no_news', newsFetchFailed: true },
+                repo as never,
+                counts
+            );
+
+            expect(mockMarkSkipped).toHaveBeenCalledWith(
+                'NEWSYM',
+                'news',
+                1800
+            );
+
+            warnSpy.mockRestore();
+        });
+
+        it('뉴스와 무관한 축(technical) 실패는 DB를 보지 않고 30분을 유지한다', async () => {
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
+
+            await resolveHarvest(
+                'AAPL',
+                'overall',
+                { status: 'error', axis: 'technical' },
+                repo as never,
+                counts
+            );
+
+            expect(mockHasAnalyzableNews).not.toHaveBeenCalled();
+            expect(mockMarkSkipped).toHaveBeenCalledWith(
+                'AAPL',
+                'overall',
+                1800
+            );
+
+            warnSpy.mockRestore();
+        });
+
+        it('뉴스 의존 탭이 아니면 DB를 보지 않는다', async () => {
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
+
+            await resolveHarvest(
+                'AAPL',
+                'financials',
+                { status: 'error', code: 'no_news' },
+                repo as never,
+                counts
+            );
+
+            expect(mockHasAnalyzableNews).not.toHaveBeenCalled();
+            expect(mockMarkSkipped).toHaveBeenCalledWith(
+                'AAPL',
+                'financials',
+                1800
+            );
+
+            warnSpy.mockRestore();
+        });
     });
 
     it('terminal status=miss_no_trigger: markSkipped + clearInFlight, returns false (FIX C)', async () => {

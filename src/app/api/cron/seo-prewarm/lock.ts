@@ -35,6 +35,32 @@ const SKIP_TTL_SECONDS = 21600; // 6h
 export const TRANSIENT_SKIP_TTL_SECONDS = 1800; // 30min
 
 /**
+ * "최근 30일 뉴스가 없다"의 backoff TTL.
+ *
+ * **`news` 탭 전용이다.** 분석 창(`NEWS_ANALYSIS_LOOKBACK_MS`, 30일) 안에 보강된
+ * 기사가 한 건도 없으면 그 탭은 만들 수 없다 — core가 `{status:'error',
+ * code:'no_news'}`를 준다.
+ *
+ * `overall`은 여기 해당하지 않는다. core 1.14.0부터 뉴스 축의 `no_news`를
+ * abstain으로 처리해 뉴스 없이도 생성되므로, overall이 실패하면 그건 재시도하면
+ * 달라지는 상태이고 기본 30분 티어가 맞다.
+ *
+ * 이 상태에 30분 backoff를 걸면 아무것도 바뀔 수 없는 유닛을 야간 창(하루 114 tick)
+ * 동안 **하루 ~19회** 재시도한다. 2026-09 실측: 41개 심볼 × 2탭이 이 루프에 갇혀
+ * 배치 head 슬롯을 계속 먹었고, 그 심볼들은 전 탭이 영영 수렴하지 못해
+ * `starvation watch`에 `never`로 남았다(3일간 심볼당 33~41회 재시도).
+ *
+ * 그렇다고 `markStructurallyUnavailable`(영구 확정)을 쓸 수는 없다. 뉴스 부재는
+ * 의회 거래 부재나 옵션 체인 부재와 성격이 다르다 — SQQQ·AGQ·SPCE처럼 **주기적으로
+ * 기사가 나오는데 지금만 건조기**인 종목이 다수다(실측: 최신 기사가 각각 53·35·34일
+ * 전으로 30일 창을 막 벗어났다). 영구 확정하면 다음 기사가 나와도 다시는 안 만들어진다.
+ *
+ * 그래서 확정이 아니라 **주기만 맞춘다**. 24시간이면 하루 한 번 재시도해 새 기사가
+ * 들어온 다음 밤에 자연 복구되고, 슬롯 점유는 ~19배 줄어든다.
+ */
+export const NO_RECENT_NEWS_SKIP_TTL_SECONDS = 86400; // 24h
+
+/**
  * SET NX EX로 루트 락을 획득하고, 성공 시 이번 실행 고유의 소유 토큰을 반환한다.
  *
  * EventBridge가 겹쳐 트리거되더라도 단일 인스턴스만 pre-warm 배치를 실행하도록

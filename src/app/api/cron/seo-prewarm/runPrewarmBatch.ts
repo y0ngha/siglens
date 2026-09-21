@@ -217,6 +217,17 @@ interface StarvedSymbol {
     symbol: string;
     /** 마지막 생성 이후 경과 ms. 탭 하나라도 한 번도 생성된 적 없으면 null(="never"). */
     ageMs: number | null;
+    /**
+     * 한 번도 생성된 적 없는 탭 이름들. `never`인 심볼이 **어디서** 막혔는지
+     * 구분하려고 싣는다.
+     *
+     * 뉴스가 없는 심볼(2026-09 실측 41개)은 `news`·`overall`만 영구히 비고 나머지
+     * 탭은 멀쩡하다 — 그건 이미 아는 상태이고 24h backoff로 처리된다. 탭 목록이
+     * 없으면 그 41개가 `never` 목록을 가득 채워, `STARVATION_LOG_LIMIT`(5)에
+     * 걸려 **정말로 회전에 도달하지 못한 신규 심볼이 영영 안 보인다** — 이
+     * 워치가 막으려던 바로 그 신호-잡음 실패다(같은 함수의 `ALAB(never)` 주석 참고).
+     */
+    missingTabs: SeoSnapshotTab[];
 }
 
 /**
@@ -244,7 +255,7 @@ function findStarvedSymbols(
     return staleSymbols
         .map(u => {
             let oldestGeneratedAt: Date | undefined;
-            let neverGenerated = false;
+            const missingTabs: SeoSnapshotTab[] = [];
             for (const tab of u.tabs) {
                 // 만들 수 없는 탭은 "미도달"의 증거가 아니다. 빼지 않으면 6탭이
                 // 멀쩡한 심볼이 congress 하나 때문에 `never`로 찍혀, 이 워치가
@@ -255,7 +266,7 @@ function findStarvedSymbols(
                     snapshotKey(u.symbol, tab)
                 );
                 if (generatedAt === undefined) {
-                    neverGenerated = true;
+                    missingTabs.push(tab);
                     continue;
                 }
                 if (
@@ -266,10 +277,10 @@ function findStarvedSymbols(
                 }
             }
             const ageMs =
-                neverGenerated || oldestGeneratedAt === undefined
+                missingTabs.length > 0 || oldestGeneratedAt === undefined
                     ? null
                     : nowMs - oldestGeneratedAt.getTime();
-            return { symbol: u.symbol, ageMs };
+            return { symbol: u.symbol, ageMs, missingTabs };
         })
         .filter(s => s.ageMs === null || s.ageMs > STARVATION_AGE_THRESHOLD_MS)
         .toSorted((a, b) => {
@@ -295,13 +306,21 @@ function logStarvationWatch(
         nowMs
     );
     if (starved.length === 0) return;
-    const worst = starved
-        .slice(0, STARVATION_LOG_LIMIT)
-        .map(s =>
-            s.ageMs === null
-                ? `${s.symbol}(never)`
-                : `${s.symbol}(${Math.floor(s.ageMs / (60 * 60 * 1000))}h)`
-        );
+    const worst = starved.slice(0, STARVATION_LOG_LIMIT).map(s =>
+        s.ageMs === null
+            ? // 어느 탭이 비었는지까지 적는다 — `never`만으로는 "뉴스가 없어
+              // news·overall만 빈 심볼"과 "회전에 아예 도달 못 한 심볼"이
+              // 구분되지 않는다(`StarvedSymbol.missingTabs` 주석).
+              // 접미사 생략 분기는 **구조상 도달 불가**다: `missingTabs`가
+              // 비려면 적용 탭이 전부 structural이어야 하는데, 그러면
+              // `isTabPending`이 전부 false라 심볼이 `staleSymbols`에 아예
+              // 들어오지 못한다(그래서 테스트로 고정할 수 없다 — 변이를 넣어도
+              // 스위트가 초록이다). 그럼에도 남기는 이유는 비용이 0이고, 위
+              // 불변식이 깨지는 날 `SYM(never: )`처럼 꼬리만 남은 로그가
+              // 운영자에게 가지 않게 하기 때문이다.
+              `${s.symbol}(never${s.missingTabs.length > 0 ? `: ${s.missingTabs.join('|')}` : ''})`
+            : `${s.symbol}(${Math.floor(s.ageMs / (60 * 60 * 1000))}h)`
+    );
     console.warn(
         `[seo-prewarm] starvation watch: ${starved.length} symbol(s) stale > 48h — worst: ${worst.join(', ')}`
     );

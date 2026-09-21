@@ -66,7 +66,10 @@ const ctx = {
     locale: 'ko' as const,
     signal: new AbortController().signal,
 };
-const rt = { analysisModel: 'deepseek-v4.1-flash' as const };
+const rt = {
+    analysisModel: 'deepseek-v4.1-flash' as const,
+    ensureSymbolData: async (): Promise<void> => {},
+};
 
 function fakeProvider(overrides: Record<string, unknown> = {}) {
     return {

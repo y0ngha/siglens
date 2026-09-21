@@ -31,7 +31,10 @@ vi.mock('@/shared/db/client', () => ({
 import { getMyPortfolioTool } from '@/app/api/ai/chat/tools/getMyPortfolio';
 import { QUOTE_LOOKUP_TIMEOUT_MS } from '@/shared/api/market/quoteTimeout';
 
-const rt = { analysisModel: 'deepseek-v4.1-flash' as const };
+const rt = {
+    analysisModel: 'deepseek-v4.1-flash' as const,
+    ensureSymbolData: async (): Promise<void> => {},
+};
 const ctxFor = (userId: string) => ({
     userId,
     tier: 'member' as const,

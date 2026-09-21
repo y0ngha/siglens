@@ -28,7 +28,7 @@
   - terminal skip(backoff, FIX C 감사): `[seo-prewarm] skip {symbol}:{tab} — status=...`(또는 `— null result`)를 `console.warn`으로 남긴다(기존 `console.debug`는 로그 파이프라인에서 조용히 사라져 운영자가 "막힌" 유닛을 볼 수 없었다). 해당 (symbol, tab)은 6시간 backoff에 들어가 다음 몇 tick 동안 재선별되지 않는다 — **하룻밤에 이 로그가 몇 번 보이는 건 정상**이다(영구 실패 유닛도 있을 수 있다: 예 — 옵션 체인이 없는 심볼의 `options` 탭). 특정 (symbol, tab)이 여러 밤 연속 반복되면 원인(정규화 실패, no_trades 등)을 살펴볼 것.
   - FMP 429(rate limit)는 `fmpRetry.ts`가 10s/15s/20s로 자동 재시도하지만, 재시도 자체를 로그로 남기지 않는다 — 안정적인 429 로그 문자열이 없어 전용 알람은 아직 없다(best-effort, `13-seo-prewarm.sh`에 TODO로 남겨둠). 429가 배치에 영향을 줄 만큼 누적되면 batch-failed 알람이 구조적 실패로 잡아낸다.
   - **정상 vs 진짜로 막힌 상태 구분**(운영 참고): `harvested 0`인 tick 자체는 정상일 수 있다 — 그 tick의 후보 창에 신규 stale 심볼이 없었을 뿐이다. **진짜로 막힌 상태**는 다음 중 하나: (a) `remaining > 0`인데 `harvested`가 여러 tick 연속 계속 0이면서 `batch deadline reached`가 매번 찍힘(유닛이 LLM 마감까지 끌려가는 중 — provider 지연/키 문제 의심), (b) 같은 (symbol, tab)에 대해 `skip ... status=` 로그가 여러 밤 연속 반복(terminal skip이 self-heal 안 됨).
-  - starvation watch(2026-08 감사): `[seo-prewarm] starvation watch: N symbol(s) stale > 48h — worst: SYM1(never), ...` — 회전에서 구조적으로 빠지고 있는 심볼을 이름으로 남긴다. 아래 "Starvation watch" 절 참고.
+  - starvation watch(2026-08 감사): `[seo-prewarm] starvation watch: N symbol(s) stale > 48h — worst: SYM1(never: news), ...` — 회전에서 구조적으로 빠지고 있는 심볼을 이름으로 남긴다. 아래 "Starvation watch" 절 참고.
 - **부트스트랩(수동, 1회)**: 첫 태그 배포 전에 다음을 순서대로 수행한다.
   1. **DB 마이그레이션** — `seo_analysis_snapshots` 테이블(마이그레이션 `0027`)을 적용한다. `yarn db:migrate`는 내부적으로 `dotenv -e .env.local`을 거치므로 **`.env.local`의 `DATABASE_URL`이 반드시 prod를 가리키게** 한 뒤 실행할 것 — 그렇지 않으면 로컬/개발 DB가 조용히 마이그레이션된다. 실행 후 `psql`로 `\d seo_analysis_snapshots`를 조회해 테이블이 실제 prod에 생겼는지 확인한다. 중복 실행 무해(이미 있으면 no-op). 이 테이블 없이 배치를 돌리면 select/upsert가 즉시 실패한다.
   2. **`infra/aws/.env` 전제조건** — `13-seo-prewarm.sh`는 `set -u` 하에서 이 파일을 `source`하므로, 파일이 없으면 즉시 hard-fail한다(다른 `infra/aws/*.sh` 스크립트가 이미 만들어뒀어야 한다).
@@ -63,7 +63,15 @@
    - **v3(시각 기반)**: offset을 `floor(now / TICK_ROTATION_MS) * SYMBOLS_PER_TICK`로 tick 시각에서 뽑았다. livelock은 고쳤지만, 배치가 지연되면(FMP 폭풍 등) 다음 실행 시각이 몇 틱 밀리고 그만큼 offset이 **경과 시간에 비례해 점프**해 창 폭(18)을 넘으면 그 구간이 영영 후보가 되지 못하는 새 구멍이 생겼다. `BATCH_DEADLINE_MS(600s) + 스케줄주기(300s) ≤ 창 폭 × TICK_ROTATION_MS(15분)`이라는 불변식이 "정확히 경계"라 여유가 없었다 — `POPULAR_TICKERS`의 KR 블록 head 5종목이 이 경로로 몇 달째 prewarm에 한 번도 도달하지 못했다(SEO snapshot 0행, `news` 테이블도 0행).
    - **v4(현재, 2026-08 감사) — Redis 영속 커서**: offset을 Redis에 절대값으로 들고(`lock.ts`의 `advanceRotationCursor`), **실제 배치 실행 1회당** `SYMBOLS_PER_TICK`만큼만 전진시킨다. "완료 개수"도 "경과 시각"도 아니라 "실행 횟수"에 묶는 게 핵심이다 — 분류 결과와 무관하게 매 호출마다 무조건 전진하므로 livelock이 재발할 수 없고(v2의 문제 해결), 실행이 아무리 늦게 일어나도 전진 폭은 항상 `SYMBOLS_PER_TICK` 하나뿐이라 이전 창과 바로 이어 붙으므로 배치 지연이 스킵으로 번지지 않는다(v3의 문제 해결). 자세한 설계 근거는 `runPrewarmBatch.ts`의 `selectFairBatch` doc-comment 참고.
 2. **blocked 배제** — stale 탭이 전부 in-flight 마커 또는 backoff로 막힌 심볼은 배치 슬롯을 소비하지 않게 제외한다(`classifySymbol`). 워커 시절의 "resumable 우선"(전 tick이 submit만 하고 못 끝낸 jobId를 먼저 채우기)은 poll 재개가 사라지면서 함께 없어졌다.
-3. **backoff 배제** — 모든 stale 탭이 6시간 backoff(FIX C, terminal skip) 중인 심볼은 배제한다.
+3. **backoff 배제** — 모든 stale 탭이 backoff(FIX C, terminal skip) 중인 심볼은 배제한다.
+
+backoff TTL은 세 단계다(`lock.ts`):
+
+| TTL | 상수 | 언제 |
+|---|---|---|
+| 30분 | `TRANSIENT_SKIP_TTL_SECONDS` | 일시적 실패 — 프로바이더 장애·타임아웃·`status=error` 일반. 장애 중엔 모든 유닛이 동시에 실패하므로 길게 걸면 그날 밤을 통째로 날린다. |
+| 6시간 | `SKIP_TTL_SECONDS`(기본값) | 구조적 불가 — `no_trades`, `no_chains_error`, `miss_no_trigger`, null 결과. |
+| 24시간 | `NO_RECENT_NEWS_SKIP_TTL_SECONDS` | **`news` 탭 전용** — 분석 창(30일) 안에 보강된 기사가 0건. 뉴스는 시간 단위로 생기지 않으므로 30분 재시도는 전부 헛돈다(2026-09 실측: 41개 심볼 × 하루 ~19회). 영구 확정(`markStructurallyUnavailable`)을 쓰지 않는 이유는 그 심볼들도 기사가 다시 나오기 때문이다 — 주기만 맞추고 자동 복구는 남긴다. 적재 자체가 실패한 밤(`newsFetchFailed`)은 판단 근거가 없으므로 30분으로 되돌린다. |
 
 Redis 비용은 bounded 후보 창(`SYMBOLS_PER_TICK * 3` = 18개 심볼)으로 제한된다 — worst case 18 × 7탭 × 2회(in-flight 마커 조회 + skip 조회) = 252회/tick(유니버스 전체를 걸면 ~1900회/tick이 든다). 회전 오프셋 자체는 배치당 Redis 왕복 1회(`INCRBY`)만 추가된다.
 
@@ -74,10 +82,10 @@ v1~v3의 회전 결함은 전부 "특정 심볼이 회전에서 조용히 빠진
 `runPrewarmBatch`는 매 tick `staleSymbols`를 계산한 직후, 이미 그 tick에 1회 읽어 온 `generatedAtMap`(DB)만 재사용해 "마지막 생성 이후 경과 시간"을 심볼별로 계산한다(`findStarvedSymbols`) — 추가 Redis/DB 왕복 없음. 48시간(하루 마감 주기의 2배 — 정상 배치 지연 한 번 정도는 여유로 흡수)을 넘겨도 아직 stale인 심볼이 있으면:
 
 ```
-[seo-prewarm] starvation watch: N symbol(s) stale > 48h — worst: SYM1(never), SYM2(72h), ...
+[seo-prewarm] starvation watch: N symbol(s) stale > 48h — worst: SYM1(never: news), SYM2(72h), ...
 ```
 
-`console.warn`으로 남긴다. `(never)`는 탭 중 하나라도 생성된 적이 없다는 뜻(정확히 KR 5종목 인시던트의 모양)이고, `(Nh)`는 마지막 생성 이후 경과 시간이다. 상위 5개(가장 오래 밀린 순)만 나열하지만 `N`(전체 offender 수)은 잘리지 않는다. 정상 야간(모든 stale이 48h 이내)에는 로그가 전혀 찍히지 않는다 — 매 tick 찍히는 로그는 신호를 잡음에 묻는다.
+`console.warn`으로 남긴다. `(never: 탭|탭)`은 나열된 탭이 한 번도 생성된 적이 없다는 뜻(정확히 KR 5종목 인시던트의 모양)이고, `(Nh)`는 마지막 생성 이후 경과 시간이다. **탭 목록을 함께 읽어야 한다** — `(never: news)` **하나만** 비어 있으면 최근 30일 뉴스가 없는 심볼(아래 24h 티어)이라 이미 알고 조치된 상태다. 그 밖의 탭이 섞여 있으면 회전에 실제로 도달하지 못한 심볼이다. 특히 `overall`이 목록에 있으면 **이상 신호**다 — core 1.14.0부터 overall은 뉴스가 없어도 abstain으로 생성되므로, 비어 있다는 건 다른 축(technical·fundamental)이 실패하고 있다는 뜻이다. 2026-09 실측에서 `news|overall` 조합이 41개였는데(core 1.13.x 시절), 탭 목록이 없던 시절에는 그 41개가 상위 5개 자리를 전부 차지해 진짜 미도달 심볼을 가렸다. 상위 5개(가장 오래 밀린 순)만 나열하지만 `N`(전체 offender 수)은 잘리지 않는다. 정상 야간(모든 stale이 48h 이내)에는 로그가 전혀 찍히지 않는다 — 매 tick 찍히는 로그는 신호를 잡음에 묻는다.
 
 CloudWatch metric filter/알람은 아직 없다(로그 discoverability만 확보) — 접두 `[seo-prewarm] starvation watch:`가 ASCII라 필요해지면 `13-seo-prewarm.sh`의 다른 필터들과 같은 패턴으로 쉽게 추가할 수 있다.
 

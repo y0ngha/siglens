@@ -19,7 +19,10 @@ const ctx = {
     locale: 'ko' as const,
     signal: new AbortController().signal,
 };
-const rt = { analysisModel: 'deepseek-v4.1-flash' as const };
+const rt = {
+    analysisModel: 'deepseek-v4.1-flash' as const,
+    ensureSymbolData: async (): Promise<void> => {},
+};
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 describe('getEconomyTool', () => {
