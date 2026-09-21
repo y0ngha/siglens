@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.86.1](https://github.com/y0ngha/siglens/compare/v0.86.0...v0.86.1) (2026-09-21)
+
+
+### Bug Fixes
+
+* **seo-prewarm:** 뉴스 없는 심볼의 무한 재시도를 끊고 챗 뉴스를 읽기 전에 적재한다 ([2d0a2fa](https://github.com/y0ngha/siglens/commit/2d0a2fa925ac4f7700cf9629735a8b2ac280f6b8))
+
 # [0.86.0](https://github.com/y0ngha/siglens/compare/v0.85.0...v0.86.0) (2026-09-20)
 
 
