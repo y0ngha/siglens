@@ -9,9 +9,10 @@ import {
 
 const replaceMock = vi.fn();
 const pushMock = vi.fn();
+const pathnameRef = { current: '/NVDA' };
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ replace: replaceMock, push: pushMock }),
-    usePathname: () => '/NVDA',
+    usePathname: () => pathnameRef.current,
 }));
 
 vi.mock('@/shared/lib/crossHostNavigate', () => ({
@@ -65,6 +66,7 @@ describe('SearchOverlayProvider', () => {
         searchState.results = [];
         searchState.hasQuery = false;
         searchState.debouncedQuery = '';
+        pathnameRef.current = '/NVDA';
     });
 
     async function openAndSelect(hrefBase?: string) {
@@ -109,6 +111,33 @@ describe('SearchOverlayProvider', () => {
         expect(screen.getByRole('status')).toHaveTextContent(
             '종목 페이지로 이동 중'
         );
+    });
+
+    it('목적지에 도착하면(pathname 변경) 진행 표시를 내린다', async () => {
+        // `useEffect([pathname])`를 렌더 중 조정으로 바꾼 자리다. 이동이 결착되지
+        // 않아도(`isNavigating`은 계속 true) pathname만 바뀌면 `isNavigationPending`이
+        // 꺼져 진행 바가 사라져야 한다 — 그래야 도착 후 표시가 걸린 채 남지 않는다.
+        replaceMock.mockReturnValue(new Promise(() => {}));
+        const { rerender } = render(
+            <SearchOverlayProvider>
+                <Trigger />
+            </SearchOverlayProvider>
+        );
+        await userEvent.click(screen.getByRole('button', { name: '열기' }));
+        await userEvent.click(screen.getByRole('button', { name: '애플' }));
+
+        expect(screen.getByRole('progressbar')).toBeInTheDocument();
+
+        pathnameRef.current = '/AAPL';
+        // 새 엘리먼트로 다시 렌더한다 — 같은 참조를 재사용하면 React가 루트에서
+        // 바로 배일아웃해 컴포넌트가 아예 재실행되지 않는다.
+        rerender(
+            <SearchOverlayProvider>
+                <Trigger />
+            </SearchOverlayProvider>
+        );
+
+        expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
 
     it('히스토리 항목을 넣지 못했으면 replace가 아니라 push로 이동한다', async () => {

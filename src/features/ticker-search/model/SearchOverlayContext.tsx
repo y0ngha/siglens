@@ -75,6 +75,17 @@ export function SearchOverlayProvider({ children }: { children: ReactNode }) {
     const [isNavigating, startNavigation] = useTransition();
 
     /**
+     * 도착(라우트 변경)을 감지해 표시를 끝낸다. `useEffect([pathname])` 대신
+     * "prop이 바뀌면 렌더 중에 상태를 조정하는" 공식 패턴을 쓴다 — commit 후
+     * 한 번 더 도는 effect 렌더가 없어져 표시가 내려가는 프레임이 한 틀 빨라진다.
+     */
+    const [committedPathname, setCommittedPathname] = useState(pathname);
+    if (pathname !== committedPathname) {
+        setCommittedPathname(pathname);
+        setIsNavigationPending(false);
+    }
+
+    /**
      * 종목으로 이동한다. **오버레이는 즉시 닫고** 이동은 뒤에서 진행시킨다.
      *
      * `router.push`가 아니라 `replace`인 이유는 `useSearchOverlay`가 열 때 넣어 둔
@@ -122,8 +133,8 @@ export function SearchOverlayProvider({ children }: { children: ReactNode }) {
     const t = useTranslations('features.ticker-search');
     const value = useMemo(() => ({ open }), [open]);
 
-    // 도착했거나(라우트 변경) 사용자가 물러났으면(popstate) 표시를 끝낸다.
-    useEffect(() => setIsNavigationPending(false), [pathname]);
+    // 사용자가 물러났으면(popstate) 표시를 끝낸다. 도착(라우트 변경)은 위
+    // 렌더 중 조정이 담당한다.
     useEffect(() => {
         const stop = () => setIsNavigationPending(false);
         window.addEventListener('popstate', stop);

@@ -545,6 +545,7 @@
   - Context: `next start` + Playwright로 RSC 요청 전수 캡처(RSC 헤더·`_rsc` 쿼리 동반, `text/x-component`, 307 0건). next.config.ts에 계약·재확인 요구 기록
 - Pre-empted (not a review finding): client-s3 3.1138이 `@aws-crypto` 의존을 없애 Dockerfile의 해당 COPY가 이미지 빌드를 깨뜨리게 됨. PR CI는 Docker 빌드를 안 돌려 못 잡는다 — SDK를 올릴 땐 runner 수동 COPY 목록만 담은 격리 디렉터리에서 실제 요청을 보내 확인
 
+
 ## [chore/node24-yahoo4 Round 1 | Node 24 정렬 + yahoo-finance2 4 | 2026-09-24]
 - Violation (R1 recommended, fixed): 런타임 버전을 바꾸면서 그 버전을 근거로 든 설정 주석(`vitest.config.ts` forks 풀, `vitest.setup.base.ts` localStorage 폴리필)을 갱신하지 않았다
   - Rule: MISTAKES.md §15.6 — 주석 정확성. 런타임·라이브러리 버전을 올리면 그 버전을 근거로 든 주석을 grep(`Node 25` 등)해 새 런타임에서 전제를 재검증하고 함께 고친다
@@ -565,6 +566,22 @@
 - Violation (not a review finding, found by CloudWatch `[Usage]` 실측): core 1.13.1이 overall `technical` 축에 `priorAnalyses`·`marketEvents`를 열었는데(두 값이 technical 캐시 키 `:hist=`·`:evt=`로 접힘) siglens 소비자 3곳 중 어디도 넘기지 않아, overall이 technical 탭이 막 채운 캐시를 못 맞히고 1Day 분석을 매번 다시 생성했다(심볼당 2회, 프리웜 DeepSeek 지출 ~25%). core 커밋 메시지가 "소비자는 양쪽 다 넘겨야 한다"고 경고했지만 소비자 bump PR이 배선을 하지 않았다
   - Rule: core가 캐시 키에 접히는 **선택 필드**를 추가하면, 소비자 bump 때 그 필드를 쓰는 모든 형제 호출부(단독 `runAnalysis` 경로와 overall 축 경로)를 grep해 양쪽 다 넘기거나 양쪽 다 생략한다 — 타입도 테스트도 불일치를 잡지 못한다. 배포 후 `[Usage]`에서 jobId별 호출 수(심볼당 1회인지)로 확인
   - Context: `prewarmOverall`·`runOverallAnalysisAction`·SSE overall 분기에 배선하고, 되돌리면 실패하는 테스트 5건 추가. 챗 도구 경로는 technical·overall 모두 두 값을 안 넘겨 키가 일관돼 그대로 둠
+
+## [fix/set-state-in-effect Round 1–2 | react/set-state-in-effect 6곳 정리 | 2026-09-24]
+- Violation (orchestrator check, fixed): `useTheme`을 useSyncExternalStore로 바꾸며 스냅샷이 localStorage를 다시 읽게 되자, 저장이 막힌 환경(사파리 비공개)에서 고른 테마가 표시상 `system`으로 되돌아갔다 — 옛 코드는 `setState(next)`라 유지됐다
+  - Rule: (new) state를 외부 스토어 구독으로 바꿀 때는 "쓰기가 실패하는 경로"에서 옛 in-memory 값이 하던 역할을 목록화하고, 그 경로를 옛 코드 기준 테스트로 고정한다(옛 코드 통과·새 코드 실패를 대조)
+  - Context: 저장 실패 시에만 쓰는 모듈 변수 `unsavedPreference` + 테스트
+- Violation (R1 REQUIRED/recommended, fixed): 리팩터가 새로 만든 로직(재발화 가드 `firedNavRef`, 결착 후 1회 이동·입력 초기화, 입력 시 취소, `explicitTab` 우선순위, 하이드레이션 server snapshot, 라벨 정규화)에 테스트가 없어 가드를 지워도 259개 테스트가 전부 통과했다
+  - Rule: (new) 동작 보존 리팩터는 "기존 테스트가 통과한다"로 끝내지 말고 **새로 생긴 분기마다 변이를 넣어 죽는 테스트가 있는지** 확인한다 — 없으면 추가
+  - Context: 변이별 FAIL→PASS 확인한 테스트 6건 추가, MISTAKES #10을 oxlint 1.79+ 기준 패턴으로 갱신(useEffectEvent 회피는 더 이상 통과하지 않음)
+- Violation (R2 recommended, fixed): 테스트 제목이 다루지 않는 경로(로케일 전환에 따른 toLocalePath 정체성 변경)를 주장 — 로케일을 실제로 전환하도록 수정. MISTAKES #10의 의도 플래그 지침이 PR 자체의 두 패턴과 모순 — 소비 위치 기준으로 정리
+
+## [PR #869 claude-review R1 | fix/set-state-in-effect | 2026-09-24]
+- Violation (Blocker, fixed): 리팩터로 setState만 렌더 중 조정으로 옮기면서 남은 ref 정리 effect를 핸들러 앞에 두고, `requestSubmit`(useCallback)을 useRef 선언들 사이에 끼워 CONVENTIONS "Custom Hook Declaration Order"를 깼다
+  - Rule: CONVENTIONS Custom Hook Declaration Order — 훅 일부를 옮긴 뒤에는 남은 조각(effect·handler)이 순서 규칙상 제자리에 있는지 다시 본다. effect 간 실행 순서에 의존하면 묶음 안에서 순서를 유지하고 이유를 주석으로 남긴다
+  - Context: ref 정리 effect를 effect 묶음 맨 앞으로(restoreFocus effect가 triggerRef를 읽어 순서 의존), requestSubmit을 커스텀 훅 뒤로
+- Violation (Blocker, fixed): 순수 헬퍼 `resolveTypedTarget`·`normalizeLabel`을 훅 파일에 정의(MISTAKES #18) — `lib/resolveSubmitTarget.ts`·`lib/normalizeLabel.ts`로 이동하고 테스트 추가
+- Question (answered, comment only): `?ticker=`만 바뀌는 히스토리 이동은 구독이 알리지 않아 스스로 재렌더되지 않는다(이전 구현과 같은 한계) — 주석을 단정 대신 사실대로 정정
 
 ## [feat/siglens-about-redesign Round 1–2 | siglens.io /about redesign | 2026-09-24]
 - Violation (pre-review, caught during implementation): `@/widgets/agent-chat` barrel imported into `src/views/about/AboutPage.tsx` (server-side view), leaking ~46 agent-chat client-side message keys into the route's `messages/_meta/clientKeys.json`
