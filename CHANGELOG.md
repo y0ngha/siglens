@@ -1,5 +1,22 @@
 # Changelog
 
+# [0.88.0](https://github.com/y0ngha/siglens/compare/v0.87.0...v0.88.0) (2026-09-24)
+
+### Bug Fixes
+
+* 방문 크립토 후보를 CRYPTO_CANDIDATE_POOL에도 추가한다 ([f6100b1](https://github.com/y0ngha/siglens/commit/f6100b1148a846ac11e5fd13019c47f72c70dfa8))
+* CI 가드(useAppPathname) 위반 수정 + 리뷰 제안 반영 ([36a6f59](https://github.com/y0ngha/siglens/commit/36a6f59edcbcc89a325c972d887ddfc53a4daa33))
+* **fear-greed:** e2e 부정 단언은 script 제외 본문에 걸고 시장별 비교 주석 정리 ([bae62a0](https://github.com/y0ngha/siglens/commit/bae62a048fba4e9bc005c29b3ab1ac887837b9c7))
+* i18n 생성 산출물을 재생성한다 ([effdd7f](https://github.com/y0ngha/siglens/commit/effdd7fe3c16524d07e1ec8e0653a02ed7f5d397))
+* PR [#872](https://github.com/y0ngha/siglens/issues/872) 리뷰 제안을 반영한다 ([9295d3e](https://github.com/y0ngha/siglens/commit/9295d3eaf7f4e7740c20e7b5295dbba9d88fb4d1)), closes [#13](https://github.com/y0ngha/siglens/issues/13)
+
+### Features
+
+* 개인정보처리방침 v5 즉시 시행 + Google Ads 태그 ID 활성화 ([06fe25b](https://github.com/y0ngha/siglens/commit/06fe25bf15d8cc98a65334d4103085cad96993e6))
+* 종목 조회수 수집과 비콘 상호작용 게이트를 추가한다 ([73885f5](https://github.com/y0ngha/siglens/commit/73885f5b2cbaa639af252ddbee76867566c0c01c))
+* **fear-greed:** 코인 시장 공포탐욕지수 페이지 /fear-greed/crypto ([eeae011](https://github.com/y0ngha/siglens/commit/eeae0112b8c0059a0dc5ba58d38a267832d3ddc7))
+* Google Ads 전환 측정 (태그·전환 3종·핸드오프 gclid 보존·방침 v5) ([d635de3](https://github.com/y0ngha/siglens/commit/d635de39354245908d52aca39b65481fc76bf54a))
+
 # [0.87.0](https://github.com/y0ngha/siglens/compare/v0.86.2...v0.87.0) (2026-09-24)
 
 ### Bug Fixes
