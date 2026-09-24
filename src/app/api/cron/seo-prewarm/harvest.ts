@@ -33,6 +33,21 @@ import type { PrewarmBatchCounts } from './runPrewarmBatch';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 
 /**
+ * 프리웜 평이화 마감. 사용자 경로 기본값(15초)보다 넉넉한 30초. 이 호출은 여기 대신
+ * 기다리는 사람이 없다 — 프리웜은 스냅샷을 굽고 끝난다.
+ *
+ * 30초를 고른 이유는 "얼마나 여유로운가"가 아니라 **이 호출이 어느
+ * 예산 안에 있는가**다. `resolveHarvest`는 `runPrewarmBatch.ts`의
+ * `UNIT_TIMEOUT_MS`(2분) `Promise.race`가 **끝난 뒤** 실행되므로 그
+ * 유닛 타임아웃의 보호를 받지 못하고, 여기서 쓰는 시간은 그대로
+ * `BATCH_DEADLINE_MS`(10분)에 순증한다. `deadline exceeded`는 프리웜
+ * 유닛의 약 1%뿐이라 그 1%에 +15초를 더하는 비용은 무시할 만하지만,
+ * 심볼당 7개 탭이 전부 60초까지 매달리면 배치 예산을 그대로 먹어
+ * 스냅샷 커버리지가 준다 — 그래서 45초도 60초도 아니고 30초다.
+ */
+const PREWARM_PLAIN_DEADLINE_MS = 30_000;
+
+/**
  * "이 유닛은 만들 데이터가 존재하지 않는다"를 뜻하는 seam status.
  *
  * 여기 실린 값만 구조적 불가로 **영구** 확정된다. 확정은 TTL이 없으므로 목록을
@@ -189,20 +204,7 @@ export async function resolveHarvest(
             DEFAULT_LOCALE,
             currencyForSymbol(symbol),
             await resolveCurrentPrice(symbol, result.result),
-            /**
-             * 사용자 경로 기본값(15초)보다 넉넉한 30초. 이 호출은 여기 대신
-             * 기다리는 사람이 없다 — 프리웜은 스냅샷을 굽고 끝난다.
-             *
-             * 30초를 고른 이유는 "얼마나 여유로운가"가 아니라 **이 호출이 어느
-             * 예산 안에 있는가**다. `resolveHarvest`는 `runPrewarmBatch.ts`의
-             * `UNIT_TIMEOUT_MS`(2분) `Promise.race`가 **끝난 뒤** 실행되므로 그
-             * 유닛 타임아웃의 보호를 받지 못하고, 여기서 쓰는 시간은 그대로
-             * `BATCH_DEADLINE_MS`(10분)에 순증한다. `deadline exceeded`는 프리웜
-             * 유닛의 약 1%뿐이라 그 1%에 +15초를 더하는 비용은 무시할 만하지만,
-             * 심볼당 7개 탭이 전부 60초까지 매달리면 배치 예산을 그대로 먹어
-             * 스냅샷 커버리지가 준다 — 그래서 45초도 60초도 아니고 30초다.
-             */
-            30_000
+            PREWARM_PLAIN_DEADLINE_MS
         );
 
         await repo.upsert({

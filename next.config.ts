@@ -21,6 +21,12 @@ const nextConfig: NextConfig = {
     // self-host: Docker 최소 번들(.next/standalone + server.js)
     output: 'standalone',
 
+    // Next 16.3부터 `next dev`가 AGENTS.md(없으면 CLAUDE.md)에 버전별 "agent rules" 블록을
+    // 자동으로 써넣는다(`next/dist/server/lib/generate-agent-files.js`, 기본 true). 이 저장소의
+    // AGENTS.md·CLAUDE.md는 직접 관리하는 문서라 `yarn dev`만 돌려도 워킹트리가 더러워지고,
+    // 에이전트가 그 블록을 무심코 커밋하거나 Next 버전을 올릴 때마다 문서가 흔들린다. 끈다.
+    agentRules: false,
+
     // ISR/fetch 캐시를 S3로 외부화(디스크풀 방지). production + 버킷 설정 시에만 등록.
     // dev/E2E(버킷 없음)는 기본 파일시스템 캐시로 동작.
     // offline build(SIGLENS_OFFLINE_BUILD=1)는 핸들러를 끈다 — prerender 중 S3 +

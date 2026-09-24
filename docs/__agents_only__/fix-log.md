@@ -562,6 +562,11 @@
   - Rule: (new) 의존성 업그레이드 후 typecheck는 `*.tsbuildinfo`를 지우고 돌린다 — `incremental: true`가 업그레이드 전 진단을 재사용해 새 타입 에러를 숨긴다(이번에 0건 → 실제 2건)
   - Context: 설정을 top-level로 이동, 캐시 삭제 후 typecheck 0건·jest-dom 매처 타입 탐침 재확인
 
+## [fix/deepseek-pr-review-followup R1 | PR #859·#860·#861 리뷰 후속 + overall technical 캐시 키 배선 | 2026-09-24]
+- Violation (not a review finding, found by CloudWatch `[Usage]` 실측): core 1.13.1이 overall `technical` 축에 `priorAnalyses`·`marketEvents`를 열었는데(두 값이 technical 캐시 키 `:hist=`·`:evt=`로 접힘) siglens 소비자 3곳 중 어디도 넘기지 않아, overall이 technical 탭이 막 채운 캐시를 못 맞히고 1Day 분석을 매번 다시 생성했다(심볼당 2회, 프리웜 DeepSeek 지출 ~25%). core 커밋 메시지가 "소비자는 양쪽 다 넘겨야 한다"고 경고했지만 소비자 bump PR이 배선을 하지 않았다
+  - Rule: core가 캐시 키에 접히는 **선택 필드**를 추가하면, 소비자 bump 때 그 필드를 쓰는 모든 형제 호출부(단독 `runAnalysis` 경로와 overall 축 경로)를 grep해 양쪽 다 넘기거나 양쪽 다 생략한다 — 타입도 테스트도 불일치를 잡지 못한다. 배포 후 `[Usage]`에서 jobId별 호출 수(심볼당 1회인지)로 확인
+  - Context: `prewarmOverall`·`runOverallAnalysisAction`·SSE overall 분기에 배선하고, 되돌리면 실패하는 테스트 5건 추가. 챗 도구 경로는 technical·overall 모두 두 값을 안 넘겨 키가 일관돼 그대로 둠
+
 ## [fix/set-state-in-effect Round 1–2 | react/set-state-in-effect 6곳 정리 | 2026-09-24]
 - Violation (orchestrator check, fixed): `useTheme`을 useSyncExternalStore로 바꾸며 스냅샷이 localStorage를 다시 읽게 되자, 저장이 막힌 환경(사파리 비공개)에서 고른 테마가 표시상 `system`으로 되돌아갔다 — 옛 코드는 `setState(next)`라 유지됐다
   - Rule: (new) state를 외부 스토어 구독으로 바꿀 때는 "쓰기가 실패하는 경로"에서 옛 in-memory 값이 하던 역할을 목록화하고, 그 경로를 옛 코드 기준 테스트로 고정한다(옛 코드 통과·새 코드 실패를 대조)
@@ -577,3 +582,4 @@
   - Context: ref 정리 effect를 effect 묶음 맨 앞으로(restoreFocus effect가 triggerRef를 읽어 순서 의존), requestSubmit을 커스텀 훅 뒤로
 - Violation (Blocker, fixed): 순수 헬퍼 `resolveTypedTarget`·`normalizeLabel`을 훅 파일에 정의(MISTAKES #18) — `lib/resolveSubmitTarget.ts`·`lib/normalizeLabel.ts`로 이동하고 테스트 추가
 - Question (answered, comment only): `?ticker=`만 바뀌는 히스토리 이동은 구독이 알리지 않아 스스로 재렌더되지 않는다(이전 구현과 같은 한계) — 주석을 단정 대신 사실대로 정정
+

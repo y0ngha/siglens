@@ -455,6 +455,63 @@ describe('runOverallAnalysisAction 함수는', () => {
         });
     });
 
+    it('priorAnalyses·marketEvents를 technical 축에도 넘겨 technical 탭과 캐시 키를 맞춘다', async () => {
+        mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+        mockResolveTierAndByok.mockResolvedValue({
+            kind: 'allowed',
+            tier: 'member' as never,
+        });
+        const priorAnalyses = [
+            { generatedAt: new Date('2026-08-01'), trend: 'bearish' },
+        ] as never;
+        const marketEvents = [
+            {
+                publishedAt: new Date('2026-08-01T14:30:00Z'),
+                category: 'earnings',
+                sentiment: 'bullish',
+                impact: 'high',
+            },
+        ] as never;
+
+        await runOverallAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            '1Day',
+            MODEL_ID,
+            'ko',
+            { priorAnalyses, marketEvents }
+        );
+
+        const callArg = mockRunOverallAnalysis.mock.calls[0]?.[0];
+        expect(callArg?.technical).toEqual({
+            tierContext: { userId: 'u1', tier: 'member' },
+            priorAnalyses,
+            marketEvents,
+        });
+        // 최상위 priorAnalyses(overall 프롬프트용)도 그대로 유지된다.
+        expect(callArg?.priorAnalyses).toBe(priorAnalyses);
+    });
+
+    it('두 값이 없으면 technical 축에 키 자체를 싣지 않는다', async () => {
+        mockGetCurrentUser.mockResolvedValue(null as never);
+        mockResolveTierAndByok.mockResolvedValue({
+            kind: 'allowed',
+            tier: 'free' as never,
+        });
+
+        await runOverallAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            '1Day',
+            MODEL_ID,
+            'ko'
+        );
+
+        const technical = mockRunOverallAnalysis.mock.calls[0]?.[0].technical;
+        expect(technical).not.toHaveProperty('priorAnalyses');
+        expect(technical).not.toHaveProperty('marketEvents');
+    });
+
     it('forwards userApiKey as top-level when present in gate result', async () => {
         mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
         mockResolveTierAndByok.mockResolvedValue({
