@@ -17,18 +17,20 @@ export const YAHOO_FETCH_TIMEOUT_MS = 8 * MS_PER_SECOND;
 /**
  * 타임아웃이 걸린 yahoo 클라이언트를 만든다.
  *
- * **라이브러리 기본 timeout은 쓸 수 없다.** `queue.timeout`은 3.15.3에서 주석 처리돼
- * 있고(`lib/options/defaults.js`) 큐 구현이 그 값을 읽지도 않는다 — 죽은 속성이다.
- * 생성자 옵션의 `fetch`는 실제로 반영되므로(`lib/yahooFinanceFetch.js`가
- * `this._opts.fetch`를 우선한다) 거기에 per-call 시그널을 얹는다.
+ * **라이브러리 기본 timeout은 쓸 수 없다.** `queue.timeout`은 주석 처리돼 있고
+ * (`lib/options/defaults.js:16`) 큐 구현(`lib/queue.js`)이 그 값을 읽지도 않는다 — 죽은
+ * 속성이다(3.15.3에서 확인, 4.0.2에서 재확인). 생성자 옵션의 `fetch`는 실제로 반영되므로
+ * 거기에 per-call 시그널을 얹는다: `lib/yahooFinanceFetch.js`는 `moduleOpts.fetch ||
+ * envFetch || this._opts.fetch` 순으로 고르는데, 앞의 둘은 우리가 넘기지 않고 `envFetch`
+ * (`this._env.fetch`)는 생성 시 `null`로 초기화된다(`createYahooFinance.js`) — 4.0.2 기준.
  *
  * **왜 `fetchOptions.signal`이 아닌가**: 그건 인스턴스마다 한 번 만들어지는 정적
  * 옵션이라, `AbortSignal.timeout`을 넣으면 첫 8초 뒤 그 시그널이 이미 abort된 상태로
  * 굳어 이후 모든 호출이 즉시 실패한다. 시그널은 호출마다 새로 만들어야 한다.
  *
- * **타임아웃이 없을 때 무슨 일이 나는가**: 라이브러리는 모든 인스턴스가 공유하는
- * 큐를 `concurrency: 4`로 돌린다. 소켓 4개가 응답 없이 물리면 프로세스 안의 **모든**
- * yahoo 호출이 그 뒤로 직렬화된다 — 무관한 심볼까지 같이 멈춘다.
+ * **타임아웃이 없을 때 무슨 일이 나는가**: 요청 큐는 `concurrency: 4`로 돈다. 소켓 4개가
+ * 응답 없이 물리면 그 큐를 쓰는 **모든** yahoo 호출이 뒤로 직렬화된다 — 무관한 심볼까지
+ * 같이 멈춘다. 프로세스의 호출은 전부 {@link getYahooClient} 하나의 큐를 탄다.
  */
 /** `fetch`에 넘어온 `RequestInfo | URL`을 로그/에러 메시지용 문자열로 좁힌다. */
 function describeFetchInput(input: Parameters<typeof fetch>[0]): string {
@@ -149,4 +151,20 @@ export function createYahooClient(): InstanceType<typeof YahooFinance> {
         },
     });
     return guardMethodsAgainstOfflineBuild(client);
+}
+
+let sharedClient: InstanceType<typeof YahooFinance> | undefined;
+
+/**
+ * 프로세스 공용 yahoo 클라이언트. 호출부는 `createYahooClient()` 대신 이것을 쓴다.
+ *
+ * yahoo-finance2 4.0부터 crumb(쿠키 jar 단위)·요청 큐·debounce 상태를 **인스턴스마다** 따로
+ * 둔다(3.x는 모든 인스턴스가 공유). 모듈마다 인스턴스를 만들면 ① 동시성 한도 4가 인스턴스
+ * 수만큼 곱해져 yahoo로 한꺼번에 나가는 요청이 늘고(429 위험) ② crumb을 인스턴스마다 새로
+ * 받는다 — 호출마다 인스턴스를 만들던 경로는 호출마다 받는다. 인스턴스를 하나로 모아
+ * 3.x의 공유 의미(큐 1개·crumb 1개)를 그대로 유지한다.
+ */
+export function getYahooClient(): InstanceType<typeof YahooFinance> {
+    sharedClient ??= createYahooClient();
+    return sharedClient;
 }

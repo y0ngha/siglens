@@ -545,6 +545,23 @@
   - Context: `next start` + Playwright로 RSC 요청 전수 캡처(RSC 헤더·`_rsc` 쿼리 동반, `text/x-component`, 307 0건). next.config.ts에 계약·재확인 요구 기록
 - Pre-empted (not a review finding): client-s3 3.1138이 `@aws-crypto` 의존을 없애 Dockerfile의 해당 COPY가 이미지 빌드를 깨뜨리게 됨. PR CI는 Docker 빌드를 안 돌려 못 잡는다 — SDK를 올릴 땐 runner 수동 COPY 목록만 담은 격리 디렉터리에서 실제 요청을 보내 확인
 
+
+## [chore/node24-yahoo4 Round 1 | Node 24 정렬 + yahoo-finance2 4 | 2026-09-24]
+- Violation (R1 recommended, fixed): 런타임 버전을 바꾸면서 그 버전을 근거로 든 설정 주석(`vitest.config.ts` forks 풀, `vitest.setup.base.ts` localStorage 폴리필)을 갱신하지 않았다
+  - Rule: MISTAKES.md §15.6 — 주석 정확성. 런타임·라이브러리 버전을 올리면 그 버전을 근거로 든 주석을 grep(`Node 25` 등)해 새 런타임에서 전제를 재검증하고 함께 고친다
+  - Context: Node 24.21에서 vmThreads·threads 풀 기동을 재확인, forks 유지 사유(PR #558 env 누수)를 주석에 명시
+- Note: yahoo-finance2 4.0은 릴리스 노트 breaking("Node 22+") 밖에 "인스턴스 간 crumb·큐·debounce 공유 중단"이 있었다. 모듈별 인스턴스 → 동시 요청 4→12(실측). `getYahooClient()` 싱글턴으로 복원, 되돌리면 실패하는 테스트 추가
+
+## [PR #865 claude-review R1 | chore/node24-yahoo4 | 2026-09-24]
+- Violation (Blocker, fixed): yahoo-finance2를 3.15.4→4.0.2로 올리면서 `3.15.3`을 근거로 든 주석 3곳(`createYahooClient.ts`의 queue.timeout, 그 테스트, `YahooOptionsAdapter.ts`의 `defaults.js:24`)을 재검증하지 않았다 — 같은 PR에서 Node 25 주석은 고쳤는데 라이브러리 버전 주석엔 같은 규칙을 적용하지 않았다(형제 규칙 불일치)
+  - Rule: MISTAKES.md §15.6 — 의존성을 올리면 `git grep`으로 **이전 버전 번호 문자열**(`3.15.3` 등)을 찾아, 그 주석의 사실(줄 번호·동작)을 새 버전 실물 소스에서 재확인하고 함께 고친다
+  - Context: 4.0.2 소스로 재확인 — queue.timeout 여전히 죽은 속성(`defaults.js:16`), `logErrors` 기본값은 `defaults.js:19`로 이동·의미 동일, fetch 우선순위 동일하고 `envFetch`는 null이라 우리 타임아웃 fetch가 적용됨
+
+## [chore/test-tooling-majors Round 1 | vitest 5·jsdom 30 | 2026-09-24]
+- Violation (R1 REQUIRED, fixed): vitest 5가 `experimental.fsModuleCache`를 top-level `fsModuleCache`로 옮겼는데 옛 위치에 남겨 타입 에러 + 런타임 무시. 로컬 `yarn typecheck`가 0건으로 나와 놓쳤다
+  - Rule: (new) 의존성 업그레이드 후 typecheck는 `*.tsbuildinfo`를 지우고 돌린다 — `incremental: true`가 업그레이드 전 진단을 재사용해 새 타입 에러를 숨긴다(이번에 0건 → 실제 2건)
+  - Context: 설정을 top-level로 이동, 캐시 삭제 후 typecheck 0건·jest-dom 매처 타입 탐침 재확인
+
 ## [fix/set-state-in-effect Round 1–2 | react/set-state-in-effect 6곳 정리 | 2026-09-24]
 - Violation (orchestrator check, fixed): `useTheme`을 useSyncExternalStore로 바꾸며 스냅샷이 localStorage를 다시 읽게 되자, 저장이 막힌 환경(사파리 비공개)에서 고른 테마가 표시상 `system`으로 되돌아갔다 — 옛 코드는 `setState(next)`라 유지됐다
   - Rule: (new) state를 외부 스토어 구독으로 바꿀 때는 "쓰기가 실패하는 경로"에서 옛 in-memory 값이 하던 역할을 목록화하고, 그 경로를 옛 코드 기준 테스트로 고정한다(옛 코드 통과·새 코드 실패를 대조)

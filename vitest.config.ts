@@ -37,12 +37,21 @@ const sharedConfig = {
 
 const sharedTestConfig = {
     globals: true as const,
-    // Node 25 + jsdom은 worker_threads 기반 풀(vmThreads·threads)에서 워커가
-    // 기동 즉시 크래시한다("Worker exited unexpectedly"). child_process 기반
-    // forks 풀만 안정적으로 동작한다 — 시작 오버헤드는 다소 크지만 유일한 선택지.
+    // vitest 5에서 기본값이 true로 바뀌었다(매 테스트 전 `vi.clearAllMocks()`). 그러면
+    // **모듈 로드 시점**의 호출 기록(예: `React.cache(fn)`로 감싸는 래퍼)이 첫 테스트 전에
+    // 지워지고, "import 시점에 X를 부르지 않는다"류 단언은 조용히 공허해진다. 13k 테스트가
+    // 전제로 삼아 온 vitest 4 의미를 유지한다 — 격리가 필요한 테스트는 지금처럼 직접 clear한다.
+    clearMocks: false,
+    // forks(child_process) 풀을 쓴다. 도입 당시 Node 25 + jsdom에서는 worker_threads
+    // 기반 풀(vmThreads·threads)의 워커가 기동 즉시 크래시했다("Worker exited
+    // unexpectedly"). `.nvmrc`를 24로 내린 뒤(2026-09-24) Node 24.21에서는 worker 풀도
+    // 기동은 되지만, 프로세스 격리가 확실한 forks를 유지한다 — vmThreads는 파일 사이
+    // env 누수로 CI 간헐 실패를 낸 이력이 있다(PR #558). 시작 오버헤드는 감수한다.
     pool: 'forks' as const,
     maxWorkers: 8,
-    experimental: { fsModuleCache: true },
+    // vitest 5에서 `experimental.fsModuleCache`가 정식 top-level 옵션으로 옮겨졌다. 옛 위치에
+    // 두면 타입 에러이고 런타임에도 조용히 무시된다.
+    fsModuleCache: true,
     // forks 풀도 워커(자식 프로세스) 하나가 여러 테스트 파일을 순차 재사용하므로
     // 한 파일에서 `vi.stubEnv`한 값이 자동 복원되지 않으면(기본 unstubEnvs=false)
     // 같은 워커의 다음 파일로 새어, isE2E()를 켜 factory들의
