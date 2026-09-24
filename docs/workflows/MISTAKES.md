@@ -593,15 +593,22 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Hooks are Client Components and will fail without the directive when parent is async Server Component
 
 10. setState called directly in useEffect body (react-hooks/set-state-in-effect)
-    → React 19 canonical fix: useEffectEvent wraps derivation logic, setState happens inside Event scope (stable, escapes linting)
-    → Alternative: If state reset logically belongs to "mutation starts", move to useMutation's onMutate callback
-    → onMutate fires synchronously before the mutationFn, satisfies the linter, and centralizes reset logic
+    → oxlint 1.79+ traces calls through useEffectEvent too — wrapping setState in useEffectEvent to "escape linting" no longer passes; the call is still attributed to the effect that scheduled it
+    → useCallback does NOT help either — the linter traces into useCallback bodies and still flags setState
+    → Real fix depends on what the effect is actually doing:
+      - Deriving state from a value that changed **this render** (e.g. resolving a pending action once inputs settle) → adjust state during render (the "previous value" comparison pattern), not in an effect
+      - Reading an external store the component doesn't own (localStorage, `window.location.search`, `matchMedia`) → `useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)`; `getServerSnapshot` must return the value the server/hydration render used, so hydration doesn't need its own setState-in-effect step at all
+      - A one-shot intent flag ("submit was requested", "this nav already fired") — pick by **where it gets consumed**:
+        - Resolvable from this render's values alone (e.g. the search settled, so the target is known) → keep the flag in `useState` and resolve it with a render-time adjustment (`useAutocomplete`'s `isSubmitArmed`)
+        - Must be consumed inside the effect that performs the side effect (navigation, callbacks) → a `useRef`; if setting it must also trigger a re-render, bump a cheap counter/tick state (`SearchOverlay`'s `pendingSubmitRef` + `submitTick`). A ref is also the right guard for "already fired" (`firedNavRef`)
+    → Effects remain the right tool only for real external side effects (`router.push`, DOM/`document` mutation, subscribing a DOM event listener) — never as a vehicle to move a `setState` call one tick later
+    → Mutations: state that must reset on every mutate call site still belongs in `useMutation`'s `onMutate` — that part of the old guidance is unchanged
     ❌ useEffect(() => { setPollError(null); setAnalysisResult(null); mutate(...); }, [deps])  // setState synchronously in effect body
-    ✅ useEffect pattern (React 19): const handleDerive = useEffectEvent(() => { setMessages(...); }); useEffect(() => { handleDerive(); }, [deps])
-    ✅ useMutation pattern: useMutation({ onMutate: () => { setPollError(null); setAnalysisResult(null); }, ... })
-    → React 19: useEffectEvent is preferred when effect triggers derivation but setState should not re-run effect
-    → Mutations: For state that must reset on every mutate call site, onMutate is the single source of truth
-    → Note: useCallback does NOT help — the linter traces into useCallback bodies and still flags setState
+    ❌ const handleDerive = useEffectEvent(() => { setMessages(...); }); useEffect(() => { handleDerive(); }, [deps])  // oxlint 1.79+ still flags this — useEffectEvent no longer escapes the rule
+    ✅ Render-time adjustment: if (isSubmitArmed && canResolve) { setIsSubmitArmed(false); setPendingNav(target); }  // conditioned on a value that changed this render, computed during render, not behind a mount effect
+    ✅ External store with hydration-safe snapshot: useSyncExternalStore(subscribePreference, getPreferenceSnapshot, getServerPreferenceSnapshot)  // getServerPreferenceSnapshot fixes the hydration-render value so it matches SSR, no setState needed to "catch up" after mount
+    ✅ One-shot flag via ref: const firedNavRef = useRef<Target | null>(null); useEffect(() => { if (!pending || firedNavRef.current === pending) return; firedNavRef.current = pending; /* real side effect: router.push, onSelect callback, etc. */ }, [pending, ...])
+    ✅ useMutation pattern (unchanged): useMutation({ onMutate: () => { setPollError(null); setAnalysisResult(null); }, ... })
 
 11. URL synchronization using initial props instead of current local state
     → RSC pending states can cause initial props to be stale during concurrent updates

@@ -544,3 +544,12 @@
   - Rule: (new) 프레임워크를 올릴 때는 구·신 `defaultConfig`를 diff하고, 뒤집힌 플래그 중 테스트·오프라인 빌드로 관측되지 않는 것(CDN·라우터·캐시 계약)은 프로덕션 빌드 + 실제 브라우저로 계약을 실증해 설정 파일 주석에 남긴다
   - Context: `next start` + Playwright로 RSC 요청 전수 캡처(RSC 헤더·`_rsc` 쿼리 동반, `text/x-component`, 307 0건). next.config.ts에 계약·재확인 요구 기록
 - Pre-empted (not a review finding): client-s3 3.1138이 `@aws-crypto` 의존을 없애 Dockerfile의 해당 COPY가 이미지 빌드를 깨뜨리게 됨. PR CI는 Docker 빌드를 안 돌려 못 잡는다 — SDK를 올릴 땐 runner 수동 COPY 목록만 담은 격리 디렉터리에서 실제 요청을 보내 확인
+
+## [fix/set-state-in-effect Round 1–2 | react/set-state-in-effect 6곳 정리 | 2026-09-24]
+- Violation (orchestrator check, fixed): `useTheme`을 useSyncExternalStore로 바꾸며 스냅샷이 localStorage를 다시 읽게 되자, 저장이 막힌 환경(사파리 비공개)에서 고른 테마가 표시상 `system`으로 되돌아갔다 — 옛 코드는 `setState(next)`라 유지됐다
+  - Rule: (new) state를 외부 스토어 구독으로 바꿀 때는 "쓰기가 실패하는 경로"에서 옛 in-memory 값이 하던 역할을 목록화하고, 그 경로를 옛 코드 기준 테스트로 고정한다(옛 코드 통과·새 코드 실패를 대조)
+  - Context: 저장 실패 시에만 쓰는 모듈 변수 `unsavedPreference` + 테스트
+- Violation (R1 REQUIRED/recommended, fixed): 리팩터가 새로 만든 로직(재발화 가드 `firedNavRef`, 결착 후 1회 이동·입력 초기화, 입력 시 취소, `explicitTab` 우선순위, 하이드레이션 server snapshot, 라벨 정규화)에 테스트가 없어 가드를 지워도 259개 테스트가 전부 통과했다
+  - Rule: (new) 동작 보존 리팩터는 "기존 테스트가 통과한다"로 끝내지 말고 **새로 생긴 분기마다 변이를 넣어 죽는 테스트가 있는지** 확인한다 — 없으면 추가
+  - Context: 변이별 FAIL→PASS 확인한 테스트 6건 추가, MISTAKES #10을 oxlint 1.79+ 기준 패턴으로 갱신(useEffectEvent 회피는 더 이상 통과하지 않음)
+- Violation (R2 recommended, fixed): 테스트 제목이 다루지 않는 경로(로케일 전환에 따른 toLocalePath 정체성 변경)를 주장 — 로케일을 실제로 전환하도록 수정. MISTAKES #10의 의도 플래그 지침이 PR 자체의 두 패턴과 모순 — 소비 위치 기준으로 정리
