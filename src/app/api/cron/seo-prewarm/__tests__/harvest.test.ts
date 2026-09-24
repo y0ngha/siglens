@@ -15,6 +15,8 @@ const {
     mockPrewarmNews,
     mockPrewarmOptions,
     mockHasAnalyzableNews,
+    mockRewriteToPlainLanguage,
+    mockResolveCurrentPrice,
 } = vi.hoisted(() => ({
     mockMarkSkipped: vi.fn(),
     mockClearInFlight: vi.fn(),
@@ -28,6 +30,8 @@ const {
     mockPrewarmNews: vi.fn(),
     mockPrewarmOptions: vi.fn(),
     mockHasAnalyzableNews: vi.fn(),
+    mockRewriteToPlainLanguage: vi.fn(),
+    mockResolveCurrentPrice: vi.fn(),
 }));
 
 vi.mock('../lock', () => ({
@@ -61,6 +65,11 @@ vi.mock('@/shared/db/client', () => ({
 
 vi.mock('@/entities/options-chain/api', () => ({
     prewarmOptions: mockPrewarmOptions,
+}));
+
+vi.mock('@/entities/analysis-plain', () => ({
+    rewriteToPlainLanguage: mockRewriteToPlainLanguage,
+    resolveCurrentPrice: mockResolveCurrentPrice,
 }));
 
 import { TAB_SEAMS, resolveHarvest } from '../harvest';
@@ -206,6 +215,27 @@ describe('resolveHarvest', () => {
         expect(call.generatedAt).toBeInstanceOf(Date);
         expect(counts.harvested).toBe(1);
         expect(mockClearInFlight).toHaveBeenCalledWith('AAPL', 'overall');
+    });
+
+    it('평이화를 프리웜 전용 30초 마감으로 호출하고 그 결과를 함께 저장한다', async () => {
+        mockResolveCurrentPrice.mockResolvedValue(123.45);
+        mockRewriteToPlainLanguage.mockResolvedValue('쉽게 쓴 글');
+        const done: SeamOutcome = {
+            status: 'done',
+            result: { foo: 'bar' },
+        };
+
+        await resolveHarvest('AAPL', 'overall', done, repo as never, counts);
+
+        expect(mockRewriteToPlainLanguage).toHaveBeenCalledWith(
+            { foo: 'bar' },
+            'AAPL',
+            'ko',
+            'USD',
+            123.45,
+            30_000
+        );
+        expect(repo.upsert.mock.calls[0][0].plain).toBe('쉽게 쓴 글');
     });
 
     it('status=done도 cached와 동일하게 upsert하고 true를 반환한다', async () => {

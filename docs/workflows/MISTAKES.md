@@ -390,6 +390,19 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ Add surface → update SURFACES + add to route enumeration test + verify cross-surface guard tests pass
     → Recurring: PR #678 (exit-signal allowlist), PR #796 R3 (SURFACES), fix/seo-internal-links (RESERVED_FIRST_SEGMENTS) — 3 occurrences
 
+25. Validation order: type check → size check → parse, before regex
+    → When validating inputs that will be processed through regex, string parsing, or size-dependent logic, checks must be applied in strict order to prevent quadratic blowup and silent data loss
+    → Type check (typeof, instanceof) must precede size check (length, byte count), which must precede regex or parse
+    → Size cap must be applied before regex (prevents ReDoS blowup from O(n²) backtracking on oversized inputs)
+    → Parse/conversion must follow size validation (avoids wasted processing on invalid input)
+    ❌ if (length > MAX_LEN) then apply regex // regex evaluated first, then capped — quadratic blowup on oversized input
+    ❌ Mutation (decrement size budget) before validation (size cap check) — oversized write destroys valid entry before rejecting write
+    ❌ String(untrustedObj) before size check — arbitrary toString() invoked before length validation
+    ✅ if (typeof value !== 'string') return error; if (value.length > MAX_LEN) return error; const result = regex.test(value.substring(0, MAX_LEN))
+    ✅ Validate size cap BEFORE mutation: if (newValue.byteLength > cap) return; then decrement budget and store
+    ✅ typeof check → .length check → regex, in that order
+    → Recurring: perf/aws-cost-reduction R1 (guard before mutation), perf/aws-cost-reduction R3 (cap before regex) — 2 occurrences
+
 16. Temporary API stub modules left in codebase after external library release
     → When an external package (e.g. @y0ngha/siglens-core) exports the API previously stubbed locally, immediately delete the stub and unify all imports to the real export
     → Keeping stubs after release creates split dependencies and defeats the purpose of modularization
