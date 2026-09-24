@@ -116,13 +116,6 @@ export function useSearchOverlay(): UseSearchOverlayReturn {
         setIsOpen(false);
     }
 
-    // 라우트가 바뀐 경우엔 포커스를 되돌리지 않는다 — 트리거는 이전 페이지의 것이고,
-    // 사용자는 새 페이지의 시작점에서 읽기 시작해야 한다.
-    useEffect(() => {
-        pushedRef.current = false;
-        triggerRef.current = null;
-    }, [pathname]);
-
     const open = useCallback(() => {
         // `pushState`는 부수효과라 setState 업데이터 안에 두면 안 된다 — React가
         // StrictMode에서 업데이터를 두 번 호출해 히스토리 항목이 두 개 쌓인다.
@@ -206,6 +199,18 @@ export function useSearchOverlay(): UseSearchOverlayReturn {
         setIsOpen(false);
         return pushedRef.current;
     }, []);
+
+    // 라우트가 바뀐 경우엔 포커스를 되돌리지 않는다 — 트리거는 이전 페이지의 것이고,
+    // 사용자는 새 페이지의 시작점에서 읽기 시작해야 한다.
+    //
+    // 순서 주의: 실제 뒤로가기로 다른 페이지로 이동하며(우리가 넣은 항목이 아닌 경우)
+    // `pathname`과 `isOpen`이 같은 커밋에서 함께 바뀔 수 있다 — 그 경우 아래
+    // restoreFocus 효과보다 **먼저** 선언되어야 `triggerRef`를 먼저 비워, 그 효과가
+    // 이전 페이지의 트리거로 포커스를 되돌리지 않게 한다(선언 순서 = 실행 순서).
+    useEffect(() => {
+        pushedRef.current = false;
+        triggerRef.current = null;
+    }, [pathname]);
 
     /**
      * 오버레이가 사라진 뒤 트리거로 포커스를 돌려준다(WCAG 2.4.3).

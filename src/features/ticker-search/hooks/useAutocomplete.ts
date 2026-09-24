@@ -19,8 +19,10 @@ import { useTickerSearch } from './useTickerSearch';
 import { resultDisplayNames } from '../lib/resultDisplay';
 import {
     resolveSubmitTarget,
+    resolveTypedTarget,
     type SubmitTarget,
 } from '../lib/resolveSubmitTarget';
+import { normalizeLabel } from '../lib/normalizeLabel';
 
 interface UseAutocompleteOptions {
     /**
@@ -56,24 +58,6 @@ interface UseAutocompleteReturn {
     prefetch: (symbol: string) => void;
 }
 
-/**
- * 폼 모드(`navigateOnSelect: false`)의 목적지. 이동이 아니라 값 확정이라 결과
- * 우선·티커 형태 검사를 걸지 않는다 — `resolveSubmitTarget`과 규칙이 다르다.
- */
-function resolveTypedTarget(query: string): SubmitTarget | null {
-    const typed = query.trim().toUpperCase();
-    return typed ? { symbol: typed, label: typed } : null;
-}
-
-/**
- * `onSelect`로 나가는 라벨의 단일 정규화 지점. 즉시 이동(`navigate`)과 결착 후
- * 이동(effect) 두 경로가 각자 정규화를 따로 하면 한쪽만 고쳤을 때 최근 검색에
- * 남는 라벨이 갈린다 — 빈 문자열·앞뒤 공백은 심볼로 대체한다.
- */
-function normalizeLabel(label: string | undefined, symbol: string): string {
-    return label?.trim() || symbol;
-}
-
 export function useAutocomplete({
     onSelect,
     navigateOnSelect = true,
@@ -104,9 +88,6 @@ export function useAutocomplete({
      */
     const [pendingNav, setPendingNav] = useState<SubmitTarget | null>(null);
     const firedNavRef = useRef<SubmitTarget | null>(null);
-
-    const requestSubmit = useCallback(() => setIsSubmitArmed(true), []);
-
     const inputRef = useRef<HTMLInputElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const prefetchedRef = useRef(new Set<string>());
@@ -118,6 +99,8 @@ export function useAutocomplete({
         useTickerSearch(query);
 
     useOnClickOutside([inputRef, dropdownRef], () => setIsClosed(true));
+
+    const requestSubmit = useCallback(() => setIsSubmitArmed(true), []);
 
     const isOpen = !isClosed && hasQuery;
     const isSettled = debouncedQuery.trim() === query.trim();

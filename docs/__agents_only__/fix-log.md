@@ -570,3 +570,10 @@
   - Rule: (new) 동작 보존 리팩터는 "기존 테스트가 통과한다"로 끝내지 말고 **새로 생긴 분기마다 변이를 넣어 죽는 테스트가 있는지** 확인한다 — 없으면 추가
   - Context: 변이별 FAIL→PASS 확인한 테스트 6건 추가, MISTAKES #10을 oxlint 1.79+ 기준 패턴으로 갱신(useEffectEvent 회피는 더 이상 통과하지 않음)
 - Violation (R2 recommended, fixed): 테스트 제목이 다루지 않는 경로(로케일 전환에 따른 toLocalePath 정체성 변경)를 주장 — 로케일을 실제로 전환하도록 수정. MISTAKES #10의 의도 플래그 지침이 PR 자체의 두 패턴과 모순 — 소비 위치 기준으로 정리
+
+## [PR #869 claude-review R1 | fix/set-state-in-effect | 2026-09-24]
+- Violation (Blocker, fixed): 리팩터로 setState만 렌더 중 조정으로 옮기면서 남은 ref 정리 effect를 핸들러 앞에 두고, `requestSubmit`(useCallback)을 useRef 선언들 사이에 끼워 CONVENTIONS "Custom Hook Declaration Order"를 깼다
+  - Rule: CONVENTIONS Custom Hook Declaration Order — 훅 일부를 옮긴 뒤에는 남은 조각(effect·handler)이 순서 규칙상 제자리에 있는지 다시 본다. effect 간 실행 순서에 의존하면 묶음 안에서 순서를 유지하고 이유를 주석으로 남긴다
+  - Context: ref 정리 effect를 effect 묶음 맨 앞으로(restoreFocus effect가 triggerRef를 읽어 순서 의존), requestSubmit을 커스텀 훅 뒤로
+- Violation (Blocker, fixed): 순수 헬퍼 `resolveTypedTarget`·`normalizeLabel`을 훅 파일에 정의(MISTAKES #18) — `lib/resolveSubmitTarget.ts`·`lib/normalizeLabel.ts`로 이동하고 테스트 추가
+- Question (answered, comment only): `?ticker=`만 바뀌는 히스토리 이동은 구독이 알리지 않아 스스로 재렌더되지 않는다(이전 구현과 같은 한계) — 주석을 단정 대신 사실대로 정정

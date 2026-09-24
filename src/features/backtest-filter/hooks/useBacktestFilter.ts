@@ -21,13 +21,17 @@ interface UseBacktestFilterReturn {
     filtered: BacktestCase[];
 }
 
-/** 구독자를 등록만 하고 절대 알리지 않는다 — `?ticker=`가 popstate 등으로
- *  바뀌었다고 해서 이 스토어가 스스로 재렌더를 유발할 필요는 없다(그런 변경은
- *  이 페이지에서 일어나지 않는다). `getUrlTicker`(아래) 자체는 `useSyncExternalStore`의
- *  `getSnapshot` 계약대로 **매 렌더마다** 호출된다 — "마운트 후 한 번만 읽는다"가
- *  아니라 "읽긴 매번 읽되, 이 스토어가 능동적으로 재렌더를 걸지는 않는다"가
- *  정확한 계약이다. `explicitTab`(사용자가 명시적으로 고른 값)이 있으면 그 값이
- *  이 스냅샷보다 항상 우선한다(`activeTab = explicitTab ?? urlTab ?? ALL_TAB`). */
+/** 구독자를 등록만 하고 절대 알리지 않는다. 그 결과, 같은 pathname에서
+ *  `?ticker=`만 바뀌는 히스토리 이동(뒤로/앞으로가기)은 이 스토어만으로는 이
+ *  훅을 재렌더시키지 않는다 — popstate를 듣지 않던 예전 useEffect 버전도 같은
+ *  한계였다(그때도 `[tabItems]` 의존 effect만 돌고 URL 변화 자체는 별도로
+ *  감지하지 않았다). 이 페이지에서 `?ticker=`를 실제로 쓰는 쪽은 `setActiveTab`
+ *  하나뿐이고, 그 경로는 `router.replace` 전에 `setExplicitTab`을 먼저 불러
+ *  `explicitTab`으로 이미 반영된다(`activeTab = explicitTab ?? urlTab ?? ALL_TAB`).
+ *  `getUrlTicker`(아래) 자체는 `useSyncExternalStore`의 `getSnapshot` 계약대로
+ *  **매 렌더마다** 호출되므로, 다른 이유로 이 훅이 재렌더되면 그 렌더는 항상
+ *  현재 URL을 읽는다 — "읽긴 매번 읽되, 이 스토어가 능동적으로 재렌더를 걸지는
+ *  않는다"가 정확한 계약이다. */
 function subscribeUrlTickerNever(): () => void {
     return () => {};
 }
