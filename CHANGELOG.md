@@ -1,5 +1,16 @@
 # Changelog
 
+# [0.87.0](https://github.com/y0ngha/siglens/compare/v0.86.2...v0.87.0) (2026-09-24)
+
+### Bug Fixes
+
+* **analysis:** overall의 technical 축에 이력·시장 이벤트를 넘겨 technical 중복 생성을 없앤다 ([4adefe2](https://github.com/y0ngha/siglens/commit/4adefe2edff14c8416698418074fd04c630706b5))
+* **hooks:** set-state-in-effect 6곳을 효과 없는 패턴으로 바꾸고 규칙을 error로 올린다 ([ca6f4c8](https://github.com/y0ngha/siglens/commit/ca6f4c81deddff2f56f2a9c4e33dc51b3e82a433))
+
+### Features
+
+* **about:** siglens.io/about을 가치 소개 페이지로 재구성한다 ([9485039](https://github.com/y0ngha/siglens/commit/9485039931400ed8518d4bea8a40b411878d2db8))
+
 ## [0.86.2](https://github.com/y0ngha/siglens/compare/v0.86.1...v0.86.2) (2026-09-21)
 
 
