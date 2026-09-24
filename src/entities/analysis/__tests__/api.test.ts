@@ -663,7 +663,14 @@ describe('prewarmOverall', () => {
                 modelId: DEEPSEEK_V4_1_FLASH_MODEL,
                 fundamentalProvider: mockFundamentalProvider,
                 marketDataProvider: mockProvider,
-                technical: { tierContext: { userId: null, tier: 'free' } },
+                // technical 축도 `prewarmTechnical`과 같은 이력·이벤트를 받아야
+                // 캐시 키(`:hist=`·`:evt=`)가 같아져 technical이 중복 생성되지
+                // 않는다(core 1.13.1).
+                technical: {
+                    tierContext: { userId: null, tier: 'free' },
+                    priorAnalyses: [],
+                    marketEvents: [],
+                },
                 tier: 'free',
                 reasoning: false,
                 skipEnqueueIfMiss: false,
@@ -841,6 +848,31 @@ describe('prewarmOverall', () => {
             });
             expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ priorAnalyses: history })
+            );
+        });
+
+        it('technical 축에 prewarmTechnical과 같은 이력을 넘겨 캐시 키를 맞춘다', async () => {
+            const history = [
+                {
+                    generatedAt: new Date('2026-08-01'),
+                    trend: 'bearish',
+                    riskLevel: 'high',
+                },
+            ];
+            mockFindRecentForPrompt.mockResolvedValue(history as never);
+
+            await prewarmTechnical('AAPL', 'Apple Inc.', undefined, false);
+            await prewarmOverall('AAPL', 'Apple Inc.', false);
+
+            const technicalOptions = mockRunAnalysis.mock.calls.at(-1)?.[5];
+            const overallTechnical =
+                mockRunOverallAnalysis.mock.calls.at(-1)?.[0].technical;
+            expect(overallTechnical?.priorAnalyses).toBe(history);
+            expect(overallTechnical?.priorAnalyses).toBe(
+                technicalOptions?.priorAnalyses
+            );
+            expect(overallTechnical?.marketEvents).toEqual(
+                technicalOptions?.marketEvents
             );
         });
 
