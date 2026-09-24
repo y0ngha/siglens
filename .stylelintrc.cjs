@@ -19,6 +19,9 @@ module.exports = {
                     'layer',
                     'theme',
                     'config',
+                    // Tailwind v4 `@source not '…'` (globals.css). Missing here since it was
+                    // introduced — lint:style is not in CI, so it went unnoticed.
+                    'source',
                 ],
             },
         ],

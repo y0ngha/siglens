@@ -141,23 +141,23 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
             ]),
         });
         // Reset DrizzleMarketNewsRepository to return fresh instance mocks each call
-        vi.mocked(api.DrizzleMarketNewsRepository).mockImplementation(
-            function (this: unknown) {
-                (this as Record<string, unknown>).upsertMarketNewsItem = vi.fn(
-                    async () => true
-                );
-                (this as Record<string, unknown>).attachAnalysis = vi.fn(
-                    async () => undefined
-                );
-                (this as Record<string, unknown>).listByCategory = vi.fn(
-                    async () => [DEFAULT_ITEM]
-                );
-                (this as Record<string, unknown>).listAnalyzedIds = vi.fn(
-                    async () => new Set<string>()
-                );
-                return this;
-            }
-        );
+        vi.mocked(api.DrizzleMarketNewsRepository).mockImplementation(function (
+            this: unknown
+        ) {
+            (this as Record<string, unknown>).upsertMarketNewsItem = vi.fn(
+                async () => true
+            );
+            (this as Record<string, unknown>).attachAnalysis = vi.fn(
+                async () => undefined
+            );
+            (this as Record<string, unknown>).listByCategory = vi.fn(
+                async () => [DEFAULT_ITEM]
+            );
+            (this as Record<string, unknown>).listAnalyzedIds = vi.fn(
+                async () => new Set<string>()
+            );
+            return this;
+        });
     });
 
     it('새 기사를 upsert하면 market-news:<sentinel> 태그를 revalidate한다', async () => {
@@ -176,22 +176,21 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
         // 경로다 — 심볼 뉴스·경제 이벤트 경로와 동일하게 skip한다.
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
         const attachAnalysis = vi.fn(async () => undefined);
-        vi.mocked(api.DrizzleMarketNewsRepository).mockImplementation(
-            function (this: unknown) {
-                (this as Record<string, unknown>).upsertMarketNewsItem = vi.fn(
-                    async () => true
-                );
-                (this as Record<string, unknown>).attachAnalysis =
-                    attachAnalysis;
-                (this as Record<string, unknown>).listByCategory = vi.fn(
-                    async () => [DEFAULT_ITEM]
-                );
-                (this as Record<string, unknown>).listAnalyzedIds = vi.fn(
-                    async () => new Set<string>()
-                );
-                return this;
-            }
-        );
+        vi.mocked(api.DrizzleMarketNewsRepository).mockImplementation(function (
+            this: unknown
+        ) {
+            (this as Record<string, unknown>).upsertMarketNewsItem = vi.fn(
+                async () => true
+            );
+            (this as Record<string, unknown>).attachAnalysis = attachAnalysis;
+            (this as Record<string, unknown>).listByCategory = vi.fn(
+                async () => [DEFAULT_ITEM]
+            );
+            (this as Record<string, unknown>).listAnalyzedIds = vi.fn(
+                async () => new Set<string>()
+            );
+            return this;
+        });
         vi.mocked(core.runNewsCardAnalysis).mockResolvedValue({
             status: 'done',
             result: {
@@ -216,23 +215,23 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
     });
 
     it('upsert가 변경 없이 끝나면(false) revalidateTag를 호출하지 않는다', async () => {
-        vi.mocked(api.DrizzleMarketNewsRepository).mockImplementation(
-            function (this: unknown) {
-                (this as Record<string, unknown>).upsertMarketNewsItem = vi.fn(
-                    async () => false
-                );
-                (this as Record<string, unknown>).attachAnalysis = vi.fn(
-                    async () => undefined
-                );
-                (this as Record<string, unknown>).listByCategory = vi.fn(
-                    async () => [DEFAULT_ITEM]
-                );
-                (this as Record<string, unknown>).listAnalyzedIds = vi.fn(
-                    async () => new Set<string>()
-                );
-                return this;
-            }
-        );
+        vi.mocked(api.DrizzleMarketNewsRepository).mockImplementation(function (
+            this: unknown
+        ) {
+            (this as Record<string, unknown>).upsertMarketNewsItem = vi.fn(
+                async () => false
+            );
+            (this as Record<string, unknown>).attachAnalysis = vi.fn(
+                async () => undefined
+            );
+            (this as Record<string, unknown>).listByCategory = vi.fn(
+                async () => [DEFAULT_ITEM]
+            );
+            (this as Record<string, unknown>).listAnalyzedIds = vi.fn(
+                async () => new Set<string>()
+            );
+            return this;
+        });
         const { revalidateTag } = await import('next/cache');
         await ensureMarketNewsCardsAnalyzedAction('crypto');
         expect(revalidateTag).not.toHaveBeenCalled();
@@ -343,38 +342,37 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
         ).mockReturnValue({
             fetchCategoryNews: vi.fn(async () => ITEMS),
         });
-        vi.mocked(api.DrizzleMarketNewsRepository).mockImplementation(
-            function (this: unknown) {
-                const upsert = vi
-                    .fn()
-                    .mockResolvedValueOnce(true)
-                    .mockRejectedValueOnce(new Error('db write error'))
-                    .mockRejectedValueOnce(new Error('db write error'))
-                    .mockResolvedValueOnce(true)
-                    .mockRejectedValueOnce(new Error('db write error'));
-                (this as Record<string, unknown>).upsertMarketNewsItem = upsert;
-                (this as Record<string, unknown>).attachAnalysis = vi.fn(
-                    async () => undefined
-                );
-                (this as Record<string, unknown>).listByCategory = vi.fn(
-                    async () =>
-                        ITEMS.map(i => ({
-                            ...i,
-                            analyzedAt: null,
-                            titleKo: null,
-                            bodyKo: null,
-                            summaryKo: null,
-                            sentiment: null,
-                            category: null,
-                            priceImpact: null,
-                        }))
-                );
-                (this as Record<string, unknown>).listAnalyzedIds = vi.fn(
-                    async () => new Set<string>()
-                );
-                return this;
-            }
-        );
+        vi.mocked(api.DrizzleMarketNewsRepository).mockImplementation(function (
+            this: unknown
+        ) {
+            const upsert = vi
+                .fn()
+                .mockResolvedValueOnce(true)
+                .mockRejectedValueOnce(new Error('db write error'))
+                .mockRejectedValueOnce(new Error('db write error'))
+                .mockResolvedValueOnce(true)
+                .mockRejectedValueOnce(new Error('db write error'));
+            (this as Record<string, unknown>).upsertMarketNewsItem = upsert;
+            (this as Record<string, unknown>).attachAnalysis = vi.fn(
+                async () => undefined
+            );
+            (this as Record<string, unknown>).listByCategory = vi.fn(async () =>
+                ITEMS.map(i => ({
+                    ...i,
+                    analyzedAt: null,
+                    titleKo: null,
+                    bodyKo: null,
+                    summaryKo: null,
+                    sentiment: null,
+                    category: null,
+                    priceImpact: null,
+                }))
+            );
+            (this as Record<string, unknown>).listAnalyzedIds = vi.fn(
+                async () => new Set<string>()
+            );
+            return this;
+        });
 
         const errorSpy = vi
             .spyOn(console, 'error')
@@ -399,36 +397,35 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
         ).mockReturnValue({
             fetchCategoryNews: vi.fn(async () => ITEMS),
         });
-        vi.mocked(api.DrizzleMarketNewsRepository).mockImplementation(
-            function (this: unknown) {
-                const upsert = vi
-                    .fn()
-                    .mockRejectedValueOnce(new Error('err'))
-                    .mockRejectedValueOnce(new Error('err'))
-                    .mockResolvedValue(true);
-                (this as Record<string, unknown>).upsertMarketNewsItem = upsert;
-                (this as Record<string, unknown>).attachAnalysis = vi.fn(
-                    async () => undefined
-                );
-                (this as Record<string, unknown>).listByCategory = vi.fn(
-                    async () =>
-                        ITEMS.map(i => ({
-                            ...i,
-                            analyzedAt: null,
-                            titleKo: null,
-                            bodyKo: null,
-                            summaryKo: null,
-                            sentiment: null,
-                            category: null,
-                            priceImpact: null,
-                        }))
-                );
-                (this as Record<string, unknown>).listAnalyzedIds = vi.fn(
-                    async () => new Set<string>()
-                );
-                return this;
-            }
-        );
+        vi.mocked(api.DrizzleMarketNewsRepository).mockImplementation(function (
+            this: unknown
+        ) {
+            const upsert = vi
+                .fn()
+                .mockRejectedValueOnce(new Error('err'))
+                .mockRejectedValueOnce(new Error('err'))
+                .mockResolvedValue(true);
+            (this as Record<string, unknown>).upsertMarketNewsItem = upsert;
+            (this as Record<string, unknown>).attachAnalysis = vi.fn(
+                async () => undefined
+            );
+            (this as Record<string, unknown>).listByCategory = vi.fn(async () =>
+                ITEMS.map(i => ({
+                    ...i,
+                    analyzedAt: null,
+                    titleKo: null,
+                    bodyKo: null,
+                    summaryKo: null,
+                    sentiment: null,
+                    category: null,
+                    priceImpact: null,
+                }))
+            );
+            (this as Record<string, unknown>).listAnalyzedIds = vi.fn(
+                async () => new Set<string>()
+            );
+            return this;
+        });
 
         await ensureMarketNewsCardsAnalyzedAction('crypto');
         // minority failure should NOT abort — LLM analysis should still run
@@ -441,39 +438,38 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
         ).mockReturnValue({
             fetchCategoryNews: vi.fn(async () => ITEMS),
         });
-        vi.mocked(api.DrizzleMarketNewsRepository).mockImplementation(
-            function (this: unknown) {
-                const upsert = vi
-                    .fn()
-                    .mockResolvedValueOnce(true) // m1
-                    .mockResolvedValueOnce(true) // m2
-                    .mockRejectedValueOnce(new Error('upsert error')) // m3
-                    .mockResolvedValueOnce(true) // m4
-                    .mockResolvedValueOnce(true); // m5
-                (this as Record<string, unknown>).upsertMarketNewsItem = upsert;
-                (this as Record<string, unknown>).attachAnalysis = vi.fn(
-                    async () => undefined
-                );
-                // listByCategory returns all 5 as unanalyzed — upsertedIds filter does the work
-                (this as Record<string, unknown>).listByCategory = vi.fn(
-                    async () =>
-                        ITEMS.map(i => ({
-                            ...i,
-                            analyzedAt: null,
-                            titleKo: null,
-                            bodyKo: null,
-                            summaryKo: null,
-                            sentiment: null,
-                            category: null,
-                            priceImpact: null,
-                        }))
-                );
-                (this as Record<string, unknown>).listAnalyzedIds = vi.fn(
-                    async () => new Set<string>()
-                );
-                return this;
-            }
-        );
+        vi.mocked(api.DrizzleMarketNewsRepository).mockImplementation(function (
+            this: unknown
+        ) {
+            const upsert = vi
+                .fn()
+                .mockResolvedValueOnce(true) // m1
+                .mockResolvedValueOnce(true) // m2
+                .mockRejectedValueOnce(new Error('upsert error')) // m3
+                .mockResolvedValueOnce(true) // m4
+                .mockResolvedValueOnce(true); // m5
+            (this as Record<string, unknown>).upsertMarketNewsItem = upsert;
+            (this as Record<string, unknown>).attachAnalysis = vi.fn(
+                async () => undefined
+            );
+            // listByCategory returns all 5 as unanalyzed — upsertedIds filter does the work
+            (this as Record<string, unknown>).listByCategory = vi.fn(async () =>
+                ITEMS.map(i => ({
+                    ...i,
+                    analyzedAt: null,
+                    titleKo: null,
+                    bodyKo: null,
+                    summaryKo: null,
+                    sentiment: null,
+                    category: null,
+                    priceImpact: null,
+                }))
+            );
+            (this as Record<string, unknown>).listAnalyzedIds = vi.fn(
+                async () => new Set<string>()
+            );
+            return this;
+        });
 
         const errorSpy = vi
             .spyOn(console, 'error')
@@ -493,33 +489,32 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
         ).mockReturnValue({
             fetchCategoryNews: vi.fn(async () => ITEMS),
         });
-        vi.mocked(api.DrizzleMarketNewsRepository).mockImplementation(
-            function (this: unknown) {
-                (this as Record<string, unknown>).upsertMarketNewsItem = vi.fn(
-                    async () => true
-                );
-                (this as Record<string, unknown>).attachAnalysis = vi.fn(
-                    async () => undefined
-                );
-                (this as Record<string, unknown>).listByCategory = vi.fn(
-                    async () =>
-                        ITEMS.map(i => ({
-                            ...i,
-                            analyzedAt: null,
-                            titleKo: null,
-                            bodyKo: null,
-                            summaryKo: null,
-                            sentiment: null,
-                            category: null,
-                            priceImpact: null,
-                        }))
-                );
-                (this as Record<string, unknown>).listAnalyzedIds = vi.fn(
-                    async () => new Set<string>()
-                );
-                return this;
-            }
-        );
+        vi.mocked(api.DrizzleMarketNewsRepository).mockImplementation(function (
+            this: unknown
+        ) {
+            (this as Record<string, unknown>).upsertMarketNewsItem = vi.fn(
+                async () => true
+            );
+            (this as Record<string, unknown>).attachAnalysis = vi.fn(
+                async () => undefined
+            );
+            (this as Record<string, unknown>).listByCategory = vi.fn(async () =>
+                ITEMS.map(i => ({
+                    ...i,
+                    analyzedAt: null,
+                    titleKo: null,
+                    bodyKo: null,
+                    summaryKo: null,
+                    sentiment: null,
+                    category: null,
+                    priceImpact: null,
+                }))
+            );
+            (this as Record<string, unknown>).listAnalyzedIds = vi.fn(
+                async () => new Set<string>()
+            );
+            return this;
+        });
 
         await ensureMarketNewsCardsAnalyzedAction('crypto');
         // All 5 items submitted (within LLM_PARALLEL_LIMIT=8 single chunk for 5 items)
@@ -560,33 +555,32 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
             };
         });
 
-        vi.mocked(api.DrizzleMarketNewsRepository).mockImplementation(
-            function (this: unknown) {
-                (this as Record<string, unknown>).upsertMarketNewsItem = vi.fn(
-                    async () => true
-                );
-                (this as Record<string, unknown>).attachAnalysis = vi.fn(
-                    async () => undefined
-                );
-                (this as Record<string, unknown>).listByCategory = vi.fn(
-                    async () =>
-                        BIG_ITEMS.map(i => ({
-                            ...i,
-                            analyzedAt: null,
-                            titleKo: null,
-                            bodyKo: null,
-                            summaryKo: null,
-                            sentiment: null,
-                            category: null,
-                            priceImpact: null,
-                        }))
-                );
-                (this as Record<string, unknown>).listAnalyzedIds = vi.fn(
-                    async () => new Set<string>()
-                );
-                return this;
-            }
-        );
+        vi.mocked(api.DrizzleMarketNewsRepository).mockImplementation(function (
+            this: unknown
+        ) {
+            (this as Record<string, unknown>).upsertMarketNewsItem = vi.fn(
+                async () => true
+            );
+            (this as Record<string, unknown>).attachAnalysis = vi.fn(
+                async () => undefined
+            );
+            (this as Record<string, unknown>).listByCategory = vi.fn(async () =>
+                BIG_ITEMS.map(i => ({
+                    ...i,
+                    analyzedAt: null,
+                    titleKo: null,
+                    bodyKo: null,
+                    summaryKo: null,
+                    sentiment: null,
+                    category: null,
+                    priceImpact: null,
+                }))
+            );
+            (this as Record<string, unknown>).listAnalyzedIds = vi.fn(
+                async () => new Set<string>()
+            );
+            return this;
+        });
 
         await ensureMarketNewsCardsAnalyzedAction('crypto');
 
@@ -619,33 +613,32 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
         ).mockReturnValue({
             fetchCategoryNews: vi.fn(async () => ITEMS),
         });
-        vi.mocked(api.DrizzleMarketNewsRepository).mockImplementation(
-            function (this: unknown) {
-                (this as Record<string, unknown>).upsertMarketNewsItem = vi.fn(
-                    async () => true
-                );
-                (this as Record<string, unknown>).attachAnalysis = vi.fn(
-                    async () => undefined
-                );
-                (this as Record<string, unknown>).listByCategory = vi.fn(
-                    async () =>
-                        ITEMS.map(i => ({
-                            ...i,
-                            analyzedAt: null,
-                            titleKo: null,
-                            bodyKo: null,
-                            summaryKo: null,
-                            sentiment: null,
-                            category: null,
-                            priceImpact: null,
-                        }))
-                );
-                (this as Record<string, unknown>).listAnalyzedIds = vi.fn(
-                    async () => new Set<string>()
-                );
-                return this;
-            }
-        );
+        vi.mocked(api.DrizzleMarketNewsRepository).mockImplementation(function (
+            this: unknown
+        ) {
+            (this as Record<string, unknown>).upsertMarketNewsItem = vi.fn(
+                async () => true
+            );
+            (this as Record<string, unknown>).attachAnalysis = vi.fn(
+                async () => undefined
+            );
+            (this as Record<string, unknown>).listByCategory = vi.fn(async () =>
+                ITEMS.map(i => ({
+                    ...i,
+                    analyzedAt: null,
+                    titleKo: null,
+                    bodyKo: null,
+                    summaryKo: null,
+                    sentiment: null,
+                    category: null,
+                    priceImpact: null,
+                }))
+            );
+            (this as Record<string, unknown>).listAnalyzedIds = vi.fn(
+                async () => new Set<string>()
+            );
+            return this;
+        });
 
         const errorSpy = vi
             .spyOn(console, 'error')

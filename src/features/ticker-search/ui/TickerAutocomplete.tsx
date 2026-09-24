@@ -151,15 +151,14 @@ export function TickerAutocomplete({
                                 {t('TickerAutocomplete.e39068')}
                             </div>
                         )}
-                        {isError &&
-                            !isSearching && (
-                                // "결과 없음"과 "조회 실패"는 다르다. 구분하지 않으면 검색이
-                                // 죽어도 "결과 없음"으로 보이고, 한글 질의에는 "티커로
-                                // 쳐보세요"라는 틀린 안내까지 나간다. 오버레이와 같은 문구.
-                                <div className="px-4 py-3 text-sm text-secondary-400">
-                                    {t('search.loadFailedRetry')}
-                                </div>
-                            )}
+                        {isError && !isSearching && (
+                            // "결과 없음"과 "조회 실패"는 다르다. 구분하지 않으면 검색이
+                            // 죽어도 "결과 없음"으로 보이고, 한글 질의에는 "티커로
+                            // 쳐보세요"라는 틀린 안내까지 나간다. 오버레이와 같은 문구.
+                            <div className="px-4 py-3 text-sm text-secondary-400">
+                                {t('search.loadFailedRetry')}
+                            </div>
+                        )}
                         {!isSearching && !isError && results.length === 0 && (
                             <div className="px-4 py-3 text-sm text-secondary-400">
                                 {isKorean

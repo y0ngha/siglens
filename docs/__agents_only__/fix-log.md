@@ -535,3 +535,12 @@
   - Rule: MISTAKES.md §15.6 — 주석 정확성. 가드·상수를 바꾸면 그것을 설명하는 다른 자리도 같은 커밋에서 갱신한다
   - Context: 주석을 `isPageDashboardScopeId`로 정정
 - Note: 배선 4건(뉴스 카테고리 다이제스트, 시장 브리핑 peek, 공포·탐욕 `comparisons`, 종목 자체 공포·탐욕)과 R3 수정 2건은 각각 되돌림 검증을 거쳤다 — 소스를 원복하면 해당 테스트가 실패한다
+
+## [chore/deps-2026-09 Round 1 | 의존성 업그레이드 | 2026-09-24]
+- Violation (R1 REQUIRED, fixed): oxlint 1.79+ `react/globals`를 `oxlint-disable-next-line`으로 억제했다(테스트 프로브가 렌더 중 모듈 변수에 `useQueryClient()`를 대입)
+  - Rule: 새 lint 규칙이 테스트 헬퍼를 잡으면 억제 주석 대신 근본 수정 — Provider가 만든 값을 읽을 땐 `renderHook(() => useX(), { wrapper: Provider })`
+  - Context: `src/app/__tests__/providers.test.tsx`의 `ClientCapture` 프로브 제거
+- Violation (R1 REQUIRED, fixed): 프레임워크 메이저/마이너 업그레이드에서 **기본값이 뒤집힌 플래그**를 확인·언급 없이 넘겼다(Next 16.3: `validateRSCRequestHeaders`·`prefetchInlining`·`varyParams`·`optimisticRouting`·`appNewScrollHandler`)
+  - Rule: (new) 프레임워크를 올릴 때는 구·신 `defaultConfig`를 diff하고, 뒤집힌 플래그 중 테스트·오프라인 빌드로 관측되지 않는 것(CDN·라우터·캐시 계약)은 프로덕션 빌드 + 실제 브라우저로 계약을 실증해 설정 파일 주석에 남긴다
+  - Context: `next start` + Playwright로 RSC 요청 전수 캡처(RSC 헤더·`_rsc` 쿼리 동반, `text/x-component`, 307 0건). next.config.ts에 계약·재확인 요구 기록
+- Pre-empted (not a review finding): client-s3 3.1138이 `@aws-crypto` 의존을 없애 Dockerfile의 해당 COPY가 이미지 빌드를 깨뜨리게 됨. PR CI는 Docker 빌드를 안 돌려 못 잡는다 — SDK를 올릴 땐 runner 수동 COPY 목록만 담은 격리 디렉터리에서 실제 요청을 보내 확인
