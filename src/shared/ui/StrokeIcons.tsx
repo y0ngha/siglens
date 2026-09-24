@@ -1,9 +1,14 @@
 import type { ReactNode } from 'react';
 
 /**
- * Stroke icons for the chat surface (24px grid, 1.75 stroke). Inline SVG
- * rather than emoji: emoji render per-platform, ignore the theme's text
- * colour and read as placeholders next to the brand's mono wordmark.
+ * Stroke icons (24px grid, 1.75 stroke) for the ai.siglens.io chat surface
+ * and both `/about` pages. Inline SVG rather than emoji: emoji render
+ * per-platform, ignore the theme's text colour and read as placeholders next
+ * to the brand's mono wordmark.
+ *
+ * Lives in `shared/ui` rather than `widgets/agent-chat` so siglens.io pages can
+ * use it without importing the chat barrel, which would pull the chat shell's
+ * client modules and message keys into their route.
  */
 interface IconFrameProps {
     readonly children: ReactNode;
@@ -155,5 +160,13 @@ export const GavelIcon = (p: IconProps) => (
     <Icon {...p}>
         <path d="M9 6.5l4 4M6 9.5l7 7M14 4l6 6M4 20l4-4" />
         <path d="M11.5 8.5l-6 6" />
+    </Icon>
+);
+
+export const GaugeIcon = (p: IconProps) => (
+    <Icon {...p}>
+        <path d="M4 16a8 8 0 0 1 16 0" />
+        <path d="m12 16 4-5" />
+        <circle cx="12" cy="16" r="1" />
     </Icon>
 );

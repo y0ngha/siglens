@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import {
     PREFERS_LIGHT_QUERY,
     readThemePreference,
@@ -28,6 +28,39 @@ export interface UseThemeResult {
 }
 
 /**
+ * 선택 변경 구독자. `usePersistentState`와 같은 모양이다 — `setTheme`가 쓰고 나면
+ * `emitPreferenceChange`로 알려 같은 훅을 쓰는 다른 인스턴스도 함께 갱신된다.
+ */
+const listeners = new Set<() => void>();
+
+function emitPreferenceChange(): void {
+    for (const listener of listeners) listener();
+}
+
+function subscribePreference(onStoreChange: () => void): () => void {
+    listeners.add(onStoreChange);
+    return () => listeners.delete(onStoreChange);
+}
+
+/**
+ * 저장이 막힌 환경(사파리 비공개 모드 등)에서 이번 세션에 고른 값. 스냅샷은
+ * `localStorage`를 다시 읽으므로, 저장이 실패하면 고른 값이 사라지고 `system`으로
+ * 되돌아 보인다(화면 테마는 이미 바뀌었는데 선택 표시만 어긋난다). 저장에 성공하면
+ * 비워서 `localStorage`가 다시 진실의 원천이 된다.
+ */
+let unsavedPreference: ThemePreference | null = null;
+
+function getPreferenceSnapshot(): ThemePreference {
+    return unsavedPreference ?? readThemePreference();
+}
+
+/** 서버 렌더·하이드레이션 렌더가 쓰는 값. 인라인 스크립트가 이미 화면을 칠해
+ *  놨지만, 서버 HTML과 다른 값을 하이드레이션 렌더에서 뱉으면 불일치가 난다. */
+function getServerPreferenceSnapshot(): ThemePreference {
+    return 'system';
+}
+
+/**
  * 테마 선택 읽기/쓰기 훅.
  *
  * **프로바이더가 없다.** 전역 컨텍스트를 두면 루트 레이아웃이 클라이언트
@@ -35,13 +68,19 @@ export interface UseThemeResult {
  * 일으킨 전례가 있다. 대신 각 소비자가 이 훅으로 `<html>` 속성과
  * `localStorage`를 직접 읽고 쓴다 — 진실의 원천이 그 둘이라 동기화할 상태가 없다.
  *
- * 첫 렌더는 항상 `system`을 반환한다. 인라인 스크립트가 이미 화면을 올바르게
- * 칠해놨지만, 서버 HTML과 다른 값을 첫 렌더에서 뱉으면 하이드레이션 불일치가
- * 난다. 실제 선택은 `useEffect`에서 한 박자 뒤에 채워진다.
+ * `preference`는 `localStorage`를 외부 스토어로 구독한다
+ * (`useSyncExternalStore`, `usePersistentState`와 같은 이유). 하이드레이션
+ * 렌더는 `getServerPreferenceSnapshot`(= `system`)을 쓰므로 서버 HTML과 일치하고,
+ * 하이드레이션이 끝나면 React가 실제 저장값으로 전환한다 — 예전에는 이 전환을
+ * 마운트 `useEffect`의 `setState`로 직접 했는데, 그러면 커밋마다 렌더가 한 번 더
+ * 돈다(react/set-state-in-effect가 잡는 바로 그 패턴).
  */
 export function useTheme(): UseThemeResult {
-    const [preference, setPreferenceState] =
-        useState<ThemePreference>('system');
+    const preference = useSyncExternalStore(
+        subscribePreference,
+        getPreferenceSnapshot,
+        getServerPreferenceSnapshot
+    );
 
     const setTheme = useCallback((next: ThemePreference) => {
         const prefersLight =
@@ -50,11 +89,13 @@ export function useTheme(): UseThemeResult {
         try {
             if (next === 'system') localStorage.removeItem(THEME_STORAGE_KEY);
             else localStorage.setItem(THEME_STORAGE_KEY, next);
+            unsavedPreference = null;
         } catch {
             // 저장이 막혀도 이번 세션 적용은 되어야 한다.
+            unsavedPreference = next;
         }
         applyTheme(resolved);
-        setPreferenceState(next);
+        emitPreferenceChange();
     }, []);
 
     /* 마운트 때 한 번 meta를 맞춘다. `applyTheme`가 meta를 덮어쓰는 것은
@@ -65,13 +106,6 @@ export function useTheme(): UseThemeResult {
         if (current === 'light' || current === 'dark') {
             syncThemeColorMeta(current);
         }
-    }, []);
-
-    /* 첫 렌더는 하이드레이션 불일치를 피하려 `system`으로 시작하므로, 실제
-       선택은 마운트 후에 읽어 채운다. 위 effect와 목적이 다르고 서로 의존하지도
-       않아 따로 둔다(CONVENTIONS — effect 책임 분리). */
-    useEffect(() => {
-        setPreferenceState(readThemePreference());
     }, []);
 
     /*

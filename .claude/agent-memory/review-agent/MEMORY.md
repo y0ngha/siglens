@@ -95,6 +95,9 @@ Closed loops (approved, kept for pattern recall only — see file for detail):
 - [prewarm-no-news-starvation R3](project-prewarm-no-news-starvation-r3.md) — core 1.14.0 no_news abstention verified in dist; all R2 fixes mutation-killed; 6 stale pre-1.14.0 comments remain
 - [core overall-optional-news-axis R4](project-core-overall-optional-news-axis-r4.md) — approved; R1-R3 defects were all doc-vs-source drift; snapshot key named an unexercised branch
 
+- [fix/set-state-in-effect R1](project-set-state-in-effect-r1.md) — source correct; firedNavRef/explicitTab/server-snapshot unpinned (mutation-verified); useEffectEvent does NOT escape oxlint 1.79 rule
+- [fix/set-state-in-effect R2](project-set-state-in-effect-r2.md) — all R1 survivors killed; hydrate:true renderHook pins server snapshot; nits only
+- [fix/set-state-in-effect R3](project-set-state-in-effect-r3.md) — approved; locale-flip test mutation-verified, MISTAKES #10 consistent
 - [chat-news-enrich-invalidate R3](project-chat-news-enrich-invalidate-r3.md) — sync LLM enrich inside get_news's 30s core tool timeout (no stall watchdog on Gemini); STALE_FRESHNESS_DETAIL_LIMIT/stalePriceCount mutations survive
 
 ## Reference

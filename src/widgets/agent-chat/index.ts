@@ -12,4 +12,4 @@ export {
     PortfolioIcon,
     QuoteIcon,
     SparkIcon,
-} from './icons';
+} from '@/shared/ui/StrokeIcons';

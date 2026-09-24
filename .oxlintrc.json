@@ -43,10 +43,8 @@
         // eslint-config-next 패리티: exhaustive-deps는 warn(에러로 올리면 기존 코드가 막힌다).
         "react/exhaustive-deps": "warn",
 
-        // oxlint 1.79가 `react/react-compiler`를 규칙 24개로 쪼개며 correctness에 새로 들어왔다.
-        // 기존 훅 6곳(검색 오버레이·테마·백테스트 필터)이 걸리는데, 의존성 업그레이드 PR에서
-        // 훅 동작을 바꾸지 않으려고 exhaustive-deps와 같이 warn으로 둔다. 개별 정리는 후속 작업.
-        "react/set-state-in-effect": "warn",
+        // 훅 6곳(검색 오버레이·테마·백테스트 필터)을 전부 정리했다 — 강제한다.
+        "react/set-state-in-effect": "error",
 
         // oxlint 1.79부터 주석도 검사한다(ESLint 기본값에 맞춤). JSDoc 안에서 `*/`를 끊으려고
         // 일부러 넣은 zero-width space(`/* *​/`)가 걸리므로, 1.78까지의 동작대로 주석은 제외한다.

@@ -16,7 +16,7 @@ import { Composer } from './Composer';
 import { AGENT_ERROR_RETRYABLE } from './errorCopy';
 import { EmptyState, type PendingSuggestions } from './EmptyState';
 import { GUEST_TURNS_PER_DAY } from './guestTurnLimit';
-import { MenuIcon } from './icons';
+import { MenuIcon } from '@/shared/ui/StrokeIcons';
 import { loginHref } from './loginHref';
 import { MessageList } from './MessageList';
 import { Sidebar } from './Sidebar';

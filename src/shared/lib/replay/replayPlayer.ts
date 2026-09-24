@@ -1,11 +1,15 @@
 /**
- * Playback engine for the `/about` chat replay: a module-level state machine
- * (`runPlayback` → `playScenario` → `waitPlaying`) that takes an explicit
- * `PlaybackContext` instead of closing over component state, so it can run
- * outside React and be unit-tested with fake timers (MISTAKES.md #14.5).
+ * Playback engine shared by the two `/about` replays: a module-level state
+ * machine (`runPlayback` → `playScenario` → `waitPlaying`) that takes an
+ * explicit `PlaybackContext` instead of closing over component state, so it
+ * can run outside React and be unit-tested with fake timers (MISTAKES.md #14.5).
  *
- * `ChatReplay` only builds the context (refs, `setFrame`, cancellation) and
- * calls `runPlayback` from a `useEffect`; every timing decision lives here.
+ * The phases are generic — type an input, light up steps one by one, stream
+ * the body — so `ChatReplay` (ai.siglens.io, a question and tool lookups) and
+ * `ReportReplay` (siglens.io, a ticker URL and analysis steps) render the same
+ * `Frame` differently. Each only builds the context (refs, `setFrame`,
+ * cancellation) and calls `runPlayback` from a `useEffect`; every timing
+ * decision lives here.
  */
 
 import { lineLength, pickNextIndex, type ReplayScenario } from './replayScript';
@@ -154,7 +158,7 @@ export async function runPlayback(ctx: PlaybackContext): Promise<void> {
         }
     } catch (error) {
         if (!(error instanceof PlaybackCancelled)) {
-            console.error('[ChatReplay] playback stopped:', error);
+            console.error('[replay] playback stopped:', error);
         }
     }
 }
