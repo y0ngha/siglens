@@ -560,3 +560,11 @@
 - Violation (R1 REQUIRED, fixed): vitest 5가 `experimental.fsModuleCache`를 top-level `fsModuleCache`로 옮겼는데 옛 위치에 남겨 타입 에러 + 런타임 무시. 로컬 `yarn typecheck`가 0건으로 나와 놓쳤다
   - Rule: (new) 의존성 업그레이드 후 typecheck는 `*.tsbuildinfo`를 지우고 돌린다 — `incremental: true`가 업그레이드 전 진단을 재사용해 새 타입 에러를 숨긴다(이번에 0건 → 실제 2건)
   - Context: 설정을 top-level로 이동, 캐시 삭제 후 typecheck 0건·jest-dom 매처 타입 탐침 재확인
+
+## [feat/siglens-about-redesign Round 1–2 | siglens.io /about redesign | 2026-09-24]
+- Violation (pre-review, caught during implementation): `@/widgets/agent-chat` barrel imported into `src/views/about/AboutPage.tsx` (server-side view), leaking ~46 agent-chat client-side message keys into the route's `messages/_meta/clientKeys.json`
+  - Rule: A view on one host must not import another product's widget barrel for a leaf utility (icons): the i18n extractor follows the import graph and attaches that barrel's client message keys to the route. Move the shared piece to `shared/` and import it directly.
+  - Context: Moved icons to `src/shared/ui/StrokeIcons.tsx` and imported directly; barrel import removed. Verified clientKeys.json no longer includes agent-chat keys.
+- Violation (pre-review, caught while verifying copy against code): About copy claimed Polygon as data source (unused in code), stated "quotes delayed up to 15 minutes" (code shows 0 for US/crypto, 20 for KR), omitted Gemini
+  - Rule: MISTAKES.md §15.6 — Documentation must reflect runtime behavior; verify product capability claims against source code before submission
+  - Context: Removed Polygon, corrected timing to market-specific delays, added Gemini to supported sources
