@@ -16,7 +16,7 @@
 // 쓰는 것과 같은 이유로, 프레임워크가 패치하는 전역에서 벗어나 있어야 한다.
 //
 // `@upstash/redis` 패키지도 쓰지 않는다: Dockerfile runner 스테이지는 node_modules에서
-// sharp / @aws-sdk / @smithy / @aws-crypto / tslib만 명시 COPY한다(Dockerfile:65-76).
+// sharp / @aws-sdk / @smithy / @aws / tslib만 명시 COPY한다(Dockerfile runner 단계).
 // 필요한 명령이 ZADD / ZRANGE / ZREMRANGEBYSCORE / EXPIRE / TIME 뿐이라 직접 호출이 낫다.
 // 앱 코드(src/shared/cache/redisClient.ts)는 계속 패키지를 쓴다 — 이 모듈은 번들 밖
 // 평문 ESM이라 src/를 import할 수도 없다.

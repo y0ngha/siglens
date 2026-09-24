@@ -6,13 +6,15 @@
 ## TypeScript 7 (네이티브 컴파일러)
 
 - `yarn typecheck` = `tsc --noEmit` (typescript 7.0.2). 전체 타입체크 약 2초.
-- **Next 16.2와의 제약**: Next의 빌드타임 타입체크는 레거시 JS API
-  (`typescript/lib/typescript.js`)를 require하는데 TypeScript 7은 그 파일을
-  배포하지 않는다. Next는 `@typescript/native-preview`가 설치돼 있으면
-  "네이티브 컴파일러 사용 중"으로 보고 자기 타입체크를 건너뛴다
-  (`next/dist/lib/verify-typescript-setup.js`). 그래서 devDependencies의
-  `@typescript/native-preview`는 **미사용 패키지가 아니라 이 신호용**이다.
-  제거하면 `yarn build`가 깨진다(next.config.ts 상단 주석에도 명시).
+- **Next 16.3의 빌드타임 타입체크**: Next 16.3부터 `experimental.useTypeScriptCli`가
+  기본값이라 `next build`가 TypeScript CLI(`tsc`, TS 7)로 전체 타입체크를 돌린다
+  ("Running TypeScript" 단계, 수 초). 레거시 JS API(`typescript/lib/typescript.js`)는
+  더 이상 필요 없다.
+  - 16.2까지는 Next가 JS API를 require했는데 TypeScript 7은 그 파일을 배포하지 않아서,
+    `@typescript/native-preview`를 설치해 두면 Next가 "네이티브 컴파일러 사용 중"으로 보고
+    타입체크를 **건너뛰는** 동작에 기대고 있었다(`next/dist/lib/verify-typescript-setup.js`).
+    CLI 모드는 이 신호를 보지 않으므로 16.3에서는 빌드에 필요 없다. 패키지는 아래
+    에디터 언어 서버 용도로 남겨 두었다(제거해도 빌드는 깨지지 않는다).
 - 타입 안전성은 pre-push + CI의 `yarn typecheck`가 담당한다.
 - yarn은 4.18 이상이어야 한다. 4.12는 typescript@7에 compat 패치를 적용하려다
   `lib/_tsc.js` ENOENT로 install 자체가 실패한다.

@@ -9,14 +9,14 @@ const withBundleAnalyzer = bundleAnalyzer({
     enabled: process.env.ANALYZE === 'true',
 });
 
-// ⚠️ TypeScript 7 + Next 16.2 조합 주의
-// Next의 빌드타임 타입체크는 레거시 JS API(`typescript/lib/typescript.js`)를 require하는데,
-// TypeScript 7(네이티브 Go 컴파일러)은 그 파일을 배포하지 않는다. Next는 대신
-// `@typescript/native-preview`가 설치돼 있으면 "네이티브 컴파일러 사용 중"으로 인식하고
-// 자기 타입체크를 건너뛴다(next/dist/lib/verify-typescript-setup.js).
-// 따라서 devDependencies의 `@typescript/native-preview`는 미사용 패키지가 아니라 이 신호용이다 —
-// 제거하면 `yarn build`가 "trying to use TypeScript but do not have the required package(s)"로 깨진다.
-// 타입 안전성은 `yarn typecheck`(tsc --noEmit, TS7)가 pre-push + CI에서 담당한다.
+// TypeScript 7 + Next 16.3: 빌드타임 타입체크는 TypeScript CLI(`tsc`)로 돈다.
+// Next 16.3부터 `experimental.useTypeScriptCli` 기본값이 true라 레거시 JS API
+// (`typescript/lib/typescript.js`, TS 7에는 없음) 대신 `tsc`를 실행한다 — `next build`의
+// "Running TypeScript" 단계가 이것이다(TS 7이라 수 초).
+// 16.2까지는 JS API가 없어서 `@typescript/native-preview`를 "네이티브 컴파일러" 신호로 두고
+// 타입체크를 건너뛰게 했는데, CLI 모드에서는 그 신호를 보지 않는다. 패키지는 에디터의
+// 네이티브 언어 서버(tsgo)용으로만 남아 있다(docs/conventions/TOOLCHAIN.md).
+// 타입 안전성의 기준은 여전히 `yarn typecheck`(tsc --noEmit, TS7)다 — pre-push + CI.
 const nextConfig: NextConfig = {
     // self-host: Docker 최소 번들(.next/standalone + server.js)
     output: 'standalone',
@@ -132,6 +132,16 @@ const nextConfig: NextConfig = {
     // (stale 1m / revalidate 5m / expire 30m), options-market-closed
     // (5m / 30m / 2h), options-weekend (1h / 6h / 1d) cacheLife profile도
     // 함께 부활시킬 것.
+
+    // Next 16.3에서 기본 ON이 된 클라이언트 라우터 플래그(`validateRSCRequestHeaders`,
+    // `prefetchInlining`, `varyParams`, `optimisticRouting`, `appNewScrollHandler`)는 기본값 그대로 둔다.
+    // CDN 캐시 규칙(docs/architecture/CDN_CACHING.md §3 R1/R2)이 기대는 계약 — "RSC 요청은 항상
+    // `RSC` 헤더와 `_rsc` 쿼리를 함께 달고, `_rsc` URL은 `text/x-component`만 받는다" — 을 16.3.6
+    // 프로덕션 빌드에서 실제 클라이언트 내비게이션으로 확인했다(2026-09-24, 위반 0, 307 0).
+    // `validateRSCRequestHeaders`는 `_rsc`가 헤더 해시와 다르면 올바른 URL로 307을 보내므로
+    // URL만 키로 쓰는 CF 캐시에 다른 변종이 섞이는 것을 오히려 막는다. 전역 링크는
+    // `prefetch={false}`라 `prefetchInlining` 경로는 실측상 발생하지 않았다(7개 페이지 0건).
+    // 플래그를 바꾸거나 Next를 올릴 때는 같은 계약을 다시 확인할 것.
 
     // Turbopack (Next.js 16 기본값이나 명시)
     turbopack: {

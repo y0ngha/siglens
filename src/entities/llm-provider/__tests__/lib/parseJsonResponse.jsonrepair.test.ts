@@ -38,12 +38,20 @@ const CORPUS: ReadonlyArray<readonly [string, string, unknown]> = [
         '{"a":None,"b":True,"c":False}',
         { a: null, b: true, c: false },
     ],
-    ['number with leading dot', '{"a": .5}', THROWS],
-    ['unquoted value starting with a keyword', '{"a": trueish}', THROWS],
+    // 3.14.1+: `.5` is completed to `0.5`, and an unquoted value that merely
+    // starts with a keyword is quoted instead of failing (3.14.0 threw on both).
+    ['number with leading dot', '{"a": .5}', { a: 0.5 }],
+    [
+        'unquoted value starting with a keyword',
+        '{"a": trueish}',
+        { a: 'trueish' },
+    ],
     [
         'HTML-entity-encoded quotes',
         '{&quot;a&quot;:&quot;b&quot;}',
-        { '&quot;a&quot;': '&quot;b&quot;' },
+        // 3.15.0: entity-encoded structural quotes are decoded (3.14 kept them as
+        // literal key/value text). Entities inside a valid string stay put — below.
+        { a: 'b' },
     ],
     [
         'entities inside a valid string value survive',
@@ -55,7 +63,10 @@ const CORPUS: ReadonlyArray<readonly [string, string, unknown]> = [
         '{"reason":"지지선 "150" 부근","score":3}',
         THROWS,
     ],
-    ['backslash right after a closed string', '{"a":"b"\\}', { a: 'b' }],
+    // 3.15.0 (#175): a stray backslash after a closed string now fails the repair
+    // consistently instead of being dropped, glued into the previous value, or
+    // (array case) overflowing the stack. Failing surfaces as the labeled parse error.
+    ['backslash right after a closed string', '{"a":"b"\\}', THROWS],
     ['backslash after a string inside an array', '["a"\\,"b"]', THROWS],
 ];
 
