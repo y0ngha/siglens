@@ -39,6 +39,11 @@ export const GOOGLE_ADS_CONVERSION_LABELS: Readonly<
  * 핸드오프를 거쳐 ai 페이지로 돌아가므로, 상위 도메인에 둬야 ai 쪽이 읽는다.
  * 태그가 운영 빌드에서만 켜지므로 운영 도메인만 적는다(개발 환경에서는 브라우저가
  * 이 쿠키를 거부하지만 거기선 측정도 꺼져 있다).
+ *
+ * `shared/lib/seo.ts`의 `SITE_HOST`와 같은 값이지만 import하지 않는다. 이 설정은
+ * 클라이언트 훅(검색·챗)까지 로드되는데, seo 모듈을 부분 mock하는 테스트가 60개라
+ * 로드 시점에 `SITE_HOST`를 읽으면 그 mock들이 연쇄로 깨진다. 두 값이 어긋나지
+ * 않는지는 `shared/config/__tests__/googleAds.test.ts`가 검사한다.
  */
 export const SIGNUP_CONVERSION_COOKIE_DOMAIN = 'siglens.io';
 export const SIGNUP_CONVERSION_COOKIE_MAX_AGE_SECONDS = 600;

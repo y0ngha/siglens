@@ -374,10 +374,6 @@
   - Rule: (신규) 검색 결과용으로 쓴 제목 문자열을 화면 헤딩으로 재사용하지 않는다.
   - Context: `app.symbols.page.heading` 키를 따로 두고 h1·가시 브레드크럼·BreadcrumbList `name`이 그것을 쓴다. `<title>`만 꼬리표를 유지한다.
 
-- Violation: (recommended) TTL 리터럴이 `24 * SECONDS_PER_HOUR`로 재계산돼 있었고 페이지는 같은 값을 `86400`으로 하드코딩했다. `SECONDS_PER_DAY`가 이미 있다.
-  - Rule: MISTAKES.md §15 — 같이 움직여야 하는 두 값에 공통 출처가 없으면 드리프트한다.
-  - Context: TTL은 `SECONDS_PER_DAY`에서 파생하고, 페이지의 `revalidate` 리터럴과의 일치는 소스를 읽는 parity 테스트가 고정한다(Next가 `revalidate`를 정적 분석해 import를 못 쓴다).
-
 ## [fix/symbols-copy-and-names Round 2 | /symbols 표기·문구 | 2026-09-18]
 - Status: APPROVED (지적 없음)
 
@@ -477,10 +473,6 @@
 - Violation: New pure/helper module lib/aboutContent.ts with no colocated unit test
   - Rule: MISTAKES.md Components §22 / DESIGN.md checklist §6 — All new pure/helper modules must include colocated unit test file
   - Context: Added lib/aboutContent.test.ts with tests covering the module's exports and edge cases
-- Suggestion (fixed): Magic delay numbers (300, 900, 350, 120 ms) in the replay playback steps had no constant names
-  - Rule: MISTAKES.md §15 — Hardcoded numbers in function bodies must be named constants with clear intent
-  - Context: Named FIRST_START_MS, NEXT_START_MS, AFTER_TYPING_MS, TOOL_GAP_MS, BEFORE_ANSWER_MS in src/views/ai-about/lib/replayPlayer.ts
-
 ## [PR #852 claude-review R2 | ai.siglens.io/about | 2026-09-19]
 - Violation: A render test listed in the implementation plan (AboutCtaBar, plan Task 3) was never written; the plan task was silently skipped
   - Rule: (new) Before requesting review, diff the plan's test list against the test files actually created
@@ -502,9 +494,6 @@
 - Suggestion (fixed): `runPlayback` in src/views/ai-about/lib/replayPlayer.ts caught every error silently, not only cancellation
   - Rule: MISTAKES.md — catch blocks must not swallow errors without logging
   - Context: cancellation now rejects with a `PlaybackCancelled` Error subclass; other errors are logged with console.error; test added
-- Suggestion (fixed): JSDoc in src/app/ai/[locale]/about/page.tsx claimed every link out of the page leads to `/`, but the "more on SIGLENS" links go to siglens.io
-  - Rule: MISTAKES.md §15.6 — comment accuracy
-  - Context: reworded to the real reason (no account-specific content; ways into the chat go to `/`)
 - Suggestion (fixed): unused `BankIcon` re-export added to the widgets/agent-chat barrel
   - Rule: do not widen a slice's public surface with exports nobody imports
   - Context: removed
@@ -531,9 +520,6 @@
 - Violation (R3, recommended): 같은 확장으로 `'crypto'`가 페이지 전용 Server Action 3종(`getSectorSignalsAction`, `getMarketSummaryClientAction`, `submitMarketBriefingAction`)의 유효 입력이 됐다. 셋 다 `isDashboardScopeId`만으로 검증해, 네트워크로 직접 부르면 화면 없는 scope의 시세 조회·브리핑 생성을 시킬 수 있었다
   - Rule: (신규) 네트워크에서 직접 호출 가능한 Server Action은 "앱이 아는 값인가"가 아니라 "이 진입점이 다루는 값인가"로 좁힌다
   - Context: `isPageDashboardScopeId`(= `hasHubPage`) 신설 후 세 액션에 적용
-- Violation (R4, recommended): 가드를 좁히면서 다른 참조 지점의 주석이 낡았다 — `src/app/api/analysis/stream/route.ts`가 여전히 `isDashboardScopeId`를 가리켰다
-  - Rule: MISTAKES.md §15.6 — 주석 정확성. 가드·상수를 바꾸면 그것을 설명하는 다른 자리도 같은 커밋에서 갱신한다
-  - Context: 주석을 `isPageDashboardScopeId`로 정정
 - Note: 배선 4건(뉴스 카테고리 다이제스트, 시장 브리핑 peek, 공포·탐욕 `comparisons`, 종목 자체 공포·탐욕)과 R3 수정 2건은 각각 되돌림 검증을 거쳤다 — 소스를 원복하면 해당 테스트가 실패한다
 
 ## [chore/deps-2026-09 Round 1 | 의존성 업그레이드 | 2026-09-24]
@@ -547,15 +533,7 @@
 
 
 ## [chore/node24-yahoo4 Round 1 | Node 24 정렬 + yahoo-finance2 4 | 2026-09-24]
-- Violation (R1 recommended, fixed): 런타임 버전을 바꾸면서 그 버전을 근거로 든 설정 주석(`vitest.config.ts` forks 풀, `vitest.setup.base.ts` localStorage 폴리필)을 갱신하지 않았다
-  - Rule: MISTAKES.md §15.6 — 주석 정확성. 런타임·라이브러리 버전을 올리면 그 버전을 근거로 든 주석을 grep(`Node 25` 등)해 새 런타임에서 전제를 재검증하고 함께 고친다
-  - Context: Node 24.21에서 vmThreads·threads 풀 기동을 재확인, forks 유지 사유(PR #558 env 누수)를 주석에 명시
 - Note: yahoo-finance2 4.0은 릴리스 노트 breaking("Node 22+") 밖에 "인스턴스 간 crumb·큐·debounce 공유 중단"이 있었다. 모듈별 인스턴스 → 동시 요청 4→12(실측). `getYahooClient()` 싱글턴으로 복원, 되돌리면 실패하는 테스트 추가
-
-## [PR #865 claude-review R1 | chore/node24-yahoo4 | 2026-09-24]
-- Violation (Blocker, fixed): yahoo-finance2를 3.15.4→4.0.2로 올리면서 `3.15.3`을 근거로 든 주석 3곳(`createYahooClient.ts`의 queue.timeout, 그 테스트, `YahooOptionsAdapter.ts`의 `defaults.js:24`)을 재검증하지 않았다 — 같은 PR에서 Node 25 주석은 고쳤는데 라이브러리 버전 주석엔 같은 규칙을 적용하지 않았다(형제 규칙 불일치)
-  - Rule: MISTAKES.md §15.6 — 의존성을 올리면 `git grep`으로 **이전 버전 번호 문자열**(`3.15.3` 등)을 찾아, 그 주석의 사실(줄 번호·동작)을 새 버전 실물 소스에서 재확인하고 함께 고친다
-  - Context: 4.0.2 소스로 재확인 — queue.timeout 여전히 죽은 속성(`defaults.js:16`), `logErrors` 기본값은 `defaults.js:19`로 이동·의미 동일, fetch 우선순위 동일하고 `envFetch`는 null이라 우리 타임아웃 fetch가 적용됨
 
 ## [chore/test-tooling-majors Round 1 | vitest 5·jsdom 30 | 2026-09-24]
 - Violation (R1 REQUIRED, fixed): vitest 5가 `experimental.fsModuleCache`를 top-level `fsModuleCache`로 옮겼는데 옛 위치에 남겨 타입 에러 + 런타임 무시. 로컬 `yarn typecheck`가 0건으로 나와 놓쳤다
@@ -587,14 +565,6 @@
 - Violation (pre-review, caught during implementation): `@/widgets/agent-chat` barrel imported into `src/views/about/AboutPage.tsx` (server-side view), leaking ~46 agent-chat client-side message keys into the route's `messages/_meta/clientKeys.json`
   - Rule: A view on one host must not import another product's widget barrel for a leaf utility (icons): the i18n extractor follows the import graph and attaches that barrel's client message keys to the route. Move the shared piece to `shared/` and import it directly.
   - Context: Moved icons to `src/shared/ui/StrokeIcons.tsx` and imported directly; barrel import removed. Verified clientKeys.json no longer includes agent-chat keys.
-- Violation (pre-review, caught while verifying copy against code): About copy claimed Polygon as data source (unused in code), stated "quotes delayed up to 15 minutes" (code shows 0 for US/crypto, 20 for KR), omitted Gemini
-  - Rule: MISTAKES.md §15.6 — Documentation must reflect runtime behavior; verify product capability claims against source code before submission
-  - Context: Removed Polygon, corrected timing to market-specific delays, added Gemini to supported sources
-
-## [PR #871 claude-review | feat/siglens-about-redesign | 2026-09-24]
-- Violation (Suggestion, fixed): ReportReplay.tsx demo address bar hardcoded literal `siglens.io/`
-  - Rule: MISTAKES.md §15 — Hardcoded host literals must be extracted to shared constants (SITE_HOST) and passed as props from server; client modules must not import config from shared/lib/seo
-  - Context: Added `export const SITE_HOST = 'siglens.io'` to `src/shared/lib/seo.ts`; reused in `resolveSiteUrl` (default URL and production host guard); passed to ReportReplay as `labels.host` prop from server component so client has no direct import of seo module
 
 ## [PR #871 CI e2e | feat/siglens-about-redesign | 2026-09-24]
 - Violation: `page.locator('script[type="application/ld+json"]', { hasText: '"FAQPage"' }).toHaveCount(1)` returned 0 — `<script>` element text is not queryable with Playwright `hasText` filter
@@ -606,3 +576,11 @@
   - Rule: (new) When adding a side effect (analytics/tracking) to a public entry point, check every internal caller that re-enters that entry point (retry/replay paths). Side effects must be decoupled from the re-entrant path by splitting the entry point into an untracked internal method and a public method that applies the side effect, then calls the internal method. No test asserted the conversion count across retry.
   - Context: Split into an untracked internal `submit()` and a public `send()` that applies tracking then calls `submit()`; `retry()` now replays via `submit()` instead of `send()`. Retry test asserts the conversion fires exactly once; verified it fails if retry is reverted to `send()`.
 - Status (R2): APPROVED (zero findings)
+
+## [PR #873 CI + claude-review | feat/google-ads-conversion | 2026-09-24]
+- Violation (CI failure): New client component `src/app/_components/GoogleAdsTag.tsx` imported `usePathname` from `next/navigation` directly; the repo-wide guard `src/shared/i18n/__tests__/useAppPathname.test.ts` fails on any non-allowlisted raw `usePathname` import.
+  - Rule: (new) Components must use `useAppPathname` (locale prefix stripped) unless the file is deliberately added to `ALLOWED_RAW_PATHNAME_USERS` with a reason. Scoped test runs do not execute this guard — run the full suite once before push.
+  - Context: The component only needs a route-change key, so it now uses `useAppPathname`; behavior is unchanged.
+- Violation (caught by full suite while applying review Suggestion): Importing `SITE_HOST` from `@/shared/lib/seo` into `src/shared/config/googleAds.ts` (read at module load) broke `src/app/[locale]/account/__tests__/page.test.ts`, whose partial `vi.mock('@/shared/lib/seo')` lacks `SITE_HOST`; 25 of 60 tests mocking that module omit it.
+  - Rule: (new) A widely imported config module must not read values from a frequently partial-mocked module at load time; keep the literal and guard against drift with a test that compares against the real constant.
+  - Context: Reverted to the `'siglens.io'` literal with a comment; `src/shared/config/__tests__/googleAds.test.ts` asserts it equals `SITE_HOST`.

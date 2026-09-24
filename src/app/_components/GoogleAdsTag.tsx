@@ -1,8 +1,8 @@
 'use client';
 
 import Script from 'next/script';
-import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
+import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import {
     consumeSignupConversionFlag,
     trackAdsConversion,
@@ -25,7 +25,7 @@ interface GoogleAdsTagProps {
  * 클라이언트 내비게이션이라 이 컴포넌트가 다시 마운트되지 않는다.
  */
 export function GoogleAdsTag({ id }: GoogleAdsTagProps) {
-    const pathname = usePathname();
+    const pathname = useAppPathname();
     useEffect(() => {
         if (consumeSignupConversionFlag()) trackAdsConversion('signUp');
     }, [pathname]);
