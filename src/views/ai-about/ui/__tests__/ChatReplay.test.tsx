@@ -1,6 +1,9 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { parseReplayLine, type ReplayScenario } from '../../lib/replayScript';
+import {
+    parseReplayLine,
+    type ReplayScenario,
+} from '@/shared/lib/replay/replayScript';
 import { ChatReplay } from '../ChatReplay';
 
 const scenario = (id: string, question: string): ReplayScenario => ({

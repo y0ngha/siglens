@@ -20,7 +20,7 @@ import {
     RefreshIcon,
     SearchIcon,
     SparkIcon,
-} from './icons';
+} from '@/shared/ui/StrokeIcons';
 import { toolResultError } from './utils/toolSummary';
 
 type IconComponent = ComponentType<{ className?: string }>;

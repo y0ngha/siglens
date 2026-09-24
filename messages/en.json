@@ -1387,7 +1387,6 @@
                 }
             },
             "legal": {
-                "aboutIntro": "What {v0} is, who built it, and what data and process each analysis goes through. We believe an investment tool can only be judged when you know who made it and how.",
                 "investmentDisclaimer": "The analysis on this service is for reference only; investment decisions are your own responsibility.",
                 "privacyBottomNotice": "For the full terms of use, see the <link>Terms of Service</link>.",
                 "privacyIntro": "{v0} (“the operator”) takes your personal data seriously and works to comply with the Personal Information Protection Act and related laws. This privacy policy explains how the personal data you provide is used, for what purposes, and what measures protect it.",
@@ -1425,8 +1424,9 @@
                 "investmentDisclaimerSummary": "Investment disclaimer summary"
             },
             "about": {
-                "description": "Siglens is an AI stock and crypto analysis service built and run by independent developer y0ngha. Learn where the data comes from, how each analysis is produced, how often it refreshes, its limits, and how to get in touch.",
-                "title": "About Siglens"
+                "description": "Siglens is a free service that takes one ticker and has AI analyze its chart, financial statements, news, and options together. It covers US stocks, Korean stocks, and crypto. This page explains its data sources, how the analysis is made, who runs it, and its limits.",
+                "title": "About Siglens",
+                "metaTitle": "About Siglens: AI Analysis for US & Korean Stocks and Crypto"
             },
             "account": {
                 "description": "Siglens account settings page",
@@ -2264,6 +2264,176 @@
                 "search": "Ticker search",
                 "web": "Web search"
             }
+        },
+        "about": {
+            "hero": {
+                "eyebrow": "About Siglens",
+                "title": "Enter one ticker. AI analyzes all of it at once.",
+                "lede": "Charts, financial statements, news, and options usually live in different places. Siglens gathers them, runs the numbers, and writes it up as a report you can actually read. US stocks, Korean stocks, and crypto all work."
+            },
+            "example": {
+                "aapl": "Apple",
+                "nvda": "NVIDIA",
+                "samsung": "Samsung Electronics",
+                "btc": "Bitcoin"
+            },
+            "replay": {
+                "title": "Here's what happens when you open a ticker page",
+                "body": "It gathers the data, computes everything by fixed rules, and then AI explains the results in plain words.",
+                "badge": "Example",
+                "region": "Example of how Siglens analyzes a ticker",
+                "pause": "Pause",
+                "resume": "Play",
+                "sources": "Based on",
+                "summary": "Analyzed in {count} steps",
+                "asOf": "As of {time}",
+                "note": "This is an example. The numbers are made up for illustration; real analysis lives on each ticker page.",
+                "step": {
+                    "bars": "Prices & chart",
+                    "barsPending": "Loading prices & chart",
+                    "indicators": "Indicators",
+                    "indicatorsPending": "Computing indicators",
+                    "patterns": "Candle & chart patterns",
+                    "patternsPending": "Finding patterns",
+                    "fundamentals": "Financials & news",
+                    "fundamentalsPending": "Checking financials & news",
+                    "news": "News",
+                    "newsPending": "Checking news",
+                    "report": "AI report",
+                    "reportPending": "AI is writing it up"
+                },
+                "subject": {
+                    "daily": "daily",
+                    "kinds": "{count} types"
+                },
+                "aapl": {
+                    "a1": "<b>Apple (AAPL)</b> keeps trending up above its 50-day moving average.",
+                    "a2": "Up <up>+6.2%</up> over the past month, stronger than the Nasdaq over the same stretch.",
+                    "a3": "RSI, which gauges how overheated a stock is, sits at <b>64</b>. That's just under the overheated line of 70, so a short pause wouldn't be surprising.",
+                    "a4": "The price levels to watch are around <b>$221</b> below and <b>$238</b> above.",
+                    "a5": "Earnings are two weeks out, so moves may get bigger around that date.",
+                    "asOf": "US close"
+                },
+                "samsung": {
+                    "a1": "<b>Samsung Electronics</b> slipped below its 20-day moving average, and momentum has weakened.",
+                    "a2": "Down <down>-4.1%</down> over five days, on volume about 30% above normal.",
+                    "a3": "The last candle left a long lower wick, a sign that buyers stepped in at lower prices.",
+                    "a4": "The first support to check is around <b>₩70,000</b>.",
+                    "a5": "It's sensitive to chip-industry news right now, so check the news tab too.",
+                    "asOf": "Korea close"
+                },
+                "btc": {
+                    "a1": "<b>Bitcoin</b> has moved inside a narrow range for three weeks.",
+                    "a2": "The Bollinger Bands, which track how widely price swings, are the tightest in three months. That often means a bigger move is near.",
+                    "a3": "Up <up>+1.3%</up> in 24 hours, on normal volume.",
+                    "a4": "The key question is whether it breaks above <b>$68,500</b> or below <b>$63,200</b>.",
+                    "a5": "The Fear & Greed Index, which reads overall market mood, is at <b>52</b>: neutral.",
+                    "asOf": "last 24 hours"
+                }
+            },
+            "pain": {
+                "title": "If this sounds familiar",
+                "body": "Common frustrations with finding stock information, and how Siglens handles them.",
+                "wasLabel": "Before",
+                "scattered": "Charts on one site, financials on another, news somewhere else.",
+                "scatteredFix": "One ticker page holds the chart, financial statements, news, options, and congressional trades.",
+                "tooMany": "So many indicators that I didn't know which ones mattered.",
+                "tooManyFix": "It computes all {indicators} indicators and explains only the signals worth watching right now.",
+                "madeUp": "I didn't trust AI not to make up numbers.",
+                "madeUpFix": "Numbers are computed by rules first, and AI only explains them. If the plain-language text includes a number the computation didn't produce, it gets filtered out.",
+                "jargon": "Even after reading a report, the jargon lost me.",
+                "jargonFix": "The default view is 'Simple', with jargon spelled out. Switch to 'Original' any time to see the indicator names and raw numbers.",
+                "markets": "US stocks, Korean stocks, and crypto each needed a different site.",
+                "marketsFix": "All three markets are analyzed the same way, and search works with company names as well as tickers."
+            },
+            "data": {
+                "title": "What one ticker page covers",
+                "body": "Each tab on a ticker page is analyzed on its own, then the Overall tab ties them together.",
+                "scopeAll": "US & Korean stocks, crypto",
+                "scopeEquity": "US & Korean stocks",
+                "scopeUs": "US stocks",
+                "example": "See {name} {tab}",
+                "chart": "Chart & indicators",
+                "chartBody": "Computes {indicators} indicators from price and volume, such as the moving average, RSI, and MACD.",
+                "patterns": "Candle & chart patterns",
+                "patternsBody": "Finds {candles} candlestick patterns and {patterns} chart patterns, and marks the price levels that act as support and resistance.",
+                "financials": "Financial statements",
+                "financialsBody": "Reads revenue, profit, and cash flow by quarter and year to judge whether the company earns well and stays sturdy.",
+                "fundamental": "Earnings & valuation",
+                "fundamentalBody": "Uses the earnings trend and valuation metrics like P/E to gauge whether the price is expensive or cheap.",
+                "news": "News",
+                "newsBody": "Collects recent articles and summarizes what could move the price. Korean tickers use Korean news.",
+                "options": "Options",
+                "optionsBody": "Reads the market's expectations from options trading, and the price levels where that trading clusters.",
+                "congress": "Congressional trades",
+                "congressBody": "Shows trades in this stock disclosed by members of the US Senate and House.",
+                "fearGreed": "Fear & Greed Index",
+                "fearGreedBody": "Scores from 0 to 100 how strong the buying mood around this ticker is right now."
+            },
+            "method": {
+                "title": "How each analysis is made",
+                "body": "AI doesn't write the answer from scratch. The computation decides the numbers; AI explains them.",
+                "step1": "Gather the data",
+                "step1Body": "Price and financial data come from Financial Modeling Prep and Yahoo Finance, the Korean ticker list from the Korea Public Data Portal (KRX), and Korean news from Naver News search.",
+                "step2": "Compute by rules",
+                "step2Body": "{indicators} indicators, {candles} candlestick patterns, and {strategies} strategies are computed first by fixed rules. Whether a signal fired is decided here.",
+                "step3": "AI explains, then gets checked",
+                "step3Body": "Only the computed results go to AI (OpenAI, Anthropic, Google, and DeepSeek models) to be written up. The text then passes format checks and cleanup before it reaches the screen.",
+                "freshTitle": "How fresh is it?",
+                "freshQuote": "US stock and crypto prices arrive with no delay; Korean stock prices can lag by up to 20 minutes.",
+                "freshRefresh": "The analysis shown in advance on ticker pages is rebuilt in turn after each market close. Running an analysis on the page builds a new one from the data at that moment.",
+                "freshMember": "Members can pick stronger models and reasoning options.",
+                "backtest": "See results checked against past data"
+            },
+            "operator": {
+                "title": "Who builds and runs it",
+                "body": "Siglens is built and run alone by independent developer {name}. Costs are paid out of pocket, there's no brokerage or asset-manager affiliation, and no payment is taken to promote any stock. There's no trading or order feature, and no brokerage account connection.",
+                "role": "Development & operations",
+                "email": "Email",
+                "github": "GitHub profile",
+                "repo": "Public source code"
+            },
+            "limits": {
+                "title": "Limits you should know",
+                "wrong": "AI-written text can contain factual errors or misread numbers.",
+                "past": "It's based on past data, so it doesn't guarantee future results.",
+                "personal": "It doesn't account for your personal finances or goals.",
+                "variance": "A different model or prompt can produce different text for the same data.",
+                "levels": "Entry, stop loss, and target levels in an analysis are reference numbers computed from chart structure. They explain what to check at each price; they are not instructions to trade.",
+                "disclaimer": "Siglens analysis is for reference only. It doesn't recommend buying or selling or give investment advice, and investment decisions are your own responsibility.",
+                "terms": "Terms of Service"
+            },
+            "faq": {
+                "title": "Frequently asked questions",
+                "whatQ": "What is Siglens?",
+                "whatA": "A web service where you enter a company name or ticker and AI analyzes its chart, indicators, candlestick patterns, financial statements, news, options, US congressional trades, and the Fear & Greed Index together. It covers US stocks, Korean stocks (KOSPI and KOSDAQ), and crypto.",
+                "freeQ": "Is it free? Do I need an account?",
+                "freeA": "Basic analysis is free with no sign-up. Members can pick stronger AI models and reasoning options, and see a few more details such as entry, stop loss, and target levels.",
+                "coverageQ": "Does it cover Korean stocks and crypto?",
+                "coverageA": "Yes. Korean stocks get the chart, earnings, financial statements, news, Fear & Greed Index, and overall analysis. Crypto gets the chart, news, Fear & Greed Index, and overall analysis. Options and congressional trades exist only for US stocks.",
+                "accuracyQ": "Does the AI make up numbers?",
+                "accuracyA": "Indicators and signals are computed by fixed rules, not by AI. AI receives the computed values and only explains them, and plain-language text that contains a number the computation didn't produce is filtered out. Mistakes can still slip into the text, so check important numbers against the chart.",
+                "adviceQ": "Does it tell me what to buy or sell?",
+                "adviceA": "No. Siglens doesn't give investment advice. The analysis is reference material to help you decide; the decision and its responsibility are yours.",
+                "aiQ": "How is it different from SIGLENS AI?",
+                "aiA": "Siglens shows an analysis report in a fixed format when you enter a ticker. SIGLENS AI (ai.siglens.io) answers questions you ask in conversation, looking up prices, news, and analysis as it goes. Siglens is handy for digging into one ticker; SIGLENS AI for a string of follow-up questions.",
+                "contactQ": "Where do I report something wrong?",
+                "contactA": "Send an email or use the contact link at the bottom of the page. The operator reads and answers it personally."
+            },
+            "more": {
+                "title": "Explore more",
+                "marketUs": "US market analysis",
+                "marketKr": "Korean market analysis",
+                "fearGreed": "Market Fear & Greed Index",
+                "backtesting": "Backtest results",
+                "ai": "About SIGLENS AI"
+            },
+            "end": {
+                "title": "Have a ticker in mind?",
+                "body": "Enter a company name or ticker to see its analysis right away.",
+                "button": "See Apple's analysis"
+            },
+            "updated": "Last updated: {date}"
         }
     },
     "widgets": {

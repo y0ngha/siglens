@@ -583,3 +583,20 @@
 - Violation (Blocker, fixed): 순수 헬퍼 `resolveTypedTarget`·`normalizeLabel`을 훅 파일에 정의(MISTAKES #18) — `lib/resolveSubmitTarget.ts`·`lib/normalizeLabel.ts`로 이동하고 테스트 추가
 - Question (answered, comment only): `?ticker=`만 바뀌는 히스토리 이동은 구독이 알리지 않아 스스로 재렌더되지 않는다(이전 구현과 같은 한계) — 주석을 단정 대신 사실대로 정정
 
+## [feat/siglens-about-redesign Round 1–2 | siglens.io /about redesign | 2026-09-24]
+- Violation (pre-review, caught during implementation): `@/widgets/agent-chat` barrel imported into `src/views/about/AboutPage.tsx` (server-side view), leaking ~46 agent-chat client-side message keys into the route's `messages/_meta/clientKeys.json`
+  - Rule: A view on one host must not import another product's widget barrel for a leaf utility (icons): the i18n extractor follows the import graph and attaches that barrel's client message keys to the route. Move the shared piece to `shared/` and import it directly.
+  - Context: Moved icons to `src/shared/ui/StrokeIcons.tsx` and imported directly; barrel import removed. Verified clientKeys.json no longer includes agent-chat keys.
+- Violation (pre-review, caught while verifying copy against code): About copy claimed Polygon as data source (unused in code), stated "quotes delayed up to 15 minutes" (code shows 0 for US/crypto, 20 for KR), omitted Gemini
+  - Rule: MISTAKES.md §15.6 — Documentation must reflect runtime behavior; verify product capability claims against source code before submission
+  - Context: Removed Polygon, corrected timing to market-specific delays, added Gemini to supported sources
+
+## [PR #871 claude-review | feat/siglens-about-redesign | 2026-09-24]
+- Violation (Suggestion, fixed): ReportReplay.tsx demo address bar hardcoded literal `siglens.io/`
+  - Rule: MISTAKES.md §15 — Hardcoded host literals must be extracted to shared constants (SITE_HOST) and passed as props from server; client modules must not import config from shared/lib/seo
+  - Context: Added `export const SITE_HOST = 'siglens.io'` to `src/shared/lib/seo.ts`; reused in `resolveSiteUrl` (default URL and production host guard); passed to ReportReplay as `labels.host` prop from server component so client has no direct import of seo module
+
+## [PR #871 CI e2e | feat/siglens-about-redesign | 2026-09-24]
+- Violation: `page.locator('script[type="application/ld+json"]', { hasText: '"FAQPage"' }).toHaveCount(1)` returned 0 — `<script>` element text is not queryable with Playwright `hasText` filter
+  - Rule: (new) Playwright `hasText` filters cannot query script element content; inline JSON requires `page.request.get()` + text assertions on SSR HTML
+  - Context: Fixed e2e/specs/legal.spec.ts test to read `/about` with `page.request.get()` and assert response `toContain('"@type":"AboutPage"')` / `toContain('"@type":"FAQPage"')`, matching the pattern in e2e/specs/market-fear-greed.spec.ts
