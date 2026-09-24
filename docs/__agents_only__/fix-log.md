@@ -495,3 +495,8 @@
 - Violation: `page.locator('script[type="application/ld+json"]', { hasText: '"FAQPage"' }).toHaveCount(1)` returned 0 — `<script>` element text is not queryable with Playwright `hasText` filter
   - Rule: (new) Playwright `hasText` filters cannot query script element content; inline JSON requires `page.request.get()` + text assertions on SSR HTML
   - Context: Fixed e2e/specs/legal.spec.ts test to read `/about` with `page.request.get()` and assert response `toContain('"@type":"AboutPage"')` / `toContain('"@type":"FAQPage"')`, matching the pattern in e2e/specs/market-fear-greed.spec.ts
+
+## [PR #872 Round 1 | feat/symbol-views | 2026-09-24]
+- Violation: scripts/update-popular-cryptos.ts added visit-driven crypto candidates (from outside the hand-maintained CRYPTO_CANDIDATE_POOL) to POPULAR_CRYPTOS, which would break the existing invariant test `CRYPTO_CANDIDATE_POOL contains all current POPULAR_CRYPTOS symbols` as soon as the script's output was committed. Same class as the earlier dashboardScope/KR_CATEGORY_IDS issues in this PR: a new data source feeding a config list without checking every existing test-enforced invariant over that list.
+  - Rule: (new) When a script gains a new path that appends to a config list, grep tests for invariants over that list and verify by applying the script's output to the real file and running the suite (dry run).
+  - Context: Fixed with scripts/lib/cryptoPoolInsert.ts (pure anchor insert into the pool) + main writes the pool first. Lesson: when a script's new path appends to a config list, grep tests for invariants over that list and verify by dry-running the script's output against the test suite.

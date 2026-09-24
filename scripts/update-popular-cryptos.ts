@@ -37,6 +37,7 @@ import {
     writeFileSync,
 } from 'fs';
 import { dirname, resolve } from 'path';
+import { insertIntoCandidatePool } from './lib/cryptoPoolInsert';
 import {
     classifyVisitSymbol,
     selectVisitCandidates,
@@ -136,6 +137,9 @@ export const CRYPTO_CANDIDATE_POOL: readonly string[] = [
     'MANAUSD',
     'APEUSD',
 ];
+
+/** 방문 후보를 `CRYPTO_CANDIDATE_POOL`에도 넣기 위해 이 스크립트 자신을 편집한다. */
+const SCRIPT_PATH = resolve(process.cwd(), 'scripts/update-popular-cryptos.ts');
 
 const POPULAR_CRYPTOS_PATH = resolve(
     process.cwd(),
@@ -406,9 +410,9 @@ export function deduplicateCryptoEntries(
  */
 export function insertCryptoTrendingSection(
     fileContent: string,
-    newSymbols: readonly string[]
+    newSymbols: readonly string[],
+    date: string = new Date().toISOString().slice(0, 10)
 ): string {
-    const date = new Date().toISOString().slice(0, 10);
     const sectionHeader = `// --- Trending (${date}) ---`;
 
     if (fileContent.includes(sectionHeader)) {
@@ -640,9 +644,12 @@ async function main(): Promise<void> {
         return;
     }
 
+    // Trending 섹션 헤더와 풀 주석이 같은 날짜를 쓰도록 한 번만 계산한다(UTC 자정 경계).
+    const todayKey = new Date().toISOString().slice(0, 10);
     const contentWithTrendingSection = insertCryptoTrendingSection(
         initialDeduplication.content,
-        symbolsToAdd
+        symbolsToAdd,
+        todayKey
     );
     const addedSymbols =
         contentWithTrendingSection === initialDeduplication.content
@@ -656,6 +663,20 @@ async function main(): Promise<void> {
         console.log(
             `Duplicate symbols removed after update: ${finalDeduplication.removedSymbols.join(', ')}`
         );
+    }
+
+    // 방문 후보는 풀 밖에서 오므로 풀에도 넣는다(`CRYPTO_CANDIDATE_POOL ⊇ POPULAR_CRYPTOS`).
+    // 풀을 먼저 쓴다 — 목록 쓰기가 실패해도 풀이 상위집합인 상태는 유지된다.
+    if (addedSymbols.length > 0 && visitSymbols.length > 0) {
+        const scriptContent = readFileSync(SCRIPT_PATH, 'utf-8');
+        const updatedScript = insertIntoCandidatePool(
+            scriptContent,
+            visitSymbols,
+            todayKey
+        );
+        if (updatedScript !== scriptContent) {
+            commitFileAtomically(SCRIPT_PATH, updatedScript);
+        }
     }
 
     commitFileAtomically(POPULAR_CRYPTOS_PATH, finalDeduplication.content);
