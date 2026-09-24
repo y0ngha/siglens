@@ -556,6 +556,11 @@
   - Rule: MISTAKES.md §15.6 — 의존성을 올리면 `git grep`으로 **이전 버전 번호 문자열**(`3.15.3` 등)을 찾아, 그 주석의 사실(줄 번호·동작)을 새 버전 실물 소스에서 재확인하고 함께 고친다
   - Context: 4.0.2 소스로 재확인 — queue.timeout 여전히 죽은 속성(`defaults.js:16`), `logErrors` 기본값은 `defaults.js:19`로 이동·의미 동일, fetch 우선순위 동일하고 `envFetch`는 null이라 우리 타임아웃 fetch가 적용됨
 
+## [chore/test-tooling-majors Round 1 | vitest 5·jsdom 30 | 2026-09-24]
+- Violation (R1 REQUIRED, fixed): vitest 5가 `experimental.fsModuleCache`를 top-level `fsModuleCache`로 옮겼는데 옛 위치에 남겨 타입 에러 + 런타임 무시. 로컬 `yarn typecheck`가 0건으로 나와 놓쳤다
+  - Rule: (new) 의존성 업그레이드 후 typecheck는 `*.tsbuildinfo`를 지우고 돌린다 — `incremental: true`가 업그레이드 전 진단을 재사용해 새 타입 에러를 숨긴다(이번에 0건 → 실제 2건)
+  - Context: 설정을 top-level로 이동, 캐시 삭제 후 typecheck 0건·jest-dom 매처 타입 탐침 재확인
+
 ## [fix/deepseek-pr-review-followup R1 | PR #859·#860·#861 리뷰 후속 + overall technical 캐시 키 배선 | 2026-09-24]
 - Violation (not a review finding, found by CloudWatch `[Usage]` 실측): core 1.13.1이 overall `technical` 축에 `priorAnalyses`·`marketEvents`를 열었는데(두 값이 technical 캐시 키 `:hist=`·`:evt=`로 접힘) siglens 소비자 3곳 중 어디도 넘기지 않아, overall이 technical 탭이 막 채운 캐시를 못 맞히고 1Day 분석을 매번 다시 생성했다(심볼당 2회, 프리웜 DeepSeek 지출 ~25%). core 커밋 메시지가 "소비자는 양쪽 다 넘겨야 한다"고 경고했지만 소비자 bump PR이 배선을 하지 않았다
   - Rule: core가 캐시 키에 접히는 **선택 필드**를 추가하면, 소비자 bump 때 그 필드를 쓰는 모든 형제 호출부(단독 `runAnalysis` 경로와 overall 축 경로)를 grep해 양쪽 다 넘기거나 양쪽 다 생략한다 — 타입도 테스트도 불일치를 잡지 못한다. 배포 후 `[Usage]`에서 jobId별 호출 수(심볼당 1회인지)로 확인
