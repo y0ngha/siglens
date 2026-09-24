@@ -10,6 +10,7 @@ import {
     sanitizeNextPath,
     toSameOriginPath,
 } from '@/shared/lib/auth/redirect';
+import { createSignupConversionCookie } from '@/shared/lib/googleAds';
 import {
     applyAuthCookie,
     createAuthHintCookie,
@@ -143,6 +144,9 @@ export async function registerAction(
                 secure,
             })
         );
+        // 신규 계정 생성이 확정된 뒤에만 도달한다 — 다음 페이지의 GoogleAdsTag가
+        // 이 플래그를 읽어 가입 전환을 한 번 기록하고 지운다.
+        cookieStore.set(createSignupConversionCookie({ secure }));
         // 리다이렉트 싱크 바로 앞에서 URL 파서로 같은-오리진 경로만 남긴다.
         // 문자열 검사(sanitizeNextPath)가 놓칠 수 있는 절대/프로토콜-상대 URL을
         // 파서가 호스트째로 떼어낸다.

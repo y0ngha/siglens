@@ -42,7 +42,6 @@
   - Rule: Repository tooling must not depend on contributor-specific absolute paths.
   - Context: Replaced the hook command with a repository-relative path so the checked-in hook works outside the author's machine.
 
-
 ## [PR #690 | claude/mobile-ai-analysis-ui-42kyji | 2026-07-17]
 - Violation: 첫 분석(서사 없음) 로딩을 AnalyzingBanner(광고 없음)에서 AnalysisProgress로 교체하면서 `isFreeUser`를 전달하지 않아, 기본값 `true`로 인해 Pro 사용자에게도 로딩 중 AdBanner가 노출됐다. 같은 파일의 기존 AnalysisPanel 호출도 동일하게 미전달 상태였다.
   - Rule: 티어 게이팅 prop(isFreeUser 등)을 소비하는 컴포넌트를 렌더할 때, 게이팅 값을 명시적으로 전달해야 한다 — "안전한 기본값"에 의존하면 유료 티어에 무료용 표면(광고)이 새어 나간다.
@@ -59,7 +58,6 @@
 - Finding (R3 - runtime verification, after 2 review rounds approved): `src/proxy.ts` guard checked `reqUrl.searchParams.has('_rsc')` + `req.headers.get('rsc')`, but Next.js strips both before middleware runs (next/dist/server/web/adapter.js: line 153 calls stripInternalSearchParams; lines 139-147 delete FLIGHT_HEADERS including RSC). Guard was dead code. Unit tests passed because mock NextRequest still had param + header — mock encoded false assumption about runtime.
   - Rule: (new) — Middleware/proxy logic inspecting framework-internal request state (_rsc param, RSC/FLIGHT headers) cannot be validated by unit tests with hand-built mock requests. Mock defines the reality being asserted. Such logic requires production build + real HTTP request to verify firing. Origin-side enforcement is impossible; defense must move to edge (Cloudflare cache rule).
   - Context: Guard + tests reverted to master. Defense moved entirely to Cloudflare cache rule. docs/architecture/CDN_CACHING.md updated documenting why origin-side enforcement is impossible.
-
 
 ## [perf/indicator-precision Round 1 | perf/indicator-precision | 2026-08-13]
 - Violation: Fixed-precision formatting (toFixed()) truncated sub-penny assets (SHIBUSD trade price ~0.00000XXX) to 0, and reversed MACD histogram sign in candle serialization
@@ -303,8 +301,6 @@
   - Rule: MISTAKES.md Components Rule 10 — Derived state updates in effect must either branch conditionally before effect runs, or return from effect body before setState; avoid setState in effect main body
   - Context: Refactored to add early return when disabled flag is true; setState now only executes for enabled state path.
 
-
-
 ## [PR #823 | feat/ai-conversation-switch-no-skeleton | Round 5 | 2026-09-15]
 - Finding: Reviewer claimed Tailwind v4 has no `aria-busy:` variant as a blocker. Compilation with @tailwindcss/node v4 verified both `aria-busy:cursor-progress` and `aria-[busy=true]:cursor-progress` generate valid CSS. v4 `aria-*` is a functional variant for any attribute.
   - Status: REJECTED — false positive; Tailwind v4 supports aria-* variants
@@ -482,19 +478,25 @@
 - Violation (pre-review, caught during implementation): `@/widgets/agent-chat` barrel imported into `src/views/about/AboutPage.tsx` (server-side view), leaking ~46 agent-chat client-side message keys into the route's `messages/_meta/clientKeys.json`
   - Rule: A view on one host must not import another product's widget barrel for a leaf utility (icons): the i18n extractor follows the import graph and attaches that barrel's client message keys to the route. Move the shared piece to `shared/` and import it directly.
   - Context: Moved icons to `src/shared/ui/StrokeIcons.tsx` and imported directly; barrel import removed. Verified clientKeys.json no longer includes agent-chat keys.
-- Violation (pre-review, caught while verifying copy against code): About copy claimed Polygon as data source (unused in code), stated "quotes delayed up to 15 minutes" (code shows 0 for US/crypto, 20 for KR), omitted Gemini
-  - Rule: MISTAKES.md §15.6 — Documentation must reflect runtime behavior; verify product capability claims against source code before submission
-  - Context: Removed Polygon, corrected timing to market-specific delays, added Gemini to supported sources
-
-## [PR #871 claude-review | feat/siglens-about-redesign | 2026-09-24]
-- Violation (Suggestion, fixed): ReportReplay.tsx demo address bar hardcoded literal `siglens.io/`
-  - Rule: MISTAKES.md §15 — Hardcoded host literals must be extracted to shared constants (SITE_HOST) and passed as props from server; client modules must not import config from shared/lib/seo
-  - Context: Added `export const SITE_HOST = 'siglens.io'` to `src/shared/lib/seo.ts`; reused in `resolveSiteUrl` (default URL and production host guard); passed to ReportReplay as `labels.host` prop from server component so client has no direct import of seo module
 
 ## [PR #871 CI e2e | feat/siglens-about-redesign | 2026-09-24]
 - Violation: `page.locator('script[type="application/ld+json"]', { hasText: '"FAQPage"' }).toHaveCount(1)` returned 0 — `<script>` element text is not queryable with Playwright `hasText` filter
   - Rule: (new) Playwright `hasText` filters cannot query script element content; inline JSON requires `page.request.get()` + text assertions on SSR HTML
   - Context: Fixed e2e/specs/legal.spec.ts test to read `/about` with `page.request.get()` and assert response `toContain('"@type":"AboutPage"')` / `toContain('"@type":"FAQPage"')`, matching the pattern in e2e/specs/market-fear-greed.spec.ts
+
+## [feat/google-ads-conversion Round 1–2 | Google Ads conversion tracking | 2026-09-24]
+- Violation (R1, required): `src/features/agent-chat/hooks/useAgentStream.ts` — ad conversion tracking was added inside the public `send()` method, but `retry()` replays an HTTP-stage failure by calling `send()` again, so one logical question recorded the `chatQuestion` conversion twice. Comment above the tracking call claimed retry was excluded; reality did not match.
+  - Rule: (new) When adding a side effect (analytics/tracking) to a public entry point, check every internal caller that re-enters that entry point (retry/replay paths). Side effects must be decoupled from the re-entrant path by splitting the entry point into an untracked internal method and a public method that applies the side effect, then calls the internal method. No test asserted the conversion count across retry.
+  - Context: Split into an untracked internal `submit()` and a public `send()` that applies tracking then calls `submit()`; `retry()` now replays via `submit()` instead of `send()`. Retry test asserts the conversion fires exactly once; verified it fails if retry is reverted to `send()`.
+- Status (R2): APPROVED (zero findings)
+
+## [PR #873 CI + claude-review | feat/google-ads-conversion | 2026-09-24]
+- Violation (CI failure): New client component `src/app/_components/GoogleAdsTag.tsx` imported `usePathname` from `next/navigation` directly; the repo-wide guard `src/shared/i18n/__tests__/useAppPathname.test.ts` fails on any non-allowlisted raw `usePathname` import.
+  - Rule: (new) Components must use `useAppPathname` (locale prefix stripped) unless the file is deliberately added to `ALLOWED_RAW_PATHNAME_USERS` with a reason. Scoped test runs do not execute this guard — run the full suite once before push.
+  - Context: The component only needs a route-change key, so it now uses `useAppPathname`; behavior is unchanged.
+- Violation (caught by full suite while applying review Suggestion): Importing `SITE_HOST` from `@/shared/lib/seo` into `src/shared/config/googleAds.ts` (read at module load) broke `src/app/[locale]/account/__tests__/page.test.ts`, whose partial `vi.mock('@/shared/lib/seo')` lacks `SITE_HOST`; 25 of 60 tests mocking that module omit it.
+  - Rule: (new) A widely imported config module must not read values from a frequently partial-mocked module at load time; keep the literal and guard against drift with a test that compares against the real constant.
+  - Context: Reverted to the `'siglens.io'` literal with a comment; `src/shared/config/__tests__/googleAds.test.ts` asserts it equals `SITE_HOST`.
 
 ## [PR #872 Round 1 | feat/symbol-views | 2026-09-24]
 - Violation: scripts/update-popular-cryptos.ts added visit-driven crypto candidates (from outside the hand-maintained CRYPTO_CANDIDATE_POOL) to POPULAR_CRYPTOS, which would break the existing invariant test `CRYPTO_CANDIDATE_POOL contains all current POPULAR_CRYPTOS symbols` as soon as the script's output was committed. Same class as the earlier dashboardScope/KR_CATEGORY_IDS issues in this PR: a new data source feeding a config list without checking every existing test-enforced invariant over that list.

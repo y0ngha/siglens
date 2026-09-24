@@ -3,6 +3,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ChatMessageView } from '@/entities/chat-conversation';
 import { useAgentStream } from '@/features/agent-chat/hooks/useAgentStream';
 
+const trackAdsConversion = vi.hoisted(() => vi.fn());
+vi.mock('@/shared/lib/googleAds', () => ({ trackAdsConversion }));
+
 function view(
     seq: number,
     role: ChatMessageView['role'],
@@ -54,6 +57,30 @@ function droppedSse(frames: string[]): Response {
 afterEach(() => vi.restoreAllMocks());
 
 describe('useAgentStream', () => {
+    it('send records one chatQuestion conversion; regenerate records none', async () => {
+        trackAdsConversion.mockClear();
+        vi.spyOn(globalThis, 'fetch').mockImplementation(async () =>
+            sse([
+                'event: meta\ndata: {"conversationId":"c1","userMessageId":"m1"}',
+                'event: text\ndata: {"delta":"ok"}',
+                'event: done\ndata: {"assistantMessageId":"m2"}',
+            ])
+        );
+        const { result } = renderHook(() =>
+            useAgentStream({ conversationId: null, initialMessages: [] })
+        );
+        act(() => {
+            void result.current.send('AAPL?');
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+        act(() => {
+            void result.current.regenerate();
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+        expect(trackAdsConversion).toHaveBeenCalledTimes(1);
+        expect(trackAdsConversion).toHaveBeenCalledWith('chatQuestion');
+    });
+
     it('send: optimistic user -> tool chips -> accumulated text -> done', async () => {
         vi.spyOn(globalThis, 'fetch').mockResolvedValue(
             sse([
@@ -360,6 +387,7 @@ describe('useAgentStream', () => {
     });
 
     it('retry after an existing-conversation HTTP failure resends via action:send, never regenerate', async () => {
+        trackAdsConversion.mockClear();
         const fetchMock = vi.spyOn(globalThis, 'fetch');
         fetchMock.mockResolvedValueOnce(
             Response.json({ error: 'conversation_full' }, { status: 409 })
@@ -388,7 +416,8 @@ describe('useAgentStream', () => {
             (fetchMock.mock.lastCall![1] as RequestInit).body as string
         );
         expect(secondCallBody.action).toBe('send');
-        expect(secondCallBody.message).toBe('new question');
+        expect(secondCallBody.message).toBe('new question'); // The replay re-asks the same question — one ad conversion, not two.
+        expect(trackAdsConversion).toHaveBeenCalledTimes(1);
     });
 
     it('retry after a turn-stage error (deadline) calls regenerate, not send', async () => {
