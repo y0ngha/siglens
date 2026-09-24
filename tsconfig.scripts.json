@@ -38,7 +38,8 @@
         "scripts/lib/__tests__/chunkDateRange.test.ts",
         "scripts/lib/__tests__/krTrendingInsert.test.ts",
         "scripts/lib/__tests__/normalizeIndicatorBaseName.test.ts",
-        "scripts/lib/__tests__/visitCandidates.test.ts"
+        "scripts/lib/__tests__/visitCandidates.test.ts",
+        "scripts/lib/__tests__/visitSources.test.ts"
     ],
     "include": [],
     "exclude": []

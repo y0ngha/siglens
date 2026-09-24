@@ -64,6 +64,10 @@ function sendView(symbol: string): void {
         });
 }
 
+interface SymbolViewPingProps {
+    symbol: string;
+}
+
 /**
  * 종목 페이지 조회를 종목당 하루 한 번 알린다. 인기 목록 스크립트의 추가 후보 신호다.
  *
@@ -71,7 +75,7 @@ function sendView(symbol: string): void {
  * 게이트(`onFirstInteraction`). `@/entities/symbol-view` barrel은 `server-only`라
  * import하지 않는다 — 이 컴포넌트는 URL만 안다.
  */
-export function SymbolViewPing({ symbol }: { symbol: string }): null {
+export function SymbolViewPing({ symbol }: SymbolViewPingProps): null {
     useEffect(() => {
         if (navigator.webdriver) return;
         return onFirstInteraction(() => sendView(symbol));
