@@ -234,6 +234,42 @@
         "text": "증시 매수 심리"
     },
     {
+        "file": "src/app/[locale]/fear-greed/copy.ts",
+        "line": 153,
+        "reason": "seo-keywords-ko-only",
+        "text": "코인 공포탐욕지수"
+    },
+    {
+        "file": "src/app/[locale]/fear-greed/copy.ts",
+        "line": 154,
+        "reason": "seo-keywords-ko-only",
+        "text": "코인 공포지수"
+    },
+    {
+        "file": "src/app/[locale]/fear-greed/copy.ts",
+        "line": 155,
+        "reason": "seo-keywords-ko-only",
+        "text": "코인 탐욕지수"
+    },
+    {
+        "file": "src/app/[locale]/fear-greed/copy.ts",
+        "line": 156,
+        "reason": "seo-keywords-ko-only",
+        "text": "크립토 공포지수"
+    },
+    {
+        "file": "src/app/[locale]/fear-greed/copy.ts",
+        "line": 157,
+        "reason": "seo-keywords-ko-only",
+        "text": "암호화폐 공포탐욕지수"
+    },
+    {
+        "file": "src/app/[locale]/fear-greed/copy.ts",
+        "line": 158,
+        "reason": "seo-keywords-ko-only",
+        "text": "비트코인 공포탐욕지수"
+    },
+    {
         "file": "src/app/[locale]/market/copy.ts",
         "line": 40,
         "reason": "seo-keywords-ko-only",

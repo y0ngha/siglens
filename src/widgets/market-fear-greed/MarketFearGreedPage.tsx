@@ -1,5 +1,8 @@
 import { useTranslations } from 'next-intl';
-import type { MarketFearGreedView } from '@/entities/market-fear-greed';
+import type {
+    MarketFearGreedView,
+    MarketFearGreedViewSnapshot,
+} from '@/entities/market-fear-greed';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { FearGreedGauge } from '@/widgets/fear-greed';
 import { confidenceLabelKey } from '@/shared/lib/fearGreedLabels';
@@ -8,7 +11,8 @@ import { MarketFearGreedComparison } from './MarketFearGreedComparison';
 import { MarketFearGreedFactorBar } from './MarketFearGreedFactorBar';
 
 interface MarketFearGreedPageProps {
-    view: MarketFearGreedView;
+    /** 미국·한국(`MarketFearGreedSnapshot`)과 암호화폐 스냅샷을 모두 받는다 — 요인은 스냅샷 자신의 것을 그린다. */
+    view: MarketFearGreedView<MarketFearGreedViewSnapshot>;
     /** 어느 시장의 지수인가. 요인 라벨·설명과 면책 문구가 시장마다 다르다. */
     market: FearGreedMarketId;
 }
@@ -31,6 +35,7 @@ function formatAsOf(
 const CNN_DIFFERENCE_KEY: Record<FearGreedMarketId, string> = {
     us: 'cnnDifference',
     kr: 'krDifference',
+    crypto: 'cryptoDifference',
 };
 
 /**

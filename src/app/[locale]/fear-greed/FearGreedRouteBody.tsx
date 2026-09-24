@@ -1,9 +1,15 @@
 import { useTranslations } from 'next-intl';
 import { useMarketFactorLabels } from '@/shared/lib/useMarketFactorLabels';
 import type { Locale } from '@/shared/i18n/locales';
-import { MARKET_FEAR_GREED_FACTOR_KEYS } from '@y0ngha/siglens-core';
+import {
+    CRYPTO_FEAR_GREED_FACTOR_KEYS,
+    MARKET_FEAR_GREED_FACTOR_KEYS,
+} from '@y0ngha/siglens-core';
 import { MarketFearGreedPage } from '@/widgets/market-fear-greed';
-import type { MarketFearGreedView } from '@/entities/market-fear-greed';
+import type {
+    MarketFearGreedView,
+    MarketFearGreedViewSnapshot,
+} from '@/entities/market-fear-greed';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
@@ -21,7 +27,7 @@ import { FEAR_GREED_BANDS, fearGreedCopyFor } from './copy';
 
 interface FearGreedRouteBodyProps {
     readonly market: FearGreedMarketId;
-    readonly view: MarketFearGreedView;
+    readonly view: MarketFearGreedView<MarketFearGreedViewSnapshot>;
     /**
      * 훅이 아니라 prop으로 받는다 — 테스트가 이 컴포넌트를 함수로 직접
      * 호출하고 그 자리에는 React 컨텍스트가 없어 `useLocale()`이 던진다.
@@ -30,7 +36,7 @@ interface FearGreedRouteBodyProps {
 }
 
 /**
- * 미국·한국 공포·탐욕 라우트가 공유하는 본문.
+ * 미국·한국·암호화폐 공포·탐욕 라우트가 공유하는 본문.
  *
  * 두 페이지는 구조(지역 탭 → h1 → 설명 → 게이지·요인 → 읽는 법 → FAQ)가 완전히
  * 같고 문장만 다르다. 라우트마다 250줄을 복사하면 한쪽만 고쳐지는 순간
@@ -39,6 +45,16 @@ interface FearGreedRouteBodyProps {
  *
  * 서버 컴포넌트 — 활성 지역은 라우트가 알고 있으므로 `usePathname`이 필요 없다.
  */
+/**
+ * "읽는 법"이 나열할 요인. 판독값이 없어도(표본 부족) 설명은 그대로 보여야 하므로
+ * 스냅샷이 아니라 시장에서 정한다. 암호화폐는 요인 집합 자체가 다르다.
+ */
+const FACTOR_KEYS: Record<FearGreedMarketId, readonly string[]> = {
+    us: MARKET_FEAR_GREED_FACTOR_KEYS,
+    kr: MARKET_FEAR_GREED_FACTOR_KEYS,
+    crypto: CRYPTO_FEAR_GREED_FACTOR_KEYS,
+};
+
 export function FearGreedRouteBody({
     market,
     view,
@@ -148,7 +164,7 @@ export function FearGreedRouteBody({
                             ))}
                         </ul>
                         <ul className="space-y-1 text-sm leading-relaxed text-secondary-400">
-                            {MARKET_FEAR_GREED_FACTOR_KEYS.map(key => (
+                            {FACTOR_KEYS[market].map(key => (
                                 <li key={key}>
                                     {factorLabel(key)} —{' '}
                                     {factorDescription(key)}

@@ -279,3 +279,57 @@ describe('SymbolFearGreedPage — SSR factor summary wiring', () => {
         expectVisibleFaqWithoutJsonLd(tree);
     });
 });
+
+/**
+ * 상위 지수 링크는 종목이 속한 시장의 지수로 가야 한다. 암호화폐는 전용 지수가
+ * 생기기 전까지 미국 페이지를 가리켰다.
+ */
+describe('SymbolFearGreedPage — 시장 지수 링크', () => {
+    beforeEach(() => {
+        mockGetAssetInfoResilient.mockReset();
+        mockGetSeedBarsStatic.mockReset();
+        mockGetSeedBarsStatic.mockResolvedValue(BARS_WITH_DATA);
+    });
+
+    it('암호화폐 종목은 /fear-greed/crypto로 링크한다', async () => {
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: {
+                symbol: 'BTCUSD',
+                name: 'Bitcoin USD',
+                fmpSymbol: 'BTCUSD',
+                marketProfile: 'crypto' as const,
+            },
+            degraded: false,
+        });
+
+        render(
+            await SymbolFearGreedPage({
+                params: Promise.resolve({ locale: 'ko', symbol: 'btcusd' }),
+            })
+        );
+
+        const link = screen.getByRole('link', {
+            name: '암호화폐 시장 공포탐욕지수',
+        });
+        expect(link.getAttribute('href')).toMatch(/\/fear-greed\/crypto$/);
+        expect(link.closest('p')).toHaveTextContent('암호화폐 시장 전반');
+    });
+
+    it('미국 종목은 여전히 /fear-greed로 링크한다', async () => {
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: EQUITY_ASSET_INFO,
+            degraded: false,
+        });
+
+        render(
+            await SymbolFearGreedPage({
+                params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+            })
+        );
+
+        const link = screen.getByRole('link', {
+            name: '시장 전체 공포·탐욕 지수',
+        });
+        expect(link.getAttribute('href')).toMatch(/\/fear-greed$/);
+    });
+});

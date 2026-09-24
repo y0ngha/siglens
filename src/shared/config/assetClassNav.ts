@@ -13,7 +13,7 @@
  *
  * **왜 단일 소스여야 하는가**: 2026-08 감사에서 헤더와 홈 히어로가 같은 목적지를
  * 다른 라벨로 가리키고 한쪽만 갱신된 이력이 있다. 버티컬마다 지역 개수가 다른
- * 지금(뉴스 3 / 나머지 2)은 드리프트 확률이 더 높다. 여기 한 곳만 고치면 네 표면이
+ * 지금(뉴스·공포탐욕 3 / 나머지 2)은 드리프트 확률이 더 높다. 여기 한 곳만 고치면 네 표면이
  * 동시에 따라온다.
  *
  * **지역 개수가 버티컬마다 다른 것은 의도다.** 데이터가 없는 지역은 메뉴에 열지
@@ -100,6 +100,12 @@ export const NAV_VERTICALS: readonly NavVertical[] = [
                 labelKey: 'shared.config.nav.region.kr',
                 fullLabelKey: 'shared.config.nav.full.fear-greed.kr',
                 href: '/fear-greed/kr',
+            },
+            {
+                region: 'crypto',
+                labelKey: 'shared.config.nav.region.crypto',
+                fullLabelKey: 'shared.config.nav.full.fear-greed.crypto',
+                href: '/fear-greed/crypto',
             },
         ],
     },

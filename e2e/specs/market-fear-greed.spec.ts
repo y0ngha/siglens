@@ -157,3 +157,65 @@ test.describe('market fear & greed', () => {
         expect(await res.text()).toContain('/fear-greed</loc>');
     });
 });
+
+const CRYPTO_PAGE_TITLE = '코인 공포탐욕지수 - 오늘 암호화폐 시장 심리';
+
+/**
+ * `/fear-greed/crypto` — 암호화폐 시장 공포탐욕지수. `fetchCryptoDailyBars`가
+ * `isE2E()`에서 결정적 fixture(종가 + 거래량)로 갈아타므로 게이지·비교·요인 막대 6개가
+ * 실제로 렌더된다. 점수 값은 fixture 난수라 어서션하지 않는다.
+ */
+test.describe('crypto market fear & greed', () => {
+    test('리다이렉트 없이 200으로 응답한다', async ({ page }) => {
+        const res = await page.request.get('/fear-greed/crypto', {
+            maxRedirects: 0,
+        });
+
+        expect(res.status()).toBe(200);
+    });
+
+    test('fixture 데이터로 게이지·비교 4칸·요인 막대 6개가 렌더된다', async ({
+        page,
+    }) => {
+        await page.goto('/fear-greed/crypto');
+
+        await expect(
+            page.getByRole('heading', { level: 1, name: CRYPTO_PAGE_TITLE })
+        ).toBeVisible();
+        await expect(
+            page.getByRole('heading', { level: 2, name: '기간별 비교' })
+        ).toBeVisible();
+        for (const label of ['현재', '1주 전', '1개월 전', '1년 전']) {
+            await expect(page.getByText(label, { exact: true })).toBeVisible();
+        }
+        await expect(page.getByRole('progressbar')).toHaveCount(6);
+    });
+
+    test('SSR HTML에 암호화폐 요인·FAQ·JSON-LD가 노출된다 (no-JS crawlers)', async ({
+        page,
+    }) => {
+        const res = await page.request.get('/fear-greed/crypto');
+        const html = await res.text();
+
+        for (const text of [
+            '하락 변동성',
+            '알트코인 강세',
+            '거래대금 흐름',
+            'alternative.me',
+            '"@type":"WebPage"',
+            '"@type":"BreadcrumbList"',
+            '"@type":"FAQPage"',
+        ]) {
+            expect(html).toContain(text);
+        }
+        expect(html).not.toContain('하이일드 수요');
+    });
+
+    test('정적 sitemap에 /fear-greed/crypto 엔트리가 있다', async ({
+        page,
+    }) => {
+        const res = await page.request.get('/sitemap-static.xml');
+
+        expect(await res.text()).toContain('/fear-greed/crypto</loc>');
+    });
+});

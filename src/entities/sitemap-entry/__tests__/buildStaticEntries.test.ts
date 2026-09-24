@@ -253,6 +253,18 @@ describe('buildStaticEntries — 지역별 lastmod', () => {
         );
         expect(kr?.lastModified).not.toEqual(us?.lastModified);
     });
+
+    /** 코인은 24시간 거래라 NYSE 마감을 쓰면 주말 내내 금요일로 멈춘 lastmod를 낸다. */
+    it('/fear-greed/crypto는 마지막으로 닫힌 UTC 일(오늘 UTC 자정)을 쓴다', () => {
+        const now = new Date('2026-08-16T12:00:00Z'); // 일요일
+        const entries = buildStaticEntries(now);
+
+        const crypto = entries.find(e => e.url.endsWith('/fear-greed/crypto'));
+
+        expect(crypto?.lastModified).toEqual(new Date('2026-08-16T00:00:00Z'));
+        expect(crypto?.changeFrequency).toBe('daily');
+        expect(crypto?.priority).toBe(0.8);
+    });
 });
 
 describe('buildStaticEntries — 주입된 콘텐츠 갱신 시각', () => {

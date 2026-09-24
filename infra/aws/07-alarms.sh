@@ -318,11 +318,11 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-node-heap-oom --namespace S
   --metric-name NodeHeapOom --statistic Sum --period 3600 --evaluation-periods 1 --threshold 0 \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $P1
 
-# ── 시장 데이터 로더 실패 (US/KR fear-greed + KR 대시보드 통합) ──────────
+# ── 시장 데이터 로더 실패 (US/KR/crypto fear-greed + KR 대시보드 통합) ───
 #
-# 셋 다 fail-open 설계라 알람 없이는 아무 신호가 없고, 임계값·주기·토픽이 완전히
+# 넷 다 fail-open 설계라 알람 없이는 아무 신호가 없고, 임계값·주기·토픽이 완전히
 # 같아 2026-09 비용 정리에서 필터 1개 + 알람 1개로 합쳤다(CloudWatch 커스텀
-# 메트릭 10개 무료 티어를 넘겨 유료 구간이었다). OR 패턴으로 세 로그 접두 중
+# 메트릭 10개 무료 티어를 넘겨 유료 구간이었다). OR 패턴으로 네 로그 접두 중
 # 하나라도 매치하면 카운트한다:
 #   - `[FearGreedRoute] getMarketFearGreedStatic failed` — `/fear-greed`. 로더
 #     예외를 삼키고 200 + "표본이 부족합니다"를 렌더한다(0바이트 ISR 캐시 동결
@@ -332,21 +332,26 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-node-heap-oom --namespace S
 #   - `[FearGreedKrRoute] getMarketFearGreedKrStatic failed` — `/fear-greed/kr`.
 #     같은 fail-open 구조. yahoo가 무인증이라 429가 주 원인, KRX ETF 상장폐지도
 #     같은 증상.
+#   - `[FearGreedCryptoRoute] getMarketFearGreedCryptoStatic failed` —
+#     `/fear-greed/crypto`. US와 같은 FMP fail-open 구조(21개 심볼, 실패당 로그
+#     2줄). 설계 문서는 전용 알람 `siglens-fear-greed-crypto-loader-failed`를
+#     적었지만, 2026-09 통합 결정(커스텀 메트릭 무료 티어)을 되돌리지 않으려고
+#     같은 임계값의 이 필터에 OR로 합쳤다.
 #   - `[MarketContent:kr]` — `/market/kr`. 지수 3 + ETF 6 + 종목 20을 무인증
 #     yahoo로 긁고(리필당 49회), 실패하면 빈 배열로 fail-open해서 canonical
 #     null + noindex가 ISR에 굳는다.
 #
 # 임계값 4 초과·연속 2주기는 US fear-greed의 "실패 1회당 로그 2줄" 산정을
 # 그대로 물려받는다(가장 보수적인 산정 — 나머지 둘은 실패당 로그 1줄이라
-# 오히려 더 관대해진다).
+# 오히려 더 관대해진다; crypto는 US와 같은 2줄).
 #
 # 어느 라우트가 원인인지는 Logs Insights로 갈라본다:
 #   fields @timestamp, @message
-#   | filter @message like /getMarketFearGreedStatic failed|getMarketFearGreedKrStatic failed|MarketContent:kr/
+#   | filter @message like /getMarketFearGreedStatic failed|getMarketFearGreedKrStatic failed|getMarketFearGreedCryptoStatic failed|MarketContent:kr/
 #   | sort @timestamp desc
 aws logs put-metric-filter --log-group-name /siglens/app \
   --filter-name siglens-market-data-loader-failed \
-  --filter-pattern '?"[FearGreedRoute] getMarketFearGreedStatic failed" ?"[FearGreedKrRoute] getMarketFearGreedKrStatic failed" ?"[MarketContent:kr]"' \
+  --filter-pattern '?"[FearGreedRoute] getMarketFearGreedStatic failed" ?"[FearGreedKrRoute] getMarketFearGreedKrStatic failed" ?"[FearGreedCryptoRoute] getMarketFearGreedCryptoStatic failed" ?"[MarketContent:kr]"' \
   --metric-transformations metricName=MarketDataLoaderFailed,metricNamespace=Siglens/Market,metricValue=1,defaultValue=0
 aws cloudwatch put-metric-alarm --alarm-name siglens-market-data-loader-failed --namespace Siglens/Market \
   --metric-name MarketDataLoaderFailed --statistic Sum --period 3600 --evaluation-periods 2 --threshold 4 \
@@ -388,7 +393,7 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-config-signal --namespace S
   --metric-name ConfigSignalDetected --statistic Sum --period 3600 --evaluation-periods 1 --threshold 0 \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $P2
 
-log "alarms: P1(즉시)=5xx, unhealthy, disk, heap-oom, analysis-stream, capacity-needed(cpu/mem) | P2(오늘중)=mem-high, surplus-credits, isr-cache, isr-tag, redis-cache, seed-bars, market-data-loader(fear-greed us/kr+market-kr), config-signal(naver-news/kr-calendar/prewarm-redis)"
+log "alarms: P1(즉시)=5xx, unhealthy, disk, heap-oom, analysis-stream, capacity-needed(cpu/mem) | P2(오늘중)=mem-high, surplus-credits, isr-cache, isr-tag, redis-cache, seed-bars, market-data-loader(fear-greed us/kr/crypto+market-kr), config-signal(naver-news/kr-calendar/prewarm-redis)"
 
 # ── 클라이언트 예외 (메트릭·알람 없음 — Logs Insights로만 기준선 관찰) ────────
 #

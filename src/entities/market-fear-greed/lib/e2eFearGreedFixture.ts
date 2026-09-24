@@ -1,4 +1,4 @@
-import type { MarketDailyClose } from '@y0ngha/siglens-core';
+import type { CryptoDailyBar, MarketDailyClose } from '@y0ngha/siglens-core';
 import { MS_PER_DAY } from '@/shared/config/time';
 
 /** Sessions per fixture series — comfortably past the 185 needed for `confidence: 'normal'`. */
@@ -47,4 +47,16 @@ export function e2eDailyCloses(symbol: string): MarketDailyClose[] {
             close,
         };
     });
+}
+
+/**
+ * `e2eDailyCloses`에 결정적 거래량을 붙인 암호화폐 일봉. `volume_flow` 요인이 상승일
+ * 거래량 비중을 보므로 상수 거래량이면 요인이 퇴화한다 — 심볼별 난수열을 따로 쓴다.
+ */
+export function e2eCryptoDailyBars(symbol: string): CryptoDailyBar[] {
+    const next = lcg(seedFor(`${symbol}:volume`));
+    return e2eDailyCloses(symbol).map(bar => ({
+        ...bar,
+        volume: 1_000_000 * (0.5 + next()),
+    }));
 }
