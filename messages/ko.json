@@ -3436,7 +3436,6 @@
                 "Fintechcrypto": "결제·증권·가상자산 거래 기업 — 금리와 코인 시세에 함께 반응합니다.",
                 "Healthcarebiotech": "제약·의료기기·신약 개발 기업 — 임상 결과와 규제 승인이 주가를 가릅니다.",
                 "Internetplatforms": "국내 포털·커머스·게임 기업 — 광고 경기와 이용자 지표를 봅니다.",
-                "Trendinginterest": "이번 주 SigLens 방문자가 많이 찾은 한국 종목입니다.",
                 "KOSDAQ": "코스닥 시가총액 상위 종목 — 코스피보다 변동성이 큽니다.",
                 "LeveragedETFs": "지수 수익률을 2~3배로 추종하는 ETF — 변동성이 크고 장기 보유 시 복리 손실이 생깁니다.",
                 "Major": "시가총액 상위 암호화폐 — 시장 전체 흐름의 기준이 됩니다.",
@@ -3444,7 +3443,8 @@
                 "Quantumcomputing": "양자 연산 하드웨어·소프트웨어 기업 — 상용화 이전 단계라 기대감에 크게 움직입니다.",
                 "SemiconductorsIT": "코스피 반도체·전자부품 대표주 — 메모리 가격과 수출 지표에 연동됩니다.",
                 "Softwarecloud": "구독형 소프트웨어와 클라우드 인프라 기업 — 매출 성장률과 이익률로 평가받습니다.",
-                "Spaceaerospace": "위성·발사체·방산 기업 — 정부 예산과 수주 공시가 주요 변수입니다."
+                "Spaceaerospace": "위성·발사체·방산 기업 — 정부 예산과 수주 공시가 주요 변수입니다.",
+                "Trendinginterest": "이번 주 SigLens 방문자가 많이 찾은 한국 종목입니다."
             },
             "skillBadge": {
                 "candlestick": "캔들",
@@ -3471,14 +3471,14 @@
                 "Fintechcrypto": "핀테크·크립토",
                 "Healthcarebiotech": "헬스케어·바이오",
                 "Internetplatforms": "인터넷·플랫폼",
-                "Trendinginterest": "관심 급상승",
                 "KOSDAQ": "코스닥",
                 "LeveragedETFs": "레버리지 ETF",
                 "Megacapsindices": "메가캡·지수",
                 "Quantumcomputing": "양자컴퓨팅",
                 "SemiconductorsIT": "반도체·IT",
                 "Softwarecloud": "소프트웨어·클라우드",
-                "Spaceaerospace": "우주·항공우주"
+                "Spaceaerospace": "우주·항공우주",
+                "Trendinginterest": "관심 급상승"
             }
         },
         "layout": {
