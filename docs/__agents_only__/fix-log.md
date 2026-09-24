@@ -578,3 +578,8 @@
 - Violation (Suggestion, fixed): ReportReplay.tsx demo address bar hardcoded literal `siglens.io/`
   - Rule: MISTAKES.md §15 — Hardcoded host literals must be extracted to shared constants (SITE_HOST) and passed as props from server; client modules must not import config from shared/lib/seo
   - Context: Added `export const SITE_HOST = 'siglens.io'` to `src/shared/lib/seo.ts`; reused in `resolveSiteUrl` (default URL and production host guard); passed to ReportReplay as `labels.host` prop from server component so client has no direct import of seo module
+
+## [PR #871 CI e2e | feat/siglens-about-redesign | 2026-09-24]
+- Violation: `page.locator('script[type="application/ld+json"]', { hasText: '"FAQPage"' }).toHaveCount(1)` returned 0 — `<script>` element text is not queryable with Playwright `hasText` filter
+  - Rule: (new) Playwright `hasText` filters cannot query script element content; inline JSON requires `page.request.get()` + text assertions on SSR HTML
+  - Context: Fixed e2e/specs/legal.spec.ts test to read `/about` with `page.request.get()` and assert response `toContain('"@type":"AboutPage"')` / `toContain('"@type":"FAQPage"')`, matching the pattern in e2e/specs/market-fear-greed.spec.ts

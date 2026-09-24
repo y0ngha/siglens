@@ -53,9 +53,12 @@ test('/about renders the intro page with its example report and FAQ', async ({
     await expect(
         page.getByRole('heading', { level: 2, name: '자주 묻는 질문' })
     ).toBeVisible();
-    await expect(
-        page.locator('script[type="application/ld+json"]', {
-            hasText: '"FAQPage"',
-        })
-    ).toHaveCount(1);
+
+    // JSON-LD is checked in the SSR HTML, like the other hub specs: a
+    // `<script>` has no rendered text, so a `hasText` locator never matches it.
+    // That the FAQPage block is a single source with the visible FAQ is pinned
+    // by the route's unit test.
+    const html = await (await page.request.get('/about')).text();
+    expect(html).toContain('"@type":"AboutPage"');
+    expect(html).toContain('"@type":"FAQPage"');
 });
