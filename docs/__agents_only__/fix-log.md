@@ -555,3 +555,8 @@
 - Violation (Blocker, fixed): yahoo-finance2를 3.15.4→4.0.2로 올리면서 `3.15.3`을 근거로 든 주석 3곳(`createYahooClient.ts`의 queue.timeout, 그 테스트, `YahooOptionsAdapter.ts`의 `defaults.js:24`)을 재검증하지 않았다 — 같은 PR에서 Node 25 주석은 고쳤는데 라이브러리 버전 주석엔 같은 규칙을 적용하지 않았다(형제 규칙 불일치)
   - Rule: MISTAKES.md §15.6 — 의존성을 올리면 `git grep`으로 **이전 버전 번호 문자열**(`3.15.3` 등)을 찾아, 그 주석의 사실(줄 번호·동작)을 새 버전 실물 소스에서 재확인하고 함께 고친다
   - Context: 4.0.2 소스로 재확인 — queue.timeout 여전히 죽은 속성(`defaults.js:16`), `logErrors` 기본값은 `defaults.js:19`로 이동·의미 동일, fetch 우선순위 동일하고 `envFetch`는 null이라 우리 타임아웃 fetch가 적용됨
+
+## [chore/test-tooling-majors Round 1 | vitest 5·jsdom 30 | 2026-09-24]
+- Violation (R1 REQUIRED, fixed): vitest 5가 `experimental.fsModuleCache`를 top-level `fsModuleCache`로 옮겼는데 옛 위치에 남겨 타입 에러 + 런타임 무시. 로컬 `yarn typecheck`가 0건으로 나와 놓쳤다
+  - Rule: (new) 의존성 업그레이드 후 typecheck는 `*.tsbuildinfo`를 지우고 돌린다 — `incremental: true`가 업그레이드 전 진단을 재사용해 새 타입 에러를 숨긴다(이번에 0건 → 실제 2건)
+  - Context: 설정을 top-level로 이동, 캐시 삭제 후 typecheck 0건·jest-dom 매처 타입 탐침 재확인
