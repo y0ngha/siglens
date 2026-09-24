@@ -95,7 +95,7 @@ describe('proxy — ai host', () => {
         // 미들웨어 CSP가 next.config의 `frame-ancestors 'none'`을 완전히 대체하므로
         // 두 지시문을 여기서 함께 실어야 한다.
         expect(res.headers.get('content-security-policy')).toBe(
-            "frame-ancestors 'none'; img-src 'self' data:"
+            "frame-ancestors 'none'; img-src 'self' data: https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://www.google.co.kr"
         );
         expect(res.headers.get('x-robots-tag')).toBeNull();
     });

@@ -511,6 +511,14 @@ describe('registerAction', () => {
             expect(setSpy).toHaveBeenCalledWith(
                 expect.objectContaining({ value: 'tok' })
             );
+            expect(setSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    name: 'siglens_signup_conversion',
+                    value: '1',
+                    domain: 'siglens.io',
+                    httpOnly: false,
+                })
+            );
         });
 
         it('redirect 제어 신호는 에러 로그로 기록하지 않는다', async () => {

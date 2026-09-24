@@ -303,7 +303,15 @@ describe('finalizeOAuthSignupAction', () => {
         expect(createAuthSession as Mock).toHaveBeenCalledWith(
             expect.objectContaining({ userId: 'new-user-id' })
         );
-        expect(mockCookieSet).toHaveBeenCalledTimes(2);
+        // 세션 · 인증 힌트 · 가입 전환 플래그
+        expect(mockCookieSet).toHaveBeenCalledTimes(3);
+        expect(mockCookieSet).toHaveBeenCalledWith(
+            expect.objectContaining({
+                name: 'siglens_signup_conversion',
+                value: '1',
+                domain: 'siglens.io',
+            })
+        );
     });
 
     it('특정 페이지(next=/AAPL)에서 가입했으면 그 페이지로 리다이렉트', async () => {

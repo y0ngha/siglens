@@ -33,7 +33,15 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 const intlMiddleware = createIntlMiddleware(routing);
 
-const AI_CSP = "frame-ancestors 'none'; img-src 'self' data:";
+/**
+ * `img-src`를 좁히는 이유는 모델 출력에 섞인 이미지 URL로 대화 내용을 빼내는 경로를
+ * 막기 위해서다(agent-chat 설계 "출력 위생"). Google Ads 전환 픽셀 호스트만 연다 —
+ * Google 태그 CSP 가이드의 Ads 이미지 목록. 국가 도메인은 와일드카드가 안 돼서
+ * 광고 대상인 한국만 넣었다.
+ */
+// ponytail: google.co.kr only — add each google.<TLD> if ads target other countries.
+const AI_CSP =
+    "frame-ancestors 'none'; img-src 'self' data: https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://www.google.co.kr";
 /**
  * SiglensAI의 공개 면은 로케일별 홈과 `/about`(`AI_INDEXABLE_PATHS`)이다. 대화(`/c/*`)는 회원 본인만
  * 볼 수 있는 사적 기록이라 크롤러에 열 이유가 없고, 게스트에게는 404다.
