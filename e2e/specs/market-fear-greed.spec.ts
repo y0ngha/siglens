@@ -208,7 +208,11 @@ test.describe('crypto market fear & greed', () => {
         ]) {
             expect(html).toContain(text);
         }
-        expect(html).not.toContain('하이일드 수요');
+        // 부정 단언은 `<script>`를 걷어낸 본문에만 건다. next-intl 클라이언트
+        // 메시지 페이로드가 모든 시장의 팩터 라벨을 싣고 있어서, 원문 HTML에는
+        // 미국 라벨이 늘 들어 있다. 크롤러가 읽는 건 렌더된 본문이다.
+        const body = html.replace(/<script[\s\S]*?<\/script>/g, '');
+        expect(body).not.toContain('하이일드 수요');
     });
 
     test('정적 sitemap에 /fear-greed/crypto 엔트리가 있다', async ({

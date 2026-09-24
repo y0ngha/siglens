@@ -26,11 +26,13 @@ function formatAsOf(
     return t('asOfClose', { v0: year!, v1: month!, v2: day! });
 }
 
-// This index is intentionally narrower than CNN's: 5 daily-close-derivable
-// factors instead of 7 (put/call ratio and NYSE 52-week high/low breadth have
-// no data source available here), and it is computed independently from daily
-// closing prices rather than replicating CNN's pipeline. The disclosure below
-// exists so readers don't expect the number to match CNN's exactly.
+// Each market's index is computed independently, so each gets a disclosure
+// naming what readers are likely to compare it against:
+// - us: CNN Fear & Greed. Ours uses 5 daily-close-derivable factors instead of
+//   7 (put/call ratio and NYSE 52-week high/low breadth have no data source).
+// - kr: no widely cited reference index; the note explains the KR proxies.
+// - crypto: alternative.me Crypto Fear & Greed. Ours has no social or survey
+//   inputs and is built from prices and volume only.
 /** 시장별 면책 문구 키 — 문구는 `widgets.market-fear-greed.page`에 있다. */
 const CNN_DIFFERENCE_KEY: Record<FearGreedMarketId, string> = {
     us: 'cnnDifference',
