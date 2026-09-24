@@ -103,6 +103,12 @@ function buildCacheKey(prompt: string, locale: Locale): string {
  * 시간을 함께 줄이는 것이었다 — 그건 여전히 유효하다. 근본 해결은 provider
  * 어댑터 계약에 `signal`을 추가하는 것이고, 그건 챗·번역 등 다른 호출자에도
  * 영향을 주므로 별도 작업이다.
+ *
+ * 레이스에서 진 `work`가 **나중에 reject해도** unhandled rejection이 되지 않는다 —
+ * `Promise.race`가 settle 여부와 무관하게 `work`에 핸들러를 이미 붙여 두기
+ * 때문이다. 그 늦은 거절은 로그 없이 사라지는데, 의도된 동작이다: 이 요청의
+ * 실패는 위 `deadline exceeded`로 이미 기록됐고, 늦게 온 프로바이더 오류를
+ * 따로 남겨도 호출자가 할 수 있는 일이 없다.
  */
 function withDeadline<T>(work: Promise<T>, ms: number): Promise<T | null> {
     let timer: ReturnType<typeof setTimeout> | undefined;
