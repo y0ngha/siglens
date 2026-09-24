@@ -4,11 +4,16 @@
 // `@/entities/market-fear-greed/api/marketFearGreedStaticCache`에서 직접 import.
 export type {
     MarketFearGreedComparisonKey,
+    MarketFearGreedCryptoView,
     MarketFearGreedComparisonPoint,
     MarketFearGreedView,
+    MarketFearGreedViewSnapshot,
 } from './model';
 
-export { buildMarketFearGreedComparisons } from './lib/buildMarketFearGreedComparisons';
+export {
+    buildCalendarDayComparisons,
+    buildMarketFearGreedComparisons,
+} from './lib/buildMarketFearGreedComparisons';
 export {
     MARKET_FEAR_GREED_SERIES,
     MARKET_FEAR_GREED_SYMBOLS,

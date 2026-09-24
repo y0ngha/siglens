@@ -4,6 +4,7 @@ import enMessages from '@/../messages/en.json';
 import jaMessages from '@/../messages/ja.json';
 import zhMessages from '@/../messages/zh.json';
 import { MARKET_FEAR_GREED_FACTOR_KEYS } from '@y0ngha/siglens-core';
+import { formatMarketFactorRaw } from '../marketFearGreedLabels';
 
 const CATALOGS = {
     ko: koMessages,
@@ -76,4 +77,32 @@ describe('market fear-greed 팩터 카탈로그', () => {
             }
         }
     });
+});
+
+describe('formatMarketFactorRaw', () => {
+    it.each(['breadth', 'alt_season', 'volume_flow'])(
+        'crypto %s는 [0, 1] 비율이라 부호 없이 낸다',
+        key => {
+            expect(formatMarketFactorRaw(0.5, key, 'crypto')).toBe('50.00%');
+        }
+    );
+
+    it.each(['momentum', 'downside_volatility', 'safe_haven'])(
+        'crypto %s는 부호 있는 거리·수익률이라 +/-를 붙인다',
+        key => {
+            expect(formatMarketFactorRaw(0.0512, key, 'crypto')).toBe('+5.12%');
+            expect(formatMarketFactorRaw(-0.0314, key, 'crypto')).toBe(
+                '-3.14%'
+            );
+        }
+    );
+
+    it.each(['us', 'kr'] as const)(
+        '%s breadth는 수익률 차라 부호를 유지한다',
+        market => {
+            expect(formatMarketFactorRaw(0.5, 'breadth', market)).toBe(
+                '+50.00%'
+            );
+        }
+    );
 });

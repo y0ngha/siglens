@@ -52,6 +52,7 @@ const NEW_ROUTES = [
     { path: '/news/kr', heading: /한국 증시 뉴스/ },
     { path: '/market/kr', heading: /한국 주식/ },
     { path: '/fear-greed/kr', heading: /코스피/ },
+    { path: '/fear-greed/crypto', heading: /코인 공포탐욕지수/ },
     { path: '/economy/kr', heading: /한국 경제/ },
 ] as const;
 
@@ -109,13 +110,22 @@ test.describe('지역 탭', () => {
         await expect(page).toHaveURL(/\/market$/);
     });
 
-    test('뉴스만 암호화폐 지역을 열어요 (happy)', async ({ page }) => {
+    test('뉴스와 공포탐욕만 암호화폐 지역을 열어요 (happy)', async ({
+        page,
+    }) => {
         await page.goto('/news/us');
         await expect(
             page
                 .getByRole('navigation', { name: '지역 선택' })
                 .getByRole('link', { name: '암호화폐' })
         ).toHaveAttribute('href', '/news/crypto');
+
+        await page.goto('/fear-greed');
+        await expect(
+            page
+                .getByRole('navigation', { name: '지역 선택' })
+                .getByRole('link', { name: '암호화폐' })
+        ).toHaveAttribute('href', '/fear-greed/crypto');
 
         await page.goto('/market');
         await expect(
@@ -136,6 +146,7 @@ test.describe('헤더 지역 드롭다운', () => {
         for (const href of [
             '/market/kr',
             '/fear-greed/kr',
+            '/fear-greed/crypto',
             '/news/kr',
             '/news/crypto',
             '/economy/kr',

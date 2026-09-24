@@ -1,11 +1,8 @@
 import { useTranslations } from 'next-intl';
 import { useMarketFactorLabels } from '@/shared/lib/useMarketFactorLabels';
 import type { CSSProperties } from 'react';
-import {
-    scoreToLabel,
-    type FearGreedLabel,
-    type MarketFearGreedFactor,
-} from '@y0ngha/siglens-core';
+import { scoreToLabel, type FearGreedLabel } from '@y0ngha/siglens-core';
+import type { MarketFearGreedViewSnapshot } from '@/entities/market-fear-greed';
 import {
     formatMarketFactorRaw,
     type FearGreedMarketId,
@@ -14,7 +11,8 @@ import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 interface MarketFearGreedFactorBarProps {
-    factor: MarketFearGreedFactor;
+    /** 미국·한국 또는 암호화폐 요인. 키는 시장별 라벨 조회에만 쓰여 문자열로 충분하다. */
+    factor: MarketFearGreedViewSnapshot['factors'][number];
     /**
      * 어느 시장의 지수인가. 요인 라벨·설명이 시장마다 다르다 — 같은 `junk_bond`
      * 키라도 미국은 하이일드 회사채, 한국은 회사채−국고채 스프레드로 채워져 있다.
@@ -58,7 +56,7 @@ export function MarketFearGreedFactorBar({
                     {label}
                 </h3>
                 <span className="font-mono text-sm text-secondary-200">
-                    {formatMarketFactorRaw(factor.rawValue)}
+                    {formatMarketFactorRaw(factor.rawValue, factor.key, market)}
                 </span>
             </header>
             <div

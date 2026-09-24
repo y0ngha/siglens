@@ -417,7 +417,9 @@
                 "overallHeadingKrEquity": "{v0} Overall Analysis — Chart, Earnings and News",
                 "overallHeadingUsEquity": "{v0} Overall Analysis — Chart, Options, Earnings and News",
                 "positionRangeSentence": "The 52-week range for {v0} is {v1} to {v2}, and the current price of {v3} sits at the {v4}% mark of that range — {v5}.",
-                "positionRegisterHint": "Register a holding below and you can also see the floor you bought on, inside the same building."
+                "positionRegisterHint": "Register a holding below and you can also see the floor you bought on, inside the same building.",
+                "marketFearGreedLinkCrypto": "Crypto Market Fear and Greed Index",
+                "marketLabelCrypto": "the crypto market"
             },
             "position": {
                 "band": {
@@ -1092,7 +1094,8 @@
                     },
                     "fear-greed": {
                         "kr": "Korean Fear & Greed Index",
-                        "us": "US Fear & Greed Index"
+                        "us": "US Fear & Greed Index",
+                        "crypto": "Crypto Fear and Greed Index"
                     },
                     "market": {
                         "kr": "Korean Market Analysis",
@@ -1376,7 +1379,10 @@
                     "junk_bond_us": "High-yield demand",
                     "momentum": "Market momentum",
                     "safe_haven": "Safe-haven demand",
-                    "volatility": "Market volatility"
+                    "volatility": "Market volatility",
+                    "downside_volatility": "Downside volatility",
+                    "alt_season": "Altcoin strength",
+                    "volume_flow": "Volume flow"
                 },
                 "symbolLabel": {
                     "buysell_imbalance": "Buy/sell imbalance",
@@ -1384,6 +1390,14 @@
                     "poc_distance": "Distance from POC ({v0} bars)",
                     "range_position": "Position in last 252 bars",
                     "volume_z": "Volume z-score (direction)"
+                },
+                "descriptionCrypto": {
+                    "momentum": "The further Bitcoin sits above its 125-day moving average, the greedier",
+                    "downside_volatility": "The smaller Bitcoin's downside volatility over the last 30 days (the rarer the sharp drops), the greedier",
+                    "safe_haven": "The more Bitcoin outruns gold over the last 20 days, the greedier",
+                    "breadth": "The larger the share of the 20 coins trading above their 50-day moving average, the greedier",
+                    "alt_season": "The larger the share of altcoins beating Bitcoin over the last 90 days, the greedier",
+                    "volume_flow": "The larger the share of the last 30 days' total trading volume that landed on Bitcoin up days, the greedier"
                 }
             },
             "legal": {
@@ -1528,6 +1542,23 @@
                     "description": "S&P 500, VIX, Treasuries, corporate bonds, and an equal-weight index combine into a 0–100 score and 5-level label for overall US buying sentiment.",
                     "heading": "US Fear & Greed Index",
                     "title": "Today's US Market Sentiment — Fear & Greed Index"
+                },
+                "crypto": {
+                    "title": "Crypto Fear and Greed Index - Today's Crypto Market Sentiment",
+                    "heading": "Crypto Fear and Greed Index",
+                    "description": "Combines recent prices and trading volume of Bitcoin, 19 other large coins and gold into a 0 to 100 score and a five-stage label for buying sentiment across the crypto market.",
+                    "copy_intro0": "The Crypto Fear and Greed Index combines recent price and trading volume trends of the 20 largest coins by market cap, led by Bitcoin, into a 0 to 100 score for short-term sentiment across the crypto market. A lower score means fear dominates; a higher score means greed does.",
+                    "copy_intro1": "Each of the six factors is converted to a percentile within its own history, then averaged with equal weights. Market momentum looks at how far Bitcoin sits from its 125-day moving average. Downside volatility looks at how often and how deeply prices fell over the last 30 days. Safe-haven demand looks at the gap between Bitcoin and gold returns over the last 20 days. Market breadth looks at the share of the 20 coins trading above their 50-day moving average. Altcoin strength looks at the share of altcoins that beat Bitcoin over the last 90 days. Volume flow looks at how much of the last 30 days of trading volume landed on days when Bitcoin rose.",
+                    "copy_faq0q": "Is this the same as the alternative.me Fear and Greed Index?",
+                    "copy_faq0a": "No. The alternative.me index also uses social media and survey data, while this index uses none of that and is computed only from exchange prices and trading volume. The two usually move in the same direction, but the scores do not match exactly.",
+                    "copy_faq1q": "Which coins are included?",
+                    "copy_faq1a": "The 20 largest coins by market cap today, including Bitcoin, Ethereum, XRP, Solana, BNB and Dogecoin; stablecoins are excluded. Because today's large-cap list is applied to earlier periods too, coins that have since disappeared or dropped out of the ranks are missing, so older scores carry survivorship bias.",
+                    "copy_faq2q": "How is the gold price handled on weekends?",
+                    "copy_faq2a": "Coins trade seven days a week, but gold trades only five. On weekends and holidays when there is no gold quote, the previous trading day's gold close (usually Friday's) is carried forward.",
+                    "copy_faq3q": "How often does the score update?",
+                    "copy_faq3a": "It updates once a day, based on the daily bar that closes at 00:00 UTC; live prices from the day still in progress are never used. The page itself is cached for up to an hour.",
+                    "copy_faq4q": "Can I trade based on this score?",
+                    "copy_faq4a": "This index is a reference that summarizes market sentiment, not investment advice. Extreme fear or greed does not by itself signal an imminent rebound or decline, so investment decisions and their consequences remain your own."
                 }
             },
             "forgotPassword": {
@@ -2191,7 +2222,8 @@
                 "marketKr": "Korean stock market analysis",
                 "marketUs": "US stock market analysis",
                 "news": "Today's stock news",
-                "title": "More on SIGLENS"
+                "title": "More on SIGLENS",
+                "fearGreedCrypto": "Crypto Fear and Greed Index"
             },
             "nvda": {
                 "a1": "It's on the expensive side relative to its earnings. But earnings are growing fast, so opinions differ.",
@@ -2426,7 +2458,8 @@
                 "marketKr": "Korean market analysis",
                 "fearGreed": "Market Fear & Greed Index",
                 "backtesting": "Backtest results",
-                "ai": "About SIGLENS AI"
+                "ai": "About SIGLENS AI",
+                "fearGreedCrypto": "Crypto Fear and Greed Index"
             },
             "end": {
                 "title": "Have a ticker in mind?",
@@ -3428,7 +3461,8 @@
             "page": {
                 "asOfClose": "As of the close on {v1}/{v2}/{v0}",
                 "cnnDifference": "This index is derived independently from daily closes alone. Its construction differs from CNN’s Fear & Greed Index — five factors rather than seven, leaving out the put/call ratio and the NYSE 52-week high/low breadth because no usable data source exists — so the direction broadly agrees while the number itself can differ from CNN’s.",
-                "krDifference": "This index is derived independently from daily closes of Korean-listed ETFs and indices. The volatility factor uses 20-day realized volatility computed from KOSPI closes, because no free VKOSPI feed exists; the credit factor uses the spread between corporate bonds and similarly dated 3-year KTBs, because Korea has no liquid high-yield bond market. The formula matches the US index, but the inputs differ — do not compare the two scores directly."
+                "krDifference": "This index is derived independently from daily closes of Korean-listed ETFs and indices. The volatility factor uses 20-day realized volatility computed from KOSPI closes, because no free VKOSPI feed exists; the credit factor uses the spread between corporate bonds and similarly dated 3-year KTBs, because Korea has no liquid high-yield bond market. The formula matches the US index, but the inputs differ — do not compare the two scores directly.",
+                "cryptoDifference": "This index is computed independently from daily exchange prices and trading volume alone. It uses no social media or survey data, unlike the alternative.me index, so the direction is usually similar but the numbers can differ. Its factors also differ from the US and Korean indices, so do not compare the scores directly."
             }
         },
         "market-news": {

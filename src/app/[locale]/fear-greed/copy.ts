@@ -66,7 +66,7 @@ export function fearGreedCopyFor(
     market: FearGreedMarketId,
     t: SeoTranslator
 ): FearGreedCopy {
-    return market === 'kr' ? KR_FEAR_GREED_COPY(t) : US_FEAR_GREED_COPY(t);
+    return FEAR_GREED_COPY[market](t);
 }
 
 const US_FEAR_GREED_COPY = (t: SeoTranslator): FearGreedCopy => ({
@@ -138,3 +138,59 @@ const KR_FEAR_GREED_COPY = (t: SeoTranslator): FearGreedCopy => ({
         },
     ],
 });
+
+/**
+ * 암호화폐. FAQ가 반드시 밝혀야 하는 다섯 가지(설계 문서 §Copy): alternative.me와 다른
+ * 점(소셜·설문 없음), 오늘의 대형 코인 목록이라 생기는 생존 편향, 코인 7일·금 5일
+ * 달력 차이, 00:00 UTC 기준 일 1회 갱신, 투자 조언 아님.
+ */
+const CRYPTO_FEAR_GREED_COPY = (t: SeoTranslator): FearGreedCopy => ({
+    path: '/fear-greed/crypto',
+    title: t('fearGreedPage.crypto.title'),
+    description: clampSeoDescription(t('fearGreedPage.crypto.description')),
+    heading: t('fearGreedPage.crypto.heading'),
+    keywords: [
+        '코인 공포탐욕지수',
+        '코인 공포지수',
+        '코인 탐욕지수',
+        '크립토 공포지수',
+        '암호화폐 공포탐욕지수',
+        '비트코인 공포탐욕지수',
+        'crypto fear and greed index',
+    ],
+    intro: [
+        t('fearGreedPage.crypto.copy_intro0'),
+        t('fearGreedPage.crypto.copy_intro1'),
+    ],
+    faq: [
+        {
+            question: t('fearGreedPage.crypto.copy_faq0q'),
+            answer: t('fearGreedPage.crypto.copy_faq0a'),
+        },
+        {
+            question: t('fearGreedPage.crypto.copy_faq1q'),
+            answer: t('fearGreedPage.crypto.copy_faq1a'),
+        },
+        {
+            question: t('fearGreedPage.crypto.copy_faq2q'),
+            answer: t('fearGreedPage.crypto.copy_faq2a'),
+        },
+        {
+            question: t('fearGreedPage.crypto.copy_faq3q'),
+            answer: t('fearGreedPage.crypto.copy_faq3a'),
+        },
+        {
+            question: t('fearGreedPage.crypto.copy_faq4q'),
+            answer: t('fearGreedPage.crypto.copy_faq4a'),
+        },
+    ],
+});
+
+const FEAR_GREED_COPY: Record<
+    FearGreedMarketId,
+    (t: SeoTranslator) => FearGreedCopy
+> = {
+    us: US_FEAR_GREED_COPY,
+    kr: KR_FEAR_GREED_COPY,
+    crypto: CRYPTO_FEAR_GREED_COPY,
+};

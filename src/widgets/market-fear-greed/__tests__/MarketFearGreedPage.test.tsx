@@ -2,7 +2,10 @@ import { render } from '@testing-library/react';
 import { beforeAll } from 'vitest';
 import { getTranslations } from 'next-intl/server';
 import type { MarketFearGreedSnapshot } from '@y0ngha/siglens-core';
-import type { MarketFearGreedView } from '@/entities/market-fear-greed';
+import type {
+    MarketFearGreedCryptoView,
+    MarketFearGreedView,
+} from '@/entities/market-fear-greed';
 import { MarketFearGreedPage } from '@/widgets/market-fear-greed/MarketFearGreedPage';
 import {
     CONFIDENCE_LIMITED_KEY,
@@ -20,6 +23,7 @@ const tFearGreedKo = catalogTranslator('shared.lib.fearGreed', 'ko');
 /** ko 카탈로그의 팩터 라벨 — 소스 상수를 대체한다. */
 const FG = koMessages.shared.lib.fearGreedFactor as unknown as {
     label: Record<string, string>;
+    descriptionCrypto: Record<string, string>;
 };
 
 let t: EnumLabelTranslator;
@@ -171,5 +175,47 @@ describe('MarketFearGreedPage', () => {
             expect(tokens).not.toContain('text-sm');
             expect(tokens).not.toContain('font-medium');
         }
+    });
+});
+
+describe('MarketFearGreedPage — crypto', () => {
+    const cryptoView: MarketFearGreedCryptoView = {
+        snapshot: {
+            score: 28,
+            label: 'FEAR',
+            confidence: 'normal',
+            sampleSize: 900,
+            asOf: '2026-09-24',
+            factors: [
+                { key: 'momentum', rawValue: -0.1, percentile: 20 },
+                { key: 'downside_volatility', rawValue: -0.03, percentile: 30 },
+                { key: 'safe_haven', rawValue: -0.05, percentile: 25 },
+                { key: 'breadth', rawValue: 0.2, percentile: 15 },
+                { key: 'alt_season', rawValue: 0.3, percentile: 40 },
+                { key: 'volume_flow', rawValue: 0.45, percentile: 35 },
+            ],
+        },
+        comparisons: [],
+    };
+
+    it('renders one bar per crypto factor with crypto labels and descriptions', () => {
+        const { getByText, getAllByRole } = render(
+            <MarketFearGreedPage market="crypto" view={cryptoView} />
+        );
+
+        expect(getAllByRole('progressbar')).toHaveLength(6);
+        for (const { key } of cryptoView.snapshot!.factors) {
+            expect(getByText(FG.label[key]!)).toBeInTheDocument();
+            expect(getByText(FG.descriptionCrypto[key]!)).toBeInTheDocument();
+        }
+    });
+
+    it('explains how it differs from alternative.me instead of CNN', () => {
+        const { getByText, queryByText } = render(
+            <MarketFearGreedPage market="crypto" view={cryptoView} />
+        );
+
+        expect(getByText(/alternative\.me/)).toBeInTheDocument();
+        expect(queryByText(/CNN/)).not.toBeInTheDocument();
     });
 });

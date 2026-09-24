@@ -420,6 +420,7 @@ export async function AboutPage({
         ['/market', t('more.marketUs')],
         ['/market/kr', t('more.marketKr')],
         ['/fear-greed', t('more.fearGreed')],
+        ['/fear-greed/crypto', t('more.fearGreedCrypto')],
         ['/backtesting', t('more.backtesting')],
     ] as const;
 

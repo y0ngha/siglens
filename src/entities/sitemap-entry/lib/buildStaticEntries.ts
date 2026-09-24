@@ -187,6 +187,10 @@ export function buildStaticEntries(
             // 배포 시각을 쓰면 하루에 세 번 배포한 날 세 번 "바뀌었다"고 주장하게 된다.
             return todayUtc;
         }
+        // 암호화폐는 24시간 거래라 세션 달력이 없다. 지수는 마지막으로 닫힌 UTC 일의
+        // 봉까지 먹으므로(`fetchCryptoDailyBars`) 그 날이 닫힌 순간, 곧 오늘 UTC 자정이
+        // 마지막 변경 시각이다.
+        if (link.region === 'crypto') return todayUtc;
         return link.region === 'kr' ? lastKrSessionClose : lastSessionClose;
     }
 
