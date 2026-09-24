@@ -22,6 +22,7 @@ vi.mock('yahoo-finance2', () => ({
 
 import {
     createYahooClient,
+    getYahooClient,
     YAHOO_FETCH_TIMEOUT_MS,
 } from '@/shared/api/yahoo/createYahooClient';
 import { __resetOfflineBuildWarningsForTests } from '@/shared/api/offlineBuild';
@@ -212,5 +213,21 @@ describe('createYahooClient의 메서드 레벨 offline 가드는', () => {
         const result = await client.quote('005930.KS');
         expect(quoteImpl).toHaveBeenCalledWith('005930.KS');
         expect(result).toEqual({ symbol: '005930.KS' });
+    });
+});
+
+/**
+ * yahoo-finance2 4.0부터 crumb·요청 큐·debounce가 인스턴스 단위다. 호출부가 인스턴스를
+ * 여러 개 만들면 동시성 한도(4)가 인스턴스 수만큼 곱해지고 crumb도 인스턴스마다 새로
+ * 받는다 — 프로세스에 인스턴스가 하나뿐이어야 3.x의 공유 의미가 유지된다.
+ */
+describe('getYahooClient는', () => {
+    it('여러 번 불러도 라이브러리 인스턴스를 한 번만 만들고 같은 클라이언트를 돌려준다', () => {
+        const before = constructorArgs.length;
+        const first = getYahooClient();
+        const second = getYahooClient();
+
+        expect(second).toBe(first);
+        expect(constructorArgs.length - before).toBe(1);
     });
 });

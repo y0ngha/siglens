@@ -544,3 +544,9 @@
   - Rule: (new) 프레임워크를 올릴 때는 구·신 `defaultConfig`를 diff하고, 뒤집힌 플래그 중 테스트·오프라인 빌드로 관측되지 않는 것(CDN·라우터·캐시 계약)은 프로덕션 빌드 + 실제 브라우저로 계약을 실증해 설정 파일 주석에 남긴다
   - Context: `next start` + Playwright로 RSC 요청 전수 캡처(RSC 헤더·`_rsc` 쿼리 동반, `text/x-component`, 307 0건). next.config.ts에 계약·재확인 요구 기록
 - Pre-empted (not a review finding): client-s3 3.1138이 `@aws-crypto` 의존을 없애 Dockerfile의 해당 COPY가 이미지 빌드를 깨뜨리게 됨. PR CI는 Docker 빌드를 안 돌려 못 잡는다 — SDK를 올릴 땐 runner 수동 COPY 목록만 담은 격리 디렉터리에서 실제 요청을 보내 확인
+
+## [chore/node24-yahoo4 Round 1 | Node 24 정렬 + yahoo-finance2 4 | 2026-09-24]
+- Violation (R1 recommended, fixed): 런타임 버전을 바꾸면서 그 버전을 근거로 든 설정 주석(`vitest.config.ts` forks 풀, `vitest.setup.base.ts` localStorage 폴리필)을 갱신하지 않았다
+  - Rule: MISTAKES.md §15.6 — 주석 정확성. 런타임·라이브러리 버전을 올리면 그 버전을 근거로 든 주석을 grep(`Node 25` 등)해 새 런타임에서 전제를 재검증하고 함께 고친다
+  - Context: Node 24.21에서 vmThreads·threads 풀 기동을 재확인, forks 유지 사유(PR #558 env 누수)를 주석에 명시
+- Note: yahoo-finance2 4.0은 릴리스 노트 breaking("Node 22+") 밖에 "인스턴스 간 crumb·큐·debounce 공유 중단"이 있었다. 모듈별 인스턴스 → 동시 요청 4→12(실측). `getYahooClient()` 싱글턴으로 복원, 되돌리면 실패하는 테스트 추가

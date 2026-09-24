@@ -7,7 +7,7 @@
  * validation errors are not, because they mean "this symbol has no options
  * market" (see `isYahooValidationError`).
  */
-import { createYahooClient } from '@/shared/api/yahoo/createYahooClient';
+import { getYahooClient } from '@/shared/api/yahoo/createYahooClient';
 import {
     mapExpirationsToSlots,
     sanitizeOptionsChain,
@@ -35,7 +35,7 @@ import {
 // 이 에러는 adapter의 catch 블록에서 null 반환으로 이미 처리되므로 로그 자체는 노이즈다.
 // validation: { logErrors: false }를 설정하면 FailedYahooValidationError throw는
 // 그대로 유지한 채 로그 출력만 비활성화된다(라이브러리 v3.15.3 defaults.js:24).
-const yahooFinance = createYahooClient();
+const yahooFinance = getYahooClient();
 
 /**
  * yahoo-finance2가 스키마 검증에 실패했을 때 던지는 에러인지.
