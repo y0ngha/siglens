@@ -6,6 +6,23 @@ import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
 import { isLocale, localePath, DEFAULT_LOCALE } from '@/shared/i18n/locales';
 
 /**
+ * 핸드오프 왕복에서 살려 보낼 쿼리. `q`는 siglens.io의 질문 진입 링크, 나머지는
+ * 광고 클릭 식별자와 캠페인 태그다 — 버리면 광고에서 온 방문의 전환이 광고와
+ * 연결되지 않는다. 목록 밖 파라미터는 버린다.
+ */
+const CARRIED_PARAMS = [
+    'q',
+    'gclid',
+    'gbraid',
+    'wbraid',
+    'utm_source',
+    'utm_medium',
+    'utm_campaign',
+    'utm_term',
+    'utm_content',
+] as const;
+
+/**
  * No ai-host session and no `?sso=none` → bounce through the SSO handoff once
  * (spec §9-4). The bounce goes to the ai-host `/api/auth/handoff/start` route
  * (relative, so it stays on the ai host in every environment) because the
@@ -31,10 +48,15 @@ export async function maybeHandoffRedirect(
     // hands them a meta-refresh page instead of the landing they should index.
     if (isBot(await headers())) return;
     const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
-    // A prefilled question (`?q=`, the entry links from siglens.io) must survive
-    // the round trip, otherwise a signed-in user lands on an empty composer.
-    const q = typeof searchParams.q === 'string' ? searchParams.q : '';
-    const next = `${localePath(resolved, path)}${q ? `?q=${encodeURIComponent(q)}` : ''}`;
+    // `?q=` must survive the round trip (otherwise a signed-in user lands on an
+    // empty composer), and so must ad click ids (otherwise the visit loses its ad).
+    const query = CARRIED_PARAMS.flatMap(key => {
+        const value = searchParams[key];
+        return typeof value === 'string' && value
+            ? [`${key}=${encodeURIComponent(value)}`]
+            : [];
+    }).join('&');
+    const next = `${localePath(resolved, path)}${query ? `?${query}` : ''}`;
     // `localePath` leaves `/api` untouched; routing through it keeps every server
     // redirect locale-aware (noRawRedirect guard). The locale travels in `next`.
     redirect(

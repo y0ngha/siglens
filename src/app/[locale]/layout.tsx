@@ -20,6 +20,8 @@ import { ReactQueryProvider } from '@/app/providers';
 import { SearchOverlayProvider } from '@/features/ticker-search';
 import { ADSENSE_ENABLED } from '@/shared/lib/adsense';
 import { CF_BEACON_TOKEN } from '@/shared/lib/cloudflareAnalytics';
+import { GoogleAdsTag } from '@/app/_components/GoogleAdsTag';
+import { GOOGLE_ADS_ID } from '@/shared/config/googleAds';
 import { ROOT_KEYWORDS, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import {
@@ -246,6 +248,9 @@ export default async function RootLayout({
                         strategy="afterInteractive"
                     />
                 )}
+                {/* Google Ads 전환 측정. 운영 빌드에서 ID가 있을 때만 로드한다 —
+                    판단 근거는 shared/config/googleAds.ts. */}
+                {GOOGLE_ADS_ID && <GoogleAdsTag id={GOOGLE_ADS_ID} />}
             </body>
         </html>
     );

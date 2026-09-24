@@ -600,3 +600,9 @@
 - Violation: `page.locator('script[type="application/ld+json"]', { hasText: '"FAQPage"' }).toHaveCount(1)` returned 0 — `<script>` element text is not queryable with Playwright `hasText` filter
   - Rule: (new) Playwright `hasText` filters cannot query script element content; inline JSON requires `page.request.get()` + text assertions on SSR HTML
   - Context: Fixed e2e/specs/legal.spec.ts test to read `/about` with `page.request.get()` and assert response `toContain('"@type":"AboutPage"')` / `toContain('"@type":"FAQPage"')`, matching the pattern in e2e/specs/market-fear-greed.spec.ts
+
+## [feat/google-ads-conversion Round 1–2 | Google Ads conversion tracking | 2026-09-24]
+- Violation (R1, required): `src/features/agent-chat/hooks/useAgentStream.ts` — ad conversion tracking was added inside the public `send()` method, but `retry()` replays an HTTP-stage failure by calling `send()` again, so one logical question recorded the `chatQuestion` conversion twice. Comment above the tracking call claimed retry was excluded; reality did not match.
+  - Rule: (new) When adding a side effect (analytics/tracking) to a public entry point, check every internal caller that re-enters that entry point (retry/replay paths). Side effects must be decoupled from the re-entrant path by splitting the entry point into an untracked internal method and a public method that applies the side effect, then calls the internal method. No test asserted the conversion count across retry.
+  - Context: Split into an untracked internal `submit()` and a public `send()` that applies tracking then calls `submit()`; `retry()` now replays via `submit()` instead of `send()`. Retry test asserts the conversion fires exactly once; verified it fails if retry is reverted to `send()`.
+- Status (R2): APPROVED (zero findings)

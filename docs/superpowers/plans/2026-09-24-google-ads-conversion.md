@@ -882,7 +882,7 @@ INSERTS = {
         'front': ('version: 4\neffectiveDate: 2026-09-14T00:00:00+09:00',
                   'version: 5\neffectiveDate: 2026-10-05T00:00:00+09:00'),
         'after': [
-            ('- 접속 통계(방문자 수 집계):',
+            ('- 접속 통계(방문자 수 집계): IP 주소와',
              '- 광고 성과 측정(Google Ads 전환 추적): 서비스 페이지에 포함된 Google 태그가 Google 광고 쿠키 식별자, 광고를 클릭해 방문한 경우 광고 클릭 식별자(gclid 등), IP 주소, User-Agent, 방문한 페이지 주소, 전환 행동(회원가입 완료·SiglensAI 질문 전송·종목 검색 선택)의 종류와 시각을 Google에 전송합니다. 이름·이메일 등 이용자를 직접 식별하는 정보는 전송하지 않으며, 맞춤형 광고(리마케팅)에는 이용하지 않습니다.'),
             ('- 서비스 품질 개선:',
              '- 광고 성과 측정: 광고로 방문한 이용자가 회원가입·SiglensAI 질문·종목 검색으로 이어졌는지 집계 (맞춤형 광고에는 이용하지 않음)'),
@@ -899,7 +899,7 @@ INSERTS = {
         'src': 'v4.en.md', 'dst': 'v5.en.md',
         'front': ('version: 4', 'version: 5'),
         'after': [
-            ('- Access statistics (visitor count aggregation):',
+            ('- Access statistics (visitor count aggregation): a pseudonymized',
              '- Advertising performance measurement (Google Ads conversion tracking): the Google tag included in the service\'s pages sends Google advertising cookie identifiers, the ad click identifier (such as gclid) when the user arrived by clicking an ad, the IP address, the User-Agent, the address of the visited page, and the type and time of conversion actions (completing sign-up, sending a question to SiglensAI, selecting a stock in search) to Google. Information that directly identifies the user, such as name or email, is not sent, and this data is not used for personalized advertising (remarketing).'),
             ('- Improving service quality:',
              '- Measuring advertising performance: counting whether users who arrived through an ad went on to sign up, ask SiglensAI a question, or search for a stock (not used for personalized advertising)'),
@@ -916,7 +916,7 @@ INSERTS = {
         'src': 'v4.ja.md', 'dst': 'v5.ja.md',
         'front': ('version: 4', 'version: 5'),
         'after': [
-            ('- アクセス統計(訪問者数集計):',
+            ('- アクセス統計(訪問者数集計):IPアドレス',
              '- 広告成果の測定(Google広告のコンバージョン測定):サービスのページに含まれるGoogleタグが、Google広告クッキーの識別子、広告をクリックして訪問した場合の広告クリック識別子(gclidなど)、IPアドレス、User-Agent、訪問したページのアドレス、コンバージョン行動(会員登録の完了・SiglensAIへの質問送信・銘柄検索での選択)の種類と日時をGoogleに送信します。氏名・メールアドレスなど利用者を直接識別する情報は送信せず、パーソナライズド広告(リマーケティング)には利用しません。'),
             ('- サービス品質の改善:',
              '- 広告成果の測定:広告から訪問した利用者が会員登録・SiglensAIへの質問・銘柄検索につながったかの集計(パーソナライズド広告には利用しません)'),
@@ -933,7 +933,7 @@ INSERTS = {
         'src': 'v4.zh.md', 'dst': 'v5.zh.md',
         'front': ('version: 4', 'version: 5'),
         'after': [
-            ('- 访问统计(访问者数量统计):',
+            ('- 访问统计(访问者数量统计):存储',
              '- 广告效果衡量(Google Ads转化跟踪):服务页面中包含的Google代码会将Google广告Cookie标识符、通过点击广告访问时的广告点击标识符(gclid等)、IP地址、User-Agent、所访问页面的地址,以及转化行为(完成注册、向SiglensAI发送提问、在搜索中选择股票)的类型和时间发送给Google。不会发送姓名、电子邮箱等可直接识别用户的信息,也不会用于个性化广告(再营销)。'),
             ('- 改善服务质量:',
              '- 衡量广告效果:统计通过广告访问的用户是否进行了注册、向SiglensAI提问或搜索股票(不用于个性化广告)'),

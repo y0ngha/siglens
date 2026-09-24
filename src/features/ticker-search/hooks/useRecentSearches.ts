@@ -12,6 +12,7 @@ import {
     removeRecentSearch,
 } from '@/entities/ticker';
 import { getAssetLabelsAction } from '@/entities/ticker/actions';
+import { trackAdsConversion } from '@/shared/lib/googleAds';
 
 interface UseRecentSearchesResult {
     recentSearches: RecentSearchEntry[];
@@ -138,6 +139,9 @@ export function useRecentSearches(): UseRecentSearchesResult {
     const addSearch = useCallback((entry: string | RecentSearchEntry) => {
         addRecentSearch(entry);
         notify();
+        // 검색에서 종목을 고르는 모든 경로(오버레이·패널 자동완성·최근 검색 클릭)가
+        // 여기를 지난다 — 호출부마다 넣는 대신 한 곳에서 센다.
+        trackAdsConversion('tickerSelect');
     }, []);
 
     const removeSearch = useCallback((symbol: string) => {
