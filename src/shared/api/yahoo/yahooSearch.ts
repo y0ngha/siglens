@@ -1,7 +1,7 @@
 import 'server-only';
-import { createYahooClient } from './createYahooClient';
+import { getYahooClient } from './createYahooClient';
 
-const yahooFinance = createYahooClient();
+const yahooFinance = getYahooClient();
 
 /** yahoo `search`가 돌려주는 quote 항목 중 이 앱이 소비하는 부분집합. */
 export interface YahooSearchQuote {

@@ -37,9 +37,11 @@ const sharedConfig = {
 
 const sharedTestConfig = {
     globals: true as const,
-    // Node 25 + jsdom은 worker_threads 기반 풀(vmThreads·threads)에서 워커가
-    // 기동 즉시 크래시한다("Worker exited unexpectedly"). child_process 기반
-    // forks 풀만 안정적으로 동작한다 — 시작 오버헤드는 다소 크지만 유일한 선택지.
+    // forks(child_process) 풀을 쓴다. 도입 당시 Node 25 + jsdom에서는 worker_threads
+    // 기반 풀(vmThreads·threads)의 워커가 기동 즉시 크래시했다("Worker exited
+    // unexpectedly"). `.nvmrc`를 24로 내린 뒤(2026-09-24) Node 24.21에서는 worker 풀도
+    // 기동은 되지만, 프로세스 격리가 확실한 forks를 유지한다 — vmThreads는 파일 사이
+    // env 누수로 CI 간헐 실패를 낸 이력이 있다(PR #558). 시작 오버헤드는 감수한다.
     pool: 'forks' as const,
     maxWorkers: 8,
     experimental: { fsModuleCache: true },
