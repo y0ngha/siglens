@@ -371,27 +371,38 @@ const DISPATCH: Record<
         // uses) skips the query entirely for a request that will not
         // trigger a generation — `runOverallAnalysisAction` independently
         // derives its own `skipEnqueueIfMiss` for the same reason.
-        const priorAnalyses = isBotRequest
-            ? undefined
-            : await new DrizzleAnalysisHistoryRepository(
-                  getDatabaseClient().db
-              ).findRecentForPrompt({
-                  symbol,
-                  timeframe,
-                  // overall도 **technical 이력**을 참고한다.
-                  //
-                  // `PriorAnalysis`는 trend / riskLevel / 진입·손절·익절이라
-                  // 본질적으로 technical 모델인데, `OverallAnalysisResponse`에는
-                  // 그 필드가 하나도 없다(headline·bullets·scenarios·riskFactors가
-                  // 전부다). 그래서 overall 결과로 만든 행은 `toPriorAnalysis`가
-                  // 남김없이 버린다 — `tab: 'overall'`로 읽으면 이 섹션은 영원히
-                  // 비어 있다.
-                  //
-                  // overall은 technical 산출물을 입력으로 받아 종합하는 축이므로,
-                  // "이 종목을 이전엔 이렇게 봤다"는 technical 판단은 여기서도
-                  // 그대로 유효한 참고다.
-                  tab: 'technical',
-              });
+        //
+        // technical 탭(`technical` 분기)과 같은 이력·이벤트를 읽는다 — overall의
+        // technical 축 캐시 키가 `:hist=`·`:evt=`로 두 값을 접으므로, 둘 중
+        // 하나라도 갈리면 그 축이 technical 탭 캐시를 못 맞히고 다시 생성한다.
+        const overallDb = getDatabaseClient().db;
+        const [priorAnalyses, marketEvents] = isBotRequest
+            ? [undefined, undefined]
+            : await Promise.all([
+                  new DrizzleAnalysisHistoryRepository(
+                      overallDb
+                  ).findRecentForPrompt({
+                      symbol,
+                      timeframe,
+                      // overall도 **technical 이력**을 참고한다.
+                      //
+                      // `PriorAnalysis`는 trend / riskLevel / 진입·손절·익절이라
+                      // 본질적으로 technical 모델인데, `OverallAnalysisResponse`에는
+                      // 그 필드가 하나도 없다(headline·bullets·scenarios·riskFactors가
+                      // 전부다). 그래서 overall 결과로 만든 행은 `toPriorAnalysis`가
+                      // 남김없이 버린다 — `tab: 'overall'`로 읽으면 이 섹션은 영원히
+                      // 비어 있다.
+                      //
+                      // overall은 technical 산출물을 입력으로 받아 종합하는 축이므로,
+                      // "이 종목을 이전엔 이렇게 봤다"는 technical 판단은 여기서도
+                      // 그대로 유효한 참고다.
+                      tab: 'technical',
+                  }),
+                  findMarketEventsForPrompt(overallDb, {
+                      symbol,
+                      ...marketEventsLookback(timeframe),
+                  }),
+              ]);
 
         const result = await runOverallAnalysisAction(
             symbol,
@@ -403,6 +414,7 @@ const DISPATCH: Record<
                 force: cooldown?.ok === true,
                 reasoning: params.reasoning as boolean | undefined,
                 priorAnalyses,
+                marketEvents,
             },
             signal
         ).catch(async (err: unknown) => {

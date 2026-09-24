@@ -9,6 +9,7 @@ import {
     type AssembledPromptRecord,
     type EnrichedNewsItem,
     type FinancialsScorecard,
+    type MarketEvent,
     type OptionsSnapshot,
     type PriorAnalysis,
     type SubmitOverallAnalysisOptions,
@@ -74,6 +75,13 @@ export interface SubmitOverallAnalysisActionOptions {
      * 보게 된다. 여기서는 가공하지 않고 그대로 넘긴다.
      */
     priorAnalyses?: readonly PriorAnalysis[];
+    /**
+     * technical 탭 스트림 경로가 `runAnalysis`에 넘기는 것과 같은 시장 이벤트.
+     * `priorAnalyses`와 함께 overall의 technical 축에도 넘겨야 그 축의 캐시 키
+     * (`:hist=`·`:evt=`)가 technical 탭과 같아진다 — 한쪽만 넘기면 같은 분석이
+     * 한 번 더 생성된다. 가공하지 않고 그대로 넘긴다.
+     */
+    marketEvents?: readonly MarketEvent[];
 }
 
 /** Server Action: tier + BYOK gate, then submit a 4-axis overall analysis job; loads enriched news + earnings from DB, options snapshot, injects FMP provider; returns `cached | done | error`. */
@@ -198,7 +206,16 @@ export async function runOverallAnalysisAction(
             marketDataProvider,
             newsItems: enrichedNews,
             upcomingCalendar: next !== null ? [next] : [],
-            technical: { tierContext: { userId, tier: gate.tier } },
+            technical: {
+                tierContext: { userId, tier: gate.tier },
+                // technical 탭과 캐시 키를 맞춘다 — 위 옵션 JSDoc 참고.
+                ...(options.priorAnalyses !== undefined
+                    ? { priorAnalyses: options.priorAnalyses }
+                    : {}),
+                ...(options.marketEvents !== undefined
+                    ? { marketEvents: options.marketEvents }
+                    : {}),
+            },
             tier: gate.tier,
             reasoning: resolveReasoning(gate.tier, options.reasoning),
             skipEnqueueIfMiss,

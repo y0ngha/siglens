@@ -612,6 +612,7 @@ describe('POST /api/analysis/stream', () => {
                     force: false,
                     reasoning: undefined,
                     priorAnalyses: [],
+                    marketEvents: undefined,
                 },
                 expect.any(AbortSignal)
             );
@@ -1817,6 +1818,71 @@ describe('POST /api/analysis/stream', () => {
                 'gemini-3.6-flash',
                 'ko',
                 expect.objectContaining({ priorAnalyses: undefined }),
+                expect.any(AbortSignal)
+            );
+        });
+
+        it('overall, 봇 아님 → technical 분기와 같은 뉴스 이벤트를 runOverallAnalysisAction의 marketEvents로 넘긴다', async () => {
+            vi.mocked(isBot).mockReturnValue(false);
+            const events = [
+                {
+                    publishedAt: new Date('2026-08-01T14:30:00Z'),
+                    category: 'earnings',
+                    sentiment: 'bullish',
+                    impact: 'high',
+                },
+            ];
+            mockFindMarketEventsForPrompt.mockResolvedValue(events);
+
+            const body = JSON.stringify({
+                type: 'overall',
+                params: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple',
+                    timeframe: '1Day',
+                    modelId: 'gemini-3.6-flash',
+                },
+            });
+            await collectSseEvents(await POST(makeRequest(undefined, body)));
+
+            // overall의 technical 축 캐시 키가 `:evt=`로 이 값을 접는다 —
+            // technical 탭과 같은 창으로 읽어야 그 캐시를 맞힌다.
+            const [, query] = mockFindMarketEventsForPrompt.mock.calls[0] ?? [];
+            expect(query).toEqual(expect.objectContaining({ symbol: 'AAPL' }));
+            expect(query.from.getTime()).toBeLessThan(query.to.getTime());
+            expect(vi.mocked(runOverallAnalysisAction)).toHaveBeenCalledWith(
+                'AAPL',
+                'Apple',
+                '1Day',
+                'gemini-3.6-flash',
+                'ko',
+                expect.objectContaining({ marketEvents: events }),
+                expect.any(AbortSignal)
+            );
+        });
+
+        it('overall, 봇 → 뉴스 이벤트를 조회하지 않고 marketEvents는 undefined다', async () => {
+            vi.mocked(isBot).mockReturnValue(true);
+
+            const body = JSON.stringify({
+                type: 'overall',
+                params: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple',
+                    timeframe: '1Day',
+                    modelId: 'gemini-3.6-flash',
+                },
+            });
+            await collectSseEvents(await POST(makeRequest(undefined, body)));
+
+            expect(mockFindMarketEventsForPrompt).not.toHaveBeenCalled();
+            expect(vi.mocked(runOverallAnalysisAction)).toHaveBeenCalledWith(
+                'AAPL',
+                'Apple',
+                '1Day',
+                'gemini-3.6-flash',
+                'ko',
+                expect.objectContaining({ marketEvents: undefined }),
                 expect.any(AbortSignal)
             );
         });
