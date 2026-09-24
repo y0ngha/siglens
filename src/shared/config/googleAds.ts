@@ -12,11 +12,11 @@
  * 여부는 서버 컴포넌트인 레이아웃이 이 값으로 판단한다. 클라이언트의
  * `trackAdsConversion`이 E2E에서 dataLayer에 쌓더라도 gtag.js가 없어 요청은 없다.
  *
- * ⚠️ ID를 채우는 배포는 개인정보처리방침 v5 시행일(2026-10-05) 이후여야 한다.
- * 계정(383-968-0637)의 태그 ID는 `AW-18472071641`이다 — 그날 이후 아래 값을 채운다.
- * 라벨은 ID가 빈 동안 아무 동작도 하지 않으므로 미리 넣어 둔다.
+ * 고지는 개인정보처리방침 v5(`db/seeds/terms/privacy/v5*.md`)가 한다. 태그가 켜진
+ * 배포와 함께 `yarn db:seed:terms`로 v5를 적재해야 고지가 수집보다 늦지 않는다.
+ * 계정: 383-968-0637.
  */
-const ADS_ID = '';
+const ADS_ID = 'AW-18472071641';
 
 export const GOOGLE_ADS_ID =
     process.env.NODE_ENV === 'production' && process.env.E2E_TEST !== '1'
