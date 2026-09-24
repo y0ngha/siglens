@@ -101,6 +101,28 @@ export function useSearchOverlay(): UseSearchOverlayReturn {
 
     const pathname = usePathname();
 
+    /**
+     * 라우트가 바뀌면(선택 후 이동 포함) 오버레이는 항상 닫힌다. `router.replace`가
+     * 우리 항목을 목적지로 대체했으므로 되돌릴 항목도 더는 없다.
+     *
+     * `useEffect([pathname])`의 `setState` 대신 "prop이 바뀌면 렌더 중에 상태를
+     * 조정하는" 공식 패턴을 쓴다 — commit 후 effect가 한 번 더 도는 렌더가 없어진다.
+     * `pushedRef`/`triggerRef` 정리는 ref라 렌더 중에 건드릴 수 없으므로(react/refs)
+     * 아래 별도 effect가 맡는다 — 그 effect엔 setState가 없어 이쪽 규칙에 안 걸린다.
+     */
+    const [committedPathname, setCommittedPathname] = useState(pathname);
+    if (pathname !== committedPathname) {
+        setCommittedPathname(pathname);
+        setIsOpen(false);
+    }
+
+    // 라우트가 바뀐 경우엔 포커스를 되돌리지 않는다 — 트리거는 이전 페이지의 것이고,
+    // 사용자는 새 페이지의 시작점에서 읽기 시작해야 한다.
+    useEffect(() => {
+        pushedRef.current = false;
+        triggerRef.current = null;
+    }, [pathname]);
+
     const open = useCallback(() => {
         // `pushState`는 부수효과라 setState 업데이터 안에 두면 안 된다 — React가
         // StrictMode에서 업데이터를 두 번 호출해 히스토리 항목이 두 개 쌓인다.
@@ -223,16 +245,6 @@ export function useSearchOverlay(): UseSearchOverlayReturn {
         window.addEventListener('popstate', handlePopState);
         return () => window.removeEventListener('popstate', handlePopState);
     }, [isOpen, restoreFocus]);
-
-    // 라우트가 바뀌면(선택 후 이동 포함) 오버레이는 항상 닫힌다. `router.replace`가
-    // 우리 항목을 목적지로 대체했으므로 되돌릴 항목도 더는 없다.
-    useEffect(() => {
-        pushedRef.current = false;
-        // 라우트가 바뀐 경우엔 포커스를 되돌리지 않는다 — 트리거는 이전 페이지의
-        // 것이고, 사용자는 새 페이지의 시작점에서 읽기 시작해야 한다.
-        triggerRef.current = null;
-        setIsOpen(false);
-    }, [pathname]);
 
     return { isOpen, open, close, dismissForNavigation };
 }
