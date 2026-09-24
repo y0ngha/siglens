@@ -48,12 +48,6 @@
         "text": "52주 최고가 최저가"
     },
     {
-        "file": "src/app/[locale]/about/content.ts",
-        "line": 25,
-        "reason": "non-component-module",
-        "text": "`## Siglens는 무엇인가 ${SITE_NAME}는 티커 하나만 입력하면 차트, 펀더멘털, 재무제표, 뉴스, 옵션, 의회 거래, 공포·탐욕"
-    },
-    {
         "file": "src/app/[locale]/backtesting/page.tsx",
         "line": 188,
         "reason": "seo-keywords-ko-only",

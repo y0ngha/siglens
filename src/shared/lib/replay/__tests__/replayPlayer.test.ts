@@ -157,7 +157,7 @@ describe('replayPlayer', () => {
             await vi.runAllTimersAsync();
             await expect(run).resolves.toBeUndefined();
             expect(errorSpy).toHaveBeenCalledWith(
-                '[ChatReplay] playback stopped:',
+                '[replay] playback stopped:',
                 expect.any(Error)
             );
 

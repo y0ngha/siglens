@@ -1,7 +1,7 @@
 /**
- * Pure pieces of the `/about` chat replay: the scenario shape, the tiny markup
- * the answer lines carry in `messages/*.json`, and the helpers the player uses
- * to stream a line character by character.
+ * Pure pieces of the `/about` replays (`replayPlayer.ts`): the scenario shape,
+ * the tiny markup the body lines carry in `messages/*.json`, and the helpers
+ * the player uses to stream a line character by character.
  *
  * The markup is three tags — `<b>`, `<up>`, `<down>` — rather than markdown so
  * translators see balanced, obviously-structural tokens (the same shape
@@ -23,7 +23,7 @@ export interface ReplayLine {
 
 export interface ReplayTool {
     readonly label: string;
-    /** "{label} 확인 중" already resolved on the server. */
+    /** The in-progress label ("… 확인 중"), already resolved on the server. */
     readonly pendingLabel: string;
     readonly subject: string;
     /** How long the lookup "takes" in the replay, in ms. */

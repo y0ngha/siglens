@@ -26,8 +26,11 @@ export const SITE_OPERATOR = {
     githubUrl: 'https://github.com/y0ngha',
 } as const;
 
-/** `/about` 본문 마지막 갱신일 — 본문(`about/content.ts`)을 고치면 함께 올린다. */
-export const ABOUT_UPDATED_AT = new Date('2026-09-18T00:00:00+09:00');
+/**
+ * `/about` 본문 마지막 갱신일 — 본문(`messages/*.json`의 `views.about`)을 고치면
+ * 함께 올린다. 화면 하단 "마지막 업데이트"와 `AboutPage.dateModified`가 읽는다.
+ */
+export const ABOUT_UPDATED_AT = new Date('2026-09-24T00:00:00+09:00');
 
 /**
  * `/about`의 `Person` 노드와 홈 `Organization.founder`가 공유하는 `@id`.
@@ -66,8 +69,13 @@ export function termsDescription(t: SeoTranslator): string {
 export function aboutTitle(t: SeoTranslator): string {
     return t('about.title');
 }
+/**
+ * `<title>`·OG 제목. 다른 법무 페이지처럼 `${title} | Siglens`가 아니다 — 소개
+ * 페이지는 브랜드 검색과 "AI 주식 분석" 류 검색을 함께 받으므로 무엇을 하는
+ * 서비스인지가 제목에 들어가고, 그 문구가 이미 `Siglens`로 시작한다.
+ */
 export function aboutFullTitle(t: SeoTranslator): string {
-    return `${aboutTitle(t)} | ${SITE_NAME}`;
+    return t('about.metaTitle');
 }
 export function aboutDescription(t: SeoTranslator): string {
     return t('about.description');
