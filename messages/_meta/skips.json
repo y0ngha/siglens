@@ -3001,9 +3001,21 @@
     },
     {
         "file": "src/shared/config/tickerCategoryLabel.ts",
-        "line": 44,
+        "line": 28,
+        "reason": "catalog-backed-data",
+        "text": "관심 급상승"
+    },
+    {
+        "file": "src/shared/config/tickerCategoryLabel.ts",
+        "line": 45,
         "reason": "catalog-backed-data",
         "text": "레버리지 ETF"
+    },
+    {
+        "file": "src/shared/config/tickerCategoryLabel.ts",
+        "line": 57,
+        "reason": "catalog-backed-data",
+        "text": "관심 급상승"
     },
     {
         "file": "src/shared/i18n/locales.ts",

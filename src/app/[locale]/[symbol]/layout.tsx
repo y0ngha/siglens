@@ -15,6 +15,7 @@ import {
 } from '@/app/[locale]/[symbol]/SymbolLayoutClient';
 import { SymbolLayoutHeader } from '@/views/symbol/SymbolLayoutHeader';
 import { RelatedSymbols } from '@/views/symbol';
+import { SymbolViewPing } from '@/features/visitor-ping';
 import { SymbolTabsSkeleton } from '@/views/symbol/SymbolTabsSkeleton';
 import {
     DEFAULT_TIMEFRAME,
@@ -176,6 +177,9 @@ export default async function SymbolLayout({
                    에게 내부링크가 푸터 뒤로 밀린다. 한국어 검색이 주 유입이고 내부링크가
                    이 컴포넌트의 존재 이유라 그 교환은 하지 않는다. */}
                 <RelatedSymbols symbol={ticker} />
+                {/* 조회수 비콘 — notFound() 판정 뒤라 실재 종목만 집계된다.
+                    레이아웃은 같은 종목의 탭 이동에서 유지되므로 탭마다 재전송하지 않는다. */}
+                <SymbolViewPing symbol={ticker} />
                 <Suspense fallback={null}>
                     <SymbolFloatingChat params={params} />
                 </Suspense>

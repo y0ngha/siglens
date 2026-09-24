@@ -7,7 +7,7 @@ import {
     KR_DASHBOARD_SCOPE,
     US_DASHBOARD_SCOPE,
 } from '../dashboardScope';
-import { POPULAR_TICKERS } from '../popular-tickers';
+import { POPULAR_TICKERS, TICKER_CATEGORIES } from '../popular-tickers';
 import { CRYPTO_CATEGORIES } from '../crypto-categories';
 
 const SCOPES = [US_DASHBOARD_SCOPE, KR_DASHBOARD_SCOPE];
@@ -64,7 +64,16 @@ describe('dashboard scopes', () => {
     it('reuses exactly the curated KR ticker set for KR signal scanning', () => {
         // 새 심볼을 넣으면 한글명 시드·사이트맵 범위·prewarm 회전까지 파생 작업이
         // 붙는다. 이 작업(동선 재편) 범위 밖이라 기존 20종을 그대로 쓴다.
-        const curatedKr = POPULAR_TICKERS.filter(t => /\.(KS|KQ)$/.test(t));
+        // `kr-trending`(방문 조회수로 스크립트가 채우는 수요 묶음)은 업종 분류가 없어
+        // 섹터 스캔 대상이 아니다 — 스크립트가 넣을 때마다 이 검사가 깨지지 않게 뺀다.
+        const trendingKr = new Set(
+            TICKER_CATEGORIES.find(c => c.id === 'kr-trending')?.items.map(
+                i => i.symbol
+            ) ?? []
+        );
+        const curatedKr = POPULAR_TICKERS.filter(
+            t => /\.(KS|KQ)$/.test(t) && !trendingKr.has(t)
+        );
         expect(
             KR_DASHBOARD_SCOPE.sectorStocks.map(s => s.symbol).sort()
         ).toEqual([...curatedKr].sort());

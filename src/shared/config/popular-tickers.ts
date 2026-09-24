@@ -219,6 +219,8 @@ export const KR_CATEGORY_IDS: ReadonlySet<CategoryId> = new Set([
     'kr-platform',
     'kr-finance',
     'kr-kosdaq',
+    // 스크립트가 만들기 전까지 config에 없다 — `has` 판정만 하므로 무해.
+    'kr-trending',
 ]);
 
 /**

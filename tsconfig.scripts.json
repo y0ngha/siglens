@@ -19,7 +19,11 @@
         "scripts/next-ambient.d.ts",
         "scripts/backfillEconomicCalendar.ts",
         "scripts/lib/chunkDateRange.ts",
+        "scripts/lib/cryptoPoolInsert.ts",
+        "scripts/lib/krTrendingInsert.ts",
         "scripts/lib/normalizeIndicatorBaseName.ts",
+        "scripts/lib/visitCandidates.ts",
+        "scripts/lib/visitSources.ts",
         "scripts/seed-crypto-assets.ts",
         "scripts/seed-crypto-korean-names.ts",
         "scripts/seed-kr-listed-names.ts",
@@ -33,7 +37,11 @@
         "scripts/__tests__/update-popular-cryptos.test.ts",
         "scripts/__tests__/validate-skills.test.ts",
         "scripts/lib/__tests__/chunkDateRange.test.ts",
-        "scripts/lib/__tests__/normalizeIndicatorBaseName.test.ts"
+        "scripts/lib/__tests__/cryptoPoolInsert.test.ts",
+        "scripts/lib/__tests__/krTrendingInsert.test.ts",
+        "scripts/lib/__tests__/normalizeIndicatorBaseName.test.ts",
+        "scripts/lib/__tests__/visitCandidates.test.ts",
+        "scripts/lib/__tests__/visitSources.test.ts"
     ],
     "include": [],
     "exclude": []

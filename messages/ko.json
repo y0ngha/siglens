@@ -3443,7 +3443,8 @@
                 "Quantumcomputing": "양자 연산 하드웨어·소프트웨어 기업 — 상용화 이전 단계라 기대감에 크게 움직입니다.",
                 "SemiconductorsIT": "코스피 반도체·전자부품 대표주 — 메모리 가격과 수출 지표에 연동됩니다.",
                 "Softwarecloud": "구독형 소프트웨어와 클라우드 인프라 기업 — 매출 성장률과 이익률로 평가받습니다.",
-                "Spaceaerospace": "위성·발사체·방산 기업 — 정부 예산과 수주 공시가 주요 변수입니다."
+                "Spaceaerospace": "위성·발사체·방산 기업 — 정부 예산과 수주 공시가 주요 변수입니다.",
+                "Trendinginterest": "이번 주 SigLens 방문자가 많이 찾은 한국 종목입니다."
             },
             "skillBadge": {
                 "candlestick": "캔들",
@@ -3476,7 +3477,8 @@
                 "Quantumcomputing": "양자컴퓨팅",
                 "SemiconductorsIT": "반도체·IT",
                 "Softwarecloud": "소프트웨어·클라우드",
-                "Spaceaerospace": "우주·항공우주"
+                "Spaceaerospace": "우주·항공우주",
+                "Trendinginterest": "관심 급상승"
             }
         },
         "layout": {

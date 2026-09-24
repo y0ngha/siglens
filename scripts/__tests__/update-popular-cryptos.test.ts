@@ -11,6 +11,7 @@ import {
     insertCryptoTrendingSection,
     rankByMarketCap,
     renderPopularCryptosFile,
+    visitCryptoRejection,
 } from '../update-popular-cryptos';
 
 describe('filterValidCandidates', () => {
@@ -449,5 +450,24 @@ export const POPULAR_CRYPTOS = [
         expect(() =>
             insertCryptoTrendingSection('export const BROKEN = [', ['BTCUSD'])
         ).toThrow('Could not find "] as const;" in popular-cryptos.ts');
+    });
+});
+
+describe('visitCryptoRejection', () => {
+    it('상장·비스테이블·시총 $1B 이상이면 null', () => {
+        expect(visitCryptoRejection(true, 2_000_000_000)).toBeNull();
+    });
+    it('cryptocurrency-list에 없거나 스테이블코인 → 탈락', () => {
+        expect(visitCryptoRejection(false, 2_000_000_000)).toBe(
+            'not eligible (unlisted or stablecoin)'
+        );
+    });
+    it('시총 없음 → 탈락', () => {
+        expect(visitCryptoRejection(true, null)).toBe('no market cap');
+    });
+    it('$1B 미만 → 탈락', () => {
+        expect(visitCryptoRejection(true, 999_999_999)).toBe(
+            'market cap < $1B'
+        );
     });
 });
