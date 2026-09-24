@@ -568,3 +568,8 @@
 - Violation (pre-review, caught while verifying copy against code): About copy claimed Polygon as data source (unused in code), stated "quotes delayed up to 15 minutes" (code shows 0 for US/crypto, 20 for KR), omitted Gemini
   - Rule: MISTAKES.md §15.6 — Documentation must reflect runtime behavior; verify product capability claims against source code before submission
   - Context: Removed Polygon, corrected timing to market-specific delays, added Gemini to supported sources
+
+## [PR #871 claude-review | feat/siglens-about-redesign | 2026-09-24]
+- Violation (Suggestion, fixed): ReportReplay.tsx demo address bar hardcoded literal `siglens.io/`
+  - Rule: MISTAKES.md §15 — Hardcoded host literals must be extracted to shared constants (SITE_HOST) and passed as props from server; client modules must not import config from shared/lib/seo
+  - Context: Added `export const SITE_HOST = 'siglens.io'` to `src/shared/lib/seo.ts`; reused in `resolveSiteUrl` (default URL and production host guard); passed to ReportReplay as `labels.host` prop from server component so client has no direct import of seo module

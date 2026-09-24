@@ -5,7 +5,7 @@ import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { localePath, type Locale } from '@/shared/i18n/locales';
 import { cn } from '@/shared/lib/cn';
 import { SITE_OPERATOR, TERMS_PATH } from '@/shared/lib/legal';
-import { GITHUB_URL, type FaqItem } from '@/shared/lib/seo';
+import { GITHUB_URL, SITE_HOST, type FaqItem } from '@/shared/lib/seo';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
@@ -450,6 +450,7 @@ export async function AboutPage({
                         <ReportReplay
                             scenarios={buildReportScenarios(t, counts)}
                             labels={{
+                                host: SITE_HOST,
                                 region: t('replay.region'),
                                 badge: t('replay.badge'),
                                 pause: t('replay.pause'),

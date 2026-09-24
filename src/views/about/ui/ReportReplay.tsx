@@ -15,6 +15,8 @@ import {
 } from '@/shared/ui/ReplayParts';
 
 export interface ReportReplayLabels {
+    /** `SITE_HOST`, passed down so this client module doesn't pull in `shared/lib/seo`. */
+    readonly host: string;
     readonly region: string;
     readonly badge: string;
     readonly pause: string;
@@ -67,7 +69,7 @@ export function ReportReplay({ scenarios, labels, doneIcon }: Props) {
                     className="flex min-h-8 min-w-0 flex-1 items-center rounded-lg bg-secondary-900 px-3 text-sm text-secondary-400"
                     translate="no"
                 >
-                    <span>siglens.io/</span>
+                    <span>{labels.host}/</span>
                     <span className="truncate text-secondary-100">
                         {scenario.question.slice(0, frame.typed)}
                     </span>

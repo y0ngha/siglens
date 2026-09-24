@@ -85,6 +85,12 @@ function parseHostname(rawUrl: string): string {
 }
 
 /**
+ * 운영 호스트. `SITE_URL`의 기본값·프로덕션 가드와, 환경과 무관하게 항상 운영
+ * 도메인을 보여줘야 하는 표시 문구(`/about` 예시 주소창)가 함께 쓴다.
+ */
+export const SITE_HOST = 'siglens.io';
+
+/**
  * 사이트 URL. 환경 변수가 설정된 경우 그 값을, 없으면 기본값 'https://siglens.io'을 사용한다.
  *
  * 프로덕션 가드: NODE_ENV==='production'이고 NEXT_PUBLIC_SITE_URL이 설정됐는데
@@ -97,12 +103,12 @@ function parseHostname(rawUrl: string): string {
  */
 function resolveSiteUrl(): string {
     const fromEnv = process.env.NEXT_PUBLIC_SITE_URL;
-    const url = fromEnv ?? 'https://siglens.io';
+    const url = fromEnv ?? `https://${SITE_HOST}`;
 
     if (process.env.NODE_ENV === 'production' && fromEnv !== undefined) {
         const host = parseHostname(url);
         // 로컬/개발/CI 호스트는 빌드 안전을 위해 검증에서 제외한다.
-        if (!isLocalOrDevHost(host) && host !== 'siglens.io') {
+        if (!isLocalOrDevHost(host) && host !== SITE_HOST) {
             throw new Error(
                 `[seo] NEXT_PUBLIC_SITE_URL="${url}"의 호스트가 siglens.io가 아닙니다. ` +
                     `canonical/OG URL이 오염되는 것을 막기 위해 빠른 실패합니다.`

@@ -27,6 +27,7 @@ const scenario = (id: string, ticker: string): ReplayScenario => ({
 });
 
 const LABELS = {
+    host: 'siglens.io',
     region: 'Example analysis',
     badge: 'Example',
     pause: 'Pause',
