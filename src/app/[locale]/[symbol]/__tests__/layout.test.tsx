@@ -151,11 +151,18 @@ vi.mock('@/entities/bars', () => ({
     getSeedBarsStatic: mockGetSeedBarsStatic,
 }));
 
+vi.mock('@/features/visitor-ping', () => ({
+    SymbolViewPing: function SymbolViewPing() {
+        return null;
+    },
+}));
+
 import SymbolLayout, {
     SymbolLayoutChrome,
 } from '@/app/[locale]/[symbol]/layout';
 import { SymbolLayoutJail } from '@/app/[locale]/[symbol]/SymbolLayoutClient';
 import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
+import { SymbolViewPing } from '@/features/visitor-ping';
 
 const ASSET_INFO = {
     symbol: 'AAPL',
@@ -399,6 +406,26 @@ describe('SymbolLayout — 관련 종목 칩 위치 (jail 밖, 푸터 위)', () 
         expect(chipIndex).toBeGreaterThan(-1);
         // 푸터 위 자리 = jail 뒤.
         expect(chipIndex).toBeGreaterThan(jailIndex);
+    });
+
+    it('정규(대문자) 심볼로 조회수 비콘을 마운트한다', async () => {
+        const tree = await SymbolLayout({
+            children: null,
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+        const providers = (tree as { props?: { children?: unknown } }).props
+            ?.children;
+        const siblings = (providers as { props?: { children?: unknown } })
+            ?.props?.children;
+        if (!Array.isArray(siblings)) {
+            throw new Error('providers children is not an array');
+        }
+        const ping = siblings.find(
+            child =>
+                (child as { type?: unknown } | null)?.type === SymbolViewPing
+        ) as { props: { symbol: string } } | undefined;
+
+        expect(ping?.props.symbol).toBe('AAPL');
     });
 });
 

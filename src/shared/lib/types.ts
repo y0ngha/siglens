@@ -96,7 +96,10 @@ export type CategoryId =
     | 'kr-bio'
     | 'kr-platform'
     | 'kr-finance'
-    | 'kr-kosdaq';
+    | 'kr-kosdaq'
+    // 업종이 아니라 수요 묶음 — `update-popular-tickers.ts`가 방문 조회수로 채운다.
+    // 객체는 첫 후보 때 스크립트가 생성하므로 config에 없을 수 있다.
+    | 'kr-trending';
 
 /** Curated ticker category (id + label + member tickers with Korean names). */
 export interface TickerCategory {

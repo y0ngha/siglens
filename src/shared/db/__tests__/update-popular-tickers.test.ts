@@ -3,6 +3,8 @@ import {
     createYahooOptionsProbe,
     deduplicatePopularTickerEntries,
     renderPopularOptionsTickersFile,
+    visitKrRejection,
+    visitUsRejection,
     writePopularTickerArtifacts,
 } from '../../../../update-popular-tickers';
 
@@ -206,5 +208,84 @@ export const POPULAR_OPTIONS_TICKERS = [
         ).rejects.toThrow('Yahoo unavailable');
 
         expect(writers.writeAll).not.toHaveBeenCalled();
+    });
+});
+
+describe('visitUsRejection', () => {
+    const ok = {
+        symbol: 'PLTR',
+        price: 30,
+        marketCap: 60_000_000_000,
+        isEtf: false,
+        isFund: false,
+        isActivelyTrading: true,
+        exchange: 'NASDAQ',
+        companyName: 'Palantir',
+    };
+
+    it('조건을 모두 만족하면 null', () => {
+        expect(visitUsRejection(ok, 5, false)).toBeNull();
+    });
+
+    it.each([
+        ['프로필 없음', null, 5, false, 'no FMP profile'],
+        [
+            '거래 중단',
+            { ...ok, isActivelyTrading: false },
+            5,
+            false,
+            'not actively trading',
+        ],
+        [
+            '크립토 거래소',
+            { ...ok, exchange: 'CRYPTO' },
+            5,
+            false,
+            'exchange CRYPTO',
+        ],
+        ['OTC', { ...ok, exchange: 'OTC' }, 5, false, 'exchange OTC'],
+        ['펀드', { ...ok, isFund: true }, 5, false, 'fund'],
+        [
+            'ETF(플래그 없음)',
+            { ...ok, isEtf: true },
+            5,
+            false,
+            'ETF (pass --include-etf)',
+        ],
+        ['저가', { ...ok, price: 4.99 }, 5, false, 'price < $5'],
+        [
+            '소형',
+            { ...ok, marketCap: 1_999_999_999 },
+            5,
+            false,
+            'market cap < $2B',
+        ],
+        ['봉 없음', ok, null, false, 'no EOD bars'],
+        ['급등락', ok, 20, false, 'max daily change ≥ 20%'],
+    ])('%s → 탈락', (_label, profile, change, includeEtf, reason) => {
+        expect(visitUsRejection(profile, change, includeEtf)).toBe(reason);
+    });
+
+    it('--include-etf면 ETF 통과', () => {
+        expect(visitUsRejection({ ...ok, isEtf: true }, 5, true)).toBeNull();
+    });
+});
+
+describe('visitKrRejection', () => {
+    it('상장·시총 1조 이상이면 null', () => {
+        expect(visitKrRejection('유한양행', 5_000_000_000_000)).toBeNull();
+    });
+    it('korean_tickers에 없거나 상장폐지 → 탈락', () => {
+        expect(visitKrRejection(undefined, 5_000_000_000_000)).toBe(
+            'not listed in korean_tickers'
+        );
+    });
+    it('시총 조회 실패 → 탈락', () => {
+        expect(visitKrRejection('유한양행', null)).toBe('no market cap');
+    });
+    it('1조 미만 → 탈락', () => {
+        expect(visitKrRejection('소형주', 999_999_999_999)).toBe(
+            'market cap < ₩1조'
+        );
     });
 });

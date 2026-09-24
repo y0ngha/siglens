@@ -161,6 +161,20 @@ describe('KR 카테고리 합집합 ↔ POPULAR_TICKERS KR 블록', () => {
 });
 
 /**
+ * `kr-trending`은 `update-popular-tickers.ts`가 첫 방문 후보를 넣을 때 객체를 만든다
+ * (빈 카테고리는 `items.length > 0` 검사에 걸리므로 미리 두지 않는다). 그 전까지만
+ * "선언됐지만 config에 없음"을 허용하고, 생기고 나면 다른 id와 똑같이 검사한다.
+ */
+const LAZILY_CREATED_KR_CATEGORY_IDS: ReadonlySet<string> = new Set([
+    'kr-trending',
+]);
+const presentKrCategoryIds = [...KR_CATEGORY_IDS].filter(
+    id =>
+        !LAZILY_CREATED_KR_CATEGORY_IDS.has(id) ||
+        TICKER_CATEGORIES.some(c => c.id === id)
+);
+
+/**
  * `KR_CATEGORY_IDS`가 실제 카테고리 목록과 어긋나면 홈 그리드의 미국/한국 분리와
  * 위 합집합 불변식이 **둘 다 동시에** 조용히 빗나간다 — 빠진 카테고리는 미국 섹션에
  * 렌더되면서 고아 검사에서도 제외된다.
@@ -170,11 +184,13 @@ describe('KR_CATEGORY_IDS', () => {
         const holdsKrSymbols = TICKER_CATEGORIES.filter(c =>
             c.items.some(i => /\.K[SQ]$/.test(i.symbol))
         ).map(c => c.id);
-        expect([...holdsKrSymbols].sort()).toEqual([...KR_CATEGORY_IDS].sort());
+        expect([...holdsKrSymbols].sort()).toEqual(
+            [...presentKrCategoryIds].sort()
+        );
     });
 
     it('KR 종목이 없는 카테고리를 포함하지 않는다', () => {
-        for (const id of KR_CATEGORY_IDS) {
+        for (const id of presentKrCategoryIds) {
             const category = TICKER_CATEGORIES.find(c => c.id === id);
             expect(category).toBeDefined();
             expect(category!.items.every(i => /\.K[SQ]$/.test(i.symbol))).toBe(

@@ -318,11 +318,6 @@
   - Rule: (new) Derived values computed and composed into component props must be tested at the composition point, not left to visual rendering tests. When a prop receives a computed value, unit tests must verify the computation and its effects (field additions, removals, transformations).
   - Context: Added `src/app/[locale]/backtesting/__tests__/page.jsonld.test.tsx` which spies on the JsonLd component's `data` prop, locates the Dataset node by `@type`, and asserts: 1) composed temporalCoverage value matches expected start/end, 2) dateModified field was removed. Test catches both the computation correctness and field deletion without running visual renders.
 
-## [feat/agent-confluence-sr-tests | siglens-wt-confluence | 2026-09-15]
-- Violation: `useEffectEvent` (notifyNavigated) in src/widgets/agent-chat/Sidebar.tsx declared after derived values and handlers
-  - Rule: MISTAKES.md Components Rule 17 — All hook calls must be declared before derived variables and handlers. Strict ordering: useState/useRef → useQuery/useMutation/custom hooks → useCallback/useMemo → derived variables → handlers → useEffect
-  - Context: Moved `useEffectEvent` to correct position right after `useOnClickOutside`. Part of recurring pattern on this feature: ChatShell useState placement, Sidebar hook ordering, handlers positioning.
-
 ## [fix/seo-b-copy-jsonld Round 1 | seo/index-footprint-recovery | 2026-09-15]
 - Violation: RECOMMENDED — loadMarketSignals loaded CachedMarketDataProvider 3 times per request without request-scope deduplication → redundant Data Cache reads
   - Rule: (new) RSC data loaders used in multiple places within one request must wrap with React cache() to eliminate redundant fetches from the same provider call
@@ -360,23 +355,6 @@
 - Violation: New i18n key (`widgets.layout.footer.symbols`) placed in `shared.seo` namespace and consumed by client-rendered `Footer`, leaked that server-only namespace into every client payload.
   - Rule: i18n namespace containment — server-only namespaces (shared.seo) must not be consumed by client-rendered components; use client-permitted namespaces (widgets.layout). Namespace pollution increases payload and masks content scope.
   - Context: Moved key to `widgets.layout` namespace before use. Existing guard (`clientKeyCoverage`) now correctly rejects shared.seo in client code.
-
-## [fix/symbols-copy-and-names Round 1 | /symbols 표기·문구 | 2026-09-18]
-- Violation: `as Record<string, TickerDisplayName>` 캐스트에 보증 주석이 없었다. 몇 줄 아래 형제 함수 `getKoreanNames`의 동일한 캐스트에는 있다.
-  - Rule: MISTAKES.md TypeScript §7 + §6.7 — safe-cast 보증 주석은 필수이고, 같은 규칙이 형제 호출부 중 한쪽에만 적용되면 안 된다.
-  - Context: `flatMap`이 `readonly [string, TickerDisplayName][]`만 만든다는 근거를 주석으로 남겼다.
-
-- Violation: `unstable_cache`가 빈 결과를 24시간 캐시할 수 있었다. 하위 리더(`getTickerDisplayNames`·`getCryptoAsset`)가 DB 실패를 삼키고 빈 값을 성공처럼 돌려주기 때문에, 순간적인 실패 한 번이 하루짜리 품질 저하가 된다(stale-while-revalidate라 만료 후 첫 요청도 옛 값).
-  - Rule: (신규) 캐시 래퍼는 "정상적으로 비어 있음"과 "실패해서 비어 있음"을 구분해야 한다. 하위 리더가 에러를 삼키면 캐시 경계에서 던져야 한다 — 거부된 promise는 캐시되지 않는다.
-  - Context: `readSymbolNames`가 이름을 하나도 못 모으면 던지고, `loadSymbolNames`가 그것을 잡아 빈 맵으로 떨어뜨린다. 이름은 사라져도 링크는 남는다.
-
-- Violation: 페이지 `<h1>`이 `<title>` 문자열을 그대로 써서 검색용 꼬리표(`— 미국·한국 주식과 암호화폐`)가 화면에 찍혔다.
-  - Rule: (신규) 검색 결과용으로 쓴 제목 문자열을 화면 헤딩으로 재사용하지 않는다.
-  - Context: `app.symbols.page.heading` 키를 따로 두고 h1·가시 브레드크럼·BreadcrumbList `name`이 그것을 쓴다. `<title>`만 꼬리표를 유지한다.
-
-- Violation: (recommended) TTL 리터럴이 `24 * SECONDS_PER_HOUR`로 재계산돼 있었고 페이지는 같은 값을 `86400`으로 하드코딩했다. `SECONDS_PER_DAY`가 이미 있다.
-  - Rule: MISTAKES.md §15 — 같이 움직여야 하는 두 값에 공통 출처가 없으면 드리프트한다.
-  - Context: TTL은 `SECONDS_PER_DAY`에서 파생하고, 페이지의 `revalidate` 리터럴과의 일치는 소스를 읽는 parity 테스트가 고정한다(Next가 `revalidate`를 정적 분석해 import를 못 쓴다).
 
 ## [fix/symbols-copy-and-names Round 2 | /symbols 표기·문구 | 2026-09-18]
 - Status: APPROVED (지적 없음)
@@ -438,49 +416,6 @@
   - Rule: (new) 금액 반올림에 `toFixed`를 쓰지 않는다 — 크기 기준 상대 엡실론 보정 후 `Math.round`(half-away-from-zero), 지수 문자열 왕복은 부동소수 잡음(1e-13)을 NaN으로 만들므로 금지
   - Context: 리뷰 라운드 1 지적. 부호 대칭·-0 정규화 포함
 
-## [feat/ai-about-page Round 1–2 | AI about page design spec | 2026-09-19]
-- Violation: Sibling JSDoc (`AI_ROBOTS_BODY` in src/proxy.ts) stated the locale home was the AI host's only public surface after `/about` became public; the neighbouring comment on `aiSitemapXml` had been updated but this one was missed
-  - Rule: MISTAKES.md Documentation §15.6 — Comment accuracy; when documentation neighbours are updated, all related neighbours must be checked for stale references
-  - Context: Corrected JSDoc to reflect that `/about` is now also public. Pattern of stale comment adjacent to updated one.
-
-- Violation: Page test suite covered only the default locale; failed to test /en route with non-default language href
-  - Rule: (new) i18n-enabled pages must test at least one non-default locale route to verify href and translations are not locale-specific
-  - Context: Added test covering /en locale with href assertions for the non-default language variant.
-
-- Violation: Helper function `raw` (forwarding i18n keys) did not start with `t`, so scripts/i18n/extract.mjs did not recognize calls — `yarn i18n:extract --write` silently deleted 25 keys only referenced through that helper
-  - Rule: (new) i18n helper functions forwarding i18n keys must be named `t…` (e.g. `tRaw`) for extract.mjs pattern match /\bt\w*(\.(rich|markup|raw))?\('key'/; any other naming defeats extract, causing deletion of "orphaned" keys when --write is run
-  - Context: Renamed `raw` → `tRaw`; re-ran `yarn i18n:extract --write` to restore deleted keys.
-
-- Violation: Running `yarn i18n:translate --locale X` to translate ~140 new keys re-translated 1,633 existing en keys on master branch (1,612 ko keys lack hash entries in messages/_meta/hashes.json, causing re-translation when hash lookup fails)
-  - Rule: (new) Do not run `yarn i18n:translate` on branches adding only new keys; instead add en/ja/zh translations by hand (following recent commit patterns) and verify with `yarn i18n:verify`, or check `--dry-run` count first to avoid cascading re-translation of approved keys
-  - Context: Learned when attempting to batch-translate new keys; the hash cache is incomplete on master, making re-translation too risky. Used manual additions for this batch.
-
-## [PR #852 claude-review R1 | ai.siglens.io/about | 2026-09-19]
-- Violation: Function return type written as inline object type duplicating existing interface AiSeoCopy
-  - Rule: CONVENTIONS.md — named return types + MISTAKES.md TypeScript §5 — reuse existing interfaces instead of duplicating shape inline
-  - Context: Moved AiSeoCopy to shared/config/aiHost.ts and reused it in the return type annotation
-- Violation: Four small components in one file declared inline prop types without named interfaces
-  - Rule: CONVENTIONS.md — Props interface must be declared above each component, not inline on the component parameter
-  - Context: Extracted *Props interfaces (AboutCopyBlockProps, AboutCtaProps, AboutStatProps, AboutHeroProps) and declared above their respective components
-- Violation: Playback state machine (wait/play) defined inside useEffect instead of at module level
-  - Rule: MISTAKES.md Components §14.5 — State enums and state machines must be module-level, not inside hooks; useEffect is for effects, not state definitions
-  - Context: Extracted to module-level lib/replayPlayer.ts with explicit PlaybackContext enum and unit tests
-- Violation: Hook order violation — useRef declared after a custom hook, and derived values declared after an effect
-  - Rule: MISTAKES.md Components §17 — Strict hook order: useState/useRef → useQuery/custom hooks → useCallback/useMemo → derived variables → handlers → useEffect
-  - Context: Reordered all hooks and derived values in the component to match the established order
-- Violation: Module-level beforeAll outside describe block in test file
-  - Rule: MISTAKES.md Tests §3 — All setup functions must be inside describe() scope, never at module level
-  - Context: Wrapped beforeAll and test suite in a describe() block
-- Violation: Decorative accent colour on ~10 elements (icon boxes, arrows, chip borders, source tags, caret, labels) across 2 components
-  - Rule: DESIGN.md accent-color guidelines — accent colour reserved for primary actions, links, focus states, and active indicators only; max 2 per viewport. Decorative accents weaken visual hierarchy and waste the primary-action signal
-  - Context: Removed primary-* classes from decorative elements (icon boxes, arrows, chip borders, source tags, caret, labels). Added UI review checklist item: grep new .tsx files for `primary-` and justify each use against DESIGN.md rules
-- Violation: New pure/helper module lib/aboutContent.ts with no colocated unit test
-  - Rule: MISTAKES.md Components §22 / DESIGN.md checklist §6 — All new pure/helper modules must include colocated unit test file
-  - Context: Added lib/aboutContent.test.ts with tests covering the module's exports and edge cases
-- Suggestion (fixed): Magic delay numbers (300, 900, 350, 120 ms) in the replay playback steps had no constant names
-  - Rule: MISTAKES.md §15 — Hardcoded numbers in function bodies must be named constants with clear intent
-  - Context: Named FIRST_START_MS, NEXT_START_MS, AFTER_TYPING_MS, TOOL_GAP_MS, BEFORE_ANSWER_MS in src/views/ai-about/lib/replayPlayer.ts
-
 ## [PR #852 claude-review R2 | ai.siglens.io/about | 2026-09-19]
 - Violation: A render test listed in the implementation plan (AboutCtaBar, plan Task 3) was never written; the plan task was silently skipped
   - Rule: (new) Before requesting review, diff the plan's test list against the test files actually created
@@ -498,19 +433,6 @@
   - Rule: (guideline) Chrome copy that sits next to a headline should add information, not echo it
   - Context: Bar copy changed to "로그인 없이 무료로 바로 물어볼 수 있어요" (views.ai-about.cta.title, all four locales)
 
-## [PR #852 claude-review R3 (APPROVED, suggestions) | ai.siglens.io/about | 2026-09-19]
-- Suggestion (fixed): `runPlayback` in src/views/ai-about/lib/replayPlayer.ts caught every error silently, not only cancellation
-  - Rule: MISTAKES.md — catch blocks must not swallow errors without logging
-  - Context: cancellation now rejects with a `PlaybackCancelled` Error subclass; other errors are logged with console.error; test added
-- Suggestion (fixed): JSDoc in src/app/ai/[locale]/about/page.tsx claimed every link out of the page leads to `/`, but the "more on SIGLENS" links go to siglens.io
-  - Rule: MISTAKES.md §15.6 — comment accuracy
-  - Context: reworded to the real reason (no account-specific content; ways into the chat go to `/`)
-- Suggestion (fixed): unused `BankIcon` re-export added to the widgets/agent-chat barrel
-  - Rule: do not widen a slice's public surface with exports nobody imports
-  - Context: removed
-- Suggestion (fixed): `useCanAnimate` reduced-motion change subscription had no test
-  - Context: added src/views/ai-about/hooks/__tests__/useCanAnimate.test.tsx (initial value, change event, unsubscribe on unmount)
-
 ## [fix/seo-snapshot-desc-tab-prefix Round 1 | SEO description collision across symbol tabs | 2026-09-20]
 - Violation: `buildSnapshotMetaDescription` in `src/shared/lib/seo.ts` prefixed only `${subject} — ` and clamped AI prose at `SEO_DESCRIPTION_MAX_LENGTH`. When two tabs' snapshots opened with the same long sentence, the clamp cut before they diverged, returning byte-identical descriptions across tabs. Measured in production 2026-09-20: `https://siglens.io/SOXS/overall` and `https://siglens.io/SOXS/fundamental` both returned 193-char descriptions.
   - Rule: Metadata fields derived from dynamic content must include a route/view discriminator in the prefix to prevent collision across different routes serving the same subject.
@@ -521,21 +443,6 @@
   - Rule: Every `generateMetadata` export must explicitly set all metadata fields; unset fields inherit from parent layout, causing search engines to crawl duplicate `<meta>` with identical content across error boundaries.
   - Context: Fixed by populating `description` metadata field with already-translated 404 body copy (`app.home` key `not-found.03ecab`) with whitespace collapsed.
 
-## [feat/agent-discovery + feat/agent-kr-signal-scan R1–R5 | 에이전트 종목·코인 발굴 + 미연결 도구 배선 | 2026-09-20]
-- Violation (R1, required): `AGENT_PROMPT_VERSION` 범프와 `AGENT_TOOL_SPECS` 설명 변경에 `docs/PUBLIC_API.md` 변경 행을 추가하지 않았다 (siglens-core)
-  - Rule: core MISTAKES.md — 모든 공개 API·프롬프트 버전·툴 설명 변경은 같은 커밋에 날짜 행을 남긴다
-  - Context: 리뷰어가 같은 누락이 앞선 세 PR(refactor/cheap-jobs R1, feat/agent-adaptive-depth R1, feat/agent-require-refetch R2)에도 있었다고 지적. 2026-09-20 행 두 개 추가
-- Violation (R3, required): `DashboardScopeId`/`DASHBOARD_SCOPES`에 `'crypto'`를 추가하자 화면 없는 scope가 `src/app/api/cron/seo-prewarm/hubs.ts`의 `marketBriefingTargets()`에 자동 편입됐다. 그 함수는 `Object.values(DASHBOARD_SCOPES)`를 돌며 `runBriefing()`(실제 LLM 호출)을 부른다 — 아무도 읽지 않는 크립토 브리핑을 매일 밤 생성하는 비용 회귀
-  - Rule: (신규) 공유 유니온·레지스트리 레코드를 넓히면 그 레지스트리를 일반적으로 순회하는 **모든** 코드에 새 멤버가 조용히 편입된다. 순회 지점에서 id를 하드코딩해 거르지 말고, 레코드에 능력 플래그를 두어 다음 멤버가 **결정을 하도록** 강제한다
-  - Context: `DashboardScope.hasHubPage` 필드 신설(us·kr true, crypto false), 프리웜이 그걸로 필터. 기존 `hubs.test.ts`는 기대 개수를 `Object.keys(DASHBOARD_SCOPES).length`에서 **직접 파생**해 이 회귀에 구조적으로 눈이 멀어 있었다(그 테스트는 "빠진 표면"만 잡도록 의도된 것). 변경 파일만 대상으로 한 되돌림 검증도 이 파일을 건드리지 않아 못 잡았다 — 테스트를 `PAGE_SCOPES` 상수 기준으로 바꾸고 "화면 없는 scope는 프리웜에 없다"를 따로 단언
-- Violation (R3, recommended): 같은 확장으로 `'crypto'`가 페이지 전용 Server Action 3종(`getSectorSignalsAction`, `getMarketSummaryClientAction`, `submitMarketBriefingAction`)의 유효 입력이 됐다. 셋 다 `isDashboardScopeId`만으로 검증해, 네트워크로 직접 부르면 화면 없는 scope의 시세 조회·브리핑 생성을 시킬 수 있었다
-  - Rule: (신규) 네트워크에서 직접 호출 가능한 Server Action은 "앱이 아는 값인가"가 아니라 "이 진입점이 다루는 값인가"로 좁힌다
-  - Context: `isPageDashboardScopeId`(= `hasHubPage`) 신설 후 세 액션에 적용
-- Violation (R4, recommended): 가드를 좁히면서 다른 참조 지점의 주석이 낡았다 — `src/app/api/analysis/stream/route.ts`가 여전히 `isDashboardScopeId`를 가리켰다
-  - Rule: MISTAKES.md §15.6 — 주석 정확성. 가드·상수를 바꾸면 그것을 설명하는 다른 자리도 같은 커밋에서 갱신한다
-  - Context: 주석을 `isPageDashboardScopeId`로 정정
-- Note: 배선 4건(뉴스 카테고리 다이제스트, 시장 브리핑 peek, 공포·탐욕 `comparisons`, 종목 자체 공포·탐욕)과 R3 수정 2건은 각각 되돌림 검증을 거쳤다 — 소스를 원복하면 해당 테스트가 실패한다
-
 ## [chore/deps-2026-09 Round 1 | 의존성 업그레이드 | 2026-09-24]
 - Violation (R1 REQUIRED, fixed): oxlint 1.79+ `react/globals`를 `oxlint-disable-next-line`으로 억제했다(테스트 프로브가 렌더 중 모듈 변수에 `useQueryClient()`를 대입)
   - Rule: 새 lint 규칙이 테스트 헬퍼를 잡으면 억제 주석 대신 근본 수정 — Provider가 만든 값을 읽을 땐 `renderHook(() => useX(), { wrapper: Provider })`
@@ -544,17 +451,6 @@
   - Rule: (new) 프레임워크를 올릴 때는 구·신 `defaultConfig`를 diff하고, 뒤집힌 플래그 중 테스트·오프라인 빌드로 관측되지 않는 것(CDN·라우터·캐시 계약)은 프로덕션 빌드 + 실제 브라우저로 계약을 실증해 설정 파일 주석에 남긴다
   - Context: `next start` + Playwright로 RSC 요청 전수 캡처(RSC 헤더·`_rsc` 쿼리 동반, `text/x-component`, 307 0건). next.config.ts에 계약·재확인 요구 기록
 - Pre-empted (not a review finding): client-s3 3.1138이 `@aws-crypto` 의존을 없애 Dockerfile의 해당 COPY가 이미지 빌드를 깨뜨리게 됨. PR CI는 Docker 빌드를 안 돌려 못 잡는다 — SDK를 올릴 땐 runner 수동 COPY 목록만 담은 격리 디렉터리에서 실제 요청을 보내 확인
-
-## [chore/node24-yahoo4 Round 1 | Node 24 정렬 + yahoo-finance2 4 | 2026-09-24]
-- Violation (R1 recommended, fixed): 런타임 버전을 바꾸면서 그 버전을 근거로 든 설정 주석(`vitest.config.ts` forks 풀, `vitest.setup.base.ts` localStorage 폴리필)을 갱신하지 않았다
-  - Rule: MISTAKES.md §15.6 — 주석 정확성. 런타임·라이브러리 버전을 올리면 그 버전을 근거로 든 주석을 grep(`Node 25` 등)해 새 런타임에서 전제를 재검증하고 함께 고친다
-  - Context: Node 24.21에서 vmThreads·threads 풀 기동을 재확인, forks 유지 사유(PR #558 env 누수)를 주석에 명시
-- Note: yahoo-finance2 4.0은 릴리스 노트 breaking("Node 22+") 밖에 "인스턴스 간 crumb·큐·debounce 공유 중단"이 있었다. 모듈별 인스턴스 → 동시 요청 4→12(실측). `getYahooClient()` 싱글턴으로 복원, 되돌리면 실패하는 테스트 추가
-
-## [PR #865 claude-review R1 | chore/node24-yahoo4 | 2026-09-24]
-- Violation (Blocker, fixed): yahoo-finance2를 3.15.4→4.0.2로 올리면서 `3.15.3`을 근거로 든 주석 3곳(`createYahooClient.ts`의 queue.timeout, 그 테스트, `YahooOptionsAdapter.ts`의 `defaults.js:24`)을 재검증하지 않았다 — 같은 PR에서 Node 25 주석은 고쳤는데 라이브러리 버전 주석엔 같은 규칙을 적용하지 않았다(형제 규칙 불일치)
-  - Rule: MISTAKES.md §15.6 — 의존성을 올리면 `git grep`으로 **이전 버전 번호 문자열**(`3.15.3` 등)을 찾아, 그 주석의 사실(줄 번호·동작)을 새 버전 실물 소스에서 재확인하고 함께 고친다
-  - Context: 4.0.2 소스로 재확인 — queue.timeout 여전히 죽은 속성(`defaults.js:16`), `logErrors` 기본값은 `defaults.js:19`로 이동·의미 동일, fetch 우선순위 동일하고 `envFetch`는 null이라 우리 타임아웃 fetch가 적용됨
 
 ## [chore/test-tooling-majors Round 1 | vitest 5·jsdom 30 | 2026-09-24]
 - Violation (R1 REQUIRED, fixed): vitest 5가 `experimental.fsModuleCache`를 top-level `fsModuleCache`로 옮겼는데 옛 위치에 남겨 타입 에러 + 런타임 무시. 로컬 `yarn typecheck`가 0건으로 나와 놓쳤다

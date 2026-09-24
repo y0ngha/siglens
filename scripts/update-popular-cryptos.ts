@@ -37,6 +37,11 @@ import {
     writeFileSync,
 } from 'fs';
 import { dirname, resolve } from 'path';
+import {
+    classifyVisitSymbol,
+    selectVisitCandidates,
+} from './lib/visitCandidates';
+import { loadVisitSources } from './lib/visitSources';
 
 const FMP_BASE_URL = 'https://financialmodelingprep.com/stable';
 
@@ -67,6 +72,9 @@ export const STABLECOINS: ReadonlySet<string> = new Set([
  * 심볼별 순차 호출 사이에 삽입한다.
  */
 const REQUEST_DELAY_MS = 250;
+
+/** 방문 후보 최소 시총 — 거래 가능한 코인만. 시총 상위 15 경로보다 느슨하다. */
+export const MIN_VISIT_CRYPTO_MARKET_CAP = 1_000_000_000;
 
 /**
  * 후보 풀 — 유지 관리 필요.
@@ -284,6 +292,17 @@ export function rankByMarketCap(
         .filter(e => e.marketCap > 0)
         .toSorted((a, b) => b.marketCap - a.marketCap)
         .slice(0, topN);
+}
+
+/** 방문 후보(크립토) 탈락 사유. 통과면 null. */
+export function visitCryptoRejection(
+    eligible: boolean,
+    marketCap: number | null
+): string | null {
+    if (!eligible) return 'not eligible (unlisted or stablecoin)';
+    if (marketCap === null || marketCap <= 0) return 'no market cap';
+    if (marketCap < MIN_VISIT_CRYPTO_MARKET_CAP) return 'market cap < $1B';
+    return null;
 }
 
 /**
@@ -576,11 +595,39 @@ async function main(): Promise<void> {
     }
 
     const newSymbols = topSymbols.filter(s => !existingCryptos.has(s));
+    // 방문 후보 — 시총 상위 경로와 별도 할당. DB 실패 시 건너뛴다.
+    const visit = await loadVisitSources();
+    const visitSymbols: string[] = [];
+    if (visit !== null) {
+        const candidates = selectVisitCandidates(
+            visit.tallies,
+            'crypto',
+            new Set([...existingCryptos, ...newSymbols]),
+            s => classifyVisitSymbol(s, visit.cryptoSymbols)
+        );
+        for (const { symbol, views } of candidates) {
+            const eligible =
+                filterValidCandidates([symbol], cryptoList).valid.length > 0;
+            const quote = eligible
+                ? await fetchSingleQuote(apiKey, symbol)
+                : null;
+            if (eligible) await sleep(REQUEST_DELAY_MS);
+            const reason = visitCryptoRejection(
+                eligible,
+                quote?.marketCap ?? null
+            );
+            console.log(
+                `  [visit:crypto] ${symbol.padEnd(10)} views=${views} → ${reason ?? 'PASS'}`
+            );
+            if (reason === null) visitSymbols.push(symbol);
+        }
+    }
+    const symbolsToAdd = [...newSymbols, ...visitSymbols];
     console.log(
         `New symbols (in top ${MAX_POPULAR_CRYPTOS}, not already listed): ${newSymbols.length}`
     );
 
-    if (newSymbols.length === 0) {
+    if (symbolsToAdd.length === 0) {
         if (initialDeduplication.content !== originalFileContent) {
             commitFileAtomically(
                 POPULAR_CRYPTOS_PATH,
@@ -595,12 +642,12 @@ async function main(): Promise<void> {
 
     const contentWithTrendingSection = insertCryptoTrendingSection(
         initialDeduplication.content,
-        newSymbols
+        symbolsToAdd
     );
     const addedSymbols =
         contentWithTrendingSection === initialDeduplication.content
             ? []
-            : newSymbols;
+            : symbolsToAdd;
     const finalDeduplication = deduplicateCryptoEntries(
         contentWithTrendingSection
     );
@@ -612,6 +659,10 @@ async function main(): Promise<void> {
     }
 
     commitFileAtomically(POPULAR_CRYPTOS_PATH, finalDeduplication.content);
+
+    console.log(
+        `Added — market cap: ${newSymbols.length}, visit: ${visitSymbols.length}`
+    );
 
     if (addedSymbols.length > 0) {
         console.log(

@@ -30,6 +30,20 @@ import {
 import { dirname, resolve } from 'path';
 import { toYahooSymbol } from '@/shared/lib/yahooSymbol';
 import YahooFinance from 'yahoo-finance2';
+import { CANONICAL_KOREAN_NAMES } from '@/shared/config/canonical-korean-names';
+import {
+    insertKrTrendingItems,
+    type KrTrendingItem,
+} from './scripts/lib/krTrendingInsert';
+import {
+    classifyVisitSymbol,
+    extractExistingKrTickers,
+    selectVisitCandidates,
+} from './scripts/lib/visitCandidates';
+import {
+    loadVisitSources,
+    type VisitSources,
+} from './scripts/lib/visitSources';
 
 // --- Constants ---
 
@@ -53,6 +67,20 @@ const EXCLUDED_TICKERS = new Set([
     'SKHY', // 000660.KS(SK하이닉스)와 동일 회사인 OTC ADR
 ]);
 
+/** 방문 후보(US)가 속해야 할 거래소. 크립토(`CRYPTO`)·OTC 잡주를 거른다. */
+const VISIT_ALLOWED_EXCHANGES: ReadonlySet<string> = new Set([
+    'NASDAQ',
+    'NYSE',
+    'AMEX',
+]);
+
+/**
+ * 방문 후보(KR) 최소 시총(KRW). KR 후보는 곧 sitemap·색인 판정·프리웜 대상이 되므로
+ * 소형주 롱테일 재개방을 막는다(US `SCREENER_MIN_MARKET_CAP` $2B ≈ 2.8조보다 낮게 —
+ * 한국 대형주 풀이 작다).
+ */
+export const MIN_VISIT_KR_MARKET_CAP_KRW = 1_000_000_000_000;
+
 const POPULAR_TICKERS_PATH = resolve(
     process.cwd(),
     'src/shared/config/popular-tickers.ts'
@@ -67,6 +95,18 @@ const TICKER_LITERAL_LINE_PATTERN =
     /^(\s*)['"]([A-Z][A-Z0-9.-]*)['"],?(\s*(?:\/\/.*)?)?$/;
 
 // --- Types ---
+
+/** FMP stable `profile` 응답에서 쓰는 필드 (2026-09-24 실키 확인: SOXL). 없는 심볼은 `[]`. */
+export interface FmpProfile {
+    symbol: string;
+    price: number | null;
+    marketCap: number | null;
+    isEtf: boolean;
+    isFund: boolean;
+    isActivelyTrading: boolean;
+    exchange: string;
+    companyName: string;
+}
 
 interface ScreenerResult {
     symbol: string;
@@ -467,6 +507,111 @@ async function fetchEodBars(
     return raw;
 }
 
+async function fetchProfile(
+    apiKey: string,
+    symbol: string
+): Promise<FmpProfile | null> {
+    const params = new URLSearchParams({ symbol, apikey: apiKey });
+    const res = await fetch(`${FMP_BASE_URL}/profile?${params}`);
+    if (!res.ok) {
+        console.warn(`  profile fetch failed for ${symbol}: ${res.status}`);
+        return null;
+    }
+    // FMP returns unvalidated JSON; unknown symbols come back as []
+    const raw: unknown = await res.json();
+    if (!Array.isArray(raw) || raw.length === 0) return null;
+    return raw[0] as FmpProfile;
+}
+
+interface YahooQuoteClient {
+    quote(
+        symbol: string,
+        queryOptions?: unknown,
+        moduleOptions?: { validateResult?: boolean }
+    ): Promise<unknown>;
+}
+
+async function fetchKrMarketCap(
+    client: YahooQuoteClient,
+    symbol: string
+): Promise<number | null> {
+    try {
+        const quote = (await client.quote(toYahooSymbol(symbol), undefined, {
+            validateResult: false,
+        })) as { marketCap?: unknown } | undefined;
+        return typeof quote?.marketCap === 'number' ? quote.marketCap : null;
+    } catch {
+        return null;
+    }
+}
+
+/** 방문 후보(US)를 검증해 통과 심볼만 돌려준다. 탈락 사유는 콘솔에 남긴다. */
+async function collectVisitUsSymbols(
+    apiKey: string,
+    visit: VisitSources,
+    existing: ReadonlySet<string>,
+    includeEtf: boolean
+): Promise<string[]> {
+    const candidates = selectVisitCandidates(
+        visit.tallies,
+        'us',
+        new Set([...existing, ...EXCLUDED_TICKERS]),
+        s => classifyVisitSymbol(s, visit.cryptoSymbols)
+    );
+    const { from, to } = getLookbackDateRange();
+    const passed: string[] = [];
+    for (const { symbol, views } of candidates) {
+        const profile = await fetchProfile(apiKey, symbol);
+        await sleep(REQUEST_DELAY_MS);
+        const bars =
+            profile === null
+                ? []
+                : await fetchEodBars(apiKey, symbol, from, to);
+        const change =
+            bars.length === 0 ? null : calculateMaxDailyChangePct(bars);
+        const reason = visitUsRejection(profile, change, includeEtf);
+        console.log(
+            `  [visit:us] ${symbol.padEnd(8)} views=${views} → ${reason ?? 'PASS'}`
+        );
+        if (reason === null) passed.push(symbol);
+    }
+    return passed;
+}
+
+/** 방문 후보(KR)를 검증해 카테고리 항목으로 돌려준다. */
+async function collectVisitKrItems(
+    visit: VisitSources,
+    existingKr: ReadonlySet<string>,
+    client: YahooQuoteClient
+): Promise<KrTrendingItem[]> {
+    const candidates = selectVisitCandidates(
+        visit.tallies,
+        'kr',
+        existingKr,
+        s => classifyVisitSymbol(s, visit.cryptoSymbols)
+    );
+    const passed: KrTrendingItem[] = [];
+    for (const { symbol, views } of candidates) {
+        const listedName = visit.krNames.get(symbol);
+        const marketCap =
+            listedName === undefined
+                ? null
+                : await fetchKrMarketCap(client, symbol);
+        const reason = visitKrRejection(listedName, marketCap);
+        console.log(
+            `  [visit:kr] ${symbol.padEnd(10)} views=${views} → ${reason ?? 'PASS'}`
+        );
+        if (reason === null && listedName !== undefined) {
+            // 홈 카드 이름은 정규명을 따른다(canonical-korean-names.test.ts).
+            passed.push({
+                symbol,
+                name: CANONICAL_KOREAN_NAMES.get(symbol) ?? listedName,
+            });
+        }
+    }
+    return passed;
+}
+
 // --- Core logic ---
 
 function calculateWeeklyVolume(bars: EodBar[]): number {
@@ -490,6 +635,41 @@ function filterAndRank(tickers: TickerWeeklyVolume[]): TickerWeeklyVolume[] {
             .sort((a, b) => b.weeklyVolume - a.weeklyVolume)
             .slice(0, MAX_NEW_TICKERS)
     );
+}
+
+/** 방문 후보(US) 탈락 사유. 통과면 null. 순서 = 싸고 결정적인 검사 먼저. */
+export function visitUsRejection(
+    profile: FmpProfile | null,
+    maxDailyChangePct: number | null,
+    includeEtf: boolean
+): string | null {
+    if (profile === null) return 'no FMP profile';
+    if (!profile.isActivelyTrading) return 'not actively trading';
+    if (!VISIT_ALLOWED_EXCHANGES.has(profile.exchange)) {
+        return `exchange ${profile.exchange}`;
+    }
+    if (profile.isFund) return 'fund';
+    if (profile.isEtf && !includeEtf) return 'ETF (pass --include-etf)';
+    if ((profile.price ?? 0) < MIN_PRICE) return `price < $${MIN_PRICE}`;
+    if ((profile.marketCap ?? 0) < SCREENER_MIN_MARKET_CAP) {
+        return 'market cap < $2B';
+    }
+    if (maxDailyChangePct === null) return 'no EOD bars';
+    if (maxDailyChangePct >= MAX_DAILY_CHANGE_PCT) {
+        return `max daily change ≥ ${MAX_DAILY_CHANGE_PCT}%`;
+    }
+    return null;
+}
+
+/** 방문 후보(KR) 탈락 사유. `name` undefined = 상장 목록에 없음. */
+export function visitKrRejection(
+    name: string | undefined,
+    marketCapKrw: number | null
+): string | null {
+    if (name === undefined) return 'not listed in korean_tickers';
+    if (marketCapKrw === null) return 'no market cap';
+    if (marketCapKrw < MIN_VISIT_KR_MARKET_CAP_KRW) return 'market cap < ₩1조';
+    return null;
 }
 
 function printResults(tickers: TickerWeeklyVolume[]): void {
@@ -541,12 +721,19 @@ async function main(): Promise<void> {
         );
     }
 
-    // 2. Fetch screener candidates
+    // 2. Load visit sources (부가 신호 — 실패해도 계속)
+    const visit = await loadVisitSources();
+    if (visit !== null) {
+        console.log(
+            `Visit tallies (≥ threshold, last 7d): ${visit.tallies.length}`
+        );
+    }
+
+    // 3. Fetch screener candidates
     console.log('Fetching screener candidates...');
     const screenerResults = await fetchScreenerResults(apiKey, includeEtf);
     console.log(`Screener returned: ${screenerResults.length} candidates`);
 
-    // 3. Exclude existing tickers
     const newCandidates = screenerResults.filter(
         r => !existingTickers.has(r.symbol) && !EXCLUDED_TICKERS.has(r.symbol)
     );
@@ -554,15 +741,9 @@ async function main(): Promise<void> {
         `New candidates (not in POPULAR_TICKERS): ${newCandidates.length}`
     );
 
-    let updatedPopularContent = fileContent;
-    let addedSymbols: readonly string[] = [];
-
-    if (newCandidates.length === 0) {
-        console.log(
-            '\nNo new candidates found. Checking for file cleanup only.'
-        );
-    } else {
-        // 4. Fetch weekly volume (capped at EOD_FETCH_CAP to limit API calls)
+    // 4. Volume candidates (기존 흐름)
+    let volumeSymbols: string[] = [];
+    if (newCandidates.length > 0) {
         const cappedCandidates = newCandidates.slice(0, EOD_FETCH_CAP);
         const { from, to } = getLookbackDateRange();
         console.log(
@@ -596,38 +777,78 @@ async function main(): Promise<void> {
         );
 
         console.log(`EOD data fetched for ${weeklyVolumes.length} tickers`);
-
-        // 5. Filter and rank
         const topTickers = filterAndRank(weeklyVolumes);
+        if (topTickers.length > 0) printResults(topTickers);
+        volumeSymbols = topTickers.map(t => t.symbol);
+    }
 
-        if (topTickers.length === 0) {
-            console.log(
-                '\nNo tickers passed filters. Keeping existing popular list.'
-            );
-        } else {
-            // 6. Display results
-            printResults(topTickers);
+    // 5. Visit candidates (US·KR) — 거래량 후보와 별도 할당
+    let visitUsSymbols: string[] = [];
+    let visitKrItems: KrTrendingItem[] = [];
+    if (visit !== null) {
+        console.log('\nValidating visit candidates...');
+        visitUsSymbols = await collectVisitUsSymbols(
+            apiKey,
+            visit,
+            new Set([...existingTickers, ...volumeSymbols]),
+            includeEtf
+        );
+        visitKrItems = await collectVisitKrItems(
+            visit,
+            extractExistingKrTickers(fileContent),
+            new YahooFinance({ suppressNotices: ['yahooSurvey'] })
+        );
+    }
 
-            // 7. Update file
-            const newSymbols = topTickers.map(t => t.symbol);
-            const contentWithTrendingSection = insertTrendingSection(
-                fileContent,
-                newSymbols
-            );
-            addedSymbols =
-                contentWithTrendingSection === fileContent ? [] : newSymbols;
-            const finalDeduplication = deduplicatePopularTickerEntries(
-                contentWithTrendingSection
-            );
-            updatedPopularContent = finalDeduplication.content;
+    // 6. Update file content
+    const newSymbols = [...volumeSymbols, ...visitUsSymbols];
+    let updatedPopularContent = fileContent;
+    let addedSymbols: readonly string[] = [];
 
-            if (finalDeduplication.removedTickers.length > 0) {
-                console.log(
-                    `Duplicate tickers removed after update: ${finalDeduplication.removedTickers.join(', ')}`
-                );
-            }
+    if (newSymbols.length > 0) {
+        const contentWithTrendingSection = insertTrendingSection(
+            updatedPopularContent,
+            newSymbols
+        );
+        addedSymbols =
+            contentWithTrendingSection === updatedPopularContent
+                ? []
+                : newSymbols;
+        updatedPopularContent = contentWithTrendingSection;
+    }
+
+    if (visitKrItems.length > 0) {
+        const before = updatedPopularContent;
+        updatedPopularContent = insertKrTrendingItems(
+            updatedPopularContent,
+            visitKrItems
+        );
+        if (updatedPopularContent !== before) {
+            addedSymbols = [
+                ...addedSymbols,
+                ...visitKrItems.map(i => i.symbol),
+            ];
         }
     }
+
+    if (updatedPopularContent !== fileContent) {
+        const finalDeduplication = deduplicatePopularTickerEntries(
+            updatedPopularContent
+        );
+        updatedPopularContent = finalDeduplication.content;
+        if (finalDeduplication.removedTickers.length > 0) {
+            console.log(
+                `Duplicate tickers removed after update: ${finalDeduplication.removedTickers.join(', ')}`
+            );
+        }
+    } else {
+        console.log('\nNo new tickers. Checking for file cleanup only.');
+    }
+
+    // 프리웜 유니버스 입력이 늘어난다(append-only) — 커밋 전에 사람이 보게 한다.
+    console.log(
+        `\nAdded — volume: ${volumeSymbols.length}, visit US: ${visitUsSymbols.length}, visit KR: ${visitKrItems.length}`
+    );
 
     const finalPopularTickers = [
         ...extractExistingTickers(updatedPopularContent),
@@ -646,6 +867,10 @@ async function main(): Promise<void> {
                     optionsContent
                 ),
         }
+    );
+
+    console.log(
+        `POPULAR_TICKERS size: ${extractExistingTickers(originalFileContent).size + extractExistingKrTickers(originalFileContent).size} → ${finalPopularTickers.length + extractExistingKrTickers(updatedPopularContent).size}`
     );
 
     if (updatedPopularContent === originalFileContent) {
