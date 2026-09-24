@@ -15,6 +15,7 @@ import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { isKoreanInput } from '@/entities/ticker';
 import { useRecentSearches } from '../hooks/useRecentSearches';
 import { useTickerSearch } from '../hooks/useTickerSearch';
+import { normalizeLabel } from '../lib/normalizeLabel';
 import { POPULAR_PREVIEW_GROUPS } from '../lib/popularPreview';
 import { resolveSubmitTarget } from '../lib/resolveSubmitTarget';
 import { SEARCH_PLACEHOLDER_KEY, SEARCH_ROW_CLASS } from '../lib/searchLabels';
@@ -189,7 +190,7 @@ function SearchOverlayBody({
      * 사용자는 애플을 눌렀는데 NVDA 차트를 2~3초 본다(LAX 경로 실측 기준). 셋 다 사라진다.
      */
     function handleSelect(symbol: string, label: string) {
-        addSearch({ symbol, label: label.trim() || symbol });
+        addSearch({ symbol, label: normalizeLabel(label, symbol) });
         // 보고 있던 종목을 다시 고른 경우. 이동할 곳이 없으니 닫기만 한다 —
         // `/NVDA`에서 인기 종목의 NVDA를 누르는 건 탭 한 번이면 닿는 흔한 동작이다.
         if (pathname === `/${symbol}`) {
