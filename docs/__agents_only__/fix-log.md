@@ -550,3 +550,8 @@
   - Rule: MISTAKES.md §15.6 — 주석 정확성. 런타임·라이브러리 버전을 올리면 그 버전을 근거로 든 주석을 grep(`Node 25` 등)해 새 런타임에서 전제를 재검증하고 함께 고친다
   - Context: Node 24.21에서 vmThreads·threads 풀 기동을 재확인, forks 유지 사유(PR #558 env 누수)를 주석에 명시
 - Note: yahoo-finance2 4.0은 릴리스 노트 breaking("Node 22+") 밖에 "인스턴스 간 crumb·큐·debounce 공유 중단"이 있었다. 모듈별 인스턴스 → 동시 요청 4→12(실측). `getYahooClient()` 싱글턴으로 복원, 되돌리면 실패하는 테스트 추가
+
+## [PR #865 claude-review R1 | chore/node24-yahoo4 | 2026-09-24]
+- Violation (Blocker, fixed): yahoo-finance2를 3.15.4→4.0.2로 올리면서 `3.15.3`을 근거로 든 주석 3곳(`createYahooClient.ts`의 queue.timeout, 그 테스트, `YahooOptionsAdapter.ts`의 `defaults.js:24`)을 재검증하지 않았다 — 같은 PR에서 Node 25 주석은 고쳤는데 라이브러리 버전 주석엔 같은 규칙을 적용하지 않았다(형제 규칙 불일치)
+  - Rule: MISTAKES.md §15.6 — 의존성을 올리면 `git grep`으로 **이전 버전 번호 문자열**(`3.15.3` 등)을 찾아, 그 주석의 사실(줄 번호·동작)을 새 버전 실물 소스에서 재확인하고 함께 고친다
+  - Context: 4.0.2 소스로 재확인 — queue.timeout 여전히 죽은 속성(`defaults.js:16`), `logErrors` 기본값은 `defaults.js:19`로 이동·의미 동일, fetch 우선순위 동일하고 `envFetch`는 null이라 우리 타임아웃 fetch가 적용됨

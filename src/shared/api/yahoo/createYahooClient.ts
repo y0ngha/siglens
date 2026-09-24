@@ -17,10 +17,12 @@ export const YAHOO_FETCH_TIMEOUT_MS = 8 * MS_PER_SECOND;
 /**
  * 타임아웃이 걸린 yahoo 클라이언트를 만든다.
  *
- * **라이브러리 기본 timeout은 쓸 수 없다.** `queue.timeout`은 3.15.3에서 주석 처리돼
- * 있고(`lib/options/defaults.js`) 큐 구현이 그 값을 읽지도 않는다 — 죽은 속성이다.
- * 생성자 옵션의 `fetch`는 실제로 반영되므로(`lib/yahooFinanceFetch.js`가
- * `this._opts.fetch`를 우선한다) 거기에 per-call 시그널을 얹는다.
+ * **라이브러리 기본 timeout은 쓸 수 없다.** `queue.timeout`은 주석 처리돼 있고
+ * (`lib/options/defaults.js:16`) 큐 구현(`lib/queue.js`)이 그 값을 읽지도 않는다 — 죽은
+ * 속성이다(3.15.3에서 확인, 4.0.2에서 재확인). 생성자 옵션의 `fetch`는 실제로 반영되므로
+ * 거기에 per-call 시그널을 얹는다: `lib/yahooFinanceFetch.js`는 `moduleOpts.fetch ||
+ * envFetch || this._opts.fetch` 순으로 고르는데, 앞의 둘은 우리가 넘기지 않고 `envFetch`
+ * (`this._env.fetch`)는 생성 시 `null`로 초기화된다(`createYahooFinance.js`) — 4.0.2 기준.
  *
  * **왜 `fetchOptions.signal`이 아닌가**: 그건 인스턴스마다 한 번 만들어지는 정적
  * 옵션이라, `AbortSignal.timeout`을 넣으면 첫 8초 뒤 그 시그널이 이미 abort된 상태로

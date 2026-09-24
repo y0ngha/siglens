@@ -34,7 +34,8 @@ import {
 // This may happen intermittently…" 메시지를 logger.error로 출력한다.
 // 이 에러는 adapter의 catch 블록에서 null 반환으로 이미 처리되므로 로그 자체는 노이즈다.
 // validation: { logErrors: false }를 설정하면 FailedYahooValidationError throw는
-// 그대로 유지한 채 로그 출력만 비활성화된다(라이브러리 v3.15.3 defaults.js:24).
+// 그대로 유지한 채 로그 출력만 비활성화된다 — 4.0.2 기준 기본값 `lib/options/defaults.js:19`,
+// 로그는 `logErrors === true`일 때만 찍고 throw는 무조건(`lib/validateAndCoerceTypes.js:188·220`).
 const yahooFinance = getYahooClient();
 
 /**
