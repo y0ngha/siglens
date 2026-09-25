@@ -18,6 +18,7 @@
 ## Project
 
 Closed loops (approved, kept for pattern recall only — see file for detail):
+- [market-fear-greed crypto signDisplay R2 closed](project-market-fear-greed-crypto-signdisplay-r2-closed.md) — signDisplay unsigned-for-share fix mutation-checked, closed
 - [audit/fix-r4 KRcal+overall degrade](project-audit-fix-r4-krcal-overall-degrade.md) — 8th file caught via file-count mismatch
 - [Coverage-PR patterns](project-coverage-pr-patterns.md) — test-only PRs: judge falsifiability not %
 - [Crypto assetClass/session](project-crypto-assetclass-session.md) — lossy assetClass→profileId ternary hotspot
@@ -87,6 +88,8 @@ Closed loops (approved, kept for pattern recall only — see file for detail):
 - [trader precomputed-core-1.11 R1](project-trader-precomputed-core-1.11-r1.md) — single-row fixture = unfalsifiable "latest past row" fallback; old-vs-new core d.ts diff via main checkout node_modules
 - [trader precomputed-core-1.11 R2](project-trader-precomputed-core-1.11-r2.md) — approved; 4 fallback mutations killed; trader scratch-copy mutation recipe
 - [trader core-1.11.1 bump R1](project-trader-core-1.11.1-bump-r1.md) — approved; pure version bump, riskReward-text prepend-condition change confirmed inert for trader
+- [trader daily-mr R3](project-trader-daily-mr-r3.md) — 3-agent parallel fix round, interactions all verified correct; only stale idempotency-key comment + silent-done edge case
+- [trader daily-mr R4 closed](project-trader-daily-mr-r4-closed.md) — approved; both R3 nits fixed, JSDoc grep-matched, mutation-shaped test added
 - [feat/agent-adaptive-depth R2](project-core-agent-adaptive-depth-r2.md) — approved; null-confluence Plain-level fallback + PUBLIC_API row, mutation-verified
 - [feat/hub-ai-prewarm R2-R4 closed](project-hub-ai-prewarm-r2.md) — R3 reorder broke durationMs (dropped hub-phase time), R4 fixed via independent batchStartedAt, sim-clock mutation-verified
 - [feat/ai-about-page R1-R2 closed](project-ai-about-page-r1-r2.md) — tRaw helper name avoids extract.mjs regex miss; key-set-equality flatten script; R2 saw unlisted unstaged files
