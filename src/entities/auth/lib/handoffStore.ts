@@ -3,7 +3,9 @@ import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { getRedisClient } from '@/shared/cache/redisClient';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import {
+    DEFAULT_LOCALE,
     isApiPath,
+    isLocale,
     localePath,
     splitLocalePath,
     type Locale,
@@ -227,4 +229,68 @@ export async function consumeHandoffCode(
     if (!timingSafeEqual(Buffer.from(stored.state), Buffer.from(state)))
         return null;
     return { userId: stored.userId, next: sanitizeNextPath(stored.next) };
+}
+
+const LOGOUT_KEY_PREFIX = 'auth:handoff-logout:';
+
+/** A signed-out ai visitor's landing (`?sso=none` stops the handoff from signing them back in). */
+export function aiSignedOutUrl(locale: Locale): URL {
+    const url = new URL(localePath(locale, '/'), AI_SITE_URL);
+    url.searchParams.set('sso', 'none');
+    return url;
+}
+
+/**
+ * ai 호스트 로그아웃을 메인 호스트까지 전파하는 1회용 코드를 발급한다.
+ *
+ * 왜 필요한가 — 두 호스트의 세션 쿠키는 각자 host-only라 ai에서 메인 세션을
+ * 지울 수 없다. ai 세션만 지우면 ai 홈이 세션 없음을 보고 핸드오프를 다시
+ * 돌려 **살아 있는 메인 세션으로 곧바로 재로그인**한다. 그래서 ai 로그아웃은
+ * 이 코드를 들고 메인 `/api/auth/handoff/logout`으로 넘어가 메인 세션도 끝낸다.
+ *
+ * 왜 코드인가(로그아웃 CSRF) — 코드 없이 GET 한 번으로 메인 세션을 끊을 수
+ * 있으면 아무 페이지나 피해자를 로그아웃시킨다. 코드는 ai 세션 소유자만
+ * 발급할 수 있고, 소비 측은 코드의 userId가 **현재 메인 세션의 사용자와 같을
+ * 때만** 세션을 지운다 — 공격자가 자기 계정으로 발급한 코드를 심어도 무해하다.
+ */
+export async function issueLogoutCode(input: {
+    userId: string;
+    locale: Locale;
+}): Promise<string> {
+    const redis = getRedisClient();
+    if (redis === null) throw new Error('[handoff] redis unavailable');
+    const code = generateHandoffToken();
+    const ok = await redis.set(
+        `${LOGOUT_KEY_PREFIX}${code}`,
+        JSON.stringify({ userId: input.userId, locale: input.locale }),
+        { ex: HANDOFF_TTL_SECONDS }
+    );
+    if (ok !== 'OK') throw new Error('[handoff] logout code not stored');
+    return code;
+}
+
+/** Consumes a logout code exactly once (`getdel`). Null for malformed/unknown/expired/corrupt. */
+export async function consumeLogoutCode(
+    code: string | null | undefined
+): Promise<{ userId: string; locale: Locale } | null> {
+    if (!isHandoffToken(code)) return null;
+    const redis = getRedisClient();
+    if (redis === null) return null;
+    let value: unknown = await redis.getdel(`${LOGOUT_KEY_PREFIX}${code}`);
+    // Upstash auto-deserializes stored JSON (see parseStored).
+    if (typeof value === 'string') {
+        try {
+            value = JSON.parse(value);
+        } catch {
+            return null;
+        }
+    }
+    if (typeof value !== 'object' || value === null) return null;
+    const candidate = value as Record<string, unknown>;
+    if (typeof candidate.userId !== 'string') return null;
+    const locale =
+        typeof candidate.locale === 'string' && isLocale(candidate.locale)
+            ? candidate.locale
+            : DEFAULT_LOCALE;
+    return { userId: candidate.userId, locale };
 }

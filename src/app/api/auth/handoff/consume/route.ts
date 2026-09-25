@@ -11,6 +11,7 @@ import {
 import { DrizzleSessionRepository } from '@/entities/auth/api';
 import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
 import {
+    aiSignedOutUrl,
     consumeHandoffCode,
     handoffStateCookie,
     handoffStateCookieName,
@@ -18,18 +19,11 @@ import {
     type HandoffPayload,
 } from '@/entities/auth/lib/handoffStore';
 import { AI_SITE_URL, isAiHost } from '@/shared/config/aiHost';
-import { DEFAULT_LOCALE, localePath, type Locale } from '@/shared/i18n/locales';
+import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 
 const { HTTP_STATUS_BAD_REQUEST, HTTP_STATUS_FOUND } = constants;
 
 export const dynamic = 'force-dynamic';
-
-/** Landing with `?sso=none` in the given locale (e.g. `/en?sso=none`). */
-function ssoNoneUrl(locale: Locale): URL {
-    const url = new URL(localePath(locale, '/'), AI_SITE_URL);
-    url.searchParams.set('sso', 'none');
-    return url;
-}
 
 function noStoreRedirect(url: URL): NextResponse {
     const response = NextResponse.redirect(url, HTTP_STATUS_FOUND);
@@ -76,7 +70,8 @@ export async function GET(request: NextRequest): Promise<Response> {
         console.error('[handoff] redis unavailable', error);
         payload = null;
     }
-    if (payload === null) return noStoreRedirect(ssoNoneUrl(DEFAULT_LOCALE));
+    if (payload === null)
+        return noStoreRedirect(aiSignedOutUrl(DEFAULT_LOCALE));
     const { locale, next } = resolveHandoffNext(payload.next);
 
     const secure = isSecureCookieEnv();
@@ -94,7 +89,7 @@ export async function GET(request: NextRequest): Promise<Response> {
         console.error('[handoff] session create failed', {
             userId: payload.userId,
         });
-        return noStoreRedirect(ssoNoneUrl(locale));
+        return noStoreRedirect(aiSignedOutUrl(locale));
     }
     const response = noStoreRedirect(new URL(next, AI_SITE_URL));
     response.cookies.set(applyAuthCookie(cookie));

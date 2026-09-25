@@ -22,7 +22,11 @@ import {
     expiredOAuthStateCookie,
     verifyOAuthState,
 } from '@/features/auth-oauth';
-import { sanitizeNextPath, toSameOriginPath } from '@/shared/lib/auth/redirect';
+import {
+    DEFAULT_REDIRECT_PATH,
+    sanitizeNextPath,
+    toSameOriginPath,
+} from '@/shared/lib/auth/redirect';
 import { localePath, splitLocalePath } from '@/shared/i18n/locales';
 
 interface CallbackRouteParams {
@@ -54,6 +58,11 @@ function redirectToLoginWithError(
     );
     url.searchParams.set('error', code);
     if (email) url.searchParams.set('email', email);
+    // 돌아갈 곳을 로그인 화면에 되실어 준다 — 없으면 ai.siglens.io에서 온 사용자가
+    // (SSO 핸드오프 `next`) 이메일로 다시 로그인한 뒤 메인 홈에 남는다.
+    const safeNext = sanitizeNextPath(next);
+    if (safeNext !== DEFAULT_REDIRECT_PATH)
+        url.searchParams.set('next', safeNext);
     const response = NextResponse.redirect(url);
     response.cookies.set(expiredOAuthStateCookie());
     return response;
