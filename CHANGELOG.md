@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.88.1](https://github.com/y0ngha/siglens/compare/v0.88.0...v0.88.1) (2026-09-25)
+
+### Bug Fixes
+
+* **auth:** log out of both hosts from ai.siglens.io and keep next on auth flows ([5a0d343](https://github.com/y0ngha/siglens/commit/5a0d34326ee1bbc7e239c8b625c6287c80204e94))
+* **auth:** return email login/signup from ai.siglens.io to the ai host ([2bb76d9](https://github.com/y0ngha/siglens/commit/2bb76d9b2305eff375bb0b4741e7c8c48d47186b))
+
 # [0.88.0](https://github.com/y0ngha/siglens/compare/v0.87.0...v0.88.0) (2026-09-24)
 
 ### Bug Fixes
