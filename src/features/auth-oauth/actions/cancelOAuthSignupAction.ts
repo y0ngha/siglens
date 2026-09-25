@@ -17,20 +17,21 @@ import {
  */
 async function discardPendingSignup(token: string): Promise<string> {
     if (!token) return '';
-    let next = DEFAULT_REDIRECT_PATH;
     try {
         const store = createPendingOAuthSignupStoreFromEnv();
         if (store === null) return '';
-        try {
-            next = sanitizeNextPath((await store.peek(token))?.next);
-        } catch {
-            // 돌아갈 곳을 못 읽어도 삭제는 시도한다.
-        }
-        await store.delete(token);
+        // 돌아갈 곳을 못 읽어도 삭제는 시도한다.
+        const next = await store.peek(token).then(
+            pending => sanitizeNextPath(pending?.next),
+            () => DEFAULT_REDIRECT_PATH
+        );
+        await store.delete(token).catch(() => {
+            // Best-effort cleanup: if Redis is unavailable, the token will TTL-expire on its own.
+        });
+        return next === DEFAULT_REDIRECT_PATH ? '' : authNextQuery(next);
     } catch {
-        // Best-effort cleanup: if Redis is unavailable, the token will TTL-expire on its own.
+        return '';
     }
-    return next === DEFAULT_REDIRECT_PATH ? '' : authNextQuery(next);
 }
 
 export async function cancelOAuthSignupAction(

@@ -35,7 +35,7 @@ describe('cancelOAuthSignupAction', () => {
         mockCreatePendingOAuthSignupStoreFromEnv.mockReturnValue({
             delete: deleteMock,
             save: vi.fn(),
-            peek: vi.fn(),
+            peek: vi.fn().mockResolvedValue(null),
             consume: vi.fn(),
         });
 
@@ -72,7 +72,7 @@ describe('cancelOAuthSignupAction', () => {
         mockCreatePendingOAuthSignupStoreFromEnv.mockReturnValue({
             delete: deleteMock,
             save: vi.fn(),
-            peek: vi.fn(),
+            peek: vi.fn().mockResolvedValue(null),
             consume: vi.fn(),
         });
         const fd = new FormData();

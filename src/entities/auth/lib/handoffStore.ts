@@ -233,6 +233,12 @@ export async function consumeHandoffCode(
 
 const LOGOUT_KEY_PREFIX = 'auth:handoff-logout:';
 
+/** What an ai-host logout hands to the main host: whose session to end, and the locale to land back in. */
+export interface LogoutCodePayload {
+    userId: string;
+    locale: Locale;
+}
+
 /** A signed-out ai visitor's landing (`?sso=none` stops the handoff from signing them back in). */
 export function aiSignedOutUrl(locale: Locale): URL {
     const url = new URL(localePath(locale, '/'), AI_SITE_URL);
@@ -253,10 +259,9 @@ export function aiSignedOutUrl(locale: Locale): URL {
  * 발급할 수 있고, 소비 측은 코드의 userId가 **현재 메인 세션의 사용자와 같을
  * 때만** 세션을 지운다 — 공격자가 자기 계정으로 발급한 코드를 심어도 무해하다.
  */
-export async function issueLogoutCode(input: {
-    userId: string;
-    locale: Locale;
-}): Promise<string> {
+export async function issueLogoutCode(
+    input: LogoutCodePayload
+): Promise<string> {
     const redis = getRedisClient();
     if (redis === null) throw new Error('[handoff] redis unavailable');
     const code = generateHandoffToken();
@@ -272,7 +277,7 @@ export async function issueLogoutCode(input: {
 /** Consumes a logout code exactly once (`getdel`). Null for malformed/unknown/expired/corrupt. */
 export async function consumeLogoutCode(
     code: string | null | undefined
-): Promise<{ userId: string; locale: Locale } | null> {
+): Promise<LogoutCodePayload | null> {
     if (!isHandoffToken(code)) return null;
     const redis = getRedisClient();
     if (redis === null) return null;

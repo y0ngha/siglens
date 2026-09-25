@@ -526,3 +526,12 @@
 - Violation: generated i18n client-key manifest (`messages/_meta/clientKeys.json`) was stale after changing a page's imports
   - Rule: CONVENTIONS.md — generated i18n artifacts must be regenerated after changing a route's import graph; static client-key analysis follows imports
   - Context: src/app/[locale]/forgot-password/page.tsx newly imported @/shared/ui/auth barrel (for AuthCrossLink), adding 10 ConsentCheckboxGroup keys to the forgot-password route. Regenerated with `yarn i18n:extract --write`.
+
+## [PR #875 | feat-review Round-final | 2026-09-25]
+- Violation: `src/entities/auth/lib/handoffStore.ts` issueLogoutCode input and consumeLogoutCode return used the same inline object type
+  - Rule: MISTAKES.md §5.3 — Function return types using inline object literals instead of named types
+  - Context: Extracted `LogoutCodePayload` interface and applied to both issueLogoutCode parameter and consumeLogoutCode return type (already documented rule; no promotion needed).
+
+- Violation: `src/features/auth-oauth/actions/cancelOAuthSignupAction.ts` `let next` reassigned inside try/catch
+  - Rule: MISTAKES.md §14 — Using let + if for conditional assignment instead of declarative const expressions
+  - Context: Replaced with const via `.then(ok, fail)` pattern. Test mocks for `peek` updated to resolve a Promise, matching the store interface (already documented rule; no promotion needed).
