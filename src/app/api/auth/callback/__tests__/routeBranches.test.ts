@@ -56,7 +56,8 @@ vi.mock('@/features/auth-oauth', () => ({
         .mockReturnValue({ name: 'oauth_state', value: '', maxAge: 0 }),
     verifyOAuthState: vi.fn(),
 }));
-vi.mock('@/shared/lib/auth/redirect', () => ({
+vi.mock('@/shared/lib/auth/redirect', async () => ({
+    ...(await vi.importActual('@/shared/lib/auth/redirect')),
     sanitizeNextPath: vi.fn().mockImplementation((p: string) => p || '/'),
 }));
 

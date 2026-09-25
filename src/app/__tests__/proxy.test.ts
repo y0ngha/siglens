@@ -93,6 +93,44 @@ describe('proxy', () => {
             }
         );
 
+        /**
+         * SiglensAI 로그인 CTA를 누른 메인 로그인 사용자. 홈으로 보내면
+         * ai.siglens.io로 돌아갈 길이 끊긴다.
+         */
+        it('세션이 있으면 정제된 next(SSO 핸드오프)로 redirect한다', async () => {
+            const next = '/api/auth/handoff?to=ai&next=%2Fc%2Fabc';
+            await proxy(
+                makeRequest(
+                    'valid-token',
+                    `/login?next=${encodeURIComponent(next)}`
+                )
+            );
+            const calledUrl = mockRedirect.mock.calls[0]![0] as URL;
+            expect(`${calledUrl.pathname}${calledUrl.search}`).toBe(next);
+            expect(calledUrl.origin).toBe('https://example.com');
+        });
+
+        it.each([
+            '//evil.com',
+            'https://evil.com/x',
+            '/\\t/evil.com',
+            '/signup',
+            '/en/login?next=%2FAAPL',
+        ])(
+            '세션이 있고 next=%j이면 같은-오리진 홈으로 redirect한다',
+            async next => {
+                await proxy(
+                    makeRequest(
+                        'valid-token',
+                        `/en/login?next=${encodeURIComponent(next)}`
+                    )
+                );
+                const calledUrl = mockRedirect.mock.calls[0]![0] as URL;
+                expect(calledUrl.origin).toBe('https://example.com');
+                expect(calledUrl.pathname).toBe('/en');
+            }
+        );
+
         it('세션 값이 빈 문자열이면 next()로 통과시킨다', async () => {
             await proxy(makeRequest(''));
             expect(mockPass).toHaveBeenCalledTimes(1);

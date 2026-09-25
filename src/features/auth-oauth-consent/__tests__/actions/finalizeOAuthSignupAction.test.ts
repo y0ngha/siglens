@@ -327,4 +327,21 @@ describe('finalizeOAuthSignupAction', () => {
 
         await expectRedirectTo('/AAPL');
     });
+
+    /** 같은-호스트 `/api/auth/handoff`는 서버 fetch로 소진돼 ai 호스트로 가지 않는다. */
+    it('SiglensAI에서 가입했으면 ai 호스트 핸드오프 start URL로 리다이렉트', async () => {
+        const next = '/api/auth/handoff?to=ai&next=%2Fc%2Fabc';
+        setupMocks({
+            peekResult: { ...SAMPLE_PROFILE, next },
+            consumeResult: { ...SAMPLE_PROFILE, next },
+        });
+        (cookies as Mock).mockResolvedValue({ set: vi.fn() });
+        (createAuthSession as Mock).mockResolvedValue({
+            cookie: { name: 'session', value: 'test-session' },
+        });
+
+        await expectRedirectTo(
+            'https://ai.siglens.io/api/auth/handoff/start?next=%2Fc%2Fabc'
+        );
+    });
 });

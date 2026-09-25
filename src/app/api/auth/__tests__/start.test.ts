@@ -11,7 +11,8 @@ vi.mock('@/features/auth-oauth', () => ({
     OAuthStateSecretMisconfiguredError: class extends Error {},
     issueOAuthState: vi.fn(),
 }));
-vi.mock('@/shared/lib/auth/redirect', () => ({
+vi.mock('@/shared/lib/auth/redirect', async () => ({
+    ...(await vi.importActual('@/shared/lib/auth/redirect')),
     sanitizeNextPath: vi.fn().mockImplementation((p: string) => p || '/'),
 }));
 
@@ -55,6 +56,20 @@ describe('GET /api/auth/[provider]/start', () => {
             const location = new URL(res.headers.get('location')!);
             expect(location.pathname).toBe('/login');
             expect(location.searchParams.get('error')).toBe('oauth_unknown');
+            expect(location.searchParams.has('next')).toBe(false);
+        });
+
+        it('carries next (e.g. the SSO handoff) back to the login page', async () => {
+            mockIsOAuthProvider.mockReturnValue(false);
+            const next = '/api/auth/handoff?to=ai&next=%2Fc%2Fabc';
+
+            const res = await GET(makeRequest('unknown', next), {
+                params: Promise.resolve({ provider: 'unknown' }),
+            });
+
+            const location = new URL(res.headers.get('location')!);
+            expect(location.pathname).toBe('/login');
+            expect(location.searchParams.get('next')).toBe(next);
         });
     });
 

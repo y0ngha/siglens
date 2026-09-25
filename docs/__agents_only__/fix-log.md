@@ -502,3 +502,36 @@
 - Violation: scripts/update-popular-cryptos.ts added visit-driven crypto candidates (from outside the hand-maintained CRYPTO_CANDIDATE_POOL) to POPULAR_CRYPTOS, which would break the existing invariant test `CRYPTO_CANDIDATE_POOL contains all current POPULAR_CRYPTOS symbols` as soon as the script's output was committed. Same class as the earlier dashboardScope/KR_CATEGORY_IDS issues in this PR: a new data source feeding a config list without checking every existing test-enforced invariant over that list.
   - Rule: (new) When a script gains a new path that appends to a config list, grep tests for invariants over that list and verify by applying the script's output to the real file and running the suite (dry run).
   - Context: Fixed with scripts/lib/cryptoPoolInsert.ts (pure anchor insert into the pool) + main writes the pool first. Lesson: when a script's new path appends to a config list, grep tests for invariants over that list and verify by dry-running the script's output against the test suite.
+
+## [claude/siglens-email-login-redirect-jbr2s1 Round 2 | toHandoffAwareRedirect test coverage | 2026-09-25]
+- Violation: REQUIRED — `src/features/auth-oauth-consent/__tests__/actions/finalizeOAuthSignupAction.test.ts` missing. A fix (toHandoffAwareRedirect wrapping the final Server Action redirect) was applied to three sibling actions (loginAction, registerAction, finalizeOAuthSignupAction) but only two (login + register) got dedicated unit tests. finalizeOAuthSignupAction's use of the same pattern was not tested.
+  - Rule: MISTAKES.md #6.7 — Rule/guard/policy applied to one of N sibling methods/routes/branches but not others; when a fix wrapping an upstream dependency is applied consistently across N siblings, all N must be tested uniformly.
+  - Context: Added `src/features/auth-oauth-consent/__tests__/actions/finalizeOAuthSignupAction.test.ts` testing the toHandoffAwareRedirect wrapping pattern alongside the existing loginAction and registerAction tests.
+- Violation: RECOMMENDED — `src/entities/auth/lib/handoffStore.ts` duplicates PARSE_ONLY_BASE constant from `src/shared/lib/auth/redirect.ts` without importing it or documenting the dependency.
+  - Rule: MISTAKES.md #16.5 — Shared constants duplicated across module boundaries without documentation; every duplicate must reference the original constant and document the sync requirement.
+  - Context: Moved PARSE_ONLY_BASE to shared export in `src/shared/lib/auth/redirect.ts` and imported it in `handoffStore.ts`. Added JSDoc linking the shared definition.
+
+## [claude/siglens-email-login-redirect-jbr2s1 Round 3 | guest-only path redirect logic | 2026-09-25]
+- Violation: RECOMMENDED (fixed) — src/proxy.ts — when the sanitized `next` parameter was itself a guest-only path (/login, /signup, /verify-email), a signed-in user would be redirected through that guest-only page (extra hop) instead of clamping to home. Sanitizer removed query params but did not validate whether the *path itself* was guarded.
+  - Rule: (new) Redirect logic sanitizing a `next` parameter must both 1) strip query params and 2) validate the target path is not itself guest-only; guest-only routes must be inaccessible to signed-in users. Failure to do so creates a dead redirect leg that wastes a round-trip.
+  - Context: Extended guest-only allowlist validation in sanitizer to reject guest-only paths after stripping params; signed-in user now clamps directly to home instead of routing through the guest-only page first.
+
+## [claude/siglens-email-login-redirect-jbr2s1 Round 4 | locale-prefixed guest-only path test coverage | 2026-09-25]
+- Finding: RECOMMENDED (skipped as false positive) — reviewer requested a test for locale-prefixed guest-only `next` parameter (e.g., '/en/login?next=%2FAAPL')
+  - Status: REJECTED — false positive; test coverage already exists at the assertion level. The existing test matrix includes locale-prefixed paths in the full parametrized test list, covering '/en/login?next=%2FAAPL' and '/ko/signup' alongside non-prefixed variants.
+  - Rule: When adding path-based tests, grep the existing test matrix before marking coverage gaps; locale-prefixed and locale-free variants must both be present in the parametrized test list.
+  - Context: Verified by reading the test assertions in src/entities/auth/__tests__/proxy.test.ts; the locale prefix is not a separate orthogonal dimension requiring additional test cases — it is already covered by the route parameter variations.
+
+## [PR #875 claude/siglens-email-login-redirect-jbr2s1 Round 2 | CI fix complete | 2026-09-25]
+- Violation: generated i18n client-key manifest (`messages/_meta/clientKeys.json`) was stale after changing a page's imports
+  - Rule: CONVENTIONS.md — generated i18n artifacts must be regenerated after changing a route's import graph; static client-key analysis follows imports
+  - Context: src/app/[locale]/forgot-password/page.tsx newly imported @/shared/ui/auth barrel (for AuthCrossLink), adding 10 ConsentCheckboxGroup keys to the forgot-password route. Regenerated with `yarn i18n:extract --write`.
+
+## [PR #875 | feat-review Round-final | 2026-09-25]
+- Violation: `src/entities/auth/lib/handoffStore.ts` issueLogoutCode input and consumeLogoutCode return used the same inline object type
+  - Rule: MISTAKES.md §5.3 — Function return types using inline object literals instead of named types
+  - Context: Extracted `LogoutCodePayload` interface and applied to both issueLogoutCode parameter and consumeLogoutCode return type (already documented rule; no promotion needed).
+
+- Violation: `src/features/auth-oauth/actions/cancelOAuthSignupAction.ts` `let next` reassigned inside try/catch
+  - Rule: MISTAKES.md §14 — Using let + if for conditional assignment instead of declarative const expressions
+  - Context: Replaced with const via `.then(ok, fail)` pattern. Test mocks for `peek` updated to resolve a Promise, matching the store interface (already documented rule; no promotion needed).

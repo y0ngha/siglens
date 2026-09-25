@@ -9,13 +9,18 @@ vi.mock('@/shared/cache/redisClient', () => ({
 }));
 
 import {
+    aiSignedOutUrl,
     consumeHandoffCode,
+    consumeLogoutCode,
+    issueLogoutCode,
     generateHandoffToken,
     HANDOFF_STATE_TTL_SECONDS,
     handoffStateCookie,
+    handoffStartUrl,
     handoffStateCookieName,
     isHandoffToken,
     issueHandoffCode,
+    toHandoffAwareRedirect,
 } from '@/entities/auth/lib/handoffStore';
 
 const STATE = 'b'.repeat(64);
@@ -190,5 +195,101 @@ describe('handoffStore', () => {
                 expires: new Date(0),
             });
         });
+    });
+
+    describe('handoffStartUrl', () => {
+        it('points at the ai-host start route with the locale carried in next', () => {
+            expect(handoffStartUrl('/en/c/abc').href).toBe(
+                'https://ai.siglens.io/api/auth/handoff/start?next=%2Fen%2Fc%2Fabc'
+            );
+        });
+
+        it('reduces an off-origin next to the locale root', () => {
+            expect(handoffStartUrl('https://evil.com/x').href).toBe(
+                'https://ai.siglens.io/api/auth/handoff/start?next=%2F'
+            );
+        });
+    });
+
+    describe('toHandoffAwareRedirect', () => {
+        it('turns the same-host issue path into the absolute ai start URL (hard navigation)', () => {
+            expect(
+                toHandoffAwareRedirect(
+                    '/api/auth/handoff?to=ai&next=%2Fen%2Fc%2Fabc'
+                )
+            ).toBe(
+                'https://ai.siglens.io/api/auth/handoff/start?next=%2Fen%2Fc%2Fabc'
+            );
+        });
+
+        it.each([
+            '/',
+            '/en/AAPL',
+            '/onboarding',
+            '/api/auth/handoff?to=other&next=%2Fc%2Fabc',
+            '/api/auth/handoff/start?next=%2Fc%2Fabc',
+        ])('leaves %j unchanged', target => {
+            expect(toHandoffAwareRedirect(target)).toBe(target);
+        });
+    });
+
+    describe('logout code', () => {
+        it('stores {userId, locale} under a 64-hex code with a 60s TTL', async () => {
+            redis.set.mockResolvedValue('OK');
+            const code = await issueLogoutCode({ userId: 'u1', locale: 'en' });
+            expect(code).toMatch(/^[0-9a-f]{64}$/);
+            expect(redis.set).toHaveBeenCalledWith(
+                `auth:handoff-logout:${code}`,
+                JSON.stringify({ userId: 'u1', locale: 'en' }),
+                { ex: 60 }
+            );
+        });
+
+        it('throws when Redis is not configured', async () => {
+            client.current = null;
+            await expect(
+                issueLogoutCode({ userId: 'u1', locale: 'ko' })
+            ).rejects.toThrow();
+        });
+
+        it('consumes once (getdel) and returns the payload', async () => {
+            redis.getdel.mockResolvedValue({ userId: 'u1', locale: 'ja' });
+            await expect(consumeLogoutCode(CODE)).resolves.toEqual({
+                userId: 'u1',
+                locale: 'ja',
+            });
+            expect(redis.getdel).toHaveBeenCalledWith(
+                `auth:handoff-logout:${CODE}`
+            );
+        });
+
+        it('falls back to the default locale for an unknown one', async () => {
+            redis.getdel.mockResolvedValue(
+                JSON.stringify({ userId: 'u1', locale: 'xx' })
+            );
+            await expect(consumeLogoutCode(CODE)).resolves.toEqual({
+                userId: 'u1',
+                locale: 'ko',
+            });
+        });
+
+        it.each([null, 'not-json', { locale: 'en' }])(
+            'returns null for a missing/corrupt payload %j',
+            async stored => {
+                redis.getdel.mockResolvedValue(stored);
+                await expect(consumeLogoutCode(CODE)).resolves.toBeNull();
+            }
+        );
+
+        it('returns null for a malformed code without touching Redis', async () => {
+            await expect(consumeLogoutCode('short')).resolves.toBeNull();
+            expect(redis.getdel).not.toHaveBeenCalled();
+        });
+    });
+
+    it('aiSignedOutUrl is the locale ai landing with ?sso=none', () => {
+        expect(aiSignedOutUrl('en').href).toBe(
+            'https://ai.siglens.io/en?sso=none'
+        );
     });
 });

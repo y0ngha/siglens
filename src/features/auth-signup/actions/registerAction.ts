@@ -30,6 +30,7 @@ import {
     bcryptPasswordVerifier,
 } from '@/entities/auth/lib/bcrypt';
 import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
+import { toHandoffAwareRedirect } from '@/entities/auth/lib/handoffStore';
 import { DrizzleAgreementRepository } from '@/entities/agreement';
 import { DrizzleTermsRepository } from '@/entities/terms/api';
 import { createEmailTokenStore } from '@/entities/email-token';
@@ -155,9 +156,13 @@ export async function registerAction(
         // 동기 `redirect`를 쓰는 이유는 아래 catch가 NEXT_REDIRECT를 재throw해야
         // 하고, TypeScript가 `never` 반환으로 이후 코드를 도달 불가로 좁혀야 하기
         // 때문이다(localeRedirect.ts JSDoc 참고).
+        // ai 호스트에서 온 가입(SSO 핸드오프)은 하드 내비게이션이어야 한다 —
+        // `toHandoffAwareRedirect` JSDoc 참고.
         redirect(
-            await localeHref(
-                toSameOriginPath(resolvePostSignupDestination(next))
+            toHandoffAwareRedirect(
+                await localeHref(
+                    toSameOriginPath(resolvePostSignupDestination(next))
+                )
             )
         );
     } catch (err) {

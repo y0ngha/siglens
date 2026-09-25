@@ -6,3 +6,4 @@ export { ConsentCheckboxGroup } from './ConsentCheckboxGroup';
 export { PasswordField } from './PasswordField';
 export { PasswordStrengthHint } from './PasswordStrengthHint';
 export { SubmitButton } from './SubmitButton';
+export { AuthCrossLink } from './AuthCrossLink';
