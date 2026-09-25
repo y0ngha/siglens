@@ -66,6 +66,7 @@ import {
     CONFLUENCE_MIN_BARS,
     CONFLUENCE_TREND_MA_PERIOD,
     evaluateConfluence,
+    PULLBACK_BASE_RATES,
     scoreConfluence,
 } from '@y0ngha/siglens-core';
 import {
@@ -513,6 +514,49 @@ describe('getBarsIndicatorsTool', () => {
         const newestClose = 100 + SOURCE_BARS - 1;
         expect(r.bars.at(-1)?.c).toBe(newestClose);
         expect(serialized).toContain(String(newestClose));
+    });
+
+    it('예산 초과 시 pullback.measured(긴 고정 문단)가 켜져 있어도 봉만 더 잘리고 판독·최신 봉은 온전히 남는다', async () => {
+        profile.mockResolvedValue('us-equity');
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+        const SOURCE_BARS = 250;
+        const rising = Array.from({ length: SOURCE_BARS }, (_, i) =>
+            bar(1_700_000_000 + i * 86_400, 100 + i)
+        );
+        // Same series with the last close dropped below its 14-bar low while
+        // still above MA200 (≈249): Williams %R -100 lights the reading.
+        const CRASH_CLOSE = 300;
+        const washout = [
+            ...rising.slice(0, -1),
+            bar(rising.at(-1)!.time, CRASH_CLOSE),
+        ];
+        const run = async (bars: typeof rising) => {
+            getCachedBars.mockResolvedValue({ bars, indicators });
+            return (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe: '1Day', bars: 200 },
+                ctx,
+                rt
+            )) as {
+                barsTrimmed: number;
+                bars: Array<{ c: number }>;
+                pullback: { reading: string; measured: string | null };
+            };
+        };
+
+        const quiet = await run(rising);
+        const lit = await run(washout);
+
+        expect(quiet.pullback.reading).toBe('none');
+        expect(lit.pullback.reading).toBe('washoutInUptrend');
+        expect(lit.pullback.measured).not.toBeNull();
+        expect(JSON.stringify(lit).length).toBeLessThanOrEqual(
+            BARS_RESULT_MAX_CHARS
+        );
+        // The paragraph displaces bars, never itself: more bars are trimmed…
+        expect(lit.barsTrimmed).toBeGreaterThan(quiet.barsTrimmed);
+        // …and the newest bar still survives.
+        expect(lit.bars.at(-1)?.c).toBe(CRASH_CLOSE);
     });
 
     it('confluence: 전체 캐시 봉(요청 bars 아님)으로 core evaluateConfluence를 돌려 압축 형태로 싣는다(htfGate는 snapshot.htfTrend로 판정)', async () => {
@@ -1001,6 +1045,88 @@ describe('getBarsIndicatorsTool', () => {
             // indicators.ma['50'] must win over the fallback `calculateMA`
             // computation (lastClose = 159, i=59).
             expect(r.derived.priceVsMa.ma50Pct).toBe(pctVs(159, 999));
+        });
+    });
+
+    describe('pullback (단기 과매도 눌림 판독 — core evaluatePullback 어댑터)', () => {
+        interface PullbackResult {
+            reading: string;
+            williamsR: number;
+            rsi2: number | null;
+            closeVsMa200Pct: number;
+            ma5: number | null;
+            measured: string | null;
+        }
+        // 판독 경계값(-90/-80)과 MA200 기권 규칙은 core pullback 테스트가 소유한다.
+        // 여기서는 일봉 게이트, 필드 이름·반올림, 기저율 문장 매핑만 고정한다.
+
+        // 종가가 i에 따라 선형으로 오르거나(상승 추세) 내린다(하락 추세) — 마지막 종가가
+        // MA200 위/아래 어느 쪽에 있는지가 fixture만으로 확정된다.
+        const trendBars = (length: number, slope: number) =>
+            Array.from({ length }, (_, i) =>
+                bar(1_700_000_000 + i * 86_400, 300 + i * slope)
+            );
+        // 마지막 봉만 `close`로 바꾼다 — 14봉 저점 아래로 내리면 Williams %R은 -100.
+        const endingAt = (
+            bars: ReturnType<typeof trendBars>,
+            close: number
+        ) => [...bars.slice(0, -1), bar(bars.at(-1)!.time, close)];
+        const meanOfLast = (bars: { close: number }[], n: number) =>
+            bars.slice(-n).reduce((sum, b) => sum + b.close, 0) / n;
+
+        const pullbackFor = async (
+            bars: ReturnType<typeof trendBars>,
+            timeframe = '1Day'
+        ): Promise<PullbackResult | null> => {
+            profile.mockResolvedValue('us-equity');
+            classify.mockReturnValue('uptrend');
+            detect.mockReturnValue([]);
+            getCachedBars.mockResolvedValue({ bars, indicators });
+            const r = (await getBarsIndicatorsTool(
+                { symbol: 'AAPL', timeframe },
+                ctx,
+                rt
+            )) as { pullback: PullbackResult | null };
+            return r.pullback;
+        };
+
+        it('상승 추세 끝의 급락 종가는 washoutInUptrend이고 core 값을 반올림해 기저율 문장과 함께 싣는다', async () => {
+            // 종가 300→429.5 상승 후 마지막 봉만 400 — 14봉 저점(423) 아래, MA200(≈380) 위.
+            const bars = endingAt(trendBars(260, 0.5), 400);
+            const r = await pullbackFor(bars);
+
+            expect(r).toEqual({
+                reading: 'washoutInUptrend',
+                williamsR: -100,
+                rsi2: expect.any(Number),
+                closeVsMa200Pct: pctVs(400, meanOfLast(bars, 200)),
+                ma5: roundNumber(meanOfLast(bars, 5)),
+                measured: PULLBACK_BASE_RATES.washoutInUptrend,
+            });
+            // 하루 급락 뒤의 RSI(2)는 trader 규칙(< 10)의 과매도 영역이다.
+            expect(r!.rsi2!).toBeLessThan(10);
+        });
+
+        it('하락 추세 끝의 급락 종가는 washoutBelowMa200이고 고위험 기저율을 싣는다', async () => {
+            const r = await pullbackFor(endingAt(trendBars(260, -0.5), 150));
+            expect(r?.reading).toBe('washoutBelowMa200');
+            expect(r?.measured).toBe(PULLBACK_BASE_RATES.washoutBelowMa200);
+            expect(r?.closeVsMa200Pct).toBeLessThan(0);
+        });
+
+        it('판독이 none이면 measured는 null이다', async () => {
+            // 상승 추세의 마지막 종가가 14봉 고점 — 과매도가 아니다.
+            const r = await pullbackFor(trendBars(260, 0.5));
+            expect(r?.reading).toBe('none');
+            expect(r?.measured).toBeNull();
+        });
+
+        it('일봉이 아니거나 core가 기권하면(200봉 미만) null이다', async () => {
+            const washout = endingAt(trendBars(260, 0.5), 400);
+            expect(await pullbackFor(washout, '1Hour')).toBeNull();
+            expect(
+                await pullbackFor(endingAt(trendBars(199, 0.5), 350))
+            ).toBeNull();
         });
     });
 

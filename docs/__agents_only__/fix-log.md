@@ -522,6 +522,14 @@
   - Rule: When adding path-based tests, grep the existing test matrix before marking coverage gaps; locale-prefixed and locale-free variants must both be present in the parametrized test list.
   - Context: Verified by reading the test assertions in src/entities/auth/__tests__/proxy.test.ts; the locale prefix is not a separate orthogonal dimension requiring additional test cases — it is already covered by the route parameter variations.
 
+## [claude/siglens-analysis-technique-review-wvfffz Round 1–2 | skill documentation audit | 2026-09-25]
+- Violation (R1 required): skills/strategies/mean-reversion.md — numeric claim in skill body ("the cross-up entry averaged -0.06% per trade") was inconsistent with the per-period figures listed in the design doc it cites. A pooled trade-weighted mean was quoted next to per-period values that average differently.
+  - Rule: Documentation Sync — skill docs must match the evidence they cite. When a doc makes a numeric claim, verify it against the referenced source before publishing.
+  - Context: Changed to state the per-period range instead of the aggregate average, matching the cited design doc.
+- Violation (caught by test suite, not review): i18n catalog entry missing for updated skill `description` frontmatter. Skill description is a UI string consumed by `shared.skillDescription` catalog (messages/ko|en|ja|zh.json + messages/_meta/hashes.json). Changing frontmatter without updating the catalog caused `src/shared/i18n/__tests__/skillDescription.test.tsx` to fail.
+  - Rule: Documentation Sync / i18n — a skill `description` is a UI string; editing it requires catalog key swap in all 4 locales and hash recompute (sha1(ko text).slice(0,12)).
+  - Context: Updated catalog keys in all 4 locales and recomputed hash. Test now passes.
+
 ## [PR #875 claude/siglens-email-login-redirect-jbr2s1 Round 2 | CI fix complete | 2026-09-25]
 - Violation: generated i18n client-key manifest (`messages/_meta/clientKeys.json`) was stale after changing a page's imports
   - Rule: CONVENTIONS.md — generated i18n artifacts must be regenerated after changing a route's import graph; static client-key analysis follows imports
@@ -535,3 +543,11 @@
 - Violation: `src/features/auth-oauth/actions/cancelOAuthSignupAction.ts` `let next` reassigned inside try/catch
   - Rule: MISTAKES.md §14 — Using let + if for conditional assignment instead of declarative const expressions
   - Context: Replaced with const via `.then(ok, fail)` pattern. Test mocks for `peek` updated to resolve a Promise, matching the store interface (already documented rule; no promotion needed).
+
+## [claude/siglens-analysis-technique-review-wvfffz Round 2 | AI chat tools pullback classification & budget | 2026-09-25]
+- Violation: RECOMMENDED — src/app/api/ai/chat/tools/getBarsIndicators.ts: 4-way classification written as nested ternary (ternary inside TRUE branch of another ternary)
+  - Rule: FF.md Readability 1-E — no nested ternaries
+  - Context: Extracted `classifyPullback()` with early returns to eliminate nesting.
+- Violation: RECOMMENDED — src/app/api/ai/chat/tools/__tests__/getBarsIndicators.test.ts: new variable-length field (`pullback.measured`) added to budget-trimmed tool result without testing its interaction with the budget trimmer
+  - Rule: (new) Tests — a new field inside a size-budgeted payload must have a test exercising its interaction with the budget logic
+  - Context: Added overflow test comparing quiet vs lit reading; verifies more bars trimmed, field and newest bar intact.
