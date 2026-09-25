@@ -252,8 +252,12 @@ interface BarsConfluenceView {
 }
 
 /**
- * Rule-based indicator-family confluence (no AI) — the same entry/exit rule
- * siglens-trader acts on — computed from the full cached series.
+ * Rule-based indicator-family confluence (no AI), computed from the full
+ * cached series. It is a descriptive tally, not a forecast: siglens-trader
+ * retired this rule on 2026-09-24 after its backtests found it
+ * indistinguishable from baseline, and on daily bars a met entry rule
+ * trailed baseline 10-day returns in every period measured 2000–2026
+ * (docs/superpowers/specs/2026-09-25-mean-reversion-evidence-design.md).
  *
  * `htfBars` (loaded once for `higherTimeframe`, §3.1) is threaded into core's
  * own HTF alignment gate when available, so `entryRuleMet` matches the

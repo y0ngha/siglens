@@ -1,227 +1,146 @@
 ---
 name: 평균 회귀 전략
-description: 가격이 이동평균 또는 통계적 평균에서 과도하게 이탈한 후 평균으로 회귀하는 경향을 이용하여 역추세 진입 시점을 판별하는 전략
+description: 장기 상승 추세(종가 > MA200) 안에서 단기 과매도(Williams %R(14) ≤ -90)로 눌린 일봉을 되돌림 후보로 판별하는 전략 — 2000~2026 일봉 백테스트로 검증된 규칙만 사용
 type: strategy
 category: neutral
-indicators: ['rsi', 'bollinger', 'atr']
-confidence_weight: 0.74
+indicators: ['williamsR', 'ma', 'connorsRsi', 'rsi', 'dmi', 'bollinger', 'atr']
+confidence_weight: 0.8
 gating:
   tier: gated
-  signal_kind: event
-  triggers: [rsi_oversold, rsi_overbought, bollinger_lower_bounce]
-token_cost: 1120
-digest_hash: "6e0cf3a8"
+  signal_kind: state
+  state:
+    feature: williamsR
+    predicate: level
+token_cost: 752
+digest_hash: "30927823"
 ---
 
 ## Overview
 
-The Mean Reversion Strategy is based on the statistical tendency of prices to return to their mean (average) after deviating significantly. When price moves too far from its average — measured by standard deviations, oscillator extremes, or band violations — the probability of a reversal back toward the mean increases.
+Short-term mean reversion in equities is one of the most replicated effects in the literature — weekly/monthly reversal (Jegadeesh 1990, Lehmann 1990) and the daily "RSI(2) pullback" popularised by Larry Connors. What survives measurement, though, is narrower than the textbook version this skill used to teach:
 
-This is one of the most academically validated strategies in quantitative finance, with documented effectiveness across equities, commodities, and forex markets, particularly in range-bound environments (win rate 60-70% in sideways markets).
+- The effect is a **short-term washout inside a long-term uptrend**: the stock is above its 200-day average and has just closed near the bottom of its two-week range.
+- It is **not** a range-market strategy. Requiring a non-trending market (ADX < 25), stacking a Bollinger lower-band touch and RSI(14) < 30, or waiting for the oscillator to cross back out of the extreme zone all measured *worse* than the plain washout reading.
+- The horizon is **days, not weeks**: the measured exit is the first close back above the 5-day average, or about ten trading days.
 
-The strategy works best when the market is **not trending strongly** (ADX < 25). In trending markets, mean reversion signals produce losing trades (catching falling knives or shorting into strength).
-
----
-
-## Core Principle
-
-Price oscillates around a moving average or equilibrium level. Extreme deviations from this level are unsustainable and tend to correct:
-
-- **Oversold (extreme below mean)**: Price has fallen too far, too fast → high probability of bounce back toward mean
-- **Overbought (extreme above mean)**: Price has risen too far, too fast → high probability of pullback toward mean
-
-The "mean" can be defined as:
-1. A moving average (MA20, MA50)
-2. The middle Bollinger Band (MA20)
-3. VWAP (Volume Weighted Average Price)
-4. A statistical mean over a defined lookback period
+This skill replaces an earlier version (range-bound Bollinger + RSI(14) + ADX < 25 doctrine) after a backtest showed that version's buy rule underperformed random entries in four of five periods, and that its triggers (`rsi_oversold`, `rsi_overbought`, `bollinger_lower_bounce`) fired on fewer than one in ten of the days the measured setup was present (8.9%).
 
 ---
 
-## Signal Indicators
+## The Measured Setup (daily bars only)
 
-### Bollinger Bands
+All three inputs are already printed in the prompt — cite them, never recompute:
 
-The primary mean reversion tool. Bollinger Bands (20-period MA ± 2 standard deviations) contain approximately 95% of price action.
-
-| Condition | Signal | Interpretation |
+| Condition | Where to read it | Setup value |
 |---|---|---|
-| Price touches/penetrates lower band | Oversold | Buy signal — price at statistical extreme below mean |
-| Price touches/penetrates upper band | Overbought | Sell signal — price at statistical extreme above mean |
-| Price at middle band (MA20) | Mean | Target — expected reversion destination |
-| Band width contracting (squeeze) | Low volatility | Caution — breakout likely, mean reversion may fail |
-| Band width expanding | High volatility | Extreme moves may continue before reverting |
+| Long-term trend | `MA(200)` in the indicator list vs the latest close | close **above** MA(200) |
+| Short-term washout | `Williams %R(14)` | **≤ -90** (close in the bottom tenth of the 14-bar range) |
+| Timeframe | chart timeframe | **1Day** |
 
-**Bollinger Band %B**: `## Indicator State (computed)` already lists a `Bollinger %B: x (BandWidth y%)` line — cite `x` directly; never compute `(Price − Lower Band) / (Upper Band − Lower Band)` yourself. (Definition, for reference only: that IS the formula %B represents.)
-- %B < 0: Price below lower band (extreme oversold)
-- %B > 1: Price above upper band (extreme overbought)
-- %B = 0.5: Price at middle band (mean)
+- **Near setup**: Williams %R between -80 and -90 above MA(200). Direction is the same, the measured edge is smaller — describe it as a weaker version, not as the setup.
+- **Corroboration, not a requirement**: `Connors RSI` ≤ 10 (its [oversold] label) means the same washout seen through a 3-day RSI and the down-streak length. When it agrees, say so; when it does not, the Williams %R reading still stands.
+- **Exit reference**: `MA(5)`. The measured trade closes on the first daily close above MA(5), or after about 10 trading days, whichever comes first. Holding for a close above MA(20) instead raised the average in three of five periods but turned the 2007–09 result negative and deepened the loss tail — MA(5) is the conservative reference, not a ceiling on the move.
 
-### RSI (Relative Strength Index)
+---
 
-| Condition | Signal | Action |
+## Evidence
+
+Backtested on daily bars (entry at the signal day's close, 0.1% cost per side):
+
+- **2000-01 → 2020-11**: point-in-time S&P 500 members (615 symbols after removing corrupted series, Yahoo-sourced Qlib dataset).
+- **2024-07 → 2026-09**: 9 large-cap stocks + SPY/QQQ (Yahoo).
+- Cross-checked against siglens-trader's independent study (FMP data, 2015 → 2026-09, 42 symbols), which adopted the same idea with RSI(2) < 10 on 2026-09-24.
+
+Mean return over the next 5 trading days, stocks:
+
+| Period | Setup (close > MA200, %R ≤ -90) | Baseline: any day above MA200 |
 |---|---|---|
-| RSI < 30 | Oversold | Buy signal — selling momentum exhausted |
-| RSI < 20 | Extremely oversold | Strong buy signal — extreme deviation |
-| RSI > 70 | Overbought | Sell signal — buying momentum exhausted |
-| RSI > 80 | Extremely overbought | Strong sell signal — extreme deviation |
-| RSI crossing 50 from below | Bullish mean cross | Mean confirmed — upward reversion in progress |
-| RSI crossing 50 from above | Bearish mean cross | Mean confirmed — downward reversion in progress |
+| 2000 – 2007-06 | +0.76% | +0.27% |
+| 2007-07 – 2009-06 (financial crisis) | +0.20% | -0.54% |
+| 2009-07 – 2014 | +0.79% | +0.35% |
+| 2015 – 2020-11 | +0.43% | +0.11% |
+| 2024-07 – 2026-09 | +2.18% | +0.24% |
 
-### Moving Average Deviation
+Trades exited on the MA(5) rule (or 10 days, with a disaster stop at 5 × ATR) won **66–75%** of the time in every period and averaged +0.05% to +1.62% after costs, against -0.26% to +0.18% for the same exit entered on any day above MA(200). RSI(2) < 10 — the trader's formulation — measured the same way and was positive against its baseline in all five periods too.
 
-When price deviates more than 2 standard deviations from a key moving average, mean reversion probability increases. `## Indicator State (computed)` already lists the `Price vs MA/EMA` distance — cite that percentage directly; never compute `(Current Price − MA) / MA × 100` yourself:
-
-- Deviation > +10% from MA → overbought
-- Deviation < −10% from MA → oversold
-- Adjust thresholds based on the asset's historical volatility
+**The edge is relative, not a guarantee.** In the 2007–09 crisis the setup's 10-day return was still negative in absolute terms (-0.71%); it only lost less than the uptrend baseline (-1.03%).
 
 ---
 
-## Entry Rules
+## What the Evidence Does Not Support
 
-### Mean Reversion Buy (Oversold)
+Each of these was measured on the same data and **did not** hold up. Do not use them as reasons to call or reject the setup:
 
-**Standard Entry**:
-1. **Environment check**: ADX < 25 (non-trending or weakly trending market)
-2. **Primary signal**: Price touches or penetrates the lower Bollinger Band
-3. **Confirmation**: RSI < 30 simultaneously (dual-indicator oversold)
-4. **Entry trigger**: Enter long when a bullish reversal candle forms (hammer, bullish engulfing, or any candle that closes in the upper half of its range)
-5. **Stop loss**: Below the lowest point of the oversold move, or 2 × ATR below entry
-6. **Target**: Middle Bollinger Band (MA20) for primary target; upper Bollinger Band for aggressive target
-
-**High-Confidence Entry** (3 conditions simultaneously):
-1. Price below lower Bollinger Band (%B < 0)
-2. RSI < 30
-3. Price at or near a known support level (horizontal support, prior swing low, or Fibonacci level)
-→ This triple confluence produces the highest win rate for mean reversion entries
-
-### Mean Reversion Sell (Overbought)
-
-**Standard Entry**:
-1. **Environment check**: ADX < 25
-2. **Primary signal**: Price touches or penetrates the upper Bollinger Band
-3. **Confirmation**: RSI > 70 simultaneously
-4. **Entry trigger**: Enter short when a bearish reversal candle forms (shooting star, bearish engulfing, or any candle that closes in the lower half of its range)
-5. **Stop loss**: Above the highest point of the overbought move, or 2 × ATR above entry
-6. **Target**: Middle Bollinger Band (MA20) for primary target; lower Bollinger Band for aggressive target
+- **ADX < 25 as a requirement.** The setup with ADX ≥ 30 did as well or better than with ADX < 25 in three of five periods. ADX describes trend strength, not whether a pullback will revert.
+- **Bollinger lower band + RSI(14) < 30 (+ ADX < 25).** This was the previous version of this skill. Its buy rule, with its own exits (middle-band target, 2 × ATR stop, 7 bars), trailed random entries with the same exits in four of five periods.
+- **Waiting for Williams %R to cross back above -80.** The cross-up entry above MA(200) was at or below zero per trade in every period (-0.40% to 0.00%); the in-zone close at ≤ -90 was positive in all five. By the time the oscillator exits the zone, most of the rebound is gone.
+- **Bullish confirmation (reversal candles, bullish signals, bullish indicator confluence).** siglens-trader tested 36 detector signals and candle patterns on the entry day: none improved results consistently. On setup days the rule-engine confluence reads **bearish** about two thirds of the time (68%), and those days did as well as or better than the other setup days in four of five periods. A bearish tally is the normal state of this setup, not a reason against it. When the confluence **exit rule** is also met (about one setup day in five), the next five days were weaker than on other setup days in four of five periods but still beat the uptrend baseline in all five — a caution worth naming, not a veto.
+- **Tight stops.** Tighter stops lowered the average trade in every period (no stop ≥ 5 × ATR > 2 × ATR), matching siglens-trader's finding; the 5 × ATR stop exists only as disaster protection.
+- **The overbought side as a sell signal.** Williams %R ≥ -20 above MA(200) was followed by slightly weaker-than-baseline but still positive 5-day returns in four of five periods, so shorting it lost money. At most it tempers upside expectations; it is not a bearish call.
 
 ---
 
-## Exit Rules
+## Where It Does Not Apply
 
-- **Primary target**: Middle Bollinger Band (MA20) — this is the "mean" in mean reversion
-- **Extended target**: Opposite Bollinger Band — only when initial move back to mean shows strong momentum
-- **Stop loss**: 2 × ATR beyond the extreme point of the deviation
-- **Time-based exit**: If price fails to begin reverting within 5-7 bars, the oversold/overbought condition may be part of a trend rather than a deviation — close position
-- **Invalidation**: If RSI reaches even more extreme levels (e.g., entered at RSI 28, RSI drops to 15) without price stabilizing, the setup may be failing — tighten stop or exit
-
----
-
-## Environment Filter: ADX
-
-The ADX (Average Directional Index) is critical for filtering mean reversion signals:
-
-| ADX Value | Market Environment | Mean Reversion Suitability |
-|---|---|---|
-| < 15 | No trend, very low volatility | Good — but small moves, tight targets |
-| 15-25 | Weak trend or range-bound | Best environment for mean reversion |
-| 25-35 | Moderate trend developing | Caution — mean reversion works but with higher risk |
-| > 35 | Strong trend | Avoid mean reversion — use trend-following instead |
-| > 50 | Extreme trend | Do not use mean reversion — high risk of continued deviation |
+- **Below MA(200).** Short-term washouts below the 200-day average also bounced on average, but their 10-day losses worse than -10% were about 2.7× as frequent (8.8% of cases vs 3.3%; 16.5% vs 9.0% in 2007–09), and siglens-trader's portfolio test found adding them raised returns and maximum drawdown together. Describe such a reading as a higher-risk rebound candidate, never as this setup.
+- **Intraday timeframes.** Nothing here was measured on intraday bars, and MA(200) on a 1-hour chart is a different object. siglens-trader measured 1-hour entries with tight exits at -0.25% to -0.30% per trade after costs. On non-daily charts, report the readings as context only and state that the measured setup is daily.
+- **Information-driven drops.** A price rule cannot tell a noisy pullback from a repricing (earnings miss, guidance cut, regulatory shock). The big failures of this setup are those. When the prompt shows a fresh negative catalyst, say that the setup's history does not cover it.
 
 ---
 
 ## Confidence Weight Rationale
 
-confidence_weight: 0.74 — Mean reversion is one of the most academically documented market phenomena, with robust statistical evidence across asset classes. In range-bound markets, the strategy has documented win rates of 60–70%, clear mathematical foundation (deviation from mean), and well-defined entry/exit criteria. The 0.74 weight sits slightly above breakout (0.72) on the strength of this statistical backing, while acknowledging that the critical dependency on market environment (ranging vs. trending) and the risk of catching falling knives in trending markets prevent a higher rating.
-
-Factors that increase confidence:
-- ADX < 25 confirms non-trending environment
-- Multiple indicators simultaneously confirm oversold/overbought (Bollinger + RSI)
-- Price is at a known support/resistance level (triple confluence)
-- Volume decreases during the extreme move (exhaustion)
-- Higher timeframe shows no clear trend (sideways)
-
-Factors that decrease confidence:
-- ADX > 30 (trending market — mean reversion is counter-trend)
-- Only one indicator shows oversold/overbought (single signal)
-- Fundamental catalyst driving the move (earnings, news) — may not revert
-- Price has been trending strongly on the higher timeframe
-- Bollinger Bands expanding rapidly (increasing volatility)
-
----
-
-## Limitations and Caveats
-
-- **Catching falling knives**: The most dangerous failure mode. In a strong downtrend, price can remain "oversold" for days or weeks, producing repeated losing buy signals. Always check the higher timeframe trend and ADX before entering
-- **Not for trending markets**: Mean reversion is fundamentally a range-bound strategy. Applying it in trending markets leads to systematic losses. The ADX filter is not optional — it is essential
-- **News-driven moves**: Fundamental catalysts (earnings surprises, regulatory changes, macro events) can cause permanent price shifts, not temporary deviations. Mean reversion does not apply to fundamental re-pricing
-- **Band expansion trap**: When Bollinger Bands are expanding (increasing volatility), touching the lower band may be the start of a larger move, not an extreme. Look for band contraction or stabilization before entering
-- **Asymmetric risk**: Mean reversion targets (back to the mean) are typically smaller than potential losses (deviation continues). Strict stop losses and position sizing are essential to survive the losing trades
+confidence_weight: 0.8 — the only strategy skill whose rule was backtested end to end on the same inputs the prompt shows, across five market periods (2000–2026) and two independent data sources, with the same sign in every period. It is not higher because the edge is small per trade (tenths of a percent over baseline in most periods), it is relative rather than absolute in bear markets, and it is blind to news-driven drops.
 
 ---
 
 ## AI Analysis Instructions
 
-Evaluate the current price relative to its statistical mean by citing the `Bollinger %B` and `Price vs MA/EMA` lines already computed in `## Indicator State (computed)`, together with RSI — never compute %B or MA deviation yourself. Determine whether the market environment is suitable for mean reversion (ADX assessment).
+Read the latest close against `MA(200)`, then `Williams %R(14)`, then `Connors RSI` and `MA(5)` — all from the indicator list already in the prompt; never compute them yourself. Classify the chart as exactly one of: setup met, near setup, not met, or not applicable (non-daily chart, or close at/below MA(200)).
 
 Return the summary in **this exact structured format** (one `**label**: value` pair per line):
 
 ```
-**시장 환경**: [ADX 기반 판단, 예: "ADX 18 — 비추세 환경으로 평균 회귀 전략 적합" / "ADX 38 — 강한 추세로 평균 회귀 부적합"]
-**볼린저 밴드 위치**: [현재 가격의 밴드 내 위치, 예: "하단 밴드 터치 (%B = -0.05) — 극단적 과매도"]
-**RSI 상태**: [RSI 값과 해석, 예: "RSI 25 — 과매도 구간, 매수 신호 활성"]
-**이평선 이격도**: [MA 대비 가격 이격, 예: "MA20 대비 -8.2% 이격 — 과매도 영역 근접"]
-**매매 신호**: [종합 판단, 예: "볼린저 하단 터치 + RSI 28 = 이중 과매도 확인 — 반등 매수 적합" / "과매수/과매도 조건 미충족"]
-**상세 분석**: [시장 환경 적합성, 복합 지표 분석, 지지·저항 수렴 여부, 평균 회귀 목표가(중심 밴드), 리스크, 주의사항을 포함한 상세 분석 문단]
+**추세 필터**: [종가 vs MA(200), 예: "종가 182.40 > MA200 165.10 — 장기 상승 추세 안" / "종가 < MA200 — 측정된 셋업 적용 범위 밖"]
+**단기 과매도**: [Williams %R(14) 값과 해석, Connors RSI 보조, 예: "Williams %R -94 — 14봉 저점 부근 마감(측정 기준 -90 이하 충족), Connors RSI 8 동조"]
+**셋업 판정**: [충족 / 근접(-80~-90) / 미충족 / 해당 없음(일봉 아님 또는 MA200 아래) 중 하나와 한 줄 근거]
+**되돌림 기준**: [MA(5) 값, 예: "종가가 MA5 176.20 위로 마감하면 되돌림 완료로 보는 기준, 또는 약 10거래일"]
+**지표 합의와의 관계**: [컨플루언스·신호가 약세여도 이 셋업에서는 정상 상태임을 설명하고, 컨플루언스 청산 규칙까지 충족이면 주의로 덧붙임, 예: "지표 합의는 약세 — 이 셋업이 나오는 날의 전형적 상태이며 셋업을 무효화하지 않음"]
+**상세 분석**: [셋업의 측정된 성격(상대 우위, 수일 호흡), 뉴스성 급락 여부, 하방 리스크를 포함한 상세 분석 문단]
 ```
 
 Additional output rules:
-- If **ADX > 30**, explicitly warn that mean reversion signals are unreliable in the current trending environment
-- If **Bollinger + RSI** both confirm oversold/overbought simultaneously, flag as high-confidence signal
-- If price is at a **known support/resistance level** while oversold/overbought, flag as triple confluence (highest confidence)
-- If neither oversold nor overbought conditions exist, state "현재 과매수/과매도 조건 미충족 — 평균 회귀 신호 없음"
-- Set the `trend` field: `bullish` if oversold conditions confirmed in non-trending market, `bearish` if overbought conditions confirmed in non-trending market, `neutral` if no mean reversion signal or trending environment
+- Never cite ADX < 25, a Bollinger band touch, RSI(14) < 30, or a %R cross back above -80 as a condition of this setup — they were measured and did not hold up.
+- A bearish indicator tally does not cancel a met setup; state both facts and explain the relationship. A met confluence exit rule is a caution to mention (historically weaker than other setup days, still above baseline), not a cancellation.
+- When the setup is met, describe it as a historically favourable short-term pullback reading, not as a certainty or an instruction; mention that in broad market sell-offs the edge was relative, not absolute.
+- On the overbought side (%R ≥ -20), say there is no measured sell edge; do not turn it into a bearish call.
+- Set the `trend` field: `bullish` only when the setup is met on a daily chart; `neutral` in every other case (near setup, not met, overbought, below MA(200), non-daily). This skill never sets `bearish`.
 
 <!-- PROMPT_DIGEST:START -->
-평균 회귀 전략 (confidence_weight 0.74)
-Price returns to mean after significant deviation. Win rate 60-70% in range-bound markets. Works best when NOT trending strongly (ADX<25); in trending markets produces losing trades (falling knives / shorting strength).
-Mean = MA20/MA50, middle Bollinger Band (MA20), VWAP, or statistical mean. Oversold (extreme below) → bounce likely; Overbought (extreme above) → pullback likely.
+평균 회귀 전략 (confidence_weight 0.8) — measured, daily only
+Setup = short-term washout inside a long-term uptrend, read from the indicator list (never recompute):
+1. Timeframe 1Day. 2. Latest close ABOVE MA(200). 3. Williams %R(14) ≤ -90.
+Near setup: %R -80 to -90 above MA(200) (same direction, smaller edge). Connors RSI ≤10 corroborates but is not required. Exit reference: first daily close above MA(5), or ~10 trading days (the conservative measured reference, not a ceiling).
 
-### Signal indicators
-Bollinger Bands (20-MA ± 2 SD, ~95% of price action):
-- touches/penetrates lower band = oversold buy; upper band = overbought sell; middle (MA20) = mean/target; width contracting (squeeze) = low vol, breakout likely, reversion may fail; width expanding = extreme moves may continue before reverting.
-- %B: cite `## Indicator State (computed)`'s `Bollinger %B: x (BandWidth y%)` line — never compute (Price−Lower)/(Upper−Lower) yourself. %B<0 = below lower (extreme oversold); %B>1 = above upper (extreme overbought); %B=0.5 = middle (mean).
-RSI: <30 oversold buy; <20 extremely oversold strong buy; >70 overbought sell; >80 extremely overbought strong sell; crossing 50 from below = bullish mean cross (upward reversion in progress); from above = bearish mean cross.
-MA deviation: cite `## Indicator State (computed)`'s `Price vs MA/EMA` % — never compute (Price−MA)/MA×100 yourself. >+10% = overbought; <−10% = oversold; adjust by historical volatility.
+Evidence (daily bars, 0.1% cost/side; S&P 500 point-in-time members 2000-2020 + large caps/SPY/QQQ 2024-26; matches siglens-trader's independent RSI(2)<10 study): next-5-day mean beat the any-day-above-MA200 baseline in every period — 2000-07 +0.76% vs +0.27%, 2007-09 crisis +0.20% vs -0.54%, 2009-14 +0.79% vs +0.35%, 2015-20 +0.43% vs +0.11%, 2024-26 +2.18% vs +0.24%. MA(5)-exit trades won 66-75% in every period. Edge is RELATIVE: in the 2007-09 crisis the 10-day return was still negative (-0.71%), only less than baseline.
 
-### Entry
-Buy (oversold) standard: (1) ADX<25; (2) price touches/penetrates lower Bollinger; (3) RSI<30 simultaneously; (4) enter long on bullish reversal candle (hammer, bullish engulfing, or close in upper half of range); (5) stop below lowest point of move or 2×ATR below entry; (6) target middle band (MA20), aggressive = upper band.
-Buy high-confidence (3 simultaneous): %B<0 + RSI<30 + at/near known support (horizontal, prior swing low, Fibonacci) → triple confluence, highest win rate.
-Sell (overbought) standard: (1) ADX<25; (2) price touches/penetrates upper band; (3) RSI>70 simultaneously; (4) enter short on bearish reversal candle (shooting star, bearish engulfing, or close in lower half); (5) stop above highest point or 2×ATR above; (6) target middle band, aggressive = lower band.
+Measured and NOT supported — never use as conditions or as reasons against:
+- ADX<25 requirement (ADX≥30 did as well or better in 3 of 5 periods).
+- Bollinger lower band + RSI(14)<30 (+ADX<25): trailed random entries in 4 of 5 periods.
+- Waiting for %R to cross back above -80: lost the edge (≤0 in all 5 periods).
+- Bullish confirmation (candles, bullish signals, bullish confluence): no consistent gain. ~2/3 of setup days show a BEARISH indicator tally and they did as well as or better than the rest (4 of 5 periods) — a bearish tally is this setup's normal state, not a reason against it. A met confluence EXIT rule (~1 in 5 setup days) was weaker than other setup days but still beat the uptrend baseline over 5 days in every period: a caution to name, not a veto.
+- Tight stops (2-4×ATR) lowered results in every period; 5×ATR is disaster protection only.
+- Overbought (%R ≥ -20) above MA(200): slightly below-baseline but still positive returns (4 of 5 periods), shorting lost — tempers upside at most, never a bearish call.
 
-### Exit
-Primary target: middle band (MA20). Extended: opposite band, only when initial move to mean shows strong momentum. Stop: 2×ATR beyond deviation extreme. Time: if no reversion within 5-7 bars, condition may be trend not deviation — close. Invalidation: if RSI reaches even more extreme (e.g. entered RSI 28, drops to 15) without price stabilizing — tighten stop or exit.
-
-### Environment Filter: ADX (essential, NOT optional)
-<15 no trend/very low vol → good but small moves, tight targets; 15-25 weak trend/range → BEST for mean reversion; 25-35 moderate trend developing → caution, higher risk; >35 strong trend → AVOID, use trend-following; >50 extreme trend → do NOT use, high risk of continued deviation.
-
-### Confidence
-Increase: ADX<25; Bollinger+RSI both confirm; at known S/R (triple confluence); volume decreases during extreme (exhaustion); higher TF no clear trend.
-Decrease: ADX>30 (counter-trend); only one indicator; fundamental catalyst (earnings/news) — may not revert; strong higher-TF trend; Bollinger bands expanding rapidly.
-Caveats: catching falling knives (price stays oversold days/weeks in strong downtrend) — always check higher-TF trend + ADX. Not for trending markets — ADX filter essential. News-driven moves = permanent re-pricing, not deviation. Band-expansion trap: lower-band touch during expanding bands may start larger move — wait for contraction/stabilization. Asymmetric risk: reversion targets smaller than potential losses — strict stops + sizing essential.
+Not applicable: close at/below MA(200) (bounces on average but >10% 10-day losses ~2.7× as frequent — call it a higher-risk rebound candidate, never this setup); non-daily charts (unmeasured; report readings as context only); news-driven drops (earnings/guidance/regulatory — the setup's big failures; say its history does not cover them).
 
 ### Output (one **label**: value per line)
-**시장 환경**: [ADX 기반, 예: ADX 18 — 비추세, 적합 / ADX 38 — 강한 추세, 부적합]
-**볼린저 밴드 위치**: [예: 하단 밴드 터치 (%B=-0.05) — 극단 과매도]
-**RSI 상태**: [값+해석, 예: RSI 25 — 과매도, 매수 신호 활성]
-**이평선 이격도**: [예: MA20 대비 -8.2% 이격 — 과매도 근접]
-**매매 신호**: [종합, 예: 볼린저 하단 + RSI 28 = 이중 과매도 — 반등 매수 적합 / 조건 미충족]
-**상세 분석**: [환경 적합성, 복합 지표, S/R 수렴, 목표가(중심 밴드), 리스크, 주의사항]
-- If ADX>30, explicitly warn signals unreliable in trending environment.
-- If Bollinger+RSI both confirm → flag high-confidence.
-- If at known S/R while oversold/overbought → flag triple confluence (highest).
-- If neither condition → "현재 과매수/과매도 조건 미충족 — 평균 회귀 신호 없음".
-- trend: bullish if oversold confirmed in non-trending, bearish if overbought confirmed in non-trending, neutral if no signal or trending.
+**추세 필터**: [종가 vs MA(200)]
+**단기 과매도**: [Williams %R(14) + 해석, Connors RSI 보조]
+**셋업 판정**: [충족 / 근접(-80~-90) / 미충족 / 해당 없음(일봉 아님 또는 MA200 아래) + 한 줄 근거]
+**되돌림 기준**: [MA(5) 값 — 종가가 MA5 위로 마감 또는 약 10거래일]
+**지표 합의와의 관계**: [약세 합의는 이 셋업의 정상 상태이며 셋업을 무효화하지 않음; 컨플루언스 청산 규칙 충족이면 주의로 명시]
+**상세 분석**: [측정된 성격(상대 우위, 수일 호흡), 뉴스성 급락 여부, 하방 리스크]
+- Met setup = historically favourable short-term pullback reading, not a certainty or instruction; note the edge was relative in broad sell-offs.
+- trend: bullish only when the setup is met on 1Day; neutral otherwise. Never bearish from this skill.
 <!-- PROMPT_DIGEST:END -->
