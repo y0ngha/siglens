@@ -940,7 +940,7 @@ IN_NECK_RATIO = 0.05        — 인넥 허용 비율
 | `strategies/multi-timeframe.md` | 다중 시간대 분석 | 0.75 |
 | `strategies/breakout.md` | 브레이크아웃 전략 | 0.7 |
 | `strategies/divergence.md` | 다이버전스 전략 | 0.7 |
-| `strategies/mean-reversion.md` | 평균 회귀 전략 | 0.7 |
+| `strategies/mean-reversion.md` | 평균 회귀 전략 (종가 > MA200 ∧ Williams %R(14) ≤ -90, 일봉 — 근거: `docs/superpowers/specs/2026-09-25-mean-reversion-evidence-design.md`) | 0.8 |
 | `strategies/elliott-wave.md` | 엘리어트 파동 | 0.7 |
 | `strategies/fibonacci.md` | 피보나치 전략 | 0.65 |
 

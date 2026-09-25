@@ -543,3 +543,11 @@
 - Violation: `src/features/auth-oauth/actions/cancelOAuthSignupAction.ts` `let next` reassigned inside try/catch
   - Rule: MISTAKES.md §14 — Using let + if for conditional assignment instead of declarative const expressions
   - Context: Replaced with const via `.then(ok, fail)` pattern. Test mocks for `peek` updated to resolve a Promise, matching the store interface (already documented rule; no promotion needed).
+
+## [claude/siglens-analysis-technique-review-wvfffz Round 2 | AI chat tools pullback classification & budget | 2026-09-25]
+- Violation: RECOMMENDED — src/app/api/ai/chat/tools/getBarsIndicators.ts: 4-way classification written as nested ternary (ternary inside TRUE branch of another ternary)
+  - Rule: FF.md Readability 1-E — no nested ternaries
+  - Context: Extracted `classifyPullback()` with early returns to eliminate nesting.
+- Violation: RECOMMENDED — src/app/api/ai/chat/tools/__tests__/getBarsIndicators.test.ts: new variable-length field (`pullback.measured`) added to budget-trimmed tool result without testing its interaction with the budget trimmer
+  - Rule: (new) Tests — a new field inside a size-budgeted payload must have a test exercising its interaction with the budget logic
+  - Context: Added overflow test comparing quiet vs lit reading; verifies more bars trimmed, field and newest bar intact.

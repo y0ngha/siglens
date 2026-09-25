@@ -14,6 +14,7 @@ siglens-trader가 2026-09-24에 매매 판단을 **1시간봉 종합 점수(컨�
 | 일봉 컨플루언스를 "strong evidence"로 제시하는 프롬프트 문구 | **변경 필요하나 siglens 범위 밖** — core 후속 과제(§6) | siglens-core `confluenceSection` |
 | trader의 매매 규칙 전체(SPY 국면 필터, 5슬롯, 재난 손절, dry_run 비용) | **적용 안 함** — 자동매매 운용 규칙이지 분석 판독이 아니다 | — |
 | 챗 도구 `get_bars_indicators`의 컨플루언스 주석 | **사실 정정** — "trader가 쓰는 규칙"이 더는 참이 아님 | `getBarsIndicators.ts` 주석 |
+| ai.siglens(챗 에이전트)의 차트 판독 | **적용** — `get_bars_indicators`에 결정론 `pullback` 판독 추가(§4-4) | `getBarsIndicators.ts` |
 
 ## 1. 질문과 경계
 
@@ -130,14 +131,31 @@ tMR 거래(비용 반영, 비중첩):
 2. **`skills/indicators/williams-r.md`** — 같은 게이트로 함께 주입되므로 "크로스가 신호"와 충돌하지 않게
    일봉·MA200 위 예외 한 줄(본문·digest).
 3. **`getBarsIndicators.ts` 주석** — "siglens-trader가 쓰는 규칙" → 은퇴 사실과 측정 결과로 정정. 동작 변경 없음.
-4. **i18n 카탈로그** — 스킬 `description`은 홈 스킬 카드에 노출되는 UI 문자열(`shared.skillDescription`, 수동 관리 네임스페이스)이라
+4. **ai.siglens — `get_bars_indicators`에 `pullback` 판독 추가** (사용자 확인: ai.siglens 도구 호출에만 적용해도 된다)
+   - 왜: 챗 모델은 스킬을 받지 않는다. `run_fresh_analysis`는 core `runAnalysis`를 거쳐 위 스킬을 그대로 받지만,
+     차트 질문에 가장 많이 쓰이는 `get_bars_indicators`는 해석 근거로 컨플루언스만 넘기고, core 에이전트 프롬프트는
+     심볼 질문마다 그 판독을 말하게 한다. 셋업일의 68%는 컨플루언스가 약세로 읽히므로(§3.4) 좋은 눌림에서 답이
+     약세 쪽으로 기울 수 있다. 원자료(`latest.williamsR`, `derived.priceVsMa.ma200Pct`)는 이미 있었지만 검증된
+     해석이 없었다.
+   - 무엇: 1Day에서만 `pullback: { reading, williamsR, connorsRsi, closeVsMa200Pct, ma5, measured }`.
+     `reading` = `washoutInUptrend`(종가 > MA200 ∧ %R ≤ −90) / `nearWashoutInUptrend`(MA200 위 ∧ −90 < %R ≤ −80) /
+     `washoutBelowMa200`(MA200 아래 ∧ %R ≤ −90) / `none`. 이름은 `confluence.entryRuleMet`과 같은 이유로 "지시"가 아닌
+     "판독"으로 지었다. `measured`는 그 판독의 과거 기저율 한 문단(§3 수치 그대로) — 모델이 수치를 지어내지 않고
+     인용하게 하려고 도구 결과에 싣는다(`findUngroundedNumbers`는 도구 결과에 없는 수치를 잡는다).
+   - 계산: core가 이미 계산한 `williamsR`·`connorsRsi` 계열과 core `calculateMA`만 읽는다(지표 재구현 없음).
+     `derived.maStack`처럼 도구 계층의 파생 판독이다. near 구간도 5개 시기 모두 기준선 대비 양(+0.29/+0.14/+0.38/
+     +0.18/+0.02%p, 5일)이라 "같은 방향, 더 작은 우위"로 적었다.
+   - 경계: 임계값(−90, MA200)은 SCOPE상 core 소유의 "신호 임계값"에 가깝다. 사용자 승인에 따라 ai.siglens 도구 계층에
+     두고, core의 결정론 섹션으로 옮기는 것을 §6-2 후속 과제로 남긴다. core 도구 설명(`AGENT_TOOL_SPECS`)에는 이 필드가
+     아직 없다 — 필드명·`measured`로 자기 설명이 되게 했고, 설명 추가는 §6-3.
+5. **i18n 카탈로그** — 스킬 `description`은 홈 스킬 카드에 노출되는 UI 문자열(`shared.skillDescription`, 수동 관리 네임스페이스)이라
    ko/en/ja/zh 4개 카탈로그와 `messages/_meta/hashes.json`(ko 원문 sha1 앞 12자)을 함께 갱신했다. 번역은 용어집
    (과매도 → Oversold / 売られすぎ / 超卖) 기준 수기 작성 — `translate.mjs`는 Gemini 호출이 필요해 이 환경에서 실행 불가.
 
 ### 검증
 
 - `yarn validate:skills`, `yarn skills:digest-verify`(81개), `node scripts/i18n/verify.mjs`(2,820키 × 3로케일) 통과.
-- vitest: 스킬·스크립트·i18n·챗 도구 관련 21개 파일 572건 통과. 전체 스위트의 실패 11건(시간대·ICU 로케일 포맷)은
+- vitest: 스킬·스크립트·i18n·챗 도구 관련 21개 파일 572건 통과(이후 `pullback` 테스트 6건 추가 — 예산 초과 상호작용 포함, `getBarsIndicators` 37건 통과). 전체 스위트의 실패 11건(시간대·ICU 로케일 포맷)은
   변경 전 코드에서도 동일하게 실패하는 컨테이너 환경 문제로 확인.
 - **실제 경로 통합 확인**: core `FileSkillsLoader`(digest만 주입) + core `buildAnalysisPrompt`로 실데이터 프롬프트를 만들어,
   셋업일(NVDA 2026-09-14, 종가 210.96 > MA200 197.25, %R −92.1)에는 새 스킬이 주입되고 평범한 날(%R −38.8)에는
@@ -163,7 +181,8 @@ tMR 거래(비용 반영, 비중첩):
 2. **(선택) 결정론 섹션에 눌림 판독 추가** — `close vs MA200`, `RSI(2)`, `Williams %R`, `MA5`를 한 블록으로 계산해
    "short-term washout in uptrend: met / near / not met"를 사실로 제시. 스킬이 모델에게 판정을 맡기는 부분을 결정론으로 옮긴다.
 3. **챗 도구 설명(`AGENT_TOOL_SPECS.get_bars_indicators`)·에이전트 시스템 프롬프트** — 컨플루언스를 "agreement score"로
-   소개하고 Detailed 레벨에서 점수를 말하게 한다. 1과 같은 이유로 "서술용 집계, 예측 아님"을 명시하도록 권한다.
+   소개하고 Detailed 레벨에서 점수를 말하게 한다. 1과 같은 이유로 "서술용 집계, 예측 아님"을 명시하고, siglens가
+   추가한 `pullback` 필드(§4-4)를 도구 설명에 넣어 모델이 컨플루언스와 함께 읽도록 권한다.
 
 ## 7. 한계
 

@@ -302,6 +302,104 @@ function confluenceView(
     };
 }
 
+/**
+ * `pullback.reading`. Named as a reading of the chart, never an instruction —
+ * the same rule that renamed `confluence.entryTrigger` to `entryRuleMet`.
+ */
+type PullbackReading =
+    | 'washoutInUptrend'
+    | 'nearWashoutInUptrend'
+    | 'washoutBelowMa200'
+    | 'none';
+
+interface PullbackView {
+    reading: PullbackReading;
+    williamsR: number | null;
+    connorsRsi: number | null;
+    closeVsMa200Pct: number | null;
+    /** The measured exit reference: the washout is treated as resolved on the first daily close above it. */
+    ma5: number | null;
+    /** What the reading has historically meant; `null` for `none`. */
+    measured: string | null;
+}
+
+/** Long-term trend filter of the measured setup. */
+const PULLBACK_TREND_MA_PERIOD = 200;
+const PULLBACK_EXIT_MA_PERIOD = 5;
+/** Williams %R(14) at or below this closes in the bottom tenth of the 14-bar range. */
+const WASHOUT_WILLIAMS_R = -90;
+const NEAR_WASHOUT_WILLIAMS_R = -80;
+
+/**
+ * Carried in the tool result so the model can quote the base rate instead of
+ * inventing one (the grounding check flags numbers no tool returned). Figures
+ * come from the backtest in
+ * docs/superpowers/specs/2026-09-25-mean-reversion-evidence-design.md.
+ */
+const PULLBACK_MEASURED: Record<Exclude<PullbackReading, 'none'>, string> = {
+    washoutInUptrend:
+        'Historical base rate, not an instruction. Daily closes above MA200 with Williams %R(14) at or below -90 were followed by above-baseline 5-day returns in every period backtested (2000-07, 2007-09, 2009-14, 2015-20, 2024-26); trades exited on the first close above MA5 (or after 10 days) won 66-75% of the time. In broad sell-offs the edge was relative, not absolute (2007-09: -0.71% over 10 days vs -1.03% baseline). About 2/3 of these days show a bearish confluence tally; that is the normal state of this reading, not evidence against it.',
+    nearWashoutInUptrend:
+        'Historical base rate, not an instruction. Above MA200 with Williams %R(14) between -90 and -80: same direction as the washout reading (above-baseline 5-day returns in every backtested period), with a smaller edge.',
+    washoutBelowMa200:
+        'Historical base rate, not an instruction. Washouts below MA200 rebounded on average, but 10-day losses worse than -10% were about 2.7x as frequent as in the uptrend reading (8.8% vs 3.3% of cases): a higher-risk rebound candidate, not the uptrend reading.',
+};
+
+function classifyPullback(
+    aboveMa200: boolean,
+    williamsR: number
+): PullbackReading {
+    if (williamsR <= WASHOUT_WILLIAMS_R) {
+        return aboveMa200 ? 'washoutInUptrend' : 'washoutBelowMa200';
+    }
+    if (aboveMa200 && williamsR <= NEAR_WASHOUT_WILLIAMS_R) {
+        return 'nearWashoutInUptrend';
+    }
+    return 'none';
+}
+
+/**
+ * The short-term washout reading siglens-trader switched to on 2026-09-24
+ * (RSI(2) < 10 above MA200), re-measured on independent data for siglens.
+ * Williams %R(14) stands in for RSI(2): it measured as well or better, and
+ * core already computes it — no indicator is re-implemented here, only core's
+ * `williamsR`/`connorsRsi` series and `calculateMA` are read.
+ *
+ * **Daily only**: the measurement is on daily bars, and MA200 on an intraday
+ * chart is a different object. Other timeframes get `null`, as does a series
+ * too short for MA200 or without a Williams %R reading.
+ */
+function pullbackView(
+    bars: readonly Bar[],
+    indicators: IndicatorResult,
+    timeframe: Timeframe
+): PullbackView | null {
+    if (timeframe !== '1Day') return null;
+    const close = last(bars.map(b => b.close));
+    const ma200 = last(calculateMA(bars.slice(), PULLBACK_TREND_MA_PERIOD));
+    const williamsR = last(indicators.williamsR);
+    if (
+        close === null ||
+        !Number.isFinite(close) ||
+        ma200 === null ||
+        !Number.isFinite(ma200) ||
+        williamsR === null ||
+        !Number.isFinite(williamsR)
+    )
+        return null;
+    const reading = classifyPullback(close > ma200, williamsR);
+    return {
+        reading,
+        williamsR: roundNumber(williamsR),
+        connorsRsi: roundOrNull(last(indicators.connorsRsi)),
+        closeVsMa200Pct: pctVs(close, ma200),
+        ma5: roundOrNull(
+            last(calculateMA(bars.slice(), PULLBACK_EXIT_MA_PERIOD))
+        ),
+        measured: reading === 'none' ? null : PULLBACK_MEASURED[reading],
+    };
+}
+
 /** `Timeframe` → the next larger INTRADAY timeframe `get_bars_indicators` loads for `higherTimeframe` (spec §3.1). `1Day`'s higher timeframe is weekly, aggregated from the already-loaded daily bars instead (see `loadHigherTimeframe` below) — no entry here. */
 const HTF_MAP: Partial<Record<Timeframe, Timeframe>> = {
     '4Hour': '1Day',
@@ -741,6 +839,7 @@ export const getBarsIndicatorsTool: ToolExecutor = async args => {
         htf?.timeframe ?? null
     );
     const higherTimeframe = higherTimeframeView(htf);
+    const pullback = pullbackView(bars, indicators, timeframe);
     const derived = computeDerived(bars, indicators, timeframe);
     // Client-serialization-boundary rounding only, same as
     // `getBarsAction.ts` — the cache still holds full-precision values.
@@ -759,6 +858,7 @@ export const getBarsIndicatorsTool: ToolExecutor = async args => {
             trend,
             signals,
             confluence,
+            pullback,
             higherTimeframe,
             derived,
             latest,
