@@ -54,6 +54,7 @@ export async function GET(request: NextRequest): Promise<Response> {
         console.error('[handoff] redis unavailable', error);
         payload = null;
     }
+    // `aiSignedOutUrl` builds its path with `localePath` — noRawRedirect guard.
     const response = NextResponse.redirect(
         aiSignedOutUrl(payload?.locale ?? DEFAULT_LOCALE),
         HTTP_STATUS_FOUND

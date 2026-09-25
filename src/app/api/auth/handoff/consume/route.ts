@@ -70,6 +70,8 @@ export async function GET(request: NextRequest): Promise<Response> {
         console.error('[handoff] redis unavailable', error);
         payload = null;
     }
+    // `aiSignedOutUrl` builds its path with `localePath`, and `next` comes back
+    // localized from `resolveHandoffNext` — noRawRedirect guard.
     if (payload === null)
         return noStoreRedirect(aiSignedOutUrl(DEFAULT_LOCALE));
     const { locale, next } = resolveHandoffNext(payload.next);
