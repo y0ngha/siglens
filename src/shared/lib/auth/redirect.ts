@@ -9,7 +9,7 @@ const PATH_PREFIX = '/';
 const PROTOCOL_RELATIVE_PREFIX = '//';
 const BACKSLASH_HOST_PREFIX = '/\\';
 /** 상대 경로를 파싱하기 위한 더미 base. 호스트는 결과에 쓰이지 않는다. */
-const PARSE_ONLY_BASE = 'https://siglens.invalid';
+export const PARSE_ONLY_BASE = 'https://siglens.invalid';
 
 /**
  * C0 제어문자와 공백. **접두사 검사보다 먼저** 걸러야 한다.

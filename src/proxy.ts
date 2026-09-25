@@ -22,6 +22,11 @@ import {
     splitLocalePath,
 } from '@/shared/i18n/locales';
 import { routing } from '@/shared/i18n/routing';
+import {
+    DEFAULT_REDIRECT_PATH,
+    sanitizeNextPath,
+    toSameOriginPath,
+} from '@/shared/lib/auth/redirect';
 import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 import {
     AI_INDEXABLE_PATHS,
@@ -395,7 +400,24 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     }
 
     if (GUEST_ONLY_PATHS.has(pathname) && hasSession) {
-        return NextResponse.redirect(new URL(localePath(locale, '/'), req.url));
+        // 이미 로그인된 사용자는 `next`(돌아갈 곳)를 따라 보낸다. 무시하고 홈으로
+        // 보내면 SiglensAI 로그인 CTA(`/login?next=/api/auth/handoff?to=ai…`)를
+        // 누른 메인 로그인 사용자 — ai 쪽만 로그아웃했거나, `?sso=none` 이후
+        // 다른 탭에서 로그인한 경우 — 가 ai.siglens.io로 못 돌아가고 메인 홈에
+        // 버려진다. 여기는 진짜 HTTP 리다이렉트라 핸드오프 302 체인도 브라우저가
+        // 그대로 따라간다. `next`는 로그인 폼과 같은 2중 방어를 거친다.
+        const next = toSameOriginPath(
+            sanitizeNextPath(reqUrl.searchParams.get('next'))
+        );
+        // `next`가 또 다른 게스트 전용 경로면 한 홉 더 튕기지 않고 바로 홈으로.
+        const nextPath = splitLocalePath(
+            new URL(next, reqUrl.origin).pathname
+        ).path;
+        const target =
+            next === DEFAULT_REDIRECT_PATH || GUEST_ONLY_PATHS.has(nextPath)
+                ? localePath(locale, '/')
+                : next;
+        return NextResponse.redirect(new URL(target, req.url));
     }
 
     if (AUTH_REQUIRED_PATHS.some(p => pathname.startsWith(p)) && !hasSession) {
