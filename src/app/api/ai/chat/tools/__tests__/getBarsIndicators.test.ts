@@ -66,6 +66,7 @@ import {
     CONFLUENCE_MIN_BARS,
     CONFLUENCE_TREND_MA_PERIOD,
     evaluateConfluence,
+    PULLBACK_BASE_RATES,
     scoreConfluence,
 } from '@y0ngha/siglens-core';
 import {
@@ -520,15 +521,18 @@ describe('getBarsIndicatorsTool', () => {
         classify.mockReturnValue('uptrend');
         detect.mockReturnValue([]);
         const SOURCE_BARS = 250;
-        // Rising closes keep the last close above MA200, so %R -95 lights the reading.
-        const bars = Array.from({ length: SOURCE_BARS }, (_, i) =>
+        const rising = Array.from({ length: SOURCE_BARS }, (_, i) =>
             bar(1_700_000_000 + i * 86_400, 100 + i)
         );
-        const run = async (williamsR: number[]) => {
-            getCachedBars.mockResolvedValue({
-                bars,
-                indicators: { ...indicators, williamsR },
-            });
+        // Same series with the last close dropped below its 14-bar low while
+        // still above MA200 (≈249): Williams %R -100 lights the reading.
+        const CRASH_CLOSE = 300;
+        const washout = [
+            ...rising.slice(0, -1),
+            bar(rising.at(-1)!.time, CRASH_CLOSE),
+        ];
+        const run = async (bars: typeof rising) => {
+            getCachedBars.mockResolvedValue({ bars, indicators });
             return (await getBarsIndicatorsTool(
                 { symbol: 'AAPL', timeframe: '1Day', bars: 200 },
                 ctx,
@@ -540,9 +544,10 @@ describe('getBarsIndicatorsTool', () => {
             };
         };
 
-        const quiet = await run([-30]);
-        const lit = await run([-95]);
+        const quiet = await run(rising);
+        const lit = await run(washout);
 
+        expect(quiet.pullback.reading).toBe('none');
         expect(lit.pullback.reading).toBe('washoutInUptrend');
         expect(lit.pullback.measured).not.toBeNull();
         expect(JSON.stringify(lit).length).toBeLessThanOrEqual(
@@ -551,7 +556,7 @@ describe('getBarsIndicatorsTool', () => {
         // The paragraph displaces bars, never itself: more bars are trimmed…
         expect(lit.barsTrimmed).toBeGreaterThan(quiet.barsTrimmed);
         // …and the newest bar still survives.
-        expect(lit.bars.at(-1)?.c).toBe(100 + SOURCE_BARS - 1);
+        expect(lit.bars.at(-1)?.c).toBe(CRASH_CLOSE);
     });
 
     it('confluence: 전체 캐시 봉(요청 bars 아님)으로 core evaluateConfluence를 돌려 압축 형태로 싣는다(htfGate는 snapshot.htfTrend로 판정)', async () => {
@@ -1043,37 +1048,40 @@ describe('getBarsIndicatorsTool', () => {
         });
     });
 
-    describe('pullback (단기 과매도 눌림 판독)', () => {
+    describe('pullback (단기 과매도 눌림 판독 — core evaluatePullback 어댑터)', () => {
         interface PullbackResult {
             reading: string;
-            williamsR: number | null;
-            connorsRsi: number | null;
-            closeVsMa200Pct: number | null;
+            williamsR: number;
+            rsi2: number | null;
+            closeVsMa200Pct: number;
             ma5: number | null;
             measured: string | null;
         }
+        // 판독 경계값(-90/-80)과 MA200 기권 규칙은 core pullback 테스트가 소유한다.
+        // 여기서는 일봉 게이트, 필드 이름·반올림, 기저율 문장 매핑만 고정한다.
+
         // 종가가 i에 따라 선형으로 오르거나(상승 추세) 내린다(하락 추세) — 마지막 종가가
         // MA200 위/아래 어느 쪽에 있는지가 fixture만으로 확정된다.
         const trendBars = (length: number, slope: number) =>
             Array.from({ length }, (_, i) =>
                 bar(1_700_000_000 + i * 86_400, 300 + i * slope)
             );
+        // 마지막 봉만 `close`로 바꾼다 — 14봉 저점 아래로 내리면 Williams %R은 -100.
+        const endingAt = (
+            bars: ReturnType<typeof trendBars>,
+            close: number
+        ) => [...bars.slice(0, -1), bar(bars.at(-1)!.time, close)];
         const meanOfLast = (bars: { close: number }[], n: number) =>
             bars.slice(-n).reduce((sum, b) => sum + b.close, 0) / n;
 
         const pullbackFor = async (
             bars: ReturnType<typeof trendBars>,
-            williamsR: (number | null)[],
-            timeframe = '1Day',
-            connorsRsi?: (number | null)[]
+            timeframe = '1Day'
         ): Promise<PullbackResult | null> => {
             profile.mockResolvedValue('us-equity');
             classify.mockReturnValue('uptrend');
             detect.mockReturnValue([]);
-            getCachedBars.mockResolvedValue({
-                bars,
-                indicators: { ...indicators, williamsR, connorsRsi },
-            });
+            getCachedBars.mockResolvedValue({ bars, indicators });
             const r = (await getBarsIndicatorsTool(
                 { symbol: 'AAPL', timeframe },
                 ctx,
@@ -1082,58 +1090,43 @@ describe('getBarsIndicatorsTool', () => {
             return r.pullback;
         };
 
-        it('MA200 위 + Williams %R ≤ -90이면 washoutInUptrend이고 MA200 거리·MA5·측정 근거를 싣는다', async () => {
-            const bars = trendBars(260, 0.5);
-            const r = await pullbackFor(bars, [-95], '1Day', [7.5]);
-            const close = bars.at(-1)!.close;
+        it('상승 추세 끝의 급락 종가는 washoutInUptrend이고 core 값을 반올림해 기저율 문장과 함께 싣는다', async () => {
+            // 종가 300→429.5 상승 후 마지막 봉만 400 — 14봉 저점(423) 아래, MA200(≈380) 위.
+            const bars = endingAt(trendBars(260, 0.5), 400);
+            const r = await pullbackFor(bars);
 
             expect(r).toEqual({
                 reading: 'washoutInUptrend',
-                williamsR: -95,
-                connorsRsi: 7.5,
-                closeVsMa200Pct: pctVs(close, meanOfLast(bars, 200)),
+                williamsR: -100,
+                rsi2: expect.any(Number),
+                closeVsMa200Pct: pctVs(400, meanOfLast(bars, 200)),
                 ma5: roundNumber(meanOfLast(bars, 5)),
-                measured: expect.stringContaining('not an instruction'),
+                measured: PULLBACK_BASE_RATES.washoutInUptrend,
             });
-            expect(r?.measured).toContain('66-75%');
+            // 하루 급락 뒤의 RSI(2)는 trader 규칙(< 10)의 과매도 영역이다.
+            expect(r!.rsi2!).toBeLessThan(10);
         });
 
-        it('경계값: -90은 washout, -80은 near, -79.9는 none이다 (MA200 위)', async () => {
-            const bars = trendBars(260, 0.5);
-            expect((await pullbackFor(bars, [-90]))?.reading).toBe(
-                'washoutInUptrend'
-            );
-            expect((await pullbackFor(bars, [-80]))?.reading).toBe(
-                'nearWashoutInUptrend'
-            );
-            const none = await pullbackFor(bars, [-79.9]);
-            expect(none?.reading).toBe('none');
-            expect(none?.measured).toBeNull();
+        it('하락 추세 끝의 급락 종가는 washoutBelowMa200이고 고위험 기저율을 싣는다', async () => {
+            const r = await pullbackFor(endingAt(trendBars(260, -0.5), 150));
+            expect(r?.reading).toBe('washoutBelowMa200');
+            expect(r?.measured).toBe(PULLBACK_BASE_RATES.washoutBelowMa200);
+            expect(r?.closeVsMa200Pct).toBeLessThan(0);
         });
 
-        it('MA200 아래의 %R ≤ -90은 washoutBelowMa200, -80~-90은 none이다', async () => {
-            const bars = trendBars(260, -0.5);
-            const below = await pullbackFor(bars, [-95]);
-            expect(below?.reading).toBe('washoutBelowMa200');
-            expect(below?.measured).toContain('higher-risk');
-            expect(below?.closeVsMa200Pct).toBeLessThan(0);
-            expect((await pullbackFor(bars, [-85]))?.reading).toBe('none');
+        it('판독이 none이면 measured는 null이다', async () => {
+            // 상승 추세의 마지막 종가가 14봉 고점 — 과매도가 아니다.
+            const r = await pullbackFor(trendBars(260, 0.5));
+            expect(r?.reading).toBe('none');
+            expect(r?.measured).toBeNull();
         });
 
-        it('connorsRsi 계열이 없으면 connorsRsi만 null이고 판독은 그대로다', async () => {
-            const r = await pullbackFor(trendBars(260, 0.5), [-95]);
-            expect(r?.reading).toBe('washoutInUptrend');
-            expect(r?.connorsRsi).toBeNull();
-        });
-
-        it('일봉이 아니면, MA200을 못 만들면(200봉 미만), %R이 없거나 비유한값이면 null이다', async () => {
+        it('일봉이 아니거나 core가 기권하면(200봉 미만) null이다', async () => {
+            const washout = endingAt(trendBars(260, 0.5), 400);
+            expect(await pullbackFor(washout, '1Hour')).toBeNull();
             expect(
-                await pullbackFor(trendBars(260, 0.5), [-95], '1Hour')
+                await pullbackFor(endingAt(trendBars(199, 0.5), 350))
             ).toBeNull();
-            expect(await pullbackFor(trendBars(199, 0.5), [-95])).toBeNull();
-            expect(await pullbackFor(trendBars(260, 0.5), [])).toBeNull();
-            expect(await pullbackFor(trendBars(260, 0.5), [null])).toBeNull();
-            expect(await pullbackFor(trendBars(260, 0.5), [NaN])).toBeNull();
         });
     });
 

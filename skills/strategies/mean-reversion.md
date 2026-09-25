@@ -12,7 +12,7 @@ gating:
     feature: williamsR
     predicate: level
 token_cost: 752
-digest_hash: "30927823"
+digest_hash: "00b9fd77"
 ---
 
 ## Overview
@@ -29,7 +29,7 @@ This skill replaces an earlier version (range-bound Bollinger + RSI(14) + ADX < 
 
 ## The Measured Setup (daily bars only)
 
-All three inputs are already printed in the prompt — cite them, never recompute:
+When `## Deterministic Metrics` carries a `### Short-Term Washout` block (daily charts with 200+ bars), it already states this reading, its inputs and the measured base rate — cite that block and do not classify again. Otherwise all three inputs are printed in the prompt — cite them, never recompute:
 
 | Condition | Where to read it | Setup value |
 |---|---|---|

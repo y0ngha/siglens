@@ -102,7 +102,8 @@ tMR 거래(비용 반영, 비중첩):
 | 진입 규칙 MET(점수 92) | **0.18** | **−1.15** | **0.84** | **0.25** | **0.81** |
 | 청산 규칙 MET(점수 8, 약세) | 0.69 | −0.95 | 1.32 | 0.46 | 2.17 |
 
-- 진입 규칙 MET는 **5개 시기 모두 기준선 아래**, 약세 청산 규칙 MET는 4개 시기에서 기준선과 같거나 위.
+- 진입 규칙 MET는 **5개 시기 모두 기준선 아래**, 약세 청산 규칙 MET는 3개 시기에서 기준선 위(P3~P5),
+  P1은 기준선과 같은 수준(−0.01%p), P2는 아래.
   점수 구간과 전진 수익률 사이에 양의 단조 관계가 없다. trader가 1시간봉에서 본 역상관과 같은 방향이다.
 - 셋업일과의 상호작용(전 종목 615, 셋업일마다 t·t−1 재계산): 셋업일의 컨플루언스 점수는 대부분 **약세(<50)**다 —
   %R 셋업 68%(시기별 67~71%), RSI(2) 셋업 83%. 약세 점수인 셋업일의 5일 수익률은 나머지 셋업일과 같거나 높았다
@@ -137,17 +138,18 @@ tMR 거래(비용 반영, 비중첩):
      심볼 질문마다 그 판독을 말하게 한다. 셋업일의 68%는 컨플루언스가 약세로 읽히므로(§3.4) 좋은 눌림에서 답이
      약세 쪽으로 기울 수 있다. 원자료(`latest.williamsR`, `derived.priceVsMa.ma200Pct`)는 이미 있었지만 검증된
      해석이 없었다.
-   - 무엇: 1Day에서만 `pullback: { reading, williamsR, connorsRsi, closeVsMa200Pct, ma5, measured }`.
+   - 무엇: 1Day에서만 `pullback: { reading, williamsR, rsi2, closeVsMa200Pct, ma5, measured }`
+     (최초 구현은 `rsi2` 대신 `connorsRsi` — core 1.17.0으로 옮기며 core 도구 설명의 필드 계약에 맞췄다).
      `reading` = `washoutInUptrend`(종가 > MA200 ∧ %R ≤ −90) / `nearWashoutInUptrend`(MA200 위 ∧ −90 < %R ≤ −80) /
      `washoutBelowMa200`(MA200 아래 ∧ %R ≤ −90) / `none`. 이름은 `confluence.entryRuleMet`과 같은 이유로 "지시"가 아닌
      "판독"으로 지었다. `measured`는 그 판독의 과거 기저율 한 문단(§3 수치 그대로) — 모델이 수치를 지어내지 않고
      인용하게 하려고 도구 결과에 싣는다(`findUngroundedNumbers`는 도구 결과에 없는 수치를 잡는다).
-   - 계산: core가 이미 계산한 `williamsR`·`connorsRsi` 계열과 core `calculateMA`만 읽는다(지표 재구현 없음).
-     `derived.maStack`처럼 도구 계층의 파생 판독이다. near 구간도 5개 시기 모두 기준선 대비 양(+0.29/+0.14/+0.38/
+   - 계산: core `evaluatePullback`(1.17.0)을 부른다 — 분류·임계값·`measured` 문장(`PULLBACK_BASE_RATES`)은 모두 core 소유이고,
+     도구 계층은 일봉 게이트와 반올림만 한다. 분석 프롬프트의 `### Short-Term Washout` 블록과 같은 함수라 챗과 분석 페이지가
+     어긋날 수 없다. near 구간도 5개 시기 모두 기준선 대비 양(+0.29/+0.14/+0.38/
      +0.18/+0.02%p, 5일)이라 "같은 방향, 더 작은 우위"로 적었다.
-   - 경계: 임계값(−90, MA200)은 SCOPE상 core 소유의 "신호 임계값"에 가깝다. 사용자 승인에 따라 ai.siglens 도구 계층에
-     두고, core의 결정론 섹션으로 옮기는 것을 §6-2 후속 과제로 남긴다. core 도구 설명(`AGENT_TOOL_SPECS`)에는 이 필드가
-     아직 없다 — 필드명·`measured`로 자기 설명이 되게 했고, 설명 추가는 §6-3.
+   - 경계: 임계값(−90, MA200)은 SCOPE상 core 소유의 "신호 임계값"이다. core 접근이 없던 첫 커밋에서는 ai.siglens 도구
+     계층에 임시로 두었고, core 1.17.0(y0ngha/siglens-core#227)에서 core로 옮겼다(§6).
 5. **i18n 카탈로그** — 스킬 `description`은 홈 스킬 카드에 노출되는 UI 문자열(`shared.skillDescription`, 수동 관리 네임스페이스)이라
    ko/en/ja/zh 4개 카탈로그와 `messages/_meta/hashes.json`(ko 원문 sha1 앞 12자)을 함께 갱신했다. 번역은 용어집
    (과매도 → Oversold / 売られすぎ / 超卖) 기준 수기 작성 — `translate.mjs`는 Gemini 호출이 필요해 이 환경에서 실행 불가.
@@ -165,14 +167,18 @@ tMR 거래(비용 반영, 비중첩):
 
 ## 5. 적용하지 않은 것과 이유
 
-- **RSI(2) 수치 자체를 프롬프트에 넣기** — 지표 계산·프롬프트 조립은 core 소유. Williams %R(14)이 같은 역할을
-  (측정상 더 낫게) 해서 스킬만으로 충분하다. core에 넣는 것은 선택 과제(§6-2).
+- **RSI(2)를 판독 기준으로 쓰기** — Williams %R(14)이 같은 역할을 측정상 더 낫게 한다. core 1.17.0의 washout 블록과
+  챗 `pullback`은 RSI(2)를 trader 규칙과의 대조용 참고값으로만 싣고, 분류는 %R로 한다(§6-2).
 - **SPY 200일선 국면 필터** — 단일 종목 차트 프롬프트에 SPY 국면이 없다. 세트 A에서 이 필터는 5일 수익률을
   일관되게 개선하지도 않았다(P2 −0.22 → −0.59, P5 1.69 → 1.56). 스킬은 "광범위한 하락장에선 상대 우위"로만 적는다.
 - **포트폴리오·체결 규칙**(5슬롯, RSI2 순위, 재난 손절 매 틱, dry_run 비용) — 매매 운용이지 분석 판독이 아니다.
 - **컨플루언스 제거** — siglens에는 core의 결정론 섹션을 끌 수단이 없고, 끄는 것 자체가 core 변경이다(§6-1).
 
-## 6. siglens-core 후속 제안 (이 PR 밖)
+## 6. siglens-core 후속 — core 1.17.0에 반영
+
+아래 세 제안은 y0ngha/siglens-core#227(설계: core `docs/superpowers/specs/2026-09-25-pullback-washout-design.md`)로
+모두 반영됐고, 이 PR은 core를 1.17.0으로 올려 도구 계층의 임시 판독을 core 함수로 교체했다. 스킬은
+`### Short-Term Washout` 블록이 있으면 그 판독을 인용하고 다시 분류하지 말라고 안내한다.
 
 1. **`confluenceSection`의 1Day 권위 문구 정정** — `CONFLUENCE_RELIABILITY['1Day']`의 "treat a met rule as strong
    evidence"와 파일 머리 주석의 "it is the same engine an auto-trader downstream already scores with"는 더는 참이 아니다.
