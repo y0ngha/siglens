@@ -1,5 +1,13 @@
 # Changelog
 
+# [0.89.0](https://github.com/y0ngha/siglens/compare/v0.88.1...v0.89.0) (2026-09-25)
+
+### Features
+
+* 평균 회귀 스킬을 측정된 눌림 판독으로 재작성 ([be8b698](https://github.com/y0ngha/siglens/commit/be8b6988a6fd5ed743985b882750e94c743cc2a8))
+* **ai-chat:** 눌림 판독을 siglens-core 1.17.0 evaluatePullback으로 교체 ([f5da2f3](https://github.com/y0ngha/siglens/commit/f5da2f3e6867f0dc5e8898579571d41f1f18d1bd))
+* **ai-chat:** get_bars_indicators에 일봉 눌림 판독 추가 ([c884201](https://github.com/y0ngha/siglens/commit/c8842013d96122fd62a9dddf7263c305bad9d654))
+
 ## [0.88.1](https://github.com/y0ngha/siglens/compare/v0.88.0...v0.88.1) (2026-09-25)
 
 ### Bug Fixes
