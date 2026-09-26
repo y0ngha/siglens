@@ -211,9 +211,15 @@ App Router는 같은 URL에서 완전 HTML과 RSC 페이로드를 요청 헤더(
   그 응답을 변형하지 않으므로 **압축도 하지 않는다.** 압축을 요청하지 않은 첫 요청이 캐시를 채우면
   비압축 본문 + 강한 ETag가 저장되고, 이후 gzip/br 요청에도 그대로 나갔다(`/NRICX` 오리진 gzip
   39KB → 엣지 HIT 209KB). ETag 없는 응답(`robots.txt`, sitemap)은 같은 조건에서도 압축됐다.
-  "엣지가 HTML만 압축하지 않는다"던 현상은 Next 기본 ETag와, 이 룰(HTML 전용)의 이 토글이 안내대로
-  켜져 있던 조합으로 설명된다(대시보드 실제 값은 이 정정 시점에 확인하지 못했다). 지금은 오리진이 ETag를 아예 내지 않으므로(`next.config.ts`
-  `generateEtags: false`) 이 토글은 사실상 no-op이지만, 누가 ETag를 되살려도 재발하지 않도록 OFF로 둔다.
+  "엣지가 HTML만 압축하지 않는다"던 현상은 Next 기본 ETag와 이 토글(당시 전 룰 ON)의 조합이었다 —
+  2026-09-26 전 룰에서 OFF로 바꾼 직후 새 캐시 키·기존 오염 객체 모두 즉시 압축됐다(209KB → br 35KB).
+  이때 CloudFlare는 ETag를 약한 ETag로 바꾸지 않고 **아예 벗긴다** — 이 토글이 OFF인 한 재방문 304는 없다.
+  오리진도 이제 ETag를 내지 않으므로(`next.config.ts` `generateEtags: false`) 둘은 이중 방어다.
+- ⚠️ **이 토글을 끄면 존 단위 Email Obfuscation·Automatic HTTPS Rewrites·Rocket Loader가 HTML에 작동한다**
+  (켜져 있는 동안엔 CloudFlare가 자동으로 막는다). 끈 직후 `/about`의 `mailto` 링크가
+  `/cdn-cgi/l/email-protection#…`로 바뀌고 `email-decode.min.js`가 주입됐다. 이메일은 RSC 페이로드·JSON-LD에
+  평문으로 있어 난독화 효과가 없으므로 Email Obfuscation은 끈다. Rocket Loader는 Next 하이드레이션을
+  깨뜨릴 수 있으니 꺼진 상태를 유지할 것.
 - **에지 TTL을 blanket override(기존 2h)에서 origin 존중으로 바꾸는 이유**: 라우트마다 ISR 주기가
   달라 `s-maxage`가 1h(`/market`)~24h(`/`, `/[symbol]/fundamental`)로 이미 다르다
   ([`ISR_REVALIDATE.md`](./ISR_REVALIDATE.md)). blanket 2h는 긴 쪽을 짧게 깎아 롱테일 재사용을 막고,
