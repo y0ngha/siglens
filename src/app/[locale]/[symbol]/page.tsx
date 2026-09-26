@@ -218,6 +218,30 @@ export default async function SymbolPage({ params }: Props) {
     //
     // layout.tsx와 **같은 인자**(대문자 ticker)로 이 헬퍼를 호출해야 요청 스코프 메모가
     // 접혀 지표가 한 벌만 직렬화된다(getQuantizedBarsStatic JSDoc).
+    //
+    // 분석 peek은 bars에 의존하지 않으므로(ticker·fmpSymbol만 쓴다) bars를 기다리기 전에
+    // 시작한다. 예전엔 bars → seed → peek 순서로 직렬이라, ISR 캐시가 빈 cold render
+    // (배포마다 S3 prefix가 바뀌어 롱테일은 사실상 매 크롤이 cold다)에서 peek의
+    // unstable_cache 조회 + Upstash 왕복이 그대로 TTFB에 더해졌다.
+    //
+    // peek은 읽기 전용 — enqueue/생성 없음. MISS·corrupt·read 실패는 모두 MISS로
+    // degrade해 FALLBACK_ANALYSIS로 폴백한다(렌더를 절대 깨지 않음). read 실패는
+    // 삼키지 않고 로깅한 뒤 degrade한다. `.catch`를 즉시 붙이므로 bars가 먼저 throw해도
+    // 미처리 rejection은 생기지 않는다.
+    //
+    // modelId: 익명/SSR 기본 방문자가 캐시를 쓰는 키와 정렬한다. SymbolModelContext의
+    // DEFAULT_MODEL이 DEEPSEEK_V4_1_FLASH_MODEL이고, useAnalysis가 그 값을
+    // SSE 라우트에 그대로 전달하므로 writer는 DeepSeek flash 모델 키로 캐시한다.
+    // peek도 동일 모델을 넘겨야 HIT한다.
+    const cachedAnalysisPromise = peekAnalysisStatic(
+        ticker,
+        DEFAULT_TIMEFRAME,
+        assetInfo.fmpSymbol,
+        DEEPSEEK_V4_1_FLASH_MODEL
+    ).catch((error: unknown) => {
+        console.error('[SymbolPage] peekAnalysisStatic failed:', error);
+        return null;
+    });
     const quantizedFactBars = await getQuantizedBarsStatic(
         ticker,
         DEFAULT_TIMEFRAME,
@@ -328,23 +352,7 @@ export default async function SymbolPage({ params }: Props) {
         }
     }
 
-    // peek은 읽기 전용 — enqueue/생성 없음. MISS·corrupt·read 실패는 모두 MISS로
-    // degrade해 FALLBACK_ANALYSIS로 폴백한다(렌더를 절대 깨지 않음). read 실패는
-    // 삼키지 않고 로깅한 뒤 degrade한다.
-    //
-    // modelId: 익명/SSR 기본 방문자가 캐시를 쓰는 키와 정렬한다. SymbolModelContext의
-    // DEFAULT_MODEL이 DEEPSEEK_V4_1_FLASH_MODEL이고, useAnalysis가 그 값을
-    // SSE 라우트에 그대로 전달하므로 writer는 DeepSeek flash 모델 키로 캐시한다.
-    // peek도 동일 모델을 넘겨야 HIT한다.
-    const cachedAnalysis = await peekAnalysisStatic(
-        ticker,
-        DEFAULT_TIMEFRAME,
-        assetInfo.fmpSymbol,
-        DEEPSEEK_V4_1_FLASH_MODEL
-    ).catch((error: unknown) => {
-        console.error('[SymbolPage] peekAnalysisStatic failed:', error);
-        return null;
-    });
+    const cachedAnalysis = await cachedAnalysisPromise;
     // 폴백 summary도 요청 로케일로 — 예전엔 한국어 상수라 `/en/AAPL`이 분석
     // 실패 시 영어 화면에 한국어 요약을 렌더했다.
     const tFallback = await getTranslations('entities.chat-message.fallback');

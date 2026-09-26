@@ -206,7 +206,14 @@ App Router는 같은 URL에서 완전 HTML과 RSC 페이로드를 요청 헤더(
   R2를 켜기 전에 반드시 먼저 넣어야 한다.
 - 설정: 캐시 적합성 = Eligible · 에지 TTL = **"Use cache-control header if present, use default
   Cloudflare caching behavior if not"**(L4) · 브라우저 TTL = Respect origin (`max-age=0` → 매 방문
-  revalidate) · SWR ON · 강한 ETag ON · 원본 오류 패스스루 ON.
+  revalidate) · SWR ON · 강한 ETag **OFF** · 원본 오류 패스스루 ON.
+- **강한 ETag는 끈다(2026-09-26 정정 — 예전 안내는 ON이었다).** 강한 ETag를 존중하면 CloudFlare는
+  그 응답을 변형하지 않으므로 **압축도 하지 않는다.** 압축을 요청하지 않은 첫 요청이 캐시를 채우면
+  비압축 본문 + 강한 ETag가 저장되고, 이후 gzip/br 요청에도 그대로 나갔다(`/NRICX` 오리진 gzip
+  39KB → 엣지 HIT 209KB). ETag 없는 응답(`robots.txt`, sitemap)은 같은 조건에서도 압축됐다.
+  "엣지가 HTML만 압축하지 않는다"던 현상은 Next 기본 ETag와, 이 룰(HTML 전용)의 이 토글이 안내대로
+  켜져 있던 조합으로 설명된다(대시보드 실제 값은 이 정정 시점에 확인하지 못했다). 지금은 오리진이 ETag를 아예 내지 않으므로(`next.config.ts`
+  `generateEtags: false`) 이 토글은 사실상 no-op이지만, 누가 ETag를 되살려도 재발하지 않도록 OFF로 둔다.
 - **에지 TTL을 blanket override(기존 2h)에서 origin 존중으로 바꾸는 이유**: 라우트마다 ISR 주기가
   달라 `s-maxage`가 1h(`/market`)~24h(`/`, `/[symbol]/fundamental`)로 이미 다르다
   ([`ISR_REVALIDATE.md`](./ISR_REVALIDATE.md)). blanket 2h는 긴 쪽을 짧게 깎아 롱테일 재사용을 막고,
