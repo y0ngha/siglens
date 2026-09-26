@@ -59,4 +59,15 @@ describe('pickMessages', () => {
     it('없는 네임스페이스는 조용히 건너뛴다 — 배포 중 카탈로그 공백이 페이지를 죽이면 안 된다', () => {
         expect(pickMessages(CATALOG, ['widgets.nope'])).toEqual({});
     });
+
+    /**
+     * 네임스페이스가 리프 값(문자열)을 지나쳐 더 깊이 내려가려 하면(카탈로그
+     * 구조와 네임스페이스 설정이 어긋난 경우) `source`가 객체가 아니게 된다.
+     * 그 지점에서도 던지지 않고 조용히 건너뛰어야 한다.
+     */
+    it('네임스페이스가 리프 문자열을 지나 더 깊이 내려가려 하면 조용히 건너뛴다', () => {
+        expect(
+            pickMessages(CATALOG, ['widgets.layout.localeSwitcher.label.extra'])
+        ).toEqual({});
+    });
 });

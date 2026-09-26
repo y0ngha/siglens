@@ -87,6 +87,13 @@ describe('FmpCongressTradesClient', () => {
         ).toEqual([]);
     });
 
+    it('배열이 아닌 응답(null)은 빈 배열로 방어한다', async () => {
+        mockOk(null);
+        expect(
+            await new FmpCongressTradesClient().getTrades('AAPL', 'senate', 50)
+        ).toEqual([]);
+    });
+
     it('FMP 5xx는 throw(장애 표면화)', async () => {
         // withRetry retries 3x on 5xx — provide 4 failing responses so all attempts exhaust
         mockFetch.mockResolvedValue({

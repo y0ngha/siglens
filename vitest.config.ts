@@ -110,6 +110,10 @@ const coverageConfig = {
         '**/types.ts',
         '**/model.ts',
         '**/test-utils/**',
+        // E2E 전용 결정적 Fake 구현체(E2E_TEST=1에서만 gated require로 로드).
+        // 실제 제품 코드가 아니고 Playwright E2E가 직접 소비하므로 단위 커버리지
+        // 게이트에서 제외한다 — 커버리지 수치는 제품 코드만 반영해야 한다.
+        'src/**/Fake*.ts',
         'src/entities/*/actions.ts',
         'src/entities/*/actions/index.ts',
         'src/features/*/actions.ts',
