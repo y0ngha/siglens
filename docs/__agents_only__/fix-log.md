@@ -551,3 +551,8 @@
 - Violation: RECOMMENDED — src/app/api/ai/chat/tools/__tests__/getBarsIndicators.test.ts: new variable-length field (`pullback.measured`) added to budget-trimmed tool result without testing its interaction with the budget trimmer
   - Rule: (new) Tests — a new field inside a size-budgeted payload must have a test exercising its interaction with the budget logic
   - Context: Added overflow test comparing quiet vs lit reading; verifies more bars trimmed, field and newest bar intact.
+
+## [perf/crawl-html-compression R1 | Cloudflare cache-rule documentation out of sync with code change | 2026-09-26]
+- Violation: docs/architecture/CDN_CACHING.md prescribed "강한 ETag ON" (Cloudflare should respect strong ETags) while the PR set `generateEtags: false` in next.config.ts without updating the documentation. The toggle ON was itself part of the root cause since Cloudflare does not compress strong-ETag responses.
+  - Rule: (new) When a code change invalidates a setting that an operator runbook prescribes, update the runbook in the same PR
+  - Context: Updated docs/architecture/CDN_CACHING.md R1 to 강한 ETag OFF with the measured reason (strong ETag blocks Cloudflare compression; identity-filled cache served 209KB instead of 39KB gzip).

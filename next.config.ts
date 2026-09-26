@@ -84,8 +84,10 @@ const nextConfig: NextConfig = {
      *
      * **더 나은 해법이 있다면 그쪽이 맞다**: CloudFlare에서 `text/html`에 Compression
      * Rule을 걸면 HTML은 brotli(173KB, gzip보다 28KB 더 작음)로 나가고 정적 자산의
-     * brotli도 지켜지며 오리진 CPU는 0이다. 애초에 왜 엣지가 HTML만 압축하지 않는지는
-     * 근본 원인이 밝혀지지 않았다 — 그게 규명되면 이 플래그는 되돌리는 것이 낫다.
+     * brotli도 지켜지며 오리진 CPU는 0이다. 엣지가 HTML만 압축하지 않던 원인은
+     * 2026-09-26에 규명됐다 — Next가 붙이는 **강한 ETag**다(아래 `generateEtags` 주석).
+     * 그래도 이 플래그는 유지한다: 롱테일은 엣지 MISS가 대부분이라 서울 오리진 →
+     * 미국 엣지(Googlebot) 구간을 건너는데, 그 구간은 gzip(~40KB)이 비압축(~210KB)보다 싸다.
      *
      * CPU 비용은 과소평가하지 말 것: CF HTML 히트율은 실측 36.7%
      * (docs/architecture/CDN_CACHING.md)라 나머지는 오리진까지 오고, RSC 페이로드도
@@ -96,6 +98,32 @@ const nextConfig: NextConfig = {
      * `Cache-Control: no-transform`에서 압축 미들웨어가 빠진다(실측 확인).
      */
     compress: true,
+
+    /*
+     * HTML/RSC 응답에 ETag를 붙이지 않는다. **CloudFlare가 강한 ETag 응답을 압축하지 않기 때문이다.**
+     *
+     * 2026-09-26 프로덕션 실측(같은 캐시 키에 첫 요청의 Accept-Encoding만 바꿔 재현):
+     *
+     *   - 첫 요청이 `Accept-Encoding: identity`(압축 미지원 봇 등)면 엣지는 비압축 본문 +
+     *     강한 ETag를 캐시하고, **이후 gzip/br 요청에도 그 비압축 본문을 그대로** 낸다.
+     *     `/NRICX` 오리진 gzip 39KB → 엣지 HIT 209KB, `/MSFT/options` 565KB.
+     *   - ETag가 없는 응답(`/sitemap-popular.xml`, `robots.txt`)은 똑같이 identity로 채워도
+     *     이후 요청에 엣지가 br로 압축한다(436KB → 9.7KB).
+     *   - 엣지가 압축해 주는 응답은 ETag가 벗겨져 나간다. 즉 지금 ETag가 살아서 나가는
+     *     HTML은 **비압축으로 오염된 캐시 객체뿐**이었다.
+     *
+     * 잃는 것은 조건부 요청(`If-None-Match` → 304)뿐인데 실익이 없었다:
+     *   - GSC 크롤 통계 응답 분포에 304가 없다(200 98%). HTML은 ISR 6h마다 가격이 바뀌어
+     *     본문 해시가 달라지고, Googlebot은 롱테일을 며칠~몇 주 간격으로 온다.
+     *   - 엣지 → 오리진 재검증은 서울 리전 터널 왕복 ~16ms라 304로 아낄 게 거의 없다.
+     *   - `Last-Modified`도 내지 않으므로 끄고 나면 재검증 수단은 없다. 되살리려면 이
+     *     플래그만 되돌리면 되지만, 그 전에 엣지 압축이 유지되는지 다시 실측할 것.
+     *
+     * 배포 후에는 CloudFlare 캐시를 **전체 퍼지**할 것 — 이미 오염된 객체는 각자
+     * `s-maxage`가 지나 재검증될 때까지 계속 비압축으로 나가고, 드물게 방문되는 롱테일은
+     * 그 재검증 자체가 늦게 일어난다.
+     */
+    generateEtags: false,
 
     allowedDevOrigins: ['172.30.1.26'],
 
