@@ -358,6 +358,44 @@ describe('ChatPanel', () => {
             expect(mockUseChatReturn.handleModelChange).toHaveBeenCalled();
         });
 
+        it('typing in the textarea updates its value', () => {
+            renderPanel();
+            const textarea = screen.getByPlaceholderText(
+                /질문을 입력하세요/
+            ) as HTMLTextAreaElement;
+            fireEvent.change(textarea, { target: { value: '테스트 질문' } });
+            expect(textarea.value).toBe('테스트 질문');
+        });
+
+        it('pressing Enter submits the typed text via sendMessage and clears the input', () => {
+            renderPanel();
+            const textarea = screen.getByPlaceholderText(
+                /질문을 입력하세요/
+            ) as HTMLTextAreaElement;
+            fireEvent.change(textarea, { target: { value: '엔터로 전송' } });
+            fireEvent.keyDown(textarea, { key: 'Enter' });
+            expect(mockUseChatReturn.sendMessage).toHaveBeenCalledWith(
+                '엔터로 전송'
+            );
+        });
+
+        it('clicking the send button submits the typed text via sendMessage', () => {
+            renderPanel();
+            const textarea = screen.getByPlaceholderText(
+                /질문을 입력하세요/
+            ) as HTMLTextAreaElement;
+            fireEvent.change(textarea, { target: { value: '버튼으로 전송' } });
+            fireEvent.click(screen.getByRole('button', { name: '전송' }));
+            expect(mockUseChatReturn.sendMessage).toHaveBeenCalledWith(
+                '버튼으로 전송'
+            );
+        });
+
+        it('the send button is disabled while the input is empty', () => {
+            renderPanel();
+            expect(screen.getByRole('button', { name: '전송' })).toBeDisabled();
+        });
+
         it('Space on an option selects it', () => {
             renderPanel();
             fireEvent.click(

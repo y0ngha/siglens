@@ -11,8 +11,11 @@ vi.mock('@/entities/market-news/api', () => ({
     DrizzleMarketNewsRepository: MarketNewsRepoCtor,
 }));
 
+const { mockGetDatabaseClient } = vi.hoisted(() => ({
+    mockGetDatabaseClient: vi.fn(() => ({ db: {} })),
+}));
 vi.mock('@/shared/db/client', () => ({
-    getDatabaseClient: () => ({ db: {} }),
+    getDatabaseClient: mockGetDatabaseClient,
 }));
 
 const { mockCallAgentProvider } = vi.hoisted(() => ({
@@ -30,9 +33,45 @@ vi.mock('@/shared/cache/redisClient', () => ({
     getRedisClient: () => redisState.client,
 }));
 
+const { buildSuggestionsPromptSpy } = vi.hoisted(() => ({
+    buildSuggestionsPromptSpy: vi.fn(),
+}));
+vi.mock('@y0ngha/siglens-core', async importOriginal => {
+    const actual =
+        await importOriginal<typeof import('@y0ngha/siglens-core')>();
+    return {
+        ...actual,
+        buildSuggestionsPrompt: (
+            ...args: Parameters<typeof actual.buildSuggestionsPrompt>
+        ) => {
+            buildSuggestionsPromptSpy(...args);
+            return actual.buildSuggestionsPrompt(...args);
+        },
+    };
+});
+
 import { SUGGESTIONS_PROMPT_VERSION } from '@y0ngha/siglens-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getAgentSuggestions } from '../api';
+import type { MarketNewsCardItem } from '@/entities/market-news';
+
+function headline(overrides: Partial<MarketNewsCardItem>): MarketNewsCardItem {
+    return {
+        id: 'n1',
+        publishedAt: '2026-09-01T00:00:00.000Z',
+        titleEn: 'Fed holds rates steady',
+        titleKo: '연준, 금리 동결',
+        sentiment: null,
+        category: null,
+        bodyKo: null,
+        summaryKo: null,
+        priceImpact: null,
+        url: 'https://example.com/n1',
+        source: 'reuters',
+        tickers: [],
+        ...overrides,
+    };
+}
 
 const INPUT = {
     locale: 'ko' as const,
@@ -62,8 +101,10 @@ describe('getAgentSuggestions', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockListCardsByCategory.mockResolvedValue([]);
+        mockGetDatabaseClient.mockReturnValue({ db: {} });
         redisState.client = null;
         warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        buildSuggestionsPromptSpy.mockClear();
     });
 
     afterEach(() => {
@@ -222,6 +263,121 @@ describe('getAgentSuggestions', () => {
 
         expect(result).toEqual(['질문1', '질문2', '질문3']);
         expect(mockCallAgentProvider).toHaveBeenCalledTimes(1);
+    });
+
+    it('merges and sorts headlines from both categories newest-first, attaching the symbol when tickers exist', async () => {
+        redisState.client = null;
+        mockCallAgentProvider.mockResolvedValue(AGENT_RESULT);
+        mockListCardsByCategory.mockImplementation(async (sentinel: string) =>
+            sentinel === '__NEWS_GENERAL__'
+                ? [
+                      headline({
+                          id: 'general-old',
+                          publishedAt: '2026-09-01T00:00:00.000Z',
+                          titleKo: '오래된 일반 뉴스',
+                          tickers: [],
+                      }),
+                  ]
+                : [
+                      headline({
+                          id: 'stock-new',
+                          publishedAt: '2026-09-05T00:00:00.000Z',
+                          titleKo: '최신 종목 뉴스',
+                          tickers: ['AAPL'],
+                      }),
+                  ]
+        );
+
+        await getAgentSuggestions(INPUT);
+
+        expect(buildSuggestionsPromptSpy).toHaveBeenCalledTimes(1);
+        const { headlines } = buildSuggestionsPromptSpy.mock.calls[0]![0] as {
+            headlines: Array<{
+                title: string;
+                category: string;
+                symbol?: string;
+            }>;
+        };
+        // Newer (stock, 09-05) sorts before older (general, 09-01).
+        expect(headlines).toEqual([
+            { title: '최신 종목 뉴스', category: 'stock', symbol: 'AAPL' },
+            { title: '오래된 일반 뉴스', category: 'general' },
+        ]);
+    });
+
+    it('one category failing to fetch headlines does not blank out the other', async () => {
+        redisState.client = null;
+        mockCallAgentProvider.mockResolvedValue(AGENT_RESULT);
+        mockListCardsByCategory.mockImplementation(async (sentinel: string) =>
+            sentinel === '__NEWS_GENERAL__'
+                ? Promise.reject(new Error('DB timeout'))
+                : [
+                      headline({
+                          id: 'stock-ok',
+                          titleKo: '살아있는 카테고리',
+                          tickers: [],
+                      }),
+                  ]
+        );
+
+        const result = await getAgentSuggestions(INPUT);
+
+        expect(result).toEqual(['질문1', '질문2', '질문3']);
+        const { headlines } = buildSuggestionsPromptSpy.mock.calls[0]![0] as {
+            headlines: Array<{ title: string; category: string }>;
+        };
+        expect(headlines).toEqual([
+            { title: '살아있는 카테고리', category: 'stock' },
+        ]);
+        // The failed category is logged, but does not surface as an error result.
+        expect(warnSpy).toHaveBeenCalled();
+    });
+
+    it('getDatabaseClient throwing (headline fetch entirely unavailable) still lets suggestion generation proceed with no headlines', async () => {
+        mockGetDatabaseClient.mockImplementationOnce(() => {
+            throw new Error('pool exhausted');
+        });
+        redisState.client = null;
+        mockCallAgentProvider.mockResolvedValue(AGENT_RESULT);
+
+        const result = await getAgentSuggestions(INPUT);
+
+        expect(result).toEqual(['질문1', '질문2', '질문3']);
+        const { headlines } = buildSuggestionsPromptSpy.mock.calls[0]![0] as {
+            headlines: unknown[];
+        };
+        expect(headlines).toEqual([]);
+        expect(warnSpy).toHaveBeenCalled();
+    });
+
+    it('a cache write failure (redis.set throws) is swallowed — the generated result is still returned', async () => {
+        const redis = freshRedis();
+        (redis.get as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+        (redis.set as ReturnType<typeof vi.fn>).mockRejectedValue(
+            new Error('redis down')
+        );
+        redisState.client = redis;
+        mockCallAgentProvider.mockResolvedValue(AGENT_RESULT);
+
+        const result = await getAgentSuggestions(INPUT);
+
+        expect(result).toEqual(['질문1', '질문2', '질문3']);
+        expect(warnSpy).toHaveBeenCalled();
+    });
+
+    it('a cache read failure (redis.get throws) falls through to generation instead of failing the request', async () => {
+        const redis = freshRedis();
+        (redis.get as ReturnType<typeof vi.fn>).mockRejectedValue(
+            new Error('redis timeout')
+        );
+        redisState.client = redis;
+        mockCallAgentProvider.mockResolvedValue(AGENT_RESULT);
+
+        const result = await getAgentSuggestions(INPUT);
+
+        expect(result).toEqual(['질문1', '질문2', '질문3']);
+        expect(mockCallAgentProvider).toHaveBeenCalledTimes(1);
+        expect(warnSpy).toHaveBeenCalled();
     });
 
     it('asserts the exact cache key read from redis under a fixed clock', async () => {

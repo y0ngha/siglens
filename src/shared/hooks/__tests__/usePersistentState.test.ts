@@ -80,6 +80,138 @@ describe('usePersistentState', () => {
         expect(result.current[0]).toEqual([1, 2, 3]);
     });
 
+    it('falls back to initial when localStorage.getItem throws (Safari private mode)', () => {
+        const getItem = vi
+            .spyOn(Storage.prototype, 'getItem')
+            .mockImplementation(() => {
+                throw new DOMException('blocked', 'SecurityError');
+            });
+        try {
+            const { result } = renderHook(() =>
+                usePersistentState('test.getItemThrows', 'fallback-value')
+            );
+            expect(result.current[0]).toBe('fallback-value');
+        } finally {
+            getItem.mockRestore();
+        }
+    });
+
+    it('keeps the new value in memory even when localStorage.setItem throws (quota exceeded)', () => {
+        const setItem = vi
+            .spyOn(Storage.prototype, 'setItem')
+            .mockImplementation(() => {
+                throw new DOMException('blocked', 'QuotaExceededError');
+            });
+        try {
+            const { result } = renderHook(() =>
+                usePersistentState('test.quota', 'initial')
+            );
+            act(() => {
+                result.current[1]('updated-despite-quota');
+            });
+            expect(result.current[0]).toBe('updated-despite-quota');
+        } finally {
+            setItem.mockRestore();
+        }
+    });
+
+    it('accepts a functional updater that reads the latest persisted value', () => {
+        const { result } = renderHook(() =>
+            usePersistentState('test.functional', 1)
+        );
+        act(() => {
+            result.current[1](prev => prev + 1);
+        });
+        expect(result.current[0]).toBe(2);
+        act(() => {
+            result.current[1](prev => prev + 1);
+        });
+        expect(result.current[0]).toBe(3);
+        expect(localStorage.getItem('test.functional')).toBe('3');
+    });
+
+    it('syncs across instances sharing the same key when one instance calls setValue', () => {
+        const { result: resultA } = renderHook(() =>
+            usePersistentState('test.crossInstance', 'a')
+        );
+        const { result: resultB } = renderHook(() =>
+            usePersistentState('test.crossInstance', 'a')
+        );
+
+        act(() => {
+            resultA.current[1]('changed-by-a');
+        });
+
+        expect(resultB.current[0]).toBe('changed-by-a');
+    });
+
+    /**
+     * 다른 탭이 같은 key를 바꾸면 `storage` 이벤트가 발생한다. 이 훅은 그 이벤트를
+     * 구독해 다음 스냅샷에서 새 값을 반영해야 한다 — 폴링 없이 탭 간 동기화되는 계약.
+     */
+    it('re-reads the value when a storage event fires for the same key from another tab', () => {
+        const { result } = renderHook(() =>
+            usePersistentState('test.crossTab', 'initial')
+        );
+        expect(result.current[0]).toBe('initial');
+
+        act(() => {
+            localStorage.setItem(
+                'test.crossTab',
+                JSON.stringify('changed-by-other-tab')
+            );
+            window.dispatchEvent(
+                new StorageEvent('storage', {
+                    key: 'test.crossTab',
+                    newValue: JSON.stringify('changed-by-other-tab'),
+                })
+            );
+        });
+
+        expect(result.current[0]).toBe('changed-by-other-tab');
+    });
+
+    it('ignores storage events for unrelated keys', () => {
+        const { result } = renderHook(() =>
+            usePersistentState('test.crossTabIgnore', 'initial')
+        );
+
+        act(() => {
+            localStorage.setItem('some.other.key', JSON.stringify('noise'));
+            window.dispatchEvent(
+                new StorageEvent('storage', {
+                    key: 'some.other.key',
+                    newValue: JSON.stringify('noise'),
+                })
+            );
+        });
+
+        expect(result.current[0]).toBe('initial');
+    });
+
+    it('unsubscribes its storage listener on unmount (no update after unmount)', () => {
+        const { result, unmount } = renderHook(() =>
+            usePersistentState('test.unmount', 'initial')
+        );
+        unmount();
+
+        expect(() => {
+            act(() => {
+                localStorage.setItem(
+                    'test.unmount',
+                    JSON.stringify('after-unmount')
+                );
+                window.dispatchEvent(
+                    new StorageEvent('storage', {
+                        key: 'test.unmount',
+                        newValue: JSON.stringify('after-unmount'),
+                    })
+                );
+            });
+        }).not.toThrow();
+        expect(result.current[0]).toBe('initial');
+    });
+
     it('works with boolean initial value false', () => {
         const { result } = renderHook(() =>
             usePersistentState('test.bool', false)

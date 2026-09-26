@@ -185,6 +185,34 @@ describe('useSupertrendOverlay', () => {
         );
     });
 
+    /**
+     * `buildTrendSplitData`에 넘기는 값 accessor(`r => r.supertrend`)가 실제로
+     * supertrend 레코드의 `.supertrend` 필드를 뽑아내는지 본다. 목이 콜백을
+     * 그냥 무시하면(대부분의 다른 테스트처럼) 이 accessor 자체는 한 번도
+     * 실행되지 않아 필드명이 오타 나도(`r.value` 등) 잡히지 않는다.
+     */
+    it('up/down 시리즈에 supertrend 값 accessor를 넘기고, accessor는 실제 필드를 뽑는다', () => {
+        const chart = makeChart();
+        vi.mocked(buildTrendSplitData).mockImplementation(
+            (_bars, _data, _direction, accessor) => {
+                expect(accessor({ supertrend: 42 } as never)).toBe(42);
+                return [];
+            }
+        );
+
+        const { result } = renderHook(() =>
+            useSupertrendOverlay({
+                chartRef: makeChartRef(chart),
+                bars: FAKE_BARS,
+                indicators: FILLED_INDICATORS,
+            })
+        );
+        act(() => result.current.toggle());
+
+        expect(buildTrendSplitData).toHaveBeenCalledTimes(2);
+        vi.mocked(buildTrendSplitData).mockReturnValue([]);
+    });
+
     it('does not set data when supertrend is empty', () => {
         const chart = makeChart();
         const { result } = renderHook(() =>

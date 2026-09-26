@@ -66,6 +66,29 @@ describe('FearGreedHistoricalChart', () => {
         ]);
     });
 
+    /**
+     * fear/greed 점수는 늘 0~100 범위다 — 실데이터가 좁은 구간(예: 40~60)에
+     * 몰려도 y축이 그 구간으로 확대되면 안 된다. `autoscaleInfoProvider`가
+     * 항상 고정 범위를 돌려주는지 콜백 자체를 실행해 검증한다.
+     */
+    it('pins the y-axis autoscale range to 0-100 regardless of data', () => {
+        render(<FearGreedHistoricalChart history={history} />);
+
+        const call = mockAddSeries.mock.calls[0] as unknown as [
+            unknown,
+            {
+                autoscaleInfoProvider: () => {
+                    priceRange: { minValue: number; maxValue: number };
+                };
+            },
+        ];
+        const options = call[1];
+        expect(options.autoscaleInfoProvider()).toEqual({
+            priceRange: { minValue: 0, maxValue: 100 },
+            margins: { above: 0.1, below: 0.1 },
+        });
+    });
+
     it('fits the time scale after setting data', () => {
         render(<FearGreedHistoricalChart history={history} />);
         expect(mockFitContent).toHaveBeenCalled();

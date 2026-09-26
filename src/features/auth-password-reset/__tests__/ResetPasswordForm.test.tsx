@@ -100,4 +100,79 @@ describe('ResetPasswordForm', () => {
         render(<ResetPasswordForm email="user@test.com" token="abc123" />);
         expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     });
+
+    it('shows same_password error', () => {
+        setFormState({
+            error: { code: 'same_password', message: '' },
+        });
+        render(<ResetPasswordForm email="user@test.com" token="abc123" />);
+        expect(screen.getByRole('alert')).toHaveTextContent(
+            koMessage('entities.auth.error.samePassword')
+        );
+    });
+
+    it('shows redis_unavailable error', () => {
+        setFormState({
+            error: { code: 'redis_unavailable', message: '' },
+        });
+        render(<ResetPasswordForm email="user@test.com" token="abc123" />);
+        expect(screen.getByRole('alert')).toHaveTextContent(
+            koMessage('entities.auth.error.redisUnavailable')
+        );
+    });
+
+    it('blocks submission and shows a confirm-mismatch error when passwords differ, without calling the form action', async () => {
+        const user = userEvent.setup();
+        render(<ResetPasswordForm email="user@test.com" token="abc123" />);
+        await user.type(screen.getByLabelText('새 비밀번호'), 'newpass123');
+        await user.type(
+            screen.getByLabelText('새 비밀번호 확인'),
+            'different123'
+        );
+        await user.click(screen.getByRole('button', { name: '비밀번호 변경' }));
+
+        expect(mockFormAction).not.toHaveBeenCalled();
+        expect(screen.getByLabelText('새 비밀번호 확인')).toHaveAttribute(
+            'aria-invalid',
+            'true'
+        );
+    });
+
+    it('submits via the form action when both password fields match', async () => {
+        const user = userEvent.setup();
+        render(<ResetPasswordForm email="user@test.com" token="abc123" />);
+        await user.type(screen.getByLabelText('새 비밀번호'), 'newpass123');
+        await user.type(
+            screen.getByLabelText('새 비밀번호 확인'),
+            'newpass123'
+        );
+        await user.click(screen.getByRole('button', { name: '비밀번호 변경' }));
+
+        expect(mockFormAction).toHaveBeenCalledTimes(1);
+        expect(screen.getByLabelText('새 비밀번호 확인')).not.toHaveAttribute(
+            'aria-invalid',
+            'true'
+        );
+    });
+
+    it('clears the confirm-mismatch error as soon as either password field changes again', async () => {
+        const user = userEvent.setup();
+        render(<ResetPasswordForm email="user@test.com" token="abc123" />);
+        await user.type(screen.getByLabelText('새 비밀번호'), 'newpass123');
+        await user.type(
+            screen.getByLabelText('새 비밀번호 확인'),
+            'different123'
+        );
+        await user.click(screen.getByRole('button', { name: '비밀번호 변경' }));
+        expect(screen.getByLabelText('새 비밀번호 확인')).toHaveAttribute(
+            'aria-invalid',
+            'true'
+        );
+
+        await user.type(screen.getByLabelText('새 비밀번호'), '4');
+        expect(screen.getByLabelText('새 비밀번호 확인')).not.toHaveAttribute(
+            'aria-invalid',
+            'true'
+        );
+    });
 });

@@ -17,8 +17,11 @@ vi.mock('@/shared/lib/cn', () => ({
             .filter(a => typeof a === 'string' && a.length > 0)
             .join(' '),
 }));
+const { mockUsePopoverToggle } = vi.hoisted(() => ({
+    mockUsePopoverToggle: vi.fn(() => ({ isOpen: false, toggle: vi.fn() })),
+}));
 vi.mock('@/shared/hooks/usePopoverToggle', () => ({
-    usePopoverToggle: () => ({ isOpen: false, toggle: vi.fn() }),
+    usePopoverToggle: mockUsePopoverToggle,
 }));
 vi.mock('@/shared/ui/tabs', () => ({
     buildPanelId: (prefix: string, value: string) => `${prefix}-panel-${value}`,
@@ -46,8 +49,8 @@ vi.mock('@/shared/ui/tabs', () => ({
         </div>
     ),
 }));
-vi.mock('../hooks/useSkillsShowcase', () => ({
-    useSkillsShowcase: () => ({
+const { mockUseSkillsShowcase } = vi.hoisted(() => ({
+    mockUseSkillsShowcase: vi.fn(() => ({
         activeTab: 'all',
         showAll: false,
         expandedKey: null,
@@ -55,7 +58,10 @@ vi.mock('../hooks/useSkillsShowcase', () => ({
         handleTabSelect: vi.fn(),
         toggleShowAll: vi.fn(),
         toggleExpanded: vi.fn(),
-    }),
+    })),
+}));
+vi.mock('../hooks/useSkillsShowcase', () => ({
+    useSkillsShowcase: mockUseSkillsShowcase,
 }));
 
 import { render, screen } from '@testing-library/react';
@@ -86,6 +92,22 @@ function makeSkill(
 }
 
 describe('SkillsShowcase', () => {
+    beforeEach(() => {
+        mockUsePopoverToggle.mockReturnValue({
+            isOpen: false,
+            toggle: vi.fn(),
+        });
+        mockUseSkillsShowcase.mockReturnValue({
+            activeTab: 'all',
+            showAll: false,
+            expandedKey: null,
+            baseId: 'skills',
+            handleTabSelect: vi.fn(),
+            toggleShowAll: vi.fn(),
+            toggleExpanded: vi.fn(),
+        });
+    });
+
     it('renders the heading', () => {
         render(<SkillsShowcase skills={[]} />);
 
@@ -161,6 +183,101 @@ describe('SkillsShowcase', () => {
 
         expect(screen.getByRole('tablist')).toBeInTheDocument();
         expect(screen.getByRole('tab', { name: /전체/ })).toBeInTheDocument();
+    });
+
+    it('renders no type badge for a skill with type === undefined', () => {
+        const skill: SkillShowcaseItem = {
+            name: '무타입 스킬',
+            type: undefined,
+            description: 'desc',
+            confidenceWeight: 0.6,
+        };
+        render(<SkillsShowcase skills={[skill]} />);
+
+        // The card renders, but its name/badge row holds only the name span —
+        // no type-badge span next to it.
+        const nameSpan = screen.getAllByText('무타입 스킬')[0]!;
+        const badgeRow = nameSpan.parentElement!;
+        expect(badgeRow.children).toHaveLength(1);
+    });
+
+    it('shows a "더보기" button with the remaining count when a panel has more than the initial visible count', () => {
+        const skills = Array.from({ length: 14 }, (_, i) =>
+            makeSkill(`skill-${i}`)
+        );
+        render(<SkillsShowcase skills={skills} />);
+
+        expect(
+            screen.getByRole('button', { name: '더 보기 (2개)' })
+        ).toBeInTheDocument();
+    });
+
+    it('does not show a "더보기" button when a panel has 12 or fewer skills', () => {
+        const skills = Array.from({ length: 12 }, (_, i) =>
+            makeSkill(`skill-${i}`)
+        );
+        render(<SkillsShowcase skills={skills} />);
+
+        expect(
+            screen.queryByRole('button', { name: /더 보기/ })
+        ).not.toBeInTheDocument();
+    });
+
+    it('shows "접기" instead of "더보기" once showAll is true', () => {
+        mockUseSkillsShowcase.mockReturnValue({
+            activeTab: 'all',
+            showAll: true,
+            expandedKey: null,
+            baseId: 'skills',
+            handleTabSelect: vi.fn(),
+            toggleShowAll: vi.fn(),
+            toggleExpanded: vi.fn(),
+        });
+        const skills = Array.from({ length: 14 }, (_, i) =>
+            makeSkill(`skill-${i}`)
+        );
+        render(<SkillsShowcase skills={skills} />);
+
+        expect(
+            screen.getByRole('button', { name: '접기' })
+        ).toBeInTheDocument();
+        // All 14 cards render, not just the first page.
+        expect(screen.getAllByText('skill-13').length).toBeGreaterThanOrEqual(
+            1
+        );
+    });
+
+    it('clicking "더보기" calls toggleShowAll', async () => {
+        const toggleShowAll = vi.fn();
+        mockUseSkillsShowcase.mockReturnValue({
+            activeTab: 'all',
+            showAll: false,
+            expandedKey: null,
+            baseId: 'skills',
+            handleTabSelect: vi.fn(),
+            toggleShowAll,
+            toggleExpanded: vi.fn(),
+        });
+        const user = userEvent.setup();
+        const skills = Array.from({ length: 14 }, (_, i) =>
+            makeSkill(`skill-${i}`)
+        );
+        render(<SkillsShowcase skills={skills} />);
+
+        await user.click(screen.getByRole('button', { name: /더 보기/ }));
+        expect(toggleShowAll).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('ConfidenceInfoTooltip open state', () => {
+    it('makes the tooltip pointer-interactive and fully opaque when open', () => {
+        mockUsePopoverToggle.mockReturnValue({ isOpen: true, toggle: vi.fn() });
+        render(<SkillsShowcase skills={[makeSkill('RSI')]} />);
+
+        const tooltip = screen.getAllByRole('tooltip')[0]!;
+        expect(tooltip.className).toContain('pointer-events-auto');
+        expect(tooltip.className).toContain('opacity-100');
+        expect(tooltip.className).not.toContain('pointer-events-none');
     });
 });
 
@@ -282,6 +399,25 @@ describe('SkillCard expand interaction', () => {
 
     it('reflects aria-expanded=true when expanded', () => {
         stubClamp(true);
+        render(
+            <SkillCard
+                skill={makeSkill('RSI')}
+                isExpanded={true}
+                onToggleExpand={vi.fn()}
+            />
+        );
+
+        expect(screen.getByRole('button', { name: /RSI/ })).toHaveAttribute(
+            'aria-expanded',
+            'true'
+        );
+    });
+
+    it('stays interactive when already expanded even if the description no longer overflows', () => {
+        // canExpand = isClamped || isExpanded — an expanded card must remain a
+        // toggle target so the user can still collapse it, even though the
+        // clamp check (measured for the collapsed state) reports false here.
+        stubClamp(false);
         render(
             <SkillCard
                 skill={makeSkill('RSI')}

@@ -199,6 +199,25 @@ describe('useMacroBriefing', () => {
         expect(result.current.input).toMatchObject({ status: 'cached' });
     });
 
+    it('refetch()는 내부 쿼리 refetch를 호출해 재시도를 트리거한다', async () => {
+        mockSubmit.mockResolvedValue({
+            briefing: {
+                status: 'done',
+                briefing: PEEK,
+                generatedAt: '2026-06-17T00:00:00Z',
+            },
+        });
+        const { result } = renderHook(() => useMacroBriefing(null), {
+            wrapper: makeWrapper(),
+        });
+        await waitFor(() => expect(result.current.input).not.toBeUndefined());
+
+        mockSubmit.mockClear();
+        result.current.refetch();
+
+        await waitFor(() => expect(mockSubmit).toHaveBeenCalledTimes(1));
+    });
+
     it('스트림이 throw하고 seed도 없으면 input="error"', async () => {
         mockSubmit.mockRejectedValue(new Error('분석 시간이 초과되었습니다.'));
         const { result } = renderHook(() => useMacroBriefing(null), {

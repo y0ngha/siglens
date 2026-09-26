@@ -198,4 +198,117 @@ describe('TabsUnderline — 활성 탭 스크롤', () => {
 
         expect(writes).toContain(0);
     });
+
+    /**
+     * 활성 탭이 스크롤러 **왼쪽 가장자리 밖**에 부분적으로 잘려 있을 때, `useTabs`의
+     * 스크롤 effect가 잘린 만큼만 `scrollLeft`를 줄여야 한다(왼쪽으로 끌어옴).
+     */
+    it('활성 탭이 왼쪽으로 잘려 있으면 그 잘린 만큼 scrollLeft를 줄인다', () => {
+        const { view, writes, tablist } = setup('chart');
+        writes.length = 0;
+
+        const activeTabButton = screen.getByText('Chart');
+        vi.spyOn(activeTabButton, 'getBoundingClientRect').mockReturnValue({
+            left: -20,
+            right: 40,
+        } as DOMRect);
+        vi.spyOn(tablist, 'getBoundingClientRect').mockReturnValue({
+            left: 0,
+            right: 300,
+        } as DOMRect);
+
+        view.rerender(
+            <TabsUnderline
+                tabs={tabs}
+                activeTab="news"
+                onChange={vi.fn()}
+                ariaLabel="Navigation"
+                size="xs"
+            />
+        );
+        // Re-render back to "chart" so the effect re-runs with the stubbed rects
+        // (the mock is attached after the initial "chart" mount above).
+        view.rerender(
+            <TabsUnderline
+                tabs={tabs}
+                activeTab="chart"
+                onChange={vi.fn()}
+                ariaLabel="Navigation"
+                size="xs"
+            />
+        );
+
+        // left(-20) < viewLeft(0) → scrollLeft -= (0 - -20) = -20
+        expect(writes).toContain(-20);
+    });
+
+    /**
+     * 활성 탭이 스크롤러 **오른쪽 가장자리 밖**에 잘려 있을 때는 반대로
+     * `scrollLeft`를 늘려야 한다(오른쪽으로 끌어옴).
+     */
+    it('활성 탭이 오른쪽으로 잘려 있으면 그 잘린 만큼 scrollLeft를 늘린다', () => {
+        const { view, writes, tablist } = setup('chart');
+        writes.length = 0;
+
+        const activeTabButton = screen.getByText('Chart');
+        vi.spyOn(activeTabButton, 'getBoundingClientRect').mockReturnValue({
+            left: 250,
+            right: 320,
+        } as DOMRect);
+        vi.spyOn(tablist, 'getBoundingClientRect').mockReturnValue({
+            left: 0,
+            right: 300,
+        } as DOMRect);
+
+        view.rerender(
+            <TabsUnderline
+                tabs={tabs}
+                activeTab="news"
+                onChange={vi.fn()}
+                ariaLabel="Navigation"
+                size="xs"
+            />
+        );
+        view.rerender(
+            <TabsUnderline
+                tabs={tabs}
+                activeTab="chart"
+                onChange={vi.fn()}
+                ariaLabel="Navigation"
+                size="xs"
+            />
+        );
+
+        // right(320) > viewRight(300) → scrollLeft += (320 - 300) = 20
+        expect(writes).toContain(20);
+    });
+});
+
+/**
+ * 화살표 키보드 탐색이 `useTabs`의 `focusTab`(ref 기반 DOM `.focus()`)까지
+ * 실제로 타는지 — roving tabindex 규약은 선택뿐 아니라 포커스도 옮겨야 한다.
+ */
+describe('TabsUnderline — 화살표 키보드 탐색 시 포커스 이동', () => {
+    it('ArrowRight는 다음 탭을 선택하고 그 탭 DOM에 포커스를 옮긴다', async () => {
+        const handleChange = vi.fn();
+        const user = userEvent.setup();
+        render(
+            <TabsUnderline
+                tabs={tabs}
+                activeTab="overview"
+                onChange={handleChange}
+                ariaLabel="Navigation"
+                size="xs"
+            />
+        );
+
+        screen.getByText('Overview').focus();
+        await user.keyboard('{ArrowRight}');
+
+        expect(handleChange).toHaveBeenCalledWith('chart');
+        // All three tab buttons are already mounted (roving tabindex, not
+        // conditional rendering), so focusTab's ref-based `.focus()` call
+        // takes effect immediately, before any parent re-render.
+        expect(screen.getByText('Chart')).toHaveFocus();
+    });
 });

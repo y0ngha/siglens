@@ -44,4 +44,108 @@ describe('isFallbackAnalysis', () => {
         };
         expect(isFallbackAnalysis(freeFiltered, FALLBACK_SUMMARY)).toBe(false);
     });
+
+    // summary는 sentinel과 같지만 나머지 필드 중 하나라도 실제 데이터를 담고
+    // 있으면 폴백이 아니다 — 각 필드를 개별로 검증해 어느 하나가 판정을
+    // 무시하지 않는지 확인한다.
+    it('summary는 일치하지만 indicatorResults가 채워져 있으면 false', () => {
+        const partial = {
+            ...FALLBACK_ANALYSIS,
+            indicatorResults: [
+                {
+                    indicatorName: 'RSI',
+                    signals: [
+                        {
+                            type: 'skill' as const,
+                            description: 'RSI 55 - 중립',
+                            trend: 'neutral' as const,
+                        },
+                    ],
+                },
+            ],
+        };
+        expect(isFallbackAnalysis(partial, FALLBACK_SUMMARY)).toBe(false);
+    });
+
+    it('summary는 일치하지만 patternSummaries가 채워져 있으면 false', () => {
+        const partial = {
+            ...FALLBACK_ANALYSIS,
+            patternSummaries: [
+                {
+                    id: 'p1',
+                    patternName: 'rising_wedge',
+                    skillName: '쐐기형',
+                    detected: true,
+                    trend: 'bearish' as const,
+                    summary: '상승 쐐기형이 감지되었습니다.',
+                    confidenceWeight: 0.7,
+                },
+            ],
+        };
+        expect(isFallbackAnalysis(partial, FALLBACK_SUMMARY)).toBe(false);
+    });
+
+    it('summary는 일치하지만 strategyResults가 채워져 있으면 false', () => {
+        const partial = {
+            ...FALLBACK_ANALYSIS,
+            strategyResults: [
+                {
+                    id: 's1',
+                    strategyName: '골든크로스',
+                    trend: 'bullish' as const,
+                    summary: '단기 이평선이 장기 이평선을 상향 돌파',
+                    confidenceWeight: 0.8,
+                },
+            ],
+        };
+        expect(isFallbackAnalysis(partial, FALLBACK_SUMMARY)).toBe(false);
+    });
+
+    it('summary는 일치하지만 candlePatterns가 채워져 있으면 false', () => {
+        const partial = {
+            ...FALLBACK_ANALYSIS,
+            candlePatterns: [
+                {
+                    id: 'c1',
+                    patternName: '헤드앤숄더',
+                    detected: true,
+                    trend: 'bearish' as const,
+                    summary: '헤드앤숄더 패턴이 감지되었습니다.',
+                },
+            ],
+        };
+        expect(isFallbackAnalysis(partial, FALLBACK_SUMMARY)).toBe(false);
+    });
+
+    it('summary는 일치하지만 trendlines가 채워져 있으면 false', () => {
+        const partial = {
+            ...FALLBACK_ANALYSIS,
+            trendlines: [
+                {
+                    direction: 'ascending' as const,
+                    start: { time: 1_700_000_000, price: 100 },
+                    end: { time: 1_700_100_000, price: 105 },
+                },
+            ],
+        };
+        expect(isFallbackAnalysis(partial, FALLBACK_SUMMARY)).toBe(false);
+    });
+
+    // 실제 AnalysisResponse의 배열 필드는 optional이 아니지만, 이 판정 함수는
+    // 네트워크 경계를 건넌 값(직렬화/역직렬화, 다른 소스의 부분 객체 등)에도
+    // 방어적으로 동작해야 해서 `?? 0`로 nullish를 흡수한다. 타입을 우회해 그
+    // 방어 경로가 실제로 true를 유지하는지 확인한다.
+    it('optional 배열 필드가 undefined여도 (nullish 병합 방어 경로) true로 판정한다', () => {
+        const withUndefinedArrays = {
+            ...FALLBACK_ANALYSIS,
+            indicatorResults: undefined,
+            patternSummaries: undefined,
+            strategyResults: undefined,
+            candlePatterns: undefined,
+            trendlines: undefined,
+        } as unknown as typeof FALLBACK_ANALYSIS;
+        expect(isFallbackAnalysis(withUndefinedArrays, FALLBACK_SUMMARY)).toBe(
+            true
+        );
+    });
 });

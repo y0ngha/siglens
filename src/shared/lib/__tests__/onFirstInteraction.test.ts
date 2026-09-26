@@ -90,6 +90,18 @@ describe('onFirstInteraction', () => {
         expect(addSpy).not.toHaveBeenCalled();
     });
 
+    it('이미 입력이 있었을 때 반환된 해제 함수는 아무 일도 하지 않는다(no-op)', async () => {
+        const { onFirstInteraction } = await load();
+        onFirstInteraction(() => {});
+        listenerFor(addSpy, 'wheel')(trusted);
+
+        const later = vi.fn();
+        const detach = onFirstInteraction(later);
+
+        expect(() => detach()).not.toThrow();
+        expect(later).toHaveBeenCalledTimes(1);
+    });
+
     it('해제 함수를 부르면 입력이 와도 실행하지 않는다', async () => {
         const { onFirstInteraction } = await load();
         const callback = vi.fn();

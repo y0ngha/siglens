@@ -702,6 +702,39 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
             screen.getByRole('button', { name: /다시 시도/ })
         ).toBeInTheDocument();
     });
+
+    it('"다시 시도" 버튼 클릭 시 페이지를 새로고침한다', async () => {
+        const { useWaitForNewsCards } = await import('@/widgets/news');
+        (
+            useWaitForNewsCards as MockedFunction<typeof useWaitForNewsCards>
+        ).mockReturnValue({
+            isReady: false,
+            pollError: new Error('polling exhausted'),
+        });
+        const reload = vi.fn();
+        const originalLocation = window.location;
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            value: { ...originalLocation, reload },
+        });
+        try {
+            render(
+                <OverallContent
+                    symbol="AAPL"
+                    companyName="Apple Inc."
+                    hasEnrichedNews={false}
+                    hasOptions={true}
+                />
+            );
+            fireEvent.click(screen.getByRole('button', { name: /다시 시도/ }));
+            expect(reload).toHaveBeenCalledTimes(1);
+        } finally {
+            Object.defineProperty(window, 'location', {
+                configurable: true,
+                value: originalLocation,
+            });
+        }
+    });
 });
 
 /**

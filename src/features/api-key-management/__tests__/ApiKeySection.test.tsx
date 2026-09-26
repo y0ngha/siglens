@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ApiKeySection } from '@/features/api-key-management/ui/ApiKeySection';
 import { useApiKeyForms } from '@/features/api-key-management/hooks/useApiKeyForms';
@@ -127,6 +127,81 @@ describe('ApiKeySection', () => {
         expect(
             screen.getAllByText('저장에 실패했습니다.').length
         ).toBeGreaterThan(0);
+    });
+
+    it('closes the save input again when 취소 is clicked from edit mode', async () => {
+        const user = userEvent.setup();
+        render(<ApiKeySection registeredProviders={['anthropic']} />);
+
+        await user.click(screen.getByRole('button', { name: '재등록' }));
+        expect(
+            screen.getByRole('button', { name: '취소' })
+        ).toBeInTheDocument();
+
+        await user.click(screen.getByRole('button', { name: '취소' }));
+        expect(screen.queryByRole('button', { name: '취소' })).toBeNull();
+        expect(
+            screen.getByRole('button', { name: '재등록' })
+        ).toBeInTheDocument();
+    });
+
+    it('optimistically closes the edit form and calls saveFormAction on re-register submit', async () => {
+        const user = userEvent.setup();
+        const saveFormAction = vi.fn();
+        mockUseApiKeyForms.mockReturnValue({
+            saveState: IDLE_STATE,
+            saveFormAction,
+            deleteState: IDLE_STATE,
+            deleteFormAction: vi.fn(),
+        });
+        render(<ApiKeySection registeredProviders={['anthropic']} />);
+        const card = screen.getByTestId('api-key-card-anthropic');
+
+        await user.click(within(card).getByRole('button', { name: '재등록' }));
+        await user.type(
+            screen.getByLabelText('Claude (Anthropic) API 키'),
+            'sk-ant-new-key'
+        );
+        await user.click(within(card).getByRole('button', { name: '저장' }));
+
+        expect(saveFormAction).toHaveBeenCalledTimes(1);
+        expect(within(card).queryByRole('button', { name: '저장' })).toBeNull();
+        expect(
+            within(card).getByRole('button', { name: '재등록' })
+        ).toBeInTheDocument();
+    });
+
+    it('calls deleteFormAction with the provider when 삭제 is clicked', async () => {
+        const user = userEvent.setup();
+        const deleteFormAction = vi.fn();
+        mockUseApiKeyForms.mockReturnValue({
+            saveState: IDLE_STATE,
+            saveFormAction: vi.fn(),
+            deleteState: IDLE_STATE,
+            deleteFormAction,
+        });
+        render(<ApiKeySection registeredProviders={['anthropic']} />);
+
+        await user.click(screen.getByRole('button', { name: '삭제' }));
+
+        expect(deleteFormAction).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows the delete status message once deleteState leaves idle', () => {
+        setApiKeyForms(IDLE_STATE, {
+            status: 'error',
+            message: '삭제에 실패했습니다.',
+            code: 'unknown',
+        });
+        render(<ApiKeySection registeredProviders={['anthropic']} />);
+        expect(screen.getByText('삭제에 실패했습니다.')).toBeInTheDocument();
+    });
+
+    it('does not render a delete status region while deleteState is idle', () => {
+        render(<ApiKeySection registeredProviders={['anthropic']} />);
+        expect(
+            document.getElementById('api-key-delete-status-anthropic')
+        ).toBeNull();
     });
 
     it('renders description text', () => {

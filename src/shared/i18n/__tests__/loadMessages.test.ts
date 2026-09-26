@@ -1,4 +1,25 @@
-import { pickMessages } from '../loadMessages';
+import { loadMessages, pickMessages } from '../loadMessages';
+import type { Locale } from '../locales';
+
+describe('loadMessages', () => {
+    it('실제 로케일 카탈로그를 로드한다(en.json)', async () => {
+        const messages = await loadMessages('en');
+        // 파일 자체를 스냅샷하지 않는다 — 실제 카탈로그의 최상위 형태(네임스페이스
+        // 객체 트리)만 확인해 extract.mjs 산출물 포맷과 어긋나지 않는지 본다.
+        expect(typeof messages).toBe('object');
+        expect(messages).not.toEqual({});
+    });
+
+    /**
+     * 배포 중 아직 만들어지지 않은 로케일 카탈로그가 있어도 페이지가 죽으면
+     * 안 된다 — 기본 로케일(ko) 카탈로그로 폴백한다.
+     */
+    it('존재하지 않는 로케일은 기본 로케일(ko) 카탈로그로 폴백한다', async () => {
+        const missing = await loadMessages('xx' as Locale);
+        const ko = await loadMessages('ko');
+        expect(missing).toEqual(ko);
+    });
+});
 
 const CATALOG = {
     widgets: {

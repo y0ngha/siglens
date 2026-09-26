@@ -224,6 +224,24 @@ describe('confirmPasswordResetAction', () => {
         });
     });
 
+    describe('예상치 못한 오류', () => {
+        it('confirmPasswordReset이 throw하면 unexpected 에러로 변환해 반환한다', async () => {
+            mockConfirm.mockRejectedValue(new Error('db connection lost'));
+            const result = await confirmPasswordResetAction(
+                { error: null },
+                makeFormData({
+                    email: 'user@example.com',
+                    token: 'tok',
+                    newPassword: 'NewPass1234',
+                })
+            );
+            expect(result.error?.code).toBe('unexpected');
+            expect(result.error?.message).toBe(
+                '비밀번호 재설정 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+            );
+        });
+    });
+
     describe('입력 누락', () => {
         it('email 키가 없으면 빈 문자열로 호출한다', async () => {
             mockConfirm.mockResolvedValue({ ok: true });

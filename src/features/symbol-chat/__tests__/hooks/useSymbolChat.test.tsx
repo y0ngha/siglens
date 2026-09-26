@@ -1,6 +1,7 @@
 import { renderHook } from '@testing-library/react';
 import {
     useSymbolChat,
+    useSymbolChatDispatch,
     usePublishSymbolChat,
 } from '@/features/symbol-chat/hooks/useSymbolChat';
 import {
@@ -55,6 +56,30 @@ describe('useSymbolChat', () => {
             wrapper: createWrapper(mockValue),
         });
         expect(result.current).toBe(mockValue);
+    });
+});
+
+describe('useSymbolChatDispatch', () => {
+    it('throws when used outside provider', () => {
+        expect(() => {
+            renderHook(() => useSymbolChatDispatch());
+        }).toThrow(
+            'useSymbolChatDispatch must be used inside SymbolChatProvider'
+        );
+    });
+
+    it('returns the dispatch-only { publish, clear } pair when used inside provider', () => {
+        const publish = vi.fn();
+        const clear = vi.fn();
+        const { result } = renderHook(() => useSymbolChatDispatch(), {
+            wrapper: ({ children }: { children: ReactNode }) =>
+                createElement(
+                    SymbolChatDispatchContext.Provider,
+                    { value: { publish, clear } },
+                    children
+                ),
+        });
+        expect(result.current).toEqual({ publish, clear });
     });
 });
 

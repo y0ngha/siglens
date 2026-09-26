@@ -553,6 +553,107 @@ describe('getAssetInfo', () => {
         );
     });
 
+    it('한국명 보유 + repository 생성 실패해도 결과는 반환되고 실패는 warn으로 삼켜진다', async () => {
+        // repository 생성 자체가 던지면(예: DB 커넥션 풀 소진) persistTranslation의
+        // await 밖(try 이전)에서 예외가 나므로, fireAndForget에 붙은 .catch가
+        // 그 거절을 삼켜야 한다 — 안 그러면 unhandled rejection이 프로세스를 죽인다.
+        mockCache.get.mockResolvedValue(null);
+        mockRepository.findBySymbol.mockResolvedValue(null);
+        searchBySymbolMock.mockResolvedValue([apple]);
+        getKoreanNamesMock.mockResolvedValue({ AAPL: '애플' });
+        // 첫 호출은 readFromDatabase(DB miss 확인)용 — 정상 반환한다.
+        // 두 번째 호출(persistTranslation)에서만 생성이 실패하게 한다.
+        repositoryFactoryMock.mockReturnValueOnce(
+            mockRepository as unknown as AssetTranslationRepository
+        );
+        repositoryFactoryMock.mockImplementation(() => {
+            throw new Error('pool exhausted');
+        });
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const result = await getAssetInfo('AAPL');
+        expect(result?.koreanName).toBe('애플');
+
+        await new Promise(resolve => setImmediate(resolve));
+        expect(warnSpy).toHaveBeenCalledWith(
+            '[getAssetInfo] persist failed',
+            expect.any(Error)
+        );
+        warnSpy.mockRestore();
+    });
+
+    it('한국명 미보유 + 번역 API 거절 시 백그라운드 번역 실패가 warn으로 삼켜진다', async () => {
+        mockCache.get.mockResolvedValue(null);
+        mockRepository.findBySymbol.mockResolvedValue(null);
+        searchBySymbolMock.mockResolvedValue([apple]);
+        getKoreanNamesMock.mockResolvedValue({});
+        translateCompanyNamesMock.mockRejectedValue(new Error('gemini down'));
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const result = await getAssetInfo('AAPL');
+        expect(result).toEqual({ symbol: 'AAPL', name: 'Apple Inc.' });
+
+        await new Promise(resolve => setImmediate(resolve));
+        expect(warnSpy).toHaveBeenCalledWith(
+            '[getAssetInfo] background translation failed',
+            expect.any(Error)
+        );
+        warnSpy.mockRestore();
+    });
+
+    it('KR 종목 + 한국명 보유 + repository 생성 실패해도 결과는 반환되고 실패는 warn으로 삼켜진다', async () => {
+        const symbol = '005930.KS'; // CURATED_KOREAN_NAMES에 있어 koreanName이 즉시 채워진다
+        mockCache.get.mockResolvedValue(null);
+        mockRepository.findBySymbol.mockResolvedValue(null);
+        fetchKrEquityQuoteNameMock.mockResolvedValue(
+            'Samsung Electronics Co Ltd'
+        );
+        getKoreanNamesMock.mockResolvedValue({});
+        // 첫 호출은 readFromDatabase(DB miss 확인)용 — 정상 반환한다.
+        // 두 번째 호출(persistTranslation)에서만 생성이 실패하게 한다.
+        repositoryFactoryMock.mockReturnValueOnce(
+            mockRepository as unknown as AssetTranslationRepository
+        );
+        repositoryFactoryMock.mockImplementation(() => {
+            throw new Error('pool exhausted');
+        });
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const result = await getAssetInfo(symbol);
+        expect(result?.koreanName).toBe('삼성전자');
+
+        await new Promise(resolve => setImmediate(resolve));
+        expect(warnSpy).toHaveBeenCalledWith(
+            '[getAssetInfo] kr persist failed',
+            expect.any(Error)
+        );
+        warnSpy.mockRestore();
+    });
+
+    it('KR 종목 + 한국명 미보유 + 번역 API 거절 시 백그라운드 번역 실패가 warn으로 삼켜진다', async () => {
+        const symbol = '999999.KQ'; // CURATED_KOREAN_NAMES에 없는 형상만 맞는 KR 심볼
+        mockCache.get.mockResolvedValue(null);
+        mockRepository.findBySymbol.mockResolvedValue(null);
+        fetchKrEquityQuoteNameMock.mockResolvedValue('Fake Korea Inc.');
+        getKoreanNamesMock.mockResolvedValue({});
+        translateCompanyNamesMock.mockRejectedValue(new Error('gemini down'));
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const result = await getAssetInfo(symbol);
+        expect(result).toEqual({
+            symbol,
+            name: 'Fake Korea Inc.',
+            marketProfile: 'kr-equity',
+        });
+
+        await new Promise(resolve => setImmediate(resolve));
+        expect(warnSpy).toHaveBeenCalledWith(
+            '[getAssetInfo] kr background translation failed',
+            expect.any(Error)
+        );
+        warnSpy.mockRestore();
+    });
+
     it('getAssetInfo가 searchBySymbol을 throwOnInfraFailure로 호출한다', async () => {
         createCacheProviderMock.mockReturnValue(null);
         tryGetTickerDatabaseClientMock.mockReturnValue(null);

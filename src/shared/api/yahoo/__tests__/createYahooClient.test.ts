@@ -150,6 +150,26 @@ describe('createYahooClient의 offline build 가드는', () => {
         }
     });
 
+    it('입력이 URL 인스턴스여도 [offline-build] 에러 메시지에 그 주소를 담는다', () => {
+        vi.stubEnv('SIGLENS_OFFLINE_BUILD', '1');
+        createYahooClient();
+        const opts = constructorArgs.at(-1) as CapturedOptions;
+
+        expect(() =>
+            opts.fetch!(new URL('https://example.test/url-input'))
+        ).toThrow('https://example.test/url-input');
+    });
+
+    it('입력이 Request 객체여도 [offline-build] 에러 메시지에 그 url을 담는다', () => {
+        vi.stubEnv('SIGLENS_OFFLINE_BUILD', '1');
+        createYahooClient();
+        const opts = constructorArgs.at(-1) as CapturedOptions;
+
+        expect(() =>
+            opts.fetch!(new Request('https://example.test/request-input'))
+        ).toThrow('https://example.test/request-input');
+    });
+
     it('SIGLENS_OFFLINE_BUILD가 미설정이면 평소대로 fetch를 호출한다', async () => {
         vi.stubEnv('SIGLENS_OFFLINE_BUILD', '');
         createYahooClient();
@@ -204,6 +224,36 @@ describe('createYahooClient의 메서드 레벨 offline 가드는', () => {
         const result = client.notAGuardedMethod('005930.KS');
         expect(result).toEqual({ symbol: '005930.KS', sync: true });
         expect(syncHelperImpl).toHaveBeenCalledWith('005930.KS');
+    });
+
+    it('인자 없이 호출해도 에러 메시지가 "(no args)"로 안전하게 조립된다', async () => {
+        vi.stubEnv('SIGLENS_OFFLINE_BUILD', '1');
+        const client = createYahooClient();
+
+        await expect(client.quote(undefined as never)).rejects.toThrow(
+            '(no args)'
+        );
+    });
+
+    it('첫 인자가 문자열이 아니어도 JSON으로 직렬화해 에러 메시지에 담는다', async () => {
+        vi.stubEnv('SIGLENS_OFFLINE_BUILD', '1');
+        const client = createYahooClient();
+
+        await expect(
+            client.quote({ symbol: '005930.KS' } as never)
+        ).rejects.toThrow('{"symbol":"005930.KS"}');
+    });
+
+    it('첫 인자가 JSON으로 직렬화되지 않아도(순환 참조) String()으로 폴백한다', async () => {
+        vi.stubEnv('SIGLENS_OFFLINE_BUILD', '1');
+        const client = createYahooClient();
+
+        const circular: Record<string, unknown> = {};
+        circular.self = circular;
+
+        await expect(client.quote(circular as never)).rejects.toThrow(
+            String(circular)
+        );
     });
 
     it('SIGLENS_OFFLINE_BUILD가 미설정이면 allowlist 메서드는 실제 라이브러리 메서드로 전달한다', async () => {

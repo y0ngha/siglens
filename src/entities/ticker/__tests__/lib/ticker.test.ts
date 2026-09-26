@@ -2,6 +2,7 @@ import {
     buildDisplayName,
     deduplicateResults,
     isKoreanInput,
+    pickAssetName,
     shouldShowEnglishName,
 } from '@/entities/ticker/lib/ticker';
 import type { AssetInfo, TickerSearchResult } from '@/shared/lib/types';
@@ -361,5 +362,71 @@ describe('shouldShowEnglishName — buildDisplayName과 판정 일치', () => {
                 'ko'
             )
         ).toBe(false);
+    });
+});
+
+/**
+ * JSON-LD `about.name`처럼 티커 없이 순수 이름만 필요한 소비자용 판정.
+ * `buildDisplayName`과 달리 티커를 괄호로 덧붙이지 않는다.
+ */
+describe('pickAssetName', () => {
+    describe('ko 로케일', () => {
+        it('koreanName이 있으면 koreanName을 반환한다(name이 영문이어도)', () => {
+            expect(
+                pickAssetName(
+                    { name: 'Apple Inc.', koreanName: '애플' },
+                    'AAPL',
+                    'ko'
+                )
+            ).toBe('애플');
+        });
+
+        it('koreanName이 없으면 name을 반환한다', () => {
+            expect(pickAssetName({ name: 'Apple Inc.' }, 'AAPL', 'ko')).toBe(
+                'Apple Inc.'
+            );
+        });
+
+        it('koreanName도 name도 없으면(빈 문자열) 빈 문자열을 반환한다', () => {
+            // `??`는 nullish만 걸러내고 빈 문자열은 통과시킨다 — 티커로 떨어지지 않는
+            // 이 동작은 `buildDisplayName`(빈 이름을 ticker로 처리)과 다르다.
+            expect(pickAssetName({ name: '' }, '005930.KS', 'ko')).toBe('');
+        });
+    });
+
+    describe('비-ko 로케일', () => {
+        it('name이 있고 ticker와 다르면 name을 반환한다(koreanName 무시)', () => {
+            expect(
+                pickAssetName(
+                    { name: 'Apple Inc.', koreanName: '애플' },
+                    'AAPL',
+                    'en'
+                )
+            ).toBe('Apple Inc.');
+        });
+
+        it('name이 ticker와 같으면 koreanName으로 대체한다', () => {
+            expect(
+                pickAssetName(
+                    { name: 'AAPL', koreanName: '애플' },
+                    'AAPL',
+                    'en'
+                )
+            ).toBe('애플');
+        });
+
+        it('name이 비어 있으면 koreanName으로 대체한다', () => {
+            expect(
+                pickAssetName(
+                    { name: '', koreanName: '삼성전자' },
+                    '005930.KS',
+                    'en'
+                )
+            ).toBe('삼성전자');
+        });
+
+        it('name도 koreanName도 없으면 name(빈 문자열)을 반환한다', () => {
+            expect(pickAssetName({ name: '' }, '005930.KS', 'ja')).toBe('');
+        });
     });
 });

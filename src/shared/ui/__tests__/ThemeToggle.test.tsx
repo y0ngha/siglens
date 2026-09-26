@@ -134,6 +134,32 @@ describe('ThemeToggle', () => {
         expect(screen.queryByRole('radiogroup')).toBeNull();
     });
 
+    it('ArrowUp/ArrowLeft도 이전 항목으로 포커스와 선택을 함께 옮긴다', () => {
+        localStorage.setItem(THEME_STORAGE_KEY, 'dark');
+        renderWithIntl(<ThemeToggle />); // dark(2번)가 선택
+        openMenu();
+
+        const radios = screen.getAllByRole('radio');
+        fireEvent.keyDown(radios[2]!, { key: 'ArrowUp' });
+        expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('light');
+
+        // 처음에서 한 번 더 올리면 끝으로 순환한다.
+        fireEvent.keyDown(screen.getAllByRole('radio')[1]!, {
+            key: 'ArrowLeft',
+        });
+        expect(localStorage.getItem(THEME_STORAGE_KEY)).toBeNull();
+    });
+
+    it('알 수 없는 저장값이면 설정 따라가기(첫 옵션)로 대체한다', () => {
+        localStorage.setItem(THEME_STORAGE_KEY, 'not-a-real-theme');
+        renderWithIntl(<ThemeToggle />);
+        openMenu();
+
+        expect(
+            screen.getByRole('radio', { name: /설정 따라가기/ })
+        ).toHaveAttribute('aria-checked', 'true');
+    });
+
     it('트리거 라벨이 현재 선택을 말한다', () => {
         // 2단 토글 시절에는 동작("라이트 모드로 전환")을 적었는데, 결과가 셋이
         // 되면서 그 문구는 무엇을 하는 버튼인지 말하지 못하게 됐다.

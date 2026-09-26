@@ -159,6 +159,24 @@ describe('kstDateKey', () => {
             '2026-01-05'
         );
     });
+
+    /**
+     * 방어적 폴백 — `Intl.DateTimeFormat.formatToParts`가 이론상 `year`/`month`/
+     * `day` 파트를 하나라도 누락시키면(런타임 ICU 이상 등), 그 조각을 빈 문자열로
+     * 채워 최소한 `NaN-NaN-NaN` 같은 값 대신 예측 가능한 형태를 낸다.
+     */
+    it('formatToParts가 파트를 누락시키면 그 자리를 빈 문자열로 채운다', () => {
+        const spy = vi
+            .spyOn(Intl.DateTimeFormat.prototype, 'formatToParts')
+            .mockReturnValue([
+                { type: 'year', value: '2026' } as Intl.DateTimeFormatPart,
+                // month/day 파트가 통째로 빠진 비정상 응답을 흉내낸다.
+            ]);
+
+        expect(kstDateKey(new Date('2026-01-05T03:00:00.000Z'))).toBe('2026--');
+
+        spy.mockRestore();
+    });
 });
 
 /**

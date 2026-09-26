@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { OpenInterestChart } from '@/widgets/options/OpenInterestChart';
 import type {
     OptionsChain,
@@ -143,12 +143,64 @@ const METRICS: OptionsExpirationMetrics = {
     topOiBidAskSummary: [],
 };
 
+function makeContract(
+    strike: number,
+    openInterest: number,
+    isCall: boolean
+): OptionsChain['calls'][number] {
+    return {
+        strike,
+        bid: 1,
+        ask: 1.1,
+        openInterest,
+        volume: 10,
+        impliedVolatility: 0.3,
+        lastPrice: 1.05,
+        inTheMoney: false,
+        contractSymbol: `${isCall ? 'C' : 'P'}${strike}`,
+    };
+}
+
 describe('OpenInterestChart', () => {
     it('renders empty state when chain is null', () => {
         render(
             <OpenInterestChart
                 underlyingPrice={150}
                 chain={null}
+                metrics={null}
+            />
+        );
+        expect(screen.getByText(/OI 데이터가 없어요/)).toBeInTheDocument();
+    });
+
+    it('renders empty state when the chain has no strikes at all', () => {
+        const noStrikesChain: OptionsChain = {
+            expirationDate: '2025-06-20',
+            daysToExpiration: 30,
+            calls: [],
+            puts: [],
+        };
+        render(
+            <OpenInterestChart
+                underlyingPrice={150}
+                chain={noStrikesChain}
+                metrics={null}
+            />
+        );
+        expect(screen.getByText(/OI 데이터가 없어요/)).toBeInTheDocument();
+    });
+
+    it('renders empty state when every strike has zero OI on both sides', () => {
+        const zeroOiChain: OptionsChain = {
+            expirationDate: '2025-06-20',
+            daysToExpiration: 30,
+            calls: [makeContract(140, 0, true), makeContract(150, 0, true)],
+            puts: [makeContract(140, 0, false), makeContract(150, 0, false)],
+        };
+        render(
+            <OpenInterestChart
+                underlyingPrice={150}
+                chain={zeroOiChain}
                 metrics={null}
             />
         );
@@ -219,5 +271,76 @@ describe('OpenInterestChart', () => {
         );
         expect(screen.getByText('Max Pain')).toBeInTheDocument();
         expect(screen.getByText('현재가')).toBeInTheDocument();
+    });
+
+    it('hovering (pointerEnter + pointerMove) a strike bar shows its Call/Put OI in the floating tooltip', () => {
+        const { container } = render(
+            <OpenInterestChart
+                underlyingPrice={150}
+                chain={CHAIN}
+                metrics={METRICS}
+            />
+        );
+        // Tooltip is hidden before any hover.
+        const tooltip = screen.getByRole('tooltip', { hidden: true });
+        expect(tooltip).toHaveAttribute('hidden');
+
+        // The invisible hit-target `<rect>` per strike carries the shared
+        // `aria-describedby` id — the last matching rect corresponds to the
+        // strike=150 row (openInterest 1000 call / 800 put).
+        const hitRects = container.querySelectorAll(
+            'rect[aria-describedby="oi-chart-tooltip"]'
+        );
+        const strike150Rect = hitRects[1]!;
+        fireEvent.pointerEnter(strike150Rect, { clientX: 10, clientY: 10 });
+        fireEvent.pointerMove(strike150Rect, { clientX: 12, clientY: 12 });
+
+        expect(tooltip).not.toHaveAttribute('hidden');
+        expect(within(tooltip).getByText('Strike $150')).toBeInTheDocument();
+        expect(within(tooltip).getByText('Call OI')).toBeInTheDocument();
+        expect(within(tooltip).getByText('Put OI')).toBeInTheDocument();
+    });
+
+    it('pointerLeave hides the tooltip again', () => {
+        const { container } = render(
+            <OpenInterestChart
+                underlyingPrice={150}
+                chain={CHAIN}
+                metrics={METRICS}
+            />
+        );
+        const tooltip = screen.getByRole('tooltip', { hidden: true });
+        const hitRects = container.querySelectorAll(
+            'rect[aria-describedby="oi-chart-tooltip"]'
+        );
+        const strike150Rect = hitRects[1]!;
+        fireEvent.pointerEnter(strike150Rect, { clientX: 10, clientY: 10 });
+        expect(tooltip).not.toHaveAttribute('hidden');
+
+        fireEvent.pointerLeave(strike150Rect);
+        expect(tooltip).toHaveAttribute('hidden');
+    });
+
+    it('rotates x-axis strike labels (-45deg) once more than 7 labels are shown', () => {
+        const manyStrikesChain: OptionsChain = {
+            expirationDate: '2025-06-20',
+            daysToExpiration: 30,
+            calls: Array.from({ length: 9 }, (_, i) =>
+                makeContract(100 + i * 10, 100 + i, true)
+            ),
+            puts: Array.from({ length: 9 }, (_, i) =>
+                makeContract(100 + i * 10, 50 + i, false)
+            ),
+        };
+        const { container } = render(
+            <OpenInterestChart
+                underlyingPrice={150}
+                chain={manyStrikesChain}
+                metrics={null}
+            />
+        );
+        const rotated = container.querySelectorAll('text[transform]');
+        expect(rotated.length).toBeGreaterThan(0);
+        expect(rotated[0]).toHaveAttribute('text-anchor', 'end');
     });
 });

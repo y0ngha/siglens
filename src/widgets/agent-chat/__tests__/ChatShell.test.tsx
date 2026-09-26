@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
     afterAll,
     afterEach,
@@ -24,16 +25,25 @@ vi.mock('@/widgets/layout/LocaleSwitcher', () => ({
     LocaleSwitcher: () => null,
 }));
 
+interface MockStreamMessage {
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    seq?: number;
+    tools: unknown[];
+    status: 'complete' | 'streaming' | 'aborted' | 'error';
+}
+
 const mockStream = vi.hoisted(() => ({
     messages: [
         {
             id: '1',
-            role: 'user' as const,
+            role: 'user',
             content: 'q',
             tools: [],
-            status: 'complete' as const,
+            status: 'complete',
         },
-    ],
+    ] as MockStreamMessage[],
     conversationId: 'c1',
     status: 'idle' as 'idle' | 'streaming' | 'error',
     error: null as string | null,
@@ -68,12 +78,21 @@ vi.mock('@/features/agent-chat', async importOriginal => {
 
 import { ChatShell } from '@/widgets/agent-chat/ChatShell';
 
-const wrap = (ui: React.ReactElement) =>
-    render(
+// A shared QueryClient across a render+rerender pair: MessageList's
+// RelatedPages mounts a `useQuery` for any non-streaming assistant bubble
+// with content, so every render pass (initial and rerender alike) needs a
+// QueryClientProvider in its tree.
+const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+});
+const withProviders = (ui: React.ReactElement) => (
+    <QueryClientProvider client={queryClient}>
         <NextIntlClientProvider locale="ko" messages={ko}>
             {ui}
         </NextIntlClientProvider>
-    );
+    </QueryClientProvider>
+);
+const wrap = (ui: React.ReactElement) => render(withProviders(ui));
 
 // A fresh element each call: passing the SAME element reference to `rerender`
 // makes React bail out of re-rendering the subtree, so the effect under test
@@ -224,11 +243,7 @@ describe('ChatShell new-conversation list update', () => {
         ).toBeGreaterThan(0);
 
         mockStream.status = 'idle';
-        rerender(
-            <NextIntlClientProvider locale="ko" messages={ko}>
-                {shellTree()}
-            </NextIntlClientProvider>
-        );
+        rerender(withProviders(shellTree()));
         // Regression guard: a prior version called router.refresh() here, which
         // swapped in the /c/[id] tree and flashed its loading skeleton.
         expect(router.refresh).not.toHaveBeenCalled();
@@ -414,6 +429,95 @@ describe('ChatShell — MessageList key (spec §3.9)', () => {
         mockStream.conversationId = 'c1';
     });
 
+    it('clicking a suggestion in EmptyState sends it through the stream', async () => {
+        mockStream.messages = [];
+        mockStream.send.mockClear();
+        await act(async () => {
+            wrap(
+                <ChatShell
+                    conversationId="c1"
+                    initialMessages={[]}
+                    conversations={[]}
+                    signedIn
+                    localePrefix=""
+                    siteUrl="https://siglens.io"
+                    currentPath="/c1"
+                    suggestions={Promise.resolve(['질문 하나'])}
+                />
+            );
+        });
+        const suggestion = await screen.findByRole('button', {
+            name: /질문 하나/,
+        });
+        fireEvent.click(suggestion);
+        expect(mockStream.send).toHaveBeenCalledWith('질문 하나');
+    });
+
+    it('the regenerate button on the last assistant answer calls stream.regenerate (never edit)', () => {
+        mockStream.messages = [
+            {
+                id: '1',
+                role: 'user' as const,
+                content: 'q',
+                tools: [],
+                status: 'complete' as const,
+            },
+            {
+                id: '2',
+                role: 'assistant' as const,
+                content: 'a',
+                tools: [],
+                status: 'complete' as const,
+            },
+        ];
+        mockStream.status = 'idle';
+        mockStream.regenerate.mockClear();
+        renderShell();
+        fireEvent.click(screen.getByRole('button', { name: '다시 생성' }));
+        expect(mockStream.regenerate).toHaveBeenCalledTimes(1);
+        expect(mockStream.edit).not.toHaveBeenCalled();
+    });
+
+    it('editing the last user message and submitting calls stream.edit with its seq and new text', () => {
+        mockStream.messages = [
+            {
+                id: '1',
+                role: 'user' as const,
+                content: '원래 질문',
+                seq: 3,
+                tools: [],
+                status: 'complete' as const,
+            },
+        ];
+        mockStream.status = 'idle';
+        mockStream.edit.mockClear();
+        renderShell();
+        fireEvent.click(screen.getByRole('button', { name: '수정' }));
+        const textarea = screen.getByLabelText('메시지 수정');
+        fireEvent.change(textarea, { target: { value: '수정된 질문' } });
+        fireEvent.submit(textarea.closest('form')!);
+        expect(mockStream.edit).toHaveBeenCalledWith(3, '수정된 질문');
+    });
+
+    it('submitting the composer sends the typed text through the stream', () => {
+        mockStream.messages = [
+            {
+                id: '1',
+                role: 'user' as const,
+                content: 'q',
+                tools: [],
+                status: 'complete' as const,
+            },
+        ];
+        mockStream.status = 'idle';
+        mockStream.send.mockClear();
+        renderShell();
+        const textarea = screen.getByRole('textbox');
+        fireEvent.change(textarea, { target: { value: '새 메시지' } });
+        fireEvent.keyDown(textarea, { key: 'Enter' });
+        expect(mockStream.send).toHaveBeenCalledWith('새 메시지');
+    });
+
     it('conversationId prop이 바뀌면 MessageList가 리마운트되어 다시 맨 아래로 점프한다', () => {
         const { rerender } = wrap(
             <ChatShell
@@ -430,7 +534,7 @@ describe('ChatShell — MessageList key (spec §3.9)', () => {
         scrollIntoViewSpy.mockClear();
 
         rerender(
-            <NextIntlClientProvider locale="ko" messages={ko}>
+            withProviders(
                 <ChatShell
                     conversationId="c2"
                     initialMessages={[]}
@@ -440,7 +544,7 @@ describe('ChatShell — MessageList key (spec §3.9)', () => {
                     siteUrl="https://siglens.io"
                     currentPath="/c2"
                 />
-            </NextIntlClientProvider>
+            )
         );
         // Remounted → the mount-only effect fires again.
         expect(scrollIntoViewSpy).toHaveBeenCalledWith({ block: 'end' });
@@ -464,7 +568,7 @@ describe('ChatShell — MessageList key (spec §3.9)', () => {
         // the ChatShell `conversationId` PROP (route-level) is unchanged.
         mockStream.conversationId = 'c1';
         rerender(
-            <NextIntlClientProvider locale="ko" messages={ko}>
+            withProviders(
                 <ChatShell
                     conversationId={null}
                     initialMessages={[]}
@@ -474,7 +578,7 @@ describe('ChatShell — MessageList key (spec §3.9)', () => {
                     siteUrl="https://siglens.io"
                     currentPath="/"
                 />
-            </NextIntlClientProvider>
+            )
         );
         expect(scrollIntoViewSpy).not.toHaveBeenCalled();
     });
