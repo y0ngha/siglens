@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { metadata as analysisMetadata } from '../stock-analysis/page';
+import { lpCopyViolations } from '@/views/lp/__tests__/lpCopyRules';
 import { metadata as chatMetadata } from '../stock-chat/page';
-
-const CRYPTO_RE =
-    /코인|비트코인|이더리움|암호화폐|가상자산|크립토|crypto|bitcoin/i;
 
 describe.each([
     ['/lp/stock-analysis', analysisMetadata],
@@ -16,10 +14,9 @@ describe.each([
         expect(metadata.twitter).toBeUndefined();
     });
 
-    it('title and description carry no crypto wording', () => {
+    it('title and description carry no crypto wording or "티커"', () => {
         const text = `${String(metadata.title)} ${metadata.description}`;
         expect(metadata.description).toBeTruthy();
-        expect(text).not.toMatch(CRYPTO_RE);
-        expect(text).not.toMatch(/[·—]/);
+        expect(lpCopyViolations(text)).toEqual([]);
     });
 });

@@ -107,6 +107,27 @@ describe('proxy — ad landing pages (/lp/*)', () => {
         expect(res.url?.pathname).toBe('/lp/stock-analysis');
     });
 
+    it.each([
+        [MAIN, '/en/lp/stock-analysis', '/lp/stock-analysis'],
+        [MAIN, '/ja/lp/stock-chat', '/lp/stock-chat'],
+        [AI, '/en/lp/stock-analysis', '/lp/stock-analysis'],
+        [AI, '/ja/lp/stock-chat', '/lp/stock-chat'],
+        [AI, '/ko/lp/stock-chat', '/lp/stock-chat'],
+        [MAIN, '/en/lp/zzz', '/lp/zzz'],
+        [AI, '/zh/lp', '/lp'],
+    ])(
+        '%s%s → 301 to %s, never into a locale route',
+        async (host, path, target) => {
+            const res = await run(host, `${path}?gclid=x`);
+            expect(res.type).toBe('redirect');
+            expect(res.status).toBe(301);
+            expect(res.url?.pathname).toBe(target);
+            expect(res.url?.search).toBe('?gclid=x');
+            expect(res.headers.get('X-Robots-Tag')).toBe('noindex, nofollow');
+            expect(mockIntlMiddleware).not.toHaveBeenCalled();
+        }
+    );
+
     it('the ai sitemap lists no /lp page', async () => {
         const res = await run(AI, '/sitemap.xml');
         expect(res.body).toContain('<urlset');

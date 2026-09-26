@@ -3,14 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { SITE_URL } from '@/shared/lib/seo';
 import { StockAnalysisLanding, StockChatLanding } from '../index';
-
-/**
- * Google Ads (KR) limits any ad whose landing page mentions crypto. These pages
- * exist only as ad final URLs, so a single crypto word anywhere on them defeats
- * their purpose (spec `2026-09-26-ad-landing-pages-design.md` "Guard").
- */
-const CRYPTO_RE =
-    /코인|비트코인|이더리움|암호화폐|가상자산|크립토|crypto|bitcoin/i;
+import { lpCopyViolations } from './lpCopyRules';
 
 function pageText(container: HTMLElement): string {
     const clone = container.cloneNode(true) as HTMLElement;
@@ -22,13 +15,9 @@ describe.each([
     ['StockAnalysisLanding', StockAnalysisLanding],
     ['StockChatLanding', StockChatLanding],
 ])('%s copy rules', (_name, Landing) => {
-    it('has no crypto wording, middle dot, em dash or "no signup" phrasing', () => {
+    it('has no crypto wording, middle dot, em dash, "티커" or "no signup" phrasing', () => {
         const { container } = render(<Landing />);
-        const text = pageText(container);
-        expect(text).not.toMatch(CRYPTO_RE);
-        expect(text).not.toContain('·');
-        expect(text).not.toContain('—');
-        expect(text).not.toMatch(/(가입|로그인)\s*없이/);
+        expect(lpCopyViolations(pageText(container))).toEqual([]);
     });
 
     it('has a minimal footer: privacy, terms, disclaimer', () => {
@@ -60,12 +49,12 @@ describe('StockAnalysisLanding', () => {
         }
     });
 
-    it('shows the hero, four feature cards and popular tickers', () => {
+    it('shows the hero, four feature cards and popular stocks', () => {
         render(<StockAnalysisLanding />);
         expect(
             screen.getByRole('heading', {
                 level: 1,
-                name: '티커 하나로 AI 종합 분석',
+                name: '종목 하나로 AI 종합 분석',
             })
         ).toBeInTheDocument();
         expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(4);
@@ -80,6 +69,30 @@ describe('StockAnalysisLanding', () => {
                 screen.getByRole('link', { name: new RegExp(symbol) })
             ).toHaveAttribute('href', `${SITE_URL}/${symbol}`);
         }
+    });
+
+    it('lists popular stocks company name first, ticker second', () => {
+        render(<StockAnalysisLanding />);
+        const list = screen.getByRole('region', { name: '많이 찾는 종목' });
+        const names = within(list)
+            .getAllByRole('link')
+            .map(link => link.textContent);
+        expect(names).toEqual([
+            '엔비디아NVDA',
+            '애플AAPL',
+            '테슬라TSLA',
+            '삼성전자005930.KS',
+            'SK하이닉스000660.KS',
+        ]);
+    });
+
+    it('shows the example report replay, complete on first render', () => {
+        render(<StockAnalysisLanding />);
+        const replay = screen.getByRole('region', {
+            name: 'SIGLENS 분석 과정 예시',
+        });
+        expect(replay).toHaveTextContent('siglens.io/AAPL');
+        expect(replay).toHaveTextContent('50일 이동평균선');
     });
 });
 
@@ -107,6 +120,15 @@ describe('StockChatLanding', () => {
             screen.getByText('답변마다 출처와 기준 시각')
         ).toBeInTheDocument();
         const faq = screen.getByRole('region', { name: '자주 묻는 질문' });
-        expect(within(faq).getAllByRole('term')).toHaveLength(3);
+        expect(within(faq).getAllByRole('group')).toHaveLength(3);
+    });
+
+    it('shows the example chat replay, complete on first render', () => {
+        render(<StockChatLanding />);
+        const replay = screen.getByRole('region', {
+            name: 'SIGLENS AI 예시 대화',
+        });
+        expect(replay).toHaveTextContent('삼성전자 요즘 흐름 어때?');
+        expect(replay).toHaveTextContent('71,800원');
     });
 });

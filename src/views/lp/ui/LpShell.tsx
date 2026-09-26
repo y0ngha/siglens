@@ -41,7 +41,8 @@ export function LpShell({ selfHref, cta, ctaHref, children }: LpShellProps) {
                     </a>
                 </div>
             </header>
-            <main className="flex-1 px-4 pb-16">
+            {/* `relative isolate` so a page's decorative backdrop (`-z-10`) sits behind content, not behind `<body>`. */}
+            <main className="relative isolate flex-1 px-4 pb-16">
                 <div className="mx-auto w-full max-w-5xl">{children}</div>
             </main>
             <footer className="border-t border-secondary-700 px-4 py-8 text-sm text-secondary-400">
@@ -49,13 +50,13 @@ export function LpShell({ selfHref, cta, ctaHref, children }: LpShellProps) {
                     <nav aria-label="약관" className="flex gap-4">
                         <a
                             href={`${SITE_URL}/privacy`}
-                            className="hover:text-secondary-200"
+                            className="inline-flex min-h-10 items-center rounded hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
                             개인정보처리방침
                         </a>
                         <a
                             href={`${SITE_URL}/terms`}
-                            className="hover:text-secondary-200"
+                            className="inline-flex min-h-10 items-center rounded hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
                             이용약관
                         </a>

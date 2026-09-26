@@ -1,3 +1,4 @@
+import { lpCopyViolations } from '@/views/lp/__tests__/lpCopyRules';
 import { test, expect } from '../support/fixtures';
 
 /**
@@ -12,11 +13,9 @@ import { test, expect } from '../support/fixtures';
  */
 const MAIN = 'http://localhost:4300';
 const AI = 'http://ai.localhost:4300';
-const CRYPTO_RE =
-    /코인|비트코인|이더리움|암호화폐|가상자산|크립토|crypto|bitcoin/i;
 
 const PAGES = [
-    { base: MAIN, path: '/lp/stock-analysis', h1: '티커 하나로 AI 종합 분석' },
+    { base: MAIN, path: '/lp/stock-analysis', h1: '종목 하나로 AI 종합 분석' },
     { base: AI, path: '/lp/stock-chat', h1: '주식 전용 AI 챗봇' },
 ] as const;
 
@@ -42,7 +41,7 @@ test.describe('ad landing pages', () => {
             expect(html).not.toContain('rel="manifest"');
 
             const body = html.replace(/<script[\s\S]*?<\/script>/g, '');
-            expect(body).not.toMatch(CRYPTO_RE);
+            expect(lpCopyViolations(body)).toEqual([]);
         });
     }
 

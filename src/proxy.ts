@@ -103,6 +103,25 @@ function landingPageResponse(
     return response;
 }
 
+/**
+ * 로케일 접두사가 붙은 랜딩(`/en/lp/stock-analysis`, `/ja/lp/stock-chat`)은
+ * 접두사를 뗀 `/lp/*`로 301한다. 랜딩은 한국어 전용이라 로케일 변형이 없다.
+ *
+ * 원시 경로만 보는 `isLandingPath` 검사로는 이 형태가 빠져 메인은
+ * `[locale]/[symbol]`, ai는 `/ai/[locale]/*`로 흘러간다. 접두사를 뗀 결과가
+ * 모르는 `/lp/*`여도 리다이렉트 후 위 404 가드가 받으므로 심볼 라우트에 닿지
+ * 않는다. 기존 `/ko/lp/*` 301과 같은 동작을 모든 로케일로 넓힌 것이다.
+ */
+function landingLocaleRedirect(req: NextRequest): NextResponse | null {
+    const url = new URL(req.url);
+    const { path } = splitLocalePath(url.pathname);
+    if (path === url.pathname || !isLandingPath(path)) return null;
+    url.pathname = path;
+    const response = NextResponse.redirect(url, 301);
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+    return response;
+}
+
 /** `ai.siglens.io`(SiglensAI) 호스트 요청을 `/ai/[locale]/*`로 rewrite한다. */
 async function handleAiHost(req: NextRequest): Promise<NextResponse> {
     const url = new URL(req.url);
@@ -111,6 +130,8 @@ async function handleAiHost(req: NextRequest): Promise<NextResponse> {
         response.headers.set('Content-Security-Policy', AI_CSP);
         return response;
     }
+    const landingRedirect = landingLocaleRedirect(req);
+    if (landingRedirect) return landingRedirect;
     if (url.pathname === '/robots.txt') {
         return new NextResponse(AI_ROBOTS_BODY, {
             headers: {
@@ -225,6 +246,8 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     if (rawPathname === '/robots.txt' || rawPathname === '/sitemap.xml')
         return NextResponse.next();
     if (isLandingPath(rawPathname)) return landingPageResponse(req, 'main');
+    const landingRedirect = landingLocaleRedirect(req);
+    if (landingRedirect) return landingRedirect;
 
     const hasSession = !!req.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value;
     const reqUrl = new URL(req.url);
