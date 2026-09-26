@@ -551,3 +551,9 @@
 - Violation: RECOMMENDED — src/app/api/ai/chat/tools/__tests__/getBarsIndicators.test.ts: new variable-length field (`pullback.measured`) added to budget-trimmed tool result without testing its interaction with the budget trimmer
   - Rule: (new) Tests — a new field inside a size-budgeted payload must have a test exercising its interaction with the budget logic
   - Context: Added overflow test comparing quiet vs lit reading; verifies more bars trimmed, field and newest bar intact.
+
+## [fix/washout-entry-verdict R1 | 눌림 판독 진입 판정(core 1.17.1) + 평균 회귀 스킬 digest 정합 | 2026-09-26]
+- Violation: skills/strategies/mean-reversion.md — digest의 "near setup"절이 `trend: neutral`을 명시하지 않았다. A/B 측정 결과: near 판독이 prompt에 주입되면 AI가 trend bullish를 19/20 선택 → 스킬 규칙 위반(near는 정의상 neutral).
+  - Rule: (existing) Skill digest는 분석 프롬프트에 주입되는 유일한 skill 정보 — digest의 모든 경우(setup/near/below/non-daily)가 prompt 소비자의 trend 결정을 정확히 가이드해야 한다. digest 변경 후 A/B를 돌려 near 판독의 trend이 규칙과 일치하는지 확인.
+  - Context: digest의 near절에 "trend stays neutral" 명시 추가, 본문 MA200 아래 손실 꼬리 문구를 core 1.17.1의 재측정 수치로 정합. 실측 후속: washout enter 0/25→23/25, near 평균 회귀 trend bullish 19/20→2/20, washout 날 전체 trend bearish 88%→36%.
+- Dependency: siglens-core #228 — 일봉 상승 추세 속 짧은 눌림(Williams %R ≤ -90)이면 룰 엔진이 enter 판정을 싣는다. 이 PR의 스킬 digest 수정과 함께 적용해야 수정이 완성된다. 분석 캐시(1Day) 키 변경 없음 — core 프롬프트 내용 변경만.
