@@ -489,3 +489,8 @@
   - Rule: (existing) Skill digest는 분석 프롬프트에 주입되는 유일한 skill 정보 — digest의 모든 경우(setup/near/below/non-daily)가 prompt 소비자의 trend 결정을 정확히 가이드해야 한다. digest 변경 후 A/B를 돌려 near 판독의 trend이 규칙과 일치하는지 확인.
   - Context: digest의 near절에 "trend stays neutral" 명시 추가, 본문 MA200 아래 손실 꼬리 문구를 core 1.17.1의 재측정 수치로 정합. 실측 후속: washout enter 0/25→23/25, near 평균 회귀 trend bullish 19/20→2/20, washout 날 전체 trend bearish 88%→36%.
 - Dependency: siglens-core #228 — 일봉 상승 추세 속 짧은 눌림(Williams %R ≤ -90)이면 룰 엔진이 enter 판정을 싣는다. 이 PR의 스킬 digest 수정과 함께 적용해야 수정이 완성된다. 분석 캐시(1Day) 키 변경 없음 — core 프롬프트 내용 변경만.
+
+## [PR #878 | perf/crawl-html-compression | 2026-09-26]
+- Violation: Tradeoff rationale for `generateEtags: false` was scoped to Googlebot only and stated an unverified generalization ("the only HTML leaving the edge with an ETag is the poisoned uncompressed variant"); browser measurement showed gzip-passthrough pages (`/AAPL`, `/NVDA/news`) keep a strong ETag, so real-user revisits do lose 304.
+- Rule: (new) A tradeoff comment must cover every client class the setting affects (crawlers AND browsers), and each factual claim must be measured with that client's actual request headers
+- Context: next.config.ts `generateEtags` comment — corrected the ETag-stripping claim and added the real-user revisit cost plus the Cloudflare "Respect strong ETags" OFF alternative that keeps 304.
