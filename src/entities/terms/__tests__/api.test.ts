@@ -83,6 +83,58 @@ describe('DrizzleTermsRepository', () => {
             expect(result?.effectiveDate).toEqual(effectiveDate);
         });
 
+        /**
+         * 사이드카에 해당 로케일 인간 번역이 없으면 원문(`row.body`)으로
+         * 폴백하고 `isTranslationFallback: true`를 세운다 — 약관이 빈 화면
+         * 보다 나은 이유는 클래스 JSDoc(`isTranslationFallback`) 참고.
+         */
+        it('번역이 없는 로케일은 원문으로 폴백하고 isTranslationFallback을 세운다', async () => {
+            const effectiveDate = new Date('2026-04-30T00:00:00+09:00');
+            const db = makeMockDb([
+                {
+                    id: 't1',
+                    kind: 'privacy',
+                    version: 2,
+                    effectiveDate,
+                    body: '## 한국어 본문',
+                },
+            ]);
+            const repo = new DrizzleTermsRepository(db);
+
+            const result = await repo.findActive('privacy', 'ja');
+
+            expect(result?.body).toBe('## 한국어 본문');
+            expect(result?.bodyLocale).toBe('ko');
+            expect(result?.isTranslationFallback).toBe(true);
+        });
+
+        /**
+         * `pickContentLocale`은 빈 문자열을 "없는 값"으로 본다(분석 실패로
+         * 빈 문자열이 들어간 행 대응). 레거시·사이드카 어느 쪽에도 값이 없으면
+         * `localizeContentRow`가 `null`을 돌려주므로, `findActive`는 원본
+         * `row.body`·`DEFAULT_LOCALE`·`isTranslationFallback: true`로 완전히
+         * 폴백해야 한다(모든 `??` 우변).
+         */
+        it('원문조차 빈 문자열이면 row.body/DEFAULT_LOCALE/true로 완전 폴백한다', async () => {
+            const effectiveDate = new Date('2026-04-30T00:00:00+09:00');
+            const db = makeMockDb([
+                {
+                    id: 't1',
+                    kind: 'privacy',
+                    version: 2,
+                    effectiveDate,
+                    body: '',
+                },
+            ]);
+            const repo = new DrizzleTermsRepository(db);
+
+            const result = await repo.findActive('privacy', 'ko');
+
+            expect(result?.body).toBe('');
+            expect(result?.bodyLocale).toBe('ko');
+            expect(result?.isTranslationFallback).toBe(true);
+        });
+
         it('returns null when no active version exists', async () => {
             const db = makeMockDb([]);
             const repo = new DrizzleTermsRepository(db);
@@ -218,6 +270,34 @@ describe('DrizzleTermsRepository.upsertFromSeed', () => {
         });
 
         expect(id).toBe('terms-existing');
+    });
+
+    /**
+     * 충돌은 났는데(returning 빈 배열) 조회로도 기존 행을 못 찾는 경우 — 이론상
+     * 불가능해야 하지만(방금 충돌한 (kind,version)이 곧바로 사라짐), 벌어지면
+     * 조용히 undefined id를 돌려주는 대신 명시적으로 실패해야 한다. 그래야
+     * 번역 사이드카가 존재하지 않는 termsId를 참조하는 사고를 막는다.
+     */
+    it('충돌했는데 기존 행도 못 찾으면 에러를 던진다', async () => {
+        const returning = vi.fn().mockResolvedValue([]);
+        const onConflictDoNothing = vi.fn(() => ({ returning }));
+        const values = vi.fn(() => ({ onConflictDoNothing }));
+        const limit = vi.fn().mockResolvedValue([]);
+        const where = vi.fn(() => ({ limit }));
+        const from = vi.fn(() => ({ where }));
+        const db = {
+            insert: vi.fn(() => ({ values })),
+            select: vi.fn(() => ({ from })),
+        } as unknown as SiglensDatabase;
+
+        await expect(
+            new DrizzleTermsRepository(db).upsertFromSeed({
+                kind: 'privacy',
+                version: 1,
+                effectiveDate: new Date('2026-04-30T00:00:00+09:00'),
+                body: '## 1. 총칙',
+            })
+        ).rejects.toThrow('terms privacy v1 not found after upsert');
     });
 });
 

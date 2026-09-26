@@ -1,6 +1,7 @@
 import { render } from '@testing-library/react';
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
 import { FearGreedPage } from '@/widgets/fear-greed/FearGreedPage';
+import { ShareableAnalysisProvider, useShareable } from '@/features/share';
 
 const baseSnapshot: FearGreedSnapshot = {
     score: 50,
@@ -116,6 +117,47 @@ describe('FearGreedPage', () => {
                         /공포 탐욕 지수 산출에 필요한 데이터가 부족합니다/
                     )
                 ).toBeInTheDocument();
+            });
+        });
+
+        /**
+         * fear-greed is deterministic (no async analysis job), so the
+         * registered `trigger` is a no-op — but `ShareButton` always calls it
+         * on click regardless of kind. This verifies the real user-visible
+         * contract: calling the registered trigger is safe (doesn't throw)
+         * and doesn't mutate the already-rendered snapshot UI.
+         */
+        describe('share registration trigger', () => {
+            beforeEach(() => {
+                mockUseFearGreedFromSymbol.mockReturnValue({
+                    snapshot: baseSnapshot,
+                    history: [],
+                });
+            });
+
+            function ShareTriggerProbe() {
+                const shareable = useShareable();
+                return (
+                    <button type="button" onClick={() => shareable?.trigger()}>
+                        invoke-trigger
+                    </button>
+                );
+            }
+
+            it('registers a no-op trigger that is safe to call and leaves the snapshot UI unchanged', () => {
+                const { getByText, getByRole } = render(
+                    <ShareableAnalysisProvider>
+                        <FearGreedPage symbol="NVDA" />
+                        <ShareTriggerProbe />
+                    </ShareableAnalysisProvider>
+                );
+
+                expect(getByText(/표본 200/)).toBeInTheDocument();
+                expect(() =>
+                    getByRole('button', { name: 'invoke-trigger' }).click()
+                ).not.toThrow();
+                // Trigger is a pure no-op — the same snapshot text still renders.
+                expect(getByText(/표본 200/)).toBeInTheDocument();
             });
         });
 

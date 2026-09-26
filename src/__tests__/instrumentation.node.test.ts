@@ -158,6 +158,49 @@ describe('registerShutdownHandlers()', () => {
         expect(exitSpy).toHaveBeenCalledWith(0);
     });
 
+    it('같은 프로세스에서 registerShutdownHandlers를 두 번 불러도 리스너를 중복 등록하지 않는다', async () => {
+        const { registerShutdownHandlers } =
+            await import('@/instrumentation.node');
+
+        const beforeCount = process.listenerCount('SIGTERM');
+        registerShutdownHandlers();
+        const afterFirstCount = process.listenerCount('SIGTERM');
+        // 재호출 — `shutdownHandlersRegistered` 가드가 두 번째 등록을 막아야
+        // 리스너 수가 늘지 않는다.
+        registerShutdownHandlers();
+        const afterSecondCount = process.listenerCount('SIGTERM');
+
+        expect(afterFirstCount).toBe(beforeCount + 1);
+        expect(afterSecondCount).toBe(afterFirstCount);
+    });
+
+    it('drain 중 에러가 나도(Promise.all reject) 로그만 남기고 여전히 exit(0)한다', async () => {
+        // drainBackgroundTasks가 던지면 Promise.all이 reject된다 — `.catch`가 그
+        // 에러를 삼키고 로그만 남긴 뒤 `.finally`의 grace 타이머로 계속 진행해야
+        // 한다. 여기서 삼키지 않으면 unhandled rejection이 되어 drain이 exit
+        // 없이 멈춘다.
+        mockDrainBackgroundTasks.mockRejectedValue(new Error('redis down'));
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+
+        const { registerShutdownHandlers } =
+            await import('@/instrumentation.node');
+        registerShutdownHandlers();
+
+        process.emit('SIGTERM');
+
+        await vi.advanceTimersByTimeAsync(1_000);
+
+        expect(errorSpy).toHaveBeenCalledWith(
+            '[instrumentation] drain error:',
+            expect.any(Error)
+        );
+        expect(exitSpy).toHaveBeenCalledWith(0);
+
+        errorSpy.mockRestore();
+    });
+
     it('두 번째 SIGTERM은 no-op — drain을 이중으로 실행하지 않는다', async () => {
         const { registerShutdownHandlers } =
             await import('@/instrumentation.node');

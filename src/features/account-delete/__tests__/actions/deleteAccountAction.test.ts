@@ -217,4 +217,20 @@ describe('deleteAccountAction', () => {
             );
         });
     });
+
+    describe('예상치 못한 오류', () => {
+        beforeEach(() => {
+            mockGetCurrentUser.mockResolvedValue(USER);
+        });
+
+        it('deleteAccount가 throw하면 unexpected 에러로 변환해 반환한다', async () => {
+            mockDelete.mockRejectedValue(new Error('db connection lost'));
+            const result = await deleteAccountAction(
+                { error: null },
+                makeFormData({ email: 'user@example.com' })
+            );
+            expect(result.error?.code).toBe('unexpected');
+            expect(setSpy).not.toHaveBeenCalled();
+        });
+    });
 });

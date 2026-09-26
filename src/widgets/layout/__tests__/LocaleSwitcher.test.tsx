@@ -128,4 +128,70 @@ describe('LocaleSwitcher', () => {
             screen.getByRole('button', { name: /언어|Language/, hidden: true })
         ).toHaveAttribute('tabindex', '-1');
     });
+
+    it('showLabel이 true면 라벨 span에서 좁은 화면 전용 hidden 클래스를 뺀다', () => {
+        renderWithIntl(<LocaleSwitcher showLabel />);
+        const label = screen.getByText('한국어', { selector: 'span' });
+        expect(label.className).toContain('inline');
+        expect(label.className).not.toContain('hidden');
+    });
+
+    it('showLabel 기본값(false)은 좁은 화면에서 라벨을 숨긴다', () => {
+        renderWithIntl(<LocaleSwitcher />);
+        const label = screen.getByText('한국어', { selector: 'span' });
+        expect(label.className).toContain('hidden');
+        expect(label.className).toContain('sm:inline');
+    });
+
+    it('align="start"면 패널을 트리거 왼쪽에 붙인다(left-0)', () => {
+        renderWithIntl(<LocaleSwitcher align="start" />);
+        open();
+        expect(screen.getByRole('radiogroup').className).toContain('left-0');
+        expect(screen.getByRole('radiogroup').className).not.toContain(
+            'right-0'
+        );
+    });
+
+    it('align 기본값(end)은 패널을 트리거 오른쪽에 붙인다(right-0)', () => {
+        renderWithIntl(<LocaleSwitcher />);
+        open();
+        expect(screen.getByRole('radiogroup').className).toContain('right-0');
+    });
+
+    describe('화살표 키 포커스 이동', () => {
+        it('ArrowDown/ArrowRight는 다음 항목으로 포커스를 옮기고 순환한다', () => {
+            renderWithIntl(<LocaleSwitcher />);
+            open();
+            const radios = screen.getAllByRole('radio');
+            radios[0]!.focus();
+            fireEvent.keyDown(radios[0]!, { key: 'ArrowDown' });
+            expect(radios[1]).toHaveFocus();
+
+            fireEvent.keyDown(radios[radios.length - 1]!, {
+                key: 'ArrowRight',
+            });
+            expect(radios[0]).toHaveFocus();
+        });
+
+        it('ArrowUp/ArrowLeft는 이전 항목으로 포커스를 옮기고 순환한다', () => {
+            renderWithIntl(<LocaleSwitcher />);
+            open();
+            const radios = screen.getAllByRole('radio');
+            radios[0]!.focus();
+            fireEvent.keyDown(radios[0]!, { key: 'ArrowUp' });
+            expect(radios[radios.length - 1]).toHaveFocus();
+
+            fireEvent.keyDown(radios[1]!, { key: 'ArrowLeft' });
+            expect(radios[0]).toHaveFocus();
+        });
+
+        it('화살표 이동은 포커스만 옮기고 선택(라우터 replace)까지는 하지 않는다', () => {
+            renderWithIntl(<LocaleSwitcher />);
+            open();
+            const radios = screen.getAllByRole('radio');
+            radios[0]!.focus();
+            fireEvent.keyDown(radios[0]!, { key: 'ArrowDown' });
+            expect(mockReplace).not.toHaveBeenCalled();
+        });
+    });
 });

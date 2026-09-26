@@ -53,4 +53,26 @@ describe('isContentLocaleEnabled', () => {
         const result = await repo.findForEntity('news', ['a'], 'ja');
         expect(result.byLocale('a', 'title')).toEqual({});
     });
+
+    /**
+     * 켜져 있으면 실제 Drizzle 구현으로 라우팅해야 한다 — 그래야 사이드카를
+     * 실제로 조회한다. `getDatabaseClient`를 fake db로 대역해 Neon 연결
+     * 없이 "Drizzle 구현이 선택됐다"만 확인한다(실제 쿼리 동작은
+     * `DrizzleContentTranslationRepository`의 자체 단위 테스트가 검증).
+     */
+    it("'1'이면 DrizzleContentTranslationRepository로 라우팅한다", async () => {
+        process.env.DB_CONTENT_LOCALE = '1';
+        vi.doMock('@/shared/db/client', () => ({
+            getDatabaseClient: () => ({ db: {} }),
+        }));
+        const { getContentTranslationRepository } =
+            await import('@/shared/db/contentTranslationClient');
+        const { DrizzleContentTranslationRepository } =
+            await import('@/shared/db/contentTranslationRepository');
+
+        const repo = getContentTranslationRepository();
+
+        expect(repo).toBeInstanceOf(DrizzleContentTranslationRepository);
+        vi.doUnmock('@/shared/db/client');
+    });
 });

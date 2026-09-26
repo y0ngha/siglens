@@ -42,4 +42,54 @@ describe('MarkdownText', () => {
         render(<MarkdownText data-testid="md-wrapper">text</MarkdownText>);
         expect(screen.getByTestId('md-wrapper')).toBeInTheDocument();
     });
+
+    it('renders ordered lists with numbered list items', () => {
+        render(<MarkdownText>{'1. first\n2. second'}</MarkdownText>);
+        const list = screen.getByText('first').closest('ol');
+        expect(list).toBeInTheDocument();
+        expect(screen.getByText('first').tagName).toBe('LI');
+        expect(screen.getByText('second').tagName).toBe('LI');
+    });
+
+    it('renders h1/h2/h3 headings as visually-demoted <p> tags (not real heading elements)', () => {
+        render(
+            <MarkdownText>
+                {'# Heading 1\n\n## Heading 2\n\n### Heading 3'}
+            </MarkdownText>
+        );
+
+        const h1 = screen.getByText('Heading 1');
+        const h2 = screen.getByText('Heading 2');
+        const h3 = screen.getByText('Heading 3');
+
+        expect(h1.tagName).toBe('P');
+        expect(h2.tagName).toBe('P');
+        expect(h3.tagName).toBe('P');
+        expect(h1.className).toContain('font-semibold');
+        expect(h3.className).toContain('font-medium');
+    });
+
+    it('renders fenced code blocks with a <pre> wrapper', () => {
+        render(<MarkdownText>{'```\nconst x = 1;\n```'}</MarkdownText>);
+        const code = screen.getByText('const x = 1;');
+        expect(code.tagName).toBe('CODE');
+        expect(code.closest('pre')).toBeInTheDocument();
+    });
+
+    it('allows overriding the default component map via the components prop', () => {
+        render(
+            <MarkdownText
+                components={{
+                    strong: ({ children }) => (
+                        <strong data-testid="custom-strong">{children}</strong>
+                    ),
+                }}
+            >
+                **bold text**
+            </MarkdownText>
+        );
+        expect(screen.getByTestId('custom-strong')).toHaveTextContent(
+            'bold text'
+        );
+    });
 });

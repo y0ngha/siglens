@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
 import { THEME_CHANGE_EVENT } from '@/shared/lib/theme';
 import type { Bar } from '@y0ngha/siglens-core';
@@ -46,7 +46,11 @@ const {
     mockFitContent,
     setPaneLayout,
     paneSpies,
+    mockToggle,
+    mockUseIndicatorVisibility,
 } = vi.hoisted(() => {
+    const mockToggle = vi.fn();
+    const mockUseIndicatorVisibility = vi.fn();
     interface PaneSpec {
         stretch: number;
         height: number;
@@ -125,6 +129,8 @@ const {
         mockFitContent,
         setPaneLayout,
         paneSpies,
+        mockToggle,
+        mockUseIndicatorVisibility,
     };
 });
 
@@ -324,55 +330,63 @@ vi.mock('@/widgets/chart/hooks/useOverlayLegend', () => ({
     useOverlayLegend: () => [],
 }));
 
+const DEFAULT_VISIBLE = {
+    ma: false,
+    ema: false,
+    ichimoku: false,
+    rsi: false,
+    macd: false,
+    dmi: false,
+    stochastic: false,
+    stochRsi: false,
+    cci: false,
+    bollinger: false,
+    volumeProfile: false,
+    mfi: false,
+    williamsR: false,
+    connorsRsi: false,
+    cmf: false,
+    bollingerPercentB: false,
+    hurst: false,
+    varianceRatio: false,
+    macdV: false,
+    forceIndex: false,
+    obv: false,
+    atr: false,
+    yangZhang: false,
+    ewmaVolatility: false,
+    elderRay: false,
+    squeezeMomentum: false,
+    regression: false,
+    elderImpulse: false,
+    smc: false,
+};
+
 vi.mock('@/widgets/chart/hooks/useIndicatorVisibility', () => ({
-    useIndicatorVisibility: () => ({
-        visible: {
-            ma: false,
-            ema: false,
-            ichimoku: false,
-            rsi: false,
-            macd: false,
-            dmi: false,
-            stochastic: false,
-            stochRsi: false,
-            cci: false,
-            bollinger: false,
-            volumeProfile: false,
-            mfi: false,
-            williamsR: false,
-            connorsRsi: false,
-            cmf: false,
-            bollingerPercentB: false,
-            hurst: false,
-            varianceRatio: false,
-            macdV: false,
-            forceIndex: false,
-            obv: false,
-            atr: false,
-            yangZhang: false,
-            ewmaVolatility: false,
-            elderRay: false,
-            squeezeMomentum: false,
-            regression: false,
-            elderImpulse: false,
-            smc: false,
-        },
-        toggle: vi.fn(),
-        paneIndices: INACTIVE_PANES,
-    }),
+    useIndicatorVisibility: () => mockUseIndicatorVisibility(),
 }));
 
 vi.mock('@/widgets/chart/ui/IndicatorSettingsModal', () => ({
     IndicatorSettingsModal: ({
         bindings,
     }: {
-        bindings: { meta: { key: string } }[];
+        bindings: { meta: { key: string }; onToggle: () => void }[];
     }) => (
         <div
             data-testid="indicator-settings-modal"
             data-count={bindings.length}
             data-keys={bindings.map(b => b.meta.key).join(',')}
-        />
+        >
+            {bindings.map(b => (
+                <button
+                    key={b.meta.key}
+                    type="button"
+                    aria-label={`toggle-${b.meta.key}`}
+                    data-testid={`toggle-${b.meta.key}`}
+                    onClick={b.onToggle}
+                />
+            ))}
+        </div>
     ),
 }));
 
@@ -480,6 +494,45 @@ function stubClientWidth(px: number): () => void {
     };
 }
 
+/**
+ * paneIndices 변경 후 명시 resize effect는 wrapper의 clientWidth/clientHeight가
+ * 둘 다 0이 아니어야 실행된다 (jsdom 레이아웃 부재로 기본값은 0). 두 값을 함께 심는다.
+ */
+function stubClientSize(width: number, height: number): () => void {
+    const originalWidth = Object.getOwnPropertyDescriptor(
+        Element.prototype,
+        'clientWidth'
+    );
+    const originalHeight = Object.getOwnPropertyDescriptor(
+        Element.prototype,
+        'clientHeight'
+    );
+    Object.defineProperty(Element.prototype, 'clientWidth', {
+        configurable: true,
+        get: () => width,
+    });
+    Object.defineProperty(Element.prototype, 'clientHeight', {
+        configurable: true,
+        get: () => height,
+    });
+    return () => {
+        if (originalWidth !== undefined) {
+            Object.defineProperty(
+                Element.prototype,
+                'clientWidth',
+                originalWidth
+            );
+        }
+        if (originalHeight !== undefined) {
+            Object.defineProperty(
+                Element.prototype,
+                'clientHeight',
+                originalHeight
+            );
+        }
+    };
+}
+
 async function flushFrame(): Promise<void> {
     await act(
         async () =>
@@ -491,6 +544,11 @@ describe('StockChart', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         setPaneLayout([{ stretch: 2, height: 200 }]);
+        mockUseIndicatorVisibility.mockReturnValue({
+            visible: DEFAULT_VISIBLE,
+            toggle: mockToggle,
+            paneIndices: INACTIVE_PANES,
+        });
     });
 
     it('renders empty state message when bars is empty', () => {
@@ -674,6 +732,60 @@ describe('StockChart', () => {
             expect(legend).toHaveAttribute('data-chart-width', '246');
         } finally {
             restoreClientWidth();
+        }
+    });
+
+    /**
+     * `IndicatorSettingsModal`에는 34개 지표 바인딩이 내려가는데, 각 바인딩의
+     * `onToggle`이 실제로 `toggle(key)`를 부르는지는 이전 테스트가 보지 않았다
+     * (바인딩 개수·키 목록만 확인). 배선이 끊겨도(`onToggle: () => {}`로 잘못
+     * 바뀌어도) 감지가 안 됐을 것 — 클릭까지 흘려서 확인한다.
+     */
+    it('지표 바인딩의 onToggle을 누르면 해당 key로 toggle을 호출한다', () => {
+        render(<StockChart bars={mockBars} timeframe="1Day" />);
+
+        fireEvent.click(screen.getByTestId('toggle-rsi'));
+
+        expect(mockToggle).toHaveBeenCalledWith('rsi');
+    });
+
+    /**
+     * indicator 토글로 `paneIndices`가 바뀌면(오브젝트 참조 변경) LWC v5가 빈 pane
+     * DOM을 정리하지 않는 문제를 우회하기 위해 명시적으로 resize를 두 번(축소 후
+     * 원복) 호출해야 한다. 첫 mount에서는 이 resize가 건너뛰어져야 하고, 이후
+     * paneIndices가 바뀔 때만 실행돼야 한다 — 둘 다 여기서 검증한다.
+     */
+    it('mount 시점에는 명시 resize를 건너뛰고, paneIndices가 바뀌면 그때 resize한다', async () => {
+        const restore = stubClientSize(300, 400);
+        try {
+            const { rerender } = render(
+                <StockChart bars={mockBars} timeframe="1Day" />
+            );
+            const chart = mockCreateChart.mock.results[0].value;
+            await flushFrame();
+
+            // 첫 mount: paneIndices effect의 초기 skip으로 명시 resize가 없어야 한다.
+            expect(chart.resize).not.toHaveBeenCalled();
+
+            // 참조가 다른 새 paneIndices 객체로 교체 — 지표 토글 시 발생하는 상황을 재현.
+            mockUseIndicatorVisibility.mockReturnValue({
+                visible: DEFAULT_VISIBLE,
+                toggle: mockToggle,
+                paneIndices: { ...INACTIVE_PANES },
+            });
+            rerender(<StockChart bars={mockBars} timeframe="1Day" />);
+            await flushFrame();
+
+            expect(chart.applyOptions).toHaveBeenCalledWith({
+                autoSize: false,
+            });
+            expect(chart.resize).toHaveBeenCalledWith(299, 400);
+            expect(chart.resize).toHaveBeenCalledWith(300, 400);
+            expect(chart.applyOptions).toHaveBeenCalledWith({
+                autoSize: true,
+            });
+        } finally {
+            restore();
         }
     });
 });

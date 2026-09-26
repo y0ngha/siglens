@@ -1,7 +1,10 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ChatMessageView } from '@/entities/chat-conversation';
-import { useAgentStream } from '@/features/agent-chat/hooks/useAgentStream';
+import {
+    fromViews,
+    useAgentStream,
+} from '@/features/agent-chat/hooks/useAgentStream';
 
 const trackAdsConversion = vi.hoisted(() => vi.fn());
 vi.mock('@/shared/lib/googleAds', () => ({ trackAdsConversion }));
@@ -55,6 +58,107 @@ function droppedSse(frames: string[]): Response {
 }
 
 afterEach(() => vi.restoreAllMocks());
+
+function toolCallsView(
+    seq: number,
+    toolCalls: { id: string; name: string; args: Record<string, unknown> }[]
+): ChatMessageView {
+    return {
+        id: `m${seq}`,
+        seq,
+        role: 'assistant',
+        content: '',
+        toolCalls,
+        toolName: null,
+        status: 'complete',
+        createdAt: new Date(2026, 0, 1).toISOString(),
+    };
+}
+
+function toolResultView(
+    seq: number,
+    toolName: string | null,
+    content: string
+): ChatMessageView {
+    return {
+        id: `m${seq}`,
+        seq,
+        role: 'tool',
+        content,
+        toolCalls: null,
+        toolName,
+        status: 'complete',
+        createdAt: new Date(2026, 0, 1).toISOString(),
+    };
+}
+
+describe('fromViews', () => {
+    it('drops a tool row that has no preceding assistant bubble to attach to', () => {
+        expect(fromViews([toolResultView(1, 'get_quote', 'result')])).toEqual(
+            []
+        );
+    });
+
+    it('a tool row with no matching tool call by name is appended as a new chip (not merged)', () => {
+        const out = fromViews([
+            toolCallsView(1, [{ id: 't1', name: 'search', args: {} }]),
+            toolResultView(2, 'weird', 'result'),
+        ]);
+        expect(out[0]!.tools.map(t => [t.name, t.summary])).toEqual([
+            ['search', undefined],
+            ['weird', 'result'],
+        ]);
+    });
+
+    it('a tool row with a null toolName falls back to the literal name "tool", both when matching and when pushed fresh', () => {
+        const out = fromViews([
+            toolCallsView(1, [{ id: 't1', name: 'search', args: {} }]),
+            toolResultView(2, null, 'result'),
+        ]);
+        // No existing call named "tool" — pushed as a new chip named "tool".
+        expect(out[0]!.tools.map(t => [t.name, t.summary])).toEqual([
+            ['search', undefined],
+            ['tool', 'result'],
+        ]);
+    });
+
+    it('a second empty-content assistant tool-call bubble merges an aborted status', () => {
+        const out = fromViews([
+            toolCallsView(1, [{ id: 't1', name: 'search', args: {} }]),
+            {
+                id: 'm2',
+                seq: 2,
+                role: 'assistant',
+                content: 'partial answer',
+                toolCalls: null,
+                toolName: null,
+                status: 'aborted',
+                createdAt: new Date(2026, 0, 1).toISOString(),
+            },
+        ]);
+        expect(out).toHaveLength(1);
+        expect(out[0]!.content).toBe('partial answer');
+        expect(out[0]!.status).toBe('aborted');
+    });
+
+    it('a standalone aborted assistant row (no merge) keeps the aborted status', () => {
+        const out = fromViews([
+            {
+                id: 'm1',
+                seq: 1,
+                role: 'assistant',
+                content: 'partial',
+                toolCalls: null,
+                toolName: null,
+                status: 'aborted',
+                createdAt: new Date(2026, 0, 1).toISOString(),
+            },
+        ]);
+        expect(out).toEqual([
+            expect.objectContaining({ content: 'partial', status: 'aborted' }),
+        ]);
+    });
+});
 
 describe('useAgentStream', () => {
     it('send records one chatQuestion conversion; regenerate records none', async () => {
@@ -481,6 +585,43 @@ describe('useAgentStream', () => {
         ]);
     });
 
+    it('retry after a failed edit replays the same edit (action:edit), not send or regenerate', async () => {
+        const fetchMock = vi.spyOn(globalThis, 'fetch');
+        fetchMock.mockResolvedValueOnce(
+            Response.json({ error: 'server_busy' }, { status: 409 })
+        );
+        const initialMessages = [
+            view(1, 'user', 'q1'),
+            view(2, 'assistant', 'a1'),
+        ];
+        const { result } = renderHook(() =>
+            useAgentStream({ conversationId: 'c1', initialMessages })
+        );
+        act(() => {
+            void result.current.edit(1, 'edited q1');
+        });
+        await waitFor(() => expect(result.current.error).toBe('server_busy'));
+
+        fetchMock.mockResolvedValueOnce(
+            sse([
+                'event: meta\ndata: {}',
+                'event: done\ndata: {"assistantMessageId":"m3"}',
+            ])
+        );
+        act(() => {
+            void result.current.retry();
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+        const secondCallBody = JSON.parse(
+            (fetchMock.mock.lastCall![1] as RequestInit).body as string
+        );
+        expect(secondCallBody).toMatchObject({
+            action: 'edit',
+            editSeq: 1,
+            message: 'edited q1',
+        });
+    });
+
     it('regenerate: an HTTP failure restores the previous assistant answer', async () => {
         vi.spyOn(globalThis, 'fetch').mockResolvedValue(
             Response.json({ error: 'server_busy' }, { status: 409 })
@@ -499,6 +640,104 @@ describe('useAgentStream', () => {
         expect(result.current.messages.map(m => [m.role, m.content])).toEqual([
             ['user', 'q1'],
             ['assistant', 'a1'],
+        ]);
+    });
+
+    it('retry after a failed non-guest regenerate replays action:regenerate (not send, not edit)', async () => {
+        const fetchMock = vi.spyOn(globalThis, 'fetch');
+        fetchMock.mockResolvedValueOnce(
+            Response.json({ error: 'server_busy' }, { status: 409 })
+        );
+        const initialMessages = [
+            view(1, 'user', 'q1'),
+            view(2, 'assistant', 'a1'),
+        ];
+        const { result } = renderHook(() =>
+            useAgentStream({ conversationId: 'c1', initialMessages })
+        );
+        act(() => {
+            void result.current.regenerate();
+        });
+        await waitFor(() => expect(result.current.error).toBe('server_busy'));
+
+        fetchMock.mockResolvedValueOnce(
+            sse([
+                'event: meta\ndata: {}',
+                'event: done\ndata: {"assistantMessageId":"m3"}',
+            ])
+        );
+        act(() => {
+            void result.current.retry();
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+        const secondCallBody = JSON.parse(
+            (fetchMock.mock.lastCall![1] as RequestInit).body as string
+        );
+        expect(secondCallBody.action).toBe('regenerate');
+    });
+
+    it('non-guest regenerate on a transcript that does not end on an assistant answer leaves the transcript untouched (no slice)', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            sse([
+                'event: meta\ndata: {}',
+                'event: done\ndata: {"assistantMessageId":"m2"}',
+            ])
+        );
+        const initialMessages = [view(1, 'user', 'q1')];
+        const { result } = renderHook(() =>
+            useAgentStream({ conversationId: 'c1', initialMessages })
+        );
+        act(() => {
+            void result.current.regenerate();
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+        // Nothing was sliced off — the original user message is still there,
+        // followed by the freshly regenerated answer.
+        expect(result.current.messages[0]).toMatchObject({
+            role: 'user',
+            content: 'q1',
+        });
+    });
+
+    it('guest regenerate with no prior question in the transcript is a no-op (never calls fetch)', async () => {
+        const fetchSpy = vi.spyOn(globalThis, 'fetch');
+        const { result } = renderHook(() =>
+            useAgentStream({
+                conversationId: null,
+                initialMessages: [],
+                guest: true,
+            })
+        );
+        await act(async () => {
+            await result.current.regenerate();
+        });
+        expect(fetchSpy).not.toHaveBeenCalled();
+        expect(result.current.messages).toEqual([]);
+    });
+
+    it('editing with a seq that matches no on-screen message appends the new question instead of truncating anything', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            sse([
+                'event: meta\ndata: {}',
+                'event: done\ndata: {"assistantMessageId":"m3"}',
+            ])
+        );
+        const initialMessages = [
+            view(1, 'user', 'q1'),
+            view(2, 'assistant', 'a1'),
+        ];
+        const { result } = renderHook(() =>
+            useAgentStream({ conversationId: 'c1', initialMessages })
+        );
+        act(() => {
+            void result.current.edit(999, 'unmatched edit');
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+        expect(result.current.messages.map(m => [m.role, m.content])).toEqual([
+            ['user', 'q1'],
+            ['assistant', 'a1'],
+            ['user', 'unmatched edit'],
+            ['assistant', ''],
         ]);
     });
 
@@ -720,5 +959,260 @@ describe('useAgentStream', () => {
         });
         unmount();
         expect(abort).toHaveBeenCalled();
+    });
+
+    it('an HTTP-stage error response whose body is not valid JSON falls back to "http_<status>" instead of throwing out of the stream', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            new Response('not json at all', { status: 502 })
+        );
+        const { result } = renderHook(() =>
+            useAgentStream({ conversationId: 'c1', initialMessages: [] })
+        );
+        act(() => {
+            void result.current.send('x');
+        });
+        await waitFor(() => expect(result.current.error).toBe('server_error'));
+    });
+
+    it('an HTTP-stage error body with no "error" field falls back to "http_<status>", which shows as the generic server_error code', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            Response.json({}, { status: 500 })
+        );
+        const { result } = renderHook(() =>
+            useAgentStream({ conversationId: 'c1', initialMessages: [] })
+        );
+        act(() => {
+            void result.current.send('x');
+        });
+        // "http_500" isn't a recognized AgentClientErrorCode, so the shell
+        // falls back to the generic code rather than showing nothing.
+        await waitFor(() => expect(result.current.error).toBe('server_error'));
+    });
+
+    it('a malformed (non-JSON) SSE frame is skipped instead of crashing the stream', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            sse([
+                'event: text\ndata: not valid json{{{',
+                'event: text\ndata: {"delta":"ok"}',
+                'event: done\ndata: {"assistantMessageId":"m2"}',
+            ])
+        );
+        const { result } = renderHook(() =>
+            useAgentStream({ conversationId: 'c1', initialMessages: [] })
+        );
+        act(() => {
+            void result.current.send('x');
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+        expect(result.current.error).toBeNull();
+        expect(result.current.messages.at(-1)!.content).toBe('ok');
+    });
+
+    it('a meta frame for a new conversation with no title reports an empty title, not a crash', async () => {
+        const onConversationCreated = vi.fn();
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            sse([
+                'event: meta\ndata: {"conversationId":"c2"}',
+                'event: done\ndata: {"assistantMessageId":"m2"}',
+            ])
+        );
+        const { result } = renderHook(() =>
+            useAgentStream({
+                conversationId: null,
+                initialMessages: [],
+                onConversationCreated,
+            })
+        );
+        act(() => {
+            void result.current.send('x');
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+        expect(onConversationCreated).toHaveBeenCalledWith('c2', '');
+    });
+
+    it('a repeated userMessageSeq on a later meta frame does not overwrite the seq already attached', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            sse([
+                'event: meta\ndata: {"conversationId":"c1","userMessageSeq":5}',
+                'event: meta\ndata: {"conversationId":"c1","userMessageSeq":6}',
+                'event: done\ndata: {"assistantMessageId":"m2"}',
+            ])
+        );
+        const { result } = renderHook(() =>
+            useAgentStream({ conversationId: null, initialMessages: [] })
+        );
+        act(() => {
+            void result.current.send('x');
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+        expect(result.current.messages[0]!.seq).toBe(5);
+    });
+
+    it('a text frame with no delta keeps the running content unchanged', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            sse([
+                'event: text\ndata: {"delta":"ab"}',
+                'event: text\ndata: {}',
+                'event: done\ndata: {"assistantMessageId":"m2"}',
+            ])
+        );
+        const { result } = renderHook(() =>
+            useAgentStream({ conversationId: 'c1', initialMessages: [] })
+        );
+        act(() => {
+            void result.current.send('x');
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+        expect(result.current.messages.at(-1)!.content).toBe('ab');
+    });
+
+    it('tool_start with no args defaults to an empty args object; with a numeric estimatedSeconds it is kept', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            sse([
+                'event: tool_start\ndata: {"id":"t1","name":"get_quote"}',
+                'event: tool_start\ndata: {"id":"t2","name":"slow_tool","estimatedSeconds":30}',
+                'event: done\ndata: {"assistantMessageId":"m2"}',
+            ])
+        );
+        const { result } = renderHook(() =>
+            useAgentStream({ conversationId: 'c1', initialMessages: [] })
+        );
+        act(() => {
+            void result.current.send('x');
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+        const tools = result.current.messages.at(-1)!.tools;
+        expect(tools[0]).toMatchObject({
+            args: {},
+            estimatedSeconds: undefined,
+        });
+        expect(tools[1]).toMatchObject({ estimatedSeconds: 30 });
+    });
+
+    it('tool_end for an id nobody started leaves the existing chips unchanged', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            sse([
+                'event: tool_start\ndata: {"id":"t1","name":"get_quote"}',
+                'event: tool_end\ndata: {"id":"unknown","status":"ok","ms":1,"summary":"s"}',
+                'event: done\ndata: {"assistantMessageId":"m2"}',
+            ])
+        );
+        const { result } = renderHook(() =>
+            useAgentStream({ conversationId: 'c1', initialMessages: [] })
+        );
+        act(() => {
+            void result.current.send('x');
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+        expect(result.current.messages.at(-1)!.tools).toEqual([
+            { id: 't1', name: 'get_quote', args: {}, status: 'running' },
+        ]);
+    });
+
+    it('tool_end with a non-"ok" status and no summary marks the chip errored with an empty summary', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            sse([
+                'event: tool_start\ndata: {"id":"t1","name":"get_quote"}',
+                'event: tool_end\ndata: {"id":"t1","status":"failed","ms":3}',
+                'event: done\ndata: {"assistantMessageId":"m2"}',
+            ])
+        );
+        const { result } = renderHook(() =>
+            useAgentStream({ conversationId: 'c1', initialMessages: [] })
+        );
+        act(() => {
+            void result.current.send('x');
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+        expect(result.current.messages.at(-1)!.tools[0]).toMatchObject({
+            status: 'error',
+            summary: '',
+        });
+    });
+
+    it('an unrecognized SSE event name is ignored', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            sse([
+                'event: ping\ndata: {}',
+                'event: text\ndata: {"delta":"ok"}',
+                'event: done\ndata: {"assistantMessageId":"m2"}',
+            ])
+        );
+        const { result } = renderHook(() =>
+            useAgentStream({ conversationId: 'c1', initialMessages: [] })
+        );
+        act(() => {
+            void result.current.send('x');
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+        expect(result.current.error).toBeNull();
+        expect(result.current.messages.at(-1)!.content).toBe('ok');
+    });
+
+    it('a turn-stage error frame with no code falls back to server_error', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            sse(['event: meta\ndata: {}', 'event: error\ndata: {}'])
+        );
+        const { result } = renderHook(() =>
+            useAgentStream({ conversationId: 'c1', initialMessages: [] })
+        );
+        act(() => {
+            void result.current.send('x');
+        });
+        await waitFor(() => expect(result.current.error).toBe('server_error'));
+    });
+
+    it('a turn-stage error frame with an unrecognized code degrades to server_error rather than showing nothing', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            sse([
+                'event: meta\ndata: {}',
+                'event: error\ndata: {"code":"totally_bogus"}',
+            ])
+        );
+        const { result } = renderHook(() =>
+            useAgentStream({ conversationId: 'c1', initialMessages: [] })
+        );
+        act(() => {
+            void result.current.send('x');
+        });
+        await waitFor(() => expect(result.current.error).toBe('server_error'));
+    });
+
+    it('a stale call whose fetch settles after a newer overlapping call already finished leaves the newer result alone', async () => {
+        let rejectFirst!: (e: unknown) => void;
+        const fetchMock = vi.spyOn(globalThis, 'fetch');
+        fetchMock.mockImplementationOnce(
+            () =>
+                new Promise((_resolve, reject) => {
+                    rejectFirst = reject;
+                })
+        );
+        fetchMock.mockResolvedValueOnce(
+            sse([
+                'event: text\ndata: {"delta":"second"}',
+                'event: done\ndata: {"assistantMessageId":"m2"}',
+            ])
+        );
+        const { result } = renderHook(() =>
+            useAgentStream({ conversationId: 'c1', initialMessages: [] })
+        );
+        act(() => {
+            // Never resolves on its own — replaced by the second call below.
+            void result.current.send('first');
+        });
+        act(() => {
+            void result.current.send('second');
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+        expect(result.current.messages.at(-1)!.content).toBe('second');
+        // The first call's fetch finally settles (network drop) well after
+        // the second, newer call already completed — it must not clobber
+        // the newer turn's state.
+        await act(async () => {
+            rejectFirst(new TypeError('late network drop'));
+            await Promise.resolve();
+        });
+        expect(result.current.status).toBe('idle');
+        expect(result.current.messages.at(-1)!.content).toBe('second');
     });
 });

@@ -63,4 +63,33 @@ describe('parseSseFrames', () => {
             data: { delta: 'hi' },
         });
     });
+
+    it('drops an empty frame produced by consecutive blank-line delimiters (heartbeat noise)', () => {
+        const { frames, rest } = splitFrames(
+            'event: a\ndata: {}\n\n\n\nevent: b\ndata: {}\n\n'
+        );
+        expect(frames).toEqual(['event: a\ndata: {}', 'event: b\ndata: {}']);
+        expect(rest).toBe('');
+    });
+
+    it('a frame with neither event: nor data: (a bare SSE comment line) yields an empty event and an empty-object data', () => {
+        expect(parseSseFrame(': keep-alive')).toEqual({
+            event: '',
+            data: {},
+        });
+    });
+
+    it('a frame with only an event: line (no data: at all) yields data: {}', () => {
+        expect(parseSseFrame('event: ping')).toEqual({
+            event: 'ping',
+            data: {},
+        });
+    });
+
+    it('accepts a data: line with no space before the value (not all senders pad it)', () => {
+        expect(parseSseFrame('event: text\ndata:{"delta":"hi"}')).toEqual({
+            event: 'text',
+            data: { delta: 'hi' },
+        });
+    });
 });

@@ -107,6 +107,19 @@ describe('NotFound page', () => {
     });
 
     /**
+     * `[locale]` 세그먼트가 신뢰 경계다 — 지원하지 않는 값(`/xx/AAPL`)이 오면
+     * 던지지 않고 기본 로케일(ko)로 떨어진다. 이 분기가 없으면 잘못된 접두사가
+     * 던져 500이 되는데, 봇에게 5xx를 주는 건 404보다 나쁘다.
+     */
+    it('지원하지 않는 locale은 기본 로케일(ko) 제목으로 떨어진다', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'xx' }),
+        });
+        expect(metadata.title).toBe('페이지를 찾을 수 없습니다');
+        expect(metadata.robots).toEqual({ index: false, follow: true });
+    });
+
+    /**
      * 회귀 가드(2026-09-20 네이버 "동일 설명문" 감지): `description`을 빼면 Next가
      * 루트 레이아웃(홈) 설명문을 상속시켜, 존재하지 않는 **모든** URL이 홈과 똑같은
      * `<meta name="description">`을 달고 나간다. 404 URL은 수에 상한이 없다.

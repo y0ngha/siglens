@@ -1,15 +1,26 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 
 import { GET } from '@/app/api/sse-probe/route';
 
 const SECRET = 'probe-secret';
+const decoder = new TextDecoder();
 
 afterEach(() => {
     vi.unstubAllEnvs();
 });
 
-function call(headers?: HeadersInit): Response {
-    return GET(new Request('https://siglens.io/api/sse-probe', { headers }));
+function call(headers?: HeadersInit, query = ''): Response {
+    return GET(
+        new Request(`https://siglens.io/api/sse-probe${query}`, { headers })
+    );
+}
+
+async function readEvent(
+    reader: ReadableStreamDefaultReader<Uint8Array>
+): Promise<string> {
+    const { value, done } = await reader.read();
+    if (done) return '';
+    return decoder.decode(value);
 }
 
 describe('GET /api/sse-probe', () => {
@@ -42,5 +53,202 @@ describe('GET /api/sse-probe', () => {
 
         // 스트림을 취소해 interval/hard timeout 타이머를 회수한다.
         await res.body?.cancel();
+    });
+
+    describe('query parameter parsing (readPositiveInt)', () => {
+        beforeEach(() => {
+            vi.useFakeTimers();
+            vi.stubEnv('CRON_SECRET', SECRET);
+        });
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it('duration/interval이 없으면 기본값(150s/5s)을 open 이벤트에 싣는다', async () => {
+            const res = call({ authorization: `Bearer ${SECRET}` });
+            const reader = res.body!.getReader();
+            await readEvent(reader); // retry line
+            const open = await readEvent(reader);
+            expect(open).toContain('event: open');
+            const parsed = JSON.parse(open.split('data: ')[1]!) as {
+                durationSeconds: number;
+                intervalSeconds: number;
+            };
+            expect(parsed.durationSeconds).toBe(150);
+            expect(parsed.intervalSeconds).toBe(5);
+            await reader.cancel();
+        });
+
+        it('숫자가 아닌 값(오타)은 기본값으로 폴백한다', async () => {
+            const res = call(
+                { authorization: `Bearer ${SECRET}` },
+                '?duration=10abc&interval=xx'
+            );
+            const reader = res.body!.getReader();
+            await readEvent(reader);
+            const open = await readEvent(reader);
+            const parsed = JSON.parse(open.split('data: ')[1]!) as {
+                durationSeconds: number;
+                intervalSeconds: number;
+            };
+            expect(parsed.durationSeconds).toBe(150);
+            expect(parsed.intervalSeconds).toBe(5);
+            await reader.cancel();
+        });
+
+        it('0 이하의 값은 기본값으로 폴백한다', async () => {
+            const res = call(
+                { authorization: `Bearer ${SECRET}` },
+                '?duration=0'
+            );
+            const reader = res.body!.getReader();
+            await readEvent(reader);
+            const open = await readEvent(reader);
+            const parsed = JSON.parse(open.split('data: ')[1]!) as {
+                durationSeconds: number;
+            };
+            expect(parsed.durationSeconds).toBe(150);
+            await reader.cancel();
+        });
+
+        it('안전 정수 범위를 넘는 값은 기본값으로 폴백한다', async () => {
+            const res = call(
+                { authorization: `Bearer ${SECRET}` },
+                '?duration=99999999999999999999'
+            );
+            const reader = res.body!.getReader();
+            await readEvent(reader);
+            const open = await readEvent(reader);
+            const parsed = JSON.parse(open.split('data: ')[1]!) as {
+                durationSeconds: number;
+            };
+            expect(parsed.durationSeconds).toBe(150);
+            await reader.cancel();
+        });
+
+        it('상한(660)을 넘는 값은 660으로 clamp한다', async () => {
+            const res = call(
+                { authorization: `Bearer ${SECRET}` },
+                '?duration=99999'
+            );
+            const reader = res.body!.getReader();
+            await readEvent(reader);
+            const open = await readEvent(reader);
+            const parsed = JSON.parse(open.split('data: ')[1]!) as {
+                durationSeconds: number;
+            };
+            expect(parsed.durationSeconds).toBe(660);
+            await reader.cancel();
+        });
+
+        it('유효한 값은 그대로 반영된다', async () => {
+            const res = call(
+                { authorization: `Bearer ${SECRET}` },
+                '?duration=30&interval=10'
+            );
+            const reader = res.body!.getReader();
+            await readEvent(reader);
+            const open = await readEvent(reader);
+            const parsed = JSON.parse(open.split('data: ')[1]!) as {
+                durationSeconds: number;
+                intervalSeconds: number;
+            };
+            expect(parsed.durationSeconds).toBe(30);
+            expect(parsed.intervalSeconds).toBe(10);
+            await reader.cancel();
+        });
+    });
+
+    describe('스트림 lifecycle', () => {
+        beforeEach(() => {
+            vi.useFakeTimers();
+            vi.stubEnv('CRON_SECRET', SECRET);
+        });
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it('interval마다 event: tick을 emit하고, duration 경과 후 event: done으로 스트림을 닫는다', async () => {
+            const res = call(
+                { authorization: `Bearer ${SECRET}` },
+                '?duration=2&interval=1'
+            );
+            const reader = res.body!.getReader();
+            await readEvent(reader); // retry
+            await readEvent(reader); // open
+
+            vi.advanceTimersByTime(1000);
+            const tick1 = await readEvent(reader);
+            expect(tick1).toContain('event: tick');
+            expect(JSON.parse(tick1.split('data: ')[1]!)).toMatchObject({
+                seq: 1,
+            });
+
+            vi.advanceTimersByTime(1000);
+            const done = await readEvent(reader);
+            expect(done).toContain('event: done');
+            expect(JSON.parse(done.split('data: ')[1]!)).toMatchObject({
+                seq: 2,
+            });
+
+            const end = await reader.read();
+            expect(end.done).toBe(true);
+        });
+
+        it('interval > duration인 대조군은 tick 없이 hard timeout으로 event: timeout을 emit한다', async () => {
+            const res = call(
+                { authorization: `Bearer ${SECRET}` },
+                '?duration=1&interval=100'
+            );
+            const reader = res.body!.getReader();
+            await readEvent(reader); // retry
+            await readEvent(reader); // open
+
+            // Hard timeout fires at duration*1000 + grace(5000) = 6000ms,
+            // long before the 100s interval tick would ever fire.
+            vi.advanceTimersByTime(6000);
+            const timeout = await readEvent(reader);
+            expect(timeout).toContain('event: timeout');
+
+            const end = await reader.read();
+            expect(end.done).toBe(true);
+        });
+
+        it('클라이언트가 cancel하면 interval/hard-timeout 타이머를 회수한다', async () => {
+            const setIntervalSpy = vi.spyOn(globalThis, 'setInterval');
+            const clearIntervalSpy = vi.spyOn(globalThis, 'clearInterval');
+            const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
+
+            const res = call(
+                { authorization: `Bearer ${SECRET}` },
+                '?duration=30&interval=5'
+            );
+            const reader = res.body!.getReader();
+            await readEvent(reader); // retry
+            await readEvent(reader); // open
+
+            const timerId = setIntervalSpy.mock.results[0]?.value;
+            await reader.cancel();
+
+            expect(clearIntervalSpy).toHaveBeenCalledWith(timerId);
+            expect(clearTimeoutSpy).toHaveBeenCalled();
+
+            // No further sends should be attempted once cancelled.
+            expect(() => vi.advanceTimersByTime(60_000)).not.toThrow();
+        });
+
+        it('첫 전송(enqueue)이 실패하면 타이머를 걸지 않는다 (closed 조기 가드)', () => {
+            const setIntervalSpy = vi.spyOn(globalThis, 'setInterval');
+            vi.spyOn(
+                ReadableStreamDefaultController.prototype,
+                'enqueue'
+            ).mockImplementation(() => {
+                throw new TypeError('stream already closed');
+            });
+
+            call({ authorization: `Bearer ${SECRET}` }, '?duration=30');
+
+            expect(setIntervalSpy).not.toHaveBeenCalled();
+        });
     });
 });

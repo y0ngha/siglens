@@ -29,7 +29,7 @@ vi.mock('@/shared/ui/BotBlockedNotice', () => ({
     BotBlockedNotice: () => <div data-testid="bot-blocked" />,
 }));
 
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 
 import { FundamentalAiSummary } from '../FundamentalAiSummary';
 import { usePublishSymbolChat } from '@/features/symbol-chat';
@@ -122,5 +122,101 @@ describe('FundamentalAiSummary', () => {
 
         expect(screen.getByText('강세 전망입니다')).toBeInTheDocument();
         expect(screen.getByText('긍정')).toBeInTheDocument();
+    });
+
+    it('renders category assessments with per-category sentiment and rationale', () => {
+        vi.mocked(useFundamentalAnalysis).mockReturnValue({
+            status: 'done',
+            plain: null,
+            result: {
+                overallSentiment: 'bullish',
+                overallConclusionKo: '강세 전망입니다',
+                categoryAssessments: [
+                    {
+                        category: 'profitability',
+                        sentiment: 'bullish',
+                        rationaleKo: '영업이익률이 개선되고 있습니다',
+                    },
+                    {
+                        category: 'valuation',
+                        sentiment: 'bearish',
+                        rationaleKo: 'PER이 업종 평균 대비 높습니다',
+                    },
+                ],
+                riskFactorsKo: [],
+            },
+            trigger: vi.fn(),
+        });
+
+        render(<FundamentalAiSummary symbol="AAPL" />);
+
+        const list = screen.getByRole('list', { name: '카테고리별 평가' });
+        expect(list).toBeInTheDocument();
+        expect(
+            screen.getByText('영업이익률이 개선되고 있습니다')
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText('PER이 업종 평균 대비 높습니다')
+        ).toBeInTheDocument();
+        // two category rows -> two sentiment badges, one per assessment.
+        expect(within(list).getAllByText('긍정')).toHaveLength(1);
+        expect(within(list).getAllByText('부정')).toHaveLength(1);
+    });
+
+    it('does not render the category list when categoryAssessments is empty', () => {
+        vi.mocked(useFundamentalAnalysis).mockReturnValue({
+            status: 'done',
+            plain: null,
+            result: {
+                overallSentiment: 'neutral',
+                overallConclusionKo: '중립적인 전망입니다',
+                categoryAssessments: [],
+                riskFactorsKo: [],
+            },
+            trigger: vi.fn(),
+        });
+
+        render(<FundamentalAiSummary symbol="AAPL" />);
+
+        expect(
+            screen.queryByRole('list', { name: '카테고리별 평가' })
+        ).not.toBeInTheDocument();
+    });
+
+    it('renders risk factors as a bullet list when present', () => {
+        vi.mocked(useFundamentalAnalysis).mockReturnValue({
+            status: 'done',
+            plain: null,
+            result: {
+                overallSentiment: 'bearish',
+                overallConclusionKo: '약세 전망입니다',
+                categoryAssessments: [],
+                riskFactorsKo: ['원자재 가격 상승', '경쟁 심화'],
+            },
+            trigger: vi.fn(),
+        });
+
+        render(<FundamentalAiSummary symbol="AAPL" />);
+
+        expect(screen.getByText('원자재 가격 상승')).toBeInTheDocument();
+        expect(screen.getByText('경쟁 심화')).toBeInTheDocument();
+    });
+
+    it('does not render the risk factors section when riskFactorsKo is empty', () => {
+        vi.mocked(useFundamentalAnalysis).mockReturnValue({
+            status: 'done',
+            plain: null,
+            result: {
+                overallSentiment: 'neutral',
+                overallConclusionKo: '중립적인 전망입니다',
+                categoryAssessments: [],
+                riskFactorsKo: [],
+            },
+            trigger: vi.fn(),
+        });
+
+        render(<FundamentalAiSummary symbol="AAPL" />);
+
+        expect(screen.queryByText('원자재 가격 상승')).not.toBeInTheDocument();
     });
 });

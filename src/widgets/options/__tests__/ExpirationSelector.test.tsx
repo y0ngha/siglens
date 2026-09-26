@@ -103,4 +103,107 @@ describe('ExpirationSelector', () => {
         expect(tabs[0]).toHaveAttribute('tabindex', '-1');
         expect(tabs[1]).toHaveAttribute('tabindex', '0');
     });
+
+    describe('keyboard navigation (WAI-ARIA tabs pattern)', () => {
+        it('ArrowRight moves selection to the next tab and moves focus with it', async () => {
+            const user = userEvent.setup();
+            const onChange = vi.fn();
+            render(
+                <ExpirationSelector
+                    slots={SLOTS}
+                    value="2025-06-20"
+                    onChange={onChange}
+                />
+            );
+            const tabs = screen.getAllByRole('tab');
+            tabs[0]!.focus();
+            await user.keyboard('{ArrowRight}');
+            expect(onChange).toHaveBeenCalledWith('2025-07-18');
+            expect(tabs[1]).toHaveFocus();
+        });
+
+        it('ArrowRight wraps from the last tab back to the first', async () => {
+            const user = userEvent.setup();
+            const onChange = vi.fn();
+            render(
+                <ExpirationSelector
+                    slots={SLOTS}
+                    value="all"
+                    onChange={onChange}
+                />
+            );
+            const tabs = screen.getAllByRole('tab');
+            tabs[2]!.focus();
+            await user.keyboard('{ArrowRight}');
+            expect(onChange).toHaveBeenCalledWith('2025-06-20');
+            expect(tabs[0]).toHaveFocus();
+        });
+
+        it('ArrowLeft moves selection to the previous tab and wraps from the first tab to the last', async () => {
+            const user = userEvent.setup();
+            const onChange = vi.fn();
+            render(
+                <ExpirationSelector
+                    slots={SLOTS}
+                    value="2025-06-20"
+                    onChange={onChange}
+                />
+            );
+            const tabs = screen.getAllByRole('tab');
+            tabs[0]!.focus();
+            await user.keyboard('{ArrowLeft}');
+            expect(onChange).toHaveBeenCalledWith('all');
+            expect(tabs[2]).toHaveFocus();
+        });
+
+        it('Home moves selection and focus to the first tab', async () => {
+            const user = userEvent.setup();
+            const onChange = vi.fn();
+            render(
+                <ExpirationSelector
+                    slots={SLOTS}
+                    value="all"
+                    onChange={onChange}
+                />
+            );
+            const tabs = screen.getAllByRole('tab');
+            tabs[2]!.focus();
+            await user.keyboard('{Home}');
+            expect(onChange).toHaveBeenCalledWith('2025-06-20');
+            expect(tabs[0]).toHaveFocus();
+        });
+
+        it('End moves selection and focus to the last (aggregate) tab', async () => {
+            const user = userEvent.setup();
+            const onChange = vi.fn();
+            render(
+                <ExpirationSelector
+                    slots={SLOTS}
+                    value="2025-06-20"
+                    onChange={onChange}
+                />
+            );
+            const tabs = screen.getAllByRole('tab');
+            tabs[0]!.focus();
+            await user.keyboard('{End}');
+            expect(onChange).toHaveBeenCalledWith('all');
+            expect(tabs[2]).toHaveFocus();
+        });
+
+        it('ignores unrelated keys (does not call onChange)', async () => {
+            const user = userEvent.setup();
+            const onChange = vi.fn();
+            render(
+                <ExpirationSelector
+                    slots={SLOTS}
+                    value="2025-06-20"
+                    onChange={onChange}
+                />
+            );
+            const tabs = screen.getAllByRole('tab');
+            tabs[0]!.focus();
+            await user.keyboard('{Escape}');
+            expect(onChange).not.toHaveBeenCalled();
+        });
+    });
 });
