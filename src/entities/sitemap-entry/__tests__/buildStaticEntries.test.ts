@@ -41,6 +41,12 @@ describe('buildStaticEntries', () => {
         );
     });
 
+    // 광고 전용 랜딩(`src/app/lp/`)은 noindex라 sitemap에 실으면 안 된다.
+    it('광고 랜딩(/lp/*)은 싣지 않는다', () => {
+        const urls = buildStaticEntries(NOW).map(e => e.url);
+        expect(urls.filter(url => url.includes('/lp'))).toEqual([]);
+    });
+
     /**
      * `/symbols`(종목 디렉터리)는 sitemap에 실려야 한다 — 이 페이지 자체가 색인
      * 대상이라서가 아니라, 크롤러가 여기서 종목 링크를 받아 가기 때문이다.

@@ -68,9 +68,49 @@ function aiSitemapXml(): string {
     return `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}</urlset>`;
 }
 
+/**
+ * 광고 전용 랜딩(`src/app/lp/`). 호스트마다 정확히 한 페이지만 연다.
+ *
+ * 로케일 rewrite(메인의 next-intl, ai의 `/ai/[locale]`)를 타지 않는 별도 루트라
+ * 두 호스트 모두 `/lp/*`를 그대로 라우터에 넘긴다. 다른 호스트의 페이지나 모르는
+ * `/lp/*`는 여기서 404로 끊는다 — 넘기면 `[locale]/[symbol]`이 `lp`를 로케일로
+ * 받아 레이아웃 `notFound()`의 빈 404가 된다.
+ *
+ * 페이지 메타데이터도 noindex지만, 404까지 덮도록 헤더로도 막는다.
+ * (spec `docs/superpowers/specs/2026-09-26-ad-landing-pages-design.md`)
+ */
+const LP_PATH_BY_HOST = {
+    main: '/lp/stock-analysis',
+    ai: '/lp/stock-chat',
+} as const;
+
+function isLandingPath(pathname: string): boolean {
+    return pathname === '/lp' || pathname.startsWith('/lp/');
+}
+
+function landingPageResponse(
+    req: NextRequest,
+    host: keyof typeof LP_PATH_BY_HOST
+): NextResponse {
+    const { pathname } = new URL(req.url);
+    const response =
+        pathname !== LP_PATH_BY_HOST[host]
+            ? new NextResponse('Not Found', { status: 404 })
+            : host === 'ai'
+              ? NextResponse.rewrite(new URL(req.url))
+              : NextResponse.next();
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+    return response;
+}
+
 /** `ai.siglens.io`(SiglensAI) 호스트 요청을 `/ai/[locale]/*`로 rewrite한다. */
 async function handleAiHost(req: NextRequest): Promise<NextResponse> {
     const url = new URL(req.url);
+    if (isLandingPath(url.pathname)) {
+        const response = landingPageResponse(req, 'ai');
+        response.headers.set('Content-Security-Policy', AI_CSP);
+        return response;
+    }
     if (url.pathname === '/robots.txt') {
         return new NextResponse(AI_ROBOTS_BODY, {
             headers: {
@@ -166,6 +206,9 @@ const RESERVED_FIRST_SEGMENTS = new Set([
     'terms',
     'privacy',
     'about',
+    // 광고 랜딩(`src/app/lp/`, `[locale]` 밖의 별도 루트라 스캐너 테스트가 못 본다).
+    // 여기 없으면 `/ko/lp/stock-analysis`가 `/LP/stock-analysis`로 301된다.
+    'lp',
     'api',
     '_next',
 ]);
@@ -181,6 +224,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     const rawPathname = new URL(req.url).pathname;
     if (rawPathname === '/robots.txt' || rawPathname === '/sitemap.xml')
         return NextResponse.next();
+    if (isLandingPath(rawPathname)) return landingPageResponse(req, 'main');
 
     const hasSession = !!req.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value;
     const reqUrl = new URL(req.url);
