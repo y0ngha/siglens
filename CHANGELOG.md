@@ -1,5 +1,21 @@
 # Changelog
 
+# [0.90.0](https://github.com/y0ngha/siglens/compare/v0.89.0...v0.90.0) (2026-09-26)
+
+### Bug Fixes
+
+* **skills:** 평균 회귀 digest가 Short-Term Washout 블록을 인용하고 near는 trend neutral로 ([c10dcb5](https://github.com/y0ngha/siglens/commit/c10dcb546e8d89224874ed38c48e812ddce9d11f))
+
+### Features
+
+* 광고 전용 랜딩 페이지 /lp/stock-analysis, /lp/stock-chat (noindex) ([aa36ea2](https://github.com/y0ngha/siglens/commit/aa36ea2e810573d7e781141118925dba4fc14bce))
+* **lp:** 랜딩 문구에서 티커 표현을 걷고 about식 재생 애니메이션을 입힌다 ([0c4f9f8](https://github.com/y0ngha/siglens/commit/0c4f9f8c1f45846bb617bb10a816d25a7ac4285d))
+
+### Performance Improvements
+
+* **cdn:** HTML ETag를 꺼 Cloudflare 엣지 압축 오염을 막는다 ([950caf8](https://github.com/y0ngha/siglens/commit/950caf80ac844ce40e14fc0cc860249a426ec435))
+* **symbol:** 차트 페이지 분석 peek을 bars와 동시에 시작한다 ([6308f7c](https://github.com/y0ngha/siglens/commit/6308f7c319bc71a7a947b2ab7fe4bdd87cd9e2ee))
+
 # [0.89.0](https://github.com/y0ngha/siglens/compare/v0.88.1...v0.89.0) (2026-09-25)
 
 ### Features
