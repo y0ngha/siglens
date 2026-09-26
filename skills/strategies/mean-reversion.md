@@ -11,8 +11,8 @@ gating:
   state:
     feature: williamsR
     predicate: level
-token_cost: 752
-digest_hash: "00b9fd77"
+token_cost: 843
+digest_hash: "20754f77"
 ---
 
 ## Overview
@@ -37,7 +37,7 @@ When `## Deterministic Metrics` carries a `### Short-Term Washout` block (daily 
 | Short-term washout | `Williams %R(14)` | **≤ -90** (close in the bottom tenth of the 14-bar range) |
 | Timeframe | chart timeframe | **1Day** |
 
-- **Near setup**: Williams %R between -80 and -90 above MA(200). Direction is the same, the measured edge is smaller — describe it as a weaker version, not as the setup.
+- **Near setup**: Williams %R between -80 and -90 above MA(200). Direction is the same, the measured edge is smaller — 5-day returns beat the baseline in every period, but since 2020 the margin has been statistically indistinguishable from it (re-measured on 101 large caps, 2000–2026). Describe it as a weaker version, not as the setup, and keep this skill's `trend` neutral for it.
 - **Corroboration, not a requirement**: `Connors RSI` ≤ 10 (its [oversold] label) means the same washout seen through a 3-day RSI and the down-streak length. When it agrees, say so; when it does not, the Williams %R reading still stands.
 - **Exit reference**: `MA(5)`. The measured trade closes on the first daily close above MA(5), or after about 10 trading days, whichever comes first. Holding for a close above MA(20) instead raised the average in three of five periods but turned the 2007–09 result negative and deepened the loss tail — MA(5) is the conservative reference, not a ceiling on the move.
 
@@ -82,7 +82,7 @@ Each of these was measured on the same data and **did not** hold up. Do not use 
 
 ## Where It Does Not Apply
 
-- **Below MA(200).** Short-term washouts below the 200-day average also bounced on average, but their 10-day losses worse than -10% were about 2.7× as frequent (8.8% of cases vs 3.3%; 16.5% vs 9.0% in 2007–09), and siglens-trader's portfolio test found adding them raised returns and maximum drawdown together. Describe such a reading as a higher-risk rebound candidate, never as this setup.
+- **Below MA(200).** Short-term washouts below the 200-day average also bounced on average, but their 10-day losses worse than -10% were more frequent in almost every period — 8.8% of cases vs 3.3% pooled, 1.3–2.8× by period (16.5% vs 9.0% in 2007–09), and siglens-trader's portfolio test found adding them raised returns and maximum drawdown together. Describe such a reading as a higher-risk rebound candidate, never as this setup.
 - **Intraday timeframes.** Nothing here was measured on intraday bars, and MA(200) on a 1-hour chart is a different object. siglens-trader measured 1-hour entries with tight exits at -0.25% to -0.30% per trade after costs. On non-daily charts, report the readings as context only and state that the measured setup is daily.
 - **Information-driven drops.** A price rule cannot tell a noisy pullback from a repricing (earnings miss, guidance cut, regulatory shock). The big failures of this setup are those. When the prompt shows a fresh negative catalyst, say that the setup's history does not cover it.
 
@@ -118,9 +118,9 @@ Additional output rules:
 
 <!-- PROMPT_DIGEST:START -->
 평균 회귀 전략 (confidence_weight 0.8) — measured, daily only
-Setup = short-term washout inside a long-term uptrend, read from the indicator list (never recompute):
+Setup = short-term washout inside a long-term uptrend. On daily charts with 200+ bars, ## Deterministic Metrics prints a `### Short-Term Washout` block with the reading, its inputs and the measured base rate — cite that block and do not classify again. Without the block, read the setup from the indicator list (never recompute):
 1. Timeframe 1Day. 2. Latest close ABOVE MA(200). 3. Williams %R(14) ≤ -90.
-Near setup: %R -80 to -90 above MA(200) (same direction, smaller edge). Connors RSI ≤10 corroborates but is not required. Exit reference: first daily close above MA(5), or ~10 trading days (the conservative measured reference, not a ceiling).
+Near setup: %R -80 to -90 above MA(200) (same direction, a small and recently indistinct edge — trend stays neutral). Connors RSI ≤10 corroborates but is not required. Exit reference: first daily close above MA(5), or ~10 trading days (the conservative measured reference, not a ceiling).
 
 Evidence (daily bars, 0.1% cost/side; S&P 500 point-in-time members 2000-2020 + large caps/SPY/QQQ 2024-26; matches siglens-trader's independent RSI(2)<10 study): next-5-day mean beat the any-day-above-MA200 baseline in every period — 2000-07 +0.76% vs +0.27%, 2007-09 crisis +0.20% vs -0.54%, 2009-14 +0.79% vs +0.35%, 2015-20 +0.43% vs +0.11%, 2024-26 +2.18% vs +0.24%. MA(5)-exit trades won 66-75% in every period. Edge is RELATIVE: in the 2007-09 crisis the 10-day return was still negative (-0.71%), only less than baseline.
 
@@ -132,7 +132,7 @@ Measured and NOT supported — never use as conditions or as reasons against:
 - Tight stops (2-4×ATR) lowered results in every period; 5×ATR is disaster protection only.
 - Overbought (%R ≥ -20) above MA(200): slightly below-baseline but still positive returns (4 of 5 periods), shorting lost — tempers upside at most, never a bearish call.
 
-Not applicable: close at/below MA(200) (bounces on average but >10% 10-day losses ~2.7× as frequent — call it a higher-risk rebound candidate, never this setup); non-daily charts (unmeasured; report readings as context only); news-driven drops (earnings/guidance/regulatory — the setup's big failures; say its history does not cover them).
+Not applicable: close at/below MA(200) (bounces on average but >10% 10-day losses more frequent in almost every period, 1.3-2.8× — call it a higher-risk rebound candidate, never this setup); non-daily charts (unmeasured; report readings as context only); news-driven drops (earnings/guidance/regulatory — the setup's big failures; say its history does not cover them).
 
 ### Output (one **label**: value per line)
 **추세 필터**: [종가 vs MA(200)]
@@ -142,5 +142,5 @@ Not applicable: close at/below MA(200) (bounces on average but >10% 10-day losse
 **지표 합의와의 관계**: [약세 합의는 이 셋업의 정상 상태이며 셋업을 무효화하지 않음; 컨플루언스 청산 규칙 충족이면 주의로 명시]
 **상세 분석**: [측정된 성격(상대 우위, 수일 호흡), 뉴스성 급락 여부, 하방 리스크]
 - Met setup = historically favourable short-term pullback reading, not a certainty or instruction; note the edge was relative in broad sell-offs.
-- trend: bullish only when the setup is met on 1Day; neutral otherwise. Never bearish from this skill.
+- trend: bullish only when the setup is met on 1Day (the washout reading, %R ≤ -90); neutral for the near setup and every other case. Never bearish from this skill.
 <!-- PROMPT_DIGEST:END -->
