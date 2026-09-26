@@ -88,6 +88,7 @@ Closed loops (approved, kept for pattern recall only — see file for detail):
 - [trader precomputed-core-1.11 R1](project-trader-precomputed-core-1.11-r1.md) — single-row fixture = unfalsifiable "latest past row" fallback; old-vs-new core d.ts diff via main checkout node_modules
 - [trader precomputed-core-1.11 R2](project-trader-precomputed-core-1.11-r2.md) — approved; 4 fallback mutations killed; trader scratch-copy mutation recipe
 - [trader core-1.11.1 bump R1](project-trader-core-1.11.1-bump-r1.md) — approved; pure version bump, riskReward-text prepend-condition change confirmed inert for trader
+- [trader core-1.17-pullback R1](project-trader-core-1.17-pullback-r1.md) — approved; evaluatePullback unused, entryRecommendation semantics-only change inert, skills resync forward-diverges (not lost)
 - [trader daily-mr R3](project-trader-daily-mr-r3.md) — 3-agent parallel fix round, interactions all verified correct; only stale idempotency-key comment + silent-done edge case
 - [trader daily-mr R4 closed](project-trader-daily-mr-r4-closed.md) — approved; both R3 nits fixed, JSDoc grep-matched, mutation-shaped test added
 - [feat/agent-adaptive-depth R2](project-core-agent-adaptive-depth-r2.md) — approved; null-confluence Plain-level fallback + PUBLIC_API row, mutation-verified

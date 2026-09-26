@@ -250,22 +250,6 @@
 ## [feat/agent-tool-analysis-context Round 2 | Agent tool analysis context | 2026-09-14]
 - Status: APPROVED (zero findings)
 
-## [PR #813 | feat/agent-tool-analysis-context | Post-approval suggestions | 2026-09-14]
-- Violation: getDescriptor(profile) computed twice in one object literal
-  - Rule: MISTAKES.md Rule 2 — Identical values queried or computed multiple times in a single function
-  - Context: Hoisted duplicate computation outside object literal.
-- Violation: Agent bars tool sliced raw detectCandlePatternEntries instead of using core selectLastCandlePatternEntries like the chart markers and analysis prompt
-  - Rule: (new) Sibling consumers must use identical data selection logic; inconsistent data selectors cause derived systems to diverge
-  - Context: Updated agent bars tool to use selectLastCandlePatternEntries, aligning with chart markers and analysis prompt.
-
-## [PR #814 | feat/agent-data-tools-wiring | Post-approval suggestions | 2026-09-14]
-- Violation: Magic number 13 (ISO date-hour slice end) duplicated in three files
-  - Rule: MISTAKES.md Rule 15 — Hardcoded literals in function names or calculations
-  - Context: Centralized ISO_DATE_HOUR_SLICE_END constant to shared/config/time.ts, updated all three call sites.
-- Violation: countsBySector object mutation with for...of
-  - Rule: MISTAKES.md Rule 104 — Array/object mutation via push/splice or direct property assignment
-  - Context: Rewrote with Object.groupBy + Object.fromEntries for immutable construction.
-
 ## [feat/economy-calendar-tz Round 2 | economy calendar UTC timezone | 2026-09-14]
 - Violation: FMP economic-calendar `date` field ("YYYY-MM-DD HH:mm:ss") was assumed to be ET wall-clock time across etTimeUtils, /economy calendar grid, KR indicator cards, and DB column comment (`date_et`); live FMP data from authoritative known-time events (Fed decision 18:00 UTC, CPI 12:30 UTC) proves it is UTC. /economy grid displayed release times 4-5 hours wrong for months.
   - Rule: External API field semantics must be verified against known reference events, not inferred from comment consensus or existing code patterns
@@ -275,15 +259,6 @@
   - Context: Added `to` parameter to FMP economic-indicators fetch, ensuring fresh data is returned. Issue discovered during production verification of /economy route.
 - Status: APPROVED (Round 2, zero findings)
 
-## [PR #823 | feat/ai-conversation-switch-no-skeleton Round 1 | 2026-09-15]
-- Violation: SUGGESTION — `aria-busy:opacity-60` state styling incomplete. Missing cursor and text color indicators for busy state.
-  - Rule: DESIGN.md mistake 4 — aria-busy state must include all three visual indicators: opacity, cursor, and secondary text color.
-  - Context: Enhanced to `aria-busy:cursor-progress aria-busy:text-secondary-400` alongside existing opacity.
-
-- Violation: SUGGESTION — delete-active redirect handler and navigation handler both called navigate(), duplicating responsibility.
-  - Rule: MISTAKES.md Cohesion — Extract repeated navigation patterns into a shared handler to eliminate duplication.
-  - Context: Extracted `startNavigationTo(href)` helper. Both redirect and navigate paths now call it instead of duplicating navigate logic.
-
 ## [PR #823 | feat/ai-conversation-switch-no-skeleton | Post-approval suggestions | 2026-09-15]
 - Violation: SUGGESTION (accepted) — pending navigation signalled only visually via `aria-busy` state; no announcement to screen readers
   - Rule: WCAG 2.1 — Dynamic state changes that affect application state must announce to assistive technology; visual-only signalling creates screen-reader blind spot
@@ -291,15 +266,6 @@
 
 - Finding: Review suggested using LocaleLink instead of raw `<a>` + `router.push` for in-app navigation
   - Status: REJECTED — false positive; LocaleProvider's `hrefBase=SITE_URL` makes LocaleLink emit absolute siglens.io URLs (cross-origin full navigation), breaking ai.siglens.io in-app conversation switching pattern
-
-## [PR #823 | feat/ai-conversation-switch-no-skeleton | Round 2 | 2026-09-15]
-- Violation: useHideOnScrollDown hook had only 2 consumers but was placed in shared/hooks, creating maintenance overhead for a single-feature pattern
-  - Rule: MISTAKES.md Components Rule 15 — Shared hooks must serve generic/cross-feature patterns; feature-specific hooks with 2 or fewer consumers must live in their feature/widget layer
-  - Context: Moved useHideOnScrollDown to widgets/layout/hooks and exported via widgets/layout barrel. Verified consumers import from new location.
-
-- Violation: setState called directly in effect body for disabled branch condition without early return for non-disabled path
-  - Rule: MISTAKES.md Components Rule 10 — Derived state updates in effect must either branch conditionally before effect runs, or return from effect body before setState; avoid setState in effect main body
-  - Context: Refactored to add early return when disabled flag is true; setState now only executes for enabled state path.
 
 ## [PR #823 | feat/ai-conversation-switch-no-skeleton | Round 5 | 2026-09-15]
 - Finding: Reviewer claimed Tailwind v4 has no `aria-busy:` variant as a blocker. Compilation with @tailwindcss/node v4 verified both `aria-busy:cursor-progress` and `aria-[busy=true]:cursor-progress` generate valid CSS. v4 `aria-*` is a functional variant for any attribute.
@@ -323,11 +289,6 @@
 - Violation: ~300-char ICU hydration guard logic duplicated in Dockerfile builder and runner stages; risk of updating only one during maintenance
   - Rule: CONVENTIONS.md — Extract duplicated logic/constants to a single source; both stages must call the same script
   - Context: Extracted to `scripts/assert-icu-locale.mjs` and called from both stages. Added `.gitignore` allowlist entry for `/scripts/**` exception.
-
-## [fix/seo-meta-description-markdown Round 2 | fix/seo-meta-description-markdown | 2026-09-18]
-- Violation: single-marker italic regexes (`/\*(.+?)\*/g`, `/_(.+?)_/g`) lacked lookaround boundaries, so two unrelated `*` or `_` in a sentence were treated as a pair and the text between them was deleted (e.g., `BRK_A와 BRK_B` → `BRKA와 BRKB`, `250*2 … 100*3` → `2502 … 1003`). The function's output feeds `<meta name="description">`, making the truncation visible to search engines.
-  - Rule: MISTAKES.md Pattern Matching #20.5 — regex patterns must use lookaround boundaries to match intended text only; unguarded inline delimiters across multiple potential markers cause false phrase boundaries and unwanted deletions
-  - Context: Fixed with lookaround boundaries (non-whitespace inside, no word char / same marker outside) plus regression tests in `src/shared/lib/stripSnapshotMarkdown.ts`.
 
 ## [fix/seo-cls-sitemap-polish Round 4 | PWA banner Polish | 2026-09-18]
 - Status: APPROVED (zero findings)
@@ -412,23 +373,6 @@
   - Rule: (new) 금액 반올림에 `toFixed`를 쓰지 않는다 — 크기 기준 상대 엡실론 보정 후 `Math.round`(half-away-from-zero), 지수 문자열 왕복은 부동소수 잡음(1e-13)을 NaN으로 만들므로 금지
   - Context: 리뷰 라운드 1 지적. 부호 대칭·-0 정규화 포함
 
-## [PR #852 claude-review R2 | ai.siglens.io/about | 2026-09-19]
-- Violation: A render test listed in the implementation plan (AboutCtaBar, plan Task 3) was never written; the plan task was silently skipped
-  - Rule: (new) Before requesting review, diff the plan's test list against the test files actually created
-  - Context: Added src/views/ai-about/ui/__tests__/AboutCtaBar.test.tsx (title, href, header-hidden translate class)
-- Violation: Pure helper `groupLines` mutated objects already stored in its result (`last.items.push`); `parseReplayLine` built its result with push
-  - Rule: MISTAKES.md Coding Paradigm §21 — pure calculations use reduce/flatMap, not imperative push
-  - Context: groupLines rewritten with reduce; parseReplayLine rewritten with split + flatMap (src/views/ai-about/lib/replayScript.ts)
-- Violation: `isLocale(x) ? x : DEFAULT_LOCALE` repeated across three ai route files
-  - Rule: MISTAKES.md §1 — check for / extract a shared helper instead of repeating logic
-  - Context: Added resolveLocale() to src/shared/i18n/locales.ts and used it in app/ai/[locale]/{page,about/page,c/[id]/page}.tsx
-- Violation: New content width (max-w-4xl) on the ai host with no entry in the DESIGN.md width convention
-  - Rule: DESIGN.md §폭 규약 — a new width value must be documented with its reason
-  - Context: Added a row for ai host /about (max-w-4xl, 2-column card grid; chat surfaces stay max-w-3xl)
-- Violation: The sticky CTA bar repeated the hero h1 sentence on the same first screen
-  - Rule: (guideline) Chrome copy that sits next to a headline should add information, not echo it
-  - Context: Bar copy changed to "로그인 없이 무료로 바로 물어볼 수 있어요" (views.ai-about.cta.title, all four locales)
-
 ## [fix/seo-snapshot-desc-tab-prefix Round 1 | SEO description collision across symbol tabs | 2026-09-20]
 - Violation: `buildSnapshotMetaDescription` in `src/shared/lib/seo.ts` prefixed only `${subject} — ` and clamped AI prose at `SEO_DESCRIPTION_MAX_LENGTH`. When two tabs' snapshots opened with the same long sentence, the clamp cut before they diverged, returning byte-identical descriptions across tabs. Measured in production 2026-09-20: `https://siglens.io/SOXS/overall` and `https://siglens.io/SOXS/fundamental` both returned 193-char descriptions.
   - Rule: Metadata fields derived from dynamic content must include a route/view discriminator in the prefix to prevent collision across different routes serving the same subject.
@@ -503,14 +447,6 @@
   - Rule: (new) When a script gains a new path that appends to a config list, grep tests for invariants over that list and verify by applying the script's output to the real file and running the suite (dry run).
   - Context: Fixed with scripts/lib/cryptoPoolInsert.ts (pure anchor insert into the pool) + main writes the pool first. Lesson: when a script's new path appends to a config list, grep tests for invariants over that list and verify by dry-running the script's output against the test suite.
 
-## [claude/siglens-email-login-redirect-jbr2s1 Round 2 | toHandoffAwareRedirect test coverage | 2026-09-25]
-- Violation: REQUIRED — `src/features/auth-oauth-consent/__tests__/actions/finalizeOAuthSignupAction.test.ts` missing. A fix (toHandoffAwareRedirect wrapping the final Server Action redirect) was applied to three sibling actions (loginAction, registerAction, finalizeOAuthSignupAction) but only two (login + register) got dedicated unit tests. finalizeOAuthSignupAction's use of the same pattern was not tested.
-  - Rule: MISTAKES.md #6.7 — Rule/guard/policy applied to one of N sibling methods/routes/branches but not others; when a fix wrapping an upstream dependency is applied consistently across N siblings, all N must be tested uniformly.
-  - Context: Added `src/features/auth-oauth-consent/__tests__/actions/finalizeOAuthSignupAction.test.ts` testing the toHandoffAwareRedirect wrapping pattern alongside the existing loginAction and registerAction tests.
-- Violation: RECOMMENDED — `src/entities/auth/lib/handoffStore.ts` duplicates PARSE_ONLY_BASE constant from `src/shared/lib/auth/redirect.ts` without importing it or documenting the dependency.
-  - Rule: MISTAKES.md #16.5 — Shared constants duplicated across module boundaries without documentation; every duplicate must reference the original constant and document the sync requirement.
-  - Context: Moved PARSE_ONLY_BASE to shared export in `src/shared/lib/auth/redirect.ts` and imported it in `handoffStore.ts`. Added JSDoc linking the shared definition.
-
 ## [claude/siglens-email-login-redirect-jbr2s1 Round 3 | guest-only path redirect logic | 2026-09-25]
 - Violation: RECOMMENDED (fixed) — src/proxy.ts — when the sanitized `next` parameter was itself a guest-only path (/login, /signup, /verify-email), a signed-in user would be redirected through that guest-only page (extra hop) instead of clamping to home. Sanitizer removed query params but did not validate whether the *path itself* was guarded.
   - Rule: (new) Redirect logic sanitizing a `next` parameter must both 1) strip query params and 2) validate the target path is not itself guest-only; guest-only routes must be inaccessible to signed-in users. Failure to do so creates a dead redirect leg that wastes a round-trip.
@@ -535,15 +471,6 @@
   - Rule: CONVENTIONS.md — generated i18n artifacts must be regenerated after changing a route's import graph; static client-key analysis follows imports
   - Context: src/app/[locale]/forgot-password/page.tsx newly imported @/shared/ui/auth barrel (for AuthCrossLink), adding 10 ConsentCheckboxGroup keys to the forgot-password route. Regenerated with `yarn i18n:extract --write`.
 
-## [PR #875 | feat-review Round-final | 2026-09-25]
-- Violation: `src/entities/auth/lib/handoffStore.ts` issueLogoutCode input and consumeLogoutCode return used the same inline object type
-  - Rule: MISTAKES.md §5.3 — Function return types using inline object literals instead of named types
-  - Context: Extracted `LogoutCodePayload` interface and applied to both issueLogoutCode parameter and consumeLogoutCode return type (already documented rule; no promotion needed).
-
-- Violation: `src/features/auth-oauth/actions/cancelOAuthSignupAction.ts` `let next` reassigned inside try/catch
-  - Rule: MISTAKES.md §14 — Using let + if for conditional assignment instead of declarative const expressions
-  - Context: Replaced with const via `.then(ok, fail)` pattern. Test mocks for `peek` updated to resolve a Promise, matching the store interface (already documented rule; no promotion needed).
-
 ## [claude/siglens-analysis-technique-review-wvfffz Round 2 | AI chat tools pullback classification & budget | 2026-09-25]
 - Violation: RECOMMENDED — src/app/api/ai/chat/tools/getBarsIndicators.ts: 4-way classification written as nested ternary (ternary inside TRUE branch of another ternary)
   - Rule: FF.md Readability 1-E — no nested ternaries
@@ -556,3 +483,9 @@
 - Violation: docs/architecture/CDN_CACHING.md prescribed "강한 ETag ON" (Cloudflare should respect strong ETags) while the PR set `generateEtags: false` in next.config.ts without updating the documentation. The toggle ON was itself part of the root cause since Cloudflare does not compress strong-ETag responses.
   - Rule: (new) When a code change invalidates a setting that an operator runbook prescribes, update the runbook in the same PR
   - Context: Updated docs/architecture/CDN_CACHING.md R1 to 강한 ETag OFF with the measured reason (strong ETag blocks Cloudflare compression; identity-filled cache served 209KB instead of 39KB gzip).
+
+## [fix/washout-entry-verdict R1 | 눌림 판독 진입 판정(core 1.17.1) + 평균 회귀 스킬 digest 정합 | 2026-09-26]
+- Violation: skills/strategies/mean-reversion.md — digest의 "near setup"절이 `trend: neutral`을 명시하지 않았다. A/B 측정 결과: near 판독이 prompt에 주입되면 AI가 trend bullish를 19/20 선택 → 스킬 규칙 위반(near는 정의상 neutral).
+  - Rule: (existing) Skill digest는 분석 프롬프트에 주입되는 유일한 skill 정보 — digest의 모든 경우(setup/near/below/non-daily)가 prompt 소비자의 trend 결정을 정확히 가이드해야 한다. digest 변경 후 A/B를 돌려 near 판독의 trend이 규칙과 일치하는지 확인.
+  - Context: digest의 near절에 "trend stays neutral" 명시 추가, 본문 MA200 아래 손실 꼬리 문구를 core 1.17.1의 재측정 수치로 정합. 실측 후속: washout enter 0/25→23/25, near 평균 회귀 trend bullish 19/20→2/20, washout 날 전체 trend bearish 88%→36%.
+- Dependency: siglens-core #228 — 일봉 상승 추세 속 짧은 눌림(Williams %R ≤ -90)이면 룰 엔진이 enter 판정을 싣는다. 이 PR의 스킬 digest 수정과 함께 적용해야 수정이 완성된다. 분석 캐시(1Day) 키 변경 없음 — core 프롬프트 내용 변경만.
