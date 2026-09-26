@@ -12,7 +12,7 @@ gating:
     feature: williamsR
     predicate: level
 token_cost: 843
-digest_hash: "20754f77"
+digest_hash: "7de69606"
 ---
 
 ## Overview
@@ -50,6 +50,7 @@ Backtested on daily bars (entry at the signal day's close, 0.1% cost per side):
 - **2000-01 → 2020-11**: point-in-time S&P 500 members (615 symbols after removing corrupted series, Yahoo-sourced Qlib dataset).
 - **2024-07 → 2026-09**: 9 large-cap stocks + SPY/QQQ (Yahoo).
 - Cross-checked against siglens-trader's independent study (FMP data, 2015 → 2026-09, 42 symbols), which adopted the same idea with RSI(2) < 10 on 2026-09-24.
+- **Re-measured 2026-09-26** on 101 current large caps + SPY/QQQ (FMP, 2000-01 → 2026-09, survivorship-biased): the washout, near-setup and below-MA(200) readings held the same direction in all six periods; this is the source of the near-setup "statistically indistinguishable since 2020" note and the 1.3–2.8× below-MA(200) loss-tail range.
 
 Mean return over the next 5 trading days, stocks:
 
