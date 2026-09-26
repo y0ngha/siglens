@@ -84,8 +84,10 @@ const nextConfig: NextConfig = {
      *
      * **더 나은 해법이 있다면 그쪽이 맞다**: CloudFlare에서 `text/html`에 Compression
      * Rule을 걸면 HTML은 brotli(173KB, gzip보다 28KB 더 작음)로 나가고 정적 자산의
-     * brotli도 지켜지며 오리진 CPU는 0이다. 애초에 왜 엣지가 HTML만 압축하지 않는지는
-     * 근본 원인이 밝혀지지 않았다 — 그게 규명되면 이 플래그는 되돌리는 것이 낫다.
+     * brotli도 지켜지며 오리진 CPU는 0이다. 엣지가 HTML만 압축하지 않던 원인은
+     * 2026-09-26에 규명됐다 — Next가 붙이는 **강한 ETag**다(아래 `generateEtags` 주석).
+     * 그래도 이 플래그는 유지한다: 롱테일은 엣지 MISS가 대부분이라 서울 오리진 →
+     * 미국 엣지(Googlebot) 구간을 건너는데, 그 구간은 gzip(~40KB)이 비압축(~210KB)보다 싸다.
      *
      * CPU 비용은 과소평가하지 말 것: CF HTML 히트율은 실측 36.7%
      * (docs/architecture/CDN_CACHING.md)라 나머지는 오리진까지 오고, RSC 페이로드도
@@ -96,6 +98,40 @@ const nextConfig: NextConfig = {
      * `Cache-Control: no-transform`에서 압축 미들웨어가 빠진다(실측 확인).
      */
     compress: true,
+
+    /*
+     * HTML/RSC 응답에 ETag를 붙이지 않는다. **CloudFlare가 강한 ETag 응답을 압축하지 않기 때문이다.**
+     *
+     * 2026-09-26 프로덕션 실측(같은 캐시 키에 첫 요청의 Accept-Encoding만 바꿔 재현):
+     *
+     *   - 첫 요청이 `Accept-Encoding: identity`(압축 미지원 봇 등)면 엣지는 비압축 본문 +
+     *     강한 ETag를 캐시하고, **이후 gzip/br 요청에도 그 비압축 본문을 그대로** 낸다.
+     *     `/NRICX` 오리진 gzip 39KB → 엣지 HIT 209KB, `/MSFT/options` 565KB.
+     *   - ETag가 없는 응답(`/sitemap-popular.xml`, `robots.txt`)은 똑같이 identity로 채워도
+     *     이후 요청에 엣지가 br로 압축한다(436KB → 9.7KB).
+     *   - 엣지가 인코딩을 **바꿔** 압축하면(오리진 gzip → zstd/br) ETag가 벗겨진다(`/MSFT`).
+     *     오리진 gzip을 그대로 넘길 때는 강한 ETag가 남는다(`/AAPL`, `/NVDA/news` — 크롬 헤더 실측).
+     *
+     * 잃는 것은 조건부 요청(`If-None-Match` → 304)이다:
+     *   - Googlebot: 실익이 없었다. GSC 크롤 통계 응답 분포에 304가 없다(200 98%). HTML은
+     *     ISR 6h마다 가격이 바뀌어 본문 해시가 달라지고, 롱테일은 며칠~몇 주 간격으로 온다.
+     *   - 실사용자 재방문: **실제로 잃는다.** 브라우저에 줄 freshness가 없어(`s-maxage`만,
+     *     `max-age`·`Last-Modified` 없음) 재방문마다 조건부 GET을 보내는데, 위처럼 gzip이
+     *     그대로 나간 페이지는 지금 304를 받고 있다. 끄면 같은 ISR 주기 안의 재방문도
+     *     압축 본문 전체(종목 페이지 ~40~60KB)를 다시 받는다. 오염된 객체의 비압축 209~565KB를
+     *     매번 받던 것보다는 싸다고 보고 감수한다 — 배포 후 재방문 트래픽을 관찰할 것.
+     *   - 엣지 → 오리진 재검증은 서울 리전 터널 왕복 ~16ms라 304로 아낄 게 거의 없다.
+     *   - 대시보드 쪽 원인은 캐시 룰의 "Respect strong ETags"였다. 2026-09-26 전 룰에서 OFF로
+     *     바꾼 직후 실측: 새 캐시 키·기존 오염 객체 모두 즉시 압축됐다(`/NRICX` 209KB → br 35KB,
+     *     `/MSFT/options` 565KB → zstd 84KB). 단 CloudFlare는 ETag를 약한 ETag(`W/`)로 바꾸지
+     *     않고 **아예 벗겼다**(gzip·zstd·identity 전부) — 즉 토글만 꺼도 재방문 304는 없다.
+     *     그래서 이 플래그의 추가 비용은 0이고, 누가 그 토글을 다시 켜도 오염이 재발하지
+     *     않게 하는 가드로 남긴다(`docs/architecture/CDN_CACHING.md` R1).
+     *   - `Last-Modified`도 내지 않으므로 재검증 수단은 없다. 304를 되살리려면 이 플래그와
+     *     토글을 함께 봐야 하고, 되살린 뒤에는 위 재현(identity로 채우고 gzip/br 요청)으로
+     *     엣지 압축이 유지되는지 반드시 다시 실측할 것.
+     */
+    generateEtags: false,
 
     allowedDevOrigins: ['172.30.1.26'],
 

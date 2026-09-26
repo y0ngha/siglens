@@ -530,6 +530,34 @@ describe('Symbol page', () => {
             });
         });
 
+        it('peek은 bars 조회를 기다리지 않고 동시에 시작한다 (cold render TTFB)', async () => {
+            // bars를 붙잡아 두고, 그동안 peek이 이미 호출됐는지 본다. 직렬이던 예전
+            // 구현(bars → seed → peek)이면 bars가 풀리기 전에는 peek이 호출되지 않는다.
+            let releaseBars: (value: {
+                bars: never[];
+                indicators: { ma: object; ema: object };
+            }) => void = () => {};
+            mockGetBarsAction.mockImplementationOnce(
+                () =>
+                    new Promise(resolve => {
+                        releaseBars = resolve;
+                    }) as never
+            );
+            mockPeekAnalysisCache.mockResolvedValue(null);
+
+            const pending = getClientProps();
+
+            await vi.waitFor(() =>
+                expect(mockPeekAnalysisCache).toHaveBeenCalled()
+            );
+            releaseBars({ bars: [], indicators: { ma: {}, ema: {} } });
+            const props = await pending;
+
+            expect(props.initialAnalysis).toMatchObject({
+                summary: 'fallback',
+            });
+        });
+
         it('peek 모델 상수(DEEPSEEK_V4_1_FLASH_MODEL)가 SEO pre-warm 스냅샷 저장 모델과 동일 참조다 (spec §7 5축 캐시 키 정합)', async () => {
             // harvest.ts는 이 상수를 PREWARM_MODEL_ID = DEEPSEEK_V4_1_FLASH_MODEL로 스냅샷
             // content.model에 저장한다. peek이 다른 모델 상수로 조회하면 스냅샷이 가리키는
