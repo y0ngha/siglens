@@ -405,8 +405,10 @@ describe('MarketSummaryPanel', () => {
 /**
  * `/market/kr`은 사이트맵 priority 0.9다. 섹터 카드에 링크가 붙으면 그 페이지가
  * `POPULAR_TICKERS`에도 prewarm 회전에도 없는 KR ETF 6종으로 가는 **새 크롤
- * 진입점**이 된다 — 봇은 캐시 미스에 분석을 큐에 넣지 않으므로 딱 thin 변형만
- * 보게 되고, 그게 2026-07 노출 급감의 메커니즘이다.
+ * 진입점**이 된다. 2026-07 노출 급감 당시엔 봇이 캐시 미스에 분석을 큐에 넣지
+ * 않아 딱 thin 변형만 보였지만, 2026-09-27부터 봇도 캐시 미스에 생성을
+ * 트리거하므로 지금은 크롤 유발 생성 비용 스파이크 쪽 위험이다
+ * (`dashboardScope.ts`의 `linkSectorCards` JSDoc 참고).
  */
 describe('MarketSummaryPanel — KR scope', () => {
     /** 첫 섹터 그룹의 심볼 하나만 채운 sectorMap — 카드 하나면 계약 검증에 충분하다. */

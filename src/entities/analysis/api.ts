@@ -234,7 +234,8 @@ export async function prewarmTechnical(
 
 /**
  * SEO pre-warm 전용 fundamental submit (spec 2026-07-24 §4 seam, Task 7).
- * `submitFundamentalAnalysisAction`의 비봇 경로를 request-context 없이 재현한다.
+ * `submitFundamentalAnalysisAction`의 기본 경로(2026-09-27부터 봇/사람 구분
+ * 없음)를 request-context 없이 재현한다.
  */
 export async function prewarmFundamental(
     symbol: string,
@@ -265,7 +266,8 @@ export async function prewarmFundamental(
 
 /**
  * SEO pre-warm 전용 financials submit (spec 2026-07-24 §4 seam, Task 7).
- * `submitFinancialsAnalysisAction`의 비봇 경로를 request-context 없이 재현한다.
+ * `submitFinancialsAnalysisAction`의 기본 경로(2026-09-27부터 봇/사람 구분
+ * 없음)를 request-context 없이 재현한다.
  */
 export async function prewarmFinancials(
     symbol: string,
@@ -285,7 +287,8 @@ export async function prewarmFinancials(
 
 /**
  * SEO pre-warm 전용 congress submit (spec 2026-07-24 §4 seam, Task 7).
- * `submitCongressTrendAction`의 비봇 경로를 request-context 없이 재현한다.
+ * `submitCongressTrendAction`의 기본 경로(2026-09-27부터 봇/사람 구분 없음)를
+ * request-context 없이 재현한다.
  * 이 경로는 액션 레이어(BYOK 게이트 포함)를 우회해 core를 직접 호출한다 — 실 사용자
  * 컨텍스트가 없는 pre-warm이라 gate 대상이 아니다. 항상 free-tier 비프리미엄 모델
  * (DEEPSEEK_V4_1_FLASH_MODEL)만 사용하므로 프리미엄/BYOK 상황 자체가 발생하지 않는다.
@@ -308,10 +311,13 @@ export async function prewarmCongress(
 
 /**
  * SEO pre-warm 전용 overall(4축 종합) submit (spec 2026-07-24 §4 seam, Task 7).
- * `submitOverallAnalysisAction`의 비봇 경로를 request-context 없이 재현한다.
+ * `submitOverallAnalysisAction`의 기본 경로(2026-09-27부터 봇/사람 구분
+ * 없음)를 request-context 없이 재현한다.
  *
- * ⚠️ 봇 트래픽에서는 skip되던 options snapshot·financials scorecard fetch가
- * prewarm에서는 항상 실행된다 — 의도된 동작이다(spec §8 FMP 예산 산정에 포함됨).
+ * options snapshot·financials scorecard fetch는 prewarm에서도, 이제는 실 요청
+ * (봇 포함)에서도 항상 실행된다 — 의도된 동작이다(spec §8 FMP 예산 산정에
+ * 포함됨). 2026-09-27 이전엔 봇 트래픽만 이 fetch를 skip했지만, 그 skip이
+ * 캐시 미스에서 사람과 다른(빈약한) 본문을 만들어 제거했다.
  */
 export async function prewarmOverall(
     symbol: string,

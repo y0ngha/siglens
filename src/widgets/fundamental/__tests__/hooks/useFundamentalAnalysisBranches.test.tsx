@@ -1,6 +1,8 @@
 /**
  * Branch coverage tests for useFundamentalAnalysis — targets uncovered branches in
- * fetchFundamentalAnalysis: miss_no_trigger, gate blocked, fetch_failed, key_error,
+ * fetchFundamentalAnalysis: miss_no_trigger (falls through to the generic
+ * unexpected error — this axis hardcodes skipEnqueueIfMiss:false, so core
+ * never actually returns this status), gate blocked, fetch_failed, key_error,
  * non-Error query error wrapping, and the hydration gate path.
  *
  * Poll/cancel machinery has been removed; run* functions return results directly.
@@ -77,7 +79,11 @@ describe('useFundamentalAnalysis — branch coverage', () => {
         });
     });
 
-    it('returns bot_blocked when submit returns miss_no_trigger', async () => {
+    it('falls through to the generic unexpected error when submit returns miss_no_trigger', async () => {
+        // Core-only status: skipEnqueueIfMiss is hardcoded false for this
+        // axis (see api/analysis/stream/route.ts top invariant), so core
+        // never actually returns this in production. Verifies the
+        // exhaustiveness fallback resolves to a plain error, not dead UI.
         mockSubmit.mockResolvedValue({ status: 'miss_no_trigger' } as never);
 
         const { result } = renderHook(
@@ -86,8 +92,14 @@ describe('useFundamentalAnalysis — branch coverage', () => {
         );
 
         await waitFor(() => {
-            expect(result.current.status).toBe('bot_blocked');
+            expect(result.current.status).toBe('error');
         });
+
+        if (result.current.status !== 'error')
+            throw new Error('expected error');
+        expect(result.current.error.message).toBe(
+            koMessages.app.api.stream.unexpected
+        );
     });
 
     it('returns error when gate blocked', async () => {

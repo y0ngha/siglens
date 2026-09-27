@@ -1,6 +1,5 @@
 'use server';
 
-import { headers } from 'next/headers';
 import type { Locale } from '@/shared/i18n/locales';
 import {
     runNewsAnalysis,
@@ -20,7 +19,6 @@ import {
     buildGateError,
 } from '@/shared/lib/byokGate';
 import { caughtAnalysisErrorCode } from '@/shared/lib/aiProviderFailure';
-import { isBot } from '@/shared/api/isBot';
 import { isE2E } from '@/shared/api/e2eEnv';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
@@ -62,9 +60,6 @@ export async function submitNewsAnalysisAction(
                 await import('@/shared/api/e2eAnalysisStub');
             return e2eCachedNews();
         }
-        const requestHeaders = await headers();
-        const skipEnqueueIfMiss = isBot(requestHeaders);
-
         const user = await getCurrentUser();
         const userId = user?.id ?? null;
 
@@ -103,7 +98,10 @@ export async function submitNewsAnalysisAction(
             upcomingCalendar: next !== null ? [next] : [],
             tier: gate.tier,
             reasoning: resolveReasoning(gate.tier, reasoning),
-            skipEnqueueIfMiss,
+            // 2026-09-27: 더 이상 UA로 가르지 않는다 — 봇의 캐시 미스도 사람과
+            // 같은 본문을 생성해야 한다(siglens/src/app/api/analysis/stream/route.ts
+            // 상단 불변식과 동일 원칙).
+            skipEnqueueIfMiss: false,
             assetClass,
             // core는 통화를 심볼에서 추론하지 않는다 — 한국 종목 프레이밍·실적 추정 통화.
             currency: descriptor.priceFormat.currency,

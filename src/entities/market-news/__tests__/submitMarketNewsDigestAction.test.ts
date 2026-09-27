@@ -56,7 +56,13 @@ describe('submitMarketNewsDigestAction은', () => {
         vi.clearAllMocks();
     });
 
-    it('봇이면 skipEnqueueIfMiss=true로 core를 호출한다', async () => {
+    /**
+     * 2026-09-27: `skipEnqueueIfMiss`는 더 이상 `isBot(...)`으로 갈리지 않는다
+     * — 크롤러도 사람과 같은 다이제스트를 받아야 한다(route.ts 상단 불변식).
+     * `isBot`을 true로 목킹해도 `false`가 나와야 한다는 게 회귀 가드다:
+     * `isBot(...)` 기반 분기가 되돌아오면 이 테스트가 `true`를 보고 실패한다.
+     */
+    it('isBot이 true를 반환해도 skipEnqueueIfMiss=false로 core를 호출한다', async () => {
         vi.mocked(isBot).mockReturnValue(true);
         vi.mocked(core.runMarketNewsDigest).mockResolvedValue({
             status: 'miss_no_trigger',
@@ -68,7 +74,7 @@ describe('submitMarketNewsDigestAction은', () => {
 
         expect(core.runMarketNewsDigest).toHaveBeenCalledWith(
             expect.objectContaining({
-                skipEnqueueIfMiss: true,
+                skipEnqueueIfMiss: false,
                 category: 'crypto',
                 // CATEGORY_CONFIG['crypto'].koLabel — 실제 값으로 검증한다.
                 categoryLabel: '암호화폐',

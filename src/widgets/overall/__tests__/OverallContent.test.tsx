@@ -195,24 +195,6 @@ describe('OverallContent non-done branches', () => {
         ).toBeInTheDocument();
     });
 
-    it('renders BotBlockedNotice in bot_blocked state', () => {
-        mockUseOverallAnalysis.mockReturnValue({
-            state: { status: 'bot_blocked' },
-            trigger: vi.fn(),
-        });
-        render(
-            <OverallContent
-                symbol="AAPL"
-                companyName="Apple Inc."
-                hasEnrichedNews={true}
-                hasOptions={true}
-            />
-        );
-        expect(
-            screen.getByText(/봇 트래픽으로 보여 분석 결과를 표시하지 않았어요/)
-        ).toBeInTheDocument();
-    });
-
     it('renders submitting loading state', () => {
         mockUseOverallAnalysis.mockReturnValue({
             state: { status: 'submitting' },

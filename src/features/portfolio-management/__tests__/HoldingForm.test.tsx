@@ -102,14 +102,17 @@ describe('HoldingForm', () => {
         await user.type(screen.getByLabelText('종목 티커 검색'), 'AAPL');
         await user.tab();
 
-        expect(screen.getByText('AAPL')).toBeInTheDocument();
+        // 칩은 자동완성이 넘긴 이름으로 `회사명 (티커)`를 그린다.
+        expect(screen.getByText('AAPL 표시명 (AAPL)')).toBeInTheDocument();
         expect(
             screen.queryByLabelText('종목 티커 검색')
         ).not.toBeInTheDocument();
 
         await user.click(screen.getByRole('button', { name: '변경' }));
 
-        expect(screen.queryByText('AAPL')).not.toBeInTheDocument();
+        expect(
+            screen.queryByText('AAPL 표시명 (AAPL)')
+        ).not.toBeInTheDocument();
         expect(screen.getByLabelText('종목 티커 검색')).toBeInTheDocument();
     });
 
@@ -129,7 +132,7 @@ describe('HoldingForm', () => {
         );
 
         // Symbol renders as read-only text, not the autocomplete input.
-        expect(screen.getByText('AAPL')).toBeInTheDocument();
+        expect(screen.getByText('Apple Inc. (AAPL)')).toBeInTheDocument();
         expect(
             screen.queryByLabelText('종목 티커 검색')
         ).not.toBeInTheDocument();

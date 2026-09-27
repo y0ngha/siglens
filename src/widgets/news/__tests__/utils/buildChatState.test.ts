@@ -35,16 +35,6 @@ describe('news buildChatState', () => {
         });
     });
 
-    it('bot_blocked → context: null, ready=false', () => {
-        expect(
-            buildChatState({ status: 'bot_blocked', trigger: () => {} })
-        ).toEqual({
-            context: null,
-            timeframe: null,
-            isAnalysisReady: false,
-        });
-    });
-
     it('error → context: null, ready=false', () => {
         const state: NewsAnalysisState = {
             status: 'error',

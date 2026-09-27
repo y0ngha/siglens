@@ -102,6 +102,29 @@ describe('useOptionsAnalysis — trigger coverage', () => {
         });
     });
 
+    /**
+     * `cacheOnly`가 OI-stale 경로의 유일한 남은 `miss_no_trigger` producer다
+     * (2026-09-27 bot parity fix 이후 다른 다섯 축은 skipEnqueueIfMiss를
+     * 하드코딩된 false로 보낸다). 캐시 미스면 새로 분석을 만들지 않고
+     * "분석 없음" 상태로 떨어져야 한다 — 결과 데이터도, 안내문도 없어야 한다
+     * (컴포넌트 레벨 "안내문 없음" 검증은 OptionsAiAnalysis.test.tsx 참고).
+     */
+    it('cacheOnly 캐시 미스(miss_no_trigger) → cache_miss 상태, 결과 데이터 없음', async () => {
+        mockSubmit.mockResolvedValue({ status: 'miss_no_trigger' });
+
+        const wrapper = makeWrapper();
+        const { result } = renderHook(
+            () => useOptionsAnalysis({ ...INPUT, cacheOnly: true }),
+            { wrapper }
+        );
+
+        await waitFor(() => {
+            expect(result.current.status).toBe('cache_miss');
+        });
+        expect(result.current).not.toHaveProperty('result');
+        expect(result.current).not.toHaveProperty('plain');
+    });
+
     it('loading 상태에서 trigger 함수를 노출한다', async () => {
         mockSubmit.mockReturnValue(new Promise(() => undefined));
 
@@ -135,7 +158,7 @@ describe('useOptionsAnalysis — trigger coverage', () => {
         );
     });
 
-    it('bot_blocked 상태에서 trigger 함수를 노출한다', async () => {
+    it('cache_miss 상태에서 trigger 함수를 노출한다', async () => {
         mockSubmit.mockResolvedValue({ status: 'miss_no_trigger' });
 
         const wrapper = makeWrapper();
@@ -144,7 +167,7 @@ describe('useOptionsAnalysis — trigger coverage', () => {
         });
 
         await waitFor(() => {
-            expect(result.current.status).toBe('bot_blocked');
+            expect(result.current.status).toBe('cache_miss');
         });
         expect(typeof result.current.trigger).toBe('function');
     });

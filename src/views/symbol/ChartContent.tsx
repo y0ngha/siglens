@@ -5,7 +5,6 @@ import { isFallbackAnalysis } from '@/entities/chat-message';
 import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { useSymbolHolding } from '@/features/portfolio-holding';
 import { cn } from '@/shared/lib/cn';
-import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 import { AnalysisPanel, AnalysisProgress } from '@/widgets/analysis';
 import { ChartSkeleton, useChartSync } from '@/widgets/chart';
 import {
@@ -175,7 +174,6 @@ export function ChartContent({
         lockedInfoDepth,
         isAnalyzing,
         analysisError,
-        isBotBlocked,
         handleReanalyze,
         reanalyzeCooldownMs,
         cooldownNotice,
@@ -282,14 +280,6 @@ export function ChartContent({
     const analysisContent = useMemo(() => {
         const hasNarrative = !isFallbackAnalysis(analysis, fallbackSummary);
 
-        // 분기 우선순위: 서사 유무를 먼저 보고, 봇 차단은 그 안에서 additive로 둔다.
-        // 이전엔 `isBotBlocked`를 맨 앞에서 검사해 봇이면 BotBlockedNotice가 사실 층
-        // (또는 캐시된 실제 분석)을 통째로 '교체'했다. 그 결과 JS를 렌더링하는 크롤러
-        // (Googlebot WRS)는 마운트 시 자동 분석 트리거가 miss_no_trigger로 봇 판정되면
-        // 종목 정보가 0인 안내문만 남은 DOM을 색인하게 돼, SSR 사실 층의 색인 의도가
-        // 무력화됐다(raw HTML엔 facts가 있어도). 이제 서사가 없으면 봇이어도 사실 층을
-        // 유지하고, 봇 안내는 그 아래 additive로만 덧붙인다 — 종목별 실측 텍스트가 렌더
-        // DOM에도 항상 남고, 봇으로 오판된 실사용자에게도 actionable hint가 유지된다.
         return !hasNarrative ? (
             <div className="flex flex-col gap-3">
                 {/* 첫 분석(서사 없음) 중에는 작은 텍스트 배너 대신, 캐시된 분석
@@ -312,7 +302,6 @@ export function ChartContent({
                     indicators={indicators}
                     marketProfile={marketProfile}
                 />
-                {isBotBlocked && <BotBlockedNotice />}
             </div>
         ) : (
             <div className="flex flex-col gap-3">
@@ -356,15 +345,9 @@ export function ChartContent({
                         quantityRaw={symbolHolding.quantity}
                     />
                 )}
-                {/* 서사가 있어도(캐시된 분석을 표시 중) 봇 판정이면 안내를 additive로
-                    덧붙인다 — 자동 트리거/수동 재분석이 봇으로 오판돼 차단된 사실을
-                    stale 분석만 보던 실사용자가 인지하도록(PR #530 리뷰 반영). 두 분기가
-                    동일하게 `isBotBlocked`일 때만 안내를 노출해 일관된다. */}
-                {isBotBlocked && <BotBlockedNotice className="mt-3" />}
             </div>
         );
     }, [
-        isBotBlocked,
         bars,
         indicators,
         isAnalyzing,
@@ -406,7 +389,7 @@ export function ChartContent({
 
     // Publish chart state to the layout-mounted FloatingChatButton so it survives
     // navigation between the 4 symbol pages. Layout owns the button; we only feed it.
-    // bot_blocked/error 시 context는 null로 보내 stale technical payload가 챗봇에
+    // error 시 context는 null로 보내 stale technical payload가 챗봇에
     // 흘러가지 않게 한다 — 다른 페이지(news/overall/options)의 buildChatState와 동일 규약.
     // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생 변수)를
     // 인자로 받기 때문에 useMemo 뒤에 위치해야 한다.
@@ -416,18 +399,10 @@ export function ChartContent({
                 analysis,
                 timeframe,
                 displayAnalyzing,
-                isBotBlocked,
                 analysisError,
                 lockedInfoDepth,
             }),
-        [
-            analysis,
-            timeframe,
-            displayAnalyzing,
-            isBotBlocked,
-            analysisError,
-            lockedInfoDepth,
-        ]
+        [analysis, timeframe, displayAnalyzing, analysisError, lockedInfoDepth]
     );
     usePublishSymbolChat(chatState);
     useRegisterShareable({
@@ -435,7 +410,6 @@ export function ChartContent({
         status: deriveChartStatus({
             isAnalyzing,
             analysisError: analysisError !== null,
-            isBotBlocked,
             // Gate on a REAL analysis — the seeded `initialAnalysis` is always
             // non-null (a fallback/no-narrative AnalysisResponse), so checking
             // `(analysisResult ?? analysis) != null` would report 'success' even

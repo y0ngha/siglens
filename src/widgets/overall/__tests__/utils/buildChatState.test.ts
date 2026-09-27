@@ -59,7 +59,6 @@ describe('overall buildChatState', () => {
     it.each<OverallAnalysisState>([
         { status: 'idle' },
         { status: 'submitting' },
-        { status: 'bot_blocked' },
         { status: 'error', error: 'boom' },
     ])('$status → context: null, timeframe forwarded, ready=false', state => {
         expect(buildChatState(state, TIMEFRAME)).toEqual({

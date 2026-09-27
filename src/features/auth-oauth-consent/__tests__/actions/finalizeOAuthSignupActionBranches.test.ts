@@ -64,7 +64,7 @@ vi.mock('next/headers', () => ({
 vi.mock('@/shared/lib/auth/redirect', () => ({
     sanitizeNextPath: vi.fn((p: unknown) => (typeof p === 'string' ? p : '/')),
     resolvePostSignupDestination: vi.fn((next: string) =>
-        next === '/' ? '/onboarding' : next
+        next === '/' ? '/portfolio' : next
     ),
 }));
 vi.mock('next/navigation', () => ({

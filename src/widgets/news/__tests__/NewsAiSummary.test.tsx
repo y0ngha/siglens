@@ -33,10 +33,6 @@ vi.mock('@/widgets/news/utils/buildChatState', () => ({
     }),
 }));
 
-vi.mock('@/shared/ui/BotBlockedNotice', () => ({
-    BotBlockedNotice: () => <div data-testid="bot-blocked" />,
-}));
-
 vi.mock('@/features/symbol-model', () => ({
     useDefaultModelId: () => 'gemini-3.5-flash-lite',
     useAnalysisSettingsHydrated: () => true,
@@ -197,26 +193,6 @@ describe('NewsAiSummary', () => {
         expect(screen.getByText('Strong earnings')).toBeInTheDocument();
         expect(screen.getByText('Earnings beat')).toBeInTheDocument();
         expect(screen.getByText('Fed meeting')).toBeInTheDocument();
-    });
-
-    it('renders bot blocked notice', () => {
-        mockWaitResult.mockReturnValue({
-            isReady: true,
-            pollError: null,
-        });
-        mockAnalysisResult.mockReturnValue({
-            status: 'bot_blocked',
-            trigger: vi.fn(),
-        });
-
-        render(
-            <NewsAiSummary
-                symbol="AAPL"
-                companyName="Apple"
-                hasEnrichedNews={true}
-            />
-        );
-        expect(screen.getByTestId('bot-blocked')).toBeInTheDocument();
     });
 
     it('renders error state with retry', () => {

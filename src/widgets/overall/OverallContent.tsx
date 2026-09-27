@@ -7,7 +7,6 @@ import { useOverallAnalysis } from './hooks/useOverallAnalysis';
 import { OverallTriggerCta } from './OverallTriggerCta';
 import { ReanalyzeButton } from './ReanalyzeButton';
 import { buildChatState } from './utils/buildChatState';
-import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 import {
     useDefaultModelId,
     useDefaultReasoning,
@@ -160,10 +159,6 @@ export function OverallContent({
                 assetClass={assetClass}
             />
         );
-    }
-
-    if (state.status === 'bot_blocked') {
-        return <BotBlockedNotice />;
     }
 
     if (state.status === 'submitting') {

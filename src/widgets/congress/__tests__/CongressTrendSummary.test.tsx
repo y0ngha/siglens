@@ -29,9 +29,6 @@ vi.mock('../CongressTrendSummarySkeleton', () => ({
 vi.mock('../CongressTrendSummaryEmpty', () => ({
     CongressTrendSummaryEmpty: () => <div data-testid="empty" />,
 }));
-vi.mock('@/shared/ui/BotBlockedNotice', () => ({
-    BotBlockedNotice: () => <div data-testid="bot-blocked" />,
-}));
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
@@ -95,17 +92,6 @@ describe('CongressTrendSummary', () => {
         render(<CongressTrendSummary symbol="AAPL" />);
 
         expect(screen.getByTestId('empty')).toBeInTheDocument();
-    });
-
-    it('renders bot-blocked notice', () => {
-        vi.mocked(useCongressTrend).mockReturnValue({
-            status: 'bot_blocked',
-            trigger: vi.fn(),
-        });
-
-        render(<CongressTrendSummary symbol="AAPL" />);
-
-        expect(screen.getByTestId('bot-blocked')).toBeInTheDocument();
     });
 
     it('renders error component on error', () => {

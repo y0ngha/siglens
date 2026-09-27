@@ -123,7 +123,12 @@ describe('useAnalysis — branch coverage', () => {
     });
 
     describe('submit status: miss_no_trigger (L208-214)', () => {
-        it('sets isBotBlocked when miss_no_trigger', async () => {
+        it('falls through to the generic unexpected error when submit returns miss_no_trigger', async () => {
+            // Core-only status: skipEnqueueIfMiss is hardcoded false for the
+            // technical axis (see api/analysis/stream/route.ts top
+            // invariant), so core never actually returns this in production.
+            // Verifies the exhaustiveness fallback resolves to a plain
+            // error, not dead bot-blocked UI.
             mockSubmit.mockResolvedValue({
                 status: 'miss_no_trigger',
             });
@@ -134,7 +139,9 @@ describe('useAnalysis — branch coverage', () => {
             );
 
             await waitFor(() => {
-                expect(result.current.isBotBlocked).toBe(true);
+                expect(result.current.analysisError).toBe(
+                    koMessages.app.api.stream.unexpected
+                );
             });
         });
     });

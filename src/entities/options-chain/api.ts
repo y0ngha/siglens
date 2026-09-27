@@ -13,8 +13,8 @@ const isSlotMapping = (s: SlotMapping | null): s is SlotMapping => s !== null;
 
 /**
  * SEO pre-warm 전용 options submit (spec 2026-07-24 §4 seam, Task 7).
- * `submitOptionsAnalysisAction`의 비봇 경로를 요청-컨텍스트 없이 재현한다.
- * 차이는 skipEnqueueIfMiss:false와 force 뿐.
+ * `submitOptionsAnalysisAction`의 기본(`cacheOnly`가 아닌) 경로를
+ * 요청-컨텍스트 없이 재현한다. 차이는 skipEnqueueIfMiss:false와 force 뿐.
  *
  * 만기(`expirationDate`) 기본값은 `OptionsPageClient.tsx`의 초기 client
  * mount 로직을 그대로 재현한다:

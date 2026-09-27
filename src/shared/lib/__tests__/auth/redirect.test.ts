@@ -156,8 +156,8 @@ describe('dot-segment open redirect', () => {
 });
 
 describe('resolvePostSignupDestination', () => {
-    it("돌아갈 곳이 없는 가입('/')은 온보딩 화면으로 라우팅한다", () => {
-        expect(resolvePostSignupDestination('/')).toBe('/onboarding');
+    it("돌아갈 곳이 없는 가입('/')은 /portfolio로 라우팅한다", () => {
+        expect(resolvePostSignupDestination('/')).toBe('/portfolio');
     });
 
     it('특정 페이지에서 가입한 경우 그 페이지로 그대로 돌아간다', () => {
@@ -169,14 +169,14 @@ describe('resolvePostSignupDestination', () => {
 describe('resolvePostSignupDestination — 로케일', () => {
     /**
      * 비-ko 사용자의 "돌아갈 곳 없음"은 `/`가 아니라 `/en`·`/ja`·`/zh`다.
-     * 문자열 그대로 비교하면 지원 로케일 4개 중 3개에서 온보딩 정책이 죽는다
+     * 문자열 그대로 비교하면 지원 로케일 4개 중 3개에서 이 정책이 죽는다
      * (실제로 `next`를 로케일화한 라운드에서 그 회귀가 났다).
      */
     it.each([
-        ['/', '/onboarding'],
-        ['/en', '/en/onboarding'],
-        ['/ja', '/ja/onboarding'],
-        ['/zh', '/zh/onboarding'],
+        ['/', '/portfolio'],
+        ['/en', '/en/portfolio'],
+        ['/ja', '/ja/portfolio'],
+        ['/zh', '/zh/portfolio'],
     ])('%s → %s', (next, expected) => {
         expect(resolvePostSignupDestination(next)).toBe(expected);
     });

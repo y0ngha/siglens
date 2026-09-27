@@ -149,7 +149,7 @@ describe('useOptionsAnalysis', () => {
         client.clear();
     });
 
-    it('returns bot_blocked when submit returns miss_no_trigger', async () => {
+    it('returns cache_miss when submit returns miss_no_trigger', async () => {
         mockSubmit.mockResolvedValue({
             status: 'miss_no_trigger',
         });
@@ -166,7 +166,7 @@ describe('useOptionsAnalysis', () => {
         );
 
         await waitFor(() => {
-            expect(result.current.status).toBe('bot_blocked');
+            expect(result.current.status).toBe('cache_miss');
         });
         client.clear();
     });

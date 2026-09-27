@@ -11,6 +11,7 @@ import type {
 } from '@/entities/portfolio';
 import { HoldingForm } from './HoldingForm';
 import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
+import { symbolLabel } from '@/shared/lib/symbolLabel';
 
 const ROW_CHROME =
     'ring-secondary-700 bg-secondary-900/60 rounded-lg p-4 ring-1';
@@ -110,15 +111,8 @@ function HoldingRow({
         <li className={ROW_CHROME}>
             <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                    <div className="flex flex-wrap items-baseline gap-x-2">
-                        <span className="font-semibold text-secondary-100">
-                            {holding.symbol}
-                        </span>
-                        {holding.companyName && (
-                            <span className="truncate text-sm text-secondary-400">
-                                {holding.companyName}
-                            </span>
-                        )}
+                    <div className="truncate font-semibold text-secondary-100">
+                        {symbolLabel(holding.symbol, holding.companyName)}
                     </div>
                     <div className="mt-0.5 text-sm text-secondary-400 tabular-nums">
                         {t('PortfolioSection.91d7d2', {
@@ -189,17 +183,23 @@ function HoldingRow({
     );
 }
 
-/** Account-page section for managing the member's portfolio holdings: list + inline edit + inline delete confirm + add form. */
+/** Section for managing the member's portfolio holdings: list + inline edit + inline delete confirm + add form. */
 interface PortfolioSectionProps {
     /**
-     * 추가 폼의 시작 심볼. 온보딩이 `/[symbol]/position`에서 넘어온 심볼을
-     * 넘긴다. `/account`에서는 넘기지 않으므로 그쪽 동작은 그대로다.
+     * 추가 폼의 시작 심볼. `/portfolio`가 `/[symbol]/position`의 CTA에서 넘어온
+     * `?symbol=` 쿼리를 그대로 넘긴다.
      */
     defaultSymbol?: string;
+    /**
+     * 저장·삭제 성공 직후 호출된다. `/portfolio`는 같은 보유종목을 서버에서 읽어
+     * 위치 카드를 그리므로, 여기서 `router.refresh()`를 걸어 카드를 다시 맞춘다.
+     */
+    onHoldingsChange?: () => void;
 }
 
 export function PortfolioSection({
     defaultSymbol,
+    onHoldingsChange,
 }: PortfolioSectionProps = {}) {
     const tToast = useTranslations('features.portfolio-management.toast');
     const t = useTranslations('features.portfolio-management');
@@ -248,6 +248,7 @@ export function PortfolioSection({
             }
             setConfirmingDeleteSymbol(null);
             setStatusMessage(tToast('holdingDeleted', { v0: symbol }));
+            onHoldingsChange?.();
             setDeleteSuccessTick(tick => tick + 1);
         } catch {
             // remove.mutateAsync can reject outright (e.g. getCurrentUser()
@@ -328,6 +329,7 @@ export function PortfolioSection({
                                 const result = await save.mutateAsync(input);
                                 if (result.status === 'ok') {
                                     setEditingSymbol(null);
+                                    onHoldingsChange?.();
                                     setStatusMessage(
                                         tToast('holdingSaved', {
                                             v0: result.holding.symbol,
@@ -371,6 +373,7 @@ export function PortfolioSection({
                             setStatusMessage(null);
                             const result = await save.mutateAsync(input);
                             if (result.status === 'ok') {
+                                onHoldingsChange?.();
                                 setStatusMessage(
                                     tToast('holdingSaved', {
                                         v0: result.holding.symbol,

@@ -5,7 +5,9 @@ import type { Locator, Page } from '@playwright/test';
  * Authed Tier 2 spec — exercises the "Portfolio Holdings Foundation" CRUD
  * (docs/superpowers/specs/2026-07-17-portfolio-holdings-foundation-design.md)
  * end to end against the real local Postgres:
- *   - the account-page section (features/portfolio-management/PortfolioSection)
+ *   - the /portfolio management section (features/portfolio-management/PortfolioSection,
+ *     wrapped by app/[locale]/portfolio/PortfolioManager) — moved off /account,
+ *     which no longer has an add/edit/delete form (PR #883)
  *   - the symbol-page header chip (features/portfolio-holding/PortfolioChip +
  *     PortfolioChipPopover), which reads the SAME React Query list cache
  *     (entities/portfolio usePortfolioHoldings, key ['portfolio-holdings']) —
@@ -48,7 +50,7 @@ import type { Locator, Page } from '@playwright/test';
  * even under local parallel workers.
  */
 
-const PORTFOLIO_REGION_NAME = '보유종목';
+const PORTFOLIO_REGION_NAME = '보유종목 관리';
 const TICKER_COMBOBOX_NAME = '종목 티커 검색';
 const EMPTY_STATE_TEXT = '아직 등록한 보유종목이 없어요';
 const SKELETON_TEXT = '보유종목을 불러오는 중이에요';
@@ -80,9 +82,9 @@ async function typeSymbolAndConfirm(page: Page, raw: string): Promise<void> {
 
 /** Deletes the AAPL row via the UI if present, so every run starts clean regardless of leftovers from a prior run against the persisted e2e Postgres. */
 async function resetAaplHolding(page: Page): Promise<void> {
-    await page.goto('/account');
+    await page.goto('/portfolio');
     await expect(
-        page.getByRole('heading', { level: 1, name: '계정 설정' })
+        page.getByRole('heading', { level: 1, name: '포트폴리오' })
     ).toBeVisible({ timeout: SETTLE_TIMEOUT_MS });
 
     // Wait out the client-only holdings skeleton (usePortfolioHoldings fetches
@@ -111,12 +113,12 @@ test.describe('portfolio holdings CRUD (authed storageState)', () => {
         await resetAaplHolding(page);
     });
 
-    test('add on /account, chip + popover reflect it on /AAPL, edit persists, delete clears', async ({
+    test('add on /portfolio, chip + popover reflect it on /AAPL, edit persists, delete clears', async ({
         page,
     }) => {
         const region = portfolioRegion(page);
 
-        // ---- 1. Add a holding on /account ----
+        // ---- 1. Add a holding on /portfolio ----
         await typeSymbolAndConfirm(page, 'aapl');
         // HoldingForm swaps the autocomplete for a read-only symbol chip once
         // selected; this is the pre-submit proof the field captured "AAPL".
@@ -157,10 +159,10 @@ test.describe('portfolio holdings CRUD (authed storageState)', () => {
         await page.keyboard.press('Escape');
         await expect(popover).toBeHidden();
 
-        // ---- 3. Edit via the account page ----
-        await page.goto('/account');
+        // ---- 3. Edit via the portfolio page ----
+        await page.goto('/portfolio');
         await expect(
-            page.getByRole('heading', { level: 1, name: '계정 설정' })
+            page.getByRole('heading', { level: 1, name: '포트폴리오' })
         ).toBeVisible({ timeout: SETTLE_TIMEOUT_MS });
         const rowToEdit = aaplRow(page);
         await rowToEdit
@@ -186,7 +188,7 @@ test.describe('portfolio holdings CRUD (authed storageState)', () => {
         // client-side React Query cache.
         await page.reload();
         await expect(
-            page.getByRole('heading', { level: 1, name: '계정 설정' })
+            page.getByRole('heading', { level: 1, name: '포트폴리오' })
         ).toBeVisible({ timeout: SETTLE_TIMEOUT_MS });
         const rowAfterReload = aaplRow(page);
         await expect(rowAfterReload).toContainText('20주', {

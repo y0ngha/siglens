@@ -328,9 +328,10 @@ function toNewsRow(row: NewsDbRow): NewsRow {
 
 /**
  * SEO pre-warm 전용 news submit (spec 2026-07-24 §4 seam, Task 7).
- * `submitNewsAnalysisAction`의 비봇 경로를 요청-컨텍스트 없이 재현한다
- * (캐시 키 5축 정합: model default / tier free / reasoning false / 동일
- * fingerprint). 차이는 skipEnqueueIfMiss:false와 force 뿐.
+ * `submitNewsAnalysisAction`의 기본 경로(2026-09-27부터 봇/사람 구분 없음)를
+ * 요청-컨텍스트 없이 재현한다(캐시 키 5축 정합: model default / tier free /
+ * reasoning false / 동일 fingerprint). 차이는 force 뿐 — `skipEnqueueIfMiss`는
+ * 액션에서도 항상 `false`다.
  *
  * modelId는 익명/free 방문자가 실제로 보내는 기본값(`DEEPSEEK_V4_1_FLASH_MODEL`
  * — `SymbolModelContext`의 `useSelectedModel` 기본값과 동일)을 명시 전달한다.
