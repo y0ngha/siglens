@@ -233,6 +233,44 @@ describe('submitOptionsAnalysisAction', () => {
         expect(callArg).not.toHaveProperty('userApiKey');
     });
 
+    /**
+     * 2026-09-27: `skipEnqueueIfMiss`는 이제 `cacheOnly`에서만 나온다 —
+     * `isBot(headers)`가 관여하던 부분은 제거됐다(route.ts 상단 불변식과
+     * 같은 이유: 봇의 캐시 미스도 사람과 같은 본문을 생성해야 한다). 이
+     * 테스트가 없으면 `isBot(...)` 기반 분기가 되돌아와도 놓친다 — `cacheOnly`를
+     * 생략한 기본 호출이 여전히 `false`를 내는지가 유일한 신호다.
+     */
+    it('passes skipEnqueueIfMiss: false when cacheOnly is omitted', async () => {
+        await submitOptionsAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            'all',
+            MODEL_ID,
+            'ko'
+        );
+
+        expect(mockRunOptionsAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ skipEnqueueIfMiss: false })
+        );
+    });
+
+    it('passes skipEnqueueIfMiss: true when cacheOnly is true', async () => {
+        await submitOptionsAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            'all',
+            MODEL_ID,
+            'ko',
+            undefined,
+            undefined,
+            true
+        );
+
+        expect(mockRunOptionsAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ skipEnqueueIfMiss: true })
+        );
+    });
+
     it('returns ai_server_unstable when the AI provider fails (retry exhausted)', async () => {
         mockRunOptionsAnalysis.mockRejectedValueOnce(
             new Error('AI_SERVER_UNSTABLE')

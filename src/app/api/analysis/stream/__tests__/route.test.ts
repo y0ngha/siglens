@@ -554,20 +554,6 @@ describe('POST /api/analysis/stream', () => {
         });
     });
 
-    describe('E2E bot → miss_no_trigger (technical)', () => {
-        it('E2E 환경에서 봇이면 heartbeatStream으로 miss_no_trigger를 흘린다', async () => {
-            vi.mocked(isE2E).mockReturnValue(true);
-            vi.mocked(isBot).mockReturnValue(true);
-
-            const response = await POST(makeRequest());
-            const events = await collectSseEvents(response);
-
-            const doneEvent = events.find(e => e.includes('event: done'));
-            expect(doneEvent).toBeDefined();
-            expect(doneEvent).toContain('miss_no_trigger');
-        });
-    });
-
     describe('DISPATCH — 각 타입이 올바른 액션으로 위임된다', () => {
         /** 모든 DISPATCH 액션이 반환할 기본 성공 값. */
         const MOCK_RESULT = { status: 'cached' as const, result: {} };
@@ -1231,15 +1217,21 @@ describe('POST /api/analysis/stream', () => {
             vi.mocked(isE2E).mockReturnValue(true);
         });
 
-        it('봇 요청은 miss_no_trigger로 끝내고 core를 부르지 않는다', async () => {
+        // 2026-09-27: 봇도 E2E fixture를 사람과 동일하게 받는다 — 예전엔 여기서
+        // 즉시 `miss_no_trigger`를 반환했는데, 그게 Googlebot이 색인하는 DOM을
+        // "봇 트래픽으로 보여 표시하지 않았어요" 안내문으로 만드는 원인이었다.
+        // 이 테스트가 없으면 그 봇 단락이 되돌아와도 초록으로 보인다.
+        it('봇 요청도 사람과 같은 E2E fixture를 받는다 — miss_no_trigger 없음', async () => {
             vi.mocked(isBot).mockReturnValue(true);
 
             const response = await POST(makeRequest());
             const events = await collectSseEvents(response);
 
-            expect(events.some(e => e.includes('miss_no_trigger'))).toBe(true);
+            expect(vi.mocked(e2eCachedTechnical)).toHaveBeenCalledWith('free');
             expect(vi.mocked(runAnalysis)).not.toHaveBeenCalled();
-            expect(vi.mocked(e2eCachedTechnical)).not.toHaveBeenCalled();
+            const doneEvent = events.find(e => e.includes('event: done'));
+            expect(doneEvent).toContain('E2E fixture');
+            expect(events.some(e => e.includes('miss_no_trigger'))).toBe(false);
         });
 
         it('비봇 요청은 fixture를 반환하고 core를 부르지 않는다', async () => {
@@ -1492,8 +1484,8 @@ describe('POST /api/analysis/stream', () => {
          * 사람 트래픽이 상한을 채운 상태에서도 Googlebot이 503을 받으면 robots.txt에
          * 이 경로를 열어 둔 의미가 사라진다.
          *
-         * 이 테스트가 없으면 `canAcceptAnalysisStream(skipEnqueueIfMiss)` 호출에서
-         * `skipEnqueueIfMiss` 인자가 제거돼 상수 `false`로 대체되어도 기존 사람 경계
+         * 이 테스트가 없으면 `canAcceptAnalysisStream(isBotRequest)` 호출에서
+         * `isBotRequest` 인자가 제거돼 상수 `false`로 대체되어도 기존 사람 경계
          * 테스트는 여전히 녹색이 된다.
          */
         describe('봇 ×2 천장 (Task 3)', () => {
@@ -1618,31 +1610,35 @@ describe('POST /api/analysis/stream', () => {
     });
 
     /**
-     * Gap 1: skipEnqueueIfMiss — 봇 감지가 LLM 비용 트리거를 제어한다.
+     * Gap 1 (revised 2026-09-27): skipEnqueueIfMiss — 더 이상 봇 감지가 LLM
+     * 생성 트리거를 제어하지 않는다.
      *
-     * `skipEnqueueIfMiss: true`이면 core가 캐시 미스 시 LLM 큐를 건너뛴다.
-     * 이 값이 잘못 배선되면 두 가지 재앙이 된다:
-     * - 항상 true → 실제 사용자가 LLM 결과를 받지 못한다.
-     * - 항상 false → 모든 크롤러 요청이 LLM 청구서를 태운다.
+     * 예전엔 `isBot(headers)`가 `skipEnqueueIfMiss`를 결정해 봇의 캐시 미스가
+     * `miss_no_trigger`로 즉시 끝났다 — 그게 Googlebot이 실제 분석 대신 "봇
+     * 트래픽으로 보여 표시하지 않았어요" 안내문을 색인하게 만든 원인이다
+     * (파일 상단 "본문은 UA에 의존하지 않는다" 불변식). 지금은 봇 여부와
+     * 무관하게 항상 `false`를 전달한다. 이 테스트가 없으면 `isBot(...)` 기반
+     * 분기가 되돌아와도 초록으로 보인다.
      */
-    describe('skipEnqueueIfMiss — 봇 감지가 LLM 비용 트리거를 제어한다', () => {
+    describe('skipEnqueueIfMiss — 봇 여부와 무관하게 항상 false다', () => {
         beforeEach(() => {
             vi.mocked(runAnalysis).mockResolvedValue({
-                status: 'miss_no_trigger' as const,
-            });
+                status: 'cached' as const,
+                result: {},
+            } as never);
         });
 
-        it('봇 요청이면 skipEnqueueIfMiss: true를 runAnalysis에 전달한다', async () => {
+        it('봇 요청이어도 skipEnqueueIfMiss: false를 runAnalysis에 전달한다', async () => {
             vi.mocked(isBot).mockReturnValue(true);
 
             const response = await POST(makeRequest());
             await collectSseEvents(response);
 
-            const opts = vi.mocked(runAnalysis).mock.calls[0]?.[5] as Record<
-                string,
-                unknown
-            >;
-            expect(opts?.skipEnqueueIfMiss).toBe(true);
+            const call = vi
+                .mocked(runAnalysis)
+                .mock.calls.find(c => c[0] === 'AAPL');
+            const opts = call?.[5] as Record<string, unknown> | undefined;
+            expect(opts?.skipEnqueueIfMiss).toBe(false);
         });
 
         it('봇 아닌 요청이면 skipEnqueueIfMiss: false를 runAnalysis에 전달한다', async () => {
@@ -1651,10 +1647,10 @@ describe('POST /api/analysis/stream', () => {
             const response = await POST(makeRequest());
             await collectSseEvents(response);
 
-            const opts = vi.mocked(runAnalysis).mock.calls[0]?.[5] as Record<
-                string,
-                unknown
-            >;
+            const call = vi
+                .mocked(runAnalysis)
+                .mock.calls.find(c => c[0] === 'AAPL');
+            const opts = call?.[5] as Record<string, unknown> | undefined;
             expect(opts?.skipEnqueueIfMiss).toBe(false);
         });
     });
@@ -1662,8 +1658,12 @@ describe('POST /api/analysis/stream', () => {
     /**
      * Task S3 (prior-analysis-context) — both axes read history BEFORE the
      * core call (never lazily on a cache miss — see the long comment above
-     * each `findRecentForPrompt` call site in `route.ts`) and skip the read
-     * entirely for a bot request, mirroring `skipEnqueueIfMiss` above.
+     * each `findRecentForPrompt` call site in `route.ts`).
+     *
+     * 2026-09-27: 봇 요청도 더 이상 이 읽기를 건너뛰지 않는다 — core가
+     * `priorAnalyses`의 fingerprint를 캐시 키에 접으므로, 건너뛰면 봇과
+     * 사람이 같은 캐시 키에 서로 다른 프롬프트 입력(그리고 다른 본문)을
+     * 만든다(파일 상단 "본문은 UA에 의존하지 않는다" 불변식 위반).
      */
     describe('priorAnalyses — 히스토리 읽기가 core 호출 전에 배선된다', () => {
         beforeEach(() => {
@@ -1727,31 +1727,52 @@ describe('POST /api/analysis/stream', () => {
             expect(opts?.marketEvents).toBe(events);
         });
 
-        it('technical, 봇 → 뉴스 이벤트도 조회하지 않고 marketEvents는 undefined다', async () => {
+        it('technical, 봇이어도 뉴스 이벤트를 조회하고 marketEvents로 전달한다', async () => {
             vi.mocked(isBot).mockReturnValue(true);
+            const events = [
+                {
+                    publishedAt: new Date('2026-08-01T14:30:00Z'),
+                    category: 'earnings',
+                    sentiment: 'bullish',
+                    impact: 'high',
+                },
+            ];
+            mockFindMarketEventsForPrompt.mockResolvedValue(events);
 
             await collectSseEvents(await POST(makeRequest()));
 
-            expect(mockFindMarketEventsForPrompt).not.toHaveBeenCalled();
-            const opts = vi.mocked(runAnalysis).mock.calls[0]?.[5] as Record<
-                string,
-                unknown
-            >;
-            expect(opts?.marketEvents).toBeUndefined();
+            expect(mockFindMarketEventsForPrompt).toHaveBeenCalled();
+            const call = vi
+                .mocked(runAnalysis)
+                .mock.calls.find(c => c[0] === 'AAPL');
+            const opts = call?.[5] as Record<string, unknown> | undefined;
+            expect(opts?.marketEvents).toBe(events);
         });
 
-        it('technical, 봇 → findRecentForPrompt를 호출하지 않고 priorAnalyses는 undefined다', async () => {
+        it('technical, 봇이어도 findRecentForPrompt가 호출되고 priorAnalyses로 전달된다', async () => {
             vi.mocked(isBot).mockReturnValue(true);
+            const history = [
+                {
+                    generatedAt: new Date('2026-08-01'),
+                    trend: 'bullish',
+                    riskLevel: 'low',
+                },
+            ];
+            mockFindRecentForPrompt.mockResolvedValue(history);
 
             const response = await POST(makeRequest());
             await collectSseEvents(response);
 
-            expect(mockFindRecentForPrompt).not.toHaveBeenCalled();
-            const opts = vi.mocked(runAnalysis).mock.calls[0]?.[5] as Record<
-                string,
-                unknown
-            >;
-            expect(opts?.priorAnalyses).toBeUndefined();
+            expect(mockFindRecentForPrompt).toHaveBeenCalledWith({
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                tab: 'technical',
+            });
+            const call = vi
+                .mocked(runAnalysis)
+                .mock.calls.find(c => c[0] === 'AAPL');
+            const opts = call?.[5] as Record<string, unknown> | undefined;
+            expect(opts?.priorAnalyses).toBe(history);
         });
 
         it('overall, 봇 아님 → findRecentForPrompt(symbol, timeframe, tab: technical) 결과가 runOverallAnalysisAction의 priorAnalyses로 전달된다', async () => {
@@ -1795,8 +1816,16 @@ describe('POST /api/analysis/stream', () => {
             );
         });
 
-        it('overall, 봇 → findRecentForPrompt를 호출하지 않고 priorAnalyses는 undefined다', async () => {
+        it('overall, 봇이어도 findRecentForPrompt가 호출되고 priorAnalyses로 전달된다', async () => {
             vi.mocked(isBot).mockReturnValue(true);
+            const history = [
+                {
+                    generatedAt: new Date('2026-08-01'),
+                    trend: 'bearish',
+                    riskLevel: 'high',
+                },
+            ];
+            mockFindRecentForPrompt.mockResolvedValue(history);
 
             const body = JSON.stringify({
                 type: 'overall',
@@ -1810,14 +1839,18 @@ describe('POST /api/analysis/stream', () => {
             const response = await POST(makeRequest(undefined, body));
             await collectSseEvents(response);
 
-            expect(mockFindRecentForPrompt).not.toHaveBeenCalled();
+            expect(mockFindRecentForPrompt).toHaveBeenCalledWith({
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                tab: 'technical',
+            });
             expect(vi.mocked(runOverallAnalysisAction)).toHaveBeenCalledWith(
                 'AAPL',
                 'Apple',
                 '1Day',
                 'gemini-3.6-flash',
                 'ko',
-                expect.objectContaining({ priorAnalyses: undefined }),
+                expect.objectContaining({ priorAnalyses: history }),
                 expect.any(AbortSignal)
             );
         });
@@ -1861,8 +1894,17 @@ describe('POST /api/analysis/stream', () => {
             );
         });
 
-        it('overall, 봇 → 뉴스 이벤트를 조회하지 않고 marketEvents는 undefined다', async () => {
+        it('overall, 봇이어도 뉴스 이벤트를 조회하고 marketEvents로 전달한다', async () => {
             vi.mocked(isBot).mockReturnValue(true);
+            const events = [
+                {
+                    publishedAt: new Date('2026-08-01T14:30:00Z'),
+                    category: 'earnings',
+                    sentiment: 'bullish',
+                    impact: 'high',
+                },
+            ];
+            mockFindMarketEventsForPrompt.mockResolvedValue(events);
 
             const body = JSON.stringify({
                 type: 'overall',
@@ -1875,14 +1917,14 @@ describe('POST /api/analysis/stream', () => {
             });
             await collectSseEvents(await POST(makeRequest(undefined, body)));
 
-            expect(mockFindMarketEventsForPrompt).not.toHaveBeenCalled();
+            expect(mockFindMarketEventsForPrompt).toHaveBeenCalled();
             expect(vi.mocked(runOverallAnalysisAction)).toHaveBeenCalledWith(
                 'AAPL',
                 'Apple',
                 '1Day',
                 'gemini-3.6-flash',
                 'ko',
-                expect.objectContaining({ marketEvents: undefined }),
+                expect.objectContaining({ marketEvents: events }),
                 expect.any(AbortSignal)
             );
         });

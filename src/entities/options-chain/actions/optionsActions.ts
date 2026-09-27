@@ -1,6 +1,6 @@
 'use server';
 
-import { headers, cookies } from 'next/headers';
+import { cookies } from 'next/headers';
 import { getTranslations } from 'next-intl/server';
 import type { Locale } from '@/shared/i18n/locales';
 import {
@@ -16,7 +16,6 @@ import {
     buildGateError,
 } from '@/shared/lib/byokGate';
 import { caughtAnalysisErrorCode } from '@/shared/lib/aiProviderFailure';
-import { isBot } from '@/shared/api/isBot';
 import { isE2E } from '@/shared/api/e2eEnv';
 import type {
     AnalysisGateBlockedResult,
@@ -82,8 +81,11 @@ export async function submitOptionsAnalysisAction(
                 ? stub.e2eForcedOptionsError()
                 : stub.e2eCachedOptions();
         }
-        const requestHeaders = await headers();
-        const skipEnqueueIfMiss = isBot(requestHeaders) || cacheOnly === true;
+        // 2026-09-27: 더 이상 `isBot(...)`로 가르지 않는다 — 봇의 캐시 미스도
+        // 사람과 같은 본문을 생성해야 한다(route.ts 상단 불변식과 동일 원칙).
+        // `cacheOnly`만 남는 skip 사유다(위 JSDoc — OI/호가 stale 시 신규 분석
+        // 자체를 원치 않는 호출자 의도).
+        const skipEnqueueIfMiss = cacheOnly === true;
 
         const user = await getCurrentUser();
         const userId = user?.id ?? null;

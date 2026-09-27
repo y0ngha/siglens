@@ -1,6 +1,5 @@
 'use server';
 
-import { headers } from 'next/headers';
 import type { Locale } from '@/shared/i18n/locales';
 import {
     isEtRegularSessionOpen,
@@ -36,7 +35,6 @@ import {
     buildGateError,
 } from '@/shared/lib/byokGate';
 import { caughtAnalysisErrorCode } from '@/shared/lib/aiProviderFailure';
-import { isBot } from '@/shared/api/isBot';
 import { isE2E } from '@/shared/api/e2eEnv';
 // Cross-entity: options-chain fetchOptionsSnapshot 필요. Phase 9에서 features 레이어 도입 시 해소.
 import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
@@ -111,9 +109,6 @@ export async function runOverallAnalysisAction(
                 await import('@/shared/api/e2eAnalysisStub');
             return e2eCachedOverall();
         }
-        const requestHeaders = await headers();
-        const skipEnqueueIfMiss = isBot(requestHeaders);
-
         const user = await getCurrentUser();
         const userId = user?.id ?? null;
 
@@ -125,41 +120,37 @@ export async function runOverallAnalysisAction(
         const { db } = getDatabaseClient();
         const newsRepo = new DrizzleNewsRepository(db);
 
-        // bot 트래픽은 어차피 enqueue를 skip하므로 (`skipEnqueueIfMiss`) 옵션
-        // 스냅샷 및 financials 스냅샷을 fetch하지 않는다 — 크롤러가 외부 API
-        // rate-limit을 소진시키는 시나리오 차단. 일반 유저는 각 fetch의 cross-
-        // request 캐시(Upstash / Next data cache)로 흡수.
+        // 2026-09-27: 더 이상 봇 트래픽이라고 이 fetch들을 skip하지 않는다.
+        // 스킵하면 봇의 캐시 미스가 옵션/financials 없이 생성되어, 같은 캐시
+        // 키인데 사람이 만든 것과 다른(빈약한) 본문이 나온다 — 파일 상단
+        // "본문은 UA에 의존하지 않는다" 원칙과 같은 이유로
+        // `src/app/api/analysis/stream/route.ts`에서 제거된 것과 동일 패턴.
         // news / earnings / options / financials 네 fetch는 서로 독립이므로
         // Promise.all로 병렬화해 직렬 대기 비용 (~1-3s)을 제거한다.
         const optionsSnapshotPromise: Promise<OptionsSnapshot | null> =
-            skipEnqueueIfMiss
-                ? Promise.resolve(null)
-                : fetchOptionsSnapshot(symbol).catch(error => {
-                      console.warn(
-                          '[runOverallAnalysisAction] options snapshot fetch failed:',
-                          error
-                      );
-                      return null;
-                  });
+            fetchOptionsSnapshot(symbol).catch(error => {
+                console.warn(
+                    '[runOverallAnalysisAction] options snapshot fetch failed:',
+                    error
+                );
+                return null;
+            });
 
         /**
-         * financials scorecard는 봇에선 skip한다(options snapshot과 동일 정책).
          * fetch/compute 실패 시 undefined로 graceful degradation — financials가
          * 없어도 나머지 4축으로 종합 분석을 계속 진행한다.
          */
         const financialsScorecardPromise: Promise<
             FinancialsScorecard | undefined
-        > = skipEnqueueIfMiss
-            ? Promise.resolve(undefined)
-            : getFinancialsSnapshot(symbol)
-                  .then(snapshot => computeFinancialsScorecard(snapshot))
-                  .catch(error => {
-                      console.warn(
-                          '[runOverallAnalysisAction] financials scorecard fetch failed:',
-                          error
-                      );
-                      return undefined;
-                  });
+        > = getFinancialsSnapshot(symbol)
+            .then(snapshot => computeFinancialsScorecard(snapshot))
+            .catch(error => {
+                console.warn(
+                    '[runOverallAnalysisAction] financials scorecard fetch failed:',
+                    error
+                );
+                return undefined;
+            });
 
         const [rows, next, optionsSnapshot, financialsScorecard] =
             await Promise.all([
@@ -218,7 +209,9 @@ export async function runOverallAnalysisAction(
             },
             tier: gate.tier,
             reasoning: resolveReasoning(gate.tier, options.reasoning),
-            skipEnqueueIfMiss,
+            // 2026-09-27: 더 이상 UA로 가르지 않는다 — 봇의 캐시 미스도 사람과
+            // 같은 본문을 생성해야 한다(route.ts 상단 불변식과 동일 원칙).
+            skipEnqueueIfMiss: false,
             assetClass,
             // core는 통화를 심볼에서 추론하지 않는다 — 시장 프로필이 소유한 값을 넘긴다.
             currency: descriptor.priceFormat.currency,

@@ -47,7 +47,8 @@ import { E2E_FORCE_CONGRESS_ERROR_COOKIE } from '@/shared/api/e2eAnalysisStub';
  *       "E2E 강제 congress 동향 분석 실패 (resilience 테스트용)"
  *   - Senate fixture amount: "$1,001 - $15,000"  (Purchase → side=buy)
  *   - House fixture amount: "$15,001 - $50,000"  (Sale (Partial) → side=sell)
- *   - Bot notice: "봇 트래픽으로 보여 분석 결과를 표시하지 않았어요."
+ *   - Bot parity (2026-09-27): a bot UA gets the same cached AI summary as a
+ *     human — `skipEnqueueIfMiss` is hardcoded `false`, never UA-derived.
  */
 
 // Cached AI summary text (overallSentiment="bullish" → label "매수 우위")
@@ -261,15 +262,16 @@ test.describe('congress: resilience', () => {
         ).toBeVisible({ timeout: 10_000 });
     });
 
-    test('bot UA → AI section bot notice OR cached fixture; trades table still renders', async ({
+    /**
+     * 2026-09-27: `runCongressTrendAction`의 `skipEnqueueIfMiss`는 더 이상
+     * `isBot(headers)`에서 나오지 않는다 — 항상 `false`다(route.ts 상단
+     * "본문은 UA에 의존하지 않는다" 불변식과 같은 원칙). 봇 UA는 사람과 완전히
+     * 같은 캐시 fixture를 받아야 하고, BotBlockedNotice는 나타나면 안 된다.
+     */
+    test('bot UA → same cached AI summary as a human; trades table still renders, no BotBlockedNotice', async ({
         page,
     }) => {
         // Set an AI-bot UA (matches AI_BOT_RE — ClaudeBot).
-        // The congress analysis action under E2E currently returns the cached
-        // fixture regardless of UA (the bot gate only applies to the real
-        // `submitCongressTrend` core call). We assert the minimal contract:
-        // trades table SSR is always present, and either the bot notice or
-        // the AI summary renders. This mirrors financials.spec.ts.
         await page.setExtraHTTPHeaders({
             'User-Agent':
                 'Mozilla/5.0 (compatible; ClaudeBot/1.0; +https://claude.ai/bot)',
@@ -282,17 +284,18 @@ test.describe('congress: resilience', () => {
             page.getByText(SENATE_FIXTURE_AMOUNT, { exact: false }).first()
         ).toBeVisible();
 
-        // Either the BotBlockedNotice OR the cached AI summary renders.
-        const botNotice = page.getByText(
-            '봇 트래픽으로 보여 분석 결과를 표시하지 않았어요.',
-            { exact: false }
-        );
-        const aiSummaryText = page.getByText(CONGRESS_AI_SUMMARY_KO, {
-            exact: false,
-        });
-        await expect(botNotice.or(aiSummaryText).first()).toBeVisible({
-            timeout: 10_000,
-        });
+        // AI summary must render deterministically for the bot UA too.
+        await expect(
+            page.getByText(CONGRESS_AI_SUMMARY_KO, { exact: false })
+        ).toBeVisible({ timeout: 10_000 });
+
+        // BotBlockedNotice가 나타나면 안 된다 — UA 기반 생성 차단이 되돌아온 신호다.
+        await expect(
+            page.getByText(
+                '봇 트래픽으로 보여 분석 결과를 표시하지 않았어요.',
+                { exact: false }
+            )
+        ).toHaveCount(0);
     });
 });
 

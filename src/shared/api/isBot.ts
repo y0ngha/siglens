@@ -11,16 +11,21 @@ import { userAgent } from 'next/server';
  * 보내는 *요청*이고 여기는 우리 쪽 *판정*이라 준수 여부와 무관하게 동작해야 한다.
  * robots.txt에 토큰을 추가할 때 여기도 같이 보는 것을 권한다.
  *
- * ⚠️ 이 함수 자체는 콘텐츠를 감추지 않는다 — 반환값만 준다. 다만 호출부
- * (SSE 분석 라우트의 종목 분석, 종목 탭 entity actions)가 이 값으로 **AI 생성
- * 트리거를 건너뛴다**(`skipEnqueueIfMiss` 등). 그래서 검색 색인 봇(Googlebot·
- * Bingbot·Yeti·Daumoa)이 캐시가 비어 있는 종목 페이지를 크롤하면 생성이 트리거되지
- * 않고 안내문(BotBlockedNotice 등)을 그대로 본다 — 색인되는 건 그 렌더된 DOM이다.
- * 이것이 봇이 보게 되는 페이지에 SSR 캐시 시드를 두는 이유다.
+ * ⚠️ 이 함수 자체는 콘텐츠를 감추지 않는다 — 반환값만 준다.
  *
- * 시장·거시 브리핑(`submitMarketBriefingAction`·`submitMacroBriefingAction`)은 이
- * 값을 쓰지 않는다 — 생성이 시각 버킷당 한 번으로 접혀 비용이 작고, 봇 분기가
- * `/market`·`/economy` 렌더에 차단 안내문을 색인시키고 있었다(2026-09-17 운영 감사).
+ * **2026-09-27부터 호출부는 이 값으로 AI 생성 트리거를 건너뛰지 않는다.**
+ * 예전엔 SSE 분석 라우트의 종목 분석·종목 탭 entity actions가 이 값으로
+ * `skipEnqueueIfMiss`를 결정해, 검색 색인 봇(Googlebot·Bingbot·Yeti·Daumoa)이
+ * 캐시가 비어 있는 종목 페이지를 크롤하면 생성이 트리거되지 않고 안내문
+ * (BotBlockedNotice 등)을 그대로 봤다 — 색인되는 게 그 렌더된 DOM이었다.
+ * 지금은 봇도 사람과 같은 본문을 생성한다(`src/app/api/analysis/stream/route.ts`
+ * 상단 불변식). 이 함수의 남은 호출부는 동시성 상한(`canAcceptAnalysisStream`의
+ * 봇 천장)과 방문자 집계(`/api/presence`) 제외뿐이다.
+ *
+ * 시장·거시 브리핑(`submitMarketBriefingAction`·`submitMacroBriefingAction`)은
+ * 애초에 이 값을 쓴 적이 없다 — 생성이 시각 버킷당 한 번으로 접혀 비용이 작고,
+ * 봇 분기가 `/market`·`/economy` 렌더에 차단 안내문을 색인시키고 있었다
+ * (2026-09-17 운영 감사).
  */
 const BOT_UA_RE = new RegExp(
     [
@@ -103,8 +108,10 @@ const BOT_UA_RE = new RegExp(
  * `User-Agent` header. Wraps Next.js' official `userAgent` helper so call
  * sites stay simple and so the detection can be swapped out later if needed.
  *
- * Used by Server Actions to suppress Redis worker dispatch on crawler
- * traffic (see the SSE analysis route and the gated entity actions).
+ * Used for the analysis-stream concurrency-cap ceiling
+ * (`canAcceptAnalysisStream`) and presence/view-count exclusion — no longer
+ * to suppress AI generation on a cache miss (removed 2026-09-27; see the
+ * long comment above).
  */
 export function isBot(headers: Headers): boolean {
     const userAgentHeader = headers.get('user-agent') ?? '';

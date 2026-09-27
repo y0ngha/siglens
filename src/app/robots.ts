@@ -172,8 +172,15 @@ export default function robots(): MetadataRoute.Robots {
                 // Server Action(현재 페이지 URL로 POST — 허용 경로)이었지만 지금은 이
                 // API 라우트로 간다. 여기가 막히면 Googlebot 렌더러가 요청 자체를
                 // 못 보내 캐시 HIT조차 못 받고, 렌더된 DOM에 에러 배너만 남는다.
-                // 봇은 캐시 미스 시 새 분석을 큐에 넣지 않으므로(`skipEnqueueIfMiss`)
-                // AI 비용은 0이고, 얻는 건 색인 가능한 분석 텍스트다.
+                //
+                // 2026-09-27: 봇은 더 이상 캐시 미스 시 큐잉을 건너뛰지 않는다 —
+                // 크롤러도 사람과 같은 본문을 받아야 한다(`skipEnqueueIfMiss`는
+                // 이제 UA와 무관하게 항상 `false`). 그래서 "AI 비용은 0"이 아니라,
+                // 캐시 키가 사람과 공유되고(같은 심볼·타임프레임이면 한 번 생성한
+                // 결과를 봇과 사람이 함께 쓴다) SEO prewarm이 인기 심볼을 미리
+                // 채워 둔다는 뜻이다 — 비용은 UA가 아니라 캐싱·prewarm과
+                // 동시성 상한(`canAcceptAnalysisStream`)이 통제한다. 얻는 건
+                // 여전히 색인 가능한, 사람과 동일한 분석 텍스트다.
                 // Allow는 더 긴 경로 매칭이 이기므로 아래 `/api/` disallow보다 우선한다.
                 allow: BASELINE_ALLOW,
                 // API 라우트는 disallow로 유지 — 응답이 JSON/이미지 등 SEO 가치

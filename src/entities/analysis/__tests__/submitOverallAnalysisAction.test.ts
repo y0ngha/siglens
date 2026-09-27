@@ -597,7 +597,15 @@ describe('runOverallAnalysisAction 함수는', () => {
         });
     });
 
-    it('passes skipEnqueueIfMiss: true to siglens-core when request UA is a bot', async () => {
+    /**
+     * 2026-09-27: `skipEnqueueIfMiss`는 더 이상 요청 UA로 갈리지 않는다 — 봇의
+     * 캐시 미스도 사람과 같은 본문을 생성해야 한다(route.ts 상단 불변식).
+     * 봇 UA를 넣어도 `false`가 나와야 한다는 게 바로 그 회귀 가드다: `isBot(...)`
+     * 기반 분기가 되돌아오면 이 테스트가 `true`를 보고 실패한다.
+     */
+    it('passes skipEnqueueIfMiss: false to siglens-core even when request UA is a bot', async () => {
+        // 액션은 더 이상 headers()를 읽지 않는다. 이 봇 UA는 죽은 설정이 아니라
+        // 회귀 가드다: isBot(headers) 기반 분기가 되돌아오면 여기서 true가 나와 실패한다.
         mockHeaders.mockResolvedValueOnce(
             new Headers({
                 'user-agent':
@@ -614,7 +622,7 @@ describe('runOverallAnalysisAction 함수는', () => {
         );
 
         expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
-            expect.objectContaining({ skipEnqueueIfMiss: true })
+            expect.objectContaining({ skipEnqueueIfMiss: false })
         );
     });
 
@@ -782,13 +790,26 @@ describe('runOverallAnalysisAction 함수는', () => {
             );
         });
 
-        it('bot 요청(skipEnqueueIfMiss=true)이면 financials fetch를 건너뛴다', async () => {
+        /**
+         * 2026-09-27: 봇 UA여도 financials fetch를 건너뛰지 않는다 — 건너뛰면
+         * 봇의 캐시 미스가 사람보다 빈약한 입력으로 생성되어, 같은 캐시 키에
+         * 서로 다른 본문이 생긴다(route.ts 상단 불변식). 이 테스트가 없으면
+         * bot 트래픽 skip 분기가 되돌아와도 `mockGetFinancialsSnapshot`이
+         * 호출되지 않는 걸 놓친다.
+         */
+        it('봇 UA여도 financials fetch를 건너뛰지 않는다', async () => {
+            // 액션은 더 이상 headers()를 읽지 않는다. 이 봇 UA는 죽은 설정이 아니라
+            // 회귀 가드다: isBot(headers) 기반 분기가 되돌아오면 여기서 true가 나와 실패한다.
             mockHeaders.mockResolvedValueOnce(
                 new Headers({
                     'user-agent':
                         'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
                 })
             );
+            const snapshot = makeFinancialsSnapshot();
+            const scorecard = makeFinancialsScorecard();
+            mockGetFinancialsSnapshot.mockResolvedValueOnce(snapshot);
+            mockComputeFinancialsScorecard.mockReturnValueOnce(scorecard);
 
             await runOverallAnalysisAction(
                 'AAPL',
@@ -798,10 +819,9 @@ describe('runOverallAnalysisAction 함수는', () => {
                 'ko'
             );
 
-            // bot 트래픽은 financials fetch를 하지 않는다
-            expect(mockGetFinancialsSnapshot).not.toHaveBeenCalled();
+            expect(mockGetFinancialsSnapshot).toHaveBeenCalledWith('AAPL');
             expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
-                expect.objectContaining({ financialsScorecard: undefined })
+                expect.objectContaining({ financialsScorecard: scorecard })
             );
         });
 

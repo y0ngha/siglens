@@ -144,8 +144,14 @@ export interface UseAnalysisResult {
     isAnalyzing: boolean;
     analysisError: string | null;
     /**
-     * Server Action이 봇 트래픽으로 판정해 캐시 미스 시 워커 작업을 enqueue하지
-     * 않고 반환한 상태. UI에서 BotBlockedNotice를 렌더한다.
+     * SSE 라우트가 `miss_no_trigger`를 반환한 상태. UI에서 BotBlockedNotice를
+     * 렌더한다.
+     *
+     * 이름과 달리 2026-09-27부터 봇 UA로만 발생하지 않는다 — technical 축의
+     * `skipEnqueueIfMiss`는 이제 UA와 무관하게 항상 `false`라(파일 상단
+     * 불변식, `api/analysis/stream/route.ts` 참고) 실제 요청에서는 이 상태가
+     * 사실상 도달하지 않는다. 이름·상태 리터럴은 그대로 두되(다른 다섯 축과
+     * 공유하는 `BotBlockedError`/`BotBlockedNotice` 계약), 원인 문구만 정정한다.
      */
     isBotBlocked: boolean;
     handleReanalyze: () => void;

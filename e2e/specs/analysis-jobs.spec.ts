@@ -6,42 +6,39 @@ import {
 import { srhCommand } from '../support/srhClient';
 
 /**
- * Analysis E2E: the two branches that the cached-fixture happy path
+ * Analysis E2E: two branches that the cached-fixture happy path
  * (symbol-analysis.spec) does NOT exercise —
- *   1. the bot-blocked branch (`miss_no_trigger` → `BotBlockedNotice`), and
+ *   1. bot UA parity (a crawler gets the same fixture body a human does), and
  *   2. the user-initiated force re-analysis branch (`handleReanalyze`).
  *
  * Both run against the E2E short-circuit in the SSE route
- * (`src/app/api/analysis/stream/route.ts`), which is
- * bot-aware: under E2E_TEST=1 a crawler User-Agent yields the core
- * `{ status: 'miss_no_trigger' }` shape (mirroring prod's `skipEnqueueIfMiss`
- * + cache miss), while a normal UA yields the deterministic cached fixture.
- * No LLM round-trip, no external browser request — the
- * support/fixtures network guard enforces zero non-app traffic.
+ * (`src/app/api/analysis/stream/route.ts`). No LLM round-trip, no external
+ * browser request — the support/fixtures network guard enforces zero
+ * non-app traffic.
+ *
+ * **2026-09-27: the E2E short-circuit is no longer bot-aware.** It used to
+ * branch on `isBot(request.headers)` and return `{ status: 'miss_no_trigger' }`
+ * for a crawler UA, which made `useAnalysis` flip `isBotBlocked` and
+ * `ChartContent` render `BotBlockedNotice` — Googlebot then indexed that
+ * notice instead of the real analysis (see the file-top invariant in
+ * route.ts: "응답 본문은 User-Agent에 의존하지 않는다"). Now every UA takes the
+ * same path and gets the same deterministic cached fixture.
  *
  * Render path reminder (see symbol-analysis.spec for the full write-up): the
  * SSR page always passes `initialAnalysisFailed={true}`, so on client mount
  * `useAnalysis` auto-submits without a `reanalyze` intent (so the server
- * derives `force=false`). For a normal UA
- * that returns the cached fixture; the fixture `summary` only surfaces after
- * the ~9s progress-finishing animation (real `setTimeout`s — we do NOT freeze
- * the clock). For a bot UA it returns `miss_no_trigger`, and `useAnalysis`
- * flips `isBotBlocked` so `ChartContent` renders `BotBlockedNotice` instead.
+ * derives `force=false`), and the cached fixture's `summary` only surfaces
+ * after the ~9s progress-finishing animation (real `setTimeout`s — we do NOT
+ * freeze the clock). This is now identical for a bot UA and a normal UA.
  */
 
-// BotBlockedNotice (src/shared/ui/BotBlockedNotice.tsx) — role="status",
-// first line of its explanatory copy.
-const BOT_BLOCKED_NOTICE_TEXT =
-    '봇 트래픽으로 보여 분석 결과를 표시하지 않았어요.';
-
 // StaleAnalysisBanner (src/widgets/analysis/StaleAnalysisBanner.tsx) message —
-// also role="status". The fixture's analysis date is old, so the chart panel
+// role="status". The fixture's analysis date is old, so the chart panel
 // shows this banner (and its own "재분석" button) above the analysis body.
 const STALE_BANNER_TEXT = 'AI 분석 결과가 오래됐어요';
 
-// Standard Googlebot UA. Next.js' `userAgent({headers}).isBot` (which
-// `src/shared/api/isBot.ts` delegates to) matches /Googlebot/i, so this is
-// flagged as a bot and the E2E short-circuit returns `miss_no_trigger`.
+// Standard Googlebot UA — used to prove bot/human parity, not to trigger a
+// different branch (there is none left; see the file-top comment above).
 const GOOGLEBOT_UA =
     'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)';
 
@@ -71,34 +68,33 @@ async function clearReanalyzeCooldown(
     await srhCommand(['DEL', `analysis:cooldown:${symbol}:${timeframe}`]);
 }
 
-test.describe('analysis jobs: bot-block + force re-analysis', () => {
-    test.describe('bot-blocked notice', () => {
-        // 봇 UA로 컨텍스트를 띄워 isBot()이 true가 되도록 한다 →
-        // SSE 라우트의 E2E 단락이 miss_no_trigger를 반환 →
-        // useAnalysis가 isBotBlocked=true → ChartContent가 BotBlockedNotice 렌더.
+test.describe('analysis jobs: bot parity + force re-analysis', () => {
+    test.describe('bot UA parity (2026-09-27)', () => {
+        // 봇 UA로 컨텍스트를 띄운다 — 예전엔 이게 SSE 라우트의 E2E 단락에서
+        // miss_no_trigger를 반환시켰지만, 지금은 사람과 같은 경로를 탄다.
         test.use({ userAgent: GOOGLEBOT_UA });
 
-        test('renders BotBlockedNotice for a crawler User-Agent', async ({
+        test('crawler User-Agent renders the same cached fixture a human gets, no BotBlockedNotice', async ({
             page,
         }) => {
             await page.goto('/AAPL');
 
-            // BotBlockedNotice는 role="status"로 렌더된다. StaleAnalysisBanner도
-            // role="status"라 텍스트로 좁힌다. 이 notice의 존재가 곧 bot-aware
-            // 단락이 작동했다는 증거다.
-            const botNotice = page
-                .getByRole('status')
-                .filter({ hasText: BOT_BLOCKED_NOTICE_TEXT });
-            await expect(botNotice.first()).toBeVisible({
-                timeout: ANALYSIS_RENDER_TIMEOUT_MS,
-            });
-
-            // 봇 경로에서는 캐시 fixture가 절대 렌더되지 않아야 한다(단락이 cached가
-            // 아닌 miss_no_trigger를 반환했음을 교차 검증).
+            // 사람 UA와 동일한 fixture summary가 렌더돼야 한다 — bot/human 본문
+            // 동일성이 핵심 회귀 가드다.
             await expect(
-                page.getByText(ANALYSIS_FIXTURE_SUMMARY_PREFIX, {
-                    exact: false,
-                })
+                page
+                    .getByText(ANALYSIS_FIXTURE_SUMMARY_PREFIX, {
+                        exact: false,
+                    })
+                    .first()
+            ).toBeVisible({ timeout: ANALYSIS_RENDER_TIMEOUT_MS });
+
+            // BotBlockedNotice가 더 이상 렌더되지 않아야 한다 — 이 문구가 다시
+            // 나타나면 UA 기반 생성 차단이 되돌아온 것이다.
+            await expect(
+                page.getByText(
+                    '봇 트래픽으로 보여 분석 결과를 표시하지 않았어요.'
+                )
             ).toHaveCount(0);
         });
     });
