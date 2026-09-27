@@ -1,5 +1,26 @@
 # Changelog
 
+# [0.91.0](https://github.com/y0ngha/siglens/compare/v0.90.1...v0.91.0) (2026-09-27)
+
+### Bug Fixes
+
+* PR [#882](https://github.com/y0ngha/siglens/issues/882) 승인 코멘트 반영 — FMP 집계 범위 주석 정정 + 옵션 스냅샷 봇 회귀 테스트 ([6f78933](https://github.com/y0ngha/siglens/commit/6f789335b950670671d64800d623e511a1dc3397))
+* PR [#882](https://github.com/y0ngha/siglens/issues/882) R1 — 봇 보조 fetch·동시성 배수 유지 근거 주석 보강 ([6e8fe69](https://github.com/y0ngha/siglens/commit/6e8fe696409b24442bc6c62ea2cd303cfc7f45f1))
+* PR [#882](https://github.com/y0ngha/siglens/issues/882) R2 — isBot 호출부 JSDoc을 실제 4곳과 일치시킴 ([f4e8060](https://github.com/y0ngha/siglens/commit/f4e806006d4b46bc2cdff48b7f75527e405886ae))
+* PR [#882](https://github.com/y0ngha/siglens/issues/882) R3 — 봇 동시성 배수 제거 + 봇 차단 안내 UI 정리 ([27a332d](https://github.com/y0ngha/siglens/commit/27a332d02c85e765b733cda8b120fa0355b7002d))
+* PR [#883](https://github.com/y0ngha/siglens/issues/883) R1 — PortfolioManager 배선 테스트 + e2e 스펙을 /portfolio로 이전 + 빈 상태 온보딩 CTA 제거 ([ec7a5e8](https://github.com/y0ngha/siglens/commit/ec7a5e8ed02427c6cb17213b73dd699c9de97ca6))
+* PR [#883](https://github.com/y0ngha/siglens/issues/883) R2 — 편집 저장 시 onHoldingsChange 테스트 추가 + 위치 섹션 aria-labelledby로 중복 발화 제거 ([93d287f](https://github.com/y0ngha/siglens/commit/93d287f301f0fc23d27058c435ecb2708412dc8f))
+* PR [#884](https://github.com/y0ngha/siglens/issues/884) R1 — 레이아웃 계약 반전 후 남은 stale 주석 갱신 ([0b350a7](https://github.com/y0ngha/siglens/commit/0b350a788ffb9287ecb06bf3d43f8b8ed8d891f4))
+* PR [#884](https://github.com/y0ngha/siglens/issues/884) R2 — 주석 버전 표기 v0.79.1로 정정 + items-start 행 계약 테스트 복원 ([a8579c1](https://github.com/y0ngha/siglens/commit/a8579c1c5c50ad700b6ac4f4192a17e4226929e5))
+* PR [#884](https://github.com/y0ngha/siglens/issues/884) R3 — diff 밖에 남은 '스크롤러는 문서 하나' 서술 전면 갱신 ([6cb7c63](https://github.com/y0ngha/siglens/commit/6cb7c632d30aaa736388adccd74ebe78c63460f7))
+* **seo:** 봇 UA에도 종목 분석을 사람과 똑같이 생성한다 (skipEnqueueIfMiss UA 분기 제거) ([3c2e928](https://github.com/y0ngha/siglens/commit/3c2e9287c0be05a1be6dc167264724b108c1e642))
+* **ui:** 차트 라우트 AI 분석 패널을 차트 높이에 고정하고 내부 스크롤 ([e1426af](https://github.com/y0ngha/siglens/commit/e1426afce0d063c81613e7f9d6fdde7d59372daa))
+
+### Features
+
+* /onboarding 라우트 제거, 가입 후 목적지·포지션 CTA를 /portfolio로 ([f2519a8](https://github.com/y0ngha/siglens/commit/f2519a8c9aef091fc19e52882bfe5482b8380cc4))
+* 포트폴리오 메뉴 분리 및 보유종목 레이블 개선 ([0fa58f8](https://github.com/y0ngha/siglens/commit/0fa58f895bd2c86719270dcaf45293e7cdbe515c))
+
 ## [0.90.1](https://github.com/y0ngha/siglens/compare/v0.90.0...v0.90.1) (2026-09-27)
 
 ### Bug Fixes
