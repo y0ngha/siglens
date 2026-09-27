@@ -10,14 +10,13 @@ import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { toView } from '@/entities/portfolio/lib/toView';
 import { getDatabaseClient } from '@/shared/db/client';
 import type { Metadata } from 'next';
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import type { PortfolioHoldingView } from '@/entities/portfolio';
 import { DEFAULT_LOCALE, isLocale, localePath } from '@/shared/i18n/locales';
 import type { Locale } from '@/shared/i18n/locales';
 
-// noindex 페이지에도 canonical/og:url을 명시한다 (login/signup/account/onboarding
+// noindex 페이지에도 canonical/og:url을 명시한다 (login/signup/account
 // 정책과 일관). 외부에 변형 URL이 공유되더라도 "원본은 /portfolio 하나"라는 신호를
 // 명확히 두면 일부 크롤러/공유 도구가 변형을 강조하지 않는다.
 /**
@@ -56,7 +55,7 @@ export async function generateMetadata({
  * Reads cookies via getCurrentUser — must be inside Suspense for PPR. Exported
  * (rather than module-private) so tests can `await PortfolioGuard()` directly
  * and assert the unauthenticated redirect target, mirroring the
- * `OnboardingGuard` export pattern in `src/app/onboarding/page.tsx`.
+ * `AccountContent` guard pattern in `src/app/[locale]/account/page.tsx`.
  *
  * Reads the user's holdings directly via `DrizzlePortfolioRepository` (the
  * same repo `getPortfolioHoldingsAction` wraps) instead of calling that
@@ -130,12 +129,6 @@ export function PortfolioEmptyState() {
             <p className="text-sm leading-relaxed text-secondary-400">
                 {t('page.d103d5')}
             </p>
-            <Link
-                href="/onboarding"
-                className="inline-flex min-h-11 touch-manipulation items-center rounded-lg border border-primary-500 px-4 text-sm font-medium text-primary-300 transition-colors hover:bg-primary-500/10 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-            >
-                {t('page.81860c')}
-            </Link>
         </section>
     );
 }
@@ -157,6 +150,25 @@ export function PortfolioErrorState() {
                 {t('page.92020d')}
             </p>
         </section>
+    );
+}
+
+/**
+ * `PortfolioManager`는 `useSearchParams()`(`?symbol=`)를 읽는 클라이언트
+ * 컴포넌트라 Suspense 경계가 필요하다 — 없으면 이 정적 페이지 전체가 dynamic으로
+ * 강등된다(빌드 route 표에서 `●`/PPR → `ƒ`). 감싸는 `<section>`이 이미
+ * border/bg/padding을 갖고 있으므로 이 스켈레톤은 내부 블록만 채운다.
+ */
+function PortfolioManagerSkeleton() {
+    return (
+        <div aria-hidden="true" className="animate-pulse space-y-4">
+            <div className="space-y-2">
+                <div className={cn('h-5 w-28 rounded', PLACEHOLDER_ON_INSET)} />
+                <div className={cn('h-4 w-56 rounded', PLACEHOLDER_ON_INSET)} />
+            </div>
+            <div className={cn('h-14 rounded-lg', PLACEHOLDER_ON_INSET)} />
+            <div className={cn('h-10 rounded-lg', PLACEHOLDER_ON_INSET)} />
+        </div>
     );
 }
 
@@ -218,7 +230,9 @@ export default async function PortfolioPage({
                     aria-label={t('page.06c7de')}
                     className="space-y-4 rounded-lg border border-secondary-700 bg-secondary-800 p-6"
                 >
-                    <PortfolioManager />
+                    <Suspense fallback={<PortfolioManagerSkeleton />}>
+                        <PortfolioManager />
+                    </Suspense>
                 </section>
                 <section aria-label={t('page.55ca69')} className="space-y-4">
                     <h2 className="text-lg font-semibold text-secondary-100">

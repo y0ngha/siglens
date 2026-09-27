@@ -1,5 +1,5 @@
 /**
- * `/portfolio` page tests — mirrors the onboarding/account sibling pattern:
+ * `/portfolio` page tests — mirrors the account sibling pattern:
  * metadata (noindex/canonical), the `PortfolioGuard` auth redirect, the
  * holdings-driven grid (one `PositionHoldingCard` per holding, server never
  * fetches per-symbol price ranges), the 0-holdings empty-state CTA, and the
