@@ -186,8 +186,8 @@ function HoldingRow({
 /** Section for managing the member's portfolio holdings: list + inline edit + inline delete confirm + add form. */
 interface PortfolioSectionProps {
     /**
-     * 추가 폼의 시작 심볼. 온보딩이 `/[symbol]/position`에서 넘어온 심볼을
-     * 넘긴다. `/account`에서는 넘기지 않으므로 그쪽 동작은 그대로다.
+     * 추가 폼의 시작 심볼. `/portfolio`가 `/[symbol]/position`의 CTA에서 넘어온
+     * `?symbol=` 쿼리를 그대로 넘긴다.
      */
     defaultSymbol?: string;
     /**

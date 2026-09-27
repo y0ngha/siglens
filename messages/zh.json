@@ -250,12 +250,6 @@
                 "us": "汇总美国综合、股票、外汇与市场文章四个类别。"
             }
         },
-        "onboarding": {
-            "page": {
-                "26bd1f": "尝试注册持仓",
-                "b1e428": "正在加载"
-            }
-        },
         "portfolio": {
             "PositionHoldingCard": {
                 "0ac914": "均价 {v0}",
@@ -269,7 +263,6 @@
             "page": {
                 "55ca69": "我的投资组合持仓",
                 "605ada": "正在加载持仓位置",
-                "81860c": "尝试注册持仓",
                 "90a081": "未能加载投资组合",
                 "92020d": "请稍后重试。",
                 "ac9263": "您尚未注册任何持仓",
@@ -760,16 +753,6 @@
             "toast": {
                 "holdingDeleted": "已删除 {v0} 的持仓",
                 "holdingSaved": "已保存 {v0} 的持仓"
-            }
-        },
-        "portfolio-onboarding": {
-            "OnboardingContent": {
-                "643019": "欢迎加入",
-                "26bd1f": "请添加持仓",
-                "389b82": "开始",
-                "5d18f5": "现在添加，即可根据您的平均成本获得分析。\n                    您也可以稍后在账户设置中添加。",
-                "c9c840": "稍后进行",
-                "cae421": "持仓"
             }
         },
         "premium-gate": {
@@ -1608,10 +1591,6 @@
             },
             "oauthConsentFullTitle": "{v0} 社交登录注册条款同意",
             "oauthConsentTitle": "社交登录注册同意",
-            "onboarding": {
-                "description": "Siglens注册后添加持仓的引导页面",
-                "title": "添加持仓"
-            },
             "portfolio": {
                 "description": "Siglens个性化页面,显示您的持仓成本在各标的近期价格区间中的位置",
                 "title": "投资组合"

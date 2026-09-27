@@ -61,7 +61,7 @@ vi.mock('@/shared/lib/auth/redirect', async () => ({
     ...(await vi.importActual('@/shared/lib/auth/redirect')),
     sanitizeNextPath: vi.fn((p: unknown) => (typeof p === 'string' ? p : '/')),
     resolvePostSignupDestination: vi.fn((next: string) =>
-        next === '/' ? '/onboarding' : next
+        next === '/' ? '/portfolio' : next
     ),
 }));
 vi.mock('next/navigation', () => ({
@@ -290,7 +290,7 @@ describe('finalizeOAuthSignupAction', () => {
         await expectRedirectTo('/login?error=service_unavailable');
     });
 
-    it('성공 시 세션 쿠키를 설정하고 돌아갈 곳(next)이 없으면 온보딩 화면으로 리다이렉트', async () => {
+    it('성공 시 세션 쿠키를 설정하고 돌아갈 곳(next)이 없으면 /portfolio로 리다이렉트', async () => {
         setupMocks();
         const mockCookieSet = vi.fn();
         (cookies as Mock).mockResolvedValue({ set: mockCookieSet });
@@ -298,7 +298,7 @@ describe('finalizeOAuthSignupAction', () => {
             cookie: { name: 'session', value: 'test-session' },
         });
 
-        await expectRedirectTo('/onboarding');
+        await expectRedirectTo('/portfolio');
 
         expect(createAuthSession as Mock).toHaveBeenCalledWith(
             expect.objectContaining({ userId: 'new-user-id' })

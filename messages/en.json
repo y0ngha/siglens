@@ -250,12 +250,6 @@
                 "us": "Four categories: US general, stocks, forex, and market articles."
             }
         },
-        "onboarding": {
-            "page": {
-                "26bd1f": "Register your holdings.",
-                "b1e428": "Loading"
-            }
-        },
         "portfolio": {
             "PositionHoldingCard": {
                 "0ac914": "Avg. Price {v0}",
@@ -269,7 +263,6 @@
             "page": {
                 "55ca69": "My Portfolio Position",
                 "605ada": "Loading holdings position.",
-                "81860c": "Register holdings.",
                 "90a081": "Failed to load portfolio.",
                 "92020d": "Please try again shortly.",
                 "ac9263": "You haven't registered any holdings yet.",
@@ -760,16 +753,6 @@
             "toast": {
                 "holdingDeleted": "Removed the {v0} holding",
                 "holdingSaved": "Saved the {v0} holding"
-            }
-        },
-        "portfolio-onboarding": {
-            "OnboardingContent": {
-                "643019": "Welcome",
-                "26bd1f": "Add your holdings",
-                "389b82": "Get Started",
-                "5d18f5": "Add them now to receive analysis based on your average price.\n                    You can also add them later in account settings.",
-                "c9c840": "Do Later",
-                "cae421": "Holdings"
             }
         },
         "premium-gate": {
@@ -1608,10 +1591,6 @@
             },
             "oauthConsentFullTitle": "{v0} — social sign-up terms consent",
             "oauthConsentTitle": "Social sign-up consent",
-            "onboarding": {
-                "description": "Onboarding page to add your holdings after signing up for Siglens",
-                "title": "Add Your Holdings"
-            },
             "portfolio": {
                 "description": "A personalized Siglens page showing where your average cost sits within each holding's recent price range.",
                 "title": "Portfolio"
