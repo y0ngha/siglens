@@ -131,11 +131,10 @@ export function SymbolPageClient({
         >
             {/* 모바일: page의 wrapper가 확정한 첫 뷰포트 높이를 flex-1로 받아
                 타임프레임 바와 차트 행이 나눈다.
-                데스크톱(md+): 높이를 놓는다(`md:flex-none`). 이 라우트의 스크롤러는
-                문서 하나뿐이라 AI 패널이 내용만큼 자라야 하고, `overflow-hidden`이
-                남아 있으면 그 성장분이 잘린다. 차트 높이는 ChartContent의 차트
-                컬럼이 `--symbol-chart-h`로 직접 들고 있으므로 여기서 확정할 필요가
-                없다. footer는 jail 형제로 push되어 스크롤 내려야 보인다. */}
+                데스크톱(md+): 높이를 놓는다(`md:flex-none`). 차트 컬럼과 AI 패널이
+                각자 `--symbol-chart-h`로 높이를 확정하고 패널은 내부 스크롤하므로
+                여기서 확정할 필요가 없다(배경은 ChartContent의 aside 주석). footer는
+                jail 형제로 push되어 스크롤 내려야 보인다. */}
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-secondary-900 text-secondary-200 md:flex-none md:overflow-visible">
                 {/* Chart-only timeframe controls live inside this chart container
                     so the layout header can stay free of useSearchParams
@@ -196,8 +195,9 @@ export function SymbolPageClient({
                         />
                     </div>
                 </div>
-                {/* md+: 높이를 놓고(`md:flex-none`) 클립을 풀어 AI 패널이 자라게
-                    한다. 대신 `md:min-h-(--symbol-chart-h)`를 남긴다 — Suspense
+                {/* md+: 높이를 놓는다(`md:flex-none`) — 높이는 ChartContent의 차트
+                    컬럼과 AI 패널이 `--symbol-chart-h`로 직접 들고 있다. 대신
+                    `md:min-h-(--symbol-chart-h)`를 남긴다 — Suspense
                     중에는 자식이 `absolute inset-0` 스켈레톤뿐이라 이 행이 0으로
                     접히고, 그러면 차트가 도착할 때 통째로 CLS가 난다. */}
                 <div className="relative flex min-h-0 flex-1 overflow-hidden md:min-h-(--symbol-chart-h) md:flex-none md:overflow-visible">

@@ -515,9 +515,8 @@ export function ChartContent({
                  sizing(모바일): `flex-1 min-h-0`으로 부모(page wrapper가 확정한 첫 뷰포트
                  높이)의 잔여를 채운다 — 기존 동작 그대로다.
                  sizing(md+): `--symbol-chart-h`로 **자기 높이를 직접 확정한다**. 부모 행은
-                 이제 `items-start`라 stretch로 높이를 받지 못하고, 애초에 그 행의 높이는
-                 AI 패널 길이에 따라 변한다. 차트가 패널 길이를 따라 늘어나면 안 되므로
-                 확정 높이의 소유권이 여기로 내려왔다. `flex-1`은 md+에서 main-axis가
+                 `items-start`라 stretch로 높이를 받지 못하므로 차트와 AI 패널이 각자 같은
+                 변수로 높이를 확정한다(배경은 아래 aside 주석). `flex-1`은 md+에서 main-axis가
                  width라 폭 배분만 담당한다(높이와 무관). lightweight-charts 컨테이너는
                  percentage height를 쓰므로 이 확정 높이가 그 체인의 시작점이다. */}
             <div
