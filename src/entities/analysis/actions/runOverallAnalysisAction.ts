@@ -1,6 +1,5 @@
 'use server';
 
-import { headers } from 'next/headers';
 import type { Locale } from '@/shared/i18n/locales';
 import {
     isEtRegularSessionOpen,
@@ -36,7 +35,6 @@ import {
     buildGateError,
 } from '@/shared/lib/byokGate';
 import { caughtAnalysisErrorCode } from '@/shared/lib/aiProviderFailure';
-import { isBot } from '@/shared/api/isBot';
 import { isE2E } from '@/shared/api/e2eEnv';
 // Cross-entity: options-chain fetchOptionsSnapshot 필요. Phase 9에서 features 레이어 도입 시 해소.
 import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
@@ -111,9 +109,6 @@ export async function runOverallAnalysisAction(
                 await import('@/shared/api/e2eAnalysisStub');
             return e2eCachedOverall();
         }
-        const requestHeaders = await headers();
-        const skipEnqueueIfMiss = isBot(requestHeaders);
-
         const user = await getCurrentUser();
         const userId = user?.id ?? null;
 
@@ -125,41 +120,62 @@ export async function runOverallAnalysisAction(
         const { db } = getDatabaseClient();
         const newsRepo = new DrizzleNewsRepository(db);
 
-        // bot 트래픽은 어차피 enqueue를 skip하므로 (`skipEnqueueIfMiss`) 옵션
-        // 스냅샷 및 financials 스냅샷을 fetch하지 않는다 — 크롤러가 외부 API
-        // rate-limit을 소진시키는 시나리오 차단. 일반 유저는 각 fetch의 cross-
-        // request 캐시(Upstash / Next data cache)로 흡수.
+        // 2026-09-27: 더 이상 봇 트래픽이라고 이 fetch들을 skip하지 않는다.
+        //
+        // 왜: 스킵하면 봇의 입력값(옵션 스냅샷/financials)이 사람과 달라지고,
+        // 그 값이 그대로 캐시 키에 접힌다 — core `runOverallAnalysis`가 계산하는
+        // inputHash는 `{ t, f, n, o: stableOptions, fin: financialsScorecard,
+        // ph: historyFingerprint }`를 해시해 `buildOverallCacheKey`에 넣는다.
+        // 옵션/financials를 null/undefined로 스킵하면 사람과 다른 inputHash →
+        // 다른 캐시 키가 나온다. technical 축도 동일 패턴으로 `buildAnalysisCacheKey`가
+        // historyFingerprint/eventsFingerprint(priorAnalyses/marketEvents)를 키에
+        // 접는다 — 그래서 분석 이력 저장 기능이 붙은 2026-09-03 이후 이력이 쌓인
+        // 심볼은 봇의 캐시 미스가 항상 prewarm 캐시를 못 맞혔다. 이게 바로 이 PR이
+        // 고치는 버그이고, 옵션/financials도 같은 병이다.
+        //
+        // 순서: 이 fetch들은 core의 캐시 조회보다 먼저(무조건, hit/miss 무관)
+        // 실행된다 — overall의 inputHash 자체가 옵션/financials 값을 필요로
+        // 하므로 core가 캐시를 보기 전에 이미 이 값들을 쥐고 있어야 한다. 즉
+        // "캐시 hit이면 이 fetch가 생략된다"는 최적화는 이 코드에 없다.
+        //
+        // rate-limit 우려는 감수한다: 봇 트래픽 대다수는 sitemap에 실려 SEO
+        // prewarm이 캐시를 미리 채워두는 심볼로 몰린다. 게다가 이 두 fetch
+        // 자체가 심볼당 TTL 캐시를 가진다(옵션 1분~4시간 — optionsDataCache.ts
+        // OPTIONS_SNAPSHOT_TTL_SECONDS, financials 24시간 — getFinancialsSnapshot.ts) —
+        // 매 요청이 FMP/Yahoo 라이브 호출로 이어지지 않는다. 실패 시
+        // null/undefined로 graceful degradation한다. FMP 사용량 집계는
+        // prewarm 자신의 FMP 호출만 세는 카운터뿐이다(seo-prewarm:fmp-budget:<ET date>,
+        // src/app/api/cron/seo-prewarm/lock.ts) — 이 request-path(방문자/크롤러)
+        // FMP/Yahoo 호출은 오늘 어디에도 집계되지 않는다(알려진 모니터링 공백).
+        // 크롤러 트래픽이 실제로 한도를 위협하면 고칠 것은 UA 분기가 아니라
+        // UA-무관 per-IP/session rate limit이다(후속 작업).
+        //
         // news / earnings / options / financials 네 fetch는 서로 독립이므로
         // Promise.all로 병렬화해 직렬 대기 비용 (~1-3s)을 제거한다.
         const optionsSnapshotPromise: Promise<OptionsSnapshot | null> =
-            skipEnqueueIfMiss
-                ? Promise.resolve(null)
-                : fetchOptionsSnapshot(symbol).catch(error => {
-                      console.warn(
-                          '[runOverallAnalysisAction] options snapshot fetch failed:',
-                          error
-                      );
-                      return null;
-                  });
+            fetchOptionsSnapshot(symbol).catch(error => {
+                console.warn(
+                    '[runOverallAnalysisAction] options snapshot fetch failed:',
+                    error
+                );
+                return null;
+            });
 
         /**
-         * financials scorecard는 봇에선 skip한다(options snapshot과 동일 정책).
          * fetch/compute 실패 시 undefined로 graceful degradation — financials가
          * 없어도 나머지 4축으로 종합 분석을 계속 진행한다.
          */
         const financialsScorecardPromise: Promise<
             FinancialsScorecard | undefined
-        > = skipEnqueueIfMiss
-            ? Promise.resolve(undefined)
-            : getFinancialsSnapshot(symbol)
-                  .then(snapshot => computeFinancialsScorecard(snapshot))
-                  .catch(error => {
-                      console.warn(
-                          '[runOverallAnalysisAction] financials scorecard fetch failed:',
-                          error
-                      );
-                      return undefined;
-                  });
+        > = getFinancialsSnapshot(symbol)
+            .then(snapshot => computeFinancialsScorecard(snapshot))
+            .catch(error => {
+                console.warn(
+                    '[runOverallAnalysisAction] financials scorecard fetch failed:',
+                    error
+                );
+                return undefined;
+            });
 
         const [rows, next, optionsSnapshot, financialsScorecard] =
             await Promise.all([
@@ -218,7 +234,9 @@ export async function runOverallAnalysisAction(
             },
             tier: gate.tier,
             reasoning: resolveReasoning(gate.tier, options.reasoning),
-            skipEnqueueIfMiss,
+            // 2026-09-27: 더 이상 UA로 가르지 않는다 — 봇의 캐시 미스도 사람과
+            // 같은 본문을 생성해야 한다(route.ts 상단 불변식과 동일 원칙).
+            skipEnqueueIfMiss: false,
             assetClass,
             // core는 통화를 심볼에서 추론하지 않는다 — 시장 프로필이 소유한 값을 넘긴다.
             currency: descriptor.priceFormat.currency,

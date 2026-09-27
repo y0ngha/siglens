@@ -2,7 +2,7 @@
  * Unit tests for options page `buildChatState`.
  *
  * Pure function — verifies that only `done` states publish a `context`,
- * while loading/error/bot_blocked all collapse to `null` so the chatbot
+ * while loading/error/cache_miss all collapse to `null` so the chatbot
  * never references partial or stale results.
  */
 import type { OptionsAnalysisResponse } from '@y0ngha/siglens-core';
@@ -36,9 +36,9 @@ describe('options buildChatState', () => {
         });
     });
 
-    it('bot_blocked → context: null, ready=false', () => {
+    it('cache_miss → context: null, ready=false', () => {
         expect(
-            buildChatState({ status: 'bot_blocked', trigger: () => {} })
+            buildChatState({ status: 'cache_miss', trigger: () => {} })
         ).toEqual({
             context: null,
             timeframe: null,

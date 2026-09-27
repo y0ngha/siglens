@@ -160,23 +160,22 @@ describe('activeStreams', () => {
         });
     });
 
-    it('봇은 더 높은 천장을 쓴다 — 사람 상한이 찼어도 크롤러는 통과한다', () => {
-        // 사람 트래픽이 슬롯을 채운 동안 Googlebot이 503을 받으면 렌더된 DOM에
-        // 실패 배너만 남고, robots.txt에 이 경로를 연 의미가 사라진다.
+    /**
+     * 봇 배수 제거 회귀 가드(2026-09-27).
+     *
+     * `canAcceptAnalysisStream`은 이제 인자를 받지 않는다 — 예전엔
+     * `canAcceptAnalysisStream(isBot)`이 봇에게 2배 천장을 줬는데(`isBot`이
+     * 순수 UA 문자열 매칭이라 curl/python-requests 같은 스크립트 클라이언트도
+     * 걸려 남용 경로였다), 그 매개변수 자체를 없앴다. count가
+     * `MAX_CONCURRENT_ANALYSIS_STREAMS`에 도달하면 무조건 false다 — "봇" 개념이
+     * 이 함수에 존재하지 않는다는 뜻. 구 시그니처(2-인자 호출)로 되돌아가면
+     * 타입 에러로 잡힌다.
+     */
+    it('상한 도달 시 무조건 false — 봇 예외 없음', () => {
         for (let i = 0; i < MAX_CONCURRENT_ANALYSIS_STREAMS; i++) {
             incrementActiveStreams();
         }
 
-        expect(canAcceptAnalysisStream(false)).toBe(false);
-        expect(canAcceptAnalysisStream(true)).toBe(true);
-    });
-
-    it('봇도 무제한은 아니다 — 배수 천장에서 막힌다', () => {
-        // `isBot`은 순수 UA 매칭이라 예외로 두면 UA에 'bot'만 넣어 우회할 수 있다.
-        for (let i = 0; i < MAX_CONCURRENT_ANALYSIS_STREAMS * 2; i++) {
-            incrementActiveStreams();
-        }
-
-        expect(canAcceptAnalysisStream(true)).toBe(false);
+        expect(canAcceptAnalysisStream()).toBe(false);
     });
 });

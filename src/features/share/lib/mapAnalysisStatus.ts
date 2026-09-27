@@ -22,7 +22,7 @@ export function mapAnalysisStatus(status: string): ShareableStatus {
         case 'pending_dependencies':
             return 'pending';
 
-        case 'bot_blocked':
+        case 'cache_miss':
         case 'no_trades':
             return 'unavailable';
 

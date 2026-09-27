@@ -9,13 +9,12 @@ interface BuildChatStateInput {
     analysis: AnalysisResponse;
     timeframe: Timeframe;
     displayAnalyzing: boolean;
-    isBotBlocked: boolean;
     analysisError: string | null;
     lockedInfoDepth: readonly TierInfoDepth[];
 }
 
 // 차트(technical) 페이지의 채팅 publish 페이로드. 세 가지 케이스로 나뉜다.
-// 1) bot_blocked 또는 error인 경우: 채팅 자체를 쓸 수 없는 상태다. context를
+// 1) error인 경우: 채팅 자체를 쓸 수 없는 상태다. context를
 //    null로 보내 챗봇이 stale analysis를 참조하지 않도록 하고 입력도 잠근다
 //    (isAnalysisReady=false).
 // 2) lockedInfoDepth가 비어있지 않은 경우(free/locked 사용자): 잠긴 분석
@@ -28,11 +27,10 @@ export function buildChatState({
     analysis,
     timeframe,
     displayAnalyzing,
-    isBotBlocked,
     analysisError,
     lockedInfoDepth,
 }: BuildChatStateInput): SymbolChatState {
-    if (isBotBlocked || analysisError !== null) {
+    if (analysisError !== null) {
         return { context: null, timeframe, isAnalysisReady: false };
     }
     if (lockedInfoDepth.length > 0) {

@@ -25,9 +25,6 @@ vi.mock('../FundamentalAiSummaryError', () => ({
 vi.mock('../FundamentalAiSummarySkeleton', () => ({
     FundamentalAiSummarySkeleton: () => <div data-testid="skeleton" />,
 }));
-vi.mock('@/shared/ui/BotBlockedNotice', () => ({
-    BotBlockedNotice: () => <div data-testid="bot-blocked" />,
-}));
 
 import { render, screen, within } from '@testing-library/react';
 
@@ -79,17 +76,6 @@ describe('FundamentalAiSummary', () => {
         render(<FundamentalAiSummary symbol="AAPL" />);
 
         expect(screen.getByTestId('skeleton')).toBeInTheDocument();
-    });
-
-    it('renders bot-blocked notice', () => {
-        vi.mocked(useFundamentalAnalysis).mockReturnValue({
-            status: 'bot_blocked',
-            trigger: vi.fn(),
-        });
-
-        render(<FundamentalAiSummary symbol="AAPL" />);
-
-        expect(screen.getByTestId('bot-blocked')).toBeInTheDocument();
     });
 
     it('renders error component on error', () => {

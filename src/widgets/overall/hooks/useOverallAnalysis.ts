@@ -25,7 +25,6 @@ type RunOverallAnalysisActionResult =
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import { BotBlockedError } from '@/shared/lib/BotBlockedError';
 import type { OverallAnalysisState } from '../types';
 import { readPlain, type WithPlain } from '@/shared/lib/plainEnvelope';
 
@@ -95,9 +94,9 @@ async function fetchOverallAnalysis(
     if (result.status === 'cached' || result.status === 'done')
         return { data: result.result, plain: readPlain(result) };
 
-    if (result.status === 'miss_no_trigger') {
-        throw new BotBlockedError();
-    }
+    // `miss_no_trigger`: core-only status. `skipEnqueueIfMiss` is hardcoded
+    // false for this axis (see `api/analysis/stream/route.ts` top invariant),
+    // so it falls through to the generic `unexpected` throw below.
 
     if (result.status === 'error') {
         if (isGateBlockedResult(result)) {
@@ -248,9 +247,6 @@ export function useOverallAnalysis(
         if (!triggered) return { status: 'idle' };
         if (query.isError) {
             const err = query.error;
-            if (err instanceof BotBlockedError) {
-                return { status: 'bot_blocked' };
-            }
             // 쿨다운 거절인데 직전 결과가 남아 있으면 그 결과를 계속 보여 준다.
             // 새 분석이 없을 뿐 기존 분석은 여전히 유효하다 — 여기서 error로 넘기면
             // OverallContent가 결과 섹션을 감춰 사용자가 읽던 분석이 사라진다.

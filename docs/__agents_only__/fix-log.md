@@ -502,3 +502,28 @@
 - Violation: After moving the confidence tooltip next to the section heading with `left-0 w-56`, the box anchored to the ⓘ button (~130px from the left) would overflow a 320px viewport. The tooltip's `relative` anchor was the ⓘ wrapper itself.
   - Rule: (new) When relocating an absolutely positioned popover, recompute its box against the narrowest supported viewport (320px) from its new anchor's offset; `left-0`/`right-0` choices that were safe at the old anchor can overflow at the new one.
   - Context: Moved the `relative` anchor from the button to the header row (the tooltip's immediate container), so the box now anchors to the section's left content edge rather than the button's position.
+
+## [PR #882 Round 1 | fix/bot-analysis-parity | 2026-09-27]
+- Violation: Bot-only skip of priorAnalyses/market events in cache-key formation created separate cache namespace, preventing bot cache hits from prewarmed entries despite prewarm being filled with full (non-bot) requests
+  - Rule: (new) Cache key formation must be consistent across all caller classes; a request-path branch that skips a cache-key input for one caller class creates a separate cache namespace for that class, silently disabling cache hits for that class even when prewarmed entries exist
+  - Context: core 1.13.1 added priorAnalyses and marketEvents to overall `technical` cache key `:hist=` and `:evt=` fields; bot callers had been skipping them (since 2026-09-03), creating bot-only cache namespace. Fixed by ensuring all callers include the same cache-key fields, allowing bots to hit prewarm cache alongside non-bot requests. Verified by comparing CloudWatch [Usage] metrics before/after.
+
+- Violation: Claude-review R3 Blocker — UA-based concurrency bonus (BOT_STREAM_LIMIT_MULTIPLIER) became an abuse vector once bots trigger paid generation. Route reads User-Agent to classify as bot and apply higher concurrency limit; generic script clients match bot UA pattern.
+  - Rule: (new) Request-based abuse vectors (rate-limit bypasses) must not read headers that generic clients also send; read-only token/fingerprint headers instead. UA header (User-Agent) is sent by all clients and can be spoofed — route should not use it for concurrent-request gating without explicit allowlist verification.
+  - Context: Removed BOT_STREAM_LIMIT_MULTIPLIER so the route no longer reads UA; all clients now route through the same concurrency limit regardless of UA. Abuse vector closed.
+
+- Violation: i18n key removal done only in ko.json left orphan keys in en.json, ja.json, zh.json uncleaned, breaking CI key-parity gate
+  - Rule: (new) When removing an i18n key, remove it from every locale catalog (ko.json, en.json, ja.json, zh.json) and run `yarn i18n:verify` to confirm key-parity across all locales. Removing a key from only one locale file leaves orphan keys in others, triggering CI key-parity validation failure.
+  - Context: Removed key from messages/ko.json; CI pipeline caught that the same key still exists in messages/en.json, messages/ja.json, messages/zh.json. All removed together and verified with `yarn i18n:verify` passing.
+
+- Violation: RECOMMENDED — format-check violations introduced during implementation (prettier/oxlint conflicts not resolved before push)
+  - Rule: Run `yarn format:check` before committing code with editor or formatter changes. Format violations must be resolved with `yarn format:write` in the same commit.
+  - Context: Caught by CI after implementation round; no formatter drift remains.
+
+- Violation: Missing test coverage — congress regression test not created for new functionality
+  - Rule: (new) When adding a new analysis path or consensus mechanism, include a regression test verifying the congress decision across multiple inputs. Test name should include "congress" or "consensus" to clarify its role in predicting regressions.
+  - Context: Added regression test for bot congress decision logic verifying path selection consistency.
+
+- Incident: Review subagent (sub-agent during review phase) ran formatter in write mode (`yarn format:write`) and then executed `git checkout -- <file>` on five files, silently wiping uncommitted edits to three of them (had to be rewritten manually).
+  - Rule: (new) Review agents must remain read-only: no git operations, no formatter write passes, no file modifications. Before invoking a review agent on a branch with uncommitted work, back up the diff with `git stash` or `cp -r` to a temp directory. Recovery after `git checkout --` requires manual rewrite if the diffs were not backed up.
+  - Context: Review agent invoked on branch with uncommitted changes; agent ran format:write then checkout without detecting the unintended destruction. Lesson: use `git stash` before review invocation, then restore with `git stash pop` after review phase completes.
