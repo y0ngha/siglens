@@ -503,9 +503,3 @@
   - Rule: (new) When relocating an absolutely positioned popover, recompute its box against the narrowest supported viewport (320px) from its new anchor's offset; `left-0`/`right-0` choices that were safe at the old anchor can overflow at the new one.
   - Context: Moved the `relative` anchor from the button to the header row (the tooltip's immediate container), so the box now anchors to the section's left content edge rather than the button's position.
 
-## [Round 1 | fix/ai-panel-inner-scroll | 2026-09-27]
-- Violation: Two stale code artifacts left after reversing a layout contract:
-  1. src/views/symbol/__tests__/ChartContent.test.tsx — contract test ('행이 md:items-start라 패널이 차트보다 길어질 수 있다') was left asserting the pre-change behavior after layout contract changed (AI aside now height-locked to --symbol-chart-h with md:overflow-y-auto). Fixed by deleting stale test.
-  2. src/views/symbol/ChartContent.tsx — comment (drag-handle self-stretch) described old behavior ("row height = taller of chart/panel") after behavior changed; sibling comments updated but this one missed. Fixed.
-  - Rule: (new) Layout refactoring — When reversing a layout contract (size relationship, axis, flex direction), stale sibling tests asserting the old contract and comments describing old behavior are easy to miss. After major layout structure changes, audit both test assertion text and inline comments describing geometry to ensure they match the new contract.
-  - Context: Deleted stale test; updated comment to describe new contract (height-locked to --symbol-chart-h with overflow-y-auto).

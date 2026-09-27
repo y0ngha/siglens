@@ -736,12 +736,13 @@ describe('Symbol page', () => {
             ).toBe(false);
         });
 
-        // 단일 문서 스크롤: <main>은 더 이상 스크롤 컨테이너가 아니다. 예전에는
+        // <main>은 더 이상 스크롤 컨테이너가 아니다. 예전에는
         // jail이 첫 뷰포트에 고정돼 있어 main이 자기 overflow-y-auto로 아래
         // 콘텐츠를 노출해야 했는데, 그 결과 데스크톱 스크롤바가 셋이 됐다
         // (main · AI 패널 · body — 사용자 제보, v0.79.0). jail이 growable min-h로
-        // 바뀌어(SymbolLayoutClient) 이 중첩 스크롤러가 불필요해졌다.
-        it('<main>을 스크롤 컨테이너로 만들지 않는다 (문서 하나만 스크롤)', async () => {
+        // 바뀌어(SymbolLayoutClient) 이 중첩 스크롤러가 불필요해졌다. (AI 패널은
+        // 다시 자체 스크롤하지만 그건 ChartContent 안쪽 계약이다 — 아래 주석 참고.)
+        it('<main>을 스크롤 컨테이너로 만들지 않는다', async () => {
             mockPeekAnalysisCache.mockResolvedValue(null);
 
             const tree = await SymbolPage({
@@ -759,8 +760,9 @@ describe('Symbol page', () => {
         // 위 단언은 <main> 한 단만 본다. 스크롤 컨테이너는 그 아래 어느 단에
         // 다시 생겨도 같은 증상(중첩 스크롤바)을 만들므로, 서버가 그리는 트리
         // 전체를 훑는다 — Suspense `fallback` prop 안쪽까지 포함해서.
-        // ChartContent 아래(클라이언트 서브트리)는 ChartContent.test.tsx가
-        // 렌더된 DOM에서 같은 불변성을 확인한다.
+        // ChartContent 아래(클라이언트 서브트리)는 불변성이 다르다 — 데스크톱 AI
+        // 패널(aside)이 유일하게 허용된 내부 스크롤러이고, ChartContent.test.tsx가
+        // 렌더된 DOM에서 "스크롤러는 aside 하나뿐"을 확인한다.
         it('차트 라우트 트리 어디에도 overflow-y-auto가 없다', async () => {
             mockPeekAnalysisCache.mockResolvedValue(null);
 

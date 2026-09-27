@@ -215,7 +215,7 @@
     /* `/[symbol]` 크롬(브레드크럼 행 + 탭 행) 높이. site Header와 달리 jail
        **안쪽**에 있어 `--header-h`로는 뺄 수 없다. 아래 `--symbol-chart-h`가
        이 값을 빼서 차트 블록의 첫 뷰포트 높이를 만든다 — 차트가 자기 높이를
-       직접 들고 있어야 페이지가 한 번만 스크롤한다.
+       직접 들고 있어야 jail·`<main>`이 높이를 확정하거나 클립·스크롤할 필요가 없다.
        `SymbolLayoutChrome`의 `py-3` 헤더 + 탭 행 실측값(124px)이다. */
     --symbol-chrome-h: 7.75rem;
 
