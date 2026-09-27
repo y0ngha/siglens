@@ -49,7 +49,8 @@ import { E2E_FORCE_FINANCIALS_ERROR_COOKIE } from '@/shared/api/e2eAnalysisStub'
  *   - AI conclusion from fixture: "E2E 고정 분석 결과: 재무제표 종합 결론입니다."
  *   - Period toggle: group label "조회 기간", buttons "연간" / "분기"
  *   - AI error: role="alert" containing the forced error message
- *   - Bot notice: "봇 트래픽으로 보여 분석 결과를 표시하지 않았어요."
+ *   - Bot parity (2026-09-27): a bot UA gets the same AI summary fixture as a
+ *     human — `skipEnqueueIfMiss` is hardcoded `false`, never UA-derived.
  *   - Overall financials bullets: "E2E 고정 재무 요약: 현금흐름 양호, 부채비율 적정"
  */
 
@@ -287,20 +288,14 @@ test.describe('financials: resilience', () => {
         ).toBeVisible({ timeout: 10_000 });
     });
 
-    test('bot UA → BotBlockedNotice shown; scorecard and tables still render', async ({
-        page,
-    }) => {
-        // The financials AI analysis uses the same bot-block path as the options
-        // analysis: `isBot(requestHeaders)` → `miss_no_trigger` → BotBlockedError
-        // → BotBlockedNotice. However, `submitFinancialsAnalysisAction` currently
-        // returns the cached fixture even for bots under E2E (unlike the chart page
-        // which is the only action with a dedicated bot check). This test therefore
-        // verifies that the page renders correctly for a bot UA with a bot-friendly
-        // User-Agent — the AI summary either shows the fixture result or, if the
-        // action is extended to gate bots in future, the BotBlockedNotice.
-        // Either way the scorecard and tables must remain visible (SSR-independent).
-        //
-        // We assert the minimal contract: scorecard + tables visible for any UA.
+    /**
+     * 2026-09-27: `runFinancialsAnalysisAction`의 `skipEnqueueIfMiss`는 더 이상
+     * `isBot(headers)`에서 나오지 않는다 — 항상 `false`다(route.ts 상단
+     * "본문은 UA에 의존하지 않는다" 불변식과 같은 원칙). 봇 UA는 사람과 완전히
+     * 같은 캐시 fixture를 받아야 한다. (봇 차단 안내 UI 자체가 삭제됐으므로
+     * 그 부재는 더 이상 별도로 검증할 필요가 없다.)
+     */
+    test('bot UA → same AI summary fixture as a human', async ({ page }) => {
         await page.setExtraHTTPHeaders({
             'User-Agent':
                 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
@@ -316,18 +311,13 @@ test.describe('financials: resilience', () => {
             page.getByRole('heading', { level: 2, name: '손익계산서' })
         ).toBeVisible();
 
-        // Either the bot notice OR the AI summary renders — both are valid outcomes.
-        const botNotice = page.getByText(
-            '봇 트래픽으로 보여 분석 결과를 표시하지 않았어요.',
-            { exact: false }
-        );
-        const aiSummaryHeading = page.getByRole('heading', {
-            level: 2,
-            name: 'AI 재무제표 분석',
-        });
-        await expect(botNotice.or(aiSummaryHeading).first()).toBeVisible({
-            timeout: 10_000,
-        });
+        // AI summary must render deterministically for the bot UA too.
+        await expect(
+            page.getByRole('heading', { level: 2, name: 'AI 재무제표 분석' })
+        ).toBeVisible({ timeout: 10_000 });
+        await expect(
+            page.getByText(FINANCIALS_AI_CONCLUSION, { exact: false })
+        ).toBeVisible();
     });
 
     test('period toggle failure reverts to annual (SSR data stays visible)', async ({

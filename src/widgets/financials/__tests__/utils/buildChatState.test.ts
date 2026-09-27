@@ -42,21 +42,6 @@ describe('buildChatState', () => {
         });
     });
 
-    it('bot_blocked 상태에서 context:null, isAnalysisReady:false를 반환한다', () => {
-        const state: FinancialsAnalysisState = {
-            status: 'bot_blocked',
-            trigger: () => {},
-        };
-
-        const chatState = buildChatState(state);
-
-        expect(chatState).toEqual({
-            context: null,
-            timeframe: null,
-            isAnalysisReady: false,
-        });
-    });
-
     it('error 상태에서 context:null, isAnalysisReady:false를 반환한다', () => {
         const state: FinancialsAnalysisState = {
             status: 'error',

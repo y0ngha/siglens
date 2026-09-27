@@ -11,7 +11,7 @@ import type { SubmitOptionsAnalysisActionResult } from '@/entities/options-chain
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import { BotBlockedError } from '@/shared/lib/BotBlockedError';
+import { CacheOnlyMissError } from '@/shared/lib/CacheOnlyMissError';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
 import { readPlain, type WithPlain } from '@/shared/lib/plainEnvelope';
 
@@ -24,7 +24,7 @@ export type OptionsAnalysisState =
           plain: string | null;
           trigger: () => void;
       }
-    | { status: 'bot_blocked'; trigger: () => void }
+    | { status: 'cache_miss'; trigger: () => void }
     | { status: 'error'; error: Error; retry: () => void; trigger: () => void };
 
 /**
@@ -58,7 +58,7 @@ async function fetchOptionsAnalysis(
     if (result.status === 'cached' || result.status === 'done')
         return { data: result.result, plain: readPlain(result) };
     if (result.status === 'miss_no_trigger') {
-        throw new BotBlockedError();
+        throw new CacheOnlyMissError();
     }
     if (result.status === 'no_chains_error') {
         /**
@@ -103,7 +103,7 @@ interface UseOptionsAnalysisInput {
      */
     isSettingsHydrated?: boolean;
     /**
-     * 캐시에 있으면 읽고, 없으면 새 분석을 만들지 않는다(miss → `bot_blocked`).
+     * 캐시에 있으면 읽고, 없으면 새 분석을 만들지 않는다(miss → `cache_miss`).
      *
      * OI가 stale할 때 쓴다: 그 입력으로 새 분석을 태우면 저품질 결과에 비용까지
      * 드는 반면, 장중에 만들어둔 캐시는 정상 결과라 챗봇 컨텍스트로 쓸 수 있다.
@@ -192,8 +192,8 @@ export function useOptionsAnalysis({
     }, [refetch]);
 
     if (query.isError) {
-        if (query.error instanceof BotBlockedError) {
-            return { status: 'bot_blocked', trigger: retry };
+        if (query.error instanceof CacheOnlyMissError) {
+            return { status: 'cache_miss', trigger: retry };
         }
         return {
             status: 'error',

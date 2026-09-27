@@ -29,9 +29,6 @@ vi.mock('../FinancialsAiSummaryError', () => ({
 vi.mock('../FinancialsAiSummarySkeleton', () => ({
     FinancialsAiSummarySkeleton: () => <div data-testid="skeleton" />,
 }));
-vi.mock('@/shared/ui/BotBlockedNotice', () => ({
-    BotBlockedNotice: () => <div data-testid="bot-blocked" />,
-}));
 
 import { render, screen } from '@testing-library/react';
 
@@ -86,17 +83,6 @@ describe('FinancialsAiSummary', () => {
         render(<FinancialsAiSummary symbol="AAPL" />);
 
         expect(screen.getByTestId('skeleton')).toBeInTheDocument();
-    });
-
-    it('renders bot-blocked notice', () => {
-        vi.mocked(useFinancialsAnalysis).mockReturnValue({
-            status: 'bot_blocked',
-            trigger: vi.fn(),
-        });
-
-        render(<FinancialsAiSummary symbol="AAPL" />);
-
-        expect(screen.getByTestId('bot-blocked')).toBeInTheDocument();
     });
 
     it('renders error component on error', () => {

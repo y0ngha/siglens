@@ -1,6 +1,6 @@
 'use server';
 
-import { headers, cookies } from 'next/headers';
+import { cookies } from 'next/headers';
 import type { Locale } from '@/shared/i18n/locales';
 import {
     runCongressTrend,
@@ -15,7 +15,6 @@ import {
     buildGateError,
 } from '@/shared/lib/byokGate';
 import { caughtAnalysisErrorCode } from '@/shared/lib/aiProviderFailure';
-import { isBot } from '@/shared/api/isBot';
 import { isE2E } from '@/shared/api/e2eEnv';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
 
@@ -48,8 +47,12 @@ export type RunCongressTrendActionResult =
  * fails fast with a localized `tier_premium_blocked` message instead of
  * being submitted and only rejected later, at poll time, by the worker.
  *
- * §Bot guard: `skipEnqueueIfMiss = isBot(headers)` so crawlers never trigger
- * LLM worker dispatches.
+ * §Bot parity (2026-09-27): `skipEnqueueIfMiss` is hardcoded `false` — no
+ * longer derived from `isBot(headers)`. Crawlers must generate the same body
+ * a human would on a cache miss (see the invariant at the top of
+ * `src/app/api/analysis/stream/route.ts`); gating a bot's generation here
+ * used to make Googlebot index a "봇 트래픽으로 보여 표시하지 않았어요" notice
+ * instead of the real analysis.
  *
  * §E2E: when `E2E_TEST=1`, returns a deterministic cached fixture. The stub
  * imports are lazy/dynamic so they land in a server-only chunk that the prod
@@ -90,9 +93,6 @@ export async function runCongressTrendAction(
                 : stub.e2eCachedCongressTrend();
         }
 
-        const requestHeaders = await headers();
-        const skipEnqueueIfMiss = isBot(requestHeaders);
-
         const user = await getCurrentUser();
         const userId = user?.id ?? null;
 
@@ -110,7 +110,7 @@ export async function runCongressTrendAction(
             dataProvider: getCongressTradesProvider(),
             tier: gate.tier,
             reasoning: resolveReasoning(gate.tier, reasoning),
-            skipEnqueueIfMiss,
+            skipEnqueueIfMiss: false,
             signal,
             ...(gate.userApiKey !== undefined
                 ? { userApiKey: gate.userApiKey }

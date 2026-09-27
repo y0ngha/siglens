@@ -112,35 +112,21 @@ export function __activeStreamCount(): number {
 export const MAX_CONCURRENT_ANALYSIS_STREAMS = 24;
 
 /**
- * 봇의 상한 배수.
- *
- * 봇은 상한에서 아예 빼지 않고 더 높은 천장을 준다. 빼면 `isBot`이 순수 User-Agent
- * 매칭이라(`shared/api/isBot.ts`) UA에 'bot'만 넣으면 무제한이 된다. LLM·FMP 비용은
- * `skipEnqueueIfMiss`가 막지만(봇의 캐시 미스는 provider 호출 전에 끝난다) 게이팅
- * 단계의 DB·Redis 조회는 그대로 돌아, 위조 봇 부하가 진짜 Googlebot의 응답을 느리게
- * 만들 수 있다.
- *
- * 다만 "봇 요청은 즉시 끝난다"는 이제 캐시 **미스**에만 해당한다. 본문이 UA에
- * 의존하면 안 되므로(`api/analysis/stream/route.ts` 상단 불변식) 봇도 사람과 같은
- * 평이화 리더 뷰를 받는다 — 캐시 HIT를 받은 봇은 평이화 조회를 한 번 더 한다.
- * 그 조회도 대개 30일 캐시 HIT라 밀리초지만, 드물게 LLM 왕복이 붙을 수 있다.
- * 그래도 배수는 유지한다: 상한은 절대 차단이 아니라 여유분이고, 여기서 봇을 조이면
- * 위에 적은 "Googlebot이 503을 받아 렌더된 DOM에 실패 배너만 남는" 쪽이 더 비싸다.
- *
- * 배수를 두는 이유는 반대 방향의 사고를 막기 위해서다: 사람 트래픽이 상한을 채운
- * 동안 Googlebot이 503을 받으면 렌더된 DOM에 실패 배너만 남고, robots.txt에 이
- * 경로를 연 의미가 사라진다.
- */
-const BOT_STREAM_LIMIT_MULTIPLIER = 2;
-
-/**
  * 새 분석 스트림을 받아도 되는지. false면 호출부는 503으로 거절해야 한다.
  *
- * @param isBot 봇 요청이면 더 높은 천장을 적용한다(위 주석 참고).
+ * **모든 호출자에 같은 상한(2026-09-27).** 예전엔 봇 요청에 2배 천장을 줬다 —
+ * `isBot`이 순수 User-Agent 문자열 매칭이라(`shared/api/isBot.ts`) curl/,
+ * python-requests, axios/, node-fetch 같은 일반 스크립트 클라이언트까지
+ * "봇"으로 잡히는데, 그 판정에 더 높은 동시성 천장을 얹는 건 그대로 남용
+ * 경로였다 — 위조도, 판별 불가도 필요 없이 스크립트가 기본으로 그 UA를 쓴다.
+ * 생성이 UA에 의존하지 않는 지금(`api/analysis/stream/route.ts` 상단 불변식)
+ * 천장만 따로 UA로 가를 이유가 없다.
+ *
+ * **감수하는 트레이드오프**: 사람 트래픽이 상한을 다 채운 순간과 겹치면
+ * 크롤러가 503을 받을 수 있다. 정상 동시 접속은 이 근처에도 오지 않으므로
+ * (위 `MAX_CONCURRENT_ANALYSIS_STREAMS` 주석 참고) 드물 것으로 판단한다.
+ * IP/세션 단위 rate limiting은 별도 후속 과제.
  */
-export function canAcceptAnalysisStream(isBot = false): boolean {
-    const limit = isBot
-        ? MAX_CONCURRENT_ANALYSIS_STREAMS * BOT_STREAM_LIMIT_MULTIPLIER
-        : MAX_CONCURRENT_ANALYSIS_STREAMS;
-    return count < limit;
+export function canAcceptAnalysisStream(): boolean {
+    return count < MAX_CONCURRENT_ANALYSIS_STREAMS;
 }

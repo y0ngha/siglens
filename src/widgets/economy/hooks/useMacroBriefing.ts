@@ -108,8 +108,5 @@ export function useMacroBriefing(
     if (isError) return { input: seedInput ?? 'error', refetch };
     if (!data) return { input: seedInput, refetch };
     if ('ok' in data) return { input: seedInput ?? 'error', refetch };
-    // 롤링 배포 중 구 컨테이너는 봇에게 `{ briefing: null, botBlocked: true }`를 보낸다
-    // (`MarketBriefingActionResult` JSDoc). 타입에는 더 없는 모양이라 여기서만 막는다.
-    if (!data.briefing) return { input: seedInput, refetch };
     return { input: data.briefing, refetch };
 }

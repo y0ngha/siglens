@@ -315,8 +315,8 @@ export type MarketSummaryActionResult =
  * `scope`의 용도는 {@link MarketSummaryActionResult}와 같다(롤링 배포 불일치 탐지).
  *
  * 예전엔 봇에게 `{ briefing: null, botBlocked: true }`를 돌려줬다(2026-09-17 제거,
- * `submitMarketBriefingAction` JSDoc). 롤링 배포 중 구 컨테이너는 아직 그 모양을
- * 보낼 수 있어 소비 훅이 `briefing` 부재를 방어한다.
+ * `submitMarketBriefingAction` JSDoc). 이후 여러 릴리스가 나가 롤링 배포 중 구 컨테이너가
+ * 그 모양을 보낼 가능성은 없다 — 소비 훅도 더 이상 방어하지 않는다.
  */
 export type MarketBriefingActionResult =
     | {

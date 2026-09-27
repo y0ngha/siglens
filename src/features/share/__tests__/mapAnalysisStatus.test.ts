@@ -21,8 +21,8 @@ describe('mapAnalysisStatus', () => {
         expect(mapAnalysisStatus('pending_dependencies')).toBe('pending');
     });
 
-    it('maps "bot_blocked" to unavailable', () => {
-        expect(mapAnalysisStatus('bot_blocked')).toBe('unavailable');
+    it('maps "cache_miss" to unavailable', () => {
+        expect(mapAnalysisStatus('cache_miss')).toBe('unavailable');
     });
 
     it('maps "no_trades" to unavailable', () => {

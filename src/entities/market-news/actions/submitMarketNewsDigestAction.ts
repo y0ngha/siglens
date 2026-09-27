@@ -1,6 +1,5 @@
 'use server';
 
-import { headers } from 'next/headers';
 import { getTranslations } from 'next-intl/server';
 import type { Locale } from '@/shared/i18n/locales';
 import {
@@ -9,7 +8,6 @@ import {
     type NewsFeedCategory,
 } from '@y0ngha/siglens-core';
 import type { SubmitMarketNewsDigestActionResult } from './submitMarketNewsDigestActionTypes';
-import { isBot } from '@/shared/api/isBot';
 import { getMarketNewsList } from '../api';
 import {
     CATEGORY_CONFIG,
@@ -26,8 +24,10 @@ import { toEnrichedMarketNewsItem } from '../lib/toEnrichedMarketNewsItem';
  * model. Reads enriched rows from DB, maps through `isEnrichedRow`, caps via
  * `selectAggregateNewsItems`, and delegates to core `runMarketNewsDigest`.
  *
- * Bot traffic sets `skipEnqueueIfMiss: true` so crawler requests return
- * `miss_no_trigger` without dispatching a worker job.
+ * `skipEnqueueIfMiss` is hardcoded `false` (2026-09-27) — no longer derived
+ * from `isBot(headers)`. Crawlers get the same digest a human would on a
+ * cache miss; see the invariant at the top of
+ * `src/app/api/analysis/stream/route.ts`.
  */
 /** 사용자에게 그대로 보이는 실패 문구. 영어 리터럴이 전 로케일에 나가고 있었다. */
 async function digestErrorMessage(locale: Locale): Promise<string> {
@@ -47,9 +47,6 @@ export async function submitMarketNewsDigestAction(
     signal?: AbortSignal
 ): Promise<SubmitMarketNewsDigestActionResult> {
     try {
-        const requestHeaders = await headers();
-        const skipEnqueueIfMiss = isBot(requestHeaders);
-
         // 알 수 없는 카테고리는 CATEGORY_CONFIG 접근 전에 차단한다.
         // TypeScript 타입으로는 방어되지만, 런타임 직렬화(SSE JSON 파라미터 등)에서
         // 타입이 우회될 수 있으므로 명시적 가드를 추가한다.
@@ -103,7 +100,7 @@ export async function submitMarketNewsDigestAction(
             // 넘어오기 전 동작(spec thinkingBudget 8192 = 추론 ON)과도 맞는다.
             // 추론 티어 모델(deepseek-v4.1-pro)로 올리는 것보다 훨씬 싸다.
             reasoning: true,
-            skipEnqueueIfMiss,
+            skipEnqueueIfMiss: false,
             signal,
         });
     } catch (error) {

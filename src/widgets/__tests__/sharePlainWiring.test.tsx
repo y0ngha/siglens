@@ -205,9 +205,6 @@ vi.mock('@/views/symbol/utils/buildChatState', () => ({
         isAnalysisReady: false,
     })),
 }));
-vi.mock('@/shared/ui/BotBlockedNotice', () => ({
-    BotBlockedNotice: () => <div data-testid="bot-blocked" />,
-}));
 vi.mock('@/widgets/congress/CongressTrendSummarySkeleton', () => ({
     CongressTrendSummarySkeleton: () => <div data-testid="congress-skeleton" />,
 }));
@@ -559,7 +556,6 @@ describe('공유 등록 plain 배선', () => {
             analysisResult: null,
             isAnalyzing: false,
             analysisError: null,
-            isBotBlocked: false,
             handleReanalyze: vi.fn(),
             reanalyzeCooldownMs: 0,
             cooldownNotice: null,

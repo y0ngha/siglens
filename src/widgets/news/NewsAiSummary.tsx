@@ -9,7 +9,6 @@ import { useNewsAnalysis } from './hooks/useNewsAnalysis';
 import { useNewsAnalysisTrigger } from './hooks/useNewsAnalysisTrigger';
 import { useWaitForNewsCards } from './hooks/useWaitForNewsCards';
 import { buildChatState } from './utils/buildChatState';
-import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 import {
     useDefaultModelId,
     useDefaultReasoning,
@@ -352,10 +351,6 @@ export function NewsAiSummary({
                 onRetry={analysis.retry}
             />
         );
-    }
-
-    if (analysis.status === 'bot_blocked') {
-        return <BotBlockedNotice />;
     }
 
     if (analysis.status === 'loading') {

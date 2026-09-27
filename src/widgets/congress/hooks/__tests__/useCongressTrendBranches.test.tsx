@@ -6,6 +6,7 @@
  * Poll/cancel machinery has been removed; run* functions return results directly.
  */
 
+import koMessages from '../../../../../messages/ko.json';
 import type { Mock, MockedFunction } from 'vitest';
 import { useCongressTrend } from '@/widgets/congress/hooks/useCongressTrend';
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
@@ -116,6 +117,33 @@ describe('useCongressTrend — branch coverage', () => {
             expect(result.current.error).toBeInstanceOf(Error);
             expect(result.current.error.message).toContain(
                 '오류가 발생했습니다'
+            );
+        });
+
+        it('falls through to the generic unexpected error when submit returns miss_no_trigger', async () => {
+            // Core-only status: skipEnqueueIfMiss is hardcoded false for this
+            // axis (see api/analysis/stream/route.ts top invariant), so core
+            // never actually returns this in production. Verifies the
+            // exhaustiveness fallback resolves to a plain error, not dead UI.
+            mockSubmit.mockResolvedValue({
+                status: 'miss_no_trigger',
+            } as never);
+
+            const wrapper = makeWrapper();
+            const { result } = renderHook(
+                () => useCongressTrend('AAPL', 'gemini-3.5-flash-lite'),
+                { wrapper }
+            );
+
+            await waitFor(() => {
+                expect(result.current.status).toBe('error');
+            });
+
+            if (result.current.status !== 'error') {
+                throw new Error('expected error state');
+            }
+            expect(result.current.error.message).toBe(
+                koMessages.app.api.stream.unexpected
             );
         });
     });
