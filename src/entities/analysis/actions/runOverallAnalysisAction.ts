@@ -121,10 +121,32 @@ export async function runOverallAnalysisAction(
         const newsRepo = new DrizzleNewsRepository(db);
 
         // 2026-09-27: 더 이상 봇 트래픽이라고 이 fetch들을 skip하지 않는다.
-        // 스킵하면 봇의 캐시 미스가 옵션/financials 없이 생성되어, 같은 캐시
-        // 키인데 사람이 만든 것과 다른(빈약한) 본문이 나온다 — 파일 상단
-        // "본문은 UA에 의존하지 않는다" 원칙과 같은 이유로
-        // `src/app/api/analysis/stream/route.ts`에서 제거된 것과 동일 패턴.
+        //
+        // 왜: 스킵하면 봇의 입력값(옵션 스냅샷/financials)이 사람과 달라지고,
+        // 그 값이 그대로 캐시 키에 접힌다 — core `runOverallAnalysis`가 계산하는
+        // inputHash는 `{ t, f, n, o: stableOptions, fin: financialsScorecard,
+        // ph: historyFingerprint }`를 해시해 `buildOverallCacheKey`에 넣는다.
+        // 옵션/financials를 null/undefined로 스킵하면 사람과 다른 inputHash →
+        // 다른 캐시 키가 나온다. technical 축도 동일 패턴으로 `buildAnalysisCacheKey`가
+        // historyFingerprint/eventsFingerprint(priorAnalyses/marketEvents)를 키에
+        // 접는다 — 그래서 분석 이력 저장 기능이 붙은 2026-09-03 이후 이력이 쌓인
+        // 심볼은 봇의 캐시 미스가 항상 prewarm 캐시를 못 맞혔다. 이게 바로 이 PR이
+        // 고치는 버그이고, 옵션/financials도 같은 병이다.
+        //
+        // 순서: 이 fetch들은 core의 캐시 조회보다 먼저(무조건, hit/miss 무관)
+        // 실행된다 — overall의 inputHash 자체가 옵션/financials 값을 필요로
+        // 하므로 core가 캐시를 보기 전에 이미 이 값들을 쥐고 있어야 한다. 즉
+        // "캐시 hit이면 이 fetch가 생략된다"는 최적화는 이 코드에 없다.
+        //
+        // rate-limit 우려는 감수한다: 봇 트래픽 대다수는 sitemap에 실려 SEO
+        // prewarm이 캐시를 미리 채워두는 심볼로 몰린다. 게다가 이 두 fetch
+        // 자체가 심볼당 TTL 캐시를 가진다(옵션 1분~4시간 — optionsDataCache.ts
+        // OPTIONS_SNAPSHOT_TTL_SECONDS, financials 24시간 — getFinancialsSnapshot.ts) —
+        // 매 요청이 FMP/Yahoo 라이브 호출로 이어지지 않는다. 실패 시
+        // null/undefined로 graceful degradation하고, FMP 사용량은 prewarm FMP
+        // budget 카운터가 감시한다. 크롤러 트래픽이 실제로 한도를 위협하면
+        // 고칠 것은 UA 분기가 아니라 UA-무관 rate limit이다.
+        //
         // news / earnings / options / financials 네 fetch는 서로 독립이므로
         // Promise.all로 병렬화해 직렬 대기 비용 (~1-3s)을 제거한다.
         const optionsSnapshotPromise: Promise<OptionsSnapshot | null> =

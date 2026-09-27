@@ -502,3 +502,8 @@
 - Violation: After moving the confidence tooltip next to the section heading with `left-0 w-56`, the box anchored to the ⓘ button (~130px from the left) would overflow a 320px viewport. The tooltip's `relative` anchor was the ⓘ wrapper itself.
   - Rule: (new) When relocating an absolutely positioned popover, recompute its box against the narrowest supported viewport (320px) from its new anchor's offset; `left-0`/`right-0` choices that were safe at the old anchor can overflow at the new one.
   - Context: Moved the `relative` anchor from the button to the header row (the tooltip's immediate container), so the box now anchors to the section's left content edge rather than the button's position.
+
+## [PR #882 Round 1 | fix/bot-analysis-parity | 2026-09-27]
+- Violation: Bot-only skip of priorAnalyses/market events in cache-key formation created separate cache namespace, preventing bot cache hits from prewarmed entries despite prewarm being filled with full (non-bot) requests
+  - Rule: (new) Cache key formation must be consistent across all caller classes; a request-path branch that skips a cache-key input for one caller class creates a separate cache namespace for that class, silently disabling cache hits for that class even when prewarmed entries exist
+  - Context: core 1.13.1 added priorAnalyses and marketEvents to overall `technical` cache key `:hist=` and `:evt=` fields; bot callers had been skipping them (since 2026-09-03), creating bot-only cache namespace. Fixed by ensuring all callers include the same cache-key fields, allowing bots to hit prewarm cache alongside non-bot requests. Verified by comparing CloudWatch [Usage] metrics before/after.

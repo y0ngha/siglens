@@ -130,6 +130,13 @@ export const MAX_CONCURRENT_ANALYSIS_STREAMS = 24;
  * 사람과 같은 상한에 묶으면, 사람 트래픽이 상한을 채운 동안 Googlebot이
  * 503을 받아 렌더된 DOM에 실패 배너만 남고, robots.txt에 이 경로를 연 의미가
  * 사라진다 — 그 실패 모드가 provider 호출까지 슬롯을 붙드는 봇 요청보다 비싸다.
+ *
+ * 정상 트래픽 기준으로도 24는 이미 여유롭다 — 사람 동시 접속은 평소 이 근처에도
+ * 오지 않는다(위 `MAX_CONCURRENT_ANALYSIS_STREAMS` 주석 참고). 그래서 봇을
+ * 사칭한 UA가 이 배수로 얻는 건 "인스턴스당 상한이 더 높다"는 것 하나뿐이다 —
+ * LLM 생성 자체는 `isBot`이 UA 문자열 매칭일 뿐이라 이미 일반 브라우저 UA를
+ * 사칭해도 그대로 나간다. 즉 사칭이 새로 열어주는 능력은 없고, 이 인스턴스
+ * 레벨 천장만 조금 더 높아질 뿐이다.
  */
 const BOT_STREAM_LIMIT_MULTIPLIER = 2;
 
