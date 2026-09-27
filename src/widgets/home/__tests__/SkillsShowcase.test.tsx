@@ -274,10 +274,42 @@ describe('ConfidenceInfoTooltip open state', () => {
         mockUsePopoverToggle.mockReturnValue({ isOpen: true, toggle: vi.fn() });
         render(<SkillsShowcase skills={[makeSkill('RSI')]} />);
 
-        const tooltip = screen.getAllByRole('tooltip')[0]!;
+        const tooltip = screen.getByRole('tooltip');
         expect(tooltip.className).toContain('pointer-events-auto');
         expect(tooltip.className).toContain('opacity-100');
         expect(tooltip.className).not.toContain('pointer-events-none');
+    });
+});
+
+/**
+ * 회귀 가드: ⓘ를 카드마다 달면 hover용 툴팁 본문이 카드 수만큼 DOM에 찍혀 홈
+ * HTML의 최다 빈출 문구가 이 안내문이 된다(2026-09 SEO 감사, 56회). 카드가 몇
+ * 장이든 섹션 제목 옆 한 번만 렌더돼야 한다.
+ */
+describe('ConfidenceInfoTooltip placement', () => {
+    it('renders the tooltip once for the section, not once per card', () => {
+        render(
+            <SkillsShowcase
+                skills={[makeSkill('RSI'), makeSkill('MACD'), makeSkill('OBV')]}
+            />
+        );
+
+        expect(screen.getAllByRole('tooltip')).toHaveLength(1);
+        expect(
+            screen.getAllByRole('button', { name: '신뢰도 점수 설명' })
+        ).toHaveLength(1);
+    });
+
+    it('SkillCard itself carries no confidence tooltip', () => {
+        render(
+            <SkillCard
+                skill={makeSkill('RSI')}
+                isExpanded={false}
+                onToggleExpand={vi.fn()}
+            />
+        );
+
+        expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
     });
 });
 
@@ -449,25 +481,6 @@ describe('SkillCard expand interaction', () => {
         expect(onToggle).toHaveBeenCalledWith('RSI');
     });
 
-    it('does NOT toggle the card when the ⓘ confidence button is clicked', async () => {
-        stubClamp(true);
-        const onToggle = vi.fn();
-        const user = userEvent.setup();
-        render(
-            <SkillCard
-                skill={makeSkill('RSI')}
-                isExpanded={false}
-                onToggleExpand={onToggle}
-            />
-        );
-
-        await user.click(
-            screen.getByRole('button', { name: '신뢰도 점수 설명' })
-        );
-
-        expect(onToggle).not.toHaveBeenCalled();
-    });
-
     it('toggles on Enter when the card itself is focused', async () => {
         stubClamp(true);
         const onToggle = vi.fn();
@@ -504,26 +517,5 @@ describe('SkillCard expand interaction', () => {
         await user.keyboard(' ');
 
         expect(onToggle).toHaveBeenCalledWith('RSI');
-    });
-
-    it('does NOT toggle the card when the ⓘ button is activated via keyboard', async () => {
-        stubClamp(true);
-        const onToggle = vi.fn();
-        const user = userEvent.setup();
-        render(
-            <SkillCard
-                skill={makeSkill('RSI')}
-                isExpanded={false}
-                onToggleExpand={onToggle}
-            />
-        );
-
-        const infoButton = screen.getByRole('button', {
-            name: '신뢰도 점수 설명',
-        });
-        infoButton.focus();
-        await user.keyboard('{Enter}');
-
-        expect(onToggle).not.toHaveBeenCalled();
     });
 });

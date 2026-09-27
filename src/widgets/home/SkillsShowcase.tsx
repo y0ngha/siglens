@@ -97,6 +97,14 @@ function barColorClass(weight: number): string {
     return 'bg-secondary-500';
 }
 
+/**
+ * 신뢰도 점수 설명 ⓘ — 섹션 제목 옆에 **한 번만** 렌더한다.
+ *
+ * 예전엔 카드마다 달았는데, 툴팁 본문이 hover용으로 항상 DOM에 있어서 숨은 탭
+ * 패널까지 합쳐 홈 HTML에 같은 3문장이 56번 찍혔다(2026-09 실측). 그 결과 홈에서
+ * 가장 자주 나오는 문구가 핵심 키워드가 아니라 이 안내문이 됐다. 설명은 모든 카드에
+ * 공통이라 한 곳이면 충분하다 — 카드 안으로 되돌리지 말 것.
+ */
 function ConfidenceInfoTooltip() {
     const t = useTranslations('widgets.home');
     const containerRef = useRef<HTMLDivElement>(null);
@@ -109,11 +117,7 @@ function ConfidenceInfoTooltip() {
                 type="button"
                 aria-label={t('SkillsShowcase.7e6540')}
                 aria-describedby={tooltipId}
-                onClick={e => {
-                    // 카드 펼침 토글로 버블링되지 않게 — ⓘ는 신뢰도 설명 전용.
-                    e.stopPropagation();
-                    toggle();
-                }}
+                onClick={toggle}
                 // 글리프만 두면 모바일에서 10.4×12로 잡힌다(실측) — WCAG 2.2
                 // SC 2.5.8의 24×24 최소치 미달이고, 같은 ⓘ가 옵션 페이지에서는
                 // `InfoTooltip`을 통해 24×24다. 같은 기호가 화면마다 다른 크기인
@@ -126,7 +130,7 @@ function ConfidenceInfoTooltip() {
                 id={tooltipId}
                 role="tooltip"
                 className={cn(
-                    'bg-secondary-800 border-secondary-600 absolute right-0 bottom-full z-10 mb-1.5 w-56 rounded border p-2 text-xs shadow-lg transition-opacity',
+                    'bg-secondary-800 border-secondary-600 absolute left-0 bottom-full z-10 mb-1.5 w-56 rounded border p-2 text-xs shadow-lg transition-opacity',
                     'group-hover:opacity-100',
                     isOpen
                         ? 'pointer-events-auto opacity-100'
@@ -184,9 +188,8 @@ export function SkillCard({
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>): void => {
-        // 내부 컨트롤(ⓘ 버튼 등)에서 버블링된 키 이벤트는 무시 — 카드 자체가
-        // 포커스됐을 때만 토글한다. 그렇지 않으면 ⓘ의 Enter/Space가 카드 펼침에
-        // 가로채여 툴팁이 열리지 않는다(접근성 결함).
+        // 카드 자체가 포커스됐을 때만 토글한다 — 나중에 카드 안에 컨트롤이 다시
+        // 생기면 그 Enter/Space가 카드 펼침에 가로채이지 않게 하는 가드.
         if (e.target !== e.currentTarget) return;
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault(); // Space의 페이지 스크롤 방지
@@ -194,8 +197,8 @@ export function SkillCard({
         }
     };
 
-    // 카드 내부에 ⓘ 버튼이 있어 루트를 진짜 <button>으로 만들 수 없으므로
-    // role="button"+tabIndex로 처리한다.
+    // 카드 내부가 <div>/<p> 블록 구조라 루트를 진짜 <button>(phrasing content만
+    // 허용)으로 만들 수 없으므로 role="button"+tabIndex로 처리한다.
     const interactiveProps = canExpand
         ? {
               role: 'button',
@@ -271,7 +274,6 @@ export function SkillCard({
                 <span className="font-mono text-xs text-secondary-400">
                     {Math.round(skill.confidenceWeight * 100)}%
                 </span>
-                <ConfidenceInfoTooltip />
             </div>
         </div>
     );
@@ -345,9 +347,12 @@ export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
             {/* 같은 위계의 h2는 `HEADING_SECTION` 한 곳에서만 정의한다 —
                 여기와 `CategoryCardGrid`가 각자 리터럴을 복제하고 있었고, 그
                 복제본이 토큰(18px)과 어긋난 16px로 굳어 있었다. */}
-            <h2 className={cn('mb-6', HEADING_SECTION)}>
-                {t('SkillsShowcase.158954')}
-            </h2>
+            <div className="mb-6 flex items-center gap-1">
+                <h2 className={HEADING_SECTION}>
+                    {t('SkillsShowcase.158954')}
+                </h2>
+                <ConfidenceInfoTooltip />
+            </div>
             <TabsPill
                 tabs={TABS.map(tab => ({
                     value: tab.value,
