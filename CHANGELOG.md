@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.90.1](https://github.com/y0ngha/siglens/compare/v0.90.0...v0.90.1) (2026-09-27)
+
+### Bug Fixes
+
+* PR [#881](https://github.com/y0ngha/siglens/issues/881) R1 — e2e robots crawl-delay 상수 참조 + 신뢰도 툴팁 앵커를 헤더 행으로 ([fda4e0d](https://github.com/y0ngha/siglens/commit/fda4e0db79856d5bca897b91f27b542a20e3a6f3))
+* **seo:** 홈 스킬 카드 신뢰도 툴팁 1회 렌더 + AI 검색 크롤러 crawl-delay 60→10 ([5ee6508](https://github.com/y0ngha/siglens/commit/5ee6508acf0006a0e14fb37bfacb6553ce71b6d9))
+
 # [0.90.0](https://github.com/y0ngha/siglens/compare/v0.89.0...v0.90.0) (2026-09-26)
 
 ### Bug Fixes
