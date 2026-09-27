@@ -460,5 +460,14 @@ describe('ChartContent', () => {
                 expect(scrollers).toEqual([asideOf(container)]);
             });
         });
+
+        // 차트·패널 높이는 각자 변수로 확정하므로 `items-start`가 빠져도 둘은 그대로다.
+        // 하지만 드래그 핸들의 `self-stretch`는 이 전제에 기대므로 행 계약을 지킨다.
+        it('행이 md:items-start를 유지해 드래그 핸들 self-stretch 전제가 깨지지 않는다', async () => {
+            const container = await renderWithParagraphs(LONG_PARAGRAPH_COUNT);
+
+            const row = container.firstElementChild as HTMLElement;
+            expect(row.className).toContain('md:items-start');
+        });
     });
 });
