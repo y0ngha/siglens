@@ -747,6 +747,39 @@ describe('runOverallAnalysisAction 함수는', () => {
             // 정상 흐름 유지 — error로 빠지지 않는다.
             expect(result).toBe(SUBMITTED_RESULT);
         });
+
+        /**
+         * 2026-09-27: 봇 UA여도 options snapshot fetch를 건너뛰지 않는다 — 건너뛰면
+         * 봇의 캐시 미스가 사람보다 빈약한 입력으로 생성되어, 같은 캐시 키에
+         * 서로 다른 본문이 생긴다(route.ts 상단 불변식). 이 테스트가 없으면
+         * bot 트래픽 skip 분기가 되돌아와도 `mockFetchSnapshot`이
+         * 호출되지 않는 걸 놓친다.
+         */
+        it('봇 UA여도 options snapshot fetch를 건너뛰지 않는다', async () => {
+            // 액션은 더 이상 headers()를 읽지 않는다. 이 봇 UA는 죽은 설정이 아니라
+            // 회귀 가드다: isBot(headers) 기반 분기가 되돌아오면 여기서 true가 나와 실패한다.
+            mockHeaders.mockResolvedValueOnce(
+                new Headers({
+                    'user-agent':
+                        'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+                })
+            );
+            const snapshot = makeSnapshot();
+            mockFetchSnapshot.mockResolvedValueOnce(snapshot);
+
+            await runOverallAnalysisAction(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                MODEL_ID,
+                'ko'
+            );
+
+            expect(mockFetchSnapshot).toHaveBeenCalledWith('AAPL');
+            expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ optionsSnapshot: snapshot })
+            );
+        });
     });
 
     describe('financials axis integration', () => {

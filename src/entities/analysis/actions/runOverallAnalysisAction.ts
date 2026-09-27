@@ -143,9 +143,12 @@ export async function runOverallAnalysisAction(
         // 자체가 심볼당 TTL 캐시를 가진다(옵션 1분~4시간 — optionsDataCache.ts
         // OPTIONS_SNAPSHOT_TTL_SECONDS, financials 24시간 — getFinancialsSnapshot.ts) —
         // 매 요청이 FMP/Yahoo 라이브 호출로 이어지지 않는다. 실패 시
-        // null/undefined로 graceful degradation하고, FMP 사용량은 prewarm FMP
-        // budget 카운터가 감시한다. 크롤러 트래픽이 실제로 한도를 위협하면
-        // 고칠 것은 UA 분기가 아니라 UA-무관 rate limit이다.
+        // null/undefined로 graceful degradation한다. FMP 사용량 집계는
+        // prewarm 자신의 FMP 호출만 세는 카운터뿐이다(seo-prewarm:fmp-budget:<ET date>,
+        // src/app/api/cron/seo-prewarm/lock.ts) — 이 request-path(방문자/크롤러)
+        // FMP/Yahoo 호출은 오늘 어디에도 집계되지 않는다(알려진 모니터링 공백).
+        // 크롤러 트래픽이 실제로 한도를 위협하면 고칠 것은 UA 분기가 아니라
+        // UA-무관 per-IP/session rate limit이다(후속 작업).
         //
         // news / earnings / options / financials 네 fetch는 서로 독립이므로
         // Promise.all로 병렬화해 직렬 대기 비용 (~1-3s)을 제거한다.
