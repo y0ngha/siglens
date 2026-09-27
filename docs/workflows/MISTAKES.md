@@ -302,6 +302,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ Comments either match reality exactly, or are removed and the WHY moved to commit/PR description
     → Recurring: PR #420 Phase 7 R1, PR #428 R16 S1, PR #442 R5 S1, PR #453 R3/R4, PR #459, feat/seo-followup B5, PR #562 R2
 
+15.62. Layout refactoring — Stale geometry comments persist when reversing a layout contract
+    → When reversing a layout contract (size relationship, flex direction, overflow behavior), comments and test names describing the OLD contract stay behind in sibling files outside the diff
+    → After major layout changes, audit both test assertion text and inline comments describing geometry across the whole repo (src/, e2e/, docs/), not only changed files
+    → Patterns to grep: old contract wording in both Korean ("문서 하나", "단일 문서 스크롤", "내용만큼 자") and English ("one scroller", "document is the only scroller", "AI panel grows with content")
+    ❌ After changing panel from "grows with content" to "height-locked with overflow-y-auto", stale comment "row height = taller of chart/panel" remains on a sibling element in the same file, no longer describing actual behavior
+    ❌ Diff contains layout fixes in 3 files; grep of repo finds 7 more files with old-contract comments (JSDoc, test names, CSS variable descriptions) — bot found them incrementally across two review rounds because each fix searched only the already-changed files
+    ✅ After major layout changes, run full-repo grep for old-contract wording; update all sibling files (test names, inline comments, JSDoc) in the same commit
+    ✅ Deleted stale test assertion and updated comment to describe new contract (height-locked to CSS var with overflow-y-auto)
+    → Recurring: Pre-PR review Round 1 + PR #884 Round 1+3 (same branch, 2 occurrences across review cycles) — consolidated into single rule
+
 15.65. UTC/timezone comments asserting time conversions that contradict the literal
     → When a comment explains a UTC timestamp's local-time equivalent, the literal and conversion must match exactly
     → Common source: DST transitions, timezone offset changes, or copy-paste edits where one half was updated but not the other
