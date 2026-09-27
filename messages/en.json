@@ -1836,10 +1836,6 @@
             "AiSummaryErrorSection": {
                 "0c767c": "Try again"
             },
-            "BotBlockedNotice": {
-                "2040a8": "If you are a real user, please refresh or try a different browser.",
-                "90ee5f": "Detected as bot traffic, analysis results are not displayed."
-            },
             "Breadcrumb": {
                 "46c31f": "Breadcrumb"
             },

@@ -18,7 +18,6 @@ import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { buildChatState } from './utils/buildChatState';
 import { FinancialsAiSummaryError } from './FinancialsAiSummaryError';
 import { FinancialsAiSummarySkeleton } from './FinancialsAiSummarySkeleton';
-import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 import {
     HEADING_SECTION,
     HEADING_SUBSECTION,
@@ -164,7 +163,7 @@ export function FinancialsAiSummary({
         isSettingsHydrated
     );
 
-    // bot_blocked/loading/error 시에도 chatState를 명시적으로 publish하여 챗봇이
+    // loading/error 시에도 chatState를 명시적으로 publish하여 챗봇이
     // 이전 페이지의 stale context를 그대로 들고 가지 않게 한다.
     // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생 변수)를
     // 인자로 받기 때문에 useMemo 뒤에 위치해야 한다.
@@ -191,10 +190,6 @@ export function FinancialsAiSummary({
 
     if (state.status === 'loading') {
         return <FinancialsAiSummarySkeleton />;
-    }
-
-    if (state.status === 'bot_blocked') {
-        return <BotBlockedNotice />;
     }
 
     if (state.status === 'error') {

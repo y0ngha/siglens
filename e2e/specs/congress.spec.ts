@@ -266,9 +266,10 @@ test.describe('congress: resilience', () => {
      * 2026-09-27: `runCongressTrendAction`의 `skipEnqueueIfMiss`는 더 이상
      * `isBot(headers)`에서 나오지 않는다 — 항상 `false`다(route.ts 상단
      * "본문은 UA에 의존하지 않는다" 불변식과 같은 원칙). 봇 UA는 사람과 완전히
-     * 같은 캐시 fixture를 받아야 하고, BotBlockedNotice는 나타나면 안 된다.
+     * 같은 캐시 fixture를 받아야 한다. (봇 차단 안내 UI 자체가 삭제됐으므로
+     * 그 부재는 더 이상 별도로 검증할 필요가 없다.)
      */
-    test('bot UA → same cached AI summary as a human; trades table still renders, no BotBlockedNotice', async ({
+    test('bot UA → same cached AI summary as a human; trades table still renders', async ({
         page,
     }) => {
         // Set an AI-bot UA (matches AI_BOT_RE — ClaudeBot).
@@ -288,14 +289,6 @@ test.describe('congress: resilience', () => {
         await expect(
             page.getByText(CONGRESS_AI_SUMMARY_KO, { exact: false })
         ).toBeVisible({ timeout: 10_000 });
-
-        // BotBlockedNotice가 나타나면 안 된다 — UA 기반 생성 차단이 되돌아온 신호다.
-        await expect(
-            page.getByText(
-                '봇 트래픽으로 보여 분석 결과를 표시하지 않았어요.',
-                { exact: false }
-            )
-        ).toHaveCount(0);
     });
 });
 

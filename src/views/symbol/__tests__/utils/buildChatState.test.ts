@@ -1,7 +1,7 @@
 /**
  * Unit tests for chart (symbol-page) `buildChatState`.
  *
- * Verifies the bot_blocked/error short-circuit so stale technical payloads
+ * Verifies the error short-circuit so stale technical payloads
  * never leak to the chatbot, the locked (free-tier) case that keeps
  * `context: null` (no-leak of gated analysis detail) while still allowing
  * chat input to become ready, and the `displayAnalyzing` gating of
@@ -14,30 +14,12 @@ const ANALYSIS = {} as AnalysisResponse;
 const TIMEFRAME: Timeframe = '1Day';
 
 describe('chart buildChatState', () => {
-    it('isBotBlocked → context: null, ready=false', () => {
-        expect(
-            buildChatState({
-                analysis: ANALYSIS,
-                timeframe: TIMEFRAME,
-                displayAnalyzing: false,
-                isBotBlocked: true,
-                analysisError: null,
-                lockedInfoDepth: [],
-            })
-        ).toEqual({
-            context: null,
-            timeframe: TIMEFRAME,
-            isAnalysisReady: false,
-        });
-    });
-
     it('analysisError → context: null, ready=false', () => {
         expect(
             buildChatState({
                 analysis: ANALYSIS,
                 timeframe: TIMEFRAME,
                 displayAnalyzing: false,
-                isBotBlocked: false,
                 analysisError: 'boom',
                 lockedInfoDepth: [],
             })
@@ -54,7 +36,6 @@ describe('chart buildChatState', () => {
                 analysis: ANALYSIS,
                 timeframe: TIMEFRAME,
                 displayAnalyzing: true,
-                isBotBlocked: false,
                 analysisError: null,
                 lockedInfoDepth: [],
             })
@@ -71,7 +52,6 @@ describe('chart buildChatState', () => {
                 analysis: ANALYSIS,
                 timeframe: TIMEFRAME,
                 displayAnalyzing: false,
-                isBotBlocked: false,
                 analysisError: null,
                 lockedInfoDepth: [],
             })
@@ -88,7 +68,6 @@ describe('chart buildChatState', () => {
                 analysis: ANALYSIS,
                 timeframe: TIMEFRAME,
                 displayAnalyzing: false,
-                isBotBlocked: false,
                 analysisError: null,
                 lockedInfoDepth: ['full_detail'],
             })
@@ -105,7 +84,6 @@ describe('chart buildChatState', () => {
                 analysis: ANALYSIS,
                 timeframe: TIMEFRAME,
                 displayAnalyzing: true,
-                isBotBlocked: false,
                 analysisError: null,
                 lockedInfoDepth: ['full_detail'],
             })

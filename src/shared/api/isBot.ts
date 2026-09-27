@@ -16,11 +16,12 @@ import { userAgent } from 'next/server';
  * **2026-09-27부터 호출부는 이 값으로 AI 생성 트리거를 건너뛰지 않는다.**
  * 예전엔 SSE 분석 라우트의 종목 분석·종목 탭 entity actions가 이 값으로
  * `skipEnqueueIfMiss`를 결정해, 검색 색인 봇(Googlebot·Bingbot·Yeti·Daumoa)이
- * 캐시가 비어 있는 종목 페이지를 크롤하면 생성이 트리거되지 않고 안내문
- * (BotBlockedNotice 등)을 그대로 봤다 — 색인되는 게 그 렌더된 DOM이었다.
+ * 캐시가 비어 있는 종목 페이지를 크롤하면 생성이 트리거되지 않고 "봇 트래픽으로
+ * 보여 표시하지 않았어요" 안내문을 그대로 봤다 — 색인되는 게 그 렌더된 DOM이었다.
  * 지금은 봇도 사람과 같은 본문을 생성한다(`src/app/api/analysis/stream/route.ts`
- * 상단 불변식). 이 함수의 남은 호출부:
- * - `src/app/api/analysis/stream/route.ts` — 동시성 상한(`canAcceptAnalysisStream`)의 봇 천장
+ * 상단 불변식). 그 라우트의 동시성 상한도 더 이상 이 값을 쓰지 않는다
+ * (2026-09-27 — `canAcceptAnalysisStream`의 봇 배수 제거, 근거는 그쪽 주석
+ * 참고). 이 함수의 남은 호출부:
  * - `src/app/api/presence/route.ts`, `src/app/api/presence/symbol/route.ts` — 방문자/조회수 집계 제외
  * - `src/app/api/ai/chat/stream/route.ts` — 에이전트 챗을 봇에게 아예 막는다(403)
  * - `src/app/ai/[locale]/handoffRedirect.ts` — 봇은 인증 핸드오프 리디렉트를 건너뛴다
@@ -112,13 +113,14 @@ const BOT_UA_RE = new RegExp(
  * sites stay simple and so the detection can be swapped out later if needed.
  *
  * Current callers:
- * - `src/app/api/analysis/stream/route.ts` — concurrency-cap ceiling via `canAcceptAnalysisStream`
  * - `src/app/api/presence/route.ts` and `src/app/api/presence/symbol/route.ts` — exclude bots from visitor/view counting
  * - `src/app/api/ai/chat/stream/route.ts` — blocks bots from the agent chat entirely (403)
  * - `src/app/ai/[locale]/handoffRedirect.ts` — skips the auth handoff redirect bounce for bots
  *
  * No longer used to suppress AI generation on a cache miss (removed
- * 2026-09-27; see the long comment above).
+ * 2026-09-27), and no longer used for the analysis-stream concurrency-cap
+ * ceiling either (removed 2026-09-27 — see the long comment above and
+ * `canAcceptAnalysisStream` in `shared/lib/sse/activeStreams.ts`).
  */
 export function isBot(headers: Headers): boolean {
     const userAgentHeader = headers.get('user-agent') ?? '';

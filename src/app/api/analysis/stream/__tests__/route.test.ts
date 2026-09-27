@@ -962,7 +962,6 @@ describe('POST /api/analysis/stream', () => {
         it('briefing → submitMarketBriefingAction', async () => {
             vi.mocked(submitMarketBriefingAction).mockResolvedValue({
                 briefing: null,
-                botBlocked: false,
             } as never);
 
             const body = JSON.stringify({ type: 'briefing', params: {} });
@@ -989,7 +988,6 @@ describe('POST /api/analysis/stream', () => {
         it('briefing params.scope를 액션에 그대로 넘긴다', async () => {
             vi.mocked(submitMarketBriefingAction).mockResolvedValue({
                 briefing: null,
-                botBlocked: false,
             } as never);
 
             const body = JSON.stringify({
@@ -1008,7 +1006,6 @@ describe('POST /api/analysis/stream', () => {
         it('macroBriefing → submitMacroBriefingAction', async () => {
             vi.mocked(submitMacroBriefingAction).mockResolvedValue({
                 briefing: null,
-                botBlocked: false,
             } as never);
 
             const body = JSON.stringify({ type: 'macroBriefing', params: {} });
@@ -1478,111 +1475,62 @@ describe('POST /api/analysis/stream', () => {
         });
 
         /**
-         * Task 3: 봇 ×2 천장 — technical + DISPATCH(overall) 경로 양쪽.
+         * 봇 배수 제거 회귀 가드 (2026-09-27).
          *
-         * 봇(isBot=true)은 `MAX_CONCURRENT_ANALYSIS_STREAMS`의 두 배 천장을 사용한다.
-         * 사람 트래픽이 상한을 채운 상태에서도 Googlebot이 503을 받으면 robots.txt에
-         * 이 경로를 열어 둔 의미가 사라진다.
+         * 예전엔 봇(isBot=true) 요청이 `MAX_CONCURRENT_ANALYSIS_STREAMS`의 2배
+         * 천장을 썼다. `isBot`은 순수 UA 문자열 매칭이라 curl/python-requests/axios
+         * 같은 일반 스크립트 클라이언트까지 "봇"으로 잡히는데, 거기에 더 높은
+         * 동시성 천장을 얹는 건 판별 불가능한 신호에 의존하는 남용 경로였다 —
+         * 지금은 생성 자체가 UA에 의존하지 않으므로(파일 상단 불변식) 천장만
+         * 따로 가를 이유도 없다.
          *
-         * 이 테스트가 없으면 `canAcceptAnalysisStream(isBotRequest)` 호출에서
-         * `isBotRequest` 인자가 제거돼 상수 `false`로 대체되어도 기존 사람 경계
-         * 테스트는 여전히 녹색이 된다.
+         * 이 테스트가 없으면 `canAcceptAnalysisStream`이 다시 봇 인자를 받아
+         * 더 높은 천장을 주더라도 기존 사람 경계 테스트는 여전히 녹색이 된다 —
+         * 봇 UA가 사람과 같은 상한에서 막힌다는 것을 직접 단언해야 한다.
          */
-        describe('봇 ×2 천장 (Task 3)', () => {
-            afterEach(() => {
-                __resetActiveStreamsForTests();
-            });
+        it('technical 경로: 봇 UA도 사람과 같은 상한(MAX)에서 503 — 봇 배수 없음', async () => {
+            __resetActiveStreamsForTests();
+            for (let i = 0; i < MAX_CONCURRENT_ANALYSIS_STREAMS; i++) {
+                incrementActiveStreams();
+            }
+            vi.mocked(isBot).mockReturnValue(true);
 
-            it('technical 경로: MAX 포화 + 봇 요청 → 200 (봇 천장 미도달)', async () => {
-                __resetActiveStreamsForTests();
-                for (let i = 0; i < MAX_CONCURRENT_ANALYSIS_STREAMS; i++) {
-                    incrementActiveStreams();
-                }
-                vi.mocked(isBot).mockReturnValue(true);
-                vi.mocked(runAnalysis).mockResolvedValue({
-                    status: 'miss_no_trigger' as const,
-                });
+            const response = await POST(makeRequest());
 
-                const response = await POST(makeRequest());
-                await collectSseEvents(response);
+            expect(response.status).toBe(503);
+            expect(response.headers.get('Retry-After')).toBe('30');
+            expect(vi.mocked(runAnalysis)).not.toHaveBeenCalled();
 
-                // 봇 천장(MAX × 2)에 아직 여유가 있으므로 통과해야 한다.
-                expect(response.status).toBe(200);
-            });
+            __resetActiveStreamsForTests();
+        });
 
-            it('technical 경로: MAX×2 포화 + 봇 요청 → 503 (봇 천장 초과)', async () => {
-                __resetActiveStreamsForTests();
-                for (let i = 0; i < MAX_CONCURRENT_ANALYSIS_STREAMS * 2; i++) {
-                    incrementActiveStreams();
-                }
-                vi.mocked(isBot).mockReturnValue(true);
+        it('DISPATCH 경로(overall): 봇 UA도 사람과 같은 상한(MAX)에서 503 — 봇 배수 없음', async () => {
+            __resetActiveStreamsForTests();
+            for (let i = 0; i < MAX_CONCURRENT_ANALYSIS_STREAMS; i++) {
+                incrementActiveStreams();
+            }
+            vi.mocked(isBot).mockReturnValue(true);
 
-                const response = await POST(makeRequest());
+            const response = await POST(
+                makeRequest(
+                    undefined,
+                    JSON.stringify({
+                        type: 'overall',
+                        params: {
+                            symbol: 'AAPL',
+                            companyName: 'Apple',
+                            timeframe: '1Day',
+                            modelId: 'gemini-3.6-flash',
+                        },
+                    })
+                )
+            );
 
-                expect(response.status).toBe(503);
-                expect(response.headers.get('Retry-After')).toBe('30');
-                expect(vi.mocked(runAnalysis)).not.toHaveBeenCalled();
-            });
+            expect(response.status).toBe(503);
+            expect(response.headers.get('Retry-After')).toBe('30');
+            expect(vi.mocked(runOverallAnalysisAction)).not.toHaveBeenCalled();
 
-            it('DISPATCH 경로(overall): MAX 포화 + 봇 요청 → 200 (봇 천장 미도달)', async () => {
-                __resetActiveStreamsForTests();
-                for (let i = 0; i < MAX_CONCURRENT_ANALYSIS_STREAMS; i++) {
-                    incrementActiveStreams();
-                }
-                vi.mocked(isBot).mockReturnValue(true);
-                vi.mocked(runOverallAnalysisAction).mockResolvedValue({
-                    status: 'cached',
-                    result: {},
-                } as never);
-
-                const response = await POST(
-                    makeRequest(
-                        undefined,
-                        JSON.stringify({
-                            type: 'overall',
-                            params: {
-                                symbol: 'AAPL',
-                                companyName: 'Apple',
-                                timeframe: '1Day',
-                                modelId: 'gemini-3.6-flash',
-                            },
-                        })
-                    )
-                );
-                await collectSseEvents(response);
-
-                // DISPATCH도 `canAcceptAnalysisStream(isBot(request.headers))`로 같은 봇 천장을 써야 한다.
-                expect(response.status).toBe(200);
-            });
-
-            it('DISPATCH 경로(overall): MAX×2 포화 + 봇 요청 → 503 (봇 천장 초과)', async () => {
-                __resetActiveStreamsForTests();
-                for (let i = 0; i < MAX_CONCURRENT_ANALYSIS_STREAMS * 2; i++) {
-                    incrementActiveStreams();
-                }
-                vi.mocked(isBot).mockReturnValue(true);
-
-                const response = await POST(
-                    makeRequest(
-                        undefined,
-                        JSON.stringify({
-                            type: 'overall',
-                            params: {
-                                symbol: 'AAPL',
-                                companyName: 'Apple',
-                                timeframe: '1Day',
-                                modelId: 'gemini-3.6-flash',
-                            },
-                        })
-                    )
-                );
-
-                expect(response.status).toBe(503);
-                expect(response.headers.get('Retry-After')).toBe('30');
-                expect(
-                    vi.mocked(runOverallAnalysisAction)
-                ).not.toHaveBeenCalled();
-            });
+            __resetActiveStreamsForTests();
         });
     });
 

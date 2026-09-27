@@ -1,7 +1,9 @@
 /**
  * Branch coverage tests for useOverallAnalysis — targets uncovered branches:
- * miss_no_trigger (bot blocked), key_error, gate blocked error,
- * non-string error in submit, hydration gate, submitting state.
+ * miss_no_trigger (falls through to the generic unexpected error — this axis
+ * hardcodes skipEnqueueIfMiss:false, so core never actually returns this
+ * status), key_error, gate blocked error, non-string error in submit,
+ * hydration gate, submitting state.
  *
  * Poll/cancel/pending_dependencies machinery has been removed; run* functions
  * return results directly.
@@ -120,7 +122,11 @@ describe('useOverallAnalysis — branch coverage', () => {
         });
     });
 
-    it('returns bot_blocked when submit returns miss_no_trigger', async () => {
+    it('falls through to the generic unexpected error when submit returns miss_no_trigger', async () => {
+        // Core-only status: skipEnqueueIfMiss is hardcoded false for this
+        // axis (see api/analysis/stream/route.ts top invariant), so core
+        // never actually returns this in production. Verifies the
+        // exhaustiveness fallback resolves to a plain error, not dead UI.
         mockSubmit.mockResolvedValue({
             status: 'miss_no_trigger',
         } as never);
@@ -134,8 +140,12 @@ describe('useOverallAnalysis — branch coverage', () => {
         });
 
         await waitFor(() => {
-            expect(result.current.state.status).toBe('bot_blocked');
+            expect(result.current.state.status).toBe('error');
         });
+
+        const state = result.current.state;
+        if (state.status !== 'error') throw new Error('expected error');
+        expect(state.error).toBe(koMessages.app.api.stream.unexpected);
     });
 
     it('does not submit while the settings-hydration gate is closed even after trigger', async () => {

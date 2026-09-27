@@ -83,21 +83,6 @@ describe('useFinancialsAnalysis — trigger coverage', () => {
         expect(typeof result.current.trigger).toBe('function');
     });
 
-    it('bot_blocked 상태에서 trigger 함수를 노출한다', async () => {
-        mockSubmit.mockResolvedValue({ status: 'miss_no_trigger' });
-
-        const wrapper = makeWrapper();
-        const { result } = renderHook(
-            () => useFinancialsAnalysis('AAPL', 'gemini-3.5-flash-lite'),
-            { wrapper }
-        );
-
-        await waitFor(() => {
-            expect(result.current.status).toBe('bot_blocked');
-        });
-        expect(typeof result.current.trigger).toBe('function');
-    });
-
     it('error 상태에서 trigger 함수를 노출한다', async () => {
         mockSubmit.mockResolvedValue({
             status: 'error',

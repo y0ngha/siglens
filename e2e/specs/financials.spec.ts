@@ -292,11 +292,10 @@ test.describe('financials: resilience', () => {
      * 2026-09-27: `runFinancialsAnalysisAction`의 `skipEnqueueIfMiss`는 더 이상
      * `isBot(headers)`에서 나오지 않는다 — 항상 `false`다(route.ts 상단
      * "본문은 UA에 의존하지 않는다" 불변식과 같은 원칙). 봇 UA는 사람과 완전히
-     * 같은 캐시 fixture를 받아야 하고, BotBlockedNotice는 나타나면 안 된다.
+     * 같은 캐시 fixture를 받아야 한다. (봇 차단 안내 UI 자체가 삭제됐으므로
+     * 그 부재는 더 이상 별도로 검증할 필요가 없다.)
      */
-    test('bot UA → same AI summary fixture as a human, no BotBlockedNotice', async ({
-        page,
-    }) => {
+    test('bot UA → same AI summary fixture as a human', async ({ page }) => {
         await page.setExtraHTTPHeaders({
             'User-Agent':
                 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
@@ -319,14 +318,6 @@ test.describe('financials: resilience', () => {
         await expect(
             page.getByText(FINANCIALS_AI_CONCLUSION, { exact: false })
         ).toBeVisible();
-
-        // BotBlockedNotice가 나타나면 안 된다 — UA 기반 생성 차단이 되돌아온 신호다.
-        await expect(
-            page.getByText(
-                '봇 트래픽으로 보여 분석 결과를 표시하지 않았어요.',
-                { exact: false }
-            )
-        ).toHaveCount(0);
     });
 
     test('period toggle failure reverts to annual (SSR data stays visible)', async ({

@@ -21,7 +21,6 @@ import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { quoteWithTimeout } from '@/shared/api/market/quoteTimeout';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
-import { isBot } from '@/shared/api/isBot';
 import {
     resolveCurrentPrice,
     rewriteToPlainLanguage,
@@ -79,11 +78,14 @@ import { submitMacroBriefingAction } from '@/entities/economy/actions/submitMacr
  * **생성 트리거도 이제 UA로 가르지 않는다 (2026-09-27).** 캐시 미스면 봇도
  * 사람과 똑같이 core에 생성을 맡긴다 — 예전엔 봇이면 `skipEnqueueIfMiss`로
  * 즉시 `miss_no_trigger`를 돌려줬는데, 그게 Googlebot이 색인하는 DOM을
- * "봇 트래픽으로 보여 표시하지 않았어요" 안내문으로 만드는 원인이었다. UA로
- * 갈라도 되는 유일한 정책은 동시성 상한(`canAcceptAnalysisStream`의 봇
- * 천장)뿐이다 — 그건 소켓·메모리를 보호하는 것이지 비용을 통제하는 게
- * 아니다(비용은 캐싱·prewarm이 맡는다). UA 조건부 **본문**은 Google의
- * 클로킹 패턴과 구분되지 않는다.
+ * "봇 트래픽으로 보여 표시하지 않았어요" 안내문으로 만드는 원인이었다.
+ *
+ * **이 라우트는 이제 User-Agent를 아예 읽지 않는다.** 마지막까지 남아 있던
+ * UA 분기(동시성 상한의 봇 배수)도 제거했다 — `isBot`은 순수 UA 문자열
+ * 매칭이라 curl/python-requests/axios 같은 일반 스크립트 클라이언트까지
+ * "봇"으로 잡히는데, 거기에 더 높은 동시성 천장을 얹는 건 판별 불가능한
+ * 신호에 의존하는 남용 경로였다. 상한 근거는
+ * `shared/lib/sse/activeStreams.ts`의 `canAcceptAnalysisStream` 주석 참고.
  */
 export const dynamic = 'force-dynamic';
 
@@ -774,10 +776,10 @@ async function withPlainLanguage<T>(
  *   아니라 **분석 텍스트 1건당** 발생하고, 화이트리스트 심볼은
  *   `seo_analysis_snapshots.plain`이 이미 채워져 있다.
  *
- * 생성 트리거는 이제 UA로 갈라도 되는 정책이 아니다 — 2026-09-27부터
- * `skipEnqueueIfMiss`도 본문과 마찬가지로 봇/사람이 같은 값(`false`)을 받는다.
- * 유일하게 UA로 갈라도 되는 것은 동시성 상한(`canAcceptAnalysisStream`의
- * 봇 천장)뿐이다 — 그건 본문이 아니라 소켓·메모리 보호 정책이다.
+ * 생성 트리거도 UA로 가르지 않는다 — 2026-09-27부터 `skipEnqueueIfMiss`도
+ * 본문과 마찬가지로 봇/사람이 같은 값(`false`)을 받는다. 이 라우트는 이제
+ * User-Agent를 아예 읽지 않는다(파일 상단 불변식 참고) — 남아 있던 동시성
+ * 상한의 봇 배수도 제거했다.
  */
 function withReaderViews<T>(
     work: Promise<T>,
@@ -902,15 +904,6 @@ export async function POST(request: Request): Promise<Response> {
                     { headers: SSE_HEADERS }
                 );
             }
-
-            // --- 2c. Bot detection: concurrency-cap ceiling only (2026-09-27) ---
-            //
-            // 예전엔 이 값으로 `skipEnqueueIfMiss`를 결정해 봇의 캐시 미스가
-            // LLM을 태우지 않고 즉시 `miss_no_trigger`로 끝났다. 지금은 봇도
-            // 사람과 같은 본문을 받아야 하므로(파일 상단 불변식) 생성 트리거를
-            // UA로 가르지 않는다 — `isBotRequest`가 남는 유일한 용도는 아래
-            // 동시성 상한(`canAcceptAnalysisStream`)의 봇 천장뿐이다.
-            const isBotRequest = isBot(request.headers);
 
             // --- 2d. Market profile → assetClass + session-aware data provider ---
             const marketProfile = await resolveMarketProfile(symbol);
@@ -1093,31 +1086,16 @@ export async function POST(request: Request): Promise<Response> {
              *
              * JSON 503으로 거절한다 — SSE로 error를 흘리면 클라이언트가 "분석 실패"로
              * 표시하지만, 이건 실패가 아니라 "지금 말고 나중에"다.
-             */
-            /**
-             * 봇은 상한에서 제외하지 않고 더 높은 천장을 준다.
              *
-             * **2026-09-27부터 더 이상 사실이 아닌 것**: 봇의 캐시 미스가 provider
-             * 호출 전에 즉시 끝난다는 가정. 지금은 봇도 캐시 미스면 사람과 똑같이
-             * core가 LLM을 태우고, 봇 요청 하나가 전체 LLM 왕복(최대 10분) 동안
-             * 슬롯을 붙들 수 있다.
-             *
-             * 그런데도 배수를 유지하는 이유는 비용이 아니라 가용성이다: 상한이
-             * 막는 것은 소켓·메모리 고갈이지 LLM 청구서가 아니다(비용은 캐시 키
-             * 공유와 SEO prewarm 회전이 이미 흡수한다 — 같은 심볼·타임프레임이면
-             * 봇과 사람이 같은 캐시 항목을 채운다). 배수를 없애 봇을 사람과 같은
-             * 상한에 묶으면, 사람 트래픽이 슬롯을 채운 동안 Googlebot이 503을
-             * 받고 렌더된 DOM에 실패 배너만 남는다 — robots.txt에
-             * `/api/analysis/stream`을 일부러 열어 크롤러가 분석을 받게 한 의미가
-             * 그대로 무너진다. 그 실패 모드가, 이제 provider 호출까지 슬롯을
-             * 붙드는 봇 요청보다 비싸다는 판단이다.
+             * 사람/봇 구분 없이 같은 상한을 쓴다(2026-09-27) — 이 라우트는
+             * User-Agent를 아예 읽지 않는다(파일 상단 불변식 참고).
              */
             // ⚠️ 번역자는 **동시성 검사 이전에** 확보한다. 검사와
             // `heartbeatStream` 사이에 `await`가 들어가면 위 주석이 설명한
             // 원자성이 깨진다 — 그 틈에 도착한 요청이 같은 빈 슬롯을 보고
             // 전부 통과해 캡이 무의미해진다(`getTranslations`는 로케일당 첫
             // 호출에서 실제 비동기 작업을 한다). 503 분기도 이 값을 쓴다.
-            if (!canAcceptAnalysisStream(isBotRequest)) {
+            if (!canAcceptAnalysisStream()) {
                 console.warn(
                     '[analysis-stream] rejected: concurrency cap reached'
                 );
@@ -1307,13 +1285,10 @@ export async function POST(request: Request): Promise<Response> {
     // await가 들어가면 원자성이 깨진다(위 technical 분기 주석 참고).
     const locale = resolveRequestLocale(request);
     const t = await streamMessages(locale);
-    // 동시성 상한에만 쓴다(2026-09-27) — 생성 트리거(DISPATCH 핸들러)에는
-    // 더 이상 넘기지 않는다. 본문 생성(`withReaderViews`)에도 넘기지 않는다:
-    // 파일 상단의 "본문은 UA에 의존하지 않는다" 불변식 참고.
-    const isBotRequest = isBot(request.headers);
 
-    // 동시 분석 상한. 봇은 더 높은 천장 — 근거는 `canAcceptAnalysisStream` 주석.
-    if (!canAcceptAnalysisStream(isBotRequest)) {
+    // 동시 분석 상한 — 사람/봇 구분 없이 같은 값을 쓴다. 근거는
+    // `canAcceptAnalysisStream` 주석 참고.
+    if (!canAcceptAnalysisStream()) {
         console.warn('[analysis-stream] rejected: concurrency cap reached');
         return Response.json(
             { error: t('busy') },

@@ -75,9 +75,6 @@ export function useMarketBriefing(
         return { input: seedInput };
     }
     if ('ok' in data) return { input: seedInput ?? 'error' };
-    // 롤링 배포 중 구 컨테이너는 봇에게 `{ briefing: null, botBlocked: true }`를 보낸다
-    // (`MarketBriefingActionResult` JSDoc). 타입에는 더 없는 모양이라 여기서만 막는다.
-    if (!data.briefing) return { input: seedInput };
     /*
      * 롤링 배포 중 구 컨테이너가 답하면 `scope`가 없다 — 그 브리핑은 정의상
      * 미국 것이다(구 액션은 인자를 안 받는다). 한국 페이지에서 그대로 그리면

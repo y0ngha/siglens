@@ -8,7 +8,6 @@ import type {
     OptionsTone,
 } from '@y0ngha/siglens-core';
 
-import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { cn } from '@/shared/lib/cn';
 import { formatAnalyzedAt } from '@/shared/lib/formatAnalyzedAt';
@@ -268,7 +267,6 @@ export function OptionsAiAnalysis({
     hideView = false,
     cacheOnly = false,
 }: OptionsAiAnalysisProps) {
-    const t = useTranslations('widgets.options');
     const state = useOptionsAnalysis({
         symbol,
         companyName,
@@ -307,21 +305,14 @@ export function OptionsAiAnalysis({
         return <OptionsAiAnalysisSkeleton />;
     }
 
-    if (state.status === 'bot_blocked') {
-        return (
-            <section
-                aria-labelledby="options-ai-analysis-heading"
-                className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
-            >
-                <h2
-                    id="options-ai-analysis-heading"
-                    className={cn('mb-3', HEADING_SECTION)}
-                >
-                    {t('OptionsAiAnalysis.eefb95')}
-                </h2>
-                <BotBlockedNotice />
-            </section>
-        );
+    // `cache_miss`: the cacheOnly read found no cached analysis. Render
+    // nothing (no data, no notice) — in practice this caller always pairs
+    // `cacheOnly` with `hideView` too (see `useOptionsAnalysis`'s `cacheOnly`
+    // JSDoc), so this never reaches a visible page. usePublishSymbolChat
+    // above still ran with `buildChatState`'s null context, so the chatbot
+    // context stays empty rather than referencing a partial result.
+    if (state.status === 'cache_miss') {
+        return null;
     }
 
     if (state.status === 'error') {

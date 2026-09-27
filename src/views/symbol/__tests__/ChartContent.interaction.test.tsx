@@ -127,7 +127,6 @@ function analysisReturn(
         lockedInfoDepth: [],
         isAnalyzing: false,
         analysisError: null,
-        isBotBlocked: false,
         handleReanalyze: vi.fn(),
         reanalyzeCooldownMs: 0,
         cooldownNotice: null,
@@ -381,24 +380,6 @@ describe('ChartContent', () => {
             // 사실 층은 정확히 한 번 보이되 진행/에러 배너는 없어야 한다.
             // (mobileContent는 콜백으로만 전달되고 DOM에 렌더되지 않으므로 1회.)
             expect(screen.getAllByText(/기술적 지표 요약/)).toHaveLength(1);
-            expect(screen.queryByText('AI 분석 중…')).toBeNull();
-        });
-
-        it('봇 차단(서사 없음) 시 사실 층을 유지한 채 BotBlockedNotice를 additive로 함께 렌더하고 진행 배너는 내지 않는다', () => {
-            analysisMock.mockReturnValue(
-                analysisReturn({ isBotBlocked: true })
-            );
-            renderChart();
-            expect(
-                screen.getByText(
-                    /봇 트래픽으로 보여 분석 결과를 표시하지 않았어요/
-                )
-            ).toBeInTheDocument();
-            // 봇 안내는 사실 층을 '교체'하지 않고 그 아래 additive로 덧붙는다(PR #530).
-            // 종목 고유 실측 텍스트가 렌더 DOM에 남아야 JS 렌더링 크롤러의 색인 의도가
-            // 유지된다 — 봇으로 오판된 실사용자에게도 actionable hint가 남는다.
-            expect(screen.getByText(/기술적 지표 요약/)).toBeInTheDocument();
-            // idle(분석 중 아님)이므로 진행 배너는 없다.
             expect(screen.queryByText('AI 분석 중…')).toBeNull();
         });
     });

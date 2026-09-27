@@ -112,42 +112,21 @@ export function __activeStreamCount(): number {
 export const MAX_CONCURRENT_ANALYSIS_STREAMS = 24;
 
 /**
- * 봇의 상한 배수.
- *
- * 봇은 상한에서 아예 빼지 않고 더 높은 천장을 준다. 빼면 `isBot`이 순수 User-Agent
- * 매칭이라(`shared/api/isBot.ts`) UA에 'bot'만 넣으면 무제한이 된다.
- *
- * **2026-09-27부터 더 이상 사실이 아닌 것**: "봇의 캐시 미스는 provider 호출
- * 전에 끝난다"는 가정. 그건 `skipEnqueueIfMiss`가 봇 UA로 결정되던 시절 얘기다
- * — 그 게이트를 걷어냈다(본문이 UA에 의존하면 안 된다는
- * `api/analysis/stream/route.ts` 상단 불변식 때문). 지금은 봇도 캐시 미스면
- * 사람과 똑같이 core가 LLM을 태우므로, 봇 요청 하나가 전체 LLM 왕복(최대
- * 10분) 동안 슬롯을 붙들 수 있다 — 미스든 히트든 다르지 않다.
- *
- * 그런데도 배수는 유지한다. 이 상한이 막는 건 LLM 비용이 아니라 소켓·메모리
- * 고갈이다 — 비용은 캐시 키 공유(같은 심볼·타임프레임이면 봇과 사람이 같은
- * 캐시 항목을 채운다)와 SEO prewarm 회전이 이미 흡수한다. 배수를 없애 봇을
- * 사람과 같은 상한에 묶으면, 사람 트래픽이 상한을 채운 동안 Googlebot이
- * 503을 받아 렌더된 DOM에 실패 배너만 남고, robots.txt에 이 경로를 연 의미가
- * 사라진다 — 그 실패 모드가 provider 호출까지 슬롯을 붙드는 봇 요청보다 비싸다.
- *
- * 정상 트래픽 기준으로도 24는 이미 여유롭다 — 사람 동시 접속은 평소 이 근처에도
- * 오지 않는다(위 `MAX_CONCURRENT_ANALYSIS_STREAMS` 주석 참고). 그래서 봇을
- * 사칭한 UA가 이 배수로 얻는 건 "인스턴스당 상한이 더 높다"는 것 하나뿐이다 —
- * LLM 생성 자체는 `isBot`이 UA 문자열 매칭일 뿐이라 이미 일반 브라우저 UA를
- * 사칭해도 그대로 나간다. 즉 사칭이 새로 열어주는 능력은 없고, 이 인스턴스
- * 레벨 천장만 조금 더 높아질 뿐이다.
- */
-const BOT_STREAM_LIMIT_MULTIPLIER = 2;
-
-/**
  * 새 분석 스트림을 받아도 되는지. false면 호출부는 503으로 거절해야 한다.
  *
- * @param isBot 봇 요청이면 더 높은 천장을 적용한다(위 주석 참고).
+ * **모든 호출자에 같은 상한(2026-09-27).** 예전엔 봇 요청에 2배 천장을 줬다 —
+ * `isBot`이 순수 User-Agent 문자열 매칭이라(`shared/api/isBot.ts`) curl/,
+ * python-requests, axios/, node-fetch 같은 일반 스크립트 클라이언트까지
+ * "봇"으로 잡히는데, 그 판정에 더 높은 동시성 천장을 얹는 건 그대로 남용
+ * 경로였다 — 위조도, 판별 불가도 필요 없이 스크립트가 기본으로 그 UA를 쓴다.
+ * 생성이 UA에 의존하지 않는 지금(`api/analysis/stream/route.ts` 상단 불변식)
+ * 천장만 따로 UA로 가를 이유가 없다.
+ *
+ * **감수하는 트레이드오프**: 사람 트래픽이 상한을 다 채운 순간과 겹치면
+ * 크롤러가 503을 받을 수 있다. 정상 동시 접속은 이 근처에도 오지 않으므로
+ * (위 `MAX_CONCURRENT_ANALYSIS_STREAMS` 주석 참고) 드물 것으로 판단한다.
+ * IP/세션 단위 rate limiting은 별도 후속 과제.
  */
-export function canAcceptAnalysisStream(isBot = false): boolean {
-    const limit = isBot
-        ? MAX_CONCURRENT_ANALYSIS_STREAMS * BOT_STREAM_LIMIT_MULTIPLIER
-        : MAX_CONCURRENT_ANALYSIS_STREAMS;
-    return count < limit;
+export function canAcceptAnalysisStream(): boolean {
+    return count < MAX_CONCURRENT_ANALYSIS_STREAMS;
 }

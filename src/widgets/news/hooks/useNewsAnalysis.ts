@@ -10,7 +10,6 @@ import type { SubmitNewsAnalysisActionResult } from '@/entities/news-article/act
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import { BotBlockedError } from '@/shared/lib/BotBlockedError';
 import { readPlain, type WithPlain } from '@/shared/lib/plainEnvelope';
 
 export type NewsAnalysisState =
@@ -22,7 +21,6 @@ export type NewsAnalysisState =
           plain: string | null;
           trigger: () => void;
       }
-    | { status: 'bot_blocked'; trigger: () => void }
     | { status: 'error'; error: Error; retry: () => void; trigger: () => void };
 
 /**
@@ -46,9 +44,9 @@ async function fetchNewsAnalysis(
 
     if (result.status === 'cached' || result.status === 'done')
         return { data: result.result, plain: readPlain(result) };
-    if (result.status === 'miss_no_trigger') {
-        throw new BotBlockedError();
-    }
+    // `miss_no_trigger`: core-only status. `skipEnqueueIfMiss` is hardcoded
+    // false for this axis (see `api/analysis/stream/route.ts` top invariant),
+    // so it falls through to the generic `unexpected` throw below.
     if (result.status === 'error') {
         if (isGateBlockedResult(result)) {
             throw new Error(result.error.message);
@@ -143,9 +141,6 @@ export function useNewsAnalysis(
     };
 
     if (query.isError) {
-        if (query.error instanceof BotBlockedError) {
-            return { status: 'bot_blocked', trigger: retry };
-        }
         return {
             status: 'error',
             error:

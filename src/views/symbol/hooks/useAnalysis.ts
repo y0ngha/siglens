@@ -143,17 +143,6 @@ export interface UseAnalysisResult {
     lockedInfoDepth: readonly TierInfoDepth[];
     isAnalyzing: boolean;
     analysisError: string | null;
-    /**
-     * SSE 라우트가 `miss_no_trigger`를 반환한 상태. UI에서 BotBlockedNotice를
-     * 렌더한다.
-     *
-     * 이름과 달리 2026-09-27부터 봇 UA로만 발생하지 않는다 — technical 축의
-     * `skipEnqueueIfMiss`는 이제 UA와 무관하게 항상 `false`라(파일 상단
-     * 불변식, `api/analysis/stream/route.ts` 참고) 실제 요청에서는 이 상태가
-     * 사실상 도달하지 않는다. 이름·상태 리터럴은 그대로 두되(다른 다섯 축과
-     * 공유하는 `BotBlockedError`/`BotBlockedNotice` 계약), 원인 문구만 정정한다.
-     */
-    isBotBlocked: boolean;
     handleReanalyze: () => void;
     /** 다음 재분석까지 남은 ms. 0이면 즉시 가능. */
     reanalyzeCooldownMs: number;
@@ -203,7 +192,6 @@ export function useAnalysis({
     const [cooldownNotice, setCooldownNotice] = useState<CooldownNotice | null>(
         null
     );
-    const [isBotBlocked, setIsBotBlocked] = useState(false);
     /**
      * 평이화("쉽게보기") 산문. SSE 라우트가 분석 결과와 함께 내려준다.
      *
@@ -329,11 +317,15 @@ export function useAnalysis({
                 .then(result => {
                     // Throw for non-success outcomes so they reach onError and
                     // surface via submitError. Only 'cached', 'done', and
-                    // 'miss_no_trigger' are returned; everything else is an error.
+                    // 'reanalyze_cooldown' are returned; everything else
+                    // (including the core-only `miss_no_trigger` — this axis
+                    // hardcodes `skipEnqueueIfMiss: false`, see
+                    // `api/analysis/stream/route.ts` top invariant, so it
+                    // never actually occurs) falls through to the generic
+                    // `unexpected` error below.
                     if (
                         result.status === 'cached' ||
                         result.status === 'done' ||
-                        result.status === 'miss_no_trigger' ||
                         result.status === 'reanalyze_cooldown'
                     ) {
                         return result;
@@ -379,7 +371,6 @@ export function useAnalysis({
                 plain: plainRef.current,
             };
             setAnalysisResult(null);
-            setIsBotBlocked(false);
             // 이전 결과의 평이화 산문은 새 제출과 무관하다. 지우지 않으면 새 분석이
             // 도착하기 전까지 이전 종목/타임프레임의 글이 쉽게보기에 남는다.
             setPlain(null);
@@ -431,13 +422,6 @@ export function useAnalysis({
                     nonce: Date.now(),
                     remainingMs: data.remainingMs,
                 });
-            } else if (data.status === 'miss_no_trigger') {
-                // 별도 boolean 상태로 추적하는 이유: 이 훅은 useMutation 기반이라
-                // useQuery처럼 에러 브랜치 narrowing으로 비-데이터 상태를 표현할
-                // 수 없다. 다른 세 분석 훅(fundamental/news/overall)은 useQuery
-                // 기반이라 BotBlockedError 던지기로 동일 의미를 표현한다.
-                setIsBotBlocked(true);
-                setIsPersonalized(false);
             }
         },
         onError: (_error, { force }) => {
@@ -766,7 +750,6 @@ export function useAnalysis({
         lockedInfoDepth,
         isAnalyzing,
         analysisError,
-        isBotBlocked,
         handleReanalyze,
         reanalyzeCooldownMs,
         cooldownNotice,

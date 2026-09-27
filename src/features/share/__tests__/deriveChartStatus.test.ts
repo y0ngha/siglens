@@ -4,7 +4,6 @@ describe('deriveChartStatus', () => {
     const base = {
         isAnalyzing: false,
         analysisError: false,
-        isBotBlocked: false,
         hasResult: false,
     };
 
@@ -26,27 +25,6 @@ describe('deriveChartStatus', () => {
         expect(deriveChartStatus({ ...base, isAnalyzing: true })).toBe(
             'pending'
         );
-    });
-
-    it('returns unavailable when isBotBlocked is true (highest priority)', () => {
-        expect(
-            deriveChartStatus({
-                isBotBlocked: true,
-                isAnalyzing: true,
-                analysisError: true,
-                hasResult: true,
-            })
-        ).toBe('unavailable');
-    });
-
-    it('isBotBlocked beats isAnalyzing', () => {
-        expect(
-            deriveChartStatus({
-                ...base,
-                isBotBlocked: true,
-                isAnalyzing: true,
-            })
-        ).toBe('unavailable');
     });
 
     it('isAnalyzing beats analysisError', () => {

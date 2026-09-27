@@ -74,13 +74,14 @@ test.describe('analysis jobs: bot parity + force re-analysis', () => {
         // miss_no_trigger를 반환시켰지만, 지금은 사람과 같은 경로를 탄다.
         test.use({ userAgent: GOOGLEBOT_UA });
 
-        test('crawler User-Agent renders the same cached fixture a human gets, no BotBlockedNotice', async ({
+        test('crawler User-Agent renders the same cached fixture a human gets', async ({
             page,
         }) => {
             await page.goto('/AAPL');
 
             // 사람 UA와 동일한 fixture summary가 렌더돼야 한다 — bot/human 본문
-            // 동일성이 핵심 회귀 가드다.
+            // 동일성이 핵심 회귀 가드다. (봇 차단 안내 UI 자체가 삭제됐으므로
+            // 그 부재는 더 이상 별도로 검증할 필요가 없다.)
             await expect(
                 page
                     .getByText(ANALYSIS_FIXTURE_SUMMARY_PREFIX, {
@@ -88,14 +89,6 @@ test.describe('analysis jobs: bot parity + force re-analysis', () => {
                     })
                     .first()
             ).toBeVisible({ timeout: ANALYSIS_RENDER_TIMEOUT_MS });
-
-            // BotBlockedNotice가 더 이상 렌더되지 않아야 한다 — 이 문구가 다시
-            // 나타나면 UA 기반 생성 차단이 되돌아온 것이다.
-            await expect(
-                page.getByText(
-                    '봇 트래픽으로 보여 분석 결과를 표시하지 않았어요.'
-                )
-            ).toHaveCount(0);
         });
     });
 

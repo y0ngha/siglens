@@ -956,6 +956,11 @@ describe('useAnalysis', () => {
         });
 
         it('miss_no_trigger → isPersonalized는 false다', async () => {
+            // Core-only status (skipEnqueueIfMiss is hardcoded false for
+            // this axis, so it never actually happens): falls through to
+            // the generic unexpected error. onMutate already reset
+            // isPersonalized to false before the submit resolved, and the
+            // error path never sets it back to true.
             mockSubmit.mockResolvedValue({ status: 'miss_no_trigger' });
 
             const { result } = renderHook(
@@ -964,7 +969,7 @@ describe('useAnalysis', () => {
             );
 
             await waitFor(() => {
-                expect(result.current.isBotBlocked).toBe(true);
+                expect(result.current.analysisError).not.toBeNull();
             });
             expect(result.current.isPersonalized).toBe(false);
         });
