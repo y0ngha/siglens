@@ -494,3 +494,11 @@
 - Violation: Tradeoff rationale for `generateEtags: false` was scoped to Googlebot only and stated an unverified generalization ("the only HTML leaving the edge with an ETag is the poisoned uncompressed variant"); browser measurement showed gzip-passthrough pages (`/AAPL`, `/NVDA/news`) keep a strong ETag, so real-user revisits do lose 304.
 - Rule: (new) A tradeoff comment must cover every client class the setting affects (crawlers AND browsers), and each factual claim must be measured with that client's actual request headers
 - Context: next.config.ts `generateEtags` comment — corrected the ETag-stripping claim and added the real-user revisit cost plus the Cloudflare "Respect strong ETags" OFF alternative that keeps 304.
+
+## [PR #881 Round 1 | fix/seoptimer-audit-actions | 2026-09-27]
+- Violation: CI e2e failure — `e2e/specs/seo-smoke.spec.ts` hard-coded `Crawl-delay: 60` while the unit test referenced the exported constant; lowering `AI_CRAWLER_CRAWL_DELAY_SECONDS` to 10 broke only the e2e. Root cause of the miss: when changing the constant, the implementer grepped src/ and docs/ but not e2e/.
+  - Rule: (new) When changing a constant's value, grep its literal value repo-wide (src/, e2e/, docs/, scripts/), not only src/ and docs/ — e2e specs are not run by scoped unit tests, so a stale literal there only surfaces in CI. Prefer tests that import the constant over re-stating the literal.
+  - Context: e2e now imports the constant from `@/app/robots`.
+- Violation: After moving the confidence tooltip next to the section heading with `left-0 w-56`, the box anchored to the ⓘ button (~130px from the left) would overflow a 320px viewport. The tooltip's `relative` anchor was the ⓘ wrapper itself.
+  - Rule: (new) When relocating an absolutely positioned popover, recompute its box against the narrowest supported viewport (320px) from its new anchor's offset; `left-0`/`right-0` choices that were safe at the old anchor can overflow at the new one.
+  - Context: Moved the `relative` anchor from the button to the header row (the tooltip's immediate container), so the box now anchors to the section's left content edge rather than the button's position.

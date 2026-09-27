@@ -1,4 +1,5 @@
 import { test, expect } from '../support/fixtures';
+import { AI_CRAWLER_CRAWL_DELAY_SECONDS } from '@/app/robots';
 
 /**
  * SEO infrastructure smoke (`/`) — Tier 4 cross-cutting outcome.
@@ -62,7 +63,15 @@ test.describe('seo smoke', () => {
         expect(response.status()).toBe(200);
         const body = await response.text();
         expect(body).toContain('GPTBot');
-        expect(body).toMatch(/Crawl-delay:\s*60/i);
+        // 리터럴 60을 박아뒀다가 상수가 60→10으로 바뀐 뒤 이 e2e만 깨진 적이 있다.
+        // 값 자체가 아니라 "robots.ts가 실제로 내보내는 값과 일치하는지"가
+        // 검증 대상이므로 상수를 참조한다.
+        expect(body).toMatch(
+            new RegExp(
+                `Crawl-delay:\\s*${AI_CRAWLER_CRAWL_DELAY_SECONDS}\\b`,
+                'i'
+            )
+        );
         expect(body).toContain('Disallow: /api/');
         expect(body).toMatch(/Sitemap:\s*\S+\/sitemap\.xml/i);
     });

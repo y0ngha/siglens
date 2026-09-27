@@ -104,6 +104,12 @@ function barColorClass(weight: number): string {
  * 패널까지 합쳐 홈 HTML에 같은 3문장이 56번 찍혔다(2026-09 실측). 그 결과 홈에서
  * 가장 자주 나오는 문구가 핵심 키워드가 아니라 이 안내문이 됐다. 설명은 모든 카드에
  * 공통이라 한 곳이면 충분하다 — 카드 안으로 되돌리지 말 것.
+ *
+ * 앵커는 ⓘ 버튼이 아니라 헤더 행(`SkillsShowcase`의 `mb-6 flex items-center
+ * gap-1` div)이다 — ⓘ가 제목 텍스트 뒤(모바일 기준 뷰포트 좌측에서 ~130px)에
+ * 오는데 툴팁 박스가 224px(`w-56`)라, 버튼에 `relative`를 주고 `left-0`을
+ * 쓰면 320px 뷰포트 오른쪽으로 넘친다. 헤더 행에 `relative`를 주면 `left-0`이
+ * 섹션 좌측 여백(page-container 패딩)에서 시작해 16px + 224px가 320px 안에 들어온다.
  */
 function ConfidenceInfoTooltip() {
     const t = useTranslations('widgets.home');
@@ -112,7 +118,7 @@ function ConfidenceInfoTooltip() {
     const { isOpen, toggle } = usePopoverToggle(containerRef);
 
     return (
-        <div ref={containerRef} className="group relative">
+        <div ref={containerRef} className="group">
             <button
                 type="button"
                 aria-label={t('SkillsShowcase.7e6540')}
@@ -347,7 +353,7 @@ export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
             {/* 같은 위계의 h2는 `HEADING_SECTION` 한 곳에서만 정의한다 —
                 여기와 `CategoryCardGrid`가 각자 리터럴을 복제하고 있었고, 그
                 복제본이 토큰(18px)과 어긋난 16px로 굳어 있었다. */}
-            <div className="mb-6 flex items-center gap-1">
+            <div className="relative mb-6 flex items-center gap-1">
                 <h2 className={HEADING_SECTION}>
                     {t('SkillsShowcase.158954')}
                 </h2>
