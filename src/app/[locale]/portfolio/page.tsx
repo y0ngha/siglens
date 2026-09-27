@@ -2,6 +2,7 @@ import { useTranslations } from 'next-intl';
 import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { PositionHoldingCard } from './PositionHoldingCard';
+import { PortfolioManager } from './PortfolioManager';
 import { cn } from '@/shared/lib/cn';
 import { PLACEHOLDER_ON_INSET } from '@/shared/lib/surfaceStyles';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
@@ -207,15 +208,26 @@ export default async function PortfolioPage({
             <div className="mx-auto w-full max-w-5xl space-y-6">
                 <header>
                     <h1 className="text-2xl font-semibold text-secondary-50">
-                        {t('page.55ca69')}
+                        {t('page.d9477a')}
                     </h1>
                     <p className="mt-1 text-sm text-secondary-400">
-                        {t('page.80736f')}
+                        {t('page.6aaec6')}
                     </p>
                 </header>
-                <Suspense fallback={<PortfolioSkeleton />}>
-                    <PortfolioGuard locale={locale} />
-                </Suspense>
+                <section
+                    aria-label={t('page.06c7de')}
+                    className="space-y-4 rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+                >
+                    <PortfolioManager />
+                </section>
+                <section aria-label={t('page.55ca69')} className="space-y-4">
+                    <h2 className="text-lg font-semibold text-secondary-100">
+                        {t('page.55ca69')}
+                    </h2>
+                    <Suspense fallback={<PortfolioSkeleton />}>
+                        <PortfolioGuard locale={locale} />
+                    </Suspense>
+                </section>
             </div>
         </main>
     );

@@ -86,7 +86,7 @@ describe('PortfolioSection', () => {
     it('renders a holding row with symbol, quantity and price', () => {
         setHoldings({ holdings: [HOLDING] });
         render(<PortfolioSection />);
-        expect(screen.getByText('AAPL')).toBeInTheDocument();
+        expect(screen.getByText('Apple Inc. (AAPL)')).toBeInTheDocument();
         expect(screen.getByText(/10주 · 평단 \$150\.5/)).toBeInTheDocument();
     });
 
@@ -159,7 +159,7 @@ describe('PortfolioSection', () => {
         });
         render(<PortfolioSection />);
 
-        const row = screen.getByText('AAPL').closest('li');
+        const row = screen.getByText('Apple Inc. (AAPL)').closest('li');
         if (!row) throw new Error('holding row not found');
 
         await user.click(
@@ -174,6 +174,52 @@ describe('PortfolioSection', () => {
         });
     });
 
+    it('calls onHoldingsChange after a successful delete and add, not after a failed delete', async () => {
+        const user = userEvent.setup();
+        const onHoldingsChange = vi.fn();
+        const { remove, save } = setHoldings({ holdings: [HOLDING] });
+        (remove.mutateAsync as ReturnType<typeof vi.fn>)
+            .mockResolvedValueOnce({
+                status: 'error',
+                code: 'unknown',
+                message: '실패',
+            })
+            .mockResolvedValueOnce({ status: 'ok' });
+        (save.mutateAsync as ReturnType<typeof vi.fn>).mockResolvedValue({
+            status: 'ok',
+            holding: HOLDING,
+        });
+        render(<PortfolioSection onHoldingsChange={onHoldingsChange} />);
+
+        const row = screen.getByText('Apple Inc. (AAPL)').closest('li');
+        if (!row) throw new Error('holding row not found');
+        await user.click(
+            within(row).getByRole('button', { name: 'AAPL 보유종목 삭제' })
+        );
+        await user.click(
+            within(row).getByRole('button', { name: '삭제 확정' })
+        );
+        await waitFor(() => {
+            expect(remove.mutateAsync).toHaveBeenCalledTimes(1);
+        });
+        expect(onHoldingsChange).not.toHaveBeenCalled();
+
+        await user.click(
+            within(row).getByRole('button', { name: '삭제 확정' })
+        );
+        await waitFor(() => {
+            expect(onHoldingsChange).toHaveBeenCalledTimes(1);
+        });
+
+        await user.type(screen.getByLabelText('종목 티커 검색'), 'MSFT');
+        await user.type(screen.getByLabelText('수량'), '1');
+        await user.type(screen.getByLabelText('평단'), '10');
+        await user.click(screen.getByRole('button', { name: '추가' }));
+        await waitFor(() => {
+            expect(onHoldingsChange).toHaveBeenCalledTimes(2);
+        });
+    });
+
     it('announces success in the polite status region after deleting a holding', async () => {
         const user = userEvent.setup();
         const { remove } = setHoldings({ holdings: [HOLDING] });
@@ -182,7 +228,7 @@ describe('PortfolioSection', () => {
         });
         render(<PortfolioSection />);
 
-        const row = screen.getByText('AAPL').closest('li');
+        const row = screen.getByText('Apple Inc. (AAPL)').closest('li');
         if (!row) throw new Error('holding row not found');
 
         await user.click(
@@ -205,7 +251,7 @@ describe('PortfolioSection', () => {
         });
         render(<PortfolioSection />);
 
-        const row = screen.getByText('AAPL').closest('li');
+        const row = screen.getByText('Apple Inc. (AAPL)').closest('li');
         if (!row) throw new Error('holding row not found');
 
         await user.click(
@@ -243,7 +289,7 @@ describe('PortfolioSection', () => {
         });
         render(<PortfolioSection />);
 
-        const row = screen.getByText('AAPL').closest('li');
+        const row = screen.getByText('Apple Inc. (AAPL)').closest('li');
         if (!row) throw new Error('holding row not found');
 
         await user.click(
@@ -289,7 +335,7 @@ describe('PortfolioSection', () => {
         setHoldings({ holdings: [HOLDING] });
         render(<PortfolioSection />);
 
-        const row = screen.getByText('AAPL').closest('li');
+        const row = screen.getByText('Apple Inc. (AAPL)').closest('li');
         if (!row) throw new Error('holding row not found');
 
         await user.click(
@@ -309,7 +355,7 @@ describe('PortfolioSection', () => {
         });
         render(<PortfolioSection />);
 
-        const row = screen.getByText('AAPL').closest('li');
+        const row = screen.getByText('Apple Inc. (AAPL)').closest('li');
         if (!row) throw new Error('holding row not found');
 
         await user.click(
@@ -325,7 +371,7 @@ describe('PortfolioSection', () => {
             )
         ).toBeInTheDocument();
         // Row is not removed - the symbol is still on screen.
-        expect(screen.getByText('AAPL')).toBeInTheDocument();
+        expect(screen.getByText('Apple Inc. (AAPL)')).toBeInTheDocument();
     });
 
     it('shows a generic delete error and does not crash when remove.mutateAsync rejects outright', async () => {
@@ -336,7 +382,7 @@ describe('PortfolioSection', () => {
         );
         render(<PortfolioSection />);
 
-        const row = screen.getByText('AAPL').closest('li');
+        const row = screen.getByText('Apple Inc. (AAPL)').closest('li');
         if (!row) throw new Error('holding row not found');
 
         await user.click(
@@ -352,7 +398,7 @@ describe('PortfolioSection', () => {
             )
         ).toBeInTheDocument();
         // Row is not removed - the symbol is still on screen.
-        expect(screen.getByText('AAPL')).toBeInTheDocument();
+        expect(screen.getByText('Apple Inc. (AAPL)')).toBeInTheDocument();
     });
 
     it('restores the normal row buttons without deleting when 취소 is clicked on the delete confirm', async () => {
@@ -360,7 +406,7 @@ describe('PortfolioSection', () => {
         const { remove } = setHoldings({ holdings: [HOLDING] });
         render(<PortfolioSection />);
 
-        const row = screen.getByText('AAPL').closest('li');
+        const row = screen.getByText('Apple Inc. (AAPL)').closest('li');
         if (!row) throw new Error('holding row not found');
 
         await user.click(
@@ -386,7 +432,7 @@ describe('PortfolioSection', () => {
         setHoldings({ holdings: [HOLDING] });
         render(<PortfolioSection />);
 
-        const row = screen.getByText('AAPL').closest('li');
+        const row = screen.getByText('Apple Inc. (AAPL)').closest('li');
         if (!row) throw new Error('holding row not found');
 
         await user.click(
@@ -403,7 +449,7 @@ describe('PortfolioSection', () => {
         setHoldings({ holdings: [HOLDING] });
         render(<PortfolioSection />);
 
-        const row = screen.getByText('AAPL').closest('li');
+        const row = screen.getByText('Apple Inc. (AAPL)').closest('li');
         if (!row) throw new Error('holding row not found');
 
         await user.click(

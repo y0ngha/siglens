@@ -9,7 +9,6 @@ import {
     type Locale,
 } from '@/shared/i18n/locales';
 import { setRequestLocale } from 'next-intl/server';
-import { PortfolioSection } from '@/features/portfolio-management';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getRegisteredProvidersAction } from '@/entities/api-key/actions';
 import { TIER_LABEL } from '@/shared/lib/auth/tierLabel';
@@ -101,19 +100,6 @@ async function AccountContent({ locale }: { locale: Locale }) {
                 className="space-y-4 rounded-lg border border-secondary-700 bg-secondary-800 p-6"
             >
                 <ApiKeySection registeredProviders={registeredProviders} />
-            </section>
-
-            <section
-                aria-label={t('page.cae421')}
-                className="space-y-4 rounded-lg border border-secondary-700 bg-secondary-800 p-6"
-            >
-                <PortfolioSection />
-                <Link
-                    href="/portfolio"
-                    className="inline-flex min-h-11 touch-manipulation items-center justify-center rounded-lg border border-border-control px-4 text-sm font-medium text-secondary-200 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                >
-                    {t('page.2a5883')}
-                </Link>
             </section>
 
             <section

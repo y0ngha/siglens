@@ -4,7 +4,6 @@
     "app.account.page.1987ac": "1987ac4a9f67",
     "app.account.page.1b62d0": "1b62d010a7f0",
     "app.account.page.1b6c6d": "1b6c6d043939",
-    "app.account.page.2a5883": "2a58836b229c",
     "app.account.page.3a0c2b": "3a0c2bbf3fe6",
     "app.account.page.3c3776": "3c37764a2b97",
     "app.account.page.54ac38": "54ac38a16ec3",
@@ -16,7 +15,6 @@
     "app.account.page.bfc060": "bfc06057432c",
     "app.account.page.c4079e": "c4079e457b6f",
     "app.account.page.c6c674": "c6c6749ad9c6",
-    "app.account.page.cae421": "cae4214fd252",
     "app.account.page.f5162c": "f5162c337583",
     "app.account.page.fa7c86": "fa7c86af119a",
     "app.ai.layout.9401e4": "c4965f15650f",
@@ -172,7 +170,6 @@
     "app.portfolio.PositionHoldingCard.fb64df": "fb64df0cb9ef",
     "app.portfolio.page.55ca69": "55ca69251be5",
     "app.portfolio.page.605ada": "605adad5f41a",
-    "app.portfolio.page.80736f": "80736f56559a",
     "app.portfolio.page.81860c": "81860cfa39a8",
     "app.portfolio.page.90a081": "90a08164c9cf",
     "app.portfolio.page.92020d": "92020d3ac0e3",
@@ -1149,7 +1146,7 @@
     "shared.seo.onboarding.description": "14f9aa105049",
     "shared.seo.onboarding.title": "0fceaf819332",
     "shared.seo.portfolio.description": "b102b9009b91",
-    "shared.seo.portfolio.title": "55ca69251be5",
+    "shared.seo.portfolio.title": "d9477ae8dac5",
     "shared.seo.position.breadcrumb": "69d3387e45f6",
     "shared.seo.position.description": "1a3cb6ecf77c",
     "shared.seo.position.title": "091c378adf27",
@@ -2816,5 +2813,9 @@
     "widgets.share.ShareTriggerDialog.5481d6": "5481d6733919",
     "widgets.share.ShareTriggerDialog.94b7db": "94b7dba15907",
     "widgets.share.ShareTriggerDialog.b74ea2": "b74ea2b043fc",
-    "widgets.share.ShareTriggerDialog.cc6aae": "cc6aaecc4784"
+    "widgets.share.ShareTriggerDialog.cc6aae": "cc6aaecc4784",
+    "app.portfolio.page.06c7de": "06c7def48136",
+    "app.portfolio.page.6aaec6": "6aaec64c9804",
+    "app.portfolio.page.d9477a": "d9477ae8dac5",
+    "widgets.layout.HeaderUserMenu.d9477a": "d9477ae8dac5"
 }

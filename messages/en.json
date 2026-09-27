@@ -7,7 +7,6 @@
                 "1987ac": "Risk Zone",
                 "1b62d0": "Return to Account Settings →",
                 "1b6c6d": "Loading AI Model API Key",
-                "2a5883": "View My Portfolio Location",
                 "3a0c2b": "Account Withdrawal",
                 "3c3776": "Email",
                 "54ac38": "All information related to your account will be immediately and permanently deleted.",
@@ -19,7 +18,6 @@
                 "bfc060": "Changed your mind?",
                 "c4079e": "Loading Profile",
                 "c6c674": "Not Set",
-                "cae421": "Holdings",
                 "f5162c": "Membership Level",
                 "fa7c86": "Proceed with Account Withdrawal"
             }
@@ -271,12 +269,14 @@
             "page": {
                 "55ca69": "My Portfolio Position",
                 "605ada": "Loading holdings position.",
-                "80736f": "Check where your average price is within the recent price range for each holding.",
                 "81860c": "Register holdings.",
                 "90a081": "Failed to load portfolio.",
                 "92020d": "Please try again shortly.",
                 "ac9263": "You haven't registered any holdings yet.",
-                "d103d5": "If you register your holdings, you can see where your average price is within the recent price range for each stock, visualized as a building."
+                "d103d5": "If you register your holdings, you can see where your average price is within the recent price range for each stock, visualized as a building.",
+                "06c7de": "Manage holdings",
+                "6aaec6": "Manage your holdings and see where your average cost sits within each stock's recent price range.",
+                "d9477a": "Portfolio"
             }
         },
         "reset-password": {
@@ -1614,7 +1614,7 @@
             },
             "portfolio": {
                 "description": "A personalized Siglens page showing where your average cost sits within each holding's recent price range.",
-                "title": "My Portfolio Position"
+                "title": "Portfolio"
             },
             "position": {
                 "breadcrumb": "My position",
@@ -3431,7 +3431,8 @@
                 "ce7156": "Authentication",
                 "e225a6": "Log In",
                 "ecb4cc": "Sign Up",
-                "menuLabel": "User menu ({v0})"
+                "menuLabel": "User menu ({v0})",
+                "d9477a": "Portfolio"
             },
             "githubRepoAria": "{v0} GitHub repository (opens in a new tab)",
             "localeSwitcher": {

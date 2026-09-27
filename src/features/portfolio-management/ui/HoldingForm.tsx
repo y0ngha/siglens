@@ -6,6 +6,7 @@ import { TickerAutocomplete } from '@/features/ticker-search';
 import { cn } from '@/shared/lib/cn';
 import { stripNegativeSign } from '@/shared/lib/stripNegativeSign';
 import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
+import { symbolLabel } from '@/shared/lib/symbolLabel';
 import type {
     PortfolioActionErrorCode,
     PortfolioHoldingView,
@@ -19,7 +20,7 @@ const FIELD_INPUT =
 const FIELD_INPUT_ERROR =
     'border-ui-danger focus:border-ui-danger focus:ring-ui-danger/40';
 const SYMBOL_CHIP =
-    'border-secondary-700 bg-secondary-950 flex h-10 items-center justify-between rounded-lg border px-3';
+    'border-secondary-700 bg-secondary-950 flex h-10 items-center justify-between gap-2 rounded-lg border px-3';
 const BUTTON_PRIMARY =
     'bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 inline-flex h-10 shrink-0 touch-manipulation items-center justify-center rounded-lg px-4 text-sm font-semibold text-white transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-secondary-700 disabled:text-secondary-500';
 const BUTTON_GHOST =
@@ -80,6 +81,11 @@ export function HoldingForm({
     const [symbol, setSymbol] = useState(
         initial?.symbol ?? defaultSymbol ?? ''
     );
+    // 표시 전용 — 자동완성이 넘긴 이름으로 칩을 `회사명 (티커)`로 그린다.
+    // 제출 페이로드는 심볼뿐이고, 저장되는 회사명은 서버가 따로 해석한다.
+    const [symbolName, setSymbolName] = useState<string | null>(
+        initial?.companyName ?? null
+    );
     const [quantity, setQuantity] = useState(
         initial ? trimTrailingZeros(initial.quantity) : ''
     );
@@ -132,6 +138,7 @@ export function HoldingForm({
                 onCancel?.();
             } else {
                 setSymbol('');
+                setSymbolName(null);
                 setQuantity('');
                 setAveragePrice('');
             }
@@ -159,7 +166,9 @@ export function HoldingForm({
                                 'flex items-center font-semibold'
                             )}
                         >
-                            {symbol}
+                            <span className="truncate">
+                                {symbolLabel(symbol, symbolName)}
+                            </span>
                         </div>
                     ) : symbol ? (
                         <div
@@ -168,12 +177,15 @@ export function HoldingForm({
                                 errorField === 'symbol' && 'border-ui-danger'
                             )}
                         >
-                            <span className="text-sm font-semibold text-secondary-100">
-                                {symbol}
+                            <span className="min-w-0 truncate text-sm font-semibold text-secondary-100">
+                                {symbolLabel(symbol, symbolName)}
                             </span>
                             <button
                                 type="button"
-                                onClick={() => setSymbol('')}
+                                onClick={() => {
+                                    setSymbol('');
+                                    setSymbolName(null);
+                                }}
                                 className="-my-2 touch-manipulation rounded px-1 py-2 text-xs font-medium text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                             >
                                 {t('HoldingForm.ce0109')}
@@ -196,9 +208,10 @@ export function HoldingForm({
                             <TickerAutocomplete
                                 size="sm"
                                 navigateOnSelect={false}
-                                // 이 폼은 심볼만 필요하다 — 표시 라벨은 보유 종목
-                                // 카드가 자체적으로 해석한다.
-                                onSelect={entry => setSymbol(entry.symbol)}
+                                onSelect={entry => {
+                                    setSymbol(entry.symbol);
+                                    setSymbolName(entry.label);
+                                }}
                                 inputClassName={cn(
                                     'bg-secondary-950 h-10 rounded-lg placeholder-secondary-400 focus:ring-2',
                                     errorField === 'symbol'

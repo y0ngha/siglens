@@ -64,6 +64,24 @@ describe('HeaderUserMenu', () => {
         expect(trigger).toHaveTextContent('Y');
     });
 
+    it('메뉴를 열면 포트폴리오·계정 설정 항목이 차례로 보인다', () => {
+        render(
+            <HeaderUserMenu
+                currentUser={{
+                    email: 'user@example.com',
+                    name: 'Yongha',
+                    tier: 'member',
+                    avatarUrl: null,
+                }}
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: /사용자 메뉴/ }));
+        const items = screen.getAllByRole('menuitem');
+        expect(items[0]).toHaveTextContent('포트폴리오');
+        expect(items[0]).toHaveAttribute('href', '/portfolio');
+        expect(items[1]).toHaveAttribute('href', '/account');
+    });
+
     it('avatarUrl이 있으면 이미지를 렌더한다', () => {
         render(
             <HeaderUserMenu
