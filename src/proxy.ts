@@ -220,6 +220,9 @@ const RESERVED_FIRST_SEGMENTS = new Set([
     // `/SYMBOLS` 티커로 301된다 — 푸터가 전 라우트에서 그 링크를 내보내므로
     // 사이트 전체가 깨진 링크를 갖게 된다.
     'symbols',
+    // 페이지 디렉터리는 삭제됐지만 위 레거시 리다이렉트의 대상 경로라 여전히
+    // 예약해야 한다 — 없으면 `/onboarding`이 `/ONBOARDING`으로 대문자
+    // 정규화되고, 그 경로는 [symbol] fallback을 타 404가 된다.
     'onboarding',
     'portfolio',
     'share',
@@ -258,6 +261,23 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
      * 자기 언어에서 이탈하지 않게 한다.
      */
     const { locale, path: pathname } = splitLocalePath(reqUrl.pathname);
+
+    /**
+     * 레거시 `/onboarding` 라우트 — 페이지 자체는 지웠지만 (보유종목 관리는
+     * `/portfolio`로 이관됐다) 북마크·진행 중인 가입 흐름·외부에 공유된
+     * 링크가 여전히 이 경로를 가리킬 수 있다. 같은 로케일의 `/portfolio`로
+     * 영구 리다이렉트하고, `?symbol=`(`/[symbol]/position` CTA에서 온 값)을
+     * 포함한 쿼리스트링을 그대로 보존한다.
+     */
+    if (pathname === '/onboarding') {
+        return NextResponse.redirect(
+            new URL(
+                `${localePath(locale, '/portfolio')}${reqUrl.search}`,
+                req.url
+            ),
+            301
+        );
+    }
 
     /**
      * `/ai` 예약 라우트(SiglensAI) — 메인 호스트로 잘못 들어온 요청을
@@ -488,15 +508,24 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     }
 
     if (AUTH_REQUIRED_PATHS.some(p => pathname.startsWith(p)) && !hasSession) {
-        // page-level guards (e.g. `PortfolioGuard`, `OnboardingGuard`) redirect
-        // unauthenticated visitors to `/login?next=<path>` so login returns them
-        // to where they were headed — the proxy's forward guard fires first for
-        // these same paths, so it must preserve `next=` too, or a guest hitting
-        // `/portfolio` directly loses the return path entirely.
+        // page-level guards (e.g. `PortfolioGuard`) redirect unauthenticated
+        // visitors to `/login?next=<path>` so login returns them to where they
+        // were headed — the proxy's forward guard fires first for these same
+        // paths, so it must preserve `next=` too, or a guest hitting `/portfolio`
+        // directly loses the return path entirely.
         const loginUrl = new URL(localePath(locale, '/login'), req.url);
         // `next`는 로케일이 붙은 경로로 저장한다 — 로그인 후 사용자가 자기 언어의
         // 원래 페이지로 돌아와야 한다.
-        loginUrl.searchParams.set('next', localePath(locale, pathname));
+        //
+        // `reqUrl.search`도 반드시 붙인다 — 빠뜨리면 `/portfolio?symbol=AAPL`
+        // (`/[symbol]/position`의 CTA)로 들어온 게스트가 로그인 후 심볼이
+        // 채워지지 않은 빈 폼에 도착한다. `sanitizeNextPath`/`toSameOriginPath`는
+        // 쿼리를 검사 대상에서 제외하고 그대로 통과시키므로 로그인 액션 쪽에서도
+        // 안전하게 살아남는다 (redirect.ts 참고).
+        loginUrl.searchParams.set(
+            'next',
+            localePath(locale, pathname) + reqUrl.search
+        );
         return NextResponse.redirect(loginUrl);
     }
 

@@ -76,8 +76,8 @@ const CLASSNAME_EXPR_RE = /className=\{([\s\S]*?)\}(?=\s|>|$)/;
 /**
  * 주석을 지운 소스. 산문에 `<h1>` 같은 조각이 섞여 있으면 `HEADING_RE`의 lazy
  * 매칭이 그 조각을 **뒤에 오는 진짜 heading의 닫는 태그**와 짝지어, 사이에 있는
- * 실제 heading을 통째로 삼킨다. 실측: `src/app/onboarding/page.tsx:38`의 주석
- * 한 줄이 42행의 진짜 h1을 가려 그 파일에서 매칭이 1건만 나왔다.
+ * 실제 heading을 통째로 삼킨다. 실측: (이제 삭제된) `src/app/onboarding/page.tsx:38`의
+ * 주석 한 줄이 42행의 진짜 h1을 가려 그 파일에서 매칭이 1건만 나왔다.
  */
 /**
  * 주석을 **지우지 않고 같은 길이의 공백으로 바꾼다.**

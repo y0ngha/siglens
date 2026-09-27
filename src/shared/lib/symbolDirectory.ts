@@ -1,6 +1,7 @@
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile';
+import { symbolLabel } from './symbolLabel';
 
 /**
  * 디렉터리 한 줄. `label`은 화면에 그대로 찍히는 최종 문자열이다.
@@ -17,8 +18,7 @@ export interface SymbolDirectoryItem {
 export type SymbolNameMap = ReadonlyMap<string, string>;
 
 function labelFor(symbol: string, names: SymbolNameMap): string {
-    const name = names.get(symbol);
-    return name === undefined || name === '' ? symbol : `${name} (${symbol})`;
+    return symbolLabel(symbol, names.get(symbol));
 }
 
 /** 자산군 한 묶음. `labelKey`는 내비가 이미 네 로케일로 갖고 있는 지역 이름이다. */

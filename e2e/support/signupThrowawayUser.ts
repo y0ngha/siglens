@@ -13,8 +13,8 @@ import { getEmailDebug } from './emailHelper';
  * there is no collision across runs/workers.
  *
  * The default post-signup redirect target is not stable: a no-`next` signup
- * now lands on /onboarding (resolvePostSignupDestination maps '/' →
- * '/onboarding'), where previously it landed on '/'. Rather than assert
+ * now lands on /portfolio (resolvePostSignupDestination maps '/' →
+ * '/portfolio'), where previously it landed on '/'. Rather than assert
  * authentication on whatever page signup happens to redirect to, this helper
  * navigates to /account (auth-guarded, renders the site header) so the auth
  * assertion is decoupled from the post-signup route and won't regress again
@@ -56,7 +56,7 @@ export async function signupThrowawayUser(
     await page.getByRole('button', { name: '회원가입' }).click();
 
     // Registered + authenticated. The default signup redirect target changed
-    // (a no-`next` signup now lands on /onboarding); navigate to a stable authed
+    // (a no-`next` signup now lands on /portfolio); navigate to a stable authed
     // page so this helper's auth assertion is decoupled from the post-signup route.
     await page.waitForURL(url => !url.pathname.startsWith('/signup'));
     await page.goto('/account');

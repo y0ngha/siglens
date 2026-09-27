@@ -79,7 +79,7 @@ import {
  * covered by `AnalysisPanel.test.tsx`'s component-level gating tests).
  */
 
-const PORTFOLIO_REGION_NAME = '보유종목';
+const PORTFOLIO_REGION_NAME = '보유종목 관리';
 const TICKER_COMBOBOX_NAME = '종목 티커 검색';
 const SKELETON_TEXT = '보유종목을 불러오는 중이에요';
 const SETTLE_TIMEOUT_MS = 15_000;
@@ -115,9 +115,9 @@ async function typeSymbolAndConfirm(page: Page, raw: string): Promise<void> {
 
 /** Deletes the AAPL row via the UI if present, so every run starts clean regardless of leftovers from this or the sibling portfolio specs' run against the persisted e2e Postgres. */
 async function resetAaplHolding(page: Page): Promise<void> {
-    await page.goto('/account');
+    await page.goto('/portfolio');
     await expect(
-        page.getByRole('heading', { level: 1, name: '계정 설정' })
+        page.getByRole('heading', { level: 1, name: '포트폴리오' })
     ).toBeVisible({ timeout: SETTLE_TIMEOUT_MS });
 
     // Wait out the client-only holdings skeleton (usePortfolioHoldings fetches
@@ -136,7 +136,7 @@ async function resetAaplHolding(page: Page): Promise<void> {
     await expect(row).toHaveCount(0, { timeout: SETTLE_TIMEOUT_MS });
 }
 
-/** Adds an AAPL holding via /account's always-present add form. Assumes the list is empty (post-reset), so an unscoped region-level getByLabel is unambiguous — mirrors the sibling portfolio specs' step 1. */
+/** Adds an AAPL holding via /portfolio's always-present add form. Assumes the list is empty (post-reset), so an unscoped region-level getByLabel is unambiguous — mirrors the sibling portfolio specs' step 1. */
 async function addAaplHolding(
     page: Page,
     quantity: string,
@@ -166,7 +166,7 @@ async function gotoAaplAndAwaitAnalysis(page: Page): Promise<void> {
 
 test.describe('personalized-analysis badge (authed storageState)', () => {
     // Two full navigations to /AAPL, each waiting out the ~9s progress-finishing
-    // animation before the fixture (and badge) render, plus two /account
+    // animation before the fixture (and badge) render, plus two /portfolio
     // add/delete round-trips — generous headroom mirrors the sibling portfolio
     // specs' full-flow budget, extended for the analysis render wait.
     test.describe.configure({ timeout: 120_000 });

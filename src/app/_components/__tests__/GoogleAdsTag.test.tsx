@@ -62,7 +62,7 @@ describe('GoogleAdsTag', () => {
     it('checks the flag again after a client-side navigation (server-action redirect does not remount)', () => {
         m.consume.mockReturnValue(false);
         const { rerender } = render(<GoogleAdsTag id="AW-1" />);
-        m.pathname = '/onboarding';
+        m.pathname = '/portfolio';
         m.consume.mockReturnValue(true);
         rerender(<GoogleAdsTag id="AW-1" />);
         expect(m.track).toHaveBeenCalledTimes(1);

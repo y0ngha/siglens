@@ -225,7 +225,7 @@ describe('handoffStore', () => {
         it.each([
             '/',
             '/en/AAPL',
-            '/onboarding',
+            '/portfolio',
             '/api/auth/handoff?to=other&next=%2Fc%2Fabc',
             '/api/auth/handoff/start?next=%2Fc%2Fabc',
         ])('leaves %j unchanged', target => {
