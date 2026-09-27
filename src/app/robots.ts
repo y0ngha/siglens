@@ -10,8 +10,13 @@ import { LOCALES } from '@/shared/i18n/locales';
  * 이 그룹에 넣으면 사실상 무제한이 된다 — `GOOGLE_NON_SEARCH_USER_AGENTS` 주석 참고.
  * 나머지 봇의 준수 여부도 문서로 보장되지 않는 best-effort 힌트다. 확실한 통제가
  * 필요하면 `Disallow` 또는 Cloudflare 봇 룰을 써야 한다.
+ *
+ * 값을 60에서 10으로 낮춘 이유(2026-09): 60초면 봇 하나가 하루 최대 1,440 URL만
+ * 가져갈 수 있다. 종목 × 탭 페이지 수만 개를 한 바퀴 도는 데 몇 주가 걸려 AI 검색
+ * 인용(GEO) 쪽 수집이 사실상 멈춘다. 10초면 하루 8,640 URL로, 봇당 평균 0.1 req/s라
+ * 오리진 부하는 여전히 무시할 수준이다.
  */
-export const AI_CRAWLER_CRAWL_DELAY_SECONDS = 60;
+export const AI_CRAWLER_CRAWL_DELAY_SECONDS = 10;
 
 // 검색엔진이 아닌 기생 SEO 크롤러(백링크/순위 분석 SaaS). 포털 랭킹에 기여하지 않으면서
 // 트래픽만 유발하므로 전면 Disallow한다 — Googlebot/Yeti/Bingbot/Daumoa 등 실제
