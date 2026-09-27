@@ -374,7 +374,7 @@ export default async function SymbolPage({ params }: Props) {
                 layout header의 SymbolTabs가 충분히 수행한다 (탭으로 sibling 페이지
                 전환 가능; anchor 기반이라 crawler도 follow 가능). TechnicalSnapshotProse는
                 아래에서 별도 처리한다. */}
-            {/* 이 라우트의 스크롤러는 **문서 하나뿐**이다. 예전에는 jail이 첫 뷰포트에
+            {/* 이 라우트의 스크롤러는 문서와 AI 패널(ChartContent aside) 둘이다. 예전에는 jail이 첫 뷰포트에
                 고정(definite height + overflow-hidden)돼 있어서 이 <main>이 자기
                 overflow-y-auto로 아래 콘텐츠를 노출해야 했는데, 그 결과 데스크톱에
                 스크롤바가 셋이 됐다 — main, AI 패널, body(사용자 제보, v0.79.0).
@@ -385,8 +385,8 @@ export default async function SymbolPage({ params }: Props) {
             <main className="flex flex-1 flex-col">
                 {/* 모바일에서는 이 wrapper가 첫 뷰포트 높이를 확정하고 안쪽 flex
                     체인(SymbolPageClient → 차트 행)이 그 잔여를 나눈다 — 기존 동작
-                    그대로다. 데스크톱(md+)에서는 높이를 놓아 AI 패널이 내용만큼
-                    자라게 하고, 차트는 자기 확정 높이를 스스로 들고 있다. */}
+                    그대로다. 데스크톱(md+)에서는 높이를 놓고, 차트 컬럼과 AI 패널이
+                    각자 `--symbol-chart-h`로 확정 높이를 스스로 들고 있다. */}
                 <div className="flex h-(--symbol-chart-h) shrink-0 flex-col md:h-auto">
                     <HydrationBoundary state={dehydrate(queryClient)}>
                         {/* fallback은 두 역할을 겸한다:

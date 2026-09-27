@@ -497,10 +497,10 @@ export function ChartContent({
     ]);
 
     return (
-        // md+: `items-start`로 AI 패널이 차트보다 길어질 수 있게 한다. 예전에는
-        // 행이 확정 높이였고 패널이 그 안에서 `overflow-y-auto`로 스크롤했는데,
-        // 그게 데스크톱 스크롤바 셋 중 하나였다(사용자 제보). 이제 행 높이는
-        // 차트와 패널 중 큰 쪽이 정하고, 차트는 자기 `--symbol-chart-h`를 지킨다.
+        // md+: 차트와 AI 패널이 각자 `--symbol-chart-h`로 같은 높이를 확정한다.
+        // 패널이 내용만큼 자라게 두었더니(v0.79.0) 긴 분석에서 패널만 아래로 한참
+        // 늘어나 차트와 동떨어진 화면이 됐다(사용자 제보, 2026-09-27). 그래서 패널은
+        // 차트 높이에 맞추고 넘치는 분석은 패널 안에서 스크롤한다.
         <div className="flex h-full w-full flex-col md:h-auto md:flex-row md:items-start">
             {/* 차트 영역 — 바텀시트는 fixed 오버레이라 콘텐츠를 밀어내지 않는다.
                  **그래서** 아래를 직접 비워 둬야 Peek 상태에서 거래량 차트와 면책 문구가
@@ -594,8 +594,8 @@ export function ChartContent({
                 aria-valuemax={PANEL_MAX_WIDTH}
                 className={cn(
                     // `self-stretch`: 부모 행이 `items-start`라 이게 없으면 높이 0으로
-                    // 접혀 잡을 것이 사라진다. 행의 높이(= 차트와 패널 중 큰 쪽)를 그대로
-                    // 덮어, 패널이 길어져도 어디서든 잡아 폭을 조절할 수 있다.
+                    // 접혀 잡을 것이 사라진다. 행의 높이(= 차트·패널 공통의
+                    // `--symbol-chart-h`)를 그대로 덮어, 경계 어디서든 잡아 폭을 조절한다.
                     'border-secondary-700 hover:border-primary-600 focus-visible:border-primary-600 hidden w-1 cursor-col-resize border-l transition-colors outline-none md:block md:self-stretch',
                     isDragging && 'border-primary-500'
                 )}
@@ -603,13 +603,15 @@ export function ChartContent({
                 onKeyDown={handleKeyDown}
             />
 
-            {/* 자체 스크롤러가 아니다. 예전에는 `md:h-full` + `overflow-y-auto`로
-                차트 행 높이에 갇혀 내부 스크롤했는데, 그게 데스크톱 스크롤바 셋 중
-                하나였다(사용자 제보, v0.79.0). 이제 패널은 내용만큼 자라고 문서가
-                한 번만 스크롤한다 — 차트는 자기 `--symbol-chart-h`를 지키므로 패널이
-                길어져도 늘어나지 않는다. */}
+            {/* 차트와 같은 `--symbol-chart-h`로 높이를 확정하고, 넘치는 분석은 패널
+                안에서 스크롤한다. 내용만큼 자라게 두면(v0.79.0~v0.90.1) 긴 분석에서
+                패널이 차트 아래로 한참 늘어나 차트와 동떨어진 화면이 됐다(사용자 제보,
+                2026-09-27). v0.79.0의 "스크롤바 셋" 제보는 jail·`<main>`이 스크롤러라
+                생긴 것이고 그쪽은 여전히 스크롤러가 아니다 — 문서 + 이 패널, 둘이다.
+                `md:h-full`이 아니라 변수를 쓰는 건 행이 `items-start`라 stretch로
+                높이를 받지 못하기 때문이다. */}
             <aside
-                className="relative hidden flex-none border-l border-secondary-700 p-4 md:flex md:w-(--panel-width) md:flex-col"
+                className="relative hidden flex-none border-l border-secondary-700 p-4 md:flex md:h-(--symbol-chart-h) md:w-(--panel-width) md:flex-col md:overflow-y-auto"
                 style={
                     {
                         // panelWidth는 드래그 상태에서 런타임에 결정되므로 정적 Tailwind 클래스로 표현 불가
