@@ -19,8 +19,11 @@ import { userAgent } from 'next/server';
  * 캐시가 비어 있는 종목 페이지를 크롤하면 생성이 트리거되지 않고 안내문
  * (BotBlockedNotice 등)을 그대로 봤다 — 색인되는 게 그 렌더된 DOM이었다.
  * 지금은 봇도 사람과 같은 본문을 생성한다(`src/app/api/analysis/stream/route.ts`
- * 상단 불변식). 이 함수의 남은 호출부는 동시성 상한(`canAcceptAnalysisStream`의
- * 봇 천장)과 방문자 집계(`/api/presence`) 제외뿐이다.
+ * 상단 불변식). 이 함수의 남은 호출부:
+ * - `src/app/api/analysis/stream/route.ts` — 동시성 상한(`canAcceptAnalysisStream`)의 봇 천장
+ * - `src/app/api/presence/route.ts`, `src/app/api/presence/symbol/route.ts` — 방문자/조회수 집계 제외
+ * - `src/app/api/ai/chat/stream/route.ts` — 에이전트 챗을 봇에게 아예 막는다(403)
+ * - `src/app/ai/[locale]/handoffRedirect.ts` — 봇은 인증 핸드오프 리디렉트를 건너뛴다
  *
  * 시장·거시 브리핑(`submitMarketBriefingAction`·`submitMacroBriefingAction`)은
  * 애초에 이 값을 쓴 적이 없다 — 생성이 시각 버킷당 한 번으로 접혀 비용이 작고,
@@ -108,10 +111,14 @@ const BOT_UA_RE = new RegExp(
  * `User-Agent` header. Wraps Next.js' official `userAgent` helper so call
  * sites stay simple and so the detection can be swapped out later if needed.
  *
- * Used for the analysis-stream concurrency-cap ceiling
- * (`canAcceptAnalysisStream`) and presence/view-count exclusion — no longer
- * to suppress AI generation on a cache miss (removed 2026-09-27; see the
- * long comment above).
+ * Current callers:
+ * - `src/app/api/analysis/stream/route.ts` — concurrency-cap ceiling via `canAcceptAnalysisStream`
+ * - `src/app/api/presence/route.ts` and `src/app/api/presence/symbol/route.ts` — exclude bots from visitor/view counting
+ * - `src/app/api/ai/chat/stream/route.ts` — blocks bots from the agent chat entirely (403)
+ * - `src/app/ai/[locale]/handoffRedirect.ts` — skips the auth handoff redirect bounce for bots
+ *
+ * No longer used to suppress AI generation on a cache miss (removed
+ * 2026-09-27; see the long comment above).
  */
 export function isBot(headers: Headers): boolean {
     const userAgentHeader = headers.get('user-agent') ?? '';
