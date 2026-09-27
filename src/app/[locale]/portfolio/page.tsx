@@ -234,8 +234,14 @@ export default async function PortfolioPage({
                         <PortfolioManager />
                     </Suspense>
                 </section>
-                <section aria-label={t('page.55ca69')} className="space-y-4">
-                    <h2 className="text-lg font-semibold text-secondary-100">
+                <section
+                    aria-labelledby="portfolio-positions-heading"
+                    className="space-y-4"
+                >
+                    <h2
+                        id="portfolio-positions-heading"
+                        className="text-lg font-semibold text-secondary-100"
+                    >
                         {t('page.55ca69')}
                     </h2>
                     <Suspense fallback={<PortfolioSkeleton />}>

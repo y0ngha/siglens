@@ -220,6 +220,42 @@ describe('PortfolioSection', () => {
         });
     });
 
+    it('calls onHoldingsChange after a successful edit save, not after a failed one', async () => {
+        const user = userEvent.setup();
+        const onHoldingsChange = vi.fn();
+        const { save } = setHoldings({ holdings: [HOLDING] });
+        (save.mutateAsync as ReturnType<typeof vi.fn>)
+            .mockResolvedValueOnce({
+                status: 'error',
+                code: 'unknown',
+                message: '실패',
+            })
+            .mockResolvedValueOnce({
+                status: 'ok',
+                holding: { ...HOLDING, quantity: '20.00000000' },
+            });
+        render(<PortfolioSection onHoldingsChange={onHoldingsChange} />);
+
+        const row = screen.getByText('Apple Inc. (AAPL)').closest('li');
+        if (!row) throw new Error('holding row not found');
+
+        await user.click(
+            within(row).getByRole('button', { name: 'AAPL 보유종목 수정' })
+        );
+        await user.click(within(row).getByRole('button', { name: '저장' }));
+        await waitFor(() => {
+            expect(save.mutateAsync).toHaveBeenCalledTimes(1);
+        });
+        expect(onHoldingsChange).not.toHaveBeenCalled();
+
+        // A failed save keeps the edit form open (see the neighbouring "edits
+        // a holding" test) - submit again from there instead of re-opening it.
+        await user.click(within(row).getByRole('button', { name: '저장' }));
+        await waitFor(() => {
+            expect(onHoldingsChange).toHaveBeenCalledTimes(1);
+        });
+    });
+
     it('announces success in the polite status region after deleting a holding', async () => {
         const user = userEvent.setup();
         const { remove } = setHoldings({ holdings: [HOLDING] });
