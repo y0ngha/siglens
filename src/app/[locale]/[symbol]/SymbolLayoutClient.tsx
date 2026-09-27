@@ -17,7 +17,9 @@ interface SymbolLayoutJailProps {
  * never a clipped fixed-height one.** The jail and `<main>` never scroll; the
  * document does. The only other scroller in the tree is the chart route's
  * desktop AI panel, which locks itself to `--symbol-chart-h` and scrolls its
- * own overflow (see the aside comment in ChartContent). The chart route used to be the exception
+ * own overflow (see the aside comment in ChartContent).
+ *
+ * The chart route used to be the exception
  * (`md:h-[calc(...)] md:overflow-hidden`) so that ChartContent's `md:h-full`
  * aside could resolve a percentage height and scroll internally. That produced
  * three scrollbars on desktop — the jail-clipped `<main>`, the AI panel, and the
