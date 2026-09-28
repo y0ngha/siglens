@@ -207,6 +207,52 @@ describe('buildOverlayLineSpecs', () => {
     });
 });
 
+describe('buildOverlayLineSpecs — label host pane', () => {
+    it('attaches labels to the price-pane spec even when an rsi segment comes first', () => {
+        const div = overlay({
+            kind: 'divergence',
+            levels: [],
+            segments: [
+                {
+                    from: { time: 1, price: 30 },
+                    to: { time: 4, price: 40 },
+                    role: 'rsi',
+                    style: 'solid',
+                    pane: 'rsi',
+                },
+                {
+                    from: { time: 1, price: 10 },
+                    to: { time: 4, price: 9 },
+                    role: 'price',
+                    style: 'solid',
+                    pane: 'price',
+                },
+            ],
+            labels: [
+                { at: { time: 4, price: 9 }, text: 'D', position: 'below' },
+            ],
+        });
+        const specs = buildOverlayLineSpecs([div], {
+            visible: {
+                pattern: true,
+                trendline: true,
+                divergence: true,
+                fibonacci: true,
+                elliott: true,
+            },
+            highlightedSourceRef: null,
+            barTimes: BAR_TIMES,
+            lastBarTime: 5,
+            rsiPaneIndex: 2,
+            colorFor: () => '#000000',
+        });
+        expect(specs.map(sp => [sp.paneIndex, sp.markers.length])).toEqual([
+            [2, 0],
+            [0, 1],
+        ]);
+    });
+});
+
 describe('countOverlaysByKind', () => {
     it('counts aligned overlays per kind', () => {
         expect(
@@ -325,18 +371,5 @@ describe('overlayColorFor', () => {
         expect(
             overlayColorFor(overlay({ kind: 'elliott' }), 'wave', {}, fallback)
         ).toBe('#elliott');
-    });
-
-    it('other kinds fall back to fallback.pattern() when fallback[kind] is missing', () => {
-        expect(
-            overlayColorFor(
-                overlay({ kind: 'divergence' }),
-                'price',
-                {},
-                {
-                    pattern: () => '#pattern',
-                }
-            )
-        ).toBe('#pattern');
     });
 });

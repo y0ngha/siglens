@@ -29,7 +29,18 @@ export const CHART_OVERLAY_KINDS: readonly OverlayKind[] = Object.keys(
  * 없을 때만 쓰는 폴백이다. support/resistance는 캔들 상승/하락 색과 동일 팔레트를 재사용해
  * 새 hex를 들여오지 않는다.
  */
-export const CHART_OVERLAY_COLORS: Readonly<Record<string, () => string>> = {
+/**
+ * kind별 색 + 추세선 role별 색 — 새 `OverlayKind`가 생기면 여기서 컴파일 에러가 난다.
+ * 추세선은 kind가 아니라 role(support/resistance)로 색을 고르므로 kind 키에서 뺀다.
+ */
+export type OverlayColorTable = Readonly<
+    Record<
+        Exclude<OverlayKind, 'trendline'> | 'support' | 'resistance',
+        () => string
+    >
+>;
+
+export const CHART_OVERLAY_COLORS: OverlayColorTable = {
     pattern: () => CHART_COLORS.neutral,
     support: () => CHART_COLORS.bullish,
     resistance: () => CHART_COLORS.bearish,

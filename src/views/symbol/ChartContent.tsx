@@ -234,9 +234,13 @@ export function ChartContent({
 
     // 폴백(서사 없는 placeholder) 분석에는 차트 작도를 넘기지 않는다 — 아직
     // 실제 분석 결과가 아니므로 논리적으로 근거가 없다.
-    const chartOverlays = isFallbackAnalysis(analysis, fallbackSummary)
-        ? undefined
-        : analysis.chartOverlays;
+    const chartOverlays = useMemo(
+        () =>
+            isFallbackAnalysis(analysis, fallbackSummary)
+                ? undefined
+                : analysis.chartOverlays,
+        [analysis, fallbackSummary]
+    );
 
     // 패턴 오버레이는 스킬 색(renderConfig.color)을 우선한다 — sourceRef(=
     // patternSummaries[].id) → 색 맵을 한 번만 계산해 StockChart에 내린다.

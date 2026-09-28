@@ -7,6 +7,7 @@ import {
     ALTERNATE_OVERLAY_OPACITY,
     DIMMED_OVERLAY_OPACITY,
     HIGHLIGHT_LINE_WIDTH_MULT,
+    type OverlayColorTable,
 } from '../model/chartOverlayCategories';
 
 const PRICE_PANE_INDEX = 0;
@@ -171,15 +172,16 @@ export function buildOverlayLineSpecs(
                   ]
         );
         const specs = [...segmentSpecs, ...levelSpecs];
+        // 라벨은 가격 좌표라 가격 패인 스펙에만 붙인다 — core의 segments 순서에
+        // 기대지 않는다(다이버전스는 price·rsi 선분이 한 오버레이에 섞인다).
         // 시각 정렬은 여기서 하지 않는다 — `useChartOverlays`가 라벨 전용 시리즈에
         // 데이터를 얹기 전에(엄격 오름차순 요구) 단 한 번 정렬 + 중복 제거한다.
-        if (specs.length > 0 && overlay.labels.length > 0) {
-            specs[0] = {
-                ...specs[0],
-                markers: overlay.labels.map(toMarker),
-            };
-        }
-        return specs;
+        const labelHost = specs.findIndex(
+            s => s.paneIndex === PRICE_PANE_INDEX
+        );
+        if (labelHost === -1 || overlay.labels.length === 0) return specs;
+        const markers = overlay.labels.map(toMarker);
+        return specs.map((s, i) => (i === labelHost ? { ...s, markers } : s));
     });
 }
 
@@ -188,7 +190,7 @@ export function overlayColorFor(
     overlay: ChartOverlay,
     role: string,
     patternColors: Readonly<Record<string, string>>,
-    fallback: Readonly<Record<string, () => string>>
+    fallback: OverlayColorTable
 ): string {
     if (overlay.kind === 'pattern') {
         return patternColors[overlay.sourceRef] ?? fallback.pattern();
@@ -198,5 +200,5 @@ export function overlayColorFor(
             ? fallback.resistance()
             : fallback.support();
     }
-    return fallback[overlay.kind]?.() ?? fallback.pattern();
+    return fallback[overlay.kind]();
 }
