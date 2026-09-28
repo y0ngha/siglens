@@ -1126,8 +1126,38 @@ interface AnalysisResponse {
     patternSummaries: PatternSummary[];         // 차트 패턴 결과 (type='pattern' skill) — "차트 패턴" 섹션에 렌더링
     strategyResults: StrategyResult[];          // 전략 skill 분석 결과 (type='strategy' skill) — "전략" 섹션에 렌더링
     candlePatterns: CandlePatternSummary[];     // 캔들 패턴 감지 결과
-    trendlines: Trendline[];                    // AI가 감지한 추세선 목록 (0~3개)
+    trendlines: Trendline[];                    // AI가 고른 추세선(0~3개) — core가 후보 좌표에서 채운다(하위 호환)
     actionRecommendation?: ActionRecommendation; // 매매 전략 추천 (optional)
+    chartOverlays?: ChartOverlay[];             // 차트 작도 — AI가 참조한 로직 후보만 (core 2.0.0, p20)
+}
+
+// 차트 작도 (siglens-core 2.0.0, spec 2026-09-28-chart-overlays).
+// 좌표는 core 로직이 봉 시각(unix초)으로 계산하고, AI는 결과 항목에 후보 id만 적는다
+// (patternSummaries[].candidateId / strategyResults[].candidateIds / 모델 출력 trendlineIds).
+type OverlayKind = 'pattern' | 'trendline' | 'divergence' | 'fibonacci' | 'elliott';
+
+interface OverlayPoint { time: number; price: number }        // time: bar Unix 초 (index 아님)
+
+interface OverlaySegment {
+    from: OverlayPoint;
+    to: OverlayPoint;
+    role: string;                   // 'pattern' | 'neckline' | 'boundary_upper' | 'pole' | 'support' | 'wave_3' | 'rsi' …
+    style: 'solid' | 'dashed';
+    pane: 'price' | 'rsi';          // 다이버전스의 RSI 쪽 선만 'rsi'
+}
+
+interface OverlayLevel { price: number; fromTime: number; label: string }  // fromTime → 차트 오른쪽 끝 수평선. label은 언어 중립 키('breakout', '61.8%')
+interface OverlayLabel { at: OverlayPoint; text: string; position: 'above' | 'below' }  // 'LS'·'H'·'RS', '1'~'5', 'A'~'C'
+
+interface ChartOverlay {
+    id: string;                     // 결정적 후보 id — 예: 'pattern:double_bottom:1714521600'
+    kind: OverlayKind;
+    skill: string;                  // 스킬 파일 stem(예: 'double-bottom', 'elliott-wave') 또는 'trendline'
+    sourceRef: string;              // 참조한 결과 항목 id(patternSummaries[].id / strategyResults[].id) 또는 'trendlines'
+    variant: 'primary' | 'alternate'; // 엘리어트 대안 카운트만 'alternate'
+    segments: OverlaySegment[];
+    levels: OverlayLevel[];
+    labels: OverlayLabel[];
 }
 ```
 
@@ -1151,6 +1181,12 @@ strategyResults[]   → AnalysisPanel "전략" 섹션
 patternSummaries[]  → AnalysisPanel "차트 패턴" 섹션
                        pattern skill의 차트 패턴 감지 결과
                        skillName으로 식별 (예: "Head and Shoulders")
+
+chartOverlays[]     → StockChart 차트 작도 오버레이 (헤더 띠 "차트 작도 · N" 드롭다운)
+                       kind별 카테고리 on/off(localStorage, 기본: 차트 패턴·추세선)
+                       기준 시각이 로드된 봉에 없으면 그리지 않는다(다른 timeframe·좁은 창)
+                       sourceRef → '원본' 보기 카드의 "차트에서 보기"로 강조(나머지 흐림)
+                       tier: 추세선은 full_detail, 나머지는 skill_detection 필요(core 필터)
 ```
 
 ---
@@ -1356,7 +1392,7 @@ display:                      # 선택. 차트 표시 설정
   chart:
     show: boolean             # 기본 show/hide 여부 (기본값: false)
     type: line | marker | region  # 차트 표시 형태
-    color: string             # 표시 색상 (CSS 색상값)
+    color: string             # 표시 색상 — 6자리 hex(#rrggbb)만. 차트 작도 흐림이 알파 hex를 덧붙인다(validate:skills가 강제)
     label: string             # 차트에 표시할 라벨
 ---
 

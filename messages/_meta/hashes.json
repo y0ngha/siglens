@@ -2820,5 +2820,16 @@
     "shared.skillDescription.고점과 저점이 평행하게 함께 낮아지는 우하향 추세 통로 — 어느 쪽 추세선을 종가로 이탈하느냐로 방향이 정해지는 패턴": "9af5e85ce55a",
     "shared.skillDescription.고점은 높아지고 저점은 낮아지며 폭이 벌어지는 메가폰 형태 — 방향은 이탈하는 쪽으로 정해지는 변동성 확대 패턴": "d45f13763ac6",
     "shared.skillDescription.종가가 직전 52주 고가(저가)를 모두 넘어선 신고가·신저가를 모멘텀 지속 신호로 해석하는 전략 — George & Hwang(2004) 52주 고가 근접도 연구와 Minervini 추세 템플릿 기반": "e21b3f9666b9",
-    "shared.skillDescription.직전 봉 범위를 완전히 벗어난 갭 상승·하락을 위치·추세·거래량 맥락으로 돌파(브레이크어웨이)·진행(런어웨이)·소멸(이그조스천) 갭으로 분류하는 전략 — \"갭은 반드시 메워진다\" 속설은 쓰지 않는다": "7e49f1291e50"
+    "shared.skillDescription.직전 봉 범위를 완전히 벗어난 갭 상승·하락을 위치·추세·거래량 맥락으로 돌파(브레이크어웨이)·진행(런어웨이)·소멸(이그조스천) 갭으로 분류하는 전략 — \"갭은 반드시 메워진다\" 속설은 쓰지 않는다": "7e49f1291e50",
+    "widgets.analysis.AnalysisPanel.bcc718": "bcc718090918",
+    "widgets.analysis.AnalysisPanel.f66b28": "f66b28018ea6",
+    "widgets.chart.ChartOverlayMenu.0b5eb6": "0b5eb6d611de",
+    "widgets.chart.ChartOverlayMenu.2bac73": "2bac73319dbb",
+    "widgets.chart.ChartOverlayMenu.3b6851": "3b6851f72aed",
+    "widgets.chart.ChartOverlayMenu.4b1cdc": "4b1cdc71cdbb",
+    "widgets.chart.ChartOverlayMenu.67eb73": "67eb73aad730",
+    "widgets.chart.ChartOverlayMenu.bdeea2": "bdeea2534217",
+    "widgets.chart.StockChart.57fdbb": "57fdbb60d70c",
+    "widgets.home.categoryDescription.Trendinginterest": "631aef176516",
+    "widgets.home.tickerCategory.Trendinginterest": "b858d2f108ae"
 }
