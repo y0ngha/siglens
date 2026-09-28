@@ -1226,7 +1226,6 @@
     "shared.skillDescription.높은 매출·이익 성장률과 확장 가능한 비즈니스 모델을 가진 기업을 발굴하는 분석 프레임．": "f89732fb9e4e",
     "shared.skillDescription.높은 자본 효율성과 지속 가능한 경쟁 우위(경제적 해자)를 가진 고품질 기업을 선별하는 분석 프레임．": "9030f468f5ba",
     "shared.skillDescription.단기/중기/장기 이동평균선 배열로 스테이지를 판별하고 그랜빌의 법칙에 따른 매매 신호를 분석하는 전략": "3cbe1aec7e21",
-    "shared.skillDescription.되돌림 후 추세 재개 시 목표가(Take Profit) 설정을 위한 피보나치 확장 레벨 분석 도구": "f74eb6bba56e",
     "shared.skillDescription.두 개의 고점이 거의 같은 가격 수준에서 형성되는 하락 반전 신호": "87503c8c7d21",
     "shared.skillDescription.두 개의 저점이 거의 같은 가격 수준에서 형성되는 상승 반전 신호": "1c9109ea10d0",
     "shared.skillDescription.롤링 선형회귀 R² 신호 해석 가이드 — 추세 청결도 컨디셔너, 방향 무관, 윈도우 스케일 유의성": "d5335dd7664f",
@@ -1242,7 +1241,6 @@
     "shared.skillDescription.세 개의 저점이 거의 같은 가격 수준에서 형성되는 상승 반전 신호": "d58ac8be3ee1",
     "shared.skillDescription.수평 저항선과 상승하는 지지 추세선이 수렴하는 강세 연속 패턴": "09f266440310",
     "shared.skillDescription.수평 지지선과 저항선 사이에서 횡보하는 연속 또는 반전 패턴": "7d853daacad1",
-    "shared.skillDescription.수평 지지선과 하락하는 저항 추세선이 수렴하는 약세 연속 패턴": "e9dcd18b4f38",
     "shared.skillDescription.스토캐스틱 RSI(14,14,3,3) 신호 해석 가이드 — 극단 모멘텀 감지, %K/%D 크로스오버, 다이버전스": "845716eccc2b",
     "shared.skillDescription.스토캐스틱(14,3,3) 신호 해석 가이드 — 과매수/과매도, %K/%D 크로스오버, 다이버전스": "55471c4bc9e7",
     "shared.skillDescription.양-장 변동성 신호 해석 가이드 — 효율적 실현 변동성 측정(드리프트 독립·점프 정합), 사이징·스톱 거리 (방향 없음)": "3297af1b163a",
@@ -1256,7 +1254,6 @@
     "shared.skillDescription.저평가된 우량 기업을 발굴하는 벤저민 그레이엄 / 워런 버핏 학파 분석 프레임．": "ce869af7e7dd",
     "shared.skillDescription.전일 가격 데이터를 기반으로 당일의 지지/저항 레벨을 자동 산출하는 클래식 데이트레이딩 도구": "f6a6e938e010",
     "shared.skillDescription.점진적으로 U자 형태를 그리며 바닥을 형성하는 장기 강세 반전 패턴": "6ae13577fa74",
-    "shared.skillDescription.주요 가격 스윙의 되돌림 비율로 잠재적 지지/저항 레벨을 식별하는 피보나치 분석 도구": "33344cee9667",
     "shared.skillDescription.주요 지지·저항선, 채널, 차트 패턴의 돌파를 감지하고 거래량·모멘텀 필터로 거짓 돌파를 걸러내어 진입하는 전략": "f7fae6bb82ae",
     "shared.skillDescription.캔들 패턴 패밀리(반전·지속·관망) 압축 primer — 상시 주입되는 코어． 개별 패턴 풀 가이드는 해당 캔들이 실제 감지될 때만 게이팅": "f476fdab734d",
     "shared.skillDescription.피보나치 되돌림/확장 비율을 활용하여 지지·저항 레벨과 목표가를 산출하고, 패턴·지표와 결합하여 매매 시점을 판별하는 전략": "cb4f060fe723",
@@ -1290,9 +1287,7 @@
     "shared.skillName.퀄리티 투자 (Quality Investing)": "1b063bb74905",
     "shared.skillName.페넌트": "ada400b1ebbb",
     "shared.skillName.평균 회귀 전략": "a63c7caa5cea",
-    "shared.skillName.피보나치 되돌림": "db4e142411bb",
     "shared.skillName.피보나치 전략": "b124e0247c77",
-    "shared.skillName.피보나치 확장": "e7ba82c97832",
     "shared.skillName.피봇 포인트": "7330d79a67e2",
     "shared.skillName.하락깃발": "819bb58b4073",
     "shared.skillName.하락삼각형": "2b83c7c188e2",
@@ -2806,5 +2801,6 @@
     "app.portfolio.page.06c7de": "06c7def48136",
     "app.portfolio.page.6aaec6": "6aaec64c9804",
     "app.portfolio.page.d9477a": "d9477ae8dac5",
-    "widgets.layout.HeaderUserMenu.d9477a": "d9477ae8dac5"
+    "widgets.layout.HeaderUserMenu.d9477a": "d9477ae8dac5",
+    "shared.skillDescription.수평 지지선과 하락하는 저항 추세선이 수렴하는 패턴 — 측정상 방향 중립에 가깝고(상방 53%) 지지선 종가 이탈 시에만 약세 확정": "be53aa4b4d60"
 }

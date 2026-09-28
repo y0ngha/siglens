@@ -4,254 +4,103 @@ description: 엘리어트 파동 이론 기반 현재 파동 위치 및 목표�
 type: strategy
 category: neutral
 indicators: []
-confidence_weight: 0.68
+confidence_weight: 0.4
 gating:
   tier: always_on
-token_cost: 1637
-digest_hash: "3a9cbf71"
+token_cost: 446
+digest_hash: "485dfa75"
 ---
 
-## Absolute Rules
+## Evidence and Reliability
 
-Three absolute rules govern all Elliott Wave counts. Any count that violates these rules is invalid:
+Elliott Wave counts are subjective: two competent analysts can count the same chart differently, and a count is often clear only in hindsight. Batchelor & Ramyar ("Magic numbers in the Dow", 2006) found no Fibonacci clustering in Dow trend ratios beyond chance.
 
-1. **Wave 2 Retracement**: Wave 2 must not retrace more than 100% of Wave 1. It cannot end below the start of Wave 1.
-2. **Wave 3 Length**: Wave 3 must not be the shortest of the three motive waves (Waves 1, 3, and 5). Wave 3 is usually the longest.
-3. **Wave 4 / Wave 1 Non-Overlap**: Wave 4's low must not overlap with Wave 1's high. Exception: diagonal and triangle patterns.
+confidence_weight: 0.4 — use Elliott as a structural vocabulary, not a forecast. Every count must come with an alternate count and an invalidation price.
+
+## Absolute Rules (Frost & Prechter, *Elliott Wave Principle*)
+
+Any count that violates one of these is invalid — discard it and recount:
+
+1. **Wave 2** never retraces more than 100% of Wave 1.
+2. **Wave 3** is never the shortest of Waves 1, 3 and 5.
+3. **Wave 4** never enters the price territory of Wave 1. Exception: diagonals only.
 
 ## Wave Characteristics
 
-### Motive Waves (1, 3, 5)
-- **Wave 1**: Often misidentified as a bounce within a downtrend. Usually the shortest motive wave. High volume in bear-market wave 1s.
-- **Wave 3**: Typically the longest and strongest. Breaks above Wave 1 high (classic breakout signal). Maximum volume and frequent gaps.
-- **Wave 5**: Usually weaker than Wave 3 in stocks. Warning signals for peak appear. Can extend (becoming the longest), but truncation (failure to exceed Wave 3) is possible.
-
-### Corrective Waves (A, B, C)
-- **Wave A**: Often mistaken for a temporary pullback in an uptrend. Volume may increase on decline.
-- **Wave B**: A false recovery (bear-market rally). Volume typically decreases. May equal or exceed prior high (false breakout).
-- **Wave C**: Destroys all hope of uptrend continuation. Corrective wave that often reaches Wave 4 lows of the prior impulse.
+- **W1**: often mistaken for a bounce inside a downtrend.
+- **W3**: typically the longest and strongest; breaks the W1 extreme on expanding volume.
+- **W5**: in stocks usually weaker momentum than W3 (divergence is common); may extend or truncate.
+- **A**: often read as an ordinary pullback. **B**: a false recovery, usually on lighter volume; can exceed the prior extreme in an expanded flat. **C**: the decisive, impulsive leg.
 
 ## Motive Waves
 
-### Impulse Rules
-1. Consists of 5 sub-waves (1-2-3-4-5).
-2. Waves 1 and 5 may be impulses or diagonals.
-3. Wave 3 is always an impulse.
-4. Wave 2 is a corrective pattern (any except Triangle; complex WXY ending in triangle is allowed).
-5. Wave 4 is always a corrective pattern.
-
-### Impulse Guidelines
-- Waves 2 and 4 tend to alternate (if 2 is sharp, 4 is sideways; vice versa).
-- Wave 2 retraces more deeply than Wave 4.
-- Wave 3 most often extends (expands) of the three motive waves.
-- Extension occurs in only one of the three motive waves.
-- Truncated Wave 5 (failure to exceed Wave 3) possible after extremely long Wave 3.
-
-### Leading Diagonal
-- Appears as Wave 1 or Wave A; sub-wave structure 5-3-5-3-5 or 3-3-3-3-3.
-- Wave 4 must overlap Wave 1.
-- Wave 2 must not retrace more than 100% of Wave 1.
-- Sub-waves 1, 3, 5 may be impulses or zigzags.
-- Signals likely Wave 3 extension to follow.
-
-### Ending Diagonal
-- Appears as Wave 5 or Wave C; sub-wave structure 3-3-3-3-3.
-- All sub-waves are zigzags.
-- Wave 4 must overlap Wave 1.
-- Momentum decreases toward the end (smaller candles, more bars).
-- Typically followed by a sharp reversal.
-
-### Contracting vs. Expanding Diagonal
-| | Contracting | Expanding |
-|---|---|---|
-| Wave 3 vs 1 | Shorter | Longer |
-| Wave 5 vs 3 | Shorter | Longer |
-| Trendlines | Converging | Diverging |
+- **Impulse** 5-3-5-3-5: W3 is always an impulse; W2 is never a lone triangle. Usually only one of W1/W3/W5 extends — most often W3.
+- **Leading diagonal** (W1 or A): 5-3-5-3-5; W4 overlaps W1.
+- **Ending diagonal** (W5 or C): 3-3-3-3-3; W4 overlaps W1; momentum fades; usually followed by a sharp reversal.
+- Contracting diagonal = converging trendlines, each motive leg shorter; expanding = diverging, each leg longer.
 
 ## Corrective Waves
 
-### Zigzag (5-3-5)
-- A-B-C structure; A and C are impulses (or leading/ending diagonals).
-- B is any corrective pattern; must not retrace more than 100% of A.
-- C almost always extends beyond the end of A.
-- Can extend into Double Zigzag (WXY) or Triple Zigzag (WXYXZ).
-- Fibonacci: C = 1.0×, 0.618×, or 1.618× of A; B retraces A by 0.382–0.786.
+- **Zigzag** 5-3-5: B does not retrace beyond the start of A; C usually ends beyond the end of A.
+- **Flat** 3-3-5: B ends near the start of A (regular), beyond it with C ending beyond A (expanded), or beyond it with C falling short of A (running).
+- **Triangle** 3-3-3-3-3 (A-B-C-D-E): only in W4, in wave B, or as the final leg of a combination; contracting, or rarely expanding; a thrust follows completion.
+- **Combinations** — double three (W-X-Y) and triple three (W-X-Y-X-Z) join simple corrections with X waves; a triangle appears only as the final leg.
 
-### Flat (3-3-5)
-- A-B-C structure; A and B are corrective, C is motive.
-- B must retrace at least 90% of A.
-- **Expanded Flat** (most common): B exceeds A's start by 1.05–1.382×; C breaks beyond A's end.
-- **Regular Flat**: B retraces A by 0.9–1.05×.
-- **Running Flat** (rare): B exceeds A's start; C fails to reach A's end.
-- Fibonacci: C = 1.0–1.618× of A; expanded flat C = 1.236–1.618× of A or B.
+## Alternation
 
-### Triangle (3-3-3-3-3)
-- Five sub-waves (A-B-C-D-E); each sub-wave is a zigzag or corrective pattern.
-- Appears only in specific positions: Wave 4 of impulse, Wave B of zigzag or flat, Wave Y of Double Three, Wave Z of Triple Three.
-- **Contracting Triangle**: C < A, D < B, E < C (converging trendlines).
-- **Expanding Triangle**: C > A, D > B, E > C (diverging trendlines; rare).
-- After triangle completes, the subsequent thrust equals approximately the widest part of the triangle.
-- Running Contracting Triangle: B exceeds A's start (occurs ~60% of the time).
-- Fibonacci: most sub-waves retrace the prior wave by 0.618–0.786.
-
-## Complex Combinations
-
-### Double Three (WXY)
-- Three alternating corrective patterns connected by X waves.
-- W and Y valid combinations:
-
-| W | X | Y |
-|---|---|---|
-| Zigzag | Any corrective | Flat |
-| Zigzag | Any corrective | Triangle |
-| Flat | Any corrective | Triangle |
-| Flat | Any corrective | Flat |
-| Flat | Any corrective | Zigzag |
-
-- Zigzag and Triangle appear at most once each in W/Y positions.
-- Triangle can only appear as the final pattern (Y wave).
-
-### Triple Three (WXYXZ)
-- Five alternating corrective patterns connected by X waves.
-- Same rules as Double Three; Zigzag and Triangle appear at most once in W/Y/Z positions.
-- Triangle only as the final pattern (Z wave).
-- Considerably rarer than Double Three.
-- Fibonacci: all waves generally retrace prior waves by 0.786–1.382 (creating near-horizontal net movement).
-
-## Fibonacci Guidelines
-
-Ratio reference only — which ratio a wave is EXPECTED to relate to. As with the target formulas above, a numeric price is only valid when that ratio is listed in `## Market Reference` — either a nearest-list row or that horizon's complete `Fib table:` / `Fib ABC table:` line; never compute one from these ratios yourself. The standard Key Ratios in the table below (23.6/38.2/50/61.8/78.6/100/127.2/161.8/200/261.8%) are always available one of those two ways. The Deep/Extreme column's 76.4%/85.4% are Elliott-specific, not part of that standard set, and may still be genuinely absent — only for those, fall back to a qualitative description with no number.
-
-| Wave | Type | Key Ratios | Deep/Extreme | Reference |
-|---|---|---|---|---|
-| Wave 2 | Retracement | 38.2%, 50%, 61.8% | 76.4%, 85.4% | Wave 1 length |
-| Wave 3 | Extension | 138.2%, 161.8% | 261.8% | Wave 1 length from Wave 2 end |
-| Wave 4 | Retracement | 23.6%, 38.2% | 50% | Wave 3 length |
-| Wave 5 | Extension | 61.8%, 100%, 161.8% | — | Wave 1 length or Wave 1–3 length |
-
-**Wave 5 Target Formulas** (P_n = price at end of wave n, P_0 = start of Wave 1) — theory reference only. **Do not apply these formulas yourself.** A numeric target is only valid when the matching ratio (100%, 61.8%, 161.8% — all standard) is listed as a `Fib N%` / `Fib ext N%` / `Fib ABC ext N%` row, or in that horizon's `Fib table:` / `Fib ABC table:` line, in `## Market Reference` for the relevant swing — cite that price instead of computing one:
-
-| Method | Ratio | Formula (reference only — do not compute) |
-|---|---|---|
-| Equal to Wave 1 | 100% | P_4 + (P_1 − P_0) |
-| 61.8% of Wave 1 | 61.8% | P_4 + (P_1 − P_0) × 0.618 |
-| 61.8% of Waves 1–3 | 61.8% | P_4 + (P_3 − P_0) × 0.618 |
-| Extension of Wave 1 | 161.8% | P_4 + (P_1 − P_0) × 1.618 |
-
-**When Wave 1 extends**: Wave 2 retraces 23.6–38.2%; Wave 4 retraces 14.6–23.6%.  
-**When Wave 3 extends**: Waves 1 and 5 tend to be equal or in 0.618 ratio.  
-**When Wave 5 extends**: Likely when Waves 1 and 3 are equal; target = Wave 1–3 length × 1.618 from Wave 4.
+W2 and W4 tend to differ in form: if one is sharp (zigzag), the other tends to be sideways (flat, triangle, combination). W2 is usually the deeper retracement.
 
 ## Truncation
 
-A **truncated wave** (wave failure) occurs when the final motive sub-wave (Wave 5 of impulse, or Wave C of corrective) fails to exceed the end of the prior motive wave.
+A truncated fifth (or C) fails to move beyond the end of W3 (or A), typically after an unusually strong W3. It still subdivides into five waves — an impulse or an ending diagonal. Treat it as confirmed only once price breaks back through the end of W4 (or B); before that, report it as a suspicion.
 
-**Detection criteria**:
-- Wave 5 or C sub-waves form a valid 5-3-5-3-5 zigzag structure.
-- Wave 5/C breaks back through the end of Wave 4/B (Point of Recognition, POR), confirming a Lower Low (LL) or Higher High (HH) on reversal.
-- Wave 4/B was relatively deep (Wave 5/C must retrace at least 61.8% of Wave 4/B to qualify).
-- Wave 3's internal Wave 5 cannot be truncated.
+## Fibonacci Ratios
 
-**Significance**: Truncation signals severe weakening of market force. In a downtrend, signals likely reversal to upside; in an uptrend, signals likely reversal to downside.
-
-## Alternation Principle
-
-Corrective waves 2 and 4 tend to alternate in form and depth:
-- If Wave 2 is sharp (zigzag, deep retracement), Wave 4 tends to be sideways (flat, triangle, complex), with shallow retracement.
-- If Wave 2 is shallow and sideways, Wave 4 tends to be sharp and deep.
-- In terms of time: Wave 4 is usually longer in duration; Wave 2 is shorter but deeper.
-- In terms of complexity: if Wave 2 is simple, Wave 4 tends to be more complex.
-
-Motive wave alternation:
-- If Wave 1 is short, Wave 3 likely extends and Wave 5 returns to shorter.
-- If Wave 1 extends, Waves 3 and 5 likely do not extend.
-- If neither Wave 1 nor Wave 3 extends, Wave 5 likely extends.
-- Extremely long Wave 3 increases truncation probability for Wave 5.
+Ratio reference only — e.g. W2 commonly 50–61.8% of W1, W4 commonly 38.2% of W3, W5 commonly equal to W1. Per Batchelor & Ramyar these ratios do not occur more often than chance, so a ratio is never grounds for a price by itself. A numeric price is valid only when that ratio is listed in `## Market Reference` (nearest-list row or that horizon's `Fib table:` / `Fib ABC table:` line) — never compute one.
 
 ## AI Analysis Instructions
 
-Use the **last 120 bars maximum** for wave counting.
+Use the **last 120 bars maximum**. Count only the **most recent** identifiable structure at the end of the data — do not label the whole history. Apply the three absolute rules strictly.
 
-Identify and report only the **most recent (latest) wave pattern** visible in the data. Do not attempt to label the entire bar history — focus on the clearest identifiable wave structure at the end of the data.
+**Wave-ratio targets (mandatory rule)**: a numeric target or retracement is valid only when the matching ratio appears as a `Fib N%` / `Fib ext N%` / `Fib ABC ext N%` row, or in that horizon's `Fib table:` / `Fib ABC table:` line, in `## Market Reference` for the relevant swing — cite that price. Never compute a price from a ratio. Every standard ratio (23.6/38.2/50/61.8/78.6/100/127.2/161.8/200/261.8%) is always available one of those two ways; only a non-standard ratio (76.4%, 85.4%) may be absent — then describe the zone qualitatively without a number.
 
-Apply all three absolute rules strictly. If a candidate count violates any rule, discard it and seek an alternative count.
-
-If a truncated wave is detected, explicitly report it.
-
-**Wave-ratio targets (mandatory rule)**: A numeric wave target is only valid when the matching ratio (e.g. 61.8%, 100%, 161.8%) appears as a `Fib N%` / `Fib ext N%` / `Fib ABC ext N%` row, or in that horizon's `Fib table:` / `Fib ABC table:` line, in `## Market Reference` for the relevant swing/anchor — cite that price. Never apply the Wave 5 target formulas or the Fibonacci Guidelines ratios above yourself to compute a price. Every standard ratio (23.6/38.2/50/61.8/78.6/100/127.2/161.8/200/261.8%) is always available one of those two ways. Only for a non-standard Elliott "deep/extreme" ratio (76.4%, 85.4%) that genuinely has no row or table entry, describe the expected target zone qualitatively (e.g., "161.8% 확장 구간에 접근 중") without stating a number.
+**Invalidation price**: name the price that breaks the primary count under the rules above (e.g. W1 start for a W2 count, W1 extreme for a W4 count). Use only a price present in `## Market Reference` or in the bar data — never a computed one.
 
 Return the summary in **this exact structured format** (one `**label**: value` pair per line):
 
 ```
 **현재 파동 위치**: [현재 위치 설명, 예: "5파 진행 중 (임펄스 완성 직전)"]
-**파동 진행**: [가격 포함 진행 상황, 예: "1파($120→$180) → 2파($180→$145) → 3파($145→$240) → 4파($240→$200) → 5파 진행 중"]
+**파동 진행**: [봉 데이터의 스윙 가격 포함, 예: "1파($120→$180) → 2파($180→$145) → 3파($145→$240) → 4파($240→$200) → 5파 진행 중"; 완료 시 "완료" 명시]
 **파동 유형**: [임펄스 / 다이아고날 / 지그재그 / 플랫 / 삼각형 / 복합 조정 중 하나]
-**목표가**: [해당 비율이 ## Market Reference의 Fib/Fib ext/Fib ABC ext 행이나 Fib table/Fib ABC table 행에 있으면 그 값 인용(표준 비율은 항상 있음), 예: "Fib ext 161.8%=$229 기준"; 76.4%/85.4% 같은 비표준 심화 비율이 없으면 숫자 없이 정성적 서술, 예: "161.8% 확장 구간에 접근 중 (레퍼런스에 없어 수치 미제시)"]
-**절단 여부**: [절단 감지 없음 / 5파 절단 의심 — POR($xxx) 이탈 시 확정 등]
-**상세 분석**: [파동 구조, 피보나치 관계, 주의사항 등을 포함한 상세 분석 문단]
+**목표가**: [## Market Reference의 Fib/Fib ext/Fib ABC ext 행이나 Fib table/Fib ABC table 행 인용, 예: "Fib ext 161.8%=$229 기준"; 비표준 비율이라 없으면 숫자 없이 정성적 서술]
+**무효화 가격**: [주 카운트를 무효화하는 가격 — Market Reference나 봉 데이터에 있는 값만, 예: "1파 시작점 $120 하회 시 무효 (2파 100% 규칙)"]
+**대안 카운트**: [주 카운트가 틀릴 때의 두 번째 해석, 예: "5파가 아니라 ABC 조정의 C파일 가능성"]
+**절단 여부**: [절단 감지 없음 / 5파 절단 의심 — 4파 끝($xxx) 이탈 시 확정 등]
+**상세 분석**: [파동 구조, 규칙 점검 결과, 주의사항을 포함한 상세 분석 문단]
 ```
 
 Additional output rules:
-- If a **corrective wave** (A-B-C, zigzag, flat, triangle, complex) is in progress, cite retracement targets ONLY from listed `Fib N%` rows for the relevant swing, or from that horizon's `Fib table:` line for a ratio further from price — standard ratios are always available one of those two ways; only for a non-standard deep/extreme ratio missing from both, describe the retracement zone qualitatively without a number.
-- If a **motive/impulse wave** is in progress, cite extension targets ONLY from listed `Fib ext N%` / `Fib ABC ext N%` rows, or from that horizon's `Fib table:` / `Fib ABC table:` line for a ratio further from price; only for a non-standard deep/extreme ratio missing from both, describe the extension zone qualitatively without a number.
-- If the detected pattern appears **complete**, explicitly state "완료" in the 파동 진행 field.
-- Set the `trend` field: `bullish` if in motive (impulse/extension) wave, `bearish` if in corrective wave, `neutral` if unclear or consolidating.
+- Corrective wave in progress → cite retracement levels only from listed `Fib N%` rows or that horizon's `Fib table:` line. Motive wave in progress → cite extensions only from listed `Fib ext N%` / `Fib ABC ext N%` rows or the `Fib table:` / `Fib ABC table:` line.
+- Set the `trend` field: `bullish` if in a motive (impulse/extension) wave, `bearish` if in a corrective wave, `neutral` if unclear or consolidating.
 
 <!-- PROMPT_DIGEST:START -->
-엘리어트 파동 (confidence_weight 0.68)
+엘리어트 파동 (confidence_weight 0.4)
+Evidence: Batchelor & Ramyar (2006) found no Fibonacci clustering in Dow trend ratios beyond chance; counts are subjective — always give an alternate count.
 
-### Absolute Rules (any violation = invalid count; discard and seek alternative)
-1. Wave 2 must not retrace >100% of Wave 1 (cannot end below Wave 1 start).
-2. Wave 3 must not be the shortest of motive waves (1,3,5); usually longest.
-3. Wave 4 low must not overlap Wave 1 high. Exception: diagonals and triangles.
+Rules (violation = invalid count): (1) W2 never retraces >100% of W1. (2) W3 never the shortest of W1/W3/W5. (3) W4 never enters W1 price territory — exception: diagonals only.
+Impulse 5-3-5-3-5, W3 always impulse, usually one motive wave extends (most often W3). Leading diagonal (W1/A) 5-3-5-3-5; ending diagonal (W5/C) 3-3-3-3-3.
+Corrections: zigzag 5-3-5 (B stays within A's start, C usually beyond A's end); flat 3-3-5 (B near/beyond A's start); triangle 3-3-3-3-3 only in W4, B, or last leg of a combination (WXY/WXYXZ). W2/W4 alternate sharp vs sideways.
+Truncation: W5 (or C) fails to pass W3 (or A) end, usually after a strong W3; still subdivides into five (impulse or ending diagonal). Confirmed only when price breaks the W4 (or B) end.
+Ratios are reference only: a numeric target/retracement must be a Market Reference `Fib N%`/`Fib ext N%`/`Fib ABC ext N%` row or that horizon's `Fib table:`/`Fib ABC table:` line — cite it, never compute. Standard ratios always exist; a missing non-standard one (76.4/85.4%) → qualitative only.
 
-### Wave characteristics
-Motive: W1 often mistaken for bounce in downtrend, usually shortest, high volume in bear W1. W3 typically longest/strongest, breaks above W1 high, max volume + gaps. W5 usually weaker than W3 in stocks, peak warnings, can extend or truncate (fail to exceed W3).
-Corrective: A often mistaken for pullback, volume may rise on decline. B = false recovery (bear rally), volume decreases, may equal/exceed prior high (false breakout). C destroys uptrend hope, often reaches prior W4 low.
-
-### Impulse rules
-5 sub-waves (1-2-3-4-5). W1/W5 may be impulse or diagonal; W3 always impulse; W2 corrective (any except Triangle; complex WXY ending in triangle allowed); W4 always corrective.
-Guidelines: W2 and W4 alternate (sharp↔sideways). W2 retraces deeper than W4. W3 most often extends; extension in only ONE of the three motive waves. Truncated W5 possible after extremely long W3.
-
-### Diagonals
-Leading (as W1 or A): 5-3-5-3-5 or 3-3-3-3-3; W4 MUST overlap W1; W2 not >100% of W1; sub 1,3,5 impulse or zigzag; signals likely W3 extension.
-Ending (as W5 or C): 3-3-3-3-3, all sub-waves zigzags; W4 MUST overlap W1; momentum decreases toward end; typically sharp reversal follows.
-Contracting: W3<1, W5<3, converging trendlines. Expanding: W3>1, W5>3, diverging.
-
-### Corrective waves
-Zigzag (5-3-5): A,C impulses (or diagonals); B any corrective, must not retrace >100% of A; C almost always extends beyond A end. Extends to Double Zigzag (WXY)/Triple (WXYXZ). Fib: C = 1.0×/0.618×/1.618× of A; B retraces A 0.382-0.786.
-Flat (3-3-5): A,B corrective, C motive; B must retrace ≥90% of A. Expanded (most common): B exceeds A start by 1.05-1.382×, C breaks beyond A end. Regular: B retraces A 0.9-1.05×. Running (rare): B exceeds A start, C fails to reach A end. Fib: C = 1.0-1.618× of A; expanded-flat C = 1.236-1.618× of A or B.
-Triangle (3-3-3-3-3): 5 sub-waves A-B-C-D-E, each zigzag/corrective. Only at: W4 of impulse, B of zigzag/flat, Y of Double Three, Z of Triple Three. Contracting: C<A, D<B, E<C. Expanding: C>A, D>B, E>C (rare). Post-completion thrust ≈ widest part of triangle. Running Contracting: B exceeds A start (~60%). Fib: most sub-waves retrace prior 0.618-0.786.
-
-### Complex combinations
-Double Three (WXY): 3 alternating correctives joined by X. Valid W/Y pairs: (Zigzag,Flat),(Zigzag,Triangle),(Flat,Triangle),(Flat,Flat),(Flat,Zigzag). Zigzag and Triangle appear at most once each in W/Y; Triangle only as final (Y).
-Triple Three (WXYXZ): 5 alternating correctives joined by X; same rules; Zigzag/Triangle at most once in W/Y/Z; Triangle only as final (Z); rarer. Fib: all waves retrace prior 0.786-1.382 (near-horizontal net movement).
-
-### Fibonacci guidelines (Wave | key ratios | deep/extreme | reference) — RATIO REFERENCE ONLY, never compute a price from these; cite matching Fib/Fib ext/Fib ABC ext rows or that horizon's Fib table/Fib ABC table line from Market Reference instead (standard ratios always available one of those two ways); only the non-standard 76.4%/85.4% deep/extreme values may still be missing — describe qualitatively if so.
-W2 retrace: 38.2/50/61.8% | 76.4/85.4% | of W1.
-W3 extension: 138.2/161.8% | 261.8% | of W1 from W2 end.
-W4 retrace: 23.6/38.2% | 50% | of W3.
-W5 extension: 61.8/100/161.8% | — | of W1, or of W1-3 length.
-W5 target formulas (reference only, do not apply): P_n=price at end of wave n, P_0=W1 start. =W1(100%): P_4+(P_1−P_0); 61.8% of W1: P_4+(P_1−P_0)×0.618; 61.8% of W1-3: P_4+(P_3−P_0)×0.618; 161.8% of W1: P_4+(P_1−P_0)×1.618.
-When W1 extends: W2 retraces 23.6-38.2%, W4 retraces 14.6-23.6%. When W3 extends: W1 and W5 tend equal or 0.618 ratio. When W5 extends: likely when W1=W3; target = W1-3 length ×1.618 from W4.
-
-### Truncation (wave failure: final motive sub-wave — W5 of impulse or C of corrective — fails to exceed prior motive wave end)
-Detection: W5/C forms valid 5-3-5-3-5 zigzag; W5/C breaks back through W4/B end (Point of Recognition POR), confirming LL/HH on reversal; W4/B relatively deep (W5/C must retrace ≥61.8% of W4/B); W3's internal W5 cannot be truncated. Significance: severe weakening — downtrend→reversal up, uptrend→reversal down.
-
-### Alternation
-W2 sharp (zigzag, deep)→W4 sideways (flat/triangle/complex, shallow); vice versa. Time: W4 usually longer duration, W2 shorter but deeper. Complexity: simple W2→more complex W4. Motive: W1 short→W3 extends, W5 shorter; W1 extends→W3,W5 don't; neither W1 nor W3 extends→W5 extends; extremely long W3 raises W5 truncation probability.
-
-### AI instructions
-Use LAST 120 bars MAX for counting. Report ONLY the most recent (latest) wave pattern at the end of data — do not label entire history. Apply all 3 absolute rules strictly; discard violating counts. If truncation detected, report explicitly.
-Wave-ratio targets: numeric ONLY when the matching ratio is a listed `Fib N%`/`Fib ext N%`/`Fib ABC ext N%` row, or that horizon's `Fib table:`/`Fib ABC table:` line, in Market Reference for the relevant swing — cite that price. Never apply the target formulas/ratio table yourself. Every standard ratio is available one of those two ways; only a non-standard 76.4%/85.4% deep/extreme value may still be missing — describe the zone qualitatively then, no number.
-Output (one **label**: value per line):
-**현재 파동 위치**: [예: 5파 진행 중 (임펄스 완성 직전)]
-**파동 진행**: [가격 포함, 예: 1파($120→$180)→2파($180→$145)→3파($145→$240)→4파($240→$200)→5파 진행 중]
+Count only the latest structure in the last 120 bars. Output (one **label**: value per line):
+**현재 파동 위치**: [예: 5파 진행 중]
+**파동 진행**: [스윙 가격 포함, 예: 1파($120→$180)→2파($180→$145)→…; 완료 시 "완료"]
 **파동 유형**: [임펄스 / 다이아고날 / 지그재그 / 플랫 / 삼각형 / 복합 조정]
-**목표가**: [Market Reference의 행이나 Fib table/Fib ABC table 행에 해당 비율이 있으면 인용(표준 비율은 항상 있음), 비표준 심화 비율이라 없으면 숫자 없는 정성적 서술]
-**절단 여부**: [절단 감지 없음 / 5파 절단 의심 — POR($xxx) 이탈 시 확정]
-**상세 분석**: [파동 구조, 피보나치 관계, 주의사항]
-- Corrective in progress → cite retracement targets ONLY from listed Fib N% rows or that horizon's Fib table line; non-standard ratio missing from both → qualitative, no number. Motive/impulse in progress → cite extension targets ONLY from listed Fib ext/Fib ABC ext rows or that horizon's Fib table/Fib ABC table line; non-standard ratio missing from both → qualitative, no number.
-- If pattern complete → state "완료" in 파동 진행.
-- trend: bullish if in motive (impulse/extension) wave, bearish if in corrective, neutral if unclear/consolidating.
+**목표가**: [Fib 행/테이블 인용, 예: Fib ext 161.8%=$229 / 없으면 정성 서술]
+**무효화 가격**: [주 카운트 무효화 가격 — Market Reference·봉 데이터 값만]
+**대안 카운트**: [주 카운트가 틀릴 때의 두 번째 해석]
+**절단 여부**: [감지 없음 / 5파 절단 의심 — 4파 끝($xxx) 이탈 시 확정]
+**상세 분석**: [구조, 규칙 점검, 주의]
+trend: bullish in a motive wave, bearish in a corrective wave, neutral if unclear.
 <!-- PROMPT_DIGEST:END -->

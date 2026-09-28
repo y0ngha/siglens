@@ -4,13 +4,13 @@ description: 3개의 EMA 차이로 MACD(상/중/하)를 계산하고, 각 MACD�
 type: strategy
 category: neutral
 indicators: ['macd', 'ema']
-confidence_weight: 0.75
+confidence_weight: 0.55
 gating:
   tier: gated
   signal_kind: event
   triggers: [macd_bullish_cross, macd_bearish_cross]
-token_cost: 1294
-digest_hash: "85a03375"
+token_cost: 1330
+digest_hash: "df4ccbb6"
 ---
 
 ## Overview
@@ -116,7 +116,7 @@ The provided MACD(12,26,9) serves as a proxy for MACD(중) momentum:
 
 ## Confidence Weight Rationale
 
-confidence_weight: 0.75 — MACD 대순환 분석 is grounded in well-established EMA and MACD theory. Confidence is set below clearly defined chart patterns (0.8) because the three signal lines (for MACD(상/중/하)) are not individually computable — transition timing is inferred from MACD value proximity to zero and the MACD(12,26,9) histogram proxy.
+confidence_weight: 0.55 — Simple MA-crossover edges vanished out of sample after 1986 (Sullivan, Timmermann & White 1999) — use as a regime description, not a timing edge. The MACD cycle is an EMA-crossover framework, so the same caution applies; in addition, the three signal lines (for MACD(상/중/하)) are not individually computable — transition timing is inferred from MACD value proximity to zero and the MACD(12,26,9) histogram proxy.
 
 Factors that increase confidence:
 - EMA(60) slope aligns with the current stage direction
@@ -165,8 +165,9 @@ Add an entry to skillSignals with skillName: `"MACD 대순환 분석"`. The sign
 - If an entry timing condition is met: type `"skill"`, strength `"strong"` for Normal / `"moderate"` for Early / `"weak"` for Advance, description in Korean describing the signal
 
 <!-- PROMPT_DIGEST:START -->
-MACD 대순환 분석 (confidence_weight 0.75)
+MACD 대순환 분석 (confidence_weight 0.55)
 Identify 6-stage cycle by CITING (not computing) `## Indicator State (computed)`'s `MACD cycle (EMA9/21/60): upper …, middle …, lower …; stage N` line, plus signal crosses.
+Simple MA-crossover edges vanished out of sample after 1986 (Sullivan, Timmermann & White 1999) — use as a regime description, not a timing edge.
 
 ### DATA SOURCE RULE (mandatory)
 Cite `upper`/`middle`/`lower`/`stage` from the `MACD cycle` line in `## Indicator State (computed)` — never compute MACD(상/중/하) from `- EMA:` yourself, and never use `- MA:` (that's for 이동평균선 대순환 only). Short=EMA(9), Mid=EMA(21), Long=EMA(60) — the periods the cited line is built from. (Definitions for reference only: 상=EMA9−EMA21, 중=EMA9−EMA60, 하=EMA21−EMA60 — do not apply these formulas yourself.)

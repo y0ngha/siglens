@@ -5,7 +5,7 @@ type: pattern
 category: reversal_bullish
 pattern: triple_bottom
 indicators: []
-confidence_weight: 0.78
+confidence_weight: 0.7
 display:
   chart:
     show: true
@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [triple_bottom]
-token_cost: 704
-digest_hash: "f991f66d"
+token_cost: 720
+digest_hash: "89cc5756"
 ---
 
 ## Detection Criteria
@@ -31,7 +31,7 @@ digest_hash: "f991f66d"
 
 ## Confidence Weight Rationale
 
-confidence_weight: 0.78 — Triple Bottom is among the more reliable bullish reversal patterns. Bulkowski reports an 80–85% success rate for upside targets once the neckline breaks. The weight sits slightly below Triple Top (0.8) because bottoming patterns generally take longer to confirm and volume patterns at bottoms are less distinct, but the three-trough structure still provides stronger confirmation than a Double Bottom — three successful defenses of support demonstrate persistent accumulation.
+confidence_weight: 0.7 — Bulkowski (thepatternsite.com/tb.html, bull market): performance rank 12 of 39, break-even failure rate 13%, 74% meet the price target. Weight: failure 11–20% → 0.7. It measures clearly better than Triple Top (tt.html: failure 25%); three successful defenses of support demonstrate persistent accumulation, but the pattern is rare and volume at bottoms is less distinct.
 
 Factors that increase confidence:
 - All three trough prices within 1.5% of each other
@@ -83,7 +83,7 @@ When this pattern is detected, include the following in the analysis response:
 - **geometry**: Fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
-삼중바닥 (Triple Bottom) — bullish reversal, confidence_weight 0.78. Three troughs at ~equal support; neckline = line connecting the two peaks between troughs.
+삼중바닥 (Triple Bottom) — bullish reversal, confidence_weight 0.7 (Bulkowski tb.html: rank 12/39, failure 13%, 74% meet target). Three troughs at ~equal support; neckline = line connecting the two peaks between troughs.
 
 ### Detection
 - Three distinct troughs at ~same price, within 2–3% of each other.

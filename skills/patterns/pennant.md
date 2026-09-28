@@ -5,7 +5,7 @@ type: pattern
 category: neutral
 pattern: pennant
 indicators: []
-confidence_weight: 0.72
+confidence_weight: 0.5
 display:
   chart:
     show: true
@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [pennant]
-token_cost: 842
-digest_hash: "6905e8e4"
+token_cost: 859
+digest_hash: "67470581"
 ---
 
 ## Detection Criteria
@@ -33,14 +33,14 @@ digest_hash: "6905e8e4"
 ## Distinguishing Pennant from Symmetrical Triangle
 
 The key difference between a Pennant and a Symmetrical Triangle is the presence of a preceding flagpole:
-- **Pennant**: Always preceded by a strong, sharp move (flagpole). Short duration (1-3 weeks). Continuation probability is higher due to the momentum context.
+- **Pennant**: Always preceded by a strong, sharp move (flagpole). Short duration (1-3 weeks). Continuation bias comes from the flagpole's momentum context.
 - **Symmetrical Triangle**: Forms independently without a flagpole. Longer duration (weeks to months). Direction bias comes from the prior trend, but with less momentum context.
 
 If no clear flagpole precedes the converging trendlines, classify the pattern as a Symmetrical Triangle instead.
 
 ## Confidence Weight Rationale
 
-confidence_weight: 0.72 — Pennant has a similar reliability profile to the Flag pattern, as both are short-term continuation patterns following a strong impulse move. Bulkowski reports continuation-direction breakouts for pennants in roughly the 65–75% range. The pennant's converging (triangular) structure is slightly less defined than the flag's parallel channel, introducing marginally more ambiguity in the breakout direction, but the mandatory flagpole provides strong momentum context that supports the continuation bias. The 0.72 weight sits just below Bull/Bear Flag (0.75) to reflect the slightly wider directional variance.
+confidence_weight: 0.5 — Bulkowski (thepatternsite.com/pennants.html, bull market; not ranked, measured over the short-term swing): break-even failure rate 54% for both upward and downward breakouts; 35% / 32% meet the price target; breakout upward 57% of the time (bull and bear pennants pooled). Bulkowski adds that pennants mark the midway point of a move only about 30% of the time. Weight: failure > 30% → 0.5. The mandatory flagpole gives momentum context, but the measured continuation edge is small — confirm with breakout volume and trend context.
 
 Factors that increase confidence:
 - Flagpole shows a move of at least 10% with significantly above-average volume
@@ -102,7 +102,7 @@ When this pattern is detected, include the following in the analysis response:
 - **geometry**: Fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
-페넌트 (Pennant) — continuation, confidence_weight 0.72. Flagpole + converging symmetrical-triangle consolidation. Bull (up flagpole) or Bear (down flagpole).
+페넌트 (Pennant) — continuation, confidence_weight 0.5 (Bulkowski pennants.html: failure 54%, 35%/32% meet target, breaks up 57%). Flagpole + converging symmetrical-triangle consolidation. Bull (up flagpole) or Bear (down flagpole).
 
 ### Detection
 - Strong decisive flagpole must PRECEDE pattern, on above-average volume. Bull = up move, Bear = down move.
@@ -114,7 +114,7 @@ When this pattern is detected, include the following in the analysis response:
 - Confirmed when price CLOSES outside pennant in flagpole direction with volume returning above-average.
 
 ### Pennant vs Symmetrical Triangle
-- Pennant: always preceded by sharp flagpole; short (1–3 wk); higher continuation probability from momentum.
+- Pennant: always preceded by sharp flagpole; short (1–3 wk); continuation bias from flagpole momentum.
 - Symmetrical Triangle: no flagpole; longer (weeks–months); bias from prior trend only.
 - If NO clear flagpole precedes converging trendlines → classify as Symmetrical Triangle instead.
 

@@ -4,73 +4,54 @@ description: 3-candle reversal pattern interpretation guide for Three White Sold
 type: candlestick
 category: neutral
 indicators: []
-confidence_weight: 0.82
+confidence_weight: 0.75
 gating:
   tier: gated
   signal_kind: event
   triggers: [three_white_soldiers, three_black_crows]
-token_cost: 469
-digest_hash: "94371c38"
+token_cost: 304
+digest_hash: "542ff51f"
 ---
 
 ## Overview
 
-Three White Soldiers and Three Black Crows are 3-candle reversal patterns that provide strong reversal signals.
-Three consecutive long candles progress in the same direction, each forming a new high/low.
+Three consecutive tall candles in the same direction (core: each body ≥ 60% of its range), each opening
+inside the prior body and closing beyond it.
 
-### Three White Soldiers
-- 3 consecutive long bullish candles
-- Each candle opens within the previous candle's body and closes at a higher price
-- Bullish reversal signal in a downtrend
+- **Three White Soldiers**: three tall bullish candles, each closing higher. Textbook: bullish reversal of a decline.
+- **Three Black Crows**: three tall bearish candles, each closing lower. Textbook: bearish reversal of an advance.
 
-### Three Black Crows
-- 3 consecutive long bearish candles
-- Each candle opens within the previous candle's body and closes at a lower price
-- Bearish reversal signal in an uptrend
+The core detector checks shape only, not the prior trend.
+
+## Measured Behavior
+
+- Three White Soldiers — Bulkowski (thepatternsite.com/ThreeWhiteSoldiers.html): bullish reversal **82%** (reversal-rate rank 3 of 103); overall performance rank **32** — price does not trend far after the breakout.
+- Three Black Crows — (thepatternsite.com/ThreeBlackCrows.html): bearish reversal **78%**; overall rank **3**.
+- Part of the high rate is mechanical (Bulkowski, same pages): the pattern closes near its own extreme, so a breakout in that direction is easy to score.
+- Bulkowski tidbits: soldiers that form as an upward retracement inside a downtrend often see the downtrend continue; taller crows perform better.
+- Weight 0.75 (weakest label: Three Black Crows 78%, ≥75% band; candle weights are capped at 0.75).
 
 ## Signal Interpretation
 
-### Three White Soldiers
-- **Strong signal**: Appears after a clear downtrend + each candle body is large with short shadows (close to Marubozu) + progressively increasing volume
-- **Moderate signal**: Appears after a downtrend, candle bodies are relatively large but shadows exist
-- **Weak signal**: Appears after a significant prior rally (risk of overheating)
-
-### Three Black Crows
-- **Strong signal**: Appears after a clear uptrend + each candle body is large with short shadows + progressively increasing volume
-- **Moderate signal**: Appears after an uptrend, candle bodies are relatively large but shadows exist
-- **Weak signal**: Appears after a significant prior decline (risk of oversold conditions)
-
-## Key Combinations
-
-- **RSI + Soldiers/Crows**: When RSI is moving from neutral toward an extreme, the pattern serves as a confirmation signal
-- **MACD + Soldiers/Crows**: Appearing simultaneously with a MACD directional shift is a powerful trend reversal signal
-- **Volume + Soldiers/Crows**: Progressively increasing volume across all three candles confirms trend strength
-- **EMA(20) + Soldiers/Crows**: Appearing simultaneously with a breakout/breakdown of EMA(20) confirms a trend shift
+- **Stronger**: clear opposing trend before the pattern; tall bodies with short shadows; rising volume across the three candles; a break of EMA(20) or a key level; RSI moving from neutral toward an extreme.
+- **Moderate**: bodies tall but with visible shadows; flat volume.
+- **Weak**: after a large move already in the pattern's direction (exhaustion risk); soldiers inside a larger downtrend (Bulkowski: often only a retracement).
 
 ## Caveats
 
-- If the third candle is excessively long, it signals overheating/oversold conditions instead — caution against chasing the move
-- Appearing after a large prior move suggests the potential for trend exhaustion
-- Each candle's open must start within the prior candle's body — the pattern is invalid if it opens with a gap up/down
-- When appearing near major resistance/support, consider the possibility of a failed breakout
+- An exceptionally long third candle signals overextension — do not chase.
+- Near major resistance/support, consider a failed breakout.
+- Never derive a price target from the candles; defer levels to Market Reference / support-resistance.
 
 ## AI Analysis Instructions
 
-When Three White Soldiers or Three Black Crows is detected:
-
-- Evaluate each candle's body size and shadow ratio — smaller shadows indicate stronger conviction
-- Check if the pattern emerges after a clear opposing trend using EMA(20) and EMA(60)
-- Assess volume progression across the three candles: increasing volume confirms the signal
-- If the third candle is exceptionally long relative to the first two, warn about potential overextension: "Third candle is excessively long — caution for potential overheating"
-- Cross-reference with nearby resistance/support levels to evaluate continuation potential
-- State the pattern strength based on body-to-shadow ratios of all three candles
-
 <!-- PROMPT_DIGEST:START -->
-Three Soldiers/Crows Guide (3-candle reversal, strong)
-- Three consecutive long candles in the same direction, each forming a new high/low.
-Structure: Three White Soldiers = 3 consecutive long bullish candles, each opens WITHIN the prior candle's body and closes higher → bullish reversal in a downtrend. Three Black Crows = 3 consecutive long bearish candles, each opens WITHIN the prior candle's body and closes lower → bearish reversal in an uptrend.
-Signal strength — Soldiers: Strong = after clear downtrend + each body large with short shadows (near-Marubozu) + progressively increasing volume; Moderate = after downtrend, bodies relatively large but shadows present; Weak = after significant prior rally (overheating risk). Crows: Strong = after clear uptrend + each body large with short shadows + progressively increasing volume; Moderate = after uptrend, bodies relatively large but shadows present; Weak = after significant prior decline (oversold risk).
-Combinations: RSI moving from neutral toward extreme = confirmation; MACD directional shift = powerful; progressively increasing volume across all 3 confirms strength; EMA(20) breakout/breakdown confirms trend shift.
-Caveats: if 3rd candle excessively long → overheating/oversold, don't chase. After a large prior move → potential exhaustion. Each candle's open must start within the prior candle's body — INVALID if it opens with a gap up/down. Near major S/R, consider failed-breakout possibility.
-AI: evaluate each candle's body size + shadow ratio (smaller shadows = stronger conviction); confirm pattern emerges after a clear opposing trend via EMA(20) + EMA(60); assess volume progression (increasing confirms); if 3rd candle exceptionally long vs first two, warn "caution for potential overheating"; cross-reference nearby S/R for continuation; state strength from body-to-shadow ratios of all three.
+Three Soldiers/Crows Guide (3-candle reversal)
+- Interpret only if three_white_soldiers or three_black_crows is listed in the detected-pattern section.
+- Shape: three tall same-direction candles, each opening inside the prior body and closing beyond it. Detector checks shape only — verify the opposing prior trend yourself.
+- Measured (Bulkowski): Three White Soldiers bullish reversal 82%, overall rank 32/103 — modest follow-through (thepatternsite.com/ThreeWhiteSoldiers.html); Three Black Crows bearish reversal 78%, rank 3 (thepatternsite.com/ThreeBlackCrows.html). Part of the rate is mechanical: the pattern closes near its own extreme, so the breakout is easy. Weight 0.75.
+- Stronger: clear opposing trend before it; tall bodies, short shadows; rising volume across the three; EMA(20) or key-level break; RSI moving from neutral toward an extreme.
+- Weak: after a large move already in the pattern's direction (exhaustion); soldiers inside a larger downtrend are often only a retracement (Bulkowski).
+- An exceptionally long third candle → "caution for potential overheating", don't chase. Near major S/R consider a failed breakout.
+- Never derive a target; cite levels only from Market Reference / S/R.
 <!-- PROMPT_DIGEST:END -->

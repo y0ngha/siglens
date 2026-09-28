@@ -1,87 +1,60 @@
 ---
 name: Doji Pattern Guide
-description: Interpretation guide for Doji-family candlestick patterns (Standard, Long-legged, Dragonfly, Gravestone)
+description: Interpretation guide for Doji-family and Spinning Top candlestick patterns (Standard, Long-legged, Dragonfly, Gravestone, Spinning Top)
 type: candlestick
 category: neutral
 indicators: []
-confidence_weight: 0.75
+confidence_weight: 0.4
 gating:
   tier: gated
   signal_kind: event
-  triggers: [doji, gravestone_doji, dragonfly_doji]
-token_cost: 459
-digest_hash: "3bde30ae"
+  triggers: [doji, gravestone_doji, dragonfly_doji, spinning_top]
+token_cost: 369
+digest_hash: "924ff676"
 ---
 
 ## Overview
 
-A Doji is a candle where the open and close prices are nearly identical, signaling market indecision or a potential trend reversal.
-It is only valid as a reversal signal at the end of a trend — a Doji in a sideways range carries no meaningful signal.
+Indecision candles: the open and close are close together, so neither side won the session.
 
-### Standard Doji (Cross)
-- Open ≈ Close, upper and lower shadows of similar length
-- Balanced state between buying and selling pressure
+- **Doji** (standard / long-legged): body ≤ 10% of the high–low range (core threshold), shadows on both sides. Long-legged = both shadows very long.
+- **Dragonfly Doji**: doji with (almost) no upper shadow — a long lower shadow, close near the high.
+- **Gravestone Doji**: doji with (almost) no lower shadow — a long upper shadow, close near the low.
+- **Spinning Top**: small body (≤ 40% of the range in the core) with shadows on both sides — a milder form of indecision.
 
-### Long-legged Doji (Long-legged Cross)
-- Very long upper and lower shadows
-- Indecision amid extreme volatility — high potential for trend reversal
+The core detector checks shape only; it does not check the prior trend.
 
-### Dragonfly Doji
-- Long lower shadow only, no upper shadow
-- Bullish reversal signal at the bottom of a downtrend
+## Measured Behavior
 
-### Gravestone Doji
-- Long upper shadow only, no lower shadow
-- Bearish reversal signal at the top of an uptrend
-- Reliability: 57%
+All Bulkowski figures below are near random — needs confirmation.
+
+- Dragonfly Doji (thepatternsite.com/Dragonfly.html): reversal **50%**; overall performance rank **98 of 103**; it breaks out upward most often. Bulkowski, "The Eight Best-Performing Candles" (S&C V.29:11): its reversal-rate rank is only 55/103, but after an **uptrend** with a close below its low it was the second-best common bearish reversal (average 10-day move 3.89%) — the textbook "bullish" reading is not what the data shows.
+- Gravestone Doji (thepatternsite.com/Gravestone.html): bearish reversal **51%**; overall rank **77**. Tidbit: ignore it in congestion areas.
+- Standard doji: Bulkowski publishes no single rate; his trend-context versions are all near 50% — northern doji (after an uptrend) bullish continuation **51%**, rank 83 (thepatternsite.com/NorthernDoji.html); southern doji (after a downtrend) bullish reversal **52%**, rank 78 (thepatternsite.com/SouthernDoji.html); long-legged doji bullish continuation **51%**, rank 37 (thepatternsite.com/LongLegDoji.html).
+- Spinning Top: black reversal **51%**, rank 73 (thepatternsite.com/SpinTopBlack.html); white reversal **50%**, rank 69 (thepatternsite.com/SpinTopWhite.html). The two most common candles (frequency ranks 1 and 2).
+- Weight 0.4 (every label < 55%).
 
 ## Signal Interpretation
 
-### Dragonfly Doji (Bullish Reversal)
-- **Strong signal**: Clear downtrend bottom + long lower shadow + next candle confirms bullish close + RSI oversold
-- **Moderate signal**: Appears after a downtrend, before next candle confirmation
-- **Weak signal**: Trend unclear or sideways range
-
-### Gravestone Doji (Bearish Reversal)
-- **Strong signal**: Clear uptrend top + long upper shadow + next candle confirms bearish close + RSI overbought
-- **Moderate signal**: Appears after an uptrend, before next candle confirmation
-- **Weak signal**: Trend unclear or sideways range
-
-### Standard / Long-legged Doji (Neutral)
-- **Potential reversal**: Appears at the end of a long-term trend — treat as a reversal warning
-- **No significance**: Ignore when appearing in a sideways range
-
-## Key Combinations
-
-- **Doji + Engulfing**: If the candle following a Doji is an Engulfing, it is a very powerful reversal signal
-- **Doji + Bollinger Band**: Appearance at band extremes increases reversal probability
-- **RSI + Doji**: A Doji in overbought/oversold territory signals exhaustion
-- **Morning/Evening Doji Star**: When the middle candle of a 3-candle pattern is a Doji, the reliability of the Star pattern increases
+- A doji or spinning top marks a **pause**, never a direction by itself. Direction comes from the next close beyond the candle's high (up) or low (down).
+- **More relevant**: at the end of an extended trend, at a support/resistance level, with RSI at an extreme or price at a Bollinger band. Taller candles (longer shadows) move farther after the breakout (Bulkowski tidbits on the gravestone and long-legged doji pages).
+- **Ignore**: inside a sideways range (ADX < 20) — there it is only reduced volatility.
 
 ## Caveats
 
-- A Doji in a sideways range indicates simple volatility reduction, not a reversal signal
-- Classified as a Doji when the body is within 5% of the total range (high–low)
-- Next candle confirmation is essential — trading decisions cannot be made based on Doji alone
-- Do not use as a reversal signal when appearing in a range-bound environment (ADX < 20)
+- Do not describe a dragonfly as bullish or a gravestone as bearish without the confirming close; the measured rates are coin flips.
+- Spinning tops are so common that one alone carries almost no information.
+- Never derive a price target from the candle; defer levels to Market Reference / support-resistance.
 
 ## AI Analysis Instructions
 
-When a Doji, Long-legged Doji, Dragonfly Doji, or Gravestone Doji is detected:
-
-- Identify the specific Doji variant and its directional implications
-- Evaluate the preceding trend using EMA(20) and ADX to determine if the Doji has reversal significance
-- If the market is range-bound (ADX < 20), explicitly note: "Doji appeared in a sideways range — difficult to interpret as a reversal signal"
-- Check for follow-up candle confirmation when available
-- Cross-reference with RSI extremes and Bollinger Band position
-- For Long-legged Doji, emphasize the high volatility context and potential for sharp directional moves
-
 <!-- PROMPT_DIGEST:START -->
-Doji Pattern Guide (Standard, Long-legged, Dragonfly, Gravestone)
-- Doji = open ≈ close; classified when body is within 5% of total range (high–low). Indecision/potential reversal. Valid as reversal ONLY at the END of a trend; in a sideways range = volatility reduction, NOT reversal.
-Variants (geometry → meaning): Standard/Cross = upper/lower shadows similar length, neutral. Long-legged = very long upper AND lower shadows, extreme-volatility indecision, high reversal potential. Dragonfly = long lower shadow only, no upper → bullish reversal at downtrend bottom. Gravestone = long upper shadow only, no lower → bearish reversal at uptrend top, reliability 57%.
-Signal strength — Dragonfly (bullish): Strong = clear downtrend bottom + long lower shadow + next candle confirms bullish close + RSI oversold; Moderate = after downtrend, pre-confirmation; Weak = unclear/sideways. Gravestone (bearish): Strong = clear uptrend top + long upper shadow + next candle bearish close + RSI overbought; Moderate = after uptrend, pre-confirmation; Weak = unclear/sideways. Standard/Long-legged (neutral): reversal warning only at end of long-term trend; ignore in sideways range.
-Combinations: Doji + next-candle Engulfing = very powerful reversal; at Bollinger band extremes ↑ reversal prob; in RSI overbought/oversold = exhaustion; as middle candle of a 3-candle Star ↑ Star reliability.
-Rules: next-candle confirmation essential — never trade on Doji alone. Do NOT use as reversal when range-bound (ADX < 20).
-AI: identify variant + directional implication; judge preceding trend via EMA(20) + ADX; if ADX < 20 explicitly note "Doji appeared in a sideways range — difficult to interpret as a reversal signal"; check follow-up candle; cross-reference RSI extremes + Bollinger; for Long-legged emphasize high-volatility / sharp-move potential.
+Doji Pattern Guide (Standard, Long-legged, Dragonfly, Gravestone, Spinning Top)
+- Interpret only if doji, dragonfly_doji, gravestone_doji or spinning_top is listed in the detected-pattern section.
+- Shapes (core): doji = body ≤ 10% of range; dragonfly = doji with ~no upper shadow; gravestone = doji with ~no lower shadow; spinning top = body ≤ 40% of range with both shadows. Detector checks shape only — not the prior trend.
+- Measured (Bulkowski, thepatternsite.com): Dragonfly reversal 50%, overall rank 98/103 (Dragonfly.html; S&C V.29:11: its best case is a close below its low after an uptrend — bearish, not the textbook bullish). Gravestone bearish reversal 51%, rank 77 (Gravestone.html). Doji after uptrend continues 51% (NorthernDoji.html), after downtrend reverses 52% (SouthernDoji.html). Spinning top reversal 50–51% (SpinTopBlack.html / SpinTopWhite.html). All near random — needs confirmation. Weight 0.4.
+- Read as a pause, never a direction. Direction = the next close beyond the candle's high (up) or low (down); until then say "indecision — awaiting confirmation".
+- More relevant at the end of an extended trend, at S/R, with RSI extreme or a Bollinger band touch; longer shadows move farther after the breakout.
+- In a sideways range (ADX < 20) say "Doji appeared in a sideways range — difficult to interpret as a reversal signal". A lone spinning top carries almost no information.
+- Never derive a target; cite levels only from Market Reference / S/R.
 <!-- PROMPT_DIGEST:END -->

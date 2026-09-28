@@ -9,8 +9,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [rsi_bullish_divergence, rsi_bearish_divergence, macd_histogram_bullish_convergence, macd_histogram_bearish_convergence]
-token_cost: 1104
-digest_hash: "0046b7af"
+token_cost: 1069
+digest_hash: "0e6e6e10"
 ---
 
 ## Overview
@@ -63,7 +63,6 @@ Hidden divergences confirm that the current trend remains intact despite a tempo
 - Regular Bullish: price makes lower low while MACD histogram makes shallower negative bar
 - Regular Bearish: price makes higher high while MACD histogram makes shorter positive bar
 - MACD signal line crossover after divergence adds confirmation
-- MACD divergences tend to precede larger moves than RSI divergences
 
 ### Stochastic Divergence
 
@@ -74,14 +73,7 @@ Hidden divergences confirm that the current trend remains intact despite a tempo
 
 ### Multi-Oscillator Confirmation
 
-When two or more oscillators show the same divergence simultaneously, signal reliability increases significantly:
-
-| Combination | Estimated Win Rate | Notes |
-|---|---|---|
-| RSI + MACD | ~73% | Highest reliability — momentum + trend confirmation |
-| RSI + Stochastic | ~65% | Good for ranging markets |
-| MACD + Stochastic | ~62% | Momentum focus |
-| All three | ~78% | Rare but most reliable |
+When two or more oscillators show the same divergence at the same swings, treat it as stronger evidence than a single-oscillator divergence. RSI, MACD and Stochastic are all derived from the same price series, so agreement is corroboration, not independent confirmation.
 
 ---
 
@@ -94,7 +86,7 @@ When two or more oscillators show the same divergence simultaneously, signal rel
 3. **Double confirmation (optional)**: Price bounces from a known support level
 4. **Entry trigger**: Enter long when the confirmation candle closes
 5. **Stop loss**: Below the most recent swing low (the lower low in the divergence)
-6. **Target**: Previous swing high or resistance level; alternatively, 1:2 risk-reward ratio
+6. **Target**: Previous swing high or resistance level
 
 ### Regular Bearish Divergence Entry
 
@@ -103,7 +95,7 @@ When two or more oscillators show the same divergence simultaneously, signal rel
 3. **Double confirmation (optional)**: Price rejects from a known resistance level
 4. **Entry trigger**: Enter short when the confirmation candle closes
 5. **Stop loss**: Above the most recent swing high (the higher high in the divergence)
-6. **Target**: Previous swing low or support level; alternatively, 1:2 risk-reward ratio
+6. **Target**: Previous swing low or support level
 
 ### Hidden Bullish Divergence Entry
 
@@ -125,8 +117,8 @@ When two or more oscillators show the same divergence simultaneously, signal rel
 
 ## Exit Rules
 
-- **Primary exit**: Target price reached (support/resistance level or risk-reward ratio target)
-- **Trailing stop**: Move stop to breakeven after 1:1 risk-reward is reached, then trail behind swing points
+- **Primary exit**: Target reached (prior swing or support/resistance level)
+- **Trailing stop**: Move stop to breakeven once price forms a new swing in the trade direction, then trail behind swing points
 - **Invalidation exit**: Close position if a new divergence forms in the opposite direction
 - **Time-based exit**: If price fails to move in the expected direction within 10-15 bars after entry, consider closing for a small loss or breakeven
 
@@ -134,7 +126,7 @@ When two or more oscillators show the same divergence simultaneously, signal rel
 
 ## Confidence Weight Rationale
 
-confidence_weight: 0.78 — Divergence is a well-documented, statistically validated phenomenon across markets. Multi-oscillator confirmation substantially improves reliability: the RSI+MACD combination reaches roughly 73% win rate, and full three-oscillator agreement approaches 78%. This places divergence among the more reliable single-strategy signals in the skill set. The 0.78 weight reflects this strong statistical backing while acknowledging that divergences can persist for extended periods before resolving (especially in strong trends), so entry timing still requires additional confirmation such as an oscillator exit from the extreme zone, a candlestick pattern, or a support/resistance test.
+confidence_weight: 0.78 — Divergence is a widely used momentum warning: it shows that the latest price extreme was not confirmed by momentum. It is a warning, not a timing signal — divergences can persist through several swings before resolving (especially in strong trends), so entry timing still requires additional confirmation such as an oscillator exit from the extreme zone, a candlestick pattern, or a support/resistance test.
 
 Factors that increase confidence:
 - Multiple oscillators show the same divergence simultaneously
@@ -202,23 +194,20 @@ Distinction: Regular = momentum fails to confirm new extreme (reversal); Hidden 
 
 ### Oscillator guidelines
 - RSI: most effective in extremes (<30 or >70). Regular bullish esp. if RSI was <30 recovering; regular bearish esp. if RSI was >70 declining. Hidden valid in neutral 40-60 during strong trend.
-- MACD: use histogram (more sensitive than line). Regular bullish = price LL + histogram shallower negative bar; regular bearish = price HH + histogram shorter positive bar. Signal-line crossover after divergence adds confirmation. MACD divergences precede larger moves than RSI.
+- MACD: use histogram (more sensitive than line). Regular bullish = price LL + histogram shallower negative bar; regular bearish = price HH + histogram shorter positive bar. Signal-line crossover after divergence adds confirmation.
 - Stochastic: best in ranging/moderate-trend markets; most effective %K in extremes (<20 or >80). %K/%D crossover after divergence = entry timing. Unreliable in strong trends.
 
-### Multi-oscillator win rates
-RSI+MACD ~73% (highest, momentum+trend); RSI+Stochastic ~65% (ranging); MACD+Stochastic ~62%; all three ~78% (rare, most reliable).
-
 ### Entry rules
-Regular Bullish: price LL + oscillator HL → wait confirmation (RSI crosses >30, Stoch %K >20, or MACD hist turns positive) → optional: price bounces off support → enter long on confirmation candle close. Stop below recent swing low (the LL). Target = prior swing high/resistance or 1:2 R:R.
-Regular Bearish: price HH + oscillator LH → wait confirmation (RSI <70, Stoch %K <80, or MACD hist turns negative) → optional: reject at resistance → enter short on close. Stop above recent swing high (the HH). Target = prior swing low/support or 1:2 R:R.
+Regular Bullish: price LL + oscillator HL → wait confirmation (RSI crosses >30, Stoch %K >20, or MACD hist turns positive) → optional: price bounces off support → enter long on confirmation candle close. Stop below recent swing low (the LL). Target = prior swing high/resistance.
+Regular Bearish: price HH + oscillator LH → wait confirmation (RSI <70, Stoch %K <80, or MACD hist turns negative) → optional: reject at resistance → enter short on close. Stop above recent swing high (the HH). Target = prior swing low/support.
 Hidden Bullish: PREREQ confirmed uptrend (HH/HL, price above key MAs) → price HL + oscillator LL → enter long when oscillator recovers from LL. Stop below the HL. Target = retest recent high/next resistance.
 Hidden Bearish: PREREQ confirmed downtrend (LH/LL, price below key MAs) → price LH + oscillator HH → enter short when oscillator declines from HH. Stop above the LH. Target = retest recent low/next support.
 
 ### Exit
-Primary: target reached. Trail: move stop to breakeven after 1:1, then trail behind swing points. Invalidation: close if opposite-direction divergence forms. Time: if price fails to move as expected within 10-15 bars, close for small loss/breakeven.
+Primary: target reached. Trail: move stop to breakeven once price forms a new swing in the trade direction, then trail behind swing points. Invalidation: close if opposite-direction divergence forms. Time: if price fails to move as expected within 10-15 bars, close for small loss/breakeven.
 
 ### Confidence
-Increase: multiple oscillators same divergence; at known S/R; volume confirms (decreasing on price extreme); on higher TF (daily/weekly).
+Increase: multiple oscillators same divergence (same price series — corroboration, not independent); at known S/R; volume confirms (decreasing on price extreme); on higher TF (daily/weekly).
 Decrease: only one oscillator; strong trend (regular divergences persist through multiple swings); no S/R confluence; very low TF (1m/5m noise).
 Caveats: NEVER trade divergence alone — it is a warning, always require confirmation. In strong trends regular divergence can appear at multiple consecutive swings before reversal — check higher-TF trend first. Hidden = continuation NOT reversal, do not confuse with regular. Keep divergence and entry confirmation on SAME timeframe. Oscillator values change per bar — confirm on CLOSED bars only.
 
