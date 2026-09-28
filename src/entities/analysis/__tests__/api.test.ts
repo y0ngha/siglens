@@ -96,6 +96,21 @@ vi.mock('@/entities/earnings-report', () => ({
     getNextEarningsReport: vi.fn(),
 }));
 
+// 매크로 캘린더 헬퍼 — 호출처가 결과를 그대로 `macroCalendar`로 넘기는지 확인한다.
+vi.mock('@/entities/economy/api/loadNewsMacroCalendar', () => ({
+    loadNewsMacroCalendar: vi.fn(async () => [
+        {
+            date: '2026-09-30 18:00:00',
+            event: 'Fed Interest Rate Decision',
+            impact: 'High',
+            actual: null,
+            estimate: null,
+            previous: null,
+            unit: '%',
+        },
+    ]),
+}));
+
 vi.mock('@/entities/options-chain/lib/optionsDataCache', () => ({
     fetchOptionsSnapshot: vi.fn(),
 }));
@@ -759,6 +774,20 @@ describe('prewarmOverall', () => {
 
         expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ upcomingCalendar: [next] })
+        );
+    });
+
+    it('passes the macro calendar helper result as macroCalendar', async () => {
+        await prewarmOverall('AAPL', 'Apple Inc.', false);
+
+        expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({
+                macroCalendar: [
+                    expect.objectContaining({
+                        event: 'Fed Interest Rate Decision',
+                    }),
+                ],
+            })
         );
     });
 

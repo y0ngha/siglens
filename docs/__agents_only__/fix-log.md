@@ -518,3 +518,14 @@
   - Rule: (new) Review agents must remain read-only: no git operations, no formatter write passes, no file modifications. Before invoking a review agent on a branch with uncommitted work, back up the diff with `git stash` or `cp -r` to a temp directory. Recovery after `git checkout --` requires manual rewrite if the diffs were not backed up.
   - Context: Review agent invoked on branch with uncommitted changes; agent ran format:write then checkout without detecting the unintended destruction. Lesson: use `git stash` before review invocation, then restore with `git stash pop` after review phase completes.
 
+
+## [feat/core-detectors-consume Round 1 | feat/core-detectors-consume | 2026-09-28]
+- Violation: new strategy skills gated on core signals told the model to "interpret only if listed in the detected-signal section", but core never renders those signal names (excluded from the confluence list; used only for gating)
+  - Rule: (new) A skill's instructions must reference only prompt sections/fields that core actually renders for its trigger — verify against the consumed core version's prompt builder before writing "if listed in …" guards
+  - Context: Reworded to "injected only when the engine detected …; derive the side from bar data / Market Reference".
+- Violation: skill template criterion that is always true under its own trigger (close above MA120/200 on a new 52-week high) made a trend branch unreachable
+  - Rule: MISTAKES Predictability — conditions must be falsifiable under the trigger that injects the skill
+  - Context: Removed the criterion; neutral branch now "MA(200) falling or stack not met".
+- Violation: `.sort()` on a filtered array; helper test froze an instant where UTC and ET dates coincide, so a UTC-vs-ET regression would pass
+  - Rule: MISTAKES Coding Paradigm #12 (toSorted); Tests — boundary instants must distinguish the alternatives
+  - Context: toSorted; test instant 2026-09-29T02:00Z.

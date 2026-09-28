@@ -6,14 +6,14 @@ indicators: []
 confidence_weight: 1.0
 gating:
   tier: always_on
-token_cost: 1219
-digest_hash: "71b88b66"
+token_cost: 1465
+digest_hash: "d29c9696"
 ---
 
 ## Pattern Index (compressed)
 
 Always-on one-line index of **every** chart pattern the engine can detect. Its
-job is coverage, not judgement: the model should always know that all 17
+job is coverage, not judgement: the model should always know that all 22
 patterns exist and be able to **name** any pattern it can clearly see on the
 chart, even when that pattern's detailed skill was not injected this run.
 
@@ -47,6 +47,7 @@ derives 측정 목표가/보수 목표가(50%) from `geometry`.
 - **triple_top:** three roughly equal highs at resistance, neckline (support) break down = bearish reversal. geom: B=neckline, E=avg(3 peaks), dir=down, inv=highest peak.
 - **triple_bottom:** three roughly equal lows at support, neckline (resistance) break up = bullish reversal. geom: B=neckline, E=avg(3 troughs), dir=up, inv=lowest trough.
 - **rounding_bottom:** slow U-shaped (saucer) base, gradual momentum shift, break up above the left rim = bullish reversal. geom: B=rim, E=saucer bottom, dir=up, inv=recent right-side trough.
+- **rounding_top:** slow inverted-bowl (dome) top after a rise, close below the rim (lowest low in the pattern) = bearish reversal. geom: B=rim (lowest low), E=dome top, dir=down, inv=dome top.
 
 ### Continuation patterns
 
@@ -56,6 +57,7 @@ derives 측정 목표가/보수 목표가(50%) from `geometry`.
 - **bull_flag:** sharp rally (pole) then a slight downward-drifting channel, break up = bullish continuation. geom: B=upper channel bound@breakout, E=flagpole start(base), dir=up, inv=lower channel bound.
 - **bear_flag:** sharp drop (pole) then a slight upward-drifting channel, break down = bearish continuation. geom: B=lower channel bound@breakdown, E=flagpole start(top), dir=down, inv=upper channel bound.
 - **cup_and_handle:** rounded U cup + small pullback handle near the rim, break up = bullish continuation. geom: B=handle resistance, E=cup bottom, dir=up, inv=handle low.
+- **high_tight_flag:** pole of +90% or more within ~2 months, then a shallow pause (give-back ≤25%); close above the pole top = bullish continuation. geom: B=pole top, E=pole base, dir=up, inv=flag low.
 
 ### Neutral / bilateral patterns
 
@@ -63,16 +65,19 @@ derives 측정 목표가/보수 목표가(50%) from `geometry`.
 - **symmetrical_triangle:** lower highs + higher lows converge; neutral until it breaks (Bulkowski: up 60% / down 40%). geom: B=broken trendline@breakout, E=opposite trendline@start(widest), dir=break side, inv=opposite trendline@last bar.
 - **pennant:** sharp move (pole) then a small symmetrical triangle; continues in the pole's direction on break. geom: B=pennant trendline@break (upper=bull/lower=bear), E=flagpole start, dir=pole direction, inv=opposite trendline.
 - **rectangle:** price oscillates between horizontal support and resistance; direction is decided by which side breaks. geom: B=broken boundary, E=opposite boundary, dir=break side, inv=opposite boundary.
+- **ascending_channel:** parallel rising trendlines; up-trend state until a close outside either line (a close below the lower line breaks the up-trend). geom: B=broken trendline@last bar, E=opposite trendline, dir=break side, inv=opposite trendline@last bar.
+- **descending_channel:** parallel falling trendlines; down-trend state until a close outside either line (a close above the upper line breaks the down-trend). geom: B=broken trendline@last bar, E=opposite trendline, dir=break side, inv=opposite trendline@last bar.
+- **broadening_formation:** higher highs + lower lows (megaphone); neutral until a close outside a line (Bulkowski bt.html/broadb.html: up 60%). geom: B=broken trendline@last bar, E=opposite trendline@last bar(widest), dir=break side, inv=opposite trendline@last bar.
 
 ### Reporting directive
 
 - Bulkowski: many chart patterns perform worse than in the 1990s — descending triangles almost in half (thepatternsite.com/dt.html; decade table: thepatternsite.com/TimePerformance.html) — never call a trade on a pattern alone.
 - Patterns **not** in the current prompt's detailed set may still be reported if clearly visible — name them and describe the structure. The **reduced confidence** attaches ONLY to the pattern-identification claim itself (its detailed skill's tolerances/nuance were not supplied this run) — it does **not** reduce the confidence of the overall analysis. Everything else — key levels, indicators, strategies, and the action plan — must stay fully committed and quantified.
 - Report any pattern you can clearly see, listed by the pre-screener or not; an approximate textbook shape is enough. Fill `patternSummaries[].geometry` from the `geom:` line above (or from the pattern's own gated skill when it was injected). Never compute a measured target, conservative target, or risk/reward yourself — the app derives 측정 목표가/보수 목표가(50%) from `geometry`, so do not leave a named pattern's `geometry` empty.
-- **Beyond this catalog:** the 17 patterns above are not an exhaustive list of what you may report — you may also name any other well-established chart pattern you clearly see (e.g. broadening formation, diamond, island reversal), using its standard English name. There is no `geom:` line for these, so derive `geometry` by the generic rule: `breakoutLevel` = the level the pattern breaks through; `extremeLevel` = the pattern's textbook measured-move anchor (its widest point or most extreme price); `direction` = the breakout direction; `invalidationLevel` = the level whose breach negates the pattern. As with every other pattern, never compute a measured target, conservative target, or risk/reward yourself.
+- **Beyond this catalog:** the 22 patterns above are not an exhaustive list of what you may report — you may also name any other well-established chart pattern you clearly see (e.g. diamond, island reversal), using its standard English name. There is no `geom:` line for these, so derive `geometry` by the generic rule: `breakoutLevel` = the level the pattern breaks through; `extremeLevel` = the pattern's textbook measured-move anchor (its widest point or most extreme price); `direction` = the breakout direction; `invalidationLevel` = the level whose breach negates the pattern. As with every other pattern, never compute a measured target, conservative target, or risk/reward yourself.
 
 <!-- PROMPT_DIGEST:START -->
-Pattern Index — one-line index of EVERY detectable chart pattern. Always know all 17 exist and NAME any pattern clearly visible on the chart, even when its detailed skill was not injected. Detailed judging (tolerances, confirmation nuance) arrives separately ONLY for patterns the pre-screener flags as candidates — but every entry below already carries a compact `geom:` line (B=breakoutLevel, E=extremeLevel, dir=direction, inv=invalidationLevel) so `patternSummaries[].geometry` can always be filled.
+Pattern Index — one-line index of EVERY detectable chart pattern. Always know all 22 exist and NAME any pattern clearly visible on the chart, even when its detailed skill was not injected. Detailed judging (tolerances, confirmation nuance) arrives separately ONLY for patterns the pre-screener flags as candidates — but every entry below already carries a compact `geom:` line (B=breakoutLevel, E=extremeLevel, dir=direction, inv=invalidationLevel) so `patternSummaries[].geometry` can always be filled.
 Reversal:
 - head_and_shoulders: three peaks, middle (head) highest, neckline break down = bearish reversal. geom: B=neckline@break, E=head, dir=down, inv=right-shoulder high.
 - inverse_head_and_shoulders: three troughs, middle (head) lowest, neckline break up = bullish reversal. geom: B=neckline@break, E=head, dir=up, inv=right-shoulder low.
@@ -81,6 +86,7 @@ Reversal:
 - triple_top: three ~equal highs at resistance, neckline (support) break down = bearish reversal. geom: B=neckline, E=avg(3 peaks), dir=down, inv=highest peak.
 - triple_bottom: three ~equal lows at support, neckline (resistance) break up = bullish reversal. geom: B=neckline, E=avg(3 troughs), dir=up, inv=lowest trough.
 - rounding_bottom: slow U (saucer) base, break up above left rim = bullish reversal. geom: B=rim, E=saucer bottom, dir=up, inv=recent right-side trough.
+- rounding_top: slow dome top after a rise, close below the rim (lowest low) = bearish reversal. geom: B=rim (lowest low), E=dome top, dir=down, inv=dome top.
 Continuation:
 - ascending_triangle: flat top resistance + rising lows, break up = bullish continuation. geom: B=horizontal resistance, E=support trendline@start(widest), dir=up, inv=support trendline@last bar.
 - ascending_wedge (rising): both bounds up + converging, break down = bearish. geom: B=lower trendline@breakdown, E=upper trendline@start(widest), dir=down, inv=upper trendline@last bar.
@@ -88,12 +94,16 @@ Continuation:
 - bull_flag: sharp rise (pole) + slight down channel, break up = bullish continuation. geom: B=upper channel bound@breakout, E=flagpole start(base), dir=up, inv=lower channel bound.
 - bear_flag: sharp drop (pole) + slight up channel, break down = bearish continuation. geom: B=lower channel bound@breakdown, E=flagpole start(top), dir=down, inv=upper channel bound.
 - cup_and_handle: rounded U cup + small handle, break up = bullish continuation. geom: B=handle resistance, E=cup bottom, dir=up, inv=handle low.
+- high_tight_flag: ≥+90% pole in ~2 months + shallow pause (≤25% give-back), close above pole top = bullish continuation. geom: B=pole top, E=pole base, dir=up, inv=flag low.
 Neutral/bilateral:
 - descending_triangle: flat bottom support + falling highs; near-neutral (Bulkowski: breaks up 53%), bearish only on close below support. geom: B=horizontal support, E=resistance trendline@start(widest), dir=down, inv=resistance trendline@last bar.
 - symmetrical_triangle: lower highs + higher lows converge; neutral until break (Bulkowski: up 60% / down 40%). geom: B=broken trendline@breakout, E=opposite trendline@start(widest), dir=break side, inv=opposite trendline@last bar.
 - pennant: sharp move (pole) + small symmetrical triangle; continues in pole direction. geom: B=pennant trendline@break (upper=bull/lower=bear), E=flagpole start, dir=pole direction, inv=opposite trendline.
 - rectangle: range between horizontal support & resistance; direction = side that breaks. geom: B=broken boundary, E=opposite boundary, dir=break side, inv=opposite boundary.
+- ascending_channel: parallel rising lines; up-trend until a close outside (below lower = up-trend broken). geom: B=broken trendline@last bar, E=opposite trendline, dir=break side, inv=opposite trendline@last bar.
+- descending_channel: parallel falling lines; down-trend until a close outside (above upper = down-trend broken). geom: B=broken trendline@last bar, E=opposite trendline, dir=break side, inv=opposite trendline@last bar.
+- broadening_formation: higher highs + lower lows (megaphone); neutral until a close outside (Bulkowski: up 60%). geom: B=broken trendline@last bar, E=opposite trendline@last bar(widest), dir=break side, inv=opposite trendline@last bar.
 Directive: patterns NOT in this prompt's detailed set may still be reported if clearly visible — name and describe them, but the REDUCED confidence attaches ONLY to the pattern-identification claim (detailed nuance not supplied this run), NOT to the overall analysis. Key levels, indicators, strategies, and action plan stay fully committed and quantified. Report any pattern you can clearly see, listed by the pre-screener or not; an approximate textbook shape is enough. Fill `geometry` from the `geom:` line above; never compute targets — the app derives 측정 목표가/보수 목표가(50%) from `geometry`.
 Evidence: Bulkowski — many patterns perform worse than in the 1990s (descending triangles almost half, thepatternsite.com/dt.html); never call a trade on a pattern alone.
-Beyond this catalog: the 17 above are not exhaustive — also name any other well-established chart pattern you clearly see (e.g. broadening formation, diamond, island reversal) by its standard English name. No `geom:` line exists for these — derive geometry by the generic rule: breakoutLevel = level the pattern breaks through; extremeLevel = its textbook measured-move anchor (widest/most extreme point); direction = breakout direction; invalidationLevel = level whose breach negates the pattern. Never compute a target or R:R yourself.
+Beyond this catalog: the 22 above are not exhaustive — also name any other well-established chart pattern you clearly see (e.g. diamond, island reversal) by its standard English name. No `geom:` line exists for these — derive geometry by the generic rule: breakoutLevel = level the pattern breaks through; extremeLevel = its textbook measured-move anchor (widest/most extreme point); direction = breakout direction; invalidationLevel = level whose breach negates the pattern. Never compute a target or R:R yourself.
 <!-- PROMPT_DIGEST:END -->
