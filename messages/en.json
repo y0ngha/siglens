@@ -2498,7 +2498,9 @@
                 "f0256c": "Sign up to receive detailed analysis with all skills applied.",
                 "f0cdeb": "AI Analysis",
                 "f744e1": "Hide Chart Price Lines",
-                "fb0cf0": "Key Prices"
+                "fb0cf0": "Key Prices",
+                "bcc718": "View on Chart",
+                "f66b28": "View {v0} on chart"
             },
             "AnalysisProgress": {
                 "784c44": "AI Analysis in Progress"
@@ -2695,7 +2697,8 @@
             },
             "StockChart": {
                 "1b2664": "No chart data available",
-                "a547a0": "Price Chart"
+                "a547a0": "Price Chart",
+                "57fdbb": "Breakout level"
             },
             "TimeframeSelector": {
                 "a4632e": "Member-exclusive timeframe.",
@@ -2719,6 +2722,14 @@
                 "trend": "Trend",
                 "volatility": "Volatility",
                 "volume": "Volume"
+            },
+            "ChartOverlayMenu": {
+                "0b5eb6": "Trendline",
+                "2bac73": "Fibonacci",
+                "3b6851": "Elliott Wave",
+                "4b1cdc": "Chart Drawing · {v0}",
+                "67eb73": "Divergence",
+                "bdeea2": "Chart Pattern"
             }
         },
         "chat": {

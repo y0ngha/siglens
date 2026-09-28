@@ -1,9 +1,10 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
 import { THEME_CHANGE_EVENT } from '@/shared/lib/theme';
-import type { Bar } from '@y0ngha/siglens-core';
+import type { Bar, ChartOverlay } from '@y0ngha/siglens-core';
 import { StockChart } from '@/widgets/chart/StockChart';
-import { INACTIVE_PANE_INDEX } from '@/widgets/chart/constants';
+import { INACTIVE_PANE_INDEX, STORAGE_KEYS } from '@/widgets/chart/constants';
+import { useChartOverlays } from '@/widgets/chart/hooks/useChartOverlays';
 
 const INACTIVE_PANES = Object.fromEntries(
     [
@@ -320,6 +321,10 @@ vi.mock('@/widgets/chart/hooks/useActionRecommendationOverlay', () => ({
 
 vi.mock('@/widgets/chart/hooks/useSmcZones', () => ({
     useSmcZones: vi.fn(),
+}));
+
+vi.mock('@/widgets/chart/hooks/useChartOverlays', () => ({
+    useChartOverlays: vi.fn(),
 }));
 
 vi.mock('@/widgets/chart/hooks/usePaneLabels', () => ({
@@ -799,5 +804,170 @@ describe('StockChart', () => {
         } finally {
             restore();
         }
+    });
+
+    describe('차트 작도(chartOverlays)', () => {
+        const overlay = {
+            id: 'pattern:double_bottom:100',
+            kind: 'pattern' as const,
+            skill: 'double_bottom',
+            sourceRef: 'p1',
+            variant: 'primary' as const,
+            segments: [
+                {
+                    from: { time: 100, price: 10 },
+                    to: { time: 300, price: 12 },
+                    role: 'pattern',
+                    style: 'solid' as const,
+                    pane: 'price' as const,
+                },
+            ],
+            levels: [],
+            labels: [],
+        };
+
+        it('renders the 차트 작도 header button when chartOverlays has an entry aligned to the loaded bars', () => {
+            render(
+                <StockChart
+                    bars={mockBars}
+                    timeframe="1Day"
+                    chartOverlays={[overlay]}
+                />
+            );
+
+            expect(
+                screen.getByRole('button', { name: /차트 작도/ })
+            ).toBeInTheDocument();
+        });
+
+        it('does not render the 차트 작도 button when chartOverlays is empty', () => {
+            render(<StockChart bars={mockBars} timeframe="1Day" />);
+
+            expect(
+                screen.queryByRole('button', { name: /차트 작도/ })
+            ).not.toBeInTheDocument();
+        });
+
+        /**
+         * `useChartOverlays`에 실제로 넘어가는 specs를 검증한다. 앞선 테스트들이
+         * 조작하는 `localStorage`(`STORAGE_KEYS.chartOverlays`, `usePersistentState`
+         * 백엔드)를 이 describe도 건드릴 수 있으므로, 매 케이스 전에 지워
+         * 기본값(pattern·trendline만 on)에서 시작한다. `mock.calls.at(-1)`로 마지막
+         * 호출만 본다 — 인덱스 [0] 고정은 리렌더 순서가 바뀌면 조용히 다른 렌더의
+         * 인자를 집는다.
+         */
+        describe('useChartOverlays로 넘어가는 specs', () => {
+            beforeEach(() => {
+                window.localStorage.removeItem(STORAGE_KEYS.chartOverlays);
+            });
+
+            function lastSpecs() {
+                return vi.mocked(useChartOverlays).mock.calls.at(-1)?.[0].specs;
+            }
+
+            it('highlightedOverlayRef가 가리키는 오버레이는 그 kind가 기본으로 꺼져 있어도(divergence) specs에 남는다', () => {
+                const divergenceOverlay: ChartOverlay = {
+                    id: 'divergence:rsi_bearish:1',
+                    kind: 'divergence',
+                    skill: 'rsi_bearish_divergence',
+                    sourceRef: 'd1',
+                    variant: 'primary',
+                    segments: [
+                        {
+                            from: { time: 100, price: 10 },
+                            to: { time: 300, price: 12 },
+                            role: 'price',
+                            style: 'solid',
+                            pane: 'price',
+                        },
+                    ],
+                    levels: [],
+                    labels: [],
+                };
+
+                render(
+                    <StockChart
+                        bars={mockBars}
+                        timeframe="1Day"
+                        chartOverlays={[divergenceOverlay]}
+                        highlightedOverlayRef="d1"
+                    />
+                );
+
+                const specs = lastSpecs();
+                expect(specs).toHaveLength(1);
+                expect(specs?.[0].points).toEqual([
+                    { time: 100, value: 10 },
+                    { time: 300, value: 12 },
+                ]);
+            });
+
+            it("레벨 라벨 'breakout'은 t()가 반환하는 번역 문구로 바뀐다", () => {
+                const patternWithLevel: ChartOverlay = {
+                    id: 'pattern:double_bottom:100',
+                    kind: 'pattern',
+                    skill: 'double_bottom',
+                    sourceRef: 'p1',
+                    variant: 'primary',
+                    segments: [],
+                    levels: [{ price: 11, fromTime: 100, label: 'breakout' }],
+                    labels: [],
+                };
+
+                render(
+                    <StockChart
+                        bars={mockBars}
+                        timeframe="1Day"
+                        chartOverlays={[patternWithLevel]}
+                    />
+                );
+
+                const specs = lastSpecs();
+                expect(specs?.[0].title).toBe('돌파 기준');
+            });
+
+            it('RSI pane이 꺼져 있으면(paneIndex=null) rsi 세그먼트가 specs에서 빠지고 price 세그먼트만 남는다', () => {
+                const divergenceWithRsi: ChartOverlay = {
+                    id: 'divergence:rsi_bearish:2',
+                    kind: 'divergence',
+                    skill: 'rsi_bearish_divergence',
+                    sourceRef: 'd2',
+                    variant: 'primary',
+                    segments: [
+                        {
+                            from: { time: 100, price: 10 },
+                            to: { time: 300, price: 12 },
+                            role: 'price',
+                            style: 'solid',
+                            pane: 'price',
+                        },
+                        {
+                            from: { time: 100, price: 30 },
+                            to: { time: 300, price: 40 },
+                            role: 'rsi',
+                            style: 'solid',
+                            pane: 'rsi',
+                        },
+                    ],
+                    levels: [],
+                    labels: [],
+                };
+
+                // mockUseIndicatorVisibility의 기본값(DEFAULT_VISIBLE)이 rsi:false다
+                // — StockChart는 그 경우 rsiPaneIndex로 null을 넘긴다.
+                render(
+                    <StockChart
+                        bars={mockBars}
+                        timeframe="1Day"
+                        chartOverlays={[divergenceWithRsi]}
+                        highlightedOverlayRef="d2"
+                    />
+                );
+
+                const specs = lastSpecs();
+                expect(specs).toHaveLength(1);
+                expect(specs?.[0].paneIndex).toBe(0);
+            });
+        });
     });
 });
