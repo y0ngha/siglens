@@ -1,13 +1,14 @@
 import 'server-only';
 import { createHmac, randomBytes, timingSafeEqual } from 'crypto';
 import type { SupportedOAuthProvider } from '@/shared/lib/types';
-import { isSecureCookieEnv, type ResponseCookie } from '@/entities/auth';
+import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
+import { type ResponseCookie } from '@/entities/auth/lib/types';
 
 /** OAuth state 쿠키 이름. */
 export const OAUTH_STATE_COOKIE_NAME = 'siglens_oauth_state';
 
 /** OAuth state 쿠키 TTL (5분). */
-export const OAUTH_STATE_TTL_MINUTES = 5;
+const OAUTH_STATE_TTL_MINUTES = 5;
 export const OAUTH_STATE_TTL_SECONDS = OAUTH_STATE_TTL_MINUTES * 60;
 
 /** Minimum acceptable byte length for OAUTH_STATE_HMAC_SECRET. 32 bytes ≈ 256-bit secret. */

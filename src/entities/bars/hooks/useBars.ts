@@ -2,7 +2,7 @@
 
 import { useSuspenseQuery } from '@tanstack/react-query';
 import type { Bar, IndicatorResult, Timeframe } from '@y0ngha/siglens-core';
-import { getBarsAction } from '@/entities/bars/actions';
+import { getBarsAction } from '@/entities/bars/actions/getBarsAction';
 import { BARS_STALE_TIME_MS, QUERY_KEYS } from '@/shared/config/queryConfig';
 
 interface UseBarsOptions {

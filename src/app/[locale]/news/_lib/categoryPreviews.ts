@@ -1,10 +1,10 @@
 import {
     CATEGORY_CONFIG,
-    MARKET_NEWS_CACHE_TAG_PREFIX,
     type NewsFeedCategoryId,
-} from '@/entities/market-news';
-import { getMarketNewsCards } from '@/entities/market-news/api';
-import { PREVIEW_HEADLINE_LIMIT } from '@/widgets/news-hub';
+} from '@/entities/market-news/lib/categoryConfig';
+import { MARKET_NEWS_CACHE_TAG_PREFIX } from '@/entities/market-news/lib/marketNewsConstants';
+import { getMarketNewsCards } from '@/entities/market-news/api/marketNewsRepository';
+import { PREVIEW_HEADLINE_LIMIT } from '@/widgets/news-hub/CategoryCard';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';
 import { SECONDS_PER_DAY } from '@/shared/config/time';

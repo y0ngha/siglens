@@ -23,8 +23,9 @@ vi.mock('@/entities/ticker/api', () => ({
     DrizzleAssetTranslationRepository: vi.fn(),
 }));
 
-vi.mock('@/entities/ticker/lib/db', () => ({
-    tryGetTickerDatabaseClient: vi.fn().mockReturnValue(null),
+vi.mock('@/shared/db/client', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/db/client')>()),
+    tryGetDatabaseClient: vi.fn().mockReturnValue(null),
 }));
 
 const mockSearchBySymbol = vi.fn().mockResolvedValue([]);

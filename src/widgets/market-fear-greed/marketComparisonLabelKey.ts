@@ -1,4 +1,4 @@
-import type { MarketFearGreedComparisonKey } from '@/entities/market-fear-greed';
+import type { MarketFearGreedComparisonKey } from '@/entities/market-fear-greed/model';
 
 /**
  * Lookback → `shared.ui.period` 메시지 키. **표시 문자열이 아니다.**

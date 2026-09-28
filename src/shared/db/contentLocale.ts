@@ -83,14 +83,6 @@ export function pickContentLocale<T>(
     return null;
 }
 
-/** `pickContentLocale`의 값만 필요한 호출부용 축약. */
-export function pickContentValue<T>(
-    byLocale: Partial<Record<Locale, T | null | undefined>>,
-    locale: Locale
-): T | null {
-    return pickContentLocale(byLocale, locale)?.value ?? null;
-}
-
 /**
  * DB 행에 붙은 로케일 문자열을 좁힌다.
  *

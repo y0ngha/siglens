@@ -7,17 +7,12 @@ import type {
     Timeframe,
 } from '@y0ngha/siglens-core';
 import type { SiglensMarketProvider } from '@/shared/api/market/marketProvider.types';
-import {
-    ISO_DATE_LENGTH,
-    MS_PER_SECOND,
-    MS_PER_HOUR,
-} from '@/shared/config/time';
+import { MS_PER_SECOND, MS_PER_HOUR } from '@/shared/config/time';
 import { pickYahooDisplayName } from './displayName';
+import { kstDateKey } from '@/shared/lib/etTimeUtils';
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
 const yahooFinance = getYahooClient();
-
-/** KST는 서머타임이 없다 — ET와 달리 고정 오프셋이라 DST 분기가 필요 없다. */
-const KST_OFFSET_HOURS = 9;
 
 /**
  * core `Timeframe` → yahoo chart interval.
@@ -66,12 +61,6 @@ function toBar(raw: YahooChartQuote): Bar | null {
         close,
         volume: raw.volume ?? 0,
     };
-}
-
-/** 시각을 KST 벽시계 기준 거래일(YYYY-MM-DD)로 환산한다. */
-function kstTradingDate(at: Date): string {
-    const shifted = new Date(at.getTime() + KST_OFFSET_HOURS * MS_PER_HOUR);
-    return shifted.toISOString().slice(0, ISO_DATE_LENGTH);
 }
 
 /** YYYY-MM-DD → UTC 자정 unix초. 일봉 `Bar.time` 규약(FMP 어댑터와 동일). */
@@ -127,7 +116,7 @@ export class YahooMarketProvider implements SiglensMarketProvider {
     private defaultPeriod1(timeframe: Timeframe): string {
         const days = timeframe === '1Day' ? 730 : 60;
         const from = new Date(Date.now() - days * 24 * MS_PER_HOUR);
-        return from.toISOString().slice(0, ISO_DATE_LENGTH);
+        return toUtcIsoDate(from);
     }
 
     /**
@@ -195,7 +184,7 @@ export class YahooMarketProvider implements SiglensMarketProvider {
             const close = q.regularMarketPrice;
 
             return {
-                time: utcMidnightSeconds(kstTradingDate(at)),
+                time: utcMidnightSeconds(kstDateKey(at)),
                 // 장 시작 전에는 open/high/low가 비어 올 수 있다 — 종가로 채워
                 // 0으로 무너진 봉(지표를 크게 왜곡)이 생기지 않게 한다.
                 open: q.regularMarketOpen ?? close,

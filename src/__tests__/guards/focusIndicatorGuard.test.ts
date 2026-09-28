@@ -55,25 +55,25 @@ describe('focus indicator guard', () => {
      * 포커스 링에 알파를 붙이면 표면 위에서 3:1을 못 넘긴다. 토큰 값이 아니라
      * **합성 후** 대비를 재므로, 나중에 토큰이 바뀌어도 규칙이 살아 있다.
      */
-    it.each([
-        'shared/ui/auth/AuthFieldGroup.tsx',
-        'shared/ui/auth/PasswordField.tsx',
-    ])('%s의 포커스 링이 3:1을 넘는다', rel => {
-        const source = read(rel);
-        const rings = [
-            ...source.matchAll(/focus:ring-([a-z][\w-]*(?:\/\d+)?)/g),
-        ]
-            .map(m => m[1])
-            // `ring-2` 같은 두께 유틸리티는 색이 아니다.
-            .filter(v => !/^\d+$/.test(v));
-        expect(rings.length, '포커스 링 색을 못 찾음').toBeGreaterThan(0);
-        for (const ring of rings) {
-            expect(
-                minContrastOverSurfaces(ring, 'either'),
-                `${rel}: focus:ring-${ring}`
-            ).toBeGreaterThanOrEqual(MIN_RATIO);
+    it.each(['shared/ui/TextField.tsx', 'shared/ui/auth/PasswordField.tsx'])(
+        '%s의 포커스 링이 3:1을 넘는다',
+        rel => {
+            const source = read(rel);
+            const rings = [
+                ...source.matchAll(/focus:ring-([a-z][\w-]*(?:\/\d+)?)/g),
+            ]
+                .map(m => m[1])
+                // `ring-2` 같은 두께 유틸리티는 색이 아니다.
+                .filter(v => !/^\d+$/.test(v));
+            expect(rings.length, '포커스 링 색을 못 찾음').toBeGreaterThan(0);
+            for (const ring of rings) {
+                expect(
+                    minContrastOverSurfaces(ring, 'either'),
+                    `${rel}: focus:ring-${ring}`
+                ).toBeGreaterThanOrEqual(MIN_RATIO);
+            }
         }
-    });
+    );
 
     /**
      * 건너뛰기 링크의 **대상이 포커스를 받을 수 있어야** 한다. 없으면 링크가

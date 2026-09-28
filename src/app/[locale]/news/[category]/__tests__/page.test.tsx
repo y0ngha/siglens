@@ -30,21 +30,22 @@ vi.mock('@/shared/cache/staticSymbolCache', () => ({
 }));
 
 // Mock getMarketNewsCards to avoid DB in tests
-vi.mock('@/entities/market-news/api', () => ({
+vi.mock('@/entities/market-news/api/marketNewsRepository', () => ({
     getMarketNewsCards: vi.fn().mockResolvedValue([]),
 }));
 
+// 상수(`@/widgets/market-news/constants`)는 목하지 않는다 — 숫자를 하드코딩하면
+// **실제 값이 무엇이든 테스트가 통과해** 상한 검증이 무의미해진다.
 // Mock MarketNewsDigest and MarketNewsList — they are client components with
 // their own polling logic; RSC test should not drive them.
-vi.mock('@/widgets/market-news', async () => ({
+vi.mock('@/widgets/market-news/MarketNewsDigest', () => ({
     MarketNewsDigest: () => <div data-testid="digest-stub" />,
+}));
+vi.mock('@/widgets/market-news/MarketNewsList', () => ({
     // data-count: 서버가 클라이언트로 몇 행을 넘겼는지 관찰한다(직렬화 상한 검증).
     MarketNewsList: ({ initialItems }: { initialItems: unknown[] }) => (
         <div data-testid="list-stub" data-count={initialItems.length} />
     ),
-    // 상수를 여기 손으로 적지 않는다. 페이지가 이 배럴에서 상수를 읽으므로,
-    // 숫자를 하드코딩하면 **실제 값이 무엇이든 테스트가 통과해** 상한 검증이 무의미해진다.
-    ...(await import('@/widgets/market-news/constants')),
 }));
 
 vi.mock('next/cache', () => ({ revalidateTag: vi.fn() }));

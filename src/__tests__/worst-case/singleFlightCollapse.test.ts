@@ -1,4 +1,7 @@
-import { createSingleFlight } from '@/entities/ticker/lib/utils/singleFlight';
+import {
+    createSingleFlight,
+    __resetSingleFlightForTests,
+} from '@/shared/lib/singleFlight';
 
 describe('SingleFlight collapse and failure propagation', () => {
     it('collapses 100 concurrent calls for same key into one execution', async () => {
@@ -84,7 +87,7 @@ describe('SingleFlight collapse and failure propagation', () => {
         };
 
         const promise1 = sf.run('key', longWork);
-        sf._resetForTest();
+        __resetSingleFlightForTests(sf);
 
         const promise2 = sf.run('key', longWork);
 

@@ -6,16 +6,16 @@ import {
     type ReplayScenario,
     type ReplayTool,
 } from '@/shared/lib/replay/replayScript';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { SURFACE_CARD, SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import {
     CheckIcon,
     LayersIcon,
     QuoteIcon,
-    SiglensMark,
     SparkIcon,
-} from '@/widgets/agent-chat';
-import { LpChatReplay } from './ui/LpChatReplay';
+} from '@/shared/ui/StrokeIcons';
+import { SiglensMark } from '@/widgets/agent-chat/SiglensMark';
+import { ChatReplay } from '@/widgets/replay/ChatReplay';
 import { LP_PRIMARY_BUTTON, LpDisclaimer, LpShell } from './ui/LpShell';
 
 const CTA = 'AI에게 물어보기';
@@ -207,8 +207,15 @@ export function StockChatLanding() {
                 </section>
 
                 <div className="motion-safe:animate-[fade-up_400ms_ease-out_both]">
-                    <LpChatReplay
+                    <ChatReplay
                         scenarios={SCENARIOS}
+                        labels={{
+                            region: 'SIGLENS AI 예시 대화',
+                            pause: '일시정지',
+                            resume: '재생',
+                            sources: '출처',
+                        }}
+                        sourcesSeparator={false}
                         avatar={<SiglensMark />}
                         doneIcon={
                             <CheckIcon className="size-3.5 text-ui-success-text" />
@@ -257,7 +264,12 @@ export function StockChatLanding() {
                                     key={title}
                                     className={cn(SURFACE_CARD, 'p-4 sm:p-5')}
                                 >
-                                    <span className="flex size-10 items-center justify-center rounded-lg bg-secondary-700/40 text-secondary-200">
+                                    <span
+                                        className={cn(
+                                            SURFACE_NESTED,
+                                            'flex size-10 items-center justify-center text-secondary-200'
+                                        )}
+                                    >
                                         <Icon className="size-5" />
                                     </span>
                                     <h3 className="mt-3 text-base font-semibold text-secondary-50">

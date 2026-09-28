@@ -13,7 +13,8 @@ import {
     getYahooStatements,
     type YahooStatementRaw,
 } from './yahooStatementsSource';
-import { currencyForSymbol } from '@/shared/config/marketProfile';
+import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
 const PERCENT = 100;
 
@@ -38,7 +39,7 @@ function toNullable(v: number | undefined): number | null {
 }
 
 function isoDate(d: Date | undefined): string {
-    return d instanceof Date ? d.toISOString().slice(0, 10) : '';
+    return d instanceof Date ? toUtcIsoDate(d) : '';
 }
 
 function fiscalYearOf(row: YahooStatementRaw): string {

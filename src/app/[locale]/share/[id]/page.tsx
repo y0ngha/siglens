@@ -1,17 +1,17 @@
 import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
-import { setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { getCachedSharedAnalysis } from '@/entities/shared-analysis/actions/getCachedSharedAnalysis';
 import { resolveAsOf } from '@/entities/shared-analysis/lib/resolveAsOf';
-import { kindLabelKey } from '@/widgets/share';
+import { kindLabelKey } from '@/entities/shared-analysis/lib/kindLabel';
 import { buildShareMetadata } from '@/entities/shared-analysis/lib/buildShareSeo';
-import { ShareKindPanel } from '@/views/share';
+import { ShareKindPanel } from '@/views/share/ShareKindPanel';
 import { formatKoreanDateTime } from '@/shared/lib/formatKoreanDateTime';
 import { SITE_NAME } from '@/shared/lib/seo';
 import { INVESTMENT_DISCLAIMER_KEY } from '@/shared/lib/legal';
-import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
+import { resolveLocale } from '@/shared/i18n/locales';
+import { enterLocale } from '@/shared/lib/enterLocale';
 
 // 공유 스냅샷은 id별로 달라 정적 생성 불가 → force-dynamic
 export const dynamic = 'force-dynamic';
@@ -22,7 +22,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { id, locale } = await params;
-    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const resolved = resolveLocale(locale);
     // 스냅샷 조회와 번역자 둘은 서로 독립이다 — 직렬로 두면 캐시 미스 시
     // DB 왕복이 끝날 때까지 번역자 로드가 시작조차 하지 않는다.
     //
@@ -43,11 +43,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function SharePage({ params }: Props) {
-    const { locale, id } = await params;
-    // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
-    // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
-    // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
-    setRequestLocale(locale);
+    const { locale: rawLocale, id } = await params;
+    const locale = enterLocale(rawLocale);
     const t = await getTranslations('app.share');
     const lookup = await getCachedSharedAnalysis(id);
 
@@ -61,11 +58,7 @@ export default async function SharePage({ params }: Props) {
 
     const { snapshot, createdAt } = lookup;
     const ticker = snapshot.symbol.toUpperCase();
-    const resolvedLocale = isLocale(locale) ? locale : DEFAULT_LOCALE;
-    const asOf = formatKoreanDateTime(
-        resolveAsOf(snapshot, createdAt),
-        resolvedLocale
-    );
+    const asOf = formatKoreanDateTime(resolveAsOf(snapshot, createdAt), locale);
     const tLabel = await getTranslations('shared.enumLabel');
     const tLegal = await getTranslations('shared.lib.legal');
     const label = tLabel(kindLabelKey(snapshot.kind));

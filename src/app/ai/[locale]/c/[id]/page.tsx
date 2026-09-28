@@ -1,14 +1,12 @@
 import { notFound } from 'next/navigation';
-import { setRequestLocale } from 'next-intl/server';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import {
-    getConversationAction,
-    listConversationsAction,
-} from '@/entities/chat-conversation/actions';
-import { localePath, resolveLocale } from '@/shared/i18n/locales';
+import { getConversationAction } from '@/entities/chat-conversation/actions/getConversationAction';
+import { listConversationsAction } from '@/entities/chat-conversation/actions/listConversationsAction';
+import { localePath } from '@/shared/i18n/locales';
 import { SITE_URL } from '@/shared/lib/seo';
-import { ChatShell } from '@/widgets/agent-chat';
+import { ChatShell } from '@/widgets/agent-chat/ChatShell';
 import { maybeHandoffRedirect } from '../../handoffRedirect';
+import { enterLocale } from '@/shared/lib/enterLocale';
 
 /**
  * No `loading.tsx` here on purpose. The rail switches conversations with a
@@ -28,8 +26,7 @@ export default async function ConversationPage({
     >;
 }) {
     const { locale: raw, id } = await params;
-    const locale = resolveLocale(raw);
-    setRequestLocale(locale);
+    const locale = enterLocale(raw);
     await maybeHandoffRedirect(locale, `/c/${id}`, await searchParams);
     const user = await getCurrentUser();
     if (!user) notFound();

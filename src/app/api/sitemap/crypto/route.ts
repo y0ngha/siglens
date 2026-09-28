@@ -1,8 +1,5 @@
-import {
-    buildCryptoPopularEntries,
-    toUrlSetXml,
-} from '@/entities/sitemap-entry';
-import { loadPopularSitemapInputs } from '@/entities/sitemap-entry/server';
+import { toUrlSetXml } from '@/entities/sitemap-entry/lib/xml';
+import { loadCryptoChildEntries } from '@/app/api/sitemap/_shared/childEntries';
 import { NextResponse } from 'next/server';
 import { SITEMAP_CACHE_CONTROL } from '@/app/api/sitemap/_shared/constants';
 import { rejectAiHost } from '@/app/api/sitemap/_shared/aiHostGuard';
@@ -12,10 +9,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request): Promise<Response> {
     const aiHostRejection = rejectAiHost(request);
     if (aiHostRejection) return aiHostRejection;
-    const now = new Date();
-    const inputs = await loadPopularSitemapInputs();
-    const entries = buildCryptoPopularEntries(now, inputs);
-    const xml = toUrlSetXml(entries);
+    const xml = toUrlSetXml(await loadCryptoChildEntries(new Date()));
 
     return new NextResponse(xml, {
         headers: {

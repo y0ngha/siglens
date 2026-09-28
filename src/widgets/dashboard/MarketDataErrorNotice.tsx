@@ -1,6 +1,7 @@
 import { useTranslations } from 'next-intl';
 import type { DashboardScope } from '@/shared/config/dashboardScope';
 import { cn } from '@/shared/lib/cn';
+import { CloseIcon } from '@/shared/ui/StrokeIcons';
 
 interface MarketDataErrorNoticeProps {
     /**
@@ -76,7 +77,7 @@ export function MarketDataErrorNotice({
                 aria-label={t('MarketDataErrorNotice.76bb07')}
                 className="-m-1 shrink-0 rounded p-1 leading-none text-ui-warning-text transition-colors hover:text-ui-warning-text focus-visible:ring-2 focus-visible:ring-ui-warning/50 focus-visible:outline-none"
             >
-                ✕
+                <CloseIcon />
             </button>
         </div>
     );

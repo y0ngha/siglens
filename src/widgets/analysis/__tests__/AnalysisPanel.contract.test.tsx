@@ -12,21 +12,21 @@
 
 // indicatorCount는 이제 AnalysisPanel에 prop으로 전달한다.
 // useSymbolPageContext mock이 더 이상 필요 없다.
-vi.mock('@/shared/hooks/useCopyToClipboard', () => ({
-    DEFAULT_RESET_MS: 2000,
+vi.mock('@/shared/config/time', () => ({
+    MS_PER_SECOND: 1000,
+    SECONDS_PER_MINUTE: 60,
 }));
 vi.mock('@/shared/lib/formatAnalyzedAt', () => ({
     formatAnalyzedAt: () => '1시간 전',
 }));
-vi.mock('@/entities/analysis', async importOriginal => ({
-    ...(await importOriginal<typeof import('@/entities/analysis')>()),
+vi.mock('@/entities/analysis/lib/staleThreshold', () => ({
     isAnalysisStale: () => false,
 }));
 // personalized-analysis 투명성 배지(§FIX 2)가 소비하는 홀딩 소스 — 실제 구현은
 // react-query 기반이라 QueryClientProvider 없는 이 테스트 트리에서 그대로
 // 렌더하면 크래시한다. 이 파일의 관심사(코어 출력 계약)와 무관하므로
 // "홀딩 없음"으로 고정한 no-op 목으로 대체한다.
-vi.mock('@/features/portfolio-holding', () => ({
+vi.mock('@/features/portfolio-holding/hooks/useSymbolHolding', () => ({
     useSymbolHolding: () => ({
         holding: null,
         isHydrated: true,
@@ -55,7 +55,7 @@ import type {
 } from '@y0ngha/siglens-core';
 
 import { AnalysisPanel } from '../AnalysisPanel';
-import { buildFallbackAnalysis } from '@/entities/analysis';
+import { buildFallbackAnalysis } from '@/entities/analysis/lib/fallbackAnalysis';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 
 // 폴백은 이제 로케일별 빌더다 — 예전 `FALLBACK_ANALYSIS` 상수는 한국어 요약을

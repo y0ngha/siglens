@@ -2,7 +2,7 @@ import { useTranslations } from 'next-intl';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import type { Locale } from '@/shared/i18n/locales';
 import { formatCurrencyForSymbol } from '@/shared/lib/priceFormat';
-import { EmptySectionCard } from './EmptySectionCard';
+import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { formatCompactCurrency } from '@/shared/lib/priceFormat';
 import type {
@@ -17,6 +17,7 @@ import {
     HEADING_SUBSECTION,
 } from '@/shared/lib/typographyStyles';
 import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 const HEADING_ID = 'future-heading';
 const HEADING_CLASS_NAME = cn('mb-4', HEADING_SECTION);
@@ -207,7 +208,7 @@ export function FutureDirectionCard({
     return (
         <section
             aria-labelledby={HEADING_ID}
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+            className={cn(SURFACE_CARD, 'p-6')}
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 {t('FutureDirectionCard.2e31de')}

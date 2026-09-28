@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
-import { buildSymbolOgImage } from '@/entities/og-image';
-import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
+import { buildSymbolOgImage } from '@/entities/og-image/lib/buildSymbolOgImage';
+import { resolveLocale } from '@/shared/i18n/locales';
 
 /**
  * Share card for the SiglensAI landing. A route handler rather than an
@@ -11,7 +11,7 @@ import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
  */
 export async function GET(request: Request): Promise<Response> {
     const raw = new URL(request.url).searchParams.get('locale') ?? '';
-    const locale = isLocale(raw) ? raw : DEFAULT_LOCALE;
+    const locale = resolveLocale(raw);
     const t = await getTranslations({ locale, namespace: 'app.ai' });
     return buildSymbolOgImage({
         ticker: 'SIGLENS AI',

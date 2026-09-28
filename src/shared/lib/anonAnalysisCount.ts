@@ -2,6 +2,7 @@ import {
     LOCAL_STORAGE_ANON_ANALYZED_SYMBOLS_KEY,
     LOCAL_STORAGE_ANON_NUDGE_SHOWN_KEY,
 } from '@/shared/lib/storageKeys';
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
 /**
  * Anonymous distinct-symbol analysis counter — member-reasoning-toggle spec
@@ -20,11 +21,6 @@ interface AnonAnalyzedSymbolsRecord {
 
 interface AnonNudgeShownRecord {
     dateUtc: string;
-}
-
-/** `YYYY-MM-DD` in UTC — the day boundary the counter and nag-prevention flag both reset on. */
-function todayUtc(now: Date): string {
-    return now.toISOString().slice(0, 10);
 }
 
 function readAnalyzedSymbolsRecord(): AnonAnalyzedSymbolsRecord | null {
@@ -79,7 +75,7 @@ export function recordAnonSymbolAnalysis(
     }
 
     try {
-        const today = todayUtc(now);
+        const today = toUtcIsoDate(now);
         const stored = readAnalyzedSymbolsRecord();
         const previousSymbols =
             stored !== null && stored.dateUtc === today ? stored.symbols : [];
@@ -132,7 +128,7 @@ export function hasNudgeShownToday(now: Date = new Date()): boolean {
         ) {
             return false;
         }
-        return (parsed as AnonNudgeShownRecord).dateUtc === todayUtc(now);
+        return (parsed as AnonNudgeShownRecord).dateUtc === toUtcIsoDate(now);
     } catch {
         return false;
     }
@@ -142,7 +138,7 @@ export function hasNudgeShownToday(now: Date = new Date()): boolean {
 export function markNudgeShownToday(now: Date = new Date()): void {
     if (typeof window === 'undefined') return;
     try {
-        const record: AnonNudgeShownRecord = { dateUtc: todayUtc(now) };
+        const record: AnonNudgeShownRecord = { dateUtc: toUtcIsoDate(now) };
         localStorage.setItem(
             LOCAL_STORAGE_ANON_NUDGE_SHOWN_KEY,
             JSON.stringify(record)

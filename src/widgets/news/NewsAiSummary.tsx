@@ -2,13 +2,11 @@
 
 import { useTranslations } from 'next-intl';
 import { useNewsAnalysis } from './hooks/useNewsAnalysis';
-import { useNewsAnalysisTrigger } from './hooks/useNewsAnalysisTrigger';
-import { useWaitForNewsCards } from './hooks/useWaitForNewsCards';
-import {
-    useDefaultModelId,
-    useDefaultReasoning,
-    useAnalysisSettingsHydrated,
-} from '@/features/symbol-model';
+import { useNewsAnalysisTrigger } from '@/entities/news-article/hooks/useNewsAnalysisTrigger';
+import { useWaitForNewsCards } from '@/entities/news-article/hooks/useWaitForNewsCards';
+import { useDefaultModelId } from '@/features/symbol-model/hooks/useDefaultModelId';
+import { useDefaultReasoning } from '@/features/symbol-model/hooks/useDefaultReasoning';
+import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
 import { cn } from '@/shared/lib/cn';
 import {
     type NewsAnalysisResponse,
@@ -16,13 +14,16 @@ import {
 } from '@y0ngha/siglens-core';
 
 import { NEWS_ANALYSIS_PERIOD_KEY } from '@/shared/lib/news/periodLabels';
-import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
+import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
+import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
 import {
     HEADING_SECTION,
     HEADING_SUBSECTION,
 } from '@/shared/lib/typographyStyles';
 import { SENTIMENT_LABEL_KEY } from '@/shared/lib/sentimentDisplay';
 import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
+import { Spinner } from '@/shared/ui/Spinner';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
     bullish: 'bg-ui-success/10 text-ui-success-text',
@@ -43,7 +44,10 @@ function StatusCard({ phase }: StatusCardProps) {
         <section
             aria-labelledby="news-ai-summary-status-heading"
             aria-busy="true"
-            className="w-full max-w-full min-w-0 overflow-hidden rounded-lg border border-secondary-700 bg-secondary-800 p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
+            className={cn(
+                SURFACE_CARD,
+                'w-full max-w-full min-w-0 overflow-hidden p-6 motion-safe:animate-[fade-in_200ms_ease-out]'
+            )}
         >
             <div className="mb-4 flex items-center gap-2">
                 <h2
@@ -57,16 +61,7 @@ function StatusCard({ phase }: StatusCardProps) {
                 </span>
             </div>
             <div className="flex items-center gap-3">
-                <div
-                    aria-hidden="true"
-                    className={cn(
-                        'h-4 w-4 animate-spin rounded-full border-2 motion-reduce:animate-none',
-                        isFetching
-                            ? 'border-primary-400'
-                            : 'border-primary-500',
-                        'border-t-transparent'
-                    )}
-                />
+                <Spinner />
                 <p
                     className="text-sm text-secondary-400"
                     aria-live="polite"
@@ -105,7 +100,10 @@ export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
     return (
         <section
             aria-labelledby="news-ai-summary-heading"
-            className="w-full max-w-full min-w-0 overflow-hidden rounded-lg border border-secondary-700 bg-secondary-800 p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
+            className={cn(
+                SURFACE_CARD,
+                'w-full max-w-full min-w-0 overflow-hidden p-6 motion-safe:animate-[fade-in_200ms_ease-out]'
+            )}
         >
             <div className="mb-4 flex min-w-0 flex-wrap items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-2">

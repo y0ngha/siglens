@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import type { UseQueryResult } from '@tanstack/react-query';
 import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import { usePortfolioHoldings } from '@/entities/portfolio/hooks/usePortfolioHoldings';
-import type { PortfolioHoldingView } from '@/entities/portfolio';
+import type { PortfolioHoldingView } from '@/entities/portfolio/model';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import { PortfolioChipMounted } from '@/features/portfolio-holding/ui/PortfolioChipMounted';
 import { mockViewport } from '@/__tests__/utils/mockViewport';

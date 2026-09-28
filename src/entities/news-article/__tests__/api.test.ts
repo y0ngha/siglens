@@ -26,7 +26,7 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(),
 }));
 
-vi.mock('@/entities/earnings-report', () => ({
+vi.mock('@/entities/earnings-report/api', () => ({
     getNextEarningsReport: vi.fn(),
 }));
 
@@ -45,7 +45,7 @@ vi.mock('@/entities/economy/api/loadNewsMacroCalendar', () => ({
     ]),
 }));
 
-vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
+vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: vi.fn(),
 }));
 
@@ -89,10 +89,10 @@ import {
     DrizzleNewsRepository,
     prewarmNews,
 } from '@/entities/news-article/api';
-import type { NewsRow } from '@/entities/news-article';
+import type { NewsRow } from '@/entities/news-article/api';
 import { getDatabaseClient } from '@/shared/db/client';
-import { getNextEarningsReport } from '@/entities/earnings-report';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
+import { getNextEarningsReport } from '@/entities/earnings-report/api';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { NEWS_ANALYSIS_LOOKBACK_MS } from '../lib/newsLookback';
 import {
     ingestNewsForSymbol,
@@ -1105,11 +1105,9 @@ describe('prewarmNews', () => {
             );
         });
 
-        // 리뷰 지적(PR #700): resolveAssetClass()가 내부적으로 resolveMarketProfile()을
-        // 호출하고 ingestNewsForSymbol도 profileId 없이 호출되면 다시 resolveMarketProfile을
-        // 호출해, 심볼당 밤마다 getAssetInfo Redis 왕복이 중복됐다. prewarmNews는 이제
-        // resolveMarketProfile을 한 번만 호출하고 그 결과를 ingestNewsForSymbol에 그대로
-        // 전달해야 한다.
+        // ingestNewsForSymbol이 profileId 없이 호출되면 resolveMarketProfile을 다시
+        // 호출해 심볼당 밤마다 getAssetInfo Redis 왕복이 중복된다. prewarmNews는
+        // resolveMarketProfile을 한 번만 호출하고 그 결과를 그대로 전달해야 한다.
         it('resolveMarketProfile을 정확히 1회만 호출하고 그 결과를 ingestNewsForSymbol에 전달한다', async () => {
             await prewarmNews('AAPL', 'Apple Inc.', false);
 

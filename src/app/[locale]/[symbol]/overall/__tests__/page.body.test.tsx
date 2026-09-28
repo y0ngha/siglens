@@ -25,11 +25,15 @@ vi.mock('next/navigation', () => ({
     notFound: vi.fn(),
 }));
 
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker/lib/assetClassification', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+}));
+vi.mock('@/entities/ticker/lib/ticker', () => ({
     pickAssetName: (info: { name: string; koreanName?: string }) =>
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn((assetInfo: { name: string }) => assetInfo.name),
+}));
+vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 
@@ -43,7 +47,7 @@ vi.mock('@/shared/cache/staticSymbolCache', () => ({
     ),
 }));
 
-vi.mock('@/entities/news-article', () => ({
+vi.mock('@/entities/news-article/lib/cacheKeys', () => ({
     NEWS_LIST_CACHE_KEY: 'news-list',
 }));
 vi.mock('@/entities/news-article/api', () => ({
@@ -53,11 +57,13 @@ vi.mock('@/entities/news-article/api', () => ({
 vi.mock('@/widgets/overall/OverallContent', () => ({
     OverallContent: () => null,
 }));
-vi.mock('@/widgets/overall', () => ({
+vi.mock('@/widgets/overall/OverallFactualFallback', () => ({
     OverallFactualFallback: () => null,
+}));
+vi.mock('@/widgets/overall/OverallFactsSummary', () => ({
     OverallFactsSummary: () => null,
 }));
-vi.mock('@/views/symbol', () => ({
+vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({
     SymbolPageHeading: ({ children }: { children: unknown }) => children,
 }));
 vi.mock('@/shared/ui/CrossLinkCards', () => ({
@@ -107,9 +113,9 @@ vi.mock('@/shared/config/market', async importOriginal => ({
 import { Suspense, isValidElement, type ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import OverallPage from '@/app/[locale]/[symbol]/overall/page';
-import { getAssetInfoResilient } from '@/entities/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { OverallContent } from '@/widgets/overall/OverallContent';
-import { OverallFactualFallback } from '@/widgets/overall';
+import { OverallFactualFallback } from '@/widgets/overall/OverallFactualFallback';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { expectVisibleFaqWithoutJsonLd } from '@/__tests__/utils/expectFaqSingleSource';
 import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';

@@ -1,29 +1,26 @@
 import { getTranslations } from 'next-intl/server';
 import { FearGreedPage } from '@/widgets/fear-greed/FearGreedPage';
-import { setRequestLocale } from 'next-intl/server';
-import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
+import { resolveLocale } from '@/shared/i18n/locales';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { ErrorBoundary } from 'react-error-boundary';
-import { FearGreedPageError } from '@/widgets/fear-greed';
-import { FearGreedFactsSummary, SymbolPageHeading } from '@/views/symbol';
+import { FearGreedPageError } from '@/widgets/fear-greed/FearGreedPageError';
+import { FearGreedFactsSummary } from '@/views/symbol/fearGreed/FearGreedFactsSummary';
+import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { FaqSection } from '@/shared/ui/FaqSection';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import {
-    DEFAULT_TIMEFRAME,
-    SymbolRouteParams,
-    isAdmissibleSymbolShape,
-} from '@/shared/config/market';
+import { DEFAULT_TIMEFRAME, SymbolRouteParams } from '@/shared/config/market';
+import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
+import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
+import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getSeedBarsStatic } from '@/entities/bars/lib/barsStaticCache';
+import { buildTechnicalFacts } from '@/entities/bars/lib/technicalFacts';
 import {
-    buildAssetAboutNode,
-    buildDisplayName,
-    pickAssetName,
-    getAssetInfoResilient,
-} from '@/entities/ticker';
-import { getSeedBarsStatic } from '@/entities/bars';
-import { buildTechnicalFacts } from '@/views/symbol/utils/technicalFacts';
-import { getDescriptor, marketProfileOf } from '@/shared/config/marketProfile';
+    getDescriptor,
+    marketProfileOf,
+} from '@/shared/config/marketProfile/registry';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import {
@@ -45,6 +42,7 @@ import type { BarsData } from '@y0ngha/siglens-core';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { enterLocale } from '@/shared/lib/enterLocale';
 
 // 종목당 SEO 콘텐츠는 고정이고 동적 데이터는 클라가 재hydrate한다. 엣지 캐시로
 // compute 호출을 줄인다. (일시 인프라 장애의 404 캐싱은 getAssetInfo strict로 차단)
@@ -97,7 +95,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { locale: rawLocale, symbol } = await params;
-    const locale = isLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
+    const locale = resolveLocale(rawLocale);
     const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     const ticker = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
@@ -121,7 +119,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         displayName,
         koreanName: assetInfo.koreanName,
         englishName: assetInfo.name,
-        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        locale,
     });
     /*
      * 종목별 공포·탐욕 탭은 **항상 noindex**다 (2026-09-17 운영 렌더 감사).
@@ -146,11 +144,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function SymbolFearGreedPage({ params }: Props) {
-    const { locale, symbol } = await params;
-    // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
-    // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
-    // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
-    setRequestLocale(locale);
+    const { locale: rawLocale, symbol } = await params;
+    const locale = enterLocale(rawLocale);
     const t = await getTranslations('app.symbol');
     const tSeo = await getTranslations('shared.seo');
     const ticker = symbol.toUpperCase();
@@ -167,11 +162,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
         notFound();
     }
 
-    const displayName = buildDisplayName(
-        assetInfo,
-        ticker,
-        isLocale(locale) ? locale : DEFAULT_LOCALE
-    );
+    const displayName = buildDisplayName(assetInfo, ticker, locale);
     const marketProfile = marketProfileOf(assetInfo);
     const assetClass = getDescriptor(marketProfile).assetClass;
     const marketFearGreedLink = MARKET_FEAR_GREED_LINK[marketProfile];
@@ -184,7 +175,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
             displayName,
             koreanName: assetInfo.koreanName,
             englishName: assetInfo.name,
-            locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+            locale,
         }
     );
 
@@ -192,11 +183,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
     // undefined로 자연 생략된다. crypto는 schema.org 표준 타입이 없어 about 노드 자체를 두지 않는다.
     const aboutNode = buildAssetAboutNode(
         ticker,
-        pickAssetName(
-            assetInfo,
-            ticker,
-            isLocale(locale) ? locale : DEFAULT_LOCALE
-        ),
+        pickAssetName(assetInfo, ticker, locale),
         assetInfo.fmpSymbol,
         assetClass
     );
@@ -205,7 +192,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
         name: fullTitle,
         description,
         about: aboutNode,
-        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        locale,
     });
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd(
@@ -213,7 +200,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
             { name: displayName, url: buildSymbolSeoContent(ticker, tSeo).url },
             { name: t('page.f9482c'), url },
         ],
-        isLocale(locale) ? locale : DEFAULT_LOCALE
+        locale
     );
 
     /**

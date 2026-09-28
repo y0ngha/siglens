@@ -1,36 +1,34 @@
-import { getTranslations, setRequestLocale } from 'next-intl/server';
-import type { PositionTranslator } from '@/widgets/portfolio-position';
+import { getTranslations } from 'next-intl/server';
+import type { PositionTranslator } from '@/widgets/portfolio-position/lib/positionBuildingNotes';
 import {
     BAND_COUNT,
     computePosition,
-    computeVolumeByBand,
+} from '@/widgets/portfolio-position/lib/positionGeometry';
+import { computeVolumeByBand } from '@/widgets/portfolio-position/lib/volumeByBand';
+import {
     describeAvgFloor,
     formatAmountAligned,
-    PositionTabContent,
-} from '@/widgets/portfolio-position';
-import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
+} from '@/widgets/portfolio-position/lib/positionBuildingNotes';
+import { PositionTabContent } from '@/widgets/portfolio-position/ui/PositionTabContent';
+import { resolveLocale } from '@/shared/i18n/locales';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
-import { SymbolPageHeading } from '@/views/symbol';
-import {
-    DEFAULT_TIMEFRAME,
-    SymbolRouteParams,
-    isAdmissibleSymbolShape,
-} from '@/shared/config/market';
+import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
+import { DEFAULT_TIMEFRAME, SymbolRouteParams } from '@/shared/config/market';
+import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
-import {
-    buildAssetAboutNode,
-    buildDisplayName,
-    getAssetInfoResilient,
-} from '@/entities/ticker';
-// isTabAllowedForSymbol은 barrel에서 제외 — fundamental page.tsx와 동일하게
-// api.ts에서 직접 deep import한다 (entities/ticker/index.ts 상단 주석 참고).
+import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
+import { buildDisplayName } from '@/entities/ticker/lib/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
-import { getQuantizedBarsStatic } from '@/entities/bars';
-import { getDescriptor, marketProfileOf } from '@/shared/config/marketProfile';
+import { getQuantizedBarsStatic } from '@/entities/bars/lib/barsStaticCache';
+import {
+    getDescriptor,
+    marketProfileOf,
+} from '@/shared/config/marketProfile/registry';
 import {
     buildTechnicalFacts,
     RECENT_BARS_WINDOW,
-} from '@/views/symbol/utils/technicalFacts';
+} from '@/entities/bars/lib/technicalFacts';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolSeoContent,
@@ -48,6 +46,7 @@ import { JsonLd } from '@/shared/ui/JsonLd';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { enterLocale } from '@/shared/lib/enterLocale';
 
 // 12h — "내 위치"는 최근 가격 범위(low52w/high52w/lastClose)만 SSR로 내려주는
 // 느리게 변하는 개인화 표층이다. ★평단/수익률은 client(hydration+user 게이트)라
@@ -67,7 +66,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { locale: rawLocale, symbol } = await params;
-    const locale = isLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
+    const locale = resolveLocale(rawLocale);
     const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     const upper = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
@@ -361,11 +360,8 @@ function resolveCurrentPricePosition(
 }
 
 export default async function PositionPage({ params }: Props) {
-    const { locale, symbol } = await params;
-    // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
-    // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
-    // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
-    setRequestLocale(locale);
+    const { locale: rawLocale, symbol } = await params;
+    const locale = enterLocale(rawLocale);
     const t = await getTranslations('app.symbol');
     const upper = symbol.toUpperCase();
 
@@ -382,11 +378,7 @@ export default async function PositionPage({ params }: Props) {
     }
     if (!(await isTabAllowedForSymbol(upper, 'position'))) notFound();
 
-    const displayName = buildDisplayName(
-        assetInfo,
-        upper,
-        isLocale(locale) ? locale : DEFAULT_LOCALE
-    );
+    const displayName = buildDisplayName(assetInfo, upper, locale);
     const marketProfile = marketProfileOf(assetInfo);
 
     // 구조화 데이터 — 이 탭만 9개 심볼 탭 중 유일하게 WebPage/BreadcrumbList가
@@ -399,7 +391,6 @@ export default async function PositionPage({ params }: Props) {
     // 결과를 중단해 표시 이득이 없고, 402개 종목에 같은 문답을 복제하면 이
     // 탭이 이미 가장 얇다는 문제(아래 색인 방침 히스토리)를 키우기만 한다.
     const tSeo = await getTranslations('shared.seo');
-    const resolvedLocale = isLocale(locale) ? locale : DEFAULT_LOCALE;
     const seo = buildPositionSeo(
         upper,
         displayName,
@@ -416,7 +407,7 @@ export default async function PositionPage({ params }: Props) {
             assetInfo.fmpSymbol,
             getDescriptor(marketProfile).assetClass
         ),
-        locale: resolvedLocale,
+        locale,
     });
     // sibling 탭과 동일한 3단계 — buildBreadcrumbJsonLd가 Siglens를 자동 prepend한다.
     const breadcrumbJsonLd = buildBreadcrumbJsonLd(
@@ -424,7 +415,7 @@ export default async function PositionPage({ params }: Props) {
             { name: displayName, url: buildSymbolSeoContent(upper, tSeo).url },
             { name: tSeo('position.breadcrumb'), url: seo.url },
         ],
-        resolvedLocale
+        locale
     );
 
     // range가 degrade되면(bars 실패 등) null — 섹션 자체를 생략한다(크래시도

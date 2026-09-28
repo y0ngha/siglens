@@ -20,7 +20,7 @@ import {
     type Timeframe,
 } from '@y0ngha/siglens-core';
 import { MS_PER_MINUTE, MS_PER_SECOND } from '@/shared/config/time';
-import { useSymbolHolding } from '@/features/portfolio-holding';
+import { useSymbolHolding } from '@/features/portfolio-holding/hooks/useSymbolHolding';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
 
 /**
@@ -51,11 +51,9 @@ type RunAnalysisActionResult =
      * 쿨다운 상태를 알게 되는 유일한 경로다.
      */
     | { status: 'reanalyze_cooldown'; remainingMs: number };
-import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
-import {
-    getReanalyzeCooldownMs as fetchReanalyzeCooldownMs,
-    normalizeAnalysisResponse,
-} from '@/entities/analysis';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
+import { getReanalyzeCooldownMs as fetchReanalyzeCooldownMs } from '@/entities/analysis/lib/reanalyzeCooldown';
+import { normalizeAnalysisResponse } from '@/entities/analysis/lib/normalizeAnalysisResponse';
 
 interface AnalyzeMutationVariables {
     symbol: string;
@@ -134,7 +132,6 @@ interface UseAnalysisOptions {
 
 // symbol-page → analysis는 허용된 하향 의존(cross-widget cross-import).
 import type { CooldownNotice } from '@/widgets/analysis/model/types';
-export type { CooldownNotice } from '@/widgets/analysis/model/types';
 
 export interface UseAnalysisResult {
     analysis: AnalysisResponse;

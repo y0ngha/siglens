@@ -28,8 +28,8 @@ vi.mock('@y0ngha/siglens-core', () => ({
     ) => ((r ?? modes.default === 'on') ? modes.on : modes.off),
     DEEPSEEK_V4_1_FLASH_MODEL: 'deepseek-v4.1-flash',
     peekAnalysisCache: vi.fn(),
-    // Task 9: @/views/symbol barrel now also exports FearGreedFactsSummary,
-    // which pulls in fearGreedLabels → POC_WINDOW_DEFAULT at module scope.
+    // FearGreedFactsSummary → fearGreedLabels reads POC_WINDOW_DEFAULT at
+    // module scope whenever it lands in the import graph.
     POC_WINDOW_DEFAULT: 60,
     // getSeedBarsStatic(barsStaticCache)이 지표 화이트리스트의 baseline으로 쓴다.
     EMPTY_INDICATOR_RESULT: { ma: {}, ema: {} },
@@ -44,22 +44,29 @@ vi.mock('@/shared/config/market', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/config/market')>()),
     DEFAULT_TIMEFRAME: '1Day',
 }));
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker/lib/assetClassification', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+}));
+vi.mock('@/entities/ticker/lib/ticker', () => ({
     pickAssetName: (info: { name: string; koreanName?: string }) =>
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
+}));
+vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
-vi.mock('@/entities/symbol-indexability', () => ({
-    evaluateSymbolIndexability: vi.fn(() => ({
-        indexable: true,
-        reason: 'popular',
-    })),
-}));
+vi.mock(
+    '@/entities/symbol-indexability/lib/evaluateSymbolIndexability',
+    () => ({
+        evaluateSymbolIndexability: vi.fn(() => ({
+            indexable: true,
+            reason: 'popular',
+        })),
+    })
+);
 // `indicators`는 BarsData의 필수 필드다 — 비워 두면 seed 축소(getSeedBarsStatic)가
 // undefined를 읽는다. 실제 shape에 맞춰 빈 지표를 함께 준다.
-vi.mock('@/entities/bars/actions', () => ({
+vi.mock('@/entities/bars/actions/getBarsAction', () => ({
     getBarsAction: vi
         .fn()
         .mockResolvedValue({ bars: [], indicators: { ma: {}, ema: {} } }),
@@ -69,7 +76,7 @@ vi.mock('@/entities/bars/actions', () => ({
 vi.mock('@/shared/api/market/sessionSpecFor', () => ({
     sessionSpecFor: vi.fn(() => ({})),
 }));
-vi.mock('@/entities/skill', () => ({
+vi.mock('@/entities/skill/api', () => ({
     countSkillFiles: vi.fn().mockResolvedValue({
         indicators: 13,
         candlesticks: 30,
@@ -130,16 +137,16 @@ import {
     default as SymbolPage,
     revalidate,
 } from '@/app/[locale]/[symbol]/page';
-import { getAssetInfoResilient } from '@/entities/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import {
     DEEPSEEK_V4_1_FLASH_MODEL,
     peekAnalysisCache,
 } from '@y0ngha/siglens-core';
-import { evaluateSymbolIndexability } from '@/entities/symbol-indexability';
+import { evaluateSymbolIndexability } from '@/entities/symbol-indexability/lib/evaluateSymbolIndexability';
 import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
 import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
-import { RelatedSymbols } from '@/views/symbol';
-import { getBarsAction } from '@/entities/bars/actions';
+import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
+import { getBarsAction } from '@/entities/bars/actions/getBarsAction';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { isValidElement, type ReactNode } from 'react';
 import { notFound } from 'next/navigation';

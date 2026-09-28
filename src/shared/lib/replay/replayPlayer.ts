@@ -37,28 +37,28 @@ export const completeFrame = (index: number): Frame => ({
 });
 
 /** Delay before the first question starts typing after mount. */
-export const FIRST_START_MS = 300;
+const FIRST_START_MS = 300;
 /** Delay before each following scenario starts typing. */
-export const NEXT_START_MS = 900;
+const NEXT_START_MS = 900;
 /** Delay between the question finishing and the first tool lighting up. */
-export const AFTER_TYPING_MS = 350;
+const AFTER_TYPING_MS = 350;
 /** Delay between one tool finishing and the next one starting. */
-export const TOOL_GAP_MS = 120;
+const TOOL_GAP_MS = 120;
 /** Delay between the last tool finishing and the answer starting to stream. */
-export const BEFORE_ANSWER_MS = 350;
+const BEFORE_ANSWER_MS = 350;
 /** Per-character typing speed for the question bubble, jittered ±40%. */
-export const TYPE_MS = 38;
+const TYPE_MS = 38;
 /** Characters revealed per answer-streaming tick. */
-export const STREAM_STEP = 3;
+const STREAM_STEP = 3;
 /** Delay per answer-streaming tick. */
-export const STREAM_MS = 28;
+const STREAM_MS = 28;
 /** How long the finished answer stays on screen before the next scenario. */
-export const HOLD_MS = 5200;
+const HOLD_MS = 5200;
 /** Poll interval `waitPlaying` uses to notice pause/visibility changes. */
-export const TICK_MS = 40;
+const TICK_MS = 40;
 
 /** Thrown by `waitPlaying` when playback was cancelled — never a real error. */
-export class PlaybackCancelled extends Error {
+class PlaybackCancelled extends Error {
     constructor() {
         super('cancelled');
         this.name = 'PlaybackCancelled';

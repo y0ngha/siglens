@@ -1,5 +1,5 @@
 import type { BacktestCase } from '@y0ngha/siglens-core';
-import backtestData from '@/app/[locale]/backtesting/data.json';
+import backtestData from '@/entities/backtest-case/data/data.json';
 import { deriveBacktestStats } from '../lib/deriveBacktestStats';
 
 function makeCase(overrides: Partial<BacktestCase>): BacktestCase {

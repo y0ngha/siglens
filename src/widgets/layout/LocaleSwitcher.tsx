@@ -11,6 +11,8 @@ import {
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { cn } from '@/shared/lib/cn';
+import { CheckIcon, GlobeIcon } from '@/shared/ui/StrokeIcons';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 interface LocaleSwitcherProps {
     readonly className?: string;
@@ -68,40 +70,6 @@ interface LocaleSwitcherProps {
  * 루트 진입 시 리다이렉트하고 싶어지는데, 그건 `localeDetection: false`로 막아 둔
  * 바로 그 동작(크롤러 이탈 + CDN 캐시 오염)이다.
  */
-
-/**
- * 언어 전환의 관용 아이콘 — 지구본.
- *
- * **인라인 SVG다.** `widgets/layout` 배럴은 헤더를 통해 33개 전 라우트의
- * first-load 청크에 들어 있고 `package.json`에 `sideEffects`가 없어 미사용
- * re-export가 제거되지 않는다 — 아이콘 패키지를 들이면 그 무게가 그대로
- * 전역으로 퍼진다. `SearchTriggerButton`·`HeaderMobileMenu`도 같은 이유로
- * 인라인 SVG를 쓴다.
- *
- * 구글 번역의 `文A` 마크를 베끼지 않는다 — 특정 서비스의 식별 표지다.
- * 지구본은 언어 선택의 일반 관용구다.
- *
- * 획 두께·크기는 `ThemeToggle`의 아이콘과 맞춘다(`h-5 w-5`, `strokeWidth 1.6`) —
- * 두 트리거가 헤더에서 나란히 서므로 굵기가 다르면 한쪽이 더 진해 보인다.
- */
-function GlobeIcon() {
-    return (
-        <svg
-            aria-hidden="true"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-5 w-5 shrink-0"
-        >
-            <circle cx="12" cy="12" r="9" />
-            <path d="M3 12h18" />
-            <path d="M12 3a14 14 0 0 1 3.6 9A14 14 0 0 1 12 21a14 14 0 0 1-3.6-9A14 14 0 0 1 12 3z" />
-        </svg>
-    );
-}
 
 export function LocaleSwitcher({
     className,
@@ -186,7 +154,9 @@ export function LocaleSwitcher({
                     showLabel ? 'px-2' : 'w-11 px-0 sm:w-auto sm:px-2'
                 )}
             >
-                <GlobeIcon />
+                {/* 구글 번역의 `文A` 마크는 특정 서비스의 식별 표지라 쓰지 않는다 —
+                    지구본이 언어 선택의 일반 관용구다. */}
+                <GlobeIcon className="size-5 shrink-0" />
                 <span
                     className={cn(
                         'text-sm',
@@ -204,7 +174,8 @@ export function LocaleSwitcher({
                     role="radiogroup"
                     aria-label={t('localeSwitcher.label')}
                     className={cn(
-                        'absolute top-full z-10 mt-1 w-max min-w-44 rounded-lg border border-secondary-700 bg-secondary-800 p-1 shadow-lg',
+                        SURFACE_CARD,
+                        'absolute top-full z-10 mt-1 w-max min-w-44 p-1 shadow-lg',
                         align === 'start' ? 'left-0' : 'right-0'
                     )}
                 >
@@ -250,18 +221,7 @@ export function LocaleSwitcher({
                                 {/* 선택 표시를 색에만 싣지 않는다 — 체크 도형으로
                                     한 번 더 말한다(WCAG 1.4.1). */}
                                 {selected && (
-                                    <svg
-                                        viewBox="0 0 16 16"
-                                        aria-hidden="true"
-                                        className="h-4 w-4 shrink-0"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                    >
-                                        <path d="m3.5 8.5 3 3 6-7" />
-                                    </svg>
+                                    <CheckIcon className="size-4 shrink-0" />
                                 )}
                             </button>
                         );

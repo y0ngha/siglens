@@ -20,7 +20,6 @@ import type {
 } from '@y0ngha/siglens-core';
 import { filterAnalysisResult } from '@y0ngha/siglens-core';
 import fixture from '@e2e/fixtures/analysis.json';
-export { isE2E } from './e2eEnv';
 
 /**
  * The fixture is authored by hand to match each core `*AnalysisResponse` shape.

@@ -44,5 +44,8 @@ export function sentimentLabel(
  * silent drift.
  */
 export function isNewsSentiment(value: unknown): value is NewsSentiment {
-    return typeof value === 'string' && value in SENTIMENT_LABEL_KEY;
+    // `in`은 프로토타입까지 본다(`'toString' in {}` → true) — 자기 키만 인정한다.
+    return (
+        typeof value === 'string' && Object.hasOwn(SENTIMENT_LABEL_KEY, value)
+    );
 }

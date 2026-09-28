@@ -5,7 +5,7 @@ import type {
     NewsImpact,
     NewsSentiment,
 } from '@y0ngha/siglens-core';
-import type { NewsRow } from '@/entities/news-article';
+import type { NewsRow } from '@/entities/news-article/api';
 
 /** LLM-enriched NewsRow — titleKo/summaryKo/sentiment/category/priceImpact are guaranteed non-null; bodyKo stays optional. */
 export interface EnrichedNewsRow extends NewsRow {

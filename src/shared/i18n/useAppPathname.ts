@@ -14,7 +14,7 @@ import { splitLocalePath } from './locales';
  *
  * ⚠️ **이동에 재사용하는 경로에는 쓰지 말 것.** `router.replace(pathname + '?x=1')`
  * 처럼 현재 경로를 그대로 다시 밟는 코드는 접두사가 **있어야** 한다
- * (`useQueryParamState`, `useSectorSignalState`). 그런 곳은 `usePathname()`을 직접 쓴다.
+ * (`useSectorSignalState`, `useBacktestFilter`). 그런 곳은 `usePathname()`을 직접 쓴다.
  */
 export function useAppPathname(): string {
     return splitLocalePath(usePathname()).path;

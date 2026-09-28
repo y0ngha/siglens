@@ -21,24 +21,45 @@ vi.mock('@/widgets/overall/hooks/useOverallAnalysis', async importOriginal => {
         useOverallAnalysis: vi.fn(),
     };
 });
-vi.mock('@/features/symbol-model', () => ({
+vi.mock('@/features/symbol-model/hooks/useDefaultModelId', () => ({
     useDefaultModelId: vi.fn(() => 'gemini-3.5-flash-lite'),
+}));
+vi.mock('@/features/symbol-model/hooks/useDefaultReasoning', () => ({
     useDefaultReasoning: vi.fn(() => false),
+}));
+vi.mock('@/features/symbol-model/hooks/useAnalysisSettingsHydrated', () => ({
     useAnalysisSettingsHydrated: vi.fn(() => true),
+}));
+vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
     useSymbolModel: vi.fn(() => ({ tier: 'member', isTierHydrated: true })),
 }));
 // /news와 동일 게이트 적용 — 두 훅을 단순화해 효과만 검증한다.
 // useNewsAnalysisTrigger는 fire-and-forget mount effect이므로 no-op.
 // useWaitForNewsCards는 prop으로 받은 initialReady를 그대로 isReady로 노출한다.
-// barrel(@/widgets/news)을 mock — production이 barrel을 import하므로 일치 필요.
-vi.mock('@/widgets/news', async importOriginal => ({
-    ...(await importOriginal<typeof import('@/widgets/news')>()),
-    useNewsAnalysisTrigger: vi.fn(),
-    useWaitForNewsCards: vi.fn((_symbol: string, initiallyReady: boolean) => ({
-        isReady: initiallyReady,
-        pollError: null,
-    })),
-}));
+// production이 import하는 정의 파일(@/widgets/news/hooks/*)을 mock한다.
+vi.mock(
+    '@/entities/news-article/hooks/useNewsAnalysisTrigger',
+    async importOriginal => ({
+        ...(await importOriginal<
+            typeof import('@/entities/news-article/hooks/useNewsAnalysisTrigger')
+        >()),
+        useNewsAnalysisTrigger: vi.fn(),
+    })
+);
+vi.mock(
+    '@/entities/news-article/hooks/useWaitForNewsCards',
+    async importOriginal => ({
+        ...(await importOriginal<
+            typeof import('@/entities/news-article/hooks/useWaitForNewsCards')
+        >()),
+        useWaitForNewsCards: vi.fn(
+            (_symbol: string, initiallyReady: boolean) => ({
+                isReady: initiallyReady,
+                pollError: null,
+            })
+        ),
+    })
+);
 // react-markdown은 ESM-only라 Jest 환경에서 직접 로드하면 실패한다. 본 테스트는
 // markdown rendering이 아니라 OverallContent의 layout과 trigger 동작을 검증하므로
 // MarkdownText를 단순 wrapper로 대체한다.
@@ -50,13 +71,13 @@ vi.mock('@/shared/ui/MarkdownText', () => ({
 // Server Action 묶음 — SSR seed describe가 실제 useOverallAnalysis를 사용할 때
 // 훅이 import하는 server-only 체인을 끊기 위해 mock한다. seed(done) 경로에서는
 // submitOverallAnalysisAction이 호출되지 않음을 검증한다.
-vi.mock('@/entities/analysis/actions', () => ({
+vi.mock('@/entities/analysis/actions/runOverallAnalysisAction', () => ({
     runOverallAnalysisAction: vi.fn(),
 }));
-vi.mock('@/entities/news-article/actions', () => ({
+vi.mock('@/entities/news-article/actions/submitNewsAnalysisAction', () => ({
     submitNewsAnalysisAction: vi.fn(),
 }));
-vi.mock('@/entities/options-chain/actions', () => ({
+vi.mock('@/entities/options-chain/actions/optionsActions', () => ({
     submitOptionsAnalysisAction: vi.fn(),
 }));
 // useSearchParams를 테스트별로 바꿀 수 있도록 mutable ref로 모킹한다(§18 tf 분기 검증용).
@@ -76,8 +97,10 @@ import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
 import { OverallContent } from '@/widgets/overall/OverallContent';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { useOverallAnalysis } from '@/widgets/overall/hooks/useOverallAnalysis';
-import { runOverallAnalysisAction } from '@/entities/analysis/actions';
+import { runOverallAnalysisAction } from '@/entities/analysis/actions/runOverallAnalysisAction';
 import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
+import { useNewsAnalysisTrigger } from '@/entities/news-article/hooks/useNewsAnalysisTrigger';
+import { useWaitForNewsCards } from '@/entities/news-article/hooks/useWaitForNewsCards';
 
 const mockUseOverallAnalysis = useOverallAnalysis as MockedFunction<
     typeof useOverallAnalysis
@@ -140,7 +163,6 @@ describe('OverallContent tf 쿼리 파라미터 처리 (§18 분기)', () => {
             '1Hour',
             'gemini-3.5-flash-lite',
             undefined,
-            'equity',
             false,
             true
         );
@@ -162,7 +184,6 @@ describe('OverallContent tf 쿼리 파라미터 처리 (§18 분기)', () => {
             DEFAULT_TIMEFRAME,
             'gemini-3.5-flash-lite',
             undefined,
-            'equity',
             false,
             true
         );
@@ -571,8 +592,6 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
             state: { status: 'idle' },
             trigger: vi.fn(),
         });
-        const { useNewsAnalysisTrigger, useWaitForNewsCards } =
-            await import('@/widgets/news');
         (
             useNewsAnalysisTrigger as MockedFunction<
                 typeof useNewsAnalysisTrigger
@@ -588,7 +607,6 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
     });
 
     it('마운트 시 useNewsAnalysisTrigger가 symbol과 함께 호출된다 (/news와 동일 fire-and-forget trigger)', async () => {
-        const { useNewsAnalysisTrigger } = await import('@/widgets/news');
         render(
             <OverallContent
                 symbol="AAPL"
@@ -654,7 +672,6 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
     });
 
     it('useWaitForNewsCards가 pollError를 반환하면 inline alert fallback + 다시 시도 버튼을 렌더한다', async () => {
-        const { useWaitForNewsCards } = await import('@/widgets/news');
         (
             useWaitForNewsCards as MockedFunction<typeof useWaitForNewsCards>
         ).mockReturnValue({
@@ -683,7 +700,6 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
     });
 
     it('"다시 시도" 버튼 클릭 시 페이지를 새로고침한다', async () => {
-        const { useWaitForNewsCards } = await import('@/widgets/news');
         (
             useWaitForNewsCards as MockedFunction<typeof useWaitForNewsCards>
         ).mockReturnValue({
@@ -717,15 +733,15 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
 });
 
 /**
- * F1: crypto assetClass — OverallContent hides options/fundamental/financials sections,
- * and useOverallAnalysis is called with assetClass='crypto'.
+ * F1: crypto assetClass — OverallContent hides options/fundamental/financials sections.
+ * `assetClass` is not forwarded to `useOverallAnalysis` (axis gating for crypto happens
+ * server-side in `runOverallAnalysis`).
  */
 describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
     beforeEach(async () => {
         mockUseOverallAnalysis.mockReset();
         // Reset useWaitForNewsCards to the default (non-error) state so the
         // previous describe's pollError mock doesn't bleed into these tests.
-        const { useWaitForNewsCards } = await import('@/widgets/news');
         (
             useWaitForNewsCards as MockedFunction<typeof useWaitForNewsCards>
         ).mockImplementation((_symbol: string, initiallyReady: boolean) => ({
@@ -734,7 +750,7 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
         }));
     });
 
-    it('useOverallAnalysis를 assetClass=crypto로 호출한다', () => {
+    it('useOverallAnalysis를 assetClass 없이 호출한다', () => {
         mockUseOverallAnalysis.mockReturnValue({
             state: { status: 'idle' },
             trigger: vi.fn(),
@@ -754,7 +770,6 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
             DEFAULT_TIMEFRAME,
             'gemini-3.5-flash-lite',
             undefined, // initialAnalysis
-            'crypto',
             false,
             true
         );

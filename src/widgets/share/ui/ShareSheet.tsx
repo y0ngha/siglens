@@ -7,7 +7,8 @@ import { useCopyToClipboard } from '@/shared/hooks/useCopyToClipboard';
 import { cn } from '@/shared/lib/cn';
 import { buildTweetIntentUrl } from '@/shared/lib/share';
 import { useEffect, useRef, useState } from 'react';
-import { CheckIcon, LinkIcon, XLogoIcon } from './icons';
+import { CheckIcon, LinkIcon } from '@/shared/ui/StrokeIcons';
+import { XLogoIcon } from './icons';
 
 interface ShareSheetProps {
     shareUrl: string;
@@ -60,11 +61,8 @@ export function ShareSheet({
 
     async function handleCopy() {
         setCopyFailed(false);
-        try {
-            await copy(shareUrl);
-        } catch {
-            setCopyFailed(true);
-        }
+        // 실패 폴백(선택 가능한 입력)은 훅의 `failed`와 달리 시간이 지나도 사라지지 않는다.
+        if (!(await copy(shareUrl))) setCopyFailed(true);
     }
 
     const tweetUrl = buildTweetIntentUrl({ text: tweetText, shareUrl });
@@ -89,9 +87,9 @@ export function ShareSheet({
                 className={cn(ROW_BASE, 'touch-manipulation')}
             >
                 {copied ? (
-                    <CheckIcon className="h-5 w-5 text-primary-300" />
+                    <CheckIcon className="size-5 text-primary-300" />
                 ) : (
-                    <LinkIcon className="h-5 w-5" />
+                    <LinkIcon className="size-5" />
                 )}
                 <span>
                     {copied ? t('ShareSheet.e5c85b') : t('ShareSheet.01660a')}

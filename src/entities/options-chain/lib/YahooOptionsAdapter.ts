@@ -24,6 +24,7 @@ import {
     type YahooOption,
     type YahooOptionsResult,
 } from './yahooNormalize';
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
 // `yahooSurvey` 공지는 yahoo-finance2가 첫 호출 시 한 번 출력하는 마케팅 배너로,
 // 운영 로그에 노이즈만 남기므로 명시적으로 억제한다.
@@ -53,10 +54,6 @@ const yahooFinance = getYahooClient();
  */
 function isYahooValidationError(err: unknown): boolean {
     return err instanceof Error && err.name === 'FailedYahooValidationError';
-}
-
-function toIsoDate(d: Date): string {
-    return d.toISOString().slice(0, 10);
 }
 
 export class YahooOptionsAdapter implements OptionsDataProvider {
@@ -90,7 +87,7 @@ export class YahooOptionsAdapter implements OptionsDataProvider {
             const now = new Date();
 
             const allExpirationIsos = (initial.expirationDates ?? []).map(
-                toIsoDate
+                toUtcIsoDate
             );
             const slotMappings = mapExpirationsToSlots(allExpirationIsos, now);
             const targetIsos = new Set<string>(
@@ -105,7 +102,7 @@ export class YahooOptionsAdapter implements OptionsDataProvider {
             // 런타임에는 `expirationDate / calls / puts` 형태가 동일하다.
             const initialOptions = initial.options as unknown as YahooOption[];
             const initialIsos = new Set(
-                initialOptions.map(o => toIsoDate(o.expirationDate))
+                initialOptions.map(o => toUtcIsoDate(o.expirationDate))
             );
             const missingIsos = [...targetIsos].filter(
                 iso => !initialIsos.has(iso)
@@ -138,7 +135,7 @@ export class YahooOptionsAdapter implements OptionsDataProvider {
 
             const mergedByIso = new Map(
                 [...initialOptions, ...additional.flat()].map(
-                    opt => [toIsoDate(opt.expirationDate), opt] as const
+                    opt => [toUtcIsoDate(opt.expirationDate), opt] as const
                 )
             );
 

@@ -5,6 +5,8 @@ import { useEffect } from 'react';
 import { usePwaInstall } from '../hooks/usePwaInstall';
 import { IosInstallModal } from './IosInstallModal';
 import { cn } from '@/shared/lib/cn';
+import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
+import { CloseIcon } from '@/shared/ui/StrokeIcons';
 
 // Pattern A (CLS prevention): always render a fixed-height shell so
 // the layout below does not shift when the 30s fallback timer or the
@@ -69,7 +71,10 @@ export function PwaBanner() {
                     type="button"
                     onClick={handleInstall}
                     tabIndex={showBanner ? 0 : -1}
-                    className="shrink-0 rounded-full bg-primary-600 px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-primary-500 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                    className={cn(
+                        BUTTON_PRIMARY,
+                        'shrink-0 rounded-full px-3 py-1 text-xs'
+                    )}
                 >
                     {t('PwaBanner.15236a')}
                 </button>
@@ -78,9 +83,9 @@ export function PwaBanner() {
                     onClick={handleDismiss}
                     aria-label={t('PwaBanner.9631f3')}
                     tabIndex={showBanner ? 0 : -1}
-                    className="shrink-0 text-lg leading-none text-secondary-500 transition-colors hover:text-secondary-300 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                    className="shrink-0 rounded text-secondary-500 transition-colors hover:text-secondary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
-                    ✕
+                    <CloseIcon className="size-4" />
                 </button>
             </div>
             {isIos && showIosModal && (

@@ -1,10 +1,10 @@
 import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import {
-    getDescriptor,
     type MarketProfileId,
     type AssetClass,
-} from '@/shared/config/marketProfile';
+} from '@/shared/config/marketProfile/types';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 
 /** All cross-linked page types in the symbol sub-navigation. */

@@ -3,7 +3,6 @@ import { join } from 'node:path';
 import {
     CONTENT_FIELD,
     TRANSLATABLE_ENTITY,
-    TRANSLATABLE_ENTITY_VALUES,
 } from '@/shared/db/contentTranslationFields';
 
 const SOURCE = readFileSync(
@@ -22,10 +21,7 @@ describe('backfillContentLocale 커버리지', () => {
      * 테이블(`seo_analysis_snapshots`, `shared_analyses`)은 `locale` 컬럼을
      * 쓰므로 애초에 등록하지 않는다(`contentTranslationFields.ts` 주석).
      */
-    it.each(TRANSLATABLE_ENTITY_VALUES)('%s 백필 소스가 있다', entity => {
-        const key = Object.entries(TRANSLATABLE_ENTITY).find(
-            ([, value]) => value === entity
-        )![0];
+    it.each(Object.keys(TRANSLATABLE_ENTITY))('%s 백필 소스가 있다', key => {
         expect(SOURCE).toContain(`TRANSLATABLE_ENTITY.${key}`);
     });
 

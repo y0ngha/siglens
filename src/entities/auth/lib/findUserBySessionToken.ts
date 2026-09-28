@@ -1,4 +1,4 @@
-import type { AuthUserRecord } from '@/shared/db/types';
+import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import type {
     FindUserBySessionTokenDependencies,
     FindUserBySessionTokenOptions,

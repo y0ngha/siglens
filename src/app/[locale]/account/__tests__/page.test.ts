@@ -1,10 +1,10 @@
-vi.mock('@/features/api-key-management', () => ({
+vi.mock('@/features/api-key-management/ui/ApiKeySection', () => ({
     ApiKeySection: () => null,
 }));
-vi.mock('@/entities/auth', () => ({
+vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
-vi.mock('@/entities/api-key/actions', () => ({
+vi.mock('@/entities/api-key/actions/getRegisteredProvidersAction', () => ({
     getRegisteredProvidersAction: vi.fn(),
 }));
 vi.mock('@/shared/lib/auth/tierLabel', () => ({

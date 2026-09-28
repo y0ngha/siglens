@@ -1,4 +1,4 @@
-import { DrizzleAgreementRepository } from '@/entities/agreement';
+import { DrizzleAgreementRepository } from '@/entities/agreement/api';
 import type { SiglensDatabase } from '@/shared/db/types';
 
 describe('DrizzleAgreementRepository', () => {

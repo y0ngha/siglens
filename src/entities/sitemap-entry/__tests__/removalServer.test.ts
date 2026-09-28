@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { APPROVED_LONGTAIL_TICKERS } from '@/entities/symbol-indexability';
+import { APPROVED_LONGTAIL_TICKERS } from '@/entities/symbol-indexability/config/approved-longtail-tickers';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 

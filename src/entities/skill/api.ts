@@ -417,8 +417,7 @@ const parseStatePredicate = (raw: unknown): SkillStatePredicate | undefined => {
  * when the block is malformed or unreachable.
  *
  * Exported for unit testing of branches the inline-array YAML parser cannot
- * reach (e.g. a non-string trigger element) — not re-exported via the entity
- * barrel, so it stays module-internal to consumers.
+ * reach (e.g. a non-string trigger element).
  */
 export const parseGating = (raw: unknown): SkillGating | undefined => {
     if (typeof raw !== 'object' || raw === null) return undefined;
@@ -520,7 +519,7 @@ const collectMdFiles = async (dir: string): Promise<string[]> => {
  * `.md` files sharing a `name` must not inject the same skill twice or make
  * selection order-dependent.
  *
- * Exported for unit testing; not re-exported via the entity barrel.
+ * Exported for unit testing.
  */
 export const dedupeByName = (skills: Skill[]): Skill[] => {
     const seen = new Set<string>();

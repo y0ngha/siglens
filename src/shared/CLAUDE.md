@@ -7,14 +7,14 @@
 
 | Path | Purpose |
 |---|---|
-| `shared/lib/` | 순수 유틸리티 함수: cn, chartColors, priceFormat, seo, og, a11y, timeFormat, eastern 등 (장 세션 판정은 `@y0ngha/siglens-core`로 단일화됨) |
-| `shared/config/` | 설정 상수: queryKeys (QUERY_KEYS), cookieNames, market, time |
-| `shared/ui/` | Primitive UI 컴포넌트: DotSeparator, EyeIcon, InfoTooltip, JsonLd, MarkdownText, tabs/ |
-| `shared/hooks/` | React 의존 일반 hook: useDialog, useEscapeKey, useFocusTrap, useHydrated, useIsMobileViewport 등 |
+| `shared/lib/` | 순수 유틸리티 함수: cn, chartColors, priceFormat, seo, seoAlternates(`buildHubMetadata` 포함), og, a11y, timeFormat, eastern, isoDate, intlFormatCache, singleFlight 등 (장 세션 판정은 `@y0ngha/siglens-core`로 단일화됨). 서버 런타임 헬퍼도 여기 둔다: backgroundTask(`fireAndForget`/drain)·afterWithDrain, enterLocale(`setRequestLocale` 래퍼)·localeFromRequestHeader, isNextRedirectError, auth/isAuthorizedCronRequest. **클래스 상수**(컴포넌트가 아니라 문자열 — DOM을 바꾸지 않고 `cn()`으로 합친다): buttonStyles(`BUTTON_PRIMARY`/`DANGER`/`OUTLINE`/`OUTLINE_DANGER`/`GHOST` — 톤만, 크기는 호출부), surfaceStyles(`SURFACE_CARD`·`SURFACE_NESTED`·`PLACEHOLDER_ON_*`), typographyStyles(`HEADING_*`·`LABEL_*`), cardStyles(`CARD_LINK_CLASSES`). 하위 폴더: `news/`(뉴스 enum 강제변환·hashUrlToId·detectTruncatedBody), `sse/`(parseSseFrames·runAnalysisStream), `replay/`, `auth/` |
+| `shared/config/` | 설정 상수: queryKeys (QUERY_KEYS), cookieNames, market, ticker(`isAdmissibleSymbolShape`), time, popular-tickers·popular-options-tickers(`update-popular-tickers.ts` 생성) |
+| `shared/ui/` | Primitive UI 컴포넌트. 아이콘: StrokeIcons(24px 획 아이콘 세트 — 한 번 쓰는 `<svg>`를 그리기 전에 여기부터), EyeIcon, GearIcon. 상태·피드백: Spinner(장식용, `size`/`tone`), ErrorAlert(폼 제출 실패 배너), SuccessNotice(폼을 대체하는 성공 안내 + 포커스 이동), AiSummaryErrorSection(AI 섹션 오류 셸, `onRetry` 선택), AiSummarySkeleton, EmptySectionCard. 오버레이: ModalShell(조건부 마운트 모달의 오버레이·포커스 트랩·Esc — 늘 렌더되는 모달은 `useDialog`), PopoverSurface. 폼: TextField, ModelListbox. 공포·탐욕: FearGreedGauge, FearGreedScoreBar. 기타: DotSeparator, InfoTooltip, JsonLd, MarkdownText, LocaleLink, tabs/ |
+| `shared/hooks/` | React 의존 일반 hook: useDialog, useEscapeKey, useFocusTrap, useOnClickOutside, useHydrated, useCopyToClipboard(`copied`/`failed`, 실패를 던지지 않음), useHideOnScrollDown, useIsMobileViewport, useBodyScrollLock, useDescribeAuthError, useMarketFactorLabels 등. **hook이 아닌 모듈은 두지 않는다**(→ `shared/lib`) |
 | `shared/db/` | Drizzle/Neon client, schema, token encryption, DB config/constants/types |
 | `shared/email/` | Email dispatcher (Resend/Noop) + email types (EmailMessage, EmailDispatcher) |
 | `shared/cache/` | Redis client (Upstash) |
-| `shared/api/` | HTTP client: isBot (bot detection), FMP fundamental client |
+| `shared/api/` | HTTP client: isBot (bot detection), `fmp/`(FMP fundamental client·normalizeFmpPublishedDate), `yahoo/`, `naver/`(네이버 검색 API `naverSearch`), `market/`, `economy/`, `dataGoKr/` |
 
 ## 의도적 예외 (shared → entities)
 
@@ -31,3 +31,4 @@
 3. **shared/lib/, shared/config/에 React import 금지.** shared/ui/와 shared/hooks/만 React 사용.
 4. **3번째 사용 후 승격.** 1~2개 슬라이스에서만 쓰는 유틸은 해당 슬라이스에 둔다.
 5. **shared 내부 cross-slice import 허용.** (예: shared/ui → shared/lib 가능)
+6. **barrel(`index.ts`) 금지.** `shared/ui/tabs/TabsUnderline`처럼 정의 파일에서 직접 import한다(테스트·`vi.mock` 포함).

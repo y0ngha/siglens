@@ -4,8 +4,8 @@ import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import type { Locale } from '@/shared/i18n/locales';
 import { useState, type CSSProperties } from 'react';
 import { cn } from '@/shared/lib/cn';
+import { formatCompactAmount } from '@/shared/lib/priceFormat';
 import {
-    formatCurrencyCompact,
     DEFAULT_STATEMENT_CURRENCY,
     type StatementCurrency,
 } from '../utils/numberFormat';
@@ -135,9 +135,7 @@ function fmt(
     currency: StatementCurrency,
     locale: Locale
 ): string {
-    return value === null
-        ? '—'
-        : formatCurrencyCompact(value, currency, locale);
+    return value === null ? '—' : formatCompactAmount(value, currency, locale);
 }
 
 interface HoverState extends TooltipPosition {

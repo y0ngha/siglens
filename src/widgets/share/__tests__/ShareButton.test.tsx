@@ -10,8 +10,7 @@
  *
  * Note: useShareable is mocked at the model-module level
  * (@/features/share/model/ShareableAnalysisContext) so that useShareFlow — which
- * imports it via the relative path — picks up the mock. The barrel-level
- * @/features/share mock is kept for consumers that import useShareable from the barrel.
+ * imports it via the relative path — picks up the mock.
  */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -45,13 +44,15 @@ vi.mock(
     }
 );
 
-vi.mock('@/features/share', async importOriginal => {
-    const original = await importOriginal<typeof import('@/features/share')>();
-    return {
-        ...original,
+vi.mock(
+    '@/features/share/model/ShareableAnalysisContext',
+    async importOriginal => ({
+        ...(await importOriginal<
+            typeof import('@/features/share/model/ShareableAnalysisContext')
+        >()),
         useShareable: mockUseShareable,
-    };
-});
+    })
+);
 
 vi.mock('@/features/symbol-model/hooks/useUserTier', () => ({
     useUserTier: vi.fn(() => ({ tier: 'free', isLoading: false })),

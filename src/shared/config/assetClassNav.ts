@@ -187,25 +187,3 @@ export const ALL_NAV_REGION_LINKS: readonly NavRegionLink[] =
 export function hasRegionForRoot(vertical: NavVertical): boolean {
     return vertical.regions.some(r => r.href === vertical.rootHref);
 }
-
-/**
- * 지역 링크로는 도달하지 않는 버티컬 상위 페이지들(현재는 `/news` 하나).
- *
- * 이걸 안 걸면 이미 색인돼 있고 이번에 의미까지 바뀐 URL이 사이트 안에서 보이는
- * 앵커를 하나도 갖지 못한다 — 헤더 드롭다운은 `invisible` 패널 + `hidden lg:flex`
- * 안이라 크롤러 기준으로 약한 신호다.
- */
-export const NAV_OVERVIEW_LINKS: readonly NavRegionLink[] =
-    NAV_VERTICALS.flatMap(v =>
-        hasRegionForRoot(v)
-            ? []
-            : [
-                  {
-                      region: v.regions[0]!.region,
-                      labelKey: v.labelKey,
-                      // `{vertical} 전체` — 어순이 언어마다 달라 별도 키로 둔다.
-                      fullLabelKey: `shared.config.nav.overviewFull.${v.id}`,
-                      href: v.rootHref,
-                  },
-              ]
-    );

@@ -2,13 +2,32 @@
 
 import { useTranslations } from 'next-intl';
 import { useFormStatus } from 'react-dom';
+import { BUTTON_DANGER, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
+import { cn } from '@/shared/lib/cn';
+import { Spinner } from '@/shared/ui/Spinner';
+
+type SubmitButtonTone = 'primary' | 'danger';
+
+const SUBMIT_TONE_CLASS: Record<SubmitButtonTone, string> = {
+    primary: BUTTON_PRIMARY,
+    danger: BUTTON_DANGER,
+};
 
 interface SubmitButtonProps {
     label: string;
     pendingLabel?: string;
+    tone?: SubmitButtonTone;
+    /** 제출 조건 미충족(예: 확인 입력 불일치). 전송 중에는 이 값과 무관하게 잠긴다. */
+    disabled?: boolean;
 }
 
-export function SubmitButton({ label, pendingLabel }: SubmitButtonProps) {
+/** 폼 전폭 제출 버튼. 전송 상태는 감싼 `<form>`에서 `useFormStatus`로 읽는다. */
+export function SubmitButton({
+    label,
+    pendingLabel,
+    tone = 'primary',
+    disabled = false,
+}: SubmitButtonProps) {
     // 기본값을 파라미터 자리에 둘 수 없다 — 컴포넌트 본문 밖이라 훅이 아직 없다.
     const tMisc = useTranslations('shared.ui.misc');
     const resolvedPendingLabel = pendingLabel ?? tMisc('submitting');
@@ -16,16 +35,16 @@ export function SubmitButton({ label, pendingLabel }: SubmitButtonProps) {
     return (
         <button
             type="submit"
-            disabled={pending}
+            disabled={disabled || pending}
             aria-busy={pending}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-primary-600 font-semibold text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-900 focus-visible:outline-none active:bg-primary-800 disabled:bg-secondary-700 disabled:text-secondary-500 motion-reduce:transition-none"
+            className={cn(
+                SUBMIT_TONE_CLASS[tone],
+                'flex h-12 w-full focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-900'
+            )}
         >
             {pending ? (
                 <>
-                    <span
-                        aria-hidden
-                        className="size-4 animate-spin rounded-full border-2 border-white/40 border-t-white motion-reduce:animate-none"
-                    />
+                    <Spinner tone="onFill" />
                     <span>{resolvedPendingLabel}</span>
                 </>
             ) : (

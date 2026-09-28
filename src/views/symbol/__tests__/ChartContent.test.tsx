@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
-import { buildFallbackAnalysis } from '@/entities/analysis';
+import { buildFallbackAnalysis } from '@/entities/analysis/lib/fallbackAnalysis';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 import { ChartContent } from '@/views/symbol/ChartContent';
 
@@ -24,8 +24,10 @@ vi.mock('@/shared/lib/cn', () => ({
     cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
 }));
 
-vi.mock('@/widgets/chart', () => ({
+vi.mock('@/widgets/chart/ChartSkeleton', () => ({
     ChartSkeleton: () => <div data-testid="chart-skeleton" />,
+}));
+vi.mock('@/widgets/chart/hooks/useChartSync', () => ({
     useChartSync: () => ({
         handleStockChartReady: vi.fn(),
         handleStockChartRemove: vi.fn(),
@@ -37,7 +39,7 @@ vi.mock('@/widgets/chart', () => ({
 // The mock renders one paragraph per `analysis.paragraphCount` so the scroll
 // tests below can drive a genuinely long vs. short panel and assert where that
 // content lands (inside the scroll container, not the chart column).
-vi.mock('@/widgets/analysis', () => ({
+vi.mock('@/widgets/analysis/AnalysisPanel', () => ({
     AnalysisPanel: ({
         analysis,
     }: {
@@ -123,7 +125,7 @@ const { mockUseAnonAnalysisNudge } = vi.hoisted(() => ({
     })),
 }));
 
-vi.mock('@/features/analysis-nudge', () => ({
+vi.mock('@/features/analysis-nudge/hooks/useAnonAnalysisNudge', () => ({
     useAnonAnalysisNudge: mockUseAnonAnalysisNudge,
 }));
 
@@ -153,7 +155,7 @@ vi.mock('@/widgets/analysis/hooks/useAnalysisProgress', () => ({
 // QueryClientProvider 없는 이 테스트 트리에서 그대로 렌더하면 크래시한다. 이
 // 파일의 관심사(ChartContent 레이아웃/분석 상태)와 무관하므로 "홀딩 없음"으로
 // 고정한 no-op 목으로 대체한다 — PositionStatusSummary는 마운트되지 않는다.
-vi.mock('@/features/portfolio-holding', () => ({
+vi.mock('@/features/portfolio-holding/hooks/useSymbolHolding', () => ({
     useSymbolHolding: vi.fn(() => ({
         holding: null,
         isHydrated: true,

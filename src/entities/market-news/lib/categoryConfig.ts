@@ -14,7 +14,7 @@ import type { NavRegionId } from '@/shared/config/assetClassNav';
 export type NewsFeedCategoryId = NewsFeedCategory | 'kr';
 
 /** 피드를 어느 소스에서 가져오는지. 클라이언트 라우팅 키. */
-export type NewsFeedSource = 'fmp' | 'naver';
+type NewsFeedSource = 'fmp' | 'naver';
 
 export interface CategoryConfig {
     /** DB bucket symbol — never shown in a URL. */

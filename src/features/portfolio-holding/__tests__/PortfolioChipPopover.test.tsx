@@ -1,6 +1,6 @@
 import { createRef } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import type { PortfolioHoldingView } from '@/entities/portfolio';
+import type { PortfolioHoldingView } from '@/entities/portfolio/model';
 import { PortfolioChipPopover } from '../ui/PortfolioChipPopover';
 
 const HOLDING: PortfolioHoldingView = {

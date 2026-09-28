@@ -3,12 +3,14 @@ import { revalidateTag } from 'next/cache';
 import { runHubPrewarm } from './hubs';
 import {
     buildPrewarmUniverse,
+    type PrewarmSymbol,
+} from '@/entities/seo-snapshot/lib/applicability';
+import {
     isSnapshotFresh,
     shouldDeferPrewarmWhileOpen,
     snapshotBoundaryFor,
-    type PrewarmSymbol,
-    type SeoSnapshotTab,
-} from '@/entities/seo-snapshot';
+} from '@/entities/seo-snapshot/lib/freshness';
+import { type SeoSnapshotTab } from '@/entities/seo-snapshot/model';
 import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
 import { getDatabaseClient } from '@/shared/db/client';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';

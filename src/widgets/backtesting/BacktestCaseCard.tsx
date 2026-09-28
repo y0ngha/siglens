@@ -2,7 +2,10 @@ import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import type { BacktestCase, BacktestRiskLevel } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
-import { formatUsdCurrency } from '@/shared/lib/priceFormat';
+import {
+    formatSignedPercent,
+    formatUsdCurrency,
+} from '@/shared/lib/priceFormat';
 
 interface BacktestCaseCardProps {
     case_: BacktestCase;
@@ -85,7 +88,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
     const t = useTranslations('widgets.backtesting');
     const isWin = c.result === 'win';
     const v = isWin ? winClasses : lossClasses;
-    const returnLabel = `${c.returnPct >= 0 ? '+' : ''}${c.returnPct.toFixed(1)}%`;
+    const returnLabel = formatSignedPercent(c.returnPct);
 
     const firstBullishTarget = c.aiAnalysis.bullishTargets[0];
     const showPredictionBlock =

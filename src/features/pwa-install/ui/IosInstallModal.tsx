@@ -1,10 +1,11 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
-import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
+import { ModalShell } from '@/shared/ui/ModalShell';
+import { CloseIcon } from '@/shared/ui/StrokeIcons';
 import Image from 'next/image';
-import { useRef } from 'react';
+import { LABEL_GROUP } from '@/shared/lib/typographyStyles';
+import { cn } from '@/shared/lib/cn';
 
 const MODAL_TITLE_ID = 'ios-modal-title';
 
@@ -43,78 +44,61 @@ interface IosInstallModalProps {
 export function IosInstallModal({ onClose }: IosInstallModalProps) {
     const t = useTranslations('features.pwa-install');
     const tStep = useTranslations('features.pwa-install.iosStep');
-    const dialogRef = useRef<HTMLDivElement>(null);
-    useEscapeKey(onClose, true);
-    useFocusTrap(dialogRef, true);
-
     return (
-        <div
-            // 배경은 장식용(role="presentation")이고 닫기 경로는 Escape(useEscapeKey)와
-            // 닫기 버튼이 담당한다. 배경 클릭은 편의 기능이라 target 비교로 처리해
-            // 내부 클릭에 stopPropagation 핸들러를 달지 않는다.
-            role="presentation"
-            data-testid="ios-modal-backdrop"
-            className="fixed inset-0 z-9999 flex items-center justify-center bg-secondary-950/80 px-4 backdrop-blur-sm"
-            onClick={e => {
-                if (e.target === e.currentTarget) onClose();
-            }}
+        <ModalShell
+            titleId={MODAL_TITLE_ID}
+            onClose={onClose}
+            className="max-w-sm border border-secondary-700 bg-secondary-800 p-5"
         >
-            <div
-                ref={dialogRef}
-                data-testid="ios-modal-content"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby={MODAL_TITLE_ID}
-                className="w-full max-w-sm rounded-lg border border-secondary-700 bg-secondary-800 p-5"
-            >
-                <div className="mb-4 flex items-center justify-between">
-                    <h2
-                        id={MODAL_TITLE_ID}
-                        className="text-base font-bold text-secondary-100"
-                    >
-                        {t('IosInstallModal.2c8570')}
-                    </h2>
-                    <button
-                        onClick={onClose}
-                        aria-label={t('IosInstallModal.94b7db')}
-                        className="text-xl leading-none text-secondary-500 transition-colors hover:text-secondary-300 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
-                    >
-                        ✕
-                    </button>
-                </div>
-                <div className="space-y-3">
-                    {STEPS.map(
-                        ({ step, titleKey, descriptionKey, img, height }) => (
-                            <div
-                                key={step}
-                                className="flex gap-3 rounded-lg bg-secondary-900 p-3"
-                            >
-                                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-600 text-xs font-bold text-white">
-                                    {step}
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                    <p className="mb-1 text-sm font-semibold text-secondary-200">
-                                        {tStep(titleKey)}
-                                    </p>
-                                    <p className="mb-2 text-xs text-secondary-400">
-                                        {tStep(descriptionKey)}
-                                    </p>
-                                    <Image
-                                        src={img}
-                                        alt={t('IosInstallModal.stepAlt', {
-                                            v0: step,
-                                        })}
-                                        width={300}
-                                        height={height}
-                                        className="w-full rounded-lg"
-                                        unoptimized
-                                    />
-                                </div>
-                            </div>
-                        )
-                    )}
-                </div>
+            <div className="mb-4 flex items-center justify-between">
+                <h2
+                    id={MODAL_TITLE_ID}
+                    className="text-base font-bold text-secondary-100"
+                >
+                    {t('IosInstallModal.2c8570')}
+                </h2>
+                <button
+                    type="button"
+                    onClick={onClose}
+                    aria-label={t('IosInstallModal.94b7db')}
+                    // 44px 타깃을 유지하면서 음수 여백으로 제목 줄 높이는 그대로 둔다.
+                    className="-my-2.5 -mr-2.5 flex size-11 items-center justify-center rounded-lg text-secondary-500 transition-colors hover:text-secondary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                >
+                    <CloseIcon className="size-5" />
+                </button>
             </div>
-        </div>
+            <div className="space-y-3">
+                {STEPS.map(
+                    ({ step, titleKey, descriptionKey, img, height }) => (
+                        <div
+                            key={step}
+                            className="flex gap-3 rounded-lg bg-secondary-900 p-3"
+                        >
+                            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-600 text-xs font-bold text-white">
+                                {step}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <p className={cn(LABEL_GROUP, 'mb-1')}>
+                                    {tStep(titleKey)}
+                                </p>
+                                <p className="mb-2 text-xs text-secondary-400">
+                                    {tStep(descriptionKey)}
+                                </p>
+                                <Image
+                                    src={img}
+                                    alt={t('IosInstallModal.stepAlt', {
+                                        v0: step,
+                                    })}
+                                    width={300}
+                                    height={height}
+                                    className="w-full rounded-lg"
+                                    unoptimized
+                                />
+                            </div>
+                        </div>
+                    )
+                )}
+            </div>
+        </ModalShell>
     );
 }

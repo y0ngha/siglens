@@ -14,9 +14,9 @@ import { AGENT_PROVIDER_STALLED } from './openAiCompatibleStream';
 /**
  * Pilot (spec R12): the agent model is fixed server-side; client/core-supplied `model` is ignored.
  *
- * A literal, not core's `DEEPSEEK_V4_1_FLASH_MODEL`: this module is reachable from the
- * `@/entities/llm-provider` barrel, and many existing tests mock `@y0ngha/siglens-core`
- * with a partial factory — reading a core value at module load throws there. The router
+ * A literal, not core's `DEEPSEEK_V4_1_FLASH_MODEL`: many existing tests that load this
+ * module mock `@y0ngha/siglens-core` with a partial factory — reading a core value at
+ * module load throws there. The router
  * test pins this literal to the core constant so they cannot drift.
  */
 export const AGENT_MODEL = 'deepseek-v4.1-flash' satisfies ModelId;

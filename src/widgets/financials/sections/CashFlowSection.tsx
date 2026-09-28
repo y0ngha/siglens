@@ -6,7 +6,7 @@ import {
     FcfTooltip,
     FcfMarginTooltip,
 } from '@/widgets/financials/financialsTooltips';
-import { EmptySectionCard } from './EmptySectionCard';
+import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
 import { StatementTable } from './StatementTable';
 import {
     DEFAULT_STATEMENT_CURRENCY,
@@ -16,6 +16,8 @@ import { FinancialTrendChart } from './FinancialTrendChart';
 import { toDisplayOrder } from './toDisplayOrder';
 import { HEADING_CLASS_NAME } from './constants';
 import { statementColumnLabel } from './statementColumnLabel';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { cn } from '@/shared/lib/cn';
 
 interface CashFlowSectionProps {
     rows: CashFlowRow[];
@@ -47,7 +49,13 @@ export function CashFlowSection({
     const t = useTranslations('widgets.financials');
     const tSection = useTranslations('widgets.financials.section');
     if (rows.length === 0) {
-        return <EmptySectionCard title={tSection(TITLE_KEY)} />;
+        return (
+            <EmptySectionCard
+                headingId={HEADING_ID}
+                title={tSection(TITLE_KEY)}
+                headingClassName={HEADING_CLASS_NAME}
+            />
+        );
     }
 
     const displayRows = toDisplayOrder(rows);
@@ -107,7 +115,7 @@ export function CashFlowSection({
     return (
         <section
             aria-labelledby={HEADING_ID}
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+            className={cn(SURFACE_CARD, 'p-6')}
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 {tSection(TITLE_KEY)}

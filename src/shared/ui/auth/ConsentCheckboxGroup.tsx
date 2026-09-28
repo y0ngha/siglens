@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 import { PRIVACY_PATH, TERMS_PATH } from '@/shared/lib/legal';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { ArrowUpRightIcon } from '@/shared/ui/StrokeIcons';
 import { useEffect, useId, useRef } from 'react';
 
 interface ConsentCheckboxGroupProps {
@@ -23,28 +24,6 @@ interface ConsentRowProps {
     invalid: boolean;
     errorId?: string;
     onChange: (checked: boolean) => void;
-}
-
-function ExternalArrowIcon() {
-    return (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 16 16"
-            width="14"
-            height="14"
-            aria-hidden="true"
-            className="ml-1 inline-block"
-        >
-            <path
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="1.5"
-                d="M6 4h6v6M11 5L4.5 11.5"
-            />
-        </svg>
-    );
 }
 
 interface CheckboxBoxProps {
@@ -181,7 +160,7 @@ function ConsentRow({
                 className="inline-flex shrink-0 items-center rounded px-1 text-xs text-secondary-400 transition-colors hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
             >
                 {t('ConsentCheckboxGroup.918f5d')}
-                <ExternalArrowIcon />
+                <ArrowUpRightIcon className="ml-1 inline-block size-3.5" />
                 <span className="sr-only">
                     {t('ConsentCheckboxGroup.f97073')}
                 </span>
@@ -264,7 +243,7 @@ export function ConsentCheckboxGroup({
                 onChange={onTosChange}
             />
             {error ? (
-                // 같은 카드의 다른 오류 표면(`AuthErrorAlert`, `AuthFieldGroup`,
+                // 같은 카드의 다른 오류 표면(`ErrorAlert`, `TextField`,
                 // `PasswordField`)이 전부 `role="alert"`다. 여기만 polite면
                 // 제출 실패라는 같은 사건이 화면마다 다르게 읽힌다.
                 <p

@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useAssetLabel } from '@/shared/i18n/assetLabel';
 import type { SectorEtf } from '@y0ngha/siglens-core';
-import { TabsUnderline } from '@/shared/ui/tabs';
+import { TabsUnderline } from '@/shared/ui/tabs/TabsUnderline';
 
 interface SectorTabsProps {
     /** 노출할 섹터. 모듈 상수로 굳히면 한국 패널이 미국 섹터 탭을 그린다. */

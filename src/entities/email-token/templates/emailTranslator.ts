@@ -1,5 +1,3 @@
-import type { Locale } from '@/shared/i18n/locales';
-
 /**
  * 메일 템플릿이 받는 번역자.
  *
@@ -12,9 +10,3 @@ export type EmailTranslator = (
     key: string,
     values?: Record<string, string>
 ) => string;
-
-/** 메일 본문 `<html lang>`. 수신함 번역기·스크린리더가 읽는다. */
-export interface EmailLocaleInput {
-    readonly t: EmailTranslator;
-    readonly locale: Locale;
-}

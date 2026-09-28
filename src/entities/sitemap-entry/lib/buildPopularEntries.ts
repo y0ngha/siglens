@@ -8,10 +8,10 @@ import {
 import { MS_PER_HOUR } from '@/shared/config/time';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
-import { POPULAR_OPTIONS_TICKERS } from '../config/popular-options-tickers';
+import { POPULAR_OPTIONS_TICKERS } from '@/shared/config/popular-options-tickers';
 import { SITE_URL } from '@/shared/lib/seo';
-import { isKrEquitySymbol } from '@/shared/config/marketProfile';
-import { classifyAsset } from '@/entities/ticker';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
+import { classifyAsset } from '@/entities/ticker/lib/assetClassification';
 import { floorToHour } from './floorToHour';
 // 게이트 정의(탭 목록·옵션 타입)는 `proseGate.ts`가 소유한다 — 크립토 빌더와
 // `server.ts`도 거기서 직접 가져온다.

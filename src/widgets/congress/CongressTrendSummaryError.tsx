@@ -15,7 +15,7 @@ export function CongressTrendSummaryError({
     return (
         <AiSummaryErrorSection
             error={error}
-            resetErrorBoundary={resetErrorBoundary}
+            onRetry={resetErrorBoundary}
             heading={t('CongressTrendSummaryError.bbb041')}
             idPrefix="congress-trend-summary"
             fallbackMessage={t('CongressTrendSummaryError.dafb12')}

@@ -7,12 +7,11 @@ import {
 } from '@/shared/i18n/locales';
 import { SYMBOL_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 import { localeAlternates, localeOpenGraph } from '@/shared/lib/seoAlternates';
-import {
-    isKrEquitySymbol,
-    type AssetClass,
-} from '@/shared/config/marketProfile';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
+import { type AssetClass } from '@/shared/config/marketProfile/types';
 import { KR_EXCHANGE_SUFFIX_RE } from '@/shared/config/ticker';
 import { stripSnapshotMarkdown } from '@/shared/lib/stripSnapshotMarkdown';
+import { truncateWithEllipsis } from '@/shared/lib/truncate';
 
 export interface BreadcrumbItem {
     name: string;
@@ -336,14 +335,9 @@ export const SEO_DESCRIPTION_MAX_LENGTH = 120;
  * supplementary plane 한자 등)가 split되어 invalid UTF-16이 되는 것을 막는다.
  */
 export function clampSeoDescription(text: string): string {
-    const codePoints = [...text];
-    if (codePoints.length <= SEO_DESCRIPTION_MAX_LENGTH) return text;
-    return (
-        codePoints
-            .slice(0, SEO_DESCRIPTION_MAX_LENGTH - 1)
-            .join('')
-            .trimEnd() + '…'
-    );
+    return truncateWithEllipsis(text, SEO_DESCRIPTION_MAX_LENGTH, {
+        trimEnd: true,
+    });
 }
 
 /**

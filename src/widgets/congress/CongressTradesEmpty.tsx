@@ -1,4 +1,7 @@
 import { useTranslations } from 'next-intl';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { cn } from '@/shared/lib/cn';
+
 /**
  * Empty-state card for the `CongressTradesTable` when there are no trades.
  *
@@ -12,7 +15,7 @@ export function CongressTradesEmpty() {
         <div
             role="status"
             aria-label={t('CongressTradesEmpty.be4210')}
-            className="rounded-lg border border-secondary-700 bg-secondary-800 px-5 py-4"
+            className={cn(SURFACE_CARD, 'px-5 py-4')}
         >
             <p className="text-sm text-secondary-400">
                 {t('CongressTradesEmpty.cb8eae')}

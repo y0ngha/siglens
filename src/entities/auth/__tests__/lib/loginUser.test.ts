@@ -73,7 +73,6 @@ function makeDependencies(options?: {
                 createSession,
                 findSession: vi.fn(),
                 deleteSession,
-                deleteExpiredSessions: vi.fn(),
             },
             passwordVerifier: { verifyPassword },
         },

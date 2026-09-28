@@ -3,7 +3,7 @@ import { renderHook } from '@testing-library/react';
 import { useOptionsChainMetrics } from '@/widgets/options/hooks/useOptionsChainMetrics';
 import type { OptionsSnapshot } from '@y0ngha/siglens-core';
 
-vi.mock('@/entities/options-chain', () => ({
+vi.mock('@/entities/options-chain/lib/pickActiveChain', () => ({
     pickActiveChain: (snapshot: OptionsSnapshot, exp: string) => {
         if (exp === 'all') return snapshot.chains[0] ?? null;
         return snapshot.chains.find(c => c.expirationDate === exp) ?? null;

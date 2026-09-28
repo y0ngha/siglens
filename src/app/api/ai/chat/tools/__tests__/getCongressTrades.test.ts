@@ -7,7 +7,7 @@ const { isTabAllowed, getTrades } = vi.hoisted(() => ({
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: isTabAllowed,
 }));
-vi.mock('@/entities/congress-trades', () => ({
+vi.mock('@/entities/congress-trades/lib/getCongressTradesResilient', () => ({
     getCongressTradesResilient: getTrades,
 }));
 

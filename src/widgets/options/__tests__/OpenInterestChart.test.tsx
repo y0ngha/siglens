@@ -29,7 +29,7 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
     };
 });
 
-vi.mock('@/entities/options-chain', () => ({
+vi.mock('@/entities/options-chain/lib/findNearestStrike', () => ({
     findNearestStrikeIndex: (strikes: number[], target: number) => {
         let idx = 0;
         let minDiff = Infinity;

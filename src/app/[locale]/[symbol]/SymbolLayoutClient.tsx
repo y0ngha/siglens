@@ -1,8 +1,8 @@
 'use client';
 
 import { type ReactNode } from 'react';
-import { SymbolModelProvider } from '@/features/symbol-model';
-import { ShareableAnalysisProvider } from '@/features/share';
+import { SymbolModelProvider } from '@/features/symbol-model/model/SymbolModelContext';
+import { ShareableAnalysisProvider } from '@/features/share/model/ShareableAnalysisContext';
 
 interface SymbolLayoutJailProps {
     children: ReactNode;

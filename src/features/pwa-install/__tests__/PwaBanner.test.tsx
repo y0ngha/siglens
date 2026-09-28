@@ -1,4 +1,4 @@
-import { PwaBanner } from '@/features/pwa-install';
+import { PwaBanner } from '@/features/pwa-install/ui/PwaBanner';
 import { usePwaInstall } from '@/features/pwa-install/hooks/usePwaInstall';
 import { fireEvent, render, screen } from '@testing-library/react';
 

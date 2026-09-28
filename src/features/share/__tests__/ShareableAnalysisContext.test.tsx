@@ -3,7 +3,7 @@ import {
     ShareableAnalysisProvider,
     useShareable,
     useRegisterShareable,
-} from '@/features/share';
+} from '@/features/share/model/ShareableAnalysisContext';
 import type { ShareableRegistration } from '@/features/share/model/ShareableAnalysisContext';
 
 function Reader() {

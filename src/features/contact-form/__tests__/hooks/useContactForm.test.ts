@@ -2,7 +2,7 @@
 import { renderHook } from '@testing-library/react';
 import { useContactForm } from '@/features/contact-form/hooks/useContactForm';
 
-vi.mock('@/entities/inquiry/actions', () => ({
+vi.mock('@/entities/inquiry/actions/submitContactAction', () => ({
     submitContactAction: vi.fn(),
 }));
 

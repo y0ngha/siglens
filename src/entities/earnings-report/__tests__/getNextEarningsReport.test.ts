@@ -4,9 +4,9 @@ import type { SiglensDatabase } from '@/shared/db/types';
 import {
     DrizzleEarningsReportsRepository,
     EARNINGS_REPORT_FMP_LIMIT,
-    EARNINGS_REPORT_STALE_MS,
     getNextEarningsReport,
-} from '@/entities/earnings-report';
+} from '@/entities/earnings-report/api';
+import { EARNINGS_REPORT_STALE_MS } from '@/entities/earnings-report/lib/isEarningsReportStale';
 import { MS_PER_HOUR } from '@/shared/config/time';
 
 // getNextEarningsReport는 getFundamentalDataProvider().getEarningsReports만 호출하므로
@@ -19,8 +19,9 @@ vi.mock('@/shared/api/fmp/getFundamentalDataProvider', () => ({
         getEarningsReports: mockGetEarningsReports,
     }),
 }));
-vi.mock('@/shared/lib/dateKey', () => ({
-    todayKstIsoDate: () => '2026-05-25',
+vi.mock('@/shared/lib/etTimeUtils', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/lib/etTimeUtils')>()),
+    kstDateKey: () => '2026-05-25',
 }));
 
 const { store, fakeRedis } = vi.hoisted(() => {
@@ -172,7 +173,7 @@ describe('getNextEarningsReport', () => {
         expect(result).toBeNull();
     });
 
-    it('passes todayKstIsoDate to getNextForSymbol', async () => {
+    it('passes today (KST) to getNextForSymbol', async () => {
         getLatestFetchedAt.mockResolvedValue(new Date());
         getNextForSymbol.mockResolvedValue(null);
 

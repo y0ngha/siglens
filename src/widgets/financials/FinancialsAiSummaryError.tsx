@@ -15,7 +15,7 @@ export function FinancialsAiSummaryError({
     return (
         <AiSummaryErrorSection
             error={error}
-            resetErrorBoundary={resetErrorBoundary}
+            onRetry={resetErrorBoundary}
             heading={t('FinancialsAiSummaryError.26f860')}
             idPrefix="financials-ai-summary"
             getErrorMessage={error => translateFmpError(error, tRoot)}

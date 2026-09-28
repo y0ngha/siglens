@@ -1,5 +1,5 @@
 import { deduplicateResults, isKoreanInput } from './ticker';
-import { isKrEquitySymbol } from '@/shared/config/marketProfile';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import {
     buildTickerSearchCacheKey,
     TICKER_SEARCH_CACHE_TTL,
@@ -19,8 +19,14 @@ import {
 import { searchCryptoAssets } from './cryptoAssetStore';
 import { searchKrEquity } from './krEquitySearch';
 import { rankByRelevance } from './searchRelevance';
-import { fireAndForget, type BackgroundTaskOptions } from './backgroundTask';
-import { createSingleFlight } from './utils/singleFlight';
+import {
+    fireAndForget,
+    type BackgroundTaskOptions,
+} from '@/shared/lib/backgroundTask';
+import {
+    createSingleFlight,
+    __resetSingleFlightForTests,
+} from '@/shared/lib/singleFlight';
 import { createCacheProvider } from '@y0ngha/siglens-core';
 import type { KoreanTickerEntry, TickerSearchResult } from '@/shared/lib/types';
 
@@ -71,7 +77,7 @@ function translateAndCache(unmapped: TickerSearchResult[]): Promise<void> {
 
 /** @internal Test helper — clears the in-flight registry between cases. */
 export function _resetInFlightTranslationsForTest(): void {
-    translationSingleFlight._resetForTest();
+    __resetSingleFlightForTests(translationSingleFlight);
 }
 
 /**

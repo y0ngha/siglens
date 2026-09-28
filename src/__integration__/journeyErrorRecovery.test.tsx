@@ -21,10 +21,6 @@ vi.mock('@/widgets/analysis/hooks/useAnalysisProgress', () => ({
     SKILL_COUNT: 60,
 }));
 
-vi.mock('./AdBanner', () => ({
-    AdBanner: () => null,
-}));
-
 describe('Journey: Error Recovery', () => {
     describe('News error fallback — NewsAiSummaryError', () => {
         it('renders error message from Error instance', () => {

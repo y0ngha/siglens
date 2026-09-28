@@ -13,7 +13,7 @@ vi.mock('@/widgets/financials/FinancialsScorecard', () => ({
 vi.mock('@/widgets/financials/FinancialsStatements', () => ({
     FinancialsStatements: () => null,
 }));
-vi.mock('@/views/symbol', () => ({
+vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({
     SymbolPageHeading: ({ children }: { children: React.ReactNode }) =>
         children,
 }));
@@ -24,14 +24,18 @@ vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
 vi.mock('@/shared/config/market', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/config/market')>()),
 }));
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker/lib/assetClassification', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+}));
+vi.mock('@/entities/ticker/lib/ticker', () => ({
     pickAssetName: (info: { name: string; koreanName?: string }) =>
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
+}));
+vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
-vi.mock('@/app/[locale]/[symbol]/fundamental/getProfileResilient', () => ({
+vi.mock('@/entities/ticker/lib/getProfileResilient', () => ({
     getProfileResilient: vi.fn(),
 }));
 vi.mock('@/app/[locale]/[symbol]/financials/financialData', () => ({
@@ -46,7 +50,7 @@ vi.mock('@/app/[locale]/[symbol]/financials/FinancialsDegraded', () => ({
 // isEmptyFinancialsSnapshot는 별도 단위 테스트(isEmptyFinancialsSnapshot.test.ts)에서
 // 실제 로직을 검증한다. 여기서는 vi.fn()으로 두고 케이스별 boolean을 직접 제어해
 // 인라인 재구현(동어반복)을 피한다.
-vi.mock('@/entities/financials-statements', () => ({
+vi.mock('@/entities/financials-statements/lib/getFinancialsSnapshot', () => ({
     getFinancialsSnapshot: vi.fn(),
     isEmptyFinancialsSnapshot: vi.fn(),
 }));
@@ -80,12 +84,12 @@ import {
     generateMetadata,
     revalidate,
 } from '@/app/[locale]/[symbol]/financials/page';
-import { getAssetInfoResilient } from '@/entities/ticker';
-import { getProfileResilient } from '@/app/[locale]/[symbol]/fundamental/getProfileResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
 import {
     getFinancialsSnapshot,
     isEmptyFinancialsSnapshot,
-} from '@/entities/financials-statements';
+} from '@/entities/financials-statements/lib/getFinancialsSnapshot';
 import type { MockedFunction } from 'vitest';
 import type { FinancialsSnapshot } from '@y0ngha/siglens-core';
 

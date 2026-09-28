@@ -11,7 +11,7 @@ import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import { NEWS_ANALYSIS_LOOKBACK_MS } from '../lib/newsLookback';
 import { buildAnalysisNewsItems } from '../lib/buildAnalysisNewsItems';
-import { getNextEarningsReport } from '@/entities/earnings-report';
+import { getNextEarningsReport } from '@/entities/earnings-report/api';
 import { loadNewsMacroCalendar } from '@/entities/economy/api/loadNewsMacroCalendar';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import {
@@ -22,8 +22,8 @@ import {
 import { caughtAnalysisErrorCode } from '@/shared/lib/aiProviderFailure';
 import { isE2E } from '@/shared/api/e2eEnv';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
-import { getDescriptor } from '@/shared/config/marketProfile';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
 
 /** Final return type — core's news result + our siglens-side gate errors. */
 export type SubmitNewsAnalysisActionResult =

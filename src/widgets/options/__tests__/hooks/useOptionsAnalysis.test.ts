@@ -6,14 +6,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createElement } from 'react';
 import type { ReactNode } from 'react';
 import { useOptionsAnalysis } from '@/widgets/options/hooks/useOptionsAnalysis';
-import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import type { OptionsAnalysisResponse } from '@y0ngha/siglens-core';
 
-vi.mock('@/shared/hooks/useAnalysisStream', () => ({
+vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({
     runAnalysisStream: vi.fn(),
 }));
 
-vi.mock('@/entities/analysis', () => ({
+vi.mock('@/entities/analysis/lib/gate', () => ({
     isGateBlockedResult: () => false,
 }));
 

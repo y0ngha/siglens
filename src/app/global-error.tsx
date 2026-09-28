@@ -26,7 +26,7 @@ interface GlobalErrorProps {
  * Tailwind classes would not resolve without this import.
  *
  * Kept dependency-light: no app providers, no shared/ui imports that pull
- * in layout-level CSS-in-JS or context. Mirrors `src/app/error.tsx`'s
+ * in layout-level CSS-in-JS or context. Mirrors `src/app/[locale]/error.tsx`'s
  * visual pattern using Tailwind classes with design tokens.
  *
  * ⚠️ **여기서는 `useTranslations`를 쓸 수 없다.** 이 파일은 루트 레이아웃을
@@ -51,18 +51,24 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
                 <ThemeInitScript />
             </head>
             <body className="flex min-h-dvh flex-col items-center justify-center bg-secondary-900 px-6 text-center text-secondary-50">
-                <p className="text-xs font-semibold tracking-[0.01em] text-primary-400">
-                    일시 오류
-                </p>
-                <h1 className="mt-4 text-2xl font-bold text-secondary-50">
-                    서비스를 불러오지 못했어요
-                </h1>
-                <p className="mt-3 max-w-md text-sm leading-relaxed text-secondary-400">
-                    페이지를 불러오지 못했습니다. 다시 시도해 주세요.
-                    <span className="mt-1 block">
-                        We couldn’t load this page. Please try again.
-                    </span>
-                </p>
+                <div
+                    role="alert"
+                    aria-atomic="true"
+                    className="flex flex-col items-center"
+                >
+                    <p className="text-xs font-semibold tracking-[0.01em] text-primary-400">
+                        일시 오류
+                    </p>
+                    <h1 className="mt-4 text-2xl font-bold text-secondary-50">
+                        서비스를 불러오지 못했어요
+                    </h1>
+                    <p className="mt-3 max-w-md text-sm leading-relaxed text-secondary-400">
+                        페이지를 불러오지 못했습니다. 다시 시도해 주세요.
+                        <span className="mt-1 block">
+                            We couldn’t load this page. Please try again.
+                        </span>
+                    </p>
+                </div>
                 <div className="mt-8 flex gap-3">
                     <button
                         type="button"

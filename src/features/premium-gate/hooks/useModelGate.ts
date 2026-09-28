@@ -6,12 +6,11 @@ import {
     type ModelId,
     type LlmProvider,
 } from '@y0ngha/siglens-core';
-import type { GateMode } from '@/entities/api-key';
-import { currentUserAction } from '@/entities/auth/actions';
-import { getRegisteredProvidersAction } from '@/entities/api-key/actions';
+import type { GateMode } from '@/shared/lib/types';
+import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
+import { getRegisteredProvidersAction } from '@/entities/api-key/actions/getRegisteredProvidersAction';
 import { useQuery } from '@tanstack/react-query';
 import {
-    CURRENT_USER_STALE_TIME_MS,
     QUERY_KEYS,
     REGISTERED_PROVIDERS_STALE_TIME_MS,
 } from '@/shared/config/queryConfig';
@@ -57,12 +56,10 @@ export function useModelGate({
     const [gateModal, setGateModal] = useState<ModelGateState | null>(null);
     const isHydrated = useHydrated();
 
-    const { data: currentUser } = useQuery({
-        queryKey: QUERY_KEYS.currentUser(),
-        queryFn: currentUserAction,
-        enabled: isHydrated,
-        staleTime: CURRENT_USER_STALE_TIME_MS,
-    });
+    // 헤더·넛지와 같은 `currentUser` 쿼리 정의를 쓴다. 예전엔 이 훅만 같은 키를
+    // 다른 staleTime·gcTime으로 따로 정의해, 같은 캐시 항목의 재조회 기준이
+    // 옵저버마다 달랐다.
+    const { data: currentUser } = useCurrentUser();
 
     const { data: registeredProviders = [] } = useQuery({
         queryKey: QUERY_KEYS.registeredProviders(),

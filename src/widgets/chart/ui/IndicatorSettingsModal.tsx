@@ -6,12 +6,14 @@ import { useId } from 'react';
 import { createPortal } from 'react-dom';
 import { useDialog } from '@/shared/hooks/useDialog';
 import { cn } from '@/shared/lib/cn';
+import { CloseIcon } from '@/shared/ui/StrokeIcons';
 import { getPeriodColor } from '@/shared/lib/chartColors';
 import { GearIcon } from '@/shared/ui/GearIcon';
 import {
     groupBindingsByCategory,
     type IndicatorBinding,
 } from '../model/indicatorRegistry';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 interface IndicatorSettingsModalProps {
     bindings: IndicatorBinding[];
@@ -137,7 +139,10 @@ export function IndicatorSettingsModal({
                     ref={dialogRef}
                     aria-labelledby={titleId}
                     onClose={close}
-                    className="max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto rounded-lg border border-secondary-700 bg-secondary-800 p-0 text-left shadow-2xl backdrop:bg-secondary-950/80 backdrop:backdrop-blur-sm"
+                    className={cn(
+                        SURFACE_CARD,
+                        'max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto p-0 text-left shadow-2xl backdrop:bg-secondary-950/80 backdrop:backdrop-blur-sm'
+                    )}
                 >
                     {isOpen && (
                         <div>
@@ -156,20 +161,7 @@ export function IndicatorSettingsModal({
                                     )}
                                     className="-mt-1 -mr-1 rounded p-1 text-secondary-500 transition-colors hover:text-secondary-300 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                                 >
-                                    <svg
-                                        width="16"
-                                        height="16"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        aria-hidden="true"
-                                    >
-                                        <line x1="18" y1="6" x2="6" y2="18" />
-                                        <line x1="6" y1="6" x2="18" y2="18" />
-                                    </svg>
+                                    <CloseIcon />
                                 </button>
                             </div>
 

@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { PremiumModelGateModal } from '@/features/premium-gate/ui/PremiumModelGateModal';
-import type { GateMode } from '@/entities/api-key';
+import type { GateMode } from '@/shared/lib/types';
 
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ push: vi.fn(), prefetch: vi.fn() }),
@@ -76,13 +76,8 @@ describe('Model Selector Flow', () => {
                 />
             );
             const user = userEvent.setup();
-            const backdrop = screen
-                .getByRole('dialog')
-                .parentElement!.querySelector('[aria-hidden="true"]');
-            if (backdrop) {
-                await user.click(backdrop);
-                expect(onClose).toHaveBeenCalledTimes(1);
-            }
+            await user.click(screen.getByTestId('modal-backdrop'));
+            expect(onClose).toHaveBeenCalledTimes(1);
         });
     });
 

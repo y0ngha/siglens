@@ -31,35 +31,37 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
     resetDatabaseClientForTests: vi.fn(),
 }));
-vi.mock('@/entities/auth', () => ({
+vi.mock('@/shared/config/cookieNames', () => ({
     AUTH_SESSION_COOKIE_NAME: 'siglens_session',
+}));
+vi.mock('@/entities/auth/lib/applyAuthCookie', () => ({
     applyAuthCookie: vi.fn((c: unknown) => c),
+}));
+vi.mock('@/entities/auth/lib/sessionCookieOptions', () => ({
     isSecureCookieEnv: vi.fn(() => false),
+}));
+vi.mock('@/entities/auth/lib/authHintCookie', () => ({
     createExpiredAuthHintCookie: vi.fn(() => ({
         name: 'auth_hint',
         value: '',
     })),
+}));
+vi.mock('@/entities/auth/lib/logoutUser', () => ({
     logoutUser: vi.fn(),
 }));
-// DrizzleSessionRepository는 barrel이 아닌 @/entities/auth/api에서 직접 import되므로
+// DrizzleSessionRepository는 @/entities/auth/api에서 직접 import되므로
 // 해당 경로를 mock한다.
 vi.mock('@/entities/auth/api', () => ({
     DrizzleSessionRepository: vi.fn().mockImplementation(function () {
         return {};
     }),
 }));
-// getAuthDatabaseClient는 barrel이 아닌 @/entities/auth/lib/db에서 직접 import되므로
-// (server-only 체인을 client 번들에서 분리) 해당 경로를 별도로 mock한다.
-vi.mock('@/entities/auth/lib/db', () => ({
-    getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
-    resetAuthDatabaseClientForTests: vi.fn(),
-}));
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { logoutUser } from '@/entities/auth';
+import { logoutUser } from '@/entities/auth/lib/logoutUser';
 import { logoutAction } from '@/features/auth-logout/actions/logoutAction';
-import { resetAuthDatabaseClientForTests } from '@/entities/auth/lib/db';
+import { resetDatabaseClientForTests } from '@/shared/db/client';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { issueLogoutCode } from '@/entities/auth/lib/handoffStore';
 
@@ -88,7 +90,7 @@ describe('logoutAction', () => {
     let setSpy: Mock;
 
     beforeEach(() => {
-        resetAuthDatabaseClientForTests();
+        resetDatabaseClientForTests();
         process.env.DATABASE_URL = 'postgres://test';
         getSpy = vi.fn();
         setSpy = vi.fn();

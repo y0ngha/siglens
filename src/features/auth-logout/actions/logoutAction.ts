@@ -4,27 +4,26 @@ import { getLocale } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { localeHref } from '@/shared/i18n/localeRedirect';
 import { cookies, headers } from 'next/headers';
-import {
-    AUTH_SESSION_COOKIE_NAME,
-    applyAuthCookie,
-    isSecureCookieEnv,
-    createExpiredAuthHintCookie,
-    logoutUser,
-} from '@/entities/auth';
+import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
+import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
+import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
+import { createExpiredAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
+import { logoutUser } from '@/entities/auth/lib/logoutUser';
 import { DrizzleSessionRepository } from '@/entities/auth/api';
-import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
+import { getDatabaseClient } from '@/shared/db/client';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import {
     aiSignedOutUrl,
     issueLogoutCode,
 } from '@/entities/auth/lib/handoffStore';
 import { isAiHost } from '@/shared/config/aiHost';
-import { DEFAULT_LOCALE, isLocale, type Locale } from '@/shared/i18n/locales';
+import { type Locale, resolveLocale } from '@/shared/i18n/locales';
 import { SITE_URL } from '@/shared/lib/seo';
+import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
 
 async function requestLocale(): Promise<Locale> {
     const raw = await getLocale();
-    return isLocale(raw) ? raw : DEFAULT_LOCALE;
+    return resolveLocale(raw);
 }
 
 /**
@@ -60,7 +59,7 @@ export async function logoutAction(): Promise<void> {
         // 세션을 지우기 전에 읽는다 — 지운 뒤에는 누구의 로그아웃인지 알 수 없다.
         const aiUser = onAiHost && sessionToken ? await getCurrentUser() : null;
         if (sessionToken) {
-            const { db } = getAuthDatabaseClient();
+            const { db } = getDatabaseClient();
             const result = await logoutUser(
                 { sessionToken },
                 { sessions: new DrizzleSessionRepository(db) },
@@ -75,8 +74,7 @@ export async function logoutAction(): Promise<void> {
                 : await localeHref('/')
         );
     } catch (err) {
-        if (err instanceof Error && err.message.startsWith('NEXT_REDIRECT'))
-            throw err;
+        if (isNextRedirectError(err)) throw err;
         console.error('[logoutAction] unexpected error:', err);
         redirect(
             onAiHost

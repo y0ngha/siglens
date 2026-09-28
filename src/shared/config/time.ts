@@ -35,9 +35,8 @@ export const CONGRESS_REVALIDATE_SECONDS = SECONDS_PER_DAY; // 24h — 의회 �
 export const ISO_DATE_HOUR_SLICE_END = 13;
 
 /**
- * `'YYYY-MM-DD'`(length 10) — `date.toISOString().slice(0, ISO_DATE_LENGTH)`로
- * ISO 인스턴트에서 날짜만 잘라낼 때 쓰는 상수. `etTimeUtils`, `FmpEconomyProvider`,
- * `YahooMarketProvider`, `fetchKrDailyCloses`가 각자 동일한 리터럴 10을 들고
- * 있었다 — 한 곳으로 모아 드리프트를 막는다.
+ * `'YYYY-MM-DD'`(length 10) — ISO 인스턴트에서 날짜만 잘라낼 때 쓰는 상수.
+ * `Date` → UTC 날짜 문자열은 이 상수를 쓰는 `toUtcIsoDate`(`shared/lib/isoDate`)를
+ * 호출한다. 여러 모듈이 각자 리터럴 10을 들고 있었다 — 한 곳으로 모아 드리프트를 막는다.
  */
 export const ISO_DATE_LENGTH = 10;

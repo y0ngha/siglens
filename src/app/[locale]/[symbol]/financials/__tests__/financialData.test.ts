@@ -61,7 +61,7 @@ import {
     getFinancialsSnapshot,
     ANNUAL_LIMIT,
     QUARTER_LIMIT,
-} from '@/entities/financials-statements';
+} from '@/entities/financials-statements/lib/getFinancialsSnapshot';
 import {
     computeFinancialsScorecard,
     normalizeFinancialsSnapshot,

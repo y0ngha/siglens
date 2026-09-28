@@ -4,14 +4,19 @@ vi.mock('next/server', async () => {
     return { ...actual };
 });
 const BACKTESTING_DATA_AT = new Date('2026-03-31T00:00:00.000Z');
-vi.mock('@/entities/sitemap-entry', () => ({
+vi.mock('@/entities/sitemap-entry/lib/buildStaticEntries', () => ({
     buildStaticEntries: vi.fn().mockReturnValue([]),
+}));
+vi.mock('@/entities/sitemap-entry/lib/xml', () => ({
     toUrlSetXml: vi.fn().mockReturnValue('<?xml version="1.0"?><urlset/>'),
+}));
+vi.mock('@/entities/sitemap-entry/lib/backtestingDataDate', () => ({
     backtestingDataDate: vi.fn(() => BACKTESTING_DATA_AT),
 }));
 
 import { GET } from '@/app/api/sitemap/static/route';
-import { buildStaticEntries, toUrlSetXml } from '@/entities/sitemap-entry';
+import { buildStaticEntries } from '@/entities/sitemap-entry/lib/buildStaticEntries';
+import { toUrlSetXml } from '@/entities/sitemap-entry/lib/xml';
 import type { MockedFunction } from 'vitest';
 
 const mockBuildStaticEntries = buildStaticEntries as MockedFunction<

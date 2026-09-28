@@ -8,14 +8,7 @@ import {
     type RunCongressTrendResult,
 } from '@y0ngha/siglens-core';
 import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import {
-    resolveTierAndByok,
-    resolveReasoning,
-    buildGateError,
-} from '@/shared/lib/byokGate';
-import { caughtAnalysisErrorCode } from '@/shared/lib/aiProviderFailure';
-import { isE2E } from '@/shared/api/e2eEnv';
+import { runGatedAnalysis } from '../lib/runGatedAnalysis';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
 
 /**
@@ -47,29 +40,13 @@ export type RunCongressTrendActionResult =
  * fails fast with a localized `tier_premium_blocked` message instead of
  * being submitted and only rejected later, at poll time, by the worker.
  *
- * §Bot parity (2026-09-27): `skipEnqueueIfMiss` is hardcoded `false` — no
- * longer derived from `isBot(headers)`. Crawlers must generate the same body
- * a human would on a cache miss (see the invariant at the top of
- * `src/app/api/analysis/stream/route.ts`); gating a bot's generation here
- * used to make Googlebot index a "봇 트래픽으로 보여 표시하지 않았어요" notice
- * instead of the real analysis.
- *
- * §E2E: when `E2E_TEST=1`, returns a deterministic cached fixture. The stub
- * imports are lazy/dynamic so they land in a server-only chunk that the prod
- * bundle never ships (mirrors runFinancialsAnalysisAction).
- *
- * §Reasoning: the "깊은 생각" toggle (member-reasoning-toggle spec Part A)
- * still requires the caller tier. `resolveReasoning` forces `false` for
- * anonymous/free callers, using the tier resolved by the gate above (so a
- * single DB round-trip serves both concerns).
+ * The gate, E2E short-circuit, bot parity (`skipEnqueueIfMiss: false`),
+ * reasoning tier rule and catch-all live in `runGatedAnalysis`, shared with the
+ * fundamental/financials actions.
  */
 export async function runCongressTrendAction(
     symbol: string,
     modelId: SubmitCongressTrendOptions['modelId'],
-    /**
-     * Client-requested "깊은 생각" (deep-thinking) toggle value. Only honored
-     * for member/pro tiers.
-     */
     /**
      * 요청 로케일. 게이트 거부 문구가 사용자에게 그대로 보이는데
      * `/api/*`는 next-intl matcher 밖이라 액션이 스스로 알 수 없다.
@@ -77,11 +54,19 @@ export async function runCongressTrendAction(
      * (실측: `resolveRequestLocale`을 상수로 바꿔도 10,516개 테스트가 초록이었다).
      */
     locale: Locale,
+    /**
+     * Client-requested "깊은 생각" (deep-thinking) toggle value. Only honored
+     * for member/pro tiers.
+     */
     reasoning?: boolean,
     signal?: AbortSignal
 ): Promise<RunCongressTrendActionResult> {
-    try {
-        if (isE2E()) {
+    return runGatedAnalysis({
+        actionName: 'runCongressTrendAction',
+        modelId,
+        locale,
+        reasoning,
+        e2eResult: async () => {
             const stub = await import('@/shared/api/e2eAnalysisStub');
             // resilience 스펙이 설정하는 force-error 쿠키가 있으면 일시적 실패를
             // 결정적으로 주입해 에러 바운더리 → 재시도 → 복구를 검증할 수 있게 한다.
@@ -91,39 +76,17 @@ export async function runCongressTrendAction(
             return forceError
                 ? stub.e2eForcedCongressError()
                 : stub.e2eCachedCongressTrend();
-        }
-
-        const user = await getCurrentUser();
-        const userId = user?.id ?? null;
-
-        const gate = await resolveTierAndByok(userId, modelId, locale);
-        if (gate.kind === 'blocked') {
-            return { status: 'error', error: gate.error };
-        }
-
-        return await runCongressTrend({
-            symbol,
-            // 화면 로케일을 AI 산출물 언어로 그대로 넘긴다 — core 0.53.0부터
-            // 받는다. `ko`는 접미 없는 기존 캐시 키를 그대로 맞힌다.
-            locale,
-            modelId,
-            dataProvider: getCongressTradesProvider(),
-            tier: gate.tier,
-            reasoning: resolveReasoning(gate.tier, reasoning),
-            skipEnqueueIfMiss: false,
-            signal,
-            ...(gate.userApiKey !== undefined
-                ? { userApiKey: gate.userApiKey }
-                : {}),
-        });
-    } catch (error) {
-        // MISTAKES §0.7: server actions must not propagate raw exceptions to
-        // the client. Mirrors the sibling submit actions' catch-all shape so
-        // the hook's `isGateBlockedResult` check stays a reliable discriminant.
-        console.error('[runCongressTrendAction] unexpected error:', error);
-        return {
-            status: 'error',
-            error: await buildGateError(caughtAnalysisErrorCode(error), locale),
-        };
-    }
+        },
+        submit: gated =>
+            runCongressTrend({
+                symbol,
+                // 화면 로케일을 AI 산출물 언어로 그대로 넘긴다 — core 0.53.0부터
+                // 받는다. `ko`는 접미 없는 기존 캐시 키를 그대로 맞힌다.
+                locale,
+                modelId,
+                dataProvider: getCongressTradesProvider(),
+                signal,
+                ...gated,
+            }),
+    });
 }

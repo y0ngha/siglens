@@ -1,11 +1,11 @@
-vi.mock('@/entities/ticker/actions', () => ({
+vi.mock('@/entities/ticker/actions/getAssetInfoAction', () => ({
     getAssetInfoAction: vi.fn(),
 }));
 
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import { getAssetInfoAction } from '@/entities/ticker/actions';
+import { getAssetInfoAction } from '@/entities/ticker/actions/getAssetInfoAction';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
 import type { AssetInfo } from '@/shared/lib/types';
 

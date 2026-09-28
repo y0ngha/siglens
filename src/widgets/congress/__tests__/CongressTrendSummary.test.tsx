@@ -6,9 +6,13 @@ vi.mock('@/shared/lib/cn', () => ({
             .filter(a => typeof a === 'string' && a.length > 0)
             .join(' '),
 }));
-vi.mock('@/features/symbol-model', () => ({
+vi.mock('@/features/symbol-model/hooks/useDefaultModelId', () => ({
     useDefaultModelId: () => 'gemini-3.5-flash-lite',
+}));
+vi.mock('@/features/symbol-model/hooks/useAnalysisSettingsHydrated', () => ({
     useAnalysisSettingsHydrated: () => true,
+}));
+vi.mock('@/features/symbol-model/hooks/useDefaultReasoning', () => ({
     useDefaultReasoning: () => false,
 }));
 vi.mock('../hooks/useCongressTrend', () => ({
@@ -27,9 +31,12 @@ vi.mock('../CongressTrendSummaryEmpty', () => ({
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
-import { ShareableAnalysisProvider, useShareable } from '@/features/share';
 import { CongressTrendSummary } from '../CongressTrendSummary';
 import { useCongressTrend } from '../hooks/useCongressTrend';
+import {
+    ShareableAnalysisProvider,
+    useShareable,
+} from '@/features/share/model/ShareableAnalysisContext';
 
 describe('CongressTrendSummary', () => {
     /**

@@ -1,5 +1,5 @@
 /** Hosts served by the SiglensAI subtree. Port-suffixed dev host is stripped before matching. */
-export const AI_HOSTS: ReadonlySet<string> = new Set([
+const AI_HOSTS: ReadonlySet<string> = new Set([
     'ai.siglens.io',
     'ai.localhost',
 ]);

@@ -2,7 +2,7 @@
  * Unit tests for fetchMarketNewsDigest.
  *
  * Mocks:
- * - @/shared/hooks/useAnalysisStream — runAnalysisStream (SSE 한 연결, 폴 루프 없음)
+ * - @/shared/lib/sse/runAnalysisStream — runAnalysisStream (SSE 한 연결, 폴 루프 없음)
  *
  * fetchMarketNewsDigest(category, signal)은 단일 프로미스를 반환한다.
  */
@@ -10,10 +10,10 @@
 import { TEST_STREAM_MESSAGES } from '@/shared/test-utils/streamMessagesFixture';
 import type { MockedFunction } from 'vitest';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
-import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import { fetchMarketNewsDigest } from '../utils/fetchMarketNewsDigest';
 
-vi.mock('@/shared/hooks/useAnalysisStream', () => ({
+vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({
     runAnalysisStream: vi.fn(),
 }));
 

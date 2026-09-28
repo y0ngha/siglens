@@ -1,17 +1,14 @@
 vi.mock('@/entities/sitemap-entry/server', () => ({
     loadRemovalSitemapEntries: vi.fn(),
 }));
-vi.mock('@/entities/sitemap-entry', async importOriginal => {
-    const actual =
-        await importOriginal<typeof import('@/entities/sitemap-entry')>();
-
-    return {
-        ...actual,
-        toRemovalUrlSetXml: vi
-            .fn()
-            .mockReturnValue('<?xml version="1.0"?><urlset/>'),
-    };
-});
+vi.mock('@/entities/sitemap-entry/lib/removalXml', async importOriginal => ({
+    ...(await importOriginal<
+        typeof import('@/entities/sitemap-entry/lib/removalXml')
+    >()),
+    toRemovalUrlSetXml: vi
+        .fn()
+        .mockReturnValue('<?xml version="1.0"?><urlset/>'),
+}));
 
 import { constants } from 'node:http2';
 import { dynamic, GET } from '@/app/api/sitemap/removal/[kind]/route';
@@ -23,9 +20,9 @@ import {
 import {
     REMOVAL_SITEMAP_KINDS,
     SITEMAP_MAX_URLS_PER_FILE,
-    toRemovalUrlSetXml,
     type RemovalSitemapEntry,
-} from '@/entities/sitemap-entry';
+} from '@/entities/sitemap-entry/model';
+import { toRemovalUrlSetXml } from '@/entities/sitemap-entry/lib/removalXml';
 import { loadRemovalSitemapEntries } from '@/entities/sitemap-entry/server';
 import type { MockedFunction, MockInstance } from 'vitest';
 

@@ -1,4 +1,4 @@
-import { countSkillFiles, FileSkillsLoader } from '@/entities/skill';
+import { countSkillFiles, FileSkillsLoader } from '@/entities/skill/api';
 import type { Skill } from '@y0ngha/siglens-core';
 import { dedupeByName, parseGating } from '../api';
 import path from 'node:path';

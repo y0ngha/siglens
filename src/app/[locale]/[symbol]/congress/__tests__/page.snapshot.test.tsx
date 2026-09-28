@@ -24,17 +24,21 @@ vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: vi.fn().mockResolvedValue(true),
 }));
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker/lib/assetClassification', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+}));
+vi.mock('@/entities/ticker/lib/ticker', () => ({
     pickAssetName: (info: { name: string; koreanName?: string }) =>
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
+}));
+vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 vi.mock('next/navigation', () => ({
     notFound: vi.fn(),
 }));
-vi.mock('@/app/[locale]/[symbol]/fundamental/getProfileResilient', () => ({
+vi.mock('@/entities/ticker/lib/getProfileResilient', () => ({
     getProfileResilient: vi.fn(),
 }));
 vi.mock('@/app/[locale]/[symbol]/congress/congressData', () => ({
@@ -42,14 +46,16 @@ vi.mock('@/app/[locale]/[symbol]/congress/congressData', () => ({
         .fn()
         .mockResolvedValue({ trades: [], degraded: false }),
 }));
-vi.mock('@/entities/congress-trades', () => ({
+vi.mock('@/entities/congress-trades/lib/getCongressTradesResilient', () => ({
     getCongressTradesResilient: vi.fn(),
 }));
-vi.mock('@/widgets/congress', () => ({
+vi.mock('@/widgets/congress/CongressTrendSummary', () => ({
     CongressTrendSummary: () => null,
+}));
+vi.mock('@/widgets/congress/CongressTradesTable', () => ({
     CongressTradesTable: () => null,
 }));
-vi.mock('@/views/symbol', () => ({
+vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({
     SymbolPageHeading: ({ children }: { children: unknown }) => children,
 }));
 vi.mock('@/shared/ui/CrossLinkCards', () => ({
@@ -75,9 +81,9 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CongressPage from '@/app/[locale]/[symbol]/congress/page';
 import { CongressSnapshotProse } from '@/views/symbol/snapshot/renderers/CongressSnapshotProse';
-import { CongressTrendSummary } from '@/widgets/congress';
-import { getAssetInfoResilient } from '@/entities/ticker';
-import { getProfileResilient } from '@/app/[locale]/[symbol]/fundamental/getProfileResilient';
+import { CongressTrendSummary } from '@/widgets/congress/CongressTrendSummary';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
 import { getCongressPageData } from '@/app/[locale]/[symbol]/congress/congressData';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { expectVisibleFaqWithoutJsonLd } from '@/__tests__/utils/expectFaqSingleSource';

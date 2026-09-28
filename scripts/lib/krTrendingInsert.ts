@@ -16,8 +16,8 @@ export interface KrTrendingItem {
     name: string;
 }
 
-export const KR_TRENDING_CATEGORY_ID = 'kr-trending';
-export const KR_TRENDING_LABEL = '관심 급상승';
+const KR_TRENDING_CATEGORY_ID = 'kr-trending';
+const KR_TRENDING_LABEL = '관심 급상승';
 
 const CATEGORIES_DECLARATION =
     'export const TICKER_CATEGORIES: readonly TickerCategory[] = [';

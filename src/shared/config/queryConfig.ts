@@ -21,9 +21,6 @@ export const SECTOR_SIGNALS_STALE_TIME_MS = MS_PER_MINUTE;
 /** FMP ticker catalogue updates daily; 5 min avoids re-querying during a typing session. */
 export const TICKER_SEARCH_STALE_TIME_MS = 5 * MS_PER_MINUTE;
 
-/** Korean translations are immutable once cached server-side, so client staleness can be aggressive. */
-export const KOREAN_TRANSLATION_STALE_TIME_MS = 60 * MS_PER_MINUTE;
-
 /** Asset metadata (sector/industry/fmpSymbol) changes infrequently; long staleness keeps repeat nav warm. */
 export const ASSET_INFO_STALE_TIME_MS = 30 * MS_PER_MINUTE;
 
@@ -37,9 +34,6 @@ export const BARS_STALE_TIME_MS = 30_000;
 
 /** The current user's tier rarely changes within a session. */
 export const USER_TIER_STALE_TIME_MS = 5 * MS_PER_MINUTE;
-
-/** Current user identity rarely changes within a session; matches USER_TIER for consistency. */
-export const CURRENT_USER_STALE_TIME_MS = 5 * MS_PER_MINUTE;
 
 /** Registered LLM providers list refreshes only after the user adds/removes a key — short stale is fine. */
 export const REGISTERED_PROVIDERS_STALE_TIME_MS = MS_PER_MINUTE;

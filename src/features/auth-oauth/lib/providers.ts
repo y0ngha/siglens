@@ -4,10 +4,6 @@ import { e2eFakeOAuthAdapter } from './E2eFakeOAuthAdapter';
 import type { OAuthProviderAdapter } from './types';
 import { isE2E } from '@/shared/api/e2eEnv';
 
-// NOTE: Kakao login is currently disabled — its adapter is intentionally excluded
-// from SUPPORTED_PROVIDERS and ADAPTERS so that /api/auth/kakao/start and the
-// callback route reject the provider. Re-enable by adding 'kakao' back here and
-// re-introducing kakaoOAuthAdapter.
 const SUPPORTED_PROVIDERS: readonly SupportedOAuthProvider[] = ['google'];
 
 const ADAPTERS: Record<SupportedOAuthProvider, OAuthProviderAdapter> = {

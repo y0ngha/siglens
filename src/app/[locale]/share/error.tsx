@@ -1,10 +1,8 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useEffect } from 'react';
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { SITE_NAME } from '@/shared/lib/seo';
-import { reportClientError } from '@/shared/lib/reportClientError';
+import { RouteErrorView } from '@/app/_components/RouteErrorView';
 
 interface ShareErrorProps {
     error: Error & { digest?: string };
@@ -20,37 +18,16 @@ interface ShareErrorProps {
  */
 export default function ShareError({ error, reset }: ShareErrorProps) {
     const t = useTranslations('app.share');
-    useEffect(() => {
-        console.error('[ShareRoute] render error:', error);
-        reportClientError(error, 'ShareRoute', error.digest);
-    }, [error]);
-
     return (
-        <main className="page-container flex flex-1 flex-col items-center py-20 text-center">
-            <p className="text-sm font-semibold tracking-[0.01em] text-primary-400">
-                {t('error.729779')}
-            </p>
-            <h1 className="mt-4 text-2xl font-bold text-secondary-50 sm:text-3xl">
-                {t('error.3cf233')}
-            </h1>
-            <p className="mt-3 max-w-md text-sm leading-relaxed text-secondary-400">
-                {t('error.1dedc8', { v0: SITE_NAME })}
-            </p>
-            <div className="mt-8 flex gap-3">
-                <button
-                    type="button"
-                    onClick={reset}
-                    className="inline-flex min-h-11 items-center rounded-lg bg-primary-600 px-6 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
-                >
-                    {t('error.0c767c')}
-                </button>
-                <Link
-                    href="/"
-                    className="inline-flex min-h-11 items-center rounded-lg px-6 text-sm font-medium text-secondary-200 transition-colors hover:text-secondary-50 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
-                >
-                    {t('error.eb2523', { v0: SITE_NAME })}
-                </Link>
-            </div>
-        </main>
+        <RouteErrorView
+            error={error}
+            reset={reset}
+            logTag="ShareRoute"
+            eyebrow={t('error.729779')}
+            title={t('error.3cf233')}
+            body={t('error.1dedc8', { v0: SITE_NAME })}
+            retryLabel={t('error.0c767c')}
+            homeLabel={t('error.eb2523', { v0: SITE_NAME })}
+        />
     );
 }

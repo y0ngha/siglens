@@ -1,12 +1,9 @@
 import type { FearGreedWarning } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
+import { useTranslations } from 'next-intl';
 // 문구 **키**는 `shared/lib/fearGreedLabels`가 소유한다 — 서버 렌더 요약
 // (`FearGreedFactsSummary`)이 이 클라이언트 모듈을 끌어오지 않게 하기 위함.
-// 기존 소비자(테스트 포함)의 import 경로를 지키려고 여기서 다시 내보낸다.
-import { useTranslations } from 'next-intl';
 import { WARNING_TEXT_KEY } from '@/shared/lib/fearGreedLabels';
-
-export { WARNING_TEXT_KEY };
 
 interface SelfNormWarningBadgeProps {
     warning: FearGreedWarning;

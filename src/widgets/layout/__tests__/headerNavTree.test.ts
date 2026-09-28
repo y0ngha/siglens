@@ -1,7 +1,10 @@
 import { NAV_TREE } from '../headerNavTree';
 import { isHrefActive, isVerticalActive } from '../navActiveState';
 import { NAV_VERTICALS } from '@/shared/config/assetClassNav';
-import { CATEGORY_CONFIG, categoriesInRegion } from '@/entities/market-news';
+import {
+    CATEGORY_CONFIG,
+    categoriesInRegion,
+} from '@/entities/market-news/lib/categoryConfig';
 
 describe('NAV_TREE', () => {
     it('mirrors the vertical/region skeleton exactly', () => {

@@ -1,10 +1,8 @@
 // @vitest-environment jsdom
 import { renderHook, waitFor } from '@testing-library/react';
 import { useApiKeyForms } from '@/features/api-key-management/hooks/useApiKeyForms';
-import {
-    saveApiKeyAction,
-    deleteApiKeyAction,
-} from '@/entities/api-key/actions';
+import { saveApiKeyAction } from '@/entities/api-key/actions/saveApiKeyAction';
+import { deleteApiKeyAction } from '@/entities/api-key/actions/deleteApiKeyAction';
 
 const mockInvalidateQueries = vi.fn();
 
@@ -14,8 +12,10 @@ vi.mock('@tanstack/react-query', () => ({
     }),
 }));
 
-vi.mock('@/entities/api-key/actions', () => ({
+vi.mock('@/entities/api-key/actions/saveApiKeyAction', () => ({
     saveApiKeyAction: vi.fn(),
+}));
+vi.mock('@/entities/api-key/actions/deleteApiKeyAction', () => ({
     deleteApiKeyAction: vi.fn(),
 }));
 

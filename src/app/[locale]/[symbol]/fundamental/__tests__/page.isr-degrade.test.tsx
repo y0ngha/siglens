@@ -31,11 +31,15 @@
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: vi.fn().mockResolvedValue(true),
 }));
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker/lib/assetClassification', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+}));
+vi.mock('@/entities/ticker/lib/ticker', () => ({
     pickAssetName: (info: { name: string; koreanName?: string }) =>
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
+}));
+vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 vi.mock('next/navigation', () => ({
@@ -43,7 +47,7 @@ vi.mock('next/navigation', () => ({
         throw new Error('NEXT_NOT_FOUND');
     }),
 }));
-vi.mock('@/app/[locale]/[symbol]/fundamental/getProfileResilient', () => ({
+vi.mock('@/entities/ticker/lib/getProfileResilient', () => ({
     getProfileResilient: vi.fn(),
 }));
 vi.mock('@/app/[locale]/[symbol]/fundamental/fundamentalData', () => ({
@@ -178,7 +182,7 @@ vi.mock('@/widgets/fundamental/sections/ValuationCard', () => ({
         />
     ),
 }));
-vi.mock('@/views/symbol', () => ({
+vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({
     SymbolPageHeading: ({ children }: { children: unknown }) => children,
 }));
 vi.mock('@/shared/ui/CrossLinkCards', () => ({
@@ -228,8 +232,8 @@ import FundamentalPage, {
     FinancialHealthSection,
     FutureDirectionSection,
 } from '@/app/[locale]/[symbol]/fundamental/page';
-import { getAssetInfoResilient } from '@/entities/ticker';
-import { getProfileResilient } from '@/app/[locale]/[symbol]/fundamental/getProfileResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
 import {
     getProfile,
     getProfileDescription,

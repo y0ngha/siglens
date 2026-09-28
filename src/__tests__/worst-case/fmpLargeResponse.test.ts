@@ -18,10 +18,6 @@ vi.mock('@/shared/api/fmp/httpClient', () => ({
     fmpGet: vi.fn(),
 }));
 
-vi.mock('@/shared/config/time', () => ({
-    MS_PER_HOUR: 3600000,
-}));
-
 import { FmpNewsClient } from '@/entities/news-article/lib/fmpNewsClient';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
 
@@ -73,7 +69,7 @@ describe('FMP large response handling', () => {
     it('handles empty array from FMP', async () => {
         mockFmpGet.mockResolvedValue([]);
 
-        const result = await client.fetchNews('AAPL', '24h');
+        const result = await client.fetchNewsForPeriod('AAPL', 24 * 3600000);
 
         expect(result).toEqual([]);
     });
@@ -100,7 +96,7 @@ describe('FMP large response handling', () => {
         };
         mockFmpGet.mockResolvedValue([oldArticle, recentArticle]);
 
-        const result = await client.fetchNews('AAPL', '24h');
+        const result = await client.fetchNewsForPeriod('AAPL', 24 * 3600000);
 
         const urls = result.map(r => r.url);
         expect(urls).not.toContain('https://example.com/old');
@@ -121,7 +117,7 @@ describe('FMP large response handling', () => {
             },
         ]);
 
-        const result = await client.fetchNews('AAPL', '24h');
+        const result = await client.fetchNewsForPeriod('AAPL', 24 * 3600000);
 
         expect(result.length).toBeLessThanOrEqual(1);
     });
@@ -129,6 +125,8 @@ describe('FMP large response handling', () => {
     it('propagates FMP 500 error', async () => {
         mockFmpGet.mockRejectedValue(new Error('FMP news/stock 500'));
 
-        await expect(client.fetchNews('AAPL', '30d')).rejects.toThrow('500');
+        await expect(
+            client.fetchNewsForPeriod('AAPL', 30 * 24 * 3600000)
+        ).rejects.toThrow('500');
     });
 });

@@ -21,7 +21,7 @@ vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
 vi.mock('@/widgets/overall/OverallContent', () => ({
     OverallContent: () => null,
 }));
-vi.mock('@/views/symbol', () => ({
+vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({
     SymbolPageHeading: ({ children }: { children: React.ReactNode }) =>
         children,
 }));
@@ -33,11 +33,15 @@ vi.mock('@/shared/config/market', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/config/market')>()),
     DEFAULT_TIMEFRAME: '1Day',
 }));
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker/lib/assetClassification', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+}));
+vi.mock('@/entities/ticker/lib/ticker', () => ({
     pickAssetName: (info: { name: string; koreanName?: string }) =>
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
+}));
+vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn().mockResolvedValue({
         assetInfo: {
             symbol: 'AAPL',
@@ -90,18 +94,21 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/shared/cache/staticSymbolCache', () => ({
     staticSymbolCache: vi.fn(),
 }));
-vi.mock('@/widgets/overall', () => ({
+vi.mock('@/widgets/overall/OverallFactsSummary', () => ({
     OverallFactsSummary: () => null,
+}));
+vi.mock('@/widgets/overall/OverallFactualFallback', () => ({
     OverallFactualFallback: () => null,
 }));
 
 import { Suspense, type ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { default as OverallPage } from '@/app/[locale]/[symbol]/overall/page';
-import { OverallFactsSummary, OverallFactualFallback } from '@/widgets/overall';
+import { OverallFactsSummary } from '@/widgets/overall/OverallFactsSummary';
+import { OverallFactualFallback } from '@/widgets/overall/OverallFactualFallback';
 import { OverallSnapshotProse } from '@/views/symbol/snapshot/renderers/OverallSnapshotProse';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
-import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article';
+import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article/lib/cacheKeys';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 
 const mockStatic = vi.mocked(staticSymbolCache);

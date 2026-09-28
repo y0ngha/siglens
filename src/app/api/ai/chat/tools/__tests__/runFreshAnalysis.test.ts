@@ -12,16 +12,16 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => ({
     ...(await importOriginal<object>()),
     runAnalysis: m.runAnalysis,
 }));
-vi.mock('@/entities/analysis/actions', () => ({
+vi.mock('@/entities/analysis/actions/runOverallAnalysisAction', () => ({
     runOverallAnalysisAction: m.overall,
 }));
-vi.mock('@/entities/news-article/actions', () => ({
+vi.mock('@/entities/news-article/actions/submitNewsAnalysisAction', () => ({
     submitNewsAnalysisAction: m.news,
 }));
-vi.mock('@/entities/options-chain/actions', () => ({
+vi.mock('@/entities/options-chain/actions/optionsActions', () => ({
     submitOptionsAnalysisAction: m.options,
 }));
-vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
+vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: m.profile,
 }));
 vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
@@ -33,7 +33,7 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
 vi.mock('@/shared/api/market/sessionSpecFor', () => ({
     sessionSpecFor: () => ({}),
 }));
-vi.mock('@/shared/config/marketProfile', () => ({
+vi.mock('@/shared/config/marketProfile/registry', () => ({
     getDescriptor: () => ({
         assetClass: 'equity',
         priceFormat: { currency: 'USD' },

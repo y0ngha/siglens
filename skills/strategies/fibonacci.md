@@ -7,8 +7,8 @@ indicators: []
 confidence_weight: 0.5
 gating:
   tier: always_on
-token_cost: 627
-digest_hash: "a28a5c73"
+token_cost: 663
+digest_hash: "8bb92dc0"
 ---
 
 ## Overview
@@ -76,7 +76,7 @@ A zone where listed levels from different horizons converge, or where a listed l
 - A `Fib anchor: swing low X → swing high Y (up leg)` (or down-leg) line — cite THAT for the swing; do not describe your own.
 - Only when a Point C exists for that horizon: `Fib ABC ext 100%`…`Fib ABC ext 261.8%` rows, a complete `Fib ABC table:` line, and a `Fib ABC anchor: A x → B y → C z (up|down)` line. Prefer these over the plain `Fib ext` / `Fib table` rows for a target. If they are absent, state that no A-B-C extension is available yet — do not pick your own A/B/C.
 
-Every standard ratio is available in the nearest-list rows or the table line — **never calculate a level yourself.** Pick the horizon(s) relevant to the setup and identify which listed level price is at or near. Put the relevant listed retracement levels in `keyLevels` and listed extension levels in `priceTargets`, citing ratio and horizon as the reason.
+Every standard ratio is available in the nearest-list rows or the table line — **never calculate a level yourself.** Pick the horizon(s) relevant to the setup and identify which listed level price is at or near. Put the relevant listed retracement levels in `keyLevels`. Put listed extension levels in `priceTargets` using the response schema's shape — each side is an object, never a bare list: `priceTargets.bullish.targets` / `priceTargets.bearish.targets` hold `{ price, basis }` items (basis cites ratio and horizon), and that side's `condition` states what must happen first.
 
 Return the summary in **this exact structured format** (one `**label**: value` pair per line):
 
@@ -105,7 +105,7 @@ Extension 100/127.2/161.8/200/261.8% = profit-target zones, not entries. Two-poi
 Cluster: listed levels from different horizons, or a level meeting S/R / MA / volume node = stronger zone; a lone level is weak.
 Entry use: pullback to a listed 38.2/50/61.8% + ≥1 confirmation (reversal candle, RSI divergence, volume dry-up then expansion, S/R or MA coincidence); stop beyond the next deeper listed level; targets = swing extreme, then listed extensions.
 
-Market Reference (per horizon Short/Medium/Long, under Resistance-above / Support-below): nearest-list rows `Fib N%` and `Fib ext N%`; a complete `Fib table:` line (every standard ratio — use it for a ratio further than the rows cover); a `Fib anchor: swing low X → swing high Y (leg)` line — cite it for the swing, never pick your own. Only when Point C exists: `Fib ABC ext 100%`…`261.8%` rows + `Fib ABC table:` + `Fib ABC anchor: A x → B y → C z (up|down)` — prefer these for targets; absent → say no A-B-C extension yet. Never calculate a level yourself. Listed retracements → keyLevels, listed extensions → priceTargets (cite ratio + horizon).
+Market Reference (per horizon Short/Medium/Long, under Resistance-above / Support-below): nearest-list rows `Fib N%` and `Fib ext N%`; a complete `Fib table:` line (every standard ratio — use it for a ratio further than the rows cover); a `Fib anchor: swing low X → swing high Y (leg)` line — cite it for the swing, never pick your own. Only when Point C exists: `Fib ABC ext 100%`…`261.8%` rows + `Fib ABC table:` + `Fib ABC anchor: A x → B y → C z (up|down)` — prefer these for targets; absent → say no A-B-C extension yet. Never calculate a level yourself. Listed retracements → keyLevels. Listed extensions → priceTargets.bullish.targets / priceTargets.bearish.targets as {price, basis} items (basis = ratio + horizon) plus that side's condition — each side is an object, never a bare list.
 
 Output (one **label**: value per line):
 **스윙 구간**: [Fib anchor 인용, 예: 저점 $138 → 고점 $175 (상승 스윙)]

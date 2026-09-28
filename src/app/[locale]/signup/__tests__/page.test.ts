@@ -1,7 +1,9 @@
 vi.mock('@/shared/ui/auth/AuthCardShell', () => ({
     AuthCardShell: () => null,
 }));
-vi.mock('@/features/auth-signup', () => ({ SignupForm: () => null }));
+vi.mock('@/features/auth-signup/ui/SignupForm', () => ({
+    SignupForm: () => null,
+}));
 vi.mock('@/features/auth-oauth/ui/SocialLoginButtons', () => ({
     SocialLoginButtons: () => null,
 }));

@@ -6,7 +6,7 @@ import { HeaderNavStatic } from './HeaderNavStatic';
 import { HeaderUserMenu, type HeaderUserMenuUser } from './HeaderUserMenu';
 import { ThemeToggle } from '@/shared/ui/ThemeToggle';
 import { NAV_TREE } from './headerNavTree';
-import { HeaderSearch } from '@/features/ticker-search';
+import { HeaderSearch } from '@/features/ticker-search/ui/HeaderSearch';
 import { LogoLockup } from './LogoLockup';
 import { Suspense } from 'react';
 import { cn } from '@/shared/lib/cn';

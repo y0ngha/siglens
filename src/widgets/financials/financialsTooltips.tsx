@@ -25,10 +25,6 @@ export const NetDebtTooltip = (
     <TooltipParagraphs namespace="widgets.financials" tooltipKey="netDebt" />
 );
 
-export const AccrualsTooltip = (
-    <TooltipParagraphs namespace="widgets.financials" tooltipKey="accruals" />
-);
-
 export const CapExTooltip = (
     <TooltipParagraphs namespace="widgets.financials" tooltipKey="capex" />
 );

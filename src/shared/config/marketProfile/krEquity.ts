@@ -25,8 +25,6 @@ export const KR_EQUITY_DESCRIPTOR: MarketProfileDescriptor = {
     // 실시간이 필요하면 증권사 API(KIS 등) 실계좌 연동이 유일한 경로다.
     quoteDelayMinutes: 20,
     dataProvider: 'yahoo',
-    // yahoo는 canonical 심볼을 그대로 받는다(`005930.KS`). FMP처럼 표기 변환이 없다.
-    toProviderSymbol: canonical => canonical,
     newsSource: 'naver',
     // 거래소는 심볼 접미사(.KS/.KQ)가 이미 결정하므로 별도 필터가 불필요하다.
     exchangeWhitelist: null,

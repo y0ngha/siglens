@@ -1,7 +1,7 @@
 import {
     isRemovalSitemapKind,
     REMOVAL_SITEMAP_KINDS,
-} from '@/entities/sitemap-entry';
+} from '@/entities/sitemap-entry/model';
 
 describe('isRemovalSitemapKind', () => {
     describe('removal sitemap kind 목록의 값이면', () => {

@@ -4,8 +4,10 @@ import { useId, type ReactNode } from 'react';
 import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
 import { SnapshotProseDisclosure } from './SnapshotProseDisclosure';
 import { formatSnapshotAsOf } from '@/shared/lib/formatSnapshotAsOf';
-import type { MarketProfileId } from '@/shared/config/marketProfile';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { cn } from '@/shared/lib/cn';
 
 interface SnapshotSummarySectionProps {
     /** 섹션 헤딩 텍스트. 생략 시 "최근 분석 요약". */
@@ -95,7 +97,7 @@ const AS_OF_CAPTION_KEY: Record<
  * audit fix FIX 4: 카드 셸은 `TechnicalFactsSummary`(Suspense-fallback
  * 대역이라 `bg-secondary-800 rounded-lg p-4`가 정당화되는 예외 케이스)가
  * 아니라, 이 섹션들이 실제로 나란히 놓이는 제품 전역 우세 패턴(67곳)인
- * `border-secondary-700 bg-secondary-800 rounded-lg border p-6`을 따른다 —
+ * `SURFACE_CARD` + `p-6`을 따른다 —
  * 이전 셸은 소수 패턴(5곳)이라 이 섹션들이 주변 카드보다 부실해 보였다.
  * 순수 프레젠테이션 서버 컴포넌트다 — 'use client' 없음, 데이터 페칭 없음,
  * request context 접근 없음.
@@ -209,7 +211,7 @@ export function SnapshotSummarySection({
              * 위젯이 따로 있고 이 섹션은 같은 내용을 중복 노출한다"는 뜻이다(차트 탭).
              */
             {...(duplicatesLiveWidget ? { 'data-snapshot-prose': '' } : {})}
-            className="flex flex-col gap-4 rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+            className={cn(SURFACE_CARD, 'flex flex-col gap-4 p-6')}
         >
             {duplicatesLiveWidget ? (
                 <SnapshotProseDisclosure

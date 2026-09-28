@@ -8,7 +8,7 @@
  * `PortfolioGuard` reads holdings directly via `DrizzlePortfolioRepository`
  * (not `getPortfolioHoldingsAction`, which re-resolves `getCurrentUser`
  * internally — see the page's doc comment), so this mocks the repository +
- * `getDatabaseClient` the same way `src/app/privacy/__tests__/page.test.ts`
+ * `getDatabaseClient` the same way `src/app/[locale]/privacy/__tests__/page.test.ts`
  * mocks `DrizzleTermsRepository`. `toView` is real (pure), so fixtures are
  * raw `PortfolioHoldingRecord`-shaped rows (Date `updatedAt`).
  */
@@ -37,14 +37,14 @@ vi.mock('next/link', () => ({ default: () => null }));
 vi.mock('next/navigation', () => ({
     redirect: vi.fn(),
 }));
-vi.mock('@/app/[locale]/portfolio/PositionHoldingCard', () => ({
+vi.mock('@/widgets/portfolio-position/ui/PositionHoldingCard', () => ({
     PositionHoldingCard: () => null,
 }));
 
 import { isValidElement, type ReactNode } from 'react';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { PositionHoldingCard } from '@/app/[locale]/portfolio/PositionHoldingCard';
+import { PositionHoldingCard } from '@/widgets/portfolio-position/ui/PositionHoldingCard';
 import {
     generateMetadata,
     PortfolioEmptyState,

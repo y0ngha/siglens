@@ -2,7 +2,7 @@
 
 import { revalidateTag } from 'next/cache';
 // CORE DEPENDENCY (separate repo, user publishes): analysis-domain AI translation
-// of an unmapped indicator name. See SP-B plan CROSS-REPO note.
+// of an unmapped indicator name.
 import { runIndicatorTranslation } from '@y0ngha/siglens-core';
 
 import { isE2E } from '@/shared/api/e2eEnv';

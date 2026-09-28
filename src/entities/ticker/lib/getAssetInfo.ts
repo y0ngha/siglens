@@ -1,6 +1,6 @@
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
-import { isKrEquitySymbol } from '@/shared/config/marketProfile';
-import type { MarketProfileId } from '@/shared/config/marketProfile';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { fetchKrEquityQuoteName } from './krEquityQuoteName';
 import { krExchangeOf } from './krExchange';
 import { CURATED_KOREAN_NAMES } from '@/shared/config/popular-tickers';
@@ -17,7 +17,7 @@ import {
     ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN,
     buildAssetInfoCacheKey,
 } from './cacheKeys';
-import { tryGetTickerDatabaseClient } from './db';
+import { tryGetDatabaseClient } from '@/shared/db/client';
 import {
     filterUsExchanges,
     findExactUsMatch,
@@ -26,14 +26,16 @@ import {
 import { translateCompanyNames } from './koreanTranslator';
 import { getKoreanNames, setKoreanTickers } from './koreanNameStore';
 import { CANONICAL_KOREAN_NAMES } from '@/shared/config/canonical-korean-names';
-import type { AssetInfoMatch } from './backgroundTask';
-import { fireAndForget } from './backgroundTask';
-import { createSingleFlight } from './utils/singleFlight';
+import { fireAndForget } from '@/shared/lib/backgroundTask';
+import {
+    createSingleFlight,
+    __resetSingleFlightForTests,
+} from '@/shared/lib/singleFlight';
 import { createCacheProvider, type CacheProvider } from '@y0ngha/siglens-core';
 import type { AssetInfo, KoreanTickerEntry } from '@/shared/lib/types';
 
 function tryGetRepository(): AssetTranslationRepository | null {
-    const client = tryGetTickerDatabaseClient();
+    const client = tryGetDatabaseClient();
     if (!client) return null;
     return new DrizzleAssetTranslationRepository(client.db);
 }
@@ -152,6 +154,14 @@ async function persistTranslation(
     );
 }
 
+/** Subset of an FMP search result needed when persisting a translation. */
+interface AssetInfoMatch {
+    symbol: string;
+    name: string;
+    exchange: string;
+    exchangeFullName: string;
+}
+
 /** Single-flight registry for fire-and-forget translate-and-persist work; collapses concurrent calls for the same symbol into one translation request. */
 const translationSingleFlight = createSingleFlight<void>();
 
@@ -264,7 +274,7 @@ async function resolveKrEquityAssetInfo(
 
 /** Test helper — clears the in-flight registry between cases. */
 export function _resetInFlightTranslationsForTest(): void {
-    translationSingleFlight._resetForTest();
+    __resetSingleFlightForTests(translationSingleFlight);
 }
 
 /**

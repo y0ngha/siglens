@@ -25,13 +25,6 @@ vi.mock('@y0ngha/siglens-core', () => ({
     sanitizeOptionsChain: vi.fn((chain: unknown) => chain),
 }));
 
-vi.mock('@/shared/config/time', () => ({
-    // `createYahooClient`가 타임아웃 상수를 여기서 가져온다 — 부분 mock이라 빠지면
-    // 모듈 로드가 통째로 실패한다.
-    MS_PER_SECOND: 1000,
-    MS_PER_DAY: 86400000,
-}));
-
 import { YahooOptionsAdapter } from '@/entities/options-chain/lib/YahooOptionsAdapter';
 import { sanitizeOptionsChain } from '@y0ngha/siglens-core';
 

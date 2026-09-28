@@ -5,7 +5,7 @@
  *
  * 실행: `yarn metrics`
  */
-import { DrizzleVisitorRepository } from '@/entities/visitor';
+import { DrizzleVisitorRepository } from '@/entities/visitor/api';
 import { getDatabaseClient } from '@/shared/db/client';
 import { kstDateKey, kstDateKeyDaysBefore } from '@/shared/lib/etTimeUtils';
 

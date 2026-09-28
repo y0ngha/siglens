@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
 import { useRecentSearches } from '../hooks/useRecentSearches';
-import { SearchGlyph } from './SearchTriggerButton';
+import { CloseIcon, SearchIcon } from '@/shared/ui/StrokeIcons';
 import {
     HERO_RECENT_CHIP_LIMIT,
     SEARCH_PLACEHOLDER_KEY,
@@ -68,7 +68,7 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
                     // "종목명 · 티커 검색"으로는 이 버튼을 부를 수 없게 된다.
                     className="focus-glow flex h-12 w-full touch-manipulation items-center gap-2 rounded-lg border border-border-control bg-secondary-800 px-4 text-left text-base text-secondary-400 transition-colors hover:border-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none lg:hidden"
                 >
-                    <SearchGlyph className="h-4 w-4 shrink-0" />
+                    <SearchIcon className="size-4 shrink-0" />
                     {t(SEARCH_PLACEHOLDER_KEY)}
                 </button>
             )}
@@ -102,8 +102,8 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
                             {/*
                                 a11y target-size: WCAG 2.5.8 requires interactive
                                 targets ≥ 24×24 CSS px. The ✕ button's visible
-                                glyph stays small because it inherits text-xs
-                                sizing inside the 24×24 flex box.
+                                glyph stays small (size-3 icon) inside the 24×24
+                                flex box.
                             */}
                             <Link
                                 href={`/${entry.symbol}`}
@@ -151,7 +151,7 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
                                 }}
                                 className="inline-flex h-6 w-6 items-center justify-center rounded-full leading-none text-secondary-400 hover:text-secondary-100 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
                             >
-                                ✕
+                                <CloseIcon className="size-3" />
                             </button>
                         </span>
                     ))}

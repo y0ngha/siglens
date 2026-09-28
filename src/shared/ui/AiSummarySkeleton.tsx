@@ -1,6 +1,8 @@
 import { type CSSProperties } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { Spinner } from '@/shared/ui/Spinner';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 const SKELETON_LINE_COUNT = 3;
 const SKELETON_WIDTH_START_PCT = 85;
@@ -46,19 +48,13 @@ export function AiSummarySkeleton({
         <section
             aria-labelledby={headingId}
             aria-busy="true"
-            className={cn(
-                'border-secondary-700 bg-secondary-800 rounded-lg border p-6',
-                className
-            )}
+            className={cn(SURFACE_CARD, 'p-6', className)}
         >
             <h2 id={headingId} className={cn('mb-4', HEADING_SECTION)}>
                 {heading}
             </h2>
             <div className="flex items-center gap-3">
-                <div
-                    aria-hidden="true"
-                    className="h-4 w-4 animate-spin rounded-full border-2 border-primary-500 border-t-transparent motion-reduce:animate-none"
-                />
+                <Spinner />
                 <p
                     className="text-sm text-secondary-400"
                     aria-live="polite"

@@ -4,13 +4,12 @@
  * These describe siglens-side denial outcomes from the BYOK/tier gate
  * (`resolveTierAndByok` in infrastructure). The canonical type definitions
  * live in `shared/lib/types` so every layer can reference them without
- * upward dependency. This module re-exports them for barrel convenience
- * and hosts the runtime guards.
+ * upward dependency. This module re-exports them and hosts the runtime
+ * guards.
  */
 
 export type {
     AnalysisGateBlockedResult,
-    AnalysisGateError,
     AnalysisGateErrorCode,
 } from '@/shared/lib/types';
 

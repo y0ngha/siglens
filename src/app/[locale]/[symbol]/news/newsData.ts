@@ -3,9 +3,9 @@ import {
     DrizzleEarningsReportsRepository,
     EARNINGS_REPORT_FMP_LIMIT,
     isEarningsKnownEmpty,
-    isEarningsReportStale,
     markEarningsEmpty,
-} from '@/entities/earnings-report';
+} from '@/entities/earnings-report/api';
+import { isEarningsReportStale } from '@/entities/earnings-report/lib/isEarningsReportStale';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import {
     getFmpUserFacingKey,

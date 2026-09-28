@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { buildFallbackAnalysis, isFallbackAnalysis } from '@/entities/analysis';
+import {
+    buildFallbackAnalysis,
+    isFallbackAnalysis,
+} from '@/entities/analysis/lib/fallbackAnalysis';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 
 // 폴백은 이제 로케일별 빌더다 — 예전 `FALLBACK_ANALYSIS` 상수는 한국어 요약을

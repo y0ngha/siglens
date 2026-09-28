@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { PortfolioSection } from '@/features/portfolio-management/ui/PortfolioSection';
 import { usePortfolioHoldings } from '@/entities/portfolio/hooks/usePortfolioHoldings';
-import type { PortfolioHoldingView } from '@/entities/portfolio';
+import type { PortfolioHoldingView } from '@/entities/portfolio/model';
 
 vi.mock('@/entities/portfolio/hooks/usePortfolioHoldings');
 
@@ -10,7 +10,7 @@ vi.mock('@/entities/portfolio/hooks/usePortfolioHoldings');
 // is unrelated to what this suite verifies (symbol selection wiring). Stub it with a
 // plain uncontrolled input that "selects" on blur (mirrors picking a dropdown result),
 // matching the real component's onSelect contract.
-vi.mock('@/features/ticker-search', () => ({
+vi.mock('@/features/ticker-search/ui/TickerAutocomplete', () => ({
     TickerAutocomplete: ({
         onSelect,
     }: {

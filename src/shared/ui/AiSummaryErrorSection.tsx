@@ -1,11 +1,14 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import type { FallbackProps } from 'react-error-boundary';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
-export interface AiSummaryErrorSectionProps extends FallbackProps {
+export interface AiSummaryErrorSectionProps {
+    /** 경계가 잡은 오류. 메시지 추출에만 쓴다. */
+    error: unknown;
+    /** 재시도. 없으면 버튼을 그리지 않는다(재시도할 수단이 없는 서피스). */
+    onRetry?: () => void;
     /**
      * 섹션 제목 (예: "AI 펀더멘털 분석").
      * `aria-labelledby` 연결에도 사용되므로 각 서피스가 고유한 값을 전달해야 한다.
@@ -35,16 +38,16 @@ export interface AiSummaryErrorSectionProps extends FallbackProps {
 }
 
 /**
- * 4개 AI 분석 위젯(fundamental / financials / news / congress)이 공유하는 에러 셸.
+ * AI 분석 위젯(fundamental / financials / news / congress / options 등)이 공유하는 에러 셸.
  *
  * 단일 소스로 아래 세 가지 표준화를 보장한다:
  * - 메시지: getErrorMessage(주입 시) → error.message → fallbackMessage 우선순위.
  * - 에러 텍스트 색: `text-ui-danger-text` (danger-on-surface 토큰).
- * - 재시도 버튼: 44px 최소 탭 타깃 (`min-h-11 inline-flex items-center px-3 py-2`).
+ * - 재시도 버튼: 44px 최소 탭 타깃 (`min-h-11 inline-flex items-center px-3 py-2`). `onRetry`가 없으면 생략.
  */
 export function AiSummaryErrorSection({
     error,
-    resetErrorBoundary,
+    onRetry,
     heading,
     idPrefix,
     fallbackMessage,
@@ -75,13 +78,15 @@ export function AiSummaryErrorSection({
             <p className="text-sm text-ui-danger-text" role="alert">
                 {message}
             </p>
-            <button
-                type="button"
-                onClick={resetErrorBoundary}
-                className="mt-4 inline-flex min-h-11 items-center rounded bg-primary-600 px-3 py-2 text-xs text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
-            >
-                {t('AiSummaryErrorSection.0c767c')}
-            </button>
+            {onRetry ? (
+                <button
+                    type="button"
+                    onClick={onRetry}
+                    className="mt-4 inline-flex min-h-11 items-center rounded bg-primary-600 px-3 py-2 text-xs text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
+                >
+                    {t('AiSummaryErrorSection.0c767c')}
+                </button>
+            ) : null}
         </section>
     );
 }

@@ -11,7 +11,7 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
 
-// DrizzleUserRepository는 barrel이 아닌 @/entities/auth/api에서 직접 import되므로
+// DrizzleUserRepository는 @/entities/auth/api에서 직접 import되므로
 // 해당 경로를 mock한다.
 vi.mock('@/entities/auth/api', () => ({
     DrizzleUserRepository: vi.fn().mockImplementation(function () {

@@ -1,8 +1,4 @@
-import type {
-    EarningsReport,
-    NewsItem,
-    NewsTimeRange,
-} from '@y0ngha/siglens-core';
+import type { NewsItem } from '@y0ngha/siglens-core';
 
 /**
  * App-facing news client surface (the methods callers depend on). `FmpNewsClient`
@@ -15,7 +11,5 @@ import type {
  * type without creating a getNewsClient ↔ FakeNewsClient import cycle.
  */
 export interface NewsClientPort {
-    fetchNews(symbol: string, range: NewsTimeRange): Promise<NewsItem[]>;
     fetchNewsForPeriod(symbol: string, lookbackMs: number): Promise<NewsItem[]>;
-    fetchEarningsReport(symbol: string): Promise<EarningsReport | null>;
 }

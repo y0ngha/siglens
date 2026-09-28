@@ -7,7 +7,7 @@
 import { confirmPasswordReset } from '@/entities/auth/lib/confirmPasswordReset';
 import type { ConfirmPasswordResetDependencies } from '@/entities/auth/lib/authUseCaseTypes';
 import { hashEmailToken } from '@/entities/auth/lib/tokenUtils';
-import type { EmailTokenValue } from '@/entities/email-token';
+import type { EmailTokenValue } from '@/entities/email-token/api';
 import type { EmailAuthUserRecord } from '@/shared/db/types';
 
 const RAW_TOKEN = 'raw-token-value';

@@ -2,30 +2,58 @@
 
 import { useTranslations } from 'next-intl';
 import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
+import { ErrorAlert } from '@/shared/ui/ErrorAlert';
+import { TextField } from '@/shared/ui/TextField';
+import { SuccessNotice } from '@/shared/ui/SuccessNotice';
 import { useContactForm } from '../hooks/useContactForm';
-import { ContactSubmittedNotice } from './ContactSubmittedNotice';
-import { ContactTextField } from './ContactTextField';
 import { ContactTextareaField } from './ContactTextareaField';
 import { getFieldError, getSubmissionError } from '../lib/contactFormUtils';
 import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import {
     CONTACT_CONTENT_MAX_LENGTH,
     CONTACT_TITLE_MAX_LENGTH,
-} from '@/entities/inquiry';
+} from '@/shared/config/contact';
 
+/** 성공 시 폼이 통째로 사라진다 — 포커스·알림 처리는 `SuccessNotice` 참고. */
 export function ContactForm() {
     const t = useTranslations('features.contact-form');
-    // 조기 return(`state.submitted`)보다 **위**에 있어야 한다. 아래에 두면
-    // 제출 성공 렌더에서만 훅이 하나 줄어 "Rendered fewer hooks than expected"로
-    // 트리가 죽는다(react-doctor rules-of-hooks).
-    const tError = useTranslations('shared.lib.contactError');
     const [state, formAction] = useContactForm();
     const currentUser = useCurrentUser();
 
-    if (state.submitted) {
-        return <ContactSubmittedNotice />;
-    }
+    return (
+        <>
+            <SuccessNotice
+                show={state.submitted}
+                title={t('ContactSubmittedNotice.820d69')}
+                messages={[
+                    t('ContactSubmittedNotice.5483d6'),
+                    t('ContactSubmittedNotice.679be7'),
+                ]}
+            />
+            {state.submitted ? null : (
+                <ContactFormFields
+                    state={state}
+                    formAction={formAction}
+                    currentUser={currentUser}
+                />
+            )}
+        </>
+    );
+}
 
+interface ContactFormFieldsProps {
+    state: ReturnType<typeof useContactForm>[0];
+    formAction: ReturnType<typeof useContactForm>[1];
+    currentUser: ReturnType<typeof useCurrentUser>;
+}
+
+function ContactFormFields({
+    state,
+    formAction,
+    currentUser,
+}: ContactFormFieldsProps) {
+    const t = useTranslations('features.contact-form');
+    const tError = useTranslations('shared.lib.contactError');
     const submissionError = getSubmissionError(state.error, tError);
 
     // Email field is uncontrolled (defaultValue). Once the form has been
@@ -37,17 +65,9 @@ export function ContactForm() {
 
     return (
         <form action={formAction} className="space-y-4" noValidate>
-            {submissionError ? (
-                <div
-                    role="alert"
-                    className="flex items-start gap-2 rounded-lg border border-ui-danger/30 bg-ui-danger/10 p-3 text-sm text-ui-danger-text"
-                >
-                    <span aria-hidden>⚠</span>
-                    <p>{submissionError}</p>
-                </div>
-            ) : null}
+            {submissionError ? <ErrorAlert message={submissionError} /> : null}
 
-            <ContactTextField
+            <TextField
                 id="contact-title"
                 name="title"
                 label={t('ContactForm.078b3a')}
@@ -62,7 +82,7 @@ export function ContactForm() {
             {currentUser.isPending ? (
                 <ContactEmailFieldSkeleton />
             ) : (
-                <ContactTextField
+                <TextField
                     id="contact-email"
                     name="email"
                     label={t('ContactForm.3c3776')}

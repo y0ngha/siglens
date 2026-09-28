@@ -1,8 +1,8 @@
 import type { OAuthProvider } from '@/shared/lib/types';
-import type { SocialLoginUserInput } from '@/entities/auth';
+import type { SocialLoginUserInput } from '@/entities/auth/lib/authUseCaseTypes';
 
 /** OAuth 콜백 처리 단계의 실패 사유. */
-export type OAuthProfileFailureReason =
+type OAuthProfileFailureReason =
     | 'token_exchange_failed'
     | 'profile_fetch_failed'
     | 'email_missing';

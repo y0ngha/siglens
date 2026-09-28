@@ -86,11 +86,7 @@ describe('AnalysisSignupNudgeModal', () => {
         const onClose = vi.fn();
         render(<AnalysisSignupNudgeModal onClose={onClose} />);
         const user = userEvent.setup();
-        const backdrop = screen
-            .getByRole('dialog')
-            .parentElement!.querySelector('[aria-hidden="true"]');
-        expect(backdrop).not.toBeNull();
-        await user.click(backdrop!);
+        await user.click(screen.getByTestId('modal-backdrop'));
         expect(onClose).toHaveBeenCalledTimes(1);
     });
 });

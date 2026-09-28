@@ -2,6 +2,7 @@
 
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
+import { logActionError } from '@/shared/lib/logActionError';
 import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import {
@@ -124,7 +125,8 @@ export async function savePortfolioHoldingAction(
         });
         return { status: 'ok', holding: toView(row) };
     } catch (error) {
-        console.error('[savePortfolioHoldingAction] upsert failed', error);
+        // Raw Drizzle errors embed bound params (user id, symbol, amounts) in `.message`.
+        logActionError('[savePortfolioHoldingAction] upsert failed', error);
         return {
             status: 'error',
             code: 'storage_unavailable',

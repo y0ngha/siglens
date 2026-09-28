@@ -1,4 +1,4 @@
-import { countSkillsByType } from '@/entities/skill/lib/skills';
+import { countSkillsByType } from '@/shared/lib/skillUtils';
 import type { SkillShowcaseItem, SkillType } from '@y0ngha/siglens-core';
 
 function buildSkill(

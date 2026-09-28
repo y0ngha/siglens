@@ -11,11 +11,9 @@ import {
     PORTFOLIO_HOLDINGS_STALE_TIME_MS,
     QUERY_KEYS,
 } from '@/shared/config/queryConfig';
-import {
-    deletePortfolioHoldingAction,
-    getPortfolioHoldingsAction,
-    savePortfolioHoldingAction,
-} from '../actions';
+import { deletePortfolioHoldingAction } from '@/entities/portfolio/actions/deletePortfolioHoldingAction';
+import { getPortfolioHoldingsAction } from '@/entities/portfolio/actions/getPortfolioHoldingsAction';
+import { savePortfolioHoldingAction } from '@/entities/portfolio/actions/savePortfolioHoldingAction';
 import type {
     PortfolioHoldingView,
     RawHoldingInput,

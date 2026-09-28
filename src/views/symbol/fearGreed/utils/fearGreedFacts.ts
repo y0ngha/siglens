@@ -12,6 +12,8 @@ import {
 } from '@/shared/lib/fearGreedLabels';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 import { koWithParticle } from '@/shared/lib/koParticle';
+import type { Locale } from '@/shared/i18n/locales';
+import type { SeoTranslator } from '@/shared/lib/seo';
 
 // 5-factor percentile을 낮음/보통/높음 3구간으로 나누는 경계값. FearGreedGroupBar의
 // "극단" 배지 임계값(<10 / >=90)보다 넓게 잡아, 문장 서사에서는 "평소 범위 밖"을
@@ -22,19 +24,13 @@ const HIGH_PERCENTILE_MIN = 75;
 // 판단하는 기준점으로 findMostExtremeFactor·buildFearGreedFactorRankingLine이 공유한다.
 const MEDIAN_PERCENTILE = 50;
 
-/**
- * `views.symbol.fearGreedFacts` 네임스페이스 번역자.
- *
- * 이 모듈은 SSR 크롤 텍스트를 만든다 — JS 없이 읽히는 본문이라, 여기 남은
- * 한국어는 비-ko 페이지에서 그대로 색인된다. 순수 함수를 유지하려고 훅을
- * 부르지 않고 번역자를 인자로 받는다(호출부는 컴포넌트 하나뿐).
- */
-type FactsTranslator = (
-    key: string,
-    values?: Record<string, string | number>
-) => string;
+// `t`/`tFacts`는 `views.symbol.fearGreedFacts` 네임스페이스 번역자(`SeoTranslator` 모양).
+//
+// 이 모듈은 SSR 크롤 텍스트를 만든다 — JS 없이 읽히는 본문이라, 여기 남은
+// 한국어는 비-ko 페이지에서 그대로 색인된다. 순수 함수를 유지하려고 훅을
+// 부르지 않고 번역자를 인자로 받는다(호출부는 컴포넌트 하나뿐).
 
-function factorInterpretation(pctile: number, t: FactsTranslator): string {
+function factorInterpretation(pctile: number, t: SeoTranslator): string {
     if (pctile < LOW_PERCENTILE_MAX) return t('factorLow');
     if (pctile >= HIGH_PERCENTILE_MIN) return t('factorHigh');
     return t('factorMid');
@@ -50,10 +46,11 @@ function factorInterpretation(pctile: number, t: FactsTranslator): string {
  */
 export function buildFearGreedFactorLines(
     snapshot: FearGreedSnapshot,
-    t: FactsTranslator,
+    t: SeoTranslator,
     // 팩터 라벨은 `shared.lib.fearGreedFactor`에 있다 — 위젯(`FearGreedGroupBar`)과
     // 공유하는 표라 이 뷰 네임스페이스로 옮기면 두 벌이 된다.
-    tFactor: FactsTranslator
+    tFactor: SeoTranslator,
+    locale: Locale
 ): string[] {
     return snapshot.groups.flatMap(group =>
         group.factors.map(factor => {
@@ -62,7 +59,7 @@ export function buildFearGreedFactorLines(
                 v0: tFactor(`symbolLabel.${factor.key}`, {
                     v0: POC_WINDOW_DEFAULT,
                 }),
-                v1: formatFactorRaw(factor.key, factor.rawValue),
+                v1: formatFactorRaw(factor.key, factor.rawValue, locale),
                 v2: pctile,
                 v3: factorInterpretation(pctile, t),
             });
@@ -92,7 +89,7 @@ const GROUP_LABEL: Record<FearGreedGroupName, string> = {
  */
 export function buildFearGreedGroupComparisonLine(
     snapshot: FearGreedSnapshot,
-    t: FactsTranslator
+    t: SeoTranslator
 ): string | null {
     const flow = snapshot.groups.find(g => g.name === 'Flow');
     const trend = snapshot.groups.find(g => g.name === 'Trend');
@@ -144,8 +141,8 @@ function findMostExtremeFactor(
  */
 export function buildFearGreedFactorRankingLine(
     snapshot: FearGreedSnapshot,
-    t: FactsTranslator,
-    tFactor: FactsTranslator
+    t: SeoTranslator,
+    tFactor: SeoTranslator
 ): string | null {
     const allFactors = snapshot.groups.flatMap(g => g.factors);
     const top = findMostExtremeFactor(allFactors);
@@ -186,7 +183,7 @@ export function scoredHistory(
  * 들어오면 `split('-')[2]`가 `19T00:00:00Z`가 되어 `2026년 8월 NaN일`을 뱉는다.
  * 존재 검사만으로는 안 잡히므로 숫자 검사까지 한다 — 실패하면 원문을 그대로 쓴다.
  */
-function formatIsoDate(iso: string, t: FactsTranslator): string {
+function formatIsoDate(iso: string, t: SeoTranslator): string {
     const [y, m, d] = iso.split('-');
     if (y === undefined || m === undefined || d === undefined) return iso;
     const month = Number(m);
@@ -222,7 +219,7 @@ const TRADING_DAYS = { week: 5, month: 21, year: 252 } as const;
 export function buildFearGreedPeriodComparisonLine(
     points: readonly ScoredPoint[],
     t: EnumLabelTranslator,
-    tFacts: FactsTranslator
+    tFacts: SeoTranslator
 ): string | null {
     const current = points.at(-1);
     if (current === undefined) return null;
@@ -296,7 +293,7 @@ const MIN_DISTRIBUTION_SAMPLE = 60;
 
 export function buildFearGreedYearRangeLine(
     points: readonly ScoredPoint[],
-    tFacts: FactsTranslator
+    tFacts: SeoTranslator
 ): string | null {
     const window = points.slice(-TRADING_DAYS.year);
     const current = window.at(-1);
@@ -348,7 +345,7 @@ export function buildFearGreedYearRangeLine(
 export function buildFearGreedRegimeDistributionLine(
     points: readonly ScoredPoint[],
     t: EnumLabelTranslator,
-    tFacts: FactsTranslator
+    tFacts: SeoTranslator
 ): string | null {
     const window = points.slice(-TRADING_DAYS.year);
     if (window.length < MIN_DISTRIBUTION_SAMPLE) return null;

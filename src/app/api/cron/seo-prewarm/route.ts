@@ -1,9 +1,8 @@
 import { constants } from 'node:http2';
-import { after } from 'next/server';
 import { DrizzleAnalysisHistoryRepository } from '@/entities/analysis/analysisHistoryRepository';
 import { getDatabaseClient } from '@/shared/db/client';
-import { safeBearerCompare } from '@/shared/lib/auth/safeBearerCompare';
-import { fireAndForget } from '@/entities/ticker';
+import { isAuthorizedCronRequest } from '@/shared/lib/auth/isAuthorizedCronRequest';
+import { afterWithDrain } from '@/shared/lib/afterWithDrain';
 import { acquirePrewarmLock, releasePrewarmLock } from './lock';
 import { runPrewarmBatch } from './runPrewarmBatch';
 
@@ -15,15 +14,13 @@ const {
 
 /**
  * SEO pre-warm cron 엔드포인트 (spec 2026-07-24 §6).
- * EventBridge API Destination(~5s)·ALB idle 60s를 피하려 202를 즉시 반환하고
+ * EventBridge API Destination(~5s)·게이트웨이 idle timeout(2026-08 cloudflared
+ * 전환 이후 Cloudflare Proxy Read Timeout ~125.9s)을 피하려 202를 즉시 반환하고
  * 배치는 after()로 백그라운드 실행. 중첩 실행은 Redis 루트 락이 차단하며,
  * 락 보유 중엔 204(2xx — EventBridge 재시도 폭풍 방지).
  */
 export async function PATCH(request: Request): Promise<Response> {
-    const expected = process.env.CRON_SECRET;
-    if (!expected)
-        return new Response(null, { status: HTTP_STATUS_UNAUTHORIZED });
-    if (!safeBearerCompare(request.headers.get('authorization'), expected)) {
+    if (!isAuthorizedCronRequest(request)) {
         return new Response(null, { status: HTTP_STATUS_UNAUTHORIZED });
     }
 
@@ -51,17 +48,11 @@ export async function PATCH(request: Request): Promise<Response> {
     if (token === null) {
         return new Response(null, { status: HTTP_STATUS_NO_CONTENT });
     }
-    // SIGTERM 시 Redis 락 해제가 완료될 때까지 drain이 대기하도록 배치 promise를
-    // fireAndForget에 등록한다. after()만 사용하면 SIGTERM이 process.exit를 호출한
+    // SIGTERM 시 Redis 락 해제가 완료될 때까지 drain이 대기하도록 배치를
+    // afterWithDrain으로 등록한다. after()만 사용하면 SIGTERM이 process.exit를 호출한
     // 직후 after() 콜백이 고아가 되어 락이 TTL까지 잠긴다 — 다음 invocation이 최대
     // LOCK_TTL(900s)을 기다렸다가 실행된다.
-    let resolveBatch!: () => void;
-    const batchDone = new Promise<void>(resolve => {
-        resolveBatch = resolve;
-    });
-    fireAndForget(batchDone);
-
-    after(async () => {
+    afterWithDrain(async () => {
         try {
             const counts = await runPrewarmBatch();
             console.log('[seo-prewarm] batch done:', JSON.stringify(counts));
@@ -89,7 +80,6 @@ export async function PATCH(request: Request): Promise<Response> {
             console.error('[seo-prewarm] prune failed:', error);
         } finally {
             await releasePrewarmLock(token);
-            resolveBatch();
         }
     });
     return new Response(null, { status: HTTP_STATUS_ACCEPTED });

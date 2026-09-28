@@ -9,7 +9,7 @@ import { join } from 'node:path';
  * `scripts/i18n/lib/scan.mjs`는 `src/app/api/`를 통째로 제외한다 — "서버 로그·
  * 에러 코드. 사용자에게 렌더되지 않는다"는 전제다. 이 라우트에 대해서는 그
  * 전제가 **틀렸다**: `heartbeatStream`이 거절을 SSE `error` 이벤트의
- * `{ message }`로 싣고, `useAnalysisStream` → `useAnalysis` → `ChartContent`의
+ * `{ message }`로 싣고, `runAnalysisStream` → `useAnalysis` → `ChartContent`의
  * `<ErrorBanner>`가 그대로 화면에 띄운다.
  *
  * 그래서 한국어 문구 3개가 미추출 기준선 1,671건에도 **잡히지 않은 채** 남아
@@ -80,7 +80,7 @@ describe('SSE 사용자 노출 문구 가드', () => {
          *
          * 제외 대상 두 부류:
          *  - **코드 sentinel** — 훅이 코드로 분기해 자체 카탈로그 문구를 만든다.
-         *  - **400 진단 문구** — `useAnalysisStream`은 400 본문을 읽지 않고
+         *  - **400 진단 문구** — `runAnalysisStream`은 400 본문을 읽지 않고
          *    `messages.failed(status)`로 자체 문구를 만든다(`:124`). 잘못된
          *    요청을 보낸 개발자용 값이라 번역 대상이 아니다. 400 응답 블록을
          *    통째로 잘라내 구분한다.

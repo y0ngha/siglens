@@ -23,7 +23,7 @@ vi.mock('@/entities/auth/lib/findUserBySessionToken', () => ({
 import { cookies } from 'next/headers';
 import { findUserBySessionToken } from '@/entities/auth/lib/findUserBySessionToken';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { resetAuthDatabaseClientForTests } from '@/entities/auth/lib/db';
+import { resetDatabaseClientForTests } from '@/shared/db/client';
 
 const mockCookies = cookies as MockedFunction<typeof cookies>;
 const mockFind = findUserBySessionToken as MockedFunction<
@@ -41,7 +41,7 @@ function makeCookieStore(token?: string) {
 
 describe('getCurrentUser', () => {
     beforeEach(() => {
-        resetAuthDatabaseClientForTests();
+        resetDatabaseClientForTests();
         process.env.DATABASE_URL = 'postgres://test';
         mockFind.mockReset();
     });

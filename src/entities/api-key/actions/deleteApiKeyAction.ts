@@ -5,7 +5,7 @@ import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleUserApiKeyRepository } from '@/entities/api-key/api';
 import { isLlmProvider } from '../lib/apiKey';
-import type { ApiKeyActionState } from '../lib/types';
+import type { ApiKeyActionState } from '@/shared/lib/types';
 import { revalidatePath } from 'next/cache';
 import { getTranslations } from 'next-intl/server';
 

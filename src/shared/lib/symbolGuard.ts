@@ -1,5 +1,5 @@
-import { VALID_TICKER_RE } from '@/shared/config/market';
-import { isKrEquitySymbol } from '@/shared/config/marketProfile';
+import { TICKER_RE as VALID_TICKER_RE } from '@/shared/config/ticker';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 
 /**
  * Returns `true` when a ticker cannot be resolved because both FMP and the

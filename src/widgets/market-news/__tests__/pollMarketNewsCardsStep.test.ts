@@ -7,25 +7,30 @@
  */
 
 import type { MockedFunction } from 'vitest';
-import type { MarketNewsCardItem } from '@/entities/market-news';
-import { getMarketNewsCardsAction } from '@/entities/market-news/actions';
+import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
+import { getMarketNewsCardsAction } from '@/entities/market-news/actions/getMarketNewsCardsAction';
 import {
     MAX_CONSECUTIVE_FAILURES,
     EMPTY_SNAPSHOT_MAX_POLLS,
     MAX_POLL_DURATION_MS,
     STAGNATION_FLOOR_POLLS,
-} from '@/widgets/market-news/constants';
+} from '@/shared/config/cardPollingConfig';
 import {
     pollMarketNewsCardsStep,
     type PollMarketNewsCardsContext,
 } from '../utils/pollMarketNewsCardsStep';
 
-vi.mock('@/entities/market-news/actions', () => ({
+vi.mock('@/entities/market-news/actions/getMarketNewsCardsAction', () => ({
     getMarketNewsCardsAction: vi.fn(),
-    ensureMarketNewsCardsAnalyzedAction: vi.fn(),
+}));
+vi.mock(
+    '@/entities/market-news/actions/ensureMarketNewsCardsAnalyzedAction',
+    () => ({
+        ensureMarketNewsCardsAnalyzedAction: vi.fn(),
+    })
+);
+vi.mock('@/entities/market-news/actions/submitMarketNewsDigestAction', () => ({
     submitMarketNewsDigestAction: vi.fn(),
-    pollMarketNewsDigestAction: vi.fn(),
-    cancelMarketNewsDigestAction: vi.fn(),
 }));
 
 const mockGetMarketNewsCardsAction = getMarketNewsCardsAction as MockedFunction<

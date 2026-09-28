@@ -10,7 +10,7 @@ import {
 // The provider renders the ONE shared signup-nudge modal. Mock it to a simple
 // testid dialog so these tests can assert single-instance open/close behavior
 // without pulling in the real modal's focus-trap/next-link dependencies.
-vi.mock('@/features/analysis-nudge', () => ({
+vi.mock('@/features/analysis-nudge/ui/AnalysisSignupNudgeModal', () => ({
     AnalysisSignupNudgeModal: ({ onClose }: { onClose: () => void }) => (
         <div role="dialog" data-testid="signup-nudge-modal">
             <button type="button" onClick={onClose}>
@@ -41,7 +41,7 @@ vi.mock('@/features/symbol-model/hooks/useSelectedModel', () => ({
     useSelectedModel: vi.fn(() => ['gemini-3.5-flash-lite', vi.fn(), true]),
 }));
 
-vi.mock('@/features/premium-gate', () => ({
+vi.mock('@/features/premium-gate/hooks/useModelGate', () => ({
     useModelGate: vi.fn(({ onAllow }: { onAllow: (m: ModelId) => void }) => ({
         gateModal: null,
         dismissGate: vi.fn(),
@@ -58,7 +58,7 @@ vi.mock('@/features/symbol-model/hooks/useUserTier', () => ({
     useUserTier: mockUseUserTier,
 }));
 
-vi.mock('@/features/reasoning-toggle', () => ({
+vi.mock('@/features/reasoning-toggle/hooks/useReasoningToggle', () => ({
     useReasoningToggle: mockUseReasoningToggle,
 }));
 

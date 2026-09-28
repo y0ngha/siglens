@@ -9,18 +9,18 @@
 import koMessages from '../../../../../messages/ko.json';
 import type { Mock } from 'vitest';
 import { useOptionsAnalysis } from '@/widgets/options/hooks/useOptionsAnalysis';
-import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
-import { isGateBlockedResult } from '@/entities/analysis';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
+import { isGateBlockedResult } from '@/entities/analysis/lib/gate';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { OptionsAnalysisResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 
-vi.mock('@/shared/hooks/useAnalysisStream', () => ({
+vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({
     runAnalysisStream: vi.fn(),
 }));
 
-vi.mock('@/entities/analysis', () => ({
+vi.mock('@/entities/analysis/lib/gate', () => ({
     isGateBlockedResult: vi.fn().mockReturnValue(false),
 }));
 

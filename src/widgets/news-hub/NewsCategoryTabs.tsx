@@ -4,7 +4,7 @@ import {
     CATEGORY_CONFIG,
     categoriesInRegion,
     type NewsFeedCategoryId,
-} from '@/entities/market-news';
+} from '@/entities/market-news/lib/categoryConfig';
 import { cn } from '@/shared/lib/cn';
 
 /**

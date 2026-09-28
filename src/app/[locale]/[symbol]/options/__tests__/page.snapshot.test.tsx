@@ -24,11 +24,15 @@ vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: vi.fn().mockResolvedValue(true),
 }));
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker/lib/assetClassification', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+}));
+vi.mock('@/entities/ticker/lib/ticker', () => ({
     pickAssetName: (info: { name: string; koreanName?: string }) =>
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
+}));
+vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 vi.mock('next/navigation', () => ({
@@ -51,7 +55,7 @@ vi.mock('@/shared/cache/staticSymbolCache', () => ({
 vi.mock('@/widgets/options/OptionsPageClient', () => ({
     OptionsPageClient: () => null,
 }));
-vi.mock('@/views/symbol', () => ({
+vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({
     SymbolPageHeading: ({ children }: { children: unknown }) => children,
 }));
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
@@ -98,7 +102,7 @@ import type { ReactNode } from 'react';
 import OptionsPage from '@/app/[locale]/[symbol]/options/page';
 import { OptionsSnapshotProse } from '@/views/symbol/snapshot/renderers/OptionsSnapshotProse';
 import { OptionsPageClient } from '@/widgets/options/OptionsPageClient';
-import { getAssetInfoResilient } from '@/entities/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import {
     fetchOptionsSnapshot,
     hasOptionsMarket,

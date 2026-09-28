@@ -1,12 +1,13 @@
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
+import { cachedNumberFormat } from '@/shared/lib/intlFormatCache';
 import {
     currencyForSymbol,
     getDescriptor,
-} from '@/shared/config/marketProfile';
+} from '@/shared/config/marketProfile/registry';
 import type {
     MarketProfileId,
     PriceFormatConfig,
-} from '@/shared/config/marketProfile';
+} from '@/shared/config/marketProfile/types';
 
 type PriceSign = '+' | '';
 type PriceArrow = '▲' | '▼';
@@ -58,39 +59,17 @@ export function formatUsdCurrency(price: number): string {
  *
  * 포매터 생성은 비싸므로 렌더마다 만들지 않고 캐시한다.
  */
-const COMPACT_FORMATTER_CACHE = new Map<string, Intl.NumberFormat>();
-
 function compactFormatter(
     locale: Locale,
     currency: 'USD' | 'KRW'
 ): Intl.NumberFormat {
-    const cacheKey = `${locale}:${currency}`;
-    const cached = COMPACT_FORMATTER_CACHE.get(cacheKey);
-    if (cached) return cached;
-    const formatter = new Intl.NumberFormat(INTL_LOCALE[locale], {
+    return cachedNumberFormat(INTL_LOCALE[locale], {
         notation: 'compact',
         style: 'currency',
         currency,
         maximumFractionDigits: 1,
     });
-    COMPACT_FORMATTER_CACHE.set(cacheKey, formatter);
-    return formatter;
 }
-
-/**
- * 시가총액·현금흐름 같은 큰 금액을 통화 기호와 함께 축약 표기한다.
- *
- * **통화는 심볼에서 유도한다.** 예전에는 USD로 고정돼 있어서, 국내 상장 종목의 원화
- * 금액이 `시가총액 US$1802.5조`·`목표 주가 US$450,000`처럼 나갔다 — 같은 사이트가
- * 차트 탭에서는 `₩274,500`으로 표시하는 값이다. 금융 정보라 표기 오류의 대가가 크고,
- * 그 페이지들은 색인 대상이다.
- *
- * 심볼을 받는 이유: 호출부는 어차피 심볼을 들고 있고, 통화 판정은 `currencyForSymbol`
- * (`shared/config/marketProfile/registry.ts`) 한 곳에서만 이뤄진다 — `getDescriptor`가
- * 읽는 REGISTRY가 3개 프로필 전체를 exhaustive하게 갖고 있는 유일한 소스라, 새 호출부가
- * 생겨도 그 함수를 호출하기만 하면 자동으로 맞는다(형상 판정이라 조회도 async도 필요 없다).
- */
-const CURRENCY_FORMATTER_CACHE = new Map<string, Intl.NumberFormat>();
 
 /**
  * 통화 금액(비축약) 포매터 — 로케일별 캐시.
@@ -104,18 +83,12 @@ export function formatCurrencyForSymbol(
     locale: Locale
 ): string {
     const currency = currencyForSymbol(symbol) === 'KRW' ? 'KRW' : 'USD';
-    const cacheKey = `${locale}:${currency}`;
-    let formatter = CURRENCY_FORMATTER_CACHE.get(cacheKey);
-    if (!formatter) {
-        formatter = new Intl.NumberFormat(INTL_LOCALE[locale], {
-            style: 'currency',
-            currency,
-            // 원화는 소수점을 쓰지 않는다.
-            maximumFractionDigits: currencyFractionDigits(currency),
-        });
-        CURRENCY_FORMATTER_CACHE.set(cacheKey, formatter);
-    }
-    return formatter.format(value);
+    return cachedNumberFormat(INTL_LOCALE[locale], {
+        style: 'currency',
+        currency,
+        // 원화는 소수점을 쓰지 않는다.
+        maximumFractionDigits: currencyFractionDigits(currency),
+    }).format(value);
 }
 
 /**
@@ -134,6 +107,19 @@ export function formatCompactAmount(
     return compactFormatter(locale, currency).format(value);
 }
 
+/**
+ * 시가총액·현금흐름 같은 큰 금액을 통화 기호와 함께 축약 표기한다.
+ *
+ * **통화는 심볼에서 유도한다.** 예전에는 USD로 고정돼 있어서, 국내 상장 종목의 원화
+ * 금액이 `시가총액 US$1802.5조`·`목표 주가 US$450,000`처럼 나갔다 — 같은 사이트가
+ * 차트 탭에서는 `₩274,500`으로 표시하는 값이다. 금융 정보라 표기 오류의 대가가 크고,
+ * 그 페이지들은 색인 대상이다.
+ *
+ * 심볼을 받는 이유: 호출부는 어차피 심볼을 들고 있고, 통화 판정은 `currencyForSymbol`
+ * (`shared/config/marketProfile/registry.ts`) 한 곳에서만 이뤄진다 — `getDescriptor`가
+ * 읽는 REGISTRY가 3개 프로필 전체를 exhaustive하게 갖고 있는 유일한 소스라, 새 호출부가
+ * 생겨도 그 함수를 호출하기만 하면 자동으로 맞는다(형상 판정이라 조회도 async도 필요 없다).
+ */
 export function formatCompactCurrency(
     value: number,
     symbol: string,
@@ -185,7 +171,7 @@ export function formatPrice(value: number, spec: PriceFormatConfig): string {
             : spec.precision.kind === 'integer'
               ? 0
               : dynamicDecimals(value);
-    return new Intl.NumberFormat(spec.locale, {
+    return cachedNumberFormat(spec.locale, {
         style: 'currency',
         currency: spec.currency,
         minimumFractionDigits: digits,
@@ -242,12 +228,21 @@ export function formatSignedAmount(value: number, symbol: string): string {
     return formatSignedUsd(value);
 }
 
+/**
+ * 부호 → 텍스트 색. ≥0이면 성공, <0이면 위험 — AA 텍스트 변형 토큰(DESIGN.md §AA),
+ * `chart-*`는 그래픽 전용이라 쓰지 않는다. 0을 중립색으로 칠해야 하는 곳(3상태)은
+ * 이 함수가 아니라 호출부에서 따로 분기한다.
+ */
+export function signColorClass(value: number): string {
+    return value >= 0 ? 'text-ui-success-text' : 'text-ui-danger-text';
+}
+
 export function formatPriceChange(percent: number): PriceChangeDisplay {
     const isUp = percent >= 0;
     return {
         isUp,
         sign: isUp ? '+' : '',
-        colorClass: isUp ? 'text-ui-success-text' : 'text-ui-danger-text',
+        colorClass: signColorClass(percent),
         arrow: isUp ? '▲' : '▼',
         // `shared.lib.priceMove` **키**다 — 소비 컴포넌트가 `t()`로 푼다.
         arrowLabelKey: isUp ? 'up' : 'down',

@@ -1,6 +1,5 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
-    isE2E,
     e2eCachedTechnical,
     e2eCachedOverall,
     e2eCachedFundamental,
@@ -11,33 +10,6 @@ import {
     e2eForcedFinancialsError,
     E2E_FORCE_FINANCIALS_ERROR_COOKIE,
 } from '@/shared/api/e2eAnalysisStub';
-
-describe('isE2E', () => {
-    const originalE2E = process.env.E2E_TEST;
-
-    afterEach(() => {
-        if (originalE2E === undefined) {
-            delete process.env.E2E_TEST;
-        } else {
-            process.env.E2E_TEST = originalE2E;
-        }
-    });
-
-    it('returns true when E2E_TEST=1', () => {
-        process.env.E2E_TEST = '1';
-        expect(isE2E()).toBe(true);
-    });
-
-    it('returns false when E2E_TEST is unset', () => {
-        delete process.env.E2E_TEST;
-        expect(isE2E()).toBe(false);
-    });
-
-    it('returns false when E2E_TEST is a non-"1" value', () => {
-        process.env.E2E_TEST = 'true';
-        expect(isE2E()).toBe(false);
-    });
-});
 
 describe('e2eCached* fixture getters', () => {
     it('e2eCachedTechnical applies the free response filter by default', () => {

@@ -2,7 +2,7 @@ vi.mock('@/shared/lib/og', () => ({
     OG_IMAGE_WIDTH: 1200,
     OG_IMAGE_HEIGHT: 630,
 }));
-vi.mock('@/entities/og-image', () => ({
+vi.mock('@/entities/og-image/lib/buildSymbolOgImage', () => ({
     buildSymbolOgImage: vi.fn().mockResolvedValue(new Response('image')),
 }));
 
@@ -11,7 +11,7 @@ import OgImage, {
     contentType,
     alt,
 } from '@/app/[locale]/[symbol]/opengraph-image';
-import { buildSymbolOgImage } from '@/entities/og-image';
+import { buildSymbolOgImage } from '@/entities/og-image/lib/buildSymbolOgImage';
 import type { MockedFunction } from 'vitest';
 
 const mockBuildSymbolOgImage = buildSymbolOgImage as MockedFunction<

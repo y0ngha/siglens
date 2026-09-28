@@ -8,8 +8,10 @@ vi.mock('react-error-boundary', () => ({
     ),
 }));
 
-vi.mock('@/features/symbol-model', () => ({
+vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
     useSymbolModel: () => ({ modelId: 'gemini-3.5-flash-lite' }),
+}));
+vi.mock('@/features/symbol-model/hooks/useAnalysisSettingsHydrated', () => ({
     useAnalysisSettingsHydrated: () => true,
 }));
 

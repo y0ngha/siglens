@@ -9,7 +9,7 @@
  * instead of silently eating the rest of the line.
  */
 
-export type SegmentTone = 'plain' | 'strong' | 'up' | 'down';
+type SegmentTone = 'plain' | 'strong' | 'up' | 'down';
 
 export interface Segment {
     readonly text: string;

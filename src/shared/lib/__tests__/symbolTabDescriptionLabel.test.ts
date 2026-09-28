@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { getTranslations } from 'next-intl/server';
-import type { AssetClass } from '@/shared/config/marketProfile';
+import type { AssetClass } from '@/shared/config/marketProfile/types';
 import {
     buildSymbolCongressSeoContent,
     buildSymbolFinancialsSeoContent,

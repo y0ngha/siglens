@@ -23,9 +23,11 @@ const { mockUsePopoverToggle } = vi.hoisted(() => ({
 vi.mock('@/shared/hooks/usePopoverToggle', () => ({
     usePopoverToggle: mockUsePopoverToggle,
 }));
-vi.mock('@/shared/ui/tabs', () => ({
+vi.mock('@/shared/ui/tabs/utils/tabIds', () => ({
     buildPanelId: (prefix: string, value: string) => `${prefix}-panel-${value}`,
     buildTabId: (prefix: string, value: string) => `${prefix}-tab-${value}`,
+}));
+vi.mock('@/shared/ui/tabs/TabsPill', () => ({
     TabsPill: ({
         tabs,
         activeTab,

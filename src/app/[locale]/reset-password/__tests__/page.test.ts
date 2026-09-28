@@ -1,7 +1,7 @@
 vi.mock('@/shared/ui/auth/AuthCardShell', () => ({
     AuthCardShell: () => null,
 }));
-vi.mock('@/features/auth-password-reset', () => ({
+vi.mock('@/features/auth-password-reset/ui/ResetPasswordForm', () => ({
     ResetPasswordForm: () => null,
 }));
 vi.mock('@/shared/lib/seo', () => ({

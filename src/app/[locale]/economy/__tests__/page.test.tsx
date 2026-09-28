@@ -18,7 +18,7 @@ vi.mock('@/entities/economy/api/economySnapshotStaticCache', () => ({
 vi.mock('@/entities/economy/api/macroBriefingStaticCache', () => ({
     peekMacroBriefingStatic: vi.fn(),
 }));
-vi.mock('@/entities/economy', () => ({
+vi.mock('@/entities/economy/lib/economyCompleteness', () => ({
     isEmptyEconomySnapshot: vi.fn(),
 }));
 // `buildFaqJsonLd`만은 **진짜를 쓴다**. 모의로 같은 매핑을 한 벌 더 적으면,
@@ -47,13 +47,20 @@ vi.mock('@/shared/ui/JsonLd', () => ({
 }));
 // widgets은 server-only 의존이 없으므로 실제 구현 사용.
 // 단, MacroBriefing은 'use client' — mock으로 교체해 SSR 환경 충돌 방지.
-vi.mock('@/widgets/economy', () => ({
+vi.mock('@/widgets/economy/sections/MacroBriefing', () => ({
     MacroBriefing: () => <div data-testid="macro-briefing" />,
+}));
+vi.mock('@/widgets/economy/sections/EconomicIndicatorGrid', () => ({
     EconomicIndicatorGrid: () => <div data-testid="indicator-grid" />,
-    EconomicCalendar: () => <div data-testid="calendar" />,
+}));
+vi.mock('@/widgets/economy/sections/EconomicCalendarGrid', () => ({
+    EconomicCalendarGrid: () => <div data-testid="calendar" />,
+}));
+vi.mock('@/widgets/economy/sections/EconomyMacroFacts', () => ({
     EconomyMacroFacts: () => <p data-testid="macro-facts" />,
+}));
+vi.mock('@/widgets/economy/sections/EconomySkeleton', () => ({
     EconomySkeleton: () => <div data-testid="economy-skeleton" />,
-    TREASURY_CARD_META: { year2: {}, year10: {} },
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -62,7 +69,7 @@ import type { EconomySnapshot } from '@y0ngha/siglens-core';
 import { generateMetadata } from '@/app/[locale]/economy/page';
 import { getEconomySnapshotStatic } from '@/entities/economy/api/economySnapshotStaticCache';
 import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingStaticCache';
-import { isEmptyEconomySnapshot } from '@/entities/economy';
+import { isEmptyEconomySnapshot } from '@/entities/economy/lib/economyCompleteness';
 // JsonLd는 vi.mocked()를 통해 test 내부에서 접근한다(최상단 변수는 호이스팅 충돌 방지).
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { expectFaqSingleSource } from '@/__tests__/utils/expectFaqSingleSource';

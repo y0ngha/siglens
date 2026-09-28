@@ -17,16 +17,23 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
-import {
-    getMarketNewsCardsAction,
-    ensureMarketNewsCardsAnalyzedAction,
-} from '@/entities/market-news/actions';
+import { getMarketNewsCardsAction } from '@/entities/market-news/actions/getMarketNewsCardsAction';
+import { ensureMarketNewsCardsAnalyzedAction } from '@/entities/market-news/actions/ensureMarketNewsCardsAnalyzedAction';
 import { fetchMarketNewsDigest } from '@/widgets/market-news/utils/fetchMarketNewsDigest';
 import { useMarketNewsDigest } from '@/widgets/market-news/hooks/useMarketNewsDigest';
 
-vi.mock('@/entities/market-news/actions', () => ({
-    ensureMarketNewsCardsAnalyzedAction: vi.fn().mockResolvedValue(undefined),
+vi.mock(
+    '@/entities/market-news/actions/ensureMarketNewsCardsAnalyzedAction',
+    () => ({
+        ensureMarketNewsCardsAnalyzedAction: vi
+            .fn()
+            .mockResolvedValue(undefined),
+    })
+);
+vi.mock('@/entities/market-news/actions/getMarketNewsCardsAction', () => ({
     getMarketNewsCardsAction: vi.fn(),
+}));
+vi.mock('@/entities/market-news/actions/submitMarketNewsDigestAction', () => ({
     submitMarketNewsDigestAction: vi.fn(),
 }));
 

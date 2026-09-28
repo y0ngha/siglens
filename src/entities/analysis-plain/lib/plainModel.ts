@@ -1,6 +1,7 @@
 import 'server-only';
 import { getProviderForModel, type ModelId } from '@y0ngha/siglens-core';
 import { isActiveModelId } from '@/shared/lib/isActiveModelId';
+import { getServerPrimaryKey } from '@/entities/llm-provider/lib/serverKeys';
 
 /**
  * 평이화에 쓰는 모델.
@@ -43,35 +44,6 @@ export interface PlainModelConfig {
 }
 
 /**
- * 모델이 속한 provider의 서버 키. 에이전트 라우터(`api/agent/router.ts`)의
- * `getServerPrimaryKey`와 같은 매핑이다.
- *
- * provider 판별은 core의 `getProviderForModel`에 맡긴다 — 모델 이름 접두사로
- * 직접 맞히면 이 레포에 provider 매핑이 세 벌 생기고, 어느 하나가 새 모델을
- * 놓쳐도 조용히 `undefined`가 되어 평이화가 통째로 꺼진다(에러 없이).
- * `never` 소진 검사가 있으면 새 provider 추가가 컴파일에서 걸린다.
- */
-function serverKeyFor(model: ModelId): string | undefined {
-    const provider = getProviderForModel(model);
-    switch (provider) {
-        case 'deepseek':
-            return process.env.DEEPSEEK_CHAT_API_KEY;
-        case 'google':
-            return process.env.GEMINI_CHAT_API_KEY;
-        case 'anthropic':
-            return process.env.ANTHROPIC_CHAT_API_KEY;
-        case 'openai':
-            return process.env.OPENAI_CHAT_API_KEY;
-        default: {
-            const exhausted: never = provider;
-            throw new Error(
-                `[analysisPlain] Unhandled provider: ${String(exhausted)}`
-            );
-        }
-    }
-}
-
-/**
  * 평이화 모델과 그에 맞는 서버 키를 함께 돌려준다.
  *
  * **모델과 키를 한 자리에서 고르는 게 핵심이다.** `tryReadTranslatorConfig`는
@@ -95,7 +67,10 @@ export function tryReadPlainModelConfig(): PlainModelConfig | null {
         }
     }
 
-    const serverApiKey = serverKeyFor(model);
+    // provider 판별은 core의 `getProviderForModel`에 맡기고, provider → 서버 키
+    // 매핑은 `getServerPrimaryKey`를 쓴다 — 모델 이름 접두사로
+    // 직접 맞히거나 매핑을 복제하면 새 모델/provider를 놓쳐 평이화가 조용히 꺼진다.
+    const serverApiKey = getServerPrimaryKey(getProviderForModel(model));
     if (serverApiKey === undefined || serverApiKey.length === 0) return null;
 
     return { model, serverApiKey };

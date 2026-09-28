@@ -11,18 +11,25 @@ import {
     type NewsFeedCategory,
 } from '@y0ngha/siglens-core';
 import { DASHBOARD_SCOPES } from '@/shared/config/dashboardScope';
-import { selectAggregateNewsItems } from '@/entities/news-article';
+import { selectAggregateNewsItems } from '@/entities/news-article/lib/newsAnalysisSelection';
 import { marketDataProviderFor } from '@/shared/api/market/getMarketDataProvider';
 import { getCachedMarketSummary } from '@/entities/market-summary/api/marketSummaryCache';
 import { marketBriefingContextOf } from '@/entities/market-summary/lib/marketBriefingContext';
-import { marketBriefingSeedSurface } from '@/entities/market-summary/api/briefingStaticCache';
+import {
+    marketBriefingCacheTag,
+    marketBriefingSeedSurface,
+} from '@/entities/market-summary/api/briefingStaticCache';
 import { getEconomySnapshot } from '@/entities/economy/api/economySnapshotCache';
-import { MACRO_BRIEFING_SEED_SURFACE } from '@/entities/economy/api/macroBriefingStaticCache';
-import { getMarketNewsList } from '@/entities/market-news/api';
+import {
+    MACRO_BRIEFING_CACHE_TAG,
+    MACRO_BRIEFING_SEED_SURFACE,
+} from '@/entities/economy/api/macroBriefingStaticCache';
+import { marketNewsDigestCacheTag } from '@/entities/market-news/api/marketNewsDigestStaticCache';
+import { getMarketNewsList } from '@/entities/market-news/api/marketNewsRepository';
 import {
     CATEGORY_CONFIG,
     type NewsFeedCategoryId,
-} from '@/entities/market-news';
+} from '@/entities/market-news/lib/categoryConfig';
 import { toEnrichedMarketNewsItem } from '@/entities/market-news/lib/toEnrichedMarketNewsItem';
 import { DEFAULT_DIGEST_MODEL_ID } from '@/entities/market-news/lib/marketNewsConstants';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
@@ -153,7 +160,7 @@ function marketBriefingTargets(): HubTarget[] {
         .filter(scope => scope.hasHubPage)
         .map(scope => ({
             label: `market-briefing:${scope.id}`,
-            tag: `market:briefing:${scope.id}`,
+            tag: marketBriefingCacheTag(scope),
             run: async () => {
                 const summary = await getCachedMarketSummary(
                     marketDataProviderFor(scope.id),
@@ -181,7 +188,7 @@ function marketBriefingTargets(): HubTarget[] {
 function macroBriefingTarget(): HubTarget {
     return {
         label: 'macro-briefing',
-        tag: 'economy:briefing',
+        tag: MACRO_BRIEFING_CACHE_TAG,
         run: async () => {
             const snapshot = await getEconomySnapshot();
             const peek = () => peekMacroBriefingCache(snapshot);
@@ -205,7 +212,7 @@ function newsDigestTargets(): HubTarget[] {
     return (Object.keys(CATEGORY_CONFIG) as NewsFeedCategoryId[]).map(
         category => ({
             label: `news-digest:${category}`,
-            tag: `market-news:digest:${category}`,
+            tag: marketNewsDigestCacheTag(category),
             run: async () => {
                 const { sentinel, koLabel } = CATEGORY_CONFIG[category];
                 const rows = await getMarketNewsList(sentinel);

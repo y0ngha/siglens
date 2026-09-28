@@ -21,11 +21,9 @@
  */
 
 import type { ReactNode } from 'react';
-import type {
-    ShareableKind,
-    SnapshotResultOf,
-} from '@/entities/shared-analysis';
-import type { AssetClass } from '@/shared/config/marketProfile';
+import type { ShareableKind } from '@/shared/db/constants';
+import type { SnapshotResultOf } from '@/entities/shared-analysis/types';
+import type { AssetClass } from '@/shared/config/marketProfile/types';
 import type { Bar } from '@y0ngha/siglens-core';
 import { SHARE_KIND_PANEL_REGISTRY } from './kindPanelRegistry';
 import type { SharePanelProps } from './kindPanelRegistry';

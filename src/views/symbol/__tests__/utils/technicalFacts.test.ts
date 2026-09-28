@@ -17,11 +17,11 @@ const tFacts = (key: string, values?: Record<string, string | number>) => {
     );
 };
 
+import { buildTechnicalFactsNarrative } from '../../utils/technicalFacts';
 import {
     buildTechnicalFacts,
-    buildTechnicalFactsNarrative,
     RECENT_BARS_WINDOW,
-} from '../../utils/technicalFacts';
+} from '@/entities/bars/lib/technicalFacts';
 
 function bar(close: number, high = close, low = close): Bar {
     return { time: 0, open: close, high, low, close, volume: 100 };

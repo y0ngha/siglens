@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { renderHook, act } from '@testing-library/react';
-import type { RecentSearchEntry } from '@/entities/ticker';
+import type { RecentSearchEntry } from '@/entities/ticker/lib/recentSearches';
 import { useRecentSearches } from '@/features/ticker-search/hooks/useRecentSearches';
 
 const RECENT_SEARCHES_EVENT = 'siglens:recent-searches-change';
@@ -19,7 +19,7 @@ const mockGetAssetLabelsAction = vi.fn<
     }>
 >(async () => ({ labels: {}, failed: [] }));
 
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker/lib/recentSearches', () => ({
     getRecentSearches: (...args: unknown[]) =>
         mockGetRecentSearches(...(args as [])),
     addRecentSearch: (...args: unknown[]) =>
@@ -43,7 +43,7 @@ vi.mock('@/shared/lib/googleAds', () => ({
  * 실제 액션이 유닛 테스트에서 호출되고, 그 실패는 `.catch`에 삼켜져 초록으로
  * 통과한다(CONVENTIONS.md External API Mocking).
  */
-vi.mock('@/entities/ticker/actions', () => ({
+vi.mock('@/entities/ticker/actions/getAssetLabelsAction', () => ({
     getAssetLabelsAction: (...args: unknown[]) =>
         mockGetAssetLabelsAction(...(args as [string[]])),
 }));

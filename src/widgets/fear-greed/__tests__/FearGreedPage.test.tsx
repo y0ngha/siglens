@@ -1,7 +1,10 @@
 import { render } from '@testing-library/react';
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
 import { FearGreedPage } from '@/widgets/fear-greed/FearGreedPage';
-import { ShareableAnalysisProvider, useShareable } from '@/features/share';
+import {
+    ShareableAnalysisProvider,
+    useShareable,
+} from '@/features/share/model/ShareableAnalysisContext';
 
 const baseSnapshot: FearGreedSnapshot = {
     score: 50,
@@ -29,7 +32,7 @@ vi.mock('@/shared/hooks/useHydrated', () => ({
 }));
 
 // Mock the chart subcomponent (it uses lightweight-charts and is hard to render under jsdom).
-vi.mock('@/widgets/chart/FearGreedHistoricalChart', () => ({
+vi.mock('@/widgets/fear-greed/FearGreedHistoricalChart', () => ({
     FearGreedHistoricalChart: () => null,
 }));
 

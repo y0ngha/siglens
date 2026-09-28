@@ -11,11 +11,15 @@
 // 기존 설계, 이 회귀 가드의 대상이 아니다). 그 주입까지 검사하면 이 테스트가
 // 정당한 기존 동작을 오탐으로 잡는다 — `koreanName` 없는 케이스로 좁혀
 // `shared.seo` 번역 자체(core/tail/description)만 순수하게 검증한다.
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker/lib/assetClassification', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+}));
+vi.mock('@/entities/ticker/lib/ticker', () => ({
     pickAssetName: (info: { name: string; koreanName?: string }) =>
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc. (AAPL)'),
+}));
+vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn().mockResolvedValue({
         assetInfo: {
             symbol: 'AAPL',

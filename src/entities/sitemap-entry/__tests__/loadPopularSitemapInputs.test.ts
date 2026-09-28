@@ -26,7 +26,7 @@ vi.mock('@/entities/seo-snapshot/api', () => ({
 }));
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SNAPSHOT_MAX_AGE_MS } from '@/entities/seo-snapshot';
+import { SNAPSHOT_MAX_AGE_MS } from '@/entities/seo-snapshot/model';
 import { loadPopularSitemapInputs } from '../server';
 
 describe('loadPopularSitemapInputs', () => {

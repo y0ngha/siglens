@@ -19,7 +19,7 @@ import type { EmailDispatcher, EmailMessage } from './types';
  */
 
 /** Redis key prefix for the captured code/token payload, keyed by recipient. */
-export const EMAIL_DEBUG_KEY_PREFIX = 'email_debug';
+const EMAIL_DEBUG_KEY_PREFIX = 'email_debug';
 
 /** TTL for the debug key — long enough for a spec to read it, short enough to self-clean. */
 const EMAIL_DEBUG_TTL_SECONDS = 600;

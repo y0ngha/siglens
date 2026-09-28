@@ -29,7 +29,7 @@ import { E2E_FORCE_FINANCIALS_ERROR_COOKIE } from '@/shared/api/e2eAnalysisStub'
  *     renders. The scorecard and tables are SSR-independent and always render.
  *
  *   - Overall integration: the analysis.json fixture now populates
- *     `financialsBulletsKo` so `FinancialsSummary` renders on the overall page.
+ *     `financialsBulletsKo` so the financials bullet section (`BulletSection`) renders on the overall page.
  *     Overall is user-triggered (idle CTA), so we only assert the CTA exists;
  *     after triggering we wait for the cached fixture to render.
  *
@@ -381,8 +381,8 @@ test.describe('financials: overall page integration', () => {
      * `pollError` and `OverallContent` renders a reload error UI instead of the CTA.
      *
      * Therefore we cannot deterministically click the CTA and wait for
-     * `FinancialsSummary` to render in this spec without seeding enriched news.
-     * The `FinancialsSummary` (재무 분석 section) and `financialsBulletsKo` fixture
+     * the financials bullet section to render in this spec without seeding enriched news.
+     * The financials `BulletSection` (재무 분석 section) and `financialsBulletsKo` fixture
      * data are validated at the unit-test level
      * (`OverallContent.test.tsx` / `OverallFactsSummary.test.tsx`). The overall
      * integration test here only proves the page itself boots and the structure

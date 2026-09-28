@@ -14,7 +14,7 @@ describe('isOAuthProvider', () => {
     });
     it('siglens-core가 알지만 siglens 앱에서 비활성화된 provider는 false', () => {
         expect(isOAuthProvider('apple')).toBe(false);
-        // Kakao login은 현재 비활성화되어 있다. (SUPPORTED_PROVIDERS 참고)
+        // 'kakao'는 DB enum 레거시 값일 뿐 로그인 provider가 아니다.
         expect(isOAuthProvider('kakao')).toBe(false);
     });
     it('지원하지 않는 문자열은 false를 반환한다', () => {

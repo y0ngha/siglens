@@ -11,7 +11,7 @@ vi.mock('@/entities/news-article/api', () => ({
         return { listCardsBySymbol: bySymbol };
     }),
 }));
-vi.mock('@/entities/market-news/api', () => ({
+vi.mock('@/entities/market-news/api/marketNewsRepository', () => ({
     DrizzleMarketNewsRepository: vi.fn(function () {
         return { listCardsByCategory: byCategory };
     }),

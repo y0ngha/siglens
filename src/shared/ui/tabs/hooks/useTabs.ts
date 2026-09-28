@@ -30,16 +30,8 @@ interface TabProps {
     ref: RefCallback<HTMLElement>;
 }
 
-interface PanelProps {
-    role: 'tabpanel';
-    id: string;
-    'aria-labelledby': string;
-    hidden: boolean;
-}
-
 interface UseTabsReturn<T extends string> {
     getTabProps: (tab: T) => TabProps;
-    getPanelProps: (tab: T) => PanelProps;
 }
 
 export function useTabs<T extends string>({
@@ -149,15 +141,5 @@ export function useTabs<T extends string>({
         [activeTab, onChange, handleKeyDown, prefix, getRef]
     );
 
-    const getPanelProps = useCallback(
-        (tab: T): PanelProps => ({
-            role: 'tabpanel',
-            id: buildPanelId(prefix, tab),
-            'aria-labelledby': buildTabId(prefix, tab),
-            hidden: tab !== activeTab,
-        }),
-        [activeTab, prefix]
-    );
-
-    return { getTabProps, getPanelProps };
+    return { getTabProps };
 }

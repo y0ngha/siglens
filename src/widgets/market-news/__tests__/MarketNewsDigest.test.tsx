@@ -11,7 +11,7 @@ import type { MockedFunction } from 'vitest';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import { useMarketNewsDigest } from '@/widgets/market-news/hooks/useMarketNewsDigest';
 import { MarketNewsDigest } from '@/widgets/market-news/MarketNewsDigest';
-import { SENTIMENT_CLASS } from '@/widgets/market-news/utils/sentimentConstants';
+import { SENTIMENT_CLASS } from '@/shared/lib/sentimentDisplay';
 
 vi.mock('@/widgets/market-news/hooks/useMarketNewsDigest', () => ({
     useMarketNewsDigest: vi.fn(),

@@ -1,7 +1,10 @@
 import { render, screen } from '@testing-library/react';
-import { ShareableAnalysisProvider, useShareable } from '@/features/share';
 import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
+import {
+    ShareableAnalysisProvider,
+    useShareable,
+} from '@/features/share/model/ShareableAnalysisContext';
 
 const ensureNewsCardsAnalyzedActionSpy = vi.hoisted(() =>
     vi.fn().mockResolvedValue(undefined)
@@ -9,11 +12,14 @@ const ensureNewsCardsAnalyzedActionSpy = vi.hoisted(() =>
 const mockWaitResult = vi.fn();
 const mockAnalysisResult = vi.fn();
 
-vi.mock('@/entities/news-article/actions', () => ({
-    ensureNewsCardsAnalyzedAction: ensureNewsCardsAnalyzedActionSpy,
-}));
+vi.mock(
+    '@/entities/news-article/actions/ensureNewsCardsAnalyzedAction',
+    () => ({
+        ensureNewsCardsAnalyzedAction: ensureNewsCardsAnalyzedActionSpy,
+    })
+);
 
-vi.mock('@/widgets/news/hooks/useWaitForNewsCards', () => ({
+vi.mock('@/entities/news-article/hooks/useWaitForNewsCards', () => ({
     useWaitForNewsCards: () => mockWaitResult(),
 }));
 
@@ -21,9 +27,13 @@ vi.mock('@/widgets/news/hooks/useNewsAnalysis', () => ({
     useNewsAnalysis: () => mockAnalysisResult(),
 }));
 
-vi.mock('@/features/symbol-model', () => ({
+vi.mock('@/features/symbol-model/hooks/useDefaultModelId', () => ({
     useDefaultModelId: () => 'gemini-3.5-flash-lite',
+}));
+vi.mock('@/features/symbol-model/hooks/useAnalysisSettingsHydrated', () => ({
     useAnalysisSettingsHydrated: () => true,
+}));
+vi.mock('@/features/symbol-model/hooks/useDefaultReasoning', () => ({
     useDefaultReasoning: () => false,
 }));
 

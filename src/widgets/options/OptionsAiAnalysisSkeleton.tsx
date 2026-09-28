@@ -1,5 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
+import { Spinner } from '@/shared/ui/Spinner';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 const SKELETON_LINE_WIDTHS = [
     'w-full',
@@ -13,12 +15,12 @@ export function OptionsAiAnalysisSkeleton() {
     const t = useTranslations('widgets.options');
     return (
         <section
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+            className={cn(SURFACE_CARD, 'p-6')}
             aria-busy="true"
             aria-label={t('OptionsAiAnalysisSkeleton.673e73')}
         >
             <div className="flex items-center gap-2">
-                <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary-500 border-t-transparent" />
+                <Spinner size="sm" />
                 <span className="text-xs tracking-[0.01em] text-secondary-400">
                     {t('OptionsAiAnalysisSkeleton.a88633')}
                 </span>

@@ -5,7 +5,7 @@ import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { cn } from '@/shared/lib/cn';
 import { getModelDisplay } from '@/shared/lib/modelDisplay';
 import { type ModelId } from '@y0ngha/siglens-core';
-import { ModelAccessBadge } from '@/shared/ui/ModelAccessBadge';
+import { ModelListbox } from '@/shared/ui/ModelListbox';
 import { useRef } from 'react';
 
 interface ModelSelectorProps {
@@ -33,7 +33,6 @@ export function ModelSelector({
     const t = useTranslations('widgets.analysis');
     const triggerRef = useRef<HTMLButtonElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
-    const optionRefs = useRef<(HTMLDivElement | null)[]>([]);
     const { isOpen, toggle, close } = usePopoverToggle([
         triggerRef,
         dropdownRef,
@@ -44,54 +43,11 @@ export function ModelSelector({
     const handleToggle = () => {
         if (disabled) return;
         toggle();
-        if (!isOpen) {
-            const selectedIdx = allowedModels.indexOf(selectedModel);
-            setTimeout(() => optionRefs.current[selectedIdx]?.focus(), 0);
-        }
     };
 
-    const handleListboxKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-        const currentIndex = allowedModels.indexOf(selectedModel);
-        switch (e.key) {
-            case 'ArrowDown': {
-                e.preventDefault();
-                const nextIdx = (currentIndex + 1) % allowedModels.length;
-                onModelChange(allowedModels[nextIdx]!);
-                optionRefs.current[nextIdx]?.focus();
-                break;
-            }
-            case 'ArrowUp': {
-                e.preventDefault();
-                const prevIdx =
-                    (currentIndex - 1 + allowedModels.length) %
-                    allowedModels.length;
-                onModelChange(allowedModels[prevIdx]!);
-                optionRefs.current[prevIdx]?.focus();
-                break;
-            }
-            case 'Home':
-                e.preventDefault();
-                onModelChange(allowedModels[0]!);
-                optionRefs.current[0]?.focus();
-                break;
-            case 'End': {
-                e.preventDefault();
-                const lastIdx = allowedModels.length - 1;
-                onModelChange(allowedModels[lastIdx]!);
-                optionRefs.current[lastIdx]?.focus();
-                break;
-            }
-            case 'Escape':
-                // Stop this from also reaching AnalysisSettingsMenu's
-                // document-level Escape listener — Escape should collapse
-                // only the innermost open layer (this listbox), not the
-                // whole settings popover it's nested in.
-                e.preventDefault();
-                e.stopPropagation();
-                close();
-                triggerRef.current?.focus();
-                break;
-        }
+    const closeToTrigger = () => {
+        close();
+        triggerRef.current?.focus();
     };
 
     return (
@@ -130,74 +86,18 @@ export function ModelSelector({
                 </button>
 
                 {isOpen && (
-                    <div
+                    <ModelListbox
                         ref={dropdownRef}
-                        role="listbox"
-                        aria-label={t('ModelSelector.7c0e87')}
-                        // listbox는 인터랙티브 role이라 포커스 가능해야 한다.
-                        // -1이므로 탭 순서는 그대로(트리거 버튼만 탭 대상).
-                        tabIndex={-1}
-                        onKeyDown={handleListboxKeyDown}
+                        models={allowedModels}
+                        selected={selectedModel}
+                        onChange={onModelChange}
+                        onClose={closeToTrigger}
+                        ariaLabel={t('ModelSelector.7c0e87')}
                         className={cn(
-                            'border-secondary-600 bg-secondary-800 absolute top-full z-10 mt-1 w-full min-w-44 rounded-lg border shadow-lg',
+                            'top-full mt-1 w-full min-w-44',
                             dropdownAlign === 'right' ? 'right-0' : 'left-0'
                         )}
-                    >
-                        <div className="max-h-66 overflow-y-auto overscroll-contain">
-                            {allowedModels.map((modelId, i) => {
-                                const display = getModelDisplay(modelId);
-                                const isSelected = modelId === selectedModel;
-                                return (
-                                    <div
-                                        key={modelId}
-                                        ref={el => {
-                                            optionRefs.current[i] = el;
-                                        }}
-                                        role="option"
-                                        tabIndex={isSelected ? 0 : -1}
-                                        aria-selected={isSelected}
-                                        onClick={() => {
-                                            onModelChange(modelId);
-                                            close();
-                                            triggerRef.current?.focus();
-                                        }}
-                                        onKeyDown={e => {
-                                            if (
-                                                e.key === 'Enter' ||
-                                                e.key === ' '
-                                            ) {
-                                                e.preventDefault();
-                                                onModelChange(modelId);
-                                                close();
-                                                triggerRef.current?.focus();
-                                            }
-                                        }}
-                                        className={cn(
-                                            'focus-visible:ring-primary-500 flex min-h-11 w-full cursor-pointer items-center gap-2 px-3 transition-colors focus-visible:ring-1 focus-visible:outline-none',
-                                            isSelected
-                                                ? 'text-primary-300 bg-primary-900/20'
-                                                : 'text-secondary-300 hover:bg-secondary-700'
-                                        )}
-                                    >
-                                        <span className="w-3 text-[10px]">
-                                            {isSelected && '✓'}
-                                        </span>
-                                        <div className="flex flex-1 items-center justify-between gap-2">
-                                            <div>
-                                                <div className="text-[11px] font-medium">
-                                                    {display.label}
-                                                </div>
-                                                <div className="text-[10px] text-secondary-500">
-                                                    {display.fullName}
-                                                </div>
-                                            </div>
-                                            <ModelAccessBadge model={modelId} />
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
+                    />
                 )}
             </div>
         </div>

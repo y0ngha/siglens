@@ -1,31 +1,28 @@
 'use server';
 
 import { localeRedirect } from '@/shared/i18n/localeRedirect';
-import {
-    DrizzleOAuthAccountRepository,
-    compositeOAuthRevoker,
-} from '@/entities/oauth-account';
-import {
-    deleteAccount,
-    applyAuthCookie,
-    isSecureCookieEnv,
-    createExpiredAuthHintCookie,
-} from '@/entities/auth';
+import { DrizzleOAuthAccountRepository } from '@/entities/oauth-account/api';
+import { compositeOAuthRevoker } from '@/entities/oauth-account/lib/revoker';
+import { deleteAccount } from '@/entities/auth/lib/deleteAccount';
+import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
+import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
+import { createExpiredAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
 import { DrizzleUserRepository } from '@/entities/auth/api';
 import { cookies } from 'next/headers';
 import type { DeleteAccountFormState } from '@/shared/lib/auth/formTypes';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
-import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
+import { getDatabaseClient } from '@/shared/db/client';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getTranslations } from 'next-intl/server';
+import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
 
 export async function deleteAccountAction(
     _prev: DeleteAccountFormState,
     formData: FormData
 ): Promise<DeleteAccountFormState> {
-    // 세 문구 모두 `entities.auth.error`에 있다 — 로그인 폼이 쓰는 표와 같은
-    // 자리다. 액션이 문구를 만드는 이유는 `state.error.message`가 그대로
-    // `AuthErrorAlert`에 실려 나가기 때문이다.
+    // 화면 표시는 `DeleteAccountConfirm`이 에러 `code`로 번역한다(`AUTH_ERROR_KEY`).
+    // 여기서 만드는 `message`는 로그·폴백용이다 — `deleteAccount`가 그대로 넘기는
+    // 코드의 `message`는 한국어 원문이라 UI가 `message`를 믿으면 안 된다.
     const tAuth = await getTranslations('entities.auth.error');
     try {
         const confirmEmail = normalizeEmail(
@@ -52,7 +49,7 @@ export async function deleteAccountAction(
         }
 
         const secure = isSecureCookieEnv();
-        const { db } = getAuthDatabaseClient();
+        const { db } = getDatabaseClient();
         const result = await deleteAccount(
             { userId: user.id },
             {
@@ -75,10 +72,11 @@ export async function deleteAccountAction(
         const cookieStore = await cookies();
         cookieStore.set(applyAuthCookie(result.cookie));
         cookieStore.set(createExpiredAuthHintCookie({ secure }));
-        return localeRedirect('/?account_deleted=1');
+        // 예전엔 `/?account_deleted=1`로 보냈지만 그 쿼리를 읽는 곳이 없었다 —
+        // 받을 쪽 없는 파라미터는 URL에 남아 공유·북마크만 더럽힌다.
+        return localeRedirect('/');
     } catch (err) {
-        if (err instanceof Error && err.message.startsWith('NEXT_REDIRECT'))
-            throw err;
+        if (isNextRedirectError(err)) throw err;
         console.error('[deleteAccountAction] unexpected error:', err);
         return {
             error: {

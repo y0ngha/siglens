@@ -1,3 +1,5 @@
+import { isE2E } from '@/shared/api/e2eEnv';
+
 /** Cloudflare Web Analytics 설정 */
 
 // beacon token은 모든 방문자의 HTML에 노출되는 public 식별자이므로 하드코딩한다.
@@ -10,5 +12,6 @@
 // 여러 스펙이 "Unstubbed external requests" 오류로 실패한다.
 // 빈 문자열이면 layout의 `{CF_BEACON_TOKEN && <Script .../>}` 가드가
 // beacon을 렌더하지 않으므로 요청 자체가 발생하지 않는다.
-export const CF_BEACON_TOKEN =
-    process.env.E2E_TEST === '1' ? '' : '24c85b35acb0491297ff6cfe470bdc99';
+export const CF_BEACON_TOKEN = isE2E()
+    ? ''
+    : '24c85b35acb0491297ff6cfe470bdc99';

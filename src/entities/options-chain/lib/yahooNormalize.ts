@@ -11,6 +11,8 @@ import type {
     OptionsSnapshot,
 } from '@y0ngha/siglens-core';
 import { MS_PER_DAY } from '@/shared/config/time';
+import { zonedDate } from '@/shared/lib/marketSessionDate';
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
 /**
  * Structural types mirroring yahoo-finance2 v3 CallOrPut / Option / OptionsResult.
@@ -55,24 +57,13 @@ export interface YahooOptionsResult {
     options: YahooOption[];
 }
 
-const ET_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/New_York',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-});
+const ET_TIME_ZONE = 'America/New_York';
 
 // 정오(UTC) — ET 캘린더 날짜를 UTC 인스턴트로 매핑할 때 DST 전이 윈도우
 // (봄·가을 각 몇 시간씩 시각이 모호한 구간)에 걸리지 않도록 하루의 중간
 // 시점에 앵커링한다. 자정 대신 정오를 쓰는 이유는 자정 자체가 DST
 // 변환 시각이라 시간 산술이 한 시간씩 어긋날 수 있어서.
 const ET_NOON_UTC_HOUR = 12;
-
-interface EtDateParts {
-    year: number;
-    month: number;
-    day: number;
-}
 
 /**
  * Returns an instant anchored at noon UTC on the same *calendar day in
@@ -82,25 +73,12 @@ interface EtDateParts {
  * The previous implementation hardcoded `-4h` (EDT), which off-by-one
  * for ~5 months of the year (EST is `-5h`). DTE math rounds to days, so
  * a 1h drift could still cross a midnight boundary — replaced with
- * IANA-aware date-part extraction via `Intl.DateTimeFormat`.
+ * IANA-aware `zonedDate` (shared/lib/marketSessionDate).
  */
 function etMidnight(now: Date): Date {
-    // `formatToParts` returns ~3-5 items; reduce+spread cost is negligible.
-    // Declarative form preferred over let+for mutation.
-    const { year, month, day } = ET_DATE_FORMATTER.formatToParts(
-        now
-    ).reduce<EtDateParts>(
-        (acc, part) => {
-            if (part.type === 'year')
-                return { ...acc, year: Number.parseInt(part.value, 10) };
-            if (part.type === 'month')
-                return { ...acc, month: Number.parseInt(part.value, 10) };
-            if (part.type === 'day')
-                return { ...acc, day: Number.parseInt(part.value, 10) };
-            return acc;
-        },
-        { year: 0, month: 0, day: 0 }
-    );
+    const [year, month, day] = zonedDate(now, ET_TIME_ZONE)
+        .split('-')
+        .map(Number);
     return new Date(Date.UTC(year, month - 1, day, ET_NOON_UTC_HOUR));
 }
 
@@ -128,7 +106,7 @@ export function normalizeYahooExpiration(
     yexp: YahooOption,
     now: Date
 ): OptionsChain {
-    const expirationDate = yexp.expirationDate.toISOString().slice(0, 10);
+    const expirationDate = toUtcIsoDate(yexp.expirationDate);
 
     const expMidnight = new Date(`${expirationDate}T00:00:00.000Z`);
     const refMidnight = etMidnight(now);

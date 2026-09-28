@@ -142,9 +142,19 @@ interface ReplaySourcesProps {
     readonly label: string;
     readonly sources: readonly string[];
     readonly asOf: string;
+    /**
+     * 기준 시각 앞의 `·` 구분자. 광고 랜딩(`/lp`)은 카피 규칙이 `·`를 금지해서
+     * 끈다(spec `2026-09-26-ad-landing-pages-design.md`).
+     */
+    readonly separator?: boolean;
 }
 
-export function ReplaySources({ label, sources, asOf }: ReplaySourcesProps) {
+export function ReplaySources({
+    label,
+    sources,
+    asOf,
+    separator = true,
+}: ReplaySourcesProps) {
     return (
         <p className="flex flex-wrap items-center gap-1.5 border-t border-dashed border-secondary-700 pt-2.5 text-xs text-secondary-400">
             {label}
@@ -156,7 +166,9 @@ export function ReplaySources({ label, sources, asOf }: ReplaySourcesProps) {
                     {source}
                 </span>
             ))}
-            <span className="tabular-nums">· {asOf}</span>
+            <span className="tabular-nums">
+                {separator ? <>· {asOf}</> : asOf}
+            </span>
         </p>
     );
 }

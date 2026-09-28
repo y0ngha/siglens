@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { ChatMessageView } from '@/entities/chat-conversation';
-import { fromViews } from '@/features/agent-chat';
+import type { ChatMessageView } from '@/entities/chat-conversation/model';
+import { fromViews } from '@/features/agent-chat/hooks/useAgentStream';
 
 const view = (v: Partial<ChatMessageView>): ChatMessageView =>
     ({

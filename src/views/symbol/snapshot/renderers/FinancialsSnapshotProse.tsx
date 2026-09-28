@@ -1,5 +1,5 @@
 import { useTranslations } from 'next-intl';
-import type { MarketProfileId } from '@/shared/config/marketProfile';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { SnapshotBulletList } from '../SnapshotBulletList';
 import { cn } from '@/shared/lib/cn';
@@ -41,9 +41,6 @@ interface FinancialsSnapshotProseProps {
      */
     plain?: string | null;
 }
-
-export { narrowFinancialsContent } from './financialsContent';
-export { hasFinancialsProse } from './financialsContent';
 
 /**
  * SEO pre-warm 스냅샷의 financials 탭 프로즈 렌더러 — Task 6, 네 번째 탭

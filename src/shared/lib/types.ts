@@ -13,18 +13,22 @@ import type { DashboardScopeId } from '@/shared/config/dashboardScope';
  * `FearGreedSnapshot.confidence`의 narrowed 형태(`'normal' | 'limited'`).
  * core는 `FearGreedConfidence`에 `'insufficient'`를 포함하지만, snapshot이 반환되는
  * 시점에는 이미 그 케이스가 걸러져 있다(composition.ts의 LIMITED gate). UI 컴포넌트
- * 와 lib/fearGreedLabels의 `formatConfidenceFooter`에서 공통으로 사용.
+ * 와 lib/fearGreedLabels의 `confidenceLabelKey`에서 공통으로 사용.
  */
 export type SnapshotConfidence = Exclude<FearGreedConfidence, 'insufficient'>;
 
-/** All OAuth providers known to the system (including those reserved but not yet active in the UI). */
+/**
+ * DB `oauth_provider` enum 값의 미러 — 로그인 가능한 provider 목록이 아니다(`SupportedOAuthProvider` 참고).
+ * `kakao`는 코드가 삭제된 레거시 값이다. 2026-04-30~05-03 master에서 활성화된 적이 있어
+ * `oauth_accounts`에 행이 남아 있을 수 있으므로 enum에서 빼지 않는다(enum 값 제거는 타입 재생성 필요).
+ */
 export type OAuthProvider = 'google' | 'kakao' | 'apple';
 
 /** siglens 앱에서 현재 활성화된 OAuth provider. */
 export type SupportedOAuthProvider = Extract<OAuthProvider, 'google'>;
 
 /** Common ticker fields shared by listing/search results. */
-export interface TickerBase {
+interface TickerBase {
     /** Canonical ticker symbol (uppercase). */
     symbol: string;
     /** English company name. */
@@ -117,31 +121,14 @@ export interface CryptoCategory {
     items: readonly TickerItem[];
 }
 
-export type {
-    DeleteAccountFormErrorCode,
-    DeleteAccountFormState,
-    FinalizeOAuthSignupState,
-    ForgotPasswordFormState,
-    LocalInfraErrorCode,
-    LoginFormState,
-    RequestEmailVerificationFormState,
-    ResetPasswordFormState,
-    SignupFormState,
-    VerifyEmailFormState,
-} from '@/shared/lib/auth/formTypes';
-
-export type { AuthUserRecord } from '@/shared/lib/auth/types';
-
 import type { LlmProvider } from '@/shared/config/llmProviders';
-// Direct import from /types (not the barrel) to avoid a circular dependency:
-// shared/lib/types → marketProfile/index(barrel) → registry → shared/lib/types
+// Import from marketProfile/types (not registry) to avoid a circular dependency:
+// shared/lib/types → marketProfile/registry → shared/lib/types
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
-
-export type { LlmProvider };
 
 export type GateMode = 'auth' | 'byok';
 
-export type ApiKeyActionStatus = 'idle' | 'success' | 'error';
+type ApiKeyActionStatus = 'idle' | 'success' | 'error';
 
 export type ApiKeyActionErrorCode =
     | 'invalid_key_format'

@@ -2,9 +2,11 @@ import 'server-only';
 import type { MarketDailyClose } from '@y0ngha/siglens-core';
 import { getYahooClient } from '@/shared/api/yahoo/createYahooClient';
 import { isE2E } from '@/shared/api/e2eEnv';
-import { ISO_DATE_LENGTH, MS_PER_DAY } from '@/shared/config/time';
+import { MS_PER_DAY } from '@/shared/config/time';
+import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { e2eDailyCloses } from './e2eFearGreedFixture';
 import { MARKET_FEAR_GREED_KR_LOOKBACK_DAYS } from './marketFearGreedKrSymbols';
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
 /**
  * 조회 창의 하한. 캐시 계층이 한 번 계산해 모든 시리즈에 같은 값을 넘긴다 —
@@ -90,27 +92,15 @@ export async function fetchKrDailyCloses(
     const closes = rows.flatMap(row => {
         const price = selectPrice(row, useAdjClose);
         return row.date instanceof Date && price !== null
-            ? [{ date: toKstDate(row.date), close: price }]
+            ? [{ date: kstDateKey(row.date), close: price }]
             : [];
     });
 
     if (closes.length === 0) {
         throw new Error(
-            `[marketFearGreedKr] no usable closes for ${symbol} (${from.toISOString().slice(0, ISO_DATE_LENGTH)}..${to.toISOString().slice(0, ISO_DATE_LENGTH)})`
+            `[marketFearGreedKr] no usable closes for ${symbol} (${toUtcIsoDate(from)}..${toUtcIsoDate(to)})`
         );
     }
 
     return closes;
-}
-
-const KST_DATE_FORMAT = new Intl.DateTimeFormat('en-CA', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    timeZone: 'Asia/Seoul',
-});
-
-/** UTC 인스턴트 → KST 달력일 `YYYY-MM-DD`. `en-CA`가 곧 ISO 순서라 재조립이 없다. */
-function toKstDate(instant: Date): string {
-    return KST_DATE_FORMAT.format(instant);
 }

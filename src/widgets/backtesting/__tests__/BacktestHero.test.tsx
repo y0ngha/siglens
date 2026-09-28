@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import type { BacktestStats } from '@/entities/backtest-case';
+import type { BacktestStats } from '@/entities/backtest-case/lib/deriveBacktestStats';
 
 import { BacktestHero } from '../BacktestHero';
 

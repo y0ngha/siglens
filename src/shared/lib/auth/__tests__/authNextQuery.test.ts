@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { authNextQuery } from '@/shared/lib/auth';
+import { authNextQuery } from '@/shared/lib/auth/redirect';
 
 describe('authNextQuery', () => {
     it('is empty without a target (main host keeps the plain /login href)', () => {

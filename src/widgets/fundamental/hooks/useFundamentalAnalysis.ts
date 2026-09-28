@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import type { StreamErrorMessages } from '@/shared/hooks/useAnalysisStream';
+import type { StreamErrorMessages } from '@/shared/lib/sse/runAnalysisStream';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { useCallback, useMemo } from 'react';
 import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
@@ -10,9 +10,9 @@ import type {
     FundamentalAnalysisResponse,
     ModelId,
 } from '@y0ngha/siglens-core';
-import type { RunFundamentalAnalysisActionResult } from '@/entities/analysis/actions';
-import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
-import { isGateBlockedResult } from '@/entities/analysis';
+import type { RunFundamentalAnalysisActionResult } from '@/entities/analysis/actions/runFundamentalAnalysisAction';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
+import { isGateBlockedResult } from '@/entities/analysis/lib/gate';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { readPlain, type WithPlain } from '@/shared/lib/plainEnvelope';
 

@@ -1,5 +1,6 @@
 import { SITE_NAME, SITE_URL, type SeoTranslator } from '@/shared/lib/seo';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
+import { cachedDateTimeFormat } from '@/shared/lib/intlFormatCache';
 
 /**
  * 투자 고지 문구는 `shared.lib.legal.investmentDisclaimer` 키다.
@@ -82,27 +83,17 @@ export function aboutDescription(t: SeoTranslator): string {
 }
 
 /**
- * 로케일별 포맷터 캐시.
+ * 약관 발효일 표기 — 로케일을 따른다.
  *
  * 예전에는 `'ko-KR'` 고정 상수 하나였다 — 그래서 `/en/terms`·`/en/privacy`의
  * `Effective Date`가 `2026년 4월 30일`을 찍었다. 타임존은 KST로 고정한다
  * (약관 발효일은 한국 법인 기준 날짜라 로케일과 무관).
  */
-const FORMATTER_CACHE = new Map<Locale, Intl.DateTimeFormat>();
-
-function formatterFor(locale: Locale): Intl.DateTimeFormat {
-    const cached = FORMATTER_CACHE.get(locale);
-    if (cached) return cached;
-    const formatter = new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+export function formatKoreanDate(date: Date, locale: Locale): string {
+    return cachedDateTimeFormat(INTL_LOCALE[locale], {
         timeZone: 'Asia/Seoul',
         year: 'numeric',
         month: 'long',
         day: 'numeric',
-    });
-    FORMATTER_CACHE.set(locale, formatter);
-    return formatter;
-}
-
-export function formatKoreanDate(date: Date, locale: Locale): string {
-    return formatterFor(locale).format(date);
+    }).format(date);
 }

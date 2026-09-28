@@ -24,7 +24,7 @@ import {
  *
  * `sortedNames`를 인자로 받아 Next.js가 자동으로 캐시 키에 포함시킨다
  * — 입력이 바뀌면 자연히 리프레시된다. per-call 생성 대신 module-level 호이스트로
- * SP-A `getCalendarFromDb` 패턴을 미러한다.
+ * `getCalendarFromDb`의 module-level 캐시 호이스트 패턴을 미러한다.
  */
 const getCachedIndicatorDbMap = unstable_cache(
     async (sortedNames: string[]): Promise<Record<string, string>> => {
@@ -66,7 +66,7 @@ async function readDbMap(
  *
  * 미해결 이름에 대한 AI 번역 트리거는 클라이언트 훅(`useIndicatorTranslationTrigger`)이
  * 마운트 시 담당한다 — RSC prerender/ISR cold-gen에서 고아 프로미스·revalidateTag를
- * 실행하는 렌더 부작용을 제거하기 위해 SP-A 패턴(`useEconomicCalendarTrigger`)을 미러.
+ * 실행하는 렌더 부작용을 제거하기 위해 인제스션 트리거(`useEconomicCalendarTrigger`)와 같은 패턴을 미러.
  *
  * 그리드(client)는 이 순수 레이블 맵만 받아 표시한다 — server-only 의존성 누출 없음.
  */

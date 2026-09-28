@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { QuoteHeader } from '@/widgets/dashboard/QuoteHeader';
 import type { QuoteHeaderData } from '@/widgets/dashboard/QuoteHeader';

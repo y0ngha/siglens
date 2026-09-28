@@ -110,23 +110,27 @@ export function usePwaInstall(): UsePwaInstallReturn {
             deferredPromptRef.current = e as BeforeInstallPromptEvent;
         };
 
-        const handleTrigger = () => {
-            setShowBanner(true);
+        const detachTriggers = () => {
+            for (const type of BANNER_TRIGGER_EVENTS) {
+                window.removeEventListener(type, handleTrigger);
+            }
         };
+
+        // 방아쇠는 합쳐서 한 번만 발화한다. 이벤트별 `once`만 걸면 한쪽이 배너를
+        // 띄우고 사용자가 닫은 뒤, 남아 있던 다른 쪽이 배너를 다시 띄운다.
+        function handleTrigger() {
+            detachTriggers();
+            setShowBanner(true);
+        }
 
         window.addEventListener('beforeinstallprompt', handlePrompt);
         for (const type of BANNER_TRIGGER_EVENTS) {
-            window.addEventListener(type, handleTrigger, {
-                once: true,
-                passive: true,
-            });
+            window.addEventListener(type, handleTrigger, { passive: true });
         }
 
         return () => {
             window.removeEventListener('beforeinstallprompt', handlePrompt);
-            for (const type of BANNER_TRIGGER_EVENTS) {
-                window.removeEventListener(type, handleTrigger);
-            }
+            detachTriggers();
         };
     }, [env.isMobile, env.isStandalone, env.isInAppBrowser]);
 

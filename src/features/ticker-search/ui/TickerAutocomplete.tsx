@@ -1,12 +1,13 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { isKoreanInput } from '@/entities/ticker';
+import { isKoreanInput } from '@/entities/ticker/lib/ticker';
 import { useAutocomplete } from '../hooks/useAutocomplete';
 import { marketBadgeSpec, resultDisplayNames } from '../lib/resultDisplay';
 import { MarketBadge } from './MarketBadge';
 import { cn } from '@/shared/lib/cn';
 import type { TickerSearchResult } from '@/shared/lib/types';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 const LISTBOX_ID = 'ticker-autocomplete-listbox';
 const OPTION_ID_PREFIX = `${LISTBOX_ID}-option`;
@@ -144,7 +145,10 @@ export function TickerAutocomplete({
                         ref={dropdownRef}
                         id={LISTBOX_ID}
                         role="listbox"
-                        className="absolute top-full left-0 z-50 mt-1 w-full overflow-hidden rounded-lg border border-secondary-700 bg-secondary-800 shadow-lg"
+                        className={cn(
+                            SURFACE_CARD,
+                            'absolute top-full left-0 z-50 mt-1 w-full overflow-hidden shadow-lg'
+                        )}
                     >
                         {isSearching && (
                             <div className="px-4 py-3 text-sm text-secondary-400">

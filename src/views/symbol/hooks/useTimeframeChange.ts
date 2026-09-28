@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Timeframe } from '@y0ngha/siglens-core';
 import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/shared/config/market';
-import { getBarsAction } from '@/entities/bars/actions';
+import { getBarsAction } from '@/entities/bars/actions/getBarsAction';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
 

@@ -12,7 +12,7 @@ import {
  * conversation, which is exactly the fallback case. This is Google's
  * documented dummy value that skips the validation (verified live 2026-09-15).
  */
-export const GEMINI_TOOL_CALL_EXTRA = {
+const GEMINI_TOOL_CALL_EXTRA = {
     extra_content: {
         google: { thought_signature: 'skip_thought_signature_validator' },
     },

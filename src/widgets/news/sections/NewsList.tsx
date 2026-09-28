@@ -6,61 +6,33 @@ import { useNewsPollingWithInvalidation } from '../hooks/useNewsPollingWithInval
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { cn } from '@/shared/lib/cn';
 import { NEWS_LIST_PERIOD_KEY } from '@/shared/lib/news/periodLabels';
-import type { NewsImpact, NewsSentiment } from '@y0ngha/siglens-core';
 import { useState } from 'react';
 import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
 import { NewsCardShell } from '@/shared/ui/NewsCardShell';
+import { Spinner } from '@/shared/ui/Spinner';
 import { NEWS_LIST_PAGE_SIZE } from '@/shared/config/newsSerialization';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { SENTIMENT_LABEL_KEY } from '@/shared/lib/sentimentDisplay';
+// 배지 색·라벨 키·가드는 `MarketNewsCard`와 같은 공유 테이블을 쓴다 — 예전에는
+// 여기 로컬 사본이 있었고 neutral/low/negligible이 `text-secondary-400`으로
+// 남아 AA 대비 보정(`-300`)이 빠져 있었다.
+import {
+    SENTIMENT_CLASS,
+    SENTIMENT_LABEL_KEY,
+    isNewsSentiment,
+} from '@/shared/lib/sentimentDisplay';
+import {
+    IMPACT_CLASS,
+    IMPACT_LABEL_KEY,
+    isNewsImpact,
+} from '@/shared/lib/news/impactDisplay';
 import {
     resolveNewsBody,
     resolveNewsSummary,
     resolveNewsTitle,
 } from '@/shared/lib/news/resolveNewsTitle';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
-const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
-    bullish: 'bg-ui-success/10 text-ui-success-text',
-    bearish: 'bg-ui-danger/10 text-ui-danger-text',
-    neutral: 'bg-secondary-700 text-secondary-400',
-};
-
-// "가격 영향" is asset-neutral: works for both equity ("주가") and crypto ("코인 가격").
-// NewsList is rendered on both equity and crypto news pages, so "주가" (stock-price)
-// would be a misleading label on crypto pages. "가격" covers both without prop threading.
-/**
- * 라벨 **키**만 담는다 — `t()`는 소비 컴포넌트에서 부른다.
- *
- * 예전에는 이 테이블이 두 벌 있었고(`market-news`는 `주가 영향`,
- * `news`는 `가격 영향`), 둘 다 한국어 리터럴이라 네 로케일 전부 한국어였다.
- * 문구는 자산 중립 쪽(`가격`)으로 통일한다 — 크립토 페이지에서 `주가`는
- * 틀린 말이다.
- */
-const IMPACT_LABEL_KEY: Record<NewsImpact, string> = {
-    high: 'newsImpact.high',
-    medium: 'newsImpact.medium',
-    low: 'newsImpact.low',
-    negligible: 'newsImpact.negligible',
-};
-
-const IMPACT_CLASS: Record<NewsImpact, string> = {
-    high: 'bg-ui-warning/10 text-ui-warning-text',
-    medium: 'bg-primary-500/10 text-primary-400',
-    low: 'bg-secondary-700 text-secondary-400',
-    negligible: 'bg-secondary-700/50 text-secondary-400',
-};
-
-const VALID_SENTIMENTS = new Set<string>(['bullish', 'bearish', 'neutral']);
-const VALID_IMPACTS = new Set<string>(['high', 'medium', 'low', 'negligible']);
 const NEWS_LIST_SKELETON_COUNT = 3;
-
-function isNewsSentiment(value: string): value is NewsSentiment {
-    return VALID_SENTIMENTS.has(value);
-}
-
-function isNewsImpact(value: string): value is NewsImpact {
-    return VALID_IMPACTS.has(value);
-}
 
 function isPendingAnalysis(item: NewsDisplayItem): boolean {
     return item.sentiment === null || item.priceImpact === null;
@@ -121,10 +93,7 @@ function NewsTextSection({ label, text }: NewsTextSectionProps) {
 
 function NewsCardSkeleton() {
     return (
-        <article
-            aria-hidden="true"
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-4"
-        >
+        <article aria-hidden="true" className={cn(SURFACE_CARD, 'p-4')}>
             <div className="h-5 w-4/5 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
             <div className="mt-2 flex flex-wrap items-center gap-2">
                 <div className="h-5 w-10 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
@@ -182,10 +151,7 @@ function NewsRefreshStatusCard() {
             aria-live="polite"
             className="flex w-full max-w-full min-w-0 items-start gap-3 overflow-hidden rounded-lg border border-primary-500/30 bg-primary-500/5 p-4"
         >
-            <div
-                aria-hidden="true"
-                className="mt-0.5 h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-primary-400 border-t-transparent motion-reduce:animate-none"
-            />
+            <Spinner className="mt-0.5 shrink-0" />
             <div className="min-w-0">
                 <p className="text-sm font-medium text-secondary-100">
                     {t('NewsList.17ecc6')}
@@ -327,7 +293,10 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
         return (
             <section
                 aria-labelledby="news-list-heading"
-                className="w-full max-w-full min-w-0 overflow-hidden rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+                className={cn(
+                    SURFACE_CARD,
+                    'w-full max-w-full min-w-0 overflow-hidden p-6'
+                )}
             >
                 <div className="mb-3 flex items-center gap-2">
                     <h2 id="news-list-heading" className={HEADING_SECTION}>

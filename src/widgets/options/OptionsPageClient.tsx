@@ -2,10 +2,8 @@
 
 import { startTransition, useEffect, useEffectEvent, useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
-import {
-    useAnalysisSettingsHydrated,
-    useSymbolModel,
-} from '@/features/symbol-model';
+import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
+import { useSymbolModel } from '@/features/symbol-model/model/SymbolModelContext';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { ExpirationSelector } from './ExpirationSelector';
 import { OptionsAiAnalysis } from './OptionsAiAnalysis';

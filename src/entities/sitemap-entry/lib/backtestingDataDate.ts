@@ -1,10 +1,10 @@
-import { deriveBacktestStats } from '@/entities/backtest-case';
+import { deriveBacktestStats } from '@/entities/backtest-case/lib/deriveBacktestStats';
 import type { BacktestCase } from '@y0ngha/siglens-core';
 
 /**
  * `/backtesting` sitemap 엔트리의 lastmod — 정적 데이터셋의 마지막 진입일.
  *
- * 이 페이지의 본문은 `src/app/[locale]/backtesting/data.json` 고정 산출물이라
+ * 이 페이지의 본문은 `src/entities/backtest-case/data/data.json` 고정 산출물이라
  * 배포로 바뀌지 않는다. 릴리스 시각(`SITE_BUILD_DATE`)을 lastmod로 쓰면 배포마다
  * "방금 바뀜"을 주장하게 되고, 부정확한 lastmod는 Google이 그 sitemap의 lastmod를
  * 통째로 무시하게 만든다(2026-09-17 감사).

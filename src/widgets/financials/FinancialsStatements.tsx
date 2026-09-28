@@ -8,7 +8,8 @@ import { IncomeStatementSection } from './sections/IncomeStatementSection';
 import { BalanceSheetSection } from './sections/BalanceSheetSection';
 import { CashFlowSection } from './sections/CashFlowSection';
 import { GrowthAnalysisSection } from './sections/GrowthAnalysisSection';
-import { statementCurrencyOf } from './utils/numberFormat';
+import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
+import { Spinner } from '@/shared/ui/Spinner';
 
 interface FinancialsStatementsProps {
     /** Ticker symbol (already uppercased). */
@@ -37,7 +38,7 @@ export function FinancialsStatements({
     );
     // 재무제표 금액의 통화는 심볼 형상만으로 결정된다 — 한국 종목은 원화라
     // `$333T`가 아니라 `₩333조`로 표기돼야 한다. 별도 조회나 prop이 필요 없다.
-    const currency = statementCurrencyOf(symbol);
+    const currency = currencyForSymbol(symbol);
 
     return (
         <div className="space-y-6">
@@ -49,10 +50,7 @@ export function FinancialsStatements({
                         role="status"
                         aria-live="polite"
                     >
-                        <span
-                            aria-hidden="true"
-                            className="h-3 w-3 animate-spin rounded-full border-2 border-primary-500 border-t-transparent motion-reduce:animate-none"
-                        />
+                        <Spinner size="sm" />
                         {t('FinancialsStatements.c78656')}
                     </span>
                 )}

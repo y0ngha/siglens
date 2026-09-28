@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { groupConversationsByDay } from '@/features/agent-chat';
+import { groupConversationsByDay } from '@/features/agent-chat/lib/groupConversationsByDay';
 
 // Local-time noon so day arithmetic is unaffected by the runner's TZ offset.
 const NOW = new Date(2026, 8, 12, 12, 0, 0);

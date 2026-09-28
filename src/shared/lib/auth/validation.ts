@@ -10,7 +10,7 @@ export type AuthValidationErrorCode = 'invalid_email' | 'weak_password';
 export type AuthValidationErrorField = 'email' | 'password';
 
 /** Structured validation error produced by domain auth helpers. */
-export interface AuthValidationError {
+interface AuthValidationError {
     /** Machine-readable error code identifying the failure reason. */
     code: AuthValidationErrorCode;
     /** Input field that caused the error. */

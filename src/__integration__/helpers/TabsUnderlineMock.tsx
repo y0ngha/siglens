@@ -36,14 +36,13 @@ function TabsUnderlineMock({
     );
 }
 
+/**
+ * Factory for `vi.mock('@/shared/ui/tabs/TabsUnderline', ...)`. The id helpers
+ * (`buildTabId`/`buildPanelId`) live in `@/shared/ui/tabs/utils/tabIds` and stay
+ * real — they are pure string builders.
+ */
 export function createTabsUnderlineMock(): {
     TabsUnderline: typeof TabsUnderlineMock;
-    buildPanelId: (prefix: string, tab: string) => string;
-    buildTabId: (prefix: string, tab: string) => string;
 } {
-    return {
-        TabsUnderline: TabsUnderlineMock,
-        buildPanelId: (prefix: string, tab: string) => `${prefix}-panel-${tab}`,
-        buildTabId: (prefix: string, tab: string) => `${prefix}-tab-${tab}`,
-    };
+    return { TabsUnderline: TabsUnderlineMock };
 }

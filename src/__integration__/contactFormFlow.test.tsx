@@ -33,7 +33,7 @@ vi.mock('@/entities/auth/hooks/useCurrentUser', () => ({
         }) as Partial<UseQueryResult>,
 }));
 
-vi.mock('@/entities/inquiry', () => ({
+vi.mock('@/shared/config/contact', () => ({
     CONTACT_TITLE_MAX_LENGTH: 100,
     CONTACT_CONTENT_MAX_LENGTH: 5000,
 }));

@@ -113,9 +113,8 @@ PPR(`cacheComponents`) 비활성 상태에서 동적 세그먼트를 ISR로 정�
    (Next 16의 `revalidateTag`는 2번째 profile 인자 필수 — 단일 인자는 deprecated).
 3. **(축 2) `useSearchParams` CSR bailout 밖으로 SEO 콘텐츠 분리.** `useSearchParams`(예:
    timeframe)를 쓰는 클라 위젯은 SSR HTML이 비므로, 크롤 가능 텍스트(FactLayer)는
-   Suspense fallback에 서버 컴포넌트로 박는다(`TechnicalFactsSummary`/`OverallFactsSummary`).
-   경량 순수 컴포넌트라 widget barrel로 노출 가능; server-only 정적화 헬퍼(`staticSymbolCache` 등)는
-   barrel 제외하고 lib/deep 경로로 import한다(client 번들 누출 방지).
+   Suspense fallback에 경량 순수 서버 컴포넌트로 박는다(`TechnicalFactsSummary`/`OverallFactsSummary`).
+   server-only 정적화 헬퍼(`staticSymbolCache` 등)는 서버 파일에서만 import한다(client 번들 누출 방지).
 4. **(축 3) `generateStaticParams=[]` + `revalidate`(리터럴) 유지.** revalidate 값은 페이지마다 다르다 —
    위 페이지별 표 및 [`docs/architecture/ISR_REVALIDATE.md`](../../docs/architecture/ISR_REVALIDATE.md) 참조.
 

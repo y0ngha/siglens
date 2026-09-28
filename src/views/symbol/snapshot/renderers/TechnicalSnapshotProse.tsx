@@ -1,5 +1,5 @@
 import { useTranslations } from 'next-intl';
-import type { MarketProfileId } from '@/shared/config/marketProfile';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { useSkillLabel } from '@/shared/i18n/skillLabel';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { LIVE_ANALYSIS_CROSS_REF_KEY } from '../lib/liveAnalysisCrossRef';
@@ -34,9 +34,6 @@ interface TechnicalSnapshotProseProps {
     /** 차트 탭에는 라이브 `AnalysisPanel`이 함께 있다 — 셸 JSDoc 참고. */
     duplicatesLiveWidget?: boolean;
 }
-
-export { narrowTechnicalContent } from './technicalContent';
-export { hasTechnicalProse } from './technicalContent';
 
 /**
  * SEO pre-warm 스냅샷의 technical 탭 프로즈 렌더러 — 7개 탭 렌더러가 따를

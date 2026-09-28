@@ -1,8 +1,8 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { AuthErrorAlert } from '@/shared/ui/auth/AuthErrorAlert';
-import { AUTH_ERROR_KEY } from '@/shared/lib/authErrorKey';
+import { ErrorAlert } from '@/shared/ui/ErrorAlert';
+import { useDescribeAuthError } from '@/shared/hooks/useDescribeAuthError';
 import { PasswordField } from '@/shared/ui/auth/PasswordField';
 import { PasswordStrengthHint } from '@/shared/ui/auth/PasswordStrengthHint';
 import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
@@ -12,20 +12,6 @@ import { useId, useState } from 'react';
 interface ResetPasswordFormProps {
     email: string;
     token: string;
-}
-
-/**
- * 에러 **코드**로 문구를 만든다 — use-case가 함께 돌려주는 `message`는
- * 로그·폴백용 한국어 원문이라 화면에 그대로 쓰면 `/en/reset-password`가
- * 영어 폼 위에 한국어 오류를 띄운다. 코드가 표에 없을 때만 원문으로 떨어진다.
- */
-function describeCode(
-    error: { code?: string; message: string } | null | undefined,
-    tAuth: (key: string) => string
-): string | null {
-    if (!error) return null;
-    const key = error.code ? AUTH_ERROR_KEY[error.code] : undefined;
-    return key ? tAuth(key) : error.message;
 }
 
 const FORM_ERROR_CODES = new Set([
@@ -42,14 +28,14 @@ export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
     const [confirmError, setConfirmError] = useState<string | null>(null);
     const hintId = useId();
     const [state, formAction] = useResetPasswordForm();
-    const tAuth = useTranslations('entities.auth');
+    const describeAuthError = useDescribeAuthError();
     const formError =
         state.error && FORM_ERROR_CODES.has(state.error.code ?? '')
-            ? describeCode(state.error, tAuth)
+            ? describeAuthError(state.error)
             : null;
     const fieldError =
         state.error?.field === 'password'
-            ? describeCode(state.error, tAuth)
+            ? describeAuthError(state.error)
             : null;
 
     const handleAction = (formData: FormData) => {
@@ -69,7 +55,7 @@ export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
         <form action={handleAction} className="space-y-4" noValidate>
             <input type="hidden" name="email" value={email} />
             <input type="hidden" name="token" value={token} />
-            {formError ? <AuthErrorAlert message={formError} /> : null}
+            {formError ? <ErrorAlert message={formError} /> : null}
             <PasswordField
                 id="reset-password"
                 name="newPassword"

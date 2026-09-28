@@ -29,7 +29,6 @@ export const US_EQUITY_DESCRIPTOR: MarketProfileDescriptor = {
     sessionModel: 'us-equity-et',
     quoteDelayMinutes: 0, // FMP 미국 시세는 실시간(실측 exchangeDataDelayedBy=0)
     dataProvider: 'fmp',
-    toProviderSymbol: canonical => canonical,
     newsSource: 'stock',
     exchangeWhitelist: US_EXCHANGES,
     searchSource: 'fmp-us',

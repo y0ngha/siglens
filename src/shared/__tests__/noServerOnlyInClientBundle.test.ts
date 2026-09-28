@@ -5,20 +5,22 @@ import { describe, expect, it } from 'vitest';
 const ROOT = process.cwd();
 
 /**
- * **`'use client'` 파일은 서버 전용 모듈을 끌고 오는 배럴을 import하지 않는다.**
+ * **`'use client'` 파일의 import 그래프에 서버 전용 모듈이 들어가지 않는다.**
  *
- * `@/entities/auth` 배럴은 `verifyEmail → tokenUtils → node:crypto`로 이어진다.
- * 클라이언트 컴포넌트가 그 배럴에서 상수 하나만 가져와도 Turbopack이 전체
- * 그래프를 클라이언트 번들에 넣으려 하고 **빌드가 깨진다**.
+ * 클라이언트 컴포넌트가 `verifyEmail → tokenUtils → node:crypto`처럼 서버 전용
+ * 모듈로 이어지는 파일에서 상수 하나만 가져와도 Turbopack이 전체 그래프를
+ * 클라이언트 번들에 넣으려 하고 **빌드가 깨진다**.
  *
- * 실제로 그렇게 냈다: `LoginForm`이 에러 코드 표를 `@/entities/auth`에서 가져오자
- * `yarn build`가 `Ecmascript file had an error`로 죽었다. tsc·lint·11,000개
- * 테스트는 전부 통과했다 — 번들러만 아는 결함이라 빌드까지 가야 보인다.
- * v0.58.0의 "서버 SDK가 클라 번들로 새던 배럴 누출"과 같은 결함군이다.
+ * 실제로 그렇게 냈다: `LoginForm`이 에러 코드 표를 당시의 `@/entities/auth`
+ * barrel에서 가져오자 `yarn build`가 `Ecmascript file had an error`로 죽었다.
+ * tsc·lint·11,000개 테스트는 전부 통과했다 — 번들러만 아는 결함이라 빌드까지
+ * 가야 보인다. v0.58.0의 "서버 SDK가 클라 번들로 새던 barrel 누출"과 같은
+ * 결함군이다. barrel은 이제 금지(`src/__tests__/guards/noBarrelFiles.test.ts`)지만
+ * 직접 import로도 같은 그래프는 만들어질 수 있다.
  *
  * 이 가드는 그걸 **빌드 전에** 잡는다. 빌드는 4분, 이 테스트는 1초다.
  */
-describe("'use client' 파일은 서버 전용 배럴을 import하지 않는다", () => {
+describe("'use client' 파일은 서버 전용 모듈을 끌고 오지 않는다", () => {
     const sources = execSync(
         `find ${JSON.stringify(`${ROOT}/src`)} -name '*.ts' -o -name '*.tsx'`,
         { encoding: 'utf8', maxBuffer: 1 << 28 }
@@ -43,16 +45,16 @@ describe("'use client' 파일은 서버 전용 배럴을 import하지 않는다"
          * 포함하면 타입 전용 모듈(`shared/db/types.ts` 등)이 전부 오탐이 된다.
          */
         const code = readCode(rel)
-            // 주석부터 지운다 — `entities/ticker/index.ts`의 "Do NOT re-export
-            // anything from './api'" 같은 **주석 속 경로**를 import로 오인하면
-            // 존재하지 않는 간선이 생겨 오탐이 난다.
+            // 주석부터 지운다 — "Do NOT import anything from './api'" 같은
+            // **주석 속 경로**를 import로 오인하면 존재하지 않는 간선이 생겨
+            // 오탐이 난다.
             .replace(/\/\*[\s\S]*?\*\//g, '')
             .replace(/^\s*\/\/.*$/gm, '')
             // 여러 줄에 걸친 `import type { … } from '…'`도 지운다 — 한 줄
             // 가정만 두면 그 형태가 그래프에 남아 오탐이 된다.
             .replace(/^import type [\s\S]*?from '[^']+';$/gm, '')
-            // `export type { … } from '…'`도 컴파일 시 지워진다 — 배럴이
-            // 타입만 재수출하는 경우가 흔하다(`entities/inquiry/index.ts`).
+            // `export type { … } from '…'`도 컴파일 시 지워진다 — 타입만
+            // 재수출하는 모듈(`entities/auth/lib/types.ts` 등)이 오탐이 된다.
             .replace(/^export type \{[\s\S]*?\} from '[^']+';$/gm, '');
         graph.set(
             rel,
@@ -78,7 +80,7 @@ describe("'use client' 파일은 서버 전용 배럴을 import하지 않는다"
         } else {
             return null;
         }
-        for (const ext of ['.ts', '.tsx', '/index.ts', '/index.tsx']) {
+        for (const ext of ['.ts', '.tsx']) {
             if (graph.has(base + ext)) return base + ext;
         }
         return graph.has(base) ? base : null;

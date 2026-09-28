@@ -5,7 +5,7 @@
 const {
     mockCache,
     createCacheProviderMock,
-    tryGetTickerDatabaseClientMock,
+    tryGetDatabaseClientMock,
     getCryptoAssetMock,
     fmpCryptoMembershipMock,
     fetchCryptoQuoteNameMock,
@@ -17,7 +17,7 @@ const {
         delete: vi.fn(),
     },
     createCacheProviderMock: vi.fn(),
-    tryGetTickerDatabaseClientMock: vi.fn(),
+    tryGetDatabaseClientMock: vi.fn(),
     getCryptoAssetMock: vi.fn(),
     fmpCryptoMembershipMock: vi.fn(),
     fetchCryptoQuoteNameMock: vi.fn(),
@@ -28,8 +28,9 @@ vi.mock('@y0ngha/siglens-core', async () => ({
     ...(await vi.importActual('@y0ngha/siglens-core')),
     createCacheProvider: () => createCacheProviderMock(),
 }));
-vi.mock('../../lib/db', () => ({
-    tryGetTickerDatabaseClient: () => tryGetTickerDatabaseClientMock(),
+vi.mock('@/shared/db/client', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/db/client')>()),
+    tryGetDatabaseClient: () => tryGetDatabaseClientMock(),
 }));
 vi.mock('../../api', () => ({
     DrizzleAssetTranslationRepository: class {
@@ -81,7 +82,7 @@ describe('getAssetInfo — crypto resolution paths', () => {
         createCacheProviderMock.mockReturnValue(
             mockCache as unknown as CacheProvider
         );
-        tryGetTickerDatabaseClientMock.mockReturnValue({ db: {} });
+        tryGetDatabaseClientMock.mockReturnValue({ db: {} });
         getCryptoAssetMock.mockReset();
         fmpCryptoMembershipMock.mockReset();
         fetchCryptoQuoteNameMock.mockReset();

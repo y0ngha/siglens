@@ -14,7 +14,8 @@ import {
     ECONOMY_INDICATORS,
     INDICATOR_TREND_LENGTH,
 } from '@/shared/config/economyIndicators';
-import { ISO_DATE_LENGTH, SECONDS_PER_DAY } from '@/shared/config/time';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
 /**
  * Next.js Data Cache 갱신 주기 — 24h, /economy revalidate(86400)와 단일 TTL 공유.
@@ -31,7 +32,7 @@ export class FmpEconomyProvider implements EconomyProvider {
      * 날짜를 넘겨 항상 최신 창을 요청한다.
      */
     async getIndicator(name: string): Promise<EconomicIndicatorSeries> {
-        const to = new Date().toISOString().slice(0, ISO_DATE_LENGTH);
+        const to = toUtcIsoDate(new Date());
         const raw = await fmpGet<unknown>(
             'economic-indicators',
             { name, to },

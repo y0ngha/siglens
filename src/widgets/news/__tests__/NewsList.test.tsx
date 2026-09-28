@@ -111,6 +111,47 @@ describe('NewsList', () => {
         );
     });
 
+    /*
+     * 회귀: NewsList가 배지 색 테이블을 로컬 사본으로 갖고 있어, 시장 뉴스
+     * 쪽에서 AA 대비로 고친 `text-secondary-300`이 여기만 `-400`으로 남았다.
+     */
+    it('neutral/low/negligible 배지는 AA 보정된 text-secondary-300을 쓴다', () => {
+        const neutralLow: NewsDisplayItem = {
+            ...READY_ITEM,
+            id: 'news-neutral-low',
+            sentiment: 'neutral',
+            priceImpact: 'low',
+        };
+        const negligible: NewsDisplayItem = {
+            ...READY_ITEM,
+            id: 'news-negligible',
+            titleKo: '영향 미미 뉴스',
+            priceImpact: 'negligible',
+        };
+        mockUseNewsPollingWithInvalidation.mockReturnValue({
+            items: [neutralLow, negligible],
+            isPolling: false,
+            pollError: null,
+        });
+
+        const { container } = renderWithClient(
+            <NewsList items={[neutralLow, negligible]} symbol="AAPL" />
+        );
+
+        const badges = Array.from(
+            container.querySelectorAll('span.rounded.text-xs.font-medium')
+        );
+        const muted = badges.filter(b =>
+            b.className.includes('bg-secondary-700')
+        );
+        // neutral 감성 1 + low 1 + negligible 1
+        expect(muted).toHaveLength(3);
+        for (const badge of muted) {
+            expect(badge.className).toContain('text-secondary-300');
+            expect(badge.className).not.toContain('text-secondary-400');
+        }
+    });
+
     it('impact badge는 자산 중립 "가격 영향" 레이블을 사용한다 (equity·crypto 공용)', () => {
         // NewsList is rendered on both equity and crypto news pages, so the label
         // must be asset-neutral ("가격") rather than equity-specific ("주가").

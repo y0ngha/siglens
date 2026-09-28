@@ -56,15 +56,17 @@ vi.mock('@/app/api/ai/chat/counters', () => ({
     }),
     GUEST_IP_TURNS_PER_DAY: 100,
 }));
-vi.mock('@/app/api/ai/chat/tools', () => ({
+vi.mock('@/app/api/ai/chat/tools/chatTools', () => ({
     createToolExecutor: () => vi.fn(),
     availableToolNames: () => new Set(['get_quote']),
 }));
-vi.mock('@/entities/llm-provider', () => ({
+vi.mock('@/entities/llm-provider/api/agent/getAgentProvider', () => ({
     getAgentProvider: (state?: { fallbackUsed: boolean }) => {
         if (state && m.forceFallback) state.fallbackUsed = true;
         return vi.fn();
     },
+}));
+vi.mock('@/entities/llm-provider/api/agent/router', () => ({
     AGENT_MODEL: 'deepseek-v4.1-flash',
     AGENT_FALLBACK_MODEL: 'gemini-3.6-flash',
 }));

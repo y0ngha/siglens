@@ -3,7 +3,7 @@ import { localePath, splitLocalePath } from '@/shared/i18n/locales';
 export const DEFAULT_REDIRECT_PATH = '/';
 
 /** Post-signup landing page (holdings management) — see `resolvePostSignupDestination` below. */
-export const POST_SIGNUP_PATH = '/portfolio';
+const POST_SIGNUP_PATH = '/portfolio';
 
 const PATH_PREFIX = '/';
 const PROTOCOL_RELATIVE_PREFIX = '//';

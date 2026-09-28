@@ -1,6 +1,5 @@
-import { constants } from 'node:http2';
 import 'server-only';
-import { NextResponse, type NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import {
     handoffStartUrl,
@@ -10,16 +9,9 @@ import {
 } from '@/entities/auth/lib/handoffStore';
 import { AI_SITE_URL, isAiHost } from '@/shared/config/aiHost';
 import { localePath } from '@/shared/i18n/locales';
-
-const { HTTP_STATUS_BAD_REQUEST, HTTP_STATUS_FOUND } = constants;
+import { invalidHandoffRequest, noStoreRedirect } from './_shared/responses';
 
 export const dynamic = 'force-dynamic';
-
-function noStoreRedirect(url: URL): NextResponse {
-    const response = NextResponse.redirect(url, HTTP_STATUS_FOUND);
-    response.headers.set('Cache-Control', 'no-store');
-    return response;
-}
 
 /**
  * MAIN host only: issue a one-time code for the signed-in user (spec §8, §9-4).
@@ -36,13 +28,7 @@ function noStoreRedirect(url: URL): NextResponse {
 export async function GET(request: NextRequest): Promise<Response> {
     const params = request.nextUrl.searchParams;
     if (isAiHost(request.headers.get('host')) || params.get('to') !== 'ai') {
-        return NextResponse.json(
-            { error: 'invalid_request' },
-            {
-                status: HTTP_STATUS_BAD_REQUEST,
-                headers: { 'Cache-Control': 'no-store' },
-            }
-        );
+        return invalidHandoffRequest();
     }
     // Every same-site target goes through `localePath` with the locale carried in
     // `next` (`/api` paths come back unchanged) — noRawRedirect guard.

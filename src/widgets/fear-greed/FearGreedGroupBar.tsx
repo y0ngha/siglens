@@ -1,34 +1,14 @@
 import { useTranslations } from 'next-intl';
-import type { CSSProperties } from 'react';
-import {
-    POC_WINDOW_DEFAULT,
-    scoreToLabel,
-    type FearGreedGroup,
-    type FearGreedLabel,
-} from '@y0ngha/siglens-core';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { POC_WINDOW_DEFAULT, type FearGreedGroup } from '@y0ngha/siglens-core';
 import { formatFactorRaw } from '@/shared/lib/fearGreedLabels';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
+import { FearGreedScoreBar } from '@/shared/ui/FearGreedScoreBar';
 
 interface FearGreedGroupBarProps {
     group: FearGreedGroup;
 }
-
-/**
- * Score → fill color class (semantic tokens; matches FearGreedGauge SEGMENTS).
- *
- * GREED가 `/85`인 이유: `/70`은 트랙 위에서 라이트 2.62:1로 3:1에 못 미친다
- * (실측). 알파를 아예 빼면 EXTREME_GREED와 값이 같아져 두 밴드가 하나로 합쳐진다.
- * `FearGreedGauge`의 SEGMENTS, `MarketFearGreedFactorBar`의 BAR_FILL_COLOR와
- * 같은 값이어야 하므로 셋 중 하나만 바꾸지 말 것.
- */
-const BAR_FILL_COLOR: Record<FearGreedLabel, string> = {
-    EXTREME_FEAR: 'bg-ui-danger',
-    FEAR: 'bg-ui-warning',
-    NEUTRAL: 'bg-secondary-400',
-    GREED: 'bg-ui-success/85',
-    EXTREME_GREED: 'bg-ui-success',
-};
 
 const EXTREME_PERCENTILE_LOW = 10;
 const EXTREME_PERCENTILE_HIGH = 90;
@@ -37,6 +17,7 @@ export function FearGreedGroupBar({ group }: FearGreedGroupBarProps) {
     const t = useTranslations('widgets.fear-greed');
     const tFactor = useTranslations('shared.lib.fearGreedFactor');
     const score = Math.round(group.score);
+    const locale = useResolvedLocale();
     return (
         <section className="flex flex-col gap-2 rounded bg-secondary-800/40 p-3">
             <header className="flex items-center justify-between">
@@ -45,25 +26,13 @@ export function FearGreedGroupBar({ group }: FearGreedGroupBarProps) {
                     {score} / 100
                 </span>
             </header>
-            <div
-                role="progressbar"
-                aria-label={t('FearGreedGroupBar.groupScore', {
+            <FearGreedScoreBar
+                value={score}
+                label={t('FearGreedGroupBar.groupScore', {
                     v0: group.name,
                     v1: score,
                 })}
-                aria-valuenow={score}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                className="relative h-2 overflow-hidden rounded bg-secondary-700/70"
-            >
-                <div
-                    className={cn(
-                        'h-full w-(--bar-width)',
-                        BAR_FILL_COLOR[scoreToLabel(score)]
-                    )}
-                    style={{ '--bar-width': `${score}%` } as CSSProperties}
-                />
-            </div>
+            />
             <ul className="flex flex-col gap-1 text-xs text-secondary-400">
                 {group.factors.map(f => {
                     const pctile = Math.round(f.percentile);
@@ -82,7 +51,7 @@ export function FearGreedGroupBar({ group }: FearGreedGroupBarProps) {
                                 })}
                             </span>
                             <span className="font-mono">
-                                {formatFactorRaw(f.key, f.rawValue)}
+                                {formatFactorRaw(f.key, f.rawValue, locale)}
                                 <span
                                     className={cn(
                                         'ml-2',

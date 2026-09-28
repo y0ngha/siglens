@@ -14,8 +14,7 @@ import {
     getRatiosTtm,
     getStockPeers,
 } from '@/app/[locale]/[symbol]/fundamental/fundamentalData';
-import { setRequestLocale } from 'next-intl/server';
-import { DEFAULT_LOCALE, isLocale, type Locale } from '@/shared/i18n/locales';
+import { type Locale, resolveLocale } from '@/shared/i18n/locales';
 import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
@@ -30,32 +29,24 @@ import { PeersTable } from '@/widgets/fundamental/sections/PeersTable';
 import { ProfileCard } from '@/widgets/fundamental/sections/ProfileCard';
 import { ProfitabilityCard } from '@/widgets/fundamental/sections/ProfitabilityCard';
 import { ValuationCard } from '@/widgets/fundamental/sections/ValuationCard';
-import { SymbolPageHeading } from '@/views/symbol';
-import {
-    FundamentalSnapshotProse,
-    hasFundamentalProse,
-} from '@/views/symbol/snapshot/renderers/FundamentalSnapshotProse';
+import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
+import { FundamentalSnapshotProse } from '@/views/symbol/snapshot/renderers/FundamentalSnapshotProse';
+import { hasFundamentalProse } from '@/views/symbol/snapshot/renderers/fundamentalContent';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { SectionSkeleton } from '@/views/symbol/SectionSkeleton';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { FaqSection } from '@/shared/ui/FaqSection';
-import {
-    SymbolRouteParams,
-    isAdmissibleSymbolShape,
-} from '@/shared/config/market';
+import { Spinner } from '@/shared/ui/Spinner';
+import { SymbolRouteParams } from '@/shared/config/market';
+import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
-import {
-    buildAssetAboutNode,
-    buildDisplayName,
-    getAssetInfoResilient,
-    pickAssetName,
-} from '@/entities/ticker';
+import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
+import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import {
     buildBreadcrumbJsonLd,
-    buildSnapshotMetaDescription,
-    symbolTabDescriptionLabel,
     buildSymbolFundamentalSeoContent,
     buildSymbolSeoContent,
     symbolMetadataFromSeo,
@@ -63,8 +54,9 @@ import {
     noindexSymbolMetadata,
     type FaqItem,
 } from '@/shared/lib/seo';
+import { loadTabSnapshotMeta } from '@/app/[locale]/[symbol]/symbolSnapshotDescription';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
-import { getProfileResilient } from './getProfileResilient';
+import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
 import { FundamentalDegraded } from './FundamentalDegraded';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -74,9 +66,12 @@ import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import {
     marketProfileOf,
     profileIdForSymbol,
-    type MarketProfileId,
-} from '@/shared/config/marketProfile';
+} from '@/shared/config/marketProfile/registry';
+import { type MarketProfileId } from '@/shared/config/marketProfile/types';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { enterLocale } from '@/shared/lib/enterLocale';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { cn } from '@/shared/lib/cn';
 
 // 종목당 SEO 콘텐츠는 고정이고 동적 데이터는 클라가 재hydrate한다. 엣지 캐시로
 // compute 호출을 줄인다. (일시 인프라 장애의 404 캐싱은 getAssetInfo strict로 차단)
@@ -95,7 +90,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { locale: rawLocale, symbol } = await params;
-    const locale = isLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
+    const locale = resolveLocale(rawLocale);
     const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     const upper = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
@@ -150,29 +145,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         displayName,
         koreanName: assetInfo?.koreanName,
         englishName: assetInfo?.name,
-        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        locale,
     });
     const metadata = symbolMetadataFromSeo(seo, locale);
 
-    // snapshot-derived unique description (spec 2026-07-24 Task 8). Same
-    // getSeoSnapshotsStatic(upper, revalidate) call the page body makes below —
-    // unstable_cache dedupes it within this render, so this is a cache hit, not
-    // an extra DB round-trip. Falls back to the templated description when no
-    // snapshot exists (backward compatible). og/twitter keep the templated copy
-    // — only the search-facing <meta name="description"> is overridden.
-    const snap = (await getSeoSnapshotsStatic(upper, revalidate, locale)).find(
-        s => s.tab === 'fundamental'
-    );
-    const snapshotDescription = snap
-        ? buildSnapshotMetaDescription(
-              'fundamental',
-              snap.content,
-              displayName,
-              null,
-              locale,
-              symbolTabDescriptionLabel('fundamental', 'equity', tSeo)
-          )
-        : null;
+    // snapshot-derived unique description (spec 2026-07-24 Task 8).
+    const { snap, description: snapshotDescription } =
+        await loadTabSnapshotMeta({
+            symbol: upper,
+            tab: 'fundamental',
+            revalidate,
+            locale,
+            displayName,
+            assetClass: 'equity',
+            tSeo,
+        });
 
     // **thin-content 게이트** — `congress/page.tsx`와 같은 모양이다.
     //
@@ -209,7 +196,7 @@ function ProfileDescriptionSkeleton() {
     return (
         <div className="mt-4 space-y-2">
             <div className="flex items-center gap-1.5">
-                <div className="h-2.5 w-2.5 animate-spin rounded-full border-2 border-secondary-500 border-t-transparent" />
+                <Spinner size="xs" tone="muted" />
                 <span className="text-xs text-secondary-500">
                     {t('page.c6cf97')}
                 </span>
@@ -233,7 +220,7 @@ function ProfileCardSkeleton({ symbol }: ProfileCardSkeletonProps) {
     return (
         <section
             aria-labelledby="profile-heading"
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+            className={cn(SURFACE_CARD, 'p-6')}
         >
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -544,13 +531,8 @@ export async function FutureDirectionSection({ symbol }: SymbolSectionProps) {
 }
 
 export default async function FundamentalPage({ params }: Props) {
-    const { locale, symbol } = await params;
-    // DB 스냅샷은 로케일별 행이라 좁혀진 로케일이 필요하다. URL 세그먼트는 신뢰 경계다.
-    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
-    // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
-    // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
-    // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
-    setRequestLocale(locale);
+    const { locale: rawLocale, symbol } = await params;
+    const locale = enterLocale(rawLocale);
     const t = await getTranslations('app.symbol');
     const tSeo = await getTranslations('shared.seo');
     const upper = symbol.toUpperCase();
@@ -576,7 +558,7 @@ export default async function FundamentalPage({ params }: Props) {
     ] = await Promise.all([
         getProfileResilient(upper),
         getAssetInfoResilient(upper),
-        getSeoSnapshotsStatic(upper, revalidate, resolved),
+        getSeoSnapshotsStatic(upper, revalidate, locale),
     ]);
     const fundamentalSnapshot = snapshots.find(s => s.tab === 'fundamental');
     // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasFundamentalProse)
@@ -597,11 +579,7 @@ export default async function FundamentalPage({ params }: Props) {
     // → 차트 페이지와 동일한 notFound 처리로 sibling 일관성 유지.
     if (isUnresolvableDegraded(upper, degraded)) notFound();
     const displayName = assetInfo
-        ? buildDisplayName(
-              assetInfo,
-              upper,
-              isLocale(locale) ? locale : DEFAULT_LOCALE
-          )
+        ? buildDisplayName(assetInfo, upper, locale)
         : upper;
     // CrossLinkCards에 넘길 시장 프로필. fundamental은 assetInfo가 optional이라(FMP
     // profile만 있어도 렌더) marketProfileOf(assetInfo)를 못 쓸 수 있다 — 그 경우
@@ -644,7 +622,7 @@ export default async function FundamentalPage({ params }: Props) {
             displayName,
             koreanName: assetInfo?.koreanName,
             englishName: assetInfo?.name,
-            locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+            locale,
             sector: sector !== '' ? sector : undefined,
         }
     );
@@ -655,13 +633,7 @@ export default async function FundamentalPage({ params }: Props) {
     // 사용해 displayName 계산 정책과 일관성을 유지한다.
     const aboutNode = buildAssetAboutNode(
         upper,
-        assetInfo
-            ? pickAssetName(
-                  assetInfo,
-                  upper,
-                  isLocale(locale) ? locale : DEFAULT_LOCALE
-              )
-            : upper,
+        assetInfo ? pickAssetName(assetInfo, upper, locale) : upper,
         assetInfo?.fmpSymbol
     );
     const jsonLd = buildSymbolWebPageJsonLd({
@@ -669,7 +641,7 @@ export default async function FundamentalPage({ params }: Props) {
         name: fullTitle,
         description,
         about: aboutNode,
-        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        locale,
         // 화면에 실제로 그려지는 스냅샷일 때만 신선도를 주장한다 —
         // 렌더 불가한 행은 본문에 한 글자도 남기지 않는다.
         generatedAt: showFundamentalProse
@@ -685,7 +657,7 @@ export default async function FundamentalPage({ params }: Props) {
                 url: buildSymbolFundamentalSeoContent(upper, tSeo).url,
             },
         ],
-        isLocale(locale) ? locale : DEFAULT_LOCALE
+        locale
     );
 
     /**
@@ -726,7 +698,7 @@ export default async function FundamentalPage({ params }: Props) {
                     {t('page.9e0659', { v0: displayName })}
                 </SymbolPageHeading>
                 <Suspense fallback={<ProfileCardSkeleton symbol={upper} />}>
-                    <ProfileSection symbol={upper} locale={resolved} />
+                    <ProfileSection symbol={upper} locale={locale} />
                 </Suspense>
 
                 {/* audit fix FIX 2: XOR — FundamentalAiSummary (client widget) and

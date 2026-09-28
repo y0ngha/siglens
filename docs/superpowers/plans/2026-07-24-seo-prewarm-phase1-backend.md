@@ -630,7 +630,7 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => ({
     ...(await importOriginal<object>()),
     submitAnalysis: (...args: unknown[]) => submitAnalysis(...args),
 }));
-vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
+vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: vi.fn().mockResolvedValue('us_equity'),
 }));
 // getCachedMarketDataProvider / sessionSpecFor / getDescriptor 도 동일하게 mock
@@ -680,7 +680,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { getDescriptor } from '@/shared/config/marketProfile';
 
 /**

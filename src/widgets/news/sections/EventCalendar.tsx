@@ -6,12 +6,18 @@ import {
 } from '@/shared/lib/priceFormat';
 import { useTranslations } from 'next-intl';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
-import { currencyForSymbol } from '@/shared/config/marketProfile';
+import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
 import type { EarningsReportComparisonItem } from '@/shared/lib/types';
 import type React from 'react';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
+import {
+    cachedDateTimeFormat,
+    cachedNumberFormat,
+} from '@/shared/lib/intlFormatCache';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { cn } from '@/shared/lib/cn';
 
 const MATERIAL_SURPRISE_PCT = 2;
 
@@ -23,23 +29,16 @@ interface SurpriseBadge {
 }
 
 /**
- * 로케일별 포맷터 캐시(렌더마다 new Intl.* 금지). 날짜는 timeZone: 'UTC'
- * 고정 — 날짜만 있는 문자열이 로컬 TZ에서 하루 밀리는 것과 서버/클라이언트
- * 렌더 불일치를 동시에 막는다. 예전에는 `'ko-KR'` 고정이라 `/en/AAPL/news`의
- * 실적 캘린더가 `Announced 4월 30일`을 찍었다.
+ * 날짜는 timeZone: 'UTC' 고정 — 날짜만 있는 문자열이 로컬 TZ에서 하루 밀리는
+ * 것과 서버/클라이언트 렌더 불일치를 동시에 막는다. 예전에는 `'ko-KR'` 고정이라
+ * `/en/AAPL/news`의 실적 캘린더가 `Announced 4월 30일`을 찍었다.
  */
-const SHORT_DATE_FORMATTER_CACHE = new Map<Locale, Intl.DateTimeFormat>();
-
 function shortDateFormatterFor(locale: Locale): Intl.DateTimeFormat {
-    const cached = SHORT_DATE_FORMATTER_CACHE.get(locale);
-    if (cached) return cached;
-    const formatter = new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+    return cachedDateTimeFormat(INTL_LOCALE[locale], {
         timeZone: 'UTC',
         month: 'short',
         day: 'numeric',
     });
-    SHORT_DATE_FORMATTER_CACHE.set(locale, formatter);
-    return formatter;
 }
 
 // 통화는 심볼에서 유도한다 — 국내 종목은 원화다(같은 버그를 FinancialHealthCard/
@@ -62,10 +61,17 @@ const MONEY_FORMATTERS: Record<'USD' | 'KRW', Intl.NumberFormat> = {
     }),
 };
 
-const SIGNED_PERCENT_FORMATTER = new Intl.NumberFormat('ko-KR', {
-    signDisplay: 'always',
-    maximumFractionDigits: 1,
-});
+// 서프라이즈 배지 전용 부호 퍼센트(`+2%`, `-3.4%`, 소수 0~1자리). shared
+// `formatSignedPercent`(`toFixed(1)` → `+2.0%`)와 일부러 다르다 — 배지의 기존
+// 표기를 유지한다. 이름이 같으면 섞여 쓰이므로 로컬 이름을 따로 둔다.
+// 예전에는 `'ko-KR'` 고정이었다 — 로케일은 `INTL_LOCALE`에서만 정한다.
+function formatSurprisePercent(value: number, locale: Locale): string {
+    const formatter = cachedNumberFormat(INTL_LOCALE[locale], {
+        signDisplay: 'always',
+        maximumFractionDigits: 1,
+    });
+    return `${formatter.format(value)}%`;
+}
 
 function formatShortDate(dateStr: string, locale: Locale): string {
     return shortDateFormatterFor(locale).format(new Date(dateStr));
@@ -163,7 +169,7 @@ function EarningsReportCard({
         formatRevenue(value, item.symbol, locale);
 
     return (
-        <article className="rounded-lg border border-secondary-700 bg-secondary-800 p-4">
+        <article className={cn(SURFACE_CARD, 'p-4')}>
             <div className="flex min-h-10 items-start justify-between gap-3">
                 <div>
                     <p className="text-xs text-secondary-400">{statusLabel}</p>
@@ -212,6 +218,7 @@ interface SurpriseBadgeProps {
 
 function SurpriseBadge({ badge }: SurpriseBadgeProps) {
     const tSurprise = useTranslations('widgets.news.surprise');
+    const locale = useResolvedLocale();
     const className =
         badge.kind === 'surprise'
             ? 'border-ui-success/40 bg-ui-success/10 text-ui-success-text'
@@ -223,7 +230,8 @@ function SurpriseBadge({ badge }: SurpriseBadgeProps) {
         <span
             className={`rounded-full border px-2 py-0.5 text-xs tabular-nums ${className}`}
         >
-            {tSurprise(badge.kind)} {formatSignedPercent(badge.percent)}
+            {tSurprise(badge.kind)}{' '}
+            {formatSurprisePercent(badge.percent, locale)}
         </span>
     );
 }
@@ -372,10 +380,6 @@ function getSurprisePercent(
 ): number | null {
     if (actual === null || estimated === null || estimated === 0) return null;
     return ((actual - estimated) / Math.abs(estimated)) * 100;
-}
-
-function formatSignedPercent(value: number): string {
-    return `${SIGNED_PERCENT_FORMATTER.format(value)}%`;
 }
 
 interface EventCalendarProps {

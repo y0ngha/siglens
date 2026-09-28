@@ -1,9 +1,9 @@
 import { useTranslations } from 'next-intl';
 import { useId } from 'react';
-import { cn } from '@/shared/lib/cn';
-import { formatSignedPercent } from '@/shared/lib/priceFormat';
+import { formatSignedPercent, signColorClass } from '@/shared/lib/priceFormat';
 import { formatAmount } from '../lib/positionBuildingNotes';
 import type { PositionModel } from '../lib/positionGeometry';
+import { ReadoutRow } from './ReadoutRow';
 
 interface PositionCardProps {
     symbol: string;
@@ -12,26 +12,6 @@ interface PositionCardProps {
     high52w: number;
     current: number;
     avg: number;
-}
-
-/** ≥0면 성공, <0면 위험 — AA 텍스트 변형 토큰(DESIGN.md §AA), chart-*는 그래픽 전용이라 미사용. */
-function signColorClass(value: number): string {
-    return value >= 0 ? 'text-ui-success-text' : 'text-ui-danger-text';
-}
-
-interface ReadoutRowProps {
-    label: string;
-    value: string;
-    valueClassName?: string;
-}
-
-function ReadoutRow({ label, value, valueClassName }: ReadoutRowProps) {
-    return (
-        <div className="flex justify-between gap-4">
-            <dt className="text-secondary-400">{label}</dt>
-            <dd className={cn('tabular-nums', valueClassName)}>{value}</dd>
-        </div>
-    );
 }
 
 /**

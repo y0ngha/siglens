@@ -1,12 +1,11 @@
+import { maxLastModified } from '@/entities/sitemap-entry/lib/maxLastModified';
+import { type SitemapIndexEntry } from '@/entities/sitemap-entry/model';
+import { toSitemapIndexXml } from '@/entities/sitemap-entry/lib/xml';
 import {
-    buildCryptoPopularEntries,
-    buildPopularEntries,
-    buildStaticEntries,
-    maxLastModified,
-    type SitemapIndexEntry,
-    toSitemapIndexXml,
-} from '@/entities/sitemap-entry';
-import { loadStaticSitemapInputs } from '@/entities/sitemap-entry/server';
+    loadCryptoChildEntries,
+    loadPopularChildEntries,
+    loadStaticChildEntries,
+} from '@/app/api/sitemap/_shared/childEntries';
 import { SITE_URL } from '@/shared/lib/seo';
 import { NextResponse } from 'next/server';
 import { SITEMAP_CACHE_CONTROL } from '@/app/api/sitemap/_shared/constants';
@@ -23,33 +22,33 @@ export const dynamic = 'force-dynamic';
  * 인덱스 lastmod의 유일한 용도가 "이 자식을 다시 열어볼 가치가 있나" 판단인데
  * 그 신호를 무력화하는 셈이라, 자식을 실제로 만들어서 최댓값을 취한다.
  *
- * 자식 빌더는 전부 순수 함수라 여기서 한 번 더 호출해도 I/O가 없다(popular 2천여
- * 엔트리 객체 생성이 전부). 최댓값만 뽑고 버린다. static 빌더가 받는 DB 입력만
- * 예외인데, 그쪽은 `unstable_cache`라 static 라우트와 같은 항목을 재사용한다.
+ * 자식 엔트리는 자식 라우트와 **같은 함수**(`_shared/childEntries`)로 만든다 — 입력
+ * (DB 신선도·산문 게이트·백테스팅 데이터일)까지 같아야 인덱스가 광고하는 lastmod가
+ * 자식 파일의 최댓값과 어긋나지 않는다. 입력 로더는 `unstable_cache`라 자식 라우트와
+ * 같은 캐시 항목을 재사용하고, 빌더는 순수 함수라 최댓값만 뽑고 버린다.
  */
 export async function GET(request: Request): Promise<Response> {
     const aiHostRejection = rejectAiHost(request);
     if (aiHostRejection) return aiHostRejection;
     const now = new Date();
-    // static 자식과 **같은 입력**으로 만들어야 인덱스가 광고하는 lastmod와 자식
-    // 파일의 최댓값이 어긋나지 않는다(같은 `unstable_cache` 항목을 공유한다).
-    const staticInputs = await loadStaticSitemapInputs();
+    const [staticEntries, popularEntries, cryptoEntries] = await Promise.all([
+        loadStaticChildEntries(now),
+        loadPopularChildEntries(now),
+        loadCryptoChildEntries(now),
+    ]);
 
     const entries: SitemapIndexEntry[] = [
         {
             url: `${SITE_URL}/sitemap-static.xml`,
-            lastModified: maxLastModified(
-                buildStaticEntries(now, staticInputs),
-                now
-            ),
+            lastModified: maxLastModified(staticEntries, now),
         },
         {
             url: `${SITE_URL}/sitemap-popular.xml`,
-            lastModified: maxLastModified(buildPopularEntries(now), now),
+            lastModified: maxLastModified(popularEntries, now),
         },
         {
             url: `${SITE_URL}/sitemap-crypto.xml`,
-            lastModified: maxLastModified(buildCryptoPopularEntries(now), now),
+            lastModified: maxLastModified(cryptoEntries, now),
         },
     ];
 

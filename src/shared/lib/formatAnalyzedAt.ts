@@ -12,7 +12,9 @@ const KST_FORMATTER = new Intl.DateTimeFormat('en-CA', {
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
-    hour12: false,
+    // `hour12: false`가 아니라 `hourCycle: 'h23'` — 일부 Node/ICU 버전은
+    // `hour12: false`를 h24로 풀어 자정을 '24'로 낸다. h23은 항상 00~23이다.
+    hourCycle: 'h23',
 });
 
 /**
@@ -31,9 +33,5 @@ export function formatAnalyzedAt(iso: string): string {
     const parts = KST_FORMATTER.formatToParts(date);
     const get = (type: Intl.DateTimeFormatPartTypes): string =>
         parts.find(p => p.type === type)?.value ?? '';
-    // 일부 Node/ICU 버전은 hour12:false 에서 자정에 '24'를 반환한다. KST 자정은
-    // '00:00'로 통일.
-    const rawHour = get('hour');
-    const hour = rawHour === '24' ? '00' : rawHour;
-    return `${get('year')}-${get('month')}-${get('day')} ${hour}:${get('minute')}`;
+    return `${get('year')}-${get('month')}-${get('day')} ${get('hour')}:${get('minute')}`;
 }

@@ -1,6 +1,6 @@
 export type ConversationGroupKey = 'today' | 'yesterday' | 'week' | 'older';
 
-export interface ConversationGroup<T> {
+interface ConversationGroup<T> {
     readonly key: ConversationGroupKey;
     readonly items: readonly T[];
 }

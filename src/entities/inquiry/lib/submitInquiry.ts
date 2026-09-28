@@ -1,4 +1,4 @@
-import type { ContactInput } from '@/entities/inquiry';
+import type { ContactInput } from '@/entities/inquiry/api';
 import type { SubmitInquiryDeps } from './types';
 
 /** Persist a visitor's contact form submission to the database. */

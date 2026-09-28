@@ -26,10 +26,6 @@ describe('kr-equity market profile', () => {
             expect(d.searchSource).toBe('kr-store');
         });
 
-        it('passes the canonical symbol straight through to the provider', () => {
-            expect(d.toProviderSymbol('005930.KS')).toBe('005930.KS');
-        });
-
         it('excludes options and congress tabs', () => {
             // 개별주식옵션은 국내 유동성이 없고, 공직자 백지신탁은 API가 존재하지 않는다.
             expect(d.tabs).not.toContain('options');

@@ -1,6 +1,6 @@
 import { act, render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SymbolViewPing } from '@/features/visitor-ping';
+import { SymbolViewPing } from '@/features/visitor-ping/ui/SymbolViewPing';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 
 const STORAGE_KEY = 'siglens:symbol-views';

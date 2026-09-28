@@ -8,7 +8,7 @@ const { resetFormSpy, searchParamsRef } = vi.hoisted(() => ({
 vi.mock('next/navigation', () => ({
     useSearchParams: () => searchParamsRef.value,
 }));
-vi.mock('@/features/auth-password-reset', () => ({
+vi.mock('@/features/auth-password-reset/ui/ResetPasswordForm', () => ({
     ResetPasswordForm: (props: { email: string; token: string }) => {
         resetFormSpy(props);
         return <div data-testid="reset-form" />;

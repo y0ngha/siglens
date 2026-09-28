@@ -6,9 +6,12 @@ const { mockEvaluateSymbolIndexability, mockGetSeoSnapshotsStatic } =
         mockGetSeoSnapshotsStatic: vi.fn(),
     }));
 
-vi.mock('@/entities/symbol-indexability', () => ({
-    evaluateSymbolIndexability: mockEvaluateSymbolIndexability,
-}));
+vi.mock(
+    '@/entities/symbol-indexability/lib/evaluateSymbolIndexability',
+    () => ({
+        evaluateSymbolIndexability: mockEvaluateSymbolIndexability,
+    })
+);
 
 vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: mockGetSeoSnapshotsStatic,

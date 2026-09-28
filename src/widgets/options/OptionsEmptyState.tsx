@@ -1,6 +1,8 @@
 import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import type { ReactNode } from 'react';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { cn } from '@/shared/lib/cn';
 
 interface OptionsEmptyStateProps {
     symbol: string;
@@ -38,7 +40,7 @@ export function OptionsEmptyState({
     const tCard = useTranslations('shared.crossLink');
     return (
         <main className="mx-auto w-full max-w-5xl px-4 py-16">
-            <div className="rounded-lg border border-secondary-700 bg-secondary-800 p-8 text-center">
+            <div className={cn(SURFACE_CARD, 'p-8 text-center')}>
                 <h1 className="text-xl font-bold tracking-tight text-balance text-secondary-50 sm:text-2xl">
                     {symbol} {t('OptionsEmptyState.68a411')}
                 </h1>

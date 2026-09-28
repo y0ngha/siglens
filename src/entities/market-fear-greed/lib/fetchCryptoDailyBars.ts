@@ -4,6 +4,7 @@ import { fmpGet } from '@/shared/api/fmp/httpClient';
 import { MS_PER_DAY } from '@/shared/config/time';
 import { e2eCryptoDailyBars } from './e2eFearGreedFixture';
 import { MARKET_FEAR_GREED_CRYPTO_LOOKBACK_DAYS } from './marketFearGreedCryptoSymbols';
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
 /** One row of FMP `/stable/historical-price-eod/full`. */
 interface FmpEodFullRow {
@@ -12,14 +13,12 @@ interface FmpEodFullRow {
     volume?: unknown;
 }
 
-function isoDate(ms: number): string {
-    return new Date(ms).toISOString().slice(0, 10);
-}
-
 /** 조회 창의 하한. 캐시 계층이 한 번 계산해 21개 시리즈 전부에 같은 값을 넘긴다. */
 export function cryptoLookbackStartDate(now: Date): string {
-    return isoDate(
-        now.getTime() - MARKET_FEAR_GREED_CRYPTO_LOOKBACK_DAYS * MS_PER_DAY
+    return toUtcIsoDate(
+        new Date(
+            now.getTime() - MARKET_FEAR_GREED_CRYPTO_LOOKBACK_DAYS * MS_PER_DAY
+        )
     );
 }
 
@@ -32,7 +31,7 @@ export function cryptoLookbackStartDate(now: Date): string {
  * 대신 UTC 자정이 마감이다.
  */
 export function lastClosedUtcDate(now: Date): string {
-    return isoDate(now.getTime() - MS_PER_DAY);
+    return toUtcIsoDate(new Date(now.getTime() - MS_PER_DAY));
 }
 
 /**

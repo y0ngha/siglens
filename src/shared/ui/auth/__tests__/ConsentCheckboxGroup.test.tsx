@@ -78,7 +78,7 @@ describe('ConsentCheckboxGroup', () => {
     });
 
     /**
-     * 같은 인증 카드의 다른 오류 표면(`AuthErrorAlert`, `AuthFieldGroup`,
+     * 같은 인증 카드의 다른 오류 표면(`ErrorAlert`, `TextField`,
      * `PasswordField`)이 전부 `role="alert"`다. 여기만 polite면 제출 실패라는
      * 같은 사건이 화면마다 다르게 읽힌다.
      */

@@ -95,8 +95,6 @@
   · `users` / `sessions` / `oauth_accounts` 등 사용자 DB 스키마 정의·마이그레이션
   · 문의(contact form) 처리, BYOK(사용자 LLM API 키) 저장·검증
   · 한국어 티커 검색·매핑 (KOREAN_TICKERS 캐시, `assetTranslations`)
-  · `usage_logs` DB 스키마 / Drizzle repository 구현
-    (단, IP 해싱 함수는 분석 use-case가 직접 호출하므로 core에 남는다)
   · 사용자별 설정 화면, 관리자 화면, 결제, 마케팅 페이지
 ```
 
@@ -113,7 +111,6 @@
   · 비밀번호 재설정·이메일 인증 토큰 저장소
   · 문의(contact form) 처리, BYOK 저장·검증
   · 한국어 티커 검색·매핑 (KOREAN_TICKERS 캐시 + `assetTranslations` repo)
-  · `usage_logs` DB 스키마 / Drizzle repository (core가 호출)
   · MarketDataProvider / OptionsDataProvider 구현체 — FMP, yahoo-finance2 같은 데이터 소스의 실제 호출 코드
   · 환경변수 주입 (siglens-core의 infrastructure가 process.env를 읽지만,
     값을 채우는 책임은 consumer)
@@ -154,7 +151,7 @@ siglens-core (npm 패키지 — 분석 도메인 + 분석 직결 인프라 + Ski
   (`@y0ngha/siglens-core/dist/...`)는 금지. 자세한 정책은 `siglens-core/docs/PUBLIC_API.md`.
 - 분석에 영향 없는 기능(인증·이메일·BYOK 등)은 core에 추가하지 않는다.
   이미 들어가 있는 것은 §7 ejection 로드맵으로 환원한다.
-- core가 `usage_logs` 같은 DB에 직접 쓰는 use-case가 필요하면, repository
+- core가 siglens DB에 직접 쓰는 use-case가 필요하면, repository
   인터페이스를 core가 정의하고 구현은 consumer가 주입한다.
 
 ---
@@ -180,7 +177,7 @@ NextResponse, "use client", "use server", CSS, 이미지 import
 사용자 LLM API 키(BYOK) 저장·복호화·검증
 contact form 처리
 한국어 티커 검색·매핑, asset translation
-users / sessions / oauth_accounts / user_api_keys / inquiries / usage_logs
+users / sessions / oauth_accounts / user_api_keys / inquiries
    스키마, 마이그레이션, repository 구현
 ```
 
@@ -189,7 +186,7 @@ core가 가질 이유가 없다. 일반 SaaS 백엔드 기능이다. 진행 중�
 §7 참고.
 
 > 예외 — IP 해싱: `hashUsageIp`처럼 분석 use-case가 직접 호출하는 순수 함수는
-> `usage_logs` repository와 분리되어 core에 남는다(`infrastructure/usage/`).
+> core에 남는다(`infrastructure/usage/`).
 
 ### Step 3 — 외부 시장 데이터 API(FMP, yahoo-finance2 등)를 직접 호출하는가?
 
@@ -319,7 +316,7 @@ i18n 메시지, 로딩 UI, 에러 토스트, 분석 결과 화면 포맷팅
 | 새 분석 use-case 함수 추가 (Tier 1) | ✅ (구현·export) | ✅ (호출 지점) | core → siglens |
 | 새 분석 직결 외부 시스템 (AI provider 등) | ✅ (factory·인터페이스) | ✅ (factory 호출 지점) | core → siglens |
 | 새 시세 프로바이더 추가 | ✅ (인터페이스만 확장 시) | ✅ (실제 fetch 구현) | siglens 단독 가능 |
-| 인증·세션·OAuth·이메일·BYOK·문의·한국어 티커·`usage_logs` DB | ❌ | ✅ | siglens only |
+| 인증·세션·OAuth·이메일·BYOK·문의·한국어 티커 DB | ❌ | ✅ | siglens only |
 | 새 페이지/라우트/컴포넌트 | ❌ | ✅ | siglens only |
 | Tailwind/디자인 토큰/SEO | ❌ | ✅ | siglens only |
 | 환경변수 추가 (분석용 실제 값) | ❌ (`docs/reference/API.md` 명세만 갱신) | ✅ (`.env`에 값) | core 명세 → siglens 주입 |
@@ -372,7 +369,7 @@ core를 분석 도메인으로 다시 좁히기 위한 단계별 작업.
 | **Phase 3** | BYOK — 사용자 LLM API 키 저장소(`DrizzleUserApiKeyRepository`, `userApiKeys` 스키마, `domain/llm` 검증 유틸의 일부) 환원. |
 | **Phase 4** | 한국어 티커 검색·매핑 — `application/ticker/`(특히 `koreanNameStore`, `getAssetInfo`의 한국어 부분), `assetTranslations`/`koreanTickers` 스키마, `KOREAN_NAMES_CACHE_TTL`/`KOREAN_TICKERS_CACHE_KEY`, `infrastructure/cache/tickerCacheKeys.ts` 환원. |
 | **Phase 5** | 문의(contact form) — `application/inquiry`, `inquiries` 스키마, `DrizzleInquiryRepository` 환원. |
-| **Phase 6** | `usage_logs` DB — `usageLogs` 스키마, `DrizzleUsageRepository`/`DrizzleUsageLogRepository` 환원. core는 `UsageRepository` 인터페이스 + `hashUsageIp`만 보유. |
+| **Phase 6** | `usage_logs` DB — `usageLogs` 스키마, `DrizzleUsageRepository`/`DrizzleUsageLogRepository` 환원. core는 `UsageRepository` 인터페이스 + `hashUsageIp`만 보유. (이후 쓰는 코드가 사라져 `usage_logs` 테이블 자체를 삭제 — `drizzle/0038_drop_usage_logs.sql`) |
 | **Phase 7** | 사용자 DB 스키마(`users`, `sessions`, `oauth_accounts`)와 `DrizzleUserRepository`/`DrizzleSessionRepository`/`DrizzleOAuthAccountRepository` 환원. core의 `infrastructure/db/`는 분석 use-case가 직접 쓰는 객체만 남거나 사라진다. |
 
 각 Phase 종료 시 SCOPE.md와 PUBLIC_API.md의 인벤토리를 갱신한다.

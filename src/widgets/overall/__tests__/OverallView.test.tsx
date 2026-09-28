@@ -90,3 +90,63 @@ describe('OverallView — hasOptions gating (SEO 감사 finding 2)', () => {
         ).not.toBeInTheDocument();
     });
 });
+
+describe('OverallView — bullet sections', () => {
+    it('renders each non-empty bullet section under its own labelled heading', () => {
+        render(
+            <OverallView
+                result={makeResult({ riskFactorsKo: ['금리 리스크'] })}
+                assetClass="equity"
+                hasOptions={true}
+            />
+        );
+        for (const [heading, bullet] of [
+            ['기술적 분석 요약', '기술적 신호'],
+            ['옵션 시장', '감마 상승'],
+            ['펀더멘털 분석 요약', '펀더멘털 신호'],
+            ['재무 분석', '재무 신호'],
+            ['뉴스 분석 요약', '뉴스 신호'],
+            ['위험 요인', '금리 리스크'],
+        ] as const) {
+            expect(
+                screen.getByRole('region', { name: heading })
+            ).toHaveTextContent(bullet);
+        }
+    });
+
+    it('drops a section whose bullets are empty', () => {
+        render(
+            <OverallView
+                result={makeResult({ optionsBulletsKo: [], riskFactorsKo: [] })}
+                assetClass="equity"
+                hasOptions={true}
+            />
+        );
+        expect(
+            screen.queryByRole('heading', { name: '옵션 시장' })
+        ).not.toBeInTheDocument();
+        expect(
+            screen.queryByRole('heading', { name: '위험 요인' })
+        ).not.toBeInTheDocument();
+    });
+
+    it('shows the OI stale badge only when optionsOiStale is true', () => {
+        const { rerender } = render(
+            <OverallView
+                result={makeResult({ optionsOiStale: true })}
+                assetClass="equity"
+                hasOptions={true}
+            />
+        );
+        expect(screen.getByText(/OI 데이터 지연/)).toBeInTheDocument();
+
+        rerender(
+            <OverallView
+                result={makeResult({ optionsOiStale: false })}
+                assetClass="equity"
+                hasOptions={true}
+            />
+        );
+        expect(screen.queryByText(/OI 데이터 지연/)).not.toBeInTheDocument();
+    });
+});

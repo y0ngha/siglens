@@ -1,5 +1,5 @@
 import { useTranslations } from 'next-intl';
-import type { MarketProfileId } from '@/shared/config/marketProfile';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { SnapshotBulletList } from '../SnapshotBulletList';
 import { LIVE_ANALYSIS_CROSS_REF_KEY } from '../lib/liveAnalysisCrossRef';
@@ -36,9 +36,6 @@ interface OverallSnapshotProseProps {
      */
     plain?: string | null;
 }
-
-export { narrowOverallContent } from './overallContent';
-export { hasOverallProse } from './overallContent';
 
 /**
  * SEO pre-warm 스냅샷의 overall 탭 프로즈 렌더러 — `TechnicalSnapshotProse`가

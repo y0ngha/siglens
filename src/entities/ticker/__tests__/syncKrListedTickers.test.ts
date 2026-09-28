@@ -22,8 +22,9 @@ vi.mock('@/shared/api/dataGoKr/krxListedInfoClient', () => ({
     hasDataGoKrCredentials: mockHasCredentials,
 }));
 
-vi.mock('../lib/db', () => ({
-    tryGetTickerDatabaseClient: mockTryGetClient,
+vi.mock('@/shared/db/client', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/db/client')>()),
+    tryGetDatabaseClient: mockTryGetClient,
 }));
 
 vi.mock('../lib/koreanNameStore', () => ({

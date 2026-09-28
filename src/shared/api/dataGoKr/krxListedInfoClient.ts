@@ -1,3 +1,4 @@
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
 /**
  * 공공데이터포털 — 금융위원회 KRX상장종목정보.
  *
@@ -86,7 +87,7 @@ const TOTAL_BUDGET_MS = 90_000;
 const MIN_PAGE_BUDGET_MS = 1_000;
 
 /** 시장 구분 값. `mrktCtg` 필드가 이 셋 중 하나로 온다. */
-export type KrxMarket = 'KOSPI' | 'KOSDAQ' | 'KONEX';
+type KrxMarket = 'KOSPI' | 'KOSDAQ' | 'KONEX';
 
 export interface KrxListedItem {
     /** 단축코드 6자리(예: `005930`). 거래소 접미사는 붙어 있지 않다. */
@@ -260,7 +261,7 @@ function recentDateCandidates(days: number): string[] {
     for (let i = 1; i <= days; i++) {
         const d = new Date();
         d.setUTCDate(d.getUTCDate() - i);
-        out.push(d.toISOString().slice(0, 10).replace(/-/g, ''));
+        out.push(toUtcIsoDate(d).replace(/-/g, ''));
     }
     return out;
 }

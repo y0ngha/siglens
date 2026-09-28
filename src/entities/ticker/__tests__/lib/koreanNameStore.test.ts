@@ -7,7 +7,7 @@ const {
     mockCache,
     mockRepository,
     createCacheProviderMock,
-    tryGetTickerDatabaseClientMock,
+    tryGetDatabaseClientMock,
     repositoryFactoryMock,
 } = vi.hoisted(() => ({
     mockCache: {
@@ -21,7 +21,7 @@ const {
         upsertMany: vi.fn(),
     },
     createCacheProviderMock: vi.fn(),
-    tryGetTickerDatabaseClientMock: vi.fn(),
+    tryGetDatabaseClientMock: vi.fn(),
     repositoryFactoryMock: vi.fn(),
 }));
 
@@ -33,8 +33,9 @@ vi.mock('@y0ngha/siglens-core', async () => ({
     ...(await vi.importActual('@y0ngha/siglens-core')),
     createCacheProvider: () => createCacheProviderMock(),
 }));
-vi.mock('../../lib/db', () => ({
-    tryGetTickerDatabaseClient: () => tryGetTickerDatabaseClientMock(),
+vi.mock('@/shared/db/client', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/db/client')>()),
+    tryGetDatabaseClient: () => tryGetDatabaseClientMock(),
 }));
 vi.mock('../../api', () => ({
     DrizzleKoreanTickerRepository: class {
@@ -84,8 +85,8 @@ function resetMocks(): void {
     createCacheProviderMock.mockReturnValue(
         mockCache as unknown as CacheProvider
     );
-    tryGetTickerDatabaseClientMock.mockReset();
-    tryGetTickerDatabaseClientMock.mockReturnValue(fakeDbClient);
+    tryGetDatabaseClientMock.mockReset();
+    tryGetDatabaseClientMock.mockReturnValue(fakeDbClient);
     repositoryFactoryMock.mockReset();
     repositoryFactoryMock.mockReturnValue(
         mockRepository as unknown as KoreanTickerRepository
@@ -238,13 +239,13 @@ describe('searchByKoreanName', () => {
 
     it('DB 클라이언트 없고 cache 도 없으면 빈 배열', async () => {
         createCacheProviderMock.mockReturnValue(null);
-        tryGetTickerDatabaseClientMock.mockReturnValue(null);
+        tryGetDatabaseClientMock.mockReturnValue(null);
         await expect(searchByKoreanName('애')).resolves.toEqual([]);
     });
 
     it('DB 클라이언트 없고 cache 미스면 빈 배열', async () => {
         mockCache.get.mockResolvedValue(null);
-        tryGetTickerDatabaseClientMock.mockReturnValue(null);
+        tryGetDatabaseClientMock.mockReturnValue(null);
         await expect(searchByKoreanName('애')).resolves.toEqual([]);
         expect(mockCache.set).not.toHaveBeenCalled();
     });
@@ -366,7 +367,7 @@ describe('getKoreanNames', () => {
 
     it('cache miss + DB 클라이언트 없으면 빈 객체 반환', async () => {
         mockCache.get.mockResolvedValue(null);
-        tryGetTickerDatabaseClientMock.mockReturnValue(null);
+        tryGetDatabaseClientMock.mockReturnValue(null);
         await expect(getKoreanNames(['AAPL'])).resolves.toEqual({});
         expect(mockRepository.findBySymbols).not.toHaveBeenCalled();
     });
@@ -494,7 +495,7 @@ describe('setKoreanTickers', () => {
     });
 
     it('DB 클라이언트 없으면 DB / cache 호출 없이 종료', async () => {
-        tryGetTickerDatabaseClientMock.mockReturnValue(null);
+        tryGetDatabaseClientMock.mockReturnValue(null);
         await setKoreanTickers([apple]);
         expect(mockRepository.upsertMany).not.toHaveBeenCalled();
         expect(mockCache.delete).not.toHaveBeenCalled();

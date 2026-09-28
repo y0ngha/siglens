@@ -1,7 +1,10 @@
 import { render, screen } from '@testing-library/react';
-import { ShareableAnalysisProvider, useShareable } from '@/features/share';
 import { OptionsAiAnalysis } from '@/widgets/options/OptionsAiAnalysis';
 import type { OptionsAnalysisResponse } from '@y0ngha/siglens-core';
+import {
+    ShareableAnalysisProvider,
+    useShareable,
+} from '@/features/share/model/ShareableAnalysisContext';
 
 const mockState = vi.fn();
 

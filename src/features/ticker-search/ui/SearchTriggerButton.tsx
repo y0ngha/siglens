@@ -2,29 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
+import { SearchIcon } from '@/shared/ui/StrokeIcons';
 import { SEARCH_TRIGGER_LABEL_KEY } from '../lib/searchLabels';
-
-/**
- * 돋보기 글리프. 헤더 아이콘 버튼과 홈 히어로 트리거가 **같은 모양**을 써야 하므로
- * 별도 export로 둔다. 아이콘 패키지를 쓰지 않는 이유는 `SearchTriggerButton` JSDoc 참고.
- */
-export function SearchGlyph({ className = 'h-5 w-5' }: { className?: string }) {
-    return (
-        <svg
-            aria-hidden="true"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={className}
-        >
-            <circle cx="11" cy="11" r="7" />
-            <path d="m20 20-3.5-3.5" />
-        </svg>
-    );
-}
 
 interface SearchTriggerButtonProps {
     onClick: () => void;
@@ -43,11 +22,9 @@ interface SearchTriggerButtonProps {
  * 모바일에서 `display:none`이 되면 `ml-auto`도 함께 사라져 CTA와 햄버거가 로고 쪽으로
  * 붕괴한다. 그래서 모바일에서 보이는 이 버튼이 그 역할을 이어받는다.
  *
- * 아이콘은 **인라인 SVG**다. `features/ticker-search` 배럴은 이미 33개 전 라우트의
- * first-load 청크에 들어 있다 — root layout의 `SearchOverlayProvider`와 헤더의
- * `HeaderSearch`(둘 다 클라이언트 컴포넌트)가 이 배럴을 소비하고 `package.json`에
- * `sideEffects`가 없어 미사용 re-export가 제거되지 않기 때문이다. 아이콘 패키지를
- * 들이면 그 무게가 그대로 전역으로 퍼진다.
+ * 아이콘은 `shared/ui/StrokeIcons`의 **인라인 SVG**다. 이 버튼은 root layout의 `SearchOverlayProvider`와 헤더의
+ * `HeaderSearch`(둘 다 클라이언트 컴포넌트)를 통해 33개 전 라우트의 first-load 청크에
+ * 들어간다. 아이콘 패키지를 들이면 그 무게가 그대로 전역으로 퍼진다.
  * `widgets/layout/HeaderMobileMenu`도 같은 이유로 인라인 SVG를 쓴다.
  */
 export function SearchTriggerButton({
@@ -68,7 +45,7 @@ export function SearchTriggerButton({
                 className
             )}
         >
-            <SearchGlyph />
+            <SearchIcon className="size-5" />
         </button>
     );
 }

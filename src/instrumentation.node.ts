@@ -9,7 +9,7 @@
 import {
     drainBackgroundTasks,
     stopAcceptingBackgroundTasks,
-} from '@/entities/ticker/lib/backgroundTask';
+} from '@/shared/lib/backgroundTask';
 import { waitForActiveStreams } from '@/shared/lib/sse/activeStreams';
 
 /**

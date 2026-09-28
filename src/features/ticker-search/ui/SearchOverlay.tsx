@@ -12,10 +12,12 @@ import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
-import { isKoreanInput } from '@/entities/ticker';
+import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
+import { isKoreanInput } from '@/entities/ticker/lib/ticker';
 import { useRecentSearches } from '../hooks/useRecentSearches';
 import { useTickerSearch } from '../hooks/useTickerSearch';
 import { normalizeLabel } from '../lib/normalizeLabel';
+import { isImeComposing } from '../lib/isImeComposing';
 import { POPULAR_PREVIEW_GROUPS } from '../lib/popularPreview';
 import { resolveSubmitTarget } from '../lib/resolveSubmitTarget';
 import { SEARCH_PLACEHOLDER_KEY, SEARCH_ROW_CLASS } from '../lib/searchLabels';
@@ -130,6 +132,8 @@ function SearchOverlayBody({
     // 본체는 열려 있을 때만 마운트된다 — 항상 활성.
     useEscapeKey(onClose, true);
     useFocusTrap(dialogRef, true);
+    // 배경 스크롤 잠금. 소유자 수를 세는 훅이라 다른 잠금과 겹쳐 열려도 안전하다.
+    useBodyScrollLock();
 
     // 지난 질의가 남지 않는 것은 언마운트가 공짜로 해 준다(예전에는 `[isOpen]` 효과로
     // 비웠다).
@@ -183,8 +187,8 @@ function SearchOverlayBody({
      * 그래서 **닫기는 즉시 하되 대기 표시는 오버레이 밖으로** 뺐다. 이동과 진행 바는
      * `SearchOverlayProvider`가 소유한다.
      *
-     * 한때 여기 주석은 "나머지는 Next의 라우트 전환이 처리한다"고 적혀 있었는데
-     * **사실이 아니었다**. `app/[symbol]/loading.tsx`는 `[symbol]`의 자식 슬롯을 감싸는데
+     * Next의 라우트 전환만으로는 나머지가 처리되지 않는다는 점에 주의:
+     * `app/[symbol]/loading.tsx`는 `[symbol]`의 자식 슬롯을 감싸는데
      * 종목→종목 이동은 그 세그먼트 자체를 바꾸므로 서스펜스가 경계 위에서 일어나고,
      * 루트 `loading.tsx`도 `<Suspense>`도 없어 React가 옛 화면을 그대로 붙들고 있는다.
      * 사용자는 애플을 눌렀는데 NVDA 차트를 2~3초 본다(LAX 경로 실측 기준). 셋 다 사라진다.
@@ -217,33 +221,23 @@ function SearchOverlayBody({
         if (e.key !== 'Enter') return;
         // 한글 IME는 음절을 **확정**할 때도 Enter를 쓴다. 이걸 걸러내지 않으면
         // `삼성전`까지 친 상태에서 확정 Enter가 `삼성` 결과로 이동시킨다.
-        if (e.nativeEvent.isComposing) return;
+        if (isImeComposing(e)) return;
         e.preventDefault();
 
-        // 디바운스(300ms) 때문에 `results`는 한 박자 전 질의의 것일 수 있다.
-        // `TS` 입력 후 멈췄다가 `LA`를 이어 치고 곧바로 검색하면 `TS`의 첫 결과로
-        // 가버린다. 질의가 아직 반영되지 않았으면 첫 결과를 믿지 않는다.
-        // 양쪽 다 trim한다. `debouncedQuery`는 입력 원본이라 `"apple "`처럼 공백이
-        // 붙으면 `query.trim()`과 영영 같아지지 않고, 첫 결과가 화면에 있는데도
-        // 무시된 뒤 `/APPLE`로 직행해 404가 난다.
-        // 지금 결정하지 않고 **의도만 남긴다**. 조회가 결착된 뒤 아래 효과가
-        // 어디로 갈지 정한다 — 이유는 그 효과의 주석 참고.
+        // 지금 결정하지 않고 의도만 남긴다 — `isSettled`(위 정의) 결착 여부는
+        // 아래 effect가 판단한다. 이유는 `pendingSubmitRef` 주석 참고.
         requestSubmit();
     };
 
-    // 배경 스크롤 잠금. 저장/복원 방식은 HeaderMobileMenu와 동일하다 — 둘이 동시에
-    // 열리면 저장값이 서로를 오염시키지만, 오버레이가 열린 동안 햄버거는 가려져
-    // 도달할 수 없다.
-    useEffect(() => {
-        const prev = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
-        return () => {
-            document.body.style.overflow = prev;
-        };
-    }, []);
-
     /**
      * 보류해 둔 검색 의도를 조회가 결착된 뒤에 처리한다.
+     *
+     * 디바운스(300ms) 때문에 `results`는 한 박자 전 질의의 것일 수 있다. `TS` 입력
+     * 후 멈췄다가 `LA`를 이어 치고 곧바로 검색하면 `TS`의 첫 결과로 가버린다 —
+     * `isSettled`(양쪽 다 trim해 비교)가 참이 될 때까지 기다려야 첫 결과를 믿을 수
+     * 있다. `debouncedQuery`는 입력 원본이라 `"apple "`처럼 공백이 붙으면
+     * `query.trim()`과 영영 같아지지 않고, 첫 결과가 화면에 있는데도 무시된 뒤
+     * `/APPLE`로 직행해 404가 난다.
      *
      * 실패(`isError`)면 아무 데도 가지 않는다 — 실패한 조회의 빈 결과는 "없다"가
      * 아니고, 사용자에게는 실패 화면을 보여주는 편이 존재하지 않는 종목 페이지로

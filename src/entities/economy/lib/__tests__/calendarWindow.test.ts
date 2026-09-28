@@ -1,32 +1,33 @@
 import { describe, it, expect } from 'vitest';
 import {
     etDateOf,
-    kstDateOf,
     addEtDays,
     pastWindowStart,
     futureWindowEnd,
     PAST_WINDOW_DAYS,
     FUTURE_WINDOW_DAYS,
 } from '@/entities/economy/lib/calendarWindow';
+import { kstDateKey } from '@/shared/lib/etTimeUtils';
 
-describe('kstDateOf', () => {
+// 경제 캘린더 페이지는 KST "오늘" 키를 `kstDateKey`로 만든다 — 이 경계 케이스들이 그 계약이다.
+describe('kstDateKey (economy KST today key)', () => {
     it('returns same KST day for morning US release (08:30 ET → 12:30Z → KST same day)', () => {
         // 2026-06-20T12:30:00Z = 08:30 ET = 21:30 KST → still 2026-06-20 KST
-        expect(kstDateOf(new Date('2026-06-20T12:30:00Z'))).toBe('2026-06-20');
+        expect(kstDateKey(new Date('2026-06-20T12:30:00Z'))).toBe('2026-06-20');
     });
 
     it('crosses KST midnight: noon ET on 2026-06-20 (16:00Z) → 2026-06-21 KST', () => {
         // 2026-06-20T16:00:00Z = 12:00 ET = 01:00 KST next day (2026-06-21) — exact old-code failure case
-        expect(kstDateOf(new Date('2026-06-20T16:00:00Z'))).toBe('2026-06-21');
+        expect(kstDateKey(new Date('2026-06-20T16:00:00Z'))).toBe('2026-06-21');
     });
 
     it('crosses KST midnight at year boundary', () => {
         // 2026-01-01T20:00:00Z = 05:00 KST 2026-01-02
-        expect(kstDateOf(new Date('2026-01-01T20:00:00Z'))).toBe('2026-01-02');
+        expect(kstDateKey(new Date('2026-01-01T20:00:00Z'))).toBe('2026-01-02');
     });
 
     it('returns a YYYY-MM-DD formatted string', () => {
-        expect(kstDateOf(new Date('2026-06-20T12:30:00Z'))).toMatch(
+        expect(kstDateKey(new Date('2026-06-20T12:30:00Z'))).toMatch(
             /^\d{4}-\d{2}-\d{2}$/
         );
     });
@@ -40,6 +41,12 @@ describe('etDateOf', () => {
 
     it('handles afternoon UTC staying same ET day', () => {
         expect(etDateOf(new Date('2026-01-15T18:00:00Z'))).toBe('2026-01-15');
+    });
+
+    it('uses the EDT offset in summer (UTC-4)', () => {
+        // 2026-06-20T03:59:00Z = 23:59 EDT 2026-06-19; 04:00Z = 00:00 EDT 2026-06-20.
+        expect(etDateOf(new Date('2026-06-20T03:59:00Z'))).toBe('2026-06-19');
+        expect(etDateOf(new Date('2026-06-20T04:00:00Z'))).toBe('2026-06-20');
     });
 });
 

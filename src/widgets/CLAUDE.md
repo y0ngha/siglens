@@ -6,34 +6,14 @@
 
 widgets는 `features/`, `entities/`, `shared/`를 import 가능. **상위 레이어(pages/views, app)를 import할 수 없다.**
 
-## 의도적 예외 (cross-widget import)
+## widgets 간 import 금지
 
-cross-widget import는 현재 허용되지만, `symbol-page` 슬라이스는 Spec-2 PR-B2에서 제거됨:
+다른 위젯의 파일을 import하지 않는다. 둘 이상의 위젯이 필요로 하는 훅·컴포넌트는 `shared/`(도메인 무관 UI·훅) 또는
+`entities/`(도메인 훅·로직)로 내리고, 위젯 조합은 `views/`·`app/`에서 한다.
 
-- **이전 예외 (제거됨):** `widgets/symbol-page` → `widgets/chart`, `widgets/analysis`, `widgets/fear-greed` 등
-  - 이유: `symbol-page` 컴포지션이 FSD `pages` 레이어(`src/views/symbol/`)로 이관됨 (Spec-2 PR-B2)
-  - 관련 hook은 `src/features/symbol-model/`로, CrossLinkCards는 `src/shared/ui/`로 이동
+oxlint `no-restricted-imports`는 "자기 슬라이스가 아닌 `@/widgets/*`"를 표현하지 못해
+`src/__tests__/guards/noCrossWidgetImports.test.ts`가 대신 강제한다(테스트 파일은 제외).
 
-이 예외는 ESLint `from: 'widgets', allow: ['widgets', ...]`로 관리됨. Spec-2 PR-C 재검토 결과, 예외는 아래 두 pre-existing 엣지에 한해 유지됨:
+## import 규칙
 
-- **`fear-greed → chart`**: `FearGreedPage.tsx`가 `@/widgets/chart/FearGreedHistoricalChart`를 deep import (barrel 미포함 heavy component)
-- **`overall → news`**: `OverallContent.tsx`가 `@/widgets/news` barrel에서 `useNewsAnalysisTrigger`, `useWaitForNewsCards`를 소비
-- **`agent-chat → layout`**: `ChatShell.tsx`가 `@/widgets/layout`의 `useHideOnScrollDown`을 소비 (모바일 대화 바를 사이트 헤더와 같은 스크롤-숨김 패턴으로 맞춤)
-
-두 엣지 모두 symbol-page와 무관(symbol-page는 PR-B2에서 `src/views/symbol/`로 이관). 규칙 완전 제거는 위 두 컴포넌트의 이전을 선행해야 하므로 보류.
-
-## barrel 제외 대상
-
-다음 항목은 barrel(index.ts)에서 re-export하지 않음 (server-side 의존성이 barrel을 통해 re-export되면 클라이언트 번들에 포함됨):
-- `FearGreedHistoricalChart` (lightweight-charts heavy component)
-
-이전 완료:
-- `useAssetInfo` → `@/entities/ticker/hooks/useAssetInfo` (Spec-2 PR-A)
-- `useBars` → `@/entities/bars/hooks/useBars` (Spec-2 PR-A)
-- `CacheOnlyMissError` (formerly `BotBlockedError`) → `@/shared/lib/CacheOnlyMissError` (Spec-2 PR-A; renamed 2026-09-27 bot-analysis-parity — no longer bot-related, purely an options `cacheOnly` cache miss)
-- `useAnalysisProgress`, `ANALYSIS_PHASES`, `ANALYSIS_TIPS` → `@/widgets/analysis/hooks/useAnalysisProgress` (Spec-2 PR-B1)
-- `CooldownNotice` → `@/widgets/analysis/model/types` (Spec-2 PR-B1)
-- `symbol-page` 전체 → `src/views/symbol/` (컴포지션), `src/features/symbol-model/` (모델 상태), `src/shared/ui/CrossLinkCards` (공용 UI) (Spec-2 PR-B2)
-
-소비자는 항목별 실제 경로로 deep import한다:
-- `FearGreedHistoricalChart` → `@/widgets/chart/FearGreedHistoricalChart`
+barrel(`index.ts`)은 금지다. 위젯 컴포넌트·훅·유틸은 정의 파일에서 직접 import한다(테스트·`vi.mock` 포함).

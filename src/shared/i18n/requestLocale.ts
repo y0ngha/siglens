@@ -1,6 +1,6 @@
 import 'server-only';
 import { getLocale } from 'next-intl/server';
-import { DEFAULT_LOCALE, isLocale, type Locale } from './locales';
+import { DEFAULT_LOCALE, type Locale, resolveLocale } from './locales';
 
 /**
  * 서버 액션·라우트 핸들러에서 요청 로케일을 얻는다.
@@ -13,7 +13,7 @@ import { DEFAULT_LOCALE, isLocale, type Locale } from './locales';
 export async function resolveRequestLocale(): Promise<Locale> {
     try {
         const value = await getLocale();
-        return isLocale(value) ? value : DEFAULT_LOCALE;
+        return resolveLocale(value);
     } catch {
         return DEFAULT_LOCALE;
     }

@@ -12,7 +12,7 @@ import {
     DrizzleEarningsReportsRepository,
     toComparisonItems,
     type EarningsReportUpsertInput,
-} from '@/entities/earnings-report';
+} from '@/entities/earnings-report/api';
 
 const rawPayload = {
     date: '2025-08-01',

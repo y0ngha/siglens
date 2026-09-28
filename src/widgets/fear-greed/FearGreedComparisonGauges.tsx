@@ -1,6 +1,6 @@
 import { useTranslations } from 'next-intl';
 import { scoreToLabel, type FearGreedHistoryPoint } from '@y0ngha/siglens-core';
-import { FearGreedGauge } from './FearGreedGauge';
+import { FearGreedGauge } from '@/shared/ui/FearGreedGauge';
 import { cn } from '@/shared/lib/cn';
 
 interface FearGreedComparisonGaugesProps {
@@ -51,9 +51,12 @@ export function FearGreedComparisonGauges({
                         key={p.key}
                         className={cn(
                             'min-w-[100px] flex-1 rounded-lg border p-1',
+                            // `MarketFearGreedComparison`과 같은 수정 — 양쪽 다
+                            // `/40`이면 `현재` 강조 보더와 기본 보더가 대비상
+                            // 사실상 같아 보였다. 알파를 걷어내 둘을 실제로 벌린다.
                             p.key === 'now'
-                                ? 'border-primary-500/40'
-                                : 'border-secondary-700/40'
+                                ? 'border-primary-500'
+                                : 'border-secondary-700'
                         )}
                     >
                         <FearGreedGauge

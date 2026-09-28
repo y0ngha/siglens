@@ -3,8 +3,8 @@
 import { useQuery } from '@tanstack/react-query';
 import type { MarketIndexData, MarketSectorData } from '@y0ngha/siglens-core';
 import type { MarketSummaryActionResult } from '@/shared/lib/types';
-import { getMarketSummaryClientAction } from '@/entities/market-summary/actions';
-import { hasMissingQuotes as detectMissingQuotes } from '@/entities/market-summary';
+import { getMarketSummaryClientAction } from '@/entities/market-summary/actions/getMarketSummaryClientAction';
+import { hasMissingQuotes as detectMissingQuotes } from '@/entities/market-summary/lib/marketSummaryCompleteness';
 import {
     MARKET_SUMMARY_STALE_TIME_MS,
     QUERY_KEYS,

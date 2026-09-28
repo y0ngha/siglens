@@ -1,4 +1,4 @@
-import type { SeoSnapshotTab } from '@/entities/seo-snapshot';
+import type { SeoSnapshotTab } from '@/entities/seo-snapshot/model';
 
 /**
  * 스냅샷 산문이 없으면 페이지가 noindex가 되는 탭(`hasCongressProse`·

@@ -5,6 +5,10 @@ import { useState } from 'react';
 import Image from 'next/image';
 import type { OAuthProvider, SupportedOAuthProvider } from '@/shared/lib/types';
 import { ConsentCheckboxGroup } from '@/shared/ui/auth/ConsentCheckboxGroup';
+import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
+import { BUTTON_GHOST } from '@/shared/lib/buttonStyles';
+import { cn } from '@/shared/lib/cn';
+import { AUTH_ERROR_KEY } from '@/shared/lib/authErrorKey';
 import { useFinalizeOAuthSignup } from '../hooks/useFinalizeOAuthSignup';
 import { usePageShowReload } from '@/shared/hooks/usePageShowReload';
 
@@ -19,7 +23,6 @@ interface OAuthConsentFormProps {
 
 const PROVIDER_LABEL: Partial<Record<OAuthProvider, string>> = {
     google: 'Google',
-    kakao: 'Kakao',
 };
 
 export function OAuthConsentForm({
@@ -31,15 +34,17 @@ export function OAuthConsentForm({
     cancelAction,
 }: OAuthConsentFormProps) {
     const t = useTranslations('features.auth-oauth-consent');
+    const tAuth = useTranslations('entities.auth');
     const [privacyChecked, setPrivacyChecked] = useState(false);
     const [tosChecked, setTosChecked] = useState(false);
-    const [finalizeState, finalizeFormAction, isPending] =
-        useFinalizeOAuthSignup();
+    const [finalizeState, finalizeFormAction] = useFinalizeOAuthSignup();
     usePageShowReload();
 
+    // 액션의 `message`는 로그·폴백용 한국어 원문이다(`AUTH_ERROR_KEY` 주석 참고) —
+    // 그대로 띄우면 모든 로케일에 한국어가 나간다. 표시는 코드로 번역한다.
     const consentError =
         finalizeState.error?.code === 'consent_required'
-            ? finalizeState.error.message
+            ? tAuth(AUTH_ERROR_KEY.consent_required)
             : undefined;
 
     return (
@@ -94,23 +99,17 @@ export function OAuthConsentForm({
                     onTosChange={setTosChecked}
                     error={consentError}
                 />
-                <button
-                    type="submit"
-                    disabled={isPending}
-                    aria-disabled={isPending}
-                    className="inline-flex h-12 w-full items-center justify-center rounded-lg bg-primary-500 text-sm font-semibold text-secondary-950 transition-colors hover:bg-primary-400 focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-secondary-700 disabled:text-secondary-500"
-                >
-                    {isPending
-                        ? t('OAuthConsentForm.e6e1a2')
-                        : t('OAuthConsentForm.6615ab')}
-                </button>
+                <SubmitButton
+                    label={t('OAuthConsentForm.6615ab')}
+                    pendingLabel={t('OAuthConsentForm.e6e1a2')}
+                />
             </form>
 
             <form action={cancelAction}>
                 <input type="hidden" name="token" value={token} />
                 <button
                     type="submit"
-                    className="inline-flex h-10 w-full items-center justify-center rounded-lg text-sm text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950 focus-visible:outline-none"
+                    className={cn(BUTTON_GHOST, 'h-10 w-full text-sm')}
                 >
                     {t('OAuthConsentForm.19b2d1')}
                 </button>

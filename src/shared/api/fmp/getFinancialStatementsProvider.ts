@@ -1,7 +1,7 @@
 import { CachedFinancialStatementsProvider } from './CachedFinancialStatementsProvider';
 import { FmpFinancialStatementsClient } from './financialStatementsClient';
 import { createE2EGatedSingleton } from '@/shared/api/createE2EGatedSingleton';
-import { isKrEquitySymbol } from '@/shared/config/marketProfile';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { YahooFinancialStatementsProvider } from '@/shared/api/yahoo/YahooFinancialStatementsProvider';
 import type { FinancialStatementsProvider } from '@y0ngha/siglens-core';
 

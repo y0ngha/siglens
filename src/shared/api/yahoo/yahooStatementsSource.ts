@@ -2,6 +2,7 @@ import 'server-only';
 import { getYahooClient } from './createYahooClient';
 import type { StatementPeriod } from '@y0ngha/siglens-core';
 import { MS_PER_SECOND } from '@/shared/config/time';
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
 const yahooFinance = getYahooClient();
 
@@ -66,7 +67,7 @@ function lookbackStart(period: StatementPeriod): string {
         period === 'annual' ? ANNUAL_LOOKBACK_YEARS : QUARTERLY_LOOKBACK_YEARS;
     const d = new Date();
     d.setUTCFullYear(d.getUTCFullYear() - years);
-    return d.toISOString().slice(0, 10);
+    return toUtcIsoDate(d);
 }
 
 async function fetchModule(

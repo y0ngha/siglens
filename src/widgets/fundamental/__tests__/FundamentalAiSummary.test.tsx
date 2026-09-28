@@ -5,9 +5,13 @@ vi.mock('@/shared/lib/cn', () => ({
             .filter(a => typeof a === 'string' && a.length > 0)
             .join(' '),
 }));
-vi.mock('@/features/symbol-model', () => ({
+vi.mock('@/features/symbol-model/hooks/useDefaultModelId', () => ({
     useDefaultModelId: () => 'gemini-3.5-flash-lite',
+}));
+vi.mock('@/features/symbol-model/hooks/useAnalysisSettingsHydrated', () => ({
     useAnalysisSettingsHydrated: () => true,
+}));
+vi.mock('@/features/symbol-model/hooks/useDefaultReasoning', () => ({
     useDefaultReasoning: () => false,
 }));
 vi.mock('../hooks/useFundamentalAnalysis', () => ({
@@ -22,7 +26,10 @@ vi.mock('../FundamentalAiSummarySkeleton', () => ({
 
 import { render, screen, within } from '@testing-library/react';
 
-import { ShareableAnalysisProvider, useShareable } from '@/features/share';
+import {
+    ShareableAnalysisProvider,
+    useShareable,
+} from '@/features/share/model/ShareableAnalysisContext';
 import { FundamentalAiSummary } from '../FundamentalAiSummary';
 import { useFundamentalAnalysis } from '../hooks/useFundamentalAnalysis';
 

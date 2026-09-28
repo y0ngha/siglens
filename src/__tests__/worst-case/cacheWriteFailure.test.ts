@@ -23,8 +23,9 @@ vi.mock('@/entities/ticker/api', () => ({
     DrizzleAssetTranslationRepository: vi.fn(),
 }));
 
-vi.mock('@/entities/ticker/lib/db', () => ({
-    tryGetTickerDatabaseClient: vi.fn().mockReturnValue(null),
+vi.mock('@/shared/db/client', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/db/client')>()),
+    tryGetDatabaseClient: vi.fn().mockReturnValue(null),
 }));
 
 vi.mock('@/entities/ticker/lib/fmpTickerApi', () => ({
@@ -52,7 +53,7 @@ vi.mock('@/entities/ticker/lib/cacheKeys', () => ({
     ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN: 43200,
 }));
 
-vi.mock('@/entities/ticker/lib/backgroundTask', () => ({
+vi.mock('@/shared/lib/backgroundTask', () => ({
     fireAndForget: vi.fn((p: Promise<unknown>) => p.catch(() => {})),
 }));
 

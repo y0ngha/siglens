@@ -15,7 +15,7 @@ const naver = vi.hoisted(() => ({
     >(),
 }));
 const AI_CREDS = { id: 'ai-id', secret: 'ai-secret' };
-vi.mock('@/entities/news-article/api', () => ({
+vi.mock('@/shared/api/naver/naverSearch', () => ({
     naverAiCredentials: () => (naver.creds ? AI_CREDS : null),
     searchNaverNews: naver.search,
     searchNaverWeb: naver.web,

@@ -28,14 +28,14 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 0.5. Tailwind color tokens used directly; design system tokens not applied
    → All colors must come from src/lib/design/tailwind-config.ts semantic tokens
    → Never use base Tailwind colors (blue-*, slate-*, rose-*, amber-*) directly in JSX className
-   → Special colors (brand-kakao) must be registered as tokens in tailwind.config.ts before use
+   → Special colors (external brand / fixed-surface colors) must be registered as tokens in the `@theme` block of src/app/globals.css before use
    ❌ className="bg-blue-600 hover:bg-blue-700"  // base Tailwind color
    ❌ className="bg-[#FEE500]"  // arbitrary color inline
    ❌ className="text-rose-600 bg-amber-100"  // undefined design tokens
    ✅ className="bg-primary-600 hover:bg-primary-700"  // semantic primary token
    ✅ className="bg-secondary-950"  // secondary token
    ✅ className="text-ui-danger"  // UI semantic token
-   ✅ className="bg-brand-kakao"  // brand token registered in tailwind.config.ts
+   ✅ className="text-on-fixed-light"  // fixed-surface token registered in globals.css @theme
 
 0.7. Server Actions throwing uncaught exceptions instead of returning typed error results
    → Server Actions must never propagate exceptions to the client; all throw paths must be caught
@@ -489,6 +489,25 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ const TRANSIENT_CODES = ['57P01', '08006']; regex `/\b(${TRANSIENT_CODES.join('|')})\b/` — word boundary
     ✅ const TRANSIENT_SQLSTATE_SET = new Set(TRANSIENT_CODES); ... TRANSIENT_SQLSTATE_SET.has(extractedCode) — exact token match
     → Recurring: PR #456 B4 (SQLSTATE false positive on user data like `pk_constraint_53300_check`)
+
+26. i18n artifacts must be regenerated after code changes
+    → When source code changes (shifting lines in files with skipped i18n literals, changing route import graph, adding/removing i18n references), regenerate i18n artifacts by running `yarn i18n:extract --write`
+    → Stale artifact manifests (skip markers in `messages/_meta/skips.json`, clientKeys in `messages/_meta/clientKeys.json`) cause subsequent extraction to fail or miss updates
+    ❌ Edit src/app/page.tsx (shifts lines of code with skipped i18n literals) → commit without running `yarn i18n:extract --write` → subsequent extraction hits wrong line numbers, misses or misplaces skip markers
+    ❌ Change import graph in route (add/remove i18n key references via new imports) → commit without regenerating clientKeys.json → route's manifest becomes stale, missing newly declared keys
+    ✅ After source file edits affecting i18n literals, run `yarn i18n:extract --write` to regenerate skip markers
+    ✅ After import graph changes on a route (new imports adding keys), regenerate `messages/_meta/clientKeys.json` to reflect updated i18n surface coverage
+    → Recurring: PR #796 (skip markers drift after source edits), PR #875 (clientKeys stale after import changes) — 2 occurrences
+
+27. i18n catalog updates must be synchronized across all locale files
+    → When editing i18n content (skill descriptions, UI strings, key removal), changes must be applied to all 4 locale catalogs (ko.json, en.json, ja.json, zh.json) simultaneously
+    → Updating a key in only one locale file leaves orphan entries in others, triggering CI key-parity validation failure
+    → When removing a key, remove it from every locale file; when renaming or updating content, apply the change uniformly across all locales
+    ❌ Update skill description in shared.skillDescription catalog, add to ko.json only → en.json, ja.json, zh.json still reference old description key
+    ❌ Remove i18n key from messages/ko.json after refactor → messages/en.json, messages/ja.json, messages/zh.json still contain orphan key → CI `yarn i18n:verify` fails
+    ✅ When editing skill `description` frontmatter, update catalog keys in all 4 locales + recompute hash in `messages/_meta/hashes.json`
+    ✅ When removing a key, remove from all locale files simultaneously; verify with `yarn i18n:verify` passing before commit
+    → Recurring: claude/siglens-analysis-technique-review (skill description catalog inconsistency), PR #882 (key removal parity across locales) — 2 occurrences
 ```
 
 ---
@@ -518,7 +537,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ❌ TocItem defined identically in both PolicySection.tsx and lib/legal-toc.ts
    ❌ NewsDbRow defined separately in database module and API response module (different shapes)
    ✅ Define TocItem in lib/legal-toc.ts once; PolicySection.tsx imports: `import { TocItem } from '@/lib/legal-toc'`
-   ✅ Use named interfaces/types from the relevant FSD slice barrel or `@y0ngha/siglens-core` public exports
+   ✅ Use named interfaces/types from their defining module in the relevant FSD slice or `@y0ngha/siglens-core` public exports
 
 5.2. Inline type annotations used instead of named type aliases
    → Extract repeated or reusable type patterns to named type aliases
@@ -1754,25 +1773,38 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Grep for the class pattern across all files → find all instances with same issue → fix all together in one PR
    ✅ When reviewer reports a style drift in one file, grep that literal and related patterns across entire codebase before applying any changes
    → Recurring: Style class drift (26 sites with identical class list), Heading colour drift (8+ additional sites) — W6c + W6d
+
+4. Stale references in code/comments/documentation after code modification (move/delete)
+   → When code is moved or deleted, all references to it in comments, JSDoc, documentation, examples, and test names must be updated
+   → Stale references confuse maintainers, hide deleted patterns, and make refactoring difficult
+   → After deletion: repo-wide grep for the deleted identifier (code, comments, docs, examples) in all siblings and dependents
+   → After move: grep all references in comments, JSDoc, test helpers, and documentation; update targets to reflect new location
+   ❌ After deleting usageRepository.ts, comments in 5 sibling files still reference it as a pattern precedent ("similar to usageRepository")
+   ❌ After moving logActionError to shared/lib, JSDoc in untouched file still references old path @/entities/chat-conversation
+   ❌ e2e specs reference `/account` route for PortfolioSection after section was moved to `/portfolio`; stale h1 text `"계정 설정"` and region names in helper functions
+   ✅ Delete identifier → grep entire repo (src/, tests, e2e/, docs/) for the name; update all references in comments, examples, and documentation
+   ✅ Move code → grep all call sites and related references for old path; update comments and JSDoc to reflect new location
+   ✅ e2e specs updated to target new route `/portfolio`, new h1 text `"포트폴리오"`, and updated region/helper names
+   → Recurring: claude/funny-turing-9cgfid R1 (stale comments after deletion), claude/funny-turing-9cgfid R2 audit (stale JSDoc after move) — 2 occurrences
 ```
 
 ## Architecture
 
 ```
 0. Widget/Feature .tsx files importing directly from entity internal paths
-   → `.tsx` UI files are prohibited from importing entity internal modules (lib/, api/)
+   → `.tsx` UI files are prohibited from calling entity use-case/server modules (lib/ business logic, api/) directly
    → Hook files (`hooks/*.ts`) may import Server Actions from `entities/*/actions/` for queryFn/mutationFn or useActionState connection only
-   → UI files must receive all data/actions through hook abstractions or barrel imports
+   → UI files must receive all data/actions through hook abstractions (pure constants/types are imported from their defining file)
    ❌ LoginForm.tsx: `import { loginUser } from '@/entities/user/lib/loginUser'`  // entity internal import in .tsx
    ✅ LoginForm.tsx: `import { useLoginForm } from '../hooks/useLoginForm'`  // hook abstraction
    ✅ Hook file imports entity action; UI component uses hook only
    ✅ App-layer RSC files may import entity api.ts directly
 
 0.5. Hook file type imports from entity internal modules
-   → Hook files must import types from entity barrel or @y0ngha/siglens-core
-   → Entity internal types (e.g., @/entities/user/lib/types) violate layer boundaries
+   → Hook files must import types from their defining type module (`model.ts`/`types.ts`) or @y0ngha/siglens-core
+   → Pulling a type out of an implementation module (DB/API code) drags that module's import chain along
    ❌ hooks/useCurrentUser.ts: `import { AuthUserRecord } from '@/entities/session/lib/db'`
-   ✅ hooks/useCurrentUser.ts: `import type { AuthUserRecord } from '@/entities/session'`  // barrel export
+   ✅ hooks/useCurrentUser.ts: `import type { AuthUserRecord } from '@/shared/lib/auth/types'`  // defining type module
 
 0.6. Helper files (hooks, utilities) mixed at same directory level as UI files
    → Custom hooks must always live in a `hooks/` subfolder
@@ -1813,10 +1845,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Widgets / hooks / app code imports directly: `import { calculateATR } from '@y0ngha/siglens-core';`
    ❌ Deep imports: `from '@y0ngha/siglens-core/dist/domain/indicators/atr'` (only the public package surface is allowed)
 
+3.1. Creating a barrel (`index.ts`/`index.tsx`) or mocking a path the code does not import
+   → Barrels are forbidden (`src/__tests__/guards/noBarrelFiles.test.ts`); import every symbol from its defining file
+   → `vi.mock` intercepts by module path — mock the defining file the code under test imports, not a slice root
+   ❌ `src/features/foo/index.ts` re-exporting `./ui/Foo`; `vi.mock('@/features/foo')`
+   ✅ `import { Foo } from '@/features/foo/ui/Foo'`; `vi.mock('@/features/foo/ui/Foo')`
+
 4. shared/lib/ misused as a dumping ground for non-utility code (side effects, types, entity logic)
    → `shared/lib/` is for pure UI utility wrappers (clsx, tailwind-merge), chart colors, and format functions only
    → Side effects (new Date(), fetch, fs, crypto) belong in entity api/ or shared/db/
-   → Cross-layer shared types belong in entity barrel exports or @y0ngha/siglens-core
+   → Cross-layer shared types belong in entity `model.ts`/`types.ts` or @y0ngha/siglens-core
    → Infrastructure helpers (retry/backoff, sleep timing, rate limiting) belong in shared/lib/ as pure functions
    ❌ shared/lib/ with fs.readFile  // side effect in shared/lib
    ✅ Move side-effect functions to entity api/ or shared/db/

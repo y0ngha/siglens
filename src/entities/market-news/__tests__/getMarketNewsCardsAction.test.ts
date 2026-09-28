@@ -26,7 +26,7 @@ const mockListByCategory = vi.fn(async () => [
     },
 ]);
 
-vi.mock('../api', () => ({
+vi.mock('@/entities/market-news/api/marketNewsRepository', () => ({
     DrizzleMarketNewsRepository: vi.fn(function () {
         return { listByCategory: mockListByCategory };
     }),
@@ -53,7 +53,7 @@ vi.mock('../api', () => ({
 // 2. Static imports — grouped after all vi.mock() calls
 import { describe, it, expect, vi } from 'vitest';
 import { getMarketNewsCardsAction } from '../actions/getMarketNewsCardsAction';
-import { getMarketNewsCards } from '../api';
+import { getMarketNewsCards } from '@/entities/market-news/api/marketNewsRepository';
 import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';
 
 // 3. Tests
@@ -74,7 +74,8 @@ describe('getMarketNewsCardsAction은', () => {
     });
 
     it('빈 버킷이면 ok: true + 빈 items 배열을 반환한다', async () => {
-        const { getMarketNewsCards } = await import('../api');
+        const { getMarketNewsCards } =
+            await import('../api/marketNewsRepository');
         vi.mocked(getMarketNewsCards).mockResolvedValueOnce([]);
         const result = await getMarketNewsCardsAction('forex');
         expect(result.ok).toBe(true);
@@ -83,7 +84,8 @@ describe('getMarketNewsCardsAction은', () => {
     });
 
     it('예외 발생 시 ok: false + error: "db error"를 반환한다', async () => {
-        const { getMarketNewsCards } = await import('../api');
+        const { getMarketNewsCards } =
+            await import('../api/marketNewsRepository');
         vi.mocked(getMarketNewsCards).mockRejectedValueOnce(
             new Error('db error')
         );

@@ -262,16 +262,14 @@ src/widgets/
 │   │   └── useChartData.ts
 │   ├── utils/
 │   │   └── seriesDataUtils.ts
-│   ├── ui/
-│   │   └── StockChart.tsx
-│   └── index.ts
+│   └── ui/
+│       └── StockChart.tsx
 └── symbol-page/
     ├── hooks/
     │   ├── useAnalysis.ts
     │   └── useBars.ts
-    ├── ui/
-    │   └── SymbolPageClient.tsx
-    └── index.ts
+    └── ui/
+        └── SymbolPageClient.tsx
 
 # ❌ Incorrect — hooks or utils at the same level as components
 src/widgets/chart/
@@ -445,7 +443,7 @@ cache-handler/  90%
 The project target is 90% coverage across all measured FSD layers.
 Current Vitest coverage includes `src/entities/**`, `src/features/**`, `src/shared/**`,
 `src/widgets/**`, `src/views/**`, `src/app/**`, `src/proxy.ts`, and `cache-handler/**`,
-excluding declaration files, barrel files, type/model-only files, and test utilities.
+excluding declaration files, type/model-only files, and test utilities.
 
 `src/views/**` is the FSD `pages` layer — it lives under `views/` because creating
 `src/pages/` would activate Next's legacy Pages Router. `cache-handler/**` sits outside
@@ -533,31 +531,27 @@ import { useBars } from '@/widgets/symbol-page/hooks/useBars';
 import { cn } from '../../../shared/lib/cn';
 ```
 
-### FSD Slice Internal Imports
+### No Barrels — Import from the Defining File
 
-FSD 슬라이스 내부에서 다른 segment를 참조할 때(예: `features/auth/ui/LoginForm.tsx` → `features/auth/model/types.ts`):
-- **relative import 사용** (`../model/types` 형태)
-- `no-restricted-imports`는 path alias 기반(`@/features/*/model/*`)으로 차단하므로, **같은 슬라이스 내에서도 `@/` 절대경로로 internal segment에 접근하면 lint 에러**
-- 같은 슬라이스 내부는 반드시 relative import 사용
+`index.ts`/`index.tsx` barrel은 금지다(`src/__tests__/guards/noBarrelFiles.test.ts`가 강제).
+모든 import — 테스트와 `vi.mock`/`vi.importActual`/`await import()` 경로 포함 — 는 심볼을 **정의한
+파일**을 가리킨다.
+
+- 다른 슬라이스·레이어의 심볼: `@/` path alias로 정의 파일을 직접 import
+- 같은 슬라이스 내부 segment 간 참조: relative import (`../model/types`)
+- `vi.mock`은 코드가 실제로 import하는 **정의 파일 경로**를 mock한다(모듈 단위로 가로채므로 경로가 다르면 mock이 적용되지 않는다)
 
 ```typescript
 // ✅ 같은 slice 내 — relative import
 // src/features/auth/ui/LoginForm.tsx
 import type { AuthFormState } from '../model/types';
 
-// ❌ 같은 slice 내라도 절대경로 internal path — no-restricted-imports 위반
-// src/features/auth/ui/LoginForm.tsx
-import type { AuthFormState } from '@/features/auth/model/types'; // 차단됨
+// ✅ 다른 slice — 정의 파일 직접 import
+import { useSymbolModel } from '@/features/symbol-model/model/SymbolModelContext';
 
-// ❌ 다른 slice의 internal path — no-restricted-imports 위반
-// src/features/auth/ui/LoginForm.tsx
-import type { SymbolModelState } from '@/features/symbol-model/model/types'; // 차단됨
-
-// ✅ 다른 slice는 public API(barrel)로만 접근
+// ❌ 슬라이스 루트(barrel) import — barrel은 존재하지 않는다
 import { useSymbolModel } from '@/features/symbol-model';
 ```
-
-> "Import Path Rules"의 path-alias 규칙은 **cross-slice** import 기준이며, 같은 슬라이스 내부 segment 간 참조는 relative import를 사용한다.
 
 ---
 

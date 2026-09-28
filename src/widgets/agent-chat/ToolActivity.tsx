@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useState, type ComponentType } from 'react';
-import type { ToolActivityItem } from '@/features/agent-chat';
+import type { ToolActivityItem } from '@/features/agent-chat/model/types';
 import { cn } from '@/shared/lib/cn';
 import {
     BankIcon,

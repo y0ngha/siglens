@@ -1,4 +1,5 @@
 import 'server-only';
+import { newsCacheTag } from '@/entities/news-article/lib/newsCacheTag';
 import { revalidateTag } from 'next/cache';
 
 import { cache } from 'react';
@@ -36,13 +37,14 @@ import { analyzeNewsCards } from './lib/analyzeNewsCards';
 import { PREWARM_NEWS_CARD_LIMIT } from './lib/newsAnalysisConstants';
 import { selectUnanalyzed } from './lib/selectUnanalyzed';
 import {
+    countChangedRows,
     ingestNewsForSymbol,
     NewsIngestWriteError,
 } from './lib/ingestNewsForSymbol';
-import { getNextEarningsReport } from '@/entities/earnings-report';
+import { getNextEarningsReport } from '@/entities/earnings-report/api';
 import { loadNewsMacroCalendar } from '@/entities/economy/api/loadNewsMacroCalendar';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
-import { getDescriptor } from '@/shared/config/marketProfile';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { PREWARM_PROVIDER_FALLBACK } from '@/shared/config/prewarm';
 
 /** Domain-level row returned from the `news` table; extends the display projection with persistence-only fields. */
@@ -366,12 +368,10 @@ export async function prewarmNews(
     companyName: string,
     force: boolean
 ): Promise<RunNewsAnalysisResult & { newsFetchFailed?: true }> {
-    // 리뷰 지적(PR #700): resolveAssetClass()는 내부적으로
-    // resolveMarketProfile() → getAssetInfo()를 호출하는데, 아래
-    // ingestNewsForSymbol도 profileId를 안 넘기면 resolveMarketProfile을 다시
-    // 호출해 심볼당 밤마다 getAssetInfo Redis 왕복이 중복된다. 여기서 프로필을
-    // 한 번만 resolve하고 assetClass는 그 결과에서 파생(resolveAssetClass가
-    // 내부적으로 하는 것과 동일)한 뒤 ingestNewsForSymbol에 그대로 전달한다.
+    // resolveMarketProfile()은 내부적으로 getAssetInfo()를 호출한다. 아래
+    // ingestNewsForSymbol에 profileId를 안 넘기면 다시 resolve해 심볼당 밤마다
+    // getAssetInfo Redis 왕복이 중복된다. 여기서 프로필을 한 번만 resolve하고
+    // assetClass는 그 결과에서 파생한 뒤 ingestNewsForSymbol에 그대로 전달한다.
     const profileId = await resolveMarketProfile(symbol);
     const descriptor = getDescriptor(profileId);
     const { assetClass } = descriptor;
@@ -405,12 +405,8 @@ export async function prewarmNews(
     // 빈 목록을 계속 서빙해, Fix B의 최대 성과가 최대 12시간 노출되지 않는다(감사 F1).
     // `revalidateTag('seo-snapshot:…')`는 다른 태그이고 전 탭 수렴 시에만 발화하므로
     // 이 경로를 대신하지 못한다.
-    const changedCount =
-        ingested?.upsertSettled.filter(
-            r => r.status === 'fulfilled' && r.value === true
-        ).length ?? 0;
-    if (changedCount > 0) {
-        revalidateTag(`news:${symbol.toUpperCase()}`, 'max');
+    if (ingested !== null && countChangedRows(ingested) > 0) {
+        revalidateTag(newsCacheTag(symbol), 'max');
     }
 
     // `rows`만 가변이다 — 보강을 돌리면 그 결과를 반영해 다시 읽는다.
@@ -487,34 +483,3 @@ export async function prewarmNews(
     });
     return ingested === null ? { ...result, newsFetchFailed: true } : result;
 }
-
-/**
- * `server-only` 모듈의 슬라이스 진입점 재노출.
- *
- * 클라이언트 안전 barrel(`index.ts`)로는 내보낼 수 없다 — 그 파일의 헤더가
- * 명시하듯 `server-only`가 client 번들에 섞이면 build가 깨진다. 그렇다고
- * 소비자가 `lib/<file>`을 깊게 파고들면 슬라이스 경계가 흐려지므로, 서버
- * 소비자용 진입점인 이 파일이 대신 재노출한다.
- */
-export { hasAnalyzableNews } from './lib/hasAnalyzableNews';
-export { analyzeNewsCards } from './lib/analyzeNewsCards';
-export { selectUnanalyzed } from './lib/selectUnanalyzed';
-export {
-    CHAT_SYNC_NEWS_CARD_LIMIT,
-    VISITOR_NEWS_CARD_LIMIT,
-} from './lib/newsAnalysisConstants';
-export { ingestNewsForSymbol } from './lib/ingestNewsForSymbol';
-export { isRecentlyFetched } from './lib/newsRefreshFlag';
-export { NEWS_ANALYSIS_LOOKBACK_MS } from './lib/newsLookback';
-
-// Naver news search, re-exported for server consumers outside this slice
-// (the agent's `web_search` tool blends it with Brave for Korean queries).
-export {
-    hasNaverCredentials,
-    naverAiCredentials,
-    searchNaverNews,
-    searchNaverWeb,
-    stripNaverMarkup,
-    toIsoPublishedAt,
-    type NaverCredentials,
-} from './lib/naverNewsSearch';

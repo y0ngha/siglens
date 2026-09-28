@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { StockChatLanding } from '@/views/lp';
+import { StockChatLanding } from '@/views/lp/StockChatLanding';
 
 /** Ad-only page: never indexed, no canonical, alternates or JSON-LD. */
 export const metadata: Metadata = {

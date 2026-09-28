@@ -1,11 +1,10 @@
 'use client';
 
-import {
-    useDefaultModelId,
-    useDefaultReasoning,
-    useAnalysisSettingsHydrated,
-} from '@/features/symbol-model';
-import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
+import { useDefaultModelId } from '@/features/symbol-model/hooks/useDefaultModelId';
+import { useDefaultReasoning } from '@/features/symbol-model/hooks/useDefaultReasoning';
+import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
+import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
+import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
 import { useCongressTrend } from './hooks/useCongressTrend';
 import { CongressTrendSummaryError } from './CongressTrendSummaryError';
 import { CongressTrendSummarySkeleton } from './CongressTrendSummarySkeleton';

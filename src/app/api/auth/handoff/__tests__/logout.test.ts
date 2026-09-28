@@ -13,8 +13,8 @@ vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
     getCurrentUser: m.getCurrentUser,
 }));
 vi.mock('@/entities/auth/lib/logoutUser', () => ({ logoutUser: m.logoutUser }));
-vi.mock('@/entities/auth/lib/db', () => ({
-    getAuthDatabaseClient: () => ({ db: {} }),
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: () => ({ db: {} }),
 }));
 vi.mock('@/entities/auth/api', () => ({ DrizzleSessionRepository: vi.fn() }));
 vi.mock('@/shared/config/aiHost', () => ({

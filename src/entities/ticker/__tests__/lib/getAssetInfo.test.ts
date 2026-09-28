@@ -10,7 +10,7 @@ const {
     mockCache,
     mockRepository,
     createCacheProviderMock,
-    tryGetTickerDatabaseClientMock,
+    tryGetDatabaseClientMock,
     repositoryFactoryMock,
     searchBySymbolMock,
     getKoreanNamesMock,
@@ -28,7 +28,7 @@ const {
         upsert: vi.fn(),
     },
     createCacheProviderMock: vi.fn(),
-    tryGetTickerDatabaseClientMock: vi.fn(),
+    tryGetDatabaseClientMock: vi.fn(),
     repositoryFactoryMock: vi.fn(),
     searchBySymbolMock: vi.fn(),
     getKoreanNamesMock: vi.fn(),
@@ -45,8 +45,9 @@ vi.mock('@y0ngha/siglens-core', async () => ({
     ...(await vi.importActual('@y0ngha/siglens-core')),
     createCacheProvider: () => createCacheProviderMock(),
 }));
-vi.mock('../../lib/db', () => ({
-    tryGetTickerDatabaseClient: () => tryGetTickerDatabaseClientMock(),
+vi.mock('@/shared/db/client', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/db/client')>()),
+    tryGetDatabaseClient: () => tryGetDatabaseClientMock(),
 }));
 vi.mock('../../api', () => ({
     DrizzleAssetTranslationRepository: class {
@@ -129,8 +130,8 @@ describe('getAssetInfo', () => {
         createCacheProviderMock.mockReturnValue(
             mockCache as unknown as CacheProvider
         );
-        tryGetTickerDatabaseClientMock.mockReset();
-        tryGetTickerDatabaseClientMock.mockReturnValue(fakeDbClient);
+        tryGetDatabaseClientMock.mockReset();
+        tryGetDatabaseClientMock.mockReturnValue(fakeDbClient);
         repositoryFactoryMock.mockReset();
         repositoryFactoryMock.mockReturnValue(
             mockRepository as unknown as AssetTranslationRepository
@@ -304,7 +305,7 @@ describe('getAssetInfo', () => {
 
     it('cache 와 DB 클라이언트 모두 없으면 FMP 만 호출', async () => {
         createCacheProviderMock.mockReturnValue(null);
-        tryGetTickerDatabaseClientMock.mockReturnValue(null);
+        tryGetDatabaseClientMock.mockReturnValue(null);
         searchBySymbolMock.mockResolvedValue([apple]);
         await expect(getAssetInfo('AAPL')).resolves.toEqual({
             symbol: 'AAPL',
@@ -351,7 +352,7 @@ describe('getAssetInfo', () => {
     });
 
     it('DB 클라이언트 없을 때 한국명 보유 경로는 cache 만 갱신', async () => {
-        tryGetTickerDatabaseClientMock.mockReturnValue(null);
+        tryGetDatabaseClientMock.mockReturnValue(null);
         mockCache.get.mockResolvedValue(null);
         searchBySymbolMock.mockResolvedValue([apple]);
         getKoreanNamesMock.mockResolvedValue({ AAPL: '애플' });
@@ -472,7 +473,7 @@ describe('getAssetInfo', () => {
 
     it('FMP 인프라 에러를 throw로 전파한다 (null로 degrade하지 않음)', async () => {
         createCacheProviderMock.mockReturnValue(null); // 캐시 미스
-        tryGetTickerDatabaseClientMock.mockReturnValue(null); // DB 미가용 → FMP fall-through
+        tryGetDatabaseClientMock.mockReturnValue(null); // DB 미가용 → FMP fall-through
         searchBySymbolMock.mockRejectedValue(new Error('FMP HTTP 429'));
 
         await expect(getAssetInfo('AAPL')).rejects.toThrow('FMP HTTP 429');
@@ -656,7 +657,7 @@ describe('getAssetInfo', () => {
 
     it('getAssetInfo가 searchBySymbol을 throwOnInfraFailure로 호출한다', async () => {
         createCacheProviderMock.mockReturnValue(null);
-        tryGetTickerDatabaseClientMock.mockReturnValue(null);
+        tryGetDatabaseClientMock.mockReturnValue(null);
         searchBySymbolMock.mockResolvedValue([]); // 200 빈 결과 → null
 
         await getAssetInfo('NOPE');

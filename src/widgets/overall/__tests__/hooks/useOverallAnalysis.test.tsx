@@ -1,13 +1,13 @@
 import koMessages from '../../../../../messages/ko.json';
 import type { Mock } from 'vitest';
 import { useOverallAnalysis } from '@/widgets/overall/hooks/useOverallAnalysis';
-import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import type { QueryClient } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
 import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
 
-vi.mock('@/shared/hooks/useAnalysisStream', () => ({
+vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({
     runAnalysisStream: vi.fn(),
 }));
 vi.mock('@/shared/lib/sleep', () => ({

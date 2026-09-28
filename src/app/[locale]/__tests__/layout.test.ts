@@ -13,8 +13,12 @@ vi.mock('@/app/_components/AuthSessionHeaderClient', () => ({
 }));
 vi.mock('@/widgets/layout/Footer', () => ({ Footer: () => null }));
 vi.mock('@/widgets/layout/SiteJsonLd', () => ({ SiteJsonLd: () => null }));
-vi.mock('@/features/pwa-install', () => ({ PwaBanner: () => null }));
-vi.mock('@/widgets/notice-popup', () => ({ NoticePopupLoader: () => null }));
+vi.mock('@/features/pwa-install/ui/PwaBanner', () => ({
+    PwaBanner: () => null,
+}));
+vi.mock('@/widgets/notice-popup/ui/NoticePopupLoader', () => ({
+    NoticePopupLoader: () => null,
+}));
 vi.mock('@/app/providers', () => ({
     ReactQueryProvider: ({ children }: { children: unknown }) => children,
 }));

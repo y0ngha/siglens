@@ -6,10 +6,16 @@ import dynamic from 'next/dynamic';
 import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
-import { formatNoticeDate } from '@/entities/notice';
+import { formatNoticeDate } from '@/entities/notice/lib/formatNoticeDate';
 import { toSafeHttpUrl } from '@/shared/lib/safeUrl';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import {
+    BUTTON_GHOST,
+    BUTTON_OUTLINE,
+    BUTTON_PRIMARY,
+} from '@/shared/lib/buttonStyles';
+import { CloseIcon } from '@/shared/ui/StrokeIcons';
 import { useNoticePopup } from '../hooks/useNoticePopup';
 
 const MODAL_TITLE_ID = 'notice-modal-title';
@@ -107,9 +113,10 @@ export function NoticePopup() {
                     <button
                         onClick={advance}
                         aria-label={t('NoticePopup.a5ce49')}
-                        className="shrink-0 text-xl leading-none text-secondary-500 transition-colors hover:text-secondary-300 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                        // 44px 타깃을 유지하면서 음수 여백으로 제목 줄 높이는 그대로 둔다.
+                        className="-my-2.5 -mr-2.5 flex size-11 shrink-0 items-center justify-center rounded-lg text-secondary-500 transition-colors hover:text-secondary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
-                        ✕
+                        <CloseIcon className="size-5" />
                     </button>
                 </div>
                 {/* 긴 마크다운이 푸터(버튼)를 화면 밖으로 밀지 않도록 본문만 스크롤시킨다.
@@ -145,7 +152,10 @@ export function NoticePopup() {
                             href={safeLinkUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="mt-4 inline-block rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-500 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
+                            className={cn(
+                                BUTTON_PRIMARY,
+                                'mt-4 px-4 py-2 text-sm'
+                            )}
                         >
                             {current.linkLabel ?? safeLinkUrl}
                         </a>
@@ -154,13 +164,17 @@ export function NoticePopup() {
                 <div className="mt-5 flex shrink-0 items-center justify-end gap-3">
                     <button
                         onClick={dontShowAgain}
-                        className="text-sm text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                        className={cn(BUTTON_GHOST, 'text-sm')}
                     >
                         {t('NoticePopup.e83def')}
                     </button>
                     <button
                         onClick={advance}
-                        className="rounded-lg border border-border-control px-4 py-2 text-sm text-secondary-200 transition-colors hover:bg-secondary-700 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                        // 패널이 secondary-800이라 BUTTON_OUTLINE의 hover 면(800)이 보이지 않는다.
+                        className={cn(
+                            BUTTON_OUTLINE,
+                            'px-4 py-2 text-sm hover:bg-secondary-700'
+                        )}
                     >
                         {t('NoticePopup.94b7db')}
                     </button>

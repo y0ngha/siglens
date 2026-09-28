@@ -4,7 +4,7 @@ import {
     relatedSymbolsFor,
     type RelatedSymbol,
 } from '@/shared/config/relatedSymbols';
-import { getAssetInfoResilient } from '@/entities/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 

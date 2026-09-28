@@ -1,25 +1,27 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useNewsAnalysisTrigger, useWaitForNewsCards } from '@/widgets/news';
+import { useNewsAnalysisTrigger } from '@/entities/news-article/hooks/useNewsAnalysisTrigger';
+import { useWaitForNewsCards } from '@/entities/news-article/hooks/useWaitForNewsCards';
 import { useOverallAnalysis } from './hooks/useOverallAnalysis';
 import { OverallTriggerCta } from './OverallTriggerCta';
 import { ReanalyzeButton } from './ReanalyzeButton';
-import {
-    useDefaultModelId,
-    useDefaultReasoning,
-    useAnalysisSettingsHydrated,
-    useSymbolModel,
-} from '@/features/symbol-model';
+import { useDefaultModelId } from '@/features/symbol-model/hooks/useDefaultModelId';
+import { useDefaultReasoning } from '@/features/symbol-model/hooks/useDefaultReasoning';
+import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
+import { useSymbolModel } from '@/features/symbol-model/model/SymbolModelContext';
 import { cn } from '@/shared/lib/cn';
 import { type OverallAnalysisResponse } from '@y0ngha/siglens-core';
 import { type CSSProperties } from 'react';
 import { useTimeframeFromUrl } from './hooks/useTimeframeFromUrl';
-import type { AssetClass } from '@/shared/config/marketProfile';
-import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
+import type { AssetClass } from '@/shared/config/marketProfile/types';
+import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
+import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
 import { OverallView } from './OverallView';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
+import { Spinner } from '@/shared/ui/Spinner';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 const SKELETON_LINE_COUNT = 3;
 const SKELETON_WIDTH_START_PCT = 85;
@@ -92,7 +94,6 @@ export function OverallContent({
         timeframe,
         modelId,
         initialAnalysis,
-        assetClass,
         reasoning,
         isSettingsHydrated
     );
@@ -162,7 +163,7 @@ export function OverallContent({
             <section
                 aria-labelledby="overall-loading-heading"
                 aria-busy="true"
-                className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+                className={cn(SURFACE_CARD, 'p-6')}
             >
                 <h2
                     id="overall-loading-heading"
@@ -171,10 +172,7 @@ export function OverallContent({
                     {t('OverallContent.8b7ae7')}
                 </h2>
                 <div className="flex items-center gap-3">
-                    <div
-                        aria-hidden="true"
-                        className="h-4 w-4 animate-spin rounded-full border-2 border-primary-500 border-t-transparent motion-reduce:animate-none"
-                    />
+                    <Spinner />
                     <p
                         className="text-sm text-secondary-400"
                         aria-live="polite"

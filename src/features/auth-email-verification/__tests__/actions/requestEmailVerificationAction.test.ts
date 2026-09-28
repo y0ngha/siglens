@@ -1,11 +1,15 @@
 import type { MockedFunction } from 'vitest';
-vi.mock('@/entities/auth', () => ({
+vi.mock('@/entities/auth/lib/errorMessages', () => ({
     AUTH_SERVICE_UNAVAILABLE_MESSAGE:
         '서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
+}));
+vi.mock('@/entities/auth/lib/requestEmailVerification', () => ({
     requestEmailVerification: vi.fn(),
 }));
-vi.mock('@/entities/email-token', () => ({
+vi.mock('@/entities/email-token/api', () => ({
     createEmailTokenStore: vi.fn(),
+}));
+vi.mock('@/entities/email-token/templates/emailVerificationEmail', () => ({
     buildEmailVerificationEmail: vi.fn(({ to, code }) => ({
         to,
         subject: 'subj',
@@ -19,14 +23,10 @@ vi.mock('@/shared/email/dispatcher', () => ({
     createEmailDispatcher: vi.fn(() => ({ sendEmail: sendEmailMock })),
 }));
 
-import {
-    requestEmailVerification,
-    AUTH_SERVICE_UNAVAILABLE_MESSAGE,
-} from '@/entities/auth';
-import {
-    createEmailTokenStore,
-    buildEmailVerificationEmail,
-} from '@/entities/email-token';
+import { requestEmailVerification } from '@/entities/auth/lib/requestEmailVerification';
+import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth/lib/errorMessages';
+import { createEmailTokenStore } from '@/entities/email-token/api';
+import { buildEmailVerificationEmail } from '@/entities/email-token/templates/emailVerificationEmail';
 import { requestEmailVerificationAction } from '@/features/auth-email-verification/actions/requestEmailVerificationAction';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 

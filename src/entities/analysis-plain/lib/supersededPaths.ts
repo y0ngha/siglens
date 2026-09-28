@@ -1,4 +1,4 @@
-import type { ProseEntry } from '@/entities/analysis-translation';
+import type { ProseEntry } from '@/entities/analysis-translation/lib/proseFields';
 
 /**
  * 재생성본이 존재하는 경로를 프롬프트 입력에서 제거한다.

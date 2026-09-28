@@ -1,34 +1,17 @@
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
-import { ISO_DATE_LENGTH, MS_PER_DAY } from '@/shared/config/time';
-import { nthSundayDay } from './eastern';
-
-// nthSundayDay는 eastern.ts의 정규 원시 함수를 위임해 사용한다.
-// 하위 호환성을 위해 re-export한다 (기존 import 경로 유지).
-export { nthSundayDay };
-
-// Intl 포매터 생성은 비싸다 — 모듈 스코프에 한 번만 만들어 재사용한다.
-const KST_DATE_PARTS_FORMATTER = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Seoul',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-});
+import { cachedDateTimeFormat } from '@/shared/lib/intlFormatCache';
+import { MS_PER_DAY } from '@/shared/config/time';
+import { zonedDate } from '@/shared/lib/marketSessionDate';
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
 /**
  * KST 기준 `YYYY-MM-DD`.
- *
- * `en-CA`로 바로 `format()`하면 ICU 버전에 따라 구분자가 `/`가 되거나 순서가
- * 바뀌어 `split('-')`이 NaN을 내놓는다. `formatToParts`로 조각을 뽑아 조립한다.
  *
  * 방문자 집계(`/api/presence`)와 그 클라이언트 비콘이 이 함수를 공유한다 —
  * 둘이 다른 날짜 경계를 쓰면 특정 날의 방문자가 통째로 누락된다.
  */
 export function kstDateKey(date: Date): string {
-    const parts = KST_DATE_PARTS_FORMATTER.formatToParts(date);
-    const year = parts.find(p => p.type === 'year')?.value ?? '';
-    const month = parts.find(p => p.type === 'month')?.value ?? '';
-    const day = parts.find(p => p.type === 'day')?.value ?? '';
-    return `${year}-${month}-${day}`;
+    return zonedDate(date, 'Asia/Seoul');
 }
 
 /**
@@ -44,9 +27,7 @@ export function kstDateKey(date: Date): string {
  */
 export function kstDateKeyDaysBefore(dateKey: string, days: number): string {
     const base = new Date(`${dateKey}T00:00:00Z`);
-    return new Date(base.getTime() - days * MS_PER_DAY)
-        .toISOString()
-        .slice(0, ISO_DATE_LENGTH);
+    return toUtcIsoDate(new Date(base.getTime() - days * MS_PER_DAY));
 }
 
 /**
@@ -56,23 +37,16 @@ export function kstDateKeyDaysBefore(dateKey: string, days: number): string {
  * `오전 8:30`을 찍었다. 타임존은 KST로 고정한 채(레이블에 KST 의미가 붙어 있다)
  * 로케일만 따른다.
  */
-const KST_TIME_LABEL_FORMATTERS = new Map<string, Intl.DateTimeFormat>();
-
 function kstTimeLabelFormatter(
     locale: Locale,
     hour12: boolean
 ): Intl.DateTimeFormat {
-    const key = `${locale}:${hour12}`;
-    const cached = KST_TIME_LABEL_FORMATTERS.get(key);
-    if (cached) return cached;
-    const formatter = new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+    return cachedDateTimeFormat(INTL_LOCALE[locale], {
         timeZone: 'Asia/Seoul',
         hour: 'numeric',
         minute: '2-digit',
         hour12,
     });
-    KST_TIME_LABEL_FORMATTERS.set(key, formatter);
-    return formatter;
 }
 
 /** FMP `economic-calendar`의 `date` shape — 'YYYY-MM-DD HH:mm(:ss)?'. */

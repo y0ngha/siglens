@@ -87,7 +87,6 @@ describe('createAuthSession', () => {
         createSession: vi.fn(),
         findSession: vi.fn(),
         deleteSession: vi.fn(),
-        deleteExpiredSessions: vi.fn(),
     };
 
     const now = new Date('2026-05-25T12:00:00Z');

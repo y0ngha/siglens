@@ -1,4 +1,4 @@
-vi.mock('@/entities/user-tier/actions', () => ({
+vi.mock('@/entities/user-tier/actions/getUserTierAction', () => ({
     getUserTierAction: vi.fn(),
 }));
 
@@ -21,7 +21,7 @@ vi.mock('@y0ngha/siglens-core', () => ({
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import { getUserTierAction } from '@/entities/user-tier/actions';
+import { getUserTierAction } from '@/entities/user-tier/actions/getUserTierAction';
 import { useUserTier } from '@/features/symbol-model/hooks/useUserTier';
 
 const queryClients: QueryClient[] = [];

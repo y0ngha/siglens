@@ -3,7 +3,7 @@ import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { isBot } from '@/shared/api/isBot';
 import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
-import { isLocale, localePath, DEFAULT_LOCALE } from '@/shared/i18n/locales';
+import { localePath, resolveLocale } from '@/shared/i18n/locales';
 
 /**
  * 핸드오프 왕복에서 살려 보낼 쿼리. `q`는 siglens.io의 질문 진입 링크, 나머지는
@@ -47,7 +47,7 @@ export async function maybeHandoffRedirect(
     // Crawlers have no session anywhere; bouncing them through two hosts only
     // hands them a meta-refresh page instead of the landing they should index.
     if (isBot(await headers())) return;
-    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const resolved = resolveLocale(locale);
     // `?q=` must survive the round trip (otherwise a signed-in user lands on an
     // empty composer), and so must ad click ids (otherwise the visit loses its ad).
     const query = CARRIED_PARAMS.flatMap(key => {

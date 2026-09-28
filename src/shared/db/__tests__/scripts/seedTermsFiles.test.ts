@@ -11,7 +11,7 @@ describe('db/seeds/terms (real files)', () => {
         expect(() => validateSeedFiles(seeds)).not.toThrow();
         expect(
             seeds
-                .filter(s => s.kind === 'privacy' && s.version === 5)
+                .filter(s => s.kind === 'privacy' && s.version === 6)
                 .map(s => s.locale ?? 'ko')
                 .toSorted()
         ).toEqual(['en', 'ja', 'ko', 'zh']);

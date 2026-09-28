@@ -156,7 +156,7 @@ vi.mock('@/entities/options-chain/api', () => ({
     prewarmPollOptions: mockPrewarmPollOptions,
 }));
 
-import type { SeoSnapshotTab } from '@/entities/seo-snapshot';
+import type { SeoSnapshotTab } from '@/entities/seo-snapshot/model';
 import type { PrewarmSymbol } from '@/entities/seo-snapshot/lib/applicability';
 import {
     lastCompletedEtCloseWithBuffer,

@@ -1,8 +1,8 @@
 import {
     POLL_INTERVAL_MS,
     MAX_CONSECUTIVE_FAILURES,
-    NEWS_ROW_SERIALIZATION_LIMIT,
-} from '@/widgets/news/constants';
+} from '@/shared/config/cardPollingConfig';
+import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';
 
 describe('news constants', () => {
     it('POLL_INTERVAL_MS is 3 seconds', () => {

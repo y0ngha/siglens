@@ -1,4 +1,4 @@
-vi.mock('@/features/auth-oauth', () => ({
+vi.mock('@/features/auth-oauth/lib/providers', () => ({
     buildOAuthRedirectUri: vi
         .fn()
         .mockReturnValue('https://accounts.google.com/callback'),
@@ -8,6 +8,8 @@ vi.mock('@/features/auth-oauth', () => ({
             .mockReturnValue(new URL('https://accounts.google.com/authorize')),
     }),
     isOAuthProvider: vi.fn(),
+}));
+vi.mock('@/features/auth-oauth/lib/state', () => ({
     OAuthStateSecretMisconfiguredError: class extends Error {},
     issueOAuthState: vi.fn(),
 }));
@@ -18,11 +20,11 @@ vi.mock('@/shared/lib/auth/redirect', async () => ({
 
 import { NextRequest } from 'next/server';
 import { GET } from '@/app/api/auth/[provider]/start/route';
+import { isOAuthProvider } from '@/features/auth-oauth/lib/providers';
 import {
-    isOAuthProvider,
     issueOAuthState,
     OAuthStateSecretMisconfiguredError,
-} from '@/features/auth-oauth';
+} from '@/features/auth-oauth/lib/state';
 import type { MockedFunction } from 'vitest';
 
 const mockIsOAuthProvider = isOAuthProvider as MockedFunction<

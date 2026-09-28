@@ -20,6 +20,14 @@ export function marketBriefingSeedSurface(scope: DashboardScope): string {
 }
 
 /**
+ * `peekBriefingStatic`의 시장별 캐시 태그. 무효화하는 쪽(허브 프리웜 등)은 반드시 이
+ * 빌더를 써야 한다 — 따로 철자하면 한쪽만 바뀌는 순간 무효화가 빗나가 ISR이 stale하게 남는다.
+ */
+export function marketBriefingCacheTag(scope: DashboardScope): string {
+    return `market:briefing:${scope.id}`;
+}
+
+/**
  * ISR static-safe peek of the cached briefing. core peekBriefingCache(읽기전용)를 Next
  * data cache로 감싼다. 키는 date-hour(매시 자연 무효화)로 충분 — 같은 시간대면 같은
  * cached briefing. revalidate=1h, `market:briefing` tag.
@@ -45,6 +53,6 @@ export function peekBriefingStatic(
         // 미국·한국이 같은 시간대에 같은 엔트리를 공유했다 — 먼저 렌더된 쪽의
         // 브리핑이 다른 시장 페이지에 그대로 나간다.
         ['briefing-peek-static', scope.id, dateHour],
-        { revalidate: SECONDS_PER_HOUR, tags: [`market:briefing:${scope.id}`] }
+        { revalidate: SECONDS_PER_HOUR, tags: [marketBriefingCacheTag(scope)] }
     )();
 }

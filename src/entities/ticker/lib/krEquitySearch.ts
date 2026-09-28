@@ -1,4 +1,4 @@
-import { isKrEquitySymbol } from '@/shared/config/marketProfile';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { krExchangeOf } from './krExchange';
 import { CURATED_KOREAN_NAMES } from '@/shared/config/popular-tickers';
 import { isKoreanInput } from './ticker';
@@ -57,7 +57,7 @@ export async function searchKrEquity(
     if (!shouldQueryYahoo(trimmed)) return [];
 
     // 동적 import 근거는 krEquityQuoteName.ts 참조 — yahoo-finance2는 Node 전용이고
-    // 이 모듈은 클라이언트가 import하는 ticker barrel 체인에 닿아 있다.
+    // 이 모듈이 클라이언트 번들 그래프에 닿더라도 yahoo가 끌려가지 않게 한다.
     const { searchYahooQuotes } =
         await import('@/shared/api/yahoo/yahooSearch');
     const quotes = await searchYahooQuotes(trimmed);

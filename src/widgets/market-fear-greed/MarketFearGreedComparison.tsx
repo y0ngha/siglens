@@ -1,6 +1,6 @@
 import { useTranslations } from 'next-intl';
-import type { MarketFearGreedComparisonPoint } from '@/entities/market-fear-greed';
-import { FearGreedGauge } from '@/widgets/fear-greed';
+import type { MarketFearGreedComparisonPoint } from '@/entities/market-fear-greed/model';
+import { FearGreedGauge } from '@/shared/ui/FearGreedGauge';
 import { cn } from '@/shared/lib/cn';
 import { MARKET_COMPARISON_LABEL_KEY } from './marketComparisonLabelKey';
 

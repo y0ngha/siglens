@@ -1,5 +1,5 @@
 import type { NewsDisplayItem } from '@/shared/lib/types';
-import { NEWS_ROW_SERIALIZATION_LIMIT } from '../constants';
+import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';
 
 /**
  * 폴링이 돌려준 목록을 서버가 넘겨준 것과 **같은 상한**으로 맞춘다.

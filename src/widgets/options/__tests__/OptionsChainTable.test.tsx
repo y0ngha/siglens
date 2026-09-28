@@ -51,7 +51,7 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
     };
 });
 
-vi.mock('@/entities/options-chain', () => ({
+vi.mock('@/entities/options-chain/lib/findNearestStrike', () => ({
     findNearestStrikeIndex: (strikes: number[], target: number) =>
         strikes.indexOf(
             strikes.reduce((a, b) =>

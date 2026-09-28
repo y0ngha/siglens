@@ -19,10 +19,18 @@ export default function LoginError({ error, reset }: LoginErrorProps) {
 
     return (
         <main className="flex min-h-[calc(100dvh-var(--header-h))] flex-col items-center justify-center gap-4 bg-secondary-950 px-4 py-12 text-center">
-            <h1 className="text-2xl font-semibold text-secondary-50">
-                {t('error.ff2e32')}
-            </h1>
-            <p className="text-sm text-secondary-400">{t('error.de45bd')}</p>
+            <div
+                role="alert"
+                aria-atomic="true"
+                className="flex flex-col items-center gap-4"
+            >
+                <h1 className="text-2xl font-semibold text-secondary-50">
+                    {t('error.ff2e32')}
+                </h1>
+                <p className="text-sm text-secondary-400">
+                    {t('error.de45bd')}
+                </p>
+            </div>
             <div className="flex gap-3">
                 <button
                     type="button"

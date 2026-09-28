@@ -45,7 +45,7 @@ export function useTimeframeFromUrl(
         // 라우터를 우회하는 경로라 로케일 접두사를 직접 붙여야 한다 — 빼면
         // `/ja/AAPL/overall?tf=1Hour` 진입 시 주소가 조용히
         // `/AAPL/overall?tf=1Day`가 된다. 피해는 주소창에서 끝나지 않는다:
-        // `useAnalysisStream`이 `window.location.pathname`에서
+        // `runAnalysisStream`이 `window.location.pathname`에서
         // `x-siglens-locale`을 뽑으므로, 이후 재분석 요청이 `ko`로 나가 **일본어
         // 페이지에 한국어 분석문이 렌더된다**. 형제 파일
         // `views/symbol/hooks/useTimeframeChange.ts`에 같은 수정이 있다.

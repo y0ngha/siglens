@@ -3,7 +3,7 @@ import {
     ECONOMY_CATEGORY_LABEL_KEY,
     ECONOMY_INDICATOR_LABEL_KEY,
 } from '@/shared/config/economyLabelKey';
-import type { KrIndicatorCard } from '@/entities/economy';
+import type { KrIndicatorCard } from '@/entities/economy/api/getKrIndicatorCards';
 import {
     ECONOMY_INDICATOR_CATEGORIES,
     type EconomyCategoryKey,

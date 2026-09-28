@@ -7,7 +7,7 @@
 import koMessages from '../../../../../messages/ko.json';
 import type { Mock } from 'vitest';
 import { useAnalysis } from '@/views/symbol/hooks/useAnalysis';
-import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import type { RunAnalysisResult } from '@y0ngha/siglens-core';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
 type RunAnalysisActionResult =
@@ -16,25 +16,24 @@ type RunAnalysisActionResult =
 import {
     getReanalyzeCooldownMs,
     tryAcquireReanalyzeCooldown,
-} from '@/entities/analysis';
+} from '@/entities/analysis/lib/reanalyzeCooldown';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 
-vi.mock('@/shared/hooks/useAnalysisStream', () => ({
+vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({
     runAnalysisStream: vi.fn(),
 }));
 
-vi.mock('@/entities/analysis', async importOriginal => {
-    const actual = await importOriginal<typeof import('@/entities/analysis')>();
-    return {
-        // 쿨다운 I/O만 스텁하고, normalizeAnalysisResponse 등 순수 함수는 실제 구현을 사용한다.
-        ...actual,
-        getReanalyzeCooldownMs: vi.fn().mockResolvedValue(0),
-        tryAcquireReanalyzeCooldown: vi.fn().mockResolvedValue({ ok: true }),
-    };
-});
+// 쿨다운 I/O만 스텁하고, normalizeAnalysisResponse 등 순수 함수는 실제 구현을 사용한다.
+vi.mock('@/entities/analysis/lib/reanalyzeCooldown', async importOriginal => ({
+    ...(await importOriginal<
+        typeof import('@/entities/analysis/lib/reanalyzeCooldown')
+    >()),
+    getReanalyzeCooldownMs: vi.fn().mockResolvedValue(0),
+    tryAcquireReanalyzeCooldown: vi.fn().mockResolvedValue({ ok: true }),
+}));
 
 vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),

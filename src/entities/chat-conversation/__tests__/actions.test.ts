@@ -22,12 +22,10 @@ vi.mock('@/shared/db/client', () => ({
 vi.mock('@/entities/chat-conversation/api', () => ({
     DrizzleChatConversationRepository: RepoCtor,
 }));
-import {
-    deleteConversationAction,
-    getConversationAction,
-    listConversationsAction,
-    renameConversationAction,
-} from '@/entities/chat-conversation/actions';
+import { deleteConversationAction } from '@/entities/chat-conversation/actions/deleteConversationAction';
+import { getConversationAction } from '@/entities/chat-conversation/actions/getConversationAction';
+import { listConversationsAction } from '@/entities/chat-conversation/actions/listConversationsAction';
+import { renameConversationAction } from '@/entities/chat-conversation/actions/renameConversationAction';
 
 const VALID_ID = '11111111-1111-1111-1111-111111111111';
 const VALID_USER = '22222222-2222-2222-2222-222222222222';

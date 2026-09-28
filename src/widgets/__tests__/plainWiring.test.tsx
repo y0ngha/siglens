@@ -12,14 +12,14 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
-import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import { useNewsAnalysis } from '@/widgets/news/hooks/useNewsAnalysis';
 import { useOptionsAnalysis } from '@/widgets/options/hooks/useOptionsAnalysis';
 import { useFinancialsAnalysis } from '@/widgets/financials/hooks/useFinancialsAnalysis';
 import { useCongressTrend } from '@/widgets/congress/hooks/useCongressTrend';
 import { useFundamentalAnalysis } from '@/widgets/fundamental/hooks/useFundamentalAnalysis';
 
-vi.mock('@/shared/hooks/useAnalysisStream', () => ({
+vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({
     runAnalysisStream: vi.fn(),
 }));
 vi.mock('@/shared/lib/sleep', () => ({

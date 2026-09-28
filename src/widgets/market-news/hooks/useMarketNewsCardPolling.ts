@@ -1,10 +1,10 @@
 'use client';
 
-import type { NewsFeedCategoryId } from '@/entities/market-news';
+import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
 import { useState, useEffect, useRef } from 'react';
-import type { MarketNewsCardItem } from '@/entities/market-news';
+import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
 
-import { POLL_INTERVAL_MS } from '../constants';
+import { POLL_INTERVAL_MS } from '@/shared/config/cardPollingConfig';
 import { pollMarketNewsCardsStep } from '../utils/pollMarketNewsCardsStep';
 
 export interface UseMarketNewsCardPollingReturn {

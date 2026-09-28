@@ -1,4 +1,4 @@
-import type { SeoSnapshotTab } from '@/entities/seo-snapshot';
+import type { SeoSnapshotTab } from '@/entities/seo-snapshot/model';
 import { hasTechnicalProse } from './renderers/technicalContent';
 import { hasOverallProse } from './renderers/overallContent';
 import { hasCongressProse } from './renderers/congressContent';

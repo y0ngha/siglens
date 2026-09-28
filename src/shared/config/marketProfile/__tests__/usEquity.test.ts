@@ -4,11 +4,6 @@ import { getDescriptor } from '../registry';
 describe('us-equity market profile descriptor', () => {
     const d = getDescriptor('us-equity');
 
-    it('passes the canonical symbol straight through to FMP (no mapping needed)', () => {
-        expect(d.toProviderSymbol('AAPL')).toBe('AAPL');
-        expect(d.toProviderSymbol('BRK.B')).toBe('BRK.B');
-    });
-
     it('formats prices as USD with 2 decimals', () => {
         expect(d.priceFormat.currency).toBe('USD');
         expect(d.priceFormat.precision).toEqual({ kind: 'fixed', digits: 2 });

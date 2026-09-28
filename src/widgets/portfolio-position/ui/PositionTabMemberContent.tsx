@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useSymbolHolding } from '@/features/portfolio-holding';
+import { useSymbolHolding } from '@/features/portfolio-holding/hooks/useSymbolHolding';
 import { computePosition } from '../lib/positionGeometry';
 import { PositionBuilding } from './PositionBuilding';
 import { PositionCard } from './PositionCard';

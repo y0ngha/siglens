@@ -1,7 +1,7 @@
 'use client';
 
 import { usePortfolioHoldings } from '@/entities/portfolio/hooks/usePortfolioHoldings';
-import type { PortfolioHoldingView } from '@/entities/portfolio';
+import type { PortfolioHoldingView } from '@/entities/portfolio/model';
 
 export interface UseSymbolHoldingReturn {
     holding: PortfolioHoldingView | null;

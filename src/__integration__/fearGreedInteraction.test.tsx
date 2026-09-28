@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { FearGreedHero } from '@/widgets/fear-greed/FearGreedHero';
-import { FearGreedGauge } from '@/widgets/fear-greed/FearGreedGauge';
+import { FearGreedGauge } from '@/shared/ui/FearGreedGauge';
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
 
 vi.mock('next/navigation', () => ({

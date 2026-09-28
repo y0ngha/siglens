@@ -2,12 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const { mockQuantize } = vi.hoisted(() => ({ mockQuantize: vi.fn() }));
 import type { BarsData, IndicatorResult } from '@y0ngha/siglens-core';
-import { buildTechnicalFacts } from '@/views/symbol/utils/technicalFacts';
+import { buildTechnicalFacts } from '@/entities/bars/lib/technicalFacts';
 
 vi.mock('next/cache', () => ({
     unstable_cache: (fn: (...a: unknown[]) => unknown) => fn, // identity로 통과 검증
 }));
-vi.mock('@/entities/bars/actions', () => ({
+vi.mock('@/entities/bars/actions/getBarsAction', () => ({
     getBarsAction: vi.fn(),
 }));
 vi.mock('@/entities/bars/lib/quantizeBars', () => ({
@@ -24,7 +24,7 @@ import {
     getQuantizedBarsStatic,
     getSeedBarsStatic,
 } from '@/entities/bars/lib/barsStaticCache';
-import { getBarsAction } from '@/entities/bars/actions';
+import { getBarsAction } from '@/entities/bars/actions/getBarsAction';
 
 const mockBars = vi.mocked(getBarsAction);
 

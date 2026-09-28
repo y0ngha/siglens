@@ -1,17 +1,15 @@
 'use server';
 
-import { requestPasswordReset } from '@/entities/auth';
+import { requestPasswordReset } from '@/entities/auth/lib/requestPasswordReset';
 import { getTranslations } from 'next-intl/server';
 import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
 import { DrizzleUserRepository } from '@/entities/auth/api';
-import {
-    createEmailTokenStore,
-    buildPasswordResetEmail,
-} from '@/entities/email-token';
+import { createEmailTokenStore } from '@/entities/email-token/api';
+import { buildPasswordResetEmail } from '@/entities/email-token/templates/passwordResetEmail';
 import type { ForgotPasswordFormState } from '@/shared/lib/auth/formTypes';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
-import { createEmailDispatcher } from '@/shared/email';
-import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
+import { createEmailDispatcher } from '@/shared/email/dispatcher';
+import { getDatabaseClient } from '@/shared/db/client';
 
 /** 형식 검사만 한다 — 도메인 존재 확인이 아니다. */
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -36,7 +34,7 @@ export async function requestPasswordResetAction(
             return { submitted: true };
         }
 
-        const { db } = getAuthDatabaseClient();
+        const { db } = getDatabaseClient();
         const repo = new DrizzleUserRepository(db);
         const emailDispatcher = createEmailDispatcher();
         // 본문도 링크와 같은 로케일로 — 링크만 로케일화하고 본문을 한국어로

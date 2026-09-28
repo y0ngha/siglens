@@ -1,7 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import type { SectorSignalsResult } from '@y0ngha/siglens-core';
-import { buildSectorFacts } from '@/entities/sector-signal';
+import { buildSectorFacts } from '@/entities/sector-signal/lib/sectorFacts';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 

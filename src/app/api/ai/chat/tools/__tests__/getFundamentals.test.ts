@@ -21,7 +21,7 @@ const {
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: isTabAllowed,
 }));
-vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
+vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile,
 }));
 vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
@@ -31,16 +31,14 @@ vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
 // derives `analystEstimate.period` with the SAME predicate
 // `getFundamentalDataProvider` routes on, so a fake here
 // would let the two silently diverge without a test ever catching it.
-vi.mock('@/shared/config/marketProfile', async importOriginal => {
-    const actual =
-        await importOriginal<typeof import('@/shared/config/marketProfile')>();
-    return {
-        ...actual,
-        getDescriptor: (id: string) => ({
-            priceFormat: { currency: id === 'kr-equity' ? 'KRW' : 'USD' },
-        }),
-    };
-});
+vi.mock('@/shared/config/marketProfile/registry', async importOriginal => ({
+    ...(await importOriginal<
+        typeof import('@/shared/config/marketProfile/registry')
+    >()),
+    getDescriptor: (id: string) => ({
+        priceFormat: { currency: id === 'kr-equity' ? 'KRW' : 'USD' },
+    }),
+}));
 vi.mock('@/shared/api/fmp/getFundamentalDataProvider', () => ({
     getFundamentalDataProvider: getProvider,
 }));
@@ -50,7 +48,9 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
 vi.mock('@/shared/api/market/sessionSpecFor', () => ({
     sessionSpecFor,
 }));
-vi.mock('@/entities/earnings-report', () => ({ getNextEarningsReport }));
+vi.mock('@/entities/earnings-report/api', () => ({
+    getNextEarningsReport,
+}));
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: 'fake-db' }),
 }));

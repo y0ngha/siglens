@@ -18,7 +18,6 @@
  * (`keysForFiles`의 `translatorNamespace.size === 0` 조기 반환). 여기서
  * `t('search.triggerLabel')`을 부르면 그 키가 클라이언트 페이로드에서 통째로
  * 빠져, 하이드레이션 후 화면에 원시 키 문자열이 뜬다 — 전 로케일에서, ko 포함.
- * `views/symbol/utils/chartPageHeading.ts`가 같은 이유로 같은 형태다.
  */
 
 /** 아이콘 전용 트리거의 접근 이름. 보이는 텍스트가 없을 때만 쓴다. */

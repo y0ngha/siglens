@@ -14,7 +14,8 @@ import { OptionsAiAnalysisError } from './OptionsAiAnalysisError';
 import { OptionsAiAnalysisSkeleton } from './OptionsAiAnalysisSkeleton';
 import { useOptionsAnalysis } from './hooks/useOptionsAnalysis';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
-import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
+import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
+import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
 import {
     HEADING_SECTION,
     HEADING_SUBSECTION,
