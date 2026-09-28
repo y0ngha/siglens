@@ -21,23 +21,27 @@ import {
     type ModelId,
 } from '@y0ngha/siglens-core';
 import type { DisplayMessage } from '@/shared/lib/types';
-import {
-    chatAction,
-    getRemainingTokensAction,
-} from '@/entities/chat-message/actions';
+import { chatAction } from '@/entities/chat-message/actions/chatAction';
+import { getRemainingTokensAction } from '@/entities/chat-message/actions/getRemainingTokensAction';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
+import { CHAT_NON_CHART_BASELINE_ANALYSIS } from '@/entities/chat-message/lib/fallbackAnalysis';
 import {
-    CHAT_NON_CHART_BASELINE_ANALYSIS,
     type SymbolChatActionResult,
     type SymbolChatErrorCode,
-} from '@/entities/chat-message';
+} from '@/entities/chat-message/model';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { useTranslations } from 'next-intl';
 import { usePageContextLabel } from './usePageContextLabel';
-import { useSymbolChat } from '@/features/symbol-chat';
+import { useSymbolChat } from '@/features/symbol-chat/hooks/useSymbolChat';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
-import { getDescriptor, marketProfileOf } from '@/shared/config/marketProfile';
-import { useModelGate, type ModelGateState } from '@/features/premium-gate';
+import {
+    getDescriptor,
+    marketProfileOf,
+} from '@/shared/config/marketProfile/registry';
+import {
+    useModelGate,
+    type ModelGateState,
+} from '@/features/premium-gate/hooks/useModelGate';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { migrateLegacyChatModel } from '@/features/symbol-model/lib/migrateChatModel';
 import { LOCAL_STORAGE_CHAT_MODEL_KEY } from '@/shared/lib/storageKeys';

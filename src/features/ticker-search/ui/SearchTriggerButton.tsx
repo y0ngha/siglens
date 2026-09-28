@@ -43,11 +43,9 @@ interface SearchTriggerButtonProps {
  * 모바일에서 `display:none`이 되면 `ml-auto`도 함께 사라져 CTA와 햄버거가 로고 쪽으로
  * 붕괴한다. 그래서 모바일에서 보이는 이 버튼이 그 역할을 이어받는다.
  *
- * 아이콘은 **인라인 SVG**다. `features/ticker-search` 배럴은 이미 33개 전 라우트의
- * first-load 청크에 들어 있다 — root layout의 `SearchOverlayProvider`와 헤더의
- * `HeaderSearch`(둘 다 클라이언트 컴포넌트)가 이 배럴을 소비하고 `package.json`에
- * `sideEffects`가 없어 미사용 re-export가 제거되지 않기 때문이다. 아이콘 패키지를
- * 들이면 그 무게가 그대로 전역으로 퍼진다.
+ * 아이콘은 **인라인 SVG**다. 이 버튼은 root layout의 `SearchOverlayProvider`와 헤더의
+ * `HeaderSearch`(둘 다 클라이언트 컴포넌트)를 통해 33개 전 라우트의 first-load 청크에
+ * 들어간다. 아이콘 패키지를 들이면 그 무게가 그대로 전역으로 퍼진다.
  * `widgets/layout/HeaderMobileMenu`도 같은 이유로 인라인 SVG를 쓴다.
  */
 export function SearchTriggerButton({

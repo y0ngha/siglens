@@ -12,9 +12,9 @@
  * ## 왜 config를 import하지 않고 값을 적어 두는가
  *
  * 두 번째 초안은 `TICKER_CATEGORIES`·`CRYPTO_CATEGORIES`를 import해 `id`로 찾아 잘랐다.
- * 단일 소스라는 점은 좋았지만 비용이 붙었다 — 이 슬라이스 배럴은 헤더와 root layout이
- * 소비해 **33개 전 라우트의 first-load 청크**에 들어가고, `package.json`에 `sideEffects`가
- * 없어 미사용 항목이 제거되지 않는다. 실측: 9행을 그리려고 **gzip 2,017B**의 config가
+ * 단일 소스라는 점은 좋았지만 비용이 붙었다 — 이 모듈은 헤더와 root layout을 거쳐
+ * **33개 전 라우트의 first-load 청크**에 들어가고, `package.json`에 `sideEffects`가
+ * 없어 import한 config 모듈이 통째로 따라온다. 실측: 9행을 그리려고 **gzip 2,017B**의 config가
  * 전 라우트에 실렸고, 쓰지도 않는 `altcoin` 카테고리와 `popular-tickers`의
  * `CURATED_KOREAN_NAMES` 계산(`flatMap`)까지 매 페이지 로드마다 따라왔다.
  *

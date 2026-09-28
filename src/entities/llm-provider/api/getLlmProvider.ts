@@ -1,7 +1,4 @@
 import type { CallAiProvider } from '@y0ngha/siglens-core';
-// Slice-internal relative import (NOT the '@/entities/llm-provider' barrel):
-// the barrel re-exports getLlmProvider, so importing the router through it would
-// create a circular dependency (barrel → getLlmProvider → barrel).
 import { callAiProviderRouter } from './router';
 import { fakeCallAiProvider } from './FakeChatProvider';
 import { isE2E } from '@/shared/api/e2eEnv';

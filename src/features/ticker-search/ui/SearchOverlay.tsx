@@ -12,7 +12,7 @@ import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
-import { isKoreanInput } from '@/entities/ticker';
+import { isKoreanInput } from '@/entities/ticker/lib/ticker';
 import { useRecentSearches } from '../hooks/useRecentSearches';
 import { useTickerSearch } from '../hooks/useTickerSearch';
 import { normalizeLabel } from '../lib/normalizeLabel';

@@ -72,7 +72,7 @@ import {
     EMPTY_INDICATOR_RESULT,
     MA_DEFAULT_PERIODS,
 } from '@y0ngha/siglens-core';
-import type { MarketProfileId } from '@/shared/config/marketProfile';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { resolvePriceDecimals } from '@/shared/lib/priceFormat';
 import { IndicatorSettingsModal } from './ui/IndicatorSettingsModal';
 import {

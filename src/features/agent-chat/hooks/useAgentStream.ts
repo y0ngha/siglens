@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ChatMessageView } from '@/entities/chat-conversation';
+import type { ChatMessageView } from '@/entities/chat-conversation/model';
 import {
     AGENT_TIME_ZONE_HEADER,
     ANALYSIS_LOCALE_HEADER,

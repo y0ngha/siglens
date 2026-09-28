@@ -2,7 +2,7 @@ import { useTranslations } from 'next-intl';
 import { useMarketFactorLabels } from '@/shared/lib/useMarketFactorLabels';
 import type { CSSProperties } from 'react';
 import { scoreToLabel, type FearGreedLabel } from '@y0ngha/siglens-core';
-import type { MarketFearGreedViewSnapshot } from '@/entities/market-fear-greed';
+import type { MarketFearGreedViewSnapshot } from '@/entities/market-fear-greed/model';
 import {
     formatMarketFactorRaw,
     type FearGreedMarketId,

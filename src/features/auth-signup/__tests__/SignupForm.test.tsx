@@ -5,7 +5,7 @@ import { useSignupForm } from '@/features/auth-signup/hooks/useSignupForm';
 import {
     useRequestEmailVerification,
     useVerifyEmail,
-} from '@/features/auth-email-verification';
+} from '@/features/auth-email-verification/hooks/useEmailVerificationForms';
 import type { RequestEmailVerificationFormState } from '@/shared/lib/auth/formTypes';
 import type { VerifyEmailFormState, SignupFormState } from '@/shared/lib/types';
 import { koMessage } from '@/shared/test-utils/koMessage';
@@ -14,7 +14,7 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
 vi.mock('@/features/auth-signup/hooks/useSignupForm');
-vi.mock('@/features/auth-email-verification');
+vi.mock('@/features/auth-email-verification/hooks/useEmailVerificationForms');
 
 const mockUseSignupForm = vi.mocked(useSignupForm);
 const mockUseRequestEmailVerification = vi.mocked(useRequestEmailVerification);

@@ -14,11 +14,14 @@ import {
     type Tier,
 } from '@y0ngha/siglens-core';
 import { useSelectedModel } from '../hooks/useSelectedModel';
-import { useModelGate, type ModelGateState } from '@/features/premium-gate';
+import {
+    useModelGate,
+    type ModelGateState,
+} from '@/features/premium-gate/hooks/useModelGate';
 import { useUserTier } from '../hooks/useUserTier';
-import { useReasoningToggle } from '@/features/reasoning-toggle';
+import { useReasoningToggle } from '@/features/reasoning-toggle/hooks/useReasoningToggle';
 import { isReasoningToggleable } from '@y0ngha/siglens-core';
-import { AnalysisSignupNudgeModal } from '@/features/analysis-nudge';
+import { AnalysisSignupNudgeModal } from '@/features/analysis-nudge/ui/AnalysisSignupNudgeModal';
 
 interface SymbolModelContextValue {
     modelId: ModelId;

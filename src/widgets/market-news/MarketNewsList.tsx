@@ -1,15 +1,15 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import type { NewsFeedCategoryId } from '@/entities/market-news';
+import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
 import { useState } from 'react';
-import type { MarketNewsCardItem } from '@/entities/market-news';
-import { MARKET_NEWS_LOOKBACK_DAYS } from '@/entities/market-news';
+import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
+import { MARKET_NEWS_LOOKBACK_DAYS } from '@/entities/market-news/lib/marketNewsConstants';
 
 import {
     MARKET_NEWS_LIST_PAGE_SIZE,
-    MARKET_NEWS_ROW_SERIALIZATION_LIMIT,
-} from './constants';
+    NEWS_ROW_SERIALIZATION_LIMIT as MARKET_NEWS_ROW_SERIALIZATION_LIMIT,
+} from '@/shared/config/newsSerialization';
 import { useMarketNewsCardPolling } from './hooks/useMarketNewsCardPolling';
 import { MarketNewsCard } from './MarketNewsCard';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';

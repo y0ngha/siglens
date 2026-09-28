@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import type { NewsFeedCategoryId } from '@/entities/market-news';
+import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { useMarketNewsDigest } from './hooks/useMarketNewsDigest';

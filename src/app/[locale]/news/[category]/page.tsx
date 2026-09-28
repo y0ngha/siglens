@@ -9,22 +9,22 @@ import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import {
     CATEGORY_CONFIG,
-    MARKET_NEWS_CACHE_TAG_PREFIX,
     NEWS_CATEGORY_SLUGS,
     categoryFromSlug,
-    type MarketNewsCardItem,
     type CategoryConfig,
     type NewsFeedCategoryId,
-} from '@/entities/market-news';
-import { getMarketNewsCards } from '@/entities/market-news/api';
+} from '@/entities/market-news/lib/categoryConfig';
+import { MARKET_NEWS_CACHE_TAG_PREFIX } from '@/entities/market-news/lib/marketNewsConstants';
+import { type MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
+import { getMarketNewsCards } from '@/entities/market-news/api/marketNewsRepository';
 import { peekMarketNewsDigestStatic } from '@/entities/market-news/api/marketNewsDigestStaticCache';
+import { MarketNewsDigest } from '@/widgets/market-news/MarketNewsDigest';
+import { MarketNewsList } from '@/widgets/market-news/MarketNewsList';
 import {
-    MarketNewsDigest,
-    MarketNewsList,
     MARKET_NEWS_LIST_PAGE_SIZE,
-    MARKET_NEWS_ROW_SERIALIZATION_LIMIT,
-} from '@/widgets/market-news';
-import { NewsCategoryTabs } from '@/widgets/news-hub';
+    NEWS_ROW_SERIALIZATION_LIMIT as MARKET_NEWS_ROW_SERIALIZATION_LIMIT,
+} from '@/shared/config/newsSerialization';
+import { NewsCategoryTabs } from '@/widgets/news-hub/NewsCategoryTabs';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { RegionTabs } from '@/shared/ui/RegionTabs';

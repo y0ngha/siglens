@@ -8,7 +8,7 @@ import {
     dynamicDecimals,
     currencyFractionDigits,
 } from '@/shared/lib/priceFormat';
-import type { PricePrecision } from '@/shared/config/marketProfile';
+import type { PricePrecision } from '@/shared/config/marketProfile/types';
 
 describe('currencyFractionDigits', () => {
     it('KRW는 0자리다', () => {

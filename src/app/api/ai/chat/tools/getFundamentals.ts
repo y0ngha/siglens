@@ -4,7 +4,7 @@ import { FMP_FUNDAMENTAL_REVALIDATE_SECONDS } from '@/shared/api/fmp/fundamental
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
 
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import {
     roundNumber,
     roundNumbersDeep,
@@ -12,12 +12,15 @@ import {
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { quoteWithTimeout } from '@/shared/api/market/quoteTimeout';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
-import { getDescriptor, isKrEquitySymbol } from '@/shared/config/marketProfile';
-import { getNextEarningsReport } from '@/entities/earnings-report';
+import {
+    getDescriptor,
+    isKrEquitySymbol,
+} from '@/shared/config/marketProfile/registry';
+import { getNextEarningsReport } from '@/entities/earnings-report/api';
 import { MS_PER_DAY } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
-import type { ToolExecutor } from './index';
+import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { pctVs, ratioPct } from './percent';
 import { resolveAssetInfoOrNull } from './resolveAssetInfo';
 

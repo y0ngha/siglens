@@ -11,14 +11,18 @@ import {
 /** 자리표가 어떤 variant로 불렸는지 기록한다 — 배선은 여기서만 잡힌다. */
 const skeletonVariants: unknown[] = [];
 
-vi.mock('@/widgets/economy', () => ({
-    EconomicCalendar: () => null,
+vi.mock('@/widgets/economy/sections/EconomicCalendarGrid', () => ({
+    EconomicCalendarGrid: () => null,
+}));
+vi.mock('@/widgets/economy/sections/EconomySkeleton', () => ({
     // 컴포넌트 쪽 테스트는 "kr을 받으면 맞게 그린다"까지만 보장한다.
     // 이 화면이 실제로 kr을 넘기는지는 이 스텁이 아니면 아무도 안 본다.
     EconomySkeleton: ({ variant }: { variant?: string }) => {
         skeletonVariants.push(variant);
         return null;
     },
+}));
+vi.mock('@/widgets/economy/sections/KrEconomicIndicatorGrid', () => ({
     KrEconomicIndicatorGrid: ({ cards }: { cards: unknown[] }) => (
         <div data-testid="kr-indicator-grid">{cards.length}</div>
     ),

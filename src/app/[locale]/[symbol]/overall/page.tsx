@@ -3,12 +3,13 @@ import { OverallContent } from '@/widgets/overall/OverallContent';
 import { setRequestLocale } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
-import { OverallFactualFallback, OverallFactsSummary } from '@/widgets/overall';
+import { OverallFactualFallback } from '@/widgets/overall/OverallFactualFallback';
+import { OverallFactsSummary } from '@/widgets/overall/OverallFactsSummary';
 import {
     hasOverallProse,
     OverallSnapshotProse,
 } from '@/views/symbol/snapshot/renderers/OverallSnapshotProse';
-import { SymbolPageHeading } from '@/views/symbol';
+import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { FaqSection } from '@/shared/ui/FaqSection';
 import { JsonLd } from '@/shared/ui/JsonLd';
@@ -19,14 +20,11 @@ import {
 } from '@/shared/config/market';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { Suspense } from 'react';
-import {
-    buildAssetAboutNode,
-    buildDisplayName,
-    pickAssetName,
-    getAssetInfoResilient,
-} from '@/entities/ticker';
+import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
+import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { getNewsList } from '@/entities/news-article/api';
-import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article';
+import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article/lib/cacheKeys';
 import {
     buildBreadcrumbJsonLd,
     buildSnapshotMetaDescription,
@@ -42,8 +40,8 @@ import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJ
 import {
     getDescriptor,
     marketProfileOf,
-    type MarketProfileId,
-} from '@/shared/config/marketProfile';
+} from '@/shared/config/marketProfile/registry';
+import { type MarketProfileId } from '@/shared/config/marketProfile/types';
 import {
     DEEPSEEK_V4_1_FLASH_MODEL,
     peekOverallAnalysisCache,

@@ -2,7 +2,7 @@
  * @file provider별 "기본 모델 후보" 우선순위 테이블.
  *
  * ⚠️ **이 파일의 `*_MODEL_PRIORITY` export는 현재 production 소비처가 없다.**
- * barrel(`entities/llm-provider`)로 공개돼 있을 뿐 `src/` 어디에서도 호출되지
+ * export돼 있을 뿐 `src/` 어디에서도 호출되지
  * 않는다 — 분석 모델 기본값은 `useSelectedModel`의 `DEEPSEEK_V4_1_FLASH_MODEL`이,
  * BYOK 게이트는 `shared/lib/byokGate`가 `TIER_CONFIG`를 직접 읽어 처리한다.
  * 따라서 순서를 바꿔도 지금은 런타임 동작이 변하지 않는다.

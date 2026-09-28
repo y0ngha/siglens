@@ -4,7 +4,7 @@ import { getTranslations } from 'next-intl/server';
 import { MarketNewsCard } from '../MarketNewsCard';
 import { sentimentLabel, SENTIMENT_CLASS } from '@/shared/lib/sentimentDisplay';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
-import type { MarketNewsCardItem } from '@/entities/market-news';
+import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
 
 let t: EnumLabelTranslator;
 beforeAll(async () => {

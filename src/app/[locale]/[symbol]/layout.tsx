@@ -14,17 +14,17 @@ import {
     SymbolLayoutProviders,
 } from '@/app/[locale]/[symbol]/SymbolLayoutClient';
 import { SymbolLayoutHeader } from '@/views/symbol/SymbolLayoutHeader';
-import { RelatedSymbols } from '@/views/symbol';
-import { SymbolViewPing } from '@/features/visitor-ping';
+import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
+import { SymbolViewPing } from '@/features/visitor-ping/ui/SymbolViewPing';
 import { SymbolTabsSkeleton } from '@/views/symbol/SymbolTabsSkeleton';
 import {
     DEFAULT_TIMEFRAME,
     isAdmissibleSymbolShape,
 } from '@/shared/config/market';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
-import { getSeedBarsStatic } from '@/entities/bars';
-import { getAssetInfoResilient } from '@/entities/ticker';
-import { marketProfileOf } from '@/shared/config/marketProfile';
+import { getSeedBarsStatic } from '@/entities/bars/lib/barsStaticCache';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { marketProfileOf } from '@/shared/config/marketProfile/registry';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { computeFearGreedIndex } from '@y0ngha/siglens-core';
 import type { AssetInfo } from '@/shared/lib/types';

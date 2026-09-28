@@ -9,7 +9,7 @@ import {
 } from '@tanstack/react-query';
 import { MarketSummaryPanel } from '@/widgets/dashboard/MarketSummaryPanel';
 import { MarketSummaryPanelSkeleton } from '@/widgets/dashboard/MarketSummaryPanelSkeleton';
-import { SectorFactsSummary } from '@/widgets/dashboard';
+import { SectorFactsSummary } from '@/widgets/dashboard/SectorFactsSummary';
 import { SectorSignalPanel } from '@/widgets/dashboard/SectorSignalPanel';
 import { SectorSignalPanelSkeleton } from '@/widgets/dashboard/SectorSignalPanelSkeleton';
 import { SignalTypeGuide } from '@/widgets/dashboard/SignalTypeGuide';

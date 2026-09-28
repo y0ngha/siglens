@@ -55,24 +55,27 @@ vi.mock('@tanstack/react-query', () => ({
     },
 }));
 
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker/lib/assetClassification', () => ({
     buildAssetAboutNode: (
         symbol: string,
         name: string,
         fmpSymbol?: string,
         assetClass?: string
     ) => mockBuildAssetAboutNode(symbol, name, fmpSymbol, assetClass),
+}));
+vi.mock('@/entities/ticker/lib/ticker', () => ({
     pickAssetName: (info: { name: string; koreanName?: string }) =>
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Bitcoin USD'),
+}));
+vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
     getAssetInfoResilient: (ticker: string) =>
         mockGetAssetInfoResilient(ticker),
 }));
 
-vi.mock('@/entities/bars', () => ({
+vi.mock('@/entities/bars/lib/barsStaticCache', () => ({
     // 세션 spec 유도는 이제 헬퍼 내부 책임이라 여기서는 위임 인자
     // (ticker, timeframe, marketProfile, fmpSymbol)만 포착한다.
-
     getSeedBarsStatic: mockGetSeedBarsStatic,
 }));
 
@@ -85,11 +88,13 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/widgets/fear-greed/FearGreedPage', () => ({
     FearGreedPage: () => null,
 }));
-vi.mock('@/widgets/fear-greed', () => ({
+vi.mock('@/widgets/fear-greed/FearGreedPageError', () => ({
     FearGreedPageError: () => null,
 }));
-vi.mock('@/views/symbol', () => ({
+vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({
     SymbolPageHeading: () => null,
+}));
+vi.mock('@/views/symbol/fearGreed/FearGreedFactsSummary', () => ({
     FearGreedFactsSummary: () => null,
 }));
 vi.mock('@/shared/ui/CrossLinkCards', () => ({

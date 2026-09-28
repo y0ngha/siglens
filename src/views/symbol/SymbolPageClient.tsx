@@ -1,11 +1,9 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import {
-    ChartErrorFallback,
-    ChartSkeleton,
-    TimeframeSelector,
-} from '@/widgets/chart';
+import { ChartErrorFallback } from '@/widgets/chart/ChartErrorFallback';
+import { ChartSkeleton } from '@/widgets/chart/ChartSkeleton';
+import { TimeframeSelector } from '@/widgets/chart/TimeframeSelector';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
 import { MOBILE_VIEWPORT_MEDIA_QUERY } from '@/shared/config/viewport';
@@ -15,13 +13,11 @@ import { useMobileSheet } from './hooks/useMobileSheet';
 import { SNAP_FULL } from './constants/mobileSheet';
 import { useTimeframeChange } from './hooks/useTimeframeChange';
 import { SymbolPageProvider } from './SymbolPageContext';
-import { useSymbolModel } from '@/features/symbol-model';
+import { useSymbolModel } from '@/features/symbol-model/model/SymbolModelContext';
 import type { MobileAnalysisSheet as MobileAnalysisSheetComponent } from './MobileAnalysisSheet';
 import type { AnalysisResponse, TierInfoDepth } from '@y0ngha/siglens-core';
-import {
-    marketProfileOf,
-    type MarketProfileId,
-} from '@/shared/config/marketProfile';
+import { marketProfileOf } from '@/shared/config/marketProfile/registry';
+import { type MarketProfileId } from '@/shared/config/marketProfile/types';
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';

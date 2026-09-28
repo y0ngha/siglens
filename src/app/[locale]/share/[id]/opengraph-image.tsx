@@ -1,9 +1,9 @@
 import { getTranslations } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
-import { buildSymbolOgImage } from '@/entities/og-image';
+import { buildSymbolOgImage } from '@/entities/og-image/lib/buildSymbolOgImage';
 import { getCachedSharedAnalysis } from '@/entities/shared-analysis/actions/getCachedSharedAnalysis';
-import { kindLabelKey } from '@/widgets/share';
+import { kindLabelKey } from '@/widgets/share/lib/kindLabel';
 
 // 공유 스냅샷은 id마다 달라 정적 생성 불가 → force-dynamic
 export const dynamic = 'force-dynamic';

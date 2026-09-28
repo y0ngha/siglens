@@ -12,7 +12,7 @@ import { PopoverSurface } from '@/shared/ui/PopoverSurface';
 import type {
     PortfolioActionErrorCode,
     PortfolioHoldingView,
-} from '@/entities/portfolio';
+} from '@/entities/portfolio/model';
 import type { UseSymbolHoldingReturn } from '../hooks/useSymbolHolding';
 
 const FIELD_LABEL = 'text-secondary-400 mb-1 block text-xs font-medium';

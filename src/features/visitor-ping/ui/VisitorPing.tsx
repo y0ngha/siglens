@@ -58,7 +58,7 @@ function sendPresence(): void {
  * 어긋나 그 방문자가 특정 날에 통째로 누락된다. 반대 방향(중복 전송)은 서버가
  * `ON CONFLICT DO NOTHING`으로 흡수하므로 무해하다.
  *
- * `@/entities/visitor` barrel은 `server-only`라 여기서 import하지 않는다.
+ * `@/entities/visitor/api`는 `server-only`라 여기서 import하지 않는다.
  *
  * 전송은 첫 신뢰 입력 뒤에만 한다(`onFirstInteraction`). 렌더만 하고 떠나는 헤드리스가
  * 이 필터를 통과하고 있었다.

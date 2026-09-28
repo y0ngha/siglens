@@ -1,7 +1,10 @@
 import { getTranslations } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import { ImageResponse } from 'next/og';
-import { CATEGORY_CONFIG, categoryFromSlug } from '@/entities/market-news';
+import {
+    CATEGORY_CONFIG,
+    categoryFromSlug,
+} from '@/entities/market-news/lib/categoryConfig';
 import { loadKoreanFont } from '@/entities/og-image/lib/loadKoreanFont';
 import {
     OG_BG,

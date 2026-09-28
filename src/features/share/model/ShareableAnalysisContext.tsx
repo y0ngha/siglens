@@ -12,9 +12,9 @@ import {
 } from 'react';
 import type {
     ShareContext,
-    ShareableKind,
     SnapshotResultOf,
-} from '@/entities/shared-analysis';
+} from '@/entities/shared-analysis/types';
+import type { ShareableKind } from '@/shared/db/constants';
 import type { Bar } from '@y0ngha/siglens-core';
 
 export type ShareableStatus =

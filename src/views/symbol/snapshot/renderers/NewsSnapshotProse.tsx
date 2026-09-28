@@ -1,5 +1,5 @@
 import { useTranslations } from 'next-intl';
-import type { MarketProfileId } from '@/shared/config/marketProfile';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { SnapshotBulletList } from '../SnapshotBulletList';
 import { SENTIMENT_LABEL_KEY, narrowNewsContent } from './newsContent';

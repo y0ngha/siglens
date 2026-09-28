@@ -4,19 +4,17 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { useQuery } from '@tanstack/react-query';
-import { getBarsAction } from '@/entities/bars/actions';
+import { getBarsAction } from '@/entities/bars/actions/getBarsAction';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { BARS_STALE_TIME_MS, QUERY_KEYS } from '@/shared/config/queryConfig';
 import { buildTechnicalFacts } from '@/views/symbol/utils/technicalFacts';
-import {
-    computePosition,
-    formatAmount,
-    PositionBuilding,
-} from '@/widgets/portfolio-position';
+import { computePosition } from '@/widgets/portfolio-position/lib/positionGeometry';
+import { formatAmount } from '@/widgets/portfolio-position/lib/positionBuildingNotes';
+import { PositionBuilding } from '@/widgets/portfolio-position/ui/PositionBuilding';
 import { formatSignedPercent } from '@/shared/lib/priceFormat';
 import { cn } from '@/shared/lib/cn';
 import { symbolLabel } from '@/shared/lib/symbolLabel';
-import type { PortfolioHoldingView } from '@/entities/portfolio';
+import type { PortfolioHoldingView } from '@/entities/portfolio/model';
 
 type HoldingCardData = Pick<
     PortfolioHoldingView,

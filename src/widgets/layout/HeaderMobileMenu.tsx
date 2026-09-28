@@ -12,7 +12,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/shared/lib/cn';
-import { authNextQuery } from '@/shared/lib/auth';
+import { authNextQuery } from '@/shared/lib/auth/redirect';
 import { LocaleSwitcher } from './LocaleSwitcher';
 import { LOCALE_SWITCHER_VISIBLE } from '@/shared/i18n/locales';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';

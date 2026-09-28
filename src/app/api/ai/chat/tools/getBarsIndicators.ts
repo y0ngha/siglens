@@ -38,11 +38,11 @@ import {
     roundIndicators,
     roundNumber,
 } from '@/entities/bars/lib/roundIndicators';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
-import { getDescriptor } from '@/shared/config/marketProfile';
-import type { ToolExecutor } from './index';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
+import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { logToolDegrade } from './logToolDegrade';
 import { pctVs, ratioPct } from './percent';
 import { resolveAssetInfoOrNull } from './resolveAssetInfo';

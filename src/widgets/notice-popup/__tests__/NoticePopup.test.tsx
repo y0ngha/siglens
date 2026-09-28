@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { NoticePopup } from '@/widgets/notice-popup/ui/NoticePopup';
-import { getActiveNoticesAction } from '@/entities/notice/actions';
-import type { NoticeRecord } from '@/entities/notice';
+import { getActiveNoticesAction } from '@/entities/notice/actions/getActiveNoticesAction';
+import type { NoticeRecord } from '@/entities/notice/model/types';
 import { DISMISSED_NOTICES_STORAGE_KEY } from '../utils/noticeStorage';
 
 const { mockPathname } = vi.hoisted(() => ({
@@ -10,7 +10,7 @@ const { mockPathname } = vi.hoisted(() => ({
 }));
 vi.mock('next/navigation', () => ({ usePathname: mockPathname }));
 
-vi.mock('@/entities/notice/actions', () => ({
+vi.mock('@/entities/notice/actions/getActiveNoticesAction', () => ({
     getActiveNoticesAction: vi.fn(),
 }));
 

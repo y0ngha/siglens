@@ -1,7 +1,7 @@
 import {
     currencyForSymbol,
     getDescriptor,
-} from '@/shared/config/marketProfile';
+} from '@/shared/config/marketProfile/registry';
 import {
     dynamicDecimals,
     formatPrice,

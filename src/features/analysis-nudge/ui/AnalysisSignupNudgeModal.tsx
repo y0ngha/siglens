@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
-import { REASONING_FEATURE_LABEL_KEY } from '@/features/reasoning-toggle';
+import { REASONING_FEATURE_LABEL_KEY } from '@/features/reasoning-toggle/model/reasoningFeature';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { useEffect, useRef } from 'react';
 

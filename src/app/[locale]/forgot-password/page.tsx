@@ -1,11 +1,11 @@
-import { AuthCrossLink } from '@/shared/ui/auth';
+import { AuthCrossLink } from '@/shared/ui/auth/AuthCrossLink';
 import { getTranslations } from 'next-intl/server';
 import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import type { Metadata } from 'next';
 import { setRequestLocale } from 'next-intl/server';
 import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
-import { ForgotPasswordForm } from '@/features/auth-password-reset';
+import { ForgotPasswordForm } from '@/features/auth-password-reset/ui/ForgotPasswordForm';
 
 // noindex 페이지에도 canonical/openGraph.url을 명시한다. 자세한 근거는 src/app/[locale]/login/page.tsx 주석 참조.
 /**

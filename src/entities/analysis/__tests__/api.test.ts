@@ -46,7 +46,7 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: vi.fn(() => mockProvider),
 }));
 
-vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
+vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: vi.fn().mockResolvedValue('us-equity'),
 }));
 
@@ -80,19 +80,26 @@ vi.mock('@/entities/news-article/api', () => ({
     }),
 }));
 
-vi.mock('@/entities/news-article', async importOriginal => {
-    // `marketEventsLookback` 은 DB 의존이 없는 순수 함수라 실제 구현을 쓴다 —
-    // 스텁으로 갈아 끼우면 스트림 경로와 같은 창을 쓰는지가 검증되지 않는다.
-    const actual =
-        await importOriginal<typeof import('@/entities/news-article')>();
-    return {
-        ...actual,
-        NEWS_ANALYSIS_LOOKBACK_MS: 30 * 24 * 60 * 60 * 1000,
+// `marketEventsLookback`(lib/marketEventsLookback)은 모킹하지 않는다 — DB 의존이
+// 없는 순수 함수라 실제 구현을 쓴다. 스텁으로 갈아 끼우면 스트림 경로와 같은 창을
+// 쓰는지가 검증되지 않는다.
+vi.mock('@/entities/news-article/lib/newsLookback', async importOriginal => ({
+    ...(await importOriginal<
+        typeof import('@/entities/news-article/lib/newsLookback')
+    >()),
+    NEWS_ANALYSIS_LOOKBACK_MS: 30 * 24 * 60 * 60 * 1000,
+}));
+vi.mock(
+    '@/entities/news-article/lib/buildAnalysisNewsItems',
+    async importOriginal => ({
+        ...(await importOriginal<
+            typeof import('@/entities/news-article/lib/buildAnalysisNewsItems')
+        >()),
         buildAnalysisNewsItems: vi.fn(() => []),
-    };
-});
+    })
+);
 
-vi.mock('@/entities/earnings-report', () => ({
+vi.mock('@/entities/earnings-report/api', () => ({
     getNextEarningsReport: vi.fn(),
 }));
 
@@ -145,14 +152,14 @@ import {
     type FinancialsScorecard,
 } from '@y0ngha/siglens-core';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
 import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
 import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
-import { getNextEarningsReport } from '@/entities/earnings-report';
+import { getNextEarningsReport } from '@/entities/earnings-report/api';
 import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
 import {

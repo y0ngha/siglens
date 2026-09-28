@@ -1,4 +1,4 @@
-import type { SymbolChatState } from '@/features/symbol-chat';
+import type { SymbolChatState } from '@/features/symbol-chat/model/SymbolChatContext';
 import type { FinancialsAnalysisState } from '../hooks/useFinancialsAnalysis';
 
 // `done`이 아닌 상태(loading·error)에서는 context를 null로 보내

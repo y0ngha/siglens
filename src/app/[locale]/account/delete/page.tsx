@@ -12,7 +12,7 @@ import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
-import { DeleteAccountConfirm } from '@/features/account-delete';
+import { DeleteAccountConfirm } from '@/features/account-delete/ui/DeleteAccountConfirm';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { SITE_NAME } from '@/shared/lib/seo';
 

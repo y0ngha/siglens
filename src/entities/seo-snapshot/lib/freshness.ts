@@ -1,6 +1,6 @@
 import { US_EQUITY_SESSION, isRegularSessionOpen } from '@y0ngha/siglens-core';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
-import { isKrEquitySymbol } from '@/shared/config/marketProfile';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
 import type { SeoSnapshotTab } from '../model';
 import { prewarmSessionSpecFor } from './applicability';

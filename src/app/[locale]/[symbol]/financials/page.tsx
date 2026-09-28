@@ -6,14 +6,14 @@ import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabi
 import {
     getFinancialsSnapshot,
     isEmptyFinancialsSnapshot,
-} from '@/entities/financials-statements';
+} from '@/entities/financials-statements/lib/getFinancialsSnapshot';
 import { getProfileResilient } from '@/app/[locale]/[symbol]/fundamental/getProfileResilient';
 import { FinancialsDegraded } from '@/app/[locale]/[symbol]/financials/FinancialsDegraded';
 import { FinancialsAiSummary } from '@/widgets/financials/FinancialsAiSummary';
 import { FinancialsScorecard } from '@/widgets/financials/FinancialsScorecard';
 import { statementCurrencyOf } from '@/widgets/financials/utils/numberFormat';
 import { FinancialsStatements } from '@/widgets/financials/FinancialsStatements';
-import { SymbolPageHeading } from '@/views/symbol';
+import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import {
     FinancialsSnapshotProse,
     hasFinancialsProse,
@@ -27,12 +27,9 @@ import {
 } from '@/shared/config/market';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
-import {
-    buildAssetAboutNode,
-    buildDisplayName,
-    getAssetInfoResilient,
-    pickAssetName,
-} from '@/entities/ticker';
+import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
+import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import {
     buildBreadcrumbJsonLd,
     buildSnapshotMetaDescription,
@@ -51,8 +48,8 @@ import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import {
     marketProfileOf,
     profileIdForSymbol,
-    type MarketProfileId,
-} from '@/shared/config/marketProfile';
+} from '@/shared/config/marketProfile/registry';
+import { type MarketProfileId } from '@/shared/config/marketProfile/types';
 
 // 종목당 재무제표는 분기(약 45일) 단위로 갱신된다. 24h revalidate는 엣지 캐시를 최대한 활용하면서
 // 다음 분기 공시 이전에 오래된 데이터를 서빙하지 않는 균형점이다.

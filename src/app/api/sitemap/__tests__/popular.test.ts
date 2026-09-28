@@ -3,8 +3,10 @@ vi.mock('next/server', async () => {
         await vi.importActual<typeof import('next/server')>('next/server');
     return { ...actual };
 });
-vi.mock('@/entities/sitemap-entry', () => ({
+vi.mock('@/entities/sitemap-entry/lib/buildPopularEntries', () => ({
     buildPopularEntries: vi.fn().mockReturnValue([]),
+}));
+vi.mock('@/entities/sitemap-entry/lib/xml', () => ({
     toUrlSetXml: vi.fn().mockReturnValue('<?xml version="1.0"?><urlset/>'),
 }));
 const PROSE_INPUTS = { symbolTabsWithProse: new Set(['AAPL:overall']) };
@@ -13,7 +15,8 @@ vi.mock('@/entities/sitemap-entry/server', () => ({
 }));
 
 import { GET } from '@/app/api/sitemap/popular/route';
-import { buildPopularEntries, toUrlSetXml } from '@/entities/sitemap-entry';
+import { buildPopularEntries } from '@/entities/sitemap-entry/lib/buildPopularEntries';
+import { toUrlSetXml } from '@/entities/sitemap-entry/lib/xml';
 import type { MockedFunction } from 'vitest';
 
 const mockBuildPopularEntries = buildPopularEntries as MockedFunction<

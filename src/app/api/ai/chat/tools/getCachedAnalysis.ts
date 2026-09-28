@@ -19,7 +19,7 @@ import {
 import { getCachedBarsWithIndicators } from '@/entities/bars/lib/barsDataCache';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { quoteWithTimeout } from '@/shared/api/market/quoteTimeout';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
@@ -27,7 +27,7 @@ import { MS_PER_DAY } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import { resolvePositionBucket } from '@/shared/lib/byokGate';
 import { isGuestSubject } from '../guestSubject';
-import type { ToolExecutor } from './index';
+import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { logToolDegrade } from './logToolDegrade';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
 import { pctVs } from './percent';

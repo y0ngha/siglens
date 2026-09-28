@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { ContactForm } from '@/features/contact-form';
+import { ContactForm } from '@/features/contact-form/ui/ContactForm';
 import { useContactForm } from '@/features/contact-form/hooks/useContactForm';
 import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import type { ContactFormState } from '@/shared/lib/types';

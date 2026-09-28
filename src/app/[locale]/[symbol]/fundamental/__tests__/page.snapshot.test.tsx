@@ -24,11 +24,15 @@ vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: vi.fn().mockResolvedValue(true),
 }));
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker/lib/assetClassification', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+}));
+vi.mock('@/entities/ticker/lib/ticker', () => ({
     pickAssetName: (info: { name: string; koreanName?: string }) =>
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
+}));
+vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 vi.mock('next/navigation', () => ({
@@ -90,7 +94,7 @@ vi.mock('@/widgets/fundamental/sections/ProfitabilityCard', () => ({
 vi.mock('@/widgets/fundamental/sections/ValuationCard', () => ({
     ValuationCard: () => null,
 }));
-vi.mock('@/views/symbol', () => ({
+vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({
     SymbolPageHeading: ({ children }: { children: unknown }) => children,
 }));
 vi.mock('@/shared/ui/CrossLinkCards', () => ({
@@ -125,7 +129,7 @@ import { FundamentalDegraded } from '@/app/[locale]/[symbol]/fundamental/Fundame
 import { FundamentalSnapshotProse } from '@/views/symbol/snapshot/renderers/FundamentalSnapshotProse';
 import { FundamentalAiSummary } from '@/widgets/fundamental/FundamentalAiSummary';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
-import { getAssetInfoResilient } from '@/entities/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { getProfileResilient } from '@/app/[locale]/[symbol]/fundamental/getProfileResilient';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { expectVisibleFaqWithoutJsonLd } from '@/__tests__/utils/expectFaqSingleSource';

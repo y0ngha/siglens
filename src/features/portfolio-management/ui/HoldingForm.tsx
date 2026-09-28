@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useEffect, useId, useRef, useState } from 'react';
-import { TickerAutocomplete } from '@/features/ticker-search';
+import { TickerAutocomplete } from '@/features/ticker-search/ui/TickerAutocomplete';
 import { cn } from '@/shared/lib/cn';
 import { stripNegativeSign } from '@/shared/lib/stripNegativeSign';
 import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
@@ -12,7 +12,7 @@ import type {
     PortfolioHoldingView,
     RawHoldingInput,
     SavePortfolioResult,
-} from '@/entities/portfolio';
+} from '@/entities/portfolio/model';
 
 const FIELD_LABEL = 'text-secondary-400 mb-1 block text-xs font-medium';
 const FIELD_INPUT =

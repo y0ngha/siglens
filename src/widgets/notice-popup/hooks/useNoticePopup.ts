@@ -1,8 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { getActiveNoticesAction } from '@/entities/notice/actions';
-import { matchPath, type NoticeRecord } from '@/entities/notice';
+import { getActiveNoticesAction } from '@/entities/notice/actions/getActiveNoticesAction';
+import { matchPath } from '@/entities/notice/lib/matchPath';
+import { type NoticeRecord } from '@/entities/notice/model/types';
 import { loadDismissedNoticeIds, dismissNotice } from '../utils/noticeStorage';
 
 /** useNoticePopup의 반환 형태 — 노출 큐와 큐 진행 핸들러. */

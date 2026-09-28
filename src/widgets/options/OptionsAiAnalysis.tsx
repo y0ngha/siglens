@@ -8,7 +8,7 @@ import type {
     OptionsTone,
 } from '@y0ngha/siglens-core';
 
-import { usePublishSymbolChat } from '@/features/symbol-chat';
+import { usePublishSymbolChat } from '@/features/symbol-chat/hooks/useSymbolChat';
 import { cn } from '@/shared/lib/cn';
 import { formatAnalyzedAt } from '@/shared/lib/formatAnalyzedAt';
 import { OptionsAiAnalysisError } from './OptionsAiAnalysisError';
@@ -16,7 +16,8 @@ import { OptionsAiAnalysisSkeleton } from './OptionsAiAnalysisSkeleton';
 import { useOptionsAnalysis } from './hooks/useOptionsAnalysis';
 import { buildChatState } from './utils/buildChatState';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
-import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
+import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
+import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
 import {
     HEADING_SECTION,
     HEADING_SUBSECTION,

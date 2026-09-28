@@ -3,7 +3,7 @@ import { after } from 'next/server';
 import { DrizzleAnalysisHistoryRepository } from '@/entities/analysis/analysisHistoryRepository';
 import { getDatabaseClient } from '@/shared/db/client';
 import { safeBearerCompare } from '@/shared/lib/auth/safeBearerCompare';
-import { fireAndForget } from '@/entities/ticker';
+import { fireAndForget } from '@/entities/ticker/lib/backgroundTask';
 import { acquirePrewarmLock, releasePrewarmLock } from './lock';
 import { runPrewarmBatch } from './runPrewarmBatch';
 

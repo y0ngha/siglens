@@ -3,7 +3,7 @@ import { OptionsPageClient } from '@/widgets/options/OptionsPageClient';
 import { setRequestLocale } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
-import { SymbolPageHeading } from '@/views/symbol';
+import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import {
     OptionsSnapshotProse,
     hasOptionsProse,
@@ -17,12 +17,9 @@ import {
 } from '@/shared/config/market';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
-import {
-    buildAssetAboutNode,
-    buildDisplayName,
-    pickAssetName,
-    getAssetInfoResilient,
-} from '@/entities/ticker';
+import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
+import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { mapExpirationsToSlots } from '@y0ngha/siglens-core';
 import {
     fetchOptionsSnapshot,

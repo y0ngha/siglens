@@ -12,8 +12,9 @@ import {
 } from '@/shared/i18n/locales';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { getNewsList } from '@/entities/news-article/api';
-import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article';
-import { NewsFactsSummary, NEWS_ROW_SERIALIZATION_LIMIT } from '@/widgets/news';
+import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article/lib/cacheKeys';
+import { NewsFactsSummary } from '@/widgets/news/NewsFactsSummary';
+import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';
 import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
 import { NewsAiSummaryErrorBoundary } from '@/widgets/news/NewsAiSummaryErrorBoundary';
 import { NewsListErrorBoundary } from '@/widgets/news/NewsListErrorBoundary';
@@ -21,7 +22,7 @@ import { NewsAiSummarySkeleton } from '@/widgets/news/NewsAiSummarySkeleton';
 import { AnalystActions } from '@/widgets/news/sections/AnalystActions';
 import { EventCalendar } from '@/widgets/news/sections/EventCalendar';
 import { NewsList } from '@/widgets/news/sections/NewsList';
-import { SymbolPageHeading } from '@/views/symbol';
+import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import {
     NewsSnapshotProse,
     hasNewsProse,
@@ -35,18 +36,14 @@ import {
 } from '@/shared/config/market';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { resolveNewsTitle } from '@/shared/lib/news/resolveNewsTitle';
-import {
-    buildAssetAboutNode,
-    buildDisplayName,
-    pickAssetName,
-    getAssetInfoResilient,
-} from '@/entities/ticker';
+import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
+import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
-// 배럴(`@/widgets/news`)이 아니라 원본에서 직접 가져온다 — `NewsList`와 이 페이지가
-// 같은 모듈 인스턴스를 보게 해서, 테스트가 배럴을 목킹해도 두 값이 갈리지 않는다.
+// `NewsList`와 이 페이지가 같은 정의 파일에서 가져와 같은 값을 보게 한다.
 import { NEWS_LIST_PAGE_SIZE } from '@/shared/config/newsSerialization';
 import { todayKstIsoDate } from '@/shared/lib/dateKey';
 import { translateFmpError } from '@/shared/api/fmp/fmpUserMessage';
@@ -67,7 +64,10 @@ import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJ
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import { getDescriptor, marketProfileOf } from '@/shared/config/marketProfile';
+import {
+    getDescriptor,
+    marketProfileOf,
+} from '@/shared/config/marketProfile/registry';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { cn } from '@/shared/lib/cn';
 

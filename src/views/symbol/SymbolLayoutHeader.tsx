@@ -8,14 +8,14 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { SymbolTabs } from './SymbolTabs';
 import { SymbolTabsSkeleton } from './SymbolTabsSkeleton';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
-import { shouldShowEnglishName } from '@/entities/ticker';
-import { useSymbolModel } from '@/features/symbol-model';
-import { AnalysisSettingsMenu } from '@/widgets/analysis';
-import { ShareButton } from '@/widgets/share';
+import { shouldShowEnglishName } from '@/entities/ticker/lib/ticker';
+import { useSymbolModel } from '@/features/symbol-model/model/SymbolModelContext';
+import { AnalysisSettingsMenu } from '@/widgets/analysis/AnalysisSettingsMenu';
+import { ShareButton } from '@/widgets/share/ui/ShareButton';
 import { FearGreedHeaderChip } from './FearGreedHeaderChip';
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
-import { PremiumModelGateModal } from '@/features/premium-gate';
-import { PortfolioChipMounted } from '@/features/portfolio-holding';
+import { PremiumModelGateModal } from '@/features/premium-gate/ui/PremiumModelGateModal';
+import { PortfolioChipMounted } from '@/features/portfolio-holding/ui/PortfolioChipMounted';
 import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
 
 interface SymbolLayoutHeaderProps {

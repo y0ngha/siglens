@@ -12,9 +12,11 @@ vi.mock('@/widgets/home/StatsBar', () => ({
 vi.mock('@/widgets/home/TickerCategories', () => ({
     TickerCategories: () => null,
 }));
-vi.mock('@/features/ticker-search', () => ({ SymbolSearchPanel: () => null }));
+vi.mock('@/features/ticker-search/ui/SymbolSearchPanel', () => ({
+    SymbolSearchPanel: () => null,
+}));
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
-vi.mock('@/entities/skill', () => ({
+vi.mock('@/entities/skill/api', () => ({
     countSkillFiles: vi.fn().mockResolvedValue({
         indicators: 13,
         candlesticks: 30,

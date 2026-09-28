@@ -15,7 +15,7 @@ import {
     CATEGORY_CONFIG,
     categoriesInRegion,
     type NewsFeedCategoryId,
-} from '@/entities/market-news';
+} from '@/entities/market-news/lib/categoryConfig';
 import type { TermsKind } from '@/shared/db/constants';
 import { ALL_NAV_REGION_LINKS } from '@/shared/config/assetClassNav';
 import type { SitemapEntry } from '../model';

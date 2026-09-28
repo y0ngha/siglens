@@ -21,37 +21,32 @@ import {
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { PREWARM_PROVIDER_FALLBACK } from '@/shared/config/prewarm';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import {
     currencyForSymbol,
     getDescriptor,
-} from '@/shared/config/marketProfile';
+} from '@/shared/config/marketProfile/registry';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
 import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
 import { getDatabaseClient } from '@/shared/db/client';
 import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
-import {
-    NEWS_ANALYSIS_LOOKBACK_MS,
-    buildAnalysisNewsItems,
-} from '@/entities/news-article';
-import { getNextEarningsReport } from '@/entities/earnings-report';
+import { NEWS_ANALYSIS_LOOKBACK_MS } from '@/entities/news-article/lib/newsLookback';
+import { buildAnalysisNewsItems } from '@/entities/news-article/lib/buildAnalysisNewsItems';
+import { getNextEarningsReport } from '@/entities/earnings-report/api';
 import { fetchQuotePriceForAnalysis } from './lib/fetchQuotePriceForAnalysis';
 // Cross-entity: overall이 options-chain 스냅샷을 조합한다. submitOverallAnalysisAction과
 // 동일한 의도적 예외(entities/CLAUDE.md).
 import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
-// analysis_history는 barrel(index.ts) 제외 대상이다 — 이 파일 자체가 이미
-// entities/analysis 슬라이스 내부이므로 barrel을 거치지 않고 직접 import한다
-// (analysisHistoryRepository.ts 상단 JSDoc 참고: server-only + node:crypto
-// 의존이라 barrel에 실으면 client 번들로 새어나간다).
+// analysisHistoryRepository는 server-only + node:crypto 의존이다(상단 JSDoc 참고).
 import {
     DrizzleAnalysisHistoryRepository,
     resolveGeneratedAt,
     type AnalysisHistoryTab,
 } from '@/entities/analysis/analysisHistoryRepository';
-import { marketEventsLookback } from '@/entities/news-article';
+import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
 import { findMarketEventsForPrompt } from '@/entities/news-article/marketEventsRepository';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 

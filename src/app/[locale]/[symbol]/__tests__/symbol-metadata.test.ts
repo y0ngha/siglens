@@ -129,8 +129,10 @@ vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: vi.fn().mockResolvedValue(true),
 }));
 
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
     getAssetInfoResilient: mockGetAssetInfoResilient,
+}));
+vi.mock('@/entities/ticker/lib/ticker', () => ({
     // assetInfo가 존재하는 happy-path에서 generateMetadata가 호출한다. canonical은
     // ticker(params) 기반이라 displayName 정확도는 회귀 검증과 무관 — 간단 stub으로 충분.
     pickAssetName: (info: { name: string; koreanName?: string }) =>
@@ -139,16 +141,21 @@ vi.mock('@/entities/ticker', () => ({
         info: { name?: string; koreanName?: string } | null,
         ticker: string
     ) => info?.koreanName ?? info?.name ?? ticker,
+}));
+vi.mock('@/entities/ticker/lib/assetClassification', () => ({
     // page.tsx 본문이 import(generateMetadata 경로에선 미사용)하므로 stub만 제공.
     buildAssetAboutNode: vi.fn(() => undefined),
 }));
 
-vi.mock('@/entities/symbol-indexability', () => ({
-    evaluateSymbolIndexability: vi.fn(() => ({
-        indexable: true,
-        reason: 'popular',
-    })),
-}));
+vi.mock(
+    '@/entities/symbol-indexability/lib/evaluateSymbolIndexability',
+    () => ({
+        evaluateSymbolIndexability: vi.fn(() => ({
+            indexable: true,
+            reason: 'popular',
+        })),
+    })
+);
 
 // fundamental generateMetadata는 noindex 게이트로 getProfileResilient를 호출한다.
 vi.mock('@/app/[locale]/[symbol]/fundamental/getProfileResilient', () => ({
@@ -168,7 +175,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 // 페이지 본문에서 쓰는 인프라 — generateMetadata에는 필요 없지만 import chain에서 로드될 수 있음
-vi.mock('@/entities/bars/actions', () => ({
+vi.mock('@/entities/bars/actions/getBarsAction', () => ({
     getBarsAction: vi.fn(),
 }));
 
@@ -177,7 +184,7 @@ vi.mock('@/entities/bars/actions', () => ({
  * 조회가 실패하면(목이 없으면) 그 렌더는 degrade로 간주돼 noindex + canonical
  * null이 된다 — 이 파일의 관심사는 canonical URL이므로 정상 봉을 준다.
  */
-vi.mock('@/entities/bars', () => {
+vi.mock('@/entities/bars/lib/barsStaticCache', () => {
     // vi.mock은 hoist되므로 픽스처를 팩토리 **안**에 둔다.
     const barsFixture = {
         bars: [
@@ -196,13 +203,16 @@ vi.mock('@/entities/bars', () => {
     };
 });
 
-vi.mock('@/entities/skill', () => ({
+vi.mock('@/entities/skill/api', () => ({
     countSkillFiles: vi.fn(() => Promise.resolve({ indicators: 13 })),
 }));
 
-vi.mock('@/entities/news-article/actions', () => ({
-    ensureNewsCardsAnalyzedAction: vi.fn(() => Promise.resolve()),
-}));
+vi.mock(
+    '@/entities/news-article/actions/ensureNewsCardsAnalyzedAction',
+    () => ({
+        ensureNewsCardsAnalyzedAction: vi.fn(() => Promise.resolve()),
+    })
+);
 
 // tanstack query (페이지 default export에서 사용, generateMetadata에는 불필요)
 // `/overall`은 스냅샷 프로즈도 peek 캐시도 없으면 noindex + canonical:null로 내려간다
@@ -257,7 +267,7 @@ import { generateMetadata as generateNewsMetadata } from '@/app/[locale]/[symbol
 import { generateMetadata as generateOverallMetadata } from '@/app/[locale]/[symbol]/overall/page';
 import { generateMetadata as generateFearGreedMetadata } from '@/app/[locale]/[symbol]/fear-greed/page';
 import { generateMetadata as generateOptionsMetadata } from '@/app/[locale]/[symbol]/options/page';
-import { evaluateSymbolIndexability } from '@/entities/symbol-indexability';
+import { evaluateSymbolIndexability } from '@/entities/symbol-indexability/lib/evaluateSymbolIndexability';
 import type { MockedFunction } from 'vitest';
 
 const mockEvaluateSymbolIndexability =

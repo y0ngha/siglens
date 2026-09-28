@@ -10,7 +10,7 @@ vi.mock('@/entities/portfolio/api', () => ({
         return { findByUser };
     }),
 }));
-vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
+vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: profile,
 }));
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
@@ -19,7 +19,7 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
 vi.mock('@/shared/api/market/sessionSpecFor', () => ({
     sessionSpecFor: vi.fn(),
 }));
-vi.mock('@/shared/config/marketProfile', () => ({
+vi.mock('@/shared/config/marketProfile/registry', () => ({
     getDescriptor: (id: string) => ({
         priceFormat: { currency: id === 'kr-equity' ? 'KRW' : 'USD' },
     }),

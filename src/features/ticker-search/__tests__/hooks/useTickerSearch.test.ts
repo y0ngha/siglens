@@ -47,7 +47,7 @@ vi.mock('@tanstack/react-query', () => ({
     },
 }));
 
-vi.mock('@/entities/ticker/actions', () => ({
+vi.mock('@/entities/ticker/actions/searchTickerAction', () => ({
     searchTickerAction: vi.fn(),
 }));
 

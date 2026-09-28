@@ -4,13 +4,11 @@ import { getLocale } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { localeHref } from '@/shared/i18n/localeRedirect';
 import { cookies, headers } from 'next/headers';
-import {
-    AUTH_SESSION_COOKIE_NAME,
-    applyAuthCookie,
-    isSecureCookieEnv,
-    createExpiredAuthHintCookie,
-    logoutUser,
-} from '@/entities/auth';
+import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
+import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
+import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
+import { createExpiredAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
+import { logoutUser } from '@/entities/auth/lib/logoutUser';
 import { DrizzleSessionRepository } from '@/entities/auth/api';
 import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';

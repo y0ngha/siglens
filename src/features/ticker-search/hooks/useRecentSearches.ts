@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 
-import type { RecentSearchEntry } from '@/entities/ticker';
+import type { RecentSearchEntry } from '@/entities/ticker/lib/recentSearches';
 import {
     addRecentSearch,
     clearRecentSearches,
@@ -10,8 +10,8 @@ import {
     RECENT_SEARCHES_STORAGE_KEY,
     relabelRecentSearches,
     removeRecentSearch,
-} from '@/entities/ticker';
-import { getAssetLabelsAction } from '@/entities/ticker/actions';
+} from '@/entities/ticker/lib/recentSearches';
+import { getAssetLabelsAction } from '@/entities/ticker/actions/getAssetLabelsAction';
 import { trackAdsConversion } from '@/shared/lib/googleAds';
 
 interface UseRecentSearchesResult {

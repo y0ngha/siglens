@@ -4,7 +4,7 @@ import { useId, type ReactNode } from 'react';
 import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
 import { SnapshotProseDisclosure } from './SnapshotProseDisclosure';
 import { formatSnapshotAsOf } from '@/shared/lib/formatSnapshotAsOf';
-import type { MarketProfileId } from '@/shared/config/marketProfile';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface SnapshotSummarySectionProps {

@@ -23,7 +23,7 @@ vi.mock('next/cache', () => ({
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: mockGetDatabaseClient,
 }));
-vi.mock('@/entities/market-news/api', () => ({
+vi.mock('@/entities/market-news/api/marketNewsRepository', () => ({
     DrizzleMarketNewsRepository: class {
         listLatestPublishedAt = mockListLatest;
     },
@@ -35,7 +35,7 @@ vi.mock('@/entities/terms/api', () => ({
 }));
 
 import { loadStaticSitemapInputs } from '../server';
-import { CATEGORY_CONFIG } from '@/entities/market-news';
+import { CATEGORY_CONFIG } from '@/entities/market-news/lib/categoryConfig';
 import { buildStaticEntries } from '../lib/buildStaticEntries';
 import { maxLastModified } from '../lib/maxLastModified';
 

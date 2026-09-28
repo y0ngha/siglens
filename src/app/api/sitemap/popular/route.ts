@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { buildPopularEntries, toUrlSetXml } from '@/entities/sitemap-entry';
+import { buildPopularEntries } from '@/entities/sitemap-entry/lib/buildPopularEntries';
+import { toUrlSetXml } from '@/entities/sitemap-entry/lib/xml';
 import { loadPopularSitemapInputs } from '@/entities/sitemap-entry/server';
 import { SITEMAP_CACHE_CONTROL } from '@/app/api/sitemap/_shared/constants';
 import { rejectAiHost } from '@/app/api/sitemap/_shared/aiHostGuard';

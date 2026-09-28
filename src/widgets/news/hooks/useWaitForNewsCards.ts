@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getNewsCardsAction } from '@/entities/news-article/actions';
+import { getNewsCardsAction } from '@/entities/news-article/actions/getNewsCardsAction';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import {
     POLL_INTERVAL_MS,
     MAX_CONSECUTIVE_FAILURES,
     MAX_POLL_DURATION_MS,
     EMPTY_SNAPSHOT_MAX_POLLS,
-} from '../constants';
+} from '@/shared/config/cardPollingConfig';
 
 function hasAnyEnrichedCard(items: NewsDisplayItem[]): boolean {
     return items.some(item => item.sentiment !== null);

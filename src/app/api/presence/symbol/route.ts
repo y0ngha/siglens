@@ -13,7 +13,7 @@ import { headers } from 'next/headers';
 import {
     DrizzleSymbolViewRepository,
     type SymbolViewRepository,
-} from '@/entities/symbol-view';
+} from '@/entities/symbol-view/api';
 import { isBot } from '@/shared/api/isBot';
 import { isAdmissibleSymbolShape } from '@/shared/config/market';
 import { getDatabaseClient } from '@/shared/db/client';

@@ -3,11 +3,12 @@ import { getCongressPageData } from '@/app/[locale]/[symbol]/congress/congressDa
 import { setRequestLocale } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
-import { getCongressTradesResilient } from '@/entities/congress-trades';
+import { getCongressTradesResilient } from '@/entities/congress-trades/lib/getCongressTradesResilient';
 import { getProfileResilient } from '@/app/[locale]/[symbol]/fundamental/getProfileResilient';
 import { CongressDegraded } from '@/app/[locale]/[symbol]/congress/CongressDegraded';
-import { CongressTradesTable, CongressTrendSummary } from '@/widgets/congress';
-import { SymbolPageHeading } from '@/views/symbol';
+import { CongressTradesTable } from '@/widgets/congress/CongressTradesTable';
+import { CongressTrendSummary } from '@/widgets/congress/CongressTrendSummary';
+import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import {
     CongressSnapshotProse,
     hasCongressProse,
@@ -21,12 +22,9 @@ import {
 } from '@/shared/config/market';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
-import {
-    buildAssetAboutNode,
-    buildDisplayName,
-    pickAssetName,
-    getAssetInfoResilient,
-} from '@/entities/ticker';
+import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
+import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import {
     buildBreadcrumbJsonLd,
     buildSnapshotMetaDescription,

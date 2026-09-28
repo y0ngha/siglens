@@ -25,10 +25,22 @@ const { deleteConversationAction, renameConversationAction } = vi.hoisted(
         renameConversationAction: vi.fn(async () => ({ ok: true })),
     })
 );
-vi.mock('@/entities/chat-conversation/actions', () => ({
-    deleteConversationAction,
-    renameConversationAction,
-}));
+vi.mock(
+    '@/entities/chat-conversation/actions/deleteConversationAction',
+    () => ({
+        deleteConversationAction,
+    })
+);
+vi.mock(
+    '@/entities/chat-conversation/actions/renameConversationAction',
+    () => ({
+        renameConversationAction,
+    })
+);
+// `LocaleSwitcher` reads next-intl's navigation helpers at import time, which
+// need a `redirect` export this file's `next/navigation` mock (above) doesn't
+// provide. Stubbing it keeps that chain out if it lands in the import graph
+// (same pattern as `HeaderMobileMenu.test.tsx`).
 // `useHideOnScrollDown` now comes from the `@/widgets/layout` barrel, which
 // eagerly re-exports `LocaleSwitcher` too — that module reads next-intl's
 // navigation helpers at import time, which need a `redirect` export this
@@ -77,17 +89,15 @@ const captured = vi.hoisted(
             } | null;
         }
 );
-vi.mock('@/features/agent-chat', async importOriginal => {
-    const actual =
-        await importOriginal<typeof import('@/features/agent-chat')>();
-    return {
-        ...actual,
-        useAgentStream: (options: typeof captured.options) => {
-            captured.options = options;
-            return mockStream;
-        },
-    };
-});
+vi.mock('@/features/agent-chat/hooks/useAgentStream', async importOriginal => ({
+    ...(await importOriginal<
+        typeof import('@/features/agent-chat/hooks/useAgentStream')
+    >()),
+    useAgentStream: (options: typeof captured.options) => {
+        captured.options = options;
+        return mockStream;
+    },
+}));
 
 import { ChatShell } from '@/widgets/agent-chat/ChatShell';
 

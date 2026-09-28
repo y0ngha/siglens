@@ -8,7 +8,7 @@ import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
 import {
     DEFAULT_MARKET_PROFILE,
     marketProfileOf,
-} from '@/shared/config/marketProfile';
+} from '@/shared/config/marketProfile/registry';
 import { tabsFor } from './utils/symbolTabsConfig';
 import { useAppPathname } from '@/shared/i18n/useAppPathname';
 

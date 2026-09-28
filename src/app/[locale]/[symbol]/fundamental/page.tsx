@@ -30,7 +30,7 @@ import { PeersTable } from '@/widgets/fundamental/sections/PeersTable';
 import { ProfileCard } from '@/widgets/fundamental/sections/ProfileCard';
 import { ProfitabilityCard } from '@/widgets/fundamental/sections/ProfitabilityCard';
 import { ValuationCard } from '@/widgets/fundamental/sections/ValuationCard';
-import { SymbolPageHeading } from '@/views/symbol';
+import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import {
     FundamentalSnapshotProse,
     hasFundamentalProse,
@@ -46,12 +46,9 @@ import {
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
-import {
-    buildAssetAboutNode,
-    buildDisplayName,
-    getAssetInfoResilient,
-    pickAssetName,
-} from '@/entities/ticker';
+import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
+import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import {
     buildBreadcrumbJsonLd,
     buildSnapshotMetaDescription,
@@ -74,8 +71,8 @@ import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import {
     marketProfileOf,
     profileIdForSymbol,
-    type MarketProfileId,
-} from '@/shared/config/marketProfile';
+} from '@/shared/config/marketProfile/registry';
+import { type MarketProfileId } from '@/shared/config/marketProfile/types';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 // 종목당 SEO 콘텐츠는 고정이고 동적 데이터는 클라가 재hydrate한다. 엣지 캐시로

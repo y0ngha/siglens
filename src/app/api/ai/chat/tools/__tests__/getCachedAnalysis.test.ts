@@ -49,7 +49,7 @@ vi.mock('@/entities/seo-snapshot/api', () => ({
         return { findBySymbol };
     }),
 }));
-vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
+vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: profile,
 }));
 vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({

@@ -11,15 +11,12 @@ import {
 } from '@/shared/lib/seoAlternates';
 import { Suspense } from 'react';
 
-import {
-    EconomicCalendar,
-    EconomyKrMacroFacts,
-    EconomySkeleton,
-    KrEconomicIndicatorGrid,
-} from '@/widgets/economy';
-// entities/economy/api/*는 server-only(`@upstash/redis` + `next/cache`) 의존이라
-// 슬라이스 barrel에서 의도적으로 제외돼 있다. app 레이어가 server-only 모듈을 직접
-// import하는 것은 클라이언트 번들 누출 위험이 없으므로 허용된다.
+import { EconomicCalendarGrid as EconomicCalendar } from '@/widgets/economy/sections/EconomicCalendarGrid';
+import { EconomyKrMacroFacts } from '@/widgets/economy/sections/EconomyKrMacroFacts';
+import { EconomySkeleton } from '@/widgets/economy/sections/EconomySkeleton';
+import { KrEconomicIndicatorGrid } from '@/widgets/economy/sections/KrEconomicIndicatorGrid';
+// entities/economy/api/*는 server-only(`@upstash/redis` + `next/cache`) 의존이다.
+// app 레이어(RSC)에서만 import하므로 클라이언트 번들 누출 위험이 없다.
 import {
     getKrIndicatorCards,
     type KrIndicatorCard,

@@ -1,7 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
 import { getTranslations } from 'next-intl/server';
-import { ApiKeySection } from '@/features/api-key-management';
+import { ApiKeySection } from '@/features/api-key-management/ui/ApiKeySection';
 import {
     DEFAULT_LOCALE,
     isLocale,
@@ -10,7 +10,7 @@ import {
 } from '@/shared/i18n/locales';
 import { setRequestLocale } from 'next-intl/server';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { getRegisteredProvidersAction } from '@/entities/api-key/actions';
+import { getRegisteredProvidersAction } from '@/entities/api-key/actions/getRegisteredProvidersAction';
 import { TIER_LABEL } from '@/shared/lib/auth/tierLabel';
 import type { Metadata } from 'next';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';

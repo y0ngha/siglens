@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { buildFallbackAnalysis } from '@/entities/chat-message';
+import { buildFallbackAnalysis } from '@/entities/chat-message/lib/fallbackAnalysis';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 import { ChartContent } from '../ChartContent';
 import { PANEL_MAX_WIDTH, PANEL_MIN_WIDTH } from '../hooks/usePanelResize';
@@ -18,10 +18,16 @@ const FALLBACK_ANALYSIS = buildFallbackAnalysis(
 // 검증한다. 배너 분기 검증을 위해 useAnalysis·useAnalysisDisplay만 테스트별로
 // 제어한다. (slot 테스트와 동일하게 vi.mock은 hoist되지만 import/first를 위해
 // 위에 모은다.)
-vi.mock('@/widgets/chart', () => ({
+vi.mock('@/widgets/chart/ChartErrorFallback', () => ({
     ChartErrorFallback: () => null,
+}));
+vi.mock('@/widgets/chart/ChartSkeleton', () => ({
     ChartSkeleton: () => null,
+}));
+vi.mock('@/widgets/chart/TimeframeSelector', () => ({
     TimeframeSelector: () => null,
+}));
+vi.mock('@/widgets/chart/hooks/useChartSync', () => ({
     useChartSync: () => ({
         handleStockChartReady: vi.fn(),
         handleStockChartRemove: vi.fn(),
@@ -58,7 +64,7 @@ const symbolModelMock = vi.fn();
 vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
     useSymbolModel: () => symbolModelMock(),
 }));
-vi.mock('@/features/analysis-nudge', () => ({
+vi.mock('@/features/analysis-nudge/hooks/useAnonAnalysisNudge', () => ({
     useAnonAnalysisNudge: () => ({
         isLoginResolved: false,
         onSymbolAnalyzed: vi.fn(),
@@ -81,13 +87,17 @@ vi.mock('../hooks/useAnalysisDisplay', () => ({
 vi.mock('@/widgets/analysis/hooks/useAnalysisProgress', () => ({
     useAnalysisProgress: () => ({ phaseIndex: 0, tipIndex: 0 }),
 }));
-vi.mock('@/features/symbol-chat', () => ({ usePublishSymbolChat: vi.fn() }));
-vi.mock('@/widgets/analysis', () => ({
+vi.mock('@/features/symbol-chat/hooks/useSymbolChat', () => ({
+    usePublishSymbolChat: vi.fn(),
+}));
+vi.mock('@/widgets/analysis/AnalysisPanel', () => ({
     // isFreeUser는 광고 게이팅 prop이다. Pro tier에서 false가 실제로 전달되는지
     // 검증할 수 있도록 data 속성으로 노출한다(회귀 방지 — fix-log PR #690).
     AnalysisPanel: ({ isFreeUser }: { isFreeUser?: boolean }) => (
         <div data-testid="analysis-panel" data-free-user={String(isFreeUser)} />
     ),
+}));
+vi.mock('@/widgets/analysis/AnalysisProgress', () => ({
     // 서사 없는 첫 분석의 로딩 인디케이터. ChartContent는 이 컴포넌트를
     // displayAnalyzing 분기에서 렌더하므로 배너와 구분되는 stub으로 대체한다.
     AnalysisProgress: ({
@@ -114,7 +124,7 @@ vi.mock('@/widgets/analysis', () => ({
 // mockable하게 둬 "내 포지션 요약" describe 블록이 holding-present 케이스를
 // 별도로 override할 수 있게 한다(기본값은 beforeEach에서 "홀딩 없음").
 const symbolHoldingMock = vi.fn();
-vi.mock('@/features/portfolio-holding', () => ({
+vi.mock('@/features/portfolio-holding/hooks/useSymbolHolding', () => ({
     useSymbolHolding: () => symbolHoldingMock(),
 }));
 

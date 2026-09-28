@@ -11,11 +11,15 @@
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: vi.fn(),
 }));
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker/lib/assetClassification', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+}));
+vi.mock('@/entities/ticker/lib/ticker', () => ({
     pickAssetName: (info: { name: string; koreanName?: string }) =>
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
+}));
+vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 vi.mock('next/navigation', () => ({
@@ -32,17 +36,19 @@ vi.mock('@/app/[locale]/[symbol]/congress/congressData', () => ({
 vi.mock('@/app/[locale]/[symbol]/congress/CongressDegraded', () => ({
     CongressDegraded: () => null,
 }));
-vi.mock('@/entities/congress-trades', () => ({
+vi.mock('@/entities/congress-trades/lib/getCongressTradesResilient', () => ({
     getCongressTradesResilient: vi.fn(),
 }));
 vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: vi.fn().mockResolvedValue([]),
 }));
-vi.mock('@/widgets/congress', () => ({
+vi.mock('@/widgets/congress/CongressTrendSummary', () => ({
     CongressTrendSummary: () => null,
+}));
+vi.mock('@/widgets/congress/CongressTradesTable', () => ({
     CongressTradesTable: () => null,
 }));
-vi.mock('@/views/symbol', () => ({
+vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({
     SymbolPageHeading: () => null,
 }));
 vi.mock('@/shared/ui/CrossLinkCards', () => ({
@@ -75,7 +81,7 @@ import {
 } from 'vitest';
 import { NOINDEX_SYMBOL_METADATA } from '@/shared/lib/seo';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
-import { getAssetInfoResilient } from '@/entities/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { getProfileResilient } from '@/app/[locale]/[symbol]/fundamental/getProfileResilient';
 import { notFound } from 'next/navigation';
 import CongressPage, {
@@ -209,7 +215,7 @@ describe('Congress generateMetadata crypto NOINDEX guard', () => {
         // getCongressTradesResilient is called after the profile gate in generateMetadata.
         // Return non-degraded so the equity path proceeds to build real metadata.
         const { getCongressTradesResilient } =
-            await import('@/entities/congress-trades');
+            await import('@/entities/congress-trades/lib/getCongressTradesResilient');
         (
             getCongressTradesResilient as MockedFunction<
                 typeof getCongressTradesResilient

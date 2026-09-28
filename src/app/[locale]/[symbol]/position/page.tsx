@@ -1,32 +1,33 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import type { PositionTranslator } from '@/widgets/portfolio-position';
+import type { PositionTranslator } from '@/widgets/portfolio-position/lib/positionBuildingNotes';
 import {
     BAND_COUNT,
     computePosition,
-    computeVolumeByBand,
+} from '@/widgets/portfolio-position/lib/positionGeometry';
+import { computeVolumeByBand } from '@/widgets/portfolio-position/lib/volumeByBand';
+import {
     describeAvgFloor,
     formatAmountAligned,
-    PositionTabContent,
-} from '@/widgets/portfolio-position';
+} from '@/widgets/portfolio-position/lib/positionBuildingNotes';
+import { PositionTabContent } from '@/widgets/portfolio-position/ui/PositionTabContent';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
-import { SymbolPageHeading } from '@/views/symbol';
+import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import {
     DEFAULT_TIMEFRAME,
     SymbolRouteParams,
     isAdmissibleSymbolShape,
 } from '@/shared/config/market';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
-import {
-    buildAssetAboutNode,
-    buildDisplayName,
-    getAssetInfoResilient,
-} from '@/entities/ticker';
-// isTabAllowedForSymbol은 barrel에서 제외 — fundamental page.tsx와 동일하게
-// api.ts에서 직접 deep import한다 (entities/ticker/index.ts 상단 주석 참고).
+import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
+import { buildDisplayName } from '@/entities/ticker/lib/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
-import { getQuantizedBarsStatic } from '@/entities/bars';
-import { getDescriptor, marketProfileOf } from '@/shared/config/marketProfile';
+import { getQuantizedBarsStatic } from '@/entities/bars/lib/barsStaticCache';
+import {
+    getDescriptor,
+    marketProfileOf,
+} from '@/shared/config/marketProfile/registry';
 import {
     buildTechnicalFacts,
     RECENT_BARS_WINDOW,

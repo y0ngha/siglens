@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
-vi.mock('@/entities/notice/actions', () => ({
+vi.mock('@/entities/notice/actions/getActiveNoticesAction', () => ({
     getActiveNoticesAction: vi.fn(),
 }));
 
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { useNoticePopup } from '@/widgets/notice-popup/hooks/useNoticePopup';
-import { getActiveNoticesAction } from '@/entities/notice/actions';
-import type { NoticeRecord } from '@/entities/notice';
+import { getActiveNoticesAction } from '@/entities/notice/actions/getActiveNoticesAction';
+import type { NoticeRecord } from '@/entities/notice/model/types';
 import { DISMISSED_NOTICES_STORAGE_KEY } from '../utils/noticeStorage';
 
 const mockedAction = vi.mocked(getActiveNoticesAction);

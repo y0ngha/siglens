@@ -1,4 +1,4 @@
-import { deriveBacktestStats } from '@/entities/backtest-case';
+import { deriveBacktestStats } from '@/entities/backtest-case/lib/deriveBacktestStats';
 import type { BacktestCase } from '@y0ngha/siglens-core';
 
 /**

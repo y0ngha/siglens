@@ -1,4 +1,4 @@
-import type { MarketProfileId } from '@/shared/config/marketProfile';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 
 /**

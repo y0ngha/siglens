@@ -5,10 +5,10 @@ import { setRequestLocale } from 'next-intl/server';
 import { localeRedirect } from '@/shared/i18n/localeRedirect';
 import { Suspense } from 'react';
 import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
-import { OAuthConsentForm } from '@/features/auth-oauth-consent';
-import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account';
-import { cancelOAuthSignupAction } from '@/features/auth-oauth/actions';
-import { OAUTH_ERROR_REDIRECT } from '@/entities/auth';
+import { OAuthConsentForm } from '@/features/auth-oauth-consent/ui/OAuthConsentForm';
+import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/lib/pendingOAuthSignupStore';
+import { cancelOAuthSignupAction } from '@/features/auth-oauth/actions/cancelOAuthSignupAction';
+import { OAUTH_ERROR_REDIRECT } from '@/entities/auth/lib/errorMessages';
 import { SITE_NAME } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
 

@@ -12,7 +12,7 @@ import {
 import {
     useRequestEmailVerification,
     useVerifyEmail,
-} from '@/features/auth-email-verification';
+} from '@/features/auth-email-verification/hooks/useEmailVerificationForms';
 import { useSignupForm } from '../hooks/useSignupForm';
 import { AuthErrorAlert } from '@/shared/ui/auth/AuthErrorAlert';
 import { AUTH_ERROR_KEY } from '@/shared/lib/authErrorKey';

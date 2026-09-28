@@ -13,8 +13,8 @@ import {
     CATEGORY_CONFIG,
     categoriesInRegion,
     type NewsFeedCategoryId,
-} from '@/entities/market-news';
-import { CategoryCard } from '@/widgets/news-hub';
+} from '@/entities/market-news/lib/categoryConfig';
+import { CategoryCard } from '@/widgets/news-hub/CategoryCard';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { regionsOf, type NavRegionId } from '@/shared/config/assetClassNav';

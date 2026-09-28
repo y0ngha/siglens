@@ -39,9 +39,9 @@ import {
     ingestNewsForSymbol,
     NewsIngestWriteError,
 } from './lib/ingestNewsForSymbol';
-import { getNextEarningsReport } from '@/entities/earnings-report';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
-import { getDescriptor } from '@/shared/config/marketProfile';
+import { getNextEarningsReport } from '@/entities/earnings-report/api';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { PREWARM_PROVIDER_FALLBACK } from '@/shared/config/prewarm';
 
 /** Domain-level row returned from the `news` table; extends the display projection with persistence-only fields. */
@@ -483,12 +483,7 @@ export async function prewarmNews(
 }
 
 /**
- * `server-only` 모듈의 슬라이스 진입점 재노출.
- *
- * 클라이언트 안전 barrel(`index.ts`)로는 내보낼 수 없다 — 그 파일의 헤더가
- * 명시하듯 `server-only`가 client 번들에 섞이면 build가 깨진다. 그렇다고
- * 소비자가 `lib/<file>`을 깊게 파고들면 슬라이스 경계가 흐려지므로, 서버
- * 소비자용 진입점인 이 파일이 대신 재노출한다.
+ * `server-only` 모듈의 서버 소비자용 재노출.
  */
 export { hasAnalyzableNews } from './lib/hasAnalyzableNews';
 export { analyzeNewsCards } from './lib/analyzeNewsCards';

@@ -1,5 +1,5 @@
 import { deduplicateResults, isKoreanInput } from './ticker';
-import { isKrEquitySymbol } from '@/shared/config/marketProfile';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import {
     buildTickerSearchCacheKey,
     TICKER_SEARCH_CACHE_TTL,

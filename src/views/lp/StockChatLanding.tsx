@@ -12,9 +12,9 @@ import {
     CheckIcon,
     LayersIcon,
     QuoteIcon,
-    SiglensMark,
     SparkIcon,
-} from '@/widgets/agent-chat';
+} from '@/shared/ui/StrokeIcons';
+import { SiglensMark } from '@/widgets/agent-chat/SiglensMark';
 import { LpChatReplay } from './ui/LpChatReplay';
 import { LP_PRIMARY_BUTTON, LpDisclaimer, LpShell } from './ui/LpShell';
 

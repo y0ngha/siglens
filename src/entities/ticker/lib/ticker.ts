@@ -1,6 +1,6 @@
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import type { AssetInfo, TickerSearchResult } from '@/shared/lib/types';
-import { isKrEquitySymbol } from '@/shared/config/marketProfile';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 
 const KOREAN_UNICODE_REGEX = /[ㄱ-ㅣ가-힣]/;
 
@@ -61,7 +61,7 @@ function shouldShowEnglishNameInKorean(
  * 결과는 `/en/005930.KS`에서 브레드크럼 `삼성전자`, `<title>`
  * `Samsung Electronics Co Ltd` — 같은 페이지가 두 이름을 말했다.
  *
- * 그래서 배럴은 **이 함수만** 내보낸다. 로케일을 안 받는 쪽을 고를 수 없으면
+ * 그래서 이 모듈은 **이 함수만** 내보낸다. 로케일을 안 받는 쪽을 고를 수 없으면
  * 같은 사고가 구조적으로 안 난다.
  */
 export function shouldShowEnglishName(

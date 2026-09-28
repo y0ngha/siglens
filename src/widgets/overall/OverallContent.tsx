@@ -1,24 +1,24 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { usePublishSymbolChat } from '@/features/symbol-chat';
-import { useNewsAnalysisTrigger, useWaitForNewsCards } from '@/widgets/news';
+import { usePublishSymbolChat } from '@/features/symbol-chat/hooks/useSymbolChat';
+import { useNewsAnalysisTrigger } from '@/widgets/news/hooks/useNewsAnalysisTrigger';
+import { useWaitForNewsCards } from '@/widgets/news/hooks/useWaitForNewsCards';
 import { useOverallAnalysis } from './hooks/useOverallAnalysis';
 import { OverallTriggerCta } from './OverallTriggerCta';
 import { ReanalyzeButton } from './ReanalyzeButton';
 import { buildChatState } from './utils/buildChatState';
-import {
-    useDefaultModelId,
-    useDefaultReasoning,
-    useAnalysisSettingsHydrated,
-    useSymbolModel,
-} from '@/features/symbol-model';
+import { useDefaultModelId } from '@/features/symbol-model/hooks/useDefaultModelId';
+import { useDefaultReasoning } from '@/features/symbol-model/hooks/useDefaultReasoning';
+import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
+import { useSymbolModel } from '@/features/symbol-model/model/SymbolModelContext';
 import { cn } from '@/shared/lib/cn';
 import { type OverallAnalysisResponse } from '@y0ngha/siglens-core';
 import { type CSSProperties } from 'react';
 import { useTimeframeFromUrl } from './hooks/useTimeframeFromUrl';
-import type { AssetClass } from '@/shared/config/marketProfile';
-import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
+import type { AssetClass } from '@/shared/config/marketProfile/types';
+import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
+import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
 import { OverallView } from './OverallView';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';

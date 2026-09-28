@@ -1,7 +1,7 @@
 import { createTranslator } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { describe, expect, it, vi } from 'vitest';
-import { GUEST_TURNS_PER_DAY } from '@/widgets/agent-chat';
+import { GUEST_TURNS_PER_DAY } from '@/widgets/agent-chat/guestTurnLimit';
 import ko from '../../../../../messages/ko.json';
 
 vi.mock('next-intl/server', () => ({

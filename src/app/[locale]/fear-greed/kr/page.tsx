@@ -8,7 +8,7 @@ import {
     localeRobots,
 } from '@/shared/lib/seoAlternates';
 import { getMarketFearGreedKrStatic } from '@/entities/market-fear-greed/api/marketFearGreedKrStaticCache';
-import type { MarketFearGreedView } from '@/entities/market-fear-greed';
+import type { MarketFearGreedView } from '@/entities/market-fear-greed/model';
 import { SITE_NAME } from '@/shared/lib/seo';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { fearGreedCopyFor } from '../copy';

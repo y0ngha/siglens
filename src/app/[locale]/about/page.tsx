@@ -1,5 +1,5 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { countSkillFiles } from '@/entities/skill';
+import { countSkillFiles } from '@/entities/skill/api';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import {
     localeAlternatesFrom,
@@ -30,7 +30,11 @@ import {
 import type { SeoTranslator } from '@/shared/lib/seo';
 import type { Locale } from '@/shared/i18n/locales';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
-import { AboutPage, EMPTY_SKILL_COUNTS, getAboutFaq } from '@/views/about';
+import { AboutPage } from '@/views/about/AboutPage';
+import {
+    EMPTY_SKILL_COUNTS,
+    getAboutFaq,
+} from '@/views/about/lib/aboutContent';
 
 const PAGE_URL = `${SITE_URL}${ABOUT_PATH}`;
 

@@ -4,9 +4,6 @@ import { isE2E } from '@/shared/api/e2eEnv';
 import { fakeAgentProvider } from './fake';
 import { createAgentProvider, type AgentProviderState } from './router';
 
-export { AGENT_MODEL, AGENT_FALLBACK_MODEL } from './router';
-export type { AgentProviderState } from './router';
-
 /**
  * E2E → fake; otherwise the fixed-model DeepSeek provider.
  *

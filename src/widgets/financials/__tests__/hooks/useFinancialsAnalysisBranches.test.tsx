@@ -12,7 +12,7 @@ import koMessages from '../../../../../messages/ko.json';
 import type { Mock } from 'vitest';
 import { useFinancialsAnalysis } from '@/widgets/financials/hooks/useFinancialsAnalysis';
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
-import { isGateBlockedResult } from '@/entities/analysis';
+import { isGateBlockedResult } from '@/entities/analysis/lib/gate';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { FinancialsAnalysisResponse } from '@y0ngha/siglens-core';
@@ -22,7 +22,7 @@ vi.mock('@/shared/hooks/useAnalysisStream', () => ({
     runAnalysisStream: vi.fn(),
 }));
 
-vi.mock('@/entities/analysis', () => ({
+vi.mock('@/entities/analysis/lib/gate', () => ({
     isGateBlockedResult: vi.fn().mockReturnValue(false),
 }));
 

@@ -548,3 +548,12 @@
 - Violation (RECOMMENDED ×1): ARCHITECTURE.md folder tree structure listed nonexistent `src/__tests__/fixtures/` directory. The adjacent line of the same section had just been edited in the same revision, indicating the deletion was missed during that edit pass.
   - Rule: Documentation structural lists (folder trees, examples, file inventories) must be kept synchronized with actual filesystem structure. When editing adjacent sections, spot-check for stale paths and delete them alongside the edit.
   - Context: Removed the nonexistent directory reference from the folder tree.
+
+## [claude/funny-turing-9cgfid Round 1 review | barrel-removal codemod self-caught issues | 2026-09-28]
+- Violation: Import-rewriting codemod treated an intentional mock seam as a barrel export and rewrote it to direct import
+  - Rule: Mock seams (architectural re-exports created solely to enable test mocking of dependencies) must be preserved during automated rewrites. src/app/api/analysis/stream/runAnalysisBridge.ts re-exports core runAnalysis to allow route.test.ts to mock it independently from the full module. Barrel-removal codemods that rewrite re-exported symbols to their origin sources eliminate the mock seam.
+  - Context: Orchestrator's review caught the broken pattern (route + tests now imported '@y0ngha/siglens-core' directly instead of through the seam). Reverted to seam re-export; added route to test allowlist so the seam is preserved through future codemod runs.
+
+- Violation: Codemod dropped comments attached to vi.mock statements and factory properties
+  - Rule: Automated code rewrites must preserve comments via full AST traversal. The implementation used getText(), which excludes leading trivia (comments). When rewriting mock statements or factory property definitions that bear explanatory comments, the comments were silently dropped.
+  - Context: Orchestrator caught the missing comments during verification. Fixed by restoring trimmed comments from git HEAD followed by manual review of all removed comment lines. Ensured all factory properties that describe mocking intent now carry their comments through the codemod pipeline.

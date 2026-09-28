@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
-import type { AssetClass } from '@/shared/config/marketProfile';
+import type { AssetClass } from '@/shared/config/marketProfile/types';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface OverallTriggerCtaProps {

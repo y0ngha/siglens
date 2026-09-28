@@ -6,20 +6,32 @@
  * 요구하므로 그 상태는 리치 결과 자격이 없을 뿐 아니라 숨김 콘텐츠 판정 쪽에
  * 가깝다. 배열 하나에서 두 표면을 만들면 갈릴 수가 없다는 것을 여기서 못 박는다.
  */
-vi.mock('@/widgets/home', () => ({
+vi.mock('@/widgets/home/heroQuickLinks', () => ({
     HERO_QUICK_LINKS: [
         { href: '/market', labelKey: 'shared.config.nav.full.market.us' },
     ],
+}));
+vi.mock('@/widgets/home/CryptoShowcase', () => ({
     CryptoShowcase: () => null,
+}));
+vi.mock('@/widgets/home/HeroIllustration', () => ({
     HeroIllustration: () => null,
+}));
+vi.mock('@/widgets/home/SkillsShowcase', () => ({
     SkillsShowcase: () => null,
     SkillsShowcaseSkeleton: () => null,
+}));
+vi.mock('@/widgets/home/StatsBar', () => ({
     StatsBar: () => null,
     StatsBarSkeleton: () => null,
+}));
+vi.mock('@/widgets/home/TickerCategories', () => ({
     TickerCategories: () => null,
 }));
-vi.mock('@/features/ticker-search', () => ({ SymbolSearchPanel: () => null }));
-vi.mock('@/entities/skill', () => ({
+vi.mock('@/features/ticker-search/ui/SymbolSearchPanel', () => ({
+    SymbolSearchPanel: () => null,
+}));
+vi.mock('@/entities/skill/api', () => ({
     countSkillFiles: vi.fn().mockResolvedValue({
         indicators: 13,
         candlesticks: 30,

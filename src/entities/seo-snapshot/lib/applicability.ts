@@ -6,8 +6,8 @@ import { SEO_SNAPSHOT_TABS, type SeoSnapshotTab } from '../model';
 import {
     DEFAULT_MARKET_PROFILE,
     isKrEquitySymbol,
-    type MarketProfileId,
-} from '@/shared/config/marketProfile';
+} from '@/shared/config/marketProfile/registry';
+import { type MarketProfileId } from '@/shared/config/marketProfile/types';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 
 const CRYPTO_TABS: readonly SeoSnapshotTab[] = ['technical', 'overall', 'news'];

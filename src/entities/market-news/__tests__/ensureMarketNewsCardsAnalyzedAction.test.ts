@@ -29,7 +29,7 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
 
 // vi.mock factories are hoisted — cannot reference outer-scope variables.
 // Access all mocked functions via vi.mocked() after static import.
-vi.mock('../api', () => ({
+vi.mock('@/entities/market-news/api/marketNewsRepository', () => ({
     DrizzleMarketNewsRepository: vi.fn(function () {
         return {
             upsertMarketNewsItem: vi.fn(async () => true),
@@ -65,7 +65,7 @@ vi.mock('../lib/getMarketNewsClient', () => ({
 // 2. Static imports — grouped after all vi.mock() calls
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ensureMarketNewsCardsAnalyzedAction } from '../actions/ensureMarketNewsCardsAnalyzedAction';
-import * as api from '../api';
+import * as api from '../api/marketNewsRepository';
 import * as getMarketNewsClientModule from '../lib/getMarketNewsClient';
 import * as core from '@y0ngha/siglens-core';
 import { MARKET_NEWS_LOOKBACK_MS } from '../lib/marketNewsConstants';

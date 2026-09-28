@@ -9,24 +9,20 @@ import {
 } from '@/shared/lib/seoAlternates';
 import { Suspense } from 'react';
 
-import {
-    EconomicCalendar,
-    EconomicIndicatorGrid,
-    EconomyMacroFacts,
-    EconomySkeleton,
-    MacroBriefing,
-} from '@/widgets/economy';
-// entities/economy/api/*는 server-only(`@upstash/redis` + `next/cache`) 의존이라
-// entities/CLAUDE.md "barrel 제외 대상" 일반 규칙대로 슬라이스 barrel(index.ts)에서
-// 의도적으로 제외돼 있다. app 레이어가 server-only 모듈을 직접 import하는 것은
-// 클라이언트 번들 누출 위험이 없으므로 허용된다.
+import { EconomicCalendarGrid as EconomicCalendar } from '@/widgets/economy/sections/EconomicCalendarGrid';
+import { EconomicIndicatorGrid } from '@/widgets/economy/sections/EconomicIndicatorGrid';
+import { EconomyMacroFacts } from '@/widgets/economy/sections/EconomyMacroFacts';
+import { EconomySkeleton } from '@/widgets/economy/sections/EconomySkeleton';
+import { MacroBriefing } from '@/widgets/economy/sections/MacroBriefing';
+// entities/economy/api/*는 server-only(`@upstash/redis` + `next/cache`) 의존이다.
+// app 레이어(RSC)에서만 import하므로 클라이언트 번들 누출 위험이 없다.
 import { getEconomySnapshotStatic } from '@/entities/economy/api/economySnapshotStaticCache';
 import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingStaticCache';
 import { getCalendarFromDb } from '@/entities/economy/api/getCalendarFromDb';
 import { resolveIndicatorLabels } from '@/entities/economy/api/resolveIndicatorLabels';
 import { etDateOf, kstDateOf } from '@/entities/economy/lib/calendarWindow';
 import { CALENDAR_COUNTRY } from '@/entities/economy/lib/economyCalendarConstants';
-import { isEmptyEconomySnapshot } from '@/entities/economy';
+import { isEmptyEconomySnapshot } from '@/entities/economy/lib/economyCompleteness';
 import {
     buildBreadcrumbJsonLd,
     buildFaqJsonLd,

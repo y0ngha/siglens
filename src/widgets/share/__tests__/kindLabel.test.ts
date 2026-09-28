@@ -1,5 +1,5 @@
 import { kindLabelKey } from '../lib/kindLabel';
-import type { ShareableKind } from '@/entities/shared-analysis';
+import type { ShareableKind } from '@/shared/db/constants';
 import koMessages from '@/../messages/ko.json';
 import enMessages from '@/../messages/en.json';
 import jaMessages from '@/../messages/ja.json';

@@ -3,7 +3,7 @@
  * result in sync with the server section's serialization limit.
  */
 import { capRows } from '@/widgets/news/utils/capRows';
-import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/widgets/news/constants';
+import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 
 function makeItems(count: number): NewsDisplayItem[] {

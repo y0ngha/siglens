@@ -1,7 +1,7 @@
 import { FmpFundamentalClient } from './fundamentalClient';
 import { CachedFundamentalProvider } from './CachedFundamentalProvider';
 import { createE2EGatedSingleton } from '@/shared/api/createE2EGatedSingleton';
-import { isKrEquitySymbol } from '@/shared/config/marketProfile';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { YahooFundamentalProvider } from '@/shared/api/yahoo/YahooFundamentalProvider';
 import type { FundamentalProviderWithRawPeers } from './fundamentalProvider.types';
 

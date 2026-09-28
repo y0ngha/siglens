@@ -1,5 +1,5 @@
 import type { FinancialsSnapshot, StatementPeriod } from '@y0ngha/siglens-core';
-import { getFinancialsQuarterAction } from '@/entities/financials-statements/actions';
+import { getFinancialsQuarterAction } from '@/entities/financials-statements/actions/getFinancialsQuarterAction';
 
 /**
  * True when the snapshot carries no statement data in any section.

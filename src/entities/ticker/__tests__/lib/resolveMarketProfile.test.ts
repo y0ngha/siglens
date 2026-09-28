@@ -5,7 +5,7 @@ vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
 }));
 
 import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 
 describe('resolveMarketProfile', () => {
     it('returns "crypto" for a crypto-profile asset', async () => {

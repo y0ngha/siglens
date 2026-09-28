@@ -7,7 +7,7 @@
  */
 
 import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
-import type { AssetClass } from '@/shared/config/marketProfile';
+import type { AssetClass } from '@/shared/config/marketProfile/types';
 import { FinancialsSummary } from './sections/FinancialsSummary';
 import { FundamentalSummary } from './sections/FundamentalSummary';
 import { IntegratedConclusion } from './sections/IntegratedConclusion';

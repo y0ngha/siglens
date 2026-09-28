@@ -4,9 +4,9 @@ import { NextResponse } from 'next/server';
 import {
     isRemovalSitemapKind,
     SITEMAP_MAX_URLS_PER_FILE,
-    toRemovalUrlSetXml,
     type RemovalSitemapEntry,
-} from '@/entities/sitemap-entry';
+} from '@/entities/sitemap-entry/model';
+import { toRemovalUrlSetXml } from '@/entities/sitemap-entry/lib/removalXml';
 import { loadRemovalSitemapEntries } from '@/entities/sitemap-entry/server';
 
 import {

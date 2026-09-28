@@ -2,7 +2,7 @@ import { fmpGet } from '@/shared/api/fmp/httpClient';
 import {
     hashUrlToId,
     normalizeFmpPublishedDate,
-} from '@/entities/news-article';
+} from '@/entities/news-article/lib/fmpNewsClient';
 import { CATEGORY_CONFIG, type NewsFeedCategoryId } from './categoryConfig';
 import type {
     MarketNewsClientPort,

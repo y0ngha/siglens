@@ -26,11 +26,11 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(),
 }));
 
-vi.mock('@/entities/earnings-report', () => ({
+vi.mock('@/entities/earnings-report/api', () => ({
     getNextEarningsReport: vi.fn(),
 }));
 
-vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
+vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: vi.fn(),
 }));
 
@@ -74,10 +74,10 @@ import {
     DrizzleNewsRepository,
     prewarmNews,
 } from '@/entities/news-article/api';
-import type { NewsRow } from '@/entities/news-article';
+import type { NewsRow } from '@/entities/news-article/api';
 import { getDatabaseClient } from '@/shared/db/client';
-import { getNextEarningsReport } from '@/entities/earnings-report';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
+import { getNextEarningsReport } from '@/entities/earnings-report/api';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { NEWS_ANALYSIS_LOOKBACK_MS } from '../lib/newsLookback';
 import {
     ingestNewsForSymbol,

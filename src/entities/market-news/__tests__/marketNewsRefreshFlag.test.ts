@@ -20,7 +20,7 @@ import {
     isRecentlyFetched,
     markFetched,
     MARKET_NEWS_REFRESH_FLAG_TTL_SECONDS,
-} from '../api';
+} from '@/entities/market-news/api/marketNewsRepository';
 import { CATEGORY_CONFIG } from '../lib/categoryConfig';
 
 const cryptoSentinel = CATEGORY_CONFIG['crypto'].sentinel; // '__NEWS_CRYPTO__'

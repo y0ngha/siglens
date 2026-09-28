@@ -1,6 +1,6 @@
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
-import { isKrEquitySymbol } from '@/shared/config/marketProfile';
-import type { MarketProfileId } from '@/shared/config/marketProfile';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { fetchKrEquityQuoteName } from './krEquityQuoteName';
 import { krExchangeOf } from './krExchange';
 import { CURATED_KOREAN_NAMES } from '@/shared/config/popular-tickers';

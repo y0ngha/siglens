@@ -1,5 +1,6 @@
 import 'server-only';
-import { callGeminiChat, parseJsonResponse } from '@/entities/llm-provider';
+import { callGeminiChat } from '@/entities/llm-provider/api/gemini';
+import { parseJsonResponse } from '@/entities/llm-provider/lib/parseJsonResponse';
 import { tryReadTranslatorConfig } from './config';
 import type { TranslatorConfig, TranslatorEntry } from '../model';
 

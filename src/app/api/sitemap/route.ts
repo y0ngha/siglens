@@ -1,11 +1,9 @@
-import {
-    buildCryptoPopularEntries,
-    buildPopularEntries,
-    buildStaticEntries,
-    maxLastModified,
-    type SitemapIndexEntry,
-    toSitemapIndexXml,
-} from '@/entities/sitemap-entry';
+import { buildCryptoPopularEntries } from '@/entities/sitemap-entry/lib/buildCryptoPopularEntries';
+import { buildPopularEntries } from '@/entities/sitemap-entry/lib/buildPopularEntries';
+import { buildStaticEntries } from '@/entities/sitemap-entry/lib/buildStaticEntries';
+import { maxLastModified } from '@/entities/sitemap-entry/lib/maxLastModified';
+import { type SitemapIndexEntry } from '@/entities/sitemap-entry/model';
+import { toSitemapIndexXml } from '@/entities/sitemap-entry/lib/xml';
 import { loadStaticSitemapInputs } from '@/entities/sitemap-entry/server';
 import { SITE_URL } from '@/shared/lib/seo';
 import { NextResponse } from 'next/server';

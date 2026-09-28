@@ -4,8 +4,10 @@ vi.mock('next/server', async () => {
     return { ...actual };
 });
 
-vi.mock('@/entities/sitemap-entry', () => ({
+vi.mock('@/entities/sitemap-entry/lib/buildCryptoPopularEntries', () => ({
     buildCryptoPopularEntries: vi.fn().mockReturnValue([]),
+}));
+vi.mock('@/entities/sitemap-entry/lib/xml', () => ({
     toUrlSetXml: vi.fn().mockReturnValue('<?xml version="1.0"?><urlset/>'),
 }));
 const PROSE_INPUTS = { symbolTabsWithProse: new Set(['BTCUSD:overall']) };
@@ -14,10 +16,8 @@ vi.mock('@/entities/sitemap-entry/server', () => ({
 }));
 
 import { GET } from '@/app/api/sitemap/crypto/route';
-import {
-    buildCryptoPopularEntries,
-    toUrlSetXml,
-} from '@/entities/sitemap-entry';
+import { buildCryptoPopularEntries } from '@/entities/sitemap-entry/lib/buildCryptoPopularEntries';
+import { toUrlSetXml } from '@/entities/sitemap-entry/lib/xml';
 import type { MockedFunction } from 'vitest';
 
 const mockBuildCryptoPopularEntries =

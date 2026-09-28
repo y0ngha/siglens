@@ -17,7 +17,7 @@ import type { ShareableRegistration } from '../model/ShareableAnalysisContext';
 import { useUserTier } from '@/features/symbol-model/hooks/useUserTier';
 import type { Tier } from '@y0ngha/siglens-core';
 import { createShareSnapshotAction } from '@/entities/shared-analysis/actions/createShareSnapshotAction';
-import { MAX_CHART_BARS } from '@/entities/shared-analysis';
+import { MAX_CHART_BARS } from '@/entities/shared-analysis/types';
 import { canShareNatively, isShareAbort } from '@/shared/lib/share';
 import { SITE_URL } from '@/shared/lib/seo';
 

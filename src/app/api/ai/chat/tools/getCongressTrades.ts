@@ -1,8 +1,8 @@
 import 'server-only';
 import { summarizeCongressTrades } from '@y0ngha/siglens-core';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
-import { getCongressTradesResilient } from '@/entities/congress-trades';
-import type { ToolExecutor } from './index';
+import { getCongressTradesResilient } from '@/entities/congress-trades/lib/getCongressTradesResilient';
+import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 
 /** Caps the raw trade list; `stats` already covers the full-set trend. */
 const TRADES_MAX = 15;

@@ -2,7 +2,7 @@ import 'server-only';
 
 import { unstable_cache } from 'next/cache';
 
-import { APPROVED_LONGTAIL_TICKERS } from '@/entities/symbol-indexability';
+import { APPROVED_LONGTAIL_TICKERS } from '@/entities/symbol-indexability/config/approved-longtail-tickers';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { getDatabaseClient } from '@/shared/db/client';
@@ -10,11 +10,11 @@ import { getDatabaseClient } from '@/shared/db/client';
 import {
     CATEGORY_CONFIG,
     type NewsFeedCategoryId,
-} from '@/entities/market-news';
-import { DrizzleMarketNewsRepository } from '@/entities/market-news/api';
+} from '@/entities/market-news/lib/categoryConfig';
+import { DrizzleMarketNewsRepository } from '@/entities/market-news/api/marketNewsRepository';
 import { DrizzleTermsRepository } from '@/entities/terms/api';
 import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
-import { SNAPSHOT_MAX_AGE_MS } from '@/entities/seo-snapshot';
+import { SNAPSHOT_MAX_AGE_MS } from '@/entities/seo-snapshot/model';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { TERMS_KIND_VALUES, type TermsKind } from '@/shared/db/constants';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';

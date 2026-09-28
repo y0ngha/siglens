@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { ensureNewsCardsAnalyzedAction } from '@/entities/news-article/actions';
+import { ensureNewsCardsAnalyzedAction } from '@/entities/news-article/actions/ensureNewsCardsAnalyzedAction';
 
 /**
  * 마운트/종목 변경 시 fresh news fetch + card analysis를 fire-and-forget로 트리거한다.

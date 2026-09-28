@@ -21,9 +21,12 @@ import { FinancialsStatements } from '../FinancialsStatements';
 // useFinancialsPeriod → financialsPeriodUtils → actions.ts('use server')는 DB에
 // 닿으므로, 클릭하지 않아도(quarter 토글 미사용) 모듈 로드 시점 크래시를 막기
 // 위해 mock한다(FinancialsStatements.test.tsx와 동일 패턴).
-vi.mock('@/entities/financials-statements/actions', () => ({
-    getFinancialsQuarterAction: vi.fn(),
-}));
+vi.mock(
+    '@/entities/financials-statements/actions/getFinancialsQuarterAction',
+    () => ({
+        getFinancialsQuarterAction: vi.fn(),
+    })
+);
 
 const SNAPSHOT: FinancialsSnapshot = {
     income: [

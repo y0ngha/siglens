@@ -5,16 +5,15 @@ import type {
     FinancialsAnalysisResponse,
     FinancialsSentiment,
 } from '@y0ngha/siglens-core';
-import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
+import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
+import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
 import { cn } from '@/shared/lib/cn';
 import { AXIS_LABEL_KEY } from './axisLabels';
-import {
-    useDefaultModelId,
-    useDefaultReasoning,
-    useAnalysisSettingsHydrated,
-} from '@/features/symbol-model';
+import { useDefaultModelId } from '@/features/symbol-model/hooks/useDefaultModelId';
+import { useDefaultReasoning } from '@/features/symbol-model/hooks/useDefaultReasoning';
+import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
 import { useFinancialsAnalysis } from './hooks/useFinancialsAnalysis';
-import { usePublishSymbolChat } from '@/features/symbol-chat';
+import { usePublishSymbolChat } from '@/features/symbol-chat/hooks/useSymbolChat';
 import { buildChatState } from './utils/buildChatState';
 import { FinancialsAiSummaryError } from './FinancialsAiSummaryError';
 import { FinancialsAiSummarySkeleton } from './FinancialsAiSummarySkeleton';

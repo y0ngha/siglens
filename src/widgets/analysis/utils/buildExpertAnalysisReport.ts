@@ -9,7 +9,7 @@ import type {
 import {
     resolveEffectiveActionLevels,
     type EffectiveActionLevels,
-} from '@/entities/analysis';
+} from '@/entities/analysis/lib/effectiveActionLevels';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 
 interface BuildExpertAnalysisReportInput {

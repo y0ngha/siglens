@@ -33,7 +33,7 @@ vi.mock('@/shared/cache/staticSymbolCache', () => ({
     ]),
 }));
 
-vi.mock('@/entities/market-news/api', () => ({
+vi.mock('@/entities/market-news/api/marketNewsRepository', () => ({
     getMarketNewsCards: vi.fn().mockResolvedValue([]),
 }));
 

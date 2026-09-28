@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
-import { formatNoticeDate } from '@/entities/notice';
+import { formatNoticeDate } from '@/entities/notice/lib/formatNoticeDate';
 import { toSafeHttpUrl } from '@/shared/lib/safeUrl';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';

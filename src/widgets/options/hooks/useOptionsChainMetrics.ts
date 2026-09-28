@@ -7,7 +7,7 @@ import {
     type OptionsSnapshot,
     summarizeChainForLlm,
 } from '@y0ngha/siglens-core';
-import { pickActiveChain } from '@/entities/options-chain';
+import { pickActiveChain } from '@/entities/options-chain/lib/pickActiveChain';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
 
 export interface OptionsChainMetrics {

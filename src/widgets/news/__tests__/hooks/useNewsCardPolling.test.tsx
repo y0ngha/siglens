@@ -1,7 +1,7 @@
 import type { MockedFunction } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import type { NewsDisplayItem } from '@/shared/lib/types';
-import { getNewsCardsAction } from '@/entities/news-article/actions';
+import { getNewsCardsAction } from '@/entities/news-article/actions/getNewsCardsAction';
 import {
     EMPTY_SNAPSHOT_MAX_POLLS,
     MAX_CONSECUTIVE_FAILURES,
@@ -11,7 +11,7 @@ import {
     useNewsCardPolling,
 } from '@/widgets/news/hooks/useNewsCardPolling';
 
-vi.mock('@/entities/news-article/actions', () => ({
+vi.mock('@/entities/news-article/actions/getNewsCardsAction', () => ({
     getNewsCardsAction: vi.fn(),
 }));
 

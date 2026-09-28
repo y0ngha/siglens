@@ -27,7 +27,7 @@ let mockSymbolChatReturn = {
 
 let mockPageContextLabel: string | null = null;
 
-vi.mock('@/features/symbol-chat', () => ({
+vi.mock('@/features/symbol-chat/hooks/useSymbolChat', () => ({
     useSymbolChat: () => mockSymbolChatReturn,
 }));
 
@@ -39,8 +39,10 @@ vi.mock('@/entities/ticker/hooks/useAssetInfo', () => ({
     useAssetInfo: () => ({ name: 'Apple Inc.' }),
 }));
 
-vi.mock('@/entities/chat-message/actions', () => ({
+vi.mock('@/entities/chat-message/actions/chatAction', () => ({
     chatAction: (...args: unknown[]) => mockChatAction(...args),
+}));
+vi.mock('@/entities/chat-message/actions/getRemainingTokensAction', () => ({
     getRemainingTokensAction: () => mockGetRemainingTokens(),
 }));
 
@@ -48,7 +50,7 @@ vi.mock('@/entities/auth/actions/currentUserAction', () => ({
     currentUserAction: vi.fn().mockResolvedValue(null),
 }));
 
-vi.mock('@/entities/api-key/actions', () => ({
+vi.mock('@/entities/api-key/actions/getRegisteredProvidersAction', () => ({
     getRegisteredProvidersAction: vi.fn().mockResolvedValue([]),
 }));
 

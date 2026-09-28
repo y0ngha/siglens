@@ -29,7 +29,7 @@ vi.mock('@/shared/lib/byokGate', () => ({
         .fn()
         .mockReturnValue({ code: 'unexpected_error', message: '' }),
 }));
-vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
+vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: vi.fn().mockResolvedValue('us-equity'),
 }));
 /**
@@ -41,7 +41,7 @@ const { US_EQUITY } = await vi.hoisted(async () => {
     return { US_EQUITY: us.US_EQUITY_DESCRIPTOR };
 });
 
-vi.mock('@/shared/config/marketProfile', () => ({
+vi.mock('@/shared/config/marketProfile/registry', () => ({
     getDescriptor: vi.fn().mockReturnValue(US_EQUITY),
 }));
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
@@ -68,19 +68,25 @@ vi.mock('@/app/api/analysis/stream/runAnalysisBridge', () => ({
 
 // DISPATCH 테이블에 등록된 액션들 — 이 파일의 테스트는 technical 타입만 사용하므로
 // 나머지 액션은 기본 vi.fn()으로 충분하다.
-vi.mock('@/entities/analysis/actions', () => ({
+vi.mock('@/entities/analysis/actions/runOverallAnalysisAction', () => ({
     runOverallAnalysisAction: vi.fn(),
+}));
+vi.mock('@/entities/analysis/actions/runFundamentalAnalysisAction', () => ({
     runFundamentalAnalysisAction: vi.fn(),
+}));
+vi.mock('@/entities/analysis/actions/runFinancialsAnalysisAction', () => ({
     runFinancialsAnalysisAction: vi.fn(),
+}));
+vi.mock('@/entities/analysis/actions/runCongressTrendAction', () => ({
     runCongressTrendAction: vi.fn(),
 }));
-vi.mock('@/entities/news-article/actions', () => ({
+vi.mock('@/entities/news-article/actions/submitNewsAnalysisAction', () => ({
     submitNewsAnalysisAction: vi.fn(),
 }));
 vi.mock('@/entities/market-news/actions/submitMarketNewsDigestAction', () => ({
     submitMarketNewsDigestAction: vi.fn(),
 }));
-vi.mock('@/entities/options-chain/actions', () => ({
+vi.mock('@/entities/options-chain/actions/optionsActions', () => ({
     submitOptionsAnalysisAction: vi.fn(),
 }));
 vi.mock('@/entities/market-summary/actions/submitMarketBriefingAction', () => ({

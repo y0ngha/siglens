@@ -3,13 +3,11 @@
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { Drawer } from 'vaul';
-import type { ChatMessageView } from '@/entities/chat-conversation';
-import type { ConversationListItem } from '@/entities/chat-conversation/actions';
-import {
-    useAgentStream,
-    type AgentClientErrorCode,
-} from '@/features/agent-chat';
-import { useHideOnScrollDown } from '@/widgets/layout';
+import type { ChatMessageView } from '@/entities/chat-conversation/model';
+import type { ConversationListItem } from '@/entities/chat-conversation/actions/listConversationsAction';
+import { useAgentStream } from '@/features/agent-chat/hooks/useAgentStream';
+import { type AgentClientErrorCode } from '@/features/agent-chat/lib/errorCodes';
+import { useHideOnScrollDown } from '@/widgets/layout/hooks/useHideOnScrollDown';
 import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import { cn } from '@/shared/lib/cn';
 import { Composer } from './Composer';

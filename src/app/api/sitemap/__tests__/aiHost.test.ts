@@ -1,8 +1,16 @@
-vi.mock('@/entities/sitemap-entry', () => ({
+vi.mock('@/entities/sitemap-entry/lib/buildCryptoPopularEntries', () => ({
     buildCryptoPopularEntries: vi.fn().mockReturnValue([]),
+}));
+vi.mock('@/entities/sitemap-entry/lib/buildPopularEntries', () => ({
     buildPopularEntries: vi.fn().mockReturnValue([]),
+}));
+vi.mock('@/entities/sitemap-entry/lib/buildStaticEntries', () => ({
     buildStaticEntries: vi.fn().mockReturnValue([]),
+}));
+vi.mock('@/entities/sitemap-entry/lib/maxLastModified', () => ({
     maxLastModified: vi.fn().mockReturnValue(new Date()),
+}));
+vi.mock('@/entities/sitemap-entry/lib/xml', () => ({
     toSitemapIndexXml: vi.fn().mockReturnValue('<?xml version="1.0"?>'),
     toUrlSetXml: vi.fn().mockReturnValue('<?xml version="1.0"?><urlset/>'),
 }));

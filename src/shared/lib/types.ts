@@ -130,8 +130,8 @@ export type {
 } from '@/shared/lib/auth/formTypes';
 
 import type { LlmProvider } from '@/shared/config/llmProviders';
-// Direct import from /types (not the barrel) to avoid a circular dependency:
-// shared/lib/types → marketProfile/index(barrel) → registry → shared/lib/types
+// Import from marketProfile/types (not registry) to avoid a circular dependency:
+// shared/lib/types → marketProfile/registry → shared/lib/types
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 
 export type GateMode = 'auth' | 'byok';

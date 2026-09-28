@@ -1,4 +1,4 @@
-import type { EmailMessage } from '@/shared/email';
+import type { EmailMessage } from '@/shared/email/types';
 import { DEFAULT_LOCALE, localePath, type Locale } from '@/shared/i18n/locales';
 import type { EmailTranslator } from './emailTranslator';
 

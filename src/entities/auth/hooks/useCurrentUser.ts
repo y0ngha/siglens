@@ -2,7 +2,7 @@
 
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
-import { currentUserAction } from '../actions';
+import { currentUserAction } from '@/entities/auth/actions/currentUserAction';
 import {
     QUERY_GC_TIME_MS,
     QUERY_KEYS,

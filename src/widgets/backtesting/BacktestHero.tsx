@@ -1,5 +1,5 @@
 import { useTranslations } from 'next-intl';
-import type { BacktestStats } from '@/entities/backtest-case';
+import type { BacktestStats } from '@/entities/backtest-case/lib/deriveBacktestStats';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 

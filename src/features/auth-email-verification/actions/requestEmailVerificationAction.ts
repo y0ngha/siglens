@@ -1,15 +1,11 @@
 'use server';
 
-import {
-    requestEmailVerification,
-    AUTH_SERVICE_UNAVAILABLE_MESSAGE,
-} from '@/entities/auth';
-import {
-    createEmailTokenStore,
-    buildEmailVerificationEmail,
-} from '@/entities/email-token';
+import { requestEmailVerification } from '@/entities/auth/lib/requestEmailVerification';
+import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth/lib/errorMessages';
+import { createEmailTokenStore } from '@/entities/email-token/api';
+import { buildEmailVerificationEmail } from '@/entities/email-token/templates/emailVerificationEmail';
 import type { RequestEmailVerificationFormState } from '@/shared/lib/auth/formTypes';
-import { createEmailDispatcher } from '@/shared/email';
+import { createEmailDispatcher } from '@/shared/email/dispatcher';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
 import { getTranslations } from 'next-intl/server';
 import { resolveRequestLocale } from '@/shared/i18n/requestLocale';

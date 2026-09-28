@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { isKoreanInput } from '@/entities/ticker';
+import { isKoreanInput } from '@/entities/ticker/lib/ticker';
 import { useAutocomplete } from '../hooks/useAutocomplete';
 import { marketBadgeSpec, resultDisplayNames } from '../lib/resultDisplay';
 import { MarketBadge } from './MarketBadge';

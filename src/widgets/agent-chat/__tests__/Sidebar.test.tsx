@@ -12,10 +12,18 @@ const { deleteConversationAction, renameConversationAction } = vi.hoisted(
         renameConversationAction: vi.fn(async () => ({ ok: true })),
     })
 );
-vi.mock('@/entities/chat-conversation/actions', () => ({
-    deleteConversationAction,
-    renameConversationAction,
-}));
+vi.mock(
+    '@/entities/chat-conversation/actions/deleteConversationAction',
+    () => ({
+        deleteConversationAction,
+    })
+);
+vi.mock(
+    '@/entities/chat-conversation/actions/renameConversationAction',
+    () => ({
+        renameConversationAction,
+    })
+);
 
 import { Sidebar } from '@/widgets/agent-chat/Sidebar';
 

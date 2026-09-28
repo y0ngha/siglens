@@ -3,17 +3,15 @@
 import { getTranslations } from 'next-intl/server';
 
 import { localeRedirect } from '@/shared/i18n/localeRedirect';
-import {
-    confirmPasswordReset,
-    AUTH_SERVICE_UNAVAILABLE_MESSAGE,
-} from '@/entities/auth';
+import { confirmPasswordReset } from '@/entities/auth/lib/confirmPasswordReset';
+import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth/lib/errorMessages';
 import { DrizzleUserRepository } from '@/entities/auth/api';
 import {
     bcryptPasswordHasher,
     bcryptPasswordVerifier,
 } from '@/entities/auth/lib/bcrypt';
 import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
-import { createEmailTokenStore } from '@/entities/email-token';
+import { createEmailTokenStore } from '@/entities/email-token/api';
 import type { ResetPasswordFormState } from '@/shared/lib/auth/formTypes';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
 

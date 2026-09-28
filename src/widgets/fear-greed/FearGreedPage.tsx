@@ -9,10 +9,10 @@ import { FearGreedGroupBar } from './FearGreedGroupBar';
 import { FearGreedHistoricalChart } from '@/widgets/chart/FearGreedHistoricalChart';
 import { SelfNormWarningBadge } from './SelfNormWarningBadge';
 import { confidenceLabelKey } from '@/shared/lib/fearGreedLabels';
-import { usePublishSymbolChat } from '@/features/symbol-chat';
+import { usePublishSymbolChat } from '@/features/symbol-chat/hooks/useSymbolChat';
 import { buildChatState } from './utils/buildChatState';
 import { useHydrated } from '@/shared/hooks/useHydrated';
-import { useRegisterShareable } from '@/features/share';
+import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface FearGreedPageProps {

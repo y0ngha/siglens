@@ -48,14 +48,14 @@ vi.mock('@/entities/bars/lib/barsDataCache', () => ({
 vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
     getAssetInfo: assetInfo,
 }));
-vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
+vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: profile,
 }));
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: () => ({}),
 }));
 vi.mock('@/shared/api/market/sessionSpecFor', () => ({ sessionSpecFor: spec }));
-vi.mock('@/shared/config/marketProfile', () => ({
+vi.mock('@/shared/config/marketProfile/registry', () => ({
     getDescriptor: () => ({ priceFormat: { currency: 'USD' } }),
 }));
 

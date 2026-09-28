@@ -1,6 +1,6 @@
 import { useTranslations } from 'next-intl';
 import { useId } from 'react';
-import { currencyForSymbol } from '@/shared/config/marketProfile';
+import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
 import { cn } from '@/shared/lib/cn';
 import {
     formatSignedAmount,

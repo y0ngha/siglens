@@ -11,10 +11,8 @@ import {
     DIRECTION_LABEL_KEY,
     RSI_ZONE_LABEL_KEY,
 } from './utils/technicalFacts';
-import {
-    getDescriptor,
-    type MarketProfileId,
-} from '@/shared/config/marketProfile';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
+import { type MarketProfileId } from '@/shared/config/marketProfile/types';
 
 interface ChangeDisplay {
     colorClass: string;

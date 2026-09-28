@@ -1,13 +1,13 @@
 import { constants } from 'node:http2';
 import 'server-only';
 import { NextResponse, type NextRequest } from 'next/server';
+import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
+import { createAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
 import {
-    applyAuthCookie,
-    createAuthHintCookie,
     createAuthSession,
     DEFAULT_SESSION_TTL_SECONDS,
-    isSecureCookieEnv,
-} from '@/entities/auth';
+} from '@/entities/auth/lib/sessionCookie';
+import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
 import { DrizzleSessionRepository } from '@/entities/auth/api';
 import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
 import {

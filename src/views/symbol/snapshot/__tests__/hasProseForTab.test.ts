@@ -11,7 +11,7 @@ import type {
 import {
     SEO_SNAPSHOT_TABS,
     type SeoSnapshotTab,
-} from '@/entities/seo-snapshot';
+} from '@/entities/seo-snapshot/model';
 import { hasProseForTab } from '../hasProseForTab';
 
 // PROSE_PREDICATE_BY_TAB is a 7-tab dispatch map with no dedicated tests

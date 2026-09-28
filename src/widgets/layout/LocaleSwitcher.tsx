@@ -72,10 +72,8 @@ interface LocaleSwitcherProps {
 /**
  * 언어 전환의 관용 아이콘 — 지구본.
  *
- * **인라인 SVG다.** `widgets/layout` 배럴은 헤더를 통해 33개 전 라우트의
- * first-load 청크에 들어 있고 `package.json`에 `sideEffects`가 없어 미사용
- * re-export가 제거되지 않는다 — 아이콘 패키지를 들이면 그 무게가 그대로
- * 전역으로 퍼진다. `SearchTriggerButton`·`HeaderMobileMenu`도 같은 이유로
+ * **인라인 SVG다.** 이 컴포넌트는 헤더를 통해 33개 전 라우트의 first-load
+ * 청크에 들어간다 — 아이콘 패키지를 들이면 그 무게가 그대로 전역으로 퍼진다. `SearchTriggerButton`·`HeaderMobileMenu`도 같은 이유로
  * 인라인 SVG를 쓴다.
  *
  * 구글 번역의 `文A` 마크를 베끼지 않는다 — 특정 서비스의 식별 표지다.

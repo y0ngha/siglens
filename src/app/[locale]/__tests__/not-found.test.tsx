@@ -4,7 +4,7 @@ vi.mock('@/shared/lib/seo', () => ({
 vi.mock('@/widgets/layout/ContactDialog', () => ({
     ContactDialog: () => <div data-testid="contact-dialog" />,
 }));
-vi.mock('@/features/ticker-search', () => ({
+vi.mock('@/features/ticker-search/ui/SymbolSearchPanel', () => ({
     SymbolSearchPanel: () => <div data-testid="symbol-search-panel" />,
 }));
 vi.mock('next/link', () => ({

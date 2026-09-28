@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
-import { buildSymbolOgImage } from '@/entities/og-image';
+import { buildSymbolOgImage } from '@/entities/og-image/lib/buildSymbolOgImage';
 
 // 동적 세그먼트([symbol]) 하위라 revalidate만으로는 캐시되지 않는다. 이미지가
 // (ticker, label) 순수 함수(동적 요청 API 미사용)이므로 force-static으로 정적 생성·캐시.

@@ -11,18 +11,18 @@ import {
     type NewsFeedCategory,
 } from '@y0ngha/siglens-core';
 import { DASHBOARD_SCOPES } from '@/shared/config/dashboardScope';
-import { selectAggregateNewsItems } from '@/entities/news-article';
+import { selectAggregateNewsItems } from '@/entities/news-article/lib/newsAnalysisSelection';
 import { marketDataProviderFor } from '@/shared/api/market/getMarketDataProvider';
 import { getCachedMarketSummary } from '@/entities/market-summary/api/marketSummaryCache';
 import { marketBriefingContextOf } from '@/entities/market-summary/lib/marketBriefingContext';
 import { marketBriefingSeedSurface } from '@/entities/market-summary/api/briefingStaticCache';
 import { getEconomySnapshot } from '@/entities/economy/api/economySnapshotCache';
 import { MACRO_BRIEFING_SEED_SURFACE } from '@/entities/economy/api/macroBriefingStaticCache';
-import { getMarketNewsList } from '@/entities/market-news/api';
+import { getMarketNewsList } from '@/entities/market-news/api/marketNewsRepository';
 import {
     CATEGORY_CONFIG,
     type NewsFeedCategoryId,
-} from '@/entities/market-news';
+} from '@/entities/market-news/lib/categoryConfig';
 import { toEnrichedMarketNewsItem } from '@/entities/market-news/lib/toEnrichedMarketNewsItem';
 import { DEFAULT_DIGEST_MODEL_ID } from '@/entities/market-news/lib/marketNewsConstants';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';

@@ -17,22 +17,30 @@ vi.mock('next-intl/server', async () => {
         await import('@/shared/test-utils/catalogTranslator');
     return nextIntlServerStub();
 });
-vi.mock('@/entities/oauth-account', () => ({
+vi.mock('@/entities/oauth-account/api', () => ({
     DrizzleOAuthAccountRepository: vi.fn().mockImplementation(function () {
         return {};
     }),
+}));
+vi.mock('@/entities/oauth-account/lib/revoker', () => ({
     compositeOAuthRevoker: { revokeToken: vi.fn() },
+}));
+vi.mock('@/entities/oauth-account/lib/pendingOAuthSignupStore', () => ({
     createPendingOAuthSignupStore: vi.fn(),
     createPendingOAuthSignupStoreFromEnv: vi.fn(),
 }));
 vi.mock('@/entities/terms/api');
-vi.mock('@/entities/agreement');
-vi.mock('@/entities/auth', () => ({
+vi.mock('@/entities/agreement/api');
+vi.mock('@/entities/auth/lib/applyAuthCookie', () => ({
     applyAuthCookie: vi.fn((c: unknown) => c),
+}));
+vi.mock('@/entities/auth/lib/authHintCookie', () => ({
     createAuthHintCookie: vi.fn(() => ({
         name: 'auth_hint',
         value: 'true',
     })),
+}));
+vi.mock('@/entities/auth/lib/errorMessages', () => ({
     CONSENT_REQUIRED_MESSAGE: '서비스 이용을 위해 필수 약관에 동의해 주세요.',
     OAUTH_ERROR_REDIRECT: {
         consentInvalid: '/login?error=oauth_consent_invalid',
@@ -40,11 +48,15 @@ vi.mock('@/entities/auth', () => ({
         serviceUnavailable: '/login?error=service_unavailable',
         emailConflict: '/login?error=oauth_email_conflict',
     },
+}));
+vi.mock('@/entities/auth/lib/sessionCookie', () => ({
     createAuthSession: vi.fn(),
     DEFAULT_SESSION_TTL_SECONDS: 7776000,
+}));
+vi.mock('@/entities/auth/lib/sessionCookieOptions', () => ({
     isSecureCookieEnv: vi.fn(() => false),
 }));
-// DrizzleSessionRepository는 barrel이 아닌 @/entities/auth/api에서 직접 import된다.
+// DrizzleSessionRepository는 @/entities/auth/api에서 직접 import된다.
 vi.mock('@/entities/auth/api', () => ({
     DrizzleSessionRepository: vi.fn().mockImplementation(function () {
         return {};
@@ -53,7 +65,7 @@ vi.mock('@/entities/auth/api', () => ({
         return {};
     }),
 }));
-// getAuthDatabaseClient는 barrel이 아닌 @/entities/auth/lib/db에서 직접 import되므로
+// getAuthDatabaseClient는 @/entities/auth/lib/db에서 직접 import되므로
 // (server-only 체인을 client 번들에서 분리) 해당 경로를 별도로 mock한다.
 vi.mock('@/entities/auth/lib/db', () => ({
     getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),

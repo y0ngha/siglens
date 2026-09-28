@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server';
-import {
-    backtestingDataDate,
-    buildStaticEntries,
-    toUrlSetXml,
-} from '@/entities/sitemap-entry';
+import { backtestingDataDate } from '@/entities/sitemap-entry/lib/backtestingDataDate';
+import { buildStaticEntries } from '@/entities/sitemap-entry/lib/buildStaticEntries';
+import { toUrlSetXml } from '@/entities/sitemap-entry/lib/xml';
 import { loadStaticSitemapInputs } from '@/entities/sitemap-entry/server';
-import { validateBacktestData } from '@/entities/backtest-case';
+import { validateBacktestData } from '@/entities/backtest-case/lib/validate';
 import backtestData from '@/app/[locale]/backtesting/data.json';
 import { SITEMAP_CACHE_CONTROL } from '@/app/api/sitemap/_shared/constants';
 import { rejectAiHost } from '@/app/api/sitemap/_shared/aiHostGuard';

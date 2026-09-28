@@ -93,7 +93,7 @@ const EXECUTORS: Record<string, ToolExecutor> = {
 /**
  * Tools this process can execute now. `web_search` needs a Brave key and is
  * off under E2E — except when `AGENT_REAL_PROVIDER=1` opts a local dev server
- * back into the real provider (see `entities/llm-provider/api/agent`): that
+ * back into the real provider (see `entities/llm-provider/api/agent/getAgentProvider`): that
  * server exists to exercise real round-trips, and a search tool that silently
  * vanishes there is exactly the kind of gap that only shows up in production.
  * CI never sets it, so the e2e suite keeps the deterministic tool set.

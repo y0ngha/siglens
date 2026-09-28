@@ -27,7 +27,7 @@ import {
 import { StrikeBarTooltip } from './ui/StrikeBarTooltip';
 import { StrikeBarSrTable } from './ui/StrikeBarSrTable';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
-import { findNearestStrikeIndex } from '@/entities/options-chain';
+import { findNearestStrikeIndex } from '@/entities/options-chain/lib/findNearestStrike';
 import {
     aggregateOpenInterest,
     type OptionsChain,

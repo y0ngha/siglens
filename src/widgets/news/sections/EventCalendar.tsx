@@ -6,7 +6,7 @@ import {
 } from '@/shared/lib/priceFormat';
 import { useTranslations } from 'next-intl';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
-import { currencyForSymbol } from '@/shared/config/marketProfile';
+import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
 import type { EarningsReportComparisonItem } from '@/shared/lib/types';
 import type React from 'react';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';

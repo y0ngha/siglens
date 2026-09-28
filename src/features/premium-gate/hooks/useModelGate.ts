@@ -6,9 +6,9 @@ import {
     type ModelId,
     type LlmProvider,
 } from '@y0ngha/siglens-core';
-import type { GateMode } from '@/entities/api-key';
-import { currentUserAction } from '@/entities/auth/actions';
-import { getRegisteredProvidersAction } from '@/entities/api-key/actions';
+import type { GateMode } from '@/shared/lib/types';
+import { currentUserAction } from '@/entities/auth/actions/currentUserAction';
+import { getRegisteredProvidersAction } from '@/entities/api-key/actions/getRegisteredProvidersAction';
 import { useQuery } from '@tanstack/react-query';
 import {
     CURRENT_USER_STALE_TIME_MS,

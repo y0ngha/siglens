@@ -18,7 +18,7 @@ import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { SITE_NAME } from '@/shared/lib/seo';
 import { ContactDialog } from '@/widgets/layout/ContactDialog';
-import { SymbolSearchPanel } from '@/features/ticker-search';
+import { SymbolSearchPanel } from '@/features/ticker-search/ui/SymbolSearchPanel';
 import { cn } from '@/shared/lib/cn';
 import { NotFoundMessage } from './NotFoundMessage';
 

@@ -1,5 +1,5 @@
 import type { OAuthProvider } from '@/shared/lib/types';
-import type { AgreementRepository } from '@/entities/agreement';
+import type { AgreementRepository } from '@/entities/agreement/api';
 import type {
     AuthSessionRecord,
     AuthUserRecord,
@@ -8,14 +8,14 @@ import type {
     SessionRepository,
     UserRepository,
 } from '@/shared/db/types';
-import type { OAuthRevoker } from '@/entities/oauth-account';
+import type { OAuthRevoker } from '@/entities/oauth-account/lib/revokerTypes';
 import type {
     AuthSessionCookie,
     PasswordHasher,
     PasswordVerifier,
 } from '@/shared/lib/auth/types';
-import type { EmailDispatcher, EmailMessage } from '@/shared/email';
-import type { EmailTokenStore } from '@/entities/email-token';
+import type { EmailDispatcher, EmailMessage } from '@/shared/email/types';
+import type { EmailTokenStore } from '@/entities/email-token/api';
 import type {
     ConfirmPasswordResetError,
     ConfirmPasswordResetErrorCode,

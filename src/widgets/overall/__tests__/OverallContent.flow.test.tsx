@@ -18,31 +18,47 @@ import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
 vi.mock('@/shared/hooks/useAnalysisStream', () => ({
     runAnalysisStream: vi.fn(),
 }));
-vi.mock('@/entities/news-article/actions', () => ({
+vi.mock('@/entities/news-article/actions/submitNewsAnalysisAction', () => ({
     submitNewsAnalysisAction: vi.fn(),
 }));
-vi.mock('@/entities/options-chain/actions', () => ({
+vi.mock('@/entities/options-chain/actions/optionsActions', () => ({
     submitOptionsAnalysisAction: vi.fn(),
 }));
 // polling 루프의 sleep을 즉시 resolve해 테스트가 done까지 빠르게 진행되게 한다.
 vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock('@/features/symbol-chat', () => ({
+vi.mock('@/features/symbol-chat/hooks/useSymbolChat', () => ({
     usePublishSymbolChat: vi.fn(),
 }));
-vi.mock('@/features/symbol-model', () => ({
+vi.mock('@/features/symbol-model/hooks/useDefaultModelId', () => ({
     useDefaultModelId: vi.fn(() => 'gemini-3.5-flash-lite'),
+}));
+vi.mock('@/features/symbol-model/hooks/useDefaultReasoning', () => ({
     useDefaultReasoning: vi.fn(() => false),
+}));
+vi.mock('@/features/symbol-model/hooks/useAnalysisSettingsHydrated', () => ({
     useAnalysisSettingsHydrated: vi.fn(() => true),
+}));
+vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
     useSymbolModel: vi.fn(() => ({ tier: 'member', isTierHydrated: true })),
 }));
 // /news와 동일 게이트 적용 후 mock 필요. flow 테스트는 hasEnrichedNews=true 전제로
 // 게이트를 즉시 통과시키고 본래 검증(submit→polling→done 서사)을 그대로 유지한다.
-// barrel(@/widgets/news)을 mock — production이 barrel을 import하므로 일치 필요.
-vi.mock('@/widgets/news', async importOriginal => ({
-    ...(await importOriginal<typeof import('@/widgets/news')>()),
-    useNewsAnalysisTrigger: vi.fn(),
+// production이 import하는 정의 파일(@/widgets/news/hooks/*)을 mock한다.
+vi.mock(
+    '@/widgets/news/hooks/useNewsAnalysisTrigger',
+    async importOriginal => ({
+        ...(await importOriginal<
+            typeof import('@/widgets/news/hooks/useNewsAnalysisTrigger')
+        >()),
+        useNewsAnalysisTrigger: vi.fn(),
+    })
+);
+vi.mock('@/widgets/news/hooks/useWaitForNewsCards', async importOriginal => ({
+    ...(await importOriginal<
+        typeof import('@/widgets/news/hooks/useWaitForNewsCards')
+    >()),
     useWaitForNewsCards: vi.fn(() => ({ isReady: true, pollError: null })),
 }));
 // useSearchParams를 테스트별로 바꿀 수 있도록 mutable ref로 모킹한다(고정 빈 값 X).

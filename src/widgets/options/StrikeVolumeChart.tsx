@@ -17,7 +17,7 @@ import {
     MIDLINE_STROKE_WIDTH,
     GUIDE_LINE_STROKE_WIDTH,
 } from './utils/chartStrokeWidths';
-import { findNearestStrikeIndex } from '@/entities/options-chain';
+import { findNearestStrikeIndex } from '@/entities/options-chain/lib/findNearestStrike';
 import { useStrikeBarChart } from './hooks/useStrikeBarChart';
 import {
     barCenterX,

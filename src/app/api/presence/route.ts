@@ -11,7 +11,8 @@
 import { constants } from 'node:http2';
 import { after } from 'next/server';
 import { headers } from 'next/headers';
-import { buildVisitorHash, DrizzleVisitorRepository } from '@/entities/visitor';
+import { buildVisitorHash } from '@/entities/visitor/lib/visitorHash';
+import { DrizzleVisitorRepository } from '@/entities/visitor/api';
 import { getClientIp } from '@/shared/api/getClientIp';
 import { isBot } from '@/shared/api/isBot';
 import { getDatabaseClient } from '@/shared/db/client';

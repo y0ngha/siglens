@@ -2,9 +2,9 @@ import { useTranslations } from 'next-intl';
 import type {
     MarketFearGreedView,
     MarketFearGreedViewSnapshot,
-} from '@/entities/market-fear-greed';
+} from '@/entities/market-fear-greed/model';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { FearGreedGauge } from '@/widgets/fear-greed';
+import { FearGreedGauge } from '@/widgets/fear-greed/FearGreedGauge';
 import { confidenceLabelKey } from '@/shared/lib/fearGreedLabels';
 import type { FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
 import { MarketFearGreedComparison } from './MarketFearGreedComparison';

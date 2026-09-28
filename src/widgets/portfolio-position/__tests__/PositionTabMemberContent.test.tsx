@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react';
-import { useSymbolHolding } from '@/features/portfolio-holding';
-import type { PortfolioHoldingView } from '@/entities/portfolio';
+import { useSymbolHolding } from '@/features/portfolio-holding/hooks/useSymbolHolding';
+import type { PortfolioHoldingView } from '@/entities/portfolio/model';
 import { PositionTabMemberContent } from '../ui/PositionTabMemberContent';
 
-vi.mock('@/features/portfolio-holding');
+vi.mock('@/features/portfolio-holding/hooks/useSymbolHolding');
 
 const mockUseSymbolHolding = vi.mocked(useSymbolHolding);
 

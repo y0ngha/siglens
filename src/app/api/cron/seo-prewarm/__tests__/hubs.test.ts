@@ -40,16 +40,28 @@ vi.mock('@/entities/market-summary/lib/marketBriefingContext', () => ({
 vi.mock('@/entities/economy/api/economySnapshotCache', () => ({
     getEconomySnapshot: mocks.getEconomySnapshot,
 }));
-vi.mock('@/entities/market-news/api', async importOriginal => ({
-    ...(await importOriginal<typeof import('@/entities/market-news/api')>()),
-    getMarketNewsList: mocks.getMarketNewsList,
-}));
+vi.mock(
+    '@/entities/market-news/api/marketNewsRepository',
+    async importOriginal => ({
+        ...(await importOriginal<
+            typeof import('@/entities/market-news/api/marketNewsRepository')
+        >()),
+        getMarketNewsList: mocks.getMarketNewsList,
+    })
+);
+// 부분 목이다 — 전체 목이면 이 모듈에 export가 하나 생길 때마다 깨진다
+// (`isEnrichedRow`가 실제로 그랬다). MISTAKES.md §18.5.
 // 부분 목이다 — 전체 목이면 이 배럴에 export가 하나 생길 때마다 깨진다
 // (`isEnrichedRow`가 실제로 그랬다). MISTAKES.md §18.5.
-vi.mock('@/entities/news-article', async importOriginal => ({
-    ...(await importOriginal<typeof import('@/entities/news-article')>()),
-    selectAggregateNewsItems: mocks.selectAggregateNewsItems,
-}));
+vi.mock(
+    '@/entities/news-article/lib/newsAnalysisSelection',
+    async importOriginal => ({
+        ...(await importOriginal<
+            typeof import('@/entities/news-article/lib/newsAnalysisSelection')
+        >()),
+        selectAggregateNewsItems: mocks.selectAggregateNewsItems,
+    })
+);
 vi.mock('@/shared/cache/hubSsrSeed', () => ({
     writeHubSsrSeed: mocks.writeHubSsrSeed,
 }));
@@ -59,7 +71,7 @@ vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
     marketDataProviderFor: vi.fn(() => ({})),
 }));
 
-import { CATEGORY_CONFIG } from '@/entities/market-news';
+import { CATEGORY_CONFIG } from '@/entities/market-news/lib/categoryConfig';
 import { MACRO_BRIEFING_SEED_SURFACE } from '@/entities/economy/api/macroBriefingStaticCache';
 import { marketBriefingSeedSurface } from '@/entities/market-summary/api/briefingStaticCache';
 import { DASHBOARD_SCOPES } from '@/shared/config/dashboardScope';

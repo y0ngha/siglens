@@ -18,16 +18,14 @@ import {
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
-import { getDescriptor } from '@/shared/config/marketProfile';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { getDatabaseClient } from '@/shared/db/client';
 import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
-import {
-    NEWS_ANALYSIS_LOOKBACK_MS,
-    buildAnalysisNewsItems,
-} from '@/entities/news-article';
-import { getNextEarningsReport } from '@/entities/earnings-report';
+import { NEWS_ANALYSIS_LOOKBACK_MS } from '@/entities/news-article/lib/newsLookback';
+import { buildAnalysisNewsItems } from '@/entities/news-article/lib/buildAnalysisNewsItems';
+import { getNextEarningsReport } from '@/entities/earnings-report/api';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import {
     resolveTierAndByok,

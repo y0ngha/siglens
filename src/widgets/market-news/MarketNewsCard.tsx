@@ -1,8 +1,8 @@
 import { useTranslations } from 'next-intl';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
-import type { NewsFeedCategoryId } from '@/entities/market-news';
+import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import type { MarketNewsCardItem } from '@/entities/market-news';
+import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
 
 import { cn } from '@/shared/lib/cn';
 import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';

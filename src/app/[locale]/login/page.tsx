@@ -3,11 +3,9 @@ import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import { Suspense } from 'react';
 import { setRequestLocale } from 'next-intl/server';
-import {
-    AuthCardShell,
-    AuthFormSkeleton,
-    AuthCrossLink,
-} from '@/shared/ui/auth';
+import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
+import { AuthFormSkeleton } from '@/shared/ui/auth/AuthFormSkeleton';
+import { AuthCrossLink } from '@/shared/ui/auth/AuthCrossLink';
 import type { Metadata } from 'next';
 import { LoginContent } from './LoginContent';
 

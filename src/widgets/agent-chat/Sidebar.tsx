@@ -11,15 +11,13 @@ import {
 } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import {
-    deleteConversationAction,
-    renameConversationAction,
-    type ConversationListItem,
-} from '@/entities/chat-conversation/actions';
+import { deleteConversationAction } from '@/entities/chat-conversation/actions/deleteConversationAction';
+import { renameConversationAction } from '@/entities/chat-conversation/actions/renameConversationAction';
+import { type ConversationListItem } from '@/entities/chat-conversation/actions/listConversationsAction';
 import {
     groupConversationsByDay,
     type ConversationGroupKey,
-} from '@/features/agent-chat';
+} from '@/features/agent-chat/lib/groupConversationsByDay';
 import { cn } from '@/shared/lib/cn';
 import { LABEL_KO } from '@/shared/lib/typographyStyles';
 import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';

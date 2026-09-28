@@ -18,7 +18,7 @@ interface Props {
     readonly scenarios: readonly ReplayScenario[];
     /**
      * Rendered on the server and handed down as elements, so this client
-     * module does not pull the `widgets/agent-chat` barrel into the bundle.
+     * module does not pull `widgets/agent-chat` modules into the bundle.
      */
     readonly avatar: ReactNode;
     readonly doneIcon: ReactNode;

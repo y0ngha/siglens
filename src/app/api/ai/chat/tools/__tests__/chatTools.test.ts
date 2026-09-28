@@ -58,7 +58,7 @@ import {
     availableToolNames,
     createToolExecutor,
     type ToolRuntime,
-} from '@/app/api/ai/chat/tools';
+} from '@/app/api/ai/chat/tools/chatTools';
 import { guestSubject } from '@/app/api/ai/chat/guestSubject';
 import {
     BARS_RESULT_MAX_CHARS,

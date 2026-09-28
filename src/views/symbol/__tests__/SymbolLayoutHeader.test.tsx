@@ -71,7 +71,7 @@ vi.mock('@/views/symbol/SymbolTabsSkeleton', () => ({
 // popover disclosure) so header tests that need to reach the model
 // selector/reasoning toggle can do so by opening the gear first, matching
 // the real interaction shape instead of bypassing it.
-vi.mock('@/widgets/analysis', () => ({
+vi.mock('@/widgets/analysis/AnalysisSettingsMenu', () => ({
     AnalysisSettingsMenu: ({
         modelId,
         reasoning,
@@ -130,7 +130,7 @@ vi.mock('@/views/symbol/FearGreedHeaderChip', () => ({
     FearGreedHeaderChip: () => mockFearGreedChip(),
 }));
 
-vi.mock('@/features/premium-gate', () => ({
+vi.mock('@/features/premium-gate/ui/PremiumModelGateModal', () => ({
     PremiumModelGateModal: () => <div data-testid="gate-modal">modal</div>,
 }));
 
@@ -138,11 +138,11 @@ vi.mock('@/shared/lib/llmProviderLabels', () => ({
     LLM_PROVIDER_LABELS: { google: 'Google' },
 }));
 
-vi.mock('@/widgets/share', () => ({
+vi.mock('@/widgets/share/ui/ShareButton', () => ({
     ShareButton: () => <button data-testid="share-button">공유</button>,
 }));
 
-vi.mock('@/features/portfolio-holding', () => ({
+vi.mock('@/features/portfolio-holding/ui/PortfolioChipMounted', () => ({
     PortfolioChipMounted: () => (
         <span data-testid="portfolio-chip">portfolio</span>
     ),

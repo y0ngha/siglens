@@ -4,8 +4,9 @@ import { setRequestLocale } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { ErrorBoundary } from 'react-error-boundary';
-import { FearGreedPageError } from '@/widgets/fear-greed';
-import { FearGreedFactsSummary, SymbolPageHeading } from '@/views/symbol';
+import { FearGreedPageError } from '@/widgets/fear-greed/FearGreedPageError';
+import { FearGreedFactsSummary } from '@/views/symbol/fearGreed/FearGreedFactsSummary';
+import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { FaqSection } from '@/shared/ui/FaqSection';
 import { JsonLd } from '@/shared/ui/JsonLd';
@@ -15,15 +16,15 @@ import {
     isAdmissibleSymbolShape,
 } from '@/shared/config/market';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
-import {
-    buildAssetAboutNode,
-    buildDisplayName,
-    pickAssetName,
-    getAssetInfoResilient,
-} from '@/entities/ticker';
-import { getSeedBarsStatic } from '@/entities/bars';
+import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
+import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getSeedBarsStatic } from '@/entities/bars/lib/barsStaticCache';
 import { buildTechnicalFacts } from '@/views/symbol/utils/technicalFacts';
-import { getDescriptor, marketProfileOf } from '@/shared/config/marketProfile';
+import {
+    getDescriptor,
+    marketProfileOf,
+} from '@/shared/config/marketProfile/registry';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import {

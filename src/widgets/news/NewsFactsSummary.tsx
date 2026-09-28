@@ -4,7 +4,7 @@ import type { Locale } from '@/shared/i18n/locales';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
 import { resolveNewsTitle } from '@/shared/lib/news/resolveNewsTitle';
-import type { AssetClass } from '@/shared/config/marketProfile';
+import type { AssetClass } from '@/shared/config/marketProfile/types';
 import {
     HEADING_SECTION,
     HEADING_SUBSECTION,

@@ -34,7 +34,7 @@ import type {
 import { HIGH_CONFIDENCE_WEIGHT } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { LABEL_KO } from '@/shared/lib/typographyStyles';
-import { isFallbackAnalysis } from '@/entities/chat-message';
+import { isFallbackAnalysis } from '@/entities/chat-message/lib/fallbackAnalysis';
 import {
     parseStructuredSummary,
     type SkillSummarySection,
@@ -51,7 +51,7 @@ import { TRENDLINE_DIRECTION_LABEL_KEY } from '@/shared/lib/trendline';
 import { MS_PER_SECOND, SECONDS_PER_MINUTE } from '@/shared/config/time';
 import { DEFAULT_RESET_MS as COPY_RESET_MS } from '@/shared/hooks/useCopyToClipboard';
 import { formatAnalyzedAt } from '@/shared/lib/formatAnalyzedAt';
-import { isAnalysisStale } from '@/entities/analysis';
+import { isAnalysisStale } from '@/entities/analysis/lib/staleThreshold';
 import { StaleAnalysisBanner } from './StaleAnalysisBanner';
 import { PlanCheckBlock } from './PlanCheckBlock';
 
@@ -947,7 +947,7 @@ export function AnalysisPanel({
     // 동일한 진행 상태를 표시하고 모바일 시트의 remount에도 상태가 유지된다.
 
     // 방어적 기본값 — analysis는 useAnalysis에서 normalizeAnalysisResponse로
-    // 정규화되지만, AnalysisPanel은 barrel(index.ts)로 외부에 단독 노출되므로
+    // 정규화되지만, AnalysisPanel은 외부에서 단독으로 import되므로
     // 부분 응답이 직접 전달되는 경우까지 컴포넌트에서 한 번 더 방어한다.
     const patternSummaries = analysis.patternSummaries ?? [];
     const strategyResults = analysis.strategyResults ?? [];

@@ -21,8 +21,8 @@ import { SECONDS_PER_DAY } from '@/shared/config/time';
  * (인프라 실패는 degrade fallback으로 흡수 — resilient JSDoc의 #545 connection() 제거 배경 참조).
  *
  * 왜 clean lib `getAssetInfo`가 아니라 `getAssetInfoAction`('use server')을 감싸는가:
- * `getAssetInfoResilient`는 ticker barrel(index.ts)에서 export되고, 그 barrel은 client
- * component(useRecentSearches 등)가 import한다. clean lib를 직접 감싸면 lib → db → client →
+ * `getAssetInfoResilient`의 import 체인은 client component(useRecentSearches 등) 그래프에
+ * 닿을 수 있다(과거 ticker barrel 경유로 실제로 닿았다). clean lib를 직접 감싸면 lib → db → client →
  * clientTest(postgres + 'server-only') 체인이 client bundle로 끌려와 빌드가 깨진다(Module not
  * found: fs/net/tls). `'use server'` 경계가 이 체인을 firewall하므로 action을 감싼다 —
  * `getBarsStatic`(getBarsAction 래핑)과 동일한 패턴. action body는 `getAssetInfo(upper)`

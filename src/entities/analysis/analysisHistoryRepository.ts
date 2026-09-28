@@ -1,16 +1,10 @@
 /**
  * `analysis_history` / `analysis_prompt_blobs` repository.
  *
- * **Deliberately NOT re-exported from `entities/analysis/index.ts`.** This
- * module imports `node:crypto` (for `sha256Hex`) and is `server-only` —
- * pulling it into the barrel would make every barrel consumer's bundle
- * (including client components) eligible to pick up that dependency. This
- * is exactly the guard that prevents a repeat of the earlier incident
- * where a barrel leak shipped `crypto-browserify` into all 33 routes'
- * first-load JS (`project_client_bundle_server_sdk_leak`). Server
- * consumers import this file directly —
- * `@/entities/analysis/analysisHistoryRepository` — instead of through the
- * barrel.
+ * This module imports `node:crypto` (for `sha256Hex`) and is `server-only` —
+ * only server consumers may import it. A client component reaching it would
+ * repeat the earlier incident where a barrel leak shipped `crypto-browserify`
+ * into all 33 routes' first-load JS (`project_client_bundle_server_sdk_leak`).
  */
 import 'server-only';
 
@@ -123,8 +117,7 @@ export const ORPHAN_BLOB_MIN_AGE_MS = 5 * MS_PER_MINUTE;
  * guard lives in exactly one place instead of being copy-pasted per caller.
  * Lives here (not in the app-layer route) because `entities/analysis/api.ts`
  * cannot import from `app/` (FSD dependency direction), while both callers
- * can already import this repository module directly (see this file's
- * top-of-module JSDoc on why it is excluded from the barrel).
+ * can already import this repository module directly.
  */
 export function resolveGeneratedAt(result: unknown): Date {
     const stamped = (result as { analyzedAt?: unknown } | null)?.analyzedAt;

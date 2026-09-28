@@ -7,8 +7,8 @@ import type { ReactNode } from 'react';
  * to the brand's mono wordmark.
  *
  * Lives in `shared/ui` rather than `widgets/agent-chat` so siglens.io pages can
- * use it without importing the chat barrel, which would pull the chat shell's
- * client modules and message keys into their route.
+ * use it without importing from `widgets/agent-chat`, which would pull the chat
+ * shell's client modules and message keys into their route.
  */
 interface IconFrameProps {
     readonly children: ReactNode;

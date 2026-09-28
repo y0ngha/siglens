@@ -1,7 +1,7 @@
 import { tryGetTickerDatabaseClient } from './db';
 import { KOREAN_NAMES_CACHE_TTL, KOREAN_TICKERS_CACHE_KEY } from './cacheKeys';
 import { createCacheProvider, type CacheProvider } from '@y0ngha/siglens-core';
-import { isKrEquitySymbol } from '@/shared/config/marketProfile';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { CANONICAL_KOREAN_NAMES } from '@/shared/config/canonical-korean-names';
 import type { KoreanTickerEntry, TickerSearchResult } from '@/shared/lib/types';
 import { DrizzleKoreanTickerRepository } from '../api';

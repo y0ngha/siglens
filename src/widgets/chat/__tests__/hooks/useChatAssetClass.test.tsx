@@ -24,7 +24,7 @@ const mockChatAction = vi.fn().mockResolvedValue({
 });
 const mockUseAssetInfo = vi.fn();
 
-vi.mock('@/features/symbol-chat', () => ({
+vi.mock('@/features/symbol-chat/hooks/useSymbolChat', () => ({
     useSymbolChat: () => ({
         context: null,
         timeframe: '1Day',
@@ -39,14 +39,16 @@ vi.mock('@/widgets/chat/hooks/usePageContextLabel', () => ({
 vi.mock('@/entities/ticker/hooks/useAssetInfo', () => ({
     useAssetInfo: (...args: unknown[]) => mockUseAssetInfo(...args),
 }));
-vi.mock('@/entities/chat-message/actions', () => ({
+vi.mock('@/entities/chat-message/actions/chatAction', () => ({
     chatAction: (...args: unknown[]) => mockChatAction(...args),
+}));
+vi.mock('@/entities/chat-message/actions/getRemainingTokensAction', () => ({
     getRemainingTokensAction: vi.fn().mockResolvedValue(5),
 }));
 vi.mock('@/entities/auth/actions/currentUserAction', () => ({
     currentUserAction: vi.fn().mockResolvedValue(null),
 }));
-vi.mock('@/entities/api-key/actions', () => ({
+vi.mock('@/entities/api-key/actions/getRegisteredProvidersAction', () => ({
     getRegisteredProvidersAction: vi.fn().mockResolvedValue([]),
 }));
 vi.mock('@/widgets/chat/utils/chatStorage', () => ({

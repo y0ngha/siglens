@@ -1,10 +1,10 @@
 vi.mock('@/shared/ui/auth/AuthCardShell', () => ({
     AuthCardShell: () => null,
 }));
-vi.mock('@/features/account-delete', () => ({
+vi.mock('@/features/account-delete/ui/DeleteAccountConfirm', () => ({
     DeleteAccountConfirm: () => null,
 }));
-vi.mock('@/entities/auth', () => ({
+vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 vi.mock('@/shared/lib/seo', () => ({

@@ -1,16 +1,14 @@
 'use server';
 
-import { requestPasswordReset } from '@/entities/auth';
+import { requestPasswordReset } from '@/entities/auth/lib/requestPasswordReset';
 import { getTranslations } from 'next-intl/server';
 import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
 import { DrizzleUserRepository } from '@/entities/auth/api';
-import {
-    createEmailTokenStore,
-    buildPasswordResetEmail,
-} from '@/entities/email-token';
+import { createEmailTokenStore } from '@/entities/email-token/api';
+import { buildPasswordResetEmail } from '@/entities/email-token/templates/passwordResetEmail';
 import type { ForgotPasswordFormState } from '@/shared/lib/auth/formTypes';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
-import { createEmailDispatcher } from '@/shared/email';
+import { createEmailDispatcher } from '@/shared/email/dispatcher';
 import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
 
 /** 형식 검사만 한다 — 도메인 존재 확인이 아니다. */

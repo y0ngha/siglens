@@ -1,16 +1,12 @@
 'use server';
 
 import { localeRedirect } from '@/shared/i18n/localeRedirect';
-import {
-    DrizzleOAuthAccountRepository,
-    compositeOAuthRevoker,
-} from '@/entities/oauth-account';
-import {
-    deleteAccount,
-    applyAuthCookie,
-    isSecureCookieEnv,
-    createExpiredAuthHintCookie,
-} from '@/entities/auth';
+import { DrizzleOAuthAccountRepository } from '@/entities/oauth-account/api';
+import { compositeOAuthRevoker } from '@/entities/oauth-account/lib/revoker';
+import { deleteAccount } from '@/entities/auth/lib/deleteAccount';
+import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
+import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
+import { createExpiredAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
 import { DrizzleUserRepository } from '@/entities/auth/api';
 import { cookies } from 'next/headers';
 import type { DeleteAccountFormState } from '@/shared/lib/auth/formTypes';

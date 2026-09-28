@@ -1,16 +1,16 @@
 import 'server-only';
 import type { MarketQuote } from '@y0ngha/siglens-core';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
-import { getDescriptor } from '@/shared/config/marketProfile';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import {
     assessFreshness,
     type FreshnessView,
     QUOTE_MAX_AGE_MS,
 } from './freshness';
-import type { ToolExecutor } from './index';
+import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { resolveAssetInfoOrNull } from './resolveAssetInfo';
 
 const MAX_SYMBOLS = 3;

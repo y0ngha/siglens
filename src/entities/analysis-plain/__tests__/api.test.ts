@@ -8,8 +8,10 @@ const tryReadPlainModelConfig = vi.fn();
 const isE2E = vi.fn();
 
 vi.mock('server-only', () => ({}));
-vi.mock('@/entities/llm-provider', () => ({
+vi.mock('@/entities/llm-provider/api/router', () => ({
     callAiProviderRouter: (...args: unknown[]) => callAiProviderRouter(...args),
+}));
+vi.mock('@/entities/llm-provider/lib/parseJsonResponse', () => ({
     stripMarkdownCodeBlock: (raw: string) =>
         raw.replace(/^```[a-z]*\s*|```\s*$/g, ''),
 }));

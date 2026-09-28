@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { ContactForm } from '@/features/contact-form';
+import { ContactForm } from '@/features/contact-form/ui/ContactForm';
 import { useEffect } from 'react';
 import { applyStoredTheme } from '@/shared/lib/theme';
 import { useDialog } from '@/shared/hooks/useDialog';

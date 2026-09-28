@@ -10,25 +10,31 @@
 
 import type { MockedFunction, MockedClass } from 'vitest';
 
-vi.mock('@/entities/auth', () => ({
+vi.mock('@/entities/auth/lib/applyAuthCookie', () => ({
     applyAuthCookie: vi.fn().mockReturnValue({ name: 'auth', value: 'v' }),
+}));
+vi.mock('@/entities/auth/lib/authHintCookie', () => ({
     createAuthHintCookie: vi.fn().mockReturnValue({ name: 'hint', value: '1' }),
+}));
+vi.mock('@/entities/auth/lib/sessionCookie', () => ({
     createAuthSession: vi.fn(),
     DEFAULT_SESSION_TTL_SECONDS: 86400,
+}));
+vi.mock('@/entities/auth/lib/sessionCookieOptions', () => ({
     isSecureCookieEnv: vi.fn().mockReturnValue(false),
 }));
-// DrizzleUserRepository와 DrizzleSessionRepository는 barrel이 아닌
+// DrizzleUserRepository와 DrizzleSessionRepository는
 // @/entities/auth/api에서 직접 import되므로 해당 경로를 mock한다.
 vi.mock('@/entities/auth/api', () => ({
     DrizzleSessionRepository: vi.fn(),
     DrizzleUserRepository: vi.fn(),
 }));
-// getAuthDatabaseClient는 barrel이 아닌 @/entities/auth/lib/db에서 직접 import되므로
+// getAuthDatabaseClient는 @/entities/auth/lib/db에서 직접 import되므로
 // (server-only 체인을 client 번들에서 분리) 해당 경로를 별도로 mock한다.
 vi.mock('@/entities/auth/lib/db', () => ({
     getAuthDatabaseClient: vi.fn().mockReturnValue({ db: {} }),
 }));
-vi.mock('@/entities/oauth-account', () => ({
+vi.mock('@/entities/oauth-account/lib/pendingOAuthSignupStore', () => ({
     createPendingOAuthSignupStoreFromEnv: vi.fn(),
 }));
 
@@ -42,13 +48,15 @@ const { MockOAuthStateSecretMisconfiguredError } = vi.hoisted(() => {
     return { MockOAuthStateSecretMisconfiguredError };
 });
 
-vi.mock('@/features/auth-oauth', () => ({
+vi.mock('@/features/auth-oauth/lib/providers', () => ({
     buildOAuthRedirectUri: vi
         .fn()
         .mockReturnValue('https://siglens.io/api/auth/callback/google'),
     getOAuthRedirectBaseUrl: vi.fn().mockReturnValue('https://siglens.io'),
     getOAuthAdapter: vi.fn(),
     isOAuthProvider: vi.fn(),
+}));
+vi.mock('@/features/auth-oauth/lib/state', () => ({
     OAUTH_STATE_COOKIE_NAME: 'oauth_state',
     OAuthStateSecretMisconfiguredError: MockOAuthStateSecretMisconfiguredError,
     expiredOAuthStateCookie: vi
@@ -67,12 +75,12 @@ import {
     DrizzleSessionRepository,
     DrizzleUserRepository,
 } from '@/entities/auth/api';
-import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account';
+import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/lib/pendingOAuthSignupStore';
 import {
     getOAuthAdapter,
     isOAuthProvider,
-    verifyOAuthState,
-} from '@/features/auth-oauth';
+} from '@/features/auth-oauth/lib/providers';
+import { verifyOAuthState } from '@/features/auth-oauth/lib/state';
 
 const MockUserRepository = DrizzleUserRepository as MockedClass<
     typeof DrizzleUserRepository

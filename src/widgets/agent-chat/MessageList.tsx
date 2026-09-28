@@ -10,9 +10,9 @@ import {
 } from 'react';
 import {
     relatedSymbolPages,
-    type AgentUiMessage,
     type RelatedSymbolPage,
-} from '@/features/agent-chat';
+} from '@/features/agent-chat/lib/relatedSymbolPages';
+import { type AgentUiMessage } from '@/features/agent-chat/hooks/useAgentStream';
 import { cn } from '@/shared/lib/cn';
 import { useSymbolLabels } from './hooks/useSymbolLabels';
 import { AgentMarkdown } from './AgentMarkdown';

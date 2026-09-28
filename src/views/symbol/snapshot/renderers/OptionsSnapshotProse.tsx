@@ -2,7 +2,7 @@ import { useTranslations } from 'next-intl';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
-import type { MarketProfileId } from '@/shared/config/marketProfile';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import {
     narrowOptionsContent,
     SIGNAL_KIND_LABEL_KEY,

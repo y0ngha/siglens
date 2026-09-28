@@ -5,13 +5,11 @@ import { getTranslations } from 'next-intl/server';
 
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
-import {
-    applyAuthCookie,
-    isSecureCookieEnv,
-    createAuthHintCookie,
-    DEFAULT_SESSION_TTL_SECONDS,
-    loginUser,
-} from '@/entities/auth';
+import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
+import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
+import { createAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
+import { DEFAULT_SESSION_TTL_SECONDS } from '@/entities/auth/lib/sessionCookie';
+import { loginUser } from '@/entities/auth/lib/loginUser';
 import { bcryptPasswordVerifier } from '@/entities/auth/lib/bcrypt';
 import {
     DrizzleSessionRepository,

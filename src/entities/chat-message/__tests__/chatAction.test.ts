@@ -1,5 +1,5 @@
 import type { MockedFunction, MockedClass, Mock } from 'vitest';
-import { callAiProviderRouter } from '@/entities/llm-provider';
+import { callAiProviderRouter } from '@/entities/llm-provider/api/router';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { chatAction } from '../actions/chatAction';
 import { getDatabaseClient } from '@/shared/db/client';
@@ -60,25 +60,22 @@ vi.mock('@/shared/api/guestId', () => ({
         .mockResolvedValue('11111111-1111-1111-1111-111111111111'),
 }));
 
-vi.mock('@/entities/llm-provider', async () => {
-    // chatAction resolves the provider via getLlmProvider() (barrel re-export)
-    // and wraps it to classify raw provider errors, so core receives a wrapper,
-    // not this instance — the wrapper's delegation is asserted in
-    // 'AI provider 장애 판정'.
-    const callAiProviderRouter = vi.fn();
-    // getServerPrimaryKey moved to lib/serverKeys — import the real
-    // implementation (not the whole barrel, to avoid loading SDK adapters)
-    // so this mock can't drift from the source of truth. Tests set
-    // *_CHAT_API_KEY directly and expect it forwarded via real env lookup.
-    const { getServerPrimaryKey } = await vi.importActual<
-        typeof import('@/entities/llm-provider/lib/serverKeys')
-    >('@/entities/llm-provider/lib/serverKeys');
-    return {
-        callAiProviderRouter,
-        getLlmProvider: vi.fn(() => callAiProviderRouter),
-        getServerPrimaryKey,
-    };
-});
+// chatAction resolves the provider via getLlmProvider() and wraps it to
+// classify raw provider errors, so core receives a wrapper, not this
+// instance — the wrapper's delegation is asserted in 'AI provider 장애 판정'.
+// getServerPrimaryKey (lib/serverKeys) stays real: tests set *_CHAT_API_KEY
+// directly and expect it forwarded via real env lookup.
+const { mockCallAiProviderRouter } = vi.hoisted(() => ({
+    mockCallAiProviderRouter: vi.fn(),
+}));
+
+vi.mock('@/entities/llm-provider/api/router', () => ({
+    callAiProviderRouter: mockCallAiProviderRouter,
+}));
+
+vi.mock('@/entities/llm-provider/api/getLlmProvider', () => ({
+    getLlmProvider: vi.fn(() => mockCallAiProviderRouter),
+}));
 
 vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
@@ -92,7 +89,7 @@ vi.mock('@/entities/api-key/api', () => ({
     DrizzleUserApiKeyRepository: vi.fn(),
 }));
 
-vi.mock('@/entities/user-tier', () => ({
+vi.mock('@/entities/user-tier/lib/getUserTier', () => ({
     getUserTier: vi.fn().mockResolvedValue('free'),
 }));
 

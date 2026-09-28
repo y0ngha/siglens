@@ -4,15 +4,15 @@
  * `getAboutFaq`는 실제 구현을 써서 FAQPage 마크업이 실제 카탈로그 문답과
  * 같은지 확인한다.
  */
-vi.mock('@/views/about', async importOriginal => ({
-    ...(await importOriginal<typeof import('@/views/about')>()),
+vi.mock('@/views/about/AboutPage', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/views/about/AboutPage')>()),
     AboutPage: () => null,
 }));
 vi.mock('@/shared/lib/og', () => ({
     OG_IMAGE_WIDTH: 1200,
     OG_IMAGE_HEIGHT: 630,
 }));
-vi.mock('@/entities/skill', () => ({
+vi.mock('@/entities/skill/api', () => ({
     countSkillFiles: vi.fn().mockResolvedValue({
         indicators: 13,
         candlesticks: 30,
@@ -156,7 +156,7 @@ describe('About page', () => {
     });
 
     it('countSkillFiles가 실패해도 0 카운트로 렌더한다', async () => {
-        const { countSkillFiles } = await import('@/entities/skill');
+        const { countSkillFiles } = await import('@/entities/skill/api');
         vi.mocked(countSkillFiles).mockRejectedValueOnce(new Error('boom'));
         const errorSpy = vi
             .spyOn(console, 'error')

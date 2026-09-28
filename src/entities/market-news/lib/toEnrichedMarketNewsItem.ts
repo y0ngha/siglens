@@ -1,5 +1,8 @@
 import type { EnrichedNewsItem } from '@y0ngha/siglens-core';
-import { isEnrichedRow, toEnrichedNewsItem } from '@/entities/news-article';
+import {
+    isEnrichedRow,
+    toEnrichedNewsItem,
+} from '@/entities/news-article/lib/newsEnrichment';
 import type { MarketNewsRow } from '../model';
 
 /**

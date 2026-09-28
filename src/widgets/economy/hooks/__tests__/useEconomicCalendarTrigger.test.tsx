@@ -4,10 +4,15 @@ const { ensureEconomicCalendarAction, ensureEconomicEventsAnalyzedAction } =
         ensureEconomicEventsAnalyzedAction: vi.fn(),
     }));
 
-vi.mock('@/entities/economy/actions', () => ({
+vi.mock('@/entities/economy/actions/ensureEconomicCalendarAction', () => ({
     ensureEconomicCalendarAction,
-    ensureEconomicEventsAnalyzedAction,
 }));
+vi.mock(
+    '@/entities/economy/actions/ensureEconomicEventsAnalyzedAction',
+    () => ({
+        ensureEconomicEventsAnalyzedAction,
+    })
+);
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';

@@ -10,9 +10,9 @@ import type {
     FundamentalAnalysisResponse,
     ModelId,
 } from '@y0ngha/siglens-core';
-import type { RunFundamentalAnalysisActionResult } from '@/entities/analysis/actions';
+import type { RunFundamentalAnalysisActionResult } from '@/entities/analysis/actions/runFundamentalAnalysisAction';
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
-import { isGateBlockedResult } from '@/entities/analysis';
+import { isGateBlockedResult } from '@/entities/analysis/lib/gate';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { readPlain, type WithPlain } from '@/shared/lib/plainEnvelope';
 

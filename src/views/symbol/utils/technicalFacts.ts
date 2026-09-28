@@ -4,10 +4,8 @@ import {
     type Bar,
     type IndicatorResult,
 } from '@y0ngha/siglens-core';
-import {
-    getDescriptor,
-    type MarketProfileId,
-} from '@/shared/config/marketProfile';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
+import { type MarketProfileId } from '@/shared/config/marketProfile/types';
 import { formatPrice } from '@/shared/lib/priceFormat';
 
 /** chart 사실 층에 표시하는 결정적 기술 지표 묶음. */

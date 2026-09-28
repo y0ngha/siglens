@@ -11,7 +11,7 @@ import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import {
     CONTACT_CONTENT_MAX_LENGTH,
     CONTACT_TITLE_MAX_LENGTH,
-} from '@/entities/inquiry';
+} from '@/shared/config/contact';
 
 export function ContactForm() {
     const t = useTranslations('features.contact-form');

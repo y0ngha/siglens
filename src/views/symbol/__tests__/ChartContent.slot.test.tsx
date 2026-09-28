@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { AnalysisResponse } from '@y0ngha/siglens-core';
-import { buildFallbackAnalysis } from '@/entities/chat-message';
+import { buildFallbackAnalysis } from '@/entities/chat-message/lib/fallbackAnalysis';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 import { ChartContent } from '../ChartContent';
 import type { UseAnalysisResult } from '../hooks/useAnalysis';
@@ -16,10 +16,16 @@ const FALLBACK_ANALYSIS = buildFallbackAnalysis(
 // vitest가 vi.mock 호출을 파일 최상단으로 호이스팅하므로, 선언 위치와 무관하게
 // 모킹이 적용된다. eslint import/first를 만족시키려고 import를 모두 위에 모으고
 // mock 선언을 그 아래에 둔다 (둘 다 동작하는 동등 표현).
-vi.mock('@/widgets/chart', () => ({
+vi.mock('@/widgets/chart/ChartErrorFallback', () => ({
     ChartErrorFallback: () => null,
+}));
+vi.mock('@/widgets/chart/ChartSkeleton', () => ({
     ChartSkeleton: () => null,
+}));
+vi.mock('@/widgets/chart/TimeframeSelector', () => ({
     TimeframeSelector: () => null,
+}));
+vi.mock('@/widgets/chart/hooks/useChartSync', () => ({
     useChartSync: () => ({
         handleStockChartReady: vi.fn(),
         handleStockChartRemove: vi.fn(),
@@ -66,7 +72,7 @@ vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
         openSignupNudge: vi.fn(),
     }),
 }));
-vi.mock('@/features/analysis-nudge', () => ({
+vi.mock('@/features/analysis-nudge/hooks/useAnonAnalysisNudge', () => ({
     useAnonAnalysisNudge: () => ({
         isLoginResolved: false,
         onSymbolAnalyzed: vi.fn(),
@@ -91,14 +97,16 @@ vi.mock('../hooks/useAnalysisDisplay', () => ({
 vi.mock('@/widgets/analysis/hooks/useAnalysisProgress', () => ({
     useAnalysisProgress: () => ({ phaseIndex: 0, tipIndex: 0 }),
 }));
-vi.mock('@/features/symbol-chat', () => ({ usePublishSymbolChat: vi.fn() }));
-vi.mock('@/widgets/analysis', () => ({
+vi.mock('@/features/symbol-chat/hooks/useSymbolChat', () => ({
+    usePublishSymbolChat: vi.fn(),
+}));
+vi.mock('@/widgets/analysis/AnalysisPanel', () => ({
     AnalysisPanel: () => <div data-testid="analysis-panel" />,
 }));
 // "내 포지션" 요약(PositionStatusSummary)의 소스 — react-query 기반이라
 // QueryClientProvider 없는 이 트리에서 그대로 렌더하면 크래시한다. 이 파일의
 // 관심사(슬롯 분기)와 무관하므로 "홀딩 없음"으로 고정한다.
-vi.mock('@/features/portfolio-holding', () => ({
+vi.mock('@/features/portfolio-holding/hooks/useSymbolHolding', () => ({
     useSymbolHolding: () => ({
         holding: null,
         isHydrated: true,

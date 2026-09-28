@@ -1,6 +1,8 @@
-vi.mock('@/shared/ui/tabs', () => ({
+vi.mock('@/shared/ui/tabs/utils/tabIds', () => ({
     buildPanelId: (prefix: string, value: string) => `${prefix}-panel-${value}`,
     buildTabId: (prefix: string, value: string) => `${prefix}-tab-${value}`,
+}));
+vi.mock('@/shared/ui/tabs/TabsUnderline', () => ({
     TabsUnderline: ({
         tabs,
         activeTab,
@@ -24,7 +26,7 @@ vi.mock('@/shared/ui/tabs', () => ({
         </div>
     ),
 }));
-vi.mock('@/features/backtest-filter', () => ({
+vi.mock('@/features/backtest-filter/hooks/useBacktestFilter', () => ({
     useBacktestFilter: vi.fn(() => ({
         tabItems: [
             { value: 'all', label: '전체' },

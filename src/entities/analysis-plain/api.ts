@@ -1,12 +1,10 @@
 import 'server-only';
 import { createHash } from 'node:crypto';
 import { createCacheProvider } from '@y0ngha/siglens-core';
-import {
-    callAiProviderRouter,
-    stripMarkdownCodeBlock,
-} from '@/entities/llm-provider';
+import { callAiProviderRouter } from '@/entities/llm-provider/api/router';
+import { stripMarkdownCodeBlock } from '@/entities/llm-provider/lib/parseJsonResponse';
 import { isE2E } from '@/shared/api/e2eEnv';
-import { extractProse } from '@/entities/analysis-translation';
+import { extractProse } from '@/entities/analysis-translation/lib/proseFields';
 import { tryReadPlainModelConfig } from './lib/plainModel';
 import type { Locale } from '@/shared/i18n/locales';
 import { collectFacts, type CurrencyCode } from './lib/collectFacts';

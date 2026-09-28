@@ -65,11 +65,8 @@ vi.mock('@y0ngha/siglens-core', () => ({
         r?: boolean
     ) => ((r ?? modes.default === 'on') ? modes.on : modes.off),
     EMPTY_INDICATOR_RESULT: MOCK_EMPTY_INDICATOR_RESULT,
-    // 레이아웃이 `@/views/symbol` 배럴에서 `RelatedSymbols`를 가져오는데, 그 배럴이
-    // `FearGreedFactsSummary`까지 끌고 오고 그게 모듈 스코프에서 이 상수를 읽는다.
-    // 레이아웃 자체는 쓰지 않지만 배럴 평가를 통과시키려면 필요하다 — production
-    // 코드가 슬라이스 배럴만 import하는 규칙(ARCHITECTURE.md)을 지키는 대가이고,
-    // deep import로 피하지 않는다.
+    // `FearGreedFactsSummary`(fearGreedLabels)가 import 그래프에 들어오면 모듈
+    // 스코프에서 이 상수를 읽는다. 레이아웃 자체는 쓰지 않는다.
     POC_WINDOW_DEFAULT: 60,
     // Phase 1 added sessionSpecFor(marketProfileOf(assetInfo)) which imports
     // US_EQUITY_SESSION and CRYPTO_SESSION from siglens-core. Provide minimal
@@ -139,19 +136,19 @@ vi.mock('@/shared/config/queryConfig', () => ({
     QUERY_STALE_TIME_MS: 60_000,
 }));
 
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
     getAssetInfoResilient: (ticker: string) =>
         mockGetAssetInfoResilient(ticker),
 }));
 
 // layout은 seed만 하므로 축소판(getSeedBarsStatic)을 쓴다. 이 mock이 원본
 // (getQuantizedBarsStatic)을 가리키면 축소 여부를 검증할 수 없으니 분리해 둔다.
-vi.mock('@/entities/bars', () => ({
+vi.mock('@/entities/bars/lib/barsStaticCache', () => ({
     getQuantizedBarsStatic: mockGetQuantizedBarsStatic,
     getSeedBarsStatic: mockGetSeedBarsStatic,
 }));
 
-vi.mock('@/features/visitor-ping', () => ({
+vi.mock('@/features/visitor-ping/ui/SymbolViewPing', () => ({
     SymbolViewPing: function SymbolViewPing() {
         return null;
     },
@@ -162,7 +159,7 @@ import SymbolLayout, {
 } from '@/app/[locale]/[symbol]/layout';
 import { SymbolLayoutJail } from '@/app/[locale]/[symbol]/SymbolLayoutClient';
 import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
-import { SymbolViewPing } from '@/features/visitor-ping';
+import { SymbolViewPing } from '@/features/visitor-ping/ui/SymbolViewPing';
 
 const ASSET_INFO = {
     symbol: 'AAPL',

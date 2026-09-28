@@ -2,7 +2,8 @@ import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { SITE_URL } from '@/shared/lib/seo';
-import { StockAnalysisLanding, StockChatLanding } from '../index';
+import { StockAnalysisLanding } from '@/views/lp/StockAnalysisLanding';
+import { StockChatLanding } from '@/views/lp/StockChatLanding';
 import { lpCopyViolations } from './lpCopyRules';
 
 function pageText(container: HTMLElement): string {

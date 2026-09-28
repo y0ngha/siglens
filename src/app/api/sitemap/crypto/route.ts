@@ -1,7 +1,5 @@
-import {
-    buildCryptoPopularEntries,
-    toUrlSetXml,
-} from '@/entities/sitemap-entry';
+import { buildCryptoPopularEntries } from '@/entities/sitemap-entry/lib/buildCryptoPopularEntries';
+import { toUrlSetXml } from '@/entities/sitemap-entry/lib/xml';
 import { loadPopularSitemapInputs } from '@/entities/sitemap-entry/server';
 import { NextResponse } from 'next/server';
 import { SITEMAP_CACHE_CONTROL } from '@/app/api/sitemap/_shared/constants';

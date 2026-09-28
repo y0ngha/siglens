@@ -17,20 +17,18 @@ import {
 } from '@/shared/i18n/locales';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { quoteWithTimeout } from '@/shared/api/market/quoteTimeout';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
-import {
-    resolveCurrentPrice,
-    rewriteToPlainLanguage,
-} from '@/entities/analysis-plain';
+import { resolveCurrentPrice } from '@/entities/analysis-plain/lib/currentPrice';
+import { rewriteToPlainLanguage } from '@/entities/analysis-plain/api';
 import { isE2E } from '@/shared/api/e2eEnv';
 import {
     currencyForSymbol,
     getDescriptor,
-} from '@/shared/config/marketProfile';
-import type { NewsFeedCategoryId } from '@/entities/market-news';
+} from '@/shared/config/marketProfile/registry';
+import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
 import { getDatabaseClient } from '@/shared/db/client';
 import {
     buildGateError,
@@ -43,13 +41,13 @@ import type { OptionsExpirationSelector } from '@/shared/lib/types';
 import { heartbeatStream } from '@/shared/lib/sse/heartbeatStream';
 import { canAcceptAnalysisStream } from '@/shared/lib/sse/activeStreams';
 import { runAnalysis, type SubmitAnalysisOptions } from './runAnalysisBridge';
-import { tryAcquireReanalyzeCooldown } from '@/entities/analysis';
+import { tryAcquireReanalyzeCooldown } from '@/entities/analysis/lib/reanalyzeCooldown';
 import {
     DrizzleAnalysisHistoryRepository,
     resolveGeneratedAt,
     type AnalysisHistoryTab,
 } from '@/entities/analysis/analysisHistoryRepository';
-import { marketEventsLookback } from '@/entities/news-article';
+import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
 import { findMarketEventsForPrompt } from '@/entities/news-article/marketEventsRepository';
 // core에서 직접 import — 해제는 서버 전용이어야 한다(클라이언트가 호출할 수 있으면
 // 쿨다운을 지우고 재요청하는 루프로 무력화된다). 아래 `releaseOnFailure` 참고.
@@ -59,15 +57,13 @@ import { releaseReanalyzeCooldown } from '@y0ngha/siglens-core';
 // Calling them from the route (server-side) is safe — no browser connection means
 // no idle-connection wall at all. The SSE heartbeat stream keeps the browser
 // connection alive while these actions await the LLM.
-import {
-    runOverallAnalysisAction,
-    runFundamentalAnalysisAction,
-    runFinancialsAnalysisAction,
-    runCongressTrendAction,
-} from '@/entities/analysis/actions';
-import { submitNewsAnalysisAction } from '@/entities/news-article/actions';
+import { runOverallAnalysisAction } from '@/entities/analysis/actions/runOverallAnalysisAction';
+import { runFundamentalAnalysisAction } from '@/entities/analysis/actions/runFundamentalAnalysisAction';
+import { runFinancialsAnalysisAction } from '@/entities/analysis/actions/runFinancialsAnalysisAction';
+import { runCongressTrendAction } from '@/entities/analysis/actions/runCongressTrendAction';
+import { submitNewsAnalysisAction } from '@/entities/news-article/actions/submitNewsAnalysisAction';
 import { submitMarketNewsDigestAction } from '@/entities/market-news/actions/submitMarketNewsDigestAction';
-import { submitOptionsAnalysisAction } from '@/entities/options-chain/actions';
+import { submitOptionsAnalysisAction } from '@/entities/options-chain/actions/optionsActions';
 import { submitMarketBriefingAction } from '@/entities/market-summary/actions/submitMarketBriefingAction';
 import { submitMacroBriefingAction } from '@/entities/economy/actions/submitMacroBriefingAction';
 

@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import { useChatButtonState } from './hooks/useChatButtonState';
-import { useSymbolChat } from '@/features/symbol-chat';
+import { useSymbolChat } from '@/features/symbol-chat/hooks/useSymbolChat';
 
 /**
  * 챗 패널은 **열었을 때** 내려받는다.

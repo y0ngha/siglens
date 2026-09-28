@@ -3,7 +3,11 @@ import { setRequestLocale } from 'next-intl/server';
 import { localePath, resolveLocale } from '@/shared/i18n/locales';
 import { buildFaqJsonLd, SITE_URL } from '@/shared/lib/seo';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { AiAboutPage, getAboutFaq, getAboutSeoCopy } from '@/views/ai-about';
+import { AiAboutPage } from '@/views/ai-about/AiAboutPage';
+import {
+    getAboutFaq,
+    getAboutSeoCopy,
+} from '@/views/ai-about/lib/aboutContent';
 import { buildAiAboutMetadata } from '../aiSeo';
 
 export async function generateMetadata({

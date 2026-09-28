@@ -40,10 +40,13 @@ const QUARTER_SNAPSHOT: FinancialsSnapshot = {
 
 const mockGetFinancialsQuarterAction = vi.fn();
 
-vi.mock('@/entities/financials-statements/actions', () => ({
-    getFinancialsQuarterAction: (symbol: string) =>
-        mockGetFinancialsQuarterAction(symbol),
-}));
+vi.mock(
+    '@/entities/financials-statements/actions/getFinancialsQuarterAction',
+    () => ({
+        getFinancialsQuarterAction: (symbol: string) =>
+            mockGetFinancialsQuarterAction(symbol),
+    })
+);
 
 vi.mock('@/widgets/financials/sections/IncomeStatementSection', () => ({
     IncomeStatementSection: ({ rows }: { rows: unknown[] }) => (

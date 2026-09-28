@@ -12,7 +12,7 @@ import {
     terms,
     users,
 } from '@/shared/db/schema';
-import { NEWS_CATEGORY_SLUGS } from '@/entities/market-news';
+import { NEWS_CATEGORY_SLUGS } from '@/entities/market-news/lib/categoryConfig';
 import { makeFakeItems } from '@/entities/market-news/lib/FakeMarketNewsClient';
 import {
     AUTH_USER_EMAIL,

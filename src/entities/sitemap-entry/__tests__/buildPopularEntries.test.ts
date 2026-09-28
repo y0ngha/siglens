@@ -2,7 +2,7 @@ import { POPULAR_OPTIONS_TICKERS } from '../config/popular-options-tickers';
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { MS_PER_HOUR } from '@/shared/config/time';
 import { SITE_URL } from '@/shared/lib/seo';
-import { classifyAsset } from '@/entities/ticker';
+import { classifyAsset } from '@/entities/ticker/lib/assetClassification';
 import { floorToHour } from '../lib/floorToHour';
 import { buildPopularEntries } from '../lib/buildPopularEntries';
 

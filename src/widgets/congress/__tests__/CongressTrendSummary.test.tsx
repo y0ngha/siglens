@@ -6,15 +6,19 @@ vi.mock('@/shared/lib/cn', () => ({
             .filter(a => typeof a === 'string' && a.length > 0)
             .join(' '),
 }));
-vi.mock('@/features/symbol-model', () => ({
+vi.mock('@/features/symbol-model/hooks/useDefaultModelId', () => ({
     useDefaultModelId: () => 'gemini-3.5-flash-lite',
+}));
+vi.mock('@/features/symbol-model/hooks/useAnalysisSettingsHydrated', () => ({
     useAnalysisSettingsHydrated: () => true,
+}));
+vi.mock('@/features/symbol-model/hooks/useDefaultReasoning', () => ({
     useDefaultReasoning: () => false,
 }));
 vi.mock('../hooks/useCongressTrend', () => ({
     useCongressTrend: vi.fn(),
 }));
-vi.mock('@/features/symbol-chat', () => ({
+vi.mock('@/features/symbol-chat/hooks/useSymbolChat', () => ({
     usePublishSymbolChat: vi.fn(),
 }));
 vi.mock('../utils/buildChatState', () => ({
@@ -33,7 +37,7 @@ vi.mock('../CongressTrendSummaryEmpty', () => ({
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
-import { usePublishSymbolChat } from '@/features/symbol-chat';
+import { usePublishSymbolChat } from '@/features/symbol-chat/hooks/useSymbolChat';
 import { CongressTrendSummary } from '../CongressTrendSummary';
 import { useCongressTrend } from '../hooks/useCongressTrend';
 
@@ -130,7 +134,8 @@ describe('CongressTrendSummary', () => {
     });
 
     it('publishes chat state via usePublishSymbolChat on every render', async () => {
-        const { usePublishSymbolChat } = await import('@/features/symbol-chat');
+        const { usePublishSymbolChat } =
+            await import('@/features/symbol-chat/hooks/useSymbolChat');
         vi.mocked(useCongressTrend).mockReturnValue({
             status: 'loading',
             trigger: vi.fn(),

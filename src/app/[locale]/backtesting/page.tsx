@@ -26,10 +26,8 @@ import { BacktestTabs } from '@/widgets/backtesting/BacktestTabs';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import backtestData from '@/app/[locale]/backtesting/data.json';
-import {
-    deriveBacktestStats,
-    validateBacktestData,
-} from '@/entities/backtest-case';
+import { deriveBacktestStats } from '@/entities/backtest-case/lib/deriveBacktestStats';
+import { validateBacktestData } from '@/entities/backtest-case/lib/validate';
 
 // JSON import typed as any; validateBacktestData ensures shape at load time
 const data = validateBacktestData(backtestData as unknown);

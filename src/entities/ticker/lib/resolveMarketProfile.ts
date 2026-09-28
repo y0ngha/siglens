@@ -2,8 +2,8 @@ import { getAssetInfo } from './getAssetInfo';
 import {
     marketProfileOf,
     DEFAULT_MARKET_PROFILE,
-    type MarketProfileId,
-} from '@/shared/config/marketProfile';
+} from '@/shared/config/marketProfile/registry';
+import { type MarketProfileId } from '@/shared/config/marketProfile/types';
 
 /**
  * Resolves the canonical `MarketProfileId` for a symbol via the cached

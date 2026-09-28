@@ -65,10 +65,17 @@ app            ← pages, widgets, features, entities, shared import 가능.
 
 `technicalindicators` 같은 일반 외부 라이브러리는 shared에서만 wrapping 가능.
 
+**barrel 금지 — 정의 파일에서 직접 import**
+
+`index.ts`/`index.tsx` barrel은 만들지 않는다. 모든 import(테스트와 `vi.mock` 경로 포함)는
+심볼을 **정의한 파일**을 가리킨다. barrel은 re-export가 쌓이기만 해서 걷어내기 어렵고,
+server-only 모듈을 client 번들로 끌고 오는 누출 경로가 된다.
+`src/__tests__/guards/noBarrelFiles.test.ts`가 `src/` 아래 `index.ts(x)`를 금지한다.
+
 **위반 예시 (절대 금지)**
 ```typescript
-// ❌ widgets에서 entity internal path 직접 import
-import { loginUser } from '@/entities/auth/lib/loginUser'; // 금지 — barrel로만
+// ❌ barrel(슬라이스 루트) import — barrel은 존재하지 않는다
+import { loginUser } from '@/entities/auth';
 
 // ❌ siglens-core deep import
 import { calculateBollinger } from '@y0ngha/siglens-core/dist/domain/indicators/bollinger'; // 금지
@@ -80,9 +87,9 @@ import { calculateBollinger } from '@y0ngha/siglens-core/dist/domain/indicators/
 import { detectCandlePatternEntries, RSI_OVERBOUGHT_LEVEL } from '@y0ngha/siglens-core';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 
-// ✅ features에서 entity barrel import (server-only 제외 항목은 deep import)
-import { loginUser } from '@/entities/auth';
-import { DrizzleUserRepository } from '@/entities/auth/api'; // server-only → deep import
+// ✅ 정의 파일에서 직접 import
+import { loginUser } from '@/entities/auth/lib/loginUser';
+import { DrizzleUserRepository } from '@/entities/auth/api'; // server-only — 서버 소비자만
 ```
 
 **순환 의존성 금지**

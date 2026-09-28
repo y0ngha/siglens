@@ -503,7 +503,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ❌ TocItem defined identically in both PolicySection.tsx and lib/legal-toc.ts
    ❌ NewsDbRow defined separately in database module and API response module (different shapes)
    ✅ Define TocItem in lib/legal-toc.ts once; PolicySection.tsx imports: `import { TocItem } from '@/lib/legal-toc'`
-   ✅ Use named interfaces/types from the relevant FSD slice barrel or `@y0ngha/siglens-core` public exports
+   ✅ Use named interfaces/types from their defining module in the relevant FSD slice or `@y0ngha/siglens-core` public exports
 
 5.2. Inline type annotations used instead of named type aliases
    → Extract repeated or reusable type patterns to named type aliases
@@ -1729,19 +1729,19 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 ```
 0. Widget/Feature .tsx files importing directly from entity internal paths
-   → `.tsx` UI files are prohibited from importing entity internal modules (lib/, api/)
+   → `.tsx` UI files are prohibited from calling entity use-case/server modules (lib/ business logic, api/) directly
    → Hook files (`hooks/*.ts`) may import Server Actions from `entities/*/actions/` for queryFn/mutationFn or useActionState connection only
-   → UI files must receive all data/actions through hook abstractions or barrel imports
+   → UI files must receive all data/actions through hook abstractions (pure constants/types are imported from their defining file)
    ❌ LoginForm.tsx: `import { loginUser } from '@/entities/user/lib/loginUser'`  // entity internal import in .tsx
    ✅ LoginForm.tsx: `import { useLoginForm } from '../hooks/useLoginForm'`  // hook abstraction
    ✅ Hook file imports entity action; UI component uses hook only
    ✅ App-layer RSC files may import entity api.ts directly
 
 0.5. Hook file type imports from entity internal modules
-   → Hook files must import types from entity barrel or @y0ngha/siglens-core
-   → Entity internal types (e.g., @/entities/user/lib/types) violate layer boundaries
+   → Hook files must import types from their defining type module (`model.ts`/`types.ts`) or @y0ngha/siglens-core
+   → Pulling a type out of an implementation module (DB/API code) drags that module's import chain along
    ❌ hooks/useCurrentUser.ts: `import { AuthUserRecord } from '@/entities/session/lib/db'`
-   ✅ hooks/useCurrentUser.ts: `import type { AuthUserRecord } from '@/entities/session'`  // barrel export
+   ✅ hooks/useCurrentUser.ts: `import type { AuthUserRecord } from '@/shared/lib/auth/types'`  // defining type module
 
 0.6. Helper files (hooks, utilities) mixed at same directory level as UI files
    → Custom hooks must always live in a `hooks/` subfolder
@@ -1782,10 +1782,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Widgets / hooks / app code imports directly: `import { calculateATR } from '@y0ngha/siglens-core';`
    ❌ Deep imports: `from '@y0ngha/siglens-core/dist/domain/indicators/atr'` (only the public package surface is allowed)
 
+3.1. Creating a barrel (`index.ts`/`index.tsx`) or mocking a path the code does not import
+   → Barrels are forbidden (`src/__tests__/guards/noBarrelFiles.test.ts`); import every symbol from its defining file
+   → `vi.mock` intercepts by module path — mock the defining file the code under test imports, not a slice root
+   ❌ `src/features/foo/index.ts` re-exporting `./ui/Foo`; `vi.mock('@/features/foo')`
+   ✅ `import { Foo } from '@/features/foo/ui/Foo'`; `vi.mock('@/features/foo/ui/Foo')`
+
 4. shared/lib/ misused as a dumping ground for non-utility code (side effects, types, entity logic)
    → `shared/lib/` is for pure UI utility wrappers (clsx, tailwind-merge), chart colors, and format functions only
    → Side effects (new Date(), fetch, fs, crypto) belong in entity api/ or shared/db/
-   → Cross-layer shared types belong in entity barrel exports or @y0ngha/siglens-core
+   → Cross-layer shared types belong in entity `model.ts`/`types.ts` or @y0ngha/siglens-core
    → Infrastructure helpers (retry/backoff, sleep timing, rate limiting) belong in shared/lib/ as pure functions
    ❌ shared/lib/ with fs.readFile  // side effect in shared/lib
    ✅ Move side-effect functions to entity api/ or shared/db/

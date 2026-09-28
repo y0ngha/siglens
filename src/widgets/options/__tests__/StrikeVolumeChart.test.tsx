@@ -50,7 +50,7 @@ vi.mock('@/widgets/options/utils/chartStrokeWidths', () => ({
     GUIDE_LINE_STROKE_WIDTH: 1.5,
 }));
 
-vi.mock('@/entities/options-chain', () => ({
+vi.mock('@/entities/options-chain/lib/findNearestStrike', () => ({
     findNearestStrikeIndex: () => 0,
 }));
 

@@ -1,6 +1,6 @@
-import type { NewsFeedCategoryId } from '@/entities/market-news';
+import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
-import type { SubmitMarketNewsDigestActionResult } from '@/entities/market-news/actions';
+import type { SubmitMarketNewsDigestActionResult } from '@/entities/market-news/actions/submitMarketNewsDigestActionTypes';
 import {
     runAnalysisStream,
     type StreamErrorMessages,

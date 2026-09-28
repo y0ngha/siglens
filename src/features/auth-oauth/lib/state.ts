@@ -1,7 +1,8 @@
 import 'server-only';
 import { createHmac, randomBytes, timingSafeEqual } from 'crypto';
 import type { SupportedOAuthProvider } from '@/shared/lib/types';
-import { isSecureCookieEnv, type ResponseCookie } from '@/entities/auth';
+import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
+import { type ResponseCookie } from '@/entities/auth/lib/types';
 
 /** OAuth state 쿠키 이름. */
 export const OAUTH_STATE_COOKIE_NAME = 'siglens_oauth_state';

@@ -5,10 +5,8 @@ import {
     type MarketSessionSpec,
     type Timeframe,
 } from '@y0ngha/siglens-core';
-import {
-    getDescriptor,
-    type MarketProfileId,
-} from '@/shared/config/marketProfile';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
+import { type MarketProfileId } from '@/shared/config/marketProfile/types';
 import type { SessionModel } from '@/shared/config/marketProfile/types';
 import type { DashboardScopeId } from '@/shared/config/dashboardScope';
 

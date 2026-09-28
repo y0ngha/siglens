@@ -14,11 +14,15 @@
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: vi.fn().mockResolvedValue(true),
 }));
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker/lib/assetClassification', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+}));
+vi.mock('@/entities/ticker/lib/ticker', () => ({
     pickAssetName: (info: { name: string; koreanName?: string }) =>
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
+}));
+vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 vi.mock('next/navigation', () => ({
@@ -43,7 +47,7 @@ vi.mock('@/app/[locale]/[symbol]/financials/financialData', () => ({
 vi.mock('@/app/[locale]/[symbol]/financials/FinancialsDegraded', () => ({
     FinancialsDegraded: () => null,
 }));
-vi.mock('@/entities/financials-statements', () => ({
+vi.mock('@/entities/financials-statements/lib/getFinancialsSnapshot', () => ({
     getFinancialsSnapshot: vi.fn(),
     isEmptyFinancialsSnapshot: vi.fn().mockReturnValue(false),
 }));
@@ -59,7 +63,7 @@ vi.mock('@/widgets/financials/FinancialsScorecard', () => ({
 vi.mock('@/widgets/financials/FinancialsStatements', () => ({
     FinancialsStatements: () => null,
 }));
-vi.mock('@/views/symbol', () => ({
+vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({
     SymbolPageHeading: () => null,
 }));
 vi.mock('@/shared/ui/CrossLinkCards', () => ({
@@ -85,7 +89,7 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import FinancialsPage from '@/app/[locale]/[symbol]/financials/page';
 import { FinancialsScorecard } from '@/widgets/financials/FinancialsScorecard';
-import { getAssetInfoResilient } from '@/entities/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { getProfileResilient } from '@/app/[locale]/[symbol]/fundamental/getProfileResilient';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 

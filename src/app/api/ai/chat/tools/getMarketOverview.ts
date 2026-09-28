@@ -3,7 +3,7 @@ import type { MarketSectorData, StockSignalResult } from '@y0ngha/siglens-core';
 import { getTranslations } from 'next-intl/server';
 import { getMarketFearGreedStatic } from '@/entities/market-fear-greed/api/marketFearGreedStaticCache';
 import { getMarketFearGreedKrStatic } from '@/entities/market-fear-greed/api/marketFearGreedKrStaticCache';
-import type { MarketFearGreedView } from '@/entities/market-fear-greed';
+import type { MarketFearGreedView } from '@/entities/market-fear-greed/model';
 import { getMarketSummaryStatic } from '@/entities/market-summary/api/marketSummaryStaticCache';
 import { getSectorSignalsStatic } from '@/entities/sector-signal/api/sectorSignalsStaticCache';
 import { peekBriefingStatic } from '@/entities/market-summary/api/briefingStaticCache';
@@ -15,7 +15,7 @@ import {
 } from '@/shared/config/dashboardScope';
 import { ISO_DATE_HOUR_SLICE_END } from '@/shared/config/time';
 import type { Locale } from '@/shared/i18n/locales';
-import type { ToolExecutor } from './index';
+import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { logToolDegrade } from './logToolDegrade';
 import { ppDelta } from './percent';
 

@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import type { BacktestCase } from '@y0ngha/siglens-core';
-import type { TabItem } from '@/shared/ui/tabs';
+import type { TabItem } from '@/shared/ui/tabs/utils/tabIds';
 
 /**
  * "전체" 탭의 **값**. 표시 라벨과 분리한다 — 값은 쿼리 파라미터 비교와

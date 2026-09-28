@@ -8,7 +8,7 @@ import type {
     PortfolioHoldingView,
     RawHoldingInput,
     SavePortfolioResult,
-} from '@/entities/portfolio';
+} from '@/entities/portfolio/model';
 import { HoldingForm } from './HoldingForm';
 import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
 import { symbolLabel } from '@/shared/lib/symbolLabel';

@@ -1,5 +1,5 @@
 import { useTranslations } from 'next-intl';
-import type { MarketProfileId } from '@/shared/config/marketProfile';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { useSkillLabel } from '@/shared/i18n/skillLabel';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { LIVE_ANALYSIS_CROSS_REF_KEY } from '../lib/liveAnalysisCrossRef';

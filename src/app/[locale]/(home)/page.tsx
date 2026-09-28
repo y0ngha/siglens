@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import { countSkillFiles, FileSkillsLoader } from '@/entities/skill';
+import { countSkillFiles, FileSkillsLoader } from '@/entities/skill/api';
 import { setRequestLocale } from 'next-intl/server';
 import {
     localeAlternatesFrom,
@@ -11,7 +11,7 @@ import {
     OPERATOR_PERSON_JSON_LD_ID,
     SITE_OPERATOR,
 } from '@/shared/lib/legal';
-import { SymbolSearchPanel } from '@/features/ticker-search';
+import { SymbolSearchPanel } from '@/features/ticker-search/ui/SymbolSearchPanel';
 import {
     buildFaqJsonLd,
     buildWebPageJsonLd,
@@ -32,16 +32,15 @@ import { FaqSection } from '@/shared/ui/FaqSection';
 import { BetaBadge } from '@/shared/ui/BetaBadge';
 import { aiAskUrl } from '@/shared/config/aiHost';
 import { buildHomeFaq } from '../homeJsonLd';
+import { CryptoShowcase } from '@/widgets/home/CryptoShowcase';
+import { HeroIllustration } from '@/widgets/home/HeroIllustration';
+import { HERO_QUICK_LINKS } from '@/widgets/home/heroQuickLinks';
 import {
-    CryptoShowcase,
-    HeroIllustration,
-    HERO_QUICK_LINKS,
     SkillsShowcase,
     SkillsShowcaseSkeleton,
-    StatsBar,
-    StatsBarSkeleton,
-    TickerCategories,
-} from '@/widgets/home';
+} from '@/widgets/home/SkillsShowcase';
+import { StatsBar, StatsBarSkeleton } from '@/widgets/home/StatsBar';
+import { TickerCategories } from '@/widgets/home/TickerCategories';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import type { Metadata } from 'next';
 import { cache, Suspense } from 'react';

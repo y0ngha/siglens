@@ -17,11 +17,13 @@ import type {
 
 import {
     CALENDAR_COUNTRY_LABEL_KEY,
+    type CalendarCountry,
+} from '@/entities/economy/lib/economyCalendarConstants';
+import {
     resolveCalendarInterpretation,
     resolveCalendarSummary,
-    type CalendarCountry,
     type EconomicCalendarEventWithAnalysis,
-} from '@/entities/economy';
+} from '@/entities/economy/model';
 import {
     SENTIMENT_LABEL_KEY,
     SENTIMENT_CLASS,

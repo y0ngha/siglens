@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useShareFlow } from '@/features/share';
+import { useShareFlow } from '@/features/share/hooks/useShareFlow';
 import { cn } from '@/shared/lib/cn';
 import { ShareSheet } from './ShareSheet';
 import { ShareTriggerDialog } from './ShareTriggerDialog';

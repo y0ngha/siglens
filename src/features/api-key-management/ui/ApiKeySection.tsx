@@ -3,8 +3,11 @@
 import { useTranslations } from 'next-intl';
 import { ApiKeyInput } from './ApiKeyInput';
 import { useApiKeyForms } from '../hooks/useApiKeyForms';
-import type { ApiKeyActionState } from '@/entities/api-key';
-import { LLM_PROVIDER_VALUES, type LlmProvider } from '@/entities/api-key';
+import type { ApiKeyActionState } from '@/shared/lib/types';
+import {
+    LLM_PROVIDER_VALUES,
+    type LlmProvider,
+} from '@/shared/config/llmProviders';
 import { cn } from '@/shared/lib/cn';
 import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
 import { useState } from 'react';

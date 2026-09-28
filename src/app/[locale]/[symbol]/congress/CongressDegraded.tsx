@@ -1,5 +1,5 @@
 import { useTranslations } from 'next-intl';
-import { SymbolPageHeading } from '@/views/symbol';
+import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import { CongressSnapshotProse } from '@/views/symbol/snapshot/renderers/CongressSnapshotProse';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 

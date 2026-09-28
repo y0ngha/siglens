@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import { getNewsCardsAction } from '@/entities/news-article/actions';
+import { getNewsCardsAction } from '@/entities/news-article/actions/getNewsCardsAction';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import {
     POLL_INTERVAL_MS,
@@ -10,7 +10,7 @@ import {
     MAX_POLL_DURATION_MS,
     STAGNANT_POLL_LIMIT,
     STAGNATION_FLOOR_POLLS,
-} from '../constants';
+} from '@/shared/config/cardPollingConfig';
 
 /**
  * Called once when polling terminates normally (all cards enriched, or timeout

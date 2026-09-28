@@ -1,10 +1,8 @@
 import { useTranslations } from 'next-intl';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { INTL_LOCALE } from '@/shared/i18n/locales';
-import {
-    getDescriptor,
-    type MarketProfileId,
-} from '@/shared/config/marketProfile';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
+import { type MarketProfileId } from '@/shared/config/marketProfile/types';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 

@@ -10,10 +10,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import {
-    buildAnalysisNewsItems,
-    MAX_AGGREGATE_NEWS_ITEMS,
-} from '@/entities/news-article';
+import { buildAnalysisNewsItems } from '@/entities/news-article/lib/buildAnalysisNewsItems';
+import { MAX_AGGREGATE_NEWS_ITEMS } from '@/entities/news-article/lib/newsAnalysisSelection';
 import type { NewsRow } from '@/entities/news-article/api';
 import type { NewsImpact } from '@y0ngha/siglens-core';
 

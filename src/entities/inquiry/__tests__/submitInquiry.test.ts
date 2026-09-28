@@ -1,5 +1,5 @@
 import type { Mock } from 'vitest';
-import type { ContactInput, ContactRepository } from '@/entities/inquiry';
+import type { ContactInput, ContactRepository } from '@/entities/inquiry/api';
 import { submitInquiry } from '../lib/submitInquiry';
 import type { SubmitInquiryDeps } from '../lib/types';
 

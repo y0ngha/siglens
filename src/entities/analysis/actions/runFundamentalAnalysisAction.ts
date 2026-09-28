@@ -7,7 +7,7 @@ import {
     type RunFundamentalAnalysisResult,
 } from '@y0ngha/siglens-core';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
-import { currencyForSymbol } from '@/shared/config/marketProfile';
+import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { fetchQuotePriceForAnalysis } from '../lib/fetchQuotePriceForAnalysis';
 import {

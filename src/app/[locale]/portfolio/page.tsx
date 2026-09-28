@@ -12,7 +12,7 @@ import { getDatabaseClient } from '@/shared/db/client';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
-import type { PortfolioHoldingView } from '@/entities/portfolio';
+import type { PortfolioHoldingView } from '@/entities/portfolio/model';
 import { DEFAULT_LOCALE, isLocale, localePath } from '@/shared/i18n/locales';
 import type { Locale } from '@/shared/i18n/locales';
 

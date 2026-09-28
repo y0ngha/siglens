@@ -1,8 +1,8 @@
 import { useTranslations } from 'next-intl';
-import { SymbolPageHeading } from '@/views/symbol';
+import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import { FundamentalSnapshotProse } from '@/views/symbol/snapshot/renderers/FundamentalSnapshotProse';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
-import type { MarketProfileId } from '@/shared/config/marketProfile';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 
 interface FundamentalDegradedProps {
     /** Resolved display name (Korean+English+ticker, or bare-ticker fallback). */

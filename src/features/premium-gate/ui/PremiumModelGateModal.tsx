@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
-import type { GateMode } from '@/entities/api-key';
+import type { GateMode } from '@/shared/lib/types';
 import { cn } from '@/shared/lib/cn';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { useEffect, useRef } from 'react';

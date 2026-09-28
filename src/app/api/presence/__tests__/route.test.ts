@@ -36,11 +36,13 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => getDatabaseClient(),
 }));
 
-vi.mock('@/entities/visitor', () => ({
+vi.mock('@/entities/visitor/api', () => ({
     DrizzleVisitorRepository: class {
         recordVisit = recordVisit;
         pruneOlderThan = pruneOlderThan;
     },
+}));
+vi.mock('@/entities/visitor/lib/visitorHash', () => ({
     buildVisitorHash: (pepper: string, ip: string, ua: string) =>
         `hash(${pepper}|${ip}|${ua})`,
 }));

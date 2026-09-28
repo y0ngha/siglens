@@ -5,7 +5,8 @@ import type { Metadata } from 'next';
 import { setRequestLocale } from 'next-intl/server';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { Suspense } from 'react';
-import { AuthCardShell, AuthFormSkeleton } from '@/shared/ui/auth';
+import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
+import { AuthFormSkeleton } from '@/shared/ui/auth/AuthFormSkeleton';
 import { ResetPasswordContent } from './ResetPasswordContent';
 
 // noindex 페이지에도 canonical/openGraph.url을 명시한다. 자세한 근거는 src/app/[locale]/login/page.tsx 주석 참조.

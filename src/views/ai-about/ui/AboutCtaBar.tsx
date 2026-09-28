@@ -1,6 +1,6 @@
 'use client';
 
-import { useHideOnScrollDown } from '@/widgets/layout';
+import { useHideOnScrollDown } from '@/widgets/layout/hooks/useHideOnScrollDown';
 import { cn } from '@/shared/lib/cn';
 
 interface Props {

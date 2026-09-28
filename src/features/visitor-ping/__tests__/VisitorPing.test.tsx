@@ -1,6 +1,6 @@
 import { act, render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { VisitorPing } from '@/features/visitor-ping';
+import { VisitorPing } from '@/features/visitor-ping/ui/VisitorPing';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 
 /**

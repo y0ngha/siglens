@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { usePublishSymbolChat } from '@/features/symbol-chat';
+import { usePublishSymbolChat } from '@/features/symbol-chat/hooks/useSymbolChat';
 import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 
@@ -9,9 +9,12 @@ const ensureNewsCardsAnalyzedActionSpy = vi.hoisted(() =>
 const mockWaitResult = vi.fn();
 const mockAnalysisResult = vi.fn();
 
-vi.mock('@/entities/news-article/actions', () => ({
-    ensureNewsCardsAnalyzedAction: ensureNewsCardsAnalyzedActionSpy,
-}));
+vi.mock(
+    '@/entities/news-article/actions/ensureNewsCardsAnalyzedAction',
+    () => ({
+        ensureNewsCardsAnalyzedAction: ensureNewsCardsAnalyzedActionSpy,
+    })
+);
 
 vi.mock('@/widgets/news/hooks/useWaitForNewsCards', () => ({
     useWaitForNewsCards: () => mockWaitResult(),
@@ -21,7 +24,7 @@ vi.mock('@/widgets/news/hooks/useNewsAnalysis', () => ({
     useNewsAnalysis: () => mockAnalysisResult(),
 }));
 
-vi.mock('@/features/symbol-chat', () => ({
+vi.mock('@/features/symbol-chat/hooks/useSymbolChat', () => ({
     usePublishSymbolChat: vi.fn(),
 }));
 
@@ -33,9 +36,13 @@ vi.mock('@/widgets/news/utils/buildChatState', () => ({
     }),
 }));
 
-vi.mock('@/features/symbol-model', () => ({
+vi.mock('@/features/symbol-model/hooks/useDefaultModelId', () => ({
     useDefaultModelId: () => 'gemini-3.5-flash-lite',
+}));
+vi.mock('@/features/symbol-model/hooks/useAnalysisSettingsHydrated', () => ({
     useAnalysisSettingsHydrated: () => true,
+}));
+vi.mock('@/features/symbol-model/hooks/useDefaultReasoning', () => ({
     useDefaultReasoning: () => false,
 }));
 

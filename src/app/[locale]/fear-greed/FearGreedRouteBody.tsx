@@ -5,11 +5,11 @@ import {
     CRYPTO_FEAR_GREED_FACTOR_KEYS,
     MARKET_FEAR_GREED_FACTOR_KEYS,
 } from '@y0ngha/siglens-core';
-import { MarketFearGreedPage } from '@/widgets/market-fear-greed';
+import { MarketFearGreedPage } from '@/widgets/market-fear-greed/MarketFearGreedPage';
 import type {
     MarketFearGreedView,
     MarketFearGreedViewSnapshot,
-} from '@/entities/market-fear-greed';
+} from '@/entities/market-fear-greed/model';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';

@@ -2,35 +2,37 @@ import { getTranslations } from 'next-intl/server';
 import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
 import { setRequestLocale } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
-import { MobileSheetPlaceholder, TechnicalFactsSummary } from '@/views/symbol';
+import { MobileSheetPlaceholder } from '@/views/symbol/MobileSheetPlaceholder';
+import { TechnicalFactsSummary } from '@/views/symbol/TechnicalFactsSummary';
 import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
 import { hasTechnicalProse } from '@/views/symbol/snapshot/renderers/technicalContent';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import { buildTechnicalFacts } from '@/views/symbol/utils/technicalFacts';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { buildFallbackAnalysis } from '@/entities/chat-message';
+import { buildFallbackAnalysis } from '@/entities/chat-message/lib/fallbackAnalysis';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import { DEEPSEEK_V4_1_FLASH_MODEL } from '@y0ngha/siglens-core';
-import {
-    normalizeAnalysisResponse,
-    peekAnalysisStatic,
-} from '@/entities/analysis';
+import { normalizeAnalysisResponse } from '@/entities/analysis/lib/normalizeAnalysisResponse';
+import { peekAnalysisStatic } from '@/entities/analysis/lib/peekAnalysisStaticCache';
 import {
     DEFAULT_TIMEFRAME,
     SymbolRouteParams,
     isAdmissibleSymbolShape,
 } from '@/shared/config/market';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
-import { getDescriptor, marketProfileOf } from '@/shared/config/marketProfile';
 import {
-    buildAssetAboutNode,
-    buildDisplayName,
-    pickAssetName,
-    getAssetInfoResilient,
-} from '@/entities/ticker';
-import { getQuantizedBarsStatic, getSeedBarsStatic } from '@/entities/bars';
-import { countSkillFiles } from '@/entities/skill';
+    getDescriptor,
+    marketProfileOf,
+} from '@/shared/config/marketProfile/registry';
+import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
+import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import {
+    getQuantizedBarsStatic,
+    getSeedBarsStatic,
+} from '@/entities/bars/lib/barsStaticCache';
+import { countSkillFiles } from '@/entities/skill/api';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import {

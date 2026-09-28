@@ -11,16 +11,16 @@ import {
     toSameOriginPath,
 } from '@/shared/lib/auth/redirect';
 import { createSignupConversionCookie } from '@/shared/lib/googleAds';
+import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
+import { createAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
 import {
-    applyAuthCookie,
-    createAuthHintCookie,
     AUTH_SERVICE_UNAVAILABLE_MESSAGE,
     CONSENT_REQUIRED_MESSAGE,
-    DEFAULT_SESSION_TTL_SECONDS,
-    isSecureCookieEnv,
-    loginUser,
-    registerUser,
-} from '@/entities/auth';
+} from '@/entities/auth/lib/errorMessages';
+import { DEFAULT_SESSION_TTL_SECONDS } from '@/entities/auth/lib/sessionCookie';
+import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
+import { loginUser } from '@/entities/auth/lib/loginUser';
+import { registerUser } from '@/entities/auth/lib/registerUser';
 import {
     DrizzleSessionRepository,
     DrizzleUserRepository,
@@ -31,9 +31,9 @@ import {
 } from '@/entities/auth/lib/bcrypt';
 import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
 import { toHandoffAwareRedirect } from '@/entities/auth/lib/handoffStore';
-import { DrizzleAgreementRepository } from '@/entities/agreement';
+import { DrizzleAgreementRepository } from '@/entities/agreement/api';
 import { DrizzleTermsRepository } from '@/entities/terms/api';
-import { createEmailTokenStore } from '@/entities/email-token';
+import { createEmailTokenStore } from '@/entities/email-token/api';
 import { cookies } from 'next/headers';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 

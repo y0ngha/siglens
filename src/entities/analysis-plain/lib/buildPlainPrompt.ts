@@ -1,4 +1,4 @@
-import type { ProseEntry } from '@/entities/analysis-translation';
+import type { ProseEntry } from '@/entities/analysis-translation/lib/proseFields';
 import type { PlainFacts } from './collectFacts';
 import {
     plainOutputLanguageDirective,

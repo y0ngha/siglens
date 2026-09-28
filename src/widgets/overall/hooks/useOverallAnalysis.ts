@@ -12,7 +12,7 @@ import type {
     OverallAxis,
     Timeframe,
 } from '@y0ngha/siglens-core';
-import type { RunOverallAnalysisActionResult as CoreOverallResult } from '@/entities/analysis/actions';
+import type { RunOverallAnalysisActionResult as CoreOverallResult } from '@/entities/analysis/actions/runOverallAnalysisAction';
 
 /**
  * 재분석 의도로 보낸 요청인데 서버가 쿨다운을 획득하지 못한 경우의 응답.
@@ -22,7 +22,7 @@ type RunOverallAnalysisActionResult =
     | CoreOverallResult
     | { status: 'reanalyze_cooldown'; remainingMs: number };
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
-import { isGateBlockedResult } from '@/entities/analysis';
+import { isGateBlockedResult } from '@/entities/analysis/lib/gate';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import type { OverallAnalysisState } from '../types';
 import { readPlain, type WithPlain } from '@/shared/lib/plainEnvelope';

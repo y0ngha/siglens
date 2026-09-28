@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { filterAnalysisResult } from '@y0ngha/siglens-core';
 import { describe, expect, it } from 'vitest';
-import { extractProse } from '@/entities/analysis-translation';
+import { extractProse } from '@/entities/analysis-translation/lib/proseFields';
 import { collectFacts } from '../lib/collectFacts';
 import { buildPlainPrompt } from '../lib/buildPlainPrompt';
 import { dropSupersededPaths } from '../lib/supersededPaths';

@@ -1,6 +1,7 @@
 'use server';
 
-import { getLlmProvider, getServerPrimaryKey } from '@/entities/llm-provider';
+import { getLlmProvider } from '@/entities/llm-provider/api/getLlmProvider';
+import { getServerPrimaryKey } from '@/entities/llm-provider/lib/serverKeys';
 import { getLocale } from 'next-intl/server';
 import { isLocale, DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { withLocaleDirective } from '../lib/localeEnvelope';
@@ -8,7 +9,7 @@ import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleUserApiKeyRepository } from '@/entities/api-key/api';
 import { DrizzleUserRepository } from '@/entities/auth/api';
-import { getUserTier } from '@/entities/user-tier';
+import { getUserTier } from '@/entities/user-tier/lib/getUserTier';
 import type {
     AnalysisResponse,
     CallAiProvider,
@@ -31,12 +32,12 @@ import {
     requiresByokKey,
     TIER_CONFIG,
 } from '@y0ngha/siglens-core';
-import type { AssetClass } from '@/shared/config/marketProfile';
+import type { AssetClass } from '@/shared/config/marketProfile/types';
 import {
     currencyForSymbol,
     DEFAULT_MARKET_PROFILE,
     getDescriptor,
-} from '@/shared/config/marketProfile';
+} from '@/shared/config/marketProfile/registry';
 import { getClientIp } from '@/shared/api/getClientIp';
 import { getOrCreateGuestId } from '@/shared/api/guestId';
 import { isAiProviderFailure } from '@/shared/lib/aiProviderFailure';

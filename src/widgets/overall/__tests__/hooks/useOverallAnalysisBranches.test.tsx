@@ -13,7 +13,7 @@ import koMessages from '../../../../../messages/ko.json';
 import type { Mock } from 'vitest';
 import { useOverallAnalysis } from '@/widgets/overall/hooks/useOverallAnalysis';
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
-import { isGateBlockedResult } from '@/entities/analysis';
+import { isGateBlockedResult } from '@/entities/analysis/lib/gate';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
@@ -21,7 +21,7 @@ import type { ReactNode } from 'react';
 vi.mock('@/shared/hooks/useAnalysisStream', () => ({
     runAnalysisStream: vi.fn(),
 }));
-vi.mock('@/entities/analysis', () => ({
+vi.mock('@/entities/analysis/lib/gate', () => ({
     isGateBlockedResult: vi.fn().mockReturnValue(false),
 }));
 vi.mock('@/shared/lib/sleep', () => ({
@@ -164,8 +164,7 @@ describe('useOverallAnalysis — branch coverage', () => {
         });
 
         const { result } = renderHook(
-            () =>
-                useOverallAnalysis(...hookArgs(), undefined, false, false),
+            () => useOverallAnalysis(...hookArgs(), undefined, false, false),
             { wrapper: makeWrapper() }
         );
 

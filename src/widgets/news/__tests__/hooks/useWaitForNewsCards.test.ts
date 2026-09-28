@@ -1,21 +1,23 @@
 // @vitest-environment jsdom
 import { renderHook, waitFor } from '@testing-library/react';
 import { useWaitForNewsCards } from '@/widgets/news/hooks/useWaitForNewsCards';
-import { getNewsCardsAction } from '@/entities/news-article/actions';
+import { getNewsCardsAction } from '@/entities/news-article/actions/getNewsCardsAction';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import {
     MAX_POLL_DURATION_MS,
     EMPTY_SNAPSHOT_MAX_POLLS,
 } from '@/shared/config/cardPollingConfig';
 
-vi.mock('@/entities/news-article/actions', () => ({
+vi.mock('@/entities/news-article/actions/getNewsCardsAction', () => ({
     getNewsCardsAction: vi.fn(),
 }));
 
 // 폴링 간격만 줄이고 상한들은 실제 값을 쓴다 — 여기서 리터럴을 복제하면
 // `cardPollingConfig`가 단일 출처라는 계약이 조용히 깨진다.
-vi.mock('@/widgets/news/constants', async importOriginal => ({
-    ...(await importOriginal<typeof import('@/widgets/news/constants')>()),
+vi.mock('@/shared/config/cardPollingConfig', async importOriginal => ({
+    ...(await importOriginal<
+        typeof import('@/shared/config/cardPollingConfig')
+    >()),
     POLL_INTERVAL_MS: 50,
     MAX_CONSECUTIVE_FAILURES: 2,
 }));

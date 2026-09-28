@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import { useRef, useState } from 'react';
 import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
-import { currencyForSymbol } from '@/shared/config/marketProfile';
+import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
 import { cn } from '@/shared/lib/cn';
 import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
 import { useSymbolHolding } from '../hooks/useSymbolHolding';

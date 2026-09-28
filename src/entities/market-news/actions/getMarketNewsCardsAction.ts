@@ -1,6 +1,6 @@
 'use server';
 
-import { getMarketNewsCards } from '../api';
+import { getMarketNewsCards } from '@/entities/market-news/api/marketNewsRepository';
 import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';
 import {
     CATEGORY_CONFIG,

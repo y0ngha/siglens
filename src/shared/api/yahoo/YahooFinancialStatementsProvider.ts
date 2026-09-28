@@ -13,7 +13,7 @@ import {
     getYahooStatements,
     type YahooStatementRaw,
 } from './yahooStatementsSource';
-import { currencyForSymbol } from '@/shared/config/marketProfile';
+import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
 
 const PERCENT = 100;
 

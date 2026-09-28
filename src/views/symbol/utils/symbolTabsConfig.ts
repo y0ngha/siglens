@@ -1,7 +1,5 @@
-import {
-    getDescriptor,
-    type MarketProfileId,
-} from '@/shared/config/marketProfile';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
+import { type MarketProfileId } from '@/shared/config/marketProfile/types';
 
 /**
  * Single source of truth for the symbol analysis tabs. Kept in a non-`'use client'`

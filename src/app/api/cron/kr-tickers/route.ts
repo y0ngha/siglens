@@ -1,10 +1,7 @@
 import { constants } from 'node:http2';
 import { after } from 'next/server';
 import { safeBearerCompare } from '@/shared/lib/auth/safeBearerCompare';
-import { fireAndForget } from '@/entities/ticker';
-// barrel이 아니라 deep path인 이유: `syncKrListedTickers`는 `server-only`인데 ticker
-// barrel은 클라이언트 번들에도 들어간다(`fireAndForget` 주석 참조). instrumentation*.ts가
-// drain 유틸을 deep import하는 것과 같은 근거.
+import { fireAndForget } from '@/entities/ticker/lib/backgroundTask';
 import { syncKrListedTickers } from '@/entities/ticker/lib/syncKrListedTickers';
 
 const { HTTP_STATUS_UNAUTHORIZED, HTTP_STATUS_ACCEPTED } = constants;

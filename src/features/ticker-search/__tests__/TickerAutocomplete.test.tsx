@@ -2,17 +2,17 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TickerAutocomplete } from '@/features/ticker-search/ui/TickerAutocomplete';
 import { useAutocomplete } from '@/features/ticker-search/hooks/useAutocomplete';
-import { isKoreanInput } from '@/entities/ticker';
+import { isKoreanInput } from '@/entities/ticker/lib/ticker';
 import type { TickerSearchResult } from '@/shared/lib/types';
 
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
 vi.mock('@/features/ticker-search/hooks/useAutocomplete');
-vi.mock('@/entities/ticker', async importOriginal => ({
-    // 부분 목 — 배지가 쓰는 `krExchangeOf` 같은 순수 함수까지 손으로 나열하면
-    // 배럴에 export가 하나 늘 때마다 무관한 테스트가 죽는다.
-    ...(await importOriginal<typeof import('@/entities/ticker')>()),
+vi.mock('@/entities/ticker/lib/ticker', async importOriginal => ({
+    // 부분 목 — 이 모듈의 다른 순수 함수까지 손으로 나열하면 모듈에 export가
+    // 하나 늘 때마다 무관한 테스트가 죽는다.
+    ...(await importOriginal<typeof import('@/entities/ticker/lib/ticker')>()),
     isKoreanInput: vi.fn(() => false),
 }));
 

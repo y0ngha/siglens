@@ -1,4 +1,4 @@
-vi.mock('@/features/contact-form', () => ({
+vi.mock('@/features/contact-form/ui/ContactForm', () => ({
     ContactForm: () => <div data-testid="contact-form" />,
 }));
 vi.mock('@/shared/hooks/useDialog', () => ({

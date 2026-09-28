@@ -9,8 +9,11 @@ import {
     localeOpenGraph,
     localeRobots,
 } from '@/shared/lib/seoAlternates';
-import { CATEGORY_CONFIG, categoriesInRegion } from '@/entities/market-news';
-import { CategoryCard } from '@/widgets/news-hub';
+import {
+    CATEGORY_CONFIG,
+    categoriesInRegion,
+} from '@/entities/market-news/lib/categoryConfig';
+import { CategoryCard } from '@/widgets/news-hub/CategoryCard';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { RegionTabs } from '@/shared/ui/RegionTabs';

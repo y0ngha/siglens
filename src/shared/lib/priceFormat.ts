@@ -2,11 +2,11 @@ import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 import {
     currencyForSymbol,
     getDescriptor,
-} from '@/shared/config/marketProfile';
+} from '@/shared/config/marketProfile/registry';
 import type {
     MarketProfileId,
     PriceFormatConfig,
-} from '@/shared/config/marketProfile';
+} from '@/shared/config/marketProfile/types';
 
 type PriceSign = '+' | '';
 type PriceArrow = '▲' | '▼';

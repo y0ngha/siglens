@@ -1,8 +1,11 @@
 // @vitest-environment jsdom
 const ensureSpy = vi.hoisted(() => vi.fn());
-vi.mock('@/entities/news-article/actions', () => ({
-    ensureNewsCardsAnalyzedAction: ensureSpy,
-}));
+vi.mock(
+    '@/entities/news-article/actions/ensureNewsCardsAnalyzedAction',
+    () => ({
+        ensureNewsCardsAnalyzedAction: ensureSpy,
+    })
+);
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StrictMode } from 'react';

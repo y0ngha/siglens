@@ -1,4 +1,4 @@
-import type { AgentClientErrorCode } from '@/features/agent-chat';
+import type { AgentClientErrorCode } from '@/features/agent-chat/lib/errorCodes';
 
 /**
  * Which error codes get a retry button in `ChatShell` — `false` for

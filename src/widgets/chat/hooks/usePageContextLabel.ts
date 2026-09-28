@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useAppPathname } from '@/shared/i18n/useAppPathname';
-import { deriveLabelKey } from '@/entities/chat-message';
+import { deriveLabelKey } from '@/entities/chat-message/lib/derivePageContextLabel';
 
 /** Localized page-context label for the current pathname; `null` on non-symbol pages. */
 export function usePageContextLabel(): string | null {

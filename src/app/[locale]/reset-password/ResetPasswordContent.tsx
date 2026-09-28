@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
-import { ResetPasswordForm } from '@/features/auth-password-reset';
+import { ResetPasswordForm } from '@/features/auth-password-reset/ui/ResetPasswordForm';
 
 // useSearchParams를 읽어 이 subtree만 CSR로 떨군다(라우트는 static 유지).
 // token은 원래도 URL(client 가시) 값이라 client-read로 인한 신규 노출 없음.

@@ -4,7 +4,7 @@ import {
     MAX_PLAIN_BYTES,
     MAX_RESULT_BYTES,
 } from '@/entities/shared-analysis/server/assertValidInput';
-import { MAX_CHART_BARS } from '@/entities/shared-analysis';
+import { MAX_CHART_BARS } from '@/entities/shared-analysis/types';
 
 describe('isValidShareInput', () => {
     it('accepts a well-formed chart input', () => {

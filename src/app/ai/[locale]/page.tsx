@@ -2,13 +2,13 @@ import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { getAgentSuggestions } from '@/entities/agent-suggestions/api';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { listConversationsAction } from '@/entities/chat-conversation/actions';
+import { listConversationsAction } from '@/entities/chat-conversation/actions/listConversationsAction';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { getDatabaseClient } from '@/shared/db/client';
 import { localePath, resolveLocale, type Locale } from '@/shared/i18n/locales';
 import { SITE_URL } from '@/shared/lib/seo';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { ChatShell } from '@/widgets/agent-chat';
+import { ChatShell } from '@/widgets/agent-chat/ChatShell';
 import {
     buildAiHomeJsonLd,
     buildAiHomeMetadata,

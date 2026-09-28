@@ -36,7 +36,7 @@ vi.mock('@/shared/cache/staticSymbolCache', () => ({
     ]),
 }));
 
-vi.mock('@/entities/market-news/api', () => ({
+vi.mock('@/entities/market-news/api/marketNewsRepository', () => ({
     getMarketNewsCards: vi.fn().mockResolvedValue([]),
 }));
 
@@ -47,9 +47,18 @@ vi.mock('@/entities/market-news/api/marketNewsDigestStaticCache', () => ({
     peekMarketNewsDigestStatic: mockPeekMarketNewsDigestStatic,
 }));
 
-vi.mock('@/entities/market-news/actions', () => ({
-    ensureMarketNewsCardsAnalyzedAction: vi.fn().mockResolvedValue(undefined),
+vi.mock(
+    '@/entities/market-news/actions/ensureMarketNewsCardsAnalyzedAction',
+    () => ({
+        ensureMarketNewsCardsAnalyzedAction: vi
+            .fn()
+            .mockResolvedValue(undefined),
+    })
+);
+vi.mock('@/entities/market-news/actions/getMarketNewsCardsAction', () => ({
     getMarketNewsCardsAction: vi.fn(),
+}));
+vi.mock('@/entities/market-news/actions/submitMarketNewsDigestAction', () => ({
     submitMarketNewsDigestAction: vi.fn(),
 }));
 

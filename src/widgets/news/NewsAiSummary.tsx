@@ -1,19 +1,15 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import {
-    usePublishSymbolChat,
-    type SymbolChatState,
-} from '@/features/symbol-chat';
+import { usePublishSymbolChat } from '@/features/symbol-chat/hooks/useSymbolChat';
+import { type SymbolChatState } from '@/features/symbol-chat/model/SymbolChatContext';
 import { useNewsAnalysis } from './hooks/useNewsAnalysis';
 import { useNewsAnalysisTrigger } from './hooks/useNewsAnalysisTrigger';
 import { useWaitForNewsCards } from './hooks/useWaitForNewsCards';
 import { buildChatState } from './utils/buildChatState';
-import {
-    useDefaultModelId,
-    useDefaultReasoning,
-    useAnalysisSettingsHydrated,
-} from '@/features/symbol-model';
+import { useDefaultModelId } from '@/features/symbol-model/hooks/useDefaultModelId';
+import { useDefaultReasoning } from '@/features/symbol-model/hooks/useDefaultReasoning';
+import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
 import { cn } from '@/shared/lib/cn';
 import {
     type NewsAnalysisResponse,
@@ -21,7 +17,8 @@ import {
 } from '@y0ngha/siglens-core';
 
 import { NEWS_ANALYSIS_PERIOD_KEY } from '@/shared/lib/news/periodLabels';
-import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
+import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
+import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
 import {
     HEADING_SECTION,
     HEADING_SUBSECTION,

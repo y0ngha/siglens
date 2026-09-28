@@ -3,7 +3,7 @@ import type {
     TierInfoDepth,
     Timeframe,
 } from '@y0ngha/siglens-core';
-import type { SymbolChatState } from '@/features/symbol-chat';
+import type { SymbolChatState } from '@/features/symbol-chat/model/SymbolChatContext';
 
 interface BuildChatStateInput {
     analysis: AnalysisResponse;

@@ -1,7 +1,9 @@
 // XML 직렬화만 스텁하고 나머지(빌더 3종·maxLastModified)는 실제 구현을 쓴다 —
 // 인덱스 lastmod가 "자식 sitemap 안의 최댓값"인지 검증하려면 진짜 빌더가 필요하다.
-vi.mock('@/entities/sitemap-entry', async importOriginal => ({
-    ...(await importOriginal<typeof import('@/entities/sitemap-entry')>()),
+vi.mock('@/entities/sitemap-entry/lib/xml', async importOriginal => ({
+    ...(await importOriginal<
+        typeof import('@/entities/sitemap-entry/lib/xml')
+    >()),
     toSitemapIndexXml: vi
         .fn()
         .mockReturnValue('<?xml version="1.0"?><sitemapindex/>'),
@@ -14,13 +16,11 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
 }));
 
 import { GET } from '@/app/api/sitemap/route';
-import {
-    buildCryptoPopularEntries,
-    buildPopularEntries,
-    buildStaticEntries,
-    maxLastModified,
-    toSitemapIndexXml,
-} from '@/entities/sitemap-entry';
+import { buildCryptoPopularEntries } from '@/entities/sitemap-entry/lib/buildCryptoPopularEntries';
+import { buildPopularEntries } from '@/entities/sitemap-entry/lib/buildPopularEntries';
+import { buildStaticEntries } from '@/entities/sitemap-entry/lib/buildStaticEntries';
+import { maxLastModified } from '@/entities/sitemap-entry/lib/maxLastModified';
+import { toSitemapIndexXml } from '@/entities/sitemap-entry/lib/xml';
 import type { MockedFunction } from 'vitest';
 
 import nextConfig from '../../../../../next.config';

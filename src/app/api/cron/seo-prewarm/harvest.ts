@@ -1,6 +1,6 @@
 import 'server-only';
 import { DEEPSEEK_V4_1_FLASH_MODEL } from '@y0ngha/siglens-core';
-import type { SeoSnapshotTab } from '@/entities/seo-snapshot';
+import type { SeoSnapshotTab } from '@/entities/seo-snapshot/model';
 import type { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
 import {
     prewarmTechnical,
@@ -14,11 +14,9 @@ import {
     hasAnalyzableNews,
     prewarmNews,
 } from '@/entities/news-article/api';
-import {
-    rewriteToPlainLanguage,
-    resolveCurrentPrice,
-} from '@/entities/analysis-plain';
-import { currencyForSymbol } from '@/shared/config/marketProfile';
+import { rewriteToPlainLanguage } from '@/entities/analysis-plain/api';
+import { resolveCurrentPrice } from '@/entities/analysis-plain/lib/currentPrice';
+import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
 import { prewarmOptions } from '@/entities/options-chain/api';
 import {
     markSkipped,

@@ -8,7 +8,8 @@ import { cn } from '@/shared/lib/cn';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import type { SkillShowcaseItem, SkillType } from '@y0ngha/siglens-core';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
-import { buildPanelId, buildTabId, TabsPill } from '@/shared/ui/tabs';
+import { buildPanelId, buildTabId } from '@/shared/ui/tabs/utils/tabIds';
+import { TabsPill } from '@/shared/ui/tabs/TabsPill';
 import {
     type SkillsActiveTab,
     useSkillsShowcase,

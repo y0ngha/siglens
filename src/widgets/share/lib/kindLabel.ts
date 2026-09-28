@@ -1,4 +1,4 @@
-import type { ShareableKind } from '@/entities/shared-analysis';
+import type { ShareableKind } from '@/shared/db/constants';
 
 /**
  * ShareableKind를 **메시지 키**로 변환한다(`shared.enumLabel` 기준 상대 경로).

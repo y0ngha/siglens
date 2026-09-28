@@ -3,9 +3,11 @@ import {
     buildOAuthRedirectUri,
     getOAuthAdapter,
     isOAuthProvider,
+} from '@/features/auth-oauth/lib/providers';
+import {
     OAuthStateSecretMisconfiguredError,
     issueOAuthState,
-} from '@/features/auth-oauth';
+} from '@/features/auth-oauth/lib/state';
 import { localePath, splitLocalePath } from '@/shared/i18n/locales';
 import {
     DEFAULT_REDIRECT_PATH,

@@ -16,7 +16,7 @@ import {
     DrizzleUserApiKeyRepository,
     LlmApiKeyDecryptionFailedError,
 } from '@/entities/api-key/api';
-import { getUserTier } from '@/entities/user-tier';
+import { getUserTier } from '@/entities/user-tier/lib/getUserTier';
 import { DrizzleUserRepository } from '@/entities/auth/api';
 import type { AnalysisGateError, AnalysisGateErrorCode } from './types';
 

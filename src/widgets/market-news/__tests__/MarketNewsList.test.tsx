@@ -8,8 +8,8 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { MockedFunction } from 'vitest';
-import type { MarketNewsCardItem } from '@/entities/market-news';
-import { MARKET_NEWS_LOOKBACK_DAYS } from '@/entities/market-news';
+import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
+import { MARKET_NEWS_LOOKBACK_DAYS } from '@/entities/market-news/lib/marketNewsConstants';
 import { useMarketNewsCardPolling } from '@/widgets/market-news/hooks/useMarketNewsCardPolling';
 import { MarketNewsList } from '@/widgets/market-news/MarketNewsList';
 
@@ -40,8 +40,8 @@ const mockUseMarketNewsCardPolling = useMarketNewsCardPolling as MockedFunction<
 
 import {
     MARKET_NEWS_LIST_PAGE_SIZE as PAGE_SIZE,
-    MARKET_NEWS_ROW_SERIALIZATION_LIMIT,
-} from '@/widgets/market-news/constants';
+    NEWS_ROW_SERIALIZATION_LIMIT as MARKET_NEWS_ROW_SERIALIZATION_LIMIT,
+} from '@/shared/config/newsSerialization';
 
 function makeItem(n: number): MarketNewsCardItem {
     return {

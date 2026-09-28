@@ -4,7 +4,10 @@ import {
     type NavRegionLink,
     type NavVertical,
 } from '@/shared/config/assetClassNav';
-import { CATEGORY_CONFIG, categoriesInRegion } from '@/entities/market-news';
+import {
+    CATEGORY_CONFIG,
+    categoriesInRegion,
+} from '@/entities/market-news/lib/categoryConfig';
 
 /** 지역 안에서 한 번에 갈 수 있는 최종 목적지. */
 interface NavLeafLink {

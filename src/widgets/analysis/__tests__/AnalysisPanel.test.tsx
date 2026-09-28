@@ -34,7 +34,7 @@ vi.mock('@/shared/hooks/useCopyToClipboard', () => ({
 vi.mock('@/shared/lib/formatAnalyzedAt', () => ({
     formatAnalyzedAt: () => '1시간 전',
 }));
-vi.mock('@/entities/analysis', () => ({
+vi.mock('@/entities/analysis/lib/staleThreshold', () => ({
     isAnalysisStale: () => false,
 }));
 // indicatorCount는 이제 AnalysisPanel에 prop으로 전달한다.
@@ -75,7 +75,7 @@ import type {
     StrategyResult,
 } from '@y0ngha/siglens-core';
 
-import { buildFallbackAnalysis } from '@/entities/chat-message';
+import { buildFallbackAnalysis } from '@/entities/chat-message/lib/fallbackAnalysis';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 import { AnalysisPanel } from '../AnalysisPanel';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
@@ -1305,7 +1305,7 @@ describe('AnalysisPanel', () => {
 
 // HIGH-2 — 부분/누락 필드 계약을 고정한다.
 // `@y0ngha/siglens-core`가 배열/객체 필드를 누락한 부분 응답을 돌려줄 수 있고,
-// AnalysisPanel은 barrel로 단독 노출되므로 무방비 .filter/.map/.length 접근이
+// AnalysisPanel은 외부에서 단독으로 import되므로 무방비 .filter/.map/.length 접근이
 // 렌더 중 throw하면 안 된다. 아래 케이스들은 HIGH-1 가드 이전엔 실패하고
 // 이후엔 빈 섹션으로 렌더된다.
 describe('AnalysisPanel — missing/partial field resilience', () => {

@@ -72,7 +72,7 @@ interface SymbolViewPingProps {
  * 종목 페이지 조회를 종목당 하루 한 번 알린다. 인기 목록 스크립트의 추가 후보 신호다.
  *
  * `VisitorPing`과 같은 봇 필터를 쓴다: `navigator.webdriver` 차단 + 첫 신뢰 입력
- * 게이트(`onFirstInteraction`). `@/entities/symbol-view` barrel은 `server-only`라
+ * 게이트(`onFirstInteraction`). `@/entities/symbol-view/api`는 `server-only`라
  * import하지 않는다 — 이 컴포넌트는 URL만 안다.
  */
 export function SymbolViewPing({ symbol }: SymbolViewPingProps): null {

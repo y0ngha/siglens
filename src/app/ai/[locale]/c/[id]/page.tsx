@@ -1,13 +1,11 @@
 import { notFound } from 'next/navigation';
 import { setRequestLocale } from 'next-intl/server';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import {
-    getConversationAction,
-    listConversationsAction,
-} from '@/entities/chat-conversation/actions';
+import { getConversationAction } from '@/entities/chat-conversation/actions/getConversationAction';
+import { listConversationsAction } from '@/entities/chat-conversation/actions/listConversationsAction';
 import { localePath, resolveLocale } from '@/shared/i18n/locales';
 import { SITE_URL } from '@/shared/lib/seo';
-import { ChatShell } from '@/widgets/agent-chat';
+import { ChatShell } from '@/widgets/agent-chat/ChatShell';
 import { maybeHandoffRedirect } from '../../handoffRedirect';
 
 /**

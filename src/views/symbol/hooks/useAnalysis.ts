@@ -20,7 +20,7 @@ import {
     type Timeframe,
 } from '@y0ngha/siglens-core';
 import { MS_PER_MINUTE, MS_PER_SECOND } from '@/shared/config/time';
-import { useSymbolHolding } from '@/features/portfolio-holding';
+import { useSymbolHolding } from '@/features/portfolio-holding/hooks/useSymbolHolding';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
 
 /**
@@ -52,10 +52,8 @@ type RunAnalysisActionResult =
      */
     | { status: 'reanalyze_cooldown'; remainingMs: number };
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
-import {
-    getReanalyzeCooldownMs as fetchReanalyzeCooldownMs,
-    normalizeAnalysisResponse,
-} from '@/entities/analysis';
+import { getReanalyzeCooldownMs as fetchReanalyzeCooldownMs } from '@/entities/analysis/lib/reanalyzeCooldown';
+import { normalizeAnalysisResponse } from '@/entities/analysis/lib/normalizeAnalysisResponse';
 
 interface AnalyzeMutationVariables {
     symbol: string;

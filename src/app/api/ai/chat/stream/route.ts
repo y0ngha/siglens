@@ -15,13 +15,13 @@ import { DrizzleChatConversationRepository } from '@/entities/chat-conversation/
 import {
     toAgentHistory,
     type NewChatMessage,
-} from '@/entities/chat-conversation';
+} from '@/entities/chat-conversation/model';
 import {
     AGENT_FALLBACK_MODEL,
     AGENT_MODEL,
-    getAgentProvider,
     type AgentProviderState,
-} from '@/entities/llm-provider';
+} from '@/entities/llm-provider/api/agent/router';
+import { getAgentProvider } from '@/entities/llm-provider/api/agent/getAgentProvider';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { getClientIp } from '@/shared/api/getClientIp';
@@ -43,7 +43,10 @@ import {
     GUEST_IP_TURNS_PER_DAY,
 } from '../counters';
 import { resolveAgentTier } from '../resolveAgentTier';
-import { availableToolNames, createToolExecutor } from '../tools';
+import {
+    availableToolNames,
+    createToolExecutor,
+} from '@/app/api/ai/chat/tools/chatTools';
 import { AGENT_BUSY_LOG } from '../busyLog';
 import { guestSubject } from '../guestSubject';
 import { acquireTurnLock } from '../turnLock';

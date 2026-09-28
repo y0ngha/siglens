@@ -1,12 +1,11 @@
 'use client';
 
-import {
-    useDefaultModelId,
-    useDefaultReasoning,
-    useAnalysisSettingsHydrated,
-} from '@/features/symbol-model';
-import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
-import { usePublishSymbolChat } from '@/features/symbol-chat';
+import { useDefaultModelId } from '@/features/symbol-model/hooks/useDefaultModelId';
+import { useDefaultReasoning } from '@/features/symbol-model/hooks/useDefaultReasoning';
+import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
+import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
+import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
+import { usePublishSymbolChat } from '@/features/symbol-chat/hooks/useSymbolChat';
 import { useCongressTrend } from './hooks/useCongressTrend';
 import { buildChatState } from './utils/buildChatState';
 import { CongressTrendSummaryError } from './CongressTrendSummaryError';

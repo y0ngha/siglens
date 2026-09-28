@@ -1,9 +1,7 @@
 import { formatCompactAmount } from '@/shared/lib/priceFormat';
 import type { Locale } from '@/shared/i18n/locales';
-import {
-    currencyForSymbol,
-    type PriceFormatConfig,
-} from '@/shared/config/marketProfile';
+import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
+import { type PriceFormatConfig } from '@/shared/config/marketProfile/types';
 
 /** 재무 금액에 쓰이는 통화. `MarketProfileDescriptor.priceFormat.currency`와 같은 집합. */
 export type StatementCurrency = PriceFormatConfig['currency'];

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { PortfolioSection } from '@/features/portfolio-management';
+import { PortfolioSection } from '@/features/portfolio-management/ui/PortfolioSection';
 
 /**
  * 보유종목 편집 후 서버가 그린 위치 카드 그리드를 다시 읽는다.

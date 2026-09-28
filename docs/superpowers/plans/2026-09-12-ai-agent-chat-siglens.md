@@ -1425,7 +1425,7 @@ export const searchTickerTool: ToolExecutor = async args => {
 ```ts
 // src/app/api/ai/chat/tools/getQuote.ts
 import 'server-only';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { getDescriptor } from '@/shared/config/marketProfile';
@@ -1449,7 +1449,7 @@ export const getQuoteTool: ToolExecutor = async args => {
 // src/app/api/ai/chat/tools/getBarsIndicators.ts
 import 'server-only';
 import { classifyTrend, detectSignals, fetchBarsWithIndicators, type IndicatorResult, type Timeframe } from '@y0ngha/siglens-core';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { getDescriptor } from '@/shared/config/marketProfile';
@@ -1490,7 +1490,7 @@ import { DrizzleAnalysisHistoryRepository, type AnalysisHistoryTab } from '@/ent
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
 import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { MS_PER_DAY } from '@/shared/config/time';
@@ -1622,7 +1622,7 @@ export const getOptionsSummaryTool: ToolExecutor = async args => {
 // src/app/api/ai/chat/tools/getMyPortfolio.ts
 import 'server-only';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { getDescriptor } from '@/shared/config/marketProfile';
 import { getDatabaseClient } from '@/shared/db/client';
 import type { ToolExecutor } from './index';
@@ -1644,7 +1644,7 @@ export const getMyPortfolioTool: ToolExecutor = async (_args, ctx) => {
 // src/app/api/ai/chat/tools/__tests__/getQuote.test.ts
 import { describe, expect, it, vi } from 'vitest';
 const { profile, getQuote, spec } = vi.hoisted(() => ({ profile: vi.fn(), getQuote: vi.fn(), spec: vi.fn() }));
-vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({ resolveMarketProfile: profile }));
+vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({ resolveMarketProfile: profile }));
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({ getCachedMarketDataProvider: () => ({ getQuote }) }));
 vi.mock('@/shared/api/market/sessionSpecFor', () => ({ sessionSpecFor: spec }));
 vi.mock('@/shared/config/marketProfile', () => ({ getDescriptor: (id: string) => ({ priceFormat: { currency: id === 'kr-equity' ? 'KRW' : 'USD' } }) }));
@@ -3132,7 +3132,7 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => ({ ...(await importOrigi
 vi.mock('@/entities/analysis/actions', () => ({ runOverallAnalysisAction: m.overall }));
 vi.mock('@/entities/news-article/actions', () => ({ submitNewsAnalysisAction: m.news }));
 vi.mock('@/entities/options-chain/actions', () => ({ submitOptionsAnalysisAction: m.options }));
-vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({ resolveMarketProfile: m.profile }));
+vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({ resolveMarketProfile: m.profile }));
 vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({ getAssetInfo: m.assetInfo }));
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({ getCachedMarketDataProvider: () => ({}) }));
 vi.mock('@/shared/api/market/sessionSpecFor', () => ({ sessionSpecFor: () => ({}) }));
@@ -3208,7 +3208,7 @@ import { runOverallAnalysisAction } from '@/entities/analysis/actions';
 import { submitNewsAnalysisAction } from '@/entities/news-article/actions';
 import { submitOptionsAnalysisAction } from '@/entities/options-chain/actions';
 import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { getDescriptor } from '@/shared/config/marketProfile';

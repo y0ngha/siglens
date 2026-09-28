@@ -5,16 +5,15 @@
  * resolve, and per-card degrade (fetch rejects / computePosition null) —
  * never throwing so the surrounding grid stays intact.
  */
-
-vi.mock('@/entities/bars/actions', () => ({
+vi.mock('@/entities/bars/actions/getBarsAction', () => ({
     getBarsAction: vi.fn(),
 }));
 
 import { act, render, screen, waitFor } from '@testing-library/react';
-import { getBarsAction } from '@/entities/bars/actions';
+import { getBarsAction } from '@/entities/bars/actions/getBarsAction';
 import { PositionHoldingCard } from '@/app/[locale]/portfolio/PositionHoldingCard';
 import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
-import type { PortfolioHoldingView } from '@/entities/portfolio';
+import type { PortfolioHoldingView } from '@/entities/portfolio/model';
 
 const mockGetBarsAction = vi.mocked(getBarsAction);
 

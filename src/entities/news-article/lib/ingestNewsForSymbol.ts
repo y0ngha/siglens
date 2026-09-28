@@ -3,11 +3,9 @@ import 'server-only';
 import type { NewsItem } from '@y0ngha/siglens-core';
 import type { DrizzleNewsRepository } from '../api';
 import { getNewsClient } from './getNewsClient';
-import {
-    getDescriptor,
-    type MarketProfileId,
-} from '@/shared/config/marketProfile';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
+import { type MarketProfileId } from '@/shared/config/marketProfile/types';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { NEWS_LOOKBACK_MS } from './newsLookback';
 import { markFetched } from './newsRefreshFlag';
 import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';

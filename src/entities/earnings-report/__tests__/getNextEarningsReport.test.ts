@@ -4,9 +4,9 @@ import type { SiglensDatabase } from '@/shared/db/types';
 import {
     DrizzleEarningsReportsRepository,
     EARNINGS_REPORT_FMP_LIMIT,
-    EARNINGS_REPORT_STALE_MS,
     getNextEarningsReport,
-} from '@/entities/earnings-report';
+} from '@/entities/earnings-report/api';
+import { EARNINGS_REPORT_STALE_MS } from '@/entities/earnings-report/lib/isEarningsReportStale';
 import { MS_PER_HOUR } from '@/shared/config/time';
 
 // getNextEarningsReport는 getFundamentalDataProvider().getEarningsReports만 호출하므로

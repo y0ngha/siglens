@@ -13,7 +13,7 @@ vi.mock('@/shared/hooks/useAnalysisStream', () => ({
     runAnalysisStream: vi.fn(),
 }));
 
-vi.mock('@/entities/analysis', () => ({
+vi.mock('@/entities/analysis/lib/gate', () => ({
     isGateBlockedResult: () => false,
 }));
 

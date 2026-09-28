@@ -9,7 +9,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { OpenInterestTooltip } from './utils/optionsTooltips';
-import { findNearestStrikeIndex } from '@/entities/options-chain';
+import { findNearestStrikeIndex } from '@/entities/options-chain/lib/findNearestStrike';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
 import { cn } from '@/shared/lib/cn';
 

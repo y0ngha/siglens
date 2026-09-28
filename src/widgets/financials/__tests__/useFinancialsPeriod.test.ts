@@ -5,10 +5,13 @@ import type { FinancialsSnapshot } from '@y0ngha/siglens-core';
 
 const mockGetFinancialsQuarterAction = vi.fn();
 
-vi.mock('@/entities/financials-statements/actions', () => ({
-    getFinancialsQuarterAction: (symbol: string) =>
-        mockGetFinancialsQuarterAction(symbol),
-}));
+vi.mock(
+    '@/entities/financials-statements/actions/getFinancialsQuarterAction',
+    () => ({
+        getFinancialsQuarterAction: (symbol: string) =>
+            mockGetFinancialsQuarterAction(symbol),
+    })
+);
 
 // Minimal FinancialsSnapshot fixture
 const makeSnapshot = (tag: string): FinancialsSnapshot => ({

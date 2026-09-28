@@ -6,9 +6,9 @@ import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { useQuery } from '@tanstack/react-query';
 import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
 import type { FinancialsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
-import type { RunFinancialsAnalysisActionResult } from '@/entities/analysis/actions';
+import type { RunFinancialsAnalysisActionResult } from '@/entities/analysis/actions/runFinancialsAnalysisAction';
 import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
-import { isGateBlockedResult } from '@/entities/analysis';
+import { isGateBlockedResult } from '@/entities/analysis/lib/gate';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { readPlain, type WithPlain } from '@/shared/lib/plainEnvelope';
 

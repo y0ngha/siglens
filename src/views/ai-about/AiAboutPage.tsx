@@ -13,9 +13,9 @@ import {
     OptionsIcon,
     PortfolioIcon,
     QuoteIcon,
-    SiglensMark,
     SparkIcon,
-} from '@/widgets/agent-chat';
+} from '@/shared/ui/StrokeIcons';
+import { SiglensMark } from '@/widgets/agent-chat/SiglensMark';
 import type { FaqItem } from '@/shared/lib/seo';
 import { buildScenarios } from './lib/aboutContent';
 import { AboutCtaBar } from './ui/AboutCtaBar';

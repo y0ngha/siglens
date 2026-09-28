@@ -3,7 +3,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import type { NewsDisplayItem } from '@/shared/lib/types';
-import { OverallFactualFallback } from '@/widgets/overall';
+import { OverallFactualFallback } from '@/widgets/overall/OverallFactualFallback';
 
 function makeNewsItem(
     id: string,

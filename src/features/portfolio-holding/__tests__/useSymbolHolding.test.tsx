@@ -1,6 +1,6 @@
 import { renderHook } from '@testing-library/react';
 import { usePortfolioHoldings } from '@/entities/portfolio/hooks/usePortfolioHoldings';
-import type { PortfolioHoldingView } from '@/entities/portfolio';
+import type { PortfolioHoldingView } from '@/entities/portfolio/model';
 import { useSymbolHolding } from '@/features/portfolio-holding/hooks/useSymbolHolding';
 
 vi.mock('@/entities/portfolio/hooks/usePortfolioHoldings');

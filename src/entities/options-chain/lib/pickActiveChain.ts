@@ -1,5 +1,5 @@
 import type { OptionsChain, OptionsSnapshot } from '@y0ngha/siglens-core';
-import type { OptionsExpirationSelector } from './types';
+import type { OptionsExpirationSelector } from '@/shared/lib/types';
 
 /**
  * Pick the chain to display for a given selector value.
