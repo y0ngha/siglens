@@ -192,24 +192,6 @@ describe('OverallContent non-done branches', () => {
         ).toBeInTheDocument();
     });
 
-    it('renders BotBlockedNotice in bot_blocked state', () => {
-        mockUseOverallAnalysis.mockReturnValue({
-            state: { status: 'bot_blocked' },
-            trigger: vi.fn(),
-        });
-        render(
-            <OverallContent
-                symbol="AAPL"
-                companyName="Apple Inc."
-                hasEnrichedNews={true}
-                hasOptions={true}
-            />
-        );
-        expect(
-            screen.getByText(/봇 트래픽으로 보여 분석 결과를 표시하지 않았어요/)
-        ).toBeInTheDocument();
-    });
-
     it('renders submitting loading state', () => {
         mockUseOverallAnalysis.mockReturnValue({
             state: { status: 'submitting' },
@@ -698,6 +680,39 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
         expect(
             screen.getByRole('button', { name: /다시 시도/ })
         ).toBeInTheDocument();
+    });
+
+    it('"다시 시도" 버튼 클릭 시 페이지를 새로고침한다', async () => {
+        const { useWaitForNewsCards } = await import('@/widgets/news');
+        (
+            useWaitForNewsCards as MockedFunction<typeof useWaitForNewsCards>
+        ).mockReturnValue({
+            isReady: false,
+            pollError: new Error('polling exhausted'),
+        });
+        const reload = vi.fn();
+        const originalLocation = window.location;
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            value: { ...originalLocation, reload },
+        });
+        try {
+            render(
+                <OverallContent
+                    symbol="AAPL"
+                    companyName="Apple Inc."
+                    hasEnrichedNews={false}
+                    hasOptions={true}
+                />
+            );
+            fireEvent.click(screen.getByRole('button', { name: /다시 시도/ }));
+            expect(reload).toHaveBeenCalledTimes(1);
+        } finally {
+            Object.defineProperty(window, 'location', {
+                configurable: true,
+                value: originalLocation,
+            });
+        }
     });
 });
 

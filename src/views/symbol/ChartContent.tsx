@@ -4,7 +4,6 @@ import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
 import { isFallbackAnalysis } from '@/entities/analysis';
 import { useSymbolHolding } from '@/features/portfolio-holding';
 import { cn } from '@/shared/lib/cn';
-import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 import { AnalysisPanel, AnalysisProgress } from '@/widgets/analysis';
 import { ChartSkeleton, useChartSync } from '@/widgets/chart';
 import {
@@ -19,7 +18,14 @@ import {
 import type { MarketProfileId } from '@/shared/config/marketProfile';
 import dynamic from 'next/dynamic';
 import type { ReactNode } from 'react';
-import React, { useEffect, useEffectEvent, useMemo, useRef } from 'react';
+import React, {
+    useCallback,
+    useEffect,
+    useEffectEvent,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import { PEEK_RESERVE_CSS } from './constants/mobileSheet';
 import { useActionPricesVisibility } from './hooks/useActionPricesVisibility';
 import { useAnalysis } from './hooks/useAnalysis';
@@ -173,7 +179,6 @@ export function ChartContent({
         lockedInfoDepth,
         isAnalyzing,
         analysisError,
-        isBotBlocked,
         handleReanalyze,
         reanalyzeCooldownMs,
         cooldownNotice,
@@ -198,6 +203,57 @@ export function ChartContent({
 
     const { displayAnalyzing, handleProgressFinished } =
         useAnalysisDisplay(isAnalyzing);
+
+    // '원본' 패널 카드에서 클릭으로 강조한 차트 작도(sourceRef). 새 분석이
+    // 도착하면(참조 변경) 이전 강조가 존재하지 않는 항목을 가리킬 수 있으므로
+    // 리셋한다 — 마운트 effect 대신 렌더 중 이전값 비교로 처리한다
+    // (MISTAKES.md #10, "adjusting state" 패턴; useEffect의 setState는 금지 규칙).
+    const [highlightedOverlayRef, setHighlightedOverlayRef] = useState<
+        string | null
+    >(null);
+    // React 공식 "이전 값과 비교해 state를 조정" 패턴 — useRef가 아니라
+    // useState로 이전 값을 들고 있어야 한다(useRef.current를 렌더 중에 읽으면
+    // oxlint react(refs)가 막는다: ref는 렌더에 필요한 값이 아니라는 규칙).
+    // 비교 키는 `analysis` 객체 참조가 아니라 `analyzedAt`이다 — `analysis`는
+    // `useAnalysis`의 `normalizeAnalysisResponse` 호출마다 새 객체를 만들 수
+    // 있어(내용이 같아도) 참조 비교는 매 렌더 리셋을 유발해 무한 루프로 이어진다.
+    const [prevAnalyzedAt, setPrevAnalyzedAt] = useState(analysis.analyzedAt);
+    if (prevAnalyzedAt !== analysis.analyzedAt) {
+        setPrevAnalyzedAt(analysis.analyzedAt);
+        if (highlightedOverlayRef !== null) setHighlightedOverlayRef(null);
+    }
+    const handleToggleOverlayHighlight = useCallback((ref: string) => {
+        setHighlightedOverlayRef(prev => (prev === ref ? null : ref));
+    }, []);
+    // 카드 언마운트 정리 전용 — 이미 다른 값(또는 null)이면 건드리지 않는다.
+    const handleClearOverlayHighlight = useCallback((ref: string) => {
+        setHighlightedOverlayRef(prev => (prev === ref ? null : prev));
+    }, []);
+
+    // 폴백(서사 없는 placeholder) 분석에는 차트 작도를 넘기지 않는다 — 아직
+    // 실제 분석 결과가 아니므로 논리적으로 근거가 없다.
+    const chartOverlays = useMemo(
+        () =>
+            isFallbackAnalysis(analysis, fallbackSummary)
+                ? undefined
+                : analysis.chartOverlays,
+        [analysis, fallbackSummary]
+    );
+
+    // 패턴 오버레이는 스킬 색(renderConfig.color)을 우선한다 — sourceRef(=
+    // patternSummaries[].id) → 색 맵을 한 번만 계산해 StockChart에 내린다.
+    const overlayColors = useMemo(() => {
+        const colors: Record<string, string> = {};
+        for (const p of analysis.patternSummaries ?? []) {
+            if (p.renderConfig?.color) colors[p.id] = p.renderConfig.color;
+        }
+        return colors;
+    }, [analysis.patternSummaries]);
+
+    const overlaySourceRefs = useMemo(
+        () => new Set((chartOverlays ?? []).map(o => o.sourceRef)),
+        [chartOverlays]
+    );
 
     // 비회원 3-심볼 회원가입 유도 (member-reasoning-toggle spec Part B).
     // 회원/로그인 판별 전에는 useAnonAnalysisNudge 내부에서 자체적으로 no-op한다.
@@ -280,14 +336,6 @@ export function ChartContent({
     const analysisContent = useMemo(() => {
         const hasNarrative = !isFallbackAnalysis(analysis, fallbackSummary);
 
-        // 분기 우선순위: 서사 유무를 먼저 보고, 봇 차단은 그 안에서 additive로 둔다.
-        // 이전엔 `isBotBlocked`를 맨 앞에서 검사해 봇이면 BotBlockedNotice가 사실 층
-        // (또는 캐시된 실제 분석)을 통째로 '교체'했다. 그 결과 JS를 렌더링하는 크롤러
-        // (Googlebot WRS)는 마운트 시 자동 분석 트리거가 miss_no_trigger로 봇 판정되면
-        // 종목 정보가 0인 안내문만 남은 DOM을 색인하게 돼, SSR 사실 층의 색인 의도가
-        // 무력화됐다(raw HTML엔 facts가 있어도). 이제 서사가 없으면 봇이어도 사실 층을
-        // 유지하고, 봇 안내는 그 아래 additive로만 덧붙인다 — 종목별 실측 텍스트가 렌더
-        // DOM에도 항상 남고, 봇으로 오판된 실사용자에게도 actionable hint가 유지된다.
         return !hasNarrative ? (
             <div className="flex flex-col gap-3">
                 {/* 첫 분석(서사 없음) 중에는 작은 텍스트 배너 대신, 캐시된 분석
@@ -310,7 +358,6 @@ export function ChartContent({
                     indicators={indicators}
                     marketProfile={marketProfile}
                 />
-                {isBotBlocked && <BotBlockedNotice />}
             </div>
         ) : (
             <div className="flex flex-col gap-3">
@@ -341,6 +388,10 @@ export function ChartContent({
                     isPersonalized={isPersonalized}
                     plain={plain}
                     isFreeUser={isFreeUser}
+                    overlaySourceRefs={overlaySourceRefs}
+                    highlightedOverlayRef={highlightedOverlayRef}
+                    onToggleOverlayHighlight={handleToggleOverlayHighlight}
+                    onClearOverlayHighlight={handleClearOverlayHighlight}
                 />
                 {/* "내 포지션" 결정적 요약 — 홀딩이 있는 회원에게만, AI 분석
                     바로 옆에 노출한다(personalized-analysis 배지와 동일 이웃).
@@ -354,15 +405,9 @@ export function ChartContent({
                         quantityRaw={symbolHolding.quantity}
                     />
                 )}
-                {/* 서사가 있어도(캐시된 분석을 표시 중) 봇 판정이면 안내를 additive로
-                    덧붙인다 — 자동 트리거/수동 재분석이 봇으로 오판돼 차단된 사실을
-                    stale 분석만 보던 실사용자가 인지하도록(PR #530 리뷰 반영). 두 분기가
-                    동일하게 `isBotBlocked`일 때만 안내를 노출해 일관된다. */}
-                {isBotBlocked && <BotBlockedNotice className="mt-3" />}
             </div>
         );
     }, [
-        isBotBlocked,
         bars,
         indicators,
         isAnalyzing,
@@ -389,6 +434,10 @@ export function ChartContent({
         isFreeUser,
         positionStatus,
         symbolHolding,
+        overlaySourceRefs,
+        highlightedOverlayRef,
+        handleToggleOverlayHighlight,
+        handleClearOverlayHighlight,
     ]);
 
     // timeframe을 React.Fragment key로 전달 — Suspense 경계 밖에서 timeframe 변경 시 자식 트리를 강제 remount한다.
@@ -407,7 +456,6 @@ export function ChartContent({
         status: deriveChartStatus({
             isAnalyzing,
             analysisError: analysisError !== null,
-            isBotBlocked,
             // Gate on a REAL analysis — the seeded `initialAnalysis` is always
             // non-null (a fallback/no-narrative AnalysisResponse), so checking
             // `(analysisResult ?? analysis) != null` would report 'success' even
@@ -469,10 +517,10 @@ export function ChartContent({
     ]);
 
     return (
-        // md+: `items-start`로 AI 패널이 차트보다 길어질 수 있게 한다. 예전에는
-        // 행이 확정 높이였고 패널이 그 안에서 `overflow-y-auto`로 스크롤했는데,
-        // 그게 데스크톱 스크롤바 셋 중 하나였다(사용자 제보). 이제 행 높이는
-        // 차트와 패널 중 큰 쪽이 정하고, 차트는 자기 `--symbol-chart-h`를 지킨다.
+        // md+: 차트와 AI 패널이 각자 `--symbol-chart-h`로 같은 높이를 확정한다.
+        // 패널이 내용만큼 자라게 두었더니(v0.79.1) 긴 분석에서 패널만 아래로 한참
+        // 늘어나 차트와 동떨어진 화면이 됐다(사용자 제보, 2026-09-27). 그래서 패널은
+        // 차트 높이에 맞추고 넘치는 분석은 패널 안에서 스크롤한다.
         <div className="flex h-full w-full flex-col md:h-auto md:flex-row md:items-start">
             {/* 차트 영역 — 바텀시트는 fixed 오버레이라 콘텐츠를 밀어내지 않는다.
                  **그래서** 아래를 직접 비워 둬야 Peek 상태에서 거래량 차트와 면책 문구가
@@ -487,9 +535,8 @@ export function ChartContent({
                  sizing(모바일): `flex-1 min-h-0`으로 부모(page wrapper가 확정한 첫 뷰포트
                  높이)의 잔여를 채운다 — 기존 동작 그대로다.
                  sizing(md+): `--symbol-chart-h`로 **자기 높이를 직접 확정한다**. 부모 행은
-                 이제 `items-start`라 stretch로 높이를 받지 못하고, 애초에 그 행의 높이는
-                 AI 패널 길이에 따라 변한다. 차트가 패널 길이를 따라 늘어나면 안 되므로
-                 확정 높이의 소유권이 여기로 내려왔다. `flex-1`은 md+에서 main-axis가
+                 `items-start`라 stretch로 높이를 받지 못하므로 차트와 AI 패널이 각자 같은
+                 변수로 높이를 확정한다(배경은 아래 aside 주석). `flex-1`은 md+에서 main-axis가
                  width라 폭 배분만 담당한다(높이와 무관). lightweight-charts 컨테이너는
                  percentage height를 쓰므로 이 확정 높이가 그 체인의 시작점이다. */}
             <div
@@ -528,6 +575,9 @@ export function ChartContent({
                         onChartRemove={handleStockChartRemove}
                         ticker={symbol}
                         marketProfile={marketProfile}
+                        chartOverlays={chartOverlays}
+                        overlayColors={overlayColors}
+                        highlightedOverlayRef={highlightedOverlayRef}
                     />
                 </div>
 
@@ -566,8 +616,8 @@ export function ChartContent({
                 aria-valuemax={PANEL_MAX_WIDTH}
                 className={cn(
                     // `self-stretch`: 부모 행이 `items-start`라 이게 없으면 높이 0으로
-                    // 접혀 잡을 것이 사라진다. 행의 높이(= 차트와 패널 중 큰 쪽)를 그대로
-                    // 덮어, 패널이 길어져도 어디서든 잡아 폭을 조절할 수 있다.
+                    // 접혀 잡을 것이 사라진다. 행의 높이(= 차트·패널 공통의
+                    // `--symbol-chart-h`)를 그대로 덮어, 경계 어디서든 잡아 폭을 조절한다.
                     'border-secondary-700 hover:border-primary-600 focus-visible:border-primary-600 hidden w-1 cursor-col-resize border-l transition-colors outline-none md:block md:self-stretch',
                     isDragging && 'border-primary-500'
                 )}
@@ -575,13 +625,15 @@ export function ChartContent({
                 onKeyDown={handleKeyDown}
             />
 
-            {/* 자체 스크롤러가 아니다. 예전에는 `md:h-full` + `overflow-y-auto`로
-                차트 행 높이에 갇혀 내부 스크롤했는데, 그게 데스크톱 스크롤바 셋 중
-                하나였다(사용자 제보, v0.79.0). 이제 패널은 내용만큼 자라고 문서가
-                한 번만 스크롤한다 — 차트는 자기 `--symbol-chart-h`를 지키므로 패널이
-                길어져도 늘어나지 않는다. */}
+            {/* 차트와 같은 `--symbol-chart-h`로 높이를 확정하고, 넘치는 분석은 패널
+                안에서 스크롤한다. 내용만큼 자라게 두면(v0.79.1~v0.90.1) 긴 분석에서
+                패널이 차트 아래로 한참 늘어나 차트와 동떨어진 화면이 됐다(사용자 제보,
+                2026-09-27). v0.79.1이 고친 "스크롤바 셋" 제보(v0.79.0 시점)의 원인
+                중 jail·`<main>`은 여전히 스크롤러가 아니다 — 문서 + 이 패널, 둘이다.
+                `md:h-full`이 아니라 변수를 쓰는 건 행이 `items-start`라 stretch로
+                높이를 받지 못하기 때문이다. */}
             <aside
-                className="relative hidden flex-none border-l border-secondary-700 p-4 md:flex md:w-(--panel-width) md:flex-col"
+                className="relative hidden flex-none border-l border-secondary-700 p-4 md:flex md:h-(--symbol-chart-h) md:w-(--panel-width) md:flex-col md:overflow-y-auto"
                 style={
                     {
                         // panelWidth는 드래그 상태에서 런타임에 결정되므로 정적 Tailwind 클래스로 표현 불가

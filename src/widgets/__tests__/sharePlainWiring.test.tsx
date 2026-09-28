@@ -180,9 +180,6 @@ vi.mock('@/features/symbol-model', () => ({
     useDefaultReasoning: vi.fn(() => false),
     useSymbolModel: vi.fn(() => ({ tier: 'member', isTierHydrated: true })),
 }));
-vi.mock('@/shared/ui/BotBlockedNotice', () => ({
-    BotBlockedNotice: () => <div data-testid="bot-blocked" />,
-}));
 vi.mock('@/widgets/congress/CongressTrendSummarySkeleton', () => ({
     CongressTrendSummarySkeleton: () => <div data-testid="congress-skeleton" />,
 }));
@@ -534,7 +531,6 @@ describe('공유 등록 plain 배선', () => {
             analysisResult: null,
             isAnalyzing: false,
             analysisError: null,
-            isBotBlocked: false,
             handleReanalyze: vi.fn(),
             reanalyzeCooldownMs: 0,
             cooldownNotice: null,

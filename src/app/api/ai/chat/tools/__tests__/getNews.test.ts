@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { bySymbol, byCategory } = vi.hoisted(() => ({
+const { bySymbol, byCategory, peekDigest, degradeSpy } = vi.hoisted(() => ({
     bySymbol: vi.fn(),
     byCategory: vi.fn(),
+    peekDigest: vi.fn(),
+    degradeSpy: vi.fn(),
 }));
 vi.mock('@/entities/news-article/api', () => ({
     DrizzleNewsRepository: vi.fn(function () {
@@ -16,6 +18,12 @@ vi.mock('@/entities/market-news/api', () => ({
 }));
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: {} }),
+}));
+vi.mock('@/entities/market-news/api/marketNewsDigestStaticCache', () => ({
+    peekMarketNewsDigestStatic: peekDigest,
+}));
+vi.mock('@/app/api/ai/chat/tools/logToolDegrade', () => ({
+    logToolDegrade: degradeSpy,
 }));
 
 import { getNewsTool } from '@/app/api/ai/chat/tools/getNews';
@@ -31,7 +39,11 @@ const ctx = {
     locale: 'ko' as const,
     signal: new AbortController().signal,
 };
-const rt = { analysisModel: 'deepseek-v4.1-flash' as const };
+const ensureSymbolData = vi.fn(async (): Promise<void> => {});
+const rt = {
+    analysisModel: 'deepseek-v4.1-flash' as const,
+    ensureSymbolData,
+};
 const row = (i: number) => ({
     titleEn: `t${i}`,
     titleKo: `제목${i}`,
@@ -45,6 +57,14 @@ const row = (i: number) => ({
 });
 
 describe('getNewsTool', () => {
+    beforeEach(() => {
+        // 호출 기록만 지운다(구현은 유지) — 이 파일에는 "호출되지 않았다"를 단언하는
+        // 테스트가 있어서, 앞 테스트의 조회가 남아 있으면 그쪽이 엉뚱하게 깨진다.
+        vi.clearAllMocks();
+        // 기본은 캐시 미스 — 다이제스트를 기대하는 테스트만 값을 넣는다.
+        peekDigest.mockResolvedValue(null);
+    });
+
     it('카테고리 slug → sentinel 매핑', async () => {
         byCategory.mockResolvedValue([row(1)]);
         await getNewsTool({ category: 'crypto' }, ctx, rt);
@@ -52,6 +72,56 @@ describe('getNewsTool', () => {
             '__NEWS_CRYPTO__',
             expect.any(Number),
             'ko'
+        );
+    });
+
+    it('카테고리 요청은 그 피드의 AI 다이제스트를 함께 싣고, 심볼 요청에는 싣지 않는다', async () => {
+        byCategory.mockResolvedValue([row(1)]);
+        bySymbol.mockResolvedValue([row(1)]);
+        peekDigest.mockResolvedValue({
+            currentDriverKo: '반도체 수요 회복 기대',
+            keyEventsKo: ['엔비디아 실적 서프라이즈'],
+            upcomingEventsKo: ['FOMC'],
+            overallSentiment: 'positive',
+        });
+
+        const byCat = (await getNewsTool({ category: 'crypto' }, ctx, rt)) as {
+            digest: { driver: string; overallSentiment: string } | null;
+        };
+        expect(peekDigest).toHaveBeenCalledWith('crypto', 'ko');
+        expect(byCat.digest).toEqual({
+            driver: '반도체 수요 회복 기대',
+            keyEvents: ['엔비디아 실적 서프라이즈'],
+            upcomingEvents: ['FOMC'],
+            overallSentiment: 'positive',
+        });
+
+        // 다이제스트는 카테고리 단위다 — 심볼 질의에 붙이면 다른 종목 이야기가 섞인다.
+        peekDigest.mockClear();
+        const bySym = (await getNewsTool({ symbol: 'AAPL' }, ctx, rt)) as {
+            digest: unknown;
+        };
+        expect(peekDigest).not.toHaveBeenCalled();
+        expect(bySym.digest).toBeNull();
+    });
+
+    // peek 구현은 지금 자체 try/catch로 실패를 삼키지만, 그 계약이 바뀌면
+    // `Promise.all`의 형제가 통째로 무너져 기사 목록까지 잃는다 — 이 테스트는
+    // 그 경계가 유지되는지를 고정한다.
+    it('다이제스트 peek이 실패해도 뉴스 목록은 그대로 나가고, 실패는 로그로 남는다', async () => {
+        byCategory.mockResolvedValue([row(1)]);
+        peekDigest.mockRejectedValue(new Error('redis down'));
+        degradeSpy.mockClear();
+        const r = (await getNewsTool({ category: 'crypto' }, ctx, rt)) as {
+            digest: unknown;
+            items: unknown[];
+        };
+        expect(r.digest).toBeNull();
+        expect(r.items).toHaveLength(1);
+        expect(degradeSpy).toHaveBeenCalledWith(
+            'get_news',
+            'digest peek',
+            expect.any(Error)
         );
     });
 
@@ -249,5 +319,42 @@ describe('getNewsTool', () => {
             };
             expect(r.items[0]!.ageHours).toBeNull();
         });
+    });
+});
+
+describe('get_news 수급 게이트', () => {
+    beforeEach(() => {
+        ensureSymbolData.mockClear();
+        ensureSymbolData.mockImplementation(async () => {});
+        bySymbol.mockResolvedValue([]);
+        byCategory.mockResolvedValue([]);
+    });
+
+    /**
+     * 이 툴은 DB만 읽는다. 적재를 트리거하는 다른 경로(뉴스 탭 방문·prewarm
+     * cron)가 최근에 안 돌았으면 며칠 묵은 목록이 그대로 답이 된다 —
+     * 실측(2026-09-21): 당일 보도자료가 FMP에는 있는데 챗은 "최신이 89시간
+     * 전"이라고 답했다.
+     */
+    it('심볼 질의는 DB를 읽기 전에 수급을 돌린다', async () => {
+        const order: string[] = [];
+        ensureSymbolData.mockImplementation(async () => {
+            order.push('refresh');
+        });
+        bySymbol.mockImplementation(async () => {
+            order.push('read');
+            return [];
+        });
+
+        await getNewsTool({ symbol: 'laes' }, ctx, rt);
+
+        expect(ensureSymbolData).toHaveBeenCalledWith('LAES');
+        expect(order).toEqual(['refresh', 'read']);
+    });
+
+    it('카테고리 질의는 심볼 수급 대상이 아니다', async () => {
+        await getNewsTool({ category: 'crypto' }, ctx, rt);
+
+        expect(ensureSymbolData).not.toHaveBeenCalled();
     });
 });

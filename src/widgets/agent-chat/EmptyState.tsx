@@ -8,7 +8,7 @@ import {
     NewsIcon,
     QuoteIcon,
     SparkIcon,
-} from './icons';
+} from '@/shared/ui/StrokeIcons';
 import { SiglensMark } from './SiglensMark';
 
 /** Member suggestions still being generated; resolves to null when there are none. */

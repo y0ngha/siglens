@@ -21,7 +21,6 @@ import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { quoteWithTimeout } from '@/shared/api/market/quoteTimeout';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
-import { isBot } from '@/shared/api/isBot';
 import {
     resolveCurrentPrice,
     rewriteToPlainLanguage,
@@ -74,9 +73,19 @@ import { submitMacroBriefingAction } from '@/entities/economy/actions/submitMacr
 
 /**
  * 불변식: **응답 본문은 User-Agent에 의존하지 않는다.** 봇과 사람은 같은 요청에
- * 같은 본문(원문 + 평이화)을 받는다. UA로 갈라도 되는 것은 생성·동시성 정책뿐이다
- * (`skipEnqueueIfMiss`, `canAcceptAnalysisStream`의 봇 천장). UA 조건부 **본문**은
- * Google의 클로킹 패턴과 구분되지 않는다.
+ * 같은 본문(원문 + 평이화)을 받는다.
+ *
+ * **생성 트리거도 이제 UA로 가르지 않는다 (2026-09-27).** 캐시 미스면 봇도
+ * 사람과 똑같이 core에 생성을 맡긴다 — 예전엔 봇이면 `skipEnqueueIfMiss`로
+ * 즉시 `miss_no_trigger`를 돌려줬는데, 그게 Googlebot이 색인하는 DOM을
+ * "봇 트래픽으로 보여 표시하지 않았어요" 안내문으로 만드는 원인이었다.
+ *
+ * **이 라우트는 이제 User-Agent를 아예 읽지 않는다.** 마지막까지 남아 있던
+ * UA 분기(동시성 상한의 봇 배수)도 제거했다 — `isBot`은 순수 UA 문자열
+ * 매칭이라 curl/python-requests/axios 같은 일반 스크립트 클라이언트까지
+ * "봇"으로 잡히는데, 거기에 더 높은 동시성 천장을 얹는 건 판별 불가능한
+ * 신호에 의존하는 남용 경로였다. 상한 근거는
+ * `shared/lib/sse/activeStreams.ts`의 `canAcceptAnalysisStream` 주석 참고.
  */
 export const dynamic = 'force-dynamic';
 
@@ -327,18 +336,10 @@ const DISPATCH: Record<
     (
         params: Record<string, unknown>,
         signal: AbortSignal | undefined,
-        locale: Locale,
-        /**
-         * Task S3 (prior-analysis-context) — only `overall` reads it (to
-         * skip the history query for bot requests, mirroring the technical
-         * branch's `skipEnqueueIfMiss` gate). The other entries ignore the
-         * extra argument; TS structurally allows an implementation with
-         * fewer parameters than the declared function type.
-         */
-        isBotRequest: boolean
+        locale: Locale
     ) => Promise<unknown>
 > = {
-    overall: async (params, signal, locale, isBotRequest) => {
+    overall: async (params, signal, locale) => {
         // technical과 같은 규칙 — 클라이언트는 의도만 보내고, 캐시 우회 여부는
         // 서버가 쿨다운 획득으로 판단한다. 키 namespace를 분리해(`<tf>:overall`)
         // 기술적 분석 재분석이 종합 분석 재분석을 막지 않게 한다.
@@ -361,37 +362,45 @@ const DISPATCH: Record<
         const modelId = params.modelId as ModelId;
 
         // Task S3 (prior-analysis-context) — read history BEFORE the core
-        // call, unconditionally on the non-bot path. core folds a
-        // fingerprint of `priorAnalyses` into the cache key, so a lazy
-        // read-on-miss would let the key computation and the prompt
-        // rendering see different history sets for the same request. This
-        // costs one indexed query per non-bot request; accepted, not
-        // deferred. `isBotRequest` (passed in from `POST`'s dispatch call
-        // site, same `isBot(request.headers)` value the concurrency cap
-        // uses) skips the query entirely for a request that will not
-        // trigger a generation — `runOverallAnalysisAction` independently
-        // derives its own `skipEnqueueIfMiss` for the same reason.
-        const priorAnalyses = isBotRequest
-            ? undefined
-            : await new DrizzleAnalysisHistoryRepository(
-                  getDatabaseClient().db
-              ).findRecentForPrompt({
-                  symbol,
-                  timeframe,
-                  // overall도 **technical 이력**을 참고한다.
-                  //
-                  // `PriorAnalysis`는 trend / riskLevel / 진입·손절·익절이라
-                  // 본질적으로 technical 모델인데, `OverallAnalysisResponse`에는
-                  // 그 필드가 하나도 없다(headline·bullets·scenarios·riskFactors가
-                  // 전부다). 그래서 overall 결과로 만든 행은 `toPriorAnalysis`가
-                  // 남김없이 버린다 — `tab: 'overall'`로 읽으면 이 섹션은 영원히
-                  // 비어 있다.
-                  //
-                  // overall은 technical 산출물을 입력으로 받아 종합하는 축이므로,
-                  // "이 종목을 이전엔 이렇게 봤다"는 technical 판단은 여기서도
-                  // 그대로 유효한 참고다.
-                  tab: 'technical',
-              });
+        // call, unconditionally. core folds a fingerprint of `priorAnalyses`
+        // into the cache key, so a lazy read-on-miss would let the key
+        // computation and the prompt rendering see different history sets
+        // for the same request. This costs one indexed query per request.
+        //
+        // 2026-09-27: 봇 요청도 여기서 건너뛰지 않는다. 봇의 캐시 미스도 이제
+        // 사람과 똑같이 생성을 트리거하므로(파일 상단 "본문은 UA에 의존하지
+        // 않는다" 불변식), 이 값을 건너뛰면 같은 캐시 키인데 프롬프트 입력만
+        // 다른 두 벌의 본문이 생긴다 — 정확히 이 불변식이 금지하는 것이다.
+        //
+        // technical 탭(`technical` 분기)과 같은 이력·이벤트를 읽는다 — overall의
+        // technical 축 캐시 키가 `:hist=`·`:evt=`로 두 값을 접으므로, 둘 중
+        // 하나라도 갈리면 그 축이 technical 탭 캐시를 못 맞히고 다시 생성한다.
+        const overallDb = getDatabaseClient().db;
+        const [priorAnalyses, marketEvents] = await Promise.all([
+            new DrizzleAnalysisHistoryRepository(overallDb).findRecentForPrompt(
+                {
+                    symbol,
+                    timeframe,
+                    // overall도 **technical 이력**을 참고한다.
+                    //
+                    // `PriorAnalysis`는 trend / riskLevel / 진입·손절·익절이라
+                    // 본질적으로 technical 모델인데, `OverallAnalysisResponse`에는
+                    // 그 필드가 하나도 없다(headline·bullets·scenarios·riskFactors가
+                    // 전부다). 그래서 overall 결과로 만든 행은 `toPriorAnalysis`가
+                    // 남김없이 버린다 — `tab: 'overall'`로 읽으면 이 섹션은 영원히
+                    // 비어 있다.
+                    //
+                    // overall은 technical 산출물을 입력으로 받아 종합하는 축이므로,
+                    // "이 종목을 이전엔 이렇게 봤다"는 technical 판단은 여기서도
+                    // 그대로 유효한 참고다.
+                    tab: 'technical',
+                }
+            ),
+            findMarketEventsForPrompt(overallDb, {
+                symbol,
+                ...marketEventsLookback(timeframe),
+            }),
+        ]);
 
         const result = await runOverallAnalysisAction(
             symbol,
@@ -403,6 +412,7 @@ const DISPATCH: Record<
                 force: cooldown?.ok === true,
                 reasoning: params.reasoning as boolean | undefined,
                 priorAnalyses,
+                marketEvents,
             },
             signal
         ).catch(async (err: unknown) => {
@@ -497,8 +507,9 @@ const DISPATCH: Record<
      */
     briefing: (params, signal) =>
         // scope는 클라이언트가 보낸 문자열이다. 여기서 좁히지 않고 그대로 넘기는 것은
-        // 의도된 설계다 — 액션이 `isDashboardScopeId`로 검증하고 알 수 없는 값이면
-        // 에러를 돌려준다(라우트와 액션 양쪽에 검증을 두면 규칙이 갈린다).
+        // 의도된 설계다 — 액션이 `isPageDashboardScopeId`(허브 페이지가 있는 시장만)로
+        // 검증하고 그 밖의 값이면 에러를 돌려준다(라우트와 액션 양쪽에 검증을 두면
+        // 규칙이 갈린다).
         submitMarketBriefingAction(params.scope as string, signal),
 
     // 게이트를 쓰지 않아 사용자 문구를 만들지 않는다 — 로케일이 필요 없다.
@@ -765,8 +776,10 @@ async function withPlainLanguage<T>(
  *   아니라 **분석 텍스트 1건당** 발생하고, 화이트리스트 심볼은
  *   `seo_analysis_snapshots.plain`이 이미 채워져 있다.
  *
- * 생성 비용·동시성 정책은 그대로 UA로 갈라도 된다(`skipEnqueueIfMiss`,
- * `canAcceptAnalysisStream`의 봇 천장) — 그건 본문이 아니다.
+ * 생성 트리거도 UA로 가르지 않는다 — 2026-09-27부터 `skipEnqueueIfMiss`도
+ * 본문과 마찬가지로 봇/사람이 같은 값(`false`)을 받는다. 이 라우트는 이제
+ * User-Agent를 아예 읽지 않는다(파일 상단 불변식 참고) — 남아 있던 동시성
+ * 상한의 봇 배수도 제거했다.
  */
 function withReaderViews<T>(
     work: Promise<T>,
@@ -846,18 +859,12 @@ export async function POST(request: Request): Promise<Response> {
             const userId = user?.id ?? null;
 
             // --- 2b. E2E short-circuit ---
+            //
+            // 2026-09-27: 봇도 이 분기를 사람과 동일하게 통과한다. 예전엔 여기서
+            // 봇이면 즉시 `miss_no_trigger`를 돌려줬는데, 그 결과 Googlebot이
+            // 색인하는 DOM이 사람과 다른 "봇 트래픽으로 보여 표시하지 않았어요"
+            // 안내문이 됐다 — 파일 상단 "본문은 UA에 의존하지 않는다" 불변식 위반.
             if (isE2E()) {
-                if (isBot(request.headers)) {
-                    return new Response(
-                        heartbeatStream(
-                            Promise.resolve({
-                                status: 'miss_no_trigger' as const,
-                            }),
-                            { genericErrorMessage: t('generic') }
-                        ),
-                        { headers: SSE_HEADERS }
-                    );
-                }
                 const tier = await resolveTierOnly(userId);
                 // Dynamic import keeps the E2E stub out of the prod bundle (dead code
                 // when E2E_TEST is unset).
@@ -897,9 +904,6 @@ export async function POST(request: Request): Promise<Response> {
                     { headers: SSE_HEADERS }
                 );
             }
-
-            // --- 2c. Bot detection → skip enqueue on miss ---
-            const skipEnqueueIfMiss = isBot(request.headers);
 
             // --- 2d. Market profile → assetClass + session-aware data provider ---
             const marketProfile = await resolveMarketProfile(symbol);
@@ -985,7 +989,9 @@ export async function POST(request: Request): Promise<Response> {
             // the cap-check atomicity this function also has to preserve.
             const options: SubmitAnalysisOptions = {
                 modelId,
-                skipEnqueueIfMiss,
+                // 2026-09-27: 더 이상 UA로 갈라 넣지 않는다 — 파일 상단 불변식.
+                // 봇의 캐시 미스도 사람과 똑같이 core에 생성을 맡긴다.
+                skipEnqueueIfMiss: false,
                 marketDataProvider,
                 assetClass,
                 // core는 심볼에서 통화를 추론하지 않는다 — 거래소 프로파일을
@@ -1080,25 +1086,16 @@ export async function POST(request: Request): Promise<Response> {
              *
              * JSON 503으로 거절한다 — SSE로 error를 흘리면 클라이언트가 "분석 실패"로
              * 표시하지만, 이건 실패가 아니라 "지금 말고 나중에"다.
-             */
-            /**
-             * 봇은 상한에서 제외한다. `skipEnqueueIfMiss`(위) 때문에 봇의 캐시 미스는
-             * LLM을 태우지 않고 즉시 `miss_no_trigger`로 끝나므로, 봇 요청이 슬롯을
-             * 붙드는 시간은 밀리초 단위다 — 상한이 막으려는 부하가 아니다.
-             * (캐시 HIT는 이제 봇도 평이화 조회를 거친다 — 대부분 캐시 HIT라 밀리초,
-             * 드문 평이화 미스만 LLM 왕복이다. 배수 유지 근거는 `activeStreams.ts`.)
              *
-             * 반대로 막으면 손해가 크다: 이 브랜치는 크롤러 렌더러가 분석을 받게
-             * 하려고 robots.txt에 `/api/analysis/stream`을 일부러 열었는데, 사람
-             * 트래픽이 슬롯을 채운 동안 Googlebot이 503을 받으면 렌더된 DOM에 실패
-             * 배너만 남는다. robots 예외를 넣은 이유가 그대로 무너진다.
+             * 사람/봇 구분 없이 같은 상한을 쓴다(2026-09-27) — 이 라우트는
+             * User-Agent를 아예 읽지 않는다(파일 상단 불변식 참고).
              */
             // ⚠️ 번역자는 **동시성 검사 이전에** 확보한다. 검사와
             // `heartbeatStream` 사이에 `await`가 들어가면 위 주석이 설명한
             // 원자성이 깨진다 — 그 틈에 도착한 요청이 같은 빈 슬롯을 보고
             // 전부 통과해 캡이 무의미해진다(`getTranslations`는 로케일당 첫
             // 호출에서 실제 비동기 작업을 한다). 503 분기도 이 값을 쓴다.
-            if (!canAcceptAnalysisStream(skipEnqueueIfMiss)) {
+            if (!canAcceptAnalysisStream()) {
                 console.warn(
                     '[analysis-stream] rejected: concurrency cap reached'
                 );
@@ -1136,24 +1133,24 @@ export async function POST(request: Request): Promise<Response> {
                 // which already only exists because the cap check
                 // passed.
                 // 이력과 이벤트를 한 번에 읽는다 — 서로 독립이라 왕복을
-                // 겹치는 편이 낫다. 봇 요청은 생성을 트리거하지 않으므로
-                // 둘 다 건너뛴다.
+                // 겹치는 편이 낫다. 봇 요청도 건너뛰지 않는다(2026-09-27) —
+                // 봇의 캐시 미스도 사람과 똑같이 생성을 트리거하므로, 여기서
+                // 건너뛰면 같은 캐시 키에 프롬프트 입력만 다른 두 벌의 본문이
+                // 생긴다(파일 상단 불변식 위반).
                 const technicalDb = getDatabaseClient().db;
-                const [priorAnalyses, marketEvents] = skipEnqueueIfMiss
-                    ? [undefined, undefined]
-                    : await Promise.all([
-                          new DrizzleAnalysisHistoryRepository(
-                              technicalDb
-                          ).findRecentForPrompt({
-                              symbol,
-                              timeframe,
-                              tab: 'technical',
-                          }),
-                          findMarketEventsForPrompt(technicalDb, {
-                              symbol,
-                              ...marketEventsLookback(timeframe),
-                          }),
-                      ]);
+                const [priorAnalyses, marketEvents] = await Promise.all([
+                    new DrizzleAnalysisHistoryRepository(
+                        technicalDb
+                    ).findRecentForPrompt({
+                        symbol,
+                        timeframe,
+                        tab: 'technical',
+                    }),
+                    findMarketEventsForPrompt(technicalDb, {
+                        symbol,
+                        ...marketEventsLookback(timeframe),
+                    }),
+                ]);
 
                 return runAnalysis(
                     symbol,
@@ -1288,14 +1285,10 @@ export async function POST(request: Request): Promise<Response> {
     // await가 들어가면 원자성이 깨진다(위 technical 분기 주석 참고).
     const locale = resolveRequestLocale(request);
     const t = await streamMessages(locale);
-    // 한 번만 계산해 동시성 상한·DISPATCH(overall의 히스토리 읽기 skip) 두 곳에서
-    // 재사용한다 — 각자 다시 계산해도 값은 같지만(Headers read, side-effect 없음)
-    // 하나로 묶는 게 더 명확하다. 본문 생성(`withReaderViews`)에는 넘기지 않는다:
-    // 파일 상단의 "본문은 UA에 의존하지 않는다" 불변식 참고.
-    const isBotRequest = isBot(request.headers);
 
-    // 동시 분석 상한. 봇은 더 높은 천장 — 근거는 `canAcceptAnalysisStream` 주석.
-    if (!canAcceptAnalysisStream(isBotRequest)) {
+    // 동시 분석 상한 — 사람/봇 구분 없이 같은 값을 쓴다. 근거는
+    // `canAcceptAnalysisStream` 주석 참고.
+    if (!canAcceptAnalysisStream()) {
         console.warn('[analysis-stream] rejected: concurrency cap reached');
         return Response.json(
             { error: t('busy') },
@@ -1305,8 +1298,7 @@ export async function POST(request: Request): Promise<Response> {
 
     try {
         const work = withDeadline(
-            deadlineSignal =>
-                handler(body.params, deadlineSignal, locale, isBotRequest),
+            deadlineSignal => handler(body.params, deadlineSignal, locale),
             t('timeout')
         );
         return new Response(

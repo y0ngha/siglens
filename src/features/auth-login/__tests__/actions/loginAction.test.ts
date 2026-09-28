@@ -162,8 +162,13 @@ describe('loginAction', () => {
         );
     });
 
-    /** SiglensAI 로그인 CTA 복귀. 비-ko에서 `/en/api/…`로 바뀌면 404다. */
-    it('en 로케일에서도 SSO 핸드오프 next는 정확히 그 경로로 redirect한다', async () => {
+    /**
+     * SiglensAI 로그인 CTA 복귀. 같은-호스트 `/api/auth/handoff`로 redirect하면
+     * Next.js가 302 체인을 서버 fetch 안에서 소진해 브라우저가 ai 호스트로 가지
+     * 않는다. 다른 호스트(ai start)의 절대 URL이어야 하드 내비게이션이 된다.
+     * 비-ko에서도 `/en/api/…`(404)가 되면 안 된다.
+     */
+    it('en 로케일에서도 SSO 핸드오프 next는 ai 호스트 start URL로 redirect한다', async () => {
         intl.locale = 'en';
         mockLogin.mockResolvedValue({
             ok: true,
@@ -186,8 +191,10 @@ describe('loginAction', () => {
                 { error: null },
                 makeFormData({ email: 'a@b.com', password: 'Pass1234', next })
             )
-        ).rejects.toThrow(`NEXT_REDIRECT:${next}`);
-        expect(mockRedirect).toHaveBeenCalledWith(next);
+        ).rejects.toThrow('NEXT_REDIRECT');
+        expect(mockRedirect).toHaveBeenCalledWith(
+            'https://ai.siglens.io/api/auth/handoff/start?next=%2Fc%2Fx'
+        );
     });
 
     /**

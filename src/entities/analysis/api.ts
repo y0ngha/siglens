@@ -37,6 +37,7 @@ import {
     buildAnalysisNewsItems,
 } from '@/entities/news-article';
 import { getNextEarningsReport } from '@/entities/earnings-report';
+import { loadNewsMacroCalendar } from '@/entities/economy/api/loadNewsMacroCalendar';
 import { fetchQuotePriceForAnalysis } from './lib/fetchQuotePriceForAnalysis';
 // Cross-entity: overall이 options-chain 스냅샷을 조합한다. submitOverallAnalysisAction과
 // 동일한 의도적 예외(entities/CLAUDE.md).
@@ -234,7 +235,8 @@ export async function prewarmTechnical(
 
 /**
  * SEO pre-warm 전용 fundamental submit (spec 2026-07-24 §4 seam, Task 7).
- * `submitFundamentalAnalysisAction`의 비봇 경로를 request-context 없이 재현한다.
+ * `submitFundamentalAnalysisAction`의 기본 경로(2026-09-27부터 봇/사람 구분
+ * 없음)를 request-context 없이 재현한다.
  */
 export async function prewarmFundamental(
     symbol: string,
@@ -265,7 +267,8 @@ export async function prewarmFundamental(
 
 /**
  * SEO pre-warm 전용 financials submit (spec 2026-07-24 §4 seam, Task 7).
- * `submitFinancialsAnalysisAction`의 비봇 경로를 request-context 없이 재현한다.
+ * `submitFinancialsAnalysisAction`의 기본 경로(2026-09-27부터 봇/사람 구분
+ * 없음)를 request-context 없이 재현한다.
  */
 export async function prewarmFinancials(
     symbol: string,
@@ -285,7 +288,8 @@ export async function prewarmFinancials(
 
 /**
  * SEO pre-warm 전용 congress submit (spec 2026-07-24 §4 seam, Task 7).
- * `submitCongressTrendAction`의 비봇 경로를 request-context 없이 재현한다.
+ * `submitCongressTrendAction`의 기본 경로(2026-09-27부터 봇/사람 구분 없음)를
+ * request-context 없이 재현한다.
  * 이 경로는 액션 레이어(BYOK 게이트 포함)를 우회해 core를 직접 호출한다 — 실 사용자
  * 컨텍스트가 없는 pre-warm이라 gate 대상이 아니다. 항상 free-tier 비프리미엄 모델
  * (DEEPSEEK_V4_1_FLASH_MODEL)만 사용하므로 프리미엄/BYOK 상황 자체가 발생하지 않는다.
@@ -308,10 +312,13 @@ export async function prewarmCongress(
 
 /**
  * SEO pre-warm 전용 overall(4축 종합) submit (spec 2026-07-24 §4 seam, Task 7).
- * `submitOverallAnalysisAction`의 비봇 경로를 request-context 없이 재현한다.
+ * `submitOverallAnalysisAction`의 기본 경로(2026-09-27부터 봇/사람 구분
+ * 없음)를 request-context 없이 재현한다.
  *
- * ⚠️ 봇 트래픽에서는 skip되던 options snapshot·financials scorecard fetch가
- * prewarm에서는 항상 실행된다 — 의도된 동작이다(spec §8 FMP 예산 산정에 포함됨).
+ * options snapshot·financials scorecard fetch는 prewarm에서도, 이제는 실 요청
+ * (봇 포함)에서도 항상 실행된다 — 의도된 동작이다(spec §8 FMP 예산 산정에
+ * 포함됨). 2026-09-27 이전엔 봇 트래픽만 이 fetch를 skip했지만, 그 skip이
+ * 캐시 미스에서 사람과 다른(빈약한) 본문을 만들어 제거했다.
  */
 export async function prewarmOverall(
     symbol: string,
@@ -368,17 +375,22 @@ export async function prewarmOverall(
 
     // Task S3 (prior-analysis-context) — same cache-key parity rationale as
     // `prewarmTechnical` (see that function's comment on the read call).
-    const priorAnalyses = await new DrizzleAnalysisHistoryRepository(
-        db
-    ).findRecentForPrompt({
-        symbol,
-        timeframe,
-        // overall도 technical 이력을 읽는다 — 근거는 스트림 경로의 같은 호출부
-        // 주석 참고(`OverallAnalysisResponse`에는 `PriorAnalysis`가 요구하는
-        // trend/riskLevel이 없다). 스트림과 **같은 tab**을 읽어야 core가 캐시 키에
-        // 접는 history fingerprint가 갈리지 않는다.
-        tab: 'technical',
-    });
+    const [priorAnalyses, marketEvents, macroCalendar] = await Promise.all([
+        new DrizzleAnalysisHistoryRepository(db).findRecentForPrompt({
+            symbol,
+            timeframe,
+            // overall도 technical 이력을 읽는다 — 근거는 스트림 경로의 같은 호출부
+            // 주석 참고(`OverallAnalysisResponse`에는 `PriorAnalysis`가 요구하는
+            // trend/riskLevel이 없다). 스트림과 **같은 tab**을 읽어야 core가 캐시 키에
+            // 접는 history fingerprint가 갈리지 않는다.
+            tab: 'technical',
+        }),
+        findMarketEventsForPrompt(db, {
+            symbol,
+            ...marketEventsLookback(timeframe),
+        }),
+        loadNewsMacroCalendar(),
+    ]);
 
     const result = await runOverallAnalysis({
         symbol,
@@ -389,7 +401,21 @@ export async function prewarmOverall(
         marketDataProvider,
         newsItems: enrichedNews,
         upcomingCalendar: next !== null ? [next] : [],
-        technical: { tierContext: { userId: null, tier: 'free' } },
+        // `/news`·prewarmNews와 같은 헬퍼 — 뉴스 축 캐시 키 일치 불변식.
+        macroCalendar,
+        /*
+         * technical 축에도 `prewarmTechnical`과 **같은** 이력·이벤트를 넘긴다.
+         * 두 값은 technical 캐시 키의 `:hist=`·`:evt=` 구간으로 접히므로, 빠지면
+         * 이 축이 바로 앞 technical 탭이 채운 캐시를 못 맞히고 같은 분석을 한 번 더
+         * 생성한다(2026-09 실측: 심볼당 1Day 호출 2회, 프리웜 DeepSeek 지출의
+         * ~25%). core 1.13.1이 이 필드를 열었다 — 양쪽 다 넘기거나 양쪽 다 생략해야
+         * 하고, 한쪽만 넘기면 타입도 테스트도 잡지 못한다.
+         */
+        technical: {
+            tierContext: { userId: null, tier: 'free' },
+            priorAnalyses,
+            marketEvents,
+        },
         tier: 'free',
         reasoning: false,
         providerFallback: PREWARM_PROVIDER_FALLBACK,

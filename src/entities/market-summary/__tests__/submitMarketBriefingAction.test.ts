@@ -199,5 +199,18 @@ describe('submitMarketBriefingAction 함수는', () => {
             expect(mockGetCachedMarketSummary).not.toHaveBeenCalled();
             errSpy.mockRestore();
         });
+
+        it("'crypto'는 isDashboardScopeId는 통과하지만 hasHubPage가 false라 요약을 읽지 않고 server_error를 반환한다", async () => {
+            const errSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            mockGetCachedMarketSummary.mockClear();
+
+            const result = await submitMarketBriefingAction('crypto');
+
+            expect(result).toEqual({ ok: false, error: 'server_error' });
+            expect(mockGetCachedMarketSummary).not.toHaveBeenCalled();
+            errSpy.mockRestore();
+        });
     });
 });

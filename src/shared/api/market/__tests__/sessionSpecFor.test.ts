@@ -139,9 +139,12 @@ describe('sessionSpecForDashboardScope', () => {
      * 아니라 객체로 받고, 잘못된 세션을 넘기면 TTL이 정확히 뒤집힌다 —
      * KRX 장중에 24시간 고정, KRX 폐장 중에 60초 폴링.
      */
-    it('kr scope는 KR 세션, 나머지는 US 세션', () => {
+    it('kr scope는 KR 세션, crypto는 24/7 세션, us는 US 세션', () => {
         expect(sessionSpecForDashboardScope('kr')).toBe(KR_EQUITY_SESSION);
         expect(sessionSpecForDashboardScope('us')).toBe(US_EQUITY_SESSION);
+        // 크립토를 US 세션으로 두면 NYSE 폐장 중 TTL이 몇 시간으로 늘어
+        // 24시간 거래되는 시장의 시세가 밤새 얼어붙는다.
+        expect(sessionSpecForDashboardScope('crypto')).toBe(CRYPTO_SESSION);
     });
 });
 

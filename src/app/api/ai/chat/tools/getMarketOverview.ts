@@ -3,10 +3,17 @@ import type { MarketSectorData, StockSignalResult } from '@y0ngha/siglens-core';
 import { getTranslations } from 'next-intl/server';
 import { getMarketFearGreedStatic } from '@/entities/market-fear-greed/api/marketFearGreedStaticCache';
 import { getMarketFearGreedKrStatic } from '@/entities/market-fear-greed/api/marketFearGreedKrStaticCache';
+import type { MarketFearGreedView } from '@/entities/market-fear-greed';
 import { getMarketSummaryStatic } from '@/entities/market-summary/api/marketSummaryStaticCache';
 import { getSectorSignalsStatic } from '@/entities/sector-signal/api/sectorSignalsStaticCache';
+import { peekBriefingStatic } from '@/entities/market-summary/api/briefingStaticCache';
 import { DEFAULT_DASHBOARD_TIMEFRAME } from '@/shared/config/dashboard-tickers';
-import { dashboardScopeOf } from '@/shared/config/dashboardScope';
+import {
+    dashboardScopeOf,
+    isDashboardScopeId,
+    type DashboardScopeId,
+} from '@/shared/config/dashboardScope';
+import { ISO_DATE_HOUR_SLICE_END } from '@/shared/config/time';
 import type { Locale } from '@/shared/i18n/locales';
 import type { ToolExecutor } from './index';
 import { logToolDegrade } from './logToolDegrade';
@@ -152,22 +159,57 @@ function sectorBreadth(
 }
 
 /**
- * Market-wide mood: fear & greed + index/sector levels, plus (US only) the
- * dashboard's sector signal scan compacted to per-sector counts and the top
- * flagged signals. `Promise.allSettled` so one failing section (e.g. the
- * signal scan) never blanks the fear & greed or index data.
+ * The market's fear & greed view, or `null` for a market that has none.
+ *
+ * `crypto` has no index of its own, and the US/KR snapshots are built from
+ * their own market's breadth and sector data — handing one of them to a crypto
+ * question would be a number from a different market with nothing marking it
+ * as such.
+ */
+function fearGreedFor(
+    market: DashboardScopeId
+): Promise<MarketFearGreedView | null> {
+    switch (market) {
+        case 'crypto':
+            return Promise.resolve(null);
+        case 'kr':
+            return getMarketFearGreedKrStatic();
+        case 'us':
+            return getMarketFearGreedStatic();
+        default: {
+            // 삼항으로 두면 네 번째 시장이 추가될 때 아무 결정도 하지 않은 채
+            // 미국 지수로 흘러간다 — 화면에는 숫자가 정상으로 보인다.
+            // `sessionSpecForDashboardScope`가 같은 유니온을 같은 방식으로 지킨다.
+            const _exhaustive: never = market;
+            console.error(
+                `[get_market_overview] Unhandled market: ${String(_exhaustive)}`
+            );
+            return Promise.resolve(null);
+        }
+    }
+}
+
+/**
+ * Market-wide mood: fear & greed + index/sector levels, plus the dashboard's
+ * sector signal scan compacted to per-sector counts and the top flagged
+ * signals. Both markets are scanned — `/market` and `/market/kr` already run
+ * the same scan over their own `scope.sectorStocks`, and the scan is the only
+ * screen the agent has when the user asks which stocks are worth a look, so
+ * skipping it for `kr` left Korean discovery questions with nothing to answer
+ * from. `Promise.allSettled` so one failing section (e.g. the signal scan)
+ * never blanks the fear & greed or index data.
  */
 export const getMarketOverviewTool: ToolExecutor = async (args, ctx) => {
-    const market = args.market === 'kr' ? 'kr' : 'us';
+    const market: DashboardScopeId = isDashboardScopeId(args.market)
+        ? args.market
+        : 'us';
     const scope = dashboardScopeOf(market);
     const [fgResult, summaryResult, sectorResult] = await Promise.allSettled([
-        market === 'kr'
-            ? getMarketFearGreedKrStatic()
-            : getMarketFearGreedStatic(),
+        // 크립토에는 공포·탐욕 지수가 없다 — 미국·한국 스냅샷은 그 시장의 지수·
+        // 섹터 데이터로 만들어지므로 빌려 쓸 수도 없다.
+        fearGreedFor(market),
         getMarketSummaryStatic(scope),
-        market === 'us'
-            ? getSectorSignalsStatic(scope, DEFAULT_DASHBOARD_TIMEFRAME)
-            : Promise.resolve(null),
+        getSectorSignalsStatic(scope, DEFAULT_DASHBOARD_TIMEFRAME),
     ]);
 
     const fearGreedView =
@@ -181,6 +223,24 @@ export const getMarketOverviewTool: ToolExecutor = async (args, ctx) => {
     const rankableSectors = rawSectors.filter(isRankableSector);
     const names = await sectorDisplayNames(ctx.locale, rawSectors);
     const rankedSectors = rankSectors(rawSectors, names);
+    // 시장 브리핑은 `/market`·`/market/kr`이 이미 화면에 그리는 AI 요약이고,
+    // peek은 **캐시 읽기 전용**이라 LLM 비용이 0이다(`get_economy`가 거시 브리핑을
+    // 같은 방식으로 붙인다). 요약이 먼저 필요해 `allSettled`에 넣지 못한다 —
+    // core 캐시 키가 그 시세에서 파생된다. `hasHubPage`가 false인 scope는
+    // 아예 조회하지 않는다 — 프리웜(`seo-prewarm/hubs.ts`)이 그 시장의 브리핑을
+    // 굽지 않으므로 **확정 미스**이고, 호출해 봤자 Redis 왕복만 버린다. 도구를
+    // 위해 굽게 만드는 쪽은 더 나쁘다(아무도 읽지 않는 LLM 호출이 매일 밤 추가된다).
+    const briefing =
+        summary === null || !scope.hasHubPage
+            ? null
+            : await peekBriefingStatic(
+                  summary,
+                  new Date().toISOString().slice(0, ISO_DATE_HOUR_SLICE_END),
+                  scope
+              ).catch(error => {
+                  logToolDegrade('get_market_overview', 'briefing peek', error);
+                  return null;
+              });
 
     return {
         asOf: new Date().toISOString(),
@@ -193,6 +253,9 @@ export const getMarketOverviewTool: ToolExecutor = async (args, ctx) => {
                 key: f.key,
                 percentile: f.percentile,
             })),
+            // 게이지 옆에 이미 그려지는 과거 대비 점수. 없으면 "지난주보다
+            // 탐욕이 심해졌나" 류 질문에 오늘 점수 하나로만 답하게 된다.
+            comparisons: fearGreedView?.comparisons ?? [],
         },
         indices:
             summary?.indices.map(i => ({
@@ -219,6 +282,11 @@ export const getMarketOverviewTool: ToolExecutor = async (args, ctx) => {
             computedAt: sectorSignals.computedAt,
             countsBySector: countsBySector(sectorSignals.stocks),
             topSignals: topSignals(sectorSignals.stocks),
+        },
+        briefing: briefing && {
+            summary: briefing.summary,
+            dominantThemes: briefing.dominantThemes,
+            riskSentiment: briefing.riskSentiment,
         },
     };
 };

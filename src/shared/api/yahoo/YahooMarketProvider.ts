@@ -1,5 +1,5 @@
 import 'server-only';
-import { createYahooClient } from './createYahooClient';
+import { getYahooClient } from './createYahooClient';
 import type {
     Bar,
     GetBarsOptions,
@@ -14,7 +14,7 @@ import {
 } from '@/shared/config/time';
 import { pickYahooDisplayName } from './displayName';
 
-const yahooFinance = createYahooClient();
+const yahooFinance = getYahooClient();
 
 /** KST는 서머타임이 없다 — ET와 달리 고정 오프셋이라 DST 분기가 필요 없다. */
 const KST_OFFSET_HOURS = 9;

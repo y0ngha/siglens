@@ -244,6 +244,111 @@ describe('rewriteToPlainLanguage', () => {
         );
     });
 
+    /**
+     * 회귀(감사, 7일 `deadline exceeded` 146건): 레이스에서 진 `attempt()`는
+     * 캐시 쓰기가 승자 경로에만 있던 시절 결과를 통째로 버렸다. 지금은
+     * `attempt()` 자신이 캐시를 쓰므로, 레이스가 끝난 뒤 프로바이더가 늦게
+     * settle해도 다음 요청은 그 결과를 캐시에서 맞는다.
+     */
+    it('마감을 넘겨도 프로바이더가 나중에 끝나면 캐시를 채운다', async () => {
+        vi.useFakeTimers();
+        try {
+            let resolveProvider: (v: string) => void = () => {};
+            callAiProviderRouter.mockReturnValue(
+                new Promise<string>(resolve => {
+                    resolveProvider = resolve;
+                })
+            );
+
+            const promise = rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
+            await vi.advanceTimersByTimeAsync(15_000);
+            expect(await promise).toBeNull();
+            expect(cacheSet).not.toHaveBeenCalled();
+
+            resolveProvider(GOOD);
+            await vi.advanceTimersByTimeAsync(0);
+            expect(cacheSet).toHaveBeenCalledOnce();
+            expect(cacheSet.mock.calls[0][1]).toBe(GOOD.trim());
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    /**
+     * 마감을 넘긴 뒤 늦게 도착한 텍스트라도 가드를 통과하지 못하면 여전히
+     * 캐시에 쓰지 않는다 — 이번 수정이 "가드를 우회하는 경로"가 되면 안 된다.
+     */
+    it('마감을 넘긴 뒤 가드가 거부하면 여전히 캐시에 쓰지 않는다', async () => {
+        vi.useFakeTimers();
+        try {
+            let resolveProvider: (v: string) => void = () => {};
+            callAiProviderRouter.mockReturnValue(
+                new Promise<string>(resolve => {
+                    resolveProvider = resolve;
+                })
+            );
+
+            const promise = rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
+            await vi.advanceTimersByTimeAsync(15_000);
+            expect(await promise).toBeNull();
+
+            // 허용 집합에 없는 숫자뿐인 문장 하나 — 도려내면 남는 것이 없어
+            // salvage도 실패한다.
+            resolveProvider('목표가 999.99달러입니다.');
+            await vi.advanceTimersByTimeAsync(0);
+            expect(cacheSet).not.toHaveBeenCalled();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    /** 프리웜처럼 기다리는 사람이 없는 호출자는 더 긴 마감을 넘길 수 있다. */
+    it('호출자가 넘긴 마감을 그대로 쓴다', async () => {
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        vi.useFakeTimers();
+        try {
+            callAiProviderRouter.mockReturnValue(new Promise<string>(() => {}));
+
+            const promise = rewriteToPlainLanguage(
+                ANALYSIS,
+                'AAPL',
+                'ko',
+                undefined,
+                undefined,
+                30_000
+            );
+            await vi.advanceTimersByTimeAsync(30_000);
+            expect(await promise).toBeNull();
+            expect(errSpy).toHaveBeenCalledWith(
+                '[analysisPlain] deadline exceeded',
+                { ms: 30_000 }
+            );
+        } finally {
+            vi.useRealTimers();
+            errSpy.mockRestore();
+        }
+    });
+
+    /** 마감을 생략하면 사용자 경로 기본값인 15초를 그대로 쓴다. */
+    it('마감을 생략하면 15초를 쓴다', async () => {
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        vi.useFakeTimers();
+        try {
+            callAiProviderRouter.mockReturnValue(new Promise<string>(() => {}));
+
+            const promise = rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
+            await vi.advanceTimersByTimeAsync(15_000);
+            expect(await promise).toBeNull();
+            expect(errSpy).toHaveBeenCalledWith(
+                '[analysisPlain] deadline exceeded',
+                { ms: 15_000 }
+            );
+        } finally {
+            vi.useRealTimers();
+            errSpy.mockRestore();
+        }
+    });
+
     it('로케일이 캐시 키를 가른다', async () => {
         await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
         const koKey = cacheGet.mock.calls[0][0];

@@ -20,6 +20,11 @@ export const TAG_LABEL_MAP: Record<string, string> = {
     parabolic_sar_flip: 'signalType.parabolic_sar_flip',
     keltner_upper_breakout: 'signalType.keltner_upper_breakout',
     squeeze_momentum_bullish: 'signalType.squeeze_momentum_bullish',
+    // 가격 행동 이벤트 (core 1.18.0)
+    new_52w_high: 'signalType.new_52w_high',
+    new_52w_low: 'signalType.new_52w_low',
+    gap_up: 'signalType.gap_up',
+    gap_down: 'signalType.gap_down',
 };
 
 /**

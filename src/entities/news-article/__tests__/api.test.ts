@@ -30,6 +30,21 @@ vi.mock('@/entities/earnings-report', () => ({
     getNextEarningsReport: vi.fn(),
 }));
 
+// 매크로 캘린더 헬퍼 — 호출처가 결과를 그대로 `macroCalendar`로 넘기는지 확인한다.
+vi.mock('@/entities/economy/api/loadNewsMacroCalendar', () => ({
+    loadNewsMacroCalendar: vi.fn(async () => [
+        {
+            date: '2026-09-30 18:00:00',
+            event: 'Fed Interest Rate Decision',
+            impact: 'High',
+            actual: null,
+            estimate: null,
+            previous: null,
+            unit: '%',
+        },
+    ]),
+}));
+
 vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
     resolveMarketProfile: vi.fn(),
 }));
@@ -824,6 +839,20 @@ describe('prewarmNews', () => {
         );
     });
 
+    it('passes the macro calendar helper result as macroCalendar', async () => {
+        await prewarmNews('AAPL', 'Apple Inc.', false);
+
+        expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({
+                macroCalendar: [
+                    expect.objectContaining({
+                        event: 'Fed Interest Rate Decision',
+                    }),
+                ],
+            })
+        );
+    });
+
     it('static guard: the seam source (api.ts) contains no request-context calls', () => {
         expect(SEAM_SOURCE).not.toMatch(
             /next\/headers|getCurrentUser|isBot|cookies|draftMode/
@@ -1035,12 +1064,26 @@ describe('prewarmNews', () => {
                 db,
             } as unknown as ReturnType<typeof getDatabaseClient>);
 
+            // 적재는 fail-open이라 분석은 그대로 진행되지만, **왜 DB가 비었는지**를
+            // 호출부가 알아야 한다 — `resolveHarvest`가 "30일간 뉴스 없음"(24h
+            // backoff)과 "오늘 못 가져옴"(30분 티어)을 여기서만 구분할 수 있다.
             await expect(
                 prewarmNews('AAPL', 'Apple Inc.', false)
-            ).resolves.toEqual(SUBMITTED_RESULT);
+            ).resolves.toEqual({ ...SUBMITTED_RESULT, newsFetchFailed: true });
 
             expect(mockRunNewsAnalysis).toHaveBeenCalledTimes(1);
             errorSpy.mockRestore();
+        });
+
+        it('적재가 성공하면 newsFetchFailed를 붙이지 않는다', async () => {
+            mockIngestNewsForSymbol.mockResolvedValue({
+                fresh: [],
+                upsertSettled: [],
+            });
+
+            await expect(
+                prewarmNews('AAPL', 'Apple Inc.', false)
+            ).resolves.not.toHaveProperty('newsFetchFailed');
         });
 
         // 감사 재검토 #2 회귀 가드. 2인자 호출로 되돌리면 180일 기본값이 살아나

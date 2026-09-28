@@ -13,6 +13,8 @@ import { LocaleProvider } from '@/shared/i18n/LocaleContext';
 import { pickMessages } from '@/shared/i18n/loadMessages';
 import { isLocale, LOCALE_HREFLANG } from '@/shared/i18n/locales';
 import Script from 'next/script';
+import { GoogleAdsTag } from '@/app/_components/GoogleAdsTag';
+import { GOOGLE_ADS_ID } from '@/shared/config/googleAds';
 import { SITE_URL } from '@/shared/lib/seo';
 import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
 import { AI_CLIENT_PATHS } from './aiClientPaths';
@@ -93,6 +95,9 @@ export default async function AiRootLayout({
                         </ReactQueryProvider>
                     </NextIntlClientProvider>
                 </LocaleProvider>
+                {/* Google Ads 전환 측정(질문 전송·가입). 판단 근거는
+                    shared/config/googleAds.ts. */}
+                {GOOGLE_ADS_ID && <GoogleAdsTag id={GOOGLE_ADS_ID} />}
             </body>
         </html>
     );

@@ -25,6 +25,21 @@ vi.mock('@/entities/earnings-report', () => ({
     getNextEarningsReport: vi.fn(),
 }));
 
+// 매크로 캘린더 헬퍼 — 호출처가 결과를 그대로 `macroCalendar`로 넘기는지 확인한다.
+vi.mock('@/entities/economy/api/loadNewsMacroCalendar', () => ({
+    loadNewsMacroCalendar: vi.fn(async () => [
+        {
+            date: '2026-09-30 18:00:00',
+            event: 'Fed Interest Rate Decision',
+            impact: 'High',
+            actual: null,
+            estimate: null,
+            previous: null,
+            unit: '%',
+        },
+    ]),
+}));
+
 vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
@@ -251,6 +266,24 @@ describe('submitNewsAnalysisAction 함수는', () => {
         );
     });
 
+    it('매크로 캘린더 헬퍼 결과를 macroCalendar로 전달한다', async () => {
+        mockListBySymbol.mockResolvedValue([ANALYZED_ROW]);
+        mockGetNextEarningsReport.mockResolvedValue(null);
+        mockRunNewsAnalysis.mockResolvedValueOnce(DONE_RESULT);
+
+        await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID, 'ko');
+
+        expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({
+                macroCalendar: [
+                    expect.objectContaining({
+                        event: 'Fed Interest Rate Decision',
+                    }),
+                ],
+            })
+        );
+    });
+
     it('underlying 함수의 결과를 그대로 반환한다', async () => {
         mockListBySymbol.mockResolvedValue([]);
         mockGetNextEarningsReport.mockResolvedValue(null);
@@ -398,7 +431,15 @@ describe('submitNewsAnalysisAction 함수는', () => {
         });
     });
 
-    it('passes skipEnqueueIfMiss: true to siglens-core when request UA is a bot', async () => {
+    /**
+     * 2026-09-27: `skipEnqueueIfMiss`는 더 이상 요청 UA로 갈리지 않는다 — 봇의
+     * 캐시 미스도 사람과 같은 본문을 생성해야 한다(route.ts 상단 불변식).
+     * 봇 UA를 넣어도 `false`가 나와야 한다는 게 바로 그 회귀 가드다: `isBot(...)`
+     * 기반 분기가 되돌아오면 이 테스트가 `true`를 보고 실패한다.
+     */
+    it('passes skipEnqueueIfMiss: false to siglens-core even when request UA is a bot', async () => {
+        // 액션은 더 이상 headers()를 읽지 않는다. 이 봇 UA는 죽은 설정이 아니라
+        // 회귀 가드다: isBot(headers) 기반 분기가 되돌아오면 여기서 true가 나와 실패한다.
         mockHeaders.mockResolvedValueOnce(
             new Headers({
                 'user-agent':
@@ -409,7 +450,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
         await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID, 'ko');
 
         expect(mockRunNewsAnalysis).toHaveBeenCalledWith(
-            expect.objectContaining({ skipEnqueueIfMiss: true })
+            expect.objectContaining({ skipEnqueueIfMiss: false })
         );
     });
 

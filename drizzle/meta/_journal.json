@@ -260,6 +260,13 @@
       "when": 1789706470792,
       "tag": "0036_snapshot_first_generated_at",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1790248668848,
+      "tag": "0037_symbol_views_daily",
+      "breakpoints": true
     }
   ]
 }

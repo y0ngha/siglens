@@ -30,7 +30,7 @@ cross-widget import는 현재 허용되지만, `symbol-page` 슬라이스는 Spe
 이전 완료:
 - `useAssetInfo` → `@/entities/ticker/hooks/useAssetInfo` (Spec-2 PR-A)
 - `useBars` → `@/entities/bars/hooks/useBars` (Spec-2 PR-A)
-- `BotBlockedError` → `@/shared/lib/BotBlockedError` (Spec-2 PR-A)
+- `CacheOnlyMissError` (formerly `BotBlockedError`) → `@/shared/lib/CacheOnlyMissError` (Spec-2 PR-A; renamed 2026-09-27 bot-analysis-parity — no longer bot-related, purely an options `cacheOnly` cache miss)
 - `useAnalysisProgress`, `ANALYSIS_PHASES`, `ANALYSIS_TIPS` → `@/widgets/analysis/hooks/useAnalysisProgress` (Spec-2 PR-B1)
 - `CooldownNotice` → `@/widgets/analysis/model/types` (Spec-2 PR-B1)
 - `symbol-page` 전체 → `src/views/symbol/` (컴포지션), `src/features/symbol-model/` (모델 상태), `src/shared/ui/CrossLinkCards` (공용 UI) (Spec-2 PR-B2)

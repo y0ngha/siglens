@@ -52,4 +52,36 @@ describe('ForgotPasswordForm', () => {
             screen.queryByRole('button', { name: '재설정 링크 보내기' })
         ).not.toBeInTheDocument();
     });
+
+    it('shows a mapped message for a known error code', () => {
+        setFormState({ submitted: false, errorCode: 'invalid_email' });
+        render(<ForgotPasswordForm />);
+        expect(screen.getByRole('alert')).toHaveTextContent(
+            '올바른 이메일 형식이 아닙니다'
+        );
+    });
+
+    it('falls back to the generic invalid-email message for an unrecognized error code', () => {
+        setFormState({
+            submitted: false,
+            errorCode: 'totally_unknown_code',
+        });
+        render(<ForgotPasswordForm />);
+        expect(screen.getByRole('alert')).toHaveTextContent(
+            '올바른 이메일 형식이 아닙니다'
+        );
+    });
+
+    it('does not show a field error when there is no errorCode', () => {
+        setFormState({ submitted: false });
+        render(<ForgotPasswordForm />);
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+
+    it('moves focus into the success panel once submitted becomes true', () => {
+        const { rerender } = render(<ForgotPasswordForm />);
+        setFormState({ submitted: true });
+        rerender(<ForgotPasswordForm />);
+        expect(screen.getByRole('status').firstElementChild).toHaveFocus();
+    });
 });

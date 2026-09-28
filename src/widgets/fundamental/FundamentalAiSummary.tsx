@@ -16,7 +16,6 @@ import {
 import { useFundamentalAnalysis } from './hooks/useFundamentalAnalysis';
 import { FundamentalAiSummaryError } from './FundamentalAiSummaryError';
 import { FundamentalAiSummarySkeleton } from './FundamentalAiSummarySkeleton';
-import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
 import {
     HEADING_SECTION,
@@ -188,10 +187,6 @@ export function FundamentalAiSummary({
 
     if (state.status === 'loading') {
         return <FundamentalAiSummarySkeleton />;
-    }
-
-    if (state.status === 'bot_blocked') {
-        return <BotBlockedNotice />;
     }
 
     if (state.status === 'error') {

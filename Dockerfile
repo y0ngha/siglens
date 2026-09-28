@@ -92,10 +92,12 @@ COPY --chown=node:node --from=builder /app/node_modules/@img ./node_modules/@img
 RUN node -e "require.resolve('sharp')" || (echo 'FAIL: sharp가 node_modules에 없음' && exit 1)
 # ISR 캐시 핸들러 (production .mjs만, 테스트 제외) — standalone에 자동 포함되지 않아 명시 복사.
 COPY --chown=node:node --from=builder /app/cache-handler/*.mjs ./cache-handler/
-# AWS SDK + 그 의존 top-level 5개 (격리 require 시뮬로 확정: @aws-sdk/client-s3 로드에 필요).
+# AWS SDK + 그 의존 top-level 4개 (격리 require 시뮬로 확정: @aws-sdk/client-s3 로드에 필요).
+# ⚠️ 목록은 SDK 버전에 따라 바뀐다. client-s3 3.1138에서 `@aws-crypto/*` 의존이 사라져
+# node_modules/@aws-crypto 자체가 없어졌다 — 없는 경로를 COPY하면 이미지 빌드가 실패한다.
+# SDK를 올릴 때는 이 목록만 복사한 격리 디렉터리에서 S3Client로 GET/PUT을 실제로 보내 확인할 것.
 COPY --chown=node:node --from=builder /app/node_modules/@aws-sdk ./node_modules/@aws-sdk
 COPY --chown=node:node --from=builder /app/node_modules/@smithy ./node_modules/@smithy
-COPY --chown=node:node --from=builder /app/node_modules/@aws-crypto ./node_modules/@aws-crypto
 COPY --chown=node:node --from=builder /app/node_modules/@aws ./node_modules/@aws
 COPY --chown=node:node --from=builder /app/node_modules/tslib ./node_modules/tslib
 # 누락 시 즉시 빌드 실패(런타임 ENOSPC보다 빌드 실패가 낫다).

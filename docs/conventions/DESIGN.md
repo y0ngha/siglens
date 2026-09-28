@@ -446,7 +446,7 @@ className="text-[#1a2b3c]"
 | 크롬 | 심볼 상단(브레드크럼·탭) · 차트 제목 줄 | 전폭 `px-4` | 뷰포트 기준 16px |
 | 본문 | 홈·마켓·뉴스·경제 | `.page-container` | 1200px 중앙, 좌우 1rem(sm 1.5rem) |
 | 본문 | 심볼 서브탭(뉴스·펀더멘털·종합…) | `mx-auto w-full max-w-5xl px-4` | 1024px 중앙, 좌우 1rem |
-| 본문 | ai 호스트 `/about` | `mx-auto w-full max-w-4xl px-4` | 896px 중앙 — 2열 카드 그리드가 있는 소개 페이지. 대화 표면(ChatShell·EmptyState)은 `max-w-3xl` |
+| 본문 | `/about`(siglens.io·ai 호스트 둘 다) | `mx-auto w-full max-w-4xl px-4` | 896px 중앙 — 2열 카드 그리드가 있는 소개 페이지. 대화 표면(ChatShell·EmptyState)은 `max-w-3xl` |
 
 **두 층이 어긋나 보이는 것은 의도다.** 한때 크롬도 본문 폭을 따라갔는데, 기본 진입 탭인
 차트가 자기 제목 줄을 전폭으로 그리는 탓에(캔버스 좌단에 맞추려고) 넓은 화면에서 크롬만

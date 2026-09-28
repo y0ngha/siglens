@@ -1,6 +1,5 @@
 'use server';
 
-import { headers } from 'next/headers';
 import type { Locale } from '@/shared/i18n/locales';
 import {
     runNewsAnalysis,
@@ -13,6 +12,7 @@ import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import { NEWS_ANALYSIS_LOOKBACK_MS } from '../lib/newsLookback';
 import { buildAnalysisNewsItems } from '../lib/buildAnalysisNewsItems';
 import { getNextEarningsReport } from '@/entities/earnings-report';
+import { loadNewsMacroCalendar } from '@/entities/economy/api/loadNewsMacroCalendar';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import {
     resolveTierAndByok,
@@ -20,7 +20,6 @@ import {
     buildGateError,
 } from '@/shared/lib/byokGate';
 import { caughtAnalysisErrorCode } from '@/shared/lib/aiProviderFailure';
-import { isBot } from '@/shared/api/isBot';
 import { isE2E } from '@/shared/api/e2eEnv';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
@@ -62,9 +61,6 @@ export async function submitNewsAnalysisAction(
                 await import('@/shared/api/e2eAnalysisStub');
             return e2eCachedNews();
         }
-        const requestHeaders = await headers();
-        const skipEnqueueIfMiss = isBot(requestHeaders);
-
         const user = await getCurrentUser();
         const userId = user?.id ?? null;
 
@@ -81,9 +77,10 @@ export async function submitNewsAnalysisAction(
         const { db } = getDatabaseClient();
         const newsRepo = new DrizzleNewsRepository(db);
 
-        const [rows, next] = await Promise.all([
+        const [rows, next, macroCalendar] = await Promise.all([
             newsRepo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS),
             getNextEarningsReport(symbol, db),
+            loadNewsMacroCalendar(),
         ]);
 
         // The per-card stage and 30-day window above are untouched — buildAnalysisNewsItems
@@ -101,9 +98,14 @@ export async function submitNewsAnalysisAction(
             modelId,
             news: enrichedNews,
             upcomingCalendar: next !== null ? [next] : [],
+            // overall 뉴스 축과 같은 헬퍼 — 캐시 키 일치 불변식.
+            macroCalendar,
             tier: gate.tier,
             reasoning: resolveReasoning(gate.tier, reasoning),
-            skipEnqueueIfMiss,
+            // 2026-09-27: 더 이상 UA로 가르지 않는다 — 봇의 캐시 미스도 사람과
+            // 같은 본문을 생성해야 한다(siglens/src/app/api/analysis/stream/route.ts
+            // 상단 불변식과 동일 원칙).
+            skipEnqueueIfMiss: false,
             assetClass,
             // core는 통화를 심볼에서 추론하지 않는다 — 한국 종목 프레이밍·실적 추정 통화.
             currency: descriptor.priceFormat.currency,

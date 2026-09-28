@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, renderHook, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ReactQueryProvider } from '@/app/providers';
 
@@ -22,15 +22,15 @@ vi.mock('@/shared/lib/reloadOnVersionSkew', () => ({
     isVersionSkewError,
 }));
 
-let capturedClient: ReturnType<typeof useQueryClient> | undefined;
-function ClientCapture() {
-    capturedClient = useQueryClient();
-    return null;
+/** The QueryClient the provider creates, read through the real context. */
+function renderProviderClient() {
+    return renderHook(() => useQueryClient(), {
+        wrapper: ReactQueryProvider,
+    }).result.current;
 }
 
 describe('ReactQueryProvider', () => {
     beforeEach(() => {
-        capturedClient = undefined;
         reloadOnVersionSkew.mockClear();
         isVersionSkewError.mockClear();
     });
@@ -56,26 +56,18 @@ describe('ReactQueryProvider', () => {
     });
 
     it('calls reloadOnVersionSkew when a query fails', () => {
-        render(
-            <ReactQueryProvider>
-                <ClientCapture />
-            </ReactQueryProvider>
-        );
+        const client = renderProviderClient();
 
-        capturedClient?.getQueryCache().config.onError?.(SKEW, {} as never);
+        client.getQueryCache().config.onError?.(SKEW, {} as never);
 
         expect(reloadOnVersionSkew).toHaveBeenCalledWith(SKEW);
     });
 
     it('calls reloadOnVersionSkew when a mutation fails', () => {
-        render(
-            <ReactQueryProvider>
-                <ClientCapture />
-            </ReactQueryProvider>
-        );
+        const client = renderProviderClient();
 
-        capturedClient
-            ?.getMutationCache()
+        client
+            .getMutationCache()
             .config.onError?.(
                 SKEW,
                 undefined,
@@ -88,13 +80,9 @@ describe('ReactQueryProvider', () => {
     });
 
     it('does not retry a version-skew error but retries others once', () => {
-        render(
-            <ReactQueryProvider>
-                <ClientCapture />
-            </ReactQueryProvider>
-        );
+        const client = renderProviderClient();
 
-        const retry = capturedClient?.getDefaultOptions().queries?.retry as (
+        const retry = client.getDefaultOptions().queries?.retry as (
             failureCount: number,
             error: unknown
         ) => boolean;

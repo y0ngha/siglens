@@ -41,6 +41,24 @@ describe('tryReadPlainModelConfig', () => {
         });
     });
 
+    it('anthropic 모델이면 ANTHROPIC_CHAT_API_KEY를 고른다', () => {
+        vi.stubEnv('PLAIN_MODEL', 'claude-opus-5');
+        vi.stubEnv('ANTHROPIC_CHAT_API_KEY', 'an-key');
+        expect(tryReadPlainModelConfig()).toEqual({
+            model: 'claude-opus-5',
+            serverApiKey: 'an-key',
+        });
+    });
+
+    it('openai 모델이면 OPENAI_CHAT_API_KEY를 고른다', () => {
+        vi.stubEnv('PLAIN_MODEL', 'gpt-5.6-sol');
+        vi.stubEnv('OPENAI_CHAT_API_KEY', 'oa-key');
+        expect(tryReadPlainModelConfig()).toEqual({
+            model: 'gpt-5.6-sol',
+            serverApiKey: 'oa-key',
+        });
+    });
+
     it('모델을 바꿨는데 그 provider 키가 없으면 null', () => {
         vi.stubEnv('PLAIN_MODEL', 'gemini-3.5-flash-lite');
         vi.stubEnv('GEMINI_CHAT_API_KEY', '');
@@ -54,6 +72,18 @@ describe('tryReadPlainModelConfig', () => {
         vi.stubEnv('DEEPSEEK_CHAT_API_KEY', 'ds-key');
 
         expect(tryReadPlainModelConfig()?.model).toBe('deepseek-v4.1-flash');
+        expect(warn).toHaveBeenCalledOnce();
+        warn.mockRestore();
+    });
+
+    it('같은 프로세스 안에서 두 번째로 모르는 모델이 와도 경고는 1회만', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        vi.stubEnv('PLAIN_MODEL', 'not-a-model');
+        vi.stubEnv('DEEPSEEK_CHAT_API_KEY', 'ds-key');
+
+        tryReadPlainModelConfig();
+        tryReadPlainModelConfig();
+
         expect(warn).toHaveBeenCalledOnce();
         warn.mockRestore();
     });

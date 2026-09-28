@@ -2,14 +2,15 @@
 name: 이동평균선 대순환 분석
 description: 단기/중기/장기 이동평균선 배열로 스테이지를 판별하고 그랜빌의 법칙에 따른 매매 신호를 분석하는 전략
 type: strategy
+category: neutral
 indicators: ['ma']
-confidence_weight: 0.8
+confidence_weight: 0.55
 gating:
   tier: gated
   signal_kind: event
   triggers: [golden_cross, death_cross]
-token_cost: 1545
-digest_hash: "1e16fb4d"
+token_cost: 1582
+digest_hash: "c0b55cef"
 ---
 
 ## Overview
@@ -164,6 +165,12 @@ The gap between the three lines is narrowing → the trend is losing momentum. I
 
 ---
 
+## Confidence Weight Rationale
+
+confidence_weight: 0.55 — Simple MA-crossover edges vanished out of sample after 1986 (Sullivan, Timmermann & White 1999) — use as a regime description, not a timing edge. The stage framework is useful for describing where the trend stands; crosses and Granville signals are not a proven timing signal on their own.
+
+---
+
 ## AI Analysis Instructions
 
 **Data Source Rule (mandatory)**: Read values exclusively from the `- MA:` line in the indicator section. These are SMA (Simple Moving Average) values.
@@ -192,8 +199,9 @@ When analyzing the current MA Cycle results, include the following:
 - **Range-Bound Assessment**: If a pattern of short Stages 1 and 4 with repeated Stages 2, 3, 5, and 6 is visible, mention the possibility of a range-bound market and present the breakout conditions.
 
 <!-- PROMPT_DIGEST:START -->
-이동평균선 대순환 분석 (confidence_weight 0.8)
+이동평균선 대순환 분석 (confidence_weight 0.55)
 Classify market into 6 stages by ordering of short MA5 / medium MA20 / long MA60. Granville's Law gives 8 buy/sell signals. Analyze via 3 dimensions: ordering (identify situation), spacing (probability of next-stage transition), slope (spot false signals).
+Simple MA-crossover edges vanished out of sample after 1986 (Sullivan, Timmermann & White 1999) — use as a regime description, not a timing edge.
 
 ### DATA SOURCE RULE (mandatory)
 Read ONLY from the `- MA:` indicator line (SMA values). Short=MA(5), Medium=MA(20), Long=MA(60). Do NOT use EMA (`- EMA:` is for MACD 대순환). Using EMA makes both strategies identical and meaningless.

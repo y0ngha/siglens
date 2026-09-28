@@ -8,7 +8,7 @@ import {
     parseReplayLine,
     type ReplayScenario,
     type ReplayTool,
-} from './replayScript';
+} from '@/shared/lib/replay/replayScript';
 
 type AboutT = Awaited<ReturnType<typeof getTranslations>>;
 

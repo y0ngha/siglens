@@ -14,6 +14,7 @@ import {
 } from '../lib/errorCodes';
 import { guestHistory } from '../lib/guestHistory';
 import { parseSseFrame, splitFrames } from '../lib/parseSseFrames';
+import { trackAdsConversion } from '@/shared/lib/googleAds';
 
 export interface ToolActivityItem {
     id: string;
@@ -483,7 +484,8 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
     );
 
     const guest = options.guest === true;
-    const send = useCallback(
+    /** Posts a user message. Untracked — `retry` replays through here so a retried question is not a second ad conversion. */
+    const submit = useCallback(
         (message: string) => {
             const snapshot = messagesRef.current;
             guestRegenerateRef.current = false;
@@ -508,6 +510,18 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
             );
         },
         [run, updateMessages, guest]
+    );
+    /**
+     * A new question from the composer — the only path that records the
+     * `chatQuestion` ad conversion. `edit`, `regenerate` and `retry` re-ask an
+     * existing question, so they go through `run`/`submit` without counting.
+     */
+    const send = useCallback(
+        (message: string) => {
+            trackAdsConversion('chatQuestion');
+            return submit(message);
+        },
+        [submit]
     );
     const regenerate = useCallback(() => {
         const snapshot = messagesRef.current;
@@ -572,11 +586,11 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
         // A guest's regenerate goes out as `send` (see `regenerate`): replaying
         // that body through `send` would put the question on screen twice.
         if (!body || guestRegenerateRef.current) return regenerate();
-        if (body.action === 'send') return send(String(body.message ?? ''));
+        if (body.action === 'send') return submit(String(body.message ?? ''));
         if (body.action === 'edit')
             return edit(Number(body.editSeq), String(body.message ?? ''));
         return run({ action: 'regenerate' }, false, messagesRef.current);
-    }, [regenerate, send, edit, run]);
+    }, [regenerate, submit, edit, run]);
 
     return {
         messages,

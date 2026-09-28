@@ -129,6 +129,26 @@ describe('getAssetInfo — crypto resolution paths', () => {
         expect(searchBySymbolMock).not.toHaveBeenCalled();
     });
 
+    it('DB hit with empty name (crypto_assets seed row missing name) → falls back to fetchCryptoQuoteName', async () => {
+        const dbRecord: CryptoAssetRecord = {
+            symbol: 'BTC',
+            name: '',
+            koreanName: null,
+            circulatingSupply: 19_000_000,
+        };
+        getCryptoAssetMock.mockResolvedValue(dbRecord);
+        fetchCryptoQuoteNameMock.mockResolvedValue('Bitcoin (from quote)');
+
+        const result = await getAssetInfo('BTC');
+
+        expect(result).toEqual({
+            symbol: 'BTC',
+            name: 'Bitcoin (from quote)',
+            marketProfile: 'crypto',
+        });
+        expect(fetchCryptoQuoteNameMock).toHaveBeenCalledWith('BTC');
+    });
+
     it('DB miss + FMP-list HIT with empty name → falls back to fetchCryptoQuoteName', async () => {
         getCryptoAssetMock.mockResolvedValue(null);
         fmpCryptoMembershipMock.mockResolvedValue({ name: '' });

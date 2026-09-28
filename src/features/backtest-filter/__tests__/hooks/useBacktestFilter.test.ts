@@ -116,6 +116,9 @@ describe('useBacktestFilter', () => {
             result.current.setActiveTab(ALL_TAB);
         });
 
+        // explicitTab(사용자가 방금 고른 값)이 urlTab보다 우선해야 한다 — 순서가
+        // 뒤집히면 URL에 남은 옛 ?ticker=가 방금 고른 "전체"를 도로 덮어쓴다.
+        expect(result.current.activeTab).toBe(ALL_TAB);
         expect(mockReplace).toHaveBeenCalledWith('/backtesting', {
             scroll: false,
         });
@@ -139,5 +142,24 @@ describe('useBacktestFilter', () => {
         );
 
         expect(result.current.filtered).toEqual([]);
+    });
+
+    it('하이드레이션 렌더는 ?ticker=가 있어도 전체 탭(서버 스냅샷)을 먼저 쓰고, 그 다음 URL 값으로 전환한다', () => {
+        // getServerUrlTicker가 하이드레이션 렌더에 쓰이지 않으면 정적 HTML(전체
+        // 탭 기준)과 클라이언트 첫 렌더(MSFT 기준)가 어긋난다.
+        window.history.pushState({}, '', '/backtesting?ticker=MSFT');
+        const seen: string[] = [];
+
+        renderHook(
+            () => {
+                const r = useBacktestFilter(cases, tickers);
+                seen.push(r.activeTab);
+                return r;
+            },
+            { ...withIntl, hydrate: true }
+        );
+
+        expect(seen[0]).toBe(ALL_TAB);
+        expect(seen[seen.length - 1]).toBe('MSFT');
     });
 });

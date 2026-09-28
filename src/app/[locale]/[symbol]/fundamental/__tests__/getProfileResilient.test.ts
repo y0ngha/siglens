@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { FundamentalProfile } from '@y0ngha/siglens-core';
 import { getProfileResilient } from '../getProfileResilient';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
+import { getProfile } from '../fundamentalData';
 
 // getProfileResilient wraps staticSymbolCache(getProfile); mock the cache to
 // drive the three outcomes (profile / null / throw) without FMP or Redis.
@@ -13,6 +14,7 @@ vi.mock('@/shared/cache/staticSymbolCache', () => ({
 vi.mock('../fundamentalData', () => ({ getProfile: vi.fn() }));
 
 const mockCache = vi.mocked(staticSymbolCache);
+const mockGetProfile = vi.mocked(getProfile);
 
 describe('getProfileResilient', () => {
     beforeEach(() => {
@@ -40,6 +42,21 @@ describe('getProfileResilient', () => {
             profile: null,
             degraded: false,
         });
+    });
+
+    it('passes a fetcher that delegates to getProfile(upper) — the actual cache-miss path', async () => {
+        const profile = {
+            symbol: 'AAPL',
+            sector: 'Technology',
+        } as unknown as FundamentalProfile;
+        mockGetProfile.mockResolvedValue(profile);
+        mockCache.mockImplementation(async (_key, _tag, fetcher) => fetcher());
+
+        expect(await getProfileResilient('AAPL')).toEqual({
+            profile,
+            degraded: false,
+        });
+        expect(mockGetProfile).toHaveBeenCalledWith('AAPL');
     });
 
     it('rethrows DYNAMIC_SERVER_USAGE (Next.js control-flow signal, not an infra failure)', async () => {

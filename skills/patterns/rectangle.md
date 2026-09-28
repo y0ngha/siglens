@@ -5,7 +5,7 @@ type: pattern
 category: neutral
 pattern: rectangle
 indicators: []
-confidence_weight: 0.65
+confidence_weight: 0.7
 display:
   chart:
     show: true
@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [rectangle]
-token_cost: 822
-digest_hash: "18b63a1c"
+token_cost: 842
+digest_hash: "f0d8bc49"
 ---
 
 ## Detection Criteria
@@ -38,7 +38,7 @@ digest_hash: "18b63a1c"
 
 ## Confidence Weight Rationale
 
-confidence_weight: 0.65 — Rectangle patterns have a lower confidence weight because the breakout direction is inherently unpredictable — price can break in either direction with roughly equal probability. However, Bulkowski's research shows that Rectangle Tops produce an average 51% profit when they break out, making them the most profitable chart pattern by average return. The pattern's value lies in its clear, objective boundaries and well-defined risk parameters, not in directional prediction.
+confidence_weight: 0.7 — Bulkowski (thepatternsite.com/recttops.html and rectbots.html, bull market): breakouts are upward 63% of the time for Rectangle Tops and 59% for Rectangle Bottoms — not a coin flip. Break-even failure rates: Tops 15% (up) / 34% (down), Bottoms 15% (up) / 24% (down); 78% / 79% of upward breakouts meet the price target; performance rank 4 of 39 (Tops, up) and 8 of 39 (Bottoms, up). Weight: median of the four variant failure rates (19.5%) → 11–20% → 0.7. Downward breakouts are clearly weaker (Tops rank 32 of 36 down), so weight a downside break less. The pattern's value lies in its clear, objective boundaries and well-defined risk parameters.
 
 Factors that increase confidence:
 - 3+ touches on both support and resistance
@@ -59,7 +59,7 @@ Factors that decrease confidence:
 - **Volume contraction during formation**: Volume should gradually decline as the rectangle develops. This compression precedes a decisive breakout. Sustained high volume within the range suggests ongoing distribution or accumulation.
 - **Breakout with volume surge**: A close outside the rectangle boundary accompanied by significantly increased volume confirms the directional move. This is the most critical signal — low-volume breakouts often fail.
 - **Touch count reliability**: More touches on support and resistance increase the significance of a breakout. However, too many touches (> 6-7) without resolution may indicate the pattern is "stale" and losing energy.
-- **Prior trend context**: The prior trend provides a continuation bias. Rectangle Tops in uptrends more often break upward; Rectangle Bottoms in downtrends more often break downward. But reversal breakouts, while less frequent, can be powerful.
+- **Prior trend context**: Upward breakouts dominate regardless of the prior trend (Bulkowski: Tops 63%, Bottoms 59% upward) — a Rectangle Top usually continues up, while a Rectangle Bottom more often reverses up than continues down. Upward breakouts also perform far better than downward ones.
 - **Accumulation/Distribution signals**: In Rectangle Tops, check for accumulation signs (higher volume on bounces from support). In Rectangle Bottoms, check for distribution signs (higher volume on rejections from resistance).
 
 ## False Positive Conditions
@@ -74,7 +74,7 @@ Factors that decrease confidence:
 
 - **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the broken boundary (resistance for an upside breakout, support for a downside breakdown); `extremeLevel` = the opposite boundary; `direction` = 'up' or 'down', matching the breakout side; `invalidationLevel` = the opposite boundary — the same level used as extremeLevel; a close back across it negates the breakout. When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Stop-loss reference level**: The opposite boundary of the rectangle from the breakout direction serves as the invalidation level. For an upward breakout, support is the stop reference. For a downward breakdown, resistance is the stop reference.
-- **Multiple targets**: Bulkowski's data shows that Rectangle Top breakouts often exceed the measured move target — consider using the full target as a minimum expectation.
+- **Target reliability**: Bulkowski (recttops.html): 78% of upward breakouts from Rectangle Tops reach the full measure-rule target, but only 54% of downward breakouts — do not treat the target as a minimum expectation.
 
 Note: These are analytical reference points for technical analysis, not trading recommendations.
 
@@ -89,7 +89,7 @@ When this pattern is detected, include the following in the analysis response:
 - **geometry**: Fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
-직사각형 (Rectangle) — continuation-or-reversal, confidence_weight 0.65. Horizontal support/resistance range; breakout direction ~equal probability.
+직사각형 (Rectangle) — continuation-or-reversal, confidence_weight 0.7. Horizontal support/resistance range; Bulkowski recttops/rectbots.html: breaks up 59–63%, up-breakout failure 15% (down 24–34%).
 
 ### Detection
 - Horizontal resistance: ≥2 touches at ~same price (within 2%).
@@ -107,7 +107,7 @@ When this pattern is detected, include the following in the analysis response:
 ### Grading
 - Increase: 3+ touches on both boundaries; volume declining during pattern with break surge; breakout aligns with prior trend; duration >20 bars; strong prior trend.
 - Decrease: <2 touches on either boundary; high/erratic volume; no clear prior trend; sloping boundaries; prior false breakouts.
-- Prior trend gives continuation bias (Top→up, Bottom→down more often), but reversal breakouts can be powerful.
+- Up-breaks dominate (Bulkowski: Tops 63%, Bottoms 59%) — Tops usually continue up, Bottoms more often reverse up; down-breaks perform worse.
 - Too many touches (>6–7) without resolution → pattern stale, losing energy.
 - Accumulation (higher volume on support bounces) in Tops; distribution (higher volume on resistance rejections) in Bottoms.
 

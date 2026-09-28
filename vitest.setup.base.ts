@@ -53,7 +53,9 @@ process.env.NEXT_PUBLIC_SITE_URL = 'https://siglens.io';
  * 드러났지만 나머지는 통과한 채로 비었다 — 더 나쁜 쪽이다.
  *
  * 그래서 `Storage` 전역 자체를 여기 정의한 클래스로 바꾸고 `localStorage`를 그 인스턴스로
- * 둔다. 테스트가 보는 `Storage.prototype`이 이 클래스의 프로토타입이 되므로 기존 스파이
+ * 둔다. 런타임과 무관하게 **무조건** 설치하므로, 네이티브 `localStorage`가 없는 Node 24
+ * (`.nvmrc`, 2026-09-24~)와 있는 Node 25+ 어느 쪽에서도 테스트가 같은 객체를 본다.
+ * 테스트가 보는 `Storage.prototype`이 이 클래스의 프로토타입이 되므로 기존 스파이
  * 15군데가 손대지 않고 다시 동작한다.
  *
  * **남의 프로토타입에 얹지 않는 이유**: jsdom과 Node의 `Storage.prototype`은 메서드가

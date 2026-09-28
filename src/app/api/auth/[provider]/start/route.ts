@@ -7,7 +7,10 @@ import {
     issueOAuthState,
 } from '@/features/auth-oauth';
 import { localePath, splitLocalePath } from '@/shared/i18n/locales';
-import { sanitizeNextPath } from '@/shared/lib/auth/redirect';
+import {
+    DEFAULT_REDIRECT_PATH,
+    sanitizeNextPath,
+} from '@/shared/lib/auth/redirect';
 
 interface StartRouteParams {
     params: Promise<{ provider: string }>;
@@ -23,9 +26,12 @@ export async function GET(
     // 사용자가 한국어 로그인 페이지로 튕긴다.
     const next = sanitizeNextPath(req.nextUrl.searchParams.get('next'));
     const loginUrl = new URL(
-        `${localePath(splitLocalePath(next).locale, '/login')}?error=oauth_unknown`,
+        localePath(splitLocalePath(next).locale, '/login'),
         req.url
     );
+    loginUrl.searchParams.set('error', 'oauth_unknown');
+    // 돌아갈 곳(예: SiglensAI 핸드오프)을 로그인 화면에 되실어 준다.
+    if (next !== DEFAULT_REDIRECT_PATH) loginUrl.searchParams.set('next', next);
     if (!isOAuthProvider(provider)) {
         return NextResponse.redirect(loginUrl);
     }

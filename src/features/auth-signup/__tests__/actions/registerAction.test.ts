@@ -353,7 +353,7 @@ describe('registerAction', () => {
                     { error: null },
                     makeConsentFormData({ name: '   ' })
                 )
-            ).rejects.toThrow('NEXT_REDIRECT:/onboarding');
+            ).rejects.toThrow('NEXT_REDIRECT:/portfolio');
             expect(mockRegister).toHaveBeenCalledWith(
                 expect.objectContaining({ name: undefined }),
                 expect.objectContaining({
@@ -511,6 +511,14 @@ describe('registerAction', () => {
             expect(setSpy).toHaveBeenCalledWith(
                 expect.objectContaining({ value: 'tok' })
             );
+            expect(setSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    name: 'siglens_signup_conversion',
+                    value: '1',
+                    domain: 'siglens.io',
+                    httpOnly: false,
+                })
+            );
         });
 
         it('redirect 제어 신호는 에러 로그로 기록하지 않는다', async () => {
@@ -527,7 +535,7 @@ describe('registerAction', () => {
 
             await expect(
                 registerAction({ error: null }, makeConsentFormData())
-            ).rejects.toThrow('NEXT_REDIRECT:/onboarding');
+            ).rejects.toThrow('NEXT_REDIRECT:/portfolio');
 
             expect(errorSpy).not.toHaveBeenCalled();
             errorSpy.mockRestore();
@@ -535,7 +543,7 @@ describe('registerAction', () => {
     });
 
     describe('가입 후 라우팅 정책', () => {
-        it('돌아갈 곳(next)이 없으면 온보딩 화면으로 리다이렉트한다', async () => {
+        it('돌아갈 곳(next)이 없으면 /portfolio로 리다이렉트한다', async () => {
             mockRegister.mockResolvedValue({ ok: true, user: FAKE_USER });
             mockLogin.mockResolvedValue({
                 ok: true,
@@ -545,7 +553,7 @@ describe('registerAction', () => {
             });
             await expect(
                 registerAction({ error: null }, makeConsentFormData())
-            ).rejects.toThrow('NEXT_REDIRECT:/onboarding');
+            ).rejects.toThrow('NEXT_REDIRECT:/portfolio');
         });
 
         it('특정 페이지(next=/AAPL)에서 가입했으면 그 페이지로 리다이렉트한다', async () => {
@@ -562,6 +570,27 @@ describe('registerAction', () => {
                     makeConsentFormData({ next: '/AAPL' })
                 )
             ).rejects.toThrow('NEXT_REDIRECT:/AAPL');
+        });
+
+        /** 같은-호스트 `/api/auth/handoff`는 서버 fetch로 소진돼 ai 호스트로 가지 않는다. */
+        it('SiglensAI에서 가입했으면 ai 호스트 핸드오프 start URL로 리다이렉트한다', async () => {
+            mockRegister.mockResolvedValue({ ok: true, user: FAKE_USER });
+            mockLogin.mockResolvedValue({
+                ok: true,
+                user: FAKE_USER,
+                session: { id: 's1' } as never,
+                cookie: FAKE_COOKIE,
+            });
+            await expect(
+                registerAction(
+                    { error: null },
+                    makeConsentFormData({
+                        next: '/api/auth/handoff?to=ai&next=%2Fc%2Fabc',
+                    })
+                )
+            ).rejects.toThrow(
+                'NEXT_REDIRECT:https://ai.siglens.io/api/auth/handoff/start?next=%2Fc%2Fabc'
+            );
         });
     });
 });

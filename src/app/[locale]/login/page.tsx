@@ -3,9 +3,12 @@ import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
 import { Suspense } from 'react';
 import { setRequestLocale } from 'next-intl/server';
-import { AuthCardShell, AuthFormSkeleton } from '@/shared/ui/auth';
+import {
+    AuthCardShell,
+    AuthFormSkeleton,
+    AuthCrossLink,
+} from '@/shared/ui/auth';
 import type { Metadata } from 'next';
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { LoginContent } from './LoginContent';
 
 // noindex 페이지에도 canonical을 두는 이유: ?next=/path 같은 쿼리 변형 URL이 외부에 공유되더라도
@@ -62,21 +65,21 @@ export default async function LoginPage({
             footer={
                 <div className="space-y-2">
                     <p>
-                        <Link
+                        <AuthCrossLink
                             href="/forgot-password"
                             className="font-medium text-primary-400 underline-offset-4 hover:text-primary-300 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
                             {t('page.313efe')}
-                        </Link>
+                        </AuthCrossLink>
                     </p>
                     <p>
                         {t('page.15bb24')}{' '}
-                        <Link
+                        <AuthCrossLink
                             href="/signup"
                             className="font-medium text-primary-400 underline-offset-4 hover:text-primary-300 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
                             {t('page.49f561')}
-                        </Link>
+                        </AuthCrossLink>
                     </p>
                 </div>
             }

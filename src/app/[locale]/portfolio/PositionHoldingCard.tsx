@@ -15,6 +15,7 @@ import {
 } from '@/widgets/portfolio-position';
 import { formatSignedPercent } from '@/shared/lib/priceFormat';
 import { cn } from '@/shared/lib/cn';
+import { symbolLabel } from '@/shared/lib/symbolLabel';
 import type { PortfolioHoldingView } from '@/entities/portfolio';
 
 type HoldingCardData = Pick<
@@ -169,15 +170,8 @@ export function PositionHoldingCard({ holding }: PositionHoldingCardProps) {
                 data-testid="portfolio-holding-card"
                 className="flex flex-col items-center gap-3 rounded-lg bg-secondary-900/60 p-4 ring-1 ring-secondary-700 transition-colors group-hover:ring-secondary-600"
             >
-                <div className="flex w-full items-baseline justify-between gap-2">
-                    <span className="text-sm font-semibold text-secondary-100">
-                        {holding.symbol}
-                    </span>
-                    {holding.companyName && (
-                        <span className="truncate text-xs text-secondary-400">
-                            {holding.companyName}
-                        </span>
-                    )}
+                <div className="w-full truncate text-sm font-semibold text-secondary-100">
+                    {symbolLabel(holding.symbol, holding.companyName)}
                 </div>
 
                 {!isSettled && <CardSkeleton symbol={holding.symbol} />}

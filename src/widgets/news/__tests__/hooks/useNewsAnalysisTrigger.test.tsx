@@ -65,4 +65,19 @@ describe('useNewsAnalysisTrigger', () => {
 
         expect(ensureSpy).toHaveBeenCalledTimes(1);
     });
+
+    /**
+     * 수동 `<StrictMode>` wrapper는 RTL의 act 배치 방식 때문에 개발 모드의
+     * "setup→cleanup→setup" 이중 invoke를 실제로 재현하지 못할 수 있다. RTL의
+     * `reactStrictMode` 렌더 옵션은 React 자체의 이중 invoke 계약을 보다 충실히
+     * 재현하므로, 같은 불변조건(중복 분석 job 없음)을 별도 경로로 다시 검증한다.
+     */
+    it('reactStrictMode 렌더 옵션의 이중 invoke에서도 1회만 호출한다', () => {
+        renderHook(() => useNewsAnalysisTrigger('AAPL'), {
+            reactStrictMode: true,
+        });
+
+        expect(ensureSpy).toHaveBeenCalledTimes(1);
+        expect(ensureSpy).toHaveBeenCalledWith('AAPL');
+    });
 });

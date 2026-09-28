@@ -1,9 +1,9 @@
 import 'server-only';
-import { createYahooClient } from './createYahooClient';
+import { getYahooClient } from './createYahooClient';
 import type { StatementPeriod } from '@y0ngha/siglens-core';
 import { MS_PER_SECOND } from '@/shared/config/time';
 
-const yahooFinance = createYahooClient();
+const yahooFinance = getYahooClient();
 
 /**
  * 조회 하한. 연간은 재무제표 탭이 보여 주는 최대 연수를 덮고, 분기는 전년 동기 대비

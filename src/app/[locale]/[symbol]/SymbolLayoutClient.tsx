@@ -12,14 +12,19 @@ interface SymbolLayoutJailProps {
  * Sticky-footer jail wrapper shared by every `/[symbol]/*` route.
  *
  * **Every route — the chart (index) page included — is a growable `min-h` box,
- * never a clipped fixed-height one.** The whole `/[symbol]/*` tree has exactly
- * one scroller: the document. The chart route used to be the exception
+ * never a clipped fixed-height one.** The jail and `<main>` never scroll; the
+ * document does. The only other scroller in the tree is the chart route's
+ * desktop AI panel, which locks itself to `--symbol-chart-h` and scrolls its
+ * own overflow (see the aside comment in ChartContent).
+ *
+ * The chart route used to be the exception
  * (`md:h-[calc(...)] md:overflow-hidden`) so that ChartContent's `md:h-full`
  * aside could resolve a percentage height and scroll internally. That produced
  * three scrollbars on desktop — the jail-clipped `<main>`, the AI panel, and the
  * body — which the product owner reported against v0.79.0. The chart's definite
- * height now lives on the chart column itself (`--symbol-chart-h`, globals.css),
- * so no ancestor needs to establish one and nothing needs clipping.
+ * height now lives on the chart column and the AI panel themselves
+ * (`--symbol-chart-h`, globals.css), so no ancestor needs to establish one and
+ * nothing needs clipping.
  *
  * `min-h-[calc(...)]` keeps short pages tall enough for the sticky footer while
  * letting long pages expand and scroll the page naturally.

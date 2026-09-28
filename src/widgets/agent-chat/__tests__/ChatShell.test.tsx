@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
     afterAll,
     afterEach,
@@ -15,6 +16,19 @@ import ko from '../../../../messages/ko.json';
 
 const router = vi.hoisted(() => ({ refresh: vi.fn(), push: vi.fn() }));
 vi.mock('next/navigation', () => ({ useRouter: () => router }));
+// The Sidebar rendered by ChatShell is real (not mocked) — its rename/delete
+// forms call these server actions directly, so they're stubbed here the same
+// way Sidebar.test.tsx stubs them.
+const { deleteConversationAction, renameConversationAction } = vi.hoisted(
+    () => ({
+        deleteConversationAction: vi.fn(async () => ({ ok: true })),
+        renameConversationAction: vi.fn(async () => ({ ok: true })),
+    })
+);
+vi.mock('@/entities/chat-conversation/actions', () => ({
+    deleteConversationAction,
+    renameConversationAction,
+}));
 // `useHideOnScrollDown` now comes from the `@/widgets/layout` barrel, which
 // eagerly re-exports `LocaleSwitcher` too — that module reads next-intl's
 // navigation helpers at import time, which need a `redirect` export this
@@ -24,16 +38,25 @@ vi.mock('@/widgets/layout/LocaleSwitcher', () => ({
     LocaleSwitcher: () => null,
 }));
 
+interface MockStreamMessage {
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    seq?: number;
+    tools: unknown[];
+    status: 'complete' | 'streaming' | 'aborted' | 'error';
+}
+
 const mockStream = vi.hoisted(() => ({
     messages: [
         {
             id: '1',
-            role: 'user' as const,
+            role: 'user',
             content: 'q',
             tools: [],
-            status: 'complete' as const,
+            status: 'complete',
         },
-    ],
+    ] as MockStreamMessage[],
     conversationId: 'c1',
     status: 'idle' as 'idle' | 'streaming' | 'error',
     error: null as string | null,
@@ -68,12 +91,21 @@ vi.mock('@/features/agent-chat', async importOriginal => {
 
 import { ChatShell } from '@/widgets/agent-chat/ChatShell';
 
-const wrap = (ui: React.ReactElement) =>
-    render(
+// A shared QueryClient across a render+rerender pair: MessageList's
+// RelatedPages mounts a `useQuery` for any non-streaming assistant bubble
+// with content, so every render pass (initial and rerender alike) needs a
+// QueryClientProvider in its tree.
+const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+});
+const withProviders = (ui: React.ReactElement) => (
+    <QueryClientProvider client={queryClient}>
         <NextIntlClientProvider locale="ko" messages={ko}>
             {ui}
         </NextIntlClientProvider>
-    );
+    </QueryClientProvider>
+);
+const wrap = (ui: React.ReactElement) => render(withProviders(ui));
 
 // A fresh element each call: passing the SAME element reference to `rerender`
 // makes React bail out of re-rendering the subtree, so the effect under test
@@ -224,14 +256,42 @@ describe('ChatShell new-conversation list update', () => {
         ).toBeGreaterThan(0);
 
         mockStream.status = 'idle';
-        rerender(
-            <NextIntlClientProvider locale="ko" messages={ko}>
-                {shellTree()}
-            </NextIntlClientProvider>
-        );
+        rerender(withProviders(shellTree()));
         // Regression guard: a prior version called router.refresh() here, which
         // swapped in the /c/[id] tree and flashed its loading skeleton.
         expect(router.refresh).not.toHaveBeenCalled();
+        mockStream.conversationId = 'c1';
+    });
+
+    it('prepends the new conversation ahead of the existing ones, de-duplicating by id', () => {
+        mockStream.status = 'streaming';
+        mockStream.conversationId = 'c2';
+        wrap(
+            <ChatShell
+                conversationId="c2"
+                initialMessages={[]}
+                conversations={[
+                    { id: 'c1', title: '기존 대화', lastMessageAt: '' },
+                    { id: 'c2', title: '오래된 제목', lastMessageAt: '' },
+                ]}
+                signedIn
+                localePrefix=""
+                siteUrl="https://siglens.io"
+                currentPath="/c2"
+            />
+        );
+        act(() => {
+            captured.options?.onConversationCreated?.('c2', '새 제목');
+        });
+        // "c2" already existed under a stale title — the event replaces it
+        // rather than adding a duplicate row, and "기존 대화" (c1) survives.
+        expect(
+            screen.getAllByRole('link', { name: '새 제목' }).length
+        ).toBeGreaterThan(0);
+        expect(screen.queryByText('오래된 제목')).toBeNull();
+        expect(
+            screen.getAllByRole('link', { name: '기존 대화' }).length
+        ).toBeGreaterThan(0);
         mockStream.conversationId = 'c1';
     });
 });
@@ -414,6 +474,95 @@ describe('ChatShell — MessageList key (spec §3.9)', () => {
         mockStream.conversationId = 'c1';
     });
 
+    it('clicking a suggestion in EmptyState sends it through the stream', async () => {
+        mockStream.messages = [];
+        mockStream.send.mockClear();
+        await act(async () => {
+            wrap(
+                <ChatShell
+                    conversationId="c1"
+                    initialMessages={[]}
+                    conversations={[]}
+                    signedIn
+                    localePrefix=""
+                    siteUrl="https://siglens.io"
+                    currentPath="/c1"
+                    suggestions={Promise.resolve(['질문 하나'])}
+                />
+            );
+        });
+        const suggestion = await screen.findByRole('button', {
+            name: /질문 하나/,
+        });
+        fireEvent.click(suggestion);
+        expect(mockStream.send).toHaveBeenCalledWith('질문 하나');
+    });
+
+    it('the regenerate button on the last assistant answer calls stream.regenerate (never edit)', () => {
+        mockStream.messages = [
+            {
+                id: '1',
+                role: 'user' as const,
+                content: 'q',
+                tools: [],
+                status: 'complete' as const,
+            },
+            {
+                id: '2',
+                role: 'assistant' as const,
+                content: 'a',
+                tools: [],
+                status: 'complete' as const,
+            },
+        ];
+        mockStream.status = 'idle';
+        mockStream.regenerate.mockClear();
+        renderShell();
+        fireEvent.click(screen.getByRole('button', { name: '다시 생성' }));
+        expect(mockStream.regenerate).toHaveBeenCalledTimes(1);
+        expect(mockStream.edit).not.toHaveBeenCalled();
+    });
+
+    it('editing the last user message and submitting calls stream.edit with its seq and new text', () => {
+        mockStream.messages = [
+            {
+                id: '1',
+                role: 'user' as const,
+                content: '원래 질문',
+                seq: 3,
+                tools: [],
+                status: 'complete' as const,
+            },
+        ];
+        mockStream.status = 'idle';
+        mockStream.edit.mockClear();
+        renderShell();
+        fireEvent.click(screen.getByRole('button', { name: '수정' }));
+        const textarea = screen.getByLabelText('메시지 수정');
+        fireEvent.change(textarea, { target: { value: '수정된 질문' } });
+        fireEvent.submit(textarea.closest('form')!);
+        expect(mockStream.edit).toHaveBeenCalledWith(3, '수정된 질문');
+    });
+
+    it('submitting the composer sends the typed text through the stream', () => {
+        mockStream.messages = [
+            {
+                id: '1',
+                role: 'user' as const,
+                content: 'q',
+                tools: [],
+                status: 'complete' as const,
+            },
+        ];
+        mockStream.status = 'idle';
+        mockStream.send.mockClear();
+        renderShell();
+        const textarea = screen.getByRole('textbox');
+        fireEvent.change(textarea, { target: { value: '새 메시지' } });
+        fireEvent.keyDown(textarea, { key: 'Enter' });
+        expect(mockStream.send).toHaveBeenCalledWith('새 메시지');
+    });
+
     it('conversationId prop이 바뀌면 MessageList가 리마운트되어 다시 맨 아래로 점프한다', () => {
         const { rerender } = wrap(
             <ChatShell
@@ -430,7 +579,7 @@ describe('ChatShell — MessageList key (spec §3.9)', () => {
         scrollIntoViewSpy.mockClear();
 
         rerender(
-            <NextIntlClientProvider locale="ko" messages={ko}>
+            withProviders(
                 <ChatShell
                     conversationId="c2"
                     initialMessages={[]}
@@ -440,7 +589,7 @@ describe('ChatShell — MessageList key (spec §3.9)', () => {
                     siteUrl="https://siglens.io"
                     currentPath="/c2"
                 />
-            </NextIntlClientProvider>
+            )
         );
         // Remounted → the mount-only effect fires again.
         expect(scrollIntoViewSpy).toHaveBeenCalledWith({ block: 'end' });
@@ -464,7 +613,7 @@ describe('ChatShell — MessageList key (spec §3.9)', () => {
         // the ChatShell `conversationId` PROP (route-level) is unchanged.
         mockStream.conversationId = 'c1';
         rerender(
-            <NextIntlClientProvider locale="ko" messages={ko}>
+            withProviders(
                 <ChatShell
                     conversationId={null}
                     initialMessages={[]}
@@ -474,8 +623,169 @@ describe('ChatShell — MessageList key (spec §3.9)', () => {
                     siteUrl="https://siglens.io"
                     currentPath="/"
                 />
-            </NextIntlClientProvider>
+            )
         );
         expect(scrollIntoViewSpy).not.toHaveBeenCalled();
+    });
+});
+
+/**
+ * The sidebar list is client state ChatShell owns (`conversationItems`), not
+ * re-read from the server — `onRenamed`/`onDeleted` (passed to the real,
+ * unmocked `Sidebar`) are what keep it in sync with the rename/delete forms
+ * the rail actually renders.
+ */
+describe('ChatShell sidebar rename/delete wiring', () => {
+    beforeAll(() => {
+        Element.prototype.scrollIntoView = vi.fn();
+    });
+    beforeEach(() => {
+        mockStream.error = null;
+        mockStream.status = 'idle';
+        router.push.mockClear();
+        deleteConversationAction.mockClear();
+        renameConversationAction.mockClear();
+    });
+
+    const conversations = [
+        { id: 'c1', title: 'Old title', lastMessageAt: '2026-01-01' },
+        { id: 'c9', title: 'Other chat', lastMessageAt: '2026-01-02' },
+    ];
+
+    /** Grouping sorts rows by `lastMessageAt`, not by list order — locate a row by its title instead of assuming a position. */
+    function rowFor(title: string): HTMLElement {
+        return screen.getByRole('link', { name: title }).closest('li')!;
+    }
+
+    it('renaming the active conversation updates both the rail entry and the mobile-bar title', async () => {
+        mockStream.conversationId = 'c1';
+        wrap(
+            <ChatShell
+                conversationId="c1"
+                initialMessages={[]}
+                conversations={conversations}
+                signedIn
+                localePrefix=""
+                siteUrl="https://siglens.io"
+                currentPath="/c1"
+            />
+        );
+        fireEvent.click(
+            within(rowFor('Old title')).getByRole('button', {
+                name: '이름 변경',
+            })
+        );
+        const input = screen.getByRole('textbox', { name: '대화 이름' });
+        fireEvent.change(input, { target: { value: 'New title' } });
+        await act(async () => {
+            fireEvent.submit(input);
+        });
+        expect(renameConversationAction).toHaveBeenCalledWith(
+            'c1',
+            'New title'
+        );
+        expect(
+            screen.getAllByRole('link', { name: 'New title' }).length
+        ).toBeGreaterThan(0);
+        expect(screen.queryByText('Old title')).toBeNull();
+        mockStream.conversationId = 'c1';
+    });
+
+    it('renaming rolls back the rail entry when the server refuses it', async () => {
+        renameConversationAction.mockResolvedValueOnce({ ok: false });
+        mockStream.conversationId = 'c1';
+        wrap(
+            <ChatShell
+                conversationId="c1"
+                initialMessages={[]}
+                conversations={conversations}
+                signedIn
+                localePrefix=""
+                siteUrl="https://siglens.io"
+                currentPath="/c1"
+            />
+        );
+        fireEvent.click(
+            within(rowFor('Old title')).getByRole('button', {
+                name: '이름 변경',
+            })
+        );
+        const input = screen.getByRole('textbox', { name: '대화 이름' });
+        fireEvent.change(input, { target: { value: 'New title' } });
+        await act(async () => {
+            fireEvent.submit(input);
+        });
+        expect(
+            screen.getAllByRole('link', { name: 'Old title' }).length
+        ).toBeGreaterThan(0);
+        expect(screen.queryByText('New title')).toBeNull();
+        mockStream.conversationId = 'c1';
+    });
+
+    it('deleting a conversation that is not the active one removes it from the rail without navigating', async () => {
+        mockStream.conversationId = 'c1';
+        wrap(
+            <ChatShell
+                conversationId="c1"
+                initialMessages={[]}
+                conversations={conversations}
+                signedIn
+                localePrefix=""
+                siteUrl="https://siglens.io"
+                currentPath="/c1"
+            />
+        );
+        fireEvent.click(
+            within(rowFor('Other chat')).getByRole('button', { name: '삭제' })
+        );
+        const confirmButtons = within(rowFor('Other chat')).getAllByRole(
+            'button',
+            { name: '삭제' }
+        );
+        await act(async () => {
+            fireEvent.click(confirmButtons[confirmButtons.length - 1]!);
+        });
+        expect(deleteConversationAction).toHaveBeenCalledWith('c9');
+        expect(screen.queryByRole('link', { name: 'Other chat' })).toBeNull();
+        expect(
+            screen.getAllByRole('link', { name: 'Old title' }).length
+        ).toBeGreaterThan(0);
+        expect(router.push).not.toHaveBeenCalled();
+        mockStream.conversationId = 'c1';
+    });
+
+    it('deleting the active conversation navigates home instead of splicing the rail entry', async () => {
+        mockStream.conversationId = 'c1';
+        wrap(
+            <ChatShell
+                conversationId="c1"
+                initialMessages={[]}
+                conversations={conversations}
+                signedIn
+                localePrefix=""
+                siteUrl="https://siglens.io"
+                currentPath="/c1"
+            />
+        );
+        // "Old title" (c1) is the active conversation.
+        fireEvent.click(
+            within(rowFor('Old title')).getByRole('button', { name: '삭제' })
+        );
+        const confirmButtons = within(rowFor('Old title')).getAllByRole(
+            'button',
+            { name: '삭제' }
+        );
+        await act(async () => {
+            fireEvent.click(confirmButtons[confirmButtons.length - 1]!);
+        });
+        expect(deleteConversationAction).toHaveBeenCalledWith('c1');
+        // Deleting the open conversation navigates away — the row is left
+        // in place (`onDeleted` is not the path taken) since the app is
+        // about to leave this screen entirely.
+        expect(
+            screen.getAllByRole('link', { name: 'Old title' }).length
+        ).toBeGreaterThan(0);
+        expect(router.push).toHaveBeenCalledWith('/');
+        mockStream.conversationId = 'c1';
     });
 });

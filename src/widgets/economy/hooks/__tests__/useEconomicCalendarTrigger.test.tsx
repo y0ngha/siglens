@@ -11,6 +11,7 @@ vi.mock('@/entities/economy/actions', () => ({
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
+import { StrictMode } from 'react';
 import { useEconomicCalendarTrigger } from '../useEconomicCalendarTrigger';
 
 function Probe({ country = 'US' as const }: { country?: 'US' | 'KR' }) {
@@ -64,6 +65,35 @@ describe('useEconomicCalendarTrigger', () => {
 
         expect(ensureEconomicCalendarAction).toHaveBeenCalledWith('KR');
         expect(ensureEconomicEventsAnalyzedAction).toHaveBeenCalledWith('KR');
+    });
+
+    /**
+     * StrictMode(개발 환경)는 마운트 effect를 두 번 태운다 — cleanup이 없으니
+     * `triggeredRef`가 살아남아, 두 번째 호출은 가드로 걸러져야 한다. 가드가
+     * 없으면 개발 환경에서 매 마운트마다 인제스션·분석 액션이 중복 호출된다.
+     */
+    it('StrictMode의 이중 마운트에서도 ensure 액션은 한 번만 실행된다', () => {
+        render(
+            <StrictMode>
+                <Probe />
+            </StrictMode>
+        );
+
+        expect(ensureEconomicCalendarAction).toHaveBeenCalledOnce();
+        expect(ensureEconomicEventsAnalyzedAction).toHaveBeenCalledOnce();
+    });
+
+    /**
+     * 위 수동 `<StrictMode>` 래핑은 RTL의 act 배치 방식 때문에 개발 모드의
+     * "setup→cleanup→setup" 이중 호출을 실제로 재현하지 못할 수 있다. RTL의
+     * `reactStrictMode` 렌더 옵션은 React 자체의 이중 invoke 계약을 보다 충실히
+     * 재현하므로, 같은 불변조건(중복 인제스션 없음)을 별도 경로로 다시 검증한다.
+     */
+    it('reactStrictMode 렌더 옵션의 이중 invoke에서도 ensure 액션은 한 번만 실행된다', () => {
+        render(<Probe />, { reactStrictMode: true });
+
+        expect(ensureEconomicCalendarAction).toHaveBeenCalledOnce();
+        expect(ensureEconomicEventsAnalyzedAction).toHaveBeenCalledOnce();
     });
 
     it('기본 국가는 미국이다', () => {

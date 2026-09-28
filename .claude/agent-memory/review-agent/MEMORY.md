@@ -18,6 +18,7 @@
 ## Project
 
 Closed loops (approved, kept for pattern recall only — see file for detail):
+- [market-fear-greed crypto signDisplay R2 closed](project-market-fear-greed-crypto-signdisplay-r2-closed.md) — signDisplay unsigned-for-share fix mutation-checked, closed
 - [audit/fix-r4 KRcal+overall degrade](project-audit-fix-r4-krcal-overall-degrade.md) — 8th file caught via file-count mismatch
 - [Coverage-PR patterns](project-coverage-pr-patterns.md) — test-only PRs: judge falsifiability not %
 - [Crypto assetClass/session](project-crypto-assetclass-session.md) — lossy assetClass→profileId ternary hotspot
@@ -53,6 +54,7 @@ Closed loops (approved, kept for pattern recall only — see file for detail):
 - [agent-analyst-voice prompt R1](project-agent-analyst-voice-prompt-r1.md) — missing PUBLIC_API.md changelog row
 - [ai-chat-sidebar-ux R2](project-ai-chat-sidebar-r2-suspense-promise.md) — unawaited-Promise/use() SSR fix, approved
 - [ai-guest-brand/cookie-polish](project-ai-guest-cookie-polish-r1.md) — guest chat blocked by pinned core version (turnsPerDay.free=0→10 after bump)
+- [analysis-plain orphan-recovery R1](project-analysis-plain-orphan-recovery-r1.md) — cache-write-in-attempt() fix verified exactly-once; prewarm benefit is really just the longer deadline, not cache reuse (6/7 tabs never re-read the key)
 - [core-1.0.4 prompt-currency R4](project-core-1.0.4-prompt-currency-plain-language-r4.md) — closed guardPlainText length-floor comment drift
 - [deepseek-stall-gemini-fallback R1-R2](project-deepseek-stall-gemini-fallback-r2-closed.md) — usage attribution wrong after fallback; closed, new gap noted (news digest missing providerFallback)
 - [seo-a-symbol-gates R1](project-fix-seo-a-symbol-gates-r1.md) — 11-item overhaul, gate/body predicate parity across 3 gates
@@ -86,9 +88,22 @@ Closed loops (approved, kept for pattern recall only — see file for detail):
 - [trader precomputed-core-1.11 R1](project-trader-precomputed-core-1.11-r1.md) — single-row fixture = unfalsifiable "latest past row" fallback; old-vs-new core d.ts diff via main checkout node_modules
 - [trader precomputed-core-1.11 R2](project-trader-precomputed-core-1.11-r2.md) — approved; 4 fallback mutations killed; trader scratch-copy mutation recipe
 - [trader core-1.11.1 bump R1](project-trader-core-1.11.1-bump-r1.md) — approved; pure version bump, riskReward-text prepend-condition change confirmed inert for trader
+- [trader core-1.17-pullback R1](project-trader-core-1.17-pullback-r1.md) — approved; evaluatePullback unused, entryRecommendation semantics-only change inert, skills resync forward-diverges (not lost)
+- [trader daily-mr R3](project-trader-daily-mr-r3.md) — 3-agent parallel fix round, interactions all verified correct; only stale idempotency-key comment + silent-done edge case
+- [trader daily-mr R4 closed](project-trader-daily-mr-r4-closed.md) — approved; both R3 nits fixed, JSDoc grep-matched, mutation-shaped test added
 - [feat/agent-adaptive-depth R2](project-core-agent-adaptive-depth-r2.md) — approved; null-confluence Plain-level fallback + PUBLIC_API row, mutation-verified
 - [feat/hub-ai-prewarm R2-R4 closed](project-hub-ai-prewarm-r2.md) — R3 reorder broke durationMs (dropped hub-phase time), R4 fixed via independent batchStartedAt, sim-clock mutation-verified
 - [feat/ai-about-page R1-R2 closed](project-ai-about-page-r1-r2.md) — tRaw helper name avoids extract.mjs regex miss; key-set-equality flatten script; R2 saw unlisted unstaged files
+- [feat/symbol-chat-to-ai-host R1](project-symbol-chat-to-ai-host-r1-share-regression.md) — hideView removal killed Share button on 5 snapshot-gated tabs (useRegisterShareable ran pre-guard, hidden); rest of removal clean
+- [prewarm-no-news-starvation R2](project-prewarm-no-news-starvation-r2.md) — 7 mutations killed; survivors: QUOTE_MAX_AGE_MS widening, gate-before-busy-check ordering
+- [prewarm-no-news-starvation R3](project-prewarm-no-news-starvation-r3.md) — core 1.14.0 no_news abstention verified in dist; all R2 fixes mutation-killed; 6 stale pre-1.14.0 comments remain
+- [core overall-optional-news-axis R4](project-core-overall-optional-news-axis-r4.md) — approved; R1-R3 defects were all doc-vs-source drift; snapshot key named an unexercised branch
+
+- [fix/set-state-in-effect R1](project-set-state-in-effect-r1.md) — source correct; firedNavRef/explicitTab/server-snapshot unpinned (mutation-verified); useEffectEvent does NOT escape oxlint 1.79 rule
+- [fix/set-state-in-effect R2](project-set-state-in-effect-r2.md) — all R1 survivors killed; hydrate:true renderHook pins server snapshot; nits only
+- [fix/set-state-in-effect R3](project-set-state-in-effect-r3.md) — approved; locale-flip test mutation-verified, MISTAKES #10 consistent
+- [chat-news-enrich-invalidate R3](project-chat-news-enrich-invalidate-r3.md) — sync LLM enrich inside get_news's 30s core tool timeout (no stall watchdog on Gemini); STALE_FRESHNESS_DETAIL_LIMIT/stalePriceCount mutations survive
+- [fix/bot-analysis-parity R3 PR#882](project-fix-bot-analysis-parity-pr882.md) — approved; bot concurrency multiplier + bot_blocked UI removed across 6 axes, BotBlockedError→CacheOnlyMissError rename, all mutation-verified
 
 ## Reference
 

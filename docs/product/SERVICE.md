@@ -73,11 +73,11 @@ Investors who want a single, consolidated interpretation of multiple indicators.
 ## Tech Stack
 
 ```
-Next.js     16.2  (App Router + Turbopack)
-React       19.2
-TypeScript  latest
-Node.js     25.2.1
-yarn        4.12.0
+Next.js     16.3  (App Router + Turbopack)
+React       19.3
+TypeScript  7.0 (네이티브 컴파일러)
+Node.js     24 (LTS, `.nvmrc`·운영 이미지 `node:24-alpine`와 동일)
+yarn        4.18.0
 ```
 
 ```

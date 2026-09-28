@@ -61,4 +61,55 @@ describe('AgentMarkdown', () => {
             screen.getByRole('heading', { level: 4, name: '뉴스' })
         ).toBeInTheDocument();
     });
+
+    it('a 4th-level markdown heading (####) also renders one level below its source (h5)', () => {
+        render(<AgentMarkdown>{'#### 세부 항목'}</AgentMarkdown>);
+        expect(
+            screen.getByRole('heading', { level: 5, name: '세부 항목' })
+        ).toBeInTheDocument();
+    });
+
+    it('renders bold text as <strong>', () => {
+        const { container } = render(
+            <AgentMarkdown>{'**중요**한 내용'}</AgentMarkdown>
+        );
+        const strong = container.querySelector('strong');
+        expect(strong).not.toBeNull();
+        expect(strong!.textContent).toBe('중요');
+    });
+
+    it('renders bullet and numbered lists as <ul>/<ol> with <li> items', () => {
+        const { container } = render(
+            <AgentMarkdown>{'- 첫째\n- 둘째\n\n1. 하나\n2. 둘'}</AgentMarkdown>
+        );
+        const ul = container.querySelector('ul');
+        const ol = container.querySelector('ol');
+        expect(ul).not.toBeNull();
+        expect(ol).not.toBeNull();
+        expect(ul!.querySelectorAll('li')).toHaveLength(2);
+        expect(ol!.querySelectorAll('li')).toHaveLength(2);
+    });
+
+    it('renders a blockquote and a horizontal rule', () => {
+        const { container } = render(
+            <AgentMarkdown>{'> 인용문\n\n---\n\n본문'}</AgentMarkdown>
+        );
+        expect(container.querySelector('blockquote')?.textContent?.trim()).toBe(
+            '인용문'
+        );
+        expect(container.querySelector('hr')).not.toBeNull();
+    });
+
+    it('renders inline code as <code> and a fenced block as <pre><code>', () => {
+        const { container } = render(
+            <AgentMarkdown>
+                {'인라인 `const x = 1` 코드와\n\n```\nblock code\n```'}
+            </AgentMarkdown>
+        );
+        const inline = container.querySelector('code');
+        expect(inline?.textContent).toBe('const x = 1');
+        const pre = container.querySelector('pre');
+        expect(pre).not.toBeNull();
+        expect(pre!.querySelector('code')?.textContent).toBe('block code\n');
+    });
 });

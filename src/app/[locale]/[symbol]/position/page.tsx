@@ -140,7 +140,7 @@ function buildPositionSeo(
 ): SymbolSeoContent {
     const url = `${SITE_URL}/${upper}/position`;
     // --- 색인 방침 히스토리 ---
-    // 이 탭은 원래 /account·/onboarding과 같은 개인화 surface로 취급해 항상
+    // 이 탭은 원래 /account·/portfolio와 같은 개인화 surface로 취급해 항상
     // noindex였다(2026-07 seo-audit 재검토에서 재확인). 근거: 익명 방문자에게
     // SSR로 실리는 유일한 공개 콘텐츠가 low52w/high52w/lastClose 세 숫자뿐이고
     // (당시 sr-only 섹션 + PositionCta), 그 숫자조차 동일한

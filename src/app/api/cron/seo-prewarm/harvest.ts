@@ -9,7 +9,11 @@ import {
     prewarmFinancials,
     prewarmCongress,
 } from '@/entities/analysis/api';
-import { prewarmNews } from '@/entities/news-article/api';
+import {
+    DrizzleNewsRepository,
+    hasAnalyzableNews,
+    prewarmNews,
+} from '@/entities/news-article/api';
 import {
     rewriteToPlainLanguage,
     resolveCurrentPrice,
@@ -21,10 +25,27 @@ import {
     clearInFlight,
     clearStructurallyUnavailable,
     markStructurallyUnavailable,
+    NO_RECENT_NEWS_SKIP_TTL_SECONDS,
     TRANSIENT_SKIP_TTL_SECONDS,
 } from './lock';
+import { getDatabaseClient } from '@/shared/db/client';
 import type { PrewarmBatchCounts } from './runPrewarmBatch';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
+
+/**
+ * 프리웜 평이화 마감. 사용자 경로 기본값(15초)보다 넉넉한 30초. 이 호출은 여기 대신
+ * 기다리는 사람이 없다 — 프리웜은 스냅샷을 굽고 끝난다.
+ *
+ * 30초를 고른 이유는 "얼마나 여유로운가"가 아니라 **이 호출이 어느
+ * 예산 안에 있는가**다. `resolveHarvest`는 `runPrewarmBatch.ts`의
+ * `UNIT_TIMEOUT_MS`(2분) `Promise.race`가 **끝난 뒤** 실행되므로 그
+ * 유닛 타임아웃의 보호를 받지 못하고, 여기서 쓰는 시간은 그대로
+ * `BATCH_DEADLINE_MS`(10분)에 순증한다. `deadline exceeded`는 프리웜
+ * 유닛의 약 1%뿐이라 그 1%에 +15초를 더하는 비용은 무시할 만하지만,
+ * 심볼당 7개 탭이 전부 60초까지 매달리면 배치 예산을 그대로 먹어
+ * 스냅샷 커버리지가 준다 — 그래서 45초도 60초도 아니고 30초다.
+ */
+const PREWARM_PLAIN_DEADLINE_MS = 30_000;
 
 /**
  * "이 유닛은 만들 데이터가 존재하지 않는다"를 뜻하는 seam status.
@@ -51,6 +72,30 @@ interface TabSeamContext {
 export interface SeamOutcome {
     status: string;
     result?: unknown;
+    /**
+     * core가 `status:'error'`에 함께 싣는 세부 사유(`no_news`,
+     * `usage_limit_exceeded`, `fetch_failed` 등). `status`만으로는 "다시 시도하면
+     * 되는 실패"와 "재료가 없어서 못 만드는 실패"가 구분되지 않는다 — 실제로
+     * CloudWatch에 `status=error`만 찍히는 바람에 41개 심볼이 무의미하게 재시도되는
+     * 걸 알아채는 데 오래 걸렸다. 로그와 backoff 결정 양쪽에서 쓴다.
+     */
+    code?: string;
+    /**
+     * overall 전용. core가 어느 축에서 실패했는지를 싣는다. backoff 판단에는
+     * 쓰지 않고 **로그에만** 넣는다 — core 1.14.0부터 overall은 뉴스 축의
+     * `no_news`를 abstain으로 처리하므로, overall이 `axis:'news'`로 떨어지는 건
+     * 재시도하면 달라지는 실패(뉴스 LLM·사용량 한도)뿐이라 기본 30분이 맞다.
+     */
+    axis?: string;
+    /**
+     * `prewarmNews` 전용. 이번 실행에서 **외부 적재가 실패**했음을 뜻한다
+     * (FMP 장애·402 — 적재는 fail-open이라 그대로 진행된다).
+     *
+     * 이게 없으면 "30일간 뉴스 없음"과 "오늘 뉴스를 못 가져옴"이 DB 상에서
+     * 똑같아 보인다. 전자는 24시간 묶어도 되지만 후자는 30분 티어가 지켜야 할
+     * 바로 그 상황이다 — 장애 중에 신규·저커버리지 심볼이 하루 묶이면 안 된다.
+     */
+    newsFetchFailed?: true;
 }
 
 type TabSeamDispatch = (ctx: TabSeamContext) => Promise<SeamOutcome | null>;
@@ -158,7 +203,8 @@ export async function resolveHarvest(
             symbol,
             DEFAULT_LOCALE,
             currencyForSymbol(symbol),
-            await resolveCurrentPrice(symbol, result.result)
+            await resolveCurrentPrice(symbol, result.result),
+            PREWARM_PLAIN_DEADLINE_MS
         );
 
         await repo.upsert({
@@ -203,13 +249,48 @@ export async function resolveHarvest(
      * null 결과)만 6시간 기본값을 유지한다.
      */
     const isTransient = result.status === 'error';
+    /**
+     * `error` 중에서도 "최근 30일 뉴스 없음"은 30분 뒤에 달라질 수 있는 상태가
+     * 아니다. 이 갈래만 24시간으로 늘린다 — 근거와 실측은
+     * `NO_RECENT_NEWS_SKIP_TTL_SECONDS` 주석에 있다.
+     *
+     * `code:'no_news'`만으로 확정하지 않고 **DB를 한 번 더 본다**. 그 code는
+     * "이번 호출에 넘긴 배열이 비었다"는 뜻일 뿐이고, `prewarmNews`는 이 시점에
+     * 이미 적재를 마쳤으므로 여기서도 0건이어야 "이번 창에 쓸 재료가 실제로
+     * 없다"가 성립한다.
+     */
+    const noRecentNews =
+        isTransient &&
+        // **`news` 탭 전용이다.** core 1.14.0부터 `runOverallAnalysis`는 뉴스 축의
+        // `no_news`를 abstain으로 처리하므로 overall은 뉴스가 없다고 실패하지
+        // 않는다 — 이제 overall이 `axis:'news'`로 떨어지는 건 뉴스 LLM 실패나
+        // 사용량 한도처럼 **재시도하면 달라지는** 상태뿐이라 30분이 맞다.
+        // (탭을 넓히면 `newsFetchFailed`도 함께 넓혀야 한다. 그 신호는
+        // `prewarmNews`만 만들 수 있어 overall에서는 항상 미설정이고, 그러면
+        // FMP 장애 중에 overall만 24h로 묶이는 비대칭이 생긴다.)
+        tab === 'news' &&
+        // 적재 자체가 실패한 밤은 판단 근거가 없다 — 일시적 실패로 되돌린다.
+        result.newsFetchFailed !== true &&
+        result.code === 'no_news' &&
+        !(await hasAnalyzableNews(
+            new DrizzleNewsRepository(getDatabaseClient().db),
+            symbol
+        ));
+
     console.warn(
-        `[seo-prewarm] skip ${symbol}:${tab} — status=${result.status}`
+        `[seo-prewarm] skip ${symbol}:${tab} — status=${result.status}` +
+            `${result.code !== undefined ? ` code=${result.code}` : ''}` +
+            `${result.axis !== undefined ? ` axis=${result.axis}` : ''}` +
+            `${noRecentNews ? ' (no analyzable news in window — 24h backoff)' : ''}`
     );
     await markSkipped(
         symbol,
         tab,
-        isTransient ? TRANSIENT_SKIP_TTL_SECONDS : undefined
+        noRecentNews
+            ? NO_RECENT_NEWS_SKIP_TTL_SECONDS
+            : isTransient
+              ? TRANSIENT_SKIP_TTL_SECONDS
+              : undefined
     );
     /**
      * 구조적으로 불가능한 유닛은 **영속** 집합에도 넣는다 — backoff만으로는

@@ -120,6 +120,28 @@ describe('MarketSummaryPanel', () => {
         expect(screen.getByTestId('skeleton')).toBeInTheDocument();
     });
 
+    /**
+     * `DashboardScopeId`가 화면 없는 시장(`crypto`, 에이전트 도구 전용)까지 품게 되면서
+     * 헤딩 키 표가 `Partial`이 됐다. 키가 없는 scope가 오면 scope 자신의 라벨로
+     * 떨어지는데, 그 분기는 지금 어떤 페이지도 태우지 않는다 — 테스트가 없으면
+     * 한 번도 실행되지 않은 채 남는다.
+     */
+    it('헤딩 키가 없는 scope는 scope 자신의 marketLabel을 제목으로 쓴다', () => {
+        mockUseMarketSummary.mockReturnValue(defaultSummaryReturn);
+        render(
+            <MarketSummaryPanel
+                scope={{
+                    ...TEST_SCOPE,
+                    id: 'crypto',
+                    hasHubPage: false,
+                    marketLabel: 'Crypto market',
+                }}
+            />
+        );
+        expect(screen.getByText('Crypto market')).toBeInTheDocument();
+        expect(screen.queryByText('오늘의 미국 시장')).not.toBeInTheDocument();
+    });
+
     it('완전 실패(ok:false) 시 데이터 로드 실패 안내만 표시한다', () => {
         mockUseMarketSummary.mockReturnValue({
             ...defaultSummaryReturn,
@@ -383,8 +405,10 @@ describe('MarketSummaryPanel', () => {
 /**
  * `/market/kr`은 사이트맵 priority 0.9다. 섹터 카드에 링크가 붙으면 그 페이지가
  * `POPULAR_TICKERS`에도 prewarm 회전에도 없는 KR ETF 6종으로 가는 **새 크롤
- * 진입점**이 된다 — 봇은 캐시 미스에 분석을 큐에 넣지 않으므로 딱 thin 변형만
- * 보게 되고, 그게 2026-07 노출 급감의 메커니즘이다.
+ * 진입점**이 된다. 2026-07 노출 급감 당시엔 봇이 캐시 미스에 분석을 큐에 넣지
+ * 않아 딱 thin 변형만 보였지만, 2026-09-27부터 봇도 캐시 미스에 생성을
+ * 트리거하므로 지금은 크롤 유발 생성 비용 스파이크 쪽 위험이다
+ * (`dashboardScope.ts`의 `linkSectorCards` JSDoc 참고).
  */
 describe('MarketSummaryPanel — KR scope', () => {
     /** 첫 섹터 그룹의 심볼 하나만 채운 sectorMap — 카드 하나면 계약 검증에 충분하다. */

@@ -93,6 +93,44 @@ describe('proxy', () => {
             }
         );
 
+        /**
+         * SiglensAI 로그인 CTA를 누른 메인 로그인 사용자. 홈으로 보내면
+         * ai.siglens.io로 돌아갈 길이 끊긴다.
+         */
+        it('세션이 있으면 정제된 next(SSO 핸드오프)로 redirect한다', async () => {
+            const next = '/api/auth/handoff?to=ai&next=%2Fc%2Fabc';
+            await proxy(
+                makeRequest(
+                    'valid-token',
+                    `/login?next=${encodeURIComponent(next)}`
+                )
+            );
+            const calledUrl = mockRedirect.mock.calls[0]![0] as URL;
+            expect(`${calledUrl.pathname}${calledUrl.search}`).toBe(next);
+            expect(calledUrl.origin).toBe('https://example.com');
+        });
+
+        it.each([
+            '//evil.com',
+            'https://evil.com/x',
+            '/\\t/evil.com',
+            '/signup',
+            '/en/login?next=%2FAAPL',
+        ])(
+            '세션이 있고 next=%j이면 같은-오리진 홈으로 redirect한다',
+            async next => {
+                await proxy(
+                    makeRequest(
+                        'valid-token',
+                        `/en/login?next=${encodeURIComponent(next)}`
+                    )
+                );
+                const calledUrl = mockRedirect.mock.calls[0]![0] as URL;
+                expect(calledUrl.origin).toBe('https://example.com');
+                expect(calledUrl.pathname).toBe('/en');
+            }
+        );
+
         it('세션 값이 빈 문자열이면 next()로 통과시킨다', async () => {
             await proxy(makeRequest(''));
             expect(mockPass).toHaveBeenCalledTimes(1);
@@ -203,7 +241,6 @@ describe('Ticker 케이스 정규화 — 소문자/혼합 케이스 → 대문�
         '/about',
         '/account',
         '/news',
-        '/onboarding',
         '/portfolio',
         '/share',
     ])(
@@ -267,7 +304,7 @@ describe('/news 라우트 — ticker 오인 방지 회귀 테스트', () => {
     });
 });
 
-describe('/onboarding 라우트 — ticker 오인으로 인한 /ONBOARDING 404 방지 회귀 테스트', () => {
+describe('/onboarding 레거시 리다이렉트 — 페이지는 삭제됐지만 북마크·공유 링크는 살아있다', () => {
     beforeEach(() => {
         mockRedirect.mockClear();
         mockRewrite.mockClear();
@@ -275,19 +312,41 @@ describe('/onboarding 라우트 — ticker 오인으로 인한 /ONBOARDING 404 �
         mockPass.mockClear();
     });
 
-    // 회귀: onboarding이 RESERVED_FIRST_SEGMENTS에서 누락되면 SYMBOL_EDGE_RE(전체
-    // 알파벳, 16자 이하)에 매칭돼 /ONBOARDING으로 301 정규화되고, 이는 존재하지 않는
-    // 라우트라 [symbol] fallback → 404로 이어진다 (실제 페이지의 auth guard는 우회당함).
-    it('세션이 없어도 /ONBOARDING으로 대문자 redirect하지 않는다', async () => {
+    it('/onboarding은 같은 로케일(기본 ko)의 /portfolio로 301 redirect된다', async () => {
         await proxy(makeRequest(undefined, '/onboarding'));
-        expect(mockRedirect).not.toHaveBeenCalled();
-        expect(mockPass).toHaveBeenCalledTimes(1);
+        expect(mockRedirect).toHaveBeenCalledTimes(1);
+        const [calledUrl, status] = mockRedirect.mock.calls[0]!;
+        expect((calledUrl as URL).pathname).toBe('/portfolio');
+        expect(status).toBe(301);
+        expect(mockPass).not.toHaveBeenCalled();
     });
 
-    it('세션이 있어도 /ONBOARDING으로 대문자 redirect하지 않는다', async () => {
+    it('세션 유무와 무관하게 redirect한다 — auth 가드보다 먼저 처리된다', async () => {
         await proxy(makeRequest('valid-token', '/onboarding'));
-        expect(mockRedirect).not.toHaveBeenCalled();
-        expect(mockPass).toHaveBeenCalledTimes(1);
+        expect(mockRedirect).toHaveBeenCalledTimes(1);
+        const [calledUrl] = mockRedirect.mock.calls[0]!;
+        expect((calledUrl as URL).pathname).toBe('/portfolio');
+    });
+
+    it('로케일 접두사와 ?symbol= 쿼리를 그대로 보존한다 (/[symbol]/position CTA 경유)', async () => {
+        await proxy(makeRequest(undefined, '/en/onboarding?symbol=AAPL'));
+        expect(mockRedirect).toHaveBeenCalledTimes(1);
+        const [calledUrl] = mockRedirect.mock.calls[0]!;
+        expect((calledUrl as URL).pathname).toBe('/en/portfolio');
+        expect((calledUrl as URL).searchParams.get('symbol')).toBe('AAPL');
+    });
+
+    // 회귀: onboarding이 RESERVED_FIRST_SEGMENTS에서 누락되면 (레거시 redirect가
+    // 대소문자 정확 일치라 못 잡는) /ONBOARDING이 SYMBOL_EDGE_RE(전체 알파벳,
+    // 16자 이하)에 매칭돼 대문자 ticker로 301 정규화되고, 이는 존재하지 않는
+    // 라우트라 [symbol] fallback → 404로 이어진다.
+    it('/ONBOARDING(대문자)은 ticker로 오인해 대문자 redirect하지 않는다', async () => {
+        await proxy(makeRequest(undefined, '/ONBOARDING'));
+        expect(
+            mockRedirect.mock.calls.filter(
+                ([url]) => (url as URL).pathname === '/ONBOARDING'
+            )
+        ).toEqual([]);
     });
 });
 
@@ -316,6 +375,21 @@ describe('/portfolio 라우트 — ticker 오인으로 인한 /PORTFOLIO 404 방
         await proxy(makeRequest('valid-token', '/portfolio'));
         expect(mockRedirect).not.toHaveBeenCalled();
         expect(mockPass).toHaveBeenCalledTimes(1);
+    });
+
+    /**
+     * `/[symbol]/position`의 CTA(`?symbol=AAPL`)를 눌렀지만 로그인이 안 된
+     * 방문자. 이 forward auth guard가 `next`를 pathname만으로 만들면 쿼리가
+     * 사라져 로그인 후 심볼이 채워지지 않은 빈 폼에 도착한다.
+     */
+    it('세션이 없으면 ?symbol= 쿼리를 next에 보존한다', async () => {
+        await proxy(makeRequest(undefined, '/portfolio?symbol=AAPL'));
+        expect(mockRedirect).toHaveBeenCalledTimes(1);
+        const [calledUrl] = mockRedirect.mock.calls[0]!;
+        expect((calledUrl as URL).pathname).toBe('/login');
+        expect((calledUrl as URL).searchParams.get('next')).toBe(
+            '/portfolio?symbol=AAPL'
+        );
     });
 });
 

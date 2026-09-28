@@ -62,6 +62,51 @@ describe('PwaBanner', () => {
         expect(handleInstall).toHaveBeenCalledTimes(1);
     });
 
+    it('showBanner=false이면 아무것도 렌더하지 않는다 (CLS 방지 shell도 제거)', () => {
+        mockUsePwaInstall.mockReturnValue({
+            showBanner: false,
+            showIosModal: false,
+            isIos: false,
+            handleInstall: vi.fn(),
+            handleDismiss: vi.fn(),
+            handleModalClose: vi.fn(),
+        });
+        const { container } = render(<PwaBanner />);
+        expect(container).toBeEmptyDOMElement();
+        expect(
+            document.documentElement.style.getPropertyValue('--pwa-banner-h')
+        ).toBe('');
+    });
+
+    it('showBanner가 true→false로 바뀌면 --pwa-banner-h 변수를 제거한다', () => {
+        mockUsePwaInstall.mockReturnValue({
+            showBanner: true,
+            showIosModal: false,
+            isIos: false,
+            handleInstall: vi.fn(),
+            handleDismiss: vi.fn(),
+            handleModalClose: vi.fn(),
+        });
+        const { rerender } = render(<PwaBanner />);
+        expect(
+            document.documentElement.style.getPropertyValue('--pwa-banner-h')
+        ).toBe('3rem');
+
+        mockUsePwaInstall.mockReturnValue({
+            showBanner: false,
+            showIosModal: false,
+            isIos: false,
+            handleInstall: vi.fn(),
+            handleDismiss: vi.fn(),
+            handleModalClose: vi.fn(),
+        });
+        rerender(<PwaBanner />);
+
+        expect(
+            document.documentElement.style.getPropertyValue('--pwa-banner-h')
+        ).toBe('');
+    });
+
     it('isIos=true && showIosModal=true → IosInstallModal 렌더', () => {
         mockUsePwaInstall.mockReturnValue({
             showBanner: true,

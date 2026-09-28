@@ -106,6 +106,40 @@ describe('NotFound page', () => {
         expect(metadata.robots).toEqual({ index: false, follow: true });
     });
 
+    /**
+     * `[locale]` 세그먼트가 신뢰 경계다 — 지원하지 않는 값(`/xx/AAPL`)이 오면
+     * 던지지 않고 기본 로케일(ko)로 떨어진다. 이 분기가 없으면 잘못된 접두사가
+     * 던져 500이 되는데, 봇에게 5xx를 주는 건 404보다 나쁘다.
+     */
+    it('지원하지 않는 locale은 기본 로케일(ko) 제목으로 떨어진다', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'xx' }),
+        });
+        expect(metadata.title).toBe('페이지를 찾을 수 없습니다');
+        expect(metadata.robots).toEqual({ index: false, follow: true });
+    });
+
+    /**
+     * 회귀 가드(2026-09-20 네이버 "동일 설명문" 감지): `description`을 빼면 Next가
+     * 루트 레이아웃(홈) 설명문을 상속시켜, 존재하지 않는 **모든** URL이 홈과 똑같은
+     * `<meta name="description">`을 달고 나간다. 404 URL은 수에 상한이 없다.
+     */
+    it.each([
+        ['ko', '요청하신 페이지가 존재하지 않거나'],
+        ['ja', 'お探しのページは存在しないか'],
+    ])(
+        '%s: 설명문이 로케일을 따르고 홈 설명을 상속하지 않는다',
+        async (locale, expected) => {
+            const metadata = await generateMetadata({
+                params: Promise.resolve({ locale }),
+            });
+
+            expect(metadata.description).toContain(expected);
+            // JSX 들여쓰기에서 온 줄바꿈·연속 공백이 메타 태그에 실리면 안 된다.
+            expect(metadata.description).not.toMatch(/\s{2,}|\n/u);
+        }
+    );
+
     /*
      * 테마 적용은 `ContactDialog`가 한다(그 파일의 주석 참고 — 전용 컴포넌트를
      * 두면 홈 first-load가 17.3KB 늘어난다). 여기서는 그 컴포넌트가 렌더되는지만

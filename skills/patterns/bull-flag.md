@@ -5,7 +5,7 @@ type: pattern
 category: continuation_bullish
 pattern: bull_flag
 indicators: []
-confidence_weight: 0.75
+confidence_weight: 0.5
 display:
   chart:
     show: true
@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [bull_flag]
-token_cost: 630
-digest_hash: "39b4c9e6"
+token_cost: 657
+digest_hash: "976abcfb"
 ---
 
 ## Detection Criteria
@@ -31,7 +31,7 @@ digest_hash: "39b4c9e6"
 
 ## Confidence Weight Rationale
 
-confidence_weight: 0.75 — Bull Flag is one of the most reliable short-term continuation patterns, frequently used in momentum trading. Its clear structure — a sharp advance followed by an orderly, low-volume pullback — directly reflects the pause-and-continue nature of trending markets. The well-defined flagpole provides a measurable target, and the flag's channel structure makes breakout detection objective.
+confidence_weight: 0.5 — Bulkowski (thepatternsite.com/flags.html, bull market; flags are measured over the short-term price swing, so they are not ranked): break-even failure rate 44% for upward / 45% for downward breakouts; 46% meet the price target; average rise 9%; breakout upward 60% of the time (all flags pooled). Weight: failure > 30% → 0.5. The structure — a sharp advance followed by an orderly, low-volume pullback — is clear and objective to detect, but the measured edge after the breakout is small.
 
 Factors that increase confidence:
 - Flagpole shows a gain of at least 10% with above-average volume
@@ -91,7 +91,7 @@ Geometry:
 - Volume declines noticeably during flag.
 - Confirmed: close ABOVE upper flag channel with increased volume.
 
-Confidence (weight 0.75).
+Confidence (weight 0.5) — Bulkowski flags.html: failure 44% (up breakouts), 46% meet target, avg rise 9%; not ranked (short swing).
 - Increase: flagpole gain ≥10% with above-avg volume, flag retrace < 38.2%, volume drops 50%+ vs flagpole, flag duration 1–2 weeks, breakout volume returns to flagpole levels.
 - Decrease: shallow/slow flagpole, retrace > 50%, volume high in flag (distribution), duration > 4 weeks, channel too wide / loses parallel structure.
 

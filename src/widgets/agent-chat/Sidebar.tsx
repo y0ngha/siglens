@@ -29,7 +29,7 @@ import {
     PencilIcon,
     PlusIcon,
     TrashIcon,
-} from './icons';
+} from '@/shared/ui/StrokeIcons';
 
 interface Props {
     readonly items: ConversationListItem[];

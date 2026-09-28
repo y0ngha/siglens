@@ -44,3 +44,12 @@ export function resolveSubmitTarget(
     if (!typed || !DIRECT_TICKER_RE.test(typed)) return null;
     return { symbol: typed, label: typed };
 }
+
+/**
+ * 폼 모드(`navigateOnSelect: false`)의 목적지. 이동이 아니라 값 확정이라 결과
+ * 우선·티커 형태 검사를 걸지 않는다 — `resolveSubmitTarget`과 규칙이 다르다.
+ */
+export function resolveTypedTarget(query: string): SubmitTarget | null {
+    const typed = query.trim().toUpperCase();
+    return typed ? { symbol: typed, label: typed } : null;
+}

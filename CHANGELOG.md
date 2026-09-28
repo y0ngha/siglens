@@ -1,5 +1,136 @@
 # Changelog
 
+# [0.91.0](https://github.com/y0ngha/siglens/compare/v0.90.1...v0.91.0) (2026-09-27)
+
+### Bug Fixes
+
+* PR [#882](https://github.com/y0ngha/siglens/issues/882) 승인 코멘트 반영 — FMP 집계 범위 주석 정정 + 옵션 스냅샷 봇 회귀 테스트 ([6f78933](https://github.com/y0ngha/siglens/commit/6f789335b950670671d64800d623e511a1dc3397))
+* PR [#882](https://github.com/y0ngha/siglens/issues/882) R1 — 봇 보조 fetch·동시성 배수 유지 근거 주석 보강 ([6e8fe69](https://github.com/y0ngha/siglens/commit/6e8fe696409b24442bc6c62ea2cd303cfc7f45f1))
+* PR [#882](https://github.com/y0ngha/siglens/issues/882) R2 — isBot 호출부 JSDoc을 실제 4곳과 일치시킴 ([f4e8060](https://github.com/y0ngha/siglens/commit/f4e806006d4b46bc2cdff48b7f75527e405886ae))
+* PR [#882](https://github.com/y0ngha/siglens/issues/882) R3 — 봇 동시성 배수 제거 + 봇 차단 안내 UI 정리 ([27a332d](https://github.com/y0ngha/siglens/commit/27a332d02c85e765b733cda8b120fa0355b7002d))
+* PR [#883](https://github.com/y0ngha/siglens/issues/883) R1 — PortfolioManager 배선 테스트 + e2e 스펙을 /portfolio로 이전 + 빈 상태 온보딩 CTA 제거 ([ec7a5e8](https://github.com/y0ngha/siglens/commit/ec7a5e8ed02427c6cb17213b73dd699c9de97ca6))
+* PR [#883](https://github.com/y0ngha/siglens/issues/883) R2 — 편집 저장 시 onHoldingsChange 테스트 추가 + 위치 섹션 aria-labelledby로 중복 발화 제거 ([93d287f](https://github.com/y0ngha/siglens/commit/93d287f301f0fc23d27058c435ecb2708412dc8f))
+* PR [#884](https://github.com/y0ngha/siglens/issues/884) R1 — 레이아웃 계약 반전 후 남은 stale 주석 갱신 ([0b350a7](https://github.com/y0ngha/siglens/commit/0b350a788ffb9287ecb06bf3d43f8b8ed8d891f4))
+* PR [#884](https://github.com/y0ngha/siglens/issues/884) R2 — 주석 버전 표기 v0.79.1로 정정 + items-start 행 계약 테스트 복원 ([a8579c1](https://github.com/y0ngha/siglens/commit/a8579c1c5c50ad700b6ac4f4192a17e4226929e5))
+* PR [#884](https://github.com/y0ngha/siglens/issues/884) R3 — diff 밖에 남은 '스크롤러는 문서 하나' 서술 전면 갱신 ([6cb7c63](https://github.com/y0ngha/siglens/commit/6cb7c632d30aaa736388adccd74ebe78c63460f7))
+* **seo:** 봇 UA에도 종목 분석을 사람과 똑같이 생성한다 (skipEnqueueIfMiss UA 분기 제거) ([3c2e928](https://github.com/y0ngha/siglens/commit/3c2e9287c0be05a1be6dc167264724b108c1e642))
+* **ui:** 차트 라우트 AI 분석 패널을 차트 높이에 고정하고 내부 스크롤 ([e1426af](https://github.com/y0ngha/siglens/commit/e1426afce0d063c81613e7f9d6fdde7d59372daa))
+
+### Features
+
+* /onboarding 라우트 제거, 가입 후 목적지·포지션 CTA를 /portfolio로 ([f2519a8](https://github.com/y0ngha/siglens/commit/f2519a8c9aef091fc19e52882bfe5482b8380cc4))
+* 포트폴리오 메뉴 분리 및 보유종목 레이블 개선 ([0fa58f8](https://github.com/y0ngha/siglens/commit/0fa58f895bd2c86719270dcaf45293e7cdbe515c))
+
+## [0.90.1](https://github.com/y0ngha/siglens/compare/v0.90.0...v0.90.1) (2026-09-27)
+
+### Bug Fixes
+
+* PR [#881](https://github.com/y0ngha/siglens/issues/881) R1 — e2e robots crawl-delay 상수 참조 + 신뢰도 툴팁 앵커를 헤더 행으로 ([fda4e0d](https://github.com/y0ngha/siglens/commit/fda4e0db79856d5bca897b91f27b542a20e3a6f3))
+* **seo:** 홈 스킬 카드 신뢰도 툴팁 1회 렌더 + AI 검색 크롤러 crawl-delay 60→10 ([5ee6508](https://github.com/y0ngha/siglens/commit/5ee6508acf0006a0e14fb37bfacb6553ce71b6d9))
+
+# [0.90.0](https://github.com/y0ngha/siglens/compare/v0.89.0...v0.90.0) (2026-09-26)
+
+### Bug Fixes
+
+* **skills:** 평균 회귀 digest가 Short-Term Washout 블록을 인용하고 near는 trend neutral로 ([c10dcb5](https://github.com/y0ngha/siglens/commit/c10dcb546e8d89224874ed38c48e812ddce9d11f))
+
+### Features
+
+* 광고 전용 랜딩 페이지 /lp/stock-analysis, /lp/stock-chat (noindex) ([aa36ea2](https://github.com/y0ngha/siglens/commit/aa36ea2e810573d7e781141118925dba4fc14bce))
+* **lp:** 랜딩 문구에서 티커 표현을 걷고 about식 재생 애니메이션을 입힌다 ([0c4f9f8](https://github.com/y0ngha/siglens/commit/0c4f9f8c1f45846bb617bb10a816d25a7ac4285d))
+
+### Performance Improvements
+
+* **cdn:** HTML ETag를 꺼 Cloudflare 엣지 압축 오염을 막는다 ([950caf8](https://github.com/y0ngha/siglens/commit/950caf80ac844ce40e14fc0cc860249a426ec435))
+* **symbol:** 차트 페이지 분석 peek을 bars와 동시에 시작한다 ([6308f7c](https://github.com/y0ngha/siglens/commit/6308f7c319bc71a7a947b2ab7fe4bdd87cd9e2ee))
+
+# [0.89.0](https://github.com/y0ngha/siglens/compare/v0.88.1...v0.89.0) (2026-09-25)
+
+### Features
+
+* 평균 회귀 스킬을 측정된 눌림 판독으로 재작성 ([be8b698](https://github.com/y0ngha/siglens/commit/be8b6988a6fd5ed743985b882750e94c743cc2a8))
+* **ai-chat:** 눌림 판독을 siglens-core 1.17.0 evaluatePullback으로 교체 ([f5da2f3](https://github.com/y0ngha/siglens/commit/f5da2f3e6867f0dc5e8898579571d41f1f18d1bd))
+* **ai-chat:** get_bars_indicators에 일봉 눌림 판독 추가 ([c884201](https://github.com/y0ngha/siglens/commit/c8842013d96122fd62a9dddf7263c305bad9d654))
+
+## [0.88.1](https://github.com/y0ngha/siglens/compare/v0.88.0...v0.88.1) (2026-09-25)
+
+### Bug Fixes
+
+* **auth:** log out of both hosts from ai.siglens.io and keep next on auth flows ([5a0d343](https://github.com/y0ngha/siglens/commit/5a0d34326ee1bbc7e239c8b625c6287c80204e94))
+* **auth:** return email login/signup from ai.siglens.io to the ai host ([2bb76d9](https://github.com/y0ngha/siglens/commit/2bb76d9b2305eff375bb0b4741e7c8c48d47186b))
+
+# [0.88.0](https://github.com/y0ngha/siglens/compare/v0.87.0...v0.88.0) (2026-09-24)
+
+### Bug Fixes
+
+* 방문 크립토 후보를 CRYPTO_CANDIDATE_POOL에도 추가한다 ([f6100b1](https://github.com/y0ngha/siglens/commit/f6100b1148a846ac11e5fd13019c47f72c70dfa8))
+* CI 가드(useAppPathname) 위반 수정 + 리뷰 제안 반영 ([36a6f59](https://github.com/y0ngha/siglens/commit/36a6f59edcbcc89a325c972d887ddfc53a4daa33))
+* **fear-greed:** e2e 부정 단언은 script 제외 본문에 걸고 시장별 비교 주석 정리 ([bae62a0](https://github.com/y0ngha/siglens/commit/bae62a048fba4e9bc005c29b3ab1ac887837b9c7))
+* i18n 생성 산출물을 재생성한다 ([effdd7f](https://github.com/y0ngha/siglens/commit/effdd7fe3c16524d07e1ec8e0653a02ed7f5d397))
+* PR [#872](https://github.com/y0ngha/siglens/issues/872) 리뷰 제안을 반영한다 ([9295d3e](https://github.com/y0ngha/siglens/commit/9295d3eaf7f4e7740c20e7b5295dbba9d88fb4d1)), closes [#13](https://github.com/y0ngha/siglens/issues/13)
+
+### Features
+
+* 개인정보처리방침 v5 즉시 시행 + Google Ads 태그 ID 활성화 ([06fe25b](https://github.com/y0ngha/siglens/commit/06fe25bf15d8cc98a65334d4103085cad96993e6))
+* 종목 조회수 수집과 비콘 상호작용 게이트를 추가한다 ([73885f5](https://github.com/y0ngha/siglens/commit/73885f5b2cbaa639af252ddbee76867566c0c01c))
+* **fear-greed:** 코인 시장 공포탐욕지수 페이지 /fear-greed/crypto ([eeae011](https://github.com/y0ngha/siglens/commit/eeae0112b8c0059a0dc5ba58d38a267832d3ddc7))
+* Google Ads 전환 측정 (태그·전환 3종·핸드오프 gclid 보존·방침 v5) ([d635de3](https://github.com/y0ngha/siglens/commit/d635de39354245908d52aca39b65481fc76bf54a))
+
+# [0.87.0](https://github.com/y0ngha/siglens/compare/v0.86.2...v0.87.0) (2026-09-24)
+
+### Bug Fixes
+
+* **analysis:** overall의 technical 축에 이력·시장 이벤트를 넘겨 technical 중복 생성을 없앤다 ([4adefe2](https://github.com/y0ngha/siglens/commit/4adefe2edff14c8416698418074fd04c630706b5))
+* **hooks:** set-state-in-effect 6곳을 효과 없는 패턴으로 바꾸고 규칙을 error로 올린다 ([ca6f4c8](https://github.com/y0ngha/siglens/commit/ca6f4c81deddff2f56f2a9c4e33dc51b3e82a433))
+
+### Features
+
+* **about:** siglens.io/about을 가치 소개 페이지로 재구성한다 ([9485039](https://github.com/y0ngha/siglens/commit/9485039931400ed8518d4bea8a40b411878d2db8))
+
+## [0.86.2](https://github.com/y0ngha/siglens/compare/v0.86.1...v0.86.2) (2026-09-21)
+
+
+### Bug Fixes
+
+* **chat:** 툴이 읽기 전에 심볼 데이터를 최신화하고 신선도를 정확히 보고한다 ([3bec491](https://github.com/y0ngha/siglens/commit/3bec491319bd9513a2b652d44f11c8dfc32086bc))
+
+## [0.86.1](https://github.com/y0ngha/siglens/compare/v0.86.0...v0.86.1) (2026-09-21)
+
+
+### Bug Fixes
+
+* **seo-prewarm:** 뉴스 없는 심볼의 무한 재시도를 끊고 챗 뉴스를 읽기 전에 적재한다 ([2d0a2fa](https://github.com/y0ngha/siglens/commit/2d0a2fa925ac4f7700cf9629735a8b2ac280f6b8))
+
+# [0.86.0](https://github.com/y0ngha/siglens/compare/v0.85.0...v0.86.0) (2026-09-20)
+
+
+### Bug Fixes
+
+* **analysis-plain:** 마감을 넘긴 평이화 호출의 결과를 버리지 않는다 ([f1d4883](https://github.com/y0ngha/siglens/commit/f1d4883c5dd92d5da82c0f90d2abc9ae619e0bf9))
+* **prewarm:** cron 창을 DeepSeek off-peak 구간으로 옮긴다 ([229d156](https://github.com/y0ngha/siglens/commit/229d156d3ff1a54ddc51d8e555d84c1966f91131))
+
+
+### Features
+
+* **prewarm:** fundamental·financials·congress를 주 2회 주기로 돌린다 ([6397403](https://github.com/y0ngha/siglens/commit/6397403b7c9943aee83d3e146f8ebf8b614d4e3a))
+
+# [0.85.0](https://github.com/y0ngha/siglens/compare/v0.84.1...v0.85.0) (2026-09-20)
+
+
+### Bug Fixes
+
+* **agent:** 시장 분기를 exhaustive switch로 바꾸고 공포·탐욕 타입을 core 유니온으로 되돌린다 ([fa12463](https://github.com/y0ngha/siglens/commit/fa12463ac81cee0f9842fbe85c9a7342387a589c)), closes [#858](https://github.com/y0ngha/siglens/issues/858)
+* **agent:** 좁힌 scope 가드에 crypto 거부 테스트를 붙이고 다이제스트 peek 실패를 로깅한다 ([8a948fd](https://github.com/y0ngha/siglens/commit/8a948fd9cec7cbc8e4137386c74ff97b37fa3538)), closes [#858](https://github.com/y0ngha/siglens/issues/858)
+* **scripts:** Yahoo 옵션 프로브 스키마 검증 실패 및 오탐 티커(SPCX/SKHY) 유입 방지 ([b5683fc](https://github.com/y0ngha/siglens/commit/b5683fcfe14a14182d4b6e017e6194605ff274cc))
+* **seo:** 중복 메타 설명문 두 경로를 막는다 ([d4eee02](https://github.com/y0ngha/siglens/commit/d4eee029b134b26fd18c1ab8ffbe85e553538a6c))
+
+
+### Features
+
+* **agent:** 한국·크립토 신호 스캔과 화면에만 있던 데이터 4종을 에이전트 도구에 연결한다 ([7426a39](https://github.com/y0ngha/siglens/commit/7426a390b6b72f91391720c766048a66f0cc6fa3))
+
+## [0.84.1](https://github.com/y0ngha/siglens/compare/v0.84.0...v0.84.1) (2026-09-19)
+
 # [0.84.0](https://github.com/y0ngha/siglens/compare/v0.83.0...v0.84.0) (2026-09-19)
 
 

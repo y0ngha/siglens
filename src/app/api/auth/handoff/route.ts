@@ -3,6 +3,7 @@ import 'server-only';
 import { NextResponse, type NextRequest } from 'next/server';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import {
+    handoffStartUrl,
     isHandoffToken,
     issueHandoffCode,
     resolveHandoffNext,
@@ -48,12 +49,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     const { locale, next } = resolveHandoffNext(params.get('next'));
     const state = params.get('state');
     if (!isHandoffToken(state)) {
-        const start = new URL(
-            localePath(locale, '/api/auth/handoff/start'),
-            AI_SITE_URL
-        );
-        start.searchParams.set('next', next);
-        return noStoreRedirect(start);
+        return noStoreRedirect(handoffStartUrl(next));
     }
 
     const fallback = new URL(next, AI_SITE_URL);

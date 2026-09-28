@@ -16,7 +16,7 @@ import {
 import { cn } from '@/shared/lib/cn';
 import { useSymbolLabels } from './hooks/useSymbolLabels';
 import { AgentMarkdown } from './AgentMarkdown';
-import { ArrowDownIcon, ArrowUpRightIcon } from './icons';
+import { ArrowDownIcon, ArrowUpRightIcon } from '@/shared/ui/StrokeIcons';
 import { SiglensMark } from './SiglensMark';
 import { ToolActivity } from './ToolActivity';
 

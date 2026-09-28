@@ -57,13 +57,19 @@ describe('NAV_VERTICALS', () => {
         }
     });
 
-    it('opens 암호화폐 only for 뉴스', () => {
-        // 공포·탐욕은 core 5요인이 채권 자산군을 요구해 암호화폐 대응이 없고,
-        // 경제는 개념 자체가 없다. 눌렀더니 "표본 부족"만 나오는 링크는 없는 것만 못하다.
+    it('opens 암호화폐 only for 뉴스 and 공포·탐욕', () => {
+        // 공포·탐욕은 core의 전용 암호화폐 6요인 지수가 생기면서 열렸다. 시장 분석은
+        // 대응 데이터가 없고 경제는 개념 자체가 없다. 눌렀더니 "표본 부족"만 나오는
+        // 링크는 없는 것만 못하다.
         for (const vertical of NAV_VERTICALS) {
             const hasCrypto = vertical.regions.some(r => r.region === 'crypto');
-            expect(hasCrypto).toBe(vertical.id === 'news');
+            expect(hasCrypto).toBe(
+                vertical.id === 'news' || vertical.id === 'fear-greed'
+            );
         }
+        expect(regionsOf('fear-greed').map(r => r.href)).toContain(
+            '/fear-greed/crypto'
+        );
     });
 });
 

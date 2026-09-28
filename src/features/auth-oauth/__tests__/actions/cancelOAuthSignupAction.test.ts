@@ -35,7 +35,7 @@ describe('cancelOAuthSignupAction', () => {
         mockCreatePendingOAuthSignupStoreFromEnv.mockReturnValue({
             delete: deleteMock,
             save: vi.fn(),
-            peek: vi.fn(),
+            peek: vi.fn().mockResolvedValue(null),
             consume: vi.fn(),
         });
 
@@ -72,7 +72,7 @@ describe('cancelOAuthSignupAction', () => {
         mockCreatePendingOAuthSignupStoreFromEnv.mockReturnValue({
             delete: deleteMock,
             save: vi.fn(),
-            peek: vi.fn(),
+            peek: vi.fn().mockResolvedValue(null),
             consume: vi.fn(),
         });
         const fd = new FormData();
@@ -93,6 +93,47 @@ describe('cancelOAuthSignupAction', () => {
         await expect(cancelOAuthSignupAction(fd)).rejects.toThrow(
             'NEXT_REDIRECT'
         );
+        expect(mockRedirect).toHaveBeenCalledWith('/login');
+    });
+
+    /** ai.siglens.io에서 온 가입을 취소해도 로그인 화면이 SSO 핸드오프 복귀를 잃지 않는다. */
+    it('지우기 전에 읽은 next를 로그인 화면에 되실어 준다', async () => {
+        const next = '/api/auth/handoff?to=ai&next=%2Fc%2Fabc';
+        const deleteMock = vi.fn().mockResolvedValue(undefined);
+        const peekMock = vi.fn().mockResolvedValue({ next });
+        mockCreatePendingOAuthSignupStoreFromEnv.mockReturnValue({
+            delete: deleteMock,
+            save: vi.fn(),
+            peek: peekMock,
+            consume: vi.fn(),
+        });
+        const fd = new FormData();
+        fd.set('token', 'tok');
+        await expect(cancelOAuthSignupAction(fd)).rejects.toThrow(
+            'NEXT_REDIRECT'
+        );
+        expect(peekMock.mock.invocationCallOrder[0]!).toBeLessThan(
+            deleteMock.mock.invocationCallOrder[0]!
+        );
+        expect(mockRedirect).toHaveBeenCalledWith(
+            `/login?next=${encodeURIComponent(next)}`
+        );
+    });
+
+    it('peek이 실패해도 토큰은 지우고 next 없이 /login으로 보낸다', async () => {
+        const deleteMock = vi.fn().mockResolvedValue(undefined);
+        mockCreatePendingOAuthSignupStoreFromEnv.mockReturnValue({
+            delete: deleteMock,
+            save: vi.fn(),
+            peek: vi.fn().mockRejectedValue(new Error('Redis down')),
+            consume: vi.fn(),
+        });
+        const fd = new FormData();
+        fd.set('token', 'tok');
+        await expect(cancelOAuthSignupAction(fd)).rejects.toThrow(
+            'NEXT_REDIRECT'
+        );
+        expect(deleteMock).toHaveBeenCalledWith('tok');
         expect(mockRedirect).toHaveBeenCalledWith('/login');
     });
 });

@@ -25,6 +25,7 @@ export const TICKER_CATEGORY_LABEL_KEY: Record<string, string> = {
     인터넷·플랫폼: 'tickerCategory.Internetplatforms',
     금융·지주: 'tickerCategory.Financialsholdings',
     코스닥: 'tickerCategory.KOSDAQ',
+    '관심 급상승': 'tickerCategory.Trendinginterest',
 };
 
 /**
@@ -53,6 +54,7 @@ export const TICKER_CATEGORY_DESCRIPTION_KEY: Record<string, string> = {
     인터넷·플랫폼: 'categoryDescription.Internetplatforms',
     금융·지주: 'categoryDescription.Financialsholdings',
     코스닥: 'categoryDescription.KOSDAQ',
+    '관심 급상승': 'categoryDescription.Trendinginterest',
     메이저: 'categoryDescription.Major',
     알트코인: 'categoryDescription.Altcoins',
 };

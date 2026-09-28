@@ -18,6 +18,7 @@ import {
     DrizzleUserRepository,
 } from '@/entities/auth/api';
 import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
+import { toHandoffAwareRedirect } from '@/entities/auth/lib/handoffStore';
 import type { LoginFormState } from '@/shared/lib/auth/formTypes';
 import { sanitizeNextPath, toSameOriginPath } from '@/shared/lib/auth/redirect';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
@@ -70,7 +71,11 @@ export async function loginAction(
         // 동기 `redirect`를 쓰는 이유는 아래 catch가 NEXT_REDIRECT를 재throw해야
         // 하고, TypeScript가 `never` 반환으로 이후 코드를 도달 불가로 좁혀야 하기
         // 때문이다(localeRedirect.ts JSDoc 참고).
-        redirect(await localeHref(toSameOriginPath(next)));
+        // ai 호스트에서 온 로그인(SSO 핸드오프)은 하드 내비게이션이어야 한다 —
+        // `toHandoffAwareRedirect` JSDoc 참고.
+        redirect(
+            toHandoffAwareRedirect(await localeHref(toSameOriginPath(next)))
+        );
     } catch (err) {
         if (err instanceof Error && err.message.startsWith('NEXT_REDIRECT'))
             throw err;

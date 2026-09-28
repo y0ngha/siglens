@@ -9,17 +9,23 @@ const withBundleAnalyzer = bundleAnalyzer({
     enabled: process.env.ANALYZE === 'true',
 });
 
-// ⚠️ TypeScript 7 + Next 16.2 조합 주의
-// Next의 빌드타임 타입체크는 레거시 JS API(`typescript/lib/typescript.js`)를 require하는데,
-// TypeScript 7(네이티브 Go 컴파일러)은 그 파일을 배포하지 않는다. Next는 대신
-// `@typescript/native-preview`가 설치돼 있으면 "네이티브 컴파일러 사용 중"으로 인식하고
-// 자기 타입체크를 건너뛴다(next/dist/lib/verify-typescript-setup.js).
-// 따라서 devDependencies의 `@typescript/native-preview`는 미사용 패키지가 아니라 이 신호용이다 —
-// 제거하면 `yarn build`가 "trying to use TypeScript but do not have the required package(s)"로 깨진다.
-// 타입 안전성은 `yarn typecheck`(tsc --noEmit, TS7)가 pre-push + CI에서 담당한다.
+// TypeScript 7 + Next 16.3: 빌드타임 타입체크는 TypeScript CLI(`tsc`)로 돈다.
+// Next 16.3부터 `experimental.useTypeScriptCli` 기본값이 true라 레거시 JS API
+// (`typescript/lib/typescript.js`, TS 7에는 없음) 대신 `tsc`를 실행한다 — `next build`의
+// "Running TypeScript" 단계가 이것이다(TS 7이라 수 초).
+// 16.2까지는 JS API가 없어서 `@typescript/native-preview`를 "네이티브 컴파일러" 신호로 두고
+// 타입체크를 건너뛰게 했는데, CLI 모드에서는 그 신호를 보지 않는다. 패키지는 에디터의
+// 네이티브 언어 서버(tsgo)용으로만 남아 있다(docs/conventions/TOOLCHAIN.md).
+// 타입 안전성의 기준은 여전히 `yarn typecheck`(tsc --noEmit, TS7)다 — pre-push + CI.
 const nextConfig: NextConfig = {
     // self-host: Docker 최소 번들(.next/standalone + server.js)
     output: 'standalone',
+
+    // Next 16.3부터 `next dev`가 AGENTS.md(없으면 CLAUDE.md)에 버전별 "agent rules" 블록을
+    // 자동으로 써넣는다(`next/dist/server/lib/generate-agent-files.js`, 기본 true). 이 저장소의
+    // AGENTS.md·CLAUDE.md는 직접 관리하는 문서라 `yarn dev`만 돌려도 워킹트리가 더러워지고,
+    // 에이전트가 그 블록을 무심코 커밋하거나 Next 버전을 올릴 때마다 문서가 흔들린다. 끈다.
+    agentRules: false,
 
     // ISR/fetch 캐시를 S3로 외부화(디스크풀 방지). production + 버킷 설정 시에만 등록.
     // dev/E2E(버킷 없음)는 기본 파일시스템 캐시로 동작.
@@ -78,8 +84,10 @@ const nextConfig: NextConfig = {
      *
      * **더 나은 해법이 있다면 그쪽이 맞다**: CloudFlare에서 `text/html`에 Compression
      * Rule을 걸면 HTML은 brotli(173KB, gzip보다 28KB 더 작음)로 나가고 정적 자산의
-     * brotli도 지켜지며 오리진 CPU는 0이다. 애초에 왜 엣지가 HTML만 압축하지 않는지는
-     * 근본 원인이 밝혀지지 않았다 — 그게 규명되면 이 플래그는 되돌리는 것이 낫다.
+     * brotli도 지켜지며 오리진 CPU는 0이다. 엣지가 HTML만 압축하지 않던 원인은
+     * 2026-09-26에 규명됐다 — Next가 붙이는 **강한 ETag**다(아래 `generateEtags` 주석).
+     * 그래도 이 플래그는 유지한다: 롱테일은 엣지 MISS가 대부분이라 서울 오리진 →
+     * 미국 엣지(Googlebot) 구간을 건너는데, 그 구간은 gzip(~40KB)이 비압축(~210KB)보다 싸다.
      *
      * CPU 비용은 과소평가하지 말 것: CF HTML 히트율은 실측 36.7%
      * (docs/architecture/CDN_CACHING.md)라 나머지는 오리진까지 오고, RSC 페이로드도
@@ -90,6 +98,40 @@ const nextConfig: NextConfig = {
      * `Cache-Control: no-transform`에서 압축 미들웨어가 빠진다(실측 확인).
      */
     compress: true,
+
+    /*
+     * HTML/RSC 응답에 ETag를 붙이지 않는다. **CloudFlare가 강한 ETag 응답을 압축하지 않기 때문이다.**
+     *
+     * 2026-09-26 프로덕션 실측(같은 캐시 키에 첫 요청의 Accept-Encoding만 바꿔 재현):
+     *
+     *   - 첫 요청이 `Accept-Encoding: identity`(압축 미지원 봇 등)면 엣지는 비압축 본문 +
+     *     강한 ETag를 캐시하고, **이후 gzip/br 요청에도 그 비압축 본문을 그대로** 낸다.
+     *     `/NRICX` 오리진 gzip 39KB → 엣지 HIT 209KB, `/MSFT/options` 565KB.
+     *   - ETag가 없는 응답(`/sitemap-popular.xml`, `robots.txt`)은 똑같이 identity로 채워도
+     *     이후 요청에 엣지가 br로 압축한다(436KB → 9.7KB).
+     *   - 엣지가 인코딩을 **바꿔** 압축하면(오리진 gzip → zstd/br) ETag가 벗겨진다(`/MSFT`).
+     *     오리진 gzip을 그대로 넘길 때는 강한 ETag가 남는다(`/AAPL`, `/NVDA/news` — 크롬 헤더 실측).
+     *
+     * 잃는 것은 조건부 요청(`If-None-Match` → 304)이다:
+     *   - Googlebot: 실익이 없었다. GSC 크롤 통계 응답 분포에 304가 없다(200 98%). HTML은
+     *     ISR 6h마다 가격이 바뀌어 본문 해시가 달라지고, 롱테일은 며칠~몇 주 간격으로 온다.
+     *   - 실사용자 재방문: **실제로 잃는다.** 브라우저에 줄 freshness가 없어(`s-maxage`만,
+     *     `max-age`·`Last-Modified` 없음) 재방문마다 조건부 GET을 보내는데, 위처럼 gzip이
+     *     그대로 나간 페이지는 지금 304를 받고 있다. 끄면 같은 ISR 주기 안의 재방문도
+     *     압축 본문 전체(종목 페이지 ~40~60KB)를 다시 받는다. 오염된 객체의 비압축 209~565KB를
+     *     매번 받던 것보다는 싸다고 보고 감수한다 — 배포 후 재방문 트래픽을 관찰할 것.
+     *   - 엣지 → 오리진 재검증은 서울 리전 터널 왕복 ~16ms라 304로 아낄 게 거의 없다.
+     *   - 대시보드 쪽 원인은 캐시 룰의 "Respect strong ETags"였다. 2026-09-26 전 룰에서 OFF로
+     *     바꾼 직후 실측: 새 캐시 키·기존 오염 객체 모두 즉시 압축됐다(`/NRICX` 209KB → br 35KB,
+     *     `/MSFT/options` 565KB → zstd 84KB). 단 CloudFlare는 ETag를 약한 ETag(`W/`)로 바꾸지
+     *     않고 **아예 벗겼다**(gzip·zstd·identity 전부) — 즉 토글만 꺼도 재방문 304는 없다.
+     *     그래서 이 플래그의 추가 비용은 0이고, 누가 그 토글을 다시 켜도 오염이 재발하지
+     *     않게 하는 가드로 남긴다(`docs/architecture/CDN_CACHING.md` R1).
+     *   - `Last-Modified`도 내지 않으므로 재검증 수단은 없다. 304를 되살리려면 이 플래그와
+     *     토글을 함께 봐야 하고, 되살린 뒤에는 위 재현(identity로 채우고 gzip/br 요청)으로
+     *     엣지 압축이 유지되는지 반드시 다시 실측할 것.
+     */
+    generateEtags: false,
 
     allowedDevOrigins: ['172.30.1.26'],
 
@@ -132,6 +174,16 @@ const nextConfig: NextConfig = {
     // (stale 1m / revalidate 5m / expire 30m), options-market-closed
     // (5m / 30m / 2h), options-weekend (1h / 6h / 1d) cacheLife profile도
     // 함께 부활시킬 것.
+
+    // Next 16.3에서 기본 ON이 된 클라이언트 라우터 플래그(`validateRSCRequestHeaders`,
+    // `prefetchInlining`, `varyParams`, `optimisticRouting`, `appNewScrollHandler`)는 기본값 그대로 둔다.
+    // CDN 캐시 규칙(docs/architecture/CDN_CACHING.md §3 R1/R2)이 기대는 계약 — "RSC 요청은 항상
+    // `RSC` 헤더와 `_rsc` 쿼리를 함께 달고, `_rsc` URL은 `text/x-component`만 받는다" — 을 16.3.6
+    // 프로덕션 빌드에서 실제 클라이언트 내비게이션으로 확인했다(2026-09-24, 위반 0, 307 0).
+    // `validateRSCRequestHeaders`는 `_rsc`가 헤더 해시와 다르면 올바른 URL로 307을 보내므로
+    // URL만 키로 쓰는 CF 캐시에 다른 변종이 섞이는 것을 오히려 막는다. 전역 링크는
+    // `prefetch={false}`라 `prefetchInlining` 경로는 실측상 발생하지 않았다(7개 페이지 0건).
+    // 플래그를 바꾸거나 Next를 올릴 때는 같은 계약을 다시 확인할 것.
 
     // Turbopack (Next.js 16 기본값이나 명시)
     turbopack: {

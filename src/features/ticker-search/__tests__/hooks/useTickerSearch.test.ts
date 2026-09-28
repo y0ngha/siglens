@@ -16,7 +16,11 @@ const mockResults: TickerSearchResult[] = [
 let lastQueryKey: readonly string[] = [];
 let lastNetworkMode: string | undefined;
 /** 훅이 파생하는 `isSearching`을 검사하려면 쿼리 상태를 케이스마다 바꿀 수 있어야 한다. */
-const queryState = { status: 'success' as 'success' | 'pending' | 'error' };
+const queryState = {
+    status: 'success' as 'success' | 'pending' | 'error',
+    isFetching: false,
+    error: null as unknown,
+};
 
 vi.mock('@tanstack/react-query', () => ({
     useQuery: ({
@@ -31,10 +35,14 @@ vi.mock('@tanstack/react-query', () => ({
         lastQueryKey = queryKey;
         lastNetworkMode = networkMode;
         return {
-            data: enabled ? mockResults : undefined,
+            data:
+                enabled && queryState.status !== 'error'
+                    ? mockResults
+                    : undefined,
             isError: queryState.status === 'error',
-            error: null,
+            error: queryState.status === 'error' ? queryState.error : null,
             status: enabled ? queryState.status : 'pending',
+            isFetching: enabled ? queryState.isFetching : false,
         };
     },
 }));
@@ -43,12 +51,20 @@ vi.mock('@/entities/ticker/actions', () => ({
     searchTickerAction: vi.fn(),
 }));
 
+const mockReportClientError = vi.fn();
+vi.mock('@/shared/lib/reportClientError', () => ({
+    reportClientError: (...args: unknown[]) => mockReportClientError(...args),
+}));
+
 describe('useTickerSearch', () => {
     beforeEach(() => {
         vi.useFakeTimers();
         lastQueryKey = [];
         lastNetworkMode = undefined;
         queryState.status = 'success';
+        queryState.isFetching = false;
+        queryState.error = null;
+        mockReportClientError.mockClear();
     });
 
     afterEach(() => {
@@ -153,5 +169,60 @@ describe('useTickerSearch', () => {
         });
 
         expect(lastNetworkMode).toBe('always');
+    });
+
+    it('완료된 status에서도 재조회(isFetching)가 도는 동안은 검색 중으로 본다', () => {
+        queryState.status = 'success';
+        queryState.isFetching = true;
+        const { result } = renderHook(() => useTickerSearch('AAPL'));
+        act(() => {
+            vi.advanceTimersByTime(300);
+        });
+
+        expect(result.current.isSearching).toBe(true);
+    });
+
+    it('exposes isError and returns an empty results array (never crashes) when the query fails', () => {
+        queryState.status = 'error';
+        queryState.error = new Error('search failed');
+        const { result } = renderHook(() => useTickerSearch('AAPL'));
+        act(() => {
+            vi.advanceTimersByTime(300);
+        });
+
+        expect(result.current.isError).toBe(true);
+        expect(result.current.results).toEqual([]);
+    });
+
+    it('reports a query failure exactly once via reportClientError', () => {
+        queryState.status = 'error';
+        queryState.error = new Error('search failed');
+        renderHook(() => useTickerSearch('AAPL'));
+        act(() => {
+            vi.advanceTimersByTime(300);
+        });
+
+        expect(mockReportClientError).toHaveBeenCalledTimes(1);
+        expect(mockReportClientError).toHaveBeenCalledWith(
+            queryState.error,
+            'useTickerSearch'
+        );
+    });
+
+    it('does not report the same error object twice across re-renders', () => {
+        queryState.status = 'error';
+        queryState.error = new Error('search failed');
+        const { rerender } = renderHook(({ query }) => useTickerSearch(query), {
+            initialProps: { query: 'AAPL' },
+        });
+        act(() => {
+            vi.advanceTimersByTime(300);
+        });
+        rerender({ query: 'AAPL' });
+        act(() => {
+            vi.advanceTimersByTime(0);
+        });
+
+        expect(mockReportClientError).toHaveBeenCalledTimes(1);
     });
 });

@@ -6,7 +6,6 @@ import {
     useAnalysisSettingsHydrated,
 } from '@/features/symbol-model';
 import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
-import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 import { useCongressTrend } from './hooks/useCongressTrend';
 import { CongressTrendSummaryError } from './CongressTrendSummaryError';
 import { CongressTrendSummarySkeleton } from './CongressTrendSummarySkeleton';
@@ -67,10 +66,6 @@ export function CongressTrendSummary({
 
     if (state.status === 'no_trades') {
         return <CongressTrendSummaryEmpty />;
-    }
-
-    if (state.status === 'bot_blocked') {
-        return <BotBlockedNotice />;
     }
 
     if (state.status === 'error') {

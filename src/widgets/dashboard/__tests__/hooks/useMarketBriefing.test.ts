@@ -140,40 +140,6 @@ describe('useMarketBriefing', () => {
         client.clear();
     });
 
-    // 롤링 배포 중 구 컨테이너는 봇에게 `{ briefing: null, botBlocked: true }`를 보낸다.
-    // 타입에서는 사라진 모양이라 `as never`로 주입한다.
-    it('(Worst) 구 컨테이너의 botBlocked 응답인데 seed가 있으면 seed를 보여 준다 (색인 텍스트 보존)', async () => {
-        const PEEK = { headlineKo: '시드 브리핑' } as never;
-        mockAction.mockResolvedValue({
-            briefing: null,
-            botBlocked: true,
-        } as never);
-        const { client, wrapper } = makeWrapper();
-        const { result } = renderHook(() => useMarketBriefing('us', PEEK), {
-            wrapper,
-        });
-
-        await waitFor(() => expect(mockAction).toHaveBeenCalled());
-        expect(result.current.input).toMatchObject({ status: 'cached' });
-        client.clear();
-    });
-
-    it('(Worst) 구 컨테이너의 botBlocked 응답(seed 없음) → input undefined, 크래시 없음', async () => {
-        mockAction.mockResolvedValue({
-            briefing: null,
-            botBlocked: true,
-        } as never);
-        const { client, wrapper } = makeWrapper();
-        const { result } = renderHook(() => useMarketBriefing('us'), {
-            wrapper,
-        });
-
-        await waitFor(() => expect(mockAction).toHaveBeenCalled());
-        await waitFor(() => expect(client.isFetching()).toBe(0));
-        expect(result.current.input).toBeUndefined();
-        client.clear();
-    });
-
     it("(Worst) action {ok:false} → input 'error'", async () => {
         const errorResult: MarketBriefingActionResult = {
             ok: false,

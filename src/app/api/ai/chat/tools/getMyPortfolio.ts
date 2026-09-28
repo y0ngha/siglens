@@ -4,6 +4,12 @@ import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import { roundNumber } from '@/entities/bars/lib/roundIndicators';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { quoteWithTimeout } from '@/shared/api/market/quoteTimeout';
+import { MS_PER_SECOND } from '@/shared/config/time';
+import {
+    assessFreshness,
+    type FreshnessView,
+    QUOTE_MAX_AGE_MS,
+} from './freshness';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import {
     getDescriptor,
@@ -28,6 +34,23 @@ import { pctVs, ratioPct } from './percent';
  */
 const QUOTE_CONCURRENCY = 5;
 
+/**
+ * 상세 나이를 실을 stale 종목 수 상한.
+ *
+ * 하나당 ~83자다. 이 툴은 기본 상한(`TOOL_RESULT_MAX_CHARS`, 4,000자)을 쓰고
+ * 보유종목 수에 제한이 없으므로, 전부 stale이면 이 필드만으로 상한을 밀어낸다 —
+ * 넘기는 순간 `truncateToolResult`가 결과 **전체**를 preview 블롭으로 접어
+ * 종목·합계·비중이 모두 사라진다.
+ *
+ * 이 상한이 보장하는 것은 "**이 필드가** 봉투를 밀어내지 않는다"까지다. 봉투
+ * 자체는 여전히 넘칠 수 있다 — 종목당 기본 페이로드가 ~246자라 stale이 하나도
+ * 없어도 16종목쯤에서 4,000자를 넘는다. 그건 이 상한이 아니라 보유종목 수의
+ * 문제이고, 별도 과제다.
+ *
+ * 잘린 분량은 `stalePriceCount`가 수로 알린다.
+ */
+const STALE_FRESHNESS_DETAIL_LIMIT = 5;
+
 interface HoldingView {
     symbol: string;
     companyName: string | null;
@@ -35,6 +58,22 @@ interface HoldingView {
     averagePrice: number;
     currency: string;
     price: number | null;
+    /**
+     * 이 종목 시세가 **동결됐을 때만** 실리는 나이 정보. `get_quote`와 같은
+     * 판정(`assessFreshness` + `QUOTE_MAX_AGE_MS`)을 쓴다.
+     *
+     * 없으면 상장폐지·티커 개명으로 동결된 시세가 아무 표시 없이 평가금액·손익에
+     * 그대로 반영된다 — 2026-09-21 `SQ`(→`XYZ`) 사례가 그 모양이고, 보유종목은
+     * 그 값으로 **사용자의 수익률을 계산**하므로 챗 답변보다 피해가 크다.
+     *
+     * **정상 시세에는 붙이지 않는다.** 이 툴은 기본 상한(`TOOL_RESULT_MAX_CHARS`,
+     * 4,000자)을 쓰고 보유종목 수에 상한이 없다. 전 종목에 나이를 실으면 종목당
+     * ~83자가 늘어 14종목 기준 3,443 → 4,605자가 되고, 상한을 넘는 순간
+     * `truncateToolResult`가 결과 **전체**를 preview 블롭으로 접어 모든 종목·합계·
+     * 비중이 사라진다 — 막으려던 위험보다 훨씬 나쁘다. 신호는 "이 값이 이상하다"일
+     * 때만 필요하므로 stale인 종목에만 싣는다.
+     */
+    priceFreshness?: FreshnessView;
     dayChangePct: number | null;
     marketValue: number | null;
     costBasis: number;
@@ -68,6 +107,8 @@ interface RawHolding {
     averagePrice: number;
     currency: string;
     price: number | null;
+    /** stale일 때만 채운다 — `HoldingView.priceFreshness` 주석 참고. */
+    priceFreshness: FreshnessView | null;
     dayChangePctRaw: number | null;
     costBasisRaw: number;
     marketValueRaw: number | null;
@@ -82,6 +123,23 @@ interface RawCurrencyTotal {
 }
 
 /**
+ * 시세 타임스탬프를 나이로 바꾸되 **stale일 때만** 돌려준다. 정상 시세에 대해
+ * `null`을 주는 것이 의도다 — 이유는 `HoldingView.priceFreshness` 주석 참고.
+ */
+function staleFreshnessOrNull(
+    timestampSeconds: number | undefined
+): FreshnessView | null {
+    if (timestampSeconds === undefined || !Number.isFinite(timestampSeconds))
+        return null;
+    const view = assessFreshness({
+        asOfMs: timestampSeconds * MS_PER_SECOND,
+        maxAgeMs: QUOTE_MAX_AGE_MS,
+        nowMs: Date.now(),
+    });
+    return view.stale ? view : null;
+}
+
+/**
  * `quoteWithTimeout`'s result, validated — `null` when the lookup failed
  * (the adapter returned `null`), timed out, or returned a zero/negative
  * price (bad upstream data) — so an unusable quote reads as "unknown", never
@@ -91,7 +149,11 @@ interface RawCurrencyTotal {
 async function fetchValidatedQuote(
     marketProfile: MarketProfileId,
     symbol: string
-): Promise<{ price: number; dayChangePctRaw: number | null } | null> {
+): Promise<{
+    price: number;
+    dayChangePctRaw: number | null;
+    freshness: FreshnessView | null;
+} | null> {
     try {
         const quote = await quoteWithTimeout(
             getCachedMarketDataProvider(sessionSpecFor(marketProfile)),
@@ -104,6 +166,7 @@ async function fetchValidatedQuote(
             dayChangePctRaw: Number.isFinite(quote.changesPercentage)
                 ? quote.changesPercentage
                 : null,
+            freshness: staleFreshnessOrNull(quote.timestamp),
         };
     } catch (error) {
         logToolDegrade('get_my_portfolio', 'quote lookup', error);
@@ -135,6 +198,7 @@ async function fetchRawHolding(r: {
         r.fmpSymbol ?? r.symbol
     );
     const price = validated?.price ?? null;
+    const priceFreshness = validated?.freshness ?? null;
     const dayChangePctRaw = validated?.dayChangePctRaw ?? null;
     return {
         symbol: r.symbol,
@@ -143,6 +207,7 @@ async function fetchRawHolding(r: {
         averagePrice,
         currency,
         price,
+        priceFreshness,
         dayChangePctRaw,
         costBasisRaw,
         marketValueRaw: price === null ? null : quantity * price,
@@ -258,6 +323,21 @@ export const getMyPortfolioTool: ToolExecutor = async (_args, ctx) => {
         ])
     );
 
+    // 상세를 실을 stale 종목을 **가장 오래된 순**으로 고른다 — 상한에 걸려 잘려도
+    // 가장 의심스러운 종목이 남도록.
+    const staleSymbols = rawHoldings
+        .filter(
+            (h): h is RawHolding & { priceFreshness: FreshnessView } =>
+                h.priceFreshness !== null
+        )
+        .toSorted(
+            (a, b) => b.priceFreshness.ageMinutes - a.priceFreshness.ageMinutes
+        );
+    const stalePriceCount = staleSymbols.length;
+    const detailedStale = new Set(
+        staleSymbols.slice(0, STALE_FRESHNESS_DETAIL_LIMIT).map(h => h.symbol)
+    );
+
     const holdings: HoldingView[] = rawHoldings.map(h => {
         const rawTotal = rawTotalByCurrency.get(h.currency)!;
         return {
@@ -267,6 +347,9 @@ export const getMyPortfolioTool: ToolExecutor = async (_args, ctx) => {
             averagePrice: h.averagePrice,
             currency: h.currency,
             price: h.price,
+            ...(h.priceFreshness !== null && detailedStale.has(h.symbol)
+                ? { priceFreshness: h.priceFreshness }
+                : {}),
             dayChangePct:
                 h.dayChangePctRaw === null
                     ? null
@@ -309,6 +392,8 @@ export const getMyPortfolioTool: ToolExecutor = async (_args, ctx) => {
         asOf: new Date().toISOString(),
         source: 'SIGLENS portfolio',
         count: holdings.length,
+        // 0이면 생략한다 — 정상 포트폴리오의 봉투에 상시 노이즈를 더하지 않는다.
+        ...(stalePriceCount > 0 ? { stalePriceCount } : {}),
         holdings,
         totals,
         ...(currencies.length > 1 ? { weightScope: 'currency' as const } : {}),

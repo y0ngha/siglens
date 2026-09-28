@@ -43,6 +43,14 @@
         // eslint-config-next 패리티: exhaustive-deps는 warn(에러로 올리면 기존 코드가 막힌다).
         "react/exhaustive-deps": "warn",
 
+        // 훅 6곳(검색 오버레이·테마·백테스트 필터)을 전부 정리했다 — 강제한다.
+        "react/set-state-in-effect": "error",
+
+        // oxlint 1.79부터 주석도 검사한다(ESLint 기본값에 맞춤). JSDoc 안에서 `*/`를 끊으려고
+        // 일부러 넣은 zero-width space(`/* *​/`)가 걸리므로, 1.78까지의 동작대로 주석은 제외한다.
+        // 문자열·코드의 불규칙 공백은 계속 에러다.
+        "no-irregular-whitespace": ["error", { "skipComments": true }],
+
         // `_` 프리픽스는 의도적 미사용(TODO 주석과 함께 유지)이라 제외.
         "no-unused-vars": [
             "warn",

@@ -12,6 +12,7 @@ import type { DashboardScope } from '@/shared/config/dashboardScope';
  */
 export const TEST_SCOPE: DashboardScope = {
     id: 'us',
+    hasHubPage: true,
     marketLabel: '미국 증시',
     currencySymbol: '$',
     linkSectorCards: true,

@@ -1,6 +1,6 @@
 import 'server-only';
 import type { MarketDailyClose } from '@y0ngha/siglens-core';
-import { createYahooClient } from '@/shared/api/yahoo/createYahooClient';
+import { getYahooClient } from '@/shared/api/yahoo/createYahooClient';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { ISO_DATE_LENGTH, MS_PER_DAY } from '@/shared/config/time';
 import { e2eDailyCloses } from './e2eFearGreedFixture';
@@ -78,7 +78,7 @@ export async function fetchKrDailyCloses(
     // fixture를 재사용해 게이지·비교·요인 막대까지 실제로 렌더시킨다.
     if (isE2E()) return e2eDailyCloses(symbol);
 
-    const client = createYahooClient();
+    const client = getYahooClient();
     const result = await client.chart(symbol, {
         period1: from,
         period2: to,

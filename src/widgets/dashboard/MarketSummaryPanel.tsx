@@ -55,7 +55,7 @@ interface MarketSummaryPanelProps {
  * 제목이 한 번 더 말해 줘야 한다 — 스크린리더는 탭의 활성 상태를 이 섹션과 함께
  * 읽어 주지 않는다.
  */
-const PANEL_HEADING_KEY: Record<ClientDashboardScope['id'], string> = {
+const PANEL_HEADING_KEY: Partial<Record<ClientDashboardScope['id'], string>> = {
     us: 'panelHeading.us',
     kr: 'panelHeading.kr',
 };
@@ -85,7 +85,11 @@ export function MarketSummaryPanel({
     const { data, isPending, sectorMap, indices, hasMissingQuotes } =
         useMarketSummary(scope.id);
     const { input: briefing } = useMarketBriefing(scope.id, peekSeed);
-    const heading = t(PANEL_HEADING_KEY[scope.id]);
+    // `crypto` scope에는 이 패널을 쓰는 페이지가 없다(에이전트 도구 전용). 키를
+    // 억지로 채우면 미국 제목이 크립토 화면에 붙는데, 그건 화면이 생기는 날까지
+    // 아무도 못 본다 — 없으면 scope 자신의 라벨로 떨어뜨린다.
+    const headingKey = PANEL_HEADING_KEY[scope.id];
+    const heading = headingKey ? t(headingKey) : scope.marketLabel;
 
     if (isPending) return <MarketSummaryPanelSkeleton scope={scope} />;
 

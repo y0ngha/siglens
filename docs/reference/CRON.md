@@ -4,13 +4,15 @@
 
 `PATCH /api/cron/seo-prewarm`(spec `docs/superpowers/specs/2026-07-24-seo-recovery-bot-ssr-prewarm-design.md`)를 AWS **EventBridge classic Rule → API Destination**이 호출한다. 이 저장소 최초의 EventBridge 사용이다.
 
-- **스케줄(UTC 고정)**: EventBridge classic Rules + API Destinations는 UTC 스케줄만 지원한다. 라우트는 ET/KRX 마감 기준 신선도로 자체 게이팅하므로 UTC 스케줄이어도 문제없다. **20:30–03:59 UTC**(미국 마감 창) + **07:00–09:55 UTC**(KR 마감 창) 사이 5분 간격으로 실행되며, EST(UTC-5)/EDT(UTC-4) 양쪽에서 16:00 ET 마감을 커버한다. 미국 마감 창은 UTC 자정을 걸치고, AWS cron이 "시간별로 다른 분(minute) 필터"를 표현할 수 없어(20시대만 :30부터 시작해야 함) 규칙을 3개로 쪼갠다:
+- **스케줄(UTC 고정)**: EventBridge classic Rules + API Destinations는 UTC 스케줄만 지원한다. 라우트는 ET/KRX 마감 기준 신선도로 자체 게이팅하므로 UTC 스케줄이어도 문제없다. **20:30–00:59 UTC + 04:05–05:55 UTC**(미국 마감 창) + **10:05–12:55 UTC**(KR 마감 창) 사이 5분 간격으로 실행되며, EST(UTC-5)/EDT(UTC-4) 양쪽에서 16:00 ET 마감을 커버한다. 미국 마감 창은 UTC 자정을 걸치고, AWS cron이 "시간별로 다른 분(minute) 필터"를 표현할 수 없어(20시대만 :30부터 시작해야 함) 규칙을 4개로 쪼갠다(DeepSeek peak 구간을 비워야 하는 제약이 더해졌다 — 아래):
   - `siglens-seo-prewarm-evening`: `cron(30,35,40,45,50,55 20 * * ? *)` (20:30–20:55 UTC)
   - `siglens-seo-prewarm-evening-late`: `cron(0/5 21-23 * * ? *)` (21:00–23:59 UTC)
-  - `siglens-seo-prewarm-early`: `cron(0/5 0-3 * * ? *)` (00:00–03:59 UTC)
-  - `siglens-seo-prewarm-kr-boundary`: `cron(0/5 7-9 * * ? *)` (07:00–09:55 UTC = 16:00–18:55 KST) — UTC 자정을 걸치지 않아 규칙 1개로 충분하다.
+  - `siglens-seo-prewarm-early`: `cron(0/5 0 * * ? *)` (00:00–00:59 UTC)
+  - `siglens-seo-prewarm-early-late`: `cron(5/5 4-5 * * ? *)` (04:05–05:55 UTC)
+  - `siglens-seo-prewarm-kr-boundary`: `cron(5/5 10-12 * * ? *)` (10:05–12:55 UTC = 19:05–21:55 KST) — UTC 자정을 걸치지 않아 규칙 1개로 충분하다.
+  - ⚠️ **2026-09 비용 감사 — 왜 01–04시와 06–10시가 비어 있는가**: 프로젝트 DeepSeek 지출의 ~99%가 이 cron이다(프리웜 창 밖은 시간당 2~15회). DeepSeek는 2026-08-16부터 **peak를 평일 `01:00–04:00`·`06:00–10:00` UTC**로 정의하고 그 밖(주말·중국 공휴일 포함)을 **정확히 절반** 가격으로 매긴다. 옛 스케줄(`early` 00–03시 + `kr-boundary` 07–09시)은 그 두 구간을 정통으로 덮어, 실측 하룻밤 출력 10.12M 토큰 중 **2.93M(29%)이 2배 요금**이었고 KR 창은 전 구간이 peak였다. 지금 배치는 peak 노출이 0이다. 창 총량은 126 tick(10.5h) → 109 tick(9h5m, −1h25m)으로 줄었고, 그 처리량은 같은 감사의 다른 두 건(overall 축 technical 중복 제거, 느린 3탭 주 2회 주기)이 되돌려준다. **시각을 옮길 때는 반드시 위 peak 구간을 피할 것** — 한 시간만 밀려도 그 시간대 토큰이 조용히 2배로 청구되고 알람은 울리지 않는다. **정각이 아니라 :05부터 시작하는 것도 같은 이유**다 — DeepSeek 문서는 peak를 `01:00 - 04:00`/`06:00 - 10:00`으로만 적고 끝점이 닫힌 구간인지 말하지 않는다. `early-late`(04시)와 `kr-boundary`(10시)는 하필 그 끝점에서 시작하므로, 닫힌 구간이면 각 창의 첫 tick이 2배로 청구된다. 확인에 청구서 하루가 걸리고 틀려도 알람이 없어, 창당 tick 1개를 양보해 질문 자체를 없앴다. 반대로 창 **끝**의 straddle(`early`의 00:55 tick, `early-late`의 05:55 tick이 띄운 배치가 01:00·06:00 이후까지 돌 수 있다 — `BATCH_DEADLINE_MS` 10분)은 창을 더 자르는 것 말고는 못 막고 그 손실이 더 커서, 의도적으로 받아들인 잔여분이다.
   - ⚠️ **FIX Z(감사) — 왜 20:00이 아니라 20:30 시작인가**: technical 캐시(anonymous/free 기준)는 KST 05:00 = **UTC 20:00**에 만료된다(`infrastructure/cache/config.js`). 원래 스케줄(20:00 시작)은 가장 많이 크롤되는 `/[symbol]` 루트 라우트가 cron의 첫 tick 시점에 거의 항상 캐시 MISS였다. 30분 지연 + 기존 30분 정착 버퍼(`SETTLE_BUFFER_MS`, `freshness.ts`)를 합쳐 캐시 만료·정착 버퍼 둘 다보다 뒤로 시작 시점을 민다.
-  - ⚠️ **2026-08 감사(KR 5종목 prewarm 미도달) — 왜 `kr-boundary` 창이 추가로 필요한가**: `shouldDeferPrewarmWhileOpen`(`freshness.ts`)이 KRX 정규장(09:00–15:30 KST = 00:00–06:30 UTC)이 열려 있는 국내 종목을 매 tick 미룬다. 미국 마감 창의 뒤쪽 4시간(00:00–03:59 UTC)이 정확히 그 장중 구간과 겹치므로, 국내 종목은 그 창의 저녁 절반(20:30–23:59 UTC)에서만 선별 가능했다 — 그런데 그 절반 창은 이미 미국·크립토 심볼로 포화 상태라(`selectFairBatch`의 bounded 후보 창) 국내 종목의 회전 순번이 자주 밀렸다. 실측: `POPULAR_TICKERS`의 KR 블록 head 5종목(`005930.KS` 삼성전자, `000660.KS` SK하이닉스, `005380.KS` 현대차, `373220.KS` LG에너지솔루션, `207940.KS` 삼성바이오로직스)이 전 탭·`news` 테이블까지 0행이었다. `kr-boundary`(07:00 UTC = 16:00 KST)는 KRX 마감(06:30 UTC) + 정착 버퍼(30min)가 이미 지난 시점이라 시작하자마자 국내 종목이 즉시 선별 가능하다. 이 창에서 뽑히는 미국·크립토 심볼은 전날 저녁 창에서 이미 fresh였을 가능성이 높아 `isSnapshotFresh`가 걸러 seam을 호출하지 않는다 — 추가 비용이 거의 없다.
+  - ⚠️ **2026-08 감사(KR 5종목 prewarm 미도달) — 왜 `kr-boundary` 창이 추가로 필요한가**: `shouldDeferPrewarmWhileOpen`(`freshness.ts`)이 KRX 정규장(09:00–15:30 KST = 00:00–06:30 UTC)이 열려 있는 국내 종목을 매 tick 미룬다. 미국 마감 창의 뒤쪽 4시간(00:00–03:59 UTC)이 정확히 그 장중 구간과 겹치므로, 국내 종목은 그 창의 저녁 절반(20:30–23:59 UTC)에서만 선별 가능했다 — 그런데 그 절반 창은 이미 미국·크립토 심볼로 포화 상태라(`selectFairBatch`의 bounded 후보 창) 국내 종목의 회전 순번이 자주 밀렸다. 실측: `POPULAR_TICKERS`의 KR 블록 head 5종목(`005930.KS` 삼성전자, `000660.KS` SK하이닉스, `005380.KS` 현대차, `373220.KS` LG에너지솔루션, `207940.KS` 삼성바이오로직스)이 전 탭·`news` 테이블까지 0행이었다. `kr-boundary`(2026-09 비용 감사 이후 10:05 UTC = 19:05 KST, 그 전에는 07:00 UTC)는 KRX 마감(06:30 UTC) + 정착 버퍼(30min)가 이미 지났고 US 정규장(13:30 UTC 개장)도 아직 열리지 않아 시작하자마자 국내 종목이 즉시 선별 가능하다. 이 창에서 뽑히는 미국·크립토 심볼은 전날 저녁 창에서 이미 fresh였을 가능성이 높아 `isSnapshotFresh`가 걸러 seam을 호출하지 않는다 — 추가 비용이 거의 없다.
 - **휴장일**: 2026-08부터 `freshness.ts`가 core의 NYSE 캘린더를 따른다. 휴장일에는 마감 경계가 롤하지 않아 전 심볼 stale 재생성이 일어나지 않고(연 9회 × ~1,900유닛 LLM 호출 절감), 반장일에는 13:30 ET에 경계가 롤한다. FMP 예산 키도 UTC가 아니라 **ET 날짜** 버킷이라 UTC 자정을 가로지르는 이 창이 두 키로 쪼개지지 않는다.
 - **인증**: EventBridge Connection(`siglens-seo-prewarm`, API_KEY 인증)이 `Authorization: Bearer <CRON_SECRET>` 헤더를 자동 주입한다. `CRON_SECRET`은 `.env.example`에 필수 키로 등록돼 있고, `04-params.sh`가 SSM `/siglens/CRON_SECRET`에 이미 게시한다(check-env.sh의 OPTIONAL_KEYS에 없음 — 배포 게이트가 강제). `13-seo-prewarm.sh`는 이 값을 SSM에서 읽기만 하고 새로 만들지 않는다.
 - **202/after() 설계**: 라우트는 인증·락 확인 후 즉시 `202 Accepted`를 반환하고, 실제 배치(`runPrewarmBatch`)는 `next/server`의 `after()`로 백그라운드 실행된다. API Destination의 짧은 타임아웃(~5s)이나 ALB idle timeout(60s)에 걸리지 않기 위함. 중첩 실행은 Redis 루트 락이 차단하며, 락 보유 중이면 `204`(2xx라 EventBridge가 재시도 폭풍을 일으키지 않음)를 반환한다.
@@ -26,23 +28,24 @@
   - terminal skip(backoff, FIX C 감사): `[seo-prewarm] skip {symbol}:{tab} — status=...`(또는 `— null result`)를 `console.warn`으로 남긴다(기존 `console.debug`는 로그 파이프라인에서 조용히 사라져 운영자가 "막힌" 유닛을 볼 수 없었다). 해당 (symbol, tab)은 6시간 backoff에 들어가 다음 몇 tick 동안 재선별되지 않는다 — **하룻밤에 이 로그가 몇 번 보이는 건 정상**이다(영구 실패 유닛도 있을 수 있다: 예 — 옵션 체인이 없는 심볼의 `options` 탭). 특정 (symbol, tab)이 여러 밤 연속 반복되면 원인(정규화 실패, no_trades 등)을 살펴볼 것.
   - FMP 429(rate limit)는 `fmpRetry.ts`가 10s/15s/20s로 자동 재시도하지만, 재시도 자체를 로그로 남기지 않는다 — 안정적인 429 로그 문자열이 없어 전용 알람은 아직 없다(best-effort, `13-seo-prewarm.sh`에 TODO로 남겨둠). 429가 배치에 영향을 줄 만큼 누적되면 batch-failed 알람이 구조적 실패로 잡아낸다.
   - **정상 vs 진짜로 막힌 상태 구분**(운영 참고): `harvested 0`인 tick 자체는 정상일 수 있다 — 그 tick의 후보 창에 신규 stale 심볼이 없었을 뿐이다. **진짜로 막힌 상태**는 다음 중 하나: (a) `remaining > 0`인데 `harvested`가 여러 tick 연속 계속 0이면서 `batch deadline reached`가 매번 찍힘(유닛이 LLM 마감까지 끌려가는 중 — provider 지연/키 문제 의심), (b) 같은 (symbol, tab)에 대해 `skip ... status=` 로그가 여러 밤 연속 반복(terminal skip이 self-heal 안 됨).
-  - starvation watch(2026-08 감사): `[seo-prewarm] starvation watch: N symbol(s) stale > 48h — worst: SYM1(never), ...` — 회전에서 구조적으로 빠지고 있는 심볼을 이름으로 남긴다. 아래 "Starvation watch" 절 참고.
+  - starvation watch(2026-08 감사): `[seo-prewarm] starvation watch: N symbol(s) stale > 48h — worst: SYM1(never: news), ...` — 회전에서 구조적으로 빠지고 있는 심볼을 이름으로 남긴다. 아래 "Starvation watch" 절 참고.
 - **부트스트랩(수동, 1회)**: 첫 태그 배포 전에 다음을 순서대로 수행한다.
   1. **DB 마이그레이션** — `seo_analysis_snapshots` 테이블(마이그레이션 `0027`)을 적용한다. `yarn db:migrate`는 내부적으로 `dotenv -e .env.local`을 거치므로 **`.env.local`의 `DATABASE_URL`이 반드시 prod를 가리키게** 한 뒤 실행할 것 — 그렇지 않으면 로컬/개발 DB가 조용히 마이그레이션된다. 실행 후 `psql`로 `\d seo_analysis_snapshots`를 조회해 테이블이 실제 prod에 생겼는지 확인한다. 중복 실행 무해(이미 있으면 no-op). 이 테이블 없이 배치를 돌리면 select/upsert가 즉시 실패한다.
   2. **`infra/aws/.env` 전제조건** — `13-seo-prewarm.sh`는 `set -u` 하에서 이 파일을 `source`하므로, 파일이 없으면 즉시 hard-fail한다(다른 `infra/aws/*.sh` 스크립트가 이미 만들어뒀어야 한다).
   3. **로그 그룹 순서** — `13-seo-prewarm.sh`의 `put-metric-filter` 호출은 로그 그룹 `/siglens/app`이 이미 존재한다는 전제다(`10-logs.sh` 또는 첫 인스턴스 부팅이 생성). 그룹이 아직 없으면 `put-metric-filter`가 에러를 던지지만 스크립트는 `|| true`로 조용히 무시하므로 **필터가 하나도 안 걸린 채로 스크립트가 "성공"한 것처럼 보인다**. 첫 배포에서는 `10-logs.sh`(또는 첫 인스턴스 부팅)가 먼저 돈 뒤 **`13-seo-prewarm.sh`를 반드시 재실행**할 것 — 재실행은 멱등이라 안전하다. 검증: `aws logs describe-metric-filters --log-group-name /siglens/app --filter-name-prefix siglens-seo-prewarm` → 필터 4개(`siglens-seo-prewarm-batch-failed`, `-redis-unavailable`, `-unit-error`, `-deadline-reached`)가 나와야 한다.
-  4. `bash infra/aws/13-seo-prewarm.sh`를 수동 실행해 IAM 역할·Connection·API Destination·Rule 4개·타겟·알람(FailedInvocations ×4 + batch-failed + redis-unavailable)을 생성한다(멱등, 재실행 가능). deploy 파이프라인 어디서도 자동 호출하지 않는다.
+  4. `bash infra/aws/13-seo-prewarm.sh`를 수동 실행해 IAM 역할·Connection·API Destination·Rule 5개·타겟·알람(FailedInvocations ×5 + batch-failed + redis-unavailable)을 생성한다(멱등, 재실행 가능). deploy 파이프라인 어디서도 자동 호출하지 않는다.
   5. **알람 구독 확인(FIX E, 감사)** — `13-seo-prewarm.sh`는 `07-alarms.sh`와 동일하게 `ALARM_EMAIL`이 설정돼 있으면 `siglens-alerts` SNS 토픽에 이메일을 구독한다(idempotent). 이 스크립트가 토픽을 처음 만드는 실행 순서(예: `07-alarms.sh`를 아직 안 돌린 상태)라면 구독자 없이 알람만 만들어지는 사각지대가 있었다 — 2026-06-28 디스크풀 인시던트와 같은 종류("액션 없는 알람")다. 검증: `aws sns list-subscriptions-by-topic --topic-arn <siglens-alerts ARN>` → 최소 1개 구독이 `SubscriptionArn`이 `PendingConfirmation`이 아니라(즉 이메일의 confirm 링크를 클릭해) **Confirmed** 상태여야 한다.
 
   **이 레포 최초의 EventBridge 사용이므로, 스크립트 실행 직후 딜리버리 스파이크(수동 invoke 또는 실제 스케줄 1회 대기)로 202가 실제로 오는지 검증하기 전까지는 스케줄을 신뢰하지 말 것.** `put-targets`의 `HttpParameters` wiring은 실전 미검증 상태다. `13-seo-prewarm.sh`는 Connection이 `AUTHORIZED` 상태에 도달할 때까지 짧게 폴링(최대 12회 × 5s)한다 — 시간 내 도달하지 못해도 스크립트를 죽이지 않고 경고만 남기므로, 로그에 `WARNING: connection ... did not reach AUTHORIZED`가 보이면 수동으로 `aws events describe-connection --name siglens-seo-prewarm --query ConnectionState`를 재확인할 것.
 
-- **딜리버리 부재 알람(OPS-1)**: 배치 내부 실패(`batch failed` 로그)는 `siglens-seo-prewarm-batch-failed`가 잡지만, EventBridge가 애초에 타겟 호출 자체를 실패하면(Connection 미인증, IAM, API Destination 오류 등) 앱 로그에는 아무 흔적도 남지 않는다. `13-seo-prewarm.sh`가 Rule별로(evening/evening-late/early/kr-boundary 4개 모두) `AWS/Events` `FailedInvocations`(dimension `RuleName`) 알람(`siglens-seo-prewarm-{evening,evening-late,early,kr-boundary}-failed`, 5분간 1건 초과)을 함께 생성해 이 공백을 커버한다.
+- **딜리버리 부재 알람(OPS-1)**: 배치 내부 실패(`batch failed` 로그)는 `siglens-seo-prewarm-batch-failed`가 잡지만, EventBridge가 애초에 타겟 호출 자체를 실패하면(Connection 미인증, IAM, API Destination 오류 등) 앱 로그에는 아무 흔적도 남지 않는다. `13-seo-prewarm.sh`가 Rule별로(evening/evening-late/early/early-late/kr-boundary 5개 모두) `AWS/Events` `FailedInvocations`(dimension `RuleName`) 알람(`siglens-seo-prewarm-{evening,evening-late,early,early-late,kr-boundary}-failed`, 5분간 1건 초과)을 함께 생성해 이 공백을 커버한다.
 
-- **롤백 / kill-switch**: cron을 즉시 끄려면 4개 Rule을 모두 비활성화한다(인스턴트, 멱등, 재실행 가능):
+- **롤백 / kill-switch**: cron을 즉시 끄려면 5개 Rule을 모두 비활성화한다(인스턴트, 멱등, 재실행 가능):
   ```bash
   aws events disable-rule --name siglens-seo-prewarm-evening
   aws events disable-rule --name siglens-seo-prewarm-evening-late
   aws events disable-rule --name siglens-seo-prewarm-early
+  aws events disable-rule --name siglens-seo-prewarm-early-late
   aws events disable-rule --name siglens-seo-prewarm-kr-boundary
   ```
   다시 켤 때는 `enable-rule`로 동일하게 되돌린다. 리소스 자체(Connection/API Destination/Role)는 그대로 남으므로 재프로비저닝이 필요 없다. **`disable-rule`은 그 자체로 알람을 발생시키지 않는다(silent by design)** — 의도적으로 끈 건지 사고로 끈 건지는 로그(그 이후 `batch done`/`batch failed`가 안 보임)로만 알 수 있다.
@@ -60,7 +63,15 @@
    - **v3(시각 기반)**: offset을 `floor(now / TICK_ROTATION_MS) * SYMBOLS_PER_TICK`로 tick 시각에서 뽑았다. livelock은 고쳤지만, 배치가 지연되면(FMP 폭풍 등) 다음 실행 시각이 몇 틱 밀리고 그만큼 offset이 **경과 시간에 비례해 점프**해 창 폭(18)을 넘으면 그 구간이 영영 후보가 되지 못하는 새 구멍이 생겼다. `BATCH_DEADLINE_MS(600s) + 스케줄주기(300s) ≤ 창 폭 × TICK_ROTATION_MS(15분)`이라는 불변식이 "정확히 경계"라 여유가 없었다 — `POPULAR_TICKERS`의 KR 블록 head 5종목이 이 경로로 몇 달째 prewarm에 한 번도 도달하지 못했다(SEO snapshot 0행, `news` 테이블도 0행).
    - **v4(현재, 2026-08 감사) — Redis 영속 커서**: offset을 Redis에 절대값으로 들고(`lock.ts`의 `advanceRotationCursor`), **실제 배치 실행 1회당** `SYMBOLS_PER_TICK`만큼만 전진시킨다. "완료 개수"도 "경과 시각"도 아니라 "실행 횟수"에 묶는 게 핵심이다 — 분류 결과와 무관하게 매 호출마다 무조건 전진하므로 livelock이 재발할 수 없고(v2의 문제 해결), 실행이 아무리 늦게 일어나도 전진 폭은 항상 `SYMBOLS_PER_TICK` 하나뿐이라 이전 창과 바로 이어 붙으므로 배치 지연이 스킵으로 번지지 않는다(v3의 문제 해결). 자세한 설계 근거는 `runPrewarmBatch.ts`의 `selectFairBatch` doc-comment 참고.
 2. **blocked 배제** — stale 탭이 전부 in-flight 마커 또는 backoff로 막힌 심볼은 배치 슬롯을 소비하지 않게 제외한다(`classifySymbol`). 워커 시절의 "resumable 우선"(전 tick이 submit만 하고 못 끝낸 jobId를 먼저 채우기)은 poll 재개가 사라지면서 함께 없어졌다.
-3. **backoff 배제** — 모든 stale 탭이 6시간 backoff(FIX C, terminal skip) 중인 심볼은 배제한다.
+3. **backoff 배제** — 모든 stale 탭이 backoff(FIX C, terminal skip) 중인 심볼은 배제한다.
+
+backoff TTL은 세 단계다(`lock.ts`):
+
+| TTL | 상수 | 언제 |
+|---|---|---|
+| 30분 | `TRANSIENT_SKIP_TTL_SECONDS` | 일시적 실패 — 프로바이더 장애·타임아웃·`status=error` 일반. 장애 중엔 모든 유닛이 동시에 실패하므로 길게 걸면 그날 밤을 통째로 날린다. |
+| 6시간 | `SKIP_TTL_SECONDS`(기본값) | 구조적 불가 — `no_trades`, `no_chains_error`, `miss_no_trigger`, null 결과. |
+| 24시간 | `NO_RECENT_NEWS_SKIP_TTL_SECONDS` | **`news` 탭 전용** — 분석 창(30일) 안에 보강된 기사가 0건. 뉴스는 시간 단위로 생기지 않으므로 30분 재시도는 전부 헛돈다(2026-09 실측: 41개 심볼 × 하루 ~19회). 영구 확정(`markStructurallyUnavailable`)을 쓰지 않는 이유는 그 심볼들도 기사가 다시 나오기 때문이다 — 주기만 맞추고 자동 복구는 남긴다. 적재 자체가 실패한 밤(`newsFetchFailed`)은 판단 근거가 없으므로 30분으로 되돌린다. |
 
 Redis 비용은 bounded 후보 창(`SYMBOLS_PER_TICK * 3` = 18개 심볼)으로 제한된다 — worst case 18 × 7탭 × 2회(in-flight 마커 조회 + skip 조회) = 252회/tick(유니버스 전체를 걸면 ~1900회/tick이 든다). 회전 오프셋 자체는 배치당 Redis 왕복 1회(`INCRBY`)만 추가된다.
 
@@ -71,10 +82,10 @@ v1~v3의 회전 결함은 전부 "특정 심볼이 회전에서 조용히 빠진
 `runPrewarmBatch`는 매 tick `staleSymbols`를 계산한 직후, 이미 그 tick에 1회 읽어 온 `generatedAtMap`(DB)만 재사용해 "마지막 생성 이후 경과 시간"을 심볼별로 계산한다(`findStarvedSymbols`) — 추가 Redis/DB 왕복 없음. 48시간(하루 마감 주기의 2배 — 정상 배치 지연 한 번 정도는 여유로 흡수)을 넘겨도 아직 stale인 심볼이 있으면:
 
 ```
-[seo-prewarm] starvation watch: N symbol(s) stale > 48h — worst: SYM1(never), SYM2(72h), ...
+[seo-prewarm] starvation watch: N symbol(s) stale > 48h — worst: SYM1(never: news), SYM2(72h), ...
 ```
 
-`console.warn`으로 남긴다. `(never)`는 탭 중 하나라도 생성된 적이 없다는 뜻(정확히 KR 5종목 인시던트의 모양)이고, `(Nh)`는 마지막 생성 이후 경과 시간이다. 상위 5개(가장 오래 밀린 순)만 나열하지만 `N`(전체 offender 수)은 잘리지 않는다. 정상 야간(모든 stale이 48h 이내)에는 로그가 전혀 찍히지 않는다 — 매 tick 찍히는 로그는 신호를 잡음에 묻는다.
+`console.warn`으로 남긴다. `(never: 탭|탭)`은 나열된 탭이 한 번도 생성된 적이 없다는 뜻(정확히 KR 5종목 인시던트의 모양)이고, `(Nh)`는 마지막 생성 이후 경과 시간이다. **탭 목록을 함께 읽어야 한다** — `(never: news)` **하나만** 비어 있으면 최근 30일 뉴스가 없는 심볼(아래 24h 티어)이라 이미 알고 조치된 상태다. 그 밖의 탭이 섞여 있으면 회전에 실제로 도달하지 못한 심볼이다. 특히 `overall`이 목록에 있으면 **이상 신호**다 — core 1.14.0부터 overall은 뉴스가 없어도 abstain으로 생성되므로, 비어 있다는 건 다른 축(technical·fundamental)이 실패하고 있다는 뜻이다. 2026-09 실측에서 `news|overall` 조합이 41개였는데(core 1.13.x 시절), 탭 목록이 없던 시절에는 그 41개가 상위 5개 자리를 전부 차지해 진짜 미도달 심볼을 가렸다. 상위 5개(가장 오래 밀린 순)만 나열하지만 `N`(전체 offender 수)은 잘리지 않는다. 정상 야간(모든 stale이 48h 이내)에는 로그가 전혀 찍히지 않는다 — 매 tick 찍히는 로그는 신호를 잡음에 묻는다.
 
 CloudWatch metric filter/알람은 아직 없다(로그 discoverability만 확보) — 접두 `[seo-prewarm] starvation watch:`가 ASCII라 필요해지면 `13-seo-prewarm.sh`의 다른 필터들과 같은 패턴으로 쉽게 추가할 수 있다.
 
@@ -84,7 +95,7 @@ CloudWatch metric filter/알람은 아직 없다(로그 discoverability만 확�
 
 in-flight 마커는 남아 있지만 역할이 바뀌었다 — 재개 지점(jobId)을 들고 있는 게 아니라, 같은 (symbol, tab)에 대해 **두 tick이 동시에 LLM을 태우는 것만** 막는다(TTL 30분, 완료 즉시 해제).
 
-`run*`이 LLM 응답까지 블로킹해 심볼당 소요 시간이 길어져 `SYMBOLS_PER_TICK`을 10 → **6**으로 낮췄다. 스케줄이 20:30 시작으로 30분 밀리면서(위 FIX Z 참고) 미국 마감 창의 tick 수는 `(20:30–23:59)+(00:00–03:59)` ≈ 90회(5분 간격), `kr-boundary` 창(2026-08 감사)이 36회를 더해 하룻밤 총 ≈ 126회다. tick당 6심볼을 "이번 tick 안에" 목표로 하면(캐시가 이미 대부분 warm인 흔한 경우 대다수 유닛이 즉시 끝난다) 하룻밤 처리량은 유니버스(290심볼)를 여유 있게 커버할 수 있는 규모다(126 tick × 6 = 756 심볼-시도/night). 이전 head-of-line 방식의 실측 처리량(~160심볼/night, 그마저도 유니버스 head에 편중)과 대비된다 — 정확한 실측치는 배포 후 `SELECT count(*), count(DISTINCT symbol) FROM seo_analysis_snapshots`로 재확인할 것.
+`run*`이 LLM 응답까지 블로킹해 심볼당 소요 시간이 길어져 `SYMBOLS_PER_TICK`을 10 → **6**으로 낮췄다. 스케줄이 20:30 시작으로 30분 밀리면서(위 FIX Z 참고), 그리고 2026-09 비용 감사가 DeepSeek peak 구간을 비우면서 미국 마감 창의 tick 수는 `(20:30–23:55)` 42회 + `early``(00:00–00:55)` 12회 + `early-late`⁠`(04:05–05:55)` 22회 = 76회(5분 간격)이고, `kr-boundary` 창⁠`(10:05–12:55)`이 33회를 더해 하룻밤 총 ≈ 109회다. tick당 6심볼을 "이번 tick 안에" 목표로 하면(캐시가 이미 대부분 warm인 흔한 경우 대다수 유닛이 즉시 끝난다) 하룻밤 처리량은 유니버스(290심볼)를 여유 있게 커버할 수 있는 규모다(109 tick × 6 = 654 심볼-시도/night). 이전 head-of-line 방식의 실측 처리량(~160심볼/night, 그마저도 유니버스 head에 편중)과 대비된다 — 정확한 실측치는 배포 후 `SELECT count(*), count(DISTINCT symbol) FROM seo_analysis_snapshots`로 재확인할 것.
 
 ### Phase 2 — SSR prewarm rendering 배포 런북
 

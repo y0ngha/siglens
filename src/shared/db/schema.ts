@@ -142,6 +142,10 @@ export const usageLogs = pgTable(
  * `model_used`가 NOT NULL인 분석 요청 로그라 방문 행을 넣으려면 의미 없는 값을
  * 채워야 하고, `ip_hash`가 UTC 날짜를 salt로 섞어 매일 달라지므로 날짜를
  * 가로지르는 MAU 집계가 원리적으로 불가능하다.
+ *
+ * ⚠️ `feat/symbol-views` 머지부터 비콘이 첫 신뢰 입력 뒤에만 나간다
+ * (`shared/lib/onFirstInteraction`). 그 전 행에는 입력 없이 렌더만 한 헤드리스가
+ * 섞여 있다(2026-09 실측 KR 외 1,237행 대부분) — 전환 전후 DAU는 직접 비교하지 않는다.
  */
 export const visitorDays = pgTable(
     'visitor_days',
@@ -187,6 +191,28 @@ export const visitorDays = pgTable(
         landingPath: text('landing_path'),
     },
     table => [primaryKey({ columns: [table.date, table.visitorHash] })]
+);
+
+/**
+ * 종목 페이지 일자 조회수 — 인기 목록 스크립트(`update-popular-tickers.ts`·
+ * `scripts/update-popular-cryptos.ts`)의 **추가 후보** 신호.
+ *
+ * 개인 식별 정보를 담지 않는다(IP·UA·해시 없음) — 집계값만 있으므로 개인정보처리방침
+ * 대상이 아니다. 중복 방지는 클라이언트(`SymbolViewPing`, 종목당 하루 1회)가 하고,
+ * 봇 필터는 비콘 게이트(`onFirstInteraction`) + `isBot`이다.
+ *
+ * 인증 없는 비콘이라 반복 POST로 부풀릴 수 있다. 방어선은 스크립트의 시장 필터와
+ * 사람의 diff 검토다.
+ */
+export const symbolViewsDaily = pgTable(
+    'symbol_views_daily',
+    {
+        /** KST `YYYY-MM-DD`. */
+        date: date('date').notNull(),
+        symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).notNull(),
+        views: integer('views').notNull().default(1),
+    },
+    table => [primaryKey({ columns: [table.date, table.symbol] })]
 );
 
 /** Linked OAuth accounts — one row per (user, provider) pair. */

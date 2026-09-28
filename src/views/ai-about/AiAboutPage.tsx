@@ -139,6 +139,7 @@ export async function AiAboutPage({
         ['/market', t('more.marketUs')],
         ['/market/kr', t('more.marketKr')],
         ['/fear-greed', t('more.fearGreed')],
+        ['/fear-greed/crypto', t('more.fearGreedCrypto')],
         ['/news', t('more.news')],
         ['/about', t('more.about')],
     ] as const;

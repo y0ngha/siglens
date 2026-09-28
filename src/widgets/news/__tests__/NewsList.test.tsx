@@ -1,5 +1,6 @@
 import type { MockedFunction } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { useNewsPollingWithInvalidation } from '@/widgets/news/hooks/useNewsPollingWithInvalidation';
@@ -20,9 +21,18 @@ function renderWithClient(ui: React.ReactElement) {
     const queryClient = new QueryClient({
         defaultOptions: { queries: { retry: false } },
     });
-    return render(
+    const result = render(
         <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
     );
+    return {
+        ...result,
+        rerenderWithClient: (nextUi: React.ReactElement) =>
+            result.rerender(
+                <QueryClientProvider client={queryClient}>
+                    {nextUi}
+                </QueryClientProvider>
+            ),
+    };
 }
 
 const READY_ITEM: NewsDisplayItem = {
@@ -135,6 +145,142 @@ describe('NewsList', () => {
 
         renderWithClient(<NewsList items={manyItems} symbol="AAPL" />);
 
+        expect(screen.getAllByRole('article')).toHaveLength(
+            NEWS_LIST_PAGE_SIZE
+        );
+    });
+
+    it('"더보기" 클릭 시 남은 개수만큼 카드를 더 렌더한다', async () => {
+        const user = userEvent.setup();
+        const manyItems = Array.from(
+            { length: NEWS_LIST_PAGE_SIZE * 2 },
+            (_, i) => ({ ...READY_ITEM, id: `news-${i}` })
+        );
+        mockUseNewsPollingWithInvalidation.mockReturnValue({
+            items: manyItems,
+            isPolling: false,
+            pollError: null,
+        });
+
+        renderWithClient(<NewsList items={manyItems} symbol="AAPL" />);
+
+        expect(screen.getAllByRole('article')).toHaveLength(
+            NEWS_LIST_PAGE_SIZE
+        );
+        const remaining = manyItems.length - NEWS_LIST_PAGE_SIZE;
+        const moreButton = screen.getByRole('button', {
+            name: `더보기 (${remaining}개 남음)`,
+        });
+
+        await user.click(moreButton);
+
+        expect(screen.getAllByRole('article')).toHaveLength(manyItems.length);
+        // All items are now visible, so the "load more" button disappears.
+        expect(
+            screen.queryByRole('button', { name: /더보기/ })
+        ).not.toBeInTheDocument();
+    });
+
+    describe('빈 뉴스 목록', () => {
+        it('폴링 중이면 로딩 스켈레톤을 3개 그리고 aria-busy를 표시한다', () => {
+            mockUseNewsPollingWithInvalidation.mockReturnValue({
+                items: [],
+                isPolling: true,
+                pollError: null,
+            });
+
+            renderWithClient(<NewsList items={[]} symbol="AAPL" />);
+
+            const section = screen
+                .getByRole('heading', { name: '최근 뉴스' })
+                .closest('section');
+            expect(section).toHaveAttribute('aria-busy', 'true');
+            // Skeleton cards are visual placeholders only.
+            expect(
+                document.querySelectorAll('article[aria-hidden="true"]')
+            ).toHaveLength(3);
+        });
+
+        it('폴링이 끝났고 뉴스가 없으면 빈 상태 안내 문구를 그린다', () => {
+            mockUseNewsPollingWithInvalidation.mockReturnValue({
+                items: [],
+                isPolling: false,
+                pollError: null,
+            });
+
+            renderWithClient(<NewsList items={[]} symbol="AAPL" />);
+
+            expect(screen.queryByRole('article')).not.toBeInTheDocument();
+            expect(
+                screen.getByText(/동안 들어온 뉴스가 없어요/)
+            ).toBeInTheDocument();
+        });
+    });
+
+    it('pollError는 에러 바운더리가 잡도록 렌더 중 throw한다', () => {
+        mockUseNewsPollingWithInvalidation.mockReturnValue({
+            items: [],
+            isPolling: false,
+            pollError: new Error('poll failed'),
+        });
+
+        expect(() =>
+            renderWithClient(<NewsList items={[]} symbol="AAPL" />)
+        ).toThrow('poll failed');
+    });
+
+    it('분석 대기 중인 뉴스(sentiment/priceImpact가 null)는 배지 대신 스켈레톤을 그린다', () => {
+        const pendingItem: NewsDisplayItem = {
+            ...READY_ITEM,
+            id: 'news-pending',
+            sentiment: null,
+            priceImpact: null,
+        };
+        mockUseNewsPollingWithInvalidation.mockReturnValue({
+            items: [pendingItem],
+            isPolling: false,
+            pollError: null,
+        });
+
+        renderWithClient(<NewsList items={[pendingItem]} symbol="AAPL" />);
+
+        expect(screen.getByText('AI 분석 중…')).toBeInTheDocument();
+        // Ready-state badges/body must not render while pending.
+        expect(screen.queryByText('본문')).not.toBeInTheDocument();
+        expect(screen.queryByText('원문 보기 →')).not.toBeInTheDocument();
+    });
+
+    it('symbol이 바뀌면 더보기로 늘어난 visibleCount를 페이지 크기로 되돌린다', () => {
+        const manyItems = Array.from(
+            { length: NEWS_LIST_PAGE_SIZE * 2 },
+            (_, i) => ({ ...READY_ITEM, id: `news-${i}` })
+        );
+        mockUseNewsPollingWithInvalidation.mockReturnValue({
+            items: manyItems,
+            isPolling: false,
+            pollError: null,
+        });
+
+        const { rerenderWithClient } = renderWithClient(
+            <NewsList items={manyItems} symbol="AAPL" />
+        );
+        expect(screen.getAllByRole('article')).toHaveLength(
+            NEWS_LIST_PAGE_SIZE
+        );
+
+        const otherSymbolItems = manyItems.map(item => ({
+            ...item,
+            id: `${item.id}-msft`,
+        }));
+        mockUseNewsPollingWithInvalidation.mockReturnValue({
+            items: otherSymbolItems,
+            isPolling: false,
+            pollError: null,
+        });
+
+        rerenderWithClient(<NewsList items={otherSymbolItems} symbol="MSFT" />);
+
+        // A fresh symbol resets pagination back to the first page.
         expect(screen.getAllByRole('article')).toHaveLength(
             NEWS_LIST_PAGE_SIZE
         );

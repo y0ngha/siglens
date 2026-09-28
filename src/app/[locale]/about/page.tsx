@@ -7,9 +7,6 @@ import {
     localeRobots,
 } from '@/shared/lib/seoAlternates';
 import type { Metadata } from 'next';
-import { LegalPageShell } from '@/widgets/legal/LegalPageShell';
-import { UntranslatedNotice } from '@/widgets/legal/UntranslatedNotice';
-import { PolicyMarkdownBody } from '@/widgets/legal/PolicyMarkdownBody';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {
     ABOUT_PATH,
@@ -21,9 +18,9 @@ import {
     OPERATOR_PERSON_JSON_LD_ID,
     SITE_OPERATOR,
 } from '@/shared/lib/legal';
-import { extractToc } from '@/shared/lib/legal-toc';
 import {
     buildBreadcrumbJsonLd,
+    buildFaqJsonLd,
     buildWebPageJsonLd,
     ORGANIZATION_JSON_LD_ID,
     SITE_NAME,
@@ -33,19 +30,20 @@ import {
 import type { SeoTranslator } from '@/shared/lib/seo';
 import type { Locale } from '@/shared/i18n/locales';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
-import { resolveAboutContent } from '@/app/[locale]/about/content';
+import { AboutPage, EMPTY_SKILL_COUNTS, getAboutFaq } from '@/views/about';
 
 const PAGE_URL = `${SITE_URL}${ABOUT_PATH}`;
 
 // terms/privacy와 동일한 근거(§terms/page.tsx `revalidate` 주석) — 본문이
-// 코드 상수라 배포 자체가 갱신이므로, 하루 재검증이면 충분하다.
+// 메시지 카탈로그라 배포 자체가 갱신이므로, 하루 재검증이면 충분하다.
 export const revalidate = 86400;
 
 /**
  * `buildWebPageJsonLd`는 8개 심볼 페이지가 공유하는 범용 WebPage 노드를
  * 만든다. 여기서는 스프레드 뒤에 `@type`을 `AboutPage`로 덮어써 좁히고,
  * `mainEntity`로 홈 `Organization`(`ORGANIZATION_JSON_LD_ID`)을 가리킨다 —
- * 이 문서가 그 조직에 대한 소개 문서임을 명시한다.
+ * 이 문서가 그 조직에 대한 소개 문서임을 명시한다. `dateModified`는 화면
+ * 하단의 "마지막 업데이트"와 같은 `ABOUT_UPDATED_AT`이다.
  */
 function buildAboutJsonLd(t: SeoTranslator, locale: Locale) {
     return {
@@ -57,6 +55,7 @@ function buildAboutJsonLd(t: SeoTranslator, locale: Locale) {
         }),
         '@type': 'AboutPage',
         mainEntity: { '@id': ORGANIZATION_JSON_LD_ID },
+        dateModified: ABOUT_UPDATED_AT.toISOString(),
     };
 }
 
@@ -100,7 +99,9 @@ export async function generateMetadata({
     });
     const ogLocale = localeOpenGraph(resolved);
     return {
-        title: aboutTitle(tSeo),
+        // 메타 타이틀은 이미 `Siglens`로 시작한다. 레이아웃 템플릿(`%s | Siglens`)을
+        // 타면 브랜드가 두 번 붙어 SERP 폭만 먹으므로 `absolute`로 끊는다.
+        title: { absolute: aboutFullTitle(tSeo) },
         description: aboutDescription(tSeo),
         robots: localeRobots(resolved),
         alternates: await localeAlternatesFrom(params, ABOUT_PATH),
@@ -129,7 +130,7 @@ export async function generateMetadata({
     };
 }
 
-export default async function AboutPage({
+export default async function AboutRoute({
     params,
 }: {
     readonly params: Promise<{ locale: string }>;
@@ -144,55 +145,31 @@ export default async function AboutPage({
         locale: resolved,
         namespace: 'shared.seo',
     });
-    const tLegal = await getTranslations({
-        locale: resolved,
-        namespace: 'shared.lib.legal',
-    });
 
     // countSkillFiles 오류는 graceful 처리 — 0 폴백으로 페이지를 계속 렌더한다.
     // throw가 전파되면 ISR 빈 캐시(0-byte body)가 동결된다((home)/page.tsx와 동일 근거).
-    const skillCounts = await countSkillFiles().catch(e => {
-        console.error('[AboutPage] countSkillFiles failed:', e);
-        return {
-            indicators: 0,
-            candlesticks: 0,
-            patterns: 0,
-            strategies: 0,
-            supportResistance: 0,
-            fundamental: 0,
-            news: 0,
-        };
-    });
-
-    const { body, bodyLocale, isTranslationFallback } = resolveAboutContent(
-        resolved,
-        skillCounts
-    );
-    const toc = extractToc(body);
+    // FAQ는 화면 FaqSection과 FAQPage JSON-LD의 단일 소스 — 두 번 만들지 않는다.
+    const [counts, faq] = await Promise.all([
+        countSkillFiles().catch(e => {
+            console.error('[AboutPage] countSkillFiles failed:', e);
+            return EMPTY_SKILL_COUNTS;
+        }),
+        getAboutFaq(resolved),
+    ]);
 
     return (
         <>
             <JsonLd data={buildAboutJsonLd(tSeo, resolved)} />
             <JsonLd data={buildAboutPersonJsonLd()} />
             <JsonLd data={buildAboutBreadcrumbJsonLd(tSeo, resolved)} />
-            <LegalPageShell
-                breadcrumbTitle={aboutTitle(tSeo)}
-                eyebrow="ABOUT"
+            <JsonLd data={buildFaqJsonLd(faq)} />
+            <AboutPage
+                locale={resolved}
                 title={aboutTitle(tSeo)}
-                intro={tLegal('aboutIntro', { v0: SITE_NAME })}
-                effectiveDate={formatKoreanDate(ABOUT_UPDATED_AT, resolved)}
-                toc={toc}
-                topNotice={
-                    isTranslationFallback ? (
-                        <UntranslatedNotice
-                            requested={resolved}
-                            served={bodyLocale}
-                        />
-                    ) : undefined
-                }
-            >
-                <PolicyMarkdownBody markdown={body} />
-            </LegalPageShell>
+                counts={counts}
+                faq={faq}
+                updatedAt={formatKoreanDate(ABOUT_UPDATED_AT, resolved)}
+            />
         </>
     );
 }

@@ -157,12 +157,19 @@ vi.mock('@/entities/bars', () => ({
 }));
 
 import { Suspense } from 'react';
+vi.mock('@/features/visitor-ping', () => ({
+    SymbolViewPing: function SymbolViewPing() {
+        return null;
+    },
+}));
+
 import SymbolLayout, {
     SymbolLayoutChrome,
 } from '@/app/[locale]/[symbol]/layout';
 import { SymbolLayoutJail } from '@/app/[locale]/[symbol]/SymbolLayoutClient';
 import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
 import { AskAiFab } from '@/widgets/ask-ai-fab';
+import { SymbolViewPing } from '@/features/visitor-ping';
 
 const ASSET_INFO = {
     symbol: 'AAPL',
@@ -364,7 +371,7 @@ describe('SymbolLayoutChrome — 봉 seed 없이 공포·탐욕 스냅샷만 내
  * 안쪽에 깔려, 사용자가 페이지를 내려 푸터를 봐도 도달하지 못했다 — DOM에는
  * 있어 크롤러는 봤지만 사람은 못 보는 상태였다(2026-08-25 사용자 제보).
  *
- * 그 중첩 스크롤러 자체는 이후 걷어냈지만(문서 하나만 스크롤), 칩의 자리는
+ * 그 `<main>` 스크롤러 자체는 이후 걷어냈지만(`<main>`·jail은 스크롤하지 않는다), 칩의 자리는
  * 그대로 유지한다 — 푸터 바로 위가 이 칩의 제자리다.
  *
  * jail **밖**, floating chat **앞**에 두어야 페이지 일반 스크롤로 닿고 푸터
@@ -406,6 +413,26 @@ describe('SymbolLayout — 관련 종목 칩 위치 (jail 밖, 푸터 위)', () 
         expect(chipIndex).toBeGreaterThan(-1);
         // 푸터 위 자리 = jail 뒤.
         expect(chipIndex).toBeGreaterThan(jailIndex);
+    });
+
+    it('정규(대문자) 심볼로 조회수 비콘을 마운트한다', async () => {
+        const tree = await SymbolLayout({
+            children: null,
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+        const providers = (tree as { props?: { children?: unknown } }).props
+            ?.children;
+        const siblings = (providers as { props?: { children?: unknown } })
+            ?.props?.children;
+        if (!Array.isArray(siblings)) {
+            throw new Error('providers children is not an array');
+        }
+        const ping = siblings.find(
+            child =>
+                (child as { type?: unknown } | null)?.type === SymbolViewPing
+        ) as { props: { symbol: string } } | undefined;
+
+        expect(ping?.props.symbol).toBe('AAPL');
     });
 });
 

@@ -4,7 +4,7 @@ vi.mock('server-only', () => ({}));
 
 const chart = vi.fn();
 vi.mock('@/shared/api/yahoo/createYahooClient', () => ({
-    createYahooClient: () => ({ chart }),
+    getYahooClient: () => ({ chart }),
 }));
 
 import {

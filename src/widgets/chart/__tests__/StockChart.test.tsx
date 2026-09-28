@@ -1,9 +1,10 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
 import { THEME_CHANGE_EVENT } from '@/shared/lib/theme';
-import type { Bar } from '@y0ngha/siglens-core';
+import type { Bar, ChartOverlay } from '@y0ngha/siglens-core';
 import { StockChart } from '@/widgets/chart/StockChart';
-import { INACTIVE_PANE_INDEX } from '@/widgets/chart/constants';
+import { INACTIVE_PANE_INDEX, STORAGE_KEYS } from '@/widgets/chart/constants';
+import { useChartOverlays } from '@/widgets/chart/hooks/useChartOverlays';
 
 const INACTIVE_PANES = Object.fromEntries(
     [
@@ -46,7 +47,11 @@ const {
     mockFitContent,
     setPaneLayout,
     paneSpies,
+    mockToggle,
+    mockUseIndicatorVisibility,
 } = vi.hoisted(() => {
+    const mockToggle = vi.fn();
+    const mockUseIndicatorVisibility = vi.fn();
     interface PaneSpec {
         stretch: number;
         height: number;
@@ -125,6 +130,8 @@ const {
         mockFitContent,
         setPaneLayout,
         paneSpies,
+        mockToggle,
+        mockUseIndicatorVisibility,
     };
 });
 
@@ -316,6 +323,10 @@ vi.mock('@/widgets/chart/hooks/useSmcZones', () => ({
     useSmcZones: vi.fn(),
 }));
 
+vi.mock('@/widgets/chart/hooks/useChartOverlays', () => ({
+    useChartOverlays: vi.fn(),
+}));
+
 vi.mock('@/widgets/chart/hooks/usePaneLabels', () => ({
     usePaneLabels: vi.fn(),
 }));
@@ -324,55 +335,63 @@ vi.mock('@/widgets/chart/hooks/useOverlayLegend', () => ({
     useOverlayLegend: () => [],
 }));
 
+const DEFAULT_VISIBLE = {
+    ma: false,
+    ema: false,
+    ichimoku: false,
+    rsi: false,
+    macd: false,
+    dmi: false,
+    stochastic: false,
+    stochRsi: false,
+    cci: false,
+    bollinger: false,
+    volumeProfile: false,
+    mfi: false,
+    williamsR: false,
+    connorsRsi: false,
+    cmf: false,
+    bollingerPercentB: false,
+    hurst: false,
+    varianceRatio: false,
+    macdV: false,
+    forceIndex: false,
+    obv: false,
+    atr: false,
+    yangZhang: false,
+    ewmaVolatility: false,
+    elderRay: false,
+    squeezeMomentum: false,
+    regression: false,
+    elderImpulse: false,
+    smc: false,
+};
+
 vi.mock('@/widgets/chart/hooks/useIndicatorVisibility', () => ({
-    useIndicatorVisibility: () => ({
-        visible: {
-            ma: false,
-            ema: false,
-            ichimoku: false,
-            rsi: false,
-            macd: false,
-            dmi: false,
-            stochastic: false,
-            stochRsi: false,
-            cci: false,
-            bollinger: false,
-            volumeProfile: false,
-            mfi: false,
-            williamsR: false,
-            connorsRsi: false,
-            cmf: false,
-            bollingerPercentB: false,
-            hurst: false,
-            varianceRatio: false,
-            macdV: false,
-            forceIndex: false,
-            obv: false,
-            atr: false,
-            yangZhang: false,
-            ewmaVolatility: false,
-            elderRay: false,
-            squeezeMomentum: false,
-            regression: false,
-            elderImpulse: false,
-            smc: false,
-        },
-        toggle: vi.fn(),
-        paneIndices: INACTIVE_PANES,
-    }),
+    useIndicatorVisibility: () => mockUseIndicatorVisibility(),
 }));
 
 vi.mock('@/widgets/chart/ui/IndicatorSettingsModal', () => ({
     IndicatorSettingsModal: ({
         bindings,
     }: {
-        bindings: { meta: { key: string } }[];
+        bindings: { meta: { key: string }; onToggle: () => void }[];
     }) => (
         <div
             data-testid="indicator-settings-modal"
             data-count={bindings.length}
             data-keys={bindings.map(b => b.meta.key).join(',')}
-        />
+        >
+            {bindings.map(b => (
+                <button
+                    key={b.meta.key}
+                    type="button"
+                    aria-label={`toggle-${b.meta.key}`}
+                    data-testid={`toggle-${b.meta.key}`}
+                    onClick={b.onToggle}
+                />
+            ))}
+        </div>
     ),
 }));
 
@@ -480,6 +499,45 @@ function stubClientWidth(px: number): () => void {
     };
 }
 
+/**
+ * paneIndices 변경 후 명시 resize effect는 wrapper의 clientWidth/clientHeight가
+ * 둘 다 0이 아니어야 실행된다 (jsdom 레이아웃 부재로 기본값은 0). 두 값을 함께 심는다.
+ */
+function stubClientSize(width: number, height: number): () => void {
+    const originalWidth = Object.getOwnPropertyDescriptor(
+        Element.prototype,
+        'clientWidth'
+    );
+    const originalHeight = Object.getOwnPropertyDescriptor(
+        Element.prototype,
+        'clientHeight'
+    );
+    Object.defineProperty(Element.prototype, 'clientWidth', {
+        configurable: true,
+        get: () => width,
+    });
+    Object.defineProperty(Element.prototype, 'clientHeight', {
+        configurable: true,
+        get: () => height,
+    });
+    return () => {
+        if (originalWidth !== undefined) {
+            Object.defineProperty(
+                Element.prototype,
+                'clientWidth',
+                originalWidth
+            );
+        }
+        if (originalHeight !== undefined) {
+            Object.defineProperty(
+                Element.prototype,
+                'clientHeight',
+                originalHeight
+            );
+        }
+    };
+}
+
 async function flushFrame(): Promise<void> {
     await act(
         async () =>
@@ -491,6 +549,11 @@ describe('StockChart', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         setPaneLayout([{ stretch: 2, height: 200 }]);
+        mockUseIndicatorVisibility.mockReturnValue({
+            visible: DEFAULT_VISIBLE,
+            toggle: mockToggle,
+            paneIndices: INACTIVE_PANES,
+        });
     });
 
     it('renders empty state message when bars is empty', () => {
@@ -579,6 +642,18 @@ describe('StockChart', () => {
             'data-keys',
             'ma,ema,ichimoku,rsi,macd,dmi,stochastic,stochRsi,cci,bollinger,volumeProfile,mfi,williamsR,connorsRsi,cmf,bollingerPercentB,hurst,varianceRatio,macdV,forceIndex,obv,atr,yangZhang,ewmaVolatility,keltnerChannel,donchianChannel,supertrend,parabolicSar,chandelierExit,elderRay,squeezeMomentum,regression,elderImpulse,smc'
         );
+    });
+
+    it('renders the settings trigger in a header strip outside and above the chart canvas', () => {
+        render(<StockChart bars={mockBars} timeframe="1Day" />);
+        const modal = screen.getByTestId('indicator-settings-modal');
+        const canvas = screen.getByRole('img');
+
+        expect(canvas.contains(modal)).toBe(false);
+        expect(
+            modal.compareDocumentPosition(canvas) &
+                Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
     });
 
     it('removes chart on unmount', () => {
@@ -675,5 +750,224 @@ describe('StockChart', () => {
         } finally {
             restoreClientWidth();
         }
+    });
+
+    /**
+     * `IndicatorSettingsModal`에는 34개 지표 바인딩이 내려가는데, 각 바인딩의
+     * `onToggle`이 실제로 `toggle(key)`를 부르는지는 이전 테스트가 보지 않았다
+     * (바인딩 개수·키 목록만 확인). 배선이 끊겨도(`onToggle: () => {}`로 잘못
+     * 바뀌어도) 감지가 안 됐을 것 — 클릭까지 흘려서 확인한다.
+     */
+    it('지표 바인딩의 onToggle을 누르면 해당 key로 toggle을 호출한다', () => {
+        render(<StockChart bars={mockBars} timeframe="1Day" />);
+
+        fireEvent.click(screen.getByTestId('toggle-rsi'));
+
+        expect(mockToggle).toHaveBeenCalledWith('rsi');
+    });
+
+    /**
+     * indicator 토글로 `paneIndices`가 바뀌면(오브젝트 참조 변경) LWC v5가 빈 pane
+     * DOM을 정리하지 않는 문제를 우회하기 위해 명시적으로 resize를 두 번(축소 후
+     * 원복) 호출해야 한다. 첫 mount에서는 이 resize가 건너뛰어져야 하고, 이후
+     * paneIndices가 바뀔 때만 실행돼야 한다 — 둘 다 여기서 검증한다.
+     */
+    it('mount 시점에는 명시 resize를 건너뛰고, paneIndices가 바뀌면 그때 resize한다', async () => {
+        const restore = stubClientSize(300, 400);
+        try {
+            const { rerender } = render(
+                <StockChart bars={mockBars} timeframe="1Day" />
+            );
+            const chart = mockCreateChart.mock.results[0].value;
+            await flushFrame();
+
+            // 첫 mount: paneIndices effect의 초기 skip으로 명시 resize가 없어야 한다.
+            expect(chart.resize).not.toHaveBeenCalled();
+
+            // 참조가 다른 새 paneIndices 객체로 교체 — 지표 토글 시 발생하는 상황을 재현.
+            mockUseIndicatorVisibility.mockReturnValue({
+                visible: DEFAULT_VISIBLE,
+                toggle: mockToggle,
+                paneIndices: { ...INACTIVE_PANES },
+            });
+            rerender(<StockChart bars={mockBars} timeframe="1Day" />);
+            await flushFrame();
+
+            expect(chart.applyOptions).toHaveBeenCalledWith({
+                autoSize: false,
+            });
+            expect(chart.resize).toHaveBeenCalledWith(299, 400);
+            expect(chart.resize).toHaveBeenCalledWith(300, 400);
+            expect(chart.applyOptions).toHaveBeenCalledWith({
+                autoSize: true,
+            });
+        } finally {
+            restore();
+        }
+    });
+
+    describe('차트 작도(chartOverlays)', () => {
+        const overlay = {
+            id: 'pattern:double_bottom:100',
+            kind: 'pattern' as const,
+            skill: 'double_bottom',
+            sourceRef: 'p1',
+            variant: 'primary' as const,
+            segments: [
+                {
+                    from: { time: 100, price: 10 },
+                    to: { time: 300, price: 12 },
+                    role: 'pattern',
+                    style: 'solid' as const,
+                    pane: 'price' as const,
+                },
+            ],
+            levels: [],
+            labels: [],
+        };
+
+        it('renders the 차트 작도 header button when chartOverlays has an entry aligned to the loaded bars', () => {
+            render(
+                <StockChart
+                    bars={mockBars}
+                    timeframe="1Day"
+                    chartOverlays={[overlay]}
+                />
+            );
+
+            expect(
+                screen.getByRole('button', { name: /차트 작도/ })
+            ).toBeInTheDocument();
+        });
+
+        it('does not render the 차트 작도 button when chartOverlays is empty', () => {
+            render(<StockChart bars={mockBars} timeframe="1Day" />);
+
+            expect(
+                screen.queryByRole('button', { name: /차트 작도/ })
+            ).not.toBeInTheDocument();
+        });
+
+        /**
+         * `useChartOverlays`에 실제로 넘어가는 specs를 검증한다. 앞선 테스트들이
+         * 조작하는 `localStorage`(`STORAGE_KEYS.chartOverlays`, `usePersistentState`
+         * 백엔드)를 이 describe도 건드릴 수 있으므로, 매 케이스 전에 지워
+         * 기본값(pattern·trendline만 on)에서 시작한다. `mock.calls.at(-1)`로 마지막
+         * 호출만 본다 — 인덱스 [0] 고정은 리렌더 순서가 바뀌면 조용히 다른 렌더의
+         * 인자를 집는다.
+         */
+        describe('useChartOverlays로 넘어가는 specs', () => {
+            beforeEach(() => {
+                window.localStorage.removeItem(STORAGE_KEYS.chartOverlays);
+            });
+
+            function lastSpecs() {
+                return vi.mocked(useChartOverlays).mock.calls.at(-1)?.[0].specs;
+            }
+
+            it('highlightedOverlayRef가 가리키는 오버레이는 그 kind가 기본으로 꺼져 있어도(divergence) specs에 남는다', () => {
+                const divergenceOverlay: ChartOverlay = {
+                    id: 'divergence:rsi_bearish:1',
+                    kind: 'divergence',
+                    skill: 'rsi_bearish_divergence',
+                    sourceRef: 'd1',
+                    variant: 'primary',
+                    segments: [
+                        {
+                            from: { time: 100, price: 10 },
+                            to: { time: 300, price: 12 },
+                            role: 'price',
+                            style: 'solid',
+                            pane: 'price',
+                        },
+                    ],
+                    levels: [],
+                    labels: [],
+                };
+
+                render(
+                    <StockChart
+                        bars={mockBars}
+                        timeframe="1Day"
+                        chartOverlays={[divergenceOverlay]}
+                        highlightedOverlayRef="d1"
+                    />
+                );
+
+                const specs = lastSpecs();
+                expect(specs).toHaveLength(1);
+                expect(specs?.[0].points).toEqual([
+                    { time: 100, value: 10 },
+                    { time: 300, value: 12 },
+                ]);
+            });
+
+            it("레벨 라벨 'breakout'은 t()가 반환하는 번역 문구로 바뀐다", () => {
+                const patternWithLevel: ChartOverlay = {
+                    id: 'pattern:double_bottom:100',
+                    kind: 'pattern',
+                    skill: 'double_bottom',
+                    sourceRef: 'p1',
+                    variant: 'primary',
+                    segments: [],
+                    levels: [{ price: 11, fromTime: 100, label: 'breakout' }],
+                    labels: [],
+                };
+
+                render(
+                    <StockChart
+                        bars={mockBars}
+                        timeframe="1Day"
+                        chartOverlays={[patternWithLevel]}
+                    />
+                );
+
+                const specs = lastSpecs();
+                expect(specs?.[0].title).toBe('돌파 기준');
+            });
+
+            it('RSI pane이 꺼져 있으면(paneIndex=null) rsi 세그먼트가 specs에서 빠지고 price 세그먼트만 남는다', () => {
+                const divergenceWithRsi: ChartOverlay = {
+                    id: 'divergence:rsi_bearish:2',
+                    kind: 'divergence',
+                    skill: 'rsi_bearish_divergence',
+                    sourceRef: 'd2',
+                    variant: 'primary',
+                    segments: [
+                        {
+                            from: { time: 100, price: 10 },
+                            to: { time: 300, price: 12 },
+                            role: 'price',
+                            style: 'solid',
+                            pane: 'price',
+                        },
+                        {
+                            from: { time: 100, price: 30 },
+                            to: { time: 300, price: 40 },
+                            role: 'rsi',
+                            style: 'solid',
+                            pane: 'rsi',
+                        },
+                    ],
+                    levels: [],
+                    labels: [],
+                };
+
+                // mockUseIndicatorVisibility의 기본값(DEFAULT_VISIBLE)이 rsi:false다
+                // — StockChart는 그 경우 rsiPaneIndex로 null을 넘긴다.
+                render(
+                    <StockChart
+                        bars={mockBars}
+                        timeframe="1Day"
+                        chartOverlays={[divergenceWithRsi]}
+                        highlightedOverlayRef="d2"
+                    />
+                );
+
+                const specs = lastSpecs();
+                expect(specs).toHaveLength(1);
+                expect(specs?.[0].paneIndex).toBe(0);
+            });
+        });
     });
 });

@@ -53,10 +53,6 @@ vi.mock('@/widgets/analysis', () => ({
     ),
 }));
 
-vi.mock('@/shared/ui/BotBlockedNotice', () => ({
-    BotBlockedNotice: () => <div data-testid="bot-blocked-notice" />,
-}));
-
 vi.mock('@/entities/bars/hooks/useBars', () => ({
     useBars: vi.fn(() => ({
         bars: [
@@ -72,7 +68,6 @@ vi.mock('@/views/symbol/hooks/useAnalysis', () => ({
         analysisResult: null,
         isAnalyzing: false,
         analysisError: null,
-        isBotBlocked: false,
         handleReanalyze: vi.fn(),
         reanalyzeCooldownMs: 0,
         cooldownNotice: null,
@@ -281,7 +276,6 @@ describe('ChartContent', () => {
                 analysisResult: null,
                 isAnalyzing: true,
                 analysisError: null,
-                isBotBlocked: false,
                 handleReanalyze: vi.fn(),
                 reanalyzeCooldownMs: 0,
                 cooldownNotice: null,
@@ -293,103 +287,23 @@ describe('ChartContent', () => {
         });
     });
 
-    it('keeps the facts layer and appends (does not replace with) the bot notice when bot is blocked and there is no narrative', async () => {
-        const { useAnalysis } =
-            await import('@/views/symbol/hooks/useAnalysis');
-        const { useBars } = await import('@/entities/bars/hooks/useBars');
-        // 사실 층이 실제로 렌더되려면 봉 2개 + rsi/macd 지표가 필요하다(buildTechnicalFacts는
-        // 봉이 2개 미만이면 null). 파일 기본 useBars mock은 봉 1개라 facts가 null이 되므로
-        // 이 테스트에 한해 2봉으로 override해 '교체가 아니라 병존'을 검증한다.
-        (useBars as ReturnType<typeof vi.fn>).mockReturnValue({
-            bars: [
-                {
-                    time: 0,
-                    open: 100,
-                    high: 120,
-                    low: 90,
-                    close: 100,
-                    volume: 1,
-                },
-                {
-                    time: 1,
-                    open: 100,
-                    high: 115,
-                    low: 100,
-                    close: 110,
-                    volume: 1,
-                },
-            ],
-            indicators: { rsi: [null, 55], macd: [], buySellVolume: [] },
-        });
-        // 서사 없음(FALLBACK) + 봇 차단 → 사실 층 분기. (참조 동등 FALLBACK이라야
-        // hasNarrative=false가 되어 사실 층 분기를 탄다 — `{}`는 hasNarrative=true.)
-        (useAnalysis as ReturnType<typeof vi.fn>).mockReturnValue({
-            analysis: FALLBACK_ANALYSIS,
-            analysisResult: null,
-            isAnalyzing: false,
-            analysisError: null,
-            isBotBlocked: true,
-            handleReanalyze: vi.fn(),
-            reanalyzeCooldownMs: 0,
-            cooldownNotice: null,
-        });
-
-        // try/finally: 앞선 어설션이 실패해도 후속 테스트로 mock(2봉/서사 없음)이
-        // 누수되지 않게 파일 기본 mock(봉 1개 / 서사 있음) 복원을 보장한다. afterEach의
-        // vi.clearAllMocks()는 vi.mock 팩토리가 vi.fn(() => ({...}))로 심은 기본 반환값을
-        // 되돌리지 않으므로(그래서 resetAllMocks로 바꾸면 다른 테스트가 깨진다) 수동
-        // 복원이 필요하고, 그 복원을 finally로 감싼다.
-        try {
-            render(<ChartContent {...defaultProps} />);
-            // 봇 안내(additive)와 종목 고유 사실 층이 함께 존재 — 교체가 아니라 병존이다.
-            // getByTestId/getByText는 부재 시 throw하므로 not.toBeNull로 존재를 명시 검증.
-            expect(screen.getByTestId('bot-blocked-notice')).not.toBeNull();
-            expect(screen.getByText(/기술적 지표 요약/)).not.toBeNull();
-        } finally {
-            (useBars as ReturnType<typeof vi.fn>).mockReturnValue({
-                bars: [
-                    {
-                        time: 1,
-                        open: 100,
-                        high: 110,
-                        low: 90,
-                        close: 105,
-                        volume: 500,
-                    },
-                ],
-                indicators: { buySellVolume: [] },
-            });
-            (useAnalysis as ReturnType<typeof vi.fn>).mockReturnValue({
-                analysis: {} as AnalysisResponse,
-                analysisResult: null,
-                isAnalyzing: false,
-                analysisError: null,
-                isBotBlocked: false,
-                handleReanalyze: vi.fn(),
-                reanalyzeCooldownMs: 0,
-                cooldownNotice: null,
-            });
-        }
-    });
-
-    // "AI 분석이 길어지면 차트도 길어진다" 회귀 가드.
+    // "AI 분석이 길어지면 차트도 길어진다" + "패널이 차트와 동떨어진다" 회귀 가드.
     //
     // jsdom에는 레이아웃 엔진이 없어 실제 픽셀을 측정할 수 없다. 대신 그 동작을
-    // 만드는 CSS 계약을 검증한다. 예전 계약은 "aside가 `md:h-full`로 차트 행 높이에
-    // 갇히고 `overflow-y-auto`로 자체 스크롤한다"였는데, 그 자체 스크롤러가 데스크톱
-    // 스크롤바 셋 중 하나였다(사용자 제보, v0.79.0). 새 계약은 정반대다:
+    // 만드는 CSS 계약을 검증한다(연혁은 ChartContent의 aside 주석 참고):
     //
     //   - 차트 컬럼이 `--symbol-chart-h`로 **자기 높이를 확정**한다. 분석 길이와
-    //     무관하게 고정되는 지점이 여기다 — 원래의 불변성은 그대로 지켜진다.
-    //   - aside는 스크롤러가 아니다. 내용만큼 자라고 문서가 한 번만 스크롤한다.
-    //   - 행은 `md:items-start`라 패널이 차트보다 길어질 수 있다.
-    describe('단일 문서 스크롤 + 차트 높이 고정', () => {
+    //     무관하게 고정되는 지점이 여기다.
+    //   - aside도 같은 `--symbol-chart-h`로 높이를 확정하고 `overflow-y-auto`로
+    //     자체 스크롤한다. 긴 분석이 패널을 차트 아래로 늘리지 않는다.
+    //   - 스크롤러는 aside 하나뿐이다(jail·`<main>` 같은 추가 중첩 스크롤러 금지).
+    describe('AI 패널 내부 스크롤 + 차트 높이 고정', () => {
         // 패널을 길게/짧게 시뮬레이션하기 위한 문단 수. 입력값과 단언값에서 함께
         // 쓰이므로 이름 있는 상수로 묶어 한쪽만 바뀌는 drift를 막는다.
         const LONG_PARAGRAPH_COUNT = 80;
         const SHORT_PARAGRAPH_COUNT = 1;
 
-        /** 차트 높이를 확정하는 CSS 변수를 참조하는 Tailwind 클래스. */
+        /** 차트·패널 높이를 확정하는 CSS 변수를 참조하는 Tailwind 클래스. */
         const CHART_HEIGHT = 'md:h-(--symbol-chart-h)';
 
         const renderWithParagraphs = async (paragraphCount: number) => {
@@ -400,7 +314,6 @@ describe('ChartContent', () => {
                 analysisResult: null,
                 isAnalyzing: false,
                 analysisError: null,
-                isBotBlocked: false,
                 handleReanalyze: vi.fn(),
                 reanalyzeCooldownMs: 0,
                 cooldownNotice: null,
@@ -421,37 +334,38 @@ describe('ChartContent', () => {
             ['길 때', LONG_PARAGRAPH_COUNT],
             ['짧을 때', SHORT_PARAGRAPH_COUNT],
         ])('AI 분석 패널이 %s', (_label, paragraphCount) => {
-            it('분석은 aside 안에 담기고, aside는 스크롤러가 아니라 내용만큼 자란다', async () => {
+            it('분석은 aside 안에 담기고, aside는 차트 높이에 맞춰 내부 스크롤한다', async () => {
                 const aside = asideOf(
                     await renderWithParagraphs(paragraphCount)
                 );
 
                 expect(paragraphsInside(aside)).toBe(paragraphCount);
-                expect(aside.className).not.toContain('overflow-y-auto');
-                // 조상 확정 높이에 갇히던 흔적. 되돌아오면 내부 스크롤도 돌아온다.
-                expect(aside.className).not.toContain('md:h-full');
+                expect(aside.className).toContain(CHART_HEIGHT);
+                expect(aside.className).toContain('md:overflow-y-auto');
             });
 
             it('차트 컬럼이 분석 길이와 무관하게 확정 높이를 유지한다', async () => {
                 const container = await renderWithParagraphs(paragraphCount);
 
                 const chartColumn = container.querySelector(
-                    `[class*="${CHART_HEIGHT}"]`
+                    `[class*="${CHART_HEIGHT}"]:not(aside)`
                 );
                 expect(chartColumn).not.toBeNull();
             });
 
-            it('차트 라우트 트리 어디에도 중첩 스크롤러가 없다', async () => {
+            it('스크롤러는 aside 하나뿐이다', async () => {
                 const container = await renderWithParagraphs(paragraphCount);
 
                 const scrollers = [
                     ...container.querySelectorAll('[class*="overflow-y-auto"]'),
                 ];
-                expect(scrollers).toHaveLength(0);
+                expect(scrollers).toEqual([asideOf(container)]);
             });
         });
 
-        it('행이 md:items-start라 패널이 차트보다 길어질 수 있다', async () => {
+        // 차트·패널 높이는 각자 변수로 확정하므로 `items-start`가 빠져도 둘은 그대로다.
+        // 하지만 드래그 핸들의 `self-stretch`는 이 전제에 기대므로 행 계약을 지킨다.
+        it('행이 md:items-start를 유지해 드래그 핸들 self-stretch 전제가 깨지지 않는다', async () => {
             const container = await renderWithParagraphs(LONG_PARAGRAPH_COUNT);
 
             const row = container.firstElementChild as HTMLElement;

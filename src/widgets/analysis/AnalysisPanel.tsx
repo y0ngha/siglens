@@ -239,6 +239,9 @@ function ReconciledLevelsBlock({
     );
 }
 
+/** overlaySourceRefs 미전달 시 기본값 — 매 렌더 새 Set을 만들지 않도록 모듈 상수로 고정. */
+const EMPTY_OVERLAY_SOURCE_REFS: ReadonlySet<string> = new Set();
+
 /** hasLockedActionDetail이 매매 전략 섹션을 잠그는 TierInfoDepth 값들. */
 const LOCKED_ACTION_INFO_DEPTHS: readonly TierInfoDepth[] = [
     'entry',
@@ -374,6 +377,74 @@ function ChevronIcon({ isOpen }: ChevronIconProps) {
     );
 }
 
+interface OverlayHighlightButtonProps {
+    /** 카드 제목(스킬명) — aria-label에 실어 어느 카드의 버튼인지 스크린리더에 알린다. */
+    cardTitle: string;
+    isHighlighted: boolean;
+    onToggle?: () => void;
+    /** 이 카드의 강조만 해제한다(멱등) — 언마운트 정리 전용. */
+    onClear?: () => void;
+}
+
+/**
+ * '원본' 카드에서 이 결과 항목에 대응하는 차트 작도(logic-drawn overlay)를
+ * 강조하는 토글. 카드 전체를 클릭 영역으로 만들면 텍스트 선택·아코디언 토글과
+ * 인터랙션이 겹치므로 별도 버튼으로 둔다(spec §4.3).
+ */
+function OverlayHighlightButton({
+    cardTitle,
+    isHighlighted,
+    onToggle,
+    onClear,
+}: OverlayHighlightButtonProps) {
+    const t = useTranslations('widgets.analysis');
+
+    /**
+     * 언마운트 시 강조 중이면 강조를 해제한다.
+     *
+     * `PlainAnalysisSwitch`는 쉽게보기로 전환되면 원본 트리(이 버튼을 포함한
+     * 카드 전체)를 **마운트 해제**한다(조건부 렌더 — display:none이 아니다).
+     * 이 카드가 강조된 채로 사라지면 `ChartContent`의 `highlightedOverlayRef`가
+     * 더 이상 존재하지 않는 버튼을 계속 가리키는 죽은 상태로 남고, 원본으로
+     * 되돌아와도(같은 sourceRef가 다시 나타나지 않는 한) 강조가 절대 꺼지지
+     * 않는다. cleanup에서 최신 `isHighlighted`/`onClear`를 ref로 읽어(effect
+     * deps에 넣으면 매 렌더 재실행돼 진짜 unmount가 아닌 데도 발동한다) 마운트
+     * 해제 시점에만 정확히 한 번 호출한다. 토글이 아니라 멱등 해제(`onClear`:
+     * "prev === ref ? null : prev")를 부른다 — 새 분석 도착으로 ChartContent가
+     * 렌더 중 이미 null로 리셋한 뒤 이 cleanup이 돌면, 토글은 null을 다시
+     * 이 ref로 켜 버린다(리뷰 2라운드 실측).
+     */
+    const latestRef = useRef({ isHighlighted, onClear });
+    useEffect(() => {
+        latestRef.current = { isHighlighted, onClear };
+    });
+    useEffect(() => {
+        return () => {
+            const { isHighlighted: wasHighlighted, onClear: clear } =
+                latestRef.current;
+            if (wasHighlighted) clear?.();
+        };
+    }, []);
+
+    return (
+        <button
+            type="button"
+            aria-pressed={isHighlighted}
+            aria-label={t('AnalysisPanel.f66b28', { v0: cardTitle })}
+            onClick={onToggle}
+            className={cn(
+                'shrink-0 rounded px-1.5 py-1 text-[10px] font-medium transition-colors',
+                'focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none',
+                isHighlighted
+                    ? 'bg-primary-600 text-white'
+                    : 'text-secondary-500 hover:bg-secondary-700 hover:text-secondary-200'
+            )}
+        >
+            {t('AnalysisPanel.bcc718')}
+        </button>
+    );
+}
+
 type ConfidenceLevel = 'high' | 'medium';
 
 // 색상만 모듈 상수로 남기고 문구는 `widgets.analysis.panel` 키로 옮겼다.
@@ -477,11 +548,21 @@ interface PatternAccordionItemProps {
      * 오표시되므로, 잠긴 경우 배지 자체를 숨긴다.
      */
     showConfidence: boolean;
+    /** 이 결과 항목에 대응하는 차트 작도가 있는지(`chartOverlays[].sourceRef`). */
+    hasOverlay: boolean;
+    /** 지금 차트에서 강조 중인 항목인지. */
+    isHighlighted: boolean;
+    onToggleHighlight?: () => void;
+    onClearHighlight?: () => void;
 }
 
 function PatternAccordionItem({
     pattern,
     showConfidence,
+    hasOverlay,
+    isHighlighted,
+    onToggleHighlight,
+    onClearHighlight,
 }: PatternAccordionItemProps) {
     const t = useTranslations('widgets.analysis');
     const skillLabel = useSkillLabel();
@@ -510,6 +591,14 @@ function PatternAccordionItem({
                     <TrendBadge trend={pattern.trend} />
                     <ChevronIcon isOpen={isOpen} />
                 </button>
+                {hasOverlay && (
+                    <OverlayHighlightButton
+                        cardTitle={skillLabel(pattern.skillName)}
+                        isHighlighted={isHighlighted}
+                        onToggle={onToggleHighlight}
+                        onClear={onClearHighlight}
+                    />
+                )}
                 {showConfidence && (
                     <span className="shrink-0 pr-2">
                         <ConfidenceBadge
@@ -583,11 +672,21 @@ interface StrategyAccordionItemProps {
     strategy: StrategyResult;
     /** free 티어의 마스킹된 confidenceWeight(0) 오표시 방지. PatternAccordionItem 참조. */
     showConfidence: boolean;
+    /** 이 결과 항목에 대응하는 차트 작도가 있는지(`chartOverlays[].sourceRef`). */
+    hasOverlay: boolean;
+    /** 지금 차트에서 강조 중인 항목인지. */
+    isHighlighted: boolean;
+    onToggleHighlight?: () => void;
+    onClearHighlight?: () => void;
 }
 
 function StrategyAccordionItem({
     strategy,
     showConfidence,
+    hasOverlay,
+    isHighlighted,
+    onToggleHighlight,
+    onClearHighlight,
 }: StrategyAccordionItemProps) {
     const skillLabel = useSkillLabel();
     const [isOpen, setIsOpen] = useState(false);
@@ -613,6 +712,14 @@ function StrategyAccordionItem({
                     <TrendBadge trend={strategy.trend} />
                     <ChevronIcon isOpen={isOpen} />
                 </button>
+                {hasOverlay && (
+                    <OverlayHighlightButton
+                        cardTitle={skillLabel(strategy.strategyName)}
+                        isHighlighted={isHighlighted}
+                        onToggle={onToggleHighlight}
+                        onClear={onClearHighlight}
+                    />
+                )}
                 {showConfidence && (
                     <span className="shrink-0 pr-2">
                         <ConfidenceBadge
@@ -830,6 +937,16 @@ interface AnalysisPanelProps {
      * (하위 호환 — 이 prop을 모르는 기존 호출부/테스트는 안전하게 배지 없음).
      */
     isPersonalized?: boolean;
+    /**
+     * `chartOverlays[].sourceRef` 집합 — 패턴/전략 카드 중 이 집합에 속한
+     * `id`만 '차트에서 보기' 토글을 렌더한다('원본' 보기 전용, spec §4.3).
+     */
+    overlaySourceRefs?: ReadonlySet<string>;
+    /** 지금 차트에서 강조 중인 결과 항목 id(sourceRef). */
+    highlightedOverlayRef?: string | null;
+    onToggleOverlayHighlight?: (ref: string) => void;
+    /** 해당 ref가 강조 중일 때만 해제(멱등). */
+    onClearOverlayHighlight?: (ref: string) => void;
 }
 
 export function AnalysisPanel({
@@ -852,6 +969,10 @@ export function AnalysisPanel({
     skillCount = 0,
     isPersonalized = false,
     plain,
+    overlaySourceRefs = EMPTY_OVERLAY_SOURCE_REFS,
+    highlightedOverlayRef = null,
+    onToggleOverlayHighlight,
+    onClearOverlayHighlight,
 }: AnalysisPanelProps) {
     const tPanel = useTranslations('widgets.analysis.panel');
     const t = useTranslations('widgets.analysis');
@@ -1370,6 +1491,31 @@ export function AnalysisPanel({
                                                 showConfidence={
                                                     !hasLockedConfidence
                                                 }
+                                                hasOverlay={overlaySourceRefs.has(
+                                                    pattern.id
+                                                )}
+                                                isHighlighted={
+                                                    highlightedOverlayRef ===
+                                                    pattern.id
+                                                }
+                                                onToggleHighlight={
+                                                    onToggleOverlayHighlight ===
+                                                    undefined
+                                                        ? undefined
+                                                        : () =>
+                                                              onToggleOverlayHighlight(
+                                                                  pattern.id
+                                                              )
+                                                }
+                                                onClearHighlight={
+                                                    onClearOverlayHighlight ===
+                                                    undefined
+                                                        ? undefined
+                                                        : () =>
+                                                              onClearOverlayHighlight(
+                                                                  pattern.id
+                                                              )
+                                                }
                                             />
                                         ))}
                                     </div>
@@ -1393,6 +1539,31 @@ export function AnalysisPanel({
                                                     strategy={strategy}
                                                     showConfidence={
                                                         !hasLockedConfidence
+                                                    }
+                                                    hasOverlay={overlaySourceRefs.has(
+                                                        strategy.id
+                                                    )}
+                                                    isHighlighted={
+                                                        highlightedOverlayRef ===
+                                                        strategy.id
+                                                    }
+                                                    onToggleHighlight={
+                                                        onToggleOverlayHighlight ===
+                                                        undefined
+                                                            ? undefined
+                                                            : () =>
+                                                                  onToggleOverlayHighlight(
+                                                                      strategy.id
+                                                                  )
+                                                    }
+                                                    onClearHighlight={
+                                                        onClearOverlayHighlight ===
+                                                        undefined
+                                                            ? undefined
+                                                            : () =>
+                                                                  onClearOverlayHighlight(
+                                                                      strategy.id
+                                                                  )
                                                     }
                                                 />
                                             )

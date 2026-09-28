@@ -22,7 +22,7 @@ describe('SymbolLayoutProviders', () => {
     });
 });
 
-// 단일 문서 스크롤 회귀 가드.
+// jail 비스크롤러 회귀 가드.
 //
 // jsdom에는 레이아웃 엔진이 없어 스크롤러가 몇 개인지 측정할 수 없다. 대신 그 동작을
 // 만들어내는 CSS 계약을 검증한다: jail은 **어느 라우트에서도** growable `min-h` 박스이며
@@ -33,9 +33,9 @@ describe('SymbolLayoutProviders', () => {
 // 들고 있으므로(ChartContent) jail이 높이를 확정할 이유가 없다.
 //
 // "AI 분석이 길어져도 차트는 늘어나지 않는다"는 원래의 불변성은 그대로다. 다만 그것을
-// 지키는 지점이 jail이 아니라 차트 컬럼으로 옮겨졌고, 그쪽 계약은
-// `views/symbol/__tests__/ChartContent.test.tsx`가 고정한다.
-describe('SymbolLayoutJail (단일 문서 스크롤)', () => {
+// 지키는 지점이 jail이 아니라 차트 컬럼·AI 패널(각자 `--symbol-chart-h`, 패널은 내부
+// 스크롤)로 옮겨졌고, 그쪽 계약은 `views/symbol/__tests__/ChartContent.test.tsx`가 고정한다.
+describe('SymbolLayoutJail (jail은 클립·스크롤하지 않는다)', () => {
     const MIN_HEIGHT =
         'min-h-[calc(100dvh-var(--header-h,3.5rem)-var(--pwa-banner-h,0px))]';
 

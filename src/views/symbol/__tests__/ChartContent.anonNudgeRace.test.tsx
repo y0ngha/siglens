@@ -49,10 +49,6 @@ vi.mock('@/widgets/analysis', () => ({
     AnalysisPanel: () => <div data-testid="analysis-panel" />,
 }));
 
-vi.mock('@/shared/ui/BotBlockedNotice', () => ({
-    BotBlockedNotice: () => <div data-testid="bot-blocked-notice" />,
-}));
-
 vi.mock('@/entities/bars/hooks/useBars', () => ({
     useBars: vi.fn(() => ({
         bars: [
@@ -71,7 +67,6 @@ vi.mock('@/views/symbol/hooks/useAnalysis', () => ({
         analysisResult: null,
         isAnalyzing: false,
         analysisError: null,
-        isBotBlocked: false,
         handleReanalyze: vi.fn(),
         reanalyzeCooldownMs: 0,
         cooldownNotice: null,

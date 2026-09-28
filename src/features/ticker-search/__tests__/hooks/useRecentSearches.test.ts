@@ -33,6 +33,11 @@ vi.mock('@/entities/ticker', () => ({
     RECENT_SEARCHES_STORAGE_KEY: 'siglens:recent-searches',
 }));
 
+const mockTrackAdsConversion = vi.fn();
+vi.mock('@/shared/lib/googleAds', () => ({
+    trackAdsConversion: (...args: unknown[]) => mockTrackAdsConversion(...args),
+}));
+
 /**
  * 회사명 백필이 부르는 서버 액션. mock하지 않으면 라벨이 심볼과 같은 픽스처마다
  * 실제 액션이 유닛 테스트에서 호출되고, 그 실패는 `.catch`에 삼켜져 초록으로
@@ -266,5 +271,17 @@ describe('useRecentSearches — 회사명 백필', () => {
         });
 
         expect(mockGetAssetLabelsAction).toHaveBeenCalledTimes(2);
+    });
+});
+
+describe('addSearch — ad conversion', () => {
+    it('records a tickerSelect conversion each time a ticker is picked', () => {
+        mockTrackAdsConversion.mockClear();
+        const { result } = renderHook(() => useRecentSearches());
+        act(() => {
+            result.current.addSearch({ symbol: 'NVDA', label: 'NVIDIA' });
+        });
+        expect(mockTrackAdsConversion).toHaveBeenCalledTimes(1);
+        expect(mockTrackAdsConversion).toHaveBeenCalledWith('tickerSelect');
     });
 });

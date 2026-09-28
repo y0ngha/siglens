@@ -1,5 +1,8 @@
 import { useTranslations } from 'next-intl';
-import type { MarketFearGreedView } from '@/entities/market-fear-greed';
+import type {
+    MarketFearGreedView,
+    MarketFearGreedViewSnapshot,
+} from '@/entities/market-fear-greed';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { FearGreedGauge } from '@/widgets/fear-greed';
 import { confidenceLabelKey } from '@/shared/lib/fearGreedLabels';
@@ -8,7 +11,8 @@ import { MarketFearGreedComparison } from './MarketFearGreedComparison';
 import { MarketFearGreedFactorBar } from './MarketFearGreedFactorBar';
 
 interface MarketFearGreedPageProps {
-    view: MarketFearGreedView;
+    /** 미국·한국(`MarketFearGreedSnapshot`)과 암호화폐 스냅샷을 모두 받는다 — 요인은 스냅샷 자신의 것을 그린다. */
+    view: MarketFearGreedView<MarketFearGreedViewSnapshot>;
     /** 어느 시장의 지수인가. 요인 라벨·설명과 면책 문구가 시장마다 다르다. */
     market: FearGreedMarketId;
 }
@@ -22,15 +26,18 @@ function formatAsOf(
     return t('asOfClose', { v0: year!, v1: month!, v2: day! });
 }
 
-// This index is intentionally narrower than CNN's: 5 daily-close-derivable
-// factors instead of 7 (put/call ratio and NYSE 52-week high/low breadth have
-// no data source available here), and it is computed independently from daily
-// closing prices rather than replicating CNN's pipeline. The disclosure below
-// exists so readers don't expect the number to match CNN's exactly.
+// Each market's index is computed independently, so each gets a disclosure
+// naming what readers are likely to compare it against:
+// - us: CNN Fear & Greed. Ours uses 5 daily-close-derivable factors instead of
+//   7 (put/call ratio and NYSE 52-week high/low breadth have no data source).
+// - kr: no widely cited reference index; the note explains the KR proxies.
+// - crypto: alternative.me Crypto Fear & Greed. Ours has no social or survey
+//   inputs and is built from prices and volume only.
 /** 시장별 면책 문구 키 — 문구는 `widgets.market-fear-greed.page`에 있다. */
 const CNN_DIFFERENCE_KEY: Record<FearGreedMarketId, string> = {
     us: 'cnnDifference',
     kr: 'krDifference',
+    crypto: 'cryptoDifference',
 };
 
 /**

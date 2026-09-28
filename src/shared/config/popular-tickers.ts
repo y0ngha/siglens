@@ -219,6 +219,8 @@ export const KR_CATEGORY_IDS: ReadonlySet<CategoryId> = new Set([
     'kr-platform',
     'kr-finance',
     'kr-kosdaq',
+    // 스크립트가 만들기 전까지 config에 없다 — `has` 판정만 하므로 무해.
+    'kr-trending',
 ]);
 
 /**
@@ -745,4 +747,10 @@ export const POPULAR_TICKERS = [
     '247540.KQ', // 에코프로비엠
     '058470.KQ', // 리노공업
     '403870.KQ', // HPSP
+
+    // --- Trending (2026-09-20) ---
+    'VLO',
+    'BX',
+    'MPC',
+    'WELL',
 ] as const;

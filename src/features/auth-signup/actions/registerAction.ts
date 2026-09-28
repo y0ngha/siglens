@@ -10,6 +10,7 @@ import {
     sanitizeNextPath,
     toSameOriginPath,
 } from '@/shared/lib/auth/redirect';
+import { createSignupConversionCookie } from '@/shared/lib/googleAds';
 import {
     applyAuthCookie,
     createAuthHintCookie,
@@ -29,6 +30,7 @@ import {
     bcryptPasswordVerifier,
 } from '@/entities/auth/lib/bcrypt';
 import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
+import { toHandoffAwareRedirect } from '@/entities/auth/lib/handoffStore';
 import { DrizzleAgreementRepository } from '@/entities/agreement';
 import { DrizzleTermsRepository } from '@/entities/terms/api';
 import { createEmailTokenStore } from '@/entities/email-token';
@@ -143,6 +145,9 @@ export async function registerAction(
                 secure,
             })
         );
+        // 신규 계정 생성이 확정된 뒤에만 도달한다 — 다음 페이지의 GoogleAdsTag가
+        // 이 플래그를 읽어 가입 전환을 한 번 기록하고 지운다.
+        cookieStore.set(createSignupConversionCookie({ secure }));
         // 리다이렉트 싱크 바로 앞에서 URL 파서로 같은-오리진 경로만 남긴다.
         // 문자열 검사(sanitizeNextPath)가 놓칠 수 있는 절대/프로토콜-상대 URL을
         // 파서가 호스트째로 떼어낸다.
@@ -151,9 +156,13 @@ export async function registerAction(
         // 동기 `redirect`를 쓰는 이유는 아래 catch가 NEXT_REDIRECT를 재throw해야
         // 하고, TypeScript가 `never` 반환으로 이후 코드를 도달 불가로 좁혀야 하기
         // 때문이다(localeRedirect.ts JSDoc 참고).
+        // ai 호스트에서 온 가입(SSO 핸드오프)은 하드 내비게이션이어야 한다 —
+        // `toHandoffAwareRedirect` JSDoc 참고.
         redirect(
-            await localeHref(
-                toSameOriginPath(resolvePostSignupDestination(next))
+            toHandoffAwareRedirect(
+                await localeHref(
+                    toSameOriginPath(resolvePostSignupDestination(next))
+                )
             )
         );
     } catch (err) {

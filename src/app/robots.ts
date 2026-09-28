@@ -10,8 +10,13 @@ import { LOCALES } from '@/shared/i18n/locales';
  * 이 그룹에 넣으면 사실상 무제한이 된다 — `GOOGLE_NON_SEARCH_USER_AGENTS` 주석 참고.
  * 나머지 봇의 준수 여부도 문서로 보장되지 않는 best-effort 힌트다. 확실한 통제가
  * 필요하면 `Disallow` 또는 Cloudflare 봇 룰을 써야 한다.
+ *
+ * 값을 60에서 10으로 낮춘 이유(2026-09): 60초면 봇 하나가 하루 최대 1,440 URL만
+ * 가져갈 수 있다. 종목 × 탭 페이지 수만 개를 한 바퀴 도는 데 몇 주가 걸려 AI 검색
+ * 인용(GEO) 쪽 수집이 사실상 멈춘다. 10초면 하루 8,640 URL로, 봇당 평균 0.1 req/s라
+ * 오리진 부하는 여전히 무시할 수준이다.
  */
-export const AI_CRAWLER_CRAWL_DELAY_SECONDS = 60;
+export const AI_CRAWLER_CRAWL_DELAY_SECONDS = 10;
 
 // 검색엔진이 아닌 기생 SEO 크롤러(백링크/순위 분석 SaaS). 포털 랭킹에 기여하지 않으면서
 // 트래픽만 유발하므로 전면 Disallow한다 — Googlebot/Yeti/Bingbot/Daumoa 등 실제
@@ -167,8 +172,15 @@ export default function robots(): MetadataRoute.Robots {
                 // Server Action(현재 페이지 URL로 POST — 허용 경로)이었지만 지금은 이
                 // API 라우트로 간다. 여기가 막히면 Googlebot 렌더러가 요청 자체를
                 // 못 보내 캐시 HIT조차 못 받고, 렌더된 DOM에 에러 배너만 남는다.
-                // 봇은 캐시 미스 시 새 분석을 큐에 넣지 않으므로(`skipEnqueueIfMiss`)
-                // AI 비용은 0이고, 얻는 건 색인 가능한 분석 텍스트다.
+                //
+                // 2026-09-27: 봇은 더 이상 캐시 미스 시 큐잉을 건너뛰지 않는다 —
+                // 크롤러도 사람과 같은 본문을 받아야 한다(`skipEnqueueIfMiss`는
+                // 이제 UA와 무관하게 항상 `false`). 그래서 "AI 비용은 0"이 아니라,
+                // 캐시 키가 사람과 공유되고(같은 심볼·타임프레임이면 한 번 생성한
+                // 결과를 봇과 사람이 함께 쓴다) SEO prewarm이 인기 심볼을 미리
+                // 채워 둔다는 뜻이다 — 비용은 UA가 아니라 캐싱·prewarm과
+                // 동시성 상한(`canAcceptAnalysisStream`)이 통제한다. 얻는 건
+                // 여전히 색인 가능한, 사람과 동일한 분석 텍스트다.
                 // Allow는 더 긴 경로 매칭이 이기므로 아래 `/api/` disallow보다 우선한다.
                 allow: BASELINE_ALLOW,
                 // API 라우트는 disallow로 유지 — 응답이 JSON/이미지 등 SEO 가치

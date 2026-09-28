@@ -15,6 +15,7 @@ import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { isKoreanInput } from '@/entities/ticker';
 import { useRecentSearches } from '../hooks/useRecentSearches';
 import { useTickerSearch } from '../hooks/useTickerSearch';
+import { normalizeLabel } from '../lib/normalizeLabel';
 import { POPULAR_PREVIEW_GROUPS } from '../lib/popularPreview';
 import { resolveSubmitTarget } from '../lib/resolveSubmitTarget';
 import { SEARCH_PLACEHOLDER_KEY, SEARCH_ROW_CLASS } from '../lib/searchLabels';
@@ -105,8 +106,18 @@ function SearchOverlayBody({
      * 가거나(`apple` → `/APPLE` 404), 아무 일도 안 일어나 **검색 키가 먹통으로**
      * 보이거나. 의도를 보류했다가 결착된 뒤 처리하면 둘 다 피한다. 기다리는 동안
      * 화면에는 "검색 중…"이 떠 있다.
+     *
+     * 의도는 ref로 든다 — 소비(`isSettled` 도달)는 렌더에 드러낼 값이 아니라서
+     * effect 안 setState로 낮출 이유가 없다(react/set-state-in-effect). `submitTick`은
+     * 그 의도가 **생겼다는 사실만** 렌더에 알리는 카운터다 — 이미 결착된 상태에서
+     * 검색 키를 눌러도 아래 effect가 한 번은 돌아야 한다(다른 의존성이 안 바뀔 수 있다).
      */
-    const [isSubmitRequested, setIsSubmitRequested] = useState(false);
+    const pendingSubmitRef = useRef(false);
+    const [submitTick, setSubmitTick] = useState(0);
+    const requestSubmit = () => {
+        pendingSubmitRef.current = true;
+        setSubmitTick(t => t + 1);
+    };
 
     const dialogRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -179,7 +190,7 @@ function SearchOverlayBody({
      * 사용자는 애플을 눌렀는데 NVDA 차트를 2~3초 본다(LAX 경로 실측 기준). 셋 다 사라진다.
      */
     function handleSelect(symbol: string, label: string) {
-        addSearch({ symbol, label: label.trim() || symbol });
+        addSearch({ symbol, label: normalizeLabel(label, symbol) });
         // 보고 있던 종목을 다시 고른 경우. 이동할 곳이 없으니 닫기만 한다 —
         // `/NVDA`에서 인기 종목의 NVDA를 누르는 건 탭 한 번이면 닿는 흔한 동작이다.
         if (pathname === `/${symbol}`) {
@@ -217,7 +228,7 @@ function SearchOverlayBody({
         // 무시된 뒤 `/APPLE`로 직행해 404가 난다.
         // 지금 결정하지 않고 **의도만 남긴다**. 조회가 결착된 뒤 아래 효과가
         // 어디로 갈지 정한다 — 이유는 그 효과의 주석 참고.
-        setIsSubmitRequested(true);
+        requestSubmit();
     };
 
     // 배경 스크롤 잠금. 저장/복원 방식은 HeaderMobileMenu와 동일하다 — 둘이 동시에
@@ -239,11 +250,11 @@ function SearchOverlayBody({
      * 보내는 것보다 정직하다.
      */
     useEffect(() => {
-        if (!isSubmitRequested || !isSettled || isSearching) return;
-        setIsSubmitRequested(false);
+        if (!pendingSubmitRef.current || !isSettled || isSearching) return;
+        pendingSubmitRef.current = false;
         if (isError) return;
         submitResolvedTarget();
-    }, [isSubmitRequested, isSettled, isSearching, isError]);
+    }, [submitTick, isSettled, isSearching, isError]);
 
     const portalTarget = typeof document === 'undefined' ? null : document.body;
     if (!portalTarget) return null;
@@ -280,7 +291,7 @@ function SearchOverlayBody({
                         // 계속 타이핑하면 앞서 남긴 검색 의도는 무효다 — 그대로
                         // 두면 새 질의가 결착되는 순간 사용자가 요청하지 않은
                         // 이동이 일어난다(`useAutocomplete`도 같은 규칙).
-                        setIsSubmitRequested(false);
+                        pendingSubmitRef.current = false;
                         setQuery(e.target.value);
                     }}
                     onKeyDown={handleKeyDown}

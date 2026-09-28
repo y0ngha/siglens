@@ -7,8 +7,8 @@ indicators: []
 confidence_weight: 1.0
 gating:
   tier: always_on
-token_cost: 433
-digest_hash: "c11afe28"
+token_cost: 518
+digest_hash: "c773387a"
 ---
 
 ## Candle Reading Primer (compressed)
@@ -34,11 +34,14 @@ OHLC. A fuller per-pattern guide is injected only when that pattern is detected.
 - **Morning / Evening Star** (incl. doji variants): 3-bar exhaustion-then-reversal.
 - **Three White Soldiers / Three Black Crows:** three strong same-direction bodies confirming a reversal thrust.
 - **Piercing Line / Dark Cloud Cover, Tweezers, Belt Hold, Counterattack:** weaker 1–2 bar reversal hints; need confirmation.
+- **Above / Below the Stomach:** 2nd candle opens past the long prior body's midpoint = reversal hint; the detector does not check the trend.
+- **Three-Line Strike:** measured as a reversal in the 4th candle's direction (opposite of its name); the trend label already follows the measured direction.
 
 ### Continuation family (favor the prior trend resuming)
 
 - **Marubozu** (bullish/bearish): full-body, no wick = one-sided conviction.
-- **Gap patterns / Tasuki, Three-method-style sequences:** brief pause inside an ongoing trend rather than a turn.
+- **Gap patterns / Tasuki:** brief pause inside an ongoing trend rather than a turn.
+- **Rising / Falling Three Methods:** 3-bar pause inside a long candle's range, then the trend resumes.
 
 ### Indecision / neutral family (wait)
 
@@ -56,9 +59,12 @@ Candle Reading Primer — compact map of candlestick families.
   - Morning/Evening Star (incl. doji variants): 3-bar exhaustion-then-reversal.
   - Three White Soldiers/Three Black Crows: three strong same-direction bodies = reversal thrust.
   - Piercing Line/Dark Cloud Cover, Tweezers, Belt Hold, Counterattack: weaker 1–2 bar reversal hints; need confirmation.
+  - Above/Below the Stomach: 2nd candle opens past the long prior body's midpoint = reversal hint; trend not checked by the detector.
+  - Three-Line Strike: measured reversal in the 4th candle's direction (opposite of its name); trend label already follows it.
 - **Continuation family** (favor prior trend resuming):
   - Marubozu (bull/bear): full-body, no wick = one-sided conviction.
-  - Gap patterns/Tasuki, Three-method sequences: brief pause inside an ongoing trend, not a turn.
+  - Gap patterns/Tasuki: brief pause inside an ongoing trend, not a turn.
+  - Rising/Falling Three Methods: 3-bar pause inside a long candle's range, then the trend resumes.
 - **Indecision/neutral family** (wait):
   - Doji (standard, long-legged, dragonfly, gravestone): open≈close = balance; meaningful only at a trend extreme, noise in a range.
   - Spinning Top: small body, wicks both sides = indecision; lowers conviction either direction.

@@ -50,3 +50,22 @@ export const VISITOR_NEWS_CARD_LIMIT = 25;
  * fresh로 잡혀 재시도되지 않는다).
  */
 export const PREWARM_NEWS_CARD_LIMIT = 12;
+
+/**
+ * 챗 툴이 **응답 전에 기다리며** 보강할 기사 수 상한.
+ *
+ * `get_news`는 적재 직후 DB를 읽어 그 턴의 답을 만든다. 보강을 전부 백그라운드로
+ * 미루면 방금 들어온 기사가 영문 제목만 달고 나가고, 한국어 제목·감성·분류는
+ * 다음 읽기부터 붙는다. 사용자가 "방금 뜬 기사"를 물었을 때 가장 알고 싶은 게
+ * 그 라벨이므로 **신규 기사만큼은 기다린다.**
+ *
+ * 숫자 근거: `withConcurrencyLimit`이 `NEWS_CARD_ANALYSIS_PARALLEL_LIMIT`(4)개씩
+ * 청크로 돌린다. 4로 맞추면 **정확히 한 청크**라, 프로덕션 실측 카드 분석 왕복
+ * 1.7~3.3초 기준 대화 지연이 그 한 번으로 끝난다. 5로 올리는 순간 두 청크가 되어
+ * 최악 6.6초가 된다 — 청크 경계가 곧 체감 비용의 경계다.
+ *
+ * 하루 대부분의 호출에서 신규 기사는 0~2건이라 이 상한에 닿지도 않는다. 닿는 건
+ * 그 심볼을 아무도 안 본 첫 방문뿐이고, 그때 남는 기사는 `after()`가
+ * `VISITOR_NEWS_CARD_LIMIT`까지 이어받으므로 진전이 누적된다.
+ */
+export const CHAT_SYNC_NEWS_CARD_LIMIT = NEWS_CARD_ANALYSIS_PARALLEL_LIMIT;

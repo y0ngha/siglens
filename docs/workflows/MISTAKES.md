@@ -93,6 +93,21 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ buildBarsRawKey(symbol, timeframe, limit) { return `bars:${symbol}:${timeframe}:${limit}`; }  // all result-affecting inputs
    ✅ unstable_cache((symbols: readonly string[]) => fetch(symbols), [symbols])  // symbols passed as argument, included in key
 
+1.3. Cache key formation must be consistent across all caller classes
+   → When a cache key includes optional fields, all caller classes (bot, user, server, etc.) must either include those fields or exclude them consistently
+   → A request-path branch that skips a cache-key input for one caller class creates a separate cache namespace for that class
+   → Separate cache namespaces silently disable cache hits, even when prewarmed entries exist for other caller classes
+   → When a core library adds optional fields to a cache key, all consumers must grep all call sites and include/exclude the fields uniformly — type safety and unit tests alone don't catch inconsistency
+   ❌ Bot path: `cache_key = buildKey(symbol, timeframe)` // omits priorAnalyses
+      User path: `cache_key = buildKey(symbol, timeframe, priorAnalyses)` // includes priorAnalyses
+      → Bot requests miss all prewarmed entries because keys don't match
+   ❌ One analysis path includes `marketEvents` in cache key, another path omits it
+      → Same symbol generates two separate cache entries depending on caller, doubling cache misses
+   ✅ Grep all callers of `buildCacheKey()` when optional fields are added
+   ✅ All callers must use identical field inclusion/exclusion; document the policy
+   ✅ Test verifies cache hits across different caller classes (bot, user, prewarm) using the same cache key
+   → Recurring: fix/deepseek-pr-review-followup R1 (core adds priorAnalyses/marketEvents, consumer paths inconsistent), fix/bot-analysis-parity (bot namespace separate from prewarmed entries) — 2 occurrences
+
 2. Identical values queried or computed multiple times in a single function
    → Extract to a local const or assign once before using repeatedly
    → Applies to loop boundaries, array calculations, and function returns
@@ -302,6 +317,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ Comments either match reality exactly, or are removed and the WHY moved to commit/PR description
     → Recurring: PR #420 Phase 7 R1, PR #428 R16 S1, PR #442 R5 S1, PR #453 R3/R4, PR #459, feat/seo-followup B5, PR #562 R2
 
+15.62. Layout refactoring — Stale geometry comments persist when reversing a layout contract
+    → When reversing a layout contract (size relationship, flex direction, overflow behavior), comments and test names describing the OLD contract stay behind in sibling files outside the diff
+    → After major layout changes, audit both test assertion text and inline comments describing geometry across the whole repo (src/, e2e/, docs/), not only changed files
+    → Patterns to grep: old contract wording in both Korean ("문서 하나", "단일 문서 스크롤", "내용만큼 자") and English ("one scroller", "document is the only scroller", "AI panel grows with content")
+    ❌ After changing panel from "grows with content" to "height-locked with overflow-y-auto", stale comment "row height = taller of chart/panel" remains on a sibling element in the same file, no longer describing actual behavior
+    ❌ Diff contains layout fixes in 3 files; grep of repo finds 7 more files with old-contract comments (JSDoc, test names, CSS variable descriptions) — bot found them incrementally across two review rounds because each fix searched only the already-changed files
+    ✅ After major layout changes, run full-repo grep for old-contract wording; update all sibling files (test names, inline comments, JSDoc) in the same commit
+    ✅ Deleted stale test assertion and updated comment to describe new contract (height-locked to CSS var with overflow-y-auto)
+    → Recurring: Pre-PR review Round 1 + PR #884 Round 1+3 (same branch, 2 occurrences across review cycles) — consolidated into single rule
+
 15.65. UTC/timezone comments asserting time conversions that contradict the literal
     → When a comment explains a UTC timestamp's local-time equivalent, the literal and conversion must match exactly
     → Common source: DST transitions, timezone offset changes, or copy-paste edits where one half was updated but not the other
@@ -389,6 +414,19 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ Add agent → update KNOWN_AGENTS allowlist + add to agent dispatch logic + update exit signal guard
     ✅ Add surface → update SURFACES + add to route enumeration test + verify cross-surface guard tests pass
     → Recurring: PR #678 (exit-signal allowlist), PR #796 R3 (SURFACES), fix/seo-internal-links (RESERVED_FIRST_SEGMENTS) — 3 occurrences
+
+25. Validation order: type check → size check → parse, before regex
+    → When validating inputs that will be processed through regex, string parsing, or size-dependent logic, checks must be applied in strict order to prevent quadratic blowup and silent data loss
+    → Type check (typeof, instanceof) must precede size check (length, byte count), which must precede regex or parse
+    → Size cap must be applied before regex (prevents ReDoS blowup from O(n²) backtracking on oversized inputs)
+    → Parse/conversion must follow size validation (avoids wasted processing on invalid input)
+    ❌ if (length > MAX_LEN) then apply regex // regex evaluated first, then capped — quadratic blowup on oversized input
+    ❌ Mutation (decrement size budget) before validation (size cap check) — oversized write destroys valid entry before rejecting write
+    ❌ String(untrustedObj) before size check — arbitrary toString() invoked before length validation
+    ✅ if (typeof value !== 'string') return error; if (value.length > MAX_LEN) return error; const result = regex.test(value.substring(0, MAX_LEN))
+    ✅ Validate size cap BEFORE mutation: if (newValue.byteLength > cap) return; then decrement budget and store
+    ✅ typeof check → .length check → regex, in that order
+    → Recurring: perf/aws-cost-reduction R1 (guard before mutation), perf/aws-cost-reduction R3 (cap before regex) — 2 occurrences
 
 16. Temporary API stub modules left in codebase after external library release
     → When an external package (e.g. @y0ngha/siglens-core) exports the API previously stubbed locally, immediately delete the stub and unify all imports to the real export
@@ -593,15 +631,22 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Hooks are Client Components and will fail without the directive when parent is async Server Component
 
 10. setState called directly in useEffect body (react-hooks/set-state-in-effect)
-    → React 19 canonical fix: useEffectEvent wraps derivation logic, setState happens inside Event scope (stable, escapes linting)
-    → Alternative: If state reset logically belongs to "mutation starts", move to useMutation's onMutate callback
-    → onMutate fires synchronously before the mutationFn, satisfies the linter, and centralizes reset logic
+    → oxlint 1.79+ traces calls through useEffectEvent too — wrapping setState in useEffectEvent to "escape linting" no longer passes; the call is still attributed to the effect that scheduled it
+    → useCallback does NOT help either — the linter traces into useCallback bodies and still flags setState
+    → Real fix depends on what the effect is actually doing:
+      - Deriving state from a value that changed **this render** (e.g. resolving a pending action once inputs settle) → adjust state during render (the "previous value" comparison pattern), not in an effect
+      - Reading an external store the component doesn't own (localStorage, `window.location.search`, `matchMedia`) → `useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)`; `getServerSnapshot` must return the value the server/hydration render used, so hydration doesn't need its own setState-in-effect step at all
+      - A one-shot intent flag ("submit was requested", "this nav already fired") — pick by **where it gets consumed**:
+        - Resolvable from this render's values alone (e.g. the search settled, so the target is known) → keep the flag in `useState` and resolve it with a render-time adjustment (`useAutocomplete`'s `isSubmitArmed`)
+        - Must be consumed inside the effect that performs the side effect (navigation, callbacks) → a `useRef`; if setting it must also trigger a re-render, bump a cheap counter/tick state (`SearchOverlay`'s `pendingSubmitRef` + `submitTick`). A ref is also the right guard for "already fired" (`firedNavRef`)
+    → Effects remain the right tool only for real external side effects (`router.push`, DOM/`document` mutation, subscribing a DOM event listener) — never as a vehicle to move a `setState` call one tick later
+    → Mutations: state that must reset on every mutate call site still belongs in `useMutation`'s `onMutate` — that part of the old guidance is unchanged
     ❌ useEffect(() => { setPollError(null); setAnalysisResult(null); mutate(...); }, [deps])  // setState synchronously in effect body
-    ✅ useEffect pattern (React 19): const handleDerive = useEffectEvent(() => { setMessages(...); }); useEffect(() => { handleDerive(); }, [deps])
-    ✅ useMutation pattern: useMutation({ onMutate: () => { setPollError(null); setAnalysisResult(null); }, ... })
-    → React 19: useEffectEvent is preferred when effect triggers derivation but setState should not re-run effect
-    → Mutations: For state that must reset on every mutate call site, onMutate is the single source of truth
-    → Note: useCallback does NOT help — the linter traces into useCallback bodies and still flags setState
+    ❌ const handleDerive = useEffectEvent(() => { setMessages(...); }); useEffect(() => { handleDerive(); }, [deps])  // oxlint 1.79+ still flags this — useEffectEvent no longer escapes the rule
+    ✅ Render-time adjustment: if (isSubmitArmed && canResolve) { setIsSubmitArmed(false); setPendingNav(target); }  // conditioned on a value that changed this render, computed during render, not behind a mount effect
+    ✅ External store with hydration-safe snapshot: useSyncExternalStore(subscribePreference, getPreferenceSnapshot, getServerPreferenceSnapshot)  // getServerPreferenceSnapshot fixes the hydration-render value so it matches SSR, no setState needed to "catch up" after mount
+    ✅ One-shot flag via ref: const firedNavRef = useRef<Target | null>(null); useEffect(() => { if (!pending || firedNavRef.current === pending) return; firedNavRef.current = pending; /* real side effect: router.push, onSelect callback, etc. */ }, [pending, ...])
+    ✅ useMutation pattern (unchanged): useMutation({ onMutate: () => { setPollError(null); setAnalysisResult(null); }, ... })
 
 11. URL synchronization using initial props instead of current local state
     → RSC pending states can cause initial props to be stale during concurrent updates
@@ -1071,6 +1116,38 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Schema already includes WebPage about.Corporation (covers service metadata) — reusing FinancialProduct is redundant
    ❌ Article.datePublished set to request time instead of publication time
    ✅ Article.datePublished = original publication; Article.dateModified = current timestamp for background analysis updates
+
+2. generateMetadata must explicitly set all metadata fields; unset fields inherit from parent layout
+   → When a route's `generateMetadata` exports omit a field (description, robots, canonical, etc.), Next.js inherits it from the root layout
+   → Inherited fields create crawled duplicates: different routes' pages receive identical metadata, degrading search engine indexability and confusing crawlers about which version is canonical
+   → Solution: every route's `generateMetadata` must be complete and unique — each field that differs by route must be explicitly set
+   ❌ // not-found.tsx: missing description
+      export const generateMetadata = (): Metadata => ({
+        title: '404 Not Found',
+        robots: 'noindex'
+        // description omitted — inherits root layout's home description
+      });
+      // Result: /nonexistent-page-xyz appears in GSC with home description
+   ❌ // [symbol]/[tab]/page.tsx: description identical across tabs
+      export const generateMetadata = (): Metadata => ({
+        title: `${symbol} Analysis`,
+        description: `${symbol} — ${snapshot}`, // snapshot clamped at SEO_DESCRIPTION_MAX_LENGTH
+        robots: 'index'
+      });
+      // When snapshot is long, /SOXS/overall and /SOXS/fundamental both hit the clamp and return identical 193-char descriptions
+   ✅ // not-found.tsx: explicit description
+      export const generateMetadata = (): Metadata => ({
+        title: '404 Not Found',
+        description: 'Page not found — search for a symbol or check the URL',
+        robots: 'noindex'
+      });
+   ✅ // [symbol]/[tab]/page.tsx: tab-discriminated description
+      export const generateMetadata = (): Metadata => ({
+        title: `${symbol} ${tabLabel}`,
+        description: `${symbol} ${tabLabel} — ${snapshot}`, // tabLabel discriminator ensures different tabs differ even if snapshot is clamped
+        robots: 'index'
+      });
+   → Recurring: fix/seo-snapshot-desc-tab-prefix R1 (description collision across tabs) + R2 (not-found inherits home description)
 ```
 
 ## Accessibility (WAI-ARIA)
@@ -1342,6 +1419,22 @@ This file contains only **recurring gotchas** that agents keep missing despite e
       - Add a compile-time check: `const _check: SkillCategory = SKILL_CATEGORIES[0];` paired with a satisfies clause on the array literal
       - Extract the mirror into a named const inside `siglens-core` itself and re-export
 
+
+7. Skill documentation must stay in sync with implementation, gating, and prompt usage
+   → Skill documents (skills/*.md) are consumed by analysis prompts and front-end tools
+   → Claims in skill body (numeric evidence, assumptions, gating status) must match the actual implementation/rules/prompt injection
+   → When a skill's rule, category, or gating status changes, update the body text AND digest metadata to match
+   → When a skill's description (frontmatter) is edited, update i18n catalog keys in all 4 locales (ko, en, ja, zh) + messages/_meta/hashes.json (sha1(ko value)[:12])
+   → Numeric claims in skill documentation must be verified against the referenced design doc or measurement before publishing
+   ❌ Skill digest says "Continuation" but body was rewritten to "neutral"; entry stayed under wrong heading, prompts inject stale grouping
+   ❌ Skill body claims "guide always available" but file was event-gated; prompt gets injected only on signal fire, contradicting claim
+   ❌ Skill description changed to "new wording" but i18n key exists only in ko.json — en/ja/zh left pointing to old key, missing translation
+   ❌ Skill claims "averaged -0.06%" but the referenced design doc shows per-period range; numeric claim contradicts source
+   ✅ When rewriting a skill's category (neutral vs continuation), update heading grouping in index.md AND update digest
+   ✅ When gating changes, update body text to say "injected when signal fires" instead of "always available"
+   ✅ When editing description, update messages/{ko,en,ja,zh}.json AND messages/_meta/hashes.json; digest metadata (token_cost/digest_hash) separately via `yarn skills:digest-update`
+   ✅ Verify numeric claims against source: design doc, measurement, or referenced data before writing the skill
+   → Recurring: claude/siglens-analysis-technique-review-wvfffz R1–2 (numeric evidence, i18n catalog sync), feat/skills-evidence-refresh R1 (category/gating sync) — 4 occurrences across 2 PRs
 ```
 
 ---

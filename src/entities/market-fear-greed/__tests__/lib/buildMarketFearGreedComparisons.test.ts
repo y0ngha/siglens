@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import type { MarketFearGreedHistoryPoint } from '@y0ngha/siglens-core';
 import { MS_PER_DAY } from '@/shared/config/time';
-import { buildMarketFearGreedComparisons } from '../../lib/buildMarketFearGreedComparisons';
+import {
+    buildCalendarDayComparisons,
+    buildMarketFearGreedComparisons,
+} from '../../lib/buildMarketFearGreedComparisons';
 
 const BASE_DATE_MS = new Date('2020-01-01T00:00:00Z').getTime();
 
@@ -118,5 +121,48 @@ describe('buildMarketFearGreedComparisons', () => {
 
         // Math.max(0, 99 - 252) = 0 → 가장 이른 scored 세션(index 0)으로 clamp.
         expect(oneYearAgo).toEqual({ key: '1y', ...scoredPoint(0) });
+    });
+});
+
+describe('buildCalendarDayComparisons', () => {
+    it('warm-up뿐이면 빈 배열이다', () => {
+        expect(buildCalendarDayComparisons([nullPoint(0)])).toEqual([]);
+    });
+
+    it('7·30·365 달력일 전을 날짜로 고른다', () => {
+        const history = Array.from({ length: 400 }, (_, i) => scoredPoint(i));
+
+        const result = buildCalendarDayComparisons(history);
+
+        expect(result.map(p => [p.key, p.date])).toEqual([
+            ['now', isoDateAt(399)],
+            ['1w', isoDateAt(392)],
+            ['1m', isoDateAt(369)],
+            ['1y', isoDateAt(34)],
+        ]);
+    });
+
+    // 한 코인의 봉이 빠진 날은 inner join에서 통째로 사라진다. 인덱스로 세면 그 뒤의
+    // 모든 비교가 하루씩 밀린다.
+    it('빠진 날이 있으면 목표일 이전의 가장 가까운 날을 쓴다', () => {
+        const history = Array.from({ length: 400 }, (_, i) => i)
+            .filter(i => i !== 392 && i !== 395)
+            .map(scoredPoint);
+
+        const oneWeek = buildCalendarDayComparisons(history).find(
+            p => p.key === '1w'
+        );
+
+        expect(oneWeek?.date).toBe(isoDateAt(391));
+    });
+
+    it('히스토리가 짧으면 가장 이른 scored 날로 clamp한다', () => {
+        const history = [nullPoint(0), scoredPoint(1), scoredPoint(10)];
+
+        const oneYear = buildCalendarDayComparisons(history).find(
+            p => p.key === '1y'
+        );
+
+        expect(oneYear?.date).toBe(isoDateAt(1));
     });
 });

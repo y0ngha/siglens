@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { StrikeVolumeChart } from '@/widgets/options/StrikeVolumeChart';
 import type { OptionsChain } from '@y0ngha/siglens-core';
 
@@ -91,6 +91,56 @@ describe('StrikeVolumeChart', () => {
         expect(screen.getByText(/거래량 데이터가 없어요/)).toBeInTheDocument();
     });
 
+    it('renders empty state when the chain has no strikes at all', () => {
+        const noStrikesChain: OptionsChain = {
+            expirationDate: '2025-06-20',
+            daysToExpiration: 30,
+            calls: [],
+            puts: [],
+        };
+        render(
+            <StrikeVolumeChart underlyingPrice={150} chain={noStrikesChain} />
+        );
+        expect(screen.getByText(/거래량 데이터가 없어요/)).toBeInTheDocument();
+    });
+
+    it('renders empty state when every strike has zero volume on both sides', () => {
+        const zeroVolumeChain: OptionsChain = {
+            expirationDate: '2025-06-20',
+            daysToExpiration: 30,
+            calls: [
+                {
+                    strike: 150,
+                    bid: 5,
+                    ask: 6,
+                    openInterest: 1000,
+                    volume: 0,
+                    impliedVolatility: 0.35,
+                    lastPrice: 5.5,
+                    inTheMoney: true,
+                    contractSymbol: 'C150',
+                },
+            ],
+            puts: [
+                {
+                    strike: 150,
+                    bid: 4,
+                    ask: 5,
+                    openInterest: 800,
+                    volume: 0,
+                    impliedVolatility: 0.32,
+                    lastPrice: 4.5,
+                    inTheMoney: false,
+                    contractSymbol: 'P150',
+                },
+            ],
+        };
+        render(
+            <StrikeVolumeChart underlyingPrice={150} chain={zeroVolumeChain} />
+        );
+        expect(screen.getByText(/거래량 데이터가 없어요/)).toBeInTheDocument();
+    });
+
     it('renders SVG chart with data', () => {
         const { container } = render(
             <StrikeVolumeChart underlyingPrice={150} chain={CHAIN} />
@@ -124,5 +174,74 @@ describe('StrikeVolumeChart', () => {
         render(<StrikeVolumeChart underlyingPrice={150} chain={CHAIN} />);
         const table = screen.getByRole('table', { hidden: true });
         expect(table).toBeInTheDocument();
+    });
+
+    it('hovering (pointerEnter + pointerMove) a strike bar shows its Call/Put volume in the floating tooltip', () => {
+        const { container } = render(
+            <StrikeVolumeChart underlyingPrice={150} chain={CHAIN} />
+        );
+        const tooltip = screen.getByRole('tooltip', { hidden: true });
+        expect(tooltip).toHaveAttribute('hidden');
+
+        const hitRect = container.querySelector(
+            'rect[aria-describedby="volume-chart-tooltip"]'
+        )!;
+        fireEvent.pointerEnter(hitRect, { clientX: 5, clientY: 5 });
+        fireEvent.pointerMove(hitRect, { clientX: 7, clientY: 7 });
+
+        expect(tooltip).not.toHaveAttribute('hidden');
+        expect(within(tooltip).getByText('Strike $150')).toBeInTheDocument();
+        expect(within(tooltip).getByText('Call Vol')).toBeInTheDocument();
+        expect(within(tooltip).getByText('Put Vol')).toBeInTheDocument();
+    });
+
+    it('pointerLeave hides the tooltip again', () => {
+        const { container } = render(
+            <StrikeVolumeChart underlyingPrice={150} chain={CHAIN} />
+        );
+        const tooltip = screen.getByRole('tooltip', { hidden: true });
+        const hitRect = container.querySelector(
+            'rect[aria-describedby="volume-chart-tooltip"]'
+        )!;
+        fireEvent.pointerEnter(hitRect, { clientX: 5, clientY: 5 });
+        expect(tooltip).not.toHaveAttribute('hidden');
+
+        fireEvent.pointerLeave(hitRect);
+        expect(tooltip).toHaveAttribute('hidden');
+    });
+
+    it('rotates x-axis strike labels (-45deg) once more than 7 labels are shown', () => {
+        const manyStrikesChain: OptionsChain = {
+            expirationDate: '2025-06-20',
+            daysToExpiration: 30,
+            calls: Array.from({ length: 9 }, (_, i) => ({
+                strike: 100 + i * 10,
+                bid: 1,
+                ask: 1.1,
+                openInterest: 10,
+                volume: 100 + i,
+                impliedVolatility: 0.3,
+                lastPrice: 1.05,
+                inTheMoney: false,
+                contractSymbol: `C${100 + i * 10}`,
+            })),
+            puts: Array.from({ length: 9 }, (_, i) => ({
+                strike: 100 + i * 10,
+                bid: 1,
+                ask: 1.1,
+                openInterest: 10,
+                volume: 50 + i,
+                impliedVolatility: 0.3,
+                lastPrice: 1.05,
+                inTheMoney: false,
+                contractSymbol: `P${100 + i * 10}`,
+            })),
+        };
+        const { container } = render(
+            <StrikeVolumeChart underlyingPrice={150} chain={manyStrikesChain} />
+        );
+        const rotated = container.querySelectorAll('text[transform]');
+        expect(rotated.length).toBeGreaterThan(0);
+        expect(rotated[0]).toHaveAttribute('text-anchor', 'end');
     });
 });

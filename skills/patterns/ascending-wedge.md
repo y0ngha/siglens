@@ -5,7 +5,7 @@ type: pattern
 category: continuation_bearish
 pattern: ascending_wedge
 indicators: []
-confidence_weight: 0.7
+confidence_weight: 0.5
 display:
   chart:
     show: true
@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [ascending_wedge]
-token_cost: 620
-digest_hash: "e706e682"
+token_cost: 627
+digest_hash: "aa8e7966"
 ---
 
 ## Detection Criteria
@@ -32,7 +32,7 @@ digest_hash: "e706e682"
 
 ## Confidence Weight Rationale
 
-confidence_weight: 0.7 — Ascending Wedge has a lower confidence weight than Head and Shoulders (0.8) or Double Top (0.75) because the breakout direction is statistically less predictable. While ascending wedges predominantly break downward, the absence of a clear neckline or defined reversal point makes timing and confirmation more ambiguous. The converging trendlines can also be subjective in their placement, introducing detection variability.
+confidence_weight: 0.5 — Bulkowski (thepatternsite.com/risewedge.html, bull market): breakouts are downward 60% of the time, but downward breakouts are among the worst performers — break-even failure rate 51%, only 32% meet the price target, performance rank 36 (last) of 36. Weight follows the downward (primary-direction) failure rate: > 30% → 0.5. The converging trendlines can also be subjective in their placement, introducing detection variability.
 
 Factors that increase confidence:
 - Clear convergence with at least 4 touches per trendline
@@ -88,7 +88,7 @@ Geometry:
 - ≥3 touches on each trendline (3 highs, 3 lows). Convergence ratio ≥30% (narrowing from start to end). Minimum 15 bars.
 - Confirmed by break BELOW lower trendline.
 
-Confidence (weight 0.7): predominantly breaks downward but direction less predictable (no clear neckline).
+Confidence (weight 0.5) — Bulkowski risewedge.html: breaks down 60%, but down-breakout failure 51%, 32% meet target, rank 36/36 (last).
 - Increase: clear convergence with 4+ touches per line, consistent volume decline as wedge narrows, decisive break below lower trendline with volume surge, duration > 25 bars.
 - Decrease: <3 touches per line, no volume decline, break near apex, ambiguous convergence (trendlines near parallel).
 

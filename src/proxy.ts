@@ -22,6 +22,11 @@ import {
     splitLocalePath,
 } from '@/shared/i18n/locales';
 import { routing } from '@/shared/i18n/routing';
+import {
+    DEFAULT_REDIRECT_PATH,
+    sanitizeNextPath,
+    toSameOriginPath,
+} from '@/shared/lib/auth/redirect';
 import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 import {
     AI_INDEXABLE_PATHS,
@@ -33,7 +38,15 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 const intlMiddleware = createIntlMiddleware(routing);
 
-const AI_CSP = "frame-ancestors 'none'; img-src 'self' data:";
+/**
+ * `img-src`를 좁히는 이유는 모델 출력에 섞인 이미지 URL로 대화 내용을 빼내는 경로를
+ * 막기 위해서다(agent-chat 설계 "출력 위생"). Google Ads 전환 픽셀 호스트만 연다 —
+ * Google 태그 CSP 가이드의 Ads 이미지 목록. 국가 도메인은 와일드카드가 안 돼서
+ * 광고 대상인 한국만 넣었다.
+ */
+// ponytail: google.co.kr only — add each google.<TLD> if ads target other countries.
+const AI_CSP =
+    "frame-ancestors 'none'; img-src 'self' data: https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://www.google.com https://www.google.co.kr";
 /**
  * SiglensAI의 공개 면은 로케일별 홈과 `/about`(`AI_INDEXABLE_PATHS`)이다. 대화(`/c/*`)는 회원 본인만
  * 볼 수 있는 사적 기록이라 크롤러에 열 이유가 없고, 게스트에게는 404다.
@@ -55,9 +68,70 @@ function aiSitemapXml(): string {
     return `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}</urlset>`;
 }
 
+/**
+ * 광고 전용 랜딩(`src/app/lp/`). 호스트마다 정확히 한 페이지만 연다.
+ *
+ * 로케일 rewrite(메인의 next-intl, ai의 `/ai/[locale]`)를 타지 않는 별도 루트라
+ * 두 호스트 모두 `/lp/*`를 그대로 라우터에 넘긴다. 다른 호스트의 페이지나 모르는
+ * `/lp/*`는 여기서 404로 끊는다 — 넘기면 `[locale]/[symbol]`이 `lp`를 로케일로
+ * 받아 레이아웃 `notFound()`의 빈 404가 된다.
+ *
+ * 페이지 메타데이터도 noindex지만, 404까지 덮도록 헤더로도 막는다.
+ * (spec `docs/superpowers/specs/2026-09-26-ad-landing-pages-design.md`)
+ */
+const LP_PATH_BY_HOST = {
+    main: '/lp/stock-analysis',
+    ai: '/lp/stock-chat',
+} as const;
+
+function isLandingPath(pathname: string): boolean {
+    return pathname === '/lp' || pathname.startsWith('/lp/');
+}
+
+function landingPageResponse(
+    req: NextRequest,
+    host: keyof typeof LP_PATH_BY_HOST
+): NextResponse {
+    const { pathname } = new URL(req.url);
+    const response =
+        pathname !== LP_PATH_BY_HOST[host]
+            ? new NextResponse('Not Found', { status: 404 })
+            : host === 'ai'
+              ? NextResponse.rewrite(new URL(req.url))
+              : NextResponse.next();
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+    return response;
+}
+
+/**
+ * 로케일 접두사가 붙은 랜딩(`/en/lp/stock-analysis`, `/ja/lp/stock-chat`)은
+ * 접두사를 뗀 `/lp/*`로 301한다. 랜딩은 한국어 전용이라 로케일 변형이 없다.
+ *
+ * 원시 경로만 보는 `isLandingPath` 검사로는 이 형태가 빠져 메인은
+ * `[locale]/[symbol]`, ai는 `/ai/[locale]/*`로 흘러간다. 접두사를 뗀 결과가
+ * 모르는 `/lp/*`여도 리다이렉트 후 위 404 가드가 받으므로 심볼 라우트에 닿지
+ * 않는다. 기존 `/ko/lp/*` 301과 같은 동작을 모든 로케일로 넓힌 것이다.
+ */
+function landingLocaleRedirect(req: NextRequest): NextResponse | null {
+    const url = new URL(req.url);
+    const { path } = splitLocalePath(url.pathname);
+    if (path === url.pathname || !isLandingPath(path)) return null;
+    url.pathname = path;
+    const response = NextResponse.redirect(url, 301);
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+    return response;
+}
+
 /** `ai.siglens.io`(SiglensAI) 호스트 요청을 `/ai/[locale]/*`로 rewrite한다. */
 async function handleAiHost(req: NextRequest): Promise<NextResponse> {
     const url = new URL(req.url);
+    if (isLandingPath(url.pathname)) {
+        const response = landingPageResponse(req, 'ai');
+        response.headers.set('Content-Security-Policy', AI_CSP);
+        return response;
+    }
+    const landingRedirect = landingLocaleRedirect(req);
+    if (landingRedirect) return landingRedirect;
     if (url.pathname === '/robots.txt') {
         return new NextResponse(AI_ROBOTS_BODY, {
             headers: {
@@ -146,6 +220,9 @@ const RESERVED_FIRST_SEGMENTS = new Set([
     // `/SYMBOLS` 티커로 301된다 — 푸터가 전 라우트에서 그 링크를 내보내므로
     // 사이트 전체가 깨진 링크를 갖게 된다.
     'symbols',
+    // 페이지 디렉터리는 삭제됐지만 위 레거시 리다이렉트의 대상 경로라 여전히
+    // 예약해야 한다 — 없으면 `/onboarding`이 `/ONBOARDING`으로 대문자
+    // 정규화되고, 그 경로는 [symbol] fallback을 타 404가 된다.
     'onboarding',
     'portfolio',
     'share',
@@ -153,6 +230,9 @@ const RESERVED_FIRST_SEGMENTS = new Set([
     'terms',
     'privacy',
     'about',
+    // 광고 랜딩(`src/app/lp/`, `[locale]` 밖의 별도 루트라 스캐너 테스트가 못 본다).
+    // 여기 없으면 `/ko/lp/stock-analysis`가 `/LP/stock-analysis`로 301된다.
+    'lp',
     'api',
     '_next',
 ]);
@@ -168,6 +248,9 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     const rawPathname = new URL(req.url).pathname;
     if (rawPathname === '/robots.txt' || rawPathname === '/sitemap.xml')
         return NextResponse.next();
+    if (isLandingPath(rawPathname)) return landingPageResponse(req, 'main');
+    const landingRedirect = landingLocaleRedirect(req);
+    if (landingRedirect) return landingRedirect;
 
     const hasSession = !!req.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value;
     const reqUrl = new URL(req.url);
@@ -178,6 +261,23 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
      * 자기 언어에서 이탈하지 않게 한다.
      */
     const { locale, path: pathname } = splitLocalePath(reqUrl.pathname);
+
+    /**
+     * 레거시 `/onboarding` 라우트 — 페이지 자체는 지웠지만 (보유종목 관리는
+     * `/portfolio`로 이관됐다) 북마크·진행 중인 가입 흐름·외부에 공유된
+     * 링크가 여전히 이 경로를 가리킬 수 있다. 같은 로케일의 `/portfolio`로
+     * 영구 리다이렉트하고, `?symbol=`(`/[symbol]/position` CTA에서 온 값)을
+     * 포함한 쿼리스트링을 그대로 보존한다.
+     */
+    if (pathname === '/onboarding') {
+        return NextResponse.redirect(
+            new URL(
+                `${localePath(locale, '/portfolio')}${reqUrl.search}`,
+                req.url
+            ),
+            301
+        );
+    }
 
     /**
      * `/ai` 예약 라우트(SiglensAI) — 메인 호스트로 잘못 들어온 요청을
@@ -387,19 +487,45 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     }
 
     if (GUEST_ONLY_PATHS.has(pathname) && hasSession) {
-        return NextResponse.redirect(new URL(localePath(locale, '/'), req.url));
+        // 이미 로그인된 사용자는 `next`(돌아갈 곳)를 따라 보낸다. 무시하고 홈으로
+        // 보내면 SiglensAI 로그인 CTA(`/login?next=/api/auth/handoff?to=ai…`)를
+        // 누른 메인 로그인 사용자 — ai 쪽만 로그아웃했거나, `?sso=none` 이후
+        // 다른 탭에서 로그인한 경우 — 가 ai.siglens.io로 못 돌아가고 메인 홈에
+        // 버려진다. 여기는 진짜 HTTP 리다이렉트라 핸드오프 302 체인도 브라우저가
+        // 그대로 따라간다. `next`는 로그인 폼과 같은 2중 방어를 거친다.
+        const next = toSameOriginPath(
+            sanitizeNextPath(reqUrl.searchParams.get('next'))
+        );
+        // `next`가 또 다른 게스트 전용 경로면 한 홉 더 튕기지 않고 바로 홈으로.
+        const nextPath = splitLocalePath(
+            new URL(next, reqUrl.origin).pathname
+        ).path;
+        const target =
+            next === DEFAULT_REDIRECT_PATH || GUEST_ONLY_PATHS.has(nextPath)
+                ? localePath(locale, '/')
+                : next;
+        return NextResponse.redirect(new URL(target, req.url));
     }
 
     if (AUTH_REQUIRED_PATHS.some(p => pathname.startsWith(p)) && !hasSession) {
-        // page-level guards (e.g. `PortfolioGuard`, `OnboardingGuard`) redirect
-        // unauthenticated visitors to `/login?next=<path>` so login returns them
-        // to where they were headed — the proxy's forward guard fires first for
-        // these same paths, so it must preserve `next=` too, or a guest hitting
-        // `/portfolio` directly loses the return path entirely.
+        // page-level guards (e.g. `PortfolioGuard`) redirect unauthenticated
+        // visitors to `/login?next=<path>` so login returns them to where they
+        // were headed — the proxy's forward guard fires first for these same
+        // paths, so it must preserve `next=` too, or a guest hitting `/portfolio`
+        // directly loses the return path entirely.
         const loginUrl = new URL(localePath(locale, '/login'), req.url);
         // `next`는 로케일이 붙은 경로로 저장한다 — 로그인 후 사용자가 자기 언어의
         // 원래 페이지로 돌아와야 한다.
-        loginUrl.searchParams.set('next', localePath(locale, pathname));
+        //
+        // `reqUrl.search`도 반드시 붙인다 — 빠뜨리면 `/portfolio?symbol=AAPL`
+        // (`/[symbol]/position`의 CTA)로 들어온 게스트가 로그인 후 심볼이
+        // 채워지지 않은 빈 폼에 도착한다. `sanitizeNextPath`/`toSameOriginPath`는
+        // 쿼리를 검사 대상에서 제외하고 그대로 통과시키므로 로그인 액션 쪽에서도
+        // 안전하게 살아남는다 (redirect.ts 참고).
+        loginUrl.searchParams.set(
+            'next',
+            localePath(locale, pathname) + reqUrl.search
+        );
         return NextResponse.redirect(loginUrl);
     }
 

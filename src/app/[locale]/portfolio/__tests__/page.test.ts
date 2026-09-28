@@ -1,5 +1,5 @@
 /**
- * `/portfolio` page tests — mirrors the onboarding/account sibling pattern:
+ * `/portfolio` page tests — mirrors the account sibling pattern:
  * metadata (noindex/canonical), the `PortfolioGuard` auth redirect, the
  * holdings-driven grid (one `PositionHoldingCard` per holding, server never
  * fetches per-symbol price ranges), the 0-holdings empty-state CTA, and the
@@ -99,7 +99,7 @@ describe('Portfolio page', () => {
         const metadata = await generateMetadata({
             params: Promise.resolve({ locale: 'ko' }),
         });
-        expect(metadata.title).toBe('내 포트폴리오 위치');
+        expect(metadata.title).toBe('포트폴리오');
     });
 
     it('sets robots to noindex, nofollow', async () => {

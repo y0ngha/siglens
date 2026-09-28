@@ -188,7 +188,24 @@ export function sessionSpecFor(profile: MarketProfileId): MarketSessionSpec {
 export function sessionSpecForDashboardScope(
     scope: DashboardScopeId
 ): MarketSessionSpec {
-    return scope === 'kr' ? KR_EQUITY_SESSION : US_EQUITY_SESSION;
+    switch (scope) {
+        case 'kr':
+            return KR_EQUITY_SESSION;
+        // 크립토는 24/7이다. 미국 세션으로 두면 NYSE가 닫힌 동안 TTL이 몇 시간으로
+        // 늘어 **거래가 한창인 시장의 시세가 밤새 얼어붙는다** — 화면에는 아무 표시도
+        // 나지 않고 숫자만 낡는다.
+        case 'crypto':
+            return CRYPTO_SESSION;
+        case 'us':
+            return US_EQUITY_SESSION;
+        default: {
+            const _exhaustive: never = scope;
+            console.error(
+                `[sessionSpecForDashboardScope] Unhandled scope: ${String(_exhaustive)} — defaulting to US_EQUITY_SESSION`
+            );
+            return US_EQUITY_SESSION;
+        }
+    }
 }
 
 /**

@@ -16,7 +16,6 @@ import {
 import { useFinancialsAnalysis } from './hooks/useFinancialsAnalysis';
 import { FinancialsAiSummaryError } from './FinancialsAiSummaryError';
 import { FinancialsAiSummarySkeleton } from './FinancialsAiSummarySkeleton';
-import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 import {
     HEADING_SECTION,
     HEADING_SUBSECTION,
@@ -182,10 +181,6 @@ export function FinancialsAiSummary({
 
     if (state.status === 'loading') {
         return <FinancialsAiSummarySkeleton />;
-    }
-
-    if (state.status === 'bot_blocked') {
-        return <BotBlockedNotice />;
     }
 
     if (state.status === 'error') {

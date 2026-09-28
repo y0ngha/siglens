@@ -31,6 +31,8 @@ export function useReasoningToggle(): [
     const [isHydrated, setIsHydrated] = useState(false);
 
     const setReasoning = useCallback((value: boolean): void => {
+        // SSR 가드 — jsdom에는 항상 window가 있어 단위 테스트로 실행할 수 없다.
+        /* v8 ignore next */
         if (typeof window !== 'undefined') {
             localStorage.setItem(LOCAL_STORAGE_REASONING_KEY, String(value));
         }
@@ -38,6 +40,8 @@ export function useReasoningToggle(): [
     }, []);
 
     const readFromStorage = useEffectEvent((): void => {
+        // SSR 가드 — 위와 같은 이유로 jsdom에서는 도달할 수 없다.
+        /* v8 ignore next */
         if (typeof window === 'undefined') return;
         const stored = localStorage.getItem(LOCAL_STORAGE_REASONING_KEY);
         startTransition(() => {

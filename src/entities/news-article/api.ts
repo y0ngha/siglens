@@ -34,11 +34,13 @@ import {
 import { buildAnalysisNewsItems } from './lib/buildAnalysisNewsItems';
 import { analyzeNewsCards } from './lib/analyzeNewsCards';
 import { PREWARM_NEWS_CARD_LIMIT } from './lib/newsAnalysisConstants';
+import { selectUnanalyzed } from './lib/selectUnanalyzed';
 import {
     ingestNewsForSymbol,
     NewsIngestWriteError,
 } from './lib/ingestNewsForSymbol';
 import { getNextEarningsReport } from '@/entities/earnings-report';
+import { loadNewsMacroCalendar } from '@/entities/economy/api/loadNewsMacroCalendar';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import { getDescriptor } from '@/shared/config/marketProfile';
 import { PREWARM_PROVIDER_FALLBACK } from '@/shared/config/prewarm';
@@ -327,9 +329,10 @@ function toNewsRow(row: NewsDbRow): NewsRow {
 
 /**
  * SEO pre-warm 전용 news submit (spec 2026-07-24 §4 seam, Task 7).
- * `submitNewsAnalysisAction`의 비봇 경로를 요청-컨텍스트 없이 재현한다
- * (캐시 키 5축 정합: model default / tier free / reasoning false / 동일
- * fingerprint). 차이는 skipEnqueueIfMiss:false와 force 뿐.
+ * `submitNewsAnalysisAction`의 기본 경로(2026-09-27부터 봇/사람 구분 없음)를
+ * 요청-컨텍스트 없이 재현한다(캐시 키 5축 정합: model default / tier free /
+ * reasoning false / 동일 fingerprint). 차이는 force 뿐 — `skipEnqueueIfMiss`는
+ * 액션에서도 항상 `false`다.
  *
  * modelId는 익명/free 방문자가 실제로 보내는 기본값(`DEEPSEEK_V4_1_FLASH_MODEL`
  * — `SymbolModelContext`의 `useSelectedModel` 기본값과 동일)을 명시 전달한다.
@@ -362,7 +365,7 @@ export async function prewarmNews(
     symbol: string,
     companyName: string,
     force: boolean
-): Promise<RunNewsAnalysisResult> {
+): Promise<RunNewsAnalysisResult & { newsFetchFailed?: true }> {
     // 리뷰 지적(PR #700): resolveAssetClass()는 내부적으로
     // resolveMarketProfile() → getAssetInfo()를 호출하는데, 아래
     // ingestNewsForSymbol도 profileId를 안 넘기면 resolveMarketProfile을 다시
@@ -411,9 +414,10 @@ export async function prewarmNews(
     }
 
     // `rows`만 가변이다 — 보강을 돌리면 그 결과를 반영해 다시 읽는다.
-    const [initialRows, next] = await Promise.all([
+    const [initialRows, next, macroCalendar] = await Promise.all([
         repo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS),
         getNextEarningsReport(symbol, db),
+        loadNewsMacroCalendar(),
     ]);
     let rows = initialRows;
 
@@ -437,18 +441,10 @@ export async function prewarmNews(
     // 창 전체를 매번 돌려주므로, 다음에 적재가 성공하면 남은 미보강 행이 그대로
     // 후보로 다시 잡힌다(자기 회복).
     //
-    // 후보를 DB에 **실제로 있는** 행으로 한 번 더 좁힌다. `ingestNewsForSymbol`은
-    // 과반 미만의 upsert 실패를 삼키고 진행하므로 `fresh`에는 있지만 DB에는 없는
-    // 항목이 남을 수 있다. 그대로 두면 LLM은 호출하고 `attachAnalysis`는 존재하지
-    // 않는 id에 no-op update를 날려, 비용만 쓰고 아무것도 남지 않는다.
-    const rowIds = new Set(rows.map(r => r.id));
-    const analyzedIds = new Set(
-        rows.filter(r => r.analyzedAt !== null).map(r => r.id)
-    );
+    // 후보 좁히기(미보강 ∩ DB 실재)는 `selectUnanalyzed`가 맡는다 — 근거는 그
+    // 함수의 주석에 있고, 챗 경로(`ensureSymbolNewsFresh`)와 같은 판단을 쓴다.
     const unanalyzed =
-        ingested?.fresh.filter(
-            item => rowIds.has(item.id) && !analyzedIds.has(item.id)
-        ) ?? [];
+        ingested === null ? [] : selectUnanalyzed(ingested.fresh, rows);
     if (unanalyzed.length > 0) {
         await analyzeNewsCards(unanalyzed, repo, {
             limit: PREWARM_NEWS_CARD_LIMIT,
@@ -462,12 +458,23 @@ export async function prewarmNews(
     const enrichedNews: ReadonlyArray<EnrichedNewsItem> =
         buildAnalysisNewsItems(rows);
 
-    return runNewsAnalysis({
+    /**
+     * `newsFetchFailed`를 결과에 실어 보낸다.
+     *
+     * 적재는 fail-open이라(`ingested === null` = FMP 장애·402) 그 밤의 DB가
+     * 비어 있으면 core는 "뉴스가 없다"(`no_news`)와 "뉴스를 못 가져왔다"를
+     * 똑같이 본다. 호출부(`resolveHarvest`)가 그 둘에 서로 다른 backoff를
+     * 매기므로, 구분 가능한 유일한 지점인 여기서 신호를 붙인다 — 이게 없으면
+     * FMP 장애 중 신규·저커버리지 심볼이 30분이 아니라 24시간 묶인다.
+     */
+    const result = await runNewsAnalysis({
         symbol,
         companyName,
         modelId: DEEPSEEK_V4_1_FLASH_MODEL,
         news: enrichedNews,
         upcomingCalendar: next !== null ? [next] : [],
+        // 방문자 경로와 같은 헬퍼 — 캐시 키 일치 불변식.
+        macroCalendar,
         tier: 'free',
         reasoning: false,
         providerFallback: PREWARM_PROVIDER_FALLBACK,
@@ -478,7 +485,27 @@ export async function prewarmNews(
         currency: descriptor.priceFormat.currency,
         ...(force ? { force: true } : {}),
     });
+    return ingested === null ? { ...result, newsFetchFailed: true } : result;
 }
+
+/**
+ * `server-only` 모듈의 슬라이스 진입점 재노출.
+ *
+ * 클라이언트 안전 barrel(`index.ts`)로는 내보낼 수 없다 — 그 파일의 헤더가
+ * 명시하듯 `server-only`가 client 번들에 섞이면 build가 깨진다. 그렇다고
+ * 소비자가 `lib/<file>`을 깊게 파고들면 슬라이스 경계가 흐려지므로, 서버
+ * 소비자용 진입점인 이 파일이 대신 재노출한다.
+ */
+export { hasAnalyzableNews } from './lib/hasAnalyzableNews';
+export { analyzeNewsCards } from './lib/analyzeNewsCards';
+export { selectUnanalyzed } from './lib/selectUnanalyzed';
+export {
+    CHAT_SYNC_NEWS_CARD_LIMIT,
+    VISITOR_NEWS_CARD_LIMIT,
+} from './lib/newsAnalysisConstants';
+export { ingestNewsForSymbol } from './lib/ingestNewsForSymbol';
+export { isRecentlyFetched } from './lib/newsRefreshFlag';
+export { NEWS_ANALYSIS_LOOKBACK_MS } from './lib/newsLookback';
 
 // Naver news search, re-exported for server consumers outside this slice
 // (the agent's `web_search` tool blends it with Brave for Korean queries).

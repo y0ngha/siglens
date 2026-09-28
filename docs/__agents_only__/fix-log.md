@@ -42,7 +42,6 @@
   - Rule: Repository tooling must not depend on contributor-specific absolute paths.
   - Context: Replaced the hook command with a repository-relative path so the checked-in hook works outside the author's machine.
 
-
 ## [PR #690 | claude/mobile-ai-analysis-ui-42kyji | 2026-07-17]
 - Violation: 첫 분석(서사 없음) 로딩을 AnalyzingBanner(광고 없음)에서 AnalysisProgress로 교체하면서 `isFreeUser`를 전달하지 않아, 기본값 `true`로 인해 Pro 사용자에게도 로딩 중 AdBanner가 노출됐다. 같은 파일의 기존 AnalysisPanel 호출도 동일하게 미전달 상태였다.
   - Rule: 티어 게이팅 prop(isFreeUser 등)을 소비하는 컴포넌트를 렌더할 때, 게이팅 값을 명시적으로 전달해야 한다 — "안전한 기본값"에 의존하면 유료 티어에 무료용 표면(광고)이 새어 나간다.
@@ -59,7 +58,6 @@
 - Finding (R3 - runtime verification, after 2 review rounds approved): `src/proxy.ts` guard checked `reqUrl.searchParams.has('_rsc')` + `req.headers.get('rsc')`, but Next.js strips both before middleware runs (next/dist/server/web/adapter.js: line 153 calls stripInternalSearchParams; lines 139-147 delete FLIGHT_HEADERS including RSC). Guard was dead code. Unit tests passed because mock NextRequest still had param + header — mock encoded false assumption about runtime.
   - Rule: (new) — Middleware/proxy logic inspecting framework-internal request state (_rsc param, RSC/FLIGHT headers) cannot be validated by unit tests with hand-built mock requests. Mock defines the reality being asserted. Such logic requires production build + real HTTP request to verify firing. Origin-side enforcement is impossible; defense must move to edge (Cloudflare cache rule).
   - Context: Guard + tests reverted to master. Defense moved entirely to Cloudflare cache rule. docs/architecture/CDN_CACHING.md updated documenting why origin-side enforcement is impossible.
-
 
 ## [perf/indicator-precision Round 1 | perf/indicator-precision | 2026-08-13]
 - Violation: Fixed-precision formatting (toFixed()) truncated sub-penny assets (SHIBUSD trade price ~0.00000XXX) to 0, and reversed MACD histogram sign in candle serialization
@@ -252,22 +250,6 @@
 ## [feat/agent-tool-analysis-context Round 2 | Agent tool analysis context | 2026-09-14]
 - Status: APPROVED (zero findings)
 
-## [PR #813 | feat/agent-tool-analysis-context | Post-approval suggestions | 2026-09-14]
-- Violation: getDescriptor(profile) computed twice in one object literal
-  - Rule: MISTAKES.md Rule 2 — Identical values queried or computed multiple times in a single function
-  - Context: Hoisted duplicate computation outside object literal.
-- Violation: Agent bars tool sliced raw detectCandlePatternEntries instead of using core selectLastCandlePatternEntries like the chart markers and analysis prompt
-  - Rule: (new) Sibling consumers must use identical data selection logic; inconsistent data selectors cause derived systems to diverge
-  - Context: Updated agent bars tool to use selectLastCandlePatternEntries, aligning with chart markers and analysis prompt.
-
-## [PR #814 | feat/agent-data-tools-wiring | Post-approval suggestions | 2026-09-14]
-- Violation: Magic number 13 (ISO date-hour slice end) duplicated in three files
-  - Rule: MISTAKES.md Rule 15 — Hardcoded literals in function names or calculations
-  - Context: Centralized ISO_DATE_HOUR_SLICE_END constant to shared/config/time.ts, updated all three call sites.
-- Violation: countsBySector object mutation with for...of
-  - Rule: MISTAKES.md Rule 104 — Array/object mutation via push/splice or direct property assignment
-  - Context: Rewrote with Object.groupBy + Object.fromEntries for immutable construction.
-
 ## [feat/economy-calendar-tz Round 2 | economy calendar UTC timezone | 2026-09-14]
 - Violation: FMP economic-calendar `date` field ("YYYY-MM-DD HH:mm:ss") was assumed to be ET wall-clock time across etTimeUtils, /economy calendar grid, KR indicator cards, and DB column comment (`date_et`); live FMP data from authoritative known-time events (Fed decision 18:00 UTC, CPI 12:30 UTC) proves it is UTC. /economy grid displayed release times 4-5 hours wrong for months.
   - Rule: External API field semantics must be verified against known reference events, not inferred from comment consensus or existing code patterns
@@ -277,15 +259,6 @@
   - Context: Added `to` parameter to FMP economic-indicators fetch, ensuring fresh data is returned. Issue discovered during production verification of /economy route.
 - Status: APPROVED (Round 2, zero findings)
 
-## [PR #823 | feat/ai-conversation-switch-no-skeleton Round 1 | 2026-09-15]
-- Violation: SUGGESTION — `aria-busy:opacity-60` state styling incomplete. Missing cursor and text color indicators for busy state.
-  - Rule: DESIGN.md mistake 4 — aria-busy state must include all three visual indicators: opacity, cursor, and secondary text color.
-  - Context: Enhanced to `aria-busy:cursor-progress aria-busy:text-secondary-400` alongside existing opacity.
-
-- Violation: SUGGESTION — delete-active redirect handler and navigation handler both called navigate(), duplicating responsibility.
-  - Rule: MISTAKES.md Cohesion — Extract repeated navigation patterns into a shared handler to eliminate duplication.
-  - Context: Extracted `startNavigationTo(href)` helper. Both redirect and navigate paths now call it instead of duplicating navigate logic.
-
 ## [PR #823 | feat/ai-conversation-switch-no-skeleton | Post-approval suggestions | 2026-09-15]
 - Violation: SUGGESTION (accepted) — pending navigation signalled only visually via `aria-busy` state; no announcement to screen readers
   - Rule: WCAG 2.1 — Dynamic state changes that affect application state must announce to assistive technology; visual-only signalling creates screen-reader blind spot
@@ -293,17 +266,6 @@
 
 - Finding: Review suggested using LocaleLink instead of raw `<a>` + `router.push` for in-app navigation
   - Status: REJECTED — false positive; LocaleProvider's `hrefBase=SITE_URL` makes LocaleLink emit absolute siglens.io URLs (cross-origin full navigation), breaking ai.siglens.io in-app conversation switching pattern
-
-## [PR #823 | feat/ai-conversation-switch-no-skeleton | Round 2 | 2026-09-15]
-- Violation: useHideOnScrollDown hook had only 2 consumers but was placed in shared/hooks, creating maintenance overhead for a single-feature pattern
-  - Rule: MISTAKES.md Components Rule 15 — Shared hooks must serve generic/cross-feature patterns; feature-specific hooks with 2 or fewer consumers must live in their feature/widget layer
-  - Context: Moved useHideOnScrollDown to widgets/layout/hooks and exported via widgets/layout barrel. Verified consumers import from new location.
-
-- Violation: setState called directly in effect body for disabled branch condition without early return for non-disabled path
-  - Rule: MISTAKES.md Components Rule 10 — Derived state updates in effect must either branch conditionally before effect runs, or return from effect body before setState; avoid setState in effect main body
-  - Context: Refactored to add early return when disabled flag is true; setState now only executes for enabled state path.
-
-
 
 ## [PR #823 | feat/ai-conversation-switch-no-skeleton | Round 5 | 2026-09-15]
 - Finding: Reviewer claimed Tailwind v4 has no `aria-busy:` variant as a blocker. Compilation with @tailwindcss/node v4 verified both `aria-busy:cursor-progress` and `aria-[busy=true]:cursor-progress` generate valid CSS. v4 `aria-*` is a functional variant for any attribute.
@@ -318,11 +280,6 @@
   - Rule: (new) Derived values computed and composed into component props must be tested at the composition point, not left to visual rendering tests. When a prop receives a computed value, unit tests must verify the computation and its effects (field additions, removals, transformations).
   - Context: Added `src/app/[locale]/backtesting/__tests__/page.jsonld.test.tsx` which spies on the JsonLd component's `data` prop, locates the Dataset node by `@type`, and asserts: 1) composed temporalCoverage value matches expected start/end, 2) dateModified field was removed. Test catches both the computation correctness and field deletion without running visual renders.
 
-## [feat/agent-confluence-sr-tests | siglens-wt-confluence | 2026-09-15]
-- Violation: `useEffectEvent` (notifyNavigated) in src/widgets/agent-chat/Sidebar.tsx declared after derived values and handlers
-  - Rule: MISTAKES.md Components Rule 17 — All hook calls must be declared before derived variables and handlers. Strict ordering: useState/useRef → useQuery/useMutation/custom hooks → useCallback/useMemo → derived variables → handlers → useEffect
-  - Context: Moved `useEffectEvent` to correct position right after `useOnClickOutside`. Part of recurring pattern on this feature: ChatShell useState placement, Sidebar hook ordering, handlers positioning.
-
 ## [fix/seo-b-copy-jsonld Round 1 | seo/index-footprint-recovery | 2026-09-15]
 - Violation: RECOMMENDED — loadMarketSignals loaded CachedMarketDataProvider 3 times per request without request-scope deduplication → redundant Data Cache reads
   - Rule: (new) RSC data loaders used in multiple places within one request must wrap with React cache() to eliminate redundant fetches from the same provider call
@@ -332,11 +289,6 @@
 - Violation: ~300-char ICU hydration guard logic duplicated in Dockerfile builder and runner stages; risk of updating only one during maintenance
   - Rule: CONVENTIONS.md — Extract duplicated logic/constants to a single source; both stages must call the same script
   - Context: Extracted to `scripts/assert-icu-locale.mjs` and called from both stages. Added `.gitignore` allowlist entry for `/scripts/**` exception.
-
-## [fix/seo-meta-description-markdown Round 2 | fix/seo-meta-description-markdown | 2026-09-18]
-- Violation: single-marker italic regexes (`/\*(.+?)\*/g`, `/_(.+?)_/g`) lacked lookaround boundaries, so two unrelated `*` or `_` in a sentence were treated as a pair and the text between them was deleted (e.g., `BRK_A와 BRK_B` → `BRKA와 BRKB`, `250*2 … 100*3` → `2502 … 1003`). The function's output feeds `<meta name="description">`, making the truncation visible to search engines.
-  - Rule: MISTAKES.md Pattern Matching #20.5 — regex patterns must use lookaround boundaries to match intended text only; unguarded inline delimiters across multiple potential markers cause false phrase boundaries and unwanted deletions
-  - Context: Fixed with lookaround boundaries (non-whitespace inside, no word char / same marker outside) plus regression tests in `src/shared/lib/stripSnapshotMarkdown.ts`.
 
 ## [fix/seo-cls-sitemap-polish Round 4 | PWA banner Polish | 2026-09-18]
 - Status: APPROVED (zero findings)
@@ -360,23 +312,6 @@
 - Violation: New i18n key (`widgets.layout.footer.symbols`) placed in `shared.seo` namespace and consumed by client-rendered `Footer`, leaked that server-only namespace into every client payload.
   - Rule: i18n namespace containment — server-only namespaces (shared.seo) must not be consumed by client-rendered components; use client-permitted namespaces (widgets.layout). Namespace pollution increases payload and masks content scope.
   - Context: Moved key to `widgets.layout` namespace before use. Existing guard (`clientKeyCoverage`) now correctly rejects shared.seo in client code.
-
-## [fix/symbols-copy-and-names Round 1 | /symbols 표기·문구 | 2026-09-18]
-- Violation: `as Record<string, TickerDisplayName>` 캐스트에 보증 주석이 없었다. 몇 줄 아래 형제 함수 `getKoreanNames`의 동일한 캐스트에는 있다.
-  - Rule: MISTAKES.md TypeScript §7 + §6.7 — safe-cast 보증 주석은 필수이고, 같은 규칙이 형제 호출부 중 한쪽에만 적용되면 안 된다.
-  - Context: `flatMap`이 `readonly [string, TickerDisplayName][]`만 만든다는 근거를 주석으로 남겼다.
-
-- Violation: `unstable_cache`가 빈 결과를 24시간 캐시할 수 있었다. 하위 리더(`getTickerDisplayNames`·`getCryptoAsset`)가 DB 실패를 삼키고 빈 값을 성공처럼 돌려주기 때문에, 순간적인 실패 한 번이 하루짜리 품질 저하가 된다(stale-while-revalidate라 만료 후 첫 요청도 옛 값).
-  - Rule: (신규) 캐시 래퍼는 "정상적으로 비어 있음"과 "실패해서 비어 있음"을 구분해야 한다. 하위 리더가 에러를 삼키면 캐시 경계에서 던져야 한다 — 거부된 promise는 캐시되지 않는다.
-  - Context: `readSymbolNames`가 이름을 하나도 못 모으면 던지고, `loadSymbolNames`가 그것을 잡아 빈 맵으로 떨어뜨린다. 이름은 사라져도 링크는 남는다.
-
-- Violation: 페이지 `<h1>`이 `<title>` 문자열을 그대로 써서 검색용 꼬리표(`— 미국·한국 주식과 암호화폐`)가 화면에 찍혔다.
-  - Rule: (신규) 검색 결과용으로 쓴 제목 문자열을 화면 헤딩으로 재사용하지 않는다.
-  - Context: `app.symbols.page.heading` 키를 따로 두고 h1·가시 브레드크럼·BreadcrumbList `name`이 그것을 쓴다. `<title>`만 꼬리표를 유지한다.
-
-- Violation: (recommended) TTL 리터럴이 `24 * SECONDS_PER_HOUR`로 재계산돼 있었고 페이지는 같은 값을 `86400`으로 하드코딩했다. `SECONDS_PER_DAY`가 이미 있다.
-  - Rule: MISTAKES.md §15 — 같이 움직여야 하는 두 값에 공통 출처가 없으면 드리프트한다.
-  - Context: TTL은 `SECONDS_PER_DAY`에서 파생하고, 페이지의 `revalidate` 리터럴과의 일치는 소스를 읽는 parity 테스트가 고정한다(Next가 `revalidate`를 정적 분석해 import를 못 쓴다).
 
 ## [fix/symbols-copy-and-names Round 2 | /symbols 표기·문구 | 2026-09-18]
 - Status: APPROVED (지적 없음)
@@ -438,65 +373,45 @@
   - Rule: (new) 금액 반올림에 `toFixed`를 쓰지 않는다 — 크기 기준 상대 엡실론 보정 후 `Math.round`(half-away-from-zero), 지수 문자열 왕복은 부동소수 잡음(1e-13)을 NaN으로 만들므로 금지
   - Context: 리뷰 라운드 1 지적. 부호 대칭·-0 정규화 포함
 
-## [feat/ai-about-page Round 1–2 | AI about page design spec | 2026-09-19]
-- Violation: Sibling JSDoc (`AI_ROBOTS_BODY` in src/proxy.ts) stated the locale home was the AI host's only public surface after `/about` became public; the neighbouring comment on `aiSitemapXml` had been updated but this one was missed
-  - Rule: MISTAKES.md Documentation §15.6 — Comment accuracy; when documentation neighbours are updated, all related neighbours must be checked for stale references
-  - Context: Corrected JSDoc to reflect that `/about` is now also public. Pattern of stale comment adjacent to updated one.
+## [fix/seo-snapshot-desc-tab-prefix Round 1 | SEO description collision across symbol tabs | 2026-09-20]
+- Violation: `buildSnapshotMetaDescription` in `src/shared/lib/seo.ts` prefixed only `${subject} — ` and clamped AI prose at `SEO_DESCRIPTION_MAX_LENGTH`. When two tabs' snapshots opened with the same long sentence, the clamp cut before they diverged, returning byte-identical descriptions across tabs. Measured in production 2026-09-20: `https://siglens.io/SOXS/overall` and `https://siglens.io/SOXS/fundamental` both returned 193-char descriptions.
+  - Rule: Metadata fields derived from dynamic content must include a route/view discriminator in the prefix to prevent collision across different routes serving the same subject.
+  - Context: Added `symbolTabDescriptionLabel(tab, assetClass, t)` helper with required `label` param; all 7 `generateMetadata` call sites under `src/app/[locale]/[symbol]/` now pass the tab-specific label, so prefix is `${subject} ${label} — `. Added unit test (`src/shared/lib/__tests__/symbolTabDescriptionLabel.test.ts`) asserting each tab's built title contains its label, because label key table and title builders pick catalog keys independently and both are `string` to the compiler.
 
-- Violation: Page test suite covered only the default locale; failed to test /en route with non-default language href
-  - Rule: (new) i18n-enabled pages must test at least one non-default locale route to verify href and translations are not locale-specific
-  - Context: Added test covering /en locale with href assertions for the non-default language variant.
+## [fix/seo-snapshot-desc-tab-prefix Round 2 | not-found page SEO metadata inheritance | 2026-09-20]
+- Violation: `src/app/[locale]/not-found.tsx` returned `generateMetadata` with only `title` and `robots`, so Next inherited the root layout's `description`: every non-existent URL shipped the home page's `<meta name="description">`. Measured on production 2026-09-20 on `/ZZZZZ`, `/nonexistent-page-xyz`, `/news/nosuchcat`.
+  - Rule: Every `generateMetadata` export must explicitly set all metadata fields; unset fields inherit from parent layout, causing search engines to crawl duplicate `<meta>` with identical content across error boundaries.
+  - Context: Fixed by populating `description` metadata field with already-translated 404 body copy (`app.home` key `not-found.03ecab`) with whitespace collapsed.
 
-- Violation: Helper function `raw` (forwarding i18n keys) did not start with `t`, so scripts/i18n/extract.mjs did not recognize calls — `yarn i18n:extract --write` silently deleted 25 keys only referenced through that helper
-  - Rule: (new) i18n helper functions forwarding i18n keys must be named `t…` (e.g. `tRaw`) for extract.mjs pattern match /\bt\w*(\.(rich|markup|raw))?\('key'/; any other naming defeats extract, causing deletion of "orphaned" keys when --write is run
-  - Context: Renamed `raw` → `tRaw`; re-ran `yarn i18n:extract --write` to restore deleted keys.
+## [chore/deps-2026-09 Round 1 | 의존성 업그레이드 | 2026-09-24]
+- Violation (R1 REQUIRED, fixed): oxlint 1.79+ `react/globals`를 `oxlint-disable-next-line`으로 억제했다(테스트 프로브가 렌더 중 모듈 변수에 `useQueryClient()`를 대입)
+  - Rule: 새 lint 규칙이 테스트 헬퍼를 잡으면 억제 주석 대신 근본 수정 — Provider가 만든 값을 읽을 땐 `renderHook(() => useX(), { wrapper: Provider })`
+  - Context: `src/app/__tests__/providers.test.tsx`의 `ClientCapture` 프로브 제거
+- Violation (R1 REQUIRED, fixed): 프레임워크 메이저/마이너 업그레이드에서 **기본값이 뒤집힌 플래그**를 확인·언급 없이 넘겼다(Next 16.3: `validateRSCRequestHeaders`·`prefetchInlining`·`varyParams`·`optimisticRouting`·`appNewScrollHandler`)
+  - Rule: (new) 프레임워크를 올릴 때는 구·신 `defaultConfig`를 diff하고, 뒤집힌 플래그 중 테스트·오프라인 빌드로 관측되지 않는 것(CDN·라우터·캐시 계약)은 프로덕션 빌드 + 실제 브라우저로 계약을 실증해 설정 파일 주석에 남긴다
+  - Context: `next start` + Playwright로 RSC 요청 전수 캡처(RSC 헤더·`_rsc` 쿼리 동반, `text/x-component`, 307 0건). next.config.ts에 계약·재확인 요구 기록
+- Pre-empted (not a review finding): client-s3 3.1138이 `@aws-crypto` 의존을 없애 Dockerfile의 해당 COPY가 이미지 빌드를 깨뜨리게 됨. PR CI는 Docker 빌드를 안 돌려 못 잡는다 — SDK를 올릴 땐 runner 수동 COPY 목록만 담은 격리 디렉터리에서 실제 요청을 보내 확인
 
-- Violation: Running `yarn i18n:translate --locale X` to translate ~140 new keys re-translated 1,633 existing en keys on master branch (1,612 ko keys lack hash entries in messages/_meta/hashes.json, causing re-translation when hash lookup fails)
-  - Rule: (new) Do not run `yarn i18n:translate` on branches adding only new keys; instead add en/ja/zh translations by hand (following recent commit patterns) and verify with `yarn i18n:verify`, or check `--dry-run` count first to avoid cascading re-translation of approved keys
-  - Context: Learned when attempting to batch-translate new keys; the hash cache is incomplete on master, making re-translation too risky. Used manual additions for this batch.
+## [chore/test-tooling-majors Round 1 | vitest 5·jsdom 30 | 2026-09-24]
+- Violation (R1 REQUIRED, fixed): vitest 5가 `experimental.fsModuleCache`를 top-level `fsModuleCache`로 옮겼는데 옛 위치에 남겨 타입 에러 + 런타임 무시. 로컬 `yarn typecheck`가 0건으로 나와 놓쳤다
+  - Rule: (new) 의존성 업그레이드 후 typecheck는 `*.tsbuildinfo`를 지우고 돌린다 — `incremental: true`가 업그레이드 전 진단을 재사용해 새 타입 에러를 숨긴다(이번에 0건 → 실제 2건)
+  - Context: 설정을 top-level로 이동, 캐시 삭제 후 typecheck 0건·jest-dom 매처 타입 탐침 재확인
 
-## [PR #852 claude-review R1 | ai.siglens.io/about | 2026-09-19]
-- Violation: Function return type written as inline object type duplicating existing interface AiSeoCopy
-  - Rule: CONVENTIONS.md — named return types + MISTAKES.md TypeScript §5 — reuse existing interfaces instead of duplicating shape inline
-  - Context: Moved AiSeoCopy to shared/config/aiHost.ts and reused it in the return type annotation
-- Violation: Four small components in one file declared inline prop types without named interfaces
-  - Rule: CONVENTIONS.md — Props interface must be declared above each component, not inline on the component parameter
-  - Context: Extracted *Props interfaces (AboutCopyBlockProps, AboutCtaProps, AboutStatProps, AboutHeroProps) and declared above their respective components
-- Violation: Playback state machine (wait/play) defined inside useEffect instead of at module level
-  - Rule: MISTAKES.md Components §14.5 — State enums and state machines must be module-level, not inside hooks; useEffect is for effects, not state definitions
-  - Context: Extracted to module-level lib/replayPlayer.ts with explicit PlaybackContext enum and unit tests
-- Violation: Hook order violation — useRef declared after a custom hook, and derived values declared after an effect
-  - Rule: MISTAKES.md Components §17 — Strict hook order: useState/useRef → useQuery/custom hooks → useCallback/useMemo → derived variables → handlers → useEffect
-  - Context: Reordered all hooks and derived values in the component to match the established order
-- Violation: Module-level beforeAll outside describe block in test file
-  - Rule: MISTAKES.md Tests §3 — All setup functions must be inside describe() scope, never at module level
-  - Context: Wrapped beforeAll and test suite in a describe() block
-- Violation: Decorative accent colour on ~10 elements (icon boxes, arrows, chip borders, source tags, caret, labels) across 2 components
-  - Rule: DESIGN.md accent-color guidelines — accent colour reserved for primary actions, links, focus states, and active indicators only; max 2 per viewport. Decorative accents weaken visual hierarchy and waste the primary-action signal
-  - Context: Removed primary-* classes from decorative elements (icon boxes, arrows, chip borders, source tags, caret, labels). Added UI review checklist item: grep new .tsx files for `primary-` and justify each use against DESIGN.md rules
-- Violation: New pure/helper module lib/aboutContent.ts with no colocated unit test
-  - Rule: MISTAKES.md Components §22 / DESIGN.md checklist §6 — All new pure/helper modules must include colocated unit test file
-  - Context: Added lib/aboutContent.test.ts with tests covering the module's exports and edge cases
-- Suggestion (fixed): Magic delay numbers (300, 900, 350, 120 ms) in the replay playback steps had no constant names
-  - Rule: MISTAKES.md §15 — Hardcoded numbers in function bodies must be named constants with clear intent
-  - Context: Named FIRST_START_MS, NEXT_START_MS, AFTER_TYPING_MS, TOOL_GAP_MS, BEFORE_ANSWER_MS in src/views/ai-about/lib/replayPlayer.ts
+## [fix/set-state-in-effect Round 1–2 | react/set-state-in-effect 6곳 정리 | 2026-09-24]
+- Violation (orchestrator check, fixed): `useTheme`을 useSyncExternalStore로 바꾸며 스냅샷이 localStorage를 다시 읽게 되자, 저장이 막힌 환경(사파리 비공개)에서 고른 테마가 표시상 `system`으로 되돌아갔다 — 옛 코드는 `setState(next)`라 유지됐다
+  - Rule: (new) state를 외부 스토어 구독으로 바꿀 때는 "쓰기가 실패하는 경로"에서 옛 in-memory 값이 하던 역할을 목록화하고, 그 경로를 옛 코드 기준 테스트로 고정한다(옛 코드 통과·새 코드 실패를 대조)
+  - Context: 저장 실패 시에만 쓰는 모듈 변수 `unsavedPreference` + 테스트
+- Violation (R1 REQUIRED/recommended, fixed): 리팩터가 새로 만든 로직(재발화 가드 `firedNavRef`, 결착 후 1회 이동·입력 초기화, 입력 시 취소, `explicitTab` 우선순위, 하이드레이션 server snapshot, 라벨 정규화)에 테스트가 없어 가드를 지워도 259개 테스트가 전부 통과했다
+  - Rule: (new) 동작 보존 리팩터는 "기존 테스트가 통과한다"로 끝내지 말고 **새로 생긴 분기마다 변이를 넣어 죽는 테스트가 있는지** 확인한다 — 없으면 추가
+  - Context: 변이별 FAIL→PASS 확인한 테스트 6건 추가, MISTAKES #10을 oxlint 1.79+ 기준 패턴으로 갱신(useEffectEvent 회피는 더 이상 통과하지 않음)
+- Violation (R2 recommended, fixed): 테스트 제목이 다루지 않는 경로(로케일 전환에 따른 toLocalePath 정체성 변경)를 주장 — 로케일을 실제로 전환하도록 수정. MISTAKES #10의 의도 플래그 지침이 PR 자체의 두 패턴과 모순 — 소비 위치 기준으로 정리
 
-## [PR #852 claude-review R2 | ai.siglens.io/about | 2026-09-19]
-- Violation: A render test listed in the implementation plan (AboutCtaBar, plan Task 3) was never written; the plan task was silently skipped
-  - Rule: (new) Before requesting review, diff the plan's test list against the test files actually created
-  - Context: Added src/views/ai-about/ui/__tests__/AboutCtaBar.test.tsx (title, href, header-hidden translate class)
-- Violation: Pure helper `groupLines` mutated objects already stored in its result (`last.items.push`); `parseReplayLine` built its result with push
-  - Rule: MISTAKES.md Coding Paradigm §21 — pure calculations use reduce/flatMap, not imperative push
-  - Context: groupLines rewritten with reduce; parseReplayLine rewritten with split + flatMap (src/views/ai-about/lib/replayScript.ts)
-- Violation: `isLocale(x) ? x : DEFAULT_LOCALE` repeated across three ai route files
-  - Rule: MISTAKES.md §1 — check for / extract a shared helper instead of repeating logic
-  - Context: Added resolveLocale() to src/shared/i18n/locales.ts and used it in app/ai/[locale]/{page,about/page,c/[id]/page}.tsx
-- Violation: New content width (max-w-4xl) on the ai host with no entry in the DESIGN.md width convention
-  - Rule: DESIGN.md §폭 규약 — a new width value must be documented with its reason
-  - Context: Added a row for ai host /about (max-w-4xl, 2-column card grid; chat surfaces stay max-w-3xl)
-- Violation: The sticky CTA bar repeated the hero h1 sentence on the same first screen
-  - Rule: (guideline) Chrome copy that sits next to a headline should add information, not echo it
-  - Context: Bar copy changed to "로그인 없이 무료로 바로 물어볼 수 있어요" (views.ai-about.cta.title, all four locales)
+## [PR #869 claude-review R1 | fix/set-state-in-effect | 2026-09-24]
+- Violation (Blocker, fixed): 리팩터로 setState만 렌더 중 조정으로 옮기면서 남은 ref 정리 effect를 핸들러 앞에 두고, `requestSubmit`(useCallback)을 useRef 선언들 사이에 끼워 CONVENTIONS "Custom Hook Declaration Order"를 깼다
+  - Rule: CONVENTIONS Custom Hook Declaration Order — 훅 일부를 옮긴 뒤에는 남은 조각(effect·handler)이 순서 규칙상 제자리에 있는지 다시 본다. effect 간 실행 순서에 의존하면 묶음 안에서 순서를 유지하고 이유를 주석으로 남긴다
+  - Context: ref 정리 effect를 effect 묶음 맨 앞으로(restoreFocus effect가 triggerRef를 읽어 순서 의존), requestSubmit을 커스텀 훅 뒤로
+- Violation (Blocker, fixed): 순수 헬퍼 `resolveTypedTarget`·`normalizeLabel`을 훅 파일에 정의(MISTAKES #18) — `lib/resolveSubmitTarget.ts`·`lib/normalizeLabel.ts`로 이동하고 테스트 추가
+- Question (answered, comment only): `?ticker=`만 바뀌는 히스토리 이동은 구독이 알리지 않아 스스로 재렌더되지 않는다(이전 구현과 같은 한계) — 주석을 단정 대신 사실대로 정정
 
 ## [PR #852 claude-review R3 (APPROVED, suggestions) | ai.siglens.io/about | 2026-09-19]
 - Suggestion (fixed): `runPlayback` in src/views/ai-about/lib/replayPlayer.ts caught every error silently, not only cancellation
@@ -522,3 +437,125 @@
   - Context: mock removed; layout test asserts AskAiFab receives the asset name and locale prefix
 - Violation: The mobile floating button showed only a star icon, which reads as "favorite"
   - Context: sparkle icon + short visible label ("AI에게 묻기") on mobile
+
+## [feat/siglens-about-redesign Round 1–2 | siglens.io /about redesign | 2026-09-24]
+- Violation (pre-review, caught during implementation): `@/widgets/agent-chat` barrel imported into `src/views/about/AboutPage.tsx` (server-side view), leaking ~46 agent-chat client-side message keys into the route's `messages/_meta/clientKeys.json`
+  - Rule: A view on one host must not import another product's widget barrel for a leaf utility (icons): the i18n extractor follows the import graph and attaches that barrel's client message keys to the route. Move the shared piece to `shared/` and import it directly.
+  - Context: Moved icons to `src/shared/ui/StrokeIcons.tsx` and imported directly; barrel import removed. Verified clientKeys.json no longer includes agent-chat keys.
+
+## [PR #871 CI e2e | feat/siglens-about-redesign | 2026-09-24]
+- Violation: `page.locator('script[type="application/ld+json"]', { hasText: '"FAQPage"' }).toHaveCount(1)` returned 0 — `<script>` element text is not queryable with Playwright `hasText` filter
+  - Rule: (new) Playwright `hasText` filters cannot query script element content; inline JSON requires `page.request.get()` + text assertions on SSR HTML
+  - Context: Fixed e2e/specs/legal.spec.ts test to read `/about` with `page.request.get()` and assert response `toContain('"@type":"AboutPage"')` / `toContain('"@type":"FAQPage"')`, matching the pattern in e2e/specs/market-fear-greed.spec.ts
+
+## [feat/google-ads-conversion Round 1–2 | Google Ads conversion tracking | 2026-09-24]
+- Violation (R1, required): `src/features/agent-chat/hooks/useAgentStream.ts` — ad conversion tracking was added inside the public `send()` method, but `retry()` replays an HTTP-stage failure by calling `send()` again, so one logical question recorded the `chatQuestion` conversion twice. Comment above the tracking call claimed retry was excluded; reality did not match.
+  - Rule: (new) When adding a side effect (analytics/tracking) to a public entry point, check every internal caller that re-enters that entry point (retry/replay paths). Side effects must be decoupled from the re-entrant path by splitting the entry point into an untracked internal method and a public method that applies the side effect, then calls the internal method. No test asserted the conversion count across retry.
+  - Context: Split into an untracked internal `submit()` and a public `send()` that applies tracking then calls `submit()`; `retry()` now replays via `submit()` instead of `send()`. Retry test asserts the conversion fires exactly once; verified it fails if retry is reverted to `send()`.
+- Status (R2): APPROVED (zero findings)
+
+## [PR #873 CI + claude-review | feat/google-ads-conversion | 2026-09-24]
+- Violation (CI failure): New client component `src/app/_components/GoogleAdsTag.tsx` imported `usePathname` from `next/navigation` directly; the repo-wide guard `src/shared/i18n/__tests__/useAppPathname.test.ts` fails on any non-allowlisted raw `usePathname` import.
+  - Rule: (new) Components must use `useAppPathname` (locale prefix stripped) unless the file is deliberately added to `ALLOWED_RAW_PATHNAME_USERS` with a reason. Scoped test runs do not execute this guard — run the full suite once before push.
+  - Context: The component only needs a route-change key, so it now uses `useAppPathname`; behavior is unchanged.
+- Violation (caught by full suite while applying review Suggestion): Importing `SITE_HOST` from `@/shared/lib/seo` into `src/shared/config/googleAds.ts` (read at module load) broke `src/app/[locale]/account/__tests__/page.test.ts`, whose partial `vi.mock('@/shared/lib/seo')` lacks `SITE_HOST`; 25 of 60 tests mocking that module omit it.
+  - Rule: (new) A widely imported config module must not read values from a frequently partial-mocked module at load time; keep the literal and guard against drift with a test that compares against the real constant.
+  - Context: Reverted to the `'siglens.io'` literal with a comment; `src/shared/config/__tests__/googleAds.test.ts` asserts it equals `SITE_HOST`.
+
+## [PR #872 Round 1 | feat/symbol-views | 2026-09-24]
+- Violation: scripts/update-popular-cryptos.ts added visit-driven crypto candidates (from outside the hand-maintained CRYPTO_CANDIDATE_POOL) to POPULAR_CRYPTOS, which would break the existing invariant test `CRYPTO_CANDIDATE_POOL contains all current POPULAR_CRYPTOS symbols` as soon as the script's output was committed. Same class as the earlier dashboardScope/KR_CATEGORY_IDS issues in this PR: a new data source feeding a config list without checking every existing test-enforced invariant over that list.
+  - Rule: (new) When a script gains a new path that appends to a config list, grep tests for invariants over that list and verify by applying the script's output to the real file and running the suite (dry run).
+  - Context: Fixed with scripts/lib/cryptoPoolInsert.ts (pure anchor insert into the pool) + main writes the pool first. Lesson: when a script's new path appends to a config list, grep tests for invariants over that list and verify by dry-running the script's output against the test suite.
+
+## [claude/siglens-email-login-redirect-jbr2s1 Round 3 | guest-only path redirect logic | 2026-09-25]
+- Violation: RECOMMENDED (fixed) — src/proxy.ts — when the sanitized `next` parameter was itself a guest-only path (/login, /signup, /verify-email), a signed-in user would be redirected through that guest-only page (extra hop) instead of clamping to home. Sanitizer removed query params but did not validate whether the *path itself* was guarded.
+  - Rule: (new) Redirect logic sanitizing a `next` parameter must both 1) strip query params and 2) validate the target path is not itself guest-only; guest-only routes must be inaccessible to signed-in users. Failure to do so creates a dead redirect leg that wastes a round-trip.
+  - Context: Extended guest-only allowlist validation in sanitizer to reject guest-only paths after stripping params; signed-in user now clamps directly to home instead of routing through the guest-only page first.
+
+## [claude/siglens-email-login-redirect-jbr2s1 Round 4 | locale-prefixed guest-only path test coverage | 2026-09-25]
+- Finding: RECOMMENDED (skipped as false positive) — reviewer requested a test for locale-prefixed guest-only `next` parameter (e.g., '/en/login?next=%2FAAPL')
+  - Status: REJECTED — false positive; test coverage already exists at the assertion level. The existing test matrix includes locale-prefixed paths in the full parametrized test list, covering '/en/login?next=%2FAAPL' and '/ko/signup' alongside non-prefixed variants.
+  - Rule: When adding path-based tests, grep the existing test matrix before marking coverage gaps; locale-prefixed and locale-free variants must both be present in the parametrized test list.
+  - Context: Verified by reading the test assertions in src/entities/auth/__tests__/proxy.test.ts; the locale prefix is not a separate orthogonal dimension requiring additional test cases — it is already covered by the route parameter variations.
+
+## [PR #875 claude/siglens-email-login-redirect-jbr2s1 Round 2 | CI fix complete | 2026-09-25]
+- Violation: generated i18n client-key manifest (`messages/_meta/clientKeys.json`) was stale after changing a page's imports
+  - Rule: CONVENTIONS.md — generated i18n artifacts must be regenerated after changing a route's import graph; static client-key analysis follows imports
+  - Context: src/app/[locale]/forgot-password/page.tsx newly imported @/shared/ui/auth barrel (for AuthCrossLink), adding 10 ConsentCheckboxGroup keys to the forgot-password route. Regenerated with `yarn i18n:extract --write`.
+
+## [claude/siglens-analysis-technique-review-wvfffz Round 2 | AI chat tools pullback classification & budget | 2026-09-25]
+- Violation: RECOMMENDED — src/app/api/ai/chat/tools/getBarsIndicators.ts: 4-way classification written as nested ternary (ternary inside TRUE branch of another ternary)
+  - Rule: FF.md Readability 1-E — no nested ternaries
+  - Context: Extracted `classifyPullback()` with early returns to eliminate nesting.
+- Violation: RECOMMENDED — src/app/api/ai/chat/tools/__tests__/getBarsIndicators.test.ts: new variable-length field (`pullback.measured`) added to budget-trimmed tool result without testing its interaction with the budget trimmer
+  - Rule: (new) Tests — a new field inside a size-budgeted payload must have a test exercising its interaction with the budget logic
+  - Context: Added overflow test comparing quiet vs lit reading; verifies more bars trimmed, field and newest bar intact.
+
+## [perf/crawl-html-compression R1 | Cloudflare cache-rule documentation out of sync with code change | 2026-09-26]
+- Violation: docs/architecture/CDN_CACHING.md prescribed "강한 ETag ON" (Cloudflare should respect strong ETags) while the PR set `generateEtags: false` in next.config.ts without updating the documentation. The toggle ON was itself part of the root cause since Cloudflare does not compress strong-ETag responses.
+  - Rule: (new) When a code change invalidates a setting that an operator runbook prescribes, update the runbook in the same PR
+  - Context: Updated docs/architecture/CDN_CACHING.md R1 to 강한 ETag OFF with the measured reason (strong ETag blocks Cloudflare compression; identity-filled cache served 209KB instead of 39KB gzip).
+
+## [fix/washout-entry-verdict R1 | 눌림 판독 진입 판정(core 1.17.1) + 평균 회귀 스킬 digest 정합 | 2026-09-26]
+- Violation: skills/strategies/mean-reversion.md — digest의 "near setup"절이 `trend: neutral`을 명시하지 않았다. A/B 측정 결과: near 판독이 prompt에 주입되면 AI가 trend bullish를 19/20 선택 → 스킬 규칙 위반(near는 정의상 neutral).
+  - Rule: (existing) Skill digest는 분석 프롬프트에 주입되는 유일한 skill 정보 — digest의 모든 경우(setup/near/below/non-daily)가 prompt 소비자의 trend 결정을 정확히 가이드해야 한다. digest 변경 후 A/B를 돌려 near 판독의 trend이 규칙과 일치하는지 확인.
+  - Context: digest의 near절에 "trend stays neutral" 명시 추가, 본문 MA200 아래 손실 꼬리 문구를 core 1.17.1의 재측정 수치로 정합. 실측 후속: washout enter 0/25→23/25, near 평균 회귀 trend bullish 19/20→2/20, washout 날 전체 trend bearish 88%→36%.
+- Dependency: siglens-core #228 — 일봉 상승 추세 속 짧은 눌림(Williams %R ≤ -90)이면 룰 엔진이 enter 판정을 싣는다. 이 PR의 스킬 digest 수정과 함께 적용해야 수정이 완성된다. 분석 캐시(1Day) 키 변경 없음 — core 프롬프트 내용 변경만.
+
+## [PR #878 | perf/crawl-html-compression | 2026-09-26]
+- Violation: Tradeoff rationale for `generateEtags: false` was scoped to Googlebot only and stated an unverified generalization ("the only HTML leaving the edge with an ETag is the poisoned uncompressed variant"); browser measurement showed gzip-passthrough pages (`/AAPL`, `/NVDA/news`) keep a strong ETag, so real-user revisits do lose 304.
+- Rule: (new) A tradeoff comment must cover every client class the setting affects (crawlers AND browsers), and each factual claim must be measured with that client's actual request headers
+- Context: next.config.ts `generateEtags` comment — corrected the ETag-stripping claim and added the real-user revisit cost plus the Cloudflare "Respect strong ETags" OFF alternative that keeps 304.
+
+## [PR #881 Round 1 | fix/seoptimer-audit-actions | 2026-09-27]
+- Violation: CI e2e failure — `e2e/specs/seo-smoke.spec.ts` hard-coded `Crawl-delay: 60` while the unit test referenced the exported constant; lowering `AI_CRAWLER_CRAWL_DELAY_SECONDS` to 10 broke only the e2e. Root cause of the miss: when changing the constant, the implementer grepped src/ and docs/ but not e2e/.
+  - Rule: (new) When changing a constant's value, grep its literal value repo-wide (src/, e2e/, docs/, scripts/), not only src/ and docs/ — e2e specs are not run by scoped unit tests, so a stale literal there only surfaces in CI. Prefer tests that import the constant over re-stating the literal.
+  - Context: e2e now imports the constant from `@/app/robots`.
+- Violation: After moving the confidence tooltip next to the section heading with `left-0 w-56`, the box anchored to the ⓘ button (~130px from the left) would overflow a 320px viewport. The tooltip's `relative` anchor was the ⓘ wrapper itself.
+  - Rule: (new) When relocating an absolutely positioned popover, recompute its box against the narrowest supported viewport (320px) from its new anchor's offset; `left-0`/`right-0` choices that were safe at the old anchor can overflow at the new one.
+  - Context: Moved the `relative` anchor from the button to the header row (the tooltip's immediate container), so the box now anchors to the section's left content edge rather than the button's position.
+
+## [PR #883 | feat/portfolio-menu | 2026-09-27]
+- Violation: CI e2e failure — moving the holdings add/edit/delete UI (PortfolioSection) from `/account` to `/portfolio` left 6 authed specs (`portfolio-holdings.spec.ts`, `portfolio-position.spec.ts`, `personalized-analysis.spec.ts`) navigating to `/account` for a form that no longer lives there, and using the stale region name `'보유종목'` (now `'보유종목 관리'` on `/portfolio`) and the stale h1 `'계정 설정'`/`'내 포트폴리오 위치'` (now `'포트폴리오'`). None of `typecheck`/`lint`/`vitest` caught this — the specs only fail live in CI under Playwright.
+  - Rule: (new) When a UI section is relocated to a different route (not just a trigger/condition narrowed — see MISTAKES.md Tests §3, which covers only removed/narrowed triggers), grep e2e/specs/ for every helper and locator scoped to the old route (page.goto target, heading text, aria-label region name) and update them in the same PR. This is a distinct failure shape from a narrowed trigger: the whole navigation target moves, so page.goto, h1 text, and region names all go stale together.
+  - Context: Updated `resetAaplHolding`/`addAaplHolding` helpers and heading assertions in all 3 specs to target `/portfolio`, `'포트폴리오'` (h1), and `'보유종목 관리'` (region). Verified via `yarn tsc --noEmit -p e2e/tsconfig.json` (specs cannot run locally — no DB/secrets in this harness) plus a full manual re-read against `PortfolioSection.tsx`/`page.tsx` source labels.
+- Violation: `src/proxy.ts`'s forward auth guard (`AUTH_REQUIRED_PATHS`) built the `next=` redirect target from `pathname` alone (`localePath(locale, pathname)`), dropping `reqUrl.search`. A guest clicking the `/[symbol]/position` CTA (`/portfolio?symbol=AAPL`) hit this guard first (it runs before the page-level `PortfolioGuard`), lost the `?symbol=` query on the login hop, and landed on `/portfolio` post-login with an empty add form — the exact funnel-context loss this PR's own `PositionCta` fix (carrying `?symbol=` instead of a bare `/onboarding` literal) was meant to prevent, reintroduced one layer up.
+  - Rule: (new) When a route gains a query parameter that must survive a login round-trip, check every redirect that can fire for that path — not just the page-level guard — for one that reconstructs the URL from `pathname` only. `AUTH_REQUIRED_PATHS`/`GUEST_ONLY_PATHS` guards in `proxy.ts` run before any page code and are easy to miss when the only mental model is "the page's own guard redirects to login."
+  - Context: `loginUrl.searchParams.set('next', localePath(locale, pathname) + reqUrl.search)`. `sanitizeNextPath`/`toSameOriginPath` (`redirect.ts`) already pass query strings through untouched, so no downstream change was needed. Added proxy tests: `'세션이 없으면 ?symbol= 쿼리를 next에 보존한다'` and the `/onboarding` legacy-redirect suite's query-preservation case.
+## [PR #882 Round 1 | fix/bot-analysis-parity | 2026-09-27]
+- Violation: Claude-review R3 Blocker — UA-based concurrency bonus (BOT_STREAM_LIMIT_MULTIPLIER) became an abuse vector once bots trigger paid generation. Route reads User-Agent to classify as bot and apply higher concurrency limit; generic script clients match bot UA pattern.
+  - Rule: (new) Request-based abuse vectors (rate-limit bypasses) must not read headers that generic clients also send; read-only token/fingerprint headers instead. UA header (User-Agent) is sent by all clients and can be spoofed — route should not use it for concurrent-request gating without explicit allowlist verification.
+  - Context: Removed BOT_STREAM_LIMIT_MULTIPLIER so the route no longer reads UA; all clients now route through the same concurrency limit regardless of UA. Abuse vector closed.
+
+- Violation: i18n key removal done only in ko.json left orphan keys in en.json, ja.json, zh.json uncleaned, breaking CI key-parity gate
+  - Rule: (new) When removing an i18n key, remove it from every locale catalog (ko.json, en.json, ja.json, zh.json) and run `yarn i18n:verify` to confirm key-parity across all locales. Removing a key from only one locale file leaves orphan keys in others, triggering CI key-parity validation failure.
+  - Context: Removed key from messages/ko.json; CI pipeline caught that the same key still exists in messages/en.json, messages/ja.json, messages/zh.json. All removed together and verified with `yarn i18n:verify` passing.
+
+- Violation: RECOMMENDED — format-check violations introduced during implementation (prettier/oxlint conflicts not resolved before push)
+  - Rule: Run `yarn format:check` before committing code with editor or formatter changes. Format violations must be resolved with `yarn format:write` in the same commit.
+  - Context: Caught by CI after implementation round; no formatter drift remains.
+
+- Violation: Missing test coverage — congress regression test not created for new functionality
+  - Rule: (new) When adding a new analysis path or consensus mechanism, include a regression test verifying the congress decision across multiple inputs. Test name should include "congress" or "consensus" to clarify its role in predicting regressions.
+  - Context: Added regression test for bot congress decision logic verifying path selection consistency.
+
+- Incident: Review subagent (sub-agent during review phase) ran formatter in write mode (`yarn format:write`) and then executed `git checkout -- <file>` on five files, silently wiping uncommitted edits to three of them (had to be rewritten manually).
+  - Rule: (new) Review agents must remain read-only: no git operations, no formatter write passes, no file modifications. Before invoking a review agent on a branch with uncommitted work, back up the diff with `git stash` or `cp -r` to a temp directory. Recovery after `git checkout --` requires manual rewrite if the diffs were not backed up.
+  - Context: Review agent invoked on branch with uncommitted changes; agent ran format:write then checkout without detecting the unintended destruction. Lesson: use `git stash` before review invocation, then restore with `git stash pop` after review phase completes.
+
+
+## [feat/core-detectors-consume Round 1 | feat/core-detectors-consume | 2026-09-28]
+- Violation: new strategy skills gated on core signals told the model to "interpret only if listed in the detected-signal section", but core never renders those signal names (excluded from the confluence list; used only for gating)
+  - Rule: (new) A skill's instructions must reference only prompt sections/fields that core actually renders for its trigger — verify against the consumed core version's prompt builder before writing "if listed in …" guards
+  - Context: Reworded to "injected only when the engine detected …; derive the side from bar data / Market Reference".
+- Violation: skill template criterion that is always true under its own trigger (close above MA120/200 on a new 52-week high) made a trend branch unreachable
+  - Rule: MISTAKES Predictability — conditions must be falsifiable under the trigger that injects the skill
+  - Context: Removed the criterion; neutral branch now "MA(200) falling or stack not met".
+- Violation: `.sort()` on a filtered array; helper test froze an instant where UTC and ET dates coincide, so a UTC-vs-ET regression would pass
+  - Rule: MISTAKES Coding Paradigm #12 (toSorted); Tests — boundary instants must distinguish the alternatives
+  - Context: toSorted; test instant 2026-09-29T02:00Z.
+
+## [PR #856 merge-conflict resolution | master → feat/symbol-chat-to-ai-host | 2026-09-29]
+- Violation: While merging master into a branch that deletes a whole slice (widgets/chat, features/symbol-chat, entities/chat-message), master had ADDED new test files inside those deleted directories (src/widgets/chat/__tests__/hooks/useChatBranches2.test.tsx, src/entities/chat-message/__tests__/localeEnvelope.test.ts which git relocated via directory-rename detection to src/entities/analysis/__tests__/lib/) and a new test (src/views/symbol/__tests__/ChartContent.overlayHighlight.test.tsx) importing from the deleted slice. The additions merged silently (no conflict marker), so only a repo-wide grep for the deleted module paths caught them.
+  - Rule: (new) After merging base into a branch that deletes a slice, grep the whole repo for the deleted module paths/exports and check for files added inside deleted directories, not just the listed conflicts.
+  - Context: deleted the orphan tests, repointed overlayHighlight test to @/entities/analysis and entities.analysis.fallback; also updated the controlBorderTokenGuard AnalysisPanel line key (master 1187 minus 2 lines removed by the branch = 1185).

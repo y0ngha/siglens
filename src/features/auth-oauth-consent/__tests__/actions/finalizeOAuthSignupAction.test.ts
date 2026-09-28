@@ -61,7 +61,7 @@ vi.mock('@/shared/lib/auth/redirect', async () => ({
     ...(await vi.importActual('@/shared/lib/auth/redirect')),
     sanitizeNextPath: vi.fn((p: unknown) => (typeof p === 'string' ? p : '/')),
     resolvePostSignupDestination: vi.fn((next: string) =>
-        next === '/' ? '/onboarding' : next
+        next === '/' ? '/portfolio' : next
     ),
 }));
 vi.mock('next/navigation', () => ({
@@ -290,7 +290,7 @@ describe('finalizeOAuthSignupAction', () => {
         await expectRedirectTo('/login?error=service_unavailable');
     });
 
-    it('성공 시 세션 쿠키를 설정하고 돌아갈 곳(next)이 없으면 온보딩 화면으로 리다이렉트', async () => {
+    it('성공 시 세션 쿠키를 설정하고 돌아갈 곳(next)이 없으면 /portfolio로 리다이렉트', async () => {
         setupMocks();
         const mockCookieSet = vi.fn();
         (cookies as Mock).mockResolvedValue({ set: mockCookieSet });
@@ -298,12 +298,20 @@ describe('finalizeOAuthSignupAction', () => {
             cookie: { name: 'session', value: 'test-session' },
         });
 
-        await expectRedirectTo('/onboarding');
+        await expectRedirectTo('/portfolio');
 
         expect(createAuthSession as Mock).toHaveBeenCalledWith(
             expect.objectContaining({ userId: 'new-user-id' })
         );
-        expect(mockCookieSet).toHaveBeenCalledTimes(2);
+        // 세션 · 인증 힌트 · 가입 전환 플래그
+        expect(mockCookieSet).toHaveBeenCalledTimes(3);
+        expect(mockCookieSet).toHaveBeenCalledWith(
+            expect.objectContaining({
+                name: 'siglens_signup_conversion',
+                value: '1',
+                domain: 'siglens.io',
+            })
+        );
     });
 
     it('특정 페이지(next=/AAPL)에서 가입했으면 그 페이지로 리다이렉트', async () => {
@@ -318,5 +326,22 @@ describe('finalizeOAuthSignupAction', () => {
         });
 
         await expectRedirectTo('/AAPL');
+    });
+
+    /** 같은-호스트 `/api/auth/handoff`는 서버 fetch로 소진돼 ai 호스트로 가지 않는다. */
+    it('SiglensAI에서 가입했으면 ai 호스트 핸드오프 start URL로 리다이렉트', async () => {
+        const next = '/api/auth/handoff?to=ai&next=%2Fc%2Fabc';
+        setupMocks({
+            peekResult: { ...SAMPLE_PROFILE, next },
+            consumeResult: { ...SAMPLE_PROFILE, next },
+        });
+        (cookies as Mock).mockResolvedValue({ set: vi.fn() });
+        (createAuthSession as Mock).mockResolvedValue({
+            cookie: { name: 'session', value: 'test-session' },
+        });
+
+        await expectRedirectTo(
+            'https://ai.siglens.io/api/auth/handoff/start?next=%2Fc%2Fabc'
+        );
     });
 });

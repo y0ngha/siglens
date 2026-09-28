@@ -332,7 +332,7 @@ describe('Fundamental generateMetadata snapshot-derived description', () => {
         // name (subject; buildDisplayName is mocked to 'Apple Inc.' above)
         // before clamping.
         expect(result.description).toBe(
-            'Apple Inc. — PER은 업종 평균 대비 높지만 성장성이 이를 상쇄합니다.'
+            'Apple Inc. 펀더멘털 — PER은 업종 평균 대비 높지만 성장성이 이를 상쇄합니다.'
         );
     });
 

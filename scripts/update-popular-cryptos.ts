@@ -37,6 +37,12 @@ import {
     writeFileSync,
 } from 'fs';
 import { dirname, resolve } from 'path';
+import { insertIntoCandidatePool } from './lib/cryptoPoolInsert';
+import {
+    classifyVisitSymbol,
+    selectVisitCandidates,
+} from './lib/visitCandidates';
+import { loadVisitSources } from './lib/visitSources';
 
 const FMP_BASE_URL = 'https://financialmodelingprep.com/stable';
 
@@ -67,6 +73,9 @@ export const STABLECOINS: ReadonlySet<string> = new Set([
  * 심볼별 순차 호출 사이에 삽입한다.
  */
 const REQUEST_DELAY_MS = 250;
+
+/** 방문 후보 최소 시총 — 거래 가능한 코인만. 시총 상위 15 경로보다 느슨하다. */
+export const MIN_VISIT_CRYPTO_MARKET_CAP = 1_000_000_000;
 
 /**
  * 후보 풀 — 유지 관리 필요.
@@ -128,6 +137,9 @@ export const CRYPTO_CANDIDATE_POOL: readonly string[] = [
     'MANAUSD',
     'APEUSD',
 ];
+
+/** 방문 후보를 `CRYPTO_CANDIDATE_POOL`에도 넣기 위해 이 스크립트 자신을 편집한다. */
+const SCRIPT_PATH = resolve(process.cwd(), 'scripts/update-popular-cryptos.ts');
 
 const POPULAR_CRYPTOS_PATH = resolve(
     process.cwd(),
@@ -286,6 +298,17 @@ export function rankByMarketCap(
         .slice(0, topN);
 }
 
+/** 방문 후보(크립토) 탈락 사유. 통과면 null. */
+export function visitCryptoRejection(
+    eligible: boolean,
+    marketCap: number | null
+): string | null {
+    if (!eligible) return 'not eligible (unlisted or stablecoin)';
+    if (marketCap === null || marketCap <= 0) return 'no market cap';
+    if (marketCap < MIN_VISIT_CRYPTO_MARKET_CAP) return 'market cap < $1B';
+    return null;
+}
+
 /**
  * 심볼 하나를 POPULAR_CRYPTOS 배열 리터럴 줄 포맷으로 렌더링한다.
  * renderPopularCryptosFile과 insertCryptoTrendingSection이 공유해 포맷 drift를 방지한다.
@@ -387,9 +410,9 @@ export function deduplicateCryptoEntries(
  */
 export function insertCryptoTrendingSection(
     fileContent: string,
-    newSymbols: readonly string[]
+    newSymbols: readonly string[],
+    date: string = new Date().toISOString().slice(0, 10)
 ): string {
-    const date = new Date().toISOString().slice(0, 10);
     const sectionHeader = `// --- Trending (${date}) ---`;
 
     if (fileContent.includes(sectionHeader)) {
@@ -576,11 +599,39 @@ async function main(): Promise<void> {
     }
 
     const newSymbols = topSymbols.filter(s => !existingCryptos.has(s));
+    // 방문 후보 — 시총 상위 경로와 별도 할당. DB 실패 시 건너뛴다.
+    const visit = await loadVisitSources();
+    const visitSymbols: string[] = [];
+    if (visit !== null) {
+        const candidates = selectVisitCandidates(
+            visit.tallies,
+            'crypto',
+            new Set([...existingCryptos, ...newSymbols]),
+            s => classifyVisitSymbol(s, visit.cryptoSymbols)
+        );
+        for (const { symbol, views } of candidates) {
+            const eligible =
+                filterValidCandidates([symbol], cryptoList).valid.length > 0;
+            const quote = eligible
+                ? await fetchSingleQuote(apiKey, symbol)
+                : null;
+            if (eligible) await sleep(REQUEST_DELAY_MS);
+            const reason = visitCryptoRejection(
+                eligible,
+                quote?.marketCap ?? null
+            );
+            console.log(
+                `  [visit:crypto] ${symbol.padEnd(10)} views=${views} → ${reason ?? 'PASS'}`
+            );
+            if (reason === null) visitSymbols.push(symbol);
+        }
+    }
+    const symbolsToAdd = [...newSymbols, ...visitSymbols];
     console.log(
         `New symbols (in top ${MAX_POPULAR_CRYPTOS}, not already listed): ${newSymbols.length}`
     );
 
-    if (newSymbols.length === 0) {
+    if (symbolsToAdd.length === 0) {
         if (initialDeduplication.content !== originalFileContent) {
             commitFileAtomically(
                 POPULAR_CRYPTOS_PATH,
@@ -593,14 +644,17 @@ async function main(): Promise<void> {
         return;
     }
 
+    // Trending 섹션 헤더와 풀 주석이 같은 날짜를 쓰도록 한 번만 계산한다(UTC 자정 경계).
+    const todayKey = new Date().toISOString().slice(0, 10);
     const contentWithTrendingSection = insertCryptoTrendingSection(
         initialDeduplication.content,
-        newSymbols
+        symbolsToAdd,
+        todayKey
     );
     const addedSymbols =
         contentWithTrendingSection === initialDeduplication.content
             ? []
-            : newSymbols;
+            : symbolsToAdd;
     const finalDeduplication = deduplicateCryptoEntries(
         contentWithTrendingSection
     );
@@ -611,7 +665,25 @@ async function main(): Promise<void> {
         );
     }
 
+    // 방문 후보는 풀 밖에서 오므로 풀에도 넣는다(`CRYPTO_CANDIDATE_POOL ⊇ POPULAR_CRYPTOS`).
+    // 풀을 먼저 쓴다 — 목록 쓰기가 실패해도 풀이 상위집합인 상태는 유지된다.
+    if (addedSymbols.length > 0 && visitSymbols.length > 0) {
+        const scriptContent = readFileSync(SCRIPT_PATH, 'utf-8');
+        const updatedScript = insertIntoCandidatePool(
+            scriptContent,
+            visitSymbols,
+            todayKey
+        );
+        if (updatedScript !== scriptContent) {
+            commitFileAtomically(SCRIPT_PATH, updatedScript);
+        }
+    }
+
     commitFileAtomically(POPULAR_CRYPTOS_PATH, finalDeduplication.content);
+
+    console.log(
+        `Added — market cap: ${newSymbols.length}, visit: ${visitSymbols.length}`
+    );
 
     if (addedSymbols.length > 0) {
         console.log(

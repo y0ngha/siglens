@@ -81,6 +81,28 @@ describe('ShareSheet', () => {
         });
     });
 
+    // Clicking the fallback readonly input selects its text so the user can
+    // copy it with a single follow-up Ctrl+C without manual text selection.
+    it('selects the fallback input text when clicked', async () => {
+        vi.stubGlobal('navigator', {
+            clipboard: {
+                writeText: vi.fn().mockRejectedValue(new Error('denied')),
+            },
+        });
+        setup();
+        fireEvent.click(screen.getByRole('button', { name: /링크 복사/ }));
+
+        const input = await screen.findByRole('textbox', {
+            name: /공유 링크/,
+        });
+        const selectSpy = vi.spyOn(
+            input as HTMLInputElement,
+            'select' as never
+        );
+        fireEvent.click(input);
+        expect(selectSpy).toHaveBeenCalledTimes(1);
+    });
+
     // Kakao button is removed (no-op SDK not wired — follow-up task)
     it('does not render a Kakao button', () => {
         setup();

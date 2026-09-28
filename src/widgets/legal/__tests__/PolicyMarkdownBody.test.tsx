@@ -22,7 +22,29 @@ vi.mock('react-markdown', async () => {
             while (i < lines.length) {
                 const line = lines[i];
 
-                if (line.startsWith('## ')) {
+                if (line.startsWith('### ')) {
+                    const text = line.slice(4).trim();
+                    const id = text
+                        .toLowerCase()
+                        .replace(/[()[\]{}.,!?;:]/g, '')
+                        .replace(/\s+/g, '-');
+                    const H3 = components['h3'] as
+                        | React.ComponentType<{ id: string; children: string }>
+                        | undefined;
+                    if (H3) {
+                        elements.push(
+                            <H3 key={i} id={id}>
+                                {text}
+                            </H3>
+                        );
+                    } else {
+                        elements.push(
+                            <h3 key={i} id={id}>
+                                {text}
+                            </h3>
+                        );
+                    }
+                } else if (line.startsWith('## ')) {
                     const text = line.slice(3).trim();
                     const id = text
                         .toLowerCase()
@@ -75,7 +97,7 @@ vi.mock('react-markdown', async () => {
                     continue;
                 } else if (line.trim()) {
                     // Inline link parsing for anchor tests
-                    const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+                    const linkRegex = /\[([^\]]+)\]\(([^)]*)\)/g;
                     const P = components['p'] as
                         | React.ComponentType<{ children: React.ReactNode }>
                         | undefined;
@@ -85,8 +107,39 @@ vi.mock('react-markdown', async () => {
                               children: string;
                           }>
                         | undefined;
+                    const Strong = components['strong'] as
+                        | React.ComponentType<{ children: React.ReactNode }>
+                        | undefined;
+                    const boldRegex = /\*\*([^*]+)\*\*/g;
 
-                    if (linkRegex.test(line) && A) {
+                    if (boldRegex.test(line) && Strong) {
+                        boldRegex.lastIndex = 0;
+                        const parts: React.ReactNode[] = [];
+                        let last = 0;
+                        let bm: RegExpExecArray | null;
+                        while ((bm = boldRegex.exec(line)) !== null) {
+                            if (bm.index > last) {
+                                parts.push(line.slice(last, bm.index));
+                            }
+                            parts.push(<Strong key={bm.index}>{bm[1]}</Strong>);
+                            last = bm.index + bm[0].length;
+                        }
+                        if (last < line.length) parts.push(line.slice(last));
+                        elements.push(
+                            components['p'] ? (
+                                (() => {
+                                    const P = components[
+                                        'p'
+                                    ] as React.ComponentType<{
+                                        children: React.ReactNode;
+                                    }>;
+                                    return <P key={i}>{parts}</P>;
+                                })()
+                            ) : (
+                                <p key={i}>{parts}</p>
+                            )
+                        );
+                    } else if (linkRegex.test(line) && A) {
                         linkRegex.lastIndex = 0;
                         const parts: React.ReactNode[] = [];
                         let last = 0;
@@ -155,5 +208,47 @@ describe('PolicyMarkdownBody', () => {
         render(<PolicyMarkdownBody markdown={md} />);
         const items = screen.getAllByRole('listitem');
         expect(items).toHaveLength(2);
+    });
+
+    it('renders h3 with slug id and demoted styling', () => {
+        const md = '### 2.1 하위 조항\n\n본문\n';
+        render(<PolicyMarkdownBody markdown={md} />);
+        const h3 = screen.getByRole('heading', {
+            level: 3,
+            name: '2.1 하위 조항',
+        });
+        expect(h3.id).toBe('21-하위-조항');
+        expect(h3.className).toContain('text-secondary-200');
+    });
+
+    it('renders bold text as <strong>', () => {
+        const md = '이용자는 **본인 확인**을 거쳐야 한다.';
+        render(<PolicyMarkdownBody markdown={md} />);
+        const strong = screen.getByText('본인 확인');
+        expect(strong.tagName).toBe('STRONG');
+        expect(strong.className).toContain('font-semibold');
+    });
+
+    it('treats a link with an empty href as external (falsy short-circuit)', () => {
+        // isInternalHref bails out early on a falsy href, so an empty-string
+        // href must not be routed through next/link.
+        const md = '자료 [빈 링크]()';
+        const { container } = render(<PolicyMarkdownBody markdown={md} />);
+        const anchor = container.querySelector('a');
+        expect(anchor?.getAttribute('target')).toBe('_blank');
+        expect(anchor?.getAttribute('rel')).toContain('noopener');
+    });
+
+    it('treats a protocol-relative link (//) as external, not internal', () => {
+        // isInternalHref requires a leading "/" but rejects "//" so
+        // protocol-relative URLs (e.g. //cdn.example.com) don't get routed
+        // through next/link, which can't resolve them.
+        const md = '자료 [다운로드](//cdn.example.com/file.pdf)';
+        const { container } = render(<PolicyMarkdownBody markdown={md} />);
+        const anchor = container.querySelector(
+            'a[href="//cdn.example.com/file.pdf"]'
+        );
+        expect(anchor?.getAttribute('target')).toBe('_blank');
+        expect(anchor?.getAttribute('rel')).toContain('noopener');
     });
 });

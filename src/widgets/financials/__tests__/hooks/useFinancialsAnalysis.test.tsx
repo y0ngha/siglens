@@ -141,7 +141,11 @@ describe('useFinancialsAnalysis', () => {
         expect(mockSubmit).toHaveBeenCalledTimes(1);
     });
 
-    it('miss_no_trigger → bot_blocked 상태', async () => {
+    it('falls through to the generic unexpected error when submit returns miss_no_trigger', async () => {
+        // Core-only status: skipEnqueueIfMiss is hardcoded false for this
+        // axis (see api/analysis/stream/route.ts top invariant), so core
+        // never actually returns this in production. Verifies the
+        // exhaustiveness fallback resolves to a plain error, not dead UI.
         mockSubmit.mockResolvedValue({
             status: 'miss_no_trigger',
         } as never);
@@ -153,8 +157,14 @@ describe('useFinancialsAnalysis', () => {
         );
 
         await waitFor(() => {
-            expect(result.current.status).toBe('bot_blocked');
+            expect(result.current.status).toBe('error');
         });
+
+        if (result.current.status !== 'error')
+            throw new Error('expected error');
+        expect(result.current.error.message).toBe(
+            koMessages.app.api.stream.unexpected
+        );
     });
 
     it('error 상태를 반환한다', async () => {

@@ -243,6 +243,38 @@ describe('GET /api/auth/callback/[provider]', () => {
             expect(location).toContain('error=oauth_email_conflict');
             expect(location).toContain(encodeURIComponent(FAKE_PROFILE.email));
         });
+
+        /** ai.siglens.io에서 온 사용자가 이메일로 다시 로그인해도 ai로 돌아가야 한다. */
+        it('state의 next(SSO 핸드오프)를 로그인 화면에 되실어 준다', async () => {
+            const next = '/api/auth/handoff?to=ai&next=%2Fc%2Fabc';
+            mockVerifyOAuthState.mockReturnValue({ ok: true, next });
+            mockUserRepo.findByOAuthAccount.mockResolvedValue(null);
+            mockUserRepo.findByEmail.mockResolvedValue(FAKE_USER);
+
+            const req = makeRequest(
+                { state: 'valid-state', code: 'auth-code' },
+                { oauth_state: 'cookie-state' }
+            );
+            const res = await GET(req, DEFAULT_PARAMS);
+
+            const location = new URL(res.headers.get('location') ?? '');
+            expect(location.pathname).toBe('/login');
+            expect(location.searchParams.get('next')).toBe(next);
+        });
+
+        it('next가 기본 경로면 쿼리에 싣지 않는다', async () => {
+            mockUserRepo.findByOAuthAccount.mockResolvedValue(null);
+            mockUserRepo.findByEmail.mockResolvedValue(FAKE_USER);
+
+            const req = makeRequest(
+                { state: 'valid-state', code: 'auth-code' },
+                { oauth_state: 'cookie-state' }
+            );
+            const res = await GET(req, DEFAULT_PARAMS);
+
+            const location = new URL(res.headers.get('location') ?? '');
+            expect(location.searchParams.has('next')).toBe(false);
+        });
     });
 
     describe('pendingStore 미설정', () => {

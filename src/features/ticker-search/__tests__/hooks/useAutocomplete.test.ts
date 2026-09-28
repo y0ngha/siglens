@@ -57,20 +57,24 @@ const searchState = {
     staleDebouncedQuery: null as string | null,
     /** 검색 키의 목적지는 결과 유무로 갈린다 — 비우면 "친 문자열" 경로를 밟는다. */
     hasResults: true,
+    /** 기본 두 결과 대신 쓸 결과 집합. null이면 기본값. */
+    resultsOverride: null as
+        | { symbol: string; name: string; koreanName?: string }[]
+        | null,
 };
 
 vi.mock('@/features/ticker-search/hooks/useTickerSearch', () => ({
     useTickerSearch: (query: string) => ({
         results:
             query && searchState.hasResults
-                ? [
+                ? (searchState.resultsOverride ?? [
                       {
                           symbol: 'AAPL',
                           name: 'Apple Inc.',
                           koreanName: '애플',
                       },
                       { symbol: 'AMZN', name: 'Amazon.com Inc.' },
-                  ]
+                  ])
                 : [],
         isSearching: searchState.isSearching,
         isError: searchState.isError,
@@ -100,6 +104,7 @@ describe('useAutocomplete', () => {
         searchState.isError = false;
         searchState.staleDebouncedQuery = null;
         searchState.hasResults = true;
+        searchState.resultsOverride = null;
         localeState.locale = 'ko';
         localeState.hrefBase = '';
         vi.clearAllMocks();
@@ -528,5 +533,103 @@ describe('useAutocomplete', () => {
             label: 'AA PL',
         });
         expect(mockPush).not.toHaveBeenCalled();
+    });
+
+    it('결착된 이동은 이후 리렌더에서 onSelect/toLocalePath 정체성이 바뀌어도 다시 쏘지 않는다', () => {
+        // HoldingForm처럼 매 렌더 새 인라인 콜백을 넘기는 호출부, 로케일 전환으로
+        // toLocalePath가 바뀌는 경우를 흉내낸다. `pendingNav`는 지워지지 않고
+        // `firedNavRef`만으로 재실행을 막으므로, 그 가드가 없으면 여기서 중복 이동이 난다.
+        const spy = vi.fn();
+        const { result, rerender } = renderHook(() =>
+            useAutocomplete({ onSelect: e => spy(e) })
+        );
+
+        act(() => {
+            result.current.handleChange(createChangeEvent('appl'));
+        });
+        act(() => {
+            result.current.handleKeyDown(createKeyEvent('Enter'));
+        });
+        // 결착 대기(기본 mock은 즉시 결착되지만, 결착 전제를 명시적으로 둔다).
+        act(() => {});
+
+        // 1) 인라인 onSelect만 새로 만들어지는 리렌더
+        rerender();
+        // 2) 로케일 전환 — toLocalePath(locale 키의 useCallback)의 정체성도 바뀐다
+        localeState.locale = 'en';
+        localeState.hrefBase = '/en';
+        rerender();
+
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(mockPush).toHaveBeenCalledTimes(1);
+    });
+
+    it('결착 대기 중(스테일 디바운스 + 조회 중)에는 이동하지 않다가, 결착되면 그때 한 번만 이동하고 입력을 비운다', () => {
+        searchState.staleDebouncedQuery = '';
+        searchState.isSearching = true;
+        const { result, rerender } = renderHook(() => useAutocomplete());
+
+        act(() => {
+            result.current.handleChange(createChangeEvent('appl'));
+        });
+        act(() => {
+            result.current.handleKeyDown(createKeyEvent('Enter'));
+        });
+
+        expect(mockPush).not.toHaveBeenCalled();
+
+        searchState.staleDebouncedQuery = null;
+        searchState.isSearching = false;
+        rerender();
+
+        expect(mockPush).toHaveBeenCalledTimes(1);
+        expect(mockPush).toHaveBeenCalledWith('/AAPL');
+        expect(result.current.query).toBe('');
+    });
+
+    it('결착 전에 계속 타이핑하면 보류해 둔 검색 의도가 취소돼 결착돼도 이동하지 않는다', () => {
+        searchState.staleDebouncedQuery = '';
+        searchState.isSearching = true;
+        const { result, rerender } = renderHook(() => useAutocomplete());
+
+        act(() => {
+            result.current.handleChange(createChangeEvent('appl'));
+        });
+        act(() => {
+            result.current.handleKeyDown(createKeyEvent('Enter'));
+        });
+        act(() => {
+            result.current.handleChange(createChangeEvent('apple'));
+        });
+
+        searchState.staleDebouncedQuery = null;
+        searchState.isSearching = false;
+        rerender();
+
+        expect(mockPush).not.toHaveBeenCalled();
+    });
+
+    it('결착된 이동(effect 경로)의 패딩된 라벨도 navigate()와 같은 규칙으로 정규화된다', () => {
+        // 항목 선택 없이 Enter → requestSubmit → 결착 후 effect가 이동을 쏘는
+        // 경로다. 표시 이름에 앞뒤 공백이 섞여 있어도(데이터 소스 결함 흉내)
+        // 최근 검색·onSelect에는 트림된 라벨이 남아야 한다.
+        searchState.resultsOverride = [
+            { symbol: 'AAPL', name: 'Apple Inc.', koreanName: '  애플  ' },
+        ];
+        const onSelect = vi.fn();
+        const { result } = renderHook(() => useAutocomplete({ onSelect }));
+
+        act(() => {
+            result.current.handleChange(createChangeEvent('aapl'));
+        });
+        act(() => {
+            result.current.handleKeyDown(createKeyEvent('Enter'));
+        });
+
+        expect(onSelect).toHaveBeenCalledWith({
+            symbol: 'AAPL',
+            label: '애플',
+        });
+        expect(mockPush).toHaveBeenCalledWith('/AAPL');
     });
 });

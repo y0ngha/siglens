@@ -9,10 +9,6 @@ vi.mock('@/widgets/options/hooks/useOptionsAnalysis', () => ({
     useOptionsAnalysis: () => mockState(),
 }));
 
-vi.mock('@/shared/ui/BotBlockedNotice', () => ({
-    BotBlockedNotice: () => <div data-testid="bot-blocked">Bot blocked</div>,
-}));
-
 vi.mock('@/widgets/options/OptionsAiAnalysisSkeleton', () => ({
     OptionsAiAnalysisSkeleton: () => <div data-testid="skeleton">Loading</div>,
 }));
@@ -120,9 +116,9 @@ describe('OptionsAiAnalysis', () => {
         expect(screen.getByTestId('skeleton')).toBeInTheDocument();
     });
 
-    it('renders bot blocked notice', () => {
-        mockState.mockReturnValue({ status: 'bot_blocked', trigger: vi.fn() });
-        render(
+    it('renders nothing for cache_miss (cacheOnly cache miss)', () => {
+        mockState.mockReturnValue({ status: 'cache_miss', trigger: vi.fn() });
+        const { container } = render(
             <OptionsAiAnalysis
                 symbol="AAPL"
                 companyName="Apple"
@@ -130,7 +126,7 @@ describe('OptionsAiAnalysis', () => {
                 modelId={'gemini-3.5-flash-lite'}
             />
         );
-        expect(screen.getByTestId('bot-blocked')).toBeInTheDocument();
+        expect(container).toBeEmptyDOMElement();
     });
 
     it('renders error state', () => {

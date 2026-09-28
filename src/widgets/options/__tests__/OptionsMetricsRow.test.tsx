@@ -96,6 +96,19 @@ describe('OptionsMetricsRow', () => {
         expect(screen.getByText(/전체 만기 합산/)).toBeInTheDocument();
     });
 
+    it('falls back to placeholders for every metric when metrics is null', () => {
+        render(
+            <OptionsMetricsRow
+                expirationDate="2025-06-20"
+                metrics={null}
+                nearestExpiry="2025-06-20"
+                oiStale={false}
+            />
+        );
+        const dashes = screen.getAllByText('—');
+        expect(dashes).toHaveLength(4);
+    });
+
     it('does not render aggregate note for specific expiration', () => {
         render(
             <OptionsMetricsRow

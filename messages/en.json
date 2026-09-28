@@ -7,7 +7,6 @@
                 "1987ac": "Risk Zone",
                 "1b62d0": "Return to Account Settings →",
                 "1b6c6d": "Loading AI Model API Key",
-                "2a5883": "View My Portfolio Location",
                 "3a0c2b": "Account Withdrawal",
                 "3c3776": "Email",
                 "54ac38": "All information related to your account will be immediately and permanently deleted.",
@@ -19,7 +18,6 @@
                 "bfc060": "Changed your mind?",
                 "c4079e": "Loading Profile",
                 "c6c674": "Not Set",
-                "cae421": "Holdings",
                 "f5162c": "Membership Level",
                 "fa7c86": "Proceed with Account Withdrawal"
             }
@@ -252,12 +250,6 @@
                 "us": "Four categories: US general, stocks, forex, and market articles."
             }
         },
-        "onboarding": {
-            "page": {
-                "26bd1f": "Register your holdings.",
-                "b1e428": "Loading"
-            }
-        },
         "portfolio": {
             "PositionHoldingCard": {
                 "0ac914": "Avg. Price {v0}",
@@ -271,12 +263,13 @@
             "page": {
                 "55ca69": "My Portfolio Position",
                 "605ada": "Loading holdings position.",
-                "80736f": "Check where your average price is within the recent price range for each holding.",
-                "81860c": "Register holdings.",
                 "90a081": "Failed to load portfolio.",
                 "92020d": "Please try again shortly.",
                 "ac9263": "You haven't registered any holdings yet.",
-                "d103d5": "If you register your holdings, you can see where your average price is within the recent price range for each stock, visualized as a building."
+                "d103d5": "If you register your holdings, you can see where your average price is within the recent price range for each stock, visualized as a building.",
+                "06c7de": "Manage holdings",
+                "6aaec6": "Manage your holdings and see where your average cost sits within each stock's recent price range.",
+                "d9477a": "Portfolio"
             }
         },
         "reset-password": {
@@ -417,7 +410,9 @@
                 "overallHeadingKrEquity": "{v0} Overall Analysis — Chart, Earnings and News",
                 "overallHeadingUsEquity": "{v0} Overall Analysis — Chart, Options, Earnings and News",
                 "positionRangeSentence": "The 52-week range for {v0} is {v1} to {v2}, and the current price of {v3} sits at the {v4}% mark of that range — {v5}.",
-                "positionRegisterHint": "Register a holding below and you can also see the floor you bought on, inside the same building."
+                "positionRegisterHint": "Register a holding below and you can also see the floor you bought on, inside the same building.",
+                "marketFearGreedLinkCrypto": "Crypto Market Fear and Greed Index",
+                "marketLabelCrypto": "the crypto market"
             },
             "position": {
                 "band": {
@@ -753,16 +748,6 @@
                 "holdingSaved": "Saved the {v0} holding"
             }
         },
-        "portfolio-onboarding": {
-            "OnboardingContent": {
-                "643019": "Welcome",
-                "26bd1f": "Add your holdings",
-                "389b82": "Get Started",
-                "5d18f5": "Add them now to receive analysis based on your average price.\n                    You can also add them later in account settings.",
-                "c9c840": "Do Later",
-                "cae421": "Holdings"
-            }
-        },
         "premium-gate": {
             "PremiumModelGateModal": {
                 "2b8afd": "Go to Sign Up",
@@ -1085,7 +1070,8 @@
                     },
                     "fear-greed": {
                         "kr": "Korean Fear & Greed Index",
-                        "us": "US Fear & Greed Index"
+                        "us": "US Fear & Greed Index",
+                        "crypto": "Crypto Fear and Greed Index"
                     },
                     "market": {
                         "kr": "Korean Market Analysis",
@@ -1285,6 +1271,8 @@
                 "death_cross": "Death cross",
                 "dmi_bearish_cross": "DMI death cross",
                 "dmi_bullish_cross": "DMI golden cross",
+                "gap_down": "Gap Down",
+                "gap_up": "Gap Up",
                 "golden_cross": "Golden cross",
                 "ichimoku_cloud_breakdown": "Ichimoku cloud breakdown",
                 "ichimoku_cloud_breakout": "Ichimoku cloud breakout",
@@ -1296,6 +1284,8 @@
                 "macd_histogram_bullish_convergence": "MACD histogram convergence (up)",
                 "mfi_overbought_reversal": "MFI overbought reversal",
                 "mfi_oversold_bounce": "MFI oversold bounce",
+                "new_52w_high": "52-Week High",
+                "new_52w_low": "52-Week Low",
                 "parabolic_sar_bearish_flip": "Parabolic SAR flips down",
                 "parabolic_sar_flip": "Parabolic SAR flip",
                 "resistance_proximity_bearish": "Near resistance",
@@ -1369,7 +1359,10 @@
                     "junk_bond_us": "High-yield demand",
                     "momentum": "Market momentum",
                     "safe_haven": "Safe-haven demand",
-                    "volatility": "Market volatility"
+                    "volatility": "Market volatility",
+                    "downside_volatility": "Downside volatility",
+                    "alt_season": "Altcoin strength",
+                    "volume_flow": "Volume flow"
                 },
                 "symbolLabel": {
                     "buysell_imbalance": "Buy/sell imbalance",
@@ -1377,10 +1370,17 @@
                     "poc_distance": "Distance from POC ({v0} bars)",
                     "range_position": "Position in last 252 bars",
                     "volume_z": "Volume z-score (direction)"
+                },
+                "descriptionCrypto": {
+                    "momentum": "The further Bitcoin sits above its 125-day moving average, the greedier",
+                    "downside_volatility": "The smaller Bitcoin's downside volatility over the last 30 days (the rarer the sharp drops), the greedier",
+                    "safe_haven": "The more Bitcoin outruns gold over the last 20 days, the greedier",
+                    "breadth": "The larger the share of the 20 coins trading above their 50-day moving average, the greedier",
+                    "alt_season": "The larger the share of altcoins beating Bitcoin over the last 90 days, the greedier",
+                    "volume_flow": "The larger the share of the last 30 days' total trading volume that landed on Bitcoin up days, the greedier"
                 }
             },
             "legal": {
-                "aboutIntro": "What {v0} is, who built it, and what data and process each analysis goes through. We believe an investment tool can only be judged when you know who made it and how.",
                 "investmentDisclaimer": "The analysis on this service is for reference only; investment decisions are your own responsibility.",
                 "privacyBottomNotice": "For the full terms of use, see the <link>Terms of Service</link>.",
                 "privacyIntro": "{v0} (“the operator”) takes your personal data seriously and works to comply with the Personal Information Protection Act and related laws. This privacy policy explains how the personal data you provide is used, for what purposes, and what measures protect it.",
@@ -1418,8 +1418,9 @@
                 "investmentDisclaimerSummary": "Investment disclaimer summary"
             },
             "about": {
-                "description": "Siglens is an AI stock and crypto analysis service built and run by independent developer y0ngha. Learn where the data comes from, how each analysis is produced, how often it refreshes, its limits, and how to get in touch.",
-                "title": "About Siglens"
+                "description": "Siglens is a free service that takes one ticker and has AI analyze its chart, financial statements, news, and options together. It covers US stocks, Korean stocks, and crypto. This page explains its data sources, how the analysis is made, who runs it, and its limits.",
+                "title": "About Siglens",
+                "metaTitle": "About Siglens: AI Analysis for US & Korean Stocks and Crypto"
             },
             "account": {
                 "description": "Siglens account settings page",
@@ -1521,6 +1522,23 @@
                     "description": "S&P 500, VIX, Treasuries, corporate bonds, and an equal-weight index combine into a 0–100 score and 5-level label for overall US buying sentiment.",
                     "heading": "US Fear & Greed Index",
                     "title": "Today's US Market Sentiment — Fear & Greed Index"
+                },
+                "crypto": {
+                    "title": "Crypto Fear and Greed Index - Today's Crypto Market Sentiment",
+                    "heading": "Crypto Fear and Greed Index",
+                    "description": "Combines recent prices and trading volume of Bitcoin, 19 other large coins and gold into a 0 to 100 score and a five-stage label for buying sentiment across the crypto market.",
+                    "copy_intro0": "The Crypto Fear and Greed Index combines recent price and trading volume trends of the 20 largest coins by market cap, led by Bitcoin, into a 0 to 100 score for short-term sentiment across the crypto market. A lower score means fear dominates; a higher score means greed does.",
+                    "copy_intro1": "Each of the six factors is converted to a percentile within its own history, then averaged with equal weights. Market momentum looks at how far Bitcoin sits from its 125-day moving average. Downside volatility looks at how often and how deeply prices fell over the last 30 days. Safe-haven demand looks at the gap between Bitcoin and gold returns over the last 20 days. Market breadth looks at the share of the 20 coins trading above their 50-day moving average. Altcoin strength looks at the share of altcoins that beat Bitcoin over the last 90 days. Volume flow looks at how much of the last 30 days of trading volume landed on days when Bitcoin rose.",
+                    "copy_faq0q": "Is this the same as the alternative.me Fear and Greed Index?",
+                    "copy_faq0a": "No. The alternative.me index also uses social media and survey data, while this index uses none of that and is computed only from exchange prices and trading volume. The two usually move in the same direction, but the scores do not match exactly.",
+                    "copy_faq1q": "Which coins are included?",
+                    "copy_faq1a": "The 20 largest coins by market cap today, including Bitcoin, Ethereum, XRP, Solana, BNB and Dogecoin; stablecoins are excluded. Because today's large-cap list is applied to earlier periods too, coins that have since disappeared or dropped out of the ranks are missing, so older scores carry survivorship bias.",
+                    "copy_faq2q": "How is the gold price handled on weekends?",
+                    "copy_faq2a": "Coins trade seven days a week, but gold trades only five. On weekends and holidays when there is no gold quote, the previous trading day's gold close (usually Friday's) is carried forward.",
+                    "copy_faq3q": "How often does the score update?",
+                    "copy_faq3a": "It updates once a day, based on the daily bar that closes at 00:00 UTC; live prices from the day still in progress are never used. The page itself is cached for up to an hour.",
+                    "copy_faq4q": "Can I trade based on this score?",
+                    "copy_faq4a": "This index is a reference that summarizes market sentiment, not investment advice. Extreme fear or greed does not by itself signal an imminent rebound or decline, so investment decisions and their consequences remain your own."
                 }
             },
             "forgotPassword": {
@@ -1570,13 +1588,9 @@
             },
             "oauthConsentFullTitle": "{v0} — social sign-up terms consent",
             "oauthConsentTitle": "Social sign-up consent",
-            "onboarding": {
-                "description": "Onboarding page to add your holdings after signing up for Siglens",
-                "title": "Add Your Holdings"
-            },
             "portfolio": {
                 "description": "A personalized Siglens page showing where your average cost sits within each holding's recent price range.",
-                "title": "My Portfolio Position"
+                "title": "Portfolio"
             },
             "position": {
                 "breadcrumb": "My position",
@@ -1697,11 +1711,13 @@
             "VWAP 신호 해석 가이드 — 장중 공정가치, 지지/저항, 브레이크아웃 신호": "VWAP signal interpretation guide — intraday fair value, support/resistance, breakout signals.",
             "Williams %R(14) 신호 해석 가이드 — 과매수/과매도, 모멘텀 전환, 다이버전스": "Williams %R(14) signal interpretation guide — Overbought/Oversold, momentum reversal, divergence.",
             "가격과 오실레이터(RSI, MACD, Stochastic)의 방향 불일치를 통해 추세 반전 또는 추세 지속을 예측하는 전략": "A strategy that predicts trend reversal or trend continuation through directional disagreement between price and an oscillator (RSI, MACD, Stochastic).",
-            "가격이 이동평균 또는 통계적 평균에서 과도하게 이탈한 후 평균으로 회귀하는 경향을 이용하여 역추세 진입 시점을 판별하는 전략": "A strategy that uses price's tendency to revert to the mean after deviating excessively from a Moving Average or statistical mean, to determine counter-trend entry timing.",
             "계산되는 모든 지표의 1줄 임계 요약 — 상시 주입되는 압축 코어(개별 풀 가이드는 해당 지표가 notable일 때만 게이팅)": "1-line threshold summary of every computed indicator — an always-injected compressed core (full guides for individual indicators are gated to load only when that indicator is notable).",
             "계산되는 모든 차트 패턴의 1줄 형태·방향·geometry 요약 — 상시 주입되는 압축 인덱스(개별 판정 기준은 프리스크리너가 후보로 지목한 패턴만 게이팅)": "1-line shape/direction/geometry summary of every computed chart pattern — an always-injected compressed index (individual detection criteria are gated to only the patterns the pre-screener flags as candidates).",
             "고점과 저점이 모두 상승하지만 폭이 좁아지는 형태로 하락 반전 신호": "A shape where both highs and lows rise but the range narrows — a bearish reversal signal.",
             "고점과 저점이 모두 하락하지만 폭이 좁아지는 형태로 상승 반전 신호": "A shape where both highs and lows fall but the range narrows — a bullish reversal signal.",
+            "고점과 저점이 평행하게 함께 낮아지는 우하향 추세 통로 — 어느 쪽 추세선을 종가로 이탈하느냐로 방향이 정해지는 패턴": "A downward-sloping trend corridor where highs and lows fall in parallel — direction is decided by which trendline the price closes beyond",
+            "고점과 저점이 평행하게 함께 높아지는 우상향 추세 통로 — 어느 쪽 추세선을 종가로 이탈하느냐로 방향이 정해지는 패턴": "An upward-sloping trend corridor where highs and lows rise in parallel — direction is decided by which trendline the price closes beyond",
+            "고점은 높아지고 저점은 낮아지며 폭이 벌어지는 메가폰 형태 — 방향은 이탈하는 쪽으로 정해지는 변동성 확대 패턴": "A megaphone shape with higher highs and lower lows widening over time — a volatility-expansion pattern whose direction is set by the side it breaks",
             "급격한 상승 후 하향 평행 채널에서 조정을 거치는 강세 연속 패턴": "A bullish continuation pattern where a sharp rally is followed by a consolidation in a downward-sloping parallel channel.",
             "급격한 움직임 후 수렴하는 삼각형 형태의 조정을 거치는 연속 패턴": "A continuation pattern where a sharp move is followed by a converging triangular consolidation.",
             "급격한 하락 후 상향 평행 채널에서 조정을 거치는 약세 연속 패턴": "A bearish continuation pattern where a sharp decline is followed by a consolidation in an upward-sloping parallel channel.",
@@ -1709,9 +1725,9 @@
             "높은 매출·이익 성장률과 확장 가능한 비즈니스 모델을 가진 기업을 발굴하는 분석 프레임．": "An analytical framework for identifying companies with high revenue/earnings growth rates and scalable business models.",
             "높은 자본 효율성과 지속 가능한 경쟁 우위(경제적 해자)를 가진 고품질 기업을 선별하는 분석 프레임．": "An analytical framework for screening high-quality companies with strong capital efficiency and a sustainable competitive advantage (economic moat).",
             "단기/중기/장기 이동평균선 배열로 스테이지를 판별하고 그랜빌의 법칙에 따른 매매 신호를 분석하는 전략": "A strategy that determines the current stage from the alignment of short/mid/long-term Moving Averages and analyzes trading signals based on Granville's rules.",
-            "되돌림 후 추세 재개 시 목표가(Take Profit) 설정을 위한 피보나치 확장 레벨 분석 도구": "A Fibonacci extension level analysis tool for setting price targets (Take Profit) when the trend resumes after a retracement.",
             "두 개의 고점이 거의 같은 가격 수준에서 형성되는 하락 반전 신호": "A bearish reversal signal formed when two highs occur at nearly the same price level.",
             "두 개의 저점이 거의 같은 가격 수준에서 형성되는 상승 반전 신호": "A bullish reversal signal formed when two lows occur at nearly the same price level.",
+            "두 달 안팎에 90% 이상 급등한 뒤 얕게 쉬어가는 강세 지속 패턴 — 깃대 고점 상향 돌파로 확정": "A bullish continuation pattern where price surges 90% or more in about two months, then pauses in a shallow consolidation — confirmed by a breakout above the flagpole high",
             "롤링 선형회귀 R² 신호 해석 가이드 — 추세 청결도 컨디셔너, 방향 무관, 윈도우 스케일 유의성": "Rolling Linear Regression R² signal interpretation guide — a trend-cleanliness conditioner, direction-agnostic, window-scale significance.",
             "볼륨 프로파일 신호 해석 가이드 — POC, VAH/VAL, 가치 영역, 거래량 희박 구간": "Volume Profile signal interpretation guide — POC, VAH/VAL, the value area, low-Volume zones.",
             "볼린저 %B·BandWidth 신호 해석 가이드 — 평균 회귀 이벤트(일봉 숏의 측정 엣지), 스퀴즈, \"태그는 신호가 아니다\" 원칙": "Bollinger %B & BandWidth signal interpretation guide — mean-reversion events (a measured edge for daily shorts), squeeze, the \"a tag is not a signal\" principle.",
@@ -1725,7 +1741,7 @@
             "세 개의 저점이 거의 같은 가격 수준에서 형성되는 상승 반전 신호": "A bullish reversal signal formed when three lows occur at nearly the same price level.",
             "수평 저항선과 상승하는 지지 추세선이 수렴하는 강세 연속 패턴": "A bullish continuation pattern where a horizontal Resistance and a rising support Trendline converge.",
             "수평 지지선과 저항선 사이에서 횡보하는 연속 또는 반전 패턴": "A continuation or reversal pattern where price consolidates sideways between horizontal Support and Resistance.",
-            "수평 지지선과 하락하는 저항 추세선이 수렴하는 약세 연속 패턴": "A bearish continuation pattern where a horizontal Support and a falling resistance Trendline converge.",
+            "수평 지지선과 하락하는 저항 추세선이 수렴하는 패턴 — 측정상 방향 중립에 가깝고(상방 53%) 지지선 종가 이탈 시에만 약세 확정": "A pattern where a horizontal support line and a descending resistance trendline converge — measured as close to direction-neutral (53% break upward); bearish only after a close below support",
             "스토캐스틱 RSI(14,14,3,3) 신호 해석 가이드 — 극단 모멘텀 감지, %K/%D 크로스오버, 다이버전스": "Stochastic RSI(14,14,3,3) signal interpretation guide — detecting extreme momentum, %K/%D crossovers, divergence.",
             "스토캐스틱(14,3,3) 신호 해석 가이드 — 과매수/과매도, %K/%D 크로스오버, 다이버전스": "Stochastic(14,3,3) signal interpretation guide — Overbought/Oversold, %K/%D crossovers, divergence.",
             "양-장 변동성 신호 해석 가이드 — 효율적 실현 변동성 측정(드리프트 독립·점프 정합), 사이징·스톱 거리 (방향 없음)": "Yang-Zhang Volatility signal interpretation guide — an efficient realized-Volatility estimator (drift-independent, jump-consistent), sizing and stop distance (no directional bias).",
@@ -1734,20 +1750,25 @@
             "엘더 임펄스 시스템 신호 해석 가이드 — 검열/허가 게이트(녹색=숏 금지, 적색=매수 금지, 청색=양쪽 허용)": "Elder Impulse System signal interpretation guide — a censor/permission gate (green = no shorts, red = no longs, blue = both allowed).",
             "엘더-레이(Bull Power/Bear Power) 신호 해석 가이드 — 추세 내 다이버전스, 베어파워 반등 매수 셋업": "Elder-Ray (Bull Power/Bear Power) signal interpretation guide — divergence within a trend, a Bear Power bounce-buy setup.",
             "엘리어트 파동 이론 기반 현재 파동 위치 및 목표가 분석": "Analysis of the current wave position and price target based on Elliott Wave theory.",
+            "완만한 역U자(돔) 형태로 고점을 형성한 뒤 림 하향 이탈로 확정되는 약세 반전 패턴": "A bearish reversal pattern that forms a top in a gradual inverted-U (dome) shape and is confirmed by a break below the rim",
             "일목균형표(9,26,52) 신호 해석 가이드 — 구름 위치, TK 크로스, 구모 브레이크아웃, 치코우 확인": "Ichimoku Cloud(9,26,52) signal interpretation guide — cloud position, TK cross, Kumo breakout, Chikou confirmation.",
+            "장기 상승 추세(종가 > MA200) 안에서 단기 과매도(Williams %R(14) ≤ -90)로 눌린 일봉을 되돌림 후보로 판별하는 전략 — 2000~2026 일봉 백테스트로 검증된 규칙만 사용": "A strategy that flags daily bars pulled back to a short-term Oversold reading (Williams %R(14) ≤ -90) inside a long-term uptrend (close > MA200) as rebound candidates — using only rules validated by a 2000–2026 daily backtest.",
             "저평가된 우량 기업을 발굴하는 벤저민 그레이엄 / 워런 버핏 학파 분석 프레임．": "A Benjamin Graham / Warren Buffett-school analytical framework for finding undervalued, high-quality companies.",
             "전일 가격 데이터를 기반으로 당일의 지지/저항 레벨을 자동 산출하는 클래식 데이트레이딩 도구": "A classic day-trading tool that automatically computes today's support/resistance levels from the previous day's price data.",
             "점진적으로 U자 형태를 그리며 바닥을 형성하는 장기 강세 반전 패턴": "A long-term bullish reversal pattern that gradually forms a U-shaped bottom.",
-            "주요 가격 스윙의 되돌림 비율로 잠재적 지지/저항 레벨을 식별하는 피보나치 분석 도구": "A Fibonacci analysis tool that identifies potential support/resistance levels from the retracement ratios of a major price swing.",
+            "종가가 직전 52주 고가(저가)를 모두 넘어선 신고가·신저가를 모멘텀 지속 신호로 해석하는 전략 — George & Hwang(2004) 52주 고가 근접도 연구와 Minervini 추세 템플릿 기반": "A strategy that reads a close beyond every high (low) of the prior 52 weeks as a momentum-continuation signal — based on George & Hwang (2004) research on nearness to the 52-week high and Minervini's trend template",
             "주요 지지·저항선, 채널, 차트 패턴의 돌파를 감지하고 거래량·모멘텀 필터로 거짓 돌파를 걸러내어 진입하는 전략": "A strategy that detects breakouts of key Support/Resistance, channels, and chart patterns, and enters after filtering out false breakouts with Volume and momentum filters.",
+            "직전 봉 범위를 완전히 벗어난 갭 상승·하락을 위치·추세·거래량 맥락으로 돌파(브레이크어웨이)·진행(런어웨이)·소멸(이그조스천) 갭으로 분류하는 전략 — \"갭은 반드시 메워진다\" 속설은 쓰지 않는다": "A strategy that classifies gap-ups and gap-downs that fully clear the prior bar's range as breakaway, runaway, or exhaustion gaps by position, trend, and volume context — it does not use the \"gaps always fill\" folklore",
             "캔들 패턴 패밀리(반전·지속·관망) 압축 primer — 상시 주입되는 코어． 개별 패턴 풀 가이드는 해당 캔들이 실제 감지될 때만 게이팅": "Compressed primer for candlestick pattern families (reversal, continuation, indecision) — an always-injected core. Full guides for individual patterns are gated to only load when that candle is actually detected.",
             "피보나치 되돌림/확장 비율을 활용하여 지지·저항 레벨과 목표가를 산출하고, 패턴·지표와 결합하여 매매 시점을 판별하는 전략": "A strategy that computes support/resistance levels and price targets using Fibonacci retracement/extension ratios, combining them with patterns and indicators to determine entry/exit timing.",
             "하락하는 저항선과 상승하는 지지선이 수렴하는 중립 연속 패턴": "A neutral continuation pattern where a falling Resistance and a rising Support converge.",
             "허스트 지수(R/S) 신호 해석 가이드 — 추세 vs 평균회귀 레짐 컨디셔너, R/S 소표본 편향 주의": "Hurst Exponent (R/S) signal interpretation guide — a trend-vs-mean-reversion regime conditioner; watch for R/S small-sample bias."
         },
         "skillName": {
+            "52주 신고가 모멘텀": "52-Week High Momentum",
             "MACD 대순환 분석": "MACD Grand Cycle Analysis",
             "가치 투자 (Value Investing)": "Value Investing",
+            "갭 분석": "Gap Analysis",
             "다이버전스 전략": "Divergence Strategy",
             "다중 시간대 분석": "Multi-Timeframe Analysis",
             "대칭삼각형": "Symmetrical Triangle",
@@ -1755,6 +1776,7 @@
             "브레이크아웃 전략": "Breakout Strategy",
             "삼중바닥": "Triple Bottom",
             "삼중천장": "Triple Top",
+            "상승 채널": "Ascending Channel",
             "상승깃발": "Bull Flag",
             "상승삼각형": "Ascending Triangle",
             "상승쐐기": "Rising Wedge",
@@ -1765,6 +1787,7 @@
             "엘리어트 파동": "Elliott Wave",
             "역헤드앤숄더": "Inverse Head and Shoulders",
             "원형바닥": "Rounding Bottom",
+            "원형천장": "Rounding Top",
             "이동평균선 대순환 분석": "Moving Average Grand Cycle Analysis",
             "이벤트 드리븐 (Event-Driven)": "Event-Driven Strategy",
             "이중바닥": "Double Bottom",
@@ -1774,14 +1797,15 @@
             "퀄리티 투자 (Quality Investing)": "Quality Investing",
             "페넌트": "Pennant",
             "평균 회귀 전략": "Mean Reversion Strategy",
-            "피보나치 되돌림": "Fibonacci Retracement",
             "피보나치 전략": "Fibonacci Strategy",
-            "피보나치 확장": "Fibonacci Extension",
             "피봇 포인트": "Pivot Points",
+            "하락 채널": "Descending Channel",
             "하락깃발": "Bear Flag",
             "하락삼각형": "Descending Triangle",
             "하락쐐기": "Falling Wedge",
-            "헤드앤숄더": "Head and Shoulders"
+            "하이 타이트 플래그": "High Tight Flag",
+            "헤드앤숄더": "Head and Shoulders",
+            "확장형 패턴(브로드닝)": "Broadening Formation"
         },
         "symbolTab": {
             "chart": "Chart",
@@ -1797,10 +1821,6 @@
         "ui": {
             "AiSummaryErrorSection": {
                 "0c767c": "Try again"
-            },
-            "BotBlockedNotice": {
-                "2040a8": "If you are a real user, please refresh or try a different browser.",
-                "90ee5f": "Detected as bot traffic, analysis results are not displayed."
             },
             "Breadcrumb": {
                 "46c31f": "Breadcrumb"
@@ -2184,7 +2204,8 @@
                 "marketKr": "Korean stock market analysis",
                 "marketUs": "US stock market analysis",
                 "news": "Today's stock news",
-                "title": "More on SIGLENS"
+                "title": "More on SIGLENS",
+                "fearGreedCrypto": "Crypto Fear and Greed Index"
             },
             "nvda": {
                 "a1": "It's on the expensive side relative to its earnings. But earnings are growing fast, so opinions differ.",
@@ -2257,6 +2278,177 @@
                 "search": "Ticker search",
                 "web": "Web search"
             }
+        },
+        "about": {
+            "hero": {
+                "eyebrow": "About Siglens",
+                "title": "Enter one ticker. AI analyzes all of it at once.",
+                "lede": "Charts, financial statements, news, and options usually live in different places. Siglens gathers them, runs the numbers, and writes it up as a report you can actually read. US stocks, Korean stocks, and crypto all work."
+            },
+            "example": {
+                "aapl": "Apple",
+                "nvda": "NVIDIA",
+                "samsung": "Samsung Electronics",
+                "btc": "Bitcoin"
+            },
+            "replay": {
+                "title": "Here's what happens when you open a ticker page",
+                "body": "It gathers the data, computes everything by fixed rules, and then AI explains the results in plain words.",
+                "badge": "Example",
+                "region": "Example of how Siglens analyzes a ticker",
+                "pause": "Pause",
+                "resume": "Play",
+                "sources": "Based on",
+                "summary": "Analyzed in {count} steps",
+                "asOf": "As of {time}",
+                "note": "This is an example. The numbers are made up for illustration; real analysis lives on each ticker page.",
+                "step": {
+                    "bars": "Prices & chart",
+                    "barsPending": "Loading prices & chart",
+                    "indicators": "Indicators",
+                    "indicatorsPending": "Computing indicators",
+                    "patterns": "Candle & chart patterns",
+                    "patternsPending": "Finding patterns",
+                    "fundamentals": "Financials & news",
+                    "fundamentalsPending": "Checking financials & news",
+                    "news": "News",
+                    "newsPending": "Checking news",
+                    "report": "AI report",
+                    "reportPending": "AI is writing it up"
+                },
+                "subject": {
+                    "daily": "daily",
+                    "kinds": "{count} types"
+                },
+                "aapl": {
+                    "a1": "<b>Apple (AAPL)</b> keeps trending up above its 50-day moving average.",
+                    "a2": "Up <up>+6.2%</up> over the past month, stronger than the Nasdaq over the same stretch.",
+                    "a3": "RSI, which gauges how overheated a stock is, sits at <b>64</b>. That's just under the overheated line of 70, so a short pause wouldn't be surprising.",
+                    "a4": "The price levels to watch are around <b>$221</b> below and <b>$238</b> above.",
+                    "a5": "Earnings are two weeks out, so moves may get bigger around that date.",
+                    "asOf": "US close"
+                },
+                "samsung": {
+                    "a1": "<b>Samsung Electronics</b> slipped below its 20-day moving average, and momentum has weakened.",
+                    "a2": "Down <down>-4.1%</down> over five days, on volume about 30% above normal.",
+                    "a3": "The last candle left a long lower wick, a sign that buyers stepped in at lower prices.",
+                    "a4": "The first support to check is around <b>₩70,000</b>.",
+                    "a5": "It's sensitive to chip-industry news right now, so check the news tab too.",
+                    "asOf": "Korea close"
+                },
+                "btc": {
+                    "a1": "<b>Bitcoin</b> has moved inside a narrow range for three weeks.",
+                    "a2": "The Bollinger Bands, which track how widely price swings, are the tightest in three months. That often means a bigger move is near.",
+                    "a3": "Up <up>+1.3%</up> in 24 hours, on normal volume.",
+                    "a4": "The key question is whether it breaks above <b>$68,500</b> or below <b>$63,200</b>.",
+                    "a5": "The Fear & Greed Index, which reads overall market mood, is at <b>52</b>: neutral.",
+                    "asOf": "last 24 hours"
+                }
+            },
+            "pain": {
+                "title": "If this sounds familiar",
+                "body": "Common frustrations with finding stock information, and how Siglens handles them.",
+                "wasLabel": "Before",
+                "scattered": "Charts on one site, financials on another, news somewhere else.",
+                "scatteredFix": "One ticker page holds the chart, financial statements, news, options, and congressional trades.",
+                "tooMany": "So many indicators that I didn't know which ones mattered.",
+                "tooManyFix": "It computes all {indicators} indicators and explains only the signals worth watching right now.",
+                "madeUp": "I didn't trust AI not to make up numbers.",
+                "madeUpFix": "Numbers are computed by rules first, and AI only explains them. If the plain-language text includes a number the computation didn't produce, it gets filtered out.",
+                "jargon": "Even after reading a report, the jargon lost me.",
+                "jargonFix": "The default view is 'Simple', with jargon spelled out. Switch to 'Original' any time to see the indicator names and raw numbers.",
+                "markets": "US stocks, Korean stocks, and crypto each needed a different site.",
+                "marketsFix": "All three markets are analyzed the same way, and search works with company names as well as tickers."
+            },
+            "data": {
+                "title": "What one ticker page covers",
+                "body": "Each tab on a ticker page is analyzed on its own, then the Overall tab ties them together.",
+                "scopeAll": "US & Korean stocks, crypto",
+                "scopeEquity": "US & Korean stocks",
+                "scopeUs": "US stocks",
+                "example": "See {name} {tab}",
+                "chart": "Chart & indicators",
+                "chartBody": "Computes {indicators} indicators from price and volume, such as the moving average, RSI, and MACD.",
+                "patterns": "Candle & chart patterns",
+                "patternsBody": "Finds {candles} candlestick patterns and {patterns} chart patterns, and marks the price levels that act as support and resistance.",
+                "financials": "Financial statements",
+                "financialsBody": "Reads revenue, profit, and cash flow by quarter and year to judge whether the company earns well and stays sturdy.",
+                "fundamental": "Earnings & valuation",
+                "fundamentalBody": "Uses the earnings trend and valuation metrics like P/E to gauge whether the price is expensive or cheap.",
+                "news": "News",
+                "newsBody": "Collects recent articles and summarizes what could move the price. Korean tickers use Korean news.",
+                "options": "Options",
+                "optionsBody": "Reads the market's expectations from options trading, and the price levels where that trading clusters.",
+                "congress": "Congressional trades",
+                "congressBody": "Shows trades in this stock disclosed by members of the US Senate and House.",
+                "fearGreed": "Fear & Greed Index",
+                "fearGreedBody": "Scores from 0 to 100 how strong the buying mood around this ticker is right now."
+            },
+            "method": {
+                "title": "How each analysis is made",
+                "body": "AI doesn't write the answer from scratch. The computation decides the numbers; AI explains them.",
+                "step1": "Gather the data",
+                "step1Body": "Price and financial data come from Financial Modeling Prep and Yahoo Finance, the Korean ticker list from the Korea Public Data Portal (KRX), and Korean news from Naver News search.",
+                "step2": "Compute by rules",
+                "step2Body": "{indicators} indicators, {candles} candlestick patterns, and {strategies} strategies are computed first by fixed rules. Whether a signal fired is decided here.",
+                "step3": "AI explains, then gets checked",
+                "step3Body": "Only the computed results go to AI (OpenAI, Anthropic, Google, and DeepSeek models) to be written up. The text then passes format checks and cleanup before it reaches the screen.",
+                "freshTitle": "How fresh is it?",
+                "freshQuote": "US stock and crypto prices arrive with no delay; Korean stock prices can lag by up to 20 minutes.",
+                "freshRefresh": "The analysis shown in advance on ticker pages is rebuilt in turn after each market close. Running an analysis on the page builds a new one from the data at that moment.",
+                "freshMember": "Members can pick stronger models and reasoning options.",
+                "backtest": "See results checked against past data"
+            },
+            "operator": {
+                "title": "Who builds and runs it",
+                "body": "Siglens is built and run alone by independent developer {name}. Costs are paid out of pocket, there's no brokerage or asset-manager affiliation, and no payment is taken to promote any stock. There's no trading or order feature, and no brokerage account connection.",
+                "role": "Development & operations",
+                "email": "Email",
+                "github": "GitHub profile",
+                "repo": "Public source code"
+            },
+            "limits": {
+                "title": "Limits you should know",
+                "wrong": "AI-written text can contain factual errors or misread numbers.",
+                "past": "It's based on past data, so it doesn't guarantee future results.",
+                "personal": "It doesn't account for your personal finances or goals.",
+                "variance": "A different model or prompt can produce different text for the same data.",
+                "levels": "Entry, stop loss, and target levels in an analysis are reference numbers computed from chart structure. They explain what to check at each price; they are not instructions to trade.",
+                "disclaimer": "Siglens analysis is for reference only. It doesn't recommend buying or selling or give investment advice, and investment decisions are your own responsibility.",
+                "terms": "Terms of Service"
+            },
+            "faq": {
+                "title": "Frequently asked questions",
+                "whatQ": "What is Siglens?",
+                "whatA": "A web service where you enter a company name or ticker and AI analyzes its chart, indicators, candlestick patterns, financial statements, news, options, US congressional trades, and the Fear & Greed Index together. It covers US stocks, Korean stocks (KOSPI and KOSDAQ), and crypto.",
+                "freeQ": "Is it free? Do I need an account?",
+                "freeA": "Basic analysis is free with no sign-up. Members can pick stronger AI models and reasoning options, and see a few more details such as entry, stop loss, and target levels.",
+                "coverageQ": "Does it cover Korean stocks and crypto?",
+                "coverageA": "Yes. Korean stocks get the chart, earnings, financial statements, news, Fear & Greed Index, and overall analysis. Crypto gets the chart, news, Fear & Greed Index, and overall analysis. Options and congressional trades exist only for US stocks.",
+                "accuracyQ": "Does the AI make up numbers?",
+                "accuracyA": "Indicators and signals are computed by fixed rules, not by AI. AI receives the computed values and only explains them, and plain-language text that contains a number the computation didn't produce is filtered out. Mistakes can still slip into the text, so check important numbers against the chart.",
+                "adviceQ": "Does it tell me what to buy or sell?",
+                "adviceA": "No. Siglens doesn't give investment advice. The analysis is reference material to help you decide; the decision and its responsibility are yours.",
+                "aiQ": "How is it different from SIGLENS AI?",
+                "aiA": "Siglens shows an analysis report in a fixed format when you enter a ticker. SIGLENS AI (ai.siglens.io) answers questions you ask in conversation, looking up prices, news, and analysis as it goes. Siglens is handy for digging into one ticker; SIGLENS AI for a string of follow-up questions.",
+                "contactQ": "Where do I report something wrong?",
+                "contactA": "Send an email or use the contact link at the bottom of the page. The operator reads and answers it personally."
+            },
+            "more": {
+                "title": "Explore more",
+                "marketUs": "US market analysis",
+                "marketKr": "Korean market analysis",
+                "fearGreed": "Market Fear & Greed Index",
+                "backtesting": "Backtest results",
+                "ai": "About SIGLENS AI",
+                "fearGreedCrypto": "Crypto Fear and Greed Index"
+            },
+            "end": {
+                "title": "Have a ticker in mind?",
+                "body": "Enter a company name or ticker to see its analysis right away.",
+                "button": "See Apple's analysis"
+            },
+            "updated": "Last updated: {date}"
         }
     },
     "widgets": {
@@ -2299,7 +2491,9 @@
                 "f0256c": "Sign up to receive detailed analysis with all skills applied.",
                 "f0cdeb": "AI Analysis",
                 "f744e1": "Hide Chart Price Lines",
-                "fb0cf0": "Key Prices"
+                "fb0cf0": "Key Prices",
+                "bcc718": "View on Chart",
+                "f66b28": "View {v0} on chart"
             },
             "AnalysisProgress": {
                 "784c44": "AI Analysis in Progress"
@@ -2496,7 +2690,8 @@
             },
             "StockChart": {
                 "1b2664": "No chart data available",
-                "a547a0": "Price Chart"
+                "a547a0": "Price Chart",
+                "57fdbb": "Breakout level"
             },
             "TimeframeSelector": {
                 "a4632e": "Member-exclusive timeframe.",
@@ -2520,6 +2715,14 @@
                 "trend": "Trend",
                 "volatility": "Volatility",
                 "volume": "Volume"
+            },
+            "ChartOverlayMenu": {
+                "0b5eb6": "Trendline",
+                "2bac73": "Fibonacci",
+                "3b6851": "Elliott Wave",
+                "4b1cdc": "Chart Drawing · {v0}",
+                "67eb73": "Divergence",
+                "bdeea2": "Chart Pattern"
             }
         },
         "ask-ai-fab": {
@@ -3090,6 +3293,7 @@
                 "Fintechcrypto": "Payments, brokerage and crypto-trading firms — they react to both interest rates and coin prices.",
                 "Healthcarebiotech": "Pharma, medical-device and drug-development firms — trial results and regulatory approvals move the price.",
                 "Internetplatforms": "Korean portal, commerce and gaming firms — watched through ad spending and user metrics.",
+                "Trendinginterest": "Korean stocks SigLens visitors looked up most this week.",
                 "KOSDAQ": "The biggest KOSDAQ names by market cap — higher volatility than the KOSPI market.",
                 "LeveragedETFs": "ETFs that track 2–3x the daily index return — high volatility, with compounding decay when held long.",
                 "Major": "The largest cryptocurrencies by market cap — the benchmark for the whole market.",
@@ -3124,6 +3328,7 @@
                 "Fintechcrypto": "Fintech & crypto",
                 "Healthcarebiotech": "Healthcare & biotech",
                 "Internetplatforms": "Internet & platforms",
+                "Trendinginterest": "Trending on SigLens",
                 "KOSDAQ": "KOSDAQ",
                 "LeveragedETFs": "Leveraged ETFs",
                 "Megacapsindices": "Mega caps & indices",
@@ -3174,7 +3379,8 @@
                 "ce7156": "Authentication",
                 "e225a6": "Log In",
                 "ecb4cc": "Sign Up",
-                "menuLabel": "User menu ({v0})"
+                "menuLabel": "User menu ({v0})",
+                "d9477a": "Portfolio"
             },
             "githubRepoAria": "{v0} GitHub repository (opens in a new tab)",
             "localeSwitcher": {
@@ -3204,7 +3410,8 @@
             "page": {
                 "asOfClose": "As of the close on {v1}/{v2}/{v0}",
                 "cnnDifference": "This index is derived independently from daily closes alone. Its construction differs from CNN’s Fear & Greed Index — five factors rather than seven, leaving out the put/call ratio and the NYSE 52-week high/low breadth because no usable data source exists — so the direction broadly agrees while the number itself can differ from CNN’s.",
-                "krDifference": "This index is derived independently from daily closes of Korean-listed ETFs and indices. The volatility factor uses 20-day realized volatility computed from KOSPI closes, because no free VKOSPI feed exists; the credit factor uses the spread between corporate bonds and similarly dated 3-year KTBs, because Korea has no liquid high-yield bond market. The formula matches the US index, but the inputs differ — do not compare the two scores directly."
+                "krDifference": "This index is derived independently from daily closes of Korean-listed ETFs and indices. The volatility factor uses 20-day realized volatility computed from KOSPI closes, because no free VKOSPI feed exists; the credit factor uses the spread between corporate bonds and similarly dated 3-year KTBs, because Korea has no liquid high-yield bond market. The formula matches the US index, but the inputs differ — do not compare the two scores directly.",
+                "cryptoDifference": "This index is computed independently from daily exchange prices and trading volume alone. It uses no social media or survey data, unlike the alternative.me index, so the direction is usually similar but the numbers can differ. Its factors also differ from the US and Korean indices, so do not compare the scores directly."
             }
         },
         "market-news": {

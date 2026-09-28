@@ -41,6 +41,12 @@ describe('buildStaticEntries', () => {
         );
     });
 
+    // 광고 전용 랜딩(`src/app/lp/`)은 noindex라 sitemap에 실으면 안 된다.
+    it('광고 랜딩(/lp/*)은 싣지 않는다', () => {
+        const urls = buildStaticEntries(NOW).map(e => e.url);
+        expect(urls.filter(url => url.includes('/lp'))).toEqual([]);
+    });
+
     /**
      * `/symbols`(종목 디렉터리)는 sitemap에 실려야 한다 — 이 페이지 자체가 색인
      * 대상이라서가 아니라, 크롤러가 여기서 종목 링크를 받아 가기 때문이다.
@@ -252,6 +258,18 @@ describe('buildStaticEntries — 지역별 lastmod', () => {
             lastClosedSessionCloseUtc(KR_EQUITY_SESSION, now)
         );
         expect(kr?.lastModified).not.toEqual(us?.lastModified);
+    });
+
+    /** 코인은 24시간 거래라 NYSE 마감을 쓰면 주말 내내 금요일로 멈춘 lastmod를 낸다. */
+    it('/fear-greed/crypto는 마지막으로 닫힌 UTC 일(오늘 UTC 자정)을 쓴다', () => {
+        const now = new Date('2026-08-16T12:00:00Z'); // 일요일
+        const entries = buildStaticEntries(now);
+
+        const crypto = entries.find(e => e.url.endsWith('/fear-greed/crypto'));
+
+        expect(crypto?.lastModified).toEqual(new Date('2026-08-16T00:00:00Z'));
+        expect(crypto?.changeFrequency).toBe('daily');
+        expect(crypto?.priority).toBe(0.8);
     });
 });
 

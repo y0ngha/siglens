@@ -279,7 +279,9 @@ const SUPPLEMENTAL_THEME_GROUPS: readonly LabeledGroup[] = [
  * - `CRYPTO_CATEGORIES` — 메이저/알트코인.
  */
 const THEME_GROUPS: readonly LabeledGroup[] = [
-    ...TICKER_CATEGORIES.map(c => ({
+    // `kr-trending`은 업종이 아니라 수요 묶음이라 제외한다 — 넣으면 서로 무관한
+    // 종목이 "관련 종목"으로 연결된다.
+    ...TICKER_CATEGORIES.filter(c => c.id !== 'kr-trending').map(c => ({
         // 홈 디스커버리 카드가 쓰는 키를 그대로 재사용한다 — 같은 카테고리가
         // 화면마다 다른 이름으로 불리지 않게.
         label: `widgets.home.${TICKER_CATEGORY_LABEL_KEY[c.label]}`,

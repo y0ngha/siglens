@@ -11,8 +11,8 @@ gating:
   state:
     feature: williamsR
     predicate: level
-token_cost: 510
-digest_hash: "d27ca839"
+token_cost: 564
+digest_hash: "6508ba52"
 ---
 
 ## Overview
@@ -32,6 +32,7 @@ Williams %R, developed by Larry Williams, is a momentum oscillator that measures
 - %R crosses above -80 from below: the close has moved away from the period low — a bullish momentum shift. Consider as a buy signal, especially when confirmed by price support.
 - %R crosses below -20 from above: the close has moved away from the period high — a bearish momentum shift. Consider as a sell signal, especially when confirmed by price resistance.
 - The crossing itself is the actionable signal — not simply being in the zone. Waiting for the exit from the extreme zone filters out many false signals during strong trends.
+- **Measured exception — daily bars above MA(200):** here the in-zone reading is the signal, not the cross. A daily close at %R ≤ -90 above MA(200) was followed by above-baseline returns in every period tested (2000–2026), while entering on the cross back above -80 gave the edge up (≤ 0 per trade in every period). Read that case through the **평균 회귀 전략** skill instead of waiting for the cross.
 
 ### Failure Swing
 
@@ -72,6 +73,7 @@ Close relative to highest high over lookback. Range 0 to -100. `%R = Fast Stocha
 - %R crosses above -80 from below = bullish shift (buy, esp. confirmed by price support).
 - %R crosses below -20 from above = bearish shift (sell, esp. confirmed by resistance).
 - The crossing (exit from extreme) is the actionable signal — NOT just being in the zone; filters false signals in strong trends.
+- EXCEPTION (measured, 1Day above MA(200)): the in-zone close at %R ≤ -90 IS the signal; waiting for the cross above -80 gave the edge up (≤0 per trade in every period 2000-2026). Use the 평균 회귀 전략 skill for that case.
 
 **Failure swing:**
 - Bullish: %R dips <-80, recovers >-80, dips again but stays above prior low, then rises above intermediate high — strong buy (sellers failed).

@@ -95,7 +95,10 @@ export type CategoryId =
     | 'kr-bio'
     | 'kr-platform'
     | 'kr-finance'
-    | 'kr-kosdaq';
+    | 'kr-kosdaq'
+    // 업종이 아니라 수요 묶음 — `update-popular-tickers.ts`가 방문 조회수로 채운다.
+    // 객체는 첫 후보 때 스크립트가 생성하므로 config에 없을 수 있다.
+    | 'kr-trending';
 
 /** Curated ticker category (id + label + member tickers with Korean names). */
 export interface TickerCategory {
@@ -291,8 +294,8 @@ export type MarketSummaryActionResult =
  * `scope`의 용도는 {@link MarketSummaryActionResult}와 같다(롤링 배포 불일치 탐지).
  *
  * 예전엔 봇에게 `{ briefing: null, botBlocked: true }`를 돌려줬다(2026-09-17 제거,
- * `submitMarketBriefingAction` JSDoc). 롤링 배포 중 구 컨테이너는 아직 그 모양을
- * 보낼 수 있어 소비 훅이 `briefing` 부재를 방어한다.
+ * `submitMarketBriefingAction` JSDoc). 이후 여러 릴리스가 나가 롤링 배포 중 구 컨테이너가
+ * 그 모양을 보낼 가능성은 없다 — 소비 훅도 더 이상 방어하지 않는다.
  */
 export type MarketBriefingActionResult =
     | {

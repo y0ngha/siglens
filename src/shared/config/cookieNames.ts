@@ -11,3 +11,11 @@ export const AUTH_HINT_COOKIE_NAME = 'siglens_auth';
  * ai.siglens.io each mint and track their own id.
  */
 export const GUEST_ID_COOKIE_NAME = 'siglens_guest';
+
+/**
+ * Client-readable one-shot flag the sign-up server actions set so the next
+ * page can record a Google Ads sign-up conversion (`shared/lib/googleAds.ts`).
+ * Value is always "1". Scoped to `siglens.io` so ai.siglens.io reads it too —
+ * a bare "signed up" marker leaks nothing to sibling subdomains.
+ */
+export const SIGNUP_CONVERSION_COOKIE_NAME = 'siglens_signup_conversion';

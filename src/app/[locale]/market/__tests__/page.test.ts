@@ -271,6 +271,21 @@ describe('Market page', () => {
             expect(mockGetMarketSummaryStatic).toHaveBeenCalled();
         });
 
+        /**
+         * `signalSectors[0]`이 없으면 스캐너 fallback sector가 없다는 뜻이라 렌더할
+         * 초기 섹터를 정할 수 없다 — 잘못된 scope 설정을 조용히 빈 화면으로 넘기지
+         * 않고 즉시 던져 배포 전에 드러나게 한다.
+         */
+        it('scope.signalSectors가 비어 있으면 즉시 던진다', async () => {
+            await expect(
+                MarketContent({
+                    scope: { ...US_DASHBOARD_SCOPE, signalSectors: [] },
+                })
+            ).rejects.toThrow(
+                `[MarketContent] scope has no sectors: ${US_DASHBOARD_SCOPE.id}`
+            );
+        });
+
         it('calls getSectorSignalsStatic with DEFAULT_DASHBOARD_TIMEFRAME', async () => {
             await MarketContent({ scope: US_DASHBOARD_SCOPE });
             expect(mockGetSectorSignalsStatic).toHaveBeenCalledWith(

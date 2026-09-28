@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveSubmitTarget } from '@/features/ticker-search/lib/resolveSubmitTarget';
+import {
+    resolveSubmitTarget,
+    resolveTypedTarget,
+} from '@/features/ticker-search/lib/resolveSubmitTarget';
 import type { TickerSearchResult } from '@/shared/lib/types';
 
 function result(
@@ -56,5 +59,45 @@ describe('resolveSubmitTarget', () => {
         expect(resolveSubmitTarget('   ', [])).toBeNull();
         // 12자를 넘는 문자열은 티커가 아니다.
         expect(resolveSubmitTarget('ABCDEFGHIJKLM', [])).toBeNull();
+    });
+});
+
+/**
+ * 폼 모드(`navigateOnSelect: false`)의 목적지 규칙. 이동이 아니라 값 확정이라
+ * `resolveSubmitTarget`과 달리 결과 우선·티커 형태 검사를 걸지 않는다.
+ */
+describe('resolveTypedTarget', () => {
+    describe('when the query is non-empty', () => {
+        it('친 문자열을 대문자로 바꿔 그대로 목적지로 삼는다', () => {
+            expect(resolveTypedTarget('appl')).toEqual({
+                symbol: 'APPL',
+                label: 'APPL',
+            });
+        });
+
+        it('티커 형태가 아니어도(회사명·경로 등) 그대로 통과시킨다', () => {
+            // 폼 모드는 값 확정일 뿐 페이지 이동이 아니므로, 티커 형태 검사가 없다.
+            expect(resolveTypedTarget('삼성전자')).toEqual({
+                symbol: '삼성전자',
+                label: '삼성전자',
+            });
+        });
+
+        it('앞뒤 공백을 제거한다', () => {
+            expect(resolveTypedTarget('  nvda  ')).toEqual({
+                symbol: 'NVDA',
+                label: 'NVDA',
+            });
+        });
+    });
+
+    describe('when the query is empty', () => {
+        it('빈 문자열이면 null을 반환한다', () => {
+            expect(resolveTypedTarget('')).toBeNull();
+        });
+
+        it('공백만 있으면 null을 반환한다', () => {
+            expect(resolveTypedTarget('   ')).toBeNull();
+        });
     });
 });

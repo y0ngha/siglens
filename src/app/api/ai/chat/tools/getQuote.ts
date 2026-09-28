@@ -4,6 +4,12 @@ import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { getDescriptor } from '@/shared/config/marketProfile';
+import { MS_PER_SECOND } from '@/shared/config/time';
+import {
+    assessFreshness,
+    type FreshnessView,
+    QUOTE_MAX_AGE_MS,
+} from './freshness';
 import type { ToolExecutor } from './index';
 import { resolveAssetInfoOrNull } from './resolveAssetInfo';
 
@@ -20,9 +26,19 @@ const MAX_SYMBOLS = 3;
 function quoteAsOf(quote: MarketQuote): {
     asOf: string;
     asOfIsFetchTime?: true;
+    freshness?: FreshnessView;
 } {
-    if (quote.timestamp !== undefined && Number.isFinite(quote.timestamp))
-        return { asOf: new Date(quote.timestamp * 1000).toISOString() };
+    if (quote.timestamp !== undefined && Number.isFinite(quote.timestamp)) {
+        const asOfMs = quote.timestamp * MS_PER_SECOND;
+        return {
+            asOf: new Date(asOfMs).toISOString(),
+            freshness: assessFreshness({
+                asOfMs,
+                maxAgeMs: QUOTE_MAX_AGE_MS,
+                nowMs: Date.now(),
+            }),
+        };
+    }
     return { asOf: new Date().toISOString(), asOfIsFetchTime: true };
 }
 

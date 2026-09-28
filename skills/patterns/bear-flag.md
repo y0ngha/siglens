@@ -5,7 +5,7 @@ type: pattern
 category: continuation_bearish
 pattern: bear_flag
 indicators: []
-confidence_weight: 0.75
+confidence_weight: 0.5
 display:
   chart:
     show: true
@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [bear_flag]
-token_cost: 649
-digest_hash: "71dad9cc"
+token_cost: 672
+digest_hash: "42684eeb"
 ---
 
 ## Detection Criteria
@@ -31,7 +31,7 @@ digest_hash: "71dad9cc"
 
 ## Confidence Weight Rationale
 
-confidence_weight: 0.75 — Bear Flag mirrors the Bull Flag's reliability as a short-term continuation pattern. The sharp decline followed by an orderly, low-volume bounce reflects the pause-and-continue nature of downtrending markets. Bear Flags are particularly effective in panic-driven markets where relief rallies are quickly overwhelmed by renewed selling pressure.
+confidence_weight: 0.5 — Bulkowski (thepatternsite.com/flags.html, bull market; flags are measured over the short-term price swing, so they are not ranked): break-even failure rate 45% for downward / 44% for upward breakouts; 46% meet the price target; average decline 8%. The page pools bull and bear flags (breakout upward 60% overall) and gives no bear-flag-specific direction split, so no direction adjustment is applied. Weight: failure > 30% → 0.5. The sharp decline followed by an orderly, low-volume bounce reflects the pause-and-continue nature of downtrending markets.
 
 Factors that increase confidence:
 - Flagpole shows a decline of at least 10% with above-average volume
@@ -92,7 +92,7 @@ Geometry:
 - Volume declines noticeably during flag.
 - Confirmed: close BELOW lower flag channel with increased volume.
 
-Confidence (weight 0.75): mirrors Bull Flag.
+Confidence (weight 0.5) — Bulkowski flags.html: failure 45% (down breakouts), 46% meet target, avg decline 8%; not ranked (short swing).
 - Increase: flagpole decline ≥10% with above-avg volume, flag retrace < 38.2%, volume drops 50%+ vs flagpole, flag duration 1–2 weeks, breakdown volume returns to flagpole levels.
 - Decrease: shallow/slow flagpole, retrace > 50%, volume rising in flag, duration > 4 weeks, channel too wide / loses parallel structure.
 

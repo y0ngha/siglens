@@ -51,8 +51,8 @@ import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 /**
  * 종목이 속한 시장의 상위 공포·탐욕 지수 링크.
  *
- * 암호화폐는 전용 시장 지수가 없어 미국 페이지를 가리킨다 — 상위 개념을 설명하는
- * 용도라 시장이 정확히 일치하지 않아도 문장이 성립한다(라벨로 그렇게 말한다).
+ * 암호화폐는 예전에 전용 시장 지수가 없어 미국 페이지를 가리켰다. 이제
+ * `/fear-greed/crypto`가 있으므로 세 시장 모두 자기 지수로 간다.
  */
 /**
  * 라벨은 **카탈로그 키**로 들고 있는다. 문자열을 그대로 두면 영어 페이지에서도
@@ -74,9 +74,9 @@ const MARKET_FEAR_GREED_LINK: Record<
         marketLabelKey: 'page.marketLabelKr',
     },
     crypto: {
-        href: '/fear-greed',
-        labelKey: 'page.marketFearGreedLinkAll',
-        marketLabelKey: 'page.marketLabelUs',
+        href: '/fear-greed/crypto',
+        labelKey: 'page.marketFearGreedLinkCrypto',
+        marketLabelKey: 'page.marketLabelCrypto',
     },
 };
 

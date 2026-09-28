@@ -128,4 +128,109 @@ describe('ModelSelector', () => {
         expect(label.className).toContain('text-secondary-400');
         expect(label.className).not.toContain('text-secondary-500');
     });
+
+    describe('listbox keyboard navigation', () => {
+        it('ArrowDown selects the next model and wraps to the first after the last', async () => {
+            const user = userEvent.setup();
+            const { onModelChange } = renderSelector({
+                selectedModel: 'claude-sonnet-5',
+            });
+
+            await user.click(
+                screen.getByRole('button', { name: 'AI 분석 모델 선택' })
+            );
+            await user.keyboard('{ArrowDown}');
+
+            // claude-sonnet-5 is the last of ALLOWED_MODELS, so ArrowDown wraps
+            expect(onModelChange).toHaveBeenCalledWith('gemini-3.5-flash-lite');
+        });
+
+        it('ArrowUp selects the previous model and wraps to the last from the first', async () => {
+            const user = userEvent.setup();
+            const { onModelChange } = renderSelector({
+                selectedModel: 'gemini-3.5-flash-lite',
+            });
+
+            await user.click(
+                screen.getByRole('button', { name: 'AI 분석 모델 선택' })
+            );
+            await user.keyboard('{ArrowUp}');
+
+            expect(onModelChange).toHaveBeenCalledWith('claude-sonnet-5');
+        });
+
+        it('Home selects the first model in the list', async () => {
+            const user = userEvent.setup();
+            const { onModelChange } = renderSelector({
+                selectedModel: 'claude-sonnet-5',
+            });
+
+            await user.click(
+                screen.getByRole('button', { name: 'AI 분석 모델 선택' })
+            );
+            await user.keyboard('{Home}');
+
+            expect(onModelChange).toHaveBeenCalledWith('gemini-3.5-flash-lite');
+        });
+
+        it('End selects the last model in the list', async () => {
+            const user = userEvent.setup();
+            const { onModelChange } = renderSelector({
+                selectedModel: 'gemini-3.5-flash-lite',
+            });
+
+            await user.click(
+                screen.getByRole('button', { name: 'AI 분석 모델 선택' })
+            );
+            await user.keyboard('{End}');
+
+            expect(onModelChange).toHaveBeenCalledWith('claude-sonnet-5');
+        });
+    });
+
+    it('pressing Enter on a focused option selects it and closes the dropdown', async () => {
+        const user = userEvent.setup();
+        const { onModelChange } = renderSelector({
+            selectedModel: 'gemini-3.5-flash-lite',
+        });
+
+        await user.click(
+            screen.getByRole('button', { name: 'AI 분석 모델 선택' })
+        );
+        const flashOption = screen
+            .getAllByRole('option')
+            .find(
+                o =>
+                    o.textContent?.includes('Flash') &&
+                    !o.textContent?.includes('Lite')
+            )!;
+        flashOption.focus();
+        await user.keyboard('{Enter}');
+
+        expect(onModelChange).toHaveBeenCalledWith('gemini-3.6-flash');
+        expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    });
+
+    it('pressing Space on a focused option selects it and closes the dropdown', async () => {
+        const user = userEvent.setup();
+        const { onModelChange } = renderSelector({
+            selectedModel: 'gemini-3.5-flash-lite',
+        });
+
+        await user.click(
+            screen.getByRole('button', { name: 'AI 분석 모델 선택' })
+        );
+        const flashOption = screen
+            .getAllByRole('option')
+            .find(
+                o =>
+                    o.textContent?.includes('Flash') &&
+                    !o.textContent?.includes('Lite')
+            )!;
+        flashOption.focus();
+        await user.keyboard(' ');
+
+        expect(onModelChange).toHaveBeenCalledWith('gemini-3.6-flash');
+        expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    });
 });

@@ -1,5 +1,5 @@
 import 'server-only';
-import { createYahooClient } from './createYahooClient';
+import { getYahooClient } from './createYahooClient';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import {
     getYahooBalanceSheet,
@@ -7,7 +7,7 @@ import {
     type YahooStatementRaw,
 } from './yahooStatementsSource';
 
-const yahooFinance = createYahooClient();
+const yahooFinance = getYahooClient();
 
 /**
  * 라이브러리의 응답 스키마 검증을 끈다.

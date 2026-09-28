@@ -10,6 +10,9 @@ import {
     termsTitle,
     termsFullTitle,
     termsDescription,
+    aboutTitle,
+    aboutFullTitle,
+    aboutDescription,
     formatKoreanDate,
 } from '@/shared/lib/legal';
 import { SITE_NAME, type SeoTranslator } from '@/shared/lib/seo';
@@ -75,6 +78,25 @@ describe('legal constants', () => {
 
     it('termsDescription(t) includes site name', () => {
         expect(termsDescription(t)).toContain(SITE_NAME);
+    });
+
+    /**
+     * `/about`은 다른 법무 페이지와 달리 `<title>`이 `${title} | Siglens`
+     * 형식이 아니다 — `aboutFullTitle` JSDoc 참고("Siglens"로 이미 시작하는
+     * 별도 metaTitle 키를 쓴다). `aboutTitle`(본문 h1)과는 다른 값이어야
+     * 그 구분이 실제로 성립한다.
+     */
+    it('aboutTitle(t) is Korean about title', () => {
+        expect(aboutTitle(t)).toBe('Siglens 소개');
+    });
+
+    it('aboutFullTitle(t)은 aboutTitle과 다른 전용 metaTitle 키를 쓴다', () => {
+        expect(aboutFullTitle(t)).not.toBe(aboutTitle(t));
+        expect(aboutFullTitle(t).length).toBeGreaterThan(0);
+    });
+
+    it('aboutDescription(t) includes site name', () => {
+        expect(aboutDescription(t)).toContain(SITE_NAME);
     });
 });
 

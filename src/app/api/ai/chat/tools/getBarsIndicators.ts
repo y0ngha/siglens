@@ -2,24 +2,31 @@ import 'server-only';
 import {
     aggregateBarsToWeekly,
     calculateIndicators,
+    computeFearGreedIndex,
     calculateMA,
     classifyTrend,
     CONFLUENCE_TREND_MA_PERIOD,
     detectCandlePatternEntries,
     detectSignals,
     evaluateConfluence,
+    evaluatePullback,
     getDetectionBars,
     MA_DEFAULT_PERIODS,
+    PULLBACK_BASE_RATES,
     scoreConfluence,
     selectLastCandlePatternEntries,
     type Bar,
     type BollingerResult,
     type CandlePattern,
     type DMIResult,
+    type FearGreedGroupName,
+    type FearGreedLabel,
+    type FearGreedSnapshot,
     type IchimokuResult,
     type IndicatorResult,
     type MACDResult,
     type MultiCandlePattern,
+    type PullbackReading,
     type SqueezeMomentumResult,
     type StochasticResult,
     type Timeframe,
@@ -248,8 +255,12 @@ interface BarsConfluenceView {
 }
 
 /**
- * Rule-based indicator-family confluence (no AI) — the same entry/exit rule
- * siglens-trader acts on — computed from the full cached series.
+ * Rule-based indicator-family confluence (no AI), computed from the full
+ * cached series. It is a descriptive tally, not a forecast: siglens-trader
+ * retired this rule on 2026-09-24 after its backtests found it
+ * indistinguishable from baseline, and on daily bars a met entry rule
+ * trailed baseline 10-day returns in every period measured 2000–2026
+ * (docs/superpowers/specs/2026-09-25-mean-reversion-evidence-design.md).
  *
  * `htfBars` (loaded once for `higherTimeframe`, §3.1) is threaded into core's
  * own HTF alignment gate when available, so `entryRuleMet` matches the
@@ -291,6 +302,53 @@ function confluenceView(
         // passed in, so `htfGate` must report what core actually DID, not
         // what the caller merely attempted.
         htfGate: snapshot.htfTrend !== null ? 'on' : 'off',
+    };
+}
+
+interface PullbackView {
+    reading: PullbackReading;
+    williamsR: number;
+    rsi2: number | null;
+    closeVsMa200Pct: number;
+    /** The measured exit reference: the washout is treated as resolved on the first daily close above it. */
+    ma5: number | null;
+    /**
+     * What the reading has historically meant (`null` for `none`). Carried in the
+     * tool result so the model can quote the base rate instead of inventing one —
+     * the grounding check flags numbers no tool returned.
+     */
+    measured: string | null;
+}
+
+/**
+ * The short-term washout reading siglens-trader switched to on 2026-09-24,
+ * re-measured on independent data for siglens
+ * (docs/superpowers/specs/2026-09-25-mean-reversion-evidence-design.md).
+ * Classification, thresholds and base-rate wording all live in core
+ * (`evaluatePullback`, `PULLBACK_BASE_RATES`) — the same reading the analysis
+ * prompt renders as `### Short-Term Washout`, so the chat and the analysis
+ * page cannot drift apart. The field names are the contract core's
+ * `get_bars_indicators` tool description promises the model.
+ *
+ * **Daily only**: the measurement is on daily bars and `evaluatePullback` does
+ * not know the timeframe, so the gate is here. Other timeframes get `null`, as
+ * does a series core abstains on (fewer than 200 bars, no Williams %R).
+ */
+function pullbackView(
+    bars: readonly Bar[],
+    timeframe: Timeframe
+): PullbackView | null {
+    if (timeframe !== '1Day') return null;
+    const snap = evaluatePullback(bars);
+    if (snap === null) return null;
+    return {
+        reading: snap.reading,
+        williamsR: roundNumber(snap.williamsR),
+        rsi2: roundOrNull(snap.rsi2),
+        closeVsMa200Pct: roundNumber(snap.closeVsMa200Pct),
+        ma5: roundOrNull(snap.ma5),
+        measured:
+            snap.reading === 'none' ? null : PULLBACK_BASE_RATES[snap.reading],
     };
 }
 
@@ -627,6 +685,60 @@ function maStackDirection(
     return bullish ? 'bullish' : bearish ? 'bearish' : 'mixed';
 }
 
+/** One Flow/Trend group of {@link SymbolFearGreedView}. */
+interface FearGreedGroupView {
+    name: FearGreedGroupName;
+    score: number;
+}
+
+/**
+ * `get_bars_indicators`'s `fearGreed` field — the symbol's own index, not the
+ * market-wide one. `label`/`confidence` keep core's literal unions rather than
+ * widening to `string`: the dashboard's own view type does the same, and a
+ * widened field lets a typo through the type checker.
+ */
+interface SymbolFearGreedView {
+    score: number;
+    label: FearGreedLabel;
+    confidence: FearGreedSnapshot['confidence'];
+    groups: FearGreedGroupView[];
+}
+
+/**
+ * The symbol's own Fear & Greed reading — the same number `/{symbol}/fear-greed`
+ * shows, from the same core function over the same inputs the page uses
+ * (`useFearGreedFromSymbol`: daily bars + `indicators.buySellVolume`). Nothing
+ * extra is fetched; both were already in hand.
+ *
+ * **Daily only.** The page pins the index to `1Day` bars by spec, so computing
+ * it off a 4-hour or 30-minute series would hand the model a score that no
+ * screen shows and that cannot be compared with the one that does. Other
+ * timeframes get `null`.
+ *
+ * `null` also when core abstains — the walk-forward sample is too short for
+ * percentiles (a young listing, or a short loaded history).
+ */
+function fearGreedView(
+    bars: readonly Bar[],
+    indicators: IndicatorResult,
+    timeframe: Timeframe
+): SymbolFearGreedView | null {
+    if (timeframe !== '1Day') return null;
+    // core는 `buySellVolume`을 봉과 **1:1로 나란한 배열**로 전제하고 인덱스로 읽는다.
+    // 짧거나 없는 배열이 들어오면 거기서 throw가 나 도구 전체가 죽는다 — 공포·탐욕
+    // 한 필드 때문에 시세·지표 답변을 통째로 잃을 이유는 없다.
+    const flow = indicators.buySellVolume;
+    if (!Array.isArray(flow) || flow.length < bars.length) return null;
+    const snapshot = computeFearGreedIndex([...bars], flow);
+    if (!snapshot) return null;
+    return {
+        score: snapshot.score,
+        label: snapshot.label,
+        confidence: snapshot.confidence,
+        groups: snapshot.groups.map(g => ({ name: g.name, score: g.score })),
+    };
+}
+
 export const getBarsIndicatorsTool: ToolExecutor = async args => {
     const symbol = String(args.symbol).toUpperCase();
     const timeframe = args.timeframe as Timeframe;
@@ -679,11 +791,13 @@ export const getBarsIndicatorsTool: ToolExecutor = async args => {
         htf?.timeframe ?? null
     );
     const higherTimeframe = higherTimeframeView(htf);
+    const pullback = pullbackView(bars, timeframe);
     const derived = computeDerived(bars, indicators, timeframe);
     // Client-serialization-boundary rounding only, same as
     // `getBarsAction.ts` — the cache still holds full-precision values.
     const latest = latestIndicators(roundIndicators(indicators));
     const candlePatterns = latestCandlePatterns(bars, timeframe);
+    const fearGreed = fearGreedView(bars, indicators, timeframe);
     const asOf = isoTimestamp(bars[bars.length - 1]!.time, timeframe);
 
     return fitBarsToBudget(
@@ -696,10 +810,12 @@ export const getBarsIndicatorsTool: ToolExecutor = async args => {
             trend,
             signals,
             confluence,
+            pullback,
             higherTimeframe,
             derived,
             latest,
             candlePatterns,
+            fearGreed,
             barsReturned: barsForOutput.length,
             barsTrimmed,
             bars: barsForOutput,

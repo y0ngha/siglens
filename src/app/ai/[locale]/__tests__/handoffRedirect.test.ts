@@ -43,6 +43,20 @@ describe('maybeHandoffRedirect', () => {
         );
     });
 
+    it('carries ad attribution params (gclid, utm_*) through next and drops the rest', async () => {
+        await expect(
+            maybeHandoffRedirect('ko', '/', {
+                gclid: 'G1',
+                utm_source: 'google',
+                utm_campaign: 'b',
+                foo: 'x',
+            })
+        ).rejects.toThrow('NEXT_REDIRECT');
+        expect(m.redirect).toHaveBeenCalledWith(
+            `/api/auth/handoff/start?next=${encodeURIComponent('/?gclid=G1&utm_source=google&utm_campaign=b')}`
+        );
+    });
+
     it('no session and no sso=none → redirects to the same-host start route with a locale-prefixed next', async () => {
         await expect(maybeHandoffRedirect('en', '/c/abc', {})).rejects.toThrow(
             'NEXT_REDIRECT'

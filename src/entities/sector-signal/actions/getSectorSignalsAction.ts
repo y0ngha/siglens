@@ -12,7 +12,7 @@ import {
 } from '@/shared/config/dashboard-tickers';
 import {
     dashboardScopeOf,
-    isDashboardScopeId,
+    isPageDashboardScopeId,
 } from '@/shared/config/dashboardScope';
 
 /**
@@ -37,11 +37,11 @@ export async function getSectorSignalsAction(
 ): Promise<SectorSignalsResult> {
     try {
         const legacyCall =
-            !isDashboardScopeId(scope) && isDashboardTimeframe(scope);
+            !isPageDashboardScopeId(scope) && isDashboardTimeframe(scope);
         const resolvedScopeId = legacyCall ? 'us' : scope;
         const resolvedTimeframe = legacyCall ? scope : timeframe;
 
-        if (!isDashboardScopeId(resolvedScopeId)) {
+        if (!isPageDashboardScopeId(resolvedScopeId)) {
             console.error(
                 '[getSectorSignalsAction] unknown scope:',
                 resolvedScopeId

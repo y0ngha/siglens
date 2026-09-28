@@ -45,7 +45,7 @@ const wrap = (ui: React.ReactElement) =>
 
 describe('MessageList', () => {
     // jsdom does not implement scrollIntoView; MessageList calls it on
-    // endRef in a useEffect (matches src/widgets/chat/__tests__/ChatPanel.test.tsx).
+    // endRef in a useEffect.
     // save/restore, mirroring the `navigator.clipboard`
     // pattern below — a global prototype patch with no restore leaks the
     // stub into every OTHER test file that runs later in the same process.

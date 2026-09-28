@@ -106,6 +106,23 @@ describe('resolveIndicatorLabels', () => {
         );
     });
 
+    /**
+     * 비-ko는 한국어 사전(`INDICATOR_NAME_KO`)이 없으므로 원본 영문명을 키·값
+     * 모두로 그대로 돌려준다 — DB 조회도, AI 트리거도 필요 없는 **의도된**
+     * 조기 반환이다.
+     */
+    it('비-ko 로케일은 사전/DB를 건너뛰고 원본 영문명을 그대로 반환한다', async () => {
+        const labels = await resolveIndicatorLabels(
+            [ev('Nonfarm Payrolls'), ev('Some Obscure Index YoY (May)')],
+            'en'
+        );
+        expect(labels).toEqual({
+            'Nonfarm Payrolls': 'Nonfarm Payrolls',
+            'Some Obscure Index YoY (May)': 'Some Obscure Index YoY (May)',
+        });
+        expect(findByNames).not.toHaveBeenCalled();
+    });
+
     it('builds a correct label map shape for mixed dict/DB/unknown names', async () => {
         findByNames.mockResolvedValue([
             {

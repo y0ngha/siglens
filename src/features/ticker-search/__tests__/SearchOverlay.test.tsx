@@ -155,6 +155,20 @@ describe('SearchOverlay', () => {
         });
     });
 
+    it('라벨 앞뒤 공백은 최근 검색에 트림되어 저장된다', async () => {
+        // `handleSelect`는 `normalizeLabel`을 통해서만 라벨을 넘긴다 — 이동(navigate)과
+        // 결착 후 이동(effect) 두 경로와 같은 정규화 지점을 공유하는지 확인한다.
+        recentState.recentSearches = [{ symbol: 'AAPL', label: '  애플  ' }];
+        renderOverlay();
+
+        await userEvent.click(screen.getByRole('button', { name: '애플' }));
+
+        expect(addSearchMock).toHaveBeenCalledWith({
+            symbol: 'AAPL',
+            label: '애플',
+        });
+    });
+
     it('이동할 때는 onClose가 아니라 onNavigate로 닫는다', async () => {
         // `onClose`는 `history.back()`으로 이어진다. `router.replace`가 우리 항목을
         // 목적지로 이미 대체했으므로, 여기서 back()이 돌면 **방금 한 이동이 취소된다**.
