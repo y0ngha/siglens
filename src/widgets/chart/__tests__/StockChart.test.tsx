@@ -639,6 +639,18 @@ describe('StockChart', () => {
         );
     });
 
+    it('renders the settings trigger in a header strip outside and above the chart canvas', () => {
+        render(<StockChart bars={mockBars} timeframe="1Day" />);
+        const modal = screen.getByTestId('indicator-settings-modal');
+        const canvas = screen.getByRole('img');
+
+        expect(canvas.contains(modal)).toBe(false);
+        expect(
+            modal.compareDocumentPosition(canvas) &
+                Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+    });
+
     it('removes chart on unmount', () => {
         const { unmount } = render(
             <StockChart bars={mockBars} timeframe="1Day" />
