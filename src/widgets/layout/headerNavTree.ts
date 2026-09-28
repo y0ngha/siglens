@@ -58,7 +58,7 @@ export interface NavVerticalNode extends Omit<NavVertical, 'regions'> {
 export const NAV_TREE: readonly NavVerticalNode[] = NAV_VERTICALS.map(
     vertical => ({
         ...vertical,
-        // 판정식은 `assetClassNav`가 소유한다 — 푸터(`NAV_OVERVIEW_LINKS`)와
+        // 판정식은 `assetClassNav`가 소유한다 — 푸터(`Footer`의 `columnOf`)와
         // 같은 규칙을 두 곳에 손으로 적어 두면 한쪽만 갱신된다.
         overview: hasRegionForRoot(vertical)
             ? null

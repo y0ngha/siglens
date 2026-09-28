@@ -1091,12 +1091,6 @@
                     }
                 },
                 "overviewAll": "All {v0}",
-                "overviewFull": {
-                    "economy": "Full Economy",
-                    "fear-greed": "Full Fear & Greed Index",
-                    "market": "Full Market Analysis",
-                    "news": "Full News"
-                },
                 "overviewToken": "All",
                 "region": {
                     "crypto": "Cryptocurrency",

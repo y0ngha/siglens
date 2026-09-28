@@ -21,7 +21,7 @@ export interface DatabaseConfig {
 export type SiglensDatabase = NeonHttpDatabase<typeof schema>;
 
 /** @internal Raw Neon serverless SQL client — access via DatabaseClient['sql']. */
-export type NeonSqlClient = NeonQueryFunction<false, false>;
+type NeonSqlClient = NeonQueryFunction<false, false>;
 
 /** Bundled handle exposing both the Drizzle ORM layer and the raw SQL client. */
 export interface DatabaseClient {
@@ -153,8 +153,6 @@ export interface SessionRepository {
     createSession(input: CreateSessionInput): Promise<AuthSessionRecord>;
     findSession(sessionToken: string): Promise<AuthSessionRecord | null>;
     deleteSession(sessionToken: string): Promise<boolean>;
-    /** Bulk-delete sessions where `expiresAt < now`; returns deleted count. Intended for cron/admin routes only — never on the request hot path. */
-    deleteExpiredSessions(now?: Date): Promise<number>;
 }
 
 /** Persistence operations for the OAuth account store. */
@@ -165,7 +163,6 @@ export interface OAuthAccountRepository {
 /** Persistence operations required by tier-gating use-cases. */
 export interface UserTierRepository {
     getUserTier(userId: string): Promise<Tier | null>;
-    updateUserTier(userId: string, tier: Tier): Promise<Tier | null>;
 }
 
 /**

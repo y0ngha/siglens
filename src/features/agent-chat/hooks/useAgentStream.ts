@@ -51,12 +51,12 @@ export interface AgentUiMessage {
 const DRAFT_MIN_CHARS = 120;
 
 /** Daily allowance left; `null` = no daily limit for this tier (core `AgentRemaining`). */
-export interface AgentRemaining {
+interface AgentRemaining {
     turns: number | null;
     fresh: number | null;
     search: number | null;
 }
-export type StreamStatus = 'idle' | 'streaming' | 'error';
+type StreamStatus = 'idle' | 'streaming' | 'error';
 interface Options {
     conversationId: string | null;
     initialMessages: ChatMessageView[];

@@ -1,11 +1,7 @@
 import { createHash } from 'crypto';
-import type {
-    EarningsReport,
-    NewsItem,
-    NewsTimeRange,
-} from '@y0ngha/siglens-core';
+import type { NewsItem, NewsTimeRange } from '@y0ngha/siglens-core';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
-import type { RawFmpEarningsReport, RawFmpNews } from '@/shared/api/fmp/types';
+import type { RawFmpNews } from '@/shared/api/fmp/types';
 import { MS_PER_HOUR } from '@/shared/config/time';
 import { detectTruncatedBody } from './detectTruncatedBody';
 
@@ -133,14 +129,6 @@ export function hashUrlToId(url: string): string {
     return createHash('sha256').update(url).digest('base64url').slice(0, 32);
 }
 
-function toEarningsDate(value: RawFmpEarningsReport): string | null {
-    return typeof value.date === 'string'
-        ? value.date
-        : typeof value.earningsDate === 'string'
-          ? value.earningsDate
-          : null;
-}
-
 /** Maximum article count for a single `fetchNewsForPeriod` request. */
 const LONG_PERIOD_LIMIT = 1000;
 
@@ -186,7 +174,7 @@ function mapRawToNewsItem(raw: RawFmpNews, publishedAt: string): NewsItem {
     };
 }
 
-/** FMP adapter for news and earnings data. Uses `fmpGet` for all HTTP calls. */
+/** FMP adapter for news data. Uses `fmpGet` for all HTTP calls. */
 export class FmpNewsClient {
     /**
      * @param newsSource - FMP news path segment to use. 'stock' hits `news/stock` (default,
@@ -238,20 +226,5 @@ export class FmpNewsClient {
                     n.publishedAt !== null && new Date(n.publishedAt) >= cutoff
             )
             .map(({ raw, publishedAt }) => mapRawToNewsItem(raw, publishedAt));
-    }
-
-    /** Fetch the latest earnings report for a symbol; returns `null` when unavailable. */
-    async fetchEarningsReport(symbol: string): Promise<EarningsReport | null> {
-        const raw = await fmpGet<RawFmpEarningsReport[]>('earnings', {
-            symbol,
-        });
-        const r = raw[0];
-        if (!r) return null;
-        const earningsDate = toEarningsDate(r);
-        if (earningsDate === null) return null;
-        return {
-            symbol: r.symbol,
-            earningsDate,
-        };
     }
 }

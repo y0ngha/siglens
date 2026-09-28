@@ -10,7 +10,6 @@
 
 export type {
     AnalysisGateBlockedResult,
-    AnalysisGateError,
     AnalysisGateErrorCode,
 } from '@/shared/lib/types';
 

@@ -60,19 +60,18 @@ interface TreasuryCardMeta {
  * 만기별 국채 수익률 카드의 표시 메타.
  * 인라인 삼항 대신 레코드로 추출해 새 만기 추가 시 단일 위치만 수정한다.
  */
-export const TREASURY_CARD_META: Record<'year2' | 'year10', TreasuryCardMeta> =
-    {
-        year2: {
-            labelKey: 'year2Label',
-            tooltipKey: 'year2Desc',
-            unit: '%',
-        },
-        year10: {
-            labelKey: 'year10Label',
-            tooltipKey: 'year10Desc',
-            unit: '%',
-        },
-    };
+const TREASURY_CARD_META: Record<'year2' | 'year10', TreasuryCardMeta> = {
+    year2: {
+        labelKey: 'year2Label',
+        tooltipKey: 'year2Desc',
+        unit: '%',
+    },
+    year10: {
+        labelKey: 'year10Label',
+        tooltipKey: 'year10Desc',
+        unit: '%',
+    },
+};
 
 interface EconomicIndicatorGridProps {
     snapshot: EconomySnapshot;

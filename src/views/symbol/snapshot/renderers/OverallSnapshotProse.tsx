@@ -37,7 +37,6 @@ interface OverallSnapshotProseProps {
     plain?: string | null;
 }
 
-export { narrowOverallContent } from './overallContent';
 export { hasOverallProse } from './overallContent';
 
 /**

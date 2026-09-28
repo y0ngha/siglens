@@ -8,7 +8,6 @@ vi.mock('../LegalBreadcrumb', () => ({
     ),
 }));
 
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 
 import { LegalPageShell } from '../LegalPageShell';

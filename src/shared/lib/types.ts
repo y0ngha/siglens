@@ -25,7 +25,7 @@ export type OAuthProvider = 'google' | 'kakao' | 'apple';
 export type SupportedOAuthProvider = Extract<OAuthProvider, 'google'>;
 
 /** Common ticker fields shared by listing/search results. */
-export interface TickerBase {
+interface TickerBase {
     /** Canonical ticker symbol (uppercase). */
     symbol: string;
     /** English company name. */
@@ -273,7 +273,7 @@ export interface EarningsReportComparisonItem {
 }
 
 /** UI-only system message emitted on chatbot page-context switch; filtered out before LLM prompt construction. */
-export interface ContextSwitchMessage {
+interface ContextSwitchMessage {
     role: 'system';
     kind: 'context_switch';
     /** Korean label of the page the chatbot context switched to. */

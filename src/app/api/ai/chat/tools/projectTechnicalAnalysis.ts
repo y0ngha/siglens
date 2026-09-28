@@ -18,7 +18,7 @@ import { fitProse, type ProseSpec } from './fitProse';
 type ProjectableAnalysis = AnalysisResponse | FilteredAnalysisResponse;
 
 /** One capped, confidence-sorted entry of `ProjectedTechnicalAnalysis['patterns']`. */
-export interface ProjectedPatternSummary {
+interface ProjectedPatternSummary {
     name: string;
     trend: Trend;
     confidence: number;
@@ -26,14 +26,14 @@ export interface ProjectedPatternSummary {
 }
 
 /** One capped entry of `ProjectedTechnicalAnalysis['candlePatterns']` (the AI analysis's own candle-pattern verdicts — distinct from `BarCandlePattern` in `getBarsIndicators.ts`, which is raw bar-level pattern detection). */
-export interface ProjectedCandlePatternSummary {
+interface ProjectedCandlePatternSummary {
     name: string;
     trend: Trend;
     summary: string;
 }
 
 /** One capped, confidence-sorted entry of `ProjectedTechnicalAnalysis['strategies']`. */
-export interface ProjectedStrategySummary {
+interface ProjectedStrategySummary {
     name: string;
     trend: Trend;
     summary: string;

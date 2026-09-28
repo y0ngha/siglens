@@ -2,7 +2,7 @@ import type { SkillShowcaseItem, SkillType } from '@y0ngha/siglens-core';
 import { countSkillsByType } from './skillUtils';
 
 /** `shared.lib.skillStats.count`의 서브키 — 'total' 또는 SkillType. */
-export type SkillStatKey = SkillType | 'total';
+type SkillStatKey = SkillType | 'total';
 
 export interface SkillStat {
     key: SkillStatKey;

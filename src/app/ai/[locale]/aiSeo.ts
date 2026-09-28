@@ -22,11 +22,11 @@ export const AI_PRODUCT_NAME = 'SIGLENS AI';
 export type { AiSeoCopy };
 
 /** Absolute ai-host URL of `path` in `locale` (`/` is the chat home). */
-export function aiUrl(locale: Locale, path: string): string {
+function aiUrl(locale: Locale, path: string): string {
     return `${AI_SITE_URL}${localePath(locale, path)}`;
 }
 
-export function aiHomeUrl(locale: Locale): string {
+function aiHomeUrl(locale: Locale): string {
     return aiUrl(locale, '/');
 }
 

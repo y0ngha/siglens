@@ -295,11 +295,4 @@ describe('NaverNewsClient', () => {
             new NaverNewsClient(resolveQuery).fetchNews(SYMBOL, '7d')
         ).resolves.toEqual([]);
     });
-
-    it('does not fabricate an earnings calendar', async () => {
-        // 국내 실적 일정은 네이버 검색 API에 없다 — 추정 값을 채우면 잘못된 발표일이 박힌다.
-        await expect(
-            new NaverNewsClient(resolveQuery).fetchEarningsReport()
-        ).resolves.toBeNull();
-    });
 });

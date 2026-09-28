@@ -1091,12 +1091,6 @@
                     }
                 },
                 "overviewAll": "{v0} 전체",
-                "overviewFull": {
-                    "economy": "경제 전체",
-                    "fear-greed": "공포·탐욕 지수 전체",
-                    "market": "시장 분석 전체",
-                    "news": "뉴스 전체"
-                },
                 "overviewToken": "전체",
                 "region": {
                     "crypto": "암호화폐",

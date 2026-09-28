@@ -2,7 +2,7 @@ import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 
 /** `widgets.financials.section` 키 — 두 위젯이 같은 문구를 쓴다. */
-export const EMPTY_MESSAGE_KEY = 'emptySection';
+const EMPTY_MESSAGE_KEY = 'emptySection';
 
 interface EmptySectionCardProps {
     headingId: string;

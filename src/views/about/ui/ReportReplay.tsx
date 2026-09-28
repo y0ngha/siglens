@@ -14,7 +14,7 @@ import {
     ReplaySteps,
 } from '@/shared/ui/ReplayParts';
 
-export interface ReportReplayLabels {
+interface ReportReplayLabels {
     /** `SITE_HOST`, passed down so this client module doesn't pull in `shared/lib/seo`. */
     readonly host: string;
     readonly region: string;

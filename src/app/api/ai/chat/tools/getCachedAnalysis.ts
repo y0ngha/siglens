@@ -291,7 +291,7 @@ function levelsBrokenFrom(
     return [...brokenSupport, ...brokenResistance];
 }
 
-export interface SinceAnalysis {
+interface SinceAnalysis {
     analysisPrice: number | null;
     priceNow: number;
     movePct: number | null;

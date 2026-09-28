@@ -42,7 +42,6 @@ interface FundamentalSnapshotProseProps {
     plain?: string | null;
 }
 
-export { narrowFundamentalContent } from './fundamentalContent';
 export { hasFundamentalProse } from './fundamentalContent';
 
 /**

@@ -42,7 +42,6 @@ interface FinancialsSnapshotProseProps {
     plain?: string | null;
 }
 
-export { narrowFinancialsContent } from './financialsContent';
 export { hasFinancialsProse } from './financialsContent';
 
 /**

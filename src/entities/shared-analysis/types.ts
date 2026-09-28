@@ -36,7 +36,7 @@ export const MAX_CHART_BARS = 400;
 export type { ShareableKind };
 
 /** kind → 그 탭의 분석 결과 타입. */
-export interface ShareResultMap {
+interface ShareResultMap {
     chart: AnalysisResponse;
     overall: OverallAnalysisResponse;
     news: NewsAnalysisResponse;

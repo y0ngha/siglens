@@ -9,7 +9,7 @@ import { symbolLabel } from './symbolLabel';
  * 이름을 아는 종목은 `자산명 (티커)`, 모르면 티커만이다 — 옛 판(`티커 한글명`)은
  * 이름이 있는 줄과 없는 줄이 서로 다른 모양이 돼 목록이 들쭉날쭉했다.
  */
-export interface SymbolDirectoryItem {
+interface SymbolDirectoryItem {
     readonly symbol: string;
     readonly label: string;
 }

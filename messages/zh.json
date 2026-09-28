@@ -1091,12 +1091,6 @@
                     }
                 },
                 "overviewAll": "{v0} 全部",
-                "overviewFull": {
-                    "economy": "经济整体",
-                    "fear-greed": "恐惧与贪婪指数整体",
-                    "market": "市场分析整体",
-                    "news": "新闻整体"
-                },
                 "overviewToken": "全部",
                 "region": {
                     "crypto": "加密货币",

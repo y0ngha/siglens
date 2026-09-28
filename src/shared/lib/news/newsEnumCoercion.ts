@@ -36,13 +36,13 @@ const NEWS_IMPACT_RECORD: Record<NewsImpact, true> = {
     negligible: true,
 };
 
-export function isNewsSentiment(value: string): value is NewsSentiment {
+function isNewsSentiment(value: string): value is NewsSentiment {
     return value in NEWS_SENTIMENT_RECORD;
 }
-export function isNewsCategory(value: string): value is NewsCategory {
+function isNewsCategory(value: string): value is NewsCategory {
     return value in NEWS_CATEGORY_RECORD;
 }
-export function isNewsImpact(value: string): value is NewsImpact {
+function isNewsImpact(value: string): value is NewsImpact {
     return value in NEWS_IMPACT_RECORD;
 }
 

@@ -14,7 +14,7 @@ import {
     ReplaySteps,
 } from '@/shared/ui/ReplayParts';
 
-export interface ChatReplayLabels {
+interface ChatReplayLabels {
     readonly region: string;
     readonly pause: string;
     readonly resume: string;

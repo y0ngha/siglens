@@ -86,7 +86,7 @@ const TOTAL_BUDGET_MS = 90_000;
 const MIN_PAGE_BUDGET_MS = 1_000;
 
 /** 시장 구분 값. `mrktCtg` 필드가 이 셋 중 하나로 온다. */
-export type KrxMarket = 'KOSPI' | 'KOSDAQ' | 'KONEX';
+type KrxMarket = 'KOSPI' | 'KOSDAQ' | 'KONEX';
 
 export interface KrxListedItem {
     /** 단축코드 6자리(예: `005930`). 거래소 접미사는 붙어 있지 않다. */

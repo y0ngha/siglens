@@ -1,8 +1,4 @@
-import type {
-    EarningsReport,
-    NewsItem,
-    NewsTimeRange,
-} from '@y0ngha/siglens-core';
+import type { NewsItem, NewsTimeRange } from '@y0ngha/siglens-core';
 import type { NewsClientPort } from './newsClientPort';
 import { computeCutoff, hashUrlToId } from './fmpNewsClient';
 import { detectTruncatedBody } from './detectTruncatedBody';
@@ -68,14 +64,6 @@ export class NaverNewsClient implements NewsClientPort {
             NAVER_MAX_DISPLAY,
             new Date(Date.now() - lookbackMs)
         );
-    }
-
-    /**
-     * 국내 실적 발표 일정은 네이버 검색 API에 없다. 캘린더 데이터를 추정으로 채우면
-     * 잘못된 발표일이 화면에 박히므로 명시적으로 제공하지 않는다.
-     */
-    async fetchEarningsReport(): Promise<EarningsReport | null> {
-        return null;
     }
 
     private async search(

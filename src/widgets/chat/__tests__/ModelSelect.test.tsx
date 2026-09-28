@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ModelSelect } from '@/widgets/chat/ModelSelect';
 import type { ModelOption } from '@/widgets/chat/ModelSelect';

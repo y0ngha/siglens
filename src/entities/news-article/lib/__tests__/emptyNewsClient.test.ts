@@ -23,10 +23,4 @@ describe('EMPTY_NEWS_CLIENT', () => {
             EMPTY_NEWS_CLIENT.fetchNewsForPeriod('005930.KS', 0)
         ).resolves.toEqual([]);
     });
-
-    it('fetchEarningsReport resolves to null (no earnings source configured)', async () => {
-        await expect(
-            EMPTY_NEWS_CLIENT.fetchEarningsReport('005930.KS')
-        ).resolves.toBeNull();
-    });
 });

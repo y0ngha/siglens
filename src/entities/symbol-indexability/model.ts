@@ -44,7 +44,7 @@ export interface SymbolIndexabilityInput {
     hasPriceData?: boolean;
 }
 
-export type SymbolIndexabilityReason =
+type SymbolIndexabilityReason =
     | 'popular'
     | 'curated-crypto'
     | 'approved-longtail'

@@ -104,26 +104,6 @@ describe('FmpNewsClient malformed data handling', () => {
         );
     });
 
-    it('returns null for earnings when response is empty', async () => {
-        mockFmpGet.mockResolvedValue([]);
-
-        const result = await client.fetchEarningsReport('AAPL');
-
-        expect(result).toBeNull();
-    });
-
-    it('returns null for earnings when date fields are missing', async () => {
-        mockFmpGet.mockResolvedValue([
-            {
-                symbol: 'AAPL',
-            },
-        ]);
-
-        const result = await client.fetchEarningsReport('AAPL');
-
-        expect(result).toBeNull();
-    });
-
     describe('normalizeFmpPublishedDate', () => {
         it('throws for completely invalid date', () => {
             expect(() => normalizeFmpPublishedDate('not-a-date')).toThrow(

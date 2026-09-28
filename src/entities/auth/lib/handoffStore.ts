@@ -19,7 +19,7 @@ import { isSecureCookieEnv } from './sessionCookieOptions';
 import type { ResponseCookie } from './types';
 
 /** One-time code lifetime. The code only has to survive one 302 hop (spec §8). */
-export const HANDOFF_TTL_SECONDS = 60;
+const HANDOFF_TTL_SECONDS = 60;
 
 /**
  * Lifetime of the ai-host SSO state cookie. It spans start → (main

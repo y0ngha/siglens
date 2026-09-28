@@ -36,7 +36,6 @@ interface NewsSnapshotProseProps {
     plain?: string | null;
 }
 
-export { narrowNewsContent } from './newsContent';
 export { hasNewsProse } from './newsContent';
 
 /**

@@ -12,5 +12,4 @@ import type { NewsClientPort } from './newsClientPort';
 export const EMPTY_NEWS_CLIENT: NewsClientPort = {
     fetchNews: async () => [],
     fetchNewsForPeriod: async () => [],
-    fetchEarningsReport: async () => null,
 };

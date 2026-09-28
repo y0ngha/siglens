@@ -15,7 +15,7 @@ export type AnalysisViewMode = 'plain' | 'raw';
 export const ANALYSIS_VIEW_STORAGE_KEY = 'siglens:analysis-view';
 
 /** 기본값은 쉽게보기다. */
-export const DEFAULT_ANALYSIS_VIEW: AnalysisViewMode = 'plain';
+const DEFAULT_ANALYSIS_VIEW: AnalysisViewMode = 'plain';
 
 /**
  * 표시 모드 훅.

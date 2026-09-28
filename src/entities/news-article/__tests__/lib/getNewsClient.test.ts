@@ -26,7 +26,6 @@ describe('getNewsClient', () => {
         const client = getNewsClient();
         expect(typeof client.fetchNews).toBe('function');
         expect(typeof client.fetchNewsForPeriod).toBe('function');
-        expect(typeof client.fetchEarningsReport).toBe('function');
     });
 
     // --- crypto branch singleton isolation (Required #3) ---

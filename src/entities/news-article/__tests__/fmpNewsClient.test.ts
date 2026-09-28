@@ -437,45 +437,6 @@ describe('FmpNewsClient', () => {
             expect(result[0]!.titleEn).toBe('Apple within period');
         });
     });
-
-    describe('fetchEarningsReport', () => {
-        it('returns the first earnings report', async () => {
-            mockOk([
-                { symbol: 'AAPL', date: '2024-08-01' },
-                { symbol: 'AAPL', date: '2024-05-02' },
-            ]);
-            const client = new FmpNewsClient();
-            const result = await client.fetchEarningsReport('AAPL');
-            expect(result).toEqual({
-                symbol: 'AAPL',
-                earningsDate: '2024-08-01',
-            });
-        });
-
-        it('supports legacy earningsDate field name', async () => {
-            mockOk([{ symbol: 'AAPL', earningsDate: '2024-08-01' }]);
-            const client = new FmpNewsClient();
-            expect(await client.fetchEarningsReport('AAPL')).toEqual({
-                symbol: 'AAPL',
-                earningsDate: '2024-08-01',
-            });
-        });
-
-        it('returns null when array is empty', async () => {
-            mockOk([]);
-            const client = new FmpNewsClient();
-            expect(await client.fetchEarningsReport('X')).toBeNull();
-        });
-
-        it('passes symbol and apikey in the URL', async () => {
-            mockOk([{ symbol: 'MSFT', earningsDate: '2024-07-25' }]);
-            const client = new FmpNewsClient();
-            await client.fetchEarningsReport('MSFT');
-            const url: string = mockFetch.mock.calls[0][0] as string;
-            expect(url).toContain('symbol=MSFT');
-            expect(url).toContain(`apikey=${TEST_API_KEY}`);
-        });
-    });
 });
 
 describe('FmpNewsClient — null site fallback (F2)', () => {

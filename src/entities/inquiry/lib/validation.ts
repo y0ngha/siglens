@@ -9,7 +9,7 @@ import type {
     ContactFormValues,
 } from '@/shared/lib/types';
 
-export interface ValidationSuccess {
+interface ValidationSuccess {
     ok: true;
     values: ContactFormValues;
 }

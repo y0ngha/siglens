@@ -1091,12 +1091,6 @@
                     }
                 },
                 "overviewAll": "{v0} すべて",
-                "overviewFull": {
-                    "economy": "経済全体",
-                    "fear-greed": "恐怖・強欲指数全体",
-                    "market": "市場分析全体",
-                    "news": "ニュース全体"
-                },
                 "overviewToken": "すべて",
                 "region": {
                     "crypto": "暗号資産",

@@ -25,13 +25,4 @@ describe('FakeNewsClient', () => {
         expect(items.length).toBeGreaterThan(0);
         expect(items.every(i => i.symbol === 'TSLA')).toBe(true);
     });
-
-    it('fetchEarningsReport returns a deterministic report for the requested symbol', async () => {
-        const report = await client.fetchEarningsReport('aapl');
-
-        expect(report).toEqual({
-            symbol: 'AAPL',
-            earningsDate: '2026-07-30',
-        });
-    });
 });

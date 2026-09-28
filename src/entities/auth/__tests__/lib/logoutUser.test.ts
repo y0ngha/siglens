@@ -14,7 +14,6 @@ function makeDependencies(sessionInvalidated: boolean): {
                 createSession: vi.fn(),
                 findSession: vi.fn(),
                 deleteSession,
-                deleteExpiredSessions: vi.fn(),
             },
         },
         deleteSession,

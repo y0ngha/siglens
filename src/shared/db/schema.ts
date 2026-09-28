@@ -819,7 +819,7 @@ export const seoAnalysisSnapshots = pgTable(
 export const contentTranslations = pgTable(
     'content_translations',
     {
-        /** 원본 테이블 식별자. `TRANSLATABLE_ENTITY_VALUES` 참조. */
+        /** 원본 테이블 식별자. `TRANSLATABLE_ENTITY` 참조. */
         entity: text('entity').notNull(),
         /** 원본 행의 PK를 문자열로. uuid·text·복합키 모두 문자열로 정규화한다. */
         entityId: text('entity_id').notNull(),

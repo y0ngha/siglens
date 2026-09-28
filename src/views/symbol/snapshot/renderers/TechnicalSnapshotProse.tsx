@@ -35,9 +35,6 @@ interface TechnicalSnapshotProseProps {
     duplicatesLiveWidget?: boolean;
 }
 
-export { narrowTechnicalContent } from './technicalContent';
-export { hasTechnicalProse } from './technicalContent';
-
 /**
  * SEO pre-warm 스냅샷의 technical 탭 프로즈 렌더러 — 7개 탭 렌더러가 따를
  * 첫 패턴(spec 2026-07-24 Task 4). `summary`(Korean 멀티토픽 요약, `\n`으로

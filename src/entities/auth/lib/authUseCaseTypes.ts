@@ -18,23 +18,13 @@ import type { EmailDispatcher, EmailMessage } from '@/shared/email/types';
 import type { EmailTokenStore } from '@/entities/email-token/api';
 import type {
     ConfirmPasswordResetError,
-    ConfirmPasswordResetErrorCode,
     DeleteAccountErrorCode,
     LoginUserErrorCode,
     RegisterUserError,
-    RegisterUserErrorCode,
     VerifyEmailErrorCode,
 } from '@/shared/lib/auth/types';
 
-export type {
-    ConfirmPasswordResetError,
-    ConfirmPasswordResetErrorCode,
-    DeleteAccountErrorCode,
-    LoginUserErrorCode,
-    RegisterUserError,
-    RegisterUserErrorCode,
-    VerifyEmailErrorCode,
-};
+export type { ConfirmPasswordResetError, RegisterUserError };
 
 export interface SocialLoginUserInput {
     provider: OAuthProvider;
@@ -75,8 +65,6 @@ export interface LoginUserError {
     code: LoginUserErrorCode;
     message: string;
 }
-
-export type { AuthSessionCookie };
 
 interface AuthSessionOptions {
     now?: Date;

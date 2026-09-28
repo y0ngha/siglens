@@ -27,7 +27,7 @@ export function lastCompletedEtCloseWithBuffer(now: Date): Date {
 }
 
 /** "가장 최근에 완료된 KRX 정규장 마감(15:30 KST)" — 같은 정착 버퍼를 쓴다. */
-export function lastCompletedKrCloseWithBuffer(now: Date): Date {
+function lastCompletedKrCloseWithBuffer(now: Date): Date {
     return lastClosedSessionCloseUtc(
         KR_EQUITY_SESSION,
         now,
@@ -77,7 +77,7 @@ export function snapshotCloseBoundaryFor(symbol: string, now: Date): Date {
  * 않아 prewarm cron이 어차피 그 시간대엔 한가하고, LLM 프로바이더가 주말 시간대를
  * 비피크 요금으로 매기기 때문에 그 창을 쓰는 편이 낫다.
  */
-export const SLOW_REFRESH_TABS: ReadonlySet<SeoSnapshotTab> = new Set([
+const SLOW_REFRESH_TABS: ReadonlySet<SeoSnapshotTab> = new Set([
     'fundamental',
     'financials',
     'congress',

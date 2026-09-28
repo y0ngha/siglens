@@ -132,7 +132,6 @@ interface UseAnalysisOptions {
 
 // symbol-page → analysis는 허용된 하향 의존(cross-widget cross-import).
 import type { CooldownNotice } from '@/widgets/analysis/model/types';
-export type { CooldownNotice } from '@/widgets/analysis/model/types';
 
 export interface UseAnalysisResult {
     analysis: AnalysisResponse;

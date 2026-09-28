@@ -5,7 +5,7 @@ import { SITE_URL } from '@/shared/lib/seo';
 export const LP_PRIMARY_BUTTON =
     'inline-flex min-h-11 items-center justify-center rounded-lg bg-primary-600 px-6 text-sm font-semibold text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-900 focus-visible:outline-none';
 
-export const LP_DISCLAIMER =
+const LP_DISCLAIMER =
     '투자 권유가 아닌 참고용 정보입니다. 투자 판단은 본인 책임입니다.';
 
 interface LpShellProps {

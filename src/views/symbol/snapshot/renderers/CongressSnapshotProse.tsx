@@ -37,7 +37,6 @@ interface CongressSnapshotProseProps {
     plain?: string | null;
 }
 
-export { narrowCongressContent } from './congressContent';
 export { hasCongressProse } from './congressContent';
 
 /**

@@ -12,7 +12,7 @@ import {
     type OpenAiCompatibleUsageLike,
 } from '../../lib/usage';
 
-export const AGENT_JOB_ID = 'agent';
+const AGENT_JOB_ID = 'agent';
 
 /** `CallAgentProviderOptions` plus the provider-specific model id the router resolved. */
 export type AgentAdapterOptions = CallAgentProviderOptions & {

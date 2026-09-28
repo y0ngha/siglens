@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { KrEconomicIndicatorGrid } from '../KrEconomicIndicatorGrid';
 import type { KrIndicatorCard } from '@/entities/economy/api/getKrIndicatorCards';

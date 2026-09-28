@@ -10,12 +10,11 @@ describe('useTabs', () => {
         onChange.mockClear();
     });
 
-    it('returns getTabProps and getPanelProps functions', () => {
+    it('returns a getTabProps function', () => {
         const { result } = renderHook(() =>
             useTabs({ tabs, activeTab: 'tab1', onChange, idPrefix: 'test' })
         );
         expect(typeof result.current.getTabProps).toBe('function');
-        expect(typeof result.current.getPanelProps).toBe('function');
     });
 
     describe('getTabProps', () => {
@@ -61,32 +60,6 @@ describe('useTabs', () => {
             );
             result.current.getTabProps('tab2').onClick();
             expect(onChange).toHaveBeenCalledWith('tab2');
-        });
-    });
-
-    describe('getPanelProps', () => {
-        it('returns role="tabpanel"', () => {
-            const { result } = renderHook(() =>
-                useTabs({ tabs, activeTab: 'tab1', onChange, idPrefix: 'test' })
-            );
-            expect(result.current.getPanelProps('tab1').role).toBe('tabpanel');
-        });
-
-        it('sets hidden=false for active tab panel', () => {
-            const { result } = renderHook(() =>
-                useTabs({ tabs, activeTab: 'tab1', onChange, idPrefix: 'test' })
-            );
-            expect(result.current.getPanelProps('tab1').hidden).toBe(false);
-            expect(result.current.getPanelProps('tab2').hidden).toBe(true);
-        });
-
-        it('sets correct id and aria-labelledby', () => {
-            const { result } = renderHook(() =>
-                useTabs({ tabs, activeTab: 'tab1', onChange, idPrefix: 'pf' })
-            );
-            const props = result.current.getPanelProps('tab1');
-            expect(props.id).toBe('pf-panel-tab1');
-            expect(props['aria-labelledby']).toBe('pf-tab-tab1');
         });
     });
 });

@@ -228,7 +228,8 @@ export const INDICATOR_REGISTRY: readonly IndicatorMeta[] = [
 ];
 
 /**
- * key → meta 조회 맵. StockChart binding 조립에서 사용.
+ * key → meta 조회 맵. 테스트가 binding fixture를 조립할 때 쓴다(StockChart는
+ * `INDICATOR_REGISTRY`를 직접 순회한다).
  *
  * `Object.fromEntries`의 반환 타입은 `Record<string, IndicatorMeta>`로 넓어지므로
  * `as` 캐스트가 필요하다. INDICATOR_REGISTRY가 IndicatorKey 멤버를 정확히

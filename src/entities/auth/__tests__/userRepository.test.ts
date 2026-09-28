@@ -622,47 +622,6 @@ describe('DrizzleUserRepository', () => {
         expect(result).toBeNull();
     });
 
-    it('updates a user tier and returns the persisted tier', async () => {
-        const { db, update, set, where, returning } = makeUpdateDb([
-            { tier: 'pro' },
-        ]);
-        const repository = new DrizzleUserRepository(db);
-
-        const result = await repository.updateUserTier('user-1', 'pro');
-
-        expect(update).toHaveBeenCalledWith(expect.any(Object));
-        expect(set).toHaveBeenCalledWith(
-            expect.objectContaining({
-                tier: 'pro',
-                updatedAt: expect.anything(),
-            })
-        );
-        expect(where).toHaveBeenCalledWith(expect.any(Object));
-        expect(returning).toHaveBeenCalledWith({ tier: expect.any(Object) });
-        expect(result).toBe('pro');
-    });
-
-    it('updateUserTier 는 updatedAt 을 명시적으로 set 한다 (timestamp advances on update)', async () => {
-        const { db, set } = makeUpdateDb([{ tier: 'pro' }]);
-        const repository = new DrizzleUserRepository(db);
-        await repository.updateUserTier('user-1', 'pro');
-        const passedSet = set.mock.calls[0][0] as Record<string, unknown>;
-        expect(passedSet).toHaveProperty('updatedAt');
-        expect(passedSet.updatedAt).toBeDefined();
-    });
-
-    it('returns null when no user tier is updated', async () => {
-        const { db } = makeUpdateDb([]);
-        const repository = new DrizzleUserRepository(db);
-
-        const result = await repository.updateUserTier(
-            'missing-user',
-            'member'
-        );
-
-        expect(result).toBeNull();
-    });
-
     it('updates the password hash and returns true when a row matches', async () => {
         const { db, update, set, where } = makeUpdateDb([{ id: 'user-1' }]);
         const repository = new DrizzleUserRepository(db);

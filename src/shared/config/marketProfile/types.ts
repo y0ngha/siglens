@@ -29,7 +29,7 @@ export type MarketProfileId = 'us-equity' | 'crypto' | 'kr-equity';
 export type AssetClass = 'equity' | 'crypto';
 
 /** Market/region axis. Drives currency, session, language, data provider. */
-export type MarketRegion = 'us' | 'global' | 'kr';
+type MarketRegion = 'us' | 'global' | 'kr';
 
 /**
  * Interim session model (siglens-local). Each `MarketProfileDescriptor` carries
@@ -85,8 +85,6 @@ export interface MarketProfileDescriptor {
     quoteDelayMinutes: number;
 
     dataProvider: 'fmp' | 'yahoo';
-    /** Canonical symbol → provider symbol. Crypto and kr-equity = passthrough. */
-    toProviderSymbol: (canonical: string) => string;
     newsSource: NewsSource;
 
     /** US equity exchange whitelist; `null` = no exchange filter (crypto, kr-equity). */

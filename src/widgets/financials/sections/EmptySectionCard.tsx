@@ -1,7 +1,7 @@
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { cn } from '@/shared/lib/cn';
 import { useTranslations } from 'next-intl';
-export const EMPTY_MESSAGE_KEY = 'emptySection';
+const EMPTY_MESSAGE_KEY = 'emptySection';
 
 interface EmptySectionCardProps {
     title: string;

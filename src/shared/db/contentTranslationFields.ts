@@ -36,10 +36,6 @@ export const TRANSLATABLE_ENTITY = {
 export type TranslatableEntity =
     (typeof TRANSLATABLE_ENTITY)[keyof typeof TRANSLATABLE_ENTITY];
 
-export const TRANSLATABLE_ENTITY_VALUES = Object.values(
-    TRANSLATABLE_ENTITY
-) as readonly TranslatableEntity[];
-
 /**
  * 엔티티별 번역 대상 필드.
  *
@@ -65,7 +61,7 @@ export const TRANSLATION_SOURCE = {
 export type TranslationSource =
     (typeof TRANSLATION_SOURCE)[keyof typeof TRANSLATION_SOURCE];
 
-export const TRANSLATION_SOURCE_VALUES = Object.values(
+const TRANSLATION_SOURCE_VALUES = Object.values(
     TRANSLATION_SOURCE
 ) as readonly TranslationSource[];
 

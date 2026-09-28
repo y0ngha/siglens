@@ -6,7 +6,7 @@ import path from 'node:path';
 const require = createRequire(import.meta.url);
 const { parse } = require('@babel/parser');
 
-export const HANGUL = /[가-힣]/;
+const HANGUL = /[가-힣]/;
 
 /** 키 해시 길이. 현재 1,071키 규모에서 충돌 확률은 무시할 수준이고, 충돌 시 `keyFor`가 늘린다. */
 const HASH_LENGTH = 6;

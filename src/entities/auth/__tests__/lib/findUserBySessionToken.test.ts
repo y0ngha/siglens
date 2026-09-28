@@ -61,7 +61,6 @@ function makeDependencies(options: {
                 createSession: vi.fn(),
                 findSession,
                 deleteSession: vi.fn(),
-                deleteExpiredSessions: vi.fn(),
             },
         },
         findSession,

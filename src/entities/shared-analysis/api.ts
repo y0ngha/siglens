@@ -41,7 +41,7 @@ export interface CreateRecord {
     locale: Locale;
 }
 
-export interface SharedAnalysisRepository {
+interface SharedAnalysisRepository {
     create(record: CreateRecord): Promise<string>;
     findById(id: string): Promise<SharedAnalysisRow | null>;
 }
