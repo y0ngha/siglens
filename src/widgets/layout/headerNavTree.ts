@@ -7,13 +7,13 @@ import {
 import { CATEGORY_CONFIG, categoriesInRegion } from '@/entities/market-news';
 
 /** 지역 안에서 한 번에 갈 수 있는 최종 목적지. */
-export interface NavLeafLink {
+interface NavLeafLink {
     /** 라벨의 완전 수식 메시지 키. 트리는 모듈 스코프 상수라 여기서 번역할 수 없다. */
     readonly labelKey: string;
     readonly href: string;
 }
 
-export interface NavRegionNode extends NavRegionLink {
+interface NavRegionNode extends NavRegionLink {
     /**
      * 이 지역 안의 최종 목적지들. 비어 있으면 지역 링크 자체가 최종 목적지다.
      *

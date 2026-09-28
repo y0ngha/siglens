@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, it, expect, beforeAll } from 'vitest';
 import { getTranslations } from 'next-intl/server';
 import { MarketNewsCard } from '../MarketNewsCard';
-import { sentimentLabel, SENTIMENT_CLASS } from '../utils/sentimentConstants';
+import { sentimentLabel, SENTIMENT_CLASS } from '@/shared/lib/sentimentDisplay';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 import type { MarketNewsCardItem } from '@/entities/market-news';
 

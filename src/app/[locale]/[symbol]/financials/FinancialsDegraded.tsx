@@ -34,8 +34,8 @@ interface FinancialsDegradedProps {
  * Rendered when the FMP company profile is temporarily unavailable (infra
  * failure) on the financials route.
  *
- * `getProfileResilient` reports `degraded` and `generateMetadata` (Phase 6)
- * will respond noindex, so this is a soft, non-indexed 200 — never a 500.
+ * `getProfileResilient` reports `degraded` and `generateMetadata` responds
+ * noindex, so this is a soft, non-indexed 200 — never a 500.
  * It keeps exactly one `<h1>` (SEO) and the cross-route links so the visitor
  * can still reach other tabs while the data provider recovers.
  */

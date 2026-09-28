@@ -1,10 +1,5 @@
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { ISO_DATE_LENGTH, MS_PER_DAY } from '@/shared/config/time';
-import { nthSundayDay } from './eastern';
-
-// nthSundayDay는 eastern.ts의 정규 원시 함수를 위임해 사용한다.
-// 하위 호환성을 위해 re-export한다 (기존 import 경로 유지).
-export { nthSundayDay };
 
 // Intl 포매터 생성은 비싸다 — 모듈 스코프에 한 번만 만들어 재사용한다.
 const KST_DATE_PARTS_FORMATTER = new Intl.DateTimeFormat('en-US', {

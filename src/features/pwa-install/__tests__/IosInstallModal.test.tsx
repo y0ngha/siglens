@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { IosInstallModal } from '@/features/pwa-install';
+import { IosInstallModal } from '@/features/pwa-install/ui/IosInstallModal';
 
 describe('IosInstallModal', () => {
     it('3단계 안내가 모두 렌더된다', () => {

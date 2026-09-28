@@ -86,7 +86,6 @@ describe('useOverallAnalysis — branch coverage', () => {
                     '1Day',
                     modelId as never,
                     SEED,
-                    'equity',
                     false,
                     settingsHydrated
                 ),
@@ -166,13 +165,7 @@ describe('useOverallAnalysis — branch coverage', () => {
 
         const { result } = renderHook(
             () =>
-                useOverallAnalysis(
-                    ...hookArgs(),
-                    undefined,
-                    'equity',
-                    false,
-                    false
-                ),
+                useOverallAnalysis(...hookArgs(), undefined, false, false),
             { wrapper: makeWrapper() }
         );
 

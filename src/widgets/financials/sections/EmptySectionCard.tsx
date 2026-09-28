@@ -7,10 +7,6 @@ interface EmptySectionCardProps {
     title: string;
 }
 
-interface EmptySectionCardProps {
-    title: string;
-}
-
 /**
  * Fallback card shown when a financial statement section has no data.
  * Mirrors the fundamental widget's EmptySectionCard API with a simplified

@@ -125,7 +125,6 @@ function buildInterpretation(
 }
 
 function buildKeyLevelsBlock(
-    analysis: AnalysisResponse,
     keyLevels: ClusteredKeyLevels,
     effectiveLevels: EffectiveActionLevels,
     tReport: ReportTranslator
@@ -364,7 +363,7 @@ export function buildExpertAnalysisReport({
             t,
             tReport
         ),
-        buildKeyLevelsBlock(analysis, safeKeyLevels, effectiveLevels, tReport),
+        buildKeyLevelsBlock(safeKeyLevels, effectiveLevels, tReport),
         buildEvidenceBlock(analysis, tReport),
         buildScenarioBlock(analysis, tReport),
         `${tReport('responseStance')}

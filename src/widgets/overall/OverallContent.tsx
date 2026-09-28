@@ -94,7 +94,6 @@ export function OverallContent({
         timeframe,
         modelId,
         initialAnalysis,
-        assetClass,
         reasoning,
         isSettingsHydrated
     );

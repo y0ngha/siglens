@@ -15,7 +15,8 @@ const {
 
 /**
  * SEO pre-warm cron 엔드포인트 (spec 2026-07-24 §6).
- * EventBridge API Destination(~5s)·ALB idle 60s를 피하려 202를 즉시 반환하고
+ * EventBridge API Destination(~5s)·게이트웨이 idle timeout(2026-08 cloudflared
+ * 전환 이후 Cloudflare Proxy Read Timeout ~125.9s)을 피하려 202를 즉시 반환하고
  * 배치는 after()로 백그라운드 실행. 중첩 실행은 Redis 루트 락이 차단하며,
  * 락 보유 중엔 204(2xx — EventBridge 재시도 폭풍 방지).
  */

@@ -1,13 +1,5 @@
 import type { Timeframe } from '@y0ngha/siglens-core';
-import { TICKER_RE } from './ticker';
-export { SYMBOL_EDGE_RE, isAdmissibleSymbolShape } from './ticker';
-
-/**
- * Valid U.S. ticker symbols. 형상 정의는 `@/shared/config/ticker`의 `TICKER_RE`로 통합됐고
- * 이 export는 기존 호출부 호환을 위한 alias다. proxy.ts(edge runtime)와 한 source를 공유하므로
- * 향후 형상 변경 시 ticker.ts만 수정하면 양쪽에 일관 적용된다.
- */
-export const VALID_TICKER_RE = TICKER_RE;
+export { isAdmissibleSymbolShape } from './ticker';
 
 export const DEFAULT_TIMEFRAME: Timeframe = '1Day';
 

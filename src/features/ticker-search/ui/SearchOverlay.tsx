@@ -183,8 +183,8 @@ function SearchOverlayBody({
      * 그래서 **닫기는 즉시 하되 대기 표시는 오버레이 밖으로** 뺐다. 이동과 진행 바는
      * `SearchOverlayProvider`가 소유한다.
      *
-     * 한때 여기 주석은 "나머지는 Next의 라우트 전환이 처리한다"고 적혀 있었는데
-     * **사실이 아니었다**. `app/[symbol]/loading.tsx`는 `[symbol]`의 자식 슬롯을 감싸는데
+     * Next의 라우트 전환만으로는 나머지가 처리되지 않는다는 점에 주의:
+     * `app/[symbol]/loading.tsx`는 `[symbol]`의 자식 슬롯을 감싸는데
      * 종목→종목 이동은 그 세그먼트 자체를 바꾸므로 서스펜스가 경계 위에서 일어나고,
      * 루트 `loading.tsx`도 `<Suspense>`도 없어 React가 옛 화면을 그대로 붙들고 있는다.
      * 사용자는 애플을 눌렀는데 NVDA 차트를 2~3초 본다(LAX 경로 실측 기준). 셋 다 사라진다.
@@ -220,14 +220,8 @@ function SearchOverlayBody({
         if (e.nativeEvent.isComposing) return;
         e.preventDefault();
 
-        // 디바운스(300ms) 때문에 `results`는 한 박자 전 질의의 것일 수 있다.
-        // `TS` 입력 후 멈췄다가 `LA`를 이어 치고 곧바로 검색하면 `TS`의 첫 결과로
-        // 가버린다. 질의가 아직 반영되지 않았으면 첫 결과를 믿지 않는다.
-        // 양쪽 다 trim한다. `debouncedQuery`는 입력 원본이라 `"apple "`처럼 공백이
-        // 붙으면 `query.trim()`과 영영 같아지지 않고, 첫 결과가 화면에 있는데도
-        // 무시된 뒤 `/APPLE`로 직행해 404가 난다.
-        // 지금 결정하지 않고 **의도만 남긴다**. 조회가 결착된 뒤 아래 효과가
-        // 어디로 갈지 정한다 — 이유는 그 효과의 주석 참고.
+        // 지금 결정하지 않고 의도만 남긴다 — `isSettled`(위 정의) 결착 여부는
+        // 아래 effect가 판단한다. 이유는 `pendingSubmitRef` 주석 참고.
         requestSubmit();
     };
 
@@ -244,6 +238,13 @@ function SearchOverlayBody({
 
     /**
      * 보류해 둔 검색 의도를 조회가 결착된 뒤에 처리한다.
+     *
+     * 디바운스(300ms) 때문에 `results`는 한 박자 전 질의의 것일 수 있다. `TS` 입력
+     * 후 멈췄다가 `LA`를 이어 치고 곧바로 검색하면 `TS`의 첫 결과로 가버린다 —
+     * `isSettled`(양쪽 다 trim해 비교)가 참이 될 때까지 기다려야 첫 결과를 믿을 수
+     * 있다. `debouncedQuery`는 입력 원본이라 `"apple "`처럼 공백이 붙으면
+     * `query.trim()`과 영영 같아지지 않고, 첫 결과가 화면에 있는데도 무시된 뒤
+     * `/APPLE`로 직행해 404가 난다.
      *
      * 실패(`isError`)면 아무 데도 가지 않는다 — 실패한 조회의 빈 결과는 "없다"가
      * 아니고, 사용자에게는 실패 화면을 보여주는 편이 존재하지 않는 종목 페이지로

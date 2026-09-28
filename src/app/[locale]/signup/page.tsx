@@ -12,7 +12,7 @@ import {
 import type { Metadata } from 'next';
 import { SignupContent } from './SignupContent';
 
-// noindex 페이지에도 canonical/openGraph.url을 명시한다. 자세한 근거는 src/app/login/page.tsx 주석 참조.
+// noindex 페이지에도 canonical/openGraph.url을 명시한다. 자세한 근거는 src/app/[locale]/login/page.tsx 주석 참조.
 /**
  * 정적 `metadata`가 아니라 `generateMetadata`인 이유: 정적 객체는 로케일을 볼 수
  * 없어 `/en/signup`도 canonical이 `/signup`(한국어)로 나갔다. noindex 페이지에

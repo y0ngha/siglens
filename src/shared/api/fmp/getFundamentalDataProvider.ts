@@ -6,9 +6,8 @@ import { YahooFundamentalProvider } from '@/shared/api/yahoo/YahooFundamentalPro
 import type { FundamentalProviderWithRawPeers } from './fundamentalProvider.types';
 
 // Re-exported so existing importers (`@/shared/api/fmp/getFundamentalDataProvider`)
-// keep resolving; the interfaces themselves live in `fundamentalProvider.types` to
+// keep resolving; the interface itself lives in `fundamentalProvider.types` to
 // avoid a type-level cycle with the `CachedFundamentalProvider` class import above.
-export type { FundamentalProvider } from './fundamentalProvider.types';
 export type { FundamentalProviderWithRawPeers } from './fundamentalProvider.types';
 
 /** FMP(미국·크립토) 경로. E2E에서는 Fake로 대체된다. */

@@ -183,7 +183,6 @@ function HoldingRow({
     );
 }
 
-/** Section for managing the member's portfolio holdings: list + inline edit + inline delete confirm + add form. */
 interface PortfolioSectionProps {
     /**
      * 추가 폼의 시작 심볼. `/portfolio`가 `/[symbol]/position`의 CTA에서 넘어온
@@ -197,6 +196,7 @@ interface PortfolioSectionProps {
     onHoldingsChange?: () => void;
 }
 
+/** Section for managing the member's portfolio holdings: list + inline edit + inline delete confirm + add form. */
 export function PortfolioSection({
     defaultSymbol,
     onHoldingsChange,

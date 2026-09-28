@@ -18,7 +18,7 @@ interface EconomyErrorProps {
  * but an unexpected throw during an uncached ISR cold-gen (DB/Redis client init,
  * unforeseen core error) would surface as a bare 500 without this boundary.
  * `reset()` re-renders the segment, which typically succeeds on a transient outage.
- * Mirrors `src/app/market/error.tsx`.
+ * Mirrors `src/app/[locale]/market/error.tsx`.
  */
 export default function EconomyError({ error, reset }: EconomyErrorProps) {
     const t = useTranslations('app.economy');

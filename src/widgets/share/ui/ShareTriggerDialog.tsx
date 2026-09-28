@@ -16,8 +16,7 @@ interface ShareTriggerDialogProps {
  * is ready yet. Explains that an analysis will be triggered first, then the
  * share sheet will open automatically.
  *
- * Mirrors the UserApiKeyRequiredModal pattern:
- * useFocusTrap (initial focus + Tab wrap + trigger restore) + useEscapeKey.
+ * Uses useFocusTrap (initial focus + Tab wrap + trigger restore) + useEscapeKey.
  * Default focus lands on the primary CTA so a single Enter confirms.
  */
 export function ShareTriggerDialog({

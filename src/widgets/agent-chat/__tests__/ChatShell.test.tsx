@@ -11,7 +11,7 @@ import {
     it,
     vi,
 } from 'vitest';
-import { AGENT_ERROR_CODES } from '@/features/agent-chat';
+import { AGENT_ERROR_CODES } from '@/features/agent-chat/lib/errorCodes';
 import ko from '../../../../messages/ko.json';
 
 const router = vi.hoisted(() => ({ refresh: vi.fn(), push: vi.fn() }));

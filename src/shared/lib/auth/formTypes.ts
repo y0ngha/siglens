@@ -15,7 +15,7 @@ export interface LoginFormState {
     } | null;
 }
 
-export type DeleteAccountFormErrorCode =
+type DeleteAccountFormErrorCode =
     | DeleteAccountErrorCode
     | 'not_authenticated'
     | 'email_mismatch'
@@ -43,20 +43,20 @@ export interface ForgotPasswordFormState {
     errorCode?: string;
 }
 
-export type LocalInfraErrorCode = 'redis_unavailable';
+type LocalInfraErrorCode = 'redis_unavailable';
 
 /**
  * Catch-all error code for unexpected runtime exceptions in Server Actions.
  * Kept separate from domain error codes to avoid polluting domain type contracts.
  */
-export type UnexpectedErrorCode = 'unexpected';
+type UnexpectedErrorCode = 'unexpected';
 
-export type RequestEmailVerificationErrorCode =
+type RequestEmailVerificationErrorCode =
     | LocalInfraErrorCode
     | 'invalid_email'
     | UnexpectedErrorCode;
 
-export type SignupFormErrorCode =
+type SignupFormErrorCode =
     | RegisterUserErrorCode
     | 'auto_login_failed'
     | 'consent_required'
@@ -95,7 +95,7 @@ export interface VerifyEmailFormState {
     } | null;
 }
 
-export type FinalizeOAuthSignupError = {
+type FinalizeOAuthSignupError = {
     code: 'consent_required';
     message: string;
 };

@@ -1,7 +1,6 @@
 export { INVALID_EMAIL_CODE, WEAK_PASSWORD_CODE } from './constants';
 export { normalizeEmail, validateEmail, validatePassword } from './validation';
 export type {
-    AuthValidationError,
     AuthValidationErrorCode,
     AuthValidationErrorField,
 } from './validation';
@@ -27,21 +26,15 @@ export type {
     PasswordVerifier,
     RegisterUserError,
     RegisterUserErrorCode,
-    RegisterUserErrorField,
     VerifyEmailErrorCode,
 } from './types';
 export type {
-    DeleteAccountFormErrorCode,
     DeleteAccountFormState,
-    FinalizeOAuthSignupError,
     FinalizeOAuthSignupState,
     ForgotPasswordFormState,
-    LocalInfraErrorCode,
     LoginFormState,
-    RequestEmailVerificationErrorCode,
     RequestEmailVerificationFormState,
     ResetPasswordFormState,
-    SignupFormErrorCode,
     SignupFormState,
     VerifyEmailFormState,
 } from './formTypes';

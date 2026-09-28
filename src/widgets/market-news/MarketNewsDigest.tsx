@@ -9,7 +9,7 @@ import {
     SENTIMENT_LABEL_KEY,
     SENTIMENT_CLASS,
     isNewsSentiment,
-} from './utils/sentimentConstants';
+} from '@/shared/lib/sentimentDisplay';
 import {
     HEADING_SECTION,
     HEADING_SUBSECTION,

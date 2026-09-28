@@ -42,7 +42,7 @@ function deriveCategories(
 }
 
 /** 어느 경제 화면의 자리를 잡는지. 화면마다 그리드 구성과 간격이 다르다. */
-export type EconomySkeletonVariant = 'us' | 'kr';
+type EconomySkeletonVariant = 'us' | 'kr';
 
 /**
  * 변형별 기하 — **실제 그리드와 한 곳에서 맞춘다.**

@@ -47,7 +47,7 @@ features       ← entities, shared import 가능. features 간 cross-import 허
                  (auth-signup → auth-email-verification 등).
 
 widgets        ← features, entities, shared import 가능. widgets 간 cross-import 허용
-                 (symbol-page가 chart/analysis/fear-greed 위젯 조합).
+                 (fear-greed → chart 등, 목록은 `src/widgets/CLAUDE.md`).
 
 pages          ← widgets, features, entities, shared import 가능.
 
@@ -103,8 +103,7 @@ import { DrizzleUserRepository } from '@/entities/auth/api'; // server-only → 
 ├── skills
 └── src
     ├── __tests__
-    │   ├── fixtures/     # 공유 test fixture (jsonResponse 등)
-    │   └── utils/        # 공유 test utility (makeFormData, readBlobText 등)
+    │   └── utils/        # 공유 test utility (공용 헬퍼는 src/shared/test-utils/)
     ├── app               # Next.js App Router (composition root)
     │   ├── [symbol]
     │   ├── account
@@ -189,7 +188,8 @@ import { DrizzleUserRepository } from '@/entities/auth/api'; // server-only → 
 ```
 
 > 각 슬라이스(entity, feature, widget)는 `__tests__/` 서브폴더에 테스트를 colocate한다.
-> 공유 테스트 fixture/utility만 `src/__tests__/fixtures/`, `src/__tests__/utils/`에 위치.
+> 공유 테스트 fixture/utility는 `src/__tests__/utils/`(테스트 전용 헬퍼)와
+> `src/shared/test-utils/`(렌더 래퍼 등)에 위치.
 
 ---
 

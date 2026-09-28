@@ -5,7 +5,7 @@
 // React does not run useEffect during server rendering — renderToStaticMarkup
 // mirrors that (unlike @testing-library/react's render(), which flushes effects
 // via act() and would hide this bug). Before the fix, the visible case list was
-// derived synchronously from useSearchParams()/useQueryParamState during render,
+// derived synchronously from useSearchParams() during render,
 // so a Suspense boundary wrapping that subtree caused Next.js to statically bake
 // only the "로딩 중..." fallback — the 100 cases never reached crawlers.
 //

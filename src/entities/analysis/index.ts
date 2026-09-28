@@ -1,8 +1,3 @@
-export {
-    type SiglensUsageCounts,
-    type SiglensUsageRepository,
-} from './usageCounts';
-
 // lib
 export {
     tryAcquireReanalyzeCooldown,
@@ -10,14 +5,13 @@ export {
 } from './lib/reanalyzeCooldown';
 
 export {
-    GATE_ERROR_CODES,
     isGateBlockedResult,
     type AnalysisGateBlockedResult,
     type AnalysisGateError,
     type AnalysisGateErrorCode,
 } from './lib/gate';
 
-export { isAnalysisStale, STALE_THRESHOLD_MS } from './lib/staleThreshold';
+export { isAnalysisStale } from './lib/staleThreshold';
 
 export {
     EMPTY_QUADRANTS,

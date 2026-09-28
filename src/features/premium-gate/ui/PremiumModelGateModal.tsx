@@ -48,7 +48,6 @@ export function PremiumModelGateModal({
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
             aria-modal="true"
         >
-            {/* backdrop */}
             <div
                 className="absolute inset-0 bg-secondary-950/80 backdrop-blur-sm"
                 onClick={onClose}
@@ -63,7 +62,6 @@ export function PremiumModelGateModal({
                 className="relative w-full max-w-sm rounded-lg bg-secondary-900 p-6 shadow-2xl ring-1 ring-secondary-700 outline-none"
             >
                 <div className="mb-4 flex flex-col items-center gap-3 text-center">
-                    {/* inline SVG avoids lucide-react dependency */}
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"

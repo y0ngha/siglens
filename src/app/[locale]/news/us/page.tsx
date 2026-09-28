@@ -30,13 +30,13 @@ import {
 export const revalidate = 86400;
 
 const PATH = '/news/us';
-export function newsUsTitle(t: SeoTranslator): string {
+function newsUsTitle(t: SeoTranslator): string {
     return t('newsUs.title');
 }
 function newsUsFullTitle(t: SeoTranslator): string {
     return `${newsUsTitle(t)} | ${SITE_NAME}`;
 }
-export function newsUsDescription(t: SeoTranslator): string {
+function newsUsDescription(t: SeoTranslator): string {
     return clampSeoDescription(t('newsUs.description'));
 }
 
@@ -58,8 +58,7 @@ export async function generateMetadata({
     const resolvedLocale = isLocale(locale) ? locale : DEFAULT_LOCALE;
     const ogLocale = localeOpenGraph(resolvedLocale);
     // og:url도 로케일별이어야 한다 — 소셜 언퍼널이 ko URL로 되돌린다.
-    const localizedUrl = localeCanonical(resolvedLocale, PATH);
-    const url = localizedUrl;
+    const url = localeCanonical(resolvedLocale, PATH);
     // 미리보기가 하나도 없으면 이 페이지는 h1 + 두 문단 + 카드 제목뿐이라
     // 2026-07 thin-content 사태에서 문제가 된 분량(약 677자)보다도 얇다.
     // 첫인상으로 판정되는 신규 URL이라 그 상태를 색인시키지 않는다.

@@ -19,7 +19,7 @@ import { QUERY_KEYS } from '@/shared/config/queryConfig';
  * core의 `SubmitMacroBriefingCached`를 확장해 `generatedAt`을 null로 오버라이드한다.
  * (core는 generatedAt을 string으로 강제하지만, seed 단계는 아직 서버 타임스탬프가 없다.)
  */
-export interface SeedMacroBriefingCached extends Omit<
+interface SeedMacroBriefingCached extends Omit<
     SubmitMacroBriefingCached,
     'generatedAt'
 > {
@@ -36,7 +36,7 @@ export interface SeedMacroBriefingCached extends Omit<
  * 생성된 타임스탬프가 없는 초기 peekSeed 표시 단계). 빈 문자열 sentinel 대신
  * null로 명시해 타입을 더 정확하게 표현한다.
  */
-export type MacroBriefingInput =
+type MacroBriefingInput =
     | RunMacroBriefingResult
     | SeedMacroBriefingCached
     | 'error'

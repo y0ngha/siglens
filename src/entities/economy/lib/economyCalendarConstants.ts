@@ -1,7 +1,7 @@
 import { SECONDS_PER_DAY, SECONDS_PER_MINUTE } from '@/shared/config/time';
 
 /** revalidateTag 대상 — 캘린더 ISR 캐시만 무효화한다(스냅샷 캐시와 분리). */
-export const ECONOMY_CALENDAR_CACHE_TAG = 'economy:calendar';
+const ECONOMY_CALENDAR_CACHE_TAG = 'economy:calendar';
 
 /**
  * 국가별 캘린더 태그.
@@ -139,7 +139,7 @@ const CALENDAR_ANALYSIS_REFRESH_FLAG_TTL_MINUTES = 30;
 
 /**
  * 분석 pass refresh-flag TTL — 이 윈도 안 재접속(봇 재크롤 포함)이면 분석 스캔을 건너뛴다.
- * SP-A 인제스션 플래그와 별도 키라 두 pass가 독립적으로 쓰로틀된다.
+ * 인제스션 refresh-flag와 별도 키라 두 pass가 독립적으로 쓰로틀된다.
  */
 export const CALENDAR_ANALYSIS_REFRESH_FLAG_TTL_SECONDS =
     CALENDAR_ANALYSIS_REFRESH_FLAG_TTL_MINUTES * SECONDS_PER_MINUTE;

@@ -21,12 +21,12 @@ import { useHydrated } from '@/shared/hooks/useHydrated';
  * silently render an empty distribution.
  *
  * KST 시각은 EDT/EST 구간별로 한 시간씩 어긋나므로, 두 구간(EDT: 22:30~05:00,
- * EST: 23:30~06:00)을 모두 병기하되, 현재 어느 구간인지(`isCurrentlyEdt`)도
+ * EST: 23:30~06:00)을 모두 병기하되, 현재 어느 구간인지(`getEasternOffsetHours`)도
  * 함께 안내해 사용자가 자기 KST 시계로 바로 환산할 수 있도록 한다.
  *
  * 모든 시간 표기(ET 정규장 + KST 환산 + 현재 EDT/EST 판정)는
- * `@/entities/options-chain/lib/marketHoursDisplay`를 single source of truth로 사용한다 —
- * 같은 ET/KST 환산 문자열을 쓰는 `OpenInterestChart`의 빈 데이터 안내와
+ * `@/shared/lib/options/marketHoursDisplay`를 single source of truth로 사용한다 —
+ * 같은 ET/KST 환산 문자열을 쓰는 `utils/optionsTooltips`의 빈 데이터 안내와
  * 표기가 자동으로 일치한다.
  *
  * `'use client'`: 현재 시각으로 EDT/EST를 판정해야 하므로 client 렌더링.

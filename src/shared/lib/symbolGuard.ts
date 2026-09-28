@@ -1,4 +1,4 @@
-import { VALID_TICKER_RE } from '@/shared/config/market';
+import { TICKER_RE as VALID_TICKER_RE } from '@/shared/config/ticker';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile';
 
 /**

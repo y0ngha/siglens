@@ -31,10 +31,9 @@ const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
 /**
  * 라벨 **키**만 담는다 — `t()`는 소비 컴포넌트에서 부른다.
  *
- * 예전에는 이 테이블이 두 벌 있었고(`market-news`는 `주가 영향`,
- * `news`는 `가격 영향`), 둘 다 한국어 리터럴이라 네 로케일 전부 한국어였다.
- * 문구는 자산 중립 쪽(`가격`)으로 통일한다 — 크립토 페이지에서 `주가`는
- * 틀린 말이다.
+ * `market-news/utils/impactConstants.ts`에도 같은 모양의 테이블이 있다 — 라벨
+ * 문구는 자산 중립 쪽(`가격`)으로 맞춰 뒀지만, 테이블 자체는 아직 두 파일에
+ * 따로 존재한다(공유 모듈로 합치지 않았다).
  */
 const IMPACT_LABEL_KEY: Record<NewsImpact, string> = {
     high: 'newsImpact.high',

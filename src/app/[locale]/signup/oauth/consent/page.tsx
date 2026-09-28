@@ -12,7 +12,7 @@ import { OAUTH_ERROR_REDIRECT } from '@/entities/auth';
 import { SITE_NAME } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
 
-// noindex 페이지에도 canonical/openGraph.url을 명시한다. 자세한 근거는 src/app/login/page.tsx 주석 참조.
+// noindex 페이지에도 canonical/openGraph.url을 명시한다. 자세한 근거는 src/app/[locale]/login/page.tsx 주석 참조.
 /**
  * 정적 `metadata`가 아니라 `generateMetadata`인 이유: 정적 객체는 로케일을 볼 수
  * 없어 `/ja/signup/oauth/consent`도 canonical이 한국어 URL로 나갔다. noindex 페이지에 다른 URL을

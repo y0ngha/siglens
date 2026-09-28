@@ -15,7 +15,7 @@ export type IndicatorCategory =
     | 'statistical'
     | 'smc';
 
-export type IndicatorKind = 'overlay' | 'pane' | 'candle-paint' | 'zone';
+type IndicatorKind = 'overlay' | 'pane' | 'candle-paint' | 'zone';
 
 export type IndicatorKey =
     | 'ma'

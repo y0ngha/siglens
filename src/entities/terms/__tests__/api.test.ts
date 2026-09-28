@@ -33,7 +33,7 @@ vi.mock('react', async importOriginal => ({
 import { DrizzleTermsRepository, getActiveTerms } from '@/entities/terms/api';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type { TermsKind } from '@/shared/db/constants';
-import type { TermsRecord } from '@/entities/terms';
+import type { TermsRecord } from '@/entities/terms/api';
 
 interface InsertedRow {
     id: string;

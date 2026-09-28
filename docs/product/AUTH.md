@@ -55,7 +55,6 @@ src/entities/auth/                   (entities/session + entities/user 병합 �
     confirmPasswordReset.ts  비밀번호 재설정 실행
   actions/
     currentUserAction.ts     'use server' wrapper — useCurrentUser용
-    cleanupExpiredSessionsAction.ts  만료 세션 정리
 
 src/entities/oauth-account/
   lib/

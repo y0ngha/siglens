@@ -16,7 +16,7 @@ const analysisFlag = createRedisFlag<CalendarCountry>(
     '[calendarAnalysisRefreshFlag]'
 );
 
-/** 최근 TTL 내 분석 pass 수행 여부 — Redis 실패 시 false(항상 스캔). SP-A 플래그 미러. */
+/** 최근 TTL 내 분석 pass 수행 여부 — Redis 실패 시 false(항상 스캔). 인제스션 refresh-flag와 같은 패턴. */
 export const isAnalysisRecentlyRun = analysisFlag.isSet;
 
 /** "최근 분석함" 마킹 — Redis 실패 시 noop. */

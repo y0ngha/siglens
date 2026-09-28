@@ -10,7 +10,7 @@ import { getFinancialsQuarterAction } from '@/entities/financials-statements/act
  * (same as a rejection) so the toggle can revert to annual instead of showing
  * a page full of EmptySectionCard placeholders.
  */
-export function isEmptySnapshot(snapshot: FinancialsSnapshot): boolean {
+function isEmptySnapshot(snapshot: FinancialsSnapshot): boolean {
     return (
         snapshot.income.length === 0 &&
         snapshot.balance.length === 0 &&

@@ -23,7 +23,6 @@ import type {
     LoginUserErrorCode,
     RegisterUserError,
     RegisterUserErrorCode,
-    RegisterUserErrorField,
     VerifyEmailErrorCode,
 } from '@/shared/lib/auth/types';
 
@@ -34,7 +33,6 @@ export type {
     LoginUserErrorCode,
     RegisterUserError,
     RegisterUserErrorCode,
-    RegisterUserErrorField,
     VerifyEmailErrorCode,
 };
 
@@ -80,7 +78,7 @@ export interface LoginUserError {
 
 export type { AuthSessionCookie };
 
-export interface AuthSessionOptions {
+interface AuthSessionOptions {
     now?: Date;
     sessionTtlSeconds?: number;
     cookieName?: string;

@@ -62,7 +62,7 @@ export function createExpiredSessionCookie(params?: {
 }
 
 /** Result of {@link createAuthSession}: the persisted session record paired with its outgoing cookie. */
-export interface CreateAuthSessionResult {
+interface CreateAuthSessionResult {
     session: AuthSessionRecord;
     cookie: AuthSessionCookie;
 }

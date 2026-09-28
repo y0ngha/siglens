@@ -54,11 +54,6 @@ export const SECTOR_GROUPS: readonly SectorGroupDef[] = [
     { label: '방어', symbols: ['XLV', 'XLP', 'XLU', 'XLRE'] },
 ];
 
-export const MARKET_SUMMARY_FMP_SYMBOLS: readonly string[] = [
-    ...MARKET_INDICES.map(i => i.fmpSymbol),
-    ...SECTOR_ETFS.map(e => e.symbol),
-];
-
 export const SECTOR_STOCKS: readonly SectorStock[] = [
     // Technology (XLK) — 8
     { symbol: 'AAPL', koreanName: '애플', sectorSymbol: 'XLK' },

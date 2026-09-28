@@ -18,15 +18,5 @@ export {
     stripMarkdownCodeBlock,
 } from './lib/parseJsonResponse';
 export { toProviderTurns } from './lib/utils';
-export type { ProviderTurn } from './lib/utils';
 export type { ProviderCallOptions } from './model';
 export { CHAT_JOB_ID, logUsage } from './lib/usage';
-export type { NormalizedUsage, UsageLogFields } from './lib/usage';
-export {
-    CLAUDE_MODEL_PRIORITY,
-    CHATGPT_MODEL_PRIORITY,
-    DEEPSEEK_MODEL_PRIORITY,
-    FALLBACK_MODEL_ID,
-    GEMINI_MODEL_PRIORITY,
-    resolveDefaultModelForProvider,
-} from './lib/providerDefaults';

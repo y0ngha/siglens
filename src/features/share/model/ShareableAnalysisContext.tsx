@@ -75,7 +75,7 @@ export function useShareable(): ShareableRegistration | null {
 /**
  * 활성 탭 위젯이 자기 상태를 등록한다. 언마운트 시 해제.
  *
- * Deps are primitive values extracted from reg so no eslint-disable is needed
+ * Deps are primitive values extracted from reg so no lint-disable is needed
  * and no object-identity render loop occurs. `trigger` is captured via a ref
  * so the registration effect doesn't re-run when only the callback identity changes.
  *

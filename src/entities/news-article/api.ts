@@ -365,12 +365,10 @@ export async function prewarmNews(
     companyName: string,
     force: boolean
 ): Promise<RunNewsAnalysisResult & { newsFetchFailed?: true }> {
-    // 리뷰 지적(PR #700): resolveAssetClass()는 내부적으로
-    // resolveMarketProfile() → getAssetInfo()를 호출하는데, 아래
-    // ingestNewsForSymbol도 profileId를 안 넘기면 resolveMarketProfile을 다시
-    // 호출해 심볼당 밤마다 getAssetInfo Redis 왕복이 중복된다. 여기서 프로필을
-    // 한 번만 resolve하고 assetClass는 그 결과에서 파생(resolveAssetClass가
-    // 내부적으로 하는 것과 동일)한 뒤 ingestNewsForSymbol에 그대로 전달한다.
+    // resolveMarketProfile()은 내부적으로 getAssetInfo()를 호출한다. 아래
+    // ingestNewsForSymbol에 profileId를 안 넘기면 다시 resolve해 심볼당 밤마다
+    // getAssetInfo Redis 왕복이 중복된다. 여기서 프로필을 한 번만 resolve하고
+    // assetClass는 그 결과에서 파생한 뒤 ingestNewsForSymbol에 그대로 전달한다.
     const profileId = await resolveMarketProfile(symbol);
     const descriptor = getDescriptor(profileId);
     const { assetClass } = descriptor;

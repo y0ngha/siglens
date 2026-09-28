@@ -1689,7 +1689,6 @@ entities/options-chain/
 ├── lib/YahooOptionsAdapter.ts   # OptionsDataProvider 구현 (yahoo-finance2)
 ├── lib/yahooNormalize.ts        # yahoo 응답 → siglens-core 타입
 ├── lib/optionsCacheLife.ts      # ET 시계 → open / closed / weekend 프로파일 선택
-├── lib/optionsCacheTags.ts      # revalidateTag 헬퍼
 ├── lib/optionsDataCache.ts      # 'use cache' 래퍼 + hasOptionsMarket
 └── actions/optionsActions.ts    # chain · signals · submit · poll · cancel Server Action
 ```

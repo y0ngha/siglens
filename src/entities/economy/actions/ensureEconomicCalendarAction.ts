@@ -27,11 +27,11 @@ const MAJORITY_DIVISOR = 2;
 
 /**
  * Server Action: ±1개월 윈도의 FMP economic-calendar를 fetch해 `economic_calendar`에
- * upsert하고, ≥1행이 실제로 변경되면 `economy:calendar` 태그를 무효화한다.
+ * upsert하고, ≥1행이 실제로 변경되면 국가별 `economyCalendarCacheTag(country)` 태그를 무효화한다.
  *
  * `ensureMarketNewsCardsAnalyzedAction` 미러: refresh-flag 가드(봇 재크롤 시 fetch 생략),
  * graceful FMP 실패(빈 결과 X, DB 기존 데이터 유지), 과반 upsert 실패 시 abort.
- * AI 분석 없음(SP-D 별도). `waitUntil` 안에서 돌도록 설계 — 응답 스트림 비차단.
+ * AI 분석 없음(별도 분석 pass가 담당). `waitUntil` 안에서 돌도록 설계 — 응답 스트림 비차단.
  */
 /**
  * @param country - 수집할 국가. 기본값은 미국이라 기존 호출부(`/economy`)가 그대로

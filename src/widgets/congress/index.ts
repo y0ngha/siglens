@@ -6,9 +6,4 @@ export { CongressTrendSummaryEmpty } from './CongressTrendSummaryEmpty';
 export type { CongressTrendState } from './hooks/useCongressTrend';
 export { CongressTradesTable } from './CongressTradesTable';
 export { CongressTradesEmpty } from './CongressTradesEmpty';
-export {
-    AmountRangeTooltip,
-    DisclosureLagTooltip,
-    SenateChamberTooltip,
-    HouseChamberTooltip,
-} from './congressTooltips';
+export { AmountRangeTooltip, DisclosureLagTooltip } from './congressTooltips';

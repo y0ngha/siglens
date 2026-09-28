@@ -12,7 +12,6 @@ import type {
     OverallAxis,
     Timeframe,
 } from '@y0ngha/siglens-core';
-import type { AssetClass } from '@/shared/config/marketProfile';
 import type { RunOverallAnalysisActionResult as CoreOverallResult } from '@/entities/analysis/actions';
 
 /**
@@ -143,14 +142,6 @@ export function useOverallAnalysis(
      * 재분석(trigger force)으로 처리된다.
      */
     initialResult?: OverallAnalysisResponse,
-    /**
-     * Asset class of the symbol being analysed.
-     * Crypto runs on technical + news only — fundamental and options axes are
-     * never submitted for crypto symbols (handled server-side by runOverallAnalysis).
-     * Defaults to 'equity' so existing callers that don't yet pass this param
-     * continue to get the full 4-axis behaviour.
-     */
-    _assetClass: AssetClass = 'equity',
     /**
      * Member "깊은 생각" (deep-thinking) toggle value (member-reasoning-toggle
      * spec Part A). Defaults to `false`. Part of the query key so toggling

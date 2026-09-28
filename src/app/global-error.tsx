@@ -26,7 +26,7 @@ interface GlobalErrorProps {
  * Tailwind classes would not resolve without this import.
  *
  * Kept dependency-light: no app providers, no shared/ui imports that pull
- * in layout-level CSS-in-JS or context. Mirrors `src/app/error.tsx`'s
+ * in layout-level CSS-in-JS or context. Mirrors `src/app/[locale]/error.tsx`'s
  * visual pattern using Tailwind classes with design tokens.
  *
  * ⚠️ **여기서는 `useTranslations`를 쓸 수 없다.** 이 파일은 루트 레이아웃을

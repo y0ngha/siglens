@@ -3,9 +3,10 @@
  * (Next.js 16은 `instrumentation.ts`를 별도 config 플래그 없이 기본 인식한다.)
  *
  * 여기서 SIGTERM/SIGINT graceful-shutdown 핸들러를 등록한다. AWS 배포 롤 시
- * systemd `ExecStop=docker stop -t 30`이 컨테이너에 SIGTERM을 보내고 30초 후
- * SIGKILL한다. 핸들러가 없으면 in-flight `fireAndForget` 백그라운드 작업(캐시
- * 쓰기, 번역 잡)이 그대로 유실된다.
+ * systemd `ExecStop=docker stop -t 185`가 컨테이너에 SIGTERM을 보내고 185초 후
+ * SIGKILL한다(정확한 드레인 예산 근거는 `instrumentation.node.ts`의
+ * `SHUTDOWN_DRAIN_DEADLINE_MS` 참고). 핸들러가 없으면 in-flight `fireAndForget`
+ * 백그라운드 작업(캐시 쓰기, 번역 잡)이 그대로 유실된다.
  *
  * 실제 핸들러 등록은 `instrumentation.node.ts`(Node 전용)에 위임하고 Node
  * 런타임에서만 `await import`한다. `process.on`/`process.exit`는 Edge 런타임에서

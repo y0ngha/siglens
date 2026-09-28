@@ -10,7 +10,7 @@ import {
 import type { CurrentAnalysisContext, Timeframe } from '@y0ngha/siglens-core';
 
 /**
- * Layout-scoped chat context — each of the 4 symbol pages publishes its in-view
+ * Layout-scoped chat context — each symbol page publishes its in-view
  * analysis result here so the layout-mounted FloatingChatButton can render a chat
  * panel that survives navigation. The `context` field is core's tagged union
  * `CurrentAnalysisContext`, so the chat layer can distinguish technical /

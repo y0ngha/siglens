@@ -78,7 +78,6 @@ const ERROR_MESSAGE_KEYS: Record<SymbolChatErrorCode, string> = {
     server_error: 'useChat.serverError',
     ai_server_unstable: 'useChat.providerUnstable',
     model_not_allowed: 'useChat.modelNotAllowed',
-    // TODO(byok-adapter): BYOK 어댑터 구현 후 chatAction에서 이 코드가 반환됩니다
     user_api_key_required: 'useChat.userApiKeyRequired',
 };
 
@@ -154,16 +153,14 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
     // null on mount — used to skip the initial effect run in the key-change effect
     const prevKeyRef = useRef<string | null>(null);
     // null on mount — used to skip emitting a context-switch system message on initial render.
-    // KNOWN LIMITATION (Task 5 → follow-up / Task 6 domain):
+    // KNOWN LIMITATION:
     //   This ref only tracks transitions while `useChat` is mounted. `useChat` lives inside
     //   `ChatPanel`, which is mounted only when the panel is open (isOpen=true). If the user
     //   navigates between symbol pages while the chat panel is closed, `useChat` is unmounted
     //   for the entire transition; on next open `previousLabelRef` is null again and the
     //   first-mount guard suppresses the context-switch system message that would have
     //   announced the symbol/timeframe change. The transition message is silently lost.
-    //   This is still strictly better than the pre-PR-413 behavior (where `useChat` was
-    //   remounted on every navigation regardless of panel state). A proper fix likely
-    //   requires hoisting context-switch detection above ChatPanel — see Task 6.
+    //   A proper fix likely requires hoisting context-switch detection above ChatPanel.
     const previousLabelRef = useRef<string | null>(null);
     // latest-value refs: let sendMessage read current values without being in its dep array
     const messagesRef = useRef(messages);
@@ -276,7 +273,6 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
                     result.remainingTokens
                 );
             } else if (result.error === 'user_api_key_required') {
-                // TODO(byok-adapter): chatAction이 BYOK 어댑터 구현 후 이 분기가 실행됩니다
                 showGate({
                     mode: 'byok',
                     provider: getProviderForModel(selectedModel),

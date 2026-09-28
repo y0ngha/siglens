@@ -11,12 +11,6 @@
  * consumers import this file directly —
  * `@/entities/analysis/analysisHistoryRepository` — instead of through the
  * barrel.
- *
- * Sibling precedent: `usageRepository.ts` in this same directory is
- * excluded from the barrel for the identical reason (DB-touching,
- * server-only, not safe to expose through a client-reachable barrel).
- * Follow that file's placement, not the barrel, when adding another
- * repository here.
  */
 import 'server-only';
 

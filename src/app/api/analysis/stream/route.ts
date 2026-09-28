@@ -205,7 +205,8 @@ const STREAM_DEADLINE_MS = 10 * 60 * 1_000;
  * 취소가 필요하다면 먼저 core의 `dedupeInFlight`에 참조 카운팅을 넣어 마지막 대기자가
  * 떠날 때만 abort되게 해야 한다. 그 전에는 여기서 signal을 넘기면 안 된다.
  *
- * 대신 폭주 방지는 `withDeadline`(5분)이 담당한다 — 클라이언트 유무와 무관한 상한이다.
+ * 대신 폭주 방지는 `withDeadline`(`STREAM_DEADLINE_MS`, 10분)이 담당한다 — 클라이언트
+ * 유무와 무관한 상한이다.
  */
 
 /**
@@ -215,11 +216,11 @@ const STREAM_DEADLINE_MS = 10 * 60 * 1_000;
  * 마감이 **자체 `AbortController`로 작업을 실제 취소**하는 게 핵심이다. 취소하지 않으면
  * 스트림만 닫히고 core의 호출은 provider 타임아웃(어댑터 기본 1시간)까지 계속 살아 있다.
  * 그 promise는 `dedupeInFlight` Map에 남으므로, 같은 캐시 키의 이후 요청이 전부 죽은
- * promise에 합류해 5분씩 기다렸다 실패한다 — 한 번의 provider 행이 그 키를 최대 한 시간
- * 봉인한다.
+ * promise에 합류해 `STREAM_DEADLINE_MS`(10분)씩 기다렸다 실패한다 — 한 번의 provider
+ * 행이 그 키를 최대 한 시간 봉인한다.
  *
  * 이 signal은 클라이언트별이 아니라 **작업별**이라, 위에서 설명한 공유 abort 문제가 없다:
- * 누가 듣고 있든 5분이 지나면 그 작업 자체가 가망이 없다.
+ * 누가 듣고 있든 `STREAM_DEADLINE_MS`가 지나면 그 작업 자체가 가망이 없다.
  */
 function withDeadline<T>(
     run: (signal: AbortSignal) => Promise<T>,
@@ -233,8 +234,8 @@ function withDeadline<T>(
             reject(new LocalizedStreamError(timeoutMessage));
         }, STREAM_DEADLINE_MS);
     });
-    // work가 먼저 끝나면 타이머를 즉시 회수한다 — 없으면 매 요청이 5분짜리 타이머와
-    // 그 reject 클로저를 붙들고 있어, LLM 작업까지 떠안은 인스턴스에서 그대로 누적된다.
+    // work가 먼저 끝나면 타이머를 즉시 회수한다 — 없으면 매 요청이 STREAM_DEADLINE_MS짜리
+    // 타이머와 그 reject 클로저를 붙들고 있어, LLM 작업까지 떠안은 인스턴스에서 그대로 누적된다.
     // run()이 **동기적으로** throw할 수 있다(핸들러가 params를 즉시 구조분해하는 경우).
     // 그대로 두면 Promise.race가 구성되지 않아 아래 finally가 붙지 않고, 타이머가
     // 살아남아 5분 뒤 아무도 듣지 않는 deadline이 reject된다(unhandled rejection).
@@ -573,21 +574,6 @@ async function resolveHoldingPositionBucket(
 }
 
 /**
- * POST /api/analysis/stream
- *
- * Browser-side analysis requests MUST go through this SSE route, not server
- * actions. A server action is a single POST — while the server awaits the LLM
- * it sends no bytes, and the edge cuts the idle connection (measured on production:
- * 61.1 s through the ALB, 125.9 s through cloudflared after the 2026-08 migration;
- * 600 s completes cleanly with the 25 s heartbeat). Server-side callers (cron, SSR,
- * bots) are unaffected and may call `run*` directly.
- *
- * Request body: `{ type: AnalysisType; params: <type-specific shape> }`
- *
- * `technical` is handled inline (complex multi-step gating + position-bucket).
- * All other types delegate to their entity action via `DISPATCH`.
- */
-/**
  * 요청이 실은 로케일. 없거나 알 수 없는 값이면 기본 로케일.
  *
  * `/api/*`는 next-intl 미들웨어 matcher에서 제외돼 있어 요청 로케일을 알 방법이
@@ -816,6 +802,21 @@ function withReaderViews<T>(
     });
 }
 
+/**
+ * POST /api/analysis/stream
+ *
+ * Browser-side analysis requests MUST go through this SSE route, not server
+ * actions. A server action is a single POST — while the server awaits the LLM
+ * it sends no bytes, and the edge cuts the idle connection (measured on production:
+ * 61.1 s through the ALB, 125.9 s through cloudflared after the 2026-08 migration;
+ * 600 s completes cleanly with the 25 s heartbeat). Server-side callers (cron, SSR,
+ * bots) are unaffected and may call `run*` directly.
+ *
+ * Request body: `{ type: AnalysisType; params: <type-specific shape> }`
+ *
+ * `technical` is handled inline (complex multi-step gating + position-bucket).
+ * All other types delegate to their entity action via `DISPATCH`.
+ */
 export async function POST(request: Request): Promise<Response> {
     // --- 1. Parse and validate request body ---
     let body: StreamRequestBody;

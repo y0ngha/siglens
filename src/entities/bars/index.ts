@@ -3,7 +3,6 @@
 // 소비자는 @/entities/bars/hooks/useBars 에서 직접 deep import한다.
 
 export {
-    getBarsStatic,
     getQuantizedBarsStatic,
     getSeedBarsStatic,
 } from './lib/barsStaticCache';

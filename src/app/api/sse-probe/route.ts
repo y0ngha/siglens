@@ -33,8 +33,9 @@ export const dynamic = 'force-dynamic';
  * 스트림 길이 상한.
  *
  * 300초였던 것을 660초로 올린다 — `STREAM_DEADLINE_MS`를 10분으로 늘려도 되는지
- * 판단하려면 그 길이의 연결이 실제로 CF·ALB를 통과하는지 재야 하는데, 상한이 300초면
- * 잴 수가 없다. 기존 실측은 286초까지만 있었다(`docs/architecture/DEPLOY_RUNBOOK.md`
+ * 판단하려면 그 길이의 연결이 실제로 Cloudflare 엣지(cloudflared 터널)를 통과하는지
+ * 재야 하는데, 상한이 300초면 잴 수가 없다. 기존 실측은 286초까지만 있었다
+ * (`docs/architecture/DEPLOY_RUNBOOK.md`
  * 및 SSE 실측 기록 참조). 660은 600초 측정에 여유 60초를 더한 값이다.
  *
  * 연결을 방치하지 않는다는 성질은 그대로다: `HARD_TIMEOUT_GRACE_MS`를 더한 하드

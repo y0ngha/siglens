@@ -35,7 +35,6 @@ export function AnalysisSignupNudgeModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* backdrop */}
             <div
                 className="absolute inset-0 bg-secondary-950/80 backdrop-blur-sm"
                 onClick={onClose}
@@ -51,7 +50,6 @@ export function AnalysisSignupNudgeModal({
                 className="relative w-full max-w-sm rounded-lg bg-secondary-900 p-6 shadow-2xl ring-1 ring-secondary-700 outline-none"
             >
                 <div className="mb-4 flex flex-col items-center gap-3 text-center">
-                    {/* inline SVG avoids lucide-react dependency, mirrors PremiumModelGateModal */}
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
@@ -74,7 +72,7 @@ export function AnalysisSignupNudgeModal({
                         {t('AnalysisSignupNudgeModal.84ff73')}
                     </h2>
                     <p className="text-sm leading-relaxed text-secondary-300">
-                        {/* The object-particle `을` assumes REASONING_FEATURE_LABEL
+                        {/* The object-particle `을` assumes REASONING_FEATURE_LABEL_KEY
                             ends in a consonant (batchim) — true for '상세 분석'
                             (분석 ends in 석). Revisit the particle (을/를) if the
                             label ever changes to a vowel-final word. */}

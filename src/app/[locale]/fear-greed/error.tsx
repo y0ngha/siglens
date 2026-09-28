@@ -19,7 +19,7 @@ interface FearGreedErrorProps {
  * from an unexpected client/render bug rather than the usual FMP/Redis
  * flakiness. This boundary still contains that into a branded, retryable UI
  * instead of a bare 500. `reset()` re-renders the segment. Mirrors
- * `src/app/market/error.tsx`.
+ * `src/app/[locale]/market/error.tsx`.
  */
 export default function FearGreedError({ error, reset }: FearGreedErrorProps) {
     const t = useTranslations('app.fear-greed');

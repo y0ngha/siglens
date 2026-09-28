@@ -85,7 +85,7 @@ async function analyzeAndPersistEvent(
 
 /**
  * Server Action: 발표된(actual≠null) Medium+ 미분석 이벤트를 core AI 분석으로
- * 채우고, ≥1행이 분석되면 `economy:calendar` 태그를 무효화한다.
+ * 채우고, ≥1행이 분석되면 국가별 `economyCalendarCacheTag(country)` 태그를 무효화한다.
  *
  * 두 트리거가 공유한다:
  *  - SEED: 백필용 tsx 스크립트(scripts/seedEconomicEventAnalysis.ts)
@@ -157,7 +157,7 @@ export async function ensureEconomicEventsAnalyzedAction(
             r => r.status === 'fulfilled' && r.value === true
         ).length;
         if (persisted > 0) {
-            // SP-A와 같은 'economy:calendar' 태그만 무효화 — 다음 렌더가 분석 채워진 행을 읽는다.
+            // 인제스션과 같은 국가별 캘린더 태그만 무효화 — 다음 렌더가 분석 채워진 행을 읽는다.
             revalidateTag(economyCalendarCacheTag(country), 'max');
         }
     } catch (error) {

@@ -15,7 +15,7 @@ import {
     SENTIMENT_LABEL_KEY,
     SENTIMENT_CLASS,
     isNewsSentiment,
-} from './utils/sentimentConstants';
+} from '@/shared/lib/sentimentDisplay';
 import {
     IMPACT_LABEL_KEY,
     IMPACT_CLASS,

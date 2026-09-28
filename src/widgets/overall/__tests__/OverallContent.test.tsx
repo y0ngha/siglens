@@ -143,7 +143,6 @@ describe('OverallContent tf 쿼리 파라미터 처리 (§18 분기)', () => {
             '1Hour',
             'gemini-3.5-flash-lite',
             undefined,
-            'equity',
             false,
             true
         );
@@ -165,7 +164,6 @@ describe('OverallContent tf 쿼리 파라미터 처리 (§18 분기)', () => {
             DEFAULT_TIMEFRAME,
             'gemini-3.5-flash-lite',
             undefined,
-            'equity',
             false,
             true
         );
@@ -720,8 +718,9 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
 });
 
 /**
- * F1: crypto assetClass — OverallContent hides options/fundamental/financials sections,
- * and useOverallAnalysis is called with assetClass='crypto'.
+ * F1: crypto assetClass — OverallContent hides options/fundamental/financials sections.
+ * `assetClass` is not forwarded to `useOverallAnalysis` (axis gating for crypto happens
+ * server-side in `runOverallAnalysis`).
  */
 describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
     beforeEach(async () => {
@@ -737,7 +736,7 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
         }));
     });
 
-    it('useOverallAnalysis를 assetClass=crypto로 호출한다', () => {
+    it('useOverallAnalysis를 assetClass 없이 호출한다', () => {
         mockUseOverallAnalysis.mockReturnValue({
             state: { status: 'idle' },
             trigger: vi.fn(),
@@ -757,7 +756,6 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
             DEFAULT_TIMEFRAME,
             'gemini-3.5-flash-lite',
             undefined, // initialAnalysis
-            'crypto',
             false,
             true
         );

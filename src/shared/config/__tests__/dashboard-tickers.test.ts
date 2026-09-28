@@ -3,7 +3,6 @@ import {
     DEFAULT_DASHBOARD_TIMEFRAME,
     isDashboardTimeframe,
     MARKET_INDICES,
-    MARKET_SUMMARY_FMP_SYMBOLS,
     SECTOR_ETFS,
     SECTOR_GROUPS,
     SECTOR_STOCKS,
@@ -93,20 +92,6 @@ describe('SECTOR_GROUPS', () => {
                 expect(etfSymbols).toContain(symbol);
             }
         }
-    });
-});
-
-describe('MARKET_SUMMARY_FMP_SYMBOLS', () => {
-    it('비어있지 않은 배열이다', () => {
-        expect(MARKET_SUMMARY_FMP_SYMBOLS.length).toBeGreaterThan(0);
-    });
-
-    it('MARKET_INDICES의 fmpSymbol + SECTOR_ETFS의 symbol을 모두 포함한다', () => {
-        const expected = [
-            ...MARKET_INDICES.map(i => i.fmpSymbol),
-            ...SECTOR_ETFS.map(e => e.symbol),
-        ];
-        expect([...MARKET_SUMMARY_FMP_SYMBOLS]).toEqual(expected);
     });
 });
 

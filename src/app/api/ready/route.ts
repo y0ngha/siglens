@@ -2,8 +2,9 @@ import { tryGetDatabaseClient } from '@/shared/db/client';
 import { getRedisClient } from '@/shared/cache/redisClient';
 
 // Deep readiness probe — 외부 의존성(Neon DB, Upstash Redis)까지 확인한다.
-// ALB 헬스체크는 /api/health(shallow)를 쓰고, CloudWatch/알람은 이 /api/ready를
-// 폴링해야 한다. 의존성 블립이 ALB 타깃을 죽이면 안 되므로 둘을 분리한다.
+// `siglens-wait-healthy.sh`/`siglens-selfcheck.timer`는 /api/health(shallow)를 쓰고,
+// CloudWatch/알람은 이 /api/ready를 폴링해야 한다. 의존성 블립이 selfcheck 타깃을
+// 죽이면 안 되므로 둘을 분리한다.
 export const dynamic = 'force-dynamic';
 
 /** 각 의존성 핑의 짧은 타임아웃(ms). 느린 의존성에 readiness가 매달리지 않게 한다. */

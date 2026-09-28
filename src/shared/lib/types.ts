@@ -14,7 +14,7 @@ import type { DashboardScopeId } from '@/shared/config/dashboardScope';
  * `FearGreedSnapshot.confidence`의 narrowed 형태(`'normal' | 'limited'`).
  * core는 `FearGreedConfidence`에 `'insufficient'`를 포함하지만, snapshot이 반환되는
  * 시점에는 이미 그 케이스가 걸러져 있다(composition.ts의 LIMITED gate). UI 컴포넌트
- * 와 lib/fearGreedLabels의 `formatConfidenceFooter`에서 공통으로 사용.
+ * 와 lib/fearGreedLabels의 `confidenceLabelKey`에서 공통으로 사용.
  */
 export type SnapshotConfidence = Exclude<FearGreedConfidence, 'insufficient'>;
 
@@ -119,11 +119,9 @@ export interface CryptoCategory {
 }
 
 export type {
-    DeleteAccountFormErrorCode,
     DeleteAccountFormState,
     FinalizeOAuthSignupState,
     ForgotPasswordFormState,
-    LocalInfraErrorCode,
     LoginFormState,
     RequestEmailVerificationFormState,
     ResetPasswordFormState,
@@ -131,18 +129,14 @@ export type {
     VerifyEmailFormState,
 } from '@/shared/lib/auth/formTypes';
 
-export type { AuthUserRecord } from '@/shared/lib/auth/types';
-
 import type { LlmProvider } from '@/shared/config/llmProviders';
 // Direct import from /types (not the barrel) to avoid a circular dependency:
 // shared/lib/types → marketProfile/index(barrel) → registry → shared/lib/types
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 
-export type { LlmProvider };
-
 export type GateMode = 'auth' | 'byok';
 
-export type ApiKeyActionStatus = 'idle' | 'success' | 'error';
+type ApiKeyActionStatus = 'idle' | 'success' | 'error';
 
 export type ApiKeyActionErrorCode =
     | 'invalid_key_format'

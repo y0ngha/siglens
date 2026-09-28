@@ -12,8 +12,3 @@ export {
     OAUTH_STATE_COOKIE_NAME,
     OAuthStateSecretMisconfiguredError,
 } from './lib/state';
-export type {
-    OAuthProviderAdapter,
-    OAuthProfileResult,
-    OAuthProfileFailureReason,
-} from './lib/types';

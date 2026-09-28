@@ -1,4 +1,9 @@
 import { DEEPSEEK_V4_1_FLASH_MODEL } from '@y0ngha/siglens-core';
+import {
+    LOCAL_STORAGE_CHAT_MODEL_KEY,
+    LOCAL_STORAGE_CHAT_MODEL_MIGRATION_KEY,
+    LOCAL_STORAGE_CHAT_MODEL_MIGRATION_V2_KEY,
+} from '@/shared/lib/storageKeys';
 
 /**
  * localStorage에 남아 있을 수 있는 **과거** 모델 ID들.
@@ -10,11 +15,6 @@ import { DEEPSEEK_V4_1_FLASH_MODEL } from '@y0ngha/siglens-core';
  */
 const LEGACY_GEMINI_2_5_FLASH = 'gemini-2.5-flash';
 const LEGACY_GEMINI_2_5_FLASH_LITE = 'gemini-2.5-flash-lite';
-import {
-    LOCAL_STORAGE_CHAT_MODEL_KEY,
-    LOCAL_STORAGE_CHAT_MODEL_MIGRATION_KEY,
-    LOCAL_STORAGE_CHAT_MODEL_MIGRATION_V2_KEY,
-} from '@/shared/lib/storageKeys';
 
 /**
  * Models the chat surface migrates away from, per migration pass.

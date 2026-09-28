@@ -8,7 +8,7 @@
  * `PortfolioGuard` reads holdings directly via `DrizzlePortfolioRepository`
  * (not `getPortfolioHoldingsAction`, which re-resolves `getCurrentUser`
  * internally — see the page's doc comment), so this mocks the repository +
- * `getDatabaseClient` the same way `src/app/privacy/__tests__/page.test.ts`
+ * `getDatabaseClient` the same way `src/app/[locale]/privacy/__tests__/page.test.ts`
  * mocks `DrizzleTermsRepository`. `toView` is real (pure), so fixtures are
  * raw `PortfolioHoldingRecord`-shaped rows (Date `updatedAt`).
  */

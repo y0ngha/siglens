@@ -1,19 +1,8 @@
-export { useAgentStream, fromViews } from './hooks/useAgentStream';
-export type {
-    AgentUiMessage,
-    ToolActivityItem,
-    StreamStatus,
-    AgentRemaining,
-} from './hooks/useAgentStream';
-export { AGENT_ERROR_CODES } from './lib/errorCodes';
+export { useAgentStream } from './hooks/useAgentStream';
+export type { AgentUiMessage, ToolActivityItem } from './hooks/useAgentStream';
 export type { AgentClientErrorCode } from './lib/errorCodes';
 export {
     groupConversationsByDay,
-    type ConversationGroup,
     type ConversationGroupKey,
 } from './lib/groupConversationsByDay';
-export {
-    relatedSymbolPages,
-    type RelatedSymbolPage,
-    type SymbolTab,
-} from './lib/relatedSymbolPages';
+export { relatedSymbolPages, type RelatedSymbolPage } from './lib/relatedSymbolPages';

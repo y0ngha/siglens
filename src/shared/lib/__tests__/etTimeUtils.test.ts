@@ -5,8 +5,8 @@ import {
     fmpCalendarDateTimeToKst,
     kstDateKey,
     kstDateKeyDaysBefore,
-    nthSundayDay,
 } from '../etTimeUtils';
+import { nthSundayDay } from '../eastern';
 
 // ------------------------------------------------------------------
 // nthSundayDay

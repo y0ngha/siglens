@@ -144,7 +144,7 @@ export class DrizzleEconomicCalendarRepository {
      * 'YYYY-MM-DD' 날짜키 — `from`은 그대로(<= 그날 00:00:00 포함), `to`는 그날
      * 23:59:59까지 포함하도록 ' 23:59:59'를 덧붙인다.
      *
-     * SP-D: AI 분석 컬럼(sentiment/summaryKo/interpretationKo/analyzedAt)도 함께 반환한다.
+     * 분석 pass가 채운 AI 분석 컬럼(sentiment/summaryKo/interpretationKo/analyzedAt)도 함께 반환한다.
      * `sentiment`는 읽기 경계에서 `toEventSentiment`로 검증 — 미지값은 null로 강등.
      */
     async listInRange(

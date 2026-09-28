@@ -227,22 +227,15 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
     // on an unmounted hook instance.
     useEffect(() => () => controllerRef.current?.abort(), []);
 
-    const updateMessages = useCallback(
-        (updater: (prev: AgentUiMessage[]) => AgentUiMessage[]) => {
-            setMessages(updater);
-        },
-        []
-    );
-
     const patchLast = useCallback(
         (fn: (m: AgentUiMessage) => AgentUiMessage) => {
-            updateMessages(prev =>
+            setMessages(prev =>
                 prev.length === 0
                     ? prev
                     : [...prev.slice(0, -1), fn(prev[prev.length - 1]!)]
             );
         },
-        [updateMessages]
+        []
     );
 
     const run = useCallback(
@@ -259,7 +252,7 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
             let reader: ReadableStreamDefaultReader<string> | undefined;
             setStatus('streaming');
             setError(null);
-            updateMessages(prev => [
+            setMessages(prev => [
                 ...prev,
                 {
                     id: `pending-${Date.now()}`,
@@ -327,7 +320,7 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
                                 typeof data.userMessageSeq === 'number'
                             ) {
                                 const seq = data.userMessageSeq;
-                                updateMessages(prev => {
+                                setMessages(prev => {
                                     const userIndex = prev.length - 2;
                                     const target = prev[userIndex];
                                     if (
@@ -454,7 +447,7 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
                     // created, or supersede the PREVIOUS answer and re-ask the OLD
                     // question).
                     lastErrorKindRef.current = 'http';
-                    updateMessages(() => restoreSnapshot);
+                    setMessages(() => restoreSnapshot);
                     setStatus('error');
                     setError(
                         isAgentClientErrorCode(e.code) ? e.code : 'server_error'
@@ -480,7 +473,7 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
                 void reader?.cancel().catch(() => {});
             }
         },
-        [conversationId, patchLast, updateMessages]
+        [conversationId, patchLast]
     );
 
     const guest = options.guest === true;
@@ -489,7 +482,7 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
         (message: string) => {
             const snapshot = messagesRef.current;
             guestRegenerateRef.current = false;
-            updateMessages(prev => [
+            setMessages(prev => [
                 ...prev,
                 {
                     id: `local-${Date.now()}`,
@@ -509,7 +502,7 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
                 snapshot
             );
         },
-        [run, updateMessages, guest]
+        [run, guest]
     );
     /**
      * A new question from the composer — the only path that records the
@@ -525,7 +518,7 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
     );
     const regenerate = useCallback(() => {
         const snapshot = messagesRef.current;
-        updateMessages(prev =>
+        setMessages(prev =>
             prev[prev.length - 1]?.role === 'assistant'
                 ? prev.slice(0, -1)
                 : prev
@@ -546,11 +539,11 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
             );
         }
         return run({ action: 'regenerate' }, false, snapshot);
-    }, [run, updateMessages, guest]);
+    }, [run, guest]);
     const edit = useCallback(
         (seq: number, message: string) => {
             const snapshot = messagesRef.current;
-            updateMessages(prev => {
+            setMessages(prev => {
                 const index = prev.findIndex(m => m.seq === seq);
                 return [
                     ...(index >= 0 ? prev.slice(0, index) : prev),
@@ -569,7 +562,7 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
                 snapshot
             );
         },
-        [run, updateMessages]
+        [run]
     );
     const stop = useCallback(() => controllerRef.current?.abort(), []);
 

@@ -1,4 +1,9 @@
 import { DEEPSEEK_V4_1_FLASH_MODEL } from '@y0ngha/siglens-core';
+import {
+    LOCAL_STORAGE_ANALYSIS_MODEL_KEY,
+    LOCAL_STORAGE_ANALYSIS_MODEL_MIGRATION_KEY,
+} from '@/shared/lib/storageKeys';
+
 /**
  * localStorage에 남아 있을 수 있는 **과거** 모델 ID들.
  *
@@ -8,11 +13,6 @@ import { DEEPSEEK_V4_1_FLASH_MODEL } from '@y0ngha/siglens-core';
  * 된다 — 바꾸는 순간 마이그레이션이 겨냥하던 사용자를 놓친다.
  */
 const LEGACY_GEMINI_2_5_FLASH_LITE = 'gemini-2.5-flash-lite';
-
-import {
-    LOCAL_STORAGE_ANALYSIS_MODEL_KEY,
-    LOCAL_STORAGE_ANALYSIS_MODEL_MIGRATION_KEY,
-} from '@/shared/lib/storageKeys';
 
 /**
  * One-time migration of the persisted analysis model from the legacy default

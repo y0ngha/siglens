@@ -13,10 +13,7 @@
 // 여기서 재노출하면 세 SDK가 통째로 클라이언트 번들에 유입된다.
 // 소비자는 @/entities/ticker/lib/koreanTranslator 에서 직접 deep import한다.
 
-export {
-    getAssetInfoResilient,
-    type ResilientAssetInfo,
-} from './lib/getAssetInfoResilient';
+export { getAssetInfoResilient } from './lib/getAssetInfoResilient';
 
 export {
     getRecentSearches,
@@ -43,16 +40,11 @@ export {
 // 영향 없음 — 클라이언트에서 SIGTERM drain이 의미 없으므로 no-op에 가깝다.
 export { fireAndForget } from './lib/backgroundTask';
 
-export {
-    buildAssetAboutNode,
-    classifyAsset,
-    type AssetCategory,
-    type CorporationAboutNode,
-} from './lib/assetClassification';
+export { buildAssetAboutNode, classifyAsset } from './lib/assetClassification';
 
 // 접미사→거래소 매핑의 유일한 출처. 자동완성 배지가 `.KQ`를 자체 판정하면
 // canonical 정규식보다 느슨한 두 번째 표가 생긴다(MISTAKES.md §16.5).
-export { krExchangeOf, type KrExchange } from './lib/krExchange';
+export { krExchangeOf } from './lib/krExchange';
 
 /**
  * 번역 모델·키 설정.

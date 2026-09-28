@@ -43,7 +43,7 @@ export const revalidate = 86400; // 24h — 이름 캐시 TTL과 같다
 
 const PATH = SYMBOLS_PATH;
 
-export function symbolsTitle(t: SeoTranslator): string {
+function symbolsTitle(t: SeoTranslator): string {
     return t('symbols.title');
 }
 
@@ -51,7 +51,7 @@ function symbolsFullTitle(t: SeoTranslator): string {
     return `${symbolsTitle(t)} | ${SITE_NAME}`;
 }
 
-export function symbolsDescription(t: SeoTranslator): string {
+function symbolsDescription(t: SeoTranslator): string {
     return clampSeoDescription(t('symbols.description'));
 }
 

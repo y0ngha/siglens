@@ -19,7 +19,7 @@ interface SharePreparingModalProps {
  * - pending: full-screen-centered spinner + aria-live status text + sub-hint.
  * - error: error message + retry + close buttons.
  *
- * Uses useFocusTrap + useEscapeKey (same pattern as UserApiKeyRequiredModal).
+ * Uses useFocusTrap + useEscapeKey (same pattern as ShareTriggerDialog).
  * aria-busy="true" during pending so screen readers announce the live region.
  */
 export function SharePreparingModal({

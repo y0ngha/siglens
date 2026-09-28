@@ -33,7 +33,7 @@ export interface PopularPreviewGroup {
      * "리터럴 전용"으로 분류해 네임스페이스를 좁힌다. 그 상태에서 한국어를
      * 그냥 두면 비-ko 화면에 한국어가 남고, `t()`를 여기서 부르면 이번엔
      * 키가 클라이언트 페이로드에서 빠진다. 키만 내보내는 것이 유일한 안전한
-     * 형태다(`views/symbol/utils/chartPageHeading.ts`와 같은 이유).
+     * 형태다.
      *
      * 지역 이름은 이미 `assetClassNav`가 네 로케일로 갖고 있다 — 새 표를
      * 만들면 `미국`이 두 곳에 생겨 한쪽만 바뀐다.

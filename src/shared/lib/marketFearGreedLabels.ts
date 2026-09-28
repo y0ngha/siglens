@@ -1,8 +1,3 @@
-// sentimentLabelText and formatConfidenceFooter are shared verbatim with the
-// per-stock index — both indices use the same 5-stage label vocabulary and the
-// same "표본 N — 신뢰도" footer phrasing, so we re-export instead of duplicating.
-export { sentimentLabelText, confidenceLabelKey } from './fearGreedLabels';
-
 /**
  * 시장 공포·탐욕 지수를 제공하는 시장.
  *

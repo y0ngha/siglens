@@ -20,7 +20,7 @@ interface RootErrorProps {
  * those nested boundaries and presents a branded, retryable UI instead of
  * a blank page. `reset()` re-renders the failed segment in place.
  *
- * Mirrors `src/app/market/error.tsx` structure and styling.
+ * Mirrors `src/app/[locale]/market/error.tsx` structure and styling.
  */
 export default function RootError({ error, reset }: RootErrorProps) {
     const t = useTranslations('app.home');

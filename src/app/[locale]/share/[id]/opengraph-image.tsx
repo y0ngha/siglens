@@ -29,13 +29,17 @@ interface Props {
 }
 
 export default async function Image({ params }: Props) {
-    const tLabel = await getTranslations('shared.enumLabel');
-    // 로케일을 넘기지 않으면 `getTranslations`가 요청 스코프를 못 찾아 기본
-    // 로케일로 떨어진다 — `force-static`이라 조용히 전 로케일이 한국어 이미지로
-    // 통일된다(실측: /AAPL·/en/AAPL·/ja/AAPL이 바이트 동일).
     const { id, locale } = await params;
+    const resolvedLocale = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    // 명시적으로 로케일을 넘긴다 — 안 넘기면 `getTranslations`가 요청 스코프를
+    // 못 찾아 기본 로케일로 조용히 떨어진다(심볼 OG 이미지의 `force-static` 경로에서
+    // 실측된 바 있음: /AAPL·/en/AAPL·/ja/AAPL이 바이트 동일해진 사례).
+    const tLabel = await getTranslations({
+        locale: resolvedLocale,
+        namespace: 'shared.enumLabel',
+    });
     const t = await getTranslations({
-        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        locale: resolvedLocale,
         namespace: 'app.share',
     });
     const lookup = await getCachedSharedAnalysis(id);

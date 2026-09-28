@@ -43,7 +43,6 @@ export type {
     LoginUserInput,
     LoginUserError,
     AuthSessionCookie,
-    AuthSessionOptions,
     LoginUserDependencies,
     LoginUserOptions,
     LoginUserResult,
@@ -81,7 +80,6 @@ export type {
     LoginUserErrorCode,
     RegisterUserError,
     RegisterUserErrorCode,
-    RegisterUserErrorField,
     VerifyEmailErrorCode,
 } from './lib/authUseCaseTypes';
 
@@ -89,18 +87,15 @@ export type {
 export {
     AUTH_SESSION_COOKIE_NAME,
     DEFAULT_SESSION_TTL_SECONDS,
-    createSessionCookie,
     createExpiredSessionCookie,
     createAuthSession,
 } from './lib/sessionCookie';
-export type { CreateAuthSessionResult } from './lib/sessionCookie';
 export { isSecureCookieEnv } from './lib/sessionCookieOptions';
 export { applyAuthCookie } from './lib/applyAuthCookie';
 export {
     createAuthHintCookie,
     createExpiredAuthHintCookie,
 } from './lib/authHintCookie';
-export type { AuthHintCookieDescriptor } from './lib/authHintCookie';
 export {
     AUTH_SERVICE_UNAVAILABLE_MESSAGE,
     CONSENT_REQUIRED_MESSAGE,

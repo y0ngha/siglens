@@ -20,7 +20,7 @@ interface Props {
 }
 
 /** Where the AI product lives for the current locale — shared by the lockup and the drawer entry. */
-export function useAiHomeHref(): string {
+function useAiHomeHref(): string {
     const locale = useCurrentLocale();
     return `${AI_SITE_URL}${localePath(locale, '/')}`;
 }

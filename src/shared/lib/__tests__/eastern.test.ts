@@ -1,5 +1,4 @@
-import { getEasternOffsetHours } from '@/shared/lib/eastern';
-import { nthSundayDay } from '@/shared/lib/etTimeUtils';
+import { getEasternOffsetHours, nthSundayDay } from '@/shared/lib/eastern';
 
 describe('eastern', () => {
     describe('getEasternOffsetHours', () => {

@@ -2,7 +2,6 @@ import { render, screen } from '@testing-library/react';
 import {
     FcfTooltip,
     NetDebtTooltip,
-    AccrualsTooltip,
     CapExTooltip,
     FcfMarginTooltip,
     GrossMarginTooltip,
@@ -25,14 +24,6 @@ describe('financialsTooltips', () => {
             screen.getByText(/총부채에서 보유 현금을 뺀 값/)
         ).toBeInTheDocument();
         expect(screen.getByText(/순현금/)).toBeInTheDocument();
-    });
-
-    it('AccrualsTooltip renders accruals quality explanation text', () => {
-        render(<div>{AccrualsTooltip}</div>);
-        expect(
-            screen.getByText(/장부상 순이익이 실제 영업현금흐름으로/)
-        ).toBeInTheDocument();
-        expect(screen.getByText(/이익의 질이 좋다/)).toBeInTheDocument();
     });
 
     it('CapExTooltip renders capital expenditure explanation text', () => {

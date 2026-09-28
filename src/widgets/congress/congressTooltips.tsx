@@ -21,17 +21,6 @@ export const DisclosureLagTooltip = (
     />
 );
 
-export const SenateChamberTooltip = (
-    <TooltipParagraphs
-        namespace="widgets.congress"
-        tooltipKey="senateChamber"
-    />
-);
-
-export const HouseChamberTooltip = (
-    <TooltipParagraphs namespace="widgets.congress" tooltipKey="houseChamber" />
-);
-
 export const ChamberColumnTooltip = (
     <TooltipParagraphs
         namespace="widgets.congress"
