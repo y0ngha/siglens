@@ -1,4 +1,7 @@
-import { createSingleFlight } from '@/shared/lib/singleFlight';
+import {
+    createSingleFlight,
+    __resetSingleFlightForTests,
+} from '@/shared/lib/singleFlight';
 
 describe('createSingleFlight', () => {
     it('shares a single promise across concurrent calls with the same key', async () => {
@@ -61,7 +64,7 @@ describe('createSingleFlight', () => {
             return new Promise(resolve => setTimeout(() => resolve(1), 10));
         };
         const first = sf.run('k', slow);
-        sf._resetForTest();
+        __resetSingleFlightForTests(sf);
         const second = sf.run('k', slow);
         await Promise.all([first, second]);
         expect(invocations).toBe(2);

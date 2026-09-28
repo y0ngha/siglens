@@ -27,7 +27,10 @@ import { translateCompanyNames } from './koreanTranslator';
 import { getKoreanNames, setKoreanTickers } from './koreanNameStore';
 import { CANONICAL_KOREAN_NAMES } from '@/shared/config/canonical-korean-names';
 import { fireAndForget } from '@/shared/lib/backgroundTask';
-import { createSingleFlight } from '@/shared/lib/singleFlight';
+import {
+    createSingleFlight,
+    __resetSingleFlightForTests,
+} from '@/shared/lib/singleFlight';
 import { createCacheProvider, type CacheProvider } from '@y0ngha/siglens-core';
 import type { AssetInfo, KoreanTickerEntry } from '@/shared/lib/types';
 
@@ -271,7 +274,7 @@ async function resolveKrEquityAssetInfo(
 
 /** Test helper — clears the in-flight registry between cases. */
 export function _resetInFlightTranslationsForTest(): void {
-    translationSingleFlight._resetForTest();
+    __resetSingleFlightForTests(translationSingleFlight);
 }
 
 /**

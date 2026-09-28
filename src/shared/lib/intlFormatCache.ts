@@ -18,28 +18,33 @@ function cacheKey(locale: string, options: object | undefined): string {
     return `${locale}|${JSON.stringify(options ?? {})}`;
 }
 
+/** Returns the cached instance for `key`, creating and storing it via `make` on a miss. */
+function getOrCreate<F>(cache: Map<string, F>, key: string, make: () => F): F {
+    const existing = cache.get(key);
+    if (existing !== undefined) return existing;
+    const created = make();
+    cache.set(key, created);
+    return created;
+}
+
 export function cachedNumberFormat(
     locale: string,
     options?: Intl.NumberFormatOptions
 ): Intl.NumberFormat {
-    const key = cacheKey(locale, options);
-    let formatter = NUMBER_FORMATS.get(key);
-    if (formatter === undefined) {
-        formatter = new Intl.NumberFormat(locale, options);
-        NUMBER_FORMATS.set(key, formatter);
-    }
-    return formatter;
+    return getOrCreate(
+        NUMBER_FORMATS,
+        cacheKey(locale, options),
+        () => new Intl.NumberFormat(locale, options)
+    );
 }
 
 export function cachedDateTimeFormat(
     locale: string,
     options?: Intl.DateTimeFormatOptions
 ): Intl.DateTimeFormat {
-    const key = cacheKey(locale, options);
-    let formatter = DATE_TIME_FORMATS.get(key);
-    if (formatter === undefined) {
-        formatter = new Intl.DateTimeFormat(locale, options);
-        DATE_TIME_FORMATS.set(key, formatter);
-    }
-    return formatter;
+    return getOrCreate(
+        DATE_TIME_FORMATS,
+        cacheKey(locale, options),
+        () => new Intl.DateTimeFormat(locale, options)
+    );
 }

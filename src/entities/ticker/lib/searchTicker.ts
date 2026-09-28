@@ -23,7 +23,10 @@ import {
     fireAndForget,
     type BackgroundTaskOptions,
 } from '@/shared/lib/backgroundTask';
-import { createSingleFlight } from '@/shared/lib/singleFlight';
+import {
+    createSingleFlight,
+    __resetSingleFlightForTests,
+} from '@/shared/lib/singleFlight';
 import { createCacheProvider } from '@y0ngha/siglens-core';
 import type { KoreanTickerEntry, TickerSearchResult } from '@/shared/lib/types';
 
@@ -74,7 +77,7 @@ function translateAndCache(unmapped: TickerSearchResult[]): Promise<void> {
 
 /** @internal Test helper — clears the in-flight registry between cases. */
 export function _resetInFlightTranslationsForTest(): void {
-    translationSingleFlight._resetForTest();
+    __resetSingleFlightForTests(translationSingleFlight);
 }
 
 /**

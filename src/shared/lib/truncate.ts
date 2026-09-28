@@ -9,10 +9,14 @@
  *
  * `trimEnd`: 자른 뒤 꼬리 공백을 걷고 말줄임표를 붙인다(`단어 …` 대신 `단어…`).
  */
+export interface TruncateWithEllipsisOptions {
+    readonly trimEnd?: boolean;
+}
+
 export function truncateWithEllipsis(
     text: string,
     max: number,
-    { trimEnd = false }: { readonly trimEnd?: boolean } = {}
+    { trimEnd = false }: TruncateWithEllipsisOptions = {}
 ): string {
     const codePoints = Array.from(text);
     if (codePoints.length <= max) return text;

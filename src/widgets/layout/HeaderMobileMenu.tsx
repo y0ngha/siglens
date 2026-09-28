@@ -138,6 +138,7 @@ export function HeaderMobileMenu({
             </button>
 
             {mounted &&
+                typeof document !== 'undefined' &&
                 createPortal(
                     <>
                         {isOpen && (

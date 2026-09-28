@@ -33,6 +33,7 @@ export const dynamic = 'force-dynamic';
  * It is a route handler rather than logic inside `maybeHandoffRedirect` because
  * a Server Component render cannot set cookies.
  */
+// react-doctor-disable-next-line react-doctor/nextjs-no-side-effect-in-get-handler
 export async function GET(request: NextRequest): Promise<Response> {
     if (!isAiHost(request.headers.get('host'))) {
         return invalidHandoffRequest();
