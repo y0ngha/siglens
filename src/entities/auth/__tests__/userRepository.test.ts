@@ -446,7 +446,7 @@ describe('DrizzleUserRepository', () => {
 
         const result = await repository.createOAuthUser({
             email: 'user@example.com',
-            provider: 'kakao',
+            provider: 'google',
             providerAccountId: 'provider-user-1',
             avatarUrl: 'https://example.com/avatar.png',
         });

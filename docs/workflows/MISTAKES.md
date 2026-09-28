@@ -28,14 +28,14 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 0.5. Tailwind color tokens used directly; design system tokens not applied
    → All colors must come from src/lib/design/tailwind-config.ts semantic tokens
    → Never use base Tailwind colors (blue-*, slate-*, rose-*, amber-*) directly in JSX className
-   → Special colors (brand-kakao) must be registered as tokens in tailwind.config.ts before use
+   → Special colors (external brand / fixed-surface colors) must be registered as tokens in the `@theme` block of src/app/globals.css before use
    ❌ className="bg-blue-600 hover:bg-blue-700"  // base Tailwind color
    ❌ className="bg-[#FEE500]"  // arbitrary color inline
    ❌ className="text-rose-600 bg-amber-100"  // undefined design tokens
    ✅ className="bg-primary-600 hover:bg-primary-700"  // semantic primary token
    ✅ className="bg-secondary-950"  // secondary token
    ✅ className="text-ui-danger"  // UI semantic token
-   ✅ className="bg-brand-kakao"  // brand token registered in tailwind.config.ts
+   ✅ className="text-on-fixed-light"  // fixed-surface token registered in globals.css @theme
 
 0.7. Server Actions throwing uncaught exceptions instead of returning typed error results
    → Server Actions must never propagate exceptions to the client; all throw paths must be caught

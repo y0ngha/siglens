@@ -33,6 +33,7 @@ import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
 import { buildSymbolDirectory } from '@/shared/lib/symbolDirectory';
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
+import { SITE_URL } from '@/shared/lib/seo';
 
 async function renderPage(locale: string): Promise<string> {
     return renderToStaticMarkup(
@@ -130,6 +131,24 @@ describe('/symbols 디렉터리 페이지', () => {
             expect.objectContaining({ url: '/og-image.png' }),
         ]);
         expect(meta.twitter?.images).toEqual(['/og-image.png']);
+    });
+
+    /**
+     * `og:url`은 canonical과 같은 로케일별 URL이어야 한다 — 전 로케일이 ko URL을
+     * 가리키면 `/en/symbols` 공유 카드가 한국어 페이지로 연결된다.
+     */
+    it.each([
+        ['ko', `${SITE_URL}/symbols`],
+        ['en', `${SITE_URL}/en/symbols`],
+        ['ja', `${SITE_URL}/ja/symbols`],
+        ['zh', `${SITE_URL}/zh/symbols`],
+    ])('og:url이 %s 로케일의 canonical과 같다', async (locale, expected) => {
+        const meta = await generateMetadata({
+            params: Promise.resolve({ locale }),
+        });
+
+        expect(meta.openGraph?.url).toBe(expected);
+        expect(meta.alternates?.canonical).toBe(expected);
     });
 
     it('제목·설명이 "전체/모든 종목"이라고 주장하지 않는다 — 상장 종목 전체가 아니다', async () => {

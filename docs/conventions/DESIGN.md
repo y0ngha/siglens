@@ -331,15 +331,18 @@ moderate strength     text-ui-warning
 
 ## Brand Color — 소셜 로그인
 
-외부 브랜드가 명시한 색상을 UI 상태 토큰과 분리해 관리한다.
+외부 브랜드가 배경색을 고정한 **고정 표면**(구글 버튼: 두 테마 모두 흰 배경) 위의
+텍스트·경계는 테마 램프 토큰 대신 테마와 무관한 `*-fixed-light-*` 토큰을 쓴다.
 
 ```
---color-brand-kakao: #fee500   (Kakao Yellow)
+--color-on-fixed-light: #16181d        (고정 흰 표면 위 텍스트)
+--color-fixed-light-border: #8e95a1    (흰 카드 위 경계, 3:1)
+--color-fixed-light-hover: #f1f2f5
 ```
 
 **사용처**
 ```
-카카오 소셜 로그인 버튼    bg-brand-kakao
+구글 소셜 로그인 버튼    bg-white text-on-fixed-light hover:bg-fixed-light-hover ring-fixed-light-border
 ```
 
 ---
@@ -373,7 +376,6 @@ Tailwind v4를 사용하므로 별도의 `tailwind.config.ts`(JS 설정) 파일�
     --color-chart-bearish: #ef5350;
     /* MA/EMA, 볼린저, MACD, RSI, DMI, Stochastic, Stochastic RSI, CCI, Ichimoku,
        VWAP, trendline, support/resistance, UI(success/warning/danger) ... */
-    --color-brand-kakao: #fee500;
 }
 ```
 

@@ -133,13 +133,13 @@ describe('issueOAuthState / verifyOAuthState', () => {
 
     it('provider 가 일치하지 않으면 거부한다 (signed payload with mismatched provider)', () => {
         // SupportedOAuthProvider 는 현재 'google' 만 허용하므로 issueOAuthState 로
-        // 'kakao' state 를 발급할 수 없다. 대신 시그니처가 유효한 mismatched payload 를
+        // 'apple' state 를 발급할 수 없다. 대신 시그니처가 유효한 mismatched payload 를
         // 직접 조립해 provider 검사 경로가 이를 거부하는지 확인한다.
         const { state } = issueOAuthState('google', '/', FIXED_NOW);
         const encoded = Buffer.from(
             JSON.stringify({
                 state,
-                provider: 'kakao',
+                provider: 'apple',
                 next: '/',
                 exp: FIXED_NOW.getTime() + 60_000,
             })

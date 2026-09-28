@@ -45,6 +45,17 @@ describe('RouteErrorView', () => {
         );
     });
 
+    it('메시지 묶음만 alert로 알리고 버튼·링크는 alert 밖에 둔다', () => {
+        vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        renderView();
+        const alert = screen.getByRole('alert');
+        expect(alert).toHaveTextContent('eyebrow');
+        expect(alert).toHaveTextContent('title');
+        expect(alert).toHaveTextContent('body');
+        expect(alert).not.toHaveTextContent('retry');
+        expect(alert).not.toHaveTextContent('home');
+    });
+
     it('logTag로 콘솔 로그와 클라이언트 에러 리포트를 남긴다', () => {
         const errorSpy = vi
             .spyOn(console, 'error')

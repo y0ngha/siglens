@@ -8,7 +8,6 @@ describe('schema 테이블 export', () => {
     const expectedTables = [
         'users',
         'sessions',
-        'usageLogs',
         'oauthAccounts',
         'userApiKeys',
         'koreanTickers',
@@ -40,7 +39,6 @@ describe('schema 테이블 export', () => {
 describe('schema enum export', () => {
     const expectedEnums = [
         'userTierEnum',
-        'usageActionTypeEnum',
         'oauthProviderEnum',
         'llmProviderEnum',
         'termsKindEnum',

@@ -251,15 +251,6 @@
             }
         },
         "portfolio": {
-            "PositionHoldingCard": {
-                "0ac914": "Avg. Price {v0}",
-                "0bafa3": "Insufficient Data",
-                "497d1e": "Current Price",
-                "900beb": "Avg. Price",
-                "ba09a5": "Loading {v0} position",
-                "fa94cf": "Failed to load range data.",
-                "fb64df": "Return Rate"
-            },
             "page": {
                 "55ca69": "My Portfolio Position",
                 "605ada": "Loading holdings position.",
@@ -3790,6 +3781,15 @@
                 "2bf3cd": "Recent Range {v0}",
                 "5cd686": "Register your average price and quantity to view your position within the recent price range\n                as an isometric building.",
                 "5edaf2": "Register Holdings"
+            },
+            "PositionHoldingCard": {
+                "0ac914": "Avg. Price {v0}",
+                "0bafa3": "Insufficient Data",
+                "497d1e": "Current Price",
+                "900beb": "Avg. Price",
+                "ba09a5": "Loading {v0} position",
+                "fa94cf": "Failed to load range data.",
+                "fb64df": "Return Rate"
             },
             "PositionStatusSummary": {
                 "160873": "To recent high",

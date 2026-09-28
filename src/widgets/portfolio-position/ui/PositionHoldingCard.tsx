@@ -66,7 +66,7 @@ function useInViewOnce<T extends Element>(): [
 const CARD_BODY_MIN_H = 'min-h-[350px]';
 
 function CardSkeleton({ symbol }: { symbol: string }) {
-    const t = useTranslations('app.portfolio');
+    const t = useTranslations('widgets.portfolio-position');
     return (
         <div
             role="status"
@@ -96,7 +96,7 @@ interface CardDegradedProps {
 }
 
 function CardDegraded({ symbol, avg, message }: CardDegradedProps) {
-    const t = useTranslations('app.portfolio');
+    const t = useTranslations('widgets.portfolio-position');
     return (
         <div
             data-testid="holding-card-degraded"
@@ -123,7 +123,7 @@ function CardDegraded({ symbol, avg, message }: CardDegradedProps) {
  * 단위로 degrade하고 그리드 전체는 절대 깨지지 않는다(design §에러/엣지).
  */
 export function PositionHoldingCard({ holding }: PositionHoldingCardProps) {
-    const t = useTranslations('app.portfolio');
+    const t = useTranslations('widgets.portfolio-position');
     const [setNode, isVisible] = useInViewOnce<HTMLDivElement>();
     const avg = Number(holding.averagePrice);
     const fmpSymbol = holding.fmpSymbol ?? undefined;

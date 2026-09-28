@@ -4,12 +4,6 @@ vi.mock('@/entities/oauth-account/lib/googleRevoker', () => ({
     },
 }));
 
-vi.mock('@/entities/oauth-account/lib/kakaoRevoker', () => ({
-    kakaoOAuthRevokerAdapter: {
-        revokeToken: vi.fn().mockResolvedValue(undefined),
-    },
-}));
-
 import { compositeOAuthRevoker } from '@/entities/oauth-account/lib/revoker';
 
 describe('compositeOAuthRevoker', () => {
@@ -28,27 +22,15 @@ describe('compositeOAuthRevoker', () => {
         });
     });
 
-    it('delegates to the kakao adapter for kakao provider', async () => {
-        const { kakaoOAuthRevokerAdapter } =
-            await import('@/entities/oauth-account/lib/kakaoRevoker');
-
-        await compositeOAuthRevoker.revokeToken('kakao', {
-            accessToken: 'kakao-access-token',
-            refreshToken: null,
-        });
-
-        expect(kakaoOAuthRevokerAdapter.revokeToken).toHaveBeenCalledWith({
-            accessToken: 'kakao-access-token',
-            refreshToken: null,
-        });
-    });
-
-    it('skips silently when no adapter is registered for the provider', async () => {
-        await expect(
-            compositeOAuthRevoker.revokeToken('apple', {
-                accessToken: 'access-token',
-                refreshToken: null,
-            })
-        ).resolves.toBeUndefined();
-    });
+    it.each(['apple', 'kakao'] as const)(
+        'skips silently when no adapter is registered for %s',
+        async provider => {
+            await expect(
+                compositeOAuthRevoker.revokeToken(provider, {
+                    accessToken: 'access-token',
+                    refreshToken: null,
+                })
+            ).resolves.toBeUndefined();
+        }
+    );
 });

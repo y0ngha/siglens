@@ -37,14 +37,14 @@ vi.mock('next/link', () => ({ default: () => null }));
 vi.mock('next/navigation', () => ({
     redirect: vi.fn(),
 }));
-vi.mock('@/app/[locale]/portfolio/PositionHoldingCard', () => ({
+vi.mock('@/widgets/portfolio-position/ui/PositionHoldingCard', () => ({
     PositionHoldingCard: () => null,
 }));
 
 import { isValidElement, type ReactNode } from 'react';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { PositionHoldingCard } from '@/app/[locale]/portfolio/PositionHoldingCard';
+import { PositionHoldingCard } from '@/widgets/portfolio-position/ui/PositionHoldingCard';
 import {
     generateMetadata,
     PortfolioEmptyState,

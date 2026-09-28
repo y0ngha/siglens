@@ -11,7 +11,7 @@ vi.mock('@/entities/bars/actions/getBarsAction', () => ({
 
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { getBarsAction } from '@/entities/bars/actions/getBarsAction';
-import { PositionHoldingCard } from '@/app/[locale]/portfolio/PositionHoldingCard';
+import { PositionHoldingCard } from '@/widgets/portfolio-position/ui/PositionHoldingCard';
 import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
 import type { PortfolioHoldingView } from '@/entities/portfolio/model';
 

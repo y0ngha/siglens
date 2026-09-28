@@ -1,7 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
 import { getTranslations } from 'next-intl/server';
-import { PositionHoldingCard } from './PositionHoldingCard';
+import { PositionHoldingCard } from '@/widgets/portfolio-position/ui/PositionHoldingCard';
 import { PortfolioManager } from './PortfolioManager';
 import { cn } from '@/shared/lib/cn';
 import { PLACEHOLDER_ON_INSET, SURFACE_CARD } from '@/shared/lib/surfaceStyles';

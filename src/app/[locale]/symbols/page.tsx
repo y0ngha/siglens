@@ -3,10 +3,9 @@ import type { Metadata } from 'next';
 import { resolveLocale } from '@/shared/i18n/locales';
 import {
     localeAlternatesFrom,
-    localeOpenGraph,
+    localePageSocial,
     localeRobots,
 } from '@/shared/lib/seoAlternates';
-import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
@@ -75,31 +74,14 @@ export async function generateMetadata({
         // 깨진다).
         alternates: await localeAlternatesFrom(params, PATH),
         robots: localeRobots(locale),
-        openGraph: {
-            type: 'website',
-            siteName: SITE_NAME,
+        // 소셜 카드는 `localePageSocial`로 통째로 선언한다 — `og:url`이 canonical과
+        // 같은 로케일별 URL이 되고(`/en/symbols`가 ko URL을 가리키지 않게), 정적
+        // `/og-image.png`도 함께 실린다(2026-09-18 실측: 이 라우트만 `og:image`가
+        // 없었다 — 이미지를 아예 안 주면 공유 카드가 텅 빈 채로 나간다).
+        ...localePageSocial(locale, PATH, {
             title: symbolsFullTitle(tSeo),
             description: symbolsDescription(tSeo),
-            url: `${SITE_URL}${PATH}`,
-            ...localeOpenGraph(locale),
-            // 정적 이미지를 쓴다 — 이 페이지에는 종목별 동적 OG를 만들 근거가 없고,
-            // 이미지를 아예 안 주면 공유 카드가 텅 빈 채로 나간다(2026-09-18 실측:
-            // 이 라우트만 `og:image`가 없었다).
-            images: [
-                {
-                    url: '/og-image.png',
-                    width: OG_IMAGE_WIDTH,
-                    height: OG_IMAGE_HEIGHT,
-                    alt: symbolsFullTitle(tSeo),
-                },
-            ],
-        },
-        twitter: {
-            card: 'summary_large_image',
-            title: symbolsFullTitle(tSeo),
-            description: symbolsDescription(tSeo),
-            images: ['/og-image.png'],
-        },
+        }),
     };
 }
 

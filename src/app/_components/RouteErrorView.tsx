@@ -46,15 +46,26 @@ export function RouteErrorView({
         <main
             className={`${containerClassName} flex flex-1 flex-col items-center py-20 text-center`}
         >
-            <p className="text-sm font-semibold tracking-[0.01em] text-primary-400">
-                {eyebrow}
-            </p>
-            <h1 className="mt-4 text-2xl font-bold text-secondary-50 sm:text-3xl">
-                {title}
-            </h1>
-            <p className="mt-3 max-w-md text-sm leading-relaxed text-secondary-400">
-                {body}
-            </p>
+            {/*
+             * 메시지 묶음만 alert로 알린다 — 버튼·링크까지 넣으면 스크린리더가 조작
+             * 라벨까지 에러 문구로 읽는다(news/error.tsx와 같은 배치). 래퍼가 flex
+             * 아이템이 되면서 가운데 정렬이 끊기지 않게 안에서 다시 세로 정렬한다.
+             */}
+            <div
+                role="alert"
+                aria-atomic="true"
+                className="flex flex-col items-center"
+            >
+                <p className="text-sm font-semibold tracking-[0.01em] text-primary-400">
+                    {eyebrow}
+                </p>
+                <h1 className="mt-4 text-2xl font-bold text-secondary-50 sm:text-3xl">
+                    {title}
+                </h1>
+                <p className="mt-3 max-w-md text-sm leading-relaxed text-secondary-400">
+                    {body}
+                </p>
+            </div>
             <div className="mt-8 flex gap-3">
                 <button
                     type="button"

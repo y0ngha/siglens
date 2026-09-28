@@ -23,7 +23,6 @@ interface OAuthConsentFormProps {
 
 const PROVIDER_LABEL: Partial<Record<OAuthProvider, string>> = {
     google: 'Google',
-    kakao: 'Kakao',
 };
 
 export function OAuthConsentForm({

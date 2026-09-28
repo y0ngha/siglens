@@ -51,13 +51,6 @@ const PROVIDERS: readonly SocialProvider[] = [
         buttonClassName:
             'bg-white text-on-fixed-light hover:bg-fixed-light-hover ring-1 ring-fixed-light-border',
     },
-    // {
-    //     id: 'kakao',
-    //     label: '카카오로 시작하기',
-    //     icon: <span aria-hidden className="font-mono text-base">K</span>,
-    //     buttonClassName:
-    //         'bg-brand-kakao text-on-fixed-light hover:brightness-95',
-    // },
 ];
 
 function buildHref(providerId: SupportedOAuthProvider, next?: string): string {

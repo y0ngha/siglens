@@ -18,7 +18,11 @@ import type { DashboardScopeId } from '@/shared/config/dashboardScope';
  */
 export type SnapshotConfidence = Exclude<FearGreedConfidence, 'insufficient'>;
 
-/** All OAuth providers known to the system (including those reserved but not yet active in the UI). */
+/**
+ * DB `oauth_provider` enum 값의 미러 — 로그인 가능한 provider 목록이 아니다(`SupportedOAuthProvider` 참고).
+ * `kakao`는 코드가 삭제된 레거시 값이다. 2026-04-30~05-03 master에서 활성화된 적이 있어
+ * `oauth_accounts`에 행이 남아 있을 수 있으므로 enum에서 빼지 않는다(enum 값 제거는 타입 재생성 필요).
+ */
 export type OAuthProvider = 'google' | 'kakao' | 'apple';
 
 /** siglens 앱에서 현재 활성화된 OAuth provider. */
