@@ -5,7 +5,7 @@ type: pattern
 category: reversal_bullish
 pattern: rounding_bottom
 indicators: []
-confidence_weight: 0.78
+confidence_weight: 0.8
 display:
   chart:
     show: true
@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [rounding_bottom]
-token_cost: 754
-digest_hash: "bc7a0065"
+token_cost: 771
+digest_hash: "eb651c90"
 ---
 
 ## Detection Criteria
@@ -32,21 +32,19 @@ digest_hash: "bc7a0065"
 
 ## Confidence Weight Rationale
 
-confidence_weight: 0.78 — Rounding Bottom (Saucer) is rated by Bulkowski as a "very reliable" reversal pattern, with documented success rates in the 75–82% range when confirmed by a rim breakout. Its gradual formation reflects a slow but steady shift from distribution to accumulation — a hallmark of smart-money positioning during periods when the broader market or sector is out of favor. The extended formation period introduces timing challenges (pattern may take months to complete, early identification can be premature), which is why the weight sits at 0.78 rather than higher despite the strong empirical track record.
+confidence_weight: 0.8 — Bulkowski (thepatternsite.com/roundb.html, bull market): performance rank 7 of 39, break-even failure rate 4%, 65% meet the price target. Weight: failure ≤ 10% → 0.8. Its gradual formation reflects a slow shift from distribution to accumulation. The extended formation period introduces timing challenges (the pattern may take months to complete, and early identification can be premature), so wait for the rim breakout before treating it as complete. A prior downtrend is not required: Bulkowski finds price "trends upward to the pattern 67% of the time (that is, 67% act as continuation patterns)."
 
 Factors that increase confidence:
 - Formation period > 3 months (60+ daily bars)
 - Volume follows a clear U-shape matching the price pattern
 - Smooth, gradual curves without sharp moves
 - Breakout above the rim with significant volume increase
-- Prior downtrend of at least 20% before the pattern began
 
 Factors that decrease confidence:
 - V-shaped bottom rather than gradual U-shape
 - No volume U-shape (flat or erratic volume)
 - Sharp moves within the pattern (disrupting the rounded shape)
 - Right rim significantly below the left rim (> 5% lower)
-- Pattern forming in an already sideways market (no prior downtrend)
 
 ## Key Signals
 
@@ -69,7 +67,7 @@ Factors that decrease confidence:
 
 - **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the rim price (the breakout level); `extremeLevel` = the saucer bottom price; `direction` = 'up'; `invalidationLevel` = the most recent right-side trough (the saucer bottom itself is a wider alternative stop). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Stop-loss reference level**: The most recent trough within the right side of the saucer, or the bottom of the saucer for a wider stop, serves as the invalidation level.
-- **Extended targets**: Rounding Bottoms confirmed at higher timeframes (weekly/monthly) often produce moves that significantly exceed the measured target, as they represent major trend reversals.
+- **Target reliability**: Bulkowski (roundb.html): 65% reach the measure-rule target — do not treat it as a minimum expectation.
 - **Patience**: The pattern's long formation period means confirmation can take months. Early positioning before rim breakout carries higher risk.
 
 Note: These are analytical reference points for technical analysis, not trading recommendations.
@@ -85,7 +83,7 @@ When this pattern is detected, include the following in the analysis response:
 - **geometry**: Fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
-원형바닥 (Rounding Bottom / Saucer) — long-term bullish reversal, confidence_weight 0.78, documented success rate 75–82%. Often coincides with sector/market rotation into the stock.
+원형바닥 (Rounding Bottom / Saucer) — long-term bullish reversal, confidence_weight 0.8 (Bulkowski roundb.html: rank 7/39, failure 4%, 65% meet target). Often coincides with sector/market rotation into the stock.
 
 ### Detection
 - Gradual rounded U-shape over extended period — NOT V-shaped bottom nor flat base.
@@ -96,8 +94,9 @@ When this pattern is detected, include the following in the analysis response:
 - Confirmed when price CLOSES above left rim (neckline/resistance) with increased volume.
 
 ### Grading
-- Increase: formation >3 months (60+ daily bars); clear volume U-shape; smooth curves without sharp moves; rim breakout with significant volume; prior downtrend ≥20% before pattern.
-- Decrease: V-shape not U; flat/erratic volume; sharp moves within pattern; right rim >5% below left rim; forming in already-sideways market (no prior downtrend).
+- Increase: formation >3 months (60+ daily bars); clear volume U-shape; smooth curves without sharp moves; rim breakout with significant volume.
+- Decrease: V-shape not U; flat/erratic volume; sharp moves within pattern; right rim >5% below left rim.
+- Prior trend: not required — Bulkowski roundb.html: price trends UP into the pattern 67% of the time (67% act as continuations).
 - Volume U-shape is the MOST important confirmation (distribution→accumulation).
 - Left & right sides roughly equal duration (time symmetry); large lopsidedness reduces reliability.
 

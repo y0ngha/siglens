@@ -5,7 +5,7 @@ type: pattern
 category: reversal_bearish
 pattern: triple_top
 indicators: []
-confidence_weight: 0.8
+confidence_weight: 0.6
 display:
   chart:
     show: true
@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [triple_top]
-token_cost: 721
-digest_hash: "1cad7207"
+token_cost: 730
+digest_hash: "94264196"
 ---
 
 ## Detection Criteria
@@ -31,7 +31,7 @@ digest_hash: "1cad7207"
 
 ## Confidence Weight Rationale
 
-confidence_weight: 0.8 — Triple Top has a higher confidence weight than Double Top (0.75) because the third failed attempt at breaking resistance provides additional confirmation of bearish reversal. Thomas Bulkowski's statistical analysis shows an 88% success rate. The three-peak structure offers more structural evidence than the two-peak Double Top, making false positives less likely.
+confidence_weight: 0.6 — Bulkowski (thepatternsite.com/tt.html, bull market): performance rank 24 of 36, break-even failure rate 25%, only 49% meet the price target — "performance toward the bottom of the list." Weight: failure 21–30% → 0.6, the same as Double Top. A third failed test of resistance adds structure but not measured reliability; volume behavior and a decisive neckline close still decide.
 
 Factors that increase confidence:
 - All three peak prices within 1.5% of each other
@@ -83,7 +83,7 @@ When this pattern is detected, include the following in the analysis response:
 - **geometry**: Fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
-삼중천장 (Triple Top) — bearish reversal, confidence_weight 0.8 (Bulkowski ~88% success). Three peaks at ~equal resistance; neckline = line connecting the two troughs between peaks.
+삼중천장 (Triple Top) — bearish reversal, confidence_weight 0.6 (Bulkowski tt.html: rank 24/36, failure 25%, 49% meet target). Three peaks at ~equal resistance; neckline = line connecting the two troughs between peaks.
 
 ### Detection
 - Three distinct peaks at ~same price, within 2–3% of each other.

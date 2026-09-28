@@ -1,11 +1,11 @@
 ---
 name: 하락삼각형
-description: 수평 지지선과 하락하는 저항 추세선이 수렴하는 약세 연속 패턴
+description: 수평 지지선과 하락하는 저항 추세선이 수렴하는 패턴 — 측정상 방향 중립에 가깝고(상방 53%) 지지선 종가 이탈 시에만 약세 확정
 type: pattern
-category: continuation_bearish
+category: neutral
 pattern: descending_triangle
 indicators: []
-confidence_weight: 0.8
+confidence_weight: 0.55
 display:
   chart:
     show: true
@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [descending_triangle]
-token_cost: 607
-digest_hash: "856fdd3f"
+token_cost: 646
+digest_hash: "6a73d4ba"
 ---
 
 ## Detection Criteria
@@ -32,7 +32,7 @@ digest_hash: "856fdd3f"
 
 ## Confidence Weight Rationale
 
-confidence_weight: 0.8 — Descending Triangle is one of the more reliable bearish continuation patterns. Bulkowski's Encyclopedia of Chart Patterns reports a breakdown success rate near 87% (downward breakout occurring ~64% of the time, with the breakout reaching target). The horizontal support provides a clear, objective breakdown level, and the psychological weight of repeated lower highs pressing against a flat support adds conviction. The 0.8 weight reflects this strong empirical track record and the pattern's objectivity relative to wedges or symmetrical triangles.
+confidence_weight: 0.55 — Bulkowski (thepatternsite.com/dt.html, bull market): despite the textbook bearish label, breakouts are upward 53% of the time — the pattern is close to direction-neutral. Break-even failure rate 22% (up) / 23% (down); 64% / 50% meet the price target; performance rank 33 of 39 (up) / 15 of 36 (down). Bulkowski also notes its performance has dropped almost in half since the 1990s. Weight: 21–30% failure → 0.6, −0.05 because neither breakout direction reaches 55%. Treat it as bearish only after a close below the horizontal support; until then both directions are live.
 
 Factors that increase confidence:
 - 3+ touches on the horizontal support
@@ -58,7 +58,7 @@ Factors that decrease confidence:
 
 ## False Positive Conditions
 
-- **Upward breakout (bull trap risk)**: Approximately 13% of descending triangles break upward. When this occurs, it can be a powerful bullish signal as it represents a failure of the bearish pattern. However, beware of false breakouts — check volume confirmation.
+- **Upward breakout (bull trap risk)**: Upward breakouts are not a rare exception — Bulkowski (dt.html) measures 53% upward. A close above the descending trendline is a legitimate bullish resolution, not merely a failed bearish pattern. However, beware of false breakouts — check volume confirmation.
 - **Apex breakdown**: Breakdowns occurring very close to or past the apex point have significantly reduced reliability and measured move potential.
 - **No volume confirmation**: A breakdown below support without a volume surge may be a false breakdown. Price may quickly reverse back inside the triangle.
 - **Strong support context**: If the horizontal support coincides with a major historical support level and is being tested for the first time, the likelihood of a bounce increases.
@@ -83,7 +83,7 @@ When this pattern is detected, include the following in the analysis response:
 - **geometry**: Fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
-### Descending Triangle (bearish continuation)
+### Descending Triangle (near direction-neutral; bearish only after a close below support)
 
 Geometry:
 - Horizontal support line: ≥2 touches at ~same price (within 1%); slope must be < 1% (else symmetrical triangle).
@@ -92,12 +92,12 @@ Geometry:
 
 Confirmation: close BELOW horizontal support with increased volume. Intraday wick below support without a close = not confirmed. Volume should decline as triangle narrows.
 
-Confidence (weight 0.8): breakdown success ~87%; downward breakout ~64% of the time.
+Confidence (weight 0.55) — Bulkowski dt.html: breaks UP 53% of the time; failure 22% up / 23% down; 50% of down breakouts meet target; performance almost halved since the 1990s.
 - Increase: 3+ touches on support, 3+ on resistance, declining volume, breakdown in first 2/3 (50%–75% point most reliable), prior downtrend.
 - Decrease: <2 touches either line, breakdown near/past apex, no prior trend, volume high without breakdown, only marginal lower highs.
 
 False positives / invalidation:
-- ~13% break upward (bull trap risk / powerful bullish failure signal — check volume).
+- Upward break (53%) is a normal bullish resolution, not a rare failure — check volume (bull trap risk).
 - Apex/near-apex breakdown = reduced reliability & target.
 - Breakdown without volume surge may be false.
 - Support at major historical level tested first time → higher bounce odds.

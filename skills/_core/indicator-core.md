@@ -6,15 +6,16 @@ indicators: []
 confidence_weight: 1.0
 gating:
   tier: always_on
-token_cost: 821
-digest_hash: "43b44c5d"
+token_cost: 843
+digest_hash: "7e67defc"
 ---
 
 ## Indicator Core (compressed)
 
-Always-on one-line reference for every computed indicator. Interpret only the
-values present in this prompt's indicator section; a fuller guide for a given
-indicator is injected separately only when that indicator is currently notable.
+Always-on one-line reference for the core indicators; supplementary indicators
+(MACD-V, Connors RSI, Force Index, Elder-Ray/Impulse, Chandelier, Hurst,
+Variance Ratio, R², Yang-Zhang, EWMA) get their own guide only when notable.
+Interpret only the values present in this prompt's indicator section.
 
 ### Momentum / Oscillators
 
@@ -33,7 +34,7 @@ indicator is injected separately only when that indicator is currently notable.
 - **DMI(+DI/-DI):** +DI>-DI = bullish, reversed = bearish; cross = directional shift, weight by ADX.
 - **Supertrend:** ATR trailing stop; flip = trend reversal, line acts as dynamic support/resistance.
 - **Parabolic SAR:** dots flip side = trend reversal / trailing-stop trigger.
-- **Ichimoku(9,26,52):** price vs cloud (above bullish / below bearish / inside neutral), TK cross, cloud thickness = support/resistance strength — full guide always available for cloud breakout/breakdown structure.
+- **Ichimoku(9,26,52):** price vs cloud (above bullish / below bearish / inside neutral), TK cross, cloud thickness = support/resistance strength — full guide injected when a cloud breakout/breakdown signal fires.
 
 ### Volatility / Bands
 
@@ -59,7 +60,7 @@ indicator is injected separately only when that indicator is currently notable.
 - **In thin / low-volume conditions, volume-dependent indicators (OBV etc.) are less reliable** — discount their weight.
 
 <!-- PROMPT_DIGEST:START -->
-Indicator Core — one-line reference for every computed indicator. Interpret ONLY the values present in this prompt's indicator section; a fuller guide is injected separately only when an indicator is currently notable.
+Indicator Core — one-line reference for the core indicators; supplementary indicators (MACD-V, Connors RSI, Force Index, Elder-Ray/Impulse, Chandelier, Hurst, Variance Ratio, R², Yang-Zhang, EWMA) get their own guide only when notable. Interpret ONLY the values present in this prompt's indicator section.
 Momentum/Oscillators:
 - **RSI(14):** >70 overbought / <30 oversold; 50 line = momentum bias; band-walk in strong trends, divergence = reversal warning.
 - **Stochastic(%K/%D):** >80 overbought / <20 oversold; %K crossing %D = momentum shift.
