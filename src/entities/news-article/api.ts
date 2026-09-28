@@ -40,6 +40,7 @@ import {
     NewsIngestWriteError,
 } from './lib/ingestNewsForSymbol';
 import { getNextEarningsReport } from '@/entities/earnings-report';
+import { loadNewsMacroCalendar } from '@/entities/economy/api/loadNewsMacroCalendar';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import { getDescriptor } from '@/shared/config/marketProfile';
 import { PREWARM_PROVIDER_FALLBACK } from '@/shared/config/prewarm';
@@ -413,9 +414,10 @@ export async function prewarmNews(
     }
 
     // `rows`만 가변이다 — 보강을 돌리면 그 결과를 반영해 다시 읽는다.
-    const [initialRows, next] = await Promise.all([
+    const [initialRows, next, macroCalendar] = await Promise.all([
         repo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS),
         getNextEarningsReport(symbol, db),
+        loadNewsMacroCalendar(),
     ]);
     let rows = initialRows;
 
@@ -471,6 +473,8 @@ export async function prewarmNews(
         modelId: DEEPSEEK_V4_1_FLASH_MODEL,
         news: enrichedNews,
         upcomingCalendar: next !== null ? [next] : [],
+        // 방문자 경로와 같은 헬퍼 — 캐시 키 일치 불변식.
+        macroCalendar,
         tier: 'free',
         reasoning: false,
         providerFallback: PREWARM_PROVIDER_FALLBACK,

@@ -92,6 +92,10 @@ const SIGNAL_CATALOG = [
     'squeeze_momentum_bearish',
     'support_proximity_bullish',
     'resistance_proximity_bearish',
+    'new_52w_high',
+    'new_52w_low',
+    'gap_up',
+    'gap_down',
 ] as const satisfies readonly SignalType[];
 
 // Exhaustiveness guard: if the core's SignalType union ever contains a member
@@ -104,7 +108,7 @@ void _signalCatalogIsExhaustive;
 const SIGNAL_SET = new Set<string>(SIGNAL_CATALOG);
 
 /**
- * Chart-pattern pre-screener candidates — the 17 `ChartPatternId` values the
+ * Chart-pattern pre-screener candidates — the 22 `ChartPatternId` values the
  * core's `screenChartPatterns()` can flag on a chart. When a pattern is a
  * plausible candidate, its detailed pattern skill is gated in via an `event`
  * trigger (exactly the way a detectSignals catalog entry gates an
@@ -145,6 +149,11 @@ export const PATTERN_TRIGGER_CATALOG = [
     'rectangle',
     'cup_and_handle',
     'rounding_bottom',
+    'rounding_top',
+    'high_tight_flag',
+    'ascending_channel',
+    'descending_channel',
+    'broadening_formation',
 ] as const;
 
 const PATTERN_TRIGGER_SET = new Set<string>(PATTERN_TRIGGER_CATALOG);

@@ -2,7 +2,7 @@
  * Content-consistency test for skills/_core/pattern-index.md.
  *
  * This file is the always-on chart-pattern coverage index (commits c6dea2ea,
- * 5be1e11d) — every one of the 17 `PATTERN_TRIGGER_CATALOG` chart-pattern
+ * 5be1e11d) — every one of the 22 `PATTERN_TRIGGER_CATALOG` chart-pattern
  * pre-screener ids (the same catalog validate-skills.ts cross-checks
  * `type: pattern` skill triggers against) must have a one-line entry here
  * carrying a compact `geom:` definition (B=breakoutLevel, E=extremeLevel,
@@ -57,8 +57,8 @@ const bulletRegex = (id: string): RegExp =>
 const ALL_BULLETS_RE = /^- \*\*[a-z_]+(?: \([^)]*\))?:\*\*/gm;
 
 describe('skills/_core/pattern-index.md content consistency', () => {
-    it('PATTERN_TRIGGER_CATALOG has the expected 17 patterns', () => {
-        expect(PATTERN_TRIGGER_CATALOG.length).toBe(17);
+    it('PATTERN_TRIGGER_CATALOG has the expected 22 patterns', () => {
+        expect(PATTERN_TRIGGER_CATALOG.length).toBe(22);
     });
 
     it('carries a bullet entry for every PATTERN_TRIGGER_CATALOG id', () => {
