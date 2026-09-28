@@ -115,13 +115,16 @@ export function IndicatorSettingsModal({
 
     return (
         <>
+            {/* 보이는 크기는 32px 헤더 스트립에 맞춘 h-7 w-7을 유지하고,
+                ::before로 히트 영역만 44x44 터치 타겟까지 확장한다
+                (28 + 2*8 = 44px). */}
             <button
                 ref={triggerRef}
                 type="button"
                 onClick={open}
                 aria-label={t('IndicatorSettingsModal.c6e1ca')}
                 aria-haspopup="dialog"
-                className="flex h-11 w-11 touch-manipulation items-center justify-center rounded-lg bg-secondary-900/85 text-secondary-400 backdrop-blur-sm transition-colors hover:bg-secondary-700/90 hover:text-white focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                className="relative flex h-7 w-7 touch-manipulation items-center justify-center rounded-lg text-secondary-400 transition-colors before:absolute before:-inset-2 before:content-[''] hover:bg-secondary-700/90 hover:text-white focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
                 <GearIcon className="h-4 w-4" />
             </button>
