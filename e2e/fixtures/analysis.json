@@ -17,28 +17,110 @@
         ],
         "riskLevel": "medium",
         "keyLevels": {
-            "support": [{ "price": 190.0, "reason": "E2E 고정 지지선" }],
-            "resistance": [{ "price": 200.0, "reason": "E2E 고정 저항선" }]
+            "support": [
+                {
+                    "price": 190.0,
+                    "reason": "E2E 고정 지지선"
+                }
+            ],
+            "resistance": [
+                {
+                    "price": 200.0,
+                    "reason": "E2E 고정 저항선"
+                }
+            ]
         },
         "priceTargets": {
             "bullish": {
                 "targets": [
-                    { "price": 205.0, "basis": "E2E 고정 상방 목표가" }
+                    {
+                        "price": 205.0,
+                        "basis": "E2E 고정 상방 목표가"
+                    }
                 ],
                 "condition": "200 돌파 시"
             },
             "bearish": {
                 "targets": [
-                    { "price": 185.0, "basis": "E2E 고정 하방 목표가" }
+                    {
+                        "price": 185.0,
+                        "basis": "E2E 고정 하방 목표가"
+                    }
                 ],
                 "condition": "190 이탈 시"
             }
         },
-        "patternSummaries": [],
+        "patternSummaries": [
+            {
+                "id": "e2e_double_bottom",
+                "patternName": "double_bottom",
+                "skillName": "double_bottom",
+                "detected": true,
+                "trend": "bullish",
+                "summary": "E2E 고정 패턴: 이중 바닥이 감지되었습니다.",
+                "confidenceWeight": 0.8
+            }
+        ],
         "strategyResults": [],
         "candlePatterns": [],
         "trendlines": [],
-        "analyzedAt": "2026-01-01T00:00:00.000Z"
+        "analyzedAt": "2026-01-01T00:00:00.000Z",
+        "chartOverlays": [
+            {
+                "id": "pattern:double_bottom:1733356800",
+                "kind": "pattern",
+                "skill": "double_bottom",
+                "sourceRef": "e2e_double_bottom",
+                "variant": "primary",
+                "segments": [
+                    {
+                        "from": {
+                            "time": 1733356800,
+                            "price": 189.2
+                        },
+                        "to": {
+                            "time": 1733529600,
+                            "price": 193.0
+                        },
+                        "role": "pattern",
+                        "style": "solid",
+                        "pane": "price"
+                    }
+                ],
+                "levels": [
+                    {
+                        "price": 195.7,
+                        "fromTime": 1733356800,
+                        "label": "breakout"
+                    }
+                ],
+                "labels": []
+            },
+            {
+                "id": "tl:support:1733356800:1733529600",
+                "kind": "trendline",
+                "skill": "trendline",
+                "sourceRef": "trendlines",
+                "variant": "primary",
+                "segments": [
+                    {
+                        "from": {
+                            "time": 1733356800,
+                            "price": 189.2
+                        },
+                        "to": {
+                            "time": 1733529600,
+                            "price": 193.0
+                        },
+                        "role": "support",
+                        "style": "solid",
+                        "pane": "price"
+                    }
+                ],
+                "levels": [],
+                "labels": []
+            }
+        ]
     },
     "overall": {
         "headlineKo": "E2E 고정 분석 결과: 종합 분석 헤드라인입니다.",
