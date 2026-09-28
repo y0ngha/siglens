@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [cup_and_handle]
-token_cost: 684
-digest_hash: "0d12c3a1"
+token_cost: 692
+digest_hash: "3e3fc477"
 ---
 
 ## Detection Criteria
@@ -32,7 +32,7 @@ digest_hash: "0d12c3a1"
 
 ## Confidence Weight Rationale
 
-confidence_weight: 0.8 — Cup and Handle is rated by Bulkowski as "very reliable" and is one of the best-performing continuation patterns. Developed by William O'Neil as part of the CANSLIM strategy, it combines price structure with volume confirmation for high-probability setups. The gradual U-shape of the cup indicates orderly accumulation, and the handle provides a final shake-out of weak holders before the advance resumes.
+confidence_weight: 0.8 — Bulkowski (thepatternsite.com/cup.html, bull market): performance rank 3 of 39, break-even failure rate 5%, 61% meet the price target. Weight: failure ≤ 10% → 0.8. Developed by William O'Neil as part of the CANSLIM strategy, it combines price structure with volume confirmation. The gradual U-shape of the cup indicates orderly accumulation, and the handle provides a final shake-out of weak holders before the advance resumes.
 
 Factors that increase confidence:
 - Cup forms a smooth, rounded U-shape (not V-shaped)
@@ -71,7 +71,7 @@ Factors that decrease confidence:
 
 - **Pattern geometry (for the `geometry` field)**: `breakoutLevel` = the handle resistance (the breakout level); `extremeLevel` = the cup bottom price; `direction` = 'up'; `invalidationLevel` = the handle low (a close below it negates the pattern; the cup midpoint is a wider alternative stop). When this pattern instance is listed in `## Chart Pattern Candidates (computed)`, copy these values from there; otherwise identify them yourself from the bars. Never compute a measured target, conservative target, or risk/reward ratio yourself — the app derives those from `geometry` and appends them to keyPrices (측정 목표가, 보수 목표가(50%)).
 - **Stop-loss reference level**: The bottom of the handle serves as the primary invalidation level. A close below this negates the bullish pattern. For a wider stop, the cup's midpoint can be used.
-- **Extended targets**: Cup and Handle patterns in strong uptrends often exceed their measured move targets. The initial target serves as a minimum expectation.
+- **Target reliability**: Bulkowski (cup.html): 61% reach the measure-rule target, and in his 1990–2024 sample of 300 cups 47% dropped substantially within two months of the breakout — do not treat the target as a minimum expectation.
 
 Note: These are analytical reference points for technical analysis, not trading recommendations.
 
@@ -96,7 +96,7 @@ Geometry:
 - Left & right rims within 5% of each other.
 - Confirmed: close ABOVE handle's upper resistance with volume 50%+ above average.
 
-Confidence (weight 0.8): Bulkowski "very reliable"; O'Neil CANSLIM.
+Confidence (weight 0.8) — Bulkowski cup.html: rank 3/39, failure 5%, 61% meet target; O'Neil CANSLIM.
 - Increase: smooth rounded U (not V), cup depth 12–33% of prior advance, handle retrace < 10% from rim, breakout volume +50%, prior uptrend ≥30%, handle in upper THIRD of cup.
 - Decrease: V-shaped bottom, cup deeper than 40% of prior advance, handle in lower half, no breakout volume surge, flat/declining breakout volume, handle > 4 weeks.
 

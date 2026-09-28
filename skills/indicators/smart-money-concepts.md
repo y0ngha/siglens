@@ -4,18 +4,20 @@ description: ICT/SMC 방법론에 기반하여 기관 자금의 행동 패턴을
 type: indicator_guide
 category: neutral
 indicators: ['atr', 'smc']
-confidence_weight: 0.8
+confidence_weight: 0.5
 usage_roles: [signal, confirmation, regime]
 gating:
   tier: always_on
-token_cost: 1589
-digest_hash: "2c9a9a6b"
+token_cost: 1631
+digest_hash: "61da37cf"
 smc_full_guide: true
 ---
 
 ## Overview
 
 Smart Money Concepts (SMC), rooted in the Inner Circle Trader (ICT) methodology, analyses markets by tracking the footprints of institutional capital ("smart money"). Unlike retail trading approaches, SMC assumes that large institutions — banks, hedge funds, central banks — drive sustained price movements through deliberate accumulation and distribution cycles. The methodology identifies the price levels where institutions are likely to enter and exit, then aligns retail positions with those flows.
+
+confidence_weight: 0.5 — Practitioner framework: on SPY none of order block / FVG / liquidity sweep / BOS showed a statistically significant forward edge (best t=1.22). Use it to describe structure and levels, not as a proven edge.
 
 SMC pre-computed values available in the `smc` indicator field:
 
@@ -214,7 +216,8 @@ Additional output rules:
 - Set `strength` field as a separate JSON field (do NOT embed it in description): map confluence count → `weak` (1 factor), `moderate` (2 factors), `strong` (3+ factors).
 
 <!-- PROMPT_DIGEST:START -->
-### Smart Money Concepts (SMC / ICT) — institutional footprint analysis
+### Smart Money Concepts (SMC / ICT) — institutional footprint analysis (confidence_weight 0.5)
+Practitioner framework: on SPY none of order block / FVG / liquidity sweep / BOS showed a statistically significant forward edge (best t=1.22).
 
 Pre-computed `smc` fields: `swingHighs`/`swingLows` (pivots), `structureBreaks` (BOS/CHoCH w/ direction+type), `orderBlocks` (w/ mitigation), `fairValueGaps` (w/ mitigation), `equalHighs`/`equalLows`, `premiumZone` (top 25% of swing range), `equilibriumZone` (middle 50%), `discountZone` (bottom 25%). `atr` is a **companion** for the app's own proximity thresholds (EQH/EQL tolerance `0.5×ATR`; key-level distance `2–3×ATR`) — not arithmetic for you to redo. Each OB/FVG/EQH-EQL entry already carries a computed `(±x% / y ATR from price)` distance with the nearest unmitigated level above/below marked — cite these, never compute `x×ATR` proximity yourself.
 

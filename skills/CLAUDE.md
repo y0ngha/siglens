@@ -6,7 +6,7 @@ Read this before adding a skill or editing any `gating` frontmatter.
 ## Why gating exists
 
 The chart prompt selects skills **dynamically by chart state** instead of injecting
-all ~70 of them every time. Tagging a skill with `gating` tells the selector *when*
+all ~90 of them every time. Tagging a skill with `gating` tells the selector *when*
 to include it (e.g. only when RSI is oversold, or Bollinger %B is extreme). This
 removes irrelevant distraction for floor models and cuts tokens.
 
@@ -111,10 +111,15 @@ different things depending on which analysis type the skill belongs to:
 
 - **Chart skills** — chart-relevant, deliberately ungated (no detector, or used as
   an analysis lens): theory strategies (elliott-wave / fibonacci / multi-timeframe),
-  S/R, Ichimoku, SMC. Chart-pattern skills are **not** in this list — each is
+  S/R, SMC. Chart-pattern skills are **not** in this list — each is
   event-gated on its own chart-pattern pre-screener candidate (see below); the
   always-on `_core/pattern-index.md` covers baseline pattern awareness for every
-  chart prompt regardless of which individual pattern skills gate in.
+  chart prompt regardless of which individual pattern skills gate in. Ichimoku
+  (`indicators/ichimoku-cloud.md`) is also **not** in this list — it is
+  event-gated on cloud breakout/breakdown, not always-on. Fibonacci is a single
+  merged skill (`strategies/fibonacci.md`); the former separate
+  `support-resistance/fibonacci-retracement.md` and `fibonacci-extension.md`
+  files were absorbed into it and removed.
 - **Fundamental/news skills** — `always_on` **within their own analysis type**:
   fundamental prompts always include the fundamental skills, news prompts always
   include the news skills. This is *not* "always injected everywhere." The
@@ -157,6 +162,7 @@ golden_cross                         death_cross
 macd_bullish_cross                   macd_bearish_cross
 macd_histogram_bullish_convergence   macd_histogram_bearish_convergence
 bollinger_lower_bounce               bollinger_upper_breakout
+bollinger_percentb_oversold          bollinger_percentb_overbought
 bollinger_squeeze_bullish            bollinger_squeeze_bearish
 supertrend_bullish_flip              supertrend_bearish_flip
 parabolic_sar_flip                   parabolic_sar_bearish_flip
@@ -188,6 +194,17 @@ For a **candle** skill, the trigger is the candle pattern name (e.g. `hammer`,
 | `donchian` | `channelProximity` |
 | `vwap` | `bandDistAtr` |
 | `buySellVolume` | `ratio` |
+| `macdV` | `level` |
+| `connorsRsi` | `level` |
+| `forceIndex` | `level` |
+| `elderRay` | `level` |
+| `elderImpulse` | `level` |
+| `chandelier` | `level` |
+| `hurst` | `level` |
+| `varianceRatio` | `level` |
+| `regression` | `level` |
+| `yangZhang` | `level` |
+| `ewma` | `level` |
 
 ## PROMPT_DIGEST markers
 
@@ -234,7 +251,7 @@ exactly one of, appended once at the very end of the file, after the body:
 ## How to add a new skill / strategy
 
 1. **Pick the tier.** Chart-relevant lens with no detector (theory strategy, S/R,
-   Ichimoku, SMC) → `tier: always_on`. A **chart-pattern** skill (`type: pattern`)
+   SMC) → `tier: always_on`. A **chart-pattern** skill (`type: pattern`)
    always has a detector — the pre-screener — so it is `tier: gated` with its own
    `ChartPatternId` as the `event` trigger (see the event-triggers section above);
    it is never `always_on`. Fundamental/news with no meaningful trigger → also

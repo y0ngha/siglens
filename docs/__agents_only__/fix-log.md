@@ -397,11 +397,6 @@
   - Rule: (new) 의존성 업그레이드 후 typecheck는 `*.tsbuildinfo`를 지우고 돌린다 — `incremental: true`가 업그레이드 전 진단을 재사용해 새 타입 에러를 숨긴다(이번에 0건 → 실제 2건)
   - Context: 설정을 top-level로 이동, 캐시 삭제 후 typecheck 0건·jest-dom 매처 타입 탐침 재확인
 
-## [fix/deepseek-pr-review-followup R1 | PR #859·#860·#861 리뷰 후속 + overall technical 캐시 키 배선 | 2026-09-24]
-- Violation (not a review finding, found by CloudWatch `[Usage]` 실측): core 1.13.1이 overall `technical` 축에 `priorAnalyses`·`marketEvents`를 열었는데(두 값이 technical 캐시 키 `:hist=`·`:evt=`로 접힘) siglens 소비자 3곳 중 어디도 넘기지 않아, overall이 technical 탭이 막 채운 캐시를 못 맞히고 1Day 분석을 매번 다시 생성했다(심볼당 2회, 프리웜 DeepSeek 지출 ~25%). core 커밋 메시지가 "소비자는 양쪽 다 넘겨야 한다"고 경고했지만 소비자 bump PR이 배선을 하지 않았다
-  - Rule: core가 캐시 키에 접히는 **선택 필드**를 추가하면, 소비자 bump 때 그 필드를 쓰는 모든 형제 호출부(단독 `runAnalysis` 경로와 overall 축 경로)를 grep해 양쪽 다 넘기거나 양쪽 다 생략한다 — 타입도 테스트도 불일치를 잡지 못한다. 배포 후 `[Usage]`에서 jobId별 호출 수(심볼당 1회인지)로 확인
-  - Context: `prewarmOverall`·`runOverallAnalysisAction`·SSE overall 분기에 배선하고, 되돌리면 실패하는 테스트 5건 추가. 챗 도구 경로는 technical·overall 모두 두 값을 안 넘겨 키가 일관돼 그대로 둠
-
 ## [fix/set-state-in-effect Round 1–2 | react/set-state-in-effect 6곳 정리 | 2026-09-24]
 - Violation (orchestrator check, fixed): `useTheme`을 useSyncExternalStore로 바꾸며 스냅샷이 localStorage를 다시 읽게 되자, 저장이 막힌 환경(사파리 비공개)에서 고른 테마가 표시상 `system`으로 되돌아갔다 — 옛 코드는 `setState(next)`라 유지됐다
   - Rule: (new) state를 외부 스토어 구독으로 바꿀 때는 "쓰기가 실패하는 경로"에서 옛 in-memory 값이 하던 역할을 목록화하고, 그 경로를 옛 코드 기준 테스트로 고정한다(옛 코드 통과·새 코드 실패를 대조)
@@ -458,14 +453,6 @@
   - Rule: When adding path-based tests, grep the existing test matrix before marking coverage gaps; locale-prefixed and locale-free variants must both be present in the parametrized test list.
   - Context: Verified by reading the test assertions in src/entities/auth/__tests__/proxy.test.ts; the locale prefix is not a separate orthogonal dimension requiring additional test cases — it is already covered by the route parameter variations.
 
-## [claude/siglens-analysis-technique-review-wvfffz Round 1–2 | skill documentation audit | 2026-09-25]
-- Violation (R1 required): skills/strategies/mean-reversion.md — numeric claim in skill body ("the cross-up entry averaged -0.06% per trade") was inconsistent with the per-period figures listed in the design doc it cites. A pooled trade-weighted mean was quoted next to per-period values that average differently.
-  - Rule: Documentation Sync — skill docs must match the evidence they cite. When a doc makes a numeric claim, verify it against the referenced source before publishing.
-  - Context: Changed to state the per-period range instead of the aggregate average, matching the cited design doc.
-- Violation (caught by test suite, not review): i18n catalog entry missing for updated skill `description` frontmatter. Skill description is a UI string consumed by `shared.skillDescription` catalog (messages/ko|en|ja|zh.json + messages/_meta/hashes.json). Changing frontmatter without updating the catalog caused `src/shared/i18n/__tests__/skillDescription.test.tsx` to fail.
-  - Rule: Documentation Sync / i18n — a skill `description` is a UI string; editing it requires catalog key swap in all 4 locales and hash recompute (sha1(ko text).slice(0,12)).
-  - Context: Updated catalog keys in all 4 locales and recomputed hash. Test now passes.
-
 ## [PR #875 claude/siglens-email-login-redirect-jbr2s1 Round 2 | CI fix complete | 2026-09-25]
 - Violation: generated i18n client-key manifest (`messages/_meta/clientKeys.json`) was stale after changing a page's imports
   - Rule: CONVENTIONS.md — generated i18n artifacts must be regenerated after changing a route's import graph; static client-key analysis follows imports
@@ -511,10 +498,6 @@
   - Rule: (new) When a route gains a query parameter that must survive a login round-trip, check every redirect that can fire for that path — not just the page-level guard — for one that reconstructs the URL from `pathname` only. `AUTH_REQUIRED_PATHS`/`GUEST_ONLY_PATHS` guards in `proxy.ts` run before any page code and are easy to miss when the only mental model is "the page's own guard redirects to login."
   - Context: `loginUrl.searchParams.set('next', localePath(locale, pathname) + reqUrl.search)`. `sanitizeNextPath`/`toSameOriginPath` (`redirect.ts`) already pass query strings through untouched, so no downstream change was needed. Added proxy tests: `'세션이 없으면 ?symbol= 쿼리를 next에 보존한다'` and the `/onboarding` legacy-redirect suite's query-preservation case.
 ## [PR #882 Round 1 | fix/bot-analysis-parity | 2026-09-27]
-- Violation: Bot-only skip of priorAnalyses/market events in cache-key formation created separate cache namespace, preventing bot cache hits from prewarmed entries despite prewarm being filled with full (non-bot) requests
-  - Rule: (new) Cache key formation must be consistent across all caller classes; a request-path branch that skips a cache-key input for one caller class creates a separate cache namespace for that class, silently disabling cache hits for that class even when prewarmed entries exist
-  - Context: core 1.13.1 added priorAnalyses and marketEvents to overall `technical` cache key `:hist=` and `:evt=` fields; bot callers had been skipping them (since 2026-09-03), creating bot-only cache namespace. Fixed by ensuring all callers include the same cache-key fields, allowing bots to hit prewarm cache alongside non-bot requests. Verified by comparing CloudWatch [Usage] metrics before/after.
-
 - Violation: Claude-review R3 Blocker — UA-based concurrency bonus (BOT_STREAM_LIMIT_MULTIPLIER) became an abuse vector once bots trigger paid generation. Route reads User-Agent to classify as bot and apply higher concurrency limit; generic script clients match bot UA pattern.
   - Rule: (new) Request-based abuse vectors (rate-limit bypasses) must not read headers that generic clients also send; read-only token/fingerprint headers instead. UA header (User-Agent) is sent by all clients and can be spoofed — route should not use it for concurrent-request gating without explicit allowlist verification.
   - Context: Removed BOT_STREAM_LIMIT_MULTIPLIER so the route no longer reads UA; all clients now route through the same concurrency limit regardless of UA. Abuse vector closed.
@@ -534,3 +517,4 @@
 - Incident: Review subagent (sub-agent during review phase) ran formatter in write mode (`yarn format:write`) and then executed `git checkout -- <file>` on five files, silently wiping uncommitted edits to three of them (had to be rewritten manually).
   - Rule: (new) Review agents must remain read-only: no git operations, no formatter write passes, no file modifications. Before invoking a review agent on a branch with uncommitted work, back up the diff with `git stash` or `cp -r` to a temp directory. Recovery after `git checkout --` requires manual rewrite if the diffs were not backed up.
   - Context: Review agent invoked on branch with uncommitted changes; agent ran format:write then checkout without detecting the unintended destruction. Lesson: use `git stash` before review invocation, then restore with `git stash pop` after review phase completes.
+

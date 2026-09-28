@@ -4,73 +4,58 @@ description: 3-candle reversal pattern interpretation guide for Morning Star and
 type: candlestick
 category: neutral
 indicators: []
-confidence_weight: 0.82
+confidence_weight: 0.65
 gating:
   tier: gated
   signal_kind: event
   triggers: [morning_star, evening_star, morning_doji_star, evening_doji_star]
-token_cost: 419
-digest_hash: "078e7d8e"
+token_cost: 312
+digest_hash: "f16bfbdb"
 ---
 
 ## Overview
 
-Morning Star / Evening Star are 3-candle reversal patterns with higher reliability than single-candle patterns.
-When the middle candle is a Doji, the pattern is classified as a Morning/Evening Doji Star and carries even greater reliability.
+Three-candle reversals.
 
-### Morning Star
-1. Long bearish candle (downtrend continuation)
-2. Small-body candle (gap down, indecision)
-3. Long bullish candle (recovers at least 50% of the first candle)
+- **Morning Star**: (1) tall bearish candle → (2) small body gapped below the first body → (3) bullish candle closing above the midpoint of the first body.
+- **Evening Star**: (1) tall bullish candle → (2) small body gapped above the first body → (3) bearish candle closing below the midpoint of the first body.
+- **Doji Star** variants: the middle candle is a doji.
 
-### Evening Star
-1. Long bullish candle (uptrend continuation)
-2. Small-body candle (gap up, indecision)
-3. Long bearish candle (retraces at least 50% of the first candle)
+The core detector requires a body gap between candles 1 and 2 and a third close past the first body's
+midpoint; it does not check the prior trend.
+
+## Measured Behavior
+
+- Morning Star — Bulkowski (thepatternsite.com/MorningStar.html): bullish reversal **78%** (reversal-rate rank 6); overall performance rank **12 of 103**.
+- Evening Star — (thepatternsite.com/EveningStar.html): bearish reversal **72%**; overall rank **4**.
+- Morning Doji Star — (thepatternsite.com/MorningDojiStar.html): bullish reversal **76%**; overall rank **25**.
+- Evening Doji Star — (thepatternsite.com/EveningDojiStar.html): bearish reversal **71%**; overall rank **30**.
+- The doji variants are **not** more reliable — each measures slightly below its plain version.
+- All four are fairly rare (frequency ranks 66–81). For the plain stars Bulkowski notes the best-move figures rest on only 108 (morning) and 63 (evening) samples, so expect them to shrink.
+- Bulkowski tidbits (same pages): taller candles perform better; the morning star works best as a downward retracement inside a primary uptrend.
+- Weight 0.65 (weakest label: Evening Doji Star 71%, 65–74% band).
 
 ## Signal Interpretation
 
-### Morning Star
-- **Strong signal**: Clear downtrend + middle candle is a Doji + third candle recovers ≥ 60% of the first candle + increased volume
-- **Moderate signal**: Appears after a downtrend, third candle recovers 50–60%
-- **Weak signal**: Trend unclear, third candle recovery ratio below 50%
-
-### Evening Star
-- **Strong signal**: Clear uptrend + middle candle is a Doji + third candle retraces ≥ 60% of the first candle + increased volume
-- **Moderate signal**: Appears after an uptrend, third candle retraces 50–60%
-- **Weak signal**: Trend unclear, third candle retracement ratio below 50%
-
-## Key Combinations
-
-- **RSI + Star**: Appearing alongside RSI extremes (overbought/oversold) significantly increases reversal reliability
-- **MACD + Star**: Appearing simultaneously with a MACD histogram direction change is a powerful signal
-- **Volume + Star**: A sharp increase in volume on the third candle confirms the strength of the emerging trend
-- **Support/Resistance + Star**: Appearing near key support/resistance levels increases reversal probability
+- **Stronger**: clear prior trend into the pattern; tall first and third candles; the third close penetrates deep into the first body; above-average volume on the third candle; at support/resistance; RSI extreme or a MACD histogram turn.
+- **Moderate**: third candle closes just past the midpoint; average volume.
+- **Weak**: sideways range (ADX < 20); middle body nearly as large as the outer candles.
 
 ## Caveats
 
-- In 24-hour markets (crypto, FX), gaps rarely form — gap conditions should be relaxed when interpreting the pattern
-- If the middle candle's body is too large, the pattern should be classified as a general reversal pattern rather than a Star pattern
-- On short-term timeframes (1Min, 5Min), noise is high and reliability is low
-- If all three candles have below-average volume, pattern reliability drops sharply
+- In 24h markets (crypto) body gaps are rare, so these patterns seldom form — scrutinize a detection there.
+- Very short timeframes are noisy; reliability drops.
+- Never derive a price target from the candles; defer levels to Market Reference / support-resistance.
 
 ## AI Analysis Instructions
 
-When a Morning Star, Evening Star, Morning Doji Star, or Evening Doji Star is detected:
-
-- Verify the preceding trend using EMA(20) and EMA(60) direction
-- Evaluate the third candle's recovery/retracement ratio relative to the first candle
-- Check if the middle candle is a Doji variant for enhanced reliability
-- Cross-reference with volume changes across all three candles
-- For 24-hour markets (crypto, FX), note that gap conditions are naturally relaxed
-- State the specific variant detected: "Morning Doji Star has higher reliability than a standard Morning Star"
-
 <!-- PROMPT_DIGEST:START -->
 Morning/Evening Star Guide (3-candle reversal)
-- Higher reliability than single-candle patterns. If middle candle is a Doji → Morning/Evening Doji Star, even greater reliability.
-Structure: Morning Star = (1) long bearish candle (downtrend continuation), (2) small-body candle (gap down, indecision), (3) long bullish candle recovering ≥50% of the 1st. Evening Star = (1) long bullish candle (uptrend continuation), (2) small-body candle (gap up, indecision), (3) long bearish candle retracing ≥50% of the 1st.
-Signal strength — Morning: Strong = clear downtrend + middle Doji + 3rd recovers ≥60% of 1st + volume up; Moderate = after downtrend, 3rd recovers 50–60%; Weak = unclear, 3rd recovery <50%. Evening: Strong = clear uptrend + middle Doji + 3rd retraces ≥60% of 1st + volume up; Moderate = after uptrend, 3rd retraces 50–60%; Weak = unclear, 3rd retracement <50%.
-Combinations: RSI extremes ↑ reliability; MACD histogram direction change = powerful; sharp volume increase on 3rd candle confirms new trend; near key S/R ↑ reversal prob.
-Caveats: in 24h markets (crypto, FX) gaps rarely form → relax gap conditions. If middle candle's body too large, classify as general reversal, not a Star. On short timeframes (1Min, 5Min) noise high / reliability low. If all three candles below-avg volume, reliability drops sharply.
-AI: verify preceding trend via EMA(20) + EMA(60); evaluate 3rd candle's recovery/retracement ratio vs 1st; check if middle candle is a Doji variant for enhanced reliability; cross-reference volume across all three; for 24h markets note gap conditions relaxed; state variant ("Morning Doji Star has higher reliability than standard Morning Star").
+- Interpret only if morning_star, evening_star, morning_doji_star or evening_doji_star is listed in the detected-pattern section.
+- Shape: tall candle → small body gapped beyond the first body (doji in the Doji Star variants) → opposite candle closing past the first body's midpoint. Detector checks shape only — verify the prior trend yourself.
+- Measured (Bulkowski, thepatternsite.com): Morning Star bullish reversal 78%, overall rank 12/103 (MorningStar.html); Evening Star bearish reversal 72%, rank 4 (EveningStar.html); Morning Doji Star 76%, rank 25 (MorningDojiStar.html); Evening Doji Star 71%, rank 30 (EveningDojiStar.html). The doji variants are NOT more reliable. Rare → small samples. Weight 0.65.
+- Stronger: clear prior trend; tall outer candles; deep third-candle penetration into the first body; above-average third-candle volume; at S/R; RSI extreme or MACD histogram turn. Morning Star works best as a pullback low inside a primary uptrend.
+- Weak: sideways range (ADX < 20) or a middle body nearly as large as the outer candles.
+- Body gaps are rare in 24h markets (crypto) — scrutinize a detection there.
+- Never derive a target; cite levels only from Market Reference / S/R.
 <!-- PROMPT_DIGEST:END -->

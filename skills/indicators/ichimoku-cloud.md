@@ -6,7 +6,9 @@ indicators: ['ichimoku']
 confidence_weight: 0.85
 usage_roles: [signal, confirmation, regime]
 gating:
-  tier: always_on
+  tier: gated
+  signal_kind: event
+  triggers: [ichimoku_cloud_breakout, ichimoku_cloud_breakdown]
 token_cost: 734
 digest_hash: "2548155d"
 ---

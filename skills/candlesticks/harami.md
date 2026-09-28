@@ -4,76 +4,55 @@ description: Harami candlestick pattern (Bullish/Bearish Harami, Harami Cross) i
 type: candlestick
 category: neutral
 indicators: []
-confidence_weight: 0.72
+confidence_weight: 0.4
 gating:
   tier: gated
   signal_kind: event
   triggers: [bullish_harami, bearish_harami, bullish_harami_cross, bearish_harami_cross]
-token_cost: 461
-digest_hash: "70449431"
+token_cost: 298
+digest_hash: "9e616c30"
 ---
 
 ## Overview
 
-Harami is a 2-candle reversal pattern — the opposite structure of Engulfing.
-The second candle is completely contained within the body of the first candle, signaling trend weakness and the potential for a reversal.
-Reliability is lower than Engulfing, but increases significantly when appearing after a long-term trend.
+Two candles: a tall first candle (core: body ≥ 60% of its range), then a second candle whose body sits
+entirely inside the first body — an inside bar that shows the prior move stalling.
 
-### Bullish Harami
-- A small bullish candle contained within the previous bearish candle's body
-- Signals weakening of the downtrend
+- **Bullish Harami**: tall bearish candle → small body inside it. Textbook: bullish reversal of a decline.
+- **Bearish Harami**: tall bullish candle → small body inside it. Textbook: bearish reversal of an advance.
+- **Harami Cross**: the second candle is a doji (body ≤ 10% of its range).
 
-### Bearish Harami
-- A small bearish candle contained within the previous bullish candle's body
-- Signals weakening of the uptrend
+The core detector checks shape only, not the prior trend.
 
-### Harami Cross
-- The second candle is a Doji — a stronger reversal signal
-- Simultaneously indicates indecision and the potential for a trend reversal
+## Measured Behavior
+
+- Bullish Harami — Bulkowski (thepatternsite.com/HaramiBull.html): bullish reversal **53%**; overall performance rank **38 of 103**.
+- Bearish Harami — (thepatternsite.com/HaramiBear.html): textbook bearish reversal, but measured as a **bullish continuation 53%**; overall rank **72**. Tidbit: near the top of a trend channel a downward breakout is more likely.
+- Bullish Harami Cross — (thepatternsite.com/HaramiCrossBull.html): acts as a **bearish continuation 55%** (bullish reversal 45%); overall rank **50**.
+- Bearish Harami Cross — (thepatternsite.com/HaramiCrossBear.html): acts as a **bullish continuation 57%** (bearish reversal 43%); overall rank **80**.
+- The cross versions are **not** stronger — they measure slightly worse than the plain harami.
+- Bulkowski tidbit on all four pages: taller candles perform better.
+- Weight 0.4 (every label < 55% in its claimed direction — near random, needs confirmation).
 
 ## Signal Interpretation
 
-### Bullish Harami
-- **Strong signal**: Appears after a long downtrend + Harami Cross (second candle is a Doji) + declining volume pattern
-- **Moderate signal**: Appears after a downtrend, second candle is within 25% of the first candle's body size
-- **Weak signal**: Appears after a short-term decline or trend is unclear
-
-### Bearish Harami
-- **Strong signal**: Appears after a long uptrend + Harami Cross + declining volume pattern
-- **Moderate signal**: Appears after an uptrend, second candle is within 25% of the first candle's body size
-- **Weak signal**: Appears after a short-term rise or trend is unclear
-
-## Key Combinations
-
-- **RSI + Harami**: Appearance in overbought/oversold zones increases reversal probability
-- **MACD + Harami**: Harami appearing while the MACD histogram is shrinking confirms trend weakening
-- **Bollinger Band + Harami**: Appearance at band extremes alongside band contraction suggests a potential directional shift
-- **Volume + Harami**: Declining volume on the second candle provides additional confirmation of trend weakening
+- Read a harami as a **pause / volatility contraction**, not a reversal. Direction comes from the next close beyond the first candle's high or low.
+- **More relevant**: after an extended trend, at a support/resistance level (bearish harami near the top of a channel), with RSI at an extreme or a shrinking MACD histogram.
+- **Ignore** in sideways ranges (ADX < 20).
 
 ## Caveats
 
-- Lower reliability than Engulfing — interpret alongside a confirmation candle rather than in isolation
-- If the second candle extends beyond the first candle's body, it is not a Harami
-- Reliability drops sharply when the trend is short or unclear
-- A Harami with high volume can instead signal trend continuation
+- If the second body extends beyond the first body, it is not a harami.
+- Never derive a price target from the candles; defer levels to Market Reference / support-resistance.
 
 ## AI Analysis Instructions
 
-When a Bullish Harami, Bearish Harami, or Harami Cross is detected:
-
-- Evaluate the length and strength of the preceding trend using EMA(20/60) and ADX
-- Determine if the pattern is a standard Harami or a Harami Cross (Doji variant) for confidence adjustment
-- Check the volume pattern: declining volume on the second candle confirms the interpretation
-- Cross-reference with RSI and MACD momentum indicators
-- Note the relative confidence: "Harami has lower reliability than Engulfing — a confirmation candle is required"
-- For Harami Cross, emphasize the enhanced reliability: "Harami Cross is a stronger reversal signal than a standard Harami"
-
 <!-- PROMPT_DIGEST:START -->
 Harami Pattern Guide (Bullish/Bearish Harami, Harami Cross)
-- 2-candle reversal, opposite of Engulfing: 2nd candle's body completely CONTAINED within the 1st candle's body. Signals trend weakness / reversal potential. Lower reliability than Engulfing; increases significantly after a long-term trend.
-Variants: Bullish Harami = small bullish candle contained in prior bearish candle's body → downtrend weakening. Bearish Harami = small bearish candle contained in prior bullish candle's body → uptrend weakening. Harami Cross = 2nd candle is a Doji → stronger reversal signal (indecision + reversal potential).
-Signal strength — Bullish: Strong = after long downtrend + Harami Cross (Doji 2nd) + declining volume; Moderate = after downtrend, 2nd candle within 25% of 1st candle's body size; Weak = after short-term decline / unclear. Bearish: Strong = after long uptrend + Harami Cross + declining volume; Moderate = after uptrend, 2nd candle within 25% of 1st candle's body size; Weak = after short-term rise / unclear.
-Combinations: RSI overbought/oversold ↑ reversal prob; MACD histogram shrinking confirms weakening; band-extreme + Bollinger contraction suggests directional shift; declining 2nd-candle volume confirms weakening.
-Caveats: lower reliability than Engulfing — need a confirmation candle, not isolation. If 2nd candle extends beyond 1st candle's body, it is NOT a Harami. Reliability drops sharply when trend short/unclear. A Harami with HIGH volume can instead signal continuation.
-AI: assess length/strength of preceding trend via EMA(20/60) + ADX; determine standard Harami vs Harami Cross (Doji) for confidence; check declining 2nd-candle volume; cross-reference RSI + MACD; note "Harami has lower reliability than Engulfing — confirmation candle required"; for Harami Cross emphasize it is stronger than standard Harami.
+- Interpret only if a harami or harami_cross label is listed in the detected-pattern section.
+- Shape: tall first candle, second body fully inside the first body (inside bar); cross = second candle is a doji. Detector checks shape only — not the prior trend.
+- Measured (Bulkowski, thepatternsite.com): Bullish Harami reversal 53%, overall rank 38/103 (HaramiBull.html). Bearish Harami acts as a bullish continuation 53%, rank 72 (HaramiBear.html). Bullish Harami Cross acts as a bearish continuation 55%, rank 50 (HaramiCrossBull.html). Bearish Harami Cross acts as a bullish continuation 57%, rank 80 (HaramiCrossBear.html). All near random — needs confirmation. The cross is NOT stronger than the plain harami. Weight 0.4.
+- Read as a pause / volatility contraction, not a reversal. Direction = the next close beyond the first candle's high or low; until then say "harami — awaiting a breakout".
+- More relevant after an extended trend, at S/R, with RSI extreme or a shrinking MACD histogram; taller candles work better. Ignore in sideways ranges (ADX < 20).
+- Never derive a target; cite levels only from Market Reference / S/R.
 <!-- PROMPT_DIGEST:END -->

@@ -5,7 +5,7 @@ type: pattern
 category: continuation_bullish
 pattern: descending_wedge
 indicators: []
-confidence_weight: 0.7
+confidence_weight: 0.6
 display:
   chart:
     show: true
@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [descending_wedge]
-token_cost: 610
-digest_hash: "c6a024a7"
+token_cost: 614
+digest_hash: "b9802b4a"
 ---
 
 ## Detection Criteria
@@ -32,7 +32,7 @@ digest_hash: "c6a024a7"
 
 ## Confidence Weight Rationale
 
-confidence_weight: 0.7 — Descending Wedge carries the same confidence weight as the Ascending Wedge. While descending wedges predominantly break upward, the absence of a clear neckline or defined reversal point makes timing and confirmation more ambiguous compared to Head and Shoulders or Double Bottom patterns. Trendline placement can be subjective, introducing detection variability.
+confidence_weight: 0.6 — Bulkowski (thepatternsite.com/fallwedge.html, bull market): breakouts are upward 68% of the time; break-even failure rate 26% (up) / 29% (down); 62% of upward breakouts meet the price target; performance rank 31 of 39 (up) — "a poor performer as far as bullish chart patterns go." Weight follows the upward (primary-direction) failure rate: 21–30% → 0.6. Trendline placement can be subjective, introducing detection variability.
 
 Factors that increase confidence:
 - Clear convergence with at least 4 touches per trendline
@@ -88,7 +88,7 @@ Geometry:
 - ≥3 touches on each trendline (3 highs, 3 lows). Convergence ratio ≥30%. Minimum 15 bars.
 - Confirmed by break ABOVE upper trendline.
 
-Confidence (weight 0.7): predominantly breaks upward but direction less predictable (no clear neckline).
+Confidence (weight 0.6) — Bulkowski fallwedge.html: breaks up 68%; up-breakout failure 26%, 62% meet target; rank 31/39.
 - Increase: clear convergence with 4+ touches per line, volume decline in formation followed by surge on breakout, decisive break above upper trendline with volume surge, duration > 25 bars.
 - Decrease: <3 touches per line, no volume pattern, break near apex, ambiguous convergence (near parallel).
 

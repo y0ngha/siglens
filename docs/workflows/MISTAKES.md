@@ -93,6 +93,21 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ buildBarsRawKey(symbol, timeframe, limit) { return `bars:${symbol}:${timeframe}:${limit}`; }  // all result-affecting inputs
    ✅ unstable_cache((symbols: readonly string[]) => fetch(symbols), [symbols])  // symbols passed as argument, included in key
 
+1.3. Cache key formation must be consistent across all caller classes
+   → When a cache key includes optional fields, all caller classes (bot, user, server, etc.) must either include those fields or exclude them consistently
+   → A request-path branch that skips a cache-key input for one caller class creates a separate cache namespace for that class
+   → Separate cache namespaces silently disable cache hits, even when prewarmed entries exist for other caller classes
+   → When a core library adds optional fields to a cache key, all consumers must grep all call sites and include/exclude the fields uniformly — type safety and unit tests alone don't catch inconsistency
+   ❌ Bot path: `cache_key = buildKey(symbol, timeframe)` // omits priorAnalyses
+      User path: `cache_key = buildKey(symbol, timeframe, priorAnalyses)` // includes priorAnalyses
+      → Bot requests miss all prewarmed entries because keys don't match
+   ❌ One analysis path includes `marketEvents` in cache key, another path omits it
+      → Same symbol generates two separate cache entries depending on caller, doubling cache misses
+   ✅ Grep all callers of `buildCacheKey()` when optional fields are added
+   ✅ All callers must use identical field inclusion/exclusion; document the policy
+   ✅ Test verifies cache hits across different caller classes (bot, user, prewarm) using the same cache key
+   → Recurring: fix/deepseek-pr-review-followup R1 (core adds priorAnalyses/marketEvents, consumer paths inconsistent), fix/bot-analysis-parity (bot namespace separate from prewarmed entries) — 2 occurrences
+
 2. Identical values queried or computed multiple times in a single function
    → Extract to a local const or assign once before using repeatedly
    → Applies to loop boundaries, array calculations, and function returns
@@ -1404,6 +1419,22 @@ This file contains only **recurring gotchas** that agents keep missing despite e
       - Add a compile-time check: `const _check: SkillCategory = SKILL_CATEGORIES[0];` paired with a satisfies clause on the array literal
       - Extract the mirror into a named const inside `siglens-core` itself and re-export
 
+
+7. Skill documentation must stay in sync with implementation, gating, and prompt usage
+   → Skill documents (skills/*.md) are consumed by analysis prompts and front-end tools
+   → Claims in skill body (numeric evidence, assumptions, gating status) must match the actual implementation/rules/prompt injection
+   → When a skill's rule, category, or gating status changes, update the body text AND digest metadata to match
+   → When a skill's description (frontmatter) is edited, update i18n catalog keys in all 4 locales (ko, en, ja, zh) + messages/_meta/hashes.json (sha1(ko value)[:12])
+   → Numeric claims in skill documentation must be verified against the referenced design doc or measurement before publishing
+   ❌ Skill digest says "Continuation" but body was rewritten to "neutral"; entry stayed under wrong heading, prompts inject stale grouping
+   ❌ Skill body claims "guide always available" but file was event-gated; prompt gets injected only on signal fire, contradicting claim
+   ❌ Skill description changed to "new wording" but i18n key exists only in ko.json — en/ja/zh left pointing to old key, missing translation
+   ❌ Skill claims "averaged -0.06%" but the referenced design doc shows per-period range; numeric claim contradicts source
+   ✅ When rewriting a skill's category (neutral vs continuation), update heading grouping in index.md AND update digest
+   ✅ When gating changes, update body text to say "injected when signal fires" instead of "always available"
+   ✅ When editing description, update messages/{ko,en,ja,zh}.json AND messages/_meta/hashes.json; digest metadata (token_cost/digest_hash) separately via `yarn skills:digest-update`
+   ✅ Verify numeric claims against source: design doc, measurement, or referenced data before writing the skill
+   → Recurring: claude/siglens-analysis-technique-review-wvfffz R1–2 (numeric evidence, i18n catalog sync), feat/skills-evidence-refresh R1 (category/gating sync) — 4 occurrences across 2 PRs
 ```
 
 ---

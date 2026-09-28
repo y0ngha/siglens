@@ -5,7 +5,7 @@ type: pattern
 category: continuation_bullish
 pattern: ascending_triangle
 indicators: []
-confidence_weight: 0.75
+confidence_weight: 0.7
 display:
   chart:
     show: true
@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [ascending_triangle]
-token_cost: 645
-digest_hash: "e8682266"
+token_cost: 668
+digest_hash: "b55c3c44"
 ---
 
 ## Detection Criteria
@@ -32,7 +32,7 @@ digest_hash: "e8682266"
 
 ## Confidence Weight Rationale
 
-confidence_weight: 0.75 — Ascending Triangle is one of the more reliable bullish continuation patterns. Bulkowski's Encyclopedia of Chart Patterns reports an upside breakout rate near 70% with a success rate (target reached) in the 75–87% range depending on market context. The horizontal resistance provides a clear, objective breakout level, and repeated higher lows pressing against a flat resistance reflect persistent buying pressure. The 0.75 weight places it on par with Descending Triangle's bearish mirror at a slightly more conservative level, acknowledging the subjectivity in drawing the ascending trendline compared to the perfectly horizontal support on its bearish counterpart.
+confidence_weight: 0.7 — Bulkowski (thepatternsite.com/at.html, bull market): breakout upward 63% of the time; break-even failure rate 17% for upward / 38% for downward breakouts; 70% / 44% meet the price target; performance rank 16 of 39 (up) / 30 of 36 (down). Weight follows the upward (primary-direction) failure rate: 11–20% → 0.7. The horizontal resistance provides a clear, objective breakout level, and repeated higher lows pressing against a flat resistance reflect persistent buying pressure — but over a third of these triangles still break down, so treat the bias as a lean, not a certainty.
 
 Factors that increase confidence:
 - 3+ touches on the horizontal resistance
@@ -58,7 +58,7 @@ Factors that decrease confidence:
 
 ## False Positive Conditions
 
-- **Breakdown instead of breakout**: Approximately 25% of ascending triangles break downward. If price closes below the ascending trendline, the bullish thesis is invalidated.
+- **Breakdown instead of breakout**: Over a third of ascending triangles break downward (Bulkowski at.html: upward only 63%), and those downward breakouts perform poorly (failure 38%). If price closes below the ascending trendline, the bullish thesis is invalidated.
 - **Apex breakout**: Breakouts occurring very close to or past the apex point have significantly reduced reliability and measured move potential.
 - **No volume confirmation**: A breakout above resistance without a volume surge may be a false breakout. Price may quickly reverse back inside the triangle.
 - **Flat market context**: If there is no prior trend and the ascending triangle forms in a choppy market, the directional bias is weakened.
@@ -93,12 +93,12 @@ Geometry:
 
 Confirmation: close ABOVE horizontal resistance with increased volume (surge 50%+ above average). Intraday wick above resistance without a close = not confirmed. Volume should decline as triangle narrows. Post-breakout: a pullback to the former resistance that holds as support confirms the pattern. Accelerating higher lows on the ascending support trendline = intensifying buying pressure.
 
-Confidence (weight 0.75): upside breakout ~70%, target reached 75–87%.
+Confidence (weight 0.7) — Bulkowski at.html: breaks up 63%; up-breakout failure 17% (down 38%); 70% of up breakouts meet target; rank 16/39.
 - Increase: 3+ touches on resistance, 3+ on support, declining volume, breakout in first 2/3 of triangle (between 50%–75% point most reliable), prior uptrend.
 - Decrease: <2 touches either line, breakout near/past apex, no prior trend, volume rising without breakout, only marginal higher lows.
 
 False positives / invalidation:
-- ~25% break downward; close below ascending trendline invalidates bullish thesis.
+- Over a third break downward (up only 63%); close below ascending trendline invalidates bullish thesis.
 - Apex/near-apex breakout = reduced reliability & target.
 - Breakout without volume surge may be false.
 

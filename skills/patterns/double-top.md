@@ -5,7 +5,7 @@ type: pattern
 category: reversal_bearish
 pattern: double_top
 indicators: []
-confidence_weight: 0.75
+confidence_weight: 0.6
 display:
   chart:
     show: true
@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [double_top]
-token_cost: 547
-digest_hash: "341bf7ca"
+token_cost: 573
+digest_hash: "8c1c0e03"
 ---
 
 ## Detection Criteria
@@ -30,7 +30,7 @@ digest_hash: "341bf7ca"
 
 ## Confidence Weight Rationale
 
-confidence_weight: 0.75 — Double Top is a well-recognized bearish reversal pattern, but its simpler two-peak structure compared to Head and Shoulders makes it slightly more prone to false positives. The absence of a third reference point (the head) means there is less structural confirmation. However, when accompanied by volume confirmation and a clear neckline break, it remains a reliable signal.
+confidence_weight: 0.6 — Bulkowski (thepatternsite.com/aadt.html, aedt.html, eadt.html, eedt.html, bull market) splits double tops into four Adam/Eve variants: break-even failure rates 25% (Adam & Adam), 21% (Adam & Eve), 21% (Eve & Adam), 20% (Eve & Eve); performance ranks 19, 10, 16, 12 of 36; 43–64% meet the price target. Weight: median variant failure rate 21% → 0.6. The simpler two-peak structure (no head as a third reference point) makes it more prone to false positives than Head and Shoulders, so volume confirmation and a clear neckline close matter.
 
 Factors that increase confidence:
 - Peak prices within 1% of each other
@@ -86,7 +86,7 @@ Geometry:
 - Peaks separated by minimum 10 bars.
 - Confirmed: close BELOW neckline (the trough between peaks).
 
-Confidence (weight 0.75).
+Confidence (weight 0.6) — Bulkowski Adam/Eve double-top pages: failure 20–25% (median 21%), ranks 10–19 of 36, 43–64% meet target.
 - Increase: peak prices within 1%, volume decline on second peak, neckline break with volume surge, spacing > 15 bars.
 - Decrease: peaks differ > 2.5%, no volume divergence, shallow trough (< 3% from peak avg), pattern in narrow range.
 

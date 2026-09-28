@@ -5,7 +5,7 @@ type: pattern
 category: reversal_bearish
 pattern: head_and_shoulders
 indicators: []
-confidence_weight: 0.8
+confidence_weight: 0.75
 display:
   chart:
     show: true
@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [head_and_shoulders]
-token_cost: 699
-digest_hash: "58ca90c1"
+token_cost: 721
+digest_hash: "ee2bb47c"
 ---
 
 ## Detection Criteria
@@ -32,7 +32,7 @@ digest_hash: "58ca90c1"
 
 ## Confidence Weight Rationale
 
-confidence_weight: 0.8 — Head and Shoulders is the most academically and practically validated reversal pattern in technical analysis. Its three-peak structure with a defined neckline provides clear, objective detection criteria. The high confidence weight reflects decades of backtesting evidence showing reliable bearish reversal signals when the pattern completes with volume confirmation.
+confidence_weight: 0.75 — Bulkowski (thepatternsite.com/hst.html, bull market): performance rank 9 of 36, break-even failure rate 19%, 51% meet the price target. Weight: failure 11–20% → 0.7, +0.05 for independent academic support (Savin, Weller & Zvingelis 2007: risk-adjusted excess returns from an H&S-conditioned strategy). Its three-peak structure with a defined neckline provides clear, objective detection criteria; volume confirmation on the neckline break still matters.
 
 Factors that increase confidence:
 - Near-horizontal neckline (slope < 2%)
@@ -80,7 +80,7 @@ When this pattern is detected, include the following in the analysis response:
 - **geometry**: Fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
-헤드앤숄더 (Head & Shoulders) — bearish reversal, confidence_weight 0.8. Three peaks: left shoulder, head (center), right shoulder.
+헤드앤숄더 (Head & Shoulders) — bearish reversal, confidence_weight 0.75 (Bulkowski hst.html: rank 9/36, failure 19%, 51% meet target; +0.05 Savin et al. 2007). Three peaks: left shoulder, head (center), right shoulder.
 
 ### Detection
 - Head must be highest peak, clearly above both shoulders.
