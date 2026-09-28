@@ -4,6 +4,7 @@ import {
     calculateIndicators,
     computeFearGreedIndex,
     calculateMA,
+    classifyMaStack,
     classifyTrend,
     CONFLUENCE_TREND_MA_PERIOD,
     detectCandlePatternEntries,
@@ -11,7 +12,6 @@ import {
     evaluateConfluence,
     evaluatePullback,
     getDetectionBars,
-    MA_DEFAULT_PERIODS,
     PULLBACK_BASE_RATES,
     scoreConfluence,
     selectLastCandlePatternEntries,
@@ -24,6 +24,7 @@ import {
     type FearGreedSnapshot,
     type IchimokuResult,
     type IndicatorResult,
+    type MaStackDirection,
     type MACDResult,
     type MultiCandlePattern,
     type PullbackReading,
@@ -508,7 +509,7 @@ interface DerivedView {
     volumeVsAvg20: number | null;
     atrPct: number | null;
     priceVsMa: Record<string, number | null>;
-    maStack: 'bullish' | 'bearish' | 'mixed' | null;
+    maStack: MaStackDirection | null;
 }
 
 /**
@@ -653,7 +654,7 @@ function computeDerived(
         ),
     };
 
-    const maStack = maStackDirection(indicators);
+    const maStack = classifyMaStack(indicators);
 
     return {
         lastClose,
@@ -665,24 +666,6 @@ function computeDerived(
         priceVsMa,
         maStack,
     };
-}
-
-/**
- * `'bullish'` when `MA_DEFAULT_PERIODS`' values strictly decrease as the
- * period grows (`MA5 > MA20 > MA60 > ...`), `'bearish'` for strictly
- * increasing, `'mixed'` otherwise. `null` when fewer than 2 configured
- * periods have a value — a single point can't describe a stack (spec §3.1).
- */
-function maStackDirection(
-    indicators: IndicatorResult
-): 'bullish' | 'bearish' | 'mixed' | null {
-    const values = MA_DEFAULT_PERIODS.map(p => last(indicators.ma[p])).filter(
-        (v): v is number => v !== null && Number.isFinite(v)
-    );
-    if (values.length < 2) return null;
-    const bullish = values.every((v, i) => i === 0 || v < values[i - 1]!);
-    const bearish = values.every((v, i) => i === 0 || v > values[i - 1]!);
-    return bullish ? 'bullish' : bearish ? 'bearish' : 'mixed';
 }
 
 /** One Flow/Trend group of {@link SymbolFearGreedView}. */
