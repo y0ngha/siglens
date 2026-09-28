@@ -16,6 +16,7 @@ import { CandlestickSeries, createChart } from 'lightweight-charts';
 import { CHART_COLORS, getChartChrome } from '@/shared/lib/chartColors';
 import type {
     Bar,
+    ChartOverlay,
     IndicatorResult,
     ReconciledActionLineData,
     Timeframe,
@@ -75,11 +76,26 @@ import {
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { resolvePriceDecimals } from '@/shared/lib/priceFormat';
 import { IndicatorSettingsModal } from './ui/IndicatorSettingsModal';
+import { ChartOverlayMenu } from './ui/ChartOverlayMenu';
+import { useChartOverlayVisibility } from './hooks/useChartOverlayVisibility';
+import { useChartOverlays } from './hooks/useChartOverlays';
+import {
+    buildOverlayLineSpecs,
+    countOverlaysByKind,
+    overlayColorFor,
+} from './utils/chartOverlayUtils';
+import {
+    BREAKOUT_LEVEL_LABEL,
+    CHART_OVERLAY_COLORS,
+} from './model/chartOverlayCategories';
 import {
     INDICATOR_REGISTRY,
     type IndicatorBinding,
     type IndicatorKey,
 } from './model/indicatorRegistry';
+
+const EMPTY_CHART_OVERLAYS: ChartOverlay[] = [];
+const EMPTY_OVERLAY_COLORS: Record<string, string> = {};
 
 interface CommonHookParams {
     chartRef: RefObject<IChartApi | null>;
@@ -107,6 +123,12 @@ interface StockChartProps {
      * Pass 'crypto' to enable dynamic-by-magnitude precision for sub-cent tokens.
      */
     marketProfile?: MarketProfileId;
+    /** AI가 참조한 로직 작도(차트 작도). */
+    chartOverlays?: ChartOverlay[];
+    /** 패턴 오버레이의 스킬별 색 — `sourceRef → renderConfig.color`. 없으면 kind 기본색 폴백. */
+    overlayColors?: Record<string, string>;
+    /** '원본' 패널 카드 클릭으로 강조할 결과 항목 id(sourceRef). */
+    highlightedOverlayRef?: string | null;
 }
 
 export function StockChart({
@@ -120,9 +142,14 @@ export function StockChart({
     onChartRemove,
     ticker,
     marketProfile = 'us-equity',
+    chartOverlays = EMPTY_CHART_OVERLAYS,
+    overlayColors = EMPTY_OVERLAY_COLORS,
+    highlightedOverlayRef = null,
 }: StockChartProps) {
     const t = useTranslations('widgets.chart');
     const tMisc = useTranslations('shared.ui.misc');
+    // core의 패턴 돌파선 레벨 라벨은 언어 중립 키(`breakout`)라 여기서 문구로 바꾼다.
+    const breakoutLevelText = t('StockChart.57fdbb');
     const locale = useResolvedLocale();
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -447,6 +474,62 @@ export function StockChart({
         isVisible: visible.smc,
     });
 
+    const { visible: overlayVisible, toggle: toggleOverlay } =
+        useChartOverlayVisibility();
+
+    const barTimes = useMemo(() => new Set(bars.map(b => b.time)), [bars]);
+    const lastBarTime = bars[bars.length - 1]?.time ?? 0;
+
+    const overlayCounts = useMemo(
+        () => countOverlaysByKind(chartOverlays, barTimes, lastBarTime),
+        [chartOverlays, barTimes, lastBarTime]
+    );
+
+    // 강조 중인 카드의 카테고리가 꺼져 있어도 잠깐 보여준다(spec §4.3).
+    const highlightedKind = chartOverlays.find(
+        o => o.sourceRef === highlightedOverlayRef
+    )?.kind;
+
+    const overlaySpecs = useMemo(
+        () =>
+            buildOverlayLineSpecs(chartOverlays, {
+                visible: highlightedKind
+                    ? { ...overlayVisible, [highlightedKind]: true }
+                    : overlayVisible,
+                highlightedSourceRef: highlightedOverlayRef,
+                barTimes,
+                lastBarTime,
+                rsiPaneIndex: visible.rsi ? paneIndices.rsi : null,
+                colorFor: (overlay, role) =>
+                    overlayColorFor(
+                        overlay,
+                        role,
+                        overlayColors,
+                        CHART_OVERLAY_COLORS
+                    ),
+                levelLabelFor: label =>
+                    label === BREAKOUT_LEVEL_LABEL ? breakoutLevelText : label,
+            }),
+        [
+            chartOverlays,
+            overlayVisible,
+            highlightedKind,
+            highlightedOverlayRef,
+            barTimes,
+            lastBarTime,
+            visible.rsi,
+            paneIndices.rsi,
+            overlayColors,
+            breakoutLevelText,
+        ]
+    );
+
+    useChartOverlays({
+        chartRef,
+        specs: overlaySpecs,
+        lineWidth: DEFAULT_LINE_WIDTH,
+    });
+
     // indicator 제거 시 LWC v5가 빈 pane DOM을 정리하지 않아 autoSize 토글로 layout invalidate를 강제한다.
     // 단, 첫 mount에서는 이 명시 resize를 skip한다 (`isInitialPaneRenderRef`) — hydration /
     // 첫 진입 시 layout 안정화 전에 wrapper.clientHeight를 측정하면 작은 값(예: 30px)이
@@ -630,7 +713,7 @@ export function StockChart({
     }
 
     // Lightweight Charts 캔버스 자체는 스크린 리더가 읽을 수 없으므로 캔버스 컨테이너에
-    // role/aria-label을 부여한다. wrapperRef에 붙이면 자식으로 들어가는 IndicatorSettingsModal·
+    // role/aria-label을 부여한다. wrapperRef에 붙이면 자식으로 들어가는
     // OverlayLegend의 인터랙티브 요소가 일부 스크린리더에서 presentational로 취급될 수 있어
     // 캔버스만 들어가는 containerRef에 둔다.
     const chartAriaLabel =
@@ -639,29 +722,36 @@ export function StockChart({
             : t('StockChart.a547a0');
 
     return (
-        <div ref={wrapperRef} className="relative h-full w-full">
-            <div
-                ref={containerRef}
-                className="h-full w-full"
-                role="img"
-                aria-label={chartAriaLabel}
-            />
-            {/* right-14로 우측 price-scale 라벨 열 안쪽으로 넣어 톱니바퀴가 가격
-                눈금 숫자와 겹치지 않게 한다 (top-2 right-2였을 때는 price-scale
-                라벨 위에 그대로 얹혀 시각적으로 충돌했다). */}
-            <div className="absolute top-2 right-14 z-10">
+        <div className="flex h-full w-full flex-col">
+            {/* 톱니바퀴는 캔버스 밖 헤더 띠에 둔다(터미널 탭바의 `+` 자리). 캔버스
+                위에 얹었을 때는 드래그·줌 중에 캔들을 가렸고 가격 눈금·범례와
+                자리를 다퉜다. 띠 자체는 비워 둔다. */}
+            <div className="flex h-8 shrink-0 items-center justify-end gap-1 border-b border-secondary-700 px-1">
+                <ChartOverlayMenu
+                    counts={overlayCounts}
+                    visible={overlayVisible}
+                    onToggle={toggleOverlay}
+                />
                 <IndicatorSettingsModal bindings={indicatorBindings} />
             </div>
-            {/* 범례는 자기 pane(pane 0) 안에만 머문다 — 넘치면 보조 pane 라벨을
-                덮어 두 글자가 겹쳐 찍힌다. 상한은 OverlayLegend가 실측 크기에서
-                계산하고, 넘친 항목 수는 `+N` 칩으로 드러낸다. */}
-            <div className="pointer-events-none absolute top-2 left-2 z-10">
-                <OverlayLegend
-                    items={overlayLegendItems}
-                    decimals={priceDecimals}
-                    pricePaneHeightPx={pricePaneSize.height}
-                    chartWidthPx={pricePaneSize.width}
+            <div ref={wrapperRef} className="relative min-h-0 w-full flex-1">
+                <div
+                    ref={containerRef}
+                    className="h-full w-full"
+                    role="img"
+                    aria-label={chartAriaLabel}
                 />
+                {/* 범례는 자기 pane(pane 0) 안에만 머문다 — 넘치면 보조 pane 라벨을
+                    덮어 두 글자가 겹쳐 찍힌다. 상한은 OverlayLegend가 실측 크기에서
+                    계산하고, 넘친 항목 수는 `+N` 칩으로 드러낸다. */}
+                <div className="pointer-events-none absolute top-2 left-2 z-10">
+                    <OverlayLegend
+                        items={overlayLegendItems}
+                        decimals={priceDecimals}
+                        pricePaneHeightPx={pricePaneSize.height}
+                        chartWidthPx={pricePaneSize.width}
+                    />
+                </div>
             </div>
         </div>
     );

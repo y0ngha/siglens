@@ -1,0 +1,160 @@
+// @vitest-environment jsdom
+import { renderHook } from '@testing-library/react';
+import { useChartOverlays } from '../../hooks/useChartOverlays';
+import type { OverlayLineSpec } from '../../utils/chartOverlayUtils';
+
+const mockRemoveSeries = vi.fn();
+const mockCreateSeriesMarkers = vi.fn();
+
+// 라벨 전용 시리즈가 메인 라인 시리즈와 **다른 객체**를 갖도록, 매 addSeries
+// 호출마다 독립된 setData mock을 만든다 — 공유 mockSetData 하나만 두면 어느
+// 호출이 라벨 시리즈로 간 데이터인지 구분할 수 없다.
+const createdSeries: { setData: ReturnType<typeof vi.fn> }[] = [];
+const mockAddSeries = vi.fn(() => {
+    const series = { setData: vi.fn() };
+    createdSeries.push(series);
+    return series;
+});
+
+vi.mock('lightweight-charts', () => ({
+    LineSeries: 'LineSeries',
+    LineStyle: { Solid: 0, Dashed: 1 },
+    createSeriesMarkers: (...args: unknown[]) =>
+        mockCreateSeriesMarkers(...args),
+}));
+
+function makeChart() {
+    return { addSeries: mockAddSeries, removeSeries: mockRemoveSeries };
+}
+
+function makeChartRef(chart: unknown = null) {
+    return { current: chart } as Parameters<
+        typeof useChartOverlays
+    >[0]['chartRef'];
+}
+
+const SPEC: OverlayLineSpec = {
+    paneIndex: 0,
+    points: [
+        { time: 1, value: 10 },
+        { time: 3, value: 12 },
+    ],
+    color: '#42a5f5',
+    dashed: false,
+    opacity: 1,
+    lineWidthMult: 1,
+    title: '',
+    markers: [],
+};
+
+describe('useChartOverlays', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        createdSeries.length = 0;
+    });
+
+    it('does nothing when chart is null', () => {
+        renderHook(() =>
+            useChartOverlays({ chartRef: makeChartRef(null), specs: [SPEC] })
+        );
+        expect(mockAddSeries).not.toHaveBeenCalled();
+    });
+
+    it('creates one series per spec and sets its points', () => {
+        renderHook(() =>
+            useChartOverlays({
+                chartRef: makeChartRef(makeChart()),
+                specs: [SPEC, { ...SPEC }],
+            })
+        );
+        expect(mockAddSeries).toHaveBeenCalledTimes(2);
+        expect(createdSeries[0]!.setData).toHaveBeenCalledWith([
+            { time: 1, value: 10 },
+            { time: 3, value: 12 },
+        ]);
+    });
+
+    it('creates a second transparent label series with markers when a spec carries labels', () => {
+        const withLabel: OverlayLineSpec = {
+            ...SPEC,
+            markers: [{ time: 3, position: 'aboveBar', text: 'H', price: 12 }],
+        };
+        renderHook(() =>
+            useChartOverlays({
+                chartRef: makeChartRef(makeChart()),
+                specs: [withLabel],
+            })
+        );
+        expect(mockAddSeries).toHaveBeenCalledTimes(2);
+        expect(mockCreateSeriesMarkers).toHaveBeenCalledTimes(1);
+        const [, markers] = mockCreateSeriesMarkers.mock.calls[0]!;
+        expect(markers).toEqual([
+            expect.objectContaining({
+                time: 3,
+                position: 'aboveBar',
+                text: 'H',
+            }),
+        ]);
+    });
+
+    it('label series receives strictly ascending unique times while markers keep every marker, including a same-time duplicate and unsorted input', () => {
+        const withDupAndUnsorted: OverlayLineSpec = {
+            ...SPEC,
+            // 일부러 시각 역순 + 같은 시각(3) 마커 2개를 준다 — 훅이 정렬 후
+            // 중복을 걷어내야 한다.
+            markers: [
+                { time: 5, position: 'aboveBar', text: 'RS', price: 20 },
+                { time: 1, position: 'belowBar', text: 'LS', price: 5 },
+                { time: 3, position: 'aboveBar', text: 'H-high', price: 12 },
+                { time: 3, position: 'belowBar', text: 'H-low', price: 8 },
+            ],
+        };
+        renderHook(() =>
+            useChartOverlays({
+                chartRef: makeChartRef(makeChart()),
+                specs: [withDupAndUnsorted],
+            })
+        );
+
+        // 라인 시리즈(0번) 다음이 라벨 시리즈(1번) — 그 setData가 시각 오름차순
+        // + 중복 시각 제거된 point 배열을 받아야 한다.
+        const labelSeries = createdSeries[1]!;
+        expect(labelSeries.setData).toHaveBeenCalledWith([
+            { time: 1, value: 5 },
+            { time: 3, value: 12 },
+            { time: 5, value: 20 },
+        ]);
+
+        // 마커는 dedup 대상이 아니다 — 같은 시각(3)에 둘 다 살아 있어야 한다.
+        const [, markers] = mockCreateSeriesMarkers.mock.calls[0]!;
+        expect(markers).toHaveLength(4);
+        expect(markers.map((m: { time: number }) => m.time)).toEqual([
+            1, 3, 3, 5,
+        ]);
+    });
+
+    it('removes all created series on unmount', () => {
+        const { unmount } = renderHook(() =>
+            useChartOverlays({
+                chartRef: makeChartRef(makeChart()),
+                specs: [SPEC],
+            })
+        );
+        unmount();
+        expect(mockRemoveSeries).toHaveBeenCalledTimes(1);
+    });
+
+    it('removes the previous series and recreates when specs change', () => {
+        const chart = makeChart();
+        const { rerender } = renderHook(
+            ({ specs }: { specs: OverlayLineSpec[] }) =>
+                useChartOverlays({ chartRef: makeChartRef(chart), specs }),
+            { initialProps: { specs: [SPEC] } }
+        );
+        expect(mockAddSeries).toHaveBeenCalledTimes(1);
+
+        rerender({ specs: [SPEC, { ...SPEC }] });
+        expect(mockRemoveSeries).toHaveBeenCalledTimes(1);
+        expect(mockAddSeries).toHaveBeenCalledTimes(3);
+    });
+});

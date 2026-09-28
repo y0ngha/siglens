@@ -168,7 +168,9 @@ describe('useMarketSummary', () => {
 
         client.clear();
         vi.doUnmock('@/shared/api/e2eClientEnv');
-        vi.doUnmock('@/entities/market-summary/actions');
+        vi.doUnmock(
+            '@/entities/market-summary/actions/getMarketSummaryClientAction'
+        );
         vi.doUnmock('@/shared/hooks/useHydrated');
     });
 });

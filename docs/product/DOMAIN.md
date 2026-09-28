@@ -787,7 +787,7 @@ type CandlePattern =
 
 ```typescript
 type MultiCandlePattern =
-    // 상승 반전 (15종)
+    // 상승 반전 (16종)
     | 'bullish_engulfing'        // 상승 장악형
     | 'bullish_harami'           // 상승 잉태형
     | 'bullish_harami_cross'     // 상승 십자 잉태형
@@ -803,7 +803,8 @@ type MultiCandlePattern =
     | 'ladder_bottom'            // 사다리바닥
     | 'tweezers_bottom'          // 족집게 바닥
     | 'downside_gap_two_rabbits' // 하락갭 투래빗
-    // 하락 반전 (15종)
+    | 'above_the_stomach'        // 어보브 더 스토막
+    // 하락 반전 (16종)
     | 'bearish_engulfing'        // 하락 장악형
     | 'bearish_harami'           // 하락 잉태형
     | 'bearish_harami_cross'     // 하락 십자 잉태형
@@ -819,12 +820,23 @@ type MultiCandlePattern =
     | 'advance_block'            // 전진 저지형
     | 'tweezers_top'             // 족집게 천장
     | 'upside_gap_two_crows'     // 상승갭 까마귀 2마리
-    // 지속 패턴 (4종)
+    | 'below_the_stomach'        // 빌로우 더 스토막
+    // 지속 패턴 (8종)
     | 'upside_gap_tasuki'        // 상승갭 타스키
     | 'downside_gap_tasuki'      // 하락갭 타스키
     | 'on_neck'                  // 온넥
-    | 'in_neck';                 // 인넥
+    | 'in_neck'                  // 인넥
+    | 'rising_three_methods'     // 상승 삼법형
+    | 'falling_three_methods'    // 하락 삼법형
+    | 'bullish_three_line_strike' // 상승 삼선 타격형
+    | 'bearish_three_line_strike'; // 하락 삼선 타격형
 ```
+
+> **삼선 타격형 방향 주의**: `bullish_three_line_strike`/`bearish_three_line_strike`는 이름이 아니라
+> **실측 방향**으로 트렌드가 매핑된다 — Bulkowski(*Encyclopedia of Candlestick Charts*) 실측 결과
+> "bullish" 삼선 타격형이 65%는 하락 반전으로, "bearish" 삼선 타격형이 84%는 상승 반전으로 작동해
+> core `getMultiPatternTrend`는 `bullish_three_line_strike` → `'bearish'`, `bearish_three_line_strike`
+> → `'bullish'`로 반환한다. 이름은 차티스트가 검색하는 전통 명칭을 유지하고, trend는 실측 결과를 따른다.
 
 ### 감지 함수
 
@@ -879,6 +891,11 @@ IN_NECK_RATIO = 0.05        — 인넥 허용 비율
 | `patterns/double-bottom.md` | double_bottom (상승 반전) | 0.75 |
 | `patterns/ascending-wedge.md` | ascending_wedge (하락 반전) | 0.7 |
 | `patterns/descending-wedge.md` | descending_wedge (상승 반전) | 0.7 |
+| `patterns/rounding-top.md` | rounding_top (하락 반전) | 0.7 |
+| `patterns/high-tight-flag.md` | high_tight_flag (상승 지속) | 0.7 |
+| `patterns/ascending-channel.md` | ascending_channel (중립 — 이탈 방향에 따름) | 0.5 |
+| `patterns/descending-channel.md` | descending_channel (중립 — 이탈 방향에 따름) | 0.5 |
+| `patterns/broadening-formation.md` | broadening_formation (중립 — 이탈 방향에 따름) | 0.6 |
 
 ---
 
@@ -942,6 +959,8 @@ IN_NECK_RATIO = 0.05        — 인넥 허용 비율
 | `strategies/divergence.md` | 다이버전스 전략 | 0.7 |
 | `strategies/mean-reversion.md` | 평균 회귀 전략 (종가 > MA200 ∧ Williams %R(14) ≤ -90, 일봉 — 근거: `docs/superpowers/specs/2026-09-25-mean-reversion-evidence-design.md`) | 0.8 |
 | `strategies/elliott-wave.md` | 엘리어트 파동 | 0.7 |
+| `strategies/52-week-high-momentum.md` | 52주 신고가 모멘텀 (new_52w_high, new_52w_low) | 0.65 |
+| `strategies/gap-analysis.md` | 갭 분석 (gap_up, gap_down) | 0.45 |
 | `strategies/fibonacci.md` | 피보나치 전략 | 0.65 |
 
 ---
@@ -1107,8 +1126,38 @@ interface AnalysisResponse {
     patternSummaries: PatternSummary[];         // 차트 패턴 결과 (type='pattern' skill) — "차트 패턴" 섹션에 렌더링
     strategyResults: StrategyResult[];          // 전략 skill 분석 결과 (type='strategy' skill) — "전략" 섹션에 렌더링
     candlePatterns: CandlePatternSummary[];     // 캔들 패턴 감지 결과
-    trendlines: Trendline[];                    // AI가 감지한 추세선 목록 (0~3개)
+    trendlines: Trendline[];                    // AI가 고른 추세선(0~3개) — core가 후보 좌표에서 채운다(하위 호환)
     actionRecommendation?: ActionRecommendation; // 매매 전략 추천 (optional)
+    chartOverlays?: ChartOverlay[];             // 차트 작도 — AI가 참조한 로직 후보만 (core 2.0.0, p20)
+}
+
+// 차트 작도 (siglens-core 2.0.0, spec 2026-09-28-chart-overlays).
+// 좌표는 core 로직이 봉 시각(unix초)으로 계산하고, AI는 결과 항목에 후보 id만 적는다
+// (patternSummaries[].candidateId / strategyResults[].candidateIds / 모델 출력 trendlineIds).
+type OverlayKind = 'pattern' | 'trendline' | 'divergence' | 'fibonacci' | 'elliott';
+
+interface OverlayPoint { time: number; price: number }        // time: bar Unix 초 (index 아님)
+
+interface OverlaySegment {
+    from: OverlayPoint;
+    to: OverlayPoint;
+    role: string;                   // 'pattern' | 'neckline' | 'boundary_upper' | 'pole' | 'support' | 'wave_3' | 'rsi' …
+    style: 'solid' | 'dashed';
+    pane: 'price' | 'rsi';          // 다이버전스의 RSI 쪽 선만 'rsi'
+}
+
+interface OverlayLevel { price: number; fromTime: number; label: string }  // fromTime → 차트 오른쪽 끝 수평선. label은 언어 중립 키('breakout', '61.8%')
+interface OverlayLabel { at: OverlayPoint; text: string; position: 'above' | 'below' }  // 'LS'·'H'·'RS', '1'~'5', 'A'~'C'
+
+interface ChartOverlay {
+    id: string;                     // 결정적 후보 id — 예: 'pattern:double_bottom:1714521600'
+    kind: OverlayKind;
+    skill: string;                  // 스킬 파일 stem(예: 'double-bottom', 'elliott-wave') 또는 'trendline'
+    sourceRef: string;              // 참조한 결과 항목 id(patternSummaries[].id / strategyResults[].id) 또는 'trendlines'
+    variant: 'primary' | 'alternate'; // 엘리어트 대안 카운트만 'alternate'
+    segments: OverlaySegment[];
+    levels: OverlayLevel[];
+    labels: OverlayLabel[];
 }
 ```
 
@@ -1132,6 +1181,12 @@ strategyResults[]   → AnalysisPanel "전략" 섹션
 patternSummaries[]  → AnalysisPanel "차트 패턴" 섹션
                        pattern skill의 차트 패턴 감지 결과
                        skillName으로 식별 (예: "Head and Shoulders")
+
+chartOverlays[]     → StockChart 차트 작도 오버레이 (헤더 띠 "차트 작도 · N" 드롭다운)
+                       kind별 카테고리 on/off(localStorage, 기본: 차트 패턴·추세선)
+                       기준 시각이 로드된 봉에 없으면 그리지 않는다(다른 timeframe·좁은 창)
+                       sourceRef → '원본' 보기 카드의 "차트에서 보기"로 강조(나머지 흐림)
+                       tier: 추세선은 full_detail, 나머지는 skill_detection 필요(core 필터)
 ```
 
 ---
@@ -1337,7 +1392,7 @@ display:                      # 선택. 차트 표시 설정
   chart:
     show: boolean             # 기본 show/hide 여부 (기본값: false)
     type: line | marker | region  # 차트 표시 형태
-    color: string             # 표시 색상 (CSS 색상값)
+    color: string             # 표시 색상 — 6자리 hex(#rrggbb)만. 차트 작도 흐림이 알파 hex를 덧붙인다(validate:skills가 강제)
     label: string             # 차트에 표시할 라벨
 ---
 

@@ -120,10 +120,10 @@ describe('legendMaxWidthPx', () => {
         expect(legendMaxWidthPx(0)).toBe(Number.POSITIVE_INFINITY);
     });
 
-    it('톱니바퀴 버튼과 가격 축 자리를 비워 둔다', () => {
-        // 톱니바퀴는 right-14(56px)에 44px로 놓여 오른쪽 100px을 차지한다.
+    it('가격 축 자리를 비워 둔다', () => {
+        // 가격 축 라벨 열은 오른쪽 약 56px을 차지한다.
         const available = legendMaxWidthPx(MOBILE_CHART_WIDTH_PX);
-        expect(available).toBeLessThanOrEqual(MOBILE_CHART_WIDTH_PX - 100 - 8);
+        expect(available).toBeLessThanOrEqual(MOBILE_CHART_WIDTH_PX - 56 - 8);
     });
 
     it('폭이 예약분보다 좁아도 음수를 돌려주지 않는다', () => {

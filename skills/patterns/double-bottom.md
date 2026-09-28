@@ -5,7 +5,7 @@ type: pattern
 category: reversal_bullish
 pattern: double_bottom
 indicators: []
-confidence_weight: 0.75
+confidence_weight: 0.7
 display:
   chart:
     show: true
@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [double_bottom]
-token_cost: 558
-digest_hash: "6c792a88"
+token_cost: 578
+digest_hash: "4d53083d"
 ---
 
 ## Detection Criteria
@@ -30,7 +30,7 @@ digest_hash: "6c792a88"
 
 ## Confidence Weight Rationale
 
-confidence_weight: 0.75 — Double Bottom is the bullish mirror of the Double Top pattern and carries the same confidence level. Its two-trough structure is simpler than the three-point Head and Shoulders, making it slightly more susceptible to false signals. However, with volume confirmation and a decisive neckline break, it is a well-established bullish reversal pattern.
+confidence_weight: 0.7 — Bulkowski (thepatternsite.com/aadb.html, aedb.html, eadb.html, eedb.html, bull market) splits double bottoms into four Adam/Eve variants: break-even failure rates 16% (Adam & Adam), 12% (Adam & Eve), 12% (Eve & Adam), 12% (Eve & Eve); performance ranks 26, 17, 20, 5 of 39; 65–73% meet the price target. Weight: median variant failure rate 12% → 0.7. Its two-trough structure is simpler than Head and Shoulders, so volume confirmation and a decisive neckline close matter.
 
 Factors that increase confidence:
 - Trough prices within 1% of each other
@@ -86,7 +86,7 @@ Geometry:
 - Troughs separated by minimum 10 bars.
 - Confirmed: close ABOVE neckline (the peak between troughs).
 
-Confidence (weight 0.75): bullish mirror of Double Top.
+Confidence (weight 0.7) — Bulkowski Adam/Eve double-bottom pages: failure 12–16% (median 12%), ranks 5–26 of 39, 65–73% meet target.
 - Increase: trough prices within 1%, volume increase on second trough, neckline break with volume surge, spacing > 15 bars.
 - Decrease: troughs differ > 2.5%, no volume divergence, shallow peak (< 3% from trough avg), pattern in narrow range.
 

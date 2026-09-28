@@ -5,7 +5,7 @@ type: pattern
 category: reversal_bullish
 pattern: inverse_head_and_shoulders
 indicators: []
-confidence_weight: 0.8
+confidence_weight: 0.75
 display:
   chart:
     show: true
@@ -16,8 +16,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [inverse_head_and_shoulders]
-token_cost: 716
-digest_hash: "f136b1a1"
+token_cost: 759
+digest_hash: "448a4eeb"
 ---
 
 ## Detection Criteria
@@ -32,7 +32,7 @@ digest_hash: "f136b1a1"
 
 ## Confidence Weight Rationale
 
-confidence_weight: 0.8 — Inverse Head and Shoulders is the mirror image of the standard H&S pattern and carries the same high reliability as a bullish reversal signal. Its three-trough structure with a defined neckline provides clear, objective detection criteria. Academic and practical evidence consistently supports its effectiveness when volume confirmation is present.
+confidence_weight: 0.75 — Bulkowski (thepatternsite.com/hsb.html, bull market): performance rank 13 of 39, break-even failure rate 11%, 71% meet the price target. Weight: failure 11–20% → 0.7, +0.05 for independent academic support (Savin, Weller & Zvingelis 2007, H&S-conditioned strategy). Its three-trough structure with a defined neckline provides clear, objective detection criteria; volume confirmation on the neckline break still matters.
 
 Factors that increase confidence:
 - Near-horizontal neckline (slope < 2%)
@@ -43,12 +43,11 @@ Factors that increase confidence:
 Factors that decrease confidence:
 - Steeply sloped neckline (slope > 5%)
 - Highly asymmetric shoulders (price difference > 5%)
-- No volume increase on right shoulder
 - Pattern forming within a strong downtrend with no prior support
 
 ## Key Signals
 
-- **Right shoulder volume increase**: Volume during right shoulder formation should be higher than during the head formation. This indicates growing buying interest and accumulation.
+- **Right shoulder volume**: Bulkowski (thepatternsite.com/hsb.html) finds volume "highest on the left shoulder or head, diminished on the right shoulder" and trending downward 65% of the time — a quiet right shoulder is normal, not a warning. The buying confirmation to look for is the volume surge on the neckline break.
 - **Neckline break with volume surge**: A decisive close above the neckline accompanied by above-average volume confirms the pattern. A break on low volume may indicate a false breakout.
 - **Retest of neckline as support**: After the initial break, price often retests the neckline from above. Holding above the neckline reinforces the bullish signal.
 - **Momentum divergence**: RSI or MACD showing bullish divergence (higher lows on the indicator while price makes the head low) strengthens the pattern signal.
@@ -75,12 +74,12 @@ When this pattern is detected, include the following in the analysis response:
 
 - **keyPrices**: Include the neckline price level, head price, left shoulder price, and right shoulder price.
 - **patternSummaries**: Describe the pattern status (forming / right shoulder in progress / completed / neckline broken), the neckline slope direction, and shoulder symmetry assessment.
-- **Volume context**: State whether volume behavior confirms or contradicts the pattern (increasing volume on right shoulder, volume surge on break).
+- **Volume context**: State whether volume behavior confirms or contradicts the pattern (volume highest on the left shoulder or head and diminished on the right shoulder, volume surge on break).
 - **Completion status**: Clearly indicate whether the pattern is still forming or fully confirmed by a neckline break with a closing price above.
 - **geometry**: Fill `patternSummaries[].geometry` = `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the Entry/Exit Considerations definition above. Never state a computed measured target, conservative target, or risk:reward ratio yourself — the app derives those from `geometry`.
 
 <!-- PROMPT_DIGEST:START -->
-역헤드앤숄더 (Inverse Head & Shoulders) — bullish reversal, confidence_weight 0.8. Three troughs: left shoulder, head (center), right shoulder.
+역헤드앤숄더 (Inverse Head & Shoulders) — bullish reversal, confidence_weight 0.75 (Bulkowski hsb.html: rank 13/39, failure 11%, 71% meet target; +0.05 Savin et al. 2007). Three troughs: left shoulder, head (center), right shoulder.
 
 ### Detection
 - Head must be lowest trough, clearly below both shoulders.
@@ -92,8 +91,8 @@ When this pattern is detected, include the following in the analysis response:
 
 ### Grading
 - Increase: near-horizontal neckline (slope <2%); symmetric shoulders (price diff <3%); volume confirmation on neckline break; duration >30 bars.
-- Decrease: steep neckline (slope >5%); asymmetric shoulders (price diff >5%); no volume increase on right shoulder; forming in strong downtrend with no prior support.
-- Right shoulder volume should be HIGHER than during the head (growing buying interest / accumulation).
+- Decrease: steep neckline (slope >5%); asymmetric shoulders (price diff >5%); forming in strong downtrend with no prior support.
+- Volume: typically highest on left shoulder or head, diminished on right shoulder (Bulkowski hsb.html; trends down 65%) — quiet right shoulder is normal; the confirmation is the break-volume surge.
 - Bullish momentum divergence (RSI/MACD higher lows vs price head low) strengthens signal.
 
 ### Confirmation / invalidation
@@ -114,7 +113,7 @@ When this pattern is detected, include the following in the analysis response:
 ### Output
 - keyPrices: neckline, head, left shoulder, right shoulder prices.
 - patternSummaries: status (forming / right shoulder in progress / completed / neckline broken), neckline slope direction, shoulder symmetry.
-- Volume context: whether volume confirms (increasing right-shoulder volume, break surge) or contradicts.
+- Volume context: whether volume confirms (highest on left shoulder/head, diminished right shoulder; break surge) or contradicts.
 - Completion status: forming vs confirmed by close above neckline.
 - geometry: `{ breakoutLevel, extremeLevel, direction, invalidationLevel }` per the definition above — never a computed target or R:R.
 - trend: bullish when pattern confirmed.

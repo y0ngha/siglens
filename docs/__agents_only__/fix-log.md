@@ -394,11 +394,6 @@
   - Rule: (new) 의존성 업그레이드 후 typecheck는 `*.tsbuildinfo`를 지우고 돌린다 — `incremental: true`가 업그레이드 전 진단을 재사용해 새 타입 에러를 숨긴다(이번에 0건 → 실제 2건)
   - Context: 설정을 top-level로 이동, 캐시 삭제 후 typecheck 0건·jest-dom 매처 타입 탐침 재확인
 
-## [fix/deepseek-pr-review-followup R1 | PR #859·#860·#861 리뷰 후속 + overall technical 캐시 키 배선 | 2026-09-24]
-- Violation (not a review finding, found by CloudWatch `[Usage]` 실측): core 1.13.1이 overall `technical` 축에 `priorAnalyses`·`marketEvents`를 열었는데(두 값이 technical 캐시 키 `:hist=`·`:evt=`로 접힘) siglens 소비자 3곳 중 어디도 넘기지 않아, overall이 technical 탭이 막 채운 캐시를 못 맞히고 1Day 분석을 매번 다시 생성했다(심볼당 2회, 프리웜 DeepSeek 지출 ~25%). core 커밋 메시지가 "소비자는 양쪽 다 넘겨야 한다"고 경고했지만 소비자 bump PR이 배선을 하지 않았다
-  - Rule: core가 캐시 키에 접히는 **선택 필드**를 추가하면, 소비자 bump 때 그 필드를 쓰는 모든 형제 호출부(단독 `runAnalysis` 경로와 overall 축 경로)를 grep해 양쪽 다 넘기거나 양쪽 다 생략한다 — 타입도 테스트도 불일치를 잡지 못한다. 배포 후 `[Usage]`에서 jobId별 호출 수(심볼당 1회인지)로 확인
-  - Context: `prewarmOverall`·`runOverallAnalysisAction`·SSE overall 분기에 배선하고, 되돌리면 실패하는 테스트 5건 추가. 챗 도구 경로는 technical·overall 모두 두 값을 안 넘겨 키가 일관돼 그대로 둠
-
 ## [fix/set-state-in-effect Round 1–2 | react/set-state-in-effect 6곳 정리 | 2026-09-24]
 - Violation (orchestrator check, fixed): `useTheme`을 useSyncExternalStore로 바꾸며 스냅샷이 localStorage를 다시 읽게 되자, 저장이 막힌 환경(사파리 비공개)에서 고른 테마가 표시상 `system`으로 되돌아갔다 — 옛 코드는 `setState(next)`라 유지됐다
   - Rule: (new) state를 외부 스토어 구독으로 바꿀 때는 "쓰기가 실패하는 경로"에서 옛 in-memory 값이 하던 역할을 목록화하고, 그 경로를 옛 코드 기준 테스트로 고정한다(옛 코드 통과·새 코드 실패를 대조)
@@ -455,10 +450,6 @@
   - Rule: When adding path-based tests, grep the existing test matrix before marking coverage gaps; locale-prefixed and locale-free variants must both be present in the parametrized test list.
   - Context: Verified by reading the test assertions in src/entities/auth/__tests__/proxy.test.ts; the locale prefix is not a separate orthogonal dimension requiring additional test cases — it is already covered by the route parameter variations.
 
-## [claude/siglens-analysis-technique-review-wvfffz Round 1–2 | skill documentation audit | 2026-09-25]
-- Violation (R1 required): skills/strategies/mean-reversion.md — numeric claim in skill body ("the cross-up entry averaged -0.06% per trade") was inconsistent with the per-period figures listed in the design doc it cites. A pooled trade-weighted mean was quoted next to per-period values that average differently.
-  - Rule: Documentation Sync — skill docs must match the evidence they cite. When a doc makes a numeric claim, verify it against the referenced source before publishing.
-  - Context: Changed to state the per-period range instead of the aggregate average, matching the cited design doc.
 
 ## [claude/siglens-analysis-technique-review-wvfffz Round 2 | AI chat tools pullback classification & budget | 2026-09-25]
 - Violation: RECOMMENDED — src/app/api/ai/chat/tools/getBarsIndicators.ts: 4-way classification written as nested ternary (ternary inside TRUE branch of another ternary)
@@ -500,10 +491,6 @@
   - Rule: (new) When a route gains a query parameter that must survive a login round-trip, check every redirect that can fire for that path — not just the page-level guard — for one that reconstructs the URL from `pathname` only. `AUTH_REQUIRED_PATHS`/`GUEST_ONLY_PATHS` guards in `proxy.ts` run before any page code and are easy to miss when the only mental model is "the page's own guard redirects to login."
   - Context: `loginUrl.searchParams.set('next', localePath(locale, pathname) + reqUrl.search)`. `sanitizeNextPath`/`toSameOriginPath` (`redirect.ts`) already pass query strings through untouched, so no downstream change was needed. Added proxy tests: `'세션이 없으면 ?symbol= 쿼리를 next에 보존한다'` and the `/onboarding` legacy-redirect suite's query-preservation case.
 ## [PR #882 Round 1 | fix/bot-analysis-parity | 2026-09-27]
-- Violation: Bot-only skip of priorAnalyses/market events in cache-key formation created separate cache namespace, preventing bot cache hits from prewarmed entries despite prewarm being filled with full (non-bot) requests
-  - Rule: (new) Cache key formation must be consistent across all caller classes; a request-path branch that skips a cache-key input for one caller class creates a separate cache namespace for that class, silently disabling cache hits for that class even when prewarmed entries exist
-  - Context: core 1.13.1 added priorAnalyses and marketEvents to overall `technical` cache key `:hist=` and `:evt=` fields; bot callers had been skipping them (since 2026-09-03), creating bot-only cache namespace. Fixed by ensuring all callers include the same cache-key fields, allowing bots to hit prewarm cache alongside non-bot requests. Verified by comparing CloudWatch [Usage] metrics before/after.
-
 - Violation: Claude-review R3 Blocker — UA-based concurrency bonus (BOT_STREAM_LIMIT_MULTIPLIER) became an abuse vector once bots trigger paid generation. Route reads User-Agent to classify as bot and apply higher concurrency limit; generic script clients match bot UA pattern.
   - Rule: (new) Request-based abuse vectors (rate-limit bypasses) must not read headers that generic clients also send; read-only token/fingerprint headers instead. UA header (User-Agent) is sent by all clients and can be spoofed — route should not use it for concurrent-request gating without explicit allowlist verification.
   - Context: Removed BOT_STREAM_LIMIT_MULTIPLIER so the route no longer reads UA; all clients now route through the same concurrency limit regardless of UA. Abuse vector closed.
@@ -537,3 +524,14 @@
 - Violation: Codemod dropped comments attached to vi.mock statements and factory properties
   - Rule: Automated code rewrites must preserve comments via full AST traversal. The implementation used getText(), which excludes leading trivia (comments). When rewriting mock statements or factory property definitions that bear explanatory comments, the comments were silently dropped.
   - Context: Orchestrator caught the missing comments during verification. Fixed by restoring trimmed comments from git HEAD followed by manual review of all removed comment lines. Ensured all factory properties that describe mocking intent now carry their comments through the codemod pipeline.
+
+## [feat/core-detectors-consume Round 1 | feat/core-detectors-consume | 2026-09-28]
+- Violation: new strategy skills gated on core signals told the model to "interpret only if listed in the detected-signal section", but core never renders those signal names (excluded from the confluence list; used only for gating)
+  - Rule: (new) A skill's instructions must reference only prompt sections/fields that core actually renders for its trigger — verify against the consumed core version's prompt builder before writing "if listed in …" guards
+  - Context: Reworded to "injected only when the engine detected …; derive the side from bar data / Market Reference".
+- Violation: skill template criterion that is always true under its own trigger (close above MA120/200 on a new 52-week high) made a trend branch unreachable
+  - Rule: MISTAKES Predictability — conditions must be falsifiable under the trigger that injects the skill
+  - Context: Removed the criterion; neutral branch now "MA(200) falling or stack not met".
+- Violation: `.sort()` on a filtered array; helper test froze an instant where UTC and ET dates coincide, so a UTC-vs-ET regression would pass
+  - Rule: MISTAKES Coding Paradigm #12 (toSorted); Tests — boundary instants must distinguish the alternatives
+  - Context: toSorted; test instant 2026-09-29T02:00Z.

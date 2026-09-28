@@ -103,7 +103,18 @@ Closed loops (approved, kept for pattern recall only — see file for detail):
 - [fix/set-state-in-effect R2](project-set-state-in-effect-r2.md) — all R1 survivors killed; hydrate:true renderHook pins server snapshot; nits only
 - [fix/set-state-in-effect R3](project-set-state-in-effect-r3.md) — approved; locale-flip test mutation-verified, MISTAKES #10 consistent
 - [chat-news-enrich-invalidate R3](project-chat-news-enrich-invalidate-r3.md) — sync LLM enrich inside get_news's 30s core tool timeout (no stall watchdog on Gemini); STALE_FRESHNESS_DETAIL_LIMIT/stalePriceCount mutations survive
+- [core pattern-signal-expansion R1](project-core-pattern-signal-expansion-r1.md) — stomach fallback changes 48% of real daily candle sections; real-bar old-vs-new probe recipe
+- [core pattern-signal-expansion R2](project-core-pattern-signal-expansion-r2.md) — approved; stomach long-prev + boundary tests mutation-shaped
 - [fix/bot-analysis-parity R3 PR#882](project-fix-bot-analysis-parity-pr882.md) — approved; bot concurrency multiplier + bot_blocked UI removed across 6 axes, BotBlockedError→CacheOnlyMissError rename, all mutation-verified
+
+- [core news-macro-calendar R2](project-core-news-macro-calendar-r2.md) — helper move verbatim; TZ regression test vacuous on UTC CI; stale fingerprint JSDoc
+- [siglens chart-overlays R1](project-chart-overlays-siglens-r1.md) — renderer: label-dedup crash fix untested, role=menu w/o arrow keys; review `git diff HEAD` (origin/master ahead)
+- [siglens chart-overlays R2](project-chart-overlays-siglens-r2.md) — unmount cleanup calls toggle not clear: stale-ref re-highlight after new analysis (scratch-harness verified)
+- [siglens chart-overlays R3](project-chart-overlays-siglens-r3.md) — onClear chain fixed; only a stale JSDoc naming onToggle
+- [core chart-overlays R1](project-core-chart-overlays-r1.md) — elliott wave-state off-by-one, vacuous rule-2 test, fib ABC untested, PUBLIC_API row missing
+- [core chart-overlays R2](project-core-chart-overlays-r2.md) — R1 fixes killed; new EW_MIN_WAVE_BARS crash fix unfalsifiable (span gate masks it), runsForward untested
+- [core-detectors-consume R1-R2 closed](project-core-detectors-consume-r2.md) — signal-gated skills fixed to "injected only when engine detected X"; toSorted + UTC-vs-ET test; approved
+- [core chart-overlays R3](project-core-chart-overlays-r3.md) — gap/span/warn killed; `.filter(runsForward)` wiring removal survives; zsh $T no-split trap
 
 ## Reference
 

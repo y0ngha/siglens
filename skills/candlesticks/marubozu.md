@@ -1,76 +1,60 @@
 ---
 name: Marubozu Guide
-description: Single-candle trend continuation confirmation pattern interpretation guide
+description: Marubozu single-candle interpretation guide with Bulkowski measured continuation rates
 type: candlestick
 category: neutral
 indicators: []
-confidence_weight: 0.75
+confidence_weight: 0.4
 gating:
   tier: gated
   signal_kind: event
   triggers: [bullish_marubozu, bearish_marubozu]
-token_cost: 419
-digest_hash: "d4e201d9"
+token_cost: 321
+digest_hash: "f893e663"
 ---
 
 ## Overview
 
-Marubozu is a long candle with no shadows or extremely short shadows (within 1% of the total range),
-representing overwhelming force in a single direction. It is a **trend strength confirmation** signal, not a reversal signal.
+A marubozu is a candle that is almost all body (core: body ≥ 90% of the high–low range), so it opens at
+one extreme and closes at the other.
 
-### Bullish Marubozu
-- Open = Low, Close = High (or very close)
-- Long bullish candle with no shadows
-- Strong buying pressure — confirms trend continuation
+- **Bullish (white) Marubozu**: opens at/near the low, closes at/near the high.
+- **Bearish (black) Marubozu**: opens at/near the high, closes at/near the low.
 
-### Bearish Marubozu
-- Open = High, Close = Low (or very close)
-- Long bearish candle with no shadows
-- Strong selling pressure — confirms trend continuation
+Textbook: a same-direction marubozu "confirms" the trend. Measurement does not support that reading.
+The core detector checks shape only, not the prior trend.
+
+## Measured Behavior
+
+- White Marubozu — Bulkowski (thepatternsite.com/WhiteMarubozu.html): continuation **56%** of the time — near random; overall performance rank **71 of 103**.
+- Black Marubozu — (thepatternsite.com/BlackMarubozu.html): continuation **53%** — near random; overall rank **57**; upward breakouts in 34% of 19,993 samples. Bulkowski: marubozu candles "have been given more weight by candlestick followers than I think they deserve."
+- Where it works — Bulkowski, "The Eight Best-Performing Candles" (S&C V.29:11), the **opposite-color** case:
+  - A **black** marubozu inside an **uptrend** that then breaks out upward (close above its high) was the #2 common bullish continuation: continuation 53%, average 10-day rise 4.39% (S&C V.29:11).
+  - A **white** marubozu inside a **downtrend** that then breaks out downward (close below its low) was the #2 common bearish continuation: continuation 56%, average 10-day drop 3.55% (S&C V.29:11).
+- Weight 0.4 (Black Marubozu 53%, <55% band — near random, needs confirmation).
 
 ## Signal Interpretation
 
-### Bullish Marubozu
-- **Strong signal**: Volume ≥ 150% of average + appears during an uptrend + coincides with a breakout above a key resistance level
-- **Moderate signal**: Above-average volume + appears during an uptrend
-- **Weak signal**: Below-average volume or isolated appearance in a sideways range
-
-### Bearish Marubozu
-- **Strong signal**: Volume ≥ 150% of average + appears during a downtrend + coincides with a breakdown below a key support level
-- **Moderate signal**: Above-average volume + appears during a downtrend
-- **Weak signal**: Below-average volume or isolated appearance in a sideways range
-
-## Key Combinations
-
-- **Volume + Marubozu**: Above-average volume confirms trend strength; below-average volume reduces reliability
-- **Support/Resistance + Marubozu**: Marubozu appearing at a breakout/breakdown of a key price level confirms the breakout's validity
-- **EMA + Marubozu**: Marubozu appearing simultaneously with a breakout of EMA(20/60) confirms a trend shift
-- **RSI + Marubozu**: Consecutive Marubozu candles + RSI at extremes warns of overheating or oversold conditions
+- **Same color as the trend** (white in an uptrend, black in a downtrend): do not overrate it as trend confirmation — continuation is near a coin flip. At most it shows one-sided pressure for that session.
+- **Opposite color to the trend** (black in an uptrend, white in a downtrend): often a temporary counter-move rather than a reversal. The trend-resumption read applies only after price closes beyond the marubozu's far end (above a black one's high in an uptrend, below a white one's low in a downtrend).
+- A marubozu breaking a key support/resistance level matters more than one inside a range.
+- **Ignore** in sideways ranges (ADX < 20).
 
 ## Caveats
 
-- Marubozu must be interpreted as a **trend strength confirmation** signal, not a reversal signal
-- Consecutive Marubozu candles can instead warn of overheating or oversold conditions
-- Entry decisions based solely on a single Marubozu are inappropriate — trend context and volume confirmation are essential
-- A Marubozu with below-average volume may be distorted by low liquidity
+- Several marubozu in a row signal an extended move; check RSI for overextension rather than chasing.
+- A marubozu on thin volume may be a low-liquidity artifact.
+- Never derive a price target from the candle; defer levels to Market Reference / support-resistance.
 
 ## AI Analysis Instructions
 
-When a Bullish Marubozu or Bearish Marubozu is detected:
-
-- Clarify that Marubozu is a trend continuation confirmation, not a reversal signal
-- Evaluate current volume relative to the recent average for confirmation strength
-- Check if the Marubozu coincides with a key level breakout (support/resistance, EMA crossover)
-- If consecutive Marubozu candles appear, warn about potential overextension: "Consecutive Marubozu detected — caution for potential overheating"
-- Cross-reference with RSI to assess whether the trend is becoming overextended
-- State the interpretation clearly: "Bullish Marubozu is a signal confirming the strength of the current uptrend"
-
 <!-- PROMPT_DIGEST:START -->
-Marubozu Guide (single-candle trend-strength confirmation)
-- Long candle with no/extremely short shadows (within 1% of total range) = overwhelming one-directional force. TREND STRENGTH CONFIRMATION, NOT a reversal signal.
-Geometry: Bullish = Open=Low, Close=High (or very close), long bullish candle no shadows, strong buying → continuation. Bearish = Open=High, Close=Low (or very close), long bearish candle no shadows, strong selling → continuation.
-Signal strength — Bullish: Strong = volume ≥150% avg + during uptrend + breakout above key resistance; Moderate = above-avg volume + during uptrend; Weak = below-avg volume / isolated in sideways range. Bearish: Strong = volume ≥150% avg + during downtrend + breakdown below key support; Moderate = above-avg volume + during downtrend; Weak = below-avg volume / isolated in sideways range.
-Combinations: above-avg volume confirms strength, below-avg reduces reliability; at a key-level breakout/breakdown confirms breakout validity; with EMA(20/60) breakout confirms trend shift; consecutive Marubozu + RSI extremes warns overheating/oversold.
-Caveats: interpret as trend-strength confirmation, NOT reversal. Consecutive Marubozu can warn of overheating/oversold. Do not enter on a single Marubozu alone — trend context + volume confirmation essential. Below-avg-volume Marubozu may be distorted by low liquidity.
-AI: clarify continuation not reversal; evaluate volume vs recent average; check coincidence with key-level breakout (S/R, EMA crossover); if consecutive, warn "caution for potential overheating"; cross-reference RSI for overextension; state clearly ("Bullish Marubozu confirms strength of current uptrend").
+Marubozu Guide
+- Interpret only if bullish_marubozu or bearish_marubozu is listed in the detected-pattern section.
+- Shape: almost all body (core: body ≥ 90% of range), open at one extreme, close at the other. Detector checks shape only — not the prior trend.
+- Measured (Bulkowski): White Marubozu continuation 56%, overall rank 71/103 (thepatternsite.com/WhiteMarubozu.html); Black Marubozu continuation 53%, rank 57 (thepatternsite.com/BlackMarubozu.html). Near random — needs confirmation. Weight 0.4.
+- Same color as the trend (white in uptrend / black in downtrend): do NOT call it trend confirmation — continuation is near a coin flip.
+- Opposite color to the trend: often a temporary counter-move, not a reversal. Bulkowski, "The Eight Best-Performing Candles" (S&C V.29:11): a black marubozu in an uptrend that then closes above its high resumed the uptrend (avg 10-day +4.39%); a white marubozu in a downtrend that then closes below its low resumed the downtrend (56%, avg 10-day −3.55%). Apply this only after that confirming close.
+- A marubozu breaking key S/R matters more than one inside a range; ignore in sideways ranges (ADX < 20). Consecutive marubozu = extended move → check RSI, don't chase.
+- Never derive a target; cite levels only from Market Reference / S/R.
 <!-- PROMPT_DIGEST:END -->

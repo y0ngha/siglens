@@ -47,6 +47,10 @@ const SIGNAL_BADGE_LABEL_KEY: Record<SignalType, string> = {
     mfi_overbought_reversal: 'signalType.mfi_overbought_reversal',
     parabolic_sar_bearish_flip: 'signalType.parabolic_sar_bearish_flip',
     squeeze_momentum_bearish: 'signalType.squeeze_momentum_bearish',
+    new_52w_high: 'signalType.new_52w_high',
+    new_52w_low: 'signalType.new_52w_low',
+    gap_up: 'signalType.gap_up',
+    gap_down: 'signalType.gap_down',
 };
 
 interface SignalBadgeProps {

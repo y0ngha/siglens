@@ -12,6 +12,7 @@ import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import { NEWS_ANALYSIS_LOOKBACK_MS } from '../lib/newsLookback';
 import { buildAnalysisNewsItems } from '../lib/buildAnalysisNewsItems';
 import { getNextEarningsReport } from '@/entities/earnings-report/api';
+import { loadNewsMacroCalendar } from '@/entities/economy/api/loadNewsMacroCalendar';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import {
     resolveTierAndByok,
@@ -76,9 +77,10 @@ export async function submitNewsAnalysisAction(
         const { db } = getDatabaseClient();
         const newsRepo = new DrizzleNewsRepository(db);
 
-        const [rows, next] = await Promise.all([
+        const [rows, next, macroCalendar] = await Promise.all([
             newsRepo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS),
             getNextEarningsReport(symbol, db),
+            loadNewsMacroCalendar(),
         ]);
 
         // The per-card stage and 30-day window above are untouched — buildAnalysisNewsItems
@@ -96,6 +98,8 @@ export async function submitNewsAnalysisAction(
             modelId,
             news: enrichedNews,
             upcomingCalendar: next !== null ? [next] : [],
+            // overall 뉴스 축과 같은 헬퍼 — 캐시 키 일치 불변식.
+            macroCalendar,
             tier: gate.tier,
             reasoning: resolveReasoning(gate.tier, reasoning),
             // 2026-09-27: 더 이상 UA로 가르지 않는다 — 봇의 캐시 미스도 사람과

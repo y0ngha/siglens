@@ -26,4 +26,6 @@ export const STORAGE_KEYS = {
     emaPeriods: `${STORAGE_PREFIX}.ema.periods`,
     overlay: (key: OverlayStorageKey): string =>
         `${STORAGE_PREFIX}.overlay.${key}`,
+    /** 차트 작도(chartOverlays) 카테고리 on/off 영속 키. */
+    chartOverlays: `${STORAGE_PREFIX}.chartOverlays`,
 } as const;

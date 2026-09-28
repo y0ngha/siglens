@@ -35,6 +35,7 @@ import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import { NEWS_ANALYSIS_LOOKBACK_MS } from '@/entities/news-article/lib/newsLookback';
 import { buildAnalysisNewsItems } from '@/entities/news-article/lib/buildAnalysisNewsItems';
 import { getNextEarningsReport } from '@/entities/earnings-report/api';
+import { loadNewsMacroCalendar } from '@/entities/economy/api/loadNewsMacroCalendar';
 import { fetchQuotePriceForAnalysis } from './lib/fetchQuotePriceForAnalysis';
 // Cross-entity: overall이 options-chain 스냅샷을 조합한다. submitOverallAnalysisAction과
 // 동일한 의도적 예외(entities/CLAUDE.md).
@@ -369,7 +370,7 @@ export async function prewarmOverall(
 
     // Task S3 (prior-analysis-context) — same cache-key parity rationale as
     // `prewarmTechnical` (see that function's comment on the read call).
-    const [priorAnalyses, marketEvents] = await Promise.all([
+    const [priorAnalyses, marketEvents, macroCalendar] = await Promise.all([
         new DrizzleAnalysisHistoryRepository(db).findRecentForPrompt({
             symbol,
             timeframe,
@@ -383,6 +384,7 @@ export async function prewarmOverall(
             symbol,
             ...marketEventsLookback(timeframe),
         }),
+        loadNewsMacroCalendar(),
     ]);
 
     const result = await runOverallAnalysis({
@@ -394,6 +396,8 @@ export async function prewarmOverall(
         marketDataProvider,
         newsItems: enrichedNews,
         upcomingCalendar: next !== null ? [next] : [],
+        // `/news`·prewarmNews와 같은 헬퍼 — 뉴스 축 캐시 키 일치 불변식.
+        macroCalendar,
         /*
          * technical 축에도 `prewarmTechnical`과 **같은** 이력·이벤트를 넘긴다.
          * 두 값은 technical 캐시 키의 `:hist=`·`:evt=` 구간으로 접히므로, 빠지면

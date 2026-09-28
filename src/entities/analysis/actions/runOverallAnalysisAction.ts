@@ -26,6 +26,7 @@ import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import { NEWS_ANALYSIS_LOOKBACK_MS } from '@/entities/news-article/lib/newsLookback';
 import { buildAnalysisNewsItems } from '@/entities/news-article/lib/buildAnalysisNewsItems';
 import { getNextEarningsReport } from '@/entities/earnings-report/api';
+import { loadNewsMacroCalendar } from '@/entities/economy/api/loadNewsMacroCalendar';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import {
     resolveTierAndByok,
@@ -180,13 +181,19 @@ export async function runOverallAnalysisAction(
                 return undefined;
             });
 
-        const [rows, next, optionsSnapshot, financialsScorecard] =
-            await Promise.all([
-                newsRepo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS),
-                getNextEarningsReport(symbol, db),
-                optionsSnapshotPromise,
-                financialsScorecardPromise,
-            ]);
+        const [
+            rows,
+            next,
+            optionsSnapshot,
+            financialsScorecard,
+            macroCalendar,
+        ] = await Promise.all([
+            newsRepo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS),
+            getNextEarningsReport(symbol, db),
+            optionsSnapshotPromise,
+            financialsScorecardPromise,
+            loadNewsMacroCalendar(),
+        ]);
 
         // Overall news axis는 core 안에서 동일한 `runNewsAnalysis`를 호출한다
         // (dependencyResolver → runNewsAnalysis). `/news` 페이지의 호출과 동일한
@@ -225,6 +232,8 @@ export async function runOverallAnalysisAction(
             marketDataProvider,
             newsItems: enrichedNews,
             upcomingCalendar: next !== null ? [next] : [],
+            // `/news` 경로와 같은 헬퍼 — 뉴스 축 캐시 키 일치 불변식.
+            macroCalendar,
             technical: {
                 tierContext: { userId, tier: gate.tier },
                 // technical 탭과 캐시 키를 맞춘다 — 위 옵션 JSDoc 참고.
