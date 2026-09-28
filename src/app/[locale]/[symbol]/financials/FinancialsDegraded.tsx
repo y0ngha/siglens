@@ -1,7 +1,6 @@
 import { useTranslations } from 'next-intl';
-import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
+import { SymbolDegradedShell } from '@/app/[locale]/[symbol]/SymbolDegradedShell';
 import { FinancialsSnapshotProse } from '@/views/symbol/snapshot/renderers/FinancialsSnapshotProse';
-import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 
 interface FinancialsDegradedProps {
@@ -48,10 +47,14 @@ export function FinancialsDegraded({
 }: FinancialsDegradedProps) {
     const t = useTranslations('app.symbol');
     return (
-        <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
-            <SymbolPageHeading>
-                {displayName} {t('FinancialsDegraded.128c11')}
-            </SymbolPageHeading>
+        <SymbolDegradedShell
+            heading={`${displayName} ${t('FinancialsDegraded.128c11')}`}
+            noticeTitle={t('FinancialsDegraded.595d2d')}
+            noticeBody={t('FinancialsDegraded.4e578a')}
+            symbol={symbol}
+            current="financials"
+            marketProfile={marketProfile}
+        >
             <FinancialsSnapshotProse
                 content={snapshotContent}
                 symbol={symbol}
@@ -59,19 +62,6 @@ export function FinancialsDegraded({
                 marketProfile={marketProfile}
                 generatedAt={snapshotGeneratedAt}
             />
-            <section className="rounded-lg border border-secondary-700 bg-secondary-900/40 px-5 py-8 text-center">
-                <p className="text-sm font-medium text-secondary-200">
-                    {t('FinancialsDegraded.595d2d')}
-                </p>
-                <p className="mt-2 text-sm leading-relaxed text-secondary-400">
-                    {t('FinancialsDegraded.4e578a')}
-                </p>
-            </section>
-            <CrossLinkCards
-                symbol={symbol}
-                current="financials"
-                marketProfile={marketProfile}
-            />
-        </main>
+        </SymbolDegradedShell>
     );
 }

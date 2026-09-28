@@ -76,13 +76,8 @@ describe('Model Selector Flow', () => {
                 />
             );
             const user = userEvent.setup();
-            const backdrop = screen
-                .getByRole('dialog')
-                .parentElement!.querySelector('[aria-hidden="true"]');
-            if (backdrop) {
-                await user.click(backdrop);
-                expect(onClose).toHaveBeenCalledTimes(1);
-            }
+            await user.click(screen.getByTestId('modal-backdrop'));
+            expect(onClose).toHaveBeenCalledTimes(1);
         });
     });
 

@@ -44,6 +44,8 @@ import type { Metadata } from 'next';
 import { cache, Suspense } from 'react';
 import { toSkillShowcaseItems } from '@/widgets/home/toSkillShowcaseItems';
 import { enterLocale } from '@/shared/lib/enterLocale';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { cn } from '@/shared/lib/cn';
 
 // 루트 레이아웃에서 canonical을 제거했으므로 홈 페이지 자체가 명시적으로 self-canonical을 선언한다.
 // 다른 인덱서블 페이지들(economy, market, backtesting 등)은 이미 자체 canonical을 갖고 있다.
@@ -390,7 +392,12 @@ export default async function Home({
                         신뢰도가 곧 제품 가치이므로, 질문을 제목 크기로 올리고
                         액센트 보더로 한 번 짚는다. 문구는 그대로 둔다.
                     */}
-                    <div className="flex flex-col items-center gap-4 rounded-lg border border-l-2 border-secondary-700 border-l-primary-500 bg-secondary-800 px-6 py-6 text-center sm:flex-row sm:justify-between sm:text-left">
+                    <div
+                        className={cn(
+                            SURFACE_CARD,
+                            'flex flex-col items-center gap-4 border-l-2 border-l-primary-500 px-6 py-6 text-center sm:flex-row sm:justify-between sm:text-left'
+                        )}
+                    >
                         <div>
                             <p className="text-lg font-semibold text-secondary-100">
                                 {t('page.dfbacd')}

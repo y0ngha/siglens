@@ -50,4 +50,16 @@ describe('SubmitButton', () => {
         render(<SubmitButton label="Sign In" />);
         expect(screen.getByRole('button')).toHaveTextContent('처리 중…');
     });
+
+    it('stays disabled while the caller withholds submission', () => {
+        render(<SubmitButton label="Delete" disabled />);
+        expect(screen.getByRole('button')).toBeDisabled();
+    });
+
+    it('renders the danger tone fill', () => {
+        render(<SubmitButton label="Delete" tone="danger" />);
+        const button = screen.getByRole('button');
+        expect(button).toHaveClass('bg-ui-danger-fill');
+        expect(button).not.toHaveClass('bg-primary-600');
+    });
 });

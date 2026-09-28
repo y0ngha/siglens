@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
 
 /**
- * Stroke icons (24px grid, 1.75 stroke) for the ai.siglens.io chat surface
- * and both `/about` pages. Inline SVG rather than emoji: emoji render
+ * The app's stroke icon set (24px grid, 1.75 stroke). Reach for these before
+ * drawing a one-off `<svg>` — hand-drawn copies drifted into three stroke
+ * weights side by side. Inline SVG rather than emoji: emoji render
  * per-platform, ignore the theme's text colour and read as placeholders next
  * to the brand's mono wordmark.
  *
@@ -72,6 +73,16 @@ export const ChevronDownIcon = (p: IconProps) => (
         <path d="M6 9l6 6 6-6" />
     </Icon>
 );
+export const ArrowUpIcon = (p: IconProps) => (
+    <Icon {...p}>
+        <path d="M12 19V5M6 11l6-6 6 6" />
+    </Icon>
+);
+export const ArrowRightIcon = (p: IconProps) => (
+    <Icon {...p}>
+        <path d="M5 12h14M13 6l6 6-6 6" />
+    </Icon>
+);
 export const ArrowDownIcon = (p: IconProps) => (
     <Icon {...p}>
         <path d="M12 5v14M6 13l6 6 6-6" />
@@ -80,6 +91,12 @@ export const ArrowDownIcon = (p: IconProps) => (
 export const CheckIcon = (p: IconProps) => (
     <Icon {...p}>
         <path d="M5 12.5l4.5 4.5L19 7.5" />
+    </Icon>
+);
+export const LinkIcon = (p: IconProps) => (
+    <Icon {...p}>
+        <path d="M10 13a5 5 0 007.5.5l3-3a5 5 0 00-7-7l-1.7 1.7" />
+        <path d="M14 11a5 5 0 00-7.5-.5l-3 3a5 5 0 007 7l1.7-1.7" />
     </Icon>
 );
 export const SearchIcon = (p: IconProps) => (
@@ -168,5 +185,11 @@ export const GaugeIcon = (p: IconProps) => (
         <path d="M4 16a8 8 0 0 1 16 0" />
         <path d="m12 16 4-5" />
         <circle cx="12" cy="16" r="1" />
+    </Icon>
+);
+export const LockIcon = (p: IconProps) => (
+    <Icon {...p}>
+        <rect x="4" y="11" width="16" height="10" rx="2" />
+        <path d="M8 11V7a4 4 0 0 1 8 0v4" />
     </Icon>
 );

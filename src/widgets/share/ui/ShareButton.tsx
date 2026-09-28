@@ -6,7 +6,8 @@ import { cn } from '@/shared/lib/cn';
 import { ShareSheet } from './ShareSheet';
 import { ShareTriggerDialog } from './ShareTriggerDialog';
 import { SharePreparingModal } from './SharePreparingModal';
-import { ShareIcon, SpinnerIcon } from './icons';
+import { Spinner } from '@/shared/ui/Spinner';
+import { ShareIcon } from './icons';
 
 /**
  * Header button that orchestrates the share flow for the current analysis tab.
@@ -58,7 +59,7 @@ export function ShareButton() {
                 )}
             >
                 {isMutating ? (
-                    <SpinnerIcon className="h-5 w-5" />
+                    <Spinner size="lg" />
                 ) : (
                     <ShareIcon className="h-5 w-5" />
                 )}

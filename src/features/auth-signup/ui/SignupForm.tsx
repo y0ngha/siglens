@@ -14,9 +14,9 @@ import {
     useVerifyEmail,
 } from '@/features/auth-email-verification/hooks/useEmailVerificationForms';
 import { useSignupForm } from '../hooks/useSignupForm';
-import { AuthErrorAlert } from '@/shared/ui/auth/AuthErrorAlert';
+import { ErrorAlert } from '@/shared/ui/ErrorAlert';
 import { useDescribeAuthError } from '@/shared/hooks/useDescribeAuthError';
-import { AuthFieldGroup } from '@/shared/ui/auth/AuthFieldGroup';
+import { TextField } from '@/shared/ui/TextField';
 import { ConsentCheckboxGroup } from '@/shared/ui/auth/ConsentCheckboxGroup';
 import { PasswordField } from '@/shared/ui/auth/PasswordField';
 import { PasswordStrengthHint } from '@/shared/ui/auth/PasswordStrengthHint';
@@ -160,11 +160,11 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
             {phase === 'email' && (
                 <form action={emailFormAction} className="space-y-4" noValidate>
                     {emailState.error ? (
-                        <AuthErrorAlert
+                        <ErrorAlert
                             message={describe(emailState.error) ?? ''}
                         />
                     ) : null}
-                    <AuthFieldGroup
+                    <TextField
                         id="signup-email"
                         name="email"
                         label={t('SignupForm.3c3776')}
@@ -196,11 +196,9 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                     </p>
                     {codeState.error?.code === 'redis_unavailable' ||
                     codeState.error?.code === 'email_already_exists' ? (
-                        <AuthErrorAlert
-                            message={describe(codeState.error) ?? ''}
-                        />
+                        <ErrorAlert message={describe(codeState.error) ?? ''} />
                     ) : null}
-                    <AuthFieldGroup
+                    <TextField
                         id="signup-code"
                         name="code"
                         label={t('SignupForm.d89be9')}
@@ -242,10 +240,10 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                         value={tosChecked ? 'true' : 'false'}
                     />
                     {signupFormError ? (
-                        <AuthErrorAlert message={signupFormError} />
+                        <ErrorAlert message={signupFormError} />
                     ) : null}
                     {signupEmailError ? (
-                        <AuthErrorAlert message={signupEmailError} />
+                        <ErrorAlert message={signupEmailError} />
                     ) : null}
                     <p className="text-sm text-secondary-300">
                         <span
@@ -260,7 +258,7 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                         </span>{' '}
                         <EmailEditButton onClick={onRestart} />
                     </p>
-                    <AuthFieldGroup
+                    <TextField
                         id="signup-name"
                         name="name"
                         label={t('SignupForm.e4d212')}

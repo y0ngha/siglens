@@ -113,9 +113,7 @@ describe('PremiumModelGateModal', () => {
     it('calls onClose when backdrop is clicked', async () => {
         const user = userEvent.setup();
         render(<PremiumModelGateModal mode="auth" onClose={onClose} />);
-        const backdrop = document.querySelector('[aria-hidden="true"]');
-        expect(backdrop).not.toBeNull();
-        await user.click(backdrop!);
+        await user.click(screen.getByTestId('modal-backdrop'));
         expect(onClose).toHaveBeenCalledTimes(1);
     });
 });

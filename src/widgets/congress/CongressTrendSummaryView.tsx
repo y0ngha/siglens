@@ -8,6 +8,7 @@ import {
     HEADING_SECTION,
     HEADING_SUBSECTION,
 } from '@/shared/lib/typographyStyles';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 /** CongressSentiment → `shared.enumLabel.congressSentiment` 카탈로그 키. */
 const SENTIMENT_LABEL_KEY: Record<CongressSentiment, string> = {
@@ -40,7 +41,7 @@ export function CongressTrendSummaryView({
     return (
         <section
             aria-labelledby="congress-trend-summary-heading"
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+            className={cn(SURFACE_CARD, 'p-6')}
         >
             <div className="mb-4 flex items-center justify-between gap-3">
                 <h2

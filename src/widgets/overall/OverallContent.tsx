@@ -2,8 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 import { usePublishSymbolChat } from '@/features/symbol-chat/hooks/useSymbolChat';
-import { useNewsAnalysisTrigger } from '@/widgets/news/hooks/useNewsAnalysisTrigger';
-import { useWaitForNewsCards } from '@/widgets/news/hooks/useWaitForNewsCards';
+import { useNewsAnalysisTrigger } from '@/entities/news-article/hooks/useNewsAnalysisTrigger';
+import { useWaitForNewsCards } from '@/entities/news-article/hooks/useWaitForNewsCards';
 import { useOverallAnalysis } from './hooks/useOverallAnalysis';
 import { OverallTriggerCta } from './OverallTriggerCta';
 import { ReanalyzeButton } from './ReanalyzeButton';
@@ -22,6 +22,8 @@ import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
 import { OverallView } from './OverallView';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
+import { Spinner } from '@/shared/ui/Spinner';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 const SKELETON_LINE_COUNT = 3;
 const SKELETON_WIDTH_START_PCT = 85;
@@ -166,7 +168,7 @@ export function OverallContent({
             <section
                 aria-labelledby="overall-loading-heading"
                 aria-busy="true"
-                className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+                className={cn(SURFACE_CARD, 'p-6')}
             >
                 <h2
                     id="overall-loading-heading"
@@ -175,10 +177,7 @@ export function OverallContent({
                     {t('OverallContent.8b7ae7')}
                 </h2>
                 <div className="flex items-center gap-3">
-                    <div
-                        aria-hidden="true"
-                        className="h-4 w-4 animate-spin rounded-full border-2 border-primary-500 border-t-transparent motion-reduce:animate-none"
-                    />
+                    <Spinner />
                     <p
                         className="text-sm text-secondary-400"
                         aria-live="polite"

@@ -1,9 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import type { FallbackProps } from 'react-error-boundary';
 import { AiSummaryErrorSection } from '../AiSummaryErrorSection';
 
-// FallbackProps.error is typed `any`; helper keeps test call sites readable.
 const renderSection = (
     error: unknown,
     reset = vi.fn(),
@@ -17,8 +15,8 @@ const renderSection = (
 ) =>
     render(
         <AiSummaryErrorSection
-            error={error as FallbackProps['error']}
-            resetErrorBoundary={reset}
+            error={error}
+            onRetry={reset}
             heading={overrides.heading ?? 'AI 테스트 분석'}
             idPrefix={overrides.idPrefix ?? 'test-ai-summary'}
             fallbackMessage={overrides.fallbackMessage}
@@ -154,5 +152,16 @@ describe('AiSummaryErrorSection', () => {
             expect(section?.className).toContain('w-full');
             expect(section?.className).toContain('overflow-hidden');
         });
+    });
+
+    it('onRetry가 없으면 재시도 버튼을 그리지 않는다', () => {
+        render(
+            <AiSummaryErrorSection
+                error={new Error('err')}
+                heading="AI 테스트 분석"
+                idPrefix="test-ai-summary"
+            />
+        );
+        expect(screen.queryByRole('button')).not.toBeInTheDocument();
     });
 });

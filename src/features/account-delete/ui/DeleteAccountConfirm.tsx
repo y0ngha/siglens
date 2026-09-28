@@ -2,11 +2,12 @@
 
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { useFormStatus } from 'react-dom';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { useDeleteAccountForm } from '../hooks/useDeleteAccountForm';
 import { cn } from '@/shared/lib/cn';
-import { AuthErrorAlert } from '@/shared/ui/auth/AuthErrorAlert';
+import { ErrorAlert } from '@/shared/ui/ErrorAlert';
+import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
+import { BUTTON_OUTLINE } from '@/shared/lib/buttonStyles';
 import { AUTH_ERROR_KEY } from '@/shared/lib/authErrorKey';
 
 const INPUT_HINT_ID = 'delete-account-email-hint';
@@ -21,36 +22,6 @@ const HINT_MATCH = 'error.deleteHintMatch';
  * 원문이라 모든 로케일에 한국어가 나갔다.
  */
 const ERROR_FALLBACK = 'error.accountDeleteFailed';
-
-interface DangerSubmitButtonProps {
-    disabled: boolean;
-}
-
-function DangerSubmitButton({ disabled }: DangerSubmitButtonProps) {
-    const t = useTranslations('features.account-delete');
-    const { pending } = useFormStatus();
-    const isDisabled = disabled || pending;
-    return (
-        <button
-            type="submit"
-            disabled={isDisabled}
-            aria-busy={pending}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-ui-danger-fill font-semibold text-white transition-colors hover:bg-ui-danger-fill-hover focus-visible:ring-2 focus-visible:ring-ui-danger focus-visible:outline-none active:bg-ui-danger-fill-active disabled:bg-secondary-700 disabled:text-secondary-500 motion-reduce:transition-none"
-        >
-            {pending ? (
-                <>
-                    <span
-                        aria-hidden
-                        className="size-4 animate-spin rounded-full border-2 border-white/40 border-t-white motion-reduce:animate-none"
-                    />
-                    <span>{t('DeleteAccountConfirm.b5b216')}</span>
-                </>
-            ) : (
-                t('DeleteAccountConfirm.009e27')
-            )}
-        </button>
-    );
-}
 
 interface DeleteAccountConfirmProps {
     userEmail: string;
@@ -75,7 +46,7 @@ export function DeleteAccountConfirm({ userEmail }: DeleteAccountConfirmProps) {
         : null;
     return (
         <form action={formAction} className="space-y-5" noValidate>
-            {errorMessage ? <AuthErrorAlert message={errorMessage} /> : null}
+            {errorMessage ? <ErrorAlert message={errorMessage} /> : null}
             <ul className="list-disc space-y-1 pl-5 text-sm text-secondary-300">
                 <li>{t('DeleteAccountConfirm.a060ae')}</li>
                 <li>{t('DeleteAccountConfirm.5c7233')}</li>
@@ -122,12 +93,20 @@ export function DeleteAccountConfirm({ userEmail }: DeleteAccountConfirmProps) {
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                 <Link
                     href="/account"
-                    className="inline-flex h-12 items-center justify-center rounded-lg border border-border-control px-5 text-sm font-medium text-secondary-200 transition-colors hover:bg-secondary-800 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-900 focus-visible:outline-none sm:flex-1"
+                    className={cn(
+                        BUTTON_OUTLINE,
+                        'h-12 px-5 text-sm focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-900 sm:flex-1'
+                    )}
                 >
                     {t('DeleteAccountConfirm.19b2d1')}
                 </Link>
                 <span className="sm:flex-1">
-                    <DangerSubmitButton disabled={!isMatch} />
+                    <SubmitButton
+                        tone="danger"
+                        disabled={!isMatch}
+                        label={t('DeleteAccountConfirm.009e27')}
+                        pendingLabel={t('DeleteAccountConfirm.b5b216')}
+                    />
                 </span>
             </div>
         </form>

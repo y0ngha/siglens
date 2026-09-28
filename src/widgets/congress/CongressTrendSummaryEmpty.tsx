@@ -1,6 +1,8 @@
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { cn } from '@/shared/lib/cn';
 import { useTranslations } from 'next-intl';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+
 /**
  * Empty-state renderer for the `no_trades` branch unique to congress.
  *
@@ -14,7 +16,7 @@ export function CongressTrendSummaryEmpty() {
     return (
         <section
             aria-labelledby="congress-trend-summary-empty-heading"
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+            className={cn(SURFACE_CARD, 'p-6')}
         >
             <h2
                 id="congress-trend-summary-empty-heading"

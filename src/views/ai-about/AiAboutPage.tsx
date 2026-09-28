@@ -2,7 +2,8 @@ import { getTranslations } from 'next-intl/server';
 import type { ComponentType } from 'react';
 import { localePath, type Locale } from '@/shared/i18n/locales';
 import { cn } from '@/shared/lib/cn';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
+import { SURFACE_CARD, SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import {
     BuildingIcon,
@@ -34,8 +35,10 @@ interface Props {
     readonly faq: readonly FaqItem[];
 }
 
-const PRIMARY_BUTTON =
-    'inline-flex min-h-11 items-center justify-center rounded-lg bg-primary-600 px-6 text-sm font-semibold text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-900 focus-visible:outline-none';
+const PRIMARY_BUTTON = cn(
+    BUTTON_PRIMARY,
+    'min-h-11 px-6 text-sm focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-900'
+);
 
 const SECTION_SUB =
     'mx-auto mt-2 max-w-xl text-center text-[15px] leading-6 text-secondary-400';
@@ -260,7 +263,12 @@ export async function AiAboutPage({
                                             'grid grid-cols-[2.5rem_minmax(0,1fr)] grid-rows-[auto_1fr_auto] gap-x-3.5 gap-y-1 p-4 sm:p-5'
                                         )}
                                     >
-                                        <span className="row-span-3 flex size-10 items-center justify-center rounded-lg bg-secondary-700/40 text-secondary-200">
+                                        <span
+                                            className={cn(
+                                                SURFACE_NESTED,
+                                                'row-span-3 flex size-10 items-center justify-center text-secondary-200'
+                                            )}
+                                        >
                                             <Icon className="size-5" />
                                         </span>
                                         <h3 className="text-base font-semibold text-secondary-50">

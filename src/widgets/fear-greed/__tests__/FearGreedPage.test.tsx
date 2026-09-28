@@ -32,7 +32,7 @@ vi.mock('@/shared/hooks/useHydrated', () => ({
 }));
 
 // Mock the chart subcomponent (it uses lightweight-charts and is hard to render under jsdom).
-vi.mock('@/widgets/chart/FearGreedHistoricalChart', () => ({
+vi.mock('@/widgets/fear-greed/FearGreedHistoricalChart', () => ({
     FearGreedHistoricalChart: () => null,
 }));
 

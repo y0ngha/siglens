@@ -46,8 +46,8 @@ entities       ← shared import 가능. entities 간 cross-import 허용
 features       ← entities, shared import 가능. features 간 cross-import 허용
                  (auth-signup → auth-email-verification 등).
 
-widgets        ← features, entities, shared import 가능. widgets 간 cross-import 허용
-                 (fear-greed → chart 등, 목록은 `src/widgets/CLAUDE.md`).
+widgets        ← features, entities, shared import 가능. widgets 간 import 금지
+                 (`src/__tests__/guards/noCrossWidgetImports.test.ts`).
 
 pages          ← widgets, features, entities, shared import 가능.
 

@@ -535,3 +535,11 @@
 - Violation: `.sort()` on a filtered array; helper test froze an instant where UTC and ET dates coincide, so a UTC-vs-ET regression would pass
   - Rule: MISTAKES Coding Paradigm #12 (toSorted); Tests — boundary instants must distinguish the alternatives
   - Context: toSorted; test instant 2026-09-29T02:00Z.
+
+## [claude/funny-turing-9cgfid Round 3 | exception-safety refactoring + line-number regression | 2026-09-28]
+- Violation: Refactoring a handler onto shared hook (useCopyToClipboard) moved exception-safe text-report construction outside the try/catch that guarded it, so malformed SSE payload could throw in onClick instead of showing failed state.
+  - Rule: (new) Exception-safety scope — when refactoring logic into a reusable hook that maintains error-handling guarantees, preserve the original try/catch scope across all input paths. Moving construction outside the guarded block silently breaks the containment invariant.
+  - Context: Fixed by moving text-builder evaluation inside the promise chain. copy() accepts a callback evaluated inside its promise, guaranteeing exception handling. Regression tests added verifying both exception cases and normal path.
+- Violation: Self-caught during implementation — edit shifted AnalysisPanel line numbers, breaking a line-number-keyed exception in src/__tests__/guards/controlBorderTokenGuard.test.ts before commit.
+  - Rule: Line-number references in code/tests are fragile after refactoring. After non-trivial edits, run guards before committing to catch such breakages.
+  - Context: Caught and fixed by running guards in pre-commit phase. Line number reference in controlBorderTokenGuard.test.ts corrected.

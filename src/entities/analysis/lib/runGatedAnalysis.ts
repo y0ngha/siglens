@@ -15,7 +15,7 @@ import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
  * The gate-derived fields every core `run*` call takes. The caller spreads them
  * into its core options next to its own `symbol`/`locale`/`modelId`/`dataProvider`.
  */
-export interface GatedAnalysisOptions {
+interface GatedAnalysisOptions {
     readonly tier: Tier;
     /** "깊은 생각" toggle — already forced `false` for free/anonymous callers. */
     readonly reasoning: boolean;

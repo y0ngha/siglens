@@ -1,7 +1,6 @@
 import { useTranslations } from 'next-intl';
-import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
+import { SymbolDegradedShell } from '@/app/[locale]/[symbol]/SymbolDegradedShell';
 import { CongressSnapshotProse } from '@/views/symbol/snapshot/renderers/CongressSnapshotProse';
-import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 
 interface CongressDegradedProps {
     /** Resolved display name (Korean+English+ticker, or bare-ticker fallback). */
@@ -42,10 +41,13 @@ export function CongressDegraded({
 }: CongressDegradedProps) {
     const t = useTranslations('app.symbol');
     return (
-        <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
-            <SymbolPageHeading>
-                {displayName} {t('CongressDegraded.7b06ac')}
-            </SymbolPageHeading>
+        <SymbolDegradedShell
+            heading={`${displayName} ${t('CongressDegraded.7b06ac')}`}
+            noticeTitle={t('CongressDegraded.ea5528')}
+            noticeBody={t('CongressDegraded.508fee')}
+            symbol={symbol}
+            current="congress"
+        >
             <CongressSnapshotProse
                 content={snapshotContent}
                 symbol={symbol}
@@ -55,15 +57,6 @@ export function CongressDegraded({
                 marketProfile="us-equity"
                 generatedAt={snapshotGeneratedAt}
             />
-            <section className="rounded-lg border border-secondary-700 bg-secondary-900/40 px-5 py-8 text-center">
-                <p className="text-sm font-medium text-secondary-200">
-                    {t('CongressDegraded.ea5528')}
-                </p>
-                <p className="mt-2 text-sm leading-relaxed text-secondary-400">
-                    {t('CongressDegraded.508fee')}
-                </p>
-            </section>
-            <CrossLinkCards symbol={symbol} current="congress" />
-        </main>
+        </SymbolDegradedShell>
     );
 }

@@ -4,7 +4,7 @@ import { getTranslations } from 'next-intl/server';
 import { PositionHoldingCard } from './PositionHoldingCard';
 import { PortfolioManager } from './PortfolioManager';
 import { cn } from '@/shared/lib/cn';
-import { PLACEHOLDER_ON_INSET } from '@/shared/lib/surfaceStyles';
+import { PLACEHOLDER_ON_INSET, SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { toView } from '@/entities/portfolio/lib/toView';
@@ -225,7 +225,7 @@ export default async function PortfolioPage({
                 </header>
                 <section
                     aria-label={t('page.06c7de')}
-                    className="space-y-4 rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+                    className={cn(SURFACE_CARD, 'space-y-4 p-6')}
                 >
                     <Suspense fallback={<PortfolioManagerSkeleton />}>
                         <PortfolioManager />

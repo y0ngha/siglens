@@ -41,23 +41,28 @@ vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
 // useWaitForNewsCards는 prop으로 받은 initialReady를 그대로 isReady로 노출한다.
 // production이 import하는 정의 파일(@/widgets/news/hooks/*)을 mock한다.
 vi.mock(
-    '@/widgets/news/hooks/useNewsAnalysisTrigger',
+    '@/entities/news-article/hooks/useNewsAnalysisTrigger',
     async importOriginal => ({
         ...(await importOriginal<
-            typeof import('@/widgets/news/hooks/useNewsAnalysisTrigger')
+            typeof import('@/entities/news-article/hooks/useNewsAnalysisTrigger')
         >()),
         useNewsAnalysisTrigger: vi.fn(),
     })
 );
-vi.mock('@/widgets/news/hooks/useWaitForNewsCards', async importOriginal => ({
-    ...(await importOriginal<
-        typeof import('@/widgets/news/hooks/useWaitForNewsCards')
-    >()),
-    useWaitForNewsCards: vi.fn((_symbol: string, initiallyReady: boolean) => ({
-        isReady: initiallyReady,
-        pollError: null,
-    })),
-}));
+vi.mock(
+    '@/entities/news-article/hooks/useWaitForNewsCards',
+    async importOriginal => ({
+        ...(await importOriginal<
+            typeof import('@/entities/news-article/hooks/useWaitForNewsCards')
+        >()),
+        useWaitForNewsCards: vi.fn(
+            (_symbol: string, initiallyReady: boolean) => ({
+                isReady: initiallyReady,
+                pollError: null,
+            })
+        ),
+    })
+);
 // react-markdown은 ESM-only라 Jest 환경에서 직접 로드하면 실패한다. 본 테스트는
 // markdown rendering이 아니라 OverallContent의 layout과 trigger 동작을 검증하므로
 // MarkdownText를 단순 wrapper로 대체한다.
@@ -97,8 +102,8 @@ import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { useOverallAnalysis } from '@/widgets/overall/hooks/useOverallAnalysis';
 import { runOverallAnalysisAction } from '@/entities/analysis/actions/runOverallAnalysisAction';
 import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
-import { useNewsAnalysisTrigger } from '@/widgets/news/hooks/useNewsAnalysisTrigger';
-import { useWaitForNewsCards } from '@/widgets/news/hooks/useWaitForNewsCards';
+import { useNewsAnalysisTrigger } from '@/entities/news-article/hooks/useNewsAnalysisTrigger';
+import { useWaitForNewsCards } from '@/entities/news-article/hooks/useWaitForNewsCards';
 
 const mockUseOverallAnalysis = useOverallAnalysis as MockedFunction<
     typeof useOverallAnalysis

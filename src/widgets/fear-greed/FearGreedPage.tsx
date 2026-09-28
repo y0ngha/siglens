@@ -6,7 +6,7 @@ import { useFearGreedFromSymbol } from './hooks/useFearGreedFromSymbol';
 import { FearGreedHero } from './FearGreedHero';
 import { FearGreedComparisonGauges } from './FearGreedComparisonGauges';
 import { FearGreedGroupBar } from './FearGreedGroupBar';
-import { FearGreedHistoricalChart } from '@/widgets/chart/FearGreedHistoricalChart';
+import { FearGreedHistoricalChart } from '@/widgets/fear-greed/FearGreedHistoricalChart';
 import { SelfNormWarningBadge } from './SelfNormWarningBadge';
 import { confidenceLabelKey } from '@/shared/lib/fearGreedLabels';
 import { usePublishSymbolChat } from '@/features/symbol-chat/hooks/useSymbolChat';

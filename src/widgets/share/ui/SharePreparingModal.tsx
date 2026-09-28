@@ -1,10 +1,19 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useRef } from 'react';
-import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
-import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
-import { SpinnerIcon } from './icons';
+import { BUTTON_OUTLINE, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
+import { cn } from '@/shared/lib/cn';
+import { ModalShell } from '@/shared/ui/ModalShell';
+import { Spinner } from '@/shared/ui/Spinner';
+import { CloseIcon } from '@/shared/ui/StrokeIcons';
+import {
+    SHARE_MODAL_ACTION_SIZE,
+    SHARE_MODAL_CLOSE_BUTTON,
+    SHARE_MODAL_OUTLINE_HOVER,
+    SHARE_MODAL_PANEL,
+} from './modalStyles';
+
+const TITLE_ID = 'share-preparing-modal-title';
 
 interface SharePreparingModalProps {
     open: boolean;
@@ -19,7 +28,7 @@ interface SharePreparingModalProps {
  * - pending: full-screen-centered spinner + aria-live status text + sub-hint.
  * - error: error message + retry + close buttons.
  *
- * Uses useFocusTrap + useEscapeKey (same pattern as ShareTriggerDialog).
+ * Built on ModalShell (same shell as ShareTriggerDialog).
  * aria-busy="true" during pending so screen readers announce the live region.
  */
 export function SharePreparingModal({
@@ -29,84 +38,82 @@ export function SharePreparingModal({
     onRetry,
 }: SharePreparingModalProps) {
     const t = useTranslations('widgets.share');
-    const dialogRef = useRef<HTMLDivElement>(null);
-
-    useFocusTrap(dialogRef, open);
-    useEscapeKey(onClose, open);
 
     if (!open) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-secondary-950/80 p-4 backdrop-blur-sm">
-            <div
-                ref={dialogRef}
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="share-preparing-modal-title"
-                aria-busy={phase === 'pending' ? 'true' : undefined}
-                tabIndex={-1}
-                className="w-full max-w-sm rounded-lg border border-secondary-700 bg-secondary-800 shadow-2xl outline-none"
-            >
-                <div className="flex items-center justify-between border-b border-secondary-700 px-5 py-4">
-                    <h2
-                        id="share-preparing-modal-title"
-                        className="text-sm font-semibold text-secondary-100"
-                    >
-                        {phase === 'pending'
-                            ? t('SharePreparingModal.797416')
-                            : t('SharePreparingModal.15b661')}
-                    </h2>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        aria-label={t('SharePreparingModal.94b7db')}
-                        className="touch-manipulation rounded p-1 text-secondary-500 transition-colors hover:text-secondary-300 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
-                    >
-                        ✕
-                    </button>
-                </div>
-
-                <div className="flex flex-col items-center gap-4 px-5 py-6">
-                    {phase === 'pending' ? (
-                        <>
-                            <SpinnerIcon className="h-8 w-8 text-primary-500" />
-                            <div
-                                aria-live="polite"
-                                className="flex flex-col items-center gap-1 text-center"
-                            >
-                                <p className="text-sm text-secondary-200">
-                                    {t('SharePreparingModal.cec483')}
-                                </p>
-                                <p className="text-xs text-secondary-500">
-                                    {t('SharePreparingModal.99d27b')}
-                                </p>
-                            </div>
-                        </>
-                    ) : (
-                        <>
-                            <p className="text-center text-sm text-secondary-300">
-                                {t('SharePreparingModal.98580d')}
-                            </p>
-                            <div className="flex w-full flex-col gap-2">
-                                <button
-                                    type="button"
-                                    onClick={onRetry}
-                                    className="flex h-9 touch-manipulation items-center justify-center rounded-lg bg-primary-600 px-4 text-sm font-medium text-secondary-50 transition-colors hover:bg-primary-500 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
-                                >
-                                    {t('SharePreparingModal.0c767c')}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={onClose}
-                                    className="flex h-9 touch-manipulation items-center justify-center rounded-lg border border-border-control px-4 text-sm text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
-                                >
-                                    {t('SharePreparingModal.94b7db')}
-                                </button>
-                            </div>
-                        </>
-                    )}
-                </div>
+        <ModalShell
+            titleId={TITLE_ID}
+            onClose={onClose}
+            busy={phase === 'pending'}
+            className={SHARE_MODAL_PANEL}
+        >
+            <div className="flex items-center justify-between border-b border-secondary-700 px-5 py-4">
+                <h2
+                    id={TITLE_ID}
+                    className="text-sm font-semibold text-secondary-100"
+                >
+                    {phase === 'pending'
+                        ? t('SharePreparingModal.797416')
+                        : t('SharePreparingModal.15b661')}
+                </h2>
+                <button
+                    type="button"
+                    onClick={onClose}
+                    aria-label={t('SharePreparingModal.94b7db')}
+                    className={SHARE_MODAL_CLOSE_BUTTON}
+                >
+                    <CloseIcon />
+                </button>
             </div>
-        </div>
+
+            <div className="flex flex-col items-center gap-4 px-5 py-6">
+                {phase === 'pending' ? (
+                    <>
+                        <Spinner size="xl" />
+                        <div
+                            aria-live="polite"
+                            className="flex flex-col items-center gap-1 text-center"
+                        >
+                            <p className="text-sm text-secondary-200">
+                                {t('SharePreparingModal.cec483')}
+                            </p>
+                            <p className="text-xs text-secondary-500">
+                                {t('SharePreparingModal.99d27b')}
+                            </p>
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <p className="text-center text-sm text-secondary-300">
+                            {t('SharePreparingModal.98580d')}
+                        </p>
+                        <div className="flex w-full flex-col gap-2">
+                            <button
+                                type="button"
+                                onClick={onRetry}
+                                className={cn(
+                                    BUTTON_PRIMARY,
+                                    SHARE_MODAL_ACTION_SIZE
+                                )}
+                            >
+                                {t('SharePreparingModal.0c767c')}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className={cn(
+                                    BUTTON_OUTLINE,
+                                    SHARE_MODAL_ACTION_SIZE,
+                                    SHARE_MODAL_OUTLINE_HOVER
+                                )}
+                            >
+                                {t('SharePreparingModal.94b7db')}
+                            </button>
+                        </div>
+                    </>
+                )}
+            </div>
+        </ModalShell>
     );
 }

@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { EyeIcon } from '@/shared/ui/EyeIcon';
+import { ChevronDownIcon } from '@/shared/ui/StrokeIcons';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { MarkdownText } from '@/shared/ui/MarkdownText';
 import type {
@@ -33,7 +34,7 @@ import type {
 } from '@y0ngha/siglens-core';
 import { HIGH_CONFIDENCE_WEIGHT } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
-import { LABEL_KO } from '@/shared/lib/typographyStyles';
+import { LABEL_GROUP, LABEL_KO } from '@/shared/lib/typographyStyles';
 import { isFallbackAnalysis } from '@/entities/chat-message/lib/fallbackAnalysis';
 import {
     parseStructuredSummary,
@@ -49,7 +50,7 @@ import { AdBanner } from './AdBanner';
 import type { CooldownNotice } from './model/types';
 import { TRENDLINE_DIRECTION_LABEL_KEY } from '@/shared/lib/trendline';
 import { MS_PER_SECOND, SECONDS_PER_MINUTE } from '@/shared/config/time';
-import { DEFAULT_RESET_MS as COPY_RESET_MS } from '@/shared/hooks/useCopyToClipboard';
+import { useCopyToClipboard } from '@/shared/hooks/useCopyToClipboard';
 import { formatAnalyzedAt } from '@/shared/lib/formatAnalyzedAt';
 import { isAnalysisStale } from '@/entities/analysis/lib/staleThreshold';
 import { StaleAnalysisBanner } from './StaleAnalysisBanner';
@@ -360,21 +361,12 @@ interface ChevronIconProps {
 
 function ChevronIcon({ isOpen }: ChevronIconProps) {
     return (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
+        <ChevronDownIcon
             className={cn(
-                'text-secondary-500 h-4 w-4 transition-transform duration-200',
+                'size-4 text-secondary-500 transition-transform duration-200',
                 isOpen && 'rotate-180'
             )}
-        >
-            <path
-                fillRule="evenodd"
-                d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
-                clipRule="evenodd"
-            />
-        </svg>
+        />
     );
 }
 
@@ -984,9 +976,8 @@ export function AnalysisPanel({
     const fallbackSummary = useTranslations('entities.chat-message.fallback')(
         'unavailable'
     );
-    const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>(
-        'idle'
-    );
+    const { copied, failed, copy } = useCopyToClipboard();
+    const copyState = copied ? 'copied' : failed ? 'failed' : 'idle';
     // SSR/hydration mismatch 방지 — 서버 렌더링 시점의 `new Date()`와
     // 클라이언트 hydration 시점의 시각이 다를 수 있어 stale 평가는 client mount
     // 이후로 미룬다. `now`가 null인 동안에는 배너가 표시되지 않는다.
@@ -1013,34 +1004,13 @@ export function AnalysisPanel({
     // 말하는 건 오해를 준다(TrendBadge·summary와 동일한 신호로 가드).
     const showPersonalizedBadge =
         isPersonalized && !isFallbackAnalysis(analysis, fallbackSummary);
-    const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-    const resetCopyStateLater = (): void => {
-        if (copyTimeoutRef.current !== null) {
-            clearTimeout(copyTimeoutRef.current);
-        }
-        copyTimeoutRef.current = setTimeout(
-            () => setCopyState('idle'),
-            COPY_RESET_MS
-        );
-    };
-
-    const handleCopyReport = async (): Promise<void> => {
+    const handleCopyReport = (): void => {
         if (showProgress || isAnalyzing || hasLockedDetails) return;
 
-        // Clipboard API 부재는 try 안에서 throw하지 않고 먼저 걸러낸다.
-        // React Compiler는 try/catch 안의 ThrowStatement를 아직 컴파일하지 못해
-        // (BuildHIR: Support ThrowStatement inside of try/catch) 이 컴포넌트 전체가
-        // 자동 메모화 대상에서 빠졌다. 동작은 동일하고(실패 상태 + 리셋 타이머),
-        // 컴파일러가 이 컴포넌트를 최적화할 수 있게 된다.
-        if (typeof navigator === 'undefined' || !navigator.clipboard) {
-            setCopyState('failed');
-            resetCopyStateLater();
-            return;
-        }
-
-        try {
-            const report = buildExpertAnalysisReport({
+        // 리포트 생성은 SSE로 받은 분석 데이터를 읽는다 — 형태가 어긋나 던지면
+        // 패널이 깨지는 대신 복사 실패로 보이게 생성 자체를 copy()에 넘긴다.
+        void copy(() =>
+            buildExpertAnalysisReport({
                 tReport,
                 symbol,
                 analysis,
@@ -1053,14 +1023,8 @@ export function AnalysisPanel({
                 // 안에 남긴다(sentimentDisplay.ts의 SENTIMENT_LABEL_KEY export
                 // 주석 참고 — 동일한 문제·동일한 해법).
                 t: (key, values) => tLabel(key, values),
-            });
-            await navigator.clipboard.writeText(report);
-            setCopyState('copied');
-        } catch {
-            setCopyState('failed');
-        }
-
-        resetCopyStateLater();
+            })
+        );
     };
 
     // showProgress, progressPhaseIndex, progressTipIndex는 ChartContent가 관리한다.
@@ -1127,14 +1091,6 @@ export function AnalysisPanel({
     });
 
     useEffect(() => {
-        return () => {
-            if (copyTimeoutRef.current !== null) {
-                clearTimeout(copyTimeoutRef.current);
-            }
-        };
-    }, []);
-
-    useEffect(() => {
         captureNow();
     }, [analysis.analyzedAt]);
 
@@ -1155,7 +1111,7 @@ export function AnalysisPanel({
                 지그재그가 생겨 responsive 스택으로 대체했다. */}
             <div className="flex flex-col gap-y-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-secondary-200">
+                    <span className={LABEL_GROUP}>
                         {t('AnalysisPanel.f0cdeb')}
                     </span>
                     {isAnalyzing && (

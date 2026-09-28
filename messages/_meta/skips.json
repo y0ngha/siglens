@@ -61,49 +61,49 @@
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 52,
+        "line": 54,
         "reason": "seo-keywords-ko-only",
         "text": "한국 경제 지표"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 53,
+        "line": 55,
         "reason": "seo-keywords-ko-only",
         "text": "한국은행 기준금리"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 54,
+        "line": 56,
         "reason": "seo-keywords-ko-only",
         "text": "국내 소비자물가"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 55,
+        "line": 57,
         "reason": "seo-keywords-ko-only",
         "text": "한국 실업률"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 56,
+        "line": 58,
         "reason": "seo-keywords-ko-only",
         "text": "한국 GDP 성장률"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 57,
+        "line": 59,
         "reason": "seo-keywords-ko-only",
         "text": "국고채 금리"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 58,
+        "line": 60,
         "reason": "seo-keywords-ko-only",
         "text": "국내 경제 캘린더"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 59,
+        "line": 61,
         "reason": "seo-keywords-ko-only",
         "text": "수출 증가율"
     },
@@ -397,73 +397,73 @@
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 61,
+        "line": 63,
         "reason": "seo-keywords-ko-only",
         "text": "미국 시장 뉴스"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 61,
+        "line": 63,
         "reason": "seo-keywords-ko-only",
         "text": "미국 마켓 뉴스"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 62,
+        "line": 64,
         "reason": "seo-keywords-ko-only",
         "text": "한국 증시 뉴스"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 62,
+        "line": 64,
         "reason": "seo-keywords-ko-only",
         "text": "코스피 뉴스"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 62,
+        "line": 64,
         "reason": "seo-keywords-ko-only",
         "text": "코스닥 뉴스"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 63,
+        "line": 65,
         "reason": "seo-keywords-ko-only",
         "text": "암호화폐 뉴스"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 63,
+        "line": 65,
         "reason": "seo-keywords-ko-only",
         "text": "비트코인 뉴스"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 197,
+        "line": 199,
         "reason": "seo-keywords-ko-only",
         "text": "`${cfg.koLabel} 뉴스`"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 198,
+        "line": 200,
         "reason": "seo-keywords-ko-only",
         "text": "`${cfg.koLabel} 최신 뉴스`"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 199,
+        "line": 201,
         "reason": "seo-keywords-ko-only",
         "text": "`${cfg.koLabel} 뉴스 분석`"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 203,
+        "line": 205,
         "reason": "seo-keywords-ko-only",
         "text": "시장 뉴스 한국어"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 204,
+        "line": 206,
         "reason": "seo-keywords-ko-only",
         "text": "AI 뉴스 다이제스트"
     },

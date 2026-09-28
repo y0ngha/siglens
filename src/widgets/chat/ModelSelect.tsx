@@ -3,18 +3,13 @@
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import { type ModelId } from '@y0ngha/siglens-core';
-import { ModelAccessBadge } from '@/shared/ui/ModelAccessBadge';
+import { ModelListbox } from '@/shared/ui/ModelListbox';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { cn } from '@/shared/lib/cn';
-
-export interface ModelOption {
-    id: ModelId;
-    label: string;
-    fullName: string;
-}
+import { getModelDisplay } from '@/shared/lib/modelDisplay';
 
 export interface ModelSelectProps {
-    options: readonly ModelOption[];
+    models: readonly ModelId[];
     selected: ModelId;
     onChange: (modelId: ModelId) => void;
     isHydrated: boolean;
@@ -22,7 +17,7 @@ export interface ModelSelectProps {
 
 /** AI 모델 listbox 드롭다운 — ChatPanel 하단 모델 선택 UI. */
 export function ModelSelect({
-    options,
+    models,
     selected,
     onChange,
     isHydrated,
@@ -30,15 +25,13 @@ export function ModelSelect({
     const t = useTranslations('widgets.chat');
     const triggerRef = useRef<HTMLButtonElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
-    const optionRefs = useRef<(HTMLDivElement | null)[]>([]);
     const [opensUpward, setOpensUpward] = useState(true);
     const { isOpen, toggle, close } = usePopoverToggle([
         triggerRef,
         dropdownRef,
     ]);
 
-    const selectedOption = options.find(o => o.id === selected);
-    const selectedLabel = selectedOption?.label ?? selected;
+    const selectedLabel = getModelDisplay(selected).label;
 
     const handleDropdownToggle = (): void => {
         if (!isOpen && triggerRef.current) {
@@ -46,50 +39,11 @@ export function ModelSelect({
             setOpensUpward(rect.top > window.innerHeight - rect.bottom);
         }
         toggle();
-        if (!isOpen) {
-            const selectedIdx = options.findIndex(opt => opt.id === selected);
-            setTimeout(() => optionRefs.current[selectedIdx]?.focus(), 0);
-        }
     };
 
-    const handleListboxKeyDown = (
-        e: React.KeyboardEvent<HTMLDivElement>
-    ): void => {
-        const currentIndex = options.findIndex(opt => opt.id === selected);
-        switch (e.key) {
-            case 'ArrowDown': {
-                e.preventDefault();
-                const nextIdx = (currentIndex + 1) % options.length;
-                onChange(options[nextIdx]!.id);
-                optionRefs.current[nextIdx]?.focus();
-                break;
-            }
-            case 'ArrowUp': {
-                e.preventDefault();
-                const prevIdx =
-                    (currentIndex - 1 + options.length) % options.length;
-                onChange(options[prevIdx]!.id);
-                optionRefs.current[prevIdx]?.focus();
-                break;
-            }
-            case 'Home':
-                e.preventDefault();
-                onChange(options[0]!.id);
-                optionRefs.current[0]?.focus();
-                break;
-            case 'End': {
-                e.preventDefault();
-                const lastIdx = options.length - 1;
-                onChange(options[lastIdx]!.id);
-                optionRefs.current[lastIdx]?.focus();
-                break;
-            }
-            case 'Escape':
-                e.preventDefault();
-                close();
-                triggerRef.current?.focus();
-                break;
-        }
+    const closeToTrigger = (): void => {
+        close();
+        triggerRef.current?.focus();
     };
 
     return (
@@ -122,67 +76,18 @@ export function ModelSelect({
             )}
 
             {isOpen && (
-                <div
+                <ModelListbox
                     ref={dropdownRef}
-                    role="listbox"
-                    aria-label={t('ModelSelect.43807f')}
-                    // listbox는 인터랙티브 role이라 포커스 가능해야 한다.
-                    // -1이므로 탭 순서는 그대로(트리거 버튼만 탭 대상).
-                    tabIndex={-1}
-                    onKeyDown={handleListboxKeyDown}
+                    models={models}
+                    selected={selected}
+                    onChange={onChange}
+                    onClose={closeToTrigger}
+                    ariaLabel={t('ModelSelect.43807f')}
                     className={cn(
-                        'border-secondary-600 bg-secondary-800 absolute left-0 z-10 min-w-40 rounded-lg border shadow-lg',
+                        'left-0 min-w-40',
                         opensUpward ? 'bottom-full mb-1' : 'top-full mt-1'
                     )}
-                >
-                    <div className="max-h-66 overflow-y-auto overscroll-contain">
-                        {options.map((option, i) => (
-                            <div
-                                key={option.id}
-                                ref={el => {
-                                    optionRefs.current[i] = el;
-                                }}
-                                role="option"
-                                tabIndex={selected === option.id ? 0 : -1}
-                                aria-selected={selected === option.id}
-                                onClick={() => {
-                                    onChange(option.id);
-                                    close();
-                                    triggerRef.current?.focus();
-                                }}
-                                onKeyDown={e => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                        e.preventDefault();
-                                        onChange(option.id);
-                                        close();
-                                        triggerRef.current?.focus();
-                                    }
-                                }}
-                                className={cn(
-                                    'focus-visible:ring-primary-500 flex min-h-11 w-full cursor-pointer items-center gap-2 px-3 transition-colors focus-visible:ring-1 focus-visible:outline-none',
-                                    selected === option.id
-                                        ? 'text-primary-300 bg-primary-900/20'
-                                        : 'text-secondary-300 hover:bg-secondary-700'
-                                )}
-                            >
-                                <span className="w-3 text-[10px]">
-                                    {selected === option.id && '✓'}
-                                </span>
-                                <div className="flex flex-1 items-center justify-between gap-2">
-                                    <div>
-                                        <div className="text-[11px] font-medium">
-                                            {option.label}
-                                        </div>
-                                        <div className="text-[10px] text-secondary-500">
-                                            {option.fullName}
-                                        </div>
-                                    </div>
-                                    <ModelAccessBadge model={option.id} />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                />
             )}
         </div>
     );

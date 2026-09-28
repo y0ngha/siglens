@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { AuthErrorAlert } from '@/shared/ui/auth/AuthErrorAlert';
+import { ErrorAlert } from '@/shared/ui/ErrorAlert';
 import { useDescribeAuthError } from '@/shared/hooks/useDescribeAuthError';
 import { PasswordField } from '@/shared/ui/auth/PasswordField';
 import { PasswordStrengthHint } from '@/shared/ui/auth/PasswordStrengthHint';
@@ -55,7 +55,7 @@ export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
         <form action={handleAction} className="space-y-4" noValidate>
             <input type="hidden" name="email" value={email} />
             <input type="hidden" name="token" value={token} />
-            {formError ? <AuthErrorAlert message={formError} /> : null}
+            {formError ? <ErrorAlert message={formError} /> : null}
             <PasswordField
                 id="reset-password"
                 name="newPassword"

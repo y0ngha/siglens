@@ -22,6 +22,7 @@ import {
     HEADING_SUBSECTION,
 } from '@/shared/lib/typographyStyles';
 import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 /** FinancialsSentiment → `shared.enumLabel.sentiment` 카탈로그 키. */
 const SENTIMENT_LABEL_KEY: Record<FinancialsSentiment, string> = {
@@ -52,7 +53,7 @@ export function FinancialsAiSummaryView({
     return (
         <section
             aria-labelledby="financials-ai-summary-heading"
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+            className={cn(SURFACE_CARD, 'p-6')}
         >
             <div className="mb-4 flex items-center justify-between gap-3">
                 <h2

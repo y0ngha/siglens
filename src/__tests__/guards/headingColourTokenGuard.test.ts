@@ -161,9 +161,9 @@ function colourBearingTokens(): Set<string> {
  * 새 항목이 생기면 테스트가 깨지므로 반드시 판단을 거친다.
  */
 const UNVERIFIABLE: ReadonlySet<string> = new Set([
-    // 호출부가 색을 넘긴다. 실제 호출부는 모두 `HEADING_CLASS_NAME`
-    // (= `cn('mb-4', HEADING_SECTION)`)을 전달한다.
-    'widgets/fundamental/sections/EmptySectionCard.tsx::headingClassName',
+    // 호출부가 색을 넘긴다. 실제 호출부(fundamental·financials 섹션)는 모두
+    // `HEADING_SECTION`에 여백만 더한 `HEADING_CLASS_NAME`을 전달한다.
+    'shared/ui/EmptySectionCard.tsx::headingClassName',
     // 카테고리별 색을 데이터에서 받는다(`card.textColor`). 카드 정의가
     // 색을 소유하므로 이 자리에서는 판정 대상이 아니다.
     'widgets/home/ui/CategoryCardGrid.tsx::card',

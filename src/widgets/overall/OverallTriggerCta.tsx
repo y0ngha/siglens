@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
 import type { AssetClass } from '@/shared/config/marketProfile/types';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 interface OverallTriggerCtaProps {
     onTrigger: () => void;
@@ -37,7 +38,7 @@ export function OverallTriggerCta({
         <section
             aria-labelledby="overall-cta-heading"
             aria-busy={disabled}
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-12 text-center"
+            className={cn(SURFACE_CARD, 'p-12 text-center')}
         >
             <h2
                 id="overall-cta-heading"

@@ -19,7 +19,7 @@ vi.mock('@/widgets/fundamental/hooks/useFundamentalAnalysis', () => ({
 vi.mock('@/widgets/news/hooks/useNewsAnalysis', () => ({
     useNewsAnalysis: vi.fn(),
 }));
-vi.mock('@/widgets/news/hooks/useWaitForNewsCards', () => ({
+vi.mock('@/entities/news-article/hooks/useWaitForNewsCards', () => ({
     useWaitForNewsCards: vi.fn(() => ({ isReady: true, pollError: null })),
 }));
 vi.mock(
@@ -52,23 +52,28 @@ vi.mock('@/widgets/overall/hooks/useOverallAnalysis', async importOriginal => {
     };
 });
 vi.mock(
-    '@/widgets/news/hooks/useNewsAnalysisTrigger',
+    '@/entities/news-article/hooks/useNewsAnalysisTrigger',
     async importOriginal => ({
         ...(await importOriginal<
-            typeof import('@/widgets/news/hooks/useNewsAnalysisTrigger')
+            typeof import('@/entities/news-article/hooks/useNewsAnalysisTrigger')
         >()),
         useNewsAnalysisTrigger: vi.fn(),
     })
 );
-vi.mock('@/widgets/news/hooks/useWaitForNewsCards', async importOriginal => ({
-    ...(await importOriginal<
-        typeof import('@/widgets/news/hooks/useWaitForNewsCards')
-    >()),
-    useWaitForNewsCards: vi.fn((_symbol: string, initiallyReady: boolean) => ({
-        isReady: initiallyReady,
-        pollError: null,
-    })),
-}));
+vi.mock(
+    '@/entities/news-article/hooks/useWaitForNewsCards',
+    async importOriginal => ({
+        ...(await importOriginal<
+            typeof import('@/entities/news-article/hooks/useWaitForNewsCards')
+        >()),
+        useWaitForNewsCards: vi.fn(
+            (_symbol: string, initiallyReady: boolean) => ({
+                isReady: initiallyReady,
+                pollError: null,
+            })
+        ),
+    })
+);
 vi.mock('@/shared/ui/MarkdownText', () => ({
     MarkdownText: ({ children }: { children: React.ReactNode }) => (
         <div>{children}</div>

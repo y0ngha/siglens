@@ -47,20 +47,23 @@ vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
 // 게이트를 즉시 통과시키고 본래 검증(submit→polling→done 서사)을 그대로 유지한다.
 // production이 import하는 정의 파일(@/widgets/news/hooks/*)을 mock한다.
 vi.mock(
-    '@/widgets/news/hooks/useNewsAnalysisTrigger',
+    '@/entities/news-article/hooks/useNewsAnalysisTrigger',
     async importOriginal => ({
         ...(await importOriginal<
-            typeof import('@/widgets/news/hooks/useNewsAnalysisTrigger')
+            typeof import('@/entities/news-article/hooks/useNewsAnalysisTrigger')
         >()),
         useNewsAnalysisTrigger: vi.fn(),
     })
 );
-vi.mock('@/widgets/news/hooks/useWaitForNewsCards', async importOriginal => ({
-    ...(await importOriginal<
-        typeof import('@/widgets/news/hooks/useWaitForNewsCards')
-    >()),
-    useWaitForNewsCards: vi.fn(() => ({ isReady: true, pollError: null })),
-}));
+vi.mock(
+    '@/entities/news-article/hooks/useWaitForNewsCards',
+    async importOriginal => ({
+        ...(await importOriginal<
+            typeof import('@/entities/news-article/hooks/useWaitForNewsCards')
+        >()),
+        useWaitForNewsCards: vi.fn(() => ({ isReady: true, pollError: null })),
+    })
+);
 // useSearchParams를 테스트별로 바꿀 수 있도록 mutable ref로 모킹한다(고정 빈 값 X).
 const { searchParamsRef } = vi.hoisted(() => ({
     searchParamsRef: { value: new URLSearchParams() },

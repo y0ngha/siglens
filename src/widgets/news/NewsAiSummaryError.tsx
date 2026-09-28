@@ -12,7 +12,7 @@ export function NewsAiSummaryError({
     return (
         <AiSummaryErrorSection
             error={error}
-            resetErrorBoundary={resetErrorBoundary}
+            onRetry={resetErrorBoundary}
             heading={t('NewsAiSummaryError.ed8166')}
             idPrefix="news-ai-summary"
             className="w-full max-w-full min-w-0 overflow-hidden"

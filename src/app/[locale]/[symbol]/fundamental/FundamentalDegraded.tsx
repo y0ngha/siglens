@@ -1,7 +1,6 @@
 import { useTranslations } from 'next-intl';
-import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
+import { SymbolDegradedShell } from '@/app/[locale]/[symbol]/SymbolDegradedShell';
 import { FundamentalSnapshotProse } from '@/views/symbol/snapshot/renderers/FundamentalSnapshotProse';
-import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 
 interface FundamentalDegradedProps {
@@ -49,10 +48,14 @@ export function FundamentalDegraded({
 }: FundamentalDegradedProps) {
     const t = useTranslations('app.symbol');
     return (
-        <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
-            <SymbolPageHeading>
-                {t('FundamentalDegraded.9e0659', { v0: displayName })}
-            </SymbolPageHeading>
+        <SymbolDegradedShell
+            heading={t('FundamentalDegraded.9e0659', { v0: displayName })}
+            noticeTitle={t('FundamentalDegraded.595d2d')}
+            noticeBody={t('FundamentalDegraded.a37ac2')}
+            symbol={symbol}
+            current="fundamental"
+            marketProfile={marketProfile}
+        >
             <FundamentalSnapshotProse
                 content={snapshotContent}
                 symbol={symbol}
@@ -60,19 +63,6 @@ export function FundamentalDegraded({
                 marketProfile={marketProfile}
                 generatedAt={snapshotGeneratedAt}
             />
-            <section className="rounded-lg border border-secondary-700 bg-secondary-900/40 px-5 py-8 text-center">
-                <p className="text-sm font-medium text-secondary-200">
-                    {t('FundamentalDegraded.595d2d')}
-                </p>
-                <p className="mt-2 text-sm leading-relaxed text-secondary-400">
-                    {t('FundamentalDegraded.a37ac2')}
-                </p>
-            </section>
-            <CrossLinkCards
-                symbol={symbol}
-                current="fundamental"
-                marketProfile={marketProfile}
-            />
-        </main>
+        </SymbolDegradedShell>
     );
 }

@@ -6,7 +6,7 @@ import {
     type ReplayScenario,
     type ReplayTool,
 } from '@/shared/lib/replay/replayScript';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { SURFACE_CARD, SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import {
     CheckIcon,
@@ -264,7 +264,12 @@ export function StockChatLanding() {
                                     key={title}
                                     className={cn(SURFACE_CARD, 'p-4 sm:p-5')}
                                 >
-                                    <span className="flex size-10 items-center justify-center rounded-lg bg-secondary-700/40 text-secondary-200">
+                                    <span
+                                        className={cn(
+                                            SURFACE_NESTED,
+                                            'flex size-10 items-center justify-center text-secondary-200'
+                                        )}
+                                    >
                                         <Icon className="size-5" />
                                     </span>
                                     <h3 className="mt-3 text-base font-semibold text-secondary-50">

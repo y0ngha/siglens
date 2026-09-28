@@ -6,17 +6,13 @@
 
 widgets는 `features/`, `entities/`, `shared/`를 import 가능. **상위 레이어(pages/views, app)를 import할 수 없다.**
 
-## 의도적 예외 (cross-widget import)
+## widgets 간 import 금지
 
-이 예외는 oxlint `no-restricted-imports`의 `from: 'widgets', allow: ['widgets', ...]`로 관리됨.
-현재 유지되는 프로덕션 cross-widget 엣지는 아래 네 개뿐이다:
+다른 위젯의 파일을 import하지 않는다. 둘 이상의 위젯이 필요로 하는 훅·컴포넌트는 `shared/`(도메인 무관 UI·훅) 또는
+`entities/`(도메인 훅·로직)로 내리고, 위젯 조합은 `views/`·`app/`에서 한다.
 
-- **`fear-greed → chart`**: `FearGreedPage.tsx`가 `@/widgets/chart/FearGreedHistoricalChart`(lightweight-charts heavy component)를 import
-- **`overall → news`**: `OverallContent.tsx`가 `@/widgets/news/hooks/*`의 `useNewsAnalysisTrigger`, `useWaitForNewsCards`를 소비
-- **`agent-chat → layout`**: `ChatShell.tsx`가 `widgets/layout`의 `useHideOnScrollDown`을 소비 (모바일 대화 바를 사이트 헤더와 같은 스크롤-숨김 패턴으로 맞춤)
-- **`market-fear-greed → fear-greed`**: `MarketFearGreedPage.tsx`/`MarketFearGreedComparison.tsx`가 `widgets/fear-greed`의 `FearGreedGauge`를 재사용한다
-
-규칙 완전 제거는 위 컴포넌트들의 `shared/`·`entities/` 이전을 선행해야 하므로 보류.
+oxlint `no-restricted-imports`는 "자기 슬라이스가 아닌 `@/widgets/*`"를 표현하지 못해
+`src/__tests__/guards/noCrossWidgetImports.test.ts`가 대신 강제한다(테스트 파일은 제외).
 
 ## import 규칙
 

@@ -16,6 +16,8 @@ import {
     cachedNumberFormat,
 } from '@/shared/lib/intlFormatCache';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { cn } from '@/shared/lib/cn';
 
 const MATERIAL_SURPRISE_PCT = 2;
 
@@ -167,7 +169,7 @@ function EarningsReportCard({
         formatRevenue(value, item.symbol, locale);
 
     return (
-        <article className="rounded-lg border border-secondary-700 bg-secondary-800 p-4">
+        <article className={cn(SURFACE_CARD, 'p-4')}>
             <div className="flex min-h-10 items-start justify-between gap-3">
                 <div>
                     <p className="text-xs text-secondary-400">{statusLabel}</p>

@@ -13,6 +13,8 @@ import {
     ReplaySources,
     ReplaySteps,
 } from '@/shared/ui/ReplayParts';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { cn } from '@/shared/lib/cn';
 
 interface ReportReplayLabels {
     /** `SITE_HOST`, passed down so this client module doesn't pull in `shared/lib/seo`. */
@@ -73,7 +75,7 @@ export function ReportReplay({
             ref={rootRef}
             role="region"
             aria-label={labels.region}
-            className="flex w-full flex-col overflow-hidden rounded-lg border border-secondary-700 bg-secondary-800"
+            className={cn(SURFACE_CARD, 'flex w-full flex-col overflow-hidden')}
         >
             <div className="flex min-h-12 items-center gap-2 border-b border-secondary-700 px-3 sm:px-4">
                 <p

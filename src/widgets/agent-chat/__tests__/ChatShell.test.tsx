@@ -37,18 +37,6 @@ vi.mock(
         renameConversationAction,
     })
 );
-// `LocaleSwitcher` reads next-intl's navigation helpers at import time, which
-// need a `redirect` export this file's `next/navigation` mock (above) doesn't
-// provide. Stubbing it keeps that chain out if it lands in the import graph
-// (same pattern as `HeaderMobileMenu.test.tsx`).
-// `useHideOnScrollDown` now comes from the `@/widgets/layout` barrel, which
-// eagerly re-exports `LocaleSwitcher` too — that module reads next-intl's
-// navigation helpers at import time, which need a `redirect` export this
-// file's `next/navigation` mock (above) doesn't provide. Stubbing it here
-// avoids pulling that chain in (same pattern as `HeaderMobileMenu.test.tsx`).
-vi.mock('@/widgets/layout/LocaleSwitcher', () => ({
-    LocaleSwitcher: () => null,
-}));
 
 interface MockStreamMessage {
     id: string;

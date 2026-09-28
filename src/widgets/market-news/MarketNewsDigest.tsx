@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
+import { Spinner } from '@/shared/ui/Spinner';
 import { useMarketNewsDigest } from './hooks/useMarketNewsDigest';
 import {
     SENTIMENT_LABEL_KEY,
@@ -14,6 +15,7 @@ import {
     HEADING_SECTION,
     HEADING_SUBSECTION,
 } from '@/shared/lib/typographyStyles';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 /** Loading / generating status card. */
 function DigestStatusCard() {
@@ -22,7 +24,10 @@ function DigestStatusCard() {
         <section
             aria-labelledby="market-news-digest-status-heading"
             aria-busy="true"
-            className="w-full max-w-full min-w-0 overflow-hidden rounded-lg border border-secondary-700 bg-secondary-800 p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
+            className={cn(
+                SURFACE_CARD,
+                'w-full max-w-full min-w-0 overflow-hidden p-6 motion-safe:animate-[fade-in_200ms_ease-out]'
+            )}
         >
             <h2
                 id="market-news-digest-status-heading"
@@ -36,10 +41,7 @@ function DigestStatusCard() {
                 aria-atomic="true"
                 className="flex items-center gap-3"
             >
-                <div
-                    aria-hidden="true"
-                    className="h-4 w-4 animate-spin rounded-full border-2 border-primary-500 border-t-transparent motion-reduce:animate-none"
-                />
+                <Spinner />
                 <p className="text-sm text-secondary-400">
                     {t('MarketNewsDigest.676ec8')}
                 </p>
@@ -67,7 +69,10 @@ function DigestResultView({ result }: DigestResultViewProps) {
     return (
         <section
             aria-labelledby="market-news-digest-heading"
-            className="w-full max-w-full min-w-0 overflow-hidden rounded-lg border border-secondary-700 bg-secondary-800 p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
+            className={cn(
+                SURFACE_CARD,
+                'w-full max-w-full min-w-0 overflow-hidden p-6 motion-safe:animate-[fade-in_200ms_ease-out]'
+            )}
         >
             <div className="mb-4 flex min-w-0 flex-wrap items-center justify-between gap-3">
                 <h2 id="market-news-digest-heading" className={HEADING_SECTION}>

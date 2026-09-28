@@ -17,6 +17,8 @@ import {
     MaxPainTooltip,
     PutCallRatioTooltip,
 } from './utils/optionsTooltips';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { cn } from '@/shared/lib/cn';
 
 interface MetricCardProps {
     label: string;
@@ -26,7 +28,7 @@ interface MetricCardProps {
 
 function MetricCard({ label, value, tooltip }: MetricCardProps) {
     return (
-        <div className="rounded-lg border border-secondary-700 bg-secondary-800 p-4">
+        <div className={cn(SURFACE_CARD, 'p-4')}>
             <div className="flex items-center">
                 <span className="text-xs tracking-widest text-secondary-400 uppercase">
                     {label}

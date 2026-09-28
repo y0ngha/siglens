@@ -1,6 +1,6 @@
 import { useTranslations } from 'next-intl';
 import { scoreToLabel, type FearGreedHistoryPoint } from '@y0ngha/siglens-core';
-import { FearGreedGauge } from './FearGreedGauge';
+import { FearGreedGauge } from '@/shared/ui/FearGreedGauge';
 import { cn } from '@/shared/lib/cn';
 
 interface FearGreedComparisonGaugesProps {

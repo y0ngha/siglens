@@ -40,6 +40,8 @@ import {
 import { resolveNewsTitle } from '@/shared/lib/news/resolveNewsTitle';
 import { buildCategoryPageTitle, buildCategoryPageDescription } from './seo';
 import { enterLocale } from '@/shared/lib/enterLocale';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { cn } from '@/shared/lib/cn';
 
 // 12h ISR — 신선도는 ensureMarketNewsCardsAnalyzedAction의 on-demand
 // revalidateTag('market-news:<sentinel>', 'max')가 보장, 시간 기반은 상한만.
@@ -399,7 +401,7 @@ function DigestSkeleton() {
             aria-busy="true"
             role="status"
             aria-label={t('page.faef4a')}
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+            className={cn(SURFACE_CARD, 'p-6')}
         >
             <div className="mb-4 h-5 w-1/3 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
             <div className="space-y-2">
@@ -419,7 +421,7 @@ function MarketNewsDegraded({ koLabel }: MarketNewsDegradedProps) {
     return (
         <section
             aria-label={t('page.newsEmptyAria', { v0: koLabel })}
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+            className={cn(SURFACE_CARD, 'p-6')}
         >
             <p className="text-sm text-secondary-400">
                 {t('page.fdb87b', { v0: koLabel })}

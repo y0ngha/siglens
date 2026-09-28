@@ -9,6 +9,8 @@ import {
     HEADING_SECTION,
     HEADING_SUBSECTION,
 } from '@/shared/lib/typographyStyles';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { cn } from '@/shared/lib/cn';
 
 export interface NewsFactsSummaryProps {
     displayName: string;
@@ -93,7 +95,7 @@ export function NewsFactsSummary({
     return (
         <section
             aria-labelledby="news-facts-summary-heading"
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-5"
+            className={cn(SURFACE_CARD, 'p-5')}
         >
             <h2 id="news-facts-summary-heading" className={HEADING_SECTION}>
                 {displayName} {t('NewsFactsSummary.438417')}

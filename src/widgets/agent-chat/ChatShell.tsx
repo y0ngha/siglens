@@ -7,7 +7,7 @@ import type { ChatMessageView } from '@/entities/chat-conversation/model';
 import type { ConversationListItem } from '@/entities/chat-conversation/actions/listConversationsAction';
 import { useAgentStream } from '@/features/agent-chat/hooks/useAgentStream';
 import { type AgentClientErrorCode } from '@/features/agent-chat/lib/errorCodes';
-import { useHideOnScrollDown } from '@/widgets/layout/hooks/useHideOnScrollDown';
+import { useHideOnScrollDown } from '@/shared/hooks/useHideOnScrollDown';
 import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import { cn } from '@/shared/lib/cn';
 import { Composer } from './Composer';

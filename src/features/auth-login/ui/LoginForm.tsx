@@ -3,8 +3,8 @@
 import { useTranslations } from 'next-intl';
 import { useDescribeAuthError } from '@/shared/hooks/useDescribeAuthError';
 import { useLoginForm } from '../hooks/useLoginForm';
-import { AuthErrorAlert } from '@/shared/ui/auth/AuthErrorAlert';
-import { AuthFieldGroup } from '@/shared/ui/auth/AuthFieldGroup';
+import { ErrorAlert } from '@/shared/ui/ErrorAlert';
+import { TextField } from '@/shared/ui/TextField';
 import { PasswordField } from '@/shared/ui/auth/PasswordField';
 import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
 
@@ -22,8 +22,8 @@ export function LoginForm({ next, initialError }: LoginFormProps) {
     return (
         <form action={formAction} className="space-y-4" noValidate>
             {next ? <input type="hidden" name="next" value={next} /> : null}
-            {errorMessage ? <AuthErrorAlert message={errorMessage} /> : null}
-            <AuthFieldGroup
+            {errorMessage ? <ErrorAlert message={errorMessage} /> : null}
+            <TextField
                 id="login-email"
                 name="email"
                 label={t('LoginForm.3c3776')}

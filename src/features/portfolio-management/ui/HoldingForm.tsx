@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useId, useRef, useState } from 'react';
 import { TickerAutocomplete } from '@/features/ticker-search/ui/TickerAutocomplete';
 import { cn } from '@/shared/lib/cn';
+import { BUTTON_GHOST, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { stripNegativeSign } from '@/shared/lib/stripNegativeSign';
 import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
 import { symbolLabel } from '@/shared/lib/symbolLabel';
@@ -21,10 +22,8 @@ const FIELD_INPUT_ERROR =
     'border-ui-danger focus:border-ui-danger focus:ring-ui-danger/40';
 const SYMBOL_CHIP =
     'border-secondary-700 bg-secondary-950 flex h-10 items-center justify-between gap-2 rounded-lg border px-3';
-const BUTTON_PRIMARY =
-    'bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 inline-flex h-10 shrink-0 touch-manipulation items-center justify-center rounded-lg px-4 text-sm font-semibold text-white transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-secondary-700 disabled:text-secondary-500';
-const BUTTON_GHOST =
-    'text-secondary-400 hover:text-secondary-200 focus-visible:ring-primary-500 inline-flex h-10 shrink-0 touch-manipulation items-center justify-center px-2 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none';
+const SAVE_BUTTON = cn(BUTTON_PRIMARY, 'h-10 shrink-0 px-4 text-sm');
+const CANCEL_BUTTON = cn(BUTTON_GHOST, 'h-10 shrink-0 px-2 text-sm');
 
 /** Which field a `PortfolioActionErrorCode` should be surfaced against; codes with no dedicated field (e.g. storage/auth failures) render only the alert message. */
 type HoldingErrorField = 'symbol' | 'quantity' | 'averagePrice' | null;
@@ -294,7 +293,7 @@ export function HoldingForm({
                         type="submit"
                         disabled={submitting}
                         aria-busy={submitting}
-                        className={BUTTON_PRIMARY}
+                        className={SAVE_BUTTON}
                     >
                         {submitting
                             ? t('HoldingForm.9f6785')
@@ -306,7 +305,7 @@ export function HoldingForm({
                         <button
                             type="button"
                             onClick={onCancel}
-                            className={BUTTON_GHOST}
+                            className={CANCEL_BUTTON}
                         >
                             {t('HoldingForm.19b2d1')}
                         </button>

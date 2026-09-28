@@ -26,7 +26,7 @@ function NewsListError({ error, resetErrorBoundary }: FallbackProps) {
     return (
         <AiSummaryErrorSection
             error={error}
-            resetErrorBoundary={resetErrorBoundary}
+            onRetry={resetErrorBoundary}
             heading={t('NewsListErrorBoundary.ac2367')}
             idPrefix="news-list"
             className="w-full max-w-full min-w-0 overflow-hidden"

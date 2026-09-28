@@ -11,6 +11,8 @@ import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { enterLocale } from '@/shared/lib/enterLocale';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { cn } from '@/shared/lib/cn';
 
 // noindex 페이지에도 canonical/og:url을 명시한다 (login/signup 정책과 일관).
 // 외부에 변형 URL이 공유되더라도 "원본은 /account 하나"라는 신호를 명확히 두면
@@ -65,7 +67,7 @@ async function AccountContent({ locale }: { locale: Locale }) {
         <>
             <section
                 aria-label={t('page.14fab1')}
-                className="space-y-4 rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+                className={cn(SURFACE_CARD, 'space-y-4 p-6')}
             >
                 <h2 className="text-lg font-semibold text-secondary-100">
                     {t('page.14fab1')}
@@ -92,7 +94,7 @@ async function AccountContent({ locale }: { locale: Locale }) {
 
             <section
                 aria-label={t('page.64f90b')}
-                className="space-y-4 rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+                className={cn(SURFACE_CARD, 'space-y-4 p-6')}
             >
                 <ApiKeySection registeredProviders={registeredProviders} />
             </section>
@@ -137,7 +139,7 @@ function AccountContentSkeleton() {
             {/* 프로필 섹션 */}
             <section
                 aria-label={t('page.c4079e')}
-                className="space-y-4 rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+                className={cn(SURFACE_CARD, 'space-y-4 p-6')}
             >
                 <SkeletonLine className="h-6 w-16" />
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-[120px_1fr]">
@@ -153,7 +155,7 @@ function AccountContentSkeleton() {
             {/* AI 모델 API 키 섹션 */}
             <section
                 aria-label={t('page.1b6c6d')}
-                className="space-y-4 rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+                className={cn(SURFACE_CARD, 'space-y-4 p-6')}
             >
                 <SkeletonLine className="h-6 w-32" />
                 <SkeletonLine className="h-4 w-64" />

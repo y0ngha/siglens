@@ -37,6 +37,8 @@ import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 import { economyKrTitle } from '../constants';
 import { enterLocale } from '@/shared/lib/enterLocale';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { cn } from '@/shared/lib/cn';
 
 // 24h — ISR. 거시 지표는 월·분기 단위로 변하고, 신선도는 캘린더 인제스션의
 // `revalidateTag('economy:calendar')`가 책임진다. 시간 기반은 상한만 정한다.
@@ -234,7 +236,7 @@ function KrEconomyDegraded() {
     return (
         <section
             aria-label={t('page.03f79d')}
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+            className={cn(SURFACE_CARD, 'p-6')}
         >
             <p className="text-sm text-secondary-400">{t('page.99ee99')}</p>
         </section>

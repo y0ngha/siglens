@@ -3,7 +3,7 @@ import { resolveLocale } from '@/shared/i18n/locales';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { buildSymbolOgImage } from '@/entities/og-image/lib/buildSymbolOgImage';
 import { getCachedSharedAnalysis } from '@/entities/shared-analysis/actions/getCachedSharedAnalysis';
-import { kindLabelKey } from '@/widgets/share/lib/kindLabel';
+import { kindLabelKey } from '@/entities/shared-analysis/lib/kindLabel';
 
 // 공유 스냅샷은 id마다 달라 정적 생성 불가 → force-dynamic
 export const dynamic = 'force-dynamic';

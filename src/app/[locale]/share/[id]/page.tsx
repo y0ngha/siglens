@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { getCachedSharedAnalysis } from '@/entities/shared-analysis/actions/getCachedSharedAnalysis';
 import { resolveAsOf } from '@/entities/shared-analysis/lib/resolveAsOf';
-import { kindLabelKey } from '@/widgets/share/lib/kindLabel';
+import { kindLabelKey } from '@/entities/shared-analysis/lib/kindLabel';
 import { buildShareMetadata } from '@/entities/shared-analysis/lib/buildShareSeo';
 import { ShareKindPanel } from '@/views/share/ShareKindPanel';
 import { formatKoreanDateTime } from '@/shared/lib/formatKoreanDateTime';

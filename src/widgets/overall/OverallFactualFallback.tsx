@@ -5,6 +5,8 @@ import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { type MarketProfileId } from '@/shared/config/marketProfile/types';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { cn } from '@/shared/lib/cn';
 
 export interface OverallFactualFallbackProps {
     displayName: string;
@@ -87,7 +89,7 @@ export function OverallFactualFallback({
     return (
         <section
             aria-labelledby={headingId}
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-5"
+            className={cn(SURFACE_CARD, 'p-5')}
         >
             <h2 id={headingId} className={HEADING_SECTION}>
                 {displayName} {t('OverallFactualFallback.87d0df')}

@@ -7,7 +7,7 @@ import { test, expect } from '../support/fixtures';
  * that opens a role="dialog" containing the ContactForm (title/email/content).
  * The submit action (submitContactAction) persists via DrizzleContactRepository
  * to the LOCAL e2e Postgres — no external service, so nothing extra to fake. A
- * successful submit swaps the form for ContactSubmittedNotice (success text +
+ * successful submit swaps the form for the SuccessNotice panel (success text +
  * the submit button gone), which we assert as the user outcome — plus that an
  * invalid (empty) submit does NOT succeed (the form stays open).
  *

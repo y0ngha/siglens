@@ -6,6 +6,7 @@ import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
+import { Spinner } from '@/shared/ui/Spinner';
 import { DeleteAccountConfirm } from '@/features/account-delete/ui/DeleteAccountConfirm';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { SITE_NAME } from '@/shared/lib/seo';
@@ -87,10 +88,7 @@ export default async function DeleteAccountPage({
                         aria-live="polite"
                         className="flex items-center justify-center gap-2 py-6"
                     >
-                        <span
-                            aria-hidden="true"
-                            className="h-3 w-3 animate-spin rounded-full border-2 border-secondary-500 border-t-transparent motion-reduce:animate-none"
-                        />
+                        <Spinner size="sm" tone="muted" />
                         <span className="text-xs text-secondary-400">
                             {t('page.109043')}
                         </span>

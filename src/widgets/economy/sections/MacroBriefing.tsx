@@ -10,6 +10,8 @@ import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { useMacroBriefing } from '../hooks/useMacroBriefing';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+
 /** MacroBriefingResponse['regime'] → `shared.enumLabel.macroRegime` 카탈로그 키. */
 const REGIME_LABEL_KEY: Record<MacroBriefingResponse['regime'], string> = {
     expansion: 'macroRegime.expansion',
@@ -72,7 +74,7 @@ function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
     const locale = useResolvedLocale();
     return (
         <section
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+            className={cn(SURFACE_CARD, 'p-6')}
             aria-labelledby="macro-briefing-heading"
         >
             <header className="mb-4 flex items-center gap-3">
@@ -118,7 +120,10 @@ function MacroBriefingSkeleton() {
     const t = useTranslations('widgets.economy');
     return (
         <section
-            className="animate-pulse rounded-lg border border-secondary-700 bg-secondary-800 p-6 motion-reduce:animate-none"
+            className={cn(
+                SURFACE_CARD,
+                'animate-pulse p-6 motion-reduce:animate-none'
+            )}
             aria-busy="true"
             aria-label={t('MacroBriefing.a0f763')}
         >
@@ -133,7 +138,7 @@ function MacroBriefingError({ onRetry }: MacroBriefingErrorProps) {
     const t = useTranslations('widgets.economy');
     return (
         <section
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+            className={cn(SURFACE_CARD, 'p-6')}
             role="alert"
             aria-label={t('MacroBriefing.b5f759')}
         >

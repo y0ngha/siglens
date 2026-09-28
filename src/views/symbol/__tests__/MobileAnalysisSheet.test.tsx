@@ -26,7 +26,6 @@ vi.mock('vaul', () => {
 
     const DrawerContent = ({
         children,
-        ..._rest
     }: {
         children: React.ReactNode;
         [key: string]: unknown;

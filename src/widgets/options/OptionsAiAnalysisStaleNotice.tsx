@@ -1,6 +1,8 @@
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { cn } from '@/shared/lib/cn';
 import { useTranslations } from 'next-intl';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+
 export function OptionsAiAnalysisStaleNotice() {
     const t = useTranslations('widgets.options');
     // sibling OptionsAiAnalysis는 <section aria-labelledby="...">로 landmark 역할.
@@ -9,7 +11,7 @@ export function OptionsAiAnalysisStaleNotice() {
     return (
         <section
             aria-labelledby="options-ai-analysis-heading"
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+            className={cn(SURFACE_CARD, 'p-6')}
         >
             <h2
                 id="options-ai-analysis-heading"

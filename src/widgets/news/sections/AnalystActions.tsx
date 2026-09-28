@@ -8,6 +8,7 @@ import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { cachedDateTimeFormat } from '@/shared/lib/intlFormatCache';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 /**
  * GradesAction → `shared.enumLabel.gradesAction` 카탈로그 키. 값 자체는 더 이상
@@ -76,7 +77,8 @@ function GradeRow({ event }: GradeRowProps) {
     return (
         <li
             className={cn(
-                'border-secondary-700 bg-secondary-800 flex flex-wrap items-start gap-3 rounded-lg border p-3 text-sm',
+                SURFACE_CARD,
+                'flex flex-wrap items-start gap-3 p-3 text-sm',
                 ROW_ACCENT_CLASS[event.action]
             )}
         >
@@ -136,7 +138,7 @@ export function AnalystActions({ events }: AnalystActionsProps) {
         return (
             <section
                 aria-labelledby="analyst-actions-heading"
-                className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+                className={cn(SURFACE_CARD, 'p-6')}
             >
                 <h2
                     id="analyst-actions-heading"

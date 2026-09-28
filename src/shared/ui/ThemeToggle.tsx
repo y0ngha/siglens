@@ -6,7 +6,9 @@ import { useTheme } from '@/shared/hooks/useTheme';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { cn } from '@/shared/lib/cn';
+import { CheckIcon } from '@/shared/ui/StrokeIcons';
 import type { ThemePreference } from '@/shared/lib/theme';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 /**
  * 테마 선택 메뉴 — 설정 따라가기 / 라이트 / 다크.
@@ -143,7 +145,10 @@ export function ThemeToggle() {
                     id={menuId}
                     role="radiogroup"
                     aria-label={t('ThemeToggle.f36b6a')}
-                    className="absolute right-0 z-10 mt-1 w-max min-w-44 rounded-lg border border-secondary-700 bg-secondary-800 p-1 shadow-lg"
+                    className={cn(
+                        SURFACE_CARD,
+                        'absolute right-0 z-10 mt-1 w-max min-w-44 p-1 shadow-lg'
+                    )}
                 >
                     {OPTIONS.map((option, index) => {
                         const selected = option.value === preference;
@@ -187,18 +192,7 @@ export function ThemeToggle() {
                                 {/* 선택 표시를 색에만 싣지 않는다 — 체크 도형으로
                                     한 번 더 말한다(WCAG 1.4.1). */}
                                 {selected && (
-                                    <svg
-                                        viewBox="0 0 16 16"
-                                        aria-hidden="true"
-                                        className="h-4 w-4 shrink-0"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                    >
-                                        <path d="m3.5 8.5 3 3 6-7" />
-                                    </svg>
+                                    <CheckIcon className="size-4 shrink-0" />
                                 )}
                             </button>
                         );

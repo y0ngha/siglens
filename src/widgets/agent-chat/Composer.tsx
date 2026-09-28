@@ -3,6 +3,8 @@
 import { useTranslations } from 'next-intl';
 import { useRef, useState, type KeyboardEvent } from 'react';
 import { cn } from '@/shared/lib/cn';
+import { BUTTON_OUTLINE, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
+import { ArrowUpIcon } from '@/shared/ui/StrokeIcons';
 
 const MAX = 4_000;
 /** The counter stays hidden until the message is long enough that the cap is a real concern. */
@@ -19,27 +21,9 @@ interface Props {
 }
 
 /** 44px hit target that sits flush inside the surface; both actions share it so the box never jumps when a turn starts or stops. */
-const ACTION_BUTTON =
-    'flex size-11 shrink-0 items-center justify-center rounded-lg focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
+const ACTION_SIZE = 'size-11 shrink-0';
 
-function SendIcon() {
-    return (
-        <svg
-            aria-hidden="true"
-            viewBox="0 0 20 20"
-            className="size-5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <path d="M10 16V4" />
-            <path d="M5 9l5-5 5 5" />
-        </svg>
-    );
-}
-
+/** No stroke equivalent in StrokeIcons — a filled square is the stop grammar users know. */
 function StopIcon() {
     return (
         <svg
@@ -134,9 +118,12 @@ export function Composer({
                         type="button"
                         onClick={onStop}
                         aria-label={t('Composer.d2e7e7')}
+                        // The composer surface is secondary-800 — BUTTON_OUTLINE's own
+                        // hover fill — so lift the hover one step to stay visible.
                         className={cn(
-                            ACTION_BUTTON,
-                            'border border-border-control text-secondary-100 hover:bg-secondary-700'
+                            BUTTON_OUTLINE,
+                            ACTION_SIZE,
+                            'hover:bg-secondary-700'
                         )}
                     >
                         <StopIcon />
@@ -147,14 +134,9 @@ export function Composer({
                         onClick={submit}
                         disabled={!canSend}
                         aria-label={t('Composer.4077ce')}
-                        className={cn(
-                            ACTION_BUTTON,
-                            canSend
-                                ? 'bg-primary-600 text-white hover:bg-primary-500'
-                                : 'bg-secondary-700 text-secondary-400'
-                        )}
+                        className={cn(BUTTON_PRIMARY, ACTION_SIZE)}
                     >
-                        <SendIcon />
+                        <ArrowUpIcon className="size-5" />
                     </button>
                 )}
             </div>

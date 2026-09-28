@@ -16,7 +16,7 @@ vi.mock(
     })
 );
 
-vi.mock('@/widgets/news/hooks/useWaitForNewsCards', () => ({
+vi.mock('@/entities/news-article/hooks/useWaitForNewsCards', () => ({
     useWaitForNewsCards: () => mockWaitResult(),
 }));
 

@@ -9,6 +9,7 @@ import { BalanceSheetSection } from './sections/BalanceSheetSection';
 import { CashFlowSection } from './sections/CashFlowSection';
 import { GrowthAnalysisSection } from './sections/GrowthAnalysisSection';
 import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
+import { Spinner } from '@/shared/ui/Spinner';
 
 interface FinancialsStatementsProps {
     /** Ticker symbol (already uppercased). */
@@ -49,10 +50,7 @@ export function FinancialsStatements({
                         role="status"
                         aria-live="polite"
                     >
-                        <span
-                            aria-hidden="true"
-                            className="h-3 w-3 animate-spin rounded-full border-2 border-primary-500 border-t-transparent motion-reduce:animate-none"
-                        />
+                        <Spinner size="sm" />
                         {t('FinancialsStatements.c78656')}
                     </span>
                 )}

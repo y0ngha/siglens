@@ -6,12 +6,13 @@ import type {
     FundamentalFinancialScoresInput,
     FundamentalCashFlowInput,
 } from '@y0ngha/siglens-core';
-import { EmptySectionCard } from './EmptySectionCard';
+import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
 import { cn } from '@/shared/lib/cn';
 import { formatCompactCurrency } from '@/shared/lib/priceFormat';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 const HEADING_ID = 'health-heading';
 const HEADING_CLASS_NAME = cn('mb-4', HEADING_SECTION);
@@ -138,7 +139,7 @@ export function FinancialHealthCard({
     return (
         <section
             aria-labelledby={HEADING_ID}
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+            className={cn(SURFACE_CARD, 'p-6')}
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 {t('FinancialHealthCard.ac568f')}

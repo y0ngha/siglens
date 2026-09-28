@@ -14,6 +14,7 @@ import {
     SenateDisclosureTooltip,
 } from './congressTooltips';
 import { CongressTradesEmpty } from './CongressTradesEmpty';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 /** Max rows rendered in a single SSR pass (newest-first). */
 const MAX_ROWS = 50;
@@ -261,7 +262,7 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
     const rows = trades.slice(0, MAX_ROWS);
 
     return (
-        <div className="rounded-lg border border-secondary-700 bg-secondary-800">
+        <div className={SURFACE_CARD}>
             {/*
              * `sm:hidden`이 붙어 있었는데, 이 표는 모든 폭에서 넘친다 —
              * 힌트가 사라지는 640px 이상이 정확히 넘치는 구간이었다.

@@ -3030,7 +3030,6 @@
                 "ef5b22": "This stock may have been recently listed or has empty volume data.\n                    Please check again in a few days, or look at other stocks in the same sector."
             },
             "FearGreedPageError": {
-                "0c767c": "Retry",
                 "f929f0": "An error occurred while loading the Fear & Greed Index. Please try again shortly.",
                 "f9482c": "Fear & Greed Index"
             },
@@ -3593,7 +3592,6 @@
                 "eefb95": "AI Option Analysis"
             },
             "OptionsAiAnalysisError": {
-                "0c767c": "Try Again",
                 "e756f5": "Failed to fetch options analysis. Please try again shortly.",
                 "eefb95": "AI Options Analysis"
             },

@@ -2,9 +2,11 @@ import { useTranslations } from 'next-intl';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import type { ReactNode } from 'react';
 import type { FundamentalProfile } from '@y0ngha/siglens-core';
-import { EmptySectionCard } from './EmptySectionCard';
+import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
 import { formatCompactCurrency } from '@/shared/lib/priceFormat';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { cn } from '@/shared/lib/cn';
 
 const HEADING_ID = 'profile-heading';
 const HEADING_CLASS_NAME = HEADING_SECTION;
@@ -38,7 +40,7 @@ export function ProfileCard({ profile, descriptionSlot }: ProfileCardProps) {
     return (
         <section
             aria-labelledby={HEADING_ID}
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+            className={cn(SURFACE_CARD, 'p-6')}
         >
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>

@@ -14,6 +14,8 @@ import {
 } from '@/features/agent-chat/lib/relatedSymbolPages';
 import type { AgentUiMessage } from '@/features/agent-chat/model/types';
 import { cn } from '@/shared/lib/cn';
+import { BUTTON_GHOST, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
+import { useCopyToClipboard } from '@/shared/hooks/useCopyToClipboard';
 import { useSymbolLabels } from './hooks/useSymbolLabels';
 import { AgentMarkdown } from './AgentMarkdown';
 import { ArrowDownIcon, ArrowUpRightIcon } from '@/shared/ui/StrokeIcons';
@@ -53,6 +55,8 @@ const ACTION =
     'inline-flex min-h-8 items-center gap-1 rounded px-1.5 text-xs text-secondary-400 hover:bg-secondary-800 hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
 
 const COPIED_RESET_MS = 1_500;
+
+const EDIT_ACTION_SIZE = 'min-h-9 px-3 text-sm';
 
 interface RelatedPagesProps {
     readonly pages: RelatedSymbolPage[];
@@ -131,6 +135,8 @@ export function MessageList({
         seq: number;
         text: string;
     } | null>(null);
+    const { copied, copy } = useCopyToClipboard(COPIED_RESET_MS);
+    // 훅은 "방금 복사됐는가"만 안다 — 어느 메시지였는지는 여기서 기억한다.
     const [copiedId, setCopiedId] = useState<string | null>(null);
     const [showScrollButton, setShowScrollButton] = useState(false);
     /**
@@ -184,19 +190,13 @@ export function MessageList({
     const userNodeRefs = useRef(new Map<string, HTMLElement>());
     const seenLastUserIdRef = useRef<string | null>(null);
     const isFirstRenderRef = useRef(true);
-    const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const lastAssistant = messages.findLast(m => m.role === 'assistant');
     const lastUser = messages.findLast(m => m.role === 'user');
 
-    const copy = (m: AgentUiMessage): void => {
-        void navigator.clipboard?.writeText(m.content);
+    const copyMessage = (m: AgentUiMessage): void => {
         setCopiedId(m.id);
-        if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
-        copiedTimerRef.current = setTimeout(
-            () => setCopiedId(null),
-            COPIED_RESET_MS
-        );
+        void copy(m.content);
     };
 
     const handleScroll = (e: UIEvent<HTMLDivElement>): void => {
@@ -274,13 +274,6 @@ export function MessageList({
         pendingAnchorIdRef.current = lastUser.id;
     }, [messages]);
 
-    useEffect(
-        () => () => {
-            if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
-        },
-        []
-    );
-
     return (
         <div className="relative min-h-0 flex-1">
             <div
@@ -319,10 +312,10 @@ export function MessageList({
                             >
                                 <button
                                     type="button"
-                                    onClick={() => copy(m)}
+                                    onClick={() => copyMessage(m)}
                                     className={ACTION}
                                 >
-                                    {copiedId === m.id
+                                    {copied && copiedId === m.id
                                         ? t('MessageList.copied')
                                         : t('MessageList.a55b1e')}
                                 </button>
@@ -390,13 +383,19 @@ export function MessageList({
                                             <button
                                                 type="button"
                                                 onClick={() => setEditing(null)}
-                                                className="inline-flex min-h-9 items-center rounded-lg px-3 text-sm text-secondary-300 hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                                className={cn(
+                                                    BUTTON_GHOST,
+                                                    EDIT_ACTION_SIZE
+                                                )}
                                             >
                                                 {t('MessageList.19b2d1')}
                                             </button>
                                             <button
                                                 type="submit"
-                                                className="inline-flex min-h-9 items-center rounded-lg bg-primary-600 px-3 text-sm font-medium text-white hover:bg-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                                className={cn(
+                                                    BUTTON_PRIMARY,
+                                                    EDIT_ACTION_SIZE
+                                                )}
                                             >
                                                 {t('MessageList.6523ca')}
                                             </button>
@@ -506,7 +505,7 @@ export function MessageList({
                     onClick={scrollToBottom}
                     aria-label={t('MessageList.scrollToBottom')}
                     // 44px-ish touch target, matching the Composer's send/stop
-                    // button (`size-11`, see Composer.tsx's `ACTION_BUTTON`).
+                    // button (`size-11`, see Composer.tsx's `ACTION_SIZE`).
                     className="absolute bottom-4 left-1/2 flex size-11 -translate-x-1/2 items-center justify-center rounded-full border border-border-control bg-secondary-800 text-secondary-200 shadow-lg hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     <ArrowDownIcon className="size-5" />

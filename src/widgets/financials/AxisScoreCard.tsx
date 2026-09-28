@@ -18,6 +18,7 @@ import {
     type StatementCurrency,
 } from './utils/numberFormat';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 interface AxisScoreCardProps {
     /** Korean axis title displayed as the card heading. */
@@ -147,7 +148,7 @@ export function AxisScoreCard({
     return (
         <section
             aria-labelledby={`axis-${axisKey}-heading`}
-            className="flex flex-col gap-4 rounded-lg border border-secondary-700 bg-secondary-800 p-4 sm:p-6"
+            className={cn(SURFACE_CARD, 'flex flex-col gap-4 p-4 sm:p-6')}
         >
             <div className="flex items-center justify-between">
                 <h3

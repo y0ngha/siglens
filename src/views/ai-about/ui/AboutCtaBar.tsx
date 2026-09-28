@@ -1,7 +1,8 @@
 'use client';
 
-import { useHideOnScrollDown } from '@/widgets/layout/hooks/useHideOnScrollDown';
+import { useHideOnScrollDown } from '@/shared/hooks/useHideOnScrollDown';
 import { cn } from '@/shared/lib/cn';
+import { ArrowRightIcon } from '@/shared/ui/StrokeIcons';
 
 interface Props {
     readonly title: string;
@@ -36,18 +37,7 @@ export function AboutCtaBar({ title, cta, href }: Props) {
                     className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-full bg-primary-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-900 focus-visible:outline-none"
                 >
                     {cta}
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={2.2}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                        className="size-4"
-                    >
-                        <path d="M5 12h14M13 6l6 6-6 6" />
-                    </svg>
+                    <ArrowRightIcon className="size-4" />
                 </a>
             </div>
         </div>

@@ -13,6 +13,8 @@ import {
     ReplaySources,
     ReplaySteps,
 } from '@/shared/ui/ReplayParts';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { cn } from '@/shared/lib/cn';
 
 interface ChatReplayLabels {
     readonly region: string;
@@ -72,7 +74,10 @@ export function ChatReplay({
             ref={rootRef}
             role="region"
             aria-label={labels.region}
-            className="mx-auto flex w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-secondary-700 bg-secondary-800"
+            className={cn(
+                SURFACE_CARD,
+                'mx-auto flex w-full max-w-3xl flex-col overflow-hidden'
+            )}
         >
             <div className="flex min-h-12 items-center justify-between gap-2 border-b border-secondary-700 px-4 text-xs text-secondary-400">
                 <span className="inline-flex items-center gap-2 font-mono tracking-wider">

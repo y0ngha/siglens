@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 const mockUseHideOnScrollDown = vi.fn();
-vi.mock('@/widgets/layout/hooks/useHideOnScrollDown', () => ({
+vi.mock('@/shared/hooks/useHideOnScrollDown', () => ({
     useHideOnScrollDown: () => mockUseHideOnScrollDown(),
 }));
 

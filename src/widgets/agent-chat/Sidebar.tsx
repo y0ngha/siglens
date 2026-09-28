@@ -28,6 +28,7 @@ import {
     PlusIcon,
     TrashIcon,
 } from '@/shared/ui/StrokeIcons';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 interface Props {
     readonly items: ConversationListItem[];
@@ -214,7 +215,7 @@ export function Sidebar({
                 aria-label={t('Sidebar.9a7569')}
                 className="flex h-full flex-col gap-3 p-3"
             >
-                <div className="rounded-lg border border-secondary-700 bg-secondary-800 p-4">
+                <div className={cn(SURFACE_CARD, 'p-4')}>
                     <p className="text-sm font-medium text-secondary-100">
                         {t('Sidebar.guestTitle')}
                     </p>

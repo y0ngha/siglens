@@ -18,6 +18,13 @@ vi.mock('@/shared/hooks/usePageShowReload', () => ({
     usePageShowReload: vi.fn(),
 }));
 
+const mockUseFormStatus = vi.fn(() => ({ pending: false }));
+
+vi.mock('react-dom', async () => {
+    const actual = await vi.importActual('react-dom');
+    return { ...actual, useFormStatus: () => mockUseFormStatus() };
+});
+
 const mockUseFinalizeOAuthSignup = vi.mocked(useFinalizeOAuthSignup);
 const mockFormAction = vi.fn();
 
@@ -46,6 +53,7 @@ describe('OAuthConsentForm', () => {
 
     beforeEach(() => {
         setupHook();
+        mockUseFormStatus.mockReturnValue({ pending: false });
     });
 
     it('renders profile email and name', () => {
@@ -153,9 +161,9 @@ describe('OAuthConsentForm', () => {
         ).not.toBeInTheDocument();
     });
 
-    // Branch coverage: isPending true → button shows '처리 중...' and is disabled
-    it('shows 처리 중... and disables submit button when isPending', () => {
-        setupHook({}, true);
+    // 제출 중 상태는 SubmitButton이 감싼 form의 useFormStatus로 읽는다.
+    it('shows 처리 중... and disables submit button while the form is pending', () => {
+        mockUseFormStatus.mockReturnValue({ pending: true });
         render(<OAuthConsentForm {...baseProps} />);
         const btn = screen.getByRole('button', { name: /처리 중/ });
         expect(btn).toBeInTheDocument();

@@ -9,6 +9,7 @@ import { NEWS_LIST_PERIOD_KEY } from '@/shared/lib/news/periodLabels';
 import { useState } from 'react';
 import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
 import { NewsCardShell } from '@/shared/ui/NewsCardShell';
+import { Spinner } from '@/shared/ui/Spinner';
 import { NEWS_LIST_PAGE_SIZE } from '@/shared/config/newsSerialization';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 // 배지 색·라벨 키·가드는 `MarketNewsCard`와 같은 공유 테이블을 쓴다 — 예전에는
@@ -29,6 +30,7 @@ import {
     resolveNewsSummary,
     resolveNewsTitle,
 } from '@/shared/lib/news/resolveNewsTitle';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 const NEWS_LIST_SKELETON_COUNT = 3;
 
@@ -91,10 +93,7 @@ function NewsTextSection({ label, text }: NewsTextSectionProps) {
 
 function NewsCardSkeleton() {
     return (
-        <article
-            aria-hidden="true"
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-4"
-        >
+        <article aria-hidden="true" className={cn(SURFACE_CARD, 'p-4')}>
             <div className="h-5 w-4/5 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
             <div className="mt-2 flex flex-wrap items-center gap-2">
                 <div className="h-5 w-10 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
@@ -152,10 +151,7 @@ function NewsRefreshStatusCard() {
             aria-live="polite"
             className="flex w-full max-w-full min-w-0 items-start gap-3 overflow-hidden rounded-lg border border-primary-500/30 bg-primary-500/5 p-4"
         >
-            <div
-                aria-hidden="true"
-                className="mt-0.5 h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-primary-400 border-t-transparent motion-reduce:animate-none"
-            />
+            <Spinner className="mt-0.5 shrink-0" />
             <div className="min-w-0">
                 <p className="text-sm font-medium text-secondary-100">
                     {t('NewsList.17ecc6')}
@@ -297,7 +293,10 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
         return (
             <section
                 aria-labelledby="news-list-heading"
-                className="w-full max-w-full min-w-0 overflow-hidden rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+                className={cn(
+                    SURFACE_CARD,
+                    'w-full max-w-full min-w-0 overflow-hidden p-6'
+                )}
             >
                 <div className="mb-3 flex items-center gap-2">
                     <h2 id="news-list-heading" className={HEADING_SECTION}>

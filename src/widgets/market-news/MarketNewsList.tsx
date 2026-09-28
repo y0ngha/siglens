@@ -13,6 +13,8 @@ import {
 import { useMarketNewsCardPolling } from './hooks/useMarketNewsCardPolling';
 import { MarketNewsCard } from './MarketNewsCard';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { cn } from '@/shared/lib/cn';
 
 const SKELETON_COUNT = 3;
 
@@ -33,10 +35,7 @@ function MarketNewsListHeader() {
 
 function MarketNewsCardSkeleton() {
     return (
-        <article
-            aria-hidden="true"
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-4"
-        >
+        <article aria-hidden="true" className={cn(SURFACE_CARD, 'p-4')}>
             <div className="h-5 w-4/5 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
             <div className="mt-2 flex flex-wrap items-center gap-2">
                 <div className="h-5 w-10 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
@@ -135,7 +134,10 @@ export function MarketNewsList({
         return (
             <section
                 aria-labelledby="market-news-list-heading"
-                className="w-full max-w-full min-w-0 overflow-hidden rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+                className={cn(
+                    SURFACE_CARD,
+                    'w-full max-w-full min-w-0 overflow-hidden p-6'
+                )}
             >
                 <MarketNewsListHeader />
                 <p className="text-sm text-secondary-400">

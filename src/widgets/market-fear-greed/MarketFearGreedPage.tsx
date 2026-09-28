@@ -4,7 +4,7 @@ import type {
     MarketFearGreedViewSnapshot,
 } from '@/entities/market-fear-greed/model';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { FearGreedGauge } from '@/widgets/fear-greed/FearGreedGauge';
+import { FearGreedGauge } from '@/shared/ui/FearGreedGauge';
 import { confidenceLabelKey } from '@/shared/lib/fearGreedLabels';
 import type { FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
 import { MarketFearGreedComparison } from './MarketFearGreedComparison';
