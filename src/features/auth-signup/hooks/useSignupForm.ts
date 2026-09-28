@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
-import type { SignupFormState } from '@/shared/lib/types';
+import type { SignupFormState } from '@/shared/lib/auth/formTypes';
 import { registerAction } from '../actions/registerAction';
 
 const INITIAL_STATE: SignupFormState = { error: null };

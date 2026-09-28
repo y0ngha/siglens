@@ -1,7 +1,7 @@
 // sitemap.org 표준 changefreq 값. SitemapEntry.changeFrequency를 string으로
 // 두면 잘못된 값이 silently invalid XML로 들어가는 회귀 위험이 있어 literal
 // union으로 좁힌다.
-export type SitemapChangeFrequency =
+type SitemapChangeFrequency =
     | 'always'
     | 'hourly'
     | 'daily'

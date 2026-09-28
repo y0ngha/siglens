@@ -3,7 +3,7 @@ import {
     EARNINGS_EMPTY_MARKER_TTL_SECONDS,
     isEarningsKnownEmpty,
     markEarningsEmpty,
-} from '@/entities/earnings-report';
+} from '@/entities/earnings-report/api';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 const { store, fakeRedis } = vi.hoisted(() => {

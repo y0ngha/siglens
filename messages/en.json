@@ -251,15 +251,6 @@
             }
         },
         "portfolio": {
-            "PositionHoldingCard": {
-                "0ac914": "Avg. Price {v0}",
-                "0bafa3": "Insufficient Data",
-                "497d1e": "Current Price",
-                "900beb": "Avg. Price",
-                "ba09a5": "Loading {v0} position",
-                "fa94cf": "Failed to load range data.",
-                "fb64df": "Return Rate"
-            },
             "page": {
                 "55ca69": "My Portfolio Position",
                 "605ada": "Loading holdings position.",
@@ -640,6 +631,11 @@
                 "6615ab": "Sign Up Complete",
                 "e6e1a2": "Processing...",
                 "ecb738": "Sign up with account"
+            }
+        },
+        "auth-oauth": {
+            "SocialLoginButtons": {
+                "ffa5ee": "Continue with Google"
             }
         },
         "auth-password-reset": {
@@ -1091,12 +1087,6 @@
                     }
                 },
                 "overviewAll": "All {v0}",
-                "overviewFull": {
-                    "economy": "Full Economy",
-                    "fear-greed": "Full Fear & Greed Index",
-                    "market": "Full Market Analysis",
-                    "news": "Full News"
-                },
                 "overviewToken": "All",
                 "region": {
                     "crypto": "Cryptocurrency",
@@ -2760,15 +2750,6 @@
                 "43807f": "AI Model List",
                 "fb54aa": "Select AI Model"
             },
-            "UserApiKeyRequiredModal": {
-                "378180": "You can use this model by registering your API key.",
-                "017c94": "You can use this model by signing up and registering your own API key.",
-                "16ec45": "Sign Up",
-                "94b7db": "Close",
-                "e790ae": "Register API Key",
-                "f77cc9": "{v0} API key registration is required.",
-                "f85b06": "Continue with Free Model"
-            },
             "thinking": {
                 "reading": "Reading your question…",
                 "writing": "Writing an answer…"
@@ -3040,7 +3021,6 @@
                 "ef5b22": "This stock may have been recently listed or has empty volume data.\n                    Please check again in a few days, or look at other stocks in the same sector."
             },
             "FearGreedPageError": {
-                "0c767c": "Retry",
                 "f929f0": "An error occurred while loading the Fear & Greed Index. Please try again shortly.",
                 "f9482c": "Fear & Greed Index"
             },
@@ -3603,7 +3583,6 @@
                 "eefb95": "AI Option Analysis"
             },
             "OptionsAiAnalysisError": {
-                "0c767c": "Try Again",
                 "e756f5": "Failed to fetch options analysis. Please try again shortly.",
                 "eefb95": "AI Options Analysis"
             },
@@ -3802,6 +3781,15 @@
                 "2bf3cd": "Recent Range {v0}",
                 "5cd686": "Register your average price and quantity to view your position within the recent price range\n                as an isometric building.",
                 "5edaf2": "Register Holdings"
+            },
+            "PositionHoldingCard": {
+                "0ac914": "Avg. Price {v0}",
+                "0bafa3": "Insufficient Data",
+                "497d1e": "Current Price",
+                "900beb": "Avg. Price",
+                "ba09a5": "Loading {v0} position",
+                "fa94cf": "Failed to load range data.",
+                "fb64df": "Return Rate"
             },
             "PositionStatusSummary": {
                 "160873": "To recent high",

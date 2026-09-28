@@ -1,10 +1,10 @@
 import { findUserBySessionToken } from '@/entities/auth/lib/findUserBySessionToken';
 import type {
     AuthSessionRecord,
-    AuthUserRecord,
     SessionRepository,
     UserRepository,
 } from '@/shared/db/types';
+import type { AuthUserRecord } from '@/shared/lib/auth/types';
 
 const sessionToken = 'session-token-1';
 const now = new Date('2026-04-28T00:00:00.000Z');
@@ -61,7 +61,6 @@ function makeDependencies(options: {
                 createSession: vi.fn(),
                 findSession,
                 deleteSession: vi.fn(),
-                deleteExpiredSessions: vi.fn(),
             },
         },
         findSession,

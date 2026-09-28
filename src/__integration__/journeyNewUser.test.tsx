@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { TickerCategories } from '@/widgets/home/TickerCategories';
 import { SymbolTabs } from '@/views/symbol/SymbolTabs';
 import { PremiumModelGateModal } from '@/features/premium-gate/ui/PremiumModelGateModal';
-import type { GateMode } from '@/entities/api-key';
+import type { GateMode } from '@/shared/lib/types';
 
 const mockPush = vi.fn();
 

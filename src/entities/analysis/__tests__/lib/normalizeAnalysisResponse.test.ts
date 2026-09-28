@@ -4,7 +4,7 @@ import { normalizeAnalysisResponse } from '@/entities/analysis/lib/normalizeAnal
 import {
     buildFallbackAnalysis,
     isFallbackAnalysis,
-} from '@/entities/chat-message';
+} from '@/entities/chat-message/lib/fallbackAnalysis';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 
 // 폴백은 이제 로케일별 빌더다 — 예전 `FALLBACK_ANALYSIS` 상수는 한국어 요약을

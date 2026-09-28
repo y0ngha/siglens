@@ -11,7 +11,7 @@ import { getTranslations } from 'next-intl/server';
 import { roundIndicators } from '../lib/roundIndicators';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import {
     translateFmpError,
     logFmpPaymentRequiredError,

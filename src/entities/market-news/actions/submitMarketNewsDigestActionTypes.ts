@@ -1,6 +1,6 @@
 import type { RunMarketNewsDigestResult } from '@y0ngha/siglens-core';
 
-export interface SubmitMarketNewsDigestActionError {
+interface SubmitMarketNewsDigestActionError {
     status: 'error';
     error: string;
 }

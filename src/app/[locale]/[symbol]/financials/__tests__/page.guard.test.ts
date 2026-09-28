@@ -11,11 +11,15 @@
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: vi.fn(),
 }));
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker/lib/assetClassification', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+}));
+vi.mock('@/entities/ticker/lib/ticker', () => ({
     pickAssetName: (info: { name: string; koreanName?: string }) =>
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
+}));
+vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 vi.mock('next/navigation', () => ({
@@ -23,7 +27,7 @@ vi.mock('next/navigation', () => ({
         throw new Error('NEXT_NOT_FOUND');
     }),
 }));
-vi.mock('@/app/[locale]/[symbol]/fundamental/getProfileResilient', () => ({
+vi.mock('@/entities/ticker/lib/getProfileResilient', () => ({
     getProfileResilient: vi.fn(),
 }));
 vi.mock('@/app/[locale]/[symbol]/financials/financialData', () => ({
@@ -42,7 +46,7 @@ vi.mock('@/app/[locale]/[symbol]/financials/financialData', () => ({
 vi.mock('@/app/[locale]/[symbol]/financials/FinancialsDegraded', () => ({
     FinancialsDegraded: () => null,
 }));
-vi.mock('@/entities/financials-statements', () => ({
+vi.mock('@/entities/financials-statements/lib/getFinancialsSnapshot', () => ({
     getFinancialsSnapshot: vi.fn(),
     isEmptyFinancialsSnapshot: vi.fn().mockReturnValue(false),
 }));
@@ -58,7 +62,7 @@ vi.mock('@/widgets/financials/FinancialsScorecard', () => ({
 vi.mock('@/widgets/financials/FinancialsStatements', () => ({
     FinancialsStatements: () => null,
 }));
-vi.mock('@/views/symbol', () => ({
+vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({
     SymbolPageHeading: () => null,
 }));
 vi.mock('@/shared/ui/CrossLinkCards', () => ({
@@ -91,8 +95,8 @@ import {
 } from 'vitest';
 import { NOINDEX_SYMBOL_METADATA } from '@/shared/lib/seo';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
-import { getAssetInfoResilient } from '@/entities/ticker';
-import { getProfileResilient } from '@/app/[locale]/[symbol]/fundamental/getProfileResilient';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
 import { notFound } from 'next/navigation';
 import FinancialsPage, {
     generateMetadata,

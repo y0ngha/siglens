@@ -7,18 +7,18 @@ import {
     type SubmitAnalysisOptions,
     type Timeframe,
 } from '@y0ngha/siglens-core';
-import { runOverallAnalysisAction } from '@/entities/analysis/actions';
-import { submitNewsAnalysisAction } from '@/entities/news-article/actions';
-import { submitOptionsAnalysisAction } from '@/entities/options-chain/actions';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
+import { runOverallAnalysisAction } from '@/entities/analysis/actions/runOverallAnalysisAction';
+import { submitNewsAnalysisAction } from '@/entities/news-article/actions/submitNewsAnalysisAction';
+import { submitOptionsAnalysisAction } from '@/entities/options-chain/actions/optionsActions';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
-import { getDescriptor } from '@/shared/config/marketProfile';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { registerActiveStream } from '@/shared/lib/sse/activeStreams';
 import { AGENT_BUSY_LOG } from '../busyLog';
 import { fitProse, type ProseSpec } from './fitProse';
-import type { ToolExecutor } from './index';
+import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import {
     fitTechnicalAnalysis,
     projectTechnicalAnalysis,

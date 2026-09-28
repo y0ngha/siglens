@@ -1,14 +1,14 @@
 import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
-import type { MarketProfileId } from '@/shared/config/marketProfile';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { quantizeBarsDataToLastClosed } from './quantizeBars';
 import {
     EMPTY_INDICATOR_RESULT,
     type BarsData,
     type Timeframe,
 } from '@y0ngha/siglens-core';
-import { getBarsAction } from '../actions';
+import { getBarsAction } from '@/entities/bars/actions/getBarsAction';
 import { SECONDS_PER_QUARTER_DAY } from '@/shared/config/time';
 
 /**

@@ -5,7 +5,9 @@ const { mockAfter, mockSync, mockFireAndForget } = vi.hoisted(() => ({
 }));
 
 vi.mock('next/server', () => ({ after: mockAfter }));
-vi.mock('@/entities/ticker', () => ({ fireAndForget: mockFireAndForget }));
+vi.mock('@/shared/lib/backgroundTask', () => ({
+    fireAndForget: mockFireAndForget,
+}));
 vi.mock('@/entities/ticker/lib/syncKrListedTickers', () => ({
     syncKrListedTickers: mockSync,
 }));

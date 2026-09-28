@@ -17,11 +17,10 @@ import { CURATED_KOREAN_NAMES } from '@/shared/config/popular-tickers';
  * `getAssetInfoResilient`가 잡아 degrade 200 + noindex로 떨어뜨린다.
  *
  * **동적 import를 쓰는 이유**: `YahooMarketProvider`는 `server-only`이고
- * `yahoo-finance2`는 `child_process`/`dns` 같은 Node 전용 모듈을 요구한다(옵션체인이
- * barrel에서 제외된 것과 같은 이유 — `entities/CLAUDE.md` 참조). 이 함수를 호출하는
- * `getAssetInfo`는 `getAssetInfoStatic` → `getAssetInfoResilient`를 거쳐 ticker barrel에
- * 노출되고, 그 barrel은 클라이언트 컴포넌트(`TickerAutocomplete` 등)가 import한다.
- * 정적 import였다면 그 체인을 타고 yahoo가 클라이언트 번들에 끌려간다.
+ * `yahoo-finance2`는 `child_process`/`dns` 같은 Node 전용 모듈을 요구한다. 이 함수를
+ * 호출하는 `getAssetInfo`는 `getAssetInfoStatic` → `getAssetInfoResilient` 체인에 있고,
+ * 그 체인이 클라이언트 번들 그래프에 닿으면 정적 import가 yahoo를 클라이언트 번들로
+ * 끌고 간다.
  *
  * 반환되는 이름은 yahoo 기준이라 영문이다("Samsung Electronics Co., Ltd."). 한글명은
  * 호출부가 기존 `translateCompanyNames` 경로로 별도 채운다 — 미국 종목과 동일한 흐름이다.

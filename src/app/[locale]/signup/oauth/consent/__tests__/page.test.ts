@@ -1,16 +1,16 @@
 vi.mock('@/shared/ui/auth/AuthCardShell', () => ({
     AuthCardShell: () => null,
 }));
-vi.mock('@/features/auth-oauth-consent', () => ({
+vi.mock('@/features/auth-oauth-consent/ui/OAuthConsentForm', () => ({
     OAuthConsentForm: () => null,
 }));
-vi.mock('@/entities/oauth-account', () => ({
+vi.mock('@/entities/oauth-account/lib/pendingOAuthSignupStore', () => ({
     createPendingOAuthSignupStoreFromEnv: vi.fn(),
 }));
-vi.mock('@/features/auth-oauth/actions', () => ({
+vi.mock('@/features/auth-oauth/actions/cancelOAuthSignupAction', () => ({
     cancelOAuthSignupAction: vi.fn(),
 }));
-vi.mock('@/entities/auth', () => ({
+vi.mock('@/entities/auth/lib/errorMessages', () => ({
     OAUTH_ERROR_REDIRECT: {
         consentInvalid: '/login?error=oauth_consent_invalid',
         serviceUnavailable: '/login?error=service_unavailable',

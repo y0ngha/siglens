@@ -1,7 +1,10 @@
-import type { NewsFeedCategoryId } from '@/entities/market-news';
-import { getMarketNewsCardsAction } from '@/entities/market-news/actions';
+import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
+import { getMarketNewsCardsAction } from '@/entities/market-news/actions/getMarketNewsCardsAction';
 
-import { MAX_CONSECUTIVE_FAILURES, MAX_POLL_DURATION_MS } from '../constants';
+import {
+    MAX_CONSECUTIVE_FAILURES,
+    MAX_POLL_DURATION_MS,
+} from '@/shared/config/cardPollingConfig';
 import type { PollStepResult } from './pollStepResult';
 
 export interface WaitForMarketNewsCardsContext {

@@ -6,7 +6,7 @@ import {
     hasOptionsMarket,
 } from '@/entities/options-chain/lib/optionsDataCache';
 import { roundNumbersDeep } from '@/entities/bars/lib/roundIndicators';
-import type { ToolExecutor } from './index';
+import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 
 export const getOptionsSummaryTool: ToolExecutor = async args => {
     const symbol = String(args.symbol).toUpperCase();

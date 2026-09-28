@@ -11,7 +11,7 @@ import {
     MS_PER_HOUR,
 } from '@/shared/config/time';
 import { fmpCalendarDateTimeToIso } from '@/shared/lib/etTimeUtils';
-import type { ToolExecutor } from './index';
+import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { roundNumber } from '@/entities/bars/lib/roundIndicators';
 import { ppDelta } from './percent';
 

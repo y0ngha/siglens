@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { getAssetLabelsAction } from '@/entities/ticker/actions';
+import { getAssetLabelsAction } from '@/entities/ticker/actions/getAssetLabelsAction';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 
 /**

@@ -12,12 +12,13 @@ import type {
     ScoreMetricUnit,
 } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
+import { formatCompactAmount } from '@/shared/lib/priceFormat';
 import {
-    formatCurrencyCompact,
     DEFAULT_STATEMENT_CURRENCY,
     type StatementCurrency,
 } from './utils/numberFormat';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 interface AxisScoreCardProps {
     /** Korean axis title displayed as the card heading. */
@@ -75,7 +76,7 @@ function formatMetricValue(
             return `${value.toFixed(2)}x`;
         // 'usd'는 "금액" 단위를 뜻하는 레거시 라벨이다 — 실제 통화는 `currency`가 정한다.
         case 'usd':
-            return formatCurrencyCompact(value, currency, locale);
+            return formatCompactAmount(value, currency, locale);
         case 'score':
             return String(Math.round(value));
     }
@@ -147,7 +148,7 @@ export function AxisScoreCard({
     return (
         <section
             aria-labelledby={`axis-${axisKey}-heading`}
-            className="flex flex-col gap-4 rounded-lg border border-secondary-700 bg-secondary-800 p-4 sm:p-6"
+            className={cn(SURFACE_CARD, 'flex flex-col gap-4 p-4 sm:p-6')}
         >
             <div className="flex items-center justify-between">
                 <h3

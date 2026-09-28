@@ -17,6 +17,7 @@ import {
 import { SECONDS_PER_DAY, SECONDS_PER_HOUR } from '@/shared/config/time';
 import { mergeBarsByTime } from './mergeBarsByTime';
 import type { SiglensMarketProvider } from './marketProvider.types';
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
 /**
  * `isLongDailyWindow` 라우팅 게이트의 룩백 임계값(일 수).
@@ -47,7 +48,7 @@ const EOD_HIST_INCOMPLETE_COOLDOWN_SECONDS =
 function isoDateDaysAgo(now: Date, days: number): string {
     const d = new Date(now);
     d.setUTCDate(d.getUTCDate() - days);
-    return d.toISOString().slice(0, 10);
+    return toUtcIsoDate(d);
 }
 
 /** YYYY-MM-DD(또는 ISO) 날짜를 UTC 자정 unix초로 변환(Bar.time과 동일 규약). */

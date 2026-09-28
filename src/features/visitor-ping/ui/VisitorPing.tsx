@@ -2,17 +2,10 @@
 
 import { useEffect } from 'react';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
-import { onFirstInteraction } from '@/shared/lib/onFirstInteraction';
+import { postBeacon, sendOnHumanInteraction } from '../lib/beacon';
 
 /** 마지막으로 비콘을 보낸 KST 날짜를 담는다. */
 const STORAGE_KEY = 'siglens:visit';
-
-/**
- * 비콘 타임아웃. 이 요청은 화면에 아무 영향이 없으므로 오래 매달려 있을 이유가
- * 없다 — 느린 네트워크에서 커넥션을 붙잡고 있으면 정작 필요한 요청이 밀린다.
- * 놓친 집계는 다음 페이지 로드가 다시 시도한다.
- */
-const BEACON_TIMEOUT_MS = 5000;
 
 function sendPresence(): void {
     const today = kstDateKey(new Date());
@@ -25,24 +18,10 @@ function sendPresence(): void {
     }
     if (last === today) return;
 
-    void fetch('/api/presence', {
-        method: 'POST',
-        keepalive: true,
-        signal: AbortSignal.timeout(BEACON_TIMEOUT_MS),
-    })
-        .then(response => {
-            // 실패는 기록하지 않는다. pepper 미설정 같은 배포 오류가
-            // 다음 로드에서 다시 드러나야 한다.
-            if (!response.ok) return;
-            try {
-                window.localStorage.setItem(STORAGE_KEY, today);
-            } catch {
-                // 위와 같다.
-            }
-        })
-        .catch(() => {
-            // 차단기·오프라인·타임아웃. 집계 하나 놓치는 편이 화면을 깨뜨리는 것보다 낫다.
-        });
+    postBeacon({
+        url: '/api/presence',
+        onDelivered: () => window.localStorage.setItem(STORAGE_KEY, today),
+    });
 }
 
 /**
@@ -58,17 +37,13 @@ function sendPresence(): void {
  * 어긋나 그 방문자가 특정 날에 통째로 누락된다. 반대 방향(중복 전송)은 서버가
  * `ON CONFLICT DO NOTHING`으로 흡수하므로 무해하다.
  *
- * `@/entities/visitor` barrel은 `server-only`라 여기서 import하지 않는다.
+ * `@/entities/visitor/api`는 `server-only`라 여기서 import하지 않는다.
  *
  * 전송은 첫 신뢰 입력 뒤에만 한다(`onFirstInteraction`). 렌더만 하고 떠나는 헤드리스가
  * 이 필터를 통과하고 있었다.
  */
 export function VisitorPing(): null {
-    useEffect(() => {
-        // 사람 수를 세는 것이 목적이다. Playwright·Puppeteer는 사람이 아니다.
-        if (navigator.webdriver) return;
-        return onFirstInteraction(sendPresence);
-    }, []);
+    useEffect(() => sendOnHumanInteraction(sendPresence), []);
 
     return null;
 }

@@ -5,7 +5,7 @@ import type {
     DashboardTimeframe,
     SectorSignalsResult,
 } from '@y0ngha/siglens-core';
-import { getSectorSignalsAction } from '@/entities/sector-signal/actions';
+import { getSectorSignalsAction } from '@/entities/sector-signal/actions/getSectorSignalsAction';
 import {
     QUERY_KEYS,
     SECTOR_SIGNALS_STALE_TIME_MS,

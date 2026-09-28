@@ -1,4 +1,4 @@
-vi.mock('@/features/symbol-chat', () => ({
+vi.mock('@/features/symbol-chat/hooks/useSymbolChat', () => ({
     useSymbolChat: vi.fn(() => ({ isAnalysisReady: false })),
 }));
 vi.mock('../hooks/useChatButtonState', () => ({

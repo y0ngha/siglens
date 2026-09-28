@@ -9,7 +9,7 @@
  * MISTAKES §17: all vi.mock 위에서 호이스팅 — 별도 파일로 분리해 다른
  * buildPopularEntries 테스트에 이 모킹이 새지 않게 한다.
  */
-vi.mock('../config/popular-options-tickers', () => ({
+vi.mock('@/shared/config/popular-options-tickers', () => ({
     POPULAR_OPTIONS_TICKERS: ['AAPL', '005930.KS'],
 }));
 

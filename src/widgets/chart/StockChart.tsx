@@ -32,24 +32,11 @@ import { useSupertrendOverlay } from './hooks/useSupertrendOverlay';
 import { useParabolicSarOverlay } from './hooks/useParabolicSarOverlay';
 import { useChandelierOverlay } from './hooks/useChandelierOverlay';
 import { useMACDChart } from './hooks/useMACDChart';
-import { useRSIChart } from './hooks/useRSIChart';
+import { useLinePaneChart } from './hooks/useLinePaneChart';
+import { LINE_PANE_SPECS } from './model/linePaneSpecs';
 import { useDMIChart } from './hooks/useDMIChart';
 import { useStochasticChart } from './hooks/useStochasticChart';
 import { useStochRSIChart } from './hooks/useStochRSIChart';
-import { useCCIChart } from './hooks/useCCIChart';
-import { useMfiChart } from './hooks/useMfiChart';
-import { useWilliamsRChart } from './hooks/useWilliamsRChart';
-import { useConnorsRsiChart } from './hooks/useConnorsRsiChart';
-import { useCmfChart } from './hooks/useCmfChart';
-import { useBollingerPercentBChart } from './hooks/useBollingerPercentBChart';
-import { useHurstChart } from './hooks/useHurstChart';
-import { useVarianceRatioChart } from './hooks/useVarianceRatioChart';
-import { useMacdVChart } from './hooks/useMacdVChart';
-import { useForceIndexChart } from './hooks/useForceIndexChart';
-import { useObvChart } from './hooks/useObvChart';
-import { useAtrChart } from './hooks/useAtrChart';
-import { useYangZhangChart } from './hooks/useYangZhangChart';
-import { useEwmaVolatilityChart } from './hooks/useEwmaVolatilityChart';
 import { useElderRayChart } from './hooks/useElderRayChart';
 import { useSqueezeMomentumChart } from './hooks/useSqueezeMomentumChart';
 import { useRegressionChart } from './hooks/useRegressionChart';
@@ -73,7 +60,7 @@ import {
     EMPTY_INDICATOR_RESULT,
     MA_DEFAULT_PERIODS,
 } from '@y0ngha/siglens-core';
-import type { MarketProfileId } from '@/shared/config/marketProfile';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { resolvePriceDecimals } from '@/shared/lib/priceFormat';
 import { IndicatorSettingsModal } from './ui/IndicatorSettingsModal';
 import { ChartOverlayMenu } from './ui/ChartOverlayMenu';
@@ -326,8 +313,9 @@ export function StockChart({
     const { isVisible: ichimokuVisible, toggle: toggleIchimoku } =
         useIchimokuOverlay(commonHookParams);
 
-    useRSIChart({
+    useLinePaneChart({
         ...commonHookParams,
+        spec: LINE_PANE_SPECS.rsi,
         isVisible: visible.rsi,
         paneIndex: paneIndices.rsi,
     });
@@ -356,86 +344,100 @@ export function StockChart({
         paneIndex: paneIndices.stochRsi,
     });
 
-    useCCIChart({
+    useLinePaneChart({
         ...commonHookParams,
+        spec: LINE_PANE_SPECS.cci,
         isVisible: visible.cci,
         paneIndex: paneIndices.cci,
     });
 
-    useMfiChart({
+    useLinePaneChart({
         ...commonHookParams,
+        spec: LINE_PANE_SPECS.mfi,
         isVisible: visible.mfi,
         paneIndex: paneIndices.mfi,
     });
 
-    useWilliamsRChart({
+    useLinePaneChart({
         ...commonHookParams,
+        spec: LINE_PANE_SPECS.williamsR,
         isVisible: visible.williamsR,
         paneIndex: paneIndices.williamsR,
     });
 
-    useConnorsRsiChart({
+    useLinePaneChart({
         ...commonHookParams,
+        spec: LINE_PANE_SPECS.connorsRsi,
         isVisible: visible.connorsRsi,
         paneIndex: paneIndices.connorsRsi,
     });
 
-    useCmfChart({
+    useLinePaneChart({
         ...commonHookParams,
+        spec: LINE_PANE_SPECS.cmf,
         isVisible: visible.cmf,
         paneIndex: paneIndices.cmf,
     });
 
-    useBollingerPercentBChart({
+    useLinePaneChart({
         ...commonHookParams,
+        spec: LINE_PANE_SPECS.bollingerPercentB,
         isVisible: visible.bollingerPercentB,
         paneIndex: paneIndices.bollingerPercentB,
     });
 
-    useHurstChart({
+    useLinePaneChart({
         ...commonHookParams,
+        spec: LINE_PANE_SPECS.hurst,
         isVisible: visible.hurst,
         paneIndex: paneIndices.hurst,
     });
 
-    useVarianceRatioChart({
+    useLinePaneChart({
         ...commonHookParams,
+        spec: LINE_PANE_SPECS.varianceRatio,
         isVisible: visible.varianceRatio,
         paneIndex: paneIndices.varianceRatio,
     });
 
-    useMacdVChart({
+    useLinePaneChart({
         ...commonHookParams,
+        spec: LINE_PANE_SPECS.macdV,
         isVisible: visible.macdV,
         paneIndex: paneIndices.macdV,
     });
 
-    useForceIndexChart({
+    useLinePaneChart({
         ...commonHookParams,
+        spec: LINE_PANE_SPECS.forceIndex,
         isVisible: visible.forceIndex,
         paneIndex: paneIndices.forceIndex,
     });
 
-    useObvChart({
+    useLinePaneChart({
         ...commonHookParams,
+        spec: LINE_PANE_SPECS.obv,
         isVisible: visible.obv,
         paneIndex: paneIndices.obv,
     });
 
-    useAtrChart({
+    useLinePaneChart({
         ...commonHookParams,
+        spec: LINE_PANE_SPECS.atr,
         isVisible: visible.atr,
         paneIndex: paneIndices.atr,
     });
 
-    useYangZhangChart({
+    useLinePaneChart({
         ...commonHookParams,
+        spec: LINE_PANE_SPECS.yangZhang,
         isVisible: visible.yangZhang,
         paneIndex: paneIndices.yangZhang,
     });
 
-    useEwmaVolatilityChart({
+    useLinePaneChart({
         ...commonHookParams,
+        spec: LINE_PANE_SPECS.ewmaVolatility,
         isVisible: visible.ewmaVolatility,
         paneIndex: paneIndices.ewmaVolatility,
     });

@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import type { Timeframe } from '@y0ngha/siglens-core';
 import { useTimeframeChange } from '@/views/symbol/hooks/useTimeframeChange';
-import { getBarsAction } from '@/entities/bars/actions';
+import { getBarsAction } from '@/entities/bars/actions/getBarsAction';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
 
 const mockReplace = vi.fn();
@@ -20,7 +20,7 @@ vi.mock('@/shared/config/market', () => ({
         ['1Day', '1Week', '1Month'].includes(v as string),
 }));
 
-vi.mock('@/entities/bars/actions', () => ({
+vi.mock('@/entities/bars/actions/getBarsAction', () => ({
     getBarsAction: vi.fn().mockResolvedValue({ bars: [], indicators: {} }),
 }));
 

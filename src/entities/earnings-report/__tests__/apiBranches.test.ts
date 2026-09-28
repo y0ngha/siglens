@@ -14,7 +14,7 @@ import {
     DrizzleEarningsReportsRepository,
     toComparisonItems,
     type EarningsReportUpsertInput,
-} from '@/entities/earnings-report';
+} from '@/entities/earnings-report/api';
 
 describe('earnings-report/api — branch coverage', () => {
     describe('toInsertRow null branches via upsertBatch', () => {

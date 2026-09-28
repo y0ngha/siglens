@@ -1,11 +1,11 @@
-import { searchNaverNews } from '@/entities/news-article/lib/naverNewsSearch';
+import { searchNaverNews } from '@/shared/api/naver/naverSearch';
 import { NaverMarketNewsClient } from '../lib/naverMarketNewsClient';
 import { CATEGORY_CONFIG } from '../lib/categoryConfig';
 
-vi.mock('@/entities/news-article/lib/naverNewsSearch', async () => {
+vi.mock('@/shared/api/naver/naverSearch', async () => {
     const actual = await vi.importActual<
-        typeof import('@/entities/news-article/lib/naverNewsSearch')
-    >('@/entities/news-article/lib/naverNewsSearch');
+        typeof import('@/shared/api/naver/naverSearch')
+    >('@/shared/api/naver/naverSearch');
     return { ...actual, searchNaverNews: vi.fn() };
 });
 

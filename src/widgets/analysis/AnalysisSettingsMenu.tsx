@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useId, useRef } from 'react';
 import { DEEPSEEK_V4_1_FLASH_MODEL, type ModelId } from '@y0ngha/siglens-core';
-import { ReasoningToggle } from '@/features/reasoning-toggle';
+import { ReasoningToggle } from '@/features/reasoning-toggle/ui/ReasoningToggle';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';

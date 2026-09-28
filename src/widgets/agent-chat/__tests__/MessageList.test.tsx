@@ -11,7 +11,7 @@ import {
     it,
     vi,
 } from 'vitest';
-import type { AgentUiMessage } from '@/features/agent-chat';
+import type { AgentUiMessage } from '@/features/agent-chat/model/types';
 import ko from '../../../../messages/ko.json';
 
 const { labels } = vi.hoisted(() => ({
@@ -22,7 +22,7 @@ const { labels } = vi.hoisted(() => ({
         failed: [],
     })),
 }));
-vi.mock('@/entities/ticker/actions', () => ({
+vi.mock('@/entities/ticker/actions/getAssetLabelsAction', () => ({
     getAssetLabelsAction: labels,
 }));
 

@@ -31,7 +31,7 @@ vi.mock('@/shared/cache/staticSymbolCache', () => ({
 }));
 
 // getMarketNewsCards — configured per-test to reject.
-vi.mock('@/entities/market-news/api', () => ({
+vi.mock('@/entities/market-news/api/marketNewsRepository', () => ({
     getMarketNewsCards: vi.fn(),
 }));
 
@@ -47,7 +47,7 @@ import {
 } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import NewsHubPage from '../page';
-import { getMarketNewsCards } from '@/entities/market-news/api';
+import { getMarketNewsCards } from '@/entities/market-news/api/marketNewsRepository';
 
 const mockGetMarketNewsList = getMarketNewsCards as MockedFunction<
     typeof getMarketNewsCards

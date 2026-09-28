@@ -18,12 +18,14 @@ import {
     type EconomyIndicatorMeta,
 } from '@/shared/config/economyIndicators';
 import { cn } from '@/shared/lib/cn';
+import { signColorClass } from '@/shared/lib/priceFormat';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import {
     HEADING_SECTION,
     HEADING_SUBSECTION,
 } from '@/shared/lib/typographyStyles';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 /**
  * 국채 수익률·2s10s 스프레드 카드의 표시 소수 자리수.
@@ -60,19 +62,18 @@ interface TreasuryCardMeta {
  * 만기별 국채 수익률 카드의 표시 메타.
  * 인라인 삼항 대신 레코드로 추출해 새 만기 추가 시 단일 위치만 수정한다.
  */
-export const TREASURY_CARD_META: Record<'year2' | 'year10', TreasuryCardMeta> =
-    {
-        year2: {
-            labelKey: 'year2Label',
-            tooltipKey: 'year2Desc',
-            unit: '%',
-        },
-        year10: {
-            labelKey: 'year10Label',
-            tooltipKey: 'year10Desc',
-            unit: '%',
-        },
-    };
+const TREASURY_CARD_META: Record<'year2' | 'year10', TreasuryCardMeta> = {
+    year2: {
+        labelKey: 'year2Label',
+        tooltipKey: 'year2Desc',
+        unit: '%',
+    },
+    year10: {
+        labelKey: 'year10Label',
+        tooltipKey: 'year10Desc',
+        unit: '%',
+    },
+};
 
 interface EconomicIndicatorGridProps {
     snapshot: EconomySnapshot;
@@ -207,7 +208,7 @@ function IndicatorCard({ meta, series }: IndicatorCardProps) {
     const delta = prev !== null ? latest.value - prev.value : null;
     const unit = unitLabel(meta.unit, tLabel);
     return (
-        <article className="rounded-lg border border-secondary-700 bg-secondary-800 p-4">
+        <article className={cn(SURFACE_CARD, 'p-4')}>
             <header className="mb-2 flex items-center gap-1 text-sm text-secondary-300">
                 <span>
                     {ECONOMY_INDICATOR_LABEL_KEY[meta.label]
@@ -239,7 +240,7 @@ function TreasuryYieldCard({ snapshot, maturity }: TreasuryYieldCardProps) {
     if (value === null) return null;
     const { labelKey, tooltipKey, unit } = TREASURY_CARD_META[maturity];
     return (
-        <article className="rounded-lg border border-secondary-700 bg-secondary-800 p-4">
+        <article className={cn(SURFACE_CARD, 'p-4')}>
             <header className="mb-2 flex items-center gap-1 text-sm text-secondary-300">
                 <span>{tCard(labelKey)}</span>
                 <InfoTooltip>{tCard(tooltipKey)}</InfoTooltip>
@@ -259,16 +260,13 @@ function YieldSpreadCard({ snapshot }: YieldSpreadCardProps) {
     if (spread === null) return null;
     const positive = spread >= 0;
     return (
-        <article className="rounded-lg border border-secondary-700 bg-secondary-800 p-4">
+        <article className={cn(SURFACE_CARD, 'p-4')}>
             <header className="mb-2 flex items-center gap-1 text-sm text-secondary-300">
                 <span>{t('EconomicIndicatorGrid.2388de')}</span>
                 <InfoTooltip>{t('EconomicIndicatorGrid.868089')}</InfoTooltip>
             </header>
             <div
-                className={cn(
-                    'text-2xl font-semibold',
-                    positive ? 'text-ui-success-text' : 'text-ui-danger-text'
-                )}
+                className={cn('text-2xl font-semibold', signColorClass(spread))}
             >
                 {positive ? '+' : ''}
                 {spread.toFixed(TREASURY_YIELD_PRECISION)}

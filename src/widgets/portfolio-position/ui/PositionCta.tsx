@@ -1,4 +1,6 @@
 import { useTranslations } from 'next-intl';
+import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
+import { cn } from '@/shared/lib/cn';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { formatAmount } from '../lib/positionBuildingNotes';
 
@@ -46,7 +48,7 @@ export function PositionCta({ symbol, low52w, high52w }: PositionCtaProps) {
              */}
             <Link
                 href={`/portfolio?symbol=${encodeURIComponent(symbol)}`}
-                className="inline-flex min-h-11 touch-manipulation items-center rounded-lg border border-primary-500 px-4 text-sm font-medium text-primary-300 transition-colors hover:bg-primary-500/10 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                className={cn(BUTTON_PRIMARY, 'min-h-11 px-4 text-sm')}
             >
                 {t('PositionCta.5edaf2')}
             </Link>

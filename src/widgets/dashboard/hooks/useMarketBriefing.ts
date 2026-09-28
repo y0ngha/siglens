@@ -7,7 +7,7 @@ import type {
     MarketBriefingResponse,
     RunBriefingResult,
 } from '@y0ngha/siglens-core';
-import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import type { MarketBriefingActionResult } from '@/shared/lib/types';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';

@@ -2,9 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 import type { FallbackProps } from 'react-error-boundary';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
-import { cn } from '@/shared/lib/cn';
 import { translateFmpError } from '@/shared/api/fmp/fmpUserMessage';
+import { AiSummaryErrorSection } from '@/shared/ui/AiSummaryErrorSection';
 
 export function FearGreedPageError({
     error,
@@ -13,30 +12,19 @@ export function FearGreedPageError({
     const t = useTranslations('widgets.fear-greed');
     // FMP 문구 키는 완전 수식이라 루트 번역자가 필요하다.
     const tRoot = useTranslations();
-    const message =
-        translateFmpError(error, tRoot) ?? t('FearGreedPageError.f929f0');
+    const fallbackMessage = t('FearGreedPageError.f929f0');
 
+    // FMP 오류가 아니면 `error.message`(원문)가 아니라 고정 문구를 보인다 —
+    // 그래서 추출기가 null을 돌려주지 않게 폴백까지 여기서 붙인다.
     return (
-        <section
-            aria-labelledby="fear-greed-error-heading"
-            className="rounded-lg border border-ui-danger/30 bg-secondary-800 p-6"
-        >
-            <h2
-                id="fear-greed-error-heading"
-                className={cn('mb-2', HEADING_SECTION)}
-            >
-                {t('FearGreedPageError.f9482c')}
-            </h2>
-            <div className="text-sm text-ui-danger-text" role="alert">
-                {message}
-            </div>
-            <button
-                type="button"
-                onClick={resetErrorBoundary}
-                className="mt-4 rounded bg-primary-600 px-3 py-1.5 text-xs text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
-            >
-                {t('FearGreedPageError.0c767c')}
-            </button>
-        </section>
+        <AiSummaryErrorSection
+            error={error}
+            onRetry={resetErrorBoundary}
+            heading={t('FearGreedPageError.f9482c')}
+            idPrefix="fear-greed"
+            getErrorMessage={e =>
+                translateFmpError(e, tRoot) ?? fallbackMessage
+            }
+        />
     );
 }

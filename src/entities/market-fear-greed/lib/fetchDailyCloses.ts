@@ -5,6 +5,7 @@ import { lastClosedSessionDate } from '@/shared/lib/marketSessionDate';
 import { MS_PER_DAY } from '@/shared/config/time';
 import { e2eDailyCloses } from './e2eFearGreedFixture';
 import { MARKET_FEAR_GREED_LOOKBACK_DAYS } from './marketFearGreedSymbols';
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
 /**
  * One row of FMP `/stable/historical-price-eod/dividend-adjusted` (`adjClose`)
@@ -43,11 +44,6 @@ function priceSourceFor(symbol: string): PriceSource {
           };
 }
 
-/** ISO `YYYY-MM-DD` for `date` in UTC. */
-function isoDate(date: Date): string {
-    return date.toISOString().slice(0, 10);
-}
-
 /**
  * The `from` bound for a lookback window ending at `now`.
  *
@@ -56,7 +52,7 @@ function isoDate(date: Date): string {
  * midnight UTC fetch different windows for different symbols.
  */
 export function lookbackStartDate(now: Date): string {
-    return isoDate(
+    return toUtcIsoDate(
         new Date(now.getTime() - MARKET_FEAR_GREED_LOOKBACK_DAYS * MS_PER_DAY)
     );
 }

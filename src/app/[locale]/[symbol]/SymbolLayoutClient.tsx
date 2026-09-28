@@ -2,9 +2,9 @@
 
 import { type ReactNode } from 'react';
 import { FloatingChatButton } from '@/widgets/chat/FloatingChatButton';
-import { SymbolChatProvider } from '@/features/symbol-chat';
-import { SymbolModelProvider } from '@/features/symbol-model';
-import { ShareableAnalysisProvider } from '@/features/share';
+import { SymbolChatProvider } from '@/features/symbol-chat/model/SymbolChatContext';
+import { SymbolModelProvider } from '@/features/symbol-model/model/SymbolModelContext';
+import { ShareableAnalysisProvider } from '@/features/share/model/ShareableAnalysisContext';
 
 interface SymbolLayoutJailProps {
     children: ReactNode;

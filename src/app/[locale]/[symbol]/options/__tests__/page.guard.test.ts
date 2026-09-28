@@ -11,11 +11,15 @@
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: vi.fn(),
 }));
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker/lib/assetClassification', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+}));
+vi.mock('@/entities/ticker/lib/ticker', () => ({
     pickAssetName: (info: { name: string; koreanName?: string }) =>
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
+}));
+vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 vi.mock('next/navigation', () => ({
@@ -41,7 +45,7 @@ vi.mock('@/widgets/options/OptionsPageClient', () => ({
 vi.mock('@/widgets/options/OptionsEmptyState', () => ({
     OptionsEmptyState: () => null,
 }));
-vi.mock('@/views/symbol', () => ({
+vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({
     SymbolPageHeading: () => null,
 }));
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
@@ -132,7 +136,8 @@ describe('Options page tab guard', () => {
         // getAssetInfoResilient and staticSymbolCache are already mocked to return
         // safe defaults that prevent a downstream notFound. We just need to confirm
         // the guard path itself didn't call it.
-        const { getAssetInfoResilient } = await import('@/entities/ticker');
+        const { getAssetInfoResilient } =
+            await import('@/entities/ticker/lib/getAssetInfoResilient');
         (
             getAssetInfoResilient as MockedFunction<
                 typeof getAssetInfoResilient
@@ -211,7 +216,8 @@ describe('Options generateMetadata crypto NOINDEX guard', () => {
         mockIsTabAllowed.mockResolvedValue(true);
 
         // Provide assetInfo so generateMetadata can build real metadata content.
-        const { getAssetInfoResilient } = await import('@/entities/ticker');
+        const { getAssetInfoResilient } =
+            await import('@/entities/ticker/lib/getAssetInfoResilient');
         (
             getAssetInfoResilient as MockedFunction<
                 typeof getAssetInfoResilient

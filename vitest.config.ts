@@ -106,7 +106,6 @@ const coverageConfig = {
     ],
     exclude: [
         '**/*.d.ts',
-        '**/index.ts',
         '**/types.ts',
         '**/model.ts',
         '**/test-utils/**',
@@ -114,9 +113,6 @@ const coverageConfig = {
         // 실제 제품 코드가 아니고 Playwright E2E가 직접 소비하므로 단위 커버리지
         // 게이트에서 제외한다 — 커버리지 수치는 제품 코드만 반영해야 한다.
         'src/**/Fake*.ts',
-        'src/entities/*/actions.ts',
-        'src/entities/*/actions/index.ts',
-        'src/features/*/actions.ts',
         // Next.js async server components (page.tsx, layout.tsx, loading.tsx, error.tsx,
         // opengraph-image.tsx, twitter-image.tsx) are excluded because they return
         // Promise<JSX.Element> which @testing-library/react cannot render.

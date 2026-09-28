@@ -9,8 +9,8 @@ vi.mock('@/entities/auth/lib/sessionCookie', async importOriginal => ({
     ...(await importOriginal<object>()),
     createAuthSession: m.createSession,
 }));
-vi.mock('@/entities/auth/lib/db', () => ({
-    getAuthDatabaseClient: () => ({ db: {} }),
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: () => ({ db: {} }),
 }));
 vi.mock('@/entities/auth/api', () => ({ DrizzleSessionRepository: vi.fn() }));
 vi.mock('@/shared/config/aiHost', () => ({

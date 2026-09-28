@@ -19,15 +19,16 @@ export const metadata: Metadata = {
  *
  * ## 왜 필요한가
  *
- * 전 라우트가 `[locale]/` 아래로 이동하면서 `src/app/layout.tsx`가 사라졌다.
- * 그러면 **어떤 라우트에도 매칭되지 않은 URL**은 로케일 레이아웃 바깥에서
- * 처리되고, Next의 내부 셸(`<html id="__next_error__">`, `lang` 없음, 본문 없음)이
+ * 전 라우트가 `[locale]/` 아래로 이동하면서, `src/app/layout.tsx`(루트 레이아웃)는
+ * `<html>`/`<body>`를 렌더하지 않는 패스스루로 남았다 — 그건 `[locale]/layout.tsx`가
+ * 로케일별로 맡는다. 그러면 **어떤 라우트에도 매칭되지 않은 URL**은 로케일 레이아웃
+ * 바깥에서 처리되고, Next의 내부 셸(`<html id="__next_error__">`, `lang` 없음, 본문 없음)이
  * 뜬다. 실측: `/nonexistent-page-xyz`, `/ZZZZZZZZZ`, `/en/nonexistent-page-xyz`가
  * 전부 제목만 있고 본문이 비어 있었다 — **한국어 사용자 포함 모든 404**가
  * 그랬고, 상태 코드는 404로 정확했기 때문에 상태만 검사하는 테스트로는 안 보였다.
  *
- * 루트 레이아웃이 없으므로 이 파일이 `<html>`·`<body>`와 스타일시트를 직접 맡는다
- * (`global-error.tsx`와 같은 이유). 로케일을 알 수 없는 자리라 한국어·영어를
+ * 루트 레이아웃이 `<html>`/`<body>`를 렌더하지 않으므로 이 파일이 그것과 스타일시트를
+ * 직접 맡는다(`global-error.tsx`와 같은 이유). 로케일을 알 수 없는 자리라 한국어·영어를
  * 병기하고, 링크는 전체 페이지 로드가 되도록 맨 `<a>`를 쓴다.
  */
 export default function RootNotFound() {

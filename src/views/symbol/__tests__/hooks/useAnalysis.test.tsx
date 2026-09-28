@@ -1,7 +1,7 @@
 import type { Mock } from 'vitest';
 import { useAnalysis } from '@/views/symbol/hooks/useAnalysis';
-import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
-import { getReanalyzeCooldownMs } from '@/entities/analysis';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
+import { getReanalyzeCooldownMs } from '@/entities/analysis/lib/reanalyzeCooldown';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type {
@@ -12,22 +12,17 @@ import type {
 } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 
-vi.mock('@/shared/hooks/useAnalysisStream', () => ({
+vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({
     runAnalysisStream: vi.fn(),
 }));
 
-vi.mock('@/entities/analysis', async importOriginal => {
-    const actual = await importOriginal<typeof import('@/entities/analysis')>();
-    return {
-        // 쿨다운 I/O만 스텁하고, normalizeAnalysisResponse 등 순수 함수는 실제 구현을 사용한다.
-        // `releaseReanalyzeCooldown`과 `tryAcquireReanalyzeCooldown`은 이 barrel에서
-        // 더 이상 export되지 않는다 — release는 서버 전용(route.ts `releaseOnFailure`),
-        // acquire는 서버 액션으로만 노출. 클라이언트가 호출할 수 없다는 설계 의도가
-        // 여기서도 반영된다(누락된 mock이 경고 없이 통과하면 설계 위반을 감지 못 함).
-        ...actual,
-        getReanalyzeCooldownMs: vi.fn().mockResolvedValue(0),
-    };
-});
+// 쿨다운 I/O만 스텁하고, normalizeAnalysisResponse 등 순수 함수는 실제 구현을 사용한다.
+vi.mock('@/entities/analysis/lib/reanalyzeCooldown', async importOriginal => ({
+    ...(await importOriginal<
+        typeof import('@/entities/analysis/lib/reanalyzeCooldown')
+    >()),
+    getReanalyzeCooldownMs: vi.fn().mockResolvedValue(0),
+}));
 
 vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
@@ -37,7 +32,7 @@ const { mockUseSymbolHolding } = vi.hoisted(() => ({
     mockUseSymbolHolding: vi.fn(),
 }));
 
-vi.mock('@/features/portfolio-holding', () => ({
+vi.mock('@/features/portfolio-holding/hooks/useSymbolHolding', () => ({
     useSymbolHolding: mockUseSymbolHolding,
 }));
 

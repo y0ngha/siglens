@@ -6,7 +6,7 @@ import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
  * 여기서는 이미 로드된 DB 맵을 받아 동기 합성만 한다.
  *
  * 초기 사전은 FMP 샘플에서 가장 흔한 지표 일부만 확정해 시드한다. 전체 ~277개 큐레이션은
- * SP-A 백필 name-dump를 소비하는 별도 데이터 작업이다(docs/superpowers/seeding 참조).
+ * 인제스션 백필 name-dump를 소비하는 별도 데이터 작업이다(docs/superpowers/seeding 참조).
  */
 
 /** `INDICATOR_NAME_KO`/DB 캐시의 키 = 정규화된 base 지표명, 값 = 한국어. */

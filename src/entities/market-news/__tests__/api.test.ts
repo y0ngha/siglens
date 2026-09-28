@@ -1,8 +1,8 @@
 vi.mock('@/shared/lib/sleep', () => ({ sleep: vi.fn() }));
 
 import { describe, expect, it, vi } from 'vitest';
-import { DrizzleMarketNewsRepository } from '../api';
-import type { MarketNewsDbRow } from '../api';
+import { DrizzleMarketNewsRepository } from '@/entities/market-news/api/marketNewsRepository';
+import type { MarketNewsDbRow } from '@/entities/market-news/api/marketNewsRepository';
 import type { MarketNewsItem } from '../lib/marketNewsClientPort';
 import type { NewsCardAnalysis } from '@y0ngha/siglens-core';
 import type { SiglensDatabase } from '@/shared/db/types';

@@ -24,8 +24,8 @@ import { SHARE_KIND_PANEL_REGISTRY } from '@/views/share/kindPanelRegistry';
 // Mock every heavy widget so this test stays unit-level.
 //
 // IMPORTANT: mock paths MUST match the import paths in kindPanelRegistry.tsx.
-// If the registry deep-imports a component but the mock targets the barrel (or
-// vice-versa), the mock won't intercept and the component will be undefined.
+// If the mock targets a different module path than the registry imports, the
+// mock won't intercept and the component will be undefined.
 
 const mockAnalysisPanel = vi.fn((_props: Record<string, unknown>) => null);
 const mockShareCandlestickChart = vi.fn(

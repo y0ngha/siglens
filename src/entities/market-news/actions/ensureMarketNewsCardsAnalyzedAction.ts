@@ -9,7 +9,7 @@ import {
     DrizzleMarketNewsRepository,
     isRecentlyFetched,
     markFetched,
-} from '../api';
+} from '@/entities/market-news/api/marketNewsRepository';
 import { getMarketNewsClient } from '../lib/getMarketNewsClient';
 import {
     CATEGORY_CONFIG,

@@ -1,4 +1,4 @@
-import type { SymbolChatState } from '@/features/symbol-chat';
+import type { SymbolChatState } from '@/features/symbol-chat/model/SymbolChatContext';
 import type { FundamentalAnalysisState } from '../hooks/useFundamentalAnalysis';
 
 // 펀더멘털 페이지의 채팅 publish 페이로드.

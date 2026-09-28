@@ -3,7 +3,7 @@ import type {
     FinancialsScorecard,
     FinancialsSnapshot,
 } from '@y0ngha/siglens-core';
-import { getFinancialsSnapshot } from '@/entities/financials-statements';
+import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
 
 /** `/[symbol]/financials` 페이지 렌더에 필요한 데이터 묶음. */
 export interface FinancialsPageData {

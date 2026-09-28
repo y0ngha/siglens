@@ -21,12 +21,12 @@
  */
 
 import { render } from '@testing-library/react';
-import type { ShareableKind } from '@/entities/shared-analysis';
+import type { ShareableKind } from '@/shared/db/constants';
 import { SHAREABLE_KIND_VALUES } from '@/shared/db/constants';
 import { ShareKindPanel } from '@/views/share/ShareKindPanel';
 
 // Mock heavy widget deps so the test stays unit-level.
-// Paths MUST match the imports in kindPanelRegistry.tsx (deep paths, not barrels).
+// Paths MUST match the imports in kindPanelRegistry.tsx (the defining files).
 
 const mockAnalysisPanel = vi.fn((_props: Record<string, unknown>) => null);
 vi.mock('@/widgets/analysis/AnalysisPanel', () => ({

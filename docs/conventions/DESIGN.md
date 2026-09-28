@@ -48,8 +48,11 @@ WCAG **AA(4.5:1)는 하한선이고 목표는 AAA(7:1)**다. 본문·헤딩·보
 |---|---|---|
 | `SURFACE_CARD` · `SURFACE_NESTED` | `shared/lib/surfaceStyles.ts` | 카드·패널, 그 안의 중첩 블록 |
 | `PLACEHOLDER_ON_CARD` · `PLACEHOLDER_ON_INSET` | `shared/lib/surfaceStyles.ts` | 로딩 자리표시자 — **어느 표면 위인지** 보고 고른다 |
-| `HEADING_SECTION` · `HEADING_SUBSECTION` · `LABEL_KO` | `shared/lib/typographyStyles.ts` | h2 · h3 · 한글 라벨 |
+| `HEADING_SECTION` · `HEADING_SUBSECTION` · `LABEL_KO` · `LABEL_GROUP` | `shared/lib/typographyStyles.ts` | h2 · h3 · 한글 라벨 · 목록 묶음 이름표(헤딩 아님 — 헤딩 요소에는 쓰지 않는다) |
 | `CARD_LINK_CLASSES` | `shared/lib/cardStyles.ts` | `Link`로 감싼 카드의 hover·focus |
+| `BUTTON_PRIMARY` · `BUTTON_DANGER` · `BUTTON_OUTLINE` · `BUTTON_OUTLINE_DANGER` · `BUTTON_GHOST` | `shared/lib/buttonStyles.ts` | 버튼·링크 버튼의 **톤**. 높이·패딩·글자 크기는 호출부가 `cn()`으로 덧붙인다. `BUTTON_OUTLINE`의 hover 면이 `secondary-800`이라 같은 색 패널 위에서는 호출부가 `hover:bg-secondary-700`으로 한 단계 올린다 |
+
+`SURFACE_CARD`의 네 토큰을 한 리터럴에 손으로 적으면 `surfaceCardConstantGuard`가 막는다.
 
 컴포넌트가 아니라 **문자열 상수**인 이유: 83곳을 컴포넌트로 감싸면 DOM 구조가 바뀌어
 E2E 로케이터와 SEO 텍스트 위치에 회귀 위험이 생긴다. 클래스만 바꾸면 구조는 그대로다.
@@ -328,15 +331,18 @@ moderate strength     text-ui-warning
 
 ## Brand Color — 소셜 로그인
 
-외부 브랜드가 명시한 색상을 UI 상태 토큰과 분리해 관리한다.
+외부 브랜드가 배경색을 고정한 **고정 표면**(구글 버튼: 두 테마 모두 흰 배경) 위의
+텍스트·경계는 테마 램프 토큰 대신 테마와 무관한 `*-fixed-light-*` 토큰을 쓴다.
 
 ```
---color-brand-kakao: #fee500   (Kakao Yellow)
+--color-on-fixed-light: #16181d        (고정 흰 표면 위 텍스트)
+--color-fixed-light-border: #8e95a1    (흰 카드 위 경계, 3:1)
+--color-fixed-light-hover: #f1f2f5
 ```
 
 **사용처**
 ```
-카카오 소셜 로그인 버튼    bg-brand-kakao
+구글 소셜 로그인 버튼    bg-white text-on-fixed-light hover:bg-fixed-light-hover ring-fixed-light-border
 ```
 
 ---
@@ -370,7 +376,6 @@ Tailwind v4를 사용하므로 별도의 `tailwind.config.ts`(JS 설정) 파일�
     --color-chart-bearish: #ef5350;
     /* MA/EMA, 볼린저, MACD, RSI, DMI, Stochastic, Stochastic RSI, CCI, Ichimoku,
        VWAP, trendline, support/resistance, UI(success/warning/danger) ... */
-    --color-brand-kakao: #fee500;
 }
 ```
 
@@ -508,6 +513,7 @@ className="text-[#1a2b3c]"
 | `semanticTextTokenGuard` | 텍스트에 `chart-*`(그래픽용 3:1) 사용 |
 | `graphicAlphaContrastGuard` | 알파 합성 후 3:1 미달인 그래픽 |
 | `radiusScaleGuard` | 반경 3단계(`rounded` / `rounded-lg` / `rounded-full`) 밖의 값 |
+| `surfaceCardConstantGuard` | `SURFACE_CARD` 토큰 묶음을 상수 대신 리터럴로 복제 |
 | `chartPaletteContrastGuard` · `chartThemeRemountGuard` | 캔버스 팔레트 대비, 테마 전환 시 remount |
 | `sourceScanParity` | 스캐너 자신이 주석을 잘못 보는 것 |
 

@@ -25,11 +25,15 @@ vi.mock('next/navigation', () => ({
     notFound: vi.fn(),
 }));
 
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker/lib/assetClassification', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+}));
+vi.mock('@/entities/ticker/lib/ticker', () => ({
     pickAssetName: (info: { name: string; koreanName?: string }) =>
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn((assetInfo: { name: string }) => assetInfo.name),
+}));
+vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 
@@ -48,7 +52,7 @@ vi.mock('@/app/[locale]/[symbol]/news/newsData', () => ({
     getGradeEvents: vi.fn().mockResolvedValue([]),
 }));
 
-vi.mock('@/entities/news-article', () => ({
+vi.mock('@/entities/news-article/lib/cacheKeys', () => ({
     NEWS_LIST_CACHE_KEY: 'news-list',
 }));
 vi.mock('@/entities/news-article/api', () => ({
@@ -65,7 +69,7 @@ vi.mock('@/widgets/news/NewsAiSummaryErrorBoundary', () => ({
 vi.mock('@/widgets/news/NewsAiSummarySkeleton', () => ({
     NewsAiSummarySkeleton: () => null,
 }));
-vi.mock('@/widgets/news', () => ({
+vi.mock('@/widgets/news/NewsFactsSummary', () => ({
     NewsFactsSummary: () => null,
 }));
 vi.mock('@/widgets/news/sections/NewsList', () => ({
@@ -77,7 +81,7 @@ vi.mock('@/widgets/news/sections/EventCalendar', () => ({
 vi.mock('@/widgets/news/sections/AnalystActions', () => ({
     AnalystActions: () => null,
 }));
-vi.mock('@/views/symbol', () => ({
+vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({
     SymbolPageHeading: ({ children }: { children: unknown }) => children,
 }));
 vi.mock('@/shared/ui/CrossLinkCards', () => ({
@@ -109,9 +113,6 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     SITE_URL: 'https://siglens.io',
 }));
 
-vi.mock('@/shared/lib/dateKey', () => ({
-    todayKstIsoDate: () => '2026-07-24',
-}));
 vi.mock('@/shared/api/fmp/fmpUserMessage', () => ({
     getFmpUserFacingKey: vi.fn().mockReturnValue(null),
     translateFmpError: vi.fn().mockReturnValue(null),
@@ -119,10 +120,10 @@ vi.mock('@/shared/api/fmp/fmpUserMessage', () => ({
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import NewsPage, { generateMetadata } from '@/app/[locale]/[symbol]/news/page';
-import { NewsFactsSummary } from '@/widgets/news';
+import { NewsFactsSummary } from '@/widgets/news/NewsFactsSummary';
 import { NewsSnapshotProse } from '@/views/symbol/snapshot/renderers/NewsSnapshotProse';
 import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
-import { getAssetInfoResilient } from '@/entities/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 
 const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);

@@ -18,15 +18,9 @@ vi.mock('@/shared/api/fmp/httpClient', () => ({
     fmpGet: vi.fn(),
 }));
 
-vi.mock('@/shared/config/time', () => ({
-    MS_PER_HOUR: 3600000,
-}));
-
-import {
-    FmpNewsClient,
-    normalizeFmpPublishedDate,
-    hashUrlToId,
-} from '@/entities/news-article/lib/fmpNewsClient';
+import { FmpNewsClient } from '@/entities/news-article/lib/fmpNewsClient';
+import { normalizeFmpPublishedDate } from '@/shared/api/fmp/normalizeFmpPublishedDate';
+import { hashUrlToId } from '@/shared/lib/news/hashUrlToId';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
 
 const mockFmpGet = fmpGet as ReturnType<typeof vi.fn>;
@@ -62,7 +56,7 @@ describe('FmpNewsClient malformed data handling', () => {
             },
         ]);
 
-        const result = await client.fetchNews('AAPL', '24h');
+        const result = await client.fetchNewsForPeriod('AAPL', 24 * 3600000);
 
         expect(result.length).toBeLessThanOrEqual(2);
         const urls = result.map(r => r.url);
@@ -83,7 +77,7 @@ describe('FmpNewsClient malformed data handling', () => {
             },
         ]);
 
-        const result = await client.fetchNews('AAPL', '24h');
+        const result = await client.fetchNewsForPeriod('AAPL', 24 * 3600000);
 
         expect(result).toEqual([]);
     });
@@ -91,7 +85,10 @@ describe('FmpNewsClient malformed data handling', () => {
     it('handles empty response array', async () => {
         mockFmpGet.mockResolvedValue([]);
 
-        const result = await client.fetchNews('AAPL', '7d');
+        const result = await client.fetchNewsForPeriod(
+            'AAPL',
+            7 * 24 * 3600000
+        );
 
         expect(result).toEqual([]);
     });
@@ -99,29 +96,9 @@ describe('FmpNewsClient malformed data handling', () => {
     it('propagates FMP 4xx/5xx errors', async () => {
         mockFmpGet.mockRejectedValue(new Error('FMP news/stock 500'));
 
-        await expect(client.fetchNews('AAPL', '24h')).rejects.toThrow(
-            'FMP news/stock 500'
-        );
-    });
-
-    it('returns null for earnings when response is empty', async () => {
-        mockFmpGet.mockResolvedValue([]);
-
-        const result = await client.fetchEarningsReport('AAPL');
-
-        expect(result).toBeNull();
-    });
-
-    it('returns null for earnings when date fields are missing', async () => {
-        mockFmpGet.mockResolvedValue([
-            {
-                symbol: 'AAPL',
-            },
-        ]);
-
-        const result = await client.fetchEarningsReport('AAPL');
-
-        expect(result).toBeNull();
+        await expect(
+            client.fetchNewsForPeriod('AAPL', 24 * 3600000)
+        ).rejects.toThrow('FMP news/stock 500');
     });
 
     describe('normalizeFmpPublishedDate', () => {

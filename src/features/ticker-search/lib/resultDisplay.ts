@@ -1,5 +1,5 @@
-import { krExchangeOf } from '@/entities/ticker';
-import { isKrEquitySymbol } from '@/shared/config/marketProfile';
+import { krExchangeOf } from '@/entities/ticker/lib/krExchange';
+import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import type { TickerSearchResult } from '@/shared/lib/types';
 
 /**

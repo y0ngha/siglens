@@ -4,7 +4,7 @@
  * defaults in toSkill), and collectMdFiles child line filtering.
  */
 
-import { FileSkillsLoader } from '@/entities/skill';
+import { FileSkillsLoader } from '@/entities/skill/api';
 
 const { mockReaddir, mockReadFile } = vi.hoisted(() => ({
     mockReaddir: vi.fn(),

@@ -1,4 +1,4 @@
-import { tryGetTickerDatabaseClient } from './db';
+import { tryGetDatabaseClient } from '@/shared/db/client';
 import { DrizzleCryptoAssetRepository } from '../api';
 import { fmpCryptoMembership } from './fmpCryptoMembership';
 import type {
@@ -42,7 +42,7 @@ const cryptoAssetCache = new Map<string, CryptoAssetRecord | null>();
 const cryptoSearchCache = new Map<string, TickerSearchResult[]>();
 
 function tryGetRepository(): CryptoAssetRepository | null {
-    const client = tryGetTickerDatabaseClient();
+    const client = tryGetDatabaseClient();
     if (!client) return null;
     return new DrizzleCryptoAssetRepository(client.db);
 }

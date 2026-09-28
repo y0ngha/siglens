@@ -21,15 +21,15 @@
 |---|---|
 | `DATABASE_URL` | Neon Postgres 연결 (siglens 로컬 Drizzle 클라이언트가 사용) |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth |
-| `KAKAO_REST_API_KEY` / `KAKAO_CLIENT_SECRET` | Kakao OAuth — **현재 비활성**(아래 참조). 어댑터를 다시 등록할 때만 필요 |
 | `OAUTH_REDIRECT_BASE_URL` (없으면 `NEXT_PUBLIC_SITE_URL` fallback) | OAuth 콜백 URL 베이스 |
 | `RESEND_API_KEY` | 비밀번호 재설정 메일 발송용 Resend API key (없으면 noop dispatcher로 fallback) |
 | `EMAIL_FROM` (없으면 `Siglens <noreply@siglens.io>`) | 발신자 표시 |
 
-> **현재 활성화된 provider**: **Google만**. `providers.ts`의 `SUPPORTED_PROVIDERS = ['google']`이며,
-> Kakao 어댑터는 의도적으로 제외돼 있다(코드 주석 명시). siglens-core 의 `OAuthProvider` union 타입은
-> `kakao`·`apple`도 포함하지만 본 앱에서는 비활성. 추후 활성화 시 `providers.ts`의 `SUPPORTED_PROVIDERS`
-> 와 `ADAPTERS`, `SocialLoginButtons` 의 PROVIDERS 배열에 추가하면 된다.
+> **지원 provider**: **Google만**. `providers.ts`의 `SUPPORTED_PROVIDERS = ['google']`.
+> Kakao OAuth 코드(어댑터·revoker·버튼)는 삭제됐다. `OAuthProvider` 타입과 DB `oauth_provider` enum에는
+> `kakao`·`apple`이 남아 있는데, 이는 DB enum 값의 미러일 뿐이다 — 2026-04-30~05-03 사이 master에 Kakao가
+> 활성화된 적이 있어 `kakao` 행이 없다고 증명할 수 없으므로 enum 값을 지우지 않았다. 새 provider를 추가하려면
+> 어댑터를 만들고 `SUPPORTED_PROVIDERS`·`ADAPTERS`·`SocialLoginButtons`의 PROVIDERS 배열에 등록한다.
 
 ## 파일 맵
 
@@ -55,13 +55,11 @@ src/entities/auth/                   (entities/session + entities/user 병합 �
     confirmPasswordReset.ts  비밀번호 재설정 실행
   actions/
     currentUserAction.ts     'use server' wrapper — useCurrentUser용
-    cleanupExpiredSessionsAction.ts  만료 세션 정리
 
 src/entities/oauth-account/
   lib/
     revoker.ts               OAuth token revoker 인터페이스
     googleRevoker.ts          Google OAuth token revocation
-    kakaoRevoker.ts           Kakao OAuth token revocation
     pendingOAuthSignupStore.ts  OAuth 가입 대기 상태 저장소
 
 src/entities/email-token/
@@ -104,7 +102,6 @@ src/features/auth-oauth/
     state.ts               issueOAuthState / verifyOAuthState (HttpOnly 쿠키 5분 TTL, timing-safe 비교)
     providers.ts            provider id → adapter map, isOAuthProvider, buildOAuthRedirectUri
     google.ts               Google OIDC 어댑터 (token + userinfo)
-    kakao.ts                Kakao OAuth 2.0 어댑터 (kapi.kakao.com) — 현재 SUPPORTED_PROVIDERS/ADAPTERS에서 제외(비활성)
   actions/
     cancelOAuthSignupAction.ts  OAuth 가입 취소
 
@@ -190,7 +187,7 @@ phase 전이는 `useEffect`로 setState하지 않고 useActionState의 결과를
    → deleteAccount({ userId }, { users, oauthAccounts, oauthRevoker }, { secureCookie })
        ⤳ provider별 OAuth token revoke + user 행 삭제 (sessions·oauth_accounts 는 FK CASCADE)
    → cookies().set(applyAuthCookie(expiredCookie))
-   → redirect('/?account_deleted=1')
+   → redirect('/')
 ```
 
 가드 전략은 다른 회원 전용 페이지와 동일하다. proxy.ts는 변경하지 않으며, RSC가
@@ -267,7 +264,6 @@ deleteAccount use-case가 OAuth provider unlink까지 함께 처리한다(`oauth
 
 provider별 정책:
 - **Google** — OIDC scope `openid email profile`. userinfo endpoint 사용. (현재 유일한 활성 provider)
-- **Kakao** *(현재 비활성)* — 재활성화 시: scope `account_email profile_nickname profile_image`. `kapi.kakao.com/v2/user/me`. `KAKAO_CLIENT_SECRET`은 카카오 개발자 콘솔에서 발급한 경우에만 전달.
 
 ### Header 사용자 표시
 

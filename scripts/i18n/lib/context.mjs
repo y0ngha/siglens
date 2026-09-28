@@ -21,7 +21,7 @@ function isComponentFunction(node) {
  * 변수 선언에 붙은 화살표 함수(`const Foo = () => …`)도 컴포넌트로 인정한다 —
  * 이 레포에 두 형태가 섞여 있다.
  */
-export function enclosingComponent(parents) {
+function enclosingComponent(parents) {
     for (let i = parents.length - 1; i >= 0; i -= 1) {
         const node = parents[i];
         if (node.type === 'FunctionDeclaration' && isComponentFunction(node)) {

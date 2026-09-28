@@ -39,19 +39,29 @@ const { FIXTURE_ROW, mockGetMarketNewsList } = vi.hoisted(() => {
         mockGetMarketNewsList: vi.fn(async () => [row]),
     };
 });
-vi.mock('../api', () => ({
+vi.mock('@/entities/market-news/api/marketNewsRepository', () => ({
     getMarketNewsList: mockGetMarketNewsList,
 }));
 
 // isEnrichedRow / toEnrichedNewsItem / selectAggregateNewsItems — pass-through,
 // identical to submitMarketNewsDigestAction.test.ts: this file tests the peek's
 // options parity with the run path, not the row → EnrichedNewsItem mapping.
-vi.mock('@/entities/news-article', async orig => ({
-    ...(await orig()),
+vi.mock('@/entities/news-article/lib/newsEnrichment', async importOriginal => ({
+    ...(await importOriginal<
+        typeof import('@/entities/news-article/lib/newsEnrichment')
+    >()),
     isEnrichedRow: vi.fn(() => true),
     toEnrichedNewsItem: vi.fn((row: unknown) => row),
-    selectAggregateNewsItems: vi.fn((items: unknown[]) => items),
 }));
+vi.mock(
+    '@/entities/news-article/lib/newsAnalysisSelection',
+    async importOriginal => ({
+        ...(await importOriginal<
+            typeof import('@/entities/news-article/lib/newsAnalysisSelection')
+        >()),
+        selectAggregateNewsItems: vi.fn((items: unknown[]) => items),
+    })
+);
 
 // 2. 정적 import — vi.mock 선언 이후에 배치한다.
 import { describe, it, expect, vi, beforeEach } from 'vitest';

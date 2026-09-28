@@ -14,7 +14,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 let lastDefaultSymbol: string | undefined;
-vi.mock('@/features/portfolio-management', () => ({
+vi.mock('@/features/portfolio-management/ui/PortfolioSection', () => ({
     PortfolioSection: ({
         defaultSymbol,
         onHoldingsChange,

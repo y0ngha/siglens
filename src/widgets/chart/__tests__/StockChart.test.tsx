@@ -5,6 +5,8 @@ import type { Bar, ChartOverlay } from '@y0ngha/siglens-core';
 import { StockChart } from '@/widgets/chart/StockChart';
 import { INACTIVE_PANE_INDEX, STORAGE_KEYS } from '@/widgets/chart/constants';
 import { useChartOverlays } from '@/widgets/chart/hooks/useChartOverlays';
+import { useLinePaneChart } from '@/widgets/chart/hooks/useLinePaneChart';
+import { LINE_PANE_SPECS } from '@/widgets/chart/model/linePaneSpecs';
 
 const INACTIVE_PANES = Object.fromEntries(
     [
@@ -199,8 +201,8 @@ vi.mock('@/widgets/chart/hooks/useMACDChart', () => ({
     useMACDChart: vi.fn(),
 }));
 
-vi.mock('@/widgets/chart/hooks/useRSIChart', () => ({
-    useRSIChart: vi.fn(),
+vi.mock('@/widgets/chart/hooks/useLinePaneChart', () => ({
+    useLinePaneChart: vi.fn(),
 }));
 
 vi.mock('@/widgets/chart/hooks/useDMIChart', () => ({
@@ -213,62 +215,6 @@ vi.mock('@/widgets/chart/hooks/useStochasticChart', () => ({
 
 vi.mock('@/widgets/chart/hooks/useStochRSIChart', () => ({
     useStochRSIChart: vi.fn(),
-}));
-
-vi.mock('@/widgets/chart/hooks/useCCIChart', () => ({
-    useCCIChart: vi.fn(),
-}));
-
-vi.mock('@/widgets/chart/hooks/useMfiChart', () => ({
-    useMfiChart: vi.fn(),
-}));
-
-vi.mock('@/widgets/chart/hooks/useWilliamsRChart', () => ({
-    useWilliamsRChart: vi.fn(),
-}));
-
-vi.mock('@/widgets/chart/hooks/useConnorsRsiChart', () => ({
-    useConnorsRsiChart: vi.fn(),
-}));
-
-vi.mock('@/widgets/chart/hooks/useCmfChart', () => ({
-    useCmfChart: vi.fn(),
-}));
-
-vi.mock('@/widgets/chart/hooks/useBollingerPercentBChart', () => ({
-    useBollingerPercentBChart: vi.fn(),
-}));
-
-vi.mock('@/widgets/chart/hooks/useHurstChart', () => ({
-    useHurstChart: vi.fn(),
-}));
-
-vi.mock('@/widgets/chart/hooks/useVarianceRatioChart', () => ({
-    useVarianceRatioChart: vi.fn(),
-}));
-
-vi.mock('@/widgets/chart/hooks/useMacdVChart', () => ({
-    useMacdVChart: vi.fn(),
-}));
-
-vi.mock('@/widgets/chart/hooks/useForceIndexChart', () => ({
-    useForceIndexChart: vi.fn(),
-}));
-
-vi.mock('@/widgets/chart/hooks/useObvChart', () => ({
-    useObvChart: vi.fn(),
-}));
-
-vi.mock('@/widgets/chart/hooks/useAtrChart', () => ({
-    useAtrChart: vi.fn(),
-}));
-
-vi.mock('@/widgets/chart/hooks/useYangZhangChart', () => ({
-    useYangZhangChart: vi.fn(),
-}));
-
-vi.mock('@/widgets/chart/hooks/useEwmaVolatilityChart', () => ({
-    useEwmaVolatilityChart: vi.fn(),
 }));
 
 vi.mock('@/widgets/chart/hooks/useElderRayChart', () => ({
@@ -423,7 +369,10 @@ vi.mock('@/widgets/chart/utils/overlayLabelUtils', () => ({
     buildOverlayLabelConfigs: () => [],
 }));
 
-vi.mock('@y0ngha/siglens-core', () => ({
+// 차트 스펙 테이블(`linePaneSpecs`)이 로드 시점에 core 기준선 상수를 읽으므로
+// 실제 모듈 위에 필요한 것만 덮는다.
+vi.mock('@y0ngha/siglens-core', async importOriginal => ({
+    ...(await importOriginal<typeof import('@y0ngha/siglens-core')>()),
     isClaudeAdaptiveModelSpec: (s: { thinkingApi?: string }) =>
         s.thinkingApi === 'adaptive',
     isClaudeBudgetModelSpec: (s: { thinkingApi?: string }) =>
@@ -560,6 +509,38 @@ describe('StockChart', () => {
         render(<StockChart bars={[]} timeframe="1Day" />);
 
         expect(screen.getByText('차트 데이터가 없습니다')).toBeInTheDocument();
+    });
+
+    it('단일 선 패인 지표마다 자기 스펙·가시성·패인 인덱스로 useLinePaneChart를 부른다', () => {
+        // 키마다 다른 값을 줘야 두 지표의 배선이 뒤바뀐 것도 잡힌다.
+        const keys = Object.keys(LINE_PANE_SPECS) as Array<
+            keyof typeof LINE_PANE_SPECS
+        >;
+        mockUseIndicatorVisibility.mockReturnValue({
+            visible: {
+                ...DEFAULT_VISIBLE,
+                ...Object.fromEntries(keys.map((k, i) => [k, i % 2 === 0])),
+            },
+            toggle: mockToggle,
+            paneIndices: {
+                ...INACTIVE_PANES,
+                ...Object.fromEntries(keys.map((k, i) => [k, i + 1])),
+            },
+        });
+        render(<StockChart bars={mockBars} timeframe="1Day" />);
+
+        const calls = vi
+            .mocked(useLinePaneChart)
+            .mock.calls.map(([params]) => params);
+        keys.forEach((key, i) => {
+            const call = calls.find(
+                params => params.spec === LINE_PANE_SPECS[key]
+            );
+            expect(call, key).toMatchObject({
+                isVisible: i % 2 === 0,
+                paneIndex: i + 1,
+            });
+        });
     });
 
     it('creates a chart when bars are provided', () => {

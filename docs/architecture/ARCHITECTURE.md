@@ -46,8 +46,8 @@ entities       ← shared import 가능. entities 간 cross-import 허용
 features       ← entities, shared import 가능. features 간 cross-import 허용
                  (auth-signup → auth-email-verification 등).
 
-widgets        ← features, entities, shared import 가능. widgets 간 cross-import 허용
-                 (symbol-page가 chart/analysis/fear-greed 위젯 조합).
+widgets        ← features, entities, shared import 가능. widgets 간 import 금지
+                 (`src/__tests__/guards/noCrossWidgetImports.test.ts`).
 
 pages          ← widgets, features, entities, shared import 가능.
 
@@ -65,10 +65,17 @@ app            ← pages, widgets, features, entities, shared import 가능.
 
 `technicalindicators` 같은 일반 외부 라이브러리는 shared에서만 wrapping 가능.
 
+**barrel 금지 — 정의 파일에서 직접 import**
+
+`index.ts`/`index.tsx` barrel은 만들지 않는다. 모든 import(테스트와 `vi.mock` 경로 포함)는
+심볼을 **정의한 파일**을 가리킨다. barrel은 re-export가 쌓이기만 해서 걷어내기 어렵고,
+server-only 모듈을 client 번들로 끌고 오는 누출 경로가 된다.
+`src/__tests__/guards/noBarrelFiles.test.ts`가 `src/` 아래 `index.ts(x)`를 금지한다.
+
 **위반 예시 (절대 금지)**
 ```typescript
-// ❌ widgets에서 entity internal path 직접 import
-import { loginUser } from '@/entities/auth/lib/loginUser'; // 금지 — barrel로만
+// ❌ barrel(슬라이스 루트) import — barrel은 존재하지 않는다
+import { loginUser } from '@/entities/auth';
 
 // ❌ siglens-core deep import
 import { calculateBollinger } from '@y0ngha/siglens-core/dist/domain/indicators/bollinger'; // 금지
@@ -80,9 +87,9 @@ import { calculateBollinger } from '@y0ngha/siglens-core/dist/domain/indicators/
 import { detectCandlePatternEntries, RSI_OVERBOUGHT_LEVEL } from '@y0ngha/siglens-core';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 
-// ✅ features에서 entity barrel import (server-only 제외 항목은 deep import)
-import { loginUser } from '@/entities/auth';
-import { DrizzleUserRepository } from '@/entities/auth/api'; // server-only → deep import
+// ✅ 정의 파일에서 직접 import
+import { loginUser } from '@/entities/auth/lib/loginUser';
+import { DrizzleUserRepository } from '@/entities/auth/api'; // server-only — 서버 소비자만
 ```
 
 **순환 의존성 금지**
@@ -103,8 +110,7 @@ import { DrizzleUserRepository } from '@/entities/auth/api'; // server-only → 
 ├── skills
 └── src
     ├── __tests__
-    │   ├── fixtures/     # 공유 test fixture (jsonResponse 등)
-    │   └── utils/        # 공유 test utility (makeFormData, readBlobText 등)
+    │   └── utils/        # 공유 test utility (공용 헬퍼는 src/shared/test-utils/)
     ├── app               # Next.js App Router (composition root)
     │   ├── [symbol]
     │   ├── account
@@ -189,7 +195,8 @@ import { DrizzleUserRepository } from '@/entities/auth/api'; // server-only → 
 ```
 
 > 각 슬라이스(entity, feature, widget)는 `__tests__/` 서브폴더에 테스트를 colocate한다.
-> 공유 테스트 fixture/utility만 `src/__tests__/fixtures/`, `src/__tests__/utils/`에 위치.
+> 공유 테스트 fixture/utility는 `src/__tests__/utils/`(테스트 전용 헬퍼)와
+> `src/shared/test-utils/`(렌더 래퍼 등)에 위치.
 
 ---
 
@@ -224,7 +231,7 @@ import { DrizzleUserRepository } from '@/entities/auth/api'; // server-only → 
 
 ```
 재분석 버튼 클릭 (또는 자동 트리거)
-  → useAnalysis 훅 → POST /api/analysis/stream (SSE, shared/hooks/useAnalysisStream)
+  → useAnalysis 훅 → POST /api/analysis/stream (SSE, shared/lib/sse/runAnalysisStream)
     → 라우트가 tier/BYOK 게이트 + 봇 판정 + 포지션 버킷 해석
     → 재분석 쿨다운(Redis) 획득 여부로 force 파생 — 클라이언트는 의도만 보낸다
     → @y0ngha/siglens-core `runAnalysis` (요청 안에서 블로킹)

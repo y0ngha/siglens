@@ -1,12 +1,11 @@
-import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
-import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
+import { resolveLocale } from '@/shared/i18n/locales';
 import {
     localeAlternatesFrom,
-    localeOpenGraph,
+    localePageSocial,
     localeRobots,
 } from '@/shared/lib/seoAlternates';
-import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
@@ -23,6 +22,7 @@ import { buildSymbolDirectory } from '@/shared/lib/symbolDirectory';
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { loadSymbolNames } from './loadSymbolNames';
+import { enterLocale } from '@/shared/lib/enterLocale';
 
 /**
  * 종목 디렉터리 — **내부 링크 고아를 없애는 페이지**다.
@@ -43,7 +43,7 @@ export const revalidate = 86400; // 24h — 이름 캐시 TTL과 같다
 
 const PATH = SYMBOLS_PATH;
 
-export function symbolsTitle(t: SeoTranslator): string {
+function symbolsTitle(t: SeoTranslator): string {
     return t('symbols.title');
 }
 
@@ -51,7 +51,7 @@ function symbolsFullTitle(t: SeoTranslator): string {
     return `${symbolsTitle(t)} | ${SITE_NAME}`;
 }
 
-export function symbolsDescription(t: SeoTranslator): string {
+function symbolsDescription(t: SeoTranslator): string {
     return clampSeoDescription(t('symbols.description'));
 }
 
@@ -60,10 +60,10 @@ export async function generateMetadata({
 }: {
     readonly params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
-    const { locale } = await params;
-    const resolvedLocale = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const { locale: rawLocale } = await params;
+    const locale = resolveLocale(rawLocale);
     const tSeo = await getTranslations({
-        locale: resolvedLocale,
+        locale,
         namespace: 'shared.seo',
     });
     return {
@@ -73,32 +73,15 @@ export async function generateMetadata({
         // URL을 만든다(ko 절대 URL을 넘기면 `/en/…`이 ko를 가리켜 hreflang 상호참조가
         // 깨진다).
         alternates: await localeAlternatesFrom(params, PATH),
-        robots: localeRobots(resolvedLocale),
-        openGraph: {
-            type: 'website',
-            siteName: SITE_NAME,
+        robots: localeRobots(locale),
+        // 소셜 카드는 `localePageSocial`로 통째로 선언한다 — `og:url`이 canonical과
+        // 같은 로케일별 URL이 되고(`/en/symbols`가 ko URL을 가리키지 않게), 정적
+        // `/og-image.png`도 함께 실린다(2026-09-18 실측: 이 라우트만 `og:image`가
+        // 없었다 — 이미지를 아예 안 주면 공유 카드가 텅 빈 채로 나간다).
+        ...localePageSocial(locale, PATH, {
             title: symbolsFullTitle(tSeo),
             description: symbolsDescription(tSeo),
-            url: `${SITE_URL}${PATH}`,
-            ...localeOpenGraph(resolvedLocale),
-            // 정적 이미지를 쓴다 — 이 페이지에는 종목별 동적 OG를 만들 근거가 없고,
-            // 이미지를 아예 안 주면 공유 카드가 텅 빈 채로 나간다(2026-09-18 실측:
-            // 이 라우트만 `og:image`가 없었다).
-            images: [
-                {
-                    url: '/og-image.png',
-                    width: OG_IMAGE_WIDTH,
-                    height: OG_IMAGE_HEIGHT,
-                    alt: symbolsFullTitle(tSeo),
-                },
-            ],
-        },
-        twitter: {
-            card: 'summary_large_image',
-            title: symbolsFullTitle(tSeo),
-            description: symbolsDescription(tSeo),
-            images: ['/og-image.png'],
-        },
+        }),
     };
 }
 
@@ -107,11 +90,8 @@ export default async function SymbolsDirectoryPage({
 }: {
     readonly params: Promise<{ locale: string }>;
 }) {
-    const { locale } = await params;
-    // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
-    // 폴백해 이 라우트의 ISR이 통째로 꺼진다(다른 정적 라우트와 같은 이유).
-    setRequestLocale(locale);
-    const resolvedLocale = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const { locale: rawLocale } = await params;
+    const locale = enterLocale(rawLocale);
     const [t, tNav, tSeo] = await Promise.all([
         getTranslations('app.symbols'),
         getTranslations(),
@@ -122,7 +102,7 @@ export default async function SymbolsDirectoryPage({
     // 빈 맵이 와서 티커만 찍힌다 — 링크는 어떤 경우에도 남는다.
     const names = await loadSymbolNames(
         [...POPULAR_TICKERS, ...POPULAR_CRYPTOS],
-        resolvedLocale
+        locale
     );
     const sections = buildSymbolDirectory(names);
 
@@ -130,7 +110,7 @@ export default async function SymbolsDirectoryPage({
         url: `${SITE_URL}${PATH}`,
         name: symbolsFullTitle(tSeo),
         description: symbolsDescription(tSeo),
-        locale: resolvedLocale,
+        locale,
     });
     // 브레드크럼·h1은 짧은 제목을 쓴다. `<title>`의 자산군 꼬리표
     // (`— 미국·한국 주식과 암호화폐`)는 검색 결과용이라 화면에 반복하면 군더더기고,
@@ -139,7 +119,7 @@ export default async function SymbolsDirectoryPage({
     const heading = t('page.heading');
     const breadcrumbJsonLd = buildBreadcrumbJsonLd(
         [{ name: heading, url: `${SITE_URL}${PATH}` }],
-        resolvedLocale
+        locale
     );
 
     return (

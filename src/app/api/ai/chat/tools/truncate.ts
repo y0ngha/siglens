@@ -32,7 +32,7 @@ export const AGGREGATE_RESULT_MAX_CHARS = 6_000;
  * UTF-16 and corrupts downstream JSON/text handling for emoji or rare CJK
  * extension characters carried in news/article text).
  */
-export function safeSliceUtf16(text: string, maxChars: number): string {
+function safeSliceUtf16(text: string, maxChars: number): string {
     if (maxChars <= 0) return '';
     const cut = text.slice(0, maxChars);
     const lastCode = cut.charCodeAt(cut.length - 1);

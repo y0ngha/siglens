@@ -1,10 +1,11 @@
 import { useTranslations } from 'next-intl';
-import { EmptySectionCard } from './EmptySectionCard';
+import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import type { FundamentalRatiosInput } from '@y0ngha/siglens-core';
 import type { CSSProperties, ReactNode } from 'react';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 const HEADING_ID = 'profitability-heading';
 const HEADING_CLASS_NAME = cn('mb-2', HEADING_SECTION);
@@ -78,7 +79,7 @@ export function ProfitabilityCard({ ratios }: ProfitabilityCardProps) {
     return (
         <section
             aria-labelledby={HEADING_ID}
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+            className={cn(SURFACE_CARD, 'p-6')}
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 {t('ProfitabilityCard.83c700')}

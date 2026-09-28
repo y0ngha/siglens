@@ -3,7 +3,7 @@ vi.mock('@/widgets/chat/FloatingChatButton', () => ({
         <button data-testid="chat-button">{symbol}</button>
     ),
 }));
-vi.mock('@/features/symbol-chat', () => ({
+vi.mock('@/features/symbol-chat/model/SymbolChatContext', () => ({
     SymbolChatProvider: ({ children }: { children: React.ReactNode }) => (
         <div data-testid="chat-provider">{children}</div>
     ),

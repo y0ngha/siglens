@@ -181,4 +181,38 @@ describe('usePwaInstall', () => {
         });
         expect(result.current.showBanner).toBe(true);
     });
+
+    /**
+     * 회귀: 방아쇠 두 개(`pointerdown`, `keydown`)가 각자 `once`로 걸려 있으면
+     * 한쪽이 배너를 띄우고 사용자가 닫은 뒤에도 다른 쪽이 남아 배너를 다시 띄웠다.
+     * 어느 쪽이든 먼저 발화하면 모든 방아쇠를 해제해야 한다.
+     */
+    it('pointerdown으로 뜬 배너를 닫은 뒤 keydown이 배너를 다시 띄우지 않는다', () => {
+        const { result } = renderHook(() => usePwaInstall());
+        act(() => {
+            window.dispatchEvent(new Event('pointerdown'));
+        });
+        expect(result.current.showBanner).toBe(true);
+        act(() => {
+            result.current.handleDismiss();
+        });
+        act(() => {
+            window.dispatchEvent(new Event('keydown'));
+        });
+        expect(result.current.showBanner).toBe(false);
+    });
+
+    it('keydown으로 뜬 배너를 닫은 뒤 pointerdown이 배너를 다시 띄우지 않는다', () => {
+        const { result } = renderHook(() => usePwaInstall());
+        act(() => {
+            window.dispatchEvent(new Event('keydown'));
+        });
+        act(() => {
+            result.current.handleDismiss();
+        });
+        act(() => {
+            window.dispatchEvent(new Event('pointerdown'));
+        });
+        expect(result.current.showBanner).toBe(false);
+    });
 });

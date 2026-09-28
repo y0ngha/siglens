@@ -71,7 +71,9 @@ vi.mock('@/widgets/chart/hooks/useBollingerOverlay', () => ({
 vi.mock('@/widgets/chart/hooks/useMACDChart', () => ({
     useMACDChart: vi.fn(),
 }));
-vi.mock('@/widgets/chart/hooks/useRSIChart', () => ({ useRSIChart: vi.fn() }));
+vi.mock('@/widgets/chart/hooks/useLinePaneChart', () => ({
+    useLinePaneChart: vi.fn(),
+}));
 vi.mock('@/widgets/chart/hooks/useDMIChart', () => ({ useDMIChart: vi.fn() }));
 vi.mock('@/widgets/chart/hooks/useStochasticChart', () => ({
     useStochasticChart: vi.fn(),
@@ -79,7 +81,6 @@ vi.mock('@/widgets/chart/hooks/useStochasticChart', () => ({
 vi.mock('@/widgets/chart/hooks/useStochRSIChart', () => ({
     useStochRSIChart: vi.fn(),
 }));
-vi.mock('@/widgets/chart/hooks/useCCIChart', () => ({ useCCIChart: vi.fn() }));
 vi.mock('@/widgets/chart/hooks/useVolumeProfileOverlay', () => ({
     useVolumeProfileOverlay: () => ({ isVisible: false, toggle: vi.fn() }),
 }));
@@ -155,7 +156,10 @@ vi.mock('@/widgets/chart/utils/overlayLabelUtils', () => ({
     buildOverlayLabelConfigs: () => [],
 }));
 
-vi.mock('@y0ngha/siglens-core', () => ({
+// 차트 스펙 테이블(`linePaneSpecs`)이 로드 시점에 core 기준선 상수를 읽으므로
+// 실제 모듈 위에 필요한 것만 덮는다.
+vi.mock('@y0ngha/siglens-core', async importOriginal => ({
+    ...(await importOriginal<typeof import('@y0ngha/siglens-core')>()),
     isClaudeAdaptiveModelSpec: (s: { thinkingApi?: string }) =>
         s.thinkingApi === 'adaptive',
     isClaudeBudgetModelSpec: (s: { thinkingApi?: string }) =>

@@ -1,20 +1,16 @@
 import { getTranslations } from 'next-intl/server';
 import { localeCanonical } from '@/shared/lib/seoAlternates';
 import type { Metadata } from 'next';
-import {
-    DEFAULT_LOCALE,
-    isLocale,
-    localePath,
-    type Locale,
-} from '@/shared/i18n/locales';
-import { setRequestLocale } from 'next-intl/server';
+import { localePath, type Locale, resolveLocale } from '@/shared/i18n/locales';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
-import { DeleteAccountConfirm } from '@/features/account-delete';
+import { Spinner } from '@/shared/ui/Spinner';
+import { DeleteAccountConfirm } from '@/features/account-delete/ui/DeleteAccountConfirm';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { SITE_NAME } from '@/shared/lib/seo';
+import { enterLocale } from '@/shared/lib/enterLocale';
 
 // noindex 페이지에도 canonical/og:url을 명시한다 (login/signup 정책과 일관).
 /**
@@ -27,17 +23,17 @@ export async function generateMetadata({
 }: {
     readonly params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
-    const { locale } = await params;
-    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const { locale: rawLocale } = await params;
+    const locale = resolveLocale(rawLocale);
     const tSeo = await getTranslations({
-        locale: resolved,
+        locale,
         namespace: 'shared.seo',
     });
     return {
         title: tSeo('accountDeleteTitle'),
         description: tSeo('accountDeleteFullTitle', { v0: SITE_NAME }),
-        alternates: { canonical: localeCanonical(resolved, '/account/delete') },
-        openGraph: { url: localeCanonical(resolved, '/account/delete') },
+        alternates: { canonical: localeCanonical(locale, '/account/delete') },
+        openGraph: { url: localeCanonical(locale, '/account/delete') },
         robots: { index: false, follow: false },
     };
 }
@@ -62,11 +58,7 @@ export default async function DeleteAccountPage({
     readonly params: Promise<{ locale: string }>;
 }) {
     const { locale: rawLocale } = await params;
-    const locale = isLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
-    // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
-    // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
-    // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
-    setRequestLocale(locale);
+    const locale = enterLocale(rawLocale);
     const t = await getTranslations('app.account');
     return (
         <AuthCardShell
@@ -96,10 +88,7 @@ export default async function DeleteAccountPage({
                         aria-live="polite"
                         className="flex items-center justify-center gap-2 py-6"
                     >
-                        <span
-                            aria-hidden="true"
-                            className="h-3 w-3 animate-spin rounded-full border-2 border-secondary-500 border-t-transparent"
-                        />
+                        <Spinner size="sm" tone="muted" />
                         <span className="text-xs text-secondary-400">
                             {t('page.109043')}
                         </span>

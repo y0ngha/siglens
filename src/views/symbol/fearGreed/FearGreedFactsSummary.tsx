@@ -21,6 +21,8 @@ import {
     scoredHistory,
 } from './utils/fearGreedFacts';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
 interface FearGreedFactsSummaryProps {
     symbol: string;
@@ -52,12 +54,18 @@ export function FearGreedFactsSummary({
     const tFacts = useTranslations('views.symbol.fearGreedFacts');
     const tFactor = useTranslations('shared.lib.fearGreedFactor');
     const tFearGreed = useTranslations('shared.lib.fearGreed');
+    const locale = useResolvedLocale();
     const headingId = useId();
     const snapshot = computeFearGreedIndex(bars, buySellVolume);
     if (!snapshot) return null;
 
     const score = Math.round(snapshot.score);
-    const factorLines = buildFearGreedFactorLines(snapshot, tFacts, tFactor);
+    const factorLines = buildFearGreedFactorLines(
+        snapshot,
+        tFacts,
+        tFactor,
+        locale
+    );
     // audit fix FIX 6 (option b): genuinely per-symbol narrative sentences
     // built from group scores / factor ranking (numbers that already exist
     // in `snapshot` but were unused) — materially improves the
@@ -89,9 +97,7 @@ export function FearGreedFactsSummary({
     // "종가 기준 vs 실시간"으로 읽힌다. 크롤 텍스트에 날짜가 들어가는 부수 효과도 있다.
     const asOf = bars.at(-1)?.time;
     const asOfLabel =
-        asOf === undefined
-            ? null
-            : new Date(asOf * 1000).toISOString().slice(0, 10);
+        asOf === undefined ? null : toUtcIsoDate(new Date(asOf * 1000));
 
     const points = scoredHistory(computeFearGreedHistory(bars, buySellVolume));
     const timeSeriesLines = [

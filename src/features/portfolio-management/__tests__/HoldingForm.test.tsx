@@ -1,13 +1,13 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HoldingForm } from '@/features/portfolio-management/ui/HoldingForm';
-import type { PortfolioHoldingView } from '@/entities/portfolio';
+import type { PortfolioHoldingView } from '@/entities/portfolio/model';
 
 // TickerAutocomplete pulls in useTickerSearch (react-query + a server action) which
 // is unrelated to what this suite verifies (symbol selection wiring). Stub it with a
 // plain uncontrolled input that "selects" on blur (mirrors picking a dropdown result),
 // matching the real component's onSelect contract.
-vi.mock('@/features/ticker-search', () => ({
+vi.mock('@/features/ticker-search/ui/TickerAutocomplete', () => ({
     TickerAutocomplete: ({
         onSelect,
     }: {

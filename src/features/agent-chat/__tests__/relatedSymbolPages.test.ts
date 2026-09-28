@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { ToolActivityItem } from '@/features/agent-chat';
-import { relatedSymbolPages } from '@/features/agent-chat';
+import type { ToolActivityItem } from '@/features/agent-chat/model/types';
+import { relatedSymbolPages } from '@/features/agent-chat/lib/relatedSymbolPages';
 
 const tool = (
     name: string,

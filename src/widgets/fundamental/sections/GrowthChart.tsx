@@ -1,8 +1,10 @@
 import { useTranslations } from 'next-intl';
 import type { FundamentalGrowthInput } from '@y0ngha/siglens-core';
-import { EmptySectionCard } from './EmptySectionCard';
+import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
 import { cn } from '@/shared/lib/cn';
+import { formatSignedPercent } from '@/shared/lib/priceFormat';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 const HEADING_ID = 'growth-heading';
 const HEADING_CLASS_NAME = cn('mb-2', HEADING_SECTION);
@@ -20,8 +22,7 @@ interface GrowthBarProps {
 /** Inline SVG bar for a single growth metric. Positive = green, negative = red; clamps at ±100%. */
 function GrowthBar({ label, value, description }: GrowthBarProps) {
     const pct = value !== null ? value * 100 : null;
-    const formattedPct =
-        pct !== null ? `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%` : '—';
+    const formattedPct = pct !== null ? formatSignedPercent(pct) : '—';
 
     const fillAbs = pct !== null ? Math.min(100, Math.abs(pct)) : 0;
     const isPositive = pct !== null ? pct >= 0 : true;
@@ -108,7 +109,7 @@ export function GrowthChart({ growth }: GrowthChartProps) {
     return (
         <section
             aria-labelledby={HEADING_ID}
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+            className={cn(SURFACE_CARD, 'p-6')}
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 {t('GrowthChart.9b388e')}

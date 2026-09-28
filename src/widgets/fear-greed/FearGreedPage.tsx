@@ -6,13 +6,13 @@ import { useFearGreedFromSymbol } from './hooks/useFearGreedFromSymbol';
 import { FearGreedHero } from './FearGreedHero';
 import { FearGreedComparisonGauges } from './FearGreedComparisonGauges';
 import { FearGreedGroupBar } from './FearGreedGroupBar';
-import { FearGreedHistoricalChart } from '@/widgets/chart/FearGreedHistoricalChart';
+import { FearGreedHistoricalChart } from '@/widgets/fear-greed/FearGreedHistoricalChart';
 import { SelfNormWarningBadge } from './SelfNormWarningBadge';
 import { confidenceLabelKey } from '@/shared/lib/fearGreedLabels';
-import { usePublishSymbolChat } from '@/features/symbol-chat';
+import { usePublishSymbolChat } from '@/features/symbol-chat/hooks/useSymbolChat';
 import { buildChatState } from './utils/buildChatState';
 import { useHydrated } from '@/shared/hooks/useHydrated';
-import { useRegisterShareable } from '@/features/share';
+import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface FearGreedPageProps {
@@ -23,7 +23,7 @@ interface FearGreedPageProps {
      *
      * `/[symbol]/fear-greed`는 이 컴포넌트 **위에** 서버 렌더된
      * `FearGreedFactsSummary`를 함께 그리고, 거기에 이미 같은 문구
-     * (`WARNING_TEXT`)가 문단으로 들어간다. 둘 다 그리면 하이드레이션 뒤
+     * (`WARNING_TEXT_KEY`)가 문단으로 들어간다. 둘 다 그리면 하이드레이션 뒤
      * 같은 90자 문장이 DOM에 두 번 남고 스크린리더도 두 번 읽는다.
      *
      * 서버 쪽을 지울 수는 없다 — 이 컴포넌트는 `useHydrated` 게이트라

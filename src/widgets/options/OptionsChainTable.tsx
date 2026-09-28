@@ -9,9 +9,10 @@ import {
 } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { OpenInterestTooltip } from './utils/optionsTooltips';
-import { findNearestStrikeIndex } from '@/entities/options-chain';
+import { findNearestStrikeIndex } from '@/entities/options-chain/lib/findNearestStrike';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
 import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 const numberFormatter = new Intl.NumberFormat('en-US');
 
@@ -109,7 +110,12 @@ export function OptionsChainTable({
 
     if (!chain || totalContracts === 0) {
         return (
-            <div className="flex w-full items-center justify-between rounded-lg border border-secondary-700 bg-secondary-800 p-4">
+            <div
+                className={cn(
+                    SURFACE_CARD,
+                    'flex w-full items-center justify-between p-4'
+                )}
+            >
                 <span className="text-sm text-secondary-400">
                     {t('OptionsChainTable.1b9687')}
                 </span>

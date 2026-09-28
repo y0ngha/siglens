@@ -1,5 +1,6 @@
 import { normalizeEmail } from '@/shared/lib/auth/validation';
-import type { AuthUserRecord, EmailAuthUserRecord } from '@/shared/db/types';
+import type { EmailAuthUserRecord } from '@/shared/db/types';
+import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import { createAuthSession } from './sessionCookie';
 import type {
     LoginUserDependencies,

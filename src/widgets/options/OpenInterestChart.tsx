@@ -10,6 +10,32 @@ import {
     GUIDE_LINE_STROKE_WIDTH,
     MIDLINE_STROKE_WIDTH,
 } from './utils/chartStrokeWidths';
+import {
+    BAR_OPACITY,
+    BAR_WIDTH_FILL_RATIO,
+    CHART_HEIGHT,
+    CHART_WIDTH,
+    COLOR_CALL,
+    COLOR_GUIDE_LINE,
+    COLOR_LABEL,
+    COLOR_MIDLINE,
+    COLOR_PUT,
+    HALF_HEIGHT,
+    LABEL_CALL,
+    LABEL_PUT,
+    LABEL_ROTATION_THRESHOLD,
+    MAX_X_AXIS_LABELS,
+    MIDLINE_Y,
+    PAD_BOTTOM,
+    PAD_LEFT,
+    PAD_RIGHT,
+    PAD_TOP,
+    ROTATED_LABEL_FONT_SIZE,
+    STRAIGHT_LABEL_FONT_SIZE,
+    SVG_HEIGHT,
+    SVG_WIDTH,
+    X_AXIS_LABEL_OFFSET_PX,
+} from './utils/strikeChartLayout';
 import { TOOLTIP_ELEMENT_ID } from './utils/computeTooltipPos';
 import { formatCompactCount } from './utils/formatCompactCount';
 import {
@@ -27,13 +53,15 @@ import {
 import { StrikeBarTooltip } from './ui/StrikeBarTooltip';
 import { StrikeBarSrTable } from './ui/StrikeBarSrTable';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
-import { findNearestStrikeIndex } from '@/entities/options-chain';
+import { findNearestStrikeIndex } from '@/entities/options-chain/lib/findNearestStrike';
 import {
     aggregateOpenInterest,
     type OptionsChain,
     type OptionsExpirationMetrics,
 } from '@y0ngha/siglens-core';
 import { useMemo } from 'react';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { cn } from '@/shared/lib/cn';
 
 interface OpenInterestChartProps {
     /** Spot price used to anchor the current-price guide line. */
@@ -44,51 +72,7 @@ interface OpenInterestChartProps {
     metrics: OptionsExpirationMetrics | null;
 }
 
-// SVG 레이아웃 상수는 StrikeVolumeChart와 동일하게 복제한다 — 두 차트가
-// 나란히 렌더되면서 같은 viewport / 같은 막대 비율을 공유해야 사용자가
-// 두 차트를 비교하는 시선 흐름이 어색해지지 않는다. 상수를 별도 유틸로
-// 빼지 않는 이유: 추후 어느 한쪽 차트의 패딩만 미세조정할 가능성이
-// 충분히 있고, 한 변경이 두 차트에 동시에 영향을 주는 결합도를 미리
-// 만들 필요는 없다.
-const SVG_WIDTH = 600;
-const SVG_HEIGHT = 240;
-const PAD_TOP = 30;
-const PAD_BOTTOM = 50;
-const PAD_LEFT = 12;
-const PAD_RIGHT = 12;
-
-const CHART_WIDTH = SVG_WIDTH - PAD_LEFT - PAD_RIGHT;
-const CHART_HEIGHT = SVG_HEIGHT - PAD_TOP - PAD_BOTTOM;
-const MIDLINE_Y = PAD_TOP + CHART_HEIGHT / 2;
-const HALF_HEIGHT = CHART_HEIGHT / 2;
-
-// Semantic chart tokens — referenced directly because SVG attributes
-// (`fill`, `stroke`) don't consume Tailwind classes targeting `color`.
-// Max Pain and the current-price line intentionally share `ui-warning`
-// since both communicate "pivot levels worth watching"; the dashed vs
-// solid stroke pattern differentiates them visually.
-const COLOR_CALL = 'var(--color-chart-bullish)';
-const COLOR_PUT = 'var(--color-chart-bearish)';
-
-/**
- * 차트 안 범례는 막대가 아니라 **글자**다. `chart-*`는 그래픽 기준(3:1)에
- * 맞춘 색이라 라이트 카드 위에서 본문 기준을 겨우 넘고, 같은 자리에서
- * `-text` 짝이 훨씬 여유롭다. `bg-chart-*` 색칩(아래 범례)은 그래픽이므로
- * 그대로 둔다.
- */
-const LABEL_CALL = 'var(--color-ui-success-text)';
-const LABEL_PUT = 'var(--color-ui-danger-text)';
-const COLOR_GUIDE_LINE = 'var(--color-ui-warning)';
-const COLOR_MIDLINE = 'var(--color-secondary-600)';
-const COLOR_LABEL = 'var(--color-secondary-500)';
-
-/*
- * 0.7이었는데 라이트 카드 위에서 Call 막대가 2.85:1로 그래픽 기준(3:1)을
- * 밑돌았다 — 다크에서는 통과해서 다크만 보면 안 보이는 결함이다. 나란히
- * 놓이는 StrikeVolumeChart가 이미 0.85라 그 값에 맞춘다(실측 3.70:1).
- * 상위 OI 강조는 1.0과의 차이로 여전히 읽힌다.
- */
-const BAR_OPACITY_DEFAULT = 0.85;
+// 상위 OI 강조는 기본 불투명도(`BAR_OPACITY`)와 1.0의 차이로 읽힌다.
 const BAR_OPACITY_TOP_OI = 1;
 
 // 모든 strike의 OI가 0일 때 globalMax 가 0이 되어 barPixelHeight에서
@@ -97,26 +81,6 @@ const MIN_OI_SCALE_FLOOR = 1;
 
 // 가장 OI가 두꺼운 상위 N개 strike만 강조해 시각적으로 두드러지게 한다.
 const TOP_OI_STRIKE_COUNT = 3;
-
-// 슬롯 너비 대비 막대 두께 비율 — 슬롯 양쪽에 약간의 간격을 남겨
-// 인접 strike와 시각적으로 구분되도록 한다.
-const BAR_WIDTH_FILL_RATIO = 0.7;
-
-// x축에 동시에 보여줄 라벨 최대 개수. PLTR 같은 weekly + LEAPS 종목은
-// strike 수가 30~50개에 달해 모든 라벨을 그리면 글자가 겹치고 시각적으로
-// 답답해진다. 이 값을 기준으로 균등하게 thinning하고, 현재가·Max Pain·양 끝
-// strike는 항상 표시되도록 보존한다.
-const MAX_X_AXIS_LABELS = 10;
-
-// 라벨 thinning 후에도 글자 길이를 줄여 가독성을 확보하기 위한 회전 임계값.
-// 라벨 개수가 이 임계값 이상이면 -45° 회전한다.
-const LABEL_ROTATION_THRESHOLD = 7;
-
-// x축 라벨을 차트 영역 하단에서 띄울 px 거리. font baseline 위치 보정.
-const X_AXIS_LABEL_OFFSET_PX = 14;
-// 가독성을 잃지 않는 한도에서, 회전 라벨은 한 글자만큼 작게 잡는다.
-const ROTATED_LABEL_FONT_SIZE = 8;
-const STRAIGHT_LABEL_FONT_SIZE = 9;
 
 export function OpenInterestChart({
     underlyingPrice,
@@ -213,7 +177,7 @@ export function OpenInterestChart({
         // stale-quote 시그니처에 해당한다. 세 경로 모두 사용자 대응법
         // (정규장 시간에 재확인)이 같아 메시지를 통합한다.
         return (
-            <div className="space-y-2 rounded-lg border border-secondary-700 bg-secondary-800 p-4">
+            <div className={cn(SURFACE_CARD, 'space-y-2 p-4')}>
                 <span className="text-sm font-medium text-secondary-300">
                     {t('OpenInterestChart.f0220d')}
                 </span>
@@ -259,7 +223,7 @@ export function OpenInterestChart({
     return (
         <div
             ref={containerRef}
-            className="relative space-y-2 rounded-lg border border-secondary-700 bg-secondary-800 p-4"
+            className={cn(SURFACE_CARD, 'relative space-y-2 p-4')}
         >
             <div className="flex items-center gap-1">
                 <span className="text-sm font-medium text-secondary-300">
@@ -319,9 +283,7 @@ export function OpenInterestChart({
                 {oiByStrike.map((row, i) => {
                     const cx = barCenterX(i, count, PAD_LEFT, CHART_WIDTH);
                     const isTopOi = topOiSet.has(row.strike);
-                    const opacity = isTopOi
-                        ? BAR_OPACITY_TOP_OI
-                        : BAR_OPACITY_DEFAULT;
+                    const opacity = isTopOi ? BAR_OPACITY_TOP_OI : BAR_OPACITY;
                     const callH = barPixelHeight(
                         row.callOpenInterest,
                         globalMax,

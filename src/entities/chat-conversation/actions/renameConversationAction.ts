@@ -3,7 +3,7 @@
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleChatConversationRepository } from '../api';
-import { logActionError } from '../lib/logActionError';
+import { logActionError } from '@/shared/lib/logActionError';
 
 /**
  * Trims and length-caps (120) the title; rejects empty/oversized input,

@@ -10,7 +10,7 @@ vi.mock('@y0ngha/siglens-core', async orig => ({
 }));
 
 // getMarketNewsList는 enriched row 형태의 최소 픽스처를 반환한다.
-vi.mock('../api', () => ({
+vi.mock('@/entities/market-news/api/marketNewsRepository', () => ({
     getMarketNewsList: vi.fn(async () => [
         {
             id: 'm1',
@@ -35,12 +35,22 @@ vi.mock('../api', () => ({
 // isEnrichedRow / toEnrichedNewsItem / selectAggregateNewsItems는 픽스처 row를
 // 그대로 통과시킨다 — 이 파일이 테스트하는 대상은 데이터 변환 로직이 아니라
 // skipEnqueueIfMiss 분기와 core 위임 동작이다.
-vi.mock('@/entities/news-article', async orig => ({
-    ...(await orig()),
+vi.mock('@/entities/news-article/lib/newsEnrichment', async importOriginal => ({
+    ...(await importOriginal<
+        typeof import('@/entities/news-article/lib/newsEnrichment')
+    >()),
     isEnrichedRow: vi.fn(() => true),
     toEnrichedNewsItem: vi.fn((row: unknown) => row),
-    selectAggregateNewsItems: vi.fn((items: unknown[]) => items),
 }));
+vi.mock(
+    '@/entities/news-article/lib/newsAnalysisSelection',
+    async importOriginal => ({
+        ...(await importOriginal<
+            typeof import('@/entities/news-article/lib/newsAnalysisSelection')
+        >()),
+        selectAggregateNewsItems: vi.fn((items: unknown[]) => items),
+    })
+);
 
 // 2. 정적 import — vi.mock 선언 이후에 배치한다.
 import { describe, it, expect, vi, beforeEach } from 'vitest';

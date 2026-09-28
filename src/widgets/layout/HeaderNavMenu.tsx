@@ -3,7 +3,6 @@
 import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import {
-    useEffect,
     useId,
     useRef,
     useState,
@@ -11,6 +10,7 @@ import {
 } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
+import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import type { NavVerticalNode } from './headerNavTree';
 import { isHrefActive, isVerticalActive } from './navActiveState';
 
@@ -76,22 +76,7 @@ export function HeaderNavMenu({
 
     // 바깥 클릭으로 닫기. `pointerdown`은 클릭이 완료되기 전에 발생해, 다른 트리거를
     // 눌렀을 때 "이전 것 닫기 → 새 것 열기"가 한 번의 상호작용으로 끝난다.
-    useEffect(() => {
-        if (!isOpen) return;
-        const onPointerDown = (event: PointerEvent) => {
-            const container = containerRef.current;
-            if (!container) return;
-            if (
-                event.target instanceof Node &&
-                container.contains(event.target)
-            ) {
-                return;
-            }
-            setIsOpen(false);
-        };
-        document.addEventListener('pointerdown', onPointerDown);
-        return () => document.removeEventListener('pointerdown', onPointerDown);
-    }, [isOpen]);
+    useOnClickOutside(containerRef, close, { enabled: isOpen });
 
     /*
      * 마우스 호버로도 열린다 — 클릭 없이 훑어볼 수 있어야 메뉴를 "탐색"할 수 있다.

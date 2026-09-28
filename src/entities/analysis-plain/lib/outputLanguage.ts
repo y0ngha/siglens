@@ -89,9 +89,6 @@ const OUTPUT_LANGUAGE = {
     }
 >;
 
-/** 기본 출력 언어. 이 값이면 지시가 붙지 않는다. */
-export const DEFAULT_PLAIN_LOCALE = 'ko';
-
 function isOverridden(locale: string): locale is keyof typeof OUTPUT_LANGUAGE {
     return locale in OUTPUT_LANGUAGE;
 }

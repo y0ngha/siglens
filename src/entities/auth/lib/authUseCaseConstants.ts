@@ -7,10 +7,6 @@ export const PASSWORD_RESET_INVALID_TOKEN_CODE = 'invalid_token' as const;
 /** @internal Error code returned when a password reset token has expired. */
 export const PASSWORD_RESET_EXPIRED_TOKEN_CODE = 'expired_token' as const;
 
-/** @internal Error code returned when an email verification code is missing or wrong. */
-export const EMAIL_VERIFICATION_INVALID_CODE =
-    'invalid_verification_code' as const;
-
 /** @internal Error code returned when registerUser is called without prior email verification. */
 export const EMAIL_NOT_VERIFIED_CODE = 'email_not_verified' as const;
 

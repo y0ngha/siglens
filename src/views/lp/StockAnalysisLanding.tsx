@@ -6,7 +6,7 @@ import {
     type ReplayTool,
 } from '@/shared/lib/replay/replayScript';
 import { SITE_HOST, SITE_URL } from '@/shared/lib/seo';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { SURFACE_CARD, SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import {
     CheckIcon,
@@ -16,7 +16,7 @@ import {
     QuoteIcon,
 } from '@/shared/ui/StrokeIcons';
 import { LP_PRIMARY_BUTTON, LpDisclaimer, LpShell } from './ui/LpShell';
-import { LpReportReplay } from './ui/LpReportReplay';
+import { ReportReplay } from '@/widgets/replay/ReportReplay';
 
 const CTA = '종목 분석 시작';
 const CTA_HREF = `${SITE_URL}/NVDA`;
@@ -191,9 +191,17 @@ export function StockAnalysisLanding() {
                         편의 리포트로 정리합니다.
                     </p>
                     <div className="mt-6">
-                        <LpReportReplay
+                        <ReportReplay
                             scenarios={SCENARIOS}
-                            host={SITE_HOST}
+                            labels={{
+                                host: SITE_HOST,
+                                region: 'SIGLENS 분석 과정 예시',
+                                badge: '예시 화면',
+                                pause: '일시정지',
+                                resume: '다시 재생',
+                                sources: '근거',
+                            }}
+                            sourcesSeparator={false}
                             doneIcon={
                                 <CheckIcon className="size-3.5 text-ui-success-text" />
                             }
@@ -218,7 +226,12 @@ export function StockAnalysisLanding() {
                                         'grid grid-cols-[2.5rem_minmax(0,1fr)] grid-rows-[auto_1fr_auto] gap-x-3.5 gap-y-1 p-4 sm:p-5'
                                     )}
                                 >
-                                    <span className="row-span-3 flex size-10 items-center justify-center rounded-lg bg-secondary-700/40 text-secondary-200">
+                                    <span
+                                        className={cn(
+                                            SURFACE_NESTED,
+                                            'row-span-3 flex size-10 items-center justify-center text-secondary-200'
+                                        )}
+                                    >
                                         <Icon className="size-5" />
                                     </span>
                                     <h3 className="flex flex-wrap items-baseline gap-x-2 text-base font-semibold text-secondary-50">

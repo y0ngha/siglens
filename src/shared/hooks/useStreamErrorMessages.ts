@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
-import type { StreamErrorMessages } from './useAnalysisStream';
+import type { StreamErrorMessages } from '@/shared/lib/sse/runAnalysisStream';
 
 /**
  * `runAnalysisStream`이 throw할 실패 문구를 로케일에 맞게 만든다.

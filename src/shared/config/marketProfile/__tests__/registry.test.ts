@@ -80,6 +80,13 @@ describe('market profile registry', () => {
             expect(currencyForSymbol('AAPL')).toBe('USD');
         });
 
+        // 재무제표 탭이 쓰던 `statementCurrencyOf`의 경계 사례를 옮겨 왔다.
+        it('접미사는 대소문자를 가리지 않고, 접미사 없는 숫자·점 포함 미국 티커는 USD다', () => {
+            expect(currencyForSymbol('005930.ks')).toBe('KRW');
+            expect(currencyForSymbol('005930')).toBe('USD');
+            expect(currencyForSymbol('BRK.B')).toBe('USD');
+        });
+
         it('크립토는 USD다 — us-equity 폴백과 우연히 일치하는 것이 아니라 CRYPTO_DESCRIPTOR도 USD라서다', () => {
             expect(currencyForSymbol('BTCUSD')).toBe('USD');
             expect(getDescriptor('crypto').priceFormat.currency).toBe('USD');

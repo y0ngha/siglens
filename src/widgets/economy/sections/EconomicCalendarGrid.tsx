@@ -17,11 +17,13 @@ import type {
 
 import {
     CALENDAR_COUNTRY_LABEL_KEY,
+    type CalendarCountry,
+} from '@/entities/economy/lib/economyCalendarConstants';
+import {
     resolveCalendarInterpretation,
     resolveCalendarSummary,
-    type CalendarCountry,
     type EconomicCalendarEventWithAnalysis,
-} from '@/entities/economy';
+} from '@/entities/economy/model';
 import {
     SENTIMENT_LABEL_KEY,
     SENTIMENT_CLASS,
@@ -339,11 +341,13 @@ function DayDetailPanel({
                                         {t('EconomicCalendarGrid.3ebd79', {
                                             v0: formatNum(
                                                 ev.original.estimate,
-                                                ev.original.unit
+                                                ev.original.unit,
+                                                locale
                                             ),
                                             v1: formatNum(
                                                 ev.original.previous,
-                                                ev.original.unit
+                                                ev.original.unit,
+                                                locale
                                             ),
                                         })}
                                         {ev.original.actual !== null && (
@@ -354,7 +358,8 @@ function DayDetailPanel({
                                                     {
                                                         v0: formatNum(
                                                             ev.original.actual,
-                                                            ev.original.unit
+                                                            ev.original.unit,
+                                                            locale
                                                         ),
                                                     }
                                                 )}

@@ -1,42 +1,39 @@
 import { getTranslations } from 'next-intl/server';
 import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
-import { setRequestLocale } from 'next-intl/server';
-import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
-import { MobileSheetPlaceholder, TechnicalFactsSummary } from '@/views/symbol';
+import { resolveLocale } from '@/shared/i18n/locales';
+import { MobileSheetPlaceholder } from '@/views/symbol/MobileSheetPlaceholder';
+import { TechnicalFactsSummary } from '@/views/symbol/TechnicalFactsSummary';
 import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
 import { hasTechnicalProse } from '@/views/symbol/snapshot/renderers/technicalContent';
+import { loadTabSnapshotMeta } from '@/app/[locale]/[symbol]/symbolSnapshotDescription';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
-import { buildTechnicalFacts } from '@/views/symbol/utils/technicalFacts';
+import { buildTechnicalFacts } from '@/entities/bars/lib/technicalFacts';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { buildFallbackAnalysis } from '@/entities/chat-message';
+import { buildFallbackAnalysis } from '@/entities/chat-message/lib/fallbackAnalysis';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import { DEEPSEEK_V4_1_FLASH_MODEL } from '@y0ngha/siglens-core';
-import {
-    normalizeAnalysisResponse,
-    peekAnalysisStatic,
-} from '@/entities/analysis';
-import {
-    DEFAULT_TIMEFRAME,
-    SymbolRouteParams,
-    isAdmissibleSymbolShape,
-} from '@/shared/config/market';
+import { normalizeAnalysisResponse } from '@/entities/analysis/lib/normalizeAnalysisResponse';
+import { peekAnalysisStatic } from '@/entities/analysis/lib/peekAnalysisStaticCache';
+import { DEFAULT_TIMEFRAME, SymbolRouteParams } from '@/shared/config/market';
+import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
-import { getDescriptor, marketProfileOf } from '@/shared/config/marketProfile';
 import {
-    buildAssetAboutNode,
-    buildDisplayName,
-    pickAssetName,
-    getAssetInfoResilient,
-} from '@/entities/ticker';
-import { getQuantizedBarsStatic, getSeedBarsStatic } from '@/entities/bars';
-import { countSkillFiles } from '@/entities/skill';
+    getDescriptor,
+    marketProfileOf,
+} from '@/shared/config/marketProfile/registry';
+import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
+import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import {
+    getQuantizedBarsStatic,
+    getSeedBarsStatic,
+} from '@/entities/bars/lib/barsStaticCache';
+import { countSkillFiles } from '@/entities/skill/api';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
-    buildSnapshotMetaDescription,
-    symbolTabDescriptionLabel,
     resolveSymbolSeoContent,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
@@ -50,6 +47,7 @@ import {
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
+import { enterLocale } from '@/shared/lib/enterLocale';
 
 export const revalidate = 21600; // 6h — ISR. 사용자 신선도는 클라 refetch(useBars 30s)가 보장하므로 상한만 길게
 
@@ -66,7 +64,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { locale: rawLocale, symbol } = await params;
-    const locale = isLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
+    const locale = resolveLocale(rawLocale);
     const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     const ticker = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
@@ -135,42 +133,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         displayName,
         koreanName: assetInfo.koreanName,
         englishName: assetInfo.name,
-        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        locale,
     });
     const metadata = symbolMetadataFromSeo(seo, locale);
 
-    // snapshot-derived unique description (spec 2026-07-24 Task 8). Same
-    // getSeoSnapshotsStatic(ticker, revalidate) call the page body makes below —
-    // unstable_cache dedupes it within this render, so this is a cache hit, not
-    // an extra DB round-trip. Falls back to the templated description when no
-    // snapshot exists (backward compatible). og/twitter keep the templated copy
-    // — only the search-facing <meta name="description"> is overridden.
-    const snap = (await getSeoSnapshotsStatic(ticker, revalidate, locale)).find(
-        s => s.tab === 'technical'
-    );
-    const snapshotDescription = snap
-        ? buildSnapshotMetaDescription(
-              'technical',
-              snap.content,
-              displayName,
-              snap.plain,
-              locale,
-              symbolTabDescriptionLabel('technical', assetClass, tSeo)
-          )
-        : null;
+    // snapshot-derived unique description (spec 2026-07-24 Task 8).
+    const { description: snapshotDescription } = await loadTabSnapshotMeta({
+        symbol: ticker,
+        tab: 'technical',
+        revalidate,
+        locale,
+        displayName,
+        assetClass: assetClass,
+        tSeo,
+        preferPlain: true,
+    });
     return snapshotDescription
         ? { ...metadata, description: snapshotDescription }
         : metadata;
 }
 
 export default async function SymbolPage({ params }: Props) {
-    const { locale, symbol } = await params;
-    // DB 스냅샷은 로케일별 행이라 좁혀진 로케일이 필요하다. URL 세그먼트는 신뢰 경계다.
-    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
-    // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
-    // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
-    // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
-    setRequestLocale(locale);
+    const { locale: rawLocale, symbol } = await params;
+    const locale = enterLocale(rawLocale);
     // 셋은 서로 독립이다.
     const [tViews, tSeo] = await Promise.all([
         getTranslations('views.symbol'),
@@ -187,7 +172,7 @@ export default async function SymbolPage({ params }: Props) {
             // ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
             // getSeoSnapshotsStatic JSDoc. revalidateSeconds mirrors this page's
             // `export const revalidate` literal above.
-            getSeoSnapshotsStatic(ticker, revalidate, resolved),
+            getSeoSnapshotsStatic(ticker, revalidate, locale),
         ]
     );
     const technicalSnapshot = snapshots.find(s => s.tab === 'technical');
@@ -252,16 +237,12 @@ export default async function SymbolPage({ params }: Props) {
         return null;
     });
 
-    const displayName = buildDisplayName(
-        assetInfo,
-        ticker,
-        isLocale(locale) ? locale : DEFAULT_LOCALE
-    );
+    const displayName = buildDisplayName(assetInfo, ticker, locale);
     const pageSeo = resolveSymbolSeoContent(ticker, assetClass, tSeo, {
         displayName,
         koreanName: assetInfo.koreanName,
         englishName: assetInfo.name,
-        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        locale,
     });
     const { fullTitle, description, url } = pageSeo;
 
@@ -270,11 +251,7 @@ export default async function SymbolPage({ params }: Props) {
     // crypto는 schema.org 표준 타입이 없어 about 노드를 생략한다.
     const aboutNode = buildAssetAboutNode(
         ticker,
-        pickAssetName(
-            assetInfo,
-            ticker,
-            isLocale(locale) ? locale : DEFAULT_LOCALE
-        ),
+        pickAssetName(assetInfo, ticker, locale),
         assetInfo.fmpSymbol,
         assetClass
     );
@@ -283,7 +260,7 @@ export default async function SymbolPage({ params }: Props) {
         name: fullTitle,
         description,
         about: aboutNode,
-        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        locale,
         // 아래 `TechnicalSnapshotProse`가 **실제로 그리는** 스냅샷일 때만
         // 신선도를 주장한다(렌더 불가한 행은 본문에 한 글자도 남기지 않는다).
         generatedAt: hasTechnicalProse(technicalSnapshot?.content)
@@ -295,7 +272,7 @@ export default async function SymbolPage({ params }: Props) {
     // (sibling 페이지들은 [Siglens, displayName, 섹션명] 3단계 — buildBreadcrumbJsonLd가 Siglens를 자동 prepend.)
     const breadcrumbJsonLd = buildBreadcrumbJsonLd(
         [{ name: displayName, url }],
-        isLocale(locale) ? locale : DEFAULT_LOCALE
+        locale
     );
 
     const queryClient = new QueryClient({

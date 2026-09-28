@@ -1,9 +1,9 @@
 import type { EarningsReportComparisonItem } from '@/shared/lib/types';
 import {
     EARNINGS_REPORT_FMP_LIMIT,
-    EARNINGS_REPORT_STALE_MS,
     type EarningsReportUpsertInput,
-} from '@/entities/earnings-report';
+} from '@/entities/earnings-report/api';
+import { EARNINGS_REPORT_STALE_MS } from '@/entities/earnings-report/lib/isEarningsReportStale';
 import { MS_PER_HOUR } from '@/shared/config/time';
 
 const {
@@ -26,8 +26,10 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: mockDb })),
 }));
 
-vi.mock('@/entities/earnings-report', async importOriginal => ({
-    ...(await importOriginal<typeof import('@/entities/earnings-report')>()),
+vi.mock('@/entities/earnings-report/api', async importOriginal => ({
+    ...(await importOriginal<
+        typeof import('@/entities/earnings-report/api')
+    >()),
     DrizzleEarningsReportsRepository: vi.fn().mockImplementation(function () {
         return {
             getLatestFetchedAt: mockGetLatestFetchedAt,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { AgentUiMessage } from '../hooks/useAgentStream';
+import type { AgentUiMessage } from '../model/types';
 import { guestHistory } from '../lib/guestHistory';
 
 const msg = (v: Partial<AgentUiMessage>): AgentUiMessage => ({

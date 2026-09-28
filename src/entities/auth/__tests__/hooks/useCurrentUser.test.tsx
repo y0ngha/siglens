@@ -2,7 +2,7 @@ const { mockCurrentUserAction } = vi.hoisted(() => ({
     mockCurrentUserAction: vi.fn(),
 }));
 
-vi.mock('@/entities/auth/actions', () => ({
+vi.mock('@/entities/auth/actions/currentUserAction', () => ({
     currentUserAction: mockCurrentUserAction,
 }));
 

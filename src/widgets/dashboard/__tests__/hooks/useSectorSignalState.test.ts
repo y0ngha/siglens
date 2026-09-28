@@ -12,7 +12,7 @@ vi.mock('next/navigation', () => ({
     useSearchParams: () => new URLSearchParams(mockSearchParamsString),
 }));
 
-vi.mock('@/entities/analysis', () => ({
+vi.mock('@/entities/analysis/lib/quadrants', () => ({
     EMPTY_QUADRANTS: {
         bullishConfirmed: [],
         bullishExpected: [],
@@ -20,14 +20,16 @@ vi.mock('@/entities/analysis', () => ({
         bearishConfirmed: [],
     },
     filterStrictAnticipation: (stocks: unknown[]) => stocks,
-    resolveConflicts: (stocks: unknown[]) => ({
-        resolved: stocks,
-        mixed: [],
-    }),
     groupStockIntoQuadrants: (
         acc: Record<string, unknown[]>,
         _stock: unknown
     ) => acc,
+}));
+vi.mock('@/entities/analysis/lib/resolveConflicts', () => ({
+    resolveConflicts: (stocks: unknown[]) => ({
+        resolved: stocks,
+        mixed: [],
+    }),
 }));
 
 vi.mock('@/shared/config/dashboard-tickers', () => ({

@@ -1,7 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ApiKeySection } from '@/features/api-key-management/ui/ApiKeySection';
-import type { ApiKeyActionState, LlmProvider } from '@/entities/api-key';
+import type { ApiKeyActionState } from '@/shared/lib/types';
+import type { LlmProvider } from '@/shared/config/llmProviders';
 
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ push: vi.fn(), prefetch: vi.fn() }),
@@ -13,7 +14,7 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
 
-vi.mock('@/entities/api-key', () => ({
+vi.mock('@/shared/config/llmProviders', () => ({
     LLM_PROVIDER_VALUES: ['anthropic', 'google', 'openai'] as LlmProvider[],
 }));
 

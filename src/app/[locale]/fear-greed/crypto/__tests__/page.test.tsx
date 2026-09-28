@@ -8,7 +8,7 @@ import {
     type MockedFunction,
 } from 'vitest';
 
-vi.mock('@/widgets/market-fear-greed', () => ({
+vi.mock('@/widgets/market-fear-greed/MarketFearGreedPage', () => ({
     MarketFearGreedPage: () => null,
 }));
 
@@ -24,7 +24,7 @@ import FearGreedCryptoRoutePage, {
     revalidate,
 } from '@/app/[locale]/fear-greed/crypto/page';
 import { getMarketFearGreedCryptoStatic } from '@/entities/market-fear-greed/api/marketFearGreedCryptoStaticCache';
-import type { MarketFearGreedCryptoView } from '@/entities/market-fear-greed';
+import type { MarketFearGreedCryptoView } from '@/entities/market-fear-greed/model';
 import { CRYPTO_FEAR_GREED_FACTOR_KEYS } from '@y0ngha/siglens-core';
 import { SITE_URL } from '@/shared/lib/seo';
 import { koMessage } from '@/shared/test-utils/koMessage';

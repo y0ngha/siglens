@@ -1,8 +1,8 @@
 /**
  * 인증 에러 **코드** → 메시지 키.
  *
- * `shared`에 둔다. `entities/auth` 배럴은 `verifyEmail → tokenUtils → node:crypto`를
- * 끌고 오므로, 클라이언트 컴포넌트가 그 배럴을 import하면 번들이 깨진다
+ * `shared`에 둔다. `entities/auth`의 use-case 모듈은 `verifyEmail → tokenUtils → node:crypto`를
+ * 끌고 오므로, 클라이언트 컴포넌트가 그쪽을 import하면 번들이 깨진다
  * (v0.58.0에서 같은 결함군을 겪었다). 이 표는 도메인 의존이 없는 순수 상수라
  * `shared`가 올바른 자리이기도 하다.
  *

@@ -2,23 +2,20 @@
 
 import { useTranslations } from 'next-intl';
 import { ContextSwitchSystemMessage } from './ContextSwitchSystemMessage';
-import { ModelSelect, type ModelOption } from './ModelSelect';
+import { ModelSelect } from './ModelSelect';
 import { useChat } from './hooks/useChat';
 import { useChatInput } from './hooks/useChatInput';
-import { useSymbolChat } from '@/features/symbol-chat';
+import { useSymbolChat } from '@/features/symbol-chat/hooks/useSymbolChat';
 import { MarkdownText } from '@/shared/ui/MarkdownText';
-import { PremiumModelGateModal } from '@/features/premium-gate';
+import { PremiumModelGateModal } from '@/features/premium-gate/ui/PremiumModelGateModal';
 import { cn } from '@/shared/lib/cn';
+import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
+import { ArrowUpIcon, CloseIcon } from '@/shared/ui/StrokeIcons';
 import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
-import { getModelDisplay } from '@/shared/lib/modelDisplay';
 import { VALID_CHAT_MODELS } from '@y0ngha/siglens-core';
 import { aiAskUrl } from '@/shared/config/aiHost';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { localePath } from '@/shared/i18n/locales';
-
-const CHAT_MODEL_OPTIONS: readonly ModelOption[] = VALID_CHAT_MODELS.map(
-    id => ({ id, ...getModelDisplay(id) })
-);
 
 /** `widgets.chat.thinking` 메시지 키 — 표시는 렌더 쪽에서 `t()`로. */
 const LOADING_MESSAGE_KEY = {
@@ -88,10 +85,10 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                     <button
                         type="button"
                         onClick={onClose}
-                        className="-mr-1 flex h-11 w-11 items-center justify-center rounded text-sm leading-none text-secondary-500 transition-colors hover:text-secondary-300 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none md:h-6 md:w-6"
+                        className="-mr-1 flex h-11 w-11 items-center justify-center rounded text-secondary-500 transition-colors hover:text-secondary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none md:h-6 md:w-6"
                         aria-label={t('ChatPanel.f4ca4c')}
                     >
-                        ✕
+                        <CloseIcon className="size-3.5" />
                     </button>
                 )}
             </div>
@@ -109,9 +106,9 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                         type="button"
                         onClick={dismissAnalysisUpdated}
                         aria-label={t('ChatPanel.1dbde9')}
-                        className="ml-2 rounded text-xs text-primary-400 hover:text-primary-200 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                        className="ml-2 inline-flex rounded text-primary-400 hover:text-primary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                     >
-                        ✕
+                        <CloseIcon className="size-3" />
                     </button>
                 </div>
             )}
@@ -185,7 +182,7 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
             <div className="border-t border-secondary-700 px-3 py-2">
                 <div className="mb-1.5 flex items-center gap-1.5 text-[10px] text-secondary-500">
                     <ModelSelect
-                        options={CHAT_MODEL_OPTIONS}
+                        models={VALID_CHAT_MODELS}
                         selected={selectedModel}
                         onChange={handleModelChange}
                         isHydrated={isModelHydrated ?? false}
@@ -225,10 +222,13 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                         type="button"
                         onClick={() => void handleSubmit()}
                         disabled={isInputDisabled || inputValue.trim() === ''}
-                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary-600 text-white transition-colors hover:bg-primary-500 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-secondary-700 disabled:text-secondary-500 md:h-8 md:w-8"
+                        className={cn(
+                            BUTTON_PRIMARY,
+                            'h-11 w-11 shrink-0 md:h-8 md:w-8'
+                        )}
                         aria-label={t('ChatPanel.4077ce')}
                     >
-                        ↑
+                        <ArrowUpIcon className="size-4" />
                     </button>
                 </div>
             </div>

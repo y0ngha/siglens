@@ -1,20 +1,21 @@
 import type { Metadata } from 'next';
-import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 import { getAgentSuggestions } from '@/entities/agent-suggestions/api';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { listConversationsAction } from '@/entities/chat-conversation/actions';
+import { listConversationsAction } from '@/entities/chat-conversation/actions/listConversationsAction';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { getDatabaseClient } from '@/shared/db/client';
 import { localePath, resolveLocale, type Locale } from '@/shared/i18n/locales';
 import { SITE_URL } from '@/shared/lib/seo';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { ChatShell } from '@/widgets/agent-chat';
+import { ChatShell } from '@/widgets/agent-chat/ChatShell';
 import {
     buildAiHomeJsonLd,
     buildAiHomeMetadata,
     type AiSeoCopy,
 } from './aiSeo';
 import { maybeHandoffRedirect } from './handoffRedirect';
+import { enterLocale } from '@/shared/lib/enterLocale';
 
 /**
  * Deliberately no `loading.tsx` for this route. With one, the streamed
@@ -85,8 +86,7 @@ export default async function AiHomePage({
     >;
 }) {
     const { locale: raw } = await params;
-    const locale = resolveLocale(raw);
-    setRequestLocale(locale);
+    const locale = enterLocale(raw);
     const sp = await searchParams;
     await maybeHandoffRedirect(locale, '/', sp);
     const user = await getCurrentUser();

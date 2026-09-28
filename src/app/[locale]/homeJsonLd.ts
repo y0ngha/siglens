@@ -1,4 +1,4 @@
-import { SITE_NAME, type FaqItem } from '@/shared/lib/seo';
+import { SITE_NAME, type FaqItem, type SeoTranslator } from '@/shared/lib/seo';
 
 /**
  * 홈의 FAQ.
@@ -20,11 +20,6 @@ import { SITE_NAME, type FaqItem } from '@/shared/lib/seo';
  * 공용 `buildFaqJsonLd`가 함께 받아 두 표면이 갈릴 수 없다 — 홈 전용 마크업
  * 빌더를 따로 두면 그 계약이 다시 두 벌이 된다.
  */
-type JsonLdTranslator = (
-    key: string,
-    values?: Record<string, string | number>
-) => string;
-
 /**
  * 홈에 싣는 문항. 탭별 FAQ와 중복되거나 매매 조언 톤인 문항은 뺐고, 남긴 6개는
  * 서비스 소개·시장 신호·종합 분석·백테스팅·요금·암호화폐다. 카탈로그 키는
@@ -32,7 +27,7 @@ type JsonLdTranslator = (
  */
 const HOME_FAQ_KEYS = ['q0', 'q2', 'q8', 'q9', 'q10', 'q11'] as const;
 
-export function buildHomeFaq(t: JsonLdTranslator): FaqItem[] {
+export function buildHomeFaq(t: SeoTranslator): FaqItem[] {
     return HOME_FAQ_KEYS.map(key => ({
         question: t(`faq.${key}.question`, { v0: SITE_NAME }),
         answer: t(`faq.${key}.answer`, { v0: SITE_NAME }),

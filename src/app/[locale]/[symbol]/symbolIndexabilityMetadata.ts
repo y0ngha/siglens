@@ -1,10 +1,10 @@
 import { getTranslations } from 'next-intl/server';
-import { evaluateSymbolIndexability } from '@/entities/symbol-indexability';
+import { evaluateSymbolIndexability } from '@/entities/symbol-indexability/lib/evaluateSymbolIndexability';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
-import type { SeoSnapshotTab } from '@/entities/seo-snapshot';
+import type { SeoSnapshotTab } from '@/entities/seo-snapshot/model';
 import { hasProseForTab } from '@/views/symbol/snapshot/hasProseForTab';
 import { noindexSymbolMetadata } from '@/shared/lib/seo';
-import { buildDisplayName } from '@/entities/ticker';
+import { buildDisplayName } from '@/entities/ticker/lib/ticker';
 import type { AssetInfo } from '@/shared/lib/types';
 import type { Locale } from '@/shared/i18n/locales';
 import { SYMBOL_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';

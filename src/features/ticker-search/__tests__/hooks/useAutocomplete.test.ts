@@ -94,6 +94,7 @@ function createKeyEvent(
     return {
         key,
         preventDefault: vi.fn(),
+        nativeEvent: { isComposing: false, keyCode: 0 },
         ...extra,
     } as unknown as KeyboardEvent<HTMLInputElement>;
 }
@@ -226,6 +227,36 @@ describe('useAutocomplete', () => {
         });
 
         expect(mockPush).toHaveBeenCalledWith('/AAPL');
+    });
+
+    /**
+     * 회귀: 한글 IME는 음절을 **확정**할 때도 Enter를 쓴다. 조합 중 Enter를
+     * 걸러내지 않으면 `삼성전`까지 친 상태에서 확정 Enter가 선택/이동을 일으킨다.
+     * SearchOverlay와 같은 가드(`isComposing` / keyCode 229)를 쓴다.
+     */
+    it.each([
+        ['isComposing', { isComposing: true, keyCode: 0 }],
+        ['keyCode 229', { isComposing: false, keyCode: 229 }],
+    ])('IME 조합 중 Enter(%s)는 선택/이동하지 않는다', (_, nativeEvent) => {
+        const onSelect = vi.fn();
+        const { result } = renderHook(() => useAutocomplete({ onSelect }));
+
+        act(() => {
+            result.current.handleChange(createChangeEvent('A'));
+        });
+        act(() => {
+            result.current.handleKeyDown(createKeyEvent('ArrowDown'));
+        });
+        const enter = createKeyEvent('Enter', {
+            nativeEvent,
+        } as unknown as Partial<KeyboardEvent<HTMLInputElement>>);
+        act(() => {
+            result.current.handleKeyDown(enter);
+        });
+
+        expect(mockPush).not.toHaveBeenCalled();
+        expect(onSelect).not.toHaveBeenCalled();
+        expect(enter.preventDefault).not.toHaveBeenCalled();
     });
 
     it('passes the selected result display name to onSelect on Enter', () => {

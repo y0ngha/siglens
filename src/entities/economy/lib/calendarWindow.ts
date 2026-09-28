@@ -1,8 +1,11 @@
+import { zonedDate } from '@/shared/lib/marketSessionDate';
+
 /**
  * 캘린더 윈도 일수 상수 + ET-zoned 날짜 헬퍼.
  *
- * `economySnapshotCache.isoDate`와 같은 ET formatter 패턴을 쓴다 — 서버가 UTC+0의
- * 00:00~04:59에 "오늘"을 계산할 때 ET 기준 전날로 밀리는 오차를 막는다. 모든 함수는
+ * ET 달력일은 `shared/lib/marketSessionDate`의 `zonedDate`(IANA 존 기반)로 뽑는다 —
+ * UTC 날짜를 그대로 쓰면 서버가 UTC 00:00~04:59에 "오늘"을 계산할 때 ET 기준 날짜와
+ * 하루 어긋난다. 모든 함수는
  * 결정론적(`Intl.DateTimeFormat` + 순수 산술)이라 ISR cold-gen에서 안전하다
  * (`Date.now()`/dynamic API 미사용 — 호출자가 `new Date()` 앵커를 주입).
  *
@@ -22,40 +25,14 @@ export const PAST_WINDOW_DAYS = 14;
 /** 미래 윈도 일수 — #610 그리드의 다가오는 ~2주와 정렬. */
 export const FUTURE_WINDOW_DAYS = 14;
 
-const ET_DATE_FORMAT = new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    timeZone: 'America/New_York',
-});
+const ET_TIME_ZONE = 'America/New_York';
 
-const KST_DATE_FORMAT = new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    timeZone: 'Asia/Seoul',
-});
-
-/** UTC instant → ET-zoned 'YYYY-MM-DD'. */
+/**
+ * UTC instant → ET-zoned 'YYYY-MM-DD'. KST 달력일이 필요하면 `shared/lib/etTimeUtils`의
+ * `kstDateKey`를 쓴다.
+ */
 export function etDateOf(instant: Date): string {
-    const parts = Object.fromEntries(
-        ET_DATE_FORMAT.formatToParts(instant).flatMap(p =>
-            p.type === 'literal' ? [] : [[p.type, p.value]]
-        )
-        // Intl.DateTimeFormat configured with year/month/day always emits parts of these exact types.
-    ) as Record<'year' | 'month' | 'day', string>;
-    return `${parts.year}-${parts.month}-${parts.day}`;
-}
-
-/** UTC instant → KST-zoned 'YYYY-MM-DD'. */
-export function kstDateOf(instant: Date): string {
-    const parts = Object.fromEntries(
-        KST_DATE_FORMAT.formatToParts(instant).flatMap(p =>
-            p.type === 'literal' ? [] : [[p.type, p.value]]
-        )
-        // Intl.DateTimeFormat configured with year/month/day always emits parts of these exact types.
-    ) as Record<'year' | 'month' | 'day', string>;
-    return `${parts.year}-${parts.month}-${parts.day}`;
+    return zonedDate(instant, ET_TIME_ZONE);
 }
 
 /** 'YYYY-MM-DD'에 일수를 더한 'YYYY-MM-DD' (UTC 산술 — TZ 비의존). */

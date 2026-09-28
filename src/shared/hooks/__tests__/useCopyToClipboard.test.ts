@@ -95,4 +95,54 @@ describe('useCopyToClipboard', () => {
             vi.advanceTimersByTime(DEFAULT_RESET_MS);
         });
     });
+
+    it('reports a rejected write as failed without throwing, then resets', async () => {
+        writeTextMock.mockRejectedValueOnce(new Error('denied'));
+        const { result } = renderHook(() => useCopyToClipboard());
+        let ok: boolean | undefined;
+        await act(async () => {
+            ok = await result.current.copy('text');
+        });
+        expect(ok).toBe(false);
+        expect(result.current.failed).toBe(true);
+        expect(result.current.copied).toBe(false);
+
+        act(() => {
+            vi.advanceTimersByTime(DEFAULT_RESET_MS);
+        });
+        expect(result.current.failed).toBe(false);
+    });
+
+    it('treats a missing Clipboard API (non-secure context) as a failure', async () => {
+        Object.assign(navigator, { clipboard: undefined });
+        const { result } = renderHook(() => useCopyToClipboard());
+        let ok: boolean | undefined;
+        await act(async () => {
+            ok = await result.current.copy('text');
+        });
+        expect(ok).toBe(false);
+        expect(result.current.failed).toBe(true);
+    });
+
+    it('copies the text returned by a builder function', async () => {
+        const { result } = renderHook(() => useCopyToClipboard());
+        await act(async () => {
+            await result.current.copy(() => 'built');
+        });
+        expect(writeTextMock).toHaveBeenCalledWith('built');
+        expect(result.current.copied).toBe(true);
+    });
+
+    it('treats a throwing builder as a failure instead of throwing', async () => {
+        const { result } = renderHook(() => useCopyToClipboard());
+        let ok: boolean | undefined;
+        await act(async () => {
+            ok = await result.current.copy(() => {
+                throw new Error('malformed analysis');
+            });
+        });
+        expect(ok).toBe(false);
+        expect(result.current.failed).toBe(true);
+        expect(writeTextMock).not.toHaveBeenCalled();
+    });
 });

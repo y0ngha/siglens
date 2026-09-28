@@ -3,7 +3,7 @@
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleUserApiKeyRepository } from '@/entities/api-key/api';
-import type { RegisteredProvider } from '../lib/types';
+import type { RegisteredProvider } from '@/shared/lib/types';
 
 export async function getRegisteredProvidersAction(): Promise<
     RegisteredProvider[]

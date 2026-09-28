@@ -2,7 +2,7 @@
 
 import { useActionState } from 'react';
 import { finalizeOAuthSignupAction } from '../actions/finalizeOAuthSignupAction';
-import type { FinalizeOAuthSignupState } from '@/shared/lib/types';
+import type { FinalizeOAuthSignupState } from '@/shared/lib/auth/formTypes';
 
 const INITIAL_STATE: FinalizeOAuthSignupState = {};
 

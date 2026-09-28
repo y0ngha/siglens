@@ -14,26 +14,24 @@
 import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
 import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
 import type { ReactNode } from 'react';
-import type {
-    ShareableKind,
-    SnapshotResultOf,
-} from '@/entities/shared-analysis';
-import type { AssetClass } from '@/shared/config/marketProfile';
+import type { ShareableKind } from '@/shared/db/constants';
+import type { SnapshotResultOf } from '@/entities/shared-analysis/types';
+import type { AssetClass } from '@/shared/config/marketProfile/types';
 import {
     getDescriptor,
     profileIdForSymbol,
-} from '@/shared/config/marketProfile';
+} from '@/shared/config/marketProfile/registry';
 import type { Bar } from '@y0ngha/siglens-core';
 import { clusterKeyLevels, validateKeyLevels } from '@y0ngha/siglens-core';
-import { AnalysisPanel } from '@/widgets/analysis';
+import { AnalysisPanel } from '@/widgets/analysis/AnalysisPanel';
 import { ShareCandlestickChart } from '@/widgets/chart/ShareCandlestickChart';
-import { OverallView } from '@/widgets/overall';
-import { NewsAiSummaryView } from '@/widgets/news';
-import { FundamentalAiSummaryView } from '@/widgets/fundamental';
-import { FinancialsAiSummaryView } from '@/widgets/financials';
-import { CongressTrendSummaryView } from '@/widgets/congress';
-import { OptionsAiAnalysisView } from '@/widgets/options';
-import { FearGreedShareView } from '@/widgets/fear-greed';
+import { OverallView } from '@/widgets/overall/OverallView';
+import { NewsAiSummaryView } from '@/widgets/news/NewsAiSummary';
+import { FundamentalAiSummaryView } from '@/widgets/fundamental/FundamentalAiSummary';
+import { FinancialsAiSummaryView } from '@/widgets/financials/FinancialsAiSummary';
+import { CongressTrendSummaryView } from '@/widgets/congress/CongressTrendSummaryView';
+import { OptionsAiAnalysisView } from '@/widgets/options/OptionsAiAnalysis';
+import { FearGreedShareView } from '@/widgets/fear-greed/FearGreedShareView';
 
 /**
  * AnalysisPanel has several required props that are interaction/live-data

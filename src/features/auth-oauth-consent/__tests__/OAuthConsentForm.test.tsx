@@ -2,7 +2,8 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { OAuthConsentForm } from '@/features/auth-oauth-consent/ui/OAuthConsentForm';
 import { useFinalizeOAuthSignup } from '@/features/auth-oauth-consent/hooks/useFinalizeOAuthSignup';
-import type { FinalizeOAuthSignupState } from '@/shared/lib/types';
+import type { FinalizeOAuthSignupState } from '@/shared/lib/auth/formTypes';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 
 vi.mock(
     '@/features/auth-oauth-consent/actions/finalizeOAuthSignupAction',
@@ -16,6 +17,13 @@ vi.mock('@/features/auth-oauth-consent/hooks/useFinalizeOAuthSignup');
 vi.mock('@/shared/hooks/usePageShowReload', () => ({
     usePageShowReload: vi.fn(),
 }));
+
+const mockUseFormStatus = vi.fn(() => ({ pending: false }));
+
+vi.mock('react-dom', async () => {
+    const actual = await vi.importActual('react-dom');
+    return { ...actual, useFormStatus: () => mockUseFormStatus() };
+});
 
 const mockUseFinalizeOAuthSignup = vi.mocked(useFinalizeOAuthSignup);
 const mockFormAction = vi.fn();
@@ -45,6 +53,7 @@ describe('OAuthConsentForm', () => {
 
     beforeEach(() => {
         setupHook();
+        mockUseFormStatus.mockReturnValue({ pending: false });
     });
 
     it('renders profile email and name', () => {
@@ -125,12 +134,36 @@ describe('OAuthConsentForm', () => {
             },
         });
         render(<OAuthConsentForm {...baseProps} />);
-        expect(screen.getByText('약관에 동의해 주세요.')).toBeInTheDocument();
+        // 액션의 한국어 폴백 `message`가 아니라 코드로 번역한 카탈로그 문구를 띄운다.
+        expect(
+            screen.getByText('개인정보처리방침과 이용약관에 동의해주세요.')
+        ).toBeInTheDocument();
+        expect(
+            screen.queryByText('약관에 동의해 주세요.')
+        ).not.toBeInTheDocument();
     });
 
-    // Branch coverage: isPending true → button shows '처리 중...' and is disabled
-    it('shows 처리 중... and disables submit button when isPending', () => {
-        setupHook({}, true);
+    it('비한국어 로케일에서는 consent_required 에러를 해당 언어로 띄운다', () => {
+        setupHook({
+            error: {
+                code: 'consent_required',
+                message: '개인정보처리방침과 이용약관에 동의해주세요.',
+            },
+        });
+        renderWithIntl(<OAuthConsentForm {...baseProps} />, { locale: 'en' });
+        expect(
+            screen.getByText(
+                'Please accept the privacy policy and the terms of service.'
+            )
+        ).toBeInTheDocument();
+        expect(
+            screen.queryByText('개인정보처리방침과 이용약관에 동의해주세요.')
+        ).not.toBeInTheDocument();
+    });
+
+    // 제출 중 상태는 SubmitButton이 감싼 form의 useFormStatus로 읽는다.
+    it('shows 처리 중... and disables submit button while the form is pending', () => {
+        mockUseFormStatus.mockReturnValue({ pending: true });
         render(<OAuthConsentForm {...baseProps} />);
         const btn = screen.getByRole('button', { name: /처리 중/ });
         expect(btn).toBeInTheDocument();

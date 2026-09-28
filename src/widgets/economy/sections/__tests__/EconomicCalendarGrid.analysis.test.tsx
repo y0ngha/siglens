@@ -1,7 +1,14 @@
-vi.mock('@/entities/economy/actions', () => ({
+vi.mock('@/entities/economy/actions/ensureEconomicCalendarAction', () => ({
     ensureEconomicCalendarAction: vi.fn().mockResolvedValue(undefined),
-    ensureEconomicEventsAnalyzedAction: vi.fn().mockResolvedValue(undefined),
 }));
+vi.mock(
+    '@/entities/economy/actions/ensureEconomicEventsAnalyzedAction',
+    () => ({
+        ensureEconomicEventsAnalyzedAction: vi
+            .fn()
+            .mockResolvedValue(undefined),
+    })
+);
 
 import { vi, describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';

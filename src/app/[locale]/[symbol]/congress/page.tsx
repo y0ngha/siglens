@@ -1,36 +1,27 @@
 import { getTranslations } from 'next-intl/server';
 import { getCongressPageData } from '@/app/[locale]/[symbol]/congress/congressData';
-import { setRequestLocale } from 'next-intl/server';
-import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
+import { resolveLocale } from '@/shared/i18n/locales';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
-import { getCongressTradesResilient } from '@/entities/congress-trades';
-import { getProfileResilient } from '@/app/[locale]/[symbol]/fundamental/getProfileResilient';
+import { getCongressTradesResilient } from '@/entities/congress-trades/lib/getCongressTradesResilient';
+import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
 import { CongressDegraded } from '@/app/[locale]/[symbol]/congress/CongressDegraded';
-import { CongressTradesTable, CongressTrendSummary } from '@/widgets/congress';
-import { SymbolPageHeading } from '@/views/symbol';
-import {
-    CongressSnapshotProse,
-    hasCongressProse,
-} from '@/views/symbol/snapshot/renderers/CongressSnapshotProse';
+import { CongressTradesTable } from '@/widgets/congress/CongressTradesTable';
+import { CongressTrendSummary } from '@/widgets/congress/CongressTrendSummary';
+import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
+import { CongressSnapshotProse } from '@/views/symbol/snapshot/renderers/CongressSnapshotProse';
+import { hasCongressProse } from '@/views/symbol/snapshot/renderers/congressContent';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { FaqSection } from '@/shared/ui/FaqSection';
-import {
-    isAdmissibleSymbolShape,
-    type SymbolRouteParams,
-} from '@/shared/config/market';
+import { type SymbolRouteParams } from '@/shared/config/market';
+import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
-import {
-    buildAssetAboutNode,
-    buildDisplayName,
-    pickAssetName,
-    getAssetInfoResilient,
-} from '@/entities/ticker';
+import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
+import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import {
     buildBreadcrumbJsonLd,
-    buildSnapshotMetaDescription,
-    symbolTabDescriptionLabel,
     buildSymbolCongressSeoContent,
     buildSymbolSeoContent,
     symbolMetadataFromSeo,
@@ -38,10 +29,12 @@ import {
     noindexSymbolMetadata,
     type FaqItem,
 } from '@/shared/lib/seo';
+import { loadTabSnapshotMeta } from '@/app/[locale]/[symbol]/symbolSnapshotDescription';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
+import { enterLocale } from '@/shared/lib/enterLocale';
 
 // 의회 거래는 STOCK Act상 신고 마감(거래일 +30~45일) 이후 공시되므로
 // 일 단위 갱신이 적절하다. 24h revalidate는 엣지 캐시를 최대한 활용하면서
@@ -61,7 +54,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { locale: rawLocale, symbol } = await params;
-    const locale = isLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
+    const locale = resolveLocale(rawLocale);
     const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     const upper = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
@@ -120,29 +113,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         displayName,
         koreanName: assetInfo?.koreanName,
         englishName: assetInfo?.name,
-        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        locale,
     });
     const metadata = symbolMetadataFromSeo(seo, locale);
 
-    // snapshot-derived unique description (spec 2026-07-24 Task 8). Same
-    // getSeoSnapshotsStatic(upper, revalidate) call the page body makes below —
-    // unstable_cache dedupes it within this render, so this is a cache hit, not
-    // an extra DB round-trip. Falls back to the templated description when no
-    // snapshot exists (backward compatible). og/twitter keep the templated copy
-    // — only the search-facing <meta name="description"> is overridden.
-    const snap = (await getSeoSnapshotsStatic(upper, revalidate, locale)).find(
-        s => s.tab === 'congress'
-    );
-    const snapshotDescription = snap
-        ? buildSnapshotMetaDescription(
-              'congress',
-              snap.content,
-              displayName,
-              null,
-              locale,
-              symbolTabDescriptionLabel('congress', 'equity', tSeo)
-          )
-        : null;
+    // snapshot-derived unique description (spec 2026-07-24 Task 8).
+    const { snap, description: snapshotDescription } =
+        await loadTabSnapshotMeta({
+            symbol: upper,
+            tab: 'congress',
+            revalidate,
+            locale,
+            displayName,
+            assetClass: 'equity',
+            tSeo,
+        });
     // **thin-content 게이트.** 거래 0건이면서 AI 스냅샷도 없으면 본문에 종목 고유
     // 텍스트가 거의 남지 않는다 — 2026-08 실측에서 `B`(1,059자)·`KEEL`(1,079자)이
     // `index, follow`로 사이트맵에 올라 있었고, 크롬(내비·푸터·탭)이 650~750자라
@@ -177,13 +162,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function CongressPage({ params }: Props) {
-    const { locale, symbol } = await params;
-    // DB 스냅샷은 로케일별 행이라 좁혀진 로케일이 필요하다. URL 세그먼트는 신뢰 경계다.
-    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
-    // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
-    // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
-    // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
-    setRequestLocale(locale);
+    const { locale: rawLocale, symbol } = await params;
+    const locale = enterLocale(rawLocale);
     const t = await getTranslations('app.symbol');
     const tSeo = await getTranslations('shared.seo');
     const upper = symbol.toUpperCase();
@@ -207,7 +187,7 @@ export default async function CongressPage({ params }: Props) {
     ] = await Promise.all([
         getProfileResilient(upper),
         getAssetInfoResilient(upper),
-        getSeoSnapshotsStatic(upper, revalidate, resolved),
+        getSeoSnapshotsStatic(upper, revalidate, locale),
     ]);
     const congressSnapshot = snapshots.find(s => s.tab === 'congress');
     // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasCongressProse)
@@ -229,11 +209,7 @@ export default async function CongressPage({ params }: Props) {
     // This mirrors the financials/fundamental pages: a soft-200 keeps the user-facing
     // page navigable while noindex prevents stale/degraded content from being indexed.
     const displayName = assetInfo
-        ? buildDisplayName(
-              assetInfo,
-              upper,
-              isLocale(locale) ? locale : DEFAULT_LOCALE
-          )
+        ? buildDisplayName(assetInfo, upper, locale)
         : upper;
 
     // FMP 인프라 일시 실패: 500 대신 degrade 안내(200)를 렌더한다. 다음 revalidate에
@@ -279,7 +255,7 @@ export default async function CongressPage({ params }: Props) {
             displayName,
             koreanName: assetInfo?.koreanName,
             englishName: assetInfo?.name,
-            locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+            locale,
         }
     );
 
@@ -287,13 +263,7 @@ export default async function CongressPage({ params }: Props) {
     // undefined로 자연 생략된다.
     const aboutNode = buildAssetAboutNode(
         upper,
-        assetInfo
-            ? pickAssetName(
-                  assetInfo,
-                  upper,
-                  isLocale(locale) ? locale : DEFAULT_LOCALE
-              )
-            : upper,
+        assetInfo ? pickAssetName(assetInfo, upper, locale) : upper,
         assetInfo?.fmpSymbol
     );
 
@@ -302,7 +272,7 @@ export default async function CongressPage({ params }: Props) {
         name: fullTitle,
         description,
         about: aboutNode,
-        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        locale,
         // 화면에 실제로 그려지는 스냅샷일 때만 신선도를 주장한다 —
         // 렌더 불가한 행은 본문에 한 글자도 남기지 않는다.
         generatedAt: showCongressProse ? congressSnapshot?.generatedAt : null,
@@ -313,7 +283,7 @@ export default async function CongressPage({ params }: Props) {
             { name: displayName, url: buildSymbolSeoContent(upper, tSeo).url },
             { name: t('page.7b06ac'), url },
         ],
-        isLocale(locale) ? locale : DEFAULT_LOCALE
+        locale
     );
 
     // FAQ — 화면 `FaqSection`과 FAQPage 구조화데이터의 단일 소스.

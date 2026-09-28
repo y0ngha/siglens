@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { ContactTextareaField } from '@/features/contact-form/ui/ContactTextareaField';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 
 describe('ContactTextareaField', () => {
     const defaultProps = {
@@ -18,6 +19,21 @@ describe('ContactTextareaField', () => {
     it('renders max length helper text', () => {
         render(<ContactTextareaField {...defaultProps} />);
         expect(screen.getByText('최대 1,000자')).toBeInTheDocument();
+    });
+
+    /**
+     * 회귀: 자릿수 서식이 'ko-KR'로 고정돼 로케일과 무관했다. 네 로케일의 천 단위
+     * 구분자가 모두 `,`라 출력으로는 구분되지 않으므로 서식에 넘긴 로케일을 본다.
+     */
+    it('formats the max length with the active locale', () => {
+        const spy = vi.spyOn(Number.prototype, 'toLocaleString');
+        renderWithIntl(<ContactTextareaField {...defaultProps} />, {
+            locale: 'ja',
+        });
+        expect(spy).toHaveBeenCalledWith('ja-JP');
+        expect(spy).not.toHaveBeenCalledWith('ko-KR');
+        expect(screen.getByText('最大1,000文字')).toBeInTheDocument();
+        spy.mockRestore();
     });
 
     it('does not show error when error prop is absent', () => {

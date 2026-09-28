@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { RouteMessages } from './RouteMessages';
-import { DEFAULT_LOCALE, isLocale } from './locales';
+import { resolveLocale } from './locales';
 
 interface RouteLayoutProps {
     readonly children: ReactNode;
@@ -34,10 +34,7 @@ export function routeLayout(route: string) {
     return async function RouteLayout({ children, params }: RouteLayoutProps) {
         const { locale } = await params;
         return (
-            <RouteMessages
-                route={route}
-                locale={isLocale(locale) ? locale : DEFAULT_LOCALE}
-            >
+            <RouteMessages route={route} locale={resolveLocale(locale)}>
                 {children}
             </RouteMessages>
         );

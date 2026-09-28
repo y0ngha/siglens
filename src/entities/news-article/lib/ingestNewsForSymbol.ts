@@ -3,11 +3,9 @@ import 'server-only';
 import type { NewsItem } from '@y0ngha/siglens-core';
 import type { DrizzleNewsRepository } from '../api';
 import { getNewsClient } from './getNewsClient';
-import {
-    getDescriptor,
-    type MarketProfileId,
-} from '@/shared/config/marketProfile';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
+import { type MarketProfileId } from '@/shared/config/marketProfile/types';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { NEWS_LOOKBACK_MS } from './newsLookback';
 import { markFetched } from './newsRefreshFlag';
 import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';
@@ -27,6 +25,18 @@ import {
 export interface NewsIngestResult {
     fresh: NewsItem[];
     upsertSettled: PromiseSettledResult<boolean>[];
+}
+
+/**
+ * 이번 적재에서 실제로 삽입·변경된 행 수. `upsertNewsItem`은 값이 바뀐 행만
+ * RETURNING하므로(`setWhere`) 같은 기사 재fetch는 `false`로 settle한다 — 그래서
+ * 이 수가 0이면 news 캐시 태그를 무효화할 이유가 없다(방문마다 무효화하는 빈도 폭풍 방지).
+ * 방문자·prewarm·챗 세 수급 경로가 모두 이 판단으로 `revalidateTag`를 건다.
+ */
+export function countChangedRows(result: NewsIngestResult): number {
+    return result.upsertSettled.filter(
+        r => r.status === 'fulfilled' && r.value === true
+    ).length;
 }
 
 /**

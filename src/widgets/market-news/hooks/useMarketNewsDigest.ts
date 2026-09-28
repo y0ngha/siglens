@@ -1,14 +1,14 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import type { NewsFeedCategoryId } from '@/entities/market-news';
+import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
 import { useState, startTransition, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
-import { ensureMarketNewsCardsAnalyzedAction } from '@/entities/market-news/actions';
+import { ensureMarketNewsCardsAnalyzedAction } from '@/entities/market-news/actions/ensureMarketNewsCardsAnalyzedAction';
 import { fetchMarketNewsDigest } from '../utils/fetchMarketNewsDigest';
 import { useWaitForMarketNewsCards } from './useWaitForMarketNewsCards';
 

@@ -6,7 +6,9 @@ import type { GradesAction, GradesEvent } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
+import { cachedDateTimeFormat } from '@/shared/lib/intlFormatCache';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 /**
  * GradesAction → `shared.enumLabel.gradesAction` 카탈로그 키. 값 자체는 더 이상
@@ -43,24 +45,17 @@ const ROW_ACCENT_CLASS: Record<GradesAction, string> = {
 const PAGE_SIZE = 5;
 
 /**
- * 로케일별 포맷터 캐시. timeZone: 'UTC' 고정 — 공시일은 날짜만 있는 값이라
- * 로컬 TZ로 포맷하면 서버(UTC)와 클라이언트에서 하루가 어긋나 하이드레이션이
- * 깨진다. 예전에는 `'ko-KR'` 고정이라 `/en/AAPL/news`의 등급 변경일이
- * `2026년 8월 10일`을 찍었다.
+ * timeZone: 'UTC' 고정 — 공시일은 날짜만 있는 값이라 로컬 TZ로 포맷하면
+ * 서버(UTC)와 클라이언트에서 하루가 어긋나 하이드레이션이 깨진다. 예전에는
+ * `'ko-KR'` 고정이라 `/en/AAPL/news`의 등급 변경일이 `2026년 8월 10일`을 찍었다.
  */
-const GRADE_DATE_FORMATTER_CACHE = new Map<Locale, Intl.DateTimeFormat>();
-
 function gradeDateFormatterFor(locale: Locale): Intl.DateTimeFormat {
-    const cached = GRADE_DATE_FORMATTER_CACHE.get(locale);
-    if (cached) return cached;
-    const formatter = new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+    return cachedDateTimeFormat(INTL_LOCALE[locale], {
         timeZone: 'UTC',
         year: 'numeric',
         month: 'short',
         day: 'numeric',
     });
-    GRADE_DATE_FORMATTER_CACHE.set(locale, formatter);
-    return formatter;
 }
 
 interface GradeRowProps {
@@ -82,7 +77,8 @@ function GradeRow({ event }: GradeRowProps) {
     return (
         <li
             className={cn(
-                'border-secondary-700 bg-secondary-800 flex flex-wrap items-start gap-3 rounded-lg border p-3 text-sm',
+                SURFACE_CARD,
+                'flex flex-wrap items-start gap-3 p-3 text-sm',
                 ROW_ACCENT_CLASS[event.action]
             )}
         >
@@ -142,7 +138,7 @@ export function AnalystActions({ events }: AnalystActionsProps) {
         return (
             <section
                 aria-labelledby="analyst-actions-heading"
-                className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+                className={cn(SURFACE_CARD, 'p-6')}
             >
                 <h2
                     id="analyst-actions-heading"

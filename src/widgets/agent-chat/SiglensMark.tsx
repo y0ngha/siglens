@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 interface SiglensMarkProps {
     readonly size?: 'sm' | 'lg';
@@ -17,7 +18,8 @@ export function SiglensMark({ size = 'sm', className }: SiglensMarkProps) {
         <span
             aria-hidden="true"
             className={cn(
-                'flex shrink-0 items-center justify-center rounded-lg border border-secondary-700 bg-secondary-800 select-none',
+                SURFACE_CARD,
+                'flex shrink-0 items-center justify-center select-none',
                 size === 'lg' ? 'size-12' : 'size-7',
                 className
             )}

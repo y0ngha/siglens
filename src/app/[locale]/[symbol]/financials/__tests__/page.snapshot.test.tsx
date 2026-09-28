@@ -24,17 +24,21 @@ vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: vi.fn().mockResolvedValue(true),
 }));
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker/lib/assetClassification', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+}));
+vi.mock('@/entities/ticker/lib/ticker', () => ({
     pickAssetName: (info: { name: string; koreanName?: string }) =>
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
+}));
+vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 vi.mock('next/navigation', () => ({
     notFound: vi.fn(),
 }));
-vi.mock('@/app/[locale]/[symbol]/fundamental/getProfileResilient', () => ({
+vi.mock('@/entities/ticker/lib/getProfileResilient', () => ({
     getProfileResilient: vi.fn(),
 }));
 vi.mock('@/app/[locale]/[symbol]/financials/financialData', () => ({
@@ -56,7 +60,7 @@ vi.mock('@/app/[locale]/[symbol]/financials/FinancialsDegraded', () => ({
         <div data-testid="financials-degraded" {...props} />
     ),
 }));
-vi.mock('@/entities/financials-statements', () => ({
+vi.mock('@/entities/financials-statements/lib/getFinancialsSnapshot', () => ({
     getFinancialsSnapshot: vi.fn(),
     isEmptyFinancialsSnapshot: vi.fn().mockReturnValue(false),
 }));
@@ -69,7 +73,7 @@ vi.mock('@/widgets/financials/FinancialsScorecard', () => ({
 vi.mock('@/widgets/financials/FinancialsStatements', () => ({
     FinancialsStatements: () => null,
 }));
-vi.mock('@/views/symbol', () => ({
+vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({
     SymbolPageHeading: ({ children }: { children: unknown }) => children,
 }));
 vi.mock('@/shared/ui/CrossLinkCards', () => ({
@@ -97,9 +101,9 @@ import FinancialsPage from '@/app/[locale]/[symbol]/financials/page';
 import { FinancialsSnapshotProse } from '@/views/symbol/snapshot/renderers/FinancialsSnapshotProse';
 import { FinancialsAiSummary } from '@/widgets/financials/FinancialsAiSummary';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
-import { getAssetInfoResilient } from '@/entities/ticker';
-import { getProfileResilient } from '@/app/[locale]/[symbol]/fundamental/getProfileResilient';
-import { isEmptyFinancialsSnapshot } from '@/entities/financials-statements';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
+import { isEmptyFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { expectVisibleFaqWithoutJsonLd } from '@/__tests__/utils/expectFaqSingleSource';
 import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';

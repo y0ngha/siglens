@@ -8,7 +8,7 @@ import {
     QUERY_KEYS,
     TICKER_SEARCH_STALE_TIME_MS,
 } from '@/shared/config/queryConfig';
-import { searchTickerAction } from '@/entities/ticker/actions';
+import { searchTickerAction } from '@/entities/ticker/actions/searchTickerAction';
 import type { TickerSearchResult } from '@/shared/lib/types';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 

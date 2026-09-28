@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import { buildManifest } from '@/shared/lib/buildManifest';
-import { DEFAULT_LOCALE, isLocale, LOCALES } from '@/shared/i18n/locales';
+import { LOCALES, resolveLocale } from '@/shared/i18n/locales';
 
 /** 로케일별 매니페스트는 정적으로 굽는다 — 요청마다 만들 이유가 없다. */
 export function generateStaticParams() {
@@ -14,7 +14,7 @@ export async function GET(
     { params }: { params: Promise<{ locale: string }> }
 ) {
     const { locale: raw } = await params;
-    const locale = isLocale(raw) ? raw : DEFAULT_LOCALE;
+    const locale = resolveLocale(raw);
     const t = await getTranslations({
         locale,
         namespace: 'shared.seo.manifest',

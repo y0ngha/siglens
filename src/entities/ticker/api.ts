@@ -41,8 +41,8 @@ import {
     getDescriptor,
     isKrEquitySymbol,
     DEFAULT_MARKET_PROFILE,
-    type TabKey,
-} from '@/shared/config/marketProfile';
+} from '@/shared/config/marketProfile/registry';
+import { type TabKey } from '@/shared/config/marketProfile/types';
 
 /**
  * DB-side ORDER BY priority buckets for crypto search (lower = ranked first).

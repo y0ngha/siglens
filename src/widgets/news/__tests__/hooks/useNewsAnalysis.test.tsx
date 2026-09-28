@@ -1,7 +1,7 @@
 import type { Mock } from 'vitest';
 import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
 import { useNewsAnalysis } from '@/widgets/news/hooks/useNewsAnalysis';
-import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
@@ -9,7 +9,7 @@ import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 import { renderToString } from 'react-dom/server';
 
-vi.mock('@/shared/hooks/useAnalysisStream', () => ({
+vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({
     runAnalysisStream: vi.fn(),
 }));
 

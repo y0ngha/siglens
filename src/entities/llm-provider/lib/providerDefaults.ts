@@ -1,9 +1,8 @@
 /**
  * @file provider별 "기본 모델 후보" 우선순위 테이블.
  *
- * ⚠️ **이 파일의 어떤 export도 현재 production 소비처가 없다.**
- * `FALLBACK_MODEL_ID`, 네 개의 `*_MODEL_PRIORITY`, `resolveDefaultModelForProvider`
- * 모두 barrel(`entities/llm-provider`)로 공개돼 있을 뿐 `src/` 어디에서도 호출되지
+ * ⚠️ **이 파일의 `*_MODEL_PRIORITY` export는 현재 production 소비처가 없다.**
+ * export돼 있을 뿐 `src/` 어디에서도 호출되지
  * 않는다 — 분석 모델 기본값은 `useSelectedModel`의 `DEEPSEEK_V4_1_FLASH_MODEL`이,
  * BYOK 게이트는 `shared/lib/byokGate`가 `TIER_CONFIG`를 직접 읽어 처리한다.
  * 따라서 순서를 바꿔도 지금은 런타임 동작이 변하지 않는다.
@@ -18,14 +17,7 @@
  * 어느 쪽도 항상 이기지 않는다. 그래서 목록마다 근거를 한 줄씩 남긴다 — 새 모델을
  * 끼워 넣을 때는 그 근거에 맞춰 위치를 정하고, 근거가 바뀌면 주석도 함께 고칠 것.
  */
-import {
-    MODEL_SPECS,
-    type AIProvider,
-    type ModelId,
-} from '@y0ngha/siglens-core';
-
-/** 어떤 provider별 모델도 해석되지 않았을 때 쓰는 최종 기본값. */
-export const FALLBACK_MODEL_ID = 'claude-haiku-4-5' as const satisfies ModelId;
+import type { ModelId } from '@y0ngha/siglens-core';
 
 /** 세대 우선 — Anthropic은 세대 갭이 라인 갭보다 크다고 보고 5세대를 모두 앞에 둔다. */
 export const CLAUDE_MODEL_PRIORITY: readonly ModelId[] = [
@@ -67,29 +59,3 @@ export const DEEPSEEK_MODEL_PRIORITY: readonly ModelId[] = [
     'deepseek-v4.1-flash',
     'deepseek-v4.1-pro',
 ];
-
-const PROVIDER_PRIORITY_MAP: Record<AIProvider, readonly ModelId[]> = {
-    claude: CLAUDE_MODEL_PRIORITY,
-    gemini: GEMINI_MODEL_PRIORITY,
-    chatgpt: CHATGPT_MODEL_PRIORITY,
-    deepseek: DEEPSEEK_MODEL_PRIORITY,
-};
-
-export function resolveDefaultModelForProvider(
-    provider: AIProvider,
-    allowedModels: readonly ModelId[]
-): ModelId | null {
-    const priorityList = PROVIDER_PRIORITY_MAP[provider];
-    const allowedSet = new Set(allowedModels);
-
-    const match = priorityList.find(
-        modelId =>
-            allowedSet.has(modelId) &&
-            modelId in MODEL_SPECS &&
-            // PROVIDER_PRIORITY_MAP only contains keys defined in MODEL_SPECS, so the cast is safe
-            MODEL_SPECS[modelId as keyof typeof MODEL_SPECS].provider ===
-                provider
-    );
-
-    return match ?? null;
-}

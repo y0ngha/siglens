@@ -1,6 +1,5 @@
 import type { OAuthProvider } from '@/shared/lib/types';
 import { googleOAuthRevokerAdapter } from './googleRevoker';
-import { kakaoOAuthRevokerAdapter } from './kakaoRevoker';
 import type {
     OAuthRevoker,
     OAuthRevokerAdapter,
@@ -9,7 +8,6 @@ import type {
 
 const ADAPTER_MAP: Partial<Record<OAuthProvider, OAuthRevokerAdapter>> = {
     google: googleOAuthRevokerAdapter,
-    kakao: kakaoOAuthRevokerAdapter,
 };
 
 /** Composite OAuth revoker that delegates to provider-specific adapters; providers without a registered adapter are silently skipped. */

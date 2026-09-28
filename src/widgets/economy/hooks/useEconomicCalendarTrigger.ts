@@ -1,11 +1,9 @@
 'use client';
 
 import { useEffect, useEffectEvent, useRef } from 'react';
-import {
-    ensureEconomicCalendarAction,
-    ensureEconomicEventsAnalyzedAction,
-} from '@/entities/economy/actions';
-import type { CalendarCountry } from '@/entities/economy';
+import { ensureEconomicCalendarAction } from '@/entities/economy/actions/ensureEconomicCalendarAction';
+import { ensureEconomicEventsAnalyzedAction } from '@/entities/economy/actions/ensureEconomicEventsAnalyzedAction';
+import type { CalendarCountry } from '@/entities/economy/lib/economyCalendarConstants';
 
 /**
  * Fire-and-forget on mount (봇 포함, 1회):

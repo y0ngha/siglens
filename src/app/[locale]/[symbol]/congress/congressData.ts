@@ -1,7 +1,7 @@
 import {
     getCongressTradesResilient,
     type ResilientCongressTrades,
-} from '@/entities/congress-trades';
+} from '@/entities/congress-trades/lib/getCongressTradesResilient';
 
 /**
  * `/[symbol]/congress` 페이지가 필요로 하는 데이터(의회 거래 + degrade 신호)를

@@ -12,11 +12,14 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/shared/lib/cn';
-import { authNextQuery } from '@/shared/lib/auth';
+import { authNextQuery } from '@/shared/lib/auth/redirect';
 import { LocaleSwitcher } from './LocaleSwitcher';
 import { LOCALE_SWITCHER_VISIBLE } from '@/shared/i18n/locales';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
+import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
+import { useHydrated } from '@/shared/hooks/useHydrated';
+import { CloseIcon, MenuIcon } from '@/shared/ui/StrokeIcons';
 import type { NavVerticalNode } from './headerNavTree';
 import { isHrefActive } from './navActiveState';
 import { AiNavLink } from './AiNavLink';
@@ -52,7 +55,9 @@ export function HeaderMobileMenu({
     // 헤더 CTA와 **같은 키**를 쓴다 — 같은 목적지에 다른 문구가 붙으면 안 된다.
     const tUser = useTranslations('widgets.layout');
     const [isOpen, setIsOpen] = useState(false);
-    const [mounted, setMounted] = useState(false);
+    // 포털은 하이드레이션 뒤에만 그린다 — 첫 클라이언트 렌더가 서버 HTML(포털 없음)과
+    // 같아야 React #418이 나지 않는다. `document` 존재로 게이트하면 첫 렌더부터 어긋난다.
+    const mounted = useHydrated();
     // `NAV_TREE`의 href는 로케일 접두사가 없는 `/market` 형태다. `usePathname()`은
     // `/en/market`을 그대로 주므로, 떼지 않으면 `isHrefActive`의 정확 일치가 영영
     // 실패해 **비-ko 사용자에게 활성 내비 표시가 통째로 사라진다.**
@@ -73,31 +78,6 @@ export function HeaderMobileMenu({
     useEscapeKey(close, isOpen);
     useFocusTrap(drawerRef, isOpen);
 
-    /**
-     * SSR/hydration safety gate for the portal.
-     * useEffect fires only after hydration, so the first client render (with
-     * mounted=false) matches the server HTML (no portal rendered) — avoiding
-     * React #418 hydration mismatch. After hydration the effect flips
-     * mounted=true and the portal renders normally.
-     * The lazy-initializer form (`() => typeof document !== 'undefined`) would
-     * set mounted=true on the first client render while the server had false,
-     * causing the mismatch this pattern is designed to prevent.
-     *
-     * useEffectEvent makes the setState lint-safe: setState inside a useEffectEvent
-     * is not tracked as an effect dependency, so the react-hooks/set-state-in-effect
-     * lint rule does not fire. startTransition separately marks the mount update as
-     * non-urgent (deferred paint) — it is NOT the lint fix. Canonical React 19
-     * pattern (MISTAKES.md §10).
-     */
-    const markMounted = useEffectEvent(() => {
-        startTransition(() => {
-            setMounted(true);
-        });
-    });
-    useEffect(() => {
-        markMounted();
-    }, []);
-
     // Auto-close the drawer when the pathname changes (e.g. browser back/forward
     // popstate navigation). Nav link clicks already call close() directly, but
     // history navigation bypasses that handler — leaving the drawer open with
@@ -117,14 +97,7 @@ export function HeaderMobileMenu({
     }, [pathname]);
 
     // Prevent body scroll while the drawer is open
-    useEffect(() => {
-        if (!isOpen) return;
-        const prev = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
-        return () => {
-            document.body.style.overflow = prev;
-        };
-    }, [isOpen]);
+    useBodyScrollLock(isOpen);
 
     /*
      * The backdrop + drawer are portaled to document.body to escape the header's
@@ -161,23 +134,11 @@ export function HeaderMobileMenu({
                 onClick={toggle}
                 className="flex h-11 w-11 touch-manipulation items-center justify-center rounded text-secondary-400 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
-                <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    aria-hidden="true"
-                >
-                    <line x1="3" y1="6" x2="21" y2="6" />
-                    <line x1="3" y1="12" x2="21" y2="12" />
-                    <line x1="3" y1="18" x2="21" y2="18" />
-                </svg>
+                <MenuIcon className="size-6" />
             </button>
 
             {mounted &&
+                typeof document !== 'undefined' &&
                 createPortal(
                     <>
                         {isOpen && (
@@ -210,7 +171,7 @@ export function HeaderMobileMenu({
                                     tabIndex={isOpen ? undefined : -1}
                                     className="flex h-11 w-11 touch-manipulation items-center justify-center rounded text-secondary-400 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                                 >
-                                    <span aria-hidden="true">✕</span>
+                                    <CloseIcon className="size-5" />
                                 </button>
                             </div>
 

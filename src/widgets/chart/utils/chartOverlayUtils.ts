@@ -12,12 +12,12 @@ import {
 
 const PRICE_PANE_INDEX = 0;
 
-export interface OverlayLinePoint {
+interface OverlayLinePoint {
     time: number;
     value: number;
 }
 
-export interface OverlayMarker {
+interface OverlayMarker {
     time: number;
     position: 'aboveBar' | 'belowBar';
     text: string;

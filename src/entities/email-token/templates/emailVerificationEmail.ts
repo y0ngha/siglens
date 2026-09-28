@@ -1,9 +1,7 @@
-import type { EmailMessage } from '@/shared/email';
+import type { EmailMessage } from '@/shared/email/types';
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import type { EmailTranslator } from './emailTranslator';
-
-// Duplicates @/shared/lib/seo SITE_NAME and passwordResetEmail.ts — update all three if changed.
-const SITE_NAME = 'Siglens';
+import { SITE_NAME } from '@/shared/lib/seo';
 
 interface BuildEmailVerificationEmailInput {
     to: string;

@@ -8,7 +8,7 @@ import {
     type MockedFunction,
 } from 'vitest';
 
-vi.mock('@/widgets/market-fear-greed', () => ({
+vi.mock('@/widgets/market-fear-greed/MarketFearGreedPage', () => ({
     MarketFearGreedPage: () => null,
 }));
 
@@ -21,7 +21,7 @@ import FearGreedRoutePage, {
     revalidate,
 } from '@/app/[locale]/fear-greed/page';
 import { getMarketFearGreedStatic } from '@/entities/market-fear-greed/api/marketFearGreedStaticCache';
-import type { MarketFearGreedView } from '@/entities/market-fear-greed';
+import type { MarketFearGreedView } from '@/entities/market-fear-greed/model';
 import { clampSeoDescription, SITE_URL } from '@/shared/lib/seo';
 
 const mockGetMarketFearGreedStatic = getMarketFearGreedStatic as MockedFunction<

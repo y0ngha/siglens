@@ -1,55 +1,47 @@
 import type {
     AssembledPromptRecord,
-    MarketDataProvider,
     ModelId,
-    PositionBucket,
     Timeframe,
 } from '@y0ngha/siglens-core';
 import { after } from 'next/server';
 import { LocalizedStreamError } from '@/shared/lib/sse/LocalizedStreamError';
 import { getTranslations } from 'next-intl/server';
 import type { AnalysisGateErrorCode } from '@/shared/lib/types';
-import {
-    ANALYSIS_LOCALE_HEADER,
-    DEFAULT_LOCALE,
-    isLocale,
-    type Locale,
-} from '@/shared/i18n/locales';
+import type { Locale } from '@/shared/i18n/locales';
+import { localeFromRequestHeader } from '@/shared/lib/localeFromRequestHeader';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
+import { resolveHoldingPositionBucket } from '@/entities/portfolio/lib/resolveHoldingPositionBucket';
+import { logActionError } from '@/shared/lib/logActionError';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
-import { quoteWithTimeout } from '@/shared/api/market/quoteTimeout';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
-import {
-    resolveCurrentPrice,
-    rewriteToPlainLanguage,
-} from '@/entities/analysis-plain';
+import { resolveCurrentPrice } from '@/entities/analysis-plain/lib/currentPrice';
+import { rewriteToPlainLanguage } from '@/entities/analysis-plain/api';
 import { isE2E } from '@/shared/api/e2eEnv';
 import {
     currencyForSymbol,
     getDescriptor,
-} from '@/shared/config/marketProfile';
-import type { NewsFeedCategoryId } from '@/entities/market-news';
+} from '@/shared/config/marketProfile/registry';
+import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
 import { getDatabaseClient } from '@/shared/db/client';
 import {
     buildGateError,
     resolveTierAndByok,
     resolveTierOnly,
     resolveReasoning,
-    resolvePositionBucket,
 } from '@/shared/lib/byokGate';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
 import { heartbeatStream } from '@/shared/lib/sse/heartbeatStream';
 import { canAcceptAnalysisStream } from '@/shared/lib/sse/activeStreams';
 import { runAnalysis, type SubmitAnalysisOptions } from './runAnalysisBridge';
-import { tryAcquireReanalyzeCooldown } from '@/entities/analysis';
+import { tryAcquireReanalyzeCooldown } from '@/entities/analysis/lib/reanalyzeCooldown';
 import {
     DrizzleAnalysisHistoryRepository,
     resolveGeneratedAt,
     type AnalysisHistoryTab,
 } from '@/entities/analysis/analysisHistoryRepository';
-import { marketEventsLookback } from '@/entities/news-article';
+import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
 import { findMarketEventsForPrompt } from '@/entities/news-article/marketEventsRepository';
 // core에서 직접 import — 해제는 서버 전용이어야 한다(클라이언트가 호출할 수 있으면
 // 쿨다운을 지우고 재요청하는 루프로 무력화된다). 아래 `releaseOnFailure` 참고.
@@ -59,15 +51,13 @@ import { releaseReanalyzeCooldown } from '@y0ngha/siglens-core';
 // Calling them from the route (server-side) is safe — no browser connection means
 // no idle-connection wall at all. The SSE heartbeat stream keeps the browser
 // connection alive while these actions await the LLM.
-import {
-    runOverallAnalysisAction,
-    runFundamentalAnalysisAction,
-    runFinancialsAnalysisAction,
-    runCongressTrendAction,
-} from '@/entities/analysis/actions';
-import { submitNewsAnalysisAction } from '@/entities/news-article/actions';
+import { runOverallAnalysisAction } from '@/entities/analysis/actions/runOverallAnalysisAction';
+import { runFundamentalAnalysisAction } from '@/entities/analysis/actions/runFundamentalAnalysisAction';
+import { runFinancialsAnalysisAction } from '@/entities/analysis/actions/runFinancialsAnalysisAction';
+import { runCongressTrendAction } from '@/entities/analysis/actions/runCongressTrendAction';
+import { submitNewsAnalysisAction } from '@/entities/news-article/actions/submitNewsAnalysisAction';
 import { submitMarketNewsDigestAction } from '@/entities/market-news/actions/submitMarketNewsDigestAction';
-import { submitOptionsAnalysisAction } from '@/entities/options-chain/actions';
+import { submitOptionsAnalysisAction } from '@/entities/options-chain/actions/optionsActions';
 import { submitMarketBriefingAction } from '@/entities/market-summary/actions/submitMarketBriefingAction';
 import { submitMacroBriefingAction } from '@/entities/economy/actions/submitMacroBriefingAction';
 
@@ -205,7 +195,8 @@ const STREAM_DEADLINE_MS = 10 * 60 * 1_000;
  * 취소가 필요하다면 먼저 core의 `dedupeInFlight`에 참조 카운팅을 넣어 마지막 대기자가
  * 떠날 때만 abort되게 해야 한다. 그 전에는 여기서 signal을 넘기면 안 된다.
  *
- * 대신 폭주 방지는 `withDeadline`(5분)이 담당한다 — 클라이언트 유무와 무관한 상한이다.
+ * 대신 폭주 방지는 `withDeadline`(`STREAM_DEADLINE_MS`, 10분)이 담당한다 — 클라이언트
+ * 유무와 무관한 상한이다.
  */
 
 /**
@@ -215,11 +206,11 @@ const STREAM_DEADLINE_MS = 10 * 60 * 1_000;
  * 마감이 **자체 `AbortController`로 작업을 실제 취소**하는 게 핵심이다. 취소하지 않으면
  * 스트림만 닫히고 core의 호출은 provider 타임아웃(어댑터 기본 1시간)까지 계속 살아 있다.
  * 그 promise는 `dedupeInFlight` Map에 남으므로, 같은 캐시 키의 이후 요청이 전부 죽은
- * promise에 합류해 5분씩 기다렸다 실패한다 — 한 번의 provider 행이 그 키를 최대 한 시간
- * 봉인한다.
+ * promise에 합류해 `STREAM_DEADLINE_MS`(10분)씩 기다렸다 실패한다 — 한 번의 provider
+ * 행이 그 키를 최대 한 시간 봉인한다.
  *
  * 이 signal은 클라이언트별이 아니라 **작업별**이라, 위에서 설명한 공유 abort 문제가 없다:
- * 누가 듣고 있든 5분이 지나면 그 작업 자체가 가망이 없다.
+ * 누가 듣고 있든 `STREAM_DEADLINE_MS`가 지나면 그 작업 자체가 가망이 없다.
  */
 function withDeadline<T>(
     run: (signal: AbortSignal) => Promise<T>,
@@ -233,8 +224,8 @@ function withDeadline<T>(
             reject(new LocalizedStreamError(timeoutMessage));
         }, STREAM_DEADLINE_MS);
     });
-    // work가 먼저 끝나면 타이머를 즉시 회수한다 — 없으면 매 요청이 5분짜리 타이머와
-    // 그 reject 클로저를 붙들고 있어, LLM 작업까지 떠안은 인스턴스에서 그대로 누적된다.
+    // work가 먼저 끝나면 타이머를 즉시 회수한다 — 없으면 매 요청이 STREAM_DEADLINE_MS짜리
+    // 타이머와 그 reject 클로저를 붙들고 있어, LLM 작업까지 떠안은 인스턴스에서 그대로 누적된다.
     // run()이 **동기적으로** throw할 수 있다(핸들러가 params를 즉시 구조분해하는 경우).
     // 그대로 두면 Promise.race가 구성되지 않아 아래 finally가 붙지 않고, 타이머가
     // 살아남아 5분 뒤 아무도 듣지 않는 deadline이 reject된다(unhandled rejection).
@@ -530,81 +521,10 @@ const DISPATCH: Record<
  */
 
 /**
- * Resolves the position bucket for personalized analysis.
- *
- * ponytail: Cannot extract to `shared/` because FSD prohibits shared from importing
- * entities/portfolio. Refactor into `entities/analysis/lib/` if a second call site appears.
- *
- * Degrades to `undefined` (no bucket, i.e. shared/base analysis) on ANY failure —
- * a holding-read or price-read error must never block the underlying analysis call.
- */
-async function resolveHoldingPositionBucket(
-    userId: string | null,
-    tier: 'free' | 'member' | 'pro',
-    symbol: string,
-    fmpSymbol: string | undefined,
-    marketDataProvider: Pick<MarketDataProvider, 'getQuote'>
-): Promise<PositionBucket | undefined> {
-    if (tier === 'free' || userId === null) return undefined;
-    try {
-        const { db } = getDatabaseClient();
-        const holding = await new DrizzlePortfolioRepository(
-            db
-        ).findByUserAndSymbol(userId, symbol.toUpperCase());
-        if (holding === null) return undefined;
-        const avgPrice = Number(holding.averagePrice);
-        // This lookup happens BEFORE the first SSE byte goes out, so it
-        // must stay well inside the silence wall (measured: 125.9s) —
-        // bound enforced by `quoteWithTimeout` (see its own JSDoc for the
-        // FMP-429-storm math behind the bound).
-        const quote = await quoteWithTimeout(
-            marketDataProvider,
-            fmpSymbol ?? symbol
-        );
-        const currentPrice = quote?.price ?? null;
-        return resolvePositionBucket(tier, avgPrice, currentPrice ?? null);
-    } catch (err) {
-        console.error(
-            '[streamAnalysisRoute] position bucket resolution failed, degrading to no-bucket:',
-            err
-        );
-        return undefined;
-    }
-}
-
-/**
- * POST /api/analysis/stream
- *
- * Browser-side analysis requests MUST go through this SSE route, not server
- * actions. A server action is a single POST — while the server awaits the LLM
- * it sends no bytes, and the edge cuts the idle connection (measured on production:
- * 61.1 s through the ALB, 125.9 s through cloudflared after the 2026-08 migration;
- * 600 s completes cleanly with the 25 s heartbeat). Server-side callers (cron, SSR,
- * bots) are unaffected and may call `run*` directly.
- *
- * Request body: `{ type: AnalysisType; params: <type-specific shape> }`
- *
- * `technical` is handled inline (complex multi-step gating + position-bucket).
- * All other types delegate to their entity action via `DISPATCH`.
- */
-/**
- * 요청이 실은 로케일. 없거나 알 수 없는 값이면 기본 로케일.
- *
- * `/api/*`는 next-intl 미들웨어 matcher에서 제외돼 있어 요청 로케일을 알 방법이
- * 헤더뿐이다(`useAnalysisStream`이 주소에서 유도해 싣는다). 신뢰 경계이므로
- * 반드시 `isLocale`로 검증한다 — 임의 문자열이 캐시 키에 들어가면 번역 캐시가
- * 무한히 파편화된다.
- */
-function resolveRequestLocale(request: Request): Locale {
-    const raw = request.headers.get(ANALYSIS_LOCALE_HEADER) ?? '';
-    return isLocale(raw) ? raw : DEFAULT_LOCALE;
-}
-
-/**
  * 사용자 화면에 그대로 렌더되는 에러 문구.
  *
  * `heartbeatStream`이 거절을 SSE `error` 이벤트의 `{ message }`로 실어 보내고,
- * `useAnalysisStream` → `useAnalysis` → `ChartContent`의 `<ErrorBanner>`가 그걸
+ * `runAnalysisStream` → `useAnalysis` → `ChartContent`의 `<ErrorBanner>`가 그걸
  * 그대로 띄운다. 즉 **서버 로그 문구가 아니라 UI 카피**다.
  *
  * `scripts/i18n/lib/scan.mjs`는 `src/app/api/`를 "사용자에게 렌더되지 않는다"는
@@ -816,6 +736,21 @@ function withReaderViews<T>(
     });
 }
 
+/**
+ * POST /api/analysis/stream
+ *
+ * Browser-side analysis requests MUST go through this SSE route, not server
+ * actions. A server action is a single POST — while the server awaits the LLM
+ * it sends no bytes, and the edge cuts the idle connection (measured on production:
+ * 61.1 s through the ALB, 125.9 s through cloudflared after the 2026-08 migration;
+ * 600 s completes cleanly with the 25 s heartbeat). Server-side callers (cron, SSR,
+ * bots) are unaffected and may call `run*` directly.
+ *
+ * Request body: `{ type: AnalysisType; params: <type-specific shape> }`
+ *
+ * `technical` is handled inline (complex multi-step gating + position-bucket).
+ * All other types delegate to their entity action via `DISPATCH`.
+ */
 export async function POST(request: Request): Promise<Response> {
     // --- 1. Parse and validate request body ---
     let body: StreamRequestBody;
@@ -851,7 +786,7 @@ export async function POST(request: Request): Promise<Response> {
             // 스트림까지 모든 `heartbeatStream` 호출이 로케일별 제네릭 문구를
             // 필요로 하고, 동시성 검사와 스트림 생성 사이에 `await`가 들어가면
             // 원자성이 깨지기 때문이다.
-            const requestLocale = resolveRequestLocale(request);
+            const requestLocale = localeFromRequestHeader(request);
             const t = await streamMessages(requestLocale);
 
             // --- 2a. Auth ---
@@ -886,7 +821,7 @@ export async function POST(request: Request): Promise<Response> {
                         ).findByUserAndSymbol(userId, symbol.toUpperCase());
                         personalized = holding !== null;
                     } catch (error) {
-                        console.error(
+                        logActionError(
                             '[streamAnalysisRoute] E2E personalized-flag holding read failed, degrading to false:',
                             error
                         );
@@ -966,13 +901,14 @@ export async function POST(request: Request): Promise<Response> {
             }
 
             // --- 2f. Position bucket for personalized analysis ---
-            const positionBucket = await resolveHoldingPositionBucket(
+            const positionBucket = await resolveHoldingPositionBucket({
                 userId,
                 tier,
                 symbol,
-                fmpSymbol,
-                marketDataProvider
-            );
+                quoteSymbol: fmpSymbol,
+                marketDataProvider,
+                logTag: '[streamAnalysisRoute] position bucket resolution failed, degrading to no-bucket:',
+            });
 
             // --- 2g. Build work promise and stream ---
             // core의 `onPromptAssembled`는 캐시 미스에서 정확히 한 번, 프로바이더
@@ -1251,7 +1187,7 @@ export async function POST(request: Request): Promise<Response> {
                     // catch 블록이라 try 안의 `requestLocale`이 스코프 밖이다.
                     error: await buildGateError(
                         'unexpected_error',
-                        resolveRequestLocale(request)
+                        localeFromRequestHeader(request)
                     ),
                 },
                 { status: 500 }
@@ -1283,7 +1219,7 @@ export async function POST(request: Request): Promise<Response> {
 
     // 번역자는 동시성 검사 **이전에** 확보한다 — 검사와 스트림 생성 사이에
     // await가 들어가면 원자성이 깨진다(위 technical 분기 주석 참고).
-    const locale = resolveRequestLocale(request);
+    const locale = localeFromRequestHeader(request);
     const t = await streamMessages(locale);
 
     // 동시 분석 상한 — 사람/봇 구분 없이 같은 값을 쓴다. 근거는

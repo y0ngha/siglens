@@ -1,4 +1,4 @@
-import type { StreamErrorMessages } from '@/shared/hooks/useAnalysisStream';
+import type { StreamErrorMessages } from '@/shared/lib/sse/runAnalysisStream';
 
 /**
  * 테스트용 `StreamErrorMessages`.

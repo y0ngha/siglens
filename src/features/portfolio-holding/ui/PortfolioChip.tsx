@@ -4,10 +4,11 @@ import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import { useRef, useState } from 'react';
 import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
-import { currencyForSymbol } from '@/shared/config/marketProfile';
+import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
 import { cn } from '@/shared/lib/cn';
 import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
 import { useSymbolHolding } from '../hooks/useSymbolHolding';
+import { SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 
 // Code-split: the popover pulls in the holding form + mutation code, which
 // only members who actually open it should download. Guests (and members who
@@ -68,7 +69,10 @@ export function PortfolioChip({ symbol }: PortfolioChipProps) {
     if (isLoading) {
         return (
             <span
-                className="inline-flex min-h-11 w-24 animate-pulse rounded-lg bg-secondary-700/40"
+                className={cn(
+                    SURFACE_NESTED,
+                    'inline-flex min-h-11 w-24 animate-pulse'
+                )}
                 aria-hidden="true"
             />
         );

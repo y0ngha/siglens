@@ -4,11 +4,13 @@
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: vi.fn().mockResolvedValue(true),
 }));
-vi.mock('@/widgets/congress', () => ({
+vi.mock('@/widgets/congress/CongressTrendSummary', () => ({
     CongressTrendSummary: () => null,
+}));
+vi.mock('@/widgets/congress/CongressTradesTable', () => ({
     CongressTradesTable: () => null,
 }));
-vi.mock('@/views/symbol', () => ({
+vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({
     SymbolPageHeading: ({ children }: { children: React.ReactNode }) =>
         children,
 }));
@@ -19,14 +21,18 @@ vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
 vi.mock('@/shared/config/market', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/config/market')>()),
 }));
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker/lib/assetClassification', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+}));
+vi.mock('@/entities/ticker/lib/ticker', () => ({
     pickAssetName: (info: { name: string; koreanName?: string }) =>
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
+}));
+vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
-vi.mock('@/app/[locale]/[symbol]/fundamental/getProfileResilient', () => ({
+vi.mock('@/entities/ticker/lib/getProfileResilient', () => ({
     getProfileResilient: vi.fn(),
 }));
 vi.mock('@/app/[locale]/[symbol]/congress/congressData', () => ({
@@ -37,7 +43,7 @@ vi.mock('@/app/[locale]/[symbol]/congress/CongressDegraded', () => ({
 }));
 // `getCongressTradesResilient`는 generateMetadata가 page body와 동일한 envelope를
 // 한 번 더 호출(React.cache로 메모이즈됨)하므로 mock으로 케이스별 degrade를 제어한다.
-vi.mock('@/entities/congress-trades', () => ({
+vi.mock('@/entities/congress-trades/lib/getCongressTradesResilient', () => ({
     getCongressTradesResilient: vi.fn(),
 }));
 vi.mock('@/shared/lib/seo', async importOriginal => ({
@@ -75,9 +81,9 @@ import {
     generateMetadata,
     revalidate,
 } from '@/app/[locale]/[symbol]/congress/page';
-import { getAssetInfoResilient } from '@/entities/ticker';
-import { getProfileResilient } from '@/app/[locale]/[symbol]/fundamental/getProfileResilient';
-import { getCongressTradesResilient } from '@/entities/congress-trades';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
+import { getCongressTradesResilient } from '@/entities/congress-trades/lib/getCongressTradesResilient';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import type { MockedFunction } from 'vitest';
 

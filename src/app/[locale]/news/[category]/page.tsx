@@ -1,30 +1,29 @@
 import { useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
-import { setRequestLocale } from 'next-intl/server';
-import { DEFAULT_LOCALE, isLocale, localePath } from '@/shared/i18n/locales';
+import { localePath, resolveLocale } from '@/shared/i18n/locales';
 import type { Locale } from '@/shared/i18n/locales';
 import { localeAlternates, localeOpenGraph } from '@/shared/lib/seoAlternates';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import {
     CATEGORY_CONFIG,
-    MARKET_NEWS_CACHE_TAG_PREFIX,
     NEWS_CATEGORY_SLUGS,
     categoryFromSlug,
-    type MarketNewsCardItem,
     type CategoryConfig,
     type NewsFeedCategoryId,
-} from '@/entities/market-news';
-import { getMarketNewsCards } from '@/entities/market-news/api';
+} from '@/entities/market-news/lib/categoryConfig';
+import { MARKET_NEWS_CACHE_TAG_PREFIX } from '@/entities/market-news/lib/marketNewsConstants';
+import { type MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
+import { getMarketNewsCards } from '@/entities/market-news/api/marketNewsRepository';
 import { peekMarketNewsDigestStatic } from '@/entities/market-news/api/marketNewsDigestStaticCache';
+import { MarketNewsDigest } from '@/widgets/market-news/MarketNewsDigest';
+import { MarketNewsList } from '@/widgets/market-news/MarketNewsList';
 import {
-    MarketNewsDigest,
-    MarketNewsList,
     MARKET_NEWS_LIST_PAGE_SIZE,
-    MARKET_NEWS_ROW_SERIALIZATION_LIMIT,
-} from '@/widgets/market-news';
-import { NewsCategoryTabs } from '@/widgets/news-hub';
+    NEWS_ROW_SERIALIZATION_LIMIT as MARKET_NEWS_ROW_SERIALIZATION_LIMIT,
+} from '@/shared/config/newsSerialization';
+import { NewsCategoryTabs } from '@/widgets/news-hub/NewsCategoryTabs';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
@@ -40,6 +39,9 @@ import {
 } from '@/shared/lib/seo';
 import { resolveNewsTitle } from '@/shared/lib/news/resolveNewsTitle';
 import { buildCategoryPageTitle, buildCategoryPageDescription } from './seo';
+import { enterLocale } from '@/shared/lib/enterLocale';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { cn } from '@/shared/lib/cn';
 
 // 12h ISR — 신선도는 ensureMarketNewsCardsAnalyzedAction의 on-demand
 // revalidateTag('market-news:<sentinel>', 'max')가 보장, 시간 기반은 상한만.
@@ -149,7 +151,7 @@ async function loadCategorySnapshot(
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { locale: rawLocale, category: slug } = await params;
-    const locale = isLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
+    const locale = resolveLocale(rawLocale);
     const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     // 카테고리 라벨은 이미 네 로케일 카탈로그에 있다(`CATEGORY_CONFIG.labelKey`).
     // `cfg.koLabel`을 번역된 템플릿에 꽂으면 `미국 주식 News`처럼 반쪽만
@@ -229,13 +231,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function CategoryNewsPage({ params }: Props) {
-    const { locale, category: slug } = await params;
-    // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
-    // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
-    // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
-    setRequestLocale(locale);
-    // DB 콘텐츠(뉴스 제목·요약) 해석에 쓸 좁혀진 로케일. URL 세그먼트는 신뢰 경계다.
-    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const { locale: rawLocale, category: slug } = await params;
+    const locale = enterLocale(rawLocale);
     // 셋은 서로 독립이다.
     const [tNav, t, tSeo] = await Promise.all([
         getTranslations(),
@@ -254,8 +251,8 @@ export default async function CategoryNewsPage({ params }: Props) {
     // peekBriefingStatic and /economy's peekMacroBriefingStatic. See
     // src/entities/market-news/api/marketNewsDigestStaticCache.ts.
     const [{ items, isEmpty }, digestPeekSeed] = await Promise.all([
-        loadCategorySnapshot(cat, resolved),
-        peekMarketNewsDigestStatic(cat, resolved),
+        loadCategorySnapshot(cat, locale),
+        peekMarketNewsDigestStatic(cat, locale),
     ]);
 
     const hasEnrichedNews = items.some(item => item.sentiment !== null);
@@ -273,7 +270,7 @@ export default async function CategoryNewsPage({ params }: Props) {
                       tNav(cfg.descriptionKey),
                       tSeo
                   ),
-                  locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+                  locale,
               }),
           }
         : null;
@@ -290,7 +287,7 @@ export default async function CategoryNewsPage({ params }: Props) {
                   name,
                   url: `${SITE_URL}${path}`,
               })),
-              isLocale(locale) ? locale : DEFAULT_LOCALE
+              locale
           )
         : null;
 
@@ -319,10 +316,7 @@ export default async function CategoryNewsPage({ params }: Props) {
                                * we don't hold each source's logo asset.
                                */
                               '@type': 'Article',
-                              headline: resolveNewsTitle(
-                                  item,
-                                  isLocale(locale) ? locale : DEFAULT_LOCALE
-                              ),
+                              headline: resolveNewsTitle(item, locale),
                               url: item.url,
                               datePublished: item.publishedAt,
                               // D5 (M-10): FMP category news carries no per-article image, so
@@ -407,7 +401,7 @@ function DigestSkeleton() {
             aria-busy="true"
             role="status"
             aria-label={t('page.faef4a')}
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+            className={cn(SURFACE_CARD, 'p-6')}
         >
             <div className="mb-4 h-5 w-1/3 animate-pulse rounded bg-secondary-700 motion-reduce:animate-none" />
             <div className="space-y-2">
@@ -427,7 +421,7 @@ function MarketNewsDegraded({ koLabel }: MarketNewsDegradedProps) {
     return (
         <section
             aria-label={t('page.newsEmptyAria', { v0: koLabel })}
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+            className={cn(SURFACE_CARD, 'p-6')}
         >
             <p className="text-sm text-secondary-400">
                 {t('page.fdb87b', { v0: koLabel })}

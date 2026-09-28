@@ -25,6 +25,19 @@ describe('LoginError page', () => {
         );
     });
 
+    it('announces the error message via a single role="alert" region', () => {
+        render(
+            <LoginError
+                error={Object.assign(new Error('test'), { digest: 'abc' })}
+                reset={vi.fn()}
+            />
+        );
+
+        expect(screen.getByRole('alert')).toHaveTextContent(
+            '로그인 페이지를 표시할 수 없어요'
+        );
+    });
+
     it('renders a retry button that calls reset', () => {
         const mockReset = vi.fn();
         render(

@@ -52,7 +52,7 @@ export interface TermsTranslationInput {
 }
 
 /** Repository for versioned legal terms documents. */
-export interface TermsRepository {
+interface TermsRepository {
     /**
      * Return the active version for the given kind, or null if none.
      *

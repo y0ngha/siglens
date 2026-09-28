@@ -31,7 +31,7 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => getDatabaseClient(),
 }));
 
-vi.mock('@/entities/symbol-view', () => ({
+vi.mock('@/entities/symbol-view/api', () => ({
     DrizzleSymbolViewRepository: class {
         recordView = recordView;
         pruneOlderThan = pruneOlderThan;

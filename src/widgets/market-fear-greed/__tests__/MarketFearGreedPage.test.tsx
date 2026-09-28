@@ -5,7 +5,7 @@ import type { MarketFearGreedSnapshot } from '@y0ngha/siglens-core';
 import type {
     MarketFearGreedCryptoView,
     MarketFearGreedView,
-} from '@/entities/market-fear-greed';
+} from '@/entities/market-fear-greed/model';
 import { MarketFearGreedPage } from '@/widgets/market-fear-greed/MarketFearGreedPage';
 import {
     CONFIDENCE_LIMITED_KEY,

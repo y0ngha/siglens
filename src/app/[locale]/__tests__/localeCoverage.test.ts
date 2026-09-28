@@ -103,8 +103,11 @@ describe('로케일 커버리지', () => {
             source.includes('export async function generateMetadata');
         if (!declaresMetadata) return;
 
+        // 허브·약관 라우트는 공용 빌더를 거친다 — 전부 내부에서
+        // `localeAlternatesFrom`을 부른다(`seoAlternates.buildHubMetadata`,
+        // `fear-greed/fearGreedRoute`, `market/marketMetadata`, `_legal/legalPolicy`).
         expect(source).toMatch(
-            /localeAlternatesFrom|localeAlternates\(|symbolMetadataFromSeo\(/
+            /localeAlternatesFrom|localeAlternates\(|symbolMetadataFromSeo\(|buildHubMetadata\(|fearGreedMetadata\(|marketMetadata\(|legalPolicyMetadata\(/
         );
     });
 
@@ -120,7 +123,10 @@ describe('로케일 커버리지', () => {
      * 사라지고, 빌드는 성공하며 테스트도 통과한다 — 캐시 비용 청구서로만 드러난다.
      */
     it.each(SERVER_PAGES)('%s: setRequestLocale을 호출한다', page => {
-        expect(readFileSync(page, 'utf8')).toContain('setRequestLocale(');
+        // `enterLocale`(shared/lib/enterLocale)이 `setRequestLocale`을 감싼다.
+        expect(readFileSync(page, 'utf8')).toMatch(
+            /\b(setRequestLocale|enterLocale)\(/
+        );
     });
 
     /**

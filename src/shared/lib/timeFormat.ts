@@ -1,4 +1,5 @@
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
+import { cachedDateTimeFormat } from '@/shared/lib/intlFormatCache';
 import type { Timeframe } from '@y0ngha/siglens-core';
 import {
     KST_OFFSET_HOURS,
@@ -14,18 +15,12 @@ import {
  * 그려서 `/en/AAPL`이 `4월 5월`을 찍었다(브라우저가 ko-KR일 때). 축과
  * 크로스헤어가 같은 로케일을 쓰도록 둘 다 URL 로케일에 맞춘다.
  */
-const MONTH_DAY_CACHE = new Map<Locale, Intl.DateTimeFormat>();
-
 function monthDayFormatter(locale: Locale): Intl.DateTimeFormat {
-    const cached = MONTH_DAY_CACHE.get(locale);
-    if (cached) return cached;
-    const fmt = new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+    return cachedDateTimeFormat(INTL_LOCALE[locale], {
         month: 'short',
         day: 'numeric',
         timeZone: 'UTC',
     });
-    MONTH_DAY_CACHE.set(locale, fmt);
-    return fmt;
 }
 
 function toKstDate(timestampSeconds: number): Date {
@@ -76,12 +71,8 @@ const DATE_TIME_TIMEFRAMES: ReadonlySet<Timeframe> = new Set([
  *
  * 타임존은 KST로 유지한다 — 뒤에 `KST`를 명시해 붙이므로 로케일과 무관하다.
  */
-const NEWS_FORMATTER_CACHE = new Map<Locale, Intl.DateTimeFormat>();
-
 function newsFormatterFor(locale: Locale): Intl.DateTimeFormat {
-    const cached = NEWS_FORMATTER_CACHE.get(locale);
-    if (cached) return cached;
-    const formatter = new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+    return cachedDateTimeFormat(INTL_LOCALE[locale], {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
@@ -89,8 +80,6 @@ function newsFormatterFor(locale: Locale): Intl.DateTimeFormat {
         minute: '2-digit',
         timeZone: 'Asia/Seoul',
     });
-    NEWS_FORMATTER_CACHE.set(locale, formatter);
-    return formatter;
 }
 
 /**

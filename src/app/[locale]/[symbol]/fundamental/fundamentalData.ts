@@ -6,12 +6,7 @@ import {
     TRANSLATABLE_ENTITY,
 } from '@/shared/db/contentTranslationFields';
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
-// DrizzleProfileDescriptionTranslationRepository lives in api.ts which is server-only;
-// import from the deep path to avoid pulling the DB chain into the client barrel.
 import { DrizzleProfileDescriptionTranslationRepository } from '@/entities/ticker/api';
-// translateCompanyDescription also barrel-excluded — koreanTranslator.ts transitively
-// pulls in @anthropic-ai/sdk + openai + @google/genai via @/entities/llm-provider, which
-// the barrel is not allowed to leak into 'use client' consumers (TickerAutocomplete etc.).
 import { translateCompanyDescription } from '@/entities/ticker/lib/koreanTranslator';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import type {

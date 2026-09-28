@@ -29,7 +29,8 @@ export function useSymbolChatDispatch(): SymbolChatDispatch {
 }
 
 /**
- * Page-level publish helper. Each page (chart / fundamental / news / overall)
+ * Page-level publish helper. Each symbol page (chart, fundamental, news,
+ * overall, financials, options, congress, fear-greed, market-news, ...)
  * calls this once its analysis result is available.
  *
  * `publish` runs whenever `state` changes; `clear` is split into a separate

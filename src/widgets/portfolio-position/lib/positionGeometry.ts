@@ -11,7 +11,7 @@ export interface PositionInputs {
     avg: number; // 회원 평단
 }
 
-export interface PositionBand {
+interface PositionBand {
     fromPct: number;
     toPct: number;
 }

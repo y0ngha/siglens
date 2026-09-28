@@ -1,5 +1,5 @@
 import { useTranslations } from 'next-intl';
-import type { MarketProfileId } from '@/shared/config/marketProfile';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { SnapshotBulletList } from '../SnapshotBulletList';
 import { cn } from '@/shared/lib/cn';
@@ -36,9 +36,6 @@ interface CongressSnapshotProseProps {
      */
     plain?: string | null;
 }
-
-export { narrowCongressContent } from './congressContent';
-export { hasCongressProse } from './congressContent';
 
 /**
  * SEO pre-warm 스냅샷의 congress 탭 프로즈 렌더러 — Task 6, 다섯 번째 탭

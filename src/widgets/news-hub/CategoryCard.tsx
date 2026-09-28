@@ -1,5 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { cn } from '@/shared/lib/cn';
 
 /**
  * Maximum number of headline previews to render on the hub card.
@@ -55,7 +57,12 @@ export function CategoryCard({
 }: CategoryCardProps) {
     const t = useTranslations('widgets.news-hub');
     return (
-        <article className="flex w-full min-w-0 flex-col overflow-hidden rounded-lg border border-secondary-700 bg-secondary-800 p-5 transition-colors hover:border-primary-500/50">
+        <article
+            className={cn(
+                SURFACE_CARD,
+                'flex w-full min-w-0 flex-col overflow-hidden p-5 transition-colors hover:border-primary-500/50'
+            )}
+        >
             {/*
                 **제목이 링크다.** 예전에는 아래 `더보기 →`만 링크라, 이 카드가 거는
                 내부 링크의 앵커 텍스트가 전부 "더보기"였다 — 목적지가 무엇에 관한

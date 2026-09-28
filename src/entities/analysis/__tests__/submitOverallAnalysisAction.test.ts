@@ -44,7 +44,7 @@ vi.mock('@/entities/news-article/api', async () => {
     };
 });
 
-vi.mock('@/entities/earnings-report', () => ({
+vi.mock('@/entities/earnings-report/api', () => ({
     getNextEarningsReport: vi.fn(),
 }));
 
@@ -95,7 +95,7 @@ vi.mock('@/entities/financials-statements/lib/getFinancialsSnapshot', () => ({
     getFinancialsSnapshot: vi.fn(),
 }));
 
-vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
+vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: vi.fn().mockResolvedValue('us-equity'),
 }));
 
@@ -127,8 +127,8 @@ import {
 } from '@y0ngha/siglens-core';
 import { headers } from 'next/headers';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
-import { MAX_AGGREGATE_NEWS_ITEMS } from '@/entities/news-article';
-import { getNextEarningsReport } from '@/entities/earnings-report';
+import { MAX_AGGREGATE_NEWS_ITEMS } from '@/entities/news-article/lib/newsAnalysisSelection';
+import { getNextEarningsReport } from '@/entities/earnings-report/api';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
@@ -136,7 +136,7 @@ import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestSt
 import type { AnalysisGateError } from '@/shared/lib/types';
 import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 
 const mockProvider = {} as import('@y0ngha/siglens-core').MarketDataProvider;
 

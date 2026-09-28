@@ -35,7 +35,7 @@ vi.mock('@/shared/lib/byokGate', () => ({
         .mockReturnValue({ code: 'unexpected_error', message: '' }),
 }));
 
-vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
+vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: vi.fn().mockResolvedValue('us-equity'),
 }));
 
@@ -59,7 +59,7 @@ const { US_EQUITY, KR_EQUITY, CRYPTO } = await vi.hoisted(async () => {
     };
 });
 
-vi.mock('@/shared/config/marketProfile', () => ({
+vi.mock('@/shared/config/marketProfile/registry', () => ({
     getDescriptor: vi.fn().mockReturnValue(US_EQUITY),
     /**
      * 통화 판별은 실물을 쓴다.
@@ -175,19 +175,25 @@ vi.mock('../runAnalysisBridge', () => ({
 
 // DISPATCH action mocks — each entity action is mocked at its import path so
 // the route's DISPATCH table picks up the mock (vi.mock is hoisted).
-vi.mock('@/entities/analysis/actions', () => ({
+vi.mock('@/entities/analysis/actions/runOverallAnalysisAction', () => ({
     runOverallAnalysisAction: vi.fn(),
+}));
+vi.mock('@/entities/analysis/actions/runFundamentalAnalysisAction', () => ({
     runFundamentalAnalysisAction: vi.fn(),
+}));
+vi.mock('@/entities/analysis/actions/runFinancialsAnalysisAction', () => ({
     runFinancialsAnalysisAction: vi.fn(),
+}));
+vi.mock('@/entities/analysis/actions/runCongressTrendAction', () => ({
     runCongressTrendAction: vi.fn(),
 }));
-vi.mock('@/entities/news-article/actions', () => ({
+vi.mock('@/entities/news-article/actions/submitNewsAnalysisAction', () => ({
     submitNewsAnalysisAction: vi.fn(),
 }));
 vi.mock('@/entities/market-news/actions/submitMarketNewsDigestAction', () => ({
     submitMarketNewsDigestAction: vi.fn(),
 }));
-vi.mock('@/entities/options-chain/actions', () => ({
+vi.mock('@/entities/options-chain/actions/optionsActions', () => ({
     submitOptionsAnalysisAction: vi.fn(),
 }));
 vi.mock('@/entities/market-summary/actions/submitMarketBriefingAction', () => ({
@@ -207,8 +213,10 @@ vi.mock('@y0ngha/siglens-core', async () => ({
     releaseReanalyzeCooldown: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('@/entities/analysis-plain', () => ({
+vi.mock('@/entities/analysis-plain/api', () => ({
     rewriteToPlainLanguage: vi.fn(async () => '쉽게 쓴 분석문입니다.'),
+}));
+vi.mock('@/entities/analysis-plain/lib/currentPrice', () => ({
     /**
      * 현재가 조회는 이 라우트의 관심사가 아니다 — "payload에 숫자가 있으면
      * 조회하지 않는다"는 분기는 `entities/analysis-plain/lib/currentPrice.ts`로
@@ -217,7 +225,7 @@ vi.mock('@/entities/analysis-plain', () => ({
      */
     resolveCurrentPrice: vi.fn(async () => undefined),
 }));
-vi.mock('@/entities/analysis', () => ({
+vi.mock('@/entities/analysis/lib/reanalyzeCooldown', () => ({
     tryAcquireReanalyzeCooldown: vi.fn().mockResolvedValue({ ok: true }),
 }));
 
@@ -235,37 +243,35 @@ import {
     resolvePositionBucket,
     resolveReasoning,
 } from '@/shared/lib/byokGate';
-import { rewriteToPlainLanguage } from '@/entities/analysis-plain';
+import { rewriteToPlainLanguage } from '@/entities/analysis-plain/api';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { DrizzleAnalysisHistoryRepository } from '@/entities/analysis/analysisHistoryRepository';
 import { isBot } from '@/shared/api/isBot';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { e2eCachedTechnical } from '@/shared/api/e2eAnalysisStub';
-import {
-    runOverallAnalysisAction,
-    runFundamentalAnalysisAction,
-    runFinancialsAnalysisAction,
-    runCongressTrendAction,
-} from '@/entities/analysis/actions';
-import { submitNewsAnalysisAction } from '@/entities/news-article/actions';
+import { runOverallAnalysisAction } from '@/entities/analysis/actions/runOverallAnalysisAction';
+import { runFundamentalAnalysisAction } from '@/entities/analysis/actions/runFundamentalAnalysisAction';
+import { runFinancialsAnalysisAction } from '@/entities/analysis/actions/runFinancialsAnalysisAction';
+import { runCongressTrendAction } from '@/entities/analysis/actions/runCongressTrendAction';
+import { submitNewsAnalysisAction } from '@/entities/news-article/actions/submitNewsAnalysisAction';
 import { submitMarketNewsDigestAction } from '@/entities/market-news/actions/submitMarketNewsDigestAction';
-import { submitOptionsAnalysisAction } from '@/entities/options-chain/actions';
+import { submitOptionsAnalysisAction } from '@/entities/options-chain/actions/optionsActions';
 import { submitMarketBriefingAction } from '@/entities/market-summary/actions/submitMarketBriefingAction';
 import { submitMacroBriefingAction } from '@/entities/economy/actions/submitMacroBriefingAction';
-import { tryAcquireReanalyzeCooldown } from '@/entities/analysis';
+import { tryAcquireReanalyzeCooldown } from '@/entities/analysis/lib/reanalyzeCooldown';
 import { releaseReanalyzeCooldown } from '@y0ngha/siglens-core';
 import {
     MAX_CONCURRENT_ANALYSIS_STREAMS,
     incrementActiveStreams,
     __resetActiveStreamsForTests,
 } from '@/shared/lib/sse/activeStreams';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
-import { getDescriptor } from '@/shared/config/marketProfile';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { QUOTE_LOOKUP_TIMEOUT_MS } from '@/shared/api/market/quoteTimeout';
-import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 
 const decoder = new TextDecoder();
 
@@ -787,7 +793,7 @@ describe('POST /api/analysis/stream', () => {
          * 헤더 로케일이 **액션 인자까지** 도달하는지 본다.
          *
          * 스위트의 다른 로케일 단언은 전부 `'ko'`(= `DEFAULT_LOCALE`)라
-         * `resolveRequestLocale`을 상수 반환으로 바꿔도 통과했다(감사 실증:
+         * 헤더 로케일 해석(현 `localeFromRequestHeader`)을 상수 반환으로 바꿔도 통과했다(감사 실증:
          * 10,516개 전부 초록). 비-기본 로케일이어야만 반증이 된다.
          */
         it.each(['ja', 'en', 'zh'])(

@@ -34,7 +34,7 @@ const mockSetActiveTab = vi.fn((tab: string) => {
     mockActiveTab = tab;
 });
 
-vi.mock('@/features/backtest-filter', () => ({
+vi.mock('@/features/backtest-filter/hooks/useBacktestFilter', () => ({
     useBacktestFilter: () => ({
         tabItems: [
             { value: 'all', label: '전체' },
@@ -51,7 +51,7 @@ vi.mock('@/widgets/backtesting/BacktestCaseList', () => ({
     BacktestCaseList: () => <div data-testid="case-list">Cases</div>,
 }));
 
-vi.mock('@/shared/ui/tabs', async () => {
+vi.mock('@/shared/ui/tabs/TabsUnderline', async () => {
     const { createTabsUnderlineMock } =
         await import('./helpers/TabsUnderlineMock');
     return createTabsUnderlineMock();

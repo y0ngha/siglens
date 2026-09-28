@@ -41,7 +41,7 @@ vi.mock('@/widgets/chat/hooks/useChat', () => ({
 }));
 
 let mockIsAnalysisReady = true;
-vi.mock('@/features/symbol-chat', () => ({
+vi.mock('@/features/symbol-chat/hooks/useSymbolChat', () => ({
     useSymbolChat: () => ({
         context: null,
         timeframe: '1Day',

@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import type { StreamErrorMessages } from '@/shared/hooks/useAnalysisStream';
+import type { StreamErrorMessages } from '@/shared/lib/sse/runAnalysisStream';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
@@ -12,8 +12,7 @@ import type {
     OverallAxis,
     Timeframe,
 } from '@y0ngha/siglens-core';
-import type { AssetClass } from '@/shared/config/marketProfile';
-import type { RunOverallAnalysisActionResult as CoreOverallResult } from '@/entities/analysis/actions';
+import type { RunOverallAnalysisActionResult as CoreOverallResult } from '@/entities/analysis/actions/runOverallAnalysisAction';
 
 /**
  * 재분석 의도로 보낸 요청인데 서버가 쿨다운을 획득하지 못한 경우의 응답.
@@ -22,8 +21,8 @@ import type { RunOverallAnalysisActionResult as CoreOverallResult } from '@/enti
 type RunOverallAnalysisActionResult =
     | CoreOverallResult
     | { status: 'reanalyze_cooldown'; remainingMs: number };
-import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
-import { isGateBlockedResult } from '@/entities/analysis';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
+import { isGateBlockedResult } from '@/entities/analysis/lib/gate';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import type { OverallAnalysisState } from '../types';
 import { readPlain, type WithPlain } from '@/shared/lib/plainEnvelope';
@@ -143,14 +142,6 @@ export function useOverallAnalysis(
      * 재분석(trigger force)으로 처리된다.
      */
     initialResult?: OverallAnalysisResponse,
-    /**
-     * Asset class of the symbol being analysed.
-     * Crypto runs on technical + news only — fundamental and options axes are
-     * never submitted for crypto symbols (handled server-side by runOverallAnalysis).
-     * Defaults to 'equity' so existing callers that don't yet pass this param
-     * continue to get the full 4-axis behaviour.
-     */
-    _assetClass: AssetClass = 'equity',
     /**
      * Member "깊은 생각" (deep-thinking) toggle value (member-reasoning-toggle
      * spec Part A). Defaults to `false`. Part of the query key so toggling

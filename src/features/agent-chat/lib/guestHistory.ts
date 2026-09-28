@@ -1,4 +1,4 @@
-import type { AgentUiMessage } from '../hooks/useAgentStream';
+import type { AgentUiMessage } from '../model/types';
 
 /** A guest history entry sent to `/api/ai/chat/stream` — role/content only. */
 export interface GuestHistoryMessage {

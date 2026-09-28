@@ -17,17 +17,19 @@ import {
     type AnalysisHistoryTab,
 } from '@/entities/analysis/analysisHistoryRepository';
 import { getCachedBarsWithIndicators } from '@/entities/bars/lib/barsDataCache';
-import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
+import {
+    resolveHoldingPositionBucket,
+    type ResolveHoldingPositionBucketInput,
+} from '@/entities/portfolio/lib/resolveHoldingPositionBucket';
 import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { quoteWithTimeout } from '@/shared/api/market/quoteTimeout';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { MS_PER_DAY } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
-import { resolvePositionBucket } from '@/shared/lib/byokGate';
 import { isGuestSubject } from '../guestSubject';
-import type { ToolExecutor } from './index';
+import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { logToolDegrade } from './logToolDegrade';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
 import { pctVs } from './percent';
@@ -134,41 +136,27 @@ async function isStaleByBars(
 }
 
 /**
- * Personalised cache key: the user's holding (avg price) vs current quote →
- * position bucket, as the symbol page does.
- *
- * Degrades to `undefined` (no bucket, i.e. shared/base analysis) on ANY
- * failure or timeout — a holding-read or price-read error must never block
- * returning the underlying cached analysis. Mirrors
- * `resolveHoldingPositionBucket` in `src/app/api/analysis/stream/route.ts`.
+ * Personalised cache key — the same holding→bucket resolution the analysis
+ * SSE route uses when it *writes* the personalised cache, so this read hits
+ * the same key. Degrades to `undefined` on any failure (including market
+ * profile resolution).
  */
 async function positionBucketFor(
     userId: string,
-    tier: Parameters<typeof resolvePositionBucket>[0],
-    symbol: string
-) {
-    try {
-        const holding = await new DrizzlePortfolioRepository(
-            getDatabaseClient().db
-        ).findByUserAndSymbol(userId, symbol);
-        if (!holding) return undefined;
-        const profile = await resolveMarketProfile(symbol);
-        const quote = await quoteWithTimeout(
-            getCachedMarketDataProvider(sessionSpecFor(profile)),
-            holding.fmpSymbol ?? symbol
-        );
-        return resolvePositionBucket(
-            tier,
-            Number(holding.averagePrice),
-            quote?.price ?? null
-        );
-    } catch (err) {
-        console.error(
-            '[AgentTool] get_cached_analysis position bucket resolution failed, degrading to no-bucket:',
-            err instanceof Error ? err.name : 'unknown'
-        );
-        return undefined;
-    }
+    tier: ResolveHoldingPositionBucketInput['tier'],
+    symbol: string,
+    fmpSymbol: string | undefined
+): Promise<Awaited<ReturnType<typeof resolveHoldingPositionBucket>>> {
+    const session = await resolveSessionOrUndefined(symbol);
+    if (session === undefined) return undefined;
+    return resolveHoldingPositionBucket({
+        userId,
+        tier,
+        symbol,
+        quoteSymbol: fmpSymbol,
+        marketDataProvider: getCachedMarketDataProvider(session),
+        logTag: '[AgentTool] get_cached_analysis position bucket resolution failed, degrading to no-bucket:',
+    });
 }
 
 /** `sessionSpecFor(await resolveMarketProfile(symbol))`, degrading to `undefined` on ANY failure — extracted so the caller can bind it with `const`, not a mutated `let`. */
@@ -291,7 +279,7 @@ function levelsBrokenFrom(
     return [...brokenSupport, ...brokenResistance];
 }
 
-export interface SinceAnalysis {
+interface SinceAnalysis {
     analysisPrice: number | null;
     priceNow: number;
     movePct: number | null;
@@ -379,7 +367,7 @@ export const getCachedAnalysisTool: ToolExecutor = async (
         // table could even compare against (uuid column).
         const positionBucket = isGuestSubject(ctx.userId)
             ? undefined
-            : await positionBucketFor(ctx.userId, ctx.tier, symbol);
+            : await positionBucketFor(ctx.userId, ctx.tier, symbol, fmpSymbol);
         const cached = await peekAnalysisCache(
             symbol,
             timeframe,

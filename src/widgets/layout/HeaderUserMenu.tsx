@@ -1,12 +1,12 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { LogoutButton } from '@/features/auth-logout';
+import { LogoutButton } from '@/features/auth-logout/ui/LogoutButton';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { TIER_LABEL } from '@/shared/lib/auth/tierLabel';
 import { cn } from '@/shared/lib/cn';
-import { authNextQuery } from '@/shared/lib/auth';
+import { authNextQuery } from '@/shared/lib/auth/redirect';
 import type { Tier } from '@y0ngha/siglens-core';
 import Image from 'next/image';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';

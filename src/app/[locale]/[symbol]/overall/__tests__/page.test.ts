@@ -16,7 +16,7 @@ vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
 vi.mock('@/widgets/overall/OverallContent', () => ({
     OverallContent: () => null,
 }));
-vi.mock('@/views/symbol', () => ({
+vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({
     SymbolPageHeading: ({ children }: { children: React.ReactNode }) =>
         children,
 }));
@@ -29,11 +29,15 @@ vi.mock('@/shared/config/market', async importOriginal => ({
     DEFAULT_TIMEFRAME: '1Day',
     isValidTimeframe: vi.fn().mockReturnValue(false),
 }));
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker/lib/assetClassification', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+}));
+vi.mock('@/entities/ticker/lib/ticker', () => ({
     pickAssetName: (info: { name: string; koreanName?: string }) =>
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
+}));
+vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 vi.mock('@/shared/lib/seo', async importOriginal => ({
@@ -74,7 +78,7 @@ vi.mock('next/navigation', () => ({
     notFound: vi.fn(),
 }));
 // /news와 동일 게이트(useWaitForNewsCards) 적용을 위해 newsItems를 SSR에서 조회한다.
-// getNewsList는 barrel 제외 대상이므로 @/entities/news-article/api에서 직접 import한다.
+// getNewsList는 @/entities/news-article/api에 정의돼 있다.
 vi.mock('@/entities/news-article/api', () => ({
     getNewsList: vi.fn().mockResolvedValue([]),
 }));
@@ -84,13 +88,14 @@ import {
     default as OverallPage,
     revalidate,
 } from '@/app/[locale]/[symbol]/overall/page';
-import { getAssetInfoResilient } from '@/entities/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import {
     DEEPSEEK_V4_1_FLASH_MODEL,
     peekOverallAnalysisCache,
 } from '@y0ngha/siglens-core';
 import { OverallContent } from '@/widgets/overall/OverallContent';
-import { OverallFactsSummary, OverallFactualFallback } from '@/widgets/overall';
+import { OverallFactsSummary } from '@/widgets/overall/OverallFactsSummary';
+import { OverallFactualFallback } from '@/widgets/overall/OverallFactualFallback';
 import { OverallSnapshotProse } from '@/views/symbol/snapshot/renderers/OverallSnapshotProse';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { Suspense, isValidElement, type ReactNode } from 'react';

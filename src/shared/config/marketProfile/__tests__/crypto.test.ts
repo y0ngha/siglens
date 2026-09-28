@@ -4,11 +4,6 @@ import { getDescriptor } from '../registry';
 describe('crypto market profile descriptor', () => {
     const d = getDescriptor('crypto');
 
-    it('passes the canonical symbol straight through to FMP (already canonical)', () => {
-        expect(d.toProviderSymbol('BTCUSD')).toBe('BTCUSD');
-        expect(d.toProviderSymbol('ETHUSD')).toBe('ETHUSD');
-    });
-
     it('is always open with zero quote delay (24/7 realtime)', () => {
         expect(d.sessionModel).toBe('always-open');
         expect(d.quoteDelayMinutes).toBe(0);

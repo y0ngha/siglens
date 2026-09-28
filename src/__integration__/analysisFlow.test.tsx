@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ModelSelector } from '@/widgets/analysis/ModelSelector';
-import { AnalysisPanel } from '@/widgets/analysis';
+import { AnalysisPanel } from '@/widgets/analysis/AnalysisPanel';
 import type {
     AnalysisResponse,
     ClusteredKeyLevels,
@@ -38,13 +38,10 @@ vi.mock('@/shared/config/time', () => ({
     SECONDS_PER_MINUTE: 60,
     MS_PER_MINUTE: 60000,
 }));
-vi.mock('@/shared/hooks/useCopyToClipboard', () => ({
-    DEFAULT_RESET_MS: 2000,
-}));
 vi.mock('@/shared/lib/formatAnalyzedAt', () => ({
     formatAnalyzedAt: () => '1시간 전',
 }));
-vi.mock('@/entities/analysis', () => ({
+vi.mock('@/entities/analysis/lib/staleThreshold', () => ({
     isAnalysisStale: () => false,
 }));
 // personalized-analysis 투명성 배지(§FIX 2)가 소비하는 홀딩 소스. 실제
@@ -52,7 +49,7 @@ vi.mock('@/entities/analysis', () => ({
 // QueryClientProvider 없이 AnalysisPanel을 렌더하므로 그대로 두면 크래시한다.
 // 이 파일의 관심사(모델 선택 ↔ 분석 패널 상호작용)와 무관하므로 "홀딩 없음"
 // no-op 목으로 대체한다.
-vi.mock('@/features/portfolio-holding', () => ({
+vi.mock('@/features/portfolio-holding/hooks/useSymbolHolding', () => ({
     useSymbolHolding: () => ({
         holding: null,
         isHydrated: true,

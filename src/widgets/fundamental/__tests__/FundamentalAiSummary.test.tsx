@@ -5,15 +5,19 @@ vi.mock('@/shared/lib/cn', () => ({
             .filter(a => typeof a === 'string' && a.length > 0)
             .join(' '),
 }));
-vi.mock('@/features/symbol-model', () => ({
+vi.mock('@/features/symbol-model/hooks/useDefaultModelId', () => ({
     useDefaultModelId: () => 'gemini-3.5-flash-lite',
+}));
+vi.mock('@/features/symbol-model/hooks/useAnalysisSettingsHydrated', () => ({
     useAnalysisSettingsHydrated: () => true,
+}));
+vi.mock('@/features/symbol-model/hooks/useDefaultReasoning', () => ({
     useDefaultReasoning: () => false,
 }));
 vi.mock('../hooks/useFundamentalAnalysis', () => ({
     useFundamentalAnalysis: vi.fn(),
 }));
-vi.mock('@/features/symbol-chat', () => ({
+vi.mock('@/features/symbol-chat/hooks/useSymbolChat', () => ({
     usePublishSymbolChat: vi.fn(),
 }));
 vi.mock('../utils/buildChatState', () => ({
@@ -29,7 +33,7 @@ vi.mock('../FundamentalAiSummarySkeleton', () => ({
 import { render, screen, within } from '@testing-library/react';
 
 import { FundamentalAiSummary } from '../FundamentalAiSummary';
-import { usePublishSymbolChat } from '@/features/symbol-chat';
+import { usePublishSymbolChat } from '@/features/symbol-chat/hooks/useSymbolChat';
 import { useFundamentalAnalysis } from '../hooks/useFundamentalAnalysis';
 
 describe('FundamentalAiSummary', () => {

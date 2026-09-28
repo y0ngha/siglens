@@ -3,7 +3,7 @@
 import { type ReactNode } from 'react';
 
 /** `StrikeBarSrTable`의 단일 행 타입. */
-export interface StrikeBarSrTableRow {
+interface StrikeBarSrTableRow {
     /** `key` prop으로 사용되는 고유 식별자. */
     key: string | number;
     /** 순서대로 렌더할 셀 내용. */

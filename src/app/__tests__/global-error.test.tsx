@@ -23,6 +23,13 @@ describe('GlobalError (root-layout error boundary)', () => {
         expect(screen.getByRole('heading')).toBeInTheDocument();
     });
 
+    it('announces the error message via a single role="alert" region', () => {
+        render(<GlobalError error={error} reset={vi.fn()} />);
+        const alert = screen.getByRole('alert');
+        expect(alert).toHaveTextContent('서비스를 불러오지 못했어요');
+        expect(alert).not.toHaveTextContent('Retry');
+    });
+
     it('wires the retry button to reset()', () => {
         const reset = vi.fn();
         render(<GlobalError error={error} reset={reset} />);

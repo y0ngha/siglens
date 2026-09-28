@@ -39,7 +39,7 @@ vi.mock('../HeaderUserMenu', () => ({
 // Header는 이제 `HeaderSearch`(모바일 트리거 + 데스크톱 인라인 자동완성 + `ml-auto`
 // 폭 계약)를 렌더한다. 이 테스트의 관심사는 헤더의 조립이지 검색 내부가 아니므로
 // 같은 testid로 대체한다.
-vi.mock('@/features/ticker-search', () => ({
+vi.mock('@/features/ticker-search/ui/HeaderSearch', () => ({
     HeaderSearch: () => <div data-testid="ticker-search" />,
 }));
 vi.mock('@/shared/lib/seo', () => ({

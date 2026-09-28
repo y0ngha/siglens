@@ -1,11 +1,13 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useMemo, useRef, type KeyboardEvent } from 'react';
+import { useMemo, useRef } from 'react';
+import { useRovingKeyboardNav } from '@/shared/hooks/useRovingKeyboardNav';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { cn } from '@/shared/lib/cn';
 import type { SlotMapping } from '@y0ngha/siglens-core';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 interface ExpirationSelectorProps {
     /** Slot mappings filtered to non-null entries (`OptionsPageClient` filters before passing). */
@@ -84,43 +86,20 @@ export function ExpirationSelector({
         [tabs, value]
     );
 
-    const focusTabAt = (index: number): void => {
-        const normalized = (index + tabs.length) % tabs.length;
-        const next = tabs[normalized];
-        if (next === undefined) return;
-        onChange(next.value);
-        buttonRefs.current[normalized]?.focus();
-    };
-
-    const handleKeyDown = (
-        event: KeyboardEvent<HTMLButtonElement>,
-        index: number
-    ): void => {
-        switch (event.key) {
-            case 'ArrowRight':
-                event.preventDefault();
-                focusTabAt(index + 1);
-                break;
-            case 'ArrowLeft':
-                event.preventDefault();
-                focusTabAt(index - 1);
-                break;
-            case 'Home':
-                event.preventDefault();
-                focusTabAt(0);
-                break;
-            case 'End':
-                event.preventDefault();
-                focusTabAt(tabs.length - 1);
-                break;
-            default:
-                break;
-        }
-    };
+    const values = tabs.map(tab => tab.value);
+    const handleKeyDown = useRovingKeyboardNav({
+        items: values,
+        activeItem: values[activeIndex]!,
+        onChange,
+        focusItem: next => buttonRefs.current[values.indexOf(next)]?.focus(),
+    });
 
     return (
         <div
-            className="flex flex-wrap items-center gap-2 overflow-x-auto rounded-lg border border-secondary-700 bg-secondary-800 p-3"
+            className={cn(
+                SURFACE_CARD,
+                'flex flex-wrap items-center gap-2 overflow-x-auto p-3'
+            )}
             role="tablist"
             aria-label={t('ExpirationSelector.15dbc6')}
         >
@@ -144,7 +123,7 @@ export function ExpirationSelector({
                         aria-selected={active}
                         tabIndex={active ? 0 : -1}
                         onClick={() => onChange(tab.value)}
-                        onKeyDown={e => handleKeyDown(e, index)}
+                        onKeyDown={handleKeyDown}
                         className={cn(
                             CHIP_BASE,
                             active ? CHIP_ACTIVE : CHIP_INACTIVE

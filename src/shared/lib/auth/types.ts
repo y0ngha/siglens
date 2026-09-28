@@ -32,7 +32,7 @@ export type RegisterUserErrorCode =
     | 'invalid_input';
 
 /** Input field associated with a registration validation error. */
-export type RegisterUserErrorField = AuthValidationErrorField;
+type RegisterUserErrorField = AuthValidationErrorField;
 
 /** Structured validation/conflict error returned when registration fails. */
 export interface RegisterUserError {

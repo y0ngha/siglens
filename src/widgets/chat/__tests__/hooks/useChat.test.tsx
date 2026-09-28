@@ -16,7 +16,7 @@ import { MODEL_STORAGE_KEY } from '@/widgets/chat/hooks/useChat';
 
 // --- Module-level mocks ---------------------------------------------------
 
-vi.mock('@/features/symbol-chat', () => ({
+vi.mock('@/features/symbol-chat/hooks/useSymbolChat', () => ({
     useSymbolChat: () => ({
         context: null,
         timeframe: '1Day',
@@ -34,8 +34,10 @@ vi.mock('@/entities/ticker/hooks/useAssetInfo', () => ({
     useAssetInfo: () => ({ name: 'AAPL Inc.' }),
 }));
 
-vi.mock('@/entities/chat-message/actions', () => ({
+vi.mock('@/entities/chat-message/actions/chatAction', () => ({
     chatAction: vi.fn(),
+}));
+vi.mock('@/entities/chat-message/actions/getRemainingTokensAction', () => ({
     getRemainingTokensAction: vi.fn().mockResolvedValue(5),
 }));
 
@@ -43,7 +45,7 @@ vi.mock('@/entities/auth/actions/currentUserAction', () => ({
     currentUserAction: vi.fn().mockResolvedValue(null),
 }));
 
-vi.mock('@/entities/api-key/actions', () => ({
+vi.mock('@/entities/api-key/actions/getRegisteredProvidersAction', () => ({
     getRegisteredProvidersAction: vi.fn().mockResolvedValue([]),
 }));
 

@@ -6,8 +6,8 @@ import {
     stripNaverMarkup,
     toIsoPublishedAt,
     type NaverCredentials,
-} from '@/entities/news-article/api';
-import type { ToolExecutor } from './index';
+} from '@/shared/api/naver/naverSearch';
+import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 
 const BRAVE_ENDPOINT = 'https://api.search.brave.com/res/v1/web/search';
 const COUNT = 5;

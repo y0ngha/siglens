@@ -3,11 +3,20 @@ import { render, screen, fireEvent, within } from '@testing-library/react';
 import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
 import { EconomicCalendarGrid } from '@/widgets/economy/sections/EconomicCalendarGrid';
 
-vi.mock('@/entities/economy/actions', () => ({
+vi.mock('@/entities/economy/actions/ensureEconomicCalendarAction', () => ({
     ensureEconomicCalendarAction: vi.fn().mockResolvedValue(undefined),
-    ensureIndicatorTranslatedAction: vi.fn().mockResolvedValue(undefined),
-    ensureEconomicEventsAnalyzedAction: vi.fn().mockResolvedValue(undefined),
 }));
+vi.mock('@/entities/economy/actions/ensureIndicatorTranslatedAction', () => ({
+    ensureIndicatorTranslatedAction: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock(
+    '@/entities/economy/actions/ensureEconomicEventsAnalyzedAction',
+    () => ({
+        ensureEconomicEventsAnalyzedAction: vi
+            .fn()
+            .mockResolvedValue(undefined),
+    })
+);
 
 /**
  * 기준 이벤트: 2026-06-19 19:30:00 UTC(FMP 원본은 존 마커 없는 UTC) → KST

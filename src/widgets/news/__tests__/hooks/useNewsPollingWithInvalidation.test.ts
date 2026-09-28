@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useNewsPollingWithInvalidation } from '@/widgets/news/hooks/useNewsPollingWithInvalidation';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/widgets/news/constants';
+import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';
 
 const mockUseNewsCardPolling = vi.fn();
 

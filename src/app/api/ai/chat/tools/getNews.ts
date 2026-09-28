@@ -1,7 +1,10 @@
 import 'server-only';
-import { DrizzleMarketNewsRepository } from '@/entities/market-news/api';
+import { DrizzleMarketNewsRepository } from '@/entities/market-news/api/marketNewsRepository';
 import { peekMarketNewsDigestStatic } from '@/entities/market-news/api/marketNewsDigestStaticCache';
-import { CATEGORY_CONFIG, categoryFromSlug } from '@/entities/market-news';
+import {
+    CATEGORY_CONFIG,
+    categoryFromSlug,
+} from '@/entities/market-news/lib/categoryConfig';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import {
@@ -11,7 +14,7 @@ import {
 } from '@/shared/lib/news/resolveNewsTitle';
 import { MS_PER_DAY, MS_PER_HOUR } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
-import type { ToolExecutor } from './index';
+import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { logToolDegrade } from './logToolDegrade';
 import { fitToEscapedBudget, TOOL_RESULT_MAX_CHARS } from './truncate';
 

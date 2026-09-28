@@ -18,7 +18,10 @@ import UsNewsHubPage, {
     revalidate,
 } from '@/app/[locale]/news/us/page';
 import { fetchCategoryPreviews } from '@/app/[locale]/news/_lib/categoryPreviews';
-import { categoriesInRegion, CATEGORY_CONFIG } from '@/entities/market-news';
+import {
+    categoriesInRegion,
+    CATEGORY_CONFIG,
+} from '@/entities/market-news/lib/categoryConfig';
 
 describe('/news/us hub', () => {
     beforeEach(() => {

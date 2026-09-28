@@ -23,7 +23,7 @@ vi.mock('@/widgets/home/StatsBar', () => ({
 vi.mock('@/widgets/home/TickerCategories', () => ({
     TickerCategories: () => null,
 }));
-vi.mock('@/widgets/home', () => ({
+vi.mock('@/widgets/home/heroQuickLinks', () => ({
     // 컴포넌트가 아닌 상수도 이 배럴을 통해 나간다 — 빠뜨리면 `page.tsx`가
     // `undefined.map`으로 죽어 ISR degrade 테스트가 엉뚱한 이유로 실패한다.
     //
@@ -35,17 +35,29 @@ vi.mock('@/widgets/home', () => ({
         { href: '/market', labelKey: 'shared.config.nav.full.market.us' },
         { href: '/news', labelKey: 'shared.config.nav.full.news.us' },
     ],
+}));
+vi.mock('@/widgets/home/CryptoShowcase', () => ({
     CryptoShowcase: () => null,
+}));
+vi.mock('@/widgets/home/HeroIllustration', () => ({
     HeroIllustration: () => null,
+}));
+vi.mock('@/widgets/home/SkillsShowcase', () => ({
     SkillsShowcase: () => null,
     SkillsShowcaseSkeleton: () => null,
+}));
+vi.mock('@/widgets/home/StatsBar', () => ({
     StatsBar: () => null,
     StatsBarSkeleton: () => null,
+}));
+vi.mock('@/widgets/home/TickerCategories', () => ({
     TickerCategories: () => null,
 }));
-vi.mock('@/features/ticker-search', () => ({ SymbolSearchPanel: () => null }));
+vi.mock('@/features/ticker-search/ui/SymbolSearchPanel', () => ({
+    SymbolSearchPanel: () => null,
+}));
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
-vi.mock('@/entities/skill', () => ({
+vi.mock('@/entities/skill/api', () => ({
     countSkillFiles: vi.fn(),
     FileSkillsLoader: vi.fn(),
 }));
@@ -89,7 +101,7 @@ import {
 import { isValidElement } from 'react';
 import { render, screen } from '@testing-library/react';
 import Home from '@/app/[locale]/(home)/page';
-import { countSkillFiles, FileSkillsLoader } from '@/entities/skill';
+import { countSkillFiles, FileSkillsLoader } from '@/entities/skill/api';
 
 const mockCountSkillFiles = countSkillFiles as MockedFunction<
     typeof countSkillFiles

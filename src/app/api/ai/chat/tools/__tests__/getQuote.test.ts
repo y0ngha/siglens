@@ -9,14 +9,14 @@ const { profile, assetInfo, getQuote, spec } = vi.hoisted(() => ({
 vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
     getAssetInfo: assetInfo,
 }));
-vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
+vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: profile,
 }));
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: () => ({ getQuote }),
 }));
 vi.mock('@/shared/api/market/sessionSpecFor', () => ({ sessionSpecFor: spec }));
-vi.mock('@/shared/config/marketProfile', () => ({
+vi.mock('@/shared/config/marketProfile/registry', () => ({
     getDescriptor: (id: string) => ({
         priceFormat: { currency: id === 'kr-equity' ? 'KRW' : 'USD' },
         quoteDelayMinutes: id === 'kr-equity' ? 20 : 0,

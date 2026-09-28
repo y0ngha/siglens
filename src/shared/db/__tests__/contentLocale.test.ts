@@ -1,7 +1,6 @@
 import {
     CONTENT_LOCALE_FALLBACK,
     pickContentLocale,
-    pickContentValue,
     toContentLocale,
 } from '@/shared/db/contentLocale';
 import { LOCALES } from '@/shared/i18n/locales';
@@ -99,15 +98,6 @@ describe('pickContentLocale', () => {
 
     it('체인이 전부 비면 null을 돌려준다', () => {
         expect(pickContentLocale({}, 'ja')).toBeNull();
-        expect(pickContentValue({}, 'ja')).toBeNull();
-    });
-
-    it('ko도 영어로 폴백한다 — 빈 화면보다 낫다', () => {
-        expect(pickContentValue({ en: 'English' }, 'ko')).toBe('English');
-    });
-
-    it('문자열이 아닌 값은 빈 값 검사를 건너뛴다', () => {
-        expect(pickContentValue<number>({ ja: 0 }, 'ja')).toBe(0);
     });
 });
 

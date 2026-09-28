@@ -6,6 +6,7 @@ import type {
 import { MarkdownText } from '@/shared/ui/MarkdownText';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 /** OverallScenarioName → `shared.enumLabel.overallScenario` 카탈로그 키. */
 const SCENARIO_LABEL_KEY: Record<OverallScenarioName, string> = {
@@ -35,7 +36,7 @@ export function ScenarioAnalysis({ scenarios }: ScenarioAnalysisProps) {
     return (
         <section
             aria-labelledby="scenario-analysis-heading"
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+            className={cn(SURFACE_CARD, 'p-6')}
         >
             <h2
                 id="scenario-analysis-heading"

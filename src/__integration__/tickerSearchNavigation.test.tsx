@@ -49,7 +49,7 @@ vi.mock('@/entities/ticker/actions/searchTickerAction', () => ({
     }),
 }));
 
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker/lib/ticker', () => ({
     isKoreanInput: vi.fn(() => false),
 }));
 

@@ -22,11 +22,15 @@ vi.mock('next/navigation', () => ({
     }),
 }));
 
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker/lib/assetClassification', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+}));
+vi.mock('@/entities/ticker/lib/ticker', () => ({
     pickAssetName: (info: { name: string; koreanName?: string }) =>
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
+}));
+vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 
@@ -47,7 +51,7 @@ vi.mock('@/app/[locale]/[symbol]/news/newsData', () => ({
     getGradeEvents: vi.fn(),
 }));
 
-vi.mock('@/entities/news-article', () => ({
+vi.mock('@/entities/news-article/lib/cacheKeys', () => ({
     NEWS_LIST_CACHE_KEY: 'news-list',
 }));
 vi.mock('@/entities/news-article/api', () => ({
@@ -91,7 +95,7 @@ vi.mock('@/widgets/news/sections/AnalystActions', () => ({
         />
     ),
 }));
-vi.mock('@/views/symbol', () => ({
+vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({
     SymbolPageHeading: ({ children }: { children: React.ReactNode }) => (
         <h1>{children}</h1>
     ),
@@ -125,9 +129,6 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     SITE_URL: 'https://siglens.io',
 }));
 
-vi.mock('@/shared/lib/dateKey', () => ({
-    todayKstIsoDate: () => '2026-06-22',
-}));
 vi.mock('@/shared/api/fmp/fmpUserMessage', () => ({
     getFmpUserFacingKey: vi.fn(),
     translateFmpError: vi.fn().mockReturnValue(null),
@@ -148,14 +149,14 @@ import NewsPage, {
     EventCalendarSection,
     AnalystActionsSection,
 } from '@/app/[locale]/[symbol]/news/page';
-import { getAssetInfoResilient } from '@/entities/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { getNewsList } from '@/entities/news-article/api';
 import {
     getEarningsReportComparison,
     getGradeEvents,
 } from '@/app/[locale]/[symbol]/news/newsData';
 import { translateFmpError } from '@/shared/api/fmp/fmpUserMessage';
-import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/widgets/news/constants';
+import { NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';
 
 const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
     typeof getAssetInfoResilient

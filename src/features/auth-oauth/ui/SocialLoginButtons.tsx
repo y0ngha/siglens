@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { SupportedOAuthProvider } from '@/shared/lib/types';
 import { cn } from '@/shared/lib/cn';
 import { ReactNode } from 'react';
@@ -33,7 +34,6 @@ function GoogleIcon() {
 
 interface SocialProvider {
     id: SupportedOAuthProvider;
-    label: string;
     icon: ReactNode;
     buttonClassName: string;
 }
@@ -41,7 +41,6 @@ interface SocialProvider {
 const PROVIDERS: readonly SocialProvider[] = [
     {
         id: 'google',
-        label: 'Continue with Google',
         icon: <GoogleIcon />,
         /*
            구글 브랜드 가이드가 흰 배경을 요구하는 **고정 표면**이다. 램프
@@ -52,13 +51,6 @@ const PROVIDERS: readonly SocialProvider[] = [
         buttonClassName:
             'bg-white text-on-fixed-light hover:bg-fixed-light-hover ring-1 ring-fixed-light-border',
     },
-    // {
-    //     id: 'kakao',
-    //     label: '카카오로 시작하기',
-    //     icon: <span aria-hidden className="font-mono text-base">K</span>,
-    //     buttonClassName:
-    //         'bg-brand-kakao text-on-fixed-light hover:brightness-95',
-    // },
 ];
 
 function buildHref(providerId: SupportedOAuthProvider, next?: string): string {
@@ -73,6 +65,13 @@ interface SocialLoginButtonsProps {
 }
 
 export function SocialLoginButtons({ next }: SocialLoginButtonsProps) {
+    const t = useTranslations('features.auth-oauth');
+    // 라벨은 로케일마다 번역한다 — 예전엔 'Continue with Google' 영어 고정이었다
+    // (구글 브랜드 가이드도 현지화 문구를 허용한다). 키를 `PROVIDERS`에 변수로 두면
+    // 정적 스캔이 못 잡아 `i18n:extract --write`가 키를 지우므로 여기서 리터럴로 부른다.
+    const labels: Record<SupportedOAuthProvider, string> = {
+        google: t('SocialLoginButtons.ffa5ee'),
+    };
     return (
         <div className="space-y-3">
             <div
@@ -91,7 +90,7 @@ export function SocialLoginButtons({ next }: SocialLoginButtonsProps) {
                     )}
                 >
                     {provider.icon}
-                    <span>{provider.label}</span>
+                    <span>{labels[provider.id]}</span>
                 </a>
             ))}
         </div>

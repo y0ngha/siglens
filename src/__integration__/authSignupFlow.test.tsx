@@ -20,10 +20,13 @@ let emailState = { submitted: false, error: null };
 let codeState = { verified: false, error: null };
 let signupState = { error: null };
 
-vi.mock('@/features/auth-email-verification', () => ({
-    useRequestEmailVerification: () => [emailState, mockEmailFormAction],
-    useVerifyEmail: () => [codeState, mockCodeFormAction],
-}));
+vi.mock(
+    '@/features/auth-email-verification/hooks/useEmailVerificationForms',
+    () => ({
+        useRequestEmailVerification: () => [emailState, mockEmailFormAction],
+        useVerifyEmail: () => [codeState, mockCodeFormAction],
+    })
+);
 
 vi.mock('@/features/auth-signup/hooks/useSignupForm', () => ({
     useSignupForm: () => [signupState, mockSignupFormAction],

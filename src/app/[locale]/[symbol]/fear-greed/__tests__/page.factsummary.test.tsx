@@ -84,16 +84,20 @@ vi.mock('@tanstack/react-query', () => ({
     },
 }));
 
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker/lib/assetClassification', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+}));
+vi.mock('@/entities/ticker/lib/ticker', () => ({
     pickAssetName: (info: { name: string; koreanName?: string }) =>
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
+}));
+vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
     getAssetInfoResilient: (ticker: string) =>
         mockGetAssetInfoResilient(ticker),
 }));
 
-vi.mock('@/entities/bars', () => ({
+vi.mock('@/entities/bars/lib/barsStaticCache', () => ({
     getSeedBarsStatic: mockGetSeedBarsStatic,
     getQuantizedBarsStatic: mockGetQuantizedBarsStatic,
 }));
@@ -107,13 +111,15 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/widgets/fear-greed/FearGreedPage', () => ({
     FearGreedPage: () => null,
 }));
-vi.mock('@/widgets/fear-greed', () => ({
+vi.mock('@/widgets/fear-greed/FearGreedPageError', () => ({
     FearGreedPageError: () => null,
 }));
 // Keep FearGreedFactsSummary real (subject under test) — only stub the
-// unrelated barrel export.
-vi.mock('@/views/symbol', async importOriginal => ({
-    ...(await importOriginal<typeof import('@/views/symbol')>()),
+// unrelated heading component.
+vi.mock('@/views/symbol/ui/SymbolPageHeading', async importOriginal => ({
+    ...(await importOriginal<
+        typeof import('@/views/symbol/ui/SymbolPageHeading')
+    >()),
     SymbolPageHeading: () => null,
 }));
 vi.mock('@/shared/ui/CrossLinkCards', () => ({

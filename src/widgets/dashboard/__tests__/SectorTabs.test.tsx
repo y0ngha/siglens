@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { SectorTabs } from '@/widgets/dashboard/SectorTabs';
 import { TEST_SCOPE } from './helpers/testScope';
 
-vi.mock('@/shared/ui/tabs', () => ({
+vi.mock('@/shared/ui/tabs/TabsUnderline', () => ({
     TabsUnderline: ({
         tabs,
         activeTab,

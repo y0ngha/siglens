@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 export interface NewsCardShellProps {
     /**
@@ -81,7 +82,8 @@ export function NewsCardShell({
     return (
         <article
             className={cn(
-                'border-secondary-700 bg-secondary-800 hover:border-primary-500/50 w-full max-w-full min-w-0 overflow-hidden rounded-lg border p-4 transition-[colors,transform] hover:-translate-y-px',
+                SURFACE_CARD,
+                'hover:border-primary-500/50 w-full max-w-full min-w-0 overflow-hidden p-4 transition-[colors,transform] hover:-translate-y-px',
                 // content가 3px 바에 붙지 않도록 pl-5로 패딩을 보정한다.
                 isHighImpact && 'border-l-ui-warning border-l-[3px] pl-5'
             )}

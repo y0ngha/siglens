@@ -1,12 +1,11 @@
 import type { Tier } from '@y0ngha/siglens-core';
 import type { OAuthProvider } from '@/shared/lib/types';
-import { and, eq, lt, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
 import { oauthAccounts, sessions, users } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type {
     AuthSessionRecord,
-    AuthUserRecord,
     CreateEmailUserInput,
     CreateOAuthUserInput,
     CreateSessionInput,
@@ -17,6 +16,7 @@ import type {
     UserRepository,
     UserTierRepository,
 } from '@/shared/db/types';
+import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import {
     encryptToken,
     requireOauthTokenEncryptionKey,
@@ -82,21 +82,6 @@ export class DrizzleSessionRepository implements SessionRepository {
         );
 
         return deletedSessions.length > 0;
-    }
-
-    async deleteExpiredSessions(now: Date = new Date()): Promise<number> {
-        // 백그라운드 cleanup — transient 실패가 다음 tick에 재시도되긴 하지만,
-        // 인라인 retry로 처리해 cleanup이 한 tick 동안 누락되지 않도록 한다.
-        const deleted = await withRetry(
-            () =>
-                this.db
-                    .delete(sessions)
-                    .where(lt(sessions.expiresAt, now))
-                    .returning({ id: sessions.id }),
-            NEON_TRANSIENT_RETRY
-        );
-
-        return deleted.length;
     }
 }
 
@@ -334,22 +319,6 @@ export class DrizzleUserRepository
             .from(users)
             .where(eq(users.id, userId))
             .limit(1);
-
-        return user?.tier ?? null;
-    }
-
-    async updateUserTier(userId: string, tier: Tier): Promise<Tier | null> {
-        // 결제/티어 상승 직후 호출 — transient 실패가 노출되면 결제는 됐는데
-        // 티어가 안 올라간 것처럼 보인다. retry로 흡수.
-        const [user] = await withRetry(
-            () =>
-                this.db
-                    .update(users)
-                    .set({ tier, updatedAt: sql`now()` })
-                    .where(eq(users.id, userId))
-                    .returning({ tier: users.tier }),
-            NEON_TRANSIENT_RETRY
-        );
 
         return user?.tier ?? null;
     }

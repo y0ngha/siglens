@@ -3,18 +3,18 @@ import { formatPriceChange, formatPrice } from '@/shared/lib/priceFormat';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { useId } from 'react';
 import {
-    buildTechnicalFacts,
     buildTechnicalFactsNarrative,
-    RECENT_BARS_WINDOW,
     technicalFactsMacdMomentumLabel,
     technicalFactsRsiZone,
     DIRECTION_LABEL_KEY,
     RSI_ZONE_LABEL_KEY,
 } from './utils/technicalFacts';
 import {
-    getDescriptor,
-    type MarketProfileId,
-} from '@/shared/config/marketProfile';
+    buildTechnicalFacts,
+    RECENT_BARS_WINDOW,
+} from '@/entities/bars/lib/technicalFacts';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
+import { type MarketProfileId } from '@/shared/config/marketProfile/types';
 
 interface ChangeDisplay {
     colorClass: string;

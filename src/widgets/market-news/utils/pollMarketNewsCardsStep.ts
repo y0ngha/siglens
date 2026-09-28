@@ -1,6 +1,6 @@
-import type { NewsFeedCategoryId } from '@/entities/market-news';
-import { getMarketNewsCardsAction } from '@/entities/market-news/actions';
-import type { MarketNewsCardItem } from '@/entities/market-news';
+import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
+import { getMarketNewsCardsAction } from '@/entities/market-news/actions/getMarketNewsCardsAction';
+import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
 
 import {
     MAX_CONSECUTIVE_FAILURES,
@@ -8,7 +8,7 @@ import {
     MAX_POLL_DURATION_MS,
     STAGNANT_POLL_LIMIT,
     STAGNATION_FLOOR_POLLS,
-} from '../constants';
+} from '@/shared/config/cardPollingConfig';
 import type { PollStepResult } from './pollStepResult';
 
 export interface PollMarketNewsCardsContext {

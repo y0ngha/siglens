@@ -28,7 +28,7 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
 
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker/lib/ticker', () => ({
     isKoreanInput: vi.fn(() => false),
 }));
 

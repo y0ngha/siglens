@@ -39,9 +39,13 @@ vi.mock('react-error-boundary', () => ({
     }) => <div data-testid="error-boundary">{children}</div>,
 }));
 
-vi.mock('@/widgets/chart', () => ({
+vi.mock('@/widgets/chart/ChartErrorFallback', () => ({
     ChartErrorFallback: () => <div data-testid="chart-error" />,
+}));
+vi.mock('@/widgets/chart/ChartSkeleton', () => ({
     ChartSkeleton: () => <div data-testid="chart-skeleton" />,
+}));
+vi.mock('@/widgets/chart/TimeframeSelector', () => ({
     TimeframeSelector: ({
         value,
         onChange: _onChange,
@@ -86,7 +90,7 @@ vi.mock('@/views/symbol/hooks/useTimeframeChange', () => ({
     })),
 }));
 
-vi.mock('@/features/symbol-model', () => ({
+vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
     useSymbolModel: vi.fn(() => ({ tier: 'free', isTierHydrated: true })),
 }));
 

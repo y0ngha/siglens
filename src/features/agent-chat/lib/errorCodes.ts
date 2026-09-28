@@ -5,7 +5,7 @@ import type { AgentErrorCode } from '@y0ngha/siglens-core';
  * starts (`{ error: <code> }` JSON body, see `stream/route.ts`). Not part of
  * core's `AgentErrorCode` — that union is turn-stage only.
  */
-export const HTTP_STAGE_CODES = [
+const HTTP_STAGE_CODES = [
     'invalid_body',
     'unauthenticated',
     'bot',
@@ -14,7 +14,7 @@ export const HTTP_STAGE_CODES = [
     'conversation_full',
     'disabled',
 ] as const;
-export type HttpStageCode = (typeof HTTP_STAGE_CODES)[number];
+type HttpStageCode = (typeof HTTP_STAGE_CODES)[number];
 
 /**
  * Every `AgentErrorCode` core can emit in the `error` SSE frame
@@ -32,9 +32,7 @@ const TURN_STAGE_CODE_MAP: Record<AgentErrorCode, true> = {
     deadline: true,
     aborted: true,
 };
-export const TURN_STAGE_CODES = Object.keys(
-    TURN_STAGE_CODE_MAP
-) as AgentErrorCode[];
+const TURN_STAGE_CODES = Object.keys(TURN_STAGE_CODE_MAP) as AgentErrorCode[];
 
 /** `server_busy` is returned at both stages (409/503 HTTP, and the turn gate) — de-duplicated here. */
 export const AGENT_ERROR_CODES: readonly string[] = [

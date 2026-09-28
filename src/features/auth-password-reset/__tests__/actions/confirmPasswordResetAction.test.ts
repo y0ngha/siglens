@@ -18,39 +18,33 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
     resetDatabaseClientForTests: vi.fn(),
 }));
-vi.mock('@/entities/auth', () => ({
+vi.mock('@/entities/auth/lib/errorMessages', () => ({
     AUTH_SERVICE_UNAVAILABLE_MESSAGE:
         '서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
+}));
+vi.mock('@/entities/auth/lib/confirmPasswordReset', () => ({
     confirmPasswordReset: vi.fn(),
 }));
 vi.mock('@/entities/auth/lib/bcrypt', () => ({
     bcryptPasswordHasher: { hashPassword: vi.fn() },
     bcryptPasswordVerifier: { verifyPassword: vi.fn() },
 }));
-// getAuthDatabaseClient는 barrel이 아닌 @/entities/auth/lib/db에서 직접 import되므로
-// (server-only 체인을 client 번들에서 분리) 해당 경로를 별도로 mock한다.
-vi.mock('@/entities/auth/lib/db', () => ({
-    getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
-    resetAuthDatabaseClientForTests: vi.fn(),
-}));
-// DrizzleUserRepository는 barrel이 아닌 @/entities/auth/api에서 직접 import되므로
+// DrizzleUserRepository는 @/entities/auth/api에서 직접 import되므로
 // 해당 경로를 별도로 mock한다.
 vi.mock('@/entities/auth/api', () => ({
     DrizzleUserRepository: vi.fn().mockImplementation(function () {
         return {};
     }),
 }));
-vi.mock('@/entities/email-token', () => ({
+vi.mock('@/entities/email-token/api', () => ({
     createEmailTokenStore: vi.fn(),
 }));
 
-import {
-    confirmPasswordReset,
-    AUTH_SERVICE_UNAVAILABLE_MESSAGE,
-} from '@/entities/auth';
-import { createEmailTokenStore } from '@/entities/email-token';
+import { confirmPasswordReset } from '@/entities/auth/lib/confirmPasswordReset';
+import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth/lib/errorMessages';
+import { createEmailTokenStore } from '@/entities/email-token/api';
 import { confirmPasswordResetAction } from '@/features/auth-password-reset/actions/confirmPasswordResetAction';
-import { resetAuthDatabaseClientForTests } from '@/entities/auth/lib/db';
+import { resetDatabaseClientForTests } from '@/shared/db/client';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 
 const mockConfirm = confirmPasswordReset as MockedFunction<
@@ -62,7 +56,7 @@ const mockCreateTokenStore = createEmailTokenStore as MockedFunction<
 
 describe('confirmPasswordResetAction', () => {
     beforeEach(() => {
-        resetAuthDatabaseClientForTests();
+        resetDatabaseClientForTests();
         process.env.DATABASE_URL = 'postgres://test';
         mockConfirm.mockReset();
         mockCreateTokenStore.mockReset();

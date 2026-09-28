@@ -4,15 +4,9 @@ const { callGeminiMock } = vi.hoisted(() => ({
     callGeminiMock: vi.fn(),
 }));
 
-vi.mock('@/entities/llm-provider', async () => {
-    const actual = await vi.importActual<
-        typeof import('@/entities/llm-provider/lib/parseJsonResponse')
-    >('@/entities/llm-provider/lib/parseJsonResponse');
-    return {
-        callGeminiChat: (...args: unknown[]) => callGeminiMock(...args),
-        parseJsonResponse: actual.parseJsonResponse,
-    };
-});
+vi.mock('@/entities/llm-provider/api/gemini', () => ({
+    callGeminiChat: (...args: unknown[]) => callGeminiMock(...args),
+}));
 
 import {
     translateCompanyDescription,

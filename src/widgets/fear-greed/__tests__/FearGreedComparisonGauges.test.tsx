@@ -74,4 +74,26 @@ describe('FearGreedComparisonGauges', () => {
             expect(container.firstChild).toBeNull();
         });
     });
+
+    /*
+     * 회귀: 타일 보더가 양쪽 다 `/40`이라 `현재` 강조와 기본이 대비상 구분되지
+     * 않았다. 시장 버전(`MarketFearGreedComparison`)이 먼저 고친 것과 맞춘다.
+     */
+    it('타일 보더에 /40 알파를 쓰지 않고 현재 타일만 primary 보더로 강조한다', () => {
+        const history = makeHistory(
+            Array.from({ length: 300 }, (_, i) => 50 + (i % 20))
+        );
+        const { container } = render(
+            <FearGreedComparisonGauges history={history} />
+        );
+        const tiles = Array.from(container.querySelectorAll('li'));
+        expect(tiles).toHaveLength(4);
+        for (const tile of tiles) {
+            expect(tile.className).not.toMatch(/border-\S+\/40/);
+        }
+        expect(tiles[0].className).toContain('border-primary-500');
+        for (const tile of tiles.slice(1)) {
+            expect(tile.className).toContain('border-secondary-700');
+        }
+    });
 });

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { buildFallbackAnalysis } from '@/entities/chat-message';
+import { buildFallbackAnalysis } from '@/entities/chat-message/lib/fallbackAnalysis';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 import { ChartContent } from '../ChartContent';
 import type { UseAnalysisResult } from '../hooks/useAnalysis';
@@ -19,10 +19,14 @@ const FALLBACK_ANALYSIS = buildFallbackAnalysis(
     catalogTranslator('entities.chat-message.fallback', 'ko')('unavailable')
 );
 
-vi.mock('@/widgets/chart', () => ({
+vi.mock('@/widgets/chart/ChartErrorFallback', () => ({
     ChartErrorFallback: () => null,
-    ChartSkeleton: () => null,
+}));
+vi.mock('@/widgets/chart/ChartSkeleton', () => ({ ChartSkeleton: () => null }));
+vi.mock('@/widgets/chart/TimeframeSelector', () => ({
     TimeframeSelector: () => null,
+}));
+vi.mock('@/widgets/chart/hooks/useChartSync', () => ({
     useChartSync: () => ({
         handleStockChartReady: vi.fn(),
         handleStockChartRemove: vi.fn(),
@@ -73,7 +77,7 @@ vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
         openSignupNudge: vi.fn(),
     }),
 }));
-vi.mock('@/features/analysis-nudge', () => ({
+vi.mock('@/features/analysis-nudge/hooks/useAnonAnalysisNudge', () => ({
     useAnonAnalysisNudge: () => ({
         isLoginResolved: false,
         onSymbolAnalyzed: vi.fn(),
@@ -98,8 +102,10 @@ vi.mock('../hooks/useAnalysisDisplay', () => ({
 vi.mock('@/widgets/analysis/hooks/useAnalysisProgress', () => ({
     useAnalysisProgress: () => ({ phaseIndex: 0, tipIndex: 0 }),
 }));
-vi.mock('@/features/symbol-chat', () => ({ usePublishSymbolChat: vi.fn() }));
-vi.mock('@/widgets/analysis', () => ({
+vi.mock('@/features/symbol-chat/hooks/useSymbolChat', () => ({
+    usePublishSymbolChat: vi.fn(),
+}));
+vi.mock('@/widgets/analysis/AnalysisPanel', () => ({
     AnalysisPanel: ({
         highlightedOverlayRef,
         onToggleOverlayHighlight,
@@ -119,9 +125,11 @@ vi.mock('@/widgets/analysis', () => ({
             </button>
         </div>
     ),
+}));
+vi.mock('@/widgets/analysis/AnalysisProgress', () => ({
     AnalysisProgress: () => <div data-testid="analysis-progress" />,
 }));
-vi.mock('@/features/portfolio-holding', () => ({
+vi.mock('@/features/portfolio-holding/hooks/useSymbolHolding', () => ({
     useSymbolHolding: () => ({
         holding: null,
         isHydrated: true,

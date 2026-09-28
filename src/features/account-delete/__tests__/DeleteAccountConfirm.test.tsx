@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { DeleteAccountConfirm } from '@/features/account-delete/ui/DeleteAccountConfirm';
 import { useDeleteAccountForm } from '@/features/account-delete/hooks/useDeleteAccountForm';
 import type { DeleteAccountFormState } from '@/shared/lib/auth/formTypes';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
@@ -104,6 +105,40 @@ describe('DeleteAccountConfirm', () => {
         render(<DeleteAccountConfirm userEmail={USER_EMAIL} />);
         expect(screen.getByRole('alert')).toHaveTextContent(
             '로그인이 필요합니다.'
+        );
+    });
+
+    /**
+     * 회귀: `deleteAccount`가 그대로 넘기는 코드(`user_not_found`)의 `message`는
+     * 로그용 한국어 원문이다. 그 `message`를 띄우면 영어 화면에도 한국어가 나갔다.
+     */
+    it('maps pass-through error codes to the active locale instead of the raw message', () => {
+        setFormState({
+            error: {
+                code: 'user_not_found',
+                message: '사용자 계정을 찾을 수 없습니다.',
+            },
+        });
+        renderWithIntl(<DeleteAccountConfirm userEmail={USER_EMAIL} />, {
+            locale: 'en',
+        });
+        expect(screen.getByRole('alert')).toHaveTextContent(
+            'We could not find that account.'
+        );
+        expect(screen.getByRole('alert')).not.toHaveTextContent(
+            '사용자 계정을 찾을 수 없습니다.'
+        );
+    });
+
+    it('falls back to the generic delete-failed message for unmapped codes', () => {
+        setFormState({
+            error: { code: 'unexpected', message: 'raw internal text' },
+        });
+        renderWithIntl(<DeleteAccountConfirm userEmail={USER_EMAIL} />, {
+            locale: 'en',
+        });
+        expect(screen.getByRole('alert')).toHaveTextContent(
+            'An error occurred while deleting your account. Please try again in a moment.'
         );
     });
 

@@ -1,27 +1,29 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
+import { createAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
 import {
-    applyAuthCookie,
-    createAuthHintCookie,
     createAuthSession,
     DEFAULT_SESSION_TTL_SECONDS,
-    isSecureCookieEnv,
-} from '@/entities/auth';
+} from '@/entities/auth/lib/sessionCookie';
+import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
 import {
     DrizzleSessionRepository,
     DrizzleUserRepository,
 } from '@/entities/auth/api';
-import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
-import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account';
+import { getDatabaseClient } from '@/shared/db/client';
+import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/lib/pendingOAuthSignupStore';
 import {
     buildOAuthRedirectUri,
     getOAuthAdapter,
     getOAuthRedirectBaseUrl,
     isOAuthProvider,
+} from '@/features/auth-oauth/lib/providers';
+import {
     OAUTH_STATE_COOKIE_NAME,
     OAuthStateSecretMisconfiguredError,
     expiredOAuthStateCookie,
     verifyOAuthState,
-} from '@/features/auth-oauth';
+} from '@/features/auth-oauth/lib/state';
 import {
     DEFAULT_REDIRECT_PATH,
     sanitizeNextPath,
@@ -112,7 +114,7 @@ export async function GET(
         );
     }
 
-    const { db } = getAuthDatabaseClient();
+    const { db } = getDatabaseClient();
     const userRepo = new DrizzleUserRepository(db);
     const sessionRepo = new DrizzleSessionRepository(db);
 

@@ -20,16 +20,22 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
     resetDatabaseClientForTests: vi.fn(),
 }));
-vi.mock('@/entities/auth', () => ({
+vi.mock('@/entities/auth/lib/applyAuthCookie', () => ({
     applyAuthCookie: vi.fn((c: unknown) => c),
+}));
+vi.mock('@/entities/auth/lib/sessionCookieOptions', () => ({
     isSecureCookieEnv: vi.fn(() => false),
+}));
+vi.mock('@/entities/auth/lib/authHintCookie', () => ({
     createExpiredAuthHintCookie: vi.fn(() => ({
         name: 'auth_hint',
         value: '',
     })),
+}));
+vi.mock('@/entities/auth/lib/deleteAccount', () => ({
     deleteAccount: vi.fn(),
 }));
-// DrizzleUserRepository와 DrizzleSessionRepository는 barrel이 아닌
+// DrizzleUserRepository와 DrizzleSessionRepository는
 // @/entities/auth/api에서 직접 import되므로 해당 경로를 mock한다.
 vi.mock('@/entities/auth/api', () => ({
     DrizzleSessionRepository: vi.fn().mockImplementation(function () {
@@ -39,28 +45,24 @@ vi.mock('@/entities/auth/api', () => ({
         return {};
     }),
 }));
-// getAuthDatabaseClient는 barrel이 아닌 @/entities/auth/lib/db에서 직접 import되므로
-// (server-only 체인을 client 번들에서 분리) 해당 경로를 별도로 mock한다.
-vi.mock('@/entities/auth/lib/db', () => ({
-    getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
-    resetAuthDatabaseClientForTests: vi.fn(),
-}));
 vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
-vi.mock('@/entities/oauth-account', () => ({
+vi.mock('@/entities/oauth-account/api', () => ({
     DrizzleOAuthAccountRepository: vi.fn().mockImplementation(function () {
         return { findByUserId: vi.fn() };
     }),
+}));
+vi.mock('@/entities/oauth-account/lib/revoker', () => ({
     compositeOAuthRevoker: { revokeToken: vi.fn() },
 }));
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { deleteAccount } from '@/entities/auth';
+import { deleteAccount } from '@/entities/auth/lib/deleteAccount';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { deleteAccountAction } from '@/features/account-delete/actions/deleteAccountAction';
-import { resetAuthDatabaseClientForTests } from '@/entities/auth/lib/db';
+import { resetDatabaseClientForTests } from '@/shared/db/client';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 
 const mockCookies = cookies as MockedFunction<typeof cookies>;
@@ -85,7 +87,7 @@ describe('deleteAccountAction', () => {
     let setSpy: Mock;
 
     beforeEach(() => {
-        resetAuthDatabaseClientForTests();
+        resetDatabaseClientForTests();
         process.env.DATABASE_URL = 'postgres://test';
         setSpy = vi.fn();
         mockCookies.mockResolvedValue({
@@ -154,7 +156,7 @@ describe('deleteAccountAction', () => {
                     { error: null },
                     makeFormData({ email: '  USER@Example.COM  ' })
                 )
-            ).rejects.toThrow('NEXT_REDIRECT:/?account_deleted=1');
+            ).rejects.toThrow(/^NEXT_REDIRECT:\/$/);
             expect(mockDelete).toHaveBeenCalledWith(
                 { userId: 'u1' },
                 expect.objectContaining({
@@ -189,14 +191,14 @@ describe('deleteAccountAction', () => {
             expect(mockRedirect).not.toHaveBeenCalled();
         });
 
-        it('성공 시 만료 쿠키를 set하고 /?account_deleted=1로 redirect한다', async () => {
+        it('성공 시 만료 쿠키를 set하고 쿼리 없이 / 로 redirect한다(읽는 곳 없는 account_deleted 제거)', async () => {
             mockDelete.mockResolvedValue({ ok: true, cookie: expiredCookie });
             await expect(
                 deleteAccountAction(
                     { error: null },
                     makeFormData({ email: 'user@example.com' })
                 )
-            ).rejects.toThrow('NEXT_REDIRECT:/?account_deleted=1');
+            ).rejects.toThrow(/^NEXT_REDIRECT:\/$/);
             expect(mockDelete).toHaveBeenCalledWith(
                 { userId: 'u1' },
                 expect.objectContaining({

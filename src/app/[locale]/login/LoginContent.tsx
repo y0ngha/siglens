@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useLocalePath } from '@/shared/i18n/useLocalePath';
 import { AUTH_ERROR_KEY } from '@/shared/lib/authErrorKey';
 import { useSearchParams } from 'next/navigation';
-import { LoginForm } from '@/features/auth-login';
+import { LoginForm } from '@/features/auth-login/ui/LoginForm';
 import { SocialLoginButtons } from '@/features/auth-oauth/ui/SocialLoginButtons';
 import { sanitizeNextPath } from '@/shared/lib/auth/redirect';
 

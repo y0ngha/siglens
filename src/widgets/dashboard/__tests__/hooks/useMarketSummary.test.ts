@@ -4,11 +4,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createElement } from 'react';
 import type { ReactNode } from 'react';
 import { useMarketSummary } from '@/widgets/dashboard/hooks/useMarketSummary';
-import { getMarketSummaryClientAction } from '@/entities/market-summary/actions';
+import { getMarketSummaryClientAction } from '@/entities/market-summary/actions/getMarketSummaryClientAction';
 
-vi.mock('@/entities/market-summary/actions', () => ({
-    getMarketSummaryClientAction: vi.fn(),
-}));
+vi.mock(
+    '@/entities/market-summary/actions/getMarketSummaryClientAction',
+    () => ({
+        getMarketSummaryClientAction: vi.fn(),
+    })
+);
 
 vi.mock('@/shared/api/e2eClientEnv', () => ({
     isE2EClient: vi.fn(() => false),
@@ -135,9 +138,12 @@ describe('useMarketSummary', () => {
         vi.doMock('@/shared/api/e2eClientEnv', () => ({
             isE2EClient: vi.fn(() => true),
         }));
-        vi.doMock('@/entities/market-summary/actions', () => ({
-            getMarketSummaryClientAction: vi.fn(),
-        }));
+        vi.doMock(
+            '@/entities/market-summary/actions/getMarketSummaryClientAction',
+            () => ({
+                getMarketSummaryClientAction: vi.fn(),
+            })
+        );
         // Also re-mock useHydrated so the query is enabled in the reloaded module context.
         vi.doMock('@/shared/hooks/useHydrated', () => ({
             useHydrated: vi.fn(() => true),
@@ -146,7 +152,7 @@ describe('useMarketSummary', () => {
         const { useMarketSummary: useMarketSummaryE2E } =
             await import('@/widgets/dashboard/hooks/useMarketSummary');
         const { getMarketSummaryClientAction: e2eMockAction } =
-            await import('@/entities/market-summary/actions');
+            await import('@/entities/market-summary/actions/getMarketSummaryClientAction');
         (e2eMockAction as ReturnType<typeof vi.fn>).mockResolvedValue(
             SUMMARY_DATA
         );
@@ -162,7 +168,9 @@ describe('useMarketSummary', () => {
 
         client.clear();
         vi.doUnmock('@/shared/api/e2eClientEnv');
-        vi.doUnmock('@/entities/market-summary/actions');
+        vi.doUnmock(
+            '@/entities/market-summary/actions/getMarketSummaryClientAction'
+        );
         vi.doUnmock('@/shared/hooks/useHydrated');
     });
 });

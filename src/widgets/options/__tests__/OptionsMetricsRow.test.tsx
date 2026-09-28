@@ -15,7 +15,7 @@ vi.mock('@/widgets/options/utils/optionsTooltips', () => ({
     ImpliedMoveTooltip: () => 'Imp Move info',
 }));
 
-vi.mock('@/entities/options-chain', () => ({
+vi.mock('@/entities/options-chain/lib/optionsFormatters', () => ({
     formatMaxPain: (v: number | null) =>
         v === null ? '—' : `$${v.toFixed(0)}`,
     formatPutCallRatio: (v: number | null) => (v === null ? '—' : v.toFixed(2)),

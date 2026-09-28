@@ -1,24 +1,20 @@
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import type { FundamentalValuationMetrics } from '@y0ngha/siglens-core';
-import { EmptySectionCard } from './EmptySectionCard';
+import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { cn } from '@/shared/lib/cn';
+import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
+import { cachedNumberFormat } from '@/shared/lib/intlFormatCache';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
-// 소수 자릿수(digits)가 행마다 달라 단일 상수로 고정할 수 없다. 자릿수별로
-// 포매터를 한 번만 만들어 재사용한다 — 렌더마다 new Intl.NumberFormat 금지.
-const DECIMAL_FORMATTERS = new Map<number, Intl.NumberFormat>();
-
-function formatDecimal(value: number, digits: number): string {
-    let formatter = DECIMAL_FORMATTERS.get(digits);
-    if (formatter === undefined) {
-        formatter = new Intl.NumberFormat('ko-KR', {
-            maximumFractionDigits: digits,
-        });
-        DECIMAL_FORMATTERS.set(digits, formatter);
-    }
-    return formatter.format(value);
+// 예전에는 `'ko-KR'` 고정이었다 — 로케일은 `INTL_LOCALE`에서만 정한다.
+function formatDecimal(value: number, digits: number, locale: Locale): string {
+    return cachedNumberFormat(INTL_LOCALE[locale], {
+        maximumFractionDigits: digits,
+    }).format(value);
 }
 
 const HEADING_ID = 'valuation-heading';
@@ -43,7 +39,9 @@ function MetricRow({
     digits = 2,
     tooltip,
 }: MetricRowProps) {
-    const formatted = value !== null ? formatDecimal(value, digits) : '—';
+    const locale = useResolvedLocale();
+    const formatted =
+        value !== null ? formatDecimal(value, digits, locale) : '—';
 
     return (
         <div className="flex items-baseline justify-between gap-4 border-b border-secondary-700 py-2.5 last:border-b-0">
@@ -78,7 +76,7 @@ export function ValuationCard({ metrics }: ValuationCardProps) {
     return (
         <section
             aria-labelledby={HEADING_ID}
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+            className={cn(SURFACE_CARD, 'p-6')}
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 {t('ValuationCard.12a32f')}

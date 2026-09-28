@@ -5,6 +5,8 @@ import {
     type EconomyCategoryKey,
 } from '@/shared/config/economyIndicators';
 import { KR_ECONOMY_INDICATORS } from '@/shared/config/economyIndicatorsKr';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { cn } from '@/shared/lib/cn';
 
 /** 카드 수 계산에 필요한 최소 형태 — 미국·한국 레지스트리가 공유하는 부분. */
 interface CategorizedIndicator {
@@ -42,7 +44,7 @@ function deriveCategories(
 }
 
 /** 어느 경제 화면의 자리를 잡는지. 화면마다 그리드 구성과 간격이 다르다. */
-export type EconomySkeletonVariant = 'us' | 'kr';
+type EconomySkeletonVariant = 'us' | 'kr';
 
 /**
  * 변형별 기하 — **실제 그리드와 한 곳에서 맞춘다.**
@@ -79,7 +81,12 @@ export interface EconomySkeletonProps {
 /** 실제 `IndicatorCard`(article.p-4: 라벨 / 값 / 델타 배지 / 날짜)와 같은 높이의 자리표. */
 function SkeletonIndicatorCard() {
     return (
-        <div className="animate-pulse rounded-lg border border-secondary-700 bg-secondary-800 p-4 motion-reduce:animate-none">
+        <div
+            className={cn(
+                SURFACE_CARD,
+                'animate-pulse p-4 motion-reduce:animate-none'
+            )}
+        >
             <div className="mb-2 h-5 w-24 rounded bg-secondary-700" />
             <div className="h-8 w-20 rounded bg-secondary-700" />
             <div className="mt-1 h-5 w-16 rounded bg-secondary-700" />
@@ -123,7 +130,10 @@ export function EconomySkeleton({ variant = 'us' }: EconomySkeletonProps = {}) {
             {v.showMacroSections && (
                 <>
                     <section
-                        className="animate-pulse rounded-lg border border-secondary-700 bg-secondary-800 p-6 motion-reduce:animate-none"
+                        className={cn(
+                            SURFACE_CARD,
+                            'animate-pulse p-6 motion-reduce:animate-none'
+                        )}
                         aria-hidden="true"
                     >
                         <div className="mb-3 h-6 w-36 rounded bg-secondary-700" />
@@ -131,7 +141,10 @@ export function EconomySkeleton({ variant = 'us' }: EconomySkeletonProps = {}) {
                     </section>
 
                     <section
-                        className="animate-pulse rounded-lg border border-secondary-700 bg-secondary-800 p-6 motion-reduce:animate-none"
+                        className={cn(
+                            SURFACE_CARD,
+                            'animate-pulse p-6 motion-reduce:animate-none'
+                        )}
                         aria-hidden="true"
                     >
                         <div className="mb-4 flex items-center gap-3">
@@ -167,7 +180,10 @@ export function EconomySkeleton({ variant = 'us' }: EconomySkeletonProps = {}) {
             </section>
 
             <section
-                className="animate-pulse rounded-lg border border-secondary-700 bg-secondary-800 p-6 motion-reduce:animate-none"
+                className={cn(
+                    SURFACE_CARD,
+                    'animate-pulse p-6 motion-reduce:animate-none'
+                )}
                 aria-hidden="true"
             >
                 <div className="mb-4 h-5 w-32 rounded bg-secondary-700" />

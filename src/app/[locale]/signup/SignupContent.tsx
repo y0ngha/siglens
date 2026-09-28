@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useLocalePath } from '@/shared/i18n/useLocalePath';
 import { useSearchParams } from 'next/navigation';
-import { SignupForm } from '@/features/auth-signup';
+import { SignupForm } from '@/features/auth-signup/ui/SignupForm';
 import { SocialLoginButtons } from '@/features/auth-oauth/ui/SocialLoginButtons';
 import { sanitizeNextPath } from '@/shared/lib/auth/redirect';
 

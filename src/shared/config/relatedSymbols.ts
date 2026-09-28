@@ -43,7 +43,7 @@ const MAX_RING_REACH = 4;
  * 묶는다. 근거를 필드로 남기는 건 테스트와 다음 사람을 위해서다 — 링 이웃은
  * "같은 시장"이라는 약한 근거라 캡션에서 테마 피어와 구분돼야 한다.
  */
-export type RelatedSymbolReason = 'theme' | 'category' | 'ring';
+type RelatedSymbolReason = 'theme' | 'category' | 'ring';
 
 /** 링 이웃(관련성 데이터 없음)의 캡션 — "같은 시장 종목". */
 export const RING_GROUP_LABEL_KEY = 'views.symbol.relatedGroup.sameMarket';

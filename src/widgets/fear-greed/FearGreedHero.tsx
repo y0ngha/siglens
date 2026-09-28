@@ -1,5 +1,5 @@
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
-import { FearGreedGauge } from './FearGreedGauge';
+import { FearGreedGauge } from '@/shared/ui/FearGreedGauge';
 
 interface FearGreedHeroProps {
     snapshot: FearGreedSnapshot;

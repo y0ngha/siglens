@@ -3,7 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import type { AiSeoCopy } from '@/shared/config/aiHost';
 import type { Locale } from '@/shared/i18n/locales';
 import type { FaqItem } from '@/shared/lib/seo';
-import { GUEST_TURNS_PER_DAY } from '@/widgets/agent-chat';
+import { GUEST_TURNS_PER_DAY } from '@/widgets/agent-chat/guestTurnLimit';
 import {
     parseReplayLine,
     type ReplayScenario,

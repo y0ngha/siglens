@@ -9,6 +9,7 @@ import {
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { cn } from '@/shared/lib/cn';
 import { AXIS_LABEL_KEY } from './axisLabels';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 interface FinancialsScorecardProps {
     /** The complete 4-axis financials scorecard from computeFinancialsScorecard. */
@@ -63,7 +64,7 @@ export function FinancialsScorecard({
     return (
         <section
             aria-labelledby="financials-scorecard-heading"
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+            className={cn(SURFACE_CARD, 'p-6')}
         >
             <h2
                 id="financials-scorecard-heading"

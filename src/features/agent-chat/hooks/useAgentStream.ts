@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ChatMessageView } from '@/entities/chat-conversation';
+import type { ChatMessageView } from '@/entities/chat-conversation/model';
 import {
     AGENT_TIME_ZONE_HEADER,
     ANALYSIS_LOCALE_HEADER,
@@ -13,34 +13,9 @@ import {
     type AgentClientErrorCode,
 } from '../lib/errorCodes';
 import { guestHistory } from '../lib/guestHistory';
-import { parseSseFrame, splitFrames } from '../lib/parseSseFrames';
+import { parseSseFrame, splitFrames } from '@/shared/lib/sse/parseSseFrames';
 import { trackAdsConversion } from '@/shared/lib/googleAds';
-
-export interface ToolActivityItem {
-    id: string;
-    name: string;
-    args: Record<string, unknown>;
-    status: 'running' | 'ok' | 'error';
-    ms?: number;
-    summary?: string;
-    estimatedSeconds?: number;
-}
-export interface AgentUiMessage {
-    id: string;
-    seq?: number;
-    role: 'user' | 'assistant';
-    content: string;
-    tools: ToolActivityItem[];
-    status: 'complete' | 'streaming' | 'aborted' | 'error';
-    truncated?: boolean;
-    /**
-     * An answer the model had already started writing when it decided to
-     * fetch more data. Kept (dimmed, with a note) until the new answer's
-     * first text arrives, so the reply is visibly being redone instead of
-     * silently vanishing. Streaming-only; never persisted.
-     */
-    draft?: string;
-}
+import type { AgentUiMessage } from '../model/types';
 
 /**
  * Text before a tool call shorter than this is narration ("시세를 확인해
@@ -51,12 +26,12 @@ export interface AgentUiMessage {
 const DRAFT_MIN_CHARS = 120;
 
 /** Daily allowance left; `null` = no daily limit for this tier (core `AgentRemaining`). */
-export interface AgentRemaining {
+interface AgentRemaining {
     turns: number | null;
     fresh: number | null;
     search: number | null;
 }
-export type StreamStatus = 'idle' | 'streaming' | 'error';
+type StreamStatus = 'idle' | 'streaming' | 'error';
 interface Options {
     conversationId: string | null;
     initialMessages: ChatMessageView[];
@@ -227,22 +202,15 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
     // on an unmounted hook instance.
     useEffect(() => () => controllerRef.current?.abort(), []);
 
-    const updateMessages = useCallback(
-        (updater: (prev: AgentUiMessage[]) => AgentUiMessage[]) => {
-            setMessages(updater);
-        },
-        []
-    );
-
     const patchLast = useCallback(
         (fn: (m: AgentUiMessage) => AgentUiMessage) => {
-            updateMessages(prev =>
+            setMessages(prev =>
                 prev.length === 0
                     ? prev
                     : [...prev.slice(0, -1), fn(prev[prev.length - 1]!)]
             );
         },
-        [updateMessages]
+        []
     );
 
     const run = useCallback(
@@ -259,7 +227,7 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
             let reader: ReadableStreamDefaultReader<string> | undefined;
             setStatus('streaming');
             setError(null);
-            updateMessages(prev => [
+            setMessages(prev => [
                 ...prev,
                 {
                     id: `pending-${Date.now()}`,
@@ -327,7 +295,7 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
                                 typeof data.userMessageSeq === 'number'
                             ) {
                                 const seq = data.userMessageSeq;
-                                updateMessages(prev => {
+                                setMessages(prev => {
                                     const userIndex = prev.length - 2;
                                     const target = prev[userIndex];
                                     if (
@@ -454,7 +422,7 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
                     // created, or supersede the PREVIOUS answer and re-ask the OLD
                     // question).
                     lastErrorKindRef.current = 'http';
-                    updateMessages(() => restoreSnapshot);
+                    setMessages(() => restoreSnapshot);
                     setStatus('error');
                     setError(
                         isAgentClientErrorCode(e.code) ? e.code : 'server_error'
@@ -480,7 +448,7 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
                 void reader?.cancel().catch(() => {});
             }
         },
-        [conversationId, patchLast, updateMessages]
+        [conversationId, patchLast]
     );
 
     const guest = options.guest === true;
@@ -489,7 +457,7 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
         (message: string) => {
             const snapshot = messagesRef.current;
             guestRegenerateRef.current = false;
-            updateMessages(prev => [
+            setMessages(prev => [
                 ...prev,
                 {
                     id: `local-${Date.now()}`,
@@ -509,7 +477,7 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
                 snapshot
             );
         },
-        [run, updateMessages, guest]
+        [run, guest]
     );
     /**
      * A new question from the composer — the only path that records the
@@ -525,7 +493,7 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
     );
     const regenerate = useCallback(() => {
         const snapshot = messagesRef.current;
-        updateMessages(prev =>
+        setMessages(prev =>
             prev[prev.length - 1]?.role === 'assistant'
                 ? prev.slice(0, -1)
                 : prev
@@ -546,11 +514,11 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
             );
         }
         return run({ action: 'regenerate' }, false, snapshot);
-    }, [run, updateMessages, guest]);
+    }, [run, guest]);
     const edit = useCallback(
         (seq: number, message: string) => {
             const snapshot = messagesRef.current;
-            updateMessages(prev => {
+            setMessages(prev => {
                 const index = prev.findIndex(m => m.seq === seq);
                 return [
                     ...(index >= 0 ? prev.slice(0, index) : prev),
@@ -569,7 +537,7 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
                 snapshot
             );
         },
-        [run, updateMessages]
+        [run]
     );
     const stop = useCallback(() => controllerRef.current?.abort(), []);
 

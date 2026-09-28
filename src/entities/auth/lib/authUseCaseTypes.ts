@@ -1,42 +1,30 @@
 import type { OAuthProvider } from '@/shared/lib/types';
-import type { AgreementRepository } from '@/entities/agreement';
+import type { AgreementRepository } from '@/entities/agreement/api';
 import type {
     AuthSessionRecord,
-    AuthUserRecord,
     EmailAuthUserRepository,
     OAuthAccountRepository,
     SessionRepository,
     UserRepository,
 } from '@/shared/db/types';
-import type { OAuthRevoker } from '@/entities/oauth-account';
+import type { AuthUserRecord } from '@/shared/lib/auth/types';
+import type { OAuthRevoker } from '@/entities/oauth-account/lib/revokerTypes';
 import type {
     AuthSessionCookie,
     PasswordHasher,
     PasswordVerifier,
 } from '@/shared/lib/auth/types';
-import type { EmailDispatcher, EmailMessage } from '@/shared/email';
-import type { EmailTokenStore } from '@/entities/email-token';
+import type { EmailDispatcher, EmailMessage } from '@/shared/email/types';
+import type { EmailTokenStore } from '@/entities/email-token/api';
 import type {
     ConfirmPasswordResetError,
-    ConfirmPasswordResetErrorCode,
     DeleteAccountErrorCode,
     LoginUserErrorCode,
     RegisterUserError,
-    RegisterUserErrorCode,
-    RegisterUserErrorField,
     VerifyEmailErrorCode,
 } from '@/shared/lib/auth/types';
 
-export type {
-    ConfirmPasswordResetError,
-    ConfirmPasswordResetErrorCode,
-    DeleteAccountErrorCode,
-    LoginUserErrorCode,
-    RegisterUserError,
-    RegisterUserErrorCode,
-    RegisterUserErrorField,
-    VerifyEmailErrorCode,
-};
+export type { ConfirmPasswordResetError, RegisterUserError };
 
 export interface SocialLoginUserInput {
     provider: OAuthProvider;
@@ -78,9 +66,7 @@ export interface LoginUserError {
     message: string;
 }
 
-export type { AuthSessionCookie };
-
-export interface AuthSessionOptions {
+interface AuthSessionOptions {
     now?: Date;
     sessionTtlSeconds?: number;
     cookieName?: string;

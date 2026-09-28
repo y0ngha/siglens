@@ -1328,12 +1328,11 @@ interface UseXxxOverlayParams {
 | `useEMAOverlay` | 0 (메인) | EMA 점선 (기간별 ON/OFF) |
 | `useBollingerOverlay` | 0 (메인) | 볼린저 밴드 (3선 + 배경) |
 | `useIchimokuOverlay` | 0 (메인) | 전환선/기준선/후행스팬/선행스팬A/선행스팬B (LineSeries 5개) + 구름대 (AreaSeries 2개) |
-| `useRSIChart` | 동적 | RSI + 과매수/과매도선 |
+| `useLinePaneChart` | 동적 | 단일 선 + 점선 기준선 지표(RSI·CCI·MFI·Williams %R·CMF 등 15종) — 색·기준선·값은 `model/linePaneSpecs.ts`의 `LINE_PANE_SPECS` |
 | `useMACDChart` | 동적 | MACD 라인 + 시그널 + 히스토그램 |
 | `useDMIChart` | 동적 | +DI / -DI / ADX |
 | `useStochasticChart` | 동적 | %K / %D + 과매수/과매도선 |
 | `useStochRSIChart` | 동적 | K / D + 과매수(0.8)/과매도(0.2)선 |
-| `useCCIChart` | 동적 | CCI + 과매수(+100)/과매도(-100)/중앙(0)선 |
 
 > **pane 인덱스 규칙**: 메인 pane(0)에는 캔들+오버레이만 표시한다.
 > 하위 인디케이터(RSI, MACD 등)의 pane 번호는 **고정값이 아니라** 현재 활성화된 인디케이터 조합에 따라
@@ -1744,7 +1743,6 @@ entities/options-chain/
 ├── lib/YahooOptionsAdapter.ts   # OptionsDataProvider 구현 (yahoo-finance2)
 ├── lib/yahooNormalize.ts        # yahoo 응답 → siglens-core 타입
 ├── lib/optionsCacheLife.ts      # ET 시계 → open / closed / weekend 프로파일 선택
-├── lib/optionsCacheTags.ts      # revalidateTag 헬퍼
 ├── lib/optionsDataCache.ts      # 'use cache' 래퍼 + hasOptionsMarket
 └── actions/optionsActions.ts    # chain · signals · submit · poll · cancel Server Action
 ```

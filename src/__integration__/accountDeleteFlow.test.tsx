@@ -98,13 +98,16 @@ describe('Account Delete Flow', () => {
     it('shows error alert when delete action fails', () => {
         deleteState = {
             error: {
-                code: 'server_error',
-                message: '탈퇴 처리에 실패했습니다.',
+                code: 'unexpected',
+                message: 'raw internal text',
             },
         };
         render(<DeleteAccountConfirm userEmail={USER_EMAIL} />);
+        // 표시는 코드로 번역한다 — 액션의 `message`는 그대로 나가지 않는다.
         expect(
-            screen.getByText('탈퇴 처리에 실패했습니다.')
+            screen.getByText(
+                '계정 삭제 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+            )
         ).toBeInTheDocument();
     });
 });

@@ -66,4 +66,39 @@ describe('useReasoningToggle', () => {
             expect(result.current[2]).toBe(true);
         });
     });
+
+    /**
+     * 회귀: 저장소가 막힌 브라우저(시크릿 모드·Safari 사생활 보호)는 `localStorage`
+     * 접근에서 `SecurityError`를 던진다. 가드가 없으면 마운트 effect/토글 핸들러가
+     * 그대로 던져 트리가 죽었다.
+     */
+    describe('when localStorage throws (storage blocked)', () => {
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        it('hydrates to the default instead of throwing on read', async () => {
+            vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+                throw new DOMException('blocked', 'SecurityError');
+            });
+            const { result } = renderHook(() => useReasoningToggle());
+
+            await waitFor(() => {
+                expect(result.current[2]).toBe(true);
+            });
+            expect(result.current[0]).toBe(false);
+        });
+
+        it('still updates in-session state when the write throws', () => {
+            vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+                throw new DOMException('blocked', 'SecurityError');
+            });
+            const { result } = renderHook(() => useReasoningToggle());
+
+            act(() => {
+                result.current[1](true);
+            });
+            expect(result.current[0]).toBe(true);
+        });
+    });
 });

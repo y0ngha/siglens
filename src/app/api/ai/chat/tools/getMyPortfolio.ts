@@ -1,6 +1,6 @@
 import 'server-only';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { roundNumber } from '@/entities/bars/lib/roundIndicators';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { quoteWithTimeout } from '@/shared/api/market/quoteTimeout';
@@ -11,14 +11,12 @@ import {
     QUOTE_MAX_AGE_MS,
 } from './freshness';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
-import {
-    getDescriptor,
-    type MarketProfileId,
-} from '@/shared/config/marketProfile';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
+import { type MarketProfileId } from '@/shared/config/marketProfile/types';
 import { getDatabaseClient } from '@/shared/db/client';
 import { currencyFractionDigits } from '@/shared/lib/priceFormat';
 import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';
-import type { ToolExecutor } from './index';
+import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { logToolDegrade } from './logToolDegrade';
 import { pctVs, ratioPct } from './percent';
 

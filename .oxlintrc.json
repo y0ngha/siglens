@@ -7,7 +7,7 @@
     //
     // FSD 레이어 규칙은 eslint-plugin-boundaries 대신 no-restricted-imports의 regex
     // 패턴으로 표현한다. oxlint는 override 간 같은 룰의 옵션을 머지하지 않고 마지막
-    // 매치가 이긴다 — 그래서 "deep import 금지 + 레이어 방향 금지 + @e2e 금지"를
+    // 매치가 이긴다 — 그래서 "레이어 방향 금지 + core deep import 금지 + @e2e 금지"를
     // 레이어별 override 하나에 함께 담는다. 아래 patterns의 regex는 Rust regex
     // 문법(lookahead 없음)이다.
     "plugins": [
@@ -89,18 +89,13 @@
 
     "overrides": [
         {
-            // src/ 공통: 슬라이스 barrel만 import(deep import 금지) + core deep import 금지
-            // + E2E 전용 모듈의 프로덕션 번들 유출 금지.
+            // src/ 공통: core deep import 금지 + E2E 전용 모듈의 프로덕션 번들 유출 금지.
             "files": ["src/**/*.ts", "src/**/*.tsx"],
             "rules": {
                 "no-restricted-imports": [
                     "error",
                     {
                         "patterns": [
-                            {
-                                "regex": "^@/(features/[^/]+/(model|hooks|ui|lib|api)|widgets/[^/]+/(model|hooks|ui|lib)|entities/[^/]+/(api|model|lib|ui))($|/)",
-                                "message": "슬라이스 barrel(index.ts)만 import하세요. 예: '@/entities/auth' (NOT '@/entities/auth/lib/loginUser')."
-                            },
                             {
                                 "regex": "^@y0ngha/siglens-core/dist",
                                 "message": "@y0ngha/siglens-core는 패키지 루트에서만 import하세요 (deep import 금지)."
@@ -128,10 +123,6 @@
                                 "message": "FSD 의존 방향 위반: shared는 상위 레이어를 import할 수 없습니다."
                             },
                             {
-                                "regex": "^@/(features/[^/]+/(model|hooks|ui|lib|api)|widgets/[^/]+/(model|hooks|ui|lib)|entities/[^/]+/(api|model|lib|ui))($|/)",
-                                "message": "슬라이스 barrel(index.ts)만 import하세요."
-                            },
-                            {
                                 "regex": "^@y0ngha/siglens-core/dist",
                                 "message": "@y0ngha/siglens-core deep import 금지."
                             },
@@ -154,10 +145,6 @@
                             {
                                 "regex": "^@/(features|widgets|views|app)/",
                                 "message": "FSD 의존 방향 위반: entities는 상위 레이어를 import할 수 없습니다."
-                            },
-                            {
-                                "regex": "^@/(features/[^/]+/(model|hooks|ui|lib|api)|widgets/[^/]+/(model|hooks|ui|lib)|entities/[^/]+/(api|model|lib|ui))($|/)",
-                                "message": "슬라이스 barrel(index.ts)만 import하세요."
                             },
                             {
                                 "regex": "^@y0ngha/siglens-core/dist",
@@ -184,10 +171,6 @@
                                 "message": "FSD 의존 방향 위반: features는 widgets/views/app을 import할 수 없습니다."
                             },
                             {
-                                "regex": "^@/(features/[^/]+/(model|hooks|ui|lib|api)|widgets/[^/]+/(model|hooks|ui|lib)|entities/[^/]+/(api|model|lib|ui))($|/)",
-                                "message": "슬라이스 barrel(index.ts)만 import하세요."
-                            },
-                            {
                                 "regex": "^@y0ngha/siglens-core/dist",
                                 "message": "@y0ngha/siglens-core deep import 금지."
                             },
@@ -201,8 +184,6 @@
             }
         },
         {
-            // widgets/views: barrel에서 제외된 heavy/server-only 모듈을 deep import해야 하는
-            // 기존 엣지가 있어 deep import 제한에서 제외(eslint 설정과 동일 범위).
             "files": ["src/widgets/**/*.ts", "src/widgets/**/*.tsx"],
             "rules": {
                 "no-restricted-imports": [
@@ -251,20 +232,9 @@
             }
         },
         {
-            // Server Action / entity 내부 lib / server-only orchestration(api.ts) /
-            // instrumentation / byokGate / useShareFlow: barrel에 노출할 수 없는
-            // server-only·client-분리 구현을 deep import해야 한다(eslint 설정의 ignores 목록).
-            // 레이어 방향 규칙은 계속 적용된다.
-            "files": [
-                "src/entities/*/actions/**",
-                "src/entities/*/lib/**",
-                "src/entities/analysis/api.ts",
-                "src/entities/news-article/api.ts",
-                "src/entities/agent-suggestions/api.ts",
-                "src/entities/sitemap-entry/server.ts",
-                "src/instrumentation.ts",
-                "src/instrumentation.node.ts"
-            ],
+            // instrumentation(src/ 루트)은 레이어 폴더 밖이라 위 레이어별 override에 잡히지
+            // 않는다. entities와 같은 방향 규칙(상위 레이어 import 금지)을 적용한다.
+            "files": ["src/instrumentation.ts", "src/instrumentation.node.ts"],
             "rules": {
                 "no-restricted-imports": [
                     "error",
@@ -273,58 +243,6 @@
                             {
                                 "regex": "^@/(features|widgets|views|app)/",
                                 "message": "FSD 의존 방향 위반: entities는 상위 레이어를 import할 수 없습니다."
-                            },
-                            {
-                                "regex": "^@y0ngha/siglens-core/dist",
-                                "message": "@y0ngha/siglens-core deep import 금지."
-                            },
-                            {
-                                "regex": "^@e2e/",
-                                "message": "src/는 E2E 전용 모듈(@e2e/*)을 import할 수 없습니다."
-                            }
-                        ]
-                    }
-                ]
-            }
-        },
-        {
-            "files": [
-                "src/features/*/actions/**",
-                "src/features/share/hooks/useShareFlow.ts"
-            ],
-            "rules": {
-                "no-restricted-imports": [
-                    "error",
-                    {
-                        "patterns": [
-                            {
-                                "regex": "^@/(widgets|views|app)/",
-                                "message": "FSD 의존 방향 위반: features는 widgets/views/app을 import할 수 없습니다."
-                            },
-                            {
-                                "regex": "^@y0ngha/siglens-core/dist",
-                                "message": "@y0ngha/siglens-core deep import 금지."
-                            },
-                            {
-                                "regex": "^@e2e/",
-                                "message": "src/는 E2E 전용 모듈(@e2e/*)을 import할 수 없습니다."
-                            }
-                        ]
-                    }
-                ]
-            }
-        },
-        {
-            // byokGate: shared → entities 예외 + api-key deep import 필요('server-only' 선언).
-            "files": ["src/shared/lib/byokGate.ts"],
-            "rules": {
-                "no-restricted-imports": [
-                    "error",
-                    {
-                        "patterns": [
-                            {
-                                "regex": "^@/(features|widgets|views|app)/",
-                                "message": "FSD 의존 방향 위반: shared는 상위 레이어를 import할 수 없습니다."
                             },
                             {
                                 "regex": "^@y0ngha/siglens-core/dist",
@@ -356,10 +274,6 @@
                                 "message": "FSD 의존 방향 위반: shared는 상위 레이어를 import할 수 없습니다."
                             },
                             {
-                                "regex": "^@/(features/[^/]+/(model|hooks|ui|lib|api)|widgets/[^/]+/(model|hooks|ui|lib)|entities/[^/]+/(api|model|lib|ui))($|/)",
-                                "message": "슬라이스 barrel(index.ts)만 import하세요."
-                            },
-                            {
                                 "regex": "^@y0ngha/siglens-core/dist",
                                 "message": "@y0ngha/siglens-core deep import 금지."
                             }
@@ -370,7 +284,6 @@
         },
         {
             // app 레이어(Next.js App Router): 모든 하위 레이어 import 가능.
-            // RSC page/route handler는 server-only 내부 구현 접근이 필요해 deep import 제외.
             "files": ["src/app/**/*.ts", "src/app/**/*.tsx"],
             "rules": {
                 "no-restricted-imports": [
@@ -418,8 +331,8 @@
             "rules": { "typescript/no-empty-object-type": "off" }
         },
         {
-            // 테스트: deep import / 레이어 방향 제한 제외(테스트 하네스가 상위 레이어를
-            // 조합하고 내부 구현을 직접 검증한다 — eslint 설정과 동일 취지).
+            // 테스트: 레이어 방향 제한 제외(테스트 하네스가 상위 레이어를 조합하고
+            // 내부 구현을 직접 검증한다 — eslint 설정과 동일 취지).
             // 또한 fixture가 의도적으로 만드는 패턴(정밀도 손실 리터럴, `* 0`, thenable,
             // null 단정 후 optional chaining 등)은 correctness 룰에서 제외한다.
             "files": [

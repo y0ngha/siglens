@@ -146,7 +146,7 @@ Required test cases for period-based indicators:
 - Valid value range → non-null numbers after the period-th index
 - Calculation accuracy → first computed value matches specification
 
-When adding exports to an FSD slice, expose production imports through the slice barrel (`index.ts`) unless the local conventions mark the path as internal-only.
+Never add a barrel (`index.ts`/`index.tsx`) to an FSD slice — consumers (including tests and `vi.mock` paths) import each symbol from the file that defines it.
 
 **Documentation updates** — if the change falls into:
 

@@ -26,7 +26,7 @@ const { mockDrainBackgroundTasks, mockStopAcceptingBackgroundTasks } =
         mockStopAcceptingBackgroundTasks: vi.fn(),
     }));
 
-vi.mock('@/entities/ticker/lib/backgroundTask', () => ({
+vi.mock('@/shared/lib/backgroundTask', () => ({
     drainBackgroundTasks: mockDrainBackgroundTasks,
     stopAcceptingBackgroundTasks: mockStopAcceptingBackgroundTasks,
 }));

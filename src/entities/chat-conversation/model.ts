@@ -2,7 +2,7 @@ import type { AgentMessage } from '@y0ngha/siglens-core';
 import type { Locale } from '@/shared/i18n/locales';
 
 /** Max stored length of a conversation title (matches `chat_conversations.title` varchar(120) minus headroom; the derived title itself is capped shorter — see {@link deriveTitle}). */
-export const CONVERSATION_TITLE_MAX = 60;
+const CONVERSATION_TITLE_MAX = 60;
 
 /**
  * `listConversationsAction`/`DrizzleChatConversationRepository.listForUser`
@@ -16,8 +16,8 @@ export const CONVERSATION_TITLE_MAX = 60;
  */
 export const CONVERSATION_LIST_LIMIT = 300;
 
-export type ChatMessageRole = 'user' | 'assistant' | 'tool';
-export type ChatMessageStatus = 'complete' | 'aborted' | 'error' | 'superseded';
+type ChatMessageRole = 'user' | 'assistant' | 'tool';
+type ChatMessageStatus = 'complete' | 'aborted' | 'error' | 'superseded';
 
 /** A persisted SiglensAI conversation row (spec §6-1). */
 export interface ChatConversationRecord {

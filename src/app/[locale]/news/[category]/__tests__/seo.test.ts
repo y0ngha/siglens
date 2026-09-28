@@ -62,7 +62,8 @@ describe('buildCategoryPageDescription', () => {
      */
     it('카테고리 소개가 다르면 설명도 서로 다르다', async () => {
         const tRoot = await getTranslations({ locale: 'ko' });
-        const { CATEGORY_CONFIG } = await import('@/entities/market-news');
+        const { CATEGORY_CONFIG } =
+            await import('@/entities/market-news/lib/categoryConfig');
 
         // 설정 전체를 훑는다 — 카테고리가 늘면 그 설명도 자동으로 검사 대상이 된다.
         const descriptions = Object.values(CATEGORY_CONFIG).map(cfg =>

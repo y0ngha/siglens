@@ -1,5 +1,5 @@
 import { render } from '@testing-library/react';
-import type { MarketFearGreedComparisonPoint } from '@/entities/market-fear-greed';
+import type { MarketFearGreedComparisonPoint } from '@/entities/market-fear-greed/model';
 import { MarketFearGreedComparison } from '@/widgets/market-fear-greed/MarketFearGreedComparison';
 
 const comparisons: MarketFearGreedComparisonPoint[] = [

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import { getNewsCardsAction } from '@/entities/news-article/actions';
+import { getNewsCardsAction } from '@/entities/news-article/actions/getNewsCardsAction';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import {
     POLL_INTERVAL_MS,
@@ -10,7 +10,7 @@ import {
     MAX_POLL_DURATION_MS,
     STAGNANT_POLL_LIMIT,
     STAGNATION_FLOOR_POLLS,
-} from '../constants';
+} from '@/shared/config/cardPollingConfig';
 
 /**
  * Called once when polling terminates normally (all cards enriched, or timeout
@@ -19,15 +19,6 @@ import {
  * polling ends due to an empty news list or consecutive errors.
  */
 export type OnPollingComplete = (finalItems: NewsDisplayItem[]) => void;
-
-export {
-    POLL_INTERVAL_MS,
-    MAX_CONSECUTIVE_FAILURES,
-    EMPTY_SNAPSHOT_MAX_POLLS,
-    MAX_POLL_DURATION_MS,
-    STAGNANT_POLL_LIMIT,
-    STAGNATION_FLOOR_POLLS,
-};
 
 const REFRESH_SNAPSHOT_MIN_POLLS = 5;
 

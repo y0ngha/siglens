@@ -1,22 +1,22 @@
 'use client';
 
 import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
-import { isFallbackAnalysis } from '@/entities/chat-message';
-import { usePublishSymbolChat } from '@/features/symbol-chat';
-import { useSymbolHolding } from '@/features/portfolio-holding';
+import { isFallbackAnalysis } from '@/entities/chat-message/lib/fallbackAnalysis';
+import { usePublishSymbolChat } from '@/features/symbol-chat/hooks/useSymbolChat';
+import { useSymbolHolding } from '@/features/portfolio-holding/hooks/useSymbolHolding';
 import { cn } from '@/shared/lib/cn';
-import { AnalysisPanel, AnalysisProgress } from '@/widgets/analysis';
-import { ChartSkeleton, useChartSync } from '@/widgets/chart';
-import {
-    computePositionStatus,
-    PositionStatusSummary,
-} from '@/widgets/portfolio-position';
+import { AnalysisPanel } from '@/widgets/analysis/AnalysisPanel';
+import { AnalysisProgress } from '@/widgets/analysis/AnalysisProgress';
+import { ChartSkeleton } from '@/widgets/chart/ChartSkeleton';
+import { useChartSync } from '@/widgets/chart/hooks/useChartSync';
+import { computePositionStatus } from '@/widgets/portfolio-position/lib/positionStatus';
+import { PositionStatusSummary } from '@/widgets/portfolio-position/ui/PositionStatusSummary';
 import {
     type AnalysisResponse,
     type TierInfoDepth,
     type Timeframe,
 } from '@y0ngha/siglens-core';
-import type { MarketProfileId } from '@/shared/config/marketProfile';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import dynamic from 'next/dynamic';
 import type { ReactNode } from 'react';
 import React, {
@@ -39,15 +39,16 @@ import {
     PANEL_MIN_WIDTH,
     usePanelResize,
 } from './hooks/usePanelResize';
-import { useSymbolModel } from '@/features/symbol-model';
-import { useAnonAnalysisNudge } from '@/features/analysis-nudge';
+import { useSymbolModel } from '@/features/symbol-model/model/SymbolModelContext';
+import { useAnonAnalysisNudge } from '@/features/analysis-nudge/hooks/useAnonAnalysisNudge';
 import { useSymbolPageContext } from './SymbolPageContext';
 import { TechnicalFactsSummary } from './TechnicalFactsSummary';
 import type { AnalysisStatus } from './utils/analysisStatus';
 import { getAnalysisStatus } from './utils/analysisStatus';
 import { buildChatState } from './utils/buildChatState';
-import { buildTechnicalFacts } from './utils/technicalFacts';
-import { useRegisterShareable, deriveChartStatus } from '@/features/share';
+import { buildTechnicalFacts } from '@/entities/bars/lib/technicalFacts';
+import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
+import { deriveChartStatus } from '@/features/share/lib/deriveChartStatus';
 import { useTranslations } from 'next-intl';
 
 const StockChart = dynamic(

@@ -1,9 +1,9 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { UseQueryResult } from '@tanstack/react-query';
 import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
-import { useSymbolHolding } from '@/features/portfolio-holding';
+import { useSymbolHolding } from '@/features/portfolio-holding/hooks/useSymbolHolding';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
-import type { PortfolioHoldingView } from '@/entities/portfolio';
+import type { PortfolioHoldingView } from '@/entities/portfolio/model';
 import { PositionTabContent } from '../ui/PositionTabContent';
 
 const { mockUseHydrated } = vi.hoisted(() => ({
@@ -15,9 +15,9 @@ vi.mock('@/shared/hooks/useHydrated', () => ({
 }));
 vi.mock('@/entities/auth/hooks/useCurrentUser');
 // PositionTabMemberContent (lazy, next/dynamic ssr:false) is the ONLY place
-// useSymbolHolding lives — mocking the barrel lets guest-path tests assert
-// the holdings query is never fired (chunk never mounted).
-vi.mock('@/features/portfolio-holding');
+// useSymbolHolding lives — mocking the hook module lets guest-path tests
+// assert the holdings query is never fired (chunk never mounted).
+vi.mock('@/features/portfolio-holding/hooks/useSymbolHolding');
 
 const mockUseCurrentUser = vi.mocked(useCurrentUser);
 const mockUseSymbolHolding = vi.mocked(useSymbolHolding);

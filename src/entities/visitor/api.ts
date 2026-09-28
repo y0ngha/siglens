@@ -27,7 +27,7 @@ export interface VisitorDayRecord {
 }
 
 /** 방문자 일자 행의 적재·정리·집계. 날짜는 전부 KST `YYYY-MM-DD`. */
-export interface VisitorRepository {
+interface VisitorRepository {
     /** 방문자당 하루 1행. 이미 있으면 아무 일도 하지 않는다. */
     recordVisit(visit: VisitorDayRecord): Promise<void>;
     /** `cutoffDate` **이전** 행을 지운다. 개인정보처리방침 §4의 보존 기간 집행. */

@@ -20,12 +20,11 @@ import {
     varchar,
 } from 'drizzle-orm/pg-core';
 import { LOCALES } from '@/shared/i18n/locales';
+import { LLM_PROVIDER_VALUES } from '@/shared/config/llmProviders';
 import {
-    LLM_PROVIDER_VALUES,
     OAUTH_PROVIDER_VALUES,
     SHAREABLE_KIND_VALUES,
     TERMS_KIND_VALUES,
-    USAGE_ACTION_TYPE_VALUES,
     USER_TIER_VALUES,
 } from './constants';
 
@@ -50,12 +49,6 @@ export const contentLocaleEnum = pgEnum('content_locale', LOCALES);
 
 /** Postgres enum for user subscription tier. */
 export const userTierEnum = pgEnum('user_tier', USER_TIER_VALUES);
-
-/** Postgres enum for usage action types tracked in usage logs. */
-export const usageActionTypeEnum = pgEnum(
-    'usage_action_type',
-    USAGE_ACTION_TYPE_VALUES
-);
 
 /** Postgres enum for supported OAuth providers. */
 export const oauthProviderEnum = pgEnum(
@@ -109,39 +102,12 @@ export const sessions = pgTable(
     ]
 );
 
-/** Per-request usage log for rate-limiting and analytics. */
-export const usageLogs = pgTable(
-    'usage_logs',
-    {
-        id: uuid('id').primaryKey().defaultRandom(),
-        userId: uuid('user_id').references(() => users.id, {
-            onDelete: 'set null',
-        }),
-        ipHash: text('ip_hash').notNull(),
-        actionType: usageActionTypeEnum('action_type').notNull(),
-        modelUsed: text('model_used').notNull(),
-        date: date('date').notNull(),
-        createdAt: timestamp('created_at', { withTimezone: true })
-            .notNull()
-            .defaultNow(),
-    },
-    table => [
-        index('usage_logs_user_id_idx').on(table.userId),
-        index('usage_logs_ip_hash_date_idx').on(table.ipHash, table.date),
-    ]
-);
-
 /**
  * 방문자 1명당 하루 1행. DAU/MAU 집계용.
  *
  * 복합 PK 하나가 세 가지를 동시에 한다: 중복 방지(`ON CONFLICT DO NOTHING`의
  * 대상), DAU 조회 인덱스(`WHERE date = $1`이 PK 접두사), MAU range 스캔.
  * 별도 인덱스도 `id` 컬럼도 두지 않는다.
- *
- * `usage_logs`를 재사용하지 않는 이유가 두 가지다. 그쪽은 `action_type`·
- * `model_used`가 NOT NULL인 분석 요청 로그라 방문 행을 넣으려면 의미 없는 값을
- * 채워야 하고, `ip_hash`가 UTC 날짜를 salt로 섞어 매일 달라지므로 날짜를
- * 가로지르는 MAU 집계가 원리적으로 불가능하다.
  *
  * ⚠️ `feat/symbol-views` 머지부터 비콘이 첫 신뢰 입력 뒤에만 나간다
  * (`shared/lib/onFirstInteraction`). 그 전 행에는 입력 없이 렌더만 한 헤드리스가
@@ -819,7 +785,7 @@ export const seoAnalysisSnapshots = pgTable(
 export const contentTranslations = pgTable(
     'content_translations',
     {
-        /** 원본 테이블 식별자. `TRANSLATABLE_ENTITY_VALUES` 참조. */
+        /** 원본 테이블 식별자. `TRANSLATABLE_ENTITY` 참조. */
         entity: text('entity').notNull(),
         /** 원본 행의 PK를 문자열로. uuid·text·복합키 모두 문자열로 정규화한다. */
         entityId: text('entity_id').notNull(),

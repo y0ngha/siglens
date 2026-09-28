@@ -10,7 +10,7 @@ import type { Locale } from '@/shared/i18n/locales';
 import type { NoticeRecord } from './model/types';
 
 /** 활성 공지 조회 repository. */
-export interface NoticeRepository {
+interface NoticeRepository {
     /**
      * 노출 조건(활성 + 시간창)을 만족하는 공지를 priority/최신순으로 반환.
      *

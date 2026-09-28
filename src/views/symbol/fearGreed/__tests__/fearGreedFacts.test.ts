@@ -82,7 +82,7 @@ function expectedLine(percentile: number, interpretation: string): string {
     const pctile = Math.round(percentile);
     // FIX 6 (audit): "82th 퍼센타일" mixed an English ordinal suffix into
     // Korean text — native Korean ordinal "번째" replaces it.
-    return `${(koMessages.shared.lib.fearGreedFactor as unknown as { symbolLabel: Record<string, string> }).symbolLabel.volume_z}: ${formatFactorRaw('volume_z', 1.2345)} (${pctile}번째 퍼센타일) — ${interpretation}.`;
+    return `${(koMessages.shared.lib.fearGreedFactor as unknown as { symbolLabel: Record<string, string> }).symbolLabel.volume_z}: ${formatFactorRaw('volume_z', 1.2345, 'ko')} (${pctile}번째 퍼센타일) — ${interpretation}.`;
 }
 
 describe('buildFearGreedFactorLines', () => {
@@ -90,7 +90,8 @@ describe('buildFearGreedFactorLines', () => {
         const lines = buildFearGreedFactorLines(
             buildSnapshot(10),
             tFacts,
-            tFactor
+            tFactor,
+            'ko'
         );
 
         expect(lines).toEqual([
@@ -102,7 +103,8 @@ describe('buildFearGreedFactorLines', () => {
         const lines = buildFearGreedFactorLines(
             buildSnapshot(24),
             tFacts,
-            tFactor
+            tFactor,
+            'ko'
         );
 
         expect(lines).toEqual([
@@ -114,7 +116,8 @@ describe('buildFearGreedFactorLines', () => {
         const lines = buildFearGreedFactorLines(
             buildSnapshot(25),
             tFacts,
-            tFactor
+            tFactor,
+            'ko'
         );
 
         expect(lines).toEqual([
@@ -126,7 +129,8 @@ describe('buildFearGreedFactorLines', () => {
         const lines = buildFearGreedFactorLines(
             buildSnapshot(50),
             tFacts,
-            tFactor
+            tFactor,
+            'ko'
         );
 
         expect(lines).toEqual([
@@ -138,7 +142,8 @@ describe('buildFearGreedFactorLines', () => {
         const lines = buildFearGreedFactorLines(
             buildSnapshot(74),
             tFacts,
-            tFactor
+            tFactor,
+            'ko'
         );
 
         expect(lines).toEqual([
@@ -150,7 +155,8 @@ describe('buildFearGreedFactorLines', () => {
         const lines = buildFearGreedFactorLines(
             buildSnapshot(75),
             tFacts,
-            tFactor
+            tFactor,
+            'ko'
         );
 
         expect(lines).toEqual([
@@ -162,7 +168,8 @@ describe('buildFearGreedFactorLines', () => {
         const lines = buildFearGreedFactorLines(
             buildSnapshot(90),
             tFacts,
-            tFactor
+            tFactor,
+            'ko'
         );
 
         expect(lines).toEqual([
@@ -174,7 +181,8 @@ describe('buildFearGreedFactorLines', () => {
         const lines = buildFearGreedFactorLines(
             buildSnapshot(83.6),
             tFacts,
-            tFactor
+            tFactor,
+            'ko'
         );
 
         expect(lines).toEqual([
@@ -216,7 +224,12 @@ describe('buildFearGreedFactorLines', () => {
             warning: null,
         };
 
-        const lines = buildFearGreedFactorLines(snapshot, tFacts, tFactor);
+        const lines = buildFearGreedFactorLines(
+            snapshot,
+            tFacts,
+            tFactor,
+            'ko'
+        );
 
         expect(lines).toHaveLength(3);
         expect(lines[0]).toContain(

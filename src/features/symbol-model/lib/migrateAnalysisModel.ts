@@ -1,4 +1,10 @@
 import { DEEPSEEK_V4_1_FLASH_MODEL } from '@y0ngha/siglens-core';
+import {
+    LOCAL_STORAGE_ANALYSIS_MODEL_KEY,
+    LOCAL_STORAGE_ANALYSIS_MODEL_MIGRATION_KEY,
+} from '@/shared/lib/storageKeys';
+import { runModelMigrationPasses } from './runModelMigrationPasses';
+
 /**
  * localStorage에 남아 있을 수 있는 **과거** 모델 ID들.
  *
@@ -8,11 +14,6 @@ import { DEEPSEEK_V4_1_FLASH_MODEL } from '@y0ngha/siglens-core';
  * 된다 — 바꾸는 순간 마이그레이션이 겨냥하던 사용자를 놓친다.
  */
 const LEGACY_GEMINI_2_5_FLASH_LITE = 'gemini-2.5-flash-lite';
-
-import {
-    LOCAL_STORAGE_ANALYSIS_MODEL_KEY,
-    LOCAL_STORAGE_ANALYSIS_MODEL_MIGRATION_KEY,
-} from '@/shared/lib/storageKeys';
 
 /**
  * One-time migration of the persisted analysis model from the legacy default
@@ -30,38 +31,17 @@ import {
  *   default" → migrate it. Once the flag is set, the migration never runs again,
  *   so a later deliberate switch back to flash-lite is preserved forever.
  *
- * Idempotent and SSR-safe: no-ops when `window` is undefined and returns early
- * once the flag is present. Only the exact legacy-default value is rewritten —
- * any other stored model (gpt, claude, gemini-2.5-flash, etc.) is left intact.
- *
- * Wrapped in try/catch: some browsers (incognito / storage-blocked) throw a
- * `SecurityError` on `localStorage` access. A failed migration must never crash
- * the app at mount, so any storage error is swallowed and treated as a no-op.
+ * The flag/rewrite/try-catch mechanics live in `runModelMigrationPasses`.
  */
 export function migrateLegacyAnalysisModel(): void {
-    if (typeof window === 'undefined') return;
-
-    try {
-        // Already migrated in this browser — never touch the stored model again.
-        if (
-            localStorage.getItem(LOCAL_STORAGE_ANALYSIS_MODEL_MIGRATION_KEY) !==
-            null
-        ) {
-            return;
-        }
-
-        const stored = localStorage.getItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY);
-        if (stored === LEGACY_GEMINI_2_5_FLASH_LITE) {
-            localStorage.setItem(
-                LOCAL_STORAGE_ANALYSIS_MODEL_KEY,
-                DEEPSEEK_V4_1_FLASH_MODEL
-            );
-        }
-
-        // Always set the flag — even when there was nothing to migrate — so the
-        // migration runs exactly once and later flash-lite choices stay untouched.
-        localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODEL_MIGRATION_KEY, '1');
-    } catch {
-        // SecurityError (incognito / storage-blocked) — no-op, never crash at mount.
-    }
+    runModelMigrationPasses({
+        storageKey: LOCAL_STORAGE_ANALYSIS_MODEL_KEY,
+        to: DEEPSEEK_V4_1_FLASH_MODEL,
+        passes: [
+            {
+                flag: LOCAL_STORAGE_ANALYSIS_MODEL_MIGRATION_KEY,
+                from: [LEGACY_GEMINI_2_5_FLASH_LITE],
+            },
+        ],
+    });
 }

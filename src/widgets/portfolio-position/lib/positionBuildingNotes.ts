@@ -1,7 +1,7 @@
 import {
     currencyForSymbol,
     getDescriptor,
-} from '@/shared/config/marketProfile';
+} from '@/shared/config/marketProfile/registry';
 import {
     dynamicDecimals,
     formatPrice,
@@ -208,7 +208,7 @@ export function avgFloorPrefixGlyph(clamped: RangeClamp): string {
     return '';
 }
 
-export interface BandPriceRange {
+interface BandPriceRange {
     bandLow: number;
     bandHigh: number;
 }

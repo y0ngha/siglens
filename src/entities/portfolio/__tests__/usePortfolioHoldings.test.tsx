@@ -1,17 +1,19 @@
-vi.mock('@/entities/portfolio/actions', () => ({
+vi.mock('@/entities/portfolio/actions/getPortfolioHoldingsAction', () => ({
     getPortfolioHoldingsAction: vi.fn(),
+}));
+vi.mock('@/entities/portfolio/actions/savePortfolioHoldingAction', () => ({
     savePortfolioHoldingAction: vi.fn(),
+}));
+vi.mock('@/entities/portfolio/actions/deletePortfolioHoldingAction', () => ({
     deletePortfolioHoldingAction: vi.fn(),
 }));
 
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import {
-    deletePortfolioHoldingAction,
-    getPortfolioHoldingsAction,
-    savePortfolioHoldingAction,
-} from '@/entities/portfolio/actions';
+import { deletePortfolioHoldingAction } from '@/entities/portfolio/actions/deletePortfolioHoldingAction';
+import { getPortfolioHoldingsAction } from '@/entities/portfolio/actions/getPortfolioHoldingsAction';
+import { savePortfolioHoldingAction } from '@/entities/portfolio/actions/savePortfolioHoldingAction';
 import { usePortfolioHoldings } from '@/entities/portfolio/hooks/usePortfolioHoldings';
 import type { PortfolioHoldingView } from '@/entities/portfolio/model';
 

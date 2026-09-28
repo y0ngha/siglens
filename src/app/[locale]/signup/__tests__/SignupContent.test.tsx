@@ -9,7 +9,7 @@ const { signupFormSpy, socialSpy, searchParamsRef } = vi.hoisted(() => ({
 vi.mock('next/navigation', () => ({
     useSearchParams: () => searchParamsRef.value,
 }));
-vi.mock('@/features/auth-signup', () => ({
+vi.mock('@/features/auth-signup/ui/SignupForm', () => ({
     SignupForm: (props: { next?: string }) => {
         signupFormSpy(props);
         return <div data-testid="signup-form" />;

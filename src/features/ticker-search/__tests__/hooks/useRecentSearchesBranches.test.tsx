@@ -11,13 +11,13 @@ import {
     clearRecentSearches,
     getRecentSearches,
     removeRecentSearch,
-} from '@/entities/ticker';
+} from '@/entities/ticker/lib/recentSearches';
 import { useRecentSearches } from '@/features/ticker-search/hooks/useRecentSearches';
 
 // `vi.mock`은 import 블록 **뒤에** 모아 둔다 — import 사이에 끼우지 않는다
 // (MISTAKES.md Tests §17). 호이스팅 덕에 동작은 같지만, 읽는 사람에게는
 // import 순서가 실행 순서처럼 보인다.
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker/lib/recentSearches', () => ({
     addRecentSearch: vi.fn(),
     clearRecentSearches: vi.fn(),
     removeRecentSearch: vi.fn(),
@@ -31,7 +31,7 @@ vi.mock('@/entities/ticker', () => ({
  * 픽스처(`{ symbol: 'AAPL', label: 'AAPL' }`)마다 실제 액션이 유닛 테스트에서
  * 호출된다 — 실패가 `.catch`에 삼켜져 초록으로 통과하므로 신호도 남지 않는다.
  */
-vi.mock('@/entities/ticker/actions', () => ({
+vi.mock('@/entities/ticker/actions/getAssetLabelsAction', () => ({
     getAssetLabelsAction: vi.fn().mockResolvedValue({ labels: {}, failed: [] }),
 }));
 

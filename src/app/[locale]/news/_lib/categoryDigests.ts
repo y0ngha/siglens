@@ -1,5 +1,5 @@
 import { peekMarketNewsDigestStatic } from '@/entities/market-news/api/marketNewsDigestStaticCache';
-import type { NewsFeedCategoryId } from '@/entities/market-news';
+import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
 import type { Locale } from '@/shared/i18n/locales';
 
 /** 카드 한 장에 얹는 최대 길이 — 두 줄을 넘기면 카드 그리드가 들쭉날쭉해진다. */

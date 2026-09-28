@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { render, screen } from '@testing-library/react';
 import { FundamentalDegraded } from '../FundamentalDegraded';
 
-vi.mock('@/views/symbol', () => ({
+vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({
     SymbolPageHeading: ({ children }: { children: ReactNode }) => (
         <h1>{children}</h1>
     ),

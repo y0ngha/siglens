@@ -40,7 +40,7 @@ const TEST_SECTORS = [
     { symbol: 'XLF', sectorName: 'Financials', koreanName: '금융' },
 ] as const;
 
-vi.mock('@/shared/ui/tabs', async () => {
+vi.mock('@/shared/ui/tabs/TabsUnderline', async () => {
     const { createTabsUnderlineMock } =
         await import('./helpers/TabsUnderlineMock');
     return createTabsUnderlineMock();

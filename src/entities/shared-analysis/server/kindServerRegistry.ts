@@ -1,4 +1,5 @@
 import type { ShareableKind } from '../types';
+import { truncateWithEllipsis } from '@/shared/lib/truncate';
 
 export interface OgText {
     description: string;
@@ -31,10 +32,6 @@ function firstLine(text: string): string {
     return text.split('\n')[0]?.trim() ?? '';
 }
 
-function clamp(text: string, max: number): string {
-    return text.length <= max ? text : `${text.slice(0, max - 1)}…`;
-}
-
 function majorityName(
     scenarios: ReadonlyArray<{ name?: string }> | undefined
 ): string {
@@ -64,8 +61,14 @@ function buildOgParts(
     // 빈 문자열이 되지 않게 한다.
     const key = DIRECTION_KEY[direction];
     const dir = key ? t(key) : direction;
-    const description = clamp(summary ? `${dir} · ${summary}` : dir, 200);
-    const tweet = clamp(`${symbol} ${dir} — ${summary}`, TWEET_TEXT_MAX);
+    const description = truncateWithEllipsis(
+        summary ? `${dir} · ${summary}` : dir,
+        200
+    );
+    const tweet = truncateWithEllipsis(
+        `${symbol} ${dir} — ${summary}`,
+        TWEET_TEXT_MAX
+    );
     return { description, tweet };
 }
 

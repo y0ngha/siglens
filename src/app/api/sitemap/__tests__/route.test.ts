@@ -1,7 +1,9 @@
 // XML 직렬화만 스텁하고 나머지(빌더 3종·maxLastModified)는 실제 구현을 쓴다 —
 // 인덱스 lastmod가 "자식 sitemap 안의 최댓값"인지 검증하려면 진짜 빌더가 필요하다.
-vi.mock('@/entities/sitemap-entry', async importOriginal => ({
-    ...(await importOriginal<typeof import('@/entities/sitemap-entry')>()),
+vi.mock('@/entities/sitemap-entry/lib/xml', async importOriginal => ({
+    ...(await importOriginal<
+        typeof import('@/entities/sitemap-entry/lib/xml')
+    >()),
     toSitemapIndexXml: vi
         .fn()
         .mockReturnValue('<?xml version="1.0"?><sitemapindex/>'),
@@ -13,14 +15,25 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     SITE_URL: 'https://siglens.io',
 }));
 
+// 자식 라우트가 실제로 쓰는 입력을 고정한다 — 산문 게이트는 "산문 있는 탭 없음"(빈 Set)으로
+// 두어 `/news`(최신 lastmod) 엔트리가 자식에서 빠지게 한다. 인덱스가 게이트 없이 빌드하면
+// 이 입력에서 인덱스 lastmod가 자식 파일의 최댓값보다 늦어진다(회귀 조건).
+vi.mock('@/entities/sitemap-entry/server', () => ({
+    loadStaticSitemapInputs: vi.fn(async () => ({})),
+    loadPopularSitemapInputs: vi.fn(async () => ({
+        symbolTabsWithProse: new Set<string>(),
+    })),
+}));
+
 import { GET } from '@/app/api/sitemap/route';
-import {
-    buildCryptoPopularEntries,
-    buildPopularEntries,
-    buildStaticEntries,
-    maxLastModified,
-    toSitemapIndexXml,
-} from '@/entities/sitemap-entry';
+import { GET as getStaticChild } from '@/app/api/sitemap/static/route';
+import { GET as getPopularChild } from '@/app/api/sitemap/popular/route';
+import { GET as getCryptoChild } from '@/app/api/sitemap/crypto/route';
+import { buildCryptoPopularEntries } from '@/entities/sitemap-entry/lib/buildCryptoPopularEntries';
+import { buildPopularEntries } from '@/entities/sitemap-entry/lib/buildPopularEntries';
+import { buildStaticEntries } from '@/entities/sitemap-entry/lib/buildStaticEntries';
+import { maxLastModified } from '@/entities/sitemap-entry/lib/maxLastModified';
+import { toSitemapIndexXml } from '@/entities/sitemap-entry/lib/xml';
 import type { MockedFunction } from 'vitest';
 
 import nextConfig from '../../../../../next.config';
@@ -87,10 +100,14 @@ describe('GET /api/sitemap (index)', () => {
             await GET(mainHostRequest());
 
             const entries = mockToSitemapIndexXml.mock.calls[0][0];
+            const popularInputs = { symbolTabsWithProse: new Set<string>() };
             const expected = [
                 maxLastModified(buildStaticEntries(now), now),
-                maxLastModified(buildPopularEntries(now), now),
-                maxLastModified(buildCryptoPopularEntries(now), now),
+                maxLastModified(buildPopularEntries(now, popularInputs), now),
+                maxLastModified(
+                    buildCryptoPopularEntries(now, popularInputs),
+                    now
+                ),
             ];
 
             entries.forEach((entry, i) => {
@@ -102,6 +119,47 @@ describe('GET /api/sitemap (index)', () => {
             expect(
                 entries.some(e => e.lastModified.getTime() < now.getTime())
             ).toBe(true);
+        });
+    });
+});
+
+/** 자식 sitemap XML 안 `<lastmod>`의 최댓값. */
+async function maxChildLastmod(res: Response): Promise<number> {
+    const xml = await res.text();
+    const stamps = [...xml.matchAll(/<lastmod>([^<]+)<\/lastmod>/g)].map(m =>
+        new Date(m[1]).getTime()
+    );
+    expect(stamps.length).toBeGreaterThan(0);
+    return Math.max(...stamps);
+}
+
+describe('GET /api/sitemap — index lastmod ↔ child sitemap 일치', () => {
+    beforeEach(() => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-01-01T00:00:00Z'));
+        vi.clearAllMocks();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    /**
+     * 회귀 가드: 인덱스가 자식과 다른 입력(산문 게이트·백테스팅 데이터일 누락)으로
+     * lastmod를 계산해, 자식 파일에 없는 엔트리의 시각을 광고하던 버그.
+     */
+    it('인덱스가 광고하는 각 자식 lastmod는 자식 라우트 XML의 최댓값과 같다', async () => {
+        await GET(mainHostRequest());
+        const entries = mockToSitemapIndexXml.mock.calls[0][0];
+
+        const childMax = [
+            await maxChildLastmod(await getStaticChild(mainHostRequest())),
+            await maxChildLastmod(await getPopularChild(mainHostRequest())),
+            await maxChildLastmod(await getCryptoChild(mainHostRequest())),
+        ];
+
+        entries.forEach((entry, i) => {
+            expect(entry.lastModified.getTime()).toBe(childMax[i]);
         });
     });
 });

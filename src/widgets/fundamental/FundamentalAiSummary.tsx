@@ -6,15 +6,14 @@ import {
     type FundamentalCategory,
     type FundamentalSentiment,
 } from '@y0ngha/siglens-core';
-import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
+import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
+import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
 import { cn } from '@/shared/lib/cn';
-import {
-    useDefaultModelId,
-    useDefaultReasoning,
-    useAnalysisSettingsHydrated,
-} from '@/features/symbol-model';
+import { useDefaultModelId } from '@/features/symbol-model/hooks/useDefaultModelId';
+import { useDefaultReasoning } from '@/features/symbol-model/hooks/useDefaultReasoning';
+import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
 import { useFundamentalAnalysis } from './hooks/useFundamentalAnalysis';
-import { usePublishSymbolChat } from '@/features/symbol-chat';
+import { usePublishSymbolChat } from '@/features/symbol-chat/hooks/useSymbolChat';
 import { buildChatState } from './utils/buildChatState';
 import { FundamentalAiSummaryError } from './FundamentalAiSummaryError';
 import { FundamentalAiSummarySkeleton } from './FundamentalAiSummarySkeleton';
@@ -23,6 +22,7 @@ import {
     HEADING_SECTION,
     HEADING_SUBSECTION,
 } from '@/shared/lib/typographyStyles';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 /** FundamentalSentiment → `shared.enumLabel.sentiment` 카탈로그 키. */
 const SENTIMENT_LABEL_KEY: Record<FundamentalSentiment, string> = {
@@ -62,7 +62,7 @@ export function FundamentalAiSummaryView({
     return (
         <section
             aria-labelledby="ai-summary-heading"
-            className="rounded-lg border border-secondary-700 bg-secondary-800 p-6"
+            className={cn(SURFACE_CARD, 'p-6')}
         >
             <div className="mb-4 flex items-center justify-between gap-3">
                 <h2 id="ai-summary-heading" className={HEADING_SECTION}>

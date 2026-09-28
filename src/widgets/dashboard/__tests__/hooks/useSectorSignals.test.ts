@@ -4,13 +4,13 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createElement } from 'react';
 import type { ReactNode } from 'react';
 import { useSectorSignals } from '@/widgets/dashboard/hooks/useSectorSignals';
-import { getSectorSignalsAction } from '@/entities/sector-signal/actions';
+import { getSectorSignalsAction } from '@/entities/sector-signal/actions/getSectorSignalsAction';
 import type {
     DashboardTimeframe,
     SectorSignalsResult,
 } from '@y0ngha/siglens-core';
 
-vi.mock('@/entities/sector-signal/actions', () => ({
+vi.mock('@/entities/sector-signal/actions/getSectorSignalsAction', () => ({
     getSectorSignalsAction: vi.fn(),
 }));
 

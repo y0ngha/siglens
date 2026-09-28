@@ -17,7 +17,33 @@ import {
     MIDLINE_STROKE_WIDTH,
     GUIDE_LINE_STROKE_WIDTH,
 } from './utils/chartStrokeWidths';
-import { findNearestStrikeIndex } from '@/entities/options-chain';
+import {
+    BAR_OPACITY,
+    BAR_WIDTH_FILL_RATIO,
+    CHART_HEIGHT,
+    CHART_WIDTH,
+    COLOR_CALL,
+    COLOR_GUIDE_LINE,
+    COLOR_LABEL,
+    COLOR_MIDLINE,
+    COLOR_PUT,
+    HALF_HEIGHT,
+    LABEL_CALL,
+    LABEL_PUT,
+    LABEL_ROTATION_THRESHOLD,
+    MAX_X_AXIS_LABELS,
+    MIDLINE_Y,
+    PAD_BOTTOM,
+    PAD_LEFT,
+    PAD_RIGHT,
+    PAD_TOP,
+    ROTATED_LABEL_FONT_SIZE,
+    STRAIGHT_LABEL_FONT_SIZE,
+    SVG_HEIGHT,
+    SVG_WIDTH,
+    X_AXIS_LABEL_OFFSET_PX,
+} from './utils/strikeChartLayout';
+import { findNearestStrikeIndex } from '@/entities/options-chain/lib/findNearestStrike';
 import { useStrikeBarChart } from './hooks/useStrikeBarChart';
 import {
     barCenterX,
@@ -26,6 +52,8 @@ import {
 } from './lib/strikeChartGeometry';
 import { StrikeBarTooltip } from './ui/StrikeBarTooltip';
 import { StrikeBarSrTable } from './ui/StrikeBarSrTable';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { cn } from '@/shared/lib/cn';
 
 interface StrikeVolumeChartProps {
     /** Spot price used to anchor the current-price guide line. */
@@ -34,56 +62,9 @@ interface StrikeVolumeChartProps {
     chain: OptionsChain | null;
 }
 
-// SVG 레이아웃 상수는 OpenInterestChart와 동일하게 복제한다 — 두 차트가
-// 나란히 렌더되면서 같은 viewport / 같은 막대 비율을 공유해야 사용자가
-// 두 차트를 비교하는 시선 흐름이 어색해지지 않는다. 상수를 별도 유틸로
-// 빼지 않는 이유: 추후 어느 한쪽 차트의 패딩만 미세조정할 가능성이
-// 충분히 있고, 한 변경이 두 차트에 동시에 영향을 주는 결합도를 미리
-// 만들 필요는 없다.
-const SVG_WIDTH = 600;
-const SVG_HEIGHT = 240;
-const PAD_TOP = 30;
-const PAD_BOTTOM = 50;
-const PAD_LEFT = 12;
-const PAD_RIGHT = 12;
-
-const CHART_WIDTH = SVG_WIDTH - PAD_LEFT - PAD_RIGHT;
-const CHART_HEIGHT = SVG_HEIGHT - PAD_TOP - PAD_BOTTOM;
-const MIDLINE_Y = PAD_TOP + CHART_HEIGHT / 2;
-const HALF_HEIGHT = CHART_HEIGHT / 2;
-
-// Volume 전용 색상 토큰. OpenInterestChart와 같은 chart-bullish/bearish를
-// 사용해 "Call 위 / Put 아래" 시각 언어를 통일한다.
-const COLOR_CALL = 'var(--color-chart-bullish)';
-const COLOR_PUT = 'var(--color-chart-bearish)';
-
-/**
- * 차트 안 범례는 막대와 같은 색으로 칠하고 싶어지지만, **글자다.**
- * `chart-*`는 그래픽 기준(3:1)에 맞춘 색이라 라이트 카드 위에서 4.82/4.89로
- * 본문 기준을 겨우 넘는다. 같은 자리에서 `-text` 짝은 6.99~12.15다.
- * 같은 파일의 HTML 범례는 이미 `-text`로 옮겼는데 SVG 쪽만 남아 있었다 —
- * 어떤 가드도 SVG `fill`이나 `var()` 문자열은 보지 않는다.
- */
-const LABEL_CALL = 'var(--color-ui-success-text)';
-const LABEL_PUT = 'var(--color-ui-danger-text)';
-const COLOR_GUIDE_LINE = 'var(--color-ui-warning)';
-const COLOR_MIDLINE = 'var(--color-secondary-600)';
-const COLOR_LABEL = 'var(--color-secondary-500)';
-
-const BAR_OPACITY = 0.85;
-
 // 모든 strike의 volume이 0일 때 globalMax가 0이 되어 barPixelHeight에서
 // 0으로 나누는 경로를 막기 위한 하한값. OpenInterestChart와 동일 패턴.
 const MIN_VOLUME_SCALE_FLOOR = 1;
-
-// 슬롯 너비 대비 막대 두께 비율 — OpenInterestChart와 통일.
-const BAR_WIDTH_FILL_RATIO = 0.7;
-
-const MAX_X_AXIS_LABELS = 10;
-const LABEL_ROTATION_THRESHOLD = 7;
-const X_AXIS_LABEL_OFFSET_PX = 14;
-const ROTATED_LABEL_FONT_SIZE = 8;
-const STRAIGHT_LABEL_FONT_SIZE = 9;
 
 // OpenInterestChart의 `oi-chart-tooltip`과 충돌하지 않도록 자체 id 사용.
 // 두 차트가 같은 페이지에 동시에 렌더되므로 id가 겹치면 `aria-describedby`
@@ -154,7 +135,7 @@ export function StrikeVolumeChart({
         // paragraph로 떨어지면 셀 높이/시각 무게가 어긋난다. 텍스트 스타일도
         // OI 차트 빈 상태와 통일(`text-xs leading-relaxed`).
         return (
-            <div className="space-y-2 rounded-lg border border-secondary-700 bg-secondary-800 p-4">
+            <div className={cn(SURFACE_CARD, 'space-y-2 p-4')}>
                 <span className="text-sm font-medium text-secondary-300">
                     {t('StrikeVolumeChart.5ceb49')}
                 </span>
@@ -187,7 +168,7 @@ export function StrikeVolumeChart({
     return (
         <div
             ref={containerRef}
-            className="relative space-y-2 rounded-lg border border-secondary-700 bg-secondary-800 p-4"
+            className={cn(SURFACE_CARD, 'relative space-y-2 p-4')}
         >
             <span className="text-sm font-medium text-secondary-300">
                 {t('StrikeVolumeChart.5ceb49')}

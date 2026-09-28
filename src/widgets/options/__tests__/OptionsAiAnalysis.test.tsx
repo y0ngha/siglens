@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { usePublishSymbolChat } from '@/features/symbol-chat';
+import { usePublishSymbolChat } from '@/features/symbol-chat/hooks/useSymbolChat';
 import { OptionsAiAnalysis } from '@/widgets/options/OptionsAiAnalysis';
 import type { OptionsAnalysisResponse } from '@y0ngha/siglens-core';
 
@@ -9,7 +9,7 @@ vi.mock('@/widgets/options/hooks/useOptionsAnalysis', () => ({
     useOptionsAnalysis: () => mockState(),
 }));
 
-vi.mock('@/features/symbol-chat', () => ({
+vi.mock('@/features/symbol-chat/hooks/useSymbolChat', () => ({
     usePublishSymbolChat: vi.fn(),
 }));
 

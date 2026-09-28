@@ -2,7 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 const mockGetQuote = vi.fn();
 
-vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
+vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: vi.fn(async () => 'us-equity'),
 }));
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({

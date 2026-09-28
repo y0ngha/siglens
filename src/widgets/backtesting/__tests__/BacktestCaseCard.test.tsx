@@ -5,7 +5,8 @@ vi.mock('@/shared/lib/cn', () => ({
             .filter(a => typeof a === 'string' && a.length > 0)
             .join(' '),
 }));
-vi.mock('@/shared/lib/priceFormat', () => ({
+vi.mock('@/shared/lib/priceFormat', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/lib/priceFormat')>()),
     formatUsdCurrency: (n: number) => `$${n.toFixed(2)}`,
 }));
 

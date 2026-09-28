@@ -202,11 +202,9 @@ const ALLOWED_CONSTANTS: ReadonlySet<string> = new Set([
     // 이 항목은 상수에 담긴 호버를 처음 잡았을 때 나왔다 — 그 전까지 호버는
     // 인라인 스캐너 하나만 봤고, 클래스를 상수로 옮기는 순간 감시가 꺼졌다.
     'shared/lib/cardStyles.ts::CARD_LINK_CLASSES',
-    // SIGLENS AI 첫 화면의 질문 카드. 같은 근거의 카드 표면이다 — 버튼 안의
-    // 질문 문장과 화살표 아이콘이 조작 요소임을 알리고, 호버에서 브랜드색
-    // 경계로 바뀐다. 컨트롤 보더(3.5:1)로 두면 어두운 페이지 위에서 여섯 칸이
-    // 밝은 격자로 떠 보였다(2026-09-13 사용자 제보).
-    'widgets/agent-chat/EmptyState.tsx::CARD',
+    // (SIGLENS AI 첫 화면의 질문 카드 `EmptyState.tsx::CARD`는 이제 경계를
+    // `SURFACE_CARD` 상수로 받아 이 스캐너의 리터럴 판정에 걸리지 않는다. 장식
+    // 경계를 쓰는 근거는 그 파일의 `CARD` 주석에 옮겨 두었다.)
 ]);
 
 /** 요소 스캐너의 예외. `파일:줄` 단위이며 근거를 함께 적는다. */
@@ -219,8 +217,8 @@ const ALLOWED_ELEMENTS: ReadonlySet<string> = new Set([
     // 그랬다 — 평상시 기본 상태인 `idle`이 장식 보더인 채로 그 주석 뒤에 숨었다.
     // 이 자리에 분기를 추가할 때는 이 예외가 그것까지 덮는다는 걸 확인할 것.
     // 줄 번호 키라 이 파일이 위에서 길어지면 함께 옮겨야 한다 —
-    // 아래 '낡은 항목' 검사가 그때 알려준다(1012 → 1025 → 1055 → 1066 → 1187).
-    'widgets/analysis/AnalysisPanel.tsx:1187',
+    // 아래 '낡은 항목' 검사가 그때 알려준다(1012 → 1025 → 1055 → 1066 → 1187 → 1140 → 1143).
+    'widgets/analysis/AnalysisPanel.tsx:1143',
 
     // 드롭다운 메뉴의 첫 항목. `border-b`는 이 항목과 아래 지역 목록을 가르는
     // **구분선**이고, 컨트롤의 경계는 패널 보더 + 상태 채움이 맡는다.
@@ -232,7 +230,7 @@ const ALLOWED_ELEMENTS: ReadonlySet<string> = new Set([
     // 줄 번호로 키를 잡으므로 이 파일이 위쪽에서 길어지면 함께 옮겨야 한다
     // (아래 '낡은 항목' 검사가 그때 알려준다 — 실제로 `idScope` prop을
     // 넣으면서 147에서 밀렸다).
-    'widgets/layout/HeaderNavMenu.tsx:169',
+    'widgets/layout/HeaderNavMenu.tsx:154',
 
     // 카드 표면. 링크이지만 제목·설명·시세 블록을 담은 면이고, 보더는 그 면의
     // 장식이지 컨트롤의 경계가 아니다(globals.css 정책의 "카드·패널 장식 보더

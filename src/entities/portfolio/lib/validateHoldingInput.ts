@@ -2,9 +2,9 @@ import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import type { RawHoldingInput, ValidateHoldingResult } from '../model';
 
 export const QUANTITY_SCALE = 8;
-export const QUANTITY_MAX = 1_000_000_000;
+const QUANTITY_MAX = 1_000_000_000;
 export const PRICE_SCALE = 8;
-export const PRICE_MAX = 10_000_000;
+const PRICE_MAX = 10_000_000;
 
 const DECIMAL_RE = /^\d+(\.\d+)?$/;
 

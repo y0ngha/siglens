@@ -1,10 +1,10 @@
-import type { NewsFeedCategoryId } from '@/entities/market-news';
+import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
-import type { SubmitMarketNewsDigestActionResult } from '@/entities/market-news/actions';
+import type { SubmitMarketNewsDigestActionResult } from '@/entities/market-news/actions/submitMarketNewsDigestActionTypes';
 import {
     runAnalysisStream,
     type StreamErrorMessages,
-} from '@/shared/hooks/useAnalysisStream';
+} from '@/shared/lib/sse/runAnalysisStream';
 
 /**
  * 다이제스트를 SSE 한 연결로 받아온다. `done`은 `cached`와 동일하게 `result`를 반환한다.

@@ -1,14 +1,14 @@
 import { useTranslations } from 'next-intl';
-import { useMarketFactorLabels } from '@/shared/lib/useMarketFactorLabels';
-import type { CSSProperties } from 'react';
-import { scoreToLabel, type FearGreedLabel } from '@y0ngha/siglens-core';
-import type { MarketFearGreedViewSnapshot } from '@/entities/market-fear-greed';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { useMarketFactorLabels } from '@/shared/hooks/useMarketFactorLabels';
+import type { MarketFearGreedViewSnapshot } from '@/entities/market-fear-greed/model';
 import {
     formatMarketFactorRaw,
     type FearGreedMarketId,
 } from '@/shared/lib/marketFearGreedLabels';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { FearGreedScoreBar } from '@/shared/ui/FearGreedScoreBar';
 
 interface MarketFearGreedFactorBarProps {
     /** 미국·한국 또는 암호화폐 요인. 키는 시장별 라벨 조회에만 쓰여 문자열로 충분하다. */
@@ -20,19 +20,6 @@ interface MarketFearGreedFactorBarProps {
     market: FearGreedMarketId;
 }
 
-/** Percentile → fill color class (semantic tokens; matches FearGreedGroupBar). */
-const BAR_FILL_COLOR: Record<FearGreedLabel, string> = {
-    EXTREME_FEAR: 'bg-ui-danger',
-    FEAR: 'bg-ui-warning',
-    NEUTRAL: 'bg-secondary-400',
-    /* `/70`은 트랙 위에서 라이트 2.64:1로 3:1에 못 미친다(실측). 알파를 아예
-       빼면 대비는 5.32/4.18로 좋아지지만 EXTREME_GREED와 **클래스가 같아져**
-       밴드 매핑이 한 칸 밀려도 테스트가 못 잡는다. `/85`가 다크 4.22 ·
-       라이트 3.30으로 양 테마 3:1을 넘으면서 클래스도 구분된다. */
-    GREED: 'bg-ui-success/85',
-    EXTREME_GREED: 'bg-ui-success',
-};
-
 /** One factor row for the market-wide Fear & Greed breakdown. Pure — no client state. */
 export function MarketFearGreedFactorBar({
     factor,
@@ -43,6 +30,7 @@ export function MarketFearGreedFactorBar({
     const label = factorLabels.label(factor.key);
     const description = factorLabels.description(factor.key);
     const pctile = Math.round(factor.percentile);
+    const locale = useResolvedLocale();
 
     /*
      * 이 행들은 카드 안에 중첩된 블록이 아니라 페이지 위에 바로 놓인다 —
@@ -56,28 +44,21 @@ export function MarketFearGreedFactorBar({
                     {label}
                 </h3>
                 <span className="font-mono text-sm text-secondary-200">
-                    {formatMarketFactorRaw(factor.rawValue, factor.key, market)}
+                    {formatMarketFactorRaw(
+                        factor.rawValue,
+                        factor.key,
+                        market,
+                        locale
+                    )}
                 </span>
             </header>
-            <div
-                role="progressbar"
-                aria-label={t('MarketFearGreedFactorBar.percentileLabel', {
+            <FearGreedScoreBar
+                value={pctile}
+                label={t('MarketFearGreedFactorBar.percentileLabel', {
                     v0: label,
                     v1: pctile,
                 })}
-                aria-valuenow={pctile}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                className="relative h-2 overflow-hidden rounded bg-secondary-700/70"
-            >
-                <div
-                    className={cn(
-                        'h-full w-(--bar-width)',
-                        BAR_FILL_COLOR[scoreToLabel(pctile)]
-                    )}
-                    style={{ '--bar-width': `${pctile}%` } as CSSProperties}
-                />
-            </div>
+            />
             <div className="flex items-center justify-between gap-2">
                 {/* Plain visible text, not a tooltip — this component is a server
                     component (no client-side disclosure widget available), and

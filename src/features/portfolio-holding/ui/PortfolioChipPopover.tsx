@@ -6,13 +6,14 @@ import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import { cn } from '@/shared/lib/cn';
+import { BUTTON_GHOST, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { stripNegativeSign } from '@/shared/lib/stripNegativeSign';
 import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
 import { PopoverSurface } from '@/shared/ui/PopoverSurface';
 import type {
     PortfolioActionErrorCode,
     PortfolioHoldingView,
-} from '@/entities/portfolio';
+} from '@/entities/portfolio/model';
 import type { UseSymbolHoldingReturn } from '../hooks/useSymbolHolding';
 
 const FIELD_LABEL = 'text-secondary-400 mb-1 block text-xs font-medium';
@@ -20,10 +21,8 @@ const FIELD_INPUT =
     'bg-secondary-950 border-border-control text-secondary-100 placeholder-secondary-400 focus:border-primary-500 focus:ring-primary-500/40 h-10 w-full touch-manipulation rounded-lg border px-3 text-sm tabular-nums transition-colors outline-none focus:ring-2';
 const FIELD_INPUT_ERROR =
     'border-ui-danger focus:border-ui-danger focus:ring-ui-danger/40';
-const BUTTON_PRIMARY =
-    'bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 inline-flex h-9 flex-1 touch-manipulation items-center justify-center rounded-lg px-4 text-sm font-semibold text-white transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-secondary-700 disabled:text-secondary-500';
-const BUTTON_GHOST =
-    'text-secondary-400 hover:text-secondary-200 focus-visible:ring-primary-500 inline-flex h-9 touch-manipulation items-center justify-center rounded-lg px-3 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none';
+const SAVE_BUTTON = cn(BUTTON_PRIMARY, 'h-9 flex-1 px-4 text-sm');
+const CANCEL_BUTTON = cn(BUTTON_GHOST, 'h-9 px-3 text-sm');
 
 /** Which field a `PortfolioActionErrorCode` should be surfaced against. The symbol here is fixed (not user-editable), so `invalid_symbol` has no dedicated field — it renders only the alert message. */
 type PopoverErrorField = 'quantity' | 'averagePrice' | null;
@@ -218,7 +217,7 @@ export function PortfolioChipPopover({
                         type="submit"
                         disabled={save.isPending}
                         aria-busy={save.isPending}
-                        className={BUTTON_PRIMARY}
+                        className={SAVE_BUTTON}
                     >
                         {save.isPending
                             ? t('PortfolioChipPopover.9f6785')
@@ -227,7 +226,7 @@ export function PortfolioChipPopover({
                     <button
                         type="button"
                         onClick={onClose}
-                        className={BUTTON_GHOST}
+                        className={CANCEL_BUTTON}
                     >
                         {t('PortfolioChipPopover.19b2d1')}
                     </button>

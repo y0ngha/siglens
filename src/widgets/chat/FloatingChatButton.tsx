@@ -3,7 +3,11 @@
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import { useChatButtonState } from './hooks/useChatButtonState';
-import { useSymbolChat } from '@/features/symbol-chat';
+import { useSymbolChat } from '@/features/symbol-chat/hooks/useSymbolChat';
+import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
+import { cn } from '@/shared/lib/cn';
+import { CloseIcon } from '@/shared/ui/StrokeIcons';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 /**
  * 챗 패널은 **열었을 때** 내려받는다.
@@ -63,7 +67,12 @@ export function FloatingChatButton({ symbol }: FloatingChatButtonProps) {
                 </div>
             )}
             {showTooltip && !isOpen && (
-                <div className="fixed right-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-60 w-64 rounded-lg border border-secondary-700 bg-secondary-800 px-4 py-3 shadow-xl md:right-6 md:bottom-22">
+                <div
+                    className={cn(
+                        SURFACE_CARD,
+                        'fixed right-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-60 w-64 px-4 py-3 shadow-xl md:right-6 md:bottom-22'
+                    )}
+                >
                     <button
                         type="button"
                         onClick={dismissTooltip}
@@ -71,10 +80,10 @@ export function FloatingChatButton({ symbol }: FloatingChatButtonProps) {
                         // WCAG 2.2 SC 2.5.8의 인라인 텍스트 예외가 적용되지 않고,
                         // 24×24 최소치를 밑돈다. 글리프 크기는 그대로 두고
                         // 히트 영역만 키운다.
-                        className="absolute top-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded text-xs text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                        className="absolute top-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         aria-label={t('FloatingChatButton.21f255')}
                     >
-                        ✕
+                        <CloseIcon className="size-3" />
                     </button>
                     <p className="pr-4 text-sm leading-relaxed text-secondary-100">
                         {t('FloatingChatButton.318233')}
@@ -84,7 +93,10 @@ export function FloatingChatButton({ symbol }: FloatingChatButtonProps) {
             <button
                 type="button"
                 onClick={handleButtonClick}
-                className="fixed right-4 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-60 flex h-12 w-12 items-center justify-center rounded-full bg-primary-600 text-white shadow-lg transition-colors hover:bg-primary-500 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none md:right-6 md:bottom-6"
+                className={cn(
+                    BUTTON_PRIMARY,
+                    'fixed right-4 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-60 size-12 rounded-full shadow-lg md:right-6 md:bottom-6'
+                )}
                 aria-label={
                     isOpen
                         ? t('FloatingChatButton.14d856')
@@ -92,9 +104,13 @@ export function FloatingChatButton({ symbol }: FloatingChatButtonProps) {
                 }
                 aria-expanded={isOpen}
             >
-                <span className="text-base leading-none">
-                    {isOpen ? '✕' : '💬'}
-                </span>
+                {isOpen ? (
+                    <CloseIcon className="size-4" />
+                ) : (
+                    <span aria-hidden="true" className="text-base leading-none">
+                        💬
+                    </span>
+                )}
             </button>
         </>
     );

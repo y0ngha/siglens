@@ -9,6 +9,7 @@ import {
     ECONOMY_INDICATORS,
     INDICATOR_TREND_LENGTH,
 } from '@/shared/config/economyIndicators';
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
 /** 지표 시리즈 시드 — 결정적 fixture 생성의 입력 형태. */
 export interface IndicatorSeed {
@@ -62,7 +63,7 @@ const INDICATOR_SEEDS: Record<string, IndicatorSeed> = {
 function shiftDate(start: string, monthsBack: number): string {
     const [y, m, d] = start.split('-').map(Number);
     const date = new Date(Date.UTC(y, m - 1 - monthsBack, d));
-    return date.toISOString().slice(0, 10);
+    return toUtcIsoDate(date);
 }
 
 /**

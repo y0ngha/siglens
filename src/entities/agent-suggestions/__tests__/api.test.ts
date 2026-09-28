@@ -7,7 +7,7 @@ const { mockListCardsByCategory, MarketNewsRepoCtor } = vi.hoisted(() => {
     });
     return { mockListCardsByCategory, MarketNewsRepoCtor };
 });
-vi.mock('@/entities/market-news/api', () => ({
+vi.mock('@/entities/market-news/api/marketNewsRepository', () => ({
     DrizzleMarketNewsRepository: MarketNewsRepoCtor,
 }));
 
@@ -21,8 +21,10 @@ vi.mock('@/shared/db/client', () => ({
 const { mockCallAgentProvider } = vi.hoisted(() => ({
     mockCallAgentProvider: vi.fn(),
 }));
-vi.mock('@/entities/llm-provider', () => ({
+vi.mock('@/entities/llm-provider/api/agent/router', () => ({
     AGENT_MODEL: 'deepseek-v4.1-flash',
+}));
+vi.mock('@/entities/llm-provider/api/agent/getAgentProvider', () => ({
     getAgentProvider: () => mockCallAgentProvider,
 }));
 
@@ -53,7 +55,7 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
 import { SUGGESTIONS_PROMPT_VERSION } from '@y0ngha/siglens-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getAgentSuggestions } from '../api';
-import type { MarketNewsCardItem } from '@/entities/market-news';
+import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
 
 function headline(overrides: Partial<MarketNewsCardItem>): MarketNewsCardItem {
     return {
@@ -232,7 +234,7 @@ describe('getAgentSuggestions', () => {
 
         // Both calls issued synchronously (no `await` between them) so the
         // second finds the first's promise already registered in the
-        // module-level `inFlight` map.
+        // module-level `inFlight` single-flight.
         const [r1, r2] = await Promise.all([
             getAgentSuggestions(INPUT),
             getAgentSuggestions(INPUT),

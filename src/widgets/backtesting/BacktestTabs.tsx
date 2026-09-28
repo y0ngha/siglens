@@ -2,8 +2,9 @@
 
 import { useTranslations } from 'next-intl';
 import type { BacktestCase } from '@y0ngha/siglens-core';
-import { buildPanelId, buildTabId, TabsUnderline } from '@/shared/ui/tabs';
-import { useBacktestFilter } from '@/features/backtest-filter';
+import { buildPanelId, buildTabId } from '@/shared/ui/tabs/utils/tabIds';
+import { TabsUnderline } from '@/shared/ui/tabs/TabsUnderline';
+import { useBacktestFilter } from '@/features/backtest-filter/hooks/useBacktestFilter';
 import { BacktestCaseList } from './BacktestCaseList';
 
 interface BacktestTabsProps {

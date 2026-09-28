@@ -10,24 +10,20 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
     resetDatabaseClientForTests: vi.fn(),
 }));
-// getAuthDatabaseClient는 barrel이 아닌 @/entities/auth/lib/db에서 직접 import되므로
-// (server-only 체인을 client 번들에서 분리) 해당 경로를 별도로 mock한다.
-vi.mock('@/entities/auth/lib/db', () => ({
-    getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
-    resetAuthDatabaseClientForTests: vi.fn(),
-}));
-vi.mock('@/entities/auth', () => ({
+vi.mock('@/entities/auth/lib/requestPasswordReset', () => ({
     requestPasswordReset: vi.fn(),
 }));
-// DrizzleUserRepository는 barrel이 아닌 @/entities/auth/api에서 직접 import되므로
+// DrizzleUserRepository는 @/entities/auth/api에서 직접 import되므로
 // 해당 경로를 별도로 mock한다.
 vi.mock('@/entities/auth/api', () => ({
     DrizzleUserRepository: vi.fn().mockImplementation(function () {
         return {};
     }),
 }));
-vi.mock('@/entities/email-token', () => ({
+vi.mock('@/entities/email-token/api', () => ({
     createEmailTokenStore: vi.fn(),
+}));
+vi.mock('@/entities/email-token/templates/passwordResetEmail', () => ({
     buildPasswordResetEmail: vi.fn(({ email, token }) => ({
         to: email,
         subject: 'subject',
@@ -41,15 +37,13 @@ vi.mock('@/shared/email/dispatcher', () => ({
     createEmailDispatcher: vi.fn(() => ({ sendEmail: sendEmailMock })),
 }));
 
-import { requestPasswordReset } from '@/entities/auth';
-import {
-    createEmailTokenStore,
-    buildPasswordResetEmail,
-} from '@/entities/email-token';
+import { requestPasswordReset } from '@/entities/auth/lib/requestPasswordReset';
+import { createEmailTokenStore } from '@/entities/email-token/api';
+import { buildPasswordResetEmail } from '@/entities/email-token/templates/passwordResetEmail';
 import { requestPasswordResetAction } from '@/features/auth-password-reset/actions/requestPasswordResetAction';
 import { getLocale } from 'next-intl/server';
 const mockGetLocale = getLocale as MockedFunction<typeof getLocale>;
-import { resetAuthDatabaseClientForTests } from '@/entities/auth/lib/db';
+import { resetDatabaseClientForTests } from '@/shared/db/client';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 
 const mockRequest = requestPasswordReset as MockedFunction<
@@ -65,7 +59,7 @@ const mockBuild = buildPasswordResetEmail as MockedFunction<
 describe('requestPasswordResetAction', () => {
     beforeEach(() => {
         mockGetLocale.mockResolvedValue('ko');
-        resetAuthDatabaseClientForTests();
+        resetDatabaseClientForTests();
         process.env.DATABASE_URL = 'postgres://test';
         mockRequest.mockReset();
         sendEmailMock.mockReset();

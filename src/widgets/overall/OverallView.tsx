@@ -6,17 +6,13 @@
  * Used by OverallContent and by the share/[id] kind panel registry.
  */
 
+import { useTranslations } from 'next-intl';
 import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
-import type { AssetClass } from '@/shared/config/marketProfile';
-import { FinancialsSummary } from './sections/FinancialsSummary';
-import { FundamentalSummary } from './sections/FundamentalSummary';
+import type { AssetClass } from '@/shared/config/marketProfile/types';
+import { BulletSection } from './sections/BulletSection';
 import { IntegratedConclusion } from './sections/IntegratedConclusion';
-import { NewsSummary } from './sections/NewsSummary';
-import { OptionsSummary } from './sections/OptionsSummary';
 import { OverallSummary } from './sections/OverallSummary';
-import { RiskFactors } from './sections/RiskFactors';
 import { ScenarioAnalysis } from './sections/ScenarioAnalysis';
-import { TechnicalSummary } from './sections/TechnicalSummary';
 
 interface OverallViewProps {
     result: OverallAnalysisResponse;
@@ -53,6 +49,7 @@ export function OverallView({
     assetClass = 'equity',
     hasOptions,
 }: OverallViewProps) {
+    const t = useTranslations('widgets.overall');
     const r = result;
     const isEquity = assetClass === 'equity';
     const optionsOiStale = r.optionsOiStale ?? false;
@@ -60,30 +57,68 @@ export function OverallView({
     return (
         <div className="space-y-6">
             <OverallSummary headline={r.headlineKo} />
-            <TechnicalSummary bullets={r.technicalBulletsKo} />
+            <BulletSection
+                headingId="technical-summary-heading"
+                title={t('TechnicalSummary.938737')}
+                listLabel={t('TechnicalSummary.6d957a')}
+                bullets={r.technicalBulletsKo}
+            />
             {/*
                 bullet이 비면 섹션째 뺀다. 예전엔 빈 상태로 "이 종목은 옵션이 상장되어
                 있지 않거나 분석할 데이터가 없어요"를 보였는데, `hasOptions`가 참인
                 종목에서 AI가 옵션 bullet만 비운 경우라 **사실과 반대인 단정**이었다
                 (2026-09-17 운영 렌더: `/AAPL/overall`이 같은 화면의 요약에서 풋콜비율을
                 인용하면서 옵션이 없다고 말했다).
+                OI가 직전 세션 기준(정규장 외 수집 스냅샷)일 때만 stale 배지를 단다.
             */}
-            {isEquity && hasOptions && r.optionsBulletsKo.length > 0 && (
-                <OptionsSummary
+            {isEquity && hasOptions && (
+                <BulletSection
+                    headingId="overall-options-heading"
+                    title={t('OptionsSummary.859330')}
+                    listLabel={t('OptionsSummary.56f3e5')}
                     bullets={r.optionsBulletsKo}
-                    oiStale={optionsOiStale}
+                    badge={
+                        optionsOiStale ? (
+                            <span
+                                className="rounded-lg bg-ui-warning/10 px-2 py-0.5 text-xs text-ui-warning-text"
+                                title={t('OptionsSummary.dac637')}
+                            >
+                                {t('OptionsSummary.e55475')}
+                            </span>
+                        ) : null
+                    }
                 />
             )}
             {isEquity && (
                 <>
-                    <FundamentalSummary bullets={r.fundamentalBulletsKo} />
-                    <FinancialsSummary bullets={r.financialsBulletsKo} />
+                    <BulletSection
+                        headingId="fundamental-summary-heading"
+                        title={t('FundamentalSummary.fd745f')}
+                        listLabel={t('FundamentalSummary.c252e2')}
+                        bullets={r.fundamentalBulletsKo}
+                    />
+                    <BulletSection
+                        headingId="financials-summary-heading"
+                        title={t('FinancialsSummary.9f2f34')}
+                        listLabel={t('FinancialsSummary.ecbc52')}
+                        bullets={r.financialsBulletsKo}
+                    />
                 </>
             )}
-            <NewsSummary bullets={r.newsBulletsKo} />
+            <BulletSection
+                headingId="news-summary-heading"
+                title={t('NewsSummary.218ec8')}
+                listLabel={t('NewsSummary.2f750a')}
+                bullets={r.newsBulletsKo}
+            />
             <IntegratedConclusion text={r.integratedConclusionKo} />
             <ScenarioAnalysis scenarios={r.scenarios} />
-            <RiskFactors factors={r.riskFactorsKo} />
+            <BulletSection
+                headingId="risk-factors-heading"
+                title={t('RiskFactors.af0480')}
+                listLabel={t('RiskFactors.b6fcf8')}
+                bullets={r.riskFactorsKo}
+            />
         </div>
     );
 }

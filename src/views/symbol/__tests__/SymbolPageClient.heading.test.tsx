@@ -1,8 +1,12 @@
 // vi.mock 호출은 vitest가 자동 호이스팅하지만, import/first 일관성을 위해
 // 모든 import보다 위(파일 최상단)에 모아 둔다.
-vi.mock('@/widgets/chart', () => ({
+vi.mock('@/widgets/chart/ChartErrorFallback', () => ({
     ChartErrorFallback: () => null,
+}));
+vi.mock('@/widgets/chart/ChartSkeleton', () => ({
     ChartSkeleton: () => null,
+}));
+vi.mock('@/widgets/chart/TimeframeSelector', () => ({
     TimeframeSelector: () => null,
 }));
 vi.mock('../ChartContent', () => ({ ChartContent: () => null }));
@@ -32,14 +36,14 @@ vi.mock('../SymbolPageContext', () => ({
     SymbolPageProvider: ({ children }: { children: ReactNode }) => children,
     useSymbolPageContext: () => ({ indicatorCount: 13, skillCount: 30 }),
 }));
-vi.mock('@/features/symbol-model', () => ({
+vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
     useSymbolModel: vi.fn(() => ({ tier: 'free', isTierHydrated: true })),
 }));
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { buildFallbackAnalysis } from '@/entities/chat-message';
+import { buildFallbackAnalysis } from '@/entities/chat-message/lib/fallbackAnalysis';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 import { SymbolPageClient } from '../SymbolPageClient';
 

@@ -4,16 +4,19 @@ import {
     type NavRegionLink,
     type NavVertical,
 } from '@/shared/config/assetClassNav';
-import { CATEGORY_CONFIG, categoriesInRegion } from '@/entities/market-news';
+import {
+    CATEGORY_CONFIG,
+    categoriesInRegion,
+} from '@/entities/market-news/lib/categoryConfig';
 
 /** 지역 안에서 한 번에 갈 수 있는 최종 목적지. */
-export interface NavLeafLink {
+interface NavLeafLink {
     /** 라벨의 완전 수식 메시지 키. 트리는 모듈 스코프 상수라 여기서 번역할 수 없다. */
     readonly labelKey: string;
     readonly href: string;
 }
 
-export interface NavRegionNode extends NavRegionLink {
+interface NavRegionNode extends NavRegionLink {
     /**
      * 이 지역 안의 최종 목적지들. 비어 있으면 지역 링크 자체가 최종 목적지다.
      *
@@ -55,7 +58,7 @@ export interface NavVerticalNode extends Omit<NavVertical, 'regions'> {
 export const NAV_TREE: readonly NavVerticalNode[] = NAV_VERTICALS.map(
     vertical => ({
         ...vertical,
-        // 판정식은 `assetClassNav`가 소유한다 — 푸터(`NAV_OVERVIEW_LINKS`)와
+        // 판정식은 `assetClassNav`가 소유한다 — 푸터(`Footer`의 `columnOf`)와
         // 같은 규칙을 두 곳에 손으로 적어 두면 한쪽만 갱신된다.
         overview: hasRegionForRoot(vertical)
             ? null

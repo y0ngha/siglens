@@ -11,12 +11,15 @@
  * in the server-rendered shell (only PositionCta, which is mocked out here,
  * carries those words).
  */
-
-vi.mock('@/entities/ticker', () => ({
+vi.mock('@/entities/ticker/lib/ticker', () => ({
     pickAssetName: (info: { name: string; koreanName?: string }) =>
         info.koreanName ?? info.name,
     buildDisplayName: vi.fn((assetInfo: { name: string }) => assetInfo.name),
+}));
+vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
+}));
+vi.mock('@/entities/ticker/lib/assetClassification', () => ({
     // 본문이 WebPage JSON-LD의 `about` 노드를 만들 때 쓴다. 실제 구현은
     // classifyAsset 분기를 타므로 여기서는 결정적인 스텁으로 고정한다 — 이
     // 파일의 관심사는 서버 데이터 경로이지 스키마 분류가 아니다.
@@ -25,37 +28,20 @@ vi.mock('@/entities/ticker', () => ({
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: vi.fn().mockResolvedValue(true),
 }));
-vi.mock('@/entities/bars', () => ({
+vi.mock('@/entities/bars/lib/barsStaticCache', () => ({
     getQuantizedBarsStatic: vi.fn(),
 }));
-vi.mock('@/views/symbol', () => ({
+vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({
     SymbolPageHeading: ({ children }: { children: React.ReactNode }) =>
         children,
 }));
-// PositionTabContent is stubbed (client component, not under test here). But
-// computeVolumeByBand/computePosition/describeAvgFloor/formatAmount are real
-// pure functions the page's server data path and the Task 1 per-symbol
-// content block call directly — pull the actual implementations from their
-// own lean lib modules (not the full barrel, which would also drag in
-// PositionTabContent's 'use client' dependency graph) so those tests exercise
-// the real aggregation/geometry, not a stub.
-vi.mock('@/widgets/portfolio-position', async () => {
-    const { computeVolumeByBand } =
-        await import('@/widgets/portfolio-position/lib/volumeByBand');
-    const { BAND_COUNT, computePosition } =
-        await import('@/widgets/portfolio-position/lib/positionGeometry');
-    const { formatAmount, formatAmountAligned, describeAvgFloor } =
-        await import('@/widgets/portfolio-position/lib/positionBuildingNotes');
-    return {
-        PositionTabContent: () => null,
-        computeVolumeByBand,
-        computePosition,
-        describeAvgFloor,
-        formatAmount,
-        formatAmountAligned,
-        BAND_COUNT,
-    };
-});
+// PositionTabContent is stubbed (client component, not under test here). The
+// pure lib modules (volumeByBand/positionGeometry/positionBuildingNotes) stay
+// real so the page's server data path and the Task 1 per-symbol content block
+// exercise the real aggregation/geometry, not a stub.
+vi.mock('@/widgets/portfolio-position/ui/PositionTabContent', () => ({
+    PositionTabContent: () => null,
+}));
 vi.mock('next/navigation', () => ({
     notFound: vi.fn(() => {
         throw new Error('NEXT_NOT_FOUND');
@@ -68,10 +54,10 @@ import {
     default as PositionPage,
     revalidate,
 } from '@/app/[locale]/[symbol]/position/page';
-import { getAssetInfoResilient } from '@/entities/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
-import { getQuantizedBarsStatic } from '@/entities/bars';
-import { PositionTabContent } from '@/widgets/portfolio-position';
+import { getQuantizedBarsStatic } from '@/entities/bars/lib/barsStaticCache';
+import { PositionTabContent } from '@/widgets/portfolio-position/ui/PositionTabContent';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
 import { SEO_DESCRIPTION_MAX_LENGTH } from '@/shared/lib/seo';

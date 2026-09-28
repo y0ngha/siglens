@@ -1,6 +1,6 @@
 import { type Timeframe } from '@y0ngha/siglens-core';
 import { type OverallAnalysisState } from '../types';
-import { type SymbolChatState } from '@/features/symbol-chat';
+import { type SymbolChatState } from '@/features/symbol-chat/model/SymbolChatContext';
 
 // Publish the overall result to the chat context only when it's available.
 // For non-done states we return `null` context so the chatbot doesn't reference

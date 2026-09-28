@@ -13,11 +13,11 @@ import { FONT_VARIABLE_CLASSES } from '../fontVariables';
 import { AuthSessionHeaderClient } from '@/app/_components/AuthSessionHeaderClient';
 import { Footer } from '@/widgets/layout/Footer';
 import { SiteJsonLd } from '@/widgets/layout/SiteJsonLd';
-import { PwaBanner } from '@/features/pwa-install';
-import { VisitorPing } from '@/features/visitor-ping';
-import { NoticePopupLoader } from '@/widgets/notice-popup';
+import { PwaBanner } from '@/features/pwa-install/ui/PwaBanner';
+import { VisitorPing } from '@/features/visitor-ping/ui/VisitorPing';
+import { NoticePopupLoader } from '@/widgets/notice-popup/ui/NoticePopupLoader';
 import { ReactQueryProvider } from '@/app/providers';
-import { SearchOverlayProvider } from '@/features/ticker-search';
+import { SearchOverlayProvider } from '@/features/ticker-search/model/SearchOverlayContext';
 import { ADSENSE_ENABLED } from '@/shared/lib/adsense';
 import { CF_BEACON_TOKEN } from '@/shared/lib/cloudflareAnalytics';
 import { GoogleAdsTag } from '@/app/_components/GoogleAdsTag';
@@ -25,12 +25,12 @@ import { GOOGLE_ADS_ID } from '@/shared/config/googleAds';
 import { ROOT_KEYWORDS, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import {
-    DEFAULT_LOCALE,
     isLocale,
     LOCALE_HREFLANG,
     localePath,
     resolvePrerenderLocales,
     type Locale,
+    resolveLocale,
 } from '@/shared/i18n/locales';
 import { pickMessages } from '@/shared/i18n/loadMessages';
 import { LocaleProvider } from '@/shared/i18n/LocaleContext';
@@ -68,7 +68,7 @@ export async function generateMetadata({
     params,
 }: LocaleParams): Promise<Metadata> {
     const { locale: raw } = await params;
-    const locale: Locale = isLocale(raw) ? raw : DEFAULT_LOCALE;
+    const locale = resolveLocale(raw);
     const siteUrl = `${SITE_URL}${localePath(locale, '/')}`.replace(/\/$/, '');
     // 루트 메타데이터도 카탈로그를 쓴다 — 예전에는 `ROOT_TITLE`·`SITE_DESCRIPTION`
     // 한국어 상수라 `/en`·`/ja`·`/zh`의 탭 제목과 공유 카드가 통째로 한국어였다.
@@ -133,7 +133,7 @@ export async function generateMetadata({
         // 루트 레벨 canonical은 자기 자신의 URL을 가진 canonical을 선언하지 않는
         // 미래 페이지에서 SITE_URL이 상속되는 잠재적 footgun이 된다.
         // 각 인덱서블 페이지는 자체 alternates.canonical을 선언한다.
-        // 홈 페이지의 canonical은 src/app/page.tsx에 명시한다.
+        // 홈 페이지의 canonical은 src/app/[locale]/(home)/page.tsx에 명시한다.
         // Google Search Console token: set NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION env var.
         verification: {
             other: {

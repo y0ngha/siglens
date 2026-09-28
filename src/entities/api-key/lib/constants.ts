@@ -7,7 +7,7 @@ export {
 
 // Core exports AIProvider type-only; siglens owns the runtime list. `satisfies`
 // forbids stale values; the Exclude<...> check below enforces exhaustiveness.
-export const AI_PROVIDER_VALUES = [
+const AI_PROVIDER_VALUES = [
     'claude',
     'gemini',
     'chatgpt',

@@ -1,11 +1,11 @@
 import { FmpNewsClient } from './fmpNewsClient';
 import { EMPTY_NEWS_CLIENT } from './emptyNewsClient';
 import { NaverNewsClient } from './naverNewsClient';
-import { hasNaverCredentials } from './naverNewsSearch';
+import { hasNaverCredentials } from '@/shared/api/naver/naverSearch';
 import { getKoreanNames } from '@/entities/ticker/lib/koreanNameStore';
 import { CURATED_KOREAN_NAMES } from '@/shared/config/popular-tickers';
 import type { NewsClientPort } from './newsClientPort';
-import type { NewsSource } from '@/shared/config/marketProfile';
+import type { NewsSource } from '@/shared/config/marketProfile/types';
 import { isE2E } from '@/shared/api/e2eEnv';
 
 let cachedStock: NewsClientPort | null = null;

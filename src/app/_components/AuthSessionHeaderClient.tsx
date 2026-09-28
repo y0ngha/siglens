@@ -3,11 +3,9 @@
 import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import {
-    Header,
-    useHideOnScrollDown,
-    type HeaderUserMenuUser,
-} from '@/widgets/layout';
+import { Header } from '@/widgets/layout/Header';
+import { useHideOnScrollDown } from '@/shared/hooks/useHideOnScrollDown';
+import { type HeaderUserMenuUser } from '@/widgets/layout/HeaderUserMenu';
 import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import { useAuthHint } from '@/entities/auth/hooks/useAuthHint';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';

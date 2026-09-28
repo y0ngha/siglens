@@ -15,7 +15,7 @@ export function FundamentalAiSummaryError({
     return (
         <AiSummaryErrorSection
             error={error}
-            resetErrorBoundary={resetErrorBoundary}
+            onRetry={resetErrorBoundary}
             heading={t('FundamentalAiSummaryError.17769c')}
             idPrefix="ai-summary"
             getErrorMessage={error => translateFmpError(error, tRoot)}

@@ -15,6 +15,22 @@ import { migrateLegacyAnalysisModel } from '../lib/migrateAnalysisModel';
 const DEFAULT_MODEL: ModelId = DEEPSEEK_V4_1_FLASH_MODEL;
 
 /**
+ * 저장된 모델을 읽는다. 저장소 접근이 막힌 브라우저(시크릿 모드·Safari 사생활 보호
+ * 등)는 `localStorage` 접근에서 `SecurityError`를 던진다 — 형제 마이그레이션
+ * (`migrateLegacyAnalysisModel`)처럼 삼키고 "저장값 없음"으로 취급한다. 던지게 두면
+ * 마운트 effect에서 트리가 죽는다.
+ */
+function readStoredModel(): ModelId | null {
+    try {
+        return localStorage.getItem(
+            LOCAL_STORAGE_ANALYSIS_MODEL_KEY
+        ) as ModelId | null;
+    } catch {
+        return null;
+    }
+}
+
+/**
  * 선택된 분석 모델 상태 — localStorage 영속 + tier 허용 목록 검증.
  *
  * `isTierHydrated`가 필수인 이유: tier는 서버 왕복(`useUserTier`)이라 마운트 직후엔
@@ -36,7 +52,12 @@ export function useSelectedModel(
 
     const setSelectedModel = useCallback((model: ModelId): void => {
         if (typeof window !== 'undefined') {
-            localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY, model);
+            try {
+                localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY, model);
+            } catch {
+                // 저장소 차단(시크릿 모드·Safari 사생활 보호 등)은 `SecurityError`를
+                // 던진다. 영속만 포기하고 이번 세션의 선택은 그대로 반영한다.
+            }
         }
         setSelectedModelState(model);
     }, []);
@@ -46,9 +67,7 @@ export function useSelectedModel(
         // Run the one-time legacy-default migration BEFORE reading, so the read
         // below picks up the migrated value for users still on gemini-3.5-flash-lite.
         migrateLegacyAnalysisModel();
-        const stored = localStorage.getItem(
-            LOCAL_STORAGE_ANALYSIS_MODEL_KEY
-        ) as ModelId | null;
+        const stored = readStoredModel();
         const resolved =
             stored !== null && allowedModels.includes(stored)
                 ? stored

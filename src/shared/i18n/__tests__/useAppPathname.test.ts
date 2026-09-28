@@ -11,7 +11,6 @@ import { execSync } from 'node:child_process';
  */
 const ALLOWED_RAW_PATHNAME_USERS = [
     // 이동에 재사용 — 접두사가 있어야 한다.
-    'src/shared/hooks/useQueryParamState.ts',
     'src/widgets/dashboard/hooks/useSectorSignalState.ts',
     'src/features/backtest-filter/hooks/useBacktestFilter.ts',
     // 경로 변경 감지 키로만 쓴다 — 접두사 유무가 무관하다.

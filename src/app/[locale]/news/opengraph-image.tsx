@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
+import { resolveLocale } from '@/shared/i18n/locales';
 import { ImageResponse } from 'next/og';
 import { loadKoreanFont } from '@/entities/og-image/lib/loadKoreanFont';
 import {
@@ -44,7 +44,7 @@ export default async function Image({ params }: Props) {
     // 통일된다(실측: /AAPL·/en/AAPL·/ja/AAPL이 바이트 동일).
     const { locale } = await params;
     const t = await getTranslations({
-        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        locale: resolveLocale(locale),
         namespace: 'app.news',
     });
     const fontData = await loadKoreanFont();

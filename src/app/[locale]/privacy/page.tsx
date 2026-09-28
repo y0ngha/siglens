@@ -1,11 +1,5 @@
 import { Suspense } from 'react';
-import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
-import {
-    localeAlternatesFrom,
-    localeOpenGraph,
-    localeRobots,
-} from '@/shared/lib/seoAlternates';
+import { getTranslations } from 'next-intl/server';
 import { PolicyMarkdownBody } from '@/widgets/legal/PolicyMarkdownBody';
 import { LegalPageShell } from '@/widgets/legal/LegalPageShell';
 import { UntranslatedNotice } from '@/widgets/legal/UntranslatedNotice';
@@ -21,22 +15,19 @@ import {
     termsTitle,
 } from '@/shared/lib/legal';
 import { extractToc } from '@/shared/lib/legal-toc';
-import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
-import {
-    buildBreadcrumbJsonLd,
-    buildWebPageJsonLd,
-    SITE_NAME,
-    SITE_URL,
-    localizedAbsoluteUrl,
-} from '@/shared/lib/seo';
+import { SITE_NAME } from '@/shared/lib/seo';
 import type { Locale } from '@/shared/i18n/locales';
-import type { SeoTranslator } from '@/shared/lib/seo';
 import { getActiveTerms, type TermsRecord } from '@/entities/terms/api';
 import type { Metadata } from 'next';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { notFound } from 'next/navigation';
-
-const PAGE_URL = `${SITE_URL}${PRIVACY_PATH}`;
+import { enterLocale } from '@/shared/lib/enterLocale';
+import {
+    legalPolicyBreadcrumbJsonLd,
+    legalPolicyMetadata,
+    legalPolicyWebPageJsonLd,
+    type LegalPolicy,
+} from '../_legal/legalPolicy';
 
 /**
  * 약관 본문은 코드가 아니라 `terms` 테이블에 있고, 발효일이 되면
@@ -56,27 +47,13 @@ const PAGE_URL = `${SITE_URL}${PRIVACY_PATH}`;
  */
 export const revalidate = 86400;
 
-/**
- * 모듈 스코프 상수였다 — 그 자리에서는 번역자도 로케일도 없어 JSON-LD가
- * 항상 한국어·기본 로케일 URL로 굳었다. 렌더 시점 함수로 바꾼다.
- */
-function buildPrivacyJsonLd(t: SeoTranslator, locale: Locale) {
-    return {
-        ...buildWebPageJsonLd({
-            url: PAGE_URL,
-            name: privacyFullTitle(t),
-            description: privacyDescription(t),
-            locale,
-        }),
-    };
-}
-
-function buildPrivacyBreadcrumbJsonLd(t: SeoTranslator, locale: Locale) {
-    return buildBreadcrumbJsonLd(
-        [{ name: privacyTitle(t), url: PAGE_URL }],
-        locale
-    );
-}
+const POLICY: LegalPolicy = {
+    kind: 'privacy',
+    path: PRIVACY_PATH,
+    title: privacyTitle,
+    fullTitle: privacyFullTitle,
+    description: privacyDescription,
+};
 
 interface LocaleMetadataParams {
     readonly params: Promise<{ locale: string }>;
@@ -85,49 +62,7 @@ interface LocaleMetadataParams {
 export async function generateMetadata({
     params,
 }: LocaleMetadataParams): Promise<Metadata> {
-    const { locale } = await params;
-    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
-    const ogLocale = localeOpenGraph(resolved);
-    const tSeo = await getTranslations({
-        locale: resolved,
-        namespace: 'shared.seo',
-    });
-    // 활성 버전이 없으면 이 URL은 404다(`PrivacyPage`가 `notFound()`를 던진다).
-    // 그 상태를 색인 후보로 광고하지 않는다 — canonical을 비우고 noindex.
-    const privacy = await getActiveTerms('privacy', resolved);
-    return {
-        title: privacyTitle(tSeo),
-        description: privacyDescription(tSeo),
-        robots:
-            privacy === null
-                ? { index: false, follow: true }
-                : localeRobots(resolved),
-        alternates: await localeAlternatesFrom(params, PRIVACY_PATH, {
-            canonical: privacy === null ? null : undefined,
-        }),
-        openGraph: {
-            type: 'article',
-            siteName: SITE_NAME,
-            title: privacyFullTitle(tSeo),
-            description: privacyDescription(tSeo),
-            url: localizedAbsoluteUrl(PAGE_URL, resolved),
-            ...ogLocale,
-            images: [
-                {
-                    url: '/og-image.png',
-                    width: OG_IMAGE_WIDTH,
-                    height: OG_IMAGE_HEIGHT,
-                    alt: privacyFullTitle(tSeo),
-                },
-            ],
-        },
-        twitter: {
-            card: 'summary',
-            title: privacyFullTitle(tSeo),
-            description: privacyDescription(tSeo),
-            images: ['/og-image.png'],
-        },
-    };
+    return legalPolicyMetadata(params, POLICY);
 }
 
 interface PrivacyContentProps {
@@ -199,28 +134,24 @@ export default async function PrivacyPage({
 }: {
     readonly params: Promise<{ locale: string }>;
 }) {
-    const { locale } = await params;
-    // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
-    // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
-    // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
-    setRequestLocale(locale);
-    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const { locale: rawLocale } = await params;
+    const locale = enterLocale(rawLocale);
     // **`<Suspense>` 밖에서** 조회하고 `notFound()`를 던진다. 안에서 던지면 셸이
     // 이미 스트리밍을 시작한 뒤라 Next가 응답을 200으로 확정해 버려, 화면은 404인데
     // 상태 코드는 200인 soft-404가 된다(2026-09 구글 정책 감사 M7).
     const [terms, tSeo] = await Promise.all([
-        getActiveTerms('privacy', resolved),
-        getTranslations({ locale: resolved, namespace: 'shared.seo' }),
+        getActiveTerms(POLICY.kind, locale),
+        getTranslations({ locale, namespace: 'shared.seo' }),
     ]);
     if (terms === null) notFound();
     return (
         <>
-            <JsonLd data={buildPrivacyJsonLd(tSeo, resolved)} />
-            <JsonLd data={buildPrivacyBreadcrumbJsonLd(tSeo, resolved)} />
+            <JsonLd data={legalPolicyWebPageJsonLd(POLICY, tSeo, locale)} />
+            <JsonLd data={legalPolicyBreadcrumbJsonLd(POLICY, tSeo, locale)} />
             <Suspense
                 fallback={<div className="animate-pulse" aria-hidden="true" />}
             >
-                <PrivacyContent locale={resolved} terms={terms} />
+                <PrivacyContent locale={locale} terms={terms} />
             </Suspense>
         </>
     );

@@ -8,13 +8,13 @@ import {
     type NewsFeedCategory,
 } from '@y0ngha/siglens-core';
 import type { SubmitMarketNewsDigestActionResult } from './submitMarketNewsDigestActionTypes';
-import { getMarketNewsList } from '../api';
+import { getMarketNewsList } from '@/entities/market-news/api/marketNewsRepository';
 import {
     CATEGORY_CONFIG,
     type NewsFeedCategoryId,
 } from '../lib/categoryConfig';
 import { DEFAULT_DIGEST_MODEL_ID } from '../lib/marketNewsConstants';
-import { selectAggregateNewsItems } from '@/entities/news-article';
+import { selectAggregateNewsItems } from '@/entities/news-article/lib/newsAnalysisSelection';
 import { toEnrichedMarketNewsItem } from '../lib/toEnrichedMarketNewsItem';
 
 /**

@@ -21,23 +21,27 @@ import {
     type ModelId,
 } from '@y0ngha/siglens-core';
 import type { DisplayMessage } from '@/shared/lib/types';
-import {
-    chatAction,
-    getRemainingTokensAction,
-} from '@/entities/chat-message/actions';
+import { chatAction } from '@/entities/chat-message/actions/chatAction';
+import { getRemainingTokensAction } from '@/entities/chat-message/actions/getRemainingTokensAction';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
+import { CHAT_NON_CHART_BASELINE_ANALYSIS } from '@/entities/chat-message/lib/fallbackAnalysis';
 import {
-    CHAT_NON_CHART_BASELINE_ANALYSIS,
     type SymbolChatActionResult,
     type SymbolChatErrorCode,
-} from '@/entities/chat-message';
+} from '@/entities/chat-message/model';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { useTranslations } from 'next-intl';
 import { usePageContextLabel } from './usePageContextLabel';
-import { useSymbolChat } from '@/features/symbol-chat';
+import { useSymbolChat } from '@/features/symbol-chat/hooks/useSymbolChat';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
-import { getDescriptor, marketProfileOf } from '@/shared/config/marketProfile';
-import { useModelGate, type ModelGateState } from '@/features/premium-gate';
+import {
+    getDescriptor,
+    marketProfileOf,
+} from '@/shared/config/marketProfile/registry';
+import {
+    useModelGate,
+    type ModelGateState,
+} from '@/features/premium-gate/hooks/useModelGate';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { migrateLegacyChatModel } from '@/features/symbol-model/lib/migrateChatModel';
 import { LOCAL_STORAGE_CHAT_MODEL_KEY } from '@/shared/lib/storageKeys';
@@ -78,7 +82,6 @@ const ERROR_MESSAGE_KEYS: Record<SymbolChatErrorCode, string> = {
     server_error: 'useChat.serverError',
     ai_server_unstable: 'useChat.providerUnstable',
     model_not_allowed: 'useChat.modelNotAllowed',
-    // TODO(byok-adapter): BYOK 어댑터 구현 후 chatAction에서 이 코드가 반환됩니다
     user_api_key_required: 'useChat.userApiKeyRequired',
 };
 
@@ -154,16 +157,14 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
     // null on mount — used to skip the initial effect run in the key-change effect
     const prevKeyRef = useRef<string | null>(null);
     // null on mount — used to skip emitting a context-switch system message on initial render.
-    // KNOWN LIMITATION (Task 5 → follow-up / Task 6 domain):
+    // KNOWN LIMITATION:
     //   This ref only tracks transitions while `useChat` is mounted. `useChat` lives inside
     //   `ChatPanel`, which is mounted only when the panel is open (isOpen=true). If the user
     //   navigates between symbol pages while the chat panel is closed, `useChat` is unmounted
     //   for the entire transition; on next open `previousLabelRef` is null again and the
     //   first-mount guard suppresses the context-switch system message that would have
     //   announced the symbol/timeframe change. The transition message is silently lost.
-    //   This is still strictly better than the pre-PR-413 behavior (where `useChat` was
-    //   remounted on every navigation regardless of panel state). A proper fix likely
-    //   requires hoisting context-switch detection above ChatPanel — see Task 6.
+    //   A proper fix likely requires hoisting context-switch detection above ChatPanel.
     const previousLabelRef = useRef<string | null>(null);
     // latest-value refs: let sendMessage read current values without being in its dep array
     const messagesRef = useRef(messages);
@@ -276,7 +277,6 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
                     result.remainingTokens
                 );
             } else if (result.error === 'user_api_key_required') {
-                // TODO(byok-adapter): chatAction이 BYOK 어댑터 구현 후 이 분기가 실행됩니다
                 showGate({
                     mode: 'byok',
                     provider: getProviderForModel(selectedModel),

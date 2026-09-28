@@ -1,28 +1,20 @@
 import { getTranslations } from 'next-intl/server';
 import { OptionsPageClient } from '@/widgets/options/OptionsPageClient';
-import { setRequestLocale } from 'next-intl/server';
-import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
+import { resolveLocale } from '@/shared/i18n/locales';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
-import { SymbolPageHeading } from '@/views/symbol';
-import {
-    OptionsSnapshotProse,
-    hasOptionsProse,
-} from '@/views/symbol/snapshot/renderers/OptionsSnapshotProse';
+import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
+import { OptionsSnapshotProse } from '@/views/symbol/snapshot/renderers/OptionsSnapshotProse';
+import { hasOptionsProse } from '@/views/symbol/snapshot/renderers/optionsContent';
 import { OptionsEmptyState } from '@/widgets/options/OptionsEmptyState';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { FaqSection } from '@/shared/ui/FaqSection';
-import {
-    SymbolRouteParams,
-    isAdmissibleSymbolShape,
-} from '@/shared/config/market';
+import { SymbolRouteParams } from '@/shared/config/market';
+import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
-import {
-    buildAssetAboutNode,
-    buildDisplayName,
-    pickAssetName,
-    getAssetInfoResilient,
-} from '@/entities/ticker';
+import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
+import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { mapExpirationsToSlots } from '@y0ngha/siglens-core';
 import {
     fetchOptionsSnapshot,
@@ -33,8 +25,6 @@ import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
-    buildSnapshotMetaDescription,
-    symbolTabDescriptionLabel,
     buildSymbolOptionsSeoContent,
     buildSymbolSeoContent,
     symbolMetadataFromSeo,
@@ -42,6 +32,7 @@ import {
     noindexSymbolMetadata,
     type FaqItem,
 } from '@/shared/lib/seo';
+import { loadTabSnapshotMeta } from '@/app/[locale]/[symbol]/symbolSnapshotDescription';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import {
     dehydrate,
@@ -51,6 +42,7 @@ import {
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
+import { enterLocale } from '@/shared/lib/enterLocale';
 
 // 종목당 SEO 콘텐츠는 고정이고 동적 데이터는 클라가 재hydrate한다. 엣지 캐시로
 // compute 호출을 줄인다. (일시 인프라 장애의 404 캐싱은 getAssetInfo strict로 차단)
@@ -69,7 +61,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { locale: rawLocale, symbol } = await params;
-    const locale = isLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
+    const locale = resolveLocale(rawLocale);
     const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     const upper = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
@@ -121,30 +113,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         displayName,
         koreanName: assetInfo.koreanName,
         englishName: assetInfo.name,
-        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        locale,
         hasOptions,
     });
     const metadata = symbolMetadataFromSeo(seo, locale);
 
-    // snapshot-derived unique description (spec 2026-07-24 Task 8). Same
-    // getSeoSnapshotsStatic(upper, revalidate) call the page body makes below —
-    // unstable_cache dedupes it within this render, so this is a cache hit, not
-    // an extra DB round-trip. Falls back to the templated description when no
-    // snapshot exists (backward compatible). og/twitter keep the templated copy
-    // — only the search-facing <meta name="description"> is overridden.
-    const snap = (await getSeoSnapshotsStatic(upper, revalidate, locale)).find(
-        s => s.tab === 'options'
-    );
-    const snapshotDescription = snap
-        ? buildSnapshotMetaDescription(
-              'options',
-              snap.content,
-              displayName,
-              null,
-              locale,
-              symbolTabDescriptionLabel('options', 'equity', tSeo)
-          )
-        : null;
+    // snapshot-derived unique description (spec 2026-07-24 Task 8).
+    const { description: snapshotDescription } = await loadTabSnapshotMeta({
+        symbol: upper,
+        tab: 'options',
+        revalidate,
+        locale,
+        displayName,
+        assetClass: 'equity',
+        tSeo,
+    });
     const description = snapshotDescription ?? metadata.description;
 
     // 옵션 없는 종목은 본문 OptionsEmptyState에서 sibling 분석 페이지
@@ -159,13 +142,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function OptionsPage({ params }: Props) {
-    const { locale, symbol } = await params;
-    // DB 스냅샷은 로케일별 행이라 좁혀진 로케일이 필요하다. URL 세그먼트는 신뢰 경계다.
-    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
-    // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
-    // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
-    // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
-    setRequestLocale(locale);
+    const { locale: rawLocale, symbol } = await params;
+    const locale = enterLocale(rawLocale);
     const t = await getTranslations('app.symbol');
     const tSeo = await getTranslations('shared.seo');
     const upper = symbol.toUpperCase();
@@ -196,7 +174,7 @@ export default async function OptionsPage({ params }: Props) {
         // ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
         // getSeoSnapshotsStatic JSDoc. revalidateSeconds mirrors this page's
         // `export const revalidate` literal above.
-        getSeoSnapshotsStatic(upper, revalidate, resolved),
+        getSeoSnapshotsStatic(upper, revalidate, locale),
     ]);
     const optionsSnapshot = snapshots.find(s => s.tab === 'options');
     // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasOptionsProse)
@@ -216,11 +194,7 @@ export default async function OptionsPage({ params }: Props) {
     if (isUnresolvableDegraded(upper, degraded)) notFound();
     if (!assetInfo) notFound();
 
-    const displayName = buildDisplayName(
-        assetInfo,
-        upper,
-        isLocale(locale) ? locale : DEFAULT_LOCALE
-    );
+    const displayName = buildDisplayName(assetInfo, upper, locale);
 
     // 옵션 시장이 없으면(또는 조회 실패로 degrade되면) OptionsEmptyState를 렌더한다.
     // 스냅샷이 있으면 이 분기에서도 프로즈를 유지한다(spec §7 — degraded 분기에서도
@@ -309,7 +283,7 @@ export default async function OptionsPage({ params }: Props) {
             displayName,
             koreanName: assetInfo.koreanName,
             englishName: assetInfo.name,
-            locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+            locale,
             hasOptions: true,
         }
     );
@@ -318,11 +292,7 @@ export default async function OptionsPage({ params }: Props) {
     // undefined로 자연 생략된다 (assetClassification 모듈 doc 참고).
     const aboutNode = buildAssetAboutNode(
         upper,
-        pickAssetName(
-            assetInfo,
-            upper,
-            isLocale(locale) ? locale : DEFAULT_LOCALE
-        ),
+        pickAssetName(assetInfo, upper, locale),
         assetInfo.fmpSymbol
     );
     const jsonLd = buildSymbolWebPageJsonLd({
@@ -330,7 +300,7 @@ export default async function OptionsPage({ params }: Props) {
         name: fullTitle,
         description,
         about: aboutNode,
-        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        locale,
         // 화면에 실제로 그려지는 스냅샷일 때만 신선도를 주장한다 —
         // 렌더 불가한 행은 본문에 한 글자도 남기지 않는다.
         generatedAt: showOptionsProse ? optionsSnapshot?.generatedAt : null,
@@ -341,7 +311,7 @@ export default async function OptionsPage({ params }: Props) {
             { name: displayName, url: buildSymbolSeoContent(upper, tSeo).url },
             { name: t('page.f1b01b'), url },
         ],
-        isLocale(locale) ? locale : DEFAULT_LOCALE
+        locale
     );
 
     /**

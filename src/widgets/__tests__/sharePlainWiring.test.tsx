@@ -19,12 +19,15 @@ vi.mock('@/widgets/fundamental/hooks/useFundamentalAnalysis', () => ({
 vi.mock('@/widgets/news/hooks/useNewsAnalysis', () => ({
     useNewsAnalysis: vi.fn(),
 }));
-vi.mock('@/widgets/news/hooks/useWaitForNewsCards', () => ({
+vi.mock('@/entities/news-article/hooks/useWaitForNewsCards', () => ({
     useWaitForNewsCards: vi.fn(() => ({ isReady: true, pollError: null })),
 }));
-vi.mock('@/entities/news-article/actions', () => ({
-    ensureNewsCardsAnalyzedAction: vi.fn().mockResolvedValue(undefined),
-}));
+vi.mock(
+    '@/entities/news-article/actions/ensureNewsCardsAnalyzedAction',
+    () => ({
+        ensureNewsCardsAnalyzedAction: vi.fn().mockResolvedValue(undefined),
+    })
+);
 vi.mock('@/shared/lib/news/periodLabels', () => ({
     NEWS_ANALYSIS_PERIOD_KEY: 'last30Days',
 }));
@@ -48,23 +51,38 @@ vi.mock('@/widgets/overall/hooks/useOverallAnalysis', async importOriginal => {
         useOverallAnalysis: vi.fn(),
     };
 });
-vi.mock('@/widgets/news', async importOriginal => ({
-    ...(await importOriginal<typeof import('@/widgets/news')>()),
-    useNewsAnalysisTrigger: vi.fn(),
-    useWaitForNewsCards: vi.fn((_symbol: string, initiallyReady: boolean) => ({
-        isReady: initiallyReady,
-        pollError: null,
-    })),
-}));
+vi.mock(
+    '@/entities/news-article/hooks/useNewsAnalysisTrigger',
+    async importOriginal => ({
+        ...(await importOriginal<
+            typeof import('@/entities/news-article/hooks/useNewsAnalysisTrigger')
+        >()),
+        useNewsAnalysisTrigger: vi.fn(),
+    })
+);
+vi.mock(
+    '@/entities/news-article/hooks/useWaitForNewsCards',
+    async importOriginal => ({
+        ...(await importOriginal<
+            typeof import('@/entities/news-article/hooks/useWaitForNewsCards')
+        >()),
+        useWaitForNewsCards: vi.fn(
+            (_symbol: string, initiallyReady: boolean) => ({
+                isReady: initiallyReady,
+                pollError: null,
+            })
+        ),
+    })
+);
 vi.mock('@/shared/ui/MarkdownText', () => ({
     MarkdownText: ({ children }: { children: React.ReactNode }) => (
         <div>{children}</div>
     ),
 }));
-vi.mock('@/entities/analysis/actions', () => ({
+vi.mock('@/entities/analysis/actions/runOverallAnalysisAction', () => ({
     runOverallAnalysisAction: vi.fn(),
 }));
-vi.mock('@/entities/options-chain/actions', () => ({
+vi.mock('@/entities/options-chain/actions/optionsActions', () => ({
     submitOptionsAnalysisAction: vi.fn(),
 }));
 vi.mock('next/navigation', () => ({
@@ -82,8 +100,10 @@ vi.mock('next/dynamic', () => ({
         return Component;
     },
 }));
-vi.mock('@/widgets/chart', () => ({
+vi.mock('@/widgets/chart/ChartSkeleton', () => ({
     ChartSkeleton: () => <div data-testid="chart-skeleton" />,
+}));
+vi.mock('@/widgets/chart/hooks/useChartSync', () => ({
     useChartSync: () => ({
         handleStockChartReady: vi.fn(),
         handleStockChartRemove: vi.fn(),
@@ -91,8 +111,10 @@ vi.mock('@/widgets/chart', () => ({
         handleVolumeChartRemove: vi.fn(),
     }),
 }));
-vi.mock('@/widgets/analysis', () => ({
+vi.mock('@/widgets/analysis/AnalysisPanel', () => ({
     AnalysisPanel: () => <div data-testid="analysis-panel" />,
+}));
+vi.mock('@/widgets/analysis/AnalysisProgress', () => ({
     AnalysisProgress: () => <div data-testid="analysis-progress" />,
 }));
 vi.mock('@/entities/bars/hooks/useBars', () => ({
@@ -134,7 +156,7 @@ vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
         openSignupNudge: vi.fn(),
     })),
 }));
-vi.mock('@/features/analysis-nudge', () => ({
+vi.mock('@/features/analysis-nudge/hooks/useAnonAnalysisNudge', () => ({
     useAnonAnalysisNudge: vi.fn(() => ({
         isLoginResolved: true,
         onSymbolAnalyzed: vi.fn(),
@@ -156,7 +178,7 @@ vi.mock('@/views/symbol/hooks/usePanelResize', () => ({
 vi.mock('@/widgets/analysis/hooks/useAnalysisProgress', () => ({
     useAnalysisProgress: vi.fn(() => ({ phaseIndex: 0, tipIndex: 0 })),
 }));
-vi.mock('@/features/portfolio-holding', () => ({
+vi.mock('@/features/portfolio-holding/hooks/useSymbolHolding', () => ({
     useSymbolHolding: vi.fn(() => ({
         holding: null,
         isHydrated: true,
@@ -174,13 +196,19 @@ vi.mock('@/shared/lib/cn', () => ({
             .filter(a => typeof a === 'string' && a.length > 0)
             .join(' '),
 }));
-vi.mock('@/features/symbol-model', () => ({
+vi.mock('@/features/symbol-model/hooks/useDefaultModelId', () => ({
     useDefaultModelId: vi.fn(() => 'gemini-3.5-flash-lite'),
+}));
+vi.mock('@/features/symbol-model/hooks/useAnalysisSettingsHydrated', () => ({
     useAnalysisSettingsHydrated: vi.fn(() => true),
+}));
+vi.mock('@/features/symbol-model/hooks/useDefaultReasoning', () => ({
     useDefaultReasoning: vi.fn(() => false),
+}));
+vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
     useSymbolModel: vi.fn(() => ({ tier: 'member', isTierHydrated: true })),
 }));
-vi.mock('@/features/symbol-chat', () => ({
+vi.mock('@/features/symbol-chat/hooks/useSymbolChat', () => ({
     usePublishSymbolChat: vi.fn(),
 }));
 vi.mock('@/widgets/congress/utils/buildChatState', () => ({
@@ -240,7 +268,10 @@ vi.mock('@/widgets/options/OptionsAiAnalysisError', () => ({
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { ShareableAnalysisProvider, useShareable } from '@/features/share';
+import {
+    ShareableAnalysisProvider,
+    useShareable,
+} from '@/features/share/model/ShareableAnalysisContext';
 import { CongressTrendSummary } from '@/widgets/congress/CongressTrendSummary';
 import { useCongressTrend } from '@/widgets/congress/hooks/useCongressTrend';
 import { FinancialsAiSummary } from '@/widgets/financials/FinancialsAiSummary';
