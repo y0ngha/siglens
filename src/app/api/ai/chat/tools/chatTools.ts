@@ -5,7 +5,7 @@ import type {
     ToolExecutionContext,
 } from '@y0ngha/siglens-core';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
-import { naverAiCredentials } from '@/entities/news-article/api';
+import { naverAiCredentials } from '@/shared/api/naver/naverSearch';
 import { isE2E } from '@/shared/api/e2eEnv';
 import {
     AGGREGATE_RESULT_MAX_CHARS,
@@ -30,7 +30,7 @@ import { getEconomyTool } from './getEconomy';
 import { getCongressTradesTool } from './getCongressTrades';
 import { safeErrorFields } from './logToolDegrade';
 import { isGuestSubject } from '../guestSubject';
-import { ensureSymbolNewsFresh } from './ensureSymbolDataFresh';
+import { ensureSymbolNewsFresh } from '@/entities/news-article/lib/ensureSymbolNewsFresh';
 
 export interface ToolRuntime {
     /** Analysis model for cache keys/fresh runs — pilot: fixed to the agent model. */

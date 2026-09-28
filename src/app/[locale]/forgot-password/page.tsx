@@ -1,11 +1,11 @@
 import { AuthCrossLink } from '@/shared/ui/auth/AuthCrossLink';
 import { getTranslations } from 'next-intl/server';
 import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
-import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
+import { resolveLocale } from '@/shared/i18n/locales';
 import type { Metadata } from 'next';
-import { setRequestLocale } from 'next-intl/server';
 import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
 import { ForgotPasswordForm } from '@/features/auth-password-reset/ui/ForgotPasswordForm';
+import { enterLocale } from '@/shared/lib/enterLocale';
 
 // noindex 페이지에도 canonical/openGraph.url을 명시한다. 자세한 근거는 src/app/[locale]/login/page.tsx 주석 참조.
 /**
@@ -18,10 +18,10 @@ export async function generateMetadata({
 }: {
     readonly params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
-    const { locale } = await params;
-    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const { locale: rawLocale } = await params;
+    const locale = resolveLocale(rawLocale);
     const tSeo = await getTranslations({
-        locale: resolved,
+        locale,
         namespace: 'shared.seo',
     });
     const title = tSeo('forgotPassword.title');
@@ -30,9 +30,9 @@ export async function generateMetadata({
         title,
         description,
         alternates: {
-            canonical: localeCanonical(resolved, '/forgot-password'),
+            canonical: localeCanonical(locale, '/forgot-password'),
         },
-        ...localePageSocial(resolved, '/forgot-password', {
+        ...localePageSocial(locale, '/forgot-password', {
             title,
             description,
         }),
@@ -46,10 +46,7 @@ export default async function ForgotPasswordPage({
     readonly params: Promise<{ locale: string }>;
 }) {
     const { locale } = await params;
-    // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
-    // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
-    // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
-    setRequestLocale(locale);
+    enterLocale(locale);
     const t = await getTranslations('app.forgot-password');
     return (
         <AuthCardShell

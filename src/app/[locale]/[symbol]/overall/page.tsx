@@ -1,24 +1,18 @@
 import { getTranslations } from 'next-intl/server';
 import { newsCacheTag } from '@/entities/news-article/lib/newsCacheTag';
 import { OverallContent } from '@/widgets/overall/OverallContent';
-import { setRequestLocale } from 'next-intl/server';
-import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
+import { DEFAULT_LOCALE, resolveLocale } from '@/shared/i18n/locales';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { OverallFactualFallback } from '@/widgets/overall/OverallFactualFallback';
 import { OverallFactsSummary } from '@/widgets/overall/OverallFactsSummary';
-import {
-    hasOverallProse,
-    OverallSnapshotProse,
-} from '@/views/symbol/snapshot/renderers/OverallSnapshotProse';
+import { OverallSnapshotProse } from '@/views/symbol/snapshot/renderers/OverallSnapshotProse';
+import { hasOverallProse } from '@/views/symbol/snapshot/renderers/overallContent';
 import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { FaqSection } from '@/shared/ui/FaqSection';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import {
-    DEFAULT_TIMEFRAME,
-    SymbolRouteParams,
-    isAdmissibleSymbolShape,
-} from '@/shared/config/market';
+import { DEFAULT_TIMEFRAME, SymbolRouteParams } from '@/shared/config/market';
+import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { Suspense } from 'react';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
@@ -28,15 +22,15 @@ import { getNewsList } from '@/entities/news-article/api';
 import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article/lib/cacheKeys';
 import {
     buildBreadcrumbJsonLd,
-    buildSnapshotMetaDescription,
-    symbolTabDescriptionLabel,
     buildSymbolSeoContent,
     resolveSymbolOverallSeoContent,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
     noindexSymbolMetadata,
     type FaqItem,
+    type SeoTranslator,
 } from '@/shared/lib/seo';
+import { loadTabSnapshotMeta } from '@/app/[locale]/[symbol]/symbolSnapshotDescription';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import {
     getDescriptor,
@@ -53,6 +47,7 @@ import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { enterLocale } from '@/shared/lib/enterLocale';
 
 /**
  * H1과 FAQ가 market profile별로 갈라 쓰는 카피 번들.
@@ -70,15 +65,9 @@ interface OverallCopy {
 
 // 질문 문구는 세 profile이 공유하고 답변만 갈린다. 시나리오가 깨지는 조건은
 // 미국·한국 주식이 같은 답을 쓰므로(실적·가이던스가 둘 다 있다) 리터럴을 하나만 둔다.
-/**
- * 카피는 `t`로 해석해 번들에 **문자열로** 담는다 — 키만 담으면 소비 지점
- * (H1·FaqSection)마다 네임스페이스를 알아야 하고, FAQ 항목은
- * `{question, answer}` 쌍이라 키 배열로는 짝을 표현할 수 없다.
- */
-type OverallTranslator = (
-    key: string,
-    values?: Record<string, string | number>
-) => string;
+// 카피는 `t`로 해석해 번들에 **문자열로** 담는다 — 키만 담으면 소비 지점
+// (H1·FaqSection)마다 네임스페이스를 알아야 하고, FAQ 항목은
+// `{question, answer}` 쌍이라 키 배열로는 짝을 표현할 수 없다.
 
 /**
  * 종합 분석 페이지의 카피(H1·FAQ 3건)는 market profile별로 세
@@ -94,8 +83,8 @@ type OverallTranslator = (
 function buildOverallCopy(
     marketProfile: MarketProfileId,
     displayName: string,
-    t: OverallTranslator,
-    tSeo: OverallTranslator
+    t: SeoTranslator,
+    tSeo: SeoTranslator
 ): OverallCopy {
     // 질문 문구는 세 profile이 공유하고 답변만 갈린다.
     const axesQuestion = tSeo('faq.overallAxes', { v0: displayName });
@@ -189,7 +178,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { locale: rawLocale, symbol } = await params;
-    const locale = isLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
+    const locale = resolveLocale(rawLocale);
     const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     const upper = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
@@ -215,15 +204,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // 올려도 부작용이 없다.
     const displayName = buildDisplayName(assetInfo, upper, locale);
 
-    // snapshot-derived unique description (spec 2026-07-24 Task 8). Same
-    // getSeoSnapshotsStatic(upper, revalidate) call the page body makes below —
-    // unstable_cache dedupes it within this render, so this is a cache hit, not
-    // an extra DB round-trip. Falls back to the templated description when no
-    // snapshot exists (backward compatible). og/twitter keep the templated copy
-    // — only the search-facing <meta name="description"> is overridden.
-    const snap = (await getSeoSnapshotsStatic(upper, revalidate, locale)).find(
-        s => s.tab === 'overall'
-    );
+    const assetClass = getDescriptor(marketProfileOf(assetInfo)).assetClass;
+    // snapshot-derived unique description (spec 2026-07-24 Task 8).
+    const { snap, description: snapshotDescription } =
+        await loadTabSnapshotMeta({
+            symbol: upper,
+            tab: 'overall',
+            revalidate,
+            locale,
+            displayName,
+            assetClass,
+            tSeo,
+            preferPlain: true,
+        });
 
     // 라운드4 감사 finding 2: getBlockedSymbolMetadata는 `degraded === true`일
     // 때만 hasProseForTab을 확인한다. 건강한(비degraded) 자산이라도 AI 분석이
@@ -276,25 +269,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         }
     }
 
-    const assetClass = getDescriptor(marketProfileOf(assetInfo)).assetClass;
     const seo = resolveSymbolOverallSeoContent(upper, assetClass, tSeo, {
         displayName,
         koreanName: assetInfo.koreanName,
         englishName: assetInfo.name,
-        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        locale,
     });
     const metadata = symbolMetadataFromSeo(seo, locale);
-
-    const snapshotDescription = snap
-        ? buildSnapshotMetaDescription(
-              'overall',
-              snap.content,
-              displayName,
-              snap.plain,
-              locale,
-              symbolTabDescriptionLabel('overall', assetClass, tSeo)
-          )
-        : null;
     return snapshotDescription
         ? { ...metadata, description: snapshotDescription }
         : metadata;
@@ -302,13 +283,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 // `?tf=` is read by the client component (useSearchParams); canonical URL excludes it so search engines see one URL per page.
 export default async function OverallPage({ params }: Props) {
-    const { locale, symbol } = await params;
-    // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
-    // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
-    // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
-    setRequestLocale(locale);
-    // DB 콘텐츠(뉴스 본문) 해석에 쓸 좁혀진 로케일. URL 세그먼트는 신뢰 경계다.
-    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const { locale: rawLocale, symbol } = await params;
+    const locale = enterLocale(rawLocale);
     const t = await getTranslations('app.symbol');
     const tSeo = await getTranslations('shared.seo');
     const upper = symbol.toUpperCase();
@@ -352,9 +328,9 @@ export default async function OverallPage({ params }: Props) {
     // cold path(둘 다 캐시 miss)에서 TTFB가 ~max(t1, t2) 수준으로 줄어든다.
     const [newsItems, cachedOverall, snapshots] = await Promise.all([
         staticSymbolCache(
-            [NEWS_LIST_CACHE_KEY, upper, ...contentLocaleKeyPart(resolved)],
+            [NEWS_LIST_CACHE_KEY, upper, ...contentLocaleKeyPart(locale)],
             upper,
-            () => getNewsList(upper, resolved),
+            () => getNewsList(upper, locale),
             [newsCacheTag(upper)],
             SECONDS_PER_HALF_DAY
         ).catch((error: unknown) => {
@@ -390,7 +366,7 @@ export default async function OverallPage({ params }: Props) {
         // ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
         // getSeoSnapshotsStatic JSDoc. revalidateSeconds mirrors this page's
         // `export const revalidate` literal above.
-        getSeoSnapshotsStatic(upper, revalidate, resolved),
+        getSeoSnapshotsStatic(upper, revalidate, locale),
     ]);
     const hasEnrichedNews = newsItems.some(item => item.sentiment !== null);
 
@@ -407,11 +383,7 @@ export default async function OverallPage({ params }: Props) {
     const overallSnapshot = snapshots.find(s => s.tab === 'overall');
     const showSnapshotProse = hasOverallProse(overallSnapshot?.content);
 
-    const displayName = buildDisplayName(
-        assetInfo,
-        upper,
-        isLocale(locale) ? locale : DEFAULT_LOCALE
-    );
+    const displayName = buildDisplayName(assetInfo, upper, locale);
     const marketProfile = marketProfileOf(assetInfo);
     const assetClass = getDescriptor(marketProfile).assetClass;
     // KR 개별주식은 유동성 있는 옵션 시장이 없다(KR_EQUITY_DESCRIPTOR.tabs 주석 참고 —
@@ -429,7 +401,7 @@ export default async function OverallPage({ params }: Props) {
             displayName,
             koreanName: assetInfo.koreanName,
             englishName: assetInfo.name,
-            locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+            locale,
         }
     );
 
@@ -437,11 +409,7 @@ export default async function OverallPage({ params }: Props) {
     // undefined로 자연 생략된다. crypto는 schema.org 표준 타입이 없어 about 노드 자체를 두지 않는다.
     const aboutNode = buildAssetAboutNode(
         upper,
-        pickAssetName(
-            assetInfo,
-            upper,
-            isLocale(locale) ? locale : DEFAULT_LOCALE
-        ),
+        pickAssetName(assetInfo, upper, locale),
         assetInfo.fmpSymbol,
         assetClass
     );
@@ -450,7 +418,7 @@ export default async function OverallPage({ params }: Props) {
         name: fullTitle,
         description,
         about: aboutNode,
-        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        locale,
         // 화면에 실제로 그려지는 스냅샷일 때만 신선도를 주장한다 —
         // 렌더 불가한 행은 본문에 한 글자도 남기지 않는다.
         generatedAt: showSnapshotProse ? overallSnapshot?.generatedAt : null,
@@ -461,7 +429,7 @@ export default async function OverallPage({ params }: Props) {
             { name: displayName, url: buildSymbolSeoContent(upper, tSeo).url },
             { name: t('page.8b7ae7'), url },
         ],
-        isLocale(locale) ? locale : DEFAULT_LOCALE
+        locale
     );
 
     // FAQ 답변은 market profile별로 분기한다 — 크립토에는 옵션 시장·분기 실적·펀더멘털이

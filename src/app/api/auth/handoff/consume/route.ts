@@ -1,6 +1,5 @@
-import { constants } from 'node:http2';
 import 'server-only';
-import { NextResponse, type NextRequest } from 'next/server';
+import type { NextRequest, NextResponse } from 'next/server';
 import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
 import { createAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
 import {
@@ -9,7 +8,7 @@ import {
 } from '@/entities/auth/lib/sessionCookie';
 import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
 import { DrizzleSessionRepository } from '@/entities/auth/api';
-import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
+import { getDatabaseClient } from '@/shared/db/client';
 import {
     aiSignedOutUrl,
     consumeHandoffCode,
@@ -20,14 +19,12 @@ import {
 } from '@/entities/auth/lib/handoffStore';
 import { AI_SITE_URL, isAiHost } from '@/shared/config/aiHost';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
-
-const { HTTP_STATUS_BAD_REQUEST, HTTP_STATUS_FOUND } = constants;
+import { invalidHandoffRequest, noStoreRedirect } from '../_shared/responses';
 
 export const dynamic = 'force-dynamic';
 
-function noStoreRedirect(url: URL): NextResponse {
-    const response = NextResponse.redirect(url, HTTP_STATUS_FOUND);
-    response.headers.set('Cache-Control', 'no-store');
+function redirectClearingState(url: URL): NextResponse {
+    const response = noStoreRedirect(url);
     // The state is single use: clear it whether or not the exchange succeeded.
     response.cookies.set(handoffStateCookie(''));
     return response;
@@ -52,13 +49,7 @@ function noStoreRedirect(url: URL): NextResponse {
 // react-doctor-disable-next-line react-doctor/nextjs-no-side-effect-in-get-handler
 export async function GET(request: NextRequest): Promise<Response> {
     if (!isAiHost(request.headers.get('host'))) {
-        return NextResponse.json(
-            { error: 'invalid_request' },
-            {
-                status: HTTP_STATUS_BAD_REQUEST,
-                headers: { 'Cache-Control': 'no-store' },
-            }
-        );
+        return invalidHandoffRequest();
     }
     let payload: HandoffPayload | null;
     try {
@@ -73,7 +64,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     // `aiSignedOutUrl` builds its path with `localePath`, and `next` comes back
     // localized from `resolveHandoffNext` — noRawRedirect guard.
     if (payload === null)
-        return noStoreRedirect(aiSignedOutUrl(DEFAULT_LOCALE));
+        return redirectClearingState(aiSignedOutUrl(DEFAULT_LOCALE));
     const { locale, next } = resolveHandoffNext(payload.next);
 
     const secure = isSecureCookieEnv();
@@ -81,7 +72,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     try {
         ({ cookie } = await createAuthSession({
             userId: payload.userId,
-            sessions: new DrizzleSessionRepository(getAuthDatabaseClient().db),
+            sessions: new DrizzleSessionRepository(getDatabaseClient().db),
             now: new Date(),
             secureCookie: secure,
         }));
@@ -91,9 +82,9 @@ export async function GET(request: NextRequest): Promise<Response> {
         console.error('[handoff] session create failed', {
             userId: payload.userId,
         });
-        return noStoreRedirect(aiSignedOutUrl(locale));
+        return redirectClearingState(aiSignedOutUrl(locale));
     }
-    const response = noStoreRedirect(new URL(next, AI_SITE_URL));
+    const response = redirectClearingState(new URL(next, AI_SITE_URL));
     response.cookies.set(applyAuthCookie(cookie));
     response.cookies.set(
         createAuthHintCookie({

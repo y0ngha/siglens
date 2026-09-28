@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import type { StreamErrorMessages } from '@/shared/hooks/useAnalysisStream';
+import type { StreamErrorMessages } from '@/shared/lib/sse/runAnalysisStream';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
@@ -21,7 +21,7 @@ import type { RunOverallAnalysisActionResult as CoreOverallResult } from '@/enti
 type RunOverallAnalysisActionResult =
     | CoreOverallResult
     | { status: 'reanalyze_cooldown'; remainingMs: number };
-import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis/lib/gate';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import type { OverallAnalysisState } from '../types';

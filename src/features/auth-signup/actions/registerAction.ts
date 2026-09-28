@@ -29,13 +29,14 @@ import {
     bcryptPasswordHasher,
     bcryptPasswordVerifier,
 } from '@/entities/auth/lib/bcrypt';
-import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
+import { getDatabaseClient } from '@/shared/db/client';
 import { toHandoffAwareRedirect } from '@/entities/auth/lib/handoffStore';
 import { DrizzleAgreementRepository } from '@/entities/agreement/api';
 import { DrizzleTermsRepository } from '@/entities/terms/api';
 import { createEmailTokenStore } from '@/entities/email-token/api';
 import { cookies } from 'next/headers';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
+import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
 
 export async function registerAction(
     _prev: SignupFormState,
@@ -72,7 +73,7 @@ export async function registerAction(
             };
         }
 
-        const { db } = getAuthDatabaseClient();
+        const { db } = getDatabaseClient();
         const termsRepo = new DrizzleTermsRepository(db);
         const [privacyTerms, tosTerms] = await Promise.all([
             // 신원(`terms.id`)만 필요하다 — 동의 레코드는 로케일과 무관한
@@ -167,9 +168,7 @@ export async function registerAction(
         );
     } catch (err) {
         // Re-throw Next.js redirect (not an error — it's a control-flow signal).
-        if (err instanceof Error && err.message.startsWith('NEXT_REDIRECT')) {
-            throw err;
-        }
+        if (isNextRedirectError(err)) throw err;
         console.error('Error in registerAction:', err);
         return {
             error: {

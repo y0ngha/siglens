@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
+import { resolveLocale } from '@/shared/i18n/locales';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { buildSymbolOgImage } from '@/entities/og-image/lib/buildSymbolOgImage';
 import { getCachedSharedAnalysis } from '@/entities/shared-analysis/actions/getCachedSharedAnalysis';
@@ -30,7 +30,7 @@ interface Props {
 
 export default async function Image({ params }: Props) {
     const { id, locale } = await params;
-    const resolvedLocale = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const resolvedLocale = resolveLocale(locale);
     // 명시적으로 로케일을 넘긴다 — 안 넘기면 `getTranslations`가 요청 스코프를
     // 못 찾아 기본 로케일로 조용히 떨어진다(심볼 OG 이미지의 `force-static` 경로에서
     // 실측된 바 있음: /AAPL·/en/AAPL·/ja/AAPL이 바이트 동일해진 사례).

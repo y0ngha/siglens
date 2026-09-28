@@ -175,7 +175,7 @@ const mockProvider = {
 } as unknown as import('@y0ngha/siglens-core').MarketDataProvider;
 
 const mockFundamentalProvider =
-    {} as import('@/shared/api/fmp/getFundamentalDataProvider').FundamentalProviderWithRawPeers;
+    {} as import('@/shared/api/fmp/fundamentalProvider.types').FundamentalProviderWithRawPeers;
 const mockFinancialsProvider =
     {} as import('@y0ngha/siglens-core').FinancialStatementsProvider;
 const mockCongressProvider =

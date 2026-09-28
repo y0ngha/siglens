@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { setRequestLocale } from 'next-intl/server';
 import { localePath, resolveLocale } from '@/shared/i18n/locales';
 import { buildFaqJsonLd, SITE_URL } from '@/shared/lib/seo';
 import { JsonLd } from '@/shared/ui/JsonLd';
@@ -9,6 +8,7 @@ import {
     getAboutSeoCopy,
 } from '@/views/ai-about/lib/aboutContent';
 import { buildAiAboutMetadata } from '../aiSeo';
+import { enterLocale } from '@/shared/lib/enterLocale';
 
 export async function generateMetadata({
     params,
@@ -29,8 +29,7 @@ export default async function AiAboutRoute({
 }: {
     readonly params: Promise<{ locale: string }>;
 }) {
-    const locale = resolveLocale((await params).locale);
-    setRequestLocale(locale);
+    const locale = enterLocale((await params).locale);
     const faq = await getAboutFaq(locale);
     return (
         <>

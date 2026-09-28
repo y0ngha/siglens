@@ -1,4 +1,5 @@
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
+import { cachedNumberFormat } from '@/shared/lib/intlFormatCache';
 
 /**
  * 시장 공포·탐욕 지수를 제공하는 시장.
@@ -17,24 +18,16 @@ export type FearGreedMarketId = 'us' | 'kr' | 'crypto';
 // volatility, safe haven) are signed distances or return spreads, while three
 // crypto factors are [0, 1] shares — "+50.00%" would read as a change that
 // does not exist, so shares render unsigned.
-const MARKET_FACTOR_FORMATTERS = new Map<string, Intl.NumberFormat>();
-
 function marketFactorFormatter(
     signed: boolean,
     locale: Locale
 ): Intl.NumberFormat {
-    const key = `${locale}:${signed ? 'signed' : 'share'}`;
-    let formatter = MARKET_FACTOR_FORMATTERS.get(key);
-    if (formatter === undefined) {
-        formatter = new Intl.NumberFormat(INTL_LOCALE[locale], {
-            style: 'percent',
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-            ...(signed ? { signDisplay: 'always' as const } : {}),
-        });
-        MARKET_FACTOR_FORMATTERS.set(key, formatter);
-    }
-    return formatter;
+    return cachedNumberFormat(INTL_LOCALE[locale], {
+        style: 'percent',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+        ...(signed ? { signDisplay: 'always' as const } : {}),
+    });
 }
 
 /**

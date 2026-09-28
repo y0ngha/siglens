@@ -1,17 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const {
-    tryGetTickerDatabaseClientMock,
+    tryGetDatabaseClientMock,
     repositoryFindBySymbolMock,
     fmpCryptoMembershipMock,
 } = vi.hoisted(() => ({
-    tryGetTickerDatabaseClientMock: vi.fn(),
+    tryGetDatabaseClientMock: vi.fn(),
     repositoryFindBySymbolMock: vi.fn(),
     fmpCryptoMembershipMock: vi.fn(),
 }));
 
-vi.mock('../../lib/db', () => ({
-    tryGetTickerDatabaseClient: () => tryGetTickerDatabaseClientMock(),
+vi.mock('@/shared/db/client', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/db/client')>()),
+    tryGetDatabaseClient: () => tryGetDatabaseClientMock(),
 }));
 vi.mock('../../api', () => ({
     DrizzleCryptoAssetRepository: class {
@@ -38,7 +39,7 @@ describe('isCryptoSymbol — FMP-list fallback', () => {
         // Re-import after resetModules to get fresh cache state
         const { isCryptoSymbol: fresh } =
             await import('../../lib/cryptoAssetStore');
-        tryGetTickerDatabaseClientMock.mockReturnValue({ db: {} });
+        tryGetDatabaseClientMock.mockReturnValue({ db: {} });
         repositoryFindBySymbolMock.mockResolvedValue({
             symbol: 'BTC',
             name: 'Bitcoin',
@@ -54,7 +55,7 @@ describe('isCryptoSymbol — FMP-list fallback', () => {
     it('DB miss + FMP-list HIT → true, result cached (2nd call skips FMP)', async () => {
         const { isCryptoSymbol: fresh } =
             await import('../../lib/cryptoAssetStore');
-        tryGetTickerDatabaseClientMock.mockReturnValue({ db: {} });
+        tryGetDatabaseClientMock.mockReturnValue({ db: {} });
         repositoryFindBySymbolMock.mockResolvedValue(null);
         fmpCryptoMembershipMock.mockResolvedValue({ name: 'NewCoin' });
 
@@ -73,7 +74,7 @@ describe('isCryptoSymbol — FMP-list fallback', () => {
     it('DB miss + FMP-list MISS → false, result cached', async () => {
         const { isCryptoSymbol: fresh } =
             await import('../../lib/cryptoAssetStore');
-        tryGetTickerDatabaseClientMock.mockReturnValue({ db: {} });
+        tryGetDatabaseClientMock.mockReturnValue({ db: {} });
         repositoryFindBySymbolMock.mockResolvedValue(null);
         fmpCryptoMembershipMock.mockResolvedValue(null);
 
@@ -91,7 +92,7 @@ describe('isCryptoSymbol — FMP-list fallback', () => {
     it('No DB client + FMP-list HIT → true, result cached', async () => {
         const { isCryptoSymbol: fresh } =
             await import('../../lib/cryptoAssetStore');
-        tryGetTickerDatabaseClientMock.mockReturnValue(null);
+        tryGetDatabaseClientMock.mockReturnValue(null);
         fmpCryptoMembershipMock.mockResolvedValue({ name: 'NewCoin' });
 
         const result = await fresh('NEWCOIN');
@@ -108,7 +109,7 @@ describe('isCryptoSymbol — FMP-list fallback', () => {
     it('No DB client + FMP-list MISS → false, result cached', async () => {
         const { isCryptoSymbol: fresh } =
             await import('../../lib/cryptoAssetStore');
-        tryGetTickerDatabaseClientMock.mockReturnValue(null);
+        tryGetDatabaseClientMock.mockReturnValue(null);
         fmpCryptoMembershipMock.mockResolvedValue(null);
 
         const result = await fresh('NOTACRYPTO');
@@ -147,7 +148,7 @@ describe('cryptoSymbolCache pollution — regression', () => {
             await import('../../lib/cryptoAssetStore');
 
         // DB is available but NEWCOIN is not seeded yet (miss).
-        tryGetTickerDatabaseClientMock.mockReturnValue({ db: {} });
+        tryGetDatabaseClientMock.mockReturnValue({ db: {} });
         repositoryFindBySymbolMock.mockResolvedValue(null);
         // FMP-list knows about NEWCOIN.
         fmpCryptoMembershipMock.mockResolvedValue({ name: 'NewCoin' });
@@ -173,7 +174,7 @@ describe('cryptoSymbolCache pollution — regression', () => {
             koreanName: null,
             circulatingSupply: null,
         };
-        tryGetTickerDatabaseClientMock.mockReturnValue({ db: {} });
+        tryGetDatabaseClientMock.mockReturnValue({ db: {} });
         repositoryFindBySymbolMock.mockResolvedValue(record);
 
         // getCryptoAsset primes cryptoSymbolCache with true.
@@ -192,7 +193,7 @@ describe('cryptoSymbolCache pollution — regression', () => {
         const { getCryptoAsset, isCryptoSymbol } =
             await import('../../lib/cryptoAssetStore');
 
-        tryGetTickerDatabaseClientMock.mockReturnValue({ db: {} });
+        tryGetDatabaseClientMock.mockReturnValue({ db: {} });
         repositoryFindBySymbolMock.mockResolvedValue(null);
         fmpCryptoMembershipMock.mockResolvedValue(null); // not in FMP-list either
 

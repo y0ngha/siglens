@@ -12,14 +12,14 @@
 import type { Mock } from 'vitest';
 import koMessages from '../../../../../messages/ko.json';
 import { useNewsAnalysis } from '@/widgets/news/hooks/useNewsAnalysis';
-import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis/lib/gate';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 
-vi.mock('@/shared/hooks/useAnalysisStream', () => ({
+vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({
     runAnalysisStream: vi.fn(),
 }));
 

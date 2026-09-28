@@ -1,6 +1,6 @@
-import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 import { countSkillFiles } from '@/entities/skill/api';
-import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
+import { resolveLocale } from '@/shared/i18n/locales';
 import {
     localeAlternatesFrom,
     localeOpenGraph,
@@ -35,6 +35,7 @@ import {
     EMPTY_SKILL_COUNTS,
     getAboutFaq,
 } from '@/views/about/lib/aboutContent';
+import { enterLocale } from '@/shared/lib/enterLocale';
 
 const PAGE_URL = `${SITE_URL}${ABOUT_PATH}`;
 
@@ -95,26 +96,26 @@ interface LocaleMetadataParams {
 export async function generateMetadata({
     params,
 }: LocaleMetadataParams): Promise<Metadata> {
-    const { locale } = await params;
-    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const { locale: rawLocale } = await params;
+    const locale = resolveLocale(rawLocale);
     const tSeo = await getTranslations({
-        locale: resolved,
+        locale,
         namespace: 'shared.seo',
     });
-    const ogLocale = localeOpenGraph(resolved);
+    const ogLocale = localeOpenGraph(locale);
     return {
         // 메타 타이틀은 이미 `Siglens`로 시작한다. 레이아웃 템플릿(`%s | Siglens`)을
         // 타면 브랜드가 두 번 붙어 SERP 폭만 먹으므로 `absolute`로 끊는다.
         title: { absolute: aboutFullTitle(tSeo) },
         description: aboutDescription(tSeo),
-        robots: localeRobots(resolved),
+        robots: localeRobots(locale),
         alternates: await localeAlternatesFrom(params, ABOUT_PATH),
         openGraph: {
             type: 'article',
             siteName: SITE_NAME,
             title: aboutFullTitle(tSeo),
             description: aboutDescription(tSeo),
-            url: localizedAbsoluteUrl(PAGE_URL, resolved),
+            url: localizedAbsoluteUrl(PAGE_URL, locale),
             ...ogLocale,
             images: [
                 {
@@ -139,14 +140,10 @@ export default async function AboutRoute({
 }: {
     readonly params: Promise<{ locale: string }>;
 }) {
-    const { locale } = await params;
-    // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
-    // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
-    // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
-    setRequestLocale(locale);
-    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const { locale: rawLocale } = await params;
+    const locale = enterLocale(rawLocale);
     const tSeo = await getTranslations({
-        locale: resolved,
+        locale,
         namespace: 'shared.seo',
     });
 
@@ -158,21 +155,21 @@ export default async function AboutRoute({
             console.error('[AboutPage] countSkillFiles failed:', e);
             return EMPTY_SKILL_COUNTS;
         }),
-        getAboutFaq(resolved),
+        getAboutFaq(locale),
     ]);
 
     return (
         <>
-            <JsonLd data={buildAboutJsonLd(tSeo, resolved)} />
+            <JsonLd data={buildAboutJsonLd(tSeo, locale)} />
             <JsonLd data={buildAboutPersonJsonLd()} />
-            <JsonLd data={buildAboutBreadcrumbJsonLd(tSeo, resolved)} />
+            <JsonLd data={buildAboutBreadcrumbJsonLd(tSeo, locale)} />
             <JsonLd data={buildFaqJsonLd(faq)} />
             <AboutPage
-                locale={resolved}
+                locale={locale}
                 title={aboutTitle(tSeo)}
                 counts={counts}
                 faq={faq}
-                updatedAt={formatKoreanDate(ABOUT_UPDATED_AT, resolved)}
+                updatedAt={formatKoreanDate(ABOUT_UPDATED_AT, locale)}
             />
         </>
     );

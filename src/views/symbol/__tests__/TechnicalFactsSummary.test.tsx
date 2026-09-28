@@ -7,7 +7,7 @@ import {
     type IndicatorResult,
 } from '@y0ngha/siglens-core';
 import { TechnicalFactsSummary } from '../TechnicalFactsSummary';
-import { RECENT_BARS_WINDOW } from '../utils/technicalFacts';
+import { RECENT_BARS_WINDOW } from '@/entities/bars/lib/technicalFacts';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 
 const OVERBOUGHT_RSI = RSI_OVERBOUGHT_LEVEL + 1;

@@ -55,7 +55,7 @@ export function marketProfileOf(asset: AssetInfo): MarketProfileId {
 
 /**
  * 심볼 하나로 표시 통화를 정한다 — `isKrEquitySymbol(symbol) ? 'KRW' : 'USD'` 삼항식이
- * `formatCompactCurrency`/`FutureDirectionCard`/`EventCalendar`/`statementCurrencyOf`
+ * `formatCompactCurrency`/`FutureDirectionCard`/`EventCalendar`/재무제표 탭
  * (`widgets/financials`)/`portfolio-position` 위젯 전반(`positionBuildingNotes`의
  * `formatAmount`·`formatCompactForSvgLabel`, `PositionCard`, `PositionCta`)/
  * `PositionHoldingCard`(`app/portfolio`)/`PortfolioChip`(`features/portfolio-holding`)

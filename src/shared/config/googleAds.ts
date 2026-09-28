@@ -1,3 +1,5 @@
+import { isE2E } from '@/shared/api/e2eEnv';
+
 /**
  * Google Ads 전환 측정 설정.
  *
@@ -19,9 +21,7 @@
 const ADS_ID = 'AW-18472071641';
 
 export const GOOGLE_ADS_ID =
-    process.env.NODE_ENV === 'production' && process.env.E2E_TEST !== '1'
-        ? ADS_ID
-        : '';
+    process.env.NODE_ENV === 'production' && !isE2E() ? ADS_ID : '';
 
 export type AdsConversion = 'signUp' | 'chatQuestion' | 'tickerSelect';
 

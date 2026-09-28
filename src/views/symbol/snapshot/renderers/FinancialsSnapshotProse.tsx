@@ -42,8 +42,6 @@ interface FinancialsSnapshotProseProps {
     plain?: string | null;
 }
 
-export { hasFinancialsProse } from './financialsContent';
-
 /**
  * SEO pre-warm 스냅샷의 financials 탭 프로즈 렌더러 — Task 6, 네 번째 탭
  * 렌더러. `overallConclusionKo`를 문단으로(`\n` 기준 분리), `overallSentiment`가

@@ -12,6 +12,7 @@ import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
+import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
 import { isKoreanInput } from '@/entities/ticker/lib/ticker';
 import { useRecentSearches } from '../hooks/useRecentSearches';
 import { useTickerSearch } from '../hooks/useTickerSearch';
@@ -131,6 +132,8 @@ function SearchOverlayBody({
     // 본체는 열려 있을 때만 마운트된다 — 항상 활성.
     useEscapeKey(onClose, true);
     useFocusTrap(dialogRef, true);
+    // 배경 스크롤 잠금. 소유자 수를 세는 훅이라 다른 잠금과 겹쳐 열려도 안전하다.
+    useBodyScrollLock();
 
     // 지난 질의가 남지 않는 것은 언마운트가 공짜로 해 준다(예전에는 `[isOpen]` 효과로
     // 비웠다).
@@ -225,17 +228,6 @@ function SearchOverlayBody({
         // 아래 effect가 판단한다. 이유는 `pendingSubmitRef` 주석 참고.
         requestSubmit();
     };
-
-    // 배경 스크롤 잠금. 저장/복원 방식은 HeaderMobileMenu와 동일하다 — 둘이 동시에
-    // 열리면 저장값이 서로를 오염시키지만, 오버레이가 열린 동안 햄버거는 가려져
-    // 도달할 수 없다.
-    useEffect(() => {
-        const prev = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
-        return () => {
-            document.body.style.overflow = prev;
-        };
-    }, []);
 
     /**
      * 보류해 둔 검색 의도를 조회가 결착된 뒤에 처리한다.

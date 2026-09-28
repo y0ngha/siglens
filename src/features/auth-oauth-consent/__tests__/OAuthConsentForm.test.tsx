@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { OAuthConsentForm } from '@/features/auth-oauth-consent/ui/OAuthConsentForm';
 import { useFinalizeOAuthSignup } from '@/features/auth-oauth-consent/hooks/useFinalizeOAuthSignup';
-import type { FinalizeOAuthSignupState } from '@/shared/lib/types';
+import type { FinalizeOAuthSignupState } from '@/shared/lib/auth/formTypes';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 
 vi.mock(

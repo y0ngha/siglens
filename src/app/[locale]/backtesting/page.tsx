@@ -1,7 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
-import { setRequestLocale } from 'next-intl/server';
-import { DEFAULT_LOCALE, isLocale, type Locale } from '@/shared/i18n/locales';
+import { type Locale, resolveLocale } from '@/shared/i18n/locales';
 import {
     localeAlternatesFrom,
     localeOpenGraph,
@@ -25,9 +24,10 @@ import { BacktestMethodology } from '@/widgets/backtesting/BacktestMethodology';
 import { BacktestTabs } from '@/widgets/backtesting/BacktestTabs';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import backtestData from '@/app/[locale]/backtesting/data.json';
+import backtestData from '@/entities/backtest-case/data/data.json';
 import { deriveBacktestStats } from '@/entities/backtest-case/lib/deriveBacktestStats';
 import { validateBacktestData } from '@/entities/backtest-case/lib/validate';
+import { enterLocale } from '@/shared/lib/enterLocale';
 
 // JSON import typed as any; validateBacktestData ensures shape at load time
 const data = validateBacktestData(backtestData as unknown);
@@ -67,16 +67,16 @@ interface LocaleMetadataParams {
 export async function generateMetadata({
     params,
 }: LocaleMetadataParams): Promise<Metadata> {
-    const { locale } = await params;
-    const resolvedLocale = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const { locale: rawLocale } = await params;
+    const locale = resolveLocale(rawLocale);
     const tSeo = await getTranslations({
-        locale: resolvedLocale,
+        locale,
         namespace: 'shared.seo',
     });
     const title = backtestingTitle(tSeo);
     const description = backtestingDescription(tSeo);
     const fullTitle = `${title} | ${SITE_NAME}`;
-    const ogLocale = localeOpenGraph(resolvedLocale);
+    const ogLocale = localeOpenGraph(locale);
     return {
         title: { absolute: fullTitle },
         description,
@@ -85,7 +85,7 @@ export async function generateMetadata({
         openGraph: {
             title: fullTitle,
             description,
-            url: localizedAbsoluteUrl(BACKTESTING_URL, resolvedLocale),
+            url: localizedAbsoluteUrl(BACKTESTING_URL, locale),
             siteName: SITE_NAME,
             ...ogLocale,
             type: 'website',
@@ -202,18 +202,15 @@ export default async function BacktestingPage({
 }: {
     readonly params: Promise<{ locale: string }>;
 }) {
-    const { locale } = await params;
-    // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
-    // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
-    // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
-    setRequestLocale(locale);
+    const { locale: rawLocale } = await params;
+    const locale = enterLocale(rawLocale);
     const t = await getTranslations('app.backtesting');
     const tSeo = await getTranslations('shared.seo');
     const { webPageJsonLd, breadcrumbJsonLd, datasetJsonLd } =
         buildBacktestingJsonLd(
             tSeo,
             await getTranslations('app.backtesting.seo'),
-            isLocale(locale) ? locale : DEFAULT_LOCALE
+            locale
         );
     return (
         <>

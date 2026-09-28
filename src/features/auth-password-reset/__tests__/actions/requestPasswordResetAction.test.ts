@@ -10,12 +10,6 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
     resetDatabaseClientForTests: vi.fn(),
 }));
-// getAuthDatabaseClient는 @/entities/auth/lib/db에서 직접 import되므로
-// (server-only 체인을 client 번들에서 분리) 해당 경로를 별도로 mock한다.
-vi.mock('@/entities/auth/lib/db', () => ({
-    getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
-    resetAuthDatabaseClientForTests: vi.fn(),
-}));
 vi.mock('@/entities/auth/lib/requestPasswordReset', () => ({
     requestPasswordReset: vi.fn(),
 }));
@@ -49,7 +43,7 @@ import { buildPasswordResetEmail } from '@/entities/email-token/templates/passwo
 import { requestPasswordResetAction } from '@/features/auth-password-reset/actions/requestPasswordResetAction';
 import { getLocale } from 'next-intl/server';
 const mockGetLocale = getLocale as MockedFunction<typeof getLocale>;
-import { resetAuthDatabaseClientForTests } from '@/entities/auth/lib/db';
+import { resetDatabaseClientForTests } from '@/shared/db/client';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 
 const mockRequest = requestPasswordReset as MockedFunction<
@@ -65,7 +59,7 @@ const mockBuild = buildPasswordResetEmail as MockedFunction<
 describe('requestPasswordResetAction', () => {
     beforeEach(() => {
         mockGetLocale.mockResolvedValue('ko');
-        resetAuthDatabaseClientForTests();
+        resetDatabaseClientForTests();
         process.env.DATABASE_URL = 'postgres://test';
         mockRequest.mockReset();
         sendEmailMock.mockReset();

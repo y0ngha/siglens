@@ -1,13 +1,13 @@
 import { getTranslations } from 'next-intl/server';
 import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
-import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
+import { resolveLocale } from '@/shared/i18n/locales';
 import { Suspense } from 'react';
-import { setRequestLocale } from 'next-intl/server';
 import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
 import { AuthFormSkeleton } from '@/shared/ui/auth/AuthFormSkeleton';
 import { AuthCrossLink } from '@/shared/ui/auth/AuthCrossLink';
 import type { Metadata } from 'next';
 import { LoginContent } from './LoginContent';
+import { enterLocale } from '@/shared/lib/enterLocale';
 
 // noindex 페이지에도 canonical을 두는 이유: ?next=/path 같은 쿼리 변형 URL이 외부에 공유되더라도
 // "원본은 /login 하나"라는 신호를 명확히 해 두면 일부 크롤러/공유 도구가 변형을 강조하지 않게 된다.
@@ -23,10 +23,10 @@ export async function generateMetadata({
 }: {
     readonly params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
-    const { locale } = await params;
-    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const { locale: rawLocale } = await params;
+    const locale = resolveLocale(rawLocale);
     const tSeo = await getTranslations({
-        locale: resolved,
+        locale,
         namespace: 'shared.seo',
     });
     const title = tSeo('login.title');
@@ -34,8 +34,8 @@ export async function generateMetadata({
     return {
         title,
         description,
-        alternates: { canonical: localeCanonical(resolved, '/login') },
-        ...localePageSocial(resolved, '/login', {
+        alternates: { canonical: localeCanonical(locale, '/login') },
+        ...localePageSocial(locale, '/login', {
             title,
             description,
         }),
@@ -51,10 +51,7 @@ export default async function LoginPage({
     readonly params: Promise<{ locale: string }>;
 }) {
     const { locale } = await params;
-    // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
-    // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
-    // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
-    setRequestLocale(locale);
+    enterLocale(locale);
     const t = await getTranslations('app.login');
     return (
         <AuthCardShell

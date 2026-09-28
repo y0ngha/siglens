@@ -65,7 +65,9 @@ function normalizeWhitespace(value: string): string {
     return value.replace(/\s+/g, ' ').trim();
 }
 
-function formatPrice(price: number): string {
+// 통화 기호 없는 2자리 숫자 — shared `formatPrice(value, spec)`(통화 표기)와 다르다.
+// `undefined` 로케일은 기존 표기를 그대로 둔 것이다(런타임 기본 로케일을 따른다).
+function formatReportPrice(price: number): string {
     return price.toLocaleString(undefined, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
@@ -73,7 +75,7 @@ function formatPrice(price: number): string {
 }
 
 function formatPriceList(prices: number[]): string {
-    return prices.map(formatPrice).join(', ');
+    return prices.map(formatReportPrice).join(', ');
 }
 
 function formatLevelWithReason(
@@ -82,7 +84,7 @@ function formatLevelWithReason(
 ): string {
     const confluence =
         level.count > 1 ? tReport('levelConvergence', { v0: level.count }) : '';
-    return `${formatPrice(level.price)} (${level.reason}${confluence})`;
+    return `${formatReportPrice(level.price)} (${level.reason}${confluence})`;
 }
 
 function buildTitle(symbol: string, tReport: ReportTranslator): string {
@@ -153,7 +155,7 @@ function buildKeyLevelsBlock(
 
     if (keyLevels.poc !== undefined) {
         lines.push(
-            `- PoC: ${formatPrice(keyLevels.poc.price)} (${keyLevels.poc.reason})`
+            `- PoC: ${formatReportPrice(keyLevels.poc.price)} (${keyLevels.poc.reason})`
         );
     }
 
@@ -168,7 +170,7 @@ function buildKeyLevelsBlock(
     if (stopLoss !== undefined) {
         lines.push(
             tReport('invalidation', {
-                v0: formatPrice(stopLoss),
+                v0: formatReportPrice(stopLoss),
             })
         );
     }
@@ -281,7 +283,7 @@ function buildResponseStance(
         const invalidation =
             effectiveLevels.stopLoss !== undefined
                 ? tReport('invalidationNote', {
-                      v0: formatPrice(effectiveLevels.stopLoss),
+                      v0: formatReportPrice(effectiveLevels.stopLoss),
                   })
                 : '';
 
@@ -290,13 +292,13 @@ function buildResponseStance(
 
     if (analysis.trend === 'bullish' && keyLevels.support.length > 0) {
         return tReport('stanceBullish', {
-            v0: formatPrice(keyLevels.support[0].price),
+            v0: formatReportPrice(keyLevels.support[0].price),
         });
     }
 
     if (analysis.trend === 'bearish' && keyLevels.resistance.length > 0) {
         return tReport('stanceBearish', {
-            v0: formatPrice(keyLevels.resistance[0].price),
+            v0: formatReportPrice(keyLevels.resistance[0].price),
         });
     }
 

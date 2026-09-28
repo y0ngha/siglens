@@ -1,4 +1,4 @@
-vi.mock('@/shared/hooks/useAnalysisStream');
+vi.mock('@/shared/lib/sse/runAnalysisStream');
 vi.mock('@/shared/hooks/useHydrated');
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
@@ -7,7 +7,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { MacroBriefingResponse } from '@y0ngha/siglens-core';
 
 import { useMacroBriefing } from '@/widgets/economy/hooks/useMacroBriefing';
-import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 
 const mockSubmit = vi.mocked(runAnalysisStream);

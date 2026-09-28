@@ -24,7 +24,6 @@ describe('getNewsClient', () => {
 
     it('exposes the NewsClientPort surface callers depend on', () => {
         const client = getNewsClient();
-        expect(typeof client.fetchNews).toBe('function');
         expect(typeof client.fetchNewsForPeriod).toBe('function');
     });
 

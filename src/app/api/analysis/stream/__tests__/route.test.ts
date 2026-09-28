@@ -271,7 +271,7 @@ import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { QUOTE_LOOKUP_TIMEOUT_MS } from '@/shared/api/market/quoteTimeout';
-import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 
 const decoder = new TextDecoder();
 
@@ -793,7 +793,7 @@ describe('POST /api/analysis/stream', () => {
          * 헤더 로케일이 **액션 인자까지** 도달하는지 본다.
          *
          * 스위트의 다른 로케일 단언은 전부 `'ko'`(= `DEFAULT_LOCALE`)라
-         * `resolveRequestLocale`을 상수 반환으로 바꿔도 통과했다(감사 실증:
+         * 헤더 로케일 해석(현 `localeFromRequestHeader`)을 상수 반환으로 바꿔도 통과했다(감사 실증:
          * 10,516개 전부 초록). 비-기본 로케일이어야만 반증이 된다.
          */
         it.each(['ja', 'en', 'zh'])(

@@ -152,9 +152,7 @@ describe('useMarketSummary', () => {
         const { useMarketSummary: useMarketSummaryE2E } =
             await import('@/widgets/dashboard/hooks/useMarketSummary');
         const { getMarketSummaryClientAction: e2eMockAction } =
-            await import(
-                '@/entities/market-summary/actions/getMarketSummaryClientAction'
-            );
+            await import('@/entities/market-summary/actions/getMarketSummaryClientAction');
         (e2eMockAction as ReturnType<typeof vi.fn>).mockResolvedValue(
             SUMMARY_DATA
         );

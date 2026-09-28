@@ -29,10 +29,8 @@ vi.mock('@/entities/auth/api', () => ({
     DrizzleSessionRepository: vi.fn(),
     DrizzleUserRepository: vi.fn(),
 }));
-// getAuthDatabaseClient는 @/entities/auth/lib/db에서 직접 import되므로
-// (server-only 체인을 client 번들에서 분리) 해당 경로를 별도로 mock한다.
-vi.mock('@/entities/auth/lib/db', () => ({
-    getAuthDatabaseClient: vi.fn().mockReturnValue({ db: {} }),
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: vi.fn().mockReturnValue({ db: {} }),
 }));
 vi.mock('@/entities/oauth-account/lib/pendingOAuthSignupStore', () => ({
     createPendingOAuthSignupStoreFromEnv: vi.fn(),

@@ -4,6 +4,10 @@ import {
     LOCAL_STORAGE_CHAT_MODEL_MIGRATION_KEY,
     LOCAL_STORAGE_CHAT_MODEL_MIGRATION_V2_KEY,
 } from '@/shared/lib/storageKeys';
+import {
+    type ModelMigrationPass,
+    runModelMigrationPasses,
+} from './runModelMigrationPasses';
 
 /**
  * localStorage에 남아 있을 수 있는 **과거** 모델 ID들.
@@ -32,7 +36,7 @@ const LEGACY_GEMINI_2_5_FLASH_LITE = 'gemini-2.5-flash-lite';
  * retired as a chat option — and it still happens at most once per browser, so
  * a re-selection after the migration sticks forever.
  */
-const PASSES = [
+const PASSES: readonly ModelMigrationPass[] = [
     {
         flag: LOCAL_STORAGE_CHAT_MODEL_MIGRATION_KEY,
         from: [LEGACY_GEMINI_2_5_FLASH],
@@ -41,7 +45,7 @@ const PASSES = [
         flag: LOCAL_STORAGE_CHAT_MODEL_MIGRATION_V2_KEY,
         from: [LEGACY_GEMINI_2_5_FLASH_LITE, LEGACY_GEMINI_2_5_FLASH],
     },
-] as const;
+];
 
 /**
  * One-time migration of the persisted CHAT model to `deepseek-v4.1-flash`.
@@ -52,36 +56,12 @@ const PASSES = [
  * extending pass 1's model list (an extended list would never execute for the
  * already-migrated majority).
  *
- * Idempotent and SSR-safe: no-ops when `window` is undefined, and a pass whose
- * flag is present is skipped entirely. Only the listed models are rewritten —
- * any other stored model (gpt, claude, …) is left intact. Each pass sets its
- * flag even when there was nothing to rewrite, so it never runs twice.
- *
- * Wrapped in try/catch: some browsers (incognito / storage-blocked) throw a
- * `SecurityError` on `localStorage` access. A failed migration must never crash
- * the app at mount, so any storage error is swallowed and treated as a no-op.
+ * The flag/rewrite/try-catch mechanics live in `runModelMigrationPasses`.
  */
 export function migrateLegacyChatModel(): void {
-    if (typeof window === 'undefined') return;
-
-    try {
-        for (const pass of PASSES) {
-            if (localStorage.getItem(pass.flag) !== null) continue;
-
-            const stored = localStorage.getItem(LOCAL_STORAGE_CHAT_MODEL_KEY);
-            if (
-                stored !== null &&
-                (pass.from as readonly string[]).includes(stored)
-            ) {
-                localStorage.setItem(
-                    LOCAL_STORAGE_CHAT_MODEL_KEY,
-                    DEEPSEEK_V4_1_FLASH_MODEL
-                );
-            }
-
-            localStorage.setItem(pass.flag, '1');
-        }
-    } catch {
-        // SecurityError (incognito / storage-blocked) — no-op, never crash at mount.
-    }
+    runModelMigrationPasses({
+        storageKey: LOCAL_STORAGE_CHAT_MODEL_KEY,
+        to: DEEPSEEK_V4_1_FLASH_MODEL,
+        passes: PASSES,
+    });
 }

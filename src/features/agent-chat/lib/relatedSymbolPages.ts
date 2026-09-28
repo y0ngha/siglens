@@ -1,5 +1,5 @@
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
-import type { ToolActivityItem } from '../hooks/useAgentStream';
+import type { ToolActivityItem } from '../model/types';
 
 /** siglens.io symbol tabs an answer can point back to (`''` = the chart page). */
 type SymbolTab =

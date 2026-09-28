@@ -5,7 +5,7 @@
     "author": "y0ngha <dev.y0ngha@gmail.com>",
     "license": "MIT",
     "scripts": {
-        "copy:backtesting": "mkdir -p public/backtesting && cp 'src/app/[locale]/backtesting/data.json' public/backtesting/data.json",
+        "copy:backtesting": "mkdir -p public/backtesting && cp src/entities/backtest-case/data/data.json public/backtesting/data.json",
         "clear:backtesting": "rm -rf public/backtesting",
         "predev": "yarn clear:backtesting && yarn copy:backtesting",
         "prebuild": "yarn clear:backtesting && yarn copy:backtesting",

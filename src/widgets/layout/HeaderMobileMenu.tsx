@@ -17,6 +17,7 @@ import { LocaleSwitcher } from './LocaleSwitcher';
 import { LOCALE_SWITCHER_VISIBLE } from '@/shared/i18n/locales';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
+import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
 import type { NavVerticalNode } from './headerNavTree';
 import { isHrefActive } from './navActiveState';
 import { AiNavLink } from './AiNavLink';
@@ -117,14 +118,7 @@ export function HeaderMobileMenu({
     }, [pathname]);
 
     // Prevent body scroll while the drawer is open
-    useEffect(() => {
-        if (!isOpen) return;
-        const prev = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
-        return () => {
-            document.body.style.overflow = prev;
-        };
-    }, [isOpen]);
+    useBodyScrollLock(isOpen);
 
     /*
      * The backdrop + drawer are portaled to document.body to escape the header's

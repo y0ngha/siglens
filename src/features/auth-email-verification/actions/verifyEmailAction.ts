@@ -5,7 +5,7 @@ import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth/lib/errorMessa
 import { DrizzleUserRepository } from '@/entities/auth/api';
 import { createEmailTokenStore } from '@/entities/email-token/api';
 import type { VerifyEmailFormState } from '@/shared/lib/auth/formTypes';
-import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
+import { getDatabaseClient } from '@/shared/db/client';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
 import { getTranslations } from 'next-intl/server';
 
@@ -41,7 +41,7 @@ export async function verifyEmailAction(
             };
         }
 
-        const { db } = getAuthDatabaseClient();
+        const { db } = getDatabaseClient();
         const userRepo = new DrizzleUserRepository(db);
         // email은 위에서 이미 normalizeEmail() 처리됨 — 중복 호출 불필요.
         const existing = await userRepo.findByEmail(email);

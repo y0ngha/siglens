@@ -7,12 +7,8 @@ import { after } from 'next/server';
 import { LocalizedStreamError } from '@/shared/lib/sse/LocalizedStreamError';
 import { getTranslations } from 'next-intl/server';
 import type { AnalysisGateErrorCode } from '@/shared/lib/types';
-import {
-    ANALYSIS_LOCALE_HEADER,
-    DEFAULT_LOCALE,
-    isLocale,
-    type Locale,
-} from '@/shared/i18n/locales';
+import type { Locale } from '@/shared/i18n/locales';
+import { localeFromRequestHeader } from '@/shared/lib/localeFromRequestHeader';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { resolveHoldingPositionBucket } from '@/entities/portfolio/lib/resolveHoldingPositionBucket';
@@ -525,23 +521,10 @@ const DISPATCH: Record<
  */
 
 /**
- * 요청이 실은 로케일. 없거나 알 수 없는 값이면 기본 로케일.
- *
- * `/api/*`는 next-intl 미들웨어 matcher에서 제외돼 있어 요청 로케일을 알 방법이
- * 헤더뿐이다(`useAnalysisStream`이 주소에서 유도해 싣는다). 신뢰 경계이므로
- * 반드시 `isLocale`로 검증한다 — 임의 문자열이 캐시 키에 들어가면 번역 캐시가
- * 무한히 파편화된다.
- */
-function resolveRequestLocale(request: Request): Locale {
-    const raw = request.headers.get(ANALYSIS_LOCALE_HEADER) ?? '';
-    return isLocale(raw) ? raw : DEFAULT_LOCALE;
-}
-
-/**
  * 사용자 화면에 그대로 렌더되는 에러 문구.
  *
  * `heartbeatStream`이 거절을 SSE `error` 이벤트의 `{ message }`로 실어 보내고,
- * `useAnalysisStream` → `useAnalysis` → `ChartContent`의 `<ErrorBanner>`가 그걸
+ * `runAnalysisStream` → `useAnalysis` → `ChartContent`의 `<ErrorBanner>`가 그걸
  * 그대로 띄운다. 즉 **서버 로그 문구가 아니라 UI 카피**다.
  *
  * `scripts/i18n/lib/scan.mjs`는 `src/app/api/`를 "사용자에게 렌더되지 않는다"는
@@ -803,7 +786,7 @@ export async function POST(request: Request): Promise<Response> {
             // 스트림까지 모든 `heartbeatStream` 호출이 로케일별 제네릭 문구를
             // 필요로 하고, 동시성 검사와 스트림 생성 사이에 `await`가 들어가면
             // 원자성이 깨지기 때문이다.
-            const requestLocale = resolveRequestLocale(request);
+            const requestLocale = localeFromRequestHeader(request);
             const t = await streamMessages(requestLocale);
 
             // --- 2a. Auth ---
@@ -1204,7 +1187,7 @@ export async function POST(request: Request): Promise<Response> {
                     // catch 블록이라 try 안의 `requestLocale`이 스코프 밖이다.
                     error: await buildGateError(
                         'unexpected_error',
-                        resolveRequestLocale(request)
+                        localeFromRequestHeader(request)
                     ),
                 },
                 { status: 500 }
@@ -1236,7 +1219,7 @@ export async function POST(request: Request): Promise<Response> {
 
     // 번역자는 동시성 검사 **이전에** 확보한다 — 검사와 스트림 생성 사이에
     // await가 들어가면 원자성이 깨진다(위 technical 분기 주석 참고).
-    const locale = resolveRequestLocale(request);
+    const locale = localeFromRequestHeader(request);
     const t = await streamMessages(locale);
 
     // 동시 분석 상한 — 사람/봇 구분 없이 같은 값을 쓴다. 근거는

@@ -20,7 +20,7 @@ import { economicCalendar } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
 import { economicCalendarId } from '../lib/economicCalendarId';
-import { toEventSentiment } from '../lib/economicEventAnalysisGuard';
+import { toNewsSentiment } from '@/shared/lib/news/newsEnumCoercion';
 import type { EconomicCalendarEventWithAnalysis } from '../model';
 
 /** 읽기 경계에서 검증하는 impact 정규값 — 미지값은 'Low'로 강등(graceful). */
@@ -57,7 +57,7 @@ function toEvent(row: CalendarDbRow): EconomicCalendarEventWithAnalysis {
         estimate: row.estimate,
         previous: row.previous,
         unit: row.unit,
-        sentiment: toEventSentiment(row.sentiment),
+        sentiment: toNewsSentiment(row.sentiment),
         summaryKo: row.summaryKo,
         interpretationKo: row.interpretationKo,
         analyzedAt: row.analyzedAt,
@@ -145,7 +145,7 @@ export class DrizzleEconomicCalendarRepository {
      * 23:59:59까지 포함하도록 ' 23:59:59'를 덧붙인다.
      *
      * 분석 pass가 채운 AI 분석 컬럼(sentiment/summaryKo/interpretationKo/analyzedAt)도 함께 반환한다.
-     * `sentiment`는 읽기 경계에서 `toEventSentiment`로 검증 — 미지값은 null로 강등.
+     * `sentiment`는 읽기 경계에서 `toNewsSentiment`로 검증 — 미지값은 null로 강등.
      */
     async listInRange(
         fromEt: string,

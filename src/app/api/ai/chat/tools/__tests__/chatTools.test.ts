@@ -16,7 +16,7 @@ const {
     getNews: vi.fn(),
     ensureSymbolNewsFresh: vi.fn(),
 }));
-vi.mock('@/app/api/ai/chat/tools/ensureSymbolDataFresh', () => ({
+vi.mock('@/entities/news-article/lib/ensureSymbolNewsFresh', () => ({
     ensureSymbolNewsFresh,
 }));
 vi.mock('@/app/api/ai/chat/tools/searchTicker', () => ({
@@ -44,7 +44,7 @@ vi.mock('@/app/api/ai/chat/tools/webSearch', () => ({
 }));
 const e2eState = vi.hoisted(() => ({ on: false }));
 const naverState = vi.hoisted(() => ({ creds: false }));
-vi.mock('@/entities/news-article/api', () => ({
+vi.mock('@/shared/api/naver/naverSearch', () => ({
     naverAiCredentials: () =>
         naverState.creds ? { id: 'ai', secret: 's' } : null,
     searchNaverNews: vi.fn(),

@@ -111,10 +111,6 @@ vi.mock('@/app/[locale]/[symbol]/news/newsData', () => ({
     getNewsList: vi.fn(() => Promise.resolve([])),
 }));
 
-vi.mock('@/shared/lib/dateKey', () => ({
-    todayKstIsoDate: vi.fn(() => '2026-05-21'),
-}));
-
 const { mockGetAssetInfoResilient, mockGetProfileResilient } = vi.hoisted(
     () => ({
         mockGetAssetInfoResilient: vi.fn(),
@@ -158,7 +154,7 @@ vi.mock(
 );
 
 // fundamental generateMetadata는 noindex 게이트로 getProfileResilient를 호출한다.
-vi.mock('@/app/[locale]/[symbol]/fundamental/getProfileResilient', () => ({
+vi.mock('@/entities/ticker/lib/getProfileResilient', () => ({
     getProfileResilient: mockGetProfileResilient,
 }));
 

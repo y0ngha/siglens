@@ -62,12 +62,6 @@ vi.mock('@/entities/auth/lib/bcrypt', () => ({
     bcryptPasswordHasher: { hashPassword: vi.fn() },
     bcryptPasswordVerifier: { verifyPassword: vi.fn() },
 }));
-// getAuthDatabaseClient는 @/entities/auth/lib/db에서 직접 import되므로
-// (server-only 체인을 client 번들에서 분리) 해당 경로를 별도로 mock한다.
-vi.mock('@/entities/auth/lib/db', () => ({
-    getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
-    resetAuthDatabaseClientForTests: vi.fn(),
-}));
 vi.mock('@/entities/agreement/api', () => ({
     DrizzleAgreementRepository: vi.fn(),
 }));
@@ -88,9 +82,9 @@ import { DrizzleAgreementRepository } from '@/entities/agreement/api';
 import { DrizzleTermsRepository } from '@/entities/terms/api';
 import { registerAction } from '@/features/auth-signup/actions/registerAction';
 import {
-    getAuthDatabaseClient,
-    resetAuthDatabaseClientForTests,
-} from '@/entities/auth/lib/db';
+    getDatabaseClient,
+    resetDatabaseClientForTests,
+} from '@/shared/db/client';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 
 const mockCookies = cookies as MockedFunction<typeof cookies>;
@@ -100,8 +94,8 @@ const mockCreateTokenStore = createEmailTokenStore as MockedFunction<
     typeof createEmailTokenStore
 >;
 const mockRedirect = redirect as MockedFunction<typeof redirect>;
-const mockGetAuthDatabaseClient = getAuthDatabaseClient as MockedFunction<
-    typeof getAuthDatabaseClient
+const mockGetDatabaseClient = getDatabaseClient as MockedFunction<
+    typeof getDatabaseClient
 >;
 const MockTermsRepository = DrizzleTermsRepository as MockedClass<
     typeof DrizzleTermsRepository
@@ -160,7 +154,7 @@ describe('registerAction', () => {
     let setSpy: Mock;
 
     beforeEach(() => {
-        resetAuthDatabaseClientForTests();
+        resetDatabaseClientForTests();
         process.env.DATABASE_URL = 'postgres://test';
         setSpy = vi.fn();
         mockCookies.mockResolvedValue({
@@ -462,7 +456,7 @@ describe('registerAction', () => {
         });
 
         it('예상치 못한 내부 에러 발생 시 service_unavailable을 반환한다', async () => {
-            mockGetAuthDatabaseClient.mockImplementationOnce(() => {
+            mockGetDatabaseClient.mockImplementationOnce(() => {
                 throw new Error('Unexpected db error');
             });
             const result = await registerAction(

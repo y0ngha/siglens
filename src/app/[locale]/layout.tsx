@@ -25,12 +25,12 @@ import { GOOGLE_ADS_ID } from '@/shared/config/googleAds';
 import { ROOT_KEYWORDS, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import {
-    DEFAULT_LOCALE,
     isLocale,
     LOCALE_HREFLANG,
     localePath,
     resolvePrerenderLocales,
     type Locale,
+    resolveLocale,
 } from '@/shared/i18n/locales';
 import { pickMessages } from '@/shared/i18n/loadMessages';
 import { LocaleProvider } from '@/shared/i18n/LocaleContext';
@@ -68,7 +68,7 @@ export async function generateMetadata({
     params,
 }: LocaleParams): Promise<Metadata> {
     const { locale: raw } = await params;
-    const locale: Locale = isLocale(raw) ? raw : DEFAULT_LOCALE;
+    const locale = resolveLocale(raw);
     const siteUrl = `${SITE_URL}${localePath(locale, '/')}`.replace(/\/$/, '');
     // 루트 메타데이터도 카탈로그를 쓴다 — 예전에는 `ROOT_TITLE`·`SITE_DESCRIPTION`
     // 한국어 상수라 `/en`·`/ja`·`/zh`의 탭 제목과 공유 카드가 통째로 한국어였다.

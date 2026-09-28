@@ -2,8 +2,6 @@
 
 import { getLlmProvider } from '@/entities/llm-provider/api/getLlmProvider';
 import { getServerPrimaryKey } from '@/entities/llm-provider/lib/serverKeys';
-import { getLocale } from 'next-intl/server';
-import { isLocale, DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { withLocaleDirective } from '../lib/localeEnvelope';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
@@ -42,6 +40,7 @@ import { getClientIp } from '@/shared/api/getClientIp';
 import { getOrCreateGuestId } from '@/shared/api/guestId';
 import { isAiProviderFailure } from '@/shared/lib/aiProviderFailure';
 import type { SymbolChatActionResult } from '../model';
+import { resolveRequestLocale } from '@/shared/i18n/requestLocale';
 
 /**
  * Resolve the user's tier and BYOK key for the given model.
@@ -89,20 +88,6 @@ async function resolveUserContext(provider: LlmProvider): Promise<UserContext> {
         tierContext: { userId: user.id, tier },
         userApiKey: record?.apiKey,
     };
-}
-
-/**
- * 요청 로케일. 서버 액션이 로케일 접두사 없는 경로(`/AAPL`)에서 호출되거나
- * 프록시가 헤더를 심지 못한 경우를 대비해 기본 로케일로 떨어뜨린다 — 여기서
- * 던지면 챗 전체가 `server_error`가 된다.
- */
-async function resolveRequestLocale(): Promise<Locale> {
-    try {
-        const locale = await getLocale();
-        return isLocale(locale) ? locale : DEFAULT_LOCALE;
-    } catch {
-        return DEFAULT_LOCALE;
-    }
 }
 
 /**

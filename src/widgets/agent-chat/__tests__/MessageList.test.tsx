@@ -11,7 +11,7 @@ import {
     it,
     vi,
 } from 'vitest';
-import type { AgentUiMessage } from '@/features/agent-chat/hooks/useAgentStream';
+import type { AgentUiMessage } from '@/features/agent-chat/model/types';
 import ko from '../../../../messages/ko.json';
 
 const { labels } = vi.hoisted(() => ({

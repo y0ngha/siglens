@@ -113,9 +113,6 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     SITE_URL: 'https://siglens.io',
 }));
 
-vi.mock('@/shared/lib/dateKey', () => ({
-    todayKstIsoDate: () => '2026-07-24',
-}));
 vi.mock('@/shared/api/fmp/fmpUserMessage', () => ({
     getFmpUserFacingKey: vi.fn().mockReturnValue(null),
     translateFmpError: vi.fn().mockReturnValue(null),

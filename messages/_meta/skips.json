@@ -1,49 +1,49 @@
 [
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 212,
+        "line": 210,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 평단`"
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 213,
+        "line": 211,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 평단 계산`"
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 214,
+        "line": 212,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 내 위치`"
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 215,
+        "line": 213,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 52주 범위`"
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 216,
+        "line": 214,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 평단`"
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 216,
+        "line": 214,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 내 위치`"
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 217,
+        "line": 215,
         "reason": "seo-keywords-ko-only",
         "text": "평단 확인"
     },
     {
         "file": "src/app/[locale]/[symbol]/position/page.tsx",
-        "line": 218,
+        "line": 216,
         "reason": "seo-keywords-ko-only",
         "text": "52주 최고가 최저가"
     },
@@ -61,109 +61,109 @@
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 56,
+        "line": 52,
         "reason": "seo-keywords-ko-only",
         "text": "한국 경제 지표"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 57,
+        "line": 53,
         "reason": "seo-keywords-ko-only",
         "text": "한국은행 기준금리"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 58,
+        "line": 54,
         "reason": "seo-keywords-ko-only",
         "text": "국내 소비자물가"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 59,
+        "line": 55,
         "reason": "seo-keywords-ko-only",
         "text": "한국 실업률"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 60,
+        "line": 56,
         "reason": "seo-keywords-ko-only",
         "text": "한국 GDP 성장률"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 61,
+        "line": 57,
         "reason": "seo-keywords-ko-only",
         "text": "국고채 금리"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 62,
+        "line": 58,
         "reason": "seo-keywords-ko-only",
         "text": "국내 경제 캘린더"
     },
     {
         "file": "src/app/[locale]/economy/kr/page.tsx",
-        "line": 63,
+        "line": 59,
         "reason": "seo-keywords-ko-only",
         "text": "수출 증가율"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 77,
+        "line": 73,
         "reason": "seo-keywords-ko-only",
         "text": "미국 경제 지표"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 78,
+        "line": 74,
         "reason": "seo-keywords-ko-only",
         "text": "미국 기준금리"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 79,
+        "line": 75,
         "reason": "seo-keywords-ko-only",
         "text": "FOMC 일정"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 80,
+        "line": 76,
         "reason": "seo-keywords-ko-only",
         "text": "CPI 발표"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 81,
+        "line": 77,
         "reason": "seo-keywords-ko-only",
         "text": "미국 실업률"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 82,
+        "line": 78,
         "reason": "seo-keywords-ko-only",
         "text": "경제 캘린더"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 83,
+        "line": 79,
         "reason": "seo-keywords-ko-only",
         "text": "장단기 금리차"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 84,
+        "line": 80,
         "reason": "seo-keywords-ko-only",
         "text": "미국 경기침체"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 85,
+        "line": 81,
         "reason": "seo-keywords-ko-only",
         "text": "2s10s 스프레드"
     },
     {
         "file": "src/app/[locale]/economy/page.tsx",
-        "line": 86,
+        "line": 82,
         "reason": "seo-keywords-ko-only",
         "text": "10년물 국채 금리"
     },
@@ -469,79 +469,79 @@
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
-        "line": 107,
+        "line": 104,
         "reason": "seo-keywords-ko-only",
         "text": "시장 뉴스"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
-        "line": 108,
+        "line": 105,
         "reason": "seo-keywords-ko-only",
         "text": "주식 뉴스"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
-        "line": 109,
+        "line": 106,
         "reason": "seo-keywords-ko-only",
         "text": "시장 뉴스 한국어"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
-        "line": 110,
+        "line": 107,
         "reason": "seo-keywords-ko-only",
         "text": "AI 뉴스 다이제스트"
     },
     {
         "file": "src/app/[locale]/news/page.tsx",
-        "line": 111,
+        "line": 108,
         "reason": "seo-keywords-ko-only",
         "text": "Siglens 뉴스"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 85,
+        "line": 80,
         "reason": "seo-keywords-ko-only",
         "text": "미국 시장 뉴스"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 87,
+        "line": 82,
         "reason": "seo-keywords-ko-only",
         "text": "미국 마켓 뉴스"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 88,
+        "line": 83,
         "reason": "seo-keywords-ko-only",
         "text": "미국 주식 뉴스"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 89,
+        "line": 84,
         "reason": "seo-keywords-ko-only",
         "text": "미국 외환 뉴스"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 90,
+        "line": 85,
         "reason": "seo-keywords-ko-only",
         "text": "시장 뉴스 한국어"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 91,
+        "line": 86,
         "reason": "seo-keywords-ko-only",
         "text": "미국 주식 뉴스 요약"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 92,
+        "line": 87,
         "reason": "seo-keywords-ko-only",
         "text": "AI 뉴스 다이제스트"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
-        "line": 93,
+        "line": 88,
         "reason": "seo-keywords-ko-only",
         "text": "Siglens 뉴스"
     },
@@ -607,7 +607,7 @@
     },
     {
         "file": "src/entities/auth/lib/loginUser.ts",
-        "line": 12,
+        "line": 13,
         "reason": "log-fallback-message",
         "text": "이메일 또는 비밀번호가 올바르지 않습니다."
     },
@@ -1032,12 +1032,6 @@
         "text": "코스피·코스닥 등 국내 증시 주요 뉴스를 네이버 뉴스에서 모았습니다."
     },
     {
-        "file": "src/entities/news-article/lib/naverNewsSearch.ts",
-        "line": 212,
-        "reason": "developer-diagnostic",
-        "text": "`${logTag} NAVER_CLIENT_ID/SECRET 미설정 — 빈 결과로 degrade`"
-    },
-    {
         "file": "src/entities/ticker/actions/searchTickerAction.ts",
         "line": 24,
         "reason": "e2e-stub",
@@ -1075,49 +1069,49 @@
     },
     {
         "file": "src/shared/api/dataGoKr/krxListedInfoClient.ts",
-        "line": 289,
+        "line": 290,
         "reason": "developer-diagnostic",
         "text": "[krxListedInfo] DATA_GO_KR_SERVICE_KEY 미설정 — 빈 목록 반환"
     },
     {
         "file": "src/shared/api/dataGoKr/krxListedInfoClient.ts",
-        "line": 306,
+        "line": 307,
         "reason": "developer-diagnostic",
         "text": "`[krxListedInfo] 예산(${TOTAL_BUDGET_MS}ms) 소진 — ${date}까지 확인하고 중단`"
     },
     {
         "file": "src/shared/api/dataGoKr/krxListedInfoClient.ts",
-        "line": 313,
+        "line": 314,
         "reason": "developer-diagnostic",
         "text": "`[krxListedInfo] 최근 ${MAX_DATE_LOOKBACK_DAYS}일 안에서 데이터를 찾지 못했다`"
     },
     {
         "file": "src/shared/api/dataGoKr/krxListedInfoClient.ts",
-        "line": 331,
+        "line": 332,
         "reason": "developer-diagnostic",
         "text": "`[krxListedInfo] 예산(${TOTAL_BUDGET_MS}ms) 소진 — ${basDt} ${pageNo}페이지에서 중단, 결과가 잘"
     },
     {
         "file": "src/shared/api/dataGoKr/krxListedInfoClient.ts",
-        "line": 354,
+        "line": 355,
         "reason": "developer-diagnostic",
         "text": "`[krxListedInfo] MAX_PAGES(${MAX_PAGES}) 도달 — 결과가 잘렸을 수 있다`"
     },
     {
         "file": "src/shared/api/e2eAnalysisStub.ts",
-        "line": 115,
+        "line": 114,
         "reason": "e2e-stub",
         "text": "E2E 강제 분석 실패 (resilience 테스트용)"
     },
     {
         "file": "src/shared/api/e2eAnalysisStub.ts",
-        "line": 128,
+        "line": 127,
         "reason": "e2e-stub",
         "text": "E2E 강제 재무제표 분석 실패 (resilience 테스트용)"
     },
     {
         "file": "src/shared/api/e2eAnalysisStub.ts",
-        "line": 154,
+        "line": 153,
         "reason": "e2e-stub",
         "text": "E2E 강제 congress 동향 분석 실패 (resilience 테스트용)"
     },
@@ -1126,6 +1120,12 @@
         "line": 99,
         "reason": "developer-diagnostic",
         "text": "`[KR_EQUITY_SESSION] ${date}는 KR_MARKET_HOLIDAYS 관측 지평선(${KR_CALENDAR_HORIZON}) "
+    },
+    {
+        "file": "src/shared/api/naver/naverSearch.ts",
+        "line": 213,
+        "reason": "developer-diagnostic",
+        "text": "`${logTag} NAVER_CLIENT_ID/SECRET 미설정 — 빈 결과로 degrade`"
     },
     {
         "file": "src/shared/config/canonical-korean-names.ts",
@@ -3061,7 +3061,7 @@
     },
     {
         "file": "src/shared/lib/formatKoreanDateTime.ts",
-        "line": 63,
+        "line": 60,
         "reason": "ko-grammar",
         "text": "`${get('year')}년 ${get('month')}월 ${get('day')}일 ${hour}시 ${minute}분`"
     },

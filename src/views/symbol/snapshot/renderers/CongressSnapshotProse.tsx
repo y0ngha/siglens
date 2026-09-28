@@ -37,8 +37,6 @@ interface CongressSnapshotProseProps {
     plain?: string | null;
 }
 
-export { hasCongressProse } from './congressContent';
-
 /**
  * SEO pre-warm 스냅샷의 congress 탭 프로즈 렌더러 — Task 6, 다섯 번째 탭
  * 렌더러. `summaryKo`를 문단으로(`\n` 기준 분리), `overallSentiment`가

@@ -9,16 +9,16 @@
  * 그 단어가 든 경로를 막는다.
  */
 import { constants } from 'node:http2';
-import { after } from 'next/server';
 import { headers } from 'next/headers';
 import { buildVisitorHash } from '@/entities/visitor/lib/visitorHash';
 import { DrizzleVisitorRepository } from '@/entities/visitor/api';
 import { getClientIp } from '@/shared/api/getClientIp';
 import { isBot } from '@/shared/api/isBot';
 import { getDatabaseClient } from '@/shared/db/client';
-import { kstDateKey, kstDateKeyDaysBefore } from '@/shared/lib/etTimeUtils';
+import { kstDateKey } from '@/shared/lib/etTimeUtils';
+import { createDailyPruner, noContent } from './_shared/dailyPruner';
 
-const { HTTP_STATUS_NO_CONTENT, HTTP_STATUS_INTERNAL_SERVER_ERROR } = constants;
+const { HTTP_STATUS_INTERNAL_SERVER_ERROR } = constants;
 
 export const dynamic = 'force-dynamic';
 
@@ -30,18 +30,7 @@ export const dynamic = 'force-dynamic';
  */
 const RETENTION_DAYS = 400;
 
-/**
- * 이 인스턴스가 마지막으로 정리를 돌린 KST 날짜.
- *
- * 보존 기간 집행을 위해 별도 EventBridge cron을 만들지 않는다. `DELETE`는
- * 멱등이라 인스턴스가 몇 개든, 같은 날 몇 번 돌든 결과가 같다. 트래픽이 0이면
- * 정리도 안 돌지만 그때는 지울 행도 없다.
- */
-let lastPrunedDate: string | null = null;
-
-function noContent(): Response {
-    return new Response(null, { status: HTTP_STATUS_NO_CONTENT });
-}
+const pruneOncePerDay = createDailyPruner(RETENTION_DAYS, '[visitor-metrics]');
 
 /**
  * 비콘이 뜬 페이지의 경로. 비콘은 same-origin `fetch`라 `Referer`에 현재 페이지
@@ -104,27 +93,10 @@ export async function POST(): Promise<Response> {
     } catch (error) {
         // 집계 실패가 사용자 화면을 깨뜨리면 안 된다.
         console.error('[visitor-metrics] recordVisit failed:', error);
-        /**
-         * 정리도 건너뛴다. DB가 죽어 있으면 어차피 실패할 뿐 아니라,
-         * `lastPrunedDate`를 오늘로 소진해 버리면 그날 남은 요청이 전부
-         * 정리를 건너뛴다 — 다음 성공 요청에 기회를 남긴다.
-         */
+        // 정리도 건너뛴다 — 이유는 `createDailyPruner` 참조.
         return noContent();
     }
 
-    if (lastPrunedDate !== today) {
-        lastPrunedDate = today;
-        after(async () => {
-            try {
-                await repo.pruneOlderThan(
-                    kstDateKeyDaysBefore(today, RETENTION_DAYS)
-                );
-            } catch (error) {
-                // 다음 날 다시 시도된다.
-                console.error('[visitor-metrics] prune failed:', error);
-            }
-        });
-    }
-
+    pruneOncePerDay(today, repo);
     return noContent();
 }

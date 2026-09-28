@@ -9,7 +9,7 @@ import {
     loadStaticSitemapInputs,
 } from '@/entities/sitemap-entry/server';
 import { validateBacktestData } from '@/entities/backtest-case/lib/validate';
-import backtestData from '@/app/[locale]/backtesting/data.json';
+import backtestData from '@/entities/backtest-case/data/data.json';
 
 /**
  * 자식 sitemap(static/popular/crypto)의 엔트리 목록을 만드는 **유일한** 경로.

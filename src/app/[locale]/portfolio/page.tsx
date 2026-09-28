@@ -1,6 +1,6 @@
 import { useTranslations } from 'next-intl';
 import { localeCanonical, localePageSocial } from '@/shared/lib/seoAlternates';
-import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 import { PositionHoldingCard } from './PositionHoldingCard';
 import { PortfolioManager } from './PortfolioManager';
 import { cn } from '@/shared/lib/cn';
@@ -13,8 +13,9 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import type { PortfolioHoldingView } from '@/entities/portfolio/model';
-import { DEFAULT_LOCALE, isLocale, localePath } from '@/shared/i18n/locales';
+import { localePath, resolveLocale } from '@/shared/i18n/locales';
 import type { Locale } from '@/shared/i18n/locales';
+import { enterLocale } from '@/shared/lib/enterLocale';
 
 // noindex 페이지에도 canonical/og:url을 명시한다 (login/signup/account
 // 정책과 일관). 외부에 변형 URL이 공유되더라도 "원본은 /portfolio 하나"라는 신호를
@@ -29,10 +30,10 @@ export async function generateMetadata({
 }: {
     readonly params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
-    const { locale } = await params;
-    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const { locale: rawLocale } = await params;
+    const locale = resolveLocale(rawLocale);
     const tSeo = await getTranslations({
-        locale: resolved,
+        locale,
         namespace: 'shared.seo',
     });
     const title = tSeo('portfolio.title');
@@ -40,8 +41,8 @@ export async function generateMetadata({
     return {
         title,
         description,
-        alternates: { canonical: localeCanonical(resolved, '/portfolio') },
-        ...localePageSocial(resolved, '/portfolio', {
+        alternates: { canonical: localeCanonical(locale, '/portfolio') },
+        ...localePageSocial(locale, '/portfolio', {
             title,
             description,
         }),
@@ -209,11 +210,7 @@ export default async function PortfolioPage({
     readonly params: Promise<{ locale: string }>;
 }) {
     const { locale: rawLocale } = await params;
-    const locale = isLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
-    // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
-    // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
-    // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
-    setRequestLocale(locale);
+    const locale = enterLocale(rawLocale);
     const t = await getTranslations('app.portfolio');
     return (
         <main className="min-h-[calc(100dvh-var(--header-h))] bg-secondary-950 px-4 py-12">

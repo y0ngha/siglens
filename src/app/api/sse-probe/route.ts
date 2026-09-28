@@ -1,5 +1,5 @@
 import { constants } from 'node:http2';
-import { safeBearerCompare } from '@/shared/lib/auth/safeBearerCompare';
+import { isAuthorizedCronRequest } from '@/shared/lib/auth/isAuthorizedCronRequest';
 import { MS_PER_SECOND } from '@/shared/config/time';
 
 const { HTTP_STATUS_UNAUTHORIZED } = constants;
@@ -74,11 +74,7 @@ function readPositiveInt(
 }
 
 export function GET(request: Request): Response {
-    const expected = process.env.CRON_SECRET;
-    if (!expected) {
-        return new Response(null, { status: HTTP_STATUS_UNAUTHORIZED });
-    }
-    if (!safeBearerCompare(request.headers.get('authorization'), expected)) {
+    if (!isAuthorizedCronRequest(request)) {
         return new Response(null, { status: HTTP_STATUS_UNAUTHORIZED });
     }
 

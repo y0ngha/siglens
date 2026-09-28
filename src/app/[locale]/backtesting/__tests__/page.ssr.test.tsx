@@ -45,7 +45,7 @@ vi.mock('next/navigation', () => ({
 
 import BacktestingPage from '@/app/[locale]/backtesting/page';
 import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
-import backtestData from '@/app/[locale]/backtesting/data.json';
+import backtestData from '@/entities/backtest-case/data/data.json';
 
 describe('/backtesting SSR output', () => {
     it('renders every real case ticker in the effect-free first render pass', async () => {

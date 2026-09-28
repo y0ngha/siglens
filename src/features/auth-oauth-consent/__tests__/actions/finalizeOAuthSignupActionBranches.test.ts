@@ -65,10 +65,8 @@ vi.mock('@/entities/auth/api', () => ({
         return {};
     }),
 }));
-// getAuthDatabaseClient는 @/entities/auth/lib/db에서 직접 import되므로
-// (server-only 체인을 client 번들에서 분리) 해당 경로를 별도로 mock한다.
-vi.mock('@/entities/auth/lib/db', () => ({
-    getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
 vi.mock('next/headers', () => ({
     cookies: vi.fn(),

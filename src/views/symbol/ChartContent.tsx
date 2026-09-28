@@ -39,7 +39,7 @@ import { TechnicalFactsSummary } from './TechnicalFactsSummary';
 import type { AnalysisStatus } from './utils/analysisStatus';
 import { getAnalysisStatus } from './utils/analysisStatus';
 import { buildChatState } from './utils/buildChatState';
-import { buildTechnicalFacts } from './utils/technicalFacts';
+import { buildTechnicalFacts } from '@/entities/bars/lib/technicalFacts';
 import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
 import { deriveChartStatus } from '@/features/share/lib/deriveChartStatus';
 import { useTranslations } from 'next-intl';

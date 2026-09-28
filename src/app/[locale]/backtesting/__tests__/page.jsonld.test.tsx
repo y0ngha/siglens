@@ -50,7 +50,7 @@ vi.mock('@/shared/ui/JsonLd', () => ({
         return null;
     },
 }));
-vi.mock('@/app/[locale]/backtesting/data.json', () => ({
+vi.mock('@/entities/backtest-case/data/data.json', () => ({
     default: {
         meta: { totalCases: 1, totalTickers: 1 },
         // `validateBacktestData`가 항등함수로 mock되므로 이 픽스처가 곧 런타임 shape다.

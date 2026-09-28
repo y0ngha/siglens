@@ -11,4 +11,3 @@ export interface UserTierDependencies {
     /** Repository that persists user tier assignments. */
     users: UserTierRepository;
 }
-

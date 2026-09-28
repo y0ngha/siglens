@@ -1,30 +1,25 @@
 import { getTranslations } from 'next-intl/server';
 import { getFinancialsPageData } from '@/app/[locale]/[symbol]/financials/financialData';
-import { setRequestLocale } from 'next-intl/server';
-import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
+import { resolveLocale } from '@/shared/i18n/locales';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import {
     getFinancialsSnapshot,
     isEmptyFinancialsSnapshot,
 } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
-import { getProfileResilient } from '@/app/[locale]/[symbol]/fundamental/getProfileResilient';
+import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
 import { FinancialsDegraded } from '@/app/[locale]/[symbol]/financials/FinancialsDegraded';
 import { FinancialsAiSummary } from '@/widgets/financials/FinancialsAiSummary';
 import { FinancialsScorecard } from '@/widgets/financials/FinancialsScorecard';
-import { statementCurrencyOf } from '@/widgets/financials/utils/numberFormat';
+import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
 import { FinancialsStatements } from '@/widgets/financials/FinancialsStatements';
 import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
-import {
-    FinancialsSnapshotProse,
-    hasFinancialsProse,
-} from '@/views/symbol/snapshot/renderers/FinancialsSnapshotProse';
+import { FinancialsSnapshotProse } from '@/views/symbol/snapshot/renderers/FinancialsSnapshotProse';
+import { hasFinancialsProse } from '@/views/symbol/snapshot/renderers/financialsContent';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { FaqSection } from '@/shared/ui/FaqSection';
-import {
-    isAdmissibleSymbolShape,
-    type SymbolRouteParams,
-} from '@/shared/config/market';
+import { type SymbolRouteParams } from '@/shared/config/market';
+import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
@@ -32,8 +27,6 @@ import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import {
     buildBreadcrumbJsonLd,
-    buildSnapshotMetaDescription,
-    symbolTabDescriptionLabel,
     buildSymbolFinancialsSeoContent,
     buildSymbolSeoContent,
     symbolMetadataFromSeo,
@@ -41,6 +34,7 @@ import {
     noindexSymbolMetadata,
     type FaqItem,
 } from '@/shared/lib/seo';
+import { loadTabSnapshotMeta } from '@/app/[locale]/[symbol]/symbolSnapshotDescription';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
@@ -50,6 +44,7 @@ import {
     profileIdForSymbol,
 } from '@/shared/config/marketProfile/registry';
 import { type MarketProfileId } from '@/shared/config/marketProfile/types';
+import { enterLocale } from '@/shared/lib/enterLocale';
 
 // 종목당 재무제표는 분기(약 45일) 단위로 갱신된다. 24h revalidate는 엣지 캐시를 최대한 활용하면서
 // 다음 분기 공시 이전에 오래된 데이터를 서빙하지 않는 균형점이다.
@@ -68,7 +63,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { locale: rawLocale, symbol } = await params;
-    const locale = isLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
+    const locale = resolveLocale(rawLocale);
     const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     const upper = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
@@ -131,42 +126,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         displayName,
         koreanName: assetInfo?.koreanName,
         englishName: assetInfo?.name,
-        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        locale,
     });
     const metadata = symbolMetadataFromSeo(seo, locale);
 
-    // snapshot-derived unique description (spec 2026-07-24 Task 8). Same
-    // getSeoSnapshotsStatic(upper, revalidate) call the page body makes below —
-    // unstable_cache dedupes it within this render, so this is a cache hit, not
-    // an extra DB round-trip. Falls back to the templated description when no
-    // snapshot exists (backward compatible). og/twitter keep the templated copy
-    // — only the search-facing <meta name="description"> is overridden.
-    const snap = (await getSeoSnapshotsStatic(upper, revalidate, locale)).find(
-        s => s.tab === 'financials'
-    );
-    const snapshotDescription = snap
-        ? buildSnapshotMetaDescription(
-              'financials',
-              snap.content,
-              displayName,
-              null,
-              locale,
-              symbolTabDescriptionLabel('financials', 'equity', tSeo)
-          )
-        : null;
+    // snapshot-derived unique description (spec 2026-07-24 Task 8).
+    const { description: snapshotDescription } = await loadTabSnapshotMeta({
+        symbol: upper,
+        tab: 'financials',
+        revalidate,
+        locale,
+        displayName,
+        assetClass: 'equity',
+        tSeo,
+    });
     return snapshotDescription
         ? { ...metadata, description: snapshotDescription }
         : metadata;
 }
 
 export default async function FinancialsPage({ params }: Props) {
-    const { locale, symbol } = await params;
-    // DB 스냅샷은 로케일별 행이라 좁혀진 로케일이 필요하다. URL 세그먼트는 신뢰 경계다.
-    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
-    // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
-    // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
-    // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
-    setRequestLocale(locale);
+    const { locale: rawLocale, symbol } = await params;
+    const locale = enterLocale(rawLocale);
     const t = await getTranslations('app.symbol');
     const tSeo = await getTranslations('shared.seo');
     const upper = symbol.toUpperCase();
@@ -191,7 +172,7 @@ export default async function FinancialsPage({ params }: Props) {
     ] = await Promise.all([
         getProfileResilient(upper),
         getAssetInfoResilient(upper),
-        getSeoSnapshotsStatic(upper, revalidate, resolved),
+        getSeoSnapshotsStatic(upper, revalidate, locale),
     ]);
     const financialsSnapshot = snapshots.find(s => s.tab === 'financials');
     // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasFinancialsProse)
@@ -210,11 +191,7 @@ export default async function FinancialsPage({ params }: Props) {
     if (isUnresolvableDegraded(upper, degraded)) notFound();
 
     const displayName = assetInfo
-        ? buildDisplayName(
-              assetInfo,
-              upper,
-              isLocale(locale) ? locale : DEFAULT_LOCALE
-          )
+        ? buildDisplayName(assetInfo, upper, locale)
         : upper;
     // CrossLinkCards에 넘길 시장 프로필. financials도 fundamental과 동일하게
     // assetInfo가 optional이라(FMP profile만 있어도 렌더) marketProfileOf(assetInfo)를
@@ -272,7 +249,7 @@ export default async function FinancialsPage({ params }: Props) {
             displayName,
             koreanName: assetInfo?.koreanName,
             englishName: assetInfo?.name,
-            locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+            locale,
         }
     );
 
@@ -281,13 +258,7 @@ export default async function FinancialsPage({ params }: Props) {
     // optional이라 ticker를 fallback name으로 사용한다.
     const aboutNode = buildAssetAboutNode(
         upper,
-        assetInfo
-            ? pickAssetName(
-                  assetInfo,
-                  upper,
-                  isLocale(locale) ? locale : DEFAULT_LOCALE
-              )
-            : upper,
+        assetInfo ? pickAssetName(assetInfo, upper, locale) : upper,
         assetInfo?.fmpSymbol
     );
 
@@ -296,7 +267,7 @@ export default async function FinancialsPage({ params }: Props) {
         name: fullTitle,
         description,
         about: aboutNode,
-        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        locale,
         // 화면에 실제로 그려지는 스냅샷일 때만 신선도를 주장한다 —
         // 렌더 불가한 행은 본문에 한 글자도 남기지 않는다.
         generatedAt: showFinancialsProse
@@ -309,7 +280,7 @@ export default async function FinancialsPage({ params }: Props) {
             { name: displayName, url: buildSymbolSeoContent(upper, tSeo).url },
             { name: t('page.128c11'), url },
         ],
-        isLocale(locale) ? locale : DEFAULT_LOCALE
+        locale
     );
 
     // FAQ — 화면 `FaqSection`과 FAQPage 구조화데이터의 단일 소스.
@@ -343,7 +314,7 @@ export default async function FinancialsPage({ params }: Props) {
                 </SymbolPageHeading>
                 <FinancialsScorecard
                     scorecard={scorecard}
-                    currency={statementCurrencyOf(upper)}
+                    currency={currencyForSymbol(upper)}
                 />
 
                 {/* audit fix FIX 2: XOR — FinancialsAiSummary (client widget) and

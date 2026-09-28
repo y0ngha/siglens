@@ -19,7 +19,7 @@ import { SiglensMark } from '@/widgets/agent-chat/SiglensMark';
 import type { FaqItem } from '@/shared/lib/seo';
 import { buildScenarios } from './lib/aboutContent';
 import { AboutCtaBar } from './ui/AboutCtaBar';
-import { ChatReplay } from './ui/ChatReplay';
+import { ChatReplay } from '@/widgets/replay/ChatReplay';
 
 interface Props {
     readonly locale: Locale;

@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getBarsAction } from '@/entities/bars/actions/getBarsAction';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { BARS_STALE_TIME_MS, QUERY_KEYS } from '@/shared/config/queryConfig';
-import { buildTechnicalFacts } from '@/views/symbol/utils/technicalFacts';
+import { buildTechnicalFacts } from '@/entities/bars/lib/technicalFacts';
 import { computePosition } from '@/widgets/portfolio-position/lib/positionGeometry';
 import { formatAmount } from '@/widgets/portfolio-position/lib/positionBuildingNotes';
 import { PositionBuilding } from '@/widgets/portfolio-position/ui/PositionBuilding';

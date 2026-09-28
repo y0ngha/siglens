@@ -10,10 +10,10 @@ import { earningsReports } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
-import { todayKstIsoDate } from '@/shared/lib/dateKey';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { getRedisClient } from '@/shared/cache/redisClient';
 import { isEarningsReportStale } from './lib/isEarningsReportStale';
+import { kstDateKey } from '@/shared/lib/etTimeUtils';
 
 export const EARNINGS_REPORT_FMP_LIMIT = 5;
 
@@ -399,5 +399,5 @@ export async function getNextEarningsReport(
         }
     }
 
-    return repo.getNextForSymbol(symbol, todayKstIsoDate());
+    return repo.getNextForSymbol(symbol, kstDateKey(new Date()));
 }

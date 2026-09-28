@@ -1,15 +1,13 @@
 import { fmpGet } from '@/shared/api/fmp/httpClient';
-import {
-    hashUrlToId,
-    normalizeFmpPublishedDate,
-} from '@/entities/news-article/lib/fmpNewsClient';
+import { normalizeFmpPublishedDate } from '@/shared/api/fmp/normalizeFmpPublishedDate';
+import { detectTruncatedBody } from '@/shared/lib/news/detectTruncatedBody';
+import { hashUrlToId } from '@/shared/lib/news/hashUrlToId';
 import { CATEGORY_CONFIG, type NewsFeedCategoryId } from './categoryConfig';
 import type {
     MarketNewsClientPort,
     MarketNewsItem,
 } from './marketNewsClientPort';
 import { FMP_NEWS_FETCH_LIMIT } from './marketNewsConstants';
-import { detectTruncatedBody } from '@/entities/news-article/lib/detectTruncatedBody';
 
 /** Raw shape returned by FMP `/stable/news/{general,stock,crypto,forex}-latest`. */
 interface RawFmpLatestNews {

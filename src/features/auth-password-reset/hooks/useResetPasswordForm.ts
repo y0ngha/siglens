@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
-import type { ResetPasswordFormState } from '@/shared/lib/types';
+import type { ResetPasswordFormState } from '@/shared/lib/auth/formTypes';
 import { confirmPasswordResetAction } from '../actions/confirmPasswordResetAction';
 
 const INITIAL_STATE: ResetPasswordFormState = { error: null };

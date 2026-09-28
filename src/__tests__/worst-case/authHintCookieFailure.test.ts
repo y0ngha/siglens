@@ -45,10 +45,8 @@ vi.mock('@/entities/auth/api', () => ({
 vi.mock('@/entities/auth/lib/bcrypt', () => ({
     bcryptPasswordVerifier: { verifyPassword: vi.fn() },
 }));
-// getAuthDatabaseClient는 @/entities/auth/lib/db에서 직접 import되므로
-// (server-only 체인을 client 번들에서 분리) 해당 경로를 별도로 mock한다.
-vi.mock('@/entities/auth/lib/db', () => ({
-    getAuthDatabaseClient: vi.fn(() => ({ db: {} })),
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: vi.fn(() => ({ db: {} })),
 }));
 
 // `importActual`로 실제 모듈을 펼친 뒤 필요한 것만 덮는다. 열거식으로

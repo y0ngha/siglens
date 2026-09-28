@@ -1,12 +1,11 @@
 import type { EmailMessage } from '@/shared/email/types';
 import { DEFAULT_LOCALE, localePath, type Locale } from '@/shared/i18n/locales';
+import { SITE_HOST, SITE_NAME } from '@/shared/lib/seo';
 import type { EmailTranslator } from './emailTranslator';
 
-// Duplicates @/shared/lib/seo SITE_NAME/SITE_URL — update both if changed.
-const SITE_NAME = 'Siglens';
-
-// Matches SITE_URL in @/shared/lib/seo — update both when the default URL changes.
-export const DEFAULT_SITE_URL = 'https://siglens.io';
+// `SITE_URL`(shared/lib/seo)과 같은 기본값. 그 상수를 직접 쓰지 않는 이유는 아래
+// `buildSiteUrl` — 모듈 로드 시점이 아니라 호출 시점에 env를 읽어야 한다.
+export const DEFAULT_SITE_URL = `https://${SITE_HOST}`;
 
 // Resolved per-call so tests can override NEXT_PUBLIC_SITE_URL via process.env (Domain #3).
 function buildSiteUrl(): string {

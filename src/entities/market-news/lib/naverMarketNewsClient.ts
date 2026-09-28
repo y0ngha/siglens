@@ -1,5 +1,5 @@
 import { toNaverNewsItem } from '@/entities/news-article/lib/naverNewsClient';
-import { searchNaverNews } from '@/entities/news-article/lib/naverNewsSearch';
+import { searchNaverNews } from '@/shared/api/naver/naverSearch';
 import { CATEGORY_CONFIG, type NewsFeedCategoryId } from './categoryConfig';
 import type {
     MarketNewsClientPort,

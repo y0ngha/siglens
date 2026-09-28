@@ -10,7 +10,7 @@ import {
     DrizzleSessionRepository,
     DrizzleUserRepository,
 } from '@/entities/auth/api';
-import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
+import { getDatabaseClient } from '@/shared/db/client';
 import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/lib/pendingOAuthSignupStore';
 import {
     buildOAuthRedirectUri,
@@ -114,7 +114,7 @@ export async function GET(
         );
     }
 
-    const { db } = getAuthDatabaseClient();
+    const { db } = getDatabaseClient();
     const userRepo = new DrizzleUserRepository(db);
     const sessionRepo = new DrizzleSessionRepository(db);
 

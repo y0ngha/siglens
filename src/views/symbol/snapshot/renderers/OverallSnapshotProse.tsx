@@ -37,8 +37,6 @@ interface OverallSnapshotProseProps {
     plain?: string | null;
 }
 
-export { hasOverallProse } from './overallContent';
-
 /**
  * SEO pre-warm 스냅샷의 overall 탭 프로즈 렌더러 — `TechnicalSnapshotProse`가
  * 세운 패턴(spec 2026-07-24 Task 4)을 그대로 따르는 두 번째 탭 렌더러(Task 5).

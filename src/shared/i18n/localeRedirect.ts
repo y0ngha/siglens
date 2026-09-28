@@ -2,11 +2,10 @@ import 'server-only';
 import { redirect } from 'next/navigation';
 import { getLocale } from 'next-intl/server';
 import {
-    DEFAULT_LOCALE,
     isApiPath,
-    isLocale,
     localePath,
     splitLocalePath,
+    resolveLocale,
 } from './locales';
 
 /**
@@ -35,7 +34,7 @@ import {
  */
 export async function localeHref(path: string): Promise<string> {
     const raw = await getLocale();
-    const locale = isLocale(raw) ? raw : DEFAULT_LOCALE;
+    const locale = resolveLocale(raw);
 
     const hashIndex = path.indexOf('#');
     const hash = hashIndex === -1 ? '' : path.slice(hashIndex);

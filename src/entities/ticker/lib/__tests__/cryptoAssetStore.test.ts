@@ -6,15 +6,16 @@ const mockFindBySymbol = vi.fn();
 const mockSearch = vi.fn();
 const mockFmpCryptoMembership = vi.fn();
 
-// The `tryGetTickerDatabaseClient` return value drives `tryGetRepository()`.
+// The `tryGetDatabaseClient` return value drives `tryGetRepository()`.
 // When null, the whole function returns null (no DB path). When non-null,
 // DrizzleCryptoAssetRepository is constructed from the returned `.db` value.
 // We mock both the db client AND the repository class so the class is never
 // actually instantiated against a real drizzle DB in tests.
 let mockDbClient: null | { db: unknown } = null;
 
-vi.mock('../db', () => ({
-    tryGetTickerDatabaseClient: () => mockDbClient,
+vi.mock('@/shared/db/client', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/db/client')>()),
+    tryGetDatabaseClient: () => mockDbClient,
 }));
 
 // Match the import path in cryptoAssetStore.ts so vitest intercepts the import.

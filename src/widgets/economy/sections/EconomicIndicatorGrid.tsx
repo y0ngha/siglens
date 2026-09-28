@@ -18,6 +18,7 @@ import {
     type EconomyIndicatorMeta,
 } from '@/shared/config/economyIndicators';
 import { cn } from '@/shared/lib/cn';
+import { signColorClass } from '@/shared/lib/priceFormat';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import {
     HEADING_SECTION,
@@ -264,10 +265,7 @@ function YieldSpreadCard({ snapshot }: YieldSpreadCardProps) {
                 <InfoTooltip>{t('EconomicIndicatorGrid.868089')}</InfoTooltip>
             </header>
             <div
-                className={cn(
-                    'text-2xl font-semibold',
-                    positive ? 'text-ui-success-text' : 'text-ui-danger-text'
-                )}
+                className={cn('text-2xl font-semibold', signColorClass(spread))}
             >
                 {positive ? '+' : ''}
                 {spread.toFixed(TREASURY_YIELD_PRECISION)}

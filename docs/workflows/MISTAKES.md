@@ -474,6 +474,25 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ const TRANSIENT_CODES = ['57P01', '08006']; regex `/\b(${TRANSIENT_CODES.join('|')})\b/` — word boundary
     ✅ const TRANSIENT_SQLSTATE_SET = new Set(TRANSIENT_CODES); ... TRANSIENT_SQLSTATE_SET.has(extractedCode) — exact token match
     → Recurring: PR #456 B4 (SQLSTATE false positive on user data like `pk_constraint_53300_check`)
+
+26. i18n artifacts must be regenerated after code changes
+    → When source code changes (shifting lines in files with skipped i18n literals, changing route import graph, adding/removing i18n references), regenerate i18n artifacts by running `yarn i18n:extract --write`
+    → Stale artifact manifests (skip markers in `messages/_meta/skips.json`, clientKeys in `messages/_meta/clientKeys.json`) cause subsequent extraction to fail or miss updates
+    ❌ Edit src/app/page.tsx (shifts lines of code with skipped i18n literals) → commit without running `yarn i18n:extract --write` → subsequent extraction hits wrong line numbers, misses or misplaces skip markers
+    ❌ Change import graph in route (add/remove i18n key references via new imports) → commit without regenerating clientKeys.json → route's manifest becomes stale, missing newly declared keys
+    ✅ After source file edits affecting i18n literals, run `yarn i18n:extract --write` to regenerate skip markers
+    ✅ After import graph changes on a route (new imports adding keys), regenerate `messages/_meta/clientKeys.json` to reflect updated i18n surface coverage
+    → Recurring: PR #796 (skip markers drift after source edits), PR #875 (clientKeys stale after import changes) — 2 occurrences
+
+27. i18n catalog updates must be synchronized across all locale files
+    → When editing i18n content (skill descriptions, UI strings, key removal), changes must be applied to all 4 locale catalogs (ko.json, en.json, ja.json, zh.json) simultaneously
+    → Updating a key in only one locale file leaves orphan entries in others, triggering CI key-parity validation failure
+    → When removing a key, remove it from every locale file; when renaming or updating content, apply the change uniformly across all locales
+    ❌ Update skill description in shared.skillDescription catalog, add to ko.json only → en.json, ja.json, zh.json still reference old description key
+    ❌ Remove i18n key from messages/ko.json after refactor → messages/en.json, messages/ja.json, messages/zh.json still contain orphan key → CI `yarn i18n:verify` fails
+    ✅ When editing skill `description` frontmatter, update catalog keys in all 4 locales + recompute hash in `messages/_meta/hashes.json`
+    ✅ When removing a key, remove from all locale files simultaneously; verify with `yarn i18n:verify` passing before commit
+    → Recurring: claude/siglens-analysis-technique-review (skill description catalog inconsistency), PR #882 (key removal parity across locales) — 2 occurrences
 ```
 
 ---

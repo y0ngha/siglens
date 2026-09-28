@@ -24,13 +24,14 @@ import {
     DrizzleSessionRepository,
     DrizzleUserRepository,
 } from '@/entities/auth/api';
-import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
+import { getDatabaseClient } from '@/shared/db/client';
 import { toHandoffAwareRedirect } from '@/entities/auth/lib/handoffStore';
 import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/lib/pendingOAuthSignupStore';
 import { DrizzleAgreementRepository } from '@/entities/agreement/api';
 import { DrizzleTermsRepository } from '@/entities/terms/api';
 import { cookies } from 'next/headers';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
+import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
 
 export async function finalizeOAuthSignupAction(
     _prev: FinalizeOAuthSignupState,
@@ -64,7 +65,7 @@ export async function finalizeOAuthSignupAction(
             return localeRedirect(OAUTH_ERROR_REDIRECT.consentExpired);
         }
 
-        const { db } = getAuthDatabaseClient();
+        const { db } = getDatabaseClient();
         const termsRepo = new DrizzleTermsRepository(db);
         const [termsP, termsT] = await Promise.all([
             // 신원(`terms.id`)만 필요하다 — 동의 레코드는 로케일과 무관한
@@ -167,9 +168,7 @@ export async function finalizeOAuthSignupAction(
         );
     } catch (err) {
         // Re-throw Next.js redirect (not an error — it's a control-flow signal).
-        if (err instanceof Error && err.message.startsWith('NEXT_REDIRECT')) {
-            throw err;
-        }
+        if (isNextRedirectError(err)) throw err;
         return localeRedirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);
     }
 }

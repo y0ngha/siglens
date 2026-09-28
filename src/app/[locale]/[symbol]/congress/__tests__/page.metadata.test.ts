@@ -32,7 +32,7 @@ vi.mock('@/entities/ticker/lib/ticker', () => ({
 vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
-vi.mock('@/app/[locale]/[symbol]/fundamental/getProfileResilient', () => ({
+vi.mock('@/entities/ticker/lib/getProfileResilient', () => ({
     getProfileResilient: vi.fn(),
 }));
 vi.mock('@/app/[locale]/[symbol]/congress/congressData', () => ({
@@ -82,7 +82,7 @@ import {
     revalidate,
 } from '@/app/[locale]/[symbol]/congress/page';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
-import { getProfileResilient } from '@/app/[locale]/[symbol]/fundamental/getProfileResilient';
+import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
 import { getCongressTradesResilient } from '@/entities/congress-trades/lib/getCongressTradesResilient';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import type { MockedFunction } from 'vitest';

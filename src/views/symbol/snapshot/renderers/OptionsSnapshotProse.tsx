@@ -15,7 +15,6 @@ import {
  * 거치지 않고 `.ts`를 직접 가져간다 — 서버 전용 메타데이터 헬퍼가 React
  * 트리를 끌어오던 체인을 끊기 위한 분리다.
  */
-export { hasOptionsProse } from './optionsContent';
 
 interface OptionsSnapshotProseProps {
     /**

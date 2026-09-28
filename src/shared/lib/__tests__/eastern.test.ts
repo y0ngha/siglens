@@ -81,7 +81,7 @@ describe('DST 경계 동치 핀 — 통합 전 실제 출력 캡처', () => {
     // 2024: 봄 전환 = 3월 10일, 가을 전환 = 11월 3일
     // 2026: 봄 전환 = 3월 8일,  가을 전환 = 11월 1일  (3월/11월 1일 모두 일요일)
 
-    describe('nthSundayDay (etTimeUtils) — 경계 날짜 계산 정확성', () => {
+    describe('nthSundayDay — 경계 날짜 계산 정확성', () => {
         it('2024 봄 전환일 = 3월 10일 (month=2, 0-indexed)', () => {
             expect(nthSundayDay(2024, 2, 2)).toBe(10);
         });

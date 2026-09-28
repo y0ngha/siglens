@@ -56,18 +56,12 @@ vi.mock('@/entities/auth/api', () => ({
         return {};
     }),
 }));
-// getAuthDatabaseClient는 @/entities/auth/lib/db에서 직접 import되므로
-// (server-only 체인을 client 번들에서 분리) 해당 경로를 별도로 mock한다.
-vi.mock('@/entities/auth/lib/db', () => ({
-    getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
-    resetAuthDatabaseClientForTests: vi.fn(),
-}));
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { logoutUser } from '@/entities/auth/lib/logoutUser';
 import { logoutAction } from '@/features/auth-logout/actions/logoutAction';
-import { resetAuthDatabaseClientForTests } from '@/entities/auth/lib/db';
+import { resetDatabaseClientForTests } from '@/shared/db/client';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { issueLogoutCode } from '@/entities/auth/lib/handoffStore';
 
@@ -96,7 +90,7 @@ describe('logoutAction', () => {
     let setSpy: Mock;
 
     beforeEach(() => {
-        resetAuthDatabaseClientForTests();
+        resetDatabaseClientForTests();
         process.env.DATABASE_URL = 'postgres://test';
         getSpy = vi.fn();
         setSpy = vi.fn();

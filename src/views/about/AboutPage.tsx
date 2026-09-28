@@ -24,7 +24,7 @@ import {
     QuoteIcon,
 } from '@/shared/ui/StrokeIcons';
 import { buildReportScenarios } from './lib/aboutContent';
-import { ReportReplay } from './ui/ReportReplay';
+import { ReportReplay } from '@/widgets/replay/ReportReplay';
 
 interface Props {
     readonly locale: Locale;

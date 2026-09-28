@@ -3,8 +3,8 @@ import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { cn } from '@/shared/lib/cn';
+import { formatCompactAmount } from '@/shared/lib/priceFormat';
 import {
-    formatCurrencyCompact,
     DEFAULT_STATEMENT_CURRENCY,
     type StatementCurrency,
 } from '../utils/numberFormat';
@@ -60,7 +60,7 @@ function formatValue(
     switch (format ?? 'num') {
         // 'usd'는 "금액" 축을 뜻하는 레거시 라벨이다 — 실제 통화는 `currency`가 정한다.
         case 'usd':
-            return formatCurrencyCompact(value, currency, locale);
+            return formatCompactAmount(value, currency, locale);
         case 'pct':
             return `${value.toFixed(1)}%`;
         case 'num':

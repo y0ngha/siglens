@@ -1,8 +1,6 @@
 import { render } from '@testing-library/react';
-import {
-    SelfNormWarningBadge,
-    WARNING_TEXT_KEY,
-} from '@/widgets/fear-greed/SelfNormWarningBadge';
+import { SelfNormWarningBadge } from '@/widgets/fear-greed/SelfNormWarningBadge';
+import { WARNING_TEXT_KEY } from '@/shared/lib/fearGreedLabels';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 
 // 문구는 `shared.lib.fearGreed` 카탈로그에서 온다 — 예전엔 모듈 상수라

@@ -8,18 +8,18 @@
  * FMP·DB로 다시 검증하므로 무해하다. 행 수 상한은 보존 기간이 정한다.
  */
 import { constants } from 'node:http2';
-import { after } from 'next/server';
 import { headers } from 'next/headers';
 import {
     DrizzleSymbolViewRepository,
     type SymbolViewRepository,
 } from '@/entities/symbol-view/api';
 import { isBot } from '@/shared/api/isBot';
-import { isAdmissibleSymbolShape } from '@/shared/config/market';
+import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { getDatabaseClient } from '@/shared/db/client';
-import { kstDateKey, kstDateKeyDaysBefore } from '@/shared/lib/etTimeUtils';
+import { kstDateKey } from '@/shared/lib/etTimeUtils';
+import { createDailyPruner, noContent } from '../_shared/dailyPruner';
 
-const { HTTP_STATUS_NO_CONTENT, HTTP_STATUS_BAD_REQUEST } = constants;
+const { HTTP_STATUS_BAD_REQUEST } = constants;
 
 export const dynamic = 'force-dynamic';
 
@@ -27,11 +27,7 @@ export const dynamic = 'force-dynamic';
 const RETENTION_DAYS = 90;
 
 /** `/api/presence`와 같은 패턴 — 별도 cron 없이 인스턴스당 KST 하루 1회 정리. */
-let lastPrunedDate: string | null = null;
-
-function noContent(): Response {
-    return new Response(null, { status: HTTP_STATUS_NO_CONTENT });
-}
+const pruneOncePerDay = createDailyPruner(RETENTION_DAYS, '[symbol-views]');
 
 async function readSymbol(request: Request): Promise<string | null> {
     try {
@@ -66,22 +62,10 @@ export async function POST(request: Request): Promise<Response> {
         await repo.recordView(today, symbol);
     } catch (error) {
         console.error('[symbol-views] recordView failed:', error);
-        // 정리도 건너뛴다 — lastPrunedDate를 소진하면 그날 남은 요청이 기회를 잃는다.
+        // 정리도 건너뛴다 — 이유는 `createDailyPruner` 참조.
         return noContent();
     }
 
-    if (lastPrunedDate !== today) {
-        lastPrunedDate = today;
-        after(async () => {
-            try {
-                await repo.pruneOlderThan(
-                    kstDateKeyDaysBefore(today, RETENTION_DAYS)
-                );
-            } catch (error) {
-                console.error('[symbol-views] prune failed:', error);
-            }
-        });
-    }
-
+    pruneOncePerDay(today, repo);
     return noContent();
 }

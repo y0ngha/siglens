@@ -54,27 +54,25 @@ describe('formatAnalyzedAt', () => {
         }
     });
 
-    it("ICU hour='24' edge case 를 '00' 으로 정규화한다", () => {
-        // 일부 Node/ICU 버전은 hour12:false + 자정에 '24'를 emit한다. V8 en-US 에선
-        // 직접 trigger할 수 없으므로 formatToParts 를 spy 로 가로채 '24'를 강제로
-        // 주입해 정규화 분기를 검증한다 (MISTAKES.md Tests §18).
+    it("KST 자정은 '24:00'이 아니라 '00:00'으로 표기한다", () => {
+        // 일부 Node/ICU 버전은 `hour12: false`를 h24로 풀어 자정을 '24'로 낸다.
+        // 포매터가 `hourCycle: 'h23'`으로 만들어졌는지와 실제 자정 출력을 함께 본다.
+        const original = Intl.DateTimeFormat.prototype.formatToParts;
+        let hourCycle: string | undefined;
         const spy = vi
             .spyOn(Intl.DateTimeFormat.prototype, 'formatToParts')
-            .mockReturnValueOnce([
-                { type: 'year', value: '2026' },
-                { type: 'literal', value: '-' },
-                { type: 'month', value: '05' },
-                { type: 'literal', value: '-' },
-                { type: 'day', value: '22' },
-                { type: 'literal', value: ', ' },
-                { type: 'hour', value: '24' },
-                { type: 'literal', value: ':' },
-                { type: 'minute', value: '00' },
-            ]);
+            .mockImplementation(function (
+                this: Intl.DateTimeFormat,
+                ...args: Parameters<Intl.DateTimeFormat['formatToParts']>
+            ) {
+                hourCycle = this.resolvedOptions().hourCycle;
+                return original.apply(this, args);
+            });
         try {
             expect(formatAnalyzedAt('2026-05-21T15:00:00.000Z')).toBe(
                 '2026-05-22 00:00'
             );
+            expect(hourCycle).toBe('h23');
         } finally {
             spy.mockRestore();
         }

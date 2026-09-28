@@ -37,6 +37,7 @@ import type {
     GradesAction,
     GradesEvent,
 } from '@y0ngha/siglens-core';
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
 /**
  * 펀더멘털 데이터는 분기 단위 재무 + statements/congress와 정합 → 24시간 freshness 창.
@@ -111,7 +112,7 @@ export function currentFiscalYearRow(
     arr: readonly RawFmpAnalystEstimate[],
     now: Date
 ): RawFmpAnalystEstimate | undefined {
-    const today = now.toISOString().slice(0, 10);
+    const today = toUtcIsoDate(now);
     const dated = arr
         .filter(
             (r): r is RawFmpAnalystEstimate & { date: string } =>

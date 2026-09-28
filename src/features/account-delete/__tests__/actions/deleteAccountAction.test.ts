@@ -45,12 +45,6 @@ vi.mock('@/entities/auth/api', () => ({
         return {};
     }),
 }));
-// getAuthDatabaseClient는 @/entities/auth/lib/db에서 직접 import되므로
-// (server-only 체인을 client 번들에서 분리) 해당 경로를 별도로 mock한다.
-vi.mock('@/entities/auth/lib/db', () => ({
-    getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
-    resetAuthDatabaseClientForTests: vi.fn(),
-}));
 vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
@@ -68,7 +62,7 @@ import { redirect } from 'next/navigation';
 import { deleteAccount } from '@/entities/auth/lib/deleteAccount';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { deleteAccountAction } from '@/features/account-delete/actions/deleteAccountAction';
-import { resetAuthDatabaseClientForTests } from '@/entities/auth/lib/db';
+import { resetDatabaseClientForTests } from '@/shared/db/client';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 
 const mockCookies = cookies as MockedFunction<typeof cookies>;
@@ -93,7 +87,7 @@ describe('deleteAccountAction', () => {
     let setSpy: Mock;
 
     beforeEach(() => {
-        resetAuthDatabaseClientForTests();
+        resetDatabaseClientForTests();
         process.env.DATABASE_URL = 'postgres://test';
         setSpy = vi.fn();
         mockCookies.mockResolvedValue({

@@ -1,6 +1,6 @@
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
-import { isAdmissibleSymbolShape } from '@/shared/config/market';
+import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { SYMBOL_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 import { APPROVED_LONGTAIL_TICKERS } from '../config/approved-longtail-tickers';
 import type {

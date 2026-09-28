@@ -11,9 +11,10 @@ import { DrizzleUserRepository } from '@/entities/auth/api';
 import { cookies } from 'next/headers';
 import type { DeleteAccountFormState } from '@/shared/lib/auth/formTypes';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
-import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
+import { getDatabaseClient } from '@/shared/db/client';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getTranslations } from 'next-intl/server';
+import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
 
 export async function deleteAccountAction(
     _prev: DeleteAccountFormState,
@@ -48,7 +49,7 @@ export async function deleteAccountAction(
         }
 
         const secure = isSecureCookieEnv();
-        const { db } = getAuthDatabaseClient();
+        const { db } = getDatabaseClient();
         const result = await deleteAccount(
             { userId: user.id },
             {
@@ -75,8 +76,7 @@ export async function deleteAccountAction(
         // 받을 쪽 없는 파라미터는 URL에 남아 공유·북마크만 더럽힌다.
         return localeRedirect('/');
     } catch (err) {
-        if (err instanceof Error && err.message.startsWith('NEXT_REDIRECT'))
-            throw err;
+        if (isNextRedirectError(err)) throw err;
         console.error('[deleteAccountAction] unexpected error:', err);
         return {
             error: {

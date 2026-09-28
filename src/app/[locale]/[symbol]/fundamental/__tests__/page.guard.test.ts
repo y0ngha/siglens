@@ -27,7 +27,7 @@ vi.mock('next/navigation', () => ({
         throw new Error('NEXT_NOT_FOUND');
     }),
 }));
-vi.mock('@/app/[locale]/[symbol]/fundamental/getProfileResilient', () => ({
+vi.mock('@/entities/ticker/lib/getProfileResilient', () => ({
     getProfileResilient: vi.fn(),
 }));
 vi.mock('@/app/[locale]/[symbol]/fundamental/fundamentalData', () => ({
@@ -124,7 +124,7 @@ import {
 import { NOINDEX_SYMBOL_METADATA } from '@/shared/lib/seo';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
-import { getProfileResilient } from '@/app/[locale]/[symbol]/fundamental/getProfileResilient';
+import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import { notFound } from 'next/navigation';
 import FundamentalPage, {

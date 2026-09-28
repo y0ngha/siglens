@@ -12,8 +12,8 @@ import type {
     ScoreMetricUnit,
 } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
+import { formatCompactAmount } from '@/shared/lib/priceFormat';
 import {
-    formatCurrencyCompact,
     DEFAULT_STATEMENT_CURRENCY,
     type StatementCurrency,
 } from './utils/numberFormat';
@@ -75,7 +75,7 @@ function formatMetricValue(
             return `${value.toFixed(2)}x`;
         // 'usd'는 "금액" 단위를 뜻하는 레거시 라벨이다 — 실제 통화는 `currency`가 정한다.
         case 'usd':
-            return formatCurrencyCompact(value, currency, locale);
+            return formatCompactAmount(value, currency, locale);
         case 'score':
             return String(Math.round(value));
     }

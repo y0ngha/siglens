@@ -2,7 +2,7 @@
 
 import { useActionState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import type { DeleteAccountFormState } from '@/shared/lib/types';
+import type { DeleteAccountFormState } from '@/shared/lib/auth/formTypes';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { deleteAccountAction } from '../actions/deleteAccountAction';
 

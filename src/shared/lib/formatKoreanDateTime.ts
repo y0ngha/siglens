@@ -1,4 +1,5 @@
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
+import { cachedDateTimeFormat } from '@/shared/lib/intlFormatCache';
 
 /**
  * ISO 타임스탬프를 KST 기준 날짜+시간 표기로 변환한다. **로케일별**로 표기가 갈린다.
@@ -28,12 +29,8 @@ const KST_DATE_TIME_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
     hour12: false,
 });
 
-const LOCALE_DATE_TIME_FORMATTER_CACHE = new Map<Locale, Intl.DateTimeFormat>();
-
 function localeFormatterFor(locale: Locale): Intl.DateTimeFormat {
-    const cached = LOCALE_DATE_TIME_FORMATTER_CACHE.get(locale);
-    if (cached) return cached;
-    const formatter = new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+    return cachedDateTimeFormat(INTL_LOCALE[locale], {
         timeZone: 'Asia/Seoul',
         year: 'numeric',
         month: 'short',
@@ -41,8 +38,6 @@ function localeFormatterFor(locale: Locale): Intl.DateTimeFormat {
         hour: 'numeric',
         minute: '2-digit',
     });
-    LOCALE_DATE_TIME_FORMATTER_CACHE.set(locale, formatter);
-    return formatter;
 }
 
 function formatKoreanDateTimeKo(date: Date): string {
@@ -54,6 +49,8 @@ function formatKoreanDateTimeKo(date: Date): string {
         parts.find(p => p.type === type)?.value ?? '';
 
     // 일부 Node/ICU 버전은 hour12:false 에서 자정에 '24'를 반환한다.
+    // `formatAnalyzedAt`처럼 `hourCycle: 'h23'`으로 바꾸면 안 된다 — ko-KR의
+    // `hour: 'numeric'`은 일부 ICU에서 h23일 때 자정을 '00'으로 내 '0시'가 깨진다.
     const rawHour = get('hour');
     const hour = rawHour === '24' ? '0' : rawHour;
     const minute = get('minute');

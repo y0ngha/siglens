@@ -4,6 +4,8 @@ import {
     MS_PER_DAY,
     MS_PER_MINUTE,
 } from '@/shared/config/time';
+import { cachedDateTimeFormat } from '@/shared/lib/intlFormatCache';
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
 /**
  * 마감 후 EOD 발행까지의 안전 버퍼(시간). 이 시간 전에는 당일을 lastClosed로 롤하지
@@ -21,27 +23,19 @@ const EOD_PUBLISH_BUFFER_MINUTES = EOD_PUBLISH_BUFFER_HOURS * MINUTES_PER_HOUR;
  */
 const MAX_REWIND_DAYS = 10;
 
-/** IANA 존별 formatter 캐시 — 요청마다 새로 만들면 Intl 생성 비용이 그대로 든다. */
-const formatterByZone = new Map<string, Intl.DateTimeFormat>();
-
 function formatterFor(timeZone: string): Intl.DateTimeFormat {
-    let fmt = formatterByZone.get(timeZone);
-    if (fmt === undefined) {
-        // en-CA는 year/month/day를 YYYY-MM-DD 순으로 내지만, 여기서는 formatToParts로
-        // 타입별로 꺼내 쓰므로 로케일 표기 순서에 의존하지 않는다.
-        fmt = new Intl.DateTimeFormat('en-CA', {
-            timeZone,
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            weekday: 'short',
-            hour: '2-digit',
-            minute: '2-digit',
-            hourCycle: 'h23',
-        });
-        formatterByZone.set(timeZone, fmt);
-    }
-    return fmt;
+    // en-CA는 year/month/day를 YYYY-MM-DD 순으로 내지만, 여기서는 formatToParts로
+    // 타입별로 꺼내 쓰므로 로케일 표기 순서에 의존하지 않는다.
+    return cachedDateTimeFormat('en-CA', {
+        timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        weekday: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23',
+    });
 }
 
 const WEEKDAY_INDEX: Record<string, number> = {
@@ -121,9 +115,9 @@ function zonedWallClockToUtc(
 
 /** `YYYY-MM-DD`의 하루 전 날짜. */
 function previousIsoDate(isoDate: string): string {
-    return new Date(Date.parse(`${isoDate}T00:00:00Z`) - MS_PER_DAY)
-        .toISOString()
-        .slice(0, 10);
+    return toUtcIsoDate(
+        new Date(Date.parse(`${isoDate}T00:00:00Z`) - MS_PER_DAY)
+    );
 }
 
 /** `YYYY-MM-DD`의 요일(0=Sun). ISO 날짜를 UTC 자정으로 읽으므로 존 무관하게 정확. */
@@ -187,7 +181,7 @@ export function lastClosedSessionDate(
 ): string {
     // 24/7 시장엔 "마감"이 없다 — 마지막으로 완결된 일봉은 어제(UTC)다.
     if (spec.kind === 'always-open') {
-        return new Date(now.getTime() - MS_PER_DAY).toISOString().slice(0, 10);
+        return toUtcIsoDate(new Date(now.getTime() - MS_PER_DAY));
     }
 
     const { date, weekday, minutesOfDay } = zonedParts(now, spec.timeZone);

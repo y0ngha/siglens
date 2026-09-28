@@ -1,6 +1,6 @@
 import type { Mock } from 'vitest';
 import { useAnalysis } from '@/views/symbol/hooks/useAnalysis';
-import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import { getReanalyzeCooldownMs } from '@/entities/analysis/lib/reanalyzeCooldown';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
@@ -12,7 +12,7 @@ import type {
 } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 
-vi.mock('@/shared/hooks/useAnalysisStream', () => ({
+vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({
     runAnalysisStream: vi.fn(),
 }));
 

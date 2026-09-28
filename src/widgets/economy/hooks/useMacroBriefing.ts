@@ -10,7 +10,7 @@ import type {
 } from '@y0ngha/siglens-core';
 
 import { useHydrated } from '@/shared/hooks/useHydrated';
-import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import type { MacroBriefingActionResult } from '@/shared/lib/types';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 

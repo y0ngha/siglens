@@ -1,5 +1,5 @@
 import { useTranslations } from 'next-intl';
-import { useMarketFactorLabels } from '@/shared/lib/useMarketFactorLabels';
+import { useMarketFactorLabels } from '@/shared/hooks/useMarketFactorLabels';
 import type { Locale } from '@/shared/i18n/locales';
 import {
     CRYPTO_FEAR_GREED_FACTOR_KEYS,

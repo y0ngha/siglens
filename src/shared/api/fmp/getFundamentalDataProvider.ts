@@ -5,11 +5,6 @@ import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { YahooFundamentalProvider } from '@/shared/api/yahoo/YahooFundamentalProvider';
 import type { FundamentalProviderWithRawPeers } from './fundamentalProvider.types';
 
-// Re-exported so existing importers (`@/shared/api/fmp/getFundamentalDataProvider`)
-// keep resolving; the interface itself lives in `fundamentalProvider.types` to
-// avoid a type-level cycle with the `CachedFundamentalProvider` class import above.
-export type { FundamentalProviderWithRawPeers } from './fundamentalProvider.types';
-
 /** FMP(미국·크립토) 경로. E2E에서는 Fake로 대체된다. */
 const getFmpProvider: () => FundamentalProviderWithRawPeers =
     createE2EGatedSingleton(

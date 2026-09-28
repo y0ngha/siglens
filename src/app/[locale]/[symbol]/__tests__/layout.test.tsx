@@ -120,7 +120,6 @@ vi.mock('@/shared/config/market', async () => {
     return {
         DEFAULT_TIMEFRAME: '1Day',
         VALID_TICKER_RE: actual.TICKER_RE,
-        isAdmissibleSymbolShape: actual.isAdmissibleSymbolShape,
     };
 });
 vi.mock('@/shared/config/queryConfig', () => ({

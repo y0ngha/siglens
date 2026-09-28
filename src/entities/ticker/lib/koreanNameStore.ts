@@ -1,4 +1,4 @@
-import { tryGetTickerDatabaseClient } from './db';
+import { tryGetDatabaseClient } from '@/shared/db/client';
 import { KOREAN_NAMES_CACHE_TTL, KOREAN_TICKERS_CACHE_KEY } from './cacheKeys';
 import { createCacheProvider, type CacheProvider } from '@y0ngha/siglens-core';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
@@ -26,7 +26,7 @@ function koreanEntryToSearchResult(
 }
 
 function tryGetRepository(): KoreanTickerRepository | null {
-    const client = tryGetTickerDatabaseClient();
+    const client = tryGetDatabaseClient();
     if (!client) return null;
     return new DrizzleKoreanTickerRepository(client.db);
 }

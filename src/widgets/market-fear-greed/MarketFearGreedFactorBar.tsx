@@ -1,6 +1,6 @@
 import { useTranslations } from 'next-intl';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
-import { useMarketFactorLabels } from '@/shared/lib/useMarketFactorLabels';
+import { useMarketFactorLabels } from '@/shared/hooks/useMarketFactorLabels';
 import type { CSSProperties } from 'react';
 import { scoreToLabel, type FearGreedLabel } from '@y0ngha/siglens-core';
 import type { MarketFearGreedViewSnapshot } from '@/entities/market-fear-greed/model';

@@ -6,21 +6,15 @@ import { EMPTY_NEWS_CLIENT } from '../emptyNewsClient';
  * 소스(FMP `stock`)로 폴백해 무관한 미국 뉴스를 보여주는 사고를 막는 방어선.
  */
 describe('EMPTY_NEWS_CLIENT', () => {
-    it('fetchNews resolves to an empty array regardless of input', async () => {
-        await expect(
-            EMPTY_NEWS_CLIENT.fetchNews('005930.KS', '24h')
-        ).resolves.toEqual([]);
-        await expect(EMPTY_NEWS_CLIENT.fetchNews('', '30d')).resolves.toEqual(
-            []
-        );
-    });
-
-    it('fetchNewsForPeriod resolves to an empty array regardless of lookback', async () => {
+    it('fetchNewsForPeriod resolves to an empty array regardless of input', async () => {
         await expect(
             EMPTY_NEWS_CLIENT.fetchNewsForPeriod('005930.KS', 86_400_000)
         ).resolves.toEqual([]);
         await expect(
             EMPTY_NEWS_CLIENT.fetchNewsForPeriod('005930.KS', 0)
+        ).resolves.toEqual([]);
+        await expect(
+            EMPTY_NEWS_CLIENT.fetchNewsForPeriod('', 86_400_000)
         ).resolves.toEqual([]);
     });
 });

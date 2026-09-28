@@ -1,6 +1,6 @@
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
-import { POPULAR_OPTIONS_TICKERS } from '@/entities/sitemap-entry/config/popular-options-tickers';
+import { POPULAR_OPTIONS_TICKERS } from '@/shared/config/popular-options-tickers';
 import type { MarketSessionSpec } from '@y0ngha/siglens-core';
 import { SEO_SNAPSHOT_TABS, type SeoSnapshotTab } from '../model';
 import {

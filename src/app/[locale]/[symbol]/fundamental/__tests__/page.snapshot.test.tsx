@@ -38,7 +38,7 @@ vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
 vi.mock('next/navigation', () => ({
     notFound: vi.fn(),
 }));
-vi.mock('@/app/[locale]/[symbol]/fundamental/getProfileResilient', () => ({
+vi.mock('@/entities/ticker/lib/getProfileResilient', () => ({
     getProfileResilient: vi.fn(),
 }));
 vi.mock('@/app/[locale]/[symbol]/fundamental/fundamentalData', () => ({
@@ -130,7 +130,7 @@ import { FundamentalSnapshotProse } from '@/views/symbol/snapshot/renderers/Fund
 import { FundamentalAiSummary } from '@/widgets/fundamental/FundamentalAiSummary';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
-import { getProfileResilient } from '@/app/[locale]/[symbol]/fundamental/getProfileResilient';
+import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { expectVisibleFaqWithoutJsonLd } from '@/__tests__/utils/expectFaqSingleSource';
 import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';

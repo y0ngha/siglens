@@ -1,5 +1,5 @@
 import { useLocale } from 'next-intl';
-import { isLocale, DEFAULT_LOCALE, type Locale } from './locales';
+import { type Locale, resolveLocale } from './locales';
 
 /**
  * 현재 로케일 — **서버 컴포넌트와 클라이언트 컴포넌트 양쪽**에서 쓴다.
@@ -21,5 +21,5 @@ import { isLocale, DEFAULT_LOCALE, type Locale } from './locales';
  */
 export function useResolvedLocale(): Locale {
     const locale = useLocale();
-    return isLocale(locale) ? locale : DEFAULT_LOCALE;
+    return resolveLocale(locale);
 }

@@ -1,8 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import type { SeoTranslator } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
-import { setRequestLocale } from 'next-intl/server';
-import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
+import { resolveLocale } from '@/shared/i18n/locales';
 import {
     localeAlternatesFrom,
     localeCanonical,
@@ -31,6 +30,7 @@ import {
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { enterLocale } from '@/shared/lib/enterLocale';
 
 // 24h ISR — 허브 인덱스는 지역 구조가 바뀌지 않는 한 신선도가 낮아도 무방.
 // 카드별 헤드라인은 staticSymbolCache(24h TTL)를 통해 캐싱된다 — 페이지 revalidate와
@@ -69,24 +69,21 @@ interface LocaleMetadataParams {
 export async function generateMetadata({
     params,
 }: LocaleMetadataParams): Promise<Metadata> {
-    const { locale } = await params;
-    const resolvedLocale = isLocale(locale) ? locale : DEFAULT_LOCALE;
-    const ogLocale = localeOpenGraph(resolvedLocale);
+    const { locale: rawLocale } = await params;
+    const locale = resolveLocale(rawLocale);
+    const ogLocale = localeOpenGraph(locale);
     // og:url도 로케일별이어야 한다 — 소셜 언퍼널이 ko URL로 되돌린다.
-    const url = localeCanonical(resolvedLocale, NEWS_HUB_PATH);
+    const url = localeCanonical(locale, NEWS_HUB_PATH);
     // 지역 카드 미리보기가 전부 비면 본문이 제목·설명뿐이라 thin으로 판정될 분량이다.
     // 자매 라우트와 같은 규약: canonical을 비우고 noindex, follow는 유지.
     const previews = await Promise.all(
         regionsOf('news').map(region =>
-            fetchCategoryPreviews(
-                previewCategoryOf(region.region),
-                isLocale(locale) ? locale : DEFAULT_LOCALE
-            )
+            fetchCategoryPreviews(previewCategoryOf(region.region), locale)
         )
     );
     const degraded = previews.every(list => list.length === 0);
     const tSeo = await getTranslations({
-        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        locale,
         namespace: 'shared.seo',
     });
     return {
@@ -118,7 +115,7 @@ export async function generateMetadata({
         }),
         robots: degraded
             ? { index: false, follow: true }
-            : localeRobots(resolvedLocale),
+            : localeRobots(locale),
         openGraph: {
             type: 'website',
             siteName: SITE_NAME,
@@ -175,11 +172,8 @@ export default async function NewsHubPage({
 }: {
     readonly params: Promise<{ locale: string }>;
 }) {
-    const { locale } = await params;
-    // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
-    // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
-    // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
-    setRequestLocale(locale);
+    const { locale: rawLocale } = await params;
+    const locale = enterLocale(rawLocale);
     // 셋은 서로 독립이다.
     const [tNav, t, tSeo] = await Promise.all([
         getTranslations(),
@@ -195,16 +189,10 @@ export default async function NewsHubPage({
     const [previews, digestLines] = await Promise.all([
         Promise.all(
             previewCategories.map(category =>
-                fetchCategoryPreviews(
-                    category,
-                    isLocale(locale) ? locale : DEFAULT_LOCALE
-                )
+                fetchCategoryPreviews(category, locale)
             )
         ),
-        fetchCategoryDigestLines(
-            previewCategories,
-            isLocale(locale) ? locale : DEFAULT_LOCALE
-        ),
+        fetchCategoryDigestLines(previewCategories, locale),
     ]);
 
     const hubUrl = `${SITE_URL}${NEWS_HUB_PATH}`;
@@ -214,13 +202,13 @@ export default async function NewsHubPage({
             url: hubUrl,
             name: `${newsHubTitle(tSeo)} | ${SITE_NAME}`,
             description: newsHubDescription(tSeo),
-            locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+            locale,
         }),
     };
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd(
         [{ name: t('page.dc06c4'), url: hubUrl }],
-        isLocale(locale) ? locale : DEFAULT_LOCALE
+        locale
     );
 
     return (

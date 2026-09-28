@@ -212,9 +212,6 @@
 - Violation: SUGGESTION — Unreachable `throw` in `resolveAboutContent` due to incomplete type enforcement on markdown map keys.
   - Rule: Maps with enum discriminant keys should enforce all cases; dead code throws indicate type-safety gap.
   - Context: Typed map with required default-locale key instead of dead-code throw.
-- Violation: CI FAILURE — `i18n extract drift`: `messages/_meta/skips.json` line numbers shifted when source file was edited with comment insertions, invalidating skip markers without regenerate.
-  - Rule: After source file edits that shift lines in code with skipped i18n literals, regenerate skip markers by running `yarn i18n:extract --write` before push; skip positions become stale and extract drifts.
-  - Context: Regenerated with `yarn i18n:extract --write` (idempotent). Root cause: earlier review-fix commit edited source with skipped literals; extract was not re-run. Same drift occurred on sibling branch `seo/ymyl-wording-fg-fixes` in this session.
 
 ## [PR #798 | seo/ymyl-wording-fg-fixes | 2026-09-11]
 - Violation: Non-component helper `priceSourceFor` returned inline object types without an explicit return type.
@@ -462,14 +459,6 @@
 - Violation (R1 required): skills/strategies/mean-reversion.md — numeric claim in skill body ("the cross-up entry averaged -0.06% per trade") was inconsistent with the per-period figures listed in the design doc it cites. A pooled trade-weighted mean was quoted next to per-period values that average differently.
   - Rule: Documentation Sync — skill docs must match the evidence they cite. When a doc makes a numeric claim, verify it against the referenced source before publishing.
   - Context: Changed to state the per-period range instead of the aggregate average, matching the cited design doc.
-- Violation (caught by test suite, not review): i18n catalog entry missing for updated skill `description` frontmatter. Skill description is a UI string consumed by `shared.skillDescription` catalog (messages/ko|en|ja|zh.json + messages/_meta/hashes.json). Changing frontmatter without updating the catalog caused `src/shared/i18n/__tests__/skillDescription.test.tsx` to fail.
-  - Rule: Documentation Sync / i18n — a skill `description` is a UI string; editing it requires catalog key swap in all 4 locales and hash recompute (sha1(ko text).slice(0,12)).
-  - Context: Updated catalog keys in all 4 locales and recomputed hash. Test now passes.
-
-## [PR #875 claude/siglens-email-login-redirect-jbr2s1 Round 2 | CI fix complete | 2026-09-25]
-- Violation: generated i18n client-key manifest (`messages/_meta/clientKeys.json`) was stale after changing a page's imports
-  - Rule: CONVENTIONS.md — generated i18n artifacts must be regenerated after changing a route's import graph; static client-key analysis follows imports
-  - Context: src/app/[locale]/forgot-password/page.tsx newly imported @/shared/ui/auth barrel (for AuthCrossLink), adding 10 ConsentCheckboxGroup keys to the forgot-password route. Regenerated with `yarn i18n:extract --write`.
 
 ## [claude/siglens-analysis-technique-review-wvfffz Round 2 | AI chat tools pullback classification & budget | 2026-09-25]
 - Violation: RECOMMENDED — src/app/api/ai/chat/tools/getBarsIndicators.ts: 4-way classification written as nested ternary (ternary inside TRUE branch of another ternary)
@@ -518,10 +507,6 @@
 - Violation: Claude-review R3 Blocker — UA-based concurrency bonus (BOT_STREAM_LIMIT_MULTIPLIER) became an abuse vector once bots trigger paid generation. Route reads User-Agent to classify as bot and apply higher concurrency limit; generic script clients match bot UA pattern.
   - Rule: (new) Request-based abuse vectors (rate-limit bypasses) must not read headers that generic clients also send; read-only token/fingerprint headers instead. UA header (User-Agent) is sent by all clients and can be spoofed — route should not use it for concurrent-request gating without explicit allowlist verification.
   - Context: Removed BOT_STREAM_LIMIT_MULTIPLIER so the route no longer reads UA; all clients now route through the same concurrency limit regardless of UA. Abuse vector closed.
-
-- Violation: i18n key removal done only in ko.json left orphan keys in en.json, ja.json, zh.json uncleaned, breaking CI key-parity gate
-  - Rule: (new) When removing an i18n key, remove it from every locale catalog (ko.json, en.json, ja.json, zh.json) and run `yarn i18n:verify` to confirm key-parity across all locales. Removing a key from only one locale file leaves orphan keys in others, triggering CI key-parity validation failure.
-  - Context: Removed key from messages/ko.json; CI pipeline caught that the same key still exists in messages/en.json, messages/ja.json, messages/zh.json. All removed together and verified with `yarn i18n:verify` passing.
 
 - Violation: RECOMMENDED — format-check violations introduced during implementation (prettier/oxlint conflicts not resolved before push)
   - Rule: Run `yarn format:check` before committing code with editor or formatter changes. Format violations must be resolved with `yarn format:write` in the same commit.

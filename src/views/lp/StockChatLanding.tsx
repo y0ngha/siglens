@@ -15,7 +15,7 @@ import {
     SparkIcon,
 } from '@/shared/ui/StrokeIcons';
 import { SiglensMark } from '@/widgets/agent-chat/SiglensMark';
-import { LpChatReplay } from './ui/LpChatReplay';
+import { ChatReplay } from '@/widgets/replay/ChatReplay';
 import { LP_PRIMARY_BUTTON, LpDisclaimer, LpShell } from './ui/LpShell';
 
 const CTA = 'AI에게 물어보기';
@@ -207,8 +207,15 @@ export function StockChatLanding() {
                 </section>
 
                 <div className="motion-safe:animate-[fade-up_400ms_ease-out_both]">
-                    <LpChatReplay
+                    <ChatReplay
                         scenarios={SCENARIOS}
+                        labels={{
+                            region: 'SIGLENS AI 예시 대화',
+                            pause: '일시정지',
+                            resume: '재생',
+                            sources: '출처',
+                        }}
+                        sourcesSeparator={false}
                         avatar={<SiglensMark />}
                         doneIcon={
                             <CheckIcon className="size-3.5 text-ui-success-text" />

@@ -1,7 +1,5 @@
 import { Suspense, type ReactNode } from 'react';
 import { RouteMessages } from '@/shared/i18n/RouteMessages';
-import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
-import { setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import {
     dehydrate,
@@ -17,10 +15,8 @@ import { SymbolLayoutHeader } from '@/views/symbol/SymbolLayoutHeader';
 import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
 import { SymbolViewPing } from '@/features/visitor-ping/ui/SymbolViewPing';
 import { SymbolTabsSkeleton } from '@/views/symbol/SymbolTabsSkeleton';
-import {
-    DEFAULT_TIMEFRAME,
-    isAdmissibleSymbolShape,
-} from '@/shared/config/market';
+import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
+import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { getSeedBarsStatic } from '@/entities/bars/lib/barsStaticCache';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
@@ -28,6 +24,7 @@ import { marketProfileOf } from '@/shared/config/marketProfile/registry';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { computeFearGreedIndex } from '@y0ngha/siglens-core';
 import type { AssetInfo } from '@/shared/lib/types';
+import { enterLocale } from '@/shared/lib/enterLocale';
 
 interface SymbolLayoutProps {
     children: ReactNode;
@@ -102,11 +99,8 @@ export default async function SymbolLayout({
     children,
     params,
 }: SymbolLayoutProps) {
-    const { locale, symbol } = await params;
-    // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
-    // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
-    // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
-    setRequestLocale(locale);
+    const { locale: rawLocale, symbol } = await params;
+    const locale = enterLocale(rawLocale);
     const ticker = symbol.toUpperCase();
     // 형상 불합격(해외 거래소 접미사 포함)은 외부 호출 없이 즉시 404.
     if (!isAdmissibleSymbolShape(ticker)) notFound();
@@ -124,10 +118,7 @@ export default async function SymbolLayout({
     return (
         // 이 서브트리가 실제로 쓰는 메시지만 클라이언트로 내려보낸다 —
         // 루트 레이아웃은 크롬만 싣는다(`RouteMessages` JSDoc 참고).
-        <RouteMessages
-            route="[symbol]"
-            locale={isLocale(locale) ? locale : DEFAULT_LOCALE}
-        >
+        <RouteMessages route="[symbol]" locale={locale}>
             <SymbolLayoutProviders>
                 <SymbolLayoutJail>
                     <Suspense fallback={<SymbolHeaderShellFallback />}>

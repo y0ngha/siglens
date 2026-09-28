@@ -2,12 +2,12 @@ import type { OAuthProvider } from '@/shared/lib/types';
 import type { AgreementRepository } from '@/entities/agreement/api';
 import type {
     AuthSessionRecord,
-    AuthUserRecord,
     EmailAuthUserRepository,
     OAuthAccountRepository,
     SessionRepository,
     UserRepository,
 } from '@/shared/db/types';
+import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import type { OAuthRevoker } from '@/entities/oauth-account/lib/revokerTypes';
 import type {
     AuthSessionCookie,

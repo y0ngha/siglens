@@ -1,21 +1,14 @@
-import type { NewsItem, NewsTimeRange } from '@y0ngha/siglens-core';
+import type { NewsItem } from '@y0ngha/siglens-core';
 import type { NewsClientPort } from './newsClientPort';
-import { computeCutoff, hashUrlToId } from './fmpNewsClient';
-import { detectTruncatedBody } from './detectTruncatedBody';
+import { hashUrlToId } from '@/shared/lib/news/hashUrlToId';
+import { detectTruncatedBody } from '@/shared/lib/news/detectTruncatedBody';
 import {
     NAVER_MAX_DISPLAY,
     searchNaverNews,
     stripNaverMarkup,
     toIsoPublishedAt,
     type NaverNewsItem,
-} from './naverNewsSearch';
-
-/** `NewsTimeRange`별 요청 건수. FMP 어댑터와 같은 축척이되 API 상한(100)에 맞춰 잘린다. */
-const RANGE_TO_DISPLAY: Record<NewsTimeRange, number> = {
-    '24h': 30,
-    '7d': NAVER_MAX_DISPLAY,
-    '30d': NAVER_MAX_DISPLAY,
-};
+} from '@/shared/api/naver/naverSearch';
 
 // 기사 `source` 필드에 그대로 들어가는 **출처 이름**이다. 로케일별로 갈리면
 // 같은 기사가 로케일마다 다른 출처로 저장된다 — 공식 영문 브랜드명 하나로 둔다.
@@ -26,7 +19,7 @@ const LOG_TAG = '[naverNewsClient]';
  * 한국 상장 종목 뉴스 클라이언트 — 네이버 검색 API.
  *
  * FMP 플랜이 KRX를 커버하지 않아 국내 종목에는 이 어댑터가 유일한 뉴스 소스다.
- * 엔드포인트·인증·마크업 정리는 `naverNewsSearch.ts`가 소유한다(시장 단위
+ * 엔드포인트·인증·마크업 정리는 `shared/api/naver/naverSearch.ts`가 소유한다(시장 단위
  * 클라이언트와 공유).
  *
  * **알려진 한계**: 네이버는 제목과 요약만 주고 본문은 주지 않으며, 본문 크롤링은 약관
@@ -47,34 +40,15 @@ export class NaverNewsClient implements NewsClientPort {
         ) => Promise<string | null>
     ) {}
 
-    async fetchNews(symbol: string, range: NewsTimeRange): Promise<NewsItem[]> {
-        return this.search(
-            symbol,
-            RANGE_TO_DISPLAY[range],
-            computeCutoff(range)
-        );
-    }
-
     async fetchNewsForPeriod(
         symbol: string,
         lookbackMs: number
     ): Promise<NewsItem[]> {
-        return this.search(
-            symbol,
-            NAVER_MAX_DISPLAY,
-            new Date(Date.now() - lookbackMs)
-        );
-    }
-
-    private async search(
-        symbol: string,
-        display: number,
-        cutoff: Date
-    ): Promise<NewsItem[]> {
+        const cutoff = new Date(Date.now() - lookbackMs);
         const query = await this.resolveQuery(symbol);
         if (!query) return [];
 
-        const items = await searchNaverNews(query, display, LOG_TAG);
+        const items = await searchNaverNews(query, NAVER_MAX_DISPLAY, LOG_TAG);
         return items.flatMap(raw => {
             const item = toNaverNewsItem(raw, symbol);
             if (item === null) return [];
@@ -127,7 +101,3 @@ export function toNaverNewsItem(
         bodyTruncated: detectTruncatedBody(description),
     };
 }
-
-// 기존 소비자·테스트가 이 모듈에서 import하던 헬퍼를 계속 노출한다
-// (구현은 `naverNewsSearch.ts`로 옮겼다).
-export { stripNaverMarkup } from './naverNewsSearch';

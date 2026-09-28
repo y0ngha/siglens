@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
+import { resolveLocale } from '@/shared/i18n/locales';
 import { NotFoundContent } from './NotFoundContent';
 
 /**
@@ -15,7 +15,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
     const { locale } = await params;
     const t = await getTranslations({
-        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        locale: resolveLocale(locale),
         namespace: 'app.home',
     });
     return {

@@ -58,10 +58,8 @@ vi.mock('@/entities/auth/api', () => ({
         return {};
     }),
 }));
-// getAuthDatabaseClient는 @/entities/auth/lib/db에서 직접 import되므로
-// (server-only 체인을 client 번들에서 분리) 해당 경로를 별도로 mock한다.
-vi.mock('@/entities/auth/lib/db', () => ({
-    getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
 vi.mock('next/headers', () => ({
     cookies: vi.fn(),
@@ -89,7 +87,7 @@ import { DrizzleTermsRepository } from '@/entities/terms/api';
 import { DrizzleUserRepository } from '@/entities/auth/api';
 import { DrizzleAgreementRepository } from '@/entities/agreement/api';
 import { createAuthSession } from '@/entities/auth/lib/sessionCookie';
-import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
+import { getDatabaseClient } from '@/shared/db/client';
 import { cookies } from 'next/headers';
 
 const mockRedirect = redirect as unknown as Mock;
@@ -103,7 +101,7 @@ const MockUserRepo = DrizzleUserRepository as MockedClass<
 const MockAgreementRepo = DrizzleAgreementRepository as MockedClass<
     typeof DrizzleAgreementRepository
 >;
-const mockGetAuthDb = getAuthDatabaseClient as unknown as Mock;
+const mockGetAuthDb = getDatabaseClient as unknown as Mock;
 
 const SAMPLE_PROFILE = {
     provider: 'google' as const,

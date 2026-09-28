@@ -1,8 +1,5 @@
 import type { Tier, UsageActionType } from '@y0ngha/siglens-core';
 import type { OAuthProvider } from '@/shared/lib/types';
-import { LLM_PROVIDER_VALUES } from '../config/llmProviders';
-
-export { LLM_PROVIDER_VALUES };
 
 /** Database enum values for the user `tier` column; mirrors the `Tier` union from `@y0ngha/siglens-core` to keep the Postgres enum in lockstep. */
 export const USER_TIER_VALUES = [

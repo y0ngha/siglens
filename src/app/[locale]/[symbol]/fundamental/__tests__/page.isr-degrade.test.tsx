@@ -47,7 +47,7 @@ vi.mock('next/navigation', () => ({
         throw new Error('NEXT_NOT_FOUND');
     }),
 }));
-vi.mock('@/app/[locale]/[symbol]/fundamental/getProfileResilient', () => ({
+vi.mock('@/entities/ticker/lib/getProfileResilient', () => ({
     getProfileResilient: vi.fn(),
 }));
 vi.mock('@/app/[locale]/[symbol]/fundamental/fundamentalData', () => ({
@@ -233,7 +233,7 @@ import FundamentalPage, {
     FutureDirectionSection,
 } from '@/app/[locale]/[symbol]/fundamental/page';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
-import { getProfileResilient } from '@/app/[locale]/[symbol]/fundamental/getProfileResilient';
+import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
 import {
     getProfile,
     getProfileDescription,

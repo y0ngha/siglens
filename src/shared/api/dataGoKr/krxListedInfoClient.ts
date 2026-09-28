@@ -1,3 +1,4 @@
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
 /**
  * 공공데이터포털 — 금융위원회 KRX상장종목정보.
  *
@@ -260,7 +261,7 @@ function recentDateCandidates(days: number): string[] {
     for (let i = 1; i <= days; i++) {
         const d = new Date();
         d.setUTCDate(d.getUTCDate() - i);
-        out.push(d.toISOString().slice(0, 10).replace(/-/g, ''));
+        out.push(toUtcIsoDate(d).replace(/-/g, ''));
     }
     return out;
 }

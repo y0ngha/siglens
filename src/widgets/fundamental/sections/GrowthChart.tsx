@@ -2,6 +2,7 @@ import { useTranslations } from 'next-intl';
 import type { FundamentalGrowthInput } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from './EmptySectionCard';
 import { cn } from '@/shared/lib/cn';
+import { formatSignedPercent } from '@/shared/lib/priceFormat';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 const HEADING_ID = 'growth-heading';
@@ -20,8 +21,7 @@ interface GrowthBarProps {
 /** Inline SVG bar for a single growth metric. Positive = green, negative = red; clamps at ±100%. */
 function GrowthBar({ label, value, description }: GrowthBarProps) {
     const pct = value !== null ? value * 100 : null;
-    const formattedPct =
-        pct !== null ? `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%` : '—';
+    const formattedPct = pct !== null ? formatSignedPercent(pct) : '—';
 
     const fillAbs = pct !== null ? Math.min(100, Math.abs(pct)) : 0;
     const isPositive = pct !== null ? pct >= 0 : true;

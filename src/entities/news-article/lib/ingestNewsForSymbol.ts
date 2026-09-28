@@ -28,6 +28,18 @@ export interface NewsIngestResult {
 }
 
 /**
+ * 이번 적재에서 실제로 삽입·변경된 행 수. `upsertNewsItem`은 값이 바뀐 행만
+ * RETURNING하므로(`setWhere`) 같은 기사 재fetch는 `false`로 settle한다 — 그래서
+ * 이 수가 0이면 news 캐시 태그를 무효화할 이유가 없다(방문마다 무효화하는 빈도 폭풍 방지).
+ * 방문자·prewarm·챗 세 수급 경로가 모두 이 판단으로 `revalidateTag`를 건다.
+ */
+export function countChangedRows(result: NewsIngestResult): number {
+    return result.upsertSettled.filter(
+        r => r.status === 'fulfilled' && r.value === true
+    ).length;
+}
+
+/**
  * 과반 upsert 실패(=DB 광역 장애로 추정)를 나타내는 전용 에러.
  *
  * 호출부가 "FMP에서 받아올 게 없었다"(→ null 반환, fail-open)와 "DB에 못 썼다"를

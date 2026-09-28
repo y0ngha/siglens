@@ -8,7 +8,7 @@ import { join } from 'node:path';
  *
  * 라운드 6에서 `x-siglens-locale` → 게이트 문구까지 로케일을 관통시켰는데,
  * 그 배선 전체가 **반증 불가능**했다. 감사가 실증한 두 가지:
- *  - `resolveRequestLocale`의 본문을 `return DEFAULT_LOCALE`로 바꿔 헤더를 통째로
+ *  - 헤더 로케일 해석(당시 `resolveRequestLocale`, 현 `localeFromRequestHeader`)의 본문을 `return DEFAULT_LOCALE`로 바꿔 헤더를 통째로
  *    무시해도 **10,516개 테스트가 전부 통과**했다.
  *  - `gateMessage`에 `locale: 'ko'`를 하드코딩해도 1,848개가 통과했다.
  *

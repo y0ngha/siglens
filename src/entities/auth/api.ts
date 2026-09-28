@@ -6,7 +6,6 @@ import { oauthAccounts, sessions, users } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type {
     AuthSessionRecord,
-    AuthUserRecord,
     CreateEmailUserInput,
     CreateOAuthUserInput,
     CreateSessionInput,
@@ -17,6 +16,7 @@ import type {
     UserRepository,
     UserTierRepository,
 } from '@/shared/db/types';
+import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import {
     encryptToken,
     requireOauthTokenEncryptionKey,

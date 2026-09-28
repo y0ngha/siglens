@@ -1,14 +1,9 @@
 import { useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
-import { getLocale, setRequestLocale } from 'next-intl/server';
-import { DEFAULT_LOCALE, isLocale, type Locale } from '@/shared/i18n/locales';
-import {
-    localeAlternatesFrom,
-    localeCanonical,
-    localeOpenGraph,
-    localeRobots,
-} from '@/shared/lib/seoAlternates';
+import { getLocale } from 'next-intl/server';
+import { type Locale, resolveLocale } from '@/shared/i18n/locales';
+import { buildHubMetadata } from '@/shared/lib/seoAlternates';
 import { Suspense } from 'react';
 
 import { EconomicCalendarGrid as EconomicCalendar } from '@/widgets/economy/sections/EconomicCalendarGrid';
@@ -23,7 +18,8 @@ import {
 } from '@/entities/economy/api/getKrIndicatorCards';
 import { getCalendarFromDb } from '@/entities/economy/api/getCalendarFromDb';
 import { resolveIndicatorLabels } from '@/entities/economy/api/resolveIndicatorLabels';
-import { etDateOf, kstDateOf } from '@/entities/economy/lib/calendarWindow';
+import { etDateOf } from '@/entities/economy/lib/calendarWindow';
+import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { cache } from 'react';
 import { CALENDAR_COUNTRY_KR } from '@/entities/economy/lib/economyCalendarConstants';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
@@ -35,12 +31,12 @@ import {
     SITE_URL,
     type SeoTranslator,
 } from '@/shared/lib/seo';
-import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 import { economyKrTitle } from '../constants';
+import { enterLocale } from '@/shared/lib/enterLocale';
 
 // 24h — ISR. 거시 지표는 월·분기 단위로 변하고, 신선도는 캘린더 인제스션의
 // `revalidateTag('economy:calendar')`가 책임진다. 시간 기반은 상한만 정한다.
@@ -80,18 +76,14 @@ interface LocaleMetadataParams {
 export async function generateMetadata({
     params,
 }: LocaleMetadataParams): Promise<Metadata> {
-    const { locale } = await params;
-    const resolvedLocale = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const { locale: rawLocale } = await params;
+    const locale = resolveLocale(rawLocale);
     const tSeo = await getTranslations({
-        locale: resolvedLocale,
+        locale,
         namespace: 'shared.seo',
     });
     const title = economyKrTitle(tSeo);
     const description = economyKrDescription(tSeo);
-    const fullTitle = `${title} | ${SITE_NAME}`;
-    const ogLocale = localeOpenGraph(resolvedLocale);
-    // og:url도 로케일별이어야 한다 — 소셜 언퍼널이 ko URL로 되돌린다.
-    const localizedUrl = localeCanonical(resolvedLocale, '/economy/kr');
     /*
      * degrade 판정은 **본문과 완전히 같은 식**이어야 한다.
      *
@@ -110,7 +102,7 @@ export async function generateMetadata({
             );
             return [] as KrIndicatorCard[];
         }),
-        getCalendarFromDb(todayEt, CALENDAR_COUNTRY_KR, resolvedLocale).catch(
+        getCalendarFromDb(todayEt, CALENDAR_COUNTRY_KR, locale).catch(
             (e: unknown) => {
                 console.error(
                     '[economy.kr.generateMetadata] calendar failed:',
@@ -122,44 +114,17 @@ export async function generateMetadata({
     ]);
     const degraded = cards.length === 0 && calendarEvents.length === 0;
 
-    return {
+    // degraded 시 canonical을 비우고 noindex — 지표가 하나도 없는 임시 상태를
+    // 색인시키지 않는다. follow는 유지해 내부 링크로 주스가 계속 흐르게 한다.
+    return buildHubMetadata({
+        params,
+        locale,
+        path: '/economy/kr',
         title,
         description,
         keywords: ECONOMY_KR_KEYWORDS,
-        // degraded 시 canonical을 비우고 noindex — 지표가 하나도 없는 임시 상태를
-        // 색인시키지 않는다. follow는 유지해 내부 링크로 주스가 계속 흐르게 한다.
-        alternates: await localeAlternatesFrom(params, '/economy/kr', {
-            // canonical은 넘기지 않는다 — `localeAlternatesFrom`이 로케일별
-            // 자기참조 URL을 만든다. ko 절대 URL을 넘기면 `/en/…`이 ko를
-            // canonical로 가리켜 hreflang 상호참조가 깨진다.
-            canonical: degraded ? null : undefined,
-        }),
-        robots: degraded
-            ? { index: false, follow: true }
-            : localeRobots(resolvedLocale),
-        openGraph: {
-            title: fullTitle,
-            description,
-            url: localizedUrl,
-            siteName: SITE_NAME,
-            ...ogLocale,
-            type: 'website',
-            images: [
-                {
-                    url: '/og-image.png',
-                    width: OG_IMAGE_WIDTH,
-                    height: OG_IMAGE_HEIGHT,
-                    alt: fullTitle,
-                },
-            ],
-        },
-        twitter: {
-            card: 'summary_large_image',
-            title: fullTitle,
-            description,
-            images: ['/og-image.png'],
-        },
-    };
+        degraded,
+    });
 }
 
 /** cold-gen(ISR 정적 생성 컨텍스트)에서 dynamic API(`cookies`/`headers`/`connection()`) 금지. */
@@ -168,12 +133,12 @@ async function KrEconomyContent() {
     // 로케일을 다시 넘기지 않아도 요청 스코프에서 찾는다(login/page.tsx 본문과 동일 패턴).
     const tSeo = await getTranslations('shared.seo');
     const requestLocale = await getLocale();
-    const locale = isLocale(requestLocale) ? requestLocale : DEFAULT_LOCALE;
+    const locale = resolveLocale(requestLocale);
     const now = requestNow();
     const todayEt = etDateOf(now);
     // 그리드 기본 선택일 = 현재 인스턴트의 KST 달력일. 그리드가 이벤트를 ET-인스턴트의
     // kstDateKey로 그룹화하므로 앵커도 같은 KST keyspace여야 한다.
-    const todayKstKey = kstDateOf(now);
+    const todayKstKey = kstDateKey(now);
 
     // 지표와 캘린더는 서로 독립이라 병렬로 기다린다. 라벨 조회는 캘린더 결과를
     // 소비하므로 그 뒤에 이어진다 — `Promise.all`로 올리면 깨진다.
@@ -334,10 +299,7 @@ export default async function EconomyKrPage({
     readonly params: Promise<{ locale: string }>;
 }) {
     const { locale } = await params;
-    // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
-    // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
-    // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
-    setRequestLocale(locale);
+    enterLocale(locale);
     const t = await getTranslations('app.economy');
     const tSeo = await getTranslations('shared.seo');
     return (

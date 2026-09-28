@@ -11,9 +11,9 @@ import {
 } from '@/entities/analysis/api';
 import {
     DrizzleNewsRepository,
-    hasAnalyzableNews,
     prewarmNews,
 } from '@/entities/news-article/api';
+import { hasAnalyzableNews } from '@/entities/news-article/lib/hasAnalyzableNews';
 import { rewriteToPlainLanguage } from '@/entities/analysis-plain/api';
 import { resolveCurrentPrice } from '@/entities/analysis-plain/lib/currentPrice';
 import { currencyForSymbol } from '@/shared/config/marketProfile/registry';

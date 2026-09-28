@@ -6,23 +6,14 @@ import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { cn } from '@/shared/lib/cn';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
+import { cachedNumberFormat } from '@/shared/lib/intlFormatCache';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 
-// 소수 자릿수(digits)가 행마다 달라 단일 상수로 고정할 수 없다. (로케일, 자릿수)별로
-// 포매터를 한 번만 만들어 재사용한다 — 렌더마다 new Intl.NumberFormat 금지.
 // 예전에는 `'ko-KR'` 고정이었다 — 로케일은 `INTL_LOCALE`에서만 정한다.
-const DECIMAL_FORMATTERS = new Map<string, Intl.NumberFormat>();
-
 function formatDecimal(value: number, digits: number, locale: Locale): string {
-    const key = `${locale}:${digits}`;
-    let formatter = DECIMAL_FORMATTERS.get(key);
-    if (formatter === undefined) {
-        formatter = new Intl.NumberFormat(INTL_LOCALE[locale], {
-            maximumFractionDigits: digits,
-        });
-        DECIMAL_FORMATTERS.set(key, formatter);
-    }
-    return formatter.format(value);
+    return cachedNumberFormat(INTL_LOCALE[locale], {
+        maximumFractionDigits: digits,
+    }).format(value);
 }
 
 const HEADING_ID = 'valuation-heading';

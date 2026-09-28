@@ -87,7 +87,7 @@ const POPULAR_TICKERS_PATH = resolve(
 );
 const POPULAR_OPTIONS_TICKERS_PATH = resolve(
     process.cwd(),
-    'src/entities/sitemap-entry/config/popular-options-tickers.ts'
+    'src/shared/config/popular-options-tickers.ts'
 );
 const POPULAR_TICKERS_DECLARATION = 'export const POPULAR_TICKERS = [';
 const POPULAR_TICKERS_END = '] as const;';

@@ -3,12 +3,12 @@ import { SITE_NAME } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
 import {
     DEFAULT_LOCALE,
-    isLocale,
     LOCALES,
     LOCALE_HREFLANG,
     LOCALE_OG,
     localePath,
     type Locale,
+    resolveLocale,
 } from '@/shared/i18n/locales';
 import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 import { SITE_URL } from '@/shared/lib/seo';
@@ -125,11 +125,7 @@ export async function localeAlternatesFrom(
     options: LocaleAlternatesOptions = {}
 ): Promise<LocaleAlternatesResult> {
     const { locale } = await params;
-    return localeAlternates(
-        isLocale(locale) ? locale : DEFAULT_LOCALE,
-        path,
-        options
-    );
+    return localeAlternates(resolveLocale(locale), path, options);
 }
 
 /**
@@ -243,5 +239,62 @@ export function localePageSocial(
             description,
             images: ['/og-image.png'],
         },
+    };
+}
+
+/** {@link buildHubMetadata} 입력. */
+export interface HubMetadataInput {
+    /** `localeAlternatesFrom`에 그대로 넘긴다(라우트의 `params`). */
+    readonly params: Promise<{ locale: string }>;
+    readonly locale: Locale;
+    /** 로케일 접두사가 없는 경로(`/market`, `/economy/kr`). */
+    readonly path: string;
+    /** 브랜드 없는 제목 — `<title>`은 레이아웃 템플릿이, 소셜 카드는 여기서 `| Siglens`를 붙인다. */
+    readonly title: string;
+    readonly description: string;
+    readonly keywords: readonly string[];
+    /**
+     * 본문이 빈 렌더(외부 데이터 실패·표본 부족)로 떨어졌는지. **본문과 같은 술어**를
+     * 넘겨야 degrade와 noindex가 어긋나지 않는다.
+     */
+    readonly degraded: boolean;
+}
+
+/**
+ * 데이터 허브 페이지(`/economy*`·`/market*`·`/fear-greed*`)의 메타데이터.
+ *
+ * 일곱 라우트가 같은 골격을 손으로 반복하고 있었다:
+ *
+ * - degraded면 canonical을 `null`로 비우고 `noindex, follow` — 임시 상태를
+ *   색인시키지 않되 링크 주스는 내부 링크로 계속 흐르게 한다.
+ * - 정상이면 canonical은 **넘기지 않는다** — `localeAlternatesFrom`이 로케일별
+ *   자기참조 URL을 만든다. ko 절대 URL을 넘기면 `/en/…`이 ko를 canonical로
+ *   가리켜 hreflang 상호참조가 깨진다.
+ * - 소셜 카드는 `localePageSocial`로 **통째로** 선언한다(부분 선언 시 레이아웃의
+ *   `images`·`locale`이 사라진다 — `localePageSocial` 참조).
+ */
+export async function buildHubMetadata({
+    params,
+    locale,
+    path,
+    title,
+    description,
+    keywords,
+    degraded,
+}: HubMetadataInput): Promise<Metadata> {
+    return {
+        title,
+        description,
+        keywords: [...keywords],
+        alternates: await localeAlternatesFrom(params, path, {
+            canonical: degraded ? null : undefined,
+        }),
+        robots: degraded
+            ? { index: false, follow: true }
+            : localeRobots(locale),
+        ...localePageSocial(locale, path, {
+            title: `${title} | ${SITE_NAME}`,
+            description,
+        }),
     };
 }

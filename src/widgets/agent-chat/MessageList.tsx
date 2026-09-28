@@ -12,7 +12,7 @@ import {
     relatedSymbolPages,
     type RelatedSymbolPage,
 } from '@/features/agent-chat/lib/relatedSymbolPages';
-import { type AgentUiMessage } from '@/features/agent-chat/hooks/useAgentStream';
+import type { AgentUiMessage } from '@/features/agent-chat/model/types';
 import { cn } from '@/shared/lib/cn';
 import { useSymbolLabels } from './hooks/useSymbolLabels';
 import { AgentMarkdown } from './AgentMarkdown';

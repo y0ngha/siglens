@@ -9,8 +9,6 @@ import type { KoreanTickerEntry } from '@/shared/lib/types';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import type * as schema from './schema';
 
-export type { AuthUserRecord };
-
 /** Connection configuration required to instantiate a database client. */
 export interface DatabaseConfig {
     /** PostgreSQL connection string, including credentials and SSL mode. */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ToolActivityItem } from '@/features/agent-chat/hooks/useAgentStream';
+import type { ToolActivityItem } from '@/features/agent-chat/model/types';
 import { relatedSymbolPages } from '@/features/agent-chat/lib/relatedSymbolPages';
 
 const tool = (

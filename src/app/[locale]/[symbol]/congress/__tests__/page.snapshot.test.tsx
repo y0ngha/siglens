@@ -38,7 +38,7 @@ vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
 vi.mock('next/navigation', () => ({
     notFound: vi.fn(),
 }));
-vi.mock('@/app/[locale]/[symbol]/fundamental/getProfileResilient', () => ({
+vi.mock('@/entities/ticker/lib/getProfileResilient', () => ({
     getProfileResilient: vi.fn(),
 }));
 vi.mock('@/app/[locale]/[symbol]/congress/congressData', () => ({
@@ -83,7 +83,7 @@ import CongressPage from '@/app/[locale]/[symbol]/congress/page';
 import { CongressSnapshotProse } from '@/views/symbol/snapshot/renderers/CongressSnapshotProse';
 import { CongressTrendSummary } from '@/widgets/congress/CongressTrendSummary';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
-import { getProfileResilient } from '@/app/[locale]/[symbol]/fundamental/getProfileResilient';
+import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
 import { getCongressPageData } from '@/app/[locale]/[symbol]/congress/congressData';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { expectVisibleFaqWithoutJsonLd } from '@/__tests__/utils/expectFaqSingleSource';

@@ -1,6 +1,5 @@
 import { getTranslations } from 'next-intl/server';
 import { countSkillFiles, FileSkillsLoader } from '@/entities/skill/api';
-import { setRequestLocale } from 'next-intl/server';
 import {
     localeAlternatesFrom,
     localeOpenGraph,
@@ -22,10 +21,9 @@ import {
     SITE_URL,
 } from '@/shared/lib/seo';
 import {
-    DEFAULT_LOCALE,
-    isLocale,
     LOCALE_HREFLANG,
     localePath,
+    resolveLocale,
 } from '@/shared/i18n/locales';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { FaqSection } from '@/shared/ui/FaqSection';
@@ -45,6 +43,7 @@ import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import type { Metadata } from 'next';
 import { cache, Suspense } from 'react';
 import { toSkillShowcaseItems } from '@/widgets/home/toSkillShowcaseItems';
+import { enterLocale } from '@/shared/lib/enterLocale';
 
 // 루트 레이아웃에서 canonical을 제거했으므로 홈 페이지 자체가 명시적으로 self-canonical을 선언한다.
 // 다른 인덱서블 페이지들(economy, market, backtesting 등)은 이미 자체 canonical을 갖고 있다.
@@ -55,10 +54,10 @@ interface LocaleMetadataParams {
 export async function generateMetadata({
     params,
 }: LocaleMetadataParams): Promise<Metadata> {
-    const { locale } = await params;
-    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const { locale: rawLocale } = await params;
+    const locale = resolveLocale(rawLocale);
     const tSeo = await getTranslations({
-        locale: resolved,
+        locale,
         namespace: 'shared.seo',
     });
     const title = tSeo('root.title');
@@ -87,8 +86,8 @@ export async function generateMetadata({
             description,
             // 로케일마다 다른 문서다 — 전 로케일이 `og:url`로 ko 루트를 가리키면
             // 공유 카드가 어느 언어에서 눌러도 한국어 페이지로 간다.
-            url: localizedAbsoluteUrl(SITE_URL, resolved),
-            ...localeOpenGraph(resolved),
+            url: localizedAbsoluteUrl(SITE_URL, locale),
+            ...localeOpenGraph(locale),
             images: [
                 {
                     url: '/og-image.png',
@@ -145,11 +144,8 @@ export default async function Home({
 }: {
     readonly params: Promise<{ locale: string }>;
 }) {
-    const { locale } = await params;
-    // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
-    // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
-    // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
-    setRequestLocale(locale);
+    const { locale: rawLocale } = await params;
+    const locale = enterLocale(rawLocale);
     // 넷은 서로 독립이다 — 직렬로 await하면 왕복이 4배가 된다.
     // 내비 라벨 키는 완전 수식이라 루트 네임스페이스로 푼다.
     const [t, tNav, tSeo, tJsonLd] = await Promise.all([
@@ -158,7 +154,6 @@ export default async function Home({
         getTranslations('shared.seo'),
         getTranslations('app.home.jsonLd'),
     ]);
-    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
     // countSkillFiles 오류(fs 접근 실패 등)는 graceful 처리 — 0 폴백으로 페이지를 계속 렌더한다.
     // throw가 전파되면 ISR 빈 캐시(0-byte body)가 동결된다.
     const skillCounts = await countSkillFiles().catch(e => {
@@ -180,15 +175,15 @@ export default async function Home({
     // JSON-LD와 화면 `<FaqSection>`의 단일 소스 — 두 번 만들지 않는다.
     const homeFaq = buildHomeFaq(tJsonLd);
 
-    const webApplicationId = `${localizedAbsoluteUrl(SITE_URL, resolved)}#webapplication`;
+    const webApplicationId = `${localizedAbsoluteUrl(SITE_URL, locale)}#webapplication`;
     const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'WebApplication',
         '@id': webApplicationId,
         name: SITE_NAME,
         description: tSeo('root.description'),
-        url: localizedAbsoluteUrl(SITE_URL, resolved),
-        inLanguage: LOCALE_HREFLANG[resolved],
+        url: localizedAbsoluteUrl(SITE_URL, locale),
+        inLanguage: LOCALE_HREFLANG[locale],
         applicationCategory: 'FinanceApplication',
         operatingSystem: 'Web',
         offers: {
@@ -210,7 +205,7 @@ export default async function Home({
             // `inLanguage: "en"`을 달고 한국어 산문을 내보내고 있었다.
             name: `${SITE_NAME} — ${tSeo('root.description')}`,
             description: tSeo('root.description'),
-            locale: resolved,
+            locale,
         }),
         mainEntity: { '@id': webApplicationId },
         // 아래 Organization 노드를 그래프에 붙인다 — 이 참조가 없으면 그 노드는
@@ -282,7 +277,7 @@ export default async function Home({
                             {/* The one SiglensAI hook on the main home: a quiet
                                 announcement line above the eyebrow, not a banner. */}
                             <a
-                                href={aiAskUrl(localePath(resolved, '/'))}
+                                href={aiAskUrl(localePath(locale, '/'))}
                                 className="mb-4 inline-flex min-h-9 max-w-full items-center gap-2 rounded-full border border-border-control px-3 text-xs text-secondary-300 hover:border-primary-400 hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                             >
                                 <span className="inline-flex items-center gap-1.5 font-mono font-semibold tracking-[0.12em] text-primary-400 uppercase">

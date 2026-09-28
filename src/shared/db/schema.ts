@@ -20,8 +20,8 @@ import {
     varchar,
 } from 'drizzle-orm/pg-core';
 import { LOCALES } from '@/shared/i18n/locales';
+import { LLM_PROVIDER_VALUES } from '@/shared/config/llmProviders';
 import {
-    LLM_PROVIDER_VALUES,
     OAUTH_PROVIDER_VALUES,
     SHAREABLE_KIND_VALUES,
     TERMS_KIND_VALUES,

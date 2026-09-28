@@ -1,3 +1,4 @@
+import { toFiniteNumber } from './toFiniteNumber';
 import type {
     CalendarImpact,
     EconomicCalendarEvent,
@@ -42,9 +43,9 @@ export function normalizeCalendarForCountry(
                     date,
                     event,
                     impact: asImpact(obj.impact),
-                    actual: asNumberOrNull(obj.actual),
-                    estimate: asNumberOrNull(obj.estimate),
-                    previous: asNumberOrNull(obj.previous),
+                    actual: toFiniteNumber(obj.actual),
+                    estimate: toFiniteNumber(obj.estimate),
+                    previous: toFiniteNumber(obj.previous),
                     unit: asString(obj.unit),
                 } satisfies EconomicCalendarEvent,
             ];
@@ -60,12 +61,4 @@ function asImpact(value: unknown): CalendarImpact {
     return IMPACTS.includes(value as CalendarImpact)
         ? (value as CalendarImpact)
         : 'Low';
-}
-
-/**
- * `Number(...)`로 강제하지 않는다 — `Number(null)`은 0이고 그건 유한수라, 발표되지
- * 않은 지표(`actual: null`)가 "0으로 발표됨"이 된다.
- */
-function asNumberOrNull(value: unknown): number | null {
-    return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }

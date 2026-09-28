@@ -1,4 +1,4 @@
-import type { NewsItem, NewsTimeRange } from '@y0ngha/siglens-core';
+import type { NewsItem } from '@y0ngha/siglens-core';
 import type { NewsClientPort } from './newsClientPort';
 
 /**
@@ -38,13 +38,6 @@ function withSymbol(symbol: string): NewsItem[] {
 }
 
 export class FakeNewsClient implements NewsClientPort {
-    async fetchNews(
-        symbol: string,
-        _range: NewsTimeRange
-    ): Promise<NewsItem[]> {
-        return withSymbol(symbol);
-    }
-
     async fetchNewsForPeriod(
         symbol: string,
         _lookbackMs: number

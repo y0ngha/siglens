@@ -15,7 +15,7 @@ import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
  *
  * vi.mock은 hoist되지만 ESLint(import/first)와 가독성을 위해 import 위에 둔다.
  */
-vi.mock('@/shared/hooks/useAnalysisStream', () => ({
+vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({
     runAnalysisStream: vi.fn(),
 }));
 vi.mock('@/entities/news-article/actions/submitNewsAnalysisAction', () => ({
@@ -78,7 +78,7 @@ vi.mock('@/shared/ui/MarkdownText', () => ({
 }));
 
 import { OverallContent } from '@/widgets/overall/OverallContent';
-import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
 
 const mockSubmit = runAnalysisStream as MockedFunction<

@@ -7,6 +7,7 @@ import {
     formatSignedUsd,
     dynamicDecimals,
     currencyFractionDigits,
+    signColorClass,
 } from '@/shared/lib/priceFormat';
 import type { PricePrecision } from '@/shared/config/marketProfile/types';
 
@@ -54,6 +55,22 @@ describe('formatUsdCurrency', () => {
 
     it('0을 처리한다', () => {
         expect(formatUsdCurrency(0)).toBe('$0.00');
+    });
+});
+
+describe('signColorClass', () => {
+    it('양수와 0은 성공 색이다', () => {
+        expect(signColorClass(1.5)).toBe('text-ui-success-text');
+        expect(signColorClass(0)).toBe('text-ui-success-text');
+    });
+
+    it('음수는 위험 색이다', () => {
+        expect(signColorClass(-0.1)).toBe('text-ui-danger-text');
+    });
+
+    it('formatPriceChange의 colorClass와 같은 규칙을 쓴다', () => {
+        expect(formatPriceChange(-2).colorClass).toBe(signColorClass(-2));
+        expect(formatPriceChange(0).colorClass).toBe(signColorClass(0));
     });
 });
 

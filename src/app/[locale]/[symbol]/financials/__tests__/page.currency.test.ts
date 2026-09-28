@@ -1,6 +1,6 @@
 /**
  * 뮤테이션 감사 생존자 회귀 가드: `FinancialsPage`의
- * `currency={statementCurrencyOf(upper)}` → `'USD'` 하드코딩 뮤테이션이
+ * `currency={currencyForSymbol(upper)}` → `'USD'` 하드코딩 뮤테이션이
  * 41/41 그린으로 살아남았다 — 기존 테스트는 `FinancialsScorecard`를
  * `() => null`로 mock하고 렌더 결과를 검사하지 않아, currency prop이 실제로
  * 심볼에서 유도돼 전달되는지는 아무도 확인하지 않았다. `.KS` 종목이면
@@ -28,7 +28,7 @@ vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
 vi.mock('next/navigation', () => ({
     notFound: vi.fn(),
 }));
-vi.mock('@/app/[locale]/[symbol]/fundamental/getProfileResilient', () => ({
+vi.mock('@/entities/ticker/lib/getProfileResilient', () => ({
     getProfileResilient: vi.fn(),
 }));
 vi.mock('@/app/[locale]/[symbol]/financials/financialData', () => ({
@@ -90,7 +90,7 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import FinancialsPage from '@/app/[locale]/[symbol]/financials/page';
 import { FinancialsScorecard } from '@/widgets/financials/FinancialsScorecard';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
-import { getProfileResilient } from '@/app/[locale]/[symbol]/fundamental/getProfileResilient';
+import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 
 const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);

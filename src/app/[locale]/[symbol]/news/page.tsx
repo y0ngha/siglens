@@ -4,12 +4,10 @@ import {
     getEarningsReportComparison,
     getGradeEvents,
 } from '@/app/[locale]/[symbol]/news/newsData';
-import { setRequestLocale } from 'next-intl/server';
 import {
-    DEFAULT_LOCALE,
-    isLocale,
     LOCALE_HREFLANG,
     type Locale,
+    resolveLocale,
 } from '@/shared/i18n/locales';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { getNewsList } from '@/entities/news-article/api';
@@ -24,17 +22,13 @@ import { AnalystActions } from '@/widgets/news/sections/AnalystActions';
 import { EventCalendar } from '@/widgets/news/sections/EventCalendar';
 import { NewsList } from '@/widgets/news/sections/NewsList';
 import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
-import {
-    NewsSnapshotProse,
-    hasNewsProse,
-} from '@/views/symbol/snapshot/renderers/NewsSnapshotProse';
+import { NewsSnapshotProse } from '@/views/symbol/snapshot/renderers/NewsSnapshotProse';
+import { hasNewsProse } from '@/views/symbol/snapshot/renderers/newsContent';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { SectionSkeleton } from '@/views/symbol/SectionSkeleton';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import {
-    SymbolRouteParams,
-    isAdmissibleSymbolShape,
-} from '@/shared/config/market';
+import { SymbolRouteParams } from '@/shared/config/market';
+import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { resolveNewsTitle } from '@/shared/lib/news/resolveNewsTitle';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
@@ -46,12 +40,9 @@ import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 // `NewsList`와 이 페이지가 같은 정의 파일에서 가져와 같은 값을 보게 한다.
 import { NEWS_LIST_PAGE_SIZE } from '@/shared/config/newsSerialization';
-import { todayKstIsoDate } from '@/shared/lib/dateKey';
 import { translateFmpError } from '@/shared/api/fmp/fmpUserMessage';
 import {
     buildBreadcrumbJsonLd,
-    buildSnapshotMetaDescription,
-    symbolTabDescriptionLabel,
     buildSymbolSeoContent,
     localizedAbsoluteUrl,
     resolveSymbolNewsSeoContent,
@@ -61,6 +52,7 @@ import {
     SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
+import { loadTabSnapshotMeta } from '@/app/[locale]/[symbol]/symbolSnapshotDescription';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -71,6 +63,8 @@ import {
 } from '@/shared/config/marketProfile/registry';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { cn } from '@/shared/lib/cn';
+import { enterLocale } from '@/shared/lib/enterLocale';
+import { kstDateKey } from '@/shared/lib/etTimeUtils';
 
 export const revalidate = 43200; // 12h — 신선도는 ensureNewsCardsAnalyzedAction의 on-demand revalidateTag('news:${symbol}', 'max')가 보장, 시간 기반은 상한만
 
@@ -87,7 +81,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { locale: rawLocale, symbol } = await params;
-    const locale = isLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
+    const locale = resolveLocale(rawLocale);
     const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     const upper = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
@@ -113,29 +107,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         displayName,
         koreanName: assetInfo.koreanName,
         englishName: assetInfo.name,
-        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        locale,
     });
     const metadata = symbolMetadataFromSeo(seo, locale);
 
-    // snapshot-derived unique description (spec 2026-07-24 Task 8). Same
-    // getSeoSnapshotsStatic(upper, revalidate) call the page body makes below —
-    // unstable_cache dedupes it within this render, so this is a cache hit, not
-    // an extra DB round-trip. Falls back to the templated description when no
-    // snapshot exists (backward compatible). og/twitter keep the templated copy
-    // — only the search-facing <meta name="description"> is overridden.
-    const snap = (await getSeoSnapshotsStatic(upper, revalidate, locale)).find(
-        s => s.tab === 'news'
-    );
-    const snapshotDescription = snap
-        ? buildSnapshotMetaDescription(
-              'news',
-              snap.content,
-              displayName,
-              null,
-              locale,
-              symbolTabDescriptionLabel('news', assetClass, tSeo)
-          )
-        : null;
+    // snapshot-derived unique description (spec 2026-07-24 Task 8).
+    const { snap, description: snapshotDescription } =
+        await loadTabSnapshotMeta({
+            symbol: upper,
+            tab: 'news',
+            revalidate,
+            locale,
+            displayName,
+            assetClass: assetClass,
+            tSeo,
+        });
 
     // **thin-content 게이트** — `congress/page.tsx`와 같은 모양이다.
     //
@@ -223,7 +209,7 @@ export async function NewsListSection({
 
 export async function EventCalendarSection({ symbol }: SymbolSectionProps) {
     const t = await getTranslations('app.symbol');
-    const today = todayKstIsoDate();
+    const today = kstDateKey(new Date());
     let earningsReports: Awaited<
         ReturnType<typeof getEarningsReportComparison>
     >;
@@ -299,13 +285,8 @@ function NewsDataServerAlert({ title, message }: NewsDataServerAlertProps) {
 }
 
 export default async function NewsPage({ params }: Props) {
-    const { locale, symbol } = await params;
-    // DB 콘텐츠(뉴스 본문) 해석에 쓸 좁혀진 로케일. URL 세그먼트는 신뢰 경계다.
-    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
-    // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
-    // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
-    // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
-    setRequestLocale(locale);
+    const { locale: rawLocale, symbol } = await params;
+    const locale = enterLocale(rawLocale);
     const t = await getTranslations('app.symbol');
     const tSeo = await getTranslations('shared.seo');
     const upper = symbol.toUpperCase();
@@ -322,11 +303,7 @@ export default async function NewsPage({ params }: Props) {
         notFound();
     }
 
-    const displayName = buildDisplayName(
-        assetInfo,
-        upper,
-        isLocale(locale) ? locale : DEFAULT_LOCALE
-    );
+    const displayName = buildDisplayName(assetInfo, upper, locale);
     const marketProfile = marketProfileOf(assetInfo);
     const assetClass = getDescriptor(marketProfile).assetClass;
     const isEquity = assetClass === 'equity';
@@ -338,7 +315,7 @@ export default async function NewsPage({ params }: Props) {
             displayName,
             koreanName: assetInfo.koreanName,
             englishName: assetInfo.name,
-            locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+            locale,
         }
     );
 
@@ -346,11 +323,7 @@ export default async function NewsPage({ params }: Props) {
     // undefined로 자연 생략된다. crypto는 schema.org 표준 타입이 없어 about 노드 자체를 두지 않는다.
     const aboutNode = buildAssetAboutNode(
         upper,
-        pickAssetName(
-            assetInfo,
-            upper,
-            isLocale(locale) ? locale : DEFAULT_LOCALE
-        ),
+        pickAssetName(assetInfo, upper, locale),
         assetInfo.fmpSymbol,
         assetClass
     );
@@ -359,7 +332,7 @@ export default async function NewsPage({ params }: Props) {
             { name: displayName, url: buildSymbolSeoContent(upper, tSeo).url },
             { name: t('page.2141f2'), url },
         ],
-        isLocale(locale) ? locale : DEFAULT_LOCALE
+        locale
     );
 
     // ISR degrade guard: getNewsList(Postgres)가 throw하면 ISR 캐시에 0-byte 빈 결과가
@@ -369,9 +342,9 @@ export default async function NewsPage({ params }: Props) {
     // Promise.all로 병렬화 — snapshots read는 서로 독립이라 직렬 await할 이유가 없다.
     const [newsItems, snapshots] = await Promise.all([
         staticSymbolCache(
-            [NEWS_LIST_CACHE_KEY, upper, ...contentLocaleKeyPart(resolved)],
+            [NEWS_LIST_CACHE_KEY, upper, ...contentLocaleKeyPart(locale)],
             upper,
-            () => getNewsList(upper, resolved),
+            () => getNewsList(upper, locale),
             [newsCacheTag(upper)],
             SECONDS_PER_HALF_DAY
         ).catch((e: unknown) => {
@@ -381,7 +354,7 @@ export default async function NewsPage({ params }: Props) {
         // ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
         // getSeoSnapshotsStatic JSDoc. revalidateSeconds mirrors this page's
         // `export const revalidate` literal above.
-        getSeoSnapshotsStatic(upper, revalidate, resolved),
+        getSeoSnapshotsStatic(upper, revalidate, locale),
     ]);
     const newsSnapshot = snapshots.find(s => s.tab === 'news');
     // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasNewsProse)
@@ -403,7 +376,7 @@ export default async function NewsPage({ params }: Props) {
         name: fullTitle,
         description,
         about: aboutNode,
-        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        locale,
         // 화면에 실제로 그려지는 스냅샷일 때만 신선도를 주장한다 —
         // 렌더 불가한 행은 본문에 한 글자도 남기지 않는다.
         generatedAt: showNewsProse ? newsSnapshot?.generatedAt : null,
@@ -449,7 +422,7 @@ export default async function NewsPage({ params }: Props) {
                 : 'page.newsArticleDescCrypto',
             { v0: displayName }
         ),
-        inLanguage: LOCALE_HREFLANG[isLocale(locale) ? locale : DEFAULT_LOCALE],
+        inLanguage: LOCALE_HREFLANG[locale],
         // datePublished/dateModified 계산 근거는 위 `articlePublishedAtForJsonLd`
         // 주석 참고. 예전에는 datePublished를 통째로 생략했는데, 그 근거였던
         // "ticker별 최초 시각을 알 수 없다"가 사실이 아니었다 — `first_generated_at`
@@ -469,7 +442,7 @@ export default async function NewsPage({ params }: Props) {
         // 같은 문서 안에 존재하지 않는 노드를 참조하고 있었다.
         isPartOf: {
             '@type': 'WebPage',
-            '@id': `${localizedAbsoluteUrl(url, isLocale(locale) ? locale : DEFAULT_LOCALE)}#webpage`,
+            '@id': `${localizedAbsoluteUrl(url, locale)}#webpage`,
         },
         // Article schema는 image를 명시할 때 Rich Results 자격이 강해진다.
         // 정적 og-image.png를 사용해 hashless permanent URL을 보장 — Next.js의
@@ -511,10 +484,7 @@ export default async function NewsPage({ params }: Props) {
                           position: idx + 1,
                           item: {
                               '@type': 'NewsArticle',
-                              headline: resolveNewsTitle(
-                                  item,
-                                  isLocale(locale) ? locale : DEFAULT_LOCALE
-                              ),
+                              headline: resolveNewsTitle(item, locale),
                               url: item.url,
                               datePublished: item.publishedAt,
                           },
@@ -597,7 +567,7 @@ export default async function NewsPage({ params }: Props) {
                  */}
                 <NewsListErrorBoundary>
                     <Suspense fallback={<SectionSkeleton />}>
-                        <NewsListSection symbol={upper} locale={resolved} />
+                        <NewsListSection symbol={upper} locale={locale} />
                     </Suspense>
                 </NewsListErrorBoundary>
 

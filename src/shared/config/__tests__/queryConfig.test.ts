@@ -6,7 +6,6 @@ import type {
 import {
     ASSET_INFO_STALE_TIME_MS,
     BARS_STALE_TIME_MS,
-    CURRENT_USER_STALE_TIME_MS,
     MARKET_SUMMARY_STALE_TIME_MS,
     QUERY_GC_TIME_MS,
     QUERY_KEYS,
@@ -27,7 +26,6 @@ describe('queryConfig staleTime constants', () => {
         ASSET_INFO_STALE_TIME_MS,
         BARS_STALE_TIME_MS,
         USER_TIER_STALE_TIME_MS,
-        CURRENT_USER_STALE_TIME_MS,
         REGISTERED_PROVIDERS_STALE_TIME_MS,
     };
 

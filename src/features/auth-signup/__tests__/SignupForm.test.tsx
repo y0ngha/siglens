@@ -6,8 +6,11 @@ import {
     useRequestEmailVerification,
     useVerifyEmail,
 } from '@/features/auth-email-verification/hooks/useEmailVerificationForms';
-import type { RequestEmailVerificationFormState } from '@/shared/lib/auth/formTypes';
-import type { VerifyEmailFormState, SignupFormState } from '@/shared/lib/types';
+import type {
+    RequestEmailVerificationFormState,
+    SignupFormState,
+    VerifyEmailFormState,
+} from '@/shared/lib/auth/formTypes';
 import { koMessage } from '@/shared/test-utils/koMessage';
 
 vi.mock('@/shared/db/client', () => ({

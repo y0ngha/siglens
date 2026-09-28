@@ -37,6 +37,7 @@ import { analyzeNewsCards } from './lib/analyzeNewsCards';
 import { PREWARM_NEWS_CARD_LIMIT } from './lib/newsAnalysisConstants';
 import { selectUnanalyzed } from './lib/selectUnanalyzed';
 import {
+    countChangedRows,
     ingestNewsForSymbol,
     NewsIngestWriteError,
 } from './lib/ingestNewsForSymbol';
@@ -403,11 +404,7 @@ export async function prewarmNews(
     // 빈 목록을 계속 서빙해, Fix B의 최대 성과가 최대 12시간 노출되지 않는다(감사 F1).
     // `revalidateTag('seo-snapshot:…')`는 다른 태그이고 전 탭 수렴 시에만 발화하므로
     // 이 경로를 대신하지 못한다.
-    const changedCount =
-        ingested?.upsertSettled.filter(
-            r => r.status === 'fulfilled' && r.value === true
-        ).length ?? 0;
-    if (changedCount > 0) {
+    if (ingested !== null && countChangedRows(ingested) > 0) {
         revalidateTag(newsCacheTag(symbol), 'max');
     }
 
@@ -482,29 +479,3 @@ export async function prewarmNews(
     });
     return ingested === null ? { ...result, newsFetchFailed: true } : result;
 }
-
-/**
- * `server-only` 모듈의 서버 소비자용 재노출.
- */
-export { hasAnalyzableNews } from './lib/hasAnalyzableNews';
-export { analyzeNewsCards } from './lib/analyzeNewsCards';
-export { selectUnanalyzed } from './lib/selectUnanalyzed';
-export {
-    CHAT_SYNC_NEWS_CARD_LIMIT,
-    VISITOR_NEWS_CARD_LIMIT,
-} from './lib/newsAnalysisConstants';
-export { ingestNewsForSymbol } from './lib/ingestNewsForSymbol';
-export { isRecentlyFetched } from './lib/newsRefreshFlag';
-export { NEWS_ANALYSIS_LOOKBACK_MS } from './lib/newsLookback';
-
-// Naver news search, re-exported for server consumers outside this slice
-// (the agent's `web_search` tool blends it with Brave for Korean queries).
-export {
-    hasNaverCredentials,
-    naverAiCredentials,
-    searchNaverNews,
-    searchNaverWeb,
-    stripNaverMarkup,
-    toIsoPublishedAt,
-    type NaverCredentials,
-} from './lib/naverNewsSearch';

@@ -20,14 +20,6 @@ import {
  */
 export type OnPollingComplete = (finalItems: NewsDisplayItem[]) => void;
 
-export {
-    POLL_INTERVAL_MS,
-    MAX_CONSECUTIVE_FAILURES,
-    EMPTY_SNAPSHOT_MAX_POLLS,
-    MAX_POLL_DURATION_MS,
-    STAGNATION_FLOOR_POLLS,
-};
-
 const REFRESH_SNAPSHOT_MIN_POLLS = 5;
 
 function hasPendingAnalysis(items: NewsDisplayItem[]): boolean {

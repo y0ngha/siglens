@@ -2,14 +2,14 @@ import type { MockedFunction } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { getNewsCardsAction } from '@/entities/news-article/actions/getNewsCardsAction';
+import { useNewsCardPolling } from '@/widgets/news/hooks/useNewsCardPolling';
 import {
     EMPTY_SNAPSHOT_MAX_POLLS,
     MAX_CONSECUTIVE_FAILURES,
     MAX_POLL_DURATION_MS,
     POLL_INTERVAL_MS,
     STAGNATION_FLOOR_POLLS,
-    useNewsCardPolling,
-} from '@/widgets/news/hooks/useNewsCardPolling';
+} from '@/shared/config/cardPollingConfig';
 
 vi.mock('@/entities/news-article/actions/getNewsCardsAction', () => ({
     getNewsCardsAction: vi.fn(),

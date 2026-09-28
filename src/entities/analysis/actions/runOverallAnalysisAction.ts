@@ -34,7 +34,12 @@ import {
 } from '@/shared/lib/byokGate';
 import { caughtAnalysisErrorCode } from '@/shared/lib/aiProviderFailure';
 import { isE2E } from '@/shared/api/e2eEnv';
-// Cross-entity: options-chain fetchOptionsSnapshot 필요. Phase 9에서 features 레이어 도입 시 해소.
+// Cross-entity(options-chain): overall은 옵션 스냅샷까지 조합하는 multi-entity
+// orchestration이다 — `src/entities/CLAUDE.md` "의도적 예외" 표에 등재된 허용 경로.
+// features로 옮기지 않는 이유: 호출부가 SSE 분석 라우트·챗 `run_fresh_analysis` 툴(app)
+// 이고, 같은 입력 조립을 캐시 키 정합을 위해 그대로 따라 하는 cron용
+// `prewarmOverall`(`analysis/api.ts`)이 이 슬라이스에 있다 — 옮기면 둘을 함께
+// 재배치하고 테스트 mock 경로까지 바꾸는 큰 리팩터가 된다.
 import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';

@@ -1,13 +1,12 @@
-import { constants } from 'node:http2';
 import 'server-only';
-import { NextResponse, type NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
 import { applyAuthCookie } from '@/entities/auth/lib/applyAuthCookie';
 import { createExpiredAuthHintCookie } from '@/entities/auth/lib/authHintCookie';
 import { isSecureCookieEnv } from '@/entities/auth/lib/sessionCookieOptions';
 import { logoutUser } from '@/entities/auth/lib/logoutUser';
 import { DrizzleSessionRepository } from '@/entities/auth/api';
-import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
+import { getDatabaseClient } from '@/shared/db/client';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import {
     aiSignedOutUrl,
@@ -15,8 +14,7 @@ import {
 } from '@/entities/auth/lib/handoffStore';
 import { isAiHost } from '@/shared/config/aiHost';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
-
-const { HTTP_STATUS_BAD_REQUEST, HTTP_STATUS_FOUND } = constants;
+import { invalidHandoffRequest, noStoreRedirect } from '../_shared/responses';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,13 +33,7 @@ export const dynamic = 'force-dynamic';
 // react-doctor-disable-next-line react-doctor/nextjs-no-side-effect-in-get-handler
 export async function GET(request: NextRequest): Promise<Response> {
     if (isAiHost(request.headers.get('host'))) {
-        return NextResponse.json(
-            { error: 'invalid_request' },
-            {
-                status: HTTP_STATUS_BAD_REQUEST,
-                headers: { 'Cache-Control': 'no-store' },
-            }
-        );
+        return invalidHandoffRequest();
     }
     let payload: Awaited<ReturnType<typeof consumeLogoutCode>>;
     try {
@@ -53,11 +45,9 @@ export async function GET(request: NextRequest): Promise<Response> {
         payload = null;
     }
     // `aiSignedOutUrl` builds its path with `localePath` — noRawRedirect guard.
-    const response = NextResponse.redirect(
-        aiSignedOutUrl(payload?.locale ?? DEFAULT_LOCALE),
-        HTTP_STATUS_FOUND
+    const response = noStoreRedirect(
+        aiSignedOutUrl(payload?.locale ?? DEFAULT_LOCALE)
     );
-    response.headers.set('Cache-Control', 'no-store');
     if (payload === null) return response;
 
     const sessionToken = request.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value;
@@ -68,7 +58,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     const result = await logoutUser(
         { sessionToken },
         {
-            sessions: new DrizzleSessionRepository(getAuthDatabaseClient().db),
+            sessions: new DrizzleSessionRepository(getDatabaseClient().db),
         },
         { secureCookie: secure }
     );

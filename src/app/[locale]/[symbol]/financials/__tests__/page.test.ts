@@ -35,7 +35,7 @@ vi.mock('@/entities/ticker/lib/ticker', () => ({
 vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
-vi.mock('@/app/[locale]/[symbol]/fundamental/getProfileResilient', () => ({
+vi.mock('@/entities/ticker/lib/getProfileResilient', () => ({
     getProfileResilient: vi.fn(),
 }));
 vi.mock('@/app/[locale]/[symbol]/financials/financialData', () => ({
@@ -85,7 +85,7 @@ import {
     revalidate,
 } from '@/app/[locale]/[symbol]/financials/page';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
-import { getProfileResilient } from '@/app/[locale]/[symbol]/fundamental/getProfileResilient';
+import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
 import {
     getFinancialsSnapshot,
     isEmptyFinancialsSnapshot,

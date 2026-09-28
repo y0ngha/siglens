@@ -10,6 +10,5 @@ import type { NewsClientPort } from './newsClientPort';
  * 상태가 없어 싱글턴 인스턴스 하나로 충분하다(FmpNewsClient의 캐시 변수 불필요).
  */
 export const EMPTY_NEWS_CLIENT: NewsClientPort = {
-    fetchNews: async () => [],
     fetchNewsForPeriod: async () => [],
 };

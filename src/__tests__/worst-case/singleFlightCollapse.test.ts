@@ -1,4 +1,4 @@
-import { createSingleFlight } from '@/entities/ticker/lib/utils/singleFlight';
+import { createSingleFlight } from '@/shared/lib/singleFlight';
 
 describe('SingleFlight collapse and failure propagation', () => {
     it('collapses 100 concurrent calls for same key into one execution', async () => {

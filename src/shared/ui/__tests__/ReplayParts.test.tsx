@@ -192,6 +192,20 @@ describe('ReplaySources', () => {
         expect(screen.getByText('SEC')).toBeInTheDocument();
         expect(screen.getByText('· 기준 2026-09-18 종가')).toBeInTheDocument();
     });
+
+    it('separator={false}면 기준 시각 앞의 `·`를 빼고 그린다 (광고 랜딩 카피 규칙)', () => {
+        const { container } = render(
+            <ReplaySources
+                label="출처"
+                sources={['FMP']}
+                asOf="기준 2026-09-18 종가"
+                separator={false}
+            />
+        );
+
+        expect(screen.getByText('기준 2026-09-18 종가')).toBeInTheDocument();
+        expect(container.textContent).not.toContain('·');
+    });
 });
 
 describe('ReplayPauseButton', () => {

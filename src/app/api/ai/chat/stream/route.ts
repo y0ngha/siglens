@@ -28,13 +28,8 @@ import { getClientIp } from '@/shared/api/getClientIp';
 import { readGuestId } from '@/shared/api/guestId';
 import { isBot } from '@/shared/api/isBot';
 import { getDatabaseClient } from '@/shared/db/client';
-import {
-    AGENT_TIME_ZONE_HEADER,
-    ANALYSIS_LOCALE_HEADER,
-    DEFAULT_LOCALE,
-    isLocale,
-    type Locale,
-} from '@/shared/i18n/locales';
+import { AGENT_TIME_ZONE_HEADER, type Locale } from '@/shared/i18n/locales';
+import { localeFromRequestHeader } from '@/shared/lib/localeFromRequestHeader';
 import { canAcceptAnalysisStream } from '@/shared/lib/sse/activeStreams';
 import { AgentTurnError, agentEventStream } from '../agentEventStream';
 import {
@@ -171,11 +166,6 @@ function parseBody(raw: unknown): Body | null {
         ...(action === 'edit' ? { editSeq: b.editSeq as number } : {}),
         history,
     };
-}
-
-function requestLocale(request: Request): Locale {
-    const raw = request.headers.get(ANALYSIS_LOCALE_HEADER) ?? '';
-    return isLocale(raw) ? raw : DEFAULT_LOCALE;
 }
 
 const json = (status: number, body: unknown, headers?: HeadersInit): Response =>
@@ -393,7 +383,7 @@ export async function POST(request: Request): Promise<Response> {
         subject = user.id;
     }
 
-    const locale = requestLocale(request);
+    const locale = localeFromRequestHeader(request);
     const tier: Tier = user ? await resolveAgentTier(user.id) : 'free';
 
     /**

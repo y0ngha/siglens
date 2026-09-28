@@ -1,6 +1,7 @@
 import { useTranslations } from 'next-intl';
 import type { BacktestStats } from '@/entities/backtest-case/lib/deriveBacktestStats';
 import { cn } from '@/shared/lib/cn';
+import { signColorClass } from '@/shared/lib/priceFormat';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 
 interface BacktestHeroProps {
@@ -126,11 +127,7 @@ export function BacktestHero({ stats }: BacktestHeroProps) {
                     <StatCard
                         value={meanReturnDisplay}
                         label={t('BacktestHero.meanReturnLabel')}
-                        valueClassName={
-                            stats.meanReturnPct >= 0
-                                ? 'text-ui-success-text'
-                                : 'text-ui-danger-text'
-                        }
+                        valueClassName={signColorClass(stats.meanReturnPct)}
                     />
                     <StatCard
                         value={tHero('caseCount', { v0: stats.totalCases })}

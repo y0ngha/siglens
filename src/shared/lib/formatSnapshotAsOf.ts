@@ -1,5 +1,6 @@
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
+import { cachedDateTimeFormat } from '@/shared/lib/intlFormatCache';
 
 /**
  * 스냅샷 프로즈의 "기준일" 캡션용 포맷터 — 시장별로 하나씩 고정한다.
@@ -34,20 +35,13 @@ const SNAPSHOT_TIME_ZONE_BY_PROFILE: Record<MarketProfileId, string> = {
  * 렌더된다. 예전에는 시장별 상수 3개를 모듈 스코프에 두었는데, 로케일이
  * `'ko-KR'`로 **고정**돼 있어 `/en/AAPL`이 `2026년 8월 18일`을 찍었다.
  */
-const FORMATTER_CACHE = new Map<string, Intl.DateTimeFormat>();
-
 function formatterFor(locale: Locale, marketProfile: MarketProfileId) {
-    const key = `${locale}:${marketProfile}`;
-    const cached = FORMATTER_CACHE.get(key);
-    if (cached) return cached;
-    const formatter = new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+    return cachedDateTimeFormat(INTL_LOCALE[locale], {
         timeZone: SNAPSHOT_TIME_ZONE_BY_PROFILE[marketProfile],
         year: 'numeric',
         month: 'long',
         day: 'numeric',
     });
-    FORMATTER_CACHE.set(key, formatter);
-    return formatter;
 }
 
 /**

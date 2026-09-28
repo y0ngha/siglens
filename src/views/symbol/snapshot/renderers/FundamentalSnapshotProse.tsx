@@ -42,8 +42,6 @@ interface FundamentalSnapshotProseProps {
     plain?: string | null;
 }
 
-export { hasFundamentalProse } from './fundamentalContent';
-
 /**
  * SEO pre-warm 스냅샷의 fundamental 탭 프로즈 렌더러 —
  * `TechnicalSnapshotProse`/`OverallSnapshotProse`가 세운 패턴(spec

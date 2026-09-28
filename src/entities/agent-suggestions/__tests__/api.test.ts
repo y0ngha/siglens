@@ -234,7 +234,7 @@ describe('getAgentSuggestions', () => {
 
         // Both calls issued synchronously (no `await` between them) so the
         // second finds the first's promise already registered in the
-        // module-level `inFlight` map.
+        // module-level `inFlight` single-flight.
         const [r1, r2] = await Promise.all([
             getAgentSuggestions(INPUT),
             getAgentSuggestions(INPUT),

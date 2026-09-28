@@ -1,8 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { AUTH_ERROR_KEY } from '@/shared/lib/authErrorKey';
-import type { LoginFormState } from '@/shared/lib/auth/formTypes';
+import { useDescribeAuthError } from '@/shared/hooks/useDescribeAuthError';
 import { useLoginForm } from '../hooks/useLoginForm';
 import { AuthErrorAlert } from '@/shared/ui/auth/AuthErrorAlert';
 import { AuthFieldGroup } from '@/shared/ui/auth/AuthFieldGroup';
@@ -14,26 +13,12 @@ interface LoginFormProps {
     initialError?: string;
 }
 
-/**
- * 에러 **코드**로 번역한다 — use-case가 함께 돌려주는 `message`는 한국어
- * 원문이라 화면에 그대로 나가면 안 된다(예전에는 그게 그대로 나갔다).
- * 코드가 표에 없을 때만 `message`로 떨어진다.
- */
-function useDescribeError(
-    state: LoginFormState,
-    initialError?: string
-): string | null {
-    const tAuth = useTranslations('entities.auth');
-    const code = state.error?.code;
-    if (code && AUTH_ERROR_KEY[code]) return tAuth(AUTH_ERROR_KEY[code]);
-    if (state.error?.message) return state.error.message;
-    return initialError ?? null;
-}
-
 export function LoginForm({ next, initialError }: LoginFormProps) {
     const t = useTranslations('features.auth-login');
     const [state, formAction] = useLoginForm();
-    const errorMessage = useDescribeError(state, initialError);
+    const describeAuthError = useDescribeAuthError();
+    // 액션 에러가 없거나 문구가 비면 OAuth 콜백 `?error=`에서 온 초기 오류로 떨어진다.
+    const errorMessage = describeAuthError(state.error) || initialError || null;
     return (
         <form action={formAction} className="space-y-4" noValidate>
             {next ? <input type="hidden" name="next" value={next} /> : null}

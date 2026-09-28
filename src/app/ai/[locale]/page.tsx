@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 import { getAgentSuggestions } from '@/entities/agent-suggestions/api';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { listConversationsAction } from '@/entities/chat-conversation/actions/listConversationsAction';
@@ -15,6 +15,7 @@ import {
     type AiSeoCopy,
 } from './aiSeo';
 import { maybeHandoffRedirect } from './handoffRedirect';
+import { enterLocale } from '@/shared/lib/enterLocale';
 
 /**
  * Deliberately no `loading.tsx` for this route. With one, the streamed
@@ -85,8 +86,7 @@ export default async function AiHomePage({
     >;
 }) {
     const { locale: raw } = await params;
-    const locale = resolveLocale(raw);
-    setRequestLocale(locale);
+    const locale = enterLocale(raw);
     const sp = await searchParams;
     await maybeHandoffRedirect(locale, '/', sp);
     const user = await getCurrentUser();

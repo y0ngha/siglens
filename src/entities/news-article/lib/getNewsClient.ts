@@ -1,7 +1,7 @@
 import { FmpNewsClient } from './fmpNewsClient';
 import { EMPTY_NEWS_CLIENT } from './emptyNewsClient';
 import { NaverNewsClient } from './naverNewsClient';
-import { hasNaverCredentials } from './naverNewsSearch';
+import { hasNaverCredentials } from '@/shared/api/naver/naverSearch';
 import { getKoreanNames } from '@/entities/ticker/lib/koreanNameStore';
 import { CURATED_KOREAN_NAMES } from '@/shared/config/popular-tickers';
 import type { NewsClientPort } from './newsClientPort';

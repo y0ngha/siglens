@@ -19,8 +19,11 @@ import {
 import { searchCryptoAssets } from './cryptoAssetStore';
 import { searchKrEquity } from './krEquitySearch';
 import { rankByRelevance } from './searchRelevance';
-import { fireAndForget, type BackgroundTaskOptions } from './backgroundTask';
-import { createSingleFlight } from './utils/singleFlight';
+import {
+    fireAndForget,
+    type BackgroundTaskOptions,
+} from '@/shared/lib/backgroundTask';
+import { createSingleFlight } from '@/shared/lib/singleFlight';
 import { createCacheProvider } from '@y0ngha/siglens-core';
 import type { KoreanTickerEntry, TickerSearchResult } from '@/shared/lib/types';
 

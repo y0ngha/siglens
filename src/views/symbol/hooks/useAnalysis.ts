@@ -51,7 +51,7 @@ type RunAnalysisActionResult =
      * 쿨다운 상태를 알게 되는 유일한 경로다.
      */
     | { status: 'reanalyze_cooldown'; remainingMs: number };
-import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import { getReanalyzeCooldownMs as fetchReanalyzeCooldownMs } from '@/entities/analysis/lib/reanalyzeCooldown';
 import { normalizeAnalysisResponse } from '@/entities/analysis/lib/normalizeAnalysisResponse';
 

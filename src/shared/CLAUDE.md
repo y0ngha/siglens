@@ -7,14 +7,14 @@
 
 | Path | Purpose |
 |---|---|
-| `shared/lib/` | 순수 유틸리티 함수: cn, chartColors, priceFormat, seo, og, a11y, timeFormat, eastern 등 (장 세션 판정은 `@y0ngha/siglens-core`로 단일화됨) |
-| `shared/config/` | 설정 상수: queryKeys (QUERY_KEYS), cookieNames, market, time |
+| `shared/lib/` | 순수 유틸리티 함수: cn, chartColors, priceFormat, seo, seoAlternates(`buildHubMetadata` 포함), og, a11y, timeFormat, eastern, isoDate, intlFormatCache, singleFlight 등 (장 세션 판정은 `@y0ngha/siglens-core`로 단일화됨). 서버 런타임 헬퍼도 여기 둔다: backgroundTask(`fireAndForget`/drain)·afterWithDrain, enterLocale(`setRequestLocale` 래퍼)·localeFromRequestHeader, isNextRedirectError, auth/isAuthorizedCronRequest. 하위 폴더: `news/`(뉴스 enum 강제변환·hashUrlToId·detectTruncatedBody), `sse/`(parseSseFrames·runAnalysisStream), `replay/`, `auth/` |
+| `shared/config/` | 설정 상수: queryKeys (QUERY_KEYS), cookieNames, market, ticker(`isAdmissibleSymbolShape`), time, popular-tickers·popular-options-tickers(`update-popular-tickers.ts` 생성) |
 | `shared/ui/` | Primitive UI 컴포넌트: DotSeparator, EyeIcon, InfoTooltip, JsonLd, MarkdownText, tabs/ |
-| `shared/hooks/` | React 의존 일반 hook: useDialog, useEscapeKey, useFocusTrap, useHydrated, useIsMobileViewport 등 |
+| `shared/hooks/` | React 의존 일반 hook: useDialog, useEscapeKey, useFocusTrap, useHydrated, useIsMobileViewport, useBodyScrollLock, useDescribeAuthError, useMarketFactorLabels 등. **hook이 아닌 모듈은 두지 않는다**(→ `shared/lib`) |
 | `shared/db/` | Drizzle/Neon client, schema, token encryption, DB config/constants/types |
 | `shared/email/` | Email dispatcher (Resend/Noop) + email types (EmailMessage, EmailDispatcher) |
 | `shared/cache/` | Redis client (Upstash) |
-| `shared/api/` | HTTP client: isBot (bot detection), FMP fundamental client |
+| `shared/api/` | HTTP client: isBot (bot detection), `fmp/`(FMP fundamental client·normalizeFmpPublishedDate), `yahoo/`, `naver/`(네이버 검색 API `naverSearch`), `market/`, `economy/`, `dataGoKr/` |
 
 ## 의도적 예외 (shared → entities)
 

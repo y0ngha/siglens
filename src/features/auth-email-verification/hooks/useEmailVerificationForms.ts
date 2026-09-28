@@ -4,7 +4,7 @@ import { useActionState } from 'react';
 import type {
     RequestEmailVerificationFormState,
     VerifyEmailFormState,
-} from '@/shared/lib/types';
+} from '@/shared/lib/auth/formTypes';
 import { requestEmailVerificationAction } from '../actions/requestEmailVerificationAction';
 import { verifyEmailAction } from '../actions/verifyEmailAction';
 

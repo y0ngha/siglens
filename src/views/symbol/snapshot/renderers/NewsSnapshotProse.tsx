@@ -36,8 +36,6 @@ interface NewsSnapshotProseProps {
     plain?: string | null;
 }
 
-export { hasNewsProse } from './newsContent';
-
 /**
  * SEO pre-warm 스냅샷의 news 탭 프로즈 렌더러 — Task 6, 마지막(일곱 번째) 탭
  * 렌더러. `currentDriverKo`를 문단으로(`\n` 기준 분리), `overallSentiment`가

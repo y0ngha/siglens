@@ -1,8 +1,5 @@
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
-
-// 로케일별로 한 번만 만든다. 예전에는 `'ko-KR'` 고정 모듈 상수였다 — 로케일은
-// `INTL_LOCALE`에서만 정한다.
-const NUMBER_FORMATTERS = new Map<Locale, Intl.NumberFormat>();
+import { cachedNumberFormat } from '@/shared/lib/intlFormatCache';
 
 /**
  * 숫자를 로케일 규칙(천 단위 구분자)으로 포맷한 뒤 단위 접미사를 붙여 반환한다.
@@ -18,11 +15,8 @@ export function formatNum(
     locale: Locale
 ): string {
     if (!Number.isFinite(v)) return 'N/A';
-    let formatter = NUMBER_FORMATTERS.get(locale);
-    if (formatter === undefined) {
-        formatter = new Intl.NumberFormat(INTL_LOCALE[locale]);
-        NUMBER_FORMATTERS.set(locale, formatter);
-    }
+    // 예전에는 `'ko-KR'` 고정 모듈 상수였다 — 로케일은 `INTL_LOCALE`에서만 정한다.
+    const formatter = cachedNumberFormat(INTL_LOCALE[locale]);
     // `!Number.isFinite` guard above ensures v is a finite number here.
     return `${formatter.format(v as number)}${unit}`;
 }

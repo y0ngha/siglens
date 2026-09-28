@@ -15,6 +15,7 @@ import { MS_PER_HOUR } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import type { Locale } from '@/shared/i18n/locales';
 import { resolveNewsTitle } from '@/shared/lib/news/resolveNewsTitle';
+import { createSingleFlight } from '@/shared/lib/singleFlight';
 import { suggestionsCacheKey } from './lib/cacheKey';
 import type { AgentSuggestionsInput } from './model';
 
@@ -45,7 +46,7 @@ const HEADLINE_CATEGORY_IDS = ['general', 'stock'] as const;
 // bounded to <=4 locales x 1 generation/hour, so a duplicate provider call
 // from another instance is rare and cheap. Upgrade to a Redis lock if this
 // key space grows (e.g. per-user fan-out at scale).
-const inFlight = new Map<string, Promise<string[] | null>>();
+const inFlight = createSingleFlight<string[] | null>();
 
 function warn(context: string, error: unknown): void {
     // Never log `error.message` — for DB errors it can embed SQL/bound
@@ -180,12 +181,5 @@ export async function getAgentSuggestions(
         }
     }
 
-    const existing = inFlight.get(cacheKey);
-    if (existing) return existing;
-
-    const promise = generate(input, now, cacheKey, redis).finally(() => {
-        inFlight.delete(cacheKey);
-    });
-    inFlight.set(cacheKey, promise);
-    return promise;
+    return inFlight.run(cacheKey, () => generate(input, now, cacheKey, redis));
 }

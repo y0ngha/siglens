@@ -29,7 +29,7 @@ vi.mock('@/widgets/backtesting/BacktestTabs', () => ({
     BacktestTabs: () => null,
 }));
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
-vi.mock('@/app/[locale]/backtesting/data.json', () => ({
+vi.mock('@/entities/backtest-case/data/data.json', () => ({
     default: {
         meta: { totalCases: 10, totalTickers: 5 },
         // `validateBacktestData`가 항등함수로 mock되므로 이 픽스처가 곧 런타임 shape다.

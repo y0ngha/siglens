@@ -231,7 +231,7 @@ import { DrizzleUserRepository } from '@/entities/auth/api'; // server-only — 
 
 ```
 재분석 버튼 클릭 (또는 자동 트리거)
-  → useAnalysis 훅 → POST /api/analysis/stream (SSE, shared/hooks/useAnalysisStream)
+  → useAnalysis 훅 → POST /api/analysis/stream (SSE, shared/lib/sse/runAnalysisStream)
     → 라우트가 tier/BYOK 게이트 + 봇 판정 + 포지션 버킷 해석
     → 재분석 쿨다운(Redis) 획득 여부로 force 파생 — 클라이언트는 의도만 보낸다
     → @y0ngha/siglens-core `runAnalysis` (요청 안에서 블로킹)

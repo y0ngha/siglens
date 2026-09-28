@@ -2,7 +2,7 @@
 
 /**
  * 뮤테이션 감사 생존자 회귀 가드: `FinancialsStatements`의
- * `statementCurrencyOf(symbol)` → `'USD'` 하드코딩 뮤테이션이 181/181
+ * `currencyForSymbol(symbol)` → `'USD'` 하드코딩 뮤테이션이 181/181
  * 그린으로 살아남았다. 기존 `FinancialsStatements.test.tsx`는
  * IncomeStatementSection 등 4개 섹션을 전부 mock해 rows 개수만 확인하므로
  * currency prop이 실제 DOM 셀까지 배선되는지는 아무도 검증하지 않았다 — 이

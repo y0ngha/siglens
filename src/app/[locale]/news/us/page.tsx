@@ -1,8 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import type { SeoTranslator } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
-import { setRequestLocale } from 'next-intl/server';
-import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
+import { resolveLocale } from '@/shared/i18n/locales';
 import {
     localeAlternatesFrom,
     localeCanonical,
@@ -26,6 +25,7 @@ import {
     SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
+import { enterLocale } from '@/shared/lib/enterLocale';
 
 // 24h ISR — 허브 인덱스는 카테고리 구조가 바뀌지 않는 한 신선도가 낮아도 무방.
 // 카드별 헤드라인은 staticSymbolCache(24h TTL)를 통해 캐싱된다 — 페이지 revalidate와
@@ -57,25 +57,20 @@ interface LocaleMetadataParams {
 export async function generateMetadata({
     params,
 }: LocaleMetadataParams): Promise<Metadata> {
-    const { locale } = await params;
-    const resolvedLocale = isLocale(locale) ? locale : DEFAULT_LOCALE;
-    const ogLocale = localeOpenGraph(resolvedLocale);
+    const { locale: rawLocale } = await params;
+    const locale = resolveLocale(rawLocale);
+    const ogLocale = localeOpenGraph(locale);
     // og:url도 로케일별이어야 한다 — 소셜 언퍼널이 ko URL로 되돌린다.
-    const url = localeCanonical(resolvedLocale, PATH);
+    const url = localeCanonical(locale, PATH);
     // 미리보기가 하나도 없으면 이 페이지는 h1 + 두 문단 + 카드 제목뿐이라
     // 2026-07 thin-content 사태에서 문제가 된 분량(약 677자)보다도 얇다.
     // 첫인상으로 판정되는 신규 URL이라 그 상태를 색인시키지 않는다.
     const previews = await Promise.all(
-        categoriesInRegion('us').map(cat =>
-            fetchCategoryPreviews(
-                cat,
-                isLocale(locale) ? locale : DEFAULT_LOCALE
-            )
-        )
+        categoriesInRegion('us').map(cat => fetchCategoryPreviews(cat, locale))
     );
     const degraded = previews.every(list => list.length === 0);
     const tSeo = await getTranslations({
-        locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+        locale,
         namespace: 'shared.seo',
     });
     return {
@@ -100,7 +95,7 @@ export async function generateMetadata({
         }),
         robots: degraded
             ? { index: false, follow: true }
-            : localeRobots(resolvedLocale),
+            : localeRobots(locale),
         openGraph: {
             type: 'website',
             siteName: SITE_NAME,
@@ -128,11 +123,8 @@ export default async function UsNewsHubPage({
 }: {
     readonly params: Promise<{ locale: string }>;
 }) {
-    const { locale } = await params;
-    // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
-    // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
-    // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
-    setRequestLocale(locale);
+    const { locale: rawLocale } = await params;
+    const locale = enterLocale(rawLocale);
     // 셋은 서로 독립이다.
     const [t, tNav, tSeo] = await Promise.all([
         getTranslations('app.news'),
@@ -141,18 +133,8 @@ export default async function UsNewsHubPage({
     ]);
     const categories = categoriesInRegion('us');
     const [previewsByCategory, digestLines] = await Promise.all([
-        Promise.all(
-            categories.map(cat =>
-                fetchCategoryPreviews(
-                    cat,
-                    isLocale(locale) ? locale : DEFAULT_LOCALE
-                )
-            )
-        ),
-        fetchCategoryDigestLines(
-            categories,
-            isLocale(locale) ? locale : DEFAULT_LOCALE
-        ),
+        Promise.all(categories.map(cat => fetchCategoryPreviews(cat, locale))),
+        fetchCategoryDigestLines(categories, locale),
     ]);
 
     const url = `${SITE_URL}${PATH}`;
@@ -162,7 +144,7 @@ export default async function UsNewsHubPage({
             url: url,
             name: `${newsUsTitle(tSeo)} | ${SITE_NAME}`,
             description: newsUsDescription(tSeo),
-            locale: isLocale(locale) ? locale : DEFAULT_LOCALE,
+            locale,
         }),
     };
 
@@ -171,7 +153,7 @@ export default async function UsNewsHubPage({
             { name: t('page.dc06c4'), url: `${SITE_URL}/news` },
             { name: t('page.d311d2'), url },
         ],
-        isLocale(locale) ? locale : DEFAULT_LOCALE
+        locale
     );
 
     return (

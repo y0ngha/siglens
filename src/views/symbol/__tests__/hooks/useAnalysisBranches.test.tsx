@@ -7,7 +7,7 @@
 import koMessages from '../../../../../messages/ko.json';
 import type { Mock } from 'vitest';
 import { useAnalysis } from '@/views/symbol/hooks/useAnalysis';
-import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import type { RunAnalysisResult } from '@y0ngha/siglens-core';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
 type RunAnalysisActionResult =
@@ -22,7 +22,7 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 
-vi.mock('@/shared/hooks/useAnalysisStream', () => ({
+vi.mock('@/shared/lib/sse/runAnalysisStream', () => ({
     runAnalysisStream: vi.fn(),
 }));
 

@@ -15,11 +15,12 @@ import {
     DrizzleSessionRepository,
     DrizzleUserRepository,
 } from '@/entities/auth/api';
-import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
+import { getDatabaseClient } from '@/shared/db/client';
 import { toHandoffAwareRedirect } from '@/entities/auth/lib/handoffStore';
 import type { LoginFormState } from '@/shared/lib/auth/formTypes';
 import { sanitizeNextPath, toSameOriginPath } from '@/shared/lib/auth/redirect';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
+import { isNextRedirectError } from '@/shared/lib/isNextRedirectError';
 
 export async function loginAction(
     _prev: LoginFormState,
@@ -33,7 +34,7 @@ export async function loginAction(
         const next = sanitizeNextPath(formData.get('next')?.toString());
         const secure = isSecureCookieEnv();
 
-        const { db } = getAuthDatabaseClient();
+        const { db } = getDatabaseClient();
         const result = await loginUser(
             { email, password },
             {
@@ -75,8 +76,7 @@ export async function loginAction(
             toHandoffAwareRedirect(await localeHref(toSameOriginPath(next)))
         );
     } catch (err) {
-        if (err instanceof Error && err.message.startsWith('NEXT_REDIRECT'))
-            throw err;
+        if (isNextRedirectError(err)) throw err;
         console.error('[loginAction] unexpected error:', err);
         return {
             error: {

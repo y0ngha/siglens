@@ -6,7 +6,7 @@ import {
 import { toKoreanTickerRows } from '@/shared/api/dataGoKr/toKoreanTickerRows';
 import { formatCandidates, planKrTickerReconcile } from './krTickerReconcile';
 import { DrizzleKoreanTickerRepository } from '../api';
-import { tryGetTickerDatabaseClient } from './db';
+import { tryGetDatabaseClient } from '@/shared/db/client';
 import { invalidateKoreanTickerCache } from './koreanNameStore';
 
 export interface KrTickerSyncCounts {
@@ -39,7 +39,7 @@ export async function syncKrListedTickers(): Promise<KrTickerSyncCounts> {
         );
     }
 
-    const client = tryGetTickerDatabaseClient();
+    const client = tryGetDatabaseClient();
     if (!client) throw new Error('[kr-tickers] database unavailable');
     const repository = new DrizzleKoreanTickerRepository(client.db);
 

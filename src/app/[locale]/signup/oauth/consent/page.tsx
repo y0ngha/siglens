@@ -1,7 +1,6 @@
 import { getTranslations } from 'next-intl/server';
-import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
+import { resolveLocale } from '@/shared/i18n/locales';
 import { localeCanonical } from '@/shared/lib/seoAlternates';
-import { setRequestLocale } from 'next-intl/server';
 import { localeRedirect } from '@/shared/i18n/localeRedirect';
 import { Suspense } from 'react';
 import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
@@ -11,6 +10,7 @@ import { cancelOAuthSignupAction } from '@/features/auth-oauth/actions/cancelOAu
 import { OAUTH_ERROR_REDIRECT } from '@/entities/auth/lib/errorMessages';
 import { SITE_NAME } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
+import { enterLocale } from '@/shared/lib/enterLocale';
 
 // noindex 페이지에도 canonical/openGraph.url을 명시한다. 자세한 근거는 src/app/[locale]/login/page.tsx 주석 참조.
 /**
@@ -23,19 +23,19 @@ export async function generateMetadata({
 }: {
     readonly params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
-    const { locale } = await params;
-    const resolved = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const { locale: rawLocale } = await params;
+    const locale = resolveLocale(rawLocale);
     const tSeo = await getTranslations({
-        locale: resolved,
+        locale,
         namespace: 'shared.seo',
     });
     return {
         title: tSeo('oauthConsentTitle'),
         description: tSeo('oauthConsentFullTitle', { v0: SITE_NAME }),
         alternates: {
-            canonical: localeCanonical(resolved, '/signup/oauth/consent'),
+            canonical: localeCanonical(locale, '/signup/oauth/consent'),
         },
-        openGraph: { url: localeCanonical(resolved, '/signup/oauth/consent') },
+        openGraph: { url: localeCanonical(locale, '/signup/oauth/consent') },
         robots: { index: false, follow: false },
     };
 }
@@ -83,9 +83,7 @@ export default async function OAuthConsentPage({
     searchParams,
 }: PageProps) {
     const { locale } = await params;
-    // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
-    // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
-    setRequestLocale(locale);
+    enterLocale(locale);
     const t = await getTranslations('app.signup');
     return (
         <AuthCardShell title={t('page.8ba06b')} subtitle={t('page.f0c59b')}>

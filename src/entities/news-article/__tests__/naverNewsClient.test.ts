@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { NaverNewsClient, stripNaverMarkup } from '../lib/naverNewsClient';
-import { hashUrlToId } from '../lib/fmpNewsClient';
+import { NaverNewsClient } from '../lib/naverNewsClient';
+import { stripNaverMarkup } from '@/shared/api/naver/naverSearch';
+import { hashUrlToId } from '@/shared/lib/news/hashUrlToId';
+import { MS_PER_DAY } from '@/shared/config/time';
+
+const SEVEN_DAYS_MS = 7 * MS_PER_DAY;
 
 const KOREAN_NAME = '삼성전자';
 const SYMBOL = '005930.KS';
@@ -72,10 +76,9 @@ describe('NaverNewsClient', () => {
     it('maps a Naver article to a NewsItem with markup stripped', async () => {
         fetchSpy.mockResolvedValue(mockNaverResponse([naverItem()]));
 
-        const items = await new NaverNewsClient(resolveQuery).fetchNews(
-            SYMBOL,
-            '7d'
-        );
+        const items = await new NaverNewsClient(
+            resolveQuery
+        ).fetchNewsForPeriod(SYMBOL, SEVEN_DAYS_MS);
 
         expect(items).toHaveLength(1);
         expect(items[0]).toMatchObject({
@@ -106,10 +109,9 @@ describe('NaverNewsClient', () => {
             ])
         );
 
-        const items = await new NaverNewsClient(resolveQuery).fetchNews(
-            SYMBOL,
-            '7d'
-        );
+        const items = await new NaverNewsClient(
+            resolveQuery
+        ).fetchNewsForPeriod(SYMBOL, SEVEN_DAYS_MS);
 
         expect(items).toHaveLength(2);
         expect(items[0]!.id).not.toBe(items[1]!.id);
@@ -119,7 +121,10 @@ describe('NaverNewsClient', () => {
         // 종목코드로 검색하면 국내 기사가 거의 잡히지 않는다.
         fetchSpy.mockResolvedValue(mockNaverResponse([]));
 
-        await new NaverNewsClient(resolveQuery).fetchNews(SYMBOL, '24h');
+        await new NaverNewsClient(resolveQuery).fetchNewsForPeriod(
+            SYMBOL,
+            MS_PER_DAY
+        );
 
         const url = String(fetchSpy.mock.calls[0]![0]);
         expect(url).toContain(`query=${encodeURIComponent(KOREAN_NAME)}`);
@@ -134,7 +139,10 @@ describe('NaverNewsClient', () => {
         // 검색 API가 NAVER API HUB로 이관되면서 NCP API Gateway 규약을 쓴다.
         fetchSpy.mockResolvedValue(mockNaverResponse([]));
 
-        await new NaverNewsClient(resolveQuery).fetchNews(SYMBOL, '24h');
+        await new NaverNewsClient(resolveQuery).fetchNewsForPeriod(
+            SYMBOL,
+            MS_PER_DAY
+        );
 
         expect(fetchSpy.mock.calls[0]![1]).toMatchObject({
             headers: {
@@ -148,7 +156,10 @@ describe('NaverNewsClient', () => {
         // 구 도메인은 2026-07-31부로 신규 신청이 막혔다 — 새 키로는 호출 자체가 안 된다.
         fetchSpy.mockResolvedValue(mockNaverResponse([]));
 
-        await new NaverNewsClient(resolveQuery).fetchNews(SYMBOL, '24h');
+        await new NaverNewsClient(resolveQuery).fetchNewsForPeriod(
+            SYMBOL,
+            MS_PER_DAY
+        );
 
         const url = String(fetchSpy.mock.calls[0]![0]);
         expect(url).toContain('naverapihub.apigw.ntruss.com/search/v1/news');
@@ -161,10 +172,9 @@ describe('NaverNewsClient', () => {
         // 고쳐 쓸 여지를 준다.
         fetchSpy.mockResolvedValue(mockNaverResponse([naverItem()]));
 
-        const [item] = await new NaverNewsClient(resolveQuery).fetchNews(
-            SYMBOL,
-            '7d'
-        );
+        const [item] = await new NaverNewsClient(
+            resolveQuery
+        ).fetchNewsForPeriod(SYMBOL, SEVEN_DAYS_MS);
 
         expect(item!.sourceLanguage).toBe('ko');
     });
@@ -182,10 +192,9 @@ describe('NaverNewsClient', () => {
             ])
         );
 
-        const [item] = await new NaverNewsClient(resolveQuery).fetchNews(
-            SYMBOL,
-            '7d'
-        );
+        const [item] = await new NaverNewsClient(
+            resolveQuery
+        ).fetchNewsForPeriod(SYMBOL, SEVEN_DAYS_MS);
 
         expect(item!.bodyTruncated).toBe(true);
     });
@@ -194,10 +203,9 @@ describe('NaverNewsClient', () => {
         // 네이버 링크는 기사 이관 시 만료되지만 원문 URL은 남는다.
         fetchSpy.mockResolvedValue(mockNaverResponse([naverItem()]));
 
-        const [item] = await new NaverNewsClient(resolveQuery).fetchNews(
-            SYMBOL,
-            '7d'
-        );
+        const [item] = await new NaverNewsClient(
+            resolveQuery
+        ).fetchNewsForPeriod(SYMBOL, SEVEN_DAYS_MS);
 
         expect(item!.url).toBe('https://news.example.com/article/1');
     });
@@ -207,10 +215,9 @@ describe('NaverNewsClient', () => {
             mockNaverResponse([naverItem({ originallink: undefined })])
         );
 
-        const [item] = await new NaverNewsClient(resolveQuery).fetchNews(
-            SYMBOL,
-            '7d'
-        );
+        const [item] = await new NaverNewsClient(
+            resolveQuery
+        ).fetchNewsForPeriod(SYMBOL, SEVEN_DAYS_MS);
 
         expect(item!.url).toBe('https://n.news.naver.com/article/1');
     });
@@ -224,15 +231,14 @@ describe('NaverNewsClient', () => {
             ])
         );
 
-        const items = await new NaverNewsClient(resolveQuery).fetchNews(
-            SYMBOL,
-            '7d'
-        );
+        const items = await new NaverNewsClient(
+            resolveQuery
+        ).fetchNewsForPeriod(SYMBOL, SEVEN_DAYS_MS);
 
         expect(items).toEqual([]);
     });
 
-    it('filters out articles older than the requested range', async () => {
+    it('filters out articles older than the lookback window', async () => {
         fetchSpy.mockResolvedValue(
             mockNaverResponse([
                 naverItem({ pubDate: 'Fri, 14 Aug 2026 15:30:00 +0900' }),
@@ -243,10 +249,9 @@ describe('NaverNewsClient', () => {
             ])
         );
 
-        const items = await new NaverNewsClient(resolveQuery).fetchNews(
-            SYMBOL,
-            '7d'
-        );
+        const items = await new NaverNewsClient(
+            resolveQuery
+        ).fetchNewsForPeriod(SYMBOL, SEVEN_DAYS_MS);
 
         expect(items).toHaveLength(1);
         expect(items[0]!.url).toBe('https://news.example.com/article/1');
@@ -255,10 +260,9 @@ describe('NaverNewsClient', () => {
     it('returns empty without calling the API when credentials are missing', async () => {
         vi.stubEnv('NAVER_CLIENT_ID', '');
 
-        const items = await new NaverNewsClient(resolveQuery).fetchNews(
-            SYMBOL,
-            '7d'
-        );
+        const items = await new NaverNewsClient(
+            resolveQuery
+        ).fetchNewsForPeriod(SYMBOL, SEVEN_DAYS_MS);
 
         expect(items).toEqual([]);
         expect(fetchSpy).not.toHaveBeenCalled();
@@ -267,10 +271,9 @@ describe('NaverNewsClient', () => {
     it('skips the request when no Korean name is known yet', async () => {
         resolveQuery.mockResolvedValueOnce(null);
 
-        const items = await new NaverNewsClient(resolveQuery).fetchNews(
-            SYMBOL,
-            '7d'
-        );
+        const items = await new NaverNewsClient(
+            resolveQuery
+        ).fetchNewsForPeriod(SYMBOL, SEVEN_DAYS_MS);
 
         expect(items).toEqual([]);
         expect(fetchSpy).not.toHaveBeenCalled();
@@ -284,7 +287,10 @@ describe('NaverNewsClient', () => {
         } as unknown as Response);
 
         await expect(
-            new NaverNewsClient(resolveQuery).fetchNews(SYMBOL, '7d')
+            new NaverNewsClient(resolveQuery).fetchNewsForPeriod(
+                SYMBOL,
+                SEVEN_DAYS_MS
+            )
         ).resolves.toEqual([]);
     });
 
@@ -292,7 +298,10 @@ describe('NaverNewsClient', () => {
         fetchSpy.mockRejectedValue(new Error('network'));
 
         await expect(
-            new NaverNewsClient(resolveQuery).fetchNews(SYMBOL, '7d')
+            new NaverNewsClient(resolveQuery).fetchNewsForPeriod(
+                SYMBOL,
+                SEVEN_DAYS_MS
+            )
         ).resolves.toEqual([]);
     });
 });

@@ -16,7 +16,7 @@ import {
     QuoteIcon,
 } from '@/shared/ui/StrokeIcons';
 import { LP_PRIMARY_BUTTON, LpDisclaimer, LpShell } from './ui/LpShell';
-import { LpReportReplay } from './ui/LpReportReplay';
+import { ReportReplay } from '@/widgets/replay/ReportReplay';
 
 const CTA = '종목 분석 시작';
 const CTA_HREF = `${SITE_URL}/NVDA`;
@@ -191,9 +191,17 @@ export function StockAnalysisLanding() {
                         편의 리포트로 정리합니다.
                     </p>
                     <div className="mt-6">
-                        <LpReportReplay
+                        <ReportReplay
                             scenarios={SCENARIOS}
-                            host={SITE_HOST}
+                            labels={{
+                                host: SITE_HOST,
+                                region: 'SIGLENS 분석 과정 예시',
+                                badge: '예시 화면',
+                                pause: '일시정지',
+                                resume: '다시 재생',
+                                sources: '근거',
+                            }}
+                            sourcesSeparator={false}
                             doneIcon={
                                 <CheckIcon className="size-3.5 text-ui-success-text" />
                             }

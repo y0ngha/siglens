@@ -40,7 +40,7 @@ export interface BuildStaticEntriesOptions {
     /**
      * `/backtesting`이 싣는 데이터의 마지막 케이스 진입일.
      *
-     * 이 페이지의 본문은 `src/app/[locale]/backtesting/data.json` 고정 산출물이라
+     * 이 페이지의 본문은 `src/entities/backtest-case/data/data.json` 고정 산출물이라
      * 배포로 바뀌지 않는다(같은 내용의 사본이 `public/`에도 있고 손으로 맞춘다 —
      * 화면과 이 lastmod는 둘 다 `src/` 쪽을 읽는다). `SITE_BUILD_DATE`를 쓰면 릴리스마다 "방금 바뀜"을 주장하게 되고,
      * lastmod가 부정확하면 Google은 그 sitemap의 lastmod 전체를 무시한다.

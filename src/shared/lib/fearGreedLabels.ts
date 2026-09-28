@@ -1,6 +1,7 @@
 import type { SnapshotConfidence } from '@/shared/lib/types';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
+import { cachedNumberFormat } from '@/shared/lib/intlFormatCache';
 import {
     type FearGreedFactorKey,
     type FearGreedLabel,
@@ -84,22 +85,11 @@ const FACTOR_FORMAT_OPTIONS: Record<
     },
 };
 
-const FACTOR_FORMATTERS = new Map<string, Intl.NumberFormat>();
-
 function factorFormatter(
     tier: FactorFormatTier,
     locale: Locale
 ): Intl.NumberFormat {
-    const key = `${locale}:${tier}`;
-    let formatter = FACTOR_FORMATTERS.get(key);
-    if (formatter === undefined) {
-        formatter = new Intl.NumberFormat(
-            INTL_LOCALE[locale],
-            FACTOR_FORMAT_OPTIONS[tier]
-        );
-        FACTOR_FORMATTERS.set(key, formatter);
-    }
-    return formatter;
+    return cachedNumberFormat(INTL_LOCALE[locale], FACTOR_FORMAT_OPTIONS[tier]);
 }
 
 /** Raw value 표시 포맷터 — UI는 이 함수로 raw 값을 출력한다. */

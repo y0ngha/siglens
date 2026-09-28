@@ -1,12 +1,7 @@
 import type { Metadata } from 'next';
-import { getLocale, getTranslations, setRequestLocale } from 'next-intl/server';
-import { DEFAULT_LOCALE, isLocale, type Locale } from '@/shared/i18n/locales';
-import {
-    localeAlternatesFrom,
-    localeCanonical,
-    localeOpenGraph,
-    localeRobots,
-} from '@/shared/lib/seoAlternates';
+import { getLocale, getTranslations } from 'next-intl/server';
+import { type Locale, resolveLocale } from '@/shared/i18n/locales';
+import { buildHubMetadata } from '@/shared/lib/seoAlternates';
 import { Suspense } from 'react';
 
 import { EconomicCalendarGrid as EconomicCalendar } from '@/widgets/economy/sections/EconomicCalendarGrid';
@@ -20,7 +15,8 @@ import { getEconomySnapshotStatic } from '@/entities/economy/api/economySnapshot
 import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingStaticCache';
 import { getCalendarFromDb } from '@/entities/economy/api/getCalendarFromDb';
 import { resolveIndicatorLabels } from '@/entities/economy/api/resolveIndicatorLabels';
-import { etDateOf, kstDateOf } from '@/entities/economy/lib/calendarWindow';
+import { etDateOf } from '@/entities/economy/lib/calendarWindow';
+import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { CALENDAR_COUNTRY } from '@/entities/economy/lib/economyCalendarConstants';
 import { isEmptyEconomySnapshot } from '@/entities/economy/lib/economyCompleteness';
 import {
@@ -37,7 +33,6 @@ import {
     ISO_DATE_HOUR_SLICE_END,
     SECONDS_PER_HOUR,
 } from '@/shared/config/time';
-import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { FaqSection } from '@/shared/ui/FaqSection';
@@ -45,6 +40,7 @@ import { RegionTabs } from '@/shared/ui/RegionTabs';
 
 import { economyTitle } from './constants';
 import { EconomyDegraded } from './EconomyDegraded';
+import { enterLocale } from '@/shared/lib/enterLocale';
 
 /** 페이지 최상단 h1 — Suspense 위에 렌더되어 ready와 degraded 양 경로에서 항상 표시된다. */
 function EconomyHeroH1({ title }: { title: string }) {
@@ -93,18 +89,14 @@ interface LocaleMetadataParams {
 export async function generateMetadata({
     params,
 }: LocaleMetadataParams): Promise<Metadata> {
-    const { locale } = await params;
-    const resolvedLocale = isLocale(locale) ? locale : DEFAULT_LOCALE;
+    const { locale: rawLocale } = await params;
+    const locale = resolveLocale(rawLocale);
     const tSeo = await getTranslations({
-        locale: resolvedLocale,
+        locale,
         namespace: 'shared.seo',
     });
     const title = economyTitle(tSeo);
     const description = economyDescription(tSeo);
-    const fullTitle = `${title} | ${SITE_NAME}`;
-    const ogLocale = localeOpenGraph(resolvedLocale);
-    // og:url도 로케일별이어야 한다 — 소셜 언퍼널이 ko URL로 되돌린다.
-    const localizedUrl = localeCanonical(resolvedLocale, '/economy');
     // metadata와 본문이 동일한 isEmpty 판정을 봐서 degrade와 noindex가 일치한다.
     // 외부 I/O 오류(Redis 등)는 graceful 처리 — null이면 degraded 경로로 폴백.
     const snapshot = await getEconomySnapshotStatic().catch(e => {
@@ -112,44 +104,17 @@ export async function generateMetadata({
         return null;
     });
     const degraded = snapshot === null || isEmptyEconomySnapshot(snapshot);
-    return {
+    // degraded 시 canonical을 null로 비워 크롤러가 임시 상태를 색인하지 않도록 한다.
+    // follow: true는 유지해 링크 주스가 내부 링크로 계속 흐르게 한다.
+    return buildHubMetadata({
+        params,
+        locale,
+        path: '/economy',
         title,
         description,
         keywords: ECONOMY_KEYWORDS,
-        // degraded 시 canonical을 null로 비워 크롤러가 임시 상태를 색인하지 않도록 한다.
-        // follow: true는 유지해 링크 주스가 내부 링크로 계속 흐르게 한다.
-        alternates: await localeAlternatesFrom(params, '/economy', {
-            // canonical은 넘기지 않는다 — `localeAlternatesFrom`이 로케일별
-            // 자기참조 URL을 만든다. ko 절대 URL을 넘기면 `/en/…`이 ko를
-            // canonical로 가리켜 hreflang 상호참조가 깨진다.
-            canonical: degraded ? null : undefined,
-        }),
-        robots: degraded
-            ? { index: false, follow: true }
-            : localeRobots(resolvedLocale),
-        openGraph: {
-            title: fullTitle,
-            description,
-            url: localizedUrl,
-            siteName: SITE_NAME,
-            ...ogLocale,
-            type: 'website',
-            images: [
-                {
-                    url: '/og-image.png',
-                    width: OG_IMAGE_WIDTH,
-                    height: OG_IMAGE_HEIGHT,
-                    alt: fullTitle,
-                },
-            ],
-        },
-        twitter: {
-            card: 'summary_large_image',
-            title: fullTitle,
-            description,
-            images: ['/og-image.png'],
-        },
-    };
+        degraded,
+    });
 }
 
 /** cold-gen(ISR 정적 생성 컨텍스트)에서 dynamic API(`cookies`/`headers`/`connection()`) 금지. */
@@ -158,7 +123,7 @@ async function EconomyContent() {
     // 로케일을 다시 넘기지 않아도 요청 스코프에서 찾는다(login/page.tsx 본문과 동일 패턴).
     const tSeo = await getTranslations('shared.seo');
     const requestLocale = await getLocale();
-    const locale = isLocale(requestLocale) ? requestLocale : DEFAULT_LOCALE;
+    const locale = resolveLocale(requestLocale);
     // 외부 I/O 오류(Redis 등)는 graceful 처리 — 빈 캐시 동결을 막기 위해 throw 대신
     // null로 폴백해 EconomyDegraded를 반환한다. generateMetadata와 동일한 catch 패턴.
     const snapshot = await getEconomySnapshotStatic().catch(e => {
@@ -198,7 +163,7 @@ async function EconomyContent() {
     // 그리드 기본 선택일 = 현재 인스턴트의 KST 달력일. 그리드가 이벤트를 ET-인스턴트의
     // kstDateKey로 그룹화하므로(EconomicCalendarGrid groupEventsByKstDay) 앵커도 같은 KST
     // keyspace여야 한다. 정오-ET 합성은 KST 다음날로 밀려 오늘 그룹을 건너뛰므로 금지.
-    const todayKstKey = kstDateOf(now);
+    const todayKstKey = kstDateKey(now);
     const calendarEvents = await getCalendarFromDb(
         todayEt,
         CALENDAR_COUNTRY,
@@ -298,10 +263,7 @@ export default async function EconomyPage({
     readonly params: Promise<{ locale: string }>;
 }) {
     const { locale } = await params;
-    // 정적 렌더 활성화. 이 호출이 없으면 next-intl의 서버 API가 `headers()`로
-    // 폴백해 **이 라우트의 ISR이 통째로 꺼진다**(빌드 route 표에서 `●` → `ƒ`).
-    // 실측으로 확인했다 — Next 16.2는 `next/root-params` 미지원이라 이 경로가 유일하다.
-    setRequestLocale(locale);
+    enterLocale(locale);
     const t = await getTranslations('app.economy');
     const tSeo = await getTranslations('shared.seo');
     // JSON-LD와 화면 `<FaqSection>`의 단일 소스 — 두 번 만들지 않는다.

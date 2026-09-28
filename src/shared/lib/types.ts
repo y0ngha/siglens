@@ -118,17 +118,6 @@ export interface CryptoCategory {
     items: readonly TickerItem[];
 }
 
-export type {
-    DeleteAccountFormState,
-    FinalizeOAuthSignupState,
-    ForgotPasswordFormState,
-    LoginFormState,
-    RequestEmailVerificationFormState,
-    ResetPasswordFormState,
-    SignupFormState,
-    VerifyEmailFormState,
-} from '@/shared/lib/auth/formTypes';
-
 import type { LlmProvider } from '@/shared/config/llmProviders';
 // Import from marketProfile/types (not registry) to avoid a circular dependency:
 // shared/lib/types → marketProfile/registry → shared/lib/types

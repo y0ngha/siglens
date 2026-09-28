@@ -1,14 +1,14 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import type { StreamErrorMessages } from '@/shared/hooks/useAnalysisStream';
+import type { StreamErrorMessages } from '@/shared/lib/sse/runAnalysisStream';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { useCallback, useMemo } from 'react';
 import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
 import { useQuery } from '@tanstack/react-query';
 import type { OptionsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
 import type { SubmitOptionsAnalysisActionResult } from '@/entities/options-chain/actions/optionsActions';
-import { runAnalysisStream } from '@/shared/hooks/useAnalysisStream';
+import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis/lib/gate';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { CacheOnlyMissError } from '@/shared/lib/CacheOnlyMissError';

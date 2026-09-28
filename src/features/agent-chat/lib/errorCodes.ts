@@ -32,9 +32,7 @@ const TURN_STAGE_CODE_MAP: Record<AgentErrorCode, true> = {
     deadline: true,
     aborted: true,
 };
-const TURN_STAGE_CODES = Object.keys(
-    TURN_STAGE_CODE_MAP
-) as AgentErrorCode[];
+const TURN_STAGE_CODES = Object.keys(TURN_STAGE_CODE_MAP) as AgentErrorCode[];
 
 /** `server_busy` is returned at both stages (409/503 HTTP, and the turn gate) — de-duplicated here. */
 export const AGENT_ERROR_CODES: readonly string[] = [

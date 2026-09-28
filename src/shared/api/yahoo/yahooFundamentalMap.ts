@@ -14,6 +14,7 @@ import type {
     YahooSummary,
 } from './yahooFundamentalSource';
 import { normalizeReportedCurrency } from '@/shared/lib/reportedCurrency';
+import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
 /**
  * 0이나 음수 분모로 나눗셈을 막는다.
@@ -283,7 +284,7 @@ export function mapEarningsReports(
     if (upcomingDate instanceof Date) {
         items.push({
             symbol,
-            earningsDate: isoDate(upcomingDate),
+            earningsDate: toUtcIsoDate(upcomingDate),
             epsActual: null,
             epsEstimated: toNullable(upcoming?.earningsAverage),
             revenueActual: null,
@@ -297,7 +298,7 @@ export function mapEarningsReports(
         if (!(h.quarter instanceof Date)) continue;
         items.push({
             symbol,
-            earningsDate: isoDate(h.quarter),
+            earningsDate: toUtcIsoDate(h.quarter),
             epsActual: toNullable(h.epsActual),
             epsEstimated: toNullable(h.epsEstimate),
             // yahoo `earningsHistory`는 매출을 주지 않는다(EPS만).
@@ -311,11 +312,6 @@ export function mapEarningsReports(
     return items
         .toSorted((a, b) => b.earningsDate.localeCompare(a.earningsDate))
         .slice(0, limit);
-}
-
-/** ISO `YYYY-MM-DD`. */
-function isoDate(d: Date): string {
-    return d.toISOString().slice(0, 10);
 }
 
 /** yahoo 실적 항목 — `FmpEarningsReportItem`에서 FMP 전용 `rawPayload`를 뺀 형태. */

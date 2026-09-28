@@ -1,6 +1,5 @@
-import { constants } from 'node:http2';
 import 'server-only';
-import { NextResponse, type NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
     generateHandoffToken,
     handoffStateCookie,
@@ -9,8 +8,7 @@ import {
 import { isAiHost } from '@/shared/config/aiHost';
 import { localePath } from '@/shared/i18n/locales';
 import { SITE_URL } from '@/shared/lib/seo';
-
-const { HTTP_STATUS_BAD_REQUEST, HTTP_STATUS_FOUND } = constants;
+import { invalidHandoffRequest, noStoreRedirect } from '../_shared/responses';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,13 +35,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(request: NextRequest): Promise<Response> {
     if (!isAiHost(request.headers.get('host'))) {
-        return NextResponse.json(
-            { error: 'invalid_request' },
-            {
-                status: HTTP_STATUS_BAD_REQUEST,
-                headers: { 'Cache-Control': 'no-store' },
-            }
-        );
+        return invalidHandoffRequest();
     }
     const { locale, next } = resolveHandoffNext(
         request.nextUrl.searchParams.get('next')
@@ -53,8 +45,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     target.searchParams.set('to', 'ai');
     target.searchParams.set('next', next);
     target.searchParams.set('state', state);
-    const response = NextResponse.redirect(target, HTTP_STATUS_FOUND);
-    response.headers.set('Cache-Control', 'no-store');
+    const response = noStoreRedirect(target);
     response.cookies.set(handoffStateCookie(state));
     return response;
 }
