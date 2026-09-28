@@ -478,10 +478,11 @@ export function StockChart({
         useChartOverlayVisibility();
 
     const barTimes = useMemo(() => new Set(bars.map(b => b.time)), [bars]);
+    const lastBarTime = bars[bars.length - 1]?.time ?? 0;
 
     const overlayCounts = useMemo(
-        () => countOverlaysByKind(chartOverlays, barTimes),
-        [chartOverlays, barTimes]
+        () => countOverlaysByKind(chartOverlays, barTimes, lastBarTime),
+        [chartOverlays, barTimes, lastBarTime]
     );
 
     // 강조 중인 카드의 카테고리가 꺼져 있어도 잠깐 보여준다(spec §4.3).
@@ -497,7 +498,7 @@ export function StockChart({
                     : overlayVisible,
                 highlightedSourceRef: highlightedOverlayRef,
                 barTimes,
-                lastBarTime: bars[bars.length - 1]?.time ?? 0,
+                lastBarTime,
                 rsiPaneIndex: visible.rsi ? paneIndices.rsi : null,
                 colorFor: (overlay, role) =>
                     overlayColorFor(
@@ -515,7 +516,7 @@ export function StockChart({
             highlightedKind,
             highlightedOverlayRef,
             barTimes,
-            bars,
+            lastBarTime,
             visible.rsi,
             paneIndices.rsi,
             overlayColors,

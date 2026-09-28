@@ -210,8 +210,11 @@ describe('buildOverlayLineSpecs', () => {
 describe('countOverlaysByKind', () => {
     it('counts aligned overlays per kind', () => {
         expect(
-            countOverlaysByKind([overlay({}), overlay({ id: 'y' })], BAR_TIMES)
-                .pattern
+            countOverlaysByKind(
+                [overlay({}), overlay({ id: 'y' })],
+                BAR_TIMES,
+                5
+            ).pattern
         ).toBe(2);
     });
 
@@ -221,8 +224,48 @@ describe('countOverlaysByKind', () => {
             levels: [{ price: 1, fromTime: 99, label: '' }],
         });
         expect(
-            countOverlaysByKind([overlay({}), misaligned], BAR_TIMES).pattern
+            countOverlaysByKind([overlay({}), misaligned], BAR_TIMES, 5).pattern
         ).toBe(1);
+    });
+});
+
+describe('countOverlaysByKind — nothing drawable', () => {
+    it('does not count an overlay whose segments and levels all get filtered out', () => {
+        // Zero-length segment + a level starting at the last bar: aligned, but
+        // buildOverlayLineSpecs would draw nothing — the menu must not count it.
+        const empty = overlay({
+            id: 'empty',
+            segments: [
+                {
+                    from: { time: 2, price: 1 },
+                    to: { time: 2, price: 2 },
+                    role: 'x',
+                    style: 'solid',
+                    pane: 'price',
+                },
+            ],
+            levels: [{ price: 1, fromTime: 5, label: '' }],
+            labels: [
+                { at: { time: 2, price: 1 }, text: 'H', position: 'above' },
+            ],
+        });
+        expect(countOverlaysByKind([empty], BAR_TIMES, 5).pattern).toBe(0);
+        expect(
+            buildOverlayLineSpecs([empty], {
+                visible: {
+                    pattern: true,
+                    trendline: true,
+                    divergence: true,
+                    fibonacci: true,
+                    elliott: true,
+                },
+                highlightedSourceRef: null,
+                barTimes: BAR_TIMES,
+                lastBarTime: 5,
+                rsiPaneIndex: null,
+                colorFor: () => '#000000',
+            })
+        ).toEqual([]);
     });
 });
 

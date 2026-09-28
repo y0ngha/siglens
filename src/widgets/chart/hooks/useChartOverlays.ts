@@ -13,6 +13,9 @@ import {
 import type { OverlayLineSpec } from '../utils/chartOverlayUtils';
 import { DEFAULT_LINE_WIDTH } from '../constants';
 
+/** lightweight-charts `LineWidth` 상한. */
+const MAX_LINE_WIDTH = 4;
+
 const OVERLAY_SERIES_OPTIONS = {
     lastValueVisible: false,
     priceLineVisible: false,
@@ -61,9 +64,15 @@ export function useChartOverlays({
                     {
                         ...OVERLAY_SERIES_OPTIONS,
                         color: withOpacity(spec.color, spec.opacity),
-                        lineWidth: Math.max(
-                            1,
-                            Math.round(lineWidth * spec.lineWidthMult)
+                        // lightweight-charts `LineWidth`는 1~4 리터럴이다 — 양 끝을 잘라
+                        // 그 범위를 보장하므로 캐스트가 안전하다(강조 배수·기본 두께가
+                        // 커져도 5 이상이 새지 않는다).
+                        lineWidth: Math.min(
+                            MAX_LINE_WIDTH,
+                            Math.max(
+                                1,
+                                Math.round(lineWidth * spec.lineWidthMult)
+                            )
                         ) as 1 | 2 | 3 | 4,
                         lineStyle: spec.dashed
                             ? LineStyle.Dashed

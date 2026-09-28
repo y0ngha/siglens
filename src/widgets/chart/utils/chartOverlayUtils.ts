@@ -65,9 +65,22 @@ export function isOverlayAlignedToBars(
     return times.every(t => barTimes.has(t));
 }
 
+/**
+ * 실제로 선이 하나라도 그려지는지 — 앞으로 가는 선분이나 오른쪽 끝 이전에 시작하는
+ * 레벨이 있어야 한다. `buildOverlayLineSpecs`와 같은 조건이라, 드롭다운 개수가
+ * 차트에 아무것도 없는 오버레이를 세지 않는다.
+ */
+function hasDrawableLine(overlay: ChartOverlay, lastBarTime: number): boolean {
+    return (
+        overlay.segments.some(s => s.to.time > s.from.time) ||
+        overlay.levels.some(l => l.fromTime < lastBarTime)
+    );
+}
+
 export function countOverlaysByKind(
     overlays: readonly ChartOverlay[],
-    barTimes: ReadonlySet<number>
+    barTimes: ReadonlySet<number>,
+    lastBarTime: number
 ): Record<OverlayKind, number> {
     const counts: Record<OverlayKind, number> = {
         pattern: 0,
@@ -77,7 +90,11 @@ export function countOverlaysByKind(
         elliott: 0,
     };
     for (const o of overlays)
-        if (isOverlayAlignedToBars(o, barTimes)) counts[o.kind]++;
+        if (
+            isOverlayAlignedToBars(o, barTimes) &&
+            hasDrawableLine(o, lastBarTime)
+        )
+            counts[o.kind]++;
     return counts;
 }
 
