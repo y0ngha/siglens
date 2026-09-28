@@ -97,7 +97,6 @@ vi.mock('@tanstack/react-query', () => ({
 }));
 
 vi.mock('@/app/[locale]/[symbol]/SymbolLayoutClient', () => ({
-    SymbolLayoutFloatingChat: () => null,
     SymbolLayoutJail: () => null,
     SymbolLayoutProviders: () => null,
 }));
@@ -147,6 +146,7 @@ vi.mock('@/entities/bars/lib/barsStaticCache', () => ({
     getSeedBarsStatic: mockGetSeedBarsStatic,
 }));
 
+import { Suspense } from 'react';
 vi.mock('@/features/visitor-ping/ui/SymbolViewPing', () => ({
     SymbolViewPing: function SymbolViewPing() {
         return null;
@@ -158,6 +158,7 @@ import SymbolLayout, {
 } from '@/app/[locale]/[symbol]/layout';
 import { SymbolLayoutJail } from '@/app/[locale]/[symbol]/SymbolLayoutClient';
 import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
+import { AskAiFab } from '@/widgets/ask-ai-fab/AskAiFab';
 import { SymbolViewPing } from '@/features/visitor-ping/ui/SymbolViewPing';
 
 const ASSET_INFO = {
@@ -422,6 +423,60 @@ describe('SymbolLayout — 관련 종목 칩 위치 (jail 밖, 푸터 위)', () 
         ) as { props: { symbol: string } } | undefined;
 
         expect(ping?.props.symbol).toBe('AAPL');
+    });
+});
+
+/**
+ * 예전 자체 챗봇 플로팅 버튼(`SymbolLayoutFloatingChat`)의 후임인 `AskAiFab`
+ * 배선 — 레이아웃이 실제로 해석한 종목명·로케일 접두 경로를 넘기는지 합성
+ * 단계에서 고정한다. `SymbolFloatingChat`(레이아웃 내부, export 없음)이
+ * `Suspense` 아래에서 이 값을 계산해 `AskAiFab`에 넘긴다.
+ */
+describe('SymbolLayout — AskAiFab 배선 (Suspense 뒤 SymbolFloatingChat)', () => {
+    beforeEach(() => {
+        mockGetAssetInfoResilient.mockReset();
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: ASSET_INFO,
+            degraded: false,
+        });
+    });
+
+    it('AskAiFab에 해석된 종목명과 로케일 접두 경로를 넘긴다', async () => {
+        const tree = await SymbolLayout({
+            children: null,
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+
+        const providers = (tree as { props?: { children?: unknown } }).props
+            ?.children;
+        const siblings = (providers as { props?: { children?: unknown } })
+            ?.props?.children;
+        if (!Array.isArray(siblings)) {
+            throw new Error('providers children is not an array');
+        }
+
+        const suspenseElement = siblings.find(
+            child => (child as { type?: unknown } | null)?.type === Suspense
+        ) as { props?: { children?: unknown } } | undefined;
+        expect(suspenseElement).toBeDefined();
+
+        const floatingChatElement = suspenseElement?.props?.children as
+            | { type?: (props: unknown) => unknown; props?: unknown }
+            | undefined;
+        expect(floatingChatElement?.type?.name).toBe('SymbolFloatingChat');
+
+        // SymbolFloatingChat is an async RSC — invoke it directly (same
+        // pattern as SymbolLayoutChrome above) to get the AskAiFab element it
+        // returns, without rendering AskAiFab itself.
+        const fabElement = (await floatingChatElement?.type?.(
+            floatingChatElement.props
+        )) as { type?: unknown; props?: Record<string, unknown> };
+
+        expect(fabElement?.type).toBe(AskAiFab);
+        expect(fabElement?.props).toEqual({
+            name: 'Apple Inc.',
+            localePrefix: '/',
+        });
     });
 });
 

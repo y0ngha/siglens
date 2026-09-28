@@ -8,13 +8,11 @@ import type {
     OptionsTone,
 } from '@y0ngha/siglens-core';
 
-import { usePublishSymbolChat } from '@/features/symbol-chat/hooks/useSymbolChat';
 import { cn } from '@/shared/lib/cn';
 import { formatAnalyzedAt } from '@/shared/lib/formatAnalyzedAt';
 import { OptionsAiAnalysisError } from './OptionsAiAnalysisError';
 import { OptionsAiAnalysisSkeleton } from './OptionsAiAnalysisSkeleton';
 import { useOptionsAnalysis } from './hooks/useOptionsAnalysis';
-import { buildChatState } from './utils/buildChatState';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
 import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
 import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
@@ -247,8 +245,9 @@ interface OptionsAiAnalysisProps {
     /**
      * SSR 스냅샷 프로즈가 같은 AI 결론을 이미 렌더 중일 때 `true`.
      *
-     * UI만 숨기고 마운트는 유지한다 — 렌더 자체를 건너뛰면
-     * `usePublishSymbolChat`이 돌지 않아 챗봇 컨텍스트가 비고 입력이 잠긴다.
+     * UI만 숨기고 마운트는 유지한다 — `useRegisterShareable`이 여기서만 불리므로,
+     * 렌더 자체를 건너뛰면 헤더의 공유 버튼이 이 탭의 분석 결과를 등록받지
+     * 못한다.
      */
     hideView?: boolean;
     /**
@@ -278,11 +277,6 @@ export function OptionsAiAnalysis({
         cacheOnly,
     });
 
-    // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생
-    // 변수)를 인자로 받으므로 useMemo 뒤에 위치해야 한다. 다른 페이지
-    // (overall/fundamental/news/chart) 모두 동일 패턴.
-    const chatState = buildChatState(state);
-    usePublishSymbolChat(chatState);
     useRegisterShareable({
         kind: 'options',
         status: mapAnalysisStatus(state.status),
@@ -299,7 +293,7 @@ export function OptionsAiAnalysis({
         trigger: state.trigger,
     });
 
-    // 훅은 모두 실행된 뒤에 렌더만 건너뛴다 — publish는 유지된다.
+    // 훅은 모두 실행된 뒤에 렌더만 건너뛴다 — 공유 데이터 등록은 유지된다.
     if (hideView) return null;
 
     if (state.status === 'loading') {
@@ -309,9 +303,7 @@ export function OptionsAiAnalysis({
     // `cache_miss`: the cacheOnly read found no cached analysis. Render
     // nothing (no data, no notice) — in practice this caller always pairs
     // `cacheOnly` with `hideView` too (see `useOptionsAnalysis`'s `cacheOnly`
-    // JSDoc), so this never reaches a visible page. usePublishSymbolChat
-    // above still ran with `buildChatState`'s null context, so the chatbot
-    // context stays empty rather than referencing a partial result.
+    // JSDoc), so this never reaches a visible page.
     if (state.status === 'cache_miss') {
         return null;
     }

@@ -21,9 +21,6 @@ vi.mock('@/widgets/overall/hooks/useOverallAnalysis', async importOriginal => {
         useOverallAnalysis: vi.fn(),
     };
 });
-vi.mock('@/features/symbol-chat/hooks/useSymbolChat', () => ({
-    usePublishSymbolChat: vi.fn(),
-}));
 vi.mock('@/features/symbol-model/hooks/useDefaultModelId', () => ({
     useDefaultModelId: vi.fn(() => 'gemini-3.5-flash-lite'),
 }));

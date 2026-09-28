@@ -36,10 +36,6 @@ vi.mock('@/widgets/fear-greed/FearGreedHistoricalChart', () => ({
     FearGreedHistoricalChart: () => null,
 }));
 
-vi.mock('@/features/symbol-chat/hooks/useSymbolChat', () => ({
-    usePublishSymbolChat: () => undefined,
-}));
-
 describe('FearGreedPage', () => {
     describe('before hydration (isHydrated=false)', () => {
         beforeEach(() => {

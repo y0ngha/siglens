@@ -410,6 +410,31 @@
 - Violation (Blocker, fixed): 순수 헬퍼 `resolveTypedTarget`·`normalizeLabel`을 훅 파일에 정의(MISTAKES #18) — `lib/resolveSubmitTarget.ts`·`lib/normalizeLabel.ts`로 이동하고 테스트 추가
 - Question (answered, comment only): `?ticker=`만 바뀌는 히스토리 이동은 구독이 알리지 않아 스스로 재렌더되지 않는다(이전 구현과 같은 한계) — 주석을 단정 대신 사실대로 정정
 
+## [PR #852 claude-review R3 (APPROVED, suggestions) | ai.siglens.io/about | 2026-09-19]
+- Suggestion (fixed): `runPlayback` in src/views/ai-about/lib/replayPlayer.ts caught every error silently, not only cancellation
+  - Rule: MISTAKES.md — catch blocks must not swallow errors without logging
+  - Context: cancellation now rejects with a `PlaybackCancelled` Error subclass; other errors are logged with console.error; test added
+- Suggestion (fixed): JSDoc in src/app/ai/[locale]/about/page.tsx claimed every link out of the page leads to `/`, but the "more on SIGLENS" links go to siglens.io
+  - Rule: MISTAKES.md §15.6 — comment accuracy
+  - Context: reworded to the real reason (no account-specific content; ways into the chat go to `/`)
+- Suggestion (fixed): unused `BankIcon` re-export added to the widgets/agent-chat barrel
+  - Rule: do not widen a slice's public surface with exports nobody imports
+  - Context: removed
+- Suggestion (fixed): `useCanAnimate` reduced-motion change subscription had no test
+  - Context: added src/views/ai-about/hooks/__tests__/useCanAnimate.test.tsx (initial value, change event, unsubscribe on unmount)
+
+## [feat/symbol-chat-to-ai-host Round 1–2 | 종목 챗봇 폐지 → ai.siglens.io | 2026-09-20]
+- Violation: Removed the `hideView` hidden mount on the news/fundamental/financials/congress/options tabs believing it existed only to publish chatbot context; it also kept `useRegisterShareable` running, so the header Share button would report "unavailable" whenever snapshot prose was shown
+  - Rule: (new) Before removing a "mounted but hidden" component, list every hook it runs before its early return (share registration, analytics, prefetch), not only the one its comment names
+  - Context: hidden mount restored; comments now name Share registration; tests assert the widget stays mounted with hideView and registers a shareable
+- Violation: Moving fallbackAnalysis into the `@/entities/analysis` barrel broke src/__integration__/analysisFlow.test.tsx, which partially mocks that barrel — only the full suite caught it
+  - Rule: (existing memory lesson) when adding exports to a barrel, grep for `vi.mock('<barrel>'` partial mocks
+  - Context: the mock now forwards the real isFallbackAnalysis
+- Violation: A test still mocked a deleted export (`SymbolLayoutFloatingChat`) and the new floating-link wiring had no composition-level test
+  - Context: mock removed; layout test asserts AskAiFab receives the asset name and locale prefix
+- Violation: The mobile floating button showed only a star icon, which reads as "favorite"
+  - Context: sparkle icon + short visible label ("AI에게 묻기") on mobile
+
 ## [feat/siglens-about-redesign Round 1–2 | siglens.io /about redesign | 2026-09-24]
 - Violation (pre-review, caught during implementation): `@/widgets/agent-chat` barrel imported into `src/views/about/AboutPage.tsx` (server-side view), leaking ~46 agent-chat client-side message keys into the route's `messages/_meta/clientKeys.json`
   - Rule: A view on one host must not import another product's widget barrel for a leaf utility (icons): the i18n extractor follows the import graph and attaches that barrel's client message keys to the route. Move the shared piece to `shared/` and import it directly.
@@ -536,6 +561,11 @@
   - Rule: MISTAKES Coding Paradigm #12 (toSorted); Tests — boundary instants must distinguish the alternatives
   - Context: toSorted; test instant 2026-09-29T02:00Z.
 
+## [PR #856 merge-conflict resolution | master → feat/symbol-chat-to-ai-host | 2026-09-29]
+- Violation: While merging master into a branch that deletes a whole slice (widgets/chat, features/symbol-chat, entities/chat-message), master had ADDED new test files inside those deleted directories (src/widgets/chat/__tests__/hooks/useChatBranches2.test.tsx, src/entities/chat-message/__tests__/localeEnvelope.test.ts which git relocated via directory-rename detection to src/entities/analysis/__tests__/lib/) and a new test (src/views/symbol/__tests__/ChartContent.overlayHighlight.test.tsx) importing from the deleted slice. The additions merged silently (no conflict marker), so only a repo-wide grep for the deleted module paths caught them.
+  - Rule: (new) After merging base into a branch that deletes a slice, grep the whole repo for the deleted module paths/exports and check for files added inside deleted directories, not just the listed conflicts.
+  - Context: deleted the orphan tests, repointed overlayHighlight test to @/entities/analysis and entities.analysis.fallback; also updated the controlBorderTokenGuard AnalysisPanel line key (master 1187 minus 2 lines removed by the branch = 1185).
+
 ## [claude/funny-turing-9cgfid Round 3 | exception-safety refactoring + line-number regression | 2026-09-28]
 - Violation: Refactoring a handler onto shared hook (useCopyToClipboard) moved exception-safe text-report construction outside the try/catch that guarded it, so malformed SSE payload could throw in onClick instead of showing failed state.
   - Rule: (new) Exception-safety scope — when refactoring logic into a reusable hook that maintains error-handling guarantees, preserve the original try/catch scope across all input paths. Moving construction outside the guarded block silently breaks the containment invariant.
@@ -564,3 +594,8 @@
 - Violation: claude-review suggestion — test-reset method exposed on production interface in singleFlight; repo convention requires separate `__reset*ForTests` exports
   - Rule: (new) Test utility methods must not be exposed on production interfaces. Separate `__reset*ForTests` exports (e.g., `__resetForTests`, `__resetCacheForTests`) allow tests to reset internal state without polluting the public API surface.
   - Context: The singleFlight utility exports a public `reset()` method on its production interface. Should refactor to separate `__resetForTests` export and remove reset from production interface, following the repo's established pattern.
+
+## [PR #856 merge-conflict resolution round 2 | master barrel-removal refactor → feat/symbol-chat-to-ai-host | 2026-09-29]
+- Violation: master landed a repo-wide barrel removal (all slice index.ts deleted; CLAUDE.md now forbids barrels). The branch had added a new barrel (src/widgets/ask-ai-fab/index.ts) and imports via barrels (@/entities/analysis, @/features/share, @/widgets/ask-ai-fab). A per-hunk "take master side, strip chat lines" resolver also dropped branch-only imports that sat in the same hunk (ShareableAnalysisProvider/useShareable in three widget tests), caught only by tsc.
+  - Rule: (new) When resolving conflicts mechanically by taking one side, diff each hunk's other side for branch-only additions (imports, mocks) before discarding it; always follow with tsc. When base removes a convention (barrels), grep the branch's own new files for the old pattern too.
+  - Context: deleted ask-ai-fab/index.ts, switched to deep imports, restored the share imports, updated controlBorderTokenGuard AnalysisPanel key to 1142, replaced CONVENTIONS.md example that referenced the deleted symbol-chat slice.

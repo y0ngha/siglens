@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { buildFallbackAnalysis } from '@/entities/chat-message/lib/fallbackAnalysis';
+import { buildFallbackAnalysis } from '@/entities/analysis/lib/fallbackAnalysis';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 import { ChartContent } from '../ChartContent';
 import type { UseAnalysisResult } from '../hooks/useAnalysis';
@@ -16,7 +16,7 @@ import type { UseAnalysisResult } from '../hooks/useAnalysis';
  * (파일-scope) mock으로 필요한 prop만 노출한다 — 다른 테스트 파일에 영향 없음.
  */
 const FALLBACK_ANALYSIS = buildFallbackAnalysis(
-    catalogTranslator('entities.chat-message.fallback', 'ko')('unavailable')
+    catalogTranslator('entities.analysis.fallback', 'ko')('unavailable')
 );
 
 vi.mock('@/widgets/chart/ChartErrorFallback', () => ({
@@ -101,9 +101,6 @@ vi.mock('../hooks/useAnalysisDisplay', () => ({
 }));
 vi.mock('@/widgets/analysis/hooks/useAnalysisProgress', () => ({
     useAnalysisProgress: () => ({ phaseIndex: 0, tipIndex: 0 }),
-}));
-vi.mock('@/features/symbol-chat/hooks/useSymbolChat', () => ({
-    usePublishSymbolChat: vi.fn(),
 }));
 vi.mock('@/widgets/analysis/AnalysisPanel', () => ({
     AnalysisPanel: ({

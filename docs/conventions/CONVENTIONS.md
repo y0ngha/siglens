@@ -547,10 +547,10 @@ import { cn } from '../../../shared/lib/cn';
 import type { AuthFormState } from '../model/types';
 
 // ✅ 다른 slice — 정의 파일 직접 import
-import { usePublishSymbolChat } from '@/features/symbol-chat/hooks/useSymbolChat';
+import { useSymbolModel } from '@/features/symbol-model/model/SymbolModelContext';
 
 // ❌ 슬라이스 루트(barrel) import — barrel은 존재하지 않는다
-import { usePublishSymbolChat } from '@/features/symbol-chat';
+import { useSymbolModel } from '@/features/symbol-model';
 ```
 
 ---

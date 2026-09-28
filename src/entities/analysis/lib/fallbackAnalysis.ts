@@ -15,7 +15,7 @@ import type { AnalysisResponse } from '@y0ngha/siglens-core';
  * `t('리터럴')`을 부르면 추출기가 파일을 통째로 건너뛰어 그 키가 클라이언트
  * 페이로드에서 빠진다(§noTranslatorParamCall.test.ts).
  *
- * @param summary `entities.chat-message.fallback.unavailable`의 로케일 문구.
+ * @param summary `entities.analysis.fallback.unavailable`의 로케일 문구.
  */
 export function buildFallbackAnalysis(summary: string): AnalysisResponse {
     return {
@@ -67,39 +67,3 @@ export function isFallbackAnalysis(
         (analysis.trendlines?.length ?? 0) === 0
     );
 }
-
-/**
- * Baseline AnalysisResponse passed to core's `requestChatCompletion` when the user
- * is on a non-chart page (fundamental / news / overall). Core's `buildChatPrompt`
- * unconditionally embeds the `analysis` parameter as the prompt's primary
- * "ANALYSIS DATA" block (trend, summary, key levels, indicators, etc.) — we cannot
- * suppress that section from the siglens side without a core API change.
- *
- * The mitigation is to make the embedded block self-deprecating: the `summary` field
- * (one of three high-signal lines surfaced by core's prompt template) explicitly
- * redirects the LLM to the `## Current analysis context` section, which carries the
- * real fundamental / news / overall payload via `currentAnalysisContext`.
- *
- * 문구가 영어인 이유: 화면에 나가지 않는 **모델 지시문**이다. 로케일별로 갈라
- * 봐야 프롬프트만 흔들리고, 응답 언어는 프롬프트의 언어 지시가 따로 정한다.
- *
- * TODO(siglens-core): make `analysis` optional in `buildChatPrompt` / `ChatRequestParams`
- * when `currentAnalysisContext` is present, and skip the entire `=== ANALYSIS DATA ===`
- * block in that case. After that lands, this constant can be removed.
- */
-export const CHAT_NON_CHART_BASELINE_ANALYSIS: AnalysisResponse = {
-    summary:
-        '(Not a chart analysis. The analysis the user is looking at is in the "## Current analysis context" section below.)',
-    trend: 'neutral',
-    indicatorResults: [],
-    riskLevel: 'medium',
-    keyLevels: { support: [], resistance: [] },
-    priceTargets: {
-        bullish: { targets: [], condition: '' },
-        bearish: { targets: [], condition: '' },
-    },
-    patternSummaries: [],
-    strategyResults: [],
-    candlePatterns: [],
-    trendlines: [],
-};

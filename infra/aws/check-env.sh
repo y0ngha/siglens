@@ -27,10 +27,11 @@ EXCLUDE='^(NEXT_PUBLIC_|SIGLENS_GITHUB_TOKEN)'
 # have existed in /siglens/* since 2026-06-29, holding the same values as their
 # analysis-side counterparts. They are server-paid keys like GEMINI_CHAT_API_KEY and
 # DEEPSEEK_CHAT_API_KEY — `getServerPrimaryKey` in
-# src/entities/chat-message/actions/chatAction.ts reads them for every chat request whose
-# model routes to that provider, including the free-tier models claude-haiku-4-5 and
+# src/entities/llm-provider/lib/serverKeys.ts is read by the SiglensAI agent router
+# (src/entities/llm-provider/api/agent/router.ts) and analysis-plain for every request
+# whose model routes to that provider, including the free-tier models claude-haiku-4-5 and
 # gpt-5-mini. Listing them as optional meant this gate would wave through a deploy that
-# had silently lost them, breaking Claude/ChatGPT chat for every non-BYOK caller. All four
+# had silently lost them, breaking Claude/ChatGPT for every non-BYOK caller. All four
 # *_CHAT_API_KEY are REQUIRED.
 #
 # DEBUG_VERBOSE_LOGS is an optional debug flag (defaults off when unset); it is never

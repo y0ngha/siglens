@@ -30,7 +30,7 @@ import {
  *    tier)` — a real fixture-shaped `AnalysisResponse`
  *    (`e2e/fixtures/analysis.json`'s `technical` key: summary "E2E 고정 분석
  *    결과: ...", `indicatorResults.length === 1`), NOT the `FALLBACK_ANALYSIS`
- *    placeholder (`src/entities/chat-message/lib/fallbackAnalysis.ts`, sentinel
+ *    placeholder (`src/entities/analysis/lib/fallbackAnalysis.ts`, sentinel
  *    summary "AI 분석을 일시적으로 사용할 수 없습니다." + all-empty arrays).
  *    `isFallbackAnalysis` compares against that sentinel shape, so the fixture
  *    analysis is NOT a fallback — `symbol-analysis.spec.ts` already proves this

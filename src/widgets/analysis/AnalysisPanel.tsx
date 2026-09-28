@@ -35,7 +35,7 @@ import type {
 import { HIGH_CONFIDENCE_WEIGHT } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { LABEL_GROUP, LABEL_KO } from '@/shared/lib/typographyStyles';
-import { isFallbackAnalysis } from '@/entities/chat-message/lib/fallbackAnalysis';
+import { isFallbackAnalysis } from '@/entities/analysis/lib/fallbackAnalysis';
 import {
     parseStructuredSummary,
     type SkillSummarySection,
@@ -973,9 +973,8 @@ export function AnalysisPanel({
     const tReport = useTranslations('widgets.analysis.expertReport');
     const skillLabel = useSkillLabel();
     // 폴백 판정의 sentinel — `buildFallbackAnalysis`와 같은 문구여야 한다.
-    const fallbackSummary = useTranslations('entities.chat-message.fallback')(
-        'unavailable'
-    );
+    const tFallback = useTranslations('entities.analysis.fallback');
+    const fallbackSummary = tFallback('unavailable');
     const { copied, failed, copy } = useCopyToClipboard();
     const copyState = copied ? 'copied' : failed ? 'failed' : 'idle';
     // SSR/hydration mismatch 방지 — 서버 렌더링 시점의 `new Date()`와

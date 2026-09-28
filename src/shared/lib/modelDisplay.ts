@@ -1,12 +1,11 @@
 import type { ModelId } from '@y0ngha/siglens-core';
 
 /**
- * Human-readable label + full name for an AI model, shown in model-selector
- * UI (analysis model dropdown, chat model dropdown). Extracted to `shared`
- * because `widgets/analysis` (ModelSelector) and `widgets/chat` (ChatPanel)
- * previously duplicated an identical map — cross-widget imports are allowed by
- * FSD here, but a shared, presentation-only lookup table belongs in `shared`
- * rather than being owned by either widget.
+ * Human-readable label + full name for an AI model, shown in the analysis
+ * model dropdown (`widgets/analysis`'s `ModelSelector`). Extracted to `shared`
+ * because it used to be duplicated by a second consumer (the now-removed
+ * symbol chatbot's own model dropdown) — a shared, presentation-only lookup
+ * table belongs in `shared` rather than being owned by either widget.
  */
 export interface ModelDisplayInfo {
     label: string;

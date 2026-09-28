@@ -208,31 +208,6 @@ vi.mock('@/features/symbol-model/hooks/useDefaultReasoning', () => ({
 vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
     useSymbolModel: vi.fn(() => ({ tier: 'member', isTierHydrated: true })),
 }));
-vi.mock('@/features/symbol-chat/hooks/useSymbolChat', () => ({
-    usePublishSymbolChat: vi.fn(),
-}));
-vi.mock('@/widgets/congress/utils/buildChatState', () => ({
-    buildChatState: () => null,
-}));
-vi.mock('@/widgets/financials/utils/buildChatState', () => ({
-    buildChatState: () => null,
-}));
-vi.mock('@/widgets/fundamental/utils/buildChatState', () => ({
-    buildChatState: () => null,
-}));
-vi.mock('@/widgets/news/utils/buildChatState', () => ({
-    buildChatState: () => null,
-}));
-vi.mock('@/widgets/options/utils/buildChatState', () => ({
-    buildChatState: () => null,
-}));
-vi.mock('@/views/symbol/utils/buildChatState', () => ({
-    buildChatState: vi.fn(() => ({
-        context: null,
-        timeframe: '1Day',
-        isAnalysisReady: false,
-    })),
-}));
 vi.mock('@/widgets/congress/CongressTrendSummarySkeleton', () => ({
     CongressTrendSummarySkeleton: () => <div data-testid="congress-skeleton" />,
 }));

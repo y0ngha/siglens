@@ -36,6 +36,12 @@ stop and confirm the work doesn't belong in `@y0ngha/siglens-core`.
 - Chat prompt builder
 - Usage limit policy: "checkAnalysisLimit / checkChatbotLimit"
 
+> **2026-09 갱신**: siglens에는 더 이상 종목 페이지 자체 챗봇이 없다 —
+> `/[symbol]`의 플로팅 버튼은 `ai.siglens.io`로 보내는 링크일 뿐이다. 위
+> "Chat prompt builder"/"checkChatbotLimit" 트리거는 core 레포 자체 작업에
+> 여전히 적용되는 규칙이며, siglens 쪽에 챗 어댑터를 새로 만드는 작업은
+> 없다 — siglens의 유일한 챗은 `ai.siglens.io` 에이전트뿐이다.
+
 **What you must do when triggered**:
 
 1. Read `docs/architecture/SCOPE.md` §0 and §3 (decision tree).

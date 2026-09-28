@@ -68,7 +68,7 @@ export function tryReadPlainModelConfig(): PlainModelConfig | null {
     }
 
     // provider 판별은 core의 `getProviderForModel`에 맡기고, provider → 서버 키
-    // 매핑은 `chatAction`과 같은 `getServerPrimaryKey`를 쓴다 — 모델 이름 접두사로
+    // 매핑은 `getServerPrimaryKey`를 쓴다 — 모델 이름 접두사로
     // 직접 맞히거나 매핑을 복제하면 새 모델/provider를 놓쳐 평이화가 조용히 꺼진다.
     const serverApiKey = getServerPrimaryKey(getProviderForModel(model));
     if (serverApiKey === undefined || serverApiKey.length === 0) return null;

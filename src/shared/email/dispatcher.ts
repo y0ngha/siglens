@@ -81,8 +81,9 @@ class NoopEmailDispatcher implements EmailDispatcher {
  * is negligible. The static import keeps this function's E2E branch
  * unit-testable — Vitest's vmThreads pool cannot resolve a relative CJS
  * `require('./E2eEmailDispatcher')` (`.ts`) inside a require-gated factory. This
- * mirrors the documented rationale for `getLlmProvider`'s static FakeChatProvider
- * import. The prod path is unchanged when `E2E_TEST` is unset.
+ * mirrors the documented rationale for `getOAuthAdapter`'s static
+ * `e2eFakeOAuthAdapter` import. The prod path is unchanged when `E2E_TEST` is
+ * unset.
  */
 export function createEmailDispatcher(): EmailDispatcher {
     if (isE2E()) {

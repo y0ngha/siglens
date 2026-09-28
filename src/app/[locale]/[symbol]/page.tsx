@@ -9,7 +9,7 @@ import { loadTabSnapshotMeta } from '@/app/[locale]/[symbol]/symbolSnapshotDescr
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import { buildTechnicalFacts } from '@/entities/bars/lib/technicalFacts';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { buildFallbackAnalysis } from '@/entities/chat-message/lib/fallbackAnalysis';
+import { buildFallbackAnalysis } from '@/entities/analysis/lib/fallbackAnalysis';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import { DEEPSEEK_V4_1_FLASH_MODEL } from '@y0ngha/siglens-core';
@@ -332,7 +332,7 @@ export default async function SymbolPage({ params }: Props) {
     const cachedAnalysis = await cachedAnalysisPromise;
     // 폴백 summary도 요청 로케일로 — 예전엔 한국어 상수라 `/en/AAPL`이 분석
     // 실패 시 영어 화면에 한국어 요약을 렌더했다.
-    const tFallback = await getTranslations('entities.chat-message.fallback');
+    const tFallback = await getTranslations('entities.analysis.fallback');
     const initialAnalysis = normalizeAnalysisResponse(
         cachedAnalysis?.result ??
             buildFallbackAnalysis(tFallback('unavailable'))

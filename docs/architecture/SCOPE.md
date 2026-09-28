@@ -40,6 +40,12 @@
 | AI 챗 프롬프트 빌더 | → core |
 | 사용량 제한 정책 (checkAnalysisLimit, checkChatbotLimit) | → core |
 
+> **2026-09 갱신**: siglens에는 더 이상 종목 페이지 자체 챗봇이 없다(`/[symbol]`의
+> 플로팅 버튼은 이제 `ai.siglens.io`로 보내는 링크일 뿐이다). 위 두 행은 core
+> 레포 자체의 챗 기능(ai.siglens.io 에이전트가 쓰는 경로)에 여전히 적용되는
+> 규칙이며, siglens 쪽에 새 챗 어댑터를 만드는 작업에는 적용되지 않는다 —
+> siglens의 유일한 챗은 `ai.siglens.io` 에이전트뿐이다.
+
 ### 반대로, 다음은 siglens에 남는 작업입니다
 
 | 영역 | 어디로 |
