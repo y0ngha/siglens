@@ -121,7 +121,7 @@ export function IndicatorSettingsModal({
                 onClick={open}
                 aria-label={t('IndicatorSettingsModal.c6e1ca')}
                 aria-haspopup="dialog"
-                className="flex h-11 w-11 touch-manipulation items-center justify-center rounded-lg bg-secondary-900/85 text-secondary-400 backdrop-blur-sm transition-colors hover:bg-secondary-700/90 hover:text-white focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
+                className="flex h-7 w-7 touch-manipulation items-center justify-center rounded-md text-secondary-400 transition-colors hover:bg-secondary-700/90 hover:text-white focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
                 <GearIcon className="h-4 w-4" />
             </button>

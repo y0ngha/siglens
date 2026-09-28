@@ -630,7 +630,7 @@ export function StockChart({
     }
 
     // Lightweight Charts 캔버스 자체는 스크린 리더가 읽을 수 없으므로 캔버스 컨테이너에
-    // role/aria-label을 부여한다. wrapperRef에 붙이면 자식으로 들어가는 IndicatorSettingsModal·
+    // role/aria-label을 부여한다. wrapperRef에 붙이면 자식으로 들어가는
     // OverlayLegend의 인터랙티브 요소가 일부 스크린리더에서 presentational로 취급될 수 있어
     // 캔버스만 들어가는 containerRef에 둔다.
     const chartAriaLabel =
@@ -639,29 +639,31 @@ export function StockChart({
             : t('StockChart.a547a0');
 
     return (
-        <div ref={wrapperRef} className="relative h-full w-full">
-            <div
-                ref={containerRef}
-                className="h-full w-full"
-                role="img"
-                aria-label={chartAriaLabel}
-            />
-            {/* right-14로 우측 price-scale 라벨 열 안쪽으로 넣어 톱니바퀴가 가격
-                눈금 숫자와 겹치지 않게 한다 (top-2 right-2였을 때는 price-scale
-                라벨 위에 그대로 얹혀 시각적으로 충돌했다). */}
-            <div className="absolute top-2 right-14 z-10">
+        <div className="flex h-full w-full flex-col">
+            {/* 톱니바퀴는 캔버스 밖 헤더 띠에 둔다(터미널 탭바의 `+` 자리). 캔버스
+                위에 얹었을 때는 드래그·줌 중에 캔들을 가렸고 가격 눈금·범례와
+                자리를 다퉜다. 띠 자체는 비워 둔다. */}
+            <div className="flex h-8 shrink-0 items-center justify-end border-b border-secondary-700 px-1">
                 <IndicatorSettingsModal bindings={indicatorBindings} />
             </div>
-            {/* 범례는 자기 pane(pane 0) 안에만 머문다 — 넘치면 보조 pane 라벨을
-                덮어 두 글자가 겹쳐 찍힌다. 상한은 OverlayLegend가 실측 크기에서
-                계산하고, 넘친 항목 수는 `+N` 칩으로 드러낸다. */}
-            <div className="pointer-events-none absolute top-2 left-2 z-10">
-                <OverlayLegend
-                    items={overlayLegendItems}
-                    decimals={priceDecimals}
-                    pricePaneHeightPx={pricePaneSize.height}
-                    chartWidthPx={pricePaneSize.width}
+            <div ref={wrapperRef} className="relative min-h-0 w-full flex-1">
+                <div
+                    ref={containerRef}
+                    className="h-full w-full"
+                    role="img"
+                    aria-label={chartAriaLabel}
                 />
+                {/* 범례는 자기 pane(pane 0) 안에만 머문다 — 넘치면 보조 pane 라벨을
+                    덮어 두 글자가 겹쳐 찍힌다. 상한은 OverlayLegend가 실측 크기에서
+                    계산하고, 넘친 항목 수는 `+N` 칩으로 드러낸다. */}
+                <div className="pointer-events-none absolute top-2 left-2 z-10">
+                    <OverlayLegend
+                        items={overlayLegendItems}
+                        decimals={priceDecimals}
+                        pricePaneHeightPx={pricePaneSize.height}
+                        chartWidthPx={pricePaneSize.width}
+                    />
+                </div>
             </div>
         </div>
     );
