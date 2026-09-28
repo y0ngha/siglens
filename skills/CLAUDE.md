@@ -141,12 +141,13 @@ a trigger from the wrong category even if the name is valid in another:
    `strategy`, and `support_resistance` skills.
 2. A detected candle-pattern name — for `candlestick` skills only.
 3. A chart-pattern pre-screener candidate id — for `pattern` skills only. These
-   are the 17 `ChartPatternId` values the core's `screenChartPatterns()` can flag
+   are the 22 `ChartPatternId` values the core's `screenChartPatterns()` can flag
    (`head_and_shoulders`, `inverse_head_and_shoulders`, `double_top`,
    `double_bottom`, `triple_top`, `triple_bottom`, `ascending_triangle`,
    `descending_triangle`, `symmetrical_triangle`, `ascending_wedge`,
    `descending_wedge`, `bull_flag`, `bear_flag`, `pennant`, `rectangle`,
-   `cup_and_handle`, `rounding_bottom` — see `PATTERN_TRIGGER_CATALOG` in
+   `cup_and_handle`, `rounding_bottom`, `rounding_top`, `high_tight_flag`,
+   `ascending_channel`, `descending_channel`, `broadening_formation` — see `PATTERN_TRIGGER_CATALOG` in
    `scripts/validate-skills.ts`).
 
 The validator cross-checks each skill's triggers against only the category
@@ -174,6 +175,8 @@ mfi_oversold_bounce                  mfi_overbought_reversal
 keltner_upper_breakout               keltner_lower_breakout
 squeeze_momentum_bullish             squeeze_momentum_bearish
 support_proximity_bullish            resistance_proximity_bearish
+new_52w_high                         new_52w_low
+gap_up                               gap_down
 ```
 
 For a **candle** skill, the trigger is the candle pattern name (e.g. `hammer`,

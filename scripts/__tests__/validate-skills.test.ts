@@ -38,7 +38,7 @@ describe('validateSkillData', () => {
         });
 
         it('event-gated pattern skill with chart-pattern pre-screener triggers is valid', () => {
-            // The 17 ChartPatternId values are accepted via PATTERN_TRIGGER_CATALOG
+            // The 22 ChartPatternId values are accepted via PATTERN_TRIGGER_CATALOG
             // (a separate catalog from SIGNAL_CATALOG). A pattern skill gates in
             // when the pre-screener flags its pattern as a candidate.
             expect(
