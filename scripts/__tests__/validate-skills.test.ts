@@ -4,6 +4,33 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { parseSkillFile, validateSkillData } from '../validate-skills';
 
+describe('validateSkillData — display.chart.color', () => {
+    const base = { gating: { tier: 'always_on' } };
+
+    it('accepts a 6-digit hex color and an absent display block', () => {
+        expect(
+            validateSkillData({
+                ...base,
+                display: { chart: { color: '#26A69a' } },
+            })
+        ).toEqual([]);
+        expect(validateSkillData(base)).toEqual([]);
+    });
+
+    it.each(['rgb(38, 166, 154)', 'teal', '#26a', '#26a69a80', 123])(
+        'rejects %s (overlay dimming appends a hex alpha)',
+        color => {
+            expect(
+                validateSkillData({ ...base, display: { chart: { color } } })
+            ).toEqual([
+                expect.stringContaining(
+                    '`display.chart.color` must be a 6-digit hex'
+                ),
+            ]);
+        }
+    );
+});
+
 describe('validateSkillData', () => {
     describe('valid frontmatter', () => {
         it('always_on tier is valid', () => {
