@@ -5,6 +5,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import type { OAuthProvider, SupportedOAuthProvider } from '@/shared/lib/types';
 import { ConsentCheckboxGroup } from '@/shared/ui/auth/ConsentCheckboxGroup';
+import { AUTH_ERROR_KEY } from '@/shared/lib/authErrorKey';
 import { useFinalizeOAuthSignup } from '../hooks/useFinalizeOAuthSignup';
 import { usePageShowReload } from '@/shared/hooks/usePageShowReload';
 
@@ -31,15 +32,18 @@ export function OAuthConsentForm({
     cancelAction,
 }: OAuthConsentFormProps) {
     const t = useTranslations('features.auth-oauth-consent');
+    const tAuth = useTranslations('entities.auth');
     const [privacyChecked, setPrivacyChecked] = useState(false);
     const [tosChecked, setTosChecked] = useState(false);
     const [finalizeState, finalizeFormAction, isPending] =
         useFinalizeOAuthSignup();
     usePageShowReload();
 
+    // 액션의 `message`는 로그·폴백용 한국어 원문이다(`AUTH_ERROR_KEY` 주석 참고) —
+    // 그대로 띄우면 모든 로케일에 한국어가 나간다. 표시는 코드로 번역한다.
     const consentError =
         finalizeState.error?.code === 'consent_required'
-            ? finalizeState.error.message
+            ? tAuth(AUTH_ERROR_KEY.consent_required)
             : undefined;
 
     return (

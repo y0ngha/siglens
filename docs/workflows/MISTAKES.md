@@ -1723,6 +1723,19 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Grep for the class pattern across all files → find all instances with same issue → fix all together in one PR
    ✅ When reviewer reports a style drift in one file, grep that literal and related patterns across entire codebase before applying any changes
    → Recurring: Style class drift (26 sites with identical class list), Heading colour drift (8+ additional sites) — W6c + W6d
+
+4. Stale references in code/comments/documentation after code modification (move/delete)
+   → When code is moved or deleted, all references to it in comments, JSDoc, documentation, examples, and test names must be updated
+   → Stale references confuse maintainers, hide deleted patterns, and make refactoring difficult
+   → After deletion: repo-wide grep for the deleted identifier (code, comments, docs, examples) in all siblings and dependents
+   → After move: grep all references in comments, JSDoc, test helpers, and documentation; update targets to reflect new location
+   ❌ After deleting usageRepository.ts, comments in 5 sibling files still reference it as a pattern precedent ("similar to usageRepository")
+   ❌ After moving logActionError to shared/lib, JSDoc in untouched file still references old path @/entities/chat-conversation
+   ❌ e2e specs reference `/account` route for PortfolioSection after section was moved to `/portfolio`; stale h1 text `"계정 설정"` and region names in helper functions
+   ✅ Delete identifier → grep entire repo (src/, tests, e2e/, docs/) for the name; update all references in comments, examples, and documentation
+   ✅ Move code → grep all call sites and related references for old path; update comments and JSDoc to reflect new location
+   ✅ e2e specs updated to target new route `/portfolio`, new h1 text `"포트폴리오"`, and updated region/helper names
+   → Recurring: claude/funny-turing-9cgfid R1 (stale comments after deletion), claude/funny-turing-9cgfid R2 audit (stale JSDoc after move) — 2 occurrences
 ```
 
 ## Architecture

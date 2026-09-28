@@ -12,6 +12,7 @@ import {
 } from '@/shared/lib/fearGreedLabels';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 import { koWithParticle } from '@/shared/lib/koParticle';
+import type { Locale } from '@/shared/i18n/locales';
 
 // 5-factor percentile을 낮음/보통/높음 3구간으로 나누는 경계값. FearGreedGroupBar의
 // "극단" 배지 임계값(<10 / >=90)보다 넓게 잡아, 문장 서사에서는 "평소 범위 밖"을
@@ -53,7 +54,8 @@ export function buildFearGreedFactorLines(
     t: FactsTranslator,
     // 팩터 라벨은 `shared.lib.fearGreedFactor`에 있다 — 위젯(`FearGreedGroupBar`)과
     // 공유하는 표라 이 뷰 네임스페이스로 옮기면 두 벌이 된다.
-    tFactor: FactsTranslator
+    tFactor: FactsTranslator,
+    locale: Locale
 ): string[] {
     return snapshot.groups.flatMap(group =>
         group.factors.map(factor => {
@@ -62,7 +64,7 @@ export function buildFearGreedFactorLines(
                 v0: tFactor(`symbolLabel.${factor.key}`, {
                     v0: POC_WINDOW_DEFAULT,
                 }),
-                v1: formatFactorRaw(factor.key, factor.rawValue),
+                v1: formatFactorRaw(factor.key, factor.rawValue, locale),
                 v2: pctile,
                 v3: factorInterpretation(pctile, t),
             });

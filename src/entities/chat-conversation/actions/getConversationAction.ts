@@ -4,7 +4,7 @@ import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleChatConversationRepository } from '../api';
 import { toMessageView, type ChatMessageView } from '../model';
-import { logActionError } from '../lib/logActionError';
+import { logActionError } from '@/shared/lib/logActionError';
 
 export interface ConversationDetail {
     id: string;

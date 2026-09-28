@@ -20,7 +20,7 @@ import {
     IMPACT_LABEL_KEY,
     IMPACT_CLASS,
     isNewsImpact,
-} from './utils/impactConstants';
+} from '@/shared/lib/news/impactDisplay';
 
 function isPending(item: MarketNewsCardItem): boolean {
     return item.sentiment === null || item.priceImpact === null;

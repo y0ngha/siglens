@@ -1,6 +1,7 @@
 'use server';
 
 import { getDatabaseClient } from '@/shared/db/client';
+import { newsCacheTag } from '@/entities/news-article/lib/newsCacheTag';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import {
     ingestNewsForSymbol,
@@ -104,7 +105,7 @@ export async function ensureNewsCardsAnalyzedAction(
         // Next.js 16.2.0 revalidateTag signature: (tag: string, profile: string | CacheLifeConfig).
         // 'max' uses the maximum stale-while-revalidate profile so this tag busts immediately.
         // See: node_modules/next/dist/server/web/spec-extension/revalidate.d.ts
-        revalidateTag(`news:${symbol.toUpperCase()}`, 'max');
+        revalidateTag(newsCacheTag(symbol), 'max');
     }
 
     if (isE2E()) return;

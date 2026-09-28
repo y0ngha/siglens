@@ -16,6 +16,7 @@ import { isKoreanInput } from '@/entities/ticker/lib/ticker';
 import { useRecentSearches } from '../hooks/useRecentSearches';
 import { useTickerSearch } from '../hooks/useTickerSearch';
 import { normalizeLabel } from '../lib/normalizeLabel';
+import { isImeComposing } from '../lib/isImeComposing';
 import { POPULAR_PREVIEW_GROUPS } from '../lib/popularPreview';
 import { resolveSubmitTarget } from '../lib/resolveSubmitTarget';
 import { SEARCH_PLACEHOLDER_KEY, SEARCH_ROW_CLASS } from '../lib/searchLabels';
@@ -217,7 +218,7 @@ function SearchOverlayBody({
         if (e.key !== 'Enter') return;
         // 한글 IME는 음절을 **확정**할 때도 Enter를 쓴다. 이걸 걸러내지 않으면
         // `삼성전`까지 친 상태에서 확정 Enter가 `삼성` 결과로 이동시킨다.
-        if (e.nativeEvent.isComposing) return;
+        if (isImeComposing(e)) return;
         e.preventDefault();
 
         // 지금 결정하지 않고 의도만 남긴다 — `isSettled`(위 정의) 결착 여부는

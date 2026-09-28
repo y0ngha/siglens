@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { OAuthConsentForm } from '@/features/auth-oauth-consent/ui/OAuthConsentForm';
 import { useFinalizeOAuthSignup } from '@/features/auth-oauth-consent/hooks/useFinalizeOAuthSignup';
 import type { FinalizeOAuthSignupState } from '@/shared/lib/types';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 
 vi.mock(
     '@/features/auth-oauth-consent/actions/finalizeOAuthSignupAction',
@@ -125,7 +126,31 @@ describe('OAuthConsentForm', () => {
             },
         });
         render(<OAuthConsentForm {...baseProps} />);
-        expect(screen.getByText('약관에 동의해 주세요.')).toBeInTheDocument();
+        // 액션의 한국어 폴백 `message`가 아니라 코드로 번역한 카탈로그 문구를 띄운다.
+        expect(
+            screen.getByText('개인정보처리방침과 이용약관에 동의해주세요.')
+        ).toBeInTheDocument();
+        expect(
+            screen.queryByText('약관에 동의해 주세요.')
+        ).not.toBeInTheDocument();
+    });
+
+    it('비한국어 로케일에서는 consent_required 에러를 해당 언어로 띄운다', () => {
+        setupHook({
+            error: {
+                code: 'consent_required',
+                message: '개인정보처리방침과 이용약관에 동의해주세요.',
+            },
+        });
+        renderWithIntl(<OAuthConsentForm {...baseProps} />, { locale: 'en' });
+        expect(
+            screen.getByText(
+                'Please accept the privacy policy and the terms of service.'
+            )
+        ).toBeInTheDocument();
+        expect(
+            screen.queryByText('개인정보처리방침과 이용약관에 동의해주세요.')
+        ).not.toBeInTheDocument();
     });
 
     // Branch coverage: isPending true → button shows '처리 중...' and is disabled

@@ -1,3 +1,5 @@
+import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
+
 /**
  * 시장 공포·탐욕 지수를 제공하는 시장.
  *
@@ -7,25 +9,33 @@
  */
 export type FearGreedMarketId = 'us' | 'kr' | 'crypto';
 
-// Locale-aware formatters hoisted to module scope — Intl.NumberFormat instances
-// are expensive to construct, so we reuse them across all factors.
+// Intl.NumberFormat instances are expensive to construct, so we cache one per
+// (locale, sign mode) and reuse them across all factors. 예전에는 `'ko-KR'` 고정
+// 모듈 상수였다 — 로케일은 `INTL_LOCALE`에서만 정한다.
 // Every market factor's rawValue is a ratio, so one 2dp precision fits all.
 // What differs is the sign: US/KR factors (and crypto momentum, downside
 // volatility, safe haven) are signed distances or return spreads, while three
 // crypto factors are [0, 1] shares — "+50.00%" would read as a change that
 // does not exist, so shares render unsigned.
-const MARKET_FACTOR_PERCENT_FORMAT = new Intl.NumberFormat('ko-KR', {
-    style: 'percent',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-    signDisplay: 'always',
-});
+const MARKET_FACTOR_FORMATTERS = new Map<string, Intl.NumberFormat>();
 
-const MARKET_FACTOR_SHARE_FORMAT = new Intl.NumberFormat('ko-KR', {
-    style: 'percent',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-});
+function marketFactorFormatter(
+    signed: boolean,
+    locale: Locale
+): Intl.NumberFormat {
+    const key = `${locale}:${signed ? 'signed' : 'share'}`;
+    let formatter = MARKET_FACTOR_FORMATTERS.get(key);
+    if (formatter === undefined) {
+        formatter = new Intl.NumberFormat(INTL_LOCALE[locale], {
+            style: 'percent',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+            ...(signed ? { signDisplay: 'always' as const } : {}),
+        });
+        MARKET_FACTOR_FORMATTERS.set(key, formatter);
+    }
+    return formatter;
+}
 
 /**
  * Crypto factors whose rawValue is a share in [0, 1] (core
@@ -45,10 +55,9 @@ const CRYPTO_SHARE_FACTOR_KEYS: ReadonlySet<string> = new Set([
 export function formatMarketFactorRaw(
     rawValue: number,
     key: string,
-    market: FearGreedMarketId
+    market: FearGreedMarketId,
+    locale: Locale
 ): string {
     const isShare = market === 'crypto' && CRYPTO_SHARE_FACTOR_KEYS.has(key);
-    return (
-        isShare ? MARKET_FACTOR_SHARE_FORMAT : MARKET_FACTOR_PERCENT_FORMAT
-    ).format(rawValue);
+    return marketFactorFormatter(!isShare, locale).format(rawValue);
 }

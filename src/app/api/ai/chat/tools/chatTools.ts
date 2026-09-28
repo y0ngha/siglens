@@ -114,7 +114,7 @@ export function availableToolNames(): Set<string> {
  * `userId` or a symbol string built from raw model tool-call args — and a
  * thrown error's `message` becomes part of a tool-result message that is
  * stored in the conversation and rendered in the UI. Never forward it.
- * Mirrors `entities/chat-conversation/lib/logActionError.ts`: only the
+ * Mirrors `shared/lib/logActionError.ts`: only the
  * error's `name` and (if present) the driver's short SQLSTATE-ish
  * `cause.code` are safe, non-sensitive diagnostics.
  */

@@ -184,4 +184,43 @@ describe('useSelectedModel', () => {
             localStorage.getItem(LOCAL_STORAGE_ANALYSIS_MODEL_MIGRATION_KEY)
         ).not.toBeNull();
     });
+
+    /**
+     * 회귀: 저장소가 막힌 브라우저(시크릿 모드·Safari 사생활 보호)는 `localStorage`
+     * 접근에서 `SecurityError`를 던진다. 형제 마이그레이션은 삼키는데 이 훅의
+     * 읽기/쓰기는 가드가 없어 마운트 effect/선택 핸들러가 그대로 던졌다.
+     */
+    describe('when localStorage throws (storage blocked)', () => {
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        it('hydrates to the default model instead of throwing on read', async () => {
+            vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+                throw new DOMException('blocked', 'SecurityError');
+            });
+            const { result } = renderHook(() =>
+                useSelectedModel([DEFAULT_MODEL, PREMIUM_MODEL], true)
+            );
+
+            await waitFor(() => {
+                expect(result.current[2]).toBe(true);
+            });
+            expect(result.current[0]).toBe(DEFAULT_MODEL);
+        });
+
+        it('still updates in-session selection when the write throws', () => {
+            vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+                throw new DOMException('blocked', 'SecurityError');
+            });
+            const { result } = renderHook(() =>
+                useSelectedModel([DEFAULT_MODEL, PREMIUM_MODEL], true)
+            );
+
+            act(() => {
+                result.current[1](PREMIUM_MODEL);
+            });
+            expect(result.current[0]).toBe(PREMIUM_MODEL);
+        });
+    });
 });

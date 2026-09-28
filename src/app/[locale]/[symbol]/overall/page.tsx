@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+import { newsCacheTag } from '@/entities/news-article/lib/newsCacheTag';
 import { OverallContent } from '@/widgets/overall/OverallContent';
 import { setRequestLocale } from 'next-intl/server';
 import { DEFAULT_LOCALE, isLocale } from '@/shared/i18n/locales';
@@ -354,7 +355,7 @@ export default async function OverallPage({ params }: Props) {
             [NEWS_LIST_CACHE_KEY, upper, ...contentLocaleKeyPart(resolved)],
             upper,
             () => getNewsList(upper, resolved),
-            [`news:${upper}`],
+            [newsCacheTag(upper)],
             SECONDS_PER_HALF_DAY
         ).catch((error: unknown) => {
             console.error('[OverallPage] getNewsList failed:', error);

@@ -13,6 +13,12 @@ import { readHubSsrSeed } from '@/shared/cache/hubSsrSeed';
 export const MACRO_BRIEFING_SEED_SURFACE = 'macro-briefing';
 
 /**
+ * `peekMacroBriefingStatic`의 캐시 태그. 무효화하는 쪽(허브 프리웜 등)은 반드시 이 상수를
+ * 써야 한다 — 따로 철자하면 한쪽만 바뀌는 순간 무효화가 빗나가 ISR이 stale하게 남는다.
+ */
+export const MACRO_BRIEFING_CACHE_TAG = 'economy:briefing';
+
+/**
  * /economy SSR seed — 캐시된 macro briefing을 read-only로 surface한다.
  *
  * `dateHour`는 외부(`page.tsx`)에서 계산해 `unstable_cache` 키 granularity 용도로
@@ -42,6 +48,6 @@ export function peekMacroBriefingStatic(
                 MACRO_BRIEFING_SEED_SURFACE
             )),
         ['economy-briefing-peek-static', dateHour],
-        { revalidate: SECONDS_PER_DAY, tags: ['economy:briefing'] }
+        { revalidate: SECONDS_PER_DAY, tags: [MACRO_BRIEFING_CACHE_TAG] }
     )();
 }

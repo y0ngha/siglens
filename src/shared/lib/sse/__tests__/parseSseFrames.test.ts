@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-    parseSseFrame,
-    splitFrames,
-} from '@/features/agent-chat/lib/parseSseFrames';
+import { parseSseFrame, splitFrames } from '@/shared/lib/sse/parseSseFrames';
 
 describe('parseSseFrames', () => {
     it('splits complete frames on the blank line and keeps the trailing partial frame', () => {

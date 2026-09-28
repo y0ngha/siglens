@@ -33,10 +33,11 @@ export function OptionsAiAnalysisError({
                 {t('OptionsAiAnalysisError.e756f5')}
             </p>
             {resetErrorBoundary ? (
+                // `min-h-11`(44px) 탭 타깃 — `AiSummaryErrorSection`의 재시도 버튼과 같은 크기.
                 <button
                     type="button"
                     onClick={resetErrorBoundary}
-                    className="mt-4 inline-flex items-center rounded-lg border border-border-control px-3 py-1.5 text-xs font-medium transition-colors hover:border-primary-500 hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+                    className="mt-4 inline-flex min-h-11 items-center rounded-lg border border-border-control px-3 py-2 text-xs font-medium transition-colors hover:border-primary-500 hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
                     {t('OptionsAiAnalysisError.0c767c')}
                 </button>

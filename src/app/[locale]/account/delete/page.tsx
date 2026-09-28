@@ -98,7 +98,7 @@ export default async function DeleteAccountPage({
                     >
                         <span
                             aria-hidden="true"
-                            className="h-3 w-3 animate-spin rounded-full border-2 border-secondary-500 border-t-transparent"
+                            className="h-3 w-3 animate-spin rounded-full border-2 border-secondary-500 border-t-transparent motion-reduce:animate-none"
                         />
                         <span className="text-xs text-secondary-400">
                             {t('page.109043')}

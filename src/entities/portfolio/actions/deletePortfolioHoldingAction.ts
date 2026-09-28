@@ -2,6 +2,7 @@
 
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
+import { logActionError } from '@/shared/lib/logActionError';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { SYMBOL_EDGE_RE } from '@/shared/config/ticker';
 import type { DeletePortfolioResult } from '../model';
@@ -59,7 +60,8 @@ export async function deletePortfolioHoldingAction(
         );
         return { status: 'ok' };
     } catch (error) {
-        console.error('[deletePortfolioHoldingAction] delete failed', error);
+        // Raw Drizzle errors embed bound params (user id, symbol, amounts) in `.message`.
+        logActionError('[deletePortfolioHoldingAction] delete failed', error);
         return {
             status: 'error',
             code: 'storage_unavailable',

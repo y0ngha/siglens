@@ -206,7 +206,7 @@ function ProfileDescriptionSkeleton() {
     return (
         <div className="mt-4 space-y-2">
             <div className="flex items-center gap-1.5">
-                <div className="h-2.5 w-2.5 animate-spin rounded-full border-2 border-secondary-500 border-t-transparent" />
+                <div className="h-2.5 w-2.5 animate-spin rounded-full border-2 border-secondary-500 border-t-transparent motion-reduce:animate-none" />
                 <span className="text-xs text-secondary-500">
                     {t('page.c6cf97')}
                 </span>

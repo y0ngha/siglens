@@ -23,7 +23,7 @@ import { execSync } from 'node:child_process';
  * under the "본인 이메일" label; the 계정 영구 삭제 submit stays disabled until the
  * typed email equals the account email (case-insensitive, trimmed); a mismatch
  * shows the HINT_MISMATCH text. On a matching submit, deleteAccountAction
- * clears the session cookies and redirects to /?account_deleted=1.
+ * clears the session cookies and redirects to /.
  */
 const COMPOSE = 'docker compose -f docker-compose.e2e.yml';
 
@@ -86,10 +86,14 @@ test.describe('account delete (isolated throwaway user)', () => {
         await emailInput.fill(email);
         await expect(deleteButton).toBeEnabled();
 
-        // Delete → deleteAccountAction clears cookies and redirects to
-        // /?account_deleted=1.
+        // Delete → deleteAccountAction clears cookies and redirects to /.
         await deleteButton.click();
-        await page.waitForURL(/\/\?account_deleted=1$/, { timeout: 15_000 });
+        await page.waitForURL(
+            url => url.pathname === '/' && url.search === '',
+            {
+                timeout: 15_000,
+            }
+        );
 
         // The user row is gone from the real DB (cascades cleared its session).
         expect(

@@ -535,11 +535,6 @@
   - Rule: (new) Review agents must remain read-only: no git operations, no formatter write passes, no file modifications. Before invoking a review agent on a branch with uncommitted work, back up the diff with `git stash` or `cp -r` to a temp directory. Recovery after `git checkout --` requires manual rewrite if the diffs were not backed up.
   - Context: Review agent invoked on branch with uncommitted changes; agent ran format:write then checkout without detecting the unintended destruction. Lesson: use `git stash` before review invocation, then restore with `git stash pop` after review phase completes.
 
-## [claude/funny-turing-9cgfid Round 1 | dead-code + stale-comment cleanup | 2026-09-28]
-- Violation (RECOMMENDED ×5): After deleting symbols/files (usageRepository.ts, UserApiKeyRequiredModal, SURFACE_NESTED stale reference), comments in untouched sibling files still named the deleted symbols as precedents/patterns. Example: "similar to usageRepository" still appeared after usageRepository.ts was deleted.
-  - Rule: (new) Cleanup after deleting code must be exhaustive — after deletion, repo-wide grep every deleted identifier (code, comments, docs, examples) in all siblings and dependents. Sibling comments and documentation referencing a pattern holder prevent the pattern from being truly deleted.
-  - Context: Fixed by repo-wide grep of every deleted identifier across src/, docs/, and comments. Note: SURFACE_NESTED was restored during Round 1 review because it is a documented design-system constant despite appearing as a stale reference.
-
 ## [claude/funny-turing-9cgfid Round 2 | dead-code + stale-comment cleanup | 2026-09-28]
 - Violation (REQUIRED ×1): ARCHITECTURE.md cited views/symbol (pages layer) as an example of a widgets↔widgets cross-import exception. views/symbol is a pages-layer route, not a widget; it does not participate in the documented exception.
   - Rule: Documentation examples must reference actual code patterns that exist. When documenting an architectural exception, cite a real widget edge (one that the codebase actually exhibits), not a made-up example.

@@ -287,7 +287,14 @@ describe('savePortfolioHoldingAction', () => {
             name: 'Apple Inc.',
             fmpSymbol: 'AAPL',
         } as never);
-        mockUpsert.mockRejectedValue(new Error('DB write failed'));
+        mockUpsert.mockRejectedValue(
+            Object.assign(
+                new Error(
+                    "Failed query: insert ... params: user-1,AAPL,'secret'"
+                ),
+                { name: 'DrizzleQueryError', cause: { code: '23505' } }
+            )
+        );
         const consoleErrorSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => {});
@@ -302,7 +309,11 @@ describe('savePortfolioHoldingAction', () => {
         if (result.status === 'error') {
             expect(result.code).toBe('storage_unavailable');
         }
-        expect(consoleErrorSpy).toHaveBeenCalled();
+        // Raw Drizzle errors embed bound params in `.message` — only name/code may be logged.
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+            '[savePortfolioHoldingAction] upsert failed',
+            { name: 'DrizzleQueryError', code: '23505' }
+        );
         consoleErrorSpy.mockRestore();
     });
 });
@@ -399,7 +410,12 @@ describe('deletePortfolioHoldingAction', () => {
     it('삭제 실패 시 storage_unavailable 에러를 반환하고 console.error로 로그를 남긴다', async () => {
         mockGetCurrentUser.mockResolvedValue(AUTHED_USER);
         mockDeleteByUserAndSymbol.mockRejectedValue(
-            new Error('DB delete failed')
+            Object.assign(
+                new Error('Failed query: delete ... params: user-1,AAPL'),
+                {
+                    name: 'DrizzleQueryError',
+                }
+            )
         );
         const consoleErrorSpy = vi
             .spyOn(console, 'error')
@@ -411,7 +427,10 @@ describe('deletePortfolioHoldingAction', () => {
         if (result.status === 'error') {
             expect(result.code).toBe('storage_unavailable');
         }
-        expect(consoleErrorSpy).toHaveBeenCalled();
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+            '[deletePortfolioHoldingAction] delete failed',
+            { name: 'DrizzleQueryError', code: undefined }
+        );
         consoleErrorSpy.mockRestore();
     });
 });

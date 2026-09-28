@@ -1,6 +1,11 @@
 import type { NewsImpact } from '@y0ngha/siglens-core';
 
 /**
+ * 뉴스 가격 영향(`NewsImpact`) 배지 표시 테이블 — `sentimentDisplay.ts`의 짝.
+ * 종목 뉴스(`widgets/news/sections/NewsList`)와 시장 뉴스
+ * (`widgets/market-news/MarketNewsCard`)가 함께 쓴다. 예전에는 두 위젯이 각자
+ * 사본을 갖고 있었고 색이 어긋났다(NewsList만 `text-secondary-400` — AA 미달).
+ *
  * 라벨 **키**만 담는다 — `t()`는 소비 컴포넌트에서 부른다.
  *
  * 예전에는 이 테이블이 두 벌 있었고(`market-news`는 `주가 영향`,
@@ -29,5 +34,6 @@ export const IMPACT_CLASS: Record<NewsImpact, string> = {
  * silent drift.
  */
 export function isNewsImpact(value: unknown): value is NewsImpact {
-    return typeof value === 'string' && value in IMPACT_CLASS;
+    // `in`은 프로토타입까지 본다(`'toString' in {}` → true) — 자기 키만 인정한다.
+    return typeof value === 'string' && Object.hasOwn(IMPACT_CLASS, value);
 }

@@ -1,10 +1,6 @@
 import { NextResponse } from 'next/server';
-import { backtestingDataDate } from '@/entities/sitemap-entry/lib/backtestingDataDate';
-import { buildStaticEntries } from '@/entities/sitemap-entry/lib/buildStaticEntries';
 import { toUrlSetXml } from '@/entities/sitemap-entry/lib/xml';
-import { loadStaticSitemapInputs } from '@/entities/sitemap-entry/server';
-import { validateBacktestData } from '@/entities/backtest-case/lib/validate';
-import backtestData from '@/app/[locale]/backtesting/data.json';
+import { loadStaticChildEntries } from '@/app/api/sitemap/_shared/childEntries';
 import { SITEMAP_CACHE_CONTROL } from '@/app/api/sitemap/_shared/constants';
 import { rejectAiHost } from '@/app/api/sitemap/_shared/aiHostGuard';
 
@@ -15,17 +11,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request): Promise<Response> {
     const aiHostRejection = rejectAiHost(request);
     if (aiHostRejection) return aiHostRejection;
-    const inputs = await loadStaticSitemapInputs();
-    const xml = toUrlSetXml(
-        buildStaticEntries(new Date(), {
-            ...inputs,
-            // 화면이 쓰는 것과 같은 파생값 — `/backtesting` 본문은 이 정적 데이터가
-            // 전부라 마지막 케이스 진입일이 곧 콘텐츠 갱신 시각이다.
-            backtestingDataDate: backtestingDataDate(
-                validateBacktestData(backtestData).cases
-            ),
-        })
-    );
+    const xml = toUrlSetXml(await loadStaticChildEntries(new Date()));
     return new NextResponse(xml, {
         headers: {
             'Content-Type': 'application/xml; charset=utf-8',

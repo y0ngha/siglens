@@ -1,4 +1,5 @@
 import 'server-only';
+import { newsCacheTag } from '@/entities/news-article/lib/newsCacheTag';
 import type { NewsItem } from '@y0ngha/siglens-core';
 import {
     analyzeNewsCards,
@@ -394,7 +395,7 @@ function scheduleRefreshTail(
     /** 반환값이 무효화 여부다 — 위 "무효화 여부는 `tail`이 정한다" 참고. */
     tail: () => Promise<boolean>
 ): void {
-    const tag = `news:${symbol.toUpperCase()}`;
+    const tag = newsCacheTag(symbol);
     try {
         // `after()` 자체가 동기적으로 throw할 수 있다(요청 스코프 밖 호출 등).
         // 이 함수는 절대 throw하지 않는 계약 안에 있으므로 삼키고 로그만 남긴다

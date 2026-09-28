@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { useEffect, useRef } from 'react';
 import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
 import { useContactForm } from '../hooks/useContactForm';
 import { ContactSubmittedNotice } from './ContactSubmittedNotice';
@@ -13,19 +14,57 @@ import {
     CONTACT_TITLE_MAX_LENGTH,
 } from '@/shared/config/contact';
 
+/**
+ * 성공 시 폼이 통째로 사라지므로 **포커스와 알림을 명시적으로 다룬다.**
+ *
+ * 예전에는 `state.submitted`에서 곧장 성공 안내만 반환했다. 그러면 (1) 포커스를 쥐고
+ * 있던 제출 버튼이 언마운트돼 포커스가 `<body>`로 떨어지고, (2) `aria-live` 영역이
+ * 내용과 같은 순간에 삽입돼 보조기술에 따라 아무것도 읽지 않는다.
+ *
+ * 그래서 라이브 영역은 항상 렌더해 두고 안쪽 내용만 바꾸며, 성공 패널이 마운트되면
+ * 포커스를 옮긴다. ForgotPasswordForm과 같은 패턴이다.
+ */
 export function ContactForm() {
-    const t = useTranslations('features.contact-form');
-    // 조기 return(`state.submitted`)보다 **위**에 있어야 한다. 아래에 두면
-    // 제출 성공 렌더에서만 훅이 하나 줄어 "Rendered fewer hooks than expected"로
-    // 트리가 죽는다(react-doctor rules-of-hooks).
-    const tError = useTranslations('shared.lib.contactError');
     const [state, formAction] = useContactForm();
     const currentUser = useCurrentUser();
+    const noticeRef = useRef<HTMLDivElement>(null);
 
-    if (state.submitted) {
-        return <ContactSubmittedNotice />;
-    }
+    useEffect(() => {
+        if (state.submitted) noticeRef.current?.focus();
+    }, [state.submitted]);
 
+    return (
+        <>
+            {/* 라이브 영역은 제출 전에도 비어 있는 채로 존재한다. */}
+            <div role="status" aria-live="polite">
+                {state.submitted ? (
+                    <ContactSubmittedNotice ref={noticeRef} />
+                ) : null}
+            </div>
+            {state.submitted ? null : (
+                <ContactFormFields
+                    state={state}
+                    formAction={formAction}
+                    currentUser={currentUser}
+                />
+            )}
+        </>
+    );
+}
+
+interface ContactFormFieldsProps {
+    state: ReturnType<typeof useContactForm>[0];
+    formAction: ReturnType<typeof useContactForm>[1];
+    currentUser: ReturnType<typeof useCurrentUser>;
+}
+
+function ContactFormFields({
+    state,
+    formAction,
+    currentUser,
+}: ContactFormFieldsProps) {
+    const t = useTranslations('features.contact-form');
+    const tError = useTranslations('shared.lib.contactError');
     const submissionError = getSubmissionError(state.error, tError);
 
     // Email field is uncontrolled (defaultValue). Once the form has been

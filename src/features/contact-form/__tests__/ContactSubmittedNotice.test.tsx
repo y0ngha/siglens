@@ -1,10 +1,13 @@
+import { createRef } from 'react';
 import { render, screen } from '@testing-library/react';
 import { ContactSubmittedNotice } from '@/features/contact-form/ui/ContactSubmittedNotice';
 
 describe('ContactSubmittedNotice', () => {
-    it('renders status region', () => {
+    // 라이브 영역은 부모(ContactForm)가 제출 전부터 소유한다 — 패널이 마운트와
+    // 동시에 라이브 영역이 되면 보조기술이 읽지 않는다.
+    it('does not own a live region itself', () => {
         render(<ContactSubmittedNotice />);
-        expect(screen.getByRole('status')).toBeInTheDocument();
+        expect(screen.queryByRole('status')).not.toBeInTheDocument();
     });
 
     it('renders submitted title', () => {
@@ -24,11 +27,11 @@ describe('ContactSubmittedNotice', () => {
         expect(screen.getByText('잠시만 기다려 주세요.')).toBeInTheDocument();
     });
 
-    it('has aria-live polite', () => {
-        render(<ContactSubmittedNotice />);
-        expect(screen.getByRole('status')).toHaveAttribute(
-            'aria-live',
-            'polite'
-        );
+    it('is programmatically focusable and forwards ref', () => {
+        const ref = createRef<HTMLDivElement>();
+        render(<ContactSubmittedNotice ref={ref} />);
+        expect(ref.current).toHaveAttribute('tabindex', '-1');
+        ref.current?.focus();
+        expect(document.activeElement).toBe(ref.current);
     });
 });

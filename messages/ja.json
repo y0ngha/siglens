@@ -642,6 +642,11 @@
                 "ecb738": "アカウントで登録"
             }
         },
+        "auth-oauth": {
+            "SocialLoginButtons": {
+                "ffa5ee": "Googleで続行"
+            }
+        },
         "auth-password-reset": {
             "ForgotPasswordForm": {
                 "3c3776": "メールアドレス",
@@ -2728,15 +2733,6 @@
             "ModelSelect": {
                 "43807f": "AIモデルリスト",
                 "fb54aa": "AIモデル選択"
-            },
-            "UserApiKeyRequiredModal": {
-                "378180": "APIキーを登録すると、このモデルを使用できます。",
-                "017c94": "会員登録してご自身のAPIキーを登録すると、このモデルを使用できます。",
-                "16ec45": "会員登録する",
-                "94b7db": "閉じる",
-                "e790ae": "APIキーを登録する",
-                "f77cc9": "{v0} APIキーの登録が必要です",
-                "f85b06": "無料モデルで続行する"
             },
             "thinking": {
                 "reading": "ご質問の内容を確認しています…",

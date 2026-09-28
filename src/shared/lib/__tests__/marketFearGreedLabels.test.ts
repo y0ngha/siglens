@@ -83,15 +83,19 @@ describe('formatMarketFactorRaw', () => {
     it.each(['breadth', 'alt_season', 'volume_flow'])(
         'crypto %s는 [0, 1] 비율이라 부호 없이 낸다',
         key => {
-            expect(formatMarketFactorRaw(0.5, key, 'crypto')).toBe('50.00%');
+            expect(formatMarketFactorRaw(0.5, key, 'crypto', 'ko')).toBe(
+                '50.00%'
+            );
         }
     );
 
     it.each(['momentum', 'downside_volatility', 'safe_haven'])(
         'crypto %s는 부호 있는 거리·수익률이라 +/-를 붙인다',
         key => {
-            expect(formatMarketFactorRaw(0.0512, key, 'crypto')).toBe('+5.12%');
-            expect(formatMarketFactorRaw(-0.0314, key, 'crypto')).toBe(
+            expect(formatMarketFactorRaw(0.0512, key, 'crypto', 'ko')).toBe(
+                '+5.12%'
+            );
+            expect(formatMarketFactorRaw(-0.0314, key, 'crypto', 'ko')).toBe(
                 '-3.14%'
             );
         }
@@ -100,7 +104,7 @@ describe('formatMarketFactorRaw', () => {
     it.each(['us', 'kr'] as const)(
         '%s breadth는 수익률 차라 부호를 유지한다',
         market => {
-            expect(formatMarketFactorRaw(0.5, 'breadth', market)).toBe(
+            expect(formatMarketFactorRaw(0.5, 'breadth', market, 'ko')).toBe(
                 '+50.00%'
             );
         }

@@ -1,5 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
+import { INTL_LOCALE } from '@/shared/i18n/locales';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 
 interface ContactTextareaFieldProps {
     id: string;
@@ -25,6 +27,7 @@ export function ContactTextareaField({
     error,
 }: ContactTextareaFieldProps) {
     const t = useTranslations('features.contact-form');
+    const locale = useResolvedLocale();
     const errorId = `${id}-error`;
     const helperId = `${id}-helper`;
     return (
@@ -54,7 +57,8 @@ export function ContactTextareaField({
             />
             <p id={helperId} className="text-right text-xs text-secondary-500">
                 {t('ContactTextareaField.fbccd7', {
-                    v0: maxLength.toLocaleString('ko-KR'),
+                    // 자릿수 구분은 현재 로케일을 따른다 — 예전엔 'ko-KR' 고정이었다.
+                    v0: maxLength.toLocaleString(INTL_LOCALE[locale]),
                 })}
             </p>
             {error ? (

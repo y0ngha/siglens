@@ -96,11 +96,18 @@ describe('PremiumModelGateModal', () => {
     });
 
     it('renders dialog with aria-modal', () => {
-        render(<PremiumModelGateModal mode="auth" onClose={onClose} />);
-        expect(screen.getByRole('dialog')).toHaveAttribute(
+        const { container } = render(
+            <PremiumModelGateModal mode="auth" onClose={onClose} />
+        );
+        const dialog = screen.getByRole('dialog');
+        expect(dialog).toHaveAttribute(
             'aria-labelledby',
             'premium-model-gate-title'
         );
+        // 회귀: `aria-modal`은 `role="dialog"` 요소에 있어야 의미가 있다. 예전엔
+        // 바깥 래퍼(role 없음)에 붙어 있어 보조기술이 무시했다.
+        expect(dialog).toHaveAttribute('aria-modal', 'true');
+        expect(container.querySelectorAll('[aria-modal]')).toHaveLength(1);
     });
 
     it('calls onClose when backdrop is clicked', async () => {

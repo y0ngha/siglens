@@ -1,5 +1,6 @@
 import type { SnapshotConfidence } from '@/shared/lib/types';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
+import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 import {
     type FearGreedFactorKey,
     type FearGreedLabel,
@@ -58,40 +59,65 @@ export function sentimentLabelText(
     return t(SENTIMENT_LABEL_KEY[label]);
 }
 
-// Locale-aware formatters hoisted to module scope — Intl.NumberFormat instances
-// are expensive to construct, so we reuse one per precision tier.
-const PERCENT_1_DP_FORMAT = new Intl.NumberFormat('ko-KR', {
-    style: 'percent',
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-});
+// Intl.NumberFormat instances are expensive to construct, so we cache one per
+// (locale, precision tier). 예전에는 `'ko-KR'` 고정 모듈 상수였다 — 로케일은
+// `INTL_LOCALE`에서만 정한다(`shared/i18n/locales.ts`).
+type FactorFormatTier = 'percent1' | 'percent2' | 'volumeZ';
 
-const PERCENT_2_DP_FORMAT = new Intl.NumberFormat('ko-KR', {
-    style: 'percent',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-});
+const FACTOR_FORMAT_OPTIONS: Record<
+    FactorFormatTier,
+    Intl.NumberFormatOptions
+> = {
+    percent1: {
+        style: 'percent',
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+    },
+    percent2: {
+        style: 'percent',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    },
+    volumeZ: {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    },
+};
 
-const VOLUME_Z_FORMAT = new Intl.NumberFormat('ko-KR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-});
+const FACTOR_FORMATTERS = new Map<string, Intl.NumberFormat>();
+
+function factorFormatter(
+    tier: FactorFormatTier,
+    locale: Locale
+): Intl.NumberFormat {
+    const key = `${locale}:${tier}`;
+    let formatter = FACTOR_FORMATTERS.get(key);
+    if (formatter === undefined) {
+        formatter = new Intl.NumberFormat(
+            INTL_LOCALE[locale],
+            FACTOR_FORMAT_OPTIONS[tier]
+        );
+        FACTOR_FORMATTERS.set(key, formatter);
+    }
+    return formatter;
+}
 
 /** Raw value 표시 포맷터 — UI는 이 함수로 raw 값을 출력한다. */
 export function formatFactorRaw(
     key: FearGreedFactorKey,
-    rawValue: number
+    rawValue: number,
+    locale: Locale
 ): string {
     switch (key) {
         case 'volume_z':
-            return VOLUME_Z_FORMAT.format(rawValue);
+            return factorFormatter('volumeZ', locale).format(rawValue);
         case 'buysell_imbalance':
         case 'range_position':
-            return PERCENT_1_DP_FORMAT.format(rawValue);
+            return factorFormatter('percent1', locale).format(rawValue);
         // poc_distance와 ma200_distance: 가격 거리 (%) — 동일 정밀도(소수 둘째 자리)
         case 'poc_distance':
         case 'ma200_distance':
-            return PERCENT_2_DP_FORMAT.format(rawValue);
+            return factorFormatter('percent2', locale).format(rawValue);
     }
 }
 

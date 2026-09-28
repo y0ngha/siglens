@@ -17,6 +17,15 @@ import { DEFAULT_DIGEST_MODEL_ID } from '../lib/marketNewsConstants';
 import { toEnrichedMarketNewsItem } from '../lib/toEnrichedMarketNewsItem';
 
 /**
+ * `peekMarketNewsDigestStatic`의 카테고리별 캐시 태그. 무효화하는 쪽(허브 프리웜 등)은
+ * 반드시 이 빌더를 써야 한다 — 따로 철자하면 한쪽만 바뀌는 순간 무효화가 빗나가 ISR이
+ * stale하게 남는다.
+ */
+export function marketNewsDigestCacheTag(category: NewsFeedCategoryId): string {
+    return `market-news:digest:${category}`;
+}
+
+/**
  * /news/[category] SSR seed — read-only peek of the cached category digest.
  *
  * Builds the exact same `news` array `submitMarketNewsDigestAction` builds
@@ -48,7 +57,7 @@ export async function peekMarketNewsDigestStatic(
             ['market-news-digest-peek-static', category, locale],
             {
                 revalidate: SECONDS_PER_HALF_DAY,
-                tags: [`market-news:digest:${category}`],
+                tags: [marketNewsDigestCacheTag(category)],
             }
         )();
     } catch (e) {

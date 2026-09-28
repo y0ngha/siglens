@@ -27,6 +27,11 @@ describe('isNewsSentiment', () => {
         expect(isNewsSentiment('bearish')).toBe(true);
     });
 
+    it('returns false for Object.prototype keys (toString, constructor)', () => {
+        expect(isNewsSentiment('toString')).toBe(false);
+        expect(isNewsSentiment('constructor')).toBe(false);
+    });
+
     it('returns false for an unknown string', () => {
         expect(isNewsSentiment('sideways')).toBe(false);
     });

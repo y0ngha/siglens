@@ -71,6 +71,45 @@ describe('runAnalysisStream', () => {
         ).resolves.toEqual({ ok: true });
     });
 
+    /*
+     * 회귀: 프레임을 리터럴 `\n\n`으로만 잘라, 줄바꿈을 CRLF로 바꾸는 중간자
+     * (일부 프록시) 뒤에서는 구분자를 영영 찾지 못했다 — 연결이 살아 있는 한
+     * 화면은 멈춘 채 버퍼만 자란다. 구분자가 청크 경계에 걸려도 재조립해야 한다.
+     */
+    it('CRLF로 정규화된 프레임도 파싱한다 (구분자가 청크 경계에 걸려도)', async () => {
+        fetchMock.mockResolvedValue(
+            sseResponse([
+                'event: open\r\ndata: {}\r\n\r\n',
+                'event: heartbeat\r\ndata: {}\r\n\r',
+                '\nevent: done\r\ndata: {"result":{"ok":true}}\r\n\r\n',
+            ])
+        );
+
+        await expect(
+            runAnalysisStream({
+                type: 'technical',
+                params: {},
+                messages: TEST_STREAM_MESSAGES,
+            })
+        ).resolves.toEqual({ ok: true });
+    });
+
+    it('CRLF error 프레임은 서버 메시지로 throw한다', async () => {
+        fetchMock.mockResolvedValue(
+            sseResponse([
+                'event: error\r\ndata: {"message":"서버 오류"}\r\n\r\n',
+            ])
+        );
+
+        await expect(
+            runAnalysisStream({
+                type: 'technical',
+                params: {},
+                messages: TEST_STREAM_MESSAGES,
+            })
+        ).rejects.toThrow('서버 오류');
+    });
+
     it('heartbeat는 조용히 버리고 계속 읽는다', async () => {
         fetchMock.mockResolvedValue(
             sseResponse([
@@ -141,6 +180,23 @@ describe('runAnalysisStream', () => {
             })
         ).rejects.toThrow('unreadable');
     });
+
+    it.each(['5', '"x"', '{}', ''])(
+        'done 프레임의 data가 result 없는 값(%j)이면 로케일 메시지로 실패한다',
+        async data => {
+            fetchMock.mockResolvedValue(
+                sseResponse([`event: done\ndata: ${data}\n\n`])
+            );
+
+            await expect(
+                runAnalysisStream({
+                    type: 'technical',
+                    params: {},
+                    messages: TEST_STREAM_MESSAGES,
+                })
+            ).rejects.toThrow('unreadable');
+        }
+    );
 
     it('error 프레임의 data가 깨져도 로케일 메시지로 실패한다', async () => {
         fetchMock.mockResolvedValue(

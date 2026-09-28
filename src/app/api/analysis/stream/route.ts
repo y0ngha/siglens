@@ -1,8 +1,6 @@
 import type {
     AssembledPromptRecord,
-    MarketDataProvider,
     ModelId,
-    PositionBucket,
     Timeframe,
 } from '@y0ngha/siglens-core';
 import { after } from 'next/server';
@@ -17,9 +15,10 @@ import {
 } from '@/shared/i18n/locales';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
+import { resolveHoldingPositionBucket } from '@/entities/portfolio/lib/resolveHoldingPositionBucket';
+import { logActionError } from '@/shared/lib/logActionError';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
-import { quoteWithTimeout } from '@/shared/api/market/quoteTimeout';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { resolveCurrentPrice } from '@/entities/analysis-plain/lib/currentPrice';
 import { rewriteToPlainLanguage } from '@/entities/analysis-plain/api';
@@ -35,7 +34,6 @@ import {
     resolveTierAndByok,
     resolveTierOnly,
     resolveReasoning,
-    resolvePositionBucket,
 } from '@/shared/lib/byokGate';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
 import { heartbeatStream } from '@/shared/lib/sse/heartbeatStream';
@@ -527,49 +525,6 @@ const DISPATCH: Record<
  */
 
 /**
- * Resolves the position bucket for personalized analysis.
- *
- * ponytail: Cannot extract to `shared/` because FSD prohibits shared from importing
- * entities/portfolio. Refactor into `entities/analysis/lib/` if a second call site appears.
- *
- * Degrades to `undefined` (no bucket, i.e. shared/base analysis) on ANY failure —
- * a holding-read or price-read error must never block the underlying analysis call.
- */
-async function resolveHoldingPositionBucket(
-    userId: string | null,
-    tier: 'free' | 'member' | 'pro',
-    symbol: string,
-    fmpSymbol: string | undefined,
-    marketDataProvider: Pick<MarketDataProvider, 'getQuote'>
-): Promise<PositionBucket | undefined> {
-    if (tier === 'free' || userId === null) return undefined;
-    try {
-        const { db } = getDatabaseClient();
-        const holding = await new DrizzlePortfolioRepository(
-            db
-        ).findByUserAndSymbol(userId, symbol.toUpperCase());
-        if (holding === null) return undefined;
-        const avgPrice = Number(holding.averagePrice);
-        // This lookup happens BEFORE the first SSE byte goes out, so it
-        // must stay well inside the silence wall (measured: 125.9s) —
-        // bound enforced by `quoteWithTimeout` (see its own JSDoc for the
-        // FMP-429-storm math behind the bound).
-        const quote = await quoteWithTimeout(
-            marketDataProvider,
-            fmpSymbol ?? symbol
-        );
-        const currentPrice = quote?.price ?? null;
-        return resolvePositionBucket(tier, avgPrice, currentPrice ?? null);
-    } catch (err) {
-        console.error(
-            '[streamAnalysisRoute] position bucket resolution failed, degrading to no-bucket:',
-            err
-        );
-        return undefined;
-    }
-}
-
-/**
  * 요청이 실은 로케일. 없거나 알 수 없는 값이면 기본 로케일.
  *
  * `/api/*`는 next-intl 미들웨어 matcher에서 제외돼 있어 요청 로케일을 알 방법이
@@ -883,7 +838,7 @@ export async function POST(request: Request): Promise<Response> {
                         ).findByUserAndSymbol(userId, symbol.toUpperCase());
                         personalized = holding !== null;
                     } catch (error) {
-                        console.error(
+                        logActionError(
                             '[streamAnalysisRoute] E2E personalized-flag holding read failed, degrading to false:',
                             error
                         );
@@ -963,13 +918,14 @@ export async function POST(request: Request): Promise<Response> {
             }
 
             // --- 2f. Position bucket for personalized analysis ---
-            const positionBucket = await resolveHoldingPositionBucket(
+            const positionBucket = await resolveHoldingPositionBucket({
                 userId,
                 tier,
                 symbol,
-                fmpSymbol,
-                marketDataProvider
-            );
+                quoteSymbol: fmpSymbol,
+                marketDataProvider,
+                logTag: '[streamAnalysisRoute] position bucket resolution failed, degrading to no-bucket:',
+            });
 
             // --- 2g. Build work promise and stream ---
             // core의 `onPromptAssembled`는 캐시 미스에서 정확히 한 번, 프로바이더

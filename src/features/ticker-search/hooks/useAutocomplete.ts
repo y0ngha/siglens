@@ -23,6 +23,7 @@ import {
     type SubmitTarget,
 } from '../lib/resolveSubmitTarget';
 import { normalizeLabel } from '../lib/normalizeLabel';
+import { isImeComposing } from '../lib/isImeComposing';
 
 interface UseAutocompleteOptions {
     /**
@@ -185,6 +186,8 @@ export function useAutocomplete({
                 const prev = results[prevIndex];
                 if (prev) prefetch(prev.symbol);
             } else if (e.key === 'Enter') {
+                // 한글 IME의 음절 확정 Enter는 선택/이동이 아니다 — SearchOverlay와 같은 가드.
+                if (isImeComposing(e)) return;
                 e.preventDefault();
                 const selected = results[selectedIndex];
                 if (selectedIndex >= 0 && selected) {

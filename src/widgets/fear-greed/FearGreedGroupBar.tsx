@@ -1,4 +1,5 @@
 import { useTranslations } from 'next-intl';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import type { CSSProperties } from 'react';
 import {
     POC_WINDOW_DEFAULT,
@@ -37,6 +38,7 @@ export function FearGreedGroupBar({ group }: FearGreedGroupBarProps) {
     const t = useTranslations('widgets.fear-greed');
     const tFactor = useTranslations('shared.lib.fearGreedFactor');
     const score = Math.round(group.score);
+    const locale = useResolvedLocale();
     return (
         <section className="flex flex-col gap-2 rounded bg-secondary-800/40 p-3">
             <header className="flex items-center justify-between">
@@ -82,7 +84,7 @@ export function FearGreedGroupBar({ group }: FearGreedGroupBarProps) {
                                 })}
                             </span>
                             <span className="font-mono">
-                                {formatFactorRaw(f.key, f.rawValue)}
+                                {formatFactorRaw(f.key, f.rawValue, locale)}
                                 <span
                                     className={cn(
                                         'ml-2',

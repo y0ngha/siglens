@@ -30,10 +30,11 @@ export function FearGreedPageError({
             <div className="text-sm text-ui-danger-text" role="alert">
                 {message}
             </div>
+            {/* `min-h-11`(44px) 탭 타깃 — `AiSummaryErrorSection`의 재시도 버튼과 같은 크기. */}
             <button
                 type="button"
                 onClick={resetErrorBoundary}
-                className="mt-4 rounded bg-primary-600 px-3 py-1.5 text-xs text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
+                className="mt-4 inline-flex min-h-11 items-center rounded bg-primary-600 px-3 py-2 text-xs text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
             >
                 {t('FearGreedPageError.0c767c')}
             </button>

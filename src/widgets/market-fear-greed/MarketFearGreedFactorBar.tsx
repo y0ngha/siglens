@@ -1,4 +1,5 @@
 import { useTranslations } from 'next-intl';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { useMarketFactorLabels } from '@/shared/lib/useMarketFactorLabels';
 import type { CSSProperties } from 'react';
 import { scoreToLabel, type FearGreedLabel } from '@y0ngha/siglens-core';
@@ -43,6 +44,7 @@ export function MarketFearGreedFactorBar({
     const label = factorLabels.label(factor.key);
     const description = factorLabels.description(factor.key);
     const pctile = Math.round(factor.percentile);
+    const locale = useResolvedLocale();
 
     /*
      * 이 행들은 카드 안에 중첩된 블록이 아니라 페이지 위에 바로 놓인다 —
@@ -56,7 +58,12 @@ export function MarketFearGreedFactorBar({
                     {label}
                 </h3>
                 <span className="font-mono text-sm text-secondary-200">
-                    {formatMarketFactorRaw(factor.rawValue, factor.key, market)}
+                    {formatMarketFactorRaw(
+                        factor.rawValue,
+                        factor.key,
+                        market,
+                        locale
+                    )}
                 </span>
             </header>
             <div

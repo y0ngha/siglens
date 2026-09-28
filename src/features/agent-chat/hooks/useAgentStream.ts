@@ -13,7 +13,7 @@ import {
     type AgentClientErrorCode,
 } from '../lib/errorCodes';
 import { guestHistory } from '../lib/guestHistory';
-import { parseSseFrame, splitFrames } from '../lib/parseSseFrames';
+import { parseSseFrame, splitFrames } from '@/shared/lib/sse/parseSseFrames';
 import { trackAdsConversion } from '@/shared/lib/googleAds';
 
 export interface ToolActivityItem {

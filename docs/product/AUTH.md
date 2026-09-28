@@ -189,7 +189,7 @@ phase 전이는 `useEffect`로 setState하지 않고 useActionState의 결과를
    → deleteAccount({ userId }, { users, oauthAccounts, oauthRevoker }, { secureCookie })
        ⤳ provider별 OAuth token revoke + user 행 삭제 (sessions·oauth_accounts 는 FK CASCADE)
    → cookies().set(applyAuthCookie(expiredCookie))
-   → redirect('/?account_deleted=1')
+   → redirect('/')
 ```
 
 가드 전략은 다른 회원 전용 페이지와 동일하다. proxy.ts는 변경하지 않으며, RSC가

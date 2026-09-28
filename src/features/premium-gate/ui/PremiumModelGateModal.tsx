@@ -44,10 +44,7 @@ export function PremiumModelGateModal({
         : tMisc('byokUnlock', { v0: providerLabel ?? '' });
 
     return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            aria-modal="true"
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div
                 className="absolute inset-0 bg-secondary-950/80 backdrop-blur-sm"
                 onClick={onClose}
@@ -57,6 +54,7 @@ export function PremiumModelGateModal({
             <div
                 ref={panelRef}
                 role="dialog"
+                aria-modal="true"
                 aria-labelledby={TITLE_ID}
                 tabIndex={-1}
                 className="relative w-full max-w-sm rounded-lg bg-secondary-900 p-6 shadow-2xl ring-1 ring-secondary-700 outline-none"

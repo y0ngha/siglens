@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { logActionError } from '@/entities/chat-conversation/lib/logActionError';
+import { logActionError } from '@/shared/lib/logActionError';
 
 describe('logActionError', () => {
     it('Error 이름과 cause.code만 남기고 message는 포함하지 않는다', () => {

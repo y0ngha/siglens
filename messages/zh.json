@@ -642,6 +642,11 @@
                 "ecb738": "注册账号"
             }
         },
+        "auth-oauth": {
+            "SocialLoginButtons": {
+                "ffa5ee": "使用 Google 继续"
+            }
+        },
         "auth-password-reset": {
             "ForgotPasswordForm": {
                 "3c3776": "电子邮件",
@@ -2728,15 +2733,6 @@
             "ModelSelect": {
                 "43807f": "AI模型列表",
                 "fb54aa": "选择AI模型"
-            },
-            "UserApiKeyRequiredModal": {
-                "378180": "注册API密钥即可使用此模型。",
-                "017c94": "注册并绑定您的API密钥即可使用此模型。",
-                "16ec45": "注册",
-                "94b7db": "关闭",
-                "e790ae": "注册API密钥",
-                "f77cc9": "需要注册 {v0} API 密钥",
-                "f85b06": "继续使用免费模型"
             },
             "thinking": {
                 "reading": "正在阅读您的问题…",

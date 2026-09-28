@@ -13,15 +13,15 @@ const tEn = catalogTranslator(NS, 'en');
 
 describe('formatFactorRaw', () => {
     it('volume_z는 소수 둘째 자리 일반 포맷으로 출력한다', () => {
-        expect(formatFactorRaw('volume_z', 1.2345)).toBe('1.23');
-        expect(formatFactorRaw('volume_z', -2.5)).toBe('-2.50');
+        expect(formatFactorRaw('volume_z', 1.2345, 'ko')).toBe('1.23');
+        expect(formatFactorRaw('volume_z', -2.5, 'ko')).toBe('-2.50');
     });
 
     it.each([
         ['buysell_imbalance' as const, 0.123],
         ['range_position' as const, 0.876],
     ])('%s는 1dp 퍼센트로 출력한다', (key, raw) => {
-        const result = formatFactorRaw(key, raw);
+        const result = formatFactorRaw(key, raw, 'ko');
         expect(result).toMatch(/^-?\d+\.\d%$/);
     });
 
@@ -29,7 +29,7 @@ describe('formatFactorRaw', () => {
         ['poc_distance' as const, 0.0512],
         ['ma200_distance' as const, -0.0314],
     ])('%s는 2dp 퍼센트로 출력한다', (key, raw) => {
-        const result = formatFactorRaw(key, raw);
+        const result = formatFactorRaw(key, raw, 'ko');
         expect(result).toMatch(/^-?\d+\.\d{2}%$/);
     });
 });

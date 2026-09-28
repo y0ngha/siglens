@@ -21,6 +21,7 @@ import {
     scoredHistory,
 } from './utils/fearGreedFacts';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 
 interface FearGreedFactsSummaryProps {
     symbol: string;
@@ -52,12 +53,18 @@ export function FearGreedFactsSummary({
     const tFacts = useTranslations('views.symbol.fearGreedFacts');
     const tFactor = useTranslations('shared.lib.fearGreedFactor');
     const tFearGreed = useTranslations('shared.lib.fearGreed');
+    const locale = useResolvedLocale();
     const headingId = useId();
     const snapshot = computeFearGreedIndex(bars, buySellVolume);
     if (!snapshot) return null;
 
     const score = Math.round(snapshot.score);
-    const factorLines = buildFearGreedFactorLines(snapshot, tFacts, tFactor);
+    const factorLines = buildFearGreedFactorLines(
+        snapshot,
+        tFacts,
+        tFactor,
+        locale
+    );
     // audit fix FIX 6 (option b): genuinely per-symbol narrative sentences
     // built from group scores / factor ranking (numbers that already exist
     // in `snapshot` but were unused) — materially improves the

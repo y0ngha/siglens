@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { StatementTable } from '../StatementTable';
+import { withLocale } from '@/shared/test-utils/intlRenderWrapper';
 
 const BASE_PROPS = {
     columns: ['2022', '2023', '2024'],
@@ -159,5 +160,52 @@ describe('StatementTable', () => {
         expect(td).not.toBeNull();
         expect(td?.className).not.toContain('text-ui-success-text');
         expect(td?.className).not.toContain('text-ui-danger-text');
+    });
+
+    /*
+     * 회귀: `formatValue`가 `locale = 'ko'` 기본값을 갖고 유일한 호출부가
+     * locale을 넘기지 않아, /en·/ja·/zh 재무표 금액 셀이 전부 한국어 단위
+     * (`US$1111.8억`)로 찍혔다.
+     */
+    it.each(['en', 'ja', 'zh'] as const)(
+        '%s: 금액 셀에 한국어 단위(억/조)가 나오지 않는다',
+        locale => {
+            const { container } = render(
+                withLocale(
+                    <StatementTable
+                        columns={['2024']}
+                        rows={[
+                            {
+                                labelKo: '매출',
+                                values: [111_180_000_000],
+                                format: 'usd',
+                            },
+                        ]}
+                    />,
+                    locale
+                )
+            );
+            const td = container.querySelector('td.font-mono');
+            expect(td?.textContent).toBeTruthy();
+            expect(td?.textContent).not.toMatch(/[억조]/);
+        }
+    );
+
+    it('ko: 금액 셀은 한국어 단위를 유지한다', () => {
+        const { container } = render(
+            <StatementTable
+                columns={['2024']}
+                rows={[
+                    {
+                        labelKo: '매출',
+                        values: [111_180_000_000],
+                        format: 'usd',
+                    },
+                ]}
+            />
+        );
+        expect(container.querySelector('td.font-mono')?.textContent).toMatch(
+            /억/
+        );
     });
 });

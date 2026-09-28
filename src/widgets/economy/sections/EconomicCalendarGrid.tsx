@@ -341,11 +341,13 @@ function DayDetailPanel({
                                         {t('EconomicCalendarGrid.3ebd79', {
                                             v0: formatNum(
                                                 ev.original.estimate,
-                                                ev.original.unit
+                                                ev.original.unit,
+                                                locale
                                             ),
                                             v1: formatNum(
                                                 ev.original.previous,
-                                                ev.original.unit
+                                                ev.original.unit,
+                                                locale
                                             ),
                                         })}
                                         {ev.original.actual !== null && (
@@ -356,7 +358,8 @@ function DayDetailPanel({
                                                     {
                                                         v0: formatNum(
                                                             ev.original.actual,
-                                                            ev.original.unit
+                                                            ev.original.unit,
+                                                            locale
                                                         ),
                                                     }
                                                 )}

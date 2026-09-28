@@ -1,5 +1,5 @@
-import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import type { Locale } from '@/shared/i18n/locales';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { cn } from '@/shared/lib/cn';
@@ -43,16 +43,21 @@ interface StatementTableProps {
     currency?: StatementCurrency;
 }
 
-/** Format a financial value based on its type. Returns '—' for null. */
+/**
+ * Format a financial value based on its type. Returns '—' for null.
+ *
+ * `locale`에 기본값을 두지 않는다 — 예전에는 `'ko'` 기본값이 있었고 유일한
+ * 호출부가 locale을 빠뜨려 /en·/ja·/zh 재무표 금액이 `US$1111.8억`으로 찍혔다.
+ */
 function formatValue(
     value: number | null,
-    format: FormatType = 'num',
-    currency: StatementCurrency = DEFAULT_STATEMENT_CURRENCY,
-    locale: Locale = DEFAULT_LOCALE
+    format: FormatType | undefined,
+    currency: StatementCurrency,
+    locale: Locale
 ): string {
     if (value === null) return '—';
 
-    switch (format) {
+    switch (format ?? 'num') {
         // 'usd'는 "금액" 축을 뜻하는 레거시 라벨이다 — 실제 통화는 `currency`가 정한다.
         case 'usd':
             return formatCurrencyCompact(value, currency, locale);
@@ -78,6 +83,7 @@ export function StatementTable({
 }: StatementTableProps) {
     const t = useTranslations('widgets.financials');
     const tSection = useTranslations('widgets.financials.section');
+    const locale = useResolvedLocale();
     return (
         <>
             <p className="mb-2 text-xs text-secondary-400 sm:hidden">
@@ -146,7 +152,8 @@ export function StatementTable({
                                     const formatted = formatValue(
                                         v,
                                         row.format,
-                                        currency
+                                        currency,
+                                        locale
                                     );
                                     const shouldColorize =
                                         row.colorize !== false;

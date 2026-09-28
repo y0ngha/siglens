@@ -1,9 +1,9 @@
 /**
  * Logs a server-action failure without leaking query content. A
  * `DrizzleQueryError`'s `.message` embeds the failed statement's bound
- * params — for `renameConversationAction` that includes the member's raw
- * title text — so logging `error` directly would put arbitrary user input
- * into server logs. Only the error's `name` and (if present) the
+ * params (e.g. a chat conversation's raw title or a portfolio holding's
+ * values) — so logging `error` directly would put arbitrary user input into
+ * server logs. Only the error's `name` and (if present) the
  * driver-supplied SQLSTATE-ish `cause.code` are safe, non-sensitive
  * diagnostics.
  */

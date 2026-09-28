@@ -162,7 +162,7 @@ describe('deleteAccountAction', () => {
                     { error: null },
                     makeFormData({ email: '  USER@Example.COM  ' })
                 )
-            ).rejects.toThrow('NEXT_REDIRECT:/?account_deleted=1');
+            ).rejects.toThrow(/^NEXT_REDIRECT:\/$/);
             expect(mockDelete).toHaveBeenCalledWith(
                 { userId: 'u1' },
                 expect.objectContaining({
@@ -197,14 +197,14 @@ describe('deleteAccountAction', () => {
             expect(mockRedirect).not.toHaveBeenCalled();
         });
 
-        it('성공 시 만료 쿠키를 set하고 /?account_deleted=1로 redirect한다', async () => {
+        it('성공 시 만료 쿠키를 set하고 쿼리 없이 / 로 redirect한다(읽는 곳 없는 account_deleted 제거)', async () => {
             mockDelete.mockResolvedValue({ ok: true, cookie: expiredCookie });
             await expect(
                 deleteAccountAction(
                     { error: null },
                     makeFormData({ email: 'user@example.com' })
                 )
-            ).rejects.toThrow('NEXT_REDIRECT:/?account_deleted=1');
+            ).rejects.toThrow(/^NEXT_REDIRECT:\/$/);
             expect(mockDelete).toHaveBeenCalledWith(
                 { userId: 'u1' },
                 expect.objectContaining({

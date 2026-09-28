@@ -104,7 +104,7 @@ export function AnalysisProgress({
 function Spinner() {
     return (
         <span className="relative inline-flex h-5 w-5 shrink-0 items-center justify-center">
-            <span className="absolute inset-0 animate-spin rounded-full border-2 border-secondary-700 border-t-primary-400" />
+            <span className="absolute inset-0 animate-spin rounded-full border-2 border-secondary-700 border-t-primary-400 motion-reduce:animate-none" />
             <span className="h-1 w-1 animate-pulse rounded-full bg-primary-400/70" />
         </span>
     );

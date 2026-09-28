@@ -49,7 +49,7 @@ export default function OptionsLoading() {
                 aria-label={t('loading.673e73')}
             >
                 <div className="mb-4 flex items-center gap-2">
-                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary-500 border-t-transparent" />
+                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary-500 border-t-transparent motion-reduce:animate-none" />
                     <div className="h-4 w-32 animate-pulse rounded bg-secondary-700" />
                 </div>
                 <div className="mb-5 space-y-2">

@@ -1,6 +1,10 @@
 /**
- * Client-side counterpart to `agentEventStream`'s `frame()` writer
- * (`src/app/api/ai/chat/agentEventStream.ts`): `event: <name>\ndata: <json>\n\n`.
+ * Client-side parser for the `event: <name>\ndata: <json>\n\n` frames our SSE
+ * routes write — `agentEventStream`'s `frame()` (`src/app/api/ai/chat/agentEventStream.ts`)
+ * and `heartbeatStream` (`./heartbeatStream.ts`). Shared by `useAgentStream`
+ * (agent chat) and `runAnalysisStream` (`shared/hooks/useAnalysisStream.ts`)
+ * so both get the same CRLF-tolerant framing — the analysis copy once split on
+ * a literal `\n\n` and hung behind CRLF-normalizing proxies.
  */
 export interface SseFrame {
     event: string;

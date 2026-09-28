@@ -1,6 +1,7 @@
 'use client';
 
 import { ANALYSIS_LOCALE_HEADER, splitLocalePath } from '@/shared/i18n/locales';
+import { parseSseFrame, splitFrames } from '@/shared/lib/sse/parseSseFrames';
 
 /**
  * 분석 SSE 스트림 소비 헬퍼.
@@ -27,15 +28,6 @@ import { ANALYSIS_LOCALE_HEADER, splitLocalePath } from '@/shared/i18n/locales';
  * 자세한 근거는 `src/app/api/analysis/stream/route.ts`의 관련 주석 참고.
  * 서버 쪽 상한은 라우트의 `withDeadline`(5분)이 담당한다.
  */
-
-/** SSE `done` 이벤트가 싣고 오는 페이로드. `result`는 use-case별 결과 객체다. */
-interface StreamDonePayload<T> {
-    result: T;
-}
-
-interface StreamErrorPayload {
-    message: string;
-}
 
 export interface RunAnalysisStreamOptions {
     /** 어떤 분석인지 — 라우트의 디스패치 테이블 키. */
@@ -158,7 +150,8 @@ export async function runAnalysisStream<T>({
         .pipeThrough(new TextDecoderStream())
         .getReader();
 
-    // SSE 프레임은 청크 경계와 무관하게 도착하므로 버퍼에 모았다가 `\n\n` 단위로 자른다.
+    // SSE 프레임은 청크 경계와 무관하게 도착하므로 버퍼에 모았다가 빈 줄 단위로 자른다.
+    // 구분자는 `\n\n`만이 아니라 `\r\n\r\n`도 받는다 — `splitFrames` 주석 참고.
     let buffer = '';
     try {
         for (;;) {
@@ -166,16 +159,12 @@ export async function runAnalysisStream<T>({
             if (done) break;
             buffer += value;
 
-            let boundary = buffer.indexOf('\n\n');
-            while (boundary !== -1) {
-                const frame = buffer.slice(0, boundary);
-                buffer = buffer.slice(boundary + 2);
-
+            const { frames, rest } = splitFrames(buffer);
+            buffer = rest;
+            for (const frame of frames) {
                 const parsed = parseFrame<T>(frame, messages);
                 if (parsed.kind === 'done') return parsed.result;
                 if (parsed.kind === 'error') throw new Error(parsed.message);
-
-                boundary = buffer.indexOf('\n\n');
             }
         }
     } finally {
@@ -191,43 +180,36 @@ type ParsedFrame<T> =
     | { kind: 'error'; message: string }
     | { kind: 'other' };
 
-function tryParse<T>(raw: string): T | null {
-    try {
-        return JSON.parse(raw) as T;
-    } catch {
-        return null;
-    }
-}
-
 function parseFrame<T>(
     frame: string,
     messages: StreamErrorMessages
 ): ParsedFrame<T> {
-    let event = '';
-    let data = '';
-    for (const line of frame.split('\n')) {
-        if (line.startsWith('event:')) event = line.slice(6).trim();
-        else if (line.startsWith('data:')) data += line.slice(5).trim();
-    }
+    const { event, data } = parseSseFrame(frame);
 
     if (event === 'done') {
         // 프레임이 잘렸거나 프록시가 본문을 건드리면 JSON.parse가 던진다. 그대로 두면
         // 사용자에게 `Unexpected token …`이 그대로 노출된다 — 이 파일이 애써 보존하는
         // 현지화 메시지 계약과 어긋나므로 한국어 메시지로 바꿔 error로 처리한다.
-        const payload = tryParse<StreamDonePayload<T>>(data);
-        if (payload === null) {
+        // 빈 `data:`는 `{}`로 파싱되지만 `result`가 없으니 깨진 프레임과 같다.
+        // `parseSseFrame`은 JSON 모양을 검사하지 않으므로(`data: 5`도 통과) `in` 전에
+        // 객체인지 먼저 본다 — 원시값에 `in`을 쓰면 TypeError가 그대로 새어 나간다.
+        if (data === null || typeof data !== 'object' || !('result' in data)) {
             return {
                 kind: 'error',
                 message: messages.unreadable,
             };
         }
-        return { kind: 'done', result: payload.result };
+        return {
+            kind: 'done',
+            // `done` 페이로드는 `{ result }` — `result`는 use-case별 결과 객체다.
+            result: data.result as T,
+        };
     }
     if (event === 'error') {
-        const payload = tryParse<StreamErrorPayload>(data);
+        const message = data?.message;
         return {
             kind: 'error',
-            message: payload?.message ?? messages.generic,
+            message: typeof message === 'string' ? message : messages.generic,
         };
     }
     return { kind: 'other' };

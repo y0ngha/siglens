@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+import { newsCacheTag } from '@/entities/news-article/lib/newsCacheTag';
 import {
     getEarningsReportComparison,
     getGradeEvents,
@@ -158,7 +159,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         [NEWS_LIST_CACHE_KEY, upper, ...contentLocaleKeyPart(locale)],
         upper,
         () => getNewsList(upper, locale),
-        [`news:${upper}`],
+        [newsCacheTag(upper)],
         SECONDS_PER_HALF_DAY
     ).catch((e: unknown) => {
         console.error(
@@ -202,7 +203,7 @@ export async function NewsListSection({
         [NEWS_LIST_CACHE_KEY, symbol, ...contentLocaleKeyPart(locale)],
         symbol,
         () => getNewsList(symbol, locale),
-        [`news:${symbol}`],
+        [newsCacheTag(symbol)],
         SECONDS_PER_HALF_DAY
     ).catch((e: unknown) => {
         console.error(
@@ -231,7 +232,7 @@ export async function EventCalendarSection({ symbol }: SymbolSectionProps) {
             ['news:earnings', symbol, today],
             symbol,
             () => getEarningsReportComparison(symbol, today),
-            [`news:${symbol}`],
+            [newsCacheTag(symbol)],
             SECONDS_PER_HALF_DAY
         );
     } catch (error) {
@@ -257,7 +258,7 @@ export async function AnalystActionsSection({ symbol }: SymbolSectionProps) {
             ['news:grades', symbol],
             symbol,
             () => getGradeEvents(symbol),
-            [`news:${symbol}`],
+            [newsCacheTag(symbol)],
             SECONDS_PER_HALF_DAY
         );
     } catch (error) {
@@ -371,7 +372,7 @@ export default async function NewsPage({ params }: Props) {
             [NEWS_LIST_CACHE_KEY, upper, ...contentLocaleKeyPart(resolved)],
             upper,
             () => getNewsList(upper, resolved),
-            [`news:${upper}`],
+            [newsCacheTag(upper)],
             SECONDS_PER_HALF_DAY
         ).catch((e: unknown) => {
             console.error('[NewsPage] getNewsList failed, degrading to []:', e);

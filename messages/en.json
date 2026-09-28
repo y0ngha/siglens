@@ -642,6 +642,11 @@
                 "ecb738": "Sign up with account"
             }
         },
+        "auth-oauth": {
+            "SocialLoginButtons": {
+                "ffa5ee": "Continue with Google"
+            }
+        },
         "auth-password-reset": {
             "ForgotPasswordForm": {
                 "3c3776": "Email",
@@ -2728,15 +2733,6 @@
             "ModelSelect": {
                 "43807f": "AI Model List",
                 "fb54aa": "Select AI Model"
-            },
-            "UserApiKeyRequiredModal": {
-                "378180": "You can use this model by registering your API key.",
-                "017c94": "You can use this model by signing up and registering your own API key.",
-                "16ec45": "Sign Up",
-                "94b7db": "Close",
-                "e790ae": "Register API Key",
-                "f77cc9": "{v0} API key registration is required.",
-                "f85b06": "Continue with Free Model"
             },
             "thinking": {
                 "reading": "Reading your question…",

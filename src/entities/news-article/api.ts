@@ -1,4 +1,5 @@
 import 'server-only';
+import { newsCacheTag } from '@/entities/news-article/lib/newsCacheTag';
 import { revalidateTag } from 'next/cache';
 
 import { cache } from 'react';
@@ -407,7 +408,7 @@ export async function prewarmNews(
             r => r.status === 'fulfilled' && r.value === true
         ).length ?? 0;
     if (changedCount > 0) {
-        revalidateTag(`news:${symbol.toUpperCase()}`, 'max');
+        revalidateTag(newsCacheTag(symbol), 'max');
     }
 
     // `rows`만 가변이다 — 보강을 돌리면 그 결과를 반영해 다시 읽는다.

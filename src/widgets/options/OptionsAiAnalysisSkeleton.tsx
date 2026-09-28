@@ -18,7 +18,7 @@ export function OptionsAiAnalysisSkeleton() {
             aria-label={t('OptionsAiAnalysisSkeleton.673e73')}
         >
             <div className="flex items-center gap-2">
-                <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary-500 border-t-transparent" />
+                <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary-500 border-t-transparent motion-reduce:animate-none" />
                 <span className="text-xs tracking-[0.01em] text-secondary-400">
                     {t('OptionsAiAnalysisSkeleton.a88633')}
                 </span>

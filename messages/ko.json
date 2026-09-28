@@ -642,6 +642,11 @@
                 "ecb738": "계정으로 가입"
             }
         },
+        "auth-oauth": {
+            "SocialLoginButtons": {
+                "ffa5ee": "Google로 계속하기"
+            }
+        },
         "auth-password-reset": {
             "ForgotPasswordForm": {
                 "3c3776": "이메일",
@@ -2852,15 +2857,6 @@
             "ModelSelect": {
                 "43807f": "AI 모델 목록",
                 "fb54aa": "AI 모델 선택"
-            },
-            "UserApiKeyRequiredModal": {
-                "378180": "API 키를 등록하면 이 모델을 사용할 수 있어요.",
-                "017c94": "회원가입하고 본인의 API 키를 등록하면 이 모델을 사용할 수 있어요.",
-                "16ec45": "회원가입하기",
-                "94b7db": "닫기",
-                "e790ae": "API 키 등록하기",
-                "f77cc9": "{v0} API 키 등록이 필요해요",
-                "f85b06": "무료 모델로 계속하기"
             },
             "thinking": {
                 "reading": "질문 내용을 살펴보고 있어요...",

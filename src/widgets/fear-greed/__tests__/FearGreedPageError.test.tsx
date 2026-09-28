@@ -61,5 +61,18 @@ describe('FearGreedPageError 컴포넌트는', () => {
             await user.click(screen.getByRole('button', { name: '다시 시도' }));
             expect(resetFn).toHaveBeenCalledTimes(1);
         });
+
+        // 회귀: `py-1.5 text-xs`만으로는 ~28px라 44px 탭 타깃 미달이었다.
+        it('44px 탭 타깃(min-h-11)을 갖는다', () => {
+            render(
+                <FearGreedPageError
+                    error={new Error('test')}
+                    resetErrorBoundary={vi.fn()}
+                />
+            );
+            expect(
+                screen.getByRole('button', { name: '다시 시도' }).className
+            ).toContain('min-h-11');
+        });
     });
 });

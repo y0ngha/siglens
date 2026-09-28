@@ -131,6 +131,48 @@ describe('ContactForm', () => {
         expect(screen.getByText('문의가 접수되었습니다')).toBeInTheDocument();
     });
 
+    /**
+     * 회귀: 성공 시 조기 return으로 성공 안내만 반환하면 (1) 포커스를 쥐고 있던 제출
+     * 버튼이 언마운트돼 포커스가 `<body>`로 떨어지고 (2) `aria-live` 영역이 내용과
+     * 같은 순간에 삽입돼 읽히지 않는다. ForgotPasswordForm과 같은 패턴을 따른다.
+     */
+    it('라이브 영역은 제출 전부터 존재하고, 성공 시 같은 영역에 안내가 채워진다', () => {
+        mockUseCurrentUser.mockReturnValue(resolvedCurrentUser(null));
+        const { rerender } = render(<ContactForm />);
+        const liveRegion = screen.getByRole('status');
+        expect(liveRegion).toHaveAttribute('aria-live', 'polite');
+        expect(liveRegion).toBeEmptyDOMElement();
+
+        setContactFormState({
+            submitted: true,
+            error: null,
+            values: IDLE_STATE.values,
+        });
+        rerender(<ContactForm />);
+
+        expect(screen.getByRole('status')).toBe(liveRegion);
+        expect(liveRegion).toHaveTextContent('문의가 접수되었습니다');
+    });
+
+    it('성공 시 포커스를 성공 안내로 옮긴다', () => {
+        mockUseCurrentUser.mockReturnValue(resolvedCurrentUser(null));
+        const { rerender } = render(<ContactForm />);
+        screen.getByRole('button', { name: '문의 보내기' }).focus();
+
+        setContactFormState({
+            submitted: true,
+            error: null,
+            values: IDLE_STATE.values,
+        });
+        rerender(<ContactForm />);
+
+        const panel = screen
+            .getByText('문의가 접수되었습니다')
+            .closest('[tabindex="-1"]');
+        expect(panel).not.toBeNull();
+        expect(document.activeElement).toBe(panel);
+    });
+
     it('submission_failed 에러는 폼 상단의 alert 로 노출된다', () => {
         mockUseCurrentUser.mockReturnValue(resolvedCurrentUser(null));
         setContactFormState({

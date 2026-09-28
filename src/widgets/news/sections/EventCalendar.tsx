@@ -62,10 +62,23 @@ const MONEY_FORMATTERS: Record<'USD' | 'KRW', Intl.NumberFormat> = {
     }),
 };
 
-const SIGNED_PERCENT_FORMATTER = new Intl.NumberFormat('ko-KR', {
-    signDisplay: 'always',
-    maximumFractionDigits: 1,
-});
+// 서프라이즈 배지 전용 부호 퍼센트(`+2%`, `-3.4%`, 소수 0~1자리). shared
+// `formatSignedPercent`(`toFixed(1)` → `+2.0%`)와 일부러 다르다 — 배지의 기존
+// 표기를 유지한다. 이름이 같으면 섞여 쓰이므로 로컬 이름을 따로 둔다.
+// 예전에는 `'ko-KR'` 고정이었다 — 로케일은 `INTL_LOCALE`에서만 정한다.
+const SURPRISE_PERCENT_FORMATTER_CACHE = new Map<Locale, Intl.NumberFormat>();
+
+function formatSurprisePercent(value: number, locale: Locale): string {
+    let formatter = SURPRISE_PERCENT_FORMATTER_CACHE.get(locale);
+    if (formatter === undefined) {
+        formatter = new Intl.NumberFormat(INTL_LOCALE[locale], {
+            signDisplay: 'always',
+            maximumFractionDigits: 1,
+        });
+        SURPRISE_PERCENT_FORMATTER_CACHE.set(locale, formatter);
+    }
+    return `${formatter.format(value)}%`;
+}
 
 function formatShortDate(dateStr: string, locale: Locale): string {
     return shortDateFormatterFor(locale).format(new Date(dateStr));
@@ -212,6 +225,7 @@ interface SurpriseBadgeProps {
 
 function SurpriseBadge({ badge }: SurpriseBadgeProps) {
     const tSurprise = useTranslations('widgets.news.surprise');
+    const locale = useResolvedLocale();
     const className =
         badge.kind === 'surprise'
             ? 'border-ui-success/40 bg-ui-success/10 text-ui-success-text'
@@ -223,7 +237,8 @@ function SurpriseBadge({ badge }: SurpriseBadgeProps) {
         <span
             className={`rounded-full border px-2 py-0.5 text-xs tabular-nums ${className}`}
         >
-            {tSurprise(badge.kind)} {formatSignedPercent(badge.percent)}
+            {tSurprise(badge.kind)}{' '}
+            {formatSurprisePercent(badge.percent, locale)}
         </span>
     );
 }
@@ -372,10 +387,6 @@ function getSurprisePercent(
 ): number | null {
     if (actual === null || estimated === null || estimated === 0) return null;
     return ((actual - estimated) / Math.abs(estimated)) * 100;
-}
-
-function formatSignedPercent(value: number): string {
-    return `${SIGNED_PERCENT_FORMATTER.format(value)}%`;
 }
 
 interface EventCalendarProps {

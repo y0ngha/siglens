@@ -72,8 +72,15 @@ vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
 }));
 
 import { CATEGORY_CONFIG } from '@/entities/market-news/lib/categoryConfig';
-import { MACRO_BRIEFING_SEED_SURFACE } from '@/entities/economy/api/macroBriefingStaticCache';
-import { marketBriefingSeedSurface } from '@/entities/market-summary/api/briefingStaticCache';
+import {
+    MACRO_BRIEFING_CACHE_TAG,
+    MACRO_BRIEFING_SEED_SURFACE,
+} from '@/entities/economy/api/macroBriefingStaticCache';
+import {
+    marketBriefingCacheTag,
+    marketBriefingSeedSurface,
+} from '@/entities/market-summary/api/briefingStaticCache';
+import { marketNewsDigestCacheTag } from '@/entities/market-news/api/marketNewsDigestStaticCache';
 import { DASHBOARD_SCOPES } from '@/shared/config/dashboardScope';
 import {
     HUB_DEADLINE_MS,
@@ -176,6 +183,26 @@ describe('hubTargets', () => {
                 /^(market:briefing:|economy:briefing$|market-news:digest:)/
             );
         }
+    });
+
+    /**
+     * 프리웜이 터는 태그는 `peek*Static`이 **다는** 태그와 글자 하나까지 같아야 한다.
+     * 프리웜이 태그를 따로 철자하면, 한쪽만 바뀌는 순간 무효화가 빗나가 ISR이 옛
+     * `null`(플레이스홀더)을 TTL 내내 서빙한다. 그래서 엔티티 소유 빌더와 대조한다.
+     */
+    it('무효화 태그는 엔티티가 캐시에 다는 태그와 같다', () => {
+        const expected = new Set<string>([
+            ...Object.values(DASHBOARD_SCOPES)
+                .filter(scope => scope.hasHubPage)
+                .map(scope => marketBriefingCacheTag(scope)),
+            MACRO_BRIEFING_CACHE_TAG,
+            ...(
+                Object.keys(CATEGORY_CONFIG) as Array<
+                    keyof typeof CATEGORY_CONFIG
+                >
+            ).map(category => marketNewsDigestCacheTag(category)),
+        ]);
+        expect(new Set(hubTargets().map(t => t.tag))).toEqual(expected);
     });
 });
 
