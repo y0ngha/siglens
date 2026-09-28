@@ -394,6 +394,20 @@ function validateUsageRoles(
     return null;
 }
 
+/** `display.chart.color`는 6자리 hex만 허용한다 — 차트 작도 렌더러(`useChartOverlays`의
+ * `withOpacity`)가 강조·흐림용 불투명도를 hex 뒤에 알파 두 자리로 붙이기 때문에,
+ * `rgb()`·색 이름 같은 다른 CSS 값은 흐림 처리가 조용히 빠진다. */
+const CHART_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
+
+function validateDisplayColor(display: unknown): string | null {
+    if (!isRecord(display) || !isRecord(display.chart)) return null;
+    const color = display.chart.color;
+    if (color === undefined) return null;
+    return typeof color === 'string' && CHART_COLOR_PATTERN.test(color)
+        ? null
+        : `\`display.chart.color\` must be a 6-digit hex color like "#26a69a" (got ${String(color)}).`;
+}
+
 /**
  * Validate a single skill's frontmatter `data`. Returns the list of error
  * messages (empty when the skill is valid). Exported for unit testing without
@@ -405,6 +419,7 @@ export const validateSkillData = (data: Record<string, unknown>): string[] => {
         data.usage_roles,
         data.gating
     );
+    const displayColorError = validateDisplayColor(data.display);
 
     // Explicit gating is mandatory (skills/CLAUDE.md's explicit-gating
     // policy): a skill with no `gating` block at all is a validation error,
@@ -413,12 +428,14 @@ export const validateSkillData = (data: Record<string, unknown>): string[] => {
     if (!('gating' in data)) {
         return [
             ...(usageRolesError !== null ? [usageRolesError] : []),
+            ...(displayColorError !== null ? [displayColorError] : []),
             'missing `gating` block — every skill must declare `gating.tier` (see skills/CLAUDE.md explicit-gating policy).',
         ];
     }
 
     return [
         ...(usageRolesError !== null ? [usageRolesError] : []),
+        ...(displayColorError !== null ? [displayColorError] : []),
         ...validateGating(data.gating, data.type),
     ];
 };
