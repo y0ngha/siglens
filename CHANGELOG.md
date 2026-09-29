@@ -1,5 +1,26 @@
 # Changelog
 
+# [0.92.0](https://github.com/y0ngha/siglens/compare/v0.91.0...v0.92.0) (2026-09-29)
+
+### Bug Fixes
+
+* **analysis:** AI 분석 캐시 키 churn·불일치 제거 — 이력 조회 창 제외, peek 포인터·locale, 챗 키 합동, 작도 메뉴 UI 정리 ([#894](https://github.com/y0ngha/siglens/issues/894)) ([d666e40](https://github.com/y0ngha/siglens/commit/d666e40fc40a857240e48ca821fd346c3bcb8509))
+* **chart:** PR [#888](https://github.com/y0ngha/siglens/issues/888) CI·리뷰 반영 — 보더 가드 예외 행 번호, lineWidth 상한, 그릴 게 없는 오버레이 개수 제외 ([0370ba1](https://github.com/y0ngha/siglens/commit/0370ba1397eb10bdbd66ae3f6ef8b5b949d2b4c4))
+* **chart:** widen gear hit area to 44px and pin header-strip layout ([3335652](https://github.com/y0ngha/siglens/commit/333565284c4cee791b2b868637dbb2f078b285ac))
+* portal ModalShell above the sticky header and raise the mobile nav layer ([#891](https://github.com/y0ngha/siglens/issues/891)) ([e89e528](https://github.com/y0ngha/siglens/commit/e89e528871e4e12146972ace0acc02202edae8a1)), closes [#856](https://github.com/y0ngha/siglens/issues/856)
+* **skills:** 피보나치 스킬에 priceTargets 응답 형태 명시 ([a87a481](https://github.com/y0ngha/siglens/commit/a87a4810f90774c56183b8ca928b33045bfb0615))
+* **symbol:** 이동 즉시 화면 전환, 멤버 tier 캐시, 분석 중복 제출, 작도 폴백, 언어 전환 복구 ([8733792](https://github.com/y0ngha/siglens/commit/873379267842267f7494139790b9db9df124ab24))
+
+### Features
+
+* **chart:** 차트 작도 — core chartOverlays 렌더 + 헤더 드롭다운 (core 2.0.0) ([0943ba6](https://github.com/y0ngha/siglens/commit/0943ba6599d6f4de832517458d1e6e48df0b866c))
+* **chart:** 차트 작도 항목별 토글 — 메뉴·AI 패널 동기화, 매매 가격선 토글, 기본 전부 켜짐 ([#893](https://github.com/y0ngha/siglens/issues/893)) ([c02d6cb](https://github.com/y0ngha/siglens/commit/c02d6cb500088edd32f7d485fda5a154bfe0db1d))
+* **chart:** move indicator settings button into header strip above chart ([649abbe](https://github.com/y0ngha/siglens/commit/649abbe0c73ec4270a812f4d587274c4acf5e649))
+* **news:** 뉴스·종합 분석에 매크로 캘린더 전달 + 신호 라벨·검증 카탈로그 ([fb4f245](https://github.com/y0ngha/siglens/commit/fb4f245049b91c21442c313dc2d669dffcab70ef))
+* **skills:** 근거 기반 스킬 최신화 — Bulkowski 수치 교정·상시 주입 45% 축소·캔들 가이드 30종 ([7f51d49](https://github.com/y0ngha/siglens/commit/7f51d498fec5ae609a9d08d7bad92c170f2312fb))
+* **skills:** 신규 탐지기 스킬 — 패턴 5·캔들 3·전략 2 + 인덱스·primer ([57684a0](https://github.com/y0ngha/siglens/commit/57684a03f2c0a11289e23ec96ebf928a6ff48199))
+* **symbol:** 종목 챗봇을 없애고 오른쪽 아래 버튼을 SIGLENS AI(ai.siglens.io)로 연결한다 ([#856](https://github.com/y0ngha/siglens/issues/856)) ([13a7ba3](https://github.com/y0ngha/siglens/commit/13a7ba328be5dd1303bc00110e73c736a65e69ba))
+
 # [0.91.0](https://github.com/y0ngha/siglens/compare/v0.90.1...v0.91.0) (2026-09-27)
 
 ### Bug Fixes
