@@ -26,6 +26,19 @@ describe('ModalShell', () => {
         expect(onClose).toHaveBeenCalledTimes(1);
     });
 
+    it('portals the overlay to document.body so it can cover the sticky header', () => {
+        const { container } = render(
+            <div data-testid="page-body">
+                <ModalShell titleId="t" onClose={vi.fn()}>
+                    <h2 id="t">Title</h2>
+                </ModalShell>
+            </div>
+        );
+        const backdrop = screen.getByTestId('modal-backdrop');
+        expect(container.contains(backdrop)).toBe(false);
+        expect(backdrop.parentElement).toBe(document.body);
+    });
+
     it('closes on Escape', () => {
         const onClose = renderShell();
         fireEvent.keyDown(document, { key: 'Escape' });
