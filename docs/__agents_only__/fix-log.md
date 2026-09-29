@@ -615,3 +615,8 @@
 - Violation: Duplicated pending-slot UI structure (hidden spinners + label positioning) in two separate files
   - Rule: MISTAKES.md Coding Paradigm §6.9 — duplicated logic across multiple locations without shared source
   - Context: Extracted to shared/ui/PendingSlot component; both callsites now render unified structure via explicit import.
+
+## [PR #893 Round 2 | feat/chart-overlay-item-toggles | 2026-09-30]
+- Violation: CI e2e failure — e2e/specs/chart-overlays.spec.ts still asserted removed behavior (category toggle persisted in localStorage across reload); unit tests were updated to reflect new all-on default after reload, but the e2e spec was not synchronized
+  - Rule: (new) When refactoring a feature's test suite to reflect behavior changes, all test layers (unit + e2e) must be updated simultaneously. Unit test updates without corresponding e2e assertions create CI failures where the contract is broken at the integration level while unit tests pass.
+  - Context: Updated e2e spec to assert new all-on default after reload and added menu↔AI-panel sync e2e test case. Synchronized behavior across all test layers (unit + e2e).
