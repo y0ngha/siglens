@@ -22,6 +22,7 @@ import {
 } from 'drizzle-orm';
 import {
     analysisHistoryQuery,
+    type AnalysisHistoryAxis,
     type AssembledPromptRecord,
     type PriorAnalysis,
     type RiskLevel,
@@ -369,11 +370,26 @@ export class DrizzleAnalysisHistoryRepository {
      * `WHERE model_id = ...` or `WHERE locale = ...` clause, don't — that is
      * the specific mistake this comment exists to head off.**
      *
-     * The query is sized via core's `analysisHistoryQuery(timeframe)`
+     * The query is sized via core's `analysisHistoryQuery(timeframe, axis)`
      * (`limit` + `sinceMs`) rather than hand-picked constants — it is a
      * deliberately coarse pre-filter core re-narrows twice downstream, and
      * under-fetching here silently disables the feature. Never tighten this
      * query below what `analysisHistoryQuery` returns.
+     *
+     * **`generatedBeforeMs` — the eviction-loop fix (measured on production,
+     * PLTR 1Day, 2026-09-29).** `ORDER BY generated_at DESC LIMIT limit` runs
+     * before core narrows the result to its cache-key fingerprint. Once the
+     * in-window rows fill `limit`, each fresh generation pushes the oldest
+     * out-of-window row out of *this query's* result set too — the survivor
+     * set (and therefore the `:hist=` fingerprint core derives from it)
+     * changes on every single generation, so the very next request misses
+     * the cache and regenerates, forever. Excluding rows inside the current
+     * cache bucket (`generated_at < generatedBeforeMs`, the same anchored
+     * bucket start core's key-narrowing uses) makes the result set depend
+     * only on rows the bucket cannot touch, so new generations can no longer
+     * displace it. Callers that explicitly want the newest row *including*
+     * the current bucket (e.g. a chat fallback wanting "whatever exists
+     * right now") pass `includeCurrentWindow: true` to skip this bound.
      *
      * Each row's `result` jsonb is mapped to `PriorAnalysis` via
      * {@link toPriorAnalysis}, which drops rows with a missing/non-string
@@ -390,15 +406,25 @@ export class DrizzleAnalysisHistoryRepository {
         symbol: string;
         timeframe: string;
         tab: AnalysisHistoryTab;
+        /** Which cache axis this history feeds. Defaults to `'technical'`. */
+        axis?: AnalysisHistoryAxis;
+        /**
+         * Skip the `generatedBeforeMs` (current-cache-bucket) exclusion.
+         * Only for callers that want the absolute newest row regardless of
+         * whether it falls inside the current cache window. Defaults to
+         * `false` (the eviction-loop-safe behaviour).
+         */
+        includeCurrentWindow?: boolean;
         now?: Date;
     }): Promise<PriorAnalysis[]> {
         try {
-            const { limit, sinceMs } = analysisHistoryQuery(
-                input.timeframe as Timeframe
+            const now = input.now ?? new Date();
+            const { limit, sinceMs, generatedBeforeMs } = analysisHistoryQuery(
+                input.timeframe as Timeframe,
+                input.axis ?? 'technical',
+                now
             );
-            const since = new Date(
-                (input.now ?? new Date()).getTime() - sinceMs
-            );
+            const since = new Date(now.getTime() - sinceMs);
 
             const rows = await withRetry(
                 () =>
@@ -413,7 +439,15 @@ export class DrizzleAnalysisHistoryRepository {
                                 eq(analysisHistory.symbol, input.symbol),
                                 eq(analysisHistory.timeframe, input.timeframe),
                                 eq(analysisHistory.tab, input.tab),
-                                gte(analysisHistory.generatedAt, since)
+                                gte(analysisHistory.generatedAt, since),
+                                ...(input.includeCurrentWindow
+                                    ? []
+                                    : [
+                                          lt(
+                                              analysisHistory.generatedAt,
+                                              new Date(generatedBeforeMs)
+                                          ),
+                                      ])
                             )
                         )
                         .orderBy(desc(analysisHistory.generatedAt))

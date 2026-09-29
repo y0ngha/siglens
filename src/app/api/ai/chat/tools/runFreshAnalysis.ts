@@ -16,6 +16,12 @@ import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarket
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { registerActiveStream } from '@/shared/lib/sse/activeStreams';
+import { getDatabaseClient } from '@/shared/db/client';
+import { DrizzleAnalysisHistoryRepository } from '@/entities/analysis/analysisHistoryRepository';
+import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
+import { findMarketEventsForPrompt } from '@/entities/news-article/marketEventsRepository';
+import { resolveHoldingPositionBucket } from '@/entities/portfolio/lib/resolveHoldingPositionBucket';
+import { isGuestSubject } from '../guestSubject';
 import { AGENT_BUSY_LOG } from '../busyLog';
 import { fitProse, type ProseSpec } from './fitProse';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
@@ -24,6 +30,33 @@ import {
     projectTechnicalAnalysis,
 } from './projectTechnicalAnalysis';
 import { resolveAssetInfoOrNull } from './resolveAssetInfo';
+
+/**
+ * Member position-bucket hint — the same holding→bucket resolution the
+ * analysis SSE route and `get_cached_analysis` use, so a fresh analysis
+ * triggered from chat WRITES the same personalized cache key the site reads.
+ * Degrades to `undefined` (no holding, guest, or lookup failure) — see
+ * `resolveHoldingPositionBucket`'s own JSDoc.
+ */
+async function positionBucketFor(
+    userId: string,
+    tier: Parameters<typeof resolveHoldingPositionBucket>[0]['tier'],
+    symbol: string,
+    fmpSymbol: string | undefined,
+    profile: Awaited<ReturnType<typeof resolveMarketProfile>>
+): Promise<Awaited<ReturnType<typeof resolveHoldingPositionBucket>>> {
+    if (isGuestSubject(userId)) return undefined;
+    return resolveHoldingPositionBucket({
+        userId,
+        tier,
+        symbol,
+        quoteSymbol: fmpSymbol,
+        marketDataProvider: getCachedMarketDataProvider(
+            sessionSpecFor(profile)
+        ),
+        logTag: '[AgentTool] run_fresh_analysis position bucket resolution failed, degrading to no-bucket:',
+    });
+}
 
 /**
  * Per-instance concurrency cap — distinct from core's per-turn cap. Each run
@@ -369,6 +402,32 @@ export const runFreshAnalysisTool: ToolExecutor = async (
         const descriptor = getDescriptor(profile);
         switch (kind) {
             case 'technical': {
+                // Task S5 (prior-analysis-context) — same history/events/
+                // positionBucket wiring as the SSE route's technical branch
+                // and `get_cached_analysis`, so a fresh analysis triggered
+                // from chat writes the SAME cache key the site reads/writes.
+                const historyDb = getDatabaseClient().db;
+                const [priorAnalyses, marketEvents, positionBucket] =
+                    await Promise.all([
+                        new DrizzleAnalysisHistoryRepository(
+                            historyDb
+                        ).findRecentForPrompt({
+                            symbol,
+                            timeframe,
+                            tab: 'technical',
+                        }),
+                        findMarketEventsForPrompt(historyDb, {
+                            symbol,
+                            ...marketEventsLookback(timeframe),
+                        }),
+                        positionBucketFor(
+                            ctx.userId,
+                            ctx.tier,
+                            symbol,
+                            asset?.fmpSymbol,
+                            profile
+                        ),
+                    ]);
                 const options: SubmitAnalysisOptions = {
                     modelId: runtime.analysisModel,
                     marketDataProvider: getCachedMarketDataProvider(
@@ -382,6 +441,9 @@ export const runFreshAnalysisTool: ToolExecutor = async (
                     skipEnqueueIfMiss: false,
                     // ai.siglens.io has no model picker: a DeepSeek outage retries once on Gemini (core 1.7.0).
                     providerFallback: true,
+                    priorAnalyses,
+                    marketEvents,
+                    positionBucket,
                 };
                 return unwrap(
                     kind,
@@ -398,7 +460,36 @@ export const runFreshAnalysisTool: ToolExecutor = async (
             }
             // overall/news/options go through server actions shared with siglens.io's
             // user-chosen model paths, which must not fall back — no providerFallback there.
-            case 'overall':
+            case 'overall': {
+                // Task S5 — same two-array split as the SSE route's overall
+                // branch (S2): the technical axis and overall's own
+                // top-level `priorAnalyses` read different recency windows
+                // (`analysisHistoryQuery`'s axis argument).
+                const overallDb = getDatabaseClient().db;
+                const overallHistoryRepo = new DrizzleAnalysisHistoryRepository(
+                    overallDb
+                );
+                const [
+                    technicalPriorAnalyses,
+                    overallPriorAnalyses,
+                    marketEvents,
+                ] = await Promise.all([
+                    overallHistoryRepo.findRecentForPrompt({
+                        symbol,
+                        timeframe,
+                        tab: 'technical',
+                    }),
+                    overallHistoryRepo.findRecentForPrompt({
+                        symbol,
+                        timeframe,
+                        tab: 'technical',
+                        axis: 'overall',
+                    }),
+                    findMarketEventsForPrompt(overallDb, {
+                        symbol,
+                        ...marketEventsLookback(timeframe),
+                    }),
+                ]);
                 return unwrap(
                     kind,
                     timeframe,
@@ -408,9 +499,15 @@ export const runFreshAnalysisTool: ToolExecutor = async (
                         timeframe,
                         runtime.analysisModel,
                         ctx.locale,
-                        { reasoning: false }
+                        {
+                            reasoning: false,
+                            priorAnalyses: overallPriorAnalyses,
+                            technicalPriorAnalyses,
+                            marketEvents,
+                        }
                     )) as Outcome
                 );
+            }
             case 'news':
                 return unwrap(
                     kind,

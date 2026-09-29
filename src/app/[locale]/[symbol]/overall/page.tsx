@@ -241,7 +241,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // 공짜는 아니다.
     if (!hasOverallProse(snap?.content)) {
         const cachedOverall = await staticSymbolCache(
-            ['peek:overall', upper, DEEPSEEK_V4_1_FLASH_MODEL],
+            ['peek:overall', upper, DEEPSEEK_V4_1_FLASH_MODEL, locale],
             upper,
             () =>
                 peekOverallAnalysisCache(
@@ -249,7 +249,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
                     assetInfo.name,
                     DEFAULT_TIMEFRAME,
                     DEEPSEEK_V4_1_FLASH_MODEL,
-                    false
+                    false,
+                    undefined,
+                    undefined,
+                    locale
                 ),
             [],
             SECONDS_PER_HALF_DAY
@@ -340,7 +343,7 @@ export default async function OverallPage({ params }: Props) {
             return [] as Awaited<ReturnType<typeof getNewsList>>;
         }),
         staticSymbolCache(
-            ['peek:overall', upper, DEEPSEEK_V4_1_FLASH_MODEL],
+            ['peek:overall', upper, DEEPSEEK_V4_1_FLASH_MODEL, locale],
             upper,
             // reasoning: false 고정 — member-reasoning-toggle spec Part A.4. 이 SSR
             // peek은 익명/봇 방문자 셸이므로 writer(익명·free의 runOverallAnalysisAction)가
@@ -352,7 +355,10 @@ export default async function OverallPage({ params }: Props) {
                     assetInfo.name,
                     DEFAULT_TIMEFRAME,
                     DEEPSEEK_V4_1_FLASH_MODEL,
-                    false
+                    false,
+                    undefined,
+                    undefined,
+                    locale
                 ),
             [],
             SECONDS_PER_HALF_DAY

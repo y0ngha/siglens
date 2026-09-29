@@ -7,6 +7,15 @@ const m = vi.hoisted(() => ({
     options: vi.fn(),
     profile: vi.fn(async () => 'us-equity'),
     assetInfo: vi.fn(async () => ({ name: 'Apple', fmpSymbol: 'AAPL' })),
+    // Task S5 (prior-analysis-context) — history/events/positionBucket
+    // wiring added to runFreshAnalysis's technical/overall cases.
+    findRecentForPrompt: vi.fn(
+        async (_input: { axis?: string }): Promise<unknown[]> => []
+    ),
+    findMarketEventsForPrompt: vi.fn(async (): Promise<unknown[]> => []),
+    resolveHoldingPositionBucket: vi.fn(
+        async (): Promise<string | undefined> => undefined
+    ),
 }));
 vi.mock('@y0ngha/siglens-core', async importOriginal => ({
     ...(await importOriginal<object>()),
@@ -38,6 +47,20 @@ vi.mock('@/shared/config/marketProfile/registry', () => ({
         assetClass: 'equity',
         priceFormat: { currency: 'USD' },
     }),
+}));
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: () => ({ db: {} }),
+}));
+vi.mock('@/entities/analysis/analysisHistoryRepository', () => ({
+    DrizzleAnalysisHistoryRepository: vi.fn(function () {
+        return { findRecentForPrompt: m.findRecentForPrompt };
+    }),
+}));
+vi.mock('@/entities/news-article/marketEventsRepository', () => ({
+    findMarketEventsForPrompt: m.findMarketEventsForPrompt,
+}));
+vi.mock('@/entities/portfolio/lib/resolveHoldingPositionBucket', () => ({
+    resolveHoldingPositionBucket: m.resolveHoldingPositionBucket,
 }));
 
 import {
@@ -244,6 +267,109 @@ describe('runFreshAnalysisTool', () => {
         });
         expect(options.signal).toBeUndefined();
         expect(__activeStreamCount()).toBe(0);
+    });
+
+    /**
+     * Task S5 (prior-analysis-context) — a fresh analysis triggered from
+     * chat must write the SAME cache key the site's SSE route and
+     * `get_cached_analysis` read/write: same history/events/positionBucket.
+     */
+    it('technical: history·이벤트·positionBucket을 조회해 runAnalysis에 넘긴다', async () => {
+        m.runAnalysis.mockResolvedValue({
+            status: 'done',
+            result: { summary: 's', trend: 'bullish' },
+        });
+        const history = [
+            { generatedAt: new Date('2026-08-01'), trend: 'bullish' },
+        ];
+        const events = [
+            { publishedAt: new Date('2026-08-01'), impact: 'high' },
+        ];
+        m.findRecentForPrompt.mockResolvedValue(history as never);
+        m.findMarketEventsForPrompt.mockResolvedValue(events as never);
+        m.resolveHoldingPositionBucket.mockResolvedValue('above_avg_10_25');
+
+        await runFreshAnalysisTool(
+            { symbol: 'AAPL', kind: 'technical' },
+            ctx,
+            rt
+        );
+
+        expect(m.findRecentForPrompt).toHaveBeenCalledWith({
+            symbol: 'AAPL',
+            timeframe: '1Day',
+            tab: 'technical',
+        });
+        const [, , , , , options] = m.runAnalysis.mock.calls[0]!;
+        expect(options).toMatchObject({
+            priorAnalyses: history,
+            marketEvents: events,
+            positionBucket: 'above_avg_10_25',
+        });
+    });
+
+    it('technical: 게스트는 positionBucket 조회 자체를 건너뛴다', async () => {
+        m.runAnalysis.mockResolvedValue({
+            status: 'done',
+            result: { summary: 's', trend: 'bullish' },
+        });
+
+        await runFreshAnalysisTool(
+            { symbol: 'AAPL', kind: 'technical' },
+            { ...ctx, userId: 'guest:abc' },
+            rt
+        );
+
+        expect(m.resolveHoldingPositionBucket).not.toHaveBeenCalled();
+        const [, , , , , options] = m.runAnalysis.mock.calls[0]!;
+        expect(options).toMatchObject({ positionBucket: undefined });
+    });
+
+    it('overall: technical 축과 overall 자신의 priorAnalyses를 axis가 다른 별도 호출로 읽는다', async () => {
+        m.overall.mockResolvedValue({
+            status: 'done',
+            result: { headlineKo: 'h' },
+        });
+        const technicalHistory = [
+            { generatedAt: new Date('2026-08-01'), trend: 'bullish' },
+        ];
+        const overallHistory = [
+            { generatedAt: new Date('2026-07-01'), trend: 'bearish' },
+        ];
+        m.findRecentForPrompt.mockImplementation((input: { axis?: string }) =>
+            Promise.resolve(
+                input.axis === 'overall' ? overallHistory : technicalHistory
+            )
+        );
+
+        await runFreshAnalysisTool(
+            { symbol: 'AAPL', kind: 'overall' },
+            ctx,
+            rt
+        );
+
+        expect(m.findRecentForPrompt).toHaveBeenCalledWith({
+            symbol: 'AAPL',
+            timeframe: '1Day',
+            tab: 'technical',
+        });
+        expect(m.findRecentForPrompt).toHaveBeenCalledWith({
+            symbol: 'AAPL',
+            timeframe: '1Day',
+            tab: 'technical',
+            axis: 'overall',
+        });
+        expect(m.overall).toHaveBeenCalledWith(
+            'AAPL',
+            'Apple',
+            '1Day',
+            'deepseek-v4.1-flash',
+            'ko',
+            expect.objectContaining({
+                priorAnalyses: overallHistory,
+                technicalPriorAnalyses: technicalHistory,
+            })
+        );
     });
 
     it('overall/news/options 분기', async () => {

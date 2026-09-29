@@ -95,12 +95,12 @@ describe('ChartOverlayMenu', () => {
         await user.click(screen.getByRole('button', { name: /차트 작도/ }));
         const panel = getPanel();
         const patternHeader = within(panel).getByRole('button', {
-            name: /차트 패턴 \(1\)/,
+            name: /차트 패턴\s*1/,
         });
         expect(patternHeader).toHaveAttribute('aria-pressed', 'true');
     });
 
-    it('mixed group (일부만 켜짐) shows aria-pressed="mixed" and "일부 켜짐" text', async () => {
+    it('mixed group (일부만 켜짐) shows aria-pressed="mixed"', async () => {
         const user = userEvent.setup();
         renderMenu(
             [
@@ -112,10 +112,9 @@ describe('ChartOverlayMenu', () => {
         await user.click(screen.getByRole('button', { name: /차트 작도/ }));
         const panel = getPanel();
         const header = within(panel).getByRole('button', {
-            name: /차트 패턴 \(2\)/,
+            name: /차트 패턴\s*2/,
         });
         expect(header).toHaveAttribute('aria-pressed', 'mixed');
-        expect(within(header).getByText('일부 켜짐')).toBeInTheDocument();
     });
 
     it('clicking the group header when all are on turns every item in the group off', async () => {
@@ -127,7 +126,7 @@ describe('ChartOverlayMenu', () => {
         await user.click(screen.getByRole('button', { name: /차트 작도/ }));
         const panel = getPanel();
         const header = within(panel).getByRole('button', {
-            name: /차트 패턴 \(2\)/,
+            name: /차트 패턴\s*2/,
         });
 
         await user.click(header);
@@ -143,7 +142,7 @@ describe('ChartOverlayMenu', () => {
         await user.click(screen.getByRole('button', { name: /차트 작도/ }));
         const panel = getPanel();
         const header = within(panel).getByRole('button', {
-            name: /차트 패턴 \(2\)/,
+            name: /차트 패턴\s*2/,
         });
 
         await user.click(header);

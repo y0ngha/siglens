@@ -370,8 +370,20 @@ export async function prewarmOverall(
 
     // Task S3 (prior-analysis-context) — same cache-key parity rationale as
     // `prewarmTechnical` (see that function's comment on the read call).
-    const [priorAnalyses, marketEvents, macroCalendar] = await Promise.all([
-        new DrizzleAnalysisHistoryRepository(db).findRecentForPrompt({
+    //
+    // 두 벌을 따로 읽는다 — technical 탭과 overall의 technical 축은 recency
+    // 윈도우가 다르다(`ANALYSIS_CACHE_TTL[timeframe]` vs
+    // `OVERALL_CACHE_TTL_SECONDS`). 스트림 경로(route.ts)와 같은 이유로,
+    // 하나의 배열을 양쪽에 동시에 흘려보내면 한쪽이 틀린 창으로 읽은
+    // 이력을 갖게 된다.
+    const historyRepo = new DrizzleAnalysisHistoryRepository(db);
+    const [
+        technicalPriorAnalyses,
+        overallPriorAnalyses,
+        marketEvents,
+        macroCalendar,
+    ] = await Promise.all([
+        historyRepo.findRecentForPrompt({
             symbol,
             timeframe,
             // overall도 technical 이력을 읽는다 — 근거는 스트림 경로의 같은 호출부
@@ -379,6 +391,12 @@ export async function prewarmOverall(
             // trend/riskLevel이 없다). 스트림과 **같은 tab**을 읽어야 core가 캐시 키에
             // 접는 history fingerprint가 갈리지 않는다.
             tab: 'technical',
+        }),
+        historyRepo.findRecentForPrompt({
+            symbol,
+            timeframe,
+            tab: 'technical',
+            axis: 'overall',
         }),
         findMarketEventsForPrompt(db, {
             symbol,
@@ -408,7 +426,7 @@ export async function prewarmOverall(
          */
         technical: {
             tierContext: { userId: null, tier: 'free' },
-            priorAnalyses,
+            priorAnalyses: technicalPriorAnalyses,
             marketEvents,
         },
         tier: 'free',
@@ -420,7 +438,7 @@ export async function prewarmOverall(
         optionsSnapshot: optionsSnapshot ?? undefined,
         optionsOiStale,
         financialsScorecard,
-        priorAnalyses,
+        priorAnalyses: overallPriorAnalyses,
         ...(force ? { force: true } : {}),
     });
 

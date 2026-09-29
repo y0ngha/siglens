@@ -1,6 +1,7 @@
 import { unstable_cache } from 'next/cache';
 import {
     peekAnalysisCache,
+    type AnalysisLocale,
     type FilteredAnalysisResult,
     type ModelId,
     type Timeframe,
@@ -41,12 +42,19 @@ import { SECONDS_PER_QUARTER_DAY } from '@/shared/config/time';
  * 쓰는 키는 항상 no-bucket이다. 회원이 자신의 포지션으로 개인화된 결과를 받는 것은 클라
  * 재요청(useAnalysis의 holding-change effect)의 몫이며, 이 SSR peek에 섞이면 안 된다.
  * unstable_cache 키에는 포함하지 않는다 — 항상 상수이므로 별도 분기가 필요 없다.
+ *
+ * `locale`은 호출부(페이지)가 해석한 요청 로케일을 그대로 넘긴다. writer(익명 방문자의
+ * SSE 분석 요청)가 `locale`을 core 캐시 키에 접으므로, 이 SSR peek도 같은 로케일로
+ * 읽어야 그 writer가 쓴 항목을 맞힌다 — 생략하면 항상 `ko` 키를 읽어, non-ko 페이지가
+ * 한국어 캐시 항목을 봇에게 노출하거나(오염) 항상 미스만 낸다. `unstable_cache` 키에도
+ * 포함한다 — 로케일마다 다른 캐시 항목을 읽으므로 별도 분기가 필요하다.
  */
 export function peekAnalysisStatic(
     ticker: string,
     timeframe: Timeframe,
     fmpSymbol: string | undefined,
-    modelId: ModelId
+    modelId: ModelId,
+    locale: AnalysisLocale
 ): Promise<FilteredAnalysisResult | null> {
     const upper = ticker.toUpperCase();
     return unstable_cache(
@@ -59,9 +67,10 @@ export function peekAnalysisStatic(
                 false,
                 'free',
                 undefined,
-                undefined
+                undefined,
+                locale
             ),
-        ['peek-analysis-static', upper, timeframe, modelId, 'free'],
+        ['peek-analysis-static', upper, timeframe, modelId, 'free', locale],
         { revalidate: SECONDS_PER_QUARTER_DAY, tags: [`symbol:${upper}`] }
     )();
 }

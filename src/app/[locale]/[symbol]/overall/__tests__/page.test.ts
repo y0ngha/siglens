@@ -272,7 +272,10 @@ describe('Overall page (narrative seed)', () => {
             'Apple Inc.',
             '1Day',
             DEEPSEEK_V4_1_FLASH_MODEL,
-            false
+            false,
+            undefined,
+            undefined,
+            'ko'
         );
         expect(props.initialAnalysis).toEqual(cached);
     });
@@ -307,7 +310,34 @@ describe('Overall page (narrative seed)', () => {
             'Apple Inc.',
             '1Day',
             DEEPSEEK_V4_1_FLASH_MODEL,
-            false
+            false,
+            undefined,
+            undefined,
+            'ko'
+        );
+    });
+
+    /**
+     * Task S7 (prior-analysis-context) — locale must reach both the peek
+     * call and the `unstable_cache` key, or a non-ko page reads the Korean
+     * writer's cache entry (or always misses it).
+     */
+    it('non-ko 페이지는 그 로케일로 peekOverallAnalysisCache를 호출한다', async () => {
+        mockPeekOverall.mockResolvedValue(null);
+
+        await OverallPage({
+            params: Promise.resolve({ locale: 'ja', symbol: 'aapl' }),
+        });
+
+        expect(mockPeekOverall).toHaveBeenCalledWith(
+            'AAPL',
+            'Apple Inc.',
+            '1Day',
+            DEEPSEEK_V4_1_FLASH_MODEL,
+            false,
+            undefined,
+            undefined,
+            'ja'
         );
     });
 

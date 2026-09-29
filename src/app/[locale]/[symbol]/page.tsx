@@ -222,7 +222,8 @@ export default async function SymbolPage({ params }: Props) {
         ticker,
         DEFAULT_TIMEFRAME,
         assetInfo.fmpSymbol,
-        DEEPSEEK_V4_1_FLASH_MODEL
+        DEEPSEEK_V4_1_FLASH_MODEL,
+        locale
     ).catch((error: unknown) => {
         console.error('[SymbolPage] peekAnalysisStatic failed:', error);
         return null;

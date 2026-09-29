@@ -95,6 +95,13 @@ vi.mock('@/entities/financials-statements/lib/getFinancialsSnapshot', () => ({
     getFinancialsSnapshot: vi.fn(),
 }));
 
+const { mockResolveHoldingPositionBucket } = vi.hoisted(() => ({
+    mockResolveHoldingPositionBucket: vi.fn(),
+}));
+vi.mock('@/entities/portfolio/lib/resolveHoldingPositionBucket', () => ({
+    resolveHoldingPositionBucket: mockResolveHoldingPositionBucket,
+}));
+
 vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: vi.fn().mockResolvedValue('us-equity'),
 }));
@@ -492,14 +499,20 @@ describe('runOverallAnalysisAction 함수는', () => {
         });
     });
 
-    it('priorAnalyses·marketEvents를 technical 축에도 넘겨 technical 탭과 캐시 키를 맞춘다', async () => {
+    it('technicalPriorAnalyses·marketEvents를 technical 축에 넘겨 technical 탭과 캐시 키를 맞춘다', async () => {
         mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
         mockResolveTierAndByok.mockResolvedValue({
             kind: 'allowed',
             tier: 'member' as never,
         });
-        const priorAnalyses = [
+        // 두 필드는 서로 다른 recency 윈도우로 읽은 별개의 배열이다(S2) —
+        // 일부러 다른 값을 써서 혼선(과거의 단일 `priorAnalyses` 공유 버그)이
+        // 재발하면 이 테스트가 잡아낸다.
+        const technicalPriorAnalyses = [
             { generatedAt: new Date('2026-08-01'), trend: 'bearish' },
+        ] as never;
+        const priorAnalyses = [
+            { generatedAt: new Date('2026-07-01'), trend: 'bullish' },
         ] as never;
         const marketEvents = [
             {
@@ -516,17 +529,50 @@ describe('runOverallAnalysisAction 함수는', () => {
             '1Day',
             MODEL_ID,
             'ko',
-            { priorAnalyses, marketEvents }
+            { priorAnalyses, technicalPriorAnalyses, marketEvents }
         );
 
         const callArg = mockRunOverallAnalysis.mock.calls[0]?.[0];
         expect(callArg?.technical).toEqual({
             tierContext: { userId: 'u1', tier: 'member' },
-            priorAnalyses,
+            priorAnalyses: technicalPriorAnalyses,
             marketEvents,
         });
-        // 최상위 priorAnalyses(overall 프롬프트용)도 그대로 유지된다.
+        // 최상위 priorAnalyses(overall 프롬프트용)는 technical 축과 다른 값을
+        // 그대로 유지한다 — 둘이 같은 배열로 뭉개지면 안 된다.
         expect(callArg?.priorAnalyses).toBe(priorAnalyses);
+    });
+
+    it('보유 종목이 있는 회원의 포지션 버킷을 technical 축에 넘겨 technical 탭 `:pos=` 키를 맞춘다', async () => {
+        mockGetCurrentUser.mockResolvedValue({ id: 'u-bucket' } as never);
+        mockResolveTierAndByok.mockResolvedValue({
+            kind: 'allowed',
+            tier: 'member' as never,
+        });
+        mockResolveHoldingPositionBucket.mockResolvedValueOnce('profit');
+
+        await runOverallAnalysisAction(
+            'BUCKET',
+            'Bucket Inc.',
+            '1Day',
+            MODEL_ID,
+            'ko',
+            {}
+        );
+
+        expect(mockResolveHoldingPositionBucket).toHaveBeenCalledWith(
+            expect.objectContaining({
+                userId: 'u-bucket',
+                tier: 'member',
+                symbol: 'BUCKET',
+            })
+        );
+        const call = mockRunOverallAnalysis.mock.calls.find(
+            c => c[0]?.symbol === 'BUCKET'
+        );
+        expect(call?.[0]?.technical).toMatchObject({
+            positionBucket: 'profit',
+        });
     });
 
     it('두 값이 없으면 technical 축에 키 자체를 싣지 않는다', async () => {

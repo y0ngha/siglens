@@ -347,7 +347,8 @@ describe('getCachedAnalysisTool', () => {
             false,
             ctx.tier,
             TIER_CONFIG,
-            expect.any(String)
+            expect.any(String),
+            ctx.locale
         );
     });
 
@@ -575,7 +576,9 @@ describe('getCachedAnalysisTool', () => {
             '1Day',
             rt.analysisModel,
             false,
-            ctx.tier
+            ctx.tier,
+            TIER_CONFIG,
+            ctx.locale
         );
     });
 
@@ -612,6 +615,15 @@ describe('getCachedAnalysisTool', () => {
         };
         expect(r.found).toBe(true);
         expect(r.source).toBe('history');
+        // 챗 폴백은 "지금 존재하는 가장 최신 행"을 원한다 — eviction-loop
+        // 방지용 generatedBeforeMs 제외를 건너뛰어야 한다(그 제외는 core 캐시
+        // 키 fingerprint 용도).
+        expect(findRecentForPrompt).toHaveBeenCalledWith({
+            symbol: 'AAPL',
+            timeframe: '1Day',
+            tab: 'technical',
+            includeCurrentWindow: true,
+        });
     });
 
     it('history: 봉 기준 staleness를 쓴다(나이 규칙 아님)', async () => {
