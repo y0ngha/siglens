@@ -21,10 +21,10 @@ interface UseUserTierResult {
  * {@link DEFAULT_TIER}로 폴백한다 — 서버 게이트가 진짜 판정이라 여기서 낙관하지 않는다.
  */
 export function useUserTier(): UseUserTierResult {
-    const { data: user, isPending, isError } = useCurrentUser();
+    const { data: user, isPending } = useCurrentUser();
 
     return {
         tier: user?.tier ?? DEFAULT_TIER,
-        isLoading: isPending && !isError,
+        isLoading: isPending,
     };
 }

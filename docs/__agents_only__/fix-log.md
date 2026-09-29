@@ -590,3 +590,28 @@
 - Violation: master landed a repo-wide barrel removal (all slice index.ts deleted; CLAUDE.md now forbids barrels). The branch had added a new barrel (src/widgets/ask-ai-fab/index.ts) and imports via barrels (@/entities/analysis, @/features/share, @/widgets/ask-ai-fab). A per-hunk "take master side, strip chat lines" resolver also dropped branch-only imports that sat in the same hunk (ShareableAnalysisProvider/useShareable in three widget tests), caught only by tsc.
   - Rule: (new) When resolving conflicts mechanically by taking one side, diff each hunk's other side for branch-only additions (imports, mocks) before discarding it; always follow with tsc. When base removes a convention (barrels), grep the branch's own new files for the old pattern too.
   - Context: deleted ask-ai-fab/index.ts, switched to deep imports, restored the share imports, updated controlBorderTokenGuard AnalysisPanel key to 1142, replaced CONVENTIONS.md example that referenced the deleted symbol-chat slice.
+
+## [PR #892 Round 2 | feat/navigation-pending-ui | 2026-09-29]
+- Violation: NavigationPendingProvider context value and startNavigation function recreated on every render (new object identity each render)
+  - Rule: MISTAKES.md Coding Paradigm §10 — derived constants recreated on every render without memoization
+  - Context: Wrapped both context value object and startNavigation callback with useMemo/useCallback respectively, enabling child useContext subscriptions to skip unnecessary re-renders.
+
+- Violation: LocaleLink's onNavigate wrapper used `let cancelled` closure mutation pattern (`cancelled = true`) to signal cancellation
+  - Rule: MISTAKES.md Coding Paradigm §5 — array/object mutation via direct assignment; MISTAKES.md §22 — missing unit tests for critical paths
+  - Context: Replaced mutation with a callerCancelled() helper function; added missing tests for onNavigate delegation path and cancellation behavior.
+
+- Violation: useUserTier hook carried redundant `!isError` guard alongside `isPending` check
+  - Rule: MISTAKES.md Coding Paradigm §4 — leaving logic that has no effect; dead code filtering/checking
+  - Context: Removed redundant `!isError` condition; `isPending` check already guards the error state.
+
+- Violation: SymbolTabs pending-highlight branch lacked unit tests
+  - Rule: MISTAKES.md Components §22 — incomplete test coverage for conditional branches
+  - Context: Added unit tests asserting pending highlight renders when navigation is in-flight to the target timeframe.
+
+- Violation: useTimeframeChange pending state cleared only when target matched current value; forced mid-switch timeframe change (logout → free tier) left spinner stuck indefinitely
+  - Rule: (new) State reset paths must account for ALL ways a state machine can transition, not only the intended path. Forced transitions (policy-driven, tier-dependent) are as valid as user-initiated changes.
+  - Context: Changed pending clear condition from equality check to range test: pending cleared whenever timeframe leaves its starting value (now handles logout→free forced change).
+
+- Violation: Duplicated pending-slot UI structure (hidden spinners + label positioning) in two separate files
+  - Rule: MISTAKES.md Coding Paradigm §6.9 — duplicated logic across multiple locations without shared source
+  - Context: Extracted to shared/ui/PendingSlot component; both callsites now render unified structure via explicit import.

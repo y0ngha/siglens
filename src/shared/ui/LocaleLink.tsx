@@ -7,6 +7,26 @@ import { localePath, splitLocalePath } from '@/shared/i18n/locales';
 import { useNavigationPending } from '@/shared/model/NavigationPendingContext';
 
 type NextLinkProps = ComponentProps<typeof NextLink>;
+type OnNavigate = NonNullable<NextLinkProps['onNavigate']>;
+
+/**
+ * 호출부의 `onNavigate`가 `preventDefault`를 불렀는지 여부를 돌려준다.
+ * 원본 `event`는 그대로 넘기되, `preventDefault` 호출만 가로채 기록한다 —
+ * `let` 변수 대신 배열 길이로 "불렸는가"를 나타내 불변 선언을 유지한다.
+ */
+function callerCancelled(
+    handler: OnNavigate | undefined,
+    event: Parameters<OnNavigate>[0]
+): boolean {
+    const calls: true[] = [];
+    handler?.({
+        preventDefault: () => {
+            calls.push(true);
+            event.preventDefault();
+        },
+    });
+    return calls.length > 0;
+}
 
 /**
  * 내부 링크의 **유일한** 진입점. 앱 코드는 `next/link`를 직접 import하지 않는다.
@@ -44,14 +64,10 @@ export function LocaleLink({ href, onNavigate, ...rest }: NextLinkProps) {
             // RSC 도착 전에 그리게 한다 — `NavigationPendingContext` JSDoc 참고.
             onNavigate={event => {
                 // 호출부가 이동을 취소하면(preventDefault) 골격을 세우지 않는다.
-                let cancelled = false;
-                onNavigate?.({
-                    preventDefault: () => {
-                        cancelled = true;
-                        event.preventDefault();
-                    },
-                });
-                if (!cancelled && typeof localized === 'string') {
+                if (
+                    !callerCancelled(onNavigate, event) &&
+                    typeof localized === 'string'
+                ) {
                     startNavigation(localized);
                 }
             }}

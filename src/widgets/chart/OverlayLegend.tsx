@@ -68,6 +68,9 @@ export function OverlayLegend({
         <div
             className="pointer-events-none flex flex-col gap-1.5 overflow-hidden rounded-sm px-1.5 py-1"
             style={{
+                // `CHART_COLORS.background`는 getter라 라이트/다크 테마에 따라 값이
+                // 바뀐다 — 모듈 상수로 굳히면 테마 전환 시 halo 색이 stale해진다.
+                // 매 렌더 계산을 유지한다.
                 textShadow: labelHalo(CHART_COLORS.background),
                 ...(maxHeight === undefined ? {} : { maxHeight }),
             }}

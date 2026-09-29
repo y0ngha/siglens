@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import { symbolOfAppPath } from '@/shared/config/reservedFirstSegments';
 import { useNavigationPending } from '@/shared/model/NavigationPendingContext';
+import { PendingSlot } from '@/shared/ui/PendingSlot';
 
 /**
  * 같은 종목 안의 다른 탭으로 가는 중이면 그 탭 경로 — 아니면 null.
@@ -26,8 +27,8 @@ export function usePendingSymbolTab(): string | null {
 
 /**
  * `[symbol]` 레이아웃의 page slot. 탭 이동이 진행 중이면 이전 탭 대신 `fallback`을
- * 보여준다. 이전 탭은 언마운트하지 않고 숨기기만 한다 — 이동이 취소돼도(같은 경로
- * 유지) 상태를 잃지 않는다. `contents`라 평소엔 jail의 flex 자식 배치를 바꾸지 않는다.
+ * 보여준다. 뼈대는 `PendingSlot` 참고 — 여기서는 "같은 종목의 탭 이동 중인가"만
+ * 판정한다.
  */
 export function SymbolTabPendingSlot({
     children,
@@ -38,9 +39,8 @@ export function SymbolTabPendingSlot({
 }) {
     const isPending = usePendingSymbolTab() !== null;
     return (
-        <>
-            {isPending && fallback}
-            <div className={isPending ? 'hidden' : 'contents'}>{children}</div>
-        </>
+        <PendingSlot isPending={isPending} fallback={fallback}>
+            {children}
+        </PendingSlot>
     );
 }

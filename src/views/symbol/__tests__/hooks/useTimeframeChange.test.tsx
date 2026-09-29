@@ -302,4 +302,42 @@ describe('useTimeframeChange', () => {
         expect(result.current.isTimeframeSwitching).toBe(false);
         expect(result.current.displayTimeframe).toBe('1Week');
     });
+
+    /**
+     * pending을 "목적지에 도착했는가"(`pending.to === timeframe`)로만 풀면, 전환
+     * 도중 timeframe이 그 목적지가 **아닌** 다른 값으로 강제로 바뀌는 경우(로그아웃
+     * 등으로 tier가 free로 떨어져 DEFAULT_TIMEFRAME으로 강등)에 스피너가 영영
+     * 풀리지 않는다. `from`(전환을 시작한 시점의 timeframe)과 달라졌는지로 풀어야
+     * 이 경우도 잡는다.
+     */
+    it('전환 도중 tier가 free로 떨어져 timeframe이 강제로 바뀌면 pending이 풀린다', () => {
+        mockGet.mockReturnValue('1Week');
+
+        const { result, rerender } = renderHook(
+            ({ isFreeTier }: { isFreeTier: boolean }) =>
+                useTimeframeChange('AAPL', isFreeTier, true),
+            {
+                wrapper: makeWrapper(),
+                initialProps: { isFreeTier: false },
+            }
+        );
+
+        expect(result.current.timeframe).toBe('1Week');
+
+        act(() => {
+            result.current.handleTimeframeChange('1Month' as Timeframe);
+        });
+
+        expect(result.current.isTimeframeSwitching).toBe(true);
+        expect(result.current.displayTimeframe).toBe('1Month');
+
+        // 로그아웃 등으로 free tier로 강등 — timeframe이 목적지(1Month)가 아니라
+        // DEFAULT_TIMEFRAME(1Day)으로 강제된다. 시작 시점(1Week)과는 달라졌으므로
+        // pending은 여기서 풀려야 한다.
+        rerender({ isFreeTier: true });
+
+        expect(result.current.timeframe).toBe('1Day');
+        expect(result.current.isTimeframeSwitching).toBe(false);
+        expect(result.current.displayTimeframe).toBe('1Day');
+    });
 });

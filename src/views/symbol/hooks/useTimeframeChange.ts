@@ -12,6 +12,12 @@ import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
 
 const TIMEFRAME_QUERY_PARAM = 'tf';
 
+interface PendingTimeframeSwitch {
+    to: Timeframe;
+    /** 전환을 시작한 시점의 timeframe — 여기서 벗어나면(도착이든 강제 변경이든) 끝난 것이다. */
+    from: Timeframe;
+}
+
 interface UseTimeframeChangeResult {
     timeframe: Timeframe;
     /**
@@ -34,9 +40,7 @@ export function useTimeframeChange(
     const [timeframeChangeCount, setTimeframeChangeCount] = useState(0);
     const [, startTransition] = useTransition();
     const pendingNavigationRef = useRef<Timeframe | null>(null);
-    const [pendingTimeframe, setPendingTimeframe] = useState<Timeframe | null>(
-        null
-    );
+    const [pending, setPending] = useState<PendingTimeframeSwitch | null>(null);
 
     const searchParams = useSearchParams();
     const assetInfo = useAssetInfo(symbol);
@@ -54,10 +58,13 @@ export function useTimeframeChange(
     // 선언 순서 예외(MISTAKES.md #17)로 timeframe 계산 직후에 둔다.
     const previousTimeframeRef = useRef<Timeframe>(timeframe);
 
-    // 전환이 커밋되면(또는 봉 조회 실패로 ErrorBoundary가 새 타임프레임을 커밋하면)
-    // pending을 푼다 — 렌더 중 조정 패턴(SearchOverlayContext와 동일).
-    if (pendingTimeframe !== null && pendingTimeframe === timeframe) {
-        setPendingTimeframe(null);
+    // 전환이 끝나면(목적지 도착, 또는 tier 강등처럼 전환 도중 timeframe이 다른 값으로
+    // 강제 변경되는 경우 모두) pending을 푼다 — 렌더 중 조정 패턴(SearchOverlayContext와
+    // 동일). `pending.to === timeframe`만 보면 "시작 시점에서 벗어났지만 목적지도
+    // 아닌" 강제 변경(로그아웃으로 free 강등 → DEFAULT_TIMEFRAME)에서 스피너가 영영
+    // 안 풀린다 — 그래서 `from`과 달라졌는지로 판정한다.
+    if (pending !== null && timeframe !== pending.from) {
+        setPending(null);
     }
 
     const handleTimeframeChange = (nextTimeframe: Timeframe): void => {
@@ -83,7 +90,7 @@ export function useTimeframeChange(
         });
         // 셀렉터·차트 dim은 transition 밖(urgent)에서 먼저 바꾼다 — 사용자는 클릭
         // 즉시 반응을 본다. 실제 timeframe 전환은 새 봉이 올 때까지 이전 차트를 유지한다.
-        setPendingTimeframe(nextTimeframe);
+        setPending({ to: nextTimeframe, from: timeframe });
         startTransition(() => {
             setTimeframeChangeCount(c => c + 1);
             pendingNavigationRef.current = nextTimeframe;
@@ -149,8 +156,8 @@ export function useTimeframeChange(
 
     return {
         timeframe,
-        displayTimeframe: pendingTimeframe ?? timeframe,
-        isTimeframeSwitching: pendingTimeframe !== null,
+        displayTimeframe: pending?.to ?? timeframe,
+        isTimeframeSwitching: pending !== null,
         timeframeChangeCount,
         handleTimeframeChange,
     };

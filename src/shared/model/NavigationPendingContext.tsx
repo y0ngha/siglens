@@ -2,14 +2,17 @@
 
 import {
     createContext,
+    useCallback,
     useContext,
     useEffect,
+    useMemo,
     useState,
     type ReactNode,
 } from 'react';
 import { splitLocalePath } from '@/shared/i18n/locales';
 import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import { symbolOfAppPath } from '@/shared/config/reservedFirstSegments';
+import { PendingSlot } from '@/shared/ui/PendingSlot';
 
 interface PendingNavigation {
     /** 목적지 앱 경로(로케일 접두사·쿼리 없음). */
@@ -71,14 +74,24 @@ export function NavigationPendingProvider({
         return () => window.removeEventListener('popstate', stop);
     }, []);
 
-    const value: NavigationPendingValue = {
-        pendingHref: pending?.href ?? null,
-        startNavigation: href => {
+    // 소비처가 `startNavigation`을 자기 useCallback/useEffect deps에 넣으므로
+    // (React Compiler가 켜져 있어도) 참조를 명시적으로 안정시킨다.
+    const startNavigation = useCallback(
+        (href: string) => {
             const target = toAppPath(href);
             if (target === pathname) return;
             setPending({ href: target, from: pathname });
         },
-    };
+        [pathname]
+    );
+
+    const value: NavigationPendingValue = useMemo(
+        () => ({
+            pendingHref: pending?.href ?? null,
+            startNavigation,
+        }),
+        [pending, startNavigation]
+    );
 
     return (
         <NavigationPendingContext.Provider value={value}>
@@ -106,8 +119,7 @@ export function usePendingSymbolEntry(): string | null {
 
 /**
  * 루트 page slot. 종목으로 진입하는 중이면 떠나온 페이지 대신 `fallback`(종목 골격)을
- * 보여준다. 떠나온 페이지는 숨기기만 한다 — 이동이 취소돼도 상태를 잃지 않는다.
- * `contents`라 평소엔 레이아웃 배치를 바꾸지 않는다.
+ * 보여준다. 뼈대는 `PendingSlot` 참고 — 여기서는 "종목 진입 중인가"만 판정한다.
  */
 export function SymbolEntryPendingSlot({
     children,
@@ -118,9 +130,8 @@ export function SymbolEntryPendingSlot({
 }) {
     const isEntering = usePendingSymbolEntry() !== null;
     return (
-        <>
-            {isEntering && fallback}
-            <div className={isEntering ? 'hidden' : 'contents'}>{children}</div>
-        </>
+        <PendingSlot isPending={isEntering} fallback={fallback}>
+            {children}
+        </PendingSlot>
     );
 }
