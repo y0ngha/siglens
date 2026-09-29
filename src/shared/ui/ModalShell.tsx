@@ -1,6 +1,7 @@
 'use client';
 
 import { type ReactNode, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { cn } from '@/shared/lib/cn';
@@ -28,6 +29,12 @@ interface ModalShellProps {
  *
  * 배경 클릭은 target 비교로 처리한다 — 패널 안 클릭마다 `stopPropagation`을 달지 않으려고.
  * 오버레이는 장식(`role="presentation"`)이고, 키보드 닫기 경로는 Esc다.
+ *
+ * `document.body`로 portal한다. 모달은 페이지 본문 안에서 마운트되는데, 본문은
+ * sticky 헤더(z-50)와 다른 stacking context라 오버레이의 z-index를 아무리 올려도
+ * 헤더와 플로팅 버튼 위로 올라가지 못했다(배경이 헤더를 덮지 못함). React context는
+ * portal을 그대로 통과하므로 번역·쿼리 프로바이더는 그대로 쓸 수 있다.
+ * 조건부 마운트(= 사용자 조작 뒤)라 SSR에서 열린 채 렌더되지 않지만, 가드는 명시한다.
  */
 export function ModalShell({
     titleId,
@@ -47,7 +54,9 @@ export function ModalShell({
         if (focusPanel) panelRef.current?.focus();
     }, [focusPanel]);
 
-    return (
+    if (typeof document === 'undefined') return null;
+
+    return createPortal(
         <div
             role="presentation"
             data-testid="modal-backdrop"
@@ -67,6 +76,7 @@ export function ModalShell({
             >
                 {children}
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

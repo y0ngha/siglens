@@ -141,9 +141,13 @@ export function HeaderMobileMenu({
                 typeof document !== 'undefined' &&
                 createPortal(
                     <>
+                        {/*
+                          z-70: 모바일 분석 시트(z-50)·AI 버튼(z-60) 위에 떠야 한다.
+                          검색 오버레이(z-70)와는 동시에 열리지 않는다.
+                        */}
                         {isOpen && (
                             <div
-                                className="fixed inset-0 z-40 bg-black/50"
+                                className="fixed inset-0 z-70 bg-black/50"
                                 aria-hidden="true"
                                 data-testid="mobile-nav-backdrop"
                                 onClick={close}
@@ -159,7 +163,7 @@ export function HeaderMobileMenu({
                             aria-hidden={!isOpen}
                             tabIndex={-1}
                             className={cn(
-                                'border-secondary-700 bg-secondary-900 fixed top-0 right-0 z-50 flex h-dvh w-64 flex-col border-l shadow-2xl transition-transform duration-200 outline-none motion-reduce:transition-none',
+                                'border-secondary-700 bg-secondary-900 fixed top-0 right-0 z-70 flex h-dvh w-64 flex-col border-l shadow-2xl transition-transform duration-200 outline-none motion-reduce:transition-none',
                                 isOpen ? 'translate-x-0' : 'translate-x-full'
                             )}
                         >
