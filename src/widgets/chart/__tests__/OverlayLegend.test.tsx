@@ -59,14 +59,16 @@ describe('OverlayLegend', () => {
      * `secondary-900`은 두 테마에서 차트 배경과 같은 값이라 "빈 배경 위"
      * 실측치를 그대로 보장한다.
      */
-    it('paints an opaque backdrop so contrast does not depend on what is behind', () => {
+    it('keeps the box transparent and haloes the text with the chart background', () => {
         const { container } = render(
             <OverlayLegend
                 items={[{ name: 'MA(5)', color: '#ff0000', value: 100 }]}
             />
         );
 
-        expect(container.firstElementChild).toHaveClass('bg-secondary-900');
+        const box = container.firstElementChild as HTMLElement;
+        expect(box).not.toHaveClass('bg-secondary-900');
+        expect(box.style.textShadow).not.toBe('');
     });
 
     it('does not bound itself before the pane has been measured', () => {

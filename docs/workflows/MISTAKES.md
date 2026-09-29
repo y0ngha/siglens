@@ -190,6 +190,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Before writing comment "provider unavailable", grep provider API for existing loaders that fetch the needed data
    → Recurring: feat/agent-tool-analysis-context Round 1 (get_fundamentals omits earningsDate), siglens-core (get_quote omits volume) — 2 occurrences
 
+6.9. Duplicated logic/constants across multiple locations without shared source
+   → When identical code patterns, guard logic, or configuration values appear in 2+ places (stages, scripts, configuration files, etc.), extract to a single shared source
+   → Duplication hides intent, makes maintenance error-prone, and creates consistency drift when one copy is updated but others are missed
+   → Each fix-round touching one copy risks leaving others unsynchronized
+   ❌ Dockerfile: ICU locale script inlined in both builder and runner stages (risk of maintaining two copies)
+   ❌ prewarm.ts × 7 sites: `providerFallback: true` comment repeated identically; policy intent buried in duplication
+   ✅ Extract ICU script to `scripts/assert-icu-locale.mjs`, call from both Dockerfile stages
+   ✅ Extract `PREWARM_PROVIDER_FALLBACK = true` constant, reference from all 7 configuration sites
+   → Recurring: PR #838 (Dockerfile ICU stages), PR #827 (prewarm configuration 7× duplication) — 2 occurrences
+
 7. Repeating identical className ternary 3+ times
    → Extract to a helper function
 

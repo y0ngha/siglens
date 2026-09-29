@@ -13,7 +13,6 @@ import {
     REGISTERED_PROVIDERS_STALE_TIME_MS,
     SECTOR_SIGNALS_STALE_TIME_MS,
     TICKER_SEARCH_STALE_TIME_MS,
-    USER_TIER_STALE_TIME_MS,
 } from '@/shared/config/queryConfig';
 
 describe('queryConfig staleTime constants', () => {
@@ -25,7 +24,6 @@ describe('queryConfig staleTime constants', () => {
         TICKER_SEARCH_STALE_TIME_MS,
         ASSET_INFO_STALE_TIME_MS,
         BARS_STALE_TIME_MS,
-        USER_TIER_STALE_TIME_MS,
         REGISTERED_PROVIDERS_STALE_TIME_MS,
     };
 
@@ -39,10 +37,6 @@ describe('queryConfig staleTime constants', () => {
 
     it('FMP 티커 검색은 OHLCV 바보다 staleTime이 길다 (rate limit 보호)', () => {
         expect(TICKER_SEARCH_STALE_TIME_MS).toBeGreaterThan(BARS_STALE_TIME_MS);
-    });
-
-    it('user tier query key는 안정적이다', () => {
-        expect(QUERY_KEYS.userTier()).toEqual(['user-tier']);
     });
 
     it('currentUser query key는 안정적이다', () => {

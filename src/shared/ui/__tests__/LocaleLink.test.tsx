@@ -1,7 +1,50 @@
-import { render, screen } from '@testing-library/react';
+vi.mock('next/navigation', () => ({
+    usePathname: vi.fn(() => '/market'),
+}));
+
+// SymbolTabs.test.tsx의 next/link 목 패턴을 따르되, onClick에서 실제 next/link처럼
+// `onNavigate`를 호출하도록 확장한다 — jsdom에서는 next/link 내부의 클라이언트
+// 네비게이션 로직이 동작하지 않아 이 목 없이는 `onNavigate`가 전혀 불리지 않는다.
+vi.mock('next/link', () => ({
+    default: ({
+        href,
+        onNavigate,
+        children,
+        ...rest
+    }: {
+        href: string;
+        onNavigate?: (event: { preventDefault: () => void }) => void;
+        children: React.ReactNode;
+        [key: string]: unknown;
+    }) => (
+        <a
+            href={href}
+            onClick={event => {
+                onNavigate?.({ preventDefault: () => event.preventDefault() });
+            }}
+            {...rest}
+        >
+            {children}
+        </a>
+    ),
+}));
+
+import { fireEvent, render, screen } from '@testing-library/react';
+import { usePathname } from 'next/navigation';
 import { LocaleLink } from '../LocaleLink';
 import { LocaleProvider } from '@/shared/i18n/LocaleContext';
+import {
+    NavigationPendingProvider,
+    useNavigationPending,
+} from '@/shared/model/NavigationPendingContext';
 import type { Locale } from '@/shared/i18n/locales';
+
+const mockPathname = usePathname as ReturnType<typeof vi.fn>;
+
+function PendingProbe() {
+    const { pendingHref } = useNavigationPending();
+    return <span data-testid="pending">{pendingHref ?? 'none'}</span>;
+}
 
 function renderIn(locale: Locale, href: string, hrefBase?: string) {
     render(
@@ -85,5 +128,55 @@ describe('LocaleLink', () => {
             'href',
             '#top'
         );
+    });
+
+    describe('클릭 시 전역 pending 상태', () => {
+        beforeEach(() => {
+            mockPathname.mockReturnValue('/market');
+        });
+
+        it('내부 링크를 클릭하면 호출부의 onNavigate를 부르고 전역 pending을 세운다', () => {
+            const onNavigate = vi.fn();
+            render(
+                <LocaleProvider locale="ko">
+                    <NavigationPendingProvider>
+                        <LocaleLink href="/news" onNavigate={onNavigate}>
+                            go
+                        </LocaleLink>
+                        <PendingProbe />
+                    </NavigationPendingProvider>
+                </LocaleProvider>
+            );
+
+            fireEvent.click(screen.getByRole('link', { name: 'go' }));
+
+            expect(onNavigate).toHaveBeenCalledTimes(1);
+            expect(screen.getByTestId('pending').textContent).toBe('/news');
+        });
+
+        it('호출부가 preventDefault하면 pending을 세우지 않고 원본 이벤트도 취소한다', () => {
+            render(
+                <LocaleProvider locale="ko">
+                    <NavigationPendingProvider>
+                        <LocaleLink
+                            href="/news"
+                            onNavigate={event => event.preventDefault()}
+                        >
+                            go
+                        </LocaleLink>
+                        <PendingProbe />
+                    </NavigationPendingProvider>
+                </LocaleProvider>
+            );
+
+            // fireEvent.click은 클릭 결과가 취소됐으면(preventDefault) false를 돌려준다
+            // — 원본 이벤트의 preventDefault가 실제로 불렸는지 이 값으로 확인한다.
+            const notPrevented = fireEvent.click(
+                screen.getByRole('link', { name: 'go' })
+            );
+
+            expect(notPrevented).toBe(false);
+            expect(screen.getByTestId('pending').textContent).toBe('none');
+        });
     });
 });

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
+import { labelHalo } from '@/widgets/chart/utils/labelHalo';
 import { THEME_ATTRIBUTE } from '@/shared/lib/theme';
 import type { PaneLabelConfig } from '../../types';
 import { usePaneLabels } from '../../hooks/usePaneLabels';
@@ -57,13 +58,6 @@ async function flushFrame(): Promise<void> {
         async () =>
             new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
     );
-}
-
-/** jsdom은 색을 `rgb(...)`로 정규화한다. 같은 정규화를 거친 값끼리 비교한다. */
-function asComputedColor(color: string): string {
-    const probe = document.createElement('div');
-    probe.style.backgroundColor = color;
-    return probe.style.backgroundColor;
 }
 
 function renderLabels(
@@ -311,26 +305,26 @@ describe('usePaneLabels', () => {
     });
 
     /**
-     * 라벨은 지표선 **위에** 떠 있어서 배경 없이는 대비가 선이 지나가는 자리에
-     * 따라 무너진다 — 다크 최악 1.13:1, 라이트 최악 2.93:1이었다. 범례가
-     * `bg-secondary-900`으로 해결한 것과 같은 처방을 라벨에도 준다.
+     * 라벨은 지표선 **위에** 떠 있어서 아무 처리 없이는 대비가 선이 지나가는
+     * 자리에 따라 무너진다 — 다크 최악 1.13:1, 라이트 최악 2.93:1이었다.
+     * 상자는 투명하게 두고(선이 가려지지 않게) 글자에 차트 배경색 halo를 두른다.
      */
-    it('라벨에 불투명한 차트 배경을 깐다', () => {
+    it('상자는 투명하고 글자에 차트 배경색 halo를 두른다', () => {
         const container = document.createElement('div');
         renderLabels(makeChart(), container);
 
-        const background = labelIn(container).style.backgroundColor;
-        expect(background).not.toBe('');
-        expect(background).toBe(asComputedColor(CHART_COLORS.background));
+        const label = labelIn(container);
+        expect(label.style.backgroundColor).toBe('');
+        expect(label.style.textShadow).toBe(labelHalo(CHART_COLORS.background));
     });
 
-    it('테마마다 그 테마의 차트 배경을 쓴다', () => {
+    it('테마마다 그 테마의 차트 배경색으로 halo를 두른다', () => {
         // 두 테마가 같은 값이면 한쪽이 굳은 것이다 — 색이 실제로 갈리는지 본다.
         const backgrounds = (['dark', 'light'] as const).map(theme => {
             document.documentElement.setAttribute(THEME_ATTRIBUTE, theme);
             const container = document.createElement('div');
             renderLabels(makeChart(), container);
-            return labelIn(container).style.backgroundColor;
+            return labelIn(container).style.textShadow;
         });
 
         expect(backgrounds[0]).not.toBe(backgrounds[1]);

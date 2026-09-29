@@ -2,7 +2,7 @@
 
 import { useLocalePath } from '@/shared/i18n/useLocalePath';
 import { useEffect, useRef, useState, useTransition } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Timeframe } from '@y0ngha/siglens-core';
 import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/shared/config/market';
@@ -12,8 +12,21 @@ import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
 
 const TIMEFRAME_QUERY_PARAM = 'tf';
 
+interface PendingTimeframeSwitch {
+    to: Timeframe;
+    /** 전환을 시작한 시점의 timeframe — 여기서 벗어나면(도착이든 강제 변경이든) 끝난 것이다. */
+    from: Timeframe;
+}
+
 interface UseTimeframeChangeResult {
     timeframe: Timeframe;
+    /**
+     * 셀렉터에 보여줄 값 — 클릭 즉시 새 타임프레임. `timeframe`은 새 봉 데이터가
+     * 도착해 transition이 커밋될 때까지 이전 값에 머문다.
+     */
+    displayTimeframe: Timeframe;
+    /** 새 타임프레임을 골랐지만 차트가 아직 이전 봉을 보여주는 동안 true. */
+    isTimeframeSwitching: boolean;
     /** 타임프레임이 변경된 누적 횟수. 0이면 초기 마운트, 1 이상이면 타임프레임 변경으로 인한 마운트다. */
     timeframeChangeCount: number;
     handleTimeframeChange: (nextTimeframe: Timeframe) => void;
@@ -27,11 +40,11 @@ export function useTimeframeChange(
     const [timeframeChangeCount, setTimeframeChangeCount] = useState(0);
     const [, startTransition] = useTransition();
     const pendingNavigationRef = useRef<Timeframe | null>(null);
+    const [pending, setPending] = useState<PendingTimeframeSwitch | null>(null);
 
     const searchParams = useSearchParams();
     const assetInfo = useAssetInfo(symbol);
     const queryClient = useQueryClient();
-    const router = useRouter();
     const toLocalePath = useLocalePath();
 
     const tf = searchParams.get(TIMEFRAME_QUERY_PARAM);
@@ -44,6 +57,15 @@ export function useTimeframeChange(
     // previousTimeframeRef의 초기값은 파생 변수 timeframe에 의존하므로, 훅
     // 선언 순서 예외(MISTAKES.md #17)로 timeframe 계산 직후에 둔다.
     const previousTimeframeRef = useRef<Timeframe>(timeframe);
+
+    // 전환이 끝나면(목적지 도착, 또는 tier 강등처럼 전환 도중 timeframe이 다른 값으로
+    // 강제 변경되는 경우 모두) pending을 푼다 — 렌더 중 조정 패턴(SearchOverlayContext와
+    // 동일). `pending.to === timeframe`만 보면 "시작 시점에서 벗어났지만 목적지도
+    // 아닌" 강제 변경(로그아웃으로 free 강등 → DEFAULT_TIMEFRAME)에서 스피너가 영영
+    // 안 풀린다 — 그래서 `from`과 달라졌는지로 판정한다.
+    if (pending !== null && timeframe !== pending.from) {
+        setPending(null);
+    }
 
     const handleTimeframeChange = (nextTimeframe: Timeframe): void => {
         if (!isTierHydrated) return;
@@ -66,14 +88,23 @@ export function useTimeframeChange(
             queryFn: ({ queryKey: [, qSymbol, qTimeframe, qFmpSymbol] }) =>
                 getBarsAction(qSymbol, qTimeframe, qFmpSymbol),
         });
+        // 셀렉터·차트 dim은 transition 밖(urgent)에서 먼저 바꾼다 — 사용자는 클릭
+        // 즉시 반응을 본다. 실제 timeframe 전환은 새 봉이 올 때까지 이전 차트를 유지한다.
+        setPending({ to: nextTimeframe, from: timeframe });
         startTransition(() => {
             setTimeframeChangeCount(c => c + 1);
             pendingNavigationRef.current = nextTimeframe;
-            router.replace(
+            // router.replace가 아니라 history.replaceState — 서버는 `tf`를 읽지 않으므로
+            // (page.tsx) RSC 왕복(1~2MB)이 순수 낭비였고, 그 응답이 올 때까지 화면이
+            // 전혀 바뀌지 않았다. Next가 패치한 replaceState는 fetch 없이
+            // useSearchParams만 transition으로 동기화한다. 라우터를 우회하므로 로케일
+            // 접두사는 직접 붙인다(아래 free tier 캐노니컬라이즈와 같은 이유).
+            window.history.replaceState(
+                null,
+                '',
                 toLocalePath(
                     `/${symbol}?${TIMEFRAME_QUERY_PARAM}=${nextTimeframe}`
-                ),
-                { scroll: false }
+                )
             );
         });
     };
@@ -123,5 +154,11 @@ export function useTimeframeChange(
         setTimeframeChangeCount(count => count + 1);
     }, [isTierHydrated, timeframe]);
 
-    return { timeframe, timeframeChangeCount, handleTimeframeChange };
+    return {
+        timeframe,
+        displayTimeframe: pending?.to ?? timeframe,
+        isTimeframeSwitching: pending !== null,
+        timeframeChangeCount,
+        handleTimeframeChange,
+    };
 }

@@ -282,11 +282,6 @@
   - Rule: (new) RSC data loaders used in multiple places within one request must wrap with React cache() to eliminate redundant fetches from the same provider call
   - Context: Server-cached providers like CachedMarketDataProvider return the same data; calling them multiple times per request wastes the cache boundary. Fixed by wrapping loader in React cache(). Scope parameter removed (was defeating cache key). Verified: getMarketSummary, getMarketNotice, getMarketCalendar now deduplicate to single provider call per request.
 
-## [PR #838 | fix/node24-icu-hydration | Post-approval suggestions | 2026-09-18]
-- Violation: ~300-char ICU hydration guard logic duplicated in Dockerfile builder and runner stages; risk of updating only one during maintenance
-  - Rule: CONVENTIONS.md — Extract duplicated logic/constants to a single source; both stages must call the same script
-  - Context: Extracted to `scripts/assert-icu-locale.mjs` and called from both stages. Added `.gitignore` allowlist entry for `/scripts/**` exception.
-
 ## [fix/seo-cls-sitemap-polish Round 4 | PWA banner Polish | 2026-09-18]
 - Status: APPROVED (zero findings)
 
@@ -296,10 +291,6 @@
 - Violation: BLOCKER — agent provider fallback decided per turn, not per step. Stalling DeepSeek re-costs the 90s stall timeout every step of a multi-step turn, creating cascading retries within a single inference request.
   - Rule: Core logic — retry/fallback state must be sticky across all steps of a multi-step operation; re-evaluating fallback on every step doubles timeout costs.
   - Context: Changed fallback decision to set `state.fallbackUsed` on first timeout, then skip re-evaluation on subsequent steps. Fallback now remains sticky for the entire inference session.
-
-- Violation: SUGGESTION — `providerFallback: true` comment repeated identically at 7 prewarm configuration sites; configuration intent is explicit but duplication hides the shared policy.
-  - Rule: CONVENTIONS.md — repeated hardcoded patterns must be extracted to shared constants; duplication obscures intent and creates consistency drift.
-  - Context: Extracted shared constant `PREWARM_PROVIDER_FALLBACK = true` in `src/shared/config/prewarm.ts`; all 7 sites now reference it. Single source of truth for fallback policy.
 
 ## [fix/seo-internal-links Round 1 | SEO internal linking strategy | 2026-09-18]
 - Violation: New nullable `Date` column (`seo_analysis_snapshots.first_generated_at`) was threaded through read path but `unstable_cache` JSON round-trip rehydration in `getSnapshotStatic.ts` was not extended to it — sibling fields `generatedAt`/`updatedAt` are rehydrated there with JSDoc explaining exactly this failure mode. On cache hit, field was a string while declared type said `Date | null`.
@@ -599,3 +590,28 @@
 - Violation: master landed a repo-wide barrel removal (all slice index.ts deleted; CLAUDE.md now forbids barrels). The branch had added a new barrel (src/widgets/ask-ai-fab/index.ts) and imports via barrels (@/entities/analysis, @/features/share, @/widgets/ask-ai-fab). A per-hunk "take master side, strip chat lines" resolver also dropped branch-only imports that sat in the same hunk (ShareableAnalysisProvider/useShareable in three widget tests), caught only by tsc.
   - Rule: (new) When resolving conflicts mechanically by taking one side, diff each hunk's other side for branch-only additions (imports, mocks) before discarding it; always follow with tsc. When base removes a convention (barrels), grep the branch's own new files for the old pattern too.
   - Context: deleted ask-ai-fab/index.ts, switched to deep imports, restored the share imports, updated controlBorderTokenGuard AnalysisPanel key to 1142, replaced CONVENTIONS.md example that referenced the deleted symbol-chat slice.
+
+## [PR #892 Round 2 | feat/navigation-pending-ui | 2026-09-29]
+- Violation: NavigationPendingProvider context value and startNavigation function recreated on every render (new object identity each render)
+  - Rule: MISTAKES.md Coding Paradigm §10 — derived constants recreated on every render without memoization
+  - Context: Wrapped both context value object and startNavigation callback with useMemo/useCallback respectively, enabling child useContext subscriptions to skip unnecessary re-renders.
+
+- Violation: LocaleLink's onNavigate wrapper used `let cancelled` closure mutation pattern (`cancelled = true`) to signal cancellation
+  - Rule: MISTAKES.md Coding Paradigm §5 — array/object mutation via direct assignment; MISTAKES.md §22 — missing unit tests for critical paths
+  - Context: Replaced mutation with a callerCancelled() helper function; added missing tests for onNavigate delegation path and cancellation behavior.
+
+- Violation: useUserTier hook carried redundant `!isError` guard alongside `isPending` check
+  - Rule: MISTAKES.md Coding Paradigm §4 — leaving logic that has no effect; dead code filtering/checking
+  - Context: Removed redundant `!isError` condition; `isPending` check already guards the error state.
+
+- Violation: SymbolTabs pending-highlight branch lacked unit tests
+  - Rule: MISTAKES.md Components §22 — incomplete test coverage for conditional branches
+  - Context: Added unit tests asserting pending highlight renders when navigation is in-flight to the target timeframe.
+
+- Violation: useTimeframeChange pending state cleared only when target matched current value; forced mid-switch timeframe change (logout → free tier) left spinner stuck indefinitely
+  - Rule: (new) State reset paths must account for ALL ways a state machine can transition, not only the intended path. Forced transitions (policy-driven, tier-dependent) are as valid as user-initiated changes.
+  - Context: Changed pending clear condition from equality check to range test: pending cleared whenever timeframe leaves its starting value (now handles logout→free forced change).
+
+- Violation: Duplicated pending-slot UI structure (hidden spinners + label positioning) in two separate files
+  - Rule: MISTAKES.md Coding Paradigm §6.9 — duplicated logic across multiple locations without shared source
+  - Context: Extracted to shared/ui/PendingSlot component; both callsites now render unified structure via explicit import.

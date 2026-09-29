@@ -85,6 +85,8 @@ vi.mock('@/views/symbol/hooks/useMobileSheet', () => ({
 vi.mock('@/views/symbol/hooks/useTimeframeChange', () => ({
     useTimeframeChange: vi.fn(() => ({
         timeframe: '1Day' as Timeframe,
+        displayTimeframe: '1Day' as Timeframe,
+        isTimeframeSwitching: false,
         timeframeChangeCount: 0,
         handleTimeframeChange: vi.fn(),
     })),

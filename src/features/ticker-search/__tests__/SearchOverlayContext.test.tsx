@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LocaleProvider } from '@/shared/i18n/LocaleContext';
+import { NavigationPendingProvider } from '@/shared/model/NavigationPendingContext';
 import {
     assignLocation,
     replaceLocation,
@@ -71,9 +72,11 @@ describe('SearchOverlayProvider', () => {
 
     async function openAndSelect(hrefBase?: string) {
         const tree = (
-            <SearchOverlayProvider>
-                <Trigger />
-            </SearchOverlayProvider>
+            <NavigationPendingProvider>
+                <SearchOverlayProvider>
+                    <Trigger />
+                </SearchOverlayProvider>
+            </NavigationPendingProvider>
         );
         render(
             hrefBase ? (
@@ -114,14 +117,16 @@ describe('SearchOverlayProvider', () => {
     });
 
     it('목적지에 도착하면(pathname 변경) 진행 표시를 내린다', async () => {
-        // `useEffect([pathname])`를 렌더 중 조정으로 바꾼 자리다. 이동이 결착되지
-        // 않아도(`isNavigating`은 계속 true) pathname만 바뀌면 `isNavigationPending`이
-        // 꺼져 진행 바가 사라져야 한다 — 그래야 도착 후 표시가 걸린 채 남지 않는다.
+        // 이동 promise가 결착되지 않아도 pathname만 바뀌면 전역 pending
+        // (`NavigationPendingContext`)이 풀려 진행 바가 사라져야 한다 — 그래야 도착
+        // 후 표시가 걸린 채 남지 않는다.
         replaceMock.mockReturnValue(new Promise(() => {}));
         const { rerender } = render(
-            <SearchOverlayProvider>
-                <Trigger />
-            </SearchOverlayProvider>
+            <NavigationPendingProvider>
+                <SearchOverlayProvider>
+                    <Trigger />
+                </SearchOverlayProvider>
+            </NavigationPendingProvider>
         );
         await userEvent.click(screen.getByRole('button', { name: '열기' }));
         await userEvent.click(screen.getByRole('button', { name: '애플' }));
@@ -132,9 +137,11 @@ describe('SearchOverlayProvider', () => {
         // 새 엘리먼트로 다시 렌더한다 — 같은 참조를 재사용하면 React가 루트에서
         // 바로 배일아웃해 컴포넌트가 아예 재실행되지 않는다.
         rerender(
-            <SearchOverlayProvider>
-                <Trigger />
-            </SearchOverlayProvider>
+            <NavigationPendingProvider>
+                <SearchOverlayProvider>
+                    <Trigger />
+                </SearchOverlayProvider>
+            </NavigationPendingProvider>
         );
 
         expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();

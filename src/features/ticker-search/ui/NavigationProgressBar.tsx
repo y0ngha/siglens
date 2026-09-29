@@ -1,7 +1,7 @@
 import { useTranslations } from 'next-intl';
 
 /**
- * 종목 이동이 진행 중임을 알리는 상단 진행 바.
+ * 앱 안 이동(링크 클릭·검색 선택)이 진행 중임을 알리는 상단 진행 바.
  *
  * ## 왜 필요한가 (실측)
  *
@@ -33,7 +33,7 @@ import { useTranslations } from 'next-intl';
  * `node_modules/next/dist/client/components/app-router-instance.js`의 파일·라인과 함께
  * 적어 두었다. 다만 그 사실이 이 바의 존재 근거는 아니다 — 이 바는 **아무것도 막지
  * 않는 순수 표시**라 그 경합의 성립 여부와 무관하게 안전하고, 진행 상태는
- * `SearchOverlayProvider`가 자기 상태로 잠가 폐기된 이동에도 남지 않게 한다.)
+ * 전역 `NavigationPendingContext`가 도착·뒤로가기로 풀어 폐기된 이동에도 남지 않게 한다.)
  */
 export function NavigationProgressBar() {
     const t = useTranslations('features.ticker-search');

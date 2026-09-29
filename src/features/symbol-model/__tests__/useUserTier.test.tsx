@@ -1,5 +1,5 @@
-vi.mock('@/entities/user-tier/actions/getUserTierAction', () => ({
-    getUserTierAction: vi.fn(),
+vi.mock('@/entities/auth/actions/currentUserAction', () => ({
+    currentUserAction: vi.fn(),
 }));
 
 vi.mock('@y0ngha/siglens-core', () => ({
@@ -21,7 +21,7 @@ vi.mock('@y0ngha/siglens-core', () => ({
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import { getUserTierAction } from '@/entities/user-tier/actions/getUserTierAction';
+import { currentUserAction } from '@/entities/auth/actions/currentUserAction';
 import { useUserTier } from '@/features/symbol-model/hooks/useUserTier';
 
 const queryClients: QueryClient[] = [];
@@ -46,7 +46,7 @@ describe('useUserTier', () => {
     });
 
     it('returns DEFAULT_TIER while loading', () => {
-        (getUserTierAction as ReturnType<typeof vi.fn>).mockImplementation(
+        (currentUserAction as ReturnType<typeof vi.fn>).mockImplementation(
             () => new Promise(() => {})
         );
 
@@ -59,9 +59,9 @@ describe('useUserTier', () => {
     });
 
     it('returns fetched tier after resolving', async () => {
-        (getUserTierAction as ReturnType<typeof vi.fn>).mockResolvedValue(
-            'premium'
-        );
+        (currentUserAction as ReturnType<typeof vi.fn>).mockResolvedValue({
+            tier: 'premium',
+        });
 
         const { result } = renderHook(() => useUserTier(), {
             wrapper: makeWrapper(),
@@ -74,8 +74,22 @@ describe('useUserTier', () => {
         expect(result.current.isLoading).toBe(false);
     });
 
+    it('returns DEFAULT_TIER for guests (null user)', async () => {
+        (currentUserAction as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+
+        const { result } = renderHook(() => useUserTier(), {
+            wrapper: makeWrapper(),
+        });
+
+        await waitFor(() => {
+            expect(result.current.isLoading).toBe(false);
+        });
+
+        expect(result.current.tier).toBe('free');
+    });
+
     it('falls back to DEFAULT_TIER on error', async () => {
-        (getUserTierAction as ReturnType<typeof vi.fn>).mockRejectedValue(
+        (currentUserAction as ReturnType<typeof vi.fn>).mockRejectedValue(
             new Error('fetch failed')
         );
 

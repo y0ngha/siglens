@@ -4,6 +4,7 @@ import type { RefObject } from 'react';
 import { useEffect, useRef } from 'react';
 import type { IChartApi } from 'lightweight-charts';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
+import { labelHalo } from '../utils/labelHalo';
 import type { PaneLabelConfig, PaneSubLabel } from '../types';
 
 interface UsePaneLabelsParams {
@@ -154,22 +155,19 @@ function createLabelElement(config: PaneLabelConfig): HTMLDivElement {
     el.style.rowGap = SUB_LABEL_GAP;
     el.style.overflow = 'hidden';
     /*
-     * **불투명 배경이 필요하다.** 라벨은 지표선 위에 떠 있어서 배경이 없으면
-     * 대비가 선이 지나가는 자리에 따라 무너진다 — 다크 최악 1.13:1(StochRSI
-     * `%D`), 라이트 최악 2.93:1이었고 라벨 면적의 5~36%가 4.5:1 아래였다.
-     * 선이 라벨까지 닿지 않는 54px 거래량 pane만 12.08:1로 멀쩡했다는 게
-     * pane 높이가 악화 요인임을 보여준다. `usePricePaneStretch`가 짧은 보조
-     * pane을 정상 상태로 만들었으니 방치하면 더 나빠진다.
-     *
-     * 값은 차트 배경(`secondary-900`: 다크 #09090b / 라이트 #f7f8fa)과 같은
-     * 것으로, `OverlayLegend`의 `bg-secondary-900`이 해결한 것과 같은 처방이다.
-     * 알파를 섞지 않는 이유도 같다 — 알파면 뒤에 무엇이 오느냐에 따라 다시 흔들린다.
+     * **상자는 투명하게, 글자에는 차트 배경색 halo를 두른다.** 라벨은 지표선
+     * 위에 떠 있어서 아무 처리도 없으면 대비가 선이 지나가는 자리에 따라
+     * 무너진다 — 다크 최악 1.13:1(StochRSI `%D`), 라이트 최악 2.93:1이었다.
+     * 예전엔 불투명 상자로 막았지만 상자가 선을 통째로 가려 차트가 끊겨 보였다
+     * (사용자 요청으로 투명화). halo는 글자 획 둘레만 차트 배경(`secondary-900`)
+     * 으로 덮어, 선은 보이면서 글자 대비는 "빈 배경 위" 값에 가깝게 유지한다.
+     * 알파를 섞지 않는 이유는 같다 — 알파면 뒤에 무엇이 오느냐에 따라 흔들린다.
      *
      * 테마는 생성 시점 값으로 충분하다. 테마가 바뀌면 `ChartContent`가
      * `key={themeVersion}`으로 `StockChart`를 통째로 remount하고, 그러면 이
      * 훅의 effect도 다시 돌아 라벨을 새로 만든다.
      */
-    el.style.backgroundColor = CHART_COLORS.background;
+    el.style.textShadow = labelHalo(CHART_COLORS.background);
     el.style.borderRadius = LABEL_RADIUS;
     el.style.padding = LABEL_PADDING;
 

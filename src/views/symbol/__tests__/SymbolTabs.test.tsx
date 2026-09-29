@@ -65,9 +65,14 @@ vi.mock('@/entities/ticker/hooks/useAssetInfo', () => ({
     useAssetInfo: vi.fn(),
 }));
 
+vi.mock('@/views/symbol/SymbolTabPendingContext', () => ({
+    usePendingSymbolTab: vi.fn(() => null),
+}));
+
 import { render, screen } from '@testing-library/react';
 import { usePathname } from 'next/navigation';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
+import { usePendingSymbolTab } from '@/views/symbol/SymbolTabPendingContext';
 import { SymbolTabs } from '@/views/symbol/SymbolTabs';
 import type { AssetInfo } from '@/shared/lib/types';
 
@@ -80,6 +85,7 @@ describe('SymbolTabs', () => {
         (useAssetInfo as ReturnType<typeof vi.fn>).mockReturnValue(
             EQUITY_ASSET
         );
+        (usePendingSymbolTab as ReturnType<typeof vi.fn>).mockReturnValue(null);
     });
 
     it('renders a nav with accessible label', () => {
@@ -173,6 +179,57 @@ describe('SymbolTabs', () => {
         expect(
             screen.getByText(koMessages.shared.symbolTab.news)
         ).toBeDefined();
+    });
+});
+
+/**
+ * 탭 이동이 진행 중이면(`usePendingSymbolTab`) 목적지 탭이 RSC 도착 전에
+ * 활성 스타일을 먼저 얻는다 — 단 `aria-current`는 실제 경로 기준으로 남겨
+ * 이동이 끝나기 전엔 AT에게 "아직 그 페이지가 아니다"를 알린다.
+ */
+describe('탭 이동 pending 하이라이트', () => {
+    beforeEach(() => {
+        (usePathname as ReturnType<typeof vi.fn>).mockReturnValue('/AAPL');
+        (useAssetInfo as ReturnType<typeof vi.fn>).mockReturnValue(
+            EQUITY_ASSET
+        );
+        (usePendingSymbolTab as ReturnType<typeof vi.fn>).mockReturnValue(null);
+    });
+
+    it('pending 탭이 활성 스타일을 얻고 현재 탭은 잃지만 aria-current는 현재 경로에 남는다', () => {
+        (usePendingSymbolTab as ReturnType<typeof vi.fn>).mockReturnValue(
+            '/AAPL/news'
+        );
+
+        render(<SymbolTabs symbol="aapl" />);
+
+        const chartLink = screen
+            .getByText(koMessages.shared.symbolTab.chart)
+            .closest('a')!;
+        const newsLink = screen
+            .getByText(koMessages.shared.symbolTab.news)
+            .closest('a')!;
+
+        expect(newsLink.className).toContain('border-primary-500');
+        expect(chartLink.className).not.toContain('border-primary-500');
+
+        expect(chartLink.getAttribute('aria-current')).toBe('page');
+        expect(newsLink.getAttribute('aria-current')).toBeNull();
+    });
+
+    it('pending이 없으면(null) 기존 동작대로 현재 탭만 활성 스타일과 aria-current를 갖는다', () => {
+        render(<SymbolTabs symbol="aapl" />);
+
+        const chartLink = screen
+            .getByText(koMessages.shared.symbolTab.chart)
+            .closest('a')!;
+        const newsLink = screen
+            .getByText(koMessages.shared.symbolTab.news)
+            .closest('a')!;
+
+        expect(chartLink.className).toContain('border-primary-500');
+        expect(newsLink.className).not.toContain('border-primary-500');
+        expect(chartLink.getAttribute('aria-current')).toBe('page');
     });
 });
 

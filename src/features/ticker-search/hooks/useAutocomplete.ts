@@ -10,6 +10,7 @@ import {
     useState,
 } from 'react';
 import { useRouter } from 'next/navigation';
+import { useNavigationPending } from '@/shared/model/NavigationPendingContext';
 import { useHrefBase } from '@/shared/i18n/LocaleContext';
 import { useLocalePath } from '@/shared/i18n/useLocalePath';
 import type { TickerSearchResult } from '@/shared/lib/types';
@@ -94,6 +95,8 @@ export function useAutocomplete({
     const prefetchedRef = useRef(new Set<string>());
 
     const router = useRouter();
+    // 목적지 골격·진행 바를 RSC 도착 전에 띄운다(`NavigationPendingContext`).
+    const { startNavigation } = useNavigationPending();
     const toLocalePath = useLocalePath();
     const base = useHrefBase();
     const { results, isSearching, hasQuery, isError, debouncedQuery } =
@@ -140,9 +143,19 @@ export function useAutocomplete({
             // 아니라 실제 크로스오리진 이동을 해야 한다 — `router.push`는 같은
             // 앱 안의 경로로만 갈 수 있다.
             if (base) assignLocation(`${base}${target}`);
-            else router.push(target);
+            else {
+                startNavigation(target);
+                router.push(target);
+            }
         },
-        [base, navigateOnSelect, onSelect, router, toLocalePath]
+        [
+            base,
+            navigateOnSelect,
+            onSelect,
+            router,
+            startNavigation,
+            toLocalePath,
+        ]
     );
 
     const prefetch = useCallback(
@@ -232,8 +245,19 @@ export function useAutocomplete({
         if (!navigateOnSelect) return;
         const href = toLocalePath(`/${pendingNav.symbol}`);
         if (base) assignLocation(`${base}${href}`);
-        else router.push(href);
-    }, [pendingNav, base, navigateOnSelect, onSelect, router, toLocalePath]);
+        else {
+            startNavigation(href);
+            router.push(href);
+        }
+    }, [
+        pendingNav,
+        base,
+        navigateOnSelect,
+        onSelect,
+        router,
+        startNavigation,
+        toLocalePath,
+    ]);
 
     return {
         query,
