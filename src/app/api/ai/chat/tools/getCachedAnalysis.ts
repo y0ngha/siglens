@@ -376,7 +376,8 @@ export const getCachedAnalysisTool: ToolExecutor = async (
             false,
             ctx.tier,
             TIER_CONFIG,
-            positionBucket
+            positionBucket,
+            ctx.locale
         );
         if (cached) {
             const a = cached.result;
@@ -426,7 +427,9 @@ export const getCachedAnalysisTool: ToolExecutor = async (
             timeframe,
             runtime.analysisModel,
             false,
-            ctx.tier
+            ctx.tier,
+            TIER_CONFIG,
+            ctx.locale
         );
         if (cached) {
             // `OverallAnalysisResponse.analyzedAt` (spec §2.5) — optional so
@@ -507,9 +510,19 @@ export const getCachedAnalysisTool: ToolExecutor = async (
         };
     }
     if (isHistoryTab(tab)) {
+        // 챗 폴백은 "지금 존재하는 가장 최신 행"을 원한다 — 캐시 키에 접히는
+        // eviction-loop 방지용 `generatedBeforeMs` 제외는 여기 적용 대상이
+        // 아니다(그 제외는 core 캐시 키 fingerprint용이지, 챗이 사용자에게
+        // 보여줄 "최근 분석"의 정의가 아니다). 그래서 현재 캐시 버킷 안의
+        // 행도 포함해서 읽는다.
         const [latest] = await new DrizzleAnalysisHistoryRepository(
             db
-        ).findRecentForPrompt({ symbol, timeframe, tab });
+        ).findRecentForPrompt({
+            symbol,
+            timeframe,
+            tab,
+            includeCurrentWindow: true,
+        });
         if (latest)
             return {
                 found: true,

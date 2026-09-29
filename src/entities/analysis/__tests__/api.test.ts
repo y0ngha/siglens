@@ -862,7 +862,7 @@ describe('prewarmOverall', () => {
     });
 
     describe('analysis_history 배선 (Task S3, PR #784 리뷰 지적)', () => {
-        it('history를 symbol/timeframe/tab:technical로 읽어 priorAnalyses로 그대로 넘긴다', async () => {
+        it('history를 symbol/timeframe/tab:technical로 읽어 technical 축의 priorAnalyses로 그대로 넘긴다', async () => {
             const history = [
                 {
                     generatedAt: new Date('2026-08-01'),
@@ -870,6 +870,9 @@ describe('prewarmOverall', () => {
                     riskLevel: 'high',
                 },
             ];
+            // `historyRepo.findRecentForPrompt`는 이제 두 번 호출된다(technical
+            // 축과 overall 자신의 top-level, 각기 다른 axis) — Promise.all 순서상
+            // 첫 호출이 technical 축(axis 인자 없음, 기본값)이다.
             mockFindRecentForPrompt.mockResolvedValueOnce(history as never);
 
             await prewarmOverall('AAPL', 'Apple Inc.', false);
@@ -883,7 +886,53 @@ describe('prewarmOverall', () => {
                 tab: 'technical',
             });
             expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
-                expect.objectContaining({ priorAnalyses: history })
+                expect.objectContaining({
+                    technical: expect.objectContaining({
+                        priorAnalyses: history,
+                    }),
+                })
+            );
+        });
+
+        it('overall 자신의 top-level priorAnalyses는 axis: "overall"로 읽은 별도 배열이다', async () => {
+            const technicalHistory = [
+                {
+                    generatedAt: new Date('2026-08-01'),
+                    trend: 'bearish',
+                    riskLevel: 'high',
+                },
+            ];
+            const overallHistory = [
+                {
+                    generatedAt: new Date('2026-07-01'),
+                    trend: 'bullish',
+                    riskLevel: 'low',
+                },
+            ];
+            mockFindRecentForPrompt.mockImplementation(
+                (input: { axis?: string }) =>
+                    Promise.resolve(
+                        input.axis === 'overall'
+                            ? overallHistory
+                            : technicalHistory
+                    )
+            );
+
+            await prewarmOverall('AAPL', 'Apple Inc.', false);
+
+            expect(mockFindRecentForPrompt).toHaveBeenCalledWith({
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                tab: 'technical',
+                axis: 'overall',
+            });
+            expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    priorAnalyses: overallHistory,
+                    technical: expect.objectContaining({
+                        priorAnalyses: technicalHistory,
+                    }),
+                })
             );
         });
 

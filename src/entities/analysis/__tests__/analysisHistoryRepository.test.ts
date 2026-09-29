@@ -351,10 +351,11 @@ describe('DrizzleAnalysisHistoryRepository.findRecentForPrompt', () => {
         analysisHistoryQuerySpy.mockReturnValue({
             limit: 7,
             sinceMs: 60 * 60 * 1000, // 1h — arbitrary, only used to assert propagation
+            generatedBeforeMs: NOW.getTime() - 5 * 60 * 1000, // arbitrary bucket start
         });
     });
 
-    it('sizes the query from analysisHistoryQuery(timeframe) — since bound and limit both reach the query builder', async () => {
+    it('sizes the query from analysisHistoryQuery(timeframe, axis, now) — since bound and limit both reach the query builder', async () => {
         const { db, spies } = makeSelectDb([]);
         const repository = new DrizzleAnalysisHistoryRepository(db);
 
@@ -365,7 +366,11 @@ describe('DrizzleAnalysisHistoryRepository.findRecentForPrompt', () => {
             now: NOW,
         });
 
-        expect(analysisHistoryQuerySpy).toHaveBeenCalledWith('1Day');
+        expect(analysisHistoryQuerySpy).toHaveBeenCalledWith(
+            '1Day',
+            'technical',
+            NOW
+        );
 
         expect(eqSpy).toHaveBeenCalledWith(analysisHistory.symbol, 'AAPL');
         expect(eqSpy).toHaveBeenCalledWith(analysisHistory.timeframe, '1Day');
@@ -381,6 +386,57 @@ describe('DrizzleAnalysisHistoryRepository.findRecentForPrompt', () => {
 
         // limit() received core's `limit` value, not a hand-picked constant.
         expect(spies.limit).toHaveBeenCalledWith(7);
+    });
+
+    it('passes the axis through to analysisHistoryQuery, defaulting to "technical"', async () => {
+        const { db } = makeSelectDb([]);
+        const repository = new DrizzleAnalysisHistoryRepository(db);
+
+        await repository.findRecentForPrompt({
+            symbol: 'AAPL',
+            timeframe: '1Day',
+            tab: 'technical',
+            axis: 'overall',
+            now: NOW,
+        });
+
+        expect(analysisHistoryQuerySpy).toHaveBeenCalledWith(
+            '1Day',
+            'overall',
+            NOW
+        );
+    });
+
+    it('excludes rows inside the current cache bucket by default (the eviction-loop fix)', async () => {
+        const { db } = makeSelectDb([]);
+        const repository = new DrizzleAnalysisHistoryRepository(db);
+
+        await repository.findRecentForPrompt({
+            symbol: 'AAPL',
+            timeframe: '1Day',
+            tab: 'technical',
+            now: NOW,
+        });
+
+        expect(ltSpy).toHaveBeenCalledWith(
+            analysisHistory.generatedAt,
+            new Date(NOW.getTime() - 5 * 60 * 1000)
+        );
+    });
+
+    it('skips the generatedBeforeMs exclusion when includeCurrentWindow is true', async () => {
+        const { db } = makeSelectDb([]);
+        const repository = new DrizzleAnalysisHistoryRepository(db);
+
+        await repository.findRecentForPrompt({
+            symbol: 'AAPL',
+            timeframe: '1Day',
+            tab: 'technical',
+            includeCurrentWindow: true,
+            now: NOW,
+        });
+
+        expect(ltSpy).not.toHaveBeenCalled();
     });
 
     it('rows are included regardless of which model/locale produced them (no such filter exists)', async () => {

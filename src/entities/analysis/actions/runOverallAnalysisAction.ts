@@ -44,6 +44,7 @@ import { isE2E } from '@/shared/api/e2eEnv';
 import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
+import { resolveHoldingPositionBucket } from '@/entities/portfolio/lib/resolveHoldingPositionBucket';
 
 /** Final return type — core's overall result + our siglens-side gate errors. */
 export type RunOverallAnalysisActionResult =
@@ -70,7 +71,10 @@ export interface SubmitOverallAnalysisActionOptions {
      */
     onPromptAssembled?: (record: AssembledPromptRecord) => void | Promise<void>;
     /**
-     * Prior-analysis-context 히스토리(Task S3)를 그대로 core에 전달한다.
+     * Prior-analysis-context 히스토리(Task S3)를 core의 **overall 축**
+     * (top-level `priorAnalyses`)에 그대로 전달한다. `analysisHistoryQuery(timeframe,
+     * 'overall')`로 읽은 값이어야 한다 — technical 축과 recency 윈도우가 다르다
+     * (overall은 `OVERALL_CACHE_TTL_SECONDS`, technical은 `ANALYSIS_CACHE_TTL[timeframe]`).
      * 호출자(SSE 라우트)가 core 호출 **이전에** 읽어 넘긴다 — core가 이 값의
      * fingerprint를 캐시 키에 접기 때문에, 캐시 미스에서만 지연 조회하면 같은
      * 요청이 키 계산 시점과 프롬프트 렌더 시점에 서로 다른 히스토리 집합을
@@ -78,10 +82,22 @@ export interface SubmitOverallAnalysisActionOptions {
      */
     priorAnalyses?: readonly PriorAnalysis[];
     /**
+     * Prior-analysis-context 히스토리를 core의 **technical 축**
+     * (`technical.priorAnalyses`)에 전달한다. technical 탭 스트림 경로가
+     * `runAnalysis`에 넘기는 것과 **같은 값**(`analysisHistoryQuery(timeframe,
+     * 'technical')`로 읽은)이어야 그 축이 technical 탭과 캐시 키를 공유한다.
+     *
+     * `priorAnalyses`(overall 축)와 별개 필드다 — 과거엔 하나의 배열을 두 곳에
+     * 동시에 흘려보냈는데, 두 축의 recency 윈도우가 다르므로(overall이 하루,
+     * technical이 타임프레임별 TTL) 같은 배열을 공유하면 한쪽이 틀린 윈도우로
+     * 읽은 이력을 갖게 된다.
+     */
+    technicalPriorAnalyses?: readonly PriorAnalysis[];
+    /**
      * technical 탭 스트림 경로가 `runAnalysis`에 넘기는 것과 같은 시장 이벤트.
-     * `priorAnalyses`와 함께 overall의 technical 축에도 넘겨야 그 축의 캐시 키
-     * (`:hist=`·`:evt=`)가 technical 탭과 같아진다 — 한쪽만 넘기면 같은 분석이
-     * 한 번 더 생성된다. 가공하지 않고 그대로 넘긴다.
+     * `technicalPriorAnalyses`와 함께 overall의 technical 축에도 넘겨야 그 축의
+     * 캐시 키(`:hist=`·`:evt=`)가 technical 탭과 같아진다 — 한쪽만 넘기면 같은
+     * 분석이 한 번 더 생성된다. 가공하지 않고 그대로 넘긴다.
      */
     marketEvents?: readonly MarketEvent[];
 }
@@ -219,6 +235,17 @@ export async function runOverallAnalysisAction(
         const marketDataProvider = getCachedMarketDataProvider(
             sessionSpecFor(marketProfile)
         );
+        // 보유 종목이 있는 회원의 technical 탭은 `:pos=` 키로 캐시된다. technical
+        // 축에도 같은 버킷을 넘겨야 그 키를 그대로 맞힌다 — 빠지면 overall을 열
+        // 때마다 technical을 한 번 더 생성했다(2026-09-29 감사). SSE 라우트의
+        // technical 분기와 같은 헬퍼·같은 조건(free·비회원은 undefined)이다.
+        const positionBucket = await resolveHoldingPositionBucket({
+            userId,
+            tier: gate.tier,
+            symbol,
+            marketDataProvider,
+            logTag: '[runOverallAnalysisAction] position bucket resolution failed, degrading to no-bucket:',
+        });
 
         return await runOverallAnalysis({
             symbol,
@@ -236,13 +263,16 @@ export async function runOverallAnalysisAction(
             macroCalendar,
             technical: {
                 tierContext: { userId, tier: gate.tier },
-                // technical 탭과 캐시 키를 맞춘다 — 위 옵션 JSDoc 참고.
-                ...(options.priorAnalyses !== undefined
-                    ? { priorAnalyses: options.priorAnalyses }
+                // technical 탭과 캐시 키를 맞춘다 — 위 `technicalPriorAnalyses`
+                // JSDoc 참고. overall 축 전용인 `options.priorAnalyses`와는
+                // 다른 값이다.
+                ...(options.technicalPriorAnalyses !== undefined
+                    ? { priorAnalyses: options.technicalPriorAnalyses }
                     : {}),
                 ...(options.marketEvents !== undefined
                     ? { marketEvents: options.marketEvents }
                     : {}),
+                ...(positionBucket !== undefined ? { positionBucket } : {}),
             },
             tier: gate.tier,
             reasoning: resolveReasoning(gate.tier, options.reasoning),

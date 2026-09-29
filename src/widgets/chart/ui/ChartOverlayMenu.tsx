@@ -7,6 +7,7 @@ import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { cn } from '@/shared/lib/cn';
+import { CheckIcon } from '@/shared/ui/StrokeIcons';
 import type {
     OverlayMenuGroupKind,
     OverlayMenuItem,
@@ -40,15 +41,35 @@ const GROUP_ORDER = Object.keys({
     fibonacci: true,
     elliott: true,
 } satisfies Record<OverlayMenuGroupKind, true>) as OverlayMenuGroupKind[];
-// `min-h-11` — 스크롤되는 메뉴의 행은 44px 터치 타깃을 지킨다(`ModelListbox` 행과 같은 규약).
-// 인접한 그룹 헤더·항목을 모바일에서 잘못 누르지 않게 한다.
-const TOGGLE_ROW_CLASS =
-    'flex min-h-11 w-full touch-manipulation items-center justify-between gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none';
+// 터치 기기(`pointer: coarse`)에서만 44px 행 — 스크롤되는 메뉴에서 인접 행을 잘못
+// 누르지 않게 한다(`ModelListbox` 행과 같은 규약). 마우스에서는 32px로 촘촘히 둔다.
+const ROW_CLASS =
+    'flex min-h-8 w-full touch-manipulation items-center gap-2.5 rounded-lg px-2 text-left text-xs transition-colors hover:bg-secondary-800 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none pointer-coarse:min-h-11';
 
-function toggleRowTone(on: boolean): string {
-    return on
-        ? 'bg-secondary-700 text-secondary-50'
-        : 'text-secondary-400 hover:bg-secondary-700 hover:text-secondary-50';
+type CheckState = boolean | 'mixed';
+
+/**
+ * 켜짐 표시 — 행 전체를 칠하지 않고 앞쪽 체크박스 하나로 말한다. 예전엔 켜진 행마다
+ * 배경을 채워 블록이 겹겹이 쌓여 보였다(사용자 피드백). 상태 전달은 버튼의
+ * `aria-pressed`가 맡고, 이 도형은 장식이다.
+ */
+function CheckBox({ state }: { state: CheckState }) {
+    return (
+        <span
+            aria-hidden="true"
+            className={cn(
+                'flex size-4 shrink-0 items-center justify-center rounded border transition-colors',
+                state === false
+                    ? 'border-secondary-500'
+                    : 'border-primary-500 bg-primary-600 text-white'
+            )}
+        >
+            {state === true && <CheckIcon className="size-3" />}
+            {state === 'mixed' && (
+                <span className="h-0.5 w-2 rounded-full bg-current" />
+            )}
+        </span>
+    );
 }
 
 /**
@@ -56,8 +77,8 @@ function toggleRowTone(on: boolean): string {
  * 다이버전스·피보나치·엘리어트 파동)를 **항목 단위로** 켜고 끈다. AI 패널 카드의
  * "차트에서 보기"와 같은 상태(`useOverlayItemVisibility`)를 쓴다.
  *
- * 그룹 헤더("차트 패턴 (2)")는 그룹 전체 스위치다. 일부만 켜져 있으면
- * `aria-pressed="mixed"`로 알리고, 누르면 전부 켠다(전부 켜져 있을 때만 전부 끈다).
+ * 그룹 헤더("차트 패턴 2")는 그룹 전체 스위치다. 일부만 켜져 있으면 체크박스가 "–"이고
+ * `aria-pressed="mixed"`로 알린다. 누르면 전부 켠다(전부 켜져 있을 때만 전부 끈다).
  *
  * `role="menu"`/`menuitemcheckbox`가 아니라 **레이블된 토글 그룹**이다 — ARIA
  * menu 패턴은 방향키 내비게이션·roving tabindex를 요구하는데(WAI-ARIA APG),
@@ -128,35 +149,42 @@ export function ChartOverlayMenu({
                     tabIndex={-1}
                     className={cn(
                         'absolute top-full right-0 z-50 mt-1 max-h-[min(70vh,28rem)] w-60 max-w-[calc(100vw-1rem)] overflow-y-auto',
-                        'flex flex-col gap-0.5 rounded-lg border border-secondary-700 bg-secondary-900 p-1.5 shadow-2xl outline-none'
+                        'flex flex-col rounded-lg border border-secondary-700 bg-secondary-900 p-1.5 shadow-2xl outline-none'
                     )}
                 >
-                    {groups.map(group => {
+                    {groups.map((group, index) => {
                         const keys = group.items.map(item => item.key);
+                        // 그룹 사이 구분선 — 첫 그룹 위에는 긋지 않는다.
+                        const divider =
+                            index > 0
+                                ? 'mt-1 border-t border-secondary-700/60 pt-1'
+                                : '';
                         if (group.kind === 'action') {
                             const [item] = group.items;
                             if (item === undefined) return null;
                             const on = isOn(item.key);
                             return (
-                                <button
-                                    key={group.kind}
-                                    type="button"
-                                    aria-pressed={on}
-                                    onClick={() => onSetVisible(keys, !on)}
-                                    className={cn(
-                                        TOGGLE_ROW_CLASS,
-                                        'font-medium',
-                                        toggleRowTone(on)
-                                    )}
-                                >
-                                    <span>{itemLabel(item)}</span>
-                                    {on && <span aria-hidden="true">✓</span>}
-                                </button>
+                                <div key={group.kind} className={divider}>
+                                    <button
+                                        type="button"
+                                        aria-pressed={on}
+                                        onClick={() => onSetVisible(keys, !on)}
+                                        className={cn(
+                                            ROW_CLASS,
+                                            on
+                                                ? 'text-secondary-100'
+                                                : 'text-secondary-400'
+                                        )}
+                                    >
+                                        <CheckBox state={on} />
+                                        <span>{itemLabel(item)}</span>
+                                    </button>
+                                </div>
                             );
                         }
                         const onCount = keys.filter(isOn).length;
                         const allOn = onCount === keys.length;
-                        const pressed = allOn
+                        const pressed: CheckState = allOn
                             ? true
                             : onCount === 0
                               ? false
@@ -164,31 +192,26 @@ export function ChartOverlayMenu({
                         return (
                             <div
                                 key={group.kind}
-                                className="flex flex-col gap-0.5"
+                                className={cn('flex flex-col', divider)}
                             >
+                                {/* 그룹 헤더 — 섹션 제목처럼 작게, 그러나 그룹 전체 스위치다.
+                                    일부만 켜졌으면 체크박스가 "–"(aria-pressed="mixed")다. */}
                                 <button
                                     type="button"
                                     aria-pressed={pressed}
                                     onClick={() => onSetVisible(keys, !allOn)}
                                     className={cn(
-                                        TOGGLE_ROW_CLASS,
-                                        'font-medium',
-                                        toggleRowTone(onCount > 0)
+                                        ROW_CLASS,
+                                        'text-[11px] font-semibold text-secondary-400'
                                     )}
                                 >
+                                    <CheckBox state={pressed} />
                                     <span>
-                                        {t(KIND_LABEL_KEY[group.kind])} (
-                                        {keys.length})
-                                    </span>
-                                    {pressed === 'mixed' ? (
-                                        <span className="text-[10px] text-secondary-400">
-                                            {t('ChartOverlayMenu.c178bc')}
+                                        {t(KIND_LABEL_KEY[group.kind])}
+                                        <span className="ml-1 font-normal text-secondary-500">
+                                            {keys.length}
                                         </span>
-                                    ) : (
-                                        allOn && (
-                                            <span aria-hidden="true">✓</span>
-                                        )
-                                    )}
+                                    </span>
                                 </button>
                                 {group.items.map(item => {
                                     const on = isOn(item.key);
@@ -201,19 +224,17 @@ export function ChartOverlayMenu({
                                                 onSetVisible([item.key], !on)
                                             }
                                             className={cn(
-                                                TOGGLE_ROW_CLASS,
-                                                'pl-5',
-                                                toggleRowTone(on)
+                                                ROW_CLASS,
+                                                'pl-4',
+                                                on
+                                                    ? 'text-secondary-100'
+                                                    : 'text-secondary-400'
                                             )}
                                         >
+                                            <CheckBox state={on} />
                                             <span className="min-w-0 truncate">
                                                 {itemLabel(item)}
                                             </span>
-                                            {on && (
-                                                <span aria-hidden="true">
-                                                    ✓
-                                                </span>
-                                            )}
                                         </button>
                                     );
                                 })}

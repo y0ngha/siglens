@@ -38,7 +38,8 @@ describe('peekAnalysisStatic', () => {
             'AAPL',
             '1Day',
             'AAPL',
-            'gemini-3.5-flash-lite'
+            'gemini-3.5-flash-lite',
+            'ko'
         );
 
         expect(result).toBe(cached);
@@ -50,7 +51,8 @@ describe('peekAnalysisStatic', () => {
             false,
             'free',
             undefined,
-            undefined
+            undefined,
+            'ko'
         );
     });
 
@@ -61,7 +63,8 @@ describe('peekAnalysisStatic', () => {
             'AAPL',
             '1Day',
             undefined,
-            'gemini-3.5-flash-lite'
+            'gemini-3.5-flash-lite',
+            'ko'
         );
 
         expect(result).toBeNull();
@@ -73,7 +76,8 @@ describe('peekAnalysisStatic', () => {
             false,
             'free',
             undefined,
-            undefined
+            undefined,
+            'ko'
         );
     });
 
@@ -84,7 +88,8 @@ describe('peekAnalysisStatic', () => {
             'AAPL',
             '1Day',
             undefined,
-            'deepseek-v4.1-flash'
+            'deepseek-v4.1-flash',
+            'ko'
         );
 
         expect(mockPeek).toHaveBeenCalledWith(
@@ -95,7 +100,32 @@ describe('peekAnalysisStatic', () => {
             false,
             'free',
             undefined,
-            undefined
+            undefined,
+            'ko'
+        );
+    });
+
+    it('passes the caller-resolved locale through to peekAnalysisCache', async () => {
+        mockPeek.mockResolvedValue(null);
+
+        await peekAnalysisStatic(
+            'AAPL',
+            '1Day',
+            undefined,
+            'gemini-3.5-flash-lite',
+            'ja'
+        );
+
+        expect(mockPeek).toHaveBeenCalledWith(
+            'AAPL',
+            '1Day',
+            undefined,
+            'gemini-3.5-flash-lite',
+            false,
+            'free',
+            undefined,
+            undefined,
+            'ja'
         );
     });
 });

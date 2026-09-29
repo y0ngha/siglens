@@ -363,13 +363,20 @@ const DISPATCH: Record<
         // 않는다" 불변식), 이 값을 건너뛰면 같은 캐시 키인데 프롬프트 입력만
         // 다른 두 벌의 본문이 생긴다 — 정확히 이 불변식이 금지하는 것이다.
         //
-        // technical 탭(`technical` 분기)과 같은 이력·이벤트를 읽는다 — overall의
-        // technical 축 캐시 키가 `:hist=`·`:evt=`로 두 값을 접으므로, 둘 중
-        // 하나라도 갈리면 그 축이 technical 탭 캐시를 못 맞히고 다시 생성한다.
+        // 두 벌을 따로 읽는다 — technical 탭과 overall의 technical 축은
+        // recency 윈도우가 다르다(`ANALYSIS_CACHE_TTL[timeframe]` vs
+        // `OVERALL_CACHE_TTL_SECONDS`, `analysisHistoryQuery`의 axis 인자
+        // 참고). 예전엔 하나의 배열을 technical 축과 overall 자신의 top-level
+        // `priorAnalyses`에 동시에 흘려보냈는데, 두 축의 윈도우가 다르므로
+        // 한쪽은 틀린 창으로 읽은 이력을 갖게 됐다.
         const overallDb = getDatabaseClient().db;
-        const [priorAnalyses, marketEvents] = await Promise.all([
-            new DrizzleAnalysisHistoryRepository(overallDb).findRecentForPrompt(
-                {
+        const historyRepo = new DrizzleAnalysisHistoryRepository(overallDb);
+        const [technicalPriorAnalyses, overallPriorAnalyses, marketEvents] =
+            await Promise.all([
+                // overall의 **technical 축**이 참고할 이력 — technical 탭과
+                // 캐시 키(`:hist=`)를 공유하려면 그 탭과 동일한 axis(=
+                // 'technical', 기본값)로 읽어야 한다.
+                historyRepo.findRecentForPrompt({
                     symbol,
                     timeframe,
                     // overall도 **technical 이력**을 참고한다.
@@ -385,13 +392,20 @@ const DISPATCH: Record<
                     // "이 종목을 이전엔 이렇게 봤다"는 technical 판단은 여기서도
                     // 그대로 유효한 참고다.
                     tab: 'technical',
-                }
-            ),
-            findMarketEventsForPrompt(overallDb, {
-                symbol,
-                ...marketEventsLookback(timeframe),
-            }),
-        ]);
+                }),
+                // overall **자신의** top-level `priorAnalyses` — overall의
+                // recency 윈도우(`OVERALL_CACHE_TTL_SECONDS`)로 읽는다.
+                historyRepo.findRecentForPrompt({
+                    symbol,
+                    timeframe,
+                    tab: 'technical',
+                    axis: 'overall',
+                }),
+                findMarketEventsForPrompt(overallDb, {
+                    symbol,
+                    ...marketEventsLookback(timeframe),
+                }),
+            ]);
 
         const result = await runOverallAnalysisAction(
             symbol,
@@ -402,7 +416,8 @@ const DISPATCH: Record<
             {
                 force: cooldown?.ok === true,
                 reasoning: params.reasoning as boolean | undefined,
-                priorAnalyses,
+                priorAnalyses: overallPriorAnalyses,
+                technicalPriorAnalyses,
                 marketEvents,
             },
             signal

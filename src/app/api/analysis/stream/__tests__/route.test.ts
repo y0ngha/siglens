@@ -604,6 +604,7 @@ describe('POST /api/analysis/stream', () => {
                     force: false,
                     reasoning: undefined,
                     priorAnalyses: [],
+                    technicalPriorAnalyses: [],
                     marketEvents: undefined,
                 },
                 expect.any(AbortSignal)
@@ -1805,6 +1806,77 @@ describe('POST /api/analysis/stream', () => {
                 'gemini-3.6-flash',
                 'ko',
                 expect.objectContaining({ priorAnalyses: history }),
+                expect.any(AbortSignal)
+            );
+        });
+
+        /**
+         * Task S2 (eviction-loop fix follow-up) — the two arrays MUST come
+         * from two SEPARATE `findRecentForPrompt` calls, one per axis
+         * (`analysisHistoryQuery`'s recency window differs between the
+         * technical tab and overall's own top-level history). A regression
+         * that collapses this back into a single shared array would still
+         * pass every OTHER test in this describe block, because they all
+         * configure `mockFindRecentForPrompt` with one `mockResolvedValue`
+         * that answers both calls identically.
+         */
+        it('overall → technical 축과 overall 자신의 priorAnalyses는 axis가 다른 별도 호출로 읽는다', async () => {
+            vi.mocked(isBot).mockReturnValue(false);
+            const technicalHistory = [
+                {
+                    generatedAt: new Date('2026-08-01'),
+                    trend: 'bullish',
+                    riskLevel: 'low',
+                },
+            ];
+            const overallHistory = [
+                {
+                    generatedAt: new Date('2026-07-15'),
+                    trend: 'bearish',
+                    riskLevel: 'high',
+                },
+            ];
+            mockFindRecentForPrompt.mockImplementation(
+                (input: { axis?: string }) =>
+                    Promise.resolve(
+                        input.axis === 'overall'
+                            ? overallHistory
+                            : technicalHistory
+                    )
+            );
+
+            const body = JSON.stringify({
+                type: 'overall',
+                params: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple',
+                    timeframe: '1Day',
+                    modelId: 'gemini-3.6-flash',
+                },
+            });
+            await collectSseEvents(await POST(makeRequest(undefined, body)));
+
+            expect(mockFindRecentForPrompt).toHaveBeenCalledWith({
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                tab: 'technical',
+            });
+            expect(mockFindRecentForPrompt).toHaveBeenCalledWith({
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                tab: 'technical',
+                axis: 'overall',
+            });
+            expect(vi.mocked(runOverallAnalysisAction)).toHaveBeenCalledWith(
+                'AAPL',
+                'Apple',
+                '1Day',
+                'gemini-3.6-flash',
+                'ko',
+                expect.objectContaining({
+                    priorAnalyses: overallHistory,
+                    technicalPriorAnalyses: technicalHistory,
+                }),
                 expect.any(AbortSignal)
             );
         });

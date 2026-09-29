@@ -512,7 +512,8 @@ describe('Symbol page', () => {
                 false,
                 'free',
                 undefined,
-                undefined
+                undefined,
+                'ko'
             );
             expect(props.initialAnalysis).toMatchObject(cached.result);
         });
@@ -582,7 +583,8 @@ describe('Symbol page', () => {
                 false,
                 'free',
                 undefined,
-                undefined
+                undefined,
+                'ko'
             );
         });
 
