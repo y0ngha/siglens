@@ -1,4 +1,3 @@
-import { useState } from 'react';
 vi.mock('@/shared/ui/MarkdownText', () => ({
     MarkdownText: ({ children }: { children: React.ReactNode }) => (
         <span>{children}</span>
@@ -1301,8 +1300,8 @@ describe('AnalysisPanel', () => {
     });
 });
 
-describe('AnalysisPanel — 차트 작도 강조 토글 (spec §4.3)', () => {
-    it('overlaySourceRefs에 속한 카드에만 차트에서 보기 버튼을 렌더한다', () => {
+describe('AnalysisPanel — 차트 작도 켜기/끄기 토글 (설계 2026-09-29)', () => {
+    it('overlaySourceRefs에 속하고 콜백 3개가 모두 있는 카드에만 버튼을 렌더한다', () => {
         render(
             <AnalysisPanel
                 symbol="AAPL"
@@ -1315,6 +1314,9 @@ describe('AnalysisPanel — 차트 작도 강조 토글 (spec §4.3)', () => {
                 keyLevels={EMPTY_KEY_LEVELS}
                 timeframe="1Day"
                 overlaySourceRefs={new Set(['p1'])}
+                onToggleOverlay={vi.fn()}
+                onHighlightOverlay={vi.fn()}
+                onClearOverlayHighlight={vi.fn()}
             />
         );
 
@@ -1328,7 +1330,48 @@ describe('AnalysisPanel — 차트 작도 강조 토글 (spec §4.3)', () => {
         expect(plainCard.querySelector('[aria-pressed]')).toBeNull();
     });
 
-    it('버튼 클릭 시 onToggleOverlayHighlight를 카드 id로 호출하고 aria-pressed가 강조 상태를 반영한다', () => {
+    it('버튼에 오른쪽 여백 클래스(mr-2)가 붙어 옆 배지·카드 끝과 붙지 않는다', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis({
+                    patternSummaries: [
+                        makePattern({ id: 'p1', skillName: 'Overlaid' }),
+                    ],
+                })}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                overlaySourceRefs={new Set(['p1'])}
+                onToggleOverlay={vi.fn()}
+                onHighlightOverlay={vi.fn()}
+                onClearOverlayHighlight={vi.fn()}
+            />
+        );
+
+        expect(
+            screen.getByRole('button', { name: 'Overlaid 차트에서 보기' })
+        ).toHaveClass('mr-2');
+    });
+
+    it('overlaySourceRefs에 속해도 콜백이 하나라도 없으면 버튼을 렌더하지 않는다', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis({
+                    patternSummaries: [makePattern({ id: 'p1' })],
+                })}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                overlaySourceRefs={new Set(['p1'])}
+            />
+        );
+
+        expect(
+            screen.queryByRole('button', { name: /차트에서 보기/ })
+        ).not.toBeInTheDocument();
+    });
+
+    it('버튼 클릭 시 onToggleOverlay를 카드 id로 호출하고 aria-pressed가 hiddenOverlayKeys를 반영한다', () => {
         const onToggle = vi.fn();
         render(
             <AnalysisPanel
@@ -1341,14 +1384,16 @@ describe('AnalysisPanel — 차트 작도 강조 토글 (spec §4.3)', () => {
                 keyLevels={EMPTY_KEY_LEVELS}
                 timeframe="1Day"
                 overlaySourceRefs={new Set(['s1'])}
-                highlightedOverlayRef="s1"
-                onToggleOverlayHighlight={onToggle}
+                hiddenOverlayKeys={new Set()}
+                onToggleOverlay={onToggle}
+                onHighlightOverlay={vi.fn()}
+                onClearOverlayHighlight={vi.fn()}
             />
         );
 
-        // 접근 가능한 이름은 이제 카드 제목을 실은 aria-label이다(R6) —
-        // 화면에 보이는 텍스트("차트에서 보기")만으로는 카드를 특정할 수 없어
-        // 스크린리더 사용자가 어느 카드의 토글인지 구분하지 못했다.
+        // 접근 가능한 이름은 카드 제목을 실은 aria-label이다 — 화면에 보이는
+        // 텍스트("차트에서 보기")만으로는 카드를 특정할 수 없어 스크린리더
+        // 사용자가 어느 카드의 토글인지 구분하지 못했다.
         const button = screen.getByRole('button', {
             name: 'Overlaid 차트에서 보기',
         });
@@ -1356,6 +1401,112 @@ describe('AnalysisPanel — 차트 작도 강조 토글 (spec §4.3)', () => {
 
         fireEvent.click(button);
         expect(onToggle).toHaveBeenCalledWith('s1');
+    });
+
+    it('hiddenOverlayKeys에 카드 id가 있으면 aria-pressed=false', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis({
+                    patternSummaries: [
+                        makePattern({ id: 'p1', skillName: 'Hidden' }),
+                    ],
+                })}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                overlaySourceRefs={new Set(['p1'])}
+                hiddenOverlayKeys={new Set(['p1'])}
+                onToggleOverlay={vi.fn()}
+                onHighlightOverlay={vi.fn()}
+                onClearOverlayHighlight={vi.fn()}
+            />
+        );
+
+        expect(
+            screen.getByRole('button', { name: 'Hidden 차트에서 보기' })
+        ).toHaveAttribute('aria-pressed', 'false');
+    });
+
+    it('마우스 포인터로 카드에 진입·이탈하면 onHighlightOverlay를 카드 id·null로 호출한다', () => {
+        const onHighlight = vi.fn();
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis({
+                    patternSummaries: [
+                        makePattern({ id: 'p1', skillName: 'Overlaid' }),
+                    ],
+                })}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                overlaySourceRefs={new Set(['p1'])}
+                onToggleOverlay={vi.fn()}
+                onHighlightOverlay={onHighlight}
+                onClearOverlayHighlight={vi.fn()}
+            />
+        );
+
+        const card = screen
+            .getByText('Overlaid')
+            .closest('div')!.parentElement!;
+        fireEvent.pointerEnter(card, { pointerType: 'mouse' });
+        expect(onHighlight).toHaveBeenCalledWith('p1');
+
+        fireEvent.pointerLeave(card, { pointerType: 'mouse' });
+        expect(onHighlight).toHaveBeenLastCalledWith(null);
+    });
+
+    it('터치 포인터의 진입·이탈은 강조를 걸지 않는다(설계: 모바일은 강조 없음)', () => {
+        const onHighlight = vi.fn();
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis({
+                    patternSummaries: [
+                        makePattern({ id: 'p1', skillName: 'Overlaid' }),
+                    ],
+                })}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                overlaySourceRefs={new Set(['p1'])}
+                onToggleOverlay={vi.fn()}
+                onHighlightOverlay={onHighlight}
+                onClearOverlayHighlight={vi.fn()}
+            />
+        );
+
+        const card = screen
+            .getByText('Overlaid')
+            .closest('div')!.parentElement!;
+        fireEvent.pointerEnter(card, { pointerType: 'touch' });
+        fireEvent.pointerLeave(card, { pointerType: 'touch' });
+        expect(onHighlight).not.toHaveBeenCalled();
+    });
+
+    it('버튼 blur 시 onClearOverlayHighlight를 카드 id로 호출한다(멱등 해제)', () => {
+        const onClear = vi.fn();
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis({
+                    patternSummaries: [
+                        makePattern({ id: 'p1', skillName: 'Overlaid' }),
+                    ],
+                })}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                overlaySourceRefs={new Set(['p1'])}
+                onToggleOverlay={vi.fn()}
+                onHighlightOverlay={vi.fn()}
+                onClearOverlayHighlight={onClear}
+            />
+        );
+
+        const button = screen.getByRole('button', {
+            name: 'Overlaid 차트에서 보기',
+        });
+        fireEvent.blur(button);
+        expect(onClear).toHaveBeenCalledWith('p1');
     });
 
     it('plain 뷰에서는 카드 자체가 마운트되지 않아 버튼도 렌더되지 않는다', () => {
@@ -1368,6 +1519,9 @@ describe('AnalysisPanel — 차트 작도 강조 토글 (spec §4.3)', () => {
                 keyLevels={EMPTY_KEY_LEVELS}
                 timeframe="1Day"
                 overlaySourceRefs={new Set(['p1'])}
+                onToggleOverlay={vi.fn()}
+                onHighlightOverlay={vi.fn()}
+                onClearOverlayHighlight={vi.fn()}
                 plain="평이화된 산문입니다."
             />
         );
@@ -1377,11 +1531,10 @@ describe('AnalysisPanel — 차트 작도 강조 토글 (spec §4.3)', () => {
         ).not.toBeInTheDocument();
     });
 
-    it('강조된 카드가 쉽게보기 전환으로 언마운트되면 onClearOverlayHighlight를 그 카드 id로 호출한다(토글 아님)', () => {
-        // R5: PlainAnalysisSwitch가 쉽게보기로 전환되면 원본 트리(카드 전체)를
-        // 마운트 해제한다 — 강조된 카드가 해제 없이 사라지면
-        // `highlightedOverlayRef`가 더 이상 존재하지 않는 버튼을 영원히
-        // 가리키는 죽은 상태로 남는다.
+    it('카드가 쉽게보기 전환으로 언마운트되면 onClearOverlayHighlight를 그 카드 id로 호출한다', () => {
+        // PlainAnalysisSwitch가 쉽게보기로 전환되면 원본 트리(카드 전체)를
+        // 마운트 해제한다 — 강조된 카드가 해제 없이 사라지면 강조 상태가
+        // 더 이상 존재하지 않는 카드를 영원히 가리키는 죽은 상태로 남는다.
         const onToggle = vi.fn();
         const onClear = vi.fn();
         const analysis = makeAnalysis({
@@ -1394,14 +1547,14 @@ describe('AnalysisPanel — 차트 작도 강조 토글 (spec §4.3)', () => {
                 keyLevels={EMPTY_KEY_LEVELS}
                 timeframe="1Day"
                 overlaySourceRefs={new Set(['p1'])}
-                highlightedOverlayRef="p1"
-                onToggleOverlayHighlight={onToggle}
+                onToggleOverlay={onToggle}
+                onHighlightOverlay={vi.fn()}
                 onClearOverlayHighlight={onClear}
             />
         );
         expect(
             screen.getByRole('button', { name: 'Stuck 차트에서 보기' })
-        ).toHaveAttribute('aria-pressed', 'true');
+        ).toBeInTheDocument();
 
         rerender(
             <AnalysisPanel
@@ -1410,8 +1563,8 @@ describe('AnalysisPanel — 차트 작도 강조 토글 (spec §4.3)', () => {
                 keyLevels={EMPTY_KEY_LEVELS}
                 timeframe="1Day"
                 overlaySourceRefs={new Set(['p1'])}
-                highlightedOverlayRef="p1"
-                onToggleOverlayHighlight={onToggle}
+                onToggleOverlay={onToggle}
+                onHighlightOverlay={vi.fn()}
                 onClearOverlayHighlight={onClear}
                 plain="평이화된 산문입니다."
             />
@@ -1424,96 +1577,78 @@ describe('AnalysisPanel — 차트 작도 강조 토글 (spec §4.3)', () => {
         expect(onToggle).not.toHaveBeenCalled();
     });
 
-    it('강조되지 않은 카드가 쉽게보기 전환으로 언마운트돼도 해제 콜백을 부르지 않는다', () => {
-        const onToggle = vi.fn();
-        const onClear = vi.fn();
-        const analysis = makeAnalysis({
-            patternSummaries: [makePattern({ id: 'p1', skillName: 'Idle' })],
+    describe('키보드 포커스(:focus-visible)일 때만 강조를 건다', () => {
+        const originalMatches = Element.prototype.matches;
+
+        afterEach(() => {
+            vi.restoreAllMocks();
         });
-        const { rerender } = render(
-            <AnalysisPanel
-                symbol="AAPL"
-                analysis={analysis}
-                keyLevels={EMPTY_KEY_LEVELS}
-                timeframe="1Day"
-                overlaySourceRefs={new Set(['p1'])}
-                highlightedOverlayRef={null}
-                onToggleOverlayHighlight={onToggle}
-                onClearOverlayHighlight={onClear}
-            />
-        );
 
-        rerender(
-            <AnalysisPanel
-                symbol="AAPL"
-                analysis={analysis}
-                keyLevels={EMPTY_KEY_LEVELS}
-                timeframe="1Day"
-                overlaySourceRefs={new Set(['p1'])}
-                highlightedOverlayRef={null}
-                onToggleOverlayHighlight={onToggle}
-                onClearOverlayHighlight={onClear}
-                plain="평이화된 산문입니다."
-            />
-        );
-
-        expect(onClear).not.toHaveBeenCalled();
-        expect(onToggle).not.toHaveBeenCalled();
-    });
-
-    it('새 분석(analyzedAt 변경)으로 강조 카드가 사라져도 강조가 다시 켜지지 않는다', () => {
-        // ChartContent와 같은 상태 규칙: 렌더 중 analyzedAt 변경 시 null 리셋,
-        // 토글은 prev === ref ? null : ref, 해제는 prev === ref ? null : prev.
-        // 해제 대신 토글을 쓰면 리셋 직후의 언마운트 정리가 null을 'p1'로 되켠다.
-        function Harness({
-            analysis,
-        }: {
-            analysis: ReturnType<typeof makeAnalysis>;
-        }) {
-            const [highlighted, setHighlighted] = useState<string | null>('p1');
-            const [prevAt, setPrevAt] = useState(analysis.analyzedAt);
-            if (prevAt !== analysis.analyzedAt) {
-                setPrevAt(analysis.analyzedAt);
-                if (highlighted !== null) setHighlighted(null);
-            }
-            return (
-                <>
-                    <output data-testid="highlighted">
-                        {String(highlighted)}
-                    </output>
-                    <AnalysisPanel
-                        symbol="AAPL"
-                        analysis={analysis}
-                        keyLevels={EMPTY_KEY_LEVELS}
-                        timeframe="1Day"
-                        overlaySourceRefs={
-                            new Set(analysis.patternSummaries.map(p => p.id))
-                        }
-                        highlightedOverlayRef={highlighted}
-                        onToggleOverlayHighlight={ref =>
-                            setHighlighted(prev => (prev === ref ? null : ref))
-                        }
-                        onClearOverlayHighlight={ref =>
-                            setHighlighted(prev => (prev === ref ? null : prev))
-                        }
-                    />
-                </>
-            );
+        // `:focus-visible`만 강제하고 나머지 selector는 원래 구현으로 위임한다 —
+        // testing-library의 접근성 조회(role·name 계산)도 내부에서 `matches`를
+        // 쓰므로, 전역으로 모든 selector에 고정값을 반환하면 `getByRole` 자체가
+        // 깨진다.
+        function stubFocusVisible(focusVisible: boolean) {
+            vi.spyOn(Element.prototype, 'matches').mockImplementation(function (
+                this: Element,
+                selector: string
+            ) {
+                if (selector === ':focus-visible') return focusVisible;
+                return originalMatches.call(this, selector);
+            });
         }
-        const first = makeAnalysis({
-            analyzedAt: '2026-09-28T00:00:00.000Z',
-            patternSummaries: [makePattern({ id: 'p1', skillName: 'Old' })],
-        });
-        const next = makeAnalysis({
-            analyzedAt: '2026-09-28T01:00:00.000Z',
-            patternSummaries: [makePattern({ id: 'p2', skillName: 'New' })],
-        });
-        const { rerender } = render(<Harness analysis={first} />);
-        expect(screen.getByTestId('highlighted')).toHaveTextContent('p1');
 
-        rerender(<Harness analysis={next} />);
+        it(':focus-visible이 true면 onFocus가 onHighlightOverlay를 카드 id로 호출한다', () => {
+            stubFocusVisible(true);
+            const onHighlight = vi.fn();
+            render(
+                <AnalysisPanel
+                    symbol="AAPL"
+                    analysis={makeAnalysis({
+                        patternSummaries: [
+                            makePattern({ id: 'p1', skillName: 'Overlaid' }),
+                        ],
+                    })}
+                    keyLevels={EMPTY_KEY_LEVELS}
+                    timeframe="1Day"
+                    overlaySourceRefs={new Set(['p1'])}
+                    onToggleOverlay={vi.fn()}
+                    onHighlightOverlay={onHighlight}
+                    onClearOverlayHighlight={vi.fn()}
+                />
+            );
 
-        expect(screen.getByTestId('highlighted')).toHaveTextContent('null');
+            fireEvent.focus(
+                screen.getByRole('button', { name: 'Overlaid 차트에서 보기' })
+            );
+            expect(onHighlight).toHaveBeenCalledWith('p1');
+        });
+
+        it(':focus-visible이 false면 onFocus가 onHighlightOverlay를 호출하지 않는다(탭·클릭 포커스)', () => {
+            stubFocusVisible(false);
+            const onHighlight = vi.fn();
+            render(
+                <AnalysisPanel
+                    symbol="AAPL"
+                    analysis={makeAnalysis({
+                        patternSummaries: [
+                            makePattern({ id: 'p1', skillName: 'Overlaid' }),
+                        ],
+                    })}
+                    keyLevels={EMPTY_KEY_LEVELS}
+                    timeframe="1Day"
+                    overlaySourceRefs={new Set(['p1'])}
+                    onToggleOverlay={vi.fn()}
+                    onHighlightOverlay={onHighlight}
+                    onClearOverlayHighlight={vi.fn()}
+                />
+            );
+
+            fireEvent.focus(
+                screen.getByRole('button', { name: 'Overlaid 차트에서 보기' })
+            );
+            expect(onHighlight).not.toHaveBeenCalledWith('p1');
+        });
     });
 });
 

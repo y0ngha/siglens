@@ -64,13 +64,13 @@ import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { resolvePriceDecimals } from '@/shared/lib/priceFormat';
 import { IndicatorSettingsModal } from './ui/IndicatorSettingsModal';
 import { ChartOverlayMenu } from './ui/ChartOverlayMenu';
-import { useChartOverlayVisibility } from './hooks/useChartOverlayVisibility';
 import { useChartOverlays } from './hooks/useChartOverlays';
 import {
+    barTimesOf,
     buildOverlayLineSpecs,
-    countOverlaysByKind,
     overlayColorFor,
 } from './utils/chartOverlayUtils';
+import type { OverlayMenuItem } from './utils/overlayItems';
 import {
     BREAKOUT_LEVEL_LABEL,
     CHART_OVERLAY_COLORS,
@@ -82,6 +82,9 @@ import {
 } from './model/indicatorRegistry';
 
 const EMPTY_CHART_OVERLAYS: ChartOverlay[] = [];
+const EMPTY_OVERLAY_ITEMS: readonly OverlayMenuItem[] = [];
+const EMPTY_HIDDEN_KEYS: ReadonlySet<string> = new Set();
+const NOOP_SET_VISIBLE = (): void => {};
 const EMPTY_OVERLAY_COLORS: Record<string, string> = {};
 
 interface CommonHookParams {
@@ -114,8 +117,13 @@ interface StockChartProps {
     chartOverlays?: ChartOverlay[];
     /** 패턴 오버레이의 스킬별 색 — `sourceRef → renderConfig.color`. 없으면 kind 기본색 폴백. */
     overlayColors?: Record<string, string>;
-    /** '원본' 패널 카드 클릭으로 강조할 결과 항목 id(sourceRef). */
-    highlightedOverlayRef?: string | null;
+    /** "차트 작도" 메뉴에 띄울 on/off 항목(매매 가격선 포함). */
+    overlayItems?: readonly OverlayMenuItem[];
+    /** 꺼진 항목 key(`overlayItemKey`·`ACTION_PRICES_ITEM_KEY`). */
+    hiddenOverlayKeys?: ReadonlySet<string>;
+    /** AI 패널 카드 hover·focus로 강조할 항목 key. */
+    highlightedOverlayKey?: string | null;
+    onSetOverlayVisible?: (keys: readonly string[], visible: boolean) => void;
 }
 
 export function StockChart({
@@ -131,7 +139,10 @@ export function StockChart({
     marketProfile = 'us-equity',
     chartOverlays = EMPTY_CHART_OVERLAYS,
     overlayColors = EMPTY_OVERLAY_COLORS,
-    highlightedOverlayRef = null,
+    overlayItems = EMPTY_OVERLAY_ITEMS,
+    hiddenOverlayKeys = EMPTY_HIDDEN_KEYS,
+    highlightedOverlayKey = null,
+    onSetOverlayVisible = NOOP_SET_VISIBLE,
 }: StockChartProps) {
     const t = useTranslations('widgets.chart');
     const tMisc = useTranslations('shared.ui.misc');
@@ -476,29 +487,14 @@ export function StockChart({
         isVisible: visible.smc,
     });
 
-    const { visible: overlayVisible, toggle: toggleOverlay } =
-        useChartOverlayVisibility();
-
-    const barTimes = useMemo(() => new Set(bars.map(b => b.time)), [bars]);
+    const barTimes = useMemo(() => barTimesOf(bars), [bars]);
     const lastBarTime = bars[bars.length - 1]?.time ?? 0;
-
-    const overlayCounts = useMemo(
-        () => countOverlaysByKind(chartOverlays, barTimes, lastBarTime),
-        [chartOverlays, barTimes, lastBarTime]
-    );
-
-    // 강조 중인 카드의 카테고리가 꺼져 있어도 잠깐 보여준다(spec §4.3).
-    const highlightedKind = chartOverlays.find(
-        o => o.sourceRef === highlightedOverlayRef
-    )?.kind;
 
     const overlaySpecs = useMemo(
         () =>
             buildOverlayLineSpecs(chartOverlays, {
-                visible: highlightedKind
-                    ? { ...overlayVisible, [highlightedKind]: true }
-                    : overlayVisible,
-                highlightedSourceRef: highlightedOverlayRef,
+                hiddenKeys: hiddenOverlayKeys,
+                highlightedKey: highlightedOverlayKey,
                 barTimes,
                 lastBarTime,
                 rsiPaneIndex: visible.rsi ? paneIndices.rsi : null,
@@ -514,9 +510,8 @@ export function StockChart({
             }),
         [
             chartOverlays,
-            overlayVisible,
-            highlightedKind,
-            highlightedOverlayRef,
+            hiddenOverlayKeys,
+            highlightedOverlayKey,
             barTimes,
             lastBarTime,
             visible.rsi,
@@ -730,9 +725,9 @@ export function StockChart({
                 자리를 다퉜다. 띠 자체는 비워 둔다. */}
             <div className="flex h-8 shrink-0 items-center justify-end gap-1 border-b border-secondary-700 px-1">
                 <ChartOverlayMenu
-                    counts={overlayCounts}
-                    visible={overlayVisible}
-                    onToggle={toggleOverlay}
+                    items={overlayItems}
+                    hiddenKeys={hiddenOverlayKeys}
+                    onSetVisible={onSetOverlayVisible}
                 />
                 <IndicatorSettingsModal bindings={indicatorBindings} />
             </div>

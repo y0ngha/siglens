@@ -2707,12 +2707,17 @@
                 "volume": "Volume"
             },
             "ChartOverlayMenu": {
+                "07d45b": "Entry · Exit · Stop Loss lines",
                 "0b5eb6": "Trendline",
                 "2bac73": "Fibonacci",
                 "3b6851": "Elliott Wave",
                 "4b1cdc": "Chart Drawing · {v0}",
+                "5d0ffc": "Chart Drawing",
                 "67eb73": "Divergence",
-                "bdeea2": "Chart Pattern"
+                "ac1149": "Falling Trendline #{v0}",
+                "bdeea2": "Chart Pattern",
+                "bfe4b6": "Rising Trendline #{v0}",
+                "c178bc": "Partly on"
             }
         },
         "ask-ai-fab": {

@@ -6,14 +6,17 @@ import { ChartContent } from '../ChartContent';
 import type { UseAnalysisResult } from '../hooks/useAnalysis';
 
 /**
- * R5(§4.3) 회귀 커버리지 — `ChartContent`가 소유하는
- * `highlightedOverlayRef`/`prevAnalyzedAt` 렌더-단계 리셋 로직 전용 파일이다.
+ * 설계 2026-09-29 회귀 커버리지 — `ChartContent`가 소유하는
+ * `useOverlayItemVisibility`의 `highlightedKey`/`prevAnalyzedAt` 렌더-단계
+ * 리셋 로직 전용 파일이다. `AnalysisPanel`은 이제 강조 상태를 prop으로
+ * 되받지 않고 `onHighlightOverlay`만 호출한다 — 실제로 강조를 그리는 쪽은
+ * `StockChart`(`highlightedOverlayKey`)뿐이다.
  *
  * `ChartContent.interaction.test.tsx`의 공유 `StockChart`/`AnalysisPanel` mock은
- * `highlightedOverlayRef`를 그대로 흘려보내지 않는 얇은 stub이라(prop을
- * 캡처하지 않음) 그 파일의 mock을 이 목적으로 "느슨하게" 바꾸면 수십 개의
- * 기존 단언이 그 변경에 얹혀 회귀 위험을 키운다. 대신 이 파일은 독립
- * (파일-scope) mock으로 필요한 prop만 노출한다 — 다른 테스트 파일에 영향 없음.
+ * 이 prop들을 그대로 흘려보내지 않는 얇은 stub이라(prop을 캡처하지 않음) 그
+ * 파일의 mock을 이 목적으로 "느슨하게" 바꾸면 수십 개의 기존 단언이 그
+ * 변경에 얹혀 회귀 위험을 키운다. 대신 이 파일은 독립(파일-scope) mock으로
+ * 필요한 prop만 노출한다 — 다른 테스트 파일에 영향 없음.
  */
 const FALLBACK_ANALYSIS = buildFallbackAnalysis(
     catalogTranslator('entities.analysis.fallback', 'ko')('unavailable')
@@ -36,13 +39,13 @@ vi.mock('@/widgets/chart/hooks/useChartSync', () => ({
 }));
 vi.mock('@/widgets/chart/StockChart', () => ({
     StockChart: ({
-        highlightedOverlayRef,
+        highlightedOverlayKey,
     }: {
-        highlightedOverlayRef?: string | null;
+        highlightedOverlayKey?: string | null;
     }) => (
         <div
             data-testid="stock-chart"
-            data-highlighted={String(highlightedOverlayRef)}
+            data-highlighted={String(highlightedOverlayKey)}
         />
     ),
 }));
@@ -59,12 +62,6 @@ vi.mock('@/entities/bars/hooks/useBars', () => ({
 const analysisMock = vi.fn();
 vi.mock('../hooks/useAnalysis', () => ({
     useAnalysis: () => analysisMock(),
-}));
-vi.mock('../hooks/useActionPricesVisibility', () => ({
-    useActionPricesVisibility: () => ({
-        actionPricesVisible: true,
-        setActionPricesVisible: vi.fn(),
-    }),
 }));
 vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
     useSymbolModel: () => ({
@@ -104,21 +101,13 @@ vi.mock('@/widgets/analysis/hooks/useAnalysisProgress', () => ({
 }));
 vi.mock('@/widgets/analysis/AnalysisPanel', () => ({
     AnalysisPanel: ({
-        highlightedOverlayRef,
-        onToggleOverlayHighlight,
+        onHighlightOverlay,
     }: {
-        highlightedOverlayRef?: string | null;
-        onToggleOverlayHighlight?: (ref: string) => void;
+        onHighlightOverlay?: (key: string | null) => void;
     }) => (
-        <div
-            data-testid="analysis-panel"
-            data-highlighted={String(highlightedOverlayRef)}
-        >
-            <button
-                type="button"
-                onClick={() => onToggleOverlayHighlight?.('p1')}
-            >
-                toggle p1
+        <div data-testid="analysis-panel">
+            <button type="button" onClick={() => onHighlightOverlay?.('p1')}>
+                highlight p1
             </button>
         </div>
     ),
@@ -165,12 +154,12 @@ const props = {
     fmpSymbol: 'AAPL',
 };
 
-describe('ChartContent — 차트 작도 강조 상태(highlightedOverlayRef)', () => {
+describe('ChartContent — 차트 작도 강조 상태(highlightedOverlayKey)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
-    it('원본 카드 토글로 강조를 켜면 AnalysisPanel과 StockChart 둘 다 같은 ref를 받는다', async () => {
+    it('AnalysisPanel의 onHighlightOverlay 호출로 강조를 켜면 StockChart가 같은 key를 받는다', async () => {
         analysisMock.mockReturnValue(
             analysisReturn({ analysis: NARRATIVE_ANALYSIS })
         );
@@ -182,12 +171,8 @@ describe('ChartContent — 차트 작도 강조 상태(highlightedOverlayRef)', 
             />
         );
 
-        fireEvent.click(screen.getByRole('button', { name: 'toggle p1' }));
+        fireEvent.click(screen.getByRole('button', { name: 'highlight p1' }));
 
-        expect(screen.getByTestId('analysis-panel')).toHaveAttribute(
-            'data-highlighted',
-            'p1'
-        );
         // StockChart는 `next/dynamic({ssr:false})`로 lazy-load되므로 첫 렌더에는
         // 아직 마운트되지 않는다 — dynamic import가 resolve된 뒤에야 나타난다.
         expect(await screen.findByTestId('stock-chart')).toHaveAttribute(
@@ -213,12 +198,11 @@ describe('ChartContent — 차트 작도 강조 상태(highlightedOverlayRef)', 
             />
         );
 
-        fireEvent.click(screen.getByRole('button', { name: 'toggle p1' }));
-        expect(screen.getByTestId('analysis-panel')).toHaveAttribute(
+        fireEvent.click(screen.getByRole('button', { name: 'highlight p1' }));
+        expect(await screen.findByTestId('stock-chart')).toHaveAttribute(
             'data-highlighted',
             'p1'
         );
-        await screen.findByTestId('stock-chart');
 
         // 새 분석 도착 — analyzedAt이 바뀐다. useAnalysis 훅이 새 결과를
         // 돌려주는 것을 흉내내 재렌더한다.
@@ -238,17 +222,13 @@ describe('ChartContent — 차트 작도 강조 상태(highlightedOverlayRef)', 
             />
         );
 
-        expect(screen.getByTestId('analysis-panel')).toHaveAttribute(
-            'data-highlighted',
-            'null'
-        );
         expect(screen.getByTestId('stock-chart')).toHaveAttribute(
             'data-highlighted',
             'null'
         );
     });
 
-    it('analyzedAt이 그대로면(같은 분석의 재렌더) 강조를 유지한다', () => {
+    it('analyzedAt이 그대로면(같은 분석의 재렌더) 강조를 유지한다', async () => {
         const sameAnalysis = {
             ...NARRATIVE_ANALYSIS,
             analyzedAt: '2026-01-01T00:00:00Z',
@@ -264,8 +244,8 @@ describe('ChartContent — 차트 작도 강조 상태(highlightedOverlayRef)', 
             />
         );
 
-        fireEvent.click(screen.getByRole('button', { name: 'toggle p1' }));
-        expect(screen.getByTestId('analysis-panel')).toHaveAttribute(
+        fireEvent.click(screen.getByRole('button', { name: 'highlight p1' }));
+        expect(await screen.findByTestId('stock-chart')).toHaveAttribute(
             'data-highlighted',
             'p1'
         );
@@ -284,7 +264,7 @@ describe('ChartContent — 차트 작도 강조 상태(highlightedOverlayRef)', 
             />
         );
 
-        expect(screen.getByTestId('analysis-panel')).toHaveAttribute(
+        expect(screen.getByTestId('stock-chart')).toHaveAttribute(
             'data-highlighted',
             'p1'
         );

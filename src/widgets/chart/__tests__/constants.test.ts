@@ -2,7 +2,6 @@ import {
     DEFAULT_LINE_WIDTH,
     INACTIVE_PANE_INDEX,
     FIRST_INDICATOR_PANE_INDEX,
-    STORAGE_KEYS,
 } from '@/widgets/chart/constants';
 
 describe('chart constants', () => {
@@ -16,9 +15,5 @@ describe('chart constants', () => {
 
     it('FIRST_INDICATOR_PANE_INDEX is 1', () => {
         expect(FIRST_INDICATOR_PANE_INDEX).toBe(1);
-    });
-
-    it('STORAGE_KEYS.chartOverlays is namespaced', () => {
-        expect(STORAGE_KEYS.chartOverlays).toBe('siglens.chart.chartOverlays');
     });
 });

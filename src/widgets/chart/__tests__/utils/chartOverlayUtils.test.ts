@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { ChartOverlay } from '@y0ngha/siglens-core';
 import {
+    barTimesOf,
     buildOverlayLineSpecs,
-    countOverlaysByKind,
     isOverlayAlignedToBars,
     isOverlayDrawn,
     overlayColorFor,
+    overlayItemKey,
 } from '../../utils/chartOverlayUtils';
 
 const overlay = (over: Partial<ChartOverlay>): ChartOverlay => ({
@@ -29,6 +30,33 @@ const overlay = (over: Partial<ChartOverlay>): ChartOverlay => ({
 });
 const BAR_TIMES = new Set([1, 2, 3, 4, 5]);
 
+describe('overlayItemKey', () => {
+    it('trendline uses overlay.id; everything else uses sourceRef', () => {
+        expect(
+            overlayItemKey(
+                overlay({
+                    kind: 'trendline',
+                    id: 'trendline:abc',
+                    sourceRef: 'trendlines',
+                })
+            )
+        ).toBe('trendline:abc');
+        expect(
+            overlayItemKey(overlay({ kind: 'pattern', sourceRef: 'p1' }))
+        ).toBe('p1');
+        expect(
+            overlayItemKey(overlay({ kind: 'divergence', sourceRef: 'd1' }))
+        ).toBe('d1');
+    });
+});
+
+describe('barTimesOf', () => {
+    it('collects each bar time into a Set', () => {
+        const bars = [{ time: 1 }, { time: 2 }, { time: 3 }];
+        expect(barTimesOf(bars)).toEqual(new Set([1, 2, 3]));
+    });
+});
+
 describe('isOverlayAlignedToBars', () => {
     it('true only when every anchor time is a loaded bar', () => {
         expect(isOverlayAlignedToBars(overlay({}), BAR_TIMES)).toBe(true);
@@ -43,14 +71,8 @@ describe('isOverlayAlignedToBars', () => {
 
 describe('buildOverlayLineSpecs', () => {
     const base = {
-        visible: {
-            pattern: true,
-            trendline: true,
-            divergence: true,
-            fibonacci: true,
-            elliott: true,
-        },
-        highlightedSourceRef: null,
+        hiddenKeys: new Set<string>(),
+        highlightedKey: null,
         lastBarTime: 5,
         rsiPaneIndex: 2,
         colorFor: () => '#000',
@@ -74,12 +96,12 @@ describe('buildOverlayLineSpecs', () => {
         expect(specs.every(s => s.paneIndex === 0)).toBe(true);
     });
 
-    it('hidden kind, misaligned overlay, and zero-length segment produce nothing', () => {
+    it('hidden key, misaligned overlay, and zero-length segment produce nothing', () => {
         expect(
             buildOverlayLineSpecs([overlay({})], {
                 ...base,
                 barTimes: BAR_TIMES,
-                visible: { ...base.visible, pattern: false },
+                hiddenKeys: new Set(['double_bottom_0']),
             })
         ).toEqual([]);
         expect(
@@ -140,16 +162,15 @@ describe('buildOverlayLineSpecs', () => {
         ).toHaveLength(1);
     });
 
-    it('highlight widens the matching overlay and dims the rest; alternate is faded', () => {
+    it('highlight of a visible key widens that overlay and dims the rest; alternate is faded', () => {
         // a(기본 overlay)는 segment 1 + level 1 = spec 2개, b는 level을 비워
-        // segment 1개뿐이다 — a의 강조 spec은 앞의 2개, b는 마지막 1개다
-        // (overlayId 필드는 프로덕션에서 쓰이지 않아 제거됐다 — R7).
+        // segment 1개뿐이다 — a의 강조 spec은 앞의 2개, b는 마지막 1개다.
         const a = overlay({});
         const b = overlay({ id: 'x', sourceRef: 'other', levels: [] });
         const specs = buildOverlayLineSpecs([a, b], {
             ...base,
             barTimes: BAR_TIMES,
-            highlightedSourceRef: 'double_bottom_0',
+            highlightedKey: 'double_bottom_0',
         });
         expect(specs).toHaveLength(3);
         expect(specs[0].lineWidthMult).toBe(2);
@@ -160,6 +181,24 @@ describe('buildOverlayLineSpecs', () => {
             barTimes: BAR_TIMES,
         });
         expect(alt[0].opacity).toBe(0.5);
+    });
+
+    it('highlight of a hidden key applies no dimming, and the hidden overlay stays absent', () => {
+        // b(other)의 key는 hiddenKeys에 있고 동시에 highlightedKey로도 지정된다 —
+        // 꺼진 작도는 강조로도 켜지지 않고, 켜져 있는 a도 흐려지지 않아야 한다
+        // (highlightedKey가 켜진 항목일 때만 강조가 걸린다는 옵션 계약).
+        const a = overlay({});
+        const b = overlay({ id: 'x', sourceRef: 'other', levels: [] });
+        const specs = buildOverlayLineSpecs([a, b], {
+            ...base,
+            barTimes: BAR_TIMES,
+            hiddenKeys: new Set(['other']),
+            highlightedKey: 'other',
+        });
+        // b가 빠졌으니 a의 spec 2개만 남고, 아무것도 강조·dim되지 않는다(opacity 1, lineWidthMult 1).
+        expect(specs).toHaveLength(2);
+        expect(specs.every(s => s.lineWidthMult === 1)).toBe(true);
+        expect(specs.every(s => s.opacity === 1)).toBe(true);
     });
 
     it('a level whose fromTime is not before lastBarTime is skipped (though aligned to bars)', () => {
@@ -234,14 +273,8 @@ describe('buildOverlayLineSpecs — label host pane', () => {
             ],
         });
         const specs = buildOverlayLineSpecs([div], {
-            visible: {
-                pattern: true,
-                trendline: true,
-                divergence: true,
-                fibonacci: true,
-                elliott: true,
-            },
-            highlightedSourceRef: null,
+            hiddenKeys: new Set(),
+            highlightedKey: null,
             barTimes: BAR_TIMES,
             lastBarTime: 5,
             rsiPaneIndex: 2,
@@ -275,34 +308,10 @@ describe('isOverlayDrawn', () => {
             )
         ).toBe(false);
     });
-});
 
-describe('countOverlaysByKind', () => {
-    it('counts aligned overlays per kind', () => {
-        expect(
-            countOverlaysByKind(
-                [overlay({}), overlay({ id: 'y' })],
-                BAR_TIMES,
-                5
-            ).pattern
-        ).toBe(2);
-    });
-
-    it('skips overlays not aligned to the loaded bars', () => {
-        const misaligned = overlay({
-            id: 'y',
-            levels: [{ price: 1, fromTime: 99, label: '' }],
-        });
-        expect(
-            countOverlaysByKind([overlay({}), misaligned], BAR_TIMES, 5).pattern
-        ).toBe(1);
-    });
-});
-
-describe('countOverlaysByKind — nothing drawable', () => {
-    it('does not count an overlay whose segments and levels all get filtered out', () => {
+    it('does not draw an overlay whose segments and levels all get filtered out (nothing drawable)', () => {
         // Zero-length segment + a level starting at the last bar: aligned, but
-        // buildOverlayLineSpecs would draw nothing — the menu must not count it.
+        // buildOverlayLineSpecs would draw nothing.
         const empty = overlay({
             id: 'empty',
             segments: [
@@ -319,17 +328,11 @@ describe('countOverlaysByKind — nothing drawable', () => {
                 { at: { time: 2, price: 1 }, text: 'H', position: 'above' },
             ],
         });
-        expect(countOverlaysByKind([empty], BAR_TIMES, 5).pattern).toBe(0);
+        expect(isOverlayDrawn(empty, BAR_TIMES, 5)).toBe(false);
         expect(
             buildOverlayLineSpecs([empty], {
-                visible: {
-                    pattern: true,
-                    trendline: true,
-                    divergence: true,
-                    fibonacci: true,
-                    elliott: true,
-                },
-                highlightedSourceRef: null,
+                hiddenKeys: new Set(),
+                highlightedKey: null,
                 barTimes: BAR_TIMES,
                 lastBarTime: 5,
                 rsiPaneIndex: null,

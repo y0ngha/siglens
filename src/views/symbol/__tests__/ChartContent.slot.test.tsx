@@ -57,12 +57,6 @@ vi.mock('../hooks/usePanelResize', () => ({
     PANEL_MIN_WIDTH: 280,
     PANEL_MAX_WIDTH: 600,
 }));
-vi.mock('../hooks/useActionPricesVisibility', () => ({
-    useActionPricesVisibility: () => ({
-        actionPricesVisible: true,
-        setActionPricesVisible: vi.fn(),
-    }),
-}));
 vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
     useSymbolModel: () => ({
         modelId: 'gemini-3.6-flash',
