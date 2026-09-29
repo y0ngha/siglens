@@ -53,7 +53,11 @@ export function ChartOverlayMenu({
     useEscapeKey(close, isOpen);
 
     const kinds = CHART_OVERLAY_KINDS.filter(kind => counts[kind] > 0);
-    const activeCount = kinds.filter(kind => visible[kind]).length;
+    // 켜진 **작도 개수**다(카테고리 수가 아니다). 카테고리 수로 세면 추세선만
+    // 그려져도 "차트 작도 · 1"이라 패턴 카드가 있는 사용자가 패턴이 그려진 줄 알았다.
+    const activeCount = kinds
+        .filter(kind => visible[kind])
+        .reduce((sum, kind) => sum + counts[kind], 0);
 
     if (kinds.length === 0) return null;
 

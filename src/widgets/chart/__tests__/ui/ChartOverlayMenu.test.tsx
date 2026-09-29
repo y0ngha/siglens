@@ -48,11 +48,10 @@ describe('ChartOverlayMenu', () => {
         expect(container).toBeEmptyDOMElement();
     });
 
-    it('shows the number of active categories on the trigger — only listed (count>0) kinds count, not merely visible ones', () => {
-        // divergence는 count>0이지만 visible=false다. trendline은 count=0이라
-        // 목록에서 아예 빠진다. 활성 개수(active)는 "목록에 있고 visible=true"인
-        // kind만 세야 하므로 기대값 2(pattern, fibonacci)는 목록에 오른 kind
-        // 수(3: pattern/divergence/fibonacci)와 달라야 한다.
+    it('shows the number of visible drawings on the trigger — hidden kinds do not count', () => {
+        // divergence는 count>0이지만 visible=false라 빠진다. 기대값 3은 켜진 kind의
+        // 작도 수 합(pattern 2 + fibonacci 1)이다 — 카테고리 수(2)로 세면 패턴이
+        // 그려지지 않아도 추세선 하나만으로 "· 1"이 떠 사용자를 오도했다.
         renderMenu(
             { ...ZERO_COUNTS, pattern: 2, divergence: 1, fibonacci: 1 },
             {
@@ -64,7 +63,7 @@ describe('ChartOverlayMenu', () => {
             }
         );
         expect(
-            screen.getByRole('button', { name: /차트 작도 · 2/ })
+            screen.getByRole('button', { name: /차트 작도 · 3/ })
         ).toBeInTheDocument();
     });
 

@@ -1,6 +1,5 @@
 import { HeaderMobileMenu } from './HeaderMobileMenu';
 import { LocaleSwitcher } from './LocaleSwitcher';
-import { LOCALE_SWITCHER_VISIBLE } from '@/shared/i18n/locales';
 import { HeaderNav } from './HeaderNav';
 import { HeaderNavStatic } from './HeaderNavStatic';
 import { HeaderUserMenu, type HeaderUserMenuUser } from './HeaderUserMenu';
@@ -104,7 +103,7 @@ export function Header({
                     {/* 모바일에서도 노출한다 — 드로어 안에도 같은 스위처가
                         있지만, 언어 전환을 쓰려고 햄버거를 여는 것은 한 홉이
                         더 든다. 검색·언어·테마 세 아이콘이 같은 줄에 선다. */}
-                    {LOCALE_SWITCHER_VISIBLE && <LocaleSwitcher />}
+                    <LocaleSwitcher />
                     <ThemeToggle />
                     <HeaderUserMenu
                         currentUser={currentUser}

@@ -282,11 +282,6 @@
   - Rule: (new) RSC data loaders used in multiple places within one request must wrap with React cache() to eliminate redundant fetches from the same provider call
   - Context: Server-cached providers like CachedMarketDataProvider return the same data; calling them multiple times per request wastes the cache boundary. Fixed by wrapping loader in React cache(). Scope parameter removed (was defeating cache key). Verified: getMarketSummary, getMarketNotice, getMarketCalendar now deduplicate to single provider call per request.
 
-## [PR #838 | fix/node24-icu-hydration | Post-approval suggestions | 2026-09-18]
-- Violation: ~300-char ICU hydration guard logic duplicated in Dockerfile builder and runner stages; risk of updating only one during maintenance
-  - Rule: CONVENTIONS.md — Extract duplicated logic/constants to a single source; both stages must call the same script
-  - Context: Extracted to `scripts/assert-icu-locale.mjs` and called from both stages. Added `.gitignore` allowlist entry for `/scripts/**` exception.
-
 ## [fix/seo-cls-sitemap-polish Round 4 | PWA banner Polish | 2026-09-18]
 - Status: APPROVED (zero findings)
 
@@ -296,10 +291,6 @@
 - Violation: BLOCKER — agent provider fallback decided per turn, not per step. Stalling DeepSeek re-costs the 90s stall timeout every step of a multi-step turn, creating cascading retries within a single inference request.
   - Rule: Core logic — retry/fallback state must be sticky across all steps of a multi-step operation; re-evaluating fallback on every step doubles timeout costs.
   - Context: Changed fallback decision to set `state.fallbackUsed` on first timeout, then skip re-evaluation on subsequent steps. Fallback now remains sticky for the entire inference session.
-
-- Violation: SUGGESTION — `providerFallback: true` comment repeated identically at 7 prewarm configuration sites; configuration intent is explicit but duplication hides the shared policy.
-  - Rule: CONVENTIONS.md — repeated hardcoded patterns must be extracted to shared constants; duplication obscures intent and creates consistency drift.
-  - Context: Extracted shared constant `PREWARM_PROVIDER_FALLBACK = true` in `src/shared/config/prewarm.ts`; all 7 sites now reference it. Single source of truth for fallback policy.
 
 ## [fix/seo-internal-links Round 1 | SEO internal linking strategy | 2026-09-18]
 - Violation: New nullable `Date` column (`seo_analysis_snapshots.first_generated_at`) was threaded through read path but `unstable_cache` JSON round-trip rehydration in `getSnapshotStatic.ts` was not extended to it — sibling fields `generatedAt`/`updatedAt` are rehydrated there with JSDoc explaining exactly this failure mode. On cache hit, field was a string while declared type said `Date | null`.

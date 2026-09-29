@@ -4,16 +4,14 @@ import {
     createContext,
     use,
     useCallback,
-    useEffect,
     useMemo,
-    useState,
-    useTransition,
     type ReactNode,
 } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useHrefBase } from '@/shared/i18n/LocaleContext';
 import { useLocalePath } from '@/shared/i18n/useLocalePath';
+import { useNavigationPending } from '@/shared/model/NavigationPendingContext';
 import {
     assignLocation,
     replaceLocation,
@@ -56,34 +54,13 @@ const SearchOverlayContext = createContext<SearchOverlayContextValue | null>(
  * 값을 직접 담는다(그 import 하나가 gzip 2,017B였다).
  */
 export function SearchOverlayProvider({ children }: { children: ReactNode }) {
-    /**
-     * 진행 바를 우리가 직접 소유하는 스위치.
-     *
-     * `isPending` 하나에만 기대면 바가 영영 사라지지 않을 수 있다 — 이동 중에
-     * 뒤로가기가 들어오면 Next는 그 액션을 `discarded`로 표시하고 `handleResult`가
-     * `action.resolve`를 **부르지 않은 채** 빠져나간다(`app-router-instance.js`).
-     * transition이 물고 있는 promise가 끝내 결착되지 않으므로, 순수 표시용 띠가
-     * 남의 promise 수명에 매달리지 않게 우리 상태로 한 번 더 잠근다.
-     */
-    const [isNavigationPending, setIsNavigationPending] = useState(false);
-
     const { isOpen, open, close, dismissForNavigation } = useSearchOverlay();
     const router = useRouter();
     const toLocalePath = useLocalePath();
     const base = useHrefBase();
-    const pathname = usePathname();
-    const [isNavigating, startNavigation] = useTransition();
-
-    /**
-     * 도착(라우트 변경)을 감지해 표시를 끝낸다. `useEffect([pathname])` 대신
-     * "prop이 바뀌면 렌더 중에 상태를 조정하는" 공식 패턴을 쓴다 — commit 후
-     * 한 번 더 도는 effect 렌더가 없어져 표시가 내려가는 프레임이 한 틀 빨라진다.
-     */
-    const [committedPathname, setCommittedPathname] = useState(pathname);
-    if (pathname !== committedPathname) {
-        setCommittedPathname(pathname);
-        setIsNavigationPending(false);
-    }
+    // 진행 표시는 전역 pending이 소유한다 — 링크 클릭·검색 선택 모두 같은 스위치다.
+    // 도착(경로 변경)·뒤로가기(popstate)로 풀리는 규칙도 거기 있다.
+    const { pendingHref, startNavigation } = useNavigationPending();
 
     /**
      * 종목으로 이동한다. **오버레이는 즉시 닫고** 이동은 뒤에서 진행시킨다.
@@ -99,14 +76,9 @@ export function SearchOverlayProvider({ children }: { children: ReactNode }) {
     const navigateToSymbol = useCallback(
         (symbol: string) => {
             const hasOwnHistoryEntry = dismissForNavigation();
-            setIsNavigationPending(true);
             // 우리 항목이 있을 때만 `replace`다. 없으면(열 때 `pushState`가 실패한
             // 경우) `replace`가 **사용자가 보던 페이지의 항목**을 덮어써 뒤로가기가
             // 그 페이지를 건너뛴다.
-            //
-            // 호출 결과를 그대로 돌려준다. 지금 라우터는 void를 반환하지만, React 19의
-            // transition은 콜백이 promise를 돌려주면 그게 끝날 때까지 pending을
-            // 유지한다 — 반환을 삼키면 그 연결이 끊긴다.
             //
             // 경로에 **로케일 접두사를 붙인다**. `/${symbol}`을 그대로 밀면
             // `/ja`에서 고른 종목이 ko 페이지로 간다 — `useAutocomplete`가 같은
@@ -122,24 +94,18 @@ export function SearchOverlayProvider({ children }: { children: ReactNode }) {
                 else assignLocation(target);
                 return;
             }
-            startNavigation(() =>
-                hasOwnHistoryEntry ? router.replace(href) : router.push(href)
-            );
+            // 클릭 순간 전역 pending을 세운다 — 진행 바와 루트의 종목 골격 슬롯이
+            // RSC 도착 전에 목적지 모양을 그린다(`NavigationPendingContext`).
+            startNavigation(href);
+            if (hasOwnHistoryEntry) router.replace(href);
+            else router.push(href);
         },
-        [base, dismissForNavigation, router, toLocalePath]
+        [base, dismissForNavigation, router, startNavigation, toLocalePath]
     );
     // 소비자는 `open`만 필요하다. `isOpen`을 값에 넣으면 오버레이가 열리고 닫힐 때마다
     // 전 소비자가 리렌더된다 — 헤더는 모든 라우트에 있으므로 그 비용이 전역이다.
     const t = useTranslations('features.ticker-search');
     const value = useMemo(() => ({ open }), [open]);
-
-    // 사용자가 물러났으면(popstate) 표시를 끝낸다. 도착(라우트 변경)은 위
-    // 렌더 중 조정이 담당한다.
-    useEffect(() => {
-        const stop = () => setIsNavigationPending(false);
-        window.addEventListener('popstate', stop);
-        return () => window.removeEventListener('popstate', stop);
-    }, []);
 
     return (
         <SearchOverlayContext value={value}>
@@ -149,14 +115,12 @@ export function SearchOverlayProvider({ children }: { children: ReactNode }) {
                 onClose={close}
                 onNavigate={navigateToSymbol}
             />
-            {isNavigating && isNavigationPending && <NavigationProgressBar />}
+            {pendingHref !== null && <NavigationProgressBar />}
             {/* 음성 고지는 진행 바 **밖**에 둔다 — `role="progressbar"`는 자손을
                 접근성 트리에서 지우므로 그 안의 텍스트는 읽히지 않는다. 리전은 항상
                 마운트해 두고 내용만 바꾼다(빈 문자열 ↔ 문구). */}
             <span role="status" className="sr-only">
-                {isNavigating && isNavigationPending
-                    ? t('search.navigating')
-                    : ''}
+                {pendingHref !== null ? t('search.navigating') : ''}
             </span>
         </SearchOverlayContext>
     );

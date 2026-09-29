@@ -11,6 +11,8 @@ import {
     legendMaxWidthPx,
     packOverlayLegend,
 } from './utils/overlayLegendLayout';
+import { labelHalo } from './utils/labelHalo';
+import { CHART_COLORS } from '@/shared/lib/chartColors';
 
 interface OverlayLegendProps {
     items: OverlayLegendItem[];
@@ -54,19 +56,21 @@ export function OverlayLegend({
 
     return (
         /*
-            불투명 배경이 필요하다. 범례는 캔들과 지표선 **위에** 떠 있어서
-            배경 없이는 대비가 그리는 내용에 따라 무너진다 — 다크 33행 중 11행이
-            4.5:1 아래, 최악 1.14:1이었다(MA(120)이 볼린저 중앙선 #94a3b8 위에
-            얹힌 경우). `secondary-900`은 두 테마 모두에서 차트 배경과 같은 값이라
-            "빈 배경 위" 실측치(텍스트 9.34/11.81, 점 3.16~5.93)가 그대로 보장된다.
-            알파를 섞지 않는 이유도 같다 — 알파면 뒤에 무엇이 오느냐에 따라 다시 흔들린다.
+            상자는 투명하게 두고 글자에 차트 배경색 halo(`labelHalo`)를 두른다.
+            범례는 캔들과 지표선 **위에** 떠 있어서 아무 처리 없이는 대비가 그리는
+            내용에 따라 무너진다 — 다크 33행 중 11행이 4.5:1 아래, 최악 1.14:1이었다
+            (MA(120)이 볼린저 중앙선 위에 얹힌 경우). 예전의 불투명 상자는 대비를
+            지켰지만 캔들·선을 가려 차트가 끊겨 보였다(사용자 요청으로 투명화).
 
             `overflow-hidden` + `maxHeight`는 줄 수 계산이 어긋나도 상자가 가격 pane
             밖으로 나가지 못하게 하는 하드 상한이다.
         */
         <div
-            className="pointer-events-none flex flex-col gap-1.5 overflow-hidden rounded-sm bg-secondary-900 px-1.5 py-1"
-            style={maxHeight === undefined ? undefined : { maxHeight }}
+            className="pointer-events-none flex flex-col gap-1.5 overflow-hidden rounded-sm px-1.5 py-1"
+            style={{
+                textShadow: labelHalo(CHART_COLORS.background),
+                ...(maxHeight === undefined ? {} : { maxHeight }),
+            }}
         >
             {rows.map((row, rowIndex) => (
                 <div

@@ -6,11 +6,9 @@ import { useTimeframeChange } from '@/views/symbol/hooks/useTimeframeChange';
 import { getBarsAction } from '@/entities/bars/actions/getBarsAction';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
 
-const mockReplace = vi.fn();
 const mockGet = vi.fn().mockReturnValue(null);
 
 vi.mock('next/navigation', () => ({
-    useRouter: () => ({ replace: mockReplace }),
     useSearchParams: () => ({ get: mockGet }),
 }));
 
@@ -45,12 +43,18 @@ function makeWrapper() {
 }
 
 describe('useTimeframeChange', () => {
+    // Timeframe changes go through window.history.replaceState (Next syncs
+    // useSearchParams from it) instead of router.replace, so this spy is the
+    // "navigation" under test.
+    let mockReplace: ReturnType<typeof vi.spyOn>;
+
     beforeEach(() => {
-        mockReplace.mockClear();
+        mockReplace = vi.spyOn(window.history, 'replaceState');
         mockGet.mockReturnValue(null);
     });
 
     afterEach(() => {
+        mockReplace.mockRestore();
         queryClients.splice(0).forEach(c => c.clear());
     });
 
@@ -123,7 +127,6 @@ describe('useTimeframeChange', () => {
         // the server ignores `tf`, so a router.replace() RSC round-trip is both
         // wasteful and race-droppable from this mount-time effect. history
         // .replaceState is synchronous and Next syncs useSearchParams from it.
-        const replaceStateSpy = vi.spyOn(window.history, 'replaceState');
 
         const { result } = renderHook(
             () => useTimeframeChange('AAPL', true, true),
@@ -133,10 +136,8 @@ describe('useTimeframeChange', () => {
         );
 
         expect(result.current.timeframe).toBe('1Day');
-        expect(mockReplace).not.toHaveBeenCalled();
-        expect(replaceStateSpy).toHaveBeenCalledWith(null, '', '/AAPL?tf=1Day');
-
-        replaceStateSpy.mockRestore();
+        expect(mockReplace).toHaveBeenCalledTimes(1);
+        expect(mockReplace).toHaveBeenCalledWith(null, '', '/AAPL?tf=1Day');
     });
 
     it('uses 1Day until the user tier has hydrated', () => {
@@ -236,9 +237,7 @@ describe('useTimeframeChange', () => {
                 undefined
             );
         });
-        expect(mockReplace).toHaveBeenCalledWith('/AAPL?tf=1Week', {
-            scroll: false,
-        });
+        expect(mockReplace).toHaveBeenCalledWith(null, '', '/AAPL?tf=1Week');
         await waitFor(() => {
             expect(result.current.timeframeChangeCount).toBe(1);
         });
@@ -281,11 +280,15 @@ describe('useTimeframeChange', () => {
             result.current.handleTimeframeChange('1Week' as Timeframe);
         });
 
+        // The selector flips immediately while the chart keeps the old bars.
+        expect(result.current.displayTimeframe).toBe('1Week');
+        expect(result.current.isTimeframeSwitching).toBe(true);
+
         await waitFor(() => {
             expect(result.current.timeframeChangeCount).toBe(1);
         });
 
-        // router.replace is mocked, so simulate the search param landing after
+        // useSearchParams is mocked, so simulate the search param landing after
         // the transition. The pending-navigation ref must absorb this so the
         // count stays at 1 — an extra increment would re-trigger the analysis
         // refresh for a timeframe change the user only made once.
@@ -296,5 +299,7 @@ describe('useTimeframeChange', () => {
             expect(result.current.timeframe).toBe('1Week');
         });
         expect(result.current.timeframeChangeCount).toBe(1);
+        expect(result.current.isTimeframeSwitching).toBe(false);
+        expect(result.current.displayTimeframe).toBe('1Week');
     });
 });

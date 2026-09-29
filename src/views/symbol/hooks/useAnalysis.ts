@@ -598,6 +598,8 @@ export function useAnalysis({
         if (modelId === prevModelIdRef.current) return;
         if (isTierHydrated === false) return;
         prevModelIdRef.current = modelId;
+        // tier 확정 직후의 첫 제출은 아래 tier effect가 소유한다 — 그 전의 변화는 기준값만 맞춘다.
+        if (!hasHandledTierHydrationRef.current) return;
 
         // 모델 변경은 새 modelId를 명시 전달 — latestModelIdRef가 렌더 직후 갱신되지 않은
         // 경우에도 useLayoutEffect 전에 이 effect가 실행될 수 있으므로 값을 직접 주입한다.
@@ -620,6 +622,10 @@ export function useAnalysis({
         if (reasoning === prevReasoningRef.current) return;
         if (isTierHydrated === false) return;
         prevReasoningRef.current = reasoning;
+        // tier가 도착한 commit에서 `canUseReasoning`이 풀리며 reasoning이 false→true로
+        // 뒤집힌다. 사용자 토글이 아니고, 같은 commit의 tier effect가 최신 reasoning으로
+        // 첫 제출을 한다 — 여기서도 쏘면 곧바로 abort되는 중복 스트림이 하나 더 나간다.
+        if (!hasHandledTierHydrationRef.current) return;
 
         // 회원의 명시적 토글 변경은 새 reasoning 값을 직접 주입한다 — modelId 변경과
         // 동일 이유(latestReasoningRef가 이 effect보다 늦게 갱신될 수 있음).
@@ -685,6 +691,12 @@ export function useAnalysis({
         if (isTierHydrated === false) return;
 
         if (!hasHandledTierHydrationRef.current) {
+            // 저장된 모델·reasoning은 tier 확정 *후에* 읽힌다(useSelectedModel). 그 전에
+            // 제출하면 DEFAULT_MODEL로 분석이 나가고, 뒤이은 모델 hydration은 기준값
+            // 동기화만 하므로 회원이 고른 모델이 조용히 무시된다.
+            if (isModelHydrated === false || isReasoningHydrated === false) {
+                return;
+            }
             hasHandledTierHydrationRef.current = true;
             prevTierRef.current = tier;
             if (tier !== 'free' && !initialAnalysisFailedAtMount) {
@@ -701,6 +713,8 @@ export function useAnalysis({
     }, [
         tier,
         isTierHydrated,
+        isModelHydrated,
+        isReasoningHydrated,
         initialAnalysisFailedAtMount,
         initialLockedInfoDepth,
         restartAnalysis,

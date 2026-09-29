@@ -18,6 +18,11 @@ import { VisitorPing } from '@/features/visitor-ping/ui/VisitorPing';
 import { NoticePopupLoader } from '@/widgets/notice-popup/ui/NoticePopupLoader';
 import { ReactQueryProvider } from '@/app/providers';
 import { SearchOverlayProvider } from '@/features/ticker-search/model/SearchOverlayContext';
+import {
+    NavigationPendingProvider,
+    SymbolEntryPendingSlot,
+} from '@/shared/model/NavigationPendingContext';
+import { SymbolEntrySkeleton } from './[symbol]/SymbolEntrySkeleton';
 import { ADSENSE_ENABLED } from '@/shared/lib/adsense';
 import { CF_BEACON_TOKEN } from '@/shared/lib/cloudflareAnalytics';
 import { GoogleAdsTag } from '@/app/_components/GoogleAdsTag';
@@ -207,25 +212,34 @@ export default async function RootLayout({
                             (`[locale]/layout.tsx`가 렌더한다). 오버레이는 번역된
                             문구를 쓰므로 `NextIntlClientProvider` **안**이어야
                             한다 — 루트에 두면 로케일 컨텍스트 밖이 된다. */}
-                            <SearchOverlayProvider>
-                                {/* 방문자 집계 비콘. 렌더 결과가 없고 하루 한 번만 요청하므로 어느
+                            <NavigationPendingProvider>
+                                <SearchOverlayProvider>
+                                    {/* 방문자 집계 비콘. 렌더 결과가 없고 하루 한 번만 요청하므로 어느
                                     위치에 두어도 무방하지만, 다른 UI보다 먼저 보내 이탈이 빠른
                                     방문자도 잡는다. */}
-                                <VisitorPing />
-                                <PwaBanner />
-                                <NoticePopupLoader />
-                                {/* 인증 헤더는 클라이언트에서 렌더된다(cookies()를 static render
+                                    <VisitorPing />
+                                    <PwaBanner />
+                                    <NoticePopupLoader />
+                                    {/* 인증 헤더는 클라이언트에서 렌더된다(cookies()를 static render
                         트리에서 제거 → 전 라우트 ISR 가능). 상세는 AuthSessionHeaderClient JSDoc. */}
-                                <AuthSessionHeaderClient />
-                                {children}
-                                {/* Footer를 root layout에 두는 이유: home/404/legal 페이지에만
+                                    <AuthSessionHeaderClient />
+                                    {/* 다른 페이지 → 종목 이동은 클릭 즉시 종목 골격으로 바꾼다.
+                                    클라이언트 상태라 직접 접속·SSR·404에는 관여하지 않는다
+                                    (`NavigationPendingContext` JSDoc). */}
+                                    <SymbolEntryPendingSlot
+                                        fallback={<SymbolEntrySkeleton />}
+                                    >
+                                        {children}
+                                    </SymbolEntryPendingSlot>
+                                    {/* Footer를 root layout에 두는 이유: home/404/legal 페이지에만
                         footer가 있어 /market, /backtesting, /[symbol]/* 등 대부분 라우트
                         에 내부 링크가 누수됐다. 차트 페이지(/[symbol])는 SymbolLayout의
                         sticky-footer jail(`min-h-[calc(100dvh-3.5rem)]`)이 chart+AI를
                         첫 viewport에 가득 채우고, footer는 jail의 형제로 그 아래에
                         위치한다 — 사용자가 스크롤을 내리면 footer가 보인다. */}
-                                <Footer />
-                            </SearchOverlayProvider>
+                                    <Footer />
+                                </SearchOverlayProvider>
+                            </NavigationPendingProvider>
                         </ReactQueryProvider>
                     </NextIntlClientProvider>
                 </LocaleProvider>

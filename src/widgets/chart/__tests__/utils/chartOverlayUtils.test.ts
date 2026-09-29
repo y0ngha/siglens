@@ -4,6 +4,7 @@ import {
     buildOverlayLineSpecs,
     countOverlaysByKind,
     isOverlayAlignedToBars,
+    isOverlayDrawn,
     overlayColorFor,
 } from '../../utils/chartOverlayUtils';
 
@@ -250,6 +251,29 @@ describe('buildOverlayLineSpecs — label host pane', () => {
             [2, 0],
             [0, 1],
         ]);
+    });
+});
+
+describe('isOverlayDrawn', () => {
+    it('needs both alignment to the loaded bars and a drawable line', () => {
+        expect(isOverlayDrawn(overlay({}), BAR_TIMES, 5)).toBe(true);
+        expect(
+            isOverlayDrawn(
+                overlay({ levels: [{ price: 1, fromTime: 99, label: '' }] }),
+                BAR_TIMES,
+                5
+            )
+        ).toBe(false);
+        expect(
+            isOverlayDrawn(
+                overlay({
+                    segments: [],
+                    levels: [{ price: 1, fromTime: 5, label: '' }],
+                }),
+                BAR_TIMES,
+                5
+            )
+        ).toBe(false);
     });
 });
 

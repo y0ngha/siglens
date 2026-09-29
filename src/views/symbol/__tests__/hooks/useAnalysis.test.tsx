@@ -238,6 +238,104 @@ describe('useAnalysis', () => {
             });
         });
 
+        it('submits once, with the saved reasoning, when a member tier unlocks reasoning in the same commit', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
+            });
+
+            // SymbolModelContext forces reasoning=false until the tier lands, then the
+            // member's saved `true` appears in the same commit as isTierHydrated=true.
+            const { rerender } = renderHook(
+                ({ ready }: { ready: boolean }) =>
+                    useAnalysis(
+                        makeOptions({
+                            isTierHydrated: ready,
+                            tier: 'member',
+                            isReasoningHydrated: true,
+                            reasoning: ready,
+                        })
+                    ),
+                {
+                    wrapper: makeWrapper(),
+                    initialProps: { ready: false },
+                }
+            );
+
+            rerender({ ready: true });
+
+            await waitFor(() => {
+                expect(mockSubmit).toHaveBeenCalledTimes(1);
+            });
+            expect(mockSubmit).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    params: expect.objectContaining({ reasoning: true }),
+                })
+            );
+        });
+
+        it('defers the member mount submit until the saved model is read after the tier lands', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
+            });
+
+            const { rerender } = renderHook(
+                ({
+                    isTierHydrated,
+                    isModelHydrated,
+                    modelId,
+                }: {
+                    isTierHydrated: boolean;
+                    isModelHydrated: boolean;
+                    modelId: string;
+                }) =>
+                    useAnalysis(
+                        makeOptions({
+                            isTierHydrated,
+                            isModelHydrated,
+                            modelId,
+                            tier: 'member',
+                        })
+                    ),
+                {
+                    wrapper: makeWrapper(),
+                    initialProps: {
+                        isTierHydrated: false,
+                        isModelHydrated: false,
+                        modelId: 'deepseek-v4-flash',
+                    },
+                }
+            );
+
+            // Tier lands first — useSelectedModel only reads storage after this.
+            rerender({
+                isTierHydrated: true,
+                isModelHydrated: false,
+                modelId: 'deepseek-v4-flash',
+            });
+            expect(mockSubmit).not.toHaveBeenCalled();
+
+            rerender({
+                isTierHydrated: true,
+                isModelHydrated: true,
+                modelId: 'claude-sonnet-5',
+            });
+
+            await waitFor(() => {
+                expect(mockSubmit).toHaveBeenCalledTimes(1);
+            });
+            expect(mockSubmit).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    params: expect.objectContaining({
+                        modelId: 'claude-sonnet-5',
+                    }),
+                })
+            );
+        });
+
         it('does not render a legacy cached result without lock metadata for a resolved free tier', async () => {
             mockSubmit.mockResolvedValue({
                 status: 'cached',

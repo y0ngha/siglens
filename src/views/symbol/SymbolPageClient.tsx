@@ -20,6 +20,7 @@ import { marketProfileOf } from '@/shared/config/marketProfile/registry';
 import { type MarketProfileId } from '@/shared/config/marketProfile/types';
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
+import { Spinner } from '@/shared/ui/Spinner';
 import { ErrorBoundary } from 'react-error-boundary';
 
 /**
@@ -114,8 +115,13 @@ export function SymbolPageClient({
     // (MISTAKES.md #17)로 그 호출 직전에 둔다. 그 외 훅은 모두 이 파생 변수보다
     // 앞선다.
     const isFreeTier = isTierHydrated && tier === 'free';
-    const { timeframe, timeframeChangeCount, handleTimeframeChange } =
-        useTimeframeChange(symbol, isFreeTier, isTierHydrated);
+    const {
+        timeframe,
+        displayTimeframe,
+        isTimeframeSwitching,
+        timeframeChangeCount,
+        handleTimeframeChange,
+    } = useTimeframeChange(symbol, isFreeTier, isTierHydrated);
     const assetInfo = useAssetInfo(symbol);
     const isHydrated = useHydrated();
     const isMobileViewport = useIsMobileViewport();
@@ -184,7 +190,7 @@ export function SymbolPageClient({
                             </button>
                         </div>
                         <TimeframeSelector
-                            value={timeframe}
+                            value={displayTimeframe}
                             onChange={handleTimeframeChange}
                             isFreeTier={isFreeTier}
                             isTierHydrated={isTierHydrated}
@@ -196,7 +202,17 @@ export function SymbolPageClient({
                     `md:min-h-(--symbol-chart-h)`를 남긴다 — Suspense
                     중에는 자식이 `absolute inset-0` 스켈레톤뿐이라 이 행이 0으로
                     접히고, 그러면 차트가 도착할 때 통째로 CLS가 난다. */}
-                <div className="relative flex min-h-0 flex-1 overflow-hidden md:min-h-(--symbol-chart-h) md:flex-none md:overflow-visible">
+                <div
+                    aria-busy={isTimeframeSwitching || undefined}
+                    className="relative flex min-h-0 flex-1 overflow-hidden md:min-h-(--symbol-chart-h) md:flex-none md:overflow-visible"
+                >
+                    {/* 타임프레임 전환 중엔 새 봉이 올 때까지 이전 차트를 그대로 두고
+                        (transition) 그 위를 덮어 "바뀌는 중"임을 즉시 보여준다. */}
+                    {isTimeframeSwitching && (
+                        <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-secondary-900/40">
+                            <Spinner size="xl" />
+                        </div>
+                    )}
                     <ErrorBoundary
                         FallbackComponent={ChartErrorFallback}
                         resetKeys={[timeframe, symbol]}

@@ -32,9 +32,6 @@ export const BARS_STALE_TIME_MS = 30_000;
  * useBars 결과로부터 즉석 산출하므로 자체 staleTime은 의미 없다. 별도 상수 미정의.
  */
 
-/** The current user's tier rarely changes within a session. */
-export const USER_TIER_STALE_TIME_MS = 5 * MS_PER_MINUTE;
-
 /** Registered LLM providers list refreshes only after the user adds/removes a key — short stale is fine. */
 export const REGISTERED_PROVIDERS_STALE_TIME_MS = MS_PER_MINUTE;
 
@@ -83,7 +80,6 @@ export const QUERY_KEYS = {
     marketNewsDigest: (category: string, locale: Locale) =>
         ['market-news-digest', category, locale] as const,
     currentUser: () => ['current-user'] as const,
-    userTier: () => ['user-tier'] as const,
     remainingTokens: () => ['chat', 'remaining-tokens'] as const,
     registeredProviders: () => ['llm', 'registered-providers'] as const,
     portfolioHoldings: () => ['portfolio-holdings'] as const,

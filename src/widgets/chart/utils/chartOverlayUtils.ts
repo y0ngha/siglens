@@ -78,6 +78,18 @@ function hasDrawableLine(overlay: ChartOverlay, lastBarTime: number): boolean {
     );
 }
 
+/** 지금 로드된 봉 위에 실제로 선이 그려지는 오버레이인지 — 개수·강조 버튼의 공통 기준. */
+export function isOverlayDrawn(
+    overlay: ChartOverlay,
+    barTimes: ReadonlySet<number>,
+    lastBarTime: number
+): boolean {
+    return (
+        isOverlayAlignedToBars(overlay, barTimes) &&
+        hasDrawableLine(overlay, lastBarTime)
+    );
+}
+
 export function countOverlaysByKind(
     overlays: readonly ChartOverlay[],
     barTimes: ReadonlySet<number>,
@@ -91,11 +103,7 @@ export function countOverlaysByKind(
         elliott: 0,
     };
     for (const o of overlays)
-        if (
-            isOverlayAlignedToBars(o, barTimes) &&
-            hasDrawableLine(o, lastBarTime)
-        )
-            counts[o.kind]++;
+        if (isOverlayDrawn(o, barTimes, lastBarTime)) counts[o.kind]++;
     return counts;
 }
 

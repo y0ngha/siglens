@@ -11,6 +11,7 @@ import {
 } from '@/shared/config/marketProfile/registry';
 import { tabsFor } from './utils/symbolTabsConfig';
 import { useAppPathname } from '@/shared/i18n/useAppPathname';
+import { usePendingSymbolTab } from './SymbolTabPendingContext';
 
 interface SymbolTabsProps {
     /** Ticker symbol. Will be uppercased internally. */
@@ -30,6 +31,7 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
     // 두면 로딩 렌더에서만 훅이 하나 줄어 훅 순서가 깨진다.
     const tTab = useTranslations('shared.symbolTab');
     const assetInfo = useAssetInfo(symbol);
+    const pendingHref = usePendingSymbolTab();
     const railRef = useRef<HTMLElement>(null);
     const activeRef = useRef<HTMLAnchorElement>(null);
 
@@ -101,6 +103,10 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
                 {tabs.map(tab => {
                     const href = tab.hrefBuilder(upper);
                     const active = pathname === href;
+                    // 누른 탭을 RSC가 오기 전에 먼저 활성으로 칠한다. aria-current는
+                    // 실제 경로 기준으로 둔다 — 이동이 끝나기 전엔 아직 그 페이지가 아니다.
+                    const highlighted =
+                        pendingHref === null ? active : pendingHref === href;
                     return (
                         <Link
                             key={tab.key}
@@ -117,7 +123,7 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
                             aria-current={active ? 'page' : undefined}
                             className={cn(
                                 'focus-visible:ring-primary-500 -mb-px flex min-h-11 touch-manipulation items-center border-b-2 border-transparent px-4 py-2 text-sm whitespace-nowrap focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
-                                active
+                                highlighted
                                     ? 'border-primary-500 text-secondary-100 font-medium'
                                     : 'text-secondary-400 hover:text-secondary-100'
                             )}

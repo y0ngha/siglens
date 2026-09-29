@@ -33,6 +33,7 @@ import { useAnalysisDerivedData } from './hooks/useAnalysisDerivedData';
 import { useAnalysisDisplay } from './hooks/useAnalysisDisplay';
 import { useAnalysisProgress } from '@/widgets/analysis/hooks/useAnalysisProgress';
 import { useBars } from '@/entities/bars/hooks/useBars';
+import { isOverlayDrawn } from '@/widgets/chart/utils/chartOverlayUtils';
 import {
     PANEL_MAX_WIDTH,
     PANEL_MIN_WIDTH,
@@ -251,10 +252,17 @@ export function ChartContent({
         return colors;
     }, [analysis.patternSummaries]);
 
-    const overlaySourceRefs = useMemo(
-        () => new Set((chartOverlays ?? []).map(o => o.sourceRef)),
-        [chartOverlays]
-    );
+    // 차트에 실제로 그려지는 작도만 센다 — 봉에 안 맞는(다른 timeframe 잔여, 좁아진
+    // 봉 창) 작도까지 넣으면 카드에 강조 버튼이 떠도 눌러서 보이는 게 없다.
+    const overlaySourceRefs = useMemo(() => {
+        const barTimes = new Set(bars.map(b => b.time));
+        const lastBarTime = bars[bars.length - 1]?.time ?? 0;
+        return new Set(
+            (chartOverlays ?? [])
+                .filter(o => isOverlayDrawn(o, barTimes, lastBarTime))
+                .map(o => o.sourceRef)
+        );
+    }, [chartOverlays, bars]);
 
     // 비회원 3-심볼 회원가입 유도 (member-reasoning-toggle spec Part B).
     // 회원/로그인 판별 전에는 useAnonAnalysisNudge 내부에서 자체적으로 no-op한다.
