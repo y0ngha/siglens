@@ -1,8 +1,4 @@
-import type {
-    ChartOverlay,
-    OverlayKind,
-    OverlayLabel,
-} from '@y0ngha/siglens-core';
+import type { ChartOverlay, OverlayLabel } from '@y0ngha/siglens-core';
 import {
     ALTERNATE_OVERLAY_OPACITY,
     DIMMED_OVERLAY_OPACITY,
@@ -39,8 +35,14 @@ export interface OverlayLineSpec {
 }
 
 export interface OverlayLineSpecOptions {
-    visible: Readonly<Record<OverlayKind, boolean>>;
-    highlightedSourceRef: string | null;
+    /** 꺼진 on/off 항목 key(`overlayItemKey`). */
+    hiddenKeys: ReadonlySet<string>;
+    /**
+     * AI 패널 카드 hover·focus로 강조할 항목 key. **켜진 항목일 때만** 강조가 걸린다 —
+     * 꺼진 작도를 강조로 흐리게라도 켜지 않는다(예전엔 강조가 그 종류 전체를 켜서
+     * 메뉴에서 끈 원형 바닥이 상승 쐐기 강조와 함께 흐리게 나타났다).
+     */
+    highlightedKey: string | null;
     barTimes: ReadonlySet<number>;
     lastBarTime: number;
     /** RSI 패인이 꺼져 있으면 null. */
@@ -48,6 +50,26 @@ export interface OverlayLineSpecOptions {
     colorFor: (overlay: ChartOverlay, role: string) => string;
     /** core가 내보내는 레벨 라벨(`breakout`, `61.8%` …)을 화면 문구로 바꾼다. 없으면 그대로. */
     levelLabelFor?: (label: string) => string;
+}
+
+/**
+ * 로드된 봉의 시각 집합 — 작도가 봉에 맞는지(`isOverlayAlignedToBars`) 판정하는 기준.
+ * 차트(`StockChart`)와 메뉴 항목 목록(`ChartContent`)이 같은 정의를 쓰도록 한 곳에 둔다.
+ */
+export function barTimesOf(bars: readonly { time: number }[]): Set<number> {
+    return new Set(bars.map(b => b.time));
+}
+
+/**
+ * 한 작도가 어느 on/off 항목에 속하는지.
+ *
+ * 추세선은 `sourceRef`가 전부 `'trendlines'`라 선마다 따로 켜고 끄려면 overlay id를
+ * 쓴다. 나머지는 결과 카드(`patternSummaries[].id`·`strategyResults[].id`)가 단위다 —
+ * 엘리어트 주/대안 파동처럼 한 카드가 작도 여러 개를 가져도 한 항목으로 움직인다.
+ * 그리기·메뉴·AI 패널 버튼이 모두 이 key로 같은 상태를 읽는다.
+ */
+export function overlayItemKey(overlay: ChartOverlay): string {
+    return overlay.kind === 'trendline' ? overlay.id : overlay.sourceRef;
 }
 
 /**
@@ -90,23 +112,6 @@ export function isOverlayDrawn(
     );
 }
 
-export function countOverlaysByKind(
-    overlays: readonly ChartOverlay[],
-    barTimes: ReadonlySet<number>,
-    lastBarTime: number
-): Record<OverlayKind, number> {
-    const counts: Record<OverlayKind, number> = {
-        pattern: 0,
-        trendline: 0,
-        divergence: 0,
-        fibonacci: 0,
-        elliott: 0,
-    };
-    for (const o of overlays)
-        if (isOverlayDrawn(o, barTimes, lastBarTime)) counts[o.kind]++;
-    return counts;
-}
-
 const toMarker = (l: OverlayLabel): OverlayMarker => ({
     time: l.at.time,
     position: l.position === 'above' ? 'aboveBar' : 'belowBar',
@@ -118,16 +123,20 @@ export function buildOverlayLineSpecs(
     overlays: readonly ChartOverlay[],
     opts: OverlayLineSpecOptions
 ): OverlayLineSpec[] {
+    const activeHighlight =
+        opts.highlightedKey !== null &&
+        !opts.hiddenKeys.has(opts.highlightedKey)
+            ? opts.highlightedKey
+            : null;
     return overlays.flatMap(overlay => {
+        const key = overlayItemKey(overlay);
         if (
-            !opts.visible[overlay.kind] ||
+            opts.hiddenKeys.has(key) ||
             !isOverlayAlignedToBars(overlay, opts.barTimes)
         )
             return [];
-        const highlighted =
-            opts.highlightedSourceRef !== null &&
-            overlay.sourceRef === opts.highlightedSourceRef;
-        const dimmed = opts.highlightedSourceRef !== null && !highlighted;
+        const highlighted = activeHighlight !== null && key === activeHighlight;
+        const dimmed = activeHighlight !== null && !highlighted;
         const opacity = dimmed
             ? DIMMED_OVERLAY_OPACITY
             : overlay.variant === 'alternate'

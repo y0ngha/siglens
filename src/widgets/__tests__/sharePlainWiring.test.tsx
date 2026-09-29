@@ -141,12 +141,6 @@ vi.mock('@/views/symbol/hooks/useAnalysisDisplay', () => ({
         handleProgressFinished: vi.fn(),
     })),
 }));
-vi.mock('@/views/symbol/hooks/useActionPricesVisibility', () => ({
-    useActionPricesVisibility: vi.fn(() => ({
-        actionPricesVisible: true,
-        setActionPricesVisible: vi.fn(),
-    })),
-}));
 vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
     useSymbolModel: vi.fn(() => ({
         modelId: 'gemini-3.5-flash-lite',

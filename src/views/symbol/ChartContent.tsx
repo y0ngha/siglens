@@ -24,16 +24,20 @@ import React, {
     useEffectEvent,
     useMemo,
     useRef,
-    useState,
 } from 'react';
 import { PEEK_RESERVE_CSS } from './constants/mobileSheet';
-import { useActionPricesVisibility } from './hooks/useActionPricesVisibility';
+import { useOverlayItemVisibility } from './hooks/useOverlayItemVisibility';
 import { useAnalysis } from './hooks/useAnalysis';
 import { useAnalysisDerivedData } from './hooks/useAnalysisDerivedData';
 import { useAnalysisDisplay } from './hooks/useAnalysisDisplay';
 import { useAnalysisProgress } from '@/widgets/analysis/hooks/useAnalysisProgress';
 import { useBars } from '@/entities/bars/hooks/useBars';
-import { isOverlayDrawn } from '@/widgets/chart/utils/chartOverlayUtils';
+import {
+    ACTION_PRICES_ITEM_KEY,
+    buildOverlayMenuItems,
+} from '@/widgets/chart/utils/overlayItems';
+import { barTimesOf } from '@/widgets/chart/utils/chartOverlayUtils';
+import { useSkillLabel } from '@/shared/i18n/skillLabel';
 import {
     PANEL_MAX_WIDTH,
     PANEL_MIN_WIDTH,
@@ -143,6 +147,7 @@ export function ChartContent({
     const t = useTranslations('views.symbol');
     const tFallback = useTranslations('entities.analysis.fallback');
     const fallbackSummary = tFallback('unavailable');
+    const skillLabel = useSkillLabel();
     const themeVersion = useThemeVersion();
     // 비회원 회원가입 유도(Part B) — 같은 심볼에 대한 중복 카운트 방지용.
     const notifiedSymbolRef = useRef<string | null>(null);
@@ -158,9 +163,6 @@ export function ChartContent({
         handleVolumeChartReady,
         handleVolumeChartRemove,
     } = useChartSync();
-
-    const { actionPricesVisible, setActionPricesVisible } =
-        useActionPricesVisibility();
 
     const {
         modelId,
@@ -206,31 +208,27 @@ export function ChartContent({
     const { displayAnalyzing, handleProgressFinished } =
         useAnalysisDisplay(isAnalyzing);
 
-    // '원본' 패널 카드에서 클릭으로 강조한 차트 작도(sourceRef). 새 분석이
-    // 도착하면(참조 변경) 이전 강조가 존재하지 않는 항목을 가리킬 수 있으므로
-    // 리셋한다 — 마운트 effect 대신 렌더 중 이전값 비교로 처리한다
-    // (MISTAKES.md #10, "adjusting state" 패턴; useEffect의 setState는 금지 규칙).
-    const [highlightedOverlayRef, setHighlightedOverlayRef] = useState<
-        string | null
-    >(null);
-    // React 공식 "이전 값과 비교해 state를 조정" 패턴 — useRef가 아니라
-    // useState로 이전 값을 들고 있어야 한다(useRef.current를 렌더 중에 읽으면
-    // oxlint react(refs)가 막는다: ref는 렌더에 필요한 값이 아니라는 규칙).
-    // 비교 키는 `analysis` 객체 참조가 아니라 `analyzedAt`이다 — `analysis`는
-    // `useAnalysis`의 `normalizeAnalysisResponse` 호출마다 새 객체를 만들 수
-    // 있어(내용이 같아도) 참조 비교는 매 렌더 리셋을 유발해 무한 루프로 이어진다.
-    const [prevAnalyzedAt, setPrevAnalyzedAt] = useState(analysis.analyzedAt);
-    if (prevAnalyzedAt !== analysis.analyzedAt) {
-        setPrevAnalyzedAt(analysis.analyzedAt);
-        if (highlightedOverlayRef !== null) setHighlightedOverlayRef(null);
-    }
-    const handleToggleOverlayHighlight = useCallback((ref: string) => {
-        setHighlightedOverlayRef(prev => (prev === ref ? null : ref));
-    }, []);
-    // 카드 언마운트 정리 전용 — 이미 다른 값(또는 null)이면 건드리지 않는다.
-    const handleClearOverlayHighlight = useCallback((ref: string) => {
-        setHighlightedOverlayRef(prev => (prev === ref ? null : prev));
-    }, []);
+    // 차트 작도 on/off — 차트 메뉴와 AI 패널 버튼이 같은 상태를 쓴다. 새 분석이 오면
+    // 전부 켜진 기본 상태로 돌아간다(`useOverlayItemVisibility` JSDoc).
+    const {
+        hiddenKeys: hiddenOverlayKeys,
+        highlightedKey: highlightedOverlayKey,
+        setVisible: setOverlayVisible,
+        setHighlighted: setHighlightedOverlay,
+        clearHighlighted: clearHighlightedOverlay,
+    } = useOverlayItemVisibility(
+        `${symbol}|${timeframe}|${analysis.analyzedAt ?? ''}`
+    );
+    const handleToggleOverlay = useCallback(
+        (key: string) => setOverlayVisible([key], hiddenOverlayKeys.has(key)),
+        [hiddenOverlayKeys, setOverlayVisible]
+    );
+    const actionPricesVisible = !hiddenOverlayKeys.has(ACTION_PRICES_ITEM_KEY);
+    const setActionPricesVisible = useCallback(
+        (visible: boolean) =>
+            setOverlayVisible([ACTION_PRICES_ITEM_KEY], visible),
+        [setOverlayVisible]
+    );
 
     // 폴백(서사 없는 placeholder) 분석에는 차트 작도를 넘기지 않는다 — 아직
     // 실제 분석 결과가 아니므로 논리적으로 근거가 없다.
@@ -244,25 +242,15 @@ export function ChartContent({
 
     // 패턴 오버레이는 스킬 색(renderConfig.color)을 우선한다 — sourceRef(=
     // patternSummaries[].id) → 색 맵을 한 번만 계산해 StockChart에 내린다.
-    const overlayColors = useMemo(() => {
-        const colors: Record<string, string> = {};
-        for (const p of analysis.patternSummaries ?? []) {
-            if (p.renderConfig?.color) colors[p.id] = p.renderConfig.color;
-        }
-        return colors;
-    }, [analysis.patternSummaries]);
-
-    // 차트에 실제로 그려지는 작도만 센다 — 봉에 안 맞는(다른 timeframe 잔여, 좁아진
-    // 봉 창) 작도까지 넣으면 카드에 강조 버튼이 떠도 눌러서 보이는 게 없다.
-    const overlaySourceRefs = useMemo(() => {
-        const barTimes = new Set(bars.map(b => b.time));
-        const lastBarTime = bars[bars.length - 1]?.time ?? 0;
-        return new Set(
-            (chartOverlays ?? [])
-                .filter(o => isOverlayDrawn(o, barTimes, lastBarTime))
-                .map(o => o.sourceRef)
-        );
-    }, [chartOverlays, bars]);
+    const overlayColors = useMemo(
+        () =>
+            Object.fromEntries(
+                (analysis.patternSummaries ?? []).flatMap(p =>
+                    p.renderConfig?.color ? [[p.id, p.renderConfig.color]] : []
+                )
+            ),
+        [analysis.patternSummaries]
+    );
 
     // 비회원 3-심볼 회원가입 유도 (member-reasoning-toggle spec Part B).
     // 회원/로그인 판별 전에는 useAnonAnalysisNudge 내부에서 자체적으로 no-op한다.
@@ -283,6 +271,47 @@ export function ChartContent({
 
     const { clusteredKeyLevels, validatedActionPrices, reconciledActionLines } =
         useAnalysisDerivedData(analysis, bars);
+
+    // 메뉴·패널에 띄울 on/off 항목 — 지금 봉 위에 실제로 그려지는 작도만 담는다.
+    // 봉에 안 맞는(다른 timeframe 잔여, 좁아진 봉 창) 작도까지 넣으면 카드에
+    // 버튼이 떠도 눌러서 보이는 게 없다.
+    const overlayItems = useMemo(() => {
+        const labels = new Map<string, string>([
+            ...(analysis.patternSummaries ?? []).map((p): [string, string] => [
+                p.id,
+                skillLabel(p.skillName),
+            ]),
+            ...(analysis.strategyResults ?? []).map((r): [string, string] => [
+                r.id,
+                skillLabel(r.strategyName),
+            ]),
+        ]);
+        return buildOverlayMenuItems(chartOverlays ?? [], {
+            barTimes: barTimesOf(bars),
+            lastBarTime: bars[bars.length - 1]?.time ?? 0,
+            labelFor: ref => labels.get(ref),
+            hasActionPrices: validatedActionPrices !== undefined,
+        });
+    }, [
+        analysis.patternSummaries,
+        analysis.strategyResults,
+        skillLabel,
+        chartOverlays,
+        bars,
+        validatedActionPrices,
+    ]);
+    const overlaySourceRefs = useMemo(
+        () =>
+            new Set(
+                overlayItems
+                    .filter(
+                        item =>
+                            item.kind !== 'action' && item.kind !== 'trendline'
+                    )
+                    .map(item => item.key)
+            ),
+        [overlayItems]
+    );
 
     // "내 포지션" 결정적(non-AI) 요약 — "내 평단 기준으로 분석했어요" 배지 옆에
     // 노출한다. useAnalysis가 내부적으로 같은 심볼의 useSymbolHolding을 이미
@@ -398,9 +427,10 @@ export function ChartContent({
                     plain={plain}
                     isFreeUser={isFreeUser}
                     overlaySourceRefs={overlaySourceRefs}
-                    highlightedOverlayRef={highlightedOverlayRef}
-                    onToggleOverlayHighlight={handleToggleOverlayHighlight}
-                    onClearOverlayHighlight={handleClearOverlayHighlight}
+                    hiddenOverlayKeys={hiddenOverlayKeys}
+                    onToggleOverlay={handleToggleOverlay}
+                    onHighlightOverlay={setHighlightedOverlay}
+                    onClearOverlayHighlight={clearHighlightedOverlay}
                 />
                 {/* "내 포지션" 결정적 요약 — 홀딩이 있는 회원에게만, AI 분석
                     바로 옆에 노출한다(personalized-analysis 배지와 동일 이웃).
@@ -444,9 +474,10 @@ export function ChartContent({
         positionStatus,
         symbolHolding,
         overlaySourceRefs,
-        highlightedOverlayRef,
-        handleToggleOverlayHighlight,
-        handleClearOverlayHighlight,
+        hiddenOverlayKeys,
+        handleToggleOverlay,
+        setHighlightedOverlay,
+        clearHighlightedOverlay,
     ]);
 
     // timeframe을 React.Fragment key로 전달 — Suspense 경계 밖에서 timeframe 변경 시 자식 트리를 강제 remount한다.
@@ -586,7 +617,10 @@ export function ChartContent({
                         marketProfile={marketProfile}
                         chartOverlays={chartOverlays}
                         overlayColors={overlayColors}
-                        highlightedOverlayRef={highlightedOverlayRef}
+                        overlayItems={overlayItems}
+                        hiddenOverlayKeys={hiddenOverlayKeys}
+                        highlightedOverlayKey={highlightedOverlayKey}
+                        onSetOverlayVisible={setOverlayVisible}
                     />
                 </div>
 

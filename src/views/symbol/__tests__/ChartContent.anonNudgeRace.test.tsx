@@ -91,13 +91,6 @@ vi.mock('@/views/symbol/hooks/useAnalysisDisplay', () => ({
     })),
 }));
 
-vi.mock('@/views/symbol/hooks/useActionPricesVisibility', () => ({
-    useActionPricesVisibility: vi.fn(() => ({
-        actionPricesVisible: true,
-        setActionPricesVisible: vi.fn(),
-    })),
-}));
-
 // Stable shared opener — in production this is the provider's memoized
 // `openSignupNudge`. It must keep a stable identity across renders so the real
 // hook's `onSymbolAnalyzed` only changes identity when login resolution flips

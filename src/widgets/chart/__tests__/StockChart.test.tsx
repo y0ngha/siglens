@@ -3,7 +3,8 @@ import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
 import { THEME_CHANGE_EVENT } from '@/shared/lib/theme';
 import type { Bar, ChartOverlay } from '@y0ngha/siglens-core';
 import { StockChart } from '@/widgets/chart/StockChart';
-import { INACTIVE_PANE_INDEX, STORAGE_KEYS } from '@/widgets/chart/constants';
+import { INACTIVE_PANE_INDEX } from '@/widgets/chart/constants';
+import type { OverlayMenuItem } from '@/widgets/chart/utils/overlayItems';
 import { useChartOverlays } from '@/widgets/chart/hooks/useChartOverlays';
 import { useLinePaneChart } from '@/widgets/chart/hooks/useLinePaneChart';
 import { LINE_PANE_SPECS } from '@/widgets/chart/model/linePaneSpecs';
@@ -807,12 +808,16 @@ describe('StockChart', () => {
             labels: [],
         };
 
-        it('renders the 차트 작도 header button when chartOverlays has an entry aligned to the loaded bars', () => {
+        it('renders the 차트 작도 header button when overlayItems is non-empty', () => {
+            const items: readonly OverlayMenuItem[] = [
+                { key: 'p1', kind: 'pattern', label: 'Double Bottom' },
+            ];
             render(
                 <StockChart
                     bars={mockBars}
                     timeframe="1Day"
                     chartOverlays={[overlay]}
+                    overlayItems={items}
                 />
             );
 
@@ -821,7 +826,7 @@ describe('StockChart', () => {
             ).toBeInTheDocument();
         });
 
-        it('does not render the 차트 작도 button when chartOverlays is empty', () => {
+        it('does not render the 차트 작도 button when overlayItems is empty (default)', () => {
             render(<StockChart bars={mockBars} timeframe="1Day" />);
 
             expect(
@@ -830,23 +835,16 @@ describe('StockChart', () => {
         });
 
         /**
-         * `useChartOverlays`에 실제로 넘어가는 specs를 검증한다. 앞선 테스트들이
-         * 조작하는 `localStorage`(`STORAGE_KEYS.chartOverlays`, `usePersistentState`
-         * 백엔드)를 이 describe도 건드릴 수 있으므로, 매 케이스 전에 지워
-         * 기본값(pattern·trendline만 on)에서 시작한다. `mock.calls.at(-1)`로 마지막
-         * 호출만 본다 — 인덱스 [0] 고정은 리렌더 순서가 바뀌면 조용히 다른 렌더의
-         * 인자를 집는다.
+         * `useChartOverlays`에 실제로 넘어가는 specs를 검증한다. `mock.calls.at(-1)`로
+         * 마지막 호출만 본다 — 인덱스 [0] 고정은 리렌더 순서가 바뀌면 조용히 다른
+         * 렌더의 인자를 집는다.
          */
         describe('useChartOverlays로 넘어가는 specs', () => {
-            beforeEach(() => {
-                window.localStorage.removeItem(STORAGE_KEYS.chartOverlays);
-            });
-
             function lastSpecs() {
                 return vi.mocked(useChartOverlays).mock.calls.at(-1)?.[0].specs;
             }
 
-            it('highlightedOverlayRef가 가리키는 오버레이는 그 kind가 기본으로 꺼져 있어도(divergence) specs에 남는다', () => {
+            it('highlightedOverlayKey가 가리키는 오버레이는 hiddenOverlayKeys에 없으면(꺼지지 않았으면) specs에 남는다', () => {
                 const divergenceOverlay: ChartOverlay = {
                     id: 'divergence:rsi_bearish:1',
                     kind: 'divergence',
@@ -871,7 +869,7 @@ describe('StockChart', () => {
                         bars={mockBars}
                         timeframe="1Day"
                         chartOverlays={[divergenceOverlay]}
-                        highlightedOverlayRef="d1"
+                        highlightedOverlayKey="d1"
                     />
                 );
 
@@ -881,6 +879,38 @@ describe('StockChart', () => {
                     { time: 100, value: 10 },
                     { time: 300, value: 12 },
                 ]);
+            });
+
+            it('hiddenOverlayKeys에 든 key의 오버레이는 specs에서 빠진다', () => {
+                const divergenceOverlay: ChartOverlay = {
+                    id: 'divergence:rsi_bearish:1',
+                    kind: 'divergence',
+                    skill: 'rsi_bearish_divergence',
+                    sourceRef: 'd1',
+                    variant: 'primary',
+                    segments: [
+                        {
+                            from: { time: 100, price: 10 },
+                            to: { time: 300, price: 12 },
+                            role: 'price',
+                            style: 'solid',
+                            pane: 'price',
+                        },
+                    ],
+                    levels: [],
+                    labels: [],
+                };
+
+                render(
+                    <StockChart
+                        bars={mockBars}
+                        timeframe="1Day"
+                        chartOverlays={[divergenceOverlay]}
+                        hiddenOverlayKeys={new Set(['d1'])}
+                    />
+                );
+
+                expect(lastSpecs()).toEqual([]);
             });
 
             it("레벨 라벨 'breakout'은 t()가 반환하는 번역 문구로 바뀐다", () => {
@@ -941,7 +971,7 @@ describe('StockChart', () => {
                         bars={mockBars}
                         timeframe="1Day"
                         chartOverlays={[divergenceWithRsi]}
-                        highlightedOverlayRef="d2"
+                        highlightedOverlayKey="d2"
                     />
                 );
 

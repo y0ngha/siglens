@@ -91,13 +91,6 @@ vi.mock('@/views/symbol/hooks/useAnalysisDisplay', () => ({
     })),
 }));
 
-vi.mock('@/views/symbol/hooks/useActionPricesVisibility', () => ({
-    useActionPricesVisibility: vi.fn(() => ({
-        actionPricesVisible: true,
-        setActionPricesVisible: vi.fn(),
-    })),
-}));
-
 const { mockOpenSignupNudge } = vi.hoisted(() => ({
     mockOpenSignupNudge: vi.fn(),
 }));

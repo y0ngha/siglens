@@ -54,12 +54,6 @@ vi.mock('../hooks/useAnalysis', () => ({
     useAnalysis: () => analysisMock(),
 }));
 // usePanelResize/useDragListener는 mock하지 않는다 — 실제 상호작용을 검증한다.
-vi.mock('../hooks/useActionPricesVisibility', () => ({
-    useActionPricesVisibility: () => ({
-        actionPricesVisible: true,
-        setActionPricesVisible: vi.fn(),
-    }),
-}));
 const symbolModelMock = vi.fn();
 vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
     useSymbolModel: () => symbolModelMock(),
