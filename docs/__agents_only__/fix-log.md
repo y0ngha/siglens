@@ -583,10 +583,6 @@
   - Rule: (new) State reset paths must account for ALL ways a state machine can transition, not only the intended path. Forced transitions (policy-driven, tier-dependent) are as valid as user-initiated changes.
   - Context: Changed pending clear condition from equality check to range test: pending cleared whenever timeframe leaves its starting value (now handles logout→free forced change).
 
-- Violation: Duplicated pending-slot UI structure (hidden spinners + label positioning) in two separate files
-  - Rule: MISTAKES.md Coding Paradigm §6.9 — duplicated logic across multiple locations without shared source
-  - Context: Extracted to shared/ui/PendingSlot component; both callsites now render unified structure via explicit import.
-
 ## [PR #893 Round 2 | feat/chart-overlay-item-toggles | 2026-09-30]
 - Violation: CI e2e failure — e2e/specs/chart-overlays.spec.ts still asserted removed behavior (category toggle persisted in localStorage across reload); unit tests were updated to reflect new all-on default after reload, but the e2e spec was not synchronized
   - Rule: (new) When refactoring a feature's test suite to reflect behavior changes, all test layers (unit + e2e) must be updated simultaneously. Unit test updates without corresponding e2e assertions create CI failures where the contract is broken at the integration level while unit tests pass.
@@ -633,9 +629,6 @@
 - Status (Round 2): APPROVED (zero findings)
 
 ## [PR #900 Round 1 | claude/magical-sagan-56eoov-hub-data | 2026-10-01]
-- Violation: CALENDAR_MAJORITY_FAILURE_DIVISOR duplicated in two economy modules synced only by comment
-  - Rule: MISTAKES.md Coding Paradigm §6.9 duplicated logic
-  - Context: extracted constant to economyCalendarConstants and imported by both modules
 - Violation: cache-key-participating option (digest `reasoning`) written as literal at three call sites (action, cron, SSR peek) that must agree
   - Rule: cache-key components shared by writer and reader live in one constant
   - Context: extracted DIGEST_REASONING constant (now false per user decision). Single source of truth for cache participation.
@@ -647,3 +640,15 @@
 - Violation: (review round 1, recommended, fixed) three comments went stale/overstated after the rule change (limit JSDoc contradicting new rule; "result used only for logging"; "won't change the screen" overclaim instead of stating the up-to-3h lag tradeoff)
   - Rule: comments describing a rule must be updated in the same change that alters the rule; state tradeoffs instead of claiming no effect
 - Status (Round 2): APPROVED
+
+## [fix/share-i18n-direction-font | Round 1–2 | 2026-10-01]
+- Violation (R1 required): news category OG label used `CATEGORY_CONFIG[cat].koLabel` (Korean AI-prompt field) in every locale; after switching ja/zh OG fonts to Noto Sans JP/SC (no Hangul) it would render tofu
+  - Rule: (new) OG metadata fields consumed by different rendering contexts (AI prompt vs share snapshot) must use locale-specific values when the consuming context depends on locale-specific properties (font, glyph coverage)
+  - Context: Fixed by translating `labelKey` in the request locale + test asserting no Hangul for ja/zh
+- Violation (R1 recommended): 5 new hand-translated i18n keys lacked messages/_meta/hashes.json entries
+  - Rule: MISTAKES.md §26–27 i18n artifact sync — hand-translated or new keys must be added to messages/_meta/hashes.json immediately
+  - Context: Verified by sync check after all translations
+- Violation (R1 recommended): `satisfies Partial<Record<OptionsSignalKind,string>>` not exhaustive over non-shared signal kinds
+  - Rule: Record types used in props must be exhaustive over their semantic domain; Partial narrows to only properties covered, masking missing cases
+  - Context: Changed to exhaustive Record over the non-shared signal kinds
+- Status (R2): APPROVED (zero findings)

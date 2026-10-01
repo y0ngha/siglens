@@ -42,6 +42,7 @@ describe('[symbol]/fundamental OG images', () => {
             expect(mockBuildSymbolOgImage).toHaveBeenCalledWith({
                 ticker: 'NVDA',
                 label: '펀더멘털',
+                locale: 'ko',
             });
         });
     });

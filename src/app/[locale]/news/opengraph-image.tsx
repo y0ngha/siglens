@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { resolveLocale } from '@/shared/i18n/locales';
 import { ImageResponse } from 'next/og';
-import { loadKoreanFont } from '@/entities/og-image/lib/loadKoreanFont';
+import { loadOgFont } from '@/entities/og-image/lib/loadOgFont';
 import {
     OG_BG,
     OG_FG,
@@ -42,12 +42,10 @@ export default async function Image({ params }: Props) {
     // 로케일을 넘기지 않으면 `getTranslations`가 요청 스코프를 못 찾아 기본
     // 로케일로 떨어진다 — `force-static`이라 조용히 전 로케일이 한국어 이미지로
     // 통일된다(실측: /AAPL·/en/AAPL·/ja/AAPL이 바이트 동일).
-    const { locale } = await params;
-    const t = await getTranslations({
-        locale: resolveLocale(locale),
-        namespace: 'app.news',
-    });
-    const fontData = await loadKoreanFont();
+    const { locale: rawLocale } = await params;
+    const locale = resolveLocale(rawLocale);
+    const t = await getTranslations({ locale, namespace: 'app.news' });
+    const font = await loadOgFont(locale);
 
     return new ImageResponse(
         <div
@@ -107,16 +105,7 @@ export default async function Image({ params }: Props) {
             height: OG_IMAGE_HEIGHT,
             // ImageResponse 기본 헤더는 CDN 캐시를 막는다 — og.ts JSDoc 참조.
             headers: { 'cache-control': OG_IMAGE_CACHE_CONTROL },
-            fonts: fontData
-                ? [
-                      {
-                          name: 'Pretendard',
-                          data: fontData,
-                          style: 'normal',
-                          weight: 700,
-                      },
-                  ]
-                : undefined,
+            fonts: font ? [font] : undefined,
         }
     );
 }

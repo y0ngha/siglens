@@ -535,9 +535,14 @@
                 "bearish": "약세",
                 "bullish": "강세",
                 "cautious": "주의",
+                "extremeFear": "극심한 공포",
+                "extremeGreed": "극심한 탐욕",
+                "fear": "공포",
                 "fearGreedSummary": "공포·탐욕 지수 {v0}",
                 "fearGreedSummaryNoScore": "공포·탐욕 지수",
-                "neutral": "중립"
+                "greed": "탐욕",
+                "neutral": "중립",
+                "volatility": "변동성"
             },
             "seo": {
                 "expiredTitle": "공유 분석",

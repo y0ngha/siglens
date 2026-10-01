@@ -49,6 +49,7 @@ export default async function Image({ params }: Props) {
         return buildSymbolOgImage({
             ticker: snapshot.symbol.toUpperCase(),
             label: tLabel(kindLabelKey(snapshot.kind)),
+            locale: resolvedLocale,
             cacheControl: SHARE_OG_CACHE_CONTROL,
         });
     }
@@ -56,6 +57,7 @@ export default async function Image({ params }: Props) {
     return buildSymbolOgImage({
         ticker: 'SIGLENS',
         label: t('opengraph-image.ce34e2'),
+        locale: resolvedLocale,
         cacheControl: SHARE_OG_CACHE_CONTROL,
     });
 }

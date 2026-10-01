@@ -16,5 +16,6 @@ export async function GET(request: Request): Promise<Response> {
     return buildSymbolOgImage({
         ticker: 'SIGLENS AI',
         label: t('seo.ogLabel'),
+        locale,
     });
 }

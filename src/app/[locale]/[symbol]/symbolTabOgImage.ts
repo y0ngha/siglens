@@ -23,13 +23,12 @@ export async function renderSymbolTabOgImage(
     params: SymbolTabOgImageProps['params'],
     label: (t: SeoTranslator) => string
 ) {
-    const { locale, symbol } = await params;
-    const t = await getTranslations({
-        locale: resolveLocale(locale),
-        namespace: 'app.symbol',
-    });
+    const { locale: rawLocale, symbol } = await params;
+    const locale = resolveLocale(rawLocale);
+    const t = await getTranslations({ locale, namespace: 'app.symbol' });
     return buildSymbolOgImage({
         ticker: symbol.toUpperCase(),
         label: label(t),
+        locale,
     });
 }
