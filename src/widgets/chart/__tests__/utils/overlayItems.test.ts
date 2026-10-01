@@ -3,6 +3,7 @@ import type { ChartOverlay } from '@y0ngha/siglens-core';
 import {
     ACTION_PRICES_ITEM_KEY,
     buildOverlayMenuItems,
+    patternLabelsByKey,
 } from '../../utils/overlayItems';
 
 const BAR_TIMES = new Set([1, 2, 3, 4, 5]);
@@ -186,5 +187,16 @@ describe('buildOverlayMenuItems', () => {
         expect(fallbackItem?.kind === 'pattern' && fallbackItem.label).toBe(
             'p1'
         );
+    });
+});
+
+describe('patternLabelsByKey', () => {
+    it('패턴 항목만 key → 라벨로 담는다', () => {
+        const map = patternLabelsByKey([
+            { key: 'rounding_bottom_0', kind: 'pattern', label: '원형 바닥' },
+            { key: 'fib_0', kind: 'fibonacci', label: '피보나치 전략' },
+            { key: 'tl:1', kind: 'trendline', direction: 'up', index: 1 },
+        ]);
+        expect([...map]).toEqual([['rounding_bottom_0', '원형 바닥']]);
     });
 });

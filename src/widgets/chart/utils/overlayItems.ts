@@ -88,3 +88,17 @@ function trendlineDirection(overlay: ChartOverlay): 'up' | 'down' {
     const [s] = overlay.segments;
     return s !== undefined && s.to.price < s.from.price ? 'down' : 'up';
 }
+
+/**
+ * 패턴 항목 key(`sourceRef`) → 메뉴 라벨(로케일 스킬명). 패턴 돌파선 라벨에 어느 패턴의
+ * 선인지 붙이는 데 쓴다 — 패턴이 둘 이상 켜지면 "돌파 기준"만으로는 구분이 안 된다.
+ */
+export function patternLabelsByKey(
+    items: readonly OverlayMenuItem[]
+): ReadonlyMap<string, string> {
+    return new Map(
+        items.flatMap(item =>
+            item.kind === 'pattern' ? [[item.key, item.label] as const] : []
+        )
+    );
+}

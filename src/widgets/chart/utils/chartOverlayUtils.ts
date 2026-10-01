@@ -53,7 +53,7 @@ export interface OverlayLineSpecOptions {
     /** 수평 레벨을 가격축 앞까지 연장 — 사용자 설정(기본 켜짐). */
     extendLevelsRight: boolean;
     /** core가 내보내는 레벨 라벨(`breakout`, `61.8%` …)을 화면 문구로 바꾼다. 없으면 그대로. */
-    levelLabelFor?: (label: string) => string;
+    levelLabelFor?: (label: string, overlay: ChartOverlay) => string;
 }
 
 /**
@@ -212,7 +212,7 @@ export function buildOverlayLineSpecs(
                           opacity,
                           lineWidthMult,
                           title: opts.levelLabelFor
-                              ? opts.levelLabelFor(l.label)
+                              ? opts.levelLabelFor(l.label, overlay)
                               : l.label,
                           markers: [],
                           extendRight: opts.extendLevelsRight,

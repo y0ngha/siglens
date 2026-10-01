@@ -244,6 +244,20 @@ describe('buildOverlayLineSpecs', () => {
         expect(specsWithoutMapper[1].title).toBe('breakout');
     });
 
+    it('levelLabelFor receives the overlay that owns the level', () => {
+        const a = overlay({ id: 'a', sourceRef: 'a' });
+        const b = overlay({ id: 'b', sourceRef: 'b' });
+        const specs = buildOverlayLineSpecs([a, b], {
+            ...base,
+            barTimes: BAR_TIMES,
+            levelLabelFor: (label, owner) => `${owner.id}:${label}`,
+        });
+        expect(specs.map(s => s.title).filter(Boolean)).toEqual([
+            'a:breakout',
+            'b:breakout',
+        ]);
+    });
+
     it('labels ride on the first spec of their overlay as markers, carrying label price for marker placement', () => {
         const withLabels = overlay({
             labels: [
