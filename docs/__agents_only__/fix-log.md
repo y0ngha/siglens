@@ -639,3 +639,11 @@
 - Violation: cache-key-participating option (digest `reasoning`) written as literal at three call sites (action, cron, SSR peek) that must agree
   - Rule: cache-key components shared by writer and reader live in one constant
   - Context: extracted DIGEST_REASONING constant (now false per user decision). Single source of truth for cache participation.
+
+## [Round 1 | fix/news-ingest-firehose-gate | 2026-10-01]
+- Violation: (production logs, not review) drain-until-empty termination condition never terminated for fast feeds (`stock`/`crypto` receive 10–50 new articles per 10 minutes while the cron enriches at most 8 per run), so `pending` stayed 26–42 and the gate never engaged (re-ingest + digest regeneration every ~10 min)
+  - Rule: (new) A drain-until-empty termination condition must be bounded when the source keeps producing — add a sufficiency condition (here: enriched >= the consumer's input cap, 25) so a continuously refilling queue cannot defeat the cooldown
+  - Context: `ingestMarketNewsCategory` now returns `enriched`; `ingestCategoryBeforeDigest` marks the gate when `pending === 0 || enriched >= MAX_AGGREGATE_NEWS_ITEMS`
+- Violation: (review round 1, recommended, fixed) three comments went stale/overstated after the rule change (limit JSDoc contradicting new rule; "result used only for logging"; "won't change the screen" overclaim instead of stating the up-to-3h lag tradeoff)
+  - Rule: comments describing a rule must be updated in the same change that alters the rule; state tradeoffs instead of claiming no effect
+- Status (Round 2): APPROVED

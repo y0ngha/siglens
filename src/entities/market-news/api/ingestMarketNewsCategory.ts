@@ -39,8 +39,9 @@ export interface IngestMarketNewsCategoryOptions {
 }
 
 /**
- * 적재 결과. 크론은 이 값을 로그에만 쓴다 — 실패해도 다이제스트는 DB에 이미 있는
- * 기사로 계속 진행한다(fail-open, `prewarmNews`와 같은 정책).
+ * 적재 결과. 크론은 로그에 남기고, `ok`일 때 `pending`·`enriched`로 3시간 간격 플래그를
+ * 세울지 정한다(`hubs.ts` `ingestCategoryBeforeDigest`). 실패해도 다이제스트는 DB에 이미
+ * 있는 기사로 계속 진행한다(fail-open, `prewarmNews`와 같은 정책).
  */
 export type IngestMarketNewsCategoryResult =
     | { readonly status: 'recently-fetched' }
@@ -52,10 +53,22 @@ export type IngestMarketNewsCategoryResult =
           readonly changed: number;
           readonly analyzed: number;
           /**
-           * `analyzeLimit`에 잘려 이번에 보강하지 못한 미보강 기사 수. 크론은 이 값이
-           * 0일 때만 3시간 간격 플래그를 세운다 — 남아 있으면 다음 tick에 이어서 비운다.
+           * `analyzeLimit`에 잘려 이번에 보강하지 못한 미보강 기사 수. 0이면 백로그가
+           * 비었다는 뜻이다.
            */
           readonly pending: number;
+          /**
+           * 이번 실행이 끝난 시점에 조회 창(7일) 안에서 **보강이 끝난** 기사 수.
+           * 피드가 비었거나 E2E 단락처럼 DB를 읽지 않은 경로는 0이다(그때는 `pending`도
+           * 0이라 크론 판정에 영향이 없다).
+           *
+           * 크론이 "백로그를 더 비울지"를 정할 때 `pending`과 함께 본다. `pending`만 보면
+           * 빠른 피드에서는 영원히 끝나지 않는다 — `stock`·`crypto`는 10분마다 새 기사가
+           * 10~50건 들어오는데 회당 상한은 8건이라 `pending`이 0이 되는 순간이 없다
+           * (2026-10-01 운영 실측: 한 시간 내내 26~42). 다이제스트·목록에 쓸 만큼 보강된
+           * 기사가 이미 있으면 거기서 멈추는 게 맞다.
+           */
+          readonly enriched: number;
       };
 
 /**
@@ -172,6 +185,7 @@ export async function ingestMarketNewsCategory(
             changed: 0,
             analyzed: 0,
             pending: 0,
+            enriched: 0,
         };
     }
 
@@ -194,6 +208,7 @@ export async function ingestMarketNewsCategory(
             changed,
             analyzed: 0,
             pending: 0,
+            enriched: 0,
         };
     }
 
@@ -230,6 +245,8 @@ export async function ingestMarketNewsCategory(
             changed,
             analyzed: 0,
             pending: 0,
+            // 이번엔 보강한 게 없으므로 창 안의 기존 보강 수 그대로다.
+            enriched: analyzedIds.size,
         };
     }
 
@@ -263,5 +280,14 @@ export async function ingestMarketNewsCategory(
         revalidateTag(cacheTag, 'max');
     }
 
-    return { status: 'ok', fetched: fresh.length, changed, analyzed, pending };
+    return {
+        status: 'ok',
+        fetched: fresh.length,
+        changed,
+        analyzed,
+        pending,
+        // 실행 전 창 안의 보강 수 + 이번에 저장한 수. 후보는 미보강 기사에서만 뽑으므로
+        // 둘이 겹치지 않는다.
+        enriched: analyzedIds.size + analyzed,
+    };
 }
