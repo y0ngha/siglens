@@ -71,6 +71,7 @@ import {
     overlayColorFor,
 } from './utils/chartOverlayUtils';
 import type { OverlayMenuItem } from './utils/overlayItems';
+import { parseFibLevelLabel } from './utils/fibLevelLabel';
 import {
     BREAKOUT_LEVEL_LABEL,
     CHART_OVERLAY_COLORS,
@@ -505,8 +506,21 @@ export function StockChart({
                         overlayColors,
                         CHART_OVERLAY_COLORS
                     ),
-                levelLabelFor: label =>
-                    label === BREAKOUT_LEVEL_LABEL ? breakoutLevelText : label,
+                levelLabelFor: label => {
+                    if (label === BREAKOUT_LEVEL_LABEL)
+                        return breakoutLevelText;
+                    const fib = parseFibLevelLabel(label);
+                    if (!fib) return label;
+                    const { percent } = fib;
+                    switch (fib.kind) {
+                        case 'retracement':
+                            return t('StockChart.99d0ce', { v0: percent });
+                        case 'extension':
+                            return t('StockChart.c8b284', { v0: percent });
+                        case 'abcExtension':
+                            return t('StockChart.575708', { v0: percent });
+                    }
+                },
             }),
         [
             chartOverlays,
@@ -518,6 +532,7 @@ export function StockChart({
             paneIndices.rsi,
             overlayColors,
             breakoutLevelText,
+            t,
         ]
     );
 
