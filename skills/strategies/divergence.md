@@ -5,6 +5,7 @@ type: strategy
 category: neutral
 indicators: ['rsi', 'macd', 'stochastic']
 confidence_weight: 0.78
+overlay_kind: divergence
 gating:
   tier: gated
   signal_kind: event

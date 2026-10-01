@@ -5,6 +5,7 @@ type: strategy
 category: neutral
 indicators: []
 confidence_weight: 0.4
+overlay_kind: elliott
 gating:
   tier: always_on
 token_cost: 446

@@ -12,7 +12,9 @@ import type {
     SkillStatePredicateKind,
     SkillType,
     SkillUsageRole,
+    StrategyOverlayKind,
 } from '@y0ngha/siglens-core';
+import { STRATEGY_OVERLAY_KINDS } from '@y0ngha/siglens-core';
 import { countSkillsByType } from '@/shared/lib/skillUtils';
 import type { SkillsProvider } from './model';
 
@@ -207,6 +209,18 @@ const _usageRolesAreExhaustive: MissingUsageRole extends never ? true : never =
 void _usageRolesAreExhaustive;
 
 const USAGE_ROLE_SET: ReadonlySet<string> = new Set(USAGE_ROLE_ORDER);
+
+/**
+ * `overlay_kind` frontmatter → `Skill.overlayKind` — the one chart overlay
+ * kind a strategy card may draw (core `resolveChartOverlays` drops the rest).
+ * Unknown values become `undefined`, so that strategy draws nothing. The
+ * allowed list is core's `STRATEGY_OVERLAY_KINDS`, so a new kind needs no
+ * change here.
+ *
+ * Mirror of `parseOverlayKind` in siglens-core's infrastructure/skills/loader.
+ */
+const parseOverlayKind = (raw: unknown): StrategyOverlayKind | undefined =>
+    STRATEGY_OVERLAY_KINDS.find(kind => kind === raw);
 
 /**
  * Validate and normalize a `usage_roles` frontmatter value.
@@ -488,6 +502,7 @@ const toSkill = (data: Record<string, unknown>, content: string): Skill => ({
         typeof data.token_cost === 'number' ? data.token_cost : undefined,
     smcFullGuide: isYamlTrue(data.smc_full_guide),
     usageRoles: parseUsageRoles(data.usage_roles),
+    overlayKind: parseOverlayKind(data.overlay_kind),
 });
 
 const collectMdFiles = async (dir: string): Promise<string[]> => {

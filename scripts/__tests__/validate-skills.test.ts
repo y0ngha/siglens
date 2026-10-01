@@ -1,6 +1,7 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import matter from 'gray-matter';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { parseSkillFile, validateSkillData } from '../validate-skills';
 
@@ -495,5 +496,52 @@ describe('parseSkillFile fail-closed parse failures', () => {
         expect(result.errors[0]?.message).toMatch(
             /frontmatter is missing or not a mapping/
         );
+    });
+});
+
+describe('validateSkillData — overlay_kind', () => {
+    const strategy = { type: 'strategy', gating: { tier: 'always_on' } };
+
+    it.each(['divergence', 'fibonacci', 'elliott'])(
+        'accepts overlay_kind: %s on a strategy',
+        kind => {
+            expect(
+                validateSkillData({ ...strategy, overlay_kind: kind })
+            ).toEqual([]);
+        }
+    );
+
+    it('rejects an unknown value — core would silently drop every drawing', () => {
+        expect(validateSkillData({ ...strategy, overlay_kind: 'fib' })).toEqual(
+            [expect.stringContaining('`overlay_kind` must be one of')]
+        );
+    });
+
+    it('rejects overlay_kind on a non-strategy skill', () => {
+        expect(
+            validateSkillData({
+                type: 'pattern',
+                gating: { tier: 'always_on' },
+                overlay_kind: 'elliott',
+            })
+        ).toEqual(['`overlay_kind` is only allowed on type: strategy']);
+    });
+});
+
+// core는 전략 카드에 `overlay_kind`가 없으면 그 전략 작도를 전부 버린다 — 이 세
+// 스킬에서 키가 빠지면 차트의 엘리어트·피보나치·다이버전스 작도가 조용히 사라진다.
+describe('strategy skills that draw chart overlays', () => {
+    it.each([
+        ['elliott-wave', 'elliott'],
+        ['fibonacci', 'fibonacci'],
+        ['divergence', 'divergence'],
+    ])('skills/strategies/%s.md declares overlay_kind: %s', (file, kind) => {
+        const { data } = matter(
+            readFileSync(
+                join(process.cwd(), 'skills/strategies', `${file}.md`),
+                'utf-8'
+            )
+        );
+        expect(data.overlay_kind).toBe(kind);
     });
 });
