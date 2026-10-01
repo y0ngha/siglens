@@ -53,7 +53,7 @@ export interface OverlayLineSpecOptions {
     /** 수평 레벨을 가격축 앞까지 연장 — 사용자 설정(기본 켜짐). */
     extendLevelsRight: boolean;
     /** core가 내보내는 레벨 라벨(`breakout`, `61.8%` …)을 화면 문구로 바꾼다. 없으면 그대로. */
-    levelLabelFor?: (label: string) => string;
+    levelLabelFor?: (label: string, overlay: ChartOverlay) => string;
 }
 
 /**
@@ -141,6 +141,21 @@ export function hasDrawnLevels(
     );
 }
 
+export type SegmentDirection = 'up' | 'down';
+
+/**
+ * 작도의 방향 — 첫 선분의 끝 가격이 시작보다 낮으면 하락. 추세선(기울기)·피보나치
+ * 다리(다리: 시작→끝, ABC: A→B)가 같은 규칙을 쓴다. 같은 가격(core가 만들지 않는
+ * 수평 선분)은 상승으로 둔다. 선분이 없으면 `null` — 기본값은 호출부가 정한다.
+ */
+export function firstSegmentDirection(
+    segments: ChartOverlay['segments']
+): SegmentDirection | null {
+    const [s] = segments;
+    if (s === undefined) return null;
+    return s.to.price < s.from.price ? 'down' : 'up';
+}
+
 const toMarker = (l: OverlayLabel): OverlayMarker => ({
     time: l.at.time,
     position: l.position === 'above' ? 'aboveBar' : 'belowBar',
@@ -212,7 +227,7 @@ export function buildOverlayLineSpecs(
                           opacity,
                           lineWidthMult,
                           title: opts.levelLabelFor
-                              ? opts.levelLabelFor(l.label)
+                              ? opts.levelLabelFor(l.label, overlay)
                               : l.label,
                           markers: [],
                           extendRight: opts.extendLevelsRight,

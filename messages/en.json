@@ -2631,11 +2631,15 @@
             },
             "StockChart": {
                 "1b2664": "No chart data available",
-                "575708": "ABC extension {v0}",
+                "3784c9": "Downside target {v0}",
+                "37cc7e": "ABC upside target {v0}",
+                "545536": "Pullback {v0}",
                 "57fdbb": "Breakout level",
-                "99d0ce": "Retracement {v0}",
+                "693f7c": "Upside target {v0}",
+                "6c577b": "{v0} breakout",
+                "87cc60": "Bounce {v0}",
                 "a547a0": "Price Chart",
-                "c8b284": "Extension {v0}"
+                "fd8510": "ABC downside target {v0}"
             },
             "TimeframeSelector": {
                 "a4632e": "Member-exclusive timeframe.",

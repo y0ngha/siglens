@@ -5,7 +5,7 @@ import { INTL_LOCALE } from '@/shared/i18n/locales';
 
 import { useTranslations } from 'next-intl';
 import type { RefObject } from 'react';
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type {
     IChartApi,
     ISeriesApi,
@@ -72,7 +72,7 @@ import {
     hasDrawnLevels,
     overlayColorFor,
 } from './utils/chartOverlayUtils';
-import type { OverlayMenuItem } from './utils/overlayItems';
+import { patternLabelsByKey, type OverlayMenuItem } from './utils/overlayItems';
 import { formatFibLevelLabel, type FibLevelTexts } from './utils/fibLevelLabel';
 import {
     BREAKOUT_LEVEL_LABEL,
@@ -149,18 +149,39 @@ export function StockChart({
 }: StockChartProps) {
     const t = useTranslations('widgets.chart');
     const tMisc = useTranslations('shared.ui.misc');
+    const locale = useResolvedLocale();
     // core의 패턴 돌파선 레벨 라벨은 언어 중립 키(`breakout`)라 여기서 문구로 바꾼다.
-    const breakoutLevelText = t('StockChart.57fdbb');
-    // core 피보나치 레벨 라벨(`61.8%`, `ext 127.2%`, `ABC 127.2%`)의 화면 문구.
+    // 어느 패턴의 선인지 붙인다("원형 바닥 돌파") — 패턴명을 모르면 "돌파 기준".
+    const breakoutTitle = useCallback(
+        (patternName: string | undefined): string =>
+            patternName === undefined
+                ? t('StockChart.57fdbb')
+                : t('StockChart.6c577b', { v0: patternName }),
+        [t]
+    );
+    const patternLabels = useMemo(
+        () => patternLabelsByKey(overlayItems),
+        [overlayItems]
+    );
+    // core 피보나치 레벨 라벨(`61.8%`, `ext 127.2%`, `ABC 127.2%`)의 화면 문구 —
+    // 다리 방향에 따라 역할(반등·눌림·목표)로 읽히게 한다.
     const fibLevelTexts = useMemo<FibLevelTexts>(
         () => ({
-            retracement: percent => t('StockChart.99d0ce', { v0: percent }),
-            extension: percent => t('StockChart.c8b284', { v0: percent }),
-            abcExtension: percent => t('StockChart.575708', { v0: percent }),
+            retracement: {
+                down: percent => t('StockChart.87cc60', { v0: percent }),
+                up: percent => t('StockChart.545536', { v0: percent }),
+            },
+            extension: {
+                down: percent => t('StockChart.3784c9', { v0: percent }),
+                up: percent => t('StockChart.693f7c', { v0: percent }),
+            },
+            abcExtension: {
+                down: percent => t('StockChart.fd8510', { v0: percent }),
+                up: percent => t('StockChart.37cc7e', { v0: percent }),
+            },
         }),
         [t]
     );
-    const locale = useResolvedLocale();
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
@@ -533,10 +554,11 @@ export function StockChart({
                         overlayColors,
                         CHART_OVERLAY_COLORS
                     ),
-                levelLabelFor: label =>
+                levelLabelFor: (label, overlay) =>
                     label === BREAKOUT_LEVEL_LABEL
-                        ? breakoutLevelText
-                        : (formatFibLevelLabel(label, fibLevelTexts) ?? label),
+                        ? breakoutTitle(patternLabels.get(overlay.sourceRef))
+                        : (formatFibLevelLabel(label, overlay, fibLevelTexts) ??
+                          label),
                 extendLevelsRight: levelRightExtend,
             }),
         [
@@ -548,7 +570,8 @@ export function StockChart({
             visible.rsi,
             paneIndices.rsi,
             overlayColors,
-            breakoutLevelText,
+            breakoutTitle,
+            patternLabels,
             fibLevelTexts,
             levelRightExtend,
         ]
