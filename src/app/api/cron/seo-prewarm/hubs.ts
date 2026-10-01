@@ -11,7 +11,10 @@ import {
     type NewsFeedCategory,
 } from '@y0ngha/siglens-core';
 import { DASHBOARD_SCOPES } from '@/shared/config/dashboardScope';
-import { selectAggregateNewsItems } from '@/entities/news-article/lib/newsAnalysisSelection';
+import {
+    MAX_AGGREGATE_NEWS_ITEMS,
+    selectAggregateNewsItems,
+} from '@/entities/news-article/lib/newsAnalysisSelection';
 import { marketDataProviderFor } from '@/shared/api/market/getMarketDataProvider';
 import { getCachedMarketSummary } from '@/entities/market-summary/api/marketSummaryCache';
 import { marketBriefingContextOf } from '@/entities/market-summary/lib/marketBriefingContext';
@@ -386,8 +389,9 @@ function macroBriefingTarget(): HubTarget {
  * 대상 하나에는 `HUB_UNIT_TIMEOUT_MS`(45초) 상한이 있고, 그 안에 적재(FMP 1~3초 +
  * upsert) + 보강 + 다이제스트 LLM이 모두 들어가야 한다. DeepSeek 왕복 실측 4~13초라
  * 한 청크면 최악 ~13초, 두 청크면 다이제스트 몫이 위태롭다. 백로그는 다음 적재 때
- * 이어서 보강된다 — 백로그가 남으면 3시간 플래그를 세우지 않아 다음 tick(방문자용
- * 10분 플래그 주기)에 곧바로 이어 받는다(`ingestCategoryBeforeDigest` 참고).
+ * 이어서 보강된다 — 보강된 기사가 다이제스트 상한(25건)에 못 미치는 동안은 3시간
+ * 플래그를 세우지 않아 다음 tick(방문자용 10분 플래그 주기)에 곧바로 이어 받고, 상한에
+ * 닿으면 백로그가 남아도 3시간 간격으로 돌아간다(`ingestCategoryBeforeDigest` 참고).
  */
 const HUB_NEWS_CARD_LIMIT = 8;
 
@@ -402,8 +406,8 @@ const HUB_NEWS_CARD_LIMIT = 8;
  *
  * 간격은 `MARKET_NEWS_CRON_INGEST_INTERVAL_SECONDS`(3시간)로 묶는다 — 근거는 그
  * 상수 주석(새 기사 = 다이제스트 재생성). 표시는 적재가 실제로 끝나고(`ok`) 보강
- * 백로그도 비었을 때만 한다: 피드·쓰기 실패나 남은 백로그면 다시 시도한다(방문자용
- * 10분 플래그가 그 사이 FMP 연타를 막는다).
+ * 백로그가 비었거나 다이제스트에 쓸 만큼 보강됐을 때 한다: 피드·쓰기 실패나 아직
+ * 모자란 백로그면 다시 시도한다(방문자용 10분 플래그가 그 사이 FMP 연타를 막는다).
  *
  * fail-open: 적재가 어떻게 실패해도 다이제스트는 DB에 이미 있는 기사로 계속 간다.
  */
@@ -430,12 +434,22 @@ async function ingestCategoryBeforeDigest(
     // 세워지므로, 직전 tick의 피드 실패도 이 상태로 보인다. 그걸 완료로 치면 실패
     // 하나가 3시간 공백이 된다. 다음 tick에 다시 묻는 비용은 Redis GET 한 번이다.
     //
-    // 보강 백로그(`pending`)가 남아 있어도 세우지 않는다. 세우면 상한 8건이 3시간마다
-    // 하나씩만 비워져, 몇 주 비어 있던 카테고리(`forex`·`articles`)의 첫 적재 백로그
-    // ~50건이 하루 가까이 걸린다(그동안 매 적재가 다이제스트 키를 바꿔 재생성도 그만큼
-    // 반복된다). 안 세우면 방문자용 10분 플래그 주기로 연달아 비우고 한 번에 끝난다 —
-    // 비용은 백로그 크기에 비례하는 일회성이다.
-    if (result.status === 'ok' && result.pending === 0) {
+    // 보강 백로그(`pending`)가 남아 있으면 세우지 않고 다음 tick(방문자용 10분 플래그
+    // 주기)에 이어 비운다. 세우면 상한 8건이 3시간마다 하나씩만 비워져, 몇 주 비어 있던
+    // 카테고리(`forex`·`articles`)의 첫 적재가 하루 가까이 걸린다.
+    //
+    // **단, 다이제스트에 쓸 만큼 보강됐으면 백로그가 남아도 세운다.** `pending`만 보면
+    // 빠른 피드는 영원히 안 끝난다 — 2026-10-01 운영 실측에서 `stock`·`crypto`는 10분마다
+    // 새 기사가 10~50건 들어와 `pending`이 한 시간 내내 26~42였고, 그동안 10분마다
+    // 재적재·카드 보강 8건·다이제스트 재생성이 돌았다(3시간 간격이 무력화). 다이제스트는
+    // 보강된 기사 중 영향도 순 상위 `MAX_AGGREGATE_NEWS_ITEMS`건만 쓰므로, 그만큼 채워졌으면
+    // 다이제스트를 구울 재료는 충분하다. **대가**: 아직 보강 안 된 새 기사 중 영향도가 더
+    // 큰 것이 있어도 다음 적재(최대 3시간 뒤)나 방문자 경로가 보강할 때까지 다이제스트에
+    // 반영되지 않는다 — 10분마다 재생성하는 비용과 맞바꾼 지연이다.
+    const backlogDrained = result.status === 'ok' && result.pending === 0;
+    const enoughForDigest =
+        result.status === 'ok' && result.enriched >= MAX_AGGREGATE_NEWS_ITEMS;
+    if (backlogDrained || enoughForDigest) {
         await markCronIngested(sentinel);
     }
 }

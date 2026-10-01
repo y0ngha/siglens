@@ -198,6 +198,7 @@ function allSucceed(): void {
         changed: 1,
         analyzed: 1,
         pending: 0,
+        enriched: 1,
     });
     mocks.runBriefing.mockResolvedValue({ briefing: 'x' });
     mocks.runMacroBriefing.mockResolvedValue({ briefing: 'y' });
@@ -582,6 +583,7 @@ describe('runHubPrewarm — 뉴스 카테고리 적재', () => {
                 changed: 1,
                 analyzed: 1,
                 pending: 0,
+                enriched: 1,
             };
         });
         mocks.getMarketNewsList.mockImplementation(async () => {
@@ -613,13 +615,49 @@ describe('runHubPrewarm — 뉴스 카테고리 적재', () => {
         );
     });
 
-    it('보강 백로그가 남으면(pending > 0) 플래그를 세우지 않아 다음 tick에 이어 비운다', async () => {
+    it('보강 백로그가 남고 다이제스트에 쓸 만큼 보강되지도 않았으면 플래그를 세우지 않는다', async () => {
         mocks.ingestMarketNewsCategory.mockResolvedValue({
             status: 'ok',
             fetched: 50,
             changed: 50,
             analyzed: 8,
             pending: 42,
+            enriched: 8,
+        });
+
+        await runHubPrewarm();
+
+        expect(mocks.markCronIngested).not.toHaveBeenCalled();
+    });
+
+    /**
+     * 2026-10-01 운영 실측: `stock`·`crypto`는 10분마다 새 기사가 10~50건 들어와 `pending`이
+     * 0이 되는 순간이 없었다. `pending === 0`만 조건이면 3시간 간격이 영원히 안 걸려
+     * 10분마다 재적재·다이제스트 재생성이 돈다.
+     */
+    it('백로그가 남아도 다이제스트에 쓸 만큼(25건) 보강됐으면 플래그를 세운다 — 빠른 피드', async () => {
+        mocks.ingestMarketNewsCategory.mockResolvedValue({
+            status: 'ok',
+            fetched: 50,
+            changed: 40,
+            analyzed: 8,
+            pending: 34,
+            enriched: 25,
+        });
+
+        await runHubPrewarm();
+
+        expect(mocks.markCronIngested).toHaveBeenCalledTimes(categories.length);
+    });
+
+    it('보강 수가 기준에 1건 모자라면(24건) 아직 세우지 않는다', async () => {
+        mocks.ingestMarketNewsCategory.mockResolvedValue({
+            status: 'ok',
+            fetched: 50,
+            changed: 40,
+            analyzed: 8,
+            pending: 10,
+            enriched: 24,
         });
 
         await runHubPrewarm();

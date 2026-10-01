@@ -96,6 +96,7 @@ describe('ingestMarketNewsCategory', () => {
             changed: 5,
             analyzed: 2,
             pending: 3,
+            enriched: 2,
         });
     });
 
@@ -107,7 +108,13 @@ describe('ingestMarketNewsCategory', () => {
         });
 
         expect(core.runNewsCardAnalysis).toHaveBeenCalledTimes(2);
-        expect(result).toMatchObject({ status: 'ok', analyzed: 2, pending: 0 });
+        // 창 안에 이미 보강된 1건(b) + 이번에 보강한 2건.
+        expect(result).toMatchObject({
+            status: 'ok',
+            analyzed: 2,
+            pending: 0,
+            enriched: 3,
+        });
     });
 
     it('행 변경과 보강 저장 뒤에 목록 태그를 각각 턴다', async () => {
