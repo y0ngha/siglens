@@ -644,3 +644,15 @@
   - Rule: MISTAKES.md 6.9 — duplicated logic/constants across multiple locations without shared source
   - Context: core v2.4.0 now exports STRATEGY_OVERLAY_KINDS; both files import it and the duplicate copies + exhaustiveness guards were removed. core pin 2.3.1 → 2.4.0. skills/CLAUDE.md wording corrected (a prompt-side fix was A/B-tested and shelved, so the doc no longer claims the prompt instructs the model).
 - Status: APPROVED (zero findings)
+
+## [fix/share-i18n-direction-font | Round 1–2 | 2026-10-01]
+- Violation (R1 required): news category OG label used `CATEGORY_CONFIG[cat].koLabel` (Korean AI-prompt field) in every locale; after switching ja/zh OG fonts to Noto Sans JP/SC (no Hangul) it would render tofu
+  - Rule: (new) OG metadata fields consumed by different rendering contexts (AI prompt vs share snapshot) must use locale-specific values when the consuming context depends on locale-specific properties (font, glyph coverage)
+  - Context: Fixed by translating `labelKey` in the request locale + test asserting no Hangul for ja/zh
+- Violation (R1 recommended): 5 new hand-translated i18n keys lacked messages/_meta/hashes.json entries
+  - Rule: MISTAKES.md §26–27 i18n artifact sync — hand-translated or new keys must be added to messages/_meta/hashes.json immediately
+  - Context: Verified by sync check after all translations
+- Violation (R1 recommended): `satisfies Partial<Record<OptionsSignalKind,string>>` not exhaustive over non-shared signal kinds
+  - Rule: Record types used in props must be exhaustive over their semantic domain; Partial narrows to only properties covered, masking missing cases
+  - Context: Changed to exhaustive Record over the non-shared signal kinds
+- Status (R2): APPROVED (zero findings)

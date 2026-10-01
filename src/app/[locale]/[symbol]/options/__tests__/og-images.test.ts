@@ -42,6 +42,7 @@ describe('[symbol]/options OG images', () => {
             expect(mockBuildSymbolOgImage).toHaveBeenCalledWith({
                 ticker: 'MSFT',
                 label: '옵션 분석',
+                locale: 'ko',
             });
         });
     });

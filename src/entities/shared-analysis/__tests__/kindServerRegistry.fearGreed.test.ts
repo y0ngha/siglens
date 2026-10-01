@@ -60,3 +60,42 @@ describe('SHARE_KIND_OG_BUILDERS.fear-greed', () => {
         }
     });
 });
+
+/*
+ * 방향 키 표에 공포·탐욕 라벨이 없어 `EXTREME_FEAR` 같은 enum이 OG 설명·트윗에
+ * 그대로 찍혔다(한국어 페이지 포함). 옵션의 `volatility`도 같았다.
+ */
+describe('SHARE_KIND_OG_BUILDERS — 방향 라벨 번역', () => {
+    it.each([
+        ['ko', 'EXTREME_FEAR', '극심한 공포'],
+        ['ko', 'GREED', '탐욕'],
+        ['en', 'EXTREME_GREED', 'Extreme Greed'],
+        ['ja', 'FEAR', '恐怖'],
+        ['zh', 'NEUTRAL', '中性'],
+    ] as const)('%s 공포·탐욕 %s → %s', (locale, label, expected) => {
+        const t = catalogTranslator('entities.shared-analysis.og', locale);
+        const out = SHARE_KIND_OG_BUILDERS['fear-greed'](
+            { label, score: 20 },
+            'AAPL',
+            t
+        );
+        expect(out.description.startsWith(`${expected} · `)).toBe(true);
+        expect(out.tweet).toContain(` ${expected} — `);
+        expect(JSON.stringify(out)).not.toContain(label);
+    });
+
+    it.each([
+        ['ko', '변동성'],
+        ['en', 'Volatility'],
+        ['ja', 'ボラティリティ'],
+        ['zh', '波动率'],
+    ] as const)('%s 옵션 volatility 신호 → %s', (locale, expected) => {
+        const t = catalogTranslator('entities.shared-analysis.og', locale);
+        const out = SHARE_KIND_OG_BUILDERS.options(
+            { signals: [{ kind: 'volatility' }], summary: 's' },
+            'AAPL',
+            t
+        );
+        expect(out.description).toBe(`${expected} · s`);
+    });
+});

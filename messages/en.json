@@ -535,9 +535,14 @@
                 "bearish": "Bearish",
                 "bullish": "Bullish",
                 "cautious": "Cautious",
+                "extremeFear": "Extreme Fear",
+                "extremeGreed": "Extreme Greed",
+                "fear": "Fear",
                 "fearGreedSummary": "Fear & Greed Index {v0}",
                 "fearGreedSummaryNoScore": "Fear & Greed Index",
-                "neutral": "Neutral"
+                "greed": "Greed",
+                "neutral": "Neutral",
+                "volatility": "Volatility"
             },
             "seo": {
                 "expiredTitle": "Shared analysis",

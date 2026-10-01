@@ -535,9 +535,14 @@
                 "bearish": "看跌",
                 "bullish": "看涨",
                 "cautious": "谨慎",
+                "extremeFear": "极度恐惧",
+                "extremeGreed": "极度贪婪",
+                "fear": "恐惧",
                 "fearGreedSummary": "恐惧与贪婪指数 {v0}",
                 "fearGreedSummaryNoScore": "恐惧与贪婪指数",
-                "neutral": "中性"
+                "greed": "贪婪",
+                "neutral": "中性",
+                "volatility": "波动率"
             },
             "seo": {
                 "expiredTitle": "共享分析",

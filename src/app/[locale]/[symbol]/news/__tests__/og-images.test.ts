@@ -42,6 +42,7 @@ describe('[symbol]/news OG images', () => {
             expect(mockBuildSymbolOgImage).toHaveBeenCalledWith({
                 ticker: 'TSLA',
                 label: '뉴스 분석',
+                locale: 'ko',
             });
         });
     });

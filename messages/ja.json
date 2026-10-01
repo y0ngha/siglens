@@ -535,9 +535,14 @@
                 "bearish": "弱気",
                 "bullish": "強気",
                 "cautious": "注意",
+                "extremeFear": "極度の恐怖",
+                "extremeGreed": "極度の強欲",
+                "fear": "恐怖",
                 "fearGreedSummary": "恐怖・強欲指数 {v0}",
                 "fearGreedSummaryNoScore": "恐怖・強欲指数",
-                "neutral": "中立"
+                "greed": "強欲",
+                "neutral": "中立",
+                "volatility": "ボラティリティ"
             },
             "seo": {
                 "expiredTitle": "共有された分析",
