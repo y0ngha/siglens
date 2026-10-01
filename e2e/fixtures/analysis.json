@@ -119,6 +119,41 @@
                 ],
                 "levels": [],
                 "labels": []
+            },
+            {
+                "id": "fib:short:1733356800",
+                "kind": "fibonacci",
+                "skill": "fibonacci-retracement",
+                "sourceRef": "kind:fibonacci",
+                "variant": "primary",
+                "segments": [
+                    {
+                        "from": {
+                            "time": 1733356800,
+                            "price": 189.2
+                        },
+                        "to": {
+                            "time": 1733529600,
+                            "price": 193.0
+                        },
+                        "role": "anchor",
+                        "style": "dashed",
+                        "pane": "price"
+                    }
+                ],
+                "levels": [
+                    {
+                        "price": 191.1,
+                        "fromTime": 1733529600,
+                        "label": "50%"
+                    },
+                    {
+                        "price": 190.65,
+                        "fromTime": 1733529600,
+                        "label": "61.8%"
+                    }
+                ],
+                "labels": []
             }
         ]
     },

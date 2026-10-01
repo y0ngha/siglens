@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { ChartOverlay } from '@y0ngha/siglens-core';
+import {
+    STRATEGY_KIND_SOURCE_REF,
+    type ChartOverlay,
+} from '@y0ngha/siglens-core';
 import {
     ACTION_PRICES_ITEM_KEY,
     buildOverlayMenuItems,
@@ -187,6 +190,49 @@ describe('buildOverlayMenuItems', () => {
         expect(fallbackItem?.kind === 'pattern' && fallbackItem.label).toBe(
             'p1'
         );
+    });
+});
+
+// core가 카드 없이 종류로 그린 작도(예: 엘리어트 카드만 인용한 피보나치 다리를
+// 분석에 피보나치 카드가 없어 'kind:fibonacci' 밑에 그린 경우).
+describe('buildOverlayMenuItems — 카드 없는 종류 항목', () => {
+    const fib = (id: string): ChartOverlay =>
+        pattern({
+            id,
+            kind: 'fibonacci',
+            skill: 'fibonacci-retracement',
+            sourceRef: STRATEGY_KIND_SOURCE_REF.fibonacci,
+        });
+
+    it('label은 null(메뉴가 종류 이름으로 표시) — labelFor가 값을 줘도 카드 이름을 쓰지 않는다', () => {
+        const items = buildOverlayMenuItems([fib('fib:short:1')], {
+            barTimes: BAR_TIMES,
+            lastBarTime: LAST_BAR_TIME,
+            labelFor: () => '엘리어트 파동',
+            hasActionPrices: false,
+        });
+        expect(items).toEqual([
+            {
+                key: STRATEGY_KIND_SOURCE_REF.fibonacci,
+                kind: 'fibonacci',
+                label: null,
+            },
+        ]);
+    });
+
+    it('같은 종류 출처의 작도 여럿은 한 항목으로 묶인다', () => {
+        const items = buildOverlayMenuItems(
+            [fib('fib:short:1'), fib('fib:abc:1')],
+            {
+                barTimes: BAR_TIMES,
+                lastBarTime: LAST_BAR_TIME,
+                labelFor: noLabel,
+                hasActionPrices: false,
+            }
+        );
+        expect(items.map(i => i.key)).toEqual([
+            STRATEGY_KIND_SOURCE_REF.fibonacci,
+        ]);
     });
 });
 

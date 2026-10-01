@@ -469,18 +469,6 @@
 - Rule: (new) A tradeoff comment must cover every client class the setting affects (crawlers AND browsers), and each factual claim must be measured with that client's actual request headers
 - Context: next.config.ts `generateEtags` comment — corrected the ETag-stripping claim and added the real-user revisit cost plus the Cloudflare "Respect strong ETags" OFF alternative that keeps 304.
 
-## [PR #881 Round 1 | fix/seoptimer-audit-actions | 2026-09-27]
-- Violation: CI e2e failure — `e2e/specs/seo-smoke.spec.ts` hard-coded `Crawl-delay: 60` while the unit test referenced the exported constant; lowering `AI_CRAWLER_CRAWL_DELAY_SECONDS` to 10 broke only the e2e. Root cause of the miss: when changing the constant, the implementer grepped src/ and docs/ but not e2e/.
-  - Rule: (new) When changing a constant's value, grep its literal value repo-wide (src/, e2e/, docs/, scripts/), not only src/ and docs/ — e2e specs are not run by scoped unit tests, so a stale literal there only surfaces in CI. Prefer tests that import the constant over re-stating the literal.
-  - Context: e2e now imports the constant from `@/app/robots`.
-- Violation: After moving the confidence tooltip next to the section heading with `left-0 w-56`, the box anchored to the ⓘ button (~130px from the left) would overflow a 320px viewport. The tooltip's `relative` anchor was the ⓘ wrapper itself.
-  - Rule: (new) When relocating an absolutely positioned popover, recompute its box against the narrowest supported viewport (320px) from its new anchor's offset; `left-0`/`right-0` choices that were safe at the old anchor can overflow at the new one.
-  - Context: Moved the `relative` anchor from the button to the header row (the tooltip's immediate container), so the box now anchors to the section's left content edge rather than the button's position.
-
-## [PR #883 | feat/portfolio-menu | 2026-09-27]
-- Violation: CI e2e failure — moving the holdings add/edit/delete UI (PortfolioSection) from `/account` to `/portfolio` left 6 authed specs (`portfolio-holdings.spec.ts`, `portfolio-position.spec.ts`, `personalized-analysis.spec.ts`) navigating to `/account` for a form that no longer lives there, and using the stale region name `'보유종목'` (now `'보유종목 관리'` on `/portfolio`) and the stale h1 `'계정 설정'`/`'내 포트폴리오 위치'` (now `'포트폴리오'`). None of `typecheck`/`lint`/`vitest` caught this — the specs only fail live in CI under Playwright.
-  - Rule: (new) When a UI section is relocated to a different route (not just a trigger/condition narrowed — see MISTAKES.md Tests §3, which covers only removed/narrowed triggers), grep e2e/specs/ for every helper and locator scoped to the old route (page.goto target, heading text, aria-label region name) and update them in the same PR. This is a distinct failure shape from a narrowed trigger: the whole navigation target moves, so page.goto, h1 text, and region names all go stale together.
-  - Context: Updated `resetAaplHolding`/`addAaplHolding` helpers and heading assertions in all 3 specs to target `/portfolio`, `'포트폴리오'` (h1), and `'보유종목 관리'` (region). Verified via `yarn tsc --noEmit -p e2e/tsconfig.json` (specs cannot run locally — no DB/secrets in this harness) plus a full manual re-read against `PortfolioSection.tsx`/`page.tsx` source labels.
 ## [PR #882 Round 1 | fix/bot-analysis-parity | 2026-09-27]
 - Violation: Claude-review R3 Blocker — UA-based concurrency bonus (BOT_STREAM_LIMIT_MULTIPLIER) became an abuse vector once bots trigger paid generation. Route reads User-Agent to classify as bot and apply higher concurrency limit; generic script clients match bot UA pattern.
   - Rule: (new) Request-based abuse vectors (rate-limit bypasses) must not read headers that generic clients also send; read-only token/fingerprint headers instead. UA header (User-Agent) is sent by all clients and can be spoofed — route should not use it for concurrent-request gating without explicit allowlist verification.
@@ -524,11 +512,6 @@
   - Rule: MISTAKES Predictability — conditions must be falsifiable under the trigger that injects the skill
   - Context: Removed the criterion; neutral branch now "MA(200) falling or stack not met".
 
-## [PR #856 merge-conflict resolution | master → feat/symbol-chat-to-ai-host | 2026-09-29]
-- Violation: While merging master into a branch that deletes a whole slice (widgets/chat, features/symbol-chat, entities/chat-message), master had ADDED new test files inside those deleted directories (src/widgets/chat/__tests__/hooks/useChatBranches2.test.tsx, src/entities/chat-message/__tests__/localeEnvelope.test.ts which git relocated via directory-rename detection to src/entities/analysis/__tests__/lib/) and a new test (src/views/symbol/__tests__/ChartContent.overlayHighlight.test.tsx) importing from the deleted slice. The additions merged silently (no conflict marker), so only a repo-wide grep for the deleted module paths caught them.
-  - Rule: (new) After merging base into a branch that deletes a slice, grep the whole repo for the deleted module paths/exports and check for files added inside deleted directories, not just the listed conflicts.
-  - Context: deleted the orphan tests, repointed overlayHighlight test to @/entities/analysis and entities.analysis.fallback; also updated the controlBorderTokenGuard AnalysisPanel line key (master 1187 minus 2 lines removed by the branch = 1185).
-
 ## [claude/funny-turing-9cgfid Round 3 | exception-safety refactoring + line-number regression | 2026-09-28]
 - Violation: Self-caught during implementation — edit shifted AnalysisPanel line numbers, breaking a line-number-keyed exception in src/__tests__/guards/controlBorderTokenGuard.test.ts before commit.
   - Rule: Line-number references in code/tests are fragile after refactoring. After non-trivial edits, run guards before committing to catch such breakages.
@@ -555,11 +538,6 @@
   - Rule: (new) Test utility methods must not be exposed on production interfaces. Separate `__reset*ForTests` exports (e.g., `__resetForTests`, `__resetCacheForTests`) allow tests to reset internal state without polluting the public API surface.
   - Context: The singleFlight utility exports a public `reset()` method on its production interface. Should refactor to separate `__resetForTests` export and remove reset from production interface, following the repo's established pattern.
 
-## [PR #856 merge-conflict resolution round 2 | master barrel-removal refactor → feat/symbol-chat-to-ai-host | 2026-09-29]
-- Violation: master landed a repo-wide barrel removal (all slice index.ts deleted; CLAUDE.md now forbids barrels). The branch had added a new barrel (src/widgets/ask-ai-fab/index.ts) and imports via barrels (@/entities/analysis, @/features/share, @/widgets/ask-ai-fab). A per-hunk "take master side, strip chat lines" resolver also dropped branch-only imports that sat in the same hunk (ShareableAnalysisProvider/useShareable in three widget tests), caught only by tsc.
-  - Rule: (new) When resolving conflicts mechanically by taking one side, diff each hunk's other side for branch-only additions (imports, mocks) before discarding it; always follow with tsc. When base removes a convention (barrels), grep the branch's own new files for the old pattern too.
-  - Context: deleted ask-ai-fab/index.ts, switched to deep imports, restored the share imports, updated controlBorderTokenGuard AnalysisPanel key to 1142, replaced CONVENTIONS.md example that referenced the deleted symbol-chat slice.
-
 ## [PR #892 Round 2 | feat/navigation-pending-ui | 2026-09-29]
 - Violation: NavigationPendingProvider context value and startNavigation function recreated on every render (new object identity each render)
   - Rule: MISTAKES.md Coding Paradigm §10 — derived constants recreated on every render without memoization
@@ -580,11 +558,6 @@
 - Violation: useTimeframeChange pending state cleared only when target matched current value; forced mid-switch timeframe change (logout → free tier) left spinner stuck indefinitely
   - Rule: (new) State reset paths must account for ALL ways a state machine can transition, not only the intended path. Forced transitions (policy-driven, tier-dependent) are as valid as user-initiated changes.
   - Context: Changed pending clear condition from equality check to range test: pending cleared whenever timeframe leaves its starting value (now handles logout→free forced change).
-
-## [PR #893 Round 2 | feat/chart-overlay-item-toggles | 2026-09-30]
-- Violation: CI e2e failure — e2e/specs/chart-overlays.spec.ts still asserted removed behavior (category toggle persisted in localStorage across reload); unit tests were updated to reflect new all-on default after reload, but the e2e spec was not synchronized
-  - Rule: (new) When refactoring a feature's test suite to reflect behavior changes, all test layers (unit + e2e) must be updated simultaneously. Unit test updates without corresponding e2e assertions create CI failures where the contract is broken at the integration level while unit tests pass.
-  - Context: Updated e2e spec to assert new all-on default after reload and added menu↔AI-panel sync e2e test case. Synchronized behavior across all test layers (unit + e2e).
 
 ## [PR #895 Round 1 | fix/fib-label-extraction | 2026-10-01]
 - Status: APPROVED (claude-review suggestions applied)
@@ -656,3 +629,17 @@
   - Rule: Record types used in props must be exhaustive over their semantic domain; Partial narrows to only properties covered, masking missing cases
   - Context: Changed to exhaustive Record over the non-shared signal kinds
 - Status (R2): APPROVED (zero findings)
+
+## [fix/overlay-kind-items | chart overlay item visibility & type safety | 2026-10-02]
+- Violation (R1): e2e/specs/chart-overlays.spec.ts fixture header comment said "the fixture has 2 chart overlays" after a third card-less overlay (kind:fibonacci) was added
+  - Rule: (existing MISTAKES.md §15.6) Comments/JSDoc making factually inaccurate claims about the code
+  - Context: Updated fixture header comment to list all three overlays
+- Violation (R1): OverlayMenuItem allowed `label: null` on pattern items, forcing an unreachable null guard in patternLabelsByKey
+  - Rule: Type discriminants must narrow branches exhaustively; nullable discriminant fields force dead-code guards in consumers
+  - Context: Split into variant: pattern items now typed `{ kind: StrategyOverlayKind; label: null }` with separate exhaustive check
+- Status (R2): APPROVED (zero findings) — core pin 2.4.0 → 2.5.0 (released) replaced local overlay used during development
+
+## [PR #881 Round 1 | fix/seoptimer-audit-actions | 2026-09-27] (restored — not part of the promoted rules)
+- Violation: After moving the confidence tooltip next to the section heading with `left-0 w-56`, the box anchored to the ⓘ button (~130px from the left) would overflow a 320px viewport. The tooltip's `relative` anchor was the ⓘ wrapper itself.
+  - Rule: (new) When relocating an absolutely positioned popover, recompute its box against the narrowest supported viewport (320px) from its new anchor's offset; `left-0`/`right-0` choices that were safe at the old anchor can overflow at the new one.
+  - Context: Moved the `relative` anchor from the button to the header row (the tooltip's immediate container), so the box now anchors to the section's left content edge rather than the button's position.

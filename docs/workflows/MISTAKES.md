@@ -571,6 +571,28 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ After narrowing to always-noindex: remove getBlockedSymbolMetadata() read, use isPrewarmTab to skip tab entirely; audit call sites for stale dependencies
     ✅ HubTarget.selfInvalidating flag prevents duplicate revalidation; revalidation happens once in inner function, not re-run by caller
     → Recurring: claude/magical-sagan-56eoov (SEO prewarm reduction), PR #900 (hub briefing) — 2 occurrences
+
+32. After moving/deleting/refactoring code, grep repo for all affected references
+    → When a code path changes (UI section relocated, constant value changed, slice deleted, merge conflict resolved), grep the entire repo (src/, e2e/, scripts/, docs/) for references that must be updated in the same commit
+    → Local editing with full-repo grep catches stale imports, e2e spec fixtures, hardcoded literals, and dangling references that scoped test runs and editor refactoring tools miss
+    → Common sources of missed references: e2e specs (not run locally), hardcoded test literals, branch-only additions in merge conflicts (grep-only detected after taking one side)
+    ❌ Relocate UI section from /account to /portfolio; grep account/page.tsx finds the move; miss the 6 e2e spec helpers still targeting /account
+    ❌ Lower AI_CRAWLER_CRAWL_DELAY_SECONDS (60 → 10); update src/ and the unit test; miss the hard-coded `Crawl-delay: 60` in e2e/specs/seo-smoke.spec.ts (PR #881)
+    ❌ Delete widgets/chat slice; merge master which added tests to deleted dirs; resolve by taking one side, miss deleted directory additions caught only by full-repo grep
+    ✅ After moving UI section: grep -r '/account.*보유종목' and -r '/portfolio.*보유종목' to find all references across src/+e2e/+docs/
+    ✅ After changing a constant: grep its old literal value repo-wide (src/, e2e/, docs/, scripts/) and update every occurrence (or import the constant)
+    ✅ After merge conflict: grep entire repo for deleted module paths, restore orphaned test files, update line-number references in guards
+    → Recurring: PR #881 (constant grep incomplete), PR #893 (e2e spec relocation missed), PR #856 (merge conflict additions missed), PR #883 (e2e helpers stale), PR #856 R2 (branch-only imports dropped) — 5+ occurrences
+
+33. Test suite layers (unit/integration/e2e) must be synchronized when behavior changes
+    → When a feature's behavior or test assertions change, update ALL test layers (unit tests + integration tests + e2e specs) simultaneously
+    → Local scoped test runs (`yarn test src/...`) do not execute e2e specs; a change that passes unit tests but breaks e2e only surfaces in CI
+    → After refactoring feature logic or test assertions, verify the change across all layers: unit assertions, integration setup, e2e selectors/steps
+    ❌ Change a feature default (overlay toggles all-on after reload instead of persisted); update the unit tests only; the e2e spec still asserting the old persistence fails in CI (PR #893)
+    ❌ Change a constant's value; the unit test reads the constant but an e2e spec re-states the old literal, so only CI e2e fails (PR #881)
+    ✅ After changing feature behavior: 1) update unit test assertions, 2) update integration test fixtures if they exist, 3) update e2e selectors and step assertions, 4) verify locally with `yarn vitest run ...` + manual e2e step-through before push
+    ✅ For constants that appear in e2e specs, prefer importing the constant instead of re-stating the literal
+    → Recurring: PR #893 (unit test behavior change, e2e spec not updated), PR #881 (constant changed, e2e literal not updated) — 2+ occurrences
 ```
 
 ---

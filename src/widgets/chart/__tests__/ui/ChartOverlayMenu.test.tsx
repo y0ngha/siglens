@@ -195,6 +195,18 @@ describe('ChartOverlayMenu', () => {
         expect(panel.getAttribute('aria-label')).not.toMatch(/\d/);
     });
 
+    it('a card-less kind item (label null) is labeled with its kind name', async () => {
+        const user = userEvent.setup();
+        renderMenu([{ key: 'kind:fibonacci', kind: 'fibonacci', label: null }]);
+        await user.click(screen.getByRole('button', { name: /차트 작도/ }));
+        const panel = getPanel();
+
+        // 그룹 머리와 항목 행이 같은 이름 "피보나치"를 쓴다(머리는 개수가 붙는다).
+        expect(
+            within(panel).getByRole('button', { name: '피보나치' })
+        ).toBeInTheDocument();
+    });
+
     it('trendline items are labeled 상승/하락 추세선 #n by direction', async () => {
         const user = userEvent.setup();
         renderMenu([trendUp1, trendDown1]);
