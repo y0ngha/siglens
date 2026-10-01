@@ -17,7 +17,9 @@
         // Next 앰비언트 진입점. 이 파일이 없으면 스크립트가 끌어오는 `src/**`가
         // 전부 `server-only` TS2882로 깨진다 — 자세한 사정은 그 파일 주석에.
         "scripts/next-ambient.d.ts",
+        "scripts/abDigestReasoning.ts",
         "scripts/backfillEconomicCalendar.ts",
+        "scripts/lib/abDigestReport.ts",
         "scripts/lib/chunkDateRange.ts",
         "scripts/lib/cryptoPoolInsert.ts",
         "scripts/lib/krTrendingInsert.ts",
@@ -36,6 +38,7 @@
         "scripts/__tests__/skills-digest.test.ts",
         "scripts/__tests__/update-popular-cryptos.test.ts",
         "scripts/__tests__/validate-skills.test.ts",
+        "scripts/lib/__tests__/abDigestReport.test.ts",
         "scripts/lib/__tests__/chunkDateRange.test.ts",
         "scripts/lib/__tests__/cryptoPoolInsert.test.ts",
         "scripts/lib/__tests__/krTrendingInsert.test.ts",

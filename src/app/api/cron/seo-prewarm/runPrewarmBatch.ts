@@ -118,10 +118,10 @@ const UNIT_TIMEOUT_MS = 120_000; // 2min
  *
  * 락은 두 단계에 걸쳐 하나로 잡혀 있고, 각 단계의 마감은 유닛 **사이**에서만
  * 검사되므로 실제 최악은 `마감 + 그 단계의 유닛 상한`이다:
- * 허브 `HUB_DEADLINE_MS` 120s + `HUB_UNIT_TIMEOUT_MS` 45s,
- * 심볼 `BATCH_DEADLINE_MS` 600s + `UNIT_TIMEOUT_MS` 120s = 885s.
- * `LOCK_TTL_SECONDS`(900s)까지 15s밖에 안 남는다 — FIX G가 막으려던 락 오버랩에
- * 그건 여유가 아니다. 이 예산으로 심볼 마감을 잘라 최악을 840s로 묶는다.
+ * 허브 `HUB_DEADLINE_MS` 180s + `HUB_UNIT_TIMEOUT_MS` 45s,
+ * 심볼 `BATCH_DEADLINE_MS` 600s + `UNIT_TIMEOUT_MS` 120s = 945s.
+ * `LOCK_TTL_SECONDS`(900s)를 넘는다 — FIX G가 막으려던 락 오버랩이다. 이 예산으로
+ * 심볼 마감을 잘라 최악을 840s로 묶는다.
  *
  * `LOCK_TTL_SECONDS`를 lock.ts에서 import하는 이유: 여기 숫자를 다시 적으면 한쪽만
  * 바뀌어도 아무도 모르게 오버랩이 열린다.
@@ -359,19 +359,19 @@ export async function runPrewarmBatch(
      * `BATCH_DEADLINE_MS`가 "심볼에 10분"이라는 뜻을 잃는다.
      *
      * 자르는 이유: 두 단계의 마감은 모두 **유닛 사이에서만** 검사되므로 실제 최악은
-     * 각 마감 + 그 단계의 유닛 상한이다 — 허브 120 + 45, 심볼 600 + 120 = 885초.
-     * `LOCK_TTL_SECONDS`(900초)까지 15초밖에 안 남는데, 이 여유가 곧 FIX G가 막으려던
-     * "락 만료 → 다음 tick이 새 락 획득 → 배치 2개 동시 실행"의 안전장치다.
+     * 각 마감 + 그 단계의 유닛 상한이다 — 허브 180 + 45, 심볼 600 + 120 = 945초.
+     * `LOCK_TTL_SECONDS`(900초)를 넘는다 — FIX G가 막으려던 "락 만료 → 다음 tick이
+     * 새 락 획득 → 배치 2개 동시 실행"이 그대로 열린다.
      * 그래서 심볼 마감을 `BATCH_WALL_CLOCK_BUDGET_MS` 안으로 자른다. 허브가 평소처럼
      * 빨리 끝나면(실측 1분 내외) 잘림이 없고, 허브가 마감을 다 쓴 최악에서만
      * 심볼 쪽이 줄어든다 — 줄어드는 쪽이 락 오버랩보다 낫다.
      */
 
     /*
-     * 허브 AI 콘텐츠를 **먼저** 굽는다(열 개, 자체 마감 120초).
+     * 허브 AI 콘텐츠를 **먼저** 굽는다(대상 목록은 `hubTargets`, 자체 마감 180초).
      *
      * 앞에 두는 이유는 물량 차이다 — 심볼 루프는 마감까지 계속 돌므로 뒤에 두면
-     * 허브가 매번 굶는다. 반대로 허브는 열 개로 끝나 심볼 예산을 거의 안 먹는다.
+     * 허브가 매번 굶는다. 반대로 허브는 대상 십여 개로 끝나 심볼 예산을 거의 안 먹는다.
      *
      * 실패해도 심볼 배치는 그대로 진행한다. 허브는 이 크론의 부가 임무고,
      * 종목 스냅샷이 이 크론의 본래 계약이다.
@@ -395,7 +395,8 @@ export async function runPrewarmBatch(
             `[hub-prewarm] 생성 ${hubs.generated}/${hubs.attempted}` +
                 `, 캐시신선 ${hubs.alreadyFresh}, 데이터없음 ${hubs.noData}` +
                 `, 키불일치 ${hubs.keyMismatch}, 실패 ${hubs.failed}` +
-                `, 마감초과 건너뜀 ${hubs.skippedByDeadline}`
+                `, 마감초과 건너뜀 ${hubs.skippedByDeadline}` +
+                `, 쿨다운 ${hubs.skippedByCooldown}`
         );
     }
     // **의도적으로 `clock.now()`가 아니다.** `PrewarmClock`은 경과 시간 예산

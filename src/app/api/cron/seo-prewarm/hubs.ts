@@ -40,6 +40,19 @@ import { DEFAULT_DIGEST_MODEL_ID } from '@/entities/market-news/lib/marketNewsCo
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { PREWARM_PROVIDER_FALLBACK } from '@/shared/config/prewarm';
 import { writeHubSsrSeed } from '@/shared/cache/hubSsrSeed';
+import { consumeSsrMiss } from '@/shared/cache/ssrMissMarker';
+import { createRedisFlag } from '@/shared/cache/createRedisFlag';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import { ECONOMY_SNAPSHOT_CACHE_TAG } from '@/entities/economy/api/economySnapshotStaticCache';
+import { shouldCacheEconomySnapshot } from '@/entities/economy/lib/economyCompleteness';
+import { ingestEconomicCalendar } from '@/entities/economy/api/ingestEconomicCalendar';
+import { analyzeEconomicEvents } from '@/entities/economy/api/analyzeEconomicEvents';
+import { translateUnresolvedCalendarIndicators } from '@/entities/economy/api/translateIndicators';
+import {
+    CALENDAR_COUNTRY,
+    CALENDAR_COUNTRY_KR,
+    economyCalendarCacheTag,
+} from '@/entities/economy/lib/economyCalendarConstants';
 
 /**
  * 허브 페이지의 AI 콘텐츠를 **서버에서 미리 굽는다**.
@@ -70,12 +83,16 @@ import { writeHubSsrSeed } from '@/shared/cache/hubSsrSeed';
  * 심볼 배치의 10분은 이 단계가 끝난 **뒤** 다시 잡히므로(`runPrewarmBatch`) 평소에는
  * 예산이 깎이지 않는다. 대신 락 보유 시간이 두 단계의 합이 되고, 두 마감 모두 유닛
  * **사이**에서만 검사되므로 실제 최악은 `마감 + 그 단계의 유닛 상한`이다:
- * 이 단계 120 + 45, 심볼 600 + 120 = 885초. `LOCK_TTL_SECONDS`(900초)에 15초 차라
- * 그대로 두면 락 오버랩 여유가 사라진다 — 그래서 `runPrewarmBatch`가 심볼 마감을
- * `BATCH_WALL_CLOCK_BUDGET_MS`(840초) 안으로 자른다. 이 상수를 올리면 잘리는 쪽은
- * 심볼 배치다.
+ * 이 단계 180 + 45, 심볼 600 + 120 = 945초. `LOCK_TTL_SECONDS`(900초)를 넘으므로
+ * `runPrewarmBatch`가 심볼 마감을 `BATCH_WALL_CLOCK_BUDGET_MS`(840초) 안으로 자른다.
+ * 이 상수를 올리면 잘리는 쪽은 심볼 배치다.
+ *
+ * 120 → 180초(2026-10-01): 이 단계에 뉴스 카테고리 적재와 경제 캘린더(적재·분석·
+ * 지표명 번역)가 붙어 대상당 시간이 늘었다. 120초면 뒤쪽 대상이 첫 tick마다
+ * `skippedByDeadline`으로 밀린다. 대신 심볼 쪽 일감은 같은 날 프리웜 탭 축소로
+ * 2,742 → 754유닛(약 72% 감소)이 돼, 잘려도 최악 ~495초가 남아 충분하다.
  */
-export const HUB_DEADLINE_MS = 120_000;
+export const HUB_DEADLINE_MS = 180_000;
 
 /**
  * 대상 하나의 상한.
@@ -136,7 +153,18 @@ async function readBackWithRetry<T>(
  *    세면, `getMarketNewsList`가 버그로 빈 배열을 돌려주는 진짜 장애도 로그에
  *    100% 성공으로 찍힌다. 이 기능의 존재 이유가 그 반대다.
  */
-type HubOutcome = 'generated' | 'alreadyFresh' | 'noData' | 'keyMismatch';
+type HubOutcome =
+    | 'generated'
+    | 'alreadyFresh'
+    | 'noData'
+    | 'keyMismatch'
+    /**
+     * 쿨다운 중이라 굽지 않았다(시장 브리핑). `alreadyFresh`와 갈라 세는 이유: 그쪽은
+     * "값이 있음을 확인했다"는 뜻이라 SSR miss 표시를 소비하고 태그를 턴다. 쿨다운
+     * 중에는 값이 있는지 **모른다** — 거기서 털면 페이지가 다시 `null`로 렌더되며
+     * 표시를 새로 세우고, 다음 tick이 또 터는 tick당 ISR 쓰기 루프가 된다.
+     */
+    | 'cooldown';
 
 export interface HubPrewarmResult {
     readonly attempted: number;
@@ -149,6 +177,8 @@ export interface HubPrewarmResult {
     readonly keyMismatch: number;
     readonly failed: number;
     readonly skippedByDeadline: number;
+    /** 쿨다운으로 굽지 않은 수(시장 브리핑). */
+    readonly skippedByCooldown: number;
 }
 
 interface HubTarget {
@@ -156,7 +186,30 @@ interface HubTarget {
     readonly run: () => Promise<HubOutcome>;
     /** 새로 구웠을 때만 털 태그 — 이걸 안 털면 `peek*Static`이 TTL 내내 옛 `null`을 준다. */
     readonly tag: string;
+    /**
+     * 대상이 실제 변경이 있을 때 **스스로** 태그를 턴다(경제 캘린더 — 내부 함수가
+     * 방문자 경로와 같은 무효화를 이미 한다). 러너는 이 대상의 태그를 다시 털지 않고,
+     * SSR miss 표시도 보지 않는다 — 이 태그엔 표시를 세우는 렌더 경로가 없다.
+     */
+    readonly selfInvalidating?: true;
 }
+
+/**
+ * 시장 브리핑의 크론 생성 간격(1시간, 시장별).
+ *
+ * 브리핑의 core 캐시 키는 시세 요약(`MarketSummaryData`)에서 파생된다. 장이 열려 있는
+ * 동안은 요약이 tick마다 바뀌어 키가 갈리고, 이 단계는 5분마다 새로 구웠다 — 크론 창
+ * 일부가 KRX·미국 장중과 겹친다(설계 문서 "비용" 절이 미뤄 둔 그 위험). 페이지 ISR이
+ * 1시간이라 그보다 자주 구워도 화면에는 시간당 한 벌만 나간다. 방문자 생성 경로
+ * (`submitMarketBriefingAction`)는 건드리지 않는다.
+ */
+const MARKET_BRIEFING_COOLDOWN_SECONDS = SECONDS_PER_HOUR;
+
+const marketBriefingCooldown = createRedisFlag(
+    (scopeId: string) => `hub-prewarm:market-briefing-cooldown:${scopeId}`,
+    MARKET_BRIEFING_COOLDOWN_SECONDS,
+    '[hub-prewarm:market-briefing-cooldown]'
+);
 
 function marketBriefingTargets(): HubTarget[] {
     // 화면이 없는 scope는 뺀다. 이 순회는 브리핑을 **생성**하므로(LLM 호출),
@@ -181,7 +234,17 @@ function marketBriefingTargets(): HubTarget[] {
                     await writeHubSsrSeed(surface, cached);
                     return 'alreadyFresh';
                 }
+                // 쿨다운 — 시장마다 크론 생성은 시간당 한 번(`MARKET_BRIEFING_COOLDOWN_SECONDS`).
+                // 쿨다운 중엔 굽지 않는다. 페이지 peek는 키가 빗나가도 직전에 써 둔 SSR
+                // seed로 물러나므로 화면은 대개 그 브리핑을 보여 준다 — 다만 값이 있는지
+                // 확인한 건 아니라 `alreadyFresh`가 아니다(`HubOutcome`의 `cooldown` 주석).
+                if (await marketBriefingCooldown.isSet(scope.id)) {
+                    return 'cooldown';
+                }
                 await runBriefing(summary, context);
+                // 생성 시도 직후에 세운다 — 되읽기 실패(`keyMismatch`)여도 LLM 비용은 이미
+                // 나갔으므로, 다음 tick에 같은 호출을 반복하지 않게 한다.
+                await marketBriefingCooldown.mark(scope.id);
                 const readBack = await readBackWithRetry(peek);
                 if (readBack === null) return 'keyMismatch';
                 await writeHubSsrSeed(surface, readBack);
@@ -190,12 +253,104 @@ function marketBriefingTargets(): HubTarget[] {
         }));
 }
 
+/**
+ * `/economy`가 quorum 미달 스냅샷으로 렌더된 적이 있으면, 지금 스냅샷이 완전할 때
+ * 그 페이지를 다시 생성시킨다.
+ *
+ * 정적 스냅샷 캐시는 이제 미달 스냅샷을 저장하지 않지만(`getEconomySnapshotStatic`),
+ * 그 렌더의 HTML은 페이지 ISR(24h) 동안 남는다. 예전에는 `economy:snapshot` 태그를
+ * 터는 곳이 없어 FMP 일시 장애 한 번이 하루짜리 `EconomyDegraded`+noindex가 됐다
+ * (2026-10-01 허브 감사 B1). 미달 렌더가 실제로 있었을 때만 표시가 남으므로
+ * (`markSsrMiss`) 매 tick 털지 않는다.
+ */
+async function repairDegradedEconomySnapshot(
+    snapshot: Awaited<ReturnType<typeof getEconomySnapshot>>
+): Promise<void> {
+    if (!shouldCacheEconomySnapshot(snapshot)) return;
+    if (await consumeSsrMiss(ECONOMY_SNAPSHOT_CACHE_TAG)) {
+        revalidateTag(ECONOMY_SNAPSHOT_CACHE_TAG, 'max');
+    }
+}
+
+/**
+ * 경제 캘린더 이벤트 분석 상한 — `CALENDAR_ANALYSIS_PARALLEL_LIMIT`(4)와 같아 **한 청크**.
+ *
+ * 이 대상 하나가 적재(FMP + upsert, 수 초) + 분석 + 번역을 `HUB_UNIT_TIMEOUT_MS`(45초)
+ * 안에 끝내야 한다. DeepSeek 왕복 실측 4~13초 기준 최악: 적재 ~5 + 분석 1청크 ~13 +
+ * 번역 1건 ~13 ≈ 31초. 두 청크·번역 3건이면 ~65초로 넘친다 — 넘치면 러너가 실패로
+ * 세고, 끊기지 않은 작업이 다음 대상과 겹쳐 돈다. 남은 이벤트·이름은 각 플래그
+ * (분석 30분, 번역 이름별)가 풀린 뒤 다음 tick이 이어받는다.
+ */
+const HUB_CALENDAR_ANALYSIS_LIMIT = 4;
+
+/** 지표명 번역 상한 — 1건. 근거는 {@link HUB_CALENDAR_ANALYSIS_LIMIT} 주석의 예산. */
+const HUB_INDICATOR_TRANSLATION_LIMIT = 1;
+
+/** 캘린더를 굽는 국가 — `/economy`(미국)와 `/economy/kr`. */
+const CALENDAR_COUNTRIES = [CALENDAR_COUNTRY, CALENDAR_COUNTRY_KR] as const;
+
+/**
+ * 국가별 경제 캘린더를 **적재 → 이벤트 분석 → 지표명 번역** 순으로 채운다.
+ *
+ * 세 단계 모두 예전엔 방문자 브라우저가 `/economy`·`/economy/kr`을 열 때만 돌았다
+ * (`useEconomicCalendarTrigger`, `useIndicatorTranslationTrigger`). 그래서 방문 전에는
+ * 캘린더·한국 지표 카드(같은 테이블에서 파생)가 비고, 발표 해설이 없고, 지표명이
+ * 영어였다(2026-10-01 허브 감사 A1·A2). 뉴스 카테고리 적재와 같은 처방이다.
+ *
+ * 간격은 각 단계의 기존 플래그가 맡는다(캘린더 60분, 분석 30분, 번역은 이름별
+ * pending 플래그) — 크론이 5분마다 와도 FMP·LLM 호출은 그 주기로 묶인다. 분석·번역
+ * 대상은 새로 발표·등장한 것뿐이라 비용도 신규 건수에 비례한다.
+ *
+ * 각 단계는 앞 단계가 실패해도 진행한다(fail-open) — DB에 이미 있는 행으로 분석·번역할
+ * 수 있다. 무효화는 각 함수가 실제 변경이 있을 때 직접 한다(`selfInvalidating`).
+ */
+function economyCalendarTargets(): HubTarget[] {
+    return CALENDAR_COUNTRIES.map(country => ({
+        label: `economy-calendar:${country}`,
+        tag: economyCalendarCacheTag(country),
+        selfInvalidating: true,
+        run: async () => {
+            const logLabel = `hub-prewarm:economy-calendar:${country}`;
+            const ingested = await ingestEconomicCalendar(
+                country,
+                logLabel
+            ).catch((error: unknown) => {
+                console.error(`[${logLabel}] ingest threw`, error);
+                return null;
+            });
+            const analyzed = await analyzeEconomicEvents(country, {
+                limit: HUB_CALENDAR_ANALYSIS_LIMIT,
+                logLabel,
+            }).catch((error: unknown) => {
+                console.error(`[${logLabel}] analysis threw`, error);
+                return null;
+            });
+            const translated = await translateUnresolvedCalendarIndicators(
+                country,
+                { limit: HUB_INDICATOR_TRANSLATION_LIMIT, logLabel }
+            ).catch((error: unknown) => {
+                console.error(`[${logLabel}] translation threw`, error);
+                return 0;
+            });
+            console.log(
+                `[${logLabel}] ${JSON.stringify({ ingested, analyzed, translated })}`
+            );
+            const changed =
+                (ingested?.status === 'ok' && ingested.changed > 0) ||
+                (analyzed?.status === 'ok' && analyzed.persisted > 0) ||
+                translated > 0;
+            return changed ? 'generated' : 'alreadyFresh';
+        },
+    }));
+}
+
 function macroBriefingTarget(): HubTarget {
     return {
         label: 'macro-briefing',
         tag: MACRO_BRIEFING_CACHE_TAG,
         run: async () => {
             const snapshot = await getEconomySnapshot();
+            await repairDegradedEconomySnapshot(snapshot);
             const peek = () => peekMacroBriefingCache(snapshot);
             const cached = await peek();
             if (cached !== null) {
@@ -334,6 +489,7 @@ export function hubTargets(): readonly HubTarget[] {
     return [
         ...marketBriefingTargets(),
         macroBriefingTarget(),
+        ...economyCalendarTargets(),
         ...newsDigestTargets(),
     ];
 }
@@ -341,7 +497,7 @@ export function hubTargets(): readonly HubTarget[] {
 /**
  * 허브 대상을 순차로 굽는다.
  *
- * 순차인 이유: 열 개뿐이라 병렬화 이득이 작고, 동시에 LLM 열 건을 던지면 프로바이더
+ * 순차인 이유: 대상이 십여 개(`hubTargets`)라 병렬화 이득이 작고, 동시에 LLM 여러 건을 던지면 프로바이더
  * 레이트리밋에 걸려 전부 실패할 수 있다. 실패는 대상 단위로 격리해 하나가 죽어도
  * 나머지와 뒤따르는 심볼 배치가 계속 돈다.
  */
@@ -356,6 +512,7 @@ export async function runHubPrewarm(
     let keyMismatch = 0;
     let failed = 0;
     let skippedByDeadline = 0;
+    let skippedByCooldown = 0;
 
     for (const target of targets) {
         if (now() - startedAt >= HUB_DEADLINE_MS) {
@@ -374,8 +531,26 @@ export async function runHubPrewarm(
                 }),
             ]);
 
+            if (outcome === 'cooldown') {
+                // 값이 있는지 확인하지 않았다 — 표시도 태그도 건드리지 않는다.
+                skippedByCooldown += 1;
+                continue;
+            }
+            if (target.selfInvalidating === true) {
+                // 대상이 실제 변경 때 스스로 털었다. 여기서 또 털면 같은 태그를 두 번
+                // 무효화하고, 이 태그엔 SSR miss 표시도 없어 getdel만 헛돈다.
+                if (outcome === 'generated') generated += 1;
+                else alreadyFresh += 1;
+                continue;
+            }
             if (outcome === 'alreadyFresh') {
                 alreadyFresh += 1;
+                // 값은 이미 있는데 페이지가 비어 있는 채로 렌더된 적이 있으면(방문자가
+                // 먼저 생성했거나 렌더 직후 캐시가 찼다) 그때만 턴다 — `markSsrMiss`
+                // JSDoc. 무조건 털면 tick마다 ISR 쓰기가 나간다.
+                if (await consumeSsrMiss(target.tag)) {
+                    revalidateTag(target.tag, 'max');
+                }
                 continue;
             }
             if (outcome === 'noData') {
@@ -389,6 +564,9 @@ export async function runHubPrewarm(
             // 실제로는 캐시에 값이 있는데 페이지는 TTL 내내 플레이스홀더를 계속
             // 렌더한다 — 이 기능이 고치려던 바로 그 증상이다.
             revalidateTag(target.tag, 'max');
+            // 방금 털었으니 남아 있던 빈 렌더 표시는 해소됐다 — 다음 tick이 같은 태그를
+            // 한 번 더 털지 않게 비운다.
+            await consumeSsrMiss(target.tag);
             if (outcome === 'generated') {
                 generated += 1;
             } else {
@@ -411,5 +589,6 @@ export async function runHubPrewarm(
         keyMismatch,
         failed,
         skippedByDeadline,
+        skippedByCooldown,
     };
 }

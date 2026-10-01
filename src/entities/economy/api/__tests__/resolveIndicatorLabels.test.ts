@@ -1,9 +1,15 @@
+// 모듈 로드 시점에 한 번 만들어지는 unstable_cache 콜백을 붙잡아 둔다 —
+// 콜백 자체가 DB 실패를 `{}`로 삼키지 않고 던지는지(= 저장되지 않는지) 검증한다.
+const cached = vi.hoisted(() => ({
+    fetcher: null as null | ((...a: unknown[]) => Promise<unknown>),
+}));
+
 vi.mock('server-only', () => ({}));
 vi.mock('next/cache', () => ({
-    unstable_cache:
-        (fn: (...a: unknown[]) => unknown) =>
-        (...a: unknown[]) =>
-            fn(...a),
+    unstable_cache: (fn: (...a: unknown[]) => Promise<unknown>) => {
+        cached.fetcher = fn;
+        return (...a: unknown[]) => fn(...a);
+    },
 }));
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: {} }),
@@ -95,7 +101,10 @@ describe('resolveIndicatorLabels', () => {
         expect(findByNames).toHaveBeenCalledWith(['Totally Unknown Thing']);
     });
 
-    it('degrades to English-only labels on DB failure (graceful)', async () => {
+    it('degrades to English-only labels on DB failure (graceful) and logs the error', async () => {
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
         findByNames.mockRejectedValue(new Error('neon down'));
         const labels = await resolveIndicatorLabels(
             [ev('Totally Unknown Thing (Apr)')],
@@ -104,6 +113,23 @@ describe('resolveIndicatorLabels', () => {
         expect(labels['Totally Unknown Thing (Apr)']).toBe(
             'Totally Unknown Thing (Apr)'
         );
+        expect(errorSpy).toHaveBeenCalledWith(
+            '[resolveIndicatorLabels] DB read failed:',
+            expect.any(Error)
+        );
+        errorSpy.mockRestore();
+    });
+
+    /**
+     * 흡수가 unstable_cache 콜백 **안**에 있으면 빈 맵 `{}`가 정상 결과로 저장돼
+     * 일시 장애 한 번이 24h 영어 레이블로 굳는다. 콜백은 던져야(저장 건너뜀)
+     * 하고, 흡수는 바깥에서 한다.
+     */
+    it('unstable_cache 콜백은 DB 실패를 {}로 삼키지 않고 던진다 (빈 맵이 캐시되지 않게)', async () => {
+        findByNames.mockRejectedValue(new Error('neon down'));
+
+        expect(cached.fetcher).not.toBeNull();
+        await expect(cached.fetcher?.(['X'])).rejects.toThrow('neon down');
     });
 
     /**

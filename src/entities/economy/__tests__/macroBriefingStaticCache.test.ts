@@ -5,6 +5,9 @@ vi.mock('next/cache', () => ({
 vi.mock('@/shared/cache/hubSsrSeed', () => ({
     readHubSsrSeed: vi.fn(),
 }));
+vi.mock('@/shared/cache/ssrMissMarker', () => ({
+    markSsrMiss: vi.fn(),
+}));
 vi.mock('@y0ngha/siglens-core', async () => {
     const actual = await vi.importActual<typeof import('@y0ngha/siglens-core')>(
         '@y0ngha/siglens-core'
@@ -22,6 +25,7 @@ import type {
 } from '@y0ngha/siglens-core';
 
 import { readHubSsrSeed } from '@/shared/cache/hubSsrSeed';
+import { markSsrMiss } from '@/shared/cache/ssrMissMarker';
 import {
     MACRO_BRIEFING_SEED_SURFACE,
     peekMacroBriefingStatic,
@@ -31,6 +35,7 @@ import { SECONDS_PER_DAY } from '@/shared/config/time';
 const mockUnstableCache = vi.mocked(unstable_cache);
 const mockPeek = vi.mocked(peekMacroBriefingCache);
 const mockReadSeed = vi.mocked(readHubSsrSeed);
+const mockMarkSsrMiss = vi.mocked(markSsrMiss);
 
 const SNAPSHOT: EconomySnapshot = {
     indicators: [],
@@ -60,6 +65,7 @@ describe('peekMacroBriefingStatic', () => {
     });
 
     it('내부 fetcher가 snapshot을 그대로 peekMacroBriefingCache에 전달', async () => {
+        mockPeek.mockResolvedValue(macro('live'));
         await peekMacroBriefingStatic(SNAPSHOT, '2026-06-17T05');
         const fetcher = mockUnstableCache.mock
             .calls[0][0] as () => Promise<unknown>;
@@ -91,6 +97,29 @@ describe('peekMacroBriefingStatic', () => {
 
         await expect(fetcher()).resolves.toEqual(macro('live'));
         expect(mockReadSeed).not.toHaveBeenCalled();
+    });
+
+    /**
+     * `null`을 캐시하면 방문자가 곧 값을 생성해도 페이지가 24h 플레이스홀더로 남는다.
+     * 그래서 fetcher가 던져 저장을 건너뛰고, 대신 SSR miss를 표시한다.
+     */
+    it('core·seed 모두 miss면 null을 반환하고 캐시 콜백은 던져 저장을 건너뛰며 SSR miss를 표시한다', async () => {
+        const result = await peekMacroBriefingStatic(SNAPSHOT, '2026-06-17T05');
+        const fetcher = mockUnstableCache.mock
+            .calls[0][0] as () => Promise<unknown>;
+
+        expect(result).toBeNull();
+        await expect(fetcher()).rejects.toThrow();
+        expect(mockMarkSsrMiss).toHaveBeenCalledWith('economy:briefing');
+    });
+
+    it('값이 있으면 SSR miss를 표시하지 않는다', async () => {
+        mockPeek.mockResolvedValue(macro('live'));
+
+        await expect(
+            peekMacroBriefingStatic(SNAPSHOT, '2026-06-17T05')
+        ).resolves.toEqual(macro('live'));
+        expect(mockMarkSsrMiss).not.toHaveBeenCalled();
     });
 
     it('서로 다른 dateHour는 별도 cache 키로 분리', async () => {

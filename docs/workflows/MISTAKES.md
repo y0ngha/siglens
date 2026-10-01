@@ -327,6 +327,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ Comments either match reality exactly, or are removed and the WHY moved to commit/PR description
     → Recurring: PR #420 Phase 7 R1, PR #428 R16 S1, PR #442 R5 S1, PR #453 R3/R4, PR #459, feat/seo-followup B5, PR #562 R2
 
+15.6a. Stale 'only X' claim after adding a second caller/path
+    → JSDoc/comments claiming "only X triggers/calls/uses this" become false when a second caller/code path is added
+    → When refactoring adds a new code path (server-side handler alongside client, second route alongside original, additional caller), update any "only" claims in related JSDoc/comments
+    → Common source: copy-pasted comment not updated when feature code is extended
+    ❌ /** Used only by the client hook */ — but server-side render also calls it now (stale claim)
+    ❌ // Only the chart route uses this metadata function — fear-greed route added in same PR without updating comment
+    ❌ // The only current caller is the chart route → new code added fear-greed route caller, comment left behind
+    ✅ /** Used by client hook and server-side render in /overall */ — names all callers explicitly
+    ✅ // Called by chart, fear-greed, and overview routes — updated comment to enumerate callers
+    → Recurring: feat/symbol-metadata-simplify Round 1, claude/magical-sagan-56eoov-hub-data Round 1 — 2 occurrences
+
 15.62. Layout refactoring — Stale geometry comments persist when reversing a layout contract
     → When reversing a layout contract (size relationship, flex direction, overflow behavior), comments and test names describing the OLD contract stay behind in sibling files outside the diff
     → After major layout changes, audit both test assertion text and inline comments describing geometry across the whole repo (src/, e2e/, docs/), not only changed files

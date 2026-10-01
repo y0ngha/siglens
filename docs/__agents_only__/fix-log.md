@@ -615,9 +615,6 @@
 - Violation: A new exported constant's JSDoc was inserted between an existing JSDoc block and its declaration, orphaning the old doc
   - Rule: JSDoc blocks must remain directly above their declarations; inserting new docs between them breaks the association
   - Context: src/shared/lib/seo.ts — moved the old JSDoc back directly above NOINDEX_SYMBOL_METADATA
-- Violation: JSDoc stating "the only current caller is the chart route" became false when the same change added the fear-greed route as a second caller
-  - Rule: JSDoc accuracy — comments must be updated when code scope changes
-  - Context: src/app/[locale]/[symbol]/symbolIndexabilityMetadata.ts — updated JSDoc to name both callers
 - Violation: getBlockedSymbolMetadata still performed a snapshot DB read whose result could no longer change the outcome for the five tabs made always-noindex
   - Rule: Optimization — remove redundant operations that no longer affect the outcome
   - Context: Added isPrewarmTab and skip the read for non-prewarm tabs
@@ -627,4 +624,19 @@
 - Task: hub prewarm cron now ingests news categories before baking digests (3h gate, enrichment cap 8); ingestion extracted to `ingestMarketNewsCategory`; `cacheNonEmpty` promoted to shared and applied to `/news/[category]` list.
 - Violation: A per-run work cap (enrichment limit 8) combined with a long re-run gate (3h flag) made the initial backlog drain extremely slowly (~50 cards → ~20h), with each partial drain also changing a downstream cache key (digest regeneration). Undocumented. Fix: ingestion returns `pending`; the long gate is set only when the backlog is empty, so the backlog drains on consecutive short-interval runs.
   - Rule: (new) when combining a per-run cap with a cooldown/gate, the gate must not engage while capped work remains (or the drain time = backlog/cap × gate must be documented and acceptable).
+- Status (Round 2): APPROVED (zero findings)
+
+## [Round 1 | claude/magical-sagan-56eoov-hub-data (hub data supply: cron ingestion, null/empty cache guards, briefing cooldown, digest A/B) | 2026-10-01]
+- Violation: Time-budget comment claimed a cron unit doing ingest (capped) + analysis (8) + sequential translations (3) could fit 45s timeout; real worst case ~65-70s
+  - Rule: (new) when a unit chains several capped LLM steps under a timeout, budget = sum of each step's worst case; document it next to the caps
+  - Context: lowered caps (4, 1) and corrected the budget math in comments
+- Violation: "skipped because of cooldown" path returned the same outcome ('alreadyFresh') as "value confirmed present", causing the runner to consume an SSR-miss marker and revalidate while the value was unknown
+  - Rule: (new) don't overload a status that triggers side effects with a different meaning; add a new status
+  - Context: added distinct 'cooldown' outcome to distinguish cooldown skip from value-present case
+- Violation: A target whose inner functions already revalidate the tag also returned 'generated', so the runner revalidated again (plus pointless Redis getdel)
+  - Rule: (new) Optimization — remove redundant operations that no longer affect the outcome
+  - Context: added HubTarget.selfInvalidating flag to prevent duplicate revalidation
+- Violation: Hard-coded count ("eleven targets") in comment derived from config
+  - Rule: MISTAKES.md §15 — magic numbers in comments must reference the constant
+  - Context: replaced with reference to config length
 - Status (Round 2): APPROVED (zero findings)

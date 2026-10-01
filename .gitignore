@@ -115,6 +115,8 @@ next-env.d.ts
 # MAU/DAU 조회 스크립트 — `yarn metrics`가 이 파일을 실행한다. 추적하지 않으면
 # fresh checkout에서 스크립트가 사라진다.
 !/scripts/metrics.ts
+# 다이제스트 추론 on/off A/B 비교(오프라인 실험).
+!/scripts/abDigestReasoning.ts
 
 # Local Lighthouse audit outputs (psi_*.json, desktop.json, mobile.json, headers.txt)
 /lighthouse/
@@ -127,3 +129,6 @@ infra/aws/.ami
 
 .claude/scheduled_tasks.lock
 infra/aws/.tunnel_id
+
+# scripts/abDigestReasoning.ts 결과물(운영 데이터 기반 — 커밋하지 않는다).
+/ab-digest-reasoning/
