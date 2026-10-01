@@ -2631,8 +2631,11 @@
             },
             "StockChart": {
                 "1b2664": "No chart data available",
+                "575708": "ABC extension {v0}",
+                "57fdbb": "Breakout level",
+                "99d0ce": "Retracement {v0}",
                 "a547a0": "Price Chart",
-                "57fdbb": "Breakout level"
+                "c8b284": "Extension {v0}"
             },
             "TimeframeSelector": {
                 "a4632e": "Member-exclusive timeframe.",

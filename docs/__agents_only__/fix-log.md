@@ -192,11 +192,6 @@
   - Rule: Audit claims about the ABSENCE of a control must be checked against the component source, not inferred from the rendered page
   - Context: The finding's substance survived (initial DOM and JS-less HTML render only 5, and Google does not click buttons) but its stated evidence did not.
 
-## [feat/visitor-metrics Round 1 | visitor presence tracking | 2026-09-02]
-- Violation: `src/app/api/presence/route.ts` handler declared an invariant in comments — "aggregation failure must not break user screen" — and wrapped `repo.recordVisit()` in try/catch. But `getDatabaseClient()`, which throws when `DATABASE_URL` is unset, sat OUTSIDE that try block. One failure mode on the same code path bypassed the stated containment, returning bare framework 500 instead of the deliberate log-and-204.
-  - Rule: (new) A try/catch that guards one call on a path does not guard the path. When code states a containment invariant, every call on that path that can throw must be inside it — including setup and client-construction calls, which are easy to overlook because they look infallible.
-  - Context: Moved `getDatabaseClient()` and repository construction inside the try block, returned early on failure so a dead DB does not consume the module-scope `lastPrunedDate` day marker (which would have suppressed retention pruning for the rest of that day). Regression test added and verified to fail without the fix.
-
 ## [fix/visitor-diagnostics-effective-now Round 2 | privacy policy effective date sync | 2026-09-10]
 - Status: APPROVED (round 2, zero findings)
   - Development note: Two self-inflicted errors caught in this round, neither shipped.
@@ -346,13 +341,6 @@
   - Rule: `docs/conventions/CONVENTIONS.md` — prefer immutable array methods (`arr.toReversed()` over `arr.reverse()`, etc.); `.findLast()` is already established in the repo (`src/views/symbol/utils/technicalFacts.ts`).
   - Context: Replaced all three call sites with `messages.findLast(m => m.role === ...)`.
 
-## [PR #849 Round 2 | feat/agent-precomputed-data | 2026-09-19]
-- Status: fixed (both findings already documented in MISTAKES.md §0.5 and Coding Paradigm #17)
-
-## [PR #849 Round 3 | feat/agent-precomputed-data | 2026-09-19]
-- Status: fixed (finding already documented in MISTAKES.md §0.8)
-- Rejected: [Suggestion] move getBarsIndicators derived-metric helpers to entities/bars/lib — reviewer marked non-blocking and pre-existing pattern in the same directory; a ~300-line move is a separate refactor, out of this PR's scope.
-
 ## [fix/portfolio-money-rounding Round 1 | get_my_portfolio 금액 반올림 | 2026-09-19]
 - Violation: 금액(marketValue/costBasis/pnl)을 지표용 유효숫자 6자리 반올림(`roundNumber`)으로 처리해 1만 달러 이상에서 센트가, 100만 이상에서 일의 자리가 잘림 — value − cost ≠ pnl
   - Rule: (new) 금액은 통화 최소 단위(USD 2자리, KRW 0자리)로 반올림한다. 유효숫자 반올림은 크기에 따라 자릿수가 바뀌어 금액에 쓰면 안 된다
@@ -455,11 +443,6 @@
   - Rule: (new) When a script gains a new path that appends to a config list, grep tests for invariants over that list and verify by applying the script's output to the real file and running the suite (dry run).
   - Context: Fixed with scripts/lib/cryptoPoolInsert.ts (pure anchor insert into the pool) + main writes the pool first. Lesson: when a script's new path appends to a config list, grep tests for invariants over that list and verify by dry-running the script's output against the test suite.
 
-## [claude/siglens-email-login-redirect-jbr2s1 Round 3 | guest-only path redirect logic | 2026-09-25]
-- Violation: RECOMMENDED (fixed) — src/proxy.ts — when the sanitized `next` parameter was itself a guest-only path (/login, /signup, /verify-email), a signed-in user would be redirected through that guest-only page (extra hop) instead of clamping to home. Sanitizer removed query params but did not validate whether the *path itself* was guarded.
-  - Rule: (new) Redirect logic sanitizing a `next` parameter must both 1) strip query params and 2) validate the target path is not itself guest-only; guest-only routes must be inaccessible to signed-in users. Failure to do so creates a dead redirect leg that wastes a round-trip.
-  - Context: Extended guest-only allowlist validation in sanitizer to reject guest-only paths after stripping params; signed-in user now clamps directly to home instead of routing through the guest-only page first.
-
 ## [claude/siglens-email-login-redirect-jbr2s1 Round 4 | locale-prefixed guest-only path test coverage | 2026-09-25]
 - Finding: RECOMMENDED (skipped as false positive) — reviewer requested a test for locale-prefixed guest-only `next` parameter (e.g., '/en/login?next=%2FAAPL')
   - Status: REJECTED — false positive; test coverage already exists at the assertion level. The existing test matrix includes locale-prefixed paths in the full parametrized test list, covering '/en/login?next=%2FAAPL' and '/ko/signup' alongside non-prefixed variants.
@@ -503,9 +486,6 @@
 - Violation: CI e2e failure — moving the holdings add/edit/delete UI (PortfolioSection) from `/account` to `/portfolio` left 6 authed specs (`portfolio-holdings.spec.ts`, `portfolio-position.spec.ts`, `personalized-analysis.spec.ts`) navigating to `/account` for a form that no longer lives there, and using the stale region name `'보유종목'` (now `'보유종목 관리'` on `/portfolio`) and the stale h1 `'계정 설정'`/`'내 포트폴리오 위치'` (now `'포트폴리오'`). None of `typecheck`/`lint`/`vitest` caught this — the specs only fail live in CI under Playwright.
   - Rule: (new) When a UI section is relocated to a different route (not just a trigger/condition narrowed — see MISTAKES.md Tests §3, which covers only removed/narrowed triggers), grep e2e/specs/ for every helper and locator scoped to the old route (page.goto target, heading text, aria-label region name) and update them in the same PR. This is a distinct failure shape from a narrowed trigger: the whole navigation target moves, so page.goto, h1 text, and region names all go stale together.
   - Context: Updated `resetAaplHolding`/`addAaplHolding` helpers and heading assertions in all 3 specs to target `/portfolio`, `'포트폴리오'` (h1), and `'보유종목 관리'` (region). Verified via `yarn tsc --noEmit -p e2e/tsconfig.json` (specs cannot run locally — no DB/secrets in this harness) plus a full manual re-read against `PortfolioSection.tsx`/`page.tsx` source labels.
-- Violation: `src/proxy.ts`'s forward auth guard (`AUTH_REQUIRED_PATHS`) built the `next=` redirect target from `pathname` alone (`localePath(locale, pathname)`), dropping `reqUrl.search`. A guest clicking the `/[symbol]/position` CTA (`/portfolio?symbol=AAPL`) hit this guard first (it runs before the page-level `PortfolioGuard`), lost the `?symbol=` query on the login hop, and landed on `/portfolio` post-login with an empty add form — the exact funnel-context loss this PR's own `PositionCta` fix (carrying `?symbol=` instead of a bare `/onboarding` literal) was meant to prevent, reintroduced one layer up.
-  - Rule: (new) When a route gains a query parameter that must survive a login round-trip, check every redirect that can fire for that path — not just the page-level guard — for one that reconstructs the URL from `pathname` only. `AUTH_REQUIRED_PATHS`/`GUEST_ONLY_PATHS` guards in `proxy.ts` run before any page code and are easy to miss when the only mental model is "the page's own guard redirects to login."
-  - Context: `loginUrl.searchParams.set('next', localePath(locale, pathname) + reqUrl.search)`. `sanitizeNextPath`/`toSameOriginPath` (`redirect.ts`) already pass query strings through untouched, so no downstream change was needed. Added proxy tests: `'세션이 없으면 ?symbol= 쿼리를 next에 보존한다'` and the `/onboarding` legacy-redirect suite's query-preservation case.
 ## [PR #882 Round 1 | fix/bot-analysis-parity | 2026-09-27]
 - Violation: Claude-review R3 Blocker — UA-based concurrency bonus (BOT_STREAM_LIMIT_MULTIPLIER) became an abuse vector once bots trigger paid generation. Route reads User-Agent to classify as bot and apply higher concurrency limit; generic script clients match bot UA pattern.
   - Rule: (new) Request-based abuse vectors (rate-limit bypasses) must not read headers that generic clients also send; read-only token/fingerprint headers instead. UA header (User-Agent) is sent by all clients and can be spoofed — route should not use it for concurrent-request gating without explicit allowlist verification.
@@ -558,9 +538,6 @@
   - Context: deleted the orphan tests, repointed overlayHighlight test to @/entities/analysis and entities.analysis.fallback; also updated the controlBorderTokenGuard AnalysisPanel line key (master 1187 minus 2 lines removed by the branch = 1185).
 
 ## [claude/funny-turing-9cgfid Round 3 | exception-safety refactoring + line-number regression | 2026-09-28]
-- Violation: Refactoring a handler onto shared hook (useCopyToClipboard) moved exception-safe text-report construction outside the try/catch that guarded it, so malformed SSE payload could throw in onClick instead of showing failed state.
-  - Rule: (new) Exception-safety scope — when refactoring logic into a reusable hook that maintains error-handling guarantees, preserve the original try/catch scope across all input paths. Moving construction outside the guarded block silently breaks the containment invariant.
-  - Context: Fixed by moving text-builder evaluation inside the promise chain. copy() accepts a callback evaluated inside its promise, guaranteeing exception handling. Regression tests added verifying both exception cases and normal path.
 - Violation: Self-caught during implementation — edit shifted AnalysisPanel line numbers, breaking a line-number-keyed exception in src/__tests__/guards/controlBorderTokenGuard.test.ts before commit.
   - Rule: Line-number references in code/tests are fragile after refactoring. After non-trivial edits, run guards before committing to catch such breakages.
   - Context: Caught and fixed by running guards in pre-commit phase. Line number reference in controlBorderTokenGuard.test.ts corrected.
@@ -620,6 +597,11 @@
 - Violation: CI e2e failure — e2e/specs/chart-overlays.spec.ts still asserted removed behavior (category toggle persisted in localStorage across reload); unit tests were updated to reflect new all-on default after reload, but the e2e spec was not synchronized
   - Rule: (new) When refactoring a feature's test suite to reflect behavior changes, all test layers (unit + e2e) must be updated simultaneously. Unit test updates without corresponding e2e assertions create CI failures where the contract is broken at the integration level while unit tests pass.
   - Context: Updated e2e spec to assert new all-on default after reload and added menu↔AI-panel sync e2e test case. Synchronized behavior across all test layers (unit + e2e).
+
+## [PR #895 Round 1 | fix/fib-label-extraction | 2026-10-01]
+- Status: APPROVED (claude-review suggestions applied)
+  - Applied fixes: Extracted fib level label kind→text mapping into `formatFibLevelLabel` helper function in `src/widgets/chart/utils/fibLevelLabel.ts` with unit tests; extracted 'ABC ' and 'ext ' prefix constants as named exports for reuse.
+  - Skipped (false positive): messages/ko.json key reordering — the canonical output of `node scripts/i18n/extract.mjs --write` does not constitute a violation; i18n extraction script defines the authoritative key ordering.
 
 ## [Round 1 | claude/magical-sagan-56eoov (SEO prewarm reduction) | 2026-10-01]
 - Violation: A new exported constant's JSDoc was inserted between an existing JSDoc block and its declaration, orphaning the old doc
