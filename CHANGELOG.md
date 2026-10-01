@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.93.3](https://github.com/y0ngha/siglens/compare/v0.93.2...v0.93.3) (2026-10-01)
+
+### Bug Fixes
+
+* **chart:** 카드 없는 전략 종류 작도를 종류 이름 항목으로 표시 — core 2.5.0 ([#904](https://github.com/y0ngha/siglens/issues/904)) ([65372ee](https://github.com/y0ngha/siglens/commit/65372eeb4d35e0353edc96d2870ee38eb9372c2d))
+
 ## [0.93.2](https://github.com/y0ngha/siglens/compare/v0.93.1...v0.93.2) (2026-10-01)
 
 ### Bug Fixes
