@@ -3,6 +3,7 @@ import type { ChartOverlay } from '@y0ngha/siglens-core';
 import {
     barTimesOf,
     buildOverlayLineSpecs,
+    firstSegmentDirection,
     hasDrawnLevels,
     isOverlayAlignedToBars,
     isOverlayDrawn,
@@ -244,6 +245,20 @@ describe('buildOverlayLineSpecs', () => {
         expect(specsWithoutMapper[1].title).toBe('breakout');
     });
 
+    it('levelLabelFor receives the overlay that owns the level', () => {
+        const a = overlay({ id: 'a', sourceRef: 'a' });
+        const b = overlay({ id: 'b', sourceRef: 'b' });
+        const specs = buildOverlayLineSpecs([a, b], {
+            ...base,
+            barTimes: BAR_TIMES,
+            levelLabelFor: (label, owner) => `${owner.id}:${label}`,
+        });
+        expect(specs.map(s => s.title).filter(Boolean)).toEqual([
+            'a:breakout',
+            'b:breakout',
+        ]);
+    });
+
     it('labels ride on the first spec of their overlay as markers, carrying label price for marker placement', () => {
         const withLabels = overlay({
             labels: [
@@ -382,6 +397,38 @@ describe('hasDrawnLevels', () => {
                 opts
             )
         ).toBe(false);
+    });
+});
+
+describe('firstSegmentDirection', () => {
+    const seg = (
+        from: number,
+        to: number
+    ): ChartOverlay['segments'][number] => ({
+        from: { time: 1, price: from },
+        to: { time: 2, price: to },
+        role: 'anchor',
+        style: 'dashed',
+        pane: 'price',
+    });
+
+    it('첫 선분의 끝 가격이 낮으면 하락, 아니면 상승', () => {
+        expect(firstSegmentDirection([seg(185, 162)])).toBe('down');
+        expect(firstSegmentDirection([seg(120, 185)])).toBe('up');
+    });
+
+    it('첫 선분만 본다 — ABC의 B→C 되돌림 방향은 무시', () => {
+        expect(firstSegmentDirection([seg(185, 120), seg(120, 150)])).toBe(
+            'down'
+        );
+        expect(firstSegmentDirection([seg(120, 185), seg(185, 160)])).toBe(
+            'up'
+        );
+    });
+
+    it('수평 선분은 상승, 선분이 없으면 null', () => {
+        expect(firstSegmentDirection([seg(150, 150)])).toBe('up');
+        expect(firstSegmentDirection([])).toBeNull();
     });
 });
 

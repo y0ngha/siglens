@@ -937,6 +937,32 @@ describe('StockChart', () => {
                 expect(specs?.[0].title).toBe('돌파 기준');
             });
 
+            it('패턴 항목 라벨이 있으면 돌파선 라벨에 패턴명을 붙인다', () => {
+                const patternWithLevel: ChartOverlay = {
+                    id: 'pattern:rounding_bottom:100',
+                    kind: 'pattern',
+                    skill: 'rounding_bottom',
+                    sourceRef: 'p1',
+                    variant: 'primary',
+                    segments: [],
+                    levels: [{ price: 11, fromTime: 100, label: 'breakout' }],
+                    labels: [],
+                };
+
+                render(
+                    <StockChart
+                        bars={mockBars}
+                        timeframe="1Day"
+                        chartOverlays={[patternWithLevel]}
+                        overlayItems={[
+                            { key: 'p1', kind: 'pattern', label: '원형 바닥' },
+                        ]}
+                    />
+                );
+
+                expect(lastSpecs()?.[0].title).toBe('원형 바닥 돌파');
+            });
+
             it('RSI pane이 꺼져 있으면(paneIndex=null) rsi 세그먼트가 specs에서 빠지고 price 세그먼트만 남는다', () => {
                 const divergenceWithRsi: ChartOverlay = {
                     id: 'divergence:rsi_bearish:2',
