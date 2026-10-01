@@ -341,13 +341,6 @@
   - Rule: `docs/conventions/CONVENTIONS.md` — prefer immutable array methods (`arr.toReversed()` over `arr.reverse()`, etc.); `.findLast()` is already established in the repo (`src/views/symbol/utils/technicalFacts.ts`).
   - Context: Replaced all three call sites with `messages.findLast(m => m.role === ...)`.
 
-## [PR #849 Round 2 | feat/agent-precomputed-data | 2026-09-19]
-- Status: fixed (both findings already documented in MISTAKES.md §0.5 and Coding Paradigm #17)
-
-## [PR #849 Round 3 | feat/agent-precomputed-data | 2026-09-19]
-- Status: fixed (finding already documented in MISTAKES.md §0.8)
-- Rejected: [Suggestion] move getBarsIndicators derived-metric helpers to entities/bars/lib — reviewer marked non-blocking and pre-existing pattern in the same directory; a ~300-line move is a separate refactor, out of this PR's scope.
-
 ## [fix/portfolio-money-rounding Round 1 | get_my_portfolio 금액 반올림 | 2026-09-19]
 - Violation: 금액(marketValue/costBasis/pnl)을 지표용 유효숫자 6자리 반올림(`roundNumber`)으로 처리해 1만 달러 이상에서 센트가, 100만 이상에서 일의 자리가 잘림 — value − cost ≠ pnl
   - Rule: (new) 금액은 통화 최소 단위(USD 2자리, KRW 0자리)로 반올림한다. 유효숫자 반올림은 크기에 따라 자릿수가 바뀌어 금액에 쓰면 안 된다
