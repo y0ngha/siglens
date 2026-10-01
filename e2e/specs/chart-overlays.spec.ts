@@ -2,7 +2,7 @@ import { test, expect } from '../support/fixtures';
 
 /**
  * 차트 작도(chartOverlays) 드롭다운 — 캐시된 분석 fixture(`e2e/fixtures/analysis.json`)의
- * `technical.chartOverlays` 2건(패턴·추세선)을 헤더 띠의 "차트 작도" 트리거로 켜고 끈다(항목 단위,
+ * `technical.chartOverlays` 3건(패턴·추세선·카드 없는 피보나치)을 헤더 띠의 "차트 작도" 트리거로 켜고 끈다(항목 단위,
  * AI 패널 카드 버튼과 같은 상태). 비로그인 tier에선 추세선이 걸러진다.
  * `chart-indicators.spec.ts`와 동일하게 데스크톱(chromium)만 대상으로 모달 UI 흐름을
  * 검증한다 — 실제 차트 canvas 렌더 대신 안정적인 드롭다운 상태로 확인한다.
@@ -66,6 +66,30 @@ test.describe('chart overlays menu', () => {
                 .getByRole('group', { name: TRIGGER })
                 .getByRole('button', { name: /차트 패턴/ })
         ).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    // core 2.5.0: 어느 카드도 소유하지 않는 전략 종류 작도(엘리어트 카드만 인용한 피보나치
+    // 다리 등)는 sourceRef가 'kind:fibonacci'로 온다 — 카드 이름 대신 종류 이름 항목으로
+    // 보이고, 끄고 켤 수 있어야 한다(fixture `technical.chartOverlays`의 fib 1건).
+    test('a card-less Fibonacci drawing appears as a 피보나치 item and toggles', async ({
+        page,
+    }) => {
+        await page.goto('/AAPL');
+        const trigger = page.getByRole('button', { name: TRIGGER });
+        await expect(trigger).toBeVisible({ timeout: 15_000 });
+        await trigger.click();
+
+        const panel = page.getByRole('group', { name: TRIGGER });
+        const item = panel.getByRole('button', {
+            name: '피보나치',
+            exact: true,
+        });
+        await expect(item).toBeVisible();
+        await expect(item).toHaveAttribute('aria-pressed', 'true');
+        await item.click();
+        await expect(item).toHaveAttribute('aria-pressed', 'false');
+        // 원시 출처 문자열이 라벨로 새지 않는다.
+        await expect(panel.getByText('kind:fibonacci')).toHaveCount(0);
     });
 
     // 메뉴와 AI 패널 카드의 "차트에서 보기"는 같은 상태다 — 한쪽에서 끄면 다른 쪽도 꺼진다.

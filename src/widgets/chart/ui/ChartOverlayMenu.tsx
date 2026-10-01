@@ -132,7 +132,8 @@ export function ChartOverlayMenu({
                 ? t('ChartOverlayMenu.bfe4b6', { v0: item.index })
                 : t('ChartOverlayMenu.ac1149', { v0: item.index });
         }
-        return item.label;
+        // 카드 없는 종류 항목은 그룹 이름(피보나치·다이버전스·엘리어트 파동)으로.
+        return item.label ?? t(KIND_LABEL_KEY[item.kind]);
     };
 
     const triggerLabel = t('ChartOverlayMenu.4b1cdc', { v0: activeCount });

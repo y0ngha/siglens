@@ -1,4 +1,9 @@
-import type { ChartOverlay, OverlayKind } from '@y0ngha/siglens-core';
+import {
+    STRATEGY_KIND_SOURCE_REF,
+    type ChartOverlay,
+    type OverlayKind,
+    type StrategyOverlayKind,
+} from '@y0ngha/siglens-core';
 import {
     firstSegmentDirection,
     isOverlayDrawn,
@@ -17,7 +22,22 @@ export const ACTION_PRICES_ITEM_KEY = 'ui:action-prices';
 export type OverlayMenuGroupKind = 'action' | OverlayKind;
 
 export type OverlayMenuItem =
-    | { key: string; kind: Exclude<OverlayKind, 'trendline'>; label: string }
+    | {
+          key: string;
+          kind: Exclude<OverlayKind, 'trendline'>;
+          /** 근거 카드 이름(로케일 스킬명). */
+          label: string;
+      }
+    | {
+          key: string;
+          kind: StrategyOverlayKind;
+          /**
+           * 카드가 없는 종류 항목 — core가 어느 카드도 소유하지 않는 피보나치·
+           * 다이버전스·엘리어트를 `STRATEGY_KIND_SOURCE_REF[kind]` 밑에 그렸다는
+           * 뜻이라, 메뉴는 종류 이름으로 표시한다.
+           */
+          label: null;
+      }
     | {
           key: string;
           kind: 'trendline';
@@ -26,6 +46,13 @@ export type OverlayMenuItem =
           index: number;
       }
     | { key: typeof ACTION_PRICES_ITEM_KEY; kind: 'action' };
+
+/** core가 카드 없이 종류로 그린 작도의 `sourceRef` 값들. */
+const KIND_SOURCE_REFS: ReadonlySet<string> = new Set(
+    Object.values(STRATEGY_KIND_SOURCE_REF)
+);
+const isKindSourceRef = (sourceRef: string): boolean =>
+    KIND_SOURCE_REFS.has(sourceRef);
 
 interface BuildOverlayMenuItemsOptions {
     barTimes: ReadonlySet<number>;
@@ -70,17 +97,20 @@ export function buildOverlayMenuItems(
                 index: i + 1,
             }))
     );
-    const cardItems = unique.flatMap((o): OverlayMenuItem[] =>
-        o.kind === 'trendline'
-            ? []
-            : [
-                  {
-                      key: o.sourceRef,
-                      kind: o.kind,
-                      label: labelFor(o.sourceRef) ?? o.sourceRef,
-                  },
-              ]
-    );
+    const cardItems = unique.flatMap((o): OverlayMenuItem[] => {
+        if (o.kind === 'trendline') return [];
+        // 패턴은 항상 카드가 소유한다(core는 전략 종류만 `kind:*`로 옮긴다) —
+        // `pattern` 제외는 그 사실을 타입에 반영해 kind 변형을 좁히는 것.
+        if (isKindSourceRef(o.sourceRef) && o.kind !== 'pattern')
+            return [{ key: o.sourceRef, kind: o.kind, label: null }];
+        return [
+            {
+                key: o.sourceRef,
+                kind: o.kind,
+                label: labelFor(o.sourceRef) ?? o.sourceRef,
+            },
+        ];
+    });
     const actionItems: OverlayMenuItem[] = hasActionPrices
         ? [{ key: ACTION_PRICES_ITEM_KEY, kind: 'action' }]
         : [];
