@@ -1,3 +1,9 @@
+import type { ChartOverlay } from '@y0ngha/siglens-core';
+import {
+    firstSegmentDirection,
+    type SegmentDirection,
+} from './chartOverlayUtils';
+
 export type FibLevelKind = 'retracement' | 'extension' | 'abcExtension';
 
 export interface ParsedFibLevel {
@@ -36,16 +42,30 @@ export function parseFibLevelLabel(label: string): ParsedFibLevel | null {
     return { kind: 'retracement', percent };
 }
 
-/** 종류별 화면 문구 — 번역 함수(`t`)는 호출부가 쥐고 여기엔 결과 함수만 넘긴다. */
+/**
+ * 종류 × 다리 방향별 화면 문구 — 번역 함수(`t`)는 호출부가 쥐고 여기엔 결과 함수만
+ * 넘긴다. 같은 `61.8%`라도 하락 다리에선 "반등"(저항), 상승 다리에선 "눌림"(지지)이라
+ * 퍼센트만으로는 읽기 어렵다(사용자 피드백).
+ */
 export type FibLevelTexts = Readonly<
-    Record<FibLevelKind, (percent: string) => string>
+    Record<
+        FibLevelKind,
+        Readonly<Record<SegmentDirection, (percent: string) => string>>
+    >
 >;
 
-/** 피보나치 레벨 라벨이면 화면 문구로, 아니면 `null`. */
+/**
+ * 피보나치 작도의 레벨 라벨이면 다리 방향에 맞는 화면 문구로, 아니면(다른 작도·방향
+ * 미상·피보나치 라벨 아님) `null`.
+ */
 export function formatFibLevelLabel(
     label: string,
+    overlay: Pick<ChartOverlay, 'kind' | 'segments'>,
     texts: FibLevelTexts
 ): string | null {
+    if (overlay.kind !== 'fibonacci') return null;
+    // 다리 방향 = 첫 앵커 선분(다리: 시작→끝, ABC: A→B). ABC의 B→C 되돌림 선분은 보지 않는다.
+    const direction = firstSegmentDirection(overlay.segments);
     const fib = parseFibLevelLabel(label);
-    return fib ? texts[fib.kind](fib.percent) : null;
+    return direction && fib ? texts[fib.kind][direction](fib.percent) : null;
 }

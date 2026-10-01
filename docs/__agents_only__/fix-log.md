@@ -337,9 +337,6 @@
   - Rule: (new) A piece of UI state derived from container geometry (scroll distance) must react to every geometry-changing cause, not just the one event type (`scroll`) that happens to be wired up — content growth from streaming is a geometry change with no accompanying scroll event.
   - Context: Added a mount-only `useEffect` that attaches a `ResizeObserver` to the content wrapper div; its callback (not the effect body — this is an external subscription, matching `react-hooks/set-state-in-effect`) calls `setShowScrollButton` via a shared `isAwayFromBottom(el)` helper also used by `handleScroll`, so the two paths can't drift apart. Follows the existing `useIsClamped.ts` observer pattern (create in effect, `observer.disconnect()` on cleanup).
 
-- Violation: Three `[...messages].reverse().find(...)` calls in `MessageList.tsx` mutated a spread copy to find the last matching message, instead of the non-mutating ES2023 method that does the same lookup directly.
-  - Rule: `docs/conventions/CONVENTIONS.md` — prefer immutable array methods (`arr.toReversed()` over `arr.reverse()`, etc.); `.findLast()` is already established in the repo (`src/views/symbol/utils/technicalFacts.ts`).
-  - Context: Replaced all three call sites with `messages.findLast(m => m.role === ...)`.
 
 ## [fix/portfolio-money-rounding Round 1 | get_my_portfolio 금액 반올림 | 2026-09-19]
 - Violation: 금액(marketValue/costBasis/pnl)을 지표용 유효숫자 6자리 반올림(`roundNumber`)으로 처리해 1만 달러 이상에서 센트가, 100만 이상에서 일의 자리가 잘림 — value − cost ≠ pnl
@@ -528,9 +525,6 @@
 - Violation: skill template criterion that is always true under its own trigger (close above MA120/200 on a new 52-week high) made a trend branch unreachable
   - Rule: MISTAKES Predictability — conditions must be falsifiable under the trigger that injects the skill
   - Context: Removed the criterion; neutral branch now "MA(200) falling or stack not met".
-- Violation: `.sort()` on a filtered array; helper test froze an instant where UTC and ET dates coincide, so a UTC-vs-ET regression would pass
-  - Rule: MISTAKES Coding Paradigm #12 (toSorted); Tests — boundary instants must distinguish the alternatives
-  - Context: toSorted; test instant 2026-09-29T02:00Z.
 
 ## [PR #856 merge-conflict resolution | master → feat/symbol-chat-to-ai-host | 2026-09-29]
 - Violation: While merging master into a branch that deletes a whole slice (widgets/chat, features/symbol-chat, entities/chat-message), master had ADDED new test files inside those deleted directories (src/widgets/chat/__tests__/hooks/useChatBranches2.test.tsx, src/entities/chat-message/__tests__/localeEnvelope.test.ts which git relocated via directory-rename detection to src/entities/analysis/__tests__/lib/) and a new test (src/views/symbol/__tests__/ChartContent.overlayHighlight.test.tsx) importing from the deleted slice. The additions merged silently (no conflict marker), so only a repo-wide grep for the deleted module paths caught them.
