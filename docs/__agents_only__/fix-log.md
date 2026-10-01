@@ -622,3 +622,9 @@
   - Rule: Optimization — remove redundant operations that no longer affect the outcome
   - Context: Added isPrewarmTab and skip the read for non-prewarm tabs
 - Status (Round 2): APPROVED (zero findings)
+
+## [Round 1 | claude/magical-sagan-56eoov (news category cron ingestion + cacheNonEmpty) | 2026-10-01]
+- Task: hub prewarm cron now ingests news categories before baking digests (3h gate, enrichment cap 8); ingestion extracted to `ingestMarketNewsCategory`; `cacheNonEmpty` promoted to shared and applied to `/news/[category]` list.
+- Violation: A per-run work cap (enrichment limit 8) combined with a long re-run gate (3h flag) made the initial backlog drain extremely slowly (~50 cards → ~20h), with each partial drain also changing a downstream cache key (digest regeneration). Undocumented. Fix: ingestion returns `pending`; the long gate is set only when the backlog is empty, so the backlog drains on consecutive short-interval runs.
+  - Rule: (new) when combining a per-run cap with a cooldown/gate, the gate must not engage while capped work remains (or the drain time = backlog/cap × gate must be documented and acceptable).
+- Status (Round 2): APPROVED (zero findings)

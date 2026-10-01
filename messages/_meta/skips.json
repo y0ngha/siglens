@@ -439,31 +439,31 @@
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 199,
+        "line": 195,
         "reason": "seo-keywords-ko-only",
         "text": "`${cfg.koLabel} 뉴스`"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 200,
+        "line": 196,
         "reason": "seo-keywords-ko-only",
         "text": "`${cfg.koLabel} 최신 뉴스`"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 201,
+        "line": 197,
         "reason": "seo-keywords-ko-only",
         "text": "`${cfg.koLabel} 뉴스 분석`"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 205,
+        "line": 201,
         "reason": "seo-keywords-ko-only",
         "text": "시장 뉴스 한국어"
     },
     {
         "file": "src/app/[locale]/news/[category]/page.tsx",
-        "line": 206,
+        "line": 202,
         "reason": "seo-keywords-ko-only",
         "text": "AI 뉴스 다이제스트"
     },

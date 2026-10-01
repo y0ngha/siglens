@@ -214,7 +214,32 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
         warnSpy.mockRestore();
     });
 
-    it('upsert가 변경 없이 끝나면(false) revalidateTag를 호출하지 않는다', async () => {
+    it('upsert가 변경 없이 끝나고 보강할 기사도 없으면 revalidateTag를 호출하지 않는다', async () => {
+        vi.mocked(api.DrizzleMarketNewsRepository).mockImplementation(function (
+            this: unknown
+        ) {
+            (this as Record<string, unknown>).upsertMarketNewsItem = vi.fn(
+                async () => false
+            );
+            (this as Record<string, unknown>).attachAnalysis = vi.fn(
+                async () => undefined
+            );
+            (this as Record<string, unknown>).listByCategory = vi.fn(
+                async () => [DEFAULT_ITEM]
+            );
+            (this as Record<string, unknown>).listAnalyzedIds = vi.fn(
+                async () => new Set<string>([DEFAULT_ITEM.id])
+            );
+            return this;
+        });
+        const { revalidateTag } = await import('next/cache');
+        await ensureMarketNewsCardsAnalyzedAction('crypto');
+        expect(revalidateTag).not.toHaveBeenCalled();
+    });
+
+    // 보강이 저장되면 SSR 목록이 미보강 카드로 12h 굳지 않게 한 번 턴다
+    // (`ingestMarketNewsCategory` JSDoc "무효화 시점").
+    it('upsert는 변경 없어도 보강을 저장했으면 revalidateTag를 한 번 호출한다', async () => {
         vi.mocked(api.DrizzleMarketNewsRepository).mockImplementation(function (
             this: unknown
         ) {
@@ -234,7 +259,11 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
         });
         const { revalidateTag } = await import('next/cache');
         await ensureMarketNewsCardsAnalyzedAction('crypto');
-        expect(revalidateTag).not.toHaveBeenCalled();
+        expect(revalidateTag).toHaveBeenCalledTimes(1);
+        expect(revalidateTag).toHaveBeenCalledWith(
+            'market-news:__NEWS_CRYPTO__',
+            'max'
+        );
     });
 
     it('refresh 플래그가 세팅돼 있으면(isRecentlyFetched=true) FMP fetch를 건너뛴다', async () => {

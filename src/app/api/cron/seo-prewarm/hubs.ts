@@ -25,7 +25,12 @@ import {
     MACRO_BRIEFING_SEED_SURFACE,
 } from '@/entities/economy/api/macroBriefingStaticCache';
 import { marketNewsDigestCacheTag } from '@/entities/market-news/api/marketNewsDigestStaticCache';
-import { getMarketNewsList } from '@/entities/market-news/api/marketNewsRepository';
+import {
+    getMarketNewsList,
+    isCronIngestedRecently,
+    markCronIngested,
+} from '@/entities/market-news/api/marketNewsRepository';
+import { ingestMarketNewsCategory } from '@/entities/market-news/api/ingestMarketNewsCategory';
 import {
     CATEGORY_CONFIG,
     type NewsFeedCategoryId,
@@ -206,6 +211,66 @@ function macroBriefingTarget(): HubTarget {
     };
 }
 
+/**
+ * 다이제스트 카드 보강 상한 — `LLM_PARALLEL_LIMIT`(8)와 같아 **한 청크**로 끝난다.
+ *
+ * 대상 하나에는 `HUB_UNIT_TIMEOUT_MS`(45초) 상한이 있고, 그 안에 적재(FMP 1~3초 +
+ * upsert) + 보강 + 다이제스트 LLM이 모두 들어가야 한다. DeepSeek 왕복 실측 4~13초라
+ * 한 청크면 최악 ~13초, 두 청크면 다이제스트 몫이 위태롭다. 백로그는 다음 적재 때
+ * 이어서 보강된다 — 백로그가 남으면 3시간 플래그를 세우지 않아 다음 tick(방문자용
+ * 10분 플래그 주기)에 곧바로 이어 받는다(`ingestCategoryBeforeDigest` 참고).
+ */
+const HUB_NEWS_CARD_LIMIT = 8;
+
+/**
+ * 다이제스트를 굽기 **전에** 그 카테고리 기사를 적재한다.
+ *
+ * 예전 허브 단계는 DB만 읽었다. 기사를 넣는 건 방문자 브라우저뿐이라, 찾는 사람이
+ * 적은 `forex`·`articles`는 몇 주씩 비었고(다이제스트도 `noData`), 방문이 한 번
+ * 생기면 "다이제스트는 있는데 목록은 비어 있는" 화면이 나왔다 — 목록 캐시 태그를
+ * 터는 건 적재 쪽인데 이 단계는 적재를 안 했기 때문이다. 종목 뉴스 프리웜
+ * (`prewarmNews`)과 같은 "ingest-before-read" 순서로 맞춘다.
+ *
+ * 간격은 `MARKET_NEWS_CRON_INGEST_INTERVAL_SECONDS`(3시간)로 묶는다 — 근거는 그
+ * 상수 주석(새 기사 = 다이제스트 재생성). 표시는 적재가 실제로 끝나고(`ok`) 보강
+ * 백로그도 비었을 때만 한다: 피드·쓰기 실패나 남은 백로그면 다시 시도한다(방문자용
+ * 10분 플래그가 그 사이 FMP 연타를 막는다).
+ *
+ * fail-open: 적재가 어떻게 실패해도 다이제스트는 DB에 이미 있는 기사로 계속 간다.
+ */
+async function ingestCategoryBeforeDigest(
+    category: NewsFeedCategoryId,
+    sentinel: string
+): Promise<void> {
+    if (await isCronIngestedRecently(sentinel)) return;
+    const result = await ingestMarketNewsCategory(category, {
+        analyzeLimit: HUB_NEWS_CARD_LIMIT,
+        logLabel: `hub-prewarm:news-ingest:${category}`,
+    }).catch((error: unknown) => {
+        console.error(
+            `[hub-prewarm] news ingest threw: ${category} — 다이제스트는 DB 기사로 계속한다`,
+            error
+        );
+        return null;
+    });
+    if (result === null) return;
+    console.log(
+        `[hub-prewarm] news ingest ${category}: ${JSON.stringify(result)}`
+    );
+    // `recently-fetched`로는 표시하지 않는다 — 10분 플래그는 적재 **시작** 시점에
+    // 세워지므로, 직전 tick의 피드 실패도 이 상태로 보인다. 그걸 완료로 치면 실패
+    // 하나가 3시간 공백이 된다. 다음 tick에 다시 묻는 비용은 Redis GET 한 번이다.
+    //
+    // 보강 백로그(`pending`)가 남아 있어도 세우지 않는다. 세우면 상한 8건이 3시간마다
+    // 하나씩만 비워져, 몇 주 비어 있던 카테고리(`forex`·`articles`)의 첫 적재 백로그
+    // ~50건이 하루 가까이 걸린다(그동안 매 적재가 다이제스트 키를 바꿔 재생성도 그만큼
+    // 반복된다). 안 세우면 방문자용 10분 플래그 주기로 연달아 비우고 한 번에 끝난다 —
+    // 비용은 백로그 크기에 비례하는 일회성이다.
+    if (result.status === 'ok' && result.pending === 0) {
+        await markCronIngested(sentinel);
+    }
+}
+
 function newsDigestTargets(): HubTarget[] {
     // safe: CATEGORY_CONFIG is Record<NewsFeedCategoryId, CategoryConfig>, so
     // Object.keys is exactly the union members — TS just widens to string[].
@@ -215,6 +280,7 @@ function newsDigestTargets(): HubTarget[] {
             tag: marketNewsDigestCacheTag(category),
             run: async () => {
                 const { sentinel, koLabel } = CATEGORY_CONFIG[category];
+                await ingestCategoryBeforeDigest(category, sentinel);
                 const rows = await getMarketNewsList(sentinel);
                 const enriched = rows
                     .map(toEnrichedMarketNewsItem)
