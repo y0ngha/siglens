@@ -257,4 +257,37 @@ describe('Options generateMetadata crypto NOINDEX guard', () => {
         expect(robots?.follow).toBe(true);
         expect(result.alternates?.canonical).not.toBeNull();
     });
+
+    it('옵션 시장이 있는 종목도 항상 noindex, follow + self-canonical이다 (2026-10-01)', async () => {
+        // 프리웜이 options 산문을 더는 굽지 않아(`PREWARM_TABS`) 탭 전체를 noindex로
+        // 돌렸다(`ALWAYS_NOINDEX_TAB_ROBOTS`). 예전엔 옵션이 있으면 색인됐다.
+        mockIsTabAllowed.mockResolvedValue(true);
+        const { staticSymbolCache } =
+            await import('@/shared/cache/staticSymbolCache');
+        (
+            staticSymbolCache as MockedFunction<typeof staticSymbolCache>
+        ).mockResolvedValue(true);
+        const { getAssetInfoResilient } =
+            await import('@/entities/ticker/lib/getAssetInfoResilient');
+        (
+            getAssetInfoResilient as MockedFunction<
+                typeof getAssetInfoResilient
+            >
+        ).mockResolvedValue({
+            assetInfo: {
+                symbol: 'AAPL',
+                name: 'Apple Inc.',
+                koreanName: '애플',
+                fmpSymbol: 'AAPL',
+            },
+            degraded: false,
+        } as Awaited<ReturnType<typeof getAssetInfoResilient>>);
+
+        const result = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko', symbol: 'AAPL' }),
+        });
+
+        expect(result.robots).toEqual({ index: false, follow: true });
+        expect(result.alternates?.canonical).not.toBeNull();
+    });
 });

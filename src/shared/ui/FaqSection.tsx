@@ -5,10 +5,7 @@ import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 const FAQ_HEADING_ID = 'faq-heading';
 
 interface FaqSectionProps {
-    /**
-     * 섹션 h2. 종목 탭은 여기에 종목명을 넣는다 — 같은 구조의 탭이 9개라
-     * "자주 묻는 질문"만 있으면 페이지끼리 구분되는 신호가 없다.
-     */
+    /** 섹션 h2. */
     heading: string;
     items: readonly FaqItem[];
 }
@@ -20,13 +17,11 @@ interface FaqSectionProps {
  * 구글은 마크업에 대응하는 질문·답변이 페이지에 실제로 보일 것을 요구하고, 두 벌로
  * 두면 한쪽만 고쳐져 리치 결과 자격을 잃는다.
  *
- * **종목 탭 6곳(congress·fear-greed·financials·fundamental·options·overall)은 화면에만
- * 둔다.** FAQ 리치 결과는 2023-08부터 정부·보건 등 권위 사이트로 한정됐고, 종목 탭의
- * 문답은 종목명만 바뀌는 템플릿이라 색인 대상 1,900여 URL에 같은 마크업을 복제하는
- * 것뿐이었다(2026-09-17 운영 감사). 화면 문답은 독자에게 쓸모가 있어 그대로 둔다.
- * 각 페이지에는 이 JSDoc을 가리키는 한 줄 주석만 남긴다 — 근거를 6곳에 복제하면
- * 정책이 또 바뀔 때 손으로 맞춰야 한다. 테스트 가드는
- * `expectVisibleFaqWithoutJsonLd`(종목 탭)와 `expectFaqSingleSource`(허브)다.
+ * **종목 탭에는 FAQ를 두지 않는다**(2026-10-01, `docs/architecture/SEO_RECOVERY_2026_09.md`
+ * §10). 2026-09-17에 FAQPage 마크업을 먼저 뺐고(FAQ 리치 결과는 2023-08부터 정부·보건
+ * 등 권위 사이트 한정), 남은 화면 문답도 종목명만 바뀌는 템플릿이라 종목 페이지끼리의
+ * 공통 문장 비율을 끌어올리던 주범이어서 걷어냈다. 종목 탭에 다시 넣지 않는다 — 지표
+ * 일반 설명은 허브나 `/about`이 맡는다. 테스트 가드는 `expectFaqSingleSource`(허브)다.
  *
  * 마크업(`dl`/`dt`/`dd`)과 클래스는 `/economy/kr`·`/fear-greed`가 이미 쓰던 것을
  * 그대로 옮겼다. 카드 테두리는 `/[symbol]/overall`의 안내 섹션과 동일하다.

@@ -1,8 +1,6 @@
-import { POPULAR_OPTIONS_TICKERS } from '@/shared/config/popular-options-tickers';
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { MS_PER_HOUR } from '@/shared/config/time';
 import { SITE_URL } from '@/shared/lib/seo';
-import { classifyAsset } from '@/entities/ticker/lib/assetClassification';
 import { floorToHour } from '../lib/floorToHour';
 import { buildPopularEntries } from '../lib/buildPopularEntries';
 
@@ -12,99 +10,59 @@ const NOW = new Date('2026-05-23T21:00:00.000Z');
 const LAST_SESSION_CLOSE = new Date('2026-05-22T20:00:00.000Z');
 
 describe('buildPopularEntries', () => {
-    // 2026-09-17 운영 크롤: congress 108·overall 49개가 sitemap에 실렸는데 noindex였다.
-    // 두 페이지는 스냅샷 산문이 없으면 noindex라, 산문 보유 집합이 있으면 거기 맞춘다.
-    it('산문 스냅샷 집합이 주어지면 congress·overall은 그 종목만 싣고 다른 탭은 그대로 둔다', () => {
+    // 2026-09-17 운영 크롤: noindex 탭이 sitemap에 실렸다. 지금은 산문 게이트 대상이
+    // news 하나뿐이라, 산문 보유 집합이 있으면 /news만 거기 맞춘다.
+    it('산문 스냅샷 집합이 주어지면 news는 그 종목만 싣고 차트·공포탐욕은 그대로 둔다', () => {
         const urls = buildPopularEntries(NOW, {
-            symbolTabsWithProse: new Set(['AAPL:overall', 'AAPL:news']),
+            symbolTabsWithProse: new Set(['AAPL:news']),
         }).map(e => e.url);
 
-        expect(urls).toContain(`${SITE_URL}/AAPL/overall`);
         // 집합에 든 조합은 실제로 실린다 — 키 형식이 어긋나면 이 단언이 깨진다.
         expect(urls).toContain(`${SITE_URL}/AAPL/news`);
-        expect(urls).not.toContain(`${SITE_URL}/AAPL/congress`);
-        expect(urls).not.toContain(`${SITE_URL}/MSFT/overall`);
-        expect(urls).not.toContain(`${SITE_URL}/MSFT/congress`);
-        expect(urls).toContain(`${SITE_URL}/MSFT`);
-        expect(urls).toContain(`${SITE_URL}/MSFT/fundamental`);
-        // 뉴스 탭도 같은 게이트를 탄다(2026-09-18: 산문 없는 종목의 /news가
-        // sitemap에 noindex로 남아 있었다).
+        // 2026-09-18: 산문 없는 종목의 /news가 sitemap에 noindex로 남아 있었다.
         expect(urls).not.toContain(`${SITE_URL}/MSFT/news`);
+        expect(urls).toContain(`${SITE_URL}/MSFT`);
+        expect(urls).toContain(`${SITE_URL}/MSFT/fear-greed`);
     });
 
-    it('산문 집합이 없으면(로더 실패) congress·overall을 전부 싣는다', () => {
+    it('산문 집합이 없으면(로더 실패) news를 전부 싣는다', () => {
         const urls = buildPopularEntries(NOW).map(e => e.url);
 
-        expect(urls).toContain(`${SITE_URL}/MSFT/overall`);
-        expect(urls).toContain(`${SITE_URL}/MSFT/congress`);
         expect(urls).toContain(`${SITE_URL}/MSFT/news`);
     });
 
-    it('모든 POPULAR_TICKERS에 대해 6축 기본 라우트를 생성하고 options/financials는 자산 분류에 맞춘다', () => {
+    it('모든 POPULAR_TICKERS에 대해 차트·뉴스·공포탐욕 3축 라우트만 생성한다', () => {
         const entries = buildPopularEntries(NOW);
 
-        // 한국 종목은 `/congress`가 없어(국내에 공직자 매매 공시 제도가 없다) 5축이다.
-        const krCount = POPULAR_TICKERS.filter(t => /\.K[SQ]$/.test(t)).length;
-        // ETF/지수는 재무제표가 없어 `/financials`가 빠진다(SPY, TQQQ 등).
-        const nonStockCount = POPULAR_TICKERS.filter(
-            t => classifyAsset(t) !== 'stock'
-        ).length;
-        expect(entries).toHaveLength(
-            POPULAR_TICKERS.length * 6 -
-                krCount -
-                nonStockCount +
-                POPULAR_OPTIONS_TICKERS.length
-        );
+        expect(entries).toHaveLength(POPULAR_TICKERS.length * 3);
 
         const first = POPULAR_TICKERS[0];
         const base = `${SITE_URL}/${first}`;
         const urls = entries.map(e => e.url);
         expect(urls).toEqual(
-            expect.arrayContaining([
-                base,
-                `${base}/news`,
-                `${base}/fundamental`,
-                `${base}/financials`,
-                `${base}/overall`,
-                `${base}/congress`,
-            ])
-        );
-        // 종목별 공포·탐욕 탭은 항상 noindex라 싣지 않는다(2026-09-17 운영 렌더 감사).
-        expect(urls).not.toContain(`${base}/fear-greed`);
-
-        // 한국 종목은 존재하지 않는 `/congress`가 sitemap에 실리면 안 된다 —
-        // 404 URL은 크롤 예산을 태우고 색인 품질 신호를 떨어뜨린다.
-        expect(urls).not.toContain(`${SITE_URL}/005930.KS/congress`);
-        expect(urls).toEqual(
-            expect.arrayContaining([
-                `${SITE_URL}/005930.KS`,
-                `${SITE_URL}/005930.KS/financials`,
-            ])
+            expect.arrayContaining([base, `${base}/news`, `${base}/fear-greed`])
         );
 
-        const congressEntry = entries.find(e => e.url === `${base}/congress`);
-        expect(congressEntry?.changeFrequency).toBe('weekly');
-        expect(congressEntry?.priority).toBe(0.75);
+        const fearGreed = entries.find(e => e.url === `${base}/fear-greed`);
+        expect(fearGreed?.changeFrequency).toBe('daily');
+        expect(fearGreed?.priority).toBe(0.75);
     });
 
-    // `/position`은 항상 noindex라 sitemap에 싣지 않는다(2026-09-11 SEO 회복
-    // 감사 — PR #791의 추가를 되돌림). noindex URL이 sitemap에 실리면 크롤
-    // 예산만 태우므로 한 건도 나가지 않는지 고정한다.
-    it('`/position` 엔트리를 한 건도 내지 않는다 (한국 종목 포함)', () => {
+    // 종합·펀더멘털·재무제표·옵션·의회거래·내위치 탭은 페이지가 항상 noindex다.
+    // noindex URL이 sitemap에 실리면 크롤 예산만 태우므로 한 건도 나가지 않는지
+    // (한국 종목·ETF 포함) 고정한다.
+    it.each([
+        'overall',
+        'fundamental',
+        'financials',
+        'options',
+        'congress',
+        'position',
+    ])('`/%s` 엔트리를 한 건도 내지 않는다', tab => {
         const entries = buildPopularEntries(NOW);
-        expect(entries.some(entry => entry.url.endsWith('/position'))).toBe(
+        expect(entries.some(entry => entry.url.endsWith(`/${tab}`))).toBe(
             false
         );
-    });
-
-    it('옵션 URL은 generated static options list와 정확히 일치한다', () => {
-        const entries = buildPopularEntries(NOW);
-        const optionsSymbols = entries
-            .filter(entry => entry.url.endsWith('/options'))
-            .map(entry => entry.url.split('/')[3])
-            .toSorted();
-
-        expect(optionsSymbols).toEqual([...POPULAR_OPTIONS_TICKERS]);
     });
 
     it('news 페이지는 1시간 슬라이딩 lastmod(정시로 내림)와 hourly changefreq를 적용한다', () => {
@@ -147,35 +105,20 @@ describe('buildPopularEntries', () => {
         );
     });
 
-    /**
-     * 회귀 가드(SEO 감사 finding 2): ETF(SPY)는 재무제표가 없다 —
-     * `/financials`는 `isEmptyFinancialsSnapshot` → NOINDEX_SYMBOL_METADATA로
-     * 응답하는 permanently-noindex 페이지다. noindex URL을 sitemap에 실으면
-     * 크롤 예산만 태우고 색인 품질 신호가 나빠지므로 stock으로 분류된 티커만
-     * `/financials` 엔트리를 내야 한다. SPY는 옵션은 있으므로(POPULAR_OPTIONS_SET)
-     * `/options`는 그대로 남아야 한다 — financials 배제가 다른 축까지 지우지
-     * 않음을 함께 확인한다.
-     */
-    it('ETF(SPY)는 /financials 엔트리가 없지만 /options는 그대로 유지한다', () => {
-        const entries = buildPopularEntries(NOW);
-        const urls = entries.map(e => e.url);
-
-        expect(urls).not.toContain(`${SITE_URL}/SPY/financials`);
-        expect(urls).toContain(`${SITE_URL}/SPY/options`);
-        // 대조군: 일반 주식(AAPL)은 financials가 정상적으로 존재해야 한다.
-        expect(urls).toContain(`${SITE_URL}/AAPL/financials`);
-    });
-
-    it('chart 페이지는 daily, fundamental은 weekly로 우선순위를 둔다', () => {
+    it('chart 페이지와 fear-greed는 daily로, 같은 lastmod를 쓴다', () => {
         const entries = buildPopularEntries(NOW);
 
         const first = POPULAR_TICKERS[0];
         const chart = entries.find(e => e.url === `${SITE_URL}/${first}`);
-        const fundamental = entries.find(
-            e => e.url === `${SITE_URL}/${first}/fundamental`
+        const fearGreed = entries.find(
+            e => e.url === `${SITE_URL}/${first}/fear-greed`
         );
         expect(chart?.changeFrequency).toBe('daily');
-        expect(fundamental?.changeFrequency).toBe('weekly');
+        expect(chart?.priority).toBe(0.8);
+        expect(fearGreed?.changeFrequency).toBe('daily');
+        expect(fearGreed?.lastModified.getTime()).toBe(
+            chart?.lastModified.getTime()
+        );
     });
 
     it('마감 전 호출이면 직전 마감 세션으로 클램프된다', () => {
@@ -193,7 +136,7 @@ describe('buildPopularEntries', () => {
     /**
      * 회귀 가드: 예전 `computeTodayAtMarketClose`는 요일을 보지 않아, 토요일
      * 20:00 UTC를 넘긴 시각에 크롤되면 **열리지도 않은 토요일 장의 마감 시각**을
-     * lastmod로 발행했다(POPULAR_TICKERS × 7축 ≈ 1800여 URL 전부).
+     * lastmod로 발행했다(POPULAR_TICKERS의 모든 URL).
      *
      * `/news`는 의도적으로 1시간 슬라이딩이라 주말 날짜가 나오는 게 정상 — 제외한다.
      */

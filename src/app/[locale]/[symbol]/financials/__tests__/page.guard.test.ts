@@ -207,10 +207,9 @@ describe('Financials generateMetadata crypto NOINDEX guard', () => {
         });
     });
 
-    it('equity symbol (isTabAllowedForSymbol → true) → returns indexable metadata (not NOINDEX)', async () => {
+    it('equity symbol (isTabAllowedForSymbol → true) → noindex(follow 유지)이되 canonical은 null이 아니다', async () => {
         mockIsTabAllowed.mockResolvedValue(true);
 
-        // Provide assetInfo + profile so generateMetadata can build real metadata content.
         mockGetAssetInfoResilient.mockResolvedValue({
             assetInfo: {
                 symbol: 'AAPL',
@@ -220,26 +219,18 @@ describe('Financials generateMetadata crypto NOINDEX guard', () => {
             },
             degraded: false,
         } as Awaited<ReturnType<typeof getAssetInfoResilient>>);
-        mockGetProfileResilient.mockResolvedValue({
-            profile: { sector: 'Technology', description: '' },
-            degraded: false,
-        } as Awaited<ReturnType<typeof getProfileResilient>>);
 
         const result = await generateMetadata({
             params: Promise.resolve({ locale: 'ko', symbol: 'AAPL' }),
         });
 
         expect(mockIsTabAllowed).toHaveBeenCalledWith('AAPL', 'financials');
-        // Must NOT be the hard NOINDEX sentinel object.
-        // NOINDEX_SYMBOL_METADATA has { robots: { index: false, follow: true },
-        //   alternates: { canonical: null } } — the sentinel returned for crypto/invalid.
-        //   `canonical: null` (not follow) is what separates it from an indexable
-        //   page: every noindex branch now keeps follow:true so crawl paths to the
-        //   sibling tabs survive.
+        // 2026-10-01 SEO 감사: 이 탭은 항상 noindex다. 하드 sentinel
+        // (NOINDEX_SYMBOL_METADATA)과 갈리는 신호는 `canonical`이다 — sentinel은
+        // null이지만 이 경로는 self-canonical을 유지한다.
         expect(result).not.toEqual(NOINDEX_SYMBOL_METADATA);
-        // Equity generateMetadata does not set a robots override — the page is fully
-        // indexable.  NOINDEX_SYMBOL_METADATA always has robots.index: false, so
-        // checking robots is undefined is the positive falsifiable signal.
-        expect(result.robots).toBeUndefined();
+        expect(result.robots).toEqual({ index: false, follow: true });
+        expect(result.alternates?.canonical).not.toBeNull();
+        expect(result.alternates?.canonical).toBeDefined();
     });
 });

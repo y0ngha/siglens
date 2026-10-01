@@ -35,7 +35,6 @@ import { hasFundamentalProse } from '@/views/symbol/snapshot/renderers/fundament
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { SectionSkeleton } from '@/views/symbol/SectionSkeleton';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { FaqSection } from '@/shared/ui/FaqSection';
 import { Spinner } from '@/shared/ui/Spinner';
 import { SymbolRouteParams } from '@/shared/config/market';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
@@ -46,15 +45,14 @@ import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import {
+    ALWAYS_NOINDEX_TAB_ROBOTS,
     buildBreadcrumbJsonLd,
     buildSymbolFundamentalSeoContent,
     buildSymbolSeoContent,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
     noindexSymbolMetadata,
-    type FaqItem,
 } from '@/shared/lib/seo';
-import { loadTabSnapshotMeta } from '@/app/[locale]/[symbol]/symbolSnapshotDescription';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
 import { FundamentalDegraded } from './FundamentalDegraded';
@@ -116,71 +114,24 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     });
     if (blockedMetadata) return blockedMetadata;
 
-    // 펀더멘털 페이지는 FMP profile이 있어야 렌더된다. profile을 본문/ProfileSection과
-    // 동일한 정적 캐시 키로 미리 확인한다(같은 요청 내 React.cache + unstable_cache 공유라
-    // 추가 FMP round-trip 없음). 그래서 본문 렌더 결과와 metadata noindex 판단이 일치한다:
-    //   - profileDegraded(FMP 인프라 실패) → 본문은 degrade(200)를 렌더하므로 noindex.
-    //   - profile === null(실존하지 않는 종목) → 본문은 notFound()이므로 noindex.
-    // `displayName`을 가드보다 위에서 계산한다 — 아래 noindex 분기들도
-    // `noindexSymbolMetadata`에 넘겨야 차단된 페이지가 티커가 아니라 사명까지
-    // 담은 title/description을 갖는다. `buildDisplayName`은 순수 함수라 위치를
-    // 올려도 부작용이 없다.
     const displayName = assetInfo
         ? buildDisplayName(assetInfo, upper, locale)
         : upper;
-
-    const { profile, degraded: profileDegraded } =
-        await getProfileResilient(upper);
-    if (profileDegraded || profile === null) {
-        return noindexSymbolMetadata(upper, tSeo, locale, {
-            tab: 'fundamental',
-            displayName,
-            koreanName: assetInfo?.koreanName,
-        });
-    }
-    // sector는 의도적으로 <meta description>에 쓰지 않는다(description은 sector 없는 base
-    // 카피, 페이지 본문 JSON-LD만 sector 보강 카피). 위 profile 조회는 noindex 게이트 용도이며
-    // 두 description 모두 동일 함수에서 파생되므로 핵심 의미는 일치한다.
     const seo = buildSymbolFundamentalSeoContent(upper, tSeo, {
         displayName,
         koreanName: assetInfo?.koreanName,
         englishName: assetInfo?.name,
         locale,
     });
-    const metadata = symbolMetadataFromSeo(seo, locale);
-
-    // snapshot-derived unique description (spec 2026-07-24 Task 8).
-    const { snap, description: snapshotDescription } =
-        await loadTabSnapshotMeta({
-            symbol: upper,
-            tab: 'fundamental',
-            revalidate,
-            locale,
-            displayName,
-            assetClass: 'equity',
-            tSeo,
-        });
-
-    // **thin-content 게이트** — `congress/page.tsx`와 같은 모양이다.
-    //
-    // 회복 문서(`SEO_RECOVERY_2026_09.md` §5 A3)의 "산문 없는 탭은 noindex"를
-    // 이 탭에 적용한다. 프로필·지표 카드는 전 종목이 같은 표를 채우는 수치라
-    // 종목 고유 텍스트는 사실상 이 스냅샷 산문뿐이다.
-    //
-    // 지금 비용은 0이다(2026-09-17 실측: 주식 402종 전부 fresh 스냅샷 보유).
-    // 목적은 미래 회귀 방어다 — 2026-08 KR 대장주 프리웜 미도달 같은 사고 때
-    // 얇아진 페이지가 자동으로 색인에서 빠지고, 프리웜이 따라잡으면 자가치유된다.
-    //
-    // 술어는 본문 `showFundamentalProse`와 **같은** `hasFundamentalProse`다
-    // (MISTAKES §2). 존재 여부로 판정하면 내용이 빈 행에서 메타와 본문이 갈라진다.
-    // self-canonical·제목은 유지한다 — 페이지는 멀쩡히 살아 있다.
-    if (!hasFundamentalProse(snap?.content)) {
-        return { ...metadata, robots: { index: false, follow: true } };
-    }
-
-    return snapshotDescription
-        ? { ...metadata, description: snapshotDescription }
-        : metadata;
+    // **항상 noindex** (2026-10-01 SEO 감사, `SEO_RECOVERY_2026_09.md` §10).
+    // 프리웜이 이 탭의 산문을 더는 굽지 않는다(`PREWARM_TABS`). 남는 것은 전 종목이
+    // 같은 표를 채우는 프로필·지표 카드뿐이라 종목 고유 텍스트가 없다 — 예전
+    // "산문 없으면 noindex" 게이트가 이제 항상 참이 되므로 조건 없이 막는다. 조건부로
+    // 두면 사용자 방문이 만든 캐시 유무에 따라 색인 여부가 흔들린다.
+    return {
+        ...symbolMetadataFromSeo(seo, locale),
+        robots: ALWAYS_NOINDEX_TAB_ROBOTS,
+    };
 }
 
 interface SymbolSectionProps {
@@ -660,35 +611,6 @@ export default async function FundamentalPage({ params }: Props) {
         locale
     );
 
-    /**
-     * FAQ — 화면 `FaqSection`과 FAQPage 구조화데이터의 단일 소스.
-     *
-     * 첫 답변이 섹터를 품는다. 예전에는 같은 지표 나열이 화면에 보이지 않는
-     * `sr-only` 개요 문단으로 따로 있었는데(섹터도 거기 있었다), 답변과 사실상
-     * 같은 문장이라 크롤러에게 같은 말을 두 번 하는 셈이었다 — 문단을 지우고
-     * 섹터만 여기로 옮겼다.
-     */
-    const faq: readonly FaqItem[] = [
-        {
-            question: tSeo('faq.fundamentalScope', { v0: displayName }),
-            answer: tSeo('faq.fundamentalScopeAnswer', {
-                v0:
-                    displayName +
-                    (sector !== ''
-                        ? tSeo('faq.fundamentalSectorSuffix', { v0: sector })
-                        : ''),
-            }),
-        },
-        {
-            question: t('page.8770b1'),
-            answer: t('page.7b255a'),
-        },
-        {
-            question: t('page.05f287'),
-            answer: t('page.6e94dd'),
-        },
-    ];
-
     return (
         <>
             <JsonLd data={jsonLd} />
@@ -762,14 +684,6 @@ export default async function FundamentalPage({ params }: Props) {
                 <Suspense fallback={<SectionSkeleton />}>
                     <FutureDirectionSection symbol={upper} />
                 </Suspense>
-                {/* 종목 탭은 FAQPage 마크업을 싣지 않는다 — 근거는 `FaqSection` JSDoc. */}
-
-                <FaqSection
-                    heading={tSeo('faqHeading.fundamental', {
-                        v0: displayName,
-                    })}
-                    items={faq}
-                />
                 <CrossLinkCards
                     symbol={upper}
                     current="fundamental"

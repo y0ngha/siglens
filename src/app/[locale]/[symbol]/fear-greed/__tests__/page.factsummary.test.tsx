@@ -149,7 +149,7 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import SymbolFearGreedPage from '@/app/[locale]/[symbol]/fear-greed/page';
 import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';
-import { expectVisibleFaqWithoutJsonLd } from '@/__tests__/utils/expectFaqSingleSource';
+import { expectNoFaq } from '@/__tests__/utils/expectFaqSingleSource';
 
 const EQUITY_ASSET_INFO = {
     symbol: 'AAPL',
@@ -282,7 +282,7 @@ describe('SymbolFearGreedPage — SSR factor summary wiring', () => {
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        expectVisibleFaqWithoutJsonLd(tree);
+        expectNoFaq(tree);
     });
 });
 

@@ -171,10 +171,8 @@ test.describe('symbol SEO + ISR (crawler-facing)', () => {
         const types = rootJsonLdTypes(await response.text());
         expect(types).toContain('WebPage');
         expect(types).toContain('BreadcrumbList');
-        // 종목 탭은 FAQPage 마크업을 싣지 않는다 — 화면 FAQ만 남긴다(2026-09-17 감사:
-        // FAQ 리치 결과는 2023-08부터 권위 사이트 한정이라, 색인 대상 1,900여 URL에
-        // 같은 마크업을 복제할 이유가 없다). 화면 쪽은 단위 테스트가 지킨다
-        // (`expectVisibleFaqWithoutJsonLd`).
+        // 종목 탭은 FAQ를 싣지 않는다 — 마크업은 2026-09-17, 화면 문답은 2026-10-01에
+        // 걷어냈다(종목명만 바뀌는 템플릿). 화면 쪽은 단위 테스트가 지킨다(`expectNoFaq`).
         expect(types).not.toContain('FAQPage');
     });
 
@@ -189,10 +187,8 @@ test.describe('symbol SEO + ISR (crawler-facing)', () => {
         const types = rootJsonLdTypes(await response.text());
         expect(types).toContain('WebPage');
         expect(types).toContain('BreadcrumbList');
-        // 종목 탭은 FAQPage 마크업을 싣지 않는다 — 화면 FAQ만 남긴다(2026-09-17 감사:
-        // FAQ 리치 결과는 2023-08부터 권위 사이트 한정이라, 색인 대상 1,900여 URL에
-        // 같은 마크업을 복제할 이유가 없다). 화면 쪽은 단위 테스트가 지킨다
-        // (`expectVisibleFaqWithoutJsonLd`).
+        // 종목 탭은 FAQ를 싣지 않는다 — 마크업은 2026-09-17, 화면 문답은 2026-10-01에
+        // 걷어냈다(종목명만 바뀌는 템플릿). 화면 쪽은 단위 테스트가 지킨다(`expectNoFaq`).
         expect(types).not.toContain('FAQPage');
     });
 

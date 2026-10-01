@@ -86,49 +86,16 @@ import {
 } from '@/app/[locale]/[symbol]/financials/page';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
-import {
-    getFinancialsSnapshot,
-    isEmptyFinancialsSnapshot,
-} from '@/entities/financials-statements/lib/getFinancialsSnapshot';
+import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
 import type { MockedFunction } from 'vitest';
-import type { FinancialsSnapshot } from '@y0ngha/siglens-core';
 
 // resolved 반환 타입 별칭 — mock fixture를 as never(bottom type) 대신 명시 타입으로
 // 캐스팅하기 위함(MISTAKES §7). 부분 객체는 as unknown as <Result>로 통과시킨다.
 type AssetInfoResult = Awaited<ReturnType<typeof getAssetInfoResilient>>;
-type ProfileResult = Awaited<ReturnType<typeof getProfileResilient>>;
 
 const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
     typeof getAssetInfoResilient
 >;
-const mockGetProfileResilient = getProfileResilient as MockedFunction<
-    typeof getProfileResilient
->;
-const mockGetFinancialsSnapshot = getFinancialsSnapshot as MockedFunction<
-    typeof getFinancialsSnapshot
->;
-const mockIsEmpty = isEmptyFinancialsSnapshot as MockedFunction<
-    typeof isEmptyFinancialsSnapshot
->;
-
-const NON_EMPTY_SNAPSHOT = {
-    income: [{}],
-    balance: [],
-    cashFlow: [],
-    incomeGrowth: [],
-    financialGrowth: [],
-    cashFlowGrowth: [],
-} as unknown as FinancialsSnapshot;
-
-const EMPTY_SNAPSHOT = {
-    income: [],
-    balance: [],
-    cashFlow: [],
-    incomeGrowth: [],
-    financialGrowth: [],
-    cashFlowGrowth: [],
-} as unknown as FinancialsSnapshot;
-
 describe('Financials page ISR route config', () => {
     it('exports revalidate = 86400 (literal — required for Next.js static analysis)', () => {
         // MISTAKES §15: route segment config must be a literal, not an imported constant
@@ -148,12 +115,6 @@ describe('generateMetadata', () => {
             },
             degraded: false,
         } as unknown as AssetInfoResult);
-        mockGetProfileResilient.mockResolvedValue({
-            profile: { sector: 'Technology', description: '' },
-            degraded: false,
-        } as unknown as ProfileResult);
-        mockGetFinancialsSnapshot.mockResolvedValue(NON_EMPTY_SNAPSHOT);
-        mockIsEmpty.mockReturnValue(false);
     });
 
     it('returns noindex for invalid ticker format', async () => {
@@ -179,46 +140,6 @@ describe('generateMetadata', () => {
         expect(metadata.alternates?.canonical).toBeNull();
     });
 
-    it('returns noindex when profile is degraded (infra failure)', async () => {
-        mockGetProfileResilient.mockResolvedValue({
-            profile: null,
-            degraded: true,
-        } as unknown as ProfileResult);
-
-        const metadata = await generateMetadata({
-            params: Promise.resolve({ locale: 'ko', symbol: 'AAPL' }),
-        });
-
-        expect(metadata.robots).toEqual({ index: false, follow: true });
-        expect(metadata.alternates?.canonical).toBeNull();
-    });
-
-    it('returns noindex when profile is null (symbol does not exist)', async () => {
-        mockGetProfileResilient.mockResolvedValue({
-            profile: null,
-            degraded: false,
-        } as unknown as ProfileResult);
-
-        const metadata = await generateMetadata({
-            params: Promise.resolve({ locale: 'ko', symbol: 'FAKESYM' }),
-        });
-
-        expect(metadata.robots).toEqual({ index: false, follow: true });
-        expect(metadata.alternates?.canonical).toBeNull();
-    });
-
-    it('returns noindex when the financial snapshot is all-empty (transient FMP failure)', async () => {
-        mockGetFinancialsSnapshot.mockResolvedValue(EMPTY_SNAPSHOT);
-        mockIsEmpty.mockReturnValue(true);
-
-        const metadata = await generateMetadata({
-            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
-        });
-
-        expect(metadata.robots).toEqual({ index: false, follow: true });
-        expect(metadata.alternates?.canonical).toBeNull();
-    });
-
     it('returns canonical /{symbol}/financials for a valid existing symbol', async () => {
         const metadata = await generateMetadata({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
@@ -229,12 +150,27 @@ describe('generateMetadata', () => {
         );
     });
 
-    it('does not set noindex robots for a valid symbol', async () => {
+    // 2026-10-01 SEO 감사: 재무제표 탭은 **항상 noindex**다. 프로필·재무 스냅샷
+    // 상태로 갈리던 분기는 사라졌고 generateMetadata는 그 데이터를 읽지 않는다.
+    it('유효한 종목도 항상 noindex(follow 유지)이고 self-canonical·SEO title은 남는다', async () => {
         const metadata = await generateMetadata({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        expect(metadata.robots).toBeUndefined();
+        expect(metadata.robots).toEqual({ index: false, follow: true });
+        expect(metadata.alternates?.canonical).toBe(
+            'https://siglens.io/AAPL/financials'
+        );
+        expect(JSON.stringify(metadata.title)).toContain('재무제표');
+    });
+
+    it('프로필·재무 스냅샷을 조회하지 않는다', async () => {
+        await generateMetadata({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+
+        expect(getProfileResilient).not.toHaveBeenCalled();
+        expect(getFinancialsSnapshot).not.toHaveBeenCalled();
     });
 
     it('sets openGraph with ko_KR locale and OG label for 재무제표', async () => {

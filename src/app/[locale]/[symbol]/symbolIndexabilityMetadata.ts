@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { evaluateSymbolIndexability } from '@/entities/symbol-indexability/lib/evaluateSymbolIndexability';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
+import { isPrewarmTab } from '@/entities/seo-snapshot/lib/applicability';
 import type { SeoSnapshotTab } from '@/entities/seo-snapshot/model';
 import { hasProseForTab } from '@/views/symbol/snapshot/hasProseForTab';
 import { noindexSymbolMetadata } from '@/shared/lib/seo';
@@ -43,10 +44,12 @@ interface BlockedSymbolMetadataInput {
      * 가격 봉 유무. 전달하는 라우트만 콘텐츠 게이트가 적용된다 —
      * `SymbolIndexabilityInput.hasPriceData` JSDoc에 배경이 있다.
      *
-     * 현재 전달자는 차트 라우트뿐이다. 그 페이지는 본문이 사실상 봉으로만
-     * 이루어져 있어(TechnicalFactsSummary + 차트) 봉이 없으면 남는 게 제목과
-     * sr-only 개요뿐이라는 것이 실측으로 확인된 유일한 탭이다. 형제 탭은 각자
-     * 다른 데이터 소스(뉴스·재무·의회 공시)를 갖고 있어 같은 근거를 쓸 수 없다.
+     * 현재 전달자는 차트 라우트와 종목별 공포·탐욕 라우트 두 곳이다. 둘 다 본문이
+     * 사실상 일봉으로만 계산되고(차트: TechnicalFactsSummary + 차트, 공포·탐욕:
+     * FearGreedFactsSummary), 같은 술어(`buildTechnicalFacts(...) !== null`)로
+     * 판정한다 — 봉이 없으면 남는 게 제목뿐이다. 공포·탐욕은 2026-10-01 색인 재개와
+     * 함께 합류했다. 다른 형제 탭은 각자 다른 데이터 소스(뉴스·재무·의회 공시)를 갖고
+     * 있어 같은 근거를 쓸 수 없다.
      */
     hasPriceData?: boolean;
 }
@@ -75,11 +78,17 @@ export async function getBlockedSymbolMetadata({
     // 보므로 결과가 버려진다. 이 함수 JSDoc의 "정상 경로에서 DB 읽기 회피" 목표를
     // 비-ko 경로에도 그대로 적용한다.
     const localeReady = SYMBOL_INDEXABLE_LOCALES.includes(locale);
+    // 프리웜하지 않는 탭(`PREWARM_TABS` 밖 — 2026-10-01부터 항상 noindex인 다섯 탭)은
+    // 스냅샷을 읽지 않는다. 그 탭들은 이 함수가 null을 돌려줘도 페이지가 noindex로
+    // 끝나므로 `hasSnapshot`이 결과를 바꿀 수 없고, 남은 옛 행에 메타 경로가 묶이지
+    // 않게 한다. `tab` 자체는 계속 받는다 — 아래 차단 메타의 탭별 카피에 쓴다.
+    const snapshotTab =
+        tab !== undefined && isPrewarmTab(tab) ? tab : undefined;
     const hasSnapshot =
-        localeReady && degraded && tab !== undefined
+        localeReady && degraded && snapshotTab !== undefined
             ? (await getSeoSnapshotsStatic(symbol, revalidateSeconds, locale))
-                  .filter(s => s.tab === tab)
-                  .some(s => hasProseForTab(tab, s.content))
+                  .filter(s => s.tab === snapshotTab)
+                  .some(s => hasProseForTab(snapshotTab, s.content))
             : undefined;
 
     const decision = evaluateSymbolIndexability({

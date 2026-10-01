@@ -1,11 +1,9 @@
 /**
- * Overall page body branching tests — verifies crypto-vs-equity copy in:
- *   1. SymbolPageHeading (visible h1 region)
- *   2. The visible FAQ section (`FaqSection`)
- *   3. FAQ JSON-LD `mainEntity[*].acceptedAnswer.text` answers
+ * Overall page body branching tests — verifies crypto-vs-equity copy in
+ * SymbolPageHeading (visible h1 region).
  *
- * 2·3은 이제 같은 배열(`copy.faq`)에서 나온다 — 예전에는 안내 문단과 FAQ 답변이
- * 두 벌이었고 문단만 화면에 보였다.
+ * 2026-10-01에 종목 탭 FAQ를 걷어내(`SEO_RECOVERY_2026_09.md` §10) 분기 대상은
+ * h1 하나뿐이다. FAQ 화면·JSON-LD가 다시 생기지 않는지는 `expectNoFaq`로 고정한다.
  *
  * Strategy: invoke the RSC directly (no DOM render) and JSON.stringify the tree
  * to assert presence/absence of branch-specific strings, mirroring the pattern
@@ -117,7 +115,7 @@ import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilie
 import { OverallContent } from '@/widgets/overall/OverallContent';
 import { OverallFactualFallback } from '@/widgets/overall/OverallFactualFallback';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
-import { expectVisibleFaqWithoutJsonLd } from '@/__tests__/utils/expectFaqSingleSource';
+import { expectNoFaq } from '@/__tests__/utils/expectFaqSingleSource';
 import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';
 
 const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);
@@ -211,57 +209,28 @@ describe('OverallPage — isEquity body branching', () => {
         });
     });
 
-    describe('visible FAQ section body', () => {
-        it('crypto → body contains 매수 분위기(공포 탐욕 지수)', async () => {
-            mockGetAssetInfoResilient.mockResolvedValue(CRYPTO_ASSET_INFO);
+    /**
+     * 회귀 가드: FAQ는 화면에도 구조화데이터에도 싣지 않는다 — 종목명만 바뀌는
+     * 템플릿이라 2026-10-01에 걷어냈다. 예전 FAQ 답변 문구도 트리에 남으면 안 된다.
+     */
+    it.each([
+        ['equity', EQUITY_ASSET_INFO, 'aapl'],
+        ['crypto', CRYPTO_ASSET_INFO, 'BTCUSD'],
+    ] as const)(
+        '%s → FAQ를 렌더하지 않고 FAQPage 구조화데이터도 싣지 않는다',
+        async (_label, info, symbol) => {
+            mockGetAssetInfoResilient.mockResolvedValue(info);
             const tree = await OverallPage({
-                params: Promise.resolve({ locale: 'ko', symbol: 'BTCUSD' }),
+                params: Promise.resolve({ locale: 'ko', symbol }),
             });
-            const treeStr = JSON.stringify(tree);
-            expect(treeStr).toContain('매수 분위기(공포 탐욕 지수)');
-        });
 
-        it('crypto → body does NOT contain 옵션 시장이 평가하는 단기 방향성', async () => {
-            mockGetAssetInfoResilient.mockResolvedValue(CRYPTO_ASSET_INFO);
-            const tree = await OverallPage({
-                params: Promise.resolve({ locale: 'ko', symbol: 'BTCUSD' }),
-            });
+            expectNoFaq(tree);
             const treeStr = JSON.stringify(tree);
             expect(treeStr).not.toContain('옵션 시장이 평가하는 단기 방향성');
-        });
-
-        it('equity → body contains 옵션 시장이 평가하는 단기 방향성', async () => {
-            mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
-            const tree = await OverallPage({
-                params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
-            });
-            const treeStr = JSON.stringify(tree);
-            expect(treeStr).toContain('옵션 시장이 평가하는 단기 방향성');
-        });
-
-        it('equity → body contains 분기 실적 흐름', async () => {
-            mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
-            const tree = await OverallPage({
-                params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
-            });
-            const treeStr = JSON.stringify(tree);
-            expect(treeStr).toContain('분기 실적과 펀더멘털');
-        });
-    });
-
-    /**
-     * 회귀 가드: FAQPage 마크업과 화면 Q&A는 `copy.faq` 하나에서 나와야 한다.
-     * 예전에는 답변이 JSON-LD 리터럴 안에만 있어 화면 어디에도 없었다 — 구글은
-     * 대응하는 내용이 페이지에 보일 것을 요구한다.
-     */
-    it('화면 FAQ는 렌더하고 FAQPage 구조화데이터는 싣지 않는다', async () => {
-        mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
-        const tree = await OverallPage({
-            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
-        });
-
-        expectVisibleFaqWithoutJsonLd(tree);
-    });
+            expect(treeStr).not.toContain('실적 발표 결과나 가이던스 변화');
+            expect(treeStr).not.toContain('규제 이슈, 대형 뉴스');
+        }
+    );
 
     /**
      * 회귀 가드: BreadcrumbList position 2는 화면 브레드크럼과 같은 이름이어야 한다.
@@ -275,52 +244,6 @@ describe('OverallPage — isEquity body branching', () => {
 
         expectSymbolBreadcrumbName('Apple Inc.');
     });
-
-    describe('FAQ JSON-LD answer branching', () => {
-        it('crypto → FAQ answer contains 매수 분위기(공포 탐욕 지수)까지 세 축을 묶어', async () => {
-            mockGetAssetInfoResilient.mockResolvedValue(CRYPTO_ASSET_INFO);
-            const tree = await OverallPage({
-                params: Promise.resolve({ locale: 'ko', symbol: 'BTCUSD' }),
-            });
-            const treeStr = JSON.stringify(tree);
-            expect(treeStr).toContain('매수 분위기(공포 탐욕 지수)를 묶어');
-            // equity-only FAQ text must be absent
-            expect(treeStr).not.toContain('옵션 시장이 평가하는 단기 방향성');
-        });
-
-        it('equity → FAQ answer contains 옵션 시장의 콜·풋 베팅 분위기', async () => {
-            mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
-            const tree = await OverallPage({
-                params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
-            });
-            const treeStr = JSON.stringify(tree);
-            expect(treeStr).toContain('옵션 시장의 콜·풋 베팅 분위기');
-            expect(treeStr).not.toContain(
-                '매수 분위기(공포 탐욕 지수)까지 세 축을 묶어'
-            );
-        });
-
-        it('crypto → FAQ risk answer contains 규제 이슈, 대형 뉴스', async () => {
-            mockGetAssetInfoResilient.mockResolvedValue(CRYPTO_ASSET_INFO);
-            const tree = await OverallPage({
-                params: Promise.resolve({ locale: 'ko', symbol: 'BTCUSD' }),
-            });
-            const treeStr = JSON.stringify(tree);
-            expect(treeStr).toContain('규제 이슈, 대형 뉴스');
-            // equity-only risk text
-            expect(treeStr).not.toContain('실적 발표 결과나 가이던스 변화');
-        });
-
-        it('equity → FAQ risk answer contains 실적 발표 결과나 가이던스 변화', async () => {
-            mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
-            const tree = await OverallPage({
-                params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
-            });
-            const treeStr = JSON.stringify(tree);
-            expect(treeStr).toContain('실적 발표 결과나 가이던스 변화');
-            expect(treeStr).not.toContain('규제 이슈, 대형 뉴스');
-        });
-    });
 });
 
 /**
@@ -328,8 +251,8 @@ describe('OverallPage — isEquity body branching', () => {
  * (`KR_EQUITY_DESCRIPTOR.tabs`에 `options`가 없음). `isEquity`(assetClass 이진
  * 분류)만으로 문구를 고르면 한국 종목도 미국 종목과 동일한 "옵션 시장" 문구를
  * 노출하게 된다 — `/005930.KS/overall`이 실재하지 않는 옵션 분석을 약속했다.
- * `hasOptions`(descriptor.tabs.includes('options')) 분기가 H1, FAQ 두 답변,
- * 본문 3문단에서 모두 걸려 있는지 각각 pin한다.
+ * `hasOptions`(descriptor.tabs.includes('options')) 분기가 H1에 걸려 있는지 pin한다.
+ * (FAQ 답변은 2026-10-01에 사라졌다.)
  */
 describe('OverallPage — kr-equity hasOptions branching (SEO 감사 finding 1)', () => {
     beforeEach(() => {
@@ -345,39 +268,6 @@ describe('OverallPage — kr-equity hasOptions branching (SEO 감사 finding 1)'
         const treeStr = JSON.stringify(tree);
         expect(treeStr).toContain('차트와 실적, 뉴스 종합 분석');
         expect(treeStr).not.toContain('차트와 옵션 시장, 실적, 뉴스 종합 분석');
-    });
-
-    it('한국 종목 FAQ 첫 답변은 옵션 시장 문구 없이 세 가지 분석 축을 언급한다', async () => {
-        mockGetAssetInfoResilient.mockResolvedValue(KR_EQUITY_ASSET_INFO);
-        const tree = await OverallPage({
-            params: Promise.resolve({ locale: 'ko', symbol: '005930.ks' }),
-        });
-        const treeStr = JSON.stringify(tree);
-        expect(treeStr).toContain(
-            '세 가지 분석 축에 시장 분위기(공포 탐욕 지수)'
-        );
-        expect(treeStr).not.toContain('옵션 시장이 평가하는 단기 방향성');
-    });
-
-    it('한국 종목 FAQ 두 번째 답변은 옵션 시장의 콜·풋 베팅 문구를 포함하지 않는다', async () => {
-        mockGetAssetInfoResilient.mockResolvedValue(KR_EQUITY_ASSET_INFO);
-        const tree = await OverallPage({
-            params: Promise.resolve({ locale: 'ko', symbol: '005930.ks' }),
-        });
-        const treeStr = JSON.stringify(tree);
-        expect(treeStr).not.toContain('옵션 시장의 콜·풋 베팅 분위기');
-        // 미국 주식과 동일하게 실적/가이던스는 여전히 언급한다.
-        expect(treeStr).toContain('실적과 가이던스 흐름');
-    });
-
-    it('한국 종목 FAQ 첫 답변은 옵션 시장 문장 대신 실적/가이던스 문장을 붙인다', async () => {
-        mockGetAssetInfoResilient.mockResolvedValue(KR_EQUITY_ASSET_INFO);
-        const tree = await OverallPage({
-            params: Promise.resolve({ locale: 'ko', symbol: '005930.ks' }),
-        });
-        const treeStr = JSON.stringify(tree);
-        expect(treeStr).not.toContain('옵션 시장이 평가하는 단기 방향성');
-        expect(treeStr).toContain('실적과 가이던스 흐름');
     });
 
     it('.KS 종목: OverallContent에 hasOptions=false, OverallFactualFallback에 marketProfile="kr-equity"를 전달한다', async () => {

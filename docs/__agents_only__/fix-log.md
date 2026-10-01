@@ -620,3 +620,15 @@
 - Violation: CI e2e failure — e2e/specs/chart-overlays.spec.ts still asserted removed behavior (category toggle persisted in localStorage across reload); unit tests were updated to reflect new all-on default after reload, but the e2e spec was not synchronized
   - Rule: (new) When refactoring a feature's test suite to reflect behavior changes, all test layers (unit + e2e) must be updated simultaneously. Unit test updates without corresponding e2e assertions create CI failures where the contract is broken at the integration level while unit tests pass.
   - Context: Updated e2e spec to assert new all-on default after reload and added menu↔AI-panel sync e2e test case. Synchronized behavior across all test layers (unit + e2e).
+
+## [Round 1 | claude/magical-sagan-56eoov (SEO prewarm reduction) | 2026-10-01]
+- Violation: A new exported constant's JSDoc was inserted between an existing JSDoc block and its declaration, orphaning the old doc
+  - Rule: JSDoc blocks must remain directly above their declarations; inserting new docs between them breaks the association
+  - Context: src/shared/lib/seo.ts — moved the old JSDoc back directly above NOINDEX_SYMBOL_METADATA
+- Violation: JSDoc stating "the only current caller is the chart route" became false when the same change added the fear-greed route as a second caller
+  - Rule: JSDoc accuracy — comments must be updated when code scope changes
+  - Context: src/app/[locale]/[symbol]/symbolIndexabilityMetadata.ts — updated JSDoc to name both callers
+- Violation: getBlockedSymbolMetadata still performed a snapshot DB read whose result could no longer change the outcome for the five tabs made always-noindex
+  - Rule: Optimization — remove redundant operations that no longer affect the outcome
+  - Context: Added isPrewarmTab and skip the read for non-prewarm tabs
+- Status (Round 2): APPROVED (zero findings)

@@ -146,6 +146,26 @@ export const ORGANIZATION_JSON_LD_ID = `${SITE_URL}#organization`;
 export const GITHUB_URL = 'https://github.com/y0ngha/siglens';
 
 /**
+ * 종목은 살아 있지만 **탭 자체를 색인하지 않기로 정한** 페이지의 robots.
+ *
+ * 2026-10-01 SEO 감사(`docs/architecture/SEO_RECOVERY_2026_09.md` §10)로 종목별
+ * 색인을 차트·뉴스·공포탐욕 세 탭으로 좁혔다. overall·fundamental·financials·
+ * congress·options 다섯 탭은 이 값을 쓴다.
+ *
+ * `NOINDEX_SYMBOL_METADATA`와 달리 canonical을 지우지 않는다 — 그쪽은 실존하지 않는
+ * 종목·degrade용이고, 이 페이지들은 정상 페이지라 self-canonical과 제목·설명을 그대로
+ * 둔다. `follow: true`인 이유는 `NOINDEX_SYMBOL_METADATA` 주석과 같다(형제 탭 크롤 경로).
+ *
+ * 다섯 페이지가 같은 상수를 써야 sitemap 빌더(`buildPopularEntries`)의 "이 탭은
+ * 싣지 않는다"와 한 곳에서 대응된다. 탭을 다시 열 때는 여기가 아니라 각 페이지에서
+ * 이 값을 걷어내고 sitemap 빌더에 엔트리를 되돌린다.
+ */
+export const ALWAYS_NOINDEX_TAB_ROBOTS = {
+    index: false,
+    follow: true,
+} as const satisfies NonNullable<Metadata['robots']>;
+
+/**
  * Shared metadata for the noindex early-returns on the `[symbol]` routes
  * (invalid ticker, infra-degraded asset, FMP-degraded profile).
  *

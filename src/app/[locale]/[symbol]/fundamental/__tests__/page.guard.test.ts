@@ -241,10 +241,9 @@ describe('Fundamental generateMetadata crypto NOINDEX guard', () => {
         });
     });
 
-    it('equity symbol (isTabAllowedForSymbol → true) → returns indexable metadata (not NOINDEX)', async () => {
+    it('equity symbol (isTabAllowedForSymbol → true) → noindex(follow 유지)이되 canonical은 null이 아니다', async () => {
         mockIsTabAllowed.mockResolvedValue(true);
 
-        // Provide assetInfo + profile so generateMetadata can build real metadata content.
         mockGetAssetInfoResilient.mockResolvedValue({
             assetInfo: {
                 symbol: 'AAPL',
@@ -254,49 +253,24 @@ describe('Fundamental generateMetadata crypto NOINDEX guard', () => {
             },
             degraded: false,
         } as Awaited<ReturnType<typeof getAssetInfoResilient>>);
-        mockGetProfileResilient.mockResolvedValue({
-            profile: { sector: 'Technology', description: '' },
-            degraded: false,
-        } as Awaited<ReturnType<typeof getProfileResilient>>);
-
-        // 2026-09-17 thin 게이트: 렌더 가능한 스냅샷 산문이 없으면 이 탭은
-        // noindex다. 여기서 검증하려는 건 크립토 가드라 산문 픽스처를 준다.
-        vi.mocked(getSeoSnapshotsStatic).mockResolvedValue([
-            {
-                tab: 'fundamental',
-                content: { overallConclusionKo: '테스트용 펀더멘털 결론' },
-                generatedAt: new Date('2026-09-01'),
-            },
-        ] as unknown as Awaited<ReturnType<typeof getSeoSnapshotsStatic>>);
 
         const result = await generateMetadata({
             params: Promise.resolve({ locale: 'ko', symbol: 'AAPL' }),
         });
 
         expect(mockIsTabAllowed).toHaveBeenCalledWith('AAPL', 'fundamental');
-        // Must NOT be the hard NOINDEX sentinel object.
-        // NOINDEX_SYMBOL_METADATA has { robots: { index: false, follow: true },
-        //   alternates: { canonical: null } } — the sentinel returned for crypto/invalid.
-        //   `canonical: null` (not follow) is what separates it from an indexable
-        //   page: every noindex branch now keeps follow:true so crawl paths to the
-        //   sibling tabs survive.
+        // 2026-10-01 SEO 감사: 이 탭은 항상 noindex다. 하드 sentinel
+        // (NOINDEX_SYMBOL_METADATA)과 갈리는 신호는 `canonical`이다 — sentinel은
+        // null이지만 이 경로는 self-canonical을 유지한다. (이 파일의 seo 목은 url을
+        // ''로 스텁하므로 사이트 루트로 해석된다 — null이 아님이 계약이다.)
         expect(result).not.toEqual(NOINDEX_SYMBOL_METADATA);
-        // Equity generateMetadata does not set a robots override — the page is fully
-        // indexable.  NOINDEX_SYMBOL_METADATA always has robots.index: false, so
-        // checking robots is undefined is the positive falsifiable signal.
-        expect(result.robots).toBeUndefined();
+        expect(result.robots).toEqual({ index: false, follow: true });
+        expect(result.alternates?.canonical).not.toBeNull();
+        expect(result.alternates?.canonical).toBeDefined();
+        expect(result.title).toBeDefined();
     });
-});
 
-/**
- * spec 2026-07-24 Task 8 — generateMetadata should use the pre-warmed
- * snapshot's `overallConclusionKo` prose as the <meta name="description">
- * when a fundamental snapshot row exists, falling back to the (here empty
- * per the seo mock) templated description otherwise.
- */
-describe('Fundamental generateMetadata snapshot-derived description', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
+    it('스냅샷 산문이 있어도 noindex이고 description은 템플릿 그대로다 (스냅샷을 읽지 않는다)', async () => {
         mockIsTabAllowed.mockResolvedValue(true);
         mockGetAssetInfoResilient.mockResolvedValue({
             assetInfo: {
@@ -307,21 +281,11 @@ describe('Fundamental generateMetadata snapshot-derived description', () => {
             },
             degraded: false,
         } as Awaited<ReturnType<typeof getAssetInfoResilient>>);
-        mockGetProfileResilient.mockResolvedValue({
-            profile: { sector: 'Technology', description: '' },
-            degraded: false,
-        } as Awaited<ReturnType<typeof getProfileResilient>>);
-    });
-
-    it('uses the snapshot overallConclusionKo when a fundamental snapshot row exists', async () => {
         mockGetSeoSnapshotsStatic.mockResolvedValue([
             {
                 symbol: 'AAPL',
                 tab: 'fundamental',
-                content: {
-                    overallConclusionKo:
-                        'PER은 업종 평균 대비 높지만 성장성이 이를 상쇄합니다.',
-                },
+                content: { overallConclusionKo: '이익의 질이 개선되고 있다.' },
                 model: 'deepseek-v4.1-flash',
                 generatedAt: new Date(),
                 updatedAt: new Date(),
@@ -332,93 +296,10 @@ describe('Fundamental generateMetadata snapshot-derived description', () => {
             params: Promise.resolve({ locale: 'ko', symbol: 'AAPL' }),
         });
 
-        // FIX 5 (audit): description is prefixed with the resolved display
-        // name (subject; buildDisplayName is mocked to 'Apple Inc.' above)
-        // before clamping.
-        expect(result.description).toBe(
-            'Apple Inc. 펀더멘털 — PER은 업종 평균 대비 높지만 성장성이 이를 상쇄합니다.'
-        );
-    });
-
-    it('falls back to the templated description when no fundamental snapshot exists', async () => {
-        mockGetSeoSnapshotsStatic.mockResolvedValue([]);
-
-        const result = await generateMetadata({
-            params: Promise.resolve({ locale: 'ko', symbol: 'AAPL' }),
-        });
-
-        // The seo mock in this file stubs buildSymbolFundamentalSeoContent to
-        // return description: '' — asserting that value confirms the templated
-        // path (not the snapshot path) was taken.
+        expect(result.robots).toEqual({ index: false, follow: true });
+        // seo 목이 description을 ''로 스텁한다 — 스냅샷 산문이 description에 섞이던
+        // 예전 경로(2026-07-24)는 사라졌다.
         expect(result.description).toBe('');
-    });
-});
-
-/**
- * thin-content 게이트(2026-09-17 정책 감사 M6 · `SEO_RECOVERY_2026_09.md` §5 A3).
- *
- * 프로필·지표 카드는 전 종목이 같은 표를 채우는 수치라, 이 탭의 종목 고유 텍스트는
- * 사실상 스냅샷 산문뿐이다. 산문이 없으면 noindex(단 follow·self-canonical 유지).
- */
-describe('Fundamental generateMetadata thin-content 게이트', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-        mockIsTabAllowed.mockResolvedValue(true);
-        mockGetAssetInfoResilient.mockResolvedValue({
-            assetInfo: {
-                symbol: 'AAPL',
-                name: 'Apple Inc.',
-                koreanName: '애플',
-                fmpSymbol: 'AAPL',
-            },
-            degraded: false,
-        } as Awaited<ReturnType<typeof getAssetInfoResilient>>);
-        mockGetProfileResilient.mockResolvedValue({
-            profile: { sector: 'Technology', description: '' },
-            degraded: false,
-        } as Awaited<ReturnType<typeof getProfileResilient>>);
-    });
-
-    const params = Promise.resolve({ locale: 'ko', symbol: 'AAPL' });
-
-    it('산문 스냅샷이 없으면 noindex — self-canonical과 제목은 유지한다', async () => {
-        vi.mocked(getSeoSnapshotsStatic).mockResolvedValue([]);
-
-        const result = await generateMetadata({ params });
-
-        expect(result.robots).toEqual({ index: false, follow: true });
-        // `NOINDEX_SYMBOL_METADATA`(canonical:null)와 다른 점: 페이지는 멀쩡히
-        // 살아 있으므로 self-canonical을 유지한다. 이 파일의 seo 목은 url을 ''로
-        // 스텁하므로 사이트 루트로 해석된다 — null이 아님이 계약이다.
-        expect(result.alternates?.canonical).not.toBeNull();
-        expect(result.title).toBeDefined();
-    });
-
-    it('스냅샷 행은 있지만 내용이 비면 여전히 thin이다', async () => {
-        vi.mocked(getSeoSnapshotsStatic).mockResolvedValue([
-            {
-                tab: 'fundamental',
-                content: {},
-                generatedAt: new Date('2026-09-01'),
-            },
-        ] as unknown as Awaited<ReturnType<typeof getSeoSnapshotsStatic>>);
-
-        const result = await generateMetadata({ params });
-
-        expect(result.robots).toEqual({ index: false, follow: true });
-    });
-
-    it('렌더 가능한 산문이 있으면 색인한다', async () => {
-        vi.mocked(getSeoSnapshotsStatic).mockResolvedValue([
-            {
-                tab: 'fundamental',
-                content: { overallConclusionKo: '이익의 질이 개선되고 있다.' },
-                generatedAt: new Date('2026-09-01'),
-            },
-        ] as unknown as Awaited<ReturnType<typeof getSeoSnapshotsStatic>>);
-
-        const result = await generateMetadata({ params });
-
-        expect(result.robots).toBeUndefined();
+        expect(mockGetSeoSnapshotsStatic).not.toHaveBeenCalled();
     });
 });
