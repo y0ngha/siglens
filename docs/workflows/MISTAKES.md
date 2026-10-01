@@ -518,6 +518,27 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ When editing skill `description` frontmatter, update catalog keys in all 4 locales + recompute hash in `messages/_meta/hashes.json`
     ✅ When removing a key, remove from all locale files simultaneously; verify with `yarn i18n:verify` passing before commit
     → Recurring: claude/siglens-analysis-technique-review (skill description catalog inconsistency), PR #882 (key removal parity across locales) — 2 occurrences
+
+28. Query parameters must survive login/auth redirects
+    → When sanitizing a `next` parameter for redirect-after-login flows, preserve query strings through the round-trip
+    → Redirect logic must both 1) strip/validate the target path itself (reject guest-only paths that would break the flow) and 2) preserve query parameters that were attached to the path
+    → Auth-required redirects in `proxy.ts` (AUTH_REQUIRED_PATHS guard) run before page-level guards and are easy to miss; check every redirect path that can fire for a route with query parameters
+    ❌ loginUrl = localePath(locale, pathname)  // loses reqUrl.search (e.g., `/portfolio?symbol=AAPL` becomes just `/portfolio` post-login)
+    ❌ Guest-only path validation rejects `/login` as target but doesn't check redirect-target path itself (redirects signed-in user through guest page first)
+    ✅ loginUrl.searchParams.set('next', localePath(locale, pathname) + reqUrl.search)  // preserves both path and query
+    ✅ Sanitizer validates both: 1) path not guest-only, 2) query preserved downstream
+    → Recurring: PR #883 feat/portfolio-menu, claude/siglens-email-login-redirect Round 3 — 2 occurrences
+
+29. Exception-safety scope must be preserved during refactoring
+    → When refactoring code that has declared a containment invariant (e.g., "X failure must not break Y"), preserve the original try/catch scope across all input paths
+    → A try/catch that guards one call on a path does not guard the entire path; check for setup/client-construction/initialization calls that can throw
+    → When extracting logic into a reusable hook or helper, ensure the entire guarded operation (including setup) stays inside the try/catch block
+    → Moving construction/initialization outside the guarded block silently breaks the containment invariant and allows exceptions to propagate uncaught
+    ❌ try { repo.recordVisit(); } catch { return log_and_204; }  // getDatabaseClient() sits OUTSIDE, can throw and bypass containment
+    ❌ const textReport = buildReport(data); try { await copy(textReport); } catch { showFailed(); }  // buildReport moved outside, can throw before try block
+    ✅ try { const client = getDatabaseClient(); repo.recordVisit(client); } catch { return log_and_204; }  // client construction inside, containment preserved
+    ✅ try { await copy(async () => buildReport(data)); } catch { showFailed(); }  // construction happens inside the promise, safe
+    → Recurring: PR #795 feat/visitor-metrics Round 1, claude/funny-turing Round 3 — 2 occurrences
 ```
 
 ---
