@@ -1,4 +1,8 @@
 import type { ChartOverlay } from '@y0ngha/siglens-core';
+import {
+    firstSegmentDirection,
+    type SegmentDirection,
+} from './chartOverlayUtils';
 
 export type FibLevelKind = 'retracement' | 'extension' | 'abcExtension';
 
@@ -38,21 +42,6 @@ export function parseFibLevelLabel(label: string): ParsedFibLevel | null {
     return { kind: 'retracement', percent };
 }
 
-export type FibLegDirection = 'up' | 'down';
-
-/**
- * 피보나치 작도의 기준 다리 방향 — 첫 앵커 선분(다리: 시작→끝, ABC: A→B)의 끝 가격이
- * 시작보다 낮으면 하락. ABC의 B→C(되돌림) 선분은 보지 않는다. 같은 가격(core가
- * 만들지 않는 수평 다리)은 상승으로 둔다. 선분이 없으면 판단하지 않는다.
- */
-export function fibLegDirection(
-    segments: ChartOverlay['segments']
-): FibLegDirection | null {
-    const [s] = segments;
-    if (s === undefined) return null;
-    return s.to.price < s.from.price ? 'down' : 'up';
-}
-
 /**
  * 종류 × 다리 방향별 화면 문구 — 번역 함수(`t`)는 호출부가 쥐고 여기엔 결과 함수만
  * 넘긴다. 같은 `61.8%`라도 하락 다리에선 "반등"(저항), 상승 다리에선 "눌림"(지지)이라
@@ -61,7 +50,7 @@ export function fibLegDirection(
 export type FibLevelTexts = Readonly<
     Record<
         FibLevelKind,
-        Readonly<Record<FibLegDirection, (percent: string) => string>>
+        Readonly<Record<SegmentDirection, (percent: string) => string>>
     >
 >;
 
@@ -75,7 +64,8 @@ export function formatFibLevelLabel(
     texts: FibLevelTexts
 ): string | null {
     if (overlay.kind !== 'fibonacci') return null;
-    const direction = fibLegDirection(overlay.segments);
+    // 다리 방향 = 첫 앵커 선분(다리: 시작→끝, ABC: A→B). ABC의 B→C 되돌림 선분은 보지 않는다.
+    const direction = firstSegmentDirection(overlay.segments);
     const fib = parseFibLevelLabel(label);
     return direction && fib ? texts[fib.kind][direction](fib.percent) : null;
 }

@@ -1,5 +1,10 @@
 import type { ChartOverlay, OverlayKind } from '@y0ngha/siglens-core';
-import { isOverlayDrawn, overlayItemKey } from './chartOverlayUtils';
+import {
+    firstSegmentDirection,
+    isOverlayDrawn,
+    overlayItemKey,
+    type SegmentDirection,
+} from './chartOverlayUtils';
 
 /**
  * 매매 가격선(진입·청산·손절) 항목의 key. 작도 key(core의 sourceRef·overlay id —
@@ -83,10 +88,9 @@ export function buildOverlayMenuItems(
     return [...actionItems, ...cardItems, ...trendItems];
 }
 
-/** 추세선 방향 — 선분의 끝 가격이 시작보다 높으면 상승. */
-function trendlineDirection(overlay: ChartOverlay): 'up' | 'down' {
-    const [s] = overlay.segments;
-    return s !== undefined && s.to.price < s.from.price ? 'down' : 'up';
+/** 추세선 방향 — 선분이 없으면(그려지지 않으므로 실제론 없음) 상승으로 센다. */
+function trendlineDirection(overlay: ChartOverlay): SegmentDirection {
+    return firstSegmentDirection(overlay.segments) ?? 'up';
 }
 
 /**

@@ -141,6 +141,21 @@ export function hasDrawnLevels(
     );
 }
 
+export type SegmentDirection = 'up' | 'down';
+
+/**
+ * 작도의 방향 — 첫 선분의 끝 가격이 시작보다 낮으면 하락. 추세선(기울기)·피보나치
+ * 다리(다리: 시작→끝, ABC: A→B)가 같은 규칙을 쓴다. 같은 가격(core가 만들지 않는
+ * 수평 선분)은 상승으로 둔다. 선분이 없으면 `null` — 기본값은 호출부가 정한다.
+ */
+export function firstSegmentDirection(
+    segments: ChartOverlay['segments']
+): SegmentDirection | null {
+    const [s] = segments;
+    if (s === undefined) return null;
+    return s.to.price < s.from.price ? 'down' : 'up';
+}
+
 const toMarker = (l: OverlayLabel): OverlayMarker => ({
     time: l.at.time,
     position: l.position === 'above' ? 'aboveBar' : 'belowBar',

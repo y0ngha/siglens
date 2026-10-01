@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-    fibLegDirection,
     formatFibLevelLabel,
     parseFibLevelLabel,
 } from '../../utils/fibLevelLabel';
@@ -37,26 +36,6 @@ const seg = (from: number, to: number) => ({
 const fibOverlay = (from: number, to: number) => ({
     kind: 'fibonacci' as const,
     segments: [seg(from, to)],
-});
-
-describe('fibLegDirection', () => {
-    it('첫 앵커 선분의 끝 가격이 낮으면 하락, 아니면 상승', () => {
-        expect(fibLegDirection([seg(185, 162)])).toBe('down');
-        expect(fibLegDirection([seg(120, 185)])).toBe('up');
-    });
-
-    it('ABC는 첫 선분(A→B)만 본다 — B→C 되돌림 방향은 무시', () => {
-        expect(fibLegDirection([seg(185, 120), seg(120, 150)])).toBe('down');
-        expect(fibLegDirection([seg(120, 185), seg(185, 160)])).toBe('up');
-    });
-
-    it('수평 선분(가격 같음)은 상승으로 본다 — core가 만들지 않는 경계값의 기본값', () => {
-        expect(fibLegDirection([seg(150, 150)])).toBe('up');
-    });
-
-    it('선분이 없으면 null', () => {
-        expect(fibLegDirection([])).toBeNull();
-    });
 });
 
 describe('formatFibLevelLabel', () => {
