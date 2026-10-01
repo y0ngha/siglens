@@ -604,3 +604,8 @@
 - Violation: CI e2e failure — e2e/specs/chart-overlays.spec.ts still asserted removed behavior (category toggle persisted in localStorage across reload); unit tests were updated to reflect new all-on default after reload, but the e2e spec was not synchronized
   - Rule: (new) When refactoring a feature's test suite to reflect behavior changes, all test layers (unit + e2e) must be updated simultaneously. Unit test updates without corresponding e2e assertions create CI failures where the contract is broken at the integration level while unit tests pass.
   - Context: Updated e2e spec to assert new all-on default after reload and added menu↔AI-panel sync e2e test case. Synchronized behavior across all test layers (unit + e2e).
+
+## [PR #895 Round 1 | fix/fib-label-extraction | 2026-10-01]
+- Status: APPROVED (claude-review suggestions applied)
+  - Applied fixes: Extracted fib level label kind→text mapping into `formatFibLevelLabel` helper function in `src/widgets/chart/utils/fibLevelLabel.ts` with unit tests; extracted 'ABC ' and 'ext ' prefix constants as named exports for reuse.
+  - Skipped (false positive): messages/ko.json key reordering — the canonical output of `node scripts/i18n/extract.mjs --write` does not constitute a violation; i18n extraction script defines the authoritative key ordering.

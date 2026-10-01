@@ -71,7 +71,7 @@ import {
     overlayColorFor,
 } from './utils/chartOverlayUtils';
 import type { OverlayMenuItem } from './utils/overlayItems';
-import { parseFibLevelLabel } from './utils/fibLevelLabel';
+import { formatFibLevelLabel, type FibLevelTexts } from './utils/fibLevelLabel';
 import {
     BREAKOUT_LEVEL_LABEL,
     CHART_OVERLAY_COLORS,
@@ -149,6 +149,15 @@ export function StockChart({
     const tMisc = useTranslations('shared.ui.misc');
     // core의 패턴 돌파선 레벨 라벨은 언어 중립 키(`breakout`)라 여기서 문구로 바꾼다.
     const breakoutLevelText = t('StockChart.57fdbb');
+    // core 피보나치 레벨 라벨(`61.8%`, `ext 127.2%`, `ABC 127.2%`)의 화면 문구.
+    const fibLevelTexts = useMemo<FibLevelTexts>(
+        () => ({
+            retracement: percent => t('StockChart.99d0ce', { v0: percent }),
+            extension: percent => t('StockChart.c8b284', { v0: percent }),
+            abcExtension: percent => t('StockChart.575708', { v0: percent }),
+        }),
+        [t]
+    );
     const locale = useResolvedLocale();
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -506,21 +515,10 @@ export function StockChart({
                         overlayColors,
                         CHART_OVERLAY_COLORS
                     ),
-                levelLabelFor: label => {
-                    if (label === BREAKOUT_LEVEL_LABEL)
-                        return breakoutLevelText;
-                    const fib = parseFibLevelLabel(label);
-                    if (!fib) return label;
-                    const { percent } = fib;
-                    switch (fib.kind) {
-                        case 'retracement':
-                            return t('StockChart.99d0ce', { v0: percent });
-                        case 'extension':
-                            return t('StockChart.c8b284', { v0: percent });
-                        case 'abcExtension':
-                            return t('StockChart.575708', { v0: percent });
-                    }
-                },
+                levelLabelFor: label =>
+                    label === BREAKOUT_LEVEL_LABEL
+                        ? breakoutLevelText
+                        : (formatFibLevelLabel(label, fibLevelTexts) ?? label),
             }),
         [
             chartOverlays,
@@ -532,7 +530,7 @@ export function StockChart({
             paneIndices.rsi,
             overlayColors,
             breakoutLevelText,
-            t,
+            fibLevelTexts,
         ]
     );
 

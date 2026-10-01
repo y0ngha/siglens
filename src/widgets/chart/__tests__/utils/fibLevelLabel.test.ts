@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { parseFibLevelLabel } from '../../utils/fibLevelLabel';
+import {
+    formatFibLevelLabel,
+    parseFibLevelLabel,
+} from '../../utils/fibLevelLabel';
 
 describe('parseFibLevelLabel', () => {
     it.each([
@@ -21,4 +24,24 @@ describe('parseFibLevelLabel', () => {
             expect(parseFibLevelLabel(label)).toBeNull();
         }
     );
+});
+
+describe('formatFibLevelLabel', () => {
+    const texts = {
+        retracement: (p: string) => `R ${p}`,
+        extension: (p: string) => `E ${p}`,
+        abcExtension: (p: string) => `ABC-E ${p}`,
+    };
+
+    it.each([
+        ['61.8%', 'R 61.8%'],
+        ['ext 127.2%', 'E 127.2%'],
+        ['ABC 161.8%', 'ABC-E 161.8%'],
+    ])('%s → %s', (label, expected) => {
+        expect(formatFibLevelLabel(label, texts)).toBe(expected);
+    });
+
+    it('피보나치 라벨이 아니면 null', () => {
+        expect(formatFibLevelLabel('breakout', texts)).toBeNull();
+    });
 });
