@@ -1,5 +1,18 @@
 # Changelog
 
+# [0.93.0](https://github.com/y0ngha/siglens/compare/v0.92.0...v0.93.0) (2026-10-01)
+
+### Bug Fixes
+
+* **chart:** 피보나치 레벨 라벨을 되돌림/확장으로 구분해 번역 ([#895](https://github.com/y0ngha/siglens/issues/895)) ([6ad36e2](https://github.com/y0ngha/siglens/commit/6ad36e2efbaa7004ddf946ff333466ab83226ad2)), closes [y0ngha/siglens-core#239](https://github.com/y0ngha/siglens-core/issues/239)
+
+### Features
+
+* **chart:** 작도 레벨선 오른쪽 연장 옵션 ([#897](https://github.com/y0ngha/siglens/issues/897)) ([80923ba](https://github.com/y0ngha/siglens/commit/80923baab3920093254c5feb0f073d329a7111ad))
+* **chart:** 피보나치 역할 라벨 + 패턴명 돌파선 ([#899](https://github.com/y0ngha/siglens/issues/899)) ([273a705](https://github.com/y0ngha/siglens/commit/273a705041e851355c4627f4ec0bb862dd5a85e3))
+* **hub:** 허브 데이터 수급을 방문자 트리거에서 크론으로 옮기고 빈 결과 캐시를 막는다 ([#900](https://github.com/y0ngha/siglens/issues/900)) ([7abccf8](https://github.com/y0ngha/siglens/commit/7abccf88831a099240fba513b928828446bc321b))
+* **seo:** 프리웜을 차트·뉴스로 축소하고 종목 색인 탭을 차트·뉴스·공포탐욕으로 재편한다 ([#898](https://github.com/y0ngha/siglens/issues/898)) ([0a1f00b](https://github.com/y0ngha/siglens/commit/0a1f00b7bf4bc8bb59339bd890e9c3c17a042251))
+
 # [0.92.0](https://github.com/y0ngha/siglens/compare/v0.91.0...v0.92.0) (2026-09-29)
 
 ### Bug Fixes
