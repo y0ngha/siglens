@@ -5,26 +5,27 @@ import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import {
     applicableTabsFor,
     buildPrewarmUniverse,
+    isPrewarmTab,
+    PREWARM_TABS,
     prewarmSessionSpecFor,
 } from '../lib/applicability';
 
 describe('applicableTabsFor', () => {
-    it('크립토는 technical/overall/news만', () => {
+    // 2026-10-01: 프리웜은 자산군과 무관하게 차트·뉴스 두 탭만 굽는다
+    // (`PREWARM_TABS` JSDoc). 나머지 탭은 페이지가 항상 noindex다.
+    it('크립토는 technical/news', () => {
         expect(applicableTabsFor(POPULAR_CRYPTOS[0])).toEqual([
             'technical',
-            'overall',
             'news',
         ]);
     });
 
-    it('옵션 상장 주식은 7탭 전부 (options 포함)', () => {
-        expect(applicableTabsFor('AAPL')).toHaveLength(7);
-        expect(applicableTabsFor('AAPL')).toContain('options');
+    it('옵션 상장 미국 주식도 technical/news만 (options·overall 등 제외)', () => {
+        expect(applicableTabsFor('AAPL')).toEqual(['technical', 'news']);
     });
 
-    it('옵션 미상장 주식(TCEHY)은 options 제외 6탭', () => {
-        expect(applicableTabsFor('TCEHY')).toHaveLength(6);
-        expect(applicableTabsFor('TCEHY')).not.toContain('options');
+    it('한국 종목도 technical/news만', () => {
+        expect(applicableTabsFor('005930.KS')).toEqual(['technical', 'news']);
     });
 
     it('화이트리스트 밖 심볼은 빈 배열', () => {
@@ -32,54 +33,52 @@ describe('applicableTabsFor', () => {
     });
 
     it('소문자 입력도 정규화 처리', () => {
-        expect(applicableTabsFor('aapl')).toHaveLength(7);
+        expect(applicableTabsFor('aapl')).toEqual(['technical', 'news']);
+    });
+
+    it('반환 배열은 호출마다 새 배열이다 (상수 오염 방지)', () => {
+        const tabs = applicableTabsFor('AAPL');
+        tabs.push('overall');
+        expect(applicableTabsFor('AAPL')).toEqual([...PREWARM_TABS]);
+    });
+});
+
+describe('isPrewarmTab', () => {
+    it('technical·news만 참이다', () => {
+        expect(isPrewarmTab('technical')).toBe(true);
+        expect(isPrewarmTab('news')).toBe(true);
+        for (const tab of [
+            'overall',
+            'fundamental',
+            'financials',
+            'congress',
+            'options',
+        ] as const) {
+            expect(isPrewarmTab(tab)).toBe(false);
+        }
     });
 });
 
 describe('buildPrewarmUniverse', () => {
-    // 실패 시 상수 목록 변경 — 스펙 §5 수치도 함께 갱신.
-    // SEO 감사 라운드 2에서 SPCX/SKHY를 POPULAR_TICKERS에서 뺀 만큼(옵션 상장
-    // US 주식 7탭 버킷에서 2종목) 264→262, 2041→2027로 갱신됐다.
-    // 2026-08-24: 두 번에 걸쳐 6탭 버킷이 1 → 120이 됐다(전부 옵션 미상장이라 7탭이
-    // 아니다).
-    //   · `/market` 섹터 허브가 링크하던 23종 (SPDR 섹터 ETF 11 + S&P 대형주 12)
-    //   · GSC 실측 수요 상위 96종 (popular-tickers.ts `[14]` 블록)
-    // 2027 + 119×6 = 2741.
-    // 2026-09-17: 3주 넘게 봉이 0개였던 15종(전부 옵션 미상장 US)을 뺐다 → 2741 − 15×6 = 2651.
-    // 2026-09-20: 주간 틱커 스크린으로 옵션 상장 4종목(VLO, BX, MPC, WELL) 추가
-    // → 262 + 4 = 266, 2651 + 91 = 2742.
+    // 실패 시 상수 목록 변경 — 아래 수치도 함께 갱신.
     //
     // ⚠️ 이 수치는 장식이 아니라 **용량 게이트**다. 야간 처리량은 틱 약 90회 ×
-    // SYMBOLS_PER_TICK 6 ≈ 540 심볼-슬롯인데 유니버스가 431이 됐다(이론 가동률 80%).
-    // 실제 처리량은 in-flight 점유·터미널 백오프 때문에 이론보다 낮으므로, 유니버스를
-    // 더 키우기 전에 `[seo-prewarm] batch done`의 `remaining`이 매일 밤 0으로
-    // 수렴하는지 먼저 확인해야 한다.
-    it('전체 유닛 수 = 266×7 + 105×6 + 20×5 + 29×3 = 2742 (spec §5 실측)', () => {
+    // SYMBOLS_PER_TICK 6 ≈ 540 심볼-슬롯이다. 유니버스를 키우기 전에
+    // `[seo-prewarm] batch done`의 `remaining`이 매일 밤 0으로 수렴하는지 먼저 본다.
+    //
+    // 2026-10-01: C 구간 43종 제거(391 → 348) + 탭을 2개로 축소 → 377 × 2 = 754.
+    // (직전 2742 유닛 대비 약 72% 감소.)
+    it('전체 유닛 수 = 377 × 2 = 754', () => {
         const units = buildPrewarmUniverse().reduce(
             (n, u) => n + u.tabs.length,
             0
         );
-        expect(units).toBe(2742);
+        expect(units).toBe(754);
     });
 
-    // 실패 시 상수 목록 변경 — 스펙 §5 수치도 함께 갱신
-    it('심볼 수 = 420 (POPULAR_TICKERS 391 + POPULAR_CRYPTOS 29)', () => {
-        expect(buildPrewarmUniverse()).toHaveLength(420);
-    });
-
-    it('한국 종목은 options·congress를 prewarm하지 않는다', () => {
-        // 국내에는 개별주식옵션 시장도 공직자 매매 공시 API도 없다 —
-        // KR_EQUITY_DESCRIPTOR.tabs와 같은 이유로 제외된다.
-        const tabs = applicableTabsFor('005930.KS');
-        expect(tabs).not.toContain('options');
-        expect(tabs).not.toContain('congress');
-        expect(tabs).toEqual([
-            'technical',
-            'overall',
-            'fundamental',
-            'financials',
-            'news',
-        ]);
+    // 실패 시 상수 목록 변경 — 위 수치도 함께 갱신
+    it('심볼 수 = 377 (POPULAR_TICKERS 348 + POPULAR_CRYPTOS 29)', () => {
+        expect(buildPrewarmUniverse()).toHaveLength(377);
     });
 });
 

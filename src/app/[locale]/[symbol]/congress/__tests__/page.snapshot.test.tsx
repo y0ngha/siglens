@@ -86,7 +86,7 @@ import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilie
 import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
 import { getCongressPageData } from '@/app/[locale]/[symbol]/congress/congressData';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
-import { expectVisibleFaqWithoutJsonLd } from '@/__tests__/utils/expectFaqSingleSource';
+import { expectNoFaq } from '@/__tests__/utils/expectFaqSingleSource';
 import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';
 
 const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);
@@ -174,7 +174,7 @@ describe('CongressPage — SEO snapshot prose (Task 7b)', () => {
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        expectVisibleFaqWithoutJsonLd(tree);
+        expectNoFaq(tree);
     });
 
     /**

@@ -1,8 +1,7 @@
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
-import { POPULAR_OPTIONS_TICKERS } from '@/shared/config/popular-options-tickers';
 import type { MarketSessionSpec } from '@y0ngha/siglens-core';
-import { SEO_SNAPSHOT_TABS, type SeoSnapshotTab } from '../model';
+import { type SeoSnapshotTab } from '../model';
 import {
     DEFAULT_MARKET_PROFILE,
     isKrEquitySymbol,
@@ -10,31 +9,44 @@ import {
 import { type MarketProfileId } from '@/shared/config/marketProfile/types';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 
-const CRYPTO_TABS: readonly SeoSnapshotTab[] = ['technical', 'overall', 'news'];
 /**
- * 한국 상장 종목의 prewarm 탭. `options`/`congress`가 빠진 것은 국내에 해당 시장·제도가
- * 없어 `KR_EQUITY_DESCRIPTOR.tabs`에도 없기 때문이다 — 넣으면 404 페이지를 prewarm하려다
- * 매일 밤 실패 로그만 쌓인다.
+ * 프리웜이 실제로 굽는 탭 — **자산군과 무관하게 차트(technical)와 뉴스 두 개뿐이다.**
+ *
+ * 2026-10-01 SEO 감사(`docs/architecture/SEO_RECOVERY_2026_09.md` §10)로 7탭에서 줄였다.
+ * 근거는 세 가지다:
+ *   - 7탭 산문 도입(07-25) 뒤 노출이 늘지 않았다(16.9 → 11.0회/일).
+ *   - Googlebot의 HTML 크롤은 하루 수백 건이라 색인 URL 하나가 며칠~몇 주에 한 번
+ *     읽힌다 — 매일 밤 굽는 산문 대부분은 한 번도 읽히지 않고 덮어써졌다.
+ *   - 종목당 산문 페이지 5~7개는 "AI 생성 프로그래매틱 금융 사이트"의 분모 그 자체였다.
+ *
+ * 남긴 두 탭의 이유: 차트는 종목의 대표 URL이고, 뉴스는 매일 바뀌는 실제 데이터(기사
+ * 목록)가 산문 옆에 있다. 나머지 탭(overall·fundamental·financials·congress·options)은
+ * 페이지가 항상 noindex이고 sitemap에도 없다 — 방문자가 오면 클라이언트 위젯이 그때
+ * 생성한다.
+ *
+ * 다른 탭의 seam(`harvest.ts` `TAB_SEAMS`)과 렌더러는 **일부러 남겨 둔다.** 되돌릴
+ * 근거(GSC 탭별 노출)가 생기면 이 목록과 각 페이지의 noindex만 바꾸면 된다.
+ *
+ * 국내 종목에 options/congress가 없다는 자산군 차이는 이 두 탭과 무관해 분기가 사라졌다.
  */
-const KR_EQUITY_TABS: readonly SeoSnapshotTab[] = [
+export const PREWARM_TABS = [
     'technical',
-    'overall',
-    'fundamental',
-    'financials',
     'news',
-];
+] as const satisfies readonly SeoSnapshotTab[];
+
+/** `tab`이 프리웜 대상인지. 스냅샷 행이 계속 갱신되는 탭은 이것뿐이다. */
+export function isPrewarmTab(tab: SeoSnapshotTab): boolean {
+    return (PREWARM_TABS as readonly SeoSnapshotTab[]).includes(tab);
+}
+
 const TICKER_SET = new Set<string>(POPULAR_TICKERS);
 const CRYPTO_SET = new Set<string>(POPULAR_CRYPTOS);
-const OPTIONS_SET = new Set<string>(POPULAR_OPTIONS_TICKERS);
 
-/** 자산군별 적용 탭 (spec §5 적용성 매트릭스). 화이트리스트 밖 심볼은 빈 배열. */
+/** 프리웜 적용 탭. 화이트리스트 밖 심볼은 빈 배열. */
 export function applicableTabsFor(symbol: string): SeoSnapshotTab[] {
     const upper = symbol.toUpperCase();
-    if (CRYPTO_SET.has(upper)) return [...CRYPTO_TABS];
-    if (!TICKER_SET.has(upper)) return [];
-    if (isKrEquitySymbol(upper)) return [...KR_EQUITY_TABS];
-    if (OPTIONS_SET.has(upper)) return [...SEO_SNAPSHOT_TABS];
-    return SEO_SNAPSHOT_TABS.filter(t => t !== 'options');
+    if (!CRYPTO_SET.has(upper) && !TICKER_SET.has(upper)) return [];
+    return [...PREWARM_TABS];
 }
 
 export interface PrewarmSymbol {

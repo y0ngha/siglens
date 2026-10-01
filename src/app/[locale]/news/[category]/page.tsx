@@ -28,7 +28,7 @@ import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
 import { regionsOf, type NavRegionId } from '@/shared/config/assetClassNav';
-import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
+import { cacheNonEmpty } from '@/shared/cache/cacheNonEmpty';
 import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import {
@@ -116,8 +116,9 @@ interface CategorySnapshot {
  * empty. Used by both `generateMetadata` and the page component so noindex
  * and the degrade UI come from a single source (no parity drift).
  *
- * Uses `staticSymbolCache` (axis 1) to avoid DYNAMIC_SERVER_USAGE from the
- * DB call during ISR cold-gen.
+ * Uses `cacheNonEmpty` (`staticSymbolCache` underneath, axis 1) to avoid
+ * DYNAMIC_SERVER_USAGE from the DB call during ISR cold-gen, without pinning an
+ * empty list for the TTL.
  *
  * 읽기(`getMarketNewsCards`) 자체가 카드 투영이라 DB 내부 컬럼(bodyEn, symbol,
  * analyzedAt)은 애초에 SELECT되지 않는다 — 받은 뒤 거르면 Neon 전송과 S3 ISR
@@ -128,22 +129,17 @@ async function loadCategorySnapshot(
     locale: Locale
 ): Promise<CategorySnapshot> {
     const cfg = CATEGORY_CONFIG[category];
-    // ISR degrade guard: getMarketNewsList(DB)가 throw하면 ISR 캐시에 0-byte 빈 결과가
-    // 굳는 것을 막으려면 여기서 흡수해야 한다. [] 로 degrade → isEmpty:true 가 되어
-    // 이미 존재하는 MarketNewsDegraded empty-state 분기로 자연스럽게 빠진다.
-    const rows = await staticSymbolCache(
+    // `cacheNonEmpty` — 빈 목록은 캐시하지 않는다. 기사가 적재되기 전 순간의 `[]`가
+    // 12h 굳으면, 허브 프리웜이 다이제스트를 구운 뒤에도 목록만 "불러오지 못했어요"로
+    // 남는다(2026-10-01 `/news/articles` 실측). DB 읽기 실패도 같은 `[]`로 흡수돼
+    // (ISR에 0-byte 결과가 굳는 것 방지) 기존 `MarketNewsDegraded` 분기로 빠진다.
+    const rows = await cacheNonEmpty(
         ['market-news:list', cfg.sentinel, ...contentLocaleKeyPart(locale)],
         cfg.sentinel,
         () => getMarketNewsCards(cfg.sentinel, locale),
         [`${MARKET_NEWS_CACHE_TAG_PREFIX}:${cfg.sentinel}`],
         SECONDS_PER_HALF_DAY
-    ).catch((e: unknown) => {
-        console.error(
-            `[CategoryNewsPage] loadCategorySnapshot(${category}) failed, degrading to []:`,
-            e
-        );
-        return [] as Awaited<ReturnType<typeof getMarketNewsCards>>;
-    });
+    );
     // 읽기 자체가 카드 투영이라 여기서 다시 거를 것이 없다 — 서버 전용 컬럼
     // (bodyEn/symbol/analyzedAt)은 애초에 select되지 않는다.
     return { items: rows, isEmpty: rows.length === 0 };

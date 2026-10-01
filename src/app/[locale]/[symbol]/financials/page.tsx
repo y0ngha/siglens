@@ -2,10 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import { getFinancialsPageData } from '@/app/[locale]/[symbol]/financials/financialData';
 import { resolveLocale } from '@/shared/i18n/locales';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
-import {
-    getFinancialsSnapshot,
-    isEmptyFinancialsSnapshot,
-} from '@/entities/financials-statements/lib/getFinancialsSnapshot';
+import { isEmptyFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
 import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
 import { FinancialsDegraded } from '@/app/[locale]/[symbol]/financials/FinancialsDegraded';
 import { FinancialsAiSummary } from '@/widgets/financials/FinancialsAiSummary';
@@ -17,7 +14,6 @@ import { FinancialsSnapshotProse } from '@/views/symbol/snapshot/renderers/Finan
 import { hasFinancialsProse } from '@/views/symbol/snapshot/renderers/financialsContent';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { FaqSection } from '@/shared/ui/FaqSection';
 import { type SymbolRouteParams } from '@/shared/config/market';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
@@ -26,15 +22,14 @@ import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import {
+    ALWAYS_NOINDEX_TAB_ROBOTS,
     buildBreadcrumbJsonLd,
     buildSymbolFinancialsSeoContent,
     buildSymbolSeoContent,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
     noindexSymbolMetadata,
-    type FaqItem,
 } from '@/shared/lib/seo';
-import { loadTabSnapshotMeta } from '@/app/[locale]/[symbol]/symbolSnapshotDescription';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
@@ -89,60 +84,24 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     });
     if (blockedMetadata) return blockedMetadata;
 
-    // 재무제표 페이지는 FMP profile이 있어야 렌더된다. profile을 본문/ProfileSection과
-    // 동일한 정적 캐시 키로 미리 확인한다(같은 요청 내 React.cache + unstable_cache 공유라
-    // 추가 FMP round-trip 없음). 그래서 본문 렌더 결과와 metadata noindex 판단이 일치한다:
-    //   - profileDegraded(FMP 인프라 실패) → 본문은 degrade(200)를 렌더하므로 noindex.
-    //   - profile === null(실존하지 않는 종목) → 본문은 notFound()이므로 noindex.
-    // `displayName`을 가드보다 위에서 계산한다 — 아래 noindex 분기들도
-    // `noindexSymbolMetadata`에 넘겨야 차단된 페이지가 티커가 아니라 사명까지
-    // 담은 title/description을 갖는다. `buildDisplayName`은 순수 함수라 위치를
-    // 올려도 부작용이 없다.
     const displayName = assetInfo
         ? buildDisplayName(assetInfo, upper, locale)
         : upper;
-    const noindexOpts = {
-        displayName,
-        koreanName: assetInfo?.koreanName,
-        tab: 'financials' as const,
-    };
-
-    const { profile, degraded: profileDegraded } =
-        await getProfileResilient(upper);
-    if (profileDegraded || profile === null) {
-        return noindexSymbolMetadata(upper, tSeo, locale, noindexOpts);
-    }
-    // profile은 있으나 6종 재무 fetch가 모두 비면(FMP 일시 장애 등) 본문은 degrade를
-    // 렌더하므로(아래 default export 참조) 메타도 noindex로 일치시킨다.
-    // getFinancialsSnapshot은 React.cache로 감싸 per-request 메모이즈되므로,
-    // generateMetadata와 페이지 렌더가 같은 인자로 호출하면 두 번째는 즉시 반환된다
-    // (빈 스냅샷 경로처럼 cacheNonEmpty가 Next 캐싱을 우회해도 재실행 없음). cross-request
-    // 정적화는 staticSymbolCache(unstable_cache), 빈 경로의 cross-request dedup은 Redis가 담당.
-    const snapshot = await getFinancialsSnapshot(upper);
-    if (isEmptyFinancialsSnapshot(snapshot)) {
-        return noindexSymbolMetadata(upper, tSeo, locale, noindexOpts);
-    }
     const seo = buildSymbolFinancialsSeoContent(upper, tSeo, {
         displayName,
         koreanName: assetInfo?.koreanName,
         englishName: assetInfo?.name,
         locale,
     });
-    const metadata = symbolMetadataFromSeo(seo, locale);
-
-    // snapshot-derived unique description (spec 2026-07-24 Task 8).
-    const { description: snapshotDescription } = await loadTabSnapshotMeta({
-        symbol: upper,
-        tab: 'financials',
-        revalidate,
-        locale,
-        displayName,
-        assetClass: 'equity',
-        tSeo,
-    });
-    return snapshotDescription
-        ? { ...metadata, description: snapshotDescription }
-        : metadata;
+    // **항상 noindex** (2026-10-01 SEO 감사, `SEO_RECOVERY_2026_09.md` §10).
+    // 프리웜이 이 탭의 산문을 더는 굽지 않는다(`PREWARM_TABS`). 산문이 빠지면 남는 건
+    // 숫자만 바뀌는 재무표다 — 종목별 공포·탐욕 탭을 noindex로 돌렸던 근거(본문 92%
+    // 공통 문장)와 같은 형태라 색인하지 않는다. 이 탭은 예전에도 산문 게이트가 없어
+    // 재무표만으로 색인됐었다.
+    return {
+        ...symbolMetadataFromSeo(seo, locale),
+        robots: ALWAYS_NOINDEX_TAB_ROBOTS,
+    };
 }
 
 export default async function FinancialsPage({ params }: Props) {
@@ -284,27 +243,6 @@ export default async function FinancialsPage({ params }: Props) {
         locale
     );
 
-    // FAQ — 화면 `FaqSection`과 FAQPage 구조화데이터의 단일 소스.
-    //
-    // 첫 답변이 페이지 범위(재무제표 3종 5년 추이 + 4개 축 점수)를 함께 말한다.
-    // 예전에는 같은 내용이 화면에 보이지 않는 `sr-only` 개요로 따로 있었는데,
-    // 숨긴 텍스트로만 크롤러에게 말하는 형태라 지우고 여기로 합쳤다
-    // (`options/page.tsx`가 같은 이유로 먼저 그렇게 했다).
-    const faq: readonly FaqItem[] = [
-        {
-            question: tSeo('faq.financialsHealthy', { v0: displayName }),
-            answer: t('page.24d5a2'),
-        },
-        {
-            question: tSeo('faq.financialsGrowth', { v0: displayName }),
-            answer: t('page.a79703'),
-        },
-        {
-            question: tSeo('faq.financialsCashflow', { v0: displayName }),
-            answer: t('page.0430a5'),
-        },
-    ];
-
     return (
         <>
             <JsonLd data={jsonLd} />
@@ -349,12 +287,6 @@ export default async function FinancialsPage({ params }: Props) {
                 <FinancialsStatements
                     symbol={upper}
                     annualSnapshot={snapshot}
-                />
-                {/* 종목 탭은 FAQPage 마크업을 싣지 않는다 — 근거는 `FaqSection` JSDoc. */}
-
-                <FaqSection
-                    heading={tSeo('faqHeading.financials', { v0: displayName })}
-                    items={faq}
                 />
                 <CrossLinkCards
                     symbol={upper}

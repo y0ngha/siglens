@@ -1,9 +1,12 @@
 import type { SeoSnapshotTab } from '@/entities/seo-snapshot/model';
 
 /**
- * 스냅샷 산문이 없으면 페이지가 noindex가 되는 탭(`hasCongressProse`·
- * `hasOverallProse`·`hasNewsProse` 게이트). sitemap은 이 탭들을 산문 보유 종목에만
- * 싣는다. 스냅샷 탭 이름 기준이다 — 세 탭 모두 URL 세그먼트와 같다.
+ * 스냅샷 산문이 없으면 페이지가 noindex가 되는 탭. sitemap은 이 탭을 산문 보유
+ * 종목에만 싣는다. 스냅샷 탭 이름 기준이다 — URL 세그먼트와 같다.
+ *
+ * 2026-10-01 SEO 감사(`docs/architecture/SEO_RECOVERY_2026_09.md` §10)로 `news` 하나만
+ * 남았다. 예전 멤버였던 `congress`·`overall`은 이제 페이지가 **항상** noindex라 sitemap
+ * 빌더가 아예 엔트리를 내지 않는다 — 산문 유무로 가를 대상이 아니다.
  *
  * `news`는 산문이 없어도 sentiment 카드가 있으면 색인되므로 이 필터가 **색인 가능한
  * URL 일부까지 sitemap에서 뺀다.** 그 편이 낫다 — 빠진 URL은 내부 링크로 여전히
@@ -13,13 +16,11 @@ import type { SeoSnapshotTab } from '@/entities/seo-snapshot/model';
  *
  * 다만 이 게이트가 반대 방향을 **완전히** 막지는 못한다 — 판정 근거가
  * `listFreshSymbolTabs`의 행 존재 여부지 `content`가 아니어서, 서사 필드가 빈
- * 스냅샷이 신선하게 저장돼 있으면 sitemap은 "산문 있음"으로 본다. `congress`·
- * `overall`도 처음부터 같은 구조였다. 실제로 문제가 되면 판정을 `content` 기반으로
- * 올리면 된다(행마다 렌더러 게이트 실행 = sitemap 생성 비용 증가).
+ * 스냅샷이 신선하게 저장돼 있으면 sitemap은 "산문 있음"으로 본다. 실제로 문제가
+ * 되면 판정을 `content` 기반으로 올리면 된다(행마다 렌더러 게이트 실행 = sitemap
+ * 생성 비용 증가).
  */
 export const PROSE_GATED_SITEMAP_TABS = [
-    'congress',
-    'overall',
     'news',
 ] as const satisfies readonly SeoSnapshotTab[];
 

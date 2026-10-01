@@ -153,7 +153,8 @@ vi.mock(
     })
 );
 
-// fundamental generateMetadata는 noindex 게이트로 getProfileResilient를 호출한다.
+// fundamental 페이지 본문이 import한다. generateMetadata는 2026-10-01부터 호출하지 않는다
+// (항상 noindex라 profile 게이트가 사라졌다).
 vi.mock('@/entities/ticker/lib/getProfileResilient', () => ({
     getProfileResilient: mockGetProfileResilient,
 }));
@@ -211,28 +212,11 @@ vi.mock(
 );
 
 // tanstack query (페이지 default export에서 사용, generateMetadata에는 불필요)
-// `/overall`은 스냅샷 프로즈도 peek 캐시도 없으면 noindex + canonical:null로 내려간다
-// (감사 라운드 4 — placeholder 페이지가 색인되던 것을 막는 게이트). 이 파일의 관심사는
-// canonical URL이지 색인성이 아니므로, 그 게이트를 통과할 최소 픽스처를 준다.
+// `/news`는 산문·감정 카드가 둘 다 없으면 noindex다. 이 파일의 관심사는 canonical
+// URL이지 색인성이 아니므로, 그 게이트를 통과할 최소 픽스처를 준다. (`/overall`·
+// `/fundamental`은 2026-10-01부터 항상 noindex라 스냅샷을 읽지 않는다.)
 vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
     getSeoSnapshotsStatic: vi.fn().mockResolvedValue([
-        {
-            symbol: 'AAPL',
-            tab: 'overall',
-            content: { headlineKo: '테스트용 종합 결론' },
-            model: 'deepseek-v4.1-flash',
-            generatedAt: new Date(),
-            updatedAt: new Date(),
-        },
-        // `/fundamental`도 산문 없이는 noindex다(2026-09-17 thin 게이트).
-        {
-            symbol: 'AAPL',
-            tab: 'fundamental',
-            content: { overallConclusionKo: '테스트용 펀더멘털 결론' },
-            model: 'deepseek-v4.1-flash',
-            generatedAt: new Date(),
-            updatedAt: new Date(),
-        },
         // `/news`도 산문·감정 카드가 둘 다 없으면 noindex다.
         {
             symbol: 'AAPL',
@@ -314,11 +298,6 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
                 return { indexable: true, reason: 'popular' };
             }
         );
-        // fundamental의 noindex 게이트 기본값: profile 존재 + 비-degraded(정상 happy-path).
-        mockGetProfileResilient.mockResolvedValue({
-            profile: { symbol: 'AAPL' },
-            degraded: false,
-        });
     });
 
     describe('[symbol] 루트 페이지 (/AAPL)', () => {
@@ -394,11 +373,13 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
         );
     });
 
+    // 펀더멘털·종합 탭은 항상 noindex지만 self-canonical·og:url은 남는다(2026-10-01).
     describe('[symbol]/fundamental 페이지 (/AAPL/fundamental)', () => {
-        it('소문자 aapl → canonical이 /AAPL/fundamental', async () => {
+        it('소문자 aapl → noindex이되 canonical이 /AAPL/fundamental', async () => {
             const metadata = await generateFundamentalMetadata(
                 makeParams('aapl')
             );
+            expect(metadata.robots).toEqual({ index: false, follow: true });
             expect(metadata.alternates?.canonical).toBe(
                 'https://siglens.io/AAPL/fundamental'
             );
@@ -425,10 +406,11 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
     });
 
     describe('[symbol]/overall 페이지 (/AAPL/overall)', () => {
-        it('소문자 aapl → canonical이 /AAPL/overall', async () => {
+        it('소문자 aapl → noindex이되 canonical이 /AAPL/overall', async () => {
             const metadata = await generateOverallMetadata(
                 makeParamsWithSearch('aapl')
             );
+            expect(metadata.robots).toEqual({ index: false, follow: true });
             expect(metadata.alternates?.canonical).toBe(
                 'https://siglens.io/AAPL/overall'
             );
@@ -440,15 +422,17 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
         });
     });
 
-    // 종목별 공포·탐욕 탭은 항상 noindex라 canonical이 없다(2026-09-17 운영 렌더 감사).
-    // 공유 카드의 og:url은 대문자 정규화된 주소로 남아야 한다.
+    // 종목별 공포·탐욕 탭은 2026-10-01부터 색인한다 — self-canonical이 대문자로
+    // 정규화되고 robots 오버라이드가 없다(봉이 정상인 인기 종목 기준).
     describe('[symbol]/fear-greed 페이지 (/AAPL/fear-greed)', () => {
-        it('소문자 aapl → noindex(canonical null), og:url은 /AAPL/fear-greed', async () => {
+        it('소문자 aapl → 색인 가능, canonical·og:url 모두 /AAPL/fear-greed', async () => {
             const metadata = await generateFearGreedMetadata(
                 makeParams('aapl')
             );
-            expect(metadata.alternates?.canonical).toBeNull();
-            expect(metadata.robots).toEqual({ index: false, follow: true });
+            expect(metadata.alternates?.canonical).toBe(
+                'https://siglens.io/AAPL/fear-greed'
+            );
+            expect(metadata.robots).toBeUndefined();
             expect(String(metadata.title)).not.toMatch(/\[SYMBOL\]/i);
             expect(metadata.openGraph?.url).toBe(
                 'https://siglens.io/AAPL/fear-greed'
@@ -481,8 +465,7 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
             {
                 name: 'fear-greed',
                 fn: () => generateFearGreedMetadata(makeParams('tsla')),
-                // 항상 noindex — canonical을 내지 않는다.
-                expectedCanonical: null,
+                expectedCanonical: 'https://siglens.io/TSLA/fear-greed',
             },
         ] as const;
 
@@ -500,11 +483,11 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
     describe('variant noindex 제거 — clean canonical 통합', () => {
         // 최상위 beforeEach가 실존 종목(assetInfo 존재)으로 설정 → 정상 index 메타데이터.
         // variant noindex 제거 검증에는 tf searchParam이 robots를 바꾸지 않음만 보면 된다.
-        it('overall: tf variant여도 noindex 없음, canonical은 clean', async () => {
+        it('overall: tf variant여도 canonical은 clean (이 탭은 variant와 무관하게 항상 noindex)', async () => {
             const metadata = await generateOverallMetadata(
                 makeParamsWithSearch('aapl', { tf: '1Hour' })
             );
-            expect(metadata.robots).toBeUndefined();
+            expect(metadata.robots).toEqual({ index: false, follow: true });
             expect(metadata.alternates?.canonical).toBe(
                 'https://siglens.io/AAPL/overall'
             );
@@ -575,8 +558,8 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
          * noindex(not-found)가 충돌하고 존재하지 않는 URL을 canonical로 자기참조하는
          * soft-404가 발생한다 (실측: HTTP 200 + robots ['index, follow', 'noindex']).
          *
-         * fundamental은 제외 — 실재성 게이트가 assetInfo가 아닌 getProfileResilient의
-         * profile===null이며, 아래 별도 describe에서 검증한다.
+         * fundamental은 제외 — 이 탭은 항상 noindex + self-canonical이라 아래 별도
+         * describe에서 검증한다.
          */
         const nonExistentCases = [
             {
@@ -621,29 +604,16 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
         );
     });
 
-    describe('fundamental — profile 인프라 실패/부재 시 noindex (본문 결과와 일치)', () => {
-        it('profile degraded(FMP 인프라 실패) → noindex + canonical null', async () => {
-            mockGetProfileResilient.mockResolvedValue({
-                profile: null,
-                degraded: true,
-            });
+    describe('항상 noindex 탭 — 데이터 상태와 무관하다 (2026-10-01)', () => {
+        it('fundamental: profile 조회 없이 noindex + self-canonical', async () => {
             const metadata = await generateFundamentalMetadata(
                 makeParams('aapl')
             );
             expect(metadata.robots).toEqual({ index: false, follow: true });
-            expect(metadata.alternates?.canonical).toBeNull();
-        });
-
-        it('profile null(실존하지 않는 종목) → noindex (본문 notFound와 짝)', async () => {
-            mockGetProfileResilient.mockResolvedValue({
-                profile: null,
-                degraded: false,
-            });
-            const metadata = await generateFundamentalMetadata(
-                makeParams('aapl')
+            expect(metadata.alternates?.canonical).toBe(
+                'https://siglens.io/AAPL/fundamental'
             );
-            expect(metadata.robots).toEqual({ index: false, follow: true });
-            expect(metadata.alternates?.canonical).toBeNull();
+            expect(mockGetProfileResilient).not.toHaveBeenCalled();
         });
     });
 });

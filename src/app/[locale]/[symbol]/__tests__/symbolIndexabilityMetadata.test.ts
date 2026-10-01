@@ -240,7 +240,7 @@ describe('getBlockedSymbolMetadata', () => {
             degraded: true,
             locale: 'ko',
             revalidateSeconds: 86400,
-            tab: 'congress',
+            tab: 'news',
         });
 
         expect(mockGetSeoSnapshotsStatic).toHaveBeenCalledWith(
@@ -255,8 +255,46 @@ describe('getBlockedSymbolMetadata', () => {
             locale: 'ko',
             hasSnapshot: false,
         });
-        expectBlockedWithOwnIdentity(result, 'AAPL', '/congress');
+        expectBlockedWithOwnIdentity(result, 'AAPL', '/news');
     });
+
+    // 2026-10-01: 프리웜하지 않는 탭(`PREWARM_TABS` 밖)은 degraded여도 스냅샷을 읽지
+    // 않는다 — 그 다섯 탭은 페이지가 항상 noindex라 `hasSnapshot`이 결과를 바꿀 수
+    // 없다. 탭별 차단 카피는 그대로 써야 한다.
+    it.each([
+        'overall',
+        'fundamental',
+        'financials',
+        'congress',
+        'options',
+    ] as const)(
+        '프리웜 밖 탭(%s)은 degraded여도 스냅샷을 읽지 않고 탭별 카피로 차단한다',
+        async tab => {
+            mockEvaluateSymbolIndexability.mockReturnValue({
+                indexable: false,
+                reason: 'degraded',
+            });
+
+            const result = await getBlockedSymbolMetadata({
+                symbol: 'AAPL',
+                assetInfo: ASSET_INFO,
+                degraded: true,
+                locale: 'ko',
+                revalidateSeconds: 86400,
+                tab,
+            });
+
+            expect(mockGetSeoSnapshotsStatic).not.toHaveBeenCalled();
+            expect(mockEvaluateSymbolIndexability).toHaveBeenCalledWith({
+                symbol: 'AAPL',
+                assetInfo: ASSET_INFO,
+                degraded: true,
+                locale: 'ko',
+                hasSnapshot: undefined,
+            });
+            expectBlockedWithOwnIdentity(result, 'AAPL', `/${tab}`);
+        }
+    );
 
     // FIX 1 (audit): a same-tab row whose `content` is malformed (fails the
     // renderer's narrowing) must NOT flip hasSnapshot to true. Before this

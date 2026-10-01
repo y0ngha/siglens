@@ -159,152 +159,29 @@ describe('generateMetadata', () => {
         expect(metadata.alternates?.canonical).toBeNull();
     });
 
-    it('returns noindex when profile is degraded (FMP infra failure)', async () => {
-        mockGetProfileResilient.mockResolvedValue({
-            profile: null,
-            degraded: true,
-        } as unknown as ProfileResult);
-
-        const metadata = await generateMetadata({
-            params: Promise.resolve({ locale: 'ko', symbol: 'AAPL' }),
-        });
-
-        expect(metadata.robots).toEqual({ index: false, follow: true });
-        expect(metadata.alternates?.canonical).toBeNull();
-    });
-
-    it('returns noindex when profile is null (symbol does not exist)', async () => {
-        mockGetProfileResilient.mockResolvedValue({
-            profile: null,
-            degraded: false,
-        } as unknown as ProfileResult);
-
-        const metadata = await generateMetadata({
-            params: Promise.resolve({ locale: 'ko', symbol: 'FAKESYM' }),
-        });
-
-        expect(metadata.robots).toEqual({ index: false, follow: true });
-        expect(metadata.alternates?.canonical).toBeNull();
-    });
-
-    it('returns noindex when congress trades are degraded (FMP infra failure)', async () => {
-        mockGetCongressTradesResilient.mockResolvedValue({
-            trades: [],
-            degraded: true,
-        } as unknown as TradesResult);
-
+    // 2026-10-01 SEO 감사: 의회 거래 탭은 **항상 noindex**다. 프로필·거래·스냅샷
+    // 상태로 갈리던 분기(thin 게이트 등)는 사라졌고, generateMetadata는 이제 그
+    // 데이터를 읽지 않는다. 사용자용 title·self-canonical은 남는다.
+    it('유효한 종목은 항상 noindex(follow 유지) + self-canonical + SEO title을 유지한다', async () => {
         const metadata = await generateMetadata({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
         expect(metadata.robots).toEqual({ index: false, follow: true });
-        expect(metadata.alternates?.canonical).toBeNull();
-    });
-
-    // financials와의 차이: 0건 **자체**는 여전히 degrade가 아니다(200 렌더). 다만 0건이면서
-    // AI 스냅샷도 없으면 크롤 텍스트가 크롬만 남아 thin이 된다 — 2026-08 실측 B 1,059자 /
-    // KEEL 1,079자 대 AAPL 6,605자. 그 교집합만 noindex로 떨어뜨린다.
-    it('거래 0건 + 스냅샷 없음 = thin이라 noindex(단 follow는 유지)', async () => {
-        mockGetCongressTradesResilient.mockResolvedValue({
-            trades: [],
-            degraded: false,
-        } as unknown as TradesResult);
-
-        const metadata = await generateMetadata({
-            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
-        });
-
-        // follow:true — 이 페이지는 CrossLinkCards로 형제 탭에 내부 링크를 뿌린다.
-        expect(metadata.robots).toEqual({ index: false, follow: true });
-        // 제목·canonical은 그대로 남는다(사용자용). NOINDEX_SYMBOL_METADATA와 다른 점.
         expect(metadata.alternates?.canonical).toBe(
             'https://siglens.io/AAPL/congress'
         );
-        expect(metadata.title).toBeDefined();
+        expect(JSON.stringify(metadata.title)).toContain('의회 거래');
     });
 
-    it('스냅샷 행은 있지만 내용이 비면 여전히 thin이다 (존재 여부로 판정하면 새는 케이스)', async () => {
-        mockGetCongressTradesResilient.mockResolvedValue({
-            trades: [],
-            degraded: false,
-        } as unknown as TradesResult);
-        // 본문의 `hasCongressProse`는 이 content를 렌더 불가로 판정한다 —
-        // 메타가 `snap !== undefined`만 봤다면 여기서 색인 가능이 되어 갈라진다.
-        vi.mocked(getSeoSnapshotsStatic).mockResolvedValue([
-            {
-                tab: 'congress',
-                content: {},
-                generatedAt: new Date('2026-08-01'),
-            },
-        ] as unknown as Awaited<ReturnType<typeof getSeoSnapshotsStatic>>);
-
-        const metadata = await generateMetadata({
+    it('거래·프로필·스냅샷 상태와 무관하다 — 메타데이터가 해당 데이터를 조회하지 않는다', async () => {
+        await generateMetadata({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        expect(metadata.robots).toEqual({ index: false, follow: true });
-    });
-
-    it('거래 0건이어도 렌더 가능한 프로즈가 있으면 색인한다', async () => {
-        // 이 케이스가 없으면 `&& !hasCongressProse(...)` 조건을 통째로 지워도 모든
-        // 테스트가 통과한다(2026-08 감사가 뮤테이션으로 증명). 즉 "0건이지만 서술이
-        // 있는 페이지는 색인한다"는 문서화된 예외가 아무 데도 고정돼 있지 않았다.
-        mockGetCongressTradesResilient.mockResolvedValue({
-            trades: [],
-            degraded: false,
-        } as unknown as TradesResult);
-        vi.mocked(getSeoSnapshotsStatic).mockResolvedValue([
-            {
-                tab: 'congress',
-                content: {
-                    summaryKo:
-                        '의원 매매 공시가 없지만 섹터 흐름은 이렇습니다.',
-                },
-                generatedAt: new Date('2026-08-01'),
-            },
-        ] as unknown as Awaited<ReturnType<typeof getSeoSnapshotsStatic>>);
-
-        const metadata = await generateMetadata({
-            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
-        });
-
-        expect(metadata.robots).toBeUndefined();
-    });
-
-    it('거래가 1건이라도 있으면 색인 대상이다', async () => {
-        mockGetCongressTradesResilient.mockResolvedValue({
-            trades: [{ id: 't1' }],
-            degraded: false,
-        } as unknown as TradesResult);
-
-        const metadata = await generateMetadata({
-            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
-        });
-
-        expect(metadata.robots).toBeUndefined();
-    });
-
-    it('returns canonical /{symbol}/congress for a valid existing symbol with trades', async () => {
-        mockGetCongressTradesResilient.mockResolvedValue({
-            trades: [{ id: 't1' }],
-            degraded: false,
-        } as unknown as TradesResult);
-
-        const metadata = await generateMetadata({
-            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
-        });
-
-        expect(metadata.alternates?.canonical).toBe(
-            'https://siglens.io/AAPL/congress'
-        );
-    });
-
-    it('does not set noindex robots for a valid symbol', async () => {
-        const metadata = await generateMetadata({
-            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
-        });
-
-        expect(metadata.robots).toBeUndefined();
+        expect(mockGetProfileResilient).not.toHaveBeenCalled();
+        expect(mockGetCongressTradesResilient).not.toHaveBeenCalled();
+        expect(getSeoSnapshotsStatic).not.toHaveBeenCalled();
     });
 
     it('sets openGraph with ko_KR locale and OG label for 의회 거래', async () => {

@@ -222,3 +222,43 @@ v0.79.1 배포 직후 운영을 **밖에서** 다시 봤다. 코드가 아니라
 | R5 | 원시 HTML에서 Suspense fallback과 본문이 `<main>`을 두 번 갖고, 차트 탭 h1이 sr-only로 먼저 온다(렌더 후엔 정상) | Google은 렌더 DOM을 본다. 비렌더 크롤러만 영향 |
 | R6 | 관련 종목에 무관한 링 이웃(AAPL → LENZ·UNBX), 백테스팅 표의 12px 미만 텍스트 1,117개, 경제 지표 "159075천명" 같은 미포맷 숫자 | 낮음 |
 | R7 | CWV: PSI 익명 할당량 소진으로 이번엔 미측정 | GSC › 코어 웹 바이탈에서 확인 |
+
+## 10. 2026-10-01 — 프리웜 축소·색인 탭 재편·C구간·종목 FAQ 정리
+
+### 10-1. 감사 결론 — 프리웜은 "있어야 하지만 지금처럼은 아니다"
+
+| 근거 | 내용 |
+|---|---|
+| 필요한 이유 | 크롤러가 처음 받는 SSR HTML에는 **미리 구운 스냅샷만** 실린다. 2026-09-27부터 봇도 캐시 미스에 생성을 트리거하지만(`analysis/stream/route.ts` 상단 불변식) 그 결과는 JS를 실행한 그 방문의 화면에만 나타나고, SSR HTML에는 다음 ISR 재생성부터 반영된다. 원시 HTML만 읽는 크롤러·첫 크롤은 스냅샷이 없으면 플레이스홀더를 받는다(2026-07 절벽 당시 677자). 색인 페이지에는 산문이 있어야 한다 |
+| 효과 미입증 | 7탭 산문 도입(07-25) 전후 노출 16.9 → 11.0회/일(§5 B3). 6월 클릭의 대부분은 산문 없는 fear-greed 탭에서 났다 |
+| 크롤이 못 따라옴 | HTML 크롤 하루 ~900건(§4), 색인 대상 ~3,000 URL → URL당 재크롤은 며칠~몇 주. 매일 밤 굽는 산문 대부분은 Google이 한 번도 읽지 않고 덮어써졌다 |
+| 판정 리스크 | 종목당 산문 페이지 5~7개(≈2,700개)는 "AI 생성 프로그래매틱 금융 사이트"(§3·§7-1 scaled content abuse)의 분모 그 자체다. **갱신 주기는 이 판정과 무관하다** — Google은 크롤 시점의 페이지만 본다. 줄여야 하는 건 주기가 아니라 색인 페이지 수다 |
+| 비용 | 프리웜 LLM 월 $250~350(2026-09-11 에이전트 챗 스펙 §10 추정, 하루 5~6천 호출) |
+
+### 10-2. 조치
+
+| # | 조치 | 위치 |
+|---|---|---|
+| P1 | 프리웜 탭을 **technical·news 두 개**로 축소(자산군 무관). 나머지 탭의 seam·렌더러는 되돌리기용으로 남김 | `entities/seo-snapshot/lib/applicability.ts` `PREWARM_TABS` |
+| P2 | overall·fundamental·financials·congress·options **항상 noindex**(self-canonical 유지) + sitemap 제외. 조건부(산문·peek 유무)로 두면 사용자 방문이 채운 캐시에 따라 색인이 뒤집힌다 | 각 `page.tsx` generateMetadata, `ALWAYS_NOINDEX_TAB_ROBOTS`(`shared/lib/seo.ts`), `buildPopularEntries`·`buildCryptoPopularEntries` |
+| P3 | 종목별 **fear-greed 색인 재개**(사용자 결정) + sitemap 등재. 봉 조회 실패는 degraded, 봉 부족은 `no-price-data`로 noindex | `[symbol]/fear-greed/page.tsx` |
+| P4 | `POPULAR_TICKERS` **C구간 43종 제거**(페니주·SPAC·워런트·뮤추얼펀드·2배 단일종목 ETF) — `longtail-default-blocked`로 noindex, 프리웜·sitemap 제외 | `shared/config/popular-tickers.ts` `[14]` |
+| P5 | 종목 탭 6곳(congress·fear-greed·financials·fundamental·options·overall)의 **화면 FAQ 제거** — 종목명만 바뀌는 템플릿(§9-4 R3) | 각 `page.tsx`, `FaqSection` JSDoc, i18n 카탈로그 |
+
+결과: 종목당 색인 탭은 **차트·뉴스·공포탐욕 3개**. 프리웜 유닛 2,742 → **754**(377종목 × 2탭, 약 72% 감소).
+
+P3의 위험은 알고 받아들였다 — 2026-09-17 감사가 이 탭을 noindex로 돌린 근거(본문 92%가 공통 문장)는 그대로다. 수요(6월 클릭)가 실재한다는 점, FAQ 제거로 공통 문장의 큰 덩어리가 빠진다는 점, 다른 탭 다섯 개를 빼 색인 총량은 오히려 줄어든다는 점을 근거로 열었다.
+
+### 10-3. 되돌림 신호
+
+| 신호 | 대응 |
+|---|---|
+| GSC `크롤링됨-현재 색인 생성되지 않음`에 `/{ticker}/fear-greed`가 쌓이거나 사이트 평균 순위 악화 | P3 되돌림(fear-greed noindex + sitemap 제외) |
+| GSC 탭별 노출에서 noindex로 뺀 탭에 이전 실적이 크게 있었음이 확인됨 | 해당 탭만 P1(`PREWARM_TABS`)·P2(페이지 robots·sitemap 엔트리) 동시 복원 |
+| 다음 core update 직후 | 차트·뉴스(산문) vs 공포탐욕(산문 없음) 노출을 비교 — 프리웜 효과를 판정할 유일한 자연 실험. 지금 수치를 기준선으로 기록해 둔다 |
+
+### 10-4. 하지 않은 것
+
+- 프리웜 갱신 주기 변경 — technical은 가격 의존이라 하루 1회를 유지해야 차트와 산문이 어긋나지 않는다.
+- 다른 탭 seam(`harvest.ts` `TAB_SEAMS`)·스냅샷 렌더러 삭제 — 되돌림 비용을 낮추려 남겼다. 기존 스냅샷 행은 7일(`SNAPSHOT_MAX_AGE_MS`) 뒤 읽기 경로에서 자연히 걸러진다.
+- GSC의 removal sitemap·Speed Brain 같은 대시보드 작업(§5 A1·C1).

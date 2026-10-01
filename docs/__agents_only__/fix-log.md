@@ -604,3 +604,21 @@
 - Violation: missing lifecycle/render tests for lightweight-charts series primitive
   - Rule: (new) Primitives wrapping third-party chart libraries that manage their own lifecycle (mount, update, unmount) must include integration tests verifying lifecycle methods are called at expected render boundaries. Lifecycle management without test coverage leaves render-order regressions undetected.
   - Context: Added tests covering series mount/update/unmount lifecycle for lightweight-charts integration.
+
+## [Round 1 | claude/magical-sagan-56eoov (SEO prewarm reduction) | 2026-10-01]
+- Violation: A new exported constant's JSDoc was inserted between an existing JSDoc block and its declaration, orphaning the old doc
+  - Rule: JSDoc blocks must remain directly above their declarations; inserting new docs between them breaks the association
+  - Context: src/shared/lib/seo.ts — moved the old JSDoc back directly above NOINDEX_SYMBOL_METADATA
+- Violation: JSDoc stating "the only current caller is the chart route" became false when the same change added the fear-greed route as a second caller
+  - Rule: JSDoc accuracy — comments must be updated when code scope changes
+  - Context: src/app/[locale]/[symbol]/symbolIndexabilityMetadata.ts — updated JSDoc to name both callers
+- Violation: getBlockedSymbolMetadata still performed a snapshot DB read whose result could no longer change the outcome for the five tabs made always-noindex
+  - Rule: Optimization — remove redundant operations that no longer affect the outcome
+  - Context: Added isPrewarmTab and skip the read for non-prewarm tabs
+- Status (Round 2): APPROVED (zero findings)
+
+## [Round 1 | claude/magical-sagan-56eoov (news category cron ingestion + cacheNonEmpty) | 2026-10-01]
+- Task: hub prewarm cron now ingests news categories before baking digests (3h gate, enrichment cap 8); ingestion extracted to `ingestMarketNewsCategory`; `cacheNonEmpty` promoted to shared and applied to `/news/[category]` list.
+- Violation: A per-run work cap (enrichment limit 8) combined with a long re-run gate (3h flag) made the initial backlog drain extremely slowly (~50 cards → ~20h), with each partial drain also changing a downstream cache key (digest regeneration). Undocumented. Fix: ingestion returns `pending`; the long gate is set only when the backlog is empty, so the backlog drains on consecutive short-interval runs.
+  - Rule: (new) when combining a per-run cap with a cooldown/gate, the gate must not engage while capped work remains (or the drain time = backlog/cap × gate must be documented and acceptable).
+- Status (Round 2): APPROVED (zero findings)

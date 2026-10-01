@@ -35,9 +35,9 @@ function quantizeTo6hBoundary(now: Date): Date {
 /**
  * 종목 sitemap 엔트리에 다국어 대체본을 붙인다.
  *
- * 엔트리마다 손으로 `alternates`를 적지 않는 이유는 이 빌더가 티커당 8~9개
- * 엔트리를 만들고 분기(ETF·KR·옵션)마다 리터럴이 흩어져 있어서다 — 한 곳만
- * 빠뜨려도 그 탭만 조용히 hreflang을 잃는다. 마지막에 일괄로 붙인다.
+ * 엔트리마다 손으로 `alternates`를 적지 않는 이유는 분기(산문 게이트 등)마다
+ * 리터럴이 흩어지면 한 곳만 빠뜨려도 그 탭만 조용히 hreflang을 잃기 때문이다.
+ * 마지막에 일괄로 붙인다.
  *
  * `SYMBOL_INDEXABLE_LOCALES`가 기본 로케일 하나인 동안에는 `sitemapAlternates`가
  * `undefined`를 돌려 XML이 지금과 바이트 단위로 동일하다.
@@ -56,10 +56,7 @@ function withSymbolAlternates(entries: SitemapEntry[]): SitemapEntry[] {
  * Crypto popular sitemap entries.
  *
  * lastmod uses the chart ISR period (6h, `CRYPTO_CHART_ISR_PERIOD_HOURS`) as a
- * conservative common baseline for all tabs via `quantizeTo6hBoundary`. This is
- * shorter than the overall tab's actual cadence (revalidate=43200/12h) — meaning lastmod conservatively under-claims freshness rather than
- * over-claiming it. Googlebot may recrawl that tab less often than their true cadence
- * would allow, but we never send a false "this page is newer than it is" signal.
+ * common baseline via `quantizeTo6hBoundary` (news uses a rolling hour instead, below).
  *
  * `changeFrequency` per tab reflects editorial intent and is independent of lastmod:
  *   - chart (`revalidate=21600`, 6h) → `changeFrequency: 'daily'`, 6h-boundary lastmod.
@@ -67,22 +64,26 @@ function withSymbolAlternates(entries: SitemapEntry[]): SitemapEntry[] {
  *     floored to the hour (`floorToHour`) so repeated calls within the same hour agree
  *     (news is the most dynamic tab; 1h rolling accounts for on-demand revalidateTag that
  *     can refresh the page inside the ISR window).
- *   - overall (`revalidate=43200`, 12h) → `changeFrequency: 'weekly'`, 6h-boundary lastmod
- *     (AI analysis cache is slow-moving; weekly matches the stock overall convention).
+ *   - fear-greed (`revalidate=86400`, 24h) → `changeFrequency: 'daily'`, UTC-midnight
+ *     lastmod — the page regenerates at most daily, so a 6h boundary would over-claim.
  *
- * Only the crypto-applicable, indexable tabs are advertised (chart/news/overall)
- * — fundamental/financials/options/congress are not rendered for crypto, and `/position`
- * and `/fear-greed` (both in `CRYPTO_DESCRIPTOR.tabs`) are always noindex, so listing
- * them would only burn crawl budget.
+ * Only the crypto-applicable, indexable tabs are advertised (chart/news/fear-greed).
+ * `/overall` is always noindex since the 2026-10-01 SEO audit
+ * (`docs/architecture/SEO_RECOVERY_2026_09.md` §10 — `ALWAYS_NOINDEX_TAB_ROBOTS`), and
+ * `/position` is always noindex (2026-09-11), so listing them would only burn crawl
+ * budget. fundamental/financials/options/congress are not rendered for crypto.
  */
 export function buildCryptoPopularEntries(
     now: Date,
-    // `buildPopularEntries`와 같은 산문 게이트 — 종합·뉴스 탭은 자산군과 무관하게
-    // 산문이 없으면 noindex다. 없으면(로더 실패) 필터를 끈다.
+    // `buildPopularEntries`와 같은 산문 게이트 — 뉴스 탭은 자산군과 무관하게
+    // 산문이 없으면 noindex일 수 있다. 없으면(로더 실패) 필터를 끈다.
     { symbolTabsWithProse }: BuildPopularEntriesOptions = {}
 ): SitemapEntry[] {
     const hasProse = makeProseGate({ symbolTabsWithProse });
     const boundary6h = quantizeTo6hBoundary(now);
+    const utcMidnight = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+    );
     // floorToHour: rolling `now - 1h`를 그대로 쓰면 매 호출마다 값이 달라져
     // sitemap index lastmod의 freshness 신호가 무력화된다 — `buildPopularEntries`의
     // `/news` 엔트리와 같은 이유(floorToHour JSDoc 참고).
@@ -105,20 +106,14 @@ export function buildCryptoPopularEntries(
                       },
                   ]
                 : []),
-            ...(hasProse(sym, 'overall')
-                ? [
-                      {
-                          url: `${SITE_URL}/${sym}/overall`,
-                          lastModified: boundary6h,
-                          changeFrequency: 'weekly' as const,
-                          priority: 0.82,
-                      },
-                  ]
-                : []),
-            // `/fear-greed` and `/position` are deliberately absent — both pages
-            // are always noindex (fear-greed: 2026-09-17 live render audit, the
-            // per-symbol body is a numbers-only template; position: 2026-09-11
-            // SEO recovery audit). See `buildPopularEntries`.
+            // 공포탐욕 탭은 2026-10-01부터 색인한다(`[symbol]/fear-greed/page.tsx`
+            // generateMetadata 주석). `/overall`·`/position`은 항상 noindex라 싣지 않는다.
+            {
+                url: `${SITE_URL}/${sym}/fear-greed`,
+                lastModified: utcMidnight,
+                changeFrequency: 'daily',
+                priority: 0.75,
+            },
         ])
     );
 }

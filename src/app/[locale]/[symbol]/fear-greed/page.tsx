@@ -7,7 +7,6 @@ import { FearGreedPageError } from '@/widgets/fear-greed/FearGreedPageError';
 import { FearGreedFactsSummary } from '@/views/symbol/fearGreed/FearGreedFactsSummary';
 import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
-import { FaqSection } from '@/shared/ui/FaqSection';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { DEFAULT_TIMEFRAME, SymbolRouteParams } from '@/shared/config/market';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
@@ -30,7 +29,6 @@ import {
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
     noindexSymbolMetadata,
-    type FaqItem,
 } from '@/shared/lib/seo';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import {
@@ -103,12 +101,40 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return NOINDEX_SYMBOL_METADATA;
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(ticker);
+    // 콘텐츠 게이트 — 본문의 `FearGreedFactsSummary`와 **같은 입력·같은 술어**로
+    // 판정한다(MISTAKES §2). 본문이 쓰는 `getSeedBarsStatic`과 같은 인자라 요청 스코프
+    // 메모가 접혀 왕복이 늘지 않는다. 차트 라우트(`[symbol]/page.tsx`)와 같은 모양이다:
+    //   - 조회 **실패**(`null`) → degraded로 넘긴다. 이 탭에는 스냅샷이 없으므로
+    //     (`tab` 생략) degraded는 곧 noindex — 장애 중 빈 껍데기가 색인되지 않는다.
+    //   - 조회는 됐는데 봉이 모자라 요약이 안 그려지면(`buildTechnicalFacts` null,
+    //     상장폐지 종목 등) `no-price-data`로 noindex.
+    const metadataBars = assetInfo
+        ? await getSeedBarsStatic(
+              ticker,
+              DEFAULT_TIMEFRAME,
+              marketProfileOf(assetInfo),
+              assetInfo.fmpSymbol
+          ).catch((e: unknown) => {
+              console.error(
+                  '[SymbolFearGreedPage] generateMetadata getSeedBarsStatic failed:',
+                  e
+              );
+              return null;
+          })
+        : null;
     const blockedMetadata = await getBlockedSymbolMetadata({
         locale,
         symbol: ticker,
         assetInfo,
-        degraded,
+        degraded: degraded || metadataBars === null,
         revalidateSeconds: revalidate,
+        hasPriceData:
+            metadataBars === null
+                ? undefined
+                : buildTechnicalFacts(
+                      metadataBars.bars,
+                      metadataBars.indicators
+                  ) !== null,
     });
     if (blockedMetadata) return blockedMetadata;
     if (!assetInfo) return noindexSymbolMetadata(ticker, tSeo, locale);
@@ -122,25 +148,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         locale,
     });
     /*
-     * 종목별 공포·탐욕 탭은 **항상 noindex**다 (2026-09-17 운영 렌더 감사).
+     * 종목별 공포·탐욕 탭은 **색인한다** (2026-10-01 사용자 결정,
+     * `SEO_RECOVERY_2026_09.md` §10).
      *
-     * 실측: 색인되던 416개 페이지를 서로 비교하면(숫자·종목명 정규화 후 12자 shingle,
-     * 30% 이상 페이지에 나오면 공통) 본문의 92%(중앙값)가 공통 문장이고, 종목 고유
-     * 문자는 중앙값 300자다. 같은 방식으로 차트 탭은 30%, 뉴스 탭은 26%다.
-     * "현재 N점(탐욕)은 1주 전 M점 대비…", "최근 1년 동안 최저 A점에서 최고 B점…"처럼
-     * **숫자만 바뀌는 템플릿**이라, 2026-07 강등 사유(`SEO_RECOVERY_2026_09.md` §3)와
-     * 형태가 같다. 산문 스냅샷이 없는 탭이고 회복 전략 A3("산문 없는 탭은 색인 금지")에
-     * 해당한다. 같은 날 오전의 가격 데이터 게이트(M1)는 이 결정으로 쓸모가 없어져 뺐다.
+     * 2026-09-17 운영 렌더 감사는 이 탭을 항상 noindex로 돌렸다 — 본문의 92%(중앙값)가
+     * 숫자만 바뀌는 공통 문장이었다(차트 30%, 뉴스 26%). 그 판단을 되돌리는 근거는
+     * **수요**다: 2026-06에 실제 클릭을 만든 것은 거의 전부 이 탭의 롱테일이었고,
+     * 노출 회복 전략이 "산문 있는 탭만 색인"으로 좁혀 둔 뒤 그 수요를 받을 페이지가
+     * 사라졌다. 대신 템플릿 비중을 낮추려고 같은 날 종목 탭 FAQ를 걷어냈고(FAQ는
+     * 이 페이지 공통 문장의 큰 덩어리였다), 다른 탭 다섯 개를 noindex로 빼 종목당
+     * 색인 페이지를 세 개(차트·뉴스·공포탐욕)로 줄였다.
      *
-     * `/position`과 같은 모양이다 — 훅 카피(title/OG/Twitter)는 공유 카드에 필요하므로
-     * 두고, `NOINDEX_SYMBOL_METADATA`를 뒤에 스프레드해 robots와 `canonical: null`만
-     * 덮는다. `follow`는 유지돼 형제 탭으로 가는 크롤 경로는 끊기지 않는다.
-     * 사이트 단위 `/fear-greed`·`/fear-greed/kr` 허브는 색인 대상 그대로다.
+     * 되돌림 신호: GSC `크롤링됨-현재 색인 생성되지 않음`에 `/fear-greed` URL이
+     * 쌓이거나, 사이트 평균 게재순위가 나빠지면 이 탭을 다시 noindex로 돌린다.
      */
-    return {
-        ...symbolMetadataFromSeo(seo, locale),
-        ...NOINDEX_SYMBOL_METADATA,
-    };
+    return symbolMetadataFromSeo(seo, locale);
 }
 
 export default async function SymbolFearGreedPage({ params }: Props) {
@@ -202,35 +224,6 @@ export default async function SymbolFearGreedPage({ params }: Props) {
         ],
         locale
     );
-
-    /**
-     * FAQ — 화면 `FaqSection`과 FAQPage 구조화데이터의 단일 소스.
-     *
-     * 예전에는 같은 내용이 화면에 보이지 않는 마크업 전용 FAQ 답변 3개와, 화면에만
-     * 보이는 "가이드" 안내 섹션(문단 3개) 두 벌로 있었다 — 구글이 요구하는 "마크업한
-     * Q&A가 페이지에 보일 것"을 어기면서 동시에 같은 말을 두 번 하는 중복 콘텐츠이기도
-     * 했다. 안내 섹션의 5-factor 설명과 60일 신뢰도 문턱은 이미 아래 답변 2·3과
-     * 사실상 같은 문장이라 답변으로 흡수했다. 시장 전체 지수로 가는 내부 링크
-     * (`marketFearGreedLink`)만은 텍스트로 옮길 수 없는 실제 이동 수단이라 아래
-     * `<FaqSection>` 위에 별도 문단으로 남겨 둔다(하단 참고).
-     *
-     * 경계값 라벨(3번 답변)은 경계값 상수 변경에 따른 schema 회귀를 막기 위해
-     * 구체 숫자(0~25, 25~45 등) 대신 질적 표현으로만 정리한다.
-     */
-    const faq: readonly FaqItem[] = [
-        {
-            question: tSeo('faq.fearGreedMeasures', { v0: displayName }),
-            answer: tSeo('faq.fearGreedMeasuresAnswer', { v0: displayName }),
-        },
-        {
-            question: t('page.7fcfc0'),
-            answer: t('page.7ed747'),
-        },
-        {
-            question: t('page.dc8a6d'),
-            answer: t('page.094886'),
-        },
-    ];
 
     const queryClient = new QueryClient({
         defaultOptions: { queries: { staleTime: QUERY_STALE_TIME_MS } },
@@ -302,13 +295,10 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                 <SymbolPageHeading>
                     {t('page.6cd32e', { v0: displayName })}
                 </SymbolPageHeading>
-                {/* sr-only 개요 문단(구 시안)은 삭제했다 — 0~100 점수·5단계 라벨·factor
-                    근거를 그대로 되풀이했고, 그 내용은 지금 아래 `FaqSection`의
-                    답변 3개가 화면에 보이는 텍스트로 이미 커버한다(크롤러에게 같은
-                    말을 두 번 하지 않는다). 화면에 실제로 보이던 "가이드" 카드도 같은
-                    이유로 지웠다 — 5-factor 설명·60일 신뢰도 문턱은 아래 답변 2·3과
-                    사실상 같은 문장이었다. 유일하게 답변으로 옮길 수 없던 내용(시장
-                    전체 지수로 가는 실제 이동 링크)만 아래 문단으로 남겨 둔다. */}
+                {/* 종목 탭 FAQ(지표 설명 3문항)는 2026-10-01에 걷어냈다 — 종목명만
+                    바뀌는 템플릿이라 이 탭의 공통 문장 비율(92%)을 끌어올리던 덩어리였다
+                    (`SEO_RECOVERY_2026_09.md` §10). 지표 일반 설명은 사이트 단위
+                    `/fear-greed` 허브가 맡고, 아래 문단이 그 허브로 보낸다. */}
                 <p className="text-sm leading-relaxed text-secondary-400">
                     {/* 상위 지수 링크는 이 종목이 속한 시장을 가리켜야 한다.
                         `/fear-greed/kr`이 생기기 전에는 둘 다 미국뿐이라
@@ -351,11 +341,6 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                         />
                     </ErrorBoundary>
                 </HydrationBoundary>
-                {/* 종목 탭은 FAQPage 마크업을 싣지 않는다 — 근거는 `FaqSection` JSDoc. */}
-                <FaqSection
-                    heading={tSeo('faqHeading.fear-greed', { v0: displayName })}
-                    items={faq}
-                />
                 <CrossLinkCards
                     symbol={ticker}
                     current="fear-greed"

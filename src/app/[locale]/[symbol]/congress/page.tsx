@@ -2,7 +2,6 @@ import { getTranslations } from 'next-intl/server';
 import { getCongressPageData } from '@/app/[locale]/[symbol]/congress/congressData';
 import { resolveLocale } from '@/shared/i18n/locales';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
-import { getCongressTradesResilient } from '@/entities/congress-trades/lib/getCongressTradesResilient';
 import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
 import { CongressDegraded } from '@/app/[locale]/[symbol]/congress/CongressDegraded';
 import { CongressTradesTable } from '@/widgets/congress/CongressTradesTable';
@@ -12,7 +11,6 @@ import { CongressSnapshotProse } from '@/views/symbol/snapshot/renderers/Congres
 import { hasCongressProse } from '@/views/symbol/snapshot/renderers/congressContent';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { FaqSection } from '@/shared/ui/FaqSection';
 import { type SymbolRouteParams } from '@/shared/config/market';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
@@ -21,15 +19,14 @@ import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import {
+    ALWAYS_NOINDEX_TAB_ROBOTS,
     buildBreadcrumbJsonLd,
     buildSymbolCongressSeoContent,
     buildSymbolSeoContent,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
     noindexSymbolMetadata,
-    type FaqItem,
 } from '@/shared/lib/seo';
-import { loadTabSnapshotMeta } from '@/app/[locale]/[symbol]/symbolSnapshotDescription';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
@@ -78,87 +75,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     });
     if (blockedMetadata) return blockedMetadata;
 
-    // 의회 거래 페이지는 종목이 실존해야 의미가 있다 — fundamental/financials와
-    // 동일한 profile 게이트로 존재성을 확인한다(같은 요청 내 React.cache + unstable_cache
-    // 공유라 추가 FMP round-trip 없음). 본문과 메타의 source-of-truth가 일치한다:
-    //   - profileDegraded(FMP 인프라 실패) → 본문은 degrade(200)를 렌더하므로 noindex.
-    //   - profile === null(실존하지 않는 종목) → 본문은 notFound()이므로 noindex.
-    // `displayName`을 가드보다 위에서 계산한다 — 아래 noindex 분기들도
-    // `noindexSymbolMetadata`에 넘겨야 차단된 페이지가 티커가 아니라 사명까지
-    // 담은 title/description을 갖는다. `buildDisplayName`은 순수 함수라 위치를
-    // 올려도 부작용이 없다.
     const displayName = assetInfo
         ? buildDisplayName(assetInfo, upper, locale)
         : upper;
-    const noindexOpts = {
-        displayName,
-        koreanName: assetInfo?.koreanName,
-        tab: 'congress' as const,
-    };
-
-    const { profile, degraded: profileDegraded } =
-        await getProfileResilient(upper);
-    if (profileDegraded || profile === null) {
-        return noindexSymbolMetadata(upper, tSeo, locale, noindexOpts);
-    }
-    // **financials와의 의도적 차이점**: 0건 자체는 정상(sparse 종목)이라, 그것만으로
-    // noindex하지 않는다. `degraded === true`(FMP 인프라 실패)는 noindex.
-    // getCongressTradesResilient는 React.cache로 메모이즈되므로 본문과 동일한 호출이 즉시 반환된다.
-    const { trades, degraded: tradesDegraded } =
-        await getCongressTradesResilient(upper);
-    if (tradesDegraded) {
-        return noindexSymbolMetadata(upper, tSeo, locale, noindexOpts);
-    }
     const seo = buildSymbolCongressSeoContent(upper, tSeo, {
         displayName,
         koreanName: assetInfo?.koreanName,
         englishName: assetInfo?.name,
         locale,
     });
-    const metadata = symbolMetadataFromSeo(seo, locale);
-
-    // snapshot-derived unique description (spec 2026-07-24 Task 8).
-    const { snap, description: snapshotDescription } =
-        await loadTabSnapshotMeta({
-            symbol: upper,
-            tab: 'congress',
-            revalidate,
-            locale,
-            displayName,
-            assetClass: 'equity',
-            tSeo,
-        });
-    // **thin-content 게이트.** 거래 0건이면서 AI 스냅샷도 없으면 본문에 종목 고유
-    // 텍스트가 거의 남지 않는다 — 2026-08 실측에서 `B`(1,059자)·`KEEL`(1,079자)이
-    // `index, follow`로 사이트맵에 올라 있었고, 크롬(내비·푸터·탭)이 650~750자라
-    // 실제 콘텐츠는 300~400자였다. `SITEMAP_SCOPE.md`가 2026-07 노출 붕괴의 기준선으로
-    // 기록한 677자와 같은 대역이다.
-    //
-    // 0건 **그 자체**는 여전히 정상 상태다. 렌더 가능한 프로즈가 있으면 0건이어도
-    // 색인한다 — 게이트는 "빈 상태 + 서술 없음"의 교집합에만 걸린다.
-    //
-    // 존재 여부(`snap !== undefined`)가 아니라 `hasCongressProse`로 판정하는 게 핵심이다.
-    // 본문(아래 `showCongressProse`)이 쓰는 것과 **같은** 술어여야 메타와 본문이 갈라지지
-    // 않는다. 내용이 빈/깨진 스냅샷 행이 남아 있으면 본문은 프로즈를 안 그리는데
-    // 메타만 색인 가능이 되어, 정확히 이 픽스가 겨냥한 thin 페이지가 색인된 채 남는다.
-    //
-    // `getSeoSnapshotsStatic`이 읽기 실패 시 `[]`로 fail-open하는 건 여기서 문제가 아니다:
-    // 본문이 같은 `unstable_cache` 호출을 공유하므로 실패하면 본문에도 프로즈가 없다 —
-    // 그 렌더의 페이지는 **실제로** thin이고, noindex가 맞는 판정이다.
-    //
-    // `NOINDEX_SYMBOL_METADATA`(canonical:null)를 쓰지 않는다. 그건 존재하지 않는
-    // 종목·degrade용이고, 이 페이지는 멀쩡히 살아 있으므로 self-canonical을 유지해야
-    // 한다. 제목·설명도 사용자(브라우저 탭)에게는 그대로 필요하다.
-    // (`follow`는 이제 둘 다 true다 — 2026-08-24에 상수 쪽 `follow:false`를 걷어냈다.
-    //  noindex 페이지에 nofollow를 얹으면 `CrossLinkCards`가 뿌리는 형제 탭 링크가
-    //  통째로 끊기는데, 그 결함이 차단된 심볼 페이지 전체에 걸려 있었다.)
-    if (trades.length === 0 && !hasCongressProse(snap?.content)) {
-        return { ...metadata, robots: { index: false, follow: true } };
-    }
-
-    return snapshotDescription
-        ? { ...metadata, description: snapshotDescription }
-        : metadata;
+    // **항상 noindex** (2026-10-01 SEO 감사, `SEO_RECOVERY_2026_09.md` §10).
+    // 프리웜이 이 탭의 산문을 더는 굽지 않는다(`PREWARM_TABS`). 예전 thin-content
+    // 게이트("거래 0건 + 산문 없음")는 산문 쪽이 항상 비게 되면서 거래 건수 하나로만
+    // 색인을 가르게 됐는데, 거래 목록은 숫자·이름만 바뀌는 표라 색인 근거가 못 된다.
+    return {
+        ...symbolMetadataFromSeo(seo, locale),
+        robots: ALWAYS_NOINDEX_TAB_ROBOTS,
+    };
 }
 
 export default async function CongressPage({ params }: Props) {
@@ -287,26 +220,6 @@ export default async function CongressPage({ params }: Props) {
         locale
     );
 
-    // FAQ — 화면 `FaqSection`과 FAQPage 구조화데이터의 단일 소스.
-    //
-    // 예전에 있던 `sr-only` 개요(STOCK Act 공시 설명)는 지웠다 — 숨긴 텍스트로만
-    // 크롤러에게 말하는 형태였고, 내용은 아래 첫 답변이 이미 화면에 보이는
-    // 텍스트로 말한다(공시 항목 자체는 `CongressTradesTable` 헤더가 보여 준다).
-    const faq: readonly FaqItem[] = [
-        {
-            question: tSeo('faq.congressMeaning', { v0: displayName }),
-            answer: t('page.1a9e0a'),
-        },
-        {
-            question: t('page.72cf41'),
-            answer: t('page.a916d9'),
-        },
-        {
-            question: tSeo('faq.congressBuySignal', { v0: displayName }),
-            answer: t('page.2c1d31'),
-        },
-    ];
-
     return (
         <>
             <JsonLd data={jsonLd} />
@@ -345,12 +258,6 @@ export default async function CongressPage({ params }: Props) {
                 />
 
                 <CongressTradesTable trades={trades} />
-                {/* 종목 탭은 FAQPage 마크업을 싣지 않는다 — 근거는 `FaqSection` JSDoc. */}
-
-                <FaqSection
-                    heading={tSeo('faqHeading.congress', { v0: displayName })}
-                    items={faq}
-                />
                 <CrossLinkCards symbol={upper} current="congress" />
             </main>
         </>

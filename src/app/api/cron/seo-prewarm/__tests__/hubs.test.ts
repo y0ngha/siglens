@@ -19,6 +19,9 @@ const mocks = vi.hoisted(() => ({
     selectAggregateNewsItems: vi.fn(),
     marketBriefingContextOf: vi.fn(),
     writeHubSsrSeed: vi.fn(),
+    ingestMarketNewsCategory: vi.fn(),
+    isCronIngestedRecently: vi.fn(),
+    markCronIngested: vi.fn(),
 }));
 
 vi.mock('next/cache', () => ({ revalidateTag: mocks.revalidateTag }));
@@ -47,8 +50,13 @@ vi.mock(
             typeof import('@/entities/market-news/api/marketNewsRepository')
         >()),
         getMarketNewsList: mocks.getMarketNewsList,
+        isCronIngestedRecently: mocks.isCronIngestedRecently,
+        markCronIngested: mocks.markCronIngested,
     })
 );
+vi.mock('@/entities/market-news/api/ingestMarketNewsCategory', () => ({
+    ingestMarketNewsCategory: mocks.ingestMarketNewsCategory,
+}));
 // 부분 목이다 — 전체 목이면 이 모듈에 export가 하나 생길 때마다 깨진다
 // (`isEnrichedRow`가 실제로 그랬다). MISTAKES.md §18.5.
 // 부분 목이다 — 전체 목이면 이 배럴에 export가 하나 생길 때마다 깨진다
@@ -117,6 +125,15 @@ function allSucceed(): void {
     mocks.getEconomySnapshot.mockResolvedValue({ snapshot: true });
     mocks.getMarketNewsList.mockResolvedValue([NEWS_ROW]);
     mocks.selectAggregateNewsItems.mockReturnValue([NEWS_ROW]);
+    mocks.isCronIngestedRecently.mockResolvedValue(false);
+    mocks.markCronIngested.mockResolvedValue(undefined);
+    mocks.ingestMarketNewsCategory.mockResolvedValue({
+        status: 'ok',
+        fetched: 1,
+        changed: 1,
+        analyzed: 1,
+        pending: 0,
+    });
     mocks.runBriefing.mockResolvedValue({ briefing: 'x' });
     mocks.runMacroBriefing.mockResolvedValue({ briefing: 'y' });
     mocks.runMarketNewsDigest.mockResolvedValue({ currentDriverKo: 'z' });
@@ -457,5 +474,114 @@ describe('runHubPrewarm', () => {
         expect(mocks.runMarketNewsDigest).toHaveBeenCalledWith(
             expect.objectContaining({ providerFallback: true })
         );
+    });
+});
+
+/**
+ * 다이제스트 전에 그 카테고리 기사를 적재한다(ingest-before-read).
+ *
+ * 예전엔 이 단계가 DB만 읽어, 방문이 없는 카테고리(`forex`·`articles`)는 몇 주씩
+ * 비었고 "다이제스트는 있는데 목록은 비어 있는" 화면도 나왔다.
+ */
+describe('runHubPrewarm — 뉴스 카테고리 적재', () => {
+    const categories = Object.keys(CATEGORY_CONFIG);
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        allSucceed();
+    });
+
+    it('카테고리마다 다이제스트를 읽기 전에 상한을 걸어 적재한다', async () => {
+        const order: string[] = [];
+        mocks.ingestMarketNewsCategory.mockImplementation(async () => {
+            order.push('ingest');
+            return {
+                status: 'ok',
+                fetched: 1,
+                changed: 1,
+                analyzed: 1,
+                pending: 0,
+            };
+        });
+        mocks.getMarketNewsList.mockImplementation(async () => {
+            order.push('read');
+            return [NEWS_ROW];
+        });
+
+        await runHubPrewarm();
+
+        expect(mocks.ingestMarketNewsCategory).toHaveBeenCalledTimes(
+            categories.length
+        );
+        for (const category of categories) {
+            expect(mocks.ingestMarketNewsCategory).toHaveBeenCalledWith(
+                category,
+                expect.objectContaining({ analyzeLimit: 8 })
+            );
+        }
+        // 카테고리마다 ingest → read 순서다.
+        expect(order).toEqual(categories.flatMap(() => ['ingest', 'read']));
+    });
+
+    it('적재가 끝나고 백로그가 없으면(ok, pending 0) 3시간 간격 플래그를 세운다', async () => {
+        await runHubPrewarm();
+
+        expect(mocks.markCronIngested).toHaveBeenCalledTimes(categories.length);
+        expect(mocks.markCronIngested).toHaveBeenCalledWith(
+            CATEGORY_CONFIG.forex.sentinel
+        );
+    });
+
+    it('보강 백로그가 남으면(pending > 0) 플래그를 세우지 않아 다음 tick에 이어 비운다', async () => {
+        mocks.ingestMarketNewsCategory.mockResolvedValue({
+            status: 'ok',
+            fetched: 50,
+            changed: 50,
+            analyzed: 8,
+            pending: 42,
+        });
+
+        await runHubPrewarm();
+
+        expect(mocks.markCronIngested).not.toHaveBeenCalled();
+    });
+
+    it('간격 안에 이미 적재했으면 적재를 건너뛰고 다이제스트만 굽는다', async () => {
+        mocks.isCronIngestedRecently.mockResolvedValue(true);
+
+        const result = await runHubPrewarm();
+
+        expect(mocks.ingestMarketNewsCategory).not.toHaveBeenCalled();
+        expect(mocks.runMarketNewsDigest).toHaveBeenCalledTimes(
+            categories.length
+        );
+        expect(result.failed).toBe(0);
+    });
+
+    it.each(['fetch-failed', 'write-failed', 'recently-fetched'] as const)(
+        '%s면 간격 플래그를 세우지 않는다 — 실패 하나가 3시간 공백이 되지 않게',
+        async status => {
+            mocks.ingestMarketNewsCategory.mockResolvedValue({ status });
+
+            await runHubPrewarm();
+
+            expect(mocks.markCronIngested).not.toHaveBeenCalled();
+        }
+    );
+
+    it('적재가 던져도 다이제스트는 DB 기사로 계속 굽는다(fail-open)', async () => {
+        mocks.ingestMarketNewsCategory.mockRejectedValue(new Error('db down'));
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+
+        const result = await runHubPrewarm();
+
+        expect(mocks.runMarketNewsDigest).toHaveBeenCalledTimes(
+            categories.length
+        );
+        expect(mocks.markCronIngested).not.toHaveBeenCalled();
+        expect(result.failed).toBe(0);
+        errorSpy.mockRestore();
     });
 });

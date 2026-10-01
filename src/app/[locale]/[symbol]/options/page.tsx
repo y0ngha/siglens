@@ -7,7 +7,6 @@ import { OptionsSnapshotProse } from '@/views/symbol/snapshot/renderers/OptionsS
 import { hasOptionsProse } from '@/views/symbol/snapshot/renderers/optionsContent';
 import { OptionsEmptyState } from '@/widgets/options/OptionsEmptyState';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { FaqSection } from '@/shared/ui/FaqSection';
 import { SymbolRouteParams } from '@/shared/config/market';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
@@ -24,15 +23,14 @@ import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import {
+    ALWAYS_NOINDEX_TAB_ROBOTS,
     buildBreadcrumbJsonLd,
     buildSymbolOptionsSeoContent,
     buildSymbolSeoContent,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
     noindexSymbolMetadata,
-    type FaqItem,
 } from '@/shared/lib/seo';
-import { loadTabSnapshotMeta } from '@/app/[locale]/[symbol]/symbolSnapshotDescription';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import {
     dehydrate,
@@ -116,28 +114,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         locale,
         hasOptions,
     });
-    const metadata = symbolMetadataFromSeo(seo, locale);
-
-    // snapshot-derived unique description (spec 2026-07-24 Task 8).
-    const { description: snapshotDescription } = await loadTabSnapshotMeta({
-        symbol: upper,
-        tab: 'options',
-        revalidate,
-        locale,
-        displayName,
-        assetClass: 'equity',
-        tSeo,
-    });
-    const description = snapshotDescription ?? metadata.description;
-
-    // 옵션 없는 종목은 본문 OptionsEmptyState에서 sibling 분석 페이지
-    // (차트/펀더멘털/뉴스 등)로 안내하므로, crawler가 그 internal link를
-    // 따라갈 수 있도록 follow는 true를 유지한다. noindex이지만 follow:true는
-    // "이 페이지는 색인 말고, 링크는 따라가라"는 정확한 의도 표현.
+    // **항상 noindex** (2026-10-01 SEO 감사, `SEO_RECOVERY_2026_09.md` §10).
+    // 프리웜이 이 탭의 산문을 더는 굽지 않는다(`PREWARM_TABS`). 산문이 빠지면 옵션
+    // 체인 수치표만 남아 색인 근거가 없다. 옵션 없는 종목도 같은 값이다 — 예전에도
+    // `follow`를 남겨 본문의 형제 탭 안내 링크를 크롤러가 따라가게 했다.
     return {
-        ...metadata,
-        description,
-        ...(hasOptions ? {} : { robots: { index: false, follow: true } }),
+        ...symbolMetadataFromSeo(seo, locale),
+        robots: ALWAYS_NOINDEX_TAB_ROBOTS,
     };
 }
 
@@ -315,35 +298,6 @@ export default async function OptionsPage({ params }: Props) {
         locale
     );
 
-    /**
-     * FAQ — 화면 `FaqSection`과 FAQPage 구조화데이터의 단일 소스.
-     *
-     * 첫 답변에 만기 요약을 붙인다. 예전에는 같은 내용이 화면에 보이지 않는
-     * `sr-only` 개요 문단으로 따로 있었는데, 답변과 거의 같은 문장이라 크롤러에게
-     * 같은 말을 두 번 하는 셈이었다 — 그 문단을 지우고 여기로 합쳤다.
-     */
-    const faq: readonly FaqItem[] = [
-        {
-            question: tSeo('faq.optionsScope', { v0: displayName }),
-            answer:
-                t('page.a32c23') +
-                (expirations.length > 0
-                    ? tSeo('faq.optionsExpirations', {
-                          v0: expirations.length,
-                          v1: expirations[0] ?? '',
-                      })
-                    : ''),
-        },
-        {
-            question: t('page.faa62c'),
-            answer: t('page.e70f2d'),
-        },
-        {
-            question: t('page.ec648e'),
-            answer: t('page.f865a7'),
-        },
-    ];
-
     return (
         <>
             <JsonLd data={jsonLd} />
@@ -396,11 +350,6 @@ export default async function OptionsPage({ params }: Props) {
                         hasSnapshotProse={showOptionsProse}
                     />
                 </HydrationBoundary>
-                {/* 종목 탭은 FAQPage 마크업을 싣지 않는다 — 근거는 `FaqSection` JSDoc. */}
-                <FaqSection
-                    heading={tSeo('faqHeading.options', { v0: displayName })}
-                    items={faq}
-                />
             </main>
         </>
     );

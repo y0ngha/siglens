@@ -9,7 +9,6 @@ import { OverallSnapshotProse } from '@/views/symbol/snapshot/renderers/OverallS
 import { hasOverallProse } from '@/views/symbol/snapshot/renderers/overallContent';
 import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
-import { FaqSection } from '@/shared/ui/FaqSection';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { DEFAULT_TIMEFRAME, SymbolRouteParams } from '@/shared/config/market';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
@@ -21,16 +20,15 @@ import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilie
 import { getNewsList } from '@/entities/news-article/api';
 import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article/lib/cacheKeys';
 import {
+    ALWAYS_NOINDEX_TAB_ROBOTS,
     buildBreadcrumbJsonLd,
     buildSymbolSeoContent,
     resolveSymbolOverallSeoContent,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
     noindexSymbolMetadata,
-    type FaqItem,
     type SeoTranslator,
 } from '@/shared/lib/seo';
-import { loadTabSnapshotMeta } from '@/app/[locale]/[symbol]/symbolSnapshotDescription';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import {
     getDescriptor,
@@ -50,107 +48,26 @@ import { notFound } from 'next/navigation';
 import { enterLocale } from '@/shared/lib/enterLocale';
 
 /**
- * H1과 FAQ가 market profile별로 갈라 쓰는 카피 번들.
+ * 종합 분석 페이지의 H1은 market profile별로 세 갈래로 갈린다 — 미국 개별주식·한국
+ * 개별주식·크립토. `MarketProfileId`(이미 3개 값으로 exhaustive)를 판별식 삼아 한 번에
+ * 고른다 — 새 market profile이 추가되면 `_exhaustive: never` 가드에서 컴파일 에러가 난다
+ * (MISTAKES.md §0.9, `sessionSpecFor`와 같은 패턴).
  *
- * `faq`는 화면 `<dl>`(FaqSection)이 쓰는 문답이다. 예전에는 같은 내용이 "안내 문단
- * 3개"와 "FAQ 답변 3개"로 두 벌 있었고, 문단만 화면에 보이고 답변은 마크업에만
- * 있었다 — 구글이 요구하는 "마크업한 Q&A가 페이지에 보일 것"을 어기면서 동시에
- * 같은 말을 두 번 하는 중복 콘텐츠이기도 했다. 문단의 고유한 내용은 답변에 흡수했다.
- * FAQPage 구조화데이터는 2026-09-17에 종목 탭에서 뺐다(아래 `FaqSection` 위 주석).
+ * 예전에는 FAQ 3문항도 같은 번들로 갈라 썼다. 종목명만 바뀌는 템플릿이라 2026-10-01에
+ * 걷어냈다(`SEO_RECOVERY_2026_09.md` §10).
  */
-interface OverallCopy {
-    heading: string;
-    faq: readonly FaqItem[];
-}
-
-// 질문 문구는 세 profile이 공유하고 답변만 갈린다. 시나리오가 깨지는 조건은
-// 미국·한국 주식이 같은 답을 쓰므로(실적·가이던스가 둘 다 있다) 리터럴을 하나만 둔다.
-// 카피는 `t`로 해석해 번들에 **문자열로** 담는다 — 키만 담으면 소비 지점
-// (H1·FaqSection)마다 네임스페이스를 알아야 하고, FAQ 항목은
-// `{question, answer}` 쌍이라 키 배열로는 짝을 표현할 수 없다.
-
-/**
- * 종합 분석 페이지의 카피(H1·FAQ 3건)는 market profile별로 세
- * 갈래로 갈린다 — 미국 개별주식(옵션 있음)·한국 개별주식(옵션 없음)·크립토
- * (펀더멘털·재무·옵션 자체가 없음). `isEquity ? (hasOptions ? A : B) : C` 3항
- * 중첩을 렌더 지점(H1, FAQ 답변)마다 반복하면 새 market
- * profile이 추가돼도 컴파일 에러 없이 기존 분기 중 하나로 조용히 흡수된다
- * (MISTAKES.md §0.9). `MarketProfileId`(이미 3개 값으로 exhaustive)를 판별식
- * 삼아 카피 번들을 한 번에 만들고, 각 렌더 지점은 이 번들의 필드만 읽는다 —
- * `sessionSpecFor`(shared/api/market/sessionSpecFor.ts)와 동일한
- * `_exhaustive: never` 가드 패턴.
- */
-function buildOverallCopy(
+function buildOverallHeading(
     marketProfile: MarketProfileId,
     displayName: string,
-    t: SeoTranslator,
-    tSeo: SeoTranslator
-): OverallCopy {
-    // 질문 문구는 세 profile이 공유하고 답변만 갈린다.
-    const axesQuestion = tSeo('faq.overallAxes', { v0: displayName });
-    const scenarioQuestion = tSeo('faq.overallScenarioQuestion');
-    const brokenQuestion = tSeo('faq.overallBrokenQuestion');
-    // 시나리오가 깨지는 조건은 미국·한국 주식이 같은 답을 쓴다(실적·가이던스가 둘 다 있다).
-    const equityBrokenAnswer = tSeo('faq.overallBrokenAnswerEquity');
-
+    t: SeoTranslator
+): string {
     switch (marketProfile) {
         case 'us-equity':
-            return {
-                heading: t('page.overallHeadingUsEquity', { v0: displayName }),
-                faq: [
-                    {
-                        question: axesQuestion,
-                        answer: tSeo('faq.overallAxesAnswerUsEquity', {
-                            v0: displayName,
-                        }),
-                    },
-                    {
-                        question: scenarioQuestion,
-                        answer: tSeo('faq.overallScenarioAnswerUsEquity'),
-                    },
-                    { question: brokenQuestion, answer: equityBrokenAnswer },
-                ],
-            };
+            return t('page.overallHeadingUsEquity', { v0: displayName });
         case 'kr-equity':
-            // 한국 개별주식: 옵션 시장이 없으므로(KR_EQUITY_DESCRIPTOR.tabs) 세
-            // 축(차트·실적·뉴스)만 다룬다 — 미국 주식 카피의 "옵션 시장"
-            // 문장을 실적/가이던스 문장으로 교체한다.
-            return {
-                heading: t('page.overallHeadingKrEquity', { v0: displayName }),
-                faq: [
-                    {
-                        question: axesQuestion,
-                        answer: tSeo('faq.overallAxesAnswerKrEquity', {
-                            v0: displayName,
-                        }),
-                    },
-                    {
-                        question: scenarioQuestion,
-                        answer: tSeo('faq.overallScenarioAnswerKrEquity'),
-                    },
-                    { question: brokenQuestion, answer: equityBrokenAnswer },
-                ],
-            };
+            return t('page.overallHeadingKrEquity', { v0: displayName });
         case 'crypto':
-            return {
-                heading: t('page.overallHeadingCrypto', { v0: displayName }),
-                faq: [
-                    {
-                        question: axesQuestion,
-                        answer: tSeo('faq.overallAxesAnswerCrypto', {
-                            v0: displayName,
-                        }),
-                    },
-                    {
-                        question: scenarioQuestion,
-                        answer: tSeo('faq.overallScenarioAnswerCrypto'),
-                    },
-                    {
-                        question: brokenQuestion,
-                        answer: tSeo('faq.overallBrokenAnswerCrypto'),
-                    },
-                ],
-            };
+            return t('page.overallHeadingCrypto', { v0: displayName });
         default: {
             // Exhaustiveness guard: 새 MarketProfileId가 추가되면 TypeScript가
             // 이 대입에서 컴파일 에러를 낸다 — sessionSpecFor와 동일 패턴.
@@ -158,7 +75,7 @@ function buildOverallCopy(
             console.error(
                 `[OverallPage] Unhandled MarketProfileId: ${String(_exhaustive)} — defaulting to us-equity copy`
             );
-            return buildOverallCopy('us-equity', displayName, t, tSeo);
+            return buildOverallHeading('us-equity', displayName, t);
         }
     }
 }
@@ -198,90 +115,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (!assetInfo)
         return noindexSymbolMetadata(upper, tSeo, locale, { tab: 'overall' });
 
-    // `displayName`을 가드보다 위에서 계산한다 — 아래 `!cachedOverall` noindex
-    // 분기도 `noindexSymbolMetadata`에 넘겨야 차단된 페이지가 티커가 아니라 사명까지
-    // 담은 title/description을 갖는다. `buildDisplayName`은 순수 함수라 위치를
-    // 올려도 부작용이 없다.
     const displayName = buildDisplayName(assetInfo, upper, locale);
-
     const assetClass = getDescriptor(marketProfileOf(assetInfo)).assetClass;
-    // snapshot-derived unique description (spec 2026-07-24 Task 8).
-    const { snap, description: snapshotDescription } =
-        await loadTabSnapshotMeta({
-            symbol: upper,
-            tab: 'overall',
-            revalidate,
-            locale,
-            displayName,
-            assetClass,
-            tSeo,
-            preferPlain: true,
-        });
-
-    // 라운드4 감사 finding 2: getBlockedSymbolMetadata는 `degraded === true`일
-    // 때만 hasProseForTab을 확인한다. 건강한(비degraded) 자산이라도 AI 분석이
-    // 아직 캐시되지 않았으면(배포 직후 ISR cold) 위 가드를 그냥 통과해
-    // index,follow + self-canonical을 내보내는 동안, 본문은 OverallFactualFallback
-    // (~1,250자 placeholder: "종합 AI 결론이 아직 캐시되지 않았습니다…")을 렌더했다.
-    // 본문은 두 소스(스냅샷 프로즈 `hasOverallProse`, peek 캐시 `cachedOverall` →
-    // `OverallFactsSummary`)가 **둘 다** 없을 때만 그 placeholder로 떨어진다 — 여기
-    // 게이트도 `degraded`가 아니라 그 두 소스로 판단해야 본문과 어긋나지 않는다.
-    // peek 키/인자는 아래 본문 호출과 동일해 같은 캐시 엔트리를 겨냥한다.
-    //
-    // **영향 범위와 되돌아오는 경로**(감사 라운드 4 리뷰): 스냅샷은 Postgres에 있어
-    // 배포로 사라지지 않는다 — 실측 시점에 `overall` 스냅샷 보유 심볼 287개 중 KR은
-    // 0개였으므로, 이 게이트에 걸리는 건 아직 프로즈가 없는 KR 20개뿐이고 그건 지금
-    // placeholder를 내보내는 바로 그 페이지들이다. 미국·크립토는 배포 직후 cold ISR
-    // 에서도 스냅샷을 읽어 색인 상태를 유지한다.
-    //
-    // 스냅샷이 들어오면 `revalidateTag('seo-snapshot:{SYM}')`가 이 항목을 깨는데,
-    // prewarm은 **전 탭이 fresh로 수렴할 때만** 그 태그를 쏜다(`runPrewarmBatch`).
-    // 그래서 overall만 채워지고 다른 탭 하나가 실패한 밤에는 noindex가 페이지
-    // `revalidate`(12h)까지 남는다 — 플레이스홀더를 색인시키는 것보다는 낫지만
-    // 공짜는 아니다.
-    if (!hasOverallProse(snap?.content)) {
-        const cachedOverall = await staticSymbolCache(
-            ['peek:overall', upper, DEEPSEEK_V4_1_FLASH_MODEL, locale],
-            upper,
-            () =>
-                peekOverallAnalysisCache(
-                    upper,
-                    assetInfo.name,
-                    DEFAULT_TIMEFRAME,
-                    DEEPSEEK_V4_1_FLASH_MODEL,
-                    false,
-                    undefined,
-                    undefined,
-                    locale
-                ),
-            [],
-            SECONDS_PER_HALF_DAY
-        ).catch((error: unknown) => {
-            console.error(
-                '[OverallPage.generateMetadata] peekOverallAnalysisCache failed:',
-                error
-            );
-            return null;
-        });
-        if (!cachedOverall) {
-            return noindexSymbolMetadata(upper, tSeo, locale, {
-                tab: 'overall',
-                displayName,
-                koreanName: assetInfo.koreanName,
-            });
-        }
-    }
-
     const seo = resolveSymbolOverallSeoContent(upper, assetClass, tSeo, {
         displayName,
         koreanName: assetInfo.koreanName,
         englishName: assetInfo.name,
         locale,
     });
-    const metadata = symbolMetadataFromSeo(seo, locale);
-    return snapshotDescription
-        ? { ...metadata, description: snapshotDescription }
-        : metadata;
+    // **항상 noindex** (2026-10-01 SEO 감사, `SEO_RECOVERY_2026_09.md` §10).
+    // 프리웜이 이 탭의 산문을 더는 굽지 않는다(`PREWARM_TABS`). 예전 게이트(스냅샷 산문
+    // 또는 peek 캐시가 있으면 색인)를 그대로 두면 **사용자 방문이 캐시를 채웠는지**에
+    // 따라 색인 여부가 날마다 뒤집힌다 — 크롤 시점의 우연이 색인 판정이 된다. 또 종합
+    // 결론은 다른 탭(차트·뉴스 등)의 요약이라, 같은 검색어를 두고 차트 페이지와 경쟁한다.
+    return {
+        ...symbolMetadataFromSeo(seo, locale),
+        robots: ALWAYS_NOINDEX_TAB_ROBOTS,
+    };
 }
 
 // `?tf=` is read by the client component (useSearchParams); canonical URL excludes it so search engines see one URL per page.
@@ -398,7 +248,7 @@ export default async function OverallPage({ params }: Props) {
     // 미국 종목과 같은 "옵션 시장" 문구를 그대로 노출하게 된다(SEO 감사 2026-08-18) —
     // tabs whitelist를 직접 물어 실제 옵션 탭 존재 여부로 판정한다.
     const hasOptions = getDescriptor(marketProfile).tabs.includes('options');
-    const copy = buildOverallCopy(marketProfile, displayName, t, tSeo);
+    const heading = buildOverallHeading(marketProfile, displayName, t);
     const { fullTitle, description, url } = resolveSymbolOverallSeoContent(
         upper,
         assetClass,
@@ -438,18 +288,12 @@ export default async function OverallPage({ params }: Props) {
         locale
     );
 
-    // FAQ 답변은 market profile별로 분기한다 — 크립토에는 옵션 시장·분기 실적·펀더멘털이
-    // 없고, 한국 개별주식은 옵션 시장만 없으므로 해당 문구가 포함된 답변을 그대로
-    // 노출하면 실재하지 않는 콘텐츠를 약속하게 된다. `copy`(buildOverallCopy)가
-    // marketProfile 하나로 세 답변을 모두 판별한다 — 판별식·가드 이유는 그 함수 JSDoc 참고.
-    // 아래 `FaqSection`이 같은 `copy.faq`를 화면에 그린다.
-
     return (
         <>
             <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
-                <SymbolPageHeading>{copy.heading}</SymbolPageHeading>
+                <SymbolPageHeading>{heading}</SymbolPageHeading>
                 {/* AI 스냅샷 프로즈는 Suspense fallback이 아니라 PERSISTENT server
                     sibling으로 마운트한다(audit fix — fallback 안에 두면 React가
                     boundary resolve 시 클라이언트에서 그 서브트리를 DESTROY한다:
@@ -510,11 +354,6 @@ export default async function OverallPage({ params }: Props) {
                         hasOptions={hasOptions}
                     />
                 </Suspense>
-                {/* 종목 탭은 FAQPage 마크업을 싣지 않는다 — 근거는 `FaqSection` JSDoc. */}
-                <FaqSection
-                    heading={tSeo('faqHeading.overall', { v0: displayName })}
-                    items={copy.faq}
-                />
                 <CrossLinkCards
                     symbol={upper}
                     current="overall"

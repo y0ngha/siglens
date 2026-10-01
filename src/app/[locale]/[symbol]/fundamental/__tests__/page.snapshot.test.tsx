@@ -132,7 +132,7 @@ import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
-import { expectVisibleFaqWithoutJsonLd } from '@/__tests__/utils/expectFaqSingleSource';
+import { expectNoFaq } from '@/__tests__/utils/expectFaqSingleSource';
 import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';
 
 const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);
@@ -226,7 +226,7 @@ describe('FundamentalPage — SEO snapshot prose (Task 7b)', () => {
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        expectVisibleFaqWithoutJsonLd(tree);
+        expectNoFaq(tree);
     });
 
     /**

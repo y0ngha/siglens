@@ -1,31 +1,24 @@
 import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { SYMBOL_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 import { sitemapAlternates } from './sitemapAlternates';
-import {
-    CURATED_KOREAN_NAMES,
-    POPULAR_TICKERS,
-} from '@/shared/config/popular-tickers';
+import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { MS_PER_HOUR } from '@/shared/config/time';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
-import { POPULAR_OPTIONS_TICKERS } from '@/shared/config/popular-options-tickers';
 import { SITE_URL } from '@/shared/lib/seo';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
-import { classifyAsset } from '@/entities/ticker/lib/assetClassification';
 import { floorToHour } from './floorToHour';
 // 게이트 정의(탭 목록·옵션 타입)는 `proseGate.ts`가 소유한다 — 크립토 빌더와
 // `server.ts`도 거기서 직접 가져온다.
 import { makeProseGate, type BuildPopularEntriesOptions } from './proseGate';
 import type { SitemapEntry } from '../model';
 
-const POPULAR_OPTIONS_SET = new Set<string>(POPULAR_OPTIONS_TICKERS);
-
 /**
  * 종목 sitemap 엔트리에 다국어 대체본을 붙인다.
  *
- * 엔트리마다 손으로 `alternates`를 적지 않는 이유는 이 빌더가 티커당 8~9개
- * 엔트리를 만들고 분기(ETF·KR·옵션)마다 리터럴이 흩어져 있어서다 — 한 곳만
- * 빠뜨려도 그 탭만 조용히 hreflang을 잃는다. 마지막에 일괄로 붙인다.
+ * 엔트리마다 손으로 `alternates`를 적지 않는 이유는 분기(산문 게이트 등)마다
+ * 리터럴이 흩어지면 한 곳만 빠뜨려도 그 탭만 조용히 hreflang을 잃기 때문이다.
+ * 마지막에 일괄로 붙인다.
  *
  * `SYMBOL_INDEXABLE_LOCALES`가 기본 로케일 하나인 동안에는 `sitemapAlternates`가
  * `undefined`를 돌려 XML이 지금과 바이트 단위로 동일하다.
@@ -41,23 +34,26 @@ function withSymbolAlternates(entries: SitemapEntry[]): SitemapEntry[] {
 }
 
 /**
- * POPULAR_TICKERS의 색인 대상 sub-route(차트/뉴스/펀더멘털/재무제표/옵션/종합/의회거래)에
- * 대한 sitemap 엔트리를 반환한다. 공포탐욕·내위치 탭은 항상 noindex라 싣지 않는다.
- * 종합·뉴스·의회거래는 스냅샷 산문이 있는 종목만 싣는다({@link BuildPopularEntriesOptions}) —
- * 세 탭 모두 산문이 없으면 noindex다(대상 탭은 `lib/proseGate.ts`의
- * `PROSE_GATED_SITEMAP_TABS`). 재무제표는 stock으로 분류된 티커만(ETF는 재무제표가
- * 없어 noindex), 옵션 페이지는 generated static list에 포함된 미국 티커만 포함 —
- * noindex인 종목 페이지를 sitemap에 두면 품질 신호가 약해진다.
+ * POPULAR_TICKERS의 색인 대상 sub-route(차트/뉴스/공포탐욕)에 대한 sitemap 엔트리를
+ * 반환한다.
+ *
+ * **종목당 세 탭뿐이다** (2026-10-01 SEO 감사, `docs/architecture/SEO_RECOVERY_2026_09.md`
+ * §10). 종합·펀더멘털·재무제표·옵션·의회거래 다섯 탭은 페이지가 항상 noindex다
+ * (`ALWAYS_NOINDEX_TAB_ROBOTS`) — 프리웜이 그 탭의 산문을 더는 굽지 않고, 종목당 산문
+ * 페이지 5~7개가 "AI 생성 프로그래매틱 금융 사이트" 판정의 분모였다. 내위치 탭도 항상
+ * noindex다(2026-09-11). noindex URL을 sitemap에 실으면 크롤 예산만 태우고 GSC 오류가
+ * 된다. 탭을 다시 열 때는 페이지의 noindex를 걷어내고 여기에 엔트리를 되돌린다.
+ *
+ * 뉴스는 스냅샷 산문이 있는 종목만 싣는다({@link BuildPopularEntriesOptions}) — 산문이
+ * 없으면 noindex일 수 있다(대상 탭은 `lib/proseGate.ts`의 `PROSE_GATED_SITEMAP_TABS`).
  *
  * `lastmod`는 `lastClosedSessionCloseUtc` — **마지막으로 마감된 정규 세션의 마감
  * 순간**이다. 국내 상장 종목은 KRX 세션(15:30 KST), 나머지는 NYSE 세션(16:00 ET,
  * 반장은 13:00)으로 각각 계산한다. 한 벌만 쓰면 한국 종목 lastmod가 미국 마감 시각으로
  * 나가고, NYSE 휴장일(KRX는 개장)에는 하루 전으로 되감겨 실제보다 오래된 신호를 준다.
- * 이전에는 "오늘 20:00 UTC(미래면 어제로 클램프)"를 직접 계산했는데,
- * 요일을 보지 않아 **토·일에는 열리지도 않은 장의 마감 시각**을 lastmod로 발행했다
- * (토 20:00 UTC 이후 크롤되면 1800여 URL이 전부 그렇게 나간다). 또 DST를 무시해
- * 겨울에는 실제 마감보다 1시간 일렀다. 공유 헬퍼는 주말 되감기와 DST를 모두 처리하고,
- * bars EOD 캐시 키가 쓰는 것과 같은 "마지막 마감 세션" 정의를 공유한다.
+ * 공유 헬퍼는 주말 되감기와 DST를 모두 처리하고, bars EOD 캐시 키가 쓰는 것과 같은
+ * "마지막 마감 세션" 정의를 공유한다. 공포탐욕 탭도 같은 일봉으로 계산되므로 같은
+ * 값을 쓴다.
  *
  * `/{ticker}/news`만 1시간 슬라이딩을 유지한다 — 뉴스는 실제로 시간 단위로 바뀌고
  * on-demand `revalidateTag`가 ISR 창 안에서도 갱신하므로 슬라이딩이 사실에 가깝다.
@@ -76,25 +72,7 @@ export function buildPopularEntries(
 
     return withSymbolAlternates(
         POPULAR_TICKERS.flatMap((ticker): SitemapEntry[] => {
-            const isKr = isKrEquitySymbol(ticker);
-            const todayClose = isKr ? krClose : usClose;
-            // ETF(SPY, TQQQ, ...)는 재무제표가 없다 — financials 페이지는
-            // isEmptyFinancialsSnapshot으로 noindex를 반환한다(`[symbol]/financials/page.tsx`).
-            // noindex URL을 sitemap에 실으면 크롤 예산만 태우고 품질 신호가 나빠지므로
-            // stock으로 분류된 티커만 `/financials` 엔트리를 낸다.
-            //
-            // `name`을 반드시 넘겨야 한다 — `classifyAsset`의
-            // `isKrEquitySymbol(symbol) && isKrEtfName(name)` 분기는 `name`이 없으면
-            // 절대 참이 될 수 없다(`isKrEtfName(undefined)`는 항상 false). 이 인자를
-            // 빼먹으면 KODEX/TIGER 같은 국내 ETF도 전부 `stock`으로 떨어져
-            // `/financials`가 열리고, 그 페이지는 재무제표가 없어 영구 noindex다
-            // (assetClassification.ts JSDoc이 경고하는 바로 그 시나리오).
-            const isStock =
-                classifyAsset(
-                    ticker,
-                    undefined,
-                    CURATED_KOREAN_NAMES.get(ticker)
-                ) === 'stock';
+            const todayClose = isKrEquitySymbol(ticker) ? krClose : usClose;
             return [
                 {
                     url: `${SITE_URL}/${ticker}`,
@@ -107,93 +85,24 @@ export function buildPopularEntries(
                           {
                               url: `${SITE_URL}/${ticker}/news`,
                               lastModified: oneHourAgo,
-                              // 아래 options/congress 분기와 같은 이유로 `as const`가 필요하다.
+                              // ternary 안의 inline array literal은 outer flatMap의
+                              // SitemapEntry[] annotation이 닿지 않아 'hourly'가 string
+                              // 으로 widening된다 — `as const`로 좁힌다.
                               changeFrequency: 'hourly' as const,
                               priority: 0.78,
                           },
                       ]
                     : []),
+                // 공포탐욕 탭은 2026-10-01부터 색인한다(`[symbol]/fear-greed/page.tsx`
+                // generateMetadata 주석). 봉이 없는 종목은 페이지가 `no-price-data`로
+                // noindex지만, 그런 종목은 화이트리스트에서 정리해 왔다(2026-09-17
+                // 15종 제거) — 차트 엔트리와 같은 조건이다.
                 {
-                    url: `${SITE_URL}/${ticker}/fundamental`,
+                    url: `${SITE_URL}/${ticker}/fear-greed`,
                     lastModified: todayClose,
-                    changeFrequency: 'weekly',
+                    changeFrequency: 'daily',
                     priority: 0.75,
                 },
-                ...(isStock
-                    ? [
-                          {
-                              url: `${SITE_URL}/${ticker}/financials`,
-                              lastModified: todayClose,
-                              // 아래 options/congress 분기와 같은 이유로 `as const`가 필요하다.
-                              changeFrequency: 'monthly' as const,
-                              priority: 0.73,
-                          },
-                      ]
-                    : []),
-                // options: 미국 개별주식만 옵션 시장이 있다(POPULAR_OPTIONS_SET이 FMP 미국
-                // 옵션 유니버스에서 생성됨). 한국 종목이 우연히 그 목록에 없는 것은 생성기의
-                // 데이터 소스 특성일 뿐 의도적 배제가 아니었다 — `isKr` 가드로 명시한다
-                // (KR_EQUITY_DESCRIPTOR.tabs에 애초에 options가 없다).
-                ...(!isKr && POPULAR_OPTIONS_SET.has(ticker)
-                    ? [
-                          {
-                              url: `${SITE_URL}/${ticker}/options`,
-                              lastModified: todayClose,
-                              // ternary 안의 inline array literal은 outer flatMap의
-                              // SitemapEntry[] annotation이 닿지 않아 'daily'가 string
-                              // 으로 widening된다. 런타임 값은 항상 'daily'(=valid
-                              // SitemapChangeFrequency)이므로 `as const`로 좁혀 safe.
-                              changeFrequency: 'daily' as const,
-                              priority: 0.75,
-                          },
-                      ]
-                    : []),
-                ...(hasProse(ticker, 'overall')
-                    ? [
-                          {
-                              url: `${SITE_URL}/${ticker}/overall`,
-                              lastModified: todayClose,
-                              // 아래 options/congress 분기와 같은 이유로 `as const`가 필요하다.
-                              changeFrequency: 'weekly' as const,
-                              priority: 0.85,
-                          },
-                      ]
-                    : []),
-                // `/fear-greed`는 싣지 않는다 — 종목별 공포·탐욕 탭은 항상 noindex다
-                // (2026-09-17 운영 렌더 감사: 종목 간 본문의 92%가 숫자만 바뀌는 공통
-                // 문장, `[symbol]/fear-greed/page.tsx` generateMetadata 주석 참고).
-                //
-                // `/position`은 싣지 않는다 — 페이지가 항상 noindex다(2026-09-11 SEO
-                // 회복 감사, `[symbol]/position/page.tsx` generateMetadata 주석 참고).
-                // PR #791이 "index인데 sitemap에 없다"며 402 URL을 더했는데, 그 탭의 SSR
-                // 고유 텍스트는 868~1,222자 템플릿 문장뿐이라 색인 대상에서 뺐다.
-                // noindex URL을 sitemap에 실으면 크롤 예산만 태운다(아래 congress 주석과
-                // 같은 근거).
-                //
-                // 국내 상장 종목은 공직자 매매 공시 제도가 없어 `/congress`가 not-found
-                // UI + noindex로 나간다(`KR_EQUITY_DESCRIPTOR.tabs`에서 제외). 상태 코드는
-                // 200이다 — `notFound()`가 부모 `loading.tsx`의 Suspense 안에서 던져지기
-                // 때문이고, 그 계약은 `e2e/specs/kr-equity-seo.spec.ts`가 고정한다.
-                // noindex URL을 sitemap에 실으면 크롤 예산만 태우고 색인 품질 신호가
-                // 나빠지므로 제외한다.
-                //
-                // ⚠️ 2026-08 감사가 "`isStock`도 함께 걸면 레버리지 ETF의 thin한 congress를
-                // 공짜로 뺄 수 있다"고 제안했으나 **실측으로 반증됐다.** 비-주식 12개 중
-                // SPY(7,760자)·VTI(7,338)·QQQ(6,105)·IWM(5,674)·DIA(4,793)·TQQQ(2,148)은
-                // 내용이 충분하다 — 의원들이 광범위 ETF를 실제로 매매하므로 공시가 존재한다.
-                // thin한 건 레버리지·인버스 6종(LABU/NVDL/SOXL/SOXS/SQQQ/TSLL, 1,095~1,171자)
-                // 뿐이다. 자산 분류로는 그 둘을 가를 수 없으므로 `isStock`을 걸지 않는다.
-                ...(isKr || !hasProse(ticker, 'congress')
-                    ? []
-                    : [
-                          {
-                              url: `${SITE_URL}/${ticker}/congress`,
-                              lastModified: todayClose,
-                              // 위 options 분기와 같은 이유로 `as const`가 필요하다.
-                              changeFrequency: 'weekly' as const,
-                              priority: 0.75,
-                          },
-                      ]),
             ];
         })
     );
