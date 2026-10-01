@@ -603,9 +603,6 @@
 - Violation: A new exported constant's JSDoc was inserted between an existing JSDoc block and its declaration, orphaning the old doc
   - Rule: JSDoc blocks must remain directly above their declarations; inserting new docs between them breaks the association
   - Context: src/shared/lib/seo.ts — moved the old JSDoc back directly above NOINDEX_SYMBOL_METADATA
-- Violation: getBlockedSymbolMetadata still performed a snapshot DB read whose result could no longer change the outcome for the five tabs made always-noindex
-  - Rule: Optimization — remove redundant operations that no longer affect the outcome
-  - Context: Added isPrewarmTab and skip the read for non-prewarm tabs
 - Status (Round 2): APPROVED (zero findings)
 
 ## [Round 1 | claude/magical-sagan-56eoov (news category cron ingestion + cacheNonEmpty) | 2026-10-01]
@@ -618,9 +615,6 @@
 - Violation: Time-budget comment claimed a cron unit doing ingest (capped) + analysis (8) + sequential translations (3) could fit 45s timeout; real worst case ~65-70s
   - Rule: (new) when a unit chains several capped LLM steps under a timeout, budget = sum of each step's worst case; document it next to the caps
   - Context: lowered caps (4, 1) and corrected the budget math in comments
-- Violation: A target whose inner functions already revalidate the tag also returned 'generated', so the runner revalidated again (plus pointless Redis getdel)
-  - Rule: (new) Optimization — remove redundant operations that no longer affect the outcome
-  - Context: added HubTarget.selfInvalidating flag to prevent duplicate revalidation
 - Violation: Hard-coded count ("eleven targets") in comment derived from config
   - Rule: MISTAKES.md §15 — magic numbers in comments must reference the constant
   - Context: replaced with reference to config length
@@ -644,3 +638,9 @@
   - Rule: MISTAKES.md 6.5/6.9 — mirrored constants drift; type-annotated mirrors with exhaustiveness guards prevent drift
   - Context: Added `satisfies readonly StrategyOverlayKind[]` to OVERLAY_KINDS; added mirror note in types.ts; validate-skills.ts exit-conditions doc updated with new overlay_kind rule reference.
 - Status: APPROVED (round 2, zero findings)
+
+## [PR #903 claude-review | fix/strategy-overlay-kind | 2026-10-01]
+- Violation: STRATEGY_OVERLAY_KINDS (api.ts) and OVERLAY_KINDS (validate-skills.ts) were two copies of the same list — guarded but still duplicated
+  - Rule: MISTAKES.md 6.9 — duplicated logic/constants across multiple locations without shared source
+  - Context: core v2.4.0 now exports STRATEGY_OVERLAY_KINDS; both files import it and the duplicate copies + exhaustiveness guards were removed. core pin 2.3.1 → 2.4.0. skills/CLAUDE.md wording corrected (a prompt-side fix was A/B-tested and shelved, so the doc no longer claims the prompt instructs the model).
+- Status: APPROVED (zero findings)

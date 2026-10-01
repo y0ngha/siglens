@@ -560,6 +560,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ return 'alreadyFresh' only for "value confirmed in cache"; separate return 'cooldown' for "skipped due to gate"; separate return 'failed' for "ingest or analysis error"
     ✅ Each distinct input path (success, error, skip, cooldown) has its own status so callers can branch correctly
     → Recurring: feat/hub-briefing-ssr-seed Round 1 + PR #900 Round 1 — 2 occurrences
+
+31. Operations that no longer affect the outcome must be removed after refactoring
+    → When refactoring, if a condition changes such that an operation (DB read, cache check, revalidation, computation) can no longer change the outcome, remove it
+    → Dead operations hide intent, waste resources, and become a source of confusion in future maintenance (why is this code here?)
+    → When refactoring narrows behavior (e.g., a route always takes one path now), audit the narrowed path for operations that were necessary before but are now guaranteed to produce no side effect
+    → Applies to: redundant cache checks, unnecessary revalidations, reads that can never be used, computations that can never be acted upon
+    ❌ All tabs made always-noindex; getBlockedSymbolMetadata() still performs DB snapshot read, but result cannot change route metadata outcome
+    ❌ HubTarget revalidates its tag; inner functions already revalidate themselves; runner revalidates again; triple revalidation on same tag
+    ✅ After narrowing to always-noindex: remove getBlockedSymbolMetadata() read, use isPrewarmTab to skip tab entirely; audit call sites for stale dependencies
+    ✅ HubTarget.selfInvalidating flag prevents duplicate revalidation; revalidation happens once in inner function, not re-run by caller
+    → Recurring: claude/magical-sagan-56eoov (SEO prewarm reduction), PR #900 (hub briefing) — 2 occurrences
 ```
 
 ---

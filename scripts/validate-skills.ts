@@ -39,6 +39,7 @@ import matter from 'gray-matter';
 import {
     getCandlePatternLabel,
     getMultiCandlePatternLabel,
+    STRATEGY_OVERLAY_KINDS,
 } from '@y0ngha/siglens-core';
 import type {
     CandlePattern,
@@ -47,7 +48,6 @@ import type {
     SkillStateFeature,
     SkillStatePredicateKind,
     SkillUsageRole,
-    StrategyOverlayKind,
 } from '@y0ngha/siglens-core';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -413,27 +413,10 @@ function validateDisplayColor(display: unknown): string | null {
         : `\`display.chart.color\` must be a 6-digit hex color like "#26a69a" (got ${String(color)}).`;
 }
 
-/**
- * Mirror of STRATEGY_OVERLAY_KINDS in src/entities/skill/api.ts (and
- * siglens-core's domain/overlays/constants). The satisfies + exhaustiveness
- * guard fail the build here if this copy drifts behind the core union.
- */
-const OVERLAY_KINDS = [
-    'divergence',
-    'fibonacci',
-    'elliott',
-] as const satisfies readonly StrategyOverlayKind[];
-
-type MissingOverlayKind = Exclude<
-    StrategyOverlayKind,
-    (typeof OVERLAY_KINDS)[number]
->;
-const _overlayKindsAreExhaustive: MissingOverlayKind extends never
-    ? true
-    : never = true;
-void _overlayKindsAreExhaustive;
-
-const OVERLAY_KIND_SET: ReadonlySet<string> = new Set<string>(OVERLAY_KINDS);
+// core's own list — no copy to drift (siglens #903 review suggestion).
+const OVERLAY_KIND_SET: ReadonlySet<string> = new Set<string>(
+    STRATEGY_OVERLAY_KINDS
+);
 
 /** `overlay_kind`는 전략 스킬 전용이고 값이 틀리면 core가 그 전략 작도를 전부 버린다 —
  * 오타가 "작도가 조용히 사라짐"으로만 드러나지 않게 빌드에서 막는다. */
@@ -443,7 +426,7 @@ function validateOverlayKind(type: unknown, raw: unknown): string | null {
         return '`overlay_kind` is only allowed on type: strategy';
     return typeof raw === 'string' && OVERLAY_KIND_SET.has(raw)
         ? null
-        : `\`overlay_kind\` must be one of ${OVERLAY_KINDS.join(' | ')} (got ${String(raw)}).`;
+        : `\`overlay_kind\` must be one of ${STRATEGY_OVERLAY_KINDS.join(' | ')} (got ${String(raw)}).`;
 }
 
 /**

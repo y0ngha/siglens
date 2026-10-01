@@ -14,6 +14,7 @@ import type {
     SkillUsageRole,
     StrategyOverlayKind,
 } from '@y0ngha/siglens-core';
+import { STRATEGY_OVERLAY_KINDS } from '@y0ngha/siglens-core';
 import { countSkillsByType } from '@/shared/lib/skillUtils';
 import type { SkillsProvider } from './model';
 
@@ -209,27 +210,12 @@ void _usageRolesAreExhaustive;
 
 const USAGE_ROLE_SET: ReadonlySet<string> = new Set(USAGE_ROLE_ORDER);
 
-const STRATEGY_OVERLAY_KINDS = [
-    'divergence',
-    'fibonacci',
-    'elliott',
-] as const satisfies readonly StrategyOverlayKind[];
-
-// Exhaustiveness guard: a new core StrategyOverlayKind not mirrored above
-// would otherwise be dropped here, and that strategy would draw nothing.
-type MissingOverlayKind = Exclude<
-    StrategyOverlayKind,
-    (typeof STRATEGY_OVERLAY_KINDS)[number]
->;
-const _overlayKindsAreExhaustive: MissingOverlayKind extends never
-    ? true
-    : never = true;
-void _overlayKindsAreExhaustive;
-
 /**
  * `overlay_kind` frontmatter → `Skill.overlayKind` — the one chart overlay
  * kind a strategy card may draw (core `resolveChartOverlays` drops the rest).
- * Unknown values become `undefined`, so that strategy draws nothing.
+ * Unknown values become `undefined`, so that strategy draws nothing. The
+ * allowed list is core's `STRATEGY_OVERLAY_KINDS`, so a new kind needs no
+ * change here.
  *
  * Mirror of `parseOverlayKind` in siglens-core's infrastructure/skills/loader.
  */

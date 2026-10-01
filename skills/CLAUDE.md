@@ -51,7 +51,7 @@ All keys are **snake_case**; the loader maps them to camelCase `Skill` fields.
 | `gating.state` | `state` only | `{ feature, predicate }` | must be one of the valid pairs below; optional `hi`/`lo` numeric thresholds |
 | `token_cost` | top-level | number | **measured token estimate of the skill's `PROMPT_DIGEST` section** (`Math.ceil(digestText.length / 4)`) — maintained by `yarn skills:digest-update`, checked by `yarn skills:digest-verify`. See [PROMPT_DIGEST markers](#prompt_digest-markers) below. Do not hand-set it. |
 | `smc_full_guide` | top-level | `true` | **SMC full-guide skill only** — identifies it so a compressed note can replace it |
-| `overlay_kind` | top-level | `divergence` \| `fibonacci` \| `elliott` | **`type: strategy` only** — the one chart overlay kind this strategy's card may draw. core drops any other kind the model cites, and a strategy without it draws nothing (the chart menu names a drawing after its card, so an Elliott card citing a Fibonacci ladder looked like a broken Elliott drawing). |
+| `overlay_kind` | top-level | `divergence` \| `fibonacci` \| `elliott` | **`type: strategy` only** — the one chart overlay kind this strategy's card may draw. core drops any other kind the model cites, and a strategy without it draws nothing (the chart menu names a drawing after its card, so an Elliott card citing a Fibonacci ladder looked like a broken Elliott drawing). A cross-kind id is dropped rather than shown under a kind-named item — decision and rationale in siglens-core `resolveChartOverlays` (`strategySlotKinds` JSDoc) (a prompt-side fix was A/B-tested and shelved — it did not increase drawn ladders). |
 
 ## confidence_weight
 
