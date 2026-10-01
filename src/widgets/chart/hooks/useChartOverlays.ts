@@ -12,6 +12,7 @@ import {
 } from 'lightweight-charts';
 import type { OverlayLineSpec } from '../utils/chartOverlayUtils';
 import { DEFAULT_LINE_WIDTH } from '../constants';
+import { createRightExtendPrimitive } from '../utils/rightExtendPrimitive';
 
 /** lightweight-charts `LineWidth` 상한. */
 const MAX_LINE_WIDTH = 4;
@@ -40,6 +41,7 @@ interface UseChartOverlaysParams {
 /**
  * `chartOverlays[]`(패턴·추세선·다이버전스·피보나치·엘리어트)를 `LineSeries`로
  * 그린다. 하나의 스펙 = 선분 하나(2점) 또는 레벨 하나(수평선) = 시리즈 하나.
+ * 레벨 스펙(`extendRight`)은 primitive로 마지막 봉 ~ 가격축 앞까지 덧그린다.
  *
  * 라벨(HS의 LS/H/RS 등)은 선분/레벨 시리즈 위가 아니라 **라벨 전용 투명
  * 시리즈**에 마커로 단다 — 라벨 시각이 선분의 두 끝점 밖일 수 있어(예: 헤드
@@ -59,21 +61,20 @@ export function useChartOverlays({
 
         const created = specs
             .map(spec => {
+                // lightweight-charts `LineWidth`는 1~4 리터럴이다 — 양 끝을 잘라
+                // 그 범위를 보장하므로 캐스트가 안전하다(강조 배수·기본 두께가
+                // 커져도 5 이상이 새지 않는다).
+                const resolvedWidth = Math.min(
+                    MAX_LINE_WIDTH,
+                    Math.max(1, Math.round(lineWidth * spec.lineWidthMult))
+                ) as 1 | 2 | 3 | 4;
+                const color = withOpacity(spec.color, spec.opacity);
                 const series = chart.addSeries(
                     LineSeries,
                     {
                         ...OVERLAY_SERIES_OPTIONS,
-                        color: withOpacity(spec.color, spec.opacity),
-                        // lightweight-charts `LineWidth`는 1~4 리터럴이다 — 양 끝을 잘라
-                        // 그 범위를 보장하므로 캐스트가 안전하다(강조 배수·기본 두께가
-                        // 커져도 5 이상이 새지 않는다).
-                        lineWidth: Math.min(
-                            MAX_LINE_WIDTH,
-                            Math.max(
-                                1,
-                                Math.round(lineWidth * spec.lineWidthMult)
-                            )
-                        ) as 1 | 2 | 3 | 4,
+                        color,
+                        lineWidth: resolvedWidth,
                         lineStyle: spec.dashed
                             ? LineStyle.Dashed
                             : LineStyle.Solid,
@@ -87,6 +88,18 @@ export function useChartOverlays({
                         value: p.value,
                     }))
                 );
+                if (spec.extendRight) {
+                    const [, end] = spec.points;
+                    series.attachPrimitive(
+                        createRightExtendPrimitive({
+                            startTime: end.time,
+                            price: end.value,
+                            color,
+                            lineWidth: resolvedWidth,
+                            dashed: spec.dashed,
+                        })
+                    );
+                }
 
                 if (spec.markers.length === 0) return [series];
 

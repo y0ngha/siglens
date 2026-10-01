@@ -32,6 +32,8 @@ export interface OverlayLineSpec {
     /** 레벨 라벨(가격축 옆 title). */
     title: string;
     markers: OverlayMarker[];
+    /** 마지막 봉 ~ 가격축 앞까지 덧그릴지(수평 레벨만). */
+    extendRight: boolean;
 }
 
 export interface OverlayLineSpecOptions {
@@ -48,6 +50,8 @@ export interface OverlayLineSpecOptions {
     /** RSI 패인이 꺼져 있으면 null. */
     rsiPaneIndex: number | null;
     colorFor: (overlay: ChartOverlay, role: string) => string;
+    /** 수평 레벨을 가격축 앞까지 연장 — 사용자 설정(기본 켜짐). */
+    extendLevelsRight: boolean;
     /** core가 내보내는 레벨 라벨(`breakout`, `61.8%` …)을 화면 문구로 바꾼다. 없으면 그대로. */
     levelLabelFor?: (label: string) => string;
 }
@@ -163,6 +167,7 @@ export function buildOverlayLineSpecs(
                         lineWidthMult,
                         title: '',
                         markers: [],
+                        extendRight: false,
                     },
                 ];
             }
@@ -185,6 +190,7 @@ export function buildOverlayLineSpecs(
                               ? opts.levelLabelFor(l.label)
                               : l.label,
                           markers: [],
+                          extendRight: opts.extendLevelsRight,
                       },
                   ]
         );

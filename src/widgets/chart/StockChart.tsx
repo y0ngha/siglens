@@ -49,7 +49,8 @@ import { usePaneLabels } from './hooks/usePaneLabels';
 import { usePricePaneSize } from './hooks/usePricePaneSize';
 import { usePricePaneStretch } from './hooks/usePricePaneStretch';
 import { useOverlayLegend } from './hooks/useOverlayLegend';
-import { DEFAULT_LINE_WIDTH } from './constants';
+import { DEFAULT_LINE_WIDTH, STORAGE_KEYS } from './constants';
+import { usePersistentState } from '@/shared/hooks/usePersistentState';
 import { useIndicatorVisibility } from './hooks/useIndicatorVisibility';
 import { OverlayLegend } from './OverlayLegend';
 import { buildPaneLabels } from './utils/paneLabelUtils';
@@ -68,7 +69,9 @@ import { useChartOverlays } from './hooks/useChartOverlays';
 import {
     barTimesOf,
     buildOverlayLineSpecs,
+    isOverlayDrawn,
     overlayColorFor,
+    overlayItemKey,
 } from './utils/chartOverlayUtils';
 import type { OverlayMenuItem } from './utils/overlayItems';
 import { formatFibLevelLabel, type FibLevelTexts } from './utils/fibLevelLabel';
@@ -500,6 +503,24 @@ export function StockChart({
     const barTimes = useMemo(() => barTimesOf(bars), [bars]);
     const lastBarTime = bars[bars.length - 1]?.time ?? 0;
 
+    // 작도 수평 레벨 오른쪽 연장 — 분석·종목이 바뀌어도 유지되는 사용자 환경설정(localStorage).
+    const [levelRightExtend, setLevelRightExtend] = usePersistentState(
+        STORAGE_KEYS.levelRightExtend,
+        true
+    );
+    // 연장할 레벨이 지금 그려지는(켜진) 작도에 하나라도 있을 때만 메뉴에 설정 행을
+    // 띄운다 — 레벨 작도를 전부 끈 상태에서 눌러도 아무것도 안 바뀌는 스위치를 두지 않는다.
+    const hasExtendableLevels = useMemo(
+        () =>
+            chartOverlays.some(
+                o =>
+                    o.levels.length > 0 &&
+                    !hiddenOverlayKeys.has(overlayItemKey(o)) &&
+                    isOverlayDrawn(o, barTimes, lastBarTime)
+            ),
+        [chartOverlays, hiddenOverlayKeys, barTimes, lastBarTime]
+    );
+
     const overlaySpecs = useMemo(
         () =>
             buildOverlayLineSpecs(chartOverlays, {
@@ -519,6 +540,7 @@ export function StockChart({
                     label === BREAKOUT_LEVEL_LABEL
                         ? breakoutLevelText
                         : (formatFibLevelLabel(label, fibLevelTexts) ?? label),
+                extendLevelsRight: levelRightExtend,
             }),
         [
             chartOverlays,
@@ -531,6 +553,7 @@ export function StockChart({
             overlayColors,
             breakoutLevelText,
             fibLevelTexts,
+            levelRightExtend,
         ]
     );
 
@@ -741,6 +764,14 @@ export function StockChart({
                     items={overlayItems}
                     hiddenKeys={hiddenOverlayKeys}
                     onSetVisible={onSetOverlayVisible}
+                    rightExtend={
+                        hasExtendableLevels
+                            ? {
+                                  checked: levelRightExtend,
+                                  onChange: setLevelRightExtend,
+                              }
+                            : undefined
+                    }
                 />
                 <IndicatorSettingsModal bindings={indicatorBindings} />
             </div>
