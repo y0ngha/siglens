@@ -42,6 +42,7 @@ describe('[symbol]/fear-greed OG images', () => {
             expect(mockBuildSymbolOgImage).toHaveBeenCalledWith({
                 ticker: 'AMZN',
                 label: '공포 탐욕 지수',
+                locale: 'ko',
             });
         });
     });

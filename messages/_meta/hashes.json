@@ -2800,5 +2800,10 @@
     "widgets.chart.StockChart.fd8510": "fd85102b537a",
     "widgets.chart.StockChart.6c577b": "6c577baa2384",
     "widgets.home.categoryDescription.Trendinginterest": "631aef176516",
-    "widgets.home.tickerCategory.Trendinginterest": "b858d2f108ae"
+    "widgets.home.tickerCategory.Trendinginterest": "b858d2f108ae",
+    "entities.shared-analysis.og.extremeFear": "0b663e5ca246",
+    "entities.shared-analysis.og.extremeGreed": "5ef126fdf1f1",
+    "entities.shared-analysis.og.fear": "904b7f38255f",
+    "entities.shared-analysis.og.greed": "a58e2086b61c",
+    "entities.shared-analysis.og.volatility": "dd3bbdd8cfc0"
 }

@@ -41,6 +41,7 @@ describe('[symbol] OG images', () => {
             expect(mockBuildSymbolOgImage).toHaveBeenCalledWith({
                 ticker: 'AAPL',
                 label: '차트 분석',
+                locale: 'ko',
             });
         });
 
@@ -61,6 +62,7 @@ describe('[symbol] OG images', () => {
             expect(mockBuildSymbolOgImage).toHaveBeenCalledWith({
                 ticker: 'AAPL',
                 label: expected,
+                locale,
             });
         });
 

@@ -16,11 +16,14 @@ import {
     OG_SITE_NAME_TOP,
     OG_TICKER_FONT_SIZE,
 } from '@/shared/lib/og';
-import { loadKoreanFont } from './loadKoreanFont';
+import type { Locale } from '@/shared/i18n/locales';
+import { loadOgFont } from './loadOgFont';
 
 export interface SymbolOgImageOptions {
     ticker: string;
     label: string;
+    /** 라벨 글꼴을 고른다 — ja/zh는 Pretendard에 글리프가 없다. */
+    locale: Locale;
     /**
      * 응답의 `Cache-Control`. 기본값은 CDN 장기 캐시(`OG_IMAGE_CACHE_CONTROL`)다 —
      * 심볼 OG 이미지는 `(ticker, label)` 순수 함수라 신선도 개념이 없다.
@@ -32,9 +35,10 @@ export interface SymbolOgImageOptions {
 export async function buildSymbolOgImage({
     ticker,
     label,
+    locale,
     cacheControl = OG_IMAGE_CACHE_CONTROL,
 }: SymbolOgImageOptions): Promise<ImageResponse> {
-    const fontData = await loadKoreanFont();
+    const font = await loadOgFont(locale);
     return new ImageResponse(
         <div
             style={{
@@ -91,16 +95,7 @@ export async function buildSymbolOgImage({
             width: OG_IMAGE_WIDTH,
             height: OG_IMAGE_HEIGHT,
             headers: { 'cache-control': cacheControl },
-            fonts: fontData
-                ? [
-                      {
-                          name: 'Pretendard',
-                          data: fontData,
-                          style: 'normal',
-                          weight: 700,
-                      },
-                  ]
-                : undefined,
+            fonts: font ? [font] : undefined,
         }
     );
 }

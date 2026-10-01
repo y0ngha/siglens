@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { resolveLocale } from '@/shared/i18n/locales';
 import { ImageResponse } from 'next/og';
-import { loadKoreanFont } from '@/entities/og-image/lib/loadKoreanFont';
+import { loadOgFont } from '@/entities/og-image/lib/loadOgFont';
 import {
     OG_BG,
     OG_FG,
@@ -47,7 +47,7 @@ export default async function Image({ params }: Props) {
         locale: resolveLocale(locale),
         namespace: 'app.news',
     });
-    const fontData = await loadKoreanFont();
+    const font = await loadOgFont(resolveLocale(locale));
 
     return new ImageResponse(
         <div
@@ -107,16 +107,7 @@ export default async function Image({ params }: Props) {
             height: OG_IMAGE_HEIGHT,
             // ImageResponse 기본 헤더는 CDN 캐시를 막는다 — og.ts JSDoc 참조.
             headers: { 'cache-control': OG_IMAGE_CACHE_CONTROL },
-            fonts: fontData
-                ? [
-                      {
-                          name: 'Pretendard',
-                          data: fontData,
-                          style: 'normal',
-                          weight: 700,
-                      },
-                  ]
-                : undefined,
+            fonts: font ? [font] : undefined,
         }
     );
 }

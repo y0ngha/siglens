@@ -42,6 +42,7 @@ describe('[symbol]/overall OG images', () => {
             expect(mockBuildSymbolOgImage).toHaveBeenCalledWith({
                 ticker: 'GOOG',
                 label: 'AI 종합 분석',
+                locale: 'ko',
             });
         });
     });

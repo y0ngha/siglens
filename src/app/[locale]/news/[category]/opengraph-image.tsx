@@ -5,7 +5,7 @@ import {
     CATEGORY_CONFIG,
     categoryFromSlug,
 } from '@/entities/market-news/lib/categoryConfig';
-import { loadKoreanFont } from '@/entities/og-image/lib/loadKoreanFont';
+import { loadOgFont } from '@/entities/og-image/lib/loadOgFont';
 import {
     OG_BG,
     OG_FG,
@@ -30,7 +30,7 @@ export const size = { width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT };
 export const contentType = 'image/png';
 // 이 파일은 `/news/kr`·`/news/crypto`까지 모든 카테고리에 붙는 정적 문자열이라
 // 지역을 박으면 한국·암호화폐 페이지가 자기를 미국이라고 말하게 된다.
-// 이미지 본문은 `CATEGORY_CONFIG[cat].koLabel`로 카테고리마다 갈린다.
+// 이미지 본문은 `CATEGORY_CONFIG[cat].labelKey`로 카테고리마다 갈린다.
 // `alt`는 Next가 **모듈 스코프 상수**로 요구해 로케일별로 낼 수 없다(이미지
 // 본문은 아래에서 로케일별로 그린다). 네 로케일이 한 값을 공유해야 하므로
 // 한국어 대신 영어로 둔다 — 예전엔 한국어라 `/en/…` 공유 카드의 alt만 한국어였다.
@@ -44,17 +44,17 @@ export default async function Image({ params }: Props) {
     // 로케일을 넘기지 않으면 `getTranslations`가 요청 스코프를 못 찾아 기본
     // 로케일로 떨어진다 — `force-static`이라 조용히 전 로케일이 한국어 이미지로
     // 통일된다(실측: /AAPL·/en/AAPL·/ja/AAPL이 바이트 동일).
-    const { category: slug, locale } = await params;
-    const t = await getTranslations({
-        locale: resolveLocale(locale),
-        namespace: 'app.news',
-    });
+    const { category: slug, locale: rawLocale } = await params;
+    const locale = resolveLocale(rawLocale);
+    const tRoot = await getTranslations({ locale });
     const cat = categoryFromSlug(slug);
+    // `koLabel`은 AI 프롬프트 입력이라 전 로케일 한국어다 — 라벨은 로케일 카탈로그에서
+    // 읽는다. ja/zh 폰트(Noto Sans JP/SC)엔 한글이 없어 `koLabel`이면 빈 네모가 된다.
     const label = cat
-        ? CATEGORY_CONFIG[cat].koLabel
-        : t('opengraph-image.91dd85');
+        ? tRoot(CATEGORY_CONFIG[cat].labelKey)
+        : tRoot('app.news.opengraph-image.91dd85');
 
-    const fontData = await loadKoreanFont();
+    const font = await loadOgFont(locale);
 
     return new ImageResponse(
         <div
@@ -106,7 +106,7 @@ export default async function Image({ params }: Props) {
                     display: 'flex',
                 }}
             >
-                {t('opengraph-image.3a465d')}
+                {tRoot('app.news.opengraph-image.3a465d')}
             </div>
         </div>,
         {
@@ -114,16 +114,7 @@ export default async function Image({ params }: Props) {
             height: OG_IMAGE_HEIGHT,
             // ImageResponse 기본 헤더는 CDN 캐시를 막는다 — og.ts JSDoc 참조.
             headers: { 'cache-control': OG_IMAGE_CACHE_CONTROL },
-            fonts: fontData
-                ? [
-                      {
-                          name: 'Pretendard',
-                          data: fontData,
-                          style: 'normal',
-                          weight: 700,
-                      },
-                  ]
-                : undefined,
+            fonts: font ? [font] : undefined,
         }
     );
 }

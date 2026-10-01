@@ -1,3 +1,4 @@
+import type { FearGreedLabel, OptionsSignalKind } from '@y0ngha/siglens-core';
 import type { ShareableKind } from '../types';
 import { truncateWithEllipsis } from '@/shared/lib/truncate';
 
@@ -15,11 +16,25 @@ const TWEET_TEXT_MAX = 180;
  * 한국어로 굳으면 `/en/share/…`가 영어 제목 아래 한국어 방향성을 실어 보낸다.
  * 요약문(`summary`)은 저장된 AI 산출물이라 여기서 바꿀 수 없다.
  */
-const DIRECTION_KEY: Record<string, string> = {
+const DIRECTION_KEY: Readonly<Record<string, string>> = {
     bullish: 'bullish',
     bearish: 'bearish',
     neutral: 'neutral',
     cautious: 'cautious',
+    // 옵션 `signals[].kind` — bullish/bearish/neutral은 위와 같다. 빠지면
+    // `volatility`가 원문 그대로 OG 설명·트윗에 찍혔다.
+    ...({ volatility: 'volatility' } satisfies Record<
+        Exclude<OptionsSignalKind, 'bullish' | 'bearish' | 'neutral'>,
+        string
+    >),
+    // 공포·탐욕 `label`. 빠지면 `EXTREME_FEAR` 같은 enum이 전 로케일에 찍혔다.
+    ...({
+        EXTREME_FEAR: 'extremeFear',
+        FEAR: 'fear',
+        NEUTRAL: 'neutral',
+        GREED: 'greed',
+        EXTREME_GREED: 'extremeGreed',
+    } satisfies Record<FearGreedLabel, string>),
 };
 
 /** `entities.shared-analysis.og` 번역자. */
