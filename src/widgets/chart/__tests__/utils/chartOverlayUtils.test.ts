@@ -3,6 +3,7 @@ import type { ChartOverlay } from '@y0ngha/siglens-core';
 import {
     barTimesOf,
     buildOverlayLineSpecs,
+    hasDrawnLevels,
     isOverlayAlignedToBars,
     isOverlayDrawn,
     overlayColorFor,
@@ -76,6 +77,7 @@ describe('buildOverlayLineSpecs', () => {
         lastBarTime: 5,
         rsiPaneIndex: 2,
         colorFor: () => '#000',
+        extendLevelsRight: false,
     };
 
     it('segment → 2-point price series; level → fromTime to last bar', () => {
@@ -94,6 +96,17 @@ describe('buildOverlayLineSpecs', () => {
             ],
         ]);
         expect(specs.every(s => s.paneIndex === 0)).toBe(true);
+    });
+
+    it('extendLevelsRight marks level specs only', () => {
+        const specsFor = (extendLevelsRight: boolean) =>
+            buildOverlayLineSpecs([overlay({})], {
+                ...base,
+                barTimes: BAR_TIMES,
+                extendLevelsRight,
+            }).map(s => s.extendRight);
+        expect(specsFor(true)).toEqual([false, true]);
+        expect(specsFor(false)).toEqual([false, false]);
     });
 
     it('hidden key, misaligned overlay, and zero-length segment produce nothing', () => {
@@ -279,6 +292,7 @@ describe('buildOverlayLineSpecs — label host pane', () => {
             lastBarTime: 5,
             rsiPaneIndex: 2,
             colorFor: () => '#000000',
+            extendLevelsRight: false,
         });
         expect(specs.map(sp => [sp.paneIndex, sp.markers.length])).toEqual([
             [2, 0],
@@ -337,8 +351,37 @@ describe('isOverlayDrawn', () => {
                 lastBarTime: 5,
                 rsiPaneIndex: null,
                 colorFor: () => '#000000',
+                extendLevelsRight: false,
             })
         ).toEqual([]);
+    });
+});
+
+describe('hasDrawnLevels', () => {
+    const opts = {
+        hiddenKeys: new Set<string>(),
+        barTimes: BAR_TIMES,
+        lastBarTime: 5,
+    };
+
+    it('켜진 채 그려지는 작도에 레벨이 있으면 true', () => {
+        expect(hasDrawnLevels([overlay({})], opts)).toBe(true);
+    });
+
+    it('레벨 작도가 전부 꺼졌거나, 레벨이 없거나, 봉에 안 맞으면 false', () => {
+        expect(
+            hasDrawnLevels([overlay({})], {
+                ...opts,
+                hiddenKeys: new Set(['double_bottom_0']),
+            })
+        ).toBe(false);
+        expect(hasDrawnLevels([overlay({ levels: [] })], opts)).toBe(false);
+        expect(
+            hasDrawnLevels(
+                [overlay({ levels: [{ price: 1, fromTime: 99, label: '' }] })],
+                opts
+            )
+        ).toBe(false);
     });
 });
 

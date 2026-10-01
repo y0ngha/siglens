@@ -209,3 +209,39 @@ describe('ChartOverlayMenu', () => {
         ).toBeInTheDocument();
     });
 });
+
+describe('ChartOverlayMenu — level right-extend toggle', () => {
+    it('rightExtend가 없으면 행을 렌더하지 않는다', async () => {
+        const user = userEvent.setup();
+        renderMenu([patternItem]);
+        await user.click(screen.getByRole('button', { name: /차트 작도/ }));
+        expect(
+            within(getPanel()).queryByRole('button', {
+                name: '레벨선 오른쪽 연장',
+            })
+        ).not.toBeInTheDocument();
+    });
+
+    it('체크 상태를 보이고 누르면 반대 값으로 콜백, 트리거 개수엔 세지 않는다', async () => {
+        const user = userEvent.setup();
+        const onChange = vi.fn();
+        render(
+            <ChartOverlayMenu
+                items={[patternItem]}
+                hiddenKeys={new Set()}
+                onSetVisible={vi.fn()}
+                rightExtend={{ checked: true, onChange }}
+            />
+        );
+        expect(
+            screen.getByRole('button', { name: /차트 작도 · 1/ })
+        ).toBeInTheDocument();
+        await user.click(screen.getByRole('button', { name: /차트 작도/ }));
+        const toggle = within(getPanel()).getByRole('button', {
+            name: '레벨선 오른쪽 연장',
+        });
+        expect(toggle).toHaveAttribute('aria-pressed', 'true');
+        await user.click(toggle);
+        expect(onChange).toHaveBeenCalledWith(false);
+    });
+});

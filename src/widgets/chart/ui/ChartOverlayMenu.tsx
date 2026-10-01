@@ -13,11 +13,22 @@ import type {
     OverlayMenuItem,
 } from '../utils/overlayItems';
 
+/** 수평 레벨 오른쪽 연장 설정 — 값과 변경 콜백. */
+export interface RightExtendSetting {
+    checked: boolean;
+    onChange: (checked: boolean) => void;
+}
+
 interface ChartOverlayMenuProps {
     /** 켜고 끌 수 있는 항목 — `buildOverlayMenuItems`가 실제로 그려지는 작도만 담는다. */
     items: readonly OverlayMenuItem[];
     hiddenKeys: ReadonlySet<string>;
     onSetVisible: (keys: readonly string[], visible: boolean) => void;
+    /**
+     * 수평 레벨 오른쪽 연장 설정(작도 항목이 아닌 표시 환경설정 — 트리거 개수에 세지 않는다).
+     * 연장할 레벨이 없으면 넘기지 않아 행을 숨긴다.
+     */
+    rightExtend?: RightExtendSetting;
 }
 
 const KIND_LABEL_KEY: Record<OverlayKind, string> = {
@@ -93,6 +104,7 @@ export function ChartOverlayMenu({
     items,
     hiddenKeys,
     onSetVisible,
+    rightExtend,
 }: ChartOverlayMenuProps) {
     const t = useTranslations('widgets.chart');
     const triggerRef = useRef<HTMLButtonElement>(null);
@@ -241,6 +253,26 @@ export function ChartOverlayMenu({
                             </div>
                         );
                     })}
+                    {rightExtend && (
+                        <div className="mt-1 border-t border-secondary-700/60 pt-1">
+                            <button
+                                type="button"
+                                aria-pressed={rightExtend.checked}
+                                onClick={() =>
+                                    rightExtend.onChange(!rightExtend.checked)
+                                }
+                                className={cn(
+                                    ROW_CLASS,
+                                    rightExtend.checked
+                                        ? 'text-secondary-100'
+                                        : 'text-secondary-400'
+                                )}
+                            >
+                                <CheckBox state={rightExtend.checked} />
+                                <span>{t('ChartOverlayMenu.a57483')}</span>
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

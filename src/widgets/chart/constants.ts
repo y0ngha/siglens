@@ -24,6 +24,8 @@ export const STORAGE_KEYS = {
     visible: `${STORAGE_PREFIX}.visible`,
     maPeriods: `${STORAGE_PREFIX}.ma.periods`,
     emaPeriods: `${STORAGE_PREFIX}.ema.periods`,
+    /** 작도 수평 레벨을 가격축 앞까지 연장할지(기본 켜짐). */
+    levelRightExtend: `${STORAGE_PREFIX}.levelRightExtend`,
     overlay: (key: OverlayStorageKey): string =>
         `${STORAGE_PREFIX}.overlay.${key}`,
 } as const;

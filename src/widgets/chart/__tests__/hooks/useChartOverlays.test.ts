@@ -9,9 +9,12 @@ const mockCreateSeriesMarkers = vi.fn();
 // 라벨 전용 시리즈가 메인 라인 시리즈와 **다른 객체**를 갖도록, 매 addSeries
 // 호출마다 독립된 setData mock을 만든다 — 공유 mockSetData 하나만 두면 어느
 // 호출이 라벨 시리즈로 간 데이터인지 구분할 수 없다.
-const createdSeries: { setData: ReturnType<typeof vi.fn> }[] = [];
+const createdSeries: {
+    setData: ReturnType<typeof vi.fn>;
+    attachPrimitive: ReturnType<typeof vi.fn>;
+}[] = [];
 const mockAddSeries = vi.fn(() => {
-    const series = { setData: vi.fn() };
+    const series = { setData: vi.fn(), attachPrimitive: vi.fn() };
     createdSeries.push(series);
     return series;
 });
@@ -21,6 +24,11 @@ vi.mock('lightweight-charts', () => ({
     LineStyle: { Solid: 0, Dashed: 1 },
     createSeriesMarkers: (...args: unknown[]) =>
         mockCreateSeriesMarkers(...args),
+}));
+
+const mockCreateRightExtend = vi.fn((opts: unknown) => ({ opts }));
+vi.mock('../../utils/rightExtendPrimitive', () => ({
+    createRightExtendPrimitive: (opts: unknown) => mockCreateRightExtend(opts),
 }));
 
 function makeChart() {
@@ -45,6 +53,7 @@ const SPEC: OverlayLineSpec = {
     lineWidthMult: 1,
     title: '',
     markers: [],
+    extendRight: false,
 };
 
 describe('useChartOverlays', () => {
@@ -58,6 +67,24 @@ describe('useChartOverlays', () => {
             useChartOverlays({ chartRef: makeChartRef(null), specs: [SPEC] })
         );
         expect(mockAddSeries).not.toHaveBeenCalled();
+    });
+
+    it('attaches the right-extend primitive only to extendRight specs', () => {
+        renderHook(() =>
+            useChartOverlays({
+                chartRef: makeChartRef(makeChart()),
+                specs: [SPEC, { ...SPEC, extendRight: true, dashed: true }],
+            })
+        );
+        expect(createdSeries[0]!.attachPrimitive).not.toHaveBeenCalled();
+        expect(createdSeries[1]!.attachPrimitive).toHaveBeenCalledTimes(1);
+        expect(mockCreateRightExtend).toHaveBeenCalledWith({
+            startTime: 3,
+            price: 12,
+            color: '#42a5f5',
+            lineWidth: 1,
+            dashed: true,
+        });
     });
 
     it('creates one series per spec and sets its points', () => {
