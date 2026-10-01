@@ -1,5 +1,4 @@
 import 'server-only';
-import { unstable_cache } from 'next/cache';
 import {
     peekMacroBriefingCache,
     type EconomySnapshot,
@@ -8,6 +7,7 @@ import {
 
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { readHubSsrSeed } from '@/shared/cache/hubSsrSeed';
+import { cacheNonNull } from '@/shared/cache/cacheNonNull';
 
 /** 프리웜이 쓰고 이 모듈이 읽는 SSR seed의 키. 거시 브리핑은 시장 구분이 없어 하나다. */
 export const MACRO_BRIEFING_SEED_SURFACE = 'macro-briefing';
@@ -39,7 +39,9 @@ export function peekMacroBriefingStatic(
     snapshot: EconomySnapshot,
     dateHour: string
 ): Promise<MacroBriefingResponse | null> {
-    return unstable_cache(
+    // `cacheNonNull` — miss(`null`)는 캐시하지 않고 SSR miss로 표시한다. 예전에는 그
+    // `null`이 24h 굳어, 방문자가 곧 브리핑을 생성해도 페이지는 하루 내내 비어 있었다.
+    return cacheNonNull(
         async () =>
             // 이유는 `briefingStaticCache`와 같다 — 입력 파생 키라 프리웜이 쓴 값을
             // 나중에 같은 키로 읽지 못한다. SSR seed가 그 공백을 메운다.
@@ -49,5 +51,5 @@ export function peekMacroBriefingStatic(
             )),
         ['economy-briefing-peek-static', dateHour],
         { revalidate: SECONDS_PER_DAY, tags: [MACRO_BRIEFING_CACHE_TAG] }
-    )();
+    );
 }

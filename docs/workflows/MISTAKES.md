@@ -327,6 +327,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ Comments either match reality exactly, or are removed and the WHY moved to commit/PR description
     → Recurring: PR #420 Phase 7 R1, PR #428 R16 S1, PR #442 R5 S1, PR #453 R3/R4, PR #459, feat/seo-followup B5, PR #562 R2
 
+15.6a. Stale 'only X' claim after adding a second caller/path
+    → JSDoc/comments claiming "only X triggers/calls/uses this" become false when a second caller/code path is added
+    → When refactoring adds a new code path (server-side handler alongside client, second route alongside original, additional caller), update any "only" claims in related JSDoc/comments
+    → Common source: copy-pasted comment not updated when feature code is extended
+    ❌ /** Used only by the client hook */ — but server-side render also calls it now (stale claim)
+    ❌ // Only the chart route uses this metadata function — fear-greed route added in same PR without updating comment
+    ❌ // The only current caller is the chart route → new code added fear-greed route caller, comment left behind
+    ✅ /** Used by client hook and server-side render in /overall */ — names all callers explicitly
+    ✅ // Called by chart, fear-greed, and overview routes — updated comment to enumerate callers
+    → Recurring: feat/symbol-metadata-simplify Round 1, claude/magical-sagan-56eoov-hub-data Round 1 — 2 occurrences
+
 15.62. Layout refactoring — Stale geometry comments persist when reversing a layout contract
     → When reversing a layout contract (size relationship, flex direction, overflow behavior), comments and test names describing the OLD contract stay behind in sibling files outside the diff
     → After major layout changes, audit both test assertion text and inline comments describing geometry across the whole repo (src/, e2e/, docs/), not only changed files
@@ -539,6 +550,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ try { const client = getDatabaseClient(); repo.recordVisit(client); } catch { return log_and_204; }  // client construction inside, containment preserved
     ✅ try { await copy(async () => buildReport(data)); } catch { showFailed(); }  // construction happens inside the promise, safe
     → Recurring: PR #795 feat/visitor-metrics Round 1, claude/funny-turing Round 3 — 2 occurrences
+
+30. Status/return value must not overload different meanings
+    → A status that means "nothing to do" or "no change required" must not absorb failure states, skip reasons, or other conditions that trigger side effects
+    → When a function returns a status that affects caller behavior (cache invalidation, re-fetch, logging), every distinct outcome must have its own status value
+    → Returning the same status for multiple different conditions hides the actual state and causes side-effect bugs (redundant operations, missed error logging, cache corruption)
+    ❌ return 'alreadyFresh' for both "analysis confirmed present" AND "skipped due to cooldown" → runner revalidates even when value is unknown
+    ❌ return 'alreadyFresh' for both "analysis succeeded" AND "ingest failed AND analysis threw" → outages hidden in logs, looks like normal success
+    ✅ return 'alreadyFresh' only for "value confirmed in cache"; separate return 'cooldown' for "skipped due to gate"; separate return 'failed' for "ingest or analysis error"
+    ✅ Each distinct input path (success, error, skip, cooldown) has its own status so callers can branch correctly
+    → Recurring: feat/hub-briefing-ssr-seed Round 1 + PR #900 Round 1 — 2 occurrences
 ```
 
 ---

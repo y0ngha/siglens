@@ -7,8 +7,13 @@ vi.mock('next/cache', () => ({
     },
 }));
 
-const { mockPeekMarketNewsDigestCache } = vi.hoisted(() => ({
+const { mockPeekMarketNewsDigestCache, mockMarkSsrMiss } = vi.hoisted(() => ({
     mockPeekMarketNewsDigestCache: vi.fn(),
+    mockMarkSsrMiss: vi.fn(),
+}));
+
+vi.mock('@/shared/cache/ssrMissMarker', () => ({
+    markSsrMiss: mockMarkSsrMiss,
 }));
 
 vi.mock('@y0ngha/siglens-core', async orig => ({
@@ -111,6 +116,18 @@ describe('peekMarketNewsDigestStatic', () => {
         const result = await peekMarketNewsDigestStatic('crypto', 'ko');
 
         expect(result).toBeNull();
+        // null은 캐시하지 않고 대신 SSR miss를 표시한다 — 허브 프리웜이 값을 확인하면 턴다.
+        expect(mockMarkSsrMiss).toHaveBeenCalledWith(
+            'market-news:digest:crypto'
+        );
+    });
+
+    it('(Happy) 캐시 hit면 SSR miss를 표시하지 않는다', async () => {
+        mockPeekMarketNewsDigestCache.mockResolvedValue(DIGEST_RESULT);
+
+        await peekMarketNewsDigestStatic('crypto', 'ko');
+
+        expect(mockMarkSsrMiss).not.toHaveBeenCalled();
     });
 
     it('(Worst) 내부에서 throw해도 null을 반환하고 로그를 남긴다 (침묵 스왈로 금지)', async () => {
@@ -123,8 +140,11 @@ describe('peekMarketNewsDigestStatic', () => {
 
         expect(result).toBeNull();
         expect(consoleErrorSpy).toHaveBeenCalledWith(
-            '[MarketNewsDigest/PeekStatic] failed:',
+            '[cacheNonNull] unexpected cache error:',
             expect.any(Error)
+        );
+        expect(mockMarkSsrMiss).toHaveBeenCalledWith(
+            'market-news:digest:crypto'
         );
 
         consoleErrorSpy.mockRestore();
@@ -152,7 +172,7 @@ describe('peekMarketNewsDigestStatic', () => {
             locale: 'ko',
             modelId: DEFAULT_DIGEST_MODEL_ID,
             news: [shapedFixtureRow],
-            reasoning: true,
+            reasoning: false,
         });
     });
 

@@ -150,3 +150,10 @@ export const CALENDAR_ANALYSIS_REFRESH_FLAG_TTL_SECONDS =
  */
 export const CALENDAR_ANALYSIS_REFRESH_FLAG_KEY =
     'economy:calendar:analysis:refresh';
+
+/**
+ * 과반 실패 판정 분모 — 경제 캘린더 적재(`ingestEconomicCalendar`)와 이벤트 분석
+ * (`analyzeEconomicEvents`)이 공유한다. 실패가 처리 대상의 절반을 넘으면 적재는 중단하고
+ * 분석은 경보를 남긴다.
+ */
+export const CALENDAR_MAJORITY_FAILURE_DIVISOR = 2;

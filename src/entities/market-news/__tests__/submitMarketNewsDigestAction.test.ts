@@ -117,11 +117,10 @@ describe('submitMarketNewsDigestAction은', () => {
         );
     });
 
-    it('추론을 켜고 DeepSeek 기본 모델로 core를 호출한다', async () => {
-        // `reasoning: true`는 모델 스펙을 오버라이드한다 — 스펙상 non-thinking인
-        // deepseek-v4.1-flash에서도 추론이 켜져야 Gemini 시절 동작(spec
-        // thinkingBudget 8192 = 추론 ON)과 같은 깊이가 유지된다. 이 단언이
-        // 없으면 모델만 갈아끼웠을 때 다이제스트 추론이 조용히 꺼진다.
+    it('추론 끔(DIGEST_REASONING=false)과 DeepSeek 기본 모델로 core를 호출한다', async () => {
+        // 2026-10-01 다이제스트 추론을 껐다(`DIGEST_REASONING` 주석). 값 자체를 고정해
+        // 두는 이유: 캐시 키 성분이라 누가 무심코 켜면 전 카테고리가 새 키로 재생성되고
+        // 비용이 다시 오른다 — 그 변경이 이 단언에서 드러나게 한다.
         vi.mocked(isBot).mockReturnValue(false);
         vi.mocked(core.runMarketNewsDigest).mockResolvedValue({
             status: 'done',
@@ -139,7 +138,7 @@ describe('submitMarketNewsDigestAction은', () => {
 
         expect(core.runMarketNewsDigest).toHaveBeenCalledWith(
             expect.objectContaining({
-                reasoning: true,
+                reasoning: false,
                 modelId: DEFAULT_DIGEST_MODEL_ID,
             })
         );

@@ -1,5 +1,4 @@
 import 'server-only';
-import { unstable_cache } from 'next/cache';
 import {
     peekMarketNewsDigestCache,
     type NewsAnalysisResponse,
@@ -7,13 +6,17 @@ import {
 } from '@y0ngha/siglens-core';
 import type { Locale } from '@/shared/i18n/locales';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
+import { cacheNonNull } from '@/shared/cache/cacheNonNull';
 import { selectAggregateNewsItems } from '@/entities/news-article/lib/newsAnalysisSelection';
 import { getMarketNewsList } from '@/entities/market-news/api/marketNewsRepository';
 import {
     CATEGORY_CONFIG,
     type NewsFeedCategoryId,
 } from '../lib/categoryConfig';
-import { DEFAULT_DIGEST_MODEL_ID } from '../lib/marketNewsConstants';
+import {
+    DEFAULT_DIGEST_MODEL_ID,
+    DIGEST_REASONING,
+} from '../lib/marketNewsConstants';
 import { toEnrichedMarketNewsItem } from '../lib/toEnrichedMarketNewsItem';
 
 /**
@@ -39,7 +42,7 @@ export function marketNewsDigestCacheTag(category: NewsFeedCategoryId): string {
  * `MarketNewsDigestCacheKeyOptions`, so they are not built here either.
  *
  * Zero LLM cost, zero enqueue — cache miss (cold cache, no provider, read
- * error) resolves to `null` so the client falls back to
+ * error) resolves to `null` (never cached — see `cacheNonNull`) so the client falls back to
  * `runMarketNewsDigest` via `submitMarketNewsDigestAction`.
  *
  * `revalidate=SECONDS_PER_HALF_DAY` matches this page's own ISR cadence
@@ -51,19 +54,17 @@ export async function peekMarketNewsDigestStatic(
     category: NewsFeedCategoryId,
     locale: Locale
 ): Promise<NewsAnalysisResponse | null> {
-    try {
-        return await unstable_cache(
-            () => computeDigestPeek(category, locale),
-            ['market-news-digest-peek-static', category, locale],
-            {
-                revalidate: SECONDS_PER_HALF_DAY,
-                tags: [marketNewsDigestCacheTag(category)],
-            }
-        )();
-    } catch (e) {
-        console.error('[MarketNewsDigest/PeekStatic] failed:', e);
-        return null;
-    }
+    // `cacheNonNull` — miss(`null`)는 캐시하지 않고 SSR miss로 표시한다. 예전에는 그
+    // `null`이 12h 굳어, 방문자가 곧 다이제스트를 생성해도 페이지는 반나절 비어 있었다.
+    // 읽기 실패도 `null`(플레이스홀더)로 degrade한다 — 예전 try/catch와 같다.
+    return cacheNonNull(
+        () => computeDigestPeek(category, locale),
+        ['market-news-digest-peek-static', category, locale],
+        {
+            revalidate: SECONDS_PER_HALF_DAY,
+            tags: [marketNewsDigestCacheTag(category)],
+        }
+    );
 }
 
 async function computeDigestPeek(
@@ -84,6 +85,6 @@ async function computeDigestPeek(
         locale,
         modelId: DEFAULT_DIGEST_MODEL_ID,
         news,
-        reasoning: true,
+        reasoning: DIGEST_REASONING,
     });
 }

@@ -70,6 +70,7 @@ vi.mock('../hubs', () => ({
         keyMismatch: 0,
         failed: 0,
         skippedByDeadline: 0,
+        skippedByCooldown: 0,
     }),
 }));
 
@@ -1467,6 +1468,7 @@ describe('runPrewarmBatch', () => {
                 keyMismatch: 0,
                 failed: 0,
                 skippedByDeadline: 0,
+                skippedByCooldown: 0,
             };
         });
 
@@ -1537,6 +1539,7 @@ describe('runPrewarmBatch', () => {
                 keyMismatch: 0,
                 failed: 0,
                 skippedByDeadline: 0,
+                skippedByCooldown: 0,
             };
         });
 

@@ -22,9 +22,15 @@ vi.mock('next/cache', () => ({
     },
 }));
 
-const { mockPeekBriefingCache, mockReadHubSsrSeed } = vi.hoisted(() => ({
-    mockPeekBriefingCache: vi.fn(),
-    mockReadHubSsrSeed: vi.fn(),
+const { mockPeekBriefingCache, mockReadHubSsrSeed, mockMarkSsrMiss } =
+    vi.hoisted(() => ({
+        mockPeekBriefingCache: vi.fn(),
+        mockReadHubSsrSeed: vi.fn(),
+        mockMarkSsrMiss: vi.fn(),
+    }));
+
+vi.mock('@/shared/cache/ssrMissMarker', () => ({
+    markSsrMiss: mockMarkSsrMiss,
 }));
 
 vi.mock('@/shared/cache/hubSsrSeed', () => ({
@@ -154,6 +160,8 @@ describe('peekBriefingStatic', () => {
         );
 
         expect(result).toBeNull();
+        // null은 캐시하지 않고 SSR miss로 표시한다 — 허브 프리웜이 값을 확인하면 턴다.
+        expect(mockMarkSsrMiss).toHaveBeenCalledWith('market:briefing:us');
     });
 
     /**
@@ -191,16 +199,37 @@ describe('peekBriefingStatic', () => {
         expect(mockReadHubSsrSeed).not.toHaveBeenCalled();
     });
 
-    it('(Worst) peekBriefingCache가 throw하면 에러가 전파된다', async () => {
+    it('(Worst) peekBriefingCache가 throw하면 null로 degrade하고 로그·SSR miss 표시를 남긴다', async () => {
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
         mockPeekBriefingCache.mockRejectedValue(new Error('redis error'));
 
-        await expect(
-            peekBriefingStatic(
-                sampleSummary,
-                '2026-06-04T10',
-                US_DASHBOARD_SCOPE
-            )
-        ).rejects.toThrow('redis error');
+        const result = await peekBriefingStatic(
+            sampleSummary,
+            '2026-06-04T10',
+            US_DASHBOARD_SCOPE
+        );
+
+        expect(result).toBeNull();
+        expect(errorSpy).toHaveBeenCalledWith(
+            '[cacheNonNull] unexpected cache error:',
+            expect.any(Error)
+        );
+        expect(mockMarkSsrMiss).toHaveBeenCalledWith('market:briefing:us');
+        errorSpy.mockRestore();
+    });
+
+    it('(Happy) 값이 있으면 SSR miss를 표시하지 않는다', async () => {
+        mockPeekBriefingCache.mockResolvedValue(sampleBriefing);
+
+        await peekBriefingStatic(
+            sampleSummary,
+            '2026-06-04T10',
+            US_DASHBOARD_SCOPE
+        );
+
+        expect(mockMarkSsrMiss).not.toHaveBeenCalled();
     });
 
     it('(Happy) 서로 다른 dateHour는 독립적으로 호출된다', async () => {

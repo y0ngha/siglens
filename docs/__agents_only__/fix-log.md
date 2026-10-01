@@ -609,9 +609,6 @@
 - Violation: A new exported constant's JSDoc was inserted between an existing JSDoc block and its declaration, orphaning the old doc
   - Rule: JSDoc blocks must remain directly above their declarations; inserting new docs between them breaks the association
   - Context: src/shared/lib/seo.ts — moved the old JSDoc back directly above NOINDEX_SYMBOL_METADATA
-- Violation: JSDoc stating "the only current caller is the chart route" became false when the same change added the fear-greed route as a second caller
-  - Rule: JSDoc accuracy — comments must be updated when code scope changes
-  - Context: src/app/[locale]/[symbol]/symbolIndexabilityMetadata.ts — updated JSDoc to name both callers
 - Violation: getBlockedSymbolMetadata still performed a snapshot DB read whose result could no longer change the outcome for the five tabs made always-noindex
   - Rule: Optimization — remove redundant operations that no longer affect the outcome
   - Context: Added isPrewarmTab and skip the read for non-prewarm tabs
@@ -622,3 +619,23 @@
 - Violation: A per-run work cap (enrichment limit 8) combined with a long re-run gate (3h flag) made the initial backlog drain extremely slowly (~50 cards → ~20h), with each partial drain also changing a downstream cache key (digest regeneration). Undocumented. Fix: ingestion returns `pending`; the long gate is set only when the backlog is empty, so the backlog drains on consecutive short-interval runs.
   - Rule: (new) when combining a per-run cap with a cooldown/gate, the gate must not engage while capped work remains (or the drain time = backlog/cap × gate must be documented and acceptable).
 - Status (Round 2): APPROVED (zero findings)
+
+## [Round 1 | claude/magical-sagan-56eoov-hub-data (hub data supply: cron ingestion, null/empty cache guards, briefing cooldown, digest A/B) | 2026-10-01]
+- Violation: Time-budget comment claimed a cron unit doing ingest (capped) + analysis (8) + sequential translations (3) could fit 45s timeout; real worst case ~65-70s
+  - Rule: (new) when a unit chains several capped LLM steps under a timeout, budget = sum of each step's worst case; document it next to the caps
+  - Context: lowered caps (4, 1) and corrected the budget math in comments
+- Violation: A target whose inner functions already revalidate the tag also returned 'generated', so the runner revalidated again (plus pointless Redis getdel)
+  - Rule: (new) Optimization — remove redundant operations that no longer affect the outcome
+  - Context: added HubTarget.selfInvalidating flag to prevent duplicate revalidation
+- Violation: Hard-coded count ("eleven targets") in comment derived from config
+  - Rule: MISTAKES.md §15 — magic numbers in comments must reference the constant
+  - Context: replaced with reference to config length
+- Status (Round 2): APPROVED (zero findings)
+
+## [PR #900 Round 1 | claude/magical-sagan-56eoov-hub-data | 2026-10-01]
+- Violation: CALENDAR_MAJORITY_FAILURE_DIVISOR duplicated in two economy modules synced only by comment
+  - Rule: MISTAKES.md Coding Paradigm §6.9 duplicated logic
+  - Context: extracted constant to economyCalendarConstants and imported by both modules
+- Violation: cache-key-participating option (digest `reasoning`) written as literal at three call sites (action, cron, SSR peek) that must agree
+  - Rule: cache-key components shared by writer and reader live in one constant
+  - Context: extracted DIGEST_REASONING constant (now false per user decision). Single source of truth for cache participation.
