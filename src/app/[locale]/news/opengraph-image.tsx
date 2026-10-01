@@ -42,12 +42,10 @@ export default async function Image({ params }: Props) {
     // 로케일을 넘기지 않으면 `getTranslations`가 요청 스코프를 못 찾아 기본
     // 로케일로 떨어진다 — `force-static`이라 조용히 전 로케일이 한국어 이미지로
     // 통일된다(실측: /AAPL·/en/AAPL·/ja/AAPL이 바이트 동일).
-    const { locale } = await params;
-    const t = await getTranslations({
-        locale: resolveLocale(locale),
-        namespace: 'app.news',
-    });
-    const font = await loadOgFont(resolveLocale(locale));
+    const { locale: rawLocale } = await params;
+    const locale = resolveLocale(rawLocale);
+    const t = await getTranslations({ locale, namespace: 'app.news' });
+    const font = await loadOgFont(locale);
 
     return new ImageResponse(
         <div
