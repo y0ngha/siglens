@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.93.1](https://github.com/y0ngha/siglens/compare/v0.93.0...v0.93.1) (2026-10-01)
+
+### Bug Fixes
+
+* **news:** 빠른 피드에서 허브 뉴스 적재 3시간 간격이 걸리지 않던 문제를 고친다 ([#901](https://github.com/y0ngha/siglens/issues/901)) ([5347712](https://github.com/y0ngha/siglens/commit/534771289a1d97d5392d1836fd78942ba6ea585e))
+
 # [0.93.0](https://github.com/y0ngha/siglens/compare/v0.92.0...v0.93.0) (2026-10-01)
 
 ### Bug Fixes
