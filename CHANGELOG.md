@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.93.2](https://github.com/y0ngha/siglens/compare/v0.93.1...v0.93.2) (2026-10-01)
+
+### Bug Fixes
+
+* **chart:** 전략 카드는 자기 종류 작도만 — core 2.3.1 + 전략 스킬 overlay_kind ([#903](https://github.com/y0ngha/siglens/issues/903)) ([67adf8e](https://github.com/y0ngha/siglens/commit/67adf8e3bcb159839a184e6850b3307261884e63))
+* **share:** 공유 OG 방향 라벨 번역 + 로케일별 OG 폰트(ja/zh Noto Sans) ([#902](https://github.com/y0ngha/siglens/issues/902)) ([a781bbb](https://github.com/y0ngha/siglens/commit/a781bbb2176b39c6c5b9ce2f69c6ab2af21fa424))
+
 ## [0.93.1](https://github.com/y0ngha/siglens/compare/v0.93.0...v0.93.1) (2026-10-01)
 
 ### Bug Fixes
