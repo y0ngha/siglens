@@ -3,6 +3,7 @@ import type { ChartOverlay } from '@y0ngha/siglens-core';
 import {
     barTimesOf,
     buildOverlayLineSpecs,
+    hasDrawnLevels,
     isOverlayAlignedToBars,
     isOverlayDrawn,
     overlayColorFor,
@@ -353,6 +354,34 @@ describe('isOverlayDrawn', () => {
                 extendLevelsRight: false,
             })
         ).toEqual([]);
+    });
+});
+
+describe('hasDrawnLevels', () => {
+    const opts = {
+        hiddenKeys: new Set<string>(),
+        barTimes: BAR_TIMES,
+        lastBarTime: 5,
+    };
+
+    it('켜진 채 그려지는 작도에 레벨이 있으면 true', () => {
+        expect(hasDrawnLevels([overlay({})], opts)).toBe(true);
+    });
+
+    it('레벨 작도가 전부 꺼졌거나, 레벨이 없거나, 봉에 안 맞으면 false', () => {
+        expect(
+            hasDrawnLevels([overlay({})], {
+                ...opts,
+                hiddenKeys: new Set(['double_bottom_0']),
+            })
+        ).toBe(false);
+        expect(hasDrawnLevels([overlay({ levels: [] })], opts)).toBe(false);
+        expect(
+            hasDrawnLevels(
+                [overlay({ levels: [{ price: 1, fromTime: 99, label: '' }] })],
+                opts
+            )
+        ).toBe(false);
     });
 });
 

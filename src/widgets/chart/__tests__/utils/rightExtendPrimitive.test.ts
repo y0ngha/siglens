@@ -35,7 +35,7 @@ describe('rightExtendSegment', () => {
 
 describe('createRightExtendPrimitive', () => {
     const OPTS = {
-        startTime: 100,
+        startTime: 100 as Time,
         price: 50,
         color: '#123456',
         lineWidth: 2,

@@ -13,6 +13,12 @@ import type {
     OverlayMenuItem,
 } from '../utils/overlayItems';
 
+/** 수평 레벨 오른쪽 연장 설정 — 값과 변경 콜백. */
+export interface RightExtendSetting {
+    checked: boolean;
+    onChange: (checked: boolean) => void;
+}
+
 interface ChartOverlayMenuProps {
     /** 켜고 끌 수 있는 항목 — `buildOverlayMenuItems`가 실제로 그려지는 작도만 담는다. */
     items: readonly OverlayMenuItem[];
@@ -22,7 +28,7 @@ interface ChartOverlayMenuProps {
      * 수평 레벨 오른쪽 연장 설정(작도 항목이 아닌 표시 환경설정 — 트리거 개수에 세지 않는다).
      * 연장할 레벨이 없으면 넘기지 않아 행을 숨긴다.
      */
-    rightExtend?: { checked: boolean; onChange: (checked: boolean) => void };
+    rightExtend?: RightExtendSetting;
 }
 
 const KIND_LABEL_KEY: Record<OverlayKind, string> = {

@@ -90,9 +90,11 @@ export function useChartOverlays({
                 );
                 if (spec.extendRight) {
                     const [, end] = spec.points;
+                    // core 작도 시각은 봉 시각과 같은 UTC 초(UTCTimestamp)라 `Time`으로
+                    // 그대로 쓸 수 있다 — 위 `setData`의 `p.time as Time`과 같은 근거.
                     series.attachPrimitive(
                         createRightExtendPrimitive({
-                            startTime: end.time,
+                            startTime: end.time as Time,
                             price: end.value,
                             color,
                             lineWidth: resolvedWidth,

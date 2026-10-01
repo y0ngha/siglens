@@ -27,7 +27,7 @@ export function rightExtendSegment(
 
 export interface RightExtendOptions {
     /** 연장 시작 시각 — 레벨 시리즈의 끝점(마지막 봉). */
-    startTime: number;
+    startTime: Time;
     price: number;
     color: string;
     lineWidth: number;
@@ -79,9 +79,7 @@ export function createRightExtendPrimitive(
         },
         updateAllViews: () => {
             if (!param) return;
-            x = param.chart
-                .timeScale()
-                .timeToCoordinate(opts.startTime as Time);
+            x = param.chart.timeScale().timeToCoordinate(opts.startTime);
             y = param.series.priceToCoordinate(opts.price);
         },
         paneViews: () => paneViews,

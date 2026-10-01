@@ -116,6 +116,31 @@ export function isOverlayDrawn(
     );
 }
 
+/**
+ * 켜진 채로 실제 그려지는 작도 중 수평 레벨을 가진 것이 있는지 — "레벨선 오른쪽 연장"
+ * 설정 행을 띄울지의 기준. 레벨 작도를 전부 끈 상태에서 눌러도 아무것도 안 바뀌는
+ * 스위치를 두지 않는다.
+ */
+export function hasDrawnLevels(
+    overlays: readonly ChartOverlay[],
+    {
+        hiddenKeys,
+        barTimes,
+        lastBarTime,
+    }: {
+        hiddenKeys: ReadonlySet<string>;
+        barTimes: ReadonlySet<number>;
+        lastBarTime: number;
+    }
+): boolean {
+    return overlays.some(
+        o =>
+            o.levels.length > 0 &&
+            !hiddenKeys.has(overlayItemKey(o)) &&
+            isOverlayDrawn(o, barTimes, lastBarTime)
+    );
+}
+
 const toMarker = (l: OverlayLabel): OverlayMarker => ({
     time: l.at.time,
     position: l.position === 'above' ? 'aboveBar' : 'belowBar',
