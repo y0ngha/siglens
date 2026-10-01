@@ -47,6 +47,13 @@ export type OverlayMenuItem =
       }
     | { key: typeof ACTION_PRICES_ITEM_KEY; kind: 'action' };
 
+/** core가 카드 없이 종류로 그린 작도의 `sourceRef` 값들. */
+const KIND_SOURCE_REFS: ReadonlySet<string> = new Set(
+    Object.values(STRATEGY_KIND_SOURCE_REF)
+);
+const isKindSourceRef = (sourceRef: string): boolean =>
+    KIND_SOURCE_REFS.has(sourceRef);
+
 interface BuildOverlayMenuItemsOptions {
     barTimes: ReadonlySet<number>;
     lastBarTime: number;
@@ -92,6 +99,8 @@ export function buildOverlayMenuItems(
     );
     const cardItems = unique.flatMap((o): OverlayMenuItem[] => {
         if (o.kind === 'trendline') return [];
+        // 패턴은 항상 카드가 소유한다(core는 전략 종류만 `kind:*`로 옮긴다) —
+        // `pattern` 제외는 그 사실을 타입에 반영해 kind 변형을 좁히는 것.
         if (isKindSourceRef(o.sourceRef) && o.kind !== 'pattern')
             return [{ key: o.sourceRef, kind: o.kind, label: null }];
         return [
@@ -108,13 +117,6 @@ export function buildOverlayMenuItems(
 
     return [...actionItems, ...cardItems, ...trendItems];
 }
-
-/** core가 카드 없이 종류로 그린 작도의 `sourceRef` 값들. */
-const KIND_SOURCE_REFS: ReadonlySet<string> = new Set(
-    Object.values(STRATEGY_KIND_SOURCE_REF)
-);
-const isKindSourceRef = (sourceRef: string): boolean =>
-    KIND_SOURCE_REFS.has(sourceRef);
 
 /** 추세선 방향 — 선분이 없으면(그려지지 않으므로 실제론 없음) 상승으로 센다. */
 function trendlineDirection(overlay: ChartOverlay): SegmentDirection {
