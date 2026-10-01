@@ -23,6 +23,7 @@ import type {
     ValidatedActionPrices,
 } from '@y0ngha/siglens-core';
 import { getTimeFormatter } from '@/shared/lib/timeFormat';
+import { usePersistentState } from '@/shared/hooks/usePersistentState';
 import { useMAOverlay } from './hooks/useMAOverlay';
 import { useEMAOverlay } from './hooks/useEMAOverlay';
 import { useBollingerOverlay } from './hooks/useBollingerOverlay';
@@ -50,7 +51,6 @@ import { usePricePaneSize } from './hooks/usePricePaneSize';
 import { usePricePaneStretch } from './hooks/usePricePaneStretch';
 import { useOverlayLegend } from './hooks/useOverlayLegend';
 import { DEFAULT_LINE_WIDTH, STORAGE_KEYS } from './constants';
-import { usePersistentState } from '@/shared/hooks/usePersistentState';
 import { useIndicatorVisibility } from './hooks/useIndicatorVisibility';
 import { OverlayLegend } from './OverlayLegend';
 import { buildPaneLabels } from './utils/paneLabelUtils';

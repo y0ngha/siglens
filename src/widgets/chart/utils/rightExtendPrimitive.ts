@@ -14,7 +14,9 @@ export interface RightExtendSegment {
 
 /**
  * 연장 구간의 미디어 좌표. 시작 x가 pane 왼쪽 밖이면 0부터, 오른쪽 끝 이상이면
- * 그릴 게 없다. 좌표 변환이 실패(`null`)하면 그리지 않는다.
+ * 그릴 게 없다. 좌표 변환이 실패(`null`)하면 그리지 않는다 — 시작 봉이 시간축 범위
+ * 밖이라 `timeToCoordinate`가 `null`이면 연장선도 통째로 생략된다(의도: 기준 봉 없는
+ * 연장은 근거가 없다).
  */
 export function rightExtendSegment(
     x: number | null,
