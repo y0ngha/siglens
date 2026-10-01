@@ -23,6 +23,7 @@ import type {
     ValidatedActionPrices,
 } from '@y0ngha/siglens-core';
 import { getTimeFormatter } from '@/shared/lib/timeFormat';
+import { usePersistentState } from '@/shared/hooks/usePersistentState';
 import { useMAOverlay } from './hooks/useMAOverlay';
 import { useEMAOverlay } from './hooks/useEMAOverlay';
 import { useBollingerOverlay } from './hooks/useBollingerOverlay';
@@ -49,7 +50,7 @@ import { usePaneLabels } from './hooks/usePaneLabels';
 import { usePricePaneSize } from './hooks/usePricePaneSize';
 import { usePricePaneStretch } from './hooks/usePricePaneStretch';
 import { useOverlayLegend } from './hooks/useOverlayLegend';
-import { DEFAULT_LINE_WIDTH } from './constants';
+import { DEFAULT_LINE_WIDTH, STORAGE_KEYS } from './constants';
 import { useIndicatorVisibility } from './hooks/useIndicatorVisibility';
 import { OverlayLegend } from './OverlayLegend';
 import { buildPaneLabels } from './utils/paneLabelUtils';
@@ -68,6 +69,7 @@ import { useChartOverlays } from './hooks/useChartOverlays';
 import {
     barTimesOf,
     buildOverlayLineSpecs,
+    hasDrawnLevels,
     overlayColorFor,
 } from './utils/chartOverlayUtils';
 import type { OverlayMenuItem } from './utils/overlayItems';
@@ -176,6 +178,12 @@ export function StockChart({
     const priceDecimalsRef = useRef<number>(2);
 
     const { visible, toggle, paneIndices } = useIndicatorVisibility();
+
+    // 작도 수평 레벨 오른쪽 연장 — 분석·종목이 바뀌어도 유지되는 사용자 환경설정(localStorage).
+    const [levelRightExtend, setLevelRightExtend] = usePersistentState(
+        STORAGE_KEYS.levelRightExtend,
+        true
+    );
 
     const commonHookParams: CommonHookParams = {
         chartRef,
@@ -500,6 +508,16 @@ export function StockChart({
     const barTimes = useMemo(() => barTimesOf(bars), [bars]);
     const lastBarTime = bars[bars.length - 1]?.time ?? 0;
 
+    const hasExtendableLevels = useMemo(
+        () =>
+            hasDrawnLevels(chartOverlays, {
+                hiddenKeys: hiddenOverlayKeys,
+                barTimes,
+                lastBarTime,
+            }),
+        [chartOverlays, hiddenOverlayKeys, barTimes, lastBarTime]
+    );
+
     const overlaySpecs = useMemo(
         () =>
             buildOverlayLineSpecs(chartOverlays, {
@@ -519,6 +537,7 @@ export function StockChart({
                     label === BREAKOUT_LEVEL_LABEL
                         ? breakoutLevelText
                         : (formatFibLevelLabel(label, fibLevelTexts) ?? label),
+                extendLevelsRight: levelRightExtend,
             }),
         [
             chartOverlays,
@@ -531,6 +550,7 @@ export function StockChart({
             overlayColors,
             breakoutLevelText,
             fibLevelTexts,
+            levelRightExtend,
         ]
     );
 
@@ -741,6 +761,14 @@ export function StockChart({
                     items={overlayItems}
                     hiddenKeys={hiddenOverlayKeys}
                     onSetVisible={onSetOverlayVisible}
+                    rightExtend={
+                        hasExtendableLevels
+                            ? {
+                                  checked: levelRightExtend,
+                                  onChange: setLevelRightExtend,
+                              }
+                            : undefined
+                    }
                 />
                 <IndicatorSettingsModal bindings={indicatorBindings} />
             </div>

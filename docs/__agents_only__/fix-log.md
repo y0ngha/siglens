@@ -603,6 +603,14 @@
   - Applied fixes: Extracted fib level label kind→text mapping into `formatFibLevelLabel` helper function in `src/widgets/chart/utils/fibLevelLabel.ts` with unit tests; extracted 'ABC ' and 'ext ' prefix constants as named exports for reuse.
   - Skipped (false positive): messages/ko.json key reordering — the canonical output of `node scripts/i18n/extract.mjs --write` does not constitute a violation; i18n extraction script defines the authoritative key ordering.
 
+## [feat/level-right-extend Round 1–2 | chart overlay visibility toggle | 2026-10-01]
+- Violation: toggle-visibility predicate in StockChart ignored hidden overlay keys (shown setting with no visible effect)
+  - Rule: (new) UI state predicates filtering a key list must apply the filter predicate to all keys, not only to a subset. A "shown" setting that excludes a key from rendering but leaves it in the key check causes inconsistency between the control and the visible output.
+  - Context: Fixed by applying hidden-key filter to toggle predicate logic; verified toggle now correctly hides/shows overlays.
+- Violation: missing lifecycle/render tests for lightweight-charts series primitive
+  - Rule: (new) Primitives wrapping third-party chart libraries that manage their own lifecycle (mount, update, unmount) must include integration tests verifying lifecycle methods are called at expected render boundaries. Lifecycle management without test coverage leaves render-order regressions undetected.
+  - Context: Added tests covering series mount/update/unmount lifecycle for lightweight-charts integration.
+
 ## [Round 1 | claude/magical-sagan-56eoov (SEO prewarm reduction) | 2026-10-01]
 - Violation: A new exported constant's JSDoc was inserted between an existing JSDoc block and its declaration, orphaning the old doc
   - Rule: JSDoc blocks must remain directly above their declarations; inserting new docs between them breaks the association

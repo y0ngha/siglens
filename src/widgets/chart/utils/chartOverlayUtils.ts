@@ -32,6 +32,8 @@ export interface OverlayLineSpec {
     /** 레벨 라벨(가격축 옆 title). */
     title: string;
     markers: OverlayMarker[];
+    /** 마지막 봉 ~ 가격축 앞까지 덧그릴지(수평 레벨만). */
+    extendRight: boolean;
 }
 
 export interface OverlayLineSpecOptions {
@@ -48,6 +50,8 @@ export interface OverlayLineSpecOptions {
     /** RSI 패인이 꺼져 있으면 null. */
     rsiPaneIndex: number | null;
     colorFor: (overlay: ChartOverlay, role: string) => string;
+    /** 수평 레벨을 가격축 앞까지 연장 — 사용자 설정(기본 켜짐). */
+    extendLevelsRight: boolean;
     /** core가 내보내는 레벨 라벨(`breakout`, `61.8%` …)을 화면 문구로 바꾼다. 없으면 그대로. */
     levelLabelFor?: (label: string) => string;
 }
@@ -112,6 +116,31 @@ export function isOverlayDrawn(
     );
 }
 
+/**
+ * 켜진 채로 실제 그려지는 작도 중 수평 레벨을 가진 것이 있는지 — "레벨선 오른쪽 연장"
+ * 설정 행을 띄울지의 기준. 레벨 작도를 전부 끈 상태에서 눌러도 아무것도 안 바뀌는
+ * 스위치를 두지 않는다.
+ */
+export function hasDrawnLevels(
+    overlays: readonly ChartOverlay[],
+    {
+        hiddenKeys,
+        barTimes,
+        lastBarTime,
+    }: {
+        hiddenKeys: ReadonlySet<string>;
+        barTimes: ReadonlySet<number>;
+        lastBarTime: number;
+    }
+): boolean {
+    return overlays.some(
+        o =>
+            o.levels.length > 0 &&
+            !hiddenKeys.has(overlayItemKey(o)) &&
+            isOverlayDrawn(o, barTimes, lastBarTime)
+    );
+}
+
 const toMarker = (l: OverlayLabel): OverlayMarker => ({
     time: l.at.time,
     position: l.position === 'above' ? 'aboveBar' : 'belowBar',
@@ -163,6 +192,7 @@ export function buildOverlayLineSpecs(
                         lineWidthMult,
                         title: '',
                         markers: [],
+                        extendRight: false,
                     },
                 ];
             }
@@ -185,6 +215,7 @@ export function buildOverlayLineSpecs(
                               ? opts.levelLabelFor(l.label)
                               : l.label,
                           markers: [],
+                          extendRight: opts.extendLevelsRight,
                       },
                   ]
         );
