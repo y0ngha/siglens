@@ -23,7 +23,11 @@
  *   - an unreachable gated skill (no triggers and no state predicate),
  *   - a `triggers` entry that is not a known catalog signal, candle pattern, or
  *     chart-pattern id — or that belongs to the wrong vocabulary for the
- *     skill's own `type`.
+ *     skill's own `type`,
+ *   - a `usage_roles` value missing/invalid on an indicator_guide skill or
+ *     present on any other type,
+ *   - a `display.chart.color` that is not a 6-digit hex,
+ *   - an `overlay_kind` on a non-strategy skill or with an unknown value.
  *
  * Run via `yarn validate:skills`; wired into CI.
  */
@@ -43,6 +47,7 @@ import type {
     SkillStateFeature,
     SkillStatePredicateKind,
     SkillUsageRole,
+    StrategyOverlayKind,
 } from '@y0ngha/siglens-core';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -409,6 +414,39 @@ function validateDisplayColor(display: unknown): string | null {
 }
 
 /**
+ * Mirror of STRATEGY_OVERLAY_KINDS in src/entities/skill/api.ts (and
+ * siglens-core's domain/overlays/constants). The satisfies + exhaustiveness
+ * guard fail the build here if this copy drifts behind the core union.
+ */
+const OVERLAY_KINDS = [
+    'divergence',
+    'fibonacci',
+    'elliott',
+] as const satisfies readonly StrategyOverlayKind[];
+
+type MissingOverlayKind = Exclude<
+    StrategyOverlayKind,
+    (typeof OVERLAY_KINDS)[number]
+>;
+const _overlayKindsAreExhaustive: MissingOverlayKind extends never
+    ? true
+    : never = true;
+void _overlayKindsAreExhaustive;
+
+const OVERLAY_KIND_SET: ReadonlySet<string> = new Set<string>(OVERLAY_KINDS);
+
+/** `overlay_kind`는 전략 스킬 전용이고 값이 틀리면 core가 그 전략 작도를 전부 버린다 —
+ * 오타가 "작도가 조용히 사라짐"으로만 드러나지 않게 빌드에서 막는다. */
+function validateOverlayKind(type: unknown, raw: unknown): string | null {
+    if (raw === undefined) return null;
+    if (type !== 'strategy')
+        return '`overlay_kind` is only allowed on type: strategy';
+    return typeof raw === 'string' && OVERLAY_KIND_SET.has(raw)
+        ? null
+        : `\`overlay_kind\` must be one of ${OVERLAY_KINDS.join(' | ')} (got ${String(raw)}).`;
+}
+
+/**
  * Validate a single skill's frontmatter `data`. Returns the list of error
  * messages (empty when the skill is valid). Exported for unit testing without
  * spawning the CLI.
@@ -420,6 +458,7 @@ export const validateSkillData = (data: Record<string, unknown>): string[] => {
         data.gating
     );
     const displayColorError = validateDisplayColor(data.display);
+    const overlayKindError = validateOverlayKind(data.type, data.overlay_kind);
 
     // Explicit gating is mandatory (skills/CLAUDE.md's explicit-gating
     // policy): a skill with no `gating` block at all is a validation error,
@@ -429,6 +468,7 @@ export const validateSkillData = (data: Record<string, unknown>): string[] => {
         return [
             ...(usageRolesError !== null ? [usageRolesError] : []),
             ...(displayColorError !== null ? [displayColorError] : []),
+            ...(overlayKindError !== null ? [overlayKindError] : []),
             'missing `gating` block — every skill must declare `gating.tier` (see skills/CLAUDE.md explicit-gating policy).',
         ];
     }
@@ -436,6 +476,7 @@ export const validateSkillData = (data: Record<string, unknown>): string[] => {
     return [
         ...(usageRolesError !== null ? [usageRolesError] : []),
         ...(displayColorError !== null ? [displayColorError] : []),
+        ...(overlayKindError !== null ? [overlayKindError] : []),
         ...validateGating(data.gating, data.type),
     ];
 };

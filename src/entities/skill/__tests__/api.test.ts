@@ -942,6 +942,26 @@ ${gatingYaml}${extra}
             expect(skill.smcFullGuide).toBe(true);
         });
 
+        it.each(['divergence', 'fibonacci', 'elliott'])(
+            'overlay_kind: %s를 overlayKind로 매핑한다',
+            async kind => {
+                const skill = await loadOne(
+                    withGating(
+                        'gating:\n  tier: always_on',
+                        `\noverlay_kind: ${kind}`
+                    )
+                );
+                expect(skill.overlayKind).toBe(kind);
+            }
+        );
+
+        it('알 수 없는 overlay_kind는 undefined다 — 그 전략은 작도하지 않는다', async () => {
+            const skill = await loadOne(
+                withGating('gating:\n  tier: always_on', '\noverlay_kind: fib')
+            );
+            expect(skill.overlayKind).toBeUndefined();
+        });
+
         it('따옴표 문자열 smc_full_guide: "true"도 smcFullGuide=true로 매핑한다', async () => {
             // 일부 YAML 저자가 boolean 대신 quoted string 'true'를 쓸 수 있으므로 두 형태 모두 처리하는지 확인
             const skill = await loadOne(

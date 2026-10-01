@@ -5,6 +5,7 @@ type: strategy
 category: neutral
 indicators: []
 confidence_weight: 0.5
+overlay_kind: fibonacci
 gating:
   tier: always_on
 token_cost: 663
