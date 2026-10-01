@@ -36,7 +36,10 @@ import {
     type NewsFeedCategoryId,
 } from '@/entities/market-news/lib/categoryConfig';
 import { toEnrichedMarketNewsItem } from '@/entities/market-news/lib/toEnrichedMarketNewsItem';
-import { DEFAULT_DIGEST_MODEL_ID } from '@/entities/market-news/lib/marketNewsConstants';
+import {
+    DEFAULT_DIGEST_MODEL_ID,
+    DIGEST_REASONING,
+} from '@/entities/market-news/lib/marketNewsConstants';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { PREWARM_PROVIDER_FALLBACK } from '@/shared/config/prewarm';
 import { writeHubSsrSeed } from '@/shared/cache/hubSsrSeed';
@@ -234,10 +237,9 @@ function marketBriefingTargets(): HubTarget[] {
                     await writeHubSsrSeed(surface, cached);
                     return 'alreadyFresh';
                 }
-                // 쿨다운 — 시장마다 크론 생성은 시간당 한 번(`MARKET_BRIEFING_COOLDOWN_SECONDS`).
-                // 쿨다운 중엔 굽지 않는다. 페이지 peek는 키가 빗나가도 직전에 써 둔 SSR
-                // seed로 물러나므로 화면은 대개 그 브리핑을 보여 준다 — 다만 값이 있는지
-                // 확인한 건 아니라 `alreadyFresh`가 아니다(`HubOutcome`의 `cooldown` 주석).
+                // 페이지 peek는 키가 빗나가도 직전에 써 둔 SSR seed로 물러나므로 화면은
+                // 대개 그 브리핑을 보여 준다 — 다만 값이 있는지 확인한 건 아니라
+                // `alreadyFresh`가 아니다(`HubOutcome`의 `cooldown` 주석).
                 if (await marketBriefingCooldown.isSet(scope.id)) {
                     return 'cooldown';
                 }
@@ -335,6 +337,18 @@ function economyCalendarTargets(): HubTarget[] {
             console.log(
                 `[${logLabel}] ${JSON.stringify({ ingested, analyzed, translated })}`
             );
+            // 적재와 분석이 **둘 다** 실패했으면 실패로 센다 — 그대로 `alreadyFresh`로
+            // 두면 FMP·DB 장애가 로그에 "캐시 신선"으로 찍혀 묻힌다(`HubOutcome` 주석의
+            // 경계와 같다). 한쪽이라도 정상이면 fail-open으로 계속 간다.
+            const ingestFailed =
+                ingested === null ||
+                ingested.status === 'fetch-failed' ||
+                ingested.status === 'write-failed';
+            if (ingestFailed && analyzed === null) {
+                throw new Error(
+                    `economy calendar ${country}: ingest and analysis both failed`
+                );
+            }
             const changed =
                 (ingested?.status === 'ok' && ingested.changed > 0) ||
                 (analyzed?.status === 'ok' && analyzed.persisted > 0) ||
@@ -455,7 +469,7 @@ function newsDigestTargets(): HubTarget[] {
                     modelId: DEFAULT_DIGEST_MODEL_ID,
                     news,
                     // 액션과 같은 값이어야 한다 — 캐시 키 성분이다.
-                    reasoning: true,
+                    reasoning: DIGEST_REASONING,
                 } as const;
                 // `options`를 peek에도 그대로 넘긴다. `categoryLabel`은 키 성분이
                 // 아니지만(`marketNewsDigestStaticCache.ts`의 peek 헬퍼는 그래서

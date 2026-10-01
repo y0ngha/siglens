@@ -550,6 +550,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ try { const client = getDatabaseClient(); repo.recordVisit(client); } catch { return log_and_204; }  // client construction inside, containment preserved
     ✅ try { await copy(async () => buildReport(data)); } catch { showFailed(); }  // construction happens inside the promise, safe
     → Recurring: PR #795 feat/visitor-metrics Round 1, claude/funny-turing Round 3 — 2 occurrences
+
+30. Status/return value must not overload different meanings
+    → A status that means "nothing to do" or "no change required" must not absorb failure states, skip reasons, or other conditions that trigger side effects
+    → When a function returns a status that affects caller behavior (cache invalidation, re-fetch, logging), every distinct outcome must have its own status value
+    → Returning the same status for multiple different conditions hides the actual state and causes side-effect bugs (redundant operations, missed error logging, cache corruption)
+    ❌ return 'alreadyFresh' for both "analysis confirmed present" AND "skipped due to cooldown" → runner revalidates even when value is unknown
+    ❌ return 'alreadyFresh' for both "analysis succeeded" AND "ingest failed AND analysis threw" → outages hidden in logs, looks like normal success
+    ✅ return 'alreadyFresh' only for "value confirmed in cache"; separate return 'cooldown' for "skipped due to gate"; separate return 'failed' for "ingest or analysis error"
+    ✅ Each distinct input path (success, error, skip, cooldown) has its own status so callers can branch correctly
+    → Recurring: feat/hub-briefing-ssr-seed Round 1 + PR #900 Round 1 — 2 occurrences
 ```
 
 ---

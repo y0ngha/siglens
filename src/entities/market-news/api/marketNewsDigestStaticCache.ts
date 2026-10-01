@@ -13,7 +13,10 @@ import {
     CATEGORY_CONFIG,
     type NewsFeedCategoryId,
 } from '../lib/categoryConfig';
-import { DEFAULT_DIGEST_MODEL_ID } from '../lib/marketNewsConstants';
+import {
+    DEFAULT_DIGEST_MODEL_ID,
+    DIGEST_REASONING,
+} from '../lib/marketNewsConstants';
 import { toEnrichedMarketNewsItem } from '../lib/toEnrichedMarketNewsItem';
 
 /**
@@ -82,6 +85,6 @@ async function computeDigestPeek(
         locale,
         modelId: DEFAULT_DIGEST_MODEL_ID,
         news,
-        reasoning: true,
+        reasoning: DIGEST_REASONING,
     });
 }

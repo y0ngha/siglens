@@ -481,7 +481,7 @@ describe('runHubPrewarm', () => {
         await runHubPrewarm();
 
         expect(mocks.runMarketNewsDigest).toHaveBeenCalledWith(
-            expect.objectContaining({ reasoning: true, locale: 'ko' })
+            expect.objectContaining({ reasoning: false, locale: 'ko' })
         );
     });
 
@@ -1022,5 +1022,44 @@ describe('runHubPrewarm — 시장 브리핑 쿨다운', () => {
 
         expect(mocks.cooldownMark).toHaveBeenCalledTimes(PAGE_SCOPES.length);
         errorSpy.mockRestore();
+    });
+});
+
+describe('runHubPrewarm — 경제 캘린더 실패 집계', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        allSucceed();
+    });
+
+    it('적재와 분석이 둘 다 실패하면 failed로 센다 — 장애가 "캐시 신선"으로 묻히지 않게', async () => {
+        mocks.ingestEconomicCalendar.mockResolvedValue({
+            status: 'fetch-failed',
+        });
+        mocks.analyzeEconomicEvents.mockRejectedValue(new Error('db down'));
+        mocks.translateUnresolvedCalendarIndicators.mockResolvedValue(0);
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+
+        const result = await runHubPrewarm();
+
+        expect(result.failed).toBe(CALENDAR_COUNTRIES.length);
+        errorSpy.mockRestore();
+    });
+
+    it('적재만 실패하고 분석이 정상이면 fail-open으로 계속 간다', async () => {
+        mocks.ingestEconomicCalendar.mockResolvedValue({
+            status: 'write-failed',
+        });
+        mocks.analyzeEconomicEvents.mockResolvedValue({
+            status: 'ok',
+            persisted: 0,
+            pending: 0,
+        });
+        mocks.translateUnresolvedCalendarIndicators.mockResolvedValue(0);
+
+        const result = await runHubPrewarm();
+
+        expect(result.failed).toBe(0);
     });
 });

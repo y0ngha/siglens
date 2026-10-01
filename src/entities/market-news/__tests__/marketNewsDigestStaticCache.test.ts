@@ -172,7 +172,7 @@ describe('peekMarketNewsDigestStatic', () => {
             locale: 'ko',
             modelId: DEFAULT_DIGEST_MODEL_ID,
             news: [shapedFixtureRow],
-            reasoning: true,
+            reasoning: false,
         });
     });
 

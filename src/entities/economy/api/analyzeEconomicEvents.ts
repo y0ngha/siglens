@@ -15,15 +15,13 @@ import {
     markAnalysisRun,
 } from './calendarAnalysisRefreshFlag';
 import {
+    CALENDAR_MAJORITY_FAILURE_DIVISOR,
     CALENDAR_ANALYSIS_PARALLEL_LIMIT,
     CALENDAR_ANALYZED_IMPACTS,
     CALENDAR_REGION_LABEL,
     economyCalendarCacheTag,
     type CalendarCountry,
 } from '../lib/economyCalendarConstants';
-
-/** 과반 실패 판정 분모. ingestMarketNewsCategory.ts의 MAJORITY_DIVISOR와 동일 — 변경 시 함께 업데이트. */
-const MAJORITY_DIVISOR = 2;
 
 export interface AnalyzeEconomicEventsOptions {
     /**
@@ -151,7 +149,7 @@ export async function analyzeEconomicEvents(
             failures.map(f => f.reason)
         );
     }
-    if (failures.length > batch.length / MAJORITY_DIVISOR) {
+    if (failures.length > batch.length / CALENDAR_MAJORITY_FAILURE_DIVISOR) {
         console.error(
             `[${logLabel}] majority analyze failure (${failures.length}/${batch.length})`
         );

@@ -12,14 +12,12 @@ import {
 import { addEtDays, etDateOf } from '../lib/calendarWindow';
 import { economicCalendarId } from '../lib/economicCalendarId';
 import {
+    CALENDAR_MAJORITY_FAILURE_DIVISOR,
     CALENDAR_INGESTION_WINDOW_DAYS,
     CALENDAR_PAST_WINDOW_DAYS,
     economyCalendarCacheTag,
     type CalendarCountry,
 } from '../lib/economyCalendarConstants';
-
-/** upsert 과반 실패 시 abort 임계 분모. */
-const MAJORITY_DIVISOR = 2;
 
 export type IngestEconomicCalendarResult =
     | { readonly status: 'recently-fetched' }
@@ -97,7 +95,7 @@ export async function ingestEconomicCalendar(
             failures.map(f => (f.status === 'rejected' ? f.reason : null))
         );
     }
-    if (failures.length > deduped.length / MAJORITY_DIVISOR) {
+    if (failures.length > deduped.length / CALENDAR_MAJORITY_FAILURE_DIVISOR) {
         console.error(
             `[${logLabel}] majority upsert failure (${failures.length}/${deduped.length}) — aborting`
         );

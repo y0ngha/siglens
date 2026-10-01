@@ -624,9 +624,6 @@
 - Violation: Time-budget comment claimed a cron unit doing ingest (capped) + analysis (8) + sequential translations (3) could fit 45s timeout; real worst case ~65-70s
   - Rule: (new) when a unit chains several capped LLM steps under a timeout, budget = sum of each step's worst case; document it next to the caps
   - Context: lowered caps (4, 1) and corrected the budget math in comments
-- Violation: "skipped because of cooldown" path returned the same outcome ('alreadyFresh') as "value confirmed present", causing the runner to consume an SSR-miss marker and revalidate while the value was unknown
-  - Rule: (new) don't overload a status that triggers side effects with a different meaning; add a new status
-  - Context: added distinct 'cooldown' outcome to distinguish cooldown skip from value-present case
 - Violation: A target whose inner functions already revalidate the tag also returned 'generated', so the runner revalidated again (plus pointless Redis getdel)
   - Rule: (new) Optimization — remove redundant operations that no longer affect the outcome
   - Context: added HubTarget.selfInvalidating flag to prevent duplicate revalidation
@@ -634,3 +631,11 @@
   - Rule: MISTAKES.md §15 — magic numbers in comments must reference the constant
   - Context: replaced with reference to config length
 - Status (Round 2): APPROVED (zero findings)
+
+## [PR #900 Round 1 | claude/magical-sagan-56eoov-hub-data | 2026-10-01]
+- Violation: CALENDAR_MAJORITY_FAILURE_DIVISOR duplicated in two economy modules synced only by comment
+  - Rule: MISTAKES.md Coding Paradigm §6.9 duplicated logic
+  - Context: extracted constant to economyCalendarConstants and imported by both modules
+- Violation: cache-key-participating option (digest `reasoning`) written as literal at three call sites (action, cron, SSR peek) that must agree
+  - Rule: cache-key components shared by writer and reader live in one constant
+  - Context: extracted DIGEST_REASONING constant (now false per user decision). Single source of truth for cache participation.
