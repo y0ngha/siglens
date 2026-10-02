@@ -361,7 +361,8 @@ function toNewsRow(row: NewsDbRow): NewsRow {
  * ingest 실패(FMP 장애/402 등)는 fail-open — 배치의 다른 단위 격리 철학과
  * 동일하게 여기서 삼켜서 DB에 이미 있는 뉴스만으로 분석을 진행한다. FMP
  * 신규 호출 비용: pre-warm 방문마다 심볼당 1회 추가. 유니버스 295개, FMP
- * 한도 분당 300req, 배치는 5분 tick당 6심볼만 처리하므로 무시 가능한 증가분이다.
+ * 한도 분당 300req, 배치는 5분 tick당 12심볼(2026-10-02 이전 6)만 처리하므로 무시
+ * 가능한 증가분이다.
  */
 export async function prewarmNews(
     symbol: string,

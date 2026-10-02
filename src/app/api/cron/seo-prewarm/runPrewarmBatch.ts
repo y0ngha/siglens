@@ -50,12 +50,23 @@ export interface PrewarmBatchCounts {
 }
 
 /**
- * FIX Z(감사) — run* 함수가 LLM 블로킹 호출이라 심볼당 소요 시간이 길다.
- * 원래 10 → 6으로 낮춰 청크(SYMBOL_CONCURRENCY와 같아 1청크)당 최악 대기가
- * 과도해지지 않게 한다 — 실제 상한은 BATCH_DEADLINE_MS가 건다(이 상수는
- * "정상 tick의 목표 처리량"일 뿐, 배치 전체를 막는 하드 캡이 아니다).
+ * 한 tick이 처리할 심볼 수 — "정상 tick의 목표 처리량"이다. 배치 전체를 막는 하드
+ * 캡은 `BATCH_DEADLINE_MS`가 건다.
+ *
+ * 6 → 12 (2026-10-02). 프리웜 탭을 7개에서 2개(`PREWARM_TABS`: technical·news)로 줄인
+ * 뒤 tick 하나가 약 60초 만에 끝나 5분 주기의 대부분이 비었는데, 처리량은 그대로
+ * 6심볼이라 유니버스를 야간 창 안에 못 돌았다 — 배포 후 첫 밤 실측(10/01 20:30~
+ * 10/02 00:59 UTC): 48 tick × 6 = 288심볼로 377심볼 중 90개가 창 끝까지 stale로 남아
+ * 다음 창(04:05 UTC)으로 넘어갔다. 12면 약 32 tick(2시간 40분)에 한 바퀴가 끝난다.
+ *
+ * LLM 호출 총량은 같다(같은 심볼을 더 일찍 구울 뿐). tick당 시간은 2청크라 대략 두 배
+ * (~2분)가 되지만 5분 주기와 `BATCH_DEADLINE_MS`(10분) 안이다. 더 올리려면 tick당
+ * 시간이 주기에 닿는지(`durationMs`)부터 본다 — 주기를 넘기면 다음 tick이 락에 막혀
+ * 처리량이 도로 준다.
+ *
+ * (이력: FIX Z 감사 때 10 → 6으로 낮췄었다. 당시엔 탭이 5~7개라 심볼당 시간이 길었다.)
  */
-const SYMBOLS_PER_TICK = 6;
+export const SYMBOLS_PER_TICK = 12;
 /**
  * 한 청크에서 병렬 처리할 심볼 수.
  *
@@ -64,18 +75,15 @@ const SYMBOLS_PER_TICK = 6;
  * 무관했다. 지금은 `run*`가 LLM 왕복 내내 블로킹하므로 배치 시간이 그대로 지연에 비례한다.
  *
  * 탭 루프는 심볼 안에서 **직렬**이므로(캐시 재사용 목적), 배치 시간 ≈
- * `ceil(SYMBOLS_PER_TICK / SYMBOL_CONCURRENCY) × 탭수 × 유닛지연`이다. 3이면 2청크라
- * 유닛당 ~21초만 넘어도 하룻밤에 유니버스(294심볼)를 못 돈다. 실측 유닛 지연은
- * 콜드 상태에서 30초대(dev 서버 계측: technical 31.8s/34.3s, market briefing 46s)라
- * 그 선을 이미 넘는다. 6이면 1청크가 되어 배치 시간이 절반이 되고 tick 간격(5분)
- * 안에 들어온다.
+ * `ceil(SYMBOLS_PER_TICK / SYMBOL_CONCURRENCY) × 탭수 × 유닛지연`이다. 지금은
+ * 12 / 6 = 2청크 × 2탭이다(실측 1청크 ≈ 60초).
  *
- * 비용: core fundamental이 Promise.all로 ~13개 FMP 호출을 한번에 쏘므로 순간 버스트가
- * 3×13≈40 → 6×13≈78로 는다. FMP 예산 집계(`addFmpBudget`)와 429 백오프(`fmpRetry`)가
- * 그대로 받는다. 버스트가 문제가 되면 이 값이 아니라 스케줄 폭을 넓히는 쪽이 맞다 —
- * `BATCH_DEADLINE_MS`는 회전 불변식(아래) 때문에 못 올린다.
+ * `SYMBOLS_PER_TICK`과 같이 12로 올려 1청크로 만들지 않는 이유: 동시 LLM 호출과 FMP
+ * 버스트가 두 배가 된다. 프로바이더가 흔들릴 때(2026-10-01 DeepSeek 정지 1시간) 동시
+ * 요청이 많을수록 한꺼번에 90초씩 매달린다 — 처리량은 청크 수로 늘리고 동시성은 둔다.
+ * FMP 예산 집계(`addFmpBudget`)와 429 백오프(`fmpRetry`)는 그대로 받는다.
  */
-const SYMBOL_CONCURRENCY = 6;
+export const SYMBOL_CONCURRENCY = 6;
 // FIX A(감사) — bounded in-flight/backoff 후보 스캔 폭. selectFairBatch 참고.
 //
 // 2026-08 감사(KR 5종목 prewarm 미도달) — 예전엔 이 값이 "회전 오프셋이 시각에서 파생돼 배치가
@@ -498,10 +506,11 @@ export async function runPrewarmBatch(
     /**
      * 데드라인으로 버려진 작업을 **여기서** 로깅한다.
      *
-     * 위 청크 경계 검사는 `SYMBOLS_PER_TICK === SYMBOL_CONCURRENCY`인 현재 상수 조합에서
-     * 배치가 항상 1청크라 도달하지 않는다. 실제로 발동하는 건 심볼 안의 탭 경계 검사인데
-     * 그건 조용히 건너뛰기만 했다 — 즉 알람을 붙여 놔도 영원히 발화하지 않는 상태였다.
-     * 커버리지가 야금야금 줄어드는 걸 잡는 유일한 신호이므로 마커를 반드시 남긴다.
+     * 위 청크 경계 검사는 청크 **사이**에서만 돈다(지금은 2청크라 한 번). 마감이 청크
+     * 안에서 지나면 발동하는 건 심볼 안의 탭 경계 검사인데, 그건 조용히 건너뛰기만
+     * 했다 — 1청크이던 시절엔 청크 경계 검사가 아예 도달하지 않아, 알람을 붙여 놔도
+     * 영원히 발화하지 않는 상태였다. 커버리지가 야금야금 줄어드는 걸 잡는 신호이므로
+     * 탭 단위로 버려진 것도 마커를 반드시 남긴다.
      */
     if (droppedByDeadline > 0) {
         counts.remaining += droppedByDeadline;
@@ -560,12 +569,13 @@ export async function runPrewarmBatch(
  * 대신 후보 폭을 `SYMBOLS_PER_TICK * CANDIDATE_WINDOW_MULTIPLIER`개로 제한하고,
  * 그 창 안에서만 심볼당 최대 2회(마커 조회 1 + 마커가 아예 없을 때만 skip 조회 1)×stale
  * 탭 수를 조회한다 — worst case `SYMBOLS_PER_TICK * CANDIDATE_WINDOW_MULTIPLIER
- * (=18) × 7탭 × 2 = 252회/tick`(≪1900). 마커가 present면 skip 조회를 생략하므로
+ * (=36) × 2탭 × 2 = 144회/tick`(≪ 유니버스 전체). 탭이 7개이고 창이 18이던 시절엔
+ * 18 × 7 × 2 = 252회였다. 마커가 present면 skip 조회를 생략하므로
  * (present 자체가 "이번 tick엔 손대지 마라"는 뜻) 실측 평균은 이보다 낮다.
  *
  * FIX 2(감사, PR #698 리뷰) — 이 창 안의 후보 분류(`classifySymbol`)는 서로
  * 독립적이고 순서에 의존하지 않으므로 `Promise.all`로 병렬 실행한다(이전엔
- * `for`-루프 안에서 순차 `await` — worst case 252회 왕복이 전부 직렬이었다).
+ * `for`-루프 안에서 순차 `await` — 당시 worst case 252회 왕복이 전부 직렬이었다).
  * 결과 배열은 Promise.all이 입력 순서 그대로 반환하므로 회전 결정성이 유지된다.
  *
  * FIX C(감사) — 모든 stale 탭이 backoff(skip) 상태이거나 in-flight

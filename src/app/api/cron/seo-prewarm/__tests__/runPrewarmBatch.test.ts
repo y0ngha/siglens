@@ -165,7 +165,12 @@ import {
     snapshotCloseBoundaryFor as snapshotCloseBoundaryForReal,
     shouldDeferPrewarmWhileOpen as shouldDeferPrewarmWhileOpenReal,
 } from '@/entities/seo-snapshot/lib/freshness';
-import { runPrewarmBatch, type PrewarmClock } from '../runPrewarmBatch';
+import {
+    runPrewarmBatch,
+    SYMBOL_CONCURRENCY,
+    SYMBOLS_PER_TICK,
+    type PrewarmClock,
+} from '../runPrewarmBatch';
 import { runHubPrewarm } from '../hubs';
 
 const mockRunHubPrewarm = vi.mocked(runHubPrewarm);
@@ -197,6 +202,16 @@ function makeSimClock(startMs: number): PrewarmClock {
             t += ms;
         },
     };
+}
+
+/**
+ * 시간이 흐르지 않는 clock. `makeSimClock`은 유닛 타임아웃 race의
+ * `clock.sleep(UNIT_TIMEOUT_MS)`가 seam이 이겨도 시계를 120s씩 전진시키므로, 한 청크
+ * (6심볼)만 돌아도 600s 데드라인을 넘긴다 — 2청크를 전부 돌려야 하는 테스트는
+ * 이 clock으로 데드라인이 걸리지 않게 한다(sleep은 영원히 대기 = 타임아웃 불발).
+ */
+function makeFrozenClock(nowMs: number): PrewarmClock {
+    return { now: () => nowMs, sleep: () => new Promise<void>(() => {}) };
 }
 
 describe('runPrewarmBatch', () => {
@@ -445,22 +460,34 @@ describe('runPrewarmBatch', () => {
         errSpy.mockRestore();
     });
 
-    it('SYMBOLS_PER_TICK(6)을 초과하면 나머지는 remaining으로 잡힌다', async () => {
-        const symbols: PrewarmSymbol[] = Array.from({ length: 15 }, (_, i) => ({
-            symbol: `SYM${i}`,
-            tabs: ['technical'] as SeoSnapshotTab[],
-        }));
+    it('SYMBOLS_PER_TICK를 초과하면 데드라인과 무관하게 tick 캡만큼만 처리하고 나머지는 remaining으로 잡힌다', async () => {
+        const total = SYMBOLS_PER_TICK + 8;
+        const symbols: PrewarmSymbol[] = Array.from(
+            { length: total },
+            (_, i) => ({
+                symbol: `SYM${i}`,
+                tabs: ['technical'] as SeoSnapshotTab[],
+            })
+        );
         universe(...symbols);
         mockPrewarmTechnical.mockResolvedValue({
-            status: 'done',
+            status: 'cached',
             result: {},
         });
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-        const clock = makeSimClock(FIXED_NOW.getTime());
+        // 시계가 전혀 흐르지 않으므로 데드라인은 절대 걸리지 않는다 — 이 테스트가
+        // 보는 것은 오직 per-tick 캡(2청크 전부 처리)이다.
+        const clock = makeFrozenClock(FIXED_NOW.getTime());
         const counts = await runPrewarmBatch(clock);
 
-        expect(mockPrewarmTechnical).toHaveBeenCalledTimes(6);
-        expect(counts.remaining).toBe(9);
+        expect(mockPrewarmTechnical).toHaveBeenCalledTimes(SYMBOLS_PER_TICK);
+        expect(counts.remaining).toBe(total - SYMBOLS_PER_TICK);
+        expect(warnSpy).not.toHaveBeenCalledWith(
+            expect.stringContaining('batch deadline reached')
+        );
+
+        warnSpy.mockRestore();
     });
 
     it('options seam이 null을 반환하면 스킵하고 upsert하지 않으며 backoff(FIX C) 마커를 남긴다', async () => {
@@ -653,7 +680,7 @@ describe('runPrewarmBatch', () => {
 
     it('회전 오프셋 — Redis 영속 커서에서 결정적으로 파생된다(시각·Math.random과 무관)', async () => {
         const staleOnes: PrewarmSymbol[] = Array.from(
-            { length: 10 },
+            { length: 20 },
             (_, i) => ({
                 symbol: `S${i}`,
                 tabs: ['technical'] as SeoSnapshotTab[],
@@ -667,18 +694,43 @@ describe('runPrewarmBatch', () => {
         });
 
         // advanceRotationCursor는 "전진 전"(=이번 tick이 쓸) 값을 반환한다.
-        // 8을 주면 offset = 8 % 10 = 8 → S8,S9,S0..S3이 선택된다.
-        mockAdvanceRotationCursor.mockResolvedValue(8);
+        // 유니버스를 tick 캡(12)보다 크게(20) 잡아 창이 통째로 순환하지 않게 한다.
+        // 18을 주면 offset = 18 % 20 = 18 → S18,S19,S0..S9가 선택된다(12개).
+        mockAdvanceRotationCursor.mockResolvedValue(18);
 
         await runPrewarmBatch();
 
-        expect(mockAdvanceRotationCursor).toHaveBeenCalledWith(6); // SYMBOLS_PER_TICK
+        expect(mockAdvanceRotationCursor).toHaveBeenCalledWith(
+            SYMBOLS_PER_TICK
+        );
         const calledSymbols = mockPrewarmTechnical.mock.calls.map(c => c[0]);
-        expect(calledSymbols).toHaveLength(6);
-        for (const s of ['S8', 'S9', 'S0', 'S1', 'S2', 'S3']) {
+        expect(calledSymbols).toHaveLength(SYMBOLS_PER_TICK);
+        for (const s of [
+            'S18',
+            'S19',
+            'S0',
+            'S1',
+            'S2',
+            'S3',
+            'S4',
+            'S5',
+            'S6',
+            'S7',
+            'S8',
+            'S9',
+        ]) {
             expect(calledSymbols).toContain(s);
         }
-        for (const s of ['S4', 'S5', 'S6', 'S7']) {
+        for (const s of [
+            'S10',
+            'S11',
+            'S12',
+            'S13',
+            'S14',
+            'S15',
+            'S16',
+            'S17',
+        ]) {
             expect(calledSymbols).not.toContain(s);
         }
     });
@@ -693,7 +745,7 @@ describe('runPrewarmBatch', () => {
     // 전진하므로 이 livelock이 재발할 수 없다.
     it('창이 전부 blocked여도 커서가 무조건 전진해 다음 tick엔 다른 창을 본다(livelock 회귀 가드)', async () => {
         const staleOnes: PrewarmSymbol[] = Array.from(
-            { length: 40 },
+            { length: 100 },
             (_, i) => ({
                 symbol: `S${i}`,
                 tabs: ['technical'] as SeoSnapshotTab[],
@@ -716,7 +768,7 @@ describe('runPrewarmBatch', () => {
 
         // tick 2 — 이제는 아무것도 막혀 있지 않다고 가정한다. 진행이 전혀 없었는데도
         // (tick 1에서 아무것도 완료되지 않았다) 커서는 실행 자체로 전진했으므로,
-        // tick 1과 겹치지 않는 새 창(offset=6)을 봐야 한다.
+        // tick 1과 겹치지 않는 새 창(offset=SYMBOLS_PER_TICK)을 봐야 한다.
         mockGetInFlightMarker.mockResolvedValue({
             present: false,
             jobId: null,
@@ -724,7 +776,12 @@ describe('runPrewarmBatch', () => {
         await runPrewarmBatch();
         const second = mockPrewarmTechnical.mock.calls.map(c => c[0]);
 
-        expect(second).toEqual(['S6', 'S7', 'S8', 'S9', 'S10', 'S11']);
+        expect(second).toEqual(
+            Array.from(
+                { length: SYMBOLS_PER_TICK },
+                (_, i) => `S${SYMBOLS_PER_TICK + i}`
+            )
+        );
     });
 
     // 2026-08 감사(KR 5종목 prewarm 미도달의 근본 원인) 회귀 가드.
@@ -733,14 +790,14 @@ describe('runPrewarmBatch', () => {
     // 점프했다. 여기서는 그 지연을 그대로 재현한다: tick 1과 tick 2 사이에 실제
     // wall-clock이 4틱(20분)만큼 흘렀다고 가정한다(FMP 폭풍으로 배치 하나가
     // BATCH_DEADLINE_MS+스케줄 주기를 다 쓴 뒤에도 그다음 tick조차 락 때문에
-    // 건너뛴 시나리오). 이전 구현이라면 offset이 floor(20분/5분)×6=24로 뛰어(창
-    // 폭 18을 넘어) S18~S23 대역이 한동안 후보가 되지 못했다 — 그 뒤로도 회전
+    // 건너뛴 시나리오). 이전 구현이라면 offset이 floor(20분/5분)×12=48로 뛰어(창
+    // 폭 36을 넘어) S36~S47 대역이 한동안 후보가 되지 못했다 — 그 뒤로도 회전
     // 시각이 계속 옛 offset과 어긋나므로 "다음에 자연스럽게 따라잡는다"가 보장되지
     // 않는다. 새 구현은 시각과 무관하므로 그 대역이 "밀린 tick 바로 다음"에
     // 정확히 예정대로 도착해야 한다.
     it('배치 오버런으로 여러 tick이 밀려도 다음 tick들이 대역을 건너뛰지 않는다(overrun-no-skip 회귀 가드)', async () => {
         const staleOnes: PrewarmSymbol[] = Array.from(
-            { length: 40 },
+            { length: 100 },
             (_, i) => ({
                 symbol: `S${i}`,
                 tabs: ['technical'] as SeoSnapshotTab[],
@@ -759,27 +816,32 @@ describe('runPrewarmBatch', () => {
         );
 
         const TICK_MS = 5 * 60 * 1000;
-        // tick 1 — 정상 시각. offset=0 → S0~S5.
-        await runPrewarmBatch(makeSimClock(0));
+        // tick 1 — 정상 시각. offset=0 → S0~S11.
+        await runPrewarmBatch(makeFrozenClock(0));
         mockPrewarmTechnical.mockClear();
 
         // tick 2 — 배치 하나가 데드라인(600s)+스케줄(300s)을 다 써 다음 실제
-        // 실행이 4틱(20분) 뒤에야 시작됐다고 가정한다. offset=6 → S6~S11
-        // (옛 구현이라면 offset이 24로 뛰어 S24~S29를 봤을 시점).
-        await runPrewarmBatch(makeSimClock(4 * TICK_MS));
+        // 실행이 4틱(20분) 뒤에야 시작됐다고 가정한다. offset=12 → S12~S23
+        // (옛 구현이라면 offset이 48로 뛰어 S48~S59를 봤을 시점).
+        await runPrewarmBatch(makeFrozenClock(4 * TICK_MS));
         mockPrewarmTechnical.mockClear();
 
-        // tick 3 — offset=12 → S12~S17.
-        await runPrewarmBatch(makeSimClock(4 * TICK_MS));
+        // tick 3 — offset=24 → S24~S35.
+        await runPrewarmBatch(makeFrozenClock(4 * TICK_MS));
         mockPrewarmTechnical.mockClear();
 
-        // tick 4 — offset=18 → S18~S23. 옛 구현이라면 tick 2의 24-점프 때문에
+        // tick 4 — offset=36 → S36~S47. 옛 구현이라면 tick 2의 48-점프 때문에
         // 이 대역이 이 시점에 나타나지 않았다(다음 도달은 회전 주기 전체를
         // 기다려야 했다).
-        await runPrewarmBatch(makeSimClock(4 * TICK_MS));
+        await runPrewarmBatch(makeFrozenClock(4 * TICK_MS));
         const fourth = mockPrewarmTechnical.mock.calls.map(c => c[0]);
 
-        expect(fourth).toEqual(['S18', 'S19', 'S20', 'S21', 'S22', 'S23']);
+        expect(fourth).toEqual(
+            Array.from(
+                { length: SYMBOLS_PER_TICK },
+                (_, i) => `S${3 * SYMBOLS_PER_TICK + i}`
+            )
+        );
     });
 
     // review(2026-08) 회귀 가드 — selectFairBatch doc-comment(①)이 "이전 창과 바로
@@ -802,7 +864,7 @@ describe('runPrewarmBatch', () => {
     // 이 파일에서 mock되지 않는다)를 그대로 불러 쓴다. `base`는 실제 실행이 그
     // tick에 advanceRotationCursor로부터 받은 값을 그대로 가져온다(재계산하지
     // 않음) — 그래서 이 테스트가 검증하는 것은 정확히 "그 base와 그 tick의 실제
-    // selectable로부터 나와야 할 6개"뿐이다. 모듈로가 stale length를 쓰거나
+    // selectable로부터 나와야 할 SYMBOLS_PER_TICK개"뿐이다. 모듈로가 stale length를 쓰거나
     // 커서가 매 실행 리셋되면 실제 선택이 이 예측과 tick마다 어긋나 즉시 실패한다.
     it('staleSymbols가 완료·자정 리셋·KR defer로 매 tick 실제로 바뀌어도 회전이 전 심볼을 빠짐없이 커버한다(동적 배열 회귀 가드)', async () => {
         const KR_BLOCK = Array.from(
@@ -853,12 +915,12 @@ describe('runPrewarmBatch', () => {
 
         // selectFairBatch의 회전 산술만 재구현(위 doc-comment 참고). windowSize
         // 캡(CANDIDATE_WINDOW_MULTIPLIER)은 blocked 후보가 없는 이 테스트에서는
-        // 결과에 영향이 없다 — fresh = window 전체이고 batch는 그 앞 6개뿐이라,
-        // 그 6개는 windowSize와 무관하게 항상 selectable[(offset+i) % length]다.
+        // 결과에 영향이 없다 — fresh = window 전체이고 batch는 그 앞 SYMBOLS_PER_TICK개뿐이라,
+        // 그 개수만큼은 windowSize와 무관하게 항상 selectable[(offset+i) % length]다.
         function predictBatch(selectable: string[], base: number): string[] {
             if (selectable.length === 0) return [];
             const offset = base % selectable.length;
-            const size = Math.min(6, selectable.length); // SYMBOLS_PER_TICK
+            const size = Math.min(SYMBOLS_PER_TICK, selectable.length);
             return Array.from(
                 { length: size },
                 (_, i) => selectable[(offset + i) % selectable.length]
@@ -1192,13 +1254,16 @@ describe('runPrewarmBatch', () => {
     // ── FIX G(감사) — 배치 wall-clock 데드라인 ──
 
     it('청크 진입 시 데드라인을 넘겼으면 그 청크를 통째로 건너뛰고 로그를 남긴다', async () => {
-        // SYMBOLS_PER_TICK === SYMBOL_CONCURRENCY(=6)이라 현재 상수 조합에서는 배치가
-        // 항상 1청크다. 이 검사는 두 상수가 다시 갈라질 때를 위한 가드이므로, 시계를
-        // 청크 진입 직전에 앞당겨 그 경로를 직접 태운다.
-        const symbols: PrewarmSymbol[] = Array.from({ length: 6 }, (_, i) => ({
-            symbol: `SYM${i}`,
-            tabs: ['technical'] as SeoSnapshotTab[],
-        }));
+        // SYMBOLS_PER_TICK(12) > SYMBOL_CONCURRENCY(6)이라 배치는 2청크다. 이 테스트는
+        // 첫 청크 진입 시점에 이미 데드라인을 넘긴 경우(0개 처리)를 본다. 청크 사이
+        // 경계는 바로 아래 테스트가 본다. 시계를 청크 진입 직전에 앞당겨 직접 태운다.
+        const symbols: PrewarmSymbol[] = Array.from(
+            { length: SYMBOL_CONCURRENCY },
+            (_, i) => ({
+                symbol: `SYM${i}`,
+                tabs: ['technical'] as SeoSnapshotTab[],
+            })
+        );
         universe(...symbols);
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
@@ -1222,9 +1287,48 @@ describe('runPrewarmBatch', () => {
         const counts = await runPrewarmBatch(clock);
 
         expect(mockPrewarmTechnical).not.toHaveBeenCalled();
-        expect(counts.remaining).toBe(6);
+        expect(counts.remaining).toBe(SYMBOL_CONCURRENCY);
         expect(warnSpy).toHaveBeenCalledWith(
-            '[seo-prewarm] batch deadline reached — 0 symbols processed, 6 remaining'
+            `[seo-prewarm] batch deadline reached — 0 symbols processed, ${SYMBOL_CONCURRENCY} remaining`
+        );
+
+        warnSpy.mockRestore();
+    });
+
+    it('청크 사이 경계에서 데드라인을 넘겼으면 첫 청크만 처리하고 둘째 청크는 remaining으로 잡는다', async () => {
+        const symbols: PrewarmSymbol[] = Array.from(
+            { length: SYMBOLS_PER_TICK },
+            (_, i) => ({
+                symbol: `SYM${i}`,
+                tabs: ['technical'] as SeoSnapshotTab[],
+            })
+        );
+        universe(...symbols);
+        const clock = makeSimClock(FIXED_NOW.getTime());
+        // 첫 청크가 도는 동안 시계가 데드라인을 넘긴다 — 첫 청크는 이미 진입했으므로
+        // 끝까지 돌고, 둘째 청크 진입 검사에서 걸린다.
+        //
+        // seam 안의 sleep은 **의도를 드러내는 용도**다. `makeSimClock`은 유닛마다 도는
+        // unit-timeout race(120s)까지 시계에 더하므로 이 sleep 없이도 6유닛이면 이미
+        // 600s를 넘는다(`makeFrozenClock` 주석). 이 테스트가 지키는 건 "누가 넘겼나"가
+        // 아니라 "넘긴 뒤 둘째 청크에 진입하지 않는다"다 — 경계 검사를 지우면 호출 수가
+        // 12가 되어 실패한다.
+        mockPrewarmTechnical.mockImplementation(async () => {
+            await clock.sleep(BATCH_DEADLINE_MS + 1);
+            return { status: 'cached', result: {} };
+        });
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const counts = await runPrewarmBatch(clock);
+
+        expect(mockPrewarmTechnical).toHaveBeenCalledTimes(SYMBOL_CONCURRENCY);
+        const called = mockPrewarmTechnical.mock.calls.map(c => c[0]);
+        expect(called).toEqual(
+            symbols.slice(0, SYMBOL_CONCURRENCY).map(u => u.symbol)
+        );
+        expect(counts.remaining).toBe(SYMBOLS_PER_TICK - SYMBOL_CONCURRENCY);
+        expect(warnSpy).toHaveBeenCalledWith(
+            `[seo-prewarm] batch deadline reached — ${SYMBOL_CONCURRENCY} symbols processed, ${SYMBOLS_PER_TICK - SYMBOL_CONCURRENCY} remaining`
         );
 
         warnSpy.mockRestore();
