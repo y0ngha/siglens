@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import type { CSSProperties } from 'react';
 import { useEffect, useId, useRef } from 'react';
 import type { OverlayKind } from '@y0ngha/siglens-core';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
@@ -62,6 +63,15 @@ const GROUP_ORDER = Object.keys({
 // 누르지 않게 한다(`ModelListbox` 행과 같은 규약). 마우스에서는 32px로 촘촘히 둔다.
 const ROW_CLASS =
     'flex min-h-8 w-full touch-manipulation items-center gap-2.5 rounded-lg px-2 text-left text-xs transition-colors hover:bg-secondary-800 focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none pointer-coarse:min-h-11';
+
+/**
+ * 패널 폭과 lg 이상에서의 오른쪽 오프셋은 함께 본다 — 오프셋(`lg:right-60`, 240px)은 가격
+ * 축과 가장 긴 결과선 라벨("ヘッドアンドショルダー 無効化")을 비켜 가는 값이고, 패널(`w-60`)이
+ * 그만큼 왼쪽으로 가도 lg 차트 안에 들어간다. 어느 한쪽을 바꾸면 다른 쪽이 여전히 맞는지
+ * 확인한다. Tailwind가 클래스를 찾도록 리터럴로 둔다.
+ */
+const PANEL_WIDTH_CLASS = 'w-60';
+const PANEL_AXIS_OFFSET_CLASS = 'lg:right-60';
 
 type CheckState = boolean | 'mixed';
 
@@ -191,7 +201,9 @@ export function ChartOverlayMenu({
                     // 축 라벨을 패널이 덮지 않게 한다. 라벨 폭은 언어마다 달라("ヘッドアンドショルダー
                     // 無効化") 넉넉히 잡고, 차트가 좁은 lg 미만에서는 넘침을 피해 그대로 둔다.
                     className={cn(
-                        'absolute top-full right-0 z-50 mt-1 max-h-[min(70vh,28rem)] w-60 max-w-[calc(100vw-1rem)] overflow-y-auto lg:right-60',
+                        'absolute top-full right-0 z-50 mt-1 max-h-[min(70vh,28rem)] max-w-[calc(100vw-1rem)] overflow-y-auto',
+                        PANEL_WIDTH_CLASS,
+                        PANEL_AXIS_OFFSET_CLASS,
                         'flex flex-col rounded-lg border border-secondary-700 bg-secondary-900 p-1.5 shadow-2xl outline-none'
                     )}
                 >
@@ -285,10 +297,13 @@ export function ChartOverlayMenu({
                                             {color !== undefined && (
                                                 <span
                                                     aria-hidden="true"
-                                                    className="size-2 shrink-0 rounded-full"
-                                                    style={{
-                                                        backgroundColor: color,
-                                                    }}
+                                                    className="size-2 shrink-0 rounded-full bg-[var(--item-color)]"
+                                                    style={
+                                                        {
+                                                            '--item-color':
+                                                                color,
+                                                        } as CSSProperties
+                                                    }
                                                 />
                                             )}
                                             <span className="min-w-0 truncate">

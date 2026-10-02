@@ -9,7 +9,10 @@ export type ElliottStructureName =
     | 'combination';
 
 /**
- * 엘리어트 작도의 구조. id 넷째 칸이 숫자(`:5`, `:6`, `:6:abc`)면 임펄스, 나머지는
+ * 엘리어트 작도의 구조. core의 `ChartOverlay`는 구조 필드를 노출하지 않아 후보 id를 직접
+ * 파싱한다 — id 꼴(`ew:<dir>:<time>:<구조>`)은 `@y0ngha/siglens-core` 엘리어트 후보가 정하며,
+ * core가 꼴을 바꾸면 여기도 따라가야 한다. 모르는 꼴은 `null`이라 호출부가 종류만 쓴 문구로
+ * 떨어진다. id 넷째 칸이 숫자(`:5`, `:6`, `:6:abc`)면 임펄스, 나머지는
  * core가 붙이는 접미사(`tri`·`diag`·`abc`·`combo`/`combo3`)로 가른다. 엘리어트가 아니거나
  * 모르는 꼴이면 `null`.
  */

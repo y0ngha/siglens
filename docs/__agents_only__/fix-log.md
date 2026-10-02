@@ -593,18 +593,6 @@
   - Rule: comments describing a rule must be updated in the same change that alters the rule; state tradeoffs instead of claiming no effect
 - Status (Round 2): APPROVED
 
-## [fix/strategy-overlay-kind Round 2 | overlay strategy kind type safety | 2026-10-01]
-- Violation: OVERLAY_KINDS was a bare `readonly string[]` without `satisfies readonly StrategyOverlayKind[]`, exhaustiveness guard, or mirror note — unlike the other mirrored lists (SIGNAL_CATALOG, STATE_FEATURES, USAGE_ROLE_ORDER)
-  - Rule: MISTAKES.md 6.5/6.9 — mirrored constants drift; type-annotated mirrors with exhaustiveness guards prevent drift
-  - Context: Added `satisfies readonly StrategyOverlayKind[]` to OVERLAY_KINDS; added mirror note in types.ts; validate-skills.ts exit-conditions doc updated with new overlay_kind rule reference.
-- Status: APPROVED (round 2, zero findings)
-
-## [PR #903 claude-review | fix/strategy-overlay-kind | 2026-10-01]
-- Violation: STRATEGY_OVERLAY_KINDS (api.ts) and OVERLAY_KINDS (validate-skills.ts) were two copies of the same list — guarded but still duplicated
-  - Rule: MISTAKES.md 6.9 — duplicated logic/constants across multiple locations without shared source
-  - Context: core v2.4.0 now exports STRATEGY_OVERLAY_KINDS; both files import it and the duplicate copies + exhaustiveness guards were removed. core pin 2.3.1 → 2.4.0. skills/CLAUDE.md wording corrected (a prompt-side fix was A/B-tested and shelved, so the doc no longer claims the prompt instructs the model).
-- Status: APPROVED (zero findings)
-
 ## [Round 1–3 | perf/prewarm-symbols-per-tick | 2026-10-02]
 - Violation (R1, REQUIRED): doc-comment next to `SYMBOLS_PER_TICK` constant still quoted old derived figure (window 18 × 7 tabs × 2 = 252 Redis calls/tick) while same figure was updated in markdown docs
   - Rule: (new) when a constant changes, every derived number quoted in comments/docs (source comments, infra script rationale, capacity docs, sibling-module JSDoc) must be recomputed in the same change — grep the constant name AND the old literal
@@ -637,3 +625,17 @@
   - Rule: Guard cleanup to state the component itself set; avoid magic offsets tied to text width at narrow breakpoints; enforce claimed properties in the guard test.
   - Context: `unhighlight` only clears a menu-set highlight (+ focus/blur tests); `lg:right-60`; pairwise ΔE ≥ 20 guard for overlayPattern1..6.
 - Status (R2): APPROVED
+
+## [PR #908 claude-review | feat/overlay-outcome-levels | 2026-10-02]
+- Violation (BLOCKER): ChartOverlayMenu colour dot used `style={{ backgroundColor: color }}` — inline colour computation, MISTAKES.md Coding Paradigm #19
+  - Rule: Dynamic colours go through a CSS custom property (`style={{ '--x': v } as CSSProperties}`) + Tailwind `bg-[var(--x)]`, never an inline `backgroundColor`.
+  - Context: dot now sets `--item-color` with `bg-[var(--item-color)]`; menu test asserts `style.getPropertyValue('--item-color')`.
+- Violation (SUGGESTION): panel width `w-60` and axis offset `lg:right-60` were coupled only implicitly
+  - Rule: Values that must change together live in one place (named constants + comment), not as scattered literals.
+  - Context: `PANEL_WIDTH_CLASS` / `PANEL_AXIS_OFFSET_CLASS` constants in ChartOverlayMenu.tsx with a coupling comment.
+- Violation (SUGGESTION): `elliottStructureOf` parses core's candidate id format without stating the dependency; regression test lacked the plain `combo` suffix
+  - Rule: A parser of another package's id format documents the owner and the unknown-shape fallback, and its tests cover every suffix the owner emits.
+  - Context: JSDoc names `@y0ngha/siglens-core` as format owner (unknown shapes → null → kind-only label); added `ew:up:1:combo` case (5, 6, 6:abc, tri, diag, abc, combo, combo3 all covered).
+- Violation (SUGGESTION): `abc: 'A-B-C'` literal in StockChart skipped translation without saying why
+  - Rule: Deliberately untranslated literals get a named constant plus a one-line reason.
+  - Context: `ABC_STRUCTURE_NAME` constant with comment (language-neutral notation); `i18n:extract --write` and `i18n:verify` pass with no catalog changes.

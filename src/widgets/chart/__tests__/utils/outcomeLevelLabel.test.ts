@@ -28,6 +28,7 @@ describe('elliottStructureOf', () => {
         ['ew:down:1:tri', 'triangle'],
         ['ew:up:1:diag', 'diagonal'],
         ['ew:down:1:abc', 'abc'],
+        ['ew:up:1:combo', 'combination'],
         ['ew:up:1:combo3', 'combination'],
     ])('%s → %s', (id, structure) => {
         expect(elliottStructureOf(ew(id))).toBe(structure);

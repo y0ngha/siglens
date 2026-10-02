@@ -283,9 +283,9 @@ describe('ChartOverlayMenu — 항목 색·강조', () => {
         await open();
         const dots = getPanel().querySelectorAll('span.rounded-full');
         expect(dots).toHaveLength(1);
-        expect((dots[0] as HTMLElement).style.backgroundColor).toBe(
-            'rgb(34, 211, 238)'
-        );
+        expect(
+            (dots[0] as HTMLElement).style.getPropertyValue('--item-color')
+        ).toBe('rgb(34, 211, 238)');
     });
 
     it('hover로 그 작도를 강조하고, 벗어나면 푼다', async () => {

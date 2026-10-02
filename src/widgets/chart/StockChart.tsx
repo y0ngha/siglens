@@ -94,6 +94,8 @@ import {
     type IndicatorKey,
 } from './model/indicatorRegistry';
 
+// A-B-C 표기는 언어 중립이라 번역하지 않는다.
+const ABC_STRUCTURE_NAME = 'A-B-C';
 const EMPTY_CHART_OVERLAYS: ChartOverlay[] = [];
 const EMPTY_OVERLAY_ITEMS: readonly OverlayMenuItem[] = [];
 const EMPTY_HIDDEN_KEYS: ReadonlySet<string> = new Set();
@@ -233,7 +235,7 @@ export function StockChart({
                 impulse: t('StockChart.216f1f'),
                 triangle: t('StockChart.6e96f3'),
                 diagonal: t('StockChart.2751c7'),
-                abc: 'A-B-C',
+                abc: ABC_STRUCTURE_NAME,
                 combination: t('StockChart.a8aa4c'),
             },
         }),
