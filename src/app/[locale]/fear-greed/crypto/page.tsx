@@ -17,6 +17,7 @@ const SOURCE: FearGreedRouteSource = {
     market: 'crypto',
     load: getMarketFearGreedCryptoStatic,
     failureLog: '[FearGreedCryptoRoute] getMarketFearGreedCryptoStatic failed',
+    usesFmp: true,
 };
 
 interface LocaleParams {

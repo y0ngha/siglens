@@ -8,9 +8,13 @@ import {
     getCachedSectorSignals,
     sectorStocksConfigFingerprint,
 } from './sectorSignalsCache';
-import { marketDataProviderFor } from '@/shared/api/market/getMarketDataProvider';
+import {
+    marketDataProviderFor,
+    scopeUsesFmp,
+} from '@/shared/api/market/getMarketDataProvider';
 import type { DashboardScope } from '@/shared/config/dashboardScope';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import { assertFmpAvailableAtBuild } from '@/shared/api/offlineBuild';
 
 /**
  * ISR static-safe sector signals. timeframe별 캐시. revalidate=1h, `sector:signals` tag.
@@ -21,12 +25,18 @@ export function getSectorSignalsStatic(
     timeframe: DashboardTimeframe
 ): Promise<SectorSignalsResult> {
     return unstable_cache(
-        () =>
-            getCachedSectorSignals(
+        async () => {
+            const result = await getCachedSectorSignals(
                 marketDataProviderFor(scope.id),
                 scope,
                 timeframe
-            ),
+            );
+            // core가 종목별 실패를 빈 결과로 삼키므로 빌드 중 FMP가 죽었으면 Data
+            // Cache에 굳히지 않는다 — marketSummaryStaticCache와 같은 이유.
+            if (scopeUsesFmp(scope.id))
+                assertFmpAvailableAtBuild('sector-signals-static');
+            return result;
+        },
         [
             'sector-signals-static',
             scope.id,

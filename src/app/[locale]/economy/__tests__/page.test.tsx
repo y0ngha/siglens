@@ -62,6 +62,9 @@ vi.mock('@/widgets/economy/sections/EconomyMacroFacts', () => ({
 vi.mock('@/widgets/economy/sections/EconomySkeleton', () => ({
     EconomySkeleton: () => <div data-testid="economy-skeleton" />,
 }));
+vi.mock('@/shared/cache/buildFmpDegradedRevalidate', () => ({
+    shortenRevalidateIfFmpFailedAtBuild: vi.fn(async () => undefined),
+}));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
@@ -73,6 +76,7 @@ import { isEmptyEconomySnapshot } from '@/entities/economy/lib/economyCompletene
 // JsonLd는 vi.mocked()를 통해 test 내부에서 접근한다(최상단 변수는 호이스팅 충돌 방지).
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { expectFaqSingleSource } from '@/__tests__/utils/expectFaqSingleSource';
+import { shortenRevalidateIfFmpFailedAtBuild } from '@/shared/cache/buildFmpDegradedRevalidate';
 
 const mockGetSnapshot = vi.mocked(getEconomySnapshotStatic);
 const mockPeekStatic = vi.mocked(peekMacroBriefingStatic);
@@ -181,6 +185,31 @@ describe('/economy page.tsx integration', () => {
             expect(
                 screen.getByText(/잠시 후 다시 시도해 주세요/)
             ).toBeInTheDocument();
+        });
+
+        // 빌드 중 FMP 실패로 degrade된 렌더는 60초 뒤 재생성돼야 한다 — 헬퍼 배선 고정.
+        // 빌드 단계·회로 판정은 헬퍼 자체 테스트가 고정하므로 여기선 호출 여부만 본다.
+        it('degrade 분기에서도 빌드 degrade revalidate 헬퍼를 부른다', async () => {
+            vi.mocked(shortenRevalidateIfFmpFailedAtBuild).mockClear();
+            mockGetSnapshot.mockResolvedValue(EMPTY_SNAPSHOT);
+            mockIsEmpty.mockReturnValue(true);
+
+            const { default: EconomyPage } =
+                await import('@/app/[locale]/economy/page');
+            const { act } = await import('@testing-library/react');
+            await act(async () => {
+                render(
+                    await EconomyPage({
+                        params: Promise.resolve({ locale: 'ko' }),
+                    })
+                );
+            });
+
+            expect(
+                screen.getByText(/잠시 후 다시 시도해 주세요/)
+            ).toBeInTheDocument();
+            // 횟수는 고정하지 않는다 — 테스트 렌더러가 async RSC를 여러 번 재시도한다.
+            expect(shortenRevalidateIfFmpFailedAtBuild).toHaveBeenCalled();
         });
 
         it('getEconomySnapshotStatic이 throw하면 EconomyDegraded를 렌더한다 (빈 캐시 동결 방지)', async () => {

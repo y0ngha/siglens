@@ -151,6 +151,14 @@ jobs:
             # the snapshot/quote fetches fail and a degraded page is baked into the image until the
             # 24h revalidation re-renders it at runtime).
             #
+            # FMP_AT_BUILD (repo variable, default best-effort): during `next build`, fmpGet never retries
+            # 429/5xx and a build-wide breaker fails every later FMP call after the first transient failure
+            # — retry waits (10s/15s/20s) used to push a page past the 60s prerender timeout and fail the
+            # whole build (v0.94.0). Pages degraded by an FMP failure get revalidate=60 so the first
+            # post-deploy request re-renders them with real data. If FMP is rate-limiting deploys, skip it
+            # entirely: `gh variable set FMP_AT_BUILD --body off`, re-run this workflow, then
+            # `gh variable delete FMP_AT_BUILD` (docs/architecture/DEPLOY_RUNBOOK.md §1). Runtime unaffected.
+            #
             # NOTE: DATABASE_URL and FMP_API_KEY secrets must both be present in the repo's Actions
             # secrets before this workflow can succeed (required=true mounts). See: Settings → Secrets → Actions.
             #
@@ -180,6 +188,7 @@ jobs:
                       --build-arg NEXT_PUBLIC_ADSENSE_ENABLED=false \
                       `# GIT_SHA carries the release version (IMAGE_TAG), not a commit SHA. It is baked as buildId and used as the per-release S3 cache prefix (siglens-isr/<GIT_SHA>/...).` \
                       --build-arg PRERENDER_LOCALES=${{ vars.PRERENDER_LOCALES }} \
+                      --build-arg FMP_AT_BUILD=${{ vars.FMP_AT_BUILD || 'best-effort' }} \
                       --build-arg GIT_SHA=${IMAGE_TAG} \
                       --build-arg NEXT_BUILD_DATE=${NEXT_BUILD_DATE} \
                       `# ⚠️ 버킷 이름은 infra/aws/12-isr-cache.sh, infra/aws/deploy.sh, .github/workflows/deploy.yml 3곳에서 동기화되어야 한다.` \

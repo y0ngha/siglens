@@ -97,6 +97,35 @@ Upstash 자격증명을 읽어 캐시 클라이언트를 만들기 때문이다.
 core의 `readUpstashConfig`가 `null`을 받아 캐시 접근을 끈다 — siglens 측 어댑터 변경 없이도
 로컬 빌드가 core의 Upstash 접근을 막는다.
 
+### FMP가 배포 빌드를 막을 때 — `FMP_AT_BUILD`
+
+빌드는 `/market`(섹터 스캔 포함 ~255 calls)·`/economy`(12)·`/fear-greed`(6)·
+`/fear-greed/crypto`(21)를 prerender하며 FMP를 몰아 부른다. v0.94.0은 FMP 429에 `fmpGet`의
+재시도 대기(10s→15s→20s)가 붙어 페이지가 Next prerender 타임아웃(60s)을 3번 넘겨
+`prerenderEarlyExit`로 두 번 실패했다. 이제 빌드 단계(`NEXT_PHASE=phase-production-build`)에서는:
+
+- `fmpGet`이 429/5xx를 **재시도하지 않는다.**
+- 첫 transient 실패(429·5xx·타임아웃·네트워크)에서 **회로**가 열려 그 빌드 프로세스의 이후 FMP
+  호출은 요청 없이 실패한다. 로그 `[build-fmp] breaker tripped on …`가 워커당 한 번 찍힌다
+  (Next 정적 생성 워커는 별도 프로세스라 회로도 워커마다 따로다).
+- FMP 실패로 degrade된 렌더는 revalidate가 **60초**로 낮아진다(`shortenRevalidateIfFmpFailedAtBuild`).
+  정상 빌드는 라우트 고유값(market·fear-greed 3600, economy 86400) 그대로다.
+- 런타임은 전혀 바뀌지 않는다(재시도 포함).
+
+FMP가 계속 막고 있어 시도조차 원치 않으면 빌드 중 FMP를 끈다:
+
+```bash
+gh variable set FMP_AT_BUILD --body off   # deploy.yml → --build-arg FMP_AT_BUILD
+gh run rerun <실패한 run id>              # 또는 태그 push로 재배포
+gh variable delete FMP_AT_BUILD           # 다음 배포부터 기본(best-effort)으로 복귀
+```
+
+`off`로 구운 FMP 페이지는 degrade(noindex) 상태지만, 프로덕션은 S3 ISR 핸들러의 prefix가
+GIT_SHA별로 비어 있어 **배포 후 첫 요청이 어차피 런타임에서 새로 렌더한다**(warm-isr.sh가
+그 첫 요청을 낸다). 빌드 산출 HTML이 직접 서빙되는 환경(파일시스템 캐시 — 로컬 `next start`)
+에서는 60초 revalidate가 첫 재생성을 보장한다. 두 경우 모두 Cloudflare가 그 짧은 창의 degraded
+응답을 `s-maxage=60` 동안 엣지에 둘 수 있다.
+
 ### 배포 후 확인
 
 ```bash

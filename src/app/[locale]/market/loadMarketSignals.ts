@@ -7,6 +7,8 @@ import { getMarketSummaryStatic } from '@/entities/market-summary/api/marketSumm
 import { getSectorSignalsStatic } from '@/entities/sector-signal/api/sectorSignalsStaticCache';
 import { DEFAULT_DASHBOARD_TIMEFRAME } from '@/shared/config/dashboard-tickers';
 import type { DashboardScope } from '@/shared/config/dashboardScope';
+import { scopeUsesFmp } from '@/shared/api/market/getMarketDataProvider';
+import { shortenRevalidateIfFmpFailedAtBuild } from '@/shared/cache/buildFmpDegradedRevalidate';
 
 export interface LoadMarketSignalsResult {
     summary: MarketSummaryData;
@@ -43,6 +45,9 @@ const loadMarketSignalsOnce = cache(async (scope: DashboardScope) => {
             return { computedAt: '', stocks: [], failed: true };
         }),
     ]);
+    // 빌드 중 FMP가 실패했으면 이 prerender를 60초 뒤 재생성되게 한다(헬퍼 JSDoc).
+    // yahoo인 KRX scope는 FMP 상태와 무관하므로 건드리지 않는다.
+    if (scopeUsesFmp(scope.id)) await shortenRevalidateIfFmpFailedAtBuild();
     return { summary, sectorData };
 });
 

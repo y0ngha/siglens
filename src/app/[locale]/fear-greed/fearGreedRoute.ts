@@ -7,6 +7,7 @@ import type {
 import { resolveLocale } from '@/shared/i18n/locales';
 import type { FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
 import { buildHubMetadata } from '@/shared/lib/seoAlternates';
+import { shortenRevalidateIfFmpFailedAtBuild } from '@/shared/cache/buildFmpDegradedRevalidate';
 import { fearGreedCopyFor } from './copy';
 
 type FearGreedRouteView = MarketFearGreedView<MarketFearGreedViewSnapshot>;
@@ -30,6 +31,11 @@ export interface FearGreedRouteSource {
      * fear-greed us/kr + market-kr 통합)가 이 문자열을 본다 — 바꾸면 알람이 끊긴다.
      */
     readonly failureLog: string;
+    /**
+     * 판독값이 FMP에서 오는가(us·crypto = true, kr = yahoo라 false). 빌드 중 FMP 실패 시
+     * 60초 degrade revalidate를 FMP 라우트에만 건다.
+     */
+    readonly usesFmp: boolean;
 }
 
 /**
@@ -67,12 +73,15 @@ export async function fearGreedMetadata(
  * 빈 ISR 캐시 동결을 막기 위해 throw 대신 빈 스냅샷으로 폴백한다(/market 페이지와
  * 동일 패턴). 본문은 `snapshot === null`을 "표본 부족"으로 정상 렌더한다 —
  * `notFound()`는 절대 쓰지 않는다(Suspense 안 notFound가 soft-404를 만든 이력이 있다).
+ * 빌드 중 FMP가 실패했으면 이 prerender를 60초 뒤 재생성되게 한다(헬퍼 JSDoc).
  */
-export function loadFearGreedView(
+export async function loadFearGreedView(
     source: FearGreedRouteSource
 ): Promise<FearGreedRouteView> {
-    return source.load().catch((e: unknown) => {
+    const view = await source.load().catch((e: unknown): FearGreedRouteView => {
         console.error(`${source.failureLog}:`, e);
         return { snapshot: null, comparisons: [] };
     });
+    if (source.usesFmp) await shortenRevalidateIfFmpFailedAtBuild();
+    return view;
 }
