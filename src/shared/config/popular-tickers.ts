@@ -570,7 +570,7 @@ export const POPULAR_TICKERS = [
     // 이미 화이트리스트에 있는 것을 뺀 **차집합 전부**이고, 전원 SPDR 섹터 ETF
     // 또는 S&P 500 대형주라 차트·펀더멘털·재무가 모두 채워진다. prewarm
     // 유니버스는 312 → 335가 되고, 야간 처리량(틱 ~90 × SYMBOLS_PER_TICK 6
-    // ≈ 540 슬롯)에 여유가 있다.
+    // ≈ 540 슬롯, 당시 수치 — 지금은 `SITEMAP_SCOPE.md` §3-5)에 여유가 있다.
     //
     // 불변식: 이 블록의 합집합 = `SECTOR_ETFS` ∪ `SECTOR_STOCKS` − (다른 블록).
     // `__tests__/marketHubIndexability.test.ts`가 강제한다 — dashboard 그리드에 심볼을 더하면
@@ -612,12 +612,14 @@ export const POPULAR_TICKERS = [
     // 중앙값 3,042)의 절반도 안 된다 — 얇아서 못 넣는 게 아니라 **안 넣어서 얇다**.
     // 스냅샷이 붙기 전까지는 `hasSnapshot` 게이트가 degraded 페이지를 계속 막는다.
     //
-    // ⚠️ 용량: 유니버스 335 → 431. 야간 처리량은 틱 약 90회 × SYMBOLS_PER_TICK 6
+    // ⚠️ 용량(2026-08-24 당시 수치 — 지금 처리량은 `SITEMAP_SCOPE.md` §3-5): 유니버스
+    // 335 → 431. 야간 처리량은 틱 약 90회 × SYMBOLS_PER_TICK 6
     // ≈ 540 심볼-슬롯이라 이론 가동률이 62% → 80%로 오른다. 실제 처리량은 in-flight
     // 점유와 터미널 6h 백오프 때문에 이론보다 낮으므로, 배포 후
     // `[seo-prewarm] batch done`의 `remaining`이 매일 밤 0으로 수렴하는지 반드시
     // 확인한다. 수렴하지 않으면 기존 종목 스냅샷이 낡는다 — 그때는 SYMBOLS_PER_TICK을
     // 올리거나 아래 B 구간부터 줄인다(노출 기준 내림차순이라 뒤에서부터 자르면 된다).
+    // (SYMBOLS_PER_TICK 상향은 2026-10-02에 6 → 12로 한 번 썼다.)
     //
     // C 구간은 2026-10-01에 제거됐다 — 이 블록 맨 끝 주석 참고.
 

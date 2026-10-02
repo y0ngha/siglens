@@ -77,7 +77,7 @@ backoff TTL은 세 단계다(`lock.ts`):
 | 6시간 | `SKIP_TTL_SECONDS`(기본값) | 구조적 불가 — `no_trades`, `no_chains_error`, `miss_no_trigger`, null 결과. |
 | 24시간 | `NO_RECENT_NEWS_SKIP_TTL_SECONDS` | **`news` 탭 전용** — 분석 창(30일) 안에 보강된 기사가 0건. 뉴스는 시간 단위로 생기지 않으므로 30분 재시도는 전부 헛돈다(2026-09 실측: 41개 심볼 × 하루 ~19회). 영구 확정(`markStructurallyUnavailable`)을 쓰지 않는 이유는 그 심볼들도 기사가 다시 나오기 때문이다 — 주기만 맞추고 자동 복구는 남긴다. 적재 자체가 실패한 밤(`newsFetchFailed`)은 판단 근거가 없으므로 30분으로 되돌린다. |
 
-Redis 비용은 bounded 후보 창(`SYMBOLS_PER_TICK * 3` = 18개 심볼)으로 제한된다 — worst case 18 × 7탭 × 2회(in-flight 마커 조회 + skip 조회) = 252회/tick(유니버스 전체를 걸면 ~1900회/tick이 든다). 회전 오프셋 자체는 배치당 Redis 왕복 1회(`INCRBY`)만 추가된다.
+Redis 비용은 bounded 후보 창(`SYMBOLS_PER_TICK * 3` = 36개 심볼, 2026-10-02 이전엔 18)으로 제한된다 — worst case 36 × 2탭 × 2회(in-flight 마커 조회 + skip 조회) = 144회/tick(탭이 7개이던 시절엔 18 × 7 × 2 = 252회/tick)(유니버스 전체를 걸면 ~1900회/tick이 든다). 회전 오프셋 자체는 배치당 Redis 왕복 1회(`INCRBY`)만 추가된다.
 
 ### Starvation watch — 2026-08 감사(KR 5종목 prewarm 미도달)
 
@@ -99,7 +99,7 @@ CloudWatch metric filter/알람은 아직 없다(로그 discoverability만 확�
 
 in-flight 마커는 남아 있지만 역할이 바뀌었다 — 재개 지점(jobId)을 들고 있는 게 아니라, 같은 (symbol, tab)에 대해 **두 tick이 동시에 LLM을 태우는 것만** 막는다(TTL 30분, 완료 즉시 해제).
 
-`run*`이 LLM 응답까지 블로킹해 심볼당 소요 시간이 길어져 `SYMBOLS_PER_TICK`을 10 → **6**으로 낮췄다. 스케줄이 20:30 시작으로 30분 밀리면서(위 FIX Z 참고), 그리고 2026-09 비용 감사가 DeepSeek peak 구간을 비우면서 미국 마감 창의 tick 수는 `(20:30–23:55)` 42회 + `early``(00:00–00:55)` 12회 + `early-late`⁠`(04:05–05:55)` 22회 = 76회(5분 간격)이고, `kr-boundary` 창⁠`(10:05–12:55)`이 33회를 더해 하룻밤 총 ≈ 109회다. tick당 6심볼을 "이번 tick 안에" 목표로 하면(캐시가 이미 대부분 warm인 흔한 경우 대다수 유닛이 즉시 끝난다) 하룻밤 처리량은 유니버스(290심볼)를 여유 있게 커버할 수 있는 규모다(109 tick × 6 = 654 심볼-시도/night). 이전 head-of-line 방식의 실측 처리량(~160심볼/night, 그마저도 유니버스 head에 편중)과 대비된다 — 정확한 실측치는 배포 후 `SELECT count(*), count(DISTINCT symbol) FROM seo_analysis_snapshots`로 재확인할 것.
+`run*`이 LLM 응답까지 블로킹해 심볼당 소요 시간이 길어져 `SYMBOLS_PER_TICK`을 10 → **6**으로 낮췄다. **2026-10-02에 6 → 12로 다시 올렸다** — 프리웜 탭이 7개 → 2개(technical·news)로 줄어 tick 하나가 약 60초에 끝나는데 6심볼씩이라 첫 야간 창(48 tick × 6 = 288)에 377심볼을 못 돌고 90개가 다음 창으로 넘어갔다(10/01 밤 실측). 12면 약 32 tick에 한 바퀴다. `SYMBOL_CONCURRENCY`는 6 그대로(2청크) — 동시 LLM 호출을 늘리지 않는다. 아래 tick 수 산식은 6이던 시절 기록이다. 스케줄이 20:30 시작으로 30분 밀리면서(위 FIX Z 참고), 그리고 2026-09 비용 감사가 DeepSeek peak 구간을 비우면서 미국 마감 창의 tick 수는 `(20:30–23:55)` 42회 + `early``(00:00–00:55)` 12회 + `early-late`⁠`(04:05–05:55)` 22회 = 76회(5분 간격)이고, `kr-boundary` 창⁠`(10:05–12:55)`이 33회를 더해 하룻밤 총 ≈ 109회다. tick당 6심볼을 "이번 tick 안에" 목표로 하면(캐시가 이미 대부분 warm인 흔한 경우 대다수 유닛이 즉시 끝난다) 하룻밤 처리량은 유니버스(290심볼)를 여유 있게 커버할 수 있는 규모다(109 tick × 6 = 654 심볼-시도/night). 이전 head-of-line 방식의 실측 처리량(~160심볼/night, 그마저도 유니버스 head에 편중)과 대비된다 — 정확한 실측치는 배포 후 `SELECT count(*), count(DISTINCT symbol) FROM seo_analysis_snapshots`로 재확인할 것.
 
 ### Phase 2 — SSR prewarm rendering 배포 런북
 

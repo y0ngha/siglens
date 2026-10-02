@@ -639,6 +639,18 @@
   - Context: Split into variant: pattern items now typed `{ kind: StrategyOverlayKind; label: null }` with separate exhaustive check
 - Status (R2): APPROVED (zero findings) — core pin 2.4.0 → 2.5.0 (released) replaced local overlay used during development
 
+## [Round 1–3 | perf/prewarm-symbols-per-tick | 2026-10-02]
+- Violation (R1, REQUIRED): doc-comment next to `SYMBOLS_PER_TICK` constant still quoted old derived figure (window 18 × 7 tabs × 2 = 252 Redis calls/tick) while same figure was updated in markdown docs
+  - Rule: (new) when a constant changes, every derived number quoted in comments/docs (source comments, infra script rationale, capacity docs, sibling-module JSDoc) must be recomputed in the same change — grep the constant name AND the old literal
+  - Context: fixed in: src/shared/config/popular-tickers.ts (constant changed 6 → 12), infra/aws/13-seo-prewarm.sh (alarm rationale), src/entities/news-article/api.ts (JSDoc), docs/architecture/SITEMAP_SCOPE.md
+- Violation (R1–R2, RECOMMENDED): tests mirrored private source constants by hand and kept literal `6` in assertions/log strings after part of file was converted
+  - Rule: (new) tests should import source constant (export it) rather than mirror it; when converting literals to constants, convert every assertion in the file
+  - Context: tests now import SYMBOLS_PER_TICK instead of mirroring; all assertion literals and log messages referencing the old value updated
+- Violation (found while fixing tests R2, not by review): existing test ("per-tick cap") kept passing after cap doubled because simulated clock advanced 120s per unit (unit-timeout race) and tripped batch deadline at chunk boundary — passed for wrong reason
+  - Rule: (new) after changing a limit, confirm each test that asserts old limit fails for intended reason; still-green test may be passing via different mechanism (here: simulated-clock side effect)
+  - Context: added regression test confirming test fails when clock behavior returns to original; verified new assertion catches stale cap logic
+- Status (R3): APPROVED (zero findings)
+
 ## [PR #881 Round 1 | fix/seoptimer-audit-actions | 2026-09-27] (restored — not part of the promoted rules)
 - Violation: After moving the confidence tooltip next to the section heading with `left-0 w-56`, the box anchored to the ⓘ button (~130px from the left) would overflow a 320px viewport. The tooltip's `relative` anchor was the ⓘ wrapper itself.
   - Rule: (new) When relocating an absolutely positioned popover, recompute its box against the narrowest supported viewport (320px) from its new anchor's offset; `left-0`/`right-0` choices that were safe at the old anchor can overflow at the new one.

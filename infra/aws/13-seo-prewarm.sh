@@ -352,8 +352,10 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-seo-prewarm-batch-failed \
 # 배치는 fail-open이라 'batch failed'도 안 남는다 — 그 조합이면 야간 prewarm이 산출 0으로
 # 조용히 죽는다.
 #
-# 임계값: 15분 20건 초과가 연속 2주기. tick당 유닛 수(SYMBOLS_PER_TICK 6 × 최대 7탭)를
-# 감안하면 전면 장애는 배치마다 수십 건을 만들고, 심볼 한둘의 고질적 실패는 이 밑에 머문다.
+# 임계값: 15분 20건 초과가 연속 2주기. tick당 유닛 수는 SYMBOLS_PER_TICK 12 × 2탭
+# (technical·news) = 최대 24건이다(2026-10-02 이전엔 6 × 최대 7탭 = 42건). 전면 장애는
+# tick마다 ~24건 → 15분(3 tick)에 ~72건으로 임계값을 넘고, 심볼 한둘의 고질적 실패는
+# 15분에 많아야 2 × 2탭 × 3 tick = 12건이라 이 밑에 머문다.
 aws logs put-metric-filter --log-group-name /siglens/app \
   --filter-name siglens-seo-prewarm-unit-error \
   --filter-pattern '?"[seo-prewarm] unit-error" ?"[seo-prewarm] unit-timeout"' \
