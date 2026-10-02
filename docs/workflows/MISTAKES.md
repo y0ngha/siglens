@@ -2051,3 +2051,31 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ if (Number.isNaN(value)) throw new Error('invalid: NaN'); if (value > MIN) proceed
    → Recurring: validation guards over numeric fields with NaN risk — 2 occurrences in fix-log; third instance already in codebase awaiting discovery
 ```
+
+---
+
+## Skills
+
+```
+1. Skill instructions reference prompt sections/fields not emitted by pinned core version
+   → A skill's instructions must reference only sections/fields that the consumed @y0ngha/siglens-core version actually renders in its prompts
+   → Verify against the core version's prompt builder before writing conditional instructions like "if included in …" or "interpret only if listed in …"
+   → When core versions roll out with new prompt fields, add backward-compatible fallback logic: "use the computed line when present, otherwise fall back to old comparison"
+   ❌ skills/strategies/gap-analysis.md references `- Gap (last bar vs previous bar):` but core 2.7.0 does not yet emit this line
+      → Instructions fail silently; model cannot compare, analysis output degrades
+   ❌ Instruction: "Interpret only if listed in the detected-signal section" but core never renders signal names in that section (reserved for internal gating)
+      → User instructions contradicts prompt injection; model receives no signal context despite instructions claiming it will
+   ✅ Add fallback: "use the computed line when present, otherwise use the old comparison method"
+   ✅ Verify against core prompt builder: ensure every referenced section exists before the skill ships
+   → Recurring: feat/core-detectors-consume R1 (signal section reference); fix/skills-computed-lines R1 (gap/ma-cycle lines) — 2 occurrences; requires version-aware backward compatibility
+
+2. Skill digest edited without updating the body it summarizes
+   → A skill digest (the summary text injected into analysis prompts) must remain synchronized with its full body (the authoritative rule)
+   → If digest and body diverge, digest-verify cannot catch the drift and prompt injection uses stale summary
+   → digest_hash fingerprints the body, so editing only the digest leaves the hash unchanged and digest-verify passes — re-read the body section the digest summarizes and update it in the same change
+   ❌ ma-cycle.md digest's DATA SOURCE RULE / Current Stage bullets changed to cite the `MA cycle` line, but the body's Data Source Rule / Current Stage Determination still said "read only from the `- MA:` line"
+      → digest_hash stays old; digest-verify cannot detect divergence; prompt injection uses stale summary
+   ✅ Always update body and digest together; re-run `yarn skills:digest-update` after editing either one to recompute digest_hash
+   ✅ Commit digest_hash change; if hash stays the same, verify both digest and body reflect current truth
+   → Recurring: fix/washout-entry-verdict R1 (digest/body sync); fix/skills-computed-lines R1 (digest edited without body sync) — 2 occurrences confirmed only in digest-verify log
+```

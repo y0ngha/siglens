@@ -492,9 +492,6 @@
   - Context: Orchestrator caught the missing comments during verification. Fixed by restoring trimmed comments from git HEAD followed by manual review of all removed comment lines. Ensured all factory properties that describe mocking intent now carry their comments through the codemod pipeline.
 
 ## [feat/core-detectors-consume Round 1 | feat/core-detectors-consume | 2026-09-28]
-- Violation: new strategy skills gated on core signals told the model to "interpret only if listed in the detected-signal section", but core never renders those signal names (excluded from the confluence list; used only for gating)
-  - Rule: (new) A skill's instructions must reference only prompt sections/fields that core actually renders for its trigger — verify against the consumed core version's prompt builder before writing "if listed in …" guards
-  - Context: Reworded to "injected only when the engine detected …; derive the side from bar data / Market Reference".
 - Violation: skill template criterion that is always true under its own trigger (close above MA120/200 on a new 52-week high) made a trend branch unreachable
   - Rule: MISTAKES Predictability — conditions must be falsifiable under the trigger that injects the skill
   - Context: Removed the criterion; neutral branch now "MA(200) falling or stack not met".
@@ -653,3 +650,12 @@
 - Violation (SUGGESTION): `overlayPattern1..6` palette missing from the chart colour docs
   - Rule: New chart colour constants get a row in `docs/conventions/DESIGN.md` with dark/light values.
   - Context: added "차트 패턴 팔레트" section (values from `src/shared/lib/chartColors.ts`).
+
+## [fix/skills-computed-lines Round 1–2 | Skills computed prompt lines compatibility | 2026-10-02]
+- Violation (R1 RECOMMENDED, fixed): ma-cycle.md digest was edited without updating the full body it summarizes, so digest_hash did not change and digest-verify could not detect the drift between summary and body
+  - Rule: (new) When editing a skill digest (summary text for prompt injection), the full body (the authoritative rule) must be updated in the same change. If digest and body drift, digest-verify cannot catch the divergence and prompt injection uses stale summary.
+  - Context: Synced digest body with current rule text and re-ran `yarn skills:digest-update` to recompute digest_hash; digest-verify now reports all 98 skill files valid.
+- Violation (R1 REQUIRED, fixed): gap-analysis.md and ma-cycle.md pointed only at prompt lines (`- Gap (last bar vs previous bar):`, `- MA cycle (MA5/MA20/MA60):`) that the pinned core 2.7.0 does not emit, and removed the old fallback comparison
+  - Rule: MISTAKES Skills #1 — reference only lines the consumed core renders; keep a fallback until the core bump lands
+  - Context: "use the computed line when present, otherwise the old bar/MA comparison" in both body and digest.
+- Status (R2): APPROVED (zero findings)

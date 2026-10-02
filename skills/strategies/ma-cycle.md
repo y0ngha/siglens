@@ -9,8 +9,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [golden_cross, death_cross]
-token_cost: 1582
-digest_hash: "c0b55cef"
+token_cost: 1642
+digest_hash: "02561d8f"
 ---
 
 ## Overview
@@ -173,7 +173,7 @@ confidence_weight: 0.55 — Simple MA-crossover edges vanished out of sample aft
 
 ## AI Analysis Instructions
 
-**Data Source Rule (mandatory)**: Read values exclusively from the `- MA:` line in the indicator section. These are SMA (Simple Moving Average) values.
+**Data Source Rule (mandatory)**: When ## Indicator State has a `- MA cycle (MA5/MA20/MA60):` line, copy its order and stage — it is computed from the same values, so do not order the MAs yourself. Otherwise read values exclusively from the `- MA:` line in the indicator section. These are SMA (Simple Moving Average) values.
 
 - Short-term (단기): **MA(5)**
 - Medium-term (중기): **MA(20)**
@@ -183,7 +183,7 @@ Do NOT use EMA values. The `- EMA:` line is reserved for MACD 대순환 분석. 
 
 When analyzing the current MA Cycle results, include the following:
 
-- **Current Stage Determination**: Specify which of Stages 1–6 applies based on the positional relationship of MA(5) (short), MA(20) (medium), and MA(60) (long) read from the `- MA:` indicator line. If the ordering is unclear or converging, state "Stage Transition Zone" or "Possible Range-Bound Market."
+- **Current Stage Determination**: Specify which of Stages 1–6 applies — the stage on the `- MA cycle (MA5/MA20/MA60):` line when present, otherwise from the positional relationship of MA(5) (short), MA(20) (medium), and MA(60) (long) read from the `- MA:` indicator line. If the ordering is unclear or converging, state "Stage Transition Zone" or "Possible Range-Bound Market."
 
 - **Forward/Reverse Progression Pattern**: Explain the path of transition from the previous stage to the current stage, including whether it was a forward progression. If a reverse transition is detected, clearly describe its meaning (pullback vs. trend reversal).
 
@@ -204,7 +204,7 @@ Classify market into 6 stages by ordering of short MA5 / medium MA20 / long MA60
 Simple MA-crossover edges vanished out of sample after 1986 (Sullivan, Timmermann & White 1999) — use as a regime description, not a timing edge.
 
 ### DATA SOURCE RULE (mandatory)
-Read ONLY from the `- MA:` indicator line (SMA values). Short=MA(5), Medium=MA(20), Long=MA(60). Do NOT use EMA (`- EMA:` is for MACD 대순환). Using EMA makes both strategies identical and meaningless.
+When ## Indicator State has a `- MA cycle (MA5/MA20/MA60):` line, copy its order and stage — do not order the MAs yourself; otherwise order them from the `- MA:` line. Short=MA(5), Medium=MA(20), Long=MA(60) from the `- MA:` line (SMA values) for any value you cite. Do NOT use EMA (`- EMA:` is for MACD 대순환). Using EMA makes both strategies identical and meaningless.
 
 ### Stage definitions (Stage | ordering top→bottom | entry cross | duration)
 1 Stable Uptrend | Short>Medium>Long | Medium golden-crosses Long | Long
@@ -245,7 +245,7 @@ Stable: 3 lines near-parallel → trend continues. Accelerating: gaps widening �
 Range breakout: lines sideways & converge (med/long convergence is key). Upside breakout: lines rise with widening gaps + short stays above medium without re-crossing. Downside: lines fall with widening gaps + short stays below medium. False: apparent breakout but short re-crosses medium → range continues; don't enter prematurely.
 
 ### AI instructions (narrative summary, include)
-- Current Stage: which of 1-6 from MA5/MA20/MA60 positions (from `- MA:` line). If unclear/converging → "Stage Transition Zone" or "Possible Range-Bound Market".
+- Current Stage: the stage on the `- MA cycle (MA5/MA20/MA60):` line with its order (if absent: which of 1-6 from MA5/MA20/MA60 on the `- MA:` line). If unclear/converging → "Stage Transition Zone" or "Possible Range-Bound Market".
 - Forward/Reverse progression: path from previous to current stage; if reverse, clarify meaning (pullback vs reversal).
 - 3-Dim: Ordering (stage+meaning); Spacing (widening/narrowing/parallel + implication); Slope (each MA's slope + false-signal possibility).
 - Granville signals: if detectable, give signal number + conditions; else "No clear Granville signal at this time."

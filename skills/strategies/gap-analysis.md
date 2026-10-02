@@ -9,8 +9,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [gap_up, gap_down]
-token_cost: 431
-digest_hash: "90afe119"
+token_cost: 462
+digest_hash: "23be6cc4"
 ---
 
 ## Overview
@@ -22,7 +22,7 @@ A price gap is a range of prices where no trading happened between two bars. Wha
 - `gap_up`: the latest bar's **low** is above the previous bar's **high** (the gap stayed open through the whole bar).
 - `gap_down`: the latest bar's **high** is below the previous bar's **low**.
 - The gap must be at least 0.25 × ATR(14) (when ATR is available), so tiny gaps are ignored.
-- These signals only gate this skill in — the signal name is **not printed** anywhere in the prompt. This guide appears only when the engine detected a gap on the latest bar; tell the direction by comparing the last bar's low/high with the previous bar's high/low in the recent bar data.
+- These signals only gate this skill in — the signal name is **not printed** anywhere in the prompt. This guide appears only when the engine detected a gap on the latest bar; the `- Gap (last bar vs previous bar):` line in ## Indicator State gives the direction, size and ATR multiple. If that line is absent, tell the direction by comparing the last bar's low/high with the previous bar's high/low in the recent bar data.
 - Only the latest bar is checked. Instruments that trade around the clock (crypto) rarely gap on daily bars; intraday bars gap mostly at the session open.
 
 ## Gap Types (classical classification — Edwards & Magee)
@@ -47,7 +47,7 @@ Classify by context, never by the gap alone:
 
 <!-- PROMPT_DIGEST:START -->
 갭 분석 (confidence_weight 0.45)
-- This guide is injected only when the engine detected a gap on the latest bar (size ≥ 0.25×ATR(14)). The signal name is not printed elsewhere — determine direction from the recent bar data: last bar's low above the previous bar's high = gap up; last bar's high below the previous bar's low = gap down.
+- This guide is injected only when the engine detected a gap on the latest bar (size ≥ 0.25×ATR(14)). The `- Gap (last bar vs previous bar):` line in ## Indicator State states its direction, size, ATR multiple and whether it counts — copy that verdict; do not compare the bars yourself. Only if that line is absent: last bar's low above the previous bar's high = gap up; last bar's high below the previous bar's low = gap down.
 - Classify by CONTEXT (Edwards & Magee), never by the gap alone:
   - Common: inside a sideways range, ordinary volume — little meaning.
   - Breakaway: gaps out of a range / base / detected pattern boundary, ideally with above-average volume (cite the computed volume line) — starts a new move, most meaningful.
