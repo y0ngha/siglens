@@ -523,7 +523,7 @@ aws sns list-subscriptions-by-topic --topic-arn <siglens-alerts ARN> --profile s
 
 같은 실수를 되풀이하지 않기 위한 요약. 상세 기록은 `docs/qa/`의 날짜별 문서에 있다.
 
-**빈 ISR 캐시 동결 (2026-06-26)** — 외부 API 402가 24시간 재검증 중에 uncaught로 throw되어 `/`·`/economy`가 0-byte 캐시로 굳었다. `error.tsx`는 ISR prerender의 빈 캐시를 막지 못한다. → **모든 로더는 catch해서 degrade**하고, 복구는 instance refresh + CF 퍼지.
+**빈 ISR 캐시 동결 (2026-06-26)** — 외부 API 402가 24시간 재검증 중에 uncaught로 throw되어 `/`·`/economy`가 0-byte 캐시로 굳었다. `error.tsx`는 ISR prerender의 빈 캐시를 막지 못한다. → **모든 로더는 catch해서 degrade**한다. 복구는 캐시가 S3에 있으므로 instance refresh로는 안 지워진다 — [`ISR_CACHE_HANDLER.md`](ISR_CACHE_HANDLER.md) §3의 수동 캐시 정리(해당 배포 prefix 삭제) 후 CF 퍼지.
 
 **디스크풀 → FS read-only (2026-06-28)** — Next의 ISR/fetch 캐시가 시간당 수 GB씩 쌓여 루트 디스크를 채웠고, 재부팅 시 xfs가 read-only로 올라와 SSH/SSM/EIC가 전부 막혔다. 게다가 golden AMI가 **minimal** 변종이어서 접속 도구 자체가 없었다. → 캐시는 **S3로 외부화**(현재 상태), AMI는 SSM param standard 기반으로 수정, **진입 복구보다 인스턴스 교체가 먼저**.
 

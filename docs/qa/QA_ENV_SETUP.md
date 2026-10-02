@@ -113,10 +113,11 @@ yarn playwright install chromium webkit   # 최초 1회
 
 ## 8. pre-push 게이트 (참고)
 
-`.husky/pre-push`는 **format:check / lint / typecheck / i18n / test / build**를 돌린다. e2e는
-`SIGLENS_RELEASE_E2E=1`일 때만 추가된다. 즉 일반 push는 build까지만 — docker 미기동 시 build의
-DB 연결 단계에서 실패할 수 있으니 `.env.local`이 연결 가능한 DB(Neon)를 가리키는지 확인한다.
-`--no-verify`는 **사용자 허락 없이 금지**(CI와 동일 게이트라 우회하면 CI에서 터진다).
+`.husky/pre-push`는 **format:check / lint / typecheck / i18n** 4단계를 돌린다. **test·build는
+2026-09-24부터 로컬 훅에서 뺐다** — 로컬 `.env.local`이 프로덕션 자격증명을 담고 있어 prerender마다
+실 서비스(FMP/Neon/Upstash)를 불러 느리고 비용이 든다. 둘은 GitHub Actions에서만 돈다. e2e는
+`SIGLENS_RELEASE_E2E=1`일 때만 추가된다.
+`--no-verify`는 **사용자 허락 없이 금지**(우회하면 format·lint·타입 오류가 CI에서 터진다).
 
 **예외 — 릴리스.** `yarn release`는 `.release-it.json`의 `git.commitArgs`/`git.pushArgs`로
 `--no-verify`를 붙인다. 릴리스는 CI가 이미 통과한 master에서만 돌고(`requireBranch: master`)

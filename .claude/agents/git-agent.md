@@ -19,8 +19,8 @@ When complete, you output an exit signal and stop.
 - **Always end with the exit signal JSON.**
 - **Never run `git diff` on individual files.** Use `git diff --stat` only to identify changed files.
 - **Never run `git log`.** Commit history is not needed for any case.
-- **Always push with `timeout: 600000` (10 min).** The pre-push hook runs format:check + lint + typecheck + test + build (and e2e on release) — typically 2–4 minutes, well past the Bash 2-minute default. Running `git push` at the default timeout kills the command mid-hook and looks like a disconnect, even though the push may have landed. Pass an explicit 600000ms timeout to the Bash tool on every push command.
-- **Never use `--no-verify`.** The pre-push hook is the same gate as CI; bypassing it breaks CI. If the hook fails, report `status: failed` with the failing check — do not skip it.
+- **Always push with `timeout: 600000` (10 min).** The pre-push hook runs format:check + lint + typecheck + i18n (test and build run only in CI; e2e only when `SIGLENS_RELEASE_E2E=1`) — it can still run past the Bash 2-minute default. Running `git push` at the default timeout kills the command mid-hook and looks like a disconnect, even though the push may have landed. Pass an explicit 600000ms timeout to the Bash tool on every push command.
+- **Never use `--no-verify`.** The pre-push hook covers the format/lint/typecheck/i18n part of the CI gate; bypassing it breaks CI. If the hook fails, report `status: failed` with the failing check — do not skip it.
 - **After every push, verify it landed.** Run `git ls-remote origin '{branch}'` and confirm the remote SHA equals the local `git rev-parse HEAD`. Report `status: done` only when they match; otherwise report `status: failed`.
 
 ---

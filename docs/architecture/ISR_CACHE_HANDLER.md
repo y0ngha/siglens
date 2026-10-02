@@ -48,7 +48,8 @@ siglens-isr/{GIT_SHA}/{pages|fetch}/{encoded-or-sha256-key}.cache
 
 메모리 계층 상태는 5분마다 JSON 한 줄로 남는다:
 `{"tag":"isr-cache","event":"fetch-mem","size":..,"bytes":..,"hit":..,"miss":..,"evicted":..}`.
-`07-alarms.sh`의 JSON 메트릭 필터가 이걸 `Siglens/ISRCache`로 올린다(알람 없음, 지표만).
+이 로그에는 메트릭 필터를 만들지 않는다 — CloudWatch 메트릭 필터는 필터당 변환이 1개라
+값 5개를 올리려면 필터 5개가 필요하다. 대신 Logs Insights로 본다(쿼리는 `07-alarms.sh` 주석).
 
 S3 get/set 실패는 **fail-open**: 오류를 `console.error('[isr-cache] s3 get/set failed', ...)` 로만 기록하고
 렌더가 SSR 폴백으로 이어진다. 캐시 계층이 깨져도 서비스는 살아있으나 S3 비용(ISR Write) 없는
