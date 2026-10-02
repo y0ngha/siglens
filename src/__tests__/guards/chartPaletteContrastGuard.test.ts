@@ -174,6 +174,29 @@ describe('chart palette contrast guard', () => {
         expect(stray).toEqual([]);
     });
 
+    /**
+     * 차트 작도 패턴 팔레트는 패턴끼리 **서로 구분**되려고 있다 — 대비만 맞추면 비슷한
+     * 색으로 모여도 통과하므로 팔레트 안의 지각 거리를 따로 본다(2026-10-02: 앰버·오렌지가
+     * 실제 차트에서 구분되지 않아 6번을 노랑으로 바꿨다).
+     */
+    it.each(['dark', 'light'] as const)(
+        '%s 테마의 패턴 팔레트 6색이 서로 ΔE 20 이상 떨어진다',
+        theme => {
+            const palette = paletteFor(theme);
+            const keys = Object.keys(palette).filter(k =>
+                k.startsWith('overlayPattern')
+            );
+            expect(keys).toHaveLength(6);
+            const close = keys.flatMap((a, i) =>
+                keys
+                    .slice(i + 1)
+                    .filter(b => deltaE(palette[a], palette[b]) < 20)
+                    .map(b => `${a}~${b}`)
+            );
+            expect(close).toEqual([]);
+        }
+    );
+
     it('측정기가 실제로 잰다', () => {
         expect(contrast('#000000', '#ffffff')).toBeCloseTo(21, 1);
         expect(contrast('#ffffff', '#ffffff')).toBeCloseTo(1, 5);

@@ -621,6 +621,7 @@ export function ChartContent({
                         hiddenOverlayKeys={hiddenOverlayKeys}
                         highlightedOverlayKey={highlightedOverlayKey}
                         onSetOverlayVisible={setOverlayVisible}
+                        onHighlightOverlay={setHighlightedOverlay}
                     />
                 </div>
 

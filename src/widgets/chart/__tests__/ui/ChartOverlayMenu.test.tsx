@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { OverlayMenuItem } from '../../utils/overlayItems';
 import { ACTION_PRICES_ITEM_KEY } from '../../utils/overlayItems';
@@ -255,5 +255,74 @@ describe('ChartOverlayMenu — level right-extend toggle', () => {
         expect(toggle).toHaveAttribute('aria-pressed', 'true');
         await user.click(toggle);
         expect(onChange).toHaveBeenCalledWith(false);
+    });
+});
+
+describe('ChartOverlayMenu — 항목 색·강조', () => {
+    const second: OverlayMenuItem = {
+        key: 'p2',
+        kind: 'pattern',
+        label: 'Double Top',
+    };
+    const open = async (onHighlight = vi.fn()) => {
+        const user = userEvent.setup();
+        render(
+            <ChartOverlayMenu
+                items={[patternItem, second]}
+                hiddenKeys={new Set()}
+                onSetVisible={vi.fn()}
+                itemColors={new Map([['p1', 'rgb(34, 211, 238)']])}
+                onHighlight={onHighlight}
+            />
+        );
+        await user.click(screen.getByRole('button', { name: /차트 작도/ }));
+        return { user, onHighlight };
+    };
+
+    it('색이 있는 항목 앞에만 그 색 점을 찍는다', async () => {
+        await open();
+        const dots = getPanel().querySelectorAll('span.rounded-full');
+        expect(dots).toHaveLength(1);
+        expect((dots[0] as HTMLElement).style.backgroundColor).toBe(
+            'rgb(34, 211, 238)'
+        );
+    });
+
+    it('hover로 그 작도를 강조하고, 벗어나면 푼다', async () => {
+        const { user, onHighlight } = await open();
+        const row = within(getPanel()).getByRole('button', {
+            name: /Double Top/,
+        });
+        await user.hover(row);
+        expect(onHighlight).toHaveBeenLastCalledWith('p2');
+        await user.unhover(row);
+        expect(onHighlight).toHaveBeenLastCalledWith(null);
+    });
+
+    it('focus로도 강조하고 blur로 푼다', async () => {
+        const { onHighlight } = await open();
+        const row = within(getPanel()).getByRole('button', {
+            name: /Double Bottom/,
+        });
+        act(() => row.focus());
+        expect(onHighlight).toHaveBeenLastCalledWith('p1');
+        act(() => row.blur());
+        expect(onHighlight).toHaveBeenLastCalledWith(null);
+    });
+
+    it('메뉴가 건 강조가 없으면 hover 없이 닫혀도 카드가 건 강조를 건드리지 않는다', async () => {
+        const { user, onHighlight } = await open();
+        await user.keyboard('{Escape}');
+        expect(onHighlight).not.toHaveBeenCalled();
+    });
+
+    it('항목 위에 커서를 둔 채 패널을 닫아도 메뉴가 건 강조를 푼다', async () => {
+        const { user, onHighlight } = await open();
+        await user.hover(
+            within(getPanel()).getByRole('button', { name: /Double Bottom/ })
+        );
+        expect(onHighlight).toHaveBeenLastCalledWith('p1');
+        await user.keyboard('{Escape}');
+        expect(onHighlight).toHaveBeenLastCalledWith(null);
     });
 });

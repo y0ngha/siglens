@@ -5,8 +5,11 @@ import {
 } from '@y0ngha/siglens-core';
 import {
     ACTION_PRICES_ITEM_KEY,
+    areOutcomeLabelsCrowded,
     buildOverlayMenuItems,
     patternLabelsByKey,
+    patternPaletteByKey,
+    type OverlayMenuItem,
 } from '../../utils/overlayItems';
 
 const BAR_TIMES = new Set([1, 2, 3, 4, 5]);
@@ -244,5 +247,74 @@ describe('patternLabelsByKey', () => {
             { key: 'tl:1', kind: 'trendline', direction: 'up', index: 1 },
         ]);
         expect([...map]).toEqual([['rounding_bottom_0', '원형 바닥']]);
+    });
+});
+
+const patternItem = (key: string): OverlayMenuItem => ({
+    key,
+    kind: 'pattern',
+    label: key,
+});
+
+describe('patternPaletteByKey', () => {
+    it('패턴이 하나뿐이면 빈 맵 — 스킬 색(방향 의미)을 그대로 쓴다', () => {
+        expect(
+            patternPaletteByKey([patternItem('p1')], ['#a', '#b']).size
+        ).toBe(0);
+    });
+
+    it('둘 이상이면 메뉴 순서대로 팔레트를 돌아 쓴다(패턴 외 항목은 건너뛴다)', () => {
+        const items: OverlayMenuItem[] = [
+            { key: ACTION_PRICES_ITEM_KEY, kind: 'action' },
+            patternItem('p1'),
+            { key: 'kind:elliott', kind: 'elliott', label: null },
+            patternItem('p2'),
+            patternItem('p3'),
+        ];
+        expect([...patternPaletteByKey(items, ['#a', '#b'])]).toEqual([
+            ['p1', '#a'],
+            ['p2', '#b'],
+            ['p3', '#a'],
+        ]);
+    });
+});
+
+describe('areOutcomeLabelsCrowded', () => {
+    const items: OverlayMenuItem[] = [
+        { key: ACTION_PRICES_ITEM_KEY, kind: 'action' },
+        patternItem('p1'),
+        patternItem('p2'),
+        patternItem('p3'),
+    ];
+
+    it('결과선을 내는 패턴·엘리어트가 셋 이상 켜지면 붐빈다', () => {
+        expect(areOutcomeLabelsCrowded(items, new Set())).toBe(true);
+    });
+
+    it('추세선·피보나치처럼 결과선이 없는 작도는 세지 않는다', () => {
+        const mixed: OverlayMenuItem[] = [
+            patternItem('p1'),
+            { key: 't1', kind: 'trendline', direction: 'up', index: 1 },
+            { key: 't2', kind: 'trendline', direction: 'down', index: 1 },
+            { key: 'kind:fibonacci', kind: 'fibonacci', label: null },
+        ];
+        expect(areOutcomeLabelsCrowded(mixed, new Set())).toBe(false);
+        expect(
+            areOutcomeLabelsCrowded(
+                [
+                    ...mixed,
+                    patternItem('p2'),
+                    { key: 'kind:elliott', kind: 'elliott', label: null },
+                ],
+                new Set()
+            )
+        ).toBe(true);
+    });
+
+    it('꺼진 항목은 세지 않는다 — 둘 이하면 라벨을 전부 띄운다', () => {
+        expect(areOutcomeLabelsCrowded(items, new Set(['p3']))).toBe(false);
+        expect(
+            areOutcomeLabelsCrowded(items, new Set([ACTION_PRICES_ITEM_KEY]))
+        ).toBe(true);
     });
 });

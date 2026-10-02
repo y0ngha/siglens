@@ -622,12 +622,18 @@
   - Rule: (new) When relocating an absolutely positioned popover, recompute its box against the narrowest supported viewport (320px) from its new anchor's offset; `left-0`/`right-0` choices that were safe at the old anchor can overflow at the new one.
   - Context: Moved the `relative` anchor from the button to the header row (the tooltip's immediate container), so the box now anchors to the section's left content edge rather than the button's position.
 
-## [feat/elliott-structures Round 1–3 | Elliott wave skill update + core 2.6.0 | 2026-10-02]
-- Violation (R1 REQUIRED): Fib-only target rules stated as exclusive in 3 locations (skill body, injected PROMPT_DIGEST, structured output-rules directive) but the new instruction allowed quoting computed Elliott candidate targets as an alternative
-  - Rule: (new) When adding a new allowed source to an exclusive rule, grep every restatement of the old rule across all rule contexts (body + digest + output-rules + injected directives), not only the first occurrence. Incomplete grep leaves sibling statements contradicting the new intent.
-  - Context: Added carve-out "quote computed Elliott targets" to all 3 restatements; kept "never compute/re-derive" for non-quote cases. Validated with real-LLM run (14 citations, 0 fabricated prices).
-- Violation (R2 REQUIRED): A fourth rule restatement ('Additional output rules', motive wave directive) still lacked the carve-out
-  - Rule: Same as above — exhaustive grep required for all restatements
-  - Context: Added carve-out to the fourth location. Recommendation adopted: state first id = primary / optional second = alternate; triangle candidate adopted only in W4/B or combination's last leg.
-- Status (R3): APPROVED (zero findings)
 
+## [feat/overlay-outcome-levels Round 1–2 | outcome-level labels, pattern palette, crowded labels | 2026-10-02]
+- Violation (R1 REQUIRED): crowding heuristic counted every non-action overlay item, though only pattern and elliott overlays emit invalidation/target levels — a 1-pattern chart with trendlines/fib hid the very labels the feature adds
+  - Rule: (new) A threshold over "items" must count only the items that produce the thing being limited; check which producers emit it before counting.
+  - Context: `areOutcomeLabelsCrowded` counts pattern + elliott only; falsifiable test (1 pattern + 2 trendlines + fib = not crowded).
+- Violation (R1 REQUIRED): new i18n keys added to ko/en/ja/zh + clientKeys.json but not messages/_meta/hashes.json — the next `yarn i18n:translate` would treat them as stale and overwrite hand-written translations; `i18n:verify` does not catch it
+  - Rule: (new) Hand-written catalog keys need their `hashes.json` entry (`sha1(ko).slice(0,12)`) in the same change.
+  - Context: 10 StockChart hashes added beside the sibling entries.
+- Violation (R1 REQUIRED): behaviour composed inline in StockChart (owner titles, crowded gate + highlight exemption, palette colour override) had no test — removing the gate or the override stayed green
+  - Rule: Pure-helper tests do not cover the composition site; pin each user-visible branch where it is wired (StockChart `lastSpecs()`), then mutation-check.
+  - Context: 3 specs tests, mutation-checked.
+- Violation (R1 RECOMMENDED): menu leave/blur cleared a card-set highlight; offset `sm:right-48` guessed a locale-dependent width; palette distinctness claimed but unguarded
+  - Rule: Guard cleanup to state the component itself set; avoid magic offsets tied to text width at narrow breakpoints; enforce claimed properties in the guard test.
+  - Context: `unhighlight` only clears a menu-set highlight (+ focus/blur tests); `lg:right-60`; pairwise ΔE ≥ 20 guard for overlayPattern1..6.
+- Status (R2): APPROVED

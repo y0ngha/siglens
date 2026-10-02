@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useId, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import type { OverlayKind } from '@y0ngha/siglens-core';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
@@ -29,7 +29,13 @@ interface ChartOverlayMenuProps {
      * 연장할 레벨이 없으면 넘기지 않아 행을 숨긴다.
      */
     rightExtend?: RightExtendSetting;
+    /** 항목 key → 차트에 그린 색. 있으면 항목 앞에 색 점을 찍어 선과 짝짓는다. */
+    itemColors?: ReadonlyMap<string, string>;
+    /** 항목 hover·focus로 그 작도를 강조한다(축 라벨이 가려질 때 고르는 수단). */
+    onHighlight?: (key: string | null) => void;
 }
+
+const NO_ITEM_COLORS: ReadonlyMap<string, string> = new Map();
 
 const KIND_LABEL_KEY: Record<OverlayKind, string> = {
     pattern: 'ChartOverlayMenu.bdeea2',
@@ -105,6 +111,8 @@ export function ChartOverlayMenu({
     hiddenKeys,
     onSetVisible,
     rightExtend,
+    itemColors = NO_ITEM_COLORS,
+    onHighlight,
 }: ChartOverlayMenuProps) {
     const t = useTranslations('widgets.chart');
     const triggerRef = useRef<HTMLButtonElement>(null);
@@ -114,6 +122,25 @@ export function ChartOverlayMenu({
 
     useFocusTrap(panelRef, isOpen);
     useEscapeKey(close, isOpen);
+
+    // 메뉴가 건 강조는 패널이 닫히면 푼다 — 커서가 항목 위에 있는 채로 닫히면
+    // mouseleave가 오지 않아 강조가 남는다. 카드가 건 강조는 건드리지 않는다.
+    const highlightedByMenu = useRef(false);
+    const highlight = (key: string): void => {
+        highlightedByMenu.current = true;
+        onHighlight?.(key);
+    };
+    // 메뉴가 건 강조만 푼다 — hover·focus 없이 카드가 건 강조는 그대로 둔다.
+    const unhighlight = (): void => {
+        if (!highlightedByMenu.current) return;
+        highlightedByMenu.current = false;
+        onHighlight?.(null);
+    };
+    useEffect(() => {
+        if (isOpen || !highlightedByMenu.current) return;
+        highlightedByMenu.current = false;
+        onHighlight?.(null);
+    }, [isOpen, onHighlight]);
 
     if (items.length === 0) return null;
 
@@ -160,8 +187,11 @@ export function ChartOverlayMenu({
                     // 개수 없는 고정 이름 — 항목을 켤 때마다 그룹 이름이 바뀌어 읽히지 않게 한다.
                     aria-label={t('ChartOverlayMenu.5d0ffc')}
                     tabIndex={-1}
+                    // lg 이상에서는 가격 축과 축 라벨 폭만큼 왼쪽에 연다 — 항목 hover로 띄운 무효화·목표
+                    // 축 라벨을 패널이 덮지 않게 한다. 라벨 폭은 언어마다 달라("ヘッドアンドショルダー
+                    // 無効化") 넉넉히 잡고, 차트가 좁은 lg 미만에서는 넘침을 피해 그대로 둔다.
                     className={cn(
-                        'absolute top-full right-0 z-50 mt-1 max-h-[min(70vh,28rem)] w-60 max-w-[calc(100vw-1rem)] overflow-y-auto',
+                        'absolute top-full right-0 z-50 mt-1 max-h-[min(70vh,28rem)] w-60 max-w-[calc(100vw-1rem)] overflow-y-auto lg:right-60',
                         'flex flex-col rounded-lg border border-secondary-700 bg-secondary-900 p-1.5 shadow-2xl outline-none'
                     )}
                 >
@@ -228,6 +258,7 @@ export function ChartOverlayMenu({
                                 </button>
                                 {group.items.map(item => {
                                     const on = isOn(item.key);
+                                    const color = itemColors.get(item.key);
                                     return (
                                         <button
                                             key={item.key}
@@ -236,6 +267,12 @@ export function ChartOverlayMenu({
                                             onClick={() =>
                                                 onSetVisible([item.key], !on)
                                             }
+                                            onMouseEnter={() =>
+                                                highlight(item.key)
+                                            }
+                                            onMouseLeave={unhighlight}
+                                            onFocus={() => highlight(item.key)}
+                                            onBlur={unhighlight}
                                             className={cn(
                                                 ROW_CLASS,
                                                 'pl-4',
@@ -245,6 +282,15 @@ export function ChartOverlayMenu({
                                             )}
                                         >
                                             <CheckBox state={on} />
+                                            {color !== undefined && (
+                                                <span
+                                                    aria-hidden="true"
+                                                    className="size-2 shrink-0 rounded-full"
+                                                    style={{
+                                                        backgroundColor: color,
+                                                    }}
+                                                />
+                                            )}
                                             <span className="min-w-0 truncate">
                                                 {itemLabel(item)}
                                             </span>

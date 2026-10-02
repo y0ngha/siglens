@@ -71,9 +71,19 @@ import {
     buildOverlayLineSpecs,
     hasDrawnLevels,
     overlayColorFor,
+    overlayItemKey,
 } from './utils/chartOverlayUtils';
-import { patternLabelsByKey, type OverlayMenuItem } from './utils/overlayItems';
+import {
+    areOutcomeLabelsCrowded,
+    patternLabelsByKey,
+    patternPaletteByKey,
+    type OverlayMenuItem,
+} from './utils/overlayItems';
 import { formatFibLevelLabel, type FibLevelTexts } from './utils/fibLevelLabel';
+import {
+    formatOutcomeLevelLabel,
+    type OutcomeLevelTexts,
+} from './utils/outcomeLevelLabel';
 import {
     BREAKOUT_LEVEL_LABEL,
     CHART_OVERLAY_COLORS,
@@ -124,9 +134,11 @@ interface StockChartProps {
     overlayItems?: readonly OverlayMenuItem[];
     /** 꺼진 항목 key(`overlayItemKey`·`ACTION_PRICES_ITEM_KEY`). */
     hiddenOverlayKeys?: ReadonlySet<string>;
-    /** AI 패널 카드 hover·focus로 강조할 항목 key. */
+    /** AI 패널 카드·"차트 작도" 메뉴 항목 hover·focus로 강조할 항목 key. */
     highlightedOverlayKey?: string | null;
     onSetOverlayVisible?: (keys: readonly string[], visible: boolean) => void;
+    /** 메뉴 항목 hover·focus로 강조를 바꾼다(`null`이면 해제). */
+    onHighlightOverlay?: (key: string | null) => void;
 }
 
 export function StockChart({
@@ -146,6 +158,7 @@ export function StockChart({
     hiddenOverlayKeys = EMPTY_HIDDEN_KEYS,
     highlightedOverlayKey = null,
     onSetOverlayVisible = NOOP_SET_VISIBLE,
+    onHighlightOverlay,
 }: StockChartProps) {
     const t = useTranslations('widgets.chart');
     const tMisc = useTranslations('shared.ui.misc');
@@ -163,6 +176,24 @@ export function StockChart({
         () => patternLabelsByKey(overlayItems),
         [overlayItems]
     );
+    // 패턴이 둘 이상이면 항목마다 팔레트 색 — 스킬 색(상승/하락/중립)만으로는 같은 방향
+    // 패턴끼리 겹친다. 테마 토글은 차트를 remount하므로 마운트 시점 테마 값으로 충분하다.
+    const patternPalette = useMemo(
+        () =>
+            patternPaletteByKey(overlayItems, [
+                CHART_COLORS.overlayPattern1,
+                CHART_COLORS.overlayPattern2,
+                CHART_COLORS.overlayPattern3,
+                CHART_COLORS.overlayPattern4,
+                CHART_COLORS.overlayPattern5,
+                CHART_COLORS.overlayPattern6,
+            ]),
+        [overlayItems]
+    );
+    const outcomeLabelsCrowded = useMemo(
+        () => areOutcomeLabelsCrowded(overlayItems, hiddenOverlayKeys),
+        [overlayItems, hiddenOverlayKeys]
+    );
     // core 피보나치 레벨 라벨(`61.8%`, `ext 127.2%`, `ABC 127.2%`)의 화면 문구 —
     // 다리 방향에 따라 역할(반등·눌림·목표)로 읽히게 한다.
     const fibLevelTexts = useMemo<FibLevelTexts>(
@@ -178,6 +209,32 @@ export function StockChart({
             abcExtension: {
                 down: percent => t('StockChart.fd8510', { v0: percent }),
                 up: percent => t('StockChart.37cc7e', { v0: percent }),
+            },
+        }),
+        [t]
+    );
+    // core 무효화·목표·5파 상한 선(언어 중립 키)의 화면 문구 — 어느 패턴·엘리어트 구조의
+    // 선인지 붙인다("이중천장 무효화", "삼각형 목표"). 주인을 모르면 종류만.
+    const outcomeLevelTexts = useMemo<OutcomeLevelTexts>(
+        () => ({
+            invalidation: owner =>
+                owner === undefined
+                    ? t('StockChart.b7de20')
+                    : t('StockChart.c70cbe', { v0: owner }),
+            target: owner =>
+                owner === undefined
+                    ? t('StockChart.2fbea4')
+                    : t('StockChart.3322f9', { v0: owner }),
+            wave5Cap: owner =>
+                owner === undefined
+                    ? t('StockChart.b3fa71')
+                    : t('StockChart.6c1313', { v0: owner }),
+            elliottStructure: {
+                impulse: t('StockChart.216f1f'),
+                triangle: t('StockChart.6e96f3'),
+                diagonal: t('StockChart.2751c7'),
+                abc: 'A-B-C',
+                combination: t('StockChart.a8aa4c'),
             },
         }),
         [t]
@@ -548,17 +605,36 @@ export function StockChart({
                 lastBarTime,
                 rsiPaneIndex: visible.rsi ? paneIndices.rsi : null,
                 colorFor: (overlay, role) =>
+                    (overlay.kind === 'pattern'
+                        ? patternPalette.get(overlay.sourceRef)
+                        : undefined) ??
                     overlayColorFor(
                         overlay,
                         role,
                         overlayColors,
                         CHART_OVERLAY_COLORS
                     ),
-                levelLabelFor: (label, overlay) =>
-                    label === BREAKOUT_LEVEL_LABEL
-                        ? breakoutTitle(patternLabels.get(overlay.sourceRef))
-                        : (formatFibLevelLabel(label, overlay, fibLevelTexts) ??
-                          label),
+                levelLabelFor: (label, overlay) => {
+                    if (label === BREAKOUT_LEVEL_LABEL)
+                        return breakoutTitle(
+                            patternLabels.get(overlay.sourceRef)
+                        );
+                    const outcome = formatOutcomeLevelLabel(
+                        label,
+                        overlay,
+                        patternLabels.get(overlay.sourceRef),
+                        outcomeLevelTexts
+                    );
+                    if (outcome !== null)
+                        return outcomeLabelsCrowded &&
+                            overlayItemKey(overlay) !== highlightedOverlayKey
+                            ? ''
+                            : outcome;
+                    return (
+                        formatFibLevelLabel(label, overlay, fibLevelTexts) ??
+                        label
+                    );
+                },
                 extendLevelsRight: levelRightExtend,
             }),
         [
@@ -573,6 +649,9 @@ export function StockChart({
             breakoutTitle,
             patternLabels,
             fibLevelTexts,
+            outcomeLevelTexts,
+            outcomeLabelsCrowded,
+            patternPalette,
             levelRightExtend,
         ]
     );
@@ -784,6 +863,8 @@ export function StockChart({
                     items={overlayItems}
                     hiddenKeys={hiddenOverlayKeys}
                     onSetVisible={onSetOverlayVisible}
+                    itemColors={patternPalette}
+                    onHighlight={onHighlightOverlay}
                     rightExtend={
                         hasExtendableLevels
                             ? {

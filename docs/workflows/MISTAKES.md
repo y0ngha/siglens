@@ -593,6 +593,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ After changing feature behavior: 1) update unit test assertions, 2) update integration test fixtures if they exist, 3) update e2e selectors and step assertions, 4) verify locally with `yarn vitest run ...` + manual e2e step-through before push
     ✅ For constants that appear in e2e specs, prefer importing the constant instead of re-stating the literal
     → Recurring: PR #893 (unit test behavior change, e2e spec not updated), PR #881 (constant changed, e2e literal not updated) — 2+ occurrences
+
+34. When adding a new allowed source to an exclusive rule, grep every restatement
+    → Exclusive rules (allowed values, permitted sources, enforcement conditions) often appear in multiple contexts within the same feature: prompt body, digest/configuration, output validation directives, and injected instructions
+    → Adding a new source or relaxing a constraint must update ALL restatements, not just the primary one; incomplete grep leaves sibling statements contradicting the new intent
+    → After each rule change, verify by searching the entire codebase (including config files, comments, and schema definitions) for every restatement of that rule
+    ❌ Allow Elliott target carve-out in main skill body; miss the prompt digest restatement (kept "Fib-only"); AI follows digest rule
+    ❌ Add "computed Elliott targets" exception; update 2 of 3 rule restatements, miss the 3rd in output-rules directive → model refuses to quote Elliott targets in output
+    ✅ When modifying an exclusive rule: grep rule name + all synonyms (e.g., "fib" + "fibonacci", "only" + "must be") across all config, prompt, and directive files
+    ✅ Update every restatement, document why the rule changed, and test that output behavior matches the new rule (A/B measurement on real LLM if the rule affects instruction following)
+    → Recurring: feat/elliott-structures R1 (rule change incomplete across rule restatements) + R2 (4th restatement still had old rule) — 2 occurrences
 ```
 
 ---

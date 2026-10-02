@@ -159,6 +159,12 @@ vi.mock('@/shared/lib/chartColors', () => ({
         bollingerUpper: '#aaaaff',
         bollingerMiddle: '#8888cc',
         bollingerLower: '#6666aa',
+        overlayPattern1: '#pal-1',
+        overlayPattern2: '#pal-2',
+        overlayPattern3: '#pal-3',
+        overlayPattern4: '#pal-4',
+        overlayPattern5: '#pal-5',
+        overlayPattern6: '#pal-6',
     },
     getPeriodColor: (period: number) => `#color-${period}`,
     /* 차트 크롬을 런타임 테마에서 읽는 리졸버. 테스트는 다크 고정이면 충분하다. */
@@ -961,6 +967,97 @@ describe('StockChart', () => {
                 );
 
                 expect(lastSpecs()?.[0].title).toBe('원형 바닥 돌파');
+            });
+
+            const outcomePattern = (sourceRef: string): ChartOverlay => ({
+                id: `pattern:double_top:${sourceRef}`,
+                kind: 'pattern',
+                skill: 'double_top',
+                sourceRef,
+                variant: 'primary',
+                segments: [
+                    {
+                        from: { time: 100, price: 10 },
+                        to: { time: 300, price: 12 },
+                        role: 'pattern',
+                        style: 'solid',
+                        pane: 'price',
+                    },
+                ],
+                levels: [{ price: 14, fromTime: 100, label: 'invalidation' }],
+                labels: [],
+            });
+            const patternItems = (refs: string[]) =>
+                refs.map(ref => ({
+                    key: ref,
+                    kind: 'pattern' as const,
+                    label: `패턴${ref}`,
+                }));
+            const outcomeTitles = () =>
+                (lastSpecs() ?? [])
+                    .filter(spec => spec.points[0].value === 14)
+                    .map(spec => spec.title);
+
+            it('무효화 선 라벨에 패턴 이름을 붙인다', () => {
+                render(
+                    <StockChart
+                        bars={mockBars}
+                        timeframe="1Day"
+                        chartOverlays={[outcomePattern('p1')]}
+                        overlayItems={patternItems(['p1'])}
+                    />
+                );
+                expect(outcomeTitles()).toEqual(['패턴p1 무효화']);
+            });
+
+            it('결과선 작도가 셋 이상이면 강조한 작도의 무효화 라벨만 남긴다(선은 그대로)', () => {
+                const refs = ['p1', 'p2', 'p3'];
+                const { rerender } = render(
+                    <StockChart
+                        bars={mockBars}
+                        timeframe="1Day"
+                        chartOverlays={refs.map(outcomePattern)}
+                        overlayItems={patternItems(refs)}
+                    />
+                );
+                expect(outcomeTitles()).toEqual(['', '', '']);
+                rerender(
+                    <StockChart
+                        bars={mockBars}
+                        timeframe="1Day"
+                        chartOverlays={refs.map(outcomePattern)}
+                        overlayItems={patternItems(refs)}
+                        highlightedOverlayKey="p2"
+                    />
+                );
+                expect(outcomeTitles()).toEqual(['', '패턴p2 무효화', '']);
+            });
+
+            it('패턴이 둘 이상이면 팔레트 색, 하나면 스킬 색을 쓴다', () => {
+                const colorsOf = () =>
+                    (lastSpecs() ?? [])
+                        .filter(spec => spec.points[0].value === 10)
+                        .map(spec => spec.color);
+                const { rerender } = render(
+                    <StockChart
+                        bars={mockBars}
+                        timeframe="1Day"
+                        chartOverlays={[outcomePattern('p1')]}
+                        overlayItems={patternItems(['p1'])}
+                        overlayColors={{ p1: '#ef5350' }}
+                    />
+                );
+                expect(colorsOf()).toEqual(['#ef5350']);
+                rerender(
+                    <StockChart
+                        bars={mockBars}
+                        timeframe="1Day"
+                        chartOverlays={['p1', 'p2'].map(outcomePattern)}
+                        overlayItems={patternItems(['p1', 'p2'])}
+                        overlayColors={{ p1: '#ef5350', p2: '#ef5350' }}
+                    />
+                );
+                expect(colorsOf()).toEqual(['#pal-1', '#pal-2']);
             });
 
             it('RSI pane이 꺼져 있으면(paneIndex=null) rsi 세그먼트가 specs에서 빠지고 price 세그먼트만 남는다', () => {
