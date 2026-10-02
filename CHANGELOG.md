@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.95.1](https://github.com/y0ngha/siglens/compare/v0.95.0...v0.95.1) (2026-10-02)
+
+### Bug Fixes
+
+* **skills:** 갭·이동평균선 대순환 스킬이 core가 계산한 줄을 인용하도록 ([#910](https://github.com/y0ngha/siglens/issues/910)) ([34454a4](https://github.com/y0ngha/siglens/commit/34454a4ff63bbe40a760dbc8ceb5f7db58d99e20))
+
 # [0.95.0](https://github.com/y0ngha/siglens/compare/v0.94.1...v0.95.0) (2026-10-02)
 
 ### Features
