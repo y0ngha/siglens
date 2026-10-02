@@ -1,5 +1,11 @@
 # Changelog
 
+# [0.95.0](https://github.com/y0ngha/siglens/compare/v0.94.1...v0.95.0) (2026-10-02)
+
+### Features
+
+* **chart:** 무효화·목표가 수평선 라벨 + 패턴별 색 — core 2.7.0 ([#908](https://github.com/y0ngha/siglens/issues/908)) ([46604cb](https://github.com/y0ngha/siglens/commit/46604cbc8408a5d6f5c45df965ecbcf187944cd0))
+
 ## [0.94.1](https://github.com/y0ngha/siglens/compare/v0.94.0...v0.94.1) (2026-10-02)
 
 ### Bug Fixes
