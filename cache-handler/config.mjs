@@ -10,5 +10,7 @@ export const config = {
     // 실패하고(fail-open이라 빌드는 통과) 배포 로그를 수십 줄 채우면서 SDK 재시도
     // 대기만 더한다. 빌드 산출물은 Next가 직접 `.next`에 쓰므로 잃는 것이 없다.
     // Next가 빌드 시작 시 설정한다(next/dist/build/index.js: NEXT_PHASE=phase-production-build).
+    // 같은 판정이 src/shared/api/offlineBuild.ts `isBuildPhase()`에 있다 — 이 파일은
+    // 번들 밖(.mjs)이라 공유하지 못한다. 바꾸면 두 곳을 함께 바꾼다.
     buildPhase: process.env.NEXT_PHASE === 'phase-production-build',
 };

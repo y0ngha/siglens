@@ -5,9 +5,13 @@ import {
     getCachedMarketSummary,
     marketSummaryConfigFingerprint,
 } from './marketSummaryCache';
-import { marketDataProviderFor } from '@/shared/api/market/getMarketDataProvider';
+import {
+    marketDataProviderFor,
+    scopeUsesFmp,
+} from '@/shared/api/market/getMarketDataProvider';
 import type { DashboardScope } from '@/shared/config/dashboardScope';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import { assertFmpAvailableAtBuild } from '@/shared/api/offlineBuild';
 
 /**
  * ISR static-safe market summary. getCachedMarketSummary(redis getOrSetCache)를 Next
@@ -22,7 +26,18 @@ export function getMarketSummaryStatic(
     scope: DashboardScope
 ): Promise<MarketSummaryData> {
     return unstable_cache(
-        () => getCachedMarketSummary(marketDataProviderFor(scope.id), scope),
+        async () => {
+            const summary = await getCachedMarketSummary(
+                marketDataProviderFor(scope.id),
+                scope
+            );
+            // provider가 FMP 실패를 0-가격으로 삼키므로, 빌드 중 FMP가 죽었으면 여기서
+            // 던져 그 번들을 Data Cache(1h)에 굳히지 않는다 — 굳으면 60초 뒤 재생성도
+            // 같은 0-가격을 읽는다. 호출부(loadMarketSignals)가 catch해 degrade한다.
+            if (scopeUsesFmp(scope.id))
+                assertFmpAvailableAtBuild('market-summary-static');
+            return summary;
+        },
         [
             'market-summary-static',
             scope.id,

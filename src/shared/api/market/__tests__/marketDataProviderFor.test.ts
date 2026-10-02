@@ -54,6 +54,19 @@ describe('marketDataProviderFor', () => {
         expect(marketDataProviderFor('kr')).toBe(marketDataProviderFor('kr'));
     });
 
+    // 빌드 중 FMP 가드가 이 술어로 scope를 거른다 — provider 분기와 어긋나면 yahoo인
+    // 한국 페이지가 FMP 장애에 휩쓸리거나, FMP 페이지가 degrade된 채 굳는다.
+    it.each(['us', 'kr', 'crypto'] as const)(
+        '(Happy) scopeUsesFmp(%s)는 실제 provider가 FMP인지와 일치한다',
+        async scope => {
+            const { marketDataProviderFor, scopeUsesFmp } = await loadModule();
+
+            expect(scopeUsesFmp(scope)).toBe(
+                marketDataProviderFor(scope) instanceof FakeFmp
+            );
+        }
+    );
+
     // E2E 분기(`isE2E()` → FakeMarketProvider)는 여기서 검증하지 않는다 —
     // 소스가 `require('./FakeMarketProvider')`로 조건부 로드하는데 vitest ESM은
     // 확장자 없는 require를 해석하지 못한다. 실제 배선은 e2e 스위트가 검증한다.

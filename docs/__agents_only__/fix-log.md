@@ -384,19 +384,6 @@
 - Violation (Blocker, fixed): 순수 헬퍼 `resolveTypedTarget`·`normalizeLabel`을 훅 파일에 정의(MISTAKES #18) — `lib/resolveSubmitTarget.ts`·`lib/normalizeLabel.ts`로 이동하고 테스트 추가
 - Question (answered, comment only): `?ticker=`만 바뀌는 히스토리 이동은 구독이 알리지 않아 스스로 재렌더되지 않는다(이전 구현과 같은 한계) — 주석을 단정 대신 사실대로 정정
 
-## [PR #852 claude-review R3 (APPROVED, suggestions) | ai.siglens.io/about | 2026-09-19]
-- Suggestion (fixed): `runPlayback` in src/views/ai-about/lib/replayPlayer.ts caught every error silently, not only cancellation
-  - Rule: MISTAKES.md — catch blocks must not swallow errors without logging
-  - Context: cancellation now rejects with a `PlaybackCancelled` Error subclass; other errors are logged with console.error; test added
-- Suggestion (fixed): JSDoc in src/app/ai/[locale]/about/page.tsx claimed every link out of the page leads to `/`, but the "more on SIGLENS" links go to siglens.io
-  - Rule: MISTAKES.md §15.6 — comment accuracy
-  - Context: reworded to the real reason (no account-specific content; ways into the chat go to `/`)
-- Suggestion (fixed): unused `BankIcon` re-export added to the widgets/agent-chat barrel
-  - Rule: do not widen a slice's public surface with exports nobody imports
-  - Context: removed
-- Suggestion (fixed): `useCanAnimate` reduced-motion change subscription had no test
-  - Context: added src/views/ai-about/hooks/__tests__/useCanAnimate.test.tsx (initial value, change event, unsubscribe on unmount)
-
 ## [feat/symbol-chat-to-ai-host Round 1–2 | 종목 챗봇 폐지 → ai.siglens.io | 2026-09-20]
 - Violation: Removed the `hideView` hidden mount on the news/fundamental/financials/congress/options tabs believing it existed only to publish chatbot context; it also kept `useRegisterShareable` running, so the header Share button would report "unavailable" whenever snapshot prose was shown
   - Rule: (new) Before removing a "mounted but hidden" component, list every hook it runs before its early return (share registration, analytics, prefetch), not only the one its comment names
@@ -618,27 +605,6 @@
   - Context: core v2.4.0 now exports STRATEGY_OVERLAY_KINDS; both files import it and the duplicate copies + exhaustiveness guards were removed. core pin 2.3.1 → 2.4.0. skills/CLAUDE.md wording corrected (a prompt-side fix was A/B-tested and shelved, so the doc no longer claims the prompt instructs the model).
 - Status: APPROVED (zero findings)
 
-## [fix/share-i18n-direction-font | Round 1–2 | 2026-10-01]
-- Violation (R1 required): news category OG label used `CATEGORY_CONFIG[cat].koLabel` (Korean AI-prompt field) in every locale; after switching ja/zh OG fonts to Noto Sans JP/SC (no Hangul) it would render tofu
-  - Rule: (new) OG metadata fields consumed by different rendering contexts (AI prompt vs share snapshot) must use locale-specific values when the consuming context depends on locale-specific properties (font, glyph coverage)
-  - Context: Fixed by translating `labelKey` in the request locale + test asserting no Hangul for ja/zh
-- Violation (R1 recommended): 5 new hand-translated i18n keys lacked messages/_meta/hashes.json entries
-  - Rule: MISTAKES.md §26–27 i18n artifact sync — hand-translated or new keys must be added to messages/_meta/hashes.json immediately
-  - Context: Verified by sync check after all translations
-- Violation (R1 recommended): `satisfies Partial<Record<OptionsSignalKind,string>>` not exhaustive over non-shared signal kinds
-  - Rule: Record types used in props must be exhaustive over their semantic domain; Partial narrows to only properties covered, masking missing cases
-  - Context: Changed to exhaustive Record over the non-shared signal kinds
-- Status (R2): APPROVED (zero findings)
-
-## [fix/overlay-kind-items | chart overlay item visibility & type safety | 2026-10-02]
-- Violation (R1): e2e/specs/chart-overlays.spec.ts fixture header comment said "the fixture has 2 chart overlays" after a third card-less overlay (kind:fibonacci) was added
-  - Rule: (existing MISTAKES.md §15.6) Comments/JSDoc making factually inaccurate claims about the code
-  - Context: Updated fixture header comment to list all three overlays
-- Violation (R1): OverlayMenuItem allowed `label: null` on pattern items, forcing an unreachable null guard in patternLabelsByKey
-  - Rule: Type discriminants must narrow branches exhaustively; nullable discriminant fields force dead-code guards in consumers
-  - Context: Split into variant: pattern items now typed `{ kind: StrategyOverlayKind; label: null }` with separate exhaustive check
-- Status (R2): APPROVED (zero findings) — core pin 2.4.0 → 2.5.0 (released) replaced local overlay used during development
-
 ## [Round 1–3 | perf/prewarm-symbols-per-tick | 2026-10-02]
 - Violation (R1, REQUIRED): doc-comment next to `SYMBOLS_PER_TICK` constant still quoted old derived figure (window 18 × 7 tabs × 2 = 252 Redis calls/tick) while same figure was updated in markdown docs
   - Rule: (new) when a constant changes, every derived number quoted in comments/docs (source comments, infra script rationale, capacity docs, sibling-module JSDoc) must be recomputed in the same change — grep the constant name AND the old literal
@@ -664,3 +630,4 @@
   - Rule: Same as above — exhaustive grep required for all restatements
   - Context: Added carve-out to the fourth location. Recommendation adopted: state first id = primary / optional second = alternate; triangle candidate adopted only in W4/B or combination's last leg.
 - Status (R3): APPROVED (zero findings)
+

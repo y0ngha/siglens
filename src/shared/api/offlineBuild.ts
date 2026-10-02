@@ -84,3 +84,73 @@ export function assertOnline(
 export function __resetOfflineBuildWarningsForTests(): void {
     warnedServices.clear();
 }
+
+/**
+ * `next build`(prerender) 단계인가. Next가 빌드 시작 시 메인 프로세스에
+ * `NEXT_PHASE=phase-production-build`를 심고(next/dist/build/index.js) 정적 생성
+ * 워커는 그 env를 물려받는다. `next start`/standalone 런타임에는 설정되지 않는다.
+ * `cache-handler/config.mjs`의 `buildPhase`와 같은 판정이다 — 그 파일은 번들 밖(.mjs)이라
+ * 이 함수를 import하지 못한다. 바꾸면 두 곳을 함께 바꾼다.
+ */
+export function isBuildPhase(): boolean {
+    return process.env.NEXT_PHASE === 'phase-production-build';
+}
+
+/**
+ * 빌드 중 FMP 정책 — `FMP_AT_BUILD` env(Dockerfile ARG ← deploy.yml build-arg).
+ *
+ * WHY: 배포 빌드가 `/market`(섹터 스캔 ~255 calls)·`/economy`·`/fear-greed`·
+ * `/fear-greed/crypto`를 prerender하며 FMP를 몰아 부른다. FMP가 429를 주면 `fmpGet`의
+ * 런타임 재시도(10s→15s→20s)가 페이지 하나를 Next prerender 타임아웃(60s) 너머로
+ * 밀고, 3회 재시도 후 `prerenderEarlyExit`로 빌드 전체가 죽었다(v0.94.0 배포 2회 실패).
+ * 모든 호출부는 이미 catch해 degrade하므로 빌드 중엔 "빨리 실패"가 정답이다.
+ *
+ *   - `off`: 빌드 중 FMP 요청을 아예 보내지 않는다(FMP가 배포를 막고 있을 때의 스위치).
+ *   - 그 외(미설정/`best-effort`): 시도는 하되 재시도 없이 실패하고, 첫 transient
+ *     실패(429·5xx·타임아웃·네트워크)에서 회로를 열어 이후 호출을 요청 없이 실패시킨다.
+ *
+ * 런타임(빌드 단계가 아님)에는 이 정책이 전혀 개입하지 않는다.
+ *
+ * 회로 상태는 모듈 전역 = **프로세스 단위**다. Next의 정적 생성 워커는 별도 프로세스라
+ * 워커마다 첫 실패를 한 번씩 겪고 각자 회로를 연다(빌드 전체로 최대 워커 수만큼의 429).
+ */
+let fmpBuildBreakerOpen = false;
+
+function isFmpOffAtBuild(): boolean {
+    return process.env.FMP_AT_BUILD === 'off';
+}
+
+/**
+ * 이 빌드 프로세스에서 FMP가 더는 쓸 수 없는 상태인가(빌드 단계 + `off` 또는 회로 열림).
+ * true면 이 프로세스의 prerender 결과가 FMP 실패로 degrade됐을 수 있다는 뜻이다.
+ */
+export function isFmpUnavailableAtBuild(): boolean {
+    return isBuildPhase() && (isFmpOffAtBuild() || fmpBuildBreakerOpen);
+}
+
+/**
+ * 빌드 중 FMP를 쓸 수 없으면 즉시 던진다. `fmpGet`은 요청 전에, FMP 실패를 삼키는
+ * `unstable_cache` 콜백은 반환 직전에 불러 degrade된 값이 Data Cache에 굳지 않게 한다.
+ */
+export function assertFmpAvailableAtBuild(detail: string): void {
+    if (!isFmpUnavailableAtBuild()) return;
+    const reason = isFmpOffAtBuild() ? 'FMP_AT_BUILD=off' : 'breaker open';
+    throw new Error(
+        `[build-fmp] FMP unavailable at build (${reason}): ${detail}`
+    );
+}
+
+/** 빌드 중 첫 transient FMP 실패에서 회로를 연다. 로그는 프로세스당 한 번. */
+export function tripFmpBuildBreaker(detail: string, error: unknown): void {
+    if (fmpBuildBreakerOpen) return;
+    fmpBuildBreakerOpen = true;
+    const cause = error instanceof Error ? error.message : String(error);
+    console.warn(
+        `[build-fmp] breaker tripped on ${detail} (${cause}) — remaining FMP calls in this build process fail fast`
+    );
+}
+
+/** @internal 테스트 간 빌드 FMP 회로를 닫는다. */
+export function __resetFmpBuildBreakerForTests(): void {
+    fmpBuildBreakerOpen = false;
+}

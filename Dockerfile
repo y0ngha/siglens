@@ -48,10 +48,16 @@ ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
 # 빌드 타임 ISR prerender에 필요한 자격증명. secret mount로 주입해 빌드 로그·이미지
 # 레이어에 자격증명이 남지 않게 한다.
 #   - DATABASE_URL: news/[category]·legal 등 DB-backed prerender
-#   - FMP_API_KEY: /economy(거시경제 지표/treasury)·/market(지수·섹터 quote)·
-#     /fear-greed(SPY·^VIX·TLT·HYG·LQD·RSP 일간 종가) prerender.
-#     없으면 빌드타임 FMP fetch가 실패해 EconomyDegraded/빈 패널이 이미지에 baked되고,
-#     ISR revalidate(24h)까지 degraded 페이지가 서빙된다. (런타임 SSM에는 이미 존재)
+#   - FMP_API_KEY: /economy(거시경제 지표/treasury)·/market(지수·섹터 quote + 섹터 스캔
+#     ~255 calls)·/fear-greed(6)·/fear-greed/crypto(21) prerender. (런타임 SSM에는 이미 존재)
+# FMP_AT_BUILD: 빌드 중 FMP 정책(src/shared/api/offlineBuild.ts). 빌드 단계에서는 `fmpGet`이
+#   429/5xx를 재시도하지 않고, 첫 transient 실패에서 빌드 프로세스 단위 회로를 열어 이후 호출을
+#   요청 없이 실패시킨다 — 런타임 재시도(10s→15s→20s)가 prerender 60s 타임아웃을 넘겨 빌드를
+#   죽였다(v0.94.0). `off`면 빌드 중 FMP를 아예 부르지 않는다(FMP가 배포를 막을 때의 스위치,
+#   DEPLOY_RUNBOOK §1). 어느 쪽이든 FMP 실패로 degrade된 페이지는 revalidate가 60초로 낮아져
+#   배포 후 첫 요청이 실데이터로 재생성한다. 런타임 동작은 이 값과 무관하다.
+ARG FMP_AT_BUILD=best-effort
+ENV FMP_AT_BUILD=$FMP_AT_BUILD
 RUN --mount=type=secret,id=SIGLENS_GITHUB_TOKEN,required=true \
     --mount=type=secret,id=DATABASE_URL,required=true \
     --mount=type=secret,id=FMP_API_KEY,required=true \

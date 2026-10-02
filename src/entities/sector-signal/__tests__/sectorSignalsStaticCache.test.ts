@@ -26,6 +26,7 @@ vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
     // scope 인지 팩토리도 같은 모듈에 있다 — 목에서 빠지면 액션이 import 단계에서
     // 실패해 `server_error`로 조용히 떨어진다.
     marketDataProviderFor: vi.fn(() => ({})),
+    scopeUsesFmp: (scope: string) => scope !== 'kr',
 }));
 
 import { getSectorSignalsStatic } from '../api/sectorSignalsStaticCache';
@@ -145,5 +146,27 @@ describe('getSectorSignalsStatic', () => {
         await expect(
             getSectorSignalsStatic(US_DASHBOARD_SCOPE, '1Day')
         ).rejects.toThrow('signals failed');
+    });
+
+    it('(Worst) 빌드 중 FMP를 쓸 수 없으면 결과를 캐시하지 않도록 던진다', async () => {
+        vi.stubEnv('NEXT_PHASE', 'phase-production-build');
+        vi.stubEnv('FMP_AT_BUILD', 'off');
+        mockGetCachedSectorSignals.mockResolvedValue(sampleResult);
+
+        await expect(
+            getSectorSignalsStatic(US_DASHBOARD_SCOPE, '1Day')
+        ).rejects.toThrow('[build-fmp]');
+        vi.unstubAllEnvs();
+    });
+
+    it('(Edge) 빌드 중 FMP를 쓸 수 없어도 kr scope는 결과를 그대로 반환한다', async () => {
+        vi.stubEnv('NEXT_PHASE', 'phase-production-build');
+        vi.stubEnv('FMP_AT_BUILD', 'off');
+        mockGetCachedSectorSignals.mockResolvedValue(sampleResult);
+
+        await expect(
+            getSectorSignalsStatic(KR_DASHBOARD_SCOPE, '1Day')
+        ).resolves.toBe(sampleResult);
+        vi.unstubAllEnvs();
     });
 });

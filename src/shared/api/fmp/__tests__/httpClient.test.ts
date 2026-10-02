@@ -26,7 +26,11 @@ import { FMP_STABLE_BASE, fmpGet } from '@/shared/api/fmp/httpClient';
 import { FmpHttpError } from '@/shared/api/fmp/FmpHttpError';
 import { sleep } from '@/shared/lib/sleep';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
-import { __resetOfflineBuildWarningsForTests } from '@/shared/api/offlineBuild';
+import {
+    __resetFmpBuildBreakerForTests,
+    __resetOfflineBuildWarningsForTests,
+    isFmpUnavailableAtBuild,
+} from '@/shared/api/offlineBuild';
 
 const mockFetch = vi.fn();
 const sleepMock = sleep as MockedFunction<typeof sleep>;
@@ -401,6 +405,99 @@ describe('fmpGet의 offline build 가드는', () => {
 
         await fmpGet('profile');
         expect(mockFetch).toHaveBeenCalledOnce();
+    });
+});
+
+// v0.94.0 배포가 빌드 중 FMP 429 재시도(10s→15s→20s)로 prerender 60s 타임아웃을
+// 넘겨 두 번 실패했다. 빌드 단계에서는 재시도 없이 실패하고 첫 transient 실패에서
+// 회로를 열어야 한다 — 런타임 재시도 정책은 그대로여야 한다.
+describe('fmpGet의 빌드 단계 정책은', () => {
+    beforeEach(() => {
+        vi.stubGlobal('fetch', mockFetch);
+        mockFetch.mockReset();
+        sleepMock.mockClear();
+        __resetFmpBuildBreakerForTests();
+        vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+        vi.spyOn(Math, 'random').mockReturnValue(0);
+    });
+
+    afterEach(() => {
+        __resetFmpBuildBreakerForTests();
+        vi.unstubAllGlobals();
+        vi.unstubAllEnvs();
+        vi.restoreAllMocks();
+    });
+
+    function mockStatus(status: number): void {
+        mockFetch.mockResolvedValueOnce({
+            ok: status < 400,
+            status,
+            headers: new Headers(),
+            json: async () => ({ ok: true }),
+        });
+    }
+
+    it('빌드 중 429는 재시도 없이 즉시 던지고 회로를 연다', async () => {
+        vi.stubEnv('NEXT_PHASE', 'phase-production-build');
+        mockStatus(429);
+
+        await expect(fmpGet('quote')).rejects.toThrow(FmpHttpError);
+        expect(mockFetch).toHaveBeenCalledOnce();
+        expect(sleepMock).not.toHaveBeenCalled();
+        expect(isFmpUnavailableAtBuild()).toBe(true);
+    });
+
+    it('회로가 열린 뒤의 호출은 요청 없이 실패하고, 트립 로그는 한 번만 남긴다', async () => {
+        vi.stubEnv('NEXT_PHASE', 'phase-production-build');
+        mockStatus(429);
+        await expect(fmpGet('quote')).rejects.toThrow(FmpHttpError);
+
+        await expect(fmpGet('quote')).rejects.toThrow('breaker open');
+        await expect(fmpGet('profile')).rejects.toThrow('breaker open');
+
+        expect(mockFetch).toHaveBeenCalledOnce();
+        expect(console.warn).toHaveBeenCalledOnce();
+    });
+
+    it('빌드 중 타임아웃(DOMException)도 회로를 연다', async () => {
+        vi.stubEnv('NEXT_PHASE', 'phase-production-build');
+        mockFetch.mockRejectedValueOnce(
+            new DOMException('timed out', 'TimeoutError')
+        );
+
+        await expect(fmpGet('quote')).rejects.toThrow(DOMException);
+        expect(mockFetch).toHaveBeenCalledOnce();
+        expect(isFmpUnavailableAtBuild()).toBe(true);
+    });
+
+    it('빌드 중 404 같은 비-transient 오류는 회로를 열지 않는다', async () => {
+        vi.stubEnv('NEXT_PHASE', 'phase-production-build');
+        mockStatus(404);
+        await expect(fmpGet('quote')).rejects.toThrow(FmpHttpError);
+
+        mockStatus(200);
+        await expect(fmpGet('quote')).resolves.toEqual({ ok: true });
+        expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('FMP_AT_BUILD=off면 빌드 중 첫 호출부터 요청 없이 실패한다', async () => {
+        vi.stubEnv('NEXT_PHASE', 'phase-production-build');
+        vi.stubEnv('FMP_AT_BUILD', 'off');
+
+        await expect(fmpGet('quote')).rejects.toThrow('FMP_AT_BUILD=off');
+        expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('런타임(빌드 단계 아님)에서는 FMP_AT_BUILD=off여도 평소처럼 429를 재시도한다', async () => {
+        vi.stubEnv('NEXT_PHASE', '');
+        vi.stubEnv('FMP_AT_BUILD', 'off');
+        mockStatus(429);
+        mockStatus(200);
+
+        await expect(fmpGet('quote')).resolves.toEqual({ ok: true });
+        expect(mockFetch).toHaveBeenCalledTimes(2);
+        expect(sleepMock).toHaveBeenCalledWith(10_000);
+        expect(isFmpUnavailableAtBuild()).toBe(false);
     });
 });
 

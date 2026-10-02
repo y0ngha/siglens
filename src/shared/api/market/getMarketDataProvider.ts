@@ -36,9 +36,26 @@ export const getMarketDataProvider: () => SiglensMarketProvider =
 export function marketDataProviderFor(
     scope: DashboardScopeId
 ): SiglensMarketProvider {
-    if (scope !== 'kr' || isE2E()) return getMarketDataProvider();
+    if (scopeUsesFmp(scope) || isE2E()) return getMarketDataProvider();
     if (krProvider === null) krProvider = new YahooMarketProvider();
     return krProvider;
 }
 
 let krProvider: SiglensMarketProvider | null = null;
+
+/**
+ * 이 scope의 시세가 FMP에서 오는가 — {@link marketDataProviderFor}의 분기와 같은 판정.
+ * 빌드 중 FMP 실패 가드(`assertFmpAvailableAtBuild`)와 60초 degrade revalidate를
+ * FMP 기반 scope에만 걸기 위해 쓴다 — yahoo인 KRX는 FMP 상태와 무관하게 정상 빌드돼야 한다.
+ */
+export function scopeUsesFmp(scope: DashboardScopeId): boolean {
+    return SCOPE_USES_FMP[scope];
+}
+
+// 전수 Record — 새 scope가 생기면 여기서 컴파일 에러가 나 FMP 여부를 정하게 한다
+// (`scope !== 'kr'`였다면 새 scope가 조용히 FMP로 분류된다).
+const SCOPE_USES_FMP: Readonly<Record<DashboardScopeId, boolean>> = {
+    us: true,
+    kr: false,
+    crypto: true,
+};
