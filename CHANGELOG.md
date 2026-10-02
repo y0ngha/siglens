@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.94.1](https://github.com/y0ngha/siglens/compare/v0.94.0...v0.94.1) (2026-10-02)
+
+### Bug Fixes
+
+* **build:** 빌드 중 FMP 429로 배포가 실패하지 않게 — 빌드 시 즉시 실패·차단기·FMP_AT_BUILD 스위치·빈 페이지 60초 재생성 ([#907](https://github.com/y0ngha/siglens/issues/907)) ([0075194](https://github.com/y0ngha/siglens/commit/00751942dfb0069123300da91aa78c1be445c733))
+
 # [0.94.0](https://github.com/y0ngha/siglens/compare/v0.93.3...v0.94.0) (2026-10-02)
 
 ### Features
