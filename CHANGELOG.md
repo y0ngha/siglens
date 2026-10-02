@@ -1,5 +1,15 @@
 # Changelog
 
+# [0.94.0](https://github.com/y0ngha/siglens/compare/v0.93.3...v0.94.0) (2026-10-02)
+
+### Features
+
+* **elliott:** 삼각형·다이아고날 작도 + 계산된 무효화·목표가 인용 — core 2.6.0 ([#906](https://github.com/y0ngha/siglens/issues/906)) ([7016af7](https://github.com/y0ngha/siglens/commit/7016af77009a6f91ccd1984929e687a46bb1b9ce))
+
+### Performance Improvements
+
+* **prewarm:** tick당 종목 수 6 → 12 — 야간 창 안에 회전 완료 ([#905](https://github.com/y0ngha/siglens/issues/905)) ([6a814fb](https://github.com/y0ngha/siglens/commit/6a814fbf6a9efa49782a739368d8225b87c47ded))
+
 ## [0.93.3](https://github.com/y0ngha/siglens/compare/v0.93.2...v0.93.3) (2026-10-01)
 
 ### Bug Fixes
