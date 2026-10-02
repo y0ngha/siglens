@@ -18,7 +18,6 @@ const SOURCE: FearGreedRouteSource = {
     market: 'us',
     load: getMarketFearGreedStatic,
     failureLog: '[FearGreedRoute] getMarketFearGreedStatic failed',
-    usesFmp: true,
 };
 
 interface LocaleParams {

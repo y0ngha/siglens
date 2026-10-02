@@ -8,6 +8,7 @@ import { resolveLocale } from '@/shared/i18n/locales';
 import type { FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
 import { buildHubMetadata } from '@/shared/lib/seoAlternates';
 import { shortenRevalidateIfFmpFailedAtBuild } from '@/shared/cache/buildFmpDegradedRevalidate';
+import { scopeUsesFmp } from '@/shared/api/market/getMarketDataProvider';
 import { fearGreedCopyFor } from './copy';
 
 type FearGreedRouteView = MarketFearGreedView<MarketFearGreedViewSnapshot>;
@@ -31,11 +32,6 @@ export interface FearGreedRouteSource {
      * fear-greed us/kr + market-kr 통합)가 이 문자열을 본다 — 바꾸면 알람이 끊긴다.
      */
     readonly failureLog: string;
-    /**
-     * 판독값이 FMP에서 오는가(us·crypto = true, kr = yahoo라 false). 빌드 중 FMP 실패 시
-     * 60초 degrade revalidate를 FMP 라우트에만 건다.
-     */
-    readonly usesFmp: boolean;
 }
 
 /**
@@ -82,6 +78,9 @@ export async function loadFearGreedView(
         console.error(`${source.failureLog}:`, e);
         return { snapshot: null, comparisons: [] };
     });
-    if (source.usesFmp) await shortenRevalidateIfFmpFailedAtBuild();
+    // 빌드 중 FMP 실패 시 60초 degrade revalidate는 FMP 라우트(us·crypto)에만 —
+    // kr은 yahoo라 FMP 상태와 무관하다. 시장 → 시세 출처 판정은 scopeUsesFmp 하나가 소유.
+    if (scopeUsesFmp(source.market))
+        await shortenRevalidateIfFmpFailedAtBuild();
     return view;
 }

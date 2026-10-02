@@ -41,7 +41,7 @@ const params = Promise.resolve({ locale: 'ko' });
 
 /**
  * 빌드 중 FMP가 죽었을 때 60초 degrade revalidate는 FMP 라우트(us·crypto)에만 걸려야
- * 한다. 각 라우트의 `usesFmp` 값을 실제 페이지 경유로 고정한다 — kr(yahoo)이 true로
+ * 한다. 각 라우트의 FMP 여부(`scopeUsesFmp(market)`)를 실제 페이지 경유로 고정한다 — kr(yahoo)이 FMP로
  * 바뀌면 FMP 장애와 무관한 정상 페이지가 매 60초 재생성된다.
  */
 describe('fear-greed 라우트의 빌드 degrade revalidate 배선', () => {
@@ -62,16 +62,19 @@ describe('fear-greed 라우트의 빌드 degrade revalidate 배선', () => {
         expect(mockShorten).not.toHaveBeenCalled();
     });
 
-    it.each([true, false])(
-        'loadFearGreedView는 usesFmp=%s를 그대로 따른다',
-        async usesFmp => {
+    it.each([
+        ['us', 1],
+        ['crypto', 1],
+        ['kr', 0],
+    ] as const)(
+        'loadFearGreedView는 market=%s의 시세 출처(scopeUsesFmp)를 따른다',
+        async (market, calls) => {
             await loadFearGreedView({
-                market: 'us',
+                market,
                 load: async () => ({ snapshot: null, comparisons: [] }),
                 failureLog: '[test]',
-                usesFmp,
             });
-            expect(mockShorten).toHaveBeenCalledTimes(usesFmp ? 1 : 0);
+            expect(mockShorten).toHaveBeenCalledTimes(calls);
         }
     );
 });

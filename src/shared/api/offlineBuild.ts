@@ -89,7 +89,8 @@ export function __resetOfflineBuildWarningsForTests(): void {
  * `next build`(prerender) 단계인가. Next가 빌드 시작 시 메인 프로세스에
  * `NEXT_PHASE=phase-production-build`를 심고(next/dist/build/index.js) 정적 생성
  * 워커는 그 env를 물려받는다. `next start`/standalone 런타임에는 설정되지 않는다.
- * `cache-handler/config.mjs`의 `buildPhase`와 같은 판정이다.
+ * `cache-handler/config.mjs`의 `buildPhase`와 같은 판정이다 — 그 파일은 번들 밖(.mjs)이라
+ * 이 함수를 import하지 못한다. 바꾸면 두 곳을 함께 바꾼다.
  */
 export function isBuildPhase(): boolean {
     return process.env.NEXT_PHASE === 'phase-production-build';

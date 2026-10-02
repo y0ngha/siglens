@@ -49,5 +49,13 @@ let krProvider: SiglensMarketProvider | null = null;
  * FMP 기반 scope에만 걸기 위해 쓴다 — yahoo인 KRX는 FMP 상태와 무관하게 정상 빌드돼야 한다.
  */
 export function scopeUsesFmp(scope: DashboardScopeId): boolean {
-    return scope !== 'kr';
+    return SCOPE_USES_FMP[scope];
 }
+
+// 전수 Record — 새 scope가 생기면 여기서 컴파일 에러가 나 FMP 여부를 정하게 한다
+// (`scope !== 'kr'`였다면 새 scope가 조용히 FMP로 분류된다).
+const SCOPE_USES_FMP: Readonly<Record<DashboardScopeId, boolean>> = {
+    us: true,
+    kr: false,
+    crypto: true,
+};
