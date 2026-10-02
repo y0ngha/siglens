@@ -655,3 +655,12 @@
 - Violation: After moving the confidence tooltip next to the section heading with `left-0 w-56`, the box anchored to the ⓘ button (~130px from the left) would overflow a 320px viewport. The tooltip's `relative` anchor was the ⓘ wrapper itself.
   - Rule: (new) When relocating an absolutely positioned popover, recompute its box against the narrowest supported viewport (320px) from its new anchor's offset; `left-0`/`right-0` choices that were safe at the old anchor can overflow at the new one.
   - Context: Moved the `relative` anchor from the button to the header row (the tooltip's immediate container), so the box now anchors to the section's left content edge rather than the button's position.
+
+## [feat/elliott-structures Round 1–3 | Elliott wave skill update + core 2.6.0 | 2026-10-02]
+- Violation (R1 REQUIRED): Fib-only target rules stated as exclusive in 3 locations (skill body, injected PROMPT_DIGEST, structured output-rules directive) but the new instruction allowed quoting computed Elliott candidate targets as an alternative
+  - Rule: (new) When adding a new allowed source to an exclusive rule, grep every restatement of the old rule across all rule contexts (body + digest + output-rules + injected directives), not only the first occurrence. Incomplete grep leaves sibling statements contradicting the new intent.
+  - Context: Added carve-out "quote computed Elliott targets" to all 3 restatements; kept "never compute/re-derive" for non-quote cases. Validated with real-LLM run (14 citations, 0 fabricated prices).
+- Violation (R2 REQUIRED): A fourth rule restatement ('Additional output rules', motive wave directive) still lacked the carve-out
+  - Rule: Same as above — exhaustive grep required for all restatements
+  - Context: Added carve-out to the fourth location. Recommendation adopted: state first id = primary / optional second = alternate; triangle candidate adopted only in W4/B or combination's last leg.
+- Status (R3): APPROVED (zero findings)
