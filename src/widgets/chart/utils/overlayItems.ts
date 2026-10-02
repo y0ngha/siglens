@@ -136,3 +136,47 @@ export function patternLabelsByKey(
         )
     );
 }
+
+/**
+ * 패턴 항목 key → 팔레트 색. 패턴이 **둘 이상**일 때만 채운다 — 스킬 색은 상승/하락/
+ * 중립 3색뿐이라 같은 방향 패턴끼리 선이 겹쳐 구분되지 않았다(2026-10-02 렌더 점검).
+ * 하나뿐이면 빈 맵을 돌려 스킬 색(방향 의미)을 그대로 쓴다. 메뉴 순서대로 팔레트를
+ * 돌아 쓴다.
+ */
+export function patternPaletteByKey(
+    items: readonly OverlayMenuItem[],
+    palette: readonly string[]
+): ReadonlyMap<string, string> {
+    const patterns = items.filter(item => item.kind === 'pattern');
+    if (patterns.length < 2 || palette.length === 0) return new Map();
+    return new Map(
+        patterns.map((item, i) => [item.key, palette[i % palette.length]])
+    );
+}
+
+/** 켜진 작도가 이 수 이하면 무효화·목표 축 라벨을 전부 띄운다. 넘으면 강조한 작도 것만. */
+export const MAX_OVERLAYS_WITH_OUTCOME_LABELS = 2;
+
+/** 무효화·목표·5파 상한 선을 내는 작도 종류 — core는 패턴과 엘리어트에만 싣는다. */
+const OUTCOME_LEVEL_KINDS: ReadonlySet<OverlayMenuGroupKind> = new Set([
+    'pattern',
+    'elliott',
+]);
+
+/**
+ * 결과선(무효화·목표)을 내는 켜진 작도가 MAX_OVERLAYS_WITH_OUTCOME_LABELS를 넘는가 —
+ * 넘으면 그 축 라벨을 강조한 작도 것만 띄운다. 작도 8개에서 라벨이 20개 넘게 쌓여
+ * 서로 가렸다(2026-10-02 렌더 점검). 추세선·피보나치·다이버전스는 결과선이 없으니
+ * 세지 않는다. 선은 늘 그린다.
+ */
+export function areOutcomeLabelsCrowded(
+    items: readonly OverlayMenuItem[],
+    hiddenKeys: ReadonlySet<string>
+): boolean {
+    return (
+        items.filter(
+            item =>
+                OUTCOME_LEVEL_KINDS.has(item.kind) && !hiddenKeys.has(item.key)
+        ).length > MAX_OVERLAYS_WITH_OUTCOME_LABELS
+    );
+}

@@ -593,18 +593,6 @@
   - Rule: comments describing a rule must be updated in the same change that alters the rule; state tradeoffs instead of claiming no effect
 - Status (Round 2): APPROVED
 
-## [fix/strategy-overlay-kind Round 2 | overlay strategy kind type safety | 2026-10-01]
-- Violation: OVERLAY_KINDS was a bare `readonly string[]` without `satisfies readonly StrategyOverlayKind[]`, exhaustiveness guard, or mirror note — unlike the other mirrored lists (SIGNAL_CATALOG, STATE_FEATURES, USAGE_ROLE_ORDER)
-  - Rule: MISTAKES.md 6.5/6.9 — mirrored constants drift; type-annotated mirrors with exhaustiveness guards prevent drift
-  - Context: Added `satisfies readonly StrategyOverlayKind[]` to OVERLAY_KINDS; added mirror note in types.ts; validate-skills.ts exit-conditions doc updated with new overlay_kind rule reference.
-- Status: APPROVED (round 2, zero findings)
-
-## [PR #903 claude-review | fix/strategy-overlay-kind | 2026-10-01]
-- Violation: STRATEGY_OVERLAY_KINDS (api.ts) and OVERLAY_KINDS (validate-skills.ts) were two copies of the same list — guarded but still duplicated
-  - Rule: MISTAKES.md 6.9 — duplicated logic/constants across multiple locations without shared source
-  - Context: core v2.4.0 now exports STRATEGY_OVERLAY_KINDS; both files import it and the duplicate copies + exhaustiveness guards were removed. core pin 2.3.1 → 2.4.0. skills/CLAUDE.md wording corrected (a prompt-side fix was A/B-tested and shelved, so the doc no longer claims the prompt instructs the model).
-- Status: APPROVED (zero findings)
-
 ## [Round 1–3 | perf/prewarm-symbols-per-tick | 2026-10-02]
 - Violation (R1, REQUIRED): doc-comment next to `SYMBOLS_PER_TICK` constant still quoted old derived figure (window 18 × 7 tabs × 2 = 252 Redis calls/tick) while same figure was updated in markdown docs
   - Rule: (new) when a constant changes, every derived number quoted in comments/docs (source comments, infra script rationale, capacity docs, sibling-module JSDoc) must be recomputed in the same change — grep the constant name AND the old literal
@@ -622,12 +610,46 @@
   - Rule: (new) When relocating an absolutely positioned popover, recompute its box against the narrowest supported viewport (320px) from its new anchor's offset; `left-0`/`right-0` choices that were safe at the old anchor can overflow at the new one.
   - Context: Moved the `relative` anchor from the button to the header row (the tooltip's immediate container), so the box now anchors to the section's left content edge rather than the button's position.
 
-## [feat/elliott-structures Round 1–3 | Elliott wave skill update + core 2.6.0 | 2026-10-02]
-- Violation (R1 REQUIRED): Fib-only target rules stated as exclusive in 3 locations (skill body, injected PROMPT_DIGEST, structured output-rules directive) but the new instruction allowed quoting computed Elliott candidate targets as an alternative
-  - Rule: (new) When adding a new allowed source to an exclusive rule, grep every restatement of the old rule across all rule contexts (body + digest + output-rules + injected directives), not only the first occurrence. Incomplete grep leaves sibling statements contradicting the new intent.
-  - Context: Added carve-out "quote computed Elliott targets" to all 3 restatements; kept "never compute/re-derive" for non-quote cases. Validated with real-LLM run (14 citations, 0 fabricated prices).
-- Violation (R2 REQUIRED): A fourth rule restatement ('Additional output rules', motive wave directive) still lacked the carve-out
-  - Rule: Same as above — exhaustive grep required for all restatements
-  - Context: Added carve-out to the fourth location. Recommendation adopted: state first id = primary / optional second = alternate; triangle candidate adopted only in W4/B or combination's last leg.
-- Status (R3): APPROVED (zero findings)
 
+## [feat/overlay-outcome-levels Round 1–2 | outcome-level labels, pattern palette, crowded labels | 2026-10-02]
+- Violation (R1 REQUIRED): crowding heuristic counted every non-action overlay item, though only pattern and elliott overlays emit invalidation/target levels — a 1-pattern chart with trendlines/fib hid the very labels the feature adds
+  - Rule: (new) A threshold over "items" must count only the items that produce the thing being limited; check which producers emit it before counting.
+  - Context: `areOutcomeLabelsCrowded` counts pattern + elliott only; falsifiable test (1 pattern + 2 trendlines + fib = not crowded).
+- Violation (R1 REQUIRED): new i18n keys added to ko/en/ja/zh + clientKeys.json but not messages/_meta/hashes.json — the next `yarn i18n:translate` would treat them as stale and overwrite hand-written translations; `i18n:verify` does not catch it
+  - Rule: (new) Hand-written catalog keys need their `hashes.json` entry (`sha1(ko).slice(0,12)`) in the same change.
+  - Context: 10 StockChart hashes added beside the sibling entries.
+- Violation (R1 REQUIRED): behaviour composed inline in StockChart (owner titles, crowded gate + highlight exemption, palette colour override) had no test — removing the gate or the override stayed green
+  - Rule: Pure-helper tests do not cover the composition site; pin each user-visible branch where it is wired (StockChart `lastSpecs()`), then mutation-check.
+  - Context: 3 specs tests, mutation-checked.
+- Violation (R1 RECOMMENDED): menu leave/blur cleared a card-set highlight; offset `sm:right-48` guessed a locale-dependent width; palette distinctness claimed but unguarded
+  - Rule: Guard cleanup to state the component itself set; avoid magic offsets tied to text width at narrow breakpoints; enforce claimed properties in the guard test.
+  - Context: `unhighlight` only clears a menu-set highlight (+ focus/blur tests); `lg:right-60`; pairwise ΔE ≥ 20 guard for overlayPattern1..6.
+- Status (R2): APPROVED
+
+## [PR #908 claude-review | feat/overlay-outcome-levels | 2026-10-02]
+- Violation (BLOCKER): ChartOverlayMenu colour dot used `style={{ backgroundColor: color }}` — inline colour computation, MISTAKES.md Coding Paradigm #19
+  - Rule: Dynamic colours go through a CSS custom property (`style={{ '--x': v } as CSSProperties}`) + Tailwind `bg-[var(--x)]`, never an inline `backgroundColor`.
+  - Context: dot now sets `--item-color` with `bg-[var(--item-color)]`; menu test asserts `style.getPropertyValue('--item-color')`.
+- Violation (SUGGESTION): panel width `w-60` and axis offset `lg:right-60` were coupled only implicitly
+  - Rule: Values that must change together live in one place (named constants + comment), not as scattered literals.
+  - Context: `PANEL_WIDTH_CLASS` / `PANEL_AXIS_OFFSET_CLASS` constants in ChartOverlayMenu.tsx with a coupling comment.
+- Violation (SUGGESTION): `elliottStructureOf` parses core's candidate id format without stating the dependency; regression test lacked the plain `combo` suffix
+  - Rule: A parser of another package's id format documents the owner and the unknown-shape fallback, and its tests cover every suffix the owner emits.
+  - Context: JSDoc names `@y0ngha/siglens-core` as format owner (unknown shapes → null → kind-only label); added `ew:up:1:combo` case (5, 6, 6:abc, tri, diag, abc, combo, combo3 all covered).
+- Violation (SUGGESTION): `abc: 'A-B-C'` literal in StockChart skipped translation without saying why
+  - Rule: Deliberately untranslated literals get a named constant plus a one-line reason.
+  - Context: `ABC_STRUCTURE_NAME` constant with comment (language-neutral notation); `i18n:extract --write` and `i18n:verify` pass with no catalog changes.
+
+## [PR #908 claude-review round 2 (approved, suggestions) | feat/overlay-outcome-levels | 2026-10-02]
+- Violation (SUGGESTION): `formatOutcomeLevelLabel` computed `owner` with a nested ternary
+  - Rule: Replace nested ternaries with a named helper or early returns.
+  - Context: extracted `ownerOf(overlay, cardName, texts)`; behaviour unchanged.
+- Violation (SUGGESTION): StockChart `levelLabelFor` held a 4-branch label decision inline (breakout → outcome with crowded/highlight gate → fib → raw)
+  - Rule: Decision logic with several branches lives in a pure util with its own per-branch tests, not inside a hook callback.
+  - Context: moved to `widgets/chart/utils/levelTitle.ts` `levelTitleFor(label, overlay, ctx)` + `__tests__/utils/levelTitle.test.ts`; StockChart specs tests unchanged and green.
+- Violation (SUGGESTION): ChartOverlayMenu hover/focus sharing one menu-owned highlight (last enter/leave wins) was undocumented
+  - Rule: Intentional shared-state semantics get a one-line comment at the writer.
+  - Context: comment added above `highlightedByMenu`.
+- Violation (SUGGESTION): `overlayPattern1..6` palette missing from the chart colour docs
+  - Rule: New chart colour constants get a row in `docs/conventions/DESIGN.md` with dark/light values.
+  - Context: added "차트 패턴 팔레트" section (values from `src/shared/lib/chartColors.ts`).

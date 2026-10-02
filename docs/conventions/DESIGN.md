@@ -271,6 +271,19 @@ VWAP             #e879f9   (퍼플)
 구름 약세 (Cloud Bearish) #ef535020 (레드 12% 투명도)
 ```
 
+### 차트 패턴 팔레트 (overlayPattern1~6)
+
+패턴 작도가 둘 이상일 때 항목마다 돌려 쓰는 색. 다크 / 라이트 순.
+
+```
+overlayPattern1   #22d3ee / #0e7490   (시안)
+overlayPattern2   #f59e0b / #b45309   (앰버)
+overlayPattern3   #f472b6 / #be185d   (핑크)
+overlayPattern4   #a3e635 / #4d7c0f   (라임)
+overlayPattern5   #a78bfa / #6d28d9   (바이올렛)
+overlayPattern6   #fde047 / #854d0e   (옐로)
+```
+
 ---
 
 ## UI Color — 상태 표시

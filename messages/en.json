@@ -2635,16 +2635,26 @@
                 "25e234": "Snapshot Price Chart"
             },
             "StockChart": {
+                "545536": "Pullback {v0}",
                 "1b2664": "No chart data available",
                 "3784c9": "Downside target {v0}",
                 "37cc7e": "ABC upside target {v0}",
-                "545536": "Pullback {v0}",
                 "57fdbb": "Breakout level",
                 "693f7c": "Upside target {v0}",
                 "6c577b": "{v0} breakout",
                 "87cc60": "Bounce {v0}",
                 "a547a0": "Price Chart",
-                "fd8510": "ABC downside target {v0}"
+                "fd8510": "ABC downside target {v0}",
+                "b7de20": "Invalidation",
+                "c70cbe": "{v0} invalidation",
+                "2fbea4": "Target",
+                "3322f9": "{v0} target",
+                "b3fa71": "Wave-5 cap",
+                "6c1313": "{v0} wave-5 cap",
+                "216f1f": "Impulse",
+                "6e96f3": "Triangle",
+                "2751c7": "Diagonal",
+                "a8aa4c": "Combination"
             },
             "TimeframeSelector": {
                 "a4632e": "Member-exclusive timeframe.",

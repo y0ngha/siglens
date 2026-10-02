@@ -28,6 +28,17 @@ export const CHART_COLORS_RAW_DARK = {
     bullish: '#26a69a',
     bearish: '#ef5350',
     neutral: '#94a3b8',
+    /*
+     * 차트 작도 패턴 팔레트 — 패턴이 둘 이상 켜졌을 때 항목마다 다른 색을 준다
+     * (스킬 색은 상승/하락/중립 3색뿐이라 같은 방향 패턴끼리 겹쳤다). 메뉴의 색 점과
+     * 같은 값이다.
+     */
+    overlayPattern1: '#22d3ee',
+    overlayPattern2: '#f59e0b',
+    overlayPattern3: '#f472b6',
+    overlayPattern4: '#a3e635',
+    overlayPattern5: '#a78bfa',
+    overlayPattern6: '#fde047',
 
     // 거래량 (50% 투명도)
     volumeBullish: '#26a69a80',
@@ -221,6 +232,12 @@ export const CHART_COLORS_LIGHT = {
     text: '#565c66',
     bullish: '#1e9388',
     neutral: '#7a81a9',
+    overlayPattern1: '#0e7490',
+    overlayPattern2: '#b45309',
+    overlayPattern3: '#be185d',
+    overlayPattern4: '#4d7c0f',
+    overlayPattern5: '#6d28d9',
+    overlayPattern6: '#854d0e',
     volumeBullish: '#1e938880',
     period5: '#f24425',
     period10: '#de5b00',
