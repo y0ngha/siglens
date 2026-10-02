@@ -135,6 +135,7 @@ export function ChartOverlayMenu({
 
     // 메뉴가 건 강조는 패널이 닫히면 푼다 — 커서가 항목 위에 있는 채로 닫히면
     // mouseleave가 오지 않아 강조가 남는다. 카드가 건 강조는 건드리지 않는다.
+    // hover와 focus는 메뉴가 쥔 강조 하나를 공유한다 — 마지막 enter/leave 이벤트가 이긴다(의도).
     const highlightedByMenu = useRef(false);
     const highlight = (key: string): void => {
         highlightedByMenu.current = true;

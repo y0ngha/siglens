@@ -639,3 +639,17 @@
 - Violation (SUGGESTION): `abc: 'A-B-C'` literal in StockChart skipped translation without saying why
   - Rule: Deliberately untranslated literals get a named constant plus a one-line reason.
   - Context: `ABC_STRUCTURE_NAME` constant with comment (language-neutral notation); `i18n:extract --write` and `i18n:verify` pass with no catalog changes.
+
+## [PR #908 claude-review round 2 (approved, suggestions) | feat/overlay-outcome-levels | 2026-10-02]
+- Violation (SUGGESTION): `formatOutcomeLevelLabel` computed `owner` with a nested ternary
+  - Rule: Replace nested ternaries with a named helper or early returns.
+  - Context: extracted `ownerOf(overlay, cardName, texts)`; behaviour unchanged.
+- Violation (SUGGESTION): StockChart `levelLabelFor` held a 4-branch label decision inline (breakout → outcome with crowded/highlight gate → fib → raw)
+  - Rule: Decision logic with several branches lives in a pure util with its own per-branch tests, not inside a hook callback.
+  - Context: moved to `widgets/chart/utils/levelTitle.ts` `levelTitleFor(label, overlay, ctx)` + `__tests__/utils/levelTitle.test.ts`; StockChart specs tests unchanged and green.
+- Violation (SUGGESTION): ChartOverlayMenu hover/focus sharing one menu-owned highlight (last enter/leave wins) was undocumented
+  - Rule: Intentional shared-state semantics get a one-line comment at the writer.
+  - Context: comment added above `highlightedByMenu`.
+- Violation (SUGGESTION): `overlayPattern1..6` palette missing from the chart colour docs
+  - Rule: New chart colour constants get a row in `docs/conventions/DESIGN.md` with dark/light values.
+  - Context: added "차트 패턴 팔레트" section (values from `src/shared/lib/chartColors.ts`).

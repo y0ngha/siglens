@@ -42,6 +42,17 @@ export interface OutcomeLevelTexts {
 
 const TARGET_PREFIX = `${OVERLAY_LEVEL_LABELS.target} `;
 
+/** 선의 주인 이름 — 엘리어트는 구조 이름(모르는 꼴이면 `undefined`), 그 외는 카드 이름. */
+function ownerOf(
+    overlay: Pick<ChartOverlay, 'kind' | 'id'>,
+    cardName: string | undefined,
+    texts: OutcomeLevelTexts
+): string | undefined {
+    if (overlay.kind !== 'elliott') return cardName;
+    const structure = elliottStructureOf(overlay);
+    return structure === null ? undefined : texts.elliottStructure[structure];
+}
+
 /**
  * core 결과선 라벨(`invalidation`, `target`, `target 161.8%`, `wave5_cap`)이면 "이중천장
  * 무효화"·"삼각형 목표"처럼 주인 이름을 붙인 문구로, 아니면 `null`. 패턴은 카드 이름을,
@@ -54,13 +65,7 @@ export function formatOutcomeLevelLabel(
     cardName: string | undefined,
     texts: OutcomeLevelTexts
 ): string | null {
-    const structure = elliottStructureOf(overlay);
-    const owner =
-        overlay.kind === 'elliott'
-            ? structure === null
-                ? undefined
-                : texts.elliottStructure[structure]
-            : cardName;
+    const owner = ownerOf(overlay, cardName, texts);
     if (label === OVERLAY_LEVEL_LABELS.invalidation)
         return texts.invalidation(owner);
     if (label === OVERLAY_LEVEL_LABELS.wave5Cap) return texts.wave5Cap(owner);

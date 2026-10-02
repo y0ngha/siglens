@@ -71,7 +71,6 @@ import {
     buildOverlayLineSpecs,
     hasDrawnLevels,
     overlayColorFor,
-    overlayItemKey,
 } from './utils/chartOverlayUtils';
 import {
     areOutcomeLabelsCrowded,
@@ -79,15 +78,10 @@ import {
     patternPaletteByKey,
     type OverlayMenuItem,
 } from './utils/overlayItems';
-import { formatFibLevelLabel, type FibLevelTexts } from './utils/fibLevelLabel';
-import {
-    formatOutcomeLevelLabel,
-    type OutcomeLevelTexts,
-} from './utils/outcomeLevelLabel';
-import {
-    BREAKOUT_LEVEL_LABEL,
-    CHART_OVERLAY_COLORS,
-} from './model/chartOverlayCategories';
+import { type FibLevelTexts } from './utils/fibLevelLabel';
+import { levelTitleFor } from './utils/levelTitle';
+import { type OutcomeLevelTexts } from './utils/outcomeLevelLabel';
+import { CHART_OVERLAY_COLORS } from './model/chartOverlayCategories';
 import {
     INDICATOR_REGISTRY,
     type IndicatorBinding,
@@ -616,27 +610,15 @@ export function StockChart({
                         overlayColors,
                         CHART_OVERLAY_COLORS
                     ),
-                levelLabelFor: (label, overlay) => {
-                    if (label === BREAKOUT_LEVEL_LABEL)
-                        return breakoutTitle(
-                            patternLabels.get(overlay.sourceRef)
-                        );
-                    const outcome = formatOutcomeLevelLabel(
-                        label,
-                        overlay,
-                        patternLabels.get(overlay.sourceRef),
-                        outcomeLevelTexts
-                    );
-                    if (outcome !== null)
-                        return outcomeLabelsCrowded &&
-                            overlayItemKey(overlay) !== highlightedOverlayKey
-                            ? ''
-                            : outcome;
-                    return (
-                        formatFibLevelLabel(label, overlay, fibLevelTexts) ??
-                        label
-                    );
-                },
+                levelLabelFor: (label, overlay) =>
+                    levelTitleFor(label, overlay, {
+                        cardName: patternLabels.get(overlay.sourceRef),
+                        highlightedKey: highlightedOverlayKey,
+                        crowded: outcomeLabelsCrowded,
+                        breakoutTitle,
+                        outcomeTexts: outcomeLevelTexts,
+                        fibTexts: fibLevelTexts,
+                    }),
                 extendLevelsRight: levelRightExtend,
             }),
         [
