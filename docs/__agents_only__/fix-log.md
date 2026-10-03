@@ -664,3 +664,18 @@
   - Rule: MISTAKES Skills #1 — reference only lines the consumed core renders; keep a fallback until the core bump lands
   - Context: "use the computed line when present, otherwise the old bar/MA comparison" in both body and digest.
 - Status (R2): APPROVED (zero findings)
+
+## [feat/analysis-plain-db-store Rounds 1-2 | feat/analysis-plain-db-store | 2026-10-03]
+- Violation (R1 recommended, fixed): storage silently disappeared when the DB client was unavailable, so a misconfiguration would pay the LLM on every request with no log line
+  - Rule: (new) When a store prevents paid regeneration (LLM/API), its unavailability must be logged loudly (once per process), not degraded silently
+  - Context: `api.ts` logs a one-time `console.error` when `tryGetDatabaseClient()` is null outside E2E/offline build.
+- Violation (R1 recommended, fixed): a new network read on the request path ran outside the existing deadline budget with no timeout (neon-http has none)
+  - Rule: (new) A new remote read added in front of a deadline-guarded operation needs its own short time bound that degrades to a miss
+  - Context: `findStored()` races `find` against `PLAIN_STORE_READ_TIMEOUT_MS = 2500`; fake-timer tests.
+- Violation (R1 recommended, fixed): repository test asserted the SET of columns and the SET of values, so a swapped column/value pairing passed
+  - Rule: (new) Query-condition tests must pin column↔value pairing (compile the SQL and assert order + params with pairwise-distinct values)
+  - Context: `plainTextRepository.test.ts` compiles with `PgDialect().sqlToQuery`; mutation-checked (swapped values / swapped columns fail).
+- Violation (R1/R2 recommended, fixed): comments in code, an untouched caller (`route.ts`) and tests still described the old Redis cache/TTL after the storage moved to a DB table
+  - Rule: MISTAKES 15.62-style stale-contract wording — grep old vocabulary repo-wide (incl. tests and untouched callers) when changing a storage contract
+  - Context: Reworded `buildPlainPrompt.ts`, `api.ts`, `route.ts`, `api.test.ts`.
+- Status (R3): APPROVED (zero findings)
