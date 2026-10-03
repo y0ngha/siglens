@@ -675,6 +675,11 @@
 - Violation (R1 recommended, fixed): storage-format change documented full-rollback behaviour but not the mixed-version rolling-deploy window
   - Rule: (new) A cache storage-format change must document both rollback and mixed old/new instance behaviour (cost of flip-flopping keys)
   - Context: Extended `getOrSetCache` JSDoc: old instances treat compressed keys as legacy misses → FMP refetch + uncompressed overwrite until the deploy completes.
+
+## [perf/crypto-list-memory-cache Round 1 | perf/crypto-list-memory-cache | 2026-10-03]
+- Violation (R1 recommended, fixed): new L1 memo dropped the still-available expired list on refresh failure and returned an empty Map, so un-seeded coins briefly classified as non-crypto at the 1-hour boundary
+  - Rule: (new) When adding a memo in front of a fallible refresh, a failed refresh should serve the last good (expired) value while leaving the expiry untouched so the next call retries — not degrade to empty
+  - Context: `fmpCryptoMembership.ts` catch now returns `memo?.map ?? new Map()` with a distinct warn message; test added and mutation-checked.
 - Status (R2): APPROVED (zero findings)
 
 ## [Branch feat/agent-confluence-rule-state | 2026-10-03] — Round 3 review findings
