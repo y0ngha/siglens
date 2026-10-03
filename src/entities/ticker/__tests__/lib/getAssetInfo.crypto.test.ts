@@ -70,7 +70,6 @@ import {
     _resetInFlightTranslationsForTest,
     getAssetInfo,
 } from '../../lib/getAssetInfo';
-import { ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN } from '../../lib/cacheKeys';
 
 describe('getAssetInfo — crypto resolution paths', () => {
     beforeEach(() => {
@@ -195,20 +194,28 @@ describe('getAssetInfo — crypto resolution paths', () => {
         expect(result).not.toHaveProperty('marketProfile');
     });
 
-    it('FMP-list HIT result is written to cache (cacheKey, TTL)', async () => {
+    it('FMP-list HIT result is not written to Redis (the list itself is cached)', async () => {
         getCryptoAssetMock.mockResolvedValue(null);
         fmpCryptoMembershipMock.mockResolvedValue({ name: 'New Coin' });
 
         await getAssetInfo('NEWCOIN');
 
-        // TTL must be the 12 h "incomplete/retry" constant — not the 1 yr
-        // WITH_KOREAN constant — because FMP-list records have no koreanName
-        // and are provisional until the next crypto_assets re-seed.
-        expect(mockCache.set).toHaveBeenCalledWith(
-            'asset-info:NEWCOIN',
-            { symbol: 'NEWCOIN', name: 'New Coin', marketProfile: 'crypto' },
-            ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN
-        );
+        expect(mockCache.set).not.toHaveBeenCalled();
+        expect(mockCache.get).not.toHaveBeenCalled();
+    });
+
+    it('crypto_assets DB hit does not touch Redis', async () => {
+        getCryptoAssetMock.mockResolvedValue({
+            symbol: 'BTC',
+            name: 'Bitcoin',
+            koreanName: '비트코인',
+            circulatingSupply: 19_000_000,
+        } satisfies CryptoAssetRecord);
+
+        await getAssetInfo('BTC');
+
+        expect(mockCache.get).not.toHaveBeenCalled();
+        expect(mockCache.set).not.toHaveBeenCalled();
     });
 
     it('fmpCryptoMembership failure (returns null) degrades gracefully — falls through to stock path', async () => {
