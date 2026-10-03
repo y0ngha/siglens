@@ -655,10 +655,10 @@ describe('DrizzleUserRepository', () => {
     });
 });
 
-// createEmailUser 를 대표 site 로 골라 NEON_TRANSIENT_RETRY 정책이 wire-up
+// createEmailUser 를 대표 site 로 골라 DB_TRANSIENT_RETRY 정책이 wire-up
 // 됐는지 확인하는 smoke 테스트. createOAuthUser 도 동일 패턴(withRetry +
-// NEON_TRANSIENT_RETRY)을 쓰므로 대표 1개만 검증해도 회귀 방지에 충분하다.
-describe('DrizzleUserRepository — Neon transient retry wire-up', () => {
+// DB_TRANSIENT_RETRY)을 쓰므로 대표 1개만 검증해도 회귀 방지에 충분하다.
+describe('DrizzleUserRepository — DB transient retry wire-up', () => {
     const emailInput = {
         email: 'user@example.com',
         passwordHash: 'hash',
@@ -667,14 +667,14 @@ describe('DrizzleUserRepository — Neon transient retry wire-up', () => {
         emailVerified: false,
     };
 
-    it('transient NeonDbError 가 발생하면 재시도해 결국 성공한다', async () => {
-        const neonTransient = Object.assign(
-            new Error('Error connecting to database: fetch failed'),
-            { name: 'NeonDbError' }
+    it('transient 연결 에러(CONNECTION_CLOSED)가 발생하면 재시도해 결국 성공한다', async () => {
+        const dbTransient = Object.assign(
+            new Error('write CONNECTION_CLOSED db.example:5432'),
+            { code: 'CONNECTION_CLOSED' }
         );
         const returning = vi
             .fn()
-            .mockRejectedValueOnce(neonTransient)
+            .mockRejectedValueOnce(dbTransient)
             .mockResolvedValueOnce([userRecord]);
         const onConflictDoNothing = vi.fn(() => ({ returning }));
         const values = vi.fn(() => ({ onConflictDoNothing }));
@@ -694,7 +694,7 @@ describe('DrizzleUserRepository — Neon transient retry wire-up', () => {
             new Error(
                 'duplicate key value violates unique constraint "users_email_unique"'
             ),
-            { name: 'NeonDbError' }
+            { name: 'PostgresError', code: '23505' }
         );
         const returning = vi.fn().mockRejectedValueOnce(constraintError);
         const onConflictDoNothing = vi.fn(() => ({ returning }));

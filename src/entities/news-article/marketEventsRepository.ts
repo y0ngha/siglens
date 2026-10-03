@@ -7,7 +7,7 @@ import type {
     NewsImpact,
     NewsSentiment,
 } from '@y0ngha/siglens-core';
-import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
+import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { news } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
@@ -103,7 +103,7 @@ export async function findMarketEventsForPrompt(
                         )
                     )
                     .orderBy(desc(news.publishedAt)),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
 
         return rows.flatMap(row =>

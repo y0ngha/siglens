@@ -50,11 +50,11 @@ const nextConfig: NextConfig = {
 
     // serverExternalPackages 부재는 의도된 것(L3) — 다시 추가하지 말 것.
     // 과거 'postgres'를 serverExternalPackages에 넣었다가 E2E prod build가 깨졌다:
-    // 정적 페이지 prerender 중 clientTest(postgres)가 실제 실행되는데 external 처리로
+    // 정적 페이지 prerender 중 DB 클라이언트(postgres)가 실제 실행되는데 external 처리로
     // 번들에서 빠져 빌드가 실패(MEMORY: e2e_prerender_executes_clienttest 참고).
-    // 프로덕션 DB는 Neon HTTP 드라이버(@neondatabase/serverless)를 쓰므로 네이티브
-    // postgres를 external로 분리할 이유 자체가 없다. external 후보가 생기면 반드시
-    // `E2E_TEST=1 yarn build`로 검증한 뒤에만 추가한다.
+    // 프로덕션 DB도 이제 같은 postgres-js 드라이버(src/shared/db/client.ts)를 쓴다 —
+    // E2E/prod 모두 번들에 들어가는 순수 JS라 external로 분리할 이유가 없다.
+    // external 후보가 생기면 반드시 `E2E_TEST=1 yarn build`로 검증한 뒤에만 추가한다.
 
     /*
      * 오리진에서 gzip을 건다.

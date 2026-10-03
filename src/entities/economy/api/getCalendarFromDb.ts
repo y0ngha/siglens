@@ -27,8 +27,8 @@ import {
  * `unstable_cache`는 함수 인자를 자동으로 캐시 키에 포함하므로 날짜가
  * 바뀌면 자연히 새 윈도로 리프레시된다.
  *
- * ISR cold-gen 안전: `@neondatabase/serverless` HTTP는 no-store라 static
- * generate가 `DYNAMIC_SERVER_USAGE`를 throw한다 — `unstable_cache`로 감싸
+ * ISR cold-gen 안전: DB 쿼리는 drizzle 로거(`noStoreQueryLogger`)의
+ * `unstable_noStore`로 static generate에서 `DYNAMIC_SERVER_USAGE`를 throw한다 — `unstable_cache`로 감싸
  * HTML에 박고 정적화한다 (src/app/CLAUDE.md 4축 규약 축1).
  * revalidate=24h + 국가별 `economyCalendarCacheTag(country)` 태그로 `ensureEconomicCalendarAction`이
  * on-demand 무효화 가능. cookies/headers/connection 미사용.

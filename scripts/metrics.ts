@@ -6,7 +6,7 @@
  * 실행: `yarn metrics`
  */
 import { DrizzleVisitorRepository } from '@/entities/visitor/api';
-import { getDatabaseClient } from '@/shared/db/client';
+import { endDatabaseClient, getDatabaseClient } from '@/shared/db/client';
 import { kstDateKey, kstDateKeyDaysBefore } from '@/shared/lib/etTimeUtils';
 
 /** 표에 찍을 일수. */
@@ -70,8 +70,11 @@ async function main(): Promise<void> {
 }
 
 if (require.main === module) {
-    main().catch(err => {
-        console.error('[metrics] failed:', err);
-        process.exit(1);
-    });
+    main()
+        .catch(err => {
+            console.error('[metrics] failed:', err);
+            process.exitCode = 1;
+        })
+        // 풀을 닫지 않으면 유휴 소켓(idle_timeout 20s)이 프로세스를 그만큼 붙잡는다.
+        .finally(() => endDatabaseClient());
 }

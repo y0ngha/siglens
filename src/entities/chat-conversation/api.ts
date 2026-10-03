@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { and, desc, eq, gte, sql } from 'drizzle-orm';
-import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
+import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { chatConversations, chatMessages } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
@@ -92,7 +92,7 @@ export class DrizzleChatConversationRepository {
                         )
                     )
                     .limit(1),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
         return (row as ChatConversationRecord | undefined) ?? null;
     }
@@ -113,7 +113,7 @@ export class DrizzleChatConversationRepository {
                     .where(eq(chatConversations.userId, userId))
                     .orderBy(desc(chatConversations.lastMessageAt))
                     .limit(limit),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         ) as Promise<ChatConversationRecord[]>;
     }
 
@@ -183,14 +183,14 @@ export class DrizzleChatConversationRepository {
                     .from(chatMessages)
                     .where(eq(chatMessages.conversationId, conversationId))
                     .orderBy(chatMessages.seq),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         ) as Promise<ChatMessageRecord[]>;
     }
 
     /**
      * NOT owner-scoped — see the class doc. One INSERT whose `seq` values
      * are `(select coalesce(max(seq),0) …) + n` — evaluated inside the
-     * statement, so no transaction is needed (neon-http has none).
+     * statement, so no transaction is needed.
      * Cross-request races are excluded by the per-user turn lock.
      *
      * Not retried: like `create`, an INSERT of new message rows is not
@@ -242,7 +242,7 @@ export class DrizzleChatConversationRepository {
                             updatedAt: new Date(),
                         })
                         .where(eq(chatConversations.id, conversationId)),
-                NEON_TRANSIENT_RETRY
+                DB_TRANSIENT_RETRY
             );
         } catch {
             console.error(

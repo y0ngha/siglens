@@ -15,7 +15,7 @@ import type {
     EconomicCalendarEvent,
     EconomicEventAnalysis,
 } from '@y0ngha/siglens-core';
-import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
+import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { economicCalendar } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
@@ -133,7 +133,7 @@ export class DrizzleEconomicCalendarRepository {
                         `,
                     })
                     .returning({ id: economicCalendar.id }),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
         return changed.length > 0;
     }
@@ -179,7 +179,7 @@ export class DrizzleEconomicCalendarRepository {
                         )
                     )
                     .orderBy(asc(economicCalendar.dateEt)),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
         return rows.map(toEvent);
     }
@@ -208,7 +208,7 @@ export class DrizzleEconomicCalendarRepository {
                             isNull(economicCalendar.analyzedAt)
                         )
                     ),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
     }
 
@@ -250,7 +250,7 @@ export class DrizzleEconomicCalendarRepository {
                     // 상한이 없으면 인제스션 창을 넓힌 국가가 처음 켜질 때 수십 건이
                     // 한 요청에 몰린다. 남은 것은 다음 pass(플래그 TTL)가 가져간다.
                     .limit(UNANALYZED_SCAN_LIMIT),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
         return rows.map(r => ({
             id: r.id,
@@ -295,7 +295,7 @@ export class DrizzleEconomicCalendarRepository {
                         )
                     )
                     .orderBy(asc(economicCalendar.dateEt)),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
         return rows.flatMap(row =>
             row.actual === null

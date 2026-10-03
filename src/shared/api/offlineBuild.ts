@@ -39,7 +39,7 @@ export function isOfflineBuild(): boolean {
 /** 이 게이트가 차단하는 서비스 이름. 문자열 리터럴 중복을 막기 위한 단일 출처. */
 export const OFFLINE_BUILD_SERVICE = {
     FMP: 'FMP',
-    NEON: 'Neon',
+    DATABASE: 'Database',
     UPSTASH: 'Upstash',
     YAHOO: 'Yahoo',
 } as const;

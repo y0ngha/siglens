@@ -16,7 +16,7 @@ import {
     or,
     sql,
 } from 'drizzle-orm';
-import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
+import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import {
     assetTranslations,
     cryptoAssets,
@@ -58,7 +58,8 @@ const DB_SORT_OTHER = 2;
 
 /**
  * `korean_tickers`에 대한 한 INSERT/UPDATE 문에 담을 최대 행 수. 전 종목 동기화는
- * 2,500행대라 한 번에 보내면 Neon HTTP 페이로드 한도에 걸린다. `upsertMany`(INSERT),
+ * 2,500행대라 한 번에 보내면 한 쿼리의 페이로드·바인드 파라미터(최대 65,535개) 한도에
+ * 걸린다(청크 크기 500은 과거 Neon HTTP 페이로드 한도에서 정한 값이다). `upsertMany`(INSERT),
  * `markRelisted`(대량 재상장 UPDATE), `markDelisted`(대량 상폐 UPDATE) 세 곳의 청크
  * 크기로 재사용한다.
  * `scripts/seed-kr-listed-names.ts`의 `UPSERT_BATCH_SIZE`와 같은 한도를 인코딩한
@@ -87,10 +88,10 @@ const assetTranslationColumns = {
 };
 
 /**
- * Drizzle ORM implementation of {@link KoreanTickerRepository} backed by Neon
+ * Drizzle ORM implementation of {@link KoreanTickerRepository} backed by PostgreSQL
  * PostgreSQL. Reads/writes the `korean_tickers` table.
  *
- * @param db - Drizzle-wrapped Neon database client; obtain via `createDatabaseClient`.
+ * @param db - Drizzle-wrapped database client; obtain via `createDatabaseClient`.
  */
 export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
     constructor(private readonly db: SiglensDatabase) {}
@@ -166,7 +167,7 @@ export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
                             updatedAt: sql`now()`,
                         },
                     }),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
     }
 
@@ -201,7 +202,7 @@ export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
     async markDelisted(symbols: readonly string[]): Promise<void> {
         // 현재 유일한 호출부(`syncKrListedTickers`)는 대량 상폐 가드가 25개로 묶어
         // 두므로 지금은 청크가 한 번에 끝난다. 그래도 `markRelisted`와 같은 크기로
-        // 맞춰 둔다 — 가드가 완화되거나 새 호출부가 생기는 순간 같은 Neon HTTP
+        // 맞춰 둔다 — 가드가 완화되거나 새 호출부가 생기는 순간 같은 쿼리
         // 페이로드 한도에 걸리고, 그때는 이 자리가 아니라 호출부를 보게 된다.
         // (`--force-delist`는 시드 스크립트 자체의 UPDATE만 푼다 — 그쪽 주석 참조.)
         for (
@@ -231,14 +232,14 @@ export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
                             isNull(koreanTickers.delistedAt)
                         )
                     ),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
     }
 
     async markRelisted(symbols: readonly string[]): Promise<void> {
         // `upsertMany`와 같은 이유로 청크를 나눈다 — 피드 장애가 며칠 이어졌다 복구되면
         // 재상장 심볼이 한 번에 수백~수천 개 몰릴 수 있고, 그걸 IN (...) 하나에 담으면
-        // 같은 Neon HTTP 페이로드 한도에 걸린다.
+        // 같은 쿼리 페이로드 한도에 걸린다.
         for (
             let i = 0;
             i < symbols.length;
@@ -259,16 +260,16 @@ export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
                     .update(koreanTickers)
                     .set({ delistedAt: null })
                     .where(inArray(koreanTickers.symbol, [...symbols])),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
     }
 }
 
 /**
  * Drizzle ORM implementation of {@link AssetTranslationRepository} backed by
- * Neon PostgreSQL. Reads/writes the `asset_translations` table.
+ * PostgreSQL. Reads/writes the `asset_translations` table.
  *
- * @param db - Drizzle-wrapped Neon database client; obtain via `createDatabaseClient`.
+ * @param db - Drizzle-wrapped database client; obtain via `createDatabaseClient`.
  */
 export class DrizzleAssetTranslationRepository implements AssetTranslationRepository {
     constructor(private readonly db: SiglensDatabase) {}
@@ -303,7 +304,7 @@ export class DrizzleAssetTranslationRepository implements AssetTranslationReposi
                             updatedAt: sql`now()`,
                         },
                     }),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
     }
 }
@@ -312,7 +313,7 @@ export class DrizzleAssetTranslationRepository implements AssetTranslationReposi
  * Drizzle ORM implementation of {@link ProfileDescriptionTranslationRepository}.
  * Reads/writes the `profile_description_translations` table.
  *
- * @param db - Drizzle-wrapped Neon database client; obtain via `createDatabaseClient`.
+ * @param db - Drizzle-wrapped database client; obtain via `createDatabaseClient`.
  */
 export class DrizzleProfileDescriptionTranslationRepository implements ProfileDescriptionTranslationRepository {
     constructor(private readonly db: SiglensDatabase) {}
@@ -345,7 +346,7 @@ export class DrizzleProfileDescriptionTranslationRepository implements ProfileDe
                             updatedAt: sql`now()`,
                         },
                     }),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
     }
 }
@@ -423,10 +424,10 @@ function toKoreanTickerRow(entry: KoreanTickerEntry): KoreanTickerRow {
 }
 
 /**
- * Drizzle ORM implementation of {@link CryptoAssetRepository} backed by Neon
+ * Drizzle ORM implementation of {@link CryptoAssetRepository} backed by PostgreSQL
  * PostgreSQL. Reads the `crypto_assets` table (written by the seed script).
  *
- * @param db - Drizzle-wrapped Neon database client; obtain via `createDatabaseClient`.
+ * @param db - Drizzle-wrapped database client; obtain via `createDatabaseClient`.
  */
 export class DrizzleCryptoAssetRepository implements CryptoAssetRepository {
     constructor(private readonly db: SiglensDatabase) {}

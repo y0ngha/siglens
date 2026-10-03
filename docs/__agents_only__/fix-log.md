@@ -705,6 +705,19 @@
 
 Round 4: approved
 
+## [refactor/db-postgres-js-driver Rounds 1-2 | refactor/db-postgres-js-driver | 2026-10-03]
+- Violation (R1 REQUIRED, fixed): swapping an HTTPS-based DB driver for postgres-js silently downgraded TLS — `sslmode=require` means encrypt-without-verify in postgres-js
+  - Rule: (new) When replacing a transport/driver, compare the security semantics of every connection option (sslmode, cert verification) against the old transport and keep or raise them; prove with a negative test (self-signed server must be rejected)
+  - Context: `resolveSslOption` upgrades require/prefer/allow to verify-full for non-local hosts; verified against a throwaway self-signed TLS server and read-only against production Neon.
+- Violation (R1 REQUIRED, fixed): Dockerfile `ADD <url>` produced a 0600 root-owned CA bundle that the non-root runtime user could not read (Node only warns)
+  - Rule: (new) Files fetched with Dockerfile `ADD <url>` need explicit `--chmod` and an existing parent dir, verified by reading them as the runtime user in a throwaway build
+  - Context: `ADD --chmod=0644 --checksum=... /etc/ssl/certs/rds-global-bundle.pem`; uid 1000 read 111 certs.
+- Violation (R1 recommended, fixed): CLIs that used the shared DB client hung ~20s after the driver swap because TCP pool sockets keep the event loop alive
+  - Rule: (new) After moving to a pooled TCP client, every CLI/one-shot entry point must end the pool (finally) and prefer `process.exitCode` over `process.exit`
+  - Context: `endDatabaseClient()` in metrics, seedTerms, visitSources; pool also ended after the SIGTERM drain.
+- Violation (R2 recommended, fixed): a new env override (`DATABASE_PREPARE`) and the sslmode upgrade were undocumented
+  - Rule: (new) Every new env switch read by app code is documented in `.env.example` with when to set it
+  - Context: `.env.example` Database section rewritten.
 ## [perf/build-without-db Rounds 1-2 | perf/build-without-db | 2026-10-03]
 - Violation (R1 recommended, fixed): removing the only consumer of a CI permission (build-time DB URL) left the grant (SSM read + KMS decrypt) in the deploy role
   - Rule: (new) When removing the last use of a credential/permission, remove the IAM grant in the same change and note that hand-applied policies must be re-applied and verified on the live role
@@ -744,3 +757,14 @@ Round 4: approved
   - Rule: (new) Code retained "because X" must have a test that fails when X breaks
   - Context: Added KR translation + upsert-failure test asserting `marketProfile: 'kr-equity'` in the provisional write; mutation-checked.
 - Status (R3): APPROVED (zero findings)
+
+## [PR #921 Claude review | refactor/db-postgres-js-driver | 2026-10-03]
+- Violation (suggestion, fixed): comments in code merged from another PR (#916) still described the old driver ("neon-http에는 쿼리 타임아웃이 없어")
+  - Rule: MISTAKES §32 — after a driver/contract switch, grep the old name repo-wide again after every master merge
+  - Context: analysis-plain api.ts and api.test.ts reworded to postgres-js (connect_timeout only).
+- Violation (suggestion, fixed): imperative `for…of` delete loop in `stripLibpqOnlyParams`
+  - Rule: CONVENTIONS — prefer array methods over for/while loops
+  - Context: `present.forEach(...)`.
+- Violation (suggestion, fixed): offline-build service key `NEON` named a vendor that no longer applies
+  - Rule: MISTAKES §11 — names must describe the current concept
+  - Context: `OFFLINE_BUILD_SERVICE.DATABASE` ('Database').

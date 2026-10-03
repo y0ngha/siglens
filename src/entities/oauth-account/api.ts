@@ -31,7 +31,7 @@ function decryptAccountToken(
     return decryptToken(encrypted, encryptionKey);
 }
 
-/** Drizzle ORM implementation of {@link OAuthAccountRepository} backed by Neon PostgreSQL. */
+/** Drizzle ORM implementation of {@link OAuthAccountRepository} backed by PostgreSQL. */
 export class DrizzleOAuthAccountRepository implements OAuthAccountRepository {
     constructor(private readonly db: SiglensDatabase) {}
 

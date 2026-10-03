@@ -10,7 +10,7 @@
 import { DrizzleSymbolViewRepository } from '@/entities/symbol-view/api';
 import type { SymbolViewTally } from '@/entities/symbol-view/types';
 import { DrizzleKoreanTickerRepository } from '@/entities/ticker/api';
-import { getDatabaseClient } from '@/shared/db/client';
+import { endDatabaseClient, getDatabaseClient } from '@/shared/db/client';
 import { cryptoAssets } from '@/shared/db/schema';
 import { kstDateKey, kstDateKeyDaysBefore } from '@/shared/lib/etTimeUtils';
 import { MIN_WEEKLY_VIEWS, VISIT_LOOKBACK_DAYS } from './visitCandidates';
@@ -52,5 +52,9 @@ export async function loadVisitSources(
             }`
         );
         return null;
+    } finally {
+        // 이 CLI 경로의 유일한 DB 사용처다 — 풀을 닫지 않으면 유휴 소켓(idle_timeout
+        // 20s)이 프로세스를 그만큼 붙잡는다. 캐시를 비우므로 재호출해도 새 풀을 연다.
+        await endDatabaseClient();
     }
 }

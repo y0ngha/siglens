@@ -26,6 +26,14 @@ const { mockDrainBackgroundTasks, mockStopAcceptingBackgroundTasks } =
         mockStopAcceptingBackgroundTasks: vi.fn(),
     }));
 
+const { mockEndDatabaseClient } = vi.hoisted(() => ({
+    mockEndDatabaseClient: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('@/shared/db/client', () => ({
+    endDatabaseClient: mockEndDatabaseClient,
+}));
+
 vi.mock('@/shared/lib/backgroundTask', () => ({
     drainBackgroundTasks: mockDrainBackgroundTasks,
     stopAcceptingBackgroundTasks: mockStopAcceptingBackgroundTasks,
@@ -63,6 +71,8 @@ describe('registerShutdownHandlers()', () => {
         mockDrainBackgroundTasks.mockReset();
         mockDrainBackgroundTasks.mockResolvedValue(undefined);
         mockStopAcceptingBackgroundTasks.mockReset();
+        mockEndDatabaseClient.mockReset();
+        mockEndDatabaseClient.mockResolvedValue(undefined);
         // `shutdownHandlersRegistered` 싱글톤을 초기화하기 위해 모듈 레지스트리를 리셋.
         // 이렇게 하면 다음 동적 import가 모듈을 새로 실행해 `= false`로 시작한다.
         vi.resetModules();
@@ -156,6 +166,44 @@ describe('registerShutdownHandlers()', () => {
         await vi.advanceTimersByTimeAsync(1_000);
 
         expect(exitSpy).toHaveBeenCalledWith(0);
+    });
+
+    it('drain이 끝나면 DB 풀을 닫고(5s timeout), 풀 종료가 끝난 뒤에 exit(0)한다', async () => {
+        let resolveEnd: () => void = () => undefined;
+        mockEndDatabaseClient.mockReturnValue(
+            new Promise<void>(resolve => {
+                resolveEnd = resolve;
+            })
+        );
+        const { registerShutdownHandlers } =
+            await import('@/instrumentation.node');
+        registerShutdownHandlers();
+
+        process.emit('SIGTERM');
+        await vi.advanceTimersByTimeAsync(1_000);
+
+        expect(mockEndDatabaseClient).toHaveBeenCalledTimes(1);
+        expect(mockEndDatabaseClient).toHaveBeenCalledWith(5);
+        // 유예는 지났지만 풀이 아직 닫히는 중이면 exit하지 않는다.
+        expect(exitSpy).not.toHaveBeenCalled();
+
+        resolveEnd();
+        await vi.advanceTimersByTimeAsync(1);
+        expect(exitSpy).toHaveBeenCalledWith(0);
+    });
+
+    it('DB 풀 종료가 실패해도 exit(0)한다', async () => {
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        mockEndDatabaseClient.mockRejectedValue(new Error('end failed'));
+        const { registerShutdownHandlers } =
+            await import('@/instrumentation.node');
+        registerShutdownHandlers();
+
+        process.emit('SIGTERM');
+        await vi.advanceTimersByTimeAsync(1_000);
+
+        expect(exitSpy).toHaveBeenCalledWith(0);
+        warnSpy.mockRestore();
     });
 
     it('같은 프로세스에서 registerShutdownHandlers를 두 번 불러도 리스너를 중복 등록하지 않는다', async () => {

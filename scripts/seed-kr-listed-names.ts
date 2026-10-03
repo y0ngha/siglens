@@ -70,7 +70,7 @@ if (!databaseUrl) {
 }
 
 /**
- * `src/entities/ticker/api.ts`의 `KOREAN_TICKER_UPSERT_BATCH_SIZE`와 같은 Neon HTTP
+ * `src/entities/ticker/api.ts`의 `KOREAN_TICKER_UPSERT_BATCH_SIZE`와 같은 쿼리
  * 페이로드 한도를 인코딩한 값이다 — 하나를 바꾸면 다른 쪽도 함께 확인해야 한다.
  */
 const UPSERT_BATCH_SIZE = 500;
@@ -165,7 +165,7 @@ async function main() {
 
         // relist/delist도 upsert와 같은 이유로 쪼갠다 — 이 스크립트는 피드 장애
         // 복구를 손으로 돌리는 경로이고, 그때가 바로 심볼이 수백~수천 개로 몰려
-        // `IN (...)` 하나가 Neon HTTP 페이로드 한도에 걸리는 상황이다
+        // `IN (...)` 하나가 쿼리 페이로드 한도에 걸리는 상황이다
         // (`DrizzleKoreanTickerRepository.markRelisted`가 같은 이유로 청크를 나눈다).
         for (let i = 0; i < plan.relist.length; i += UPSERT_BATCH_SIZE) {
             await db

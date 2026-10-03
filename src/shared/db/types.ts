@@ -1,7 +1,7 @@
 import 'server-only';
 
-import type { NeonQueryFunction } from '@neondatabase/serverless';
-import type { NeonHttpDatabase } from 'drizzle-orm/neon-http';
+import type { Sql } from 'postgres';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import type { Tier } from '@y0ngha/siglens-core';
 import type { OAuthProvider } from '@/shared/lib/types';
 import type { LlmProvider } from '../config/llmProviders';
@@ -15,18 +15,19 @@ export interface DatabaseConfig {
     databaseUrl: string;
 }
 
-/** Fully-typed Drizzle ORM database instance scoped to the siglens schema (tied to `drizzle-orm/neon-http`). */
-export type SiglensDatabase = NeonHttpDatabase<typeof schema>;
-
-/** @internal Raw Neon serverless SQL client — access via DatabaseClient['sql']. */
-type NeonSqlClient = NeonQueryFunction<false, false>;
+/** Fully-typed Drizzle ORM database instance scoped to the siglens schema (tied to `drizzle-orm/postgres-js`). */
+export type SiglensDatabase = PostgresJsDatabase<typeof schema>;
 
 /** Bundled handle exposing both the Drizzle ORM layer and the raw SQL client. */
 export interface DatabaseClient {
     /** Drizzle ORM instance scoped to the siglens schema. */
     db: SiglensDatabase;
-    /** Raw Neon serverless SQL client for template-literal queries. */
-    sql: NeonSqlClient;
+    /**
+     * Raw postgres-js client for template-literal queries. Bypasses the drizzle
+     * logger, so it does NOT send the `unstable_noStore` signal — see
+     * `noStoreQueryLogger`.
+     */
+    sql: Sql;
 }
 
 /** Email-auth user record including the password hash needed for credential checks. */

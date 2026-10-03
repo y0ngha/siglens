@@ -79,7 +79,8 @@ function buildInputDigest(prompt: string): string {
 }
 
 /**
- * 저장소 조회 상한(ms). neon-http에는 쿼리 타임아웃이 없어 DB가 매달리면 `find`가
+ * 저장소 조회 상한(ms). DB 클라이언트(postgres-js)는 연결 타임아웃(`connect_timeout`)만
+ * 있고 쿼리 단위 타임아웃을 걸지 않아 DB가 매달리면 `find`가
  * 영영 끝나지 않고, 이 조회는 `withDeadline` **바깥**(생성 앞단)이라 그대로 사용자
  * 대기로 이어진다. 넘기면 미스로 취급하고 생성으로 넘어간다 — 정상 조회는 한 자릿수
  * ~수십 ms라 2.5초면 일시적 지연은 담으면서 매달림은 끊는다. 늦게 끝난 조회 결과는

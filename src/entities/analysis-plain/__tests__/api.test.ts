@@ -453,7 +453,7 @@ describe('rewriteToPlainLanguage', () => {
     });
 
     /**
-     * neon-http에는 쿼리 타임아웃이 없다. 조회가 매달리면 `withDeadline` 바깥의
+     * DB 클라이언트에는 쿼리 단위 타임아웃이 없다. 조회가 매달리면 `withDeadline` 바깥의
      * 이 await가 그대로 사용자 대기가 되므로, 상한을 넘기면 미스로 보고 생성한다.
      */
     describe('저장소 조회 상한', () => {

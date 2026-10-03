@@ -289,16 +289,16 @@ describe('DrizzleNewsRepository', () => {
             );
         });
 
-        it('Neon transient 에러 발생 후 재시도해 성공하면 boolean을 반환한다', async () => {
-            // 첫 chain은 returning에서 transient NeonDbError를 던지고,
+        it('DB transient 에러 발생 후 재시도해 성공하면 boolean을 반환한다', async () => {
+            // 첫 chain은 returning에서 transient 연결 에러를 던지고,
             // 두 번째 chain은 성공해야 retry 정책이 의도대로 동작함을 보장한다.
-            const neonTransient = Object.assign(
-                new Error('Error connecting to database: fetch failed'),
-                { name: 'NeonDbError' }
+            const dbTransient = Object.assign(
+                new Error('write CONNECTION_CLOSED db.example:5432'),
+                { code: 'CONNECTION_CLOSED' }
             );
             const returning = vi
                 .fn()
-                .mockRejectedValueOnce(neonTransient)
+                .mockRejectedValueOnce(dbTransient)
                 .mockResolvedValueOnce([{ id: 'abc123' }]);
             const onConflictDoUpdate = vi.fn(() => ({ returning }));
             const values = vi.fn(() => ({ onConflictDoUpdate }));
@@ -322,7 +322,7 @@ describe('DrizzleNewsRepository', () => {
                 new Error(
                     'duplicate key value violates unique constraint "news_pkey"'
                 ),
-                { name: 'NeonDbError' }
+                { name: 'PostgresError', code: '23505' }
             );
             const returning = vi.fn().mockRejectedValueOnce(constraintError);
             const onConflictDoUpdate = vi.fn(() => ({ returning }));

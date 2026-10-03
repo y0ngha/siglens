@@ -1,5 +1,5 @@
 import type { TermsKind } from '@/shared/db/constants';
-import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
+import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { contentTranslations, terms } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
@@ -148,7 +148,7 @@ export class DrizzleTermsRepository implements TermsRepository {
                         target: [terms.kind, terms.version],
                     })
                     .returning({ id: terms.id }),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
         const insertedId = inserted[0]?.id;
         if (insertedId !== undefined) return insertedId;
@@ -167,7 +167,7 @@ export class DrizzleTermsRepository implements TermsRepository {
                         )
                     )
                     .limit(1),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
         const existingId = existing[0]?.id;
         if (existingId === undefined) {
@@ -204,7 +204,7 @@ export class DrizzleTermsRepository implements TermsRepository {
                             updatedAt: sql`now()`,
                         },
                     }),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
     }
 }

@@ -164,7 +164,7 @@ import { DrizzleUserRepository } from '@/entities/auth/api'; // server-only — 
     │   ├── api/          # HTTP client, bot detection
     │   ├── cache/        # Redis client
     │   ├── config/       # queryKeys, cookieNames, market, time 상수
-    │   ├── db/           # Drizzle/Neon client, schema, token encryption
+    │   ├── db/           # Drizzle/postgres-js client, schema, token encryption
     │   ├── email/        # Email dispatcher (Resend/Noop)
     │   ├── hooks/        # 범용 React hooks (useDialog, useEscapeKey 등)
     │   ├── lib/          # 순수 유틸리티 (cn, chartColors, priceFormat, seo 등)

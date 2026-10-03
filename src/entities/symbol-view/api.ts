@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { desc, gte, lt, sql } from 'drizzle-orm';
-import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
+import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { symbolViewsDaily } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
@@ -33,7 +33,7 @@ export class DrizzleSymbolViewRepository implements SymbolViewRepository {
                         ],
                         set: { views: sql`${symbolViewsDaily.views} + 1` },
                     }),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
     }
 
@@ -43,7 +43,7 @@ export class DrizzleSymbolViewRepository implements SymbolViewRepository {
                 this.db
                     .delete(symbolViewsDaily)
                     .where(lt(symbolViewsDaily.date, cutoffDate)),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
     }
 
@@ -51,7 +51,7 @@ export class DrizzleSymbolViewRepository implements SymbolViewRepository {
         fromDate: string,
         minViews: number
     ): Promise<SymbolViewTally[]> {
-        // Neon HTTP는 bigint(sum 결과)를 문자열로 준다 — int로 캐스팅한다.
+        // postgres-js는 int8(sum 결과)을 문자열로 준다 — int로 캐스팅한다.
         const total = sql<number>`sum(${symbolViewsDaily.views})::int`;
         return this.db
             .select({ symbol: symbolViewsDaily.symbol, views: total })

@@ -30,7 +30,7 @@ import {
     type Trend,
 } from '@y0ngha/siglens-core';
 import { MS_PER_DAY, MS_PER_MINUTE } from '@/shared/config/time';
-import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
+import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { analysisHistory, analysisPromptBlobs } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type { Locale } from '@/shared/i18n/locales';
@@ -93,8 +93,8 @@ export const PRUNE_BATCH_SIZE = 500;
  * its prompt for no reason.
  *
  * **Why this value is safe.** The gap between the two writes is bounded by
- * one blob-insert round-trip plus its `NEON_TRANSIENT_RETRY` backoff
- * budget (`backoffBudgetMs: 5000` — see `isNeonTransientError.ts`), so a
+ * one blob-insert round-trip plus its `DB_TRANSIENT_RETRY` backoff
+ * budget (`backoffBudgetMs: 5000` — see `isTransientDbError.ts`), so a
  * few seconds covers every realistic case, including a transient Neon
  * retry. Five minutes is two to three orders of magnitude past that,
  * with room to spare for clock skew between the app instance and Neon.
@@ -327,7 +327,7 @@ export class DrizzleAnalysisHistoryRepository {
                         .onConflictDoNothing({
                             target: analysisPromptBlobs.hash,
                         }),
-                NEON_TRANSIENT_RETRY
+                DB_TRANSIENT_RETRY
             );
 
             await withRetry(
@@ -346,7 +346,7 @@ export class DrizzleAnalysisHistoryRepository {
                         promptDynamic: prompt.dynamic,
                         generatedAt: input.generatedAt,
                     }),
-                NEON_TRANSIENT_RETRY
+                DB_TRANSIENT_RETRY
             );
         } catch (err) {
             console.error('[analysisHistoryRepository] persist failed:', err);
@@ -452,7 +452,7 @@ export class DrizzleAnalysisHistoryRepository {
                         )
                         .orderBy(desc(analysisHistory.generatedAt))
                         .limit(limit),
-                NEON_TRANSIENT_RETRY
+                DB_TRANSIENT_RETRY
             );
 
             return rows
@@ -526,7 +526,7 @@ export class DrizzleAnalysisHistoryRepository {
                         .delete(analysisHistory)
                         .where(inArray(analysisHistory.id, staleRowIds))
                         .returning({ id: analysisHistory.id }),
-                NEON_TRANSIENT_RETRY
+                DB_TRANSIENT_RETRY
             );
 
             // (2) Among survivors, clear prompt_dynamic past the shorter window.
@@ -548,7 +548,7 @@ export class DrizzleAnalysisHistoryRepository {
                         .set({ promptDynamic: null })
                         .where(inArray(analysisHistory.id, promptClearIds))
                         .returning({ id: analysisHistory.id }),
-                NEON_TRANSIENT_RETRY
+                DB_TRANSIENT_RETRY
             );
 
             // (3) Sweep blobs no surviving row references — computed last so
@@ -604,7 +604,7 @@ export class DrizzleAnalysisHistoryRepository {
                             inArray(analysisPromptBlobs.hash, orphanBlobHashes)
                         )
                         .returning({ hash: analysisPromptBlobs.hash }),
-                NEON_TRANSIENT_RETRY
+                DB_TRANSIENT_RETRY
             );
             console.log(
                 `[analysisHistoryRepository] prune: ${deletedRows.length} row(s) deleted, ${clearedRows.length} prompt(s) cleared, ${deletedBlobs.length} orphan blob(s) deleted`
