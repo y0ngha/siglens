@@ -73,12 +73,17 @@ describe('encodeCacheValue 함수는', () => {
     it('압축 이득도 글자 수가 아니라 UTF-8 바이트와 비교한다', async () => {
         // 고정 시드 LCG로 고른 한글 음절 — 압축 결과(base64)가 원본 글자 수보다는 길고
         // 원본 바이트 수보다는 짧은 구간에 들어가, 비교 기준이 바뀌면 결과가 뒤집힌다.
-        let seed = 42;
-        const syllable = (): string => {
-            seed = (seed * 1103515245 + 12345) % 2 ** 31;
-            return String.fromCharCode(0xac00 + (seed % 11172));
+        const nextSeed = (seed: number): number =>
+            (seed * 1103515245 + 12345) % 2 ** 31;
+        const seeds = Array.from({ length: 1200 }).reduce<number[]>(
+            (acc, _, i) => [...acc, nextSeed(i === 0 ? 42 : acc[i - 1])],
+            []
+        );
+        const value = {
+            data: seeds
+                .map(seed => String.fromCharCode(0xac00 + (seed % 11172)))
+                .join(''),
         };
-        const value = { data: Array.from({ length: 1200 }, syllable).join('') };
         const json = JSON.stringify(value);
 
         const encoded = await encodeCacheValue(value);

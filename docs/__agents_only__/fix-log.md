@@ -687,3 +687,8 @@
   Context: Added a 150-bar 1Day case expecting latest.rsi2 === null.
 
 Round 4: approved
+
+## [PR #918 Claude review | perf/redis-cache-compression | 2026-10-03]
+- Violation (suggestion, fixed): seeded LCG test helper reassigned a closure `let seed`
+  - Rule: MISTAKES Coding Paradigm 5·14 — prefer immutable derivation (reduce over previous value) even in test helpers
+  - Context: `cacheValueCodec.test.ts` now derives the seed sequence with `reduce`; same sequence, test still pins byte-vs-char comparison.
