@@ -1,5 +1,22 @@
 # Changelog
 
+# [0.96.0](https://github.com/y0ngha/siglens/compare/v0.95.1...v0.96.0) (2026-10-03)
+
+### Bug Fixes
+
+* getBarsIndicators 도구에서 confluence.entryRuleMet/exitRuleMet 필드 제거 ([#913](https://github.com/y0ngha/siglens/issues/913)) ([ea3ce38](https://github.com/y0ngha/siglens/commit/ea3ce38b479b478bd121b751cebc7234c959a879))
+
+### Features
+
+* **analysis-plain:** 쉬운 설명 결과를 DB 테이블에 영구 저장 ([#916](https://github.com/y0ngha/siglens/issues/916)) ([818c1d7](https://github.com/y0ngha/siglens/commit/818c1d7729078eefbc0a8370aeee67e3bdea0fa0))
+
+### Performance Improvements
+
+* **build:** 배포 빌드가 DB 없이 돌게 ([#920](https://github.com/y0ngha/siglens/issues/920)) ([6dd2f75](https://github.com/y0ngha/siglens/commit/6dd2f7599ba73e1556571e8c8598f893ce6e8a98))
+* **cache:** getOrSetCache 값을 zstd로 압축해 Redis 저장량을 1/3로 ([#918](https://github.com/y0ngha/siglens/issues/918)) ([79e375b](https://github.com/y0ngha/siglens/commit/79e375b21d20763545469e14621853946ab08aaa))
+* **ticker:** asset-info를 DB에서 먼저 읽고 Redis 1년 캐시 계층 제거 ([#915](https://github.com/y0ngha/siglens/issues/915)) ([bf75118](https://github.com/y0ngha/siglens/commit/bf75118eefa79f6a2ff6e5a810f3a49e063c3d45))
+* **ticker:** FMP 크립토 목록을 인스턴스 메모리에 1시간 캐시 ([#914](https://github.com/y0ngha/siglens/issues/914)) ([fa991e2](https://github.com/y0ngha/siglens/commit/fa991e236c665154198285ca9bbe3a49bcf557f5))
+
 ## [0.95.1](https://github.com/y0ngha/siglens/compare/v0.95.0...v0.95.1) (2026-10-02)
 
 ### Bug Fixes
