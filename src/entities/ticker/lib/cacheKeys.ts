@@ -12,8 +12,6 @@ export const ASSET_INFO_HOURS_WITHOUT_KOREAN = 12;
 /** 한국어 미보유 자산정보 캐시 TTL (초). */
 export const ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN =
     ASSET_INFO_HOURS_WITHOUT_KOREAN * SECONDS_PER_HOUR;
-/** 한국어 보유: 완성된 데이터 → 1년 장기 보존 */
-export const ASSET_INFO_CACHE_TTL_WITH_KOREAN = SECONDS_PER_YEAR;
 
 /** 한국어 이름 매핑: 장기 보존 (sync 스크립트로 주기 갱신) */
 export const KOREAN_NAMES_CACHE_TTL = SECONDS_PER_YEAR;
@@ -36,6 +34,14 @@ export function buildTickerSearchCacheKey(query: string): string {
     return `ticker:search:v2:${query.toLowerCase()}`;
 }
 
-export function buildAssetInfoCacheKey(symbol: string): string {
-    return `asset-info:${symbol.toUpperCase()}`;
+/**
+ * 자산정보 임시 항목(12시간) 캐시 키.
+ *
+ * 예전 `asset-info:<SYM>`은 번역 완료분을 1년 TTL로 굳힌 DB 사본이었고 운영 Redis에
+ * 32,667개가 남아 있다. 같은 키를 임시 항목에 재사용하면 그 옛 값이 임시 항목으로
+ * 읽히므로(DB 미스 뒤에 읽는다 해도 옛 이름이 1년 동안 나간다) 키를 분리했다. 옛 키는
+ * 아무도 읽지 않는 고아가 되며, 배포 뒤 일회성 스크립트로 지운다.
+ */
+export function buildAssetInfoProvisionalCacheKey(symbol: string): string {
+    return `asset-info:provisional:${symbol.toUpperCase()}`;
 }
