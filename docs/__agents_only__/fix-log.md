@@ -722,3 +722,14 @@ Round 4: approved
   - Rule: (new) Code retained "because X" must have a test that fails when X breaks
   - Context: Added KR translation + upsert-failure test asserting `marketProfile: 'kr-equity'` in the provisional write; mutation-checked.
 - Status (R3): APPROVED (zero findings)
+
+## [PR #921 Claude review | refactor/db-postgres-js-driver | 2026-10-03]
+- Violation (suggestion, fixed): comments in code merged from another PR (#916) still described the old driver ("neon-http에는 쿼리 타임아웃이 없어")
+  - Rule: MISTAKES §32 — after a driver/contract switch, grep the old name repo-wide again after every master merge
+  - Context: analysis-plain api.ts and api.test.ts reworded to postgres-js (connect_timeout only).
+- Violation (suggestion, fixed): imperative `for…of` delete loop in `stripLibpqOnlyParams`
+  - Rule: CONVENTIONS — prefer array methods over for/while loops
+  - Context: `present.forEach(...)`.
+- Violation (suggestion, fixed): offline-build service key `NEON` named a vendor that no longer applies
+  - Rule: MISTAKES §11 — names must describe the current concept
+  - Context: `OFFLINE_BUILD_SERVICE.DATABASE` ('Database').

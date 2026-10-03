@@ -175,7 +175,7 @@ export function stripLibpqOnlyParams(databaseUrl: string): string {
     if (url === null) return databaseUrl;
     const present = LIBPQ_ONLY_PARAMS.filter(key => url.searchParams.has(key));
     if (present.length === 0) return databaseUrl;
-    for (const key of present) url.searchParams.delete(key);
+    present.forEach(key => url.searchParams.delete(key));
     return url.toString();
 }
 
@@ -214,7 +214,7 @@ export function createDatabaseClient(config: DatabaseConfig): DatabaseClient {
  * connection before `postgres()` is ever constructed).
  */
 export function getDatabaseClient(): DatabaseClient {
-    assertOnline(OFFLINE_BUILD_SERVICE.NEON, 'connection');
+    assertOnline(OFFLINE_BUILD_SERVICE.DATABASE, 'connection');
     const client =
         readCachedClient() ?? createDatabaseClient(readDatabaseConfig());
     writeCachedClient(client);
@@ -228,7 +228,7 @@ export function getDatabaseClient(): DatabaseClient {
  */
 export function tryGetDatabaseClient(): DatabaseClient | null {
     if (isOfflineBuild()) {
-        warnOfflineBuildOnce(OFFLINE_BUILD_SERVICE.NEON);
+        warnOfflineBuildOnce(OFFLINE_BUILD_SERVICE.DATABASE);
         return null;
     }
     const config = tryReadDatabaseConfig();
