@@ -262,7 +262,7 @@ fi
 #                              이전 직후 Neon 대비 느려진 쿼리를 찾는 유일한 수단이다.
 # - max_connections            **건드리지 않는다.** 기본값은 인스턴스 메모리 비례
 #                              (LEAST(메모리/9531392, 5000) — t4g.small ≈ 180~225)이고,
-#                              알람(07-alarms.sh)이 150에서 먼저 울린다.
+#                              알람(07-alarms.sh `RDS_CONNECTIONS_ALARM_THRESHOLD`=150)이 먼저 울린다.
 # - rds.logical_replication=0  명시적으로 끈다. 논리 복제는 **발행자(Neon)** 쪽에서 WAL 레벨을
 #                              logical로 올려야 하는 기능이고, 구독자(RDS)는 일반 클라이언트처럼
 #                              발행자에 연결해 변경분을 받아 적용할 뿐이라 필요 없다. 켜면

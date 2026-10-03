@@ -444,11 +444,13 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-rds-free-storage-low --name
   --comparison-operator LessThanThreshold --treat-missing-data notBreaching $P1
 
 # 연결 수 (P1). max_connections 기본값(메모리 비례, t4g.small ≈ 180~225)의 약 70%.
+# 이 값은 15-rds.sh의 max_connections 주석이 참조한다 — 바꾸면 그쪽 문구도 같이 고친다.
+RDS_CONNECTIONS_ALARM_THRESHOLD=150
 # 인스턴스마다 커넥션 풀이 있어 ASG가 늘어나면 연결도 선형으로 는다 — 풀 누수나
 # 스케일아웃 폭주를 한계(too many clients)에 닿기 전에 잡는다.
 aws cloudwatch put-metric-alarm --alarm-name siglens-rds-connections-high --namespace AWS/RDS \
   --metric-name DatabaseConnections --dimensions Name=DBInstanceIdentifier,Value="$RDS_ID" \
-  --statistic Maximum --period 300 --evaluation-periods 2 --threshold 150 \
+  --statistic Maximum --period 300 --evaluation-periods 2 --threshold "$RDS_CONNECTIONS_ALARM_THRESHOLD" \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $P1
 
 log "alarms: P1(즉시)=5xx, unhealthy, disk, heap-oom, analysis-stream, capacity-needed(cpu/mem), rds(free-storage/connections) | P2(오늘중)=mem-high, surplus-credits, rds(cpu-credits/freeable-memory), isr-cache, isr-tag, redis-cache, seed-bars, market-data-loader(fear-greed us/kr/crypto+market-kr), config-signal(naver-news/kr-calendar/prewarm-redis)"

@@ -741,3 +741,11 @@ Round 4: approved
   - Rule: (new) Code retained "because X" must have a test that fails when X breaks
   - Context: Added KR translation + upsert-failure test asserting `marketProfile: 'kr-equity'` in the provisional write; mutation-checked.
 - Status (R3): APPROVED (zero findings)
+
+## [PR #922 Claude review | infra/rds-provisioning-and-runbook | 2026-10-03]
+- Violation (suggestion, fixed): runbook step (reboot after a parameter change) needed an API the scoped deployer policy didn't grant
+  - Rule: (new) When scoping an IAM policy to a script, also cover every action the runbook tells the same identity to run, not only the script's own calls
+  - Context: `rds:RebootDBInstance` added to `siglens-deployer-rds`.
+- Violation (suggestion, fixed): the connection-alarm threshold (150) was written in two files independently
+  - Rule: MISTAKES §15 drift trap — one source with cross-references
+  - Context: `RDS_CONNECTIONS_ALARM_THRESHOLD` in 07-alarms.sh, referenced from 15-rds.sh.

@@ -32,6 +32,7 @@
             "Action": [
                 "rds:CreateDBInstance",
                 "rds:ModifyDBInstance",
+                "rds:RebootDBInstance",
                 "rds:AddTagsToResource",
                 "rds:DownloadDBLogFilePortion",
                 "rds:CreateDBSubnetGroup",
