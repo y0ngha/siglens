@@ -25,6 +25,11 @@ vi.mock('@/shared/ui/JsonLd', () => ({
 
 const jsonLdSpy = vi.fn();
 
+vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
+    shortenRevalidateIfDatabaseMissingAtBuild: vi.fn(async () => undefined),
+}));
+
+import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 import { renderToStaticMarkup } from 'react-dom/server';
 import SymbolsDirectoryPage, {
     generateMetadata,
@@ -48,6 +53,16 @@ async function renderPage(locale: string): Promise<string> {
 describe('/symbols 디렉터리 페이지', () => {
     beforeEach(() => {
         jsonLdSpy.mockClear();
+    });
+
+    // 배포 빌드에는 DB가 없어 종목 이름이 빈 채로 구워진다 — 60초 revalidate 배선.
+    // DB 판정 자체는 헬퍼 테스트가 고정하므로 여기서는 호출 여부만 본다.
+    it('빌드타임 DB 부재 degrade revalidate 헬퍼를 부른다', async () => {
+        vi.mocked(shortenRevalidateIfDatabaseMissingAtBuild).mockClear();
+
+        await renderPage('ko');
+
+        expect(shortenRevalidateIfDatabaseMissingAtBuild).toHaveBeenCalled();
     });
 
     it('sitemap 소스의 모든 심볼을 루트 URL로 링크한다', async () => {

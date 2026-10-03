@@ -3361,6 +3361,8 @@
                 "4ea5e2": "生效日期: {v0}",
                 "7474d0": "目录"
             },
+            "unavailableNotice": "正在加载本文档的全文。请稍后重新打开此页面。",
+            "unavailableNoticeLabel": "文档加载提示",
             "untranslatedNotice": "本文档尚未翻译为{v0}。正在显示原文（{v1}）。",
             "untranslatedNoticeLabel": "翻译说明"
         },

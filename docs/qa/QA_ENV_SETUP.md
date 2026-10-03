@@ -42,10 +42,9 @@ DATABASE_URL=postgres://siglens:siglens@localhost:5433/siglens_e2e
 > 워크트리의 `.env.local`을 바꾸고, **끝나면 메인 레포 `.env.local`과 동일(Neon)하게 반드시 원복**한다.
 > 원복은 `cp <메인레포>/.env.local <워크트리>/.env.local`이 가장 깔끔하다(검증용 추가 키도 함께 제거됨).
 
-**Neon HTTP 드라이버 주의**: 기본 클라이언트는 Neon serverless(HTTP) 드라이버라 `localhost` Postgres에
-연결되지 않는다. E2E 경로(`E2E_TEST=1`)는 `clientTest`(postgres-js TCP)로 우회한다 —
-[E2E.md](./E2E.md)의 stubbing 구조 참조. 일반 prod 빌드로 docker DB를 보려면 `E2E_TEST=1`로 빌드하거나
-TCP 드라이버 seam을 쓴다. (검증용 임시 seam을 코드에 추가했다면 **커밋 금지 + 끝나고 원복**.)
+**DB 드라이버**: 앱은 prod/E2E 모두 postgres-js(TCP) 클라이언트(`createDatabaseClient`)를 쓰므로
+`DATABASE_URL`만 docker Postgres(`sslmode` 없음)로 바꾸면 일반 prod 빌드도 그대로 연결된다 —
+[E2E.md](./E2E.md) 참조. Neon pooler 호스트(`-pooler.`)가 아니면 prepared statement를 쓴다.
 
 ---
 

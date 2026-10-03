@@ -146,7 +146,12 @@ jobs:
             #
             # Secrets are passed via BuildKit secret mounts so they never appear
             # in image layers or build logs (see Dockerfile RUN --mount=type=secret).
-            # DATABASE_URL is needed at build time for ISR prerender of news/[category] + legal routes.
+            # DATABASE_URL is intentionally NOT passed: the production DB is a private AWS RDS that
+            # GitHub Actions runners cannot reach. DB-backed routes degrade safely without it —
+            # news/[category] renders on demand at runtime (empty generateStaticParams) and
+            # /terms + /privacy bake a noindex notice with revalidate=60 — and the warm-isr step
+            # below re-renders them with real data right after the deploy. Runtime DATABASE_URL
+            # (SSM -> container env) is unchanged.
             # FMP_API_KEY is needed at build time for ISR prerender of /economy + /market + /fear-greed (without it,
             # the snapshot/quote fetches fail and a degraded page is baked into the image until the
             # 24h revalidation re-renders it at runtime).
@@ -159,8 +164,8 @@ jobs:
             # entirely: `gh variable set FMP_AT_BUILD --body off`, re-run this workflow, then
             # `gh variable delete FMP_AT_BUILD` (docs/architecture/DEPLOY_RUNBOOK.md §1). Runtime unaffected.
             #
-            # NOTE: DATABASE_URL and FMP_API_KEY secrets must both be present in the repo's Actions
-            # secrets before this workflow can succeed (required=true mounts). See: Settings → Secrets → Actions.
+            # NOTE: the FMP_API_KEY secret must be present in the repo's Actions secrets before this
+            # workflow can succeed (required=true mount). See: Settings → Secrets → Actions.
             #
             # Build pipeline (arm64-native, zero-downtime):
             #   1. Build for linux/arm64 with --load (image lands in runner's Docker daemon natively).
@@ -171,7 +176,6 @@ jobs:
             - name: Build image (linux/arm64, load into runner)
               env:
                   SIGLENS_GITHUB_TOKEN: ${{ secrets.SIGLENS_GITHUB_TOKEN }}
-                  DATABASE_URL: ${{ secrets.DATABASE_URL }}
                   # FMP_API_KEY: /economy·/market·/fear-greed 빌드타임 prerender에 필요(없으면 degraded baked).
                   FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
               run: |
@@ -179,7 +183,6 @@ jobs:
                       --platform linux/arm64 \
                       --provenance=false \
                       --secret id=SIGLENS_GITHUB_TOKEN,env=SIGLENS_GITHUB_TOKEN \
-                      --secret id=DATABASE_URL,env=DATABASE_URL \
                       --secret id=FMP_API_KEY,env=FMP_API_KEY \
                       --build-arg NEXT_PUBLIC_SITE_URL=https://siglens.io \
                       --build-arg NEXT_PUBLIC_ADSENSE_PUBLISHER_ID=ca-pub-6121223912694381 \

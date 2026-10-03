@@ -72,9 +72,20 @@ yarn release          # release-it: 버전 범프 + CHANGELOG + 커밋 + 태그 
 
 ### 빌드타임에 env가 필요한 이유
 
-`/economy`·`/market`·`news/[category]`·법적 페이지는 **빌드 타임에 prerender**된다. 그래서 `DATABASE_URL`과 `FMP_API_KEY`는 런타임 SSM만으로 부족하고, GitHub Actions secret → `--secret` 마운트로 **빌드 타임에도** 있어야 한다. 없으면 degraded 페이지가 이미지에 baked되어 revalidate 주기(최대 24h)까지 그대로 서빙된다.
+`/economy`·`/market`·`/fear-greed`는 **빌드 타임에 prerender**된다. 그래서 `FMP_API_KEY`는 런타임 SSM만으로 부족하고, GitHub Actions secret → `--secret` 마운트로 **빌드 타임에도** 있어야 한다. 없으면 degraded 페이지가 이미지에 baked되어 revalidate 주기(최대 24h)까지 그대로 서빙된다.
 
 검증: 이미지의 페이지 크기를 비교한다(정상 수백 KB vs degraded 수십 KB).
+
+**`DATABASE_URL`은 빌드 타임에 주지 않는다.** 운영 DB가 사설 AWS RDS라 GitHub Actions 러너는 닿지 못한다(런타임 `DATABASE_URL`은 SSM → 컨테이너 env 그대로). 그래서 DB-backed 라우트는 DB 없는 빌드에서도 빈/degrade 페이지를 길게 굳히지 않도록 되어 있다:
+
+- `news/[category]` — `generateStaticParams`가 `isDatabaseConfigured()`가 아니면 `[]`을 돌려준다. 카테고리 페이지는 빌드에서 구워지지 않고 첫 요청이 실데이터로 블로킹 렌더한다.
+- `/terms`·`/privacy` — `loadLegalTerms`(`app/[locale]/_legal/legalPolicy.ts`)가 빌드 단계 + DB 없음을 `unavailable`로 판정해, DB를 건드리지 않고 비어 있지 않은 안내문(`LegalUnavailable`)을 낸다. 메타데이터는 noindex·canonical 없음이고, 그 렌더의 revalidate는 FMP 빌드 degrade와 같은 메커니즘(`shortenRevalidateForBuildDegrade`)으로 60초가 된다. 404(`notFound`)도 빈 본문도 굽지 않는다.
+- 둘 다 배포 직후 `scripts/warm-isr.sh`(캐시 퍼지 뒤)가 실데이터로 다시 렌더한다.
+- 판정 헬퍼는 `src/shared/db/config.ts`의 `isDatabaseConfigured()`(URL 있음 + 오프라인 빌드 아님)와 `isDatabaseMissingAtBuild()`(빌드 단계 + DB 없음). 런타임은 이 분기를 타지 않는다. **DB가 있는 빌드(로컬·E2E)에서 DB 오류는 삼키지 않고 던진다** — 빈 약관을 굽는 것보다 빌드 실패가 낫다.
+
+새 DB-backed 라우트를 prerender 대상으로 추가할 때는 같은 계약을 지킨다: DB 없는 빌드에서 `generateStaticParams`를 비우거나, 비어 있지 않은 fallback + `shortenRevalidateForBuildDegrade()`로 굽는다.
+
+**IAM은 수동 적용이다.** 빌드 타임 `DATABASE_URL` 제거에 맞춰 `infra/aws/iam/ci-deploy-policy.json`에서 죽은 `BuildTimeDbUrl`(`ssm:GetParameter` on `/siglens/DATABASE_URL`)·`BuildTimeDbUrlDecrypt`(`kms:Decrypt` via ssm) 두 statement를 지웠다. 이 JSON은 레포 파일일 뿐 **라이브 CI 롤에 자동 반영되지 않는다** — 머지 후 `bash infra/aws/00-iam-setup.sh`(admin 자격증명) 또는 콘솔로 다시 적용하고, 라이브 롤의 정책(`aws iam get-role-policy`)에서 두 Sid가 사라졌는지, 나머지 statement(`EnvCompletenessCheck`·`IsrBuildIdParam` 등)가 그대로인지 확인한다. 적용 전에도 배포는 동작한다(남은 권한은 쓰이지 않을 뿐이다).
 
 로컬 pre-push 빌드는 다르다 — `.husky/pre-push`가 `SIGLENS_OFFLINE_BUILD=1 yarn build`로 돌려서
 FMP/Neon/Upstash 어댑터가 실제 네트워크 호출 전에 차단되고, 그 산출물은 push 직후 버려진다.
@@ -223,9 +234,8 @@ curl -sS -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge
 
 - `.env.local`의 `DATABASE_URL`은 **로컬 개발 DB**(`postgres://siglens:siglens@localhost:5435/siglens_dev`)를
   가리킨다. `.env.example`에 같은 값이 기본으로 들어 있다.
-- ⚠️ **실행 중인 앱(`yarn dev`)이 로컬 DB를 쓰려면 postgres-js 드라이버가 필요하다**("DB 드라이버 교체"
-  PR). 그 전까지 앱 클라이언트는 neon-http라 로컬 Postgres에 붙지 못한다 — 그때까지 로컬 DB는
-  `yarn db:dev:*`와 db 스크립트에서만 쓴다.
+- 앱 클라이언트는 postgres-js(TCP)라 `yarn dev`도 이 로컬 DB에 그대로 붙는다(로컬 호스트는 URL의
+  `sslmode`를 그대로 따르고, 원격 호스트의 `require`류만 verify-full로 올린다).
 - `DIRECT_DATABASE_URL`은 `DATABASE_URL`보다 **우선**한다(db 스크립트는 `DIRECT_DATABASE_URL || DATABASE_URL`).
   `.env.local`에서 지우거나 같은 로컬 URL로 맞출 것 — 예전 운영 값이 남아 있으면 `DATABASE_URL`을
   로컬로 바꿔도 스크립트는 운영으로 간다(가드가 REMOTE로 막지만 원인 찾기가 번거롭다).

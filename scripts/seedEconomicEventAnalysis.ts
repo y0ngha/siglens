@@ -27,7 +27,7 @@ import {
     CALENDAR_REGION_LABEL,
     isCalendarCountry,
 } from '../src/entities/economy/lib/economyCalendarConstants';
-import type { SiglensDatabase } from '../src/shared/db/types';
+import * as schema from '../src/shared/db/schema';
 import {
     guardRemoteWrite,
     requireDatabaseUrl,
@@ -113,10 +113,9 @@ async function run(): Promise<void> {
     guardRemoteWrite(databaseUrl, 'seed:calendar-analysis');
     const client = postgres(databaseUrl, { max: 1 });
     try {
-        // DrizzleEconomicCalendarRepository는 SiglensDatabase(NeonHttpDatabase)를 받는다.
-        // postgres-js drizzle instance는 insert/select/update를 구조적으로 지원하므로
-        // seed용 단순 쿼리에서는 `as unknown as SiglensDatabase`로 어댑팅한다.
-        const db = drizzle(client) as unknown as SiglensDatabase;
+        // SiglensDatabase = PostgresJsDatabase<typeof schema>와 같은 타입이 되도록 schema를
+        // 넘긴다 — 앱 런타임(createDatabaseClient)과 같은 드라이버라 캐스트가 필요 없다.
+        const db = drizzle(client, { schema });
         const repo = new DrizzleEconomicCalendarRepository(db);
 
         let analyzed = 0;

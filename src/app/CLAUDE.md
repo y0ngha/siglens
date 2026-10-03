@@ -87,7 +87,10 @@ PPR(`cacheComponents`) 비활성 상태에서 동적 세그먼트를 ISR로 정�
    hint가 아닌 navigation으로 둔 이유). 라우트 본문의 `headers()`(예: 봇 판정)도 같은 이유로
    제거하고 클라 트리거로 이전한다 (news `NewsAiSummary` 참조).
 2. **(축 1) 동적 데이터(redis/DB/FMP)는 `staticSymbolCache`로 정적화.** `@upstash/redis`
-   HTTP는 no-store fetch라 static generate가 `DYNAMIC_SERVER_USAGE`를 throw한다.
+   HTTP는 no-store fetch라 static generate가 `DYNAMIC_SERVER_USAGE`를 throw한다. DB는 postgres-js(TCP,
+   fetch 미사용)라 같은 신호를 drizzle 로거가 보낸다 — `noStoreQueryLogger`(`src/shared/db/`)가
+   쿼리마다 `unstable_noStore()`를 불러 `unstable_cache` 밖 정적 생성 중 DB 읽기를 똑같이 던지게
+   한다(캐시 안에서는 no-op). 원시 `client.sql` 템플릿은 이 로거를 우회하므로 정적 경로에서 쓰지 말 것.
    `unstable_cache`(= `staticSymbolCache`, revalidate 1h + `symbol:` tag)로 감싸야 ISR이
    데이터를 HTML에 박고 정적 캐시한다. (단 축 0이 선결돼야 효과가 있다.) 신선도가 민감한
    라우트(news)는 `news:${symbol}` 그룹 태그를 추가로 달고, 데이터 변경(뉴스 ingestion) 직후

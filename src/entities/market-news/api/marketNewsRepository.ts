@@ -12,7 +12,7 @@ import {
     sql,
 } from 'drizzle-orm';
 import type { NewsCardAnalysis } from '@y0ngha/siglens-core';
-import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
+import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { getDatabaseClient } from '@/shared/db/client';
 import { marketNews } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
@@ -95,7 +95,7 @@ export class DrizzleMarketNewsRepository {
                         `,
                     })
                     .returning({ id: marketNews.id }),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
         return changed.length > 0;
     }
@@ -129,7 +129,7 @@ export class DrizzleMarketNewsRepository {
                             isNull(marketNews.analyzedAt)
                         )
                     ),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
     }
 
@@ -173,7 +173,7 @@ export class DrizzleMarketNewsRepository {
                     // 쓰므로, 같은 시각 행들의 상대 순서가 정해지지 않으면
                     // 경계에 걸친 행이 재생성마다 바뀌어 ISR 블롭이 흔들린다.
                     .orderBy(desc(marketNews.publishedAt), desc(marketNews.id)),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
 
         return rows.map(toMarketNewsRow);
@@ -225,7 +225,7 @@ export class DrizzleMarketNewsRepository {
                     // 쓰므로, 같은 시각 행들의 상대 순서가 정해지지 않으면
                     // 경계에 걸친 행이 재생성마다 바뀌어 ISR 블롭이 흔들린다.
                     .orderBy(desc(marketNews.publishedAt), desc(marketNews.id)),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
 
         // 카드 투영·해석은 종목 뉴스와 같은 함수를 쓴다 — 컬럼도 소비자도
@@ -263,7 +263,7 @@ export class DrizzleMarketNewsRepository {
                     .from(marketNews)
                     .where(inArray(marketNews.symbol, [...sentinels]))
                     .groupBy(marketNews.symbol),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
 
         return new Map(
@@ -295,7 +295,7 @@ export class DrizzleMarketNewsRepository {
                             isNotNull(marketNews.analyzedAt)
                         )
                     ),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
 
         return new Set(rows.map(row => row.id));

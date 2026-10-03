@@ -96,7 +96,7 @@ describe('acquireTurnLock', () => {
         const marginMs =
             TURN_LOCK_TTL_SECONDS * 1000 - AGENT_TURN_CAPS.turnDeadlineMs;
         // A margin of exactly the deadline (i.e. dropping back to 660s = 60s margin) must fail
-        // this assertion — degraded-Neon `withRetry(NEON_TRANSIENT_RETRY)` pre-turn reads can
+        // this assertion — degraded-Neon `withRetry(DB_TRANSIENT_RETRY)` pre-turn reads can
         // burn well past 60s across the several calls the route makes before the turn even starts.
         expect(marginMs).toBeGreaterThanOrEqual(120_000);
     });

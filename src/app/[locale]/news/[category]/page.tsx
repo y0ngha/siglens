@@ -42,6 +42,7 @@ import { buildCategoryPageTitle, buildCategoryPageDescription } from './seo';
 import { enterLocale } from '@/shared/lib/enterLocale';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { cn } from '@/shared/lib/cn';
+import { isDatabaseConfigured } from '@/shared/db/config';
 
 // 12h ISR — 신선도는 ensureMarketNewsCardsAnalyzedAction의 on-demand
 // revalidateTag('market-news:<sentinel>', 'max')가 보장, 시간 기반은 상한만.
@@ -49,7 +50,17 @@ export const revalidate = 43200;
 
 // 빈 배열 = on-demand ISR, generateStaticParams 없으면 dynamic으로 남아 ISR이 걸리지 않는다 — app CLAUDE.md 축 3.
 type CategoryPageParams = { category: string };
+/**
+ * DB가 있는 빌드(로컬·E2E)에서만 전 카테고리를 빌드타임에 prerender한다.
+ *
+ * 운영 DB가 사설 RDS라 배포 빌드(GitHub Actions 러너)에는 DB가 없다. 그 상태로
+ * prerender하면 뉴스 목록이 `[]`인 degrade 페이지(noindex)가 이미지에 구워져 12h
+ * revalidate 동안 크롤러에게 나간다. 그래서 DB가 없으면 빈 배열을 돌려 첫 요청이
+ * 실데이터로 블로킹 렌더하게 한다(에러/빈 결과는 `cacheNonEmpty`가 굳히지 않는다).
+ * 배포 직후 `scripts/warm-isr.sh`가 캐시 퍼지 뒤 이 URL들을 미리 렌더한다.
+ */
 export function generateStaticParams(): CategoryPageParams[] {
+    if (!isDatabaseConfigured()) return [];
     return NEWS_CATEGORY_SLUGS.map(category => ({ category }));
 }
 

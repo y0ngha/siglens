@@ -205,14 +205,14 @@ describe('DrizzlePortfolioRepository.upsert', () => {
         );
     });
 
-    it('retries once on a transient Neon error and succeeds', async () => {
-        const neonTransient = Object.assign(
-            new Error('Error connecting to database: fetch failed'),
-            { name: 'NeonDbError' }
+    it('retries once on a transient DB error and succeeds', async () => {
+        const dbTransient = Object.assign(
+            new Error('write CONNECTION_CLOSED db.example:5432'),
+            { code: 'CONNECTION_CLOSED' }
         );
         const returning = vi
             .fn()
-            .mockRejectedValueOnce(neonTransient)
+            .mockRejectedValueOnce(dbTransient)
             .mockResolvedValueOnce([holdingRow]);
         const onConflictDoUpdate = vi.fn(() => ({ returning }));
         const values = vi.fn(() => ({ onConflictDoUpdate }));
@@ -261,14 +261,14 @@ describe('DrizzlePortfolioRepository.findByUser', () => {
         await expect(repo.findByUser('user-1')).resolves.toEqual([]);
     });
 
-    it('retries once on a transient Neon error and succeeds', async () => {
-        const neonTransient = Object.assign(
-            new Error('Error connecting to database: fetch failed'),
-            { name: 'NeonDbError' }
+    it('retries once on a transient DB error and succeeds', async () => {
+        const dbTransient = Object.assign(
+            new Error('write CONNECTION_CLOSED db.example:5432'),
+            { code: 'CONNECTION_CLOSED' }
         );
         const where = vi
             .fn()
-            .mockRejectedValueOnce(neonTransient)
+            .mockRejectedValueOnce(dbTransient)
             .mockResolvedValueOnce([holdingRow]);
         const from = vi.fn(() => ({ where }));
         const select = vi.fn(() => ({ from }));
@@ -299,14 +299,14 @@ describe('DrizzlePortfolioRepository.findByUserAndSymbol', () => {
         ).resolves.toEqual(holdingRow);
     });
 
-    it('retries once on a transient Neon error and succeeds', async () => {
-        const neonTransient = Object.assign(
-            new Error('Error connecting to database: fetch failed'),
-            { name: 'NeonDbError' }
+    it('retries once on a transient DB error and succeeds', async () => {
+        const dbTransient = Object.assign(
+            new Error('write CONNECTION_CLOSED db.example:5432'),
+            { code: 'CONNECTION_CLOSED' }
         );
         const limit = vi
             .fn()
-            .mockRejectedValueOnce(neonTransient)
+            .mockRejectedValueOnce(dbTransient)
             .mockResolvedValueOnce([holdingRow]);
         const where = vi.fn(() => ({ limit }));
         const from = vi.fn(() => ({ where }));
@@ -355,14 +355,14 @@ describe('DrizzlePortfolioRepository.deleteByUserAndSymbol', () => {
         );
     });
 
-    it('retries once on a transient Neon error and succeeds', async () => {
-        const neonTransient = Object.assign(
-            new Error('Error connecting to database: fetch failed'),
-            { name: 'NeonDbError' }
+    it('retries once on a transient DB error and succeeds', async () => {
+        const dbTransient = Object.assign(
+            new Error('write CONNECTION_CLOSED db.example:5432'),
+            { code: 'CONNECTION_CLOSED' }
         );
         const returning = vi
             .fn()
-            .mockRejectedValueOnce(neonTransient)
+            .mockRejectedValueOnce(dbTransient)
             .mockResolvedValueOnce([{ id: 'holding-1' }]);
         const where = vi.fn(() => ({ returning }));
         const deleteFn = vi.fn(() => ({ where }));

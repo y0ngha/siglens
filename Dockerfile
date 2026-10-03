@@ -47,7 +47,11 @@ ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
     NEXT_PUBLIC_ADSENSE_SLOT_PROGRESS=$NEXT_PUBLIC_ADSENSE_SLOT_PROGRESS
 # 빌드 타임 ISR prerender에 필요한 자격증명. secret mount로 주입해 빌드 로그·이미지
 # 레이어에 자격증명이 남지 않게 한다.
-#   - DATABASE_URL: news/[category]·legal 등 DB-backed prerender
+#   - DATABASE_URL은 **일부러 주지 않는다.** 운영 DB가 사설 AWS RDS라 GitHub Actions 러너는
+#     닿지 못한다. DB-backed 라우트는 DB 없이 빌드돼도 안전하게 degrade하도록 되어 있다 —
+#     news/[category]는 generateStaticParams가 비어 런타임 on-demand 렌더, /terms·/privacy는
+#     60초 revalidate의 안내문 fallback(noindex). 둘 다 배포 직후 scripts/warm-isr.sh가
+#     실데이터로 다시 렌더한다. 런타임 DATABASE_URL은 SSM → 컨테이너 env로 그대로 들어간다.
 #   - FMP_API_KEY: /economy(거시경제 지표/treasury)·/market(지수·섹터 quote + 섹터 스캔
 #     ~255 calls)·/fear-greed(6)·/fear-greed/crypto(21) prerender. (런타임 SSM에는 이미 존재)
 # FMP_AT_BUILD: 빌드 중 FMP 정책(src/shared/api/offlineBuild.ts). 빌드 단계에서는 `fmpGet`이
@@ -59,10 +63,8 @@ ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
 ARG FMP_AT_BUILD=best-effort
 ENV FMP_AT_BUILD=$FMP_AT_BUILD
 RUN --mount=type=secret,id=SIGLENS_GITHUB_TOKEN,required=true \
-    --mount=type=secret,id=DATABASE_URL,required=true \
     --mount=type=secret,id=FMP_API_KEY,required=true \
     SIGLENS_GITHUB_TOKEN="$(cat /run/secrets/SIGLENS_GITHUB_TOKEN)" \
-    DATABASE_URL="$(cat /run/secrets/DATABASE_URL)" \
     FMP_API_KEY="$(cat /run/secrets/FMP_API_KEY)" \
     yarn build
 RUN node scripts/assert-standalone-skills.mjs
@@ -85,6 +87,20 @@ ENV GIT_SHA=$GIT_SHA
 # 페이지만 맞고 force-dynamic인 sitemap은 기동 시각을 계속 쓴다.
 ARG NEXT_BUILD_DATE
 ENV NEXT_BUILD_DATE=$NEXT_BUILD_DATE
+# AWS RDS 글로벌 CA 번들 — RDS로 옮길 때 DATABASE_URL이 `sslmode=verify-full`을 쓴다.
+# postgres-js(node tls)는 시스템 신뢰 저장소가 아니라 node 내장 루트 CA만 믿으므로
+# RDS 사설 CA를 `NODE_EXTRA_CA_CERTS`로 **추가**해야 검증이 통과한다. 추가(extend)라
+# Neon의 공개 CA 신뢰는 그대로 유지된다 — Neon을 쓰는 동안에도 무해하다.
+# URL ADD는 기본 0600 root 소유라 USER node가 읽지 못한다(node는 읽기 실패 시 경고만
+# 찍고 번들을 무시해 verify-full이 런타임에 조용히 깨진다) → `--chmod=0644`가 필수다.
+# ⚠️ `--chmod`는 ADD가 **새로 만드는 부모 디렉터리에도** 적용된다(실측: 0644로 생겨 x 비트가
+# 없어 node가 파일에 접근 못 함). 그래서 대상은 이미지에 이미 있는 /etc/ssl/certs로 둔다.
+# 새 디렉터리 경로로 바꾸면 USER node에서 읽히는지 다시 확인할 것.
+# ⚠️ AWS가 번들을 갱신하면 체크섬이 어긋나 이미지 빌드가 실패한다(의도된 fail-closed).
+# 그때는 새 파일을 내려받아 sha256을 확인한 뒤 이 값을 갱신한다.
+ADD --chmod=0644 --checksum=sha256:fe45bbebf92ad3e27a583bbb2ddd1553c521ed4d49af5514dc0a40372ea5395c \
+    https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem /etc/ssl/certs/rds-global-bundle.pem
+ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/rds-global-bundle.pem
 ENV NODE_ENV=production \
     PORT=3000 \
     HOSTNAME=0.0.0.0

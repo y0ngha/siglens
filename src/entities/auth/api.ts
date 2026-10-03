@@ -1,7 +1,7 @@
 import type { Tier } from '@y0ngha/siglens-core';
 import type { OAuthProvider } from '@/shared/lib/types';
 import { and, eq, sql } from 'drizzle-orm';
-import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
+import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { oauthAccounts, sessions, users } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type {
@@ -38,7 +38,7 @@ const sessionColumns = {
  */
 const SIGNED_UP_USER_TIER: Tier = 'member';
 
-/** Drizzle ORM implementation of {@link SessionRepository} backed by Neon PostgreSQL. */
+/** Drizzle ORM implementation of {@link SessionRepository} backed by PostgreSQL. */
 export class DrizzleSessionRepository implements SessionRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
@@ -54,7 +54,7 @@ export class DrizzleSessionRepository implements SessionRepository {
                         expiresAt: input.expiresAt,
                     })
                     .returning(sessionColumns),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
 
         return session!;
@@ -78,7 +78,7 @@ export class DrizzleSessionRepository implements SessionRepository {
                     .delete(sessions)
                     .where(eq(sessions.id, sessionToken))
                     .returning({ id: sessions.id }),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
 
         return deletedSessions.length > 0;
@@ -154,7 +154,7 @@ export class DrizzleUserRepository
                     .delete(users)
                     .where(eq(users.id, userId))
                     .returning({ id: users.id }),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
 
         return deletedUsers.length > 0;
@@ -172,7 +172,7 @@ export class DrizzleUserRepository
                     .set({ passwordHash, updatedAt: sql`now()` })
                     .where(eq(users.id, userId))
                     .returning({ id: users.id }),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
 
         return updatedUsers.length > 0;
@@ -207,7 +207,7 @@ export class DrizzleUserRepository
                     })
                     .onConflictDoNothing({ target: users.email })
                     .returning(authUserColumns),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
 
         return user ?? null;
@@ -254,7 +254,7 @@ export class DrizzleUserRepository
                     })
                     .onConflictDoNothing({ target: users.email })
                     .returning(authUserColumns),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
 
         if (user === undefined) {
@@ -286,11 +286,11 @@ export class DrizzleUserRepository
                         ],
                     })
                     .returning({ id: oauthAccounts.id }),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
 
         if (account === undefined) {
-            // Compensating delete is also exposed to Neon transient failures —
+            // Compensating delete is also exposed to transient DB failures —
             // wrap it in withRetry so a single fetch hiccup on cleanup doesn't
             // leave an orphaned user row that prevents the user from ever
             // re-signing up under the same email.
@@ -300,7 +300,7 @@ export class DrizzleUserRepository
                         .delete(users)
                         .where(eq(users.id, user.id))
                         .returning({ id: users.id }),
-                NEON_TRANSIENT_RETRY
+                DB_TRANSIENT_RETRY
             ).catch(deleteErr => {
                 console.warn(
                     '[createOAuthUser] compensating delete failed — user row may be orphaned',

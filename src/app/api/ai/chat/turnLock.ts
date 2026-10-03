@@ -14,7 +14,7 @@ const RELEASE_LOCK_SCRIPT =
 /**
  * Turn deadline (core `AGENT_TURN_CAPS.turnDeadlineMs` = 600s) + 120s margin. The lock is
  * acquired *before* the pre-turn repository calls (conversation lookup, history read, user-row
- * append, `edit`/`regenerate` mutations — all via `withRetry(NEON_TRANSIENT_RETRY)`, up to 4
+ * append, `edit`/`regenerate` mutations — all via `withRetry(DB_TRANSIENT_RETRY)`, up to 4
  * attempts) even run, not just before the deadline timer starts, and is released only after the
  * partial-output save and SSE teardown that follow the deadline. A degraded Neon can burn
  * several seconds per retried call across that many pre-turn queries; 60s of margin was not

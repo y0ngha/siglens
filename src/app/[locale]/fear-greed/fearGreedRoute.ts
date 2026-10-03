@@ -7,7 +7,7 @@ import type {
 import { resolveLocale } from '@/shared/i18n/locales';
 import type { FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
 import { buildHubMetadata } from '@/shared/lib/seoAlternates';
-import { shortenRevalidateIfFmpFailedAtBuild } from '@/shared/cache/buildFmpDegradedRevalidate';
+import { shortenRevalidateIfFmpFailedAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 import { scopeUsesFmp } from '@/shared/api/market/getMarketDataProvider';
 import { fearGreedCopyFor } from './copy';
 

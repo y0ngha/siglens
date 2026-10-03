@@ -619,6 +619,17 @@
   - Context: Synced digest body with current rule text and re-ran `yarn skills:digest-update` to recompute digest_hash; digest-verify now reports all 98 skill files valid.
 - Status (R2): APPROVED (zero findings)
 
+## [perf/redis-cache-compression Round 1 | perf/redis-cache-compression | 2026-10-03]
+- Violation (R1 recommended, fixed): codec threshold semantics (`<` vs `<=`, UTF-8 bytes vs `json.length`, encoded-vs-bytes comparison) were not pinned — every "large" fixture was far above 1KB on both measures
+  - Rule: (new) A size threshold defined in bytes needs exact-boundary tests (N-1 / N) plus a multi-byte fixture whose char count and byte count fall on opposite sides of it
+  - Context: Added 1023/1024-byte, Korean 411-char/1211-byte and seeded-Hangul tests to `cacheValueCodec.test.ts`; mutation-checked each (json.length, `<=`, encoded vs json.length) fails a test.
+- Violation (R1 recommended, fixed): compression relied on an unowned @upstash/redis contract (SET sends strings verbatim, GET returns non-JSON strings raw) that only in-memory stubs exercised
+  - Rule: (new) A design that depends on a third-party client's (de)serialization needs a contract test against the real client with a stubbed transport, not just a Map stub
+  - Context: Added `cacheValueCodec.upstashContract.test.ts` — real `new Redis({url, token})` (auto-pipelining + base64 response encoding) over a fetch stub emulating Upstash REST.
+- Violation (R1 recommended, fixed): storage-format change documented full-rollback behaviour but not the mixed-version rolling-deploy window
+  - Rule: (new) A cache storage-format change must document both rollback and mixed old/new instance behaviour (cost of flip-flopping keys)
+  - Context: Extended `getOrSetCache` JSDoc: old instances treat compressed keys as legacy misses → FMP refetch + uncompressed overwrite until the deploy completes.
+
 ## [feat/analysis-plain-db-store Rounds 1-2 | feat/analysis-plain-db-store | 2026-10-03]
 - Violation (R1 recommended, fixed): storage silently disappeared when the DB client was unavailable, so a misconfiguration would pay the LLM on every request with no log line
   - Rule: (new) When a store prevents paid regeneration (LLM/API), its unavailability must be logged loudly (once per process), not degraded silently
@@ -667,3 +678,66 @@ Round 4: approved
 - Violation (suggestion, fixed): scripts relied on `databaseUrl!` after a top-level check instead of a narrowing helper
   - Rule: (new) Replace post-check non-null assertions with a helper that returns the narrowed type (or throws)
   - Context: `requireDatabaseUrl()` in dbTarget.ts used by the seed/backfill scripts.
+## [refactor/db-postgres-js-driver Rounds 1-2 | refactor/db-postgres-js-driver | 2026-10-03]
+- Violation (R1 REQUIRED, fixed): swapping an HTTPS-based DB driver for postgres-js silently downgraded TLS — `sslmode=require` means encrypt-without-verify in postgres-js
+  - Rule: (new) When replacing a transport/driver, compare the security semantics of every connection option (sslmode, cert verification) against the old transport and keep or raise them; prove with a negative test (self-signed server must be rejected)
+  - Context: `resolveSslOption` upgrades require/prefer/allow to verify-full for non-local hosts; verified against a throwaway self-signed TLS server and read-only against production Neon.
+- Violation (R1 REQUIRED, fixed): Dockerfile `ADD <url>` produced a 0600 root-owned CA bundle that the non-root runtime user could not read (Node only warns)
+  - Rule: (new) Files fetched with Dockerfile `ADD <url>` need explicit `--chmod` and an existing parent dir, verified by reading them as the runtime user in a throwaway build
+  - Context: `ADD --chmod=0644 --checksum=... /etc/ssl/certs/rds-global-bundle.pem`; uid 1000 read 111 certs.
+- Violation (R1 recommended, fixed): CLIs that used the shared DB client hung ~20s after the driver swap because TCP pool sockets keep the event loop alive
+  - Rule: (new) After moving to a pooled TCP client, every CLI/one-shot entry point must end the pool (finally) and prefer `process.exitCode` over `process.exit`
+  - Context: `endDatabaseClient()` in metrics, seedTerms, visitSources; pool also ended after the SIGTERM drain.
+- Violation (R2 recommended, fixed): a new env override (`DATABASE_PREPARE`) and the sslmode upgrade were undocumented
+  - Rule: (new) Every new env switch read by app code is documented in `.env.example` with when to set it
+  - Context: `.env.example` Database section rewritten.
+## [perf/build-without-db Rounds 1-2 | perf/build-without-db | 2026-10-03]
+- Violation (R1 recommended, fixed): removing the only consumer of a CI permission (build-time DB URL) left the grant (SSM read + KMS decrypt) in the deploy role
+  - Rule: (new) When removing the last use of a credential/permission, remove the IAM grant in the same change and note that hand-applied policies must be re-applied and verified on the live role
+  - Context: dropped `BuildTimeDbUrl`/`BuildTimeDbUrlDecrypt` from ci-deploy-policy.json; DEPLOY_RUNBOOK notes the manual re-apply.
+- Violation (R1 recommended, fixed): a shared mechanism kept a source-specific name (`buildFmpDegradedRevalidate`) after gaining a second cause (DB missing at build)
+  - Rule: (new) When a module starts serving a second cause, rename it to the shared concept and keep cause-specific helpers named per cause
+  - Context: renamed to `buildDegradedRevalidate.ts` / `BUILD_DEGRADED_REVALIDATE_SECONDS`; guard test and importers updated.
+- Violation (R2 REQUIRED, fixed): an IAM JSON file was rewritten with a generic serializer, reformatting unrelated statements and failing format:check
+  - Rule: (new) Edit config files textually (or re-run the repo formatter) so the diff only shows the intended change; never trust the last line of a check's output — read its exit code
+  - Context: rebuilt from HEAD minus the two statements and ran oxfmt; diff is 17 deletions.
+- Status (R3): APPROVED (zero findings)
+
+## [PR #920 Claude review | perf/build-without-db | 2026-10-03]
+- Violation (suggestion, fixed): async helper with logic (`renderLegalUnavailable`) had no explicit return type
+  - Rule: MISTAKES Coding Paradigm §0 — explicit return types on exported/logic functions
+  - Context: `Promise<React.JSX.Element>` added.
+- Violation (suggestion, fixed): the same eyebrow literal was written twice per legal page (body and fallback)
+  - Rule: MISTAKES §15 drift trap — values that must stay equal live in one constant
+  - Context: `TERMS_EYEBROW` / `PRIVACY_EYEBROW` constants used by both call sites.
+
+## [PR #918 Claude review | perf/redis-cache-compression | 2026-10-03]
+- Violation (suggestion, fixed): seeded LCG test helper reassigned a closure `let seed`
+  - Rule: MISTAKES Coding Paradigm 5·14 — prefer immutable derivation (reduce over previous value) even in test helpers
+  - Context: `cacheValueCodec.test.ts` now derives the seed sequence with `reduce`; same sequence, test still pins byte-vs-char comparison.
+
+## [perf/asset-info-db-first Rounds 1-2 | perf/asset-info-db-first | 2026-10-03]
+- Violation (R1 REQUIRED, fixed): reordering resolution put a large shared-cache read (`crypto:fmp-list`, ~170KB) in front of every equity lookup, so the change meant to cut Redis commands kept the count and multiplied bytes
+  - Rule: (new) When reordering a lookup chain to remove a cache layer, count the remaining remote round-trips per path (including ones hidden inside helpers) before claiming a saving; tests that mock the helper cannot see it
+  - Context: Branch stacked on PR #914 (1h in-process memo of the list); added `getAssetInfo.cryptoListMemo.test.ts` using the real membership helper and asserting one list read across 10 lookups.
+- Violation (R1 recommended, fixed): new short-lived entries reused the key that still held 32,667 legacy 1-year values in production, so stale values could outrank fresh resolution
+  - Rule: (new) When a cache key's meaning/TTL changes, give the new entries a new key (prefix/version) instead of sharing the legacy key space
+  - Context: `buildAssetInfoProvisionalCacheKey` → `asset-info:provisional:<SYM>`; legacy keys to be deleted by a one-off script after deploy.
+- Violation (R1 recommended, fixed): removing the cache layer dropped the absorption that kept a DB failure from turning into repeated FMP/yahoo calls
+  - Rule: (new) When removing a cache layer in front of a DB, keep a short-lived fallback write for the "DB write failed / DB unavailable" case
+  - Context: `persistTranslation` returns boolean; `persistOrCacheProvisional` writes the 12h provisional entry on failure.
+- Violation (R2 recommended, fixed): code kept for a stated reason (`marketProfile` reaching output via the fallback entry) had no test that fails without it
+  - Rule: (new) Code retained "because X" must have a test that fails when X breaks
+  - Context: Added KR translation + upsert-failure test asserting `marketProfile: 'kr-equity'` in the provisional write; mutation-checked.
+- Status (R3): APPROVED (zero findings)
+
+## [PR #921 Claude review | refactor/db-postgres-js-driver | 2026-10-03]
+- Violation (suggestion, fixed): comments in code merged from another PR (#916) still described the old driver ("neon-http에는 쿼리 타임아웃이 없어")
+  - Rule: MISTAKES §32 — after a driver/contract switch, grep the old name repo-wide again after every master merge
+  - Context: analysis-plain api.ts and api.test.ts reworded to postgres-js (connect_timeout only).
+- Violation (suggestion, fixed): imperative `for…of` delete loop in `stripLibpqOnlyParams`
+  - Rule: CONVENTIONS — prefer array methods over for/while loops
+  - Context: `present.forEach(...)`.
+- Violation (suggestion, fixed): offline-build service key `NEON` named a vendor that no longer applies
+  - Rule: MISTAKES §11 — names must describe the current concept
+  - Context: `OFFLINE_BUILD_SERVICE.DATABASE` ('Database').

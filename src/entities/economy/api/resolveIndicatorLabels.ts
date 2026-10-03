@@ -17,8 +17,8 @@ import {
 } from '../lib/indicatorTranslationConstants';
 
 /**
- * Module-level `unstable_cache` — ISR cold-gen 안전: `@neondatabase/serverless` HTTP는
- * no-store라 static generate가 `DYNAMIC_SERVER_USAGE`를 throw하므로 `unstable_cache`로
+ * Module-level `unstable_cache` — ISR cold-gen 안전: DB 쿼리는 drizzle 로거(`noStoreQueryLogger`)의
+ * `unstable_noStore`로 static generate에서 `DYNAMIC_SERVER_USAGE`를 throw하므로 `unstable_cache`로
  * 감싼다(src/app/CLAUDE.md 4축 축1). revalidate=24h + `economy:indicator-translation` 태그로
  * `ensureIndicatorTranslatedAction`이 on-demand 무효화 가능.
  *

@@ -17,8 +17,11 @@ vi.mock('@/entities/ticker/api', () => ({
     },
 }));
 
+const endDatabaseClient = vi.fn();
+
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => getDatabaseClient(),
+    endDatabaseClient: () => endDatabaseClient(),
 }));
 
 import { loadVisitSources } from '../visitSources';
@@ -60,6 +63,16 @@ describe('loadVisitSources', () => {
             'BTCUSD',
             'ETHUSD',
         ]);
+    });
+
+    it('성공해도 실패해도 DB 풀을 닫는다(유휴 소켓이 CLI 종료를 붙잡지 않도록)', async () => {
+        await loadVisitSources(NOW);
+        expect(endDatabaseClient).toHaveBeenCalledTimes(1);
+
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
+        topViewed.mockRejectedValue(new Error('boom'));
+        await loadVisitSources(NOW);
+        expect(endDatabaseClient).toHaveBeenCalledTimes(2);
     });
 
     it('조회 하나라도 실패하면 경고만 남기고 null — 스크립트 주 기능은 계속된다', async () => {

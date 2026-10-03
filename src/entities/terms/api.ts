@@ -1,5 +1,5 @@
 import type { TermsKind } from '@/shared/db/constants';
-import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
+import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { contentTranslations, terms } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
@@ -148,7 +148,7 @@ export class DrizzleTermsRepository implements TermsRepository {
                         target: [terms.kind, terms.version],
                     })
                     .returning({ id: terms.id }),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
         const insertedId = inserted[0]?.id;
         if (insertedId !== undefined) return insertedId;
@@ -167,7 +167,7 @@ export class DrizzleTermsRepository implements TermsRepository {
                         )
                     )
                     .limit(1),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
         const existingId = existing[0]?.id;
         if (existingId === undefined) {
@@ -204,7 +204,7 @@ export class DrizzleTermsRepository implements TermsRepository {
                             updatedAt: sql`now()`,
                         },
                     }),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
     }
 }
@@ -218,9 +218,10 @@ export class DrizzleTermsRepository implements TermsRepository {
  * 두 legal 라우트가 같은 함수를 부르므로 한쪽만 고쳐지는 표류도 막는다.
  *
  * 로컬 pre-push 오프라인 빌드(`SIGLENS_OFFLINE_BUILD=1`)에서는 DB에 닿지 않고
- * `null`이다 — 산출물이 버려지므로 404로 구워져도 무해하다. 운영(Docker) 빌드는
- * 이 분기를 타지 않고, DB를 못 읽으면 throw해서 빌드를 실패시킨다(빈 약관이
- * 구워지는 것을 막는다).
+ * `null`이다. 페이지는 이 함수를 직접 부르지 않고 `loadLegalTerms`
+ * (`app/[locale]/_legal/legalPolicy.ts`)를 거치며, 그쪽이 DB 없는 빌드를 먼저
+ * `unavailable`(안내문 + 60초 revalidate)로 걸러낸다. DB가 있는 빌드에서 DB를 못
+ * 읽으면 throw해서 빌드를 실패시킨다(빈 약관이 구워지는 것을 막는다).
  */
 export const getActiveTerms = cache(
     async (kind: TermsKind, locale: Locale): Promise<TermsRecord | null> => {

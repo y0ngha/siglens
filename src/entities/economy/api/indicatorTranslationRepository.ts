@@ -1,6 +1,6 @@
 import 'server-only';
 import { inArray, sql } from 'drizzle-orm';
-import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
+import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { economicIndicatorTranslations } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type {
@@ -57,7 +57,7 @@ export class DrizzleIndicatorTranslationRepository implements IndicatorTranslati
                             ...normalizedNames,
                         ])
                     ),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
         return rows.map(toRecord);
     }
@@ -76,7 +76,7 @@ export class DrizzleIndicatorTranslationRepository implements IndicatorTranslati
                             updatedAt: sql`now()`,
                         },
                     }),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
     }
 }

@@ -23,6 +23,7 @@ import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { loadSymbolNames } from './loadSymbolNames';
 import { enterLocale } from '@/shared/lib/enterLocale';
+import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 
 /**
  * 종목 디렉터리 — **내부 링크 고아를 없애는 페이지**다.
@@ -92,6 +93,8 @@ export default async function SymbolsDirectoryPage({
 }) {
     const { locale: rawLocale } = await params;
     const locale = enterLocale(rawLocale);
+    // 배포 빌드에는 DB가 없다 — 이름/미리보기 없이 구워진 이 렌더를 60초 뒤 재생성하게 한다.
+    await shortenRevalidateIfDatabaseMissingAtBuild();
     const [t, tNav, tSeo] = await Promise.all([
         getTranslations('app.symbols'),
         getTranslations(),

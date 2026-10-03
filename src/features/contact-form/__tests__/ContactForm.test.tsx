@@ -6,8 +6,8 @@ import type { ContactFormState } from '@/shared/lib/types';
 import type { UseQueryResult } from '@tanstack/react-query';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
 
-// Block transitive imports that pull in the Neon serverless client (which
-// requires Web APIs not available in the jsdom test environment).
+// Block transitive imports that pull in the postgres-js client (which
+// requires node APIs not available in the jsdom test environment).
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
