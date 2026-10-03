@@ -2959,7 +2959,8 @@ describe('POST /api/analysis/stream', () => {
          * PR-E(클로킹): 본문은 User-Agent에 의존하면 안 된다. 예전엔 봇만 평이화를
          * 건너뛰었는데, 기본값이 쉽게보기라 봇이 받는 DOM과 기본 사람이 받는 DOM이
          * 서로 다른 본문이 됐다 — Google의 클로킹 패턴과 구분되지 않는다.
-         * 비용 근거였던 "크롤마다 DeepSeek 왕복"은 평이화 30일 캐시가 이미 잡는다.
+         * 비용 근거였던 "크롤마다 DeepSeek 왕복"은 만료 없이 `analysis_plain_texts`에
+         * 저장되는 평이화 결과가 이미 잡는다.
          */
         it('같은 캐시 분석이면 봇과 사람의 plain이 동일하다', async () => {
             vi.mocked(runAnalysis).mockResolvedValue({
