@@ -244,7 +244,8 @@ function latestCandlePatterns(
 
 /**
  * Compact view of core's `ConfluenceSnapshot` — drops `timeframe`/`barTime`/`close`
- * (already in the output), `params`, and the `entryTrigger`/`exitTrigger` rule states.
+ * (already in the output), `params`, the `entryTrigger`/`exitTrigger` rule states
+ * and `htfTrend` (the higher timeframe's trend is already in `higherTimeframe`).
  */
 interface BarsConfluenceView {
     score: number;
@@ -253,7 +254,6 @@ interface BarsConfluenceView {
     freshBullish: string[];
     freshBearish: string[];
     ma50: number | null;
-    htfGate: 'on' | 'off';
 }
 
 /**
@@ -266,8 +266,7 @@ interface BarsConfluenceView {
  *
  * `htfBars` (loaded once for `higherTimeframe`, §3.1) is threaded into core's
  * own HTF alignment gate when available, so the score's 92 snap matches the
- * trader's gated rule instead of always omitting that clause; `htfGate`
- * reports which happened rather than a hardcoded `'off'` (spec B3).
+ * trader's gated rule instead of always omitting that clause (spec B3).
  *
  * The rule states themselves are not sent. They went out first as
  * `entryTrigger`/`exitTrigger`, then renamed `entryRuleMet`/`exitRuleMet` so
@@ -275,6 +274,9 @@ interface BarsConfluenceView {
  * model still wrote "매수, 매도 규칙은 모두 미충족" (2026-10-03). A retired rule
  * with no measured edge is not worth a field the model can misname; when it
  * holds, `scoreConfluence` already snaps the score to 92/8, which carries it.
+ * `htfGate` (whether core applied that HTF clause) went with them: only the
+ * rule states depended on it, and with no description the model read it as
+ * "the 50-bar MA gate".
  *
  * `null` when core abstains (fewer than `CONFLUENCE_MIN_BARS` bars or a
  * non-finite last close) — an abstention, not a neutral 50.
@@ -300,29 +302,22 @@ function confluenceView(
         freshBearish: snapshot.freshBearish,
         // Same significant-digit rounding `roundIndicators` applies to `latest`.
         ma50: snapshot.ma50 === null ? null : roundNumber(snapshot.ma50),
-        // `snapshot.htfTrend` (not `gateOn`, which only reflects whether we
-        // OFFERED htf bars): core's own docs say `htfTrend` is `null` "when
-        // the gate was off OR bars were absent" — i.e. core can still
-        // internally decide not to apply the gate even when `htfBars` was
-        // passed in, so `htfGate` must report what core actually DID, not
-        // what the caller merely attempted.
-        htfGate: snapshot.htfTrend !== null ? 'on' : 'off',
     };
 }
 
 interface PullbackView {
-    reading: PullbackReading;
+    reading: Exclude<PullbackReading, 'none'>;
     williamsR: number;
     rsi2: number | null;
     closeVsMa200Pct: number;
     /** The measured exit reference: the washout is treated as resolved on the first daily close above it. */
     ma5: number | null;
     /**
-     * What the reading has historically meant (`null` for `none`). Carried in the
-     * tool result so the model can quote the base rate instead of inventing one —
-     * the grounding check flags numbers no tool returned.
+     * What the reading has historically meant. Carried in the tool result so the
+     * model can quote the base rate instead of inventing one — the grounding
+     * check flags numbers no tool returned.
      */
-    measured: string | null;
+    measured: string;
 }
 
 /**
@@ -338,6 +333,11 @@ interface PullbackView {
  * **Daily only**: the measurement is on daily bars and `evaluatePullback` does
  * not know the timeframe, so the gate is here. Other timeframes get `null`, as
  * does a series core abstains on (fewer than 200 bars, no Williams %R).
+ *
+ * **`none` is `null` too** (2026-10-03). With a `{reading: 'none', …}` block in
+ * hand the model reported it anyway ("워시오프 판독은 없음입니다. Williams %R …")
+ * despite the prompt saying to reflect only a lit reading — the same lesson as
+ * the confluence rule states: the model cannot mention a field it never gets.
  */
 function pullbackView(
     bars: readonly Bar[],
@@ -345,15 +345,14 @@ function pullbackView(
 ): PullbackView | null {
     if (timeframe !== '1Day') return null;
     const snap = evaluatePullback(bars);
-    if (snap === null) return null;
+    if (snap === null || snap.reading === 'none') return null;
     return {
         reading: snap.reading,
         williamsR: roundNumber(snap.williamsR),
         rsi2: roundOrNull(snap.rsi2),
         closeVsMa200Pct: roundNumber(snap.closeVsMa200Pct),
         ma5: roundOrNull(snap.ma5),
-        measured:
-            snap.reading === 'none' ? null : PULLBACK_BASE_RATES[snap.reading],
+        measured: PULLBACK_BASE_RATES[snap.reading],
     };
 }
 
@@ -387,7 +386,7 @@ interface HigherTimeframeView {
  * fetches its HTF bars via the same cached loader the main series uses.
  * Returns `null` when there is no mapping, the source is empty, or the
  * fetch/aggregation throws (a missing higher timeframe must degrade
- * `higherTimeframe`/`confluence.htfGate` to off, never fail the whole tool).
+ * `higherTimeframe` to null and the confluence HTF clause to off, never fail the whole tool).
  */
 async function loadHigherTimeframe(
     provider: ReturnType<typeof getCachedMarketDataProvider>,
