@@ -93,10 +93,9 @@ import {
     _resetInFlightTranslationsForTest,
     getAssetInfo,
 } from '../../lib/getAssetInfo';
-import {
-    ASSET_INFO_CACHE_TTL_WITH_KOREAN,
-    ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN,
-} from '../../lib/cacheKeys';
+import { ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN } from '../../lib/cacheKeys';
+import { getCryptoAsset } from '../../lib/cryptoAssetStore';
+import { fmpCryptoMembership } from '../../lib/fmpCryptoMembership';
 
 const apple: FmpSearchResult = {
     symbol: 'AAPL',
@@ -158,23 +157,88 @@ describe('getAssetInfo', () => {
         expect(searchBySymbolMock).not.toHaveBeenCalled();
     });
 
-    it('cache hit 시 cached 결과 반환', async () => {
-        const cached: AssetInfo = { symbol: 'AAPL', name: 'Apple' };
-        mockCache.get.mockResolvedValue(cached);
-        await expect(getAssetInfo('aapl')).resolves.toBe(cached);
+    // 해석 순서는 DB → Redis 임시 항목(12h) → FMP다. Redis는 DB 중복 사본이라
+    // (명령 수 과금) 맨 앞에서 읽지 않는다.
+    it('DB hit 시 Redis를 읽지도 쓰지도 않고 FMP도 부르지 않는다', async () => {
+        mockRepository.findBySymbol.mockResolvedValue(dbRecord);
+
+        const result = await getAssetInfo('aapl');
+
+        expect(result).toEqual({
+            symbol: 'AAPL',
+            name: 'Apple Inc.',
+            koreanName: '애플',
+        });
+        expect(mockCache.get).not.toHaveBeenCalled();
+        expect(mockCache.set).not.toHaveBeenCalled();
         expect(searchBySymbolMock).not.toHaveBeenCalled();
-        expect(mockRepository.findBySymbol).not.toHaveBeenCalled();
+    });
+
+    it('DB hit이 이미 존재하는 임시 Redis 항목보다 우선한다', async () => {
+        // 번역이 DB에 들어가면 12시간 임시 영문 항목이 남아 있어도 한글명이 나가야 한다.
+        mockCache.get.mockResolvedValue({
+            symbol: 'AAPL',
+            name: 'Apple Inc.',
+        } satisfies AssetInfo);
+        mockRepository.findBySymbol.mockResolvedValue(dbRecord);
+
+        const result = await getAssetInfo('AAPL');
+
+        expect(result?.koreanName).toBe('애플');
+        expect(mockCache.get).not.toHaveBeenCalled();
+    });
+
+    it('DB miss 뒤에야 임시 Redis 항목을 조회하고, 히트하면 FMP를 부르지 않는다', async () => {
+        const provisional: AssetInfo = { symbol: 'AAPL', name: 'Apple' };
+        mockCache.get.mockResolvedValue(provisional);
+
+        await expect(getAssetInfo('aapl')).resolves.toBe(provisional);
+
+        expect(mockRepository.findBySymbol).toHaveBeenCalledWith('AAPL');
+        expect(mockCache.get).toHaveBeenCalledWith(
+            'asset-info:provisional:AAPL'
+        );
+        expect(
+            mockRepository.findBySymbol.mock.invocationCallOrder[0]
+        ).toBeLessThan(mockCache.get.mock.invocationCallOrder[0]);
+        expect(searchBySymbolMock).not.toHaveBeenCalled();
+        expect(getKoreanNamesMock).not.toHaveBeenCalled();
+        expect(translateCompanyNamesMock).not.toHaveBeenCalled();
+        expect(mockCache.set).not.toHaveBeenCalled();
+    });
+
+    it('DB 클라이언트가 없으면 임시 Redis 항목으로 응답한다', async () => {
+        tryGetDatabaseClientMock.mockReturnValue(null);
+        const provisional: AssetInfo = { symbol: 'AAPL', name: 'Apple' };
+        mockCache.get.mockResolvedValue(provisional);
+
+        await expect(getAssetInfo('AAPL')).resolves.toBe(provisional);
+        expect(searchBySymbolMock).not.toHaveBeenCalled();
     });
 
     /**
      * 정본 한글명(`CANONICAL_KOREAN_NAMES`)은 **모든 반환 경로**를 덮어야 한다.
      *
-     * DB 읽기 지점에만 덮었더니 Redis 캐시가 먼저 답해서 옛 이름이 그대로 나갔다
-     * (로컬 실증에서 제목이 하나도 안 바뀜). 캐시 히트 경로가 가장 잡기 어려운
-     * 구멍이라 그것부터 고정한다.
+     * 과거에는 Redis 캐시가 먼저 답해서 DB 경로에만 덮은 정본이 무시됐다(로컬
+     * 실증에서 제목이 하나도 안 바뀜). 지금은 DB·임시 Redis 항목 두 경로를 각각 고정한다.
      */
-    it('cache hit이어도 정본 한글명이 캐시된 값을 덮는다', async () => {
-        // LAES의 DB/캐시 값은 '씰스큐'였다 — 정본은 '실스큐'(외래어 표기법).
+    it('DB hit이어도 정본 한글명이 저장된 값을 덮는다', async () => {
+        // LAES의 DB 값은 '씰스큐'였다 — 정본은 '실스큐'(외래어 표기법).
+        mockRepository.findBySymbol.mockResolvedValue({
+            symbol: 'LAES',
+            name: 'SEALSQ Corp',
+            koreanName: '씰스큐',
+            fmpSymbol: 'LAES',
+        } satisfies AssetTranslationRecord);
+
+        await expect(getAssetInfo('laes')).resolves.toEqual({
+            symbol: 'LAES',
+            name: 'SEALSQ Corp',
+            koreanName: '실스큐',
+        });
+    });
+
+    it('임시 Redis 항목 hit이어도 정본 한글명이 덮는다', async () => {
         mockCache.get.mockResolvedValue({
             symbol: 'LAES',
             name: 'SEALSQ Corp',
@@ -189,39 +253,68 @@ describe('getAssetInfo', () => {
     });
 
     it('정본 목록에 없는 심볼은 저장된 한글명을 그대로 쓴다', async () => {
-        mockCache.get.mockResolvedValue({
-            symbol: 'AAPL',
-            name: 'Apple',
-            koreanName: '애플',
-        } satisfies AssetInfo);
+        mockRepository.findBySymbol.mockResolvedValue(dbRecord);
 
         const result = await getAssetInfo('aapl');
 
         expect(result?.koreanName).toBe('애플');
     });
 
-    it('cache miss → DB hit 시 DB 결과 반환 후 cache 갱신', async () => {
-        mockCache.get.mockResolvedValue(null);
+    it('crypto_assets DB hit은 Redis를 읽지도 쓰지도 않는다', async () => {
+        vi.mocked(getCryptoAsset).mockResolvedValueOnce({
+            symbol: 'BTC',
+            name: 'Bitcoin',
+            koreanName: '비트코인',
+            circulatingSupply: 19_000_000,
+        });
+
+        const result = await getAssetInfo('BTC');
+
+        expect(result).toEqual({
+            symbol: 'BTC',
+            name: 'Bitcoin',
+            marketProfile: 'crypto',
+            koreanName: '비트코인',
+        });
+        expect(mockCache.get).not.toHaveBeenCalled();
+        expect(mockCache.set).not.toHaveBeenCalled();
+        expect(mockRepository.findBySymbol).not.toHaveBeenCalled();
+    });
+
+    it('FMP 크립토 목록 hit은 Redis를 읽지도 쓰지도 않는다', async () => {
+        vi.mocked(fmpCryptoMembership).mockResolvedValueOnce({
+            name: 'New Coin',
+        });
+
+        const result = await getAssetInfo('NEWCOIN');
+
+        expect(result).toEqual({
+            symbol: 'NEWCOIN',
+            name: 'New Coin',
+            marketProfile: 'crypto',
+        });
+        expect(mockCache.get).not.toHaveBeenCalled();
+        expect(mockCache.set).not.toHaveBeenCalled();
+    });
+
+    it('크립토 판정이 asset_translations보다 먼저다', async () => {
+        vi.mocked(getCryptoAsset).mockResolvedValueOnce({
+            symbol: 'AAPL',
+            name: 'Crypto AAPL',
+            koreanName: null,
+            circulatingSupply: null,
+        });
         mockRepository.findBySymbol.mockResolvedValue(dbRecord);
 
         const result = await getAssetInfo('AAPL');
-        expect(result).toEqual({
-            symbol: 'AAPL',
-            name: 'Apple Inc.',
-            koreanName: '애플',
-        });
-        expect(searchBySymbolMock).not.toHaveBeenCalled();
-        expect(mockCache.set).toHaveBeenCalledWith(
-            'asset-info:AAPL',
-            { symbol: 'AAPL', name: 'Apple Inc.', koreanName: '애플' },
-            expect.any(Number)
-        );
+
+        expect(result?.marketProfile).toBe('crypto');
+        expect(mockRepository.findBySymbol).not.toHaveBeenCalled();
     });
 
-    it('cache miss → DB hit + cache write 실패해도 결과는 반환', async () => {
-        mockCache.get.mockResolvedValue(null);
-        mockRepository.findBySymbol.mockResolvedValue(dbRecord);
+    it('DB hit이어도 Redis 쓰기가 필요 없으므로 쓰기 실패와 무관하게 결과를 반환한다', async () => {
         mockCache.set.mockRejectedValue(new Error('cache write down'));
+        mockRepository.findBySymbol.mockResolvedValue(dbRecord);
 
         const result = await getAssetInfo('AAPL');
         expect(result).toEqual({
@@ -229,10 +322,10 @@ describe('getAssetInfo', () => {
             name: 'Apple Inc.',
             koreanName: '애플',
         });
-        await Promise.resolve();
+        expect(mockCache.set).not.toHaveBeenCalled();
     });
 
-    it('cache miss → DB read 실패 시 FMP 폴백', async () => {
+    it('DB read 실패 시 FMP 폴백', async () => {
         mockCache.get.mockResolvedValue(null);
         mockRepository.findBySymbol.mockRejectedValue(new Error('db down'));
         searchBySymbolMock.mockResolvedValue([apple]);
@@ -240,7 +333,7 @@ describe('getAssetInfo', () => {
         expect(result).toEqual({ symbol: 'AAPL', name: 'Apple Inc.' });
     });
 
-    it('cache miss → DB miss → FMP → 한국명 미보유 시 결과 + 짧은 TTL cache + 번역 fire-and-forget', async () => {
+    it('DB miss → 임시 항목 miss → FMP → 한국명 미보유 시 결과 + 12시간 임시 cache + 번역 fire-and-forget', async () => {
         mockCache.get.mockResolvedValue(null);
         mockRepository.findBySymbol.mockResolvedValue(null);
         searchBySymbolMock.mockResolvedValue([apple]);
@@ -249,15 +342,16 @@ describe('getAssetInfo', () => {
 
         const result = await getAssetInfo('AAPL');
         expect(result).toEqual({ symbol: 'AAPL', name: 'Apple Inc.' });
+        expect(mockCache.set).toHaveBeenCalledTimes(1);
         expect(mockCache.set).toHaveBeenCalledWith(
-            'asset-info:AAPL',
+            'asset-info:provisional:AAPL',
             { symbol: 'AAPL', name: 'Apple Inc.' },
-            expect.any(Number)
+            ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN
         );
         expect(translateCompanyNamesMock).toHaveBeenCalledTimes(1);
     });
 
-    it('한국명 보유 시 koreanName 결과 + DB upsert + cache 갱신', async () => {
+    it('한국명 보유 시 koreanName 결과 + DB upsert만 하고 Redis는 쓰지 않는다', async () => {
         mockCache.get.mockResolvedValue(null);
         mockRepository.findBySymbol.mockResolvedValue(null);
         searchBySymbolMock.mockResolvedValue([apple]);
@@ -277,11 +371,28 @@ describe('getAssetInfo', () => {
             fmpSymbol: 'AAPL',
         });
         expect(setKoreanTickersMock).not.toHaveBeenCalled();
-        expect(mockCache.set).toHaveBeenCalledWith(
-            'asset-info:AAPL',
-            { symbol: 'AAPL', name: 'Apple Inc.', koreanName: '애플' },
-            expect.any(Number)
-        );
+        expect(mockCache.set).not.toHaveBeenCalled();
+    });
+
+    it('번역 완료 후 persistTranslation은 DB upsert만 하고 Redis에 쓰지 않는다', async () => {
+        searchBySymbolMock.mockResolvedValue([apple]);
+        getKoreanNamesMock.mockResolvedValue({});
+        translateCompanyNamesMock.mockResolvedValue({ AAPL: '애플' });
+
+        await getAssetInfo('AAPL');
+        await new Promise(resolve => setImmediate(resolve));
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(mockRepository.upsert).toHaveBeenCalledWith({
+            symbol: 'AAPL',
+            name: 'Apple Inc.',
+            koreanName: '애플',
+            fmpSymbol: 'AAPL',
+        });
+        // 쓰기는 미번역 응답 직후의 12시간 임시 항목 하나뿐이다.
+        const setCalls = mockCache.set.mock.calls;
+        expect(setCalls).toHaveLength(1);
+        expect(setCalls[0][2]).toBe(ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN);
     });
 
     it('FMP 매치가 없으면 null 반환', async () => {
@@ -291,7 +402,7 @@ describe('getAssetInfo', () => {
         await expect(getAssetInfo('AAPL')).resolves.toBeNull();
     });
 
-    it('cache provider 가 null 이어도 DB 폴백 동작', async () => {
+    it('cache provider 가 null 이어도 DB 조회 동작', async () => {
         createCacheProviderMock.mockReturnValue(null);
         mockRepository.findBySymbol.mockResolvedValue(dbRecord);
         const result = await getAssetInfo('AAPL');
@@ -313,12 +424,22 @@ describe('getAssetInfo', () => {
         });
     });
 
-    it('cache get 실패 시 DB 폴백 시도', async () => {
+    it('DB hit이면 Redis가 죽어 있어도 영향이 없다', async () => {
         mockCache.get.mockRejectedValue(new Error('cache down'));
         mockRepository.findBySymbol.mockResolvedValue(dbRecord);
         const result = await getAssetInfo('AAPL');
         expect(result?.koreanName).toBe('애플');
         expect(searchBySymbolMock).not.toHaveBeenCalled();
+    });
+
+    it('DB miss + 임시 항목 조회 실패 시 FMP로 폴백한다', async () => {
+        mockCache.get.mockRejectedValue(new Error('cache down'));
+        searchBySymbolMock.mockResolvedValue([apple]);
+
+        const result = await getAssetInfo('AAPL');
+
+        expect(result).toEqual({ symbol: 'AAPL', name: 'Apple Inc.' });
+        expect(searchBySymbolMock).toHaveBeenCalledTimes(1);
     });
 
     it('번역 결과에 symbol 이 없으면 setKoreanTickers / DB upsert 호출하지 않는다', async () => {
@@ -334,24 +455,32 @@ describe('getAssetInfo', () => {
         expect(mockRepository.upsert).not.toHaveBeenCalled();
     });
 
-    it('한국명 보유 + DB upsert 실패해도 cache 는 갱신된다', async () => {
+    it('한국명 보유 + DB upsert 실패는 warn으로 삼켜지고 한글명 임시 항목이 Redis에 남는다', async () => {
         mockCache.get.mockResolvedValue(null);
         mockRepository.findBySymbol.mockResolvedValue(null);
         searchBySymbolMock.mockResolvedValue([apple]);
         getKoreanNamesMock.mockResolvedValue({ AAPL: '애플' });
         mockRepository.upsert.mockRejectedValue(new Error('db down'));
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
         const result = await getAssetInfo('AAPL');
         expect(result?.koreanName).toBe('애플');
         await new Promise(resolve => setImmediate(resolve));
-        expect(mockCache.set).toHaveBeenCalledWith(
-            'asset-info:AAPL',
-            { symbol: 'AAPL', name: 'Apple Inc.', koreanName: '애플' },
-            expect.any(Number)
+        expect(warnSpy).toHaveBeenCalledWith(
+            '[getAssetInfo] DB upsert failed',
+            expect.any(Error)
         );
+        // DB에 못 썼으므로 한글명을 담은 12시간 임시 항목이 대신 남는다.
+        expect(mockCache.set).toHaveBeenCalledTimes(1);
+        expect(mockCache.set).toHaveBeenCalledWith(
+            'asset-info:provisional:AAPL',
+            { symbol: 'AAPL', name: 'Apple Inc.', koreanName: '애플' },
+            ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN
+        );
+        warnSpy.mockRestore();
     });
 
-    it('DB 클라이언트 없을 때 한국명 보유 경로는 cache 만 갱신', async () => {
+    it('DB 클라이언트 없을 때 한국명 보유 경로는 한글명 임시 항목만 Redis에 쓴다', async () => {
         tryGetDatabaseClientMock.mockReturnValue(null);
         mockCache.get.mockResolvedValue(null);
         searchBySymbolMock.mockResolvedValue([apple]);
@@ -360,10 +489,96 @@ describe('getAssetInfo', () => {
         const result = await getAssetInfo('AAPL');
         expect(result?.koreanName).toBe('애플');
         await new Promise(resolve => setImmediate(resolve));
-        expect(mockCache.set).toHaveBeenCalled();
+        expect(mockCache.set).toHaveBeenCalledTimes(1);
+        expect(mockCache.set).toHaveBeenCalledWith(
+            'asset-info:provisional:AAPL',
+            { symbol: 'AAPL', name: 'Apple Inc.', koreanName: '애플' },
+            ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN
+        );
+        expect(mockRepository.upsert).not.toHaveBeenCalled();
     });
 
-    it('한국명 보유 + DB 정상 + cache provider 없으면 cache 갱신 건너뜀', async () => {
+    it('DB 저하 중 쓴 한글명 임시 항목은 다음 호출에서 FMP 없이 한글명으로 응답한다', async () => {
+        tryGetDatabaseClientMock.mockReturnValue(null);
+        searchBySymbolMock.mockResolvedValue([apple]);
+        getKoreanNamesMock.mockResolvedValue({ AAPL: '애플' });
+
+        await getAssetInfo('AAPL');
+        await new Promise(resolve => setImmediate(resolve));
+        const written = mockCache.set.mock.calls.find(
+            ([key]) => key === 'asset-info:provisional:AAPL'
+        );
+        expect(written).toBeDefined();
+
+        searchBySymbolMock.mockClear();
+        mockCache.get.mockImplementation(async (key: string) =>
+            key === 'asset-info:provisional:AAPL' ? written?.[1] : null
+        );
+
+        const second = await getAssetInfo('AAPL');
+
+        expect(second?.koreanName).toBe('애플');
+        expect(searchBySymbolMock).not.toHaveBeenCalled();
+    });
+
+    it('번역 완료 후 DB upsert가 실패하면 번역된 한글명 임시 항목이 최초 응답과 같은 형태로 남는다', async () => {
+        searchBySymbolMock.mockResolvedValue([{ ...apple, symbol: 'AAPL.MX' }]);
+        getKoreanNamesMock.mockResolvedValue({});
+        translateCompanyNamesMock.mockResolvedValue({ AAPL: '애플' });
+        mockRepository.upsert.mockRejectedValue(new Error('db down'));
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        await getAssetInfo('AAPL');
+        await new Promise(resolve => setImmediate(resolve));
+        await new Promise(resolve => setImmediate(resolve));
+
+        // 미번역 응답 직후 쓴 영문 임시 항목에 이어 한글명 항목이 덮어쓴다.
+        const koreanWrite = mockCache.set.mock.calls.find(
+            ([key, value]) =>
+                key === 'asset-info:provisional:AAPL' &&
+                (value as AssetInfo).koreanName === '애플'
+        );
+        expect(koreanWrite?.[1]).toEqual({
+            symbol: 'AAPL',
+            name: 'Apple Inc.',
+            koreanName: '애플',
+            fmpSymbol: 'AAPL.MX',
+        });
+        warnSpy.mockRestore();
+    });
+
+    it('KR 종목 번역 완료 후 DB upsert가 실패하면 marketProfile을 포함한 한글명 임시 항목이 남는다', async () => {
+        // translateAndPersist의 marketProfile 전달이 끊기면 이 항목이 kr-equity 표지를
+        // 잃는다 — 그 한 줄을 지키는 유일한 테스트다.
+        const symbol = '999999.KQ'; // CURATED_KOREAN_NAMES에 없는 형상만 맞는 KR 심볼
+        const provisionalKey = `asset-info:provisional:${symbol}`;
+        fetchKrEquityQuoteNameMock.mockResolvedValue('Fake Korea Inc.');
+        getKoreanNamesMock.mockResolvedValue({});
+        translateCompanyNamesMock.mockResolvedValue({ [symbol]: '가짜코리아' });
+        mockRepository.upsert.mockRejectedValue(new Error('db down'));
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        await getAssetInfo(symbol);
+        await new Promise(resolve => setImmediate(resolve));
+        await new Promise(resolve => setImmediate(resolve));
+
+        // 미번역 응답 직후 쓴 영문 임시 항목에 이어 한글명 항목이 덮어쓴다.
+        const koreanWrite = mockCache.set.mock.calls.find(
+            ([key, value]) =>
+                key === provisionalKey &&
+                (value as AssetInfo).koreanName === '가짜코리아'
+        );
+        expect(koreanWrite?.[1]).toEqual({
+            symbol,
+            name: 'Fake Korea Inc.',
+            koreanName: '가짜코리아',
+            marketProfile: 'kr-equity',
+        });
+        expect(koreanWrite?.[2]).toBe(ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN);
+        warnSpy.mockRestore();
+    });
+
+    it('한국명 보유 + DB 정상 + cache provider 없어도 DB upsert는 수행된다', async () => {
         createCacheProviderMock.mockReturnValue(null);
         searchBySymbolMock.mockResolvedValue([apple]);
         getKoreanNamesMock.mockResolvedValue({ AAPL: '애플' });
@@ -479,7 +694,7 @@ describe('getAssetInfo', () => {
         await expect(getAssetInfo('AAPL')).rejects.toThrow('FMP HTTP 429');
     });
 
-    it('KR 종목에 한글명이 없으면 yahoo quote 이름으로 응답하고 짧은 TTL로 캐시하며 번역을 fire-and-forget 한다', async () => {
+    it('KR 종목에 한글명이 없으면 yahoo quote 이름으로 응답하고 12시간 임시 항목으로 캐시하며 번역을 fire-and-forget 한다', async () => {
         // E2E 시임은 CURATED_KOREAN_NAMES로 바로 단락시켜 이 분기를 밟지 않는다 —
         // 유닛에서 확인 안 하면 전 국내 종목의 ~99%(2026-08 실측 2,570/2,595)가 타는
         // 경로가 아무 테스트에도 안 걸린다. 이 갈래가 곧 korean_tickers를 채우는
@@ -499,7 +714,7 @@ describe('getAssetInfo', () => {
             marketProfile: 'kr-equity',
         });
         expect(mockCache.set).toHaveBeenCalledWith(
-            `asset-info:${symbol}`,
+            `asset-info:provisional:${symbol}`,
             result,
             ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN
         );
@@ -517,6 +732,22 @@ describe('getAssetInfo', () => {
                 exchangeFullName: 'KOSDAQ',
             },
         ]);
+    });
+
+    it('KR 종목의 임시 Redis 항목은 DB miss 뒤에 읽히고, hit이면 yahoo를 부르지 않는다', async () => {
+        const symbol = '999999.KQ';
+        const provisional: AssetInfo = {
+            symbol,
+            name: 'Fake Korea Inc.',
+            marketProfile: 'kr-equity',
+        };
+        mockCache.get.mockResolvedValue(provisional);
+
+        await expect(getAssetInfo(symbol)).resolves.toBe(provisional);
+
+        expect(mockRepository.findBySymbol).toHaveBeenCalledWith(symbol);
+        expect(fetchKrEquityQuoteNameMock).not.toHaveBeenCalled();
+        expect(mockCache.set).not.toHaveBeenCalled();
     });
 
     it('KR 대표 종목은 koreanNameStore가 비어도 큐레이션 카탈로그로 한글명을 채운다', async () => {
@@ -539,12 +770,9 @@ describe('getAssetInfo', () => {
             marketProfile: 'kr-equity',
             koreanName: '삼성전자',
         });
-        // 한글명을 이미 확보했으므로 긴 TTL로 굳히고, 번역 API는 부르지 않는다.
-        expect(mockCache.set).toHaveBeenCalledWith(
-            `asset-info:${symbol}`,
-            result,
-            ASSET_INFO_CACHE_TTL_WITH_KOREAN
-        );
+        // 한글명을 이미 확보했으므로 Redis에는 굳히지 않고(DB upsert가 정본),
+        // 번역 API도 부르지 않는다.
+        expect(mockCache.set).not.toHaveBeenCalled();
         expect(translateCompanyNamesMock).not.toHaveBeenCalled();
 
         await new Promise(resolve => setImmediate(resolve));
@@ -580,6 +808,16 @@ describe('getAssetInfo', () => {
             '[getAssetInfo] persist failed',
             expect.any(Error)
         );
+        // DB 저하 중에도 한글명 임시 항목은 남아야 후속 호출이 FMP를 반복하지 않는다.
+        const provisionalWrite = mockCache.set.mock.calls.find(
+            ([key]) => key === 'asset-info:provisional:AAPL'
+        );
+        expect(provisionalWrite?.[1]).toEqual({
+            symbol: 'AAPL',
+            name: 'Apple Inc.',
+            koreanName: '애플',
+        });
+        expect(provisionalWrite?.[2]).toBe(ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN);
         warnSpy.mockRestore();
     });
 
@@ -628,6 +866,16 @@ describe('getAssetInfo', () => {
             '[getAssetInfo] kr persist failed',
             expect.any(Error)
         );
+        const provisionalWrite = mockCache.set.mock.calls.find(
+            ([key]) => key === `asset-info:provisional:${symbol}`
+        );
+        expect(provisionalWrite?.[1]).toEqual({
+            symbol,
+            name: 'Samsung Electronics Co Ltd',
+            marketProfile: 'kr-equity',
+            koreanName: '삼성전자',
+        });
+        expect(provisionalWrite?.[2]).toBe(ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN);
         warnSpy.mockRestore();
     });
 

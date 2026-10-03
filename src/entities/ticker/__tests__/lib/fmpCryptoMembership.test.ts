@@ -15,15 +15,18 @@ vi.mock('@/shared/config/time', () => ({
     SECONDS_PER_DAY: 86400,
     SECONDS_PER_HOUR: 3600,
     SECONDS_PER_YEAR: 31536000,
+    MS_PER_HOUR: 3600000,
 }));
 vi.mock('../../api', () => ({
     fetchCryptoAssetList: fetchCryptoAssetListMock,
 }));
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
     getFmpCryptoListMap,
     fmpCryptoMembership,
+    FMP_CRYPTO_LIST_MEMORY_TTL_MS,
+    _resetFmpCryptoListMemoForTest,
 } from '../../lib/fmpCryptoMembership';
 import { CRYPTO_FMP_LIST_CACHE_KEY } from '../../lib/cacheKeys';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
@@ -31,6 +34,7 @@ import { SECONDS_PER_DAY } from '@/shared/config/time';
 describe('getFmpCryptoListMap', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        _resetFmpCryptoListMemoForTest();
     });
 
     it('returns a Map built from the cached FMP list record', async () => {
@@ -108,6 +112,7 @@ describe('getFmpCryptoListMap', () => {
 describe('fmpCryptoMembership', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        _resetFmpCryptoListMemoForTest();
     });
 
     it('returns the entry for a known symbol (case-insensitive input)', async () => {
@@ -159,5 +164,105 @@ describe('fmpCryptoMembership', () => {
             expect.any(Error)
         );
         warnSpy.mockRestore();
+    });
+});
+
+describe('getFmpCryptoListMap의 인스턴스 메모리(L1) 캐시는', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        _resetFmpCryptoListMemoForTest();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    it('TTL 안의 반복 호출은 Redis(L2)를 다시 읽지 않는다', async () => {
+        getOrSetCacheMock.mockResolvedValue({ BTC: { name: 'Bitcoin' } });
+
+        await fmpCryptoMembership('AAPL');
+        await fmpCryptoMembership('MSFT');
+        const btc = await fmpCryptoMembership('btc');
+
+        expect(btc).toEqual({ name: 'Bitcoin' });
+        expect(getOrSetCacheMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('TTL이 지나면 L2를 다시 읽어 새 목록을 반영한다', async () => {
+        vi.useFakeTimers();
+        getOrSetCacheMock.mockResolvedValueOnce({ BTC: { name: 'Bitcoin' } });
+        getOrSetCacheMock.mockResolvedValueOnce({
+            BTC: { name: 'Bitcoin' },
+            NEWCOIN: { name: 'New Coin' },
+        });
+
+        expect(await fmpCryptoMembership('NEWCOIN')).toBeNull();
+        vi.advanceTimersByTime(FMP_CRYPTO_LIST_MEMORY_TTL_MS + 1);
+
+        expect(await fmpCryptoMembership('NEWCOIN')).toEqual({
+            name: 'New Coin',
+        });
+        expect(getOrSetCacheMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('동시 L1 miss는 L2 조회 한 번으로 접는다', async () => {
+        let release!: (value: unknown) => void;
+        getOrSetCacheMock.mockImplementation(
+            () =>
+                new Promise(resolve => {
+                    release = resolve;
+                })
+        );
+
+        const calls = [
+            fmpCryptoMembership('BTC'),
+            fmpCryptoMembership('ETH'),
+            fmpCryptoMembership('AAPL'),
+        ];
+        await new Promise(resolve => setTimeout(resolve, 0));
+        release({ BTC: { name: 'Bitcoin' }, ETH: { name: 'Ethereum' } });
+
+        expect(await Promise.all(calls)).toEqual([
+            { name: 'Bitcoin' },
+            { name: 'Ethereum' },
+            null,
+        ]);
+        expect(getOrSetCacheMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('실패(빈 Map 폴백)는 L1에 남기지 않아 다음 호출이 다시 시도한다', async () => {
+        vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+        getOrSetCacheMock.mockRejectedValueOnce(new Error('Redis down'));
+        getOrSetCacheMock.mockResolvedValueOnce({ BTC: { name: 'Bitcoin' } });
+
+        expect(await fmpCryptoMembership('BTC')).toBeNull();
+        expect(await fmpCryptoMembership('BTC')).toEqual({ name: 'Bitcoin' });
+        expect(getOrSetCacheMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('만료 후 갱신이 실패하면 만료된 직전 목록을 돌려주고, 다음 호출은 다시 갱신을 시도한다', async () => {
+        vi.useFakeTimers();
+        const warnSpy = vi
+            .spyOn(console, 'warn')
+            .mockImplementation(() => undefined);
+        getOrSetCacheMock.mockResolvedValueOnce({ BTC: { name: 'Bitcoin' } });
+        getOrSetCacheMock.mockRejectedValueOnce(new Error('Redis down'));
+        getOrSetCacheMock.mockResolvedValueOnce({
+            BTC: { name: 'Bitcoin' },
+            NEWCOIN: { name: 'New Coin' },
+        });
+
+        await fmpCryptoMembership('BTC');
+        vi.advanceTimersByTime(FMP_CRYPTO_LIST_MEMORY_TTL_MS + 1);
+
+        expect(await fmpCryptoMembership('BTC')).toEqual({ name: 'Bitcoin' });
+        expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining('serving expired list'),
+            expect.any(Error)
+        );
+        expect(await fmpCryptoMembership('NEWCOIN')).toEqual({
+            name: 'New Coin',
+        });
+        expect(getOrSetCacheMock).toHaveBeenCalledTimes(3);
     });
 });

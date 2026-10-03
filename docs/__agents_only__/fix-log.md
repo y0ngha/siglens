@@ -665,6 +665,35 @@
   - Context: "use the computed line when present, otherwise the old bar/MA comparison" in both body and digest.
 - Status (R2): APPROVED (zero findings)
 
+## [perf/redis-cache-compression Round 1 | perf/redis-cache-compression | 2026-10-03]
+- Violation (R1 recommended, fixed): codec threshold semantics (`<` vs `<=`, UTF-8 bytes vs `json.length`, encoded-vs-bytes comparison) were not pinned — every "large" fixture was far above 1KB on both measures
+  - Rule: (new) A size threshold defined in bytes needs exact-boundary tests (N-1 / N) plus a multi-byte fixture whose char count and byte count fall on opposite sides of it
+  - Context: Added 1023/1024-byte, Korean 411-char/1211-byte and seeded-Hangul tests to `cacheValueCodec.test.ts`; mutation-checked each (json.length, `<=`, encoded vs json.length) fails a test.
+- Violation (R1 recommended, fixed): compression relied on an unowned @upstash/redis contract (SET sends strings verbatim, GET returns non-JSON strings raw) that only in-memory stubs exercised
+  - Rule: (new) A design that depends on a third-party client's (de)serialization needs a contract test against the real client with a stubbed transport, not just a Map stub
+  - Context: Added `cacheValueCodec.upstashContract.test.ts` — real `new Redis({url, token})` (auto-pipelining + base64 response encoding) over a fetch stub emulating Upstash REST.
+- Violation (R1 recommended, fixed): storage-format change documented full-rollback behaviour but not the mixed-version rolling-deploy window
+  - Rule: (new) A cache storage-format change must document both rollback and mixed old/new instance behaviour (cost of flip-flopping keys)
+  - Context: Extended `getOrSetCache` JSDoc: old instances treat compressed keys as legacy misses → FMP refetch + uncompressed overwrite until the deploy completes.
+
+## [feat/analysis-plain-db-store Rounds 1-2 | feat/analysis-plain-db-store | 2026-10-03]
+- Violation (R1 recommended, fixed): storage silently disappeared when the DB client was unavailable, so a misconfiguration would pay the LLM on every request with no log line
+  - Rule: (new) When a store prevents paid regeneration (LLM/API), its unavailability must be logged loudly (once per process), not degraded silently
+  - Context: `api.ts` logs a one-time `console.error` when `tryGetDatabaseClient()` is null outside E2E/offline build.
+- Violation (R1 recommended, fixed): a new network read on the request path ran outside the existing deadline budget with no timeout (neon-http has none)
+  - Rule: (new) A new remote read added in front of a deadline-guarded operation needs its own short time bound that degrades to a miss
+  - Context: `findStored()` races `find` against `PLAIN_STORE_READ_TIMEOUT_MS = 2500`; fake-timer tests.
+- Violation (R1 recommended, fixed): repository test asserted the SET of columns and the SET of values, so a swapped column/value pairing passed
+  - Rule: (new) Query-condition tests must pin column↔value pairing (compile the SQL and assert order + params with pairwise-distinct values)
+  - Context: `plainTextRepository.test.ts` compiles with `PgDialect().sqlToQuery`; mutation-checked (swapped values / swapped columns fail).
+- Status (R3): APPROVED (zero findings)
+
+## [perf/crypto-list-memory-cache Round 1 | perf/crypto-list-memory-cache | 2026-10-03]
+- Violation (R1 recommended, fixed): new L1 memo dropped the still-available expired list on refresh failure and returned an empty Map, so un-seeded coins briefly classified as non-crypto at the 1-hour boundary
+  - Rule: (new) When adding a memo in front of a fallible refresh, a failed refresh should serve the last good (expired) value while leaving the expiry untouched so the next call retries — not degrade to empty
+  - Context: `fmpCryptoMembership.ts` catch now returns `memo?.map ?? new Map()` with a distinct warn message; test added and mutation-checked.
+- Status (R2): APPROVED (zero findings)
+
 ## [Branch feat/agent-confluence-rule-state | 2026-10-03] — Round 3 review findings
 
 - Violation 1 (recommended): After splitting a function in two, its JSDoc paragraph ("none is null") stayed on the half that does not enforce it
@@ -693,3 +722,22 @@ Round 4: approved
   - Rule: (new) In a rollback, cut the replication path before restoring writers to the old primary
   - Context: §7-A step 1-1 disables the subscription before the SSM restore/app start.
 - Status (R3): recommended item applied directly (loop limit reached; GitHub Claude review follows)
+## [PR #918 Claude review | perf/redis-cache-compression | 2026-10-03]
+- Violation (suggestion, fixed): seeded LCG test helper reassigned a closure `let seed`
+  - Rule: MISTAKES Coding Paradigm 5·14 — prefer immutable derivation (reduce over previous value) even in test helpers
+  - Context: `cacheValueCodec.test.ts` now derives the seed sequence with `reduce`; same sequence, test still pins byte-vs-char comparison.
+
+## [perf/asset-info-db-first Rounds 1-2 | perf/asset-info-db-first | 2026-10-03]
+- Violation (R1 REQUIRED, fixed): reordering resolution put a large shared-cache read (`crypto:fmp-list`, ~170KB) in front of every equity lookup, so the change meant to cut Redis commands kept the count and multiplied bytes
+  - Rule: (new) When reordering a lookup chain to remove a cache layer, count the remaining remote round-trips per path (including ones hidden inside helpers) before claiming a saving; tests that mock the helper cannot see it
+  - Context: Branch stacked on PR #914 (1h in-process memo of the list); added `getAssetInfo.cryptoListMemo.test.ts` using the real membership helper and asserting one list read across 10 lookups.
+- Violation (R1 recommended, fixed): new short-lived entries reused the key that still held 32,667 legacy 1-year values in production, so stale values could outrank fresh resolution
+  - Rule: (new) When a cache key's meaning/TTL changes, give the new entries a new key (prefix/version) instead of sharing the legacy key space
+  - Context: `buildAssetInfoProvisionalCacheKey` → `asset-info:provisional:<SYM>`; legacy keys to be deleted by a one-off script after deploy.
+- Violation (R1 recommended, fixed): removing the cache layer dropped the absorption that kept a DB failure from turning into repeated FMP/yahoo calls
+  - Rule: (new) When removing a cache layer in front of a DB, keep a short-lived fallback write for the "DB write failed / DB unavailable" case
+  - Context: `persistTranslation` returns boolean; `persistOrCacheProvisional` writes the 12h provisional entry on failure.
+- Violation (R2 recommended, fixed): code kept for a stated reason (`marketProfile` reaching output via the fallback entry) had no test that fails without it
+  - Rule: (new) Code retained "because X" must have a test that fails when X breaks
+  - Context: Added KR translation + upsert-failure test asserting `marketProfile: 'kr-equity'` in the provisional write; mutation-checked.
+- Status (R3): APPROVED (zero findings)

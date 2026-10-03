@@ -63,8 +63,9 @@ export function collectNumbers(
  *
  * **로케일별로 갈린다.** 예전에는 `'달러'`/`'원'` 한 벌뿐이라, 프롬프트가
  * "일본어로 쓰세요"와 "facts.currency의 단위를 붙이세요"를 동시에 요구하면서
- * `319.70달러`라는 일본어 문장을 만들었다. 캐시 키에 로케일이 들어가므로 그
- * 산출물이 30일간 굳는다 — 자가 치유되지 않는 종류의 결함이다(감사 실측).
+ * `319.70달러`라는 일본어 문장을 만들었다. 저장 키에 로케일이 들어가므로 그
+ * 산출물이 저장소에 굳는다(당시 Redis 30일, 지금은 만료 없는 `analysis_plain_texts`
+ * 행) — 자가 치유되지 않는 종류의 결함이다(감사 실측).
  */
 const CURRENCY_LABEL: Record<string, Record<CurrencyCode, string>> = {
     ko: { USD: '달러', KRW: '원' },
