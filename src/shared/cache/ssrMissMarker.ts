@@ -1,5 +1,6 @@
 import 'server-only';
-import { getRedisClient } from './redisClient';
+import { getRedisClient, getUpstashWriterCredentials } from './redisClient';
+import { runUpstashCommandOutsideFetch } from './upstashRenderSafeCommand';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 /**
@@ -28,12 +29,27 @@ const keyOf = (tag: string): string => `ssr-miss:${tag}`;
  * {@link consumeSsrMiss}로 표시를 소비하며 한 번만 턴다.
  *
  * Redis 미구성·장애면 noop — 최악은 예전 동작(TTL까지 플레이스홀더)이다.
+ *
+ * ## 쓰기는 전역 `fetch`를 거치지 않는다
+ *
+ * 호출부는 전부 **정적(ISR) 렌더 안**이다. `@upstash/redis`는 `no-store` fetch를 쓰므로
+ * 렌더 중에 쓰면 Next가 그 렌더를 동적으로 판정해 재생성이 실패한다("Page changed from
+ * static to dynamic at runtime"). 에러를 잡아도 판정은 이미 기록돼 소용없고, `after()`
+ * 콜백도 같은 렌더 컨텍스트에서 돌아 마찬가지다(로컬 재현으로 확인). 미리 구운 페이지가
+ * 있으면 조용히 옛 HTML이 남고(빈 렌더를 다시 털겠다는 이 표시의 목적이 무산된다),
+ * 없으면(빌드에 DB가 없어 런타임에 처음 렌더되는 en/ja 허브) 500이 된다(v0.96.0
+ * `/en/news` 장애). 그래서 cache-handler와 같은 방식으로 `node:https`를 직접 쓴다.
  */
 export async function markSsrMiss(tag: string): Promise<void> {
-    const redis = getRedisClient();
-    if (redis === null) return;
+    if (getUpstashWriterCredentials() === null) return;
     try {
-        await redis.set(keyOf(tag), '1', { ex: SSR_MISS_TTL_SECONDS });
+        await runUpstashCommandOutsideFetch([
+            'SET',
+            keyOf(tag),
+            '1',
+            'EX',
+            SSR_MISS_TTL_SECONDS,
+        ]);
     } catch (error) {
         console.error('[ssrMissMarker] set failed', error);
     }

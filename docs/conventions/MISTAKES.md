@@ -613,6 +613,18 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ When modifying an exclusive rule: grep rule name + all synonyms (e.g., "fib" + "fibonacci", "only" + "must be") across all config, prompt, and directive files
     ✅ Update every restatement, document why the rule changed, and test that output behavior matches the new rule (A/B measurement on real LLM if the rule affects instruction following)
     → Recurring: feat/elliott-structures R1 (rule change incomplete across rule restatements) + R2 (4th restatement still had old rule) — 2 occurrences
+
+35. Code retained "because X" must have a test that fails when X breaks
+    → When code is kept for a stated reason (defensive guard, robustness mechanism, fallback handling), that reason must be verifiable by a test that fails if the code is removed
+    → Code without such a test becomes orphaned; future maintainers cannot determine if the code is still necessary or can be deleted
+    → Applies to: defensive assertions, guards before mutations, timeout mechanisms, fallback retry logic, catch-all branches, catch blocks with graceful degradation
+    ❌ socket timeout guard kept for robustness; no test exercises timeout or verifies behavior changes if timeout is removed
+    ❌ fallback cache write kept "for DB failure absorption"; no test exercising DB write failure + verifying fallback activates
+    ❌ Comment says "required for downstream log calculation"; no test that would fail if the computation is removed
+    ✅ Test that hangs the network server and verifies timeout mechanism triggers (test fails if timeout is removed)
+    ✅ Test exercising DB write failure explicitly and asserting fallback cache entry is created (mutation-check: test fails if fallback write is removed)
+    ✅ Test with mutation (revert the guard) that fails; test description names what the guard does and why it's necessary
+    → Recurring: perf/asset-info-db-first R1 (fallback cache write), review-agent fix/static-route-db-reads (network timeout guard) — 2 occurrences
 ```
 
 ---

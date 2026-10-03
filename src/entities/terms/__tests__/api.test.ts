@@ -30,7 +30,22 @@ vi.mock('react', async importOriginal => ({
     },
 }));
 
+// `unstable_cache`는 Next 요청 스코프 밖에서 쓸 수 없다. 데이터 캐시가 값을 JSON으로
+// 저장한다는 성질(Date → 문자열)만 흉내 내 그대로 통과시키고, 키·옵션은 단언용으로 남긴다.
+const { unstableCacheCalls } = vi.hoisted(() => ({
+    unstableCacheCalls: [] as { keyParts: unknown; options: unknown }[],
+}));
+vi.mock('next/cache', () => ({
+    unstable_cache:
+        <T>(fn: () => Promise<T>, keyParts: unknown, options: unknown) =>
+        async (): Promise<T> => {
+            unstableCacheCalls.push({ keyParts, options });
+            return JSON.parse(JSON.stringify(await fn())) as T;
+        },
+}));
+
 import { DrizzleTermsRepository, getActiveTerms } from '@/entities/terms/api';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type { TermsKind } from '@/shared/db/constants';
 import type { TermsRecord } from '@/entities/terms/api';
@@ -373,7 +388,42 @@ describe('getActiveTerms', () => {
         const result = await getActiveTerms('privacy', 'en');
 
         expect(findActive).toHaveBeenCalledWith('privacy', 'en');
-        expect(result).toBe(RECORD);
+        // 데이터 캐시를 거쳐 문자열이 된 effectiveDate를 Date로 되돌려 돌려준다.
+        expect(result).toStrictEqual(RECORD);
+        expect(result?.effectiveDate).toBeInstanceOf(Date);
+    });
+
+    // 배포 빌드에는 DB가 없어 legal 페이지 본문은 런타임 ISR 재생성이 채운다. 그 재생성은
+    // 정적 렌더라 캐시 밖 DB 조회는 DYNAMIC_SERVER_USAGE로 500이 된다(v0.96.0 장애).
+    it('조회를 kind·locale별 키와 약관 태그로 unstable_cache 안에서 한다', async () => {
+        delete process.env.SIGLENS_OFFLINE_BUILD;
+        vi.spyOn(
+            DrizzleTermsRepository.prototype,
+            'findActive'
+        ).mockResolvedValue(RECORD);
+        unstableCacheCalls.length = 0;
+
+        await getActiveTerms('tos', 'ja');
+
+        expect(unstableCacheCalls).toEqual([
+            {
+                keyParts: ['terms:active', 'tos', 'ja'],
+                options: {
+                    revalidate: SECONDS_PER_DAY,
+                    tags: ['terms:active'],
+                },
+            },
+        ]);
+    });
+
+    it('활성 약관이 없으면 null을 그대로 돌려준다', async () => {
+        delete process.env.SIGLENS_OFFLINE_BUILD;
+        vi.spyOn(
+            DrizzleTermsRepository.prototype,
+            'findActive'
+        ).mockResolvedValue(null);
+
+        await expect(getActiveTerms('tos', 'en')).resolves.toBeNull();
     });
 
     it('cache()로 감싸져 있어 같은 인자 호출은 repository를 한 번만 부른다', async () => {

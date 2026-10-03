@@ -13,6 +13,7 @@ import {
     getRedisClient,
     getRedisReaderWriter,
     __resetRedisClientForTests,
+    getUpstashWriterCredentials,
 } from '@/shared/cache/redisClient';
 import { __resetOfflineBuildWarningsForTests } from '@/shared/api/offlineBuild';
 
@@ -44,6 +45,23 @@ describe('redisClient', () => {
             expect(a).toBe(b);
             expect(mockRedisConstructor).toHaveBeenCalledTimes(1);
             expect(mockRedisConstructor).toHaveBeenCalledWith({
+                url: URL,
+                token: TOKEN,
+            });
+        });
+    });
+
+    describe('getUpstashWriterCredentials', () => {
+        it('env 미설정 시 null', () => {
+            expect(getUpstashWriterCredentials()).toBeNull();
+        });
+
+        // 렌더 안전 경로(node:https)는 쓰기 토큰을 써야 한다 — 읽기 전용 토큰이 있어도.
+        it('읽기 전용 토큰이 있어도 쓰기 토큰을 돌려준다', () => {
+            process.env.UPSTASH_REDIS_REST_URL = URL;
+            process.env.UPSTASH_REDIS_REST_TOKEN = TOKEN;
+            process.env.UPSTASH_REDIS_REST_READONLY_TOKEN = 'readonly';
+            expect(getUpstashWriterCredentials()).toEqual({
                 url: URL,
                 token: TOKEN,
             });

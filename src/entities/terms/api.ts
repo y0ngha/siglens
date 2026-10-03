@@ -12,7 +12,9 @@ import {
 } from '@/shared/db/contentTranslationFields';
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { cache } from 'react';
+import { unstable_cache } from 'next/cache';
 import { getDatabaseClient } from '@/shared/db/client';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { isOfflineBuild } from '@/shared/api/offlineBuild';
 
 /** Public-facing record returned by the repository. */
@@ -209,6 +211,9 @@ export class DrizzleTermsRepository implements TermsRepository {
     }
 }
 
+/** 활성 약관 데이터 캐시 키·태그. */
+const TERMS_ACTIVE_CACHE_KEY = 'terms:active';
+
 /**
  * 활성 약관 한 건 — `generateMetadata`와 페이지 본문이 **같은 행**을 보게 하는
  * 요청 스코프 메모.
@@ -222,11 +227,30 @@ export class DrizzleTermsRepository implements TermsRepository {
  * (`app/[locale]/_legal/legalPolicy.ts`)를 거치며, 그쪽이 DB 없는 빌드를 먼저
  * `unavailable`(안내문 + 60초 revalidate)로 걸러낸다. DB가 있는 빌드에서 DB를 못
  * 읽으면 throw해서 빌드를 실패시킨다(빈 약관이 구워지는 것을 막는다).
+ *
+ * **조회는 `unstable_cache` 안에서 한다**(`src/app/CLAUDE.md` 축 1). 배포 빌드에는 DB가
+ * 없어 legal 페이지가 안내문으로 구워지고, 실제 본문은 런타임 ISR 재생성이 채운다.
+ * 그 재생성은 정적 렌더라서 캐시 밖 DB 조회가 `DYNAMIC_SERVER_USAGE`를 던져 500이
+ * 된다(v0.96.0 `/terms`·`/privacy` 장애). 데이터 캐시 TTL은 페이지 revalidate(24시간)와
+ * 같게 둔다 — Next는 렌더 중 읽은 `unstable_cache` 중 가장 짧은 revalidate로 페이지
+ * s-maxage를 줄이므로, 더 짧으면 그 주기로 legal 페이지 전체가 재생성된다
+ * (`staticSymbolCache`와 같은 이유). 새 배포는 캐시 prefix(`GIT_SHA`)가 바뀌어 함께
+ * 비워지므로 "발효 직후 배포로 즉시 재생성" 절차(DEPLOY_RUNBOOK §3.5)는 그대로 동작한다.
  */
 export const getActiveTerms = cache(
     async (kind: TermsKind, locale: Locale): Promise<TermsRecord | null> => {
         if (isOfflineBuild()) return null;
-        const { db } = getDatabaseClient();
-        return new DrizzleTermsRepository(db).findActive(kind, locale);
+        const record = await unstable_cache(
+            () => {
+                const { db } = getDatabaseClient();
+                return new DrizzleTermsRepository(db).findActive(kind, locale);
+            },
+            [TERMS_ACTIVE_CACHE_KEY, kind, locale],
+            { revalidate: SECONDS_PER_DAY, tags: [TERMS_ACTIVE_CACHE_KEY] }
+        )();
+        // 데이터 캐시는 JSON으로 저장돼 Date가 문자열로 돌아온다.
+        return record === null
+            ? null
+            : { ...record, effectiveDate: new Date(record.effectiveDate) };
     }
 );
