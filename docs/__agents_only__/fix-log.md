@@ -675,3 +675,21 @@
   Context: Added a 150-bar 1Day case expecting latest.rsi2 === null.
 
 Round 4: approved
+
+## [infra/rds-provisioning-and-runbook Rounds 1-3 | infra/rds-provisioning-and-runbook | 2026-10-03]
+- Violation (R1 REQUIRED, fixed): idempotency check matched AWS CLI `--output text` with space padding, but multiple values come TAB-separated, so a rerun died on InvalidPermission.Duplicate
+  - Rule: (new) Never parse AWS CLI text output with string padding; query the exact item with JMESPath (flatten, then pipe-filter) and prove both "absent" and "present" states with a stubbed/mock AWS harness
+  - Context: `allow_from` in 15-rds.sh; harness reproduced the old failure.
+- Violation (R1 REQUIRED, fixed): cutover runbook let instances restart one by one, creating a window where Neon and RDS both took writes while logical replication was live
+  - Rule: (new) A DB cutover must stop every writer (and suspend autoscaling launches) before switching the connection target, then start them; never roll restarts across a live replication pair
+  - Context: §6 rewritten (suspend ASG → stop all → verify caught up → setval → switch SSM → start → resume).
+- Violation (R1/R2 REQUIRED, fixed): secrets placed under a path the app role could still read — nested `/siglens/rds/*` matched `parameter/siglens/*`, and a separate root was still readable via the EC2 role's AWS-managed `AmazonSSMManagedInstanceCore` (`GetParameter` on `*`)
+  - Rule: (new) Before claiming a role "cannot read" a secret, enumerate every attached policy including AWS-managed ones (`get-policy-version`); protect admin secrets with an explicit Deny on a disjoint path
+  - Context: secrets moved to `/siglens-rds/*` + `DenyRdsSecrets` on the EC2 role; trader role needs the same Deny by hand.
+- Violation (R2 REQUIRED, fixed): a new user inline policy pushed the IAM user over the 2,048-char inline quota, aborting the setup script
+  - Rule: (new) Check IAM size quotas (user inline 2,048 total; managed 6,144) when adding policies; prefer customer-managed policies for anything non-trivial
+  - Context: `siglens-deployer-rds` customer-managed policy with version pruning.
+- Violation (R3 recommended, fixed): rollback restarted the app on Neon before disabling the still-live RDS subscription, letting resumed Neon writes overwrite RDS-only rows awaiting salvage
+  - Rule: (new) In a rollback, cut the replication path before restoring writers to the old primary
+  - Context: §7-A step 1-1 disables the subscription before the SSM restore/app start.
+- Status (R3): recommended item applied directly (loop limit reached; GitHub Claude review follows)

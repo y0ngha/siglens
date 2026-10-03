@@ -40,6 +40,9 @@ sub() { sed "s/ACCOUNT_ID/$ACCOUNT_ID/g" "$1"; }
 ### 0) 서비스 연결 역할 (이미 있으면 무시) ###
 aws iam create-service-linked-role --aws-service-name autoscaling.amazonaws.com >/dev/null 2>&1 || true
 aws iam create-service-linked-role --aws-service-name elasticloadbalancing.amazonaws.com >/dev/null 2>&1 || true
+# RDS: deployer는 IAM 관리 권한이 없어서, 서비스 연결 역할이 없는 계정에서 첫 create-db-instance가
+# 막힌다. admin이 여기서 미리 만들어 둔다(15-rds.sh).
+aws iam create-service-linked-role --aws-service-name rds.amazonaws.com >/dev/null 2>&1 || true
 
 ### 1) 프로비저닝 사용자 siglens-deployer ###
 aws iam get-user --user-name "$DEPLOYER" >/dev/null 2>&1 \
@@ -60,7 +63,48 @@ aws iam put-user-policy --user-name "$DEPLOYER" --policy-name siglens-passrole \
       \"Resource\":[\"arn:aws:iam::$ACCOUNT_ID:role/$EC2_ROLE\",
                     \"arn:aws:iam::$ACCOUNT_ID:instance-profile/$EC2_ROLE\"]}]
   }"
-echo "[iam] user $DEPLOYER ready (+ 8 managed policies, scoped PassRole)"
+# RDS는 AmazonRDSFullAccess(전 리전·전 리소스·삭제 포함)를 쓰지 않고 범위를 좁힌 **고객 관리형
+# 정책**으로 준다: ap-northeast-2 + siglens-* DB/서브넷 그룹/파라미터 그룹만 생성·수정하고,
+# 인스턴스 삭제와 Reserved Instance 구매는 명시적 Deny다(둘 다 admin/root 프로파일로 수행 —
+# RDS_MIGRATION.md §8).
+#
+# 인라인 정책(put-user-policy)이 아닌 이유: IAM 사용자의 인라인 정책 합계 상한이 2,048자인데
+# 이 정책(~2.2KB)만으로 넘고, 기존 siglens-passrole(~233자)과 합치면 put-user-policy가 실패해
+# set -e로 이 스크립트가 중간에 죽는다. 관리형 정책은 6,144자까지 되고 사용자당 10개까지 붙는다
+# (지금 8개 + 이 정책 = 9개).
+#
+# 멱등: 없으면 만들고, 있으면 새 버전을 기본으로 올린다. 버전은 최대 5개라 가득 차 있으면
+# 기본이 아닌 가장 오래된 버전을 먼저 지운다. "없음"은 NoSuchEntity일 때만 — 다른 에러
+# (AccessDenied 등)를 없음으로 읽어 만들려 들지 않는다.
+publish_managed_policy() {
+  local name="$1" doc="$2" arn out n oldest
+  arn="arn:aws:iam::$ACCOUNT_ID:policy/$name"
+  if out=$(aws iam get-policy --policy-arn "$arn" 2>&1); then
+    n=$(aws iam list-policy-versions --policy-arn "$arn" --query 'length(Versions)' --output text)
+    if [ "$n" -ge 5 ]; then
+      oldest=$(aws iam list-policy-versions --policy-arn "$arn" \
+        --query 'sort_by(Versions[?IsDefaultVersion==`false`], &CreateDate)[0].VersionId' --output text)
+      aws iam delete-policy-version --policy-arn "$arn" --version-id "$oldest"
+    fi
+    aws iam create-policy-version --policy-arn "$arn" --policy-document "$doc" --set-as-default >/dev/null
+  elif grep -q 'NoSuchEntity' <<<"$out"; then
+    aws iam create-policy --policy-name "$name" --policy-document "$doc" \
+      --description "siglens-deployer: scoped RDS provisioning (no delete, no RI purchase)" >/dev/null
+  else
+    echo "$out" >&2
+    return 1
+  fi
+  echo "$arn"
+}
+
+# 이전에 붙여 둔 풀 액세스 관리형 정책과, 인라인으로 넣었다가 한도에 걸려 남았을 수 있는
+# 인라인 사본을 정리한다(없으면 무시).
+aws iam detach-user-policy --user-name "$DEPLOYER" \
+  --policy-arn arn:aws:iam::aws:policy/AmazonRDSFullAccess >/dev/null 2>&1 || true
+aws iam delete-user-policy --user-name "$DEPLOYER" --policy-name siglens-rds >/dev/null 2>&1 || true
+RDS_POLICY_ARN="$(publish_managed_policy siglens-deployer-rds "$(sub "$IAM_DIR/deployer-rds-policy.json")")"
+aws iam attach-user-policy --user-name "$DEPLOYER" --policy-arn "$RDS_POLICY_ARN"
+echo "[iam] user $DEPLOYER ready (+ 8 managed policies, scoped PassRole inline, customer-managed RDS policy $RDS_POLICY_ARN)"
 
 ### 2) EC2 인스턴스 역할 + 인스턴스 프로파일 ###
 aws iam get-role --role-name "$EC2_ROLE" >/dev/null 2>&1 \

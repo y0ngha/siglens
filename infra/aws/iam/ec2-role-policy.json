@@ -28,6 +28,20 @@
             "Resource": "arn:aws:ssm:ap-northeast-2:ACCOUNT_ID:parameter/siglens/*"
         },
         {
+            "Sid": "DenyRdsSecrets",
+            "Effect": "Deny",
+            "Action": [
+                "ssm:GetParameter",
+                "ssm:GetParameters",
+                "ssm:GetParametersByPath",
+                "ssm:GetParameterHistory"
+            ],
+            "Resource": [
+                "arn:aws:ssm:ap-northeast-2:ACCOUNT_ID:parameter/siglens-rds",
+                "arn:aws:ssm:ap-northeast-2:ACCOUNT_ID:parameter/siglens-rds/*"
+            ]
+        },
+        {
             "Sid": "DecryptSecrets",
             "Effect": "Allow",
             "Action": ["kms:Decrypt"],
