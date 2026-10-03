@@ -705,3 +705,11 @@ Round 4: approved
   - Rule: (new) Edit config files textually (or re-run the repo formatter) so the diff only shows the intended change; never trust the last line of a check's output — read its exit code
   - Context: rebuilt from HEAD minus the two statements and ran oxfmt; diff is 17 deletions.
 - Status (R3): APPROVED (zero findings)
+
+## [PR #920 Claude review | perf/build-without-db | 2026-10-03]
+- Violation (suggestion, fixed): async helper with logic (`renderLegalUnavailable`) had no explicit return type
+  - Rule: MISTAKES Coding Paradigm §0 — explicit return types on exported/logic functions
+  - Context: `Promise<React.JSX.Element>` added.
+- Violation (suggestion, fixed): the same eyebrow literal was written twice per legal page (body and fallback)
+  - Rule: MISTAKES §15 drift trap — values that must stay equal live in one constant
+  - Context: `TERMS_EYEBROW` / `PRIVACY_EYEBROW` constants used by both call sites.

@@ -24,7 +24,7 @@ export async function renderLegalUnavailable(
     policy: LegalPolicy,
     eyebrow: string,
     tSeo: SeoTranslator
-) {
+): Promise<React.JSX.Element> {
     await shortenRevalidateForBuildDegrade();
     return (
         <LegalUnavailable

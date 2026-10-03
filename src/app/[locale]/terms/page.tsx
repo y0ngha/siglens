@@ -47,6 +47,9 @@ import { renderLegalUnavailable } from '../_legal/renderLegalUnavailable';
  */
 export const revalidate = 86400;
 
+/** 본문과 대체 화면이 같은 eyebrow를 쓰도록 한 곳에 둔다. */
+const TERMS_EYEBROW = 'TERMS OF SERVICE';
+
 const POLICY: LegalPolicy = {
     kind: 'tos',
     path: TERMS_PATH,
@@ -99,7 +102,7 @@ async function TermsContent({ locale, terms }: TermsContentProps) {
     return (
         <LegalPageShell
             breadcrumbTitle={termsTitle(tSeo)}
-            eyebrow="TERMS OF SERVICE"
+            eyebrow={TERMS_EYEBROW}
             title={termsTitle(tSeo)}
             intro={tLegal('termsIntro', { v0: SITE_NAME })}
             effectiveDate={formatKoreanDate(terms.effectiveDate, locale)}
@@ -139,7 +142,7 @@ export default async function TermsPage({
     ]);
     // DB 없이 도는 배포 빌드 — 404도 빈 페이지도 굽지 않고 안내문을 60초 revalidate로 낸다.
     if (load.status === 'unavailable')
-        return renderLegalUnavailable(POLICY, 'TERMS OF SERVICE', tSeo);
+        return renderLegalUnavailable(POLICY, TERMS_EYEBROW, tSeo);
     if (load.status === 'missing') notFound();
     const { terms } = load;
     return (

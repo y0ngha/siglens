@@ -49,6 +49,9 @@ import { renderLegalUnavailable } from '../_legal/renderLegalUnavailable';
  */
 export const revalidate = 86400;
 
+/** 본문과 대체 화면이 같은 eyebrow를 쓰도록 한 곳에 둔다. */
+const PRIVACY_EYEBROW = 'PRIVACY POLICY';
+
 const POLICY: LegalPolicy = {
     kind: 'privacy',
     path: PRIVACY_PATH,
@@ -83,7 +86,7 @@ async function PrivacyContent({ locale, terms }: PrivacyContentProps) {
     return (
         <LegalPageShell
             breadcrumbTitle={privacyTitle(tSeo)}
-            eyebrow="PRIVACY POLICY"
+            eyebrow={PRIVACY_EYEBROW}
             title={privacyTitle(tSeo)}
             intro={tLegal('privacyIntro', { v0: SITE_NAME })}
             effectiveDate={formatKoreanDate(terms.effectiveDate, locale)}
@@ -147,7 +150,7 @@ export default async function PrivacyPage({
     ]);
     // DB 없이 도는 배포 빌드 — 404도 빈 페이지도 굽지 않고 안내문을 60초 revalidate로 낸다.
     if (load.status === 'unavailable')
-        return renderLegalUnavailable(POLICY, 'PRIVACY POLICY', tSeo);
+        return renderLegalUnavailable(POLICY, PRIVACY_EYEBROW, tSeo);
     if (load.status === 'missing') notFound();
     const { terms } = load;
     return (
