@@ -8,6 +8,10 @@ import {
     __resetInFlightForTests,
 } from '@/shared/cache/getOrSetCache';
 import { getRedisClient } from '@/shared/cache/redisClient';
+import {
+    COMPRESSED_VALUE_PREFIX,
+    decodeCacheValue,
+} from '@/shared/cache/cacheValueCodec';
 
 const mockedGetRedisClient = vi.mocked(getRedisClient);
 
@@ -218,6 +222,98 @@ describe('getOrSetCache 함수는', () => {
     });
 });
 
+describe('getOrSetCache의 값 압축은', () => {
+    // 운영 `bars:eodhist`와 같은 모양 — 직렬화 크기가 압축 임계값(1KB)을 넘는다.
+    const bars = Array.from({ length: 200 }, (_, i) => ({
+        time: 1727308800 + i * 86400,
+        open: 48.99 + i / 7,
+        high: 49.5 + i / 7,
+        low: 48.1 + i / 7,
+        close: 49.03 + i / 7,
+        volume: 1000 + i,
+    }));
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        __resetInFlightForTests();
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('큰 값은 압축 문자열로 저장하고, 다음 호출은 그것을 풀어 fetch 없이 반환한다', async () => {
+        const redis = createRedisStub();
+        mockedGetRedisClient.mockReturnValue(redis as never);
+        const fetcher = vi.fn().mockResolvedValue(bars);
+
+        await getOrSetCache('bars:eodhist:AAPL:2026-10-02', 60, fetcher);
+        const stored = redis.store.get('bars:eodhist:AAPL:2026-10-02');
+        const second = await getOrSetCache(
+            'bars:eodhist:AAPL:2026-10-02',
+            60,
+            fetcher
+        );
+
+        expect(typeof stored).toBe('string');
+        expect(stored as string).toMatch(
+            new RegExp(`^${COMPRESSED_VALUE_PREFIX}`)
+        );
+        expect(redis.set).toHaveBeenCalledWith(
+            'bars:eodhist:AAPL:2026-10-02',
+            stored,
+            { ex: 60 }
+        );
+        expect(second).toEqual(bars);
+        expect(fetcher).toHaveBeenCalledTimes(1);
+    });
+
+    it('압축 도입 전에 저장된 큰 envelope 객체도 그대로 캐시 히트로 읽는다', async () => {
+        const redis = createRedisStub();
+        redis.store.set('bars:eodhist:AAPL:2026-10-02', { data: bars });
+        mockedGetRedisClient.mockReturnValue(redis as never);
+        const fetcher = vi.fn().mockResolvedValue([]);
+
+        const result = await getOrSetCache(
+            'bars:eodhist:AAPL:2026-10-02',
+            60,
+            fetcher
+        );
+
+        expect(result).toEqual(bars);
+        expect(fetcher).not.toHaveBeenCalled();
+    });
+
+    it('해독할 수 없는 압축 엔트리는 miss로 흡수해 refetch 후 유효한 값으로 덮어쓴다', async () => {
+        const redis = createRedisStub();
+        redis.store.set(
+            'bars:eodhist:AAPL:2026-10-02',
+            `${COMPRESSED_VALUE_PREFIX}bm90LXpzdGQ=`
+        );
+        mockedGetRedisClient.mockReturnValue(redis as never);
+        const fetcher = vi.fn().mockResolvedValue(bars);
+
+        const result = await getOrSetCache(
+            'bars:eodhist:AAPL:2026-10-02',
+            60,
+            fetcher
+        );
+
+        expect(result).toEqual(bars);
+        expect(fetcher).toHaveBeenCalledTimes(1);
+        expect(console.error).toHaveBeenCalledWith(
+            '[getOrSetCache] get failed: bars:eodhist:AAPL:2026-10-02',
+            expect.any(Error)
+        );
+        expect(
+            await decodeCacheValue(
+                redis.store.get('bars:eodhist:AAPL:2026-10-02')
+            )
+        ).toEqual({ data: bars });
+    });
+});
+
 describe('getOrSetCache의 in-flight 중복 제거는', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -246,7 +342,8 @@ describe('getOrSetCache의 in-flight 중복 제거는', () => {
             getOrSetCache('k', 60, fetcher),
         ];
         // 세 호출이 모두 miss를 통과해 in-flight 맵에 도달한 뒤 fetcher를 완료시킨다.
-        await Promise.resolve();
+        // 마이크로태스크 개수(get→decode 체인 길이)에 묶이지 않도록 매크로태스크까지 비운다.
+        await new Promise(resolve => setTimeout(resolve, 0));
         release('fresh');
         const results = await Promise.all(calls);
 

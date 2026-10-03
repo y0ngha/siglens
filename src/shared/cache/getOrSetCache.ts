@@ -1,6 +1,10 @@
 import 'server-only';
 import type { Redis } from '@upstash/redis';
 import { getRedisClient } from '@/shared/cache/redisClient';
+import {
+    decodeCacheValue,
+    encodeCacheValue,
+} from '@/shared/cache/cacheValueCodec';
 
 interface CacheEnvelope<T> {
     data: T;
@@ -70,7 +74,8 @@ async function fetchAndStore<T>(
         const ex =
             typeof ttlSeconds === 'function' ? ttlSeconds(fresh) : ttlSeconds;
         try {
-            await redis.set(key, { data: fresh }, { ex });
+            const stored = await encodeCacheValue({ data: fresh });
+            await redis.set(key, stored, { ex });
         } catch (error) {
             console.error(`[getOrSetCache] set failed: ${key}`, error);
         }
@@ -88,6 +93,15 @@ async function fetchAndStore<T>(
  * hit은 `{ data: ... }`(안의 값이 `null`이어도)로 구분된다. 덕분에 "데이터 없음"을
  * 뜻하는 정상 `null`(예: 프로필 없는 티커)도 캐싱해, 롱테일/봇 트래픽이 매 요청마다
  * FMP를 재호출하던 문제를 막는다.
+ *
+ * 직렬화된 envelope이 1KB 이상이면 zstd로 압축해 저장한다(`cacheValueCodec.ts`). 운영 Redis의
+ * 95%가 봉 캐시(`bars:<SYM>:1Day` 키당 ~660KB, `bars:eodhist` ~41KB)라 저장량과 Upstash
+ * 왕복 대역폭이 이 경로에 몰려 있다. 압축 도입 전 엔트리는 그대로 읽히고, 이 빌드를 롤백하면
+ * 옛 코드는 압축 문자열을 아래 레거시 raw 엔트리처럼 miss로 보고 덮어쓴다.
+ * 구·신 빌드가 함께 도는 롤링 배포 구간에도 같은 일이 생긴다: 옛 인스턴스는 압축 키를 읽을
+ * 때마다 외부 API(FMP 등)를 다시 부르고 비압축으로 덮어쓰며, 새 인스턴스는 다음 miss에 다시
+ * 압축한다. 자가 치유되고 구간이 끝나면 멈추지만, 그동안 대상 키(봉 캐시)에서 FMP 호출과
+ * Redis 쓰기가 늘어난다.
  *
  * envelope이 아닌 레거시 raw 엔트리(이전 포맷이 운영 Redis에 남아 있는 경우)는 cache
  * miss로 취급한다 — 그대로 반환하면 `hit.data`가 `undefined`가 되므로, fetch 후
@@ -121,7 +135,7 @@ export async function getOrSetCache<T>(
     const redis = getRedisClient();
     if (redis !== null) {
         try {
-            const hit = await redis.get<unknown>(key);
+            const hit = await decodeCacheValue(await redis.get<unknown>(key));
             if (isCacheEnvelope<T>(hit) && isFresh(hit.data)) return hit.data;
         } catch (error) {
             console.error(`[getOrSetCache] get failed: ${key}`, error);

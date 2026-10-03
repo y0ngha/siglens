@@ -665,6 +665,17 @@
   - Context: "use the computed line when present, otherwise the old bar/MA comparison" in both body and digest.
 - Status (R2): APPROVED (zero findings)
 
+## [perf/redis-cache-compression Round 1 | perf/redis-cache-compression | 2026-10-03]
+- Violation (R1 recommended, fixed): codec threshold semantics (`<` vs `<=`, UTF-8 bytes vs `json.length`, encoded-vs-bytes comparison) were not pinned — every "large" fixture was far above 1KB on both measures
+  - Rule: (new) A size threshold defined in bytes needs exact-boundary tests (N-1 / N) plus a multi-byte fixture whose char count and byte count fall on opposite sides of it
+  - Context: Added 1023/1024-byte, Korean 411-char/1211-byte and seeded-Hangul tests to `cacheValueCodec.test.ts`; mutation-checked each (json.length, `<=`, encoded vs json.length) fails a test.
+- Violation (R1 recommended, fixed): compression relied on an unowned @upstash/redis contract (SET sends strings verbatim, GET returns non-JSON strings raw) that only in-memory stubs exercised
+  - Rule: (new) A design that depends on a third-party client's (de)serialization needs a contract test against the real client with a stubbed transport, not just a Map stub
+  - Context: Added `cacheValueCodec.upstashContract.test.ts` — real `new Redis({url, token})` (auto-pipelining + base64 response encoding) over a fetch stub emulating Upstash REST.
+- Violation (R1 recommended, fixed): storage-format change documented full-rollback behaviour but not the mixed-version rolling-deploy window
+  - Rule: (new) A cache storage-format change must document both rollback and mixed old/new instance behaviour (cost of flip-flopping keys)
+  - Context: Extended `getOrSetCache` JSDoc: old instances treat compressed keys as legacy misses → FMP refetch + uncompressed overwrite until the deploy completes.
+
 ## [feat/analysis-plain-db-store Rounds 1-2 | feat/analysis-plain-db-store | 2026-10-03]
 - Violation (R1 recommended, fixed): storage silently disappeared when the DB client was unavailable, so a misconfiguration would pay the LLM on every request with no log line
   - Rule: (new) When a store prevents paid regeneration (LLM/API), its unavailability must be logged loudly (once per process), not degraded silently
@@ -713,6 +724,11 @@ Round 4: approved
 - Violation (suggestion, fixed): the same eyebrow literal was written twice per legal page (body and fallback)
   - Rule: MISTAKES §15 drift trap — values that must stay equal live in one constant
   - Context: `TERMS_EYEBROW` / `PRIVACY_EYEBROW` constants used by both call sites.
+
+## [PR #918 Claude review | perf/redis-cache-compression | 2026-10-03]
+- Violation (suggestion, fixed): seeded LCG test helper reassigned a closure `let seed`
+  - Rule: MISTAKES Coding Paradigm 5·14 — prefer immutable derivation (reduce over previous value) even in test helpers
+  - Context: `cacheValueCodec.test.ts` now derives the seed sequence with `reduce`; same sequence, test still pins byte-vs-char comparison.
 
 ## [perf/asset-info-db-first Rounds 1-2 | perf/asset-info-db-first | 2026-10-03]
 - Violation (R1 REQUIRED, fixed): reordering resolution put a large shared-cache read (`crypto:fmp-list`, ~170KB) in front of every equity lookup, so the change meant to cut Redis commands kept the count and multiplied bytes
