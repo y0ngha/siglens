@@ -48,6 +48,21 @@ function readUpstashEnv(): UpstashEnv | null {
 }
 
 /**
+ * Writer 자격증명(URL + 쓰기 토큰). 미설정·오프라인 빌드면 `null`.
+ *
+ * `@upstash/redis` 패키지는 전역 `fetch`로 요청하므로 정적(ISR) 렌더 안에서 쓰면 그
+ * 렌더를 동적으로 바꾼다. 렌더 중 쓰기가 필요한 곳은 이 자격증명으로
+ * {@link import('./upstashRenderSafeCommand').runUpstashCommandOutsideFetch}를 쓴다.
+ */
+export function getUpstashWriterCredentials(): {
+    url: string;
+    token: string;
+} | null {
+    const env = getUpstashEnv();
+    return env ? { url: env.url, token: env.token } : null;
+}
+
+/**
  * The app's shared Upstash Redis writer client (singleton).
  *
  * Returns `null` when `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` are
