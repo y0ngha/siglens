@@ -28,11 +28,12 @@ import {
     isCalendarCountry,
 } from '../src/entities/economy/lib/economyCalendarConstants';
 import * as schema from '../src/shared/db/schema';
+import {
+    guardRemoteWrite,
+    requireDatabaseUrl,
+} from '../db/scripts/lib/dbTarget';
 
-const databaseUrl = process.env.DIRECT_DATABASE_URL ?? process.env.DATABASE_URL;
-if (!databaseUrl) {
-    throw new Error('DIRECT_DATABASE_URL (or DATABASE_URL) env var required');
-}
+const databaseUrl = requireDatabaseUrl();
 
 /** 동시 분석 상한 — seed는 일괄이라 작게 잡아 LLM 큐 압박을 피한다. */
 const SEED_PARALLEL_LIMIT = 4;
@@ -109,7 +110,8 @@ async function seedPass(
 }
 
 async function run(): Promise<void> {
-    const client = postgres(databaseUrl!, { max: 1 });
+    guardRemoteWrite(databaseUrl, 'seed:calendar-analysis');
+    const client = postgres(databaseUrl, { max: 1 });
     try {
         // SiglensDatabase = PostgresJsDatabase<typeof schema>와 같은 타입이 되도록 schema를
         // 넘긴다 — 앱 런타임(createDatabaseClient)과 같은 드라이버라 캐스트가 필요 없다.

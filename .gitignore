@@ -106,6 +106,10 @@ next-env.d.ts
 !/scripts/warm-isr.sh
 # Infra: CDN 엣지 캐시 실측 프로브 (docs/architecture/CDN_CACHING.md §6에서 참조).
 !/scripts/probe-cdn-cache.sh
+# 로컬 개발 DB(Docker)·운영 DB SSM 터널·운영 비개인 데이터 시드. package.json db:dev:* / db:tunnel이 실행한다.
+!/scripts/db-dev.sh
+!/scripts/db-tunnel.sh
+!/scripts/db-dev-seed-from-prod.sh
 !/scripts/lib/
 !/scripts/lib/**
 # i18n 툴링 — `yarn i18n:extract/translate/verify/lint/routes`가 이 파일들을

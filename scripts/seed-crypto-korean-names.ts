@@ -37,6 +37,7 @@ import { GoogleGenAI, JobState } from '@google/genai';
 import { fileURLToPath } from 'node:url';
 import { cryptoAssets } from '../src/shared/db/schema';
 import { MS_PER_HOUR, MS_PER_SECOND } from '../src/shared/config/time';
+import { guardRemoteWrite } from '../db/scripts/lib/dbTarget';
 
 // Env reads are deferred to run() (not module-level throws) so the pure helpers
 // below (extractKoreanName / buildUpsertValues) can be imported by unit tests
@@ -373,6 +374,9 @@ async function run(): Promise<void> {
             'DIRECT_DATABASE_URL (or DATABASE_URL) env var required'
         );
     }
+    // DRY_RUN은 SELECT + 프롬프트 빌드만 하고 쓰지 않으므로 가드 대상이 아니다.
+    // 쓰기 경로는 Gemini 배치 비용이 나가기 전에 거부해야 한다.
+    if (!isDryRun) guardRemoteWrite(databaseUrl, 'seed:crypto-korean');
     if (!isDryRun && !GEMINI_API_KEY) {
         throw new Error('GEMINI_API_KEY is required in .env.local');
     }

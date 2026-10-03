@@ -116,14 +116,6 @@
   - Rule: Verify each replacement with targeted grep (e.g., `grep 'expected string' file`) instead of whole-file inequality check
   - Context: A component edit never applied; documented in team feedback.
 
-## [perf/aws-cost-reduction Round 1 | ISR cache-handler refactor | 2026-08-19]
-- Violation: `cache-handler/memStore.mjs` — `setEntry()` deleted the previous entry and decremented the byte budget BEFORE checking the per-entry size cap, so writing an oversized value to an already-cached key silently destroyed a valid existing entry instead of rejecting the oversized write
-  - Rule: (new) Guard-Ordering — Validation checks must precede mutation; early-return before mutation prevents silent data loss
-  - Context: Moved size-cap check before deletion and decrement. Added regression test verifying that oversized writes leave existing entries intact.
-## [perf/aws-cost-reduction Round 3 | Code logic audit | 2026-08-20]
-- Violation: Length cap applied AFTER regex instead of before, making cap useless against the quadratic blowup it was meant to prevent. Same code later called `String(value)` on untrusted object before capping, invoking arbitrary `toString`.
-  - Rule: Validation must be applied in order (type check → size check → parse); size checks must precede regex to prevent quadratic blowup
-  - Context: Moved `.substring(0, MAX_LEN)` BEFORE regex; added `typeof value === 'string'` check before `String(value)`.
 
 ## [W6a — symbol layout header | redesign-p1 | 2026-08-25]
 - Violation: Suspense fallback header shell did not mirror the real header's row structure. Fallback was one row (109px) while the real header stacks to two below 640px (160px), so the fallback->real swap shifted content down 51px on cold first paint (15px at >=640px).
@@ -491,11 +483,6 @@
   - Rule: Automated code rewrites must preserve comments via full AST traversal. The implementation used getText(), which excludes leading trivia (comments). When rewriting mock statements or factory property definitions that bear explanatory comments, the comments were silently dropped.
   - Context: Orchestrator caught the missing comments during verification. Fixed by restoring trimmed comments from git HEAD followed by manual review of all removed comment lines. Ensured all factory properties that describe mocking intent now carry their comments through the codemod pipeline.
 
-## [feat/core-detectors-consume Round 1 | feat/core-detectors-consume | 2026-09-28]
-- Violation: skill template criterion that is always true under its own trigger (close above MA120/200 on a new 52-week high) made a trend branch unreachable
-  - Rule: MISTAKES Predictability — conditions must be falsifiable under the trigger that injects the skill
-  - Context: Removed the criterion; neutral branch now "MA(200) falling or stack not met".
-
 ## [claude/funny-turing-9cgfid Round 3 | exception-safety refactoring + line-number regression | 2026-09-28]
 - Violation: Self-caught during implementation — edit shifted AnalysisPanel line numbers, breaking a line-number-keyed exception in src/__tests__/guards/controlBorderTokenGuard.test.ts before commit.
   - Rule: Line-number references in code/tests are fragile after refactoring. After non-trivial edits, run guards before committing to catch such breakages.
@@ -510,35 +497,11 @@
   - Rule: Routes with intentional, documented side effects (handoff/start GET cookie in auth flows) use `/* @react-doctor-disable */` marker to suppress analyzer findings. When touching the file during cleanup, apply the existing convention inline rather than resolving the marked violations.
   - Context: Applied `/* @react-doctor-disable */` comment to the cookie side-effect code in handoff and start routes, matching the pattern used in sibling auth routes. Findings suppressed while preserving intended behavior.
 
-- Violation: claude-review suggestion — `let` + `if` reassignment pattern in intlFormatCache (MISTAKES.md §14)
-  - Rule: MISTAKES.md Coding Paradigm §14 — prefer ternary/conditional expressions (const) over imperative reassignment (let)
-  - Context: Code already documented in MISTAKES.md as recurring pattern; no fix needed in this round.
-
-- Violation: claude-review suggestion — inline options object type in truncate (MISTAKES.md §5.2)
-  - Rule: MISTAKES.md §5.2 — inline type annotations must be extracted to named type aliases
-  - Context: Code already documented in MISTAKES.md as recurring pattern; no fix needed in this round.
-
 - Violation: claude-review suggestion — test-reset method exposed on production interface in singleFlight; repo convention requires separate `__reset*ForTests` exports
   - Rule: (new) Test utility methods must not be exposed on production interfaces. Separate `__reset*ForTests` exports (e.g., `__resetForTests`, `__resetCacheForTests`) allow tests to reset internal state without polluting the public API surface.
   - Context: The singleFlight utility exports a public `reset()` method on its production interface. Should refactor to separate `__resetForTests` export and remove reset from production interface, following the repo's established pattern.
 
 ## [PR #892 Round 2 | feat/navigation-pending-ui | 2026-09-29]
-- Violation: NavigationPendingProvider context value and startNavigation function recreated on every render (new object identity each render)
-  - Rule: MISTAKES.md Coding Paradigm §10 — derived constants recreated on every render without memoization
-  - Context: Wrapped both context value object and startNavigation callback with useMemo/useCallback respectively, enabling child useContext subscriptions to skip unnecessary re-renders.
-
-- Violation: LocaleLink's onNavigate wrapper used `let cancelled` closure mutation pattern (`cancelled = true`) to signal cancellation
-  - Rule: MISTAKES.md Coding Paradigm §5 — array/object mutation via direct assignment; MISTAKES.md §22 — missing unit tests for critical paths
-  - Context: Replaced mutation with a callerCancelled() helper function; added missing tests for onNavigate delegation path and cancellation behavior.
-
-- Violation: useUserTier hook carried redundant `!isError` guard alongside `isPending` check
-  - Rule: MISTAKES.md Coding Paradigm §4 — leaving logic that has no effect; dead code filtering/checking
-  - Context: Removed redundant `!isError` condition; `isPending` check already guards the error state.
-
-- Violation: SymbolTabs pending-highlight branch lacked unit tests
-  - Rule: MISTAKES.md Components §22 — incomplete test coverage for conditional branches
-  - Context: Added unit tests asserting pending highlight renders when navigation is in-flight to the target timeframe.
-
 - Violation: useTimeframeChange pending state cleared only when target matched current value; forced mid-switch timeframe change (logout → free tier) left spinner stuck indefinitely
   - Rule: (new) State reset paths must account for ALL ways a state machine can transition, not only the intended path. Forced transitions (policy-driven, tier-dependent) are as valid as user-initiated changes.
   - Context: Changed pending clear condition from equality check to range test: pending cleared whenever timeframe leaves its starting value (now handles logout→free forced change).
@@ -572,9 +535,6 @@
 - Violation: Time-budget comment claimed a cron unit doing ingest (capped) + analysis (8) + sequential translations (3) could fit 45s timeout; real worst case ~65-70s
   - Rule: (new) when a unit chains several capped LLM steps under a timeout, budget = sum of each step's worst case; document it next to the caps
   - Context: lowered caps (4, 1) and corrected the budget math in comments
-- Violation: Hard-coded count ("eleven targets") in comment derived from config
-  - Rule: MISTAKES.md §15 — magic numbers in comments must reference the constant
-  - Context: replaced with reference to config length
 - Status (Round 2): APPROVED (zero findings)
 
 ## [PR #900 Round 1 | claude/magical-sagan-56eoov-hub-data | 2026-10-01]
@@ -629,9 +589,6 @@
 - Status (R2): APPROVED
 
 ## [PR #908 claude-review | feat/overlay-outcome-levels | 2026-10-02]
-- Violation (BLOCKER): ChartOverlayMenu colour dot used `style={{ backgroundColor: color }}` — inline colour computation, MISTAKES.md Coding Paradigm #19
-  - Rule: Dynamic colours go through a CSS custom property (`style={{ '--x': v } as CSSProperties}`) + Tailwind `bg-[var(--x)]`, never an inline `backgroundColor`.
-  - Context: dot now sets `--item-color` with `bg-[var(--item-color)]`; menu test asserts `style.getPropertyValue('--item-color')`.
 - Violation (SUGGESTION): panel width `w-60` and axis offset `lg:right-60` were coupled only implicitly
   - Rule: Values that must change together live in one place (named constants + comment), not as scattered literals.
   - Context: `PANEL_WIDTH_CLASS` / `PANEL_AXIS_OFFSET_CLASS` constants in ChartOverlayMenu.tsx with a coupling comment.
@@ -660,9 +617,6 @@
 - Violation (R1 RECOMMENDED, fixed): ma-cycle.md digest was edited without updating the full body it summarizes, so digest_hash did not change and digest-verify could not detect the drift between summary and body
   - Rule: (new) When editing a skill digest (summary text for prompt injection), the full body (the authoritative rule) must be updated in the same change. If digest and body drift, digest-verify cannot catch the divergence and prompt injection uses stale summary.
   - Context: Synced digest body with current rule text and re-ran `yarn skills:digest-update` to recompute digest_hash; digest-verify now reports all 98 skill files valid.
-- Violation (R1 REQUIRED, fixed): gap-analysis.md and ma-cycle.md pointed only at prompt lines (`- Gap (last bar vs previous bar):`, `- MA cycle (MA5/MA20/MA60):`) that the pinned core 2.7.0 does not emit, and removed the old fallback comparison
-  - Rule: MISTAKES Skills #1 — reference only lines the consumed core renders; keep a fallback until the core bump lands
-  - Context: "use the computed line when present, otherwise the old bar/MA comparison" in both body and digest.
 - Status (R2): APPROVED (zero findings)
 
 ## [perf/redis-cache-compression Round 1 | perf/redis-cache-compression | 2026-10-03]
@@ -705,6 +659,25 @@
 
 Round 4: approved
 
+## [chore/local-dev-db-and-tunnel Round 1 | chore/local-dev-db-and-tunnel | 2026-10-03]
+- Violation (R1 REQUIRED, fixed): docs made the local Docker DB the default for the running app while the app's runtime driver (neon-http) could not connect to it
+  - Rule: (new) A config/doc default must be usable by every consumer that reads it at the time it merges; state ordering dependencies on other PRs explicitly
+  - Context: .env.example and DEPLOY_RUNBOOK now say `yarn dev` needs the postgres-js driver PR; PR merges after it.
+- Violation (R1 recommended, fixed): safety assertions in a script test matched a comment instead of the code line, and PII exclusions without FKs were not pinned
+  - Rule: (new) Tests that pin a script's safety property must strip comments (or anchor on code) and pin the full expected list independently of derived checks
+  - Context: seed test asserts the real `PGOPTIONS` line and an explicit PII table list; mutation-checked.
+- Violation (R1 recommended, fixed): six write scripts targeted `DIRECT_DATABASE_URL || DATABASE_URL` without the remote-write guard while docs claimed the guard covered `yarn db:*`
+  - Rule: (new) Every script that writes to a DB resolved from env must call the remote-write guard at entry; docs must not claim coverage the code doesn't have
+  - Context: `guardRemoteWrite(url, op)` added and called first in all six; spawn-based test mutation-checked 6/6.
+- Status (R2): APPROVED (zero findings)
+
+## [PR #919 Claude review | chore/local-dev-db-and-tunnel | 2026-10-03]
+- Violation (suggestion, fixed): the same tunnel-port literal lived in three files with only comments keeping them in sync
+  - Rule: (new) A constant duplicated across languages/files (TS + shell) needs a test that parses every copy and asserts equality
+  - Context: `scripts/__tests__/db-tunnel-port.test.ts` reads dbTarget.ts, db-tunnel.sh and the seed script; mutation-checked.
+- Violation (suggestion, fixed): scripts relied on `databaseUrl!` after a top-level check instead of a narrowing helper
+  - Rule: (new) Replace post-check non-null assertions with a helper that returns the narrowed type (or throws)
+  - Context: `requireDatabaseUrl()` in dbTarget.ts used by the seed/backfill scripts.
 ## [refactor/db-postgres-js-driver Rounds 1-2 | refactor/db-postgres-js-driver | 2026-10-03]
 - Violation (R1 REQUIRED, fixed): swapping an HTTPS-based DB driver for postgres-js silently downgraded TLS — `sslmode=require` means encrypt-without-verify in postgres-js
   - Rule: (new) When replacing a transport/driver, compare the security semantics of every connection option (sslmode, cert verification) against the old transport and keep or raise them; prove with a negative test (self-signed server must be rejected)

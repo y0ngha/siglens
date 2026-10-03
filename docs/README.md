@@ -14,6 +14,7 @@
 
 ### 운영 런북
 - [DEPLOY_RUNBOOK.md](./architecture/DEPLOY_RUNBOOK.md) — **운영 문제 시 첫 진입점.** 배포·롤백, 알람 대응, 증상별 트리아지, 부트스트랩 체크리스트
+- 로컬 개발 DB(Docker, 포트 5435)·운영 DB 터널(`yarn db:tunnel`) — [DEPLOY_RUNBOOK.md](./architecture/DEPLOY_RUNBOOK.md) "로컬 `.env.local`과 운영 DB" 절
 - [ISR_CACHE_HANDLER.md](./architecture/ISR_CACHE_HANDLER.md) — S3 ISR 캐시 핸들러, 킬 스위치, 태그 스토어, 수동 캐시 정리
 - [ISR_REVALIDATE.md](./architecture/ISR_REVALIDATE.md) — ISR revalidate 정책(페이지별 값·근거, Fast Origin Transfer 절감)
 - [CDN_CACHING.md](./architecture/CDN_CACHING.md) — Cloudflare 캐싱·WAF·봇 보호

@@ -1,10 +1,12 @@
-import { afterEach } from 'vitest';
+import { afterEach, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
+    DB_TUNNEL_PORT,
     assertRemoteWriteAllowed,
     describeTarget,
     formatTarget,
+    guardRemoteWrite,
 } from '../../../../../db/scripts/lib/dbTarget';
 
 const ORIGINAL = process.env.ALLOW_REMOTE_DB_WRITE;
@@ -46,6 +48,99 @@ describe('describeTarget', () => {
         const rendered = formatTarget(describeTarget(url));
         expect(rendered).not.toContain('sup3rs3cret');
         expect(rendered).not.toContain('myuser');
+    });
+});
+
+/**
+ * 운영 RDS는 private이라 SSM 포트포워딩으로만 닿고, 그 터널은 localhost에 열린다.
+ * 호스트 이름만 보면 로컬 Docker와 똑같아서, 포트로 구별하지 않으면 운영 터널이
+ * 쓰기 가드를 통째로 연다.
+ */
+describe('describeTarget — 운영 터널 포트', () => {
+    it('localhost:5435 (로컬 개발 DB) 는 로컬이다', () => {
+        const target = describeTarget(
+            'postgres://siglens:siglens@localhost:5435/siglens_dev'
+        );
+        expect(target.isLocal).toBe(true);
+        expect(target.viaTunnel).toBe(false);
+    });
+
+    it.each([
+        'postgres://u:p@localhost:6543/db',
+        'postgres://u:p@127.0.0.1:6543/db',
+        'postgres://u:p@[::1]:6543/db',
+        'postgres://u:p@host.docker.internal:6543/db',
+    ])('%s 는 호스트가 로컬이어도 원격(운영 터널)이다', url => {
+        const target = describeTarget(url);
+        expect(target.isLocal).toBe(false);
+        expect(target.viaTunnel).toBe(true);
+    });
+
+    it('포트 생략(기본 5432)은 로컬이다', () => {
+        expect(describeTarget('postgres://u:p@localhost/db').isLocal).toBe(
+            true
+        );
+    });
+
+    it('원격 호스트는 포트와 무관하게 원격이다', () => {
+        const target = describeTarget(
+            'postgres://u:p@siglens.abc.ap-northeast-2.rds.amazonaws.com:5432/db'
+        );
+        expect(target.isLocal).toBe(false);
+        expect(target.viaTunnel).toBe(false);
+    });
+
+    it('formatTarget이 터널 경유 운영임을 밝힌다', () => {
+        const rendered = formatTarget(
+            describeTarget('postgres://u:p@localhost:6543/siglens')
+        );
+        expect(rendered).toContain('REMOTE');
+        expect(rendered).toContain('PRODUCTION');
+    });
+
+    it('터널 URL로는 ALLOW_REMOTE_DB_WRITE=1 없이 쓸 수 없다', () => {
+        delete process.env.ALLOW_REMOTE_DB_WRITE;
+        const target = describeTarget('postgres://u:p@localhost:6543/siglens');
+        expect(() => assertRemoteWriteAllowed(target, 'migrate')).toThrow(
+            /거부: 'migrate'/
+        );
+    });
+});
+
+describe('guardRemoteWrite', () => {
+    it('로컬 대상은 통과하고 대상을 돌려준다', () => {
+        const target = guardRemoteWrite(
+            'postgres://u:p@localhost:5435/siglens_dev',
+            'seed'
+        );
+        expect(target.isLocal).toBe(true);
+    });
+
+    it('대상을 찍는다 — 자격증명은 빼고', () => {
+        const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+        try {
+            guardRemoteWrite('postgres://u:sup3rs3cret@localhost/db', 'seed');
+            const printed = log.mock.calls.map(c => String(c[0])).join('\n');
+            expect(printed).toContain('[db] target: localhost/db (local)');
+            expect(printed).not.toContain('sup3rs3cret');
+        } finally {
+            log.mockRestore();
+        }
+    });
+
+    it('원격(운영 터널 포함)은 ALLOW_REMOTE_DB_WRITE=1 없이 거부한다', () => {
+        delete process.env.ALLOW_REMOTE_DB_WRITE;
+        const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+        try {
+            expect(() =>
+                guardRemoteWrite('postgres://u:p@localhost:6543/db', 'seed')
+            ).toThrow(/거부: 'seed'/);
+            expect(() =>
+                guardRemoteWrite('postgres://u:p@ep-x.neon.tech/db', 'seed')
+            ).toThrow(/ep-x\.neon\.tech/);
+        } finally {
+            log.mockRestore();
+        }
     });
 });
 
