@@ -48,8 +48,7 @@ vi.mock('@/entities/ticker/lib/koreanTranslator', () => ({
 vi.mock('@/entities/ticker/lib/cacheKeys', () => ({
     buildTickerSearchCacheKey: vi.fn((q: string) => `search:${q}`),
     TICKER_SEARCH_CACHE_TTL: 300,
-    buildAssetInfoCacheKey: vi.fn((s: string) => `asset:${s}`),
-    ASSET_INFO_CACHE_TTL_WITH_KOREAN: 86400,
+    buildAssetInfoProvisionalCacheKey: vi.fn((s: string) => `asset:${s}`),
     ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN: 43200,
 }));
 
