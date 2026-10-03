@@ -40,7 +40,8 @@ export function buildTickerSearchCacheKey(query: string): string {
  * 예전 `asset-info:<SYM>`은 번역 완료분을 1년 TTL로 굳힌 DB 사본이었고 운영 Redis에
  * 32,667개가 남아 있다. 같은 키를 임시 항목에 재사용하면 그 옛 값이 임시 항목으로
  * 읽히므로(DB 미스 뒤에 읽는다 해도 옛 이름이 1년 동안 나간다) 키를 분리했다. 옛 키는
- * 아무도 읽지 않는 고아가 되며, 배포 뒤 일회성 스크립트로 지운다.
+ * 아무도 읽지 않는 고아가 되며, 배포 뒤 일회성 스크립트로 지운다. (32,667은 2026-10
+ * 운영 Redis SCAN + PTTL 전수 집계 — PR #915 설명.)
  */
 export function buildAssetInfoProvisionalCacheKey(symbol: string): string {
     return `asset-info:provisional:${symbol.toUpperCase()}`;

@@ -26,7 +26,7 @@ import {
     getFmpCryptoListMap,
     fmpCryptoMembership,
     FMP_CRYPTO_LIST_MEMORY_TTL_MS,
-    __resetFmpCryptoListMemoForTests,
+    _resetFmpCryptoListMemoForTest,
 } from '../../lib/fmpCryptoMembership';
 import { CRYPTO_FMP_LIST_CACHE_KEY } from '../../lib/cacheKeys';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
@@ -34,7 +34,7 @@ import { SECONDS_PER_DAY } from '@/shared/config/time';
 describe('getFmpCryptoListMap', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        __resetFmpCryptoListMemoForTests();
+        _resetFmpCryptoListMemoForTest();
     });
 
     it('returns a Map built from the cached FMP list record', async () => {
@@ -112,7 +112,7 @@ describe('getFmpCryptoListMap', () => {
 describe('fmpCryptoMembership', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        __resetFmpCryptoListMemoForTests();
+        _resetFmpCryptoListMemoForTest();
     });
 
     it('returns the entry for a known symbol (case-insensitive input)', async () => {
@@ -170,7 +170,7 @@ describe('fmpCryptoMembership', () => {
 describe('getFmpCryptoListMap의 인스턴스 메모리(L1) 캐시는', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        __resetFmpCryptoListMemoForTests();
+        _resetFmpCryptoListMemoForTest();
     });
 
     afterEach(() => {

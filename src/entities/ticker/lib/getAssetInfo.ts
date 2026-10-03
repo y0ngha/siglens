@@ -164,19 +164,23 @@ async function persistOrCacheProvisional(
     fmpSymbol: string,
     cache: CacheProvider | null
 ): Promise<void> {
-    let persisted = false;
-    try {
-        persisted = await persistTranslation(info, fmpSymbol);
-    } finally {
-        if (!persisted) {
-            setCacheBestEffort(
-                cache,
-                buildAssetInfoProvisionalCacheKey(info.symbol),
-                info,
-                ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN
-            );
-        }
+    const outcome = await persistTranslation(info, fmpSymbol).then(
+        persisted => ({ persisted, rejected: false as const }),
+        (error: unknown) => ({
+            persisted: false,
+            rejected: true as const,
+            error,
+        })
+    );
+    if (!outcome.persisted) {
+        setCacheBestEffort(
+            cache,
+            buildAssetInfoProvisionalCacheKey(info.symbol),
+            info,
+            ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN
+        );
     }
+    if (outcome.rejected) throw outcome.error;
 }
 
 /** Subset of an FMP search result needed when persisting a translation. */
@@ -328,7 +332,8 @@ export async function getAssetInfo(symbol: string): Promise<AssetInfo | null> {
  * 전부 1년 TTL이었고 DB에는 `asset_translations` 28,499행 + `crypto_assets`
  * 4,785행이 있어 Redis는 DB의 중복 사본이었다. 그 GET이 앱 Redis 명령의 14%였고
  * Upstash는 명령 수로 과금한다. DB가 같은 AZ의 RDS(~1ms)로 옮겨 가므로 DB를 바로
- * 읽는 쪽이 더 싸고 빠르다.
+ * 읽는 쪽이 더 싸고 빠르다. (수치 근거와 재측정 방법: PR #915 설명 — 키 수·TTL은 SCAN +
+ * PTTL 전수 집계, 명령 비중은 운영 Upstash `MONITOR` 2분 표본을 클라이언트 IP별로 집계.)
  *
  * 크립토 검사는 `asset_translations`보다 앞에 둔다 — 분류 우선순위를 기존과 같게
  * 유지하기 위해서다. 이 순서 때문에 크립토가 아닌 모든 호출이 `fmpCryptoMembership`을

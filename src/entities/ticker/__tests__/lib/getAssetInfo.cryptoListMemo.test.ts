@@ -43,12 +43,12 @@ vi.mock('../../lib/cryptoAssetStore', () => ({
 }));
 
 import { CRYPTO_FMP_LIST_CACHE_KEY } from '../../lib/cacheKeys';
-import { __resetFmpCryptoListMemoForTests } from '../../lib/fmpCryptoMembership';
+import { _resetFmpCryptoListMemoForTest } from '../../lib/fmpCryptoMembership';
 import { getAssetInfo } from '../../lib/getAssetInfo';
 
 describe('getAssetInfo — FMP 크립토 목록은 호출마다 Redis에서 받지 않는다', () => {
     beforeEach(() => {
-        __resetFmpCryptoListMemoForTests();
+        _resetFmpCryptoListMemoForTest();
         getOrSetCacheMock.mockReset();
         getOrSetCacheMock.mockResolvedValue({ BTCUSD: { name: 'Bitcoin' } });
         createCacheProviderMock.mockReset();
