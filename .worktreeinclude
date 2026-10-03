@@ -5,12 +5,6 @@ node_modules
 .husky/_
 .yarn/install-state.gz
 .env.local
-# 로컬 전용 docs(.gitignore 참고). docs/ 자체는 추적 폴더가 있어 늘 존재하므로
-# 하위 폴더 단위로 적어야 post-checkout 훅의 "이미 있으면 건너뜀"에 걸리지 않는다.
-docs/README.md
-docs/architecture
-docs/reference
-docs/qa
-docs/workflows
-docs/superpowers
-docs/__agents_only__
+# 로컬 전용 docs(.gitignore 참고). docs/는 추적 폴더(product·conventions) 때문에
+# 체크아웃 직후에도 존재하므로, post-checkout 훅이 없는 파일만 채워 넣는다.
+docs
