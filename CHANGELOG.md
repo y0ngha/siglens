@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.96.1](https://github.com/y0ngha/siglens/compare/v0.96.0...v0.96.1) (2026-10-03)
+
+### Bug Fixes
+
+* v0.96.0 ISR 재생성 500 — 약관 DB 조회를 캐시 안으로, SSR miss 표시를 전역 fetch 밖으로 ([#925](https://github.com/y0ngha/siglens/issues/925)) ([6871986](https://github.com/y0ngha/siglens/commit/68719867f46014388ff87bdc4626525584fbd78a)), closes [#920](https://github.com/y0ngha/siglens/issues/920)
+
 # [0.96.0](https://github.com/y0ngha/siglens/compare/v0.95.1...v0.96.0) (2026-10-03)
 
 ### Bug Fixes
