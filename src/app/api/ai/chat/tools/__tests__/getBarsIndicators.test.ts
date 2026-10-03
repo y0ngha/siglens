@@ -599,8 +599,6 @@ describe('getBarsIndicatorsTool', () => {
         expect(snapshot!.bullish.length).toBeGreaterThan(0);
         expect(r.confluence).toEqual({
             score: scoreConfluence(snapshot),
-            entryRuleMet: snapshot!.entryTrigger,
-            exitRuleMet: snapshot!.exitTrigger,
             bullish: snapshot!.bullish,
             bearish: snapshot!.bearish,
             freshBullish: snapshot!.freshBullish,

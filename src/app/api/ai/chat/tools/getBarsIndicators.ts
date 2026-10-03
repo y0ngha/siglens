@@ -242,11 +242,12 @@ function latestCandlePatterns(
     }));
 }
 
-/** Compact view of core's `ConfluenceSnapshot` — drops `timeframe`/`barTime`/`close` (already in the output) and `params`. */
+/**
+ * Compact view of core's `ConfluenceSnapshot` — drops `timeframe`/`barTime`/`close`
+ * (already in the output), `params`, and the `entryTrigger`/`exitTrigger` rule states.
+ */
 interface BarsConfluenceView {
     score: number;
-    entryRuleMet: boolean;
-    exitRuleMet: boolean;
     bullish: string[];
     bearish: string[];
     freshBullish: string[];
@@ -264,11 +265,16 @@ interface BarsConfluenceView {
  * (docs/superpowers/specs/2026-09-25-mean-reversion-evidence-design.md).
  *
  * `htfBars` (loaded once for `higherTimeframe`, §3.1) is threaded into core's
- * own HTF alignment gate when available, so `entryRuleMet` matches the
+ * own HTF alignment gate when available, so the score's 92 snap matches the
  * trader's gated rule instead of always omitting that clause; `htfGate`
  * reports which happened rather than a hardcoded `'off'` (spec B3).
- * `entryRuleMet`/`exitRuleMet` were named `entryTrigger`/`exitTrigger` —
- * renamed so prose never reads them as a buy/sell instruction (spec §3.1).
+ *
+ * The rule states themselves are not sent. They went out first as
+ * `entryTrigger`/`exitTrigger`, then renamed `entryRuleMet`/`exitRuleMet` so
+ * prose would not read them as a buy/sell instruction (spec §3.1) — and the
+ * model still wrote "매수, 매도 규칙은 모두 미충족" (2026-10-03). A retired rule
+ * with no measured edge is not worth a field the model can misname; when it
+ * holds, `scoreConfluence` already snaps the score to 92/8, which carries it.
  *
  * `null` when core abstains (fewer than `CONFLUENCE_MIN_BARS` bars or a
  * non-finite last close) — an abstention, not a neutral 50.
@@ -288,8 +294,6 @@ function confluenceView(
     if (!snapshot) return null;
     return {
         score: scoreConfluence(snapshot),
-        entryRuleMet: snapshot.entryTrigger,
-        exitRuleMet: snapshot.exitTrigger,
         bullish: snapshot.bullish,
         bearish: snapshot.bearish,
         freshBullish: snapshot.freshBullish,
