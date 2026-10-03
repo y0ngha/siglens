@@ -92,18 +92,13 @@ function setCacheBestEffort(
 }
 
 /**
- * Neon wraps the originating error as `cause.sourceError`. We unwrap it to
- * detect AbortError, which fires on every navigation when Next.js cancels
- * in-flight requests — this is expected behaviour and should not be logged.
+ * Next.js가 네비게이션마다 진행 중 요청을 취소할 때 나는 AbortError는 예상된
+ * 동작이라 로그를 남기지 않는다. DB 드라이버(postgres-js)는 TCP라 fetch의
+ * AbortSignal을 거치지 않으므로 `cause.sourceError`로 한 겹 감싸 던지던 옛 Neon HTTP
+ * 형태는 더 이상 없다 — 직접 던져진 AbortError만 본다.
  */
 function isAbortError(e: unknown): boolean {
-    if (!(e instanceof Error)) return false;
-    if (e.name === 'AbortError') return true;
-    const neonError = (e as Error & { cause?: unknown }).cause;
-    if (!(neonError instanceof Error)) return false;
-    const sourceError = (neonError as Error & { sourceError?: unknown })
-        .sourceError;
-    return sourceError instanceof Error && sourceError.name === 'AbortError';
+    return e instanceof Error && e.name === 'AbortError';
 }
 
 async function readFromDatabase(symbol: string): Promise<AssetInfo | null> {

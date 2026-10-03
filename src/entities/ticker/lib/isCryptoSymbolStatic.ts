@@ -3,9 +3,9 @@ import { isCryptoSymbol } from './cryptoAssetStore';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 /**
- * ISR static-safe crypto membership predicate. Wraps `isCryptoSymbol` (raw
- * Neon POST fetch) in Next.js `unstable_cache` so ISR cold-gen does not
- * encounter a no-store fetch that throws `DYNAMIC_SERVER_USAGE`.
+ * ISR static-safe crypto membership predicate. Wraps `isCryptoSymbol` (a DB
+ * read that signals `unstable_noStore` via the drizzle logger) in Next.js
+ * `unstable_cache` so ISR cold-gen does not throw `DYNAMIC_SERVER_USAGE`.
  *
  * Why wrap here rather than change `isCryptoSymbol` itself:
  * `isCryptoSymbol` is called on hot paths (getAssetInfo, search) where the

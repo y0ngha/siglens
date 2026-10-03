@@ -60,7 +60,7 @@ export class NewsIngestWriteError extends Error {
 /**
  * 한 심볼의 기사 upsert 동시 실행 상한.
  *
- * `upsertNewsItem`은 기사 1건당 Neon **HTTP** 쿼리 1회다. 사람 방문 경로에선
+ * `upsertNewsItem`은 기사 1건당 DB 쿼리 1회다. 사람 방문 경로에선
  * 한 번에 한 심볼이라 무제한 fan-out이 문제되지 않았지만, cron은 심볼을
  * `SYMBOL_CONCURRENCY`(3)개씩 동시에 돌리므로 상한이 없으면 (기사 수 × 3)만큼의
  * 동시 요청이 배치 데드라인을 갉아먹는다(감사 F5).

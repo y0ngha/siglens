@@ -1,4 +1,4 @@
-import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
+import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { agreements } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
@@ -35,7 +35,7 @@ export class DrizzleAgreementRepository implements AgreementRepository {
                         agreedAt: input.agreedAt,
                     }))
                 ),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
     }
 }

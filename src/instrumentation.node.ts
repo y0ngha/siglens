@@ -6,6 +6,7 @@
  * 실행되지 않아도) edge 컴파일 대상에 포함돼 빌드 경고가 발생한다. 이 모듈을 Node
  * 분기에서만 `await import`해 edge 번들에서 완전히 배제한다.
  */
+import { endDatabaseClient } from '@/shared/db/client';
 import {
     drainBackgroundTasks,
     stopAcceptingBackgroundTasks,
@@ -43,6 +44,16 @@ const SHUTDOWN_DRAIN_DEADLINE_MS = 180_000;
  * 시간을 준다 — 자세한 근거는 아래 `.finally` 주석 참고.
  */
 const POST_DRAIN_GRACE_MS = 1_000;
+
+/**
+ * drain 뒤 DB 풀을 닫을 때 진행 중 쿼리를 기다리는 최대 시간(초).
+ *
+ * drain이 모든 요청·백그라운드 작업을 이미 기다렸으므로 통상 남은 쿼리가 없어 즉시 끝난다.
+ * 풀 종료는 아래 유예(`POST_DRAIN_GRACE_MS`)와 **병행**으로 돌려 둘 중 긴 쪽만큼만 더한다 —
+ * 최악도 180 + 5 = 185s로 `docker stop -t 185s`에 맞물리고, 넘어가면 SIGKILL이 같은 결과
+ * (소켓 정리)를 낸다. 즉 best-effort다.
+ */
+const DB_POOL_END_TIMEOUT_SECONDS = 5;
 
 /** 시그널당 핸들러 중복 등록 방지 가드(같은 프로세스에서 register 재호출 대비). */
 let shutdownHandlersRegistered = false;
@@ -85,9 +96,18 @@ export function registerShutdownHandlers(): void {
                  * 짧은 유예로 그 in-flight write를 흘려보낸다. drain 예산(180s) 대비
                  * 무시할 수 있는 비용이고, docker stop -t 185s 안에 충분히 들어간다.
                  */
+                const dbPoolClosed = endDatabaseClient(
+                    DB_POOL_END_TIMEOUT_SECONDS
+                ).catch(err => {
+                    console.warn('[instrumentation] db pool end error:', err);
+                });
                 setTimeout(() => {
-                    console.log('[instrumentation] drain complete — exiting');
-                    process.exit(0);
+                    void dbPoolClosed.finally(() => {
+                        console.log(
+                            '[instrumentation] drain complete — exiting'
+                        );
+                        process.exit(0);
+                    });
                 }, POST_DRAIN_GRACE_MS);
             });
     };

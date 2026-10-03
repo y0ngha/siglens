@@ -175,10 +175,10 @@ describe('DrizzleTermsRepository', () => {
         });
     });
 
-    // upsertFromSeed 가 NEON_TRANSIENT_RETRY 정책을 실제로 통과시키는지 확인하는
-    // smoke 테스트. withRetry/isNeonTransientError 자체 동작은 각자의 단위
+    // upsertFromSeed 가 DB_TRANSIENT_RETRY 정책을 실제로 통과시키는지 확인하는
+    // smoke 테스트. withRetry/isTransientDbError 자체 동작은 각자의 단위
     // 테스트에서 검증하므로 여기서는 "정책이 wire-up 됐다"만 보장한다.
-    describe('Neon transient retry wire-up', () => {
+    describe('DB transient retry wire-up', () => {
         const seedInput = {
             kind: 'privacy' as TermsKind,
             version: 1,
@@ -186,14 +186,14 @@ describe('DrizzleTermsRepository', () => {
             body: '## body',
         };
 
-        it('transient NeonDbError 가 발생하면 재시도해 결국 성공한다', async () => {
-            const neonTransient = Object.assign(
-                new Error('Error connecting to database: fetch failed'),
-                { name: 'NeonDbError' }
+        it('transient 연결 에러(CONNECTION_CLOSED)가 발생하면 재시도해 결국 성공한다', async () => {
+            const dbTransient = Object.assign(
+                new Error('write CONNECTION_CLOSED db.example:5432'),
+                { code: 'CONNECTION_CLOSED' }
             );
             const returning = vi
                 .fn()
-                .mockRejectedValueOnce(neonTransient)
+                .mockRejectedValueOnce(dbTransient)
                 .mockResolvedValueOnce([{ id: 'terms-1' }]);
             const onConflictDoNothing = vi.fn(() => ({ returning }));
             const values = vi.fn(() => ({ onConflictDoNothing }));
@@ -213,7 +213,7 @@ describe('DrizzleTermsRepository', () => {
                 new Error(
                     'duplicate key value violates unique constraint "terms_kind_version_unique"'
                 ),
-                { name: 'NeonDbError' }
+                { name: 'PostgresError', code: '23505' }
             );
             const returning = vi.fn().mockRejectedValueOnce(constraintError);
             const onConflictDoNothing = vi.fn(() => ({ returning }));

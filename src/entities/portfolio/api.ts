@@ -1,5 +1,5 @@
 import { and, eq, sql } from 'drizzle-orm';
-import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
+import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { portfolioHoldings } from '@/shared/db/schema';
 import type {
     PortfolioHoldingRecord,
@@ -23,11 +23,11 @@ const columns = {
 
 /**
  * Drizzle ORM implementation of {@link PortfolioHoldingRepository} backed by
- * Neon PostgreSQL. One row per (userId, symbol); `upsert` relies on the
+ * PostgreSQL. One row per (userId, symbol); `upsert` relies on the
  * `portfolio_holdings_user_symbol_uidx` unique index to merge repeat
  * submissions for the same symbol instead of accumulating duplicate rows.
  *
- * Every method wraps its query in `withRetry(NEON_TRANSIENT_RETRY)` — retry
+ * Every method wraps its query in `withRetry(DB_TRANSIENT_RETRY)` — retry
  * is a repository-layer concern, applied uniformly here rather than
  * scattered across individual action call sites.
  */
@@ -41,7 +41,7 @@ export class DrizzlePortfolioRepository implements PortfolioHoldingRepository {
                     .select(columns)
                     .from(portfolioHoldings)
                     .where(eq(portfolioHoldings.userId, userId)),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
     }
 
@@ -68,7 +68,7 @@ export class DrizzlePortfolioRepository implements PortfolioHoldingRepository {
                         )
                     )
                     .limit(1),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
         return row ?? null;
     }
@@ -109,7 +109,7 @@ export class DrizzlePortfolioRepository implements PortfolioHoldingRepository {
                         },
                     })
                     .returning(columns),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
 
         if (row === undefined) {
@@ -133,7 +133,7 @@ export class DrizzlePortfolioRepository implements PortfolioHoldingRepository {
                         )
                     )
                     .returning({ id: portfolioHoldings.id }),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
 
         return deleted.length > 0;
