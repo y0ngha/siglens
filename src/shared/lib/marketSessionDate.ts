@@ -3,6 +3,7 @@ import {
     MINUTES_PER_HOUR,
     MS_PER_DAY,
     MS_PER_MINUTE,
+    MS_PER_SECOND,
 } from '@/shared/config/time';
 import { cachedDateTimeFormat } from '@/shared/lib/intlFormatCache';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
@@ -120,6 +121,13 @@ function previousIsoDate(isoDate: string): string {
     );
 }
 
+/** `YYYY-MM-DD`의 하루 뒤 날짜. */
+function nextIsoDate(isoDate: string): string {
+    return toUtcIsoDate(
+        new Date(Date.parse(`${isoDate}T00:00:00Z`) + MS_PER_DAY)
+    );
+}
+
 /** `YYYY-MM-DD`의 요일(0=Sun). ISO 날짜를 UTC 자정으로 읽으므로 존 무관하게 정확. */
 function isoWeekday(isoDate: string): number {
     return new Date(`${isoDate}T00:00:00Z`).getUTCDay();
@@ -222,4 +230,48 @@ export function lastClosedSessionCloseUtc(
     const date = lastClosedSessionDate(spec, now, bufferMinutes);
     if (spec.kind === 'always-open') return new Date(`${date}T00:00:00Z`);
     return zonedWallClockToUtc(date, closeMinuteOn(spec, date), spec.timeZone);
+}
+
+/**
+ * {@link lastClosedSessionDate}가 지금 값에서 **다음 세션 날짜로 넘어가기까지** 남은 초.
+ *
+ * 세션 날짜를 키에 넣은 캐시(`bars:eodhist:<SYM>:<lastClosed>`)는 날짜가 넘어가는 순간
+ * 다시 읽히지 않는다. 그런 키의 TTL을 고정값(예: 7일)으로 두면 넘어간 뒤에도 남아 같은
+ * 종목의 옛 날짜 키가 TTL만큼 쌓이고, 짧게 고정하면 주말·연휴처럼 날짜가 오래 안 바뀌는
+ * 구간에 키가 먼저 사라져 같은 데이터를 다시 받는다. 이 함수로 "넘어가는 시각까지"를
+ * 재면 둘 다 피한다.
+ *
+ * 판정은 `lastClosedSessionDate`와 같은 규칙(주말·휴장일·반장·DST·발행 버퍼)을 쓴다 —
+ * 다음 거래일의 마감 + 버퍼가 곧 롤 시각이다. 24/7 시장은 다음 UTC 자정이다.
+ * 거래일을 `MAX_REWIND_DAYS` 안에서 못 찾으면(잘못된 스펙) 그 기간을 돌려준다.
+ */
+export function secondsUntilSessionRoll(
+    spec: MarketSessionSpec,
+    now: Date,
+    bufferMinutes: number = EOD_PUBLISH_BUFFER_MINUTES
+): number {
+    const secondsUntil = (atMs: number): number =>
+        Math.ceil((atMs - now.getTime()) / MS_PER_SECOND);
+
+    if (spec.kind === 'always-open') {
+        return secondsUntil(
+            Date.parse(`${toUtcIsoDate(now)}T00:00:00Z`) + MS_PER_DAY
+        );
+    }
+
+    let cursor = zonedParts(now, spec.timeZone).date;
+    for (let i = 0; i < MAX_REWIND_DAYS; i++) {
+        if (isTradingDate(spec, cursor)) {
+            const rollAt = zonedWallClockToUtc(
+                cursor,
+                closeMinuteOn(spec, cursor) + bufferMinutes,
+                spec.timeZone
+            );
+            if (rollAt.getTime() > now.getTime()) {
+                return secondsUntil(rollAt.getTime());
+            }
+        }
+        cursor = nextIsoDate(cursor);
+    }
+    return (MAX_REWIND_DAYS * MS_PER_DAY) / MS_PER_SECOND;
 }

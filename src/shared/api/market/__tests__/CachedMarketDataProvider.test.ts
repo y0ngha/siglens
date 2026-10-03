@@ -7,7 +7,11 @@ import {
     type MarketQuote,
 } from '@y0ngha/siglens-core';
 import type { SiglensMarketProvider } from '@/shared/api/market/marketProvider.types';
-import { SECONDS_PER_DAY, SECONDS_PER_HOUR } from '@/shared/config/time';
+import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
+
+/** 2026-06-30T15:00Z 기준 eodhist 롤 TTL: 07-01T00:00Z까지 9h + 여유 1h. */
+const ROLL_TTL_AT_TUE_1500Z = SECONDS_PER_HOUR * 10;
 
 /**
  * Captures the `ex` TTL passed to redis.set so we can assert that
@@ -266,8 +270,11 @@ describe('CachedMarketDataProvider', () => {
             expect(store.has('bars:today:AAPL')).toBe(true);
         });
 
-        // ── eodhist TTL = SECONDS_PER_DAY * 7 when history reaches lastClosed ─
-        it('bars:eodhist TTL = SECONDS_PER_DAY * 7 (7-day long TTL) when newest bar reaches lastClosed', async () => {
+        // ── eodhist TTL = time until the session key rolls + 1h margin ─────────
+        // 2026-06-30T15:00Z (Tue 11:00 EDT) → lastClosed 06-29. The key rolls at Tue close
+        // 16:00 EDT + 4h buffer = 2026-07-01T00:00Z, 9h away → TTL 9h + 1h = 10h.
+        // (Was a fixed 7 days: dead date keys piled up ~7 per symbol.)
+        it('bars:eodhist TTL = until next session roll + 1h when newest bar reaches lastClosed', async () => {
             // System time: 2026-06-30T15:00Z → lastClosed = 2026-06-29
             // newest bar must be at 2026-06-29 UTC midnight to trigger long TTL
             const lastClosedBar = bar(
@@ -286,7 +293,7 @@ describe('CachedMarketDataProvider', () => {
                     typeof key === 'string' && key.startsWith('bars:eodhist')
             );
             expect(histSetCall).toBeDefined();
-            expect(histSetCall![2]?.ex).toBe(SECONDS_PER_DAY * 7);
+            expect(histSetCall![2]?.ex).toBe(ROLL_TTL_AT_TUE_1500Z);
         });
 
         // ── FMP publish-lag / permanent-incomplete → cooldown TTL ──────────────
@@ -315,7 +322,7 @@ describe('CachedMarketDataProvider', () => {
         });
 
         // ── FMP publish-lag: complete history → long TTL ──────────────────────
-        it('[FMP lag] history newest bar AT lastClosed → long TTL (7 days)', async () => {
+        it('[FMP lag] history newest bar AT lastClosed → roll TTL (10h)', async () => {
             // System time: 2026-06-30T15:00Z → lastClosed = 2026-06-29
             // FMP has published; newest bar is exactly 2026-06-29
             const completeBar = bar(
@@ -334,7 +341,75 @@ describe('CachedMarketDataProvider', () => {
                     typeof key === 'string' && key.startsWith('bars:eodhist')
             );
             expect(histSetCall).toBeDefined();
-            expect(histSetCall![2]?.ex).toBe(SECONDS_PER_DAY * 7);
+            expect(histSetCall![2]?.ex).toBe(ROLL_TTL_AT_TUE_1500Z);
+        });
+
+        // ── roll TTL right before the key rolls: cooldown is capped by the roll ─
+        // 2026-06-30T23:30Z (Tue 19:30 EDT) → lastClosed still 06-29; the key rolls at
+        // 2026-07-01T00:00Z, 30 min away → roll TTL 0.5h + 1h = 1.5h, which also caps the
+        // 4h incomplete cooldown (no point keeping a key past the moment it stops being read).
+        it.each([
+            ['complete', '2026-06-29T00:00:00Z'],
+            ['incomplete (FMP lag)', '2026-06-28T00:00:00Z'],
+        ])(
+            '30 min before roll: %s history → TTL 1.5h',
+            async (_label, newestIso) => {
+                vi.setSystemTime(new Date('2026-06-30T23:30:00Z'));
+                const getBars = vi.fn(async () => [
+                    bar(Math.floor(Date.parse(newestIso) / 1000)),
+                ]);
+                const provider = new CachedMarketDataProvider(
+                    makeInner({ getBars, getTodayBar: vi.fn(async () => null) })
+                );
+
+                await provider.getBars(longOpts);
+
+                const histSetCall = fakeRedis.set.mock.calls.find(
+                    ([key]) => key === 'bars:eodhist:AAPL:2026-06-29'
+                );
+                expect(histSetCall![2]?.ex).toBe(SECONDS_PER_HOUR * 1.5);
+            }
+        );
+
+        // ── roll TTL follows the provider's own session, not US ─────────────────
+        it('KR session: Chuseok eve → TTL spans the holiday (143.5h + 1h), not the US roll', async () => {
+            // 2026-09-23T11:00Z = 20:00 KST Wed → lastClosed 09-23. KRX is closed 9/24–9/28,
+            // so the key rolls at 9/29 19:30 KST (10:30Z). A US-session TTL here would be 14h.
+            vi.setSystemTime(new Date('2026-09-23T11:00:00Z'));
+            const getBars = vi.fn(async () => [
+                bar(Math.floor(Date.parse('2026-09-23T00:00:00Z') / 1000)),
+            ]);
+            const provider = new CachedMarketDataProvider(
+                makeInner({ getBars, getTodayBar: vi.fn(async () => null) }),
+                KR_EQUITY_SESSION
+            );
+
+            await provider.getBars({ ...longOpts, symbol: '005930.KS' });
+
+            const histSetCall = fakeRedis.set.mock.calls.find(
+                ([key]) => key === 'bars:eodhist:005930.KS:2026-09-23'
+            );
+            expect(histSetCall![2]?.ex).toBe(SECONDS_PER_HOUR * 144.5);
+        });
+
+        it('crypto session: TTL runs to the next UTC midnight (+1h), not the US roll', async () => {
+            // 2026-07-04T15:00Z (Sat). Crypto lastClosed = 07-03, rolls at 07-05T00:00Z (9h).
+            // The US key would roll Mon 07-06 20:00 EDT (NYSE closed Fri 07-03 for July 4th).
+            vi.setSystemTime(new Date('2026-07-04T15:00:00Z'));
+            const getBars = vi.fn(async () => [
+                bar(Math.floor(Date.parse('2026-07-03T00:00:00Z') / 1000)),
+            ]);
+            const provider = new CachedMarketDataProvider(
+                makeInner({ getBars, getTodayBar: vi.fn(async () => null) }),
+                CRYPTO_SESSION
+            );
+
+            await provider.getBars({ ...longOpts, symbol: 'BTCUSD' });
+
+            const histSetCall = fakeRedis.set.mock.calls.find(
+                ([key]) => key === 'bars:eodhist:BTCUSD:2026-07-03'
+            );
+            expect(histSetCall![2]?.ex).toBe(SECONDS_PER_HOUR * 10);
         });
 
         // ── FMP publish-lag: retry after short TTL catches up → long TTL ──────
@@ -375,7 +450,7 @@ describe('CachedMarketDataProvider', () => {
                     typeof key === 'string' && key.startsWith('bars:eodhist')
             );
             expect(secondHistSetCall).toBeDefined();
-            expect(secondHistSetCall![2]?.ex).toBe(SECONDS_PER_DAY * 7);
+            expect(secondHistSetCall![2]?.ex).toBe(ROLL_TTL_AT_TUE_1500Z);
         });
 
         // ── delisted/permanent-incomplete: cooldown TTL + within-cooldown cache hit ──
