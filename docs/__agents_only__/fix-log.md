@@ -707,4 +707,18 @@ Round 4: approved
 - Violation (R2 recommended, fixed): a new env override (`DATABASE_PREPARE`) and the sslmode upgrade were undocumented
   - Rule: (new) Every new env switch read by app code is documented in `.env.example` with when to set it
   - Context: `.env.example` Database section rewritten.
+
+## [perf/asset-info-db-first Rounds 1-2 | perf/asset-info-db-first | 2026-10-03]
+- Violation (R1 REQUIRED, fixed): reordering resolution put a large shared-cache read (`crypto:fmp-list`, ~170KB) in front of every equity lookup, so the change meant to cut Redis commands kept the count and multiplied bytes
+  - Rule: (new) When reordering a lookup chain to remove a cache layer, count the remaining remote round-trips per path (including ones hidden inside helpers) before claiming a saving; tests that mock the helper cannot see it
+  - Context: Branch stacked on PR #914 (1h in-process memo of the list); added `getAssetInfo.cryptoListMemo.test.ts` using the real membership helper and asserting one list read across 10 lookups.
+- Violation (R1 recommended, fixed): new short-lived entries reused the key that still held 32,667 legacy 1-year values in production, so stale values could outrank fresh resolution
+  - Rule: (new) When a cache key's meaning/TTL changes, give the new entries a new key (prefix/version) instead of sharing the legacy key space
+  - Context: `buildAssetInfoProvisionalCacheKey` → `asset-info:provisional:<SYM>`; legacy keys to be deleted by a one-off script after deploy.
+- Violation (R1 recommended, fixed): removing the cache layer dropped the absorption that kept a DB failure from turning into repeated FMP/yahoo calls
+  - Rule: (new) When removing a cache layer in front of a DB, keep a short-lived fallback write for the "DB write failed / DB unavailable" case
+  - Context: `persistTranslation` returns boolean; `persistOrCacheProvisional` writes the 12h provisional entry on failure.
+- Violation (R2 recommended, fixed): code kept for a stated reason (`marketProfile` reaching output via the fallback entry) had no test that fails without it
+  - Rule: (new) Code retained "because X" must have a test that fails when X breaks
+  - Context: Added KR translation + upsert-failure test asserting `marketProfile: 'kr-equity'` in the provisional write; mutation-checked.
 - Status (R3): APPROVED (zero findings)

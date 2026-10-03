@@ -13,9 +13,8 @@ import type {
     AssetTranslationRepository,
 } from '@/shared/db/types';
 import {
-    ASSET_INFO_CACHE_TTL_WITH_KOREAN,
     ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN,
-    buildAssetInfoCacheKey,
+    buildAssetInfoProvisionalCacheKey,
 } from './cacheKeys';
 import { tryGetDatabaseClient } from '@/shared/db/client';
 import {
@@ -59,14 +58,16 @@ function recordToAssetInfo(record: AssetTranslationRecord): AssetInfo {
  * SEALSQ/씰스큐로 세 갈래였다. 사람이 고른 표기가 있으면 그쪽이 이겨야 같은
  * 종목이 화면마다 다른 이름으로 보이지 않는다(`CANONICAL_KOREAN_NAMES` JSDoc).
  *
- * ⚠️ **DB 읽기 지점이 아니라 함수 출구에 둔다.** `getAssetInfo`는 Redis 캐시를
- * 먼저 보고 히트하면 즉시 반환하므로(`if (cached) return cached`), DB 경로에만
- * 덮으면 이미 캐시에 굳은 옛 이름이 그대로 나간다 — 실제로 그렇게 두었다가 로컬
- * 실증에서 제목이 하나도 안 바뀌는 것을 확인했다. 출구에 두면 캐시·DB·FMP·크립토
- * 어느 경로로 왔든 같은 이름이 나가고, 캐시를 비울 필요도 없다.
+ * ⚠️ **DB 읽기 지점이 아니라 함수 출구에 둔다.** 반환 경로가 여럿(크립토 DB·
+ * `asset_translations` DB·Redis 임시 항목·야후·FMP)이라 한 지점에만 덮으면 나머지
+ * 경로로 나간 옛 이름이 그대로 남는다. 과거에는 Redis 캐시가 먼저 답해 즉시
+ * 반환하는 경로(`if (cached) return cached`)가 있었고, DB 경로에만 덮었다가 로컬
+ * 실증에서 제목이 하나도 안 바뀌는 것을 확인했다. 지금은 Redis가 1년 사본을 들지
+ * 않지만, 출구에 두면 어느 경로로 왔든 같은 이름이 나가는 불변식이 경로가 늘어도
+ * 유지된다.
  *
- * 캐시에 쓰는 값은 원본 그대로 둔다 — 캐시가 파생값을 들고 있으면 정본 맵과
- * 어긋날 수 있기 때문이다. 덕분에 이 Redis 계층은 맵을 고쳐도 무효화가 필요 없다.
+ * Redis에 쓰는 임시 항목(12시간)은 원본 그대로 둔다 — 캐시가 파생값을 들고 있으면
+ * 정본 맵과 어긋날 수 있기 때문이다. 덕분에 맵을 고쳐도 무효화가 필요 없다.
  *
  * ⚠️ **그렇다고 배포 즉시 전 화면에 반영되는 건 아니다.** `getAssetInfoStatic`이
  * 결과를 `unstable_cache`(24h, S3 cache-handler라 배포를 넘어 살아남는다)로 다시
@@ -115,38 +116,66 @@ async function readFromDatabase(symbol: string): Promise<AssetInfo | null> {
     }
 }
 
+/**
+ * 번역 결과를 `asset_translations`에 upsert하고, DB에 실제로 썼는지 돌려준다.
+ *
+ * Redis에는 쓰지 않는다 — 읽기 경로가 DB를 먼저 보므로(`resolveAssetInfo` JSDoc)
+ * 1년짜리 Redis 사본은 DB와 중복이고 명령 수만 늘린다. DB에 못 쓴 경우의 보완은
+ * 호출부(`persistOrCacheProvisional`)가 `false`를 보고 처리한다.
+ *
+ * @returns DB 클라이언트가 없거나 upsert가 실패하면 `false`.
+ */
 async function persistTranslation(
+    info: Pick<AssetInfo, 'symbol' | 'name'> & { koreanName: string },
+    fmpSymbol: string
+): Promise<boolean> {
+    const { symbol, name, koreanName } = info;
+    const repository = tryGetRepository();
+    if (!repository) return false;
+
+    try {
+        await repository.upsert({ symbol, name, koreanName, fmpSymbol });
+        return true;
+    } catch (e) {
+        console.warn('[getAssetInfo] DB upsert failed', e);
+        return false;
+    }
+}
+
+/**
+ * 번역을 DB에 저장하되, DB에 쓰지 못했으면 한글명을 담은 12시간 임시 항목을 Redis에 쓴다.
+ *
+ * DB가 저하된 동안(클라이언트 없음·upsert 실패·repository 생성 실패)에는 한글명이
+ * 어디에도 남지 않아, `unstable_cache`로 감싸이지 않은 호출자(`getAssetLabelsAction`,
+ * `savePortfolioHoldingAction` 등)가 호출마다 FMP/yahoo 조회와 번역을 반복한다.
+ * 임시 항목이 그 반복을 막는다. DB 저장이 성공하면 읽기 경로가 DB에서 바로 잡으므로
+ * Redis에는 쓰지 않는다.
+ *
+ * repository 생성이 던져도(`persistTranslation` reject) 임시 항목은 쓰고 그 거절은
+ * 그대로 전파한다 — 호출부의 `.catch`가 warn으로 삼킨다.
+ */
+async function persistOrCacheProvisional(
     info: AssetInfo & { koreanName: string },
     fmpSymbol: string,
     cache: CacheProvider | null
 ): Promise<void> {
-    const { symbol, name } = info;
-    const repository = tryGetRepository();
-    if (repository) {
-        try {
-            await repository.upsert({
-                symbol,
-                name,
-                koreanName: info.koreanName,
-                fmpSymbol,
-            });
-        } catch (e) {
-            console.warn('[getAssetInfo] DB upsert failed', e);
-            // DB 실패여도 캐시는 갱신해야 12시간 영문 캐시가 유지되는 문제를 방지한다.
-        }
-    }
-
-    // 호출부가 방금 돌려준 객체를 그대로 굳힌다 — 여기서 필드를 다시 조립하면
-    // `marketProfile`처럼 나중에 생긴 필드가 조용히 빠지고, 이 TTL이 1년이라 그
-    // 결손 레코드가 오래 남는다. 지금은 `marketProfileOf`의 심볼 형상 폴백이
-    // 한국 종목을 되살려 증상이 없지만, 형상으로 판정 못 하는 프로필이 이 경로에
-    // 들어오는 순간 조용히 틀린다.
-    setCacheBestEffort(
-        cache,
-        buildAssetInfoCacheKey(symbol),
-        info,
-        ASSET_INFO_CACHE_TTL_WITH_KOREAN
+    const outcome = await persistTranslation(info, fmpSymbol).then(
+        persisted => ({ persisted, rejected: false as const }),
+        (error: unknown) => ({
+            persisted: false,
+            rejected: true as const,
+            error,
+        })
     );
+    if (!outcome.persisted) {
+        setCacheBestEffort(
+            cache,
+            buildAssetInfoProvisionalCacheKey(info.symbol),
+            info,
+            ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN
+        );
+    }
+    if (outcome.rejected) throw outcome.error;
 }
 
 /** Subset of an FMP search result needed when persisting a translation. */
@@ -186,17 +215,16 @@ function translateAndPersist(
             exchangeFullName: match.exchangeFullName,
         };
         await setKoreanTickers([entry]);
-        await persistTranslation(
-            {
-                symbol,
-                name: match.name,
-                koreanName,
-                ...(match.symbol !== symbol && { fmpSymbol: match.symbol }),
-                ...(marketProfile && { marketProfile }),
-            },
-            match.symbol,
-            cache
-        );
+        // DB 저장이 실패하면 이 객체가 그대로 Redis 임시 항목이 되어 읽기 경로가 돌려준다 —
+        // 최초 응답과 같은 형태(`fmpSymbol`·`marketProfile`)여야 하는 이유다.
+        const info: AssetInfo & { koreanName: string } = {
+            symbol,
+            name: match.name,
+            koreanName,
+            ...(match.symbol !== symbol && { fmpSymbol: match.symbol }),
+            ...(marketProfile && { marketProfile }),
+        };
+        await persistOrCacheProvisional(info, match.symbol, cache);
     });
 }
 
@@ -233,9 +261,11 @@ async function resolveKrEquityAssetInfo(
 
     if (koreanName) {
         fireAndForget(
-            persistTranslation({ ...info, koreanName }, upper, cache).catch(e =>
-                console.warn('[getAssetInfo] kr persist failed', e)
-            )
+            persistOrCacheProvisional(
+                { ...info, koreanName },
+                upper,
+                cache
+            ).catch(e => console.warn('[getAssetInfo] kr persist failed', e))
         );
         return info;
     }
@@ -257,9 +287,12 @@ async function resolveKrEquityAssetInfo(
         )
     );
 
+    // 번역이 끝나 `asset_translations`에 들어가면 읽기 경로가 DB에서 먼저 잡으므로
+    // 이 임시 항목은 12시간 동안 영문 이름에 머물게 하지 않는다. 번역이 진행되는
+    // 동안 같은 심볼의 yahoo 재조회만 막는 용도다.
     setCacheBestEffort(
         cache,
-        buildAssetInfoCacheKey(upper),
+        buildAssetInfoProvisionalCacheKey(upper),
         info,
         ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN
     );
@@ -275,7 +308,7 @@ export function _resetInFlightTranslationsForTest(): void {
 /**
  * Resolve canonical asset information for a single ticker symbol.
  *
- * 해석은 `resolveAssetInfo`(cache → DB → FMP, 백그라운드 한글명 번역 포함)가
+ * 해석은 `resolveAssetInfo`(DB → 임시 Redis 항목 → yahoo/FMP, 백그라운드 한글명 번역 포함)가
  * 하고, 이 래퍼는 마지막에 정본 한글명을 덮는다 —
  * `withCanonicalKoreanName` JSDoc에 출구에 둬야 하는 이유가 있다.
  */
@@ -283,29 +316,43 @@ export async function getAssetInfo(symbol: string): Promise<AssetInfo | null> {
     return withCanonicalKoreanName(await resolveAssetInfo(symbol));
 }
 
-/** cache → DB → FMP 순으로 해석한다. 정본 덮어쓰기는 호출자(`getAssetInfo`)가 한다. */
+/**
+ * 심볼 하나의 AssetInfo를 해석한다. 정본 덮어쓰기는 호출자(`getAssetInfo`)가 한다.
+ *
+ * 해석 순서: `crypto_assets` DB → FMP 크립토 목록 → `asset_translations` DB →
+ * Redis 임시 항목(12시간) → 한국 종목(yahoo) → FMP 검색.
+ *
+ * ⚠️ **Redis를 맨 앞에서 읽지 않는다.** 예전에는 `asset-info:<SYM>`을 먼저 읽고
+ * 번역 완료 항목을 1년 TTL로 써 두었는데, 2026-10 실측에서 Redis의 32,667개 키가
+ * 전부 1년 TTL이었고 DB에는 `asset_translations` 28,499행 + `crypto_assets`
+ * 4,785행이 있어 Redis는 DB의 중복 사본이었다. 그 GET이 앱 Redis 명령의 14%였고
+ * Upstash는 명령 수로 과금한다. DB가 같은 AZ의 RDS(~1ms)로 옮겨 가므로 DB를 바로
+ * 읽는 쪽이 더 싸고 빠르다. (수치 근거와 재측정 방법: PR #915 설명 — 키 수·TTL은 SCAN +
+ * PTTL 전수 집계, 명령 비중은 운영 Upstash `MONITOR` 2분 표본을 클라이언트 IP별로 집계.)
+ *
+ * 크립토 검사는 `asset_translations`보다 앞에 둔다 — 분류 우선순위를 기존과 같게
+ * 유지하기 위해서다. 이 순서 때문에 크립토가 아닌 모든 호출이 `fmpCryptoMembership`을
+ * 먼저 지나므로, 이 순서는 FMP 크립토 목록의 인스턴스 메모리 캐시(1시간, 호출마다
+ * ~170KB Redis GET 방지)에 기댄다.
+ *
+ * Redis에는 번역이 아직 없거나 DB에 저장하지 못한 심볼의 임시 항목(12시간, 전용 키
+ * `buildAssetInfoProvisionalCacheKey`)만 남는다. 읽기가 DB 미스
+ * 뒤라서, 번역이 `asset_translations`에 들어가는 즉시 한글명이 나가고 임시
+ * 항목의 영문 이름이 12시간 늦게까지 남지 않는다.
+ */
 async function resolveAssetInfo(symbol: string): Promise<AssetInfo | null> {
     const upper = symbol.toUpperCase();
     if (!isAdmissibleSymbolShape(upper)) return null;
 
     const cache = createCacheProvider();
-    const cacheKey = buildAssetInfoCacheKey(upper);
-
-    if (cache) {
-        try {
-            const cached = await cache.get<AssetInfo>(cacheKey);
-            if (cached) return cached;
-        } catch {
-            // Graceful degradation: cache read failure falls through to provider fetch.
-        }
-    }
+    const cacheKey = buildAssetInfoProvisionalCacheKey(upper);
 
     // Crypto classification is authoritative via crypto_assets membership.
     // FMP profile is empty for crypto, so name comes from DB (fallback: quote).
     const cryptoAsset = await getCryptoAsset(upper);
     if (cryptoAsset) {
         const name = cryptoAsset.name || (await fetchCryptoQuoteName(upper));
-        const cryptoInfo: AssetInfo = {
+        return {
             symbol: upper,
             name,
             marketProfile: 'crypto',
@@ -313,13 +360,6 @@ async function resolveAssetInfo(symbol: string): Promise<AssetInfo | null> {
                 ? { koreanName: cryptoAsset.koreanName }
                 : {}),
         };
-        setCacheBestEffort(
-            cache,
-            cacheKey,
-            cryptoInfo,
-            ASSET_INFO_CACHE_TTL_WITH_KOREAN
-        );
-        return cryptoInfo;
     }
 
     // FMP-list freshness fallback: when a new crypto is not yet seeded in
@@ -332,41 +372,34 @@ async function resolveAssetInfo(symbol: string): Promise<AssetInfo | null> {
     const fmpEntry = await fmpCryptoMembership(upper);
     if (fmpEntry) {
         const name = fmpEntry.name || (await fetchCryptoQuoteName(upper));
-        const fmpCryptoInfo: AssetInfo = {
+        // FMP-list records have no koreanName and are provisional (valid only until
+        // the next crypto_assets re-seed). Redis에는 쓰지 않는다 — 목록 자체가 이미
+        // 캐시되어 있어 재조회가 싸고, 따로 굳히면 crypto_assets에 시드된 뒤에도
+        // 임시 항목이 남아 자가 치유를 늦춘다. 시드되면 위 DB 경로가 바로 잡는다.
+        return {
             symbol: upper,
             name,
             marketProfile: 'crypto',
         };
-        // FMP-list records have no koreanName and are provisional (valid only until
-        // the next crypto_assets re-seed). The 12 h TTL lets the record self-heal:
-        // once the symbol is seeded with a koreanName, the next request after
-        // cache expiry will find it in crypto_assets and write a WITH_KOREAN entry.
-        // Using WITH_KOREAN (1 yr) here would lock in the incomplete record and
-        // prevent self-healing — same reasoning as the WITHOUT_KOREAN path for
-        // equities still awaiting translation.
-        setCacheBestEffort(
-            cache,
-            cacheKey,
-            fmpCryptoInfo,
-            ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN
-        );
-        return fmpCryptoInfo;
     }
 
     const fromDb = await readFromDatabase(upper);
-    if (fromDb) {
-        setCacheBestEffort(
-            cache,
-            cacheKey,
-            fromDb,
-            ASSET_INFO_CACHE_TTL_WITH_KOREAN
-        );
-        return fromDb;
+    if (fromDb) return fromDb;
+
+    // 번역 대기 중인 심볼의 임시 항목. DB 미스 뒤에서만 읽으므로 번역이 DB에 들어간
+    // 순간부터는 이 항목이 DB 결과를 가리지 못한다.
+    if (cache) {
+        try {
+            const provisional = await cache.get<AssetInfo>(cacheKey);
+            if (provisional) return provisional;
+        } catch {
+            // Graceful degradation: cache read failure falls through to provider fetch.
+        }
     }
 
     // 한국 상장 종목은 FMP 플랜이 커버하지 않으므로 아래 `searchBySymbol` 경로로 내려가면
-    // 반드시 빈 결과 → null(=404)로 끝난다. DB 조회 뒤, FMP 조회 앞에 둬야 이미 번역된
-    // 레코드는 DB에서 잡히고(yahoo 호출 0회), 신규 심볼만 yahoo로 이름을 해석한다.
+    // 반드시 빈 결과 → null(=404)로 끝난다. DB·임시 항목 조회 뒤, FMP 조회 앞에 둬야 이미
+    // 번역된 레코드는 DB에서 잡히고(yahoo 호출 0회), 신규 심볼만 yahoo로 이름을 해석한다.
     if (isKrEquitySymbol(upper)) {
         return resolveKrEquityAssetInfo(upper, cache);
     }
@@ -394,9 +427,11 @@ async function resolveAssetInfo(symbol: string): Promise<AssetInfo | null> {
 
     if (koreanName) {
         fireAndForget(
-            persistTranslation({ ...info, koreanName }, fmpSymbol, cache).catch(
-                e => console.warn('[getAssetInfo] persist failed', e)
-            )
+            persistOrCacheProvisional(
+                { ...info, koreanName },
+                fmpSymbol,
+                cache
+            ).catch(e => console.warn('[getAssetInfo] persist failed', e))
         );
         return info;
     }
@@ -411,6 +446,7 @@ async function resolveAssetInfo(symbol: string): Promise<AssetInfo | null> {
         )
     );
 
+    // 번역이 끝날 때까지 FMP 재조회를 막는 12시간 임시 항목. 읽기는 DB 미스 뒤에서 한다.
     setCacheBestEffort(
         cache,
         cacheKey,
