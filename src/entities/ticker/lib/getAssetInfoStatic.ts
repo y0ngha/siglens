@@ -5,7 +5,8 @@ import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 /**
  * ISR static-safe asset-info fetch. `getAssetInfoAction`(='use server' → getAssetInfo:
- * cache → DB → FMP)을 Next data cache로 감싸 static generate가 내부 redis/DB no-store
+ * crypto_assets DB → FMP 크립토 목록(인스턴스 메모리) → asset_translations DB →
+ * 12h 임시 Redis 항목 → yahoo/FMP)을 Next data cache로 감싸 static generate가 내부 redis/DB no-store
  * fetch에 막히지 않게 한다. 종목당 캐시이며 revalidate=24h로 주기 갱신한다.
  *
  * revalidate=24h 이유: asset metadata(name, fmpSymbol 등)는 사실상 불변이라 24h 상한이
@@ -31,7 +32,7 @@ import { SECONDS_PER_DAY } from '@/shared/config/time';
  * 전제(축 0): 이 정적화는 root layout cookies() 제거가 선결돼야 효과가 있다 — layout이 전
  * 라우트를 dynamic으로 강제하면 unstable_cache 래핑도 무력하다.
  *
- * 정적 분석 확인: `getAssetInfo` 체인(cache/DB/FMP/koreanNameStore)에 cookies()/headers()/
+ * 정적 분석 확인: `getAssetInfo` 체인(DB/Redis 임시 항목/FMP/yahoo/koreanNameStore)에 cookies()/headers()/
  * connection() 없음 → `unstable_cache` 래핑 안전. null=실재하지 않는 종목, throw=인프라 실패.
  *
  * ticker는 대문자로 정규화해 unstable_cache 키·태그를 canonical하게 유지한다(호출부 대소문자
