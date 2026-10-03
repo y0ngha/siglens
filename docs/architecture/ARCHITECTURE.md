@@ -302,3 +302,9 @@ const data = await fetch(url, {
 - 캐시 키: `analysis:{symbol}:{timeframe}` (예: `analysis:AAPL:1Day`)
 - 타임프레임별 TTL: 1Min=300s, 5Min=900s, 15Min=1800s, 1Hour=3600s, 1Day=86400s
 - 환경변수(`UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`) 미설정 시 캐시 없이 정상 동작 (graceful degradation)
+
+**Upstash Redis 캐싱 (외부 데이터 read-through)**
+- siglens의 외부 데이터 캐시(봉·재무·펀더멘털·시장 요약 등)는 `shared/cache/getOrSetCache.ts`를 거친다.
+- 직렬화 1KB 이상 값은 zstd로 압축해 `zstd1:` + base64 문자열로 저장한다(`shared/cache/cacheValueCodec.ts`). 운영 Redis 용량의 95%를 차지하는 봉 캐시가 원본의 약 1/3로 준다.
+- 이 헬퍼를 거치지 않고 `redis.get`으로 같은 키를 직접 읽는 코드는 `decodeCacheValue`를 함께 써야 한다.
+- core가 쓰는 키(`analysis:*`, `plain:*`, `v1:analysis:*`)는 core 캐시 프로바이더 소관이라 압축하지 않는다.

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CachedFinancialStatementsProvider } from '@/shared/api/fmp/CachedFinancialStatementsProvider';
+import { decodeCacheValue } from '@/shared/cache/cacheValueCodec';
 import type {
     FinancialStatementsProvider,
     IncomeStatementRow,
@@ -424,10 +425,11 @@ describe('CachedFinancialStatementsProvider — limit slicing (cache-key/limit m
 
         const rows = await provider.getIncomeStatements('AAPL', 'annual', 2);
         expect(rows).toHaveLength(2);
-        // The full 40-row array is what is cached, not just 2.
-        const cached = store.get('financials:income:AAPL:annual') as {
-            data: IncomeStatementRow[];
-        };
+        // The full 40-row array is what is cached, not just 2. 40 rows exceed
+        // the compression threshold, so the stored value must be decoded first.
+        const cached = (await decodeCacheValue(
+            store.get('financials:income:AAPL:annual')
+        )) as { data: IncomeStatementRow[] };
         expect(cached.data).toHaveLength(40);
     });
 
