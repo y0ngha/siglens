@@ -13,6 +13,7 @@ import { economicCalendarId } from '../src/entities/economy/lib/economicCalendar
 import { CALENDAR_COUNTRY } from '../src/entities/economy/lib/economyCalendarConstants';
 import { chunkDateRange } from './lib/chunkDateRange';
 import { normalizeIndicatorBaseName } from './lib/normalizeIndicatorBaseName';
+import { guardRemoteWrite } from '../db/scripts/lib/dbTarget';
 
 const FMP_API_KEY = process.env.FMP_API_KEY;
 const databaseUrl = process.env.DIRECT_DATABASE_URL || process.env.DATABASE_URL;
@@ -54,6 +55,7 @@ async function fetchCalendarChunk(
 }
 
 async function run(): Promise<void> {
+    guardRemoteWrite(databaseUrl!, 'backfill:calendar');
     const client = postgres(databaseUrl!, { max: 1 });
     const db = drizzle(client);
 

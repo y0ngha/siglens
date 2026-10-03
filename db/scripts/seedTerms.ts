@@ -6,6 +6,8 @@ import { z } from 'zod';
 import { TERMS_KIND_VALUES, type TermsKind } from '@/shared/db/constants';
 import { DrizzleTermsRepository } from '@/entities/terms/api';
 import { getDatabaseClient } from '@/shared/db/client';
+import { readDatabaseConfig } from '@/shared/db/config';
+import { guardRemoteWrite } from './lib/dbTarget';
 import { DEFAULT_LOCALE, LOCALES, type Locale } from '@/shared/i18n/locales';
 
 const FrontmatterSchema = z.object({
@@ -119,6 +121,8 @@ export function validateSeedFiles(seeds: readonly ParsedSeed[]): void {
 }
 
 async function main(): Promise<void> {
+    // 앱 클라이언트는 DIRECT_DATABASE_URL이 아니라 DATABASE_URL만 읽는다 — 가드도 같은 값을 본다.
+    guardRemoteWrite(readDatabaseConfig().databaseUrl, 'seed:terms');
     const seedsRoot = path.resolve(__dirname, '../seeds/terms');
     const files = await glob('**/*.md', { cwd: seedsRoot, absolute: true });
     if (files.length === 0) {

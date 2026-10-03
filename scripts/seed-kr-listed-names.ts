@@ -13,6 +13,7 @@ import {
 } from '../src/entities/ticker/lib/krTickerReconcile';
 import { KOREAN_TICKERS_CACHE_KEY } from '../src/entities/ticker/lib/cacheKeys';
 import { createCacheProvider } from '@y0ngha/siglens-core';
+import { guardRemoteWrite } from '../db/scripts/lib/dbTarget';
 
 /**
  * `korean_tickers` 테이블 정의 — `src/shared/db/schema.ts`의 동명 테이블과 **같은 컬럼**이다.
@@ -86,6 +87,7 @@ const UPSERT_BATCH_SIZE = 500;
 const FORCE_DELIST = process.argv.includes('--force-delist');
 
 async function main() {
+    guardRemoteWrite(databaseUrl!, 'seed:kr-names');
     if (!hasDataGoKrCredentials()) {
         throw new Error(
             'DATA_GO_KR_SERVICE_KEY env var required — https://www.data.go.kr/data/15094775/openapi.do 에서 활용신청'

@@ -3,6 +3,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import { sql } from 'drizzle-orm';
 import { cryptoAssets } from '../src/shared/db/schema';
 import { fetchCryptoAssetList } from '../src/entities/ticker/api';
+import { guardRemoteWrite } from '../db/scripts/lib/dbTarget';
 
 const databaseUrl = process.env.DIRECT_DATABASE_URL || process.env.DATABASE_URL;
 
@@ -13,6 +14,7 @@ if (!databaseUrl) {
 const UPSERT_BATCH_SIZE = 500;
 
 async function main() {
+    guardRemoteWrite(databaseUrl!, 'seed:crypto');
     const client = postgres(databaseUrl!, { max: 1 });
     const db = drizzle(client);
 

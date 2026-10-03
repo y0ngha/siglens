@@ -28,6 +28,7 @@ import {
     isCalendarCountry,
 } from '../src/entities/economy/lib/economyCalendarConstants';
 import type { SiglensDatabase } from '../src/shared/db/types';
+import { guardRemoteWrite } from '../db/scripts/lib/dbTarget';
 
 const databaseUrl = process.env.DIRECT_DATABASE_URL ?? process.env.DATABASE_URL;
 if (!databaseUrl) {
@@ -109,6 +110,7 @@ async function seedPass(
 }
 
 async function run(): Promise<void> {
+    guardRemoteWrite(databaseUrl!, 'seed:calendar-analysis');
     const client = postgres(databaseUrl!, { max: 1 });
     try {
         // DrizzleEconomicCalendarRepository는 SiglensDatabase(NeonHttpDatabase)를 받는다.
