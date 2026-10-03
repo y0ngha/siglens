@@ -120,6 +120,8 @@
         "widgets.home.skillFilter",
         "widgets.home.tickerCategory",
         "widgets.layout.localeSwitcher",
+        "widgets.legal.unavailableNotice",
+        "widgets.legal.unavailableNoticeLabel",
         "widgets.legal.untranslatedNotice",
         "widgets.legal.untranslatedNoticeLabel",
         "widgets.market-fear-greed.page",

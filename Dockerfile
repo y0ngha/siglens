@@ -47,7 +47,11 @@ ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
     NEXT_PUBLIC_ADSENSE_SLOT_PROGRESS=$NEXT_PUBLIC_ADSENSE_SLOT_PROGRESS
 # 빌드 타임 ISR prerender에 필요한 자격증명. secret mount로 주입해 빌드 로그·이미지
 # 레이어에 자격증명이 남지 않게 한다.
-#   - DATABASE_URL: news/[category]·legal 등 DB-backed prerender
+#   - DATABASE_URL은 **일부러 주지 않는다.** 운영 DB가 사설 AWS RDS라 GitHub Actions 러너는
+#     닿지 못한다. DB-backed 라우트는 DB 없이 빌드돼도 안전하게 degrade하도록 되어 있다 —
+#     news/[category]는 generateStaticParams가 비어 런타임 on-demand 렌더, /terms·/privacy는
+#     60초 revalidate의 안내문 fallback(noindex). 둘 다 배포 직후 scripts/warm-isr.sh가
+#     실데이터로 다시 렌더한다. 런타임 DATABASE_URL은 SSM → 컨테이너 env로 그대로 들어간다.
 #   - FMP_API_KEY: /economy(거시경제 지표/treasury)·/market(지수·섹터 quote + 섹터 스캔
 #     ~255 calls)·/fear-greed(6)·/fear-greed/crypto(21) prerender. (런타임 SSM에는 이미 존재)
 # FMP_AT_BUILD: 빌드 중 FMP 정책(src/shared/api/offlineBuild.ts). 빌드 단계에서는 `fmpGet`이
@@ -59,10 +63,8 @@ ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
 ARG FMP_AT_BUILD=best-effort
 ENV FMP_AT_BUILD=$FMP_AT_BUILD
 RUN --mount=type=secret,id=SIGLENS_GITHUB_TOKEN,required=true \
-    --mount=type=secret,id=DATABASE_URL,required=true \
     --mount=type=secret,id=FMP_API_KEY,required=true \
     SIGLENS_GITHUB_TOKEN="$(cat /run/secrets/SIGLENS_GITHUB_TOKEN)" \
-    DATABASE_URL="$(cat /run/secrets/DATABASE_URL)" \
     FMP_API_KEY="$(cat /run/secrets/FMP_API_KEY)" \
     yarn build
 RUN node scripts/assert-standalone-skills.mjs

@@ -4,13 +4,13 @@ vi.mock('@/entities/market-summary/api/marketSummaryStaticCache', () => ({
 vi.mock('@/entities/sector-signal/api/sectorSignalsStaticCache', () => ({
     getSectorSignalsStatic: vi.fn(async () => ({ computedAt: '', stocks: [] })),
 }));
-vi.mock('@/shared/cache/buildFmpDegradedRevalidate', () => ({
+vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
     shortenRevalidateIfFmpFailedAtBuild: vi.fn(async () => undefined),
 }));
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { loadMarketSignals } from '@/app/[locale]/market/loadMarketSignals';
-import { shortenRevalidateIfFmpFailedAtBuild } from '@/shared/cache/buildFmpDegradedRevalidate';
+import { shortenRevalidateIfFmpFailedAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 import {
     CRYPTO_DASHBOARD_SCOPE,
     KR_DASHBOARD_SCOPE,

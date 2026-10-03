@@ -2815,5 +2815,7 @@
     "entities.shared-analysis.og.extremeGreed": "5ef126fdf1f1",
     "entities.shared-analysis.og.fear": "904b7f38255f",
     "entities.shared-analysis.og.greed": "a58e2086b61c",
-    "entities.shared-analysis.og.volatility": "dd3bbdd8cfc0"
+    "entities.shared-analysis.og.volatility": "dd3bbdd8cfc0",
+    "widgets.legal.unavailableNotice": "a14a9bfcb714",
+    "widgets.legal.unavailableNoticeLabel": "02e9ba731383"
 }

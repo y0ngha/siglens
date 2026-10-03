@@ -3,7 +3,7 @@ import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
 
 /**
- * `src/shared/cache/buildFmpDegradedRevalidate.ts` 전제 가드.
+ * `src/shared/cache/buildDegradedRevalidate.ts` 전제 가드.
  *
  * 그 헬퍼는 렌더 중 `unstable_cache(..., { revalidate: 60 })`를 불러 페이지 revalidate를
  * 낮춘다. 공개 문서가 보장하는 동작이 아니라 Next 내부 구현(중첩되지 않은 호출이
@@ -18,7 +18,7 @@ const SOURCE = readFileSync(
 );
 const HINT =
     'Next 업그레이드로 unstable_cache의 revalidate 하향 분기가 바뀌었다 — ' +
-    'src/shared/cache/buildFmpDegradedRevalidate.ts의 60초 degrade revalidate 메커니즘을 재검증할 것';
+    'src/shared/cache/buildDegradedRevalidate.ts의 60초 degrade revalidate 메커니즘을 재검증할 것';
 
 /** 중첩 판정(`isNestedUnstableCache = true`)을 포함한 store-type switch 블록. */
 function storeTypeSwitch(): string {
