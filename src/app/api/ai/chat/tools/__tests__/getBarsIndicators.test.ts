@@ -15,6 +15,7 @@ const {
     detectCandlePatternEntries,
     getDetectionBars,
     computeFearGreed,
+    evaluateConfluenceSpy,
 } = vi.hoisted(() => ({
     profile: vi.fn(),
     assetInfo: vi.fn(),
@@ -25,6 +26,7 @@ const {
     detectCandlePatternEntries: vi.fn(),
     getDetectionBars: vi.fn(),
     computeFearGreed: vi.fn(),
+    evaluateConfluenceSpy: vi.fn(),
 }));
 vi.mock('@y0ngha/siglens-core', async importOriginal => {
     const actual =
@@ -33,6 +35,8 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
     // 테스트들이 실측 확률 계산으로 검증하기 때문이다. "기권" 자체를 고정하는
     // 테스트에서만 mockReturnValueOnce로 null을 강제한다.
     computeFearGreed.mockImplementation(actual.computeFearGreedIndex);
+    // Real implementation, observed only to check which htfBars the tool passes.
+    evaluateConfluenceSpy.mockImplementation(actual.evaluateConfluence);
     return {
         ...actual,
         classifyTrend: classify,
@@ -40,6 +44,7 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
         detectCandlePatternEntries,
         getDetectionBars,
         computeFearGreedIndex: computeFearGreed,
+        evaluateConfluence: evaluateConfluenceSpy,
     };
 });
 vi.mock('@/entities/bars/lib/barsDataCache', () => ({
@@ -540,16 +545,16 @@ describe('getBarsIndicatorsTool', () => {
             )) as {
                 barsTrimmed: number;
                 bars: Array<{ c: number }>;
-                pullback: { reading: string; measured: string | null };
+                pullback: { reading: string; measured: string } | null;
             };
         };
 
         const quiet = await run(rising);
         const lit = await run(washout);
 
-        expect(quiet.pullback.reading).toBe('none');
-        expect(lit.pullback.reading).toBe('washoutInUptrend');
-        expect(lit.pullback.measured).not.toBeNull();
+        expect(quiet.pullback).toBeNull();
+        expect(lit.pullback?.reading).toBe('washoutInUptrend');
+        expect(lit.pullback?.measured).toBeTruthy();
         expect(JSON.stringify(lit).length).toBeLessThanOrEqual(
             BARS_RESULT_MAX_CHARS
         );
@@ -559,7 +564,7 @@ describe('getBarsIndicatorsTool', () => {
         expect(lit.bars.at(-1)?.c).toBe(CRASH_CLOSE);
     });
 
-    it('confluence: 전체 캐시 봉(요청 bars 아님)으로 core evaluateConfluence를 돌려 압축 형태로 싣는다(htfGate는 snapshot.htfTrend로 판정)', async () => {
+    it('confluence: 전체 캐시 봉(요청 bars 아님)으로 core evaluateConfluence를 돌려 압축 형태로 싣는다', async () => {
         profile.mockResolvedValue('us-equity');
         // Oscillating uptrend — the real detector catalogue lights several
         // signals on it and ma50 comes out non-integer (exercises rounding).
@@ -581,14 +586,11 @@ describe('getBarsIndicatorsTool', () => {
         )) as { confluence: Record<string, unknown> | null };
 
         // `evaluateConfluence`/`scoreConfluence`/`aggregateBarsToWeekly` are
-        // core's real exports (the module mock spreads `...actual`), so this
-        // is the real computation — '1Day's higher timeframe is now the
-        // weekly aggregation of the SAME cached daily bars. 150 daily bars
-        // aggregate to far fewer weekly bars than core needs to actually
-        // apply the HTF gate, so `snapshot.htfTrend` comes back `null` even
-        // though `htfBars` WAS supplied — `htfGate` must reflect that real
-        // outcome (`snapshot.htfTrend !== null`), not merely "were bars
-        // offered".
+        // core's real implementations (the module mock spreads `...actual`
+        // and only observes `evaluateConfluence`), so this is the real
+        // computation — '1Day's higher timeframe is the weekly aggregation of
+        // the SAME cached daily bars. The view carries neither the rule
+        // states nor `htfGate` (2026-10-03): the model misnamed both.
         const weeklyBars = aggregateBarsToWeekly(bars);
         const snapshot = evaluateConfluence(bars, {
             timeframe: '1Day',
@@ -599,18 +601,15 @@ describe('getBarsIndicatorsTool', () => {
         expect(snapshot!.bullish.length).toBeGreaterThan(0);
         expect(r.confluence).toEqual({
             score: scoreConfluence(snapshot),
-            entryRuleMet: snapshot!.entryTrigger,
-            exitRuleMet: snapshot!.exitTrigger,
             bullish: snapshot!.bullish,
             bearish: snapshot!.bearish,
             freshBullish: snapshot!.freshBullish,
             freshBearish: snapshot!.freshBearish,
             ma50: roundNumber(snapshot!.ma50!),
-            htfGate: snapshot!.htfTrend !== null ? 'on' : 'off',
         });
     });
 
-    it('confluence: htfBars가 로드되면 htfGate가 on이고 core evaluateConfluence에 htfBars가 전달된다', async () => {
+    it('confluence: htfBars가 로드되면 core evaluateConfluence에 htfBars가 전달된다(점수의 92 고정이 상위 타임프레임 조건을 반영)', async () => {
         profile.mockResolvedValue('us-equity');
         const bars = Array.from({ length: 150 }, (_, i) =>
             bar(1_700_000_000 + i * 3_600, 100 + 10 * Math.sin(i / 8) + i * 0.1)
@@ -629,9 +628,13 @@ describe('getBarsIndicatorsTool', () => {
             { symbol: 'AAPL', timeframe: '1Hour', bars: 10 },
             ctx,
             rt
-        )) as { confluence: { htfGate: string } | null };
+        )) as { confluence: Record<string, unknown> | null };
 
-        expect(r.confluence?.htfGate).toBe('on');
+        const call = evaluateConfluenceSpy.mock.calls.find(
+            ([series, opts]) => series === bars && opts?.timeframe === '1Hour'
+        );
+        expect(call?.[1]).toMatchObject({ htfBars, htfLabel: '4Hour' });
+        expect(r.confluence).not.toHaveProperty('htfGate');
     });
 
     it('confluence: CONFLUENCE_MIN_BARS 미만이면 null(기권)', async () => {
@@ -1055,7 +1058,7 @@ describe('getBarsIndicatorsTool', () => {
             rsi2: number | null;
             closeVsMa200Pct: number;
             ma5: number | null;
-            measured: string | null;
+            measured: string;
         }
         // 판독 경계값(-90/-80)과 MA200 기권 규칙은 core pullback 테스트가 소유한다.
         // 여기서는 일봉 게이트, 필드 이름·반올림, 기저율 문장 매핑만 고정한다.
@@ -1114,11 +1117,43 @@ describe('getBarsIndicatorsTool', () => {
             expect(r?.closeVsMa200Pct).toBeLessThan(0);
         });
 
-        it('판독이 none이면 measured는 null이다', async () => {
+        it('판독이 none이면 pullback 자체가 null이다 — 모델이 "없음"을 보고하지 않도록', async () => {
             // 상승 추세의 마지막 종가가 14봉 고점 — 과매도가 아니다.
-            const r = await pullbackFor(trendBars(260, 0.5));
-            expect(r?.reading).toBe('none');
-            expect(r?.measured).toBeNull();
+            expect(await pullbackFor(trendBars(260, 0.5))).toBeNull();
+        });
+
+        it('RSI(2)는 판독과 무관하게 일봉 latest.rsi2로 싣고, 일봉이 아니면 null이다', async () => {
+            const run = async (
+                bars: ReturnType<typeof trendBars>,
+                timeframe: string
+            ) => {
+                profile.mockResolvedValue('us-equity');
+                classify.mockReturnValue('uptrend');
+                detect.mockReturnValue([]);
+                getCachedBars.mockResolvedValue({ bars, indicators });
+                return (await getBarsIndicatorsTool(
+                    { symbol: 'AAPL', timeframe },
+                    ctx,
+                    rt
+                )) as {
+                    pullback: PullbackResult | null;
+                    latest: { rsi2: number | null };
+                };
+            };
+            const quiet = await run(trendBars(260, 0.5), '1Day');
+            expect(quiet.pullback).toBeNull();
+            // Monotonic rise: RSI(2) pins at its ceiling.
+            expect(quiet.latest.rsi2).toBe(100);
+
+            const lit = await run(endingAt(trendBars(260, 0.5), 400), '1Day');
+            expect(lit.latest.rsi2).toBe(lit.pullback?.rsi2);
+
+            const intraday = await run(trendBars(260, 0.5), '1Hour');
+            expect(intraday.latest.rsi2).toBeNull();
+
+            // Below 200 daily bars core abstains, and rsi2 must follow it.
+            const short = await run(trendBars(150, 0.5), '1Day');
+            expect(short.latest.rsi2).toBeNull();
         });
 
         it('일봉이 아니거나 core가 기권하면(200봉 미만) null이다', async () => {
