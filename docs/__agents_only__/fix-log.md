@@ -116,14 +116,6 @@
   - Rule: Verify each replacement with targeted grep (e.g., `grep 'expected string' file`) instead of whole-file inequality check
   - Context: A component edit never applied; documented in team feedback.
 
-## [perf/aws-cost-reduction Round 1 | ISR cache-handler refactor | 2026-08-19]
-- Violation: `cache-handler/memStore.mjs` — `setEntry()` deleted the previous entry and decremented the byte budget BEFORE checking the per-entry size cap, so writing an oversized value to an already-cached key silently destroyed a valid existing entry instead of rejecting the oversized write
-  - Rule: (new) Guard-Ordering — Validation checks must precede mutation; early-return before mutation prevents silent data loss
-  - Context: Moved size-cap check before deletion and decrement. Added regression test verifying that oversized writes leave existing entries intact.
-## [perf/aws-cost-reduction Round 3 | Code logic audit | 2026-08-20]
-- Violation: Length cap applied AFTER regex instead of before, making cap useless against the quadratic blowup it was meant to prevent. Same code later called `String(value)` on untrusted object before capping, invoking arbitrary `toString`.
-  - Rule: Validation must be applied in order (type check → size check → parse); size checks must precede regex to prevent quadratic blowup
-  - Context: Moved `.substring(0, MAX_LEN)` BEFORE regex; added `typeof value === 'string'` check before `String(value)`.
 
 ## [W6a — symbol layout header | redesign-p1 | 2026-08-25]
 - Violation: Suspense fallback header shell did not mirror the real header's row structure. Fallback was one row (109px) while the real header stacks to two below 640px (160px), so the fallback->real swap shifted content down 51px on cold first paint (15px at >=640px).
@@ -649,3 +641,11 @@ Round 4: approved
   - Rule: (new) Every script that writes to a DB resolved from env must call the remote-write guard at entry; docs must not claim coverage the code doesn't have
   - Context: `guardRemoteWrite(url, op)` added and called first in all six; spawn-based test mutation-checked 6/6.
 - Status (R2): APPROVED (zero findings)
+
+## [PR #919 Claude review | chore/local-dev-db-and-tunnel | 2026-10-03]
+- Violation (suggestion, fixed): the same tunnel-port literal lived in three files with only comments keeping them in sync
+  - Rule: (new) A constant duplicated across languages/files (TS + shell) needs a test that parses every copy and asserts equality
+  - Context: `scripts/__tests__/db-tunnel-port.test.ts` reads dbTarget.ts, db-tunnel.sh and the seed script; mutation-checked.
+- Violation (suggestion, fixed): scripts relied on `databaseUrl!` after a top-level check instead of a narrowing helper
+  - Rule: (new) Replace post-check non-null assertions with a helper that returns the narrowed type (or throws)
+  - Context: `requireDatabaseUrl()` in dbTarget.ts used by the seed/backfill scripts.

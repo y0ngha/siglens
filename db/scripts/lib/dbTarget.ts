@@ -113,6 +113,24 @@ export function assertRemoteWriteAllowed(
 }
 
 /**
+ * `DIRECT_DATABASE_URL || DATABASE_URL`을 읽어 **string으로 좁혀** 돌려준다. 없으면 던진다.
+ *
+ * 모듈 최상단의 `if (!url) throw`는 함수 선언 안에서 좁혀지지 않아 `url!`가 필요했다.
+ * 이 헬퍼는 좁혀진 값을 반환하므로 호출부에 비-null 단언이 남지 않는다.
+ * (DIRECT가 우선이다 — `migrate.ts`와 같은 규칙.)
+ */
+export function requireDatabaseUrl(): string {
+    const databaseUrl =
+        process.env.DIRECT_DATABASE_URL || process.env.DATABASE_URL;
+    if (!databaseUrl) {
+        throw new Error(
+            'DIRECT_DATABASE_URL (or DATABASE_URL) environment variable is required'
+        );
+    }
+    return databaseUrl;
+}
+
+/**
  * 쓰기 스크립트의 진입점 한 줄: 대상을 찍고 원격이면 거부한다.
  *
  * `readDatabaseUrl`을 못 쓰는 스크립트(접속 문자열을 모듈 최상단에서 이미 읽었거나,

@@ -20,6 +20,15 @@ cd "$(dirname "$0")/.."
 
 PORT="${DEV_DB_PORT:-5435}"
 PROJECT="${DEV_DB_PROJECT:-siglens-dev}"
+
+# 6543은 운영 SSM 터널 포트(db/scripts/lib/dbTarget.ts의 DB_TUNNEL_PORT)다. 로컬 DB를 이
+# 포트로 띄우면 dbTarget이 로컬 DB를 운영으로 오인해 migrate가 거부되고, 터널이 뜬 상태면
+# 포트 충돌로 엉뚱한 곳에 붙을 수 있다 — 아예 쓰지 못하게 한다.
+if [[ "$PORT" =~ ^[0-9]+$ ]] && ((10#$PORT == 6543)); then
+    echo "[db-dev] DEV_DB_PORT=6543은 운영 터널 포트라 쓸 수 없다. 다른 포트를 고를 것 (기본 5435)." >&2
+    exit 1
+fi
+
 LOCAL_URL="postgres://siglens:siglens@localhost:${PORT}/siglens_dev"
 
 # 변수가 아니라 함수로 감싼다 — zsh에서도 단어 분할에 기대지 않는다.

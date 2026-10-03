@@ -57,16 +57,6 @@ describe('describeTarget', () => {
  * 쓰기 가드를 통째로 연다.
  */
 describe('describeTarget — 운영 터널 포트', () => {
-    it('터널 포트 상수는 db-tunnel.sh와 같은 6543이다', () => {
-        expect(DB_TUNNEL_PORT).toBe(6543);
-        const script = readFileSync(
-            join(process.cwd(), 'scripts/db-tunnel.sh'),
-            'utf8'
-        );
-        // 환경변수로 덮어쓸 수 없는 고정 상수여야 한다 — 바꾸면 가드 판정이 어긋난다.
-        expect(script).toMatch(/^readonly TUNNEL_PORT=6543$/m);
-    });
-
     it('localhost:5435 (로컬 개발 DB) 는 로컬이다', () => {
         const target = describeTarget(
             'postgres://siglens:siglens@localhost:5435/siglens_dev'

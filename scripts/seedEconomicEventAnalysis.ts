@@ -28,12 +28,12 @@ import {
     isCalendarCountry,
 } from '../src/entities/economy/lib/economyCalendarConstants';
 import type { SiglensDatabase } from '../src/shared/db/types';
-import { guardRemoteWrite } from '../db/scripts/lib/dbTarget';
+import {
+    guardRemoteWrite,
+    requireDatabaseUrl,
+} from '../db/scripts/lib/dbTarget';
 
-const databaseUrl = process.env.DIRECT_DATABASE_URL ?? process.env.DATABASE_URL;
-if (!databaseUrl) {
-    throw new Error('DIRECT_DATABASE_URL (or DATABASE_URL) env var required');
-}
+const databaseUrl = requireDatabaseUrl();
 
 /** 동시 분석 상한 — seed는 일괄이라 작게 잡아 LLM 큐 압박을 피한다. */
 const SEED_PARALLEL_LIMIT = 4;
@@ -110,8 +110,8 @@ async function seedPass(
 }
 
 async function run(): Promise<void> {
-    guardRemoteWrite(databaseUrl!, 'seed:calendar-analysis');
-    const client = postgres(databaseUrl!, { max: 1 });
+    guardRemoteWrite(databaseUrl, 'seed:calendar-analysis');
+    const client = postgres(databaseUrl, { max: 1 });
     try {
         // DrizzleEconomicCalendarRepository는 SiglensDatabase(NeonHttpDatabase)를 받는다.
         // postgres-js drizzle instance는 insert/select/update를 구조적으로 지원하므로
