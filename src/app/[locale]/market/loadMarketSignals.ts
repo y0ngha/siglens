@@ -8,7 +8,7 @@ import { getSectorSignalsStatic } from '@/entities/sector-signal/api/sectorSigna
 import { DEFAULT_DASHBOARD_TIMEFRAME } from '@/shared/config/dashboard-tickers';
 import type { DashboardScope } from '@/shared/config/dashboardScope';
 import { scopeUsesFmp } from '@/shared/api/market/getMarketDataProvider';
-import { shortenRevalidateIfFmpFailedAtBuild } from '@/shared/cache/buildFmpDegradedRevalidate';
+import { shortenRevalidateIfFmpFailedAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 
 export interface LoadMarketSignalsResult {
     summary: MarketSummaryData;

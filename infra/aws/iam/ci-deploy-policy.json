@@ -64,12 +64,6 @@
             "Resource": "arn:aws:ssm:ap-northeast-2::parameter/aws/service/*"
         },
         {
-            "Sid": "BuildTimeDbUrl",
-            "Effect": "Allow",
-            "Action": ["ssm:GetParameter"],
-            "Resource": "arn:aws:ssm:ap-northeast-2:ACCOUNT_ID:parameter/siglens/DATABASE_URL"
-        },
-        {
             "Sid": "EnvCompletenessCheck",
             "Effect": "Allow",
             "Action": ["ssm:GetParametersByPath"],
@@ -89,17 +83,6 @@
             "Effect": "Allow",
             "Action": ["ssm:GetParameter", "ssm:PutParameter"],
             "Resource": "arn:aws:ssm:ap-northeast-2:ACCOUNT_ID:parameter/siglens/prev-isr-buildid"
-        },
-        {
-            "Sid": "BuildTimeDbUrlDecrypt",
-            "Effect": "Allow",
-            "Action": ["kms:Decrypt"],
-            "Resource": "*",
-            "Condition": {
-                "StringEquals": {
-                    "kms:ViaService": "ssm.ap-northeast-2.amazonaws.com"
-                }
-            }
         }
     ]
 }

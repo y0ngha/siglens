@@ -25,7 +25,7 @@ vi.mock(
         })),
     })
 );
-vi.mock('@/shared/cache/buildFmpDegradedRevalidate', () => ({
+vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
     shortenRevalidateIfFmpFailedAtBuild: vi.fn(async () => undefined),
 }));
 
@@ -34,7 +34,7 @@ import FearGreedRoutePage from '@/app/[locale]/fear-greed/page';
 import FearGreedCryptoRoutePage from '@/app/[locale]/fear-greed/crypto/page';
 import FearGreedKrRoutePage from '@/app/[locale]/fear-greed/kr/page';
 import { loadFearGreedView } from '@/app/[locale]/fear-greed/fearGreedRoute';
-import { shortenRevalidateIfFmpFailedAtBuild } from '@/shared/cache/buildFmpDegradedRevalidate';
+import { shortenRevalidateIfFmpFailedAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 
 const mockShorten = vi.mocked(shortenRevalidateIfFmpFailedAtBuild);
 const params = Promise.resolve({ locale: 'ko' });

@@ -3361,6 +3361,8 @@
                 "4ea5e2": "Effective Date: {v0}",
                 "7474d0": "Table of Contents"
             },
+            "unavailableNotice": "We are loading the full text of this document. Please reopen this page in a moment.",
+            "unavailableNoticeLabel": "Document loading notice",
             "untranslatedNotice": "This document has not been translated into {v0} yet. Showing the original ({v1}).",
             "untranslatedNoticeLabel": "Translation notice"
         },

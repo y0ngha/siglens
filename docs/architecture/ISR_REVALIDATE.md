@@ -49,6 +49,12 @@ ISR `revalidate`는 **"크롤러가 보는 SSR HTML을 이만큼 묵혀도 되�
 > 트래픽 대부분인 종목 페이지를 6~24h로 늘려 백그라운드 재생성(Fast Origin Transfer)을 줄이고,
 > 비용이 미미한 단일 페이지(`/market`)만 1h로 둬 크롤러 신선도를 챙기는 구조.
 
+> **DB 없는 빌드(배포 빌드)는 위 표의 값을 따르지 않는다.** 운영 DB가 사설 RDS라 배포 빌드에는 DB가 없으므로,
+> DB를 읽는 `/terms`·`/privacy`·`/symbols`·`/economy`·`/economy/kr`·`/news`·`/news/us`는 그 빌드의
+> prerender 결과만 60초로 고정(`buildDegradedRevalidate`)하고, `news/[category]`는 `generateStaticParams`가
+> 빈 배열이라 런타임 on-demand로 렌더된다. 런타임 재생성은 표의 값 그대로다. 근거와 계약은
+> [`DEPLOY_RUNBOOK.md`](DEPLOY_RUNBOOK.md) §1 "`DATABASE_URL`은 빌드 타임에 주지 않는다".
+
 ## 2-1. 실효 revalidate vs 선언값 — 공유 캐시 클램프 (⚠️ 비용 핵심)
 
 위 표의 `revalidate`는 **선언값(상한 의도)**일 뿐, 실제 `Cache-Control: s-maxage`는 다를 수 있다.
