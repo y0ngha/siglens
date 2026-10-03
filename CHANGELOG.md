@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.96.2](https://github.com/y0ngha/siglens/compare/v0.96.1...v0.96.2) (2026-10-03)
+
+### Performance Improvements
+
+* **cache:** bars:eodhist TTL을 7일 고정에서 다음 세션 롤까지로 — 넘어간 날짜 키가 쌓이지 않게 ([#926](https://github.com/y0ngha/siglens/issues/926)) ([fb55002](https://github.com/y0ngha/siglens/commit/fb550029c08be3152e641c40f34979c6b28bbaa1))
+
 ## [0.96.1](https://github.com/y0ngha/siglens/compare/v0.96.0...v0.96.1) (2026-10-03)
 
 ### Bug Fixes
