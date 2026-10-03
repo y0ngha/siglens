@@ -706,8 +706,8 @@ async function withPlainLanguage<T>(
  * - **클로킹.** 기본값이 쉽게보기라(localStorage가 빈 크롤러는 항상 기본값)
  *   봇만 원문을 받으면 봇이 보는 DOM과 기본 사람이 보는 DOM이 서로 다른 본문이
  *   된다. 의도와 무관하게 Google의 클로킹 패턴과 구분되지 않는다.
- * - **비용은 이미 캐시가 잡는다.** 평이화 결과는 원문 해시 키로 30일 캐시된다
- *   (`entities/analysis-plain/api.ts`의 `CACHE_TTL_SECONDS`). 비용은 크롤 1회당이
+ * - **비용은 이미 저장소가 잡는다.** 평이화 결과는 원문 해시 키로 만료 없이
+ *   `analysis_plain_texts`에 저장된다(`entities/analysis-plain/api.ts`). 비용은 크롤 1회당이
  *   아니라 **분석 텍스트 1건당** 발생하고, 화이트리스트 심볼은
  *   `seo_analysis_snapshots.plain`이 이미 채워져 있다.
  *
