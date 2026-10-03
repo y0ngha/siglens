@@ -675,9 +675,6 @@
 - Violation (R1 recommended, fixed): repository test asserted the SET of columns and the SET of values, so a swapped column/value pairing passed
   - Rule: (new) Query-condition tests must pin column↔value pairing (compile the SQL and assert order + params with pairwise-distinct values)
   - Context: `plainTextRepository.test.ts` compiles with `PgDialect().sqlToQuery`; mutation-checked (swapped values / swapped columns fail).
-- Violation (R1/R2 recommended, fixed): comments in code, an untouched caller (`route.ts`) and tests still described the old Redis cache/TTL after the storage moved to a DB table
-  - Rule: MISTAKES 15.62-style stale-contract wording — grep old vocabulary repo-wide (incl. tests and untouched callers) when changing a storage contract
-  - Context: Reworded `buildPlainPrompt.ts`, `api.ts`, `route.ts`, `api.test.ts`.
 - Status (R3): APPROVED (zero findings)
 
 ## [Branch feat/agent-confluence-rule-state | 2026-10-03] — Round 3 review findings
