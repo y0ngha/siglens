@@ -54,10 +54,10 @@ worker 제거로 LLM 호출이 앱 요청 안에서 돌기 때문에 예산을 3
 > 드레인 예산은 ALB 때보다 오히려 넉넉하다. ALB는 등록해제 185초가 **끝난 뒤** 앱에
 > SIGTERM을 보냈지만, 지금은 systemd가 cloudflared를 먼저 내리고(최대 180초 인플라이트
 > 배수, 이때 앱은 살아 있다) 그 다음 앱을 내린다 — 둘이 순차라 합이 최대 ~365초다.
-- 라우트 상한 `STREAM_DEADLINE_MS` **5분** — drain(180s)보다 길다. 즉 3분을 넘긴
-  분석은 배포 시 잘릴 수 있다(허용된 트레이드오프). 배포를 더 안전하게 하려면
-  STREAM_DEADLINE을 낮추거나 drain을 5분으로 올려야 하는데, 후자는 인스턴스당
-  롤 시간이 그만큼 늘어난다(`deploy.sh`의 폴 상한 1800s와 함께 봐야 함).
+- 라우트 상한 `STREAM_DEADLINE_MS` **10분**(`src/app/api/analysis/stream/route.ts`) —
+  drain(180s)보다 길다. 즉 3분을 넘긴 분석은 배포 시 잘릴 수 있다(허용된 트레이드오프).
+  배포를 더 안전하게 하려면 STREAM_DEADLINE을 낮추는 수밖에 없다 — drain은 위의
+  cloudflared 180초 하드 상한 때문에 더 올릴 수 없다.
 
 in-flight SSE 스트림 수는 `src/shared/lib/sse/activeStreams.ts`가 센다 —
 `heartbeatStream`이 시작/종료(done·error·cancel) 시점에 증감시킨다.

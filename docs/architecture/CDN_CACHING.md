@@ -41,8 +41,13 @@ App Router의 `<Link>`는 기본값(`prefetch={null}` = auto)에서 **뷰포트�
   자체가 없었고, `cf-cache-status: MISS`로 강제해도 같았다. 위임의 전제가 성립하지 않아
   오리진에서 걸었다(홈 기준 1,021KB → 201KB). 대가로 `/_next/static/**`은 brotli 대신
   gzip으로 나간다(홈 기준 +57KB, 1년 immutable 캐시라 첫 방문만). 순이득 763KB.
-  엣지에서 `text/html` Compression Rule을 켤 수 있으면 그쪽이 상위 호환이다 —
-  HTML brotli(173KB) + 정적 brotli 유지 + 오리진 CPU 0.
+  엣지 `text/html` Compression Rule은 대안이 아니다 — 2026-08-19에 실제로 걸어 보고 원복했다.
+  CF는 캐시에 **저장할 때** 압축하므로 룰을 켜면 오리진에 평문을 요청한다(`/economy` fill
+  55KB → 616KB, 오리진 egress 11배). 사용자는 brotli를 받지만 늘어나는 쪽은 AWS 청구서이고,
+  `Accept-Encoding` 없는 요청이 채운 평문 엔트리가 HIT에서 그대로 나가는 문제도 못 고친다
+  (캐시 키에 `Accept-Encoding`을 넣는 건 Enterprise 기능). 이 수치의 측정 기록은 레포에 따로
+  남아 있지 않다 — 다시 검토할 때는 룰을 켠 상태에서 `cf-cache-status: MISS` 응답의
+  `content-encoding`(br이면 CF가 평문을 받아 직접 압축한 것)과 오리진 전송 바이트를 직접 잰다.
 
 #### ⚠️ `_rsc` 해시는 진입 페이지마다 다르다 — prefetch는 캐시를 데우지 못한다
 
@@ -271,6 +276,10 @@ Caching → Tiered Cache → **Smart Topology 켜기**. 무료 플랜에서 사�
 | W1 | Block scanner paths | `http.request.uri.path contains ".php" or http.request.uri.path contains "/wp-" or http.request.uri.path contains "/.env" or http.request.uri.path contains "/.git"` | Block |
 | W2 | Block abusive ASN | `ip.geoip.asnum in {132203 13220}` | Block |
 | W3 | Challenge non-KR 비검증 봇 (핵심 레버) | `(ip.geoip.country ne "KR") and (not cf.client.bot) and (not starts_with(http.request.uri, "/api"))` | Managed Challenge |
+
+> ⚠️ **위 표는 의도한 룰이고, 실제 배포된 W1은 다르다(2026-10-03 확인).** `.php`·`/wp-`만 403으로
+> 막히고 `/.env`·`/.git/HEAD`는 오리진까지 도달해 404를 받는다. 대시보드에서 W1 표현식을 위 표대로
+> 다시 적용해야 한다. W2·W3의 실제 배포 상태는 이 확인에서 보지 않았다.
 
 - **W3가 핵심 레버**: 검증 검색봇(`cf.client.bot`=Googlebot/Bingbot)·한국 검색봇(geo KR=Yeti/Daum)·
   CF-verified AI봇은 통과, 나머지 non-KR 비검증 봇은 Managed Challenge → JS를 못 풀어 렌더 불가.

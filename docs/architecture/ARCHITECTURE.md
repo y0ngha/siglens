@@ -237,7 +237,9 @@ import { DrizzleUserRepository } from '@/entities/auth/api'; // server-only — 
       → entities/bars → fetchBarsWithIndicators (서버 재구성)
       → entities/skill → Skills 파일 로드
       → 프롬프트 구성 → LLM provider 직접 호출 (서버 키)
-    → 25초 heartbeat로 ALB idle_timeout(60초)을 넘기며 대기
+    → 25초 heartbeat로 인그레스의 무응답 절단을 넘기며 대기
+      (cloudflared 터널 경로의 벽은 Cloudflare Proxy Read Timeout 약 125초 —
+       근거·실측은 shared/lib/sse/runAnalysisStream.ts 주석)
   → SSE `done` 이벤트로 결과 수신 → AnalysisPanel 업데이트
 ```
 

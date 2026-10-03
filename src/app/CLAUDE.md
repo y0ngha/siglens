@@ -15,16 +15,12 @@ In FSD, `app/` is the **composition root**: it wires together widgets, features,
 ✅ Allowed: widgets, features, entities, shared imports
 ✅ Allowed: @y0ngha/siglens-core direct imports
 ❌ Forbidden: implementing business logic directly in route files
+❌ Forbidden: exposing internal error details in a response — return a generic message to the client
 ```
 
 ---
 
 ## RSC (React Server Components)
-
-- Page files like `app/[symbol]/page.tsx` are server components
-- Data fetching: call entity/feature actions or shared/api
-- Indicator calculations: delegated to @y0ngha/siglens-core or entity/feature layers
-- Client components are composed via widget layer
 
 ### Data Flow (Initial Page Load)
 
@@ -43,13 +39,6 @@ In FSD, `app/` is the **composition root**: it wires together widgets, features,
 ```
 
 ### Caching
-
-```typescript
-// fetch caching
-const data = await fetch(url, {
-    next: { revalidate: 60 },
-});
-```
 
 > **Note (cacheComponents 비활성화):** 현재 `next.config.ts`에서 `cacheComponents`는
 > 비활성화 상태다. PPR resumable slots 오류로 인한 SEO metadata placeholder 누출 때문에
@@ -76,16 +65,9 @@ on-demand ISR)를 함께 export해야 빌드에서 `● (SSG)`로 전환된다. 
 사용자 신선도는 ISR이 아니라 클라 refetch가 책임지므로, revalidate는 **크롤러 SSR 신선도 + Fast Origin
 Transfer/ISR 비용** 기준으로 정한다(Fast Data Transfer는 줄지 않음 — CF 앞단 캐시 몫).
 
-| 페이지 | revalidate | | 페이지 | revalidate |
-|---|---|---|---|---|
-| `/` | 86400 (24h) | | `/[symbol]/news` | 43200 (12h)\* |
-| `/[symbol]` | 21600 (6h) | | `/[symbol]/fear-greed` | 86400 (24h) |
-| `/[symbol]/overall` | 43200 (12h) | | `/[symbol]/options` | 43200 (12h) |
-| `/[symbol]/fundamental` | 86400 (24h) | | `/market` | 3600 (1h) |
-| `/[symbol]/financials` | 86400 (24h) | | `/[symbol]/congress` | 86400 (24h) |
-| `/terms` · `/privacy` | 86400 (24h) | | | |
+현재 값은 각 `page.tsx`의 `export const revalidate` 리터럴이 원본이다(표를 여기 복사해 두지 않는다).
 
-\* news는 `ensureNewsCardsAnalyzedAction`이 새 기사 fetch 시 `revalidateTag('news:${symbol}', 'max')`로 on-demand
+news는 `ensureNewsCardsAnalyzedAction`이 새 기사 fetch 시 `revalidateTag('news:${symbol}', 'max')`로 on-demand
 무효화하므로 시간 기반은 상한선일 뿐. 종목 페이지 전수 cron은 도입하지 않는다(전수 재생성 = Fast Origin
 Transfer 폭증). 자세한 근거는 위 문서 참조.
 
@@ -114,9 +96,11 @@ PPR(`cacheComponents`) 비활성 상태에서 동적 세그먼트를 ISR로 정�
 3. **(축 2) `useSearchParams` CSR bailout 밖으로 SEO 콘텐츠 분리.** `useSearchParams`(예:
    timeframe)를 쓰는 클라 위젯은 SSR HTML이 비므로, 크롤 가능 텍스트(FactLayer)는
    Suspense fallback에 경량 순수 서버 컴포넌트로 박는다(`TechnicalFactsSummary`/`OverallFactsSummary`).
+   단 fallback은 원시 HTML에만 남는다 — 하이드레이션 때 React가 클라 위젯으로 교체하므로 렌더하는
+   크롤러(Googlebot)의 DOM에는 없다. 렌더 후에도 보여야 하는 산문은 Suspense 밖 영구 서버 sibling으로 둔다.
    server-only 정적화 헬퍼(`staticSymbolCache` 등)는 서버 파일에서만 import한다(client 번들 누출 방지).
 4. **(축 3) `generateStaticParams=[]` + `revalidate`(리터럴) 유지.** revalidate 값은 페이지마다 다르다 —
-   위 페이지별 표 및 [`docs/architecture/ISR_REVALIDATE.md`](../../docs/architecture/ISR_REVALIDATE.md) 참조.
+   [`docs/architecture/ISR_REVALIDATE.md`](../../docs/architecture/ISR_REVALIDATE.md) 참조.
 
 > ⚠️ 빌드 output의 `●`(SSG) 표시 ≠ 런타임 동작. 반드시 `prod build && start` 후
 > 런타임 로그의 `DYNAMIC_SERVER_USAGE` 0 + `x-nextjs-cache` HIT로 실측 검증한다.
@@ -125,16 +109,9 @@ PPR(`cacheComponents`) 비활성 상태에서 동적 세그먼트를 ISR로 정�
 
 ---
 
-## Server Actions
-
-Server Actions are defined within FSD slices (entities/*/actions/, features/*/actions/) and called from widget hooks.
-
----
-
 ## Next.js 16 Notes
 
 - Use `proxy.ts` instead of `middleware.ts` (if needed)
-- Follow App Router conventions
 - `cacheComponents` (PPR)는 현재 비활성화 — 활성화 시 dynamic route의 `generateMetadata`가
   fake-params로 prerender되어 canonical에 `[SYMBOL]` placeholder가 박히는 문제를 다시
   검토해야 한다.
@@ -144,11 +121,3 @@ Server Actions are defined within FSD slices (entities/*/actions/, features/*/ac
 ## Design Rules
 
 See `docs/conventions/DESIGN.md` for the full color system and Tailwind CSS rules.
-
----
-
-## Common Mistakes
-
-- Implementing domain logic in route handlers → delegate to entities/features/shared
-- No caching strategy, calling API every request → use `fetch`의 `next: { revalidate }`
-- Exposing internal error details in responses → return generic messages to client

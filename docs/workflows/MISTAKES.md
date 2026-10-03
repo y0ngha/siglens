@@ -359,6 +359,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ // UTC 02:00Z closes at 9:00 ET (verify this matches the actual literal in code)
     → Recurring: feat/market-calendar-adoption R3 + R4 (3 instances across both rounds)
 
+15.66. Factual/numeric documentation claims without evidence trail or reproducibility path
+    → When a documentation field contains a factual claim (measurement, size, count, deadline, behavior) or numeric value (sizes, multipliers, delays), it must either: 1) point to the evidence (test, link, measurement record, script), or 2) state explicitly how to re-measure/verify it
+    → Undocumented facts create maintenance risk — if the actual value drifts, the documentation claim stays stale forever because there's no method to detect drift
+    → Even dated measurements must carry context: date recorded, measurement method, and conditions under which it may change
+    ❌ "Cloudflare respects strong ETags, keeping 304 responses compressed" (no measurement, no verification method)
+    ❌ "an edge Compression Rule raises origin egress 11x" (a figure with no record anywhere in the repo and no way to re-measure)
+    ✅ "strong ETags block Cloudflare compression — `/NRICX` origin gzip 39KB → edge HIT 209KB" (names the URL and both measured sizes, so the probe can be repeated)
+    ✅ "no separate measurement record exists; to re-check, read `content-encoding` on a `cf-cache-status: MISS` response and measure origin transfer bytes" (states the reproduction path when no record exists)
+    → Recurring: perf/cdn-compression (strong ETag claim without measurement), docs/architecture/CDN_CACHING (measured figure without source record) — 2 occurrences
+
 15.4. Visual section separator comments (`// ─── Title ───────────`) inside source files
     → Box-drawing characters used to "organize" sections in code are WHAT-comments in disguise (they label what's below).
     → Function/interface/type names already organize the file; section labels add visual noise that drifts whenever sections move.

@@ -590,6 +590,11 @@
   - Rule: comments describing a rule must be updated in the same change that alters the rule; state tradeoffs instead of claiming no effect
 - Status (Round 2): APPROVED
 
+## [review-agent round 2 | review-agent recommended findings | 2026-10-03]
+- Violation: `src/app/CLAUDE.md` — while trimming code-derivable content from a nested CLAUDE.md, a real rule was removed along with generic bullets ("do not expose internal error details in a response; return a generic message").
+  - Rule: (new) When deleting a "generic advice" block from a guidance file, check each bullet for a rule that no other doc, lint rule or code states before removing it.
+  - Context: Restored the removed rule as one line.
+
 ## [Round 1–3 | perf/prewarm-symbols-per-tick | 2026-10-02]
 - Violation (R1, REQUIRED): doc-comment next to `SYMBOLS_PER_TICK` constant still quoted old derived figure (window 18 × 7 tabs × 2 = 252 Redis calls/tick) while same figure was updated in markdown docs
   - Rule: (new) when a constant changes, every derived number quoted in comments/docs (source comments, infra script rationale, capacity docs, sibling-module JSDoc) must be recomputed in the same change — grep the constant name AND the old literal

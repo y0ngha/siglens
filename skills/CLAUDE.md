@@ -21,23 +21,18 @@ The CI validator (`yarn validate:skills`, `scripts/validate-skills.ts`) rejects 
 missing/malformed `gating` block before it ships — every skill file, chart or
 fundamental/news, must carry an explicit `tier`.
 
-**Scope of "load error" — CI vs. runtime.** The two enforcement points land on
-different timelines and must not be conflated:
+**Scope of "load error" — CI vs. runtime.** There are two enforcement points:
 
-- **CI (this repo, today):** `yarn validate:skills` rejects a missing or
-  malformed `gating` block for every skill file. This is authoring-time
-  enforcement — it stops a new untagged skill from ever being committed.
-- **Runtime (siglens-core ≥0.30, not yet shipped):** the selection engine's
-  fail-closed behavior described above — treating an untagged/unreachable
-  skill as a load error at prompt-build time — arrives with that engine.
-  Until it ships, this repo's app-side parser
-  (`src/entities/skill/api.ts`'s `parseGating`) still **fail-opens** at
-  runtime: it mirrors the pre-≥0.30 core loader and returns `undefined`
-  (treated as untagged) for a malformed/unreachable block rather than
-  throwing. That parser is deliberately left unchanged in this PR: 100% of
-  skill files are CI-tagged today, so the fail-open path is currently
-  unreachable in practice, but the runtime code itself does not yet enforce
-  the policy — only CI does.
+- **CI (authoring time):** `yarn validate:skills` rejects a missing or
+  malformed `gating` block for every skill file, so an untagged skill is never
+  committed.
+- **Runtime (prompt-build time):** this repo's app-side parser
+  (`src/entities/skill/api.ts`'s `parseGating`) does not throw — it returns
+  `undefined` (treated as untagged) for a malformed/unreachable block. The
+  throw comes one step later: siglens-core's `selectSkills` is fail-closed and
+  throws on a whitelisted skill whose `gating` is `undefined`. So a bad block
+  that slipped past CI surfaces as a failed analysis, not as a silently
+  always-injected skill.
 
 ## Frontmatter `gating` schema
 
@@ -142,43 +137,16 @@ a trigger from the wrong category even if the name is valid in another:
    `strategy`, and `support_resistance` skills.
 2. A detected candle-pattern name — for `candlestick` skills only.
 3. A chart-pattern pre-screener candidate id — for `pattern` skills only. These
-   are the 22 `ChartPatternId` values the core's `screenChartPatterns()` can flag
-   (`head_and_shoulders`, `inverse_head_and_shoulders`, `double_top`,
-   `double_bottom`, `triple_top`, `triple_bottom`, `ascending_triangle`,
-   `descending_triangle`, `symmetrical_triangle`, `ascending_wedge`,
-   `descending_wedge`, `bull_flag`, `bear_flag`, `pennant`, `rectangle`,
-   `cup_and_handle`, `rounding_bottom`, `rounding_top`, `high_tight_flag`,
-   `ascending_channel`, `descending_channel`, `broadening_formation` — see `PATTERN_TRIGGER_CATALOG` in
-   `scripts/validate-skills.ts`).
+   are the `ChartPatternId` values the core's `screenChartPatterns()` can flag —
+   the list is `PATTERN_TRIGGER_CATALOG` in `scripts/validate-skills.ts`.
 
 The validator cross-checks each skill's triggers against only the category
 valid for its own `type`: a typo'd trigger, or a trigger borrowed from the
 wrong category, **fails CI** — it does not silently disappear.
 
-Full signal catalog (bidirectional set):
-
-```
-rsi_oversold                         rsi_overbought
-rsi_bullish_divergence               rsi_bearish_divergence
-golden_cross                         death_cross
-macd_bullish_cross                   macd_bearish_cross
-macd_histogram_bullish_convergence   macd_histogram_bearish_convergence
-bollinger_lower_bounce               bollinger_upper_breakout
-bollinger_percentb_oversold          bollinger_percentb_overbought
-bollinger_squeeze_bullish            bollinger_squeeze_bearish
-supertrend_bullish_flip              supertrend_bearish_flip
-parabolic_sar_flip                   parabolic_sar_bearish_flip
-ichimoku_cloud_breakout              ichimoku_cloud_breakdown
-cci_bullish_cross                    cci_bearish_cross
-dmi_bullish_cross                    dmi_bearish_cross
-cmf_bullish_flip                     cmf_bearish_flip
-mfi_oversold_bounce                  mfi_overbought_reversal
-keltner_upper_breakout               keltner_lower_breakout
-squeeze_momentum_bullish             squeeze_momentum_bearish
-support_proximity_bullish            resistance_proximity_bearish
-new_52w_high                         new_52w_low
-gap_up                               gap_down
-```
+The full signal catalog is `SIGNAL_CATALOG` in `scripts/validate-skills.ts`
+(a bidirectional set — each bullish name has a bearish counterpart). Read it
+there rather than from a copy here.
 
 For a **candle** skill, the trigger is the candle pattern name (e.g. `hammer`,
 `bullish_engulfing`) — anything the core has a label for.
@@ -186,29 +154,9 @@ For a **candle** skill, the trigger is the candle pattern name (e.g. `hammer`,
 ## state pairs — the only valid feature:predicate combos
 
 `state` gating must use one of these pairs (they are the only ones the core's
-`isStateNotable` evaluates). Any other pairing is **unreachable** and rejected by CI:
-
-| feature | predicate |
-|---|---|
-| `bollinger` | `pctB` |
-| `keltner` | `bandDistAtr` |
-| `williamsR` | `level` |
-| `stochastic` | `level` |
-| `stochRsi` | `level` |
-| `donchian` | `channelProximity` |
-| `vwap` | `bandDistAtr` |
-| `buySellVolume` | `ratio` |
-| `macdV` | `level` |
-| `connorsRsi` | `level` |
-| `forceIndex` | `level` |
-| `elderRay` | `level` |
-| `elderImpulse` | `level` |
-| `chandelier` | `level` |
-| `hurst` | `level` |
-| `varianceRatio` | `level` |
-| `regression` | `level` |
-| `yangZhang` | `level` |
-| `ewma` | `level` |
+`isStateNotable` evaluates). Any other pairing is **unreachable** and rejected by CI.
+The list is `VALID_STATE_PAIRS` in `scripts/validate-skills.ts` (mirrored in
+`src/entities/skill/api.ts` — the two must stay in sync).
 
 ## PROMPT_DIGEST markers
 

@@ -361,7 +361,8 @@ void _predicateKindsAreExhaustive;
  * (feature, predicate) pairs the core's `isStateNotable` actually evaluates;
  * any other pairing returns `false` for every chart, so the gated skill is
  * unreachable. Validating the pair here (not just each half) keeps the runtime
- * parser fail-open robust instead of leaning on the CI validator alone.
+ * parser from accepting an unreachable pair, instead of leaning on the CI
+ * validator alone.
  *
  * Mirror of `VALID_STATE_PAIRS` in scripts/validate-skills.ts. These two must
  * stay in sync — when the core's set of evaluated (feature, predicate) pairs
@@ -412,7 +413,8 @@ const parseStatePredicate = (raw: unknown): SkillStatePredicate | undefined => {
 
     // Each half is valid above, but an unreachable pair (e.g. bollinger +
     // channelProximity) would parse into a SkillGating the core never fires on.
-    // Fail-open: treat such a predicate as untagged so the selector loads it.
+    // Treat such a pair as untagged; the core selector then throws (fail-closed)
+    // rather than carrying a gated skill that can never fire.
     if (!VALID_STATE_PAIRS.has(`${feature}:${predicate}`)) return undefined;
 
     return {
@@ -427,8 +429,10 @@ const parseStatePredicate = (raw: unknown): SkillStatePredicate | undefined => {
 
 /**
  * Validate and normalize a `gating` frontmatter block, mirroring the core
- * loader. Returns undefined (skill treated as untagged → selector fail-opens)
- * when the block is malformed or unreachable.
+ * loader. Returns undefined (skill treated as untagged) when the block is
+ * malformed or unreachable. This parser does not throw, but the core's
+ * `selectSkills` is fail-closed: it throws on a whitelisted skill whose gating
+ * is undefined, so a bad block fails the analysis instead of being injected.
  *
  * Exported for unit testing of branches the inline-array YAML parser cannot
  * reach (e.g. a non-string trigger element).
