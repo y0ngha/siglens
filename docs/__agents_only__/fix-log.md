@@ -665,6 +665,12 @@
   - Context: "use the computed line when present, otherwise the old bar/MA comparison" in both body and digest.
 - Status (R2): APPROVED (zero findings)
 
+## [perf/crypto-list-memory-cache Round 1 | perf/crypto-list-memory-cache | 2026-10-03]
+- Violation (R1 recommended, fixed): new L1 memo dropped the still-available expired list on refresh failure and returned an empty Map, so un-seeded coins briefly classified as non-crypto at the 1-hour boundary
+  - Rule: (new) When adding a memo in front of a fallible refresh, a failed refresh should serve the last good (expired) value while leaving the expiry untouched so the next call retries — not degrade to empty
+  - Context: `fmpCryptoMembership.ts` catch now returns `memo?.map ?? new Map()` with a distinct warn message; test added and mutation-checked.
+- Status (R2): APPROVED (zero findings)
+
 ## [Branch feat/agent-confluence-rule-state | 2026-10-03] — Round 3 review findings
 
 - Violation 1 (recommended): After splitting a function in two, its JSDoc paragraph ("none is null") stayed on the half that does not enforce it
