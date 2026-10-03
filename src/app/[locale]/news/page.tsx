@@ -43,7 +43,7 @@ const NEWS_HUB_PATH = '/news';
  * 3지역 커버리지를 밝히는 문구 — `src/app/__tests__/supportedAssets.test.ts`가
  * 여기서 자산군 누락을 검사한다. 커버리지 문구가 여러 표면에 프로즈로 흩어져
  * 한쪽만 갱신되는 것이 이 저장소에서 세 라운드 반복된 결함이다
- * (`docs/workflows/MISTAKES.md` §6.6).
+ * (`docs/conventions/MISTAKES.md` §6.6).
  */
 export function newsHubTitle(t: SeoTranslator): string {
     return t('newsHub.title');

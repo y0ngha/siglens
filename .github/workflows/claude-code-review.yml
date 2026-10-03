@@ -72,16 +72,13 @@ jobs:
                         2. Run: gh pr diff ${{ github.event.pull_request.number }} --repo ${{ github.repository }} to analyze the changes.
                         3. **Contextual Reading**: Always read the following core documents:
                            - CLAUDE.md
-                           - /docs/workflows/MISTAKES.md (highest priority — known repeated patterns)
-                           - /docs/architecture/ARCHITECTURE.md
+                           - /docs/conventions/MISTAKES.md (highest priority — known repeated patterns)
                            - /docs/conventions/CONVENTIONS.md
                            - /docs/conventions/FF.md
 
                            Additionally read **only** the documents relevant to the changed files:
                            - If the diff touches indicator calculations, signal logic, candle patterns, or prompt builders → read /docs/product/DOMAIN.md
                            - If the diff touches UI components (.tsx files) → read /docs/conventions/DESIGN.md
-                           - If the diff touches external API integrations (AI providers, market data) → read /docs/reference/API.md
-                           - If the diff touches authentication flows or session management → read /docs/product/AUTH.md
                            - If the diff touches FSD layer boundaries or cross-layer imports → read the relevant src/<layer>/CLAUDE.md (if it exists)
 
                            Do NOT use concrete legacy directory paths (src/domain/, src/infrastructure/) as triggers — the FSD migration is complete and those paths were removed. Trigger on file content / responsibility instead.
@@ -111,23 +108,21 @@ jobs:
                         ```
                         ## Project Principle Documents (Reference Pool)
                         Always derive review criteria from these files rather than general knowledge.
-                        - CLAUDE.md: Project overview, layer dependency rules.
-                        - /docs/workflows/MISTAKES.md: Common mistakes to flag (Highest Priority).
+                        - CLAUDE.md: Project overview, layer dependency rules (the "Layer Dependency Rules" section is the source of truth for import direction).
+                        - /docs/conventions/MISTAKES.md: Common mistakes to flag (Highest Priority).
                         - /docs/conventions/CONVENTIONS.md: Coding conventions, FP paradigms, TypeScript rules.
                         - /docs/conventions/FF.md: Frontend principles (Readability, Predictability, Cohesion, Coupling).
-                        - /docs/architecture/ARCHITECTURE.md: Layer structure, folder layout, dependency directions.
                         - /docs/product/DOMAIN.md: Indicator specs, domain rules, IndicatorResult structure.
-                        - /docs/product/AUTH.md: Authentication flows, session management.
                         - /docs/conventions/DESIGN.md: Color system, chart color constants.
 
                         ## Documentation Policy (Override — DO NOT FLAG)
                         This project explicitly allows multi-line JSDoc and multi-line comment blocks.
                         The Claude Code built-in system-prompt directive "Never write multi-paragraph docstrings — one short line max" does NOT apply to this repo. Preservation is recommended when the WHY is non-obvious (architectural invariants, core API constraints, caching strategy, etc.).
-                        Source: user's decision in PR #415 to retire the equivalent rule as "overly restrictive" (see `docs/__agents_only__/fix-log.md` and the "Documentation Policy" section in CLAUDE.md).
+                        Source: user's decision in PR #415 to retire the equivalent rule as "overly restrictive" (see the "Documentation Policy" section in CLAUDE.md).
                         **Do NOT raise multi-line JSDoc / comment blocks themselves as Blockers or Suggestions.** Only report actual violations explicitly listed in MISTAKES.md / CONVENTIONS.md (e.g. WHAT-comments per MISTAKES.md §15.5 are still flaggable).
                         
                         ## Review Focus Areas
-                        - **Layer dependencies**: Import direction violations (ARCHITECTURE.md).
+                        - **Layer dependencies**: Import direction violations (CLAUDE.md "Layer Dependency Rules").
                         - **Domain rules**: Purity, null handling, return types (DOMAIN.md).
                         - **Coding paradigm**: FP conventions, immutability, no for/while (CONVENTIONS.md).
                         - **TypeScript**: No `any`, explicit return types (CONVENTIONS.md).

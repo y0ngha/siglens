@@ -3,6 +3,10 @@
 # On a fresh worktree, copy the gitignored assets listed in .worktreeinclude
 # from the main worktree so the new tree behaves like a full checkout and skips
 # a fresh `yarn install`. No-op on ordinary branch checkouts.
+#
+# Claude Code도 워크트리를 도구 대신 Bash `git worktree add`로 만들 수 있다. 그때는
+# Claude Code의 .worktreeinclude 처리가 돌지 않고 이 훅만 돈다 — 어떤 경로로
+# 만들든 로컬 전용 파일이 채워지는 건 이 훅이 보장한다.
 old=$1; flag=$3
 
 [ "$flag" = "1" ] || exit 0                                       # branch checkout only
@@ -17,8 +21,24 @@ inc="$main_root/.worktreeinclude"
 
 while IFS= read -r p; do
   case "$p" in ''|'#'*) continue ;; esac    # skip blanks / comments
-  [ -e "$main_root/$p" ] || continue        # must exist in main
-  [ -e "$wt_root/$p" ] && continue          # already present -> skip
-  mkdir -p "$(dirname "$wt_root/$p")"
-  cp -R "$main_root/$p" "$wt_root/$p"
+  src="$main_root/$p"; dst="$wt_root/$p"
+  [ -e "$src" ] || continue                 # must exist in main
+  if [ -d "$src" ] && [ -d "$dst" ]; then
+    # 추적 파일과 로컬 전용 파일이 섞인 폴더(예: docs/ — product·conventions만
+    # 추적)는 체크아웃 직후에도 이미 존재한다. 통째로 건너뛰면 로컬 전용 파일이
+    # 빠지고, 통째로 복사하면 메인에만 있는 추적·미추적 파일까지 끌려와 새
+    # 워크트리가 dirty해진다. 그래서 메인에서 gitignore된 파일만, 없을 때만 채운다.
+    # 훅 안에서는 GIT_DIR 등이 새 워크트리를 가리킬 수 있어 지우고 메인을 조회한다.
+    env -u GIT_DIR -u GIT_INDEX_FILE -u GIT_WORK_TREE \
+      git -C "$main_root" ls-files -z --others --ignored --exclude-standard -- "$p" |
+      while IFS= read -r -d '' f; do
+        [ -e "$wt_root/$f" ] && continue
+        mkdir -p "$(dirname "$wt_root/$f")"
+        cp -p "$main_root/$f" "$wt_root/$f"
+      done
+    continue
+  fi
+  [ -e "$dst" ] && continue                 # already present file -> skip
+  mkdir -p "$(dirname "$dst")"
+  cp -R "$src" "$dst"
 done < "$inc"

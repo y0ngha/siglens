@@ -1944,7 +1944,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Move presentation-specific types to shared/lib/ (e.g., shared/lib/skillStats.ts)
 
 3. Creating thin re-export wrappers around `@y0ngha/siglens-core`
-   → `@y0ngha/siglens-core` is the externalized SigLens domain — direct import from any layer is allowed (see ARCHITECTURE.md)
+   → `@y0ngha/siglens-core` is the externalized SigLens domain — direct import from any layer is allowed (see CLAUDE.md "Layer Dependency Rules")
    → Wrapper files that only re-export from siglens-core add no information and should not exist
    ❌ src/entities/bars/lib/indicators.ts: `export { calculateATR } from '@y0ngha/siglens-core';`  // pure boilerplate wrapper
    ✅ Widgets / hooks / app code imports directly: `import { calculateATR } from '@y0ngha/siglens-core';`

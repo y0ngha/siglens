@@ -5,3 +5,6 @@ node_modules
 .husky/_
 .yarn/install-state.gz
 .env.local
+# 로컬 전용 docs(.gitignore 참고). docs/는 추적 폴더(product·conventions) 때문에
+# 체크아웃 직후에도 존재하므로, post-checkout 훅이 없는 파일만 채워 넣는다.
+docs
