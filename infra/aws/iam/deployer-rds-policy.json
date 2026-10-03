@@ -1,0 +1,111 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "RdsDescribe",
+            "Effect": "Allow",
+            "Action": [
+                "rds:DescribeDBInstances",
+                "rds:DescribeDBSubnetGroups",
+                "rds:DescribeDBParameterGroups",
+                "rds:DescribeDBParameters",
+                "rds:DescribeDBLogFiles",
+                "rds:DescribeCertificates",
+                "rds:DescribeDBEngineVersions",
+                "rds:DescribeOrderableDBInstanceOptions",
+                "rds:DescribePendingMaintenanceActions",
+                "rds:DescribeEvents",
+                "rds:DescribeReservedDBInstances",
+                "rds:DescribeReservedDBInstancesOfferings",
+                "rds:ListTagsForResource"
+            ],
+            "Resource": "*",
+            "Condition": {
+                "StringEquals": {
+                    "aws:RequestedRegion": "ap-northeast-2"
+                }
+            }
+        },
+        {
+            "Sid": "RdsProvisionSiglens",
+            "Effect": "Allow",
+            "Action": [
+                "rds:CreateDBInstance",
+                "rds:ModifyDBInstance",
+                "rds:RebootDBInstance",
+                "rds:AddTagsToResource",
+                "rds:DownloadDBLogFilePortion",
+                "rds:CreateDBSubnetGroup",
+                "rds:ModifyDBSubnetGroup",
+                "rds:CreateDBParameterGroup",
+                "rds:ModifyDBParameterGroup"
+            ],
+            "Resource": [
+                "arn:aws:rds:ap-northeast-2:ACCOUNT_ID:db:siglens-*",
+                "arn:aws:rds:ap-northeast-2:ACCOUNT_ID:subgrp:siglens-*",
+                "arn:aws:rds:ap-northeast-2:ACCOUNT_ID:pg:siglens-*",
+                "arn:aws:rds:ap-northeast-2:ACCOUNT_ID:og:default:*",
+                "arn:aws:rds:ap-northeast-2:ACCOUNT_ID:secgrp:default"
+            ],
+            "Condition": {
+                "StringEquals": {
+                    "aws:RequestedRegion": "ap-northeast-2"
+                }
+            }
+        },
+        {
+            "Sid": "RdsEncryptionKey",
+            "Effect": "Allow",
+            "Action": [
+                "kms:CreateGrant",
+                "kms:DescribeKey",
+                "kms:Encrypt",
+                "kms:Decrypt",
+                "kms:ReEncrypt*",
+                "kms:GenerateDataKey*"
+            ],
+            "Resource": "*",
+            "Condition": {
+                "StringEquals": {
+                    "kms:ViaService": "rds.ap-northeast-2.amazonaws.com",
+                    "kms:CallerAccount": "ACCOUNT_ID"
+                }
+            }
+        },
+        {
+            "Sid": "RdsServiceLinkedRole",
+            "Effect": "Allow",
+            "Action": "iam:CreateServiceLinkedRole",
+            "Resource": "arn:aws:iam::ACCOUNT_ID:role/aws-service-role/rds.amazonaws.com/AWSServiceRoleForRDS",
+            "Condition": {
+                "StringEquals": {
+                    "iam:AWSServiceName": "rds.amazonaws.com"
+                }
+            }
+        },
+        {
+            "Sid": "PerformanceInsightsRead",
+            "Effect": "Allow",
+            "Action": [
+                "pi:DescribeDimensionKeys",
+                "pi:GetResourceMetrics",
+                "pi:GetResourceMetadata",
+                "pi:ListAvailableResourceMetrics"
+            ],
+            "Resource": "arn:aws:pi:ap-northeast-2:ACCOUNT_ID:metrics/rds/*"
+        },
+        {
+            "Sid": "DenyDestructiveRds",
+            "Effect": "Deny",
+            "Action": [
+                "rds:DeleteDBInstance",
+                "rds:DeleteDBSubnetGroup",
+                "rds:DeleteDBParameterGroup",
+                "rds:DeleteDBSnapshot",
+                "rds:DeleteDBInstanceAutomatedBackup",
+                "rds:PurchaseReservedDBInstancesOffering"
+            ],
+            "Resource": "*"
+        }
+    ]
+}

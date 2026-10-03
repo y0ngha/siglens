@@ -393,7 +393,67 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-config-signal --namespace S
   --metric-name ConfigSignalDetected --statistic Sum --period 3600 --evaluation-periods 1 --threshold 0 \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $P2
 
-log "alarms: P1(즉시)=5xx, unhealthy, disk, heap-oom, analysis-stream, capacity-needed(cpu/mem) | P2(오늘중)=mem-high, surplus-credits, isr-cache, isr-tag, redis-cache, seed-bars, market-data-loader(fear-greed us/kr/crypto+market-kr), config-signal(naver-news/kr-calendar/prewarm-redis)"
+# ── RDS (15-rds.sh) ──────────────────────────────────────────────────────────
+#
+# 운영 DB가 Neon에서 RDS(db.t4g.small, Single-AZ)로 옮겨 온다. Neon은 컴퓨트·스토리지를
+# 알아서 늘렸지만 RDS는 **우리가 지켜봐야 한다** — 아래 넷이 그 최소 안전망이다.
+# 인스턴스가 아직 없어도 알람은 만들어진다(데이터가 없는 동안 INSUFFICIENT_DATA).
+# 지표는 전부 AWS/RDS 네임스페이스의 무료 기본 지표라 알람 비용(월 $0.10/개) 외 추가 비용이 없다.
+#
+# 누락 데이터 정책 `notBreaching`: 인스턴스가 삭제·정지돼 지표가 끊겼을 때 알람이
+# 허위로 울리지 않게 한다. DB가 죽은 경우는 `/api/ready`와 앱 에러 로그가 따로 잡는다.
+RDS_ID="${RDS_DB_ID:-siglens-db}"
+
+# CPU 크레딧 잔량 (P2). t4g는 baseline(20%/vCPU)을 넘기면 크레딧을 태우고, RDS t4g는
+# 기본이 **Unlimited 모드**라 0이 되어도 느려지지 않는 대신 초과분이 과금된다
+# (CPUSurplusCreditsCharged). 즉 이 알람은 "곧 돈이 나가기 시작한다"는 선행 신호다.
+#
+# ⚠️ 이전 구간(논리 복제 초기 복사, pg_restore)에는 거의 확정적으로 울린다 — 1.4GB를
+# 한 번에 적재하면 baseline을 넘기기 때문이다. 오탐이 아니라 예상된 소모이므로
+# RDS_MIGRATION.md §4의 복제 구간에서는 무시하고, 안정화 후 계속 30 아래면 인스턴스
+# 클래스를 재검토한다. EC2의 `siglens-cpu-credits-low`가 배포마다 오탐이던 것과 달리
+# RDS는 한 번 만들고 계속 쓰므로 정상 운영에서는 울리지 않는 게 맞다.
+aws cloudwatch put-metric-alarm --alarm-name siglens-rds-cpu-credits-low --namespace AWS/RDS \
+  --metric-name CPUCreditBalance --dimensions Name=DBInstanceIdentifier,Value="$RDS_ID" \
+  --statistic Minimum --period 300 --evaluation-periods 3 --threshold 30 \
+  --comparison-operator LessThanThreshold --treat-missing-data notBreaching $P2
+
+# 여유 메모리 (P2). 2GiB 인스턴스에서 FreeableMemory가 200MB 밑이면 shared_buffers·
+# 워크메모리·OS 캐시가 서로 밀어내는 구간이고, 더 내려가면 스왑·OOM으로 이어진다.
+#
+# P1이 아니라 P2다: Postgres는 남는 메모리를 OS 페이지 캐시로 쓰기 때문에 소형
+# 인스턴스의 FreeableMemory는 정상 운영에서도 낮게 형성될 수 있고, **실측 기준선이
+# 아직 없다.** P1로 두면 첫날 기준선이 잡히기 전에 오탐으로 P1 토픽을 오염시킬 수 있다.
+# ⚠️ 이전 후 첫날의 실제 최저값을 보고 임계를 다시 잡을 것(너무 자주 울리면 100MB로
+# 낮추고, 한 번도 안 가까워지면 그대로 둔다). 기준이 서면 P1 승격을 검토한다.
+# FreeableMemory 단위는 바이트다(200MB = 209715200).
+aws cloudwatch put-metric-alarm --alarm-name siglens-rds-freeable-memory-low --namespace AWS/RDS \
+  --metric-name FreeableMemory --dimensions Name=DBInstanceIdentifier,Value="$RDS_ID" \
+  --statistic Minimum --period 300 --evaluation-periods 3 --threshold 209715200 \
+  --comparison-operator LessThanThreshold --treat-missing-data notBreaching $P2
+
+# 여유 스토리지 (P1). 남은 공간이 4GB 미만이면 알린다. 스토리지 자동확장(상한 50GB)은
+# 여유가 할당량의 10% 이하일 때에야 발동하고 한 번 늘리면 6시간 쿨다운이 있어서,
+# 그 전에 사람이 먼저 알아야 한다. 알람은 "사용률"이 아니라 "남은 절대량"을 본다 —
+# 자동확장으로 할당량이 늘면 같은 4GB가 더 낮은 사용률을 뜻한다.
+# 단위는 바이트(4GB = 4294967296).
+# 복제 중에는 구독자 WAL·초기 복사로 일시적으로 빨리 찰 수 있다.
+aws cloudwatch put-metric-alarm --alarm-name siglens-rds-free-storage-low --namespace AWS/RDS \
+  --metric-name FreeStorageSpace --dimensions Name=DBInstanceIdentifier,Value="$RDS_ID" \
+  --statistic Minimum --period 300 --evaluation-periods 2 --threshold 4294967296 \
+  --comparison-operator LessThanThreshold --treat-missing-data notBreaching $P1
+
+# 연결 수 (P1). max_connections 기본값(메모리 비례, t4g.small ≈ 180~225)의 약 70%.
+# 이 값은 15-rds.sh의 max_connections 주석이 참조한다 — 바꾸면 그쪽 문구도 같이 고친다.
+RDS_CONNECTIONS_ALARM_THRESHOLD=150
+# 인스턴스마다 커넥션 풀이 있어 ASG가 늘어나면 연결도 선형으로 는다 — 풀 누수나
+# 스케일아웃 폭주를 한계(too many clients)에 닿기 전에 잡는다.
+aws cloudwatch put-metric-alarm --alarm-name siglens-rds-connections-high --namespace AWS/RDS \
+  --metric-name DatabaseConnections --dimensions Name=DBInstanceIdentifier,Value="$RDS_ID" \
+  --statistic Maximum --period 300 --evaluation-periods 2 --threshold "$RDS_CONNECTIONS_ALARM_THRESHOLD" \
+  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $P1
+
+log "alarms: P1(즉시)=5xx, unhealthy, disk, heap-oom, analysis-stream, capacity-needed(cpu/mem), rds(free-storage/connections) | P2(오늘중)=mem-high, surplus-credits, rds(cpu-credits/freeable-memory), isr-cache, isr-tag, redis-cache, seed-bars, market-data-loader(fear-greed us/kr/crypto+market-kr), config-signal(naver-news/kr-calendar/prewarm-redis)"
 
 # ── 클라이언트 예외 (메트릭·알람 없음 — Logs Insights로만 기준선 관찰) ────────
 #

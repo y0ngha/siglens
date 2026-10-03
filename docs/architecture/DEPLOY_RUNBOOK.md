@@ -11,6 +11,7 @@
 | 페이지별 revalidate 정책 | [ISR_REVALIDATE.md](./ISR_REVALIDATE.md) |
 | Cloudflare 캐싱·WAF·봇 보호 | [CDN_CACHING.md](./CDN_CACHING.md) |
 | seo-prewarm 크론, 배치 알람, 크론 킬 스위치 | [CRON.md](../reference/CRON.md) |
+| 운영 DB(Neon → AWS RDS) 이전: 프로비저닝, 롤, 논리 복제, 컷오버, 롤백 | [RDS_MIGRATION.md](./RDS_MIGRATION.md) |
 
 **고정 좌표**: 리전 `ap-northeast-2` · ASG `siglens-asg` · 인스턴스 `t4g.medium`(arm64) · ECR 레포 `siglens` · ISR 캐시 버킷 `siglens-isr-cache` · 로그 그룹 `/siglens/app` · SNS 토픽 `siglens-alerts`.
 
@@ -419,6 +420,10 @@ ISR write가 로케일 수만큼 늘어난다. 이 레포에서 ISR write는 실
 | `siglens-tunnel-down` | `[cloudflared-down]` 로그 5분 합계 ≥ 1 | 인그레스 전멸이다. `systemctl status cloudflared` → 토큰(SSM `/siglens/TUNNEL_TOKEN`)·아웃바운드 7844 확인. 복구 안 되면 DNS를 잠시 되돌릴 수 없으니(ALB 없음) instance refresh |
 | `siglens-app-unhealthy` | `[selfcheck]` 로그 5분 합계 ≥ 1 | 온박스 selfcheck가 인스턴스를 Unhealthy로 표시했다는 뜻 = ASG가 교체 중. 교체가 반복되면 컨테이너 로그부터 |
 | `siglens-cpu-credits-low` | CPUCreditBalance < 30 (5분 Min ×2) | t4g 버스트 소진 임박. 배포·빌드가 유발했는지 먼저 확인(정상 회복). 지속되면 인스턴스 타입 재검토 |
+| `siglens-rds-freeable-memory-low` (P2) | RDS `FreeableMemory` < 200MB (5분 Min ×3). **실측 기준선 없이 정한 임계**라 이전 후 첫날 최저값으로 재조정(너무 자주 울리면 100MB) | RDS(`siglens-db`, 2GiB)가 메모리 압박일 수 있다(Postgres는 남는 메모리를 OS 캐시로 써서 평시에도 낮을 수 있다). Performance Insights에서 상위 쿼리·워크메모리 큰 정렬/해시를 찾고, `pg_stat_activity`로 장기 쿼리를 본다. 반복되면 `db.t4g.medium`으로 상향(`modify-db-instance --db-instance-class`, 재시작 수 분). [RDS_MIGRATION.md](./RDS_MIGRATION.md) |
+| `siglens-rds-free-storage-low` | RDS `FreeStorageSpace` < 4GB (5분 Min ×2) | 남은 공간이 4GB 미만(사용률이 아니라 남은 절대량 기준). 자동확장(상한 50GB)이 곧 발동하지만 되돌릴 수 없고 6시간 쿨다운이 있다. 큰 테이블·WAL(복제 슬롯이 남아 있지 않은지 `pg_replication_slots`)·로그를 먼저 의심 |
+| `siglens-rds-connections-high` | RDS `DatabaseConnections` > 150 (5분 Max ×2) | `max_connections`(≈180~225) 근접. 인스턴스마다 풀이 있어 ASG 스케일아웃 시 선형 증가한다. `pg_stat_activity`로 `application_name`·`state='idle'` 누적 확인, 풀 크기/누수 점검 |
+| `siglens-rds-cpu-credits-low` (P2) | RDS `CPUCreditBalance` < 30 (5분 Min ×3) | t4g Unlimited 모드라 0이어도 느려지진 않지만 곧 초과 크레딧이 과금된다. **이전 구간(초기 복사·pg_restore)에는 예상된 소모**라 무시. 평시에도 지속되면 클래스 재검토 |
 | `siglens-mem-high` | mem_used_percent > 90 (5분 Avg ×3) | OOM 전 경고. 컨테이너 메모리 확인 → 재시작으로 완화, 반복되면 누수 조사 |
 | `siglens-disk-high` | disk_used_percent > 85 (5분 Max ×2) | **ISR 외부화 회귀 카나리다.** 캐시가 S3로 안 나가고 로컬에 쌓인다는 뜻 → `siglens-isr-cache-failures`와 함께 보고 [ISR_CACHE_HANDLER.md](./ISR_CACHE_HANDLER.md)로 |
 | `siglens-isr-cache-failures` | IsrCacheFailures 5분 합계 > 5 | S3 권한/버킷/IMDS 확인. fail-open이라 사이트는 살아 있지만 캐시는 사실상 죽은 상태 |
@@ -554,6 +559,7 @@ aws ssm get-command-invocation --profile siglens \
 | 5 | `bash infra/aws/07-alarms.sh` | 알람 없음. `ALARM_EMAIL` 설정 후 **confirm 메일 클릭까지** 해야 통지가 온다 |
 | 6 | `bash infra/aws/13-seo-prewarm.sh` (**10-logs.sh 이후 반드시 재실행**) | metric filter가 하나도 안 걸린 채 "성공"으로 보인다 |
 | 7 | `bash infra/aws/09-bake-ami.sh` → `vars.PINNED_AMI` 갱신 | `PINNED_AMI`가 없으면 배포는 **실패**한다(latest로 조용히 떨어지지 않음) |
+| 8 | `bash infra/aws/15-rds.sh` (**1번 이후**, deployer에 RDS 권한 필요) — 상세 절차는 [RDS_MIGRATION.md](./RDS_MIGRATION.md) | RDS가 없다. 이 스크립트가 `/siglens/RDS_ENDPOINT`를 SSM에 게시한다. 7단계의 `07-alarms.sh`는 인스턴스보다 먼저 돌려도 RDS 알람이 `INSUFFICIENT_DATA`로 만들어질 뿐이다 |
 
 검증 포인트:
 

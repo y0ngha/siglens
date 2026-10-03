@@ -659,6 +659,23 @@
 
 Round 4: approved
 
+## [infra/rds-provisioning-and-runbook Rounds 1-3 | infra/rds-provisioning-and-runbook | 2026-10-03]
+- Violation (R1 REQUIRED, fixed): idempotency check matched AWS CLI `--output text` with space padding, but multiple values come TAB-separated, so a rerun died on InvalidPermission.Duplicate
+  - Rule: (new) Never parse AWS CLI text output with string padding; query the exact item with JMESPath (flatten, then pipe-filter) and prove both "absent" and "present" states with a stubbed/mock AWS harness
+  - Context: `allow_from` in 15-rds.sh; harness reproduced the old failure.
+- Violation (R1 REQUIRED, fixed): cutover runbook let instances restart one by one, creating a window where Neon and RDS both took writes while logical replication was live
+  - Rule: (new) A DB cutover must stop every writer (and suspend autoscaling launches) before switching the connection target, then start them; never roll restarts across a live replication pair
+  - Context: §6 rewritten (suspend ASG → stop all → verify caught up → setval → switch SSM → start → resume).
+- Violation (R1/R2 REQUIRED, fixed): secrets placed under a path the app role could still read — nested `/siglens/rds/*` matched `parameter/siglens/*`, and a separate root was still readable via the EC2 role's AWS-managed `AmazonSSMManagedInstanceCore` (`GetParameter` on `*`)
+  - Rule: (new) Before claiming a role "cannot read" a secret, enumerate every attached policy including AWS-managed ones (`get-policy-version`); protect admin secrets with an explicit Deny on a disjoint path
+  - Context: secrets moved to `/siglens-rds/*` + `DenyRdsSecrets` on the EC2 role; trader role needs the same Deny by hand.
+- Violation (R2 REQUIRED, fixed): a new user inline policy pushed the IAM user over the 2,048-char inline quota, aborting the setup script
+  - Rule: (new) Check IAM size quotas (user inline 2,048 total; managed 6,144) when adding policies; prefer customer-managed policies for anything non-trivial
+  - Context: `siglens-deployer-rds` customer-managed policy with version pruning.
+- Violation (R3 recommended, fixed): rollback restarted the app on Neon before disabling the still-live RDS subscription, letting resumed Neon writes overwrite RDS-only rows awaiting salvage
+  - Rule: (new) In a rollback, cut the replication path before restoring writers to the old primary
+  - Context: §7-A step 1-1 disables the subscription before the SSM restore/app start.
+- Status (R3): recommended item applied directly (loop limit reached; GitHub Claude review follows)
 ## [chore/local-dev-db-and-tunnel Round 1 | chore/local-dev-db-and-tunnel | 2026-10-03]
 - Violation (R1 REQUIRED, fixed): docs made the local Docker DB the default for the running app while the app's runtime driver (neon-http) could not connect to it
   - Rule: (new) A config/doc default must be usable by every consumer that reads it at the time it merges; state ordering dependencies on other PRs explicitly
@@ -731,6 +748,13 @@ Round 4: approved
   - Context: Added KR translation + upsert-failure test asserting `marketProfile: 'kr-equity'` in the provisional write; mutation-checked.
 - Status (R3): APPROVED (zero findings)
 
+## [PR #922 Claude review | infra/rds-provisioning-and-runbook | 2026-10-03]
+- Violation (suggestion, fixed): runbook step (reboot after a parameter change) needed an API the scoped deployer policy didn't grant
+  - Rule: (new) When scoping an IAM policy to a script, also cover every action the runbook tells the same identity to run, not only the script's own calls
+  - Context: `rds:RebootDBInstance` added to `siglens-deployer-rds`.
+- Violation (suggestion, fixed): the connection-alarm threshold (150) was written in two files independently
+  - Rule: MISTAKES §15 drift trap — one source with cross-references
+  - Context: `RDS_CONNECTIONS_ALARM_THRESHOLD` in 07-alarms.sh, referenced from 15-rds.sh.
 ## [PR #921 Claude review | refactor/db-postgres-js-driver | 2026-10-03]
 - Violation (suggestion, fixed): comments in code merged from another PR (#916) still described the old driver ("neon-http에는 쿼리 타임아웃이 없어")
   - Rule: MISTAKES §32 — after a driver/contract switch, grep the old name repo-wide again after every master merge
