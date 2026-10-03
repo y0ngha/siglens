@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { count, countDistinct, desc, gte, lt } from 'drizzle-orm';
-import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
+import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { visitorDays } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
@@ -55,7 +55,7 @@ export class DrizzleVisitorRepository implements VisitorRepository {
         await withRetry(
             () =>
                 this.db.insert(visitorDays).values(visit).onConflictDoNothing(),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
     }
 
@@ -67,7 +67,7 @@ export class DrizzleVisitorRepository implements VisitorRepository {
                 this.db
                     .delete(visitorDays)
                     .where(lt(visitorDays.date, cutoffDate)),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
     }
 

@@ -4,88 +4,92 @@ vi.mock('@/shared/lib/sleep', () => ({
 
 import { withRetry } from '@/shared/lib/withRetry';
 import {
-    isNeonTransientError,
-    NEON_TRANSIENT_RETRY,
-} from '@/shared/db/isNeonTransientError';
-import { NeonDbError } from '@neondatabase/serverless';
+    isTransientDbError,
+    DB_TRANSIENT_RETRY,
+} from '@/shared/db/isTransientDbError';
+import postgres from 'postgres';
 
-function createNeonError(code: string, message: string): NeonDbError {
-    const err = new NeonDbError(message);
-    (err as NeonDbError & { code: string }).code = code;
-    return err;
+function createPostgresError(
+    code: string,
+    message: string
+): postgres.PostgresError {
+    // 실제 postgres-js가 서버 에러를 만드는 방식과 같다. 런타임 생성자는 응답 필드
+    // 객체를 받아 Object.assign하지만 선언 타입은 string이라 캐스트가 필요하다.
+    return new postgres.PostgresError({ code, message } as unknown as string);
 }
 
 describe('Database retry and transient error detection', () => {
-    describe('isNeonTransientError', () => {
+    describe('isTransientDbError', () => {
         it('detects admin_shutdown (57P01) via code field', () => {
-            const err = createNeonError('57P01', 'admin shutdown');
-            expect(isNeonTransientError(err)).toBe(true);
+            const err = createPostgresError('57P01', 'admin shutdown');
+            expect(isTransientDbError(err)).toBe(true);
         });
 
         it('detects connection_failure (08006) via code field', () => {
-            const err = createNeonError('08006', 'connection failure');
-            expect(isNeonTransientError(err)).toBe(true);
+            const err = createPostgresError('08006', 'connection failure');
+            expect(isTransientDbError(err)).toBe(true);
         });
 
         it('detects too_many_connections (53300) via code field', () => {
-            const err = createNeonError('53300', 'too many connections');
-            expect(isNeonTransientError(err)).toBe(true);
+            const err = createPostgresError('53300', 'too many connections');
+            expect(isTransientDbError(err)).toBe(true);
         });
 
-        it('detects transient error via message needle (fetch failed)', () => {
-            const err = new NeonDbError(
-                'Error connecting to database: TypeError: fetch failed'
+        it('detects postgres-js connection error (CONNECTION_CLOSED)', () => {
+            const err = Object.assign(
+                new Error('write CONNECTION_CLOSED db.example:5432'),
+                { code: 'CONNECTION_CLOSED' }
             );
-            expect(isNeonTransientError(err)).toBe(true);
+            expect(isTransientDbError(err)).toBe(true);
         });
 
         it('detects transient error in cause chain (Drizzle wrapping)', () => {
-            const inner = createNeonError('57P01', 'admin_shutdown');
+            const inner = createPostgresError('57P01', 'admin_shutdown');
             const outer = new Error('Failed query: SELECT ...', {
                 cause: inner,
             });
-            expect(isNeonTransientError(outer)).toBe(true);
+            expect(isTransientDbError(outer)).toBe(true);
         });
 
         it('returns false for non-retryable error (23505 unique violation)', () => {
-            const err = createNeonError(
+            const err = createPostgresError(
                 '23505',
                 'duplicate key value violates unique constraint'
             );
-            expect(isNeonTransientError(err)).toBe(false);
+            expect(isTransientDbError(err)).toBe(false);
         });
 
-        it('returns false for plain Error without NeonDbError in chain', () => {
+        it('returns false for plain Error without a DB error in chain', () => {
             const err = new Error('something else');
-            expect(isNeonTransientError(err)).toBe(false);
+            expect(isTransientDbError(err)).toBe(false);
         });
 
         it('returns false for non-Error values', () => {
-            expect(isNeonTransientError('string error')).toBe(false);
-            expect(isNeonTransientError(42)).toBe(false);
-            expect(isNeonTransientError(null)).toBe(false);
+            expect(isTransientDbError('string error')).toBe(false);
+            expect(isTransientDbError(42)).toBe(false);
+            expect(isTransientDbError(null)).toBe(false);
         });
 
         it('handles deeply nested cause chain up to MAX_CAUSE_DEPTH', () => {
-            let current: Error = createNeonError(
+            let current: Error = createPostgresError(
                 '57P01',
                 'buried transient error'
             );
             for (let i = 0; i < 7; i++) {
                 current = new Error(`wrapper-${i}`, { cause: current });
             }
-            expect(isNeonTransientError(current)).toBe(true);
+            expect(isTransientDbError(current)).toBe(true);
         });
 
-        it('does not match SQLSTATE code embedded in user data (no word boundary)', () => {
-            const err = new NeonDbError('user_57P01ABC_check');
-            expect(isNeonTransientError(err)).toBe(false);
+        it('does not match SQLSTATE text embedded in the message (code field only)', () => {
+            const err = new Error('user_57P01ABC_check');
+            expect(isTransientDbError(err)).toBe(false);
         });
     });
 
     describe('withRetry exhaustion', () => {
         it('throws after all retries are exhausted', async () => {
-            const transientError = createNeonError('57P01', 'shutdown');
+            const transientError = createPostgresError('57P01', 'shutdown');
             let callCount = 0;
             const fn = vi.fn().mockImplementation(() => {
                 callCount++;
@@ -96,7 +100,7 @@ describe('Database retry and transient error detection', () => {
                 withRetry(fn, {
                     maxRetries: 2,
                     baseDelayMs: 10,
-                    isRetryable: isNeonTransientError,
+                    isRetryable: isTransientDbError,
                 })
             ).rejects.toThrow('shutdown');
 
@@ -104,7 +108,7 @@ describe('Database retry and transient error detection', () => {
         });
 
         it('does not retry non-retryable errors', async () => {
-            const uniqueViolation = createNeonError(
+            const uniqueViolation = createPostgresError(
                 '23505',
                 'unique violation'
             );
@@ -114,7 +118,7 @@ describe('Database retry and transient error detection', () => {
                 withRetry(fn, {
                     maxRetries: 3,
                     baseDelayMs: 10,
-                    isRetryable: isNeonTransientError,
+                    isRetryable: isTransientDbError,
                 })
             ).rejects.toThrow('unique violation');
 
@@ -122,7 +126,7 @@ describe('Database retry and transient error detection', () => {
         });
 
         it('succeeds on retry after transient failure', async () => {
-            const transientError = createNeonError(
+            const transientError = createPostgresError(
                 '08006',
                 'connection_failure'
             );
@@ -134,7 +138,7 @@ describe('Database retry and transient error detection', () => {
             const result = await withRetry(fn, {
                 maxRetries: 2,
                 baseDelayMs: 10,
-                isRetryable: isNeonTransientError,
+                isRetryable: isTransientDbError,
             });
 
             expect(result).toBe('success');
@@ -142,14 +146,14 @@ describe('Database retry and transient error detection', () => {
         });
 
         it('respects backoff budget and throws early', async () => {
-            const transientError = createNeonError('57P01', 'shutdown');
+            const transientError = createPostgresError('57P01', 'shutdown');
             const fn = vi.fn().mockRejectedValue(transientError);
 
             await expect(
                 withRetry(fn, {
                     maxRetries: 10,
                     baseDelayMs: 1000,
-                    isRetryable: isNeonTransientError,
+                    isRetryable: isTransientDbError,
                     backoffBudgetMs: 1,
                 })
             ).rejects.toThrow('shutdown');
@@ -158,12 +162,12 @@ describe('Database retry and transient error detection', () => {
         });
     });
 
-    describe('NEON_TRANSIENT_RETRY preset', () => {
+    describe('DB_TRANSIENT_RETRY preset', () => {
         it('has expected configuration', () => {
-            expect(NEON_TRANSIENT_RETRY.maxRetries).toBe(3);
-            expect(NEON_TRANSIENT_RETRY.baseDelayMs).toBe(200);
-            expect(NEON_TRANSIENT_RETRY.backoffBudgetMs).toBe(5000);
-            expect(NEON_TRANSIENT_RETRY.isRetryable).toBe(isNeonTransientError);
+            expect(DB_TRANSIENT_RETRY.maxRetries).toBe(3);
+            expect(DB_TRANSIENT_RETRY.baseDelayMs).toBe(200);
+            expect(DB_TRANSIENT_RETRY.backoffBudgetMs).toBe(5000);
+            expect(DB_TRANSIENT_RETRY.isRetryable).toBe(isTransientDbError);
         });
     });
 });

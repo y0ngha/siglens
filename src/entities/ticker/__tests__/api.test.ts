@@ -356,7 +356,7 @@ describe('DrizzleKoreanTickerRepository', () => {
     });
 
     it('upsertMany 는 전 종목 동기화를 배치로 쪼갠다', async () => {
-        // 2,500행대를 한 INSERT로 보내면 Neon HTTP 페이로드 한도에 걸린다.
+        // 2,500행대를 한 INSERT로 보내면 쿼리 페이로드 한도에 걸린다.
         const { db, insert, values } = makeUpsertDb();
         const repo = new DrizzleKoreanTickerRepository(db);
         const symbols = Array.from({ length: 1_100 }, (_, i) => `SYM${i}`);
@@ -446,7 +446,7 @@ describe('DrizzleKoreanTickerRepository', () => {
 
     it('markRelisted 는 대량 재상장을 배치로 쪼갠다', async () => {
         // 피드 장애 복구 직후처럼 재상장 심볼이 한 번에 몰리면 IN (...) 하나가
-        // upsertMany와 같은 Neon HTTP 페이로드 한도에 걸린다.
+        // upsertMany와 같은 쿼리 페이로드 한도에 걸린다.
         const { db, update, where } = makeUpdateDb();
         const repo = new DrizzleKoreanTickerRepository(db);
         const many = Array.from({ length: 1_100 }, (_, i) => `SYM${i}.KS`);
@@ -640,18 +640,18 @@ describe('DrizzleProfileDescriptionTranslationRepository', () => {
 });
 
 // DrizzleKoreanTickerRepository.upsertMany 를 대표 site 로 골라
-// NEON_TRANSIENT_RETRY 정책이 wire-up 됐는지 확인하는 smoke 테스트. 이 파일의
-// 다른 두 클래스(Asset/ProfileDescription)도 동일한 withRetry + NEON_TRANSIENT_RETRY
+// DB_TRANSIENT_RETRY 정책이 wire-up 됐는지 확인하는 smoke 테스트. 이 파일의
+// 다른 두 클래스(Asset/ProfileDescription)도 동일한 withRetry + DB_TRANSIENT_RETRY
 // 패턴을 쓰므로 대표 1개만 검증해도 회귀 방지에 충분하다.
-describe('Neon transient retry wire-up', () => {
-    it('transient NeonDbError 가 발생하면 재시도해 결국 성공한다', async () => {
-        const neonTransient = Object.assign(
-            new Error('Error connecting to database: fetch failed'),
-            { name: 'NeonDbError' }
+describe('DB transient retry wire-up', () => {
+    it('transient 연결 에러(CONNECTION_CLOSED)가 발생하면 재시도해 결국 성공한다', async () => {
+        const dbTransient = Object.assign(
+            new Error('write CONNECTION_CLOSED db.example:5432'),
+            { code: 'CONNECTION_CLOSED' }
         );
         const onConflictDoUpdate = vi
             .fn()
-            .mockRejectedValueOnce(neonTransient)
+            .mockRejectedValueOnce(dbTransient)
             .mockResolvedValueOnce(undefined);
         const values = vi.fn(() => ({ onConflictDoUpdate }));
         const insert = vi.fn(() => ({ values }));
@@ -668,7 +668,7 @@ describe('Neon transient retry wire-up', () => {
             new Error(
                 'duplicate key value violates unique constraint "korean_tickers_pkey"'
             ),
-            { name: 'NeonDbError' }
+            { name: 'PostgresError', code: '23505' }
         );
         const onConflictDoUpdate = vi
             .fn()

@@ -64,9 +64,9 @@ RDS는 외부에서 못 들어오는 비공개 인스턴스고 Neon 전용 드�
 
 | # | PR | 왜 선행인가 | 확인 |
 |---|---|---|---|
-| 1 | 드라이버 교체 PR (`#___`) | 앱이 Neon serverless 드라이버(HTTP/WebSocket)를 쓰는 채로 `DATABASE_URL`을 RDS로 바꾸면 전 요청이 DB 에러다. 표준 Postgres 드라이버 + `sslmode=verify-full`(CA 번들 이미지 포함)이 먼저 운영에 있어야 한다 | 아래 ①② |
-| 2 | 빌드 DB 제거 PR (`#___`) | CI 러너는 빌드 때 `/siglens/DATABASE_URL`을 읽어 DB에 붙는다(`ci-deploy-policy.json`의 `BuildTimeDbUrl`). RDS는 SG가 앱 SG에서만 열려 있어 **러너가 못 붙는다 = 컷오버 후 모든 배포 빌드 실패** | 아래 ③ |
-| 3 | 로컬 DB/터널 PR (`#___`) | 운영자가 `localhost:6543` 터널로 RDS에 접속하는 도구. §1·§2·§3·§5가 이 터널(또는 아래 대체 명령)을 쓴다. 이 PR이 `dbTarget` 가드와 어떻게 맞물리는지는 §8 ⚠️ 참고 | 터널 스크립트 실행 확인 |
+| 1 | 드라이버 교체 PR (#921, 머지됨) | 앱이 Neon serverless 드라이버(HTTP/WebSocket)를 쓰는 채로 `DATABASE_URL`을 RDS로 바꾸면 전 요청이 DB 에러다. 표준 Postgres 드라이버 + `sslmode=verify-full`(CA 번들 이미지 포함)이 먼저 운영에 있어야 한다 | 아래 ①② |
+| 2 | 빌드 DB 제거 PR (#920, 머지됨 — CI 역할의 `BuildTimeDbUrl` 권한도 제거, IAM 수동 재적용 필요) | 이전에는 CI 러너가 빌드 때 DB에 붙었다. RDS는 SG가 앱 SG에서만 열려 있어 **러너가 못 붙는다 = 컷오버 후 모든 배포 빌드 실패** | 아래 ③ |
+| 3 | 로컬 DB/터널 PR (#919, 머지됨) | 운영자가 `localhost:6543` 터널로 RDS에 접속하는 도구. §1·§2·§3·§5가 이 터널(또는 아래 대체 명령)을 쓴다. 이 PR이 `dbTarget` 가드와 어떻게 맞물리는지는 §8 ⚠️ 참고 | 터널 스크립트 실행 확인 |
 | 4 | 이 PR (인프라 + 런북) | `15-rds.sh`, RDS 알람, 이 문서 | 머지 후 `00-iam-setup.sh` 재실행(§1) |
 
 ```bash

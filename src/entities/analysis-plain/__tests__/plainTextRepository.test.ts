@@ -107,12 +107,15 @@ describe('DrizzlePlainTextRepository.insert', () => {
         ]);
     });
 
-    it('일시적 Neon 오류는 재시도해 성공시킨다', async () => {
+    it('일시적 연결 오류는 재시도해 성공시킨다', async () => {
         vi.useFakeTimers();
         try {
+            // postgres-js가 연결이 끊겼을 때 던지는 형태(`code`로 판별된다).
             const transient = Object.assign(
-                new Error('Error connecting to database: fetch failed'),
-                { name: 'NeonDbError' }
+                new Error('write CONNECTION_CLOSED'),
+                {
+                    code: 'CONNECTION_CLOSED',
+                }
             );
             const onConflictDoNothing = vi
                 .fn()

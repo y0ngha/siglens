@@ -21,13 +21,13 @@
 | 의존성   | 프로덕션                            | E2E (`E2E_TEST=1`)                                                            |
 | -------- | ----------------------------------- | ----------------------------------------------------------------------------- |
 | 시세     | `FmpMarketProvider` (FMP API)       | `FakeMarketProvider` — `e2e/fixtures/bars.json` 고정 데이터 반환              |
-| Database | Neon serverless (`@neondatabase`)   | postgres-js 드라이버 스왑 (`clientTest.ts`) → 로컬 Postgres                   |
+| Database | postgres-js (Neon 연결)             | 같은 postgres-js 클라이언트, `DATABASE_URL`만 로컬 Postgres로 교체            |
 | Redis    | Upstash REST (`@upstash/redis`)     | 로컬 Redis 앞에 **SRH** 사이드카 (Upstash REST 호환), env만 교체              |
 
 구현 위치:
 
 - **시세 fake** — `src/shared/api/market/getMarketDataProvider.ts`가 `process.env.E2E_TEST === '1'`일 때 `FakeMarketProvider`를 반환합니다(`require`로 가져와 프로덕션 번들에 fake/fixture가 섞이지 않게 함). fake 구현은 `src/shared/api/market/FakeMarketProvider.ts`.
-- **DB 드라이버 스왑** — `src/shared/db/client.ts`의 `buildClient()`가 `E2E_TEST=1`일 때 `clientTest.ts`의 `createTestDatabaseClient()`(postgres-js + drizzle)를 반환하고, 그 외에는 Neon serverless 클라이언트를 반환합니다. drizzle 쿼리 API는 두 드라이버 간 런타임 호환이라 레포지토리 코드는 무변경입니다.
+- **DB** — 프로덕션과 E2E가 같은 `createDatabaseClient()`(postgres-js + drizzle, `src/shared/db/client.ts`)를 씁니다. 드라이버를 갈아 끼우는 분기는 없고 `.env.e2e`의 `DATABASE_URL`(로컬 Postgres, `sslmode` 없음)만 다릅니다.
 - **Redis** — `.env.e2e`의 `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN`이 SRH 사이드카(`http://localhost:8079`)를 가리키도록 교체됩니다. Redis 클라이언트 코드는 그대로입니다.
 
 > 참고: 현재 fake로 실제 구현된 것은 **시세(`FakeMarketProvider`)** 뿐입니다. 설계서가 언급하는 LLM/이메일/OAuth fake provider 주입은 향후 Tier 1/2 스펙과 함께 추가될 예정입니다.
@@ -117,8 +117,7 @@ e2e/
 docker-compose.e2e.yml                       # postgres:17 + redis:7 + SRH 사이드카
 .env.e2e                                     # E2E_TEST=1 + 로컬 DB/Redis 자격증명 (커밋됨)
 playwright.config.ts                         # testDir, webServer, projects(chromium/webkit)
-src/shared/db/clientTest.ts                  # postgres-js 드라이버 (E2E 전용)
-src/shared/db/client.ts                      # E2E_TEST 분기 (buildClient)
+src/shared/db/client.ts                      # postgres-js 클라이언트 팩토리 (prod/E2E 공용)
 src/shared/api/market/FakeMarketProvider.ts  # fixture 기반 MarketDataProvider
 src/shared/api/market/getMarketDataProvider.ts  # E2E_TEST 분기
 .github/workflows/e2e.yml                    # CI 워크플로
@@ -128,7 +127,7 @@ src/shared/api/market/getMarketDataProvider.ts  # E2E_TEST 분기
 
 ## 데이터 & 결정성(determinism)
 
-- **로컬 Postgres 17** (드라이버 스왑) — 프로덕션 Neon 대신 사용. `docker-compose.e2e.yml`이 호스트 포트 5433에 노출.
+- **로컬 Postgres 17** — 프로덕션 DB 대신 사용(같은 postgres-js 클라이언트, `DATABASE_URL`만 교체). `docker-compose.e2e.yml`이 호스트 포트 5433에 노출.
 - **AAPL 시드** — `e2e/setup/seed.ts`가 `asset_translations` 테이블에 AAPL 한 행을 `onConflictDoNothing`으로 넣습니다. `[symbol]` 페이지는 이 행이 있어야 `/AAPL`을 렌더합니다(없으면 `getAssetInfo`가 null → `notFound()`). 이 레포에 `tickers` 테이블은 없고, asset 조회의 권위 테이블은 `asset_translations`입니다.
 - **고정 OHLCV** — `FakeMarketProvider`는 `e2e/fixtures/bars.json`의 3봉을 항상 반환하므로 차트/시세가 결정적입니다.
 - **`freezeClock` 헬퍼** — `e2e/support/clock.ts`. 시간 의존 UI(옵션 stale 배너, React Query staleTime 등)를 결정적으로 만들기 위해 브라우저 시계를 고정합니다. 기본값은 미국장 마감 주말 시각(`2026-05-30T20:00:00Z`).

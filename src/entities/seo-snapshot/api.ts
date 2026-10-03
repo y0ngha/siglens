@@ -21,7 +21,7 @@ export interface FindBySymbolOptions {
 }
 
 /**
- * Drizzle ORM implementation backed by Neon PostgreSQL. One row per
+ * Drizzle ORM implementation backed by PostgreSQL. One row per
  * (symbol, tab); `upsert` relies on the `seo_analysis_snapshots_symbol_tab_uq`
  * unique index so repeat pre-warm cron runs overwrite the last-known-good
  * row instead of accumulating duplicates.

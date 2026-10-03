@@ -225,35 +225,75 @@ curl -sS -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge
 
 세부 절차는 각각 [ISR_CACHE_HANDLER.md](./ISR_CACHE_HANDLER.md) §1, [CRON.md](../reference/CRON.md)에 있다.
 
-### ⛔ `.env.local`은 **운영 DB**를 가리킨다
+### ⛔ 로컬 `.env.local`과 운영 DB — 로컬 Docker DB가 기본, 운영은 터널로만
 
-`yarn db:*` 스크립트는 전부 `dotenv -e .env.local`로 실행된다. 그 파일의
-`DATABASE_URL`/`DIRECT_DATABASE_URL`은 **운영 Neon 인스턴스**다. 즉 아무 플래그
-없이 `yarn db:migrate`를 치면 기본값이 운영 스키마 변경이다.
+> **전환 시점**: 이 절은 운영 DB가 Neon → private AWS RDS(ap-northeast-2, default VPC)로
+> 옮겨간 뒤의 모델이다. 컷오버 전까지 `.env.local`은 여전히 **운영 Neon**을 가리키므로,
+> 아래 "컷오버 전" 가드가 유일한 안전장치다.
 
-그래서 쓰기 작업은 **원격 대상일 때 기본 거부**한다
-(`db/scripts/lib/dbTarget.ts`). 막히는 것:
+**컷오버 후 모델**
+
+- `.env.local`의 `DATABASE_URL`은 **로컬 개발 DB**(`postgres://siglens:siglens@localhost:5435/siglens_dev`)를
+  가리킨다. `.env.example`에 같은 값이 기본으로 들어 있다.
+- 앱 클라이언트는 postgres-js(TCP)라 `yarn dev`도 이 로컬 DB에 그대로 붙는다(로컬 호스트는 URL의
+  `sslmode`를 그대로 따르고, 원격 호스트의 `require`류만 verify-full로 올린다).
+- `DIRECT_DATABASE_URL`은 `DATABASE_URL`보다 **우선**한다(db 스크립트는 `DIRECT_DATABASE_URL || DATABASE_URL`).
+  `.env.local`에서 지우거나 같은 로컬 URL로 맞출 것 — 예전 운영 값이 남아 있으면 `DATABASE_URL`을
+  로컬로 바꿔도 스크립트는 운영으로 간다(가드가 REMOTE로 막지만 원인 찾기가 번거롭다).
+- 로컬 DB는 `127.0.0.1`에만 바인딩된다(같은 네트워크의 다른 기기에 열리지 않음).
+- RDS는 퍼블릭 접근이 없다. 운영 DB는 `yarn db:tunnel`(SSM 포트포워딩, `localhost:6543`)로만
+  닿고, 끝나면 터널을 닫는다.
+- `db/scripts/lib/dbTarget.ts`는 호스트가 localhost여도 **포트 6543(`DB_TUNNEL_PORT`)이면
+  REMOTE**로 분류한다. 호스트 이름만 보면 터널과 로컬 Docker가 구별되지 않아, 이 규칙이
+  없으면 운영 터널이 쓰기 가드를 통째로 연다. 로그에는 `(REMOTE via tunnel :6543 = PRODUCTION)`
+  으로 찍힌다.
+
+| 하고 싶은 것 | 명령 |
+|---|---|
+| 로컬 DB 기동 (healthy까지 대기) | `yarn db:dev:up` |
+| 로컬 DB 마이그레이션 | `yarn db:dev:migrate` (`(local)`이 찍혀야 한다) |
+| 로컬 DB 초기화 (볼륨 삭제 후 재생성 + 마이그레이션) | `yarn db:dev:reset` |
+| 운영 DB 터널 열기 | `yarn db:tunnel` (`session-manager-plugin` 필요, `AWS_PROFILE` 기본 `siglens`) |
+| 운영의 비개인 데이터를 로컬로 복사 (선택) | 터널을 연 채 `SOURCE_DATABASE_URL=postgres://<user>:<pw>@localhost:6543/<db> scripts/db-dev-seed-from-prod.sh` |
+
+- `yarn db:tunnel`은 ASG `siglens-asg`의 InService 인스턴스를 점프 호스트로 쓰고,
+  RDS 엔드포인트는 SSM `/siglens/RDS_ENDPOINT`에서 읽는다(infra가 RDS 생성 시 게시).
+  파라미터가 없으면 `yarn db:tunnel --host <rds-endpoint>`.
+- `db-dev-seed-from-prod.sh`는 **Docker Desktop(macOS/Windows)에서만** 동작한다 — `host.docker.internal`에
+  의존하므로 Linux에서는 시작 즉시 거부한다. 계정·세션·OAuth·API 키·보유종목·약관 동의·문의·대화·방문자·
+  공유 분석의 **행을 가져오지 않는다**(스키마만). 원본이 `localhost:6543`이고 대상이
+  `localhost:5435`가 아니면 거부한다. 제외 목록의 근거는 스크립트 상단 주석.
+- `yarn db:dev:migrate`는 `.env.local`을 읽지 않는다(`env -u`로 비우고 로컬 URL을 강제).
+  `yarn db:migrate`(`dotenv -e .env.local`)로 로컬을 마이그레이션하지 말 것 — `.env.local`이
+  터널을 가리키고 있으면 운영에 닿는다.
+
+**쓰기 가드 (컷오버 전후 공통)**
+
+`yarn db:*` 스크립트는 전부 `dotenv -e .env.local`로 실행된다. 그래서 쓰기 작업은 **원격 대상일
+때 기본 거부**한다(`db/scripts/lib/dbTarget.ts`). 막히는 것:
 
 | 명령 | 원격 대상일 때 |
 |---|---|
 | `yarn db:migrate` | ⛔ 거부 (exit 1) |
 | `yarn db:backfill:content-locale --apply` | ⛔ 거부 |
 | `yarn db:translate:content-locale --apply` | ⛔ 거부 |
+| `yarn db:seed:terms` · `db:seed:crypto` · `db:seed:crypto-korean`(`DRY_RUN=1`은 제외) · `db:seed:kr-names` · `db:seed:calendar-analysis` · `db:backfill:calendar` | ⛔ 거부 |
 | `yarn db:verify:content-locale` | ✅ 허용 (읽기 전용) |
 
 모든 스크립트가 시작할 때 `[db] target: <host>/<db> (local|REMOTE)`를 찍는다 —
 어느 DB를 봤는지 모르는 채로 "정상"이라 보고하는 것이 가장 위험하다.
 
-**운영에 정말 적용해야 할 때만** `ALLOW_REMOTE_DB_WRITE=1`을 명시한다:
+**운영에 정말 적용해야 할 때만** `ALLOW_REMOTE_DB_WRITE=1`을 명시한다. 컷오버 후에는
+터널을 연 상태에서 `.env.local`을 터널 URL로 바꾸거나 그 값만 덮어써서 실행한다:
 
 ```bash
 ALLOW_REMOTE_DB_WRITE=1 yarn db:migrate
 ```
 
-`true`·`yes`·`1` 외의 값으로는 열리지 않는다. 배포 파이프라인은 이 스크립트들을
+**정확히 `1`일 때만** 열린다(`true`·`yes`·`0`·빈 문자열은 거부). 배포 파이프라인은 이 스크립트들을
 부르지 않으므로(마이그레이션은 수동 운영) 이 가드가 자동 배포를 막지 않는다.
 
-**로컬에서 돌리려면** `DATABASE_URL`을 덮어쓴다:
+**컷오버 전: 로컬에서 돌리려면** `DATABASE_URL`을 덮어쓴다(또는 `yarn db:dev:*`를 쓴다):
 
 ```bash
 docker compose -f docker-compose.e2e.yml up -d postgres

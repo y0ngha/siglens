@@ -14,7 +14,7 @@ import {
     runNewsAnalysis,
     DEEPSEEK_V4_1_FLASH_MODEL,
 } from '@y0ngha/siglens-core';
-import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
+import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { getDatabaseClient } from '@/shared/db/client';
 import { news } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
@@ -73,8 +73,8 @@ export class DrizzleNewsRepository {
      * conflict `set` to avoid overwriting LLM-translated content on every fetch.
      */
     async upsertNewsItem(item: NewsItem): Promise<boolean> {
-        // Wrapped in withRetry: the Neon HTTP driver intermittently throws
-        // `fetch failed` on connection recycling; retrying transparently
+        // Wrapped in withRetry: the pooled DB connection can be
+        // closed mid-flight (`CONNECTION_CLOSED`/`ECONNRESET` on recycling); retrying transparently
         // keeps single-item dropouts from leaving news cards permanently
         // un-upserted in the 250-item batch.
         const changed = await withRetry(
@@ -123,7 +123,7 @@ export class DrizzleNewsRepository {
                         `,
                     })
                     .returning({ id: news.id }),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
         return changed.length > 0;
     }
@@ -150,7 +150,7 @@ export class DrizzleNewsRepository {
                         analyzedAt,
                     })
                     .where(eq(news.id, id)),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
     }
 

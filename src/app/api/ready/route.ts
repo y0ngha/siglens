@@ -1,7 +1,7 @@
 import { tryGetDatabaseClient } from '@/shared/db/client';
 import { getRedisClient } from '@/shared/cache/redisClient';
 
-// Deep readiness probe — 외부 의존성(Neon DB, Upstash Redis)까지 확인한다.
+// Deep readiness probe — 외부 의존성(Postgres DB, Upstash Redis)까지 확인한다.
 // `siglens-wait-healthy.sh`/`siglens-selfcheck.timer`는 /api/health(shallow)를 쓰고,
 // CloudWatch/알람은 이 /api/ready를 폴링해야 한다. 의존성 블립이 selfcheck 타깃을
 // 죽이면 안 되므로 둘을 분리한다.
@@ -42,7 +42,11 @@ function toErrorMessage(err: unknown): string {
     return err instanceof Error ? err.message : 'unknown error';
 }
 
-/** Neon DB에 `SELECT 1`로 핑한다. 클라이언트 미구성(env 부재) 시 실패로 본다. */
+/**
+ * DB에 `SELECT 1`로 핑한다. 원시 `sql`(postgres-js)은 drizzle 로거를 우회해
+ * `unstable_noStore` 신호를 보내지 않는다 — 이 라우트는 `force-dynamic`이라 무관하다.
+ * 클라이언트 미구성(env 부재) 시 실패로 본다.
+ */
 async function checkDatabase(): Promise<DependencyCheck> {
     const client = tryGetDatabaseClient();
     if (client === null) {

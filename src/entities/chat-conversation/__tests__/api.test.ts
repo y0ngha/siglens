@@ -10,15 +10,17 @@ const VALID_ID = '11111111-1111-1111-1111-111111111111';
 const VALID_USER = '22222222-2222-2222-2222-222222222222';
 
 /**
- * A `NeonDbError`-shaped transient error — matches `isNeonTransientError`'s
- * classification exactly (name check + `TRANSIENT_MESSAGE_NEEDLES` includes
- * `'fetch failed'`). A plain `new Error('boom')` is NOT retryable, so tests
+ * A postgres-js connection-shaped transient error — matches `isTransientDbError`'s
+ * classification exactly (`code: 'CONNECTION_CLOSED'` is in the connection-code
+ * set). A plain `new Error('boom')` is NOT retryable, so tests
  * asserting "not retried" must use this shape — otherwise the assertion
  * passes for the wrong reason (the error was never eligible for retry in
  * the first place) and can't catch a regression that re-adds retry.
  */
 function transientError(): Error {
-    return Object.assign(new Error('fetch failed'), { name: 'NeonDbError' });
+    return Object.assign(new Error('write CONNECTION_CLOSED db.example:5432'), {
+        code: 'CONNECTION_CLOSED',
+    });
 }
 
 /** Chainable drizzle stub: every builder method returns the same object; awaiting yields `result`. */
@@ -363,7 +365,7 @@ describe('DrizzleChatConversationRepository — invalid UUID guard', () => {
 });
 
 describe('DrizzleChatConversationRepository — retry policy', () => {
-    it('create의 INSERT 실패는 재시도하지 않는다(비-멱등) — Neon 일시 오류라도', async () => {
+    it('create의 INSERT 실패는 재시도하지 않는다(비-멱등) — DB 일시 오류라도', async () => {
         const db: Record<string, unknown> = {};
         let insertCalls = 0;
         db.insert = vi.fn(() => {
@@ -382,11 +384,11 @@ describe('DrizzleChatConversationRepository — retry policy', () => {
                 locale: 'ko',
                 modelId: 'm',
             })
-        ).rejects.toThrow('fetch failed');
+        ).rejects.toThrow('CONNECTION_CLOSED');
         expect(insertCalls).toBe(1);
     });
 
-    it('appendMessages의 INSERT 실패는 재시도하지 않는다(비-멱등) — Neon 일시 오류라도', async () => {
+    it('appendMessages의 INSERT 실패는 재시도하지 않는다(비-멱등) — DB 일시 오류라도', async () => {
         const db: Record<string, unknown> = {};
         let insertCalls = 0;
         db.insert = vi.fn(() => {
@@ -400,7 +402,7 @@ describe('DrizzleChatConversationRepository — retry policy', () => {
         );
         await expect(
             repo.appendMessages(VALID_ID, [{ role: 'user', content: 'q' }])
-        ).rejects.toThrow('fetch failed');
+        ).rejects.toThrow('CONNECTION_CLOSED');
         expect(insertCalls).toBe(1);
     });
 

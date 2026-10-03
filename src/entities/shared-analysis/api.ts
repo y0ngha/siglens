@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { eq } from 'drizzle-orm';
-import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
+import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { sharedAnalyses } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
@@ -57,8 +57,8 @@ export class DrizzleSharedAnalysisRepository implements SharedAnalysisRepository
      * handles both paths atomically, so callers always get the canonical id back
      * regardless of whether the row was new or a duplicate.
      *
-     * Wrapped in withRetry(NEON_TRANSIENT_RETRY) to absorb transient Neon HTTP
-     * driver failures (e.g. admin_shutdown, fetch failed) without surfacing them
+     * Wrapped in withRetry(DB_TRANSIENT_RETRY) to absorb transient DB
+     * failures (e.g. admin_shutdown, CONNECTION_CLOSED) without surfacing them
      * to the action layer.
      *
      * Retry safety: `record.id` is a fresh random token generated once per
@@ -95,7 +95,7 @@ export class DrizzleSharedAnalysisRepository implements SharedAnalysisRepository
                         set: { expiresAt: record.expiresAt },
                     })
                     .returning({ id: sharedAnalyses.id }),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
         return row!.id;
     }
@@ -113,7 +113,7 @@ export class DrizzleSharedAnalysisRepository implements SharedAnalysisRepository
                     .from(sharedAnalyses)
                     .where(eq(sharedAnalyses.id, id))
                     .limit(1),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
         const row = rows[0];
         if (row === undefined) return null;

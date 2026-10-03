@@ -57,7 +57,7 @@ describe('warnOfflineBuildOnce', () => {
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
         warnOfflineBuildOnce('FMP');
-        warnOfflineBuildOnce('Neon');
+        warnOfflineBuildOnce('Database');
         warnOfflineBuildOnce('Upstash');
 
         expect(warnSpy).toHaveBeenCalledTimes(3);
@@ -104,7 +104,7 @@ describe('assertOnline', () => {
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
         expect(() =>
-            assertOnline(OFFLINE_BUILD_SERVICE.NEON, 'connection')
+            assertOnline(OFFLINE_BUILD_SERVICE.DATABASE, 'connection')
         ).not.toThrow();
         expect(warnSpy).not.toHaveBeenCalled();
 

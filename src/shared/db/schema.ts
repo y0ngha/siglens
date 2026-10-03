@@ -979,8 +979,8 @@ export const chatConversations = pgTable(
 
 /**
  * 대화 메시지. tool 행의 `content`는 실행기가 4,000자로 절단한 결과 JSON 그대로.
- * `seq`는 INSERT … SELECT coalesce(max(seq),0)+n 단일 문으로 매긴다(neon-http는
- * 트랜잭션 미지원). 요청 간 경합은 사용자별 턴 락이 막는다.
+ * `seq`는 INSERT … SELECT coalesce(max(seq),0)+n 단일 문으로 매긴다(단일 문이라
+ * 트랜잭션 없이 원자적이다). 요청 간 경합은 사용자별 턴 락이 막는다.
  */
 export const chatMessages = pgTable(
     'chat_messages',

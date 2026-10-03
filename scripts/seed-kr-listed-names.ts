@@ -13,6 +13,10 @@ import {
 } from '../src/entities/ticker/lib/krTickerReconcile';
 import { KOREAN_TICKERS_CACHE_KEY } from '../src/entities/ticker/lib/cacheKeys';
 import { createCacheProvider } from '@y0ngha/siglens-core';
+import {
+    guardRemoteWrite,
+    requireDatabaseUrl,
+} from '../db/scripts/lib/dbTarget';
 
 /**
  * `korean_tickers` 테이블 정의 — `src/shared/db/schema.ts`의 동명 테이블과 **같은 컬럼**이다.
@@ -63,14 +67,10 @@ const koreanTickers = pgTable('korean_tickers', {
  * 필요 환경변수: `DATA_GO_KR_SERVICE_KEY`, `DATABASE_URL`(또는 `DIRECT_DATABASE_URL`).
  */
 
-const databaseUrl = process.env.DIRECT_DATABASE_URL || process.env.DATABASE_URL;
-
-if (!databaseUrl) {
-    throw new Error('DATABASE_URL env var required');
-}
+const databaseUrl = requireDatabaseUrl();
 
 /**
- * `src/entities/ticker/api.ts`의 `KOREAN_TICKER_UPSERT_BATCH_SIZE`와 같은 Neon HTTP
+ * `src/entities/ticker/api.ts`의 `KOREAN_TICKER_UPSERT_BATCH_SIZE`와 같은 쿼리
  * 페이로드 한도를 인코딩한 값이다 — 하나를 바꾸면 다른 쪽도 함께 확인해야 한다.
  */
 const UPSERT_BATCH_SIZE = 500;
@@ -86,6 +86,7 @@ const UPSERT_BATCH_SIZE = 500;
 const FORCE_DELIST = process.argv.includes('--force-delist');
 
 async function main() {
+    guardRemoteWrite(databaseUrl, 'seed:kr-names');
     if (!hasDataGoKrCredentials()) {
         throw new Error(
             'DATA_GO_KR_SERVICE_KEY env var required — https://www.data.go.kr/data/15094775/openapi.do 에서 활용신청'
@@ -112,7 +113,7 @@ async function main() {
         return;
     }
 
-    const client = postgres(databaseUrl!, { max: 1 });
+    const client = postgres(databaseUrl, { max: 1 });
     const db = drizzle(client);
 
     try {
@@ -165,7 +166,7 @@ async function main() {
 
         // relist/delist도 upsert와 같은 이유로 쪼갠다 — 이 스크립트는 피드 장애
         // 복구를 손으로 돌리는 경로이고, 그때가 바로 심볼이 수백~수천 개로 몰려
-        // `IN (...)` 하나가 Neon HTTP 페이로드 한도에 걸리는 상황이다
+        // `IN (...)` 하나가 쿼리 페이로드 한도에 걸리는 상황이다
         // (`DrizzleKoreanTickerRepository.markRelisted`가 같은 이유로 청크를 나눈다).
         for (let i = 0; i < plan.relist.length; i += UPSERT_BATCH_SIZE) {
             await db

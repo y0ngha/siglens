@@ -1,6 +1,6 @@
 import type { LlmProvider } from './lib/constants';
 import { and, eq, sql } from 'drizzle-orm';
-import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
+import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { userApiKeys } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import {
@@ -61,14 +61,14 @@ function requireLlmEncryptionKey(): string {
 }
 
 /**
- * Drizzle ORM implementation of {@link UserApiKeyRepository} backed by Neon
+ * Drizzle ORM implementation of {@link UserApiKeyRepository} backed by PostgreSQL
  * PostgreSQL. Encrypts plaintext API keys with AES-256-GCM (via
  * {@link encryptToken}) before storage and decrypts them on single-row reads.
  *
  * Requires `LLM_API_KEY_ENCRYPTION_KEY` (32-byte hex) to be present in the
  * environment whenever {@link upsert} or {@link findByUserAndProvider} runs.
  *
- * @param db - Drizzle-wrapped Neon database client; obtain via `createDatabaseClient`.
+ * @param db - Drizzle-wrapped database client; obtain via `createDatabaseClient`.
  */
 export class DrizzleUserApiKeyRepository implements UserApiKeyRepository {
     constructor(private readonly db: SiglensDatabase) {}
@@ -91,7 +91,7 @@ export class DrizzleUserApiKeyRepository implements UserApiKeyRepository {
                         set: { encryptedApiKey, updatedAt: sql`now()` },
                     })
                     .returning(userApiKeyMetaColumns),
-            NEON_TRANSIENT_RETRY
+            DB_TRANSIENT_RETRY
         );
 
         if (row === undefined) {

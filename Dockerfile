@@ -87,6 +87,20 @@ ENV GIT_SHA=$GIT_SHA
 # 페이지만 맞고 force-dynamic인 sitemap은 기동 시각을 계속 쓴다.
 ARG NEXT_BUILD_DATE
 ENV NEXT_BUILD_DATE=$NEXT_BUILD_DATE
+# AWS RDS 글로벌 CA 번들 — RDS로 옮길 때 DATABASE_URL이 `sslmode=verify-full`을 쓴다.
+# postgres-js(node tls)는 시스템 신뢰 저장소가 아니라 node 내장 루트 CA만 믿으므로
+# RDS 사설 CA를 `NODE_EXTRA_CA_CERTS`로 **추가**해야 검증이 통과한다. 추가(extend)라
+# Neon의 공개 CA 신뢰는 그대로 유지된다 — Neon을 쓰는 동안에도 무해하다.
+# URL ADD는 기본 0600 root 소유라 USER node가 읽지 못한다(node는 읽기 실패 시 경고만
+# 찍고 번들을 무시해 verify-full이 런타임에 조용히 깨진다) → `--chmod=0644`가 필수다.
+# ⚠️ `--chmod`는 ADD가 **새로 만드는 부모 디렉터리에도** 적용된다(실측: 0644로 생겨 x 비트가
+# 없어 node가 파일에 접근 못 함). 그래서 대상은 이미지에 이미 있는 /etc/ssl/certs로 둔다.
+# 새 디렉터리 경로로 바꾸면 USER node에서 읽히는지 다시 확인할 것.
+# ⚠️ AWS가 번들을 갱신하면 체크섬이 어긋나 이미지 빌드가 실패한다(의도된 fail-closed).
+# 그때는 새 파일을 내려받아 sha256을 확인한 뒤 이 값을 갱신한다.
+ADD --chmod=0644 --checksum=sha256:fe45bbebf92ad3e27a583bbb2ddd1553c521ed4d49af5514dc0a40372ea5395c \
+    https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem /etc/ssl/certs/rds-global-bundle.pem
+ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/rds-global-bundle.pem
 ENV NODE_ENV=production \
     PORT=3000 \
     HOSTNAME=0.0.0.0
