@@ -13,6 +13,11 @@ vi.mock('@/app/[locale]/news/_lib/categoryPreviews', () => ({
     fetchCategoryPreviews: vi.fn(async () => ['헤드라인 1']),
 }));
 
+vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
+    shortenRevalidateIfDatabaseMissingAtBuild: vi.fn(async () => undefined),
+}));
+
+import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 import UsNewsHubPage, {
     generateMetadata,
     revalidate,
@@ -26,6 +31,16 @@ import {
 describe('/news/us hub', () => {
     beforeEach(() => {
         vi.mocked(fetchCategoryPreviews).mockClear();
+    });
+
+    // 배포 빌드에는 DB가 없어 미리보기이 빈 채로 구워진다 — 60초 revalidate 배선.
+    // DB 판정 자체는 헬퍼 테스트가 고정하므로 여기서는 호출 여부만 본다.
+    it('빌드타임 DB 부재 degrade revalidate 헬퍼를 부른다', async () => {
+        vi.mocked(shortenRevalidateIfDatabaseMissingAtBuild).mockClear();
+
+        await UsNewsHubPage({ params: Promise.resolve({ locale: 'ko' }) });
+
+        expect(shortenRevalidateIfDatabaseMissingAtBuild).toHaveBeenCalled();
     });
 
     it('caches for a day — the category structure rarely changes', () => {

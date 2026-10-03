@@ -26,6 +26,7 @@ import {
     SITE_URL,
 } from '@/shared/lib/seo';
 import { enterLocale } from '@/shared/lib/enterLocale';
+import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 
 // 24h ISR — 허브 인덱스는 카테고리 구조가 바뀌지 않는 한 신선도가 낮아도 무방.
 // 카드별 헤드라인은 staticSymbolCache(24h TTL)를 통해 캐싱된다 — 페이지 revalidate와
@@ -125,6 +126,8 @@ export default async function UsNewsHubPage({
 }) {
     const { locale: rawLocale } = await params;
     const locale = enterLocale(rawLocale);
+    // 배포 빌드에는 DB가 없다 — 이름/미리보기 없이 구워진 이 렌더를 60초 뒤 재생성하게 한다.
+    await shortenRevalidateIfDatabaseMissingAtBuild();
     // 셋은 서로 독립이다.
     const [t, tNav, tSeo] = await Promise.all([
         getTranslations('app.news'),

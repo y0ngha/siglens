@@ -62,8 +62,9 @@ vi.mock('@/widgets/economy/sections/EconomyMacroFacts', () => ({
 vi.mock('@/widgets/economy/sections/EconomySkeleton', () => ({
     EconomySkeleton: () => <div data-testid="economy-skeleton" />,
 }));
-vi.mock('@/shared/cache/buildFmpDegradedRevalidate', () => ({
+vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
     shortenRevalidateIfFmpFailedAtBuild: vi.fn(async () => undefined),
+    shortenRevalidateIfDatabaseMissingAtBuild: vi.fn(async () => undefined),
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -76,7 +77,10 @@ import { isEmptyEconomySnapshot } from '@/entities/economy/lib/economyCompletene
 // JsonLd는 vi.mocked()를 통해 test 내부에서 접근한다(최상단 변수는 호이스팅 충돌 방지).
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { expectFaqSingleSource } from '@/__tests__/utils/expectFaqSingleSource';
-import { shortenRevalidateIfFmpFailedAtBuild } from '@/shared/cache/buildFmpDegradedRevalidate';
+import {
+    shortenRevalidateIfDatabaseMissingAtBuild,
+    shortenRevalidateIfFmpFailedAtBuild,
+} from '@/shared/cache/buildDegradedRevalidate';
 
 const mockGetSnapshot = vi.mocked(getEconomySnapshotStatic);
 const mockPeekStatic = vi.mocked(peekMacroBriefingStatic);
@@ -191,6 +195,7 @@ describe('/economy page.tsx integration', () => {
         // 빌드 단계·회로 판정은 헬퍼 자체 테스트가 고정하므로 여기선 호출 여부만 본다.
         it('degrade 분기에서도 빌드 degrade revalidate 헬퍼를 부른다', async () => {
             vi.mocked(shortenRevalidateIfFmpFailedAtBuild).mockClear();
+            vi.mocked(shortenRevalidateIfDatabaseMissingAtBuild).mockClear();
             mockGetSnapshot.mockResolvedValue(EMPTY_SNAPSHOT);
             mockIsEmpty.mockReturnValue(true);
 
@@ -210,6 +215,10 @@ describe('/economy page.tsx integration', () => {
             ).toBeInTheDocument();
             // 횟수는 고정하지 않는다 — 테스트 렌더러가 async RSC를 여러 번 재시도한다.
             expect(shortenRevalidateIfFmpFailedAtBuild).toHaveBeenCalled();
+            // DB 없는 배포 빌드도 같은 경로로 60초 revalidate — DB 판정은 헬퍼 자체 테스트가 고정.
+            expect(
+                shortenRevalidateIfDatabaseMissingAtBuild
+            ).toHaveBeenCalled();
         });
 
         it('getEconomySnapshotStatic이 throw하면 EconomyDegraded를 렌더한다 (빈 캐시 동결 방지)', async () => {

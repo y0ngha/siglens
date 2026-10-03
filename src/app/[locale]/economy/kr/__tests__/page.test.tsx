@@ -38,6 +38,11 @@ vi.mock('@/entities/economy/api/resolveIndicatorLabels', () => ({
     resolveIndicatorLabels: vi.fn(),
 }));
 
+vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
+    shortenRevalidateIfDatabaseMissingAtBuild: vi.fn(async () => undefined),
+}));
+
+import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 import EconomyKrPage, {
     generateMetadata,
     revalidate,
@@ -94,6 +99,25 @@ describe('/economy/kr page', () => {
         });
         expect(meta.alternates?.canonical).toBeNull();
         expect(meta.robots).toEqual({ index: false, follow: true });
+    });
+
+    // 배포 빌드에는 DB가 없어 지표 카드이 빈 채로 구워진다 — 60초 revalidate 배선.
+    // DB 판정 자체는 헬퍼 테스트가 고정하므로 여기서는 호출 여부만 본다.
+    it('빌드타임 DB 부재 degrade revalidate 헬퍼를 부른다', async () => {
+        vi.mocked(shortenRevalidateIfDatabaseMissingAtBuild).mockClear();
+
+        mockCards.mockResolvedValue([CARD]);
+
+        render(
+            await EconomyKrPage({ params: Promise.resolve({ locale: 'ko' }) })
+        );
+        await vi.waitFor(() => {
+            expect(
+                shortenRevalidateIfDatabaseMissingAtBuild
+            ).toHaveBeenCalled();
+        });
+
+        expect(shortenRevalidateIfDatabaseMissingAtBuild).toHaveBeenCalled();
     });
 
     it('reads only the KR calendar', async () => {

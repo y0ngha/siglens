@@ -41,7 +41,10 @@ import { RegionTabs } from '@/shared/ui/RegionTabs';
 import { economyTitle } from './constants';
 import { EconomyDegraded } from './EconomyDegraded';
 import { enterLocale } from '@/shared/lib/enterLocale';
-import { shortenRevalidateIfFmpFailedAtBuild } from '@/shared/cache/buildFmpDegradedRevalidate';
+import {
+    shortenRevalidateIfDatabaseMissingAtBuild,
+    shortenRevalidateIfFmpFailedAtBuild,
+} from '@/shared/cache/buildDegradedRevalidate';
 
 /** 페이지 최상단 h1 — Suspense 위에 렌더되어 ready와 degraded 양 경로에서 항상 표시된다. */
 function EconomyHeroH1({ title }: { title: string }) {
@@ -133,6 +136,8 @@ async function EconomyContent() {
     });
     // 빌드 중 FMP가 실패했으면 이 prerender를 60초 뒤 재생성되게 한다(헬퍼 JSDoc).
     await shortenRevalidateIfFmpFailedAtBuild();
+    // 배포 빌드에는 DB가 없어 캘린더가 비어 구워진다 — 같은 방식으로 60초 뒤 재생성한다.
+    await shortenRevalidateIfDatabaseMissingAtBuild();
     if (snapshot === null || isEmptyEconomySnapshot(snapshot))
         return <EconomyDegraded />;
 

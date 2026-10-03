@@ -705,6 +705,26 @@
 
 Round 4: approved
 
+## [perf/build-without-db Rounds 1-2 | perf/build-without-db | 2026-10-03]
+- Violation (R1 recommended, fixed): removing the only consumer of a CI permission (build-time DB URL) left the grant (SSM read + KMS decrypt) in the deploy role
+  - Rule: (new) When removing the last use of a credential/permission, remove the IAM grant in the same change and note that hand-applied policies must be re-applied and verified on the live role
+  - Context: dropped `BuildTimeDbUrl`/`BuildTimeDbUrlDecrypt` from ci-deploy-policy.json; DEPLOY_RUNBOOK notes the manual re-apply.
+- Violation (R1 recommended, fixed): a shared mechanism kept a source-specific name (`buildFmpDegradedRevalidate`) after gaining a second cause (DB missing at build)
+  - Rule: (new) When a module starts serving a second cause, rename it to the shared concept and keep cause-specific helpers named per cause
+  - Context: renamed to `buildDegradedRevalidate.ts` / `BUILD_DEGRADED_REVALIDATE_SECONDS`; guard test and importers updated.
+- Violation (R2 REQUIRED, fixed): an IAM JSON file was rewritten with a generic serializer, reformatting unrelated statements and failing format:check
+  - Rule: (new) Edit config files textually (or re-run the repo formatter) so the diff only shows the intended change; never trust the last line of a check's output — read its exit code
+  - Context: rebuilt from HEAD minus the two statements and ran oxfmt; diff is 17 deletions.
+- Status (R3): APPROVED (zero findings)
+
+## [PR #920 Claude review | perf/build-without-db | 2026-10-03]
+- Violation (suggestion, fixed): async helper with logic (`renderLegalUnavailable`) had no explicit return type
+  - Rule: MISTAKES Coding Paradigm §0 — explicit return types on exported/logic functions
+  - Context: `Promise<React.JSX.Element>` added.
+- Violation (suggestion, fixed): the same eyebrow literal was written twice per legal page (body and fallback)
+  - Rule: MISTAKES §15 drift trap — values that must stay equal live in one constant
+  - Context: `TERMS_EYEBROW` / `PRIVACY_EYEBROW` constants used by both call sites.
+
 ## [PR #918 Claude review | perf/redis-cache-compression | 2026-10-03]
 - Violation (suggestion, fixed): seeded LCG test helper reassigned a closure `let seed`
   - Rule: MISTAKES Coding Paradigm 5·14 — prefer immutable derivation (reduce over previous value) even in test helpers
