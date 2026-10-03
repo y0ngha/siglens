@@ -1122,6 +1122,40 @@ describe('getBarsIndicatorsTool', () => {
             expect(await pullbackFor(trendBars(260, 0.5))).toBeNull();
         });
 
+        it('RSI(2)는 판독과 무관하게 일봉 latest.rsi2로 싣고, 일봉이 아니면 null이다', async () => {
+            const run = async (
+                bars: ReturnType<typeof trendBars>,
+                timeframe: string
+            ) => {
+                profile.mockResolvedValue('us-equity');
+                classify.mockReturnValue('uptrend');
+                detect.mockReturnValue([]);
+                getCachedBars.mockResolvedValue({ bars, indicators });
+                return (await getBarsIndicatorsTool(
+                    { symbol: 'AAPL', timeframe },
+                    ctx,
+                    rt
+                )) as {
+                    pullback: PullbackResult | null;
+                    latest: { rsi2: number | null };
+                };
+            };
+            const quiet = await run(trendBars(260, 0.5), '1Day');
+            expect(quiet.pullback).toBeNull();
+            // Monotonic rise: RSI(2) pins at its ceiling.
+            expect(quiet.latest.rsi2).toBe(100);
+
+            const lit = await run(endingAt(trendBars(260, 0.5), 400), '1Day');
+            expect(lit.latest.rsi2).toBe(lit.pullback?.rsi2);
+
+            const intraday = await run(trendBars(260, 0.5), '1Hour');
+            expect(intraday.latest.rsi2).toBeNull();
+
+            // Below 200 daily bars core abstains, and rsi2 must follow it.
+            const short = await run(trendBars(150, 0.5), '1Day');
+            expect(short.latest.rsi2).toBeNull();
+        });
+
         it('일봉이 아니거나 core가 기권하면(200봉 미만) null이다', async () => {
             const washout = endingAt(trendBars(260, 0.5), 400);
             expect(await pullbackFor(washout, '1Hour')).toBeNull();

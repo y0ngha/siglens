@@ -664,3 +664,14 @@
   - Rule: MISTAKES Skills #1 — reference only lines the consumed core renders; keep a fallback until the core bump lands
   - Context: "use the computed line when present, otherwise the old bar/MA comparison" in both body and digest.
 - Status (R2): APPROVED (zero findings)
+
+## [Branch feat/agent-confluence-rule-state | 2026-10-03] — Round 3 review findings
+
+- Violation 1 (recommended): After splitting a function in two, its JSDoc paragraph ("none is null") stayed on the half that does not enforce it
+  Rule: A JSDoc block must describe the declaration it sits on; move paragraphs with the logic when splitting
+  Context: Moved the paragraph onto pullbackView; pullbackSnapshot keeps the daily gate and abstention note.
+- Violation 2 (recommended): A documented null case (rsi2 below 200 daily bars) had no test
+  Rule: Every null branch the docs/tool description promise needs a dedicated test
+  Context: Added a 150-bar 1Day case expecting latest.rsi2 === null.
+
+Round 4: approved

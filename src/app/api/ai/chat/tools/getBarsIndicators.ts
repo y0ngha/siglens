@@ -28,6 +28,7 @@ import {
     type MACDResult,
     type MultiCandlePattern,
     type PullbackReading,
+    type PullbackSnapshot,
     type SqueezeMomentumResult,
     type StochasticResult,
     type Timeframe,
@@ -152,6 +153,12 @@ interface LatestIndicatorsView {
     supertrend: { value: number | null; trend: TrendDirection } | null;
     parabolicSar: { sar: number | null; trend: TrendDirection } | null;
     squeezeMomentum: Pick<SqueezeMomentumResult, 'momentum' | 'sqzOn'> | null;
+    /**
+     * RSI(2), 1Day only (`null` elsewhere or below 200 bars). Core computes it
+     * inside `evaluatePullback`, not in `IndicatorResult`; it is surfaced here
+     * so it survives when the washout reading is `none` and `pullback` is null.
+     */
+    rsi2: number | null;
 }
 
 /**
@@ -160,7 +167,10 @@ interface LatestIndicatorsView {
  * ~30 other indicators (DMI, stochastic, CCI, MFI, Williams %R, VWAP,
  * Ichimoku, Supertrend, Parabolic SAR, Squeeze Momentum, ...) invisible.
  */
-function latestIndicators(ind: IndicatorResult): LatestIndicatorsView {
+function latestIndicators(
+    ind: IndicatorResult,
+    rsi2: number | null
+): LatestIndicatorsView {
     const supertrend = last(ind.supertrend);
     const parabolicSar = last(ind.parabolicSar);
     return {
@@ -193,6 +203,7 @@ function latestIndicators(ind: IndicatorResult): LatestIndicatorsView {
             ? { sar: parabolicSar.sar, trend: parabolicSar.trend }
             : null,
         squeezeMomentum: lastPick(ind.squeezeMomentum, ['momentum', 'sqzOn']),
+        rsi2,
     };
 }
 
@@ -332,19 +343,24 @@ interface PullbackView {
  *
  * **Daily only**: the measurement is on daily bars and `evaluatePullback` does
  * not know the timeframe, so the gate is here. Other timeframes get `null`, as
- * does a series core abstains on (fewer than 200 bars, no Williams %R).
- *
- * **`none` is `null` too** (2026-10-03). With a `{reading: 'none', …}` block in
- * hand the model reported it anyway ("워시오프 판독은 없음입니다. Williams %R …")
- * despite the prompt saying to reflect only a lit reading — the same lesson as
- * the confluence rule states: the model cannot mention a field it never gets.
+ * does a series core abstains on (fewer than 200 bars, no Williams %R). The
+ * snapshot keeps every reading, `none` included — `latest.rsi2` reads it too.
  */
-function pullbackView(
+function pullbackSnapshot(
     bars: readonly Bar[],
     timeframe: Timeframe
-): PullbackView | null {
-    if (timeframe !== '1Day') return null;
-    const snap = evaluatePullback(bars);
+): PullbackSnapshot | null {
+    return timeframe === '1Day' ? evaluatePullback(bars) : null;
+}
+
+/**
+ * The model-facing washout block. **`none` is `null`** (2026-10-03): with a
+ * `{reading: 'none', …}` block in hand the model reported it anyway ("워시오프
+ * 판독은 없음입니다. Williams %R …") despite the prompt saying to reflect only a
+ * lit reading — the same lesson as the confluence rule states: the model cannot
+ * mention a field it never gets. RSI(2) survives in `latest.rsi2`.
+ */
+function pullbackView(snap: PullbackSnapshot | null): PullbackView | null {
     if (snap === null || snap.reading === 'none') return null;
     return {
         reading: snap.reading,
@@ -777,11 +793,15 @@ export const getBarsIndicatorsTool: ToolExecutor = async args => {
         htf?.timeframe ?? null
     );
     const higherTimeframe = higherTimeframeView(htf);
-    const pullback = pullbackView(bars, timeframe);
+    const pullbackSnap = pullbackSnapshot(bars, timeframe);
+    const pullback = pullbackView(pullbackSnap);
     const derived = computeDerived(bars, indicators, timeframe);
     // Client-serialization-boundary rounding only, same as
     // `getBarsAction.ts` — the cache still holds full-precision values.
-    const latest = latestIndicators(roundIndicators(indicators));
+    const latest = latestIndicators(
+        roundIndicators(indicators),
+        roundOrNull(pullbackSnap?.rsi2 ?? null)
+    );
     const candlePatterns = latestCandlePatterns(bars, timeframe);
     const fearGreed = fearGreedView(bars, indicators, timeframe);
     const asOf = isoTimestamp(bars[bars.length - 1]!.time, timeframe);
