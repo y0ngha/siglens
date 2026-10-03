@@ -346,6 +346,36 @@ export const assetTranslations = pgTable('asset_translations', {
         .$onUpdateFn(nowFn),
 });
 
+/**
+ * 평이화(쉽게보기) LLM 산출물 저장소. 예전에는 Upstash Redis에 30일 TTL로 캐시했는데,
+ * LLM이 만든 텍스트라 유실되면 비용이 다시 들고 재생성 전까지 사용자는 `plain: null`을
+ * 받는다 — 그래서 내구 저장소인 DB에 둔다.
+ *
+ * 키는 내용 주소 방식이다: `input_digest`가 프롬프트 전문의 sha256이라 같은 입력은 항상
+ * 같은 키를 얻고, 입력이 조금이라도 바뀌면 다른 키가 된다. 그래서 행에 만료가 없다 —
+ * 예전 TTL은 메모리를 묶어 두려는 장치였지 정합성 장치가 아니었다.
+ * `prompt_version`을 올리면 옛 행이 고아가 되므로, 배포 뒤 수동으로 지운다
+ * (`PLAIN_PROMPT_VERSION` 주석 참고).
+ */
+export const analysisPlainTexts = pgTable(
+    'analysis_plain_texts',
+    {
+        promptVersion: text('prompt_version').notNull(),
+        locale: text('locale').notNull(),
+        /** 프롬프트 전문의 sha256 hex. */
+        inputDigest: text('input_digest').notNull(),
+        text: text('text').notNull(),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    table => [
+        primaryKey({
+            columns: [table.promptVersion, table.locale, table.inputDigest],
+        }),
+    ]
+);
+
 /** Contact form submissions from visitors. */
 export const inquiries = pgTable('inquiries', {
     id: uuid('id').primaryKey().defaultRandom(),
