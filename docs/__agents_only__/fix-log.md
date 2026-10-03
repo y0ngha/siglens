@@ -724,9 +724,6 @@ Round 4: approved
 - Violation (suggestion, fixed): async helper with logic (`renderLegalUnavailable`) had no explicit return type
   - Rule: MISTAKES Coding Paradigm §0 — explicit return types on exported/logic functions
   - Context: `Promise<React.JSX.Element>` added.
-- Violation (suggestion, fixed): the same eyebrow literal was written twice per legal page (body and fallback)
-  - Rule: MISTAKES §15 drift trap — values that must stay equal live in one constant
-  - Context: `TERMS_EYEBROW` / `PRIVACY_EYEBROW` constants used by both call sites.
 
 ## [PR #918 Claude review | perf/redis-cache-compression | 2026-10-03]
 - Violation (suggestion, fixed): seeded LCG test helper reassigned a closure `let seed`
@@ -752,9 +749,6 @@ Round 4: approved
 - Violation (suggestion, fixed): runbook step (reboot after a parameter change) needed an API the scoped deployer policy didn't grant
   - Rule: (new) When scoping an IAM policy to a script, also cover every action the runbook tells the same identity to run, not only the script's own calls
   - Context: `rds:RebootDBInstance` added to `siglens-deployer-rds`.
-- Violation (suggestion, fixed): the connection-alarm threshold (150) was written in two files independently
-  - Rule: MISTAKES §15 drift trap — one source with cross-references
-  - Context: `RDS_CONNECTIONS_ALARM_THRESHOLD` in 07-alarms.sh, referenced from 15-rds.sh.
 ## [PR #921 Claude review | refactor/db-postgres-js-driver | 2026-10-03]
 - Violation (suggestion, fixed): comments in code merged from another PR (#916) still described the old driver ("neon-http에는 쿼리 타임아웃이 없어")
   - Rule: MISTAKES §32 — after a driver/contract switch, grep the old name repo-wide again after every master merge
@@ -765,3 +759,11 @@ Round 4: approved
 - Violation (suggestion, fixed): offline-build service key `NEON` named a vendor that no longer applies
   - Rule: MISTAKES §11 — names must describe the current concept
   - Context: `OFFLINE_BUILD_SERVICE.DATABASE` ('Database').
+
+## [review-agent | docs/rds-runbook-siglens-first | 2026-10-03]
+- Violation (R1 required, fixed): operating-window advice ("주말이나 KST 오전~오후") was derived from market hours, not from the system's actual cron schedule (trader crons run 13–21 UTC Mon–Fri = KST 22:00–06:59, Friday's window spills into Saturday KST; digest sends at 10:00 KST)
+  - Rule: (new) Downtime/cutover windows in runbooks must come from the actual schedule source (cron table, config defaults), cited by file, not from inferred business hours
+  - Context: §8-3 time row rewritten from trader `server/app.ts` CRON_JOBS.
+- Violation (R1 recommended, fixed): an irreversible console action (Neon project delete) was guarded by a check only available in SQL (`neon.tenant_id`), not on the console screen where the deletion happens
+  - Rule: (new) A safety check for an irreversible action must be verifiable at the moment and place the action is taken
+  - Context: endpoint ids (`ep-…`) visible in the Neon console recorded once in a top table; §8-5 refers to it.

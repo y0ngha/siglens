@@ -1,6 +1,15 @@
 # 운영 DB 이전 런북 — Neon → AWS RDS
 
-운영 Postgres(siglens 1.38GB·테이블 29·시퀀스 1 / trader 35MB·테이블 17·시퀀스 13, 둘 다 PG 17.11, 확장은 `plpgsql`뿐, 스키마 `public` + `drizzle`)를 Neon(싱가포르)에서 AWS RDS PostgreSQL 17로 옮기는 절차다. 방식은 **Neon → RDS 논리 복제**이고, 컷오버는 **앱을 완전히 멈춘 뒤 전환**한다(두 DB에 동시에 쓰는 구간이 없다). 다운타임은 앱 정지 → 복제 따라잡기 확인 → 시작까지 약 5–8분이다.
+운영 Postgres(siglens 1.38GB·테이블 29·시퀀스 1 / trader 35MB·테이블 17·시퀀스 13, 둘 다 PG 17.11, 확장은 `plpgsql`뿐, 스키마 `public` + `drizzle`)를 Neon(싱가포르)에서 AWS RDS PostgreSQL 17로 옮기는 절차다(**이번 범위는 siglens만** — 바로 아래 참고). 방식은 **Neon → RDS 논리 복제**이고, 컷오버는 **앱을 완전히 멈춘 뒤 전환**한다(두 DB에 동시에 쓰는 구간이 없다). 다운타임은 앱 정지 → 복제 따라잡기 확인 → 시작까지 약 5–8분이다.
+
+> **진행 범위: siglens만 먼저 옮긴다(2026-10-03 결정). trader는 당분간 Neon에 남는다.** 두 시스템은 **서로 다른 Neon 프로젝트**다(2026-10-03 운영 URL에 읽기 전용으로 접속해 확인):
+
+| 시스템 | 컴퓨트 엔드포인트(콘솔 Connection details·Branches에 보이는 호스트) | `show neon.tenant_id` |
+|---|---|---|
+| siglens | `ep-sweet-poetry-aoqx9pfh` | `092fab1f…` |
+| trader | `ep-green-breeze-aomwwzg5` | `25577e88…` |
+
+그래서 siglens 프로젝트에서 하는 Neon 작업(§4-1 논리 복제 활성화와 컴퓨트 재시작, §8-5 프로젝트 삭제)은 trader에 영향이 없다. 이번에는 **trader 관련 단계를 모두 보류**한다: §1-4 `NEON_TRADER_URL`, §3-0 trader 덤프, §3-5, §4~§7의 trader 반복(`trader_pub`/`trader_sub`, `NEON_TRADER_DATABASE_URL_BACKUP` 등), §8-3. §2의 trader 롤·DB는 비어 있는 채로 만들어 둬도 무해하다(만들었으면 trader 이관 때 §2를 건너뛴다).
 
 > 장애 중이라면 [DEPLOY_RUNBOOK.md](./DEPLOY_RUNBOOK.md)가 첫 진입점이다. 이 문서는 **계획된 이전 작업**의 절차서다.
 
@@ -179,7 +188,7 @@ Neon URL은 **direct(비 pooler) 연결 문자열**을 Neon 콘솔(Connection de
 
 ```bash
 read -rs NEON_SIGLENS_URL && export NEON_SIGLENS_URL   # 붙여넣고 엔터
-read -rs NEON_TRADER_URL  && export NEON_TRADER_URL    # trader가 같은 프로젝트면 같은 호스트, DB 이름만 다름
+read -rs NEON_TRADER_URL  && export NEON_TRADER_URL    # trader 이관(§8-3) 때만. trader는 별도 Neon 프로젝트라 호스트가 다르다
 ```
 
 ### 1-5. 연결 확인 (터널 + psql)
@@ -274,7 +283,7 @@ psql17 "$(rds_url siglens_admin "$ADMIN_PW" postgres)" -c '\du' -c '\l'
 
 ```bash
 pg_dump17 -Fc --no-owner --no-privileges -n public -n drizzle "$NEON_SIGLENS_URL" -f siglens-neon-full.dump
-pg_dump17 -Fc --no-owner --no-privileges -n public -n drizzle "$NEON_TRADER_URL"  -f trader-neon-full.dump
+pg_dump17 -Fc --no-owner --no-privileges -n public -n drizzle "$NEON_TRADER_URL"  -f trader-neon-full.dump   # trader 이관(§8-3) 때만
 ls -lh *.dump
 ```
 
@@ -337,7 +346,7 @@ psql17 "$(rds_url siglens_app "$SA_PW" siglens)" -At \
 
 ### 3-5. trader
 
-trader도 같은 절차다(`siglens` → `trader`, `NEON_SIGLENS_URL` → `NEON_TRADER_URL`, `SIGLENS_*_PASSWORD` → `TRADER_*_PASSWORD`, 파일명 `trader-*`). 스키마 복원까지는 지금 해 두고, 복제·컷오버는 §8에서 한다.
+trader도 같은 절차다(`siglens` → `trader`, `NEON_SIGLENS_URL` → `NEON_TRADER_URL`, `SIGLENS_*_PASSWORD` → `TRADER_*_PASSWORD`, 파일명 `trader-*`). **siglens만 옮기는 이번에는 건너뛰고, trader 이관(§8-3) 때 그 직전에 한다.** 미리 복원해 두면 그사이 trader 마이그레이션이 Neon에만 적용돼 RDS 쪽 스키마가 어긋나고, 구독의 초기 복사가 컬럼 불일치로 멈춘다.
 
 ---
 
@@ -398,7 +407,7 @@ Neon 콘솔 → 프로젝트 → Settings → **Logical Replication → Enable**
 
 - **한 번 켜면 끌 수 없다**(프로젝트 단위, 비가역).
 - 컴퓨트가 재시작된다 — 몇 초간 연결이 끊긴다. 트래픽이 낮은 시간(KST 새벽)에 한다.
-- trader가 같은 Neon 프로젝트면 이 한 번으로 끝난다. 다른 프로젝트면 각각 켠다.
+- trader는 **별도 Neon 프로젝트**라 이 설정·재시작의 영향을 받지 않는다. trader를 옮길 때(§8-3) trader 프로젝트에서 따로 켠다.
 
 ```bash
 psql17 "$NEON_SIGLENS_URL" -At -c "show wal_level"   # → logical
@@ -406,7 +415,7 @@ psql17 "$NEON_SIGLENS_URL" -At -c "show wal_level"   # → logical
 
 ### 4-1b. 복제 전용 Neon 롤 **[사용자가 Neon 콘솔에서]**
 
-구독이 Neon에 붙을 때 쓸 롤은 **`REPLICATION` 속성이 있어야 한다.** Neon에서는 **콘솔(또는 API)로 만든 롤은 `REPLICATION`이 있고, SQL `CREATE ROLE`로 만든 롤은 없다.** 그래서 앱이 쓰는 롤을 재활용하지 말고 **콘솔에서 복제 전용 롤을 새로 만든다** — 예: `repl_siglens`(trader가 별도 프로젝트면 `repl_trader`). 이유가 하나 더 있다: 이 롤의 비밀번호는 평문으로 RDS의 구독 정보(`pg_subscription`)에 저장되므로(§4-4) 앱 롤과 분리해 두면 컷오버 후 이 롤만 삭제하면 끝난다(앱·롤백 백업 URL에 영향 없음).
+구독이 Neon에 붙을 때 쓸 롤은 **`REPLICATION` 속성이 있어야 한다.** Neon에서는 **콘솔(또는 API)로 만든 롤은 `REPLICATION`이 있고, SQL `CREATE ROLE`로 만든 롤은 없다.** 그래서 앱이 쓰는 롤을 재활용하지 말고 **콘솔에서 복제 전용 롤을 새로 만든다** — 예: `repl_siglens`(trader 이관 때는 trader 프로젝트에 `repl_trader`). 이유가 하나 더 있다: 이 롤의 비밀번호는 평문으로 RDS의 구독 정보(`pg_subscription`)에 저장되므로(§4-4) 앱 롤과 분리해 두면 컷오버 후 이 롤만 삭제하면 끝난다(앱·롤백 백업 URL에 영향 없음).
 
 ```bash
 # 새 롤로 접속해 확인 (URL은 NEON_SIGLENS_URL의 user/password만 repl 롤로 바꾼 것)
@@ -450,7 +459,7 @@ psql17 "$NEON_SIGLENS_URL" -At -c "select schemaname, count(*) from pg_publicati
 # → drizzle|1 / public|28   (siglens 기준 합 29, trader는 합 17)
 ```
 
-trader도 같은 방식(`trader_pub`)이다.
+trader도 같은 방식(`trader_pub`)이다 — trader 이관(§8-3) 때만.
 
 ### 4-3. RDS를 일시 공개 **[승인 필요: 복제 구간 동안만 공인 IP]**
 
@@ -1105,9 +1114,9 @@ DB 스키마가 걸린 PR은 **RDS에 마이그레이션을 먼저 적용하고 
 
 운영 DB에 대고 돌리던 일회성 캐시/백필 스크립트(레포 밖에 보관)는 `DATABASE_URL` 대상을 RDS(터널, owner 롤)로 바꿔서만 실행한다. Neon URL이 남아 있는 사본은 폐기한다.
 
-### 8-3. trader 컷오버
+### 8-3. trader 컷오버 (보류 — siglens만 먼저, 시기 미정)
 
-siglens와 **같은 단계**(§2 → §3 → §4 → §5 → §6 → §7)를 `trader`로 반복한다. 다른 점:
+siglens와 같은 단계를 `trader`로 반복한다. 순서: §1-4 `NEON_TRADER_URL` 입력 → §2(trader 롤·DB를 이미 만들었으면 건너뛴다. 비밀번호 루프는 있으면 유지되므로 다시 돌려도 된다) → §3-0 trader 덤프 → §3-5(스키마 복원) → §4 → §5 → §6 → §7. 다른 점:
 
 | 항목 | siglens | trader |
 |---|---|---|
@@ -1119,7 +1128,9 @@ siglens와 **같은 단계**(§2 → §3 → §4 → §5 → §6 → §7)를 `tr
 | 시퀀스 | 1개 | 13개 (`setval.sql` 13줄 확인) |
 | 호스트 | ASG `siglens-asg` | 단일 EC2 `i-0a44a942039e42a4f`(2c, `siglens-trader-sg`) |
 | 정지·시작 | §6-3~§6-9 (`ssm_all`은 ASG 태그 타깃) | 단일 박스라 `--instance-ids i-0a44a942039e42a4f`로 보낸다(ASG 소속이면 같은 `suspend-processes`를 그 ASG에 적용, 아니면 생략). 서비스 이름을 먼저 확인: `aws ssm send-command --instance-ids i-0a44a942039e42a4f --document-name AWS-RunShellScript --parameters 'commands=["systemctl list-units --type=service --no-legend | grep -i trader"]'`. selfcheck 타이머가 없으면 해당 줄은 생략 |
-| 코드 PR | 드라이버 교체·빌드 DB 제거(§0) | **trader 레포의 별도 PR** (같은 드라이버 교체 + `sslmode=verify-full` + CA 번들). 이 PR들이 trader 운영에 배포돼 있어야 한다 |
+| 코드 PR | 드라이버 교체·빌드 DB 제거(§0) | trader 레포 #89(`pg` 드라이버, 로컬이 아닌 호스트는 인증서 검증 TLS 강제, RDS CA 번들). 머지됨. 운영 Neon에 이 설정으로 붙는 것은 읽기 전용 조회로 확인했다(2026-10-03). **trader 운영에 배포(v* 태그)된 뒤**에 컷오버한다 |
+| Neon | siglens 프로젝트(문서 상단 표) | **별도 프로젝트**(문서 상단 표). §4-1 논리 복제 활성화·컴퓨트 재시작·§8-5 삭제를 이 프로젝트에서 따로 한다 |
+| 시간 | KST 새벽(§6) | **trader 크론 창을 피한다.** `execute`·`reconcile`(`13-21 * * 1-5` UTC)과 `review`(16–21시 UTC) 크론이 **평일 KST 22:00–06:59** 안에서 돈다(미국 정규장 KST 22:30–05:00, 서머타임 해제 시 23:30–06:00을 감싼다). 금요일 창은 **토요일 KST 06:59**까지 이어진다. 가능한 때: 평일 KST 07:00–21:59, 또는 토 07:00 이후 ~ 월 22:00 전. `digest`는 매일 매시 돌고 KST 10:00(`digest_hour_kst` 기본값)에 발송하니 그 시각은 피한다. §4-1의 컴퓨트 재시작도 같은 창에서 한다. 정확한 스케줄은 trader `server/app.ts`의 `CRON_JOBS`에서 다시 확인한다(trader `docs/DEPLOYMENT.md`의 크론 표는 옛 목록이라 쓰지 않는다) |
 
 trader는 데이터가 35MB라 초기 복사가 수십 초다. siglens 컷오버가 안정화된 뒤(최소 하루) 진행해 한 번에 한 시스템만 건드린다. trader는 AZ 2c라 RDS(2a)와 AZ 간 전송이 발생하지만 트래픽이 작아 무시할 수준이다. `siglens-rds-sg`는 이미 `siglens-trader-sg`를 허용한다.
 
@@ -1140,10 +1151,10 @@ aws --profile <admin> rds purchase-reserved-db-instances-offering --reserved-db-
 
 ### 8-5. Neon 프로젝트 삭제 **[승인 필요: 되돌릴 수 없음]**
 
-컷오버 후 **2주** 문제가 없으면 삭제한다. 삭제 전:
+컷오버 후 **2주** 문제가 없으면 삭제한다. **siglens 프로젝트만 지운다.** trader는 별도 프로젝트로 Neon에 남아 있다. 콘솔 삭제 화면으로 가기 전에, 그 프로젝트의 Connection details(또는 Branches → 컴퓨트)에 보이는 엔드포인트가 문서 상단 표의 siglens 값(`ep-sweet-poetry-aoqx9pfh`)인지 확인한다. trader 엔드포인트(`ep-green-breeze-aomwwzg5`)가 보이면 멈춘다. trader 프로젝트는 trader 이관 후 같은 절차로 따로 지운다. 삭제 전:
 
 - [ ] Neon의 모든 테이블 행 수가 RDS 이하인지 §6-11 (1)의 대조를 한 번 더 한다(RDS는 컷오버 후 쓰기가 더해져 ≥여야 한다)
-- [ ] 로컬 사본 `siglens-neon-full.dump`·`trader-neon-full.dump` 보관(암호화된 위치, 몇 달) 또는 폐기 결정
+- [ ] 로컬 사본 `siglens-neon-full.dump`(trader 이관 후에는 `trader-neon-full.dump`도) 보관(암호화된 위치, 몇 달) 또는 폐기 결정
 - [ ] `/siglens-rds/NEON_*_BACKUP` SSM 삭제, Neon 콘솔의 복제 전용 롤(`repl_*`)이 지워졌는지 확인, 코드·문서에 남은 Neon URL 제거
 
 ### 8-6. 문서·메모리 갱신
