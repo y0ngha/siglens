@@ -370,3 +370,27 @@ export interface CryptoAssetRepository {
     /** Prefix/substring match over symbol + name, ordered by circulatingSupply desc, capped. */
     search(query: string, limit: number): Promise<CryptoAssetRecord[]>;
 }
+
+/**
+ * Persistence operations backing the `analysis_plain_texts` table. The
+ * `(promptVersion, locale, inputDigest)` triple is the composite primary key;
+ * `inputDigest` is the sha256 hex of the full prompt (content-addressed).
+ */
+export interface PlainTextRepository {
+    /** 저장된 평이화 텍스트. 없으면 `null`. */
+    find(
+        promptVersion: string,
+        locale: string,
+        inputDigest: string
+    ): Promise<string | null>;
+    /**
+     * 평이화 텍스트를 저장한다. 키가 같으면(동시 생성 레이스 포함) 기존 행을 그대로
+     * 둔다 — 내용 주소 키라 어느 쪽이든 유효하다.
+     */
+    insert(
+        promptVersion: string,
+        locale: string,
+        inputDigest: string,
+        text: string
+    ): Promise<void>;
+}

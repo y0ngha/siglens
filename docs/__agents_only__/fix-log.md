@@ -665,6 +665,24 @@
   - Context: "use the computed line when present, otherwise the old bar/MA comparison" in both body and digest.
 - Status (R2): APPROVED (zero findings)
 
+## [feat/analysis-plain-db-store Rounds 1-2 | feat/analysis-plain-db-store | 2026-10-03]
+- Violation (R1 recommended, fixed): storage silently disappeared when the DB client was unavailable, so a misconfiguration would pay the LLM on every request with no log line
+  - Rule: (new) When a store prevents paid regeneration (LLM/API), its unavailability must be logged loudly (once per process), not degraded silently
+  - Context: `api.ts` logs a one-time `console.error` when `tryGetDatabaseClient()` is null outside E2E/offline build.
+- Violation (R1 recommended, fixed): a new network read on the request path ran outside the existing deadline budget with no timeout (neon-http has none)
+  - Rule: (new) A new remote read added in front of a deadline-guarded operation needs its own short time bound that degrades to a miss
+  - Context: `findStored()` races `find` against `PLAIN_STORE_READ_TIMEOUT_MS = 2500`; fake-timer tests.
+- Violation (R1 recommended, fixed): repository test asserted the SET of columns and the SET of values, so a swapped column/value pairing passed
+  - Rule: (new) Query-condition tests must pin column↔value pairing (compile the SQL and assert order + params with pairwise-distinct values)
+  - Context: `plainTextRepository.test.ts` compiles with `PgDialect().sqlToQuery`; mutation-checked (swapped values / swapped columns fail).
+- Status (R3): APPROVED (zero findings)
+
+## [perf/crypto-list-memory-cache Round 1 | perf/crypto-list-memory-cache | 2026-10-03]
+- Violation (R1 recommended, fixed): new L1 memo dropped the still-available expired list on refresh failure and returned an empty Map, so un-seeded coins briefly classified as non-crypto at the 1-hour boundary
+  - Rule: (new) When adding a memo in front of a fallible refresh, a failed refresh should serve the last good (expired) value while leaving the expiry untouched so the next call retries — not degrade to empty
+  - Context: `fmpCryptoMembership.ts` catch now returns `memo?.map ?? new Map()` with a distinct warn message; test added and mutation-checked.
+- Status (R2): APPROVED (zero findings)
+
 ## [Branch feat/agent-confluence-rule-state | 2026-10-03] — Round 3 review findings
 
 - Violation 1 (recommended): After splitting a function in two, its JSDoc paragraph ("none is null") stayed on the half that does not enforce it
