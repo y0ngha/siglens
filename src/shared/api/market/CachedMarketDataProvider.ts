@@ -13,8 +13,9 @@ import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import {
     EOD_PUBLISH_BUFFER_HOURS,
     lastClosedSessionDate,
+    secondsUntilSessionRoll,
 } from '@/shared/lib/marketSessionDate';
-import { SECONDS_PER_DAY, SECONDS_PER_HOUR } from '@/shared/config/time';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import { mergeBarsByTime } from './mergeBarsByTime';
 import type { SiglensMarketProvider } from './marketProvider.types';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
@@ -27,11 +28,16 @@ import { toUtcIsoDate } from '@/shared/lib/isoDate';
 const EOD_LONG_WINDOW_GATE_DAYS = 10;
 
 /**
- * EOD history 캐시 TTL. 세션-날짜 키(bars:eodhist:<SYM>:<date>)가 미국 마감마다
- * 자동 롤(자연 버전닝)되므로 TTL은 단순히 롱 홀리데이 플래토를 넘길 여유만 있으면 된다.
- * 7일 = 공휴일 연속 최대치(추수감사절 주 등)를 충분히 커버.
+ * EOD history 캐시 TTL에 더하는 여유. 세션-날짜 키(`bars:eodhist:<SYM>:<date>`)는
+ * 다음 세션 마감 + 발행 버퍼에 날짜가 넘어가 다시 읽히지 않으므로, TTL은 "넘어가는
+ * 시각까지 남은 시간"(`secondsUntilSessionRoll`)이면 충분하다. 이 여유는 인스턴스 간
+ * 시계 차이로 넘어가기 직전에 읽는 요청을 덮는 정도다.
+ *
+ * 예전에는 7일 고정이었다. 날짜가 넘어간 키가 최대 7일 남아 종목마다 옛 날짜 키가
+ * 평균 7개씩 쌓였고(2026-10-04 운영 36,279키·326MB), 반대로 KRX 추석·설 연휴처럼
+ * 날짜가 7일 넘게 안 바뀌는 구간에는 키가 먼저 사라져 같은 히스토리를 다시 받았다.
  */
-const EOD_HIST_TTL_SECONDS = SECONDS_PER_DAY * 7;
+const EOD_HIST_ROLL_MARGIN_SECONDS = SECONDS_PER_HOUR;
 
 /**
  * 불완전 EOD history(상장폐지/거래정지, 휴장일로 라벨된 키, 드물게 4h를 초과하는 FMP 지연)를
@@ -161,7 +167,7 @@ export class CachedMarketDataProvider implements MarketDataProvider {
      *     (`KR_MARKET_HOLIDAYS`; `KR_CALENDAR_HORIZON` 밖 날짜는 정상 개장으로 폴백).
      *   - 크립토(`always-open`): 어제 UTC 날짜 — 24/7이므로 주말 되감기·버퍼 없음.
      *   TTL은 fetch된 bars가 lastClosed까지 도달했는지에 따라 분기한다:
-     *   - 도달했으면(newest.time >= lastClosedThreshold) 7일 long TTL(EOD_HIST_TTL_SECONDS).
+     *   - 도달했으면(newest.time >= lastClosedThreshold) 다음 세션 롤까지 + 여유(EOD_HIST_ROLL_MARGIN_SECONDS).
      *   - 미도달이면(FMP EOD 미발행/지연, 상장폐지, 휴장일 키) 4h 쿨다운 TTL(EOD_HIST_INCOMPLETE_COOLDOWN_SECONDS)로
      *     재fetch를 제한(≈6회/일/심볼)한다. FMP가 따라잡으면 long TTL로 승격된다.
      *     갭은 발생하지 않는다: today(quote)가 경계를 채우며 휴장일/주말은 거래가 없다. 단, today(quote)가 lastClosed를 채우는 것은
@@ -193,6 +199,10 @@ export class CachedMarketDataProvider implements MarketDataProvider {
                 ? utcMidnightSeconds(options.from)
                 : null;
         const symbolKey = options.symbol.toUpperCase();
+        // 이 키가 다시 읽히지 않게 되는 시각(다음 세션 마감 + 발행 버퍼)까지만 둔다.
+        const rollTtlSeconds =
+            secondsUntilSessionRoll(this.session, now) +
+            EOD_HIST_ROLL_MARGIN_SECONDS;
 
         const [history, todayBars] = await Promise.all([
             getOrSetCache<Bar[]>(
@@ -200,8 +210,11 @@ export class CachedMarketDataProvider implements MarketDataProvider {
                 bars =>
                     bars.length > 0 &&
                     bars[bars.length - 1]!.time >= lastClosedThreshold
-                        ? EOD_HIST_TTL_SECONDS
-                        : EOD_HIST_INCOMPLETE_COOLDOWN_SECONDS,
+                        ? rollTtlSeconds
+                        : Math.min(
+                              EOD_HIST_INCOMPLETE_COOLDOWN_SECONDS,
+                              rollTtlSeconds
+                          ),
                 () => this.inner.getBars({ ...options, before: lastClosed }),
                 bars => bars.length > 0,
                 bars =>
