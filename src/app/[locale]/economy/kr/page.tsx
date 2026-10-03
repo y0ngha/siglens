@@ -37,6 +37,7 @@ import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 import { economyKrTitle } from '../constants';
 import { enterLocale } from '@/shared/lib/enterLocale';
+import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { cn } from '@/shared/lib/cn';
 
@@ -141,6 +142,11 @@ async function KrEconomyContent() {
     // 그리드 기본 선택일 = 현재 인스턴트의 KST 달력일. 그리드가 이벤트를 ET-인스턴트의
     // kstDateKey로 그룹화하므로 앵커도 같은 KST keyspace여야 한다.
     const todayKstKey = kstDateKey(now);
+
+    // 배포 빌드에는 DB가 없어 지표 카드가 비어 구워진다(KrEconomyDegraded + noindex) —
+    // 24h 굳지 않게 이 렌더를 60초 뒤 재생성한다. 로더 앞에서 불러도 된다: DB 부재 판정은
+    // 로더 결과가 아니라 빌드 환경이다.
+    await shortenRevalidateIfDatabaseMissingAtBuild();
 
     // 지표와 캘린더는 서로 독립이라 병렬로 기다린다. 라벨 조회는 캘린더 결과를
     // 소비하므로 그 뒤에 이어진다 — `Promise.all`로 올리면 깨진다.

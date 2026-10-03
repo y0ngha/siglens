@@ -3361,6 +3361,8 @@
                 "4ea5e2": "施行日: {v0}",
                 "7474d0": "目次"
             },
+            "unavailableNotice": "この文書の全文を読み込んでいます。しばらくしてからもう一度このページを開いてください。",
+            "unavailableNoticeLabel": "文書の読み込みに関するお知らせ",
             "untranslatedNotice": "この文書はまだ{v0}に翻訳されていません。原文（{v1}）を表示しています。",
             "untranslatedNoticeLabel": "翻訳に関するお知らせ"
         },

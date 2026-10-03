@@ -18,14 +18,16 @@ import { extractToc } from '@/shared/lib/legal-toc';
 import { SITE_NAME } from '@/shared/lib/seo';
 import type { SeoTranslator } from '@/shared/lib/seo';
 import type { Locale } from '@/shared/i18n/locales';
-import { getActiveTerms, type TermsRecord } from '@/entities/terms/api';
+import type { TermsRecord } from '@/entities/terms/api';
 import { enterLocale } from '@/shared/lib/enterLocale';
 import {
     legalPolicyBreadcrumbJsonLd,
     legalPolicyMetadata,
     legalPolicyWebPageJsonLd,
+    loadLegalTerms,
     type LegalPolicy,
 } from '../_legal/legalPolicy';
+import { renderLegalUnavailable } from '../_legal/renderLegalUnavailable';
 
 /**
  * 약관 본문은 코드가 아니라 `terms` 테이블에 있고, 발효일이 되면
@@ -131,11 +133,15 @@ export default async function TermsPage({
     // **`<Suspense>` 밖에서** 조회하고 `notFound()`를 던진다. 안에서 던지면 셸이
     // 이미 스트리밍을 시작한 뒤라 Next가 응답을 200으로 확정해 버려, 화면은 404인데
     // 상태 코드는 200인 soft-404가 된다(2026-09 구글 정책 감사 M7).
-    const [terms, tSeo] = await Promise.all([
-        getActiveTerms(POLICY.kind, locale),
+    const [load, tSeo] = await Promise.all([
+        loadLegalTerms(POLICY.kind, locale),
         getTranslations({ locale, namespace: 'shared.seo' }),
     ]);
-    if (terms === null) notFound();
+    // DB 없이 도는 배포 빌드 — 404도 빈 페이지도 굽지 않고 안내문을 60초 revalidate로 낸다.
+    if (load.status === 'unavailable')
+        return renderLegalUnavailable(POLICY, 'TERMS OF SERVICE', tSeo);
+    if (load.status === 'missing') notFound();
+    const { terms } = load;
     return (
         <>
             <JsonLd data={legalPolicyWebPageJsonLd(POLICY, tSeo, locale)} />

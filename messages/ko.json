@@ -3485,6 +3485,8 @@
                 "4ea5e2": "시행일: {v0}",
                 "7474d0": "목차"
             },
+            "unavailableNotice": "약관 전문을 불러오는 중이에요. 잠시 후 이 페이지를 다시 열어 주세요.",
+            "unavailableNoticeLabel": "약관 불러오기 안내",
             "untranslatedNotice": "이 문서는 아직 {v0}로 번역되지 않았습니다. 원문({v1})을 표시합니다.",
             "untranslatedNoticeLabel": "번역 안내"
         },

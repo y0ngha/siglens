@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { getActiveTerms } from '@/entities/terms/api';
+import { cache } from 'react';
+import { getActiveTerms, type TermsRecord } from '@/entities/terms/api';
+import type { TermsKind } from '@/shared/db/constants';
+import { isDatabaseMissingAtBuild } from '@/shared/db/config';
 import { resolveLocale, type Locale } from '@/shared/i18n/locales';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import {
@@ -34,10 +37,42 @@ export interface LegalPolicy {
 }
 
 /**
+ * 활성 약관 조회 결과.
+ *
+ *  - `ready`: 본문이 있다.
+ *  - `missing`: DB는 읽었는데 활성 버전이 없다 → 페이지는 404.
+ *  - `unavailable`: **DB 없이 도는 빌드**라 본문을 읽을 수 없다 → 안내문 fallback.
+ */
+export type LegalTermsLoad =
+    | { readonly status: 'ready'; readonly terms: TermsRecord }
+    | { readonly status: 'missing' }
+    | { readonly status: 'unavailable' };
+
+/**
+ * `generateMetadata`와 페이지 본문이 **같은 결과**를 보게 하는 요청 스코프 조회.
+ *
+ * 운영 DB가 사설 RDS라 배포 빌드(GitHub Actions 러너)에는 DB가 없다. 그 빌드에서
+ * `notFound()`(404가 구워진다)나 throw(빌드 실패)로 가면 안 되고, 빈 본문을 굳혀도
+ * 안 된다 — 그래서 DB를 건드리지 않고 `unavailable`을 돌려 안내문 + 짧은 revalidate
+ * 페이지를 만들게 한다. 런타임과 DB가 있는 빌드는 그대로 `getActiveTerms`를 부르며,
+ * 그 쪽 DB 오류는 삼키지 않고 던진다(로컬/E2E 빌드가 빈 약관을 굽지 않게).
+ */
+export const loadLegalTerms = cache(
+    async (kind: TermsKind, locale: Locale): Promise<LegalTermsLoad> => {
+        if (isDatabaseMissingAtBuild()) return { status: 'unavailable' };
+        const terms = await getActiveTerms(kind, locale);
+        return terms === null
+            ? { status: 'missing' }
+            : { status: 'ready', terms };
+    }
+);
+
+/**
  * 약관·방침 라우트의 `generateMetadata` 본체.
  *
- * 활성 버전이 없으면 이 URL은 404다(페이지가 `notFound()`를 던진다). 그 상태를
- * 색인 후보로 광고하지 않는다 — canonical을 비우고 noindex.
+ * 활성 버전이 없으면 이 URL은 404다(페이지가 `notFound()`를 던진다). 본문을 못 읽은
+ * 빌드 fallback도 마찬가지다. 그 상태를 색인 후보로 광고하지 않는다 — canonical을
+ * 비우고 noindex.
  */
 export async function legalPolicyMetadata(
     params: Promise<{ locale: string }>,
@@ -45,18 +80,18 @@ export async function legalPolicyMetadata(
 ): Promise<Metadata> {
     const locale = resolveLocale((await params).locale);
     const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
-    const active = await getActiveTerms(policy.kind, locale);
+    const { status } = await loadLegalTerms(policy.kind, locale);
+    const indexable = status === 'ready';
     const fullTitle = policy.fullTitle(tSeo);
     const description = policy.description(tSeo);
     return {
         title: policy.title(tSeo),
         description,
-        robots:
-            active === null
-                ? { index: false, follow: true }
-                : localeRobots(locale),
+        robots: indexable
+            ? localeRobots(locale)
+            : { index: false, follow: true },
         alternates: await localeAlternatesFrom(params, policy.path, {
-            canonical: active === null ? null : undefined,
+            canonical: indexable ? undefined : null,
         }),
         openGraph: {
             type: 'article',

@@ -37,9 +37,24 @@ vi.mock('@/entities/market-news/api/marketNewsRepository', () => ({
     getMarketNewsCards: vi.fn().mockResolvedValue([]),
 }));
 
+vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
+    shortenRevalidateIfDatabaseMissingAtBuild: vi.fn(async () => undefined),
+}));
+
+import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 import NewsHubPage, { generateMetadata } from '../page';
 
 describe('/news hub page는', () => {
+    // 배포 빌드에는 DB가 없어 미리보기이 빈 채로 구워진다 — 60초 revalidate 배선.
+    // DB 판정 자체는 헬퍼 테스트가 고정하므로 여기서는 호출 여부만 본다.
+    it('빌드타임 DB 부재 degrade revalidate 헬퍼를 부른다', async () => {
+        vi.mocked(shortenRevalidateIfDatabaseMissingAtBuild).mockClear();
+
+        await NewsHubPage({ params: Promise.resolve({ locale: 'ko' }) });
+
+        expect(shortenRevalidateIfDatabaseMissingAtBuild).toHaveBeenCalled();
+    });
+
     it('5개 카테고리 딥링크를 SSR 렌더한다', async () => {
         render(
             await NewsHubPage({ params: Promise.resolve({ locale: 'ko' }) })

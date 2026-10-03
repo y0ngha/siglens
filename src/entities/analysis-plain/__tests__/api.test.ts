@@ -1,11 +1,13 @@
+import { createHash } from 'node:crypto';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const callAiProviderRouter = vi.fn();
-const cacheGet = vi.fn();
-const cacheSet = vi.fn();
-const createCacheProvider = vi.fn();
+const repoFind = vi.fn();
+const repoInsert = vi.fn();
+const tryGetDatabaseClient = vi.fn();
 const tryReadPlainModelConfig = vi.fn();
 const isE2E = vi.fn();
+const isOfflineBuild = vi.fn();
 
 vi.mock('server-only', () => ({}));
 vi.mock('@/entities/llm-provider/api/router', () => ({
@@ -28,14 +30,27 @@ vi.mock('@y0ngha/siglens-core', () => ({
         modes: { off: unknown; on: unknown; default: string },
         r?: boolean
     ) => ((r ?? modes.default === 'on') ? modes.on : modes.off),
-    createCacheProvider: () => createCacheProvider(),
 }));
 vi.mock('@/shared/api/e2eEnv', () => ({ isE2E: () => isE2E() }));
+vi.mock('@/shared/api/offlineBuild', () => ({
+    isOfflineBuild: () => isOfflineBuild(),
+}));
+vi.mock('@/shared/db/client', () => ({
+    tryGetDatabaseClient: () => tryGetDatabaseClient(),
+}));
+vi.mock('../plainTextRepository', () => ({
+    DrizzlePlainTextRepository: class {
+        find = (...args: unknown[]) => repoFind(...args);
+        insert = (...args: unknown[]) => repoInsert(...args);
+    },
+}));
 vi.mock('../lib/plainModel', () => ({
     tryReadPlainModelConfig: () => tryReadPlainModelConfig(),
 }));
 
-const { rewriteToPlainLanguage } = await import('../api');
+const { rewriteToPlainLanguage, PLAIN_STORE_READ_TIMEOUT_MS } =
+    await import('../api');
+const { PLAIN_PROMPT_VERSION } = await import('../lib/buildPlainPrompt');
 
 /**
  * 산문 두 조각. 재작성에 길이 하한은 없다 — 쉽게보기는 항상 원본보기 토글과
@@ -47,16 +62,26 @@ const ANALYSIS = {
 };
 const GOOD = `${'좋은 문장입니다. '.repeat(30)}\n\n지지선은 183.60달러입니다.`;
 
+/**
+ * 호출 기록은 인덱스가 아니라 판별 인자로 찾는다 — 앞선 비동기 호출이 먼저
+ * 도착해 `calls[0]`을 차지해도 단언이 흔들리지 않게.
+ */
+const findCallFor = (locale: string) =>
+    repoFind.mock.calls.find(call => call[1] === locale);
+const insertCallFor = (text: string) =>
+    repoInsert.mock.calls.find(call => call[3] === text);
+
 beforeEach(() => {
     vi.clearAllMocks();
     isE2E.mockReturnValue(false);
+    isOfflineBuild.mockReturnValue(false);
     tryReadPlainModelConfig.mockReturnValue({
         serverApiKey: 'k',
         model: 'deepseek-v4.1-flash',
     });
-    cacheGet.mockResolvedValue(null);
-    cacheSet.mockResolvedValue(undefined);
-    createCacheProvider.mockReturnValue({ get: cacheGet, set: cacheSet });
+    repoFind.mockResolvedValue(null);
+    repoInsert.mockResolvedValue(undefined);
+    tryGetDatabaseClient.mockReturnValue({ db: {} });
     callAiProviderRouter.mockResolvedValue(GOOD);
 });
 
@@ -112,8 +137,9 @@ describe('rewriteToPlainLanguage', () => {
 
         vi.clearAllMocks();
         isE2E.mockReturnValue(false);
-        cacheGet.mockResolvedValue(null);
-        createCacheProvider.mockReturnValue({ get: cacheGet, set: cacheSet });
+        repoFind.mockResolvedValue(null);
+        repoInsert.mockResolvedValue(undefined);
+        tryGetDatabaseClient.mockReturnValue({ db: {} });
         tryReadPlainModelConfig.mockReturnValue({
             serverApiKey: 'k',
             model: 'deepseek-v4.1-flash',
@@ -141,17 +167,59 @@ describe('rewriteToPlainLanguage', () => {
         expect(callAiProviderRouter).not.toHaveBeenCalled();
     });
 
-    it('캐시 히트면 LLM을 부르지 않는다', async () => {
-        cacheGet.mockResolvedValue(GOOD);
+    it('저장된 행이 있으면 LLM을 부르지 않고 그 텍스트를 돌려준다', async () => {
+        repoFind.mockResolvedValue(GOOD);
         expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBe(GOOD);
         expect(callAiProviderRouter).not.toHaveBeenCalled();
+        expect(repoInsert).not.toHaveBeenCalled();
     });
 
-    it('통과하면 텍스트를 돌려주고 캐시에 쓴다', async () => {
+    it('조회 키는 (버전, 로케일, 프롬프트 sha256)이다', async () => {
+        await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
+
+        const prompt = callAiProviderRouter.mock.calls.find(
+            ([arg]) => arg.jobId === 'analysis-plain'
+        )?.[0].contents as string;
+        const [version, locale, digest] = findCallFor('ko') ?? [];
+        expect(version).toBe(PLAIN_PROMPT_VERSION);
+        expect(locale).toBe('ko');
+        expect(digest).toBe(createHash('sha256').update(prompt).digest('hex'));
+    });
+
+    it('미스면 LLM을 한 번 부르고 같은 키로 한 번 저장한다', async () => {
         expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBe(
             GOOD.trim()
         );
-        expect(cacheSet).toHaveBeenCalledOnce();
+        expect(callAiProviderRouter).toHaveBeenCalledOnce();
+        expect(repoInsert).toHaveBeenCalledOnce();
+        // 조회 키와 저장 키가 어긋나면 영영 히트하지 않는다.
+        expect(insertCallFor(GOOD.trim())).toEqual([
+            ...(findCallFor('ko') ?? []),
+            GOOD.trim(),
+        ]);
+    });
+
+    it('저장이 거절돼도 평이화 결과는 그대로 돌려준다', async () => {
+        repoInsert.mockRejectedValue(new Error('db down'));
+        expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBe(
+            GOOD.trim()
+        );
+        expect(repoInsert).toHaveBeenCalledOnce();
+    });
+
+    it('조회가 거절되면 미스로 취급해 생성한다', async () => {
+        repoFind.mockRejectedValue(new Error('db down'));
+        expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBe(
+            GOOD.trim()
+        );
+        expect(callAiProviderRouter).toHaveBeenCalledOnce();
+    });
+
+    it('빈 문자열 행은 히트로 치지 않는다', async () => {
+        repoFind.mockResolvedValue('');
+        expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBe(
+            GOOD.trim()
+        );
         expect(callAiProviderRouter).toHaveBeenCalledOnce();
     });
 
@@ -184,15 +252,16 @@ describe('rewriteToPlainLanguage', () => {
         expect(result).not.toContain('999.99');
         expect(result).toContain('좋은 문장입니다');
         expect(callAiProviderRouter).toHaveBeenCalledTimes(2);
-        // 살려낸 결과도 캐시에 넣는다 — 다음 조회가 같은 왕복을 반복하지 않는다.
-        expect(cacheSet).toHaveBeenCalledOnce();
+        // 살려낸 결과도 저장한다 — 다음 조회가 같은 왕복을 반복하지 않는다.
+        expect(repoInsert).toHaveBeenCalledOnce();
+        expect(insertCallFor(result as string)).toBeDefined();
     });
 
     /** 모든 문장이 어긋난 숫자를 품고 있으면 도려낸 뒤 남는 것이 없어 버린다. */
     it('도려낸 결과가 비면 null', async () => {
         callAiProviderRouter.mockResolvedValue('목표가 999.99달러입니다.');
         expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBeNull();
-        expect(cacheSet).not.toHaveBeenCalled();
+        expect(repoInsert).not.toHaveBeenCalled();
     });
 
     /**
@@ -208,7 +277,7 @@ describe('rewriteToPlainLanguage', () => {
             SHORT
         );
         expect(callAiProviderRouter).toHaveBeenCalledTimes(1);
-        expect(cacheSet).toHaveBeenCalledOnce();
+        expect(repoInsert).toHaveBeenCalledOnce();
     });
 
     /** 크기 접미사는 자릿수가 틀린 금액이라 문장 제거로 고쳐지지 않는다. */
@@ -217,7 +286,7 @@ describe('rewriteToPlainLanguage', () => {
             `${GOOD}\n\n총부채는 3,475.2B 원입니다.`
         );
         expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBeNull();
-        expect(cacheSet).not.toHaveBeenCalled();
+        expect(repoInsert).not.toHaveBeenCalled();
     });
 
     it('LLM이 던져도 예외를 전파하지 않는다 — 분석 전체가 실패하면 안 된다', async () => {
@@ -225,18 +294,30 @@ describe('rewriteToPlainLanguage', () => {
         expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBeNull();
     });
 
-    it('캐시 팩토리가 던져도 예외를 전파하지 않는다', async () => {
-        createCacheProvider.mockImplementation(() => {
-            throw new Error('no redis');
+    it('DB 클라이언트 생성이 던져도 저장소 없이 생성한다', async () => {
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        tryGetDatabaseClient.mockImplementation(() => {
+            throw new Error('bad config');
         });
-        expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBeNull();
+        try {
+            expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBe(
+                GOOD.trim()
+            );
+            expect(repoFind).not.toHaveBeenCalled();
+            expect(repoInsert).not.toHaveBeenCalled();
+        } finally {
+            errSpy.mockRestore();
+        }
     });
 
-    it('캐시가 없어도(로컬·E2E) 동작한다', async () => {
-        createCacheProvider.mockReturnValue(null);
+    it('DB 클라이언트가 없어도(로컬·오프라인 빌드) 생성하고 저장은 건너뛴다', async () => {
+        tryGetDatabaseClient.mockReturnValue(null);
         expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBe(
             GOOD.trim()
         );
+        expect(callAiProviderRouter).toHaveBeenCalledOnce();
+        expect(repoFind).not.toHaveBeenCalled();
+        expect(repoInsert).not.toHaveBeenCalled();
     });
 
     it('텔레메트리 분리를 위해 jobId를 지정한다', async () => {
@@ -248,11 +329,11 @@ describe('rewriteToPlainLanguage', () => {
 
     /**
      * 회귀(감사, 7일 `deadline exceeded` 146건): 레이스에서 진 `attempt()`는
-     * 캐시 쓰기가 승자 경로에만 있던 시절 결과를 통째로 버렸다. 지금은
-     * `attempt()` 자신이 캐시를 쓰므로, 레이스가 끝난 뒤 프로바이더가 늦게
-     * settle해도 다음 요청은 그 결과를 캐시에서 맞는다.
+     * 저장(당시엔 Redis 캐시) 쓰기가 승자 경로에만 있던 시절 결과를 통째로 버렸다.
+     * 지금은 `attempt()` 자신이 DB 행을 쓰므로, 레이스가 끝난 뒤 프로바이더가 늦게
+     * settle해도 다음 요청은 그 결과를 저장소에서 맞는다.
      */
-    it('마감을 넘겨도 프로바이더가 나중에 끝나면 캐시를 채운다', async () => {
+    it('마감을 넘겨도 프로바이더가 나중에 끝나면 행을 저장한다', async () => {
         vi.useFakeTimers();
         try {
             let resolveProvider: (v: string) => void = () => {};
@@ -265,12 +346,12 @@ describe('rewriteToPlainLanguage', () => {
             const promise = rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
             await vi.advanceTimersByTimeAsync(15_000);
             expect(await promise).toBeNull();
-            expect(cacheSet).not.toHaveBeenCalled();
+            expect(repoInsert).not.toHaveBeenCalled();
 
             resolveProvider(GOOD);
             await vi.advanceTimersByTimeAsync(0);
-            expect(cacheSet).toHaveBeenCalledOnce();
-            expect(cacheSet.mock.calls[0][1]).toBe(GOOD.trim());
+            expect(repoInsert).toHaveBeenCalledOnce();
+            expect(insertCallFor(GOOD.trim())).toBeDefined();
         } finally {
             vi.useRealTimers();
         }
@@ -278,9 +359,9 @@ describe('rewriteToPlainLanguage', () => {
 
     /**
      * 마감을 넘긴 뒤 늦게 도착한 텍스트라도 가드를 통과하지 못하면 여전히
-     * 캐시에 쓰지 않는다 — 이번 수정이 "가드를 우회하는 경로"가 되면 안 된다.
+     * 저장소에 쓰지 않는다 — 이번 수정이 "가드를 우회하는 경로"가 되면 안 된다.
      */
-    it('마감을 넘긴 뒤 가드가 거부하면 여전히 캐시에 쓰지 않는다', async () => {
+    it('마감을 넘긴 뒤 가드가 거부하면 여전히 저장하지 않는다', async () => {
         vi.useFakeTimers();
         try {
             let resolveProvider: (v: string) => void = () => {};
@@ -298,7 +379,7 @@ describe('rewriteToPlainLanguage', () => {
             // salvage도 실패한다.
             resolveProvider('목표가 999.99달러입니다.');
             await vi.advanceTimersByTimeAsync(0);
-            expect(cacheSet).not.toHaveBeenCalled();
+            expect(repoInsert).not.toHaveBeenCalled();
         } finally {
             vi.useRealTimers();
         }
@@ -351,19 +432,177 @@ describe('rewriteToPlainLanguage', () => {
         }
     });
 
-    it('로케일이 캐시 키를 가른다', async () => {
+    it('로케일이 저장 키를 가른다', async () => {
         await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
-        const koKey = cacheGet.mock.calls[0][0];
+        const koKey = findCallFor('ko')?.slice(0, 3).join('|');
         vi.clearAllMocks();
         isE2E.mockReturnValue(false);
-        cacheGet.mockResolvedValue(null);
-        createCacheProvider.mockReturnValue({ get: cacheGet, set: cacheSet });
+        repoFind.mockResolvedValue(null);
+        repoInsert.mockResolvedValue(undefined);
+        tryGetDatabaseClient.mockReturnValue({ db: {} });
         tryReadPlainModelConfig.mockReturnValue({
             serverApiKey: 'k',
             model: 'deepseek-v4.1-flash',
         });
         callAiProviderRouter.mockResolvedValue(GOOD);
         await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ja');
-        expect(cacheGet.mock.calls[0][0]).not.toBe(koKey);
+        const jaKey = findCallFor('ja')?.slice(0, 3).join('|');
+        expect(koKey).toBeDefined();
+        expect(jaKey).toBeDefined();
+        expect(jaKey).not.toBe(koKey);
+    });
+
+    /**
+     * neon-http에는 쿼리 타임아웃이 없다. 조회가 매달리면 `withDeadline` 바깥의
+     * 이 await가 그대로 사용자 대기가 되므로, 상한을 넘기면 미스로 보고 생성한다.
+     */
+    describe('저장소 조회 상한', () => {
+        it('끝나지 않는 조회는 상한 뒤 미스로 취급해 생성으로 넘어간다', async () => {
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
+            vi.useFakeTimers();
+            try {
+                repoFind.mockReturnValue(new Promise<string | null>(() => {}));
+
+                const promise = rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
+                await vi.advanceTimersByTimeAsync(
+                    PLAIN_STORE_READ_TIMEOUT_MS - 1
+                );
+                expect(callAiProviderRouter).not.toHaveBeenCalled();
+
+                await vi.advanceTimersByTimeAsync(1);
+                expect(await promise).toBe(GOOD.trim());
+                expect(callAiProviderRouter).toHaveBeenCalledOnce();
+                expect(insertCallFor(GOOD.trim())).toBeDefined();
+                expect(warnSpy).toHaveBeenCalledWith(
+                    '[analysisPlain] store read timed out',
+                    { ms: PLAIN_STORE_READ_TIMEOUT_MS }
+                );
+            } finally {
+                vi.useRealTimers();
+                warnSpy.mockRestore();
+            }
+        });
+
+        it('상한 안에 끝난 조회는 타이머를 남기지 않고 히트로 쓴다', async () => {
+            vi.useFakeTimers();
+            try {
+                repoFind.mockResolvedValue(GOOD);
+                expect(
+                    await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')
+                ).toBe(GOOD);
+                expect(vi.getTimerCount()).toBe(0);
+                expect(callAiProviderRouter).not.toHaveBeenCalled();
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('상한 뒤에 늦게 끝난 조회는 결과를 바꾸지 못한다', async () => {
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
+            vi.useFakeTimers();
+            try {
+                let resolveFind: (v: string) => void = () => {};
+                repoFind.mockReturnValue(
+                    new Promise<string>(resolve => {
+                        resolveFind = resolve;
+                    })
+                );
+
+                const promise = rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
+                await vi.advanceTimersByTimeAsync(PLAIN_STORE_READ_TIMEOUT_MS);
+                expect(await promise).toBe(GOOD.trim());
+
+                resolveFind('늦게 온 다른 텍스트');
+                await vi.advanceTimersByTimeAsync(0);
+                expect(callAiProviderRouter).toHaveBeenCalledOnce();
+            } finally {
+                vi.useRealTimers();
+                warnSpy.mockRestore();
+            }
+        });
+    });
+
+    /**
+     * 저장소가 없으면 모든 요청이 LLM을 다시 부른다(비용). 막지는 않되 조용히
+     * 넘어가지 않는다 — 프로세스당 한 번만 크게 남긴다. 모듈 수준 플래그라 테스트마다
+     * 모듈을 새로 불러온다.
+     */
+    describe('DB 부재 경보', () => {
+        const MESSAGE =
+            '[analysis-plain] DB unavailable — plain texts will be regenerated on every request (LLM cost)';
+
+        async function freshRewrite() {
+            vi.resetModules();
+            return (await import('../api')).rewriteToPlainLanguage;
+        }
+
+        const unavailableCalls = (spy: { mock: { calls: unknown[][] } }) =>
+            spy.mock.calls.filter(call => call[0] === MESSAGE);
+
+        it('DB가 없으면 프로세스당 한 번만 console.error를 남긴다', async () => {
+            const errSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            try {
+                tryGetDatabaseClient.mockReturnValue(null);
+                const rewrite = await freshRewrite();
+
+                await rewrite(ANALYSIS, 'AAPL', 'ko');
+                await rewrite(ANALYSIS, 'MSFT', 'ko');
+
+                expect(unavailableCalls(errSpy)).toHaveLength(1);
+                expect(callAiProviderRouter).toHaveBeenCalledTimes(2);
+            } finally {
+                errSpy.mockRestore();
+            }
+        });
+
+        it('DB가 있으면 남기지 않는다', async () => {
+            const errSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            try {
+                const rewrite = await freshRewrite();
+                await rewrite(ANALYSIS, 'AAPL', 'ko');
+                expect(unavailableCalls(errSpy)).toHaveLength(0);
+            } finally {
+                errSpy.mockRestore();
+            }
+        });
+
+        it('오프라인 빌드에서는 남기지 않는다', async () => {
+            const errSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            try {
+                tryGetDatabaseClient.mockReturnValue(null);
+                isOfflineBuild.mockReturnValue(true);
+                const rewrite = await freshRewrite();
+                await rewrite(ANALYSIS, 'AAPL', 'ko');
+                expect(unavailableCalls(errSpy)).toHaveLength(0);
+            } finally {
+                errSpy.mockRestore();
+            }
+        });
+
+        it('E2E에서는 남기지 않는다', async () => {
+            const errSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            try {
+                tryGetDatabaseClient.mockReturnValue(null);
+                // 진입부의 E2E 단락을 지난 뒤에 E2E로 보이는 경우까지 가드가 막는지 본다.
+                isE2E.mockReturnValueOnce(false).mockReturnValue(true);
+                const rewrite = await freshRewrite();
+                await rewrite(ANALYSIS, 'AAPL', 'ko');
+                expect(unavailableCalls(errSpy)).toHaveLength(0);
+            } finally {
+                errSpy.mockRestore();
+            }
+        });
     });
 });
