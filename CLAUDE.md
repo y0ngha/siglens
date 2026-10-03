@@ -261,5 +261,7 @@ Script list lives in `package.json` — read it there rather than duplicating it
 
 ## Reference Documents
 
-전체 인덱스와 각 문서 요약은 [`docs/README.md`](docs/README.md)에 있다. 작업 전 해당 인덱스를 읽고
+전체 인덱스와 각 문서 요약은 [`docs/README.md`](docs/README.md)에 있다.
+`docs/`는 `product/`·`conventions/`만 git에 올라가고 나머지는 로컬 전용이다(`.gitignore`).
+새 워크트리에는 `.worktreeinclude`로 복사된다. 공개 문서에 내부 운영 정보(인프라 ID, 런북, 감사 결과)를 넣지 않는다. 작업 전 해당 인덱스를 읽고
 필요한 문서로 이동한다. 운영 문제는 [`docs/architecture/DEPLOY_RUNBOOK.md`](docs/architecture/DEPLOY_RUNBOOK.md)가 첫 진입점.

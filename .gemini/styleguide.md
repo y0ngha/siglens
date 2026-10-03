@@ -9,7 +9,7 @@ All review comments must be written in **Korean**.
 Before reviewing, read the following project documents in order:
 
 1. `docs/conventions/CONVENTIONS.md` — coding paradigm, TypeScript rules, component rules, layer dependency rules, React Query rules
-2. `docs/workflows/MISTAKES.md` — common mistakes to flag (highest priority)
+2. `docs/conventions/MISTAKES.md` — common mistakes to flag (highest priority)
 3. `docs/conventions/FF.md` — FF 4 principles: Readability, Predictability, Cohesion, Coupling
 4. `docs/product/DOMAIN.md` — indicator specs, domain rules, IndicatorResult structure
 5. `docs/conventions/DESIGN.md` — chart color constants, Tailwind token rules

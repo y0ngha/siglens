@@ -141,20 +141,18 @@ cp .env.example .env.local
 yarn dev
 ```
 
-The app starts at `http://localhost:4200`. Use the Node.js version in `.nvmrc`; the Yarn version is pinned in `package.json`. Installing dependencies requires a GitHub token because `@y0ngha/siglens-core` is published to GitHub Packages. Every environment variable is explained in `.env.example` and [API.md](./docs/reference/API.md), and every script is listed in `package.json`.
+The app starts at `http://localhost:4200`. Use the Node.js version in `.nvmrc`; the Yarn version is pinned in `package.json`. Installing dependencies requires a GitHub token because `@y0ngha/siglens-core` is published to GitHub Packages. Every environment variable is explained in `.env.example`, and every script is listed in `package.json`.
 
 ### Documentation
 
-Project documentation is written in Korean. [docs/README.md](./docs/README.md) indexes all of it. These are good places to start:
+Project documentation is written in Korean. The public documents live in `docs/product/` and `docs/conventions/`:
 
 | Document | Contents |
 |---|---|
 | [SERVICE.md](./docs/product/SERVICE.md) | What the service does and who it is for |
-| [ARCHITECTURE.md](./docs/architecture/ARCHITECTURE.md) | Layer structure and dependency rules |
-| [SCOPE.md](./docs/architecture/SCOPE.md) | What belongs in this repository and what belongs in siglens-core |
 | [DOMAIN.md](./docs/product/DOMAIN.md) | Indicators, patterns, and business rules |
 | [CONVENTIONS.md](./docs/conventions/CONVENTIONS.md) | Coding and testing conventions |
-| [DEPLOY_RUNBOOK.md](./docs/architecture/DEPLOY_RUNBOOK.md) | Deployment, rollback, and incident response |
+| [DESIGN.md](./docs/conventions/DESIGN.md) | Color system and UI rules |
 
 ## Security
 

@@ -88,7 +88,7 @@ The memory versions contain all rules; only verbose code examples are omitted.
 
 Always read:
 ```
-docs/workflows/MISTAKES.md
+docs/conventions/MISTAKES.md
 docs/architecture/ARCHITECTURE.md
 ```
 
@@ -99,7 +99,7 @@ Additionally, based on changed file locations:
 | Diff touches indicator calculations, signal logic, candle patterns, or prompt builders | `docs/product/DOMAIN.md` |
 | Diff touches `.tsx` files (UI components) | `docs/conventions/DESIGN.md` |
 | Diff touches AI provider calls or market data fetches | `docs/reference/API.md` |
-| Diff touches authentication flows or session management | `docs/product/AUTH.md` |
+| Diff touches authentication flows or session management | `docs/architecture/AUTH.md` |
 | Only test files changed, no source files | Skip all conditional docs |
 
 Determine the trigger by reading the actual file content of the diff — do NOT match on directory paths (`src/domain/`, `src/infrastructure/`). FSD migration is in progress; concrete layer paths are unstable.
@@ -155,7 +155,7 @@ Using the 4 principles from docs/conventions/FF.md, look for **code that will be
 
 Evaluate silently. Do not output reasoning — violations go into findings only.
 
-Check docs/workflows/MISTAKES.md against the changed code for known repeated patterns.
+Check docs/conventions/MISTAKES.md against the changed code for known repeated patterns.
 
 ---
 

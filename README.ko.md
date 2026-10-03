@@ -141,20 +141,18 @@ cp .env.example .env.local
 yarn dev
 ```
 
-앱은 `http://localhost:4200`에서 실행됩니다. Node.js는 `.nvmrc`의 버전을 사용하고, Yarn 버전은 `package.json`에 고정되어 있습니다. `@y0ngha/siglens-core`가 GitHub Packages에 배포되어 있어 의존성을 설치하려면 GitHub 토큰이 필요합니다. 환경변수는 `.env.example`과 [API.md](./docs/reference/API.md)에, 스크립트는 `package.json`에 모두 정리되어 있습니다.
+앱은 `http://localhost:4200`에서 실행됩니다. Node.js는 `.nvmrc`의 버전을 사용하고, Yarn 버전은 `package.json`에 고정되어 있습니다. `@y0ngha/siglens-core`가 GitHub Packages에 배포되어 있어 의존성을 설치하려면 GitHub 토큰이 필요합니다. 환경변수는 `.env.example`에, 스크립트는 `package.json`에 모두 정리되어 있습니다.
 
 ### 문서
 
-프로젝트 문서는 한국어로 작성되어 있으며, 전체 목록은 [docs/README.md](./docs/README.md)에 있습니다. 처음 읽기에 좋은 문서는 다음과 같습니다.
+프로젝트 문서는 한국어로 작성되어 있으며, 공개 문서는 `docs/product/`와 `docs/conventions/`에 있습니다.
 
 | 문서 | 내용 |
 |---|---|
 | [SERVICE.md](./docs/product/SERVICE.md) | 서비스가 하는 일과 대상 사용자 |
-| [ARCHITECTURE.md](./docs/architecture/ARCHITECTURE.md) | 레이어 구조와 의존 규칙 |
-| [SCOPE.md](./docs/architecture/SCOPE.md) | 이 저장소와 siglens-core의 역할 구분 |
 | [DOMAIN.md](./docs/product/DOMAIN.md) | 보조지표, 패턴, 비즈니스 규칙 |
 | [CONVENTIONS.md](./docs/conventions/CONVENTIONS.md) | 코딩과 테스트 규칙 |
-| [DEPLOY_RUNBOOK.md](./docs/architecture/DEPLOY_RUNBOOK.md) | 배포, 롤백, 장애 대응 |
+| [DESIGN.md](./docs/conventions/DESIGN.md) | 컬러 시스템과 UI 규칙 |
 
 ## 보안
 

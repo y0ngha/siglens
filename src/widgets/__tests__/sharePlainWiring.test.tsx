@@ -265,7 +265,7 @@ import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
  * (`if (!register) return;`). 일곱 위젯의 기존 테스트 파일은 전부 이 Provider로
  * 감싸지 않고 `@/features/share`도 mock하지 않으므로, 호출부에서 `plain: null`로
  * 굳혀도 기존 테스트는 전부 초록이다(리뷰 라운드 2 지적, PR #778과 동일 패턴 —
- * docs/workflows/MISTAKES.md Tests §23). 여기서는 실제 Provider로 감싸고
+ * docs/conventions/MISTAKES.md Tests §23). 여기서는 실제 Provider로 감싸고
  * `useShareable()`을 읽는 probe로 등록된 `plain`을 직접 관찰한다.
  */
 

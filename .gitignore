@@ -58,10 +58,14 @@ next-env.d.ts
 /worker/dist/
 /worker/node_modules/
 /.superpowers/
-/docs/superpowers/*
-!/docs/superpowers/specs/
-!/docs/superpowers/plans/
-!/docs/superpowers/seeding/
+# docs/는 로컬 전용이다. 공개해도 되는 문서(서비스 소개·도메인 명세·코딩 규칙)만
+# product/와 conventions/에 두고 추적한다. CI 리뷰 봇과 designDocTokenGuard가
+# conventions/를 읽으므로 이 두 폴더는 체크아웃에 있어야 한다. 나머지(설계 spec·플랜,
+# 런북, QA, 에이전트 워크플로)는 새 워크트리에 .worktreeinclude로 복사된다.
+# docs/ 바로 아래에 비공개 폴더·파일을 새로 만들면 .worktreeinclude에도 추가할 것.
+/docs/*
+!/docs/product/
+!/docs/conventions/
 
 # backtest batch job state
 /scripts/backtests/.batch-job.txt

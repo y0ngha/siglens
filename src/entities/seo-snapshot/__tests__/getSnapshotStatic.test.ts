@@ -52,7 +52,7 @@ import {
 } from '@/entities/seo-snapshot/model';
 
 // FIX D(감사) — max-age 필터는 Date.now() 기준이라 실제 wall-clock에 기대면
-// 테스트가 시간 의존 flaky가 된다(docs/workflows/MISTAKES.md 사례). fake
+// 테스트가 시간 의존 flaky가 된다(docs/conventions/MISTAKES.md 사례). fake
 // timers로 고정한다.
 const FIXED_NOW = new Date('2026-07-25T12:00:00.000Z');
 

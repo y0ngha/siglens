@@ -10,7 +10,7 @@ closes #{이슈}
 
 - [ ] @docs/conventions/CONVENTIONS.md 준수 확인
 - [ ] @docs/conventions/FF.md 준수 확인
-- [ ] @docs/workflows/MISTAKES.md 준수 확인
+- [ ] @docs/conventions/MISTAKES.md 준수 확인
 - [ ] domain/: 외부 라이브러리 import 없음, 순수 함수만
 - [ ] 인디케이터 초기 구간 null 반환 (0, NaN 없음)
 - [ ] 반환 타입 명시
