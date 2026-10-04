@@ -203,19 +203,52 @@ function withDeadline<T>(work: Promise<T>, ms: number): Promise<T | null> {
  * 이하만 잃으면 도려낸 결과를 그대로 쓰고, 그보다 많이 잃으면 재생성이 낫다고 본다.
  * 크기 접미사(`magnitude_suffix`)·문자 혼입 등 다른 거부는 도려내서 고쳐지지 않으므로
  * 그대로 재시도한다.
+ *
+ * ## 위 수치를 다시 세는 법
+ *
+ * 거부는 `attempt()`가 `console.warn('[analysisPlain] guard rejected', { symbol, locale,
+ * kind, retry, tokens })`로 매번 한 번씩 남긴다. CloudWatch Logs Insights, 로그 그룹
+ * `/siglens/app`, 14일 범위:
+ *
+ *     fields @timestamp, @message
+ *     | filter @message like "[analysisPlain] guard rejected"
+ *     | stats count() as rejections
+ *
+ * - 거부 전체(2,696건)는 위 마커 줄 수, 그중 첫 시도만(2,038건)은 `retry: false`인 건이다.
+ * - 종류별 비율(`unsupported_numbers` 73%)은 같은 필드의 `kind`로 가른다. Node는 객체를
+ *   여러 줄로 찍으므로 awslogs가 필드마다 별개 이벤트로 쪼갤 수 있다 — 그러면
+ *   `filter @message like "kind: 'unsupported_numbers'"` 줄 수를 마커 줄 수로 나눈다.
+ *   쪼개졌는지는 먼저 `limit 20`으로 원문을 보고 정할 것.
+ * - 이 상한을 도입한 뒤의 실제 손실 분포는 `[analysisPlain] salvaged without retry`의
+ *   `lossRatio`로 본다(아래 `console.info`). 이 로그는 도입 전 기간에는 없어 위 14일 수치를
+ *   과거로 재현하는 데는 못 쓴다.
  */
 const SALVAGE_BEFORE_RETRY_MAX_LOSS = 0.25;
+
+/** 로그에 남기는 손실 비율의 소수 자릿수. 0.25 상한 근처를 0.1% 단위로 구분하면 충분하다. */
+const LOSS_RATIO_LOG_DIGITS = 3;
+
+interface SalvagedBeforeRetry {
+    text: string;
+    /** 잃은 글자 비율(0~1). 상한 판정과 로그가 같은 값을 쓰도록 한 번만 계산한다. */
+    lossRatio: number;
+}
 
 function salvageBeforeRetry(
     text: string,
     failure: PlainGuardFailure,
     allowed: GuardInput['allowed']
-): string | null {
+): SalvagedBeforeRetry | null {
     if (failure.kind !== 'unsupported_numbers') return null;
     const salvaged = salvageByRemovingSentences(text, allowed);
-    if (salvaged === null || text.length === 0) return null;
-    const loss = (text.length - salvaged.length) / text.length;
-    return loss <= SALVAGE_BEFORE_RETRY_MAX_LOSS ? salvaged : null;
+    if (salvaged === null) return null;
+    // `text`가 빈 문자열일 수 없다 — `unsupported_numbers`는 `guardPlainText`가 `trim()` 뒤
+    // 비어 있지 않음을 확인한 다음에야 나오는 종류다(빈 입력은 `empty`로 먼저 끝난다).
+    // 설령 0이 되어도 `0 / 0`은 NaN이고 `NaN <= 상한`은 거짓이라 null로 떨어져 안전하다.
+    const lossRatio = (text.length - salvaged.length) / text.length;
+    return lossRatio <= SALVAGE_BEFORE_RETRY_MAX_LOSS
+        ? { text: salvaged, lossRatio }
+        : null;
 }
 
 /**
@@ -376,16 +409,15 @@ export async function rewriteToPlainLanguage(
                         symbol,
                         locale,
                         originalChars: text.length,
-                        removedChars: text.length - salvagedFirst.length,
+                        removedChars: text.length - salvagedFirst.text.length,
                         lossRatio: Number(
-                            (
-                                (text.length - salvagedFirst.length) /
-                                text.length
-                            ).toFixed(3)
+                            salvagedFirst.lossRatio.toFixed(
+                                LOSS_RATIO_LOG_DIGITS
+                            )
                         ),
                     });
-                    writeStored(salvagedFirst);
-                    return salvagedFirst;
+                    writeStored(salvagedFirst.text);
+                    return salvagedFirst.text;
                 }
                 return attempt(describeFailure(failure, locale));
             }

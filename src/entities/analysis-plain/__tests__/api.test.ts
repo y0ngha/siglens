@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const callAiProviderRouter = vi.fn();
 const repoFind = vi.fn();
@@ -75,6 +75,14 @@ const findCallFor = (locale: string) =>
     repoFind.mock.calls.find(call => call[1] === locale);
 const insertCallFor = (text: string) =>
     repoInsert.mock.calls.find(call => call[3] === text);
+
+/**
+ * `vi.spyOn(console, ...)`는 테스트 본문 끝에서 `mockRestore()`하면 앞선 `expect`가 실패했을 때
+ * 복원되지 않고 다음 테스트로 새어 나간다. 여기서 한 번에 복원한다(`vi.fn()` 목은 건드리지 않는다).
+ */
+afterEach(() => {
+    vi.restoreAllMocks();
+});
 
 beforeEach(() => {
     vi.clearAllMocks();
@@ -281,7 +289,20 @@ describe('rewriteToPlainLanguage', () => {
             '[analysisPlain] salvaged without retry',
             expect.objectContaining({ symbol: 'AAPL' })
         );
-        infoSpy.mockRestore();
+        // 상한 판정에 쓴 값과 같은 비율이 로그에 남는다 — 0 초과, 상한 이하.
+        const logged = infoSpy.mock.calls.find(
+            call => call[0] === '[analysisPlain] salvaged without retry'
+        )?.[1] as {
+            lossRatio: number;
+            originalChars: number;
+            removedChars: number;
+        };
+        expect(logged.lossRatio).toBeGreaterThan(0);
+        expect(logged.lossRatio).toBeLessThanOrEqual(0.25);
+        expect(logged.lossRatio).toBeCloseTo(
+            logged.removedChars / logged.originalChars,
+            3
+        );
     });
 
     /** 크기 접미사는 도려내서 고쳐지지 않으므로(10배 금액 오류) 짧아도 재시도한다. */
