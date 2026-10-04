@@ -50,6 +50,11 @@ P2="--alarm-actions $ALARM_SNS_LOW"
 # ⚠️ 예전 임계(`15분 2건 연속 2주기` 같은 시간축 조건)는 점수 합계 한 개로 환원되며 일부
 #    의미가 달라졌다 — 개별 임계를 되살리려면 알람을 늘리지 말고 가중치를 조정할 것.
 #
+# 노이즈 검산(2026-10-04, 지난 30일 /siglens/app 로그에 현재 가중치를 적용해 5분·15분 창
+# 합계를 Logs Insights `stats count() by bin()`으로 재계산): P1은 2개 창(10/3 RDS 컷오버 중
+# cloudflared-down), P2는 8개 창이었고 전부 seed-bars 실패가 창마다 수십~수백 건 몰린 실제
+# 장애 3건(9/21, 10/2, 10/3)이었다. 평상시 창에서 100에 닿은 경우는 없다.
+#
 # ── P1 가중치 ────────────────────────────────────────────────────────────────
 #   [cloudflared-down]=100  [selfcheck]=100  JavaScript heap out of memory=100
 #   trader `[cron:` … `failed`=100 (siglens-trader provision.sh, 로그 그룹 /siglens-trader/app)
@@ -284,6 +289,11 @@ put_fill_alarm siglens-p2 Siglens/Alerts P2Score 900 1 100 GreaterThanOrEqualToT
 #   p50 6.0 / p90 9.2 / p95 10.4 / p99 13.6 / max 22.6
 #   25% 초과 0회, 25% 연속 초과 최대 0분.
 # 즉 3주기(15분) 연속 25% 초과는 배포·SSM 작업 같은 단발 스파이크로는 도달할 수 없다.
+#
+# 이 알람이 폐기한 `siglens-surplus-credits`(Unlimited 초과 과금)도 대신한다. 인스턴스는
+# Unlimited 모드(`aws ec2 describe-instance-credit-specifications`로 확인, 2026-10-04)라
+# 초과 과금은 baseline(20%)을 쌓아 둔 크레딧보다 오래 넘을 때만 생긴다. 25%를 15분 넘게
+# 유지하는 경우가 그 조건이고, 짧은 스파이크는 적립 크레딧으로 흡수된다.
 aws cloudwatch put-metric-alarm --alarm-name siglens-capacity-needed --namespace AWS/EC2 \
   --alarm-description 'EC2(ASG) CPU 평균 25% 초과가 15분(5분x3) 지속 = t4g.medium baseline(20%) 초과로 크레딧을 태우는 용량 부족 신호. 원인 후보: 부하 증가, 크래시 루프 후 재시도 폭주. 조치: 먼저 SSM으로 프로세스 확인, 정말 부하면 aws autoscaling set-desired-capacity로 수동 증설(target-tracking 정책은 폐기됨, 08-scaling.sh).' \
   --metric-name CPUUtilization --dimensions Name=AutoScalingGroupName,Value=siglens-asg \
@@ -344,12 +354,17 @@ put_fill_alarm siglens-agent-spend Siglens/Agent AgentOutputTokens 86400 1 10000
 #
 # 2026-10 통합: 4개 알람(free-storage / connections / freeable-memory / cpu-credits-low)을
 # 메트릭 수식 알람 1개로 합쳤다. 세 조건 중 하나라도 걸리면 1, 아니면 0을 더해 >=1이면
-# 발화한다(알람 지표 3개 과금). `rds-cpu-credits-low`는 Unlimited 모드라 느려지지 않고
+# 발화한다. 수식 알람은 수식이 참조하는 지표 수만큼 알람 지표로 과금된다(3개,
+# https://aws.amazon.com/cloudwatch/pricing/ 의 "alarm metrics"). `rds-cpu-credits-low`는 Unlimited 모드라 느려지지 않고
 # 초과분 과금만 되며, 복제 구간에는 확정적으로 울리는 알람이라 폐기했다.
 #
 # 누락 데이터 정책 `notBreaching`: 인스턴스가 삭제·정지돼 지표가 끊겼을 때 알람이
 # 허위로 울리지 않게 한다. DB가 죽은 경우는 `/api/ready`와 앱 에러 로그가 따로 잡는다.
-# 수식에서 지표 하나만 결측이면 식 전체가 결측이 된다(RDS 지표는 한꺼번에 발행된다).
+# RDS 기본 지표는 같은 주기에 함께 발행되므로 지표 하나만 빠지는 경우는 따로 다루지 않는다.
+#
+# 평가 3주기(15분): 예전 free-storage·connections 알람(2주기, 10분)보다 탐지가 5분 늦다.
+# 세 조건이 한 알람을 공유해서, 가장 노이즈가 우려되던 메모리 조건(예전 3주기)에 맞췄다.
+# 스토리지·연결 고갈은 분 단위로 진행되지 않아 5분 지연은 감수한다.
 RDS_ID="${RDS_DB_ID:-siglens-db}"
 
 # 여유 스토리지: 남은 공간이 4GB 미만. 스토리지 자동확장(상한 50GB)은 여유가 할당량의
@@ -364,9 +379,10 @@ RDS_FREE_STORAGE_ALARM_BYTES=4294967296
 RDS_CONNECTIONS_ALARM_THRESHOLD=150
 # 여유 메모리: 2GiB 인스턴스에서 FreeableMemory가 200MB 밑이면 shared_buffers·워크메모리·
 # OS 캐시가 서로 밀어내는 구간이고, 더 내려가면 스왑·OOM으로 이어진다. 단위는 바이트
-# (200MB = 209715200). ⚠️ Postgres는 남는 메모리를 OS 페이지 캐시로 쓰므로 소형
-# 인스턴스에서는 정상 운영에서도 낮게 형성될 수 있다 — 실측 기준선이 아직 없으니 이전 후
-# 첫날의 실제 최저값을 보고 임계를 다시 잡을 것(너무 자주 울리면 100MB로 낮춘다).
+# (200MB = 209715200). 예전엔 기준선이 없어 P2였는데, 통합 알람이 P1이라 함께 P1이 됐다.
+# 실측 기준선(2026-10-01~04, 이전 후 3일, get-metric-statistics Minimum 1h): 최저 565MiB로
+# 임계의 약 3배, 같은 기간 DatabaseConnections 최대 24. Postgres는 남는 메모리를 OS 페이지
+# 캐시로 쓰므로 부하가 늘면 낮아질 수 있다 — 자주 울리면 100MB로 낮춘다.
 RDS_FREEABLE_MEMORY_ALARM_BYTES=209715200
 
 RDS_METRICS=$(jq -cn --arg id "$RDS_ID" \

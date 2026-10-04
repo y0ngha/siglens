@@ -22,7 +22,9 @@ aws autoscaling delete-policy --auto-scaling-group-name siglens-asg \
   --policy-name siglens-tt-albreq 2>/dev/null || true
 
 # (c) [제거됨] CPU 기반 타깃 트래킹(`siglens-tt-cpu`, ASGAverageCPUUtilization 50%).
-#     2026-10 CloudWatch 무료 티어 통합에서 폐기했다. 근거(30일 실측):
+#     2026-10 CloudWatch 무료 티어 통합에서 폐기했다. 근거(30일 실측, 2026-10-03,
+#     `aws cloudwatch describe-alarm-history --alarm-name <TargetTracking-…-AlarmHigh/Low>
+#     --history-item-type StateUpdate`와 ASG CPUUtilization 5분 평균):
 #       - 스케일아웃 알람(AlarmHigh)은 **딱 한 번** 31분간 발화했다. 평소 CPU는 5~10%라
 #         50%는 정상 대비 7배, 사실상 도달하지 않는 값이다.
 #       - 스케일인 알람(AlarmLow, 15분 평균 < 35%)은 min=1 상태에서 **항상 ALARM**이었다
