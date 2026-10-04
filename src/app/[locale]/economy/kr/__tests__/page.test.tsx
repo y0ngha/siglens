@@ -52,6 +52,7 @@ import { getCalendarFromDb } from '@/entities/economy/api/getCalendarFromDb';
 import { resolveIndicatorLabels } from '@/entities/economy/api/resolveIndicatorLabels';
 import { KR_ECONOMY_INDICATORS } from '@/shared/config/economyIndicatorsKr';
 import { SITE_URL } from '@/shared/lib/seo';
+import { INDEXABLE_PAGE_ROBOTS } from '@/shared/test-utils/indexablePageRobots';
 
 const mockCards = getKrIndicatorCards as MockedFunction<
     typeof getKrIndicatorCards
@@ -90,7 +91,7 @@ describe('/economy/kr page', () => {
             params: Promise.resolve({ locale: 'ko' }),
         });
         expect(meta.alternates?.canonical).toBe(`${SITE_URL}/economy/kr`);
-        expect(meta.robots).toEqual({ index: true, follow: true });
+        expect(meta.robots).toMatchObject(INDEXABLE_PAGE_ROBOTS);
     });
 
     it('noindexes while no indicator has been announced yet', async () => {

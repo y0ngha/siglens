@@ -4,7 +4,7 @@ import { resolveLocale } from '@/shared/i18n/locales';
 import {
     localeAlternatesFrom,
     localeOpenGraph,
-    localeRobots,
+    localePageRobots,
 } from '@/shared/lib/seoAlternates';
 import type { Metadata } from 'next';
 import { JsonLd } from '@/shared/ui/JsonLd';
@@ -115,7 +115,7 @@ export async function generateMetadata({
         // 타면 브랜드가 두 번 붙어 SERP 폭만 먹으므로 `absolute`로 끊는다.
         title: { absolute: aboutFullTitle(tSeo) },
         description: aboutDescription(tSeo),
-        robots: localeRobots(locale),
+        robots: localePageRobots(locale),
         alternates: await localeAlternatesFrom(params, ABOUT_PATH),
         openGraph: {
             type: 'article',

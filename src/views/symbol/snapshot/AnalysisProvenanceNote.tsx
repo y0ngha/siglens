@@ -5,8 +5,8 @@ import { METHODOLOGY_PATH, SITE_OPERATOR } from '@/shared/lib/legal';
 import { LocaleLink } from '@/shared/ui/LocaleLink';
 
 /**
- * `ai`: AI가 쓴 산문 아래 — 규칙으로 계산한 값을 AI가 문장으로 정리했고, 사람이
- * 검수하지 않았다는 고지. `rule-based`: 공포·탐욕 탭 — AI 서술이 없고 규칙 계산뿐이라는 고지.
+ * `ai`: AI가 쓴 산문 아래 — 규칙으로 계산한 값을 AI가 문장으로 정리했고, 어떤 자동
+ * 검사를 거치며 사람이 한 편씩 읽지는 않는다는 고지. `rule-based`: 공포·탐욕 탭 — AI 서술이 없고 규칙 계산뿐이라는 고지.
  */
 export type AnalysisProvenanceVariant = 'ai' | 'rule-based';
 
@@ -33,7 +33,12 @@ const LINK =
  * 셸(`SnapshotSummarySection`)의 캡션이 이미 그리므로 여기서 반복하지 않는다.
  *
  * 문구는 코드 동작과 같아야 한다:
- *  - "사람이 검수하지 않았다" — 프리웜 크론이 생성한 글이 검수 단계 없이 그대로 나간다.
+ *  - "쉽게 보기 글은 계산에 없는 가격이 섞이면 다시 쓰거나 그 문장을 뺀다" — 쉬운 설명
+ *    출력 가드(재작성 1회 → 문장 제거 → 원본만 표시)와 같다. `/methodology#ai`의
+ *    `check` 문단이 같은 동작을 자세히 적는다. 가드가 바뀌면 이 문구도 바꾼다.
+ *  - "사람이 한 편씩 읽어 보지는 않는다" — 프리웜 크론이 생성한 글이 사람 검토 없이 나간다.
+ *    (2026-10-04: 검수하지 않는다는 사실만 말하던 문구를, 실제로 하는 자동 검사를
+ *    먼저 말하도록 바꿨다. 검토하지 않는다는 사실은 그대로 밝힌다.)
  *  - 데이터 출처 — `dataSourceLabelKey`가 시장 프로필의 실제 어댑터와 대응한다.
  *  - `rule-based`는 점수가 규칙 계산뿐이라는 말이다(`computeFearGreedIndex`, AI 호출 없음).
  *    공포·탐욕 점수는 뉴스를 읽지 않으므로 출처도 시세만 말한다(`'prices'` 범위).

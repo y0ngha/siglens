@@ -8,7 +8,7 @@ import { AnalysisProvenanceNote } from '../AnalysisProvenanceNote';
 const NOTE = ko.views.symbol.AnalysisProvenanceNote;
 
 const AI_SENTENCE =
-    'Siglens가 규칙으로 계산한 값을 AI가 문장으로 정리한 글이에요. 사람이 검수하지 않았고 투자 권유가 아니에요.';
+    'Siglens가 규칙으로 계산한 값을 AI가 문장으로 정리한 글이에요. 쉽게 보기 글은 계산에 없는 가격이 섞이면 자동으로 다시 쓰거나 그 문장을 빼요. 사람이 한 편씩 읽어 보지는 않으며, 투자 권유가 아니에요.';
 
 describe('AnalysisProvenanceNote', () => {
     describe('variant="ai" (default)', () => {
@@ -26,10 +26,16 @@ describe('AnalysisProvenanceNote', () => {
             }
         );
 
-        it('says nothing was reviewed by a person and that it is not advice', () => {
+        /**
+         * 고지는 실제로 하는 자동 검사를 먼저 말하되, 사람이 검토하지 않는다는 사실과
+         * 투자 권유가 아니라는 말은 지우지 않는다 — 셋 중 하나라도 빠지면 코드 동작과
+         * 고지가 어긋난다.
+         */
+        it('states the automatic check, that no person reviews it, and that it is not advice', () => {
             render(<AnalysisProvenanceNote marketProfile="us-equity" />);
             const text = document.body.textContent ?? '';
-            expect(text).toContain('사람이 검수하지 않았고');
+            expect(text).toContain('자동으로 다시 쓰거나 그 문장을 빼요');
+            expect(text).toContain('사람이 한 편씩 읽어 보지는 않으며');
             expect(text).toContain('투자 권유가 아니에요');
         });
 
