@@ -423,6 +423,11 @@ export async function prewarmOverall(
          * 생성한다(2026-09 실측: 심볼당 1Day 호출 2회, 프리웜 DeepSeek 지출의
          * ~25%). core 1.13.1이 이 필드를 열었다 — 양쪽 다 넘기거나 양쪽 다 생략해야
          * 하고, 한쪽만 넘기면 타입도 테스트도 잡지 못한다.
+         *
+         * core 2.8.1부터는 키가 어긋나도 overall이 peek 포인터로 최신 technical을
+         * 재사용한다(technical 탭과 overall 사이에 뉴스 탭이 새 기사를 분류하면
+         * 이벤트 지문만 바뀌고 프롬프트는 같았다). 그래도 이 불변식은 지킨다 —
+         * 정확 키 적중이 먼저이고, peek 키에는 스킬 지문이 없다.
          */
         technical: {
             tierContext: { userId: null, tier: 'free' },

@@ -521,6 +521,31 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ const TRANSIENT_SQLSTATE_SET = new Set(TRANSIENT_CODES); ... TRANSIENT_SQLSTATE_SET.has(extractedCode) — exact token match
     → Recurring: PR #456 B4 (SQLSTATE false positive on user data like `pk_constraint_53300_check`)
 
+36. JSDoc blocks must remain directly above their declarations
+    → When inserting new functions, constants, or exports above existing code, insert them ABOVE any JSDoc blocks that document the existing code, never between a JSDoc and its declaration
+    → A JSDoc block inserted between a JSDoc and the declaration it documents orphans the original documentation
+    → This applies to all code insertions: adding exports, constants, helper functions, or other declarations
+    ❌ // existing JSDoc comment for function
+       /** New export docstring */
+       export const NEW_CONST = ...;
+       export function documentedFunc() { ... }  // original JSDoc is now orphaned
+    ❌ /**
+         * Documented function
+         */
+       const helperFunc = () => ...;  // helper inserted between JSDoc and function declaration
+       function documentedFunc() { ... }
+    ✅ const helperFunc = () => ...;  // helper added ABOVE the JSDoc
+       /**
+        * Documented function
+        */
+       function documentedFunc() { ... }
+    ✅ /** New export docstring */
+       export const NEW_CONST = ...;
+
+       /** Original docstring */
+       export function documentedFunc() { ... }  // JSDoc stays directly above its declaration
+    → Recurring: claude/magical-sagan-56eoov Round 1, perf/analysis-plain-salvage-first R1 — 2 occurrences
+
 26. i18n artifacts must be regenerated after code changes
     → When source code changes (shifting lines in files with skipped i18n literals, changing route import graph, adding/removing i18n references), regenerate i18n artifacts by running `yarn i18n:extract --write`
     → Stale artifact manifests (skip markers in `messages/_meta/skips.json`, clientKeys in `messages/_meta/clientKeys.json`) cause subsequent extraction to fail or miss updates

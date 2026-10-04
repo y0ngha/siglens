@@ -147,8 +147,9 @@ function isDisabled() {
 // 상태 로그 간격.
 const STATS_LOG_INTERVAL_MS = 5 * 60 * 1000;
 
-// 상태 로그 이벤트 이름. infra/aws/07-alarms.sh의 JSON 메트릭 필터
-// `{ $.event = "fetch-mem" }`가 이 값을 매칭한다 — 바꾸면 알람도 함께 고칠 것.
+// 상태 로그 이벤트 이름. 메트릭 필터·알람은 걸려 있지 않고(2026-09 비용 정리에서 제거),
+// infra/aws/07-alarms.sh와 이 파일 머리말의 Logs Insights 쿼리(`filter event = "fetch-mem"`)가
+// 이 값을 찾는다 — 바꾸면 그 쿼리들도 함께 고칠 것.
 const STATS_EVENT = 'fetch-mem';
 
 /** @type {Map<string, { entry: unknown, bytes: number }>} */
@@ -173,7 +174,8 @@ function logStatsThrottled() {
     // **JSON이어야 한다.** CloudWatch 공백 구분 필터(`[a, b, size, ...]`)는 토큰을
     // 공백으로만 쪼개므로 `size=12` 같은 key=value는 통째로 한 토큰이 된다 —
     // `metricValue=$size`가 "size=12"를 숫자로 못 읽어 **아무것도 발행하지 않는다**.
-    // JSON 필터(`{ $.event = "fetch-mem" }` + `metricValue=$.evicted`)는 값만 정확히 뽑는다.
+    // JSON이면 Logs Insights가 필드를 바로 읽고, 나중에 메트릭 필터를 다시 걸 때도
+    // `{ $.event = "fetch-mem" }` + `metricValue=$.evicted`로 값만 정확히 뽑을 수 있다.
     console.log(
         JSON.stringify({
             tag: 'isr-cache',
