@@ -13,19 +13,25 @@
 // 큰 `unstable_cache` JSON — 는 소수인데 용량의 97%를 쥔다. 그것들은 재생성이 비싸고
 // 인스턴스 간 공유가 실제로 값을 하므로 **S3에 그대로 둔다**.
 //
-// 그래서 이 맵이 담는 건 `MEM_ROUTE_MAX_BYTES` 이하 엔트리뿐이다. 예상 상주량은
-// 128.4MB의 3% ≈ 4MB — 예산에 크게 못 미쳐 정상 운영 중 축출이 사실상 없다.
+// 그래서 이 맵이 담는 건 `MEM_ROUTE_MAX_BYTES` 이하 엔트리뿐이다. (위 분포의 8KB는
+// **gzip된 S3 객체** 기준이고, 게이트는 압축 전 본문 길이를 잰다 — 아래 상수 주석 참고.)
+// 2026-08에는 상주 ~4MB로 축출이 거의 없을 거라 봤지만 2026-10 실측은 개수 상한(2만)에
+// 상시 붙어 하루 ~14만 건 축출(적중률 26%)이었다. 그래서 게이트·예산·개수를 넓혔고, 지금
+// 기대치는 "바이트 예산(64MB)이 먼저 걸리는지"를 `fetch-mem` 로그(size·bytes·evicted)로
+// 확인해야 하는 가정이다.
 //
 // ## FETCH는 `fmpGet`만이 아니다
 //
 // Next의 `unstable_cache`도 `kind: FETCH`로 쓴다
 // (next/dist/server/web/spec-extension/unstable-cache.js). 즉 이 계층에는 FMP 응답뿐
-// 아니라 앱의 `unstable_cache` L2 전체가 섞여 있고, 그중에는 Redis가 아니라 **Neon DB**를
+// 아니라 앱의 `unstable_cache` L2 전체가 섞여 있고, 그중에는 Redis가 아니라 **DB**를
 // 백엔드로 쓰는 것들이 있다(`peekAnalysisStaticCache`, `getCalendarFromDb`,
 // `sitemap-entry/server.ts`, `resolveIndicatorLabels`, `getKrIndicatorCards`,
 // `getAssetInfoStatic`). 이것들은 Redis가 막아주지 않으므로 메모리로 강등하면
 // 재시작·스케일아웃마다 DB 쿼리가 늘어난다 — 크기 게이트가 그 위험을 큰 엔트리에서
-// 걷어내고, 남는 작은 엔트리는 재생성이 싸다.
+// 걷어내고, 남는 작은 엔트리는 재생성이 싸다. (S3 키에 빌드 ID가 들어가 배포를 넘어
+// 공유된 적은 원래 없으므로, 메모리로 옮겨 잃는 건 같은 빌드 안의 인스턴스 간 공유뿐이다 —
+// 스케일아웃·교체 때 인스턴스당 DB 조회 1회로, 대신 나가던 S3 GET 1회와 비용이 비슷하다.)
 //
 // ## next.config.ts의 `cacheMaxMemorySize: 0`과 무관
 //
@@ -51,34 +57,76 @@ function readPositiveBound(name, fallback) {
     return Number.isFinite(raw) && raw > 0 ? raw : fallback;
 }
 
-// 메모리로 보낼 엔트리의 크기 상한 = S3와의 분기점. 위 분포에서 객체 88% / 용량 3%를
-// 가르는 지점이다. 초과분은 `setEntry`가 거부하고 `index.mjs`가 S3로 보낸다.
+// 메모리로 보낼 엔트리의 크기 상한 = S3와의 분기점. 초과분은 `setEntry`가 거부하고
+// `index.mjs`가 S3로 보낸다.
+//
+// **단위에 주의.** 위 분포(8KB에서 객체 88% / 용량 3%)는 S3 객체, 즉 v8 직렬화 후
+// **gzip된** 크기다. 반면 이 게이트는 `approximateBytes`로 **압축 전 본문 길이**를 잰다
+// (`fetch()` 본문은 base64라 원본의 1.33배다). 예전에 8KB를 그대로 썼을 때 압축 후
+// 2KB짜리 엔트리도 S3로 가서 PUT·GET이 늘었다(2026-10 감사: S3 GET의 ~90%가 FETCH miss).
+// JSON의 gzip 압축률이 대략 1/4~1/6이라 압축 전 32KB ≈ 압축 후 6~8KB로, 원래 의도한
+// 분기점에 맞춘다. 바이트 예산(아래)이 상주량을 따로 묶으므로 상한을 올려도 힙은 안전하다.
 export const MEM_ROUTE_MAX_BYTES = readPositiveBound(
     'ISR_FETCH_CACHE_ROUTE_MAX_BYTES',
-    8 * 1024
+    32 * 1024
 );
 
-// 엔트리 수 상한. 실측 소형 엔트리는 12,334개의 88% ≈ 10,850개(평균 0.36KB)이므로
-// 20,000은 전량 수용 + 여유다. 실질 제동은 아래 바이트 예산이 건다 — 개수 상한은
-// 키 공간이 예상 밖으로 폭발했을 때의 마지막 방어선이다.
+// 엔트리 수 상한. 2026-08 실측(소형 ~10,850개)으로 20,000을 잡았지만 2026-10에는 상한에
+// 상시 붙어 하루 ~14만 건을 축출했다(적중률 26%, 계상 ~7MB) — 크롤 범위가 넓어진 탓이다.
+// (재측정: 아래 MAX_TOTAL_BYTES 주석의 "위 실측치를 다시 재는 법" — `fetch-mem` 누적 카운터 차이.)
+// 운영값은 SSM `/siglens/ISR_FETCH_CACHE_MAX_ENTRIES`(2026-10: 100000)로 올렸고, 이 기본값은
+// SSM이 없을 때의 하한이다. 실질 제동은 아래 바이트 예산이 건다.
 const MAX_ENTRIES = readPositiveBound('ISR_FETCH_CACHE_MAX_ENTRIES', 20000);
 
 // 총 바이트 상한. 컨테이너 메모리 상한이 걸려 있으므로(8aacd2b6 "앱 컨테이너 메모리
 // 상한 2층 + 힙 고갈 알람") 개수만으로는 부족하다 — 큰 응답 몇 개가 힙을 먹는 걸 막는다.
 //
-// 32MB인 이유: 크기 게이트를 통과하는 작은 엔트리의 실측 총량이 ~4MB라 8배 여유다.
-// 예산이 실제로 발화하는 건 트래픽 패턴이 크게 바뀌었을 때뿐이고, 그때도 축출은
-// 순수 재조회 가능한 엔트리에만 일어난다.
+// 64MB인 이유: 2026-08에는 게이트를 통과하는 엔트리 총량이 ~4MB라 32MB로 충분했지만,
+// 개수 상한을 10만으로 올리고 게이트를 압축 전 32KB로 바로잡으면 상주량이 늘어난다
+// (예전 게이트 기준 평균 0.35KB × 10만 ≈ 35MB만으로 32MB를 넘는다. 게이트를 넓혀 평균이
+// 커지면 예산이 개수 상한보다 먼저 걸릴 수 있다 — 배포 후 `fetch-mem` 로그로 확인할 것).
 //
-// `approximateBytes`가 본문 길이만 세고 headers/url/tags와 Map 노드 오버헤드는 빼므로
-// **실제 상주 메모리는 계상값보다 크다**(한국어 JSON은 V8이 2바이트 문자열로 잡아
-// 최대 2배). 4MB 실측 기준이면 상주 ~8MB로, `--max-old-space-size=1536`에 무의미한 수준.
+// ## 이 파일의 상주량 숫자는 서로 다른 조건을 센다
+//
+// `approximateBytes`는 `data.body`의 **문자열 길이(UTF-16 코드 유닛 수)** 만 계상한다.
+// headers·url·tags·키 문자열·Map/LRU 노드·V8 객체 헤더는 계상에 들어가지 않는다.
+// 그래서 `MAX_TOTAL_BYTES`(64MB)가 묶는 것은 "본문 글자 수의 합"이고 RSS가 아니다.
+//
+//   - **~128MB** = 바이트 예산이 먼저 걸려 본문만 64M 글자로 찼을 때의 **본문 상주** 상한.
+//     한국어 JSON은 V8이 2바이트 문자열로 저장하므로 글자당 최대 2바이트라 계상값의 2배다
+//     (ASCII뿐이면 1바이트라 ~64MB). 엔트리별 오버헤드는 포함하지 않는다.
+//   - **+250~350MB** = 개수 상한이 먼저 걸리는 경우, 즉 10만 개가 평균 0.35KB쯤 되는 작은
+//     엔트리로 차서 계상은 ~35MB로 예산 아래인 상태에서, 엔트리당 오버헤드(위 목록)와
+//     UTF-16 저장까지 얹은 **RSS 증가 추정**이다. 실측이 아니라 추정이며, 배포 후
+//     `docker stats`의 컨테이너 메모리 증가분으로 확인해야 한다(아래 재측정 방법).
+//
+// 두 숫자는 합산하지 않는다 — 같은 상태를 다른 잣대로 센 것이 아니라 서로 다른 상태다.
+// 예산이 먼저 걸리면 엔트리 수가 10만 미만이라 오버헤드 총량도 그만큼 작다. 어느 쪽이
+// 걸리는지는 `fetch-mem` 로그의 `size`(10만 근처인가)와 `bytes`(64MB 근처인가)로 가린다.
+// 2026-10-04 실측 컨테이너 610MiB / 상한 2.5GiB(`--memory`), 힙 한도 1536MB라
+// 어느 쪽이든 여유 안이다.
+//
+// ## 위 실측치(2026-10)를 다시 재는 법
+//
+// `fetch-mem`은 5분마다 JSON 한 줄을 남긴다(`logStatsThrottled`). 필드는
+// `size`(엔트리 수)·`bytes`(계상 바이트)·`hit`·`miss`·`evicted`이고, 셋은 **프로세스 시작
+// 이후 누적 카운터**다 — 구간 값은 차이로 구해야 하고 인스턴스(스트림)마다 따로 본다.
+// CloudWatch Logs Insights, 로그 그룹 `/siglens/app`:
+//
+//     fields @timestamp, @logStream, size, bytes, hit, miss, evicted
+//     | filter event = "fetch-mem"
+//     | sort @timestamp desc
+//
+// 적중률 = hit / (hit + miss), 하루 축출 건수 = 스트림별 `max(evicted) - min(evicted)`의 합
+// (`stats max(evicted) - min(evicted) by @logStream`; 재시작이 끼면 카운터가 0으로 돌아가니
+// 구간을 재시작 사이로 자를 것). 컨테이너 메모리(610MiB)는 SSM으로 인스턴스에 들어가
+// `docker stats --no-stream`의 MEM USAGE / LIMIT 열을 본다.
 // 운영 중 조정은 SSM `/siglens/ISR_FETCH_CACHE_MAX_BYTES`로 가능하다(코드 변경 불필요).
 // 하한이 `MEM_ROUTE_MAX_BYTES`인 이유: 두 값이 독립 env라 운영자가 총 예산을 라우팅
 // 게이트보다 작게 잡을 수 있다. 그러면 게이트를 통과한 엔트리가 삽입 직후 `evictToFit`에
 // 즉시 축출돼 **캐시가 조용히 no-op**이 된다(히트율 0%, 에러 없음). 최소 1개는 담기게 한다.
 const MAX_TOTAL_BYTES = Math.max(
-    readPositiveBound('ISR_FETCH_CACHE_MAX_BYTES', 32 * 1024 * 1024),
+    readPositiveBound('ISR_FETCH_CACHE_MAX_BYTES', 64 * 1024 * 1024),
     MEM_ROUTE_MAX_BYTES
 );
 
