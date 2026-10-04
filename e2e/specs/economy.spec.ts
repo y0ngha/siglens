@@ -153,8 +153,8 @@ test.describe('economy overview', () => {
      * E2 — 헤더 nav에서 /economy 진입: 홈(/)에서 헤더의 '미국 경제' 링크를
      * 클릭해 /economy로 이동하고 경제 페이지 h1이 표시되는지 검증한다.
      *
-     * HeaderNav(client island)와 HeaderNavStatic(PPR fallback) 모두
-     * `aria-label="주요 네비게이션"` 아래 `href="/economy"` 링크를 렌더한다.
+     * HeaderNav(client island)는 `aria-label="주요 네비게이션"` 아래
+     * `href="/economy"` 링크를 렌더한다.
      * 기존 economy 스펙은 모두 `page.goto('/economy')` 직접 이동만 사용하므로,
      * 이 테스트가 헤더 nav 클릭 경로를 처음으로 검증한다.
      *

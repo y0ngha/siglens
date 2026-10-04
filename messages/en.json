@@ -3495,9 +3495,6 @@
             "HeaderNavMenu": {
                 "shortcutLabel": "{v0} shortcuts"
             },
-            "HeaderNavStatic": {
-                "5281d7": "Main Navigation"
-            },
             "HeaderUserMenu": {
                 "3a7424": "Avatar Image",
                 "622fae": "Account Settings",
