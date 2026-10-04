@@ -54,6 +54,7 @@ vi.mock('../hubs', () => ({
         failed: 0,
         skippedByDeadline: 0,
         skippedByCooldown: 0,
+        generatedUrls: [],
     }),
 }));
 

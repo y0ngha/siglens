@@ -106,6 +106,39 @@ describe('localeAlternates', () => {
     });
 });
 
+describe('localeAlternates — 발견 링크(types)', () => {
+    const TYPES = { 'application/rss+xml': `${SITE_URL}/rss.xml` };
+
+    it('옵션으로 준 types를 canonical·languages와 함께 낸다', () => {
+        expect(
+            localeAlternates('ko', '/', { available: ['ko'], types: TYPES })
+        ).toEqual({ canonical: `${SITE_URL}/`, types: TYPES });
+        const multi = localeAlternates('ko', '/', {
+            available: ['ko', 'en'],
+            types: TYPES,
+        });
+        expect(multi.types).toEqual(TYPES);
+        expect(multi.languages).toBeDefined();
+    });
+
+    it('준비 집합에 없는 로케일에도 types는 유지한다 — 발견 링크는 hreflang 클러스터와 무관하다', () => {
+        expect(
+            localeAlternates('en', '/', { available: ['ko'], types: TYPES })
+                .types
+        ).toEqual(TYPES);
+    });
+
+    it('옵션이 없으면 types 키 자체를 내지 않는다 — 기존 페이지 head가 바뀌지 않는다', () => {
+        expect('types' in localeAlternates('ko', '/news')).toBe(false);
+    });
+
+    it('canonical이 null인 noindex 분기에는 붙이지 않는다', () => {
+        expect(
+            localeAlternates('ko', '/', { canonical: null, types: TYPES })
+        ).toEqual({ canonical: null });
+    });
+});
+
 describe('localeAlternatesFrom', () => {
     it('params에서 로케일을 읽는다', async () => {
         const result = await localeAlternatesFrom(

@@ -2,6 +2,11 @@ import 'server-only';
 import { revalidateTag } from 'next/cache';
 import { runHubPrewarm } from './hubs';
 import {
+    INDEXNOW_BATCH_FAILED,
+    submitIndexNowForBatch,
+    type IndexNowCounts,
+} from './indexNowSubmission';
+import {
     buildPrewarmUniverse,
     type PrewarmSymbol,
 } from '@/entities/seo-snapshot/lib/applicability';
@@ -32,7 +37,12 @@ import {
 } from './lock';
 import { TAB_SEAMS, resolveHarvest } from './harvest';
 
-export interface PrewarmBatchCounts {
+/**
+ * `IndexNowCounts`(`indexNowSubmitted`·`indexNowOk`·`indexNowFailed`)를 함께 싣는다 —
+ * 제출은 부가 임무라 실패해도 배치 결과는 같고, 이 세 값이 그 응답을 보는 유일한 창이다
+ * (`[seo-prewarm] batch done` 로그에 그대로 찍힌다).
+ */
+export interface PrewarmBatchCounts extends IndexNowCounts {
     harvested: number;
     /**
      * 이번 tick 시작 시점의 stale 심볼 총량과 배치 wall-clock(ms).
@@ -464,6 +474,9 @@ export async function runPrewarmBatch(
         revalidated: 0,
         remaining: Math.max(0, staleSymbols.length - batch.length),
         fmpBudgetUsed: 0,
+        indexNowSubmitted: 0,
+        indexNowOk: 0,
+        indexNowFailed: 0,
     };
 
     // shared `withConcurrencyLimit`(shared/lib)은 쓰지 않는다 — 그 헬퍼는 청크
@@ -474,6 +487,8 @@ export async function runPrewarmBatch(
     // 루프로 청크 경계마다 데드라인을 검사한다. 격리는 각 processSymbol 호출의
     // `.catch`가 보장하므로 Promise.all 기반 청크 처리와 동일하게 안전하다.
     let droppedByDeadline = 0;
+    // `revalidateTag`까지 간 심볼 — 배치 끝에 IndexNow로 한 번에 알린다.
+    let revalidatedSymbols: readonly string[] = [];
     for (let i = 0; i < batch.length; i += SYMBOL_CONCURRENCY) {
         if (isPastDeadline()) {
             const remainingCount = batch.length - i;
@@ -484,7 +499,7 @@ export async function runPrewarmBatch(
             break;
         }
         const chunk = batch.slice(i, i + SYMBOL_CONCURRENCY);
-        const dropped = await Promise.all(
+        const outcomes = await Promise.all(
             chunk.map(u =>
                 processSymbol(
                     u,
@@ -494,13 +509,24 @@ export async function runPrewarmBatch(
                     counts,
                     isPastDeadline,
                     clock
-                ).catch(error => {
+                ).catch((error): SymbolOutcome => {
                     console.error(`[seo-prewarm] ${u.symbol} failed:`, error);
-                    return 0;
+                    return {
+                        symbol: u.symbol,
+                        tabsDropped: 0,
+                        revalidated: false,
+                    };
                 })
             )
         );
-        droppedByDeadline += dropped.reduce((sum, n) => sum + n, 0);
+        droppedByDeadline += outcomes.reduce(
+            (sum, outcome) => sum + outcome.tabsDropped,
+            0
+        );
+        revalidatedSymbols = [
+            ...revalidatedSymbols,
+            ...outcomes.filter(o => o.revalidated).map(o => o.symbol),
+        ];
     }
 
     /**
@@ -518,6 +544,30 @@ export async function runPrewarmBatch(
             `[seo-prewarm] batch deadline reached — ${droppedByDeadline} tabs dropped`
         );
     }
+
+    /*
+     * 새로 반영한 URL을 검색엔진(Bing·Naver, IndexNow)에 **한 번** 알린다.
+     *
+     * 심볼 루프가 끝난 뒤에 두는 이유: 루프 중에 보내면 청크마다 호출이 늘고, 각 호출이
+     * sitemap 입력(DB)을 읽는다. 락 예산 쪽에서도 이 자리가 맞다 — 심볼 마감은
+     * `BATCH_WALL_CLOCK_BUDGET_MS`로 락 TTL보다 `LOCK_SAFETY_MARGIN_MS`(60초) 일찍 끝나도록
+     * 잘라 두었고, 제출은 자체 5초 상한(`INDEXNOW_TIMEOUT_MS`)으로 그 여유 안에서 끝난다.
+     *
+     * 제출은 부가 임무다. 던지지 않게 만들었지만(`submitIndexNowForBatch`) 방어적으로 한 번
+     * 더 감싼다 — 이 줄이 던지면 아래 `getFmpBudgetUsed`와 `durationMs`가 사라지고 크론이
+     * 배치 전체를 실패로 로그한다. 스냅샷 반영은 이미 끝난 일이다.
+     */
+    const indexNow = await submitIndexNowForBatch({
+        symbols: revalidatedSymbols,
+        hubUrls: hubs?.generatedUrls ?? [],
+        now,
+    }).catch(error => {
+        console.error('[seo-prewarm] indexnow submission threw:', error);
+        return INDEXNOW_BATCH_FAILED;
+    });
+    counts.indexNowSubmitted = indexNow.indexNowSubmitted;
+    counts.indexNowOk = indexNow.indexNowOk;
+    counts.indexNowFailed = indexNow.indexNowFailed;
 
     counts.fmpBudgetUsed = await getFmpBudgetUsed();
     counts.durationMs = clock.now() - batchStartedAt;
@@ -647,6 +697,14 @@ async function classifySymbol(
     return anyActionable ? 'fresh' : 'blocked';
 }
 
+/** `processSymbol`의 결과 — 데드라인으로 버려진 탭 수와 태그 무효화 여부. */
+interface SymbolOutcome {
+    readonly symbol: string;
+    readonly tabsDropped: number;
+    /** 전 탭이 fresh라 `revalidateTag`까지 갔는가 — IndexNow 제출 대상이 되는 조건이다. */
+    readonly revalidated: boolean;
+}
+
 async function processSymbol(
     u: PrewarmSymbol,
     now: Date,
@@ -661,7 +719,7 @@ async function processSymbol(
      */
     isPastDeadline: () => boolean,
     clock: PrewarmClock
-): Promise<number> {
+): Promise<SymbolOutcome> {
     const { assetInfo } = await getAssetInfoResilient(u.symbol);
     const companyName = assetInfo?.name ?? u.symbol;
     const fmpSymbol = assetInfo?.fmpSymbol;
@@ -784,6 +842,7 @@ async function processSymbol(
         await addFmpBudget(fmpCallsPerTab * seamsRunForSymbol);
     }
 
+    let revalidated = false;
     if (u.tabs.length > 0 && freshTabCount === u.tabs.length) {
         // FIX B(감사) — 이 태그는 더 이상 소비자 없는 no-op이 아니다. Phase 2가
         // `getSeoSnapshotsStatic`(entities/seo-snapshot/lib/getSnapshotStatic.ts)에서
@@ -795,7 +854,12 @@ async function processSymbol(
         // ISR-write 비용이라 여기선 이점이 없다(태그 무효화가 정확한 지점).
         revalidateTag(`seo-snapshot:${u.symbol.toUpperCase()}`, 'max');
         counts.revalidated++;
+        revalidated = true;
     }
 
-    return tabsDroppedByDeadline;
+    return {
+        symbol: u.symbol,
+        tabsDropped: tabsDroppedByDeadline,
+        revalidated,
+    };
 }

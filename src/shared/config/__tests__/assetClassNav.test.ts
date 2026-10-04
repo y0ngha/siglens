@@ -3,6 +3,7 @@ import {
     ALL_NAV_REGION_LINKS,
     hasRegionForRoot,
     NAV_VERTICALS,
+    regionHrefOf,
     regionsOf,
     type NavVerticalId,
 } from '../assetClassNav';
@@ -86,6 +87,20 @@ describe('regionsOf', () => {
         expect(() => regionsOf('nope' as NavVerticalId)).toThrow(
             /unknown vertical/
         );
+    });
+});
+
+describe('regionHrefOf', () => {
+    it('버티컬·지역 조합의 허브 경로를 돌려준다', () => {
+        expect(regionHrefOf('market', 'us')).toBe('/market');
+        expect(regionHrefOf('market', 'kr')).toBe('/market/kr');
+        expect(regionHrefOf('economy', 'us')).toBe('/economy');
+        expect(regionHrefOf('economy', 'kr')).toBe('/economy/kr');
+    });
+
+    it('그 지역에 화면이 없으면 던지지 않고 null이다', () => {
+        expect(regionHrefOf('market', 'crypto')).toBeNull();
+        expect(regionHrefOf('economy', 'crypto')).toBeNull();
     });
 });
 

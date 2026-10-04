@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => ({
     selectAggregateNewsItems: vi.fn(),
     marketBriefingContextOf: vi.fn(),
     writeHubSsrSeed: vi.fn(),
+    recordHubContentStamp: vi.fn(),
     ingestMarketNewsCategory: vi.fn(),
     isCronIngestedRecently: vi.fn(),
     markCronIngested: vi.fn(),
@@ -80,6 +81,9 @@ vi.mock(
 vi.mock('@/shared/cache/hubSsrSeed', () => ({
     writeHubSsrSeed: mocks.writeHubSsrSeed,
 }));
+vi.mock('@/shared/cache/hubContentStamp', () => ({
+    recordHubContentStamp: mocks.recordHubContentStamp,
+}));
 vi.mock('@/shared/cache/ssrMissMarker', () => ({
     consumeSsrMiss: mocks.consumeSsrMiss,
 }));
@@ -127,6 +131,13 @@ import {
     economyCalendarCacheTag,
 } from '@/entities/economy/lib/economyCalendarConstants';
 import { DASHBOARD_SCOPES } from '@/shared/config/dashboardScope';
+import { SITE_URL } from '@/shared/lib/seo';
+import { rssSources } from '@/app/api/rss/sources';
+import {
+    RSS_ECONOMY_SURFACE,
+    rssMarketSurface,
+    rssNewsSurface,
+} from '@/entities/rss-feed/model';
 import {
     HUB_DEADLINE_MS,
     HUB_UNIT_TIMEOUT_MS,
@@ -1099,5 +1110,310 @@ describe('runHubPrewarm — 경제 캘린더 실패 집계', () => {
         const result = await runHubPrewarm();
 
         expect(result.failed).toBe(0);
+    });
+});
+
+describe('runHubPrewarm — 새로 구운 허브 URL (IndexNow 제출용)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        allSucceed();
+    });
+
+    const NEWS_URLS = Object.values(CATEGORY_CONFIG).map(
+        config => `${SITE_URL}/news/${config.slug}`
+    );
+
+    it('대상별 경로가 실제 허브 페이지와 일치한다 — 시장·경제·뉴스', () => {
+        const pathByLabel = Object.fromEntries(
+            hubTargets().map(target => [target.label, target.path])
+        );
+
+        expect(pathByLabel['market-briefing:us']).toBe('/market');
+        expect(pathByLabel['market-briefing:kr']).toBe('/market/kr');
+        expect(pathByLabel['macro-briefing']).toBe('/economy');
+        expect(pathByLabel['economy-calendar:US']).toBe('/economy');
+        expect(pathByLabel['economy-calendar:KR']).toBe('/economy/kr');
+        for (const config of Object.values(CATEGORY_CONFIG)) {
+            expect(pathByLabel[`news-digest:${config.slug}`]).toBe(
+                `/news/${config.slug}`
+            );
+        }
+    });
+
+    it('전부 새로 구우면 모든 허브의 공개 URL을 돌려준다', async () => {
+        const result = await runHubPrewarm();
+
+        expect(new Set(result.generatedUrls)).toEqual(
+            new Set([
+                `${SITE_URL}/market`,
+                `${SITE_URL}/market/kr`,
+                `${SITE_URL}/economy`,
+                `${SITE_URL}/economy/kr`,
+                ...NEWS_URLS,
+            ])
+        );
+    });
+
+    it('이미 캐시에 있어 굽지 않은 허브는 싣지 않는다', async () => {
+        mocks.peekBriefingCache.mockResolvedValue({ briefing: 'x' });
+        mocks.peekMacroBriefingCache.mockResolvedValue({ briefing: 'y' });
+        mocks.peekMarketNewsDigestCache.mockResolvedValue({
+            currentDriverKo: 'z',
+        });
+        calendarUnchanged();
+
+        const result = await runHubPrewarm();
+
+        expect(result.alreadyFresh).toBe(hubTargets().length);
+        expect(result.generatedUrls).toEqual([]);
+    });
+
+    it('기사가 없어 만들 게 없던 뉴스 카테고리는 싣지 않는다', async () => {
+        mocks.getMarketNewsList.mockResolvedValue([]);
+        mocks.selectAggregateNewsItems.mockReturnValue([]);
+
+        const result = await runHubPrewarm();
+
+        expect(result.noData).toBe(NEWS_URLS.length);
+        for (const url of NEWS_URLS) {
+            expect(result.generatedUrls).not.toContain(url);
+        }
+        expect(result.generatedUrls).toContain(`${SITE_URL}/market`);
+    });
+
+    it('되읽기에 실패한(keyMismatch) 허브는 싣지 않는다 — 값이 있다는 확인이 없다', async () => {
+        mocks.peekBriefingCache.mockResolvedValue(null);
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+
+        const result = await runHubPrewarm();
+
+        expect(result.keyMismatch).toBe(PAGE_SCOPES.length);
+        expect(result.generatedUrls).not.toContain(`${SITE_URL}/market`);
+        expect(result.generatedUrls).not.toContain(`${SITE_URL}/market/kr`);
+        // 나머지 허브는 정상으로 구워졌다 — 불일치가 다른 대상의 기록을 막지 않는다.
+        expect(result.generatedUrls).toContain(`${SITE_URL}/economy/kr`);
+        errorSpy.mockRestore();
+    });
+
+    it('실패한 허브는 싣지 않는다', async () => {
+        mocks.runMarketNewsDigest.mockRejectedValue(new Error('provider down'));
+        // `fillsAfterRun`은 run 호출 횟수로 값을 내주므로, 던지는 run 뒤의 다음
+        // 카테고리가 "이미 캐시에 있음"으로 빠진다 — 항상 비어 있게 고정한다.
+        mocks.peekMarketNewsDigestCache.mockResolvedValue(null);
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+
+        const result = await runHubPrewarm();
+
+        expect(result.failed).toBe(NEWS_URLS.length);
+        for (const url of NEWS_URLS) {
+            expect(result.generatedUrls).not.toContain(url);
+        }
+        errorSpy.mockRestore();
+    });
+
+    it('쿨다운 중인 시장 브리핑은 싣지 않는다', async () => {
+        mocks.cooldownIsSet.mockResolvedValue(true);
+
+        const result = await runHubPrewarm();
+
+        expect(result.skippedByCooldown).toBe(PAGE_SCOPES.length);
+        expect(result.generatedUrls).not.toContain(`${SITE_URL}/market`);
+        expect(result.generatedUrls).not.toContain(`${SITE_URL}/market/kr`);
+    });
+
+    it('캘린더가 바뀌지 않은 국가는 싣지 않는다 — 경제 캘린더는 스스로 무효화하는 대상이다', async () => {
+        calendarUnchanged();
+        // 거시 브리핑이 이미 캐시에 있어 `/economy`가 다른 경로로 실리지 않게 한다.
+        mocks.peekMacroBriefingCache.mockResolvedValue({ briefing: 'y' });
+
+        const result = await runHubPrewarm();
+
+        expect(result.generatedUrls).not.toContain(`${SITE_URL}/economy`);
+        expect(result.generatedUrls).not.toContain(`${SITE_URL}/economy/kr`);
+    });
+
+    it('캘린더가 바뀐 국가는 selfInvalidating 경로로도 싣는다', async () => {
+        mocks.peekMacroBriefingCache.mockResolvedValue({ briefing: 'y' });
+
+        const result = await runHubPrewarm();
+
+        expect(result.generatedUrls).toContain(`${SITE_URL}/economy`);
+        expect(result.generatedUrls).toContain(`${SITE_URL}/economy/kr`);
+    });
+});
+
+describe('runHubPrewarm — 본문 스탬프(RSS pubDate 근거)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        allSucceed();
+    });
+
+    const FIXED_MS = Date.parse('2026-10-04T05:00:00.000Z');
+    const CATEGORIES = Object.keys(CATEGORY_CONFIG);
+
+    /** 표면별 호출을 표면 이름으로 찾는다 — 호출 순서에 기대지 않는다. */
+    function stampCallsFor(surface: string) {
+        return mocks.recordHubContentStamp.mock.calls.filter(
+            ([s]) => s === surface
+        );
+    }
+
+    it('새로 구운 허브는 되읽기로 확인한 본문과 주입된 시계의 시각으로 스탬프를 남긴다', async () => {
+        await runHubPrewarm(() => FIXED_MS);
+
+        for (const scope of PAGE_SCOPES) {
+            expect(stampCallsFor(rssMarketSurface(scope.id))).toEqual([
+                [
+                    rssMarketSurface(scope.id),
+                    { briefing: 'x' },
+                    new Date(FIXED_MS),
+                ],
+            ]);
+        }
+        expect(stampCallsFor(RSS_ECONOMY_SURFACE)).toEqual([
+            [RSS_ECONOMY_SURFACE, { briefing: 'y' }, new Date(FIXED_MS)],
+        ]);
+        for (const category of CATEGORIES) {
+            expect(stampCallsFor(rssNewsSurface(category))).toEqual([
+                [
+                    rssNewsSurface(category),
+                    { currentDriverKo: 'z' },
+                    new Date(FIXED_MS),
+                ],
+            ]);
+        }
+    });
+
+    it('이미 캐시에 있던 본문도 스탬프를 남긴다 — 같은 해시면 시각이 유지되므로 매 tick 불러도 안전하다', async () => {
+        mocks.peekBriefingCache.mockResolvedValue({ briefing: 'cached-m' });
+        mocks.peekMacroBriefingCache.mockResolvedValue({
+            briefing: 'cached-e',
+        });
+        mocks.peekMarketNewsDigestCache.mockResolvedValue({
+            currentDriverKo: 'cached-n',
+        });
+        calendarUnchanged();
+
+        const result = await runHubPrewarm(() => FIXED_MS);
+
+        expect(result.alreadyFresh).toBe(hubTargets().length);
+        for (const scope of PAGE_SCOPES) {
+            expect(stampCallsFor(rssMarketSurface(scope.id))[0]?.[1]).toEqual({
+                briefing: 'cached-m',
+            });
+        }
+        expect(stampCallsFor(RSS_ECONOMY_SURFACE)[0]?.[1]).toEqual({
+            briefing: 'cached-e',
+        });
+        for (const category of CATEGORIES) {
+            expect(stampCallsFor(rssNewsSurface(category))[0]?.[1]).toEqual({
+                currentDriverKo: 'cached-n',
+            });
+        }
+    });
+
+    it('쿨다운 중인 시장 브리핑은 확인한 본문이 없으므로 스탬프를 남기지 않는다', async () => {
+        mocks.cooldownIsSet.mockResolvedValue(true);
+
+        await runHubPrewarm();
+
+        for (const scope of PAGE_SCOPES) {
+            expect(stampCallsFor(rssMarketSurface(scope.id))).toEqual([]);
+        }
+    });
+
+    it('기사가 없어 만들 게 없던 뉴스 카테고리는 스탬프를 남기지 않는다', async () => {
+        mocks.getMarketNewsList.mockResolvedValue([]);
+        mocks.selectAggregateNewsItems.mockReturnValue([]);
+
+        await runHubPrewarm();
+
+        for (const category of CATEGORIES) {
+            expect(stampCallsFor(rssNewsSurface(category))).toEqual([]);
+        }
+        expect(stampCallsFor(rssMarketSurface('us'))).toHaveLength(1);
+    });
+
+    it('되읽기에 실패한 허브는 스탬프를 남기지 않는다 — 확인된 본문이 없다', async () => {
+        mocks.peekBriefingCache.mockResolvedValue(null);
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+
+        await runHubPrewarm();
+
+        for (const scope of PAGE_SCOPES) {
+            expect(stampCallsFor(rssMarketSurface(scope.id))).toEqual([]);
+        }
+        errorSpy.mockRestore();
+    });
+
+    it('생성이 실패한 허브는 스탬프를 남기지 않는다', async () => {
+        mocks.runMacroBriefing.mockRejectedValue(new Error('provider down'));
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+
+        await runHubPrewarm();
+
+        expect(stampCallsFor(RSS_ECONOMY_SURFACE)).toEqual([]);
+        errorSpy.mockRestore();
+    });
+});
+
+/**
+ * IndexNow가 알리는 URL(크론의 허브 대상 경로)과 RSS 항목의 링크는 같은 허브를 가리켜야
+ * 한다. 둘이 경로를 따로 도출하던 시절에는 한쪽만 바뀌어도 아무것도 깨지지 않았다 —
+ * 표면 이름으로 두 쪽을 짝지어 경로를 대조한다.
+ */
+describe('허브 경로 — 크론 대상과 RSS 소스의 일치', () => {
+    /** 크론 대상 라벨 → RSS 표면 이름. */
+    function surfaceOfTarget(label: string): string | null {
+        const [kind, id] = label.split(':');
+        if (kind === 'market-briefing' && id !== undefined)
+            return rssMarketSurface(id);
+        if (kind === 'macro-briefing') return RSS_ECONOMY_SURFACE;
+        if (kind === 'news-digest' && id !== undefined)
+            return rssNewsSurface(id);
+        return null; // economy-calendar는 본문 스탬프가 없다.
+    }
+
+    const sourcePathBySurface = new Map(
+        rssSources().map(source => [source.surface, source.path])
+    );
+
+    it('RSS 표면마다 같은 표면의 크론 대상이 있고 경로가 같다', () => {
+        const targetPathBySurface = new Map(
+            hubTargets().flatMap(target => {
+                const surface = surfaceOfTarget(target.label);
+                return surface === null ? [] : [[surface, target.path]];
+            })
+        );
+
+        expect(sourcePathBySurface.size).toBeGreaterThan(0);
+        for (const [surface, path] of sourcePathBySurface) {
+            expect(path, surface).not.toBeNull();
+            expect(targetPathBySurface.get(surface), surface).toBe(path);
+        }
+    });
+
+    it('스탬프를 남기는 크론 대상마다 RSS 소스가 있다 — 항목이 되지 못하는 표면이 없다', () => {
+        for (const target of hubTargets()) {
+            const surface = surfaceOfTarget(target.label);
+            if (surface === null) continue;
+            expect(sourcePathBySurface.has(surface), target.label).toBe(true);
+        }
+    });
+
+    it('경제 캘린더 대상의 경로는 경제 허브(`/economy`·`/economy/kr`)다', () => {
+        const calendarPaths = hubTargets()
+            .filter(target => target.label.startsWith('economy-calendar:'))
+            .map(target => target.path);
+
+        expect(calendarPaths).toEqual(['/economy', '/economy/kr']);
     });
 });

@@ -92,6 +92,9 @@ function makeCounts(): PrewarmBatchCounts {
         fmpBudgetUsed: 0,
         staleTotal: 0,
         durationMs: 0,
+        indexNowSubmitted: 0,
+        indexNowOk: 0,
+        indexNowFailed: 0,
     };
 }
 

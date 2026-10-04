@@ -169,6 +169,22 @@ export function regionsOf(verticalId: NavVerticalId): readonly NavRegionLink[] {
     return vertical.regions;
 }
 
+/**
+ * 버티컬의 한 지역 허브 경로(`market` + `kr` → `/market/kr`). 그 지역에 화면이 없으면 `null`.
+ *
+ * `regionsOf`와 달리 던지지 않는다 — 호출부(프리웜·RSS)는 화면이 없는 지역(크립토 시장
+ * 브리핑)을 **걸러내는 쪽**이라, 없음이 오류가 아니라 정상 분기다. 경로를 따로 적으면
+ * 내비·sitemap과 갈라져 sitemap 대조에서 조용히 탈락한다.
+ */
+export function regionHrefOf(
+    verticalId: NavVerticalId,
+    region: NavRegionId
+): string | null {
+    return (
+        regionsOf(verticalId).find(link => link.region === region)?.href ?? null
+    );
+}
+
 /** 모든 지역 링크를 버티컬 순서대로 평탄화. 푸터와 사이트맵 정합성 테스트가 쓴다. */
 export const ALL_NAV_REGION_LINKS: readonly NavRegionLink[] =
     NAV_VERTICALS.flatMap(v => v.regions);
