@@ -16,6 +16,15 @@ main_root=$(cd "$(dirname "$(git rev-parse --git-common-dir)")" && pwd) || exit 
 wt_root=$(git rev-parse --show-toplevel) || exit 0
 [ "$wt_root" = "$main_root" ] && exit 0                           # never the main worktree
 
+# .claude/agent-memory/는 로컬 전용(gitignore)이라 복사하면 워크트리에서 sub-agent가
+# 쌓은 메모가 워크트리 삭제와 함께 사라진다. 그래서 복사 대신 메인 폴더로 링크해
+# 모든 워크트리가 한 벌을 같이 읽고 쓴다. 아직 메모를 추적하던 옛 브랜치를
+# 체크아웃해 폴더가 이미 있으면 건드리지 않는다.
+mem=.claude/agent-memory
+if [ -d "$main_root/$mem" ] && [ ! -e "$wt_root/$mem" ] && [ ! -L "$wt_root/$mem" ]; then
+  mkdir -p "$wt_root/.claude" && ln -s "$main_root/$mem" "$wt_root/$mem"
+fi
+
 inc="$main_root/.worktreeinclude"
 [ -f "$inc" ] || exit 0
 
