@@ -13,6 +13,7 @@ import { getMarketSummaryStatic } from '@/entities/market-summary/api/marketSumm
 import { getSectorSignalsStatic } from '@/entities/sector-signal/api/sectorSignalsStaticCache';
 import { KR_DASHBOARD_SCOPE } from '@/shared/config/dashboardScope';
 import { SITE_URL } from '@/shared/lib/seo';
+import { INDEXABLE_PAGE_ROBOTS } from '@/shared/test-utils/indexablePageRobots';
 
 const mockSummary = vi.mocked(getMarketSummaryStatic);
 const mockSignals = vi.mocked(getSectorSignalsStatic);
@@ -59,7 +60,7 @@ describe('/market/kr page', () => {
             params: Promise.resolve({ locale: 'ko' }),
         });
         expect(meta.alternates?.canonical).toBe(`${SITE_URL}/market/kr`);
-        expect(meta.robots).toEqual({ index: true, follow: true });
+        expect(meta.robots).toMatchObject(INDEXABLE_PAGE_ROBOTS);
     });
 
     it('noindexes when both loaders come back empty', async () => {

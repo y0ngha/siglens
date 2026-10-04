@@ -11,6 +11,12 @@ import type { MockedFunction } from 'vitest';
 // 대부분의 describe는 useOverallAnalysis를 mock해 임의 state shape를 주입하지만,
 // 'OverallContent SSR seed' describe는 mockImplementation으로 실제 훅을 복원해
 // initialAnalysis prop → done 서사로 흐르는 전체 경로를 검증한다(아래 참고).
+const { mockUseAiAutoRunAllowed } = vi.hoisted(() => ({
+    mockUseAiAutoRunAllowed: vi.fn(() => ({ allowed: true, grant: vi.fn() })),
+}));
+vi.mock('@/features/symbol-model/hooks/useAiAutoRunAllowed', () => ({
+    useAiAutoRunAllowed: mockUseAiAutoRunAllowed,
+}));
 vi.mock('@/widgets/overall/hooks/useOverallAnalysis', async importOriginal => {
     const actual =
         await importOriginal<
@@ -615,7 +621,23 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
                 hasOptions={true}
             />
         );
-        expect(useNewsAnalysisTrigger).toHaveBeenCalledWith('AAPL');
+        expect(useNewsAnalysisTrigger).toHaveBeenCalledWith('AAPL', true);
+    });
+
+    it('AI 자동 실행 게이트가 닫혀 있으면 카드 보강 트리거에 false를 넘긴다', () => {
+        mockUseAiAutoRunAllowed.mockReturnValueOnce({
+            allowed: false,
+            grant: vi.fn(),
+        });
+        render(
+            <OverallContent
+                symbol="PCLOF"
+                companyName="Pacific"
+                hasEnrichedNews={false}
+                hasOptions={false}
+            />
+        );
+        expect(useNewsAnalysisTrigger).toHaveBeenCalledWith('PCLOF', false);
     });
 
     it('hasEnrichedNews=false(개별 분석 미완료)면 CTA 버튼이 disabled', () => {

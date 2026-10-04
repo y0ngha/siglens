@@ -1049,11 +1049,9 @@ describe('useAnalysis', () => {
         });
 
         it('miss_no_trigger → isPersonalized는 false다', async () => {
-            // Core-only status (skipEnqueueIfMiss is hardcoded false for
-            // this axis, so it never actually happens): falls through to
-            // the generic unexpected error. onMutate already reset
-            // isPersonalized to false before the submit resolved, and the
-            // error path never sets it back to true.
+            // 서버는 cacheOnly 제출(AI 자동 실행 게이트가 닫힌 마운트 재시도)에만 이
+            // 상태를 돌려준다. onMutate가 이미 false로 되돌렸고, 대기 경로는 다시
+            // true로 세우지 않는다.
             mockSubmit.mockResolvedValue({ status: 'miss_no_trigger' });
 
             const { result } = renderHook(
@@ -1062,7 +1060,7 @@ describe('useAnalysis', () => {
             );
 
             await waitFor(() => {
-                expect(result.current.analysisError).not.toBeNull();
+                expect(result.current.isAwaitingInteraction).toBe(true);
             });
             expect(result.current.isPersonalized).toBe(false);
         });
@@ -1233,5 +1231,191 @@ describe('useAnalysis', () => {
             expect(result.current.analysis.summary).toBe('요약');
             expect(result.current.analysis.trend).toBe('bullish');
         });
+    });
+});
+
+/**
+ * AI 자동 실행 게이트(`autoRunAllowed`) — SSR 시드가 실패한 마운트의 자동 재시도만 막는다.
+ * 요청 판별은 순서가 아니라 `cacheOnly` 인자로 한다(mock.calls 인덱스 단언 금지).
+ */
+describe('useAnalysis — AI 자동 실행 게이트', () => {
+    const RESULT = { summary: '분석' } as unknown as AnalysisResponse;
+    const paramsOf = (call: unknown[]) =>
+        (call[0] as { params: Record<string, unknown> }).params;
+    const gated = (autoRunAllowed: boolean) => ({
+        ...makeOptions({
+            symbol: 'PCLOF',
+            initialAnalysisFailed: true,
+            isModelHydrated: true,
+            isReasoningHydrated: true,
+            isTierHydrated: true,
+            tier: 'free',
+        }),
+        autoRunAllowed,
+    });
+
+    beforeEach(() => {
+        mockSubmit.mockReset();
+        (getReanalyzeCooldownMs as Mock).mockResolvedValue(0);
+        mockUseSymbolHolding.mockReturnValue({
+            holding: null,
+            isHydrated: true,
+            isLoading: false,
+            isError: false,
+            save: {} as never,
+        });
+    });
+    afterEach(() => {
+        queryClients.splice(0).forEach(client => client.clear());
+    });
+
+    it('게이트가 열려 있으면 기존처럼 cacheOnly 없이 1회 제출한다', async () => {
+        mockSubmit.mockResolvedValue({
+            status: 'done',
+            result: RESULT,
+            lockedInfoDepth: ['basic'],
+        });
+        renderHook(() => useAnalysis(gated(true)), {
+            wrapper: makeWrapper(),
+        });
+        await waitFor(() => expect(mockSubmit).toHaveBeenCalledTimes(1));
+        expect(
+            mockSubmit.mock.calls.every(c => !('cacheOnly' in paramsOf(c)))
+        ).toBe(true);
+    });
+
+    it('닫힌 게이트: 캐시 전용 조회 미스 → 대기 → 열리면 일반 제출 1회', async () => {
+        mockSubmit.mockImplementation(
+            async ({ params }: { params: Record<string, unknown> }) =>
+                params.cacheOnly === true
+                    ? { status: 'miss_no_trigger' }
+                    : {
+                          status: 'done',
+                          result: RESULT,
+                          lockedInfoDepth: ['basic'],
+                      }
+        );
+        const { result, rerender } = renderHook(
+            ({ allowed }: { allowed: boolean }) => useAnalysis(gated(allowed)),
+            { wrapper: makeWrapper(), initialProps: { allowed: false } }
+        );
+
+        await waitFor(() =>
+            expect(result.current.isAwaitingInteraction).toBe(true)
+        );
+        expect(result.current.isAnalyzing).toBe(false);
+        expect(result.current.analysisError).toBeNull();
+        expect(
+            mockSubmit.mock.calls.filter(c => paramsOf(c).cacheOnly === true)
+        ).toHaveLength(1);
+
+        rerender({ allowed: true });
+
+        await waitFor(() =>
+            expect(result.current.isAwaitingInteraction).toBe(false)
+        );
+        expect(
+            mockSubmit.mock.calls.filter(c => paramsOf(c).cacheOnly !== true)
+        ).toHaveLength(1);
+    });
+
+    it('닫힌 게이트라도 캐시 HIT이면 대기하지 않고, 열린 뒤 다시 제출하지 않는다', async () => {
+        mockSubmit.mockResolvedValue({
+            status: 'cached',
+            result: RESULT,
+            lockedInfoDepth: ['basic'],
+        });
+        const { result, rerender } = renderHook(
+            ({ allowed }: { allowed: boolean }) => useAnalysis(gated(allowed)),
+            { wrapper: makeWrapper(), initialProps: { allowed: false } }
+        );
+        await waitFor(() => expect(mockSubmit).toHaveBeenCalledTimes(1));
+        await waitFor(() => expect(result.current.isAnalyzing).toBe(false));
+        expect(result.current.isAwaitingInteraction).toBe(false);
+
+        rerender({ allowed: true });
+
+        // 열린 뒤에도 같은 분석을 다시 받지 않는다(mountRetryPhaseRef = done).
+        await new Promise(resolve => setTimeout(resolve, 20));
+        expect(mockSubmit).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('useAnalysis — AI 자동 실행 게이트(리뷰 라운드 1)', () => {
+    const paramsOf = (call: unknown[]) =>
+        (call[0] as { params: Record<string, unknown> }).params;
+    const gated = (autoRunAllowed: boolean) => ({
+        ...makeOptions({
+            symbol: 'PCLOF',
+            initialAnalysisFailed: true,
+            isModelHydrated: true,
+            isReasoningHydrated: true,
+            isTierHydrated: true,
+            tier: 'free',
+        }),
+        autoRunAllowed,
+    });
+
+    beforeEach(() => {
+        mockSubmit.mockReset();
+        (getReanalyzeCooldownMs as Mock).mockResolvedValue(0);
+        mockUseSymbolHolding.mockReturnValue({
+            holding: null,
+            isHydrated: true,
+            isLoading: false,
+            isError: false,
+            save: {} as never,
+        });
+    });
+    afterEach(() => {
+        queryClients.splice(0).forEach(client => client.clear());
+    });
+
+    it('게이트가 열린 뒤의 일반 제출이 실패하면 대기 화면이 아니라 오류를 보여 준다', async () => {
+        mockSubmit.mockImplementation(
+            async ({ params }: { params: Record<string, unknown> }) => {
+                if (params.cacheOnly === true) {
+                    return { status: 'miss_no_trigger' };
+                }
+                throw new Error('분석 실패');
+            }
+        );
+        const { result, rerender } = renderHook(
+            ({ allowed }: { allowed: boolean }) => useAnalysis(gated(allowed)),
+            { wrapper: makeWrapper(), initialProps: { allowed: false } }
+        );
+        await waitFor(() =>
+            expect(result.current.isAwaitingInteraction).toBe(true)
+        );
+
+        rerender({ allowed: true });
+
+        await waitFor(() =>
+            expect(result.current.analysisError).toBe('분석 실패')
+        );
+        expect(result.current.isAwaitingInteraction).toBe(false);
+        expect(
+            mockSubmit.mock.calls.some(c => paramsOf(c).cacheOnly !== true)
+        ).toBe(true);
+    });
+
+    it('캐시 전용 조회가 진행 중일 때는 분석 중으로 표시하지 않는다', async () => {
+        let resolveCacheOnly: ((value: unknown) => void) | undefined;
+        mockSubmit.mockImplementation(
+            () =>
+                new Promise(resolve => {
+                    resolveCacheOnly = resolve;
+                })
+        );
+        const { result } = renderHook(() => useAnalysis(gated(false)), {
+            wrapper: makeWrapper(),
+        });
+        await waitFor(() => expect(mockSubmit).toHaveBeenCalledTimes(1));
+        expect(result.current.isAnalyzing).toBe(false);
+
+        resolveCacheOnly?.({ status: 'miss_no_trigger' });
+        await waitFor(() =>
+            expect(result.current.isAwaitingInteraction).toBe(true)
+        );
     });
 });

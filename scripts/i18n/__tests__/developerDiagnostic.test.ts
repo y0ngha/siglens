@@ -146,3 +146,27 @@ describe('native-language-label 분류', () => {
         ).not.toContain('native-language-label');
     });
 });
+
+/**
+ * `brand-native-name`은 브랜드 한글 표기 상수 하나만 면제한다 — 고유명사라
+ * 번역 대상이 아니고, 구조화 데이터가 전 로케일에서 같은 값을 싣는다.
+ */
+describe('brand-native-name 분류', () => {
+    it('SITE_NAME_KO는 면제된다', () => {
+        expect(
+            reasonsFor(
+                "export const SITE_NAME_KO = '시그렌즈';",
+                'src/shared/lib/seo.ts'
+            )
+        ).toContain('brand-native-name');
+    });
+
+    it('같은 파일의 다른 한국어 상수는 면제되지 않는다', () => {
+        expect(
+            reasonsFor(
+                "export const SITE_TAGLINE = '주식을 AI로 분석해요';",
+                'src/shared/lib/seo.ts'
+            )
+        ).not.toContain('brand-native-name');
+    });
+});

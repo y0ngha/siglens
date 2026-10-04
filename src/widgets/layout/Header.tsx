@@ -1,13 +1,11 @@
 import { HeaderMobileMenu } from './HeaderMobileMenu';
 import { LocaleSwitcher } from './LocaleSwitcher';
 import { HeaderNav } from './HeaderNav';
-import { HeaderNavStatic } from './HeaderNavStatic';
 import { HeaderUserMenu, type HeaderUserMenuUser } from './HeaderUserMenu';
 import { ThemeToggle } from '@/shared/ui/ThemeToggle';
 import { NAV_TREE } from './headerNavTree';
 import { HeaderSearch } from '@/features/ticker-search/ui/HeaderSearch';
 import { LogoLockup } from './LogoLockup';
-import { Suspense } from 'react';
 import { cn } from '@/shared/lib/cn';
 
 interface HeaderProps {
@@ -69,7 +67,10 @@ export function Header({
             <div className="flex h-14 items-center gap-2 px-4 sm:gap-4">
                 <LogoLockup />
                 {/*
-                    Desktop nav — PPR: Suspense fallback renders the static version.
+                    Desktop nav. Suspense로 감싸지 않는다 — 예전에는 PPR 정적 셸용으로
+                    정적 판을 fallback에 뒀는데, PPR이 꺼진 지금은 경계가 같은 내비
+                    마크업(7.5KB)을 전 페이지 HTML에 fallback + 숨김 청크로 두 번
+                    싣기만 했다(`navPanelIdUniqueness.test.tsx`).
 
                     브레이크포인트가 `lg`(1024px)인 것은 의도다. 헤더는 고정 `h-14`
                     한 줄이고 로고·검색·인증 메뉴가 같은 줄을 나눠 쓰는데, 내비
@@ -85,9 +86,7 @@ export function Header({
                     항목당 폭이 라벨 길이만으로 결정되지 않는다.
                 */}
                 <div className="hidden lg:flex">
-                    <Suspense fallback={<HeaderNavStatic items={NAV_TREE} />}>
-                        <HeaderNav items={NAV_TREE} />
-                    </Suspense>
+                    <HeaderNav items={NAV_TREE} />
                 </div>
                 {/* 모바일은 아이콘 트리거 + 전체화면 오버레이, 데스크톱은 기존 인라인
                     자동완성. 폭 계약(`ml-auto`)까지 이 컴포넌트가 소유한다 —

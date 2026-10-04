@@ -5,6 +5,8 @@ import { createElement } from 'react';
 import type { ReactNode } from 'react';
 import { useMarketSummary } from '@/widgets/dashboard/hooks/useMarketSummary';
 import { getMarketSummaryClientAction } from '@/entities/market-summary/actions/getMarketSummaryClientAction';
+import { marketSummarySeed } from '@/entities/market-summary/lib/marketSummarySeed';
+import { QUERY_KEYS } from '@/shared/config/queryConfig';
 
 vi.mock(
     '@/entities/market-summary/actions/getMarketSummaryClientAction',
@@ -172,5 +174,46 @@ describe('useMarketSummary', () => {
             '@/entities/market-summary/actions/getMarketSummaryClientAction'
         );
         vi.doUnmock('@/shared/hooks/useHydrated');
+    });
+
+    /**
+     * 서버가 심은 시드가 **fetch 전에** 화면에 쓰이는가. 크롤러가 받는 서버 HTML과
+     * 첫 페인트가 여기에 달려 있다 — 시드가 버려지면 카드가 fetch 뒤에야 생기며 아래를
+     * 밀어낸다. 시드는 손으로 만들지 않고 서버가 쓰는 `marketSummarySeed`로 만든다.
+     */
+    describe('서버 시드', () => {
+        it.each(['us', 'kr'] as const)(
+            '%s: 시드만으로 지수·섹터가 나온다',
+            scope => {
+                mockAction.mockImplementation(() => new Promise(() => {}));
+                const { client, wrapper } = makeWrapper();
+                client.setQueryData(
+                    QUERY_KEYS.marketSummary(scope),
+                    marketSummarySeed(scope, SUMMARY_DATA.summary)
+                );
+
+                const { result } = renderHook(() => useMarketSummary(scope), {
+                    wrapper,
+                });
+
+                expect(result.current.isPending).toBe(false);
+                expect(result.current.indices).toHaveLength(1);
+                expect(result.current.sectorMap.get('XLK')).toBeDefined();
+                client.clear();
+            }
+        );
+
+        it('kr: scope를 밝히지 않은 데이터는 쓰지 않는다 — 구 컨테이너의 미국 응답일 수 있다', () => {
+            mockAction.mockImplementation(() => new Promise(() => {}));
+            const { client, wrapper } = makeWrapper();
+            client.setQueryData(QUERY_KEYS.marketSummary('kr'), SUMMARY_DATA);
+
+            const { result } = renderHook(() => useMarketSummary('kr'), {
+                wrapper,
+            });
+
+            expect(result.current.indices).toHaveLength(0);
+            client.clear();
+        });
     });
 });

@@ -26,6 +26,7 @@ import FearGreedKrRoutePage, {
 import { getMarketFearGreedKrStatic } from '@/entities/market-fear-greed/api/marketFearGreedKrStaticCache';
 import type { MarketFearGreedView } from '@/entities/market-fear-greed/model';
 import { SITE_URL } from '@/shared/lib/seo';
+import { INDEXABLE_PAGE_ROBOTS } from '@/shared/test-utils/indexablePageRobots';
 
 const mockLoader = getMarketFearGreedKrStatic as MockedFunction<
     typeof getMarketFearGreedKrStatic
@@ -61,7 +62,7 @@ describe('/fear-greed/kr page', () => {
             params: Promise.resolve({ locale: 'ko' }),
         });
         expect(meta.alternates?.canonical).toBe(`${SITE_URL}/fear-greed/kr`);
-        expect(meta.robots).toEqual({ index: true, follow: true });
+        expect(meta.robots).toMatchObject(INDEXABLE_PAGE_ROBOTS);
     });
 
     it('noindexes but keeps following when the sample is insufficient', async () => {

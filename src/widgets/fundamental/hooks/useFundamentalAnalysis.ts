@@ -15,6 +15,8 @@ import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis/lib/gate';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { readPlain, type WithPlain } from '@/shared/lib/plainEnvelope';
+import { AwaitingInteractionError } from '@/shared/lib/AwaitingInteractionError';
+import { useRefetchWhenAllowed } from '@/shared/hooks/useRefetchWhenAllowed';
 
 export type FundamentalAnalysisState =
     | { status: 'loading'; trigger: () => void }
@@ -25,6 +27,7 @@ export type FundamentalAnalysisState =
           plain: string | null;
           trigger: () => void;
       }
+    | { status: 'awaiting_interaction'; trigger: () => void }
     | { status: 'error'; error: Error; retry: () => void; trigger: () => void };
 
 /**
@@ -36,20 +39,28 @@ async function fetchFundamentalAnalysis(
     modelId: ModelId,
     reasoning: boolean,
     messages: StreamErrorMessages,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    cacheOnly = false
 ): Promise<WithPlain<FundamentalAnalysisResponse>> {
     const result = await runAnalysisStream<RunFundamentalAnalysisActionResult>({
         type: 'fundamental',
-        params: { symbol, modelId, reasoning },
+        params: {
+            symbol,
+            modelId,
+            reasoning,
+            ...(cacheOnly ? { cacheOnly: true } : {}),
+        },
         signal,
         messages,
     });
 
     if (result.status === 'cached' || result.status === 'done')
         return { data: result.result, plain: readPlain(result) };
-    // `miss_no_trigger`: core-only status. `skipEnqueueIfMiss` is hardcoded
-    // false for this axis (see `api/analysis/stream/route.ts` top invariant),
-    // so it falls through to the generic `unexpected` throw below.
+    // `miss_no_trigger`: AI 자동 실행 게이트가 막은 상태의 캐시 전용 조회가 미스였다
+    // (`useAiAutoRunAllowed`). 오류가 아니라 대기 상태다 — 입력이 들어오면 다시 부른다.
+    if (result.status === 'miss_no_trigger') {
+        throw new AwaitingInteractionError();
+    }
     if (result.status === 'error') {
         if (isGateBlockedResult(result)) {
             throw new Error(result.error.message);
@@ -92,7 +103,13 @@ export function useFundamentalAnalysis(
      * 제출하면 DEFAULT 모델로 LLM을 한 번 태운 뒤 확정값으로 다시 태우게 된다.
      * 기본값 `true`는 게이트가 필요 없는 단위 테스트용이다.
      */
-    isSettingsHydrated = true
+    isSettingsHydrated = true,
+    /**
+     * AI 분석을 생성까지 요청해도 되는지(`useAiAutoRunAllowed().allowed`). `false`면
+     * 캐시만 조회하고, 미스면 `awaiting_interaction`으로 둔다. 기본값 `true`는 단위
+     * 테스트와 게이트가 필요 없는 호출부용이다.
+     */
+    autoRunAllowed = true
 ): FundamentalAnalysisState {
     const tError = useTranslations('shared.ui.analysisError');
     const locale = useCurrentLocale();
@@ -111,7 +128,8 @@ export function useFundamentalAnalysis(
                 qModelId,
                 qReasoning,
                 streamMessages,
-                signal
+                signal,
+                !autoRunAllowed
             ),
         // 캐시가 없을 때만 1회 자동 실행한다. staleTime: Infinity라 캐시가 있으면
         // 조용히 재사용되고(재요청 없음), 포커스/재연결 재요청은 꺼서 실패 이후
@@ -133,7 +151,18 @@ export function useFundamentalAnalysis(
         void refetch();
     }, [refetch]);
 
+    const isAwaitingInteraction =
+        query.error instanceof AwaitingInteractionError;
+    useRefetchWhenAllowed(autoRunAllowed, isAwaitingInteraction, refetch);
+
     if (query.isError) {
+        if (isAwaitingInteraction) {
+            // 게이트가 열려 다시 부르는 동안에는 React Query가 직전 오류를 유지한다 —
+            // 그대로 두면 생성이 도는 내내 "AI 분석 보기" 버튼이 남는다.
+            return query.isFetching
+                ? { status: 'loading', trigger: retry }
+                : { status: 'awaiting_interaction', trigger: retry };
+        }
         return {
             status: 'error',
             error:

@@ -20,7 +20,15 @@ import {
     TERMS_PATH,
     termsTitle,
 } from '@/shared/lib/legal';
-import { GITHUB_URL, SITE_NAME, SYMBOLS_PATH, X_URL } from '@/shared/lib/seo';
+import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import {
+    GITHUB_URL,
+    SITE_NAME,
+    SITE_NAME_KO,
+    SYMBOLS_PATH,
+    X_URL,
+} from '@/shared/lib/seo';
 import { LABEL_GROUP } from '@/shared/lib/typographyStyles';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
@@ -142,6 +150,7 @@ export function Footer() {
     const tNav = useTranslations();
     const tSeo = useTranslations('shared.seo');
     const tLegal = useTranslations('shared.lib.legal');
+    const locale = useResolvedLocale();
     // 라벨이 카탈로그에서 오므로 모듈 상수로 만들 수 없다 — 렌더에서 계산한다.
     const navColumns = NAV_VERTICALS.map(v => columnOf(v, tNav));
     return (
@@ -163,6 +172,12 @@ export function Footer() {
                             두 줄로 쪼개지던 회귀가 있었다(2026-08-25 사용자 제보). */}
                         <p className="text-sm whitespace-nowrap text-secondary-400">
                             © <CurrentYear /> {SITE_NAME.toUpperCase()}
+                            {/* 워드마크 옆 한글 표기 — 전 페이지에서 "시그렌즈"가
+                                보이는 유일한 자리다(`SITE_NAME_KO` 주석). 한글 독음이라
+                                ko에서만 낸다. */}
+                            {locale === DEFAULT_LOCALE && (
+                                <> · {SITE_NAME_KO}</>
+                            )}
                         </p>
                         <a
                             href={GITHUB_URL}

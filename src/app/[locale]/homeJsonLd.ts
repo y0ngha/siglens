@@ -1,4 +1,10 @@
-import { SITE_NAME, type FaqItem, type SeoTranslator } from '@/shared/lib/seo';
+import type { Locale } from '@/shared/i18n/locales';
+import {
+    brandIntroName,
+    SITE_NAME,
+    type FaqItem,
+    type SeoTranslator,
+} from '@/shared/lib/seo';
 
 /**
  * 홈의 FAQ.
@@ -27,9 +33,21 @@ import { SITE_NAME, type FaqItem, type SeoTranslator } from '@/shared/lib/seo';
  */
 const HOME_FAQ_KEYS = ['q0', 'q2', 'q8', 'q9', 'q10', 'q11'] as const;
 
-export function buildHomeFaq(t: SeoTranslator): FaqItem[] {
+/**
+ * "어떤 서비스인가요?" — 브랜드를 소개하는 문항. 이 질문에서만 ko가 한글 표기를
+ * 함께 적는다(`brandIntroName`). 화면 FAQ와 FAQPage 마크업이 같은 배열을 쓰므로
+ * "시그렌즈"와 "Siglens"가 같은 서비스라는 문장이 두 표면에 똑같이 실린다.
+ */
+const BRAND_INTRO_FAQ_KEY = 'q0';
+
+export function buildHomeFaq(t: SeoTranslator, locale: Locale): FaqItem[] {
     return HOME_FAQ_KEYS.map(key => ({
-        question: t(`faq.${key}.question`, { v0: SITE_NAME }),
+        question: t(`faq.${key}.question`, {
+            v0:
+                key === BRAND_INTRO_FAQ_KEY
+                    ? brandIntroName(locale)
+                    : SITE_NAME,
+        }),
         answer: t(`faq.${key}.answer`, { v0: SITE_NAME }),
     }));
 }

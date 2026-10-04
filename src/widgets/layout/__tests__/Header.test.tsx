@@ -30,9 +30,6 @@ vi.mock('../LocaleSwitcher', () => ({
 vi.mock('../HeaderNav', () => ({
     HeaderNav: () => <nav data-testid="header-nav" />,
 }));
-vi.mock('../HeaderNavStatic', () => ({
-    HeaderNavStatic: () => <nav data-testid="header-nav-static" />,
-}));
 vi.mock('../HeaderUserMenu', () => ({
     HeaderUserMenu: () => <div data-testid="user-menu" />,
 }));

@@ -47,7 +47,12 @@ export async function submitNewsAnalysisAction(
      */
     locale: Locale,
     reasoning?: boolean,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    /**
+     * 캐시만 읽고 미스면 생성하지 않는다(`miss_no_trigger`). 큐레이션 밖 종목에서
+     * 첫 신뢰 입력 전에 클라이언트가 보낸다(`useAiAutoRunAllowed`).
+     */
+    cacheOnly?: boolean
 ): Promise<SubmitNewsAnalysisActionResult> {
     try {
         // E2E short-circuits the LLM/worker; returns a deterministic cached fixture
@@ -104,8 +109,9 @@ export async function submitNewsAnalysisAction(
             reasoning: resolveReasoning(gate.tier, reasoning),
             // 2026-09-27: 더 이상 UA로 가르지 않는다 — 봇의 캐시 미스도 사람과
             // 같은 본문을 생성해야 한다(siglens/src/app/api/analysis/stream/route.ts
-            // 상단 불변식과 동일 원칙).
-            skipEnqueueIfMiss: false,
+            // 상단 불변식과 동일 원칙). `cacheOnly`는 UA가 아니라 클라이언트의 AI 자동
+            // 실행 게이트(첫 입력 전 조회)에서 온다.
+            skipEnqueueIfMiss: cacheOnly === true,
             assetClass,
             // core는 통화를 심볼에서 추론하지 않는다 — 한국 종목 프레이밍·실적 추정 통화.
             currency: descriptor.priceFormat.currency,

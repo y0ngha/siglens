@@ -297,12 +297,14 @@ describe('MethodologyPage', () => {
     });
 
     describe('AI section', () => {
-        it('names the four providers and says nothing is human-reviewed', async () => {
+        it('names the four providers and says no person reviews each text', async () => {
             await renderPage();
             expect(m.ai.do1).toMatch(/OpenAI.*Anthropic.*Google.*DeepSeek/);
             expect(screen.getByText(m.ai.do1)).toBeInTheDocument();
             expect(screen.getByText(m.ai.dont4)).toBeInTheDocument();
-            expect(m.ai.dont4).toContain('검수 없이');
+            expect(m.ai.dont4).toContain(
+                '사람이 한 편씩 읽고 고친 뒤에 보여주지는 않아요'
+            );
         });
 
         it('describes the plain-text check and the no-instruction rule', async () => {
