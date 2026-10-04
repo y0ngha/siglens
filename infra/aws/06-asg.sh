@@ -24,7 +24,8 @@ SUBNET_CSV=$(echo $SUBNETS | tr ' ' ',')
 # ELB 헬스체크보다 오히려 넓다(systemd가 StartLimitBurst로 포기한 경우까지 포함).
 ASG_EXISTS=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names siglens-asg --query 'AutoScalingGroups[0].AutoScalingGroupName' --output text 2>/dev/null) || true
 if [ "$ASG_EXISTS" = "None" ] || [ -z "$ASG_EXISTS" ]; then
-  # 평시 한 대를 유지하고, target tracking이 필요할 때만 확장한다.
+  # 평시 한 대를 유지한다. 증설은 siglens-capacity-needed 알람(07-alarms.sh)을 받은
+  # 운영자가 set-desired-capacity로 수동 수행한다(target-tracking 정책은 08에서 폐기).
   # max-size 4: ASG 용량의 단일 소스 오브 트루스(L1). 08-scaling.sh는 max-size를
   # 건드리지 않는다.
   aws autoscaling create-auto-scaling-group --auto-scaling-group-name siglens-asg \
