@@ -58,6 +58,7 @@ describe('FearGreedFactsSummary', () => {
         const { container, getByText } = render(
             <FearGreedFactsSummary
                 symbol="AAPL"
+                marketProfile="us-equity"
                 bars={fakeBars}
                 buySellVolume={fakeBsv}
             />
@@ -81,6 +82,68 @@ describe('FearGreedFactsSummary', () => {
         expect(getByText(/표본 220/)).toBeInTheDocument();
     });
 
+    /**
+     * 점수는 규칙 계산뿐이고 AI 서술이 없다 — 요약 하단에 그 사실과 데이터 출처,
+     * 계산 방법 링크를 단다. 같은 산문 고지가 AI 문구("AI가 문장으로 정리")를
+     * 달면 거짓이므로 `rule-based` 변형이어야 한다.
+     */
+    it('규칙 계산 고지(rule-based)를 요약 하단에 한 번 렌더한다', () => {
+        (computeFearGreedIndex as Mock).mockReturnValue(FIXTURE_SNAPSHOT);
+
+        const { container, getAllByText, getByRole, queryByText } = render(
+            <FearGreedFactsSummary
+                symbol="AAPL"
+                marketProfile="us-equity"
+                bars={fakeBars}
+                buySellVolume={fakeBsv}
+            />
+        );
+
+        expect(
+            getAllByText(/AI 서술 없이 규칙으로만 계산한 점수예요/)
+        ).toHaveLength(1);
+        expect(getByRole('link', { name: '계산 방법' })).toHaveAttribute(
+            'href',
+            '/methodology#fear-greed'
+        );
+        expect(queryByText(/AI가 문장으로 정리한 글이에요/)).toBeNull();
+        // 마지막 자식 — 신뢰도 문구(confidence footer) 다음에 온다.
+        const section = container.querySelector('section')!;
+        expect(section.lastElementChild?.textContent).toContain(
+            '데이터: 시세 Financial Modeling Prep'
+        );
+    });
+
+    it('한국 종목이면 시세 출처가 Yahoo Finance로 바뀐다', () => {
+        (computeFearGreedIndex as Mock).mockReturnValue(FIXTURE_SNAPSHOT);
+
+        const { getByText } = render(
+            <FearGreedFactsSummary
+                symbol="005930.KS"
+                marketProfile="kr-equity"
+                bars={fakeBars}
+                buySellVolume={fakeBsv}
+            />
+        );
+
+        expect(getByText(/데이터: 시세 Yahoo Finance\./)).toBeInTheDocument();
+    });
+
+    it('점수가 없으면(null) 고지도 렌더하지 않는다', () => {
+        (computeFearGreedIndex as Mock).mockReturnValue(null);
+
+        const { container } = render(
+            <FearGreedFactsSummary
+                symbol="AAPL"
+                marketProfile="us-equity"
+                bars={[]}
+                buySellVolume={[]}
+            />
+        );
+
+        expect(container).toBeEmptyDOMElement();
+    });
+
     // FIX 6 (audit, option b): group comparison + factor ranking narrative
     // sentences, built from FIXTURE_SNAPSHOT's group scores (Flow 58, Trend
     // 66) and factor percentiles.
@@ -90,6 +153,7 @@ describe('FearGreedFactsSummary', () => {
         const { getByText } = render(
             <FearGreedFactsSummary
                 symbol="AAPL"
+                marketProfile="us-equity"
                 bars={fakeBars}
                 buySellVolume={fakeBsv}
             />
@@ -115,7 +179,12 @@ describe('FearGreedFactsSummary', () => {
         (computeFearGreedIndex as Mock).mockReturnValue(FIXTURE_SNAPSHOT);
 
         const { queryByText } = render(
-            <FearGreedFactsSummary symbol="AAPL" bars={[]} buySellVolume={[]} />
+            <FearGreedFactsSummary
+                symbol="AAPL"
+                marketProfile="us-equity"
+                bars={[]}
+                buySellVolume={[]}
+            />
         );
 
         expect(queryByText(/종가 기준/)).not.toBeInTheDocument();
@@ -135,6 +204,7 @@ describe('FearGreedFactsSummary', () => {
         const { getByText } = render(
             <FearGreedFactsSummary
                 symbol="AAPL"
+                marketProfile="us-equity"
                 bars={fakeBars}
                 buySellVolume={fakeBsv}
             />
@@ -147,7 +217,12 @@ describe('FearGreedFactsSummary', () => {
         (computeFearGreedIndex as Mock).mockReturnValue(null);
 
         const { container } = render(
-            <FearGreedFactsSummary symbol="AAPL" bars={[]} buySellVolume={[]} />
+            <FearGreedFactsSummary
+                symbol="AAPL"
+                marketProfile="us-equity"
+                bars={[]}
+                buySellVolume={[]}
+            />
         );
 
         expect(container).toBeEmptyDOMElement();
@@ -198,6 +273,7 @@ describe('FearGreedFactsSummary', () => {
             const { getByText } = render(
                 <FearGreedFactsSummary
                     symbol="AAPL"
+                    marketProfile="us-equity"
                     bars={realisticBars}
                     buySellVolume={realisticBsv}
                 />
@@ -225,5 +301,48 @@ describe('FearGreedFactsSummary', () => {
             expect(getByText(/탐욕 23일/)).toBeInTheDocument();
             expect(getByText(/극심한 탐욕 17일/)).toBeInTheDocument();
         });
+    });
+});
+
+/**
+ * 네이버는 본문 첫 텍스트로 스니펫을 만든다 — 점수 행(`<dl>`)보다 서술 문장이 DOM에서
+ * 앞서야 한다(2026-10-04, `TechnicalFactsSummary`와 같은 구조).
+ */
+describe('FearGreedFactsSummary — DOM 순서', () => {
+    it('서술 문단이 점수 <dl>보다 앞서고, 제목이 맨 앞·신뢰도 각주가 맨 뒤다', () => {
+        (computeFearGreedIndex as Mock).mockReturnValue(FIXTURE_SNAPSHOT);
+
+        const { container } = render(
+            <FearGreedFactsSummary
+                symbol="AAPL"
+                marketProfile="us-equity"
+                bars={fakeBars}
+                buySellVolume={fakeBsv}
+            />
+        );
+        const section = container.querySelector('section')!;
+        const dl = section.querySelector('dl')!;
+        const firstParagraph = section.querySelector('p')!;
+        const following = Node.DOCUMENT_POSITION_FOLLOWING;
+
+        expect(firstParagraph.compareDocumentPosition(dl) & following).toBe(
+            following
+        );
+        expect(firstParagraph.textContent?.trim().length).toBeGreaterThan(0);
+        expect(section.firstElementChild?.tagName).toBe('H2');
+        // 신뢰도 각주는 점수 <dl> 뒤에 오고, 그 뒤에 출처 고지가 섹션을 닫는다.
+        const footnote = [...section.querySelectorAll('p')].find(p =>
+            p.textContent?.includes('표본 220')
+        )!;
+        expect(dl.compareDocumentPosition(footnote) & following).toBe(
+            following
+        );
+        expect(section.lastElementChild?.textContent).toContain(
+            '규칙으로만 계산한 점수'
+        );
+        expect(
+            footnote.compareDocumentPosition(section.lastElementChild!) &
+                following
+        ).toBe(following);
     });
 });

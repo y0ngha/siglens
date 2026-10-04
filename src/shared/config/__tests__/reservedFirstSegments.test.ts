@@ -16,6 +16,7 @@ describe('symbolOfAppPath', () => {
             expect(symbolOfAppPath('/fear-greed/kr')).toBeNull();
             expect(symbolOfAppPath('/en')).toBeNull();
             expect(symbolOfAppPath('/symbols')).toBeNull();
+            expect(symbolOfAppPath('/methodology')).toBeNull();
         });
     });
 });

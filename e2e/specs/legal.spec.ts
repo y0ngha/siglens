@@ -12,6 +12,9 @@ import { test, expect } from '../support/fixtures';
  * `/about` no longer uses the legal shell: it is an intro page (`views/about`)
  * whose h1 is the action headline and whose title leads with "Siglens 소개".
  * It has no DB read, so it only needs its own render check below.
+ *
+ * `/methodology` is the sibling trust page (data sources, rules, what the AI
+ * does, corrections). Like `/about` it reads no DB; its checks are below.
  */
 const LEGAL_PAGES = [
     { path: '/privacy', h1: '개인정보처리방침' },
@@ -61,4 +64,51 @@ test('/about renders the intro page with its example report and FAQ', async ({
     const html = await (await page.request.get('/about')).text();
     expect(html).toContain('"@type":"AboutPage"');
     expect(html).toContain('"@type":"FAQPage"');
+});
+
+test('/methodology renders the methodology page: one h1, anchors, indexable', async ({
+    page,
+}) => {
+    const response = await page.goto('/methodology');
+    expect(response?.status()).toBe(200);
+
+    await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+    await expect(
+        page.getByRole('heading', {
+            level: 1,
+            name: '분석이 어떻게 만들어지는지 밝혀요',
+        })
+    ).toBeVisible();
+    await expect(page).toHaveTitle(/^Siglens 분석 방법: /);
+
+    // The stable section ids the symbol-page provenance note links to.
+    for (const id of ['data', 'ai', 'fear-greed', 'corrections', 'changelog']) {
+        await expect(page.locator(`h2#${id}`)).toHaveCount(1);
+    }
+
+    // ko is indexable: no `noindex` robots meta, self-referencing canonical.
+    const robots = await page
+        .locator('meta[name="robots"]')
+        .getAttribute('content');
+    expect(robots ?? '').not.toContain('noindex');
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+        'href',
+        /\/methodology$/
+    );
+
+    // JSON-LD is read from the SSR HTML (a `<script>` has no rendered text).
+    const html = await (await page.request.get('/methodology')).text();
+    expect(html).toContain('"@type":"WebPage"');
+    expect(html).toContain('"@type":"BreadcrumbList"');
+    expect(html).toContain('"dateModified"');
+    expect(html).not.toContain('"@type":"FAQPage"');
+});
+
+test('footer links to /methodology from the home page', async ({ page }) => {
+    await page.goto('/');
+    await expect(
+        page
+            .getByRole('navigation', { name: '사이트 정보' })
+            .getByRole('link', { name: '분석 방법' })
+    ).toHaveAttribute('href', '/methodology');
 });

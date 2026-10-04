@@ -65,6 +65,7 @@ vi.mock('@/shared/lib/seo', () => ({
     buildFaqJsonLd: () => ({}),
     buildWebPageJsonLd: () => ({}),
     GITHUB_URL: 'https://github.com/y0ngha/siglens',
+    X_URL: 'https://x.com/siglens_io',
     localizedAbsoluteUrl: (url: string) => url,
     SITE_DESCRIPTION: 'test description',
     SITE_NAME: 'Siglens',

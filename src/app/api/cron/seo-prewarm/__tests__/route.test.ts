@@ -116,6 +116,9 @@ describe('PATCH /api/cron/seo-prewarm', () => {
             staleTotal: 10,
             durationMs: 1234,
             fmpBudgetUsed: 5,
+            indexNowSubmitted: 0,
+            indexNowOk: 0,
+            indexNowFailed: 0,
         });
         await PATCH(makeRequest('Bearer test-secret'));
         const callback = mockAfter.mock.calls[0][0] as () => Promise<void>;
@@ -165,6 +168,9 @@ describe('PATCH /api/cron/seo-prewarm', () => {
             staleTotal: 10,
             durationMs: 1234,
             fmpBudgetUsed: 5,
+            indexNowSubmitted: 0,
+            indexNowOk: 0,
+            indexNowFailed: 0,
         });
         mockPruneAnalysisHistory.mockResolvedValue({
             rowsDeleted: 7,
@@ -196,6 +202,9 @@ describe('PATCH /api/cron/seo-prewarm', () => {
             staleTotal: 10,
             durationMs: 1234,
             fmpBudgetUsed: 5,
+            indexNowSubmitted: 0,
+            indexNowOk: 0,
+            indexNowFailed: 0,
         });
         mockPruneAnalysisHistory.mockRejectedValue(new Error('prune boom'));
         const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});

@@ -21,7 +21,7 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
 vi.mock('@/entities/sitemap-entry/server', () => ({
     loadStaticSitemapInputs: vi.fn(async () => ({})),
     loadPopularSitemapInputs: vi.fn(async () => ({
-        symbolTabsWithProse: new Set<string>(),
+        snapshotGeneratedAt: new Map<string, Date>(),
     })),
 }));
 
@@ -34,12 +34,16 @@ import { buildPopularEntries } from '@/entities/sitemap-entry/lib/buildPopularEn
 import { buildStaticEntries } from '@/entities/sitemap-entry/lib/buildStaticEntries';
 import { maxLastModified } from '@/entities/sitemap-entry/lib/maxLastModified';
 import { toSitemapIndexXml } from '@/entities/sitemap-entry/lib/xml';
+import { loadPopularSitemapInputs } from '@/entities/sitemap-entry/server';
 import type { MockedFunction } from 'vitest';
 
 import nextConfig from '../../../../../next.config';
 
 const mockToSitemapIndexXml = toSitemapIndexXml as MockedFunction<
     typeof toSitemapIndexXml
+>;
+const mockLoadPopularSitemapInputs = loadPopularSitemapInputs as MockedFunction<
+    typeof loadPopularSitemapInputs
 >;
 
 function mainHostRequest(): Request {
@@ -100,7 +104,9 @@ describe('GET /api/sitemap (index)', () => {
             await GET(mainHostRequest());
 
             const entries = mockToSitemapIndexXml.mock.calls[0][0];
-            const popularInputs = { symbolTabsWithProse: new Set<string>() };
+            const popularInputs = {
+                snapshotGeneratedAt: new Map<string, Date>(),
+            };
             const expected = [
                 maxLastModified(buildStaticEntries(now), now),
                 maxLastModified(buildPopularEntries(now, popularInputs), now),
@@ -161,6 +167,61 @@ describe('GET /api/sitemap — index lastmod ↔ child sitemap 일치', () => {
         entries.forEach((entry, i) => {
             expect(entry.lastModified.getTime()).toBe(childMax[i]);
         });
+    });
+});
+
+describe('GET /api/sitemap — 스냅샷 시각이 lastmod 최댓값일 때', () => {
+    beforeEach(() => {
+        vi.useFakeTimers();
+        // 크립토 공포탐욕 탭(UTC 자정)과 크립토 차트(6시간 경계 06:00)보다 늦은
+        // 스냅샷을 만들 수 있도록 06:30으로 둔다.
+        vi.setSystemTime(new Date('2026-01-01T06:30:00Z'));
+        vi.clearAllMocks();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+        mockLoadPopularSitemapInputs.mockImplementation(async () => ({
+            snapshotGeneratedAt: new Map<string, Date>(),
+        }));
+    });
+
+    /**
+     * 2026-10-04 lastmod 2차 정직화: 차트 탭은 `max(세션 마감, technical 스냅샷)`,
+     * 뉴스 탭은 뉴스 스냅샷 시각이다. 스냅샷이 모든 세션 마감보다 늦으면 그 시각이
+     * 자식 파일의 최댓값이 되고, 인덱스도 같은 값을 광고해야 한다 — 인덱스가 스냅샷
+     * 입력을 무시하면 여기서 어긋난다.
+     */
+    it('인덱스의 popular·crypto lastmod는 자식 최댓값이고, 그 값이 스냅샷 시각이다', async () => {
+        const technicalAt = new Date('2026-01-01T06:10:00Z');
+        const cryptoNewsAt = new Date('2026-01-01T06:20:00Z');
+        mockLoadPopularSitemapInputs.mockImplementation(async () => ({
+            snapshotGeneratedAt: new Map<string, Date>([
+                ['AAPL:technical', technicalAt],
+                ['BTCUSD:news', cryptoNewsAt],
+            ]),
+        }));
+
+        await GET(mainHostRequest());
+        const entries = mockToSitemapIndexXml.mock.calls[0][0];
+        const popularIndex = entries.find(e =>
+            e.url.endsWith('/sitemap-popular.xml')
+        );
+        const cryptoIndex = entries.find(e =>
+            e.url.endsWith('/sitemap-crypto.xml')
+        );
+
+        const popularChildMax = await maxChildLastmod(
+            await getPopularChild(mainHostRequest())
+        );
+        const cryptoChildMax = await maxChildLastmod(
+            await getCryptoChild(mainHostRequest())
+        );
+
+        expect(popularChildMax).toBe(technicalAt.getTime());
+        expect(popularIndex?.lastModified.getTime()).toBe(popularChildMax);
+        expect(cryptoChildMax).toBe(cryptoNewsAt.getTime());
+        expect(cryptoIndex?.lastModified.getTime()).toBe(cryptoChildMax);
     });
 });
 

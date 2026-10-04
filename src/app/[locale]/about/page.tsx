@@ -16,6 +16,7 @@ import {
     aboutTitle,
     formatKoreanDate,
     OPERATOR_PERSON_JSON_LD_ID,
+    OPERATOR_SAME_AS,
     SITE_OPERATOR,
 } from '@/shared/lib/legal';
 import {
@@ -50,7 +51,10 @@ export const revalidate = 86400;
  * 이 문서가 그 조직에 대한 소개 문서임을 명시한다. `dateModified`는 화면
  * 하단의 "마지막 업데이트"와 같은 `ABOUT_UPDATED_AT`이다.
  */
-function buildAboutJsonLd(t: SeoTranslator, locale: Locale) {
+function buildAboutJsonLd(
+    t: SeoTranslator,
+    locale: Locale
+): Record<string, unknown> {
     return {
         ...buildWebPageJsonLd({
             url: PAGE_URL,
@@ -69,7 +73,7 @@ function buildAboutJsonLd(t: SeoTranslator, locale: Locale) {
  * 그대로 같아야 두 노드를 같은 개체로 크롤러가 묶는다 — 둘 다
  * `OPERATOR_PERSON_JSON_LD_ID` 상수를 공유해 오타로 갈릴 여지를 없앤다.
  */
-function buildAboutPersonJsonLd() {
+function buildAboutPersonJsonLd(): Record<string, unknown> {
     return {
         '@context': 'https://schema.org',
         '@type': 'Person',
@@ -77,12 +81,15 @@ function buildAboutPersonJsonLd() {
         name: SITE_OPERATOR.name,
         email: `mailto:${SITE_OPERATOR.email}`,
         url: `${SITE_URL}${ABOUT_PATH}`,
-        sameAs: [SITE_OPERATOR.githubUrl],
+        sameAs: OPERATOR_SAME_AS,
         affiliation: { '@id': ORGANIZATION_JSON_LD_ID },
     };
 }
 
-function buildAboutBreadcrumbJsonLd(t: SeoTranslator, locale: Locale) {
+function buildAboutBreadcrumbJsonLd(
+    t: SeoTranslator,
+    locale: Locale
+): Record<string, unknown> {
     return buildBreadcrumbJsonLd(
         [{ name: aboutTitle(t), url: PAGE_URL }],
         locale

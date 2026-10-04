@@ -1485,6 +1485,8 @@ describe('buildSnapshotMetaDescription — 평이화 우선', () => {
 
     // v0.79.2 배포 후 운영 크롤: 평이화가 짧아 원문 `summary`로 폴백한 차트 설명이
     // `**종합 진단**:`으로 시작했다. 스냅샷 필드는 화면용 마크다운이다.
+    // 기호를 뗀 뒤 남는 맨 앞 라벨(`종합 진단:`)은 2026-10-04부터 별도 규칙이 뗀다
+    // (`LEADING_LABEL_PATTERN`) — 여기서는 마크다운이 없고 본문이 남는지만 본다.
     it('원문 필드의 마크다운 기호는 설명에 남기지 않는다', () => {
         const result = buildSnapshotMetaDescription(
             'technical',
@@ -1498,9 +1500,8 @@ describe('buildSnapshotMetaDescription — 평이화 우선', () => {
             TAB_LABEL
         );
 
-        expect(result).toContain(
-            '종합 진단: 애플은 일봉 기준 견조한 상승 추세'
-        );
+        expect(result).toContain('애플은 일봉 기준 견조한 상승 추세');
+        expect(result).not.toContain('종합 진단');
         expect(result).toContain('지지선은 320달러입니다.');
         expect(result).not.toMatch(/\*\*|`|- 지지선/);
     });
@@ -1547,5 +1548,155 @@ describe('buildSnapshotMetaDescription — 평이화 우선', () => {
                 TAB_LABEL
             )
         ).toBeNull();
+    });
+});
+
+/**
+ * 2026-10-04 운영 크롤: 차트 탭 348개 중 55개의 description이 `현재 상황:`·`요약:`
+ * 라벨로 시작했고, `/AAPL`은 소제목 두 줄이 문장 앞에 이어 붙었다. 원문 필드
+ * 경로(평이화가 없거나 짧아 폴백된 경우)에서만 라벨·소제목을 떼고, 평이화 경로는
+ * 그대로 둔다.
+ */
+describe('buildSnapshotMetaDescription — 원문 경로의 라벨·소제목 제거', () => {
+    const PREFIX = `AAPL ${TAB_LABEL} — `;
+    const describeRaw = (summary: string): string | null =>
+        buildSnapshotMetaDescription(
+            'technical',
+            { summary },
+            'AAPL',
+            null,
+            'ko',
+            TAB_LABEL
+        );
+
+    it('종결부호 없는 소제목 줄 두 개를 떼고 문장으로 시작한다 (/AAPL형)', () => {
+        const result = describeRaw(
+            '애플(AAPL) 일봉 종합 분석\n추세 방향과 강도\n분석 시점 가격 333.69달러는 20일 이동평균(331.90)과 60일 이동평균(322.74) 위에 있으며, 단기 흐름이 중기 흐름보다 강합니다.'
+        );
+
+        expect(
+            result?.startsWith(`${PREFIX}분석 시점 가격 333.69달러는 `)
+        ).toBe(true);
+        expect(result).not.toContain('종합 분석');
+        expect(result).not.toContain('추세 방향과 강도');
+    });
+
+    it('맨 앞 라벨 `현재 상황:`을 뗀다 (/NVDA형)', () => {
+        const result = describeRaw(
+            '현재 상황: 엔비디아(NVDA)는 분석 시점 가격 233.95달러로, 최근 한 달간 완만한 상승 흐름을 보였습니다.'
+        );
+
+        expect(result?.startsWith(`${PREFIX}엔비디아(NVDA)는 `)).toBe(true);
+        expect(result).not.toContain('현재 상황:');
+    });
+
+    it('맨 앞 라벨 `요약:`을 뗀다 (/VTI형)', () => {
+        const result = describeRaw(
+            '요약: VTI는 분석 시점 가격 377.99로, 장기 이동평균 위에서 움직이고 있습니다.'
+        );
+
+        expect(result?.startsWith(`${PREFIX}VTI는 `)).toBe(true);
+        expect(result).not.toContain('요약:');
+    });
+
+    it('소제목 줄을 뗀 뒤 남은 첫 문장 앞의 라벨도 한 번 뗀다', () => {
+        const result = describeRaw(
+            '애플 일봉 분석\n요약: 애플은 20일 이동평균 위에서 거래되고 있습니다.'
+        );
+
+        expect(result).toBe(
+            `${PREFIX}애플은 20일 이동평균 위에서 거래되고 있습니다.`
+        );
+    });
+
+    it('종결부호가 있는 줄은 짧아도 소제목이 아니다', () => {
+        const result = describeRaw('상승세입니다.\n거래량도 늘었습니다.');
+
+        expect(result).toBe(`${PREFIX}상승세입니다. 거래량도 늘었습니다.`);
+    });
+
+    it('소수점은 종결부호가 아니다 — 짧은 숫자 줄도 소제목으로 뗀다', () => {
+        const result = describeRaw(
+            '종가 333.69달러\n분석 시점 가격은 20일 이동평균 위에 있습니다.'
+        );
+
+        expect(result).toBe(
+            `${PREFIX}분석 시점 가격은 20일 이동평균 위에 있습니다.`
+        );
+    });
+
+    it('30자를 넘는 줄은 종결부호가 없어도 소제목이 아니다', () => {
+        const longLine =
+            '종결부호 없이 길게 이어지는 설명 줄이지만 소제목으로 보기에는 너무 깁니다';
+        expect([...longLine].length).toBeGreaterThan(30);
+
+        const result = describeRaw(`${longLine}\n다음 줄입니다.`);
+
+        expect(result).toBe(`${PREFIX}${longLine} 다음 줄입니다.`);
+    });
+
+    it('뒤따르는 줄이 없으면 소제목으로 보지 않는다 — 한 줄짜리는 그대로 남는다', () => {
+        const result = describeRaw('추세 방향과 강도');
+
+        expect(result).toBe(`${PREFIX}추세 방향과 강도`);
+    });
+
+    it('소제목만 있고 본문 줄이 하나뿐이면 마지막 줄은 남긴다', () => {
+        const result = describeRaw('소제목 하나\n마지막 줄은 남습니다');
+
+        expect(result).toBe(`${PREFIX}마지막 줄은 남습니다`);
+    });
+
+    it('문장 중간의 콜론은 건드리지 않는다', () => {
+        const summary =
+            '애플은 최근 실적을 발표했으며 핵심은 이렇습니다: 매출이 늘었습니다.';
+
+        expect(describeRaw(summary)).toBe(`${PREFIX}${summary}`);
+    });
+
+    it('시각 표기 `09:30`처럼 콜론 뒤에 공백이 없으면 라벨로 보지 않는다', () => {
+        const summary = '09:30 장 시작 직후 거래량이 몰렸습니다.';
+
+        expect(describeRaw(summary)).toBe(`${PREFIX}${summary}`);
+    });
+
+    it('`1:2` 같은 비율 표기는 라벨로 보지 않는다', () => {
+        const summary = '1:2 비율로 액면분할이 이루어졌습니다.';
+
+        expect(describeRaw(summary)).toBe(`${PREFIX}${summary}`);
+    });
+
+    /**
+     * 콜론 뒤가 값(숫자·통화 기호)으로 시작하면 콜론 앞은 라벨이 아니라 그 값의
+     * 주어다 — 떼면 무엇의 값인지 사라진다(2026-10-04 리뷰).
+     */
+    it.each([
+        '삼성전자 주가: 70,000원에서 거래됩니다.',
+        'RSI: 70이며 과매수 구간에 진입했습니다.',
+        '종가: $333.69로 마감했습니다.',
+    ])('값으로 시작하면 콜론 앞을 떼지 않는다: %s', summary => {
+        expect(describeRaw(summary)).toBe(`${PREFIX}${summary}`);
+    });
+
+    it('라벨이 13자 이상의 긴 단어면 떼지 않는다', () => {
+        const summary =
+            '가나다라마바사아자차카타파하: 열세 글자 이상은 라벨이 아닙니다.';
+
+        expect(describeRaw(summary)).toBe(`${PREFIX}${summary}`);
+    });
+
+    it('평이화 경로는 그대로다 — 라벨이 있어도 떼지 않는다', () => {
+        const plain =
+            '요약: 애플은 최근 한 달 동안 완만하게 올랐고 거래량도 평소보다 많았습니다.';
+        const result = buildSnapshotMetaDescription(
+            'technical',
+            { summary: '원문 필드는 쓰이지 않는다.' },
+            'AAPL',
+            plain,
+            'ko',
+            TAB_LABEL
+        );
+
+        expect(result).toBe(`${PREFIX}${plain}`);
     });
 });

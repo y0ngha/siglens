@@ -3,6 +3,8 @@ import { sitemapAlternates } from './sitemapAlternates';
 import {
     ABOUT_PATH,
     ABOUT_UPDATED_AT,
+    METHODOLOGY_PATH,
+    METHODOLOGY_UPDATED_AT,
     PRIVACY_PATH,
     TERMS_PATH,
 } from '@/shared/lib/legal';
@@ -76,7 +78,8 @@ function latestOf(
  * 바뀌지 않은 페이지에도 매번 freshness 신호를 보내게 된다. 네 등급으로 나눈다:
  *
  *  1. **콘텐츠 자체의 갱신 시각** — 그 값을 알 수 있는 페이지. `/about`은
- *     `ABOUT_UPDATED_AT`(본문 상수), `/privacy`·`/terms`는 활성 약관 버전의
+ *     `ABOUT_UPDATED_AT`, `/methodology`는 `METHODOLOGY_UPDATED_AT`(둘 다 본문
+ *     상수), `/privacy`·`/terms`는 활성 약관 버전의
  *     발효일(`legalEffectiveDates`), news 계열은 그 버킷의 최신 기사
  *     `publishedAt`(`newsLatestPublishedAt`), `/backtesting`은 정적 데이터셋의
  *     마지막 진입일(`backtestingDataDate`)이다. 주입되지 않으면 4등급으로
@@ -92,6 +95,10 @@ function latestOf(
  *     떨어진다.
  *  4. **빌드 시점 고정**(`SITE_BUILD_DATE`) — 배포로만 바뀌는 페이지(home), 그리고
  *     1등급 값이 주입되지 않았을 때의 폴백(`/backtesting`·legal).
+ *
+ * 예외: `/symbols`는 **lastmod를 생략**한다. 본문이 상수 목록이라 배포로만 바뀌는데,
+ * 4등급 값(배포 시각)을 광고하면 목록이 그대로인 릴리스에서도 "방금 바뀜"을 주장한다
+ * (2026-10-04 감사). 정직한 시각이 없으면 말하지 않는다.
  *
  * `/market*`은 예전에 "1시간 슬라이딩, 정시로 내림"이었다. ISR revalidate가 1h라
  * 갱신 *주기*와는 맞았지만 lastmod가 주장하는 것은 주기가 아니라 **마지막 변경
@@ -235,12 +242,14 @@ export function buildStaticEntries(
         {
             /**
              * 종목 디렉터리. 목록은 상수(`POPULAR_TICKERS`·`POPULAR_CRYPTOS`)라
-             * **배포로만** 바뀌므로 lastmod가 배포 시각인 것이 정직하다.
+             * 배포로만 바뀐다. 예전에는 그래서 lastmod를 배포 시각으로 뒀으나,
+             * 목록이 실제로 바뀌지 않은 배포까지 "방금 바뀜"으로 나가 2026-10-04
+             * 감사에서 부정확한 신호로 판정했다 — **`lastModified`를 생략**한다
+             * (XML에 `<lastmod>`가 나가지 않는다).
              * priority는 허브(0.8)보다 낮게 둔다 — 이 페이지의 값은 자기 본문이
              * 아니라 종목 페이지로 내보내는 링크에 있다.
              */
             url: `${SITE_URL}/symbols`,
-            lastModified: SITE_BUILD_DATE,
             changeFrequency: 'monthly',
             priority: 0.6,
             alternates: sitemapAlternates('/symbols', STATIC_INDEXABLE_LOCALES),
@@ -287,6 +296,19 @@ export function buildStaticEntries(
             changeFrequency: 'yearly',
             priority: 0.4,
             alternates: sitemapAlternates(ABOUT_PATH, STATIC_INDEXABLE_LOCALES),
+        },
+        // `/methodology` — 분석 방법·데이터 출처·한계·정정 정책. `/about`과 같은
+        // 등급(YMYL 신뢰 앵커, 본문이 코드 상수라 lastmod도 `METHODOLOGY_UPDATED_AT`).
+        // 종목 산문 하단의 출처 고지(`AnalysisProvenanceNote`)가 이 페이지로 건다.
+        {
+            url: `${SITE_URL}${METHODOLOGY_PATH}`,
+            lastModified: METHODOLOGY_UPDATED_AT,
+            changeFrequency: 'yearly',
+            priority: 0.4,
+            alternates: sitemapAlternates(
+                METHODOLOGY_PATH,
+                STATIC_INDEXABLE_LOCALES
+            ),
         },
     ];
 }

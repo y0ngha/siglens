@@ -3,6 +3,7 @@ import {
     buildAllowedNumbers,
     salvageByRemovingSentences,
     describeFailure,
+    findAdvicePhrases,
     findUnsupportedNumbers,
     guardPlainText,
 } from '../lib/guardPlainText';
@@ -467,5 +468,146 @@ describe('buildAllowedNumbers — 크기 접미사 표기', () => {
 
         expect(allowed).toContain(12_700_000);
         expect(allowed).toContain(500_000);
+    });
+});
+
+/**
+ * 2026-10-04 운영 크롤에서 색인된 페이지에 실제로 남아 있던 문장들이다. 프롬프트가
+ * 조언을 금지해도 모델이 이런 문장을 만들었으므로 가드가 결과를 직접 검사한다.
+ */
+describe('findAdvicePhrases — 독자에게 행동을 권하거나 유불리를 평가하는 문장', () => {
+    const flagged = [
+        '그래서 지금 새로 사기에는 불리한 위치입니다.',
+        '추세는 살아 있지만 지금 진입하기에는 위치가 불리하다는 뜻입니다.',
+        '이는 진입 시점을 앞당길 근거가 아니라, 조정을 기다려야 하는 구간이라는 뜻입니다.',
+        '위쪽의 197.02달러 장애물이 아래쪽의 190.00달러 지지보다 가까워서, 지금 새로 들어가기에는 기다려야 할 근거가 더 큽니다.',
+        '지금 가격은 이미 많이 오른 구간의 위쪽에 있어서, 급하게 따라 사기보다는 한 번 눌렸을 때를 확인하는 편이 나은 자리입니다.',
+        '나눠서 사는 편이 낫습니다.',
+        '관망하세요.',
+        '분할 매수하세요.',
+        // 2026-10-04 실모델 A/B(새 프롬프트)에서 가드를 빠져나간 문장
+        '이렇게 한 방향으로 꾸준히 움직이는 국면에서는 반대로 베팅하는 것이 통계적으로 불리합니다.',
+        '확인한 뒤에 움직이는 것이 합리적입니다.',
+    ];
+    const clean = [
+        '다만 지금 당장 급하게 팔려는 움직임이 몰리고 있다는 판정은 아니고, 사야 할 조건도 팔아야 할 조건도 아직 충족되지 않았습니다.',
+        '여러 신호를 종합한 점수는 100점 만점에 54점이고, 지금 당장 사거나 팔아야 한다는 신호는 나오지 않았습니다.',
+        '다만 이런 신호들은 지금 벌어지는 상황을 설명해 줄 뿐, 사야 한다거나 팔아야 한다는 뜻은 아닙니다.',
+        '모건스탠리는 이 회사를 반도체 부문 최고 추천 종목으로 다시 꼽고 12개월 목표주가를 제시했습니다.',
+        '한 증권사는 다른 반도체 회사를 추천하면서 이 회사에는 신중한 태도를 보였다고 전해졌습니다.',
+        '사모시장과 기술, 인공지능 인프라 쪽으로 사업을 넓히고 있다는 점을 근거로 목표주가 1,256달러를 제시한 매수 추천도 나왔습니다.',
+        '222.27달러에는 같은 가격대에서 매수하려는 물량이 몰려 있어, 이 아래로 내려가면 추가 하락 요인이 됩니다.',
+        '거래량도 최근 20일 평균의 절반에도 못 미치는 수준으로 줄어 관망하는 사람이 많다는 뜻입니다.',
+        '오히려 가격이 다시 위쪽 고점을 향해 반등했기 때문에, 지금은 하락으로 돌아선 것이 아니라 오르는 흐름 중간에 한 번 쉬어간 것으로 보는 편이 맞습니다.',
+        '뚜렷한 약세 신호는 없지만, 아직 진입 조건이 충족되지는 않았습니다.',
+        '325.81달러 아래로 내려가면 이 흐름은 깨진 것으로 봅니다.',
+        // 같은 A/B의 정상 문장 — 구조의 유불리, "불리는데"(호칭)는 행동 평가가 아니다
+        '위쪽까지의 거리와 아래쪽까지의 거리를 견주면 1.04로, 어느 쪽도 유리하지 않은 중립 상태입니다.',
+        '이런 상태는 보통 한 차례 씻어내는 국면으로 불리는데, 과거에는 이런 자리에서 평균적으로 반등이 나왔습니다.',
+        // 형용사 어간이 명사·동사의 접두로 쓰인 경우(리뷰 2라운드)
+        '금값이 오르는 것이 안전자산 수요 때문입니다.',
+        '가격이 내려가는 것이 시장에서 불리는 이름이 있습니다.',
+        '가격이 지지선 위에 머무는 것이 확인되면 흐름이 이어집니다.',
+    ];
+    // 숫자 가드를 통과시키기 위해 픽스처에 든 가격을 모두 허용한다.
+    const allowed = [197.02, 190, 222.27, 325.81, 1256, 100, 54, 20, 12, 1.04];
+
+    it.each(flagged)('걸러낸다: %s', sentence => {
+        expect(findAdvicePhrases(sentence)).not.toEqual([]);
+        expect(guardPlainText({ text: sentence, allowed })).toEqual({
+            kind: 'advice',
+            tokens: findAdvicePhrases(sentence),
+        });
+    });
+
+    it.each(clean)('걸러내지 않는다: %s', sentence => {
+        expect(findAdvicePhrases(sentence)).toEqual([]);
+        expect(guardPlainText({ text: sentence, allowed })).toBeNull();
+    });
+
+    it('일치한 부분 문자열을 돌려준다', () => {
+        expect(findAdvicePhrases('지금 새로 사기에는 불리합니다.')).toContain(
+            '사기에는'
+        );
+        expect(findAdvicePhrases('나눠서 사는 편이 낫습니다.')).toContain(
+            '는 편이 낫'
+        );
+    });
+
+    it('다른 단어 안의 `사기에는`은 잡지 않는다', () => {
+        expect(findAdvicePhrases('유사기에는 차이가 있습니다.')).toEqual([]);
+    });
+
+    it('ko가 아닌 로케일은 항상 빈 배열이다', () => {
+        for (const locale of ['en', 'ja', 'zh']) {
+            expect(
+                findAdvicePhrases('지금 새로 사기에는 불리합니다.', locale)
+            ).toEqual([]);
+        }
+    });
+
+    it('guardPlainText도 ko가 아니면 advice를 보고하지 않는다', () => {
+        const failure = guardPlainText({
+            text: '지금 새로 사기에는 불리합니다.',
+            allowed,
+            locale: 'en',
+        });
+        expect(failure?.kind).not.toBe('advice');
+    });
+
+    it('숫자 오류와 조언이 함께 있으면 unsupported_numbers가 먼저다', () => {
+        expect(
+            guardPlainText({
+                text: '목표가 999.99달러이고 지금 새로 사기에는 불리합니다.',
+                allowed,
+            })?.kind
+        ).toBe('unsupported_numbers');
+    });
+});
+
+describe('describeFailure — advice', () => {
+    it('위반 토큰을 담고 베낄 예시 문장은 담지 않는다', () => {
+        const message = describeFailure({
+            kind: 'advice',
+            tokens: ['사기에는'],
+        });
+        expect(message).toContain('사기에는');
+        expect(message).not.toContain('"');
+        expect(message).not.toContain('불리한 위치');
+        expect(message).not.toContain('오를 때 얻는 것보다');
+    });
+});
+
+describe('salvageByRemovingSentences — 조언 문장', () => {
+    const allowed = [183.6];
+
+    it('조언 문장만 도려내고 나머지 두 문장을 살린다', () => {
+        const text =
+            '지지선은 183.60달러입니다. 그래서 지금 새로 사기에는 불리한 위치입니다. 이 아래로 내려가면 흐름이 깨집니다.';
+        expect(salvageByRemovingSentences(text, allowed)).toBe(
+            '지지선은 183.60달러입니다. 이 아래로 내려가면 흐름이 깨집니다.'
+        );
+    });
+
+    it('모든 문장이 조언이면 null', () => {
+        expect(
+            salvageByRemovingSentences(
+                '관망하세요. 나눠서 사는 편이 낫습니다.',
+                allowed
+            )
+        ).toBeNull();
+    });
+
+    it('숫자 위반과 조언을 함께 도려낸다', () => {
+        const out = salvageByRemovingSentences(
+            '지지선은 183.60달러입니다. 목표가 999.99달러입니다. 관망하세요.',
+            allowed
+        );
+        expect(out).toBe('지지선은 183.60달러입니다.');
+    });
+
+    it('조언이 없으면 원문을 그대로 돌려준다', () => {
+        const text = '지지선은 183.60달러입니다. 이 아래로 내려가면 깨집니다.';
+        expect(salvageByRemovingSentences(text, allowed)).toBe(text);
     });
 });

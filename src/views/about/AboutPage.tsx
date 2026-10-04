@@ -5,7 +5,11 @@ import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { localePath, type Locale } from '@/shared/i18n/locales';
 import { cn } from '@/shared/lib/cn';
 import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
-import { SITE_OPERATOR, TERMS_PATH } from '@/shared/lib/legal';
+import {
+    METHODOLOGY_PATH,
+    SITE_OPERATOR,
+    TERMS_PATH,
+} from '@/shared/lib/legal';
 import { GITHUB_URL, SITE_HOST, type FaqItem } from '@/shared/lib/seo';
 import { SURFACE_CARD, SURFACE_NESTED } from '@/shared/lib/surfaceStyles';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
@@ -535,15 +539,26 @@ export async function AboutPage({
                             <li>{t('method.freshRefresh')}</li>
                             <li>{t('method.freshMember')}</li>
                         </ul>
-                        <LocaleLink
-                            href="/backtesting"
-                            className={cn(
-                                TEXT_LINK,
-                                'mt-3 inline-flex min-h-8 items-center text-sm'
-                            )}
-                        >
-                            {t('method.backtest')}
-                        </LocaleLink>
+                        <div className="mt-3 flex flex-wrap items-center gap-x-5">
+                            <LocaleLink
+                                href={METHODOLOGY_PATH}
+                                className={cn(
+                                    TEXT_LINK,
+                                    'inline-flex min-h-11 items-center text-sm'
+                                )}
+                            >
+                                {t('method.methodology')}
+                            </LocaleLink>
+                            <LocaleLink
+                                href="/backtesting"
+                                className={cn(
+                                    TEXT_LINK,
+                                    'inline-flex min-h-11 items-center text-sm'
+                                )}
+                            >
+                                {t('method.backtest')}
+                            </LocaleLink>
+                        </div>
                     </div>
                 </AboutSection>
 

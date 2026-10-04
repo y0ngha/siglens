@@ -23,9 +23,13 @@ import {
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { AnalysisProvenanceNote } from '../snapshot/AnalysisProvenanceNote';
 
 interface FearGreedFactsSummaryProps {
     symbol: string;
+    /** 출처 고지(`AnalysisProvenanceNote`)가 시장별 데이터 출처를 고르는 데 쓴다. */
+    marketProfile: MarketProfileId;
     bars: Bar[];
     buySellVolume: BuySellVolumeResult[];
 }
@@ -40,6 +44,7 @@ interface FearGreedFactsSummaryProps {
  */
 export function FearGreedFactsSummary({
     symbol,
+    marketProfile,
     bars,
     buySellVolume,
 }: FearGreedFactsSummaryProps) {
@@ -121,17 +126,8 @@ export function FearGreedFactsSummary({
                     </span>
                 )}
             </h2>
-            <dl className="grid grid-cols-1 gap-2 text-sm text-secondary-300">
-                <div className="flex justify-between gap-4">
-                    <dt className="text-secondary-400">
-                        {t('FearGreedFactsSummary.fa167e')}
-                    </dt>
-                    <dd>
-                        {score} / 100 (
-                        {tLabel(SENTIMENT_LABEL_KEY[snapshot.label])})
-                    </dd>
-                </div>
-            </dl>
+            {/* 서술 문장이 점수 행(`<dl>`)보다 DOM에서 앞서야 한다 — 네이버가 본문
+                첫 텍스트로 스니펫을 만든다(`TechnicalFactsSummary`와 같은 이유, 2026-10-04). */}
             <div className="space-y-1 text-sm leading-6 text-secondary-300">
                 {timeSeriesLines.map(line => (
                     <p key={line}>{line}</p>
@@ -145,12 +141,28 @@ export function FearGreedFactsSummary({
                     <p key={`line-${i}-${line}`}>{line}</p>
                 ))}
             </div>
+            <dl className="grid grid-cols-1 gap-2 text-sm text-secondary-300">
+                <div className="flex justify-between gap-4">
+                    <dt className="text-secondary-400">
+                        {t('FearGreedFactsSummary.fa167e')}
+                    </dt>
+                    <dd>
+                        {score} / 100 (
+                        {tLabel(SENTIMENT_LABEL_KEY[snapshot.label])})
+                    </dd>
+                </div>
+            </dl>
             <p className="text-xs text-secondary-400">
                 {tFearGreed('confidenceFooter', {
                     v0: snapshot.sampleSize,
                     v1: tFearGreed(confidenceLabelKey(snapshot.confidence)),
                 })}
             </p>
+            {/* AI 서술 없이 규칙으로만 계산한 점수라는 고지. 요약 문장 전부 아래에 둔다. */}
+            <AnalysisProvenanceNote
+                marketProfile={marketProfile}
+                variant="rule-based"
+            />
         </section>
     );
 }

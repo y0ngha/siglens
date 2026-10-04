@@ -4,9 +4,25 @@ vi.mock('@/shared/lib/seo', () => ({
     SITE_URL: 'https://siglens.io',
 }));
 
+/**
+ * `/about`과 `/methodology`의 갱신일을 **서로 다르게** 만든다. 실제 상수가 같은 날이면
+ * "methodology가 about의 상수를 lastmod로 쓰는" 배선 오류가 테스트를 그대로 통과한다.
+ * 부분 목이라 경로·갱신일 외의 `legal` 값은 실제 구현을 쓴다.
+ */
+vi.mock('@/shared/lib/legal', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/lib/legal')>()),
+    METHODOLOGY_UPDATED_AT: new Date('2026-10-07T00:00:00+09:00'),
+}));
+
 import { buildStaticEntries } from '../lib/buildStaticEntries';
 import { SITE_URL } from '@/shared/lib/seo';
-import { ABOUT_UPDATED_AT } from '@/shared/lib/legal';
+import {
+    ABOUT_UPDATED_AT,
+    METHODOLOGY_PATH,
+    METHODOLOGY_UPDATED_AT,
+} from '@/shared/lib/legal';
+import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
+import { sitemapAlternates } from '../lib/sitemapAlternates';
 import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
 import { ALL_NAV_REGION_LINKS } from '@/shared/config/assetClassNav';
@@ -50,9 +66,10 @@ describe('buildStaticEntries', () => {
     /**
      * `/symbols`(종목 디렉터리)는 sitemap에 실려야 한다 — 이 페이지 자체가 색인
      * 대상이라서가 아니라, 크롤러가 여기서 종목 링크를 받아 가기 때문이다.
-     * 목록은 상수라 배포로만 바뀌므로 lastmod가 빌드 시각인 것이 정직하다.
+     * 목록은 상수라 배포로만 바뀐다 — 배포 시각을 광고하면 목록이 그대로인 릴리스도
+     * "방금 바뀜"이 되므로 lastmod를 **생략**한다(2026-10-04 감사).
      */
-    it('/symbols는 monthly·priority 0.6, 빌드 시각을 lastmod로 쓴다', () => {
+    it('/symbols는 monthly·priority 0.6이고 lastmod를 내지 않는다', () => {
         const entry = buildStaticEntries(NOW).find(
             e => e.url === `${SITE_URL}/symbols`
         );
@@ -61,9 +78,16 @@ describe('buildStaticEntries', () => {
         expect(entry?.changeFrequency).toBe('monthly');
         // 허브(0.8)보다 낮다 — 값이 자기 본문이 아니라 내보내는 링크에 있다.
         expect(entry?.priority).toBe(0.6);
-        expect(entry?.lastModified).toEqual(
-            new Date('2025-01-01T00:00:00.000Z')
-        );
+        expect(entry).toBeDefined();
+        expect(entry).not.toHaveProperty('lastModified');
+    });
+
+    it('lastmod 생략은 /symbols 하나뿐이다 — 나머지 엔트리는 모두 시각을 가진다', () => {
+        const withoutLastmod = buildStaticEntries(NOW)
+            .filter(e => e.lastModified === undefined)
+            .map(e => e.url);
+
+        expect(withoutLastmod).toEqual([`${SITE_URL}/symbols`]);
     });
 
     it('/fear-greed는 daily·priority 0.8, 직전 마감 세션을 lastmod로 사용한다', () => {
@@ -72,11 +96,11 @@ describe('buildStaticEntries', () => {
         expect(fearGreed).toBeDefined();
         expect(fearGreed!.changeFrequency).toBe('daily');
         expect(fearGreed!.priority).toBe(0.8);
-        expect(fearGreed!.lastModified.getTime()).toBe(
+        expect(fearGreed!.lastModified?.getTime()).toBe(
             lastClosedSessionCloseUtc(US_EQUITY_SESSION, NOW).getTime()
         );
         // 요청 시각을 그대로 쓰면 크롤러가 가져갈 때마다 freshness가 갱신된다.
-        expect(fearGreed!.lastModified.getTime()).toBeLessThan(NOW.getTime());
+        expect(fearGreed!.lastModified?.getTime()).toBeLessThan(NOW.getTime());
     });
 
     it('/fear-greed lastmod는 같은 세션 안에서 호출 시각이 달라도 동일하다', () => {
@@ -85,7 +109,9 @@ describe('buildStaticEntries', () => {
         const a = buildStaticEntries(new Date('2026-05-23T00:10:00.000Z'));
         const b = buildStaticEntries(new Date('2026-05-23T23:50:00.000Z'));
         const pick = (es: ReturnType<typeof buildStaticEntries>) =>
-            es.find(e => e.url.endsWith('/fear-greed'))!.lastModified.getTime();
+            es
+                .find(e => e.url.endsWith('/fear-greed'))!
+                .lastModified?.getTime();
         expect(pick(a)).toBe(pick(b));
     });
 
@@ -116,7 +142,7 @@ describe('buildStaticEntries', () => {
         const entries = buildStaticEntries(NOW);
         const market = entries.find(e => e.url.endsWith('/market'));
         expect(market).toBeDefined();
-        expect(market!.lastModified.getTime()).toBe(
+        expect(market!.lastModified?.getTime()).toBe(
             lastClosedSessionCloseUtc(US_EQUITY_SESSION, NOW).getTime()
         );
         expect(market!.changeFrequency).toBe('hourly');
@@ -126,10 +152,10 @@ describe('buildStaticEntries', () => {
         const entries = buildStaticEntries(NOW);
         const marketKr = entries.find(e => e.url.endsWith('/market/kr'));
         expect(marketKr).toBeDefined();
-        expect(marketKr!.lastModified.getTime()).toBe(
+        expect(marketKr!.lastModified?.getTime()).toBe(
             lastClosedSessionCloseUtc(KR_EQUITY_SESSION, NOW).getTime()
         );
-        expect(marketKr!.lastModified.getTime()).not.toBe(
+        expect(marketKr!.lastModified?.getTime()).not.toBe(
             lastClosedSessionCloseUtc(US_EQUITY_SESSION, NOW).getTime()
         );
     });
@@ -145,7 +171,7 @@ describe('buildStaticEntries', () => {
         const marketOf = (now: Date) =>
             buildStaticEntries(now)
                 .find(e => e.url.endsWith('/market'))!
-                .lastModified.getTime();
+                .lastModified?.getTime();
 
         expect(marketOf(saturdayMorning)).toBe(marketOf(saturdayNight));
         expect(marketOf(saturdayNight)).toBe(
@@ -164,10 +190,10 @@ describe('buildStaticEntries', () => {
         const market = buildStaticEntries(holiday).find(e =>
             e.url.endsWith('/market')
         );
-        expect(market!.lastModified.getTime()).toBe(
+        expect(market!.lastModified?.getTime()).toBe(
             lastClosedSessionCloseUtc(US_EQUITY_SESSION, holiday).getTime()
         );
-        expect(market!.lastModified.getUTCFullYear()).toBe(2025);
+        expect(market!.lastModified?.getUTCFullYear()).toBe(2025);
     });
 
     it('home은 priority 1.0, monthly로 둔다', () => {
@@ -198,12 +224,31 @@ describe('buildStaticEntries', () => {
         expect(about[0].priority).toBe(0.4);
     });
 
+    it('/methodology는 /about과 같은 yearly, priority 0.4이고 /about 바로 뒤에 온다', () => {
+        const entries = buildStaticEntries(NOW);
+        const methodology = entries.filter(e => e.url.endsWith('/methodology'));
+        expect(methodology).toHaveLength(1);
+        expect(methodology[0].url).toBe('https://siglens.io/methodology');
+        expect(methodology[0].changeFrequency).toBe('yearly');
+        expect(methodology[0].priority).toBe(0.4);
+        const aboutIndex = entries.findIndex(e => e.url.endsWith('/about'));
+        expect(entries[aboutIndex + 1]?.url).toBe(methodology[0].url);
+    });
+
+    it('/methodology의 alternates는 /about과 같은 규칙(색인 로케일 집합)에서 파생된다', () => {
+        const entries = buildStaticEntries(NOW);
+        const methodology = entries.find(e => e.url.endsWith('/methodology'));
+        expect(methodology?.alternates).toEqual(
+            sitemapAlternates(METHODOLOGY_PATH, STATIC_INDEXABLE_LOCALES)
+        );
+    });
+
     it('/news hub과 5개 카테고리 entries는 UTC 일 경계를 lastModified로 사용한다', () => {
         const startOfDay = new Date('2026-05-23T00:00:00.000Z');
         const entries = buildStaticEntries(NOW);
         const newsHub = entries.find(e => e.url === `${SITE_URL}/news`);
         expect(newsHub).toBeDefined();
-        expect(newsHub!.lastModified.getTime()).toBe(startOfDay.getTime());
+        expect(newsHub!.lastModified?.getTime()).toBe(startOfDay.getTime());
 
         for (const slug of [
             'general',
@@ -214,7 +259,7 @@ describe('buildStaticEntries', () => {
         ]) {
             const cat = entries.find(e => e.url === `${SITE_URL}/news/${slug}`);
             expect(cat).toBeDefined();
-            expect(cat!.lastModified.getTime()).toBe(startOfDay.getTime());
+            expect(cat!.lastModified?.getTime()).toBe(startOfDay.getTime());
         }
     });
 
@@ -225,7 +270,7 @@ describe('buildStaticEntries', () => {
     it('어떤 엔트리도 요청 시각을 그대로 lastmod로 쓰지 않는다', () => {
         const entries = buildStaticEntries(NOW);
         const usingNow = entries.filter(
-            e => e.lastModified.getTime() === NOW.getTime()
+            e => e.lastModified?.getTime() === NOW.getTime()
         );
         expect(usingNow).toEqual([]);
     });
@@ -234,7 +279,19 @@ describe('buildStaticEntries', () => {
         const about = buildStaticEntries(NOW).find(e =>
             e.url.endsWith('/about')
         );
-        expect(about!.lastModified.getTime()).toBe(ABOUT_UPDATED_AT.getTime());
+        expect(about!.lastModified?.getTime()).toBe(ABOUT_UPDATED_AT.getTime());
+    });
+
+    it('/methodology는 본문 갱신 상수(METHODOLOGY_UPDATED_AT)를 lastmod로 쓴다', () => {
+        const methodology = buildStaticEntries(NOW).find(e =>
+            e.url.endsWith('/methodology')
+        );
+        expect(methodology?.lastModified?.getTime()).toBe(
+            METHODOLOGY_UPDATED_AT.getTime()
+        );
+        expect(methodology?.lastModified?.getTime()).not.toBe(
+            ABOUT_UPDATED_AT.getTime()
+        );
     });
 });
 
@@ -282,7 +339,7 @@ describe('buildStaticEntries — 주입된 콘텐츠 갱신 시각', () => {
             newsLatestPublishedAt: { crypto: CRYPTO_NEWS_AT },
         });
         const crypto = entries.find(e => e.url === `${SITE_URL}/news/crypto`);
-        expect(crypto!.lastModified.getTime()).toBe(CRYPTO_NEWS_AT.getTime());
+        expect(crypto!.lastModified?.getTime()).toBe(CRYPTO_NEWS_AT.getTime());
     });
 
     it('주입되지 않은 카테고리는 UTC 일 경계로 떨어진다', () => {
@@ -290,7 +347,7 @@ describe('buildStaticEntries — 주입된 콘텐츠 갱신 시각', () => {
             newsLatestPublishedAt: { crypto: CRYPTO_NEWS_AT },
         });
         const general = entries.find(e => e.url === `${SITE_URL}/news/general`);
-        expect(general!.lastModified.getTime()).toBe(
+        expect(general!.lastModified?.getTime()).toBe(
             new Date('2026-05-23T00:00:00.000Z').getTime()
         );
     });
@@ -309,8 +366,8 @@ describe('buildStaticEntries — 주입된 콘텐츠 갱신 시각', () => {
         });
         const hub = entries.find(e => e.url === `${SITE_URL}/news`);
         const us = entries.find(e => e.url === `${SITE_URL}/news/us`);
-        expect(hub!.lastModified.getTime()).toBe(CRYPTO_NEWS_AT.getTime());
-        expect(us!.lastModified.getTime()).toBe(STOCK_NEWS_AT.getTime());
+        expect(hub!.lastModified?.getTime()).toBe(CRYPTO_NEWS_AT.getTime());
+        expect(us!.lastModified?.getTime()).toBe(STOCK_NEWS_AT.getTime());
     });
 
     /**
@@ -365,12 +422,12 @@ describe('buildStaticEntries — 주입된 콘텐츠 갱신 시각', () => {
         expect(
             withData
                 .find(e => e.url === `${SITE_URL}/backtesting`)!
-                .lastModified.getTime()
+                .lastModified?.getTime()
         ).toBe(dataAt.getTime());
         expect(
             withoutData
                 .find(e => e.url === `${SITE_URL}/backtesting`)!
-                .lastModified.getTime()
+                .lastModified?.getTime()
         ).toBe(new Date('2025-01-01T00:00:00.000Z').getTime());
     });
 
@@ -381,7 +438,7 @@ describe('buildStaticEntries — 주입된 콘텐츠 갱신 시각', () => {
     it('/economy는 배포 시각이 아니라 UTC 일 경계를 쓴다', () => {
         const entries = buildStaticEntries(NOW);
         const economy = entries.find(e => e.url === `${SITE_URL}/economy`);
-        expect(economy!.lastModified.getTime()).toBe(
+        expect(economy!.lastModified?.getTime()).toBe(
             new Date('2026-05-23T00:00:00.000Z').getTime()
         );
     });
@@ -393,8 +450,8 @@ describe('buildStaticEntries — 주입된 콘텐츠 갱신 시각', () => {
         });
         const terms = entries.find(e => e.url === `${SITE_URL}/terms`);
         const privacy = entries.find(e => e.url === `${SITE_URL}/privacy`);
-        expect(terms!.lastModified.getTime()).toBe(tosAt.getTime());
-        expect(privacy!.lastModified.getTime()).toBe(
+        expect(terms!.lastModified?.getTime()).toBe(tosAt.getTime());
+        expect(privacy!.lastModified?.getTime()).toBe(
             new Date('2025-01-01T00:00:00.000Z').getTime()
         );
     });

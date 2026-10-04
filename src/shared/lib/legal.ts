@@ -14,6 +14,7 @@ export const INVESTMENT_DISCLAIMER_KEY = 'investmentDisclaimer';
 export const PRIVACY_PATH = '/privacy';
 export const TERMS_PATH = '/terms';
 export const ABOUT_PATH = '/about';
+export const METHODOLOGY_PATH = '/methodology';
 
 /**
  * 운영 주체 — `/about` 본문·`Person` JSON-LD·홈 `Organization.founder`가 공유하는
@@ -25,13 +26,33 @@ export const SITE_OPERATOR = {
     name: 'y0ngha',
     email: 'dev.y0ngha@gmail.com',
     githubUrl: 'https://github.com/y0ngha',
+    // 운영자 개인 블로그 — 실명 운영 주체의 외부 프로필로 `sameAs`에 싣는다.
+    velogUrl: 'https://velog.io/@y0ngha',
 } as const;
+
+/**
+ * 홈 `Organization.founder`와 `/about` `Person`이 공유하는 `sameAs`.
+ * 두 노드는 `@id`가 같아 크롤러가 하나의 개체로 합치므로, 배열이 갈리면
+ * 같은 사람이 서로 다른 프로필 목록을 주장하게 된다 — 한 상수로 묶는다.
+ */
+export const OPERATOR_SAME_AS: readonly string[] = [
+    SITE_OPERATOR.githubUrl,
+    SITE_OPERATOR.velogUrl,
+];
 
 /**
  * `/about` 본문 마지막 갱신일 — 본문(`messages/*.json`의 `views.about`)을 고치면
  * 함께 올린다. 화면 하단 "마지막 업데이트"와 `AboutPage.dateModified`가 읽는다.
  */
-export const ABOUT_UPDATED_AT = new Date('2026-09-24T00:00:00+09:00');
+export const ABOUT_UPDATED_AT = new Date('2026-10-04T00:00:00+09:00');
+
+/**
+ * `/methodology` 본문 마지막 갱신일 — 본문(`messages/*.json`의 `views.methodology`)이나
+ * 변경 이력(`views/methodology/lib/methodologyChangelog.ts`)을 고치면 함께 올린다.
+ * 화면 하단 "마지막 업데이트", JSON-LD `WebPage.dateModified`, 정적 sitemap `lastmod`가
+ * 이 값 하나를 읽는다 — 배포 시각을 쓰면 본문을 안 고친 배포까지 "갱신됨"으로 나간다.
+ */
+export const METHODOLOGY_UPDATED_AT = new Date('2026-10-04T00:00:00+09:00');
 
 /**
  * `/about`의 `Person` 노드와 홈 `Organization.founder`가 공유하는 `@id`.
@@ -80,6 +101,20 @@ export function aboutFullTitle(t: SeoTranslator): string {
 }
 export function aboutDescription(t: SeoTranslator): string {
     return t('about.description');
+}
+
+export function methodologyTitle(t: SeoTranslator): string {
+    return t('methodology.title');
+}
+/**
+ * `<title>`·OG 제목. `/about`과 같은 이유로 `| Siglens` 접미사를 붙이지 않는다 —
+ * 카탈로그 문구가 이미 `Siglens`로 시작한다.
+ */
+export function methodologyFullTitle(t: SeoTranslator): string {
+    return t('methodology.metaTitle');
+}
+export function methodologyDescription(t: SeoTranslator): string {
+    return t('methodology.description');
 }
 
 /**
