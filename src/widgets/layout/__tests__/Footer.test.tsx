@@ -25,6 +25,8 @@ vi.mock('@/shared/lib/legal', () => ({
     ABOUT_PATH: '/about',
     aboutTitle: () => 'Siglens 소개',
     INVESTMENT_DISCLAIMER_KEY: 'investmentDisclaimer',
+    METHODOLOGY_PATH: '/methodology',
+    methodologyTitle: () => '분석 방법',
     PRIVACY_PATH: '/privacy',
     privacyTitle: () => '개인정보처리방침',
     TERMS_PATH: '/terms',
@@ -41,7 +43,7 @@ import {
 } from '@/shared/config/assetClassNav';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { localePath } from '@/shared/i18n/locales';
-import { GITHUB_URL, SITE_NAME } from '@/shared/lib/seo';
+import { GITHUB_URL, SITE_NAME, X_URL } from '@/shared/lib/seo';
 import { koMessage } from '@/shared/test-utils/koMessage';
 import en from '../../../../messages/en.json';
 import ja from '../../../../messages/ja.json';
@@ -74,6 +76,23 @@ describe('Footer', () => {
         expect(link).toHaveTextContent('SIGLENS 소개');
         expect(link).not.toHaveTextContent('Siglens 소개');
         expect(link).toHaveAttribute('href', '/about');
+    });
+
+    /**
+     * 분석 방법 링크는 산문 하단의 출처 고지와 `/about`이 향하는 페이지로 가는
+     * **전역 입구**다. 소개 바로 뒤에 있고(`내비 순서`), 지워지면 `/methodology`는
+     * sitemap 말고는 크롤 경로가 없는 고아가 된다.
+     */
+    it('renders the methodology link right after the about link', () => {
+        render(<Footer />);
+
+        const info = screen.getByRole('navigation', { name: '사이트 정보' });
+        const links = within(info).getAllByRole('link');
+        const about = links.findIndex(a => a.getAttribute('href') === '/about');
+        expect(about).toBeGreaterThanOrEqual(0);
+        const link = links[about + 1]!;
+        expect(link).toHaveAttribute('href', '/methodology');
+        expect(link).toHaveAccessibleName('분석 방법');
     });
 
     /**
@@ -223,6 +242,43 @@ describe('Footer', () => {
     });
 
     /**
+     * X 계정 링크. GitHub 링크 바로 뒤의 아이콘 전용 링크라 접근 가능한 이름이
+     * `aria-label` 하나뿐이다 — 이름이 빠지면 스크린리더는 "링크"만 읽는다.
+     * 터치 영역은 아이콘(20px)이 아니라 링크 상자(`size-11` = 44px)가 진다.
+     */
+    it('X 계정 링크는 새 탭으로 열고 opener를 끊으며 이름이 있다', () => {
+        render(<Footer />);
+
+        const link = screen.getByRole('link', { name: /X\(트위터\) 계정/ });
+        expect(link).toHaveAttribute('href', X_URL);
+        expect(link).toHaveAttribute('target', '_blank');
+        expect(link.getAttribute('rel')?.split(' ').toSorted()).toEqual([
+            'noopener',
+            'noreferrer',
+        ]);
+        expect(link).toHaveAccessibleName(
+            koMessage('widgets.layout.xAccountAria').replace('{v0}', SITE_NAME)
+        );
+    });
+
+    it('X 아이콘은 장식이고 링크 상자가 44px 터치 영역이다', () => {
+        render(<Footer />);
+
+        const link = screen.getByRole('link', { name: /X\(트위터\) 계정/ });
+        expect(link.querySelector('svg')).toHaveAttribute(
+            'aria-hidden',
+            'true'
+        );
+        expect(link.className.split(/\s+/)).toEqual(
+            expect.arrayContaining(['size-11', '-m-3'])
+        );
+    });
+
+    it('X_URL은 https x.com 프로필 주소다', () => {
+        expect(X_URL).toBe('https://x.com/siglens_io');
+    });
+
+    /**
      * 위 테스트는 상수를 import하므로 **배선만** 본다 — 상수 자체가 엉뚱한 값으로
      * 바뀌면 그대로 통과한다. 값의 정확한 저장소 경로는 단위 테스트가 판단할 수
      * 없지만 **형태**는 판단할 수 있으므로, 그 층만 따로 붙든다.
@@ -306,5 +362,28 @@ describe('shared.seo.about.title 카탈로그', () => {
         ['zh', zh],
     ])('%s 카탈로그는 SITE_NAME을 담고 있다', (_locale, messages) => {
         expect(messages.shared.seo.about.title).toContain(SITE_NAME);
+    });
+});
+
+/**
+ * 푸터가 쓰는 두 새 문구는 `Footer.test.tsx`의 다른 테스트가 ko로만 읽는다 —
+ * 네 로케일 모두에 있고 인자 자리가 남아 있어야 비-ko 푸터가 키 문자열이나
+ * 한국어를 내지 않는다.
+ */
+describe('푸터의 분석 방법·X 계정 카탈로그', () => {
+    it.each([
+        ['ko', ko],
+        ['en', en],
+        ['ja', ja],
+        ['zh', zh],
+    ])('%s: 분석 방법 제목과 X 계정 이름이 있다', (locale, messages) => {
+        const title = messages.shared.seo.methodology.title;
+        const aria = messages.widgets.layout.xAccountAria;
+        expect(title.length).toBeGreaterThan(0);
+        expect(aria).toContain('{v0}');
+        if (locale !== 'ko') {
+            expect(title).not.toMatch(/[가-힣]/);
+            expect(aria).not.toMatch(/[가-힣]/);
+        }
     });
 });

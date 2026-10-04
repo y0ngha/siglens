@@ -112,6 +112,24 @@ describe('AboutPage', () => {
         ).toHaveAttribute('href', '/terms');
     });
 
+    it('links the method section to the methodology page', async () => {
+        await renderPage();
+        const methodSection = screen
+            .getByRole('heading', { name: ko.views.about.method.title })
+            .closest('section')!;
+        expect(
+            within(methodSection).getByRole('link', {
+                name: ko.views.about.method.methodology,
+            })
+        ).toHaveAttribute('href', '/methodology');
+        // The existing backtesting link stays next to it.
+        expect(
+            within(methodSection).getByRole('link', {
+                name: ko.views.about.method.backtest,
+            })
+        ).toHaveAttribute('href', '/backtesting');
+    });
+
     it('lists eight data tiles, each linking into a real ticker tab', async () => {
         await renderPage();
         const tiles = screen.getAllByRole('heading', { level: 3 });

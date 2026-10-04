@@ -239,6 +239,7 @@ describe('Ticker 케이스 정규화 — 소문자/혼합 케이스 → 대문�
         '/terms',
         '/privacy',
         '/about',
+        '/methodology',
         '/account',
         '/news',
         '/portfolio',

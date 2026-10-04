@@ -13,6 +13,12 @@ import {
     aboutTitle,
     aboutFullTitle,
     aboutDescription,
+    ABOUT_UPDATED_AT,
+    METHODOLOGY_PATH,
+    METHODOLOGY_UPDATED_AT,
+    methodologyTitle,
+    methodologyFullTitle,
+    methodologyDescription,
     formatKoreanDate,
 } from '@/shared/lib/legal';
 import { SITE_NAME, type SeoTranslator } from '@/shared/lib/seo';
@@ -97,6 +103,37 @@ describe('legal constants', () => {
 
     it('aboutDescription(t) includes site name', () => {
         expect(aboutDescription(t)).toContain(SITE_NAME);
+    });
+
+    it('METHODOLOGY_PATH is /methodology', () => {
+        expect(METHODOLOGY_PATH).toBe('/methodology');
+    });
+
+    /**
+     * `/methodology`도 `/about`처럼 `Siglens`로 이미 시작하는 전용 metaTitle을 쓴다 —
+     * 레이아웃 템플릿(`| Siglens`)을 타면 브랜드가 두 번 붙는다.
+     */
+    it('methodologyTitle(t) is the short Korean title the footer and breadcrumb show', () => {
+        expect(methodologyTitle(t)).toBe('분석 방법');
+    });
+
+    it('methodologyFullTitle(t)은 Siglens로 시작하고 methodologyTitle과 다르다', () => {
+        expect(methodologyFullTitle(t)).not.toBe(methodologyTitle(t));
+        expect(methodologyFullTitle(t).startsWith(SITE_NAME)).toBe(true);
+    });
+
+    it('methodologyDescription(t) is a non-empty description', () => {
+        expect(methodologyDescription(t).length).toBeGreaterThan(50);
+    });
+
+    it.each([
+        ['ABOUT_UPDATED_AT', ABOUT_UPDATED_AT],
+        ['METHODOLOGY_UPDATED_AT', METHODOLOGY_UPDATED_AT],
+    ])('%s는 유효한 KST 자정(= 전날 15:00 UTC)이다', (_name, date) => {
+        expect(Number.isNaN(date.getTime())).toBe(false);
+        expect(date.getUTCHours()).toBe(15);
+        expect(date.getUTCMinutes()).toBe(0);
+        expect(date.getUTCSeconds()).toBe(0);
     });
 });
 

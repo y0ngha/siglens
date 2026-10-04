@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 
 describe('SnapshotSummarySection', () => {
@@ -442,6 +442,96 @@ describe('평이화 연동', () => {
             );
 
             expect(container.querySelector('details')).toBeNull();
+        });
+    });
+
+    /**
+     * 출처 고지(`AnalysisProvenanceNote`)는 이 셸이 **한 번만** 그린다. 일곱 개 산문
+     * 렌더러가 전부 이 셸을 감싸므로, 렌더러에 따로 넣었다면 이 단언이 둘을 세거나
+     * (이중 렌더) 하나도 못 센다(누락).
+     */
+    describe('출처 고지', () => {
+        afterEach(() => {
+            delete document.documentElement.dataset.analysisView;
+        });
+
+        it('정확히 한 번 렌더되고, 시장별 데이터 출처를 밝힌다', () => {
+            render(
+                <SnapshotSummarySection
+                    displayName="삼성전자"
+                    marketProfile="kr-equity"
+                >
+                    <p>본문</p>
+                </SnapshotSummarySection>
+            );
+
+            expect(
+                screen.getAllByText(/AI가 문장으로 정리한 글이에요/)
+            ).toHaveLength(1);
+            expect(
+                screen.getByText(
+                    /데이터: 시세 Yahoo Finance, 뉴스 네이버 뉴스 검색 등\./
+                )
+            ).toBeInTheDocument();
+            expect(
+                screen.getByRole('link', { name: '분석 방법' })
+            ).toHaveAttribute('href', '/methodology#ai');
+        });
+
+        it('본문(children) 뒤에 온다 — 산문에 딸린 고지다', () => {
+            render(
+                <SnapshotSummarySection
+                    displayName="Apple Inc."
+                    marketProfile="us-equity"
+                >
+                    <p>본문 텍스트</p>
+                </SnapshotSummarySection>
+            );
+
+            const body = screen.getByText('본문 텍스트');
+            const note = screen.getByText(/AI가 문장으로 정리한 글이에요/);
+            expect(
+                body.compareDocumentPosition(note) &
+                    Node.DOCUMENT_POSITION_FOLLOWING
+            ).toBeTruthy();
+        });
+
+        it('duplicatesLiveWidget이면 접히는 <details> 안에 들어간다', () => {
+            const { container } = render(
+                <SnapshotSummarySection
+                    displayName="Apple Inc."
+                    marketProfile="us-equity"
+                    plain="애플 주가는 지금 오르는 흐름입니다."
+                    duplicatesLiveWidget
+                >
+                    <p>전문 원문</p>
+                </SnapshotSummarySection>
+            );
+
+            const details = container.querySelector('details')!;
+            expect(
+                within(details).getAllByText(/AI가 문장으로 정리한 글이에요/)
+            ).toHaveLength(1);
+            expect(
+                screen.getAllByText(/AI가 문장으로 정리한 글이에요/)
+            ).toHaveLength(1);
+        });
+
+        it('쉽게보기 토글이 있어도 고지는 하나다', () => {
+            render(
+                <SnapshotSummarySection
+                    displayName="Apple Inc."
+                    marketProfile="crypto"
+                    plain="비트코인은 지금 오르는 흐름입니다."
+                >
+                    <p>전문 원문</p>
+                </SnapshotSummarySection>
+            );
+
+            expect(screen.getByRole('radiogroup')).toBeInTheDocument();
+            expect(
+                screen.getAllByText(/AI가 문장으로 정리한 글이에요/)
+            ).toHaveLength(1);
         });
     });
 });

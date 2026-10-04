@@ -4,9 +4,25 @@ vi.mock('@/shared/lib/seo', () => ({
     SITE_URL: 'https://siglens.io',
 }));
 
+/**
+ * `/about`과 `/methodology`의 갱신일을 **서로 다르게** 만든다. 실제 상수가 같은 날이면
+ * "methodology가 about의 상수를 lastmod로 쓰는" 배선 오류가 테스트를 그대로 통과한다.
+ * 부분 목이라 경로·갱신일 외의 `legal` 값은 실제 구현을 쓴다.
+ */
+vi.mock('@/shared/lib/legal', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/lib/legal')>()),
+    METHODOLOGY_UPDATED_AT: new Date('2026-10-07T00:00:00+09:00'),
+}));
+
 import { buildStaticEntries } from '../lib/buildStaticEntries';
 import { SITE_URL } from '@/shared/lib/seo';
-import { ABOUT_UPDATED_AT } from '@/shared/lib/legal';
+import {
+    ABOUT_UPDATED_AT,
+    METHODOLOGY_PATH,
+    METHODOLOGY_UPDATED_AT,
+} from '@/shared/lib/legal';
+import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
+import { sitemapAlternates } from '../lib/sitemapAlternates';
 import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
 import { ALL_NAV_REGION_LINKS } from '@/shared/config/assetClassNav';
@@ -198,6 +214,25 @@ describe('buildStaticEntries', () => {
         expect(about[0].priority).toBe(0.4);
     });
 
+    it('/methodology는 /about과 같은 yearly, priority 0.4이고 /about 바로 뒤에 온다', () => {
+        const entries = buildStaticEntries(NOW);
+        const methodology = entries.filter(e => e.url.endsWith('/methodology'));
+        expect(methodology).toHaveLength(1);
+        expect(methodology[0].url).toBe('https://siglens.io/methodology');
+        expect(methodology[0].changeFrequency).toBe('yearly');
+        expect(methodology[0].priority).toBe(0.4);
+        const aboutIndex = entries.findIndex(e => e.url.endsWith('/about'));
+        expect(entries[aboutIndex + 1]?.url).toBe(methodology[0].url);
+    });
+
+    it('/methodology의 alternates는 /about과 같은 규칙(색인 로케일 집합)에서 파생된다', () => {
+        const entries = buildStaticEntries(NOW);
+        const methodology = entries.find(e => e.url.endsWith('/methodology'));
+        expect(methodology?.alternates).toEqual(
+            sitemapAlternates(METHODOLOGY_PATH, STATIC_INDEXABLE_LOCALES)
+        );
+    });
+
     it('/news hub과 5개 카테고리 entries는 UTC 일 경계를 lastModified로 사용한다', () => {
         const startOfDay = new Date('2026-05-23T00:00:00.000Z');
         const entries = buildStaticEntries(NOW);
@@ -235,6 +270,18 @@ describe('buildStaticEntries', () => {
             e.url.endsWith('/about')
         );
         expect(about!.lastModified.getTime()).toBe(ABOUT_UPDATED_AT.getTime());
+    });
+
+    it('/methodology는 본문 갱신 상수(METHODOLOGY_UPDATED_AT)를 lastmod로 쓴다', () => {
+        const methodology = buildStaticEntries(NOW).find(e =>
+            e.url.endsWith('/methodology')
+        );
+        expect(methodology!.lastModified.getTime()).toBe(
+            METHODOLOGY_UPDATED_AT.getTime()
+        );
+        expect(methodology!.lastModified.getTime()).not.toBe(
+            ABOUT_UPDATED_AT.getTime()
+        );
     });
 });
 

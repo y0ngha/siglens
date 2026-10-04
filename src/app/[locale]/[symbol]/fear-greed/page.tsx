@@ -326,6 +326,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                 {fearGreedFacts !== null && quantizedFgBars !== null && (
                     <FearGreedFactsSummary
                         symbol={ticker}
+                        marketProfile={marketProfile}
                         bars={quantizedFgBars.bars}
                         buySellVolume={quantizedFgBars.indicators.buySellVolume}
                     />

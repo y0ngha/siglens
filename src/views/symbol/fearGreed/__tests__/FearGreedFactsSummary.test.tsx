@@ -58,6 +58,7 @@ describe('FearGreedFactsSummary', () => {
         const { container, getByText } = render(
             <FearGreedFactsSummary
                 symbol="AAPL"
+                marketProfile="us-equity"
                 bars={fakeBars}
                 buySellVolume={fakeBsv}
             />
@@ -81,6 +82,68 @@ describe('FearGreedFactsSummary', () => {
         expect(getByText(/표본 220/)).toBeInTheDocument();
     });
 
+    /**
+     * 점수는 규칙 계산뿐이고 AI 서술이 없다 — 요약 하단에 그 사실과 데이터 출처,
+     * 계산 방법 링크를 단다. 같은 산문 고지가 AI 문구("AI가 문장으로 정리")를
+     * 달면 거짓이므로 `rule-based` 변형이어야 한다.
+     */
+    it('규칙 계산 고지(rule-based)를 요약 하단에 한 번 렌더한다', () => {
+        (computeFearGreedIndex as Mock).mockReturnValue(FIXTURE_SNAPSHOT);
+
+        const { container, getAllByText, getByRole, queryByText } = render(
+            <FearGreedFactsSummary
+                symbol="AAPL"
+                marketProfile="us-equity"
+                bars={fakeBars}
+                buySellVolume={fakeBsv}
+            />
+        );
+
+        expect(
+            getAllByText(/AI 서술 없이 규칙으로만 계산한 점수예요/)
+        ).toHaveLength(1);
+        expect(getByRole('link', { name: '계산 방법' })).toHaveAttribute(
+            'href',
+            '/methodology#fear-greed'
+        );
+        expect(queryByText(/AI가 문장으로 정리한 글이에요/)).toBeNull();
+        // 마지막 자식 — 신뢰도 문구(confidence footer) 다음에 온다.
+        const section = container.querySelector('section')!;
+        expect(section.lastElementChild?.textContent).toContain(
+            '데이터: 시세 Financial Modeling Prep'
+        );
+    });
+
+    it('한국 종목이면 시세 출처가 Yahoo Finance로 바뀐다', () => {
+        (computeFearGreedIndex as Mock).mockReturnValue(FIXTURE_SNAPSHOT);
+
+        const { getByText } = render(
+            <FearGreedFactsSummary
+                symbol="005930.KS"
+                marketProfile="kr-equity"
+                bars={fakeBars}
+                buySellVolume={fakeBsv}
+            />
+        );
+
+        expect(getByText(/데이터: 시세 Yahoo Finance\./)).toBeInTheDocument();
+    });
+
+    it('점수가 없으면(null) 고지도 렌더하지 않는다', () => {
+        (computeFearGreedIndex as Mock).mockReturnValue(null);
+
+        const { container } = render(
+            <FearGreedFactsSummary
+                symbol="AAPL"
+                marketProfile="us-equity"
+                bars={[]}
+                buySellVolume={[]}
+            />
+        );
+
+        expect(container).toBeEmptyDOMElement();
+    });
+
     // FIX 6 (audit, option b): group comparison + factor ranking narrative
     // sentences, built from FIXTURE_SNAPSHOT's group scores (Flow 58, Trend
     // 66) and factor percentiles.
@@ -90,6 +153,7 @@ describe('FearGreedFactsSummary', () => {
         const { getByText } = render(
             <FearGreedFactsSummary
                 symbol="AAPL"
+                marketProfile="us-equity"
                 bars={fakeBars}
                 buySellVolume={fakeBsv}
             />
@@ -115,7 +179,12 @@ describe('FearGreedFactsSummary', () => {
         (computeFearGreedIndex as Mock).mockReturnValue(FIXTURE_SNAPSHOT);
 
         const { queryByText } = render(
-            <FearGreedFactsSummary symbol="AAPL" bars={[]} buySellVolume={[]} />
+            <FearGreedFactsSummary
+                symbol="AAPL"
+                marketProfile="us-equity"
+                bars={[]}
+                buySellVolume={[]}
+            />
         );
 
         expect(queryByText(/종가 기준/)).not.toBeInTheDocument();
@@ -135,6 +204,7 @@ describe('FearGreedFactsSummary', () => {
         const { getByText } = render(
             <FearGreedFactsSummary
                 symbol="AAPL"
+                marketProfile="us-equity"
                 bars={fakeBars}
                 buySellVolume={fakeBsv}
             />
@@ -147,7 +217,12 @@ describe('FearGreedFactsSummary', () => {
         (computeFearGreedIndex as Mock).mockReturnValue(null);
 
         const { container } = render(
-            <FearGreedFactsSummary symbol="AAPL" bars={[]} buySellVolume={[]} />
+            <FearGreedFactsSummary
+                symbol="AAPL"
+                marketProfile="us-equity"
+                bars={[]}
+                buySellVolume={[]}
+            />
         );
 
         expect(container).toBeEmptyDOMElement();
@@ -198,6 +273,7 @@ describe('FearGreedFactsSummary', () => {
             const { getByText } = render(
                 <FearGreedFactsSummary
                     symbol="AAPL"
+                    marketProfile="us-equity"
                     bars={realisticBars}
                     buySellVolume={realisticBsv}
                 />

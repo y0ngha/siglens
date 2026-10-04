@@ -39,6 +39,9 @@ export const RESERVED_FIRST_SEGMENTS: ReadonlySet<string> = new Set([
     'terms',
     'privacy',
     'about',
+    // 분석 방법 페이지. `isAdmissibleSymbolShape('methodology')`가 참이라 여기 없으면
+    // `/METHODOLOGY`로 301되어 푸터·산문 고지가 거는 링크 전부가 깨진다.
+    'methodology',
     // 광고 랜딩(`src/app/lp/`, `[locale]` 밖의 별도 루트라 스캐너 테스트가 못 본다).
     // 여기 없으면 `/ko/lp/stock-analysis`가 `/LP/stock-analysis`로 301된다.
     'lp',

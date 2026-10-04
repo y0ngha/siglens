@@ -23,9 +23,13 @@ import {
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { AnalysisProvenanceNote } from '../snapshot/AnalysisProvenanceNote';
 
 interface FearGreedFactsSummaryProps {
     symbol: string;
+    /** 출처 고지(`AnalysisProvenanceNote`)가 시장별 데이터 출처를 고르는 데 쓴다. */
+    marketProfile: MarketProfileId;
     bars: Bar[];
     buySellVolume: BuySellVolumeResult[];
 }
@@ -40,6 +44,7 @@ interface FearGreedFactsSummaryProps {
  */
 export function FearGreedFactsSummary({
     symbol,
+    marketProfile,
     bars,
     buySellVolume,
 }: FearGreedFactsSummaryProps) {
@@ -151,6 +156,11 @@ export function FearGreedFactsSummary({
                     v1: tFearGreed(confidenceLabelKey(snapshot.confidence)),
                 })}
             </p>
+            {/* AI 서술 없이 규칙으로만 계산한 점수라는 고지. 요약 문장 전부 아래에 둔다. */}
+            <AnalysisProvenanceNote
+                marketProfile={marketProfile}
+                variant="rule-based"
+            />
         </section>
     );
 }
