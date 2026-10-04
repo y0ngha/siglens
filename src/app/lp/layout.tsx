@@ -43,7 +43,7 @@ export default function LandingRootLayout({
                     dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
                 />
                 {children}
-                {GOOGLE_ADS_ID && <GoogleAdsTag id={GOOGLE_ADS_ID} />}
+                {GOOGLE_ADS_ID && <GoogleAdsTag id={GOOGLE_ADS_ID} eager />}
             </body>
         </html>
     );

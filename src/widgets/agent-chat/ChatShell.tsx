@@ -17,6 +17,7 @@ import { GUEST_TURNS_PER_DAY } from './guestTurnLimit';
 import { MenuIcon } from '@/shared/ui/StrokeIcons';
 import { loginHref } from './loginHref';
 import { MessageList } from './MessageList';
+import { ConversationSkeleton } from './ConversationSkeleton';
 import { Sidebar } from './Sidebar';
 
 interface Props {
@@ -33,6 +34,18 @@ interface Props {
     readonly initialDraft?: string;
 }
 
+/** 대화 화면(`/c/<id>`, 로케일 접두사 포함 가능) href의 대화 id. 대화 화면이 아니면 null. */
+function conversationIdOf(href: string): string | null {
+    return /\/c\/([^/?#]+)/.exec(href)?.[1] ?? null;
+}
+
+/** 지금 열린 대화가 아닌 다른 대화로 가는가. */
+function isOtherConversation(
+    target: string | null,
+    current: string | null
+): boolean {
+    return target !== null && target !== current;
+}
 export function ChatShell({
     conversationId,
     initialMessages,
@@ -46,6 +59,14 @@ export function ChatShell({
 }: Props) {
     const t = useTranslations('widgets.agent-chat');
     const [drawerOpen, setDrawerOpen] = useState(false);
+    /**
+     * 사이드바에서 **다른 대화**로 가는 중인가. 그동안 본문은 떠나온 대화 대신 골격을 그린다.
+     * 다른 대화에 도착하면 이 셸이 대화별로 다시 마운트돼(`c/[id]/page.tsx`의 `key`) 값이
+     * 저절로 풀린다. 같은 대화를 다시 누른 경우처럼 다시 마운트되지 않고 끝나는 이동은
+     * 사이드바의 `onNavigate`(전환 종료)에서 푼다. 새 대화(`/`)로 가는 이동은 빈 화면이
+     * 가벼워 골격을 그리지 않는다.
+     */
+    const [switchingConversation, setSwitchingConversation] = useState(false);
     /**
      * The sidebar list is client state seeded from the server, not re-read with
      * `router.refresh()`. `replaceState` moves the URL to `/c/<id>`, a DIFFERENT
@@ -119,7 +140,17 @@ export function ChatShell({
             signedIn={signedIn}
             loginHref={login}
             siteUrl={siteUrl}
-            onNavigate={() => setDrawerOpen(false)}
+            onNavigationStart={href =>
+                // 지금 열린 대화를 다시 누른 것이면 골격을 그리지 않는다 — 보던 대화를
+                // 지웠다가 같은 대화로 되돌리는 깜빡임이 된다.
+                setSwitchingConversation(
+                    isOtherConversation(conversationIdOf(href), conversationId)
+                )
+            }
+            onNavigate={() => {
+                setDrawerOpen(false);
+                setSwitchingConversation(false);
+            }}
         />
     );
 
@@ -230,7 +261,9 @@ export function ChatShell({
                         {activeTitle}
                     </span>
                 </div>
-                {stream.messages.length === 0 ? (
+                {switchingConversation ? (
+                    <ConversationSkeleton />
+                ) : stream.messages.length === 0 ? (
                     <EmptyState
                         localePrefix={localePrefix}
                         signedIn={signedIn}

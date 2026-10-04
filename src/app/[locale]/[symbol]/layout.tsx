@@ -6,10 +6,8 @@ import {
     HydrationBoundary,
     QueryClient,
 } from '@tanstack/react-query';
-import {
-    SymbolLayoutJail,
-    SymbolLayoutProviders,
-} from '@/app/[locale]/[symbol]/SymbolLayoutClient';
+import { SymbolLayoutProviders } from '@/app/[locale]/[symbol]/SymbolLayoutClient';
+import { SymbolLayoutJail } from '@/app/[locale]/[symbol]/SymbolLayoutJail';
 import { SymbolLayoutHeader } from '@/views/symbol/SymbolLayoutHeader';
 import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
 import { SymbolViewPing } from '@/features/visitor-ping/ui/SymbolViewPing';

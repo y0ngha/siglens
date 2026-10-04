@@ -1,6 +1,6 @@
 'use client';
 
-import { SymbolLayoutJail } from './SymbolLayoutClient';
+import { SymbolLayoutJail } from './SymbolLayoutJail';
 import { SymbolHeaderShellFallback } from './SymbolHeaderShellFallback';
 
 /**

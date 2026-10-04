@@ -44,6 +44,11 @@ interface Props {
     readonly onDeleted: (id: string) => void;
     /** Called when an in-app navigation the rail started settles (the mobile drawer closes on it). */
     readonly onNavigate?: () => void;
+    /**
+     * 사이드바가 다른 화면으로 이동을 **시작한 순간** 목적지 href와 함께 불린다.
+     * `onNavigate`(전환이 끝난 뒤)와 짝을 이룬다 — 본문이 그 사이에 골격을 그린다.
+     */
+    readonly onNavigationStart?: (href: string) => void;
 }
 
 interface RailFooterProps {
@@ -100,6 +105,7 @@ export function Sidebar({
     onRenamed,
     onDeleted,
     onNavigate,
+    onNavigationStart,
 }: Props) {
     const t = useTranslations('widgets.agent-chat');
     const router = useRouter();
@@ -153,6 +159,7 @@ export function Sidebar({
      */
     function startNavigationTo(href: string): void {
         setPendingHref(href);
+        onNavigationStart?.(href);
         startNavigation(() => router.push(href));
     }
 
