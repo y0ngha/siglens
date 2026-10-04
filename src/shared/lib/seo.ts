@@ -146,9 +146,7 @@ export const ORGANIZATION_JSON_LD_ID = `${SITE_URL}#organization`;
 export const GITHUB_URL = 'https://github.com/y0ngha/siglens';
 
 /**
- * 공식 X(트위터) 계정. 푸터 아이콘 링크가 소비한다. 이름·값은 같은 상수를 만드는
- * 다른 묶음(JSON-LD `sameAs`)과 일부러 똑같이 둔다 — 병합할 때 충돌이 아니라 중복
- * 제거로 끝나게 하기 위해서다.
+ * 공식 X(트위터) 계정. 푸터 아이콘 링크가 소비한다.
  */
 export const X_URL = 'https://x.com/siglens_io';
 

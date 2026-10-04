@@ -152,7 +152,8 @@ function Variant({ title, body, href, linkLabel }: VariantProps) {
 
 /**
  * `siglens.io/methodology`: 분석이 어떤 데이터로, 어떤 규칙으로, 누가(무엇이) 쓴
- * 것인지 밝히는 긴 읽을거리(설계 `docs/superpowers/specs/2026-10-04-seo-ymyl-upgrade-design.md` §3).
+ * 것인지 밝히는 긴 읽을거리(PR #935). AI가 쓴 금융 분석이라 "누가·어떻게·왜"를
+ * 한 곳에서 밝히는 것이 목적이다.
  *
  * YMYL 신뢰 신호가 목적이라 꾸밈이 없다 — 카드와 목록, 일정한 행간만 쓰고
  * 애니메이션은 없다. 전부 서버 렌더 텍스트라 크롤러가 본문 전체를 받는다.

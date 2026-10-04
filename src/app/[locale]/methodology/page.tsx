@@ -50,7 +50,10 @@ export const revalidate = 86400;
  *
  * FAQPage는 내보내지 않는다 — 이 페이지에는 질문·답변 형식의 본문이 없다.
  */
-function buildMethodologyJsonLd(t: SeoTranslator, locale: Locale) {
+function buildMethodologyJsonLd(
+    t: SeoTranslator,
+    locale: Locale
+): Record<string, unknown> {
     return {
         ...buildWebPageJsonLd({
             url: PAGE_URL,
@@ -64,7 +67,10 @@ function buildMethodologyJsonLd(t: SeoTranslator, locale: Locale) {
     };
 }
 
-function buildMethodologyBreadcrumbJsonLd(t: SeoTranslator, locale: Locale) {
+function buildMethodologyBreadcrumbJsonLd(
+    t: SeoTranslator,
+    locale: Locale
+): Record<string, unknown> {
     return buildBreadcrumbJsonLd(
         [{ name: methodologyTitle(t), url: PAGE_URL }],
         locale
