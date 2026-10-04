@@ -639,7 +639,7 @@ const SNAPSHOT_META_DESCRIPTION_FIELD: Record<string, string> = {
  * 그대로 두면 SERP 스니펫에 `**종합 진단**:`이 글자로 나간다(v0.79.2 배포 후 운영 크롤).
  * 줄 머리 기호(`- `·`#`)를 줄 단위로 인식해야 하므로 줄을 합치기 **전에** 적용한다.
  */
-function collapseToSingleLine(text: string): string {
+export function collapseToSingleLine(text: string): string {
     return stripSnapshotMarkdown(text)
         .split('\n')
         .map(line => line.trim())
@@ -764,7 +764,10 @@ function isDecimalPoint(codePoints: readonly string[], index: number): boolean {
  * 늘었다. 문장 단위로만 담으면 잘림이 구조적으로 0이 되고, 한 문장도 못 담는
  * 경우에만 호출자가 원문으로 폴백한다.
  */
-function takeWholeSentences(text: string, maxLength: number): string | null {
+export function takeWholeSentences(
+    text: string,
+    maxLength: number
+): string | null {
     // 한국어 종결(`다.`)과 일반 종결부호를 모두 끊는다. CJK 종결부호는 공백을
     // 두지 않으므로 공백을 요구하지 않는다.
     const sentences = text
@@ -781,7 +784,10 @@ function takeWholeSentences(text: string, maxLength: number): string | null {
     return out === '' ? null : out;
 }
 
-function clampAtSentenceBoundary(text: string, maxLength: number): string {
+export function clampAtSentenceBoundary(
+    text: string,
+    maxLength: number
+): string {
     const codePoints = [...text];
     if (codePoints.length <= maxLength) return text;
 

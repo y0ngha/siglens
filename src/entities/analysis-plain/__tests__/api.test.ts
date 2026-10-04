@@ -287,7 +287,10 @@ describe('rewriteToPlainLanguage', () => {
         expect(insertCallFor(result as string)).toBeDefined();
         expect(infoSpy).toHaveBeenCalledWith(
             '[analysisPlain] salvaged without retry',
-            expect.objectContaining({ symbol: 'AAPL' })
+            expect.objectContaining({
+                symbol: 'AAPL',
+                kind: 'unsupported_numbers',
+            })
         );
         // 상한 판정에 쓴 값과 같은 비율이 로그에 남는다 — 0 초과, 상한 이하.
         const logged = infoSpy.mock.calls.find(
@@ -303,6 +306,46 @@ describe('rewriteToPlainLanguage', () => {
             logged.removedChars / logged.originalChars,
             3
         );
+    });
+
+    /**
+     * 조언 문구도 짧으면 재시도 없이 그 문장만 뺀다 — 숫자 위반과 같이 문장 한두 개라
+     * 도려내면 끝난다(2026-10-04: 조언 가드 도입).
+     */
+    it('조언 문구가 짧게 끼면 재시도 없이 도려내 저장한다', async () => {
+        callAiProviderRouter.mockResolvedValueOnce(
+            `${GOOD}\n\n그래서 지금 새로 사기에는 불리한 위치입니다.`
+        );
+
+        const result = await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
+
+        expect(result).not.toBeNull();
+        expect(result).not.toContain('사기에는');
+        expect(result).toContain('좋은 문장입니다');
+        expect(callAiProviderRouter).toHaveBeenCalledOnce();
+        expect(insertCallFor(result as string)).toBeDefined();
+    });
+
+    /**
+     * 조언 문구가 길게 섞여 재시도까지 실패해도 그 문장만 빼고 살린다. 버리면 그 종목의
+     * 쉽게보기가 통째로 사라진다.
+     */
+    it('재시도도 조언 문구로 실패하면 그 문장만 도려내고 살린다', async () => {
+        // 원문의 25%를 넘게 차지하게 반복한다 — 그래야 재시도 전 도려내기를 건너뛰고
+        // 재생성 경로를 탄다(`SALVAGE_BEFORE_RETRY_MAX_LOSS`).
+        const ADVICE =
+            '그래서 지금 새로 사기에는 불리한 위치입니다. 나눠서 사는 편이 낫습니다. 확인한 뒤에 움직이는 것이 합리적입니다. '.repeat(
+                4
+            );
+        callAiProviderRouter.mockResolvedValue(`${GOOD}\n\n${ADVICE}`);
+
+        const result = await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
+
+        expect(result).not.toBeNull();
+        expect(result).not.toContain('사기에는');
+        expect(result).toContain('좋은 문장입니다');
+        expect(callAiProviderRouter).toHaveBeenCalledTimes(2);
+        expect(insertCallFor(result as string)).toBeDefined();
     });
 
     /** 크기 접미사는 도려내서 고쳐지지 않으므로(10배 금액 오류) 짧아도 재시도한다. */

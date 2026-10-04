@@ -1,7 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { globSync } from 'glob';
 import { describe, expect, it } from 'vitest';
-import { buildPlainPrompt } from '../lib/buildPlainPrompt';
+import {
+    buildPlainPrompt,
+    PLAIN_PROMPT_VERSION,
+} from '../lib/buildPlainPrompt';
 import { findUnsupportedNumbers } from '../lib/guardPlainText';
 
 const entries = [
@@ -16,8 +19,12 @@ describe('buildPlainPrompt', () => {
      * 매매를 지시했다. `/about`은 "매수·매도를 권유하지 않습니다"라고 밝히고 있어
      * 고지와 산출물이 어긋난 상태였다. 규칙은 원본이 조언형이어도 조건형으로
      * 바꿔 쓰라고 지시한다(core 프롬프트의 같은 원칙과 짝).
+     *
+     * 2026-10-04 운영 크롤: 규칙 아래의 `대신)` 예시 문장이 색인된 377개 페이지 중
+     * 264개에 그대로 복사됐다. 예시는 출력으로 새므로 따옴표 예시 문장을 두지 않고
+     * 범주로만 적는다.
      */
-    it('독자에게 행동을 지시하지 말라는 규칙과 관측된 금지 문형을 담는다', () => {
+    it('독자에게 행동을 지시하지 말라는 규칙을 범주로 담고 예시 문장은 담지 않는다', () => {
         const prompt = buildPlainPrompt({
             entries: [{ path: 'summary', text: '테스트 산문' }],
             facts: { symbol: 'AAPL', numbers: [] },
@@ -25,8 +32,24 @@ describe('buildPlainPrompt', () => {
         });
 
         expect(prompt).toContain('독자에게 무엇을 하라고 말하지 마세요');
-        expect(prompt).toContain('나눠서 사는 편이 낫습니다');
-        expect(prompt).toContain('아래로 내려가면');
+        expect(prompt).not.toContain('오를 때 얻는 것보다');
+        expect(prompt).not.toContain('사기에는');
+        expect(prompt).not.toContain('나눠서 사는 편이 낫습니다');
+    });
+
+    it('가격을 손절·목표가 같은 매매 행동 이름으로 부르지 말라고 지시한다', () => {
+        const prompt = buildPlainPrompt({
+            entries: [{ path: 'summary', text: '테스트 산문' }],
+            facts: { symbol: 'AAPL', numbers: [] },
+            locale: 'ko',
+        });
+
+        expect(prompt).toContain('흐름이 깨지는 기준 가격');
+        expect(prompt).not.toContain('손절 기준이나 목표 가격');
+    });
+
+    it('프롬프트 버전은 v15다', () => {
+        expect(PLAIN_PROMPT_VERSION).toBe('v15');
     });
 
     it('경로를 키로 하는 prose 맵을 싣는다', () => {
@@ -122,7 +145,7 @@ describe('buildPlainPrompt', () => {
  * 한때 예시가 `121980.69948682484 → 121,980`(버림)이었는데, 가드는
  * `Math.round`(가까운 쪽)만 통과시킨다 — `121981`이다. 모델이 예시를 그대로
  * 따르면 가드가 그 문장을 지어낸 숫자로 보고 버려서, 정작 그 예시가 지키려던
- * 손절값이 사라진다.
+ * 기준 가격이 사라진다.
  */
 describe('반올림 예시가 가드의 관용 규칙과 일치한다', () => {
     it('예시 값이 Math.round 결과와 같다', () => {
@@ -132,7 +155,7 @@ describe('반올림 예시가 가드의 관용 규칙과 일치한다', () => {
             locale: 'ko',
         });
 
-        const example = prompt.match(/손절 기준 (\d+\.\d+) → "([\d,]+)원/);
+        const example = prompt.match(/기준 가격 (\d+\.\d+) → "([\d,]+)원/);
         expect(example).not.toBeNull();
 
         const source = Number(example![1]);

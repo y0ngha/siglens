@@ -104,6 +104,36 @@ describe('홈 generateMetadata', () => {
         expect(og['url']).toBe(expected);
     });
 
+    /**
+     * RSS 발견 링크(`<link rel="alternate" type="application/rss+xml">`).
+     *
+     * 루트 레이아웃이 아니라 **홈 페이지**가 선언해야 한다 — Next는 `alternates`를
+     * 최상위 키 단위로 교체하므로, 홈이 `alternates: { canonical }`을 선언하는 순간
+     * 레이아웃의 `types`는 사라진다(레이아웃은 alternates를 선언하지 않는다 —
+     * `layout.test.ts`). 홈이 canonical·hreflang을 잃지 않는지도 함께 못박는다.
+     * 색인되지 않는 로케일(en·ja·zh)의 head는 그대로 둔다.
+     */
+    it('ko: RSS 발견 링크를 내고 canonical은 그대로다', async () => {
+        const meta = await load('ko');
+        const alternates = meta.alternates as Record<string, unknown>;
+
+        expect(alternates['types']).toEqual({
+            'application/rss+xml': 'https://siglens.io/rss.xml',
+        });
+        expect(alternates['canonical']).toBe('https://siglens.io/');
+    });
+
+    it.each(['en', 'ja', 'zh'])(
+        '%s: 색인 로케일이 아니므로 RSS 발견 링크를 내지 않는다',
+        async locale => {
+            const meta = await load(locale);
+            const alternates = meta.alternates as Record<string, unknown>;
+
+            expect(alternates['types']).toBeUndefined();
+            expect(alternates['canonical']).toBeDefined();
+        }
+    );
+
     it.each(['ko', 'en'])(
         '%s: og·twitter 이미지를 잃지 않는다',
         async locale => {

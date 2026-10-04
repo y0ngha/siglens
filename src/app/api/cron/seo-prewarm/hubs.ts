@@ -44,8 +44,19 @@ import {
     DIGEST_REASONING,
 } from '@/entities/market-news/lib/marketNewsConstants';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
+import type { NavRegionId } from '@/shared/config/assetClassNav';
+import { SITE_URL } from '@/shared/lib/seo';
 import { PREWARM_PROVIDER_FALLBACK } from '@/shared/config/prewarm';
 import { writeHubSsrSeed } from '@/shared/cache/hubSsrSeed';
+import { recordHubContentStamp } from '@/shared/cache/hubContentStamp';
+import {
+    economyHubPath,
+    marketHubPath,
+    newsHubPath,
+    RSS_ECONOMY_SURFACE,
+    rssMarketSurface,
+    rssNewsSurface,
+} from '@/entities/rss-feed/model';
 import { consumeSsrMiss } from '@/shared/cache/ssrMissMarker';
 import { createRedisFlag } from '@/shared/cache/createRedisFlag';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
@@ -58,6 +69,7 @@ import {
     CALENDAR_COUNTRY,
     CALENDAR_COUNTRY_KR,
     economyCalendarCacheTag,
+    type CalendarCountry,
 } from '@/entities/economy/lib/economyCalendarConstants';
 
 /**
@@ -185,6 +197,15 @@ export interface HubPrewarmResult {
     readonly skippedByDeadline: number;
     /** 쿨다운으로 굽지 않은 수(시장 브리핑). */
     readonly skippedByCooldown: number;
+    /**
+     * 이번에 **새로 구운**(`generated`) 허브의 공개 URL(절대 URL).
+     *
+     * IndexNow 제출용이다(`indexNowSubmission.ts`). `alreadyFresh`·`keyMismatch`·
+     * `cooldown`은 싣지 않는다 — 검색엔진에 "바뀌었다"고 알릴 근거가 없고, 같은 URL을
+     * tick마다 다시 보내면 제출 한도만 쓴다. 이 목록은 정적 sitemap과 대조해 걸러진 뒤에
+     * 제출되므로 여기서는 sitemap 판정을 반복하지 않는다.
+     */
+    readonly generatedUrls: readonly string[];
 }
 
 interface HubTarget {
@@ -198,6 +219,13 @@ interface HubTarget {
      * SSR miss 표시도 보지 않는다 — 이 태그엔 표시를 세우는 렌더 경로가 없다.
      */
     readonly selfInvalidating?: true;
+    /**
+     * 이 대상이 채우는 허브 페이지의 경로(`/market/kr`). 화면이 없으면 `null`.
+     *
+     * 경로는 내비 단일 소스(`assetClassNav`)·카테고리 설정에서 파생한다 — sitemap 빌더가
+     * 같은 소스에서 URL을 만들므로, 여기서 따로 적으면 sitemap 대조에서 조용히 탈락한다.
+     */
+    readonly path: string | null;
 }
 
 /**
@@ -217,7 +245,23 @@ const marketBriefingCooldown = createRedisFlag(
     '[hub-prewarm:market-briefing-cooldown]'
 );
 
-function marketBriefingTargets(): HubTarget[] {
+/**
+ * 확인한 본문의 스탬프를 남긴다 — RSS `pubDate`의 근거(`hubContentStamp`).
+ *
+ * `generated`·`alreadyFresh` 둘 다에서 부른다: 본문이 바뀐 순간만 시각이 갱신되므로
+ * (같은 해시면 no-op) 확인할 때마다 불러도 비용은 Redis GET 한 번이다. 이미 캐시에 있던
+ * 본문도 스탬프가 없으면 이 호출이 처음 시각을 찍는다 — 배포 직후 첫 tick에 항목이 생긴다.
+ * `cooldown`·`noData`·`keyMismatch`에서는 확인된 본문이 없으므로 부르지 않는다.
+ */
+function stampBody(
+    surface: string,
+    body: unknown,
+    now: () => number
+): Promise<void> {
+    return recordHubContentStamp(surface, body, new Date(now()));
+}
+
+function marketBriefingTargets(now: () => number): HubTarget[] {
     // 화면이 없는 scope는 뺀다. 이 순회는 브리핑을 **생성**하므로(LLM 호출),
     // 아무도 읽지 않는 시장이 끼면 매일 밤 그만큼 돈이 나간다.
     return Object.values(DASHBOARD_SCOPES)
@@ -225,6 +269,7 @@ function marketBriefingTargets(): HubTarget[] {
         .map(scope => ({
             label: `market-briefing:${scope.id}`,
             tag: marketBriefingCacheTag(scope),
+            path: marketHubPath(scope.id),
             run: async () => {
                 const summary = await getCachedMarketSummary(
                     marketDataProviderFor(scope.id),
@@ -233,11 +278,13 @@ function marketBriefingTargets(): HubTarget[] {
                 // context는 캐시 키에 접힌다 — 액션·peek와 **같은 헬퍼**여야 한다.
                 const context = marketBriefingContextOf(scope, summary);
                 const surface = marketBriefingSeedSurface(scope);
+                const stampSurface = rssMarketSurface(scope.id);
                 const peek = () => peekBriefingCache(summary, context);
                 const cached = await peek();
                 if (cached !== null) {
                     // 이미 손에 있는 값이다 — seed를 최신으로 유지하는 비용은 SET 한 번.
                     await writeHubSsrSeed(surface, cached);
+                    await stampBody(stampSurface, cached, now);
                     return 'alreadyFresh';
                 }
                 // 페이지 peek는 키가 빗나가도 직전에 써 둔 SSR seed로 물러나므로 화면은
@@ -253,6 +300,7 @@ function marketBriefingTargets(): HubTarget[] {
                 const readBack = await readBackWithRetry(peek);
                 if (readBack === null) return 'keyMismatch';
                 await writeHubSsrSeed(surface, readBack);
+                await stampBody(stampSurface, readBack, now);
                 return 'generated';
             },
         }));
@@ -291,6 +339,12 @@ const HUB_CALENDAR_ANALYSIS_LIMIT = 4;
 /** 지표명 번역 상한 — 1건. 근거는 {@link HUB_CALENDAR_ANALYSIS_LIMIT} 주석의 예산. */
 const HUB_INDICATOR_TRANSLATION_LIMIT = 1;
 
+/** 캘린더 국가 → 허브 지역. 국가가 늘면 컴파일러가 여기서 막는다(조용히 미국으로 떨어지지 않게). */
+const CALENDAR_COUNTRY_REGION: Record<CalendarCountry, NavRegionId> = {
+    US: 'us',
+    KR: 'kr',
+};
+
 /** 캘린더를 굽는 국가 — `/economy`(미국)와 `/economy/kr`. */
 const CALENDAR_COUNTRIES = [CALENDAR_COUNTRY, CALENDAR_COUNTRY_KR] as const;
 
@@ -314,6 +368,8 @@ function economyCalendarTargets(): HubTarget[] {
         label: `economy-calendar:${country}`,
         tag: economyCalendarCacheTag(country),
         selfInvalidating: true,
+        // 캘린더는 `/economy`(US)·`/economy/kr`(KR) 페이지를 채운다.
+        path: economyHubPath(CALENDAR_COUNTRY_REGION[country]),
         run: async () => {
             const logLabel = `hub-prewarm:economy-calendar:${country}`;
             const ingested = await ingestEconomicCalendar(
@@ -361,10 +417,12 @@ function economyCalendarTargets(): HubTarget[] {
     }));
 }
 
-function macroBriefingTarget(): HubTarget {
+function macroBriefingTarget(now: () => number): HubTarget {
     return {
         label: 'macro-briefing',
         tag: MACRO_BRIEFING_CACHE_TAG,
+        // 거시 브리핑은 시장 구분이 없어 미국 경제 허브(`/economy`)에 실린다.
+        path: economyHubPath('us'),
         run: async () => {
             const snapshot = await getEconomySnapshot();
             await repairDegradedEconomySnapshot(snapshot);
@@ -372,12 +430,14 @@ function macroBriefingTarget(): HubTarget {
             const cached = await peek();
             if (cached !== null) {
                 await writeHubSsrSeed(MACRO_BRIEFING_SEED_SURFACE, cached);
+                await stampBody(RSS_ECONOMY_SURFACE, cached, now);
                 return 'alreadyFresh';
             }
             await runMacroBriefing(snapshot);
             const readBack = await readBackWithRetry(peek);
             if (readBack === null) return 'keyMismatch';
             await writeHubSsrSeed(MACRO_BRIEFING_SEED_SURFACE, readBack);
+            await stampBody(RSS_ECONOMY_SURFACE, readBack, now);
             return 'generated';
         },
     };
@@ -454,13 +514,14 @@ async function ingestCategoryBeforeDigest(
     }
 }
 
-function newsDigestTargets(): HubTarget[] {
+function newsDigestTargets(now: () => number): HubTarget[] {
     // safe: CATEGORY_CONFIG is Record<NewsFeedCategoryId, CategoryConfig>, so
     // Object.keys is exactly the union members — TS just widens to string[].
     return (Object.keys(CATEGORY_CONFIG) as NewsFeedCategoryId[]).map(
         category => ({
             label: `news-digest:${category}`,
             tag: marketNewsDigestCacheTag(category),
+            path: newsHubPath(category),
             run: async () => {
                 const { sentinel, koLabel } = CATEGORY_CONFIG[category];
                 await ingestCategoryBeforeDigest(category, sentinel);
@@ -491,7 +552,12 @@ function newsDigestTargets(): HubTarget[] {
                 // 목적이다 — 되읽기가 잡으려는 사고가 바로 "run과 peek의 입력이
                 // 갈려 키가 어긋나는 것"이라, 한쪽만 손질하면 그 검증이 약해진다.
                 const peek = () => peekMarketNewsDigestCache(options);
-                if ((await peek()) !== null) return 'alreadyFresh';
+                const stampSurface = rssNewsSurface(category);
+                const cached = await peek();
+                if (cached !== null) {
+                    await stampBody(stampSurface, cached, now);
+                    return 'alreadyFresh';
+                }
                 // 프로바이더 폴백은 **키 성분이 아니다.** 이 레포의 모든 프리웜·
                 // 백필 호출부가 켜 두는 값이고, core JSDoc도 "SEO prewarm"을 그
                 // 대상으로 명시한다 — 지켜보는 사람이 없어 수동 재시도가 불가능한
@@ -502,9 +568,10 @@ function newsDigestTargets(): HubTarget[] {
                 });
                 // 다이제스트는 seed를 두지 않는다 — 입력이 DB 행 목록이라 분 단위로
                 // 안 움직이고, 정적 peek이 같은 쿼리로 입력을 다시 만들어 키가 맞는다.
-                return (await readBackWithRetry(peek)) !== null
-                    ? 'generated'
-                    : 'keyMismatch';
+                const readBack = await readBackWithRetry(peek);
+                if (readBack === null) return 'keyMismatch';
+                await stampBody(stampSurface, readBack, now);
+                return 'generated';
             },
         })
     );
@@ -513,12 +580,12 @@ function newsDigestTargets(): HubTarget[] {
 /**
  * 색인 대상 로케일(`ko`)만 굽는다. 다른 로케일은 어차피 noindex라 비용만 4배가 된다.
  */
-export function hubTargets(): readonly HubTarget[] {
+export function hubTargets(now: () => number = Date.now): readonly HubTarget[] {
     return [
-        ...marketBriefingTargets(),
-        macroBriefingTarget(),
+        ...marketBriefingTargets(now),
+        macroBriefingTarget(now),
         ...economyCalendarTargets(),
-        ...newsDigestTargets(),
+        ...newsDigestTargets(now),
     ];
 }
 
@@ -533,7 +600,7 @@ export async function runHubPrewarm(
     now: () => number = Date.now
 ): Promise<HubPrewarmResult> {
     const startedAt = now();
-    const targets = hubTargets();
+    const targets = hubTargets(now);
     let generated = 0;
     let alreadyFresh = 0;
     let noData = 0;
@@ -541,6 +608,19 @@ export async function runHubPrewarm(
     let failed = 0;
     let skippedByDeadline = 0;
     let skippedByCooldown = 0;
+    let generatedUrls: readonly string[] = [];
+
+    /**
+     * 새로 구운 대상의 공개 URL을 모은다. 화면 없는 대상(`path: null`)은 건너뛴다.
+     * 거시 브리핑과 미국 캘린더처럼 두 대상이 같은 페이지(`/economy`)를 가리킬 수 있어
+     * 이미 담긴 URL은 다시 넣지 않는다.
+     */
+    const recordGenerated = (target: HubTarget): void => {
+        if (target.path === null) return;
+        const url = `${SITE_URL}${target.path}`;
+        if (generatedUrls.includes(url)) return;
+        generatedUrls = [...generatedUrls, url];
+    };
 
     for (const target of targets) {
         if (now() - startedAt >= HUB_DEADLINE_MS) {
@@ -567,8 +647,10 @@ export async function runHubPrewarm(
             if (target.selfInvalidating === true) {
                 // 대상이 실제 변경 때 스스로 털었다. 여기서 또 털면 같은 태그를 두 번
                 // 무효화하고, 이 태그엔 SSR miss 표시도 없어 getdel만 헛돈다.
-                if (outcome === 'generated') generated += 1;
-                else alreadyFresh += 1;
+                if (outcome === 'generated') {
+                    generated += 1;
+                    recordGenerated(target);
+                } else alreadyFresh += 1;
                 continue;
             }
             if (outcome === 'alreadyFresh') {
@@ -597,6 +679,7 @@ export async function runHubPrewarm(
             await consumeSsrMiss(target.tag);
             if (outcome === 'generated') {
                 generated += 1;
+                recordGenerated(target);
             } else {
                 keyMismatch += 1;
                 console.error(
@@ -618,5 +701,6 @@ export async function runHubPrewarm(
         failed,
         skippedByDeadline,
         skippedByCooldown,
+        generatedUrls,
     };
 }
