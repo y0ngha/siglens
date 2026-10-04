@@ -88,7 +88,7 @@ describe('legal constants', () => {
 
     /**
      * `/about`은 다른 법무 페이지와 달리 `<title>`이 `${title} | Siglens`
-     * 형식이 아니다 — `aboutFullTitle` JSDoc 참고("Siglens"로 이미 시작하는
+     * 형식이 아니다 — `aboutFullTitle` JSDoc 참고(브랜드로 이미 시작하는
      * 별도 metaTitle 키를 쓴다). `aboutTitle`(본문 h1)과는 다른 값이어야
      * 그 구분이 실제로 성립한다.
      */

@@ -101,7 +101,7 @@ describe('홈 FAQ', () => {
      * 다시 불어나면 홈이 또 12문항짜리 FAQ 블록이 된다.
      */
     it('홈에 싣는 문항은 6개다', () => {
-        expect(buildHomeFaq(key => key)).toHaveLength(6);
+        expect(buildHomeFaq(key => key, 'ko')).toHaveLength(6);
     });
 });
 
@@ -141,4 +141,46 @@ describe('홈 Organization 노드', () => {
         ]);
         expect(organization?.founder.sameAs).toEqual([...OPERATOR_SAME_AS]);
     });
+
+    /**
+     * 영문 `Siglens`는 동명 프로젝트와 겹쳐 발행 주체를 식별하지 못한다. 한글
+     * 표기가 Organization에 없으면 "시그렌즈"가 가리키는 노드가 그래프에 없다.
+     */
+    it('alternateName으로 한글 표기를 싣는다', async () => {
+        const organization = collectJsonLdData(await renderHome()).find(
+            d => d['@type'] === 'Organization'
+        ) as { alternateName: string } | undefined;
+
+        expect(organization?.alternateName).toBe('시그렌즈');
+    });
+
+    /**
+     * 화면 FAQ와 FAQPage 마크업이 같은 배열을 쓴다. 첫 문항이 브랜드를 묻는
+     * 질문이라, 여기서 한글 표기와 영문 표기가 함께 나와야 둘이 같은 서비스로 묶인다.
+     */
+    it('ko 홈 FAQ 첫 문항은 한글·영문 브랜드를 함께 적는다', async () => {
+        const faqPage = collectJsonLdData(await renderHome()).find(
+            d => d['@type'] === 'FAQPage'
+        ) as { mainEntity: { name: string }[] } | undefined;
+
+        expect(faqPage?.mainEntity[0]?.name).toBe(
+            '시그렌즈(Siglens)는 어떤 서비스인가요?'
+        );
+    });
+
+    /**
+     * 한글 표기는 한글 독음이라 ko에서만 낸다. 다른 로케일 질문에 섞이면 그
+     * 로케일 독자에게는 읽을 수 없는 글자가 브랜드 자리에 들어간다.
+     */
+    it.each(['en', 'ja', 'zh'] as const)(
+        '%s 홈 FAQ 첫 문항은 영문 브랜드만 쓴다',
+        locale => {
+            const faq = buildHomeFaq(
+                (key, values) => `${key}|${String(values?.v0)}`,
+                locale
+            );
+
+            expect(faq[0]?.question).toBe('faq.q0.question|Siglens');
+        }
+    );
 });

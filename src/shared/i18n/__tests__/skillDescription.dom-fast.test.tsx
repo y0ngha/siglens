@@ -44,7 +44,7 @@ function DescriptionProbe({ description }: { description: string }) {
 /**
  * **skills 디렉터리 ↔ `shared.skillDescription` 카탈로그 완전성.**
  *
- * `useSkillLabel — skills ↔ 카탈로그 완전성`(`skillLabel.test.tsx`)과 동일한
+ * `useSkillLabel — skills ↔ 카탈로그 완전성`(`skillLabel.dom-fast.test.tsx`)과 동일한
  * 이유·동일한 형태 — `useSkillDescription`이 `useSkillLabel`을 미러링한다.
  * 소스는 카탈로그가 아니라 skills 파일이다 — 새 스킬을 추가하면서 설명 번역을
  * 빠뜨리면 조용히 새는 상태였다.

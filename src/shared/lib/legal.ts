@@ -94,7 +94,8 @@ export function aboutTitle(t: SeoTranslator): string {
 /**
  * `<title>`·OG 제목. 다른 법무 페이지처럼 `${title} | Siglens`가 아니다 — 소개
  * 페이지는 브랜드 검색과 "AI 주식 분석" 류 검색을 함께 받으므로 무엇을 하는
- * 서비스인지가 제목에 들어가고, 그 문구가 이미 `Siglens`로 시작한다.
+ * 서비스인지가 제목에 들어가고, 그 문구가 이미 브랜드(ko는 `시그렌즈(Siglens)`)로
+ * 시작한다.
  */
 export function aboutFullTitle(t: SeoTranslator): string {
     return t('about.metaTitle');

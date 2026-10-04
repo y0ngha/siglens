@@ -45,9 +45,18 @@ jobs:
         needs: changes
         if: needs.changes.outputs.run == 'true'
         runs-on: ubuntu-latest
-        # Single job is sufficient for this foundation PR (one smoke spec).
-        # When the spec count grows, add Playwright sharding via a matrix
-        # (e.g. strategy.matrix.shard: [1, 2] + `--shard=${{ matrix.shard }}/2`).
+        # 러너 4대로 샤딩한다. playwright.config.ts가 CI에서 `workers: 1`로 직렬
+        # 실행하므로(단일 Next 서버에 워커를 여러 개 붙이면 DB 쓰기 액션이 flaky)
+        # 한 잡에서는 247개 테스트가 5분 넘게 걸린다(2026-10-04 실측 5분 18초).
+        # 샤드는 잡마다 Postgres·Redis·Next 서버를 **따로** 띄우므로 서버 경합 없이
+        # 병렬화된다 — "워커별 독립 서버"를 러너 단위로 얻는 셈이다.
+        # 샤드 수를 바꿀 때는 matrix.shard 배열만 고친다 — 분모는 strategy.job-total이다.
+        #
+        # fail-fast: false — 한 샤드가 깨져도 나머지를 끝까지 돌려 실패 목록을 한 번에 본다.
+        strategy:
+            fail-fast: false
+            matrix:
+                shard: [1, 2, 3, 4]
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
@@ -74,8 +83,20 @@ jobs:
                   SIGLENS_GITHUB_TOKEN: ${{ secrets.SIGLENS_GITHUB_TOKEN }}
               run: yarn install --immutable
 
-            - name: Install Playwright browsers
-              run: yarn playwright install --with-deps chromium webkit
+            # 브라우저 설치를 **백그라운드로** 시작한다. 이 스텝의 약 60초 중 50초는
+            # webkit용 apt 패키지 181개(125MB) 설치라 브라우저 바이너리를 캐시해도
+            # 줄지 않는다(다운로드는 9초). 대신 CPU를 거의 안 쓰는 대기 시간이므로
+            # 아래 백엔드 기동·마이그레이션·`next build`(합쳐 70초 남짓)와 겹쳐서
+            # 잡당 1분가량을 없앤다. 결과는 "Wait for Playwright browsers" 스텝이 회수한다.
+            #
+            # 종료 코드를 파일로 남기는 이유: 백그라운드 프로세스의 실패는 이 스텝의
+            # 종료 코드에 반영되지 않는다. 회수 스텝이 이 파일로 성공·실패를 판정한다.
+            - name: Install Playwright browsers (background)
+              run: |
+                  nohup sh -c '
+                      yarn playwright install --with-deps chromium webkit > "$RUNNER_TEMP/playwright-install.log" 2>&1
+                      echo $? > "$RUNNER_TEMP/playwright-install.exit"
+                  ' > /dev/null 2>&1 &
 
             # Start the Docker backend with Compose (NOT GitHub `services:`).
             # global-setup.ts runs migrate/seed via `docker compose exec`, which
@@ -107,7 +128,7 @@ jobs:
                   exit 1
 
             # Migrate + seed the e2e DB BEFORE the cold prod build runs. The
-            # webServer build statically prerenders /privacy and /terms, which
+            # build statically prerenders /privacy and /terms, which
             # query the `terms` table — so the schema AND active seed rows must
             # exist before `next build`, or the build worker dies with
             # `relation "terms" does not exist` (42P01). This runs the SAME
@@ -116,21 +137,50 @@ jobs:
             - name: Migrate + seed e2e DB
               run: yarn e2e:db
 
-            # CI=1 → reuseExistingServer is false (always cold prod build) and
-            # retries: 2. globalSetup runs migrate+seed via compose exec, then
-            # the webServer cold-builds the prod app with E2E_TEST=1 sourced from
-            # .env.e2e (there is intentionally no .env.local in CI), then runs the
-            # chromium + webkit projects.
-            - name: Run E2E tests
-              run: yarn test:e2e
+            # 프로덕션 빌드를 Playwright webServer 밖에서 미리 한다. 위에서 백그라운드로
+            # 시작한 브라우저 설치와 겹치게 하려는 것이다 — webServer 안에서 빌드하면
+            # `playwright test`가 브라우저 설치를 기다린 **뒤에야** 빌드가 시작된다.
+            # 명령은 playwright.config.ts의 webServer가 쓰던 것과 같은 형태(`dotenv -e
+            # .env.e2e`, CI에는 의도적으로 .env.local이 없다)라 빌드 입력(E2E_TEST=1
+            # 등)이 동일하다. CI=1도 같이 준다 — webServer는 테스트 스텝의 env를
+            # 물려받아 빌드해 왔으므로 그 조건을 그대로 맞춘다.
+            - name: Build (E2E prod build)
+              run: node_modules/.bin/dotenv -e .env.e2e -- yarn build
               env:
                   CI: '1'
 
+            - name: Wait for Playwright browsers
+              run: |
+                  for i in $(seq 1 150); do
+                      if [ -f "$RUNNER_TEMP/playwright-install.exit" ]; then
+                          code="$(cat "$RUNNER_TEMP/playwright-install.exit")"
+                          cat "$RUNNER_TEMP/playwright-install.log"
+                          echo "playwright install exited with $code"
+                          exit "$code"
+                      fi
+                      sleep 2
+                  done
+                  echo "Playwright install did not finish within 5 minutes. Log so far:"
+                  cat "$RUNNER_TEMP/playwright-install.log" || true
+                  exit 1
+
+            # CI=1 → reuseExistingServer is false and retries: 2. globalSetup runs
+            # migrate+seed via compose exec (no-op: already done above), then the
+            # webServer starts the app built above — E2E_PREBUILT=1 tells
+            # playwright.config.ts to skip its own `yarn build` — and runs this
+            # shard's slice of the projects.
+            - name: Run E2E tests (shard ${{ matrix.shard }}/${{ strategy.job-total }})
+              run: yarn test:e2e --shard=${{ matrix.shard }}/${{ strategy.job-total }}
+              env:
+                  CI: '1'
+                  E2E_PREBUILT: '1'
+
+            # 아티팩트 이름은 런 안에서 유일해야 한다 — 샤드 번호를 붙인다.
             - name: Upload Playwright report
               if: failure()
               uses: actions/upload-artifact@v4
               with:
-                  name: playwright-report
+                  name: playwright-report-shard-${{ matrix.shard }}
                   path: |
                       playwright-report/
                       test-results/
@@ -143,6 +193,7 @@ jobs:
 
     # Required-check gate: always runs so a path-skipped `e2e` never leaves a
     # required check stuck "pending". Mark THIS job required (not `e2e`).
+    # 매트릭스 잡의 `needs.e2e.result`는 샤드 전체의 합산 결과다(하나라도 실패면 failure).
     e2e-required:
         needs: [changes, e2e]
         if: always()

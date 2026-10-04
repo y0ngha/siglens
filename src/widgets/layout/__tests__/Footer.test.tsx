@@ -43,8 +43,9 @@ import {
 } from '@/shared/config/assetClassNav';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { localePath } from '@/shared/i18n/locales';
-import { GITHUB_URL, SITE_NAME, X_URL } from '@/shared/lib/seo';
+import { GITHUB_URL, SITE_NAME, SITE_NAME_KO, X_URL } from '@/shared/lib/seo';
 import { koMessage } from '@/shared/test-utils/koMessage';
+import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import en from '../../../../messages/en.json';
 import ja from '../../../../messages/ja.json';
 import ko from '../../../../messages/ko.json';
@@ -66,6 +67,28 @@ describe('Footer', () => {
 
         expect(screen.getByText(/© 2026 SIGLENS/)).toBeInTheDocument();
     });
+
+    /**
+     * 한글 표기는 전 페이지 푸터에서 워드마크 옆에 보인다 — 화면에서 "시그렌즈"가
+     * 사이트 전역으로 나오는 유일한 자리다. 한글 독음이라 ko에서만 낸다.
+     */
+    it('ko 푸터는 워드마크 옆에 한글 표기를 보인다', () => {
+        renderWithIntl(<Footer />, { locale: 'ko' });
+
+        expect(
+            screen.getByText(new RegExp(`© 2026 SIGLENS · ${SITE_NAME_KO}`))
+        ).toBeInTheDocument();
+    });
+
+    it.each(['en', 'ja', 'zh'] as const)(
+        '%s 푸터에는 한글 표기가 없다',
+        locale => {
+            const { container } = renderWithIntl(<Footer />, { locale });
+
+            expect(screen.getByText(/© 2026 SIGLENS/)).toBeInTheDocument();
+            expect(container.textContent).not.toContain(SITE_NAME_KO);
+        }
+    );
 
     it('renders the about link, uppercasing the brand token in the title', () => {
         render(<Footer />);

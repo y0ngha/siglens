@@ -12,8 +12,8 @@ permissions:
     contents: read
 
 jobs:
-    # Cheap detect job: decide whether the heavy `ci` job runs. Needs a checkout
-    # only to read .github/path-filters.yml; the PR diff comes from the REST API.
+    # Cheap detect job: decide whether the heavy `static`/`test` jobs run. Needs a
+    # checkout only to read .github/path-filters.yml; the PR diff comes from the REST API.
     changes:
         runs-on: ubuntu-latest
         permissions:
@@ -38,7 +38,9 @@ jobs:
                       echo "run=false" >> "$GITHUB_OUTPUT"
                   fi
 
-    ci:
+    # 정적 검사(typecheck/lint/format/i18n/skills). 다 합쳐 20초 안쪽이라 테스트
+    # 샤드와 따로 돌려 값싼 실패를 1분 안에 보여 준다.
+    static:
         needs: changes
         if: needs.changes.outputs.run == 'true'
         runs-on: ubuntu-latest
@@ -57,7 +59,7 @@ jobs:
 
             # 레지스트리 토큰은 install 스텝에만 노출한다(최소 권한). .yarnrc.yml이
             # `${SIGLENS_GITHUB_TOKEN:-}`로 기본값을 두므로 이후 스텝은 토큰 없이 돈다.
-            # --mode=skip-build: 이 잡은 typecheck/lint/format/test만 돌려 네이티브
+            # --mode=skip-build: 이 잡은 typecheck/lint/format만 돌려 네이티브
             # 빌드가 필요 없고, 시크릿이 있는 동안 패키지 lifecycle 코드를 실행하지 않는다.
             - name: Install dependencies
               env:
@@ -94,13 +96,51 @@ jobs:
                   yarn i18n:extract --write
                   git diff --exit-code -- messages/
 
-            - name: Test
-              run: yarn test
+    # 단위 테스트는 러너 여러 대로 쪼갠다. 한 잡에서 1,410개 파일을 돌리면 4 vCPU
+    # 러너에서 약 8분(2026-10-04 실측 471초)인데, 그 시간은 거의 전부 파일별 환경
+    # 준비·import라 러너 수에 반비례해 줄어든다. GitHub 호스티드 러너는 병렬로 붙고
+    # (공개 레포라 분 과금도 없다) 잡당 셋업은 40초 남짓이다.
+    #
+    # `--shard`는 파일 경로 해시로 나누므로 모든 샤드를 합치면 전체 스위트와 같다
+    # (로컬 실측: 4샤드 합계 1,410 파일 / 14,764 테스트 = 단일 실행과 동일).
+    # 샤드 수를 바꿀 때는 matrix.shard 배열만 고친다 — 분모는 strategy.job-total이다.
+    #
+    # fail-fast: false — 한 샤드가 깨져도 나머지를 끝까지 돌려 실패 목록을 한 번에 본다.
+    test:
+        needs: changes
+        if: needs.changes.outputs.run == 'true'
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+        strategy:
+            fail-fast: false
+            matrix:
+                shard: [1, 2, 3, 4]
+        steps:
+            - uses: actions/checkout@v4
 
-    # Required-check gate: always runs so a path-skipped `ci` never leaves a
-    # required check stuck "pending". Mark THIS job required (not `ci`).
+            - name: Enable Corepack
+              run: corepack enable
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version-file: .nvmrc
+                  cache: yarn
+
+            # 토큰·skip-build 근거는 위 `static` 잡의 같은 스텝 주석 참고.
+            - name: Install dependencies
+              env:
+                  SIGLENS_GITHUB_TOKEN: ${{ secrets.SIGLENS_GITHUB_TOKEN }}
+              run: yarn install --immutable --mode=skip-build
+
+            - name: Test (shard ${{ matrix.shard }}/${{ strategy.job-total }})
+              run: yarn test --shard=${{ matrix.shard }}/${{ strategy.job-total }}
+
+    # Required-check gate: always runs so path-skipped `static`/`test` never leave a
+    # required check stuck "pending". Mark THIS job required (not `static`/`test`).
+    # 매트릭스 잡의 `needs.test.result`는 샤드 전체의 합산 결과다(하나라도 실패면 failure).
     ci-required:
-        needs: [changes, ci]
+        needs: [changes, static, test]
         if: always()
         runs-on: ubuntu-latest
         steps:
@@ -109,7 +149,10 @@ jobs:
                   if [ "${{ needs.changes.result }}" = "failure" ] || [ "${{ needs.changes.result }}" = "cancelled" ]; then
                       echo "detect job failed"; exit 1
                   fi
-                  if [ "${{ needs.ci.result }}" = "failure" ] || [ "${{ needs.ci.result }}" = "cancelled" ]; then
-                      echo "ci failed"; exit 1
+                  if [ "${{ needs.static.result }}" = "failure" ] || [ "${{ needs.static.result }}" = "cancelled" ]; then
+                      echo "static checks failed"; exit 1
                   fi
-                  echo "ci ok (result=${{ needs.ci.result }})"
+                  if [ "${{ needs.test.result }}" = "failure" ] || [ "${{ needs.test.result }}" = "cancelled" ]; then
+                      echo "tests failed"; exit 1
+                  fi
+                  echo "ci ok (static=${{ needs.static.result }}, test=${{ needs.test.result }})"
