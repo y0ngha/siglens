@@ -79,7 +79,7 @@
 #
 # 전제: --profile siglens (또는 AWS_PROFILE) 로 다음 권한이 필요하다:
 #       events:*, iam:CreateRole/GetRole/PutRolePolicy, logs:PutMetricFilter,
-#       cloudwatch:PutMetricAlarm, sns:CreateTopic, secretsmanager:* (create-connection이
+#       secretsmanager:* (create-connection이
 #       API_KEY 인증 정보를 담는 관리형 시크릿을 내부적으로 생성한다 — 투명하지만 권한은
 #       명시적으로 필요). CRON_SECRET은 04-params.sh가 이미 SSM /siglens/CRON_SECRET에
 #       게시했어야 한다.
@@ -256,44 +256,18 @@ done
 
 log "seo-prewarm eventbridge schedule ready — RUN A DELIVERY SPIKE before trusting the schedule (manual invoke or watch first scheduled 202, see docs/reference/CRON.md)"
 
-### 6) 알람 — batch-failure + delivery-absence(OPS-1) + (best-effort) FMP 429 버스트 ###
-# 07-alarms.sh와 동일 패턴: SNS 토픽 idempotent 생성, alarm+ok 양방향 통지.
-ALARM_SNS="${ALARM_SNS:-$(aws sns create-topic --name siglens-alerts --query TopicArn --output text --region "$REGION")}"
-# FIX E(감사) — 07-alarms.sh:9-11과 동일한 idempotent 이메일 구독 블록. 이 스크립트가
-# siglens-alerts 토픽을 처음 만드는 실행 경로(07-alarms.sh를 아직 안 돌렸거나 순서가
-# 바뀐 경우)라면 구독자가 하나도 없는 채로 알람 5개가 매달릴 수 있다 — 2026-06-28
-# 디스크풀 인시던트(AlarmActions=[]로 조용히 진행)와 같은 종류의 "액션 없는 알람" 사각지대.
-[[ -n "${ALARM_EMAIL:-}" ]] && aws sns subscribe --topic-arn "$ALARM_SNS" --protocol email \
-  --notification-endpoint "$ALARM_EMAIL" --region "$REGION" >/dev/null 2>&1 || true
-# 07-alarms.sh와 같은 2단 체계. pre-warm 알람은 전부 P2다 — 크론이 한 번 실패해도
-# 사용자에게 즉시 보이는 장애가 아니고, 다음 회차가 따라잡는다. 복구 알림은 보내지 않는다.
-ALARM_SNS_LOW="${ALARM_SNS_LOW:-$(aws sns create-topic --name siglens-alerts-low --query TopicArn --output text --region "$REGION")}"
-# 구독은 여기서도 건다(멱등). 07-alarms.sh만 구독하던 시절 이 스크립트들의 알람은
-# **구독자 0명인 토픽**으로 발동했다 — 콘솔만 빨개지고 아무에게도 안 갔다.
-LOW_EMAIL="${ALARM_EMAIL_LOW:-${ALARM_EMAIL:-}}"
-[[ -n "$LOW_EMAIL" ]] && aws sns subscribe --topic-arn "$ALARM_SNS_LOW" --protocol email \
-  --notification-endpoint "$LOW_EMAIL" --region "$REGION" >/dev/null 2>&1 || true
-ACTIONS="--alarm-actions $ALARM_SNS_LOW"
-
-# 딜리버리 부재 알람(OPS-1): 배치 내부 실패는 batch-failed가 잡지만, EventBridge가
-# 애초에 타겟 호출 자체를 실패하면(Connection 미인증, API Destination 오류, IAM 등)
-# 우리 앱 로그에는 아무 흔적도 안 남는다 — AWS/Events FailedInvocations로 그 공백을 잡는다.
-for RULE in "$RULE_EVENING" "$RULE_EVENING_LATE" "$RULE_EARLY" "$RULE_EARLY_LATE" "$RULE_KR_BOUNDARY"; do
-  case "$RULE" in
-    "$RULE_EVENING") ALARM_SUFFIX="evening" ;;
-    "$RULE_EVENING_LATE") ALARM_SUFFIX="evening-late" ;;
-    "$RULE_EARLY") ALARM_SUFFIX="early" ;;
-    "$RULE_EARLY_LATE") ALARM_SUFFIX="early-late" ;;
-    *) ALARM_SUFFIX="kr-boundary" ;;
-  esac
-  aws cloudwatch put-metric-alarm --alarm-name "siglens-seo-prewarm-${ALARM_SUFFIX}-failed" \
-    --namespace AWS/Events --metric-name FailedInvocations \
-    --dimensions Name=RuleName,Value="$RULE" \
-    --statistic Sum --period 300 --evaluation-periods 1 --threshold 0 \
-    --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching \
-    --region "$REGION" $ACTIONS
-  log "alarm siglens-seo-prewarm-${ALARM_SUFFIX}-failed ready (AWS/Events FailedInvocations, RuleName=$RULE)"
-done
+### 6) 로그 메트릭 필터 (알람은 07-alarms.sh의 `siglens-p2` 점수 알람 하나로 통합) ###
+# 2026-10 CloudWatch 무료 티어 통합: 이 스크립트의 알람 5+3개는 모두 폐기됐다.
+#   - EventBridge FailedInvocations 알람 5개(evening/evening-late/early/early-late/kr-boundary,
+#     `siglens-seo-prewarm-<suffix>-failed`): 딜리버리 실패를 잡는 안전망이었으나 무료 티어
+#     (알람 지표 10개)를 맞추려 폐기했다. 딜리버리가 끊기면 prewarm 로그 자체가 멎으므로
+#     커버리지 저하는 사후 점검(Logs Insights로 `[seo-prewarm]` 일일 건수)에서 보인다.
+#   - 로그 알람 3개(batch-failed/unit-error/deadline-reached): 각 필터는 유지하되
+#     `Siglens/Alerts P2Score`(원인별 가중치)로 발행하고, 알람은 07-alarms.sh의 `siglens-p2`
+#     하나가 합산 평가한다. SNS 토픽·구독은 07-alarms.sh가 소유하므로 여기서는 만들지 않는다.
+# 옛 알람의 삭제도 07-alarms.sh의 OBSOLETE_ALARMS가 담당한다.
+# 필터에는 `defaultValue`를 붙이지 않는다(매 시간 0을 발행해 커스텀 메트릭 과금 — 07-alarms.sh의
+# FILL 설명 참조).
 
 # ⚠️ 로그 그룹 순서 주의: 아래 put-metric-filter 호출들은 로그 그룹 /siglens/app이
 # 이미 존재한다는 전제다(10-logs.sh 또는 첫 인스턴스 부팅이 생성). 그룹이 아직 없으면
@@ -307,14 +281,10 @@ done
 aws logs put-metric-filter --log-group-name /siglens/app \
   --filter-name siglens-seo-prewarm-batch-failed \
   --filter-pattern '"[seo-prewarm] batch failed"' \
-  --metric-transformations metricName=SeoPrewarmBatchFailed,metricNamespace=Siglens/SeoPrewarm,metricValue=1,defaultValue=0 \
+  --metric-transformations metricName=P2Score,metricNamespace=Siglens/Alerts,metricValue=34 \
   --region "$REGION" || true
-# 1시간에 3회 초과 = 산발적 hiccup이 아니라 지속 실패.
-aws cloudwatch put-metric-alarm --alarm-name siglens-seo-prewarm-batch-failed \
-  --namespace Siglens/SeoPrewarm --metric-name SeoPrewarmBatchFailed \
-  --statistic Sum --period 3600 --evaluation-periods 1 --threshold 3 \
-  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching \
-  --region "$REGION" $ACTIONS
+# 가중치 34: cron이 5분 tick이라 15분 창에는 많아야 3회가 들어온다 → 3회 연속 실패(102점)면
+# siglens-p2(≥100)가 발화한다. 단발 1~2회는 다른 P2 원인과 합산될 때만 울린다.
 
 # redis 불가용: lock.ts의 acquirePrewarmLock이 redis 미구성 시 fail-closed로 null을
 # 반환하고 '[seo-prewarm] redis unavailable — cannot run'을 남긴다. route.ts(FIX H,
@@ -326,8 +296,7 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-seo-prewarm-batch-failed \
 # 2026-09-14 알람 통합: 이 필터/알람은 여기서 만들지 않는다 — 같은 "0 초과 =
 # 즉시 알람, 1시간 주기" 모양의 다른 설정/자격증명 신호(네이버 뉴스, KR 캘린더
 # 지평선)와 합쳐 `infra/aws/07-alarms.sh`의 `siglens-config-signal`
-# 필터+알람(namespace Siglens/Config)으로 승격했다. `$ACTIONS`(=`$ALARM_SNS_LOW`)와
-# 07의 `$P2`가 같은 토픽이라 알림 등급은 그대로다. 원문 로그 문자열은 바뀌지
+# 필터(가중치 100, Siglens/Alerts P2Score)로 승격했다. 원문 로그 문자열은 바뀌지
 # 않았으니 이 주석은 유지한다 — 왜 이 리터럴을 골랐는지는 여전히 여기서 설명해야 한다.
 
 # FMP 429 버스트: best-effort/placeholder. fmpRetry.ts(isFmpTransientError)가 429를
@@ -352,20 +321,15 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-seo-prewarm-batch-failed \
 # 배치는 fail-open이라 'batch failed'도 안 남는다 — 그 조합이면 야간 prewarm이 산출 0으로
 # 조용히 죽는다.
 #
-# 임계값: 15분 20건 초과가 연속 2주기. tick당 유닛 수는 SYMBOLS_PER_TICK 12 × 2탭
+# 가중치 5: 15분 창에 20건이면 siglens-p2(≥100)가 발화한다. tick당 유닛 수는 SYMBOLS_PER_TICK 12 × 2탭
 # (technical·news) = 최대 24건이다(2026-10-02 이전엔 6 × 최대 7탭 = 42건). 전면 장애는
 # tick마다 ~24건 → 15분(3 tick)에 ~72건으로 임계값을 넘고, 심볼 한둘의 고질적 실패는
 # 15분에 많아야 2 × 2탭 × 3 tick = 12건이라 이 밑에 머문다.
 aws logs put-metric-filter --log-group-name /siglens/app \
   --filter-name siglens-seo-prewarm-unit-error \
   --filter-pattern '?"[seo-prewarm] unit-error" ?"[seo-prewarm] unit-timeout"' \
-  --metric-transformations metricName=SeoPrewarmUnitError,metricNamespace=Siglens/SeoPrewarm,metricValue=1,defaultValue=0 \
+  --metric-transformations metricName=P2Score,metricNamespace=Siglens/Alerts,metricValue=5 \
   --region "$REGION" || true
-aws cloudwatch put-metric-alarm --alarm-name siglens-seo-prewarm-unit-error \
-  --namespace Siglens/SeoPrewarm --metric-name SeoPrewarmUnitError \
-  --statistic Sum --period 900 --evaluation-periods 2 --threshold 20 \
-  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching \
-  --region "$REGION" $ACTIONS
 
 # 배치 데드라인 도달 — 커버리지 부족의 유일한 신호.
 #
@@ -373,19 +337,19 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-seo-prewarm-unit-error \
 # batch-failed에도, unit-error/unit-timeout에도 안 걸린다. 매일 밤 조금씩 덜 도는 상태가
 # 조용히 굳으면 크롤러가 보는 SSR 서술이 그만큼 낡는다(2026-07 노출 절벽의 재발 경로).
 #
-# 임계값: 하룻밤(6시간) 3회 초과. 산발적 1~2회는 느린 프로바이더로 정상 범위지만,
+# 가중치 34: 데드라인에 걸린 배치는 Redis 락을 10분 이상 쥐고 있어 그동안의 tick은 배치를 돌리지 못한다.
+# 그래서 15분 창에는 데드라인 배치가 많아야 2개이고, 배치 하나는 마커를 최대 2줄(청크 경계·탭 탈락,
+# runPrewarmBatch.ts) 남긴다. 한 배치만으로는 최대 68점이고, 같은 창에 데드라인 배치 2개가 걸려 마커가
+# 3줄 이상이면 발화한다(또는 다른 P2 원인과 합산). 예전 알람은 6시간에
+# 3회였는데 점수 알람은 15분 창만 보므로 산발적 반복은 잡지 못한다 — 추세는 Logs Insights로 본다.
+# 산발적 1~2회는 느린 프로바이더로 정상 범위지만,
 # 반복되면 SYMBOL_CONCURRENCY/스케줄 폭을 재검토해야 한다.
 aws logs put-metric-filter --log-group-name /siglens/app \
   --filter-name siglens-seo-prewarm-deadline-reached \
   --filter-pattern '"[seo-prewarm] batch deadline reached"' \
-  --metric-transformations metricName=SeoPrewarmDeadlineReached,metricNamespace=Siglens/SeoPrewarm,metricValue=1,defaultValue=0 \
+  --metric-transformations metricName=P2Score,metricNamespace=Siglens/Alerts,metricValue=34 \
   --region "$REGION" || true
-aws cloudwatch put-metric-alarm --alarm-name siglens-seo-prewarm-deadline-reached \
-  --namespace Siglens/SeoPrewarm --metric-name SeoPrewarmDeadlineReached \
-  --statistic Sum --period 21600 --evaluation-periods 1 --threshold 3 \
-  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching \
-  --region "$REGION" $ACTIONS
 
-log "skipped fmp-429 alarm: no stable log marker exists yet (see comment above) — batch-failed alarm covers structural failure in the meantime"
+log "skipped fmp-429 filter: no stable log marker exists yet (see comment above) — batch-failed filter covers structural failure in the meantime"
 
-log "seo-prewarm alarms ready (batch-failed, unit-error, deadline-reached; fmp-429 skipped, see log above). redis-unavailable is monitored by siglens-config-signal — run 07-alarms.sh too"
+log "seo-prewarm metric filters ready (batch-failed=34, unit-error/timeout=5, deadline-reached=34 -> Siglens/Alerts P2Score; alarm is siglens-p2 in 07-alarms.sh; redis-unavailable is in siglens-config-signal filter)"
