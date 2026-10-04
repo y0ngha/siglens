@@ -10,7 +10,7 @@ import { test, expect } from '../support/fixtures';
  * relation.
  *
  * `/about` no longer uses the legal shell: it is an intro page (`views/about`)
- * whose h1 is the action headline and whose title leads with "Siglens 소개".
+ * whose h1 is the action headline and whose title leads with "시그렌즈(Siglens) 소개".
  * It has no DB read, so it only needs its own render check below.
  *
  * `/methodology` is the sibling trust page (data sources, rules, what the AI
@@ -49,7 +49,7 @@ test('/about renders the intro page with its example report and FAQ', async ({
             name: '종목 하나만 입력하면, AI가 한 번에 분석해 드려요',
         })
     ).toBeVisible();
-    await expect(page).toHaveTitle(/^Siglens 소개: /);
+    await expect(page).toHaveTitle(/^시그렌즈\(Siglens\) 소개: /);
     await expect(
         page.getByRole('region', { name: 'Siglens 분석 과정 예시' })
     ).toBeVisible();

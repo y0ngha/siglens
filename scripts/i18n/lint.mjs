@@ -58,6 +58,8 @@ for (const relPath of candidateFiles(ROOT)) {
             verdict.reason === 'ko-grammar' ||
             // 언어 스위처의 자국어 표기 — 번역하면 기능이 망가진다.
             verdict.reason === 'native-language-label' ||
+            // 브랜드의 한글 표기(`SITE_NAME_KO`) — 고유명사라 번역하지 않는다.
+            verdict.reason === 'brand-native-name' ||
             // use-case의 로그·폴백 원문 — 표시는 UI가 코드로 번역한다.
             verdict.reason === 'log-fallback-message'
         ) {

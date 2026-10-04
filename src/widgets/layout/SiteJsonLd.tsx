@@ -1,4 +1,4 @@
-import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
+import { SITE_NAME, SITE_NAME_KO, SITE_URL } from '@/shared/lib/seo';
 import { JsonLd } from '@/shared/ui/JsonLd';
 
 export function SiteJsonLd() {
@@ -9,6 +9,9 @@ export function SiteJsonLd() {
         // 있게 한다 — schema.org 권장 entity graph 패턴.
         '@id': `${SITE_URL}#website`,
         name: SITE_NAME,
+        // 구글의 사이트 이름 시스템이 `name` 다음으로 읽는 후보다. 한글 표기를
+        // 먼저 둔다 — 영문은 동명 프로젝트와 겹쳐 식별력이 없다(`SITE_NAME_KO` 주석).
+        alternateName: [SITE_NAME_KO, SITE_NAME.toUpperCase()],
         url: SITE_URL,
         /*
          * `potentialAction`(SearchAction)은 뺐다.
