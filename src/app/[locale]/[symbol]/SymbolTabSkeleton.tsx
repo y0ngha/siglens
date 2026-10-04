@@ -1,23 +1,13 @@
 'use client';
 
 import { SectionSkeleton } from '@/views/symbol/SectionSkeleton';
+import {
+    SYMBOL_TAB_SECTION_COUNT,
+    isSectionSkeletonTab,
+} from '@/views/symbol/tabSkeletonSections';
 import { usePendingSymbolTab } from '@/views/symbol/SymbolTabPendingContext';
 import SymbolLoading from './loading';
 import OptionsLoading from './options/loading';
-
-/**
- * 탭 본문이 섹션 카드의 세로 목록인 탭과 그 첫 화면의 대략적인 섹션 수.
- * `overall`·`news`·`fundamental`은 각 탭 `loading.tsx`와 같은 수다.
- */
-const SECTION_COUNT_BY_TAB: Readonly<Record<string, number>> = {
-    overall: 3,
-    news: 5,
-    fundamental: 6,
-    financials: 4,
-    congress: 4,
-    'fear-greed': 4,
-    position: 3,
-};
 
 /**
  * 같은 종목 안에서 탭을 옮기는 순간 `[symbol]` 레이아웃의 page slot에 그리는 골격.
@@ -32,14 +22,14 @@ export function SymbolTabSkeleton() {
     const pendingHref = usePendingSymbolTab();
     const tab = pendingHref?.split('/')[2] ?? '';
     if (tab === 'options') return <OptionsLoading />;
-    if (Object.hasOwn(SECTION_COUNT_BY_TAB, tab)) {
+    if (isSectionSkeletonTab(tab)) {
         return (
             <div
                 data-symbol-tab-skeleton={tab}
                 className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8"
             >
                 {Array.from(
-                    { length: SECTION_COUNT_BY_TAB[tab] ?? 0 },
+                    { length: SYMBOL_TAB_SECTION_COUNT[tab] },
                     (_, i) => (
                         <SectionSkeleton key={i} />
                     )
@@ -47,6 +37,7 @@ export function SymbolTabSkeleton() {
             </div>
         );
     }
-    // 차트 탭(두 번째 세그먼트 없음)과 모르는 탭.
+    // 나머지는 차트 로딩 화면으로 둔다. 차트 탭은 본문이 jail을 꽉 채우는 한 덩어리라
+    // 섹션 골격이 맞지 않고, 모르는 탭은 모양을 짐작해 그리느니 중립적인 화면이 낫다.
     return <SymbolLoading />;
 }

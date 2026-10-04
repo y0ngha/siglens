@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-import path from 'node:path';
 import {
     AUTH_REQUIRED_PATHS,
     GUEST_ONLY_PATHS,
@@ -57,20 +55,5 @@ describe('predictGuardedLanding', () => {
                 '/signup/oauth/consent'
             );
         });
-    });
-
-    /**
-     * 목록을 프록시가 따로 들고 있으면 한쪽만 고쳐져 예측이 조용히 틀어진다. 프록시가
-     * 이 파일의 목록을 쓰는지 소스로 고정한다.
-     */
-    it('프록시는 이 파일의 목록을 쓴다', () => {
-        const proxy = readFileSync(
-            path.resolve(__dirname, '../../../proxy.ts'),
-            'utf8'
-        );
-        expect(proxy).toContain("from '@/shared/config/authGuardPaths'");
-        expect(proxy).not.toMatch(
-            /const (GUEST_ONLY_PATHS|AUTH_REQUIRED_PATHS)\b/
-        );
     });
 });

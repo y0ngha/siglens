@@ -39,9 +39,14 @@ describe('RouteSkeleton', () => {
 
     it('움직임 줄이기 설정을 따른다', () => {
         const { container } = render(<RouteSkeleton kind="market" />);
-        for (const el of container.querySelectorAll('.animate-pulse')) {
-            expect(el.className).toContain('motion-reduce:animate-none');
-        }
+        const pulsing = Array.from(
+            container.querySelectorAll('.animate-pulse')
+        );
+        expect(
+            pulsing.every(el =>
+                el.className.includes('motion-reduce:animate-none')
+            )
+        ).toBe(true);
     });
 
     it('첫 화면을 채워 푸터를 끌어올리지 않는다', () => {
