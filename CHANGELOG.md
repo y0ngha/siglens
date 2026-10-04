@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.96.3](https://github.com/y0ngha/siglens/compare/v0.96.2...v0.96.3) (2026-10-04)
+
 ## [0.96.2](https://github.com/y0ngha/siglens/compare/v0.96.1...v0.96.2) (2026-10-03)
 
 ### Performance Improvements
