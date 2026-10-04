@@ -228,6 +228,61 @@ function findForeignScript(text: string, locale: string): string[] {
     );
 }
 
+/**
+ * 독자에게 매매 행동을 지시하거나 그 행동의 유불리를 평가하는 한국어 표현.
+ *
+ * 2026-10-04 운영 크롤에서 "지금 새로 사기에는 불리한 위치입니다" 같은 문장이 색인된
+ * 페이지에 남아 있었다. `/about`은 매수·매도를 권유하지 않는다고 밝히므로, 프롬프트
+ * 규칙에만 기대지 않고 결과 문자열을 직접 검사한다.
+ *
+ * **정밀도를 우선한다.** 넓게 잡으면 "사야 할 조건도 팔아야 할 조건도 아직 충족되지
+ * 않았습니다", "관망하는 사람이 많다", "매수 추천도 나왔습니다" 같은 사실 서술이
+ * 걸려 쉬운 글 전체가 사라진다. 그래서 어미까지 붙은 형태만 본다.
+ *
+ * 한국어에는 `\b`가 통하지 않는다. 한 음절 어간(`사`·`팔`)은 앞 글자가 한글이면
+ * 다른 단어의 일부(`유사기에는`)일 수 있어 후방 탐색으로 단어 시작을 요구한다.
+ * 한글만 들어 있으므로 en·ja·zh 본문과는 겹치지 않지만, 호출 쪽(`guardPlainText`)은
+ * 그래도 로케일로 한 번 더 막는다.
+ */
+const ADVICE_PATTERNS: readonly RegExp[] = [
+    // 지금 새로 사기에는 / 진입하기에는 / 들어가기에는 — 행동의 유불리 평가
+    /(?:(?<![가-힣])[사팔]|들어가|진입하|매수하|매도하)기에는/g,
+    // 따라 사기보다는 / 쫓아가기보다는 — 행동 간 비교
+    /(?:(?<![가-힣])사|매수하|진입하|따라가|쫓아가)기보다/g,
+    // 나눠서 사는 편이 낫습니다 / 확인하는 쪽이 안전합니다
+    /는 (?:편|쪽)이 (?:낫|나은|좋|안전|합리적|유리)/g,
+    // 조정을 기다려야 하는 구간 / 기다려야 할 근거
+    /기다려야 (?:하|할)/g,
+    // 관망하세요 / 분할 매수하세요 — 명령형
+    /(?:하|사|파|보|두|피하|줄이|늘리|기다리|지켜보)(?:세요|십시오)/g,
+    // 권유 서술. "추천 종목"·"매수 추천도 나왔습니다" 같은 명사형 인용은 걸리지 않는다
+    /(?:권합니다|권장합니다|추천합니다|추천드립니다)/g,
+    // 관망이 필요합니다 / 분할 매수하는 것이 — 행동 권유
+    /(?:관망|분할 매수|분할 매도)(?:하세요|하는 것이|이 필요|을 권)/g,
+    // 반대로 베팅하는 것이 통계적으로 불리합니다 / 확인한 뒤 움직이는 것이 합리적입니다 —
+    // 행동(…하는 것)의 유불리 평가. 2026-10-04 실모델 A/B에서 새 프롬프트로도 1/20건
+    // 나왔다. "어느 쪽도 유리하지 않은 중립 상태"처럼 구조를 말하는 문장은 "는 것이"가
+    // 없어 걸리지 않는다.
+    //
+    // 형용사는 어간 뒤 어미(`하`/`합`)까지 요구한다 — `안전자산`(명사), `불리는`(동사
+    // 불리다)이 접두로 걸리지 않게 하기 위해서다. 알려진 절충: "지지선이 깨지는 것이
+    // 불리한 신호입니다"처럼 주어가 가격인 평가도 걸린다. 걸리면 그 문장만 도려내므로
+    // 손실은 문장 하나다.
+    /는 것이 (?:[가-힣]+ )?(?:불리(?:하|합)|유리(?:하|합)|낫|나은|바람직|안전(?:하|합)|합리적)/g,
+];
+
+/**
+ * 독자에게 행동을 권하거나 행동의 유불리를 평가하는 표현을 찾아 일치한 부분 문자열을
+ * 돌려준다. 한국어 패턴만 있으므로 `ko`가 아니면 항상 빈 배열이다 — 다른 언어는
+ * 이 검사의 범위가 아니다.
+ */
+export function findAdvicePhrases(text: string, locale = 'ko'): string[] {
+    if (locale !== 'ko') return [];
+    return ADVICE_PATTERNS.flatMap(pattern =>
+        [...text.matchAll(pattern)].map(m => m[0])
+    );
+}
+
 /** 산출물이 통과하지 못한 이유. 재시도 프롬프트에 그대로 실린다. */
 export type PlainGuardFailure =
     | { readonly kind: 'empty' }
@@ -236,7 +291,8 @@ export type PlainGuardFailure =
     | {
           readonly kind: 'unsupported_numbers';
           readonly tokens: readonly string[];
-      };
+      }
+    | { readonly kind: 'advice'; readonly tokens: readonly string[] };
 
 export interface GuardInput {
     readonly text: string;
@@ -284,6 +340,11 @@ export function guardPlainText({
     const tokens = findUnsupportedNumbers(trimmed, allowed);
     if (tokens.length > 0) return { kind: 'unsupported_numbers', tokens };
 
+    // 숫자 검사 뒤에 둔다 — 숫자 오류가 있으면 기존대로 그쪽이 먼저 보고된다.
+    // 한국어 패턴이므로 ko에서만 건다.
+    const advice = findAdvicePhrases(trimmed, locale);
+    if (advice.length > 0) return { kind: 'advice', tokens: advice };
+
     return null;
 }
 
@@ -306,7 +367,7 @@ function splitSentences(paragraph: string): string[] {
 }
 
 /**
- * 어긋난 숫자가 든 문장만 도려낸 텍스트. 살릴 수 없으면 `null`.
+ * 어긋난 숫자가 든 문장과 독자에게 행동을 권하는 문장만 도려낸 텍스트. 살릴 수 없으면 `null`.
  *
  * ## 왜 전체를 버리지 않는가
  *
@@ -325,13 +386,22 @@ function splitSentences(paragraph: string): string[] {
  * 숨기지 않는다는 이유로 없앴다)도 함께 봤지만, 지금은 문장을 도려낸 결과가
  * 아무리 짧아도 숫자가 전부 설명되면 살린다. 도려낸 뒤 **완전히 비면**(모든
  * 문장이 위반을 포함했던 경우) 그때는 남길 것이 없으므로 버린다.
+ *
+ * ## 조언 문장
+ *
+ * 숫자와 같은 방식으로 `findAdvicePhrases`에 걸린 문장도 도려낸다. 이 함수는
+ * 로케일을 받지 않으므로(호출자 `api.ts`를 바꾸지 않는다) 한국어 패턴을 무조건
+ * 적용한다 — 패턴이 한글을 포함해 en·ja·zh 문장과는 일치할 수 없다.
+ * 도려낸 결과는 숫자뿐 아니라 조언 검사도 스스로 통과해야 한다.
  */
 export function salvageByRemovingSentences(
     text: string,
     allowed: readonly number[]
 ): string | null {
     const unsupported = findUnsupportedNumbers(text, allowed);
-    if (unsupported.length === 0) return text;
+    if (unsupported.length === 0 && findAdvicePhrases(text).length === 0) {
+        return text;
+    }
 
     const cleaned = text
         .split(/\n\s*\n/)
@@ -339,7 +409,8 @@ export function salvageByRemovingSentences(
             splitSentences(paragraph)
                 .filter(
                     sentence =>
-                        !unsupported.some(token => sentence.includes(token))
+                        !unsupported.some(token => sentence.includes(token)) &&
+                        findAdvicePhrases(sentence).length === 0
                 )
                 .join(' ')
         )
@@ -351,6 +422,7 @@ export function salvageByRemovingSentences(
     // 잘못 잡은 경우) 완전히 비면(모든 문장이 위반을 안고 있었던 경우) 살리지 않는다.
     if (cleaned.length === 0) return null;
     if (findUnsupportedNumbers(cleaned, allowed).length > 0) return null;
+    if (findAdvicePhrases(cleaned).length > 0) return null;
     return cleaned;
 }
 
@@ -374,5 +446,8 @@ export function describeFailure(
             return `이전 응답이 ${failure.tokens.join(', ')}처럼 영문 크기 표시가 붙은 숫자를 그대로 옮겼습니다. 그 표기는 쓰지 말고, 해당 항목이 많은지 적은지 또는 늘었는지 줄었는지를 말로 쓰세요.`;
         case 'unsupported_numbers':
             return `이전 응답이 입력에 없는 숫자 ${failure.tokens.join(', ')}을(를) 포함했습니다. prose와 facts에 있는 숫자만 사용하고, 퍼센트나 비율을 직접 계산하지 마세요.`;
+        case 'advice':
+            // 모델이 베낄 예시 문장을 넣지 않는다 — 이 프롬프트의 예시는 출력으로 샌다.
+            return `이전 응답이 독자에게 무엇을 하라고 말하거나 행동이 유리하다, 불리하다고 평가했습니다(${failure.tokens.join(', ')}). 그 부분을 가격과 조건, 그 조건에서 벌어지는 결과로 다시 쓰세요. 문장의 주어는 독자의 행동이 아니라 가격, 거리, 조건이어야 합니다.`;
     }
 }

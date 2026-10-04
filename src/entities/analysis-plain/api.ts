@@ -350,8 +350,16 @@ export async function rewriteToPlainLanguage(
              *
              * 크기 접미사(`1,573.1B`)는 살리지 않는다 — 자릿수가 틀린 금액이라
              * 문장을 빼는 것으로 고쳐지지 않고, 남겨 두면 10배 오류가 그대로 나간다.
+             *
+             * 조언 문구(`advice`)는 살린다 — 독자에게 행동을 권하는 문장 한두 개만
+             * 빼면 나머지는 멀쩡한 설명이다. 여기서 버리면 그 종목은 쉽게보기가 통째로
+             * 사라져 크롤러가 받는 본문이 전문 용어 원문으로 돌아간다.
              */
-            if (failure.kind !== 'unsupported_numbers') return null;
+            if (
+                failure.kind !== 'unsupported_numbers' &&
+                failure.kind !== 'advice'
+            )
+                return null;
             const salvaged = salvageByRemovingSentences(text, allowed);
             if (salvaged !== null) {
                 console.info('[analysisPlain] salvaged by sentence removal', {

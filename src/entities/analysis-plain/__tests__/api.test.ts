@@ -257,6 +257,24 @@ describe('rewriteToPlainLanguage', () => {
         expect(insertCallFor(result as string)).toBeDefined();
     });
 
+    /**
+     * 조언 문구만으로 재시도까지 실패한 경우도 그 문장만 빼고 살린다. 버리면 그 종목의
+     * 쉽게보기가 통째로 사라진다(2026-10-04: 조언 가드 도입).
+     */
+    it('재시도도 조언 문구로 실패하면 그 문장만 도려내고 살린다', async () => {
+        callAiProviderRouter.mockResolvedValue(
+            `${GOOD}\n\n그래서 지금 새로 사기에는 불리한 위치입니다.`
+        );
+
+        const result = await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
+
+        expect(result).not.toBeNull();
+        expect(result).not.toContain('사기에는');
+        expect(result).toContain('좋은 문장입니다');
+        expect(callAiProviderRouter).toHaveBeenCalledTimes(2);
+        expect(insertCallFor(result as string)).toBeDefined();
+    });
+
     /** 모든 문장이 어긋난 숫자를 품고 있으면 도려낸 뒤 남는 것이 없어 버린다. */
     it('도려낸 결과가 비면 null', async () => {
         callAiProviderRouter.mockResolvedValue('목표가 999.99달러입니다.');
