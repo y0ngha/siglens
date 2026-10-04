@@ -197,6 +197,42 @@ export function localeRobots(
 }
 
 /**
+ * 구글 결과 미리보기 지시 — 큰 이미지 썸네일, 스니펫·동영상 미리보기 길이 무제한.
+ * 이 지시가 빠지면 구글은 기본값(작은 썸네일 등)을 쓴다.
+ */
+const GOOGLE_PREVIEW_DIRECTIVES = {
+    'max-video-preview': -1,
+    'max-image-preview': 'large',
+    'max-snippet': -1,
+} as const;
+
+/**
+ * 페이지 `metadata.robots`에 **그대로** 넣는 값 — 로케일 색인 게이트
+ * (`localeRobots`)와 구글 미리보기 지시를 함께 담는다.
+ *
+ * **왜 따로 있는가**: Next는 `robots` 키를 부모와 병합하지 않고 통째로 교체한다.
+ * 루트 레이아웃이 `googleBot` 미리보기 지시를 선언해도, ko만 색인하려고
+ * `robots: localeRobots(locale)`를 직접 선언한 페이지(허브·소개·분석 방법·약관…)는
+ * `{ index, follow }`만 남고 미리보기 지시를 잃었다(2026-10-04 운영 실측: `/market`,
+ * `/fear-greed`, `/economy`, `/news`, `/about`, `/methodology`, `/symbols`의
+ * robots 메타가 `index, follow` 한 줄뿐). 레이아웃과 페이지가 이 함수 하나를 쓰면
+ * 두 표면이 갈리지 않는다.
+ *
+ * `googleBot`도 색인 판정을 그대로 따른다 — 미리보기 지시만 얹고 noindex를 뒤집지 않는다.
+ */
+export function localePageRobots(
+    locale: Locale,
+    base?: RobotsDirective,
+    available?: readonly Locale[]
+): NonNullable<Metadata['robots']> {
+    const directive = localeRobots(locale, base, available);
+    return {
+        ...directive,
+        googleBot: { ...directive, ...GOOGLE_PREVIEW_DIRECTIVES },
+    };
+}
+
+/**
  * 단순 라우트(로그인·가입·계정 등)의 `openGraph`/`twitter`를 **통째로** 만든다.
  *
  * Next는 이 최상위 키를 부모와 **병합하지 않고 교체**한다. 그래서
@@ -300,7 +336,7 @@ export async function buildHubMetadata({
         }),
         robots: degraded
             ? { index: false, follow: true }
-            : localeRobots(locale),
+            : localePageRobots(locale),
         ...localePageSocial(locale, path, {
             title: `${title} | ${SITE_NAME}`,
             description,

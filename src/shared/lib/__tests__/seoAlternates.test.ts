@@ -4,6 +4,7 @@ import {
     localeAlternatesFrom,
     localeCanonical,
     localeOpenGraph,
+    localePageRobots,
 } from '../seoAlternates';
 import { SITE_URL } from '../seo';
 import { LOCALES } from '@/shared/i18n/locales';
@@ -174,5 +175,47 @@ describe('localeOpenGraph', () => {
             locale: 'ja_JP',
             alternateLocale: ['ko_KR', 'en_US', 'zh_CN'],
         });
+    });
+});
+
+/**
+ * Next는 `robots`를 부모와 병합하지 않고 교체한다. 페이지가 이 값을 쓰면 레이아웃의
+ * 미리보기 지시가 사라지지 않아야 하고, noindex 로케일에서 `googleBot`이 색인을
+ * 뒤집어서도 안 된다.
+ */
+describe('localePageRobots', () => {
+    it('색인 로케일은 색인 지시와 구글 미리보기 지시를 함께 낸다', () => {
+        expect(localePageRobots('ko')).toEqual({
+            index: true,
+            follow: true,
+            googleBot: {
+                index: true,
+                follow: true,
+                'max-video-preview': -1,
+                'max-image-preview': 'large',
+                'max-snippet': -1,
+            },
+        });
+    });
+
+    it.each(['en', 'ja', 'zh'] as const)(
+        '%s는 noindex이고 googleBot도 noindex를 따른다',
+        locale => {
+            const robots = localePageRobots(locale) as {
+                index: boolean;
+                googleBot: { index: boolean };
+            };
+            expect(robots.index).toBe(false);
+            expect(robots.googleBot.index).toBe(false);
+        }
+    );
+
+    it('base가 noindex면 색인 로케일이어도 noindex다', () => {
+        const robots = localePageRobots('ko', {
+            index: false,
+            follow: true,
+        }) as { index: boolean; googleBot: { index: boolean } };
+        expect(robots.index).toBe(false);
+        expect(robots.googleBot.index).toBe(false);
     });
 });
