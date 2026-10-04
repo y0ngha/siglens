@@ -179,7 +179,7 @@ describe('/economy/kr page', () => {
 });
 
 /**
- * 자리표 배선. 컴포넌트 테스트(`EconomySkeleton.test.tsx`)는 "kr을 받으면 한국 형상으로
+ * 자리표 배선. 컴포넌트 테스트(`EconomySkeleton.dom-fast.test.tsx`)는 "kr을 받으면 한국 형상으로
  * 그린다"까지만 보장한다 — 이 화면이 실제로 `kr`을 넘기지 않으면 미국 형상(거시 카드 2개
  * + 국채 3장)이 그대로 예약돼 콘텐츠 도착 시 위로 당겨진다.
  */

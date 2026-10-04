@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 vi.mock('@/shared/ui/MarkdownText', () => ({
     MarkdownText: ({ children }: { children: React.ReactNode }) => (
         <span>{children}</span>

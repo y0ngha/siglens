@@ -18,7 +18,7 @@ describe('PositionCta', () => {
         );
     });
 
-    it('sub-$1 crypto 범위(예: low52w=0.0004, high52w=0.0009)는 "$0"으로 뭉개지지 않는다(회귀 방지 — PositionBuilding.test.tsx와 동일 케이스)', () => {
+    it('sub-$1 crypto 범위(예: low52w=0.0004, high52w=0.0009)는 "$0"으로 뭉개지지 않는다(회귀 방지 — PositionBuilding.dom-fast.test.tsx와 동일 케이스)', () => {
         render(<PositionCta symbol="SHIB" low52w={0.0004} high52w={0.0009} />);
         expect(screen.getByTestId('position-cta-range').textContent).toBe(
             '최근 범위 $0.0004000 ~ $0.0009000'

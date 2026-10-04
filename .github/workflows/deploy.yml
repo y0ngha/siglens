@@ -24,11 +24,21 @@ jobs:
     # deploy hot path; e2e runs on PRs before the tag is ever cut). A tagged commit
     # that fails typecheck or unit tests must NOT reach the docker build / ASG roll.
     # `deploy` declares `needs: test-gate`, so a red gate blocks the rollout entirely.
+    #
+    # 단위 테스트는 ci.yml의 `test` 잡과 같은 방식으로 러너 4대에 나눈다(근거는 그쪽
+    # 주석). 한 잡으로 돌리면 약 8분이 배포 앞에 그대로 붙는다. `needs: test-gate`는
+    # 매트릭스 전체가 성공해야 통과하므로 게이트 의미는 그대로다. typecheck는 한 번이면
+    # 되므로 1번 샤드에서만 돈다.
+    # fail-fast는 기본값(true)을 둔다 — 배포 게이트는 하나라도 깨지면 어차피 막히므로
+    # 나머지 샤드를 끝까지 돌릴 이유가 없다.
     test-gate:
         runs-on: ubuntu-latest
         timeout-minutes: 15
         permissions:
             contents: read
+        strategy:
+            matrix:
+                shard: [1, 2, 3, 4]
         steps:
             - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
@@ -50,10 +60,11 @@ jobs:
               run: yarn install --immutable --mode=skip-build
 
             - name: Type check
+              if: matrix.shard == 1
               run: yarn typecheck
 
-            - name: Test (unit)
-              run: yarn test
+            - name: Test (unit, shard ${{ matrix.shard }}/${{ strategy.job-total }})
+              run: yarn test --shard=${{ matrix.shard }}/${{ strategy.job-total }}
 
     deploy:
         needs: test-gate
