@@ -8,6 +8,7 @@ import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import {
     ABOUT_PATH,
     OPERATOR_PERSON_JSON_LD_ID,
+    OPERATOR_SAME_AS,
     SITE_OPERATOR,
 } from '@/shared/lib/legal';
 import { SymbolSearchPanel } from '@/features/ticker-search/ui/SymbolSearchPanel';
@@ -19,6 +20,7 @@ import {
     ORGANIZATION_JSON_LD_ID,
     SITE_NAME,
     SITE_URL,
+    X_URL,
 } from '@/shared/lib/seo';
 import {
     DEFAULT_LOCALE,
@@ -239,8 +241,14 @@ export default async function Home({
         description: tSeo('root.description'),
         // 운영자 개인 저장소와 서비스 저장소 둘 다 — `founder.sameAs`가 이미
         // 전자를 가리키는데 Organization이 후자만 주장하면 두 프로필이 같은
-        // 주체로 묶이지 않는다.
-        sameAs: [SITE_OPERATOR.githubUrl, GITHUB_URL],
+        // 주체로 묶이지 않는다. velog(운영자 블로그)와 서비스 X 계정도 같은
+        // 이유로 함께 선언한다(2026-10-04 SEO 업그레이드 A1).
+        sameAs: [
+            SITE_OPERATOR.githubUrl,
+            GITHUB_URL,
+            SITE_OPERATOR.velogUrl,
+            X_URL,
+        ],
         // 운영 주체를 그래프에 붙인다 — `/about`의 `Person` 노드와 같은 `@id`라
         // 두 페이지의 사람이 하나로 합쳐진다. 값은 `SITE_OPERATOR` 단일 소스.
         founder: {
@@ -248,7 +256,7 @@ export default async function Home({
             '@id': OPERATOR_PERSON_JSON_LD_ID,
             name: SITE_OPERATOR.name,
             url: `${SITE_URL}${ABOUT_PATH}`,
-            sameAs: [SITE_OPERATOR.githubUrl],
+            sameAs: OPERATOR_SAME_AS,
         },
     };
 

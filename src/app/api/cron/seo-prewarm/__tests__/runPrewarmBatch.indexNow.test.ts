@@ -160,7 +160,7 @@ const AAPL_URLS = [
     `${SITE_URL}/AAPL/news`,
     `${SITE_URL}/AAPL/fear-greed`,
 ];
-const symbolTabsWithProse = new Set(['AAPL:news']);
+const snapshotGeneratedAt = new Map<string, Date>([['AAPL:news', NOW]]);
 
 /** 제출 호출의 URL 목록 — 호출이 정확히 한 번이라는 사실까지 함께 고정한다. */
 function submittedUrls(): readonly string[] {
@@ -211,10 +211,10 @@ describe('runPrewarmBatch — IndexNow 제출', () => {
             failed: 0,
         });
         mockLoadPopular.mockResolvedValue(
-            buildPopularEntries(NOW, { symbolTabsWithProse })
+            buildPopularEntries(NOW, { snapshotGeneratedAt })
         );
         mockLoadCrypto.mockResolvedValue(
-            buildCryptoPopularEntries(NOW, { symbolTabsWithProse })
+            buildCryptoPopularEntries(NOW, { snapshotGeneratedAt })
         );
         mockLoadStatic.mockResolvedValue(buildStaticEntries(NOW));
     });

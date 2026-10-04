@@ -27,6 +27,13 @@ function alternateLinks(
         .join('');
 }
 
+/** `lastModified`가 없으면 `<lastmod>` 줄을 아예 내지 않는다(2026-10-04: `/symbols`). */
+function lastmodLine(lastModified: Date | undefined): string {
+    return lastModified === undefined
+        ? ''
+        : `\n    <lastmod>${lastModified.toISOString()}</lastmod>`;
+}
+
 /**
  * SitemapEntry[]를 sitemap.org urlset XML로 직렬화한다.
  *
@@ -38,8 +45,7 @@ export function toUrlSetXml(entries: ReadonlyArray<SitemapEntry>): string {
         .map(
             ({ url, lastModified, changeFrequency, priority, alternates }) => `
   <url>
-    <loc>${escapeXml(url)}</loc>
-    <lastmod>${lastModified.toISOString()}</lastmod>
+    <loc>${escapeXml(url)}</loc>${lastmodLine(lastModified)}
     <changefreq>${changeFrequency}</changefreq>
     <priority>${priority}</priority>${alternateLinks(alternates)}
   </url>`

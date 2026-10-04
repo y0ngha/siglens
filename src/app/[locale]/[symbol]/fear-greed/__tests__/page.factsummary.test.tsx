@@ -20,7 +20,52 @@ const {
     mockGetAssetInfoResilient,
     mockGetSeedBarsStatic,
     mockGetQuantizedBarsStatic,
+    mockComputeFearGreedIndex,
+    FIXED_SNAPSHOT,
 } = vi.hoisted(() => ({
+    mockComputeFearGreedIndex: vi.fn(),
+    FIXED_SNAPSHOT: {
+        score: 71,
+        label: 'GREED',
+        groups: [
+            {
+                name: 'Flow',
+                score: 68,
+                factors: [
+                    { key: 'volume_z', rawValue: 1.1, percentile: 70 },
+                    {
+                        key: 'buysell_imbalance',
+                        rawValue: 0.2,
+                        percentile: 72,
+                    },
+                    {
+                        key: 'poc_distance',
+                        rawValue: 0.05,
+                        percentile: 60,
+                    },
+                ],
+            },
+            {
+                name: 'Trend',
+                score: 74,
+                factors: [
+                    {
+                        key: 'ma200_distance',
+                        rawValue: 0.12,
+                        percentile: 80,
+                    },
+                    {
+                        key: 'range_position',
+                        rawValue: 0.88,
+                        percentile: 85,
+                    },
+                ],
+            },
+        ],
+        confidence: 'normal',
+        sampleSize: 300,
+        warning: null,
+    },
     mockGetAssetInfoResilient: vi.fn(),
     mockGetSeedBarsStatic: vi.fn(),
     // 축소되지 않은 전체 지표 헬퍼. 이 페이지는 절대 부르면 안 된다 — 아래 회귀 테스트 참조.
@@ -31,48 +76,8 @@ vi.mock('@y0ngha/siglens-core', async () => {
     const actual = await vi.importActual('@y0ngha/siglens-core');
     return {
         ...actual,
-        computeFearGreedIndex: vi.fn(() => ({
-            score: 71,
-            label: 'GREED',
-            groups: [
-                {
-                    name: 'Flow',
-                    score: 68,
-                    factors: [
-                        { key: 'volume_z', rawValue: 1.1, percentile: 70 },
-                        {
-                            key: 'buysell_imbalance',
-                            rawValue: 0.2,
-                            percentile: 72,
-                        },
-                        {
-                            key: 'poc_distance',
-                            rawValue: 0.05,
-                            percentile: 60,
-                        },
-                    ],
-                },
-                {
-                    name: 'Trend',
-                    score: 74,
-                    factors: [
-                        {
-                            key: 'ma200_distance',
-                            rawValue: 0.12,
-                            percentile: 80,
-                        },
-                        {
-                            key: 'range_position',
-                            rawValue: 0.88,
-                            percentile: 85,
-                        },
-                    ],
-                },
-            ],
-            confidence: 'normal',
-            sampleSize: 300,
-            warning: null,
-        })),
+        computeFearGreedIndex: (...args: unknown[]) =>
+            mockComputeFearGreedIndex(...args),
     };
 });
 
@@ -151,6 +156,15 @@ import SymbolFearGreedPage from '@/app/[locale]/[symbol]/fear-greed/page';
 import { expectSymbolBreadcrumbName } from '@/__tests__/utils/expectSymbolBreadcrumbName';
 import { expectNoFaq } from '@/__tests__/utils/expectFaqSingleSource';
 
+// 실제 코어는 봉이 없으면 null을 낸다("Returns null when bars is empty"). 모킹이 이를
+// 흉내 내야 `hasFearGreedScore` 게이트가 실제와 같은 입력에서 같은 답을 한다.
+beforeEach(() => {
+    mockComputeFearGreedIndex.mockReset();
+    mockComputeFearGreedIndex.mockImplementation((bars: unknown[]) =>
+        bars.length === 0 ? null : FIXED_SNAPSHOT
+    );
+});
+
 const EQUITY_ASSET_INFO = {
     symbol: 'AAPL',
     name: 'Apple Inc.',
@@ -163,9 +177,9 @@ const BARS_WITH_DATA = {
         { time: 2, open: 1.5, high: 2.5, low: 1, close: 2, volume: 120 },
     ],
     indicators: {
-        // 실제 `getSeedBarsStatic` 산출물은 `EMPTY_INDICATOR_RESULT` 스프레드라
-        // rsi·macd가 항상 배열이다. 게이트(`buildTechnicalFacts`)가 그 둘을 읽으므로
-        // 픽스처도 같은 모양이어야 한다.
+        // 실제 `getSeedBarsStatic` 산출물 모양을 따른다(`EMPTY_INDICATOR_RESULT`
+        // 스프레드라 rsi·macd도 항상 배열이다). 게이트(`hasFearGreedScore`)와 요약은
+        // `buySellVolume`만 읽고, 그 계산(`computeFearGreedIndex`)은 이 파일에서 목이다.
         rsi: [50, 55],
         macd: [{ histogram: 0.1 }, { histogram: 0.2 }],
         buySellVolume: [
@@ -254,6 +268,26 @@ describe('SymbolFearGreedPage — SSR factor summary wiring', () => {
         expect(
             screen.queryByText(/공포 탐욕 지수 요약/)
         ).not.toBeInTheDocument();
+    });
+
+    /**
+     * 게이트(`hasFearGreedScore`)와 본문이 같은 core 계산으로 갈린다는 증거: 봉은
+     * 있으나 `computeFearGreedIndex`가 null(점수 표본 부족)이면 요약을 그리지 않는다.
+     * 옛 `buildTechnicalFacts` 판정이면 봉이 2개라 요약 렌더를 시도했을 조건이다.
+     */
+    it('Worst: 봉은 있으나 점수가 null이면 factor summary가 없다', async () => {
+        mockComputeFearGreedIndex.mockReturnValue(null);
+        mockGetSeedBarsStatic.mockResolvedValue(BARS_WITH_DATA);
+
+        const tree = await SymbolFearGreedPage({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+        render(tree);
+
+        expect(
+            screen.queryByText(/공포 탐욕 지수 요약/)
+        ).not.toBeInTheDocument();
+        expect(mockComputeFearGreedIndex).toHaveBeenCalled();
     });
 
     it('Worst: getSeedBarsStatic 실패(throw)해도 페이지가 깨지지 않고 factor summary는 생략된다', async () => {

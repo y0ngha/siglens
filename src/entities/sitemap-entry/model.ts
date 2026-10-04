@@ -12,7 +12,13 @@ type SitemapChangeFrequency =
 
 export interface SitemapEntry {
     url: string;
-    lastModified: Date;
+    /**
+     * 선택이다. **정직하게 말할 갱신 시각이 없으면 생략한다** — 생략하면 XML에
+     * `<lastmod>`가 나가지 않는다. `/symbols`가 예시다: 목록은 상수라 배포로만 바뀌는데
+     * 배포 시각을 광고하면 릴리스마다 "방금 바뀜"을 주장하게 되고, lastmod가 부정확하면
+     * Google은 그 sitemap의 lastmod 전체를 무시한다(2026-10-04 감사).
+     */
+    lastModified?: Date;
     changeFrequency: SitemapChangeFrequency;
     priority: number;
     /**

@@ -14,7 +14,9 @@ describe('buildPopularEntries', () => {
     // news 하나뿐이라, 산문 보유 집합이 있으면 /news만 거기 맞춘다.
     it('산문 스냅샷 집합이 주어지면 news는 그 종목만 싣고 차트·공포탐욕은 그대로 둔다', () => {
         const urls = buildPopularEntries(NOW, {
-            symbolTabsWithProse: new Set(['AAPL:news']),
+            snapshotGeneratedAt: new Map([
+                ['AAPL:news', new Date('2026-05-22T09:00:00.000Z')],
+            ]),
         }).map(e => e.url);
 
         // 집합에 든 조합은 실제로 실린다 — 키 형식이 어긋나면 이 단언이 깨진다.
@@ -70,7 +72,7 @@ describe('buildPopularEntries', () => {
 
         const newsEntry = entries.find(e => e.url.endsWith('/news'));
         expect(newsEntry).toBeDefined();
-        expect(newsEntry!.lastModified.getTime()).toBe(
+        expect(newsEntry!.lastModified?.getTime()).toBe(
             floorToHour(new Date(NOW.getTime() - MS_PER_HOUR)).getTime()
         );
         expect(newsEntry!.changeFrequency).toBe('hourly');
@@ -90,7 +92,7 @@ describe('buildPopularEntries', () => {
         const b = buildPopularEntries(new Date('2026-05-23T21:59:55.000Z'));
 
         const newsOf = (es: ReturnType<typeof buildPopularEntries>) =>
-            es.find(e => e.url.endsWith('/news'))!.lastModified.getTime();
+            es.find(e => e.url.endsWith('/news'))!.lastModified?.getTime();
         expect(newsOf(a)).toBe(newsOf(b));
 
         // US/KR 세션 앵커 엔트리는 news 픽스와 독립적으로 여전히 서로 다른 값을 유지한다.
@@ -99,7 +101,7 @@ describe('buildPopularEntries', () => {
         const chartOf = (
             es: ReturnType<typeof buildPopularEntries>,
             ticker: string
-        ) => es.find(e => e.url === `${SITE_URL}/${ticker}`)!.lastModified;
+        ) => es.find(e => e.url === `${SITE_URL}/${ticker}`)!.lastModified!;
         expect(chartOf(a, usTicker).getTime()).not.toBe(
             chartOf(a, krTicker).getTime()
         );
@@ -116,8 +118,8 @@ describe('buildPopularEntries', () => {
         expect(chart?.changeFrequency).toBe('daily');
         expect(chart?.priority).toBe(0.8);
         expect(fearGreed?.changeFrequency).toBe('daily');
-        expect(fearGreed?.lastModified.getTime()).toBe(
-            chart?.lastModified.getTime()
+        expect(fearGreed?.lastModified?.getTime()).toBe(
+            chart?.lastModified?.getTime()
         );
     });
 
@@ -128,7 +130,7 @@ describe('buildPopularEntries', () => {
         const chart = entries.find(
             e => e.url === `${SITE_URL}/${POPULAR_TICKERS[0]}`
         );
-        expect(chart!.lastModified.getTime()).toBe(
+        expect(chart!.lastModified?.getTime()).toBe(
             LAST_SESSION_CLOSE.getTime()
         );
     });
@@ -150,7 +152,7 @@ describe('buildPopularEntries', () => {
         expect(sessionEntries.length).toBeGreaterThan(0);
 
         for (const entry of sessionEntries) {
-            const day = entry.lastModified.getUTCDay();
+            const day = entry.lastModified!.getUTCDay();
             expect(day).not.toBe(0); // Sunday
             expect(day).not.toBe(6); // Saturday
         }
@@ -162,7 +164,7 @@ describe('buildPopularEntries', () => {
         const pick = (es: ReturnType<typeof buildPopularEntries>) =>
             es
                 .find(e => e.url === `${SITE_URL}/${POPULAR_TICKERS[0]}`)!
-                .lastModified.getTime();
+                .lastModified?.getTime();
 
         expect(pick(sat)).toBe(LAST_SESSION_CLOSE.getTime());
         expect(pick(sun)).toBe(LAST_SESSION_CLOSE.getTime());
@@ -174,7 +176,7 @@ describe('buildPopularEntries', () => {
         const chart = entries.find(
             e => e.url === `${SITE_URL}/${POPULAR_TICKERS[0]}`
         );
-        expect(chart!.lastModified.toISOString()).toBe(
+        expect(chart!.lastModified?.toISOString()).toBe(
             '2026-01-12T21:00:00.000Z'
         );
     });
@@ -193,7 +195,7 @@ describe('buildPopularEntries — 거래소별 lastmod', () => {
     const lastModOf = (
         entries: ReturnType<typeof buildPopularEntries>,
         url: string
-    ) => entries.find(e => e.url === url)!.lastModified;
+    ) => entries.find(e => e.url === url)!.lastModified!;
 
     it('한국 종목은 KRX 마감(15:30 KST = 06:30 UTC)을 lastmod로 쓴다', () => {
         expect(KR_TICKER).toBeDefined();
@@ -218,5 +220,122 @@ describe('buildPopularEntries — 거래소별 lastmod', () => {
         expect(
             lastModOf(entries, `${SITE_URL}/${KR_TICKER}`).toISOString()
         ).toBe('2026-11-26T06:30:00.000Z');
+    });
+});
+
+/**
+ * 2차 lastmod 정직화(2026-10-04). 실측(주말): 뉴스 탭 365개 전부가 `now − 1h`였는데
+ * 페이지에 렌더되는 뉴스 스냅샷은 중앙값 32시간 전에 구워진 것이었다. 차트 탭은 세션
+ * 마감을 광고했지만 technical 산문은 마감 1.7~3.7시간 **뒤**에 구워진다.
+ */
+describe('buildPopularEntries — 스냅샷 generatedAt lastmod', () => {
+    const NEWS_AT = new Date('2026-05-22T09:30:00.000Z'); // 토요일 NOW보다 32시간쯤 전
+    const KR_TICKER = POPULAR_TICKERS.find(t => /\.K[SQ]$/.test(t))!;
+    const US_TICKER = POPULAR_TICKERS.find(t => !/\.K[SQ]$/.test(t))!;
+
+    const lastModOf = (
+        entries: ReturnType<typeof buildPopularEntries>,
+        url: string
+    ) => entries.find(e => e.url === url)!.lastModified!;
+
+    it('뉴스 탭 lastmod는 그 종목 뉴스 스냅샷의 generatedAt이다 — now − 1h가 아니다', () => {
+        const entries = buildPopularEntries(NOW, {
+            snapshotGeneratedAt: new Map([
+                [`${US_TICKER}:news`, NEWS_AT],
+                ['MSFT:news', new Date('2026-05-23T01:00:00.000Z')],
+            ]),
+        });
+
+        expect(
+            lastModOf(entries, `${SITE_URL}/${US_TICKER}/news`).toISOString()
+        ).toBe(NEWS_AT.toISOString());
+        // 종목마다 자기 값이다 — 한 값으로 뭉개지지 않는다.
+        expect(lastModOf(entries, `${SITE_URL}/MSFT/news`).toISOString()).toBe(
+            '2026-05-23T01:00:00.000Z'
+        );
+        expect(NEWS_AT.getTime()).not.toBe(
+            floorToHour(new Date(NOW.getTime() - MS_PER_HOUR)).getTime()
+        );
+    });
+
+    it('스냅샷 맵이 없으면(DB 읽기 실패) 뉴스 탭은 예전 폴백 now − 1h(정시 내림)로 간다', () => {
+        const entries = buildPopularEntries(NOW);
+
+        expect(
+            lastModOf(entries, `${SITE_URL}/${US_TICKER}/news`).getTime()
+        ).toBe(floorToHour(new Date(NOW.getTime() - MS_PER_HOUR)).getTime());
+    });
+
+    it('차트 탭 lastmod는 세션 마감과 technical 스냅샷 중 늦은 쪽이다 (스냅샷이 마감보다 늦은 경우)', () => {
+        // 금 마감 20:00Z + 2.5시간 = 22:30Z
+        const technicalAt = new Date('2026-05-22T22:30:00.000Z');
+        const entries = buildPopularEntries(NOW, {
+            snapshotGeneratedAt: new Map([
+                [`${US_TICKER}:technical`, technicalAt],
+            ]),
+        });
+
+        expect(
+            lastModOf(entries, `${SITE_URL}/${US_TICKER}`).toISOString()
+        ).toBe(technicalAt.toISOString());
+        // 공포탐욕 탭은 스냅샷 산문이 없으므로 세션 마감 그대로다.
+        expect(
+            lastModOf(
+                entries,
+                `${SITE_URL}/${US_TICKER}/fear-greed`
+            ).toISOString()
+        ).toBe(LAST_SESSION_CLOSE.toISOString());
+    });
+
+    it('technical 스냅샷이 세션 마감보다 이르면 세션 마감을 유지한다', () => {
+        const entries = buildPopularEntries(NOW, {
+            snapshotGeneratedAt: new Map([
+                [
+                    `${US_TICKER}:technical`,
+                    new Date('2026-05-22T10:00:00.000Z'),
+                ],
+            ]),
+        });
+
+        expect(
+            lastModOf(entries, `${SITE_URL}/${US_TICKER}`).toISOString()
+        ).toBe(LAST_SESSION_CLOSE.toISOString());
+    });
+
+    it('technical 스냅샷이 없는 종목은 세션 마감 그대로다', () => {
+        const entries = buildPopularEntries(NOW, {
+            snapshotGeneratedAt: new Map([
+                ['MSFT:technical', new Date('2026-05-22T22:30:00.000Z')],
+            ]),
+        });
+
+        expect(
+            lastModOf(entries, `${SITE_URL}/${US_TICKER}`).toISOString()
+        ).toBe(LAST_SESSION_CLOSE.toISOString());
+    });
+
+    it('한국 종목도 자기 거래소 세션 마감과 겨룬다', () => {
+        // KRX 마감은 토요일 NOW 기준 금요일 06:30Z. 스냅샷이 그보다 늦다.
+        const technicalAt = new Date('2026-05-22T09:00:00.000Z');
+        const entries = buildPopularEntries(NOW, {
+            snapshotGeneratedAt: new Map([
+                [`${KR_TICKER}:technical`, technicalAt],
+            ]),
+        });
+
+        expect(
+            lastModOf(entries, `${SITE_URL}/${KR_TICKER}`).toISOString()
+        ).toBe(technicalAt.toISOString());
+    });
+
+    it('맵이 비어 있어도(산문 없음) 차트·공포탐욕은 세션 마감이고 뉴스 탭은 빠진다', () => {
+        const entries = buildPopularEntries(NOW, {
+            snapshotGeneratedAt: new Map(),
+        });
+
+        expect(entries.some(e => e.url.endsWith('/news'))).toBe(false);
+        expect(
+            lastModOf(entries, `${SITE_URL}/${US_TICKER}`).toISOString()
+        ).toBe(LAST_SESSION_CLOSE.toISOString());
     });
 });

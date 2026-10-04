@@ -36,7 +36,7 @@ const ZERO = { indexNowSubmitted: 0, indexNowOk: 0, indexNowFailed: 0 };
 
 // 목은 로더만 대신한다 — 엔트리는 실제 sitemap 빌더가 만든다. 손으로 만든 엔트리는
 // 빌더의 색인 판정(항상 noindex 탭 제외, 뉴스 산문 게이트)을 건너뛴다.
-const symbolTabsWithProse = new Set(['AAPL:news']);
+const snapshotGeneratedAt = new Map<string, Date>([['AAPL:news', NOW]]);
 
 /** 제출 호출의 URL 목록. 호출 순서가 아니라 호출 자체를 단언한다. */
 function submittedUrls(): readonly string[] {
@@ -54,10 +54,10 @@ describe('submitIndexNowForBatch', () => {
             failed: 0,
         });
         mockLoadPopular.mockResolvedValue(
-            buildPopularEntries(NOW, { symbolTabsWithProse })
+            buildPopularEntries(NOW, { snapshotGeneratedAt })
         );
         mockLoadCrypto.mockResolvedValue(
-            buildCryptoPopularEntries(NOW, { symbolTabsWithProse })
+            buildCryptoPopularEntries(NOW, { snapshotGeneratedAt })
         );
         mockLoadStatic.mockResolvedValue(buildStaticEntries(NOW));
         vi.spyOn(console, 'error').mockImplementation(() => undefined);

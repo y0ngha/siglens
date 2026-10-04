@@ -227,3 +227,36 @@ describe('FearGreedFactsSummary', () => {
         });
     });
 });
+
+/**
+ * 네이버는 본문 첫 텍스트로 스니펫을 만든다 — 점수 행(`<dl>`)보다 서술 문장이 DOM에서
+ * 앞서야 한다(2026-10-04, `TechnicalFactsSummary`와 같은 구조).
+ */
+describe('FearGreedFactsSummary — DOM 순서', () => {
+    it('서술 문단이 점수 <dl>보다 앞서고, 제목이 맨 앞·신뢰도 각주가 맨 뒤다', () => {
+        (computeFearGreedIndex as Mock).mockReturnValue(FIXTURE_SNAPSHOT);
+
+        const { container } = render(
+            <FearGreedFactsSummary
+                symbol="AAPL"
+                bars={fakeBars}
+                buySellVolume={fakeBsv}
+            />
+        );
+        const section = container.querySelector('section')!;
+        const dl = section.querySelector('dl')!;
+        const firstParagraph = section.querySelector('p')!;
+        const following = Node.DOCUMENT_POSITION_FOLLOWING;
+
+        expect(firstParagraph.compareDocumentPosition(dl) & following).toBe(
+            following
+        );
+        expect(firstParagraph.textContent?.trim().length).toBeGreaterThan(0);
+        expect(section.firstElementChild?.tagName).toBe('H2');
+        expect(section.lastElementChild?.tagName).toBe('P');
+        expect(section.lastElementChild?.textContent).toContain('표본 220');
+        expect(dl.compareDocumentPosition(section.lastElementChild!)).toBe(
+            following
+        );
+    });
+});

@@ -16,6 +16,7 @@ import {
     aboutTitle,
     formatKoreanDate,
     OPERATOR_PERSON_JSON_LD_ID,
+    OPERATOR_SAME_AS,
     SITE_OPERATOR,
 } from '@/shared/lib/legal';
 import {
@@ -77,7 +78,7 @@ function buildAboutPersonJsonLd() {
         name: SITE_OPERATOR.name,
         email: `mailto:${SITE_OPERATOR.email}`,
         url: `${SITE_URL}${ABOUT_PATH}`,
-        sameAs: [SITE_OPERATOR.githubUrl],
+        sameAs: OPERATOR_SAME_AS,
         affiliation: { '@id': ORGANIZATION_JSON_LD_ID },
     };
 }

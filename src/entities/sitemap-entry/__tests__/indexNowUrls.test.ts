@@ -9,10 +9,13 @@ const NOW = new Date('2026-10-04T12:00:00Z');
 
 // AAPL·005930.KS·BTCUSD는 큐레이션 목록 멤버다. MSFT는 목록 멤버지만 뉴스 산문이
 // 없는 것으로 둬서 sitemap 빌더가 `/MSFT/news`를 싣지 않게 한다.
-const symbolTabsWithProse = new Set(['AAPL:news', '005930.KS:news']);
+const snapshotGeneratedAt = new Map<string, Date>([
+    ['AAPL:news', NOW],
+    ['005930.KS:news', NOW],
+]);
 
-const popularEntries = buildPopularEntries(NOW, { symbolTabsWithProse });
-const cryptoEntries = buildCryptoPopularEntries(NOW, { symbolTabsWithProse });
+const popularEntries = buildPopularEntries(NOW, { snapshotGeneratedAt });
+const cryptoEntries = buildCryptoPopularEntries(NOW, { snapshotGeneratedAt });
 const allEntries = [...popularEntries, ...cryptoEntries];
 
 describe('selectIndexNowUrls', () => {
