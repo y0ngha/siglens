@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const callAiProviderRouter = vi.fn();
 const repoFind = vi.fn();
@@ -61,6 +61,11 @@ const ANALYSIS = {
     keyLevels: { support: [{ price: 183.6, reason: '지지 근거'.repeat(20) }] },
 };
 const GOOD = `${'좋은 문장입니다. '.repeat(30)}\n\n지지선은 183.60달러입니다.`;
+/**
+ * 근거 없는 숫자 문장이 원문의 25%를 넘게 차지하는 꼬리 — 재시도 전 도려내기
+ * (`SALVAGE_BEFORE_RETRY_MAX_LOSS`)로는 너무 많이 잃어 재생성 경로를 타게 한다.
+ */
+const LARGE_BAD_TAIL = `\n\n${'목표가는 999.99달러입니다. '.repeat(8)}`;
 
 /**
  * 호출 기록은 인덱스가 아니라 판별 인자로 찾는다 — 앞선 비동기 호출이 먼저
@@ -70,6 +75,14 @@ const findCallFor = (locale: string) =>
     repoFind.mock.calls.find(call => call[1] === locale);
 const insertCallFor = (text: string) =>
     repoInsert.mock.calls.find(call => call[3] === text);
+
+/**
+ * `vi.spyOn(console, ...)`는 테스트 본문 끝에서 `mockRestore()`하면 앞선 `expect`가 실패했을 때
+ * 복원되지 않고 다음 테스트로 새어 나간다. 여기서 한 번에 복원한다(`vi.fn()` 목은 건드리지 않는다).
+ */
+afterEach(() => {
+    vi.restoreAllMocks();
+});
 
 beforeEach(() => {
     vi.clearAllMocks();
@@ -223,9 +236,9 @@ describe('rewriteToPlainLanguage', () => {
         expect(callAiProviderRouter).toHaveBeenCalledOnce();
     });
 
-    it('가드가 걸리면 지적을 덧붙여 한 번만 재시도한다', async () => {
+    it('근거 없는 숫자를 도려내면 25%를 넘게 잃을 때는 지적을 덧붙여 한 번만 재시도한다', async () => {
         callAiProviderRouter
-            .mockResolvedValueOnce(`${GOOD} 목표가 999.99달러`)
+            .mockResolvedValueOnce(`${GOOD}${LARGE_BAD_TAIL}`)
             .mockResolvedValueOnce(GOOD);
 
         expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBe(
@@ -242,9 +255,7 @@ describe('rewriteToPlainLanguage', () => {
      * 사라지는 것보다 낫다.
      */
     it('재시도도 실패하면 어긋난 문장을 도려내고 살린다', async () => {
-        callAiProviderRouter.mockResolvedValue(
-            `${GOOD}\n\n목표가 999.99달러입니다.`
-        );
+        callAiProviderRouter.mockResolvedValue(`${GOOD}${LARGE_BAD_TAIL}`);
 
         const result = await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
 
@@ -258,11 +269,51 @@ describe('rewriteToPlainLanguage', () => {
     });
 
     /**
-     * 조언 문구만으로 재시도까지 실패한 경우도 그 문장만 빼고 살린다. 버리면 그 종목의
-     * 쉽게보기가 통째로 사라진다(2026-10-04: 조언 가드 도입).
+     * 위반이 짧으면(원문의 25% 이하) 재생성하지 않고 그 문장만 도려낸다 — 첫 시도 거부의
+     * 73%가 근거 없는 숫자였고 대개 문장 한두 개라, LLM을 한 번 더 부를 이유가 없다.
      */
-    it('재시도도 조언 문구로 실패하면 그 문장만 도려내고 살린다', async () => {
-        callAiProviderRouter.mockResolvedValue(
+    it('근거 없는 숫자가 짧게 끼면 재시도 없이 도려내 저장한다', async () => {
+        const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+        callAiProviderRouter.mockResolvedValueOnce(
+            `${GOOD}\n\n목표가 999.99달러입니다.`
+        );
+
+        const result = await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
+
+        expect(result).not.toBeNull();
+        expect(result).not.toContain('999.99');
+        expect(result).toContain('지지선은 183.60달러입니다');
+        expect(callAiProviderRouter).toHaveBeenCalledOnce();
+        expect(insertCallFor(result as string)).toBeDefined();
+        expect(infoSpy).toHaveBeenCalledWith(
+            '[analysisPlain] salvaged without retry',
+            expect.objectContaining({
+                symbol: 'AAPL',
+                kind: 'unsupported_numbers',
+            })
+        );
+        // 상한 판정에 쓴 값과 같은 비율이 로그에 남는다 — 0 초과, 상한 이하.
+        const logged = infoSpy.mock.calls.find(
+            call => call[0] === '[analysisPlain] salvaged without retry'
+        )?.[1] as {
+            lossRatio: number;
+            originalChars: number;
+            removedChars: number;
+        };
+        expect(logged.lossRatio).toBeGreaterThan(0);
+        expect(logged.lossRatio).toBeLessThanOrEqual(0.25);
+        expect(logged.lossRatio).toBeCloseTo(
+            logged.removedChars / logged.originalChars,
+            3
+        );
+    });
+
+    /**
+     * 조언 문구도 짧으면 재시도 없이 그 문장만 뺀다 — 숫자 위반과 같이 문장 한두 개라
+     * 도려내면 끝난다(2026-10-04: 조언 가드 도입).
+     */
+    it('조언 문구가 짧게 끼면 재시도 없이 도려내 저장한다', async () => {
+        callAiProviderRouter.mockResolvedValueOnce(
             `${GOOD}\n\n그래서 지금 새로 사기에는 불리한 위치입니다.`
         );
 
@@ -271,8 +322,42 @@ describe('rewriteToPlainLanguage', () => {
         expect(result).not.toBeNull();
         expect(result).not.toContain('사기에는');
         expect(result).toContain('좋은 문장입니다');
+        expect(callAiProviderRouter).toHaveBeenCalledOnce();
+        expect(insertCallFor(result as string)).toBeDefined();
+    });
+
+    /**
+     * 조언 문구가 길게 섞여 재시도까지 실패해도 그 문장만 빼고 살린다. 버리면 그 종목의
+     * 쉽게보기가 통째로 사라진다.
+     */
+    it('재시도도 조언 문구로 실패하면 그 문장만 도려내고 살린다', async () => {
+        // 원문의 25%를 넘게 차지하게 반복한다 — 그래야 재시도 전 도려내기를 건너뛰고
+        // 재생성 경로를 탄다(`SALVAGE_BEFORE_RETRY_MAX_LOSS`).
+        const ADVICE =
+            '그래서 지금 새로 사기에는 불리한 위치입니다. 나눠서 사는 편이 낫습니다. 확인한 뒤에 움직이는 것이 합리적입니다. '.repeat(
+                4
+            );
+        callAiProviderRouter.mockResolvedValue(`${GOOD}\n\n${ADVICE}`);
+
+        const result = await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
+
+        expect(result).not.toBeNull();
+        expect(result).not.toContain('사기에는');
+        expect(result).toContain('좋은 문장입니다');
         expect(callAiProviderRouter).toHaveBeenCalledTimes(2);
         expect(insertCallFor(result as string)).toBeDefined();
+    });
+
+    /** 크기 접미사는 도려내서 고쳐지지 않으므로(10배 금액 오류) 짧아도 재시도한다. */
+    it('크기 접미사 위반은 짧아도 재시도한다', async () => {
+        callAiProviderRouter
+            .mockResolvedValueOnce(`${GOOD}\n\n시가총액은 1,573.1B달러입니다.`)
+            .mockResolvedValueOnce(GOOD);
+
+        expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBe(
+            GOOD.trim()
+        );
+        expect(callAiProviderRouter).toHaveBeenCalledTimes(2);
     });
 
     /** 모든 문장이 어긋난 숫자를 품고 있으면 도려낸 뒤 남는 것이 없어 버린다. */
