@@ -22,7 +22,8 @@ import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import { DrizzleRemovalSitemapCandidateSource } from './api';
 import type { BuildStaticEntriesOptions } from './lib/buildStaticEntries';
 import {
-    PROSE_GATED_SITEMAP_TABS,
+    SITEMAP_SNAPSHOT_TABS,
+    snapshotKey,
     type BuildPopularEntriesOptions,
 } from './lib/proseGate';
 import { buildRemovalEntries } from './lib/buildRemovalEntries';
@@ -228,40 +229,70 @@ export async function loadStaticSitemapInputs(): Promise<BuildStaticEntriesOptio
     }
 }
 
-const POPULAR_SITEMAP_INPUT_CACHE_KEY = 'popular-sitemap-inputs:v1';
+// v2: 값 형식이 `string[]`(키 목록)에서 `{ snapshotGeneratedAt }`로 바뀌었다 — 옛 항목을
+// 새 코드가 읽으면 `serialized.snapshotGeneratedAt`이 undefined라 죽는다.
+const POPULAR_SITEMAP_INPUT_CACHE_KEY = 'popular-sitemap-inputs:v2';
 
-async function loadUncachedSymbolTabsWithProse(): Promise<string[]> {
+/**
+ * `unstable_cache`가 반환값을 JSON으로 직렬화하므로 `Date`는 캐시를 거치면 ISO
+ * 문자열로 돌아온다 — `SerializedStaticSitemapInputs`와 같은 계약이다. `Map`도 JSON에서
+ * `{}`로 깨지므로 `[키, ISO]` 쌍 배열로 넘기고, 캐시 경계 너머(`loadPopularSitemapInputs`)에서만
+ * `Map<string, Date>`로 복원한다. 복원하지 않으면 빌더가 문자열에 `.getTime()`을 불러 죽는다.
+ */
+interface SerializedPopularSitemapInputs {
+    readonly snapshotGeneratedAt: ReadonlyArray<readonly [string, string]>;
+}
+
+async function loadUncachedPopularSitemapInputs(): Promise<SerializedPopularSitemapInputs> {
     const rows = await new DrizzleSeoSnapshotRepository(
         getDatabaseClient().db
     ).listFreshSymbolTabs(
-        PROSE_GATED_SITEMAP_TABS,
+        SITEMAP_SNAPSHOT_TABS,
         DEFAULT_LOCALE,
         new Date(Date.now() - SNAPSHOT_MAX_AGE_MS)
     );
-    return rows.map(row => `${row.symbol}:${row.tab}`);
+    return {
+        snapshotGeneratedAt: rows.map(
+            row =>
+                [
+                    // safe: 쿼리가 `SITEMAP_SNAPSHOT_TABS`로 거른 행이다.
+                    snapshotKey(row.symbol, row.tab as 'technical' | 'news'),
+                    row.generatedAt.toISOString(),
+                ] as const
+        ),
+    };
 }
 
 /**
- * 스냅샷 산문이 없으면 페이지가 noindex인 탭(지금은 `/news`뿐 — 각 `page.tsx`
- * generateMetadata)을 산문 보유 종목에만 싣기 위한 입력이다. 대상 탭은
- * {@link PROSE_GATED_SITEMAP_TABS}가 쥐고 있고 이 함수는 그것을 그대로 순회한다.
- * sitemap이 그걸 모르고 전부 실었더니 2026-09-17 운영 크롤에서 congress 108·overall
- * 49개가 "sitemap에 있는데 noindex"였다(그 두 탭은 2026-10-01부터 항상 noindex라
- * sitemap에서 빠졌다).
- * 페이지 게이트와 같은 신선도 상한(`SNAPSHOT_MAX_AGE_MS`)으로 행 존재만 읽는다.
+ * 종목 sitemap의 두 입력을 **한 번의 쿼리**로 읽는다:
+ *  1. 산문 게이트 — 스냅샷 산문이 없으면 페이지가 noindex인 탭(지금은 `/news`뿐 — 각
+ *     `page.tsx` generateMetadata)을 산문 보유 종목에만 싣는다(`news` 키 존재 여부).
+ *     sitemap이 그걸 모르고 전부 실었더니 2026-09-17 운영 크롤에서 congress 108·overall
+ *     49개가 "sitemap에 있는데 noindex"였다(그 두 탭은 2026-10-01부터 항상 noindex라
+ *     sitemap에서 빠졌다).
+ *  2. lastmod — 같은 행의 `generatedAt`(`technical`·`news`). 뉴스 탭은 그 시각을,
+ *     차트 탭은 세션 마감과 겨뤄 늦은 쪽을 광고한다(2026-10-04 2차 정직화).
+ * 둘 다 {@link SITEMAP_SNAPSHOT_TABS} 행에서 나오므로 쿼리가 하나이고 판정이 갈리지
+ * 않는다. 페이지 게이트와 같은 신선도 상한(`SNAPSHOT_MAX_AGE_MS`)을 쓴다. 본문은 읽지 않는다.
  *
  * **실패하면 필터를 끈다**(`{}`) — 스냅샷을 못 읽었다고 sitemap에서 수백 URL을
- * 빼는 것보다, 예전처럼 전부 싣는 편이 안전하다. 한 시간 캐시: 프리웜은 하룻밤에
- * 한 바퀴라 그보다 자주 읽을 이유가 없다.
+ * 빼는 것보다, 예전처럼 전부 싣는 편이 안전하다(lastmod도 예전 폴백). 한 시간 캐시:
+ * 프리웜은 하룻밤에 한 바퀴라 그보다 자주 읽을 이유가 없다.
  */
 export async function loadPopularSitemapInputs(): Promise<BuildPopularEntriesOptions> {
     try {
-        const keys = await unstable_cache(
-            loadUncachedSymbolTabsWithProse,
+        const serialized = await unstable_cache(
+            loadUncachedPopularSitemapInputs,
             [POPULAR_SITEMAP_INPUT_CACHE_KEY],
             { revalidate: SECONDS_PER_HOUR }
         )();
-        return { symbolTabsWithProse: new Set(keys) };
+        return {
+            snapshotGeneratedAt: new Map(
+                serialized.snapshotGeneratedAt.map(
+                    ([key, iso]) => [key, new Date(iso)] as const
+                )
+            ),
+        };
     } catch (error) {
         console.error('[popularSitemapInputs] load failed:', error);
         return {};

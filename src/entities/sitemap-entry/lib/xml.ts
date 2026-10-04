@@ -38,8 +38,7 @@ export function toUrlSetXml(entries: ReadonlyArray<SitemapEntry>): string {
         .map(
             ({ url, lastModified, changeFrequency, priority, alternates }) => `
   <url>
-    <loc>${escapeXml(url)}</loc>
-    <lastmod>${lastModified.toISOString()}</lastmod>
+    <loc>${escapeXml(url)}</loc>${lastModified ? `\n    <lastmod>${lastModified.toISOString()}</lastmod>` : ''}
     <changefreq>${changeFrequency}</changefreq>
     <priority>${priority}</priority>${alternateLinks(alternates)}
   </url>`

@@ -154,7 +154,13 @@ export class DrizzleSeoSnapshotRepository {
     }
 
     /**
-     * sitemap용: `tabs` 중 하나에 `since` 이후 생성된 스냅샷이 있는 `(symbol, tab)`.
+     * sitemap용: `tabs` 중 하나에 `since` 이후 생성된 스냅샷이 있는 `(symbol, tab)`과
+     * 그 스냅샷의 `generatedAt`. `generatedAt`은 sitemap `lastmod`의 근거다 — 산문이
+     * 실제로 구워진 시각이 "페이지 내용이 바뀐 시각"이다.
+     *
+     * 같은 `(symbol, tab)`에 로케일별 행이 여럿일 수 있으므로(unique가
+     * `(symbol, tab, locale)`) 페이지 읽기 경로(`pickSnapshotPerTab`)와 같은 폴백
+     * 순서로 **한 행**을 고른다 — 페이지가 렌더하는 행의 시각이어야 정직하다.
      *
      * 로케일은 `locale`의 독자 폴백(`CONTENT_LOCALE_FALLBACK`)과 같은 범위로 본다 —
      * 페이지가 `findBySymbol(symbol, locale)`로 읽을 수 있는 행이어야 색인 게이트를
@@ -165,25 +171,54 @@ export class DrizzleSeoSnapshotRepository {
         tabs: readonly SeoSnapshotTab[],
         locale: Locale,
         since: Date
-    ): Promise<Array<{ symbol: string; tab: SeoSnapshotTab }>> {
+    ): Promise<
+        Array<{ symbol: string; tab: SeoSnapshotTab; generatedAt: Date }>
+    > {
+        const chain = CONTENT_LOCALE_FALLBACK[locale];
         const rows = await this.db
-            .selectDistinct({
+            .select({
                 symbol: seoAnalysisSnapshots.symbol,
                 tab: seoAnalysisSnapshots.tab,
+                locale: seoAnalysisSnapshots.locale,
+                generatedAt: seoAnalysisSnapshots.generatedAt,
             })
             .from(seoAnalysisSnapshots)
             .where(
                 and(
                     inArray(seoAnalysisSnapshots.tab, [...tabs]),
-                    inArray(seoAnalysisSnapshots.locale, [
-                        ...CONTENT_LOCALE_FALLBACK[locale],
-                    ]),
+                    inArray(seoAnalysisSnapshots.locale, [...chain]),
                     gte(seoAnalysisSnapshots.generatedAt, since)
                 )
             );
-        return rows.map(row => ({
-            symbol: row.symbol,
-            tab: row.tab as SeoSnapshotTab,
+
+        const best = new Map<
+            string,
+            {
+                symbol: string;
+                tab: SeoSnapshotTab;
+                generatedAt: Date;
+                rank: number;
+            }
+        >();
+        for (const row of rows) {
+            const rank = chain.indexOf(
+                toContentLocale(row.locale) ?? LEGACY_CONTENT_LOCALE
+            );
+            const key = `${row.symbol}:${row.tab}`;
+            const current = best.get(key);
+            if (current === undefined || rank < current.rank) {
+                best.set(key, {
+                    symbol: row.symbol,
+                    tab: row.tab as SeoSnapshotTab,
+                    generatedAt: row.generatedAt,
+                    rank,
+                });
+            }
+        }
+        return [...best.values()].map(({ symbol, tab, generatedAt }) => ({
+            symbol,
+            tab,
+            generatedAt,
         }));
     }
 

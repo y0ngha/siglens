@@ -301,3 +301,54 @@ describe('TechnicalFactsSummary — en 로케일 (audit item 1: enum 값 카탈�
         expect(macdRow).not.toMatch(/[가-힣]/);
     });
 });
+
+/**
+ * 네이버는 본문 첫 텍스트로 스니펫을 만든다. 예전에는 첫 텍스트가 `<dl>`
+ * ("현재가 : $25.40 … RSI : 50.5")이라 스니펫이 숫자 나열이 됐다 — 서술 문장을
+ * 표보다 DOM 앞에 둔다(2026-10-04). 순서만 보므로 `compareDocumentPosition`을 쓴다.
+ */
+describe('TechnicalFactsSummary — DOM 순서', () => {
+    function renderSummary() {
+        const { container } = render(
+            <TechnicalFactsSummary
+                symbol="AAPL"
+                bars={[bar(100, 120, 90), bar(110, 115, 100)]}
+                indicators={{
+                    ...emptyIndicators,
+                    rsi: [null, NEUTRAL_RSI],
+                    macd: [{ macd: 1, signal: 0.5, histogram: 0.3 }],
+                }}
+            />
+        );
+        const section = container.querySelector('section')!;
+        return {
+            section,
+            heading: section.querySelector('h2')!,
+            firstParagraph: section.querySelector('p')!,
+            dl: section.querySelector('dl')!,
+            note: section.querySelector(':scope > p:last-child')!,
+        };
+    }
+
+    const FOLLOWING = Node.DOCUMENT_POSITION_FOLLOWING;
+
+    it('서술 문단이 <dl>보다 DOM에서 앞선다', () => {
+        const { firstParagraph, dl } = renderSummary();
+
+        expect(firstParagraph.compareDocumentPosition(dl) & FOLLOWING).toBe(
+            FOLLOWING
+        );
+        // 첫 <p>가 실제 서술 문장이다(안내 각주가 아니다).
+        expect(firstParagraph.textContent).toContain('최근 종가');
+    });
+
+    it('제목이 맨 앞이고 자동 계산 안내 각주가 맨 뒤다', () => {
+        const { section, heading, dl, note } = renderSummary();
+
+        expect(section.firstElementChild).toBe(heading);
+        expect(section.lastElementChild).toBe(note);
+        expect(dl.compareDocumentPosition(note) & FOLLOWING).toBe(FOLLOWING);
+        // 각주는 서술 문단과 다른 요소다.
+        expect(note.className).toContain('text-xs');
+    });
+});

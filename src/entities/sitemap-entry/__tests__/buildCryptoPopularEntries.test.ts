@@ -30,7 +30,9 @@ describe('buildCryptoPopularEntries', () => {
     // 뉴스 탭은 산문 스냅샷이 없으면 noindex일 수 있다 — 주식 sitemap과 같은 게이트.
     it('with a prose set, emits /news only for cryptos that have prose', () => {
         const entries = buildCryptoPopularEntries(now, {
-            symbolTabsWithProse: new Set(['BTCUSD:news']),
+            snapshotGeneratedAt: new Map([
+                ['BTCUSD:news', new Date('2026-06-21T03:00:00Z')],
+            ]),
         });
         const urls = entries.map(e => e.url);
         // 집합에 든 조합은 실제로 실린다 — 키 형식이 어긋나면 이 단언이 깨진다.
@@ -54,7 +56,9 @@ describe('buildCryptoPopularEntries', () => {
         const chartEntry = entries.find(
             e => e.url === 'https://siglens.io/BTCUSD'
         );
-        expect(chartEntry?.lastModified.toISOString()).toBe(expected6hBoundary);
+        expect(chartEntry?.lastModified?.toISOString()).toBe(
+            expected6hBoundary
+        );
     });
 
     it('news route uses rolling 1h-ago lastmod, floored to the hour (most dynamic tab)', () => {
@@ -65,7 +69,7 @@ describe('buildCryptoPopularEntries', () => {
         const expected = floorToHour(
             new Date(now.getTime() - MS_PER_HOUR)
         ).toISOString();
-        expect(newsEntry?.lastModified.toISOString()).toBe(expected);
+        expect(newsEntry?.lastModified?.toISOString()).toBe(expected);
     });
 
     /**
@@ -80,7 +84,7 @@ describe('buildCryptoPopularEntries', () => {
         const newsOf = (es: ReturnType<typeof buildCryptoPopularEntries>) =>
             es
                 .find(e => e.url === 'https://siglens.io/BTCUSD/news')!
-                .lastModified.getTime();
+                .lastModified?.getTime();
         expect(newsOf(a)).toBe(newsOf(b));
     });
 
@@ -105,7 +109,7 @@ describe('buildCryptoPopularEntries', () => {
         const fearGreedEntry = entries.find(
             e => e.url === 'https://siglens.io/BTCUSD/fear-greed'
         );
-        expect(fearGreedEntry?.lastModified.toISOString()).toBe(
+        expect(fearGreedEntry?.lastModified?.toISOString()).toBe(
             '2026-06-21T00:00:00.000Z'
         );
         expect(fearGreedEntry?.priority).toBe(0.75);
@@ -118,7 +122,7 @@ describe('buildCryptoPopularEntries', () => {
         const chartEntry = entries.find(
             e => e.url === 'https://siglens.io/BTCUSD'
         );
-        expect(chartEntry?.lastModified.toISOString()).toBe(expected);
+        expect(chartEntry?.lastModified?.toISOString()).toBe(expected);
     });
 
     it('6h boundary quantizes correctly: 17:59 → 12:00', () => {
@@ -128,7 +132,7 @@ describe('buildCryptoPopularEntries', () => {
         const chartEntry = entries.find(
             e => e.url === 'https://siglens.io/BTCUSD'
         );
-        expect(chartEntry?.lastModified.toISOString()).toBe(expected);
+        expect(chartEntry?.lastModified?.toISOString()).toBe(expected);
     });
 
     it('covers every POPULAR_CRYPTOS symbol', () => {
@@ -136,5 +140,90 @@ describe('buildCryptoPopularEntries', () => {
         for (const sym of POPULAR_CRYPTOS) {
             expect(entries.some(e => e.url.endsWith(`/${sym}`))).toBe(true);
         }
+    });
+
+    // 2차 lastmod 정직화(2026-10-04): 스냅샷이 실제로 구워진 시각을 광고한다.
+    describe('스냅샷 generatedAt lastmod', () => {
+        const entryOf = (
+            entries: ReturnType<typeof buildCryptoPopularEntries>,
+            url: string
+        ) => entries.find(e => e.url === url);
+
+        it('news route uses the news snapshot generatedAt, not now − 1h', () => {
+            const generatedAt = new Date('2026-06-20T22:15:00Z');
+            const entries = buildCryptoPopularEntries(now, {
+                snapshotGeneratedAt: new Map([['BTCUSD:news', generatedAt]]),
+            });
+
+            expect(
+                entryOf(
+                    entries,
+                    'https://siglens.io/BTCUSD/news'
+                )?.lastModified?.toISOString()
+            ).toBe(generatedAt.toISOString());
+        });
+
+        it('chart route uses the later of the 6h boundary and the technical snapshot', () => {
+            // now 10:00Z → boundary 06:00Z. 스냅샷이 08:45Z에 구워졌다.
+            const technicalAt = new Date('2026-06-21T08:45:00Z');
+            const entries = buildCryptoPopularEntries(now, {
+                snapshotGeneratedAt: new Map([
+                    ['BTCUSD:technical', technicalAt],
+                ]),
+            });
+
+            expect(
+                entryOf(
+                    entries,
+                    'https://siglens.io/BTCUSD'
+                )?.lastModified?.toISOString()
+            ).toBe(technicalAt.toISOString());
+        });
+
+        it('chart route keeps the 6h boundary when the technical snapshot is older', () => {
+            const entries = buildCryptoPopularEntries(now, {
+                snapshotGeneratedAt: new Map([
+                    ['BTCUSD:technical', new Date('2026-06-21T01:00:00Z')],
+                ]),
+            });
+
+            expect(
+                entryOf(
+                    entries,
+                    'https://siglens.io/BTCUSD'
+                )?.lastModified?.toISOString()
+            ).toBe('2026-06-21T06:00:00.000Z');
+        });
+
+        it('chart route keeps the 6h boundary for a coin without a technical snapshot', () => {
+            const entries = buildCryptoPopularEntries(now, {
+                snapshotGeneratedAt: new Map([
+                    ['ETHUSD:technical', new Date('2026-06-21T08:45:00Z')],
+                ]),
+            });
+
+            expect(
+                entryOf(
+                    entries,
+                    'https://siglens.io/BTCUSD'
+                )?.lastModified?.toISOString()
+            ).toBe('2026-06-21T06:00:00.000Z');
+        });
+
+        it('fear-greed stays at UTC midnight regardless of snapshots', () => {
+            const entries = buildCryptoPopularEntries(now, {
+                snapshotGeneratedAt: new Map([
+                    ['BTCUSD:technical', new Date('2026-06-21T08:45:00Z')],
+                    ['BTCUSD:news', new Date('2026-06-21T09:00:00Z')],
+                ]),
+            });
+
+            expect(
+                entryOf(
+                    entries,
+                    'https://siglens.io/BTCUSD/fear-greed'
+                )?.lastModified?.toISOString()
+            ).toBe('2026-06-21T00:00:00.000Z');
+        });
     });
 });

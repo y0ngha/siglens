@@ -97,6 +97,15 @@ export function TechnicalFactsSummary({
             >
                 {t('TechnicalFactsSummary.170a59', { v0: symbol })}
             </h2>
+            {/* 서술 문장이 표(`<dl>`)보다 **DOM에서 앞서야** 한다 — 네이버는 본문
+                첫 텍스트로 스니펫을 만드는데, 예전 순서에서는 그것이 "현재가 : $25.40
+                … RSI : 50.5" 같은 숫자 나열이었다(2026-10-04). 시각 순서도 함께 바뀐다:
+                이 블록은 SSR 사실 층이라 문장이 위에 오는 것이 읽는 순서와도 맞다. */}
+            <div className="space-y-1 text-sm leading-6 text-secondary-300">
+                {narrative.map(line => (
+                    <p key={line}>{line}</p>
+                ))}
+            </div>
             <dl className="grid grid-cols-1 gap-2 text-sm text-secondary-300">
                 <div className="flex justify-between gap-4">
                     <dt className="text-secondary-400">
@@ -162,11 +171,6 @@ export function TechnicalFactsSummary({
                     </dd>
                 </div>
             </dl>
-            <div className="space-y-1 text-sm leading-6 text-secondary-300">
-                {narrative.map(line => (
-                    <p key={line}>{line}</p>
-                ))}
-            </div>
             <p className="text-xs text-secondary-400">
                 {t('TechnicalFactsSummary.beae1d')}
             </p>
