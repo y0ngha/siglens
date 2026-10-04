@@ -1,4 +1,11 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import {
+    act,
+    fireEvent,
+    render,
+    screen,
+    waitFor,
+    within,
+} from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
@@ -387,6 +394,123 @@ describe('ChatShell chrome', () => {
         fireEvent.click(link, { button: 0 });
         expect(router.push).toHaveBeenCalledWith('/c/c9');
         expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    });
+});
+
+/**
+ * 대화 전환 골격. 사이드바의 이동은 서버가 다음 대화를 보낼 때까지 커밋되지 않는데,
+ * 그동안 본문에 떠나온 대화가 남아 있었다. 이동이 끝나지 않게 `router.push`를 대기
+ * 상태로 두고, 그 사이 본문이 골격으로 바뀌는지 본다.
+ */
+describe('ChatShell — 대화 전환 골격', () => {
+    /**
+     * 끝나지 않은 이동은 테스트가 끝날 때 반드시 끝낸다. React는 진행 중인 비동기
+     * 전환을 한데 묶어(entangle) 전부 끝나야 `isPending`을 내리므로, 남겨 두면 다음
+     * 테스트의 이동도 영영 끝나지 않는다.
+     */
+    const unfinished: Array<() => void> = [];
+    function holdNavigation(): () => void {
+        let finish: () => void = () => {};
+        router.push.mockImplementationOnce(
+            () =>
+                new Promise<void>(resolve => {
+                    finish = resolve;
+                })
+        );
+        const release = () => finish();
+        unfinished.push(release);
+        return release;
+    }
+    afterEach(async () => {
+        await act(async () => {
+            unfinished.splice(0).forEach(release => release());
+        });
+    });
+
+    function renderShell() {
+        wrap(
+            <ChatShell
+                conversationId="c1"
+                initialMessages={[]}
+                conversations={[
+                    { id: 'c9', title: '대화 아홉', lastMessageAt: '' },
+                ]}
+                signedIn
+                localePrefix=""
+                siteUrl="https://siglens.io"
+                currentPath="/c/c1"
+            />
+        );
+    }
+    const desktopRail = () => document.querySelector('aside') as HTMLElement;
+    const skeleton = () =>
+        document.querySelector('[data-conversation-skeleton]');
+
+    it('다른 대화를 누르면 도착 전까지 본문을 골격으로 바꾼다', () => {
+        holdNavigation();
+        renderShell();
+        expect(skeleton()).toBeNull();
+
+        fireEvent.click(
+            within(desktopRail()).getByRole('link', { name: '대화 아홉' }),
+            { button: 0 }
+        );
+
+        expect(skeleton()).not.toBeNull();
+        expect(screen.queryByRole('log')).toBeNull();
+    });
+
+    it('지금 열린 대화를 다시 누르면 골격을 그리지 않는다', () => {
+        holdNavigation();
+        wrap(
+            <ChatShell
+                conversationId="c9"
+                initialMessages={[]}
+                conversations={[
+                    { id: 'c9', title: '대화 아홉', lastMessageAt: '' },
+                ]}
+                signedIn
+                localePrefix=""
+                siteUrl="https://siglens.io"
+                currentPath="/c/c9"
+            />
+        );
+
+        fireEvent.click(
+            within(desktopRail()).getByRole('link', { name: '대화 아홉' }),
+            { button: 0 }
+        );
+
+        expect(skeleton()).toBeNull();
+    });
+
+    it('새 대화로 가는 이동에는 골격을 그리지 않는다', () => {
+        holdNavigation();
+        renderShell();
+
+        const newChat = within(desktopRail())
+            .getAllByRole('link')
+            .find(link => link.getAttribute('href') === '/');
+        expect(newChat).toBeDefined();
+        fireEvent.click(newChat as HTMLElement, { button: 0 });
+
+        expect(skeleton()).toBeNull();
+    });
+
+    it('이동이 끝나면 골격을 걷는다', async () => {
+        const finish = holdNavigation();
+        renderShell();
+        fireEvent.click(
+            within(desktopRail()).getByRole('link', { name: '대화 아홉' }),
+            { button: 0 }
+        );
+        expect(skeleton()).not.toBeNull();
+
+        await act(async () => {
+            finish();
+        });
+
+        await waitFor(() => expect(skeleton()).toBeNull());
     });
 });
 

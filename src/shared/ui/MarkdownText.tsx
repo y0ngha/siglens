@@ -1,57 +1,19 @@
 import type { ComponentPropsWithoutRef } from 'react';
 import type { Components } from 'react-markdown';
-import ReactMarkdown from 'react-markdown';
+import { lazy, Suspense } from 'react';
+import { stripSnapshotMarkdown } from '@/shared/lib/stripSnapshotMarkdown';
 import { cn } from '@/shared/lib/cn';
 
-const MARKDOWN_TEXT_COMPONENTS: Components = {
-    p: ({ children }) => (
-        <p className="mb-2 leading-[1.75] whitespace-pre-line last:mb-0">
-            {children}
-        </p>
-    ),
-    strong: ({ children }) => (
-        <strong className="font-semibold text-secondary-100">{children}</strong>
-    ),
-    em: ({ children }) => (
-        <em className="text-secondary-300 italic">{children}</em>
-    ),
-    ul: ({ children }) => (
-        <ul className="mb-2 ml-4 list-disc space-y-1 leading-[1.75] last:mb-0">
-            {children}
-        </ul>
-    ),
-    ol: ({ children }) => (
-        <ol className="mb-2 ml-4 list-decimal space-y-1 leading-[1.75] last:mb-0">
-            {children}
-        </ol>
-    ),
-    li: ({ children }) => <li className="pl-0.5">{children}</li>,
-    h1: ({ children }) => (
-        <p className="mb-2 leading-[1.6] font-semibold text-secondary-100 last:mb-0">
-            {children}
-        </p>
-    ),
-    h2: ({ children }) => (
-        <p className="mb-2 leading-[1.6] font-semibold text-secondary-100 last:mb-0">
-            {children}
-        </p>
-    ),
-    h3: ({ children }) => (
-        <p className="mb-1.5 leading-[1.65] font-medium text-secondary-200 last:mb-0">
-            {children}
-        </p>
-    ),
-    code: ({ children }) => (
-        <code className="rounded bg-secondary-800 px-1 py-0.5 font-mono text-[10px] text-secondary-300">
-            {children}
-        </code>
-    ),
-    pre: ({ children }) => (
-        <pre className="mb-1.5 overflow-x-auto rounded bg-secondary-800 p-2 font-mono text-[10px] text-secondary-300 last:mb-0">
-            {children}
-        </pre>
-    ),
-};
+/**
+ * 마크다운 렌더러는 지연 로드한다(`MarkdownRenderer` JSDoc). 렌더러가 오기 전에는 같은
+ * 글자를 마커만 걷어낸 평문으로 보여 준다 — 빈칸으로 두면 렌더러가 도착할 때 아래 내용이
+ * 밀린다. 마크다운을 쓰는 화면은 대부분 클라이언트 전용 경계(`useSearchParams`) 안이라
+ * 서버 HTML과 무관하다. 서버에서도 렌더되는 공유 페이지(noindex)에서는 이 경계가 평문
+ * fallback으로 먼저 나가고, 렌더러가 도착하면 문단·목록으로 바뀌며 높이가 조금 달라질 수 있다.
+ */
+const MarkdownRenderer = lazy(() =>
+    import('./MarkdownRenderer').then(m => ({ default: m.MarkdownRenderer }))
+);
 
 interface MarkdownTextProps extends Omit<
     ComponentPropsWithoutRef<'div'>,
@@ -64,7 +26,7 @@ interface MarkdownTextProps extends Omit<
 export function MarkdownText({
     children,
     className,
-    components = MARKDOWN_TEXT_COMPONENTS,
+    components,
     ...props
 }: MarkdownTextProps) {
     return (
@@ -72,7 +34,17 @@ export function MarkdownText({
             className={cn('leading-[1.75] tracking-normal', className)}
             {...props}
         >
-            <ReactMarkdown components={components}>{children}</ReactMarkdown>
+            <Suspense
+                fallback={
+                    <p className="whitespace-pre-line">
+                        {stripSnapshotMarkdown(children)}
+                    </p>
+                }
+            >
+                <MarkdownRenderer components={components}>
+                    {children}
+                </MarkdownRenderer>
+            </Suspense>
         </div>
     );
 }

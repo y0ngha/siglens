@@ -102,7 +102,8 @@ export function FearGreedHistoricalChart({
     return (
         <div
             ref={containerRef}
-            className="w-full"
+            // 차트가 그려지기 전에도 높이를 잡아 둔다(`CHART_HEIGHT`와 같은 값).
+            className="h-[240px] w-full"
             role="img"
             aria-label={t('FearGreedHistoricalChart.9b98f6')}
         />
