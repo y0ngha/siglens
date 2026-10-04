@@ -136,17 +136,17 @@ export const SYMBOLS_PATH = '/symbols';
 export const ORGANIZATION_JSON_LD_ID = `${SITE_URL}#organization`;
 
 /**
- * 공개 소스 저장소. 푸터가 유일한 소비자다.
+ * 공개 소스 저장소. 푸터와 홈 `Organization.sameAs`가 소비자다.
  *
  * 상수로 두는 이유는 재사용이 아니라 **위치**다. 사이트를 가리키는 다른 URL이
- * 전부 여기 있으므로, 나중에 JSON-LD `sameAs`에 소셜 프로필을 실을 일이 생기면
- * 이 파일 안에서 함께 다루게 된다. 푸터 JSX 안에 문자열로 박아두면 그 시점에
- * 두 번째 사본이 생긴다.
+ * 전부 여기 있으므로, JSON-LD `sameAs`에 싣는 소셜 프로필(`X_URL`)도 이 파일
+ * 안에서 함께 다룬다. 푸터 JSX나 JSON-LD 안에 문자열로 박아두면 두 번째 사본이
+ * 생긴다.
  */
 export const GITHUB_URL = 'https://github.com/y0ngha/siglens';
 
 /**
- * 공식 X(트위터) 계정. 푸터 아이콘 링크가 소비한다.
+ * 서비스 공식 X(트위터) 계정. 홈 `Organization.sameAs`와 푸터 아이콘 링크가 소비한다.
  */
 export const X_URL = 'https://x.com/siglens_io';
 
@@ -647,6 +647,69 @@ function collapseToSingleLine(text: string): string {
         .join(' ');
 }
 
+/**
+ * 원문 필드 경로 전용 — 맨 앞 라벨·소제목 줄 제거 규칙 (2026-10-04 운영 크롤).
+ *
+ * 평이화 경로(`plain`)는 이 규칙을 타지 않는다. 원문은 LLM이 쓴 마크다운 필드라
+ * 두 가지 머리말이 SERP 첫머리로 새어 나왔다:
+ *  - 소제목 줄: `/AAPL`의 `"애플(AAPL) 일봉 종합 분석\n추세 방향과 강도\n분석 시점…"`이
+ *    줄바꿈 제거로 `…종합 분석 추세 방향과 강도 분석 시점…`처럼 문장에 이어 붙었다.
+ *  - 라벨: 차트 348개 중 55개가 `현재 상황:`·`요약:`으로 시작했다.
+ */
+const SENTENCE_TERMINATOR_PATTERN = /[!?。]|\.(?!\d)/;
+// 소제목은 짧아야 한다 — 긴 줄은 종결부호가 없어도 본문 문장이다.
+const HEADING_LINE_MAX_CODE_POINTS = 30;
+// 단어 ≤ 2개(각 ≤ 12자) + 콜론 + **공백**. 콜론 뒤 공백을 요구해 `09:30`·`1:2`
+// 같은 시각·비율 표기는 라벨로 보지 않는다. `.`은 단어에서 빼서 문장 중간의
+// 콜론이 라벨로 오인되지 않게 한다(첫 종결부호 앞까지만 훑는다).
+const LEADING_LABEL_PATTERN =
+    /^[^\s.:：!?]{1,12}(?:\s[^\s.:：!?]{1,12})?\s*[:：]\s+/;
+
+/**
+ * 뒤에 줄이 더 있는, 종결부호 없는 짧은 줄을 소제목으로 보고 **앞에서부터** 떼어
+ * 낸다. 첫 본문 줄에서 멈추며, 마지막 줄은 뒤따르는 줄이 없으므로 항상 남는다.
+ * 소수점(`333.69`)은 종결부호가 아니다.
+ */
+function dropLeadingHeadingLines(lines: readonly string[]): string[] {
+    const firstBodyIndex = lines.findIndex(
+        (line, index) =>
+            index === lines.length - 1 ||
+            SENTENCE_TERMINATOR_PATTERN.test(line) ||
+            [...line].length > HEADING_LINE_MAX_CODE_POINTS
+    );
+    return lines.slice(firstBodyIndex);
+}
+
+// 라벨 뒤가 숫자·통화 기호로 시작하면 콜론 앞은 라벨이 아니라 그 값의 주어다
+// ("삼성전자 주가: 70,000원에", "RSI: 70이며") — 떼면 무엇의 값인지가 사라진다.
+const VALUE_START_PATTERN = /^[\d$₩€¥£+\-−.]/;
+
+/**
+ * 맨 앞 라벨(`현재 상황: `, `요약: `)을 한 번 뗀다. 남은 문장이 값으로 시작하면
+ * 콜론 앞이 주어라 떼지 않는다(2026-10-04 리뷰).
+ */
+function stripLeadingLabel(text: string): string {
+    const match = LEADING_LABEL_PATTERN.exec(text);
+    if (match === null) return text;
+    const rest = text.slice(match[0].length);
+    return VALUE_START_PATTERN.test(rest) ? text : rest.trim();
+}
+
+/**
+ * 원문 필드를 한 줄로 합치되 머리말(소제목 줄, 맨 앞 라벨)을 뗀다. 떼고 나서
+ * 비면 떼기 전 텍스트로 돌아간다.
+ */
+function collapseRawToSingleLine(text: string): string {
+    const lines = stripSnapshotMarkdown(text)
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+    const unstripped = lines.join(' ');
+    const body = dropLeadingHeadingLines(lines).join(' ');
+    const stripped = stripLeadingLabel(body);
+    return stripped.length > 0 ? stripped : unstripped;
+}
+
 // FIX 5 (audit): only accept a sentence-ending punctuation mark as a clamp
 // point if it falls within this many code points of the hard cutoff — a
 // boundary near the START of an over-length string would clamp far shorter
@@ -829,7 +892,7 @@ export function buildSnapshotMetaDescription(
     const raw = (content as Record<string, unknown>)[field];
     if (typeof raw !== 'string') return null;
 
-    const singleLine = collapseToSingleLine(raw);
+    const singleLine = collapseRawToSingleLine(raw);
     if (singleLine.length === 0) return null;
 
     return clampAtSentenceBoundary(

@@ -433,6 +433,34 @@ describe('NewsPage — ItemList 상한은 렌더 개수와 같은 상수를 쓴�
         expect(itemList).toBeDefined();
         expect(itemList?.itemListElement).toHaveLength(NEWS_LIST_PAGE_SIZE);
     });
+
+    /**
+     * 2026-10-04 감사: 항목 URL은 외부 매체의 기사인데 `NewsArticle`로 선언하면
+     * 이 페이지가 호스팅하지 않는 콘텐츠의 저작을 주장하게 된다. `ListItem`에는
+     * `position`·`url`·`name`만 남긴다.
+     */
+    it('항목은 NewsArticle이 아니라 position·url·name만 가진 ListItem이다', async () => {
+        mockGetNewsList.mockResolvedValue(READY_NEWS);
+
+        const tree = await NewsPage({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+
+        const itemList = collectJsonLdData(tree).find(
+            d => d['@type'] === 'ItemList'
+        );
+        const elements = itemList?.itemListElement as Record<string, unknown>[];
+        expect(elements).toHaveLength(READY_NEWS.length);
+        elements.forEach((element, idx) => {
+            expect(element).toEqual({
+                '@type': 'ListItem',
+                position: idx + 1,
+                url: READY_NEWS[idx].url,
+                name: READY_NEWS[idx].titleKo,
+            });
+        });
+        expect(JSON.stringify(itemList)).not.toContain('NewsArticle');
+    });
 });
 
 describe('NewsPage — BreadcrumbList 이름', () => {
@@ -490,6 +518,30 @@ describe('NewsPage — Article JSON-LD 게이트와 dateModified', () => {
         });
 
         expect(findArticle(tree)).toBeUndefined();
+    });
+
+    it('Article.author는 /about(운영 주체·방법 페이지)을 가리키고 publisher는 그대로다', async () => {
+        vi.mocked(getSeoSnapshotsStatic).mockResolvedValue(PROSE_SNAPSHOT);
+
+        const tree = await NewsPage({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+
+        const article = findArticle(tree);
+        expect(article?.author).toEqual({
+            '@type': 'Organization',
+            name: 'Siglens',
+            url: 'https://siglens.io/about',
+        });
+        expect(article?.publisher).toEqual({
+            '@type': 'Organization',
+            name: 'Siglens',
+            url: 'https://siglens.io',
+            logo: {
+                '@type': 'ImageObject',
+                url: 'https://siglens.io/icon512.png',
+            },
+        });
     });
 
     it('산문이 있으면 최신 뉴스 발행 시각을 dateModified로 쓴다', async () => {

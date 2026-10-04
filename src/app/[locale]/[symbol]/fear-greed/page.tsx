@@ -5,6 +5,7 @@ import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabi
 import { ErrorBoundary } from 'react-error-boundary';
 import { FearGreedPageError } from '@/widgets/fear-greed/FearGreedPageError';
 import { FearGreedFactsSummary } from '@/views/symbol/fearGreed/FearGreedFactsSummary';
+import { hasFearGreedScore } from '@/views/symbol/fearGreed/utils/hasFearGreedScore';
 import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { JsonLd } from '@/shared/ui/JsonLd';
@@ -15,7 +16,6 @@ import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { getSeedBarsStatic } from '@/entities/bars/lib/barsStaticCache';
-import { buildTechnicalFacts } from '@/entities/bars/lib/technicalFacts';
 import {
     getDescriptor,
     marketProfileOf,
@@ -101,13 +101,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return NOINDEX_SYMBOL_METADATA;
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(ticker);
-    // 콘텐츠 게이트 — 본문의 `FearGreedFactsSummary`와 **같은 입력·같은 술어**로
-    // 판정한다(MISTAKES §2). 본문이 쓰는 `getSeedBarsStatic`과 같은 인자라 요청 스코프
-    // 메모가 접혀 왕복이 늘지 않는다. 차트 라우트(`[symbol]/page.tsx`)와 같은 모양이다:
+    // 콘텐츠 게이트 — 본문의 `FearGreedFactsSummary`와 **같은 입력·같은 술어**
+    // (`hasFearGreedScore`)로 판정한다(MISTAKES §2). 본문이 쓰는 `getSeedBarsStatic`과
+    // 같은 인자라 요청 스코프 메모가 접혀 왕복이 늘지 않는다. 차트 라우트
+    // (`[symbol]/page.tsx`)와 같은 모양이다:
     //   - 조회 **실패**(`null`) → degraded로 넘긴다. 이 탭에는 스냅샷이 없으므로
     //     (`tab` 생략) degraded는 곧 noindex — 장애 중 빈 껍데기가 색인되지 않는다.
-    //   - 조회는 됐는데 봉이 모자라 요약이 안 그려지면(`buildTechnicalFacts` null,
-    //     상장폐지 종목 등) `no-price-data`로 noindex.
+    //   - 조회는 됐는데 **점수가 안 나오면**(봉 부족·점수 표본 부족, 상장폐지·신규
+    //     상장 종목 등) 요약이 그려지지 않아 본문이 도입 문단뿐이다 → `no-price-data`로
+    //     noindex. 예전에는 `buildTechnicalFacts`(봉 2개 이상)로 판정해 봉은 있으나
+    //     점수가 없는 종목(`/TOSCF`·`/SLROF`, 2026-10-04)이 색인돼 있었다.
     const metadataBars = assetInfo
         ? await getSeedBarsStatic(
               ticker,
@@ -129,12 +132,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         degraded: degraded || metadataBars === null,
         revalidateSeconds: revalidate,
         hasPriceData:
-            metadataBars === null
-                ? undefined
-                : buildTechnicalFacts(
-                      metadataBars.bars,
-                      metadataBars.indicators
-                  ) !== null,
+            metadataBars === null ? undefined : hasFearGreedScore(metadataBars),
     });
     if (blockedMetadata) return blockedMetadata;
     if (!assetInfo) return noindexSymbolMetadata(ticker, tSeo, locale);
@@ -276,16 +274,8 @@ export default async function SymbolFearGreedPage({ params }: Props) {
         );
     }
 
-    // 게이트(generateMetadata)와 **같은 술어**로 요약 렌더를 결정한다 — 봉이 1개뿐인
-    // 상장폐지 종목처럼 `buildTechnicalFacts`가 null을 내는 경우 색인은 막혔는데
-    // 화면만 요약을 그리면 둘이 어긋난다(MISTAKES §2).
-    const fearGreedFacts =
-        quantizedFgBars === null
-            ? null
-            : buildTechnicalFacts(
-                  quantizedFgBars.bars,
-                  quantizedFgBars.indicators
-              );
+    // 요약 여부는 `FearGreedFactsSummary`가 정한다(점수가 없으면 null). 게이트의
+    // `hasFearGreedScore`와 같은 core 계산·같은 입력이라 색인과 화면이 갈리지 않는다.
 
     return (
         <>
@@ -323,7 +313,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                     이미 로드된 quantizedFgBars(bars+indicators)로 동일 수치를
                     SSR HTML에 박아 크롤 가능하게 한다(결정적, AI/pre-warm 무관).
                     사용자에게도 동일하게 보이므로 클로킹 아님. */}
-                {fearGreedFacts !== null && quantizedFgBars !== null && (
+                {quantizedFgBars !== null && (
                     <FearGreedFactsSummary
                         symbol={ticker}
                         marketProfile={marketProfile}

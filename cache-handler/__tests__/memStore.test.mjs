@@ -25,7 +25,7 @@ function fetchEntry(bodyLength, extra = {}) {
  * 상한을 낮춘 memStore 인스턴스를 새로 임포트한다.
  *
  * 상한은 모듈 로드 시점에 `process.env`에서 읽는 상수라, 축출 로직을 기본값
- * (4,000개 / 64MB)으로 검증하려면 테스트가 실제로 64MB를 할당해야 한다.
+ * (기본 상한)으로 검증하려면 테스트가 실제로 64MB를 할당해야 한다.
  * env를 stub한 뒤 모듈을 다시 임포트해 작은 예산으로 같은 코드를 태운다.
  */
 async function freshStore({ maxEntries, maxBytes }) {
@@ -44,6 +44,48 @@ beforeEach(() => {
 afterEach(() => {
     vi.unstubAllEnvs();
     vi.resetModules();
+});
+
+// 게이트 단위: 분포(8KB)는 gzip된 S3 객체 기준인데 게이트는 압축 전 본문 길이를 잰다.
+// 기본값이 다시 8KB로 돌아가면 압축 후 2~6KB짜리 엔트리가 S3로 새어 PUT·GET이 는다(2026-10 감사).
+describe('기본 상한은 (env 없이)', () => {
+    /**
+     * env 키를 실제로 지운다. `vi.stubEnv(name, '')`는 키가 "있되 빈 문자열"인 상태라
+     * `readPositiveBound`가 `Number('') = 0`을 비양수로 거르는 부수 효과에 기대 fallback으로
+     * 떨어질 뿐, "env 없음"을 표현하지 못한다. `undefined`를 넘기면 키가 삭제되고
+     * `afterEach`의 `vi.unstubAllEnvs()`가 원래 값(CI에 이미 있었다면 그 값)으로 되돌린다.
+     */
+    function unsetBoundEnv() {
+        vi.stubEnv('ISR_FETCH_CACHE_ROUTE_MAX_BYTES', undefined);
+        vi.stubEnv('ISR_FETCH_CACHE_MAX_BYTES', undefined);
+        vi.stubEnv('ISR_FETCH_CACHE_MAX_ENTRIES', undefined);
+    }
+
+    it('라우팅 게이트가 압축 전 32KB다 — 20KB 본문은 메모리에 담긴다', async () => {
+        vi.resetModules();
+        unsetBoundEnv();
+        expect(process.env.ISR_FETCH_CACHE_ROUTE_MAX_BYTES).toBeUndefined();
+        const store = await import('../memStore.mjs');
+        expect(store.MEM_ROUTE_MAX_BYTES).toBe(32 * 1024);
+        const entry = fetchEntry(20 * 1024);
+        expect(store.setEntry('mid', entry)).toBe(true);
+        expect(store.getEntry('mid')).toBe(entry);
+        expect(store.setEntry('big', fetchEntry(32 * 1024 + 1))).toBe(false);
+    });
+
+    it('바이트 예산이 64MB라 32MB를 넘게 담아도 축출하지 않는다', async () => {
+        vi.resetModules();
+        unsetBoundEnv();
+        // 개수 상한은 이 테스트의 관심사가 아니다 — 축출 사유를 바이트 예산 하나로 좁히려고 올린다.
+        vi.stubEnv('ISR_FETCH_CACHE_MAX_ENTRIES', '100000');
+        expect(process.env.ISR_FETCH_CACHE_MAX_BYTES).toBeUndefined();
+        const store = await import('../memStore.mjs');
+        // 30KB × 1,200 ≈ 35MB — 예전 32MB 예산이면 축출이 시작됐을 양
+        for (let i = 0; i < 1200; i++)
+            store.setEntry(`k${i}`, fetchEntry(30 * 1024));
+        expect(store.countersForTest().evictions).toBe(0);
+        expect(store.statsForTest().size).toBe(1200);
+    });
 });
 
 describe('memStore는', () => {
@@ -186,7 +228,7 @@ describe('memStore는', () => {
         const store = await freshStore({ maxBytes: 'Infinity' });
         for (let i = 0; i < 40; i++) store.setEntry('k' + i, fetchEntry(8000));
 
-        // 기본값 32MB 안이므로 전부 남아야 하고, 예산은 유한해야 한다.
+        // 기본값 64MB 안이므로 전부 남아야 하고, 예산은 유한해야 한다.
         expect(Number.isFinite(store.statsForTest().totalBytes)).toBe(true);
         expect(store.statsForTest().size).toBe(40);
     });

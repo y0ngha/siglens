@@ -96,6 +96,10 @@ function latestOf(
  *  4. **빌드 시점 고정**(`SITE_BUILD_DATE`) — 배포로만 바뀌는 페이지(home), 그리고
  *     1등급 값이 주입되지 않았을 때의 폴백(`/backtesting`·legal).
  *
+ * 예외: `/symbols`는 **lastmod를 생략**한다. 본문이 상수 목록이라 배포로만 바뀌는데,
+ * 4등급 값(배포 시각)을 광고하면 목록이 그대로인 릴리스에서도 "방금 바뀜"을 주장한다
+ * (2026-10-04 감사). 정직한 시각이 없으면 말하지 않는다.
+ *
  * `/market*`은 예전에 "1시간 슬라이딩, 정시로 내림"이었다. ISR revalidate가 1h라
  * 갱신 *주기*와는 맞았지만 lastmod가 주장하는 것은 주기가 아니라 **마지막 변경
  * 시각**이고, 장이 닫힌 뒤에는 매시간 "방금 바뀌었다"는 거짓 신호가 됐다
@@ -238,12 +242,14 @@ export function buildStaticEntries(
         {
             /**
              * 종목 디렉터리. 목록은 상수(`POPULAR_TICKERS`·`POPULAR_CRYPTOS`)라
-             * **배포로만** 바뀌므로 lastmod가 배포 시각인 것이 정직하다.
+             * 배포로만 바뀐다. 예전에는 그래서 lastmod를 배포 시각으로 뒀으나,
+             * 목록이 실제로 바뀌지 않은 배포까지 "방금 바뀜"으로 나가 2026-10-04
+             * 감사에서 부정확한 신호로 판정했다 — **`lastModified`를 생략**한다
+             * (XML에 `<lastmod>`가 나가지 않는다).
              * priority는 허브(0.8)보다 낮게 둔다 — 이 페이지의 값은 자기 본문이
              * 아니라 종목 페이지로 내보내는 링크에 있다.
              */
             url: `${SITE_URL}/symbols`,
-            lastModified: SITE_BUILD_DATE,
             changeFrequency: 'monthly',
             priority: 0.6,
             alternates: sitemapAlternates('/symbols', STATIC_INDEXABLE_LOCALES),

@@ -87,8 +87,39 @@ describe('maxLastModified', () => {
 
         expect(result).not.toBe(source.lastModified);
         result.setUTCFullYear(1999);
-        expect(source.lastModified.toISOString()).toBe(
+        expect(source.lastModified?.toISOString()).toBe(
             '2026-05-22T20:00:00.000Z'
         );
+    });
+
+    it('lastModified가 없는 엔트리는 건너뛴다 — 최댓값이 시각을 가진 엔트리에서 나온다', () => {
+        const withoutLastmod: SitemapEntry = {
+            url: 'https://siglens.io/symbols',
+            changeFrequency: 'monthly',
+            priority: 0.6,
+        };
+
+        const result = maxLastModified(
+            [
+                entry('2026-05-20T00:00:00.000Z'),
+                withoutLastmod,
+                entry('2026-05-22T20:00:00.000Z'),
+            ],
+            FALLBACK
+        );
+
+        expect(result.toISOString()).toBe('2026-05-22T20:00:00.000Z');
+    });
+
+    it('전부 lastModified가 없으면 fallback을 준다 (Invalid Date 방지)', () => {
+        const withoutLastmod: SitemapEntry = {
+            url: 'https://siglens.io/symbols',
+            changeFrequency: 'monthly',
+            priority: 0.6,
+        };
+
+        const result = maxLastModified([withoutLastmod], FALLBACK);
+
+        expect(result.getTime()).toBe(FALLBACK.getTime());
     });
 });

@@ -6,7 +6,11 @@ import { MS_PER_HOUR } from '@/shared/config/time';
 import { SITE_URL } from '@/shared/lib/seo';
 import { floorToHour } from './floorToHour';
 import type { SitemapEntry } from '../model';
-import { makeProseGate, type BuildPopularEntriesOptions } from './proseGate';
+import {
+    makeProseGate,
+    makeSnapshotTimeLookup,
+    type BuildPopularEntriesOptions,
+} from './proseGate';
 
 /**
  * Quantize `now` down to the most-recent 6h boundary (UTC midnight, 06:00, 12:00, 18:00).
@@ -56,14 +60,19 @@ function withSymbolAlternates(entries: SitemapEntry[]): SitemapEntry[] {
  * Crypto popular sitemap entries.
  *
  * lastmod uses the chart ISR period (6h, `CRYPTO_CHART_ISR_PERIOD_HOURS`) as a
- * common baseline via `quantizeTo6hBoundary` (news uses a rolling hour instead, below).
+ * common baseline via `quantizeTo6hBoundary`. Since the 2026-10-04 honesty pass (round 2)
+ * the two snapshot-backed tabs also carry the time their prose was actually baked:
+ *   - chart: `max(6h boundary, technical snapshot generatedAt)` — the prose is generated
+ *     after the boundary, so a crawl in between would otherwise miss the change.
+ *   - news: the news snapshot's `generatedAt`. Measured 2026-10-04: every news entry
+ *     carried `now − 1h` while the rendered snapshot was a median of 32h old. Only when the
+ *     loader failed (no snapshot map) does it fall back to the old floored `now − 1h`.
  *
  * `changeFrequency` per tab reflects editorial intent and is independent of lastmod:
- *   - chart (`revalidate=21600`, 6h) → `changeFrequency: 'daily'`, 6h-boundary lastmod.
- *   - news (`revalidate=43200`, 12h) → `changeFrequency: 'daily'`, rolling 1h-ago lastmod,
+ *   - chart (`revalidate=21600`, 6h) → `changeFrequency: 'daily'`.
+ *   - news (`revalidate=43200`, 12h) → `changeFrequency: 'daily'`; the fallback lastmod is
  *     floored to the hour (`floorToHour`) so repeated calls within the same hour agree
- *     (news is the most dynamic tab; 1h rolling accounts for on-demand revalidateTag that
- *     can refresh the page inside the ISR window).
+ *     (on-demand revalidateTag can refresh the page inside the ISR window).
  *   - fear-greed (`revalidate=86400`, 24h) → `changeFrequency: 'daily'`, UTC-midnight
  *     lastmod — the page regenerates at most daily, so a 6h boundary would over-claim.
  *
@@ -77,9 +86,10 @@ export function buildCryptoPopularEntries(
     now: Date,
     // `buildPopularEntries`와 같은 산문 게이트 — 뉴스 탭은 자산군과 무관하게
     // 산문이 없으면 noindex일 수 있다. 없으면(로더 실패) 필터를 끈다.
-    { symbolTabsWithProse }: BuildPopularEntriesOptions = {}
+    options: BuildPopularEntriesOptions = {}
 ): SitemapEntry[] {
-    const hasProse = makeProseGate({ symbolTabsWithProse });
+    const hasProse = makeProseGate(options);
+    const snapshotTimeOf = makeSnapshotTimeLookup(options);
     const boundary6h = quantizeTo6hBoundary(now);
     const utcMidnight = new Date(
         Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
@@ -89,31 +99,40 @@ export function buildCryptoPopularEntries(
     // `/news` 엔트리와 같은 이유(floorToHour JSDoc 참고).
     const oneHourAgo = floorToHour(new Date(now.getTime() - MS_PER_HOUR));
     return withSymbolAlternates(
-        POPULAR_CRYPTOS.flatMap((sym): SitemapEntry[] => [
-            {
-                url: `${SITE_URL}/${sym}`,
-                lastModified: boundary6h,
-                changeFrequency: 'daily',
-                priority: 0.8,
-            },
-            ...(hasProse(sym, 'news')
-                ? [
-                      {
-                          url: `${SITE_URL}/${sym}/news`,
-                          lastModified: oneHourAgo,
-                          changeFrequency: 'daily' as const,
-                          priority: 0.75,
-                      },
-                  ]
-                : []),
-            // 공포탐욕 탭은 2026-10-01부터 색인한다(`[symbol]/fear-greed/page.tsx`
-            // generateMetadata 주석). `/overall`·`/position`은 항상 noindex라 싣지 않는다.
-            {
-                url: `${SITE_URL}/${sym}/fear-greed`,
-                lastModified: utcMidnight,
-                changeFrequency: 'daily',
-                priority: 0.75,
-            },
-        ])
+        POPULAR_CRYPTOS.flatMap((sym): SitemapEntry[] => {
+            const technicalAt = snapshotTimeOf(sym, 'technical');
+            const chartLastModified =
+                technicalAt !== undefined &&
+                technicalAt.getTime() > boundary6h.getTime()
+                    ? technicalAt
+                    : boundary6h;
+            return [
+                {
+                    url: `${SITE_URL}/${sym}`,
+                    lastModified: chartLastModified,
+                    changeFrequency: 'daily',
+                    priority: 0.8,
+                },
+                ...(hasProse(sym, 'news')
+                    ? [
+                          {
+                              url: `${SITE_URL}/${sym}/news`,
+                              lastModified:
+                                  snapshotTimeOf(sym, 'news') ?? oneHourAgo,
+                              changeFrequency: 'daily' as const,
+                              priority: 0.75,
+                          },
+                      ]
+                    : []),
+                // 공포탐욕 탭은 2026-10-01부터 색인한다(`[symbol]/fear-greed/page.tsx`
+                // generateMetadata 주석). `/overall`·`/position`은 항상 noindex라 싣지 않는다.
+                {
+                    url: `${SITE_URL}/${sym}/fear-greed`,
+                    lastModified: utcMidnight,
+                    changeFrequency: 'daily',
+                    priority: 0.75,
+                },
+            ];
+        })
     );
 }

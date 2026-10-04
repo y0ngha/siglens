@@ -126,17 +126,8 @@ export function FearGreedFactsSummary({
                     </span>
                 )}
             </h2>
-            <dl className="grid grid-cols-1 gap-2 text-sm text-secondary-300">
-                <div className="flex justify-between gap-4">
-                    <dt className="text-secondary-400">
-                        {t('FearGreedFactsSummary.fa167e')}
-                    </dt>
-                    <dd>
-                        {score} / 100 (
-                        {tLabel(SENTIMENT_LABEL_KEY[snapshot.label])})
-                    </dd>
-                </div>
-            </dl>
+            {/* 서술 문장이 점수 행(`<dl>`)보다 DOM에서 앞서야 한다 — 네이버가 본문
+                첫 텍스트로 스니펫을 만든다(`TechnicalFactsSummary`와 같은 이유, 2026-10-04). */}
             <div className="space-y-1 text-sm leading-6 text-secondary-300">
                 {timeSeriesLines.map(line => (
                     <p key={line}>{line}</p>
@@ -150,6 +141,17 @@ export function FearGreedFactsSummary({
                     <p key={`line-${i}-${line}`}>{line}</p>
                 ))}
             </div>
+            <dl className="grid grid-cols-1 gap-2 text-sm text-secondary-300">
+                <div className="flex justify-between gap-4">
+                    <dt className="text-secondary-400">
+                        {t('FearGreedFactsSummary.fa167e')}
+                    </dt>
+                    <dd>
+                        {score} / 100 (
+                        {tLabel(SENTIMENT_LABEL_KEY[snapshot.label])})
+                    </dd>
+                </div>
+            </dl>
             <p className="text-xs text-secondary-400">
                 {tFearGreed('confidenceFooter', {
                     v0: snapshot.sampleSize,

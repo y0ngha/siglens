@@ -45,6 +45,9 @@ vi.mock('@y0ngha/siglens-core', () => ({
         weekendDays: [0, 6],
     },
     CRYPTO_SESSION: { kind: 'always-open' as const },
+    // 페이지가 `hasFearGreedScore`로 요약 렌더 여부를 판정한다. 이 스위트는 요약이
+    // 아니라 헬퍼 인자·about 노드만 보므로 점수 없음(null)으로 고정해 요약을 건너뛴다.
+    computeFearGreedIndex: () => null,
 }));
 
 vi.mock('@tanstack/react-query', () => ({
