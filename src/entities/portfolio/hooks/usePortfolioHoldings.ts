@@ -95,7 +95,10 @@ export function usePortfolioHoldings(): UsePortfolioHoldingsReturn {
         },
     });
 
-    const holdings: PortfolioHoldingView[] = data ?? [];
+    // 회원이 아니면 캐시에 무엇이 남아 있든 빈 목록이다. 쿼리를 끄기만 하면 로그아웃한
+    // 뒤에도 직전 회원의 보유종목이 캐시에 남아 그대로 노출된다 — 꺼진 쿼리는 다시 받아
+    // 비워 주지 않는다.
+    const holdings: PortfolioHoldingView[] = isMemberLikely ? (data ?? []) : [];
 
     return {
         holdings,

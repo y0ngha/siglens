@@ -287,6 +287,30 @@ describe('usePortfolioHoldings', () => {
         });
 
         /**
+         * 로그아웃하면 쿼리는 꺼지지만 직전 회원의 보유종목은 캐시에 남는다. 꺼진 쿼리는
+         * 다시 받아 비워 주지 않으므로, 훅이 직접 빈 목록을 돌려줘야 한다.
+         */
+        it('회원이었다가 게스트가 되면 캐시에 남은 보유종목을 내보내지 않는다', async () => {
+            identity.hasAuthHint = true;
+            identity.currentUser = { id: 'user-1' };
+            mockGetPortfolioHoldingsAction.mockResolvedValue([HOLDING]);
+            const { result, rerender } = renderHook(
+                () => usePortfolioHoldings(),
+                { wrapper: makeWrapper() }
+            );
+            await waitFor(() =>
+                expect(result.current.holdings).toEqual([HOLDING])
+            );
+
+            identity.hasAuthHint = false;
+            identity.currentUser = null;
+            rerender();
+
+            expect(result.current.holdings).toEqual([]);
+            expect(result.current.isLoading).toBe(false);
+        });
+
+        /**
          * `currentUser` 조회가 실패하면 데이터는 계속 `undefined`다. 그걸 "아직 모름"으로
          * 읽으면 로딩이 영영 안 풀려 첫 분석이 막힌다(분석은 보유종목 확정을 기다린다).
          */

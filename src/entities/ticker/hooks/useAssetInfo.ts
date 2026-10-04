@@ -33,7 +33,9 @@ export function useAssetInfo(symbol: string): AssetInfo | null | undefined {
         //
         // `refetchOnMount: false`로는 막히지 않는다 — 이 쿼리는 하이드레이션 뒤에
         // `enabled`가 켜지는데, 그 전환은 stale 여부만 보고 재요청한다(실측).
-        // 시드가 없는 화면은 데이터가 없어 staleTime과 무관하게 평소대로 받는다.
+        // 시드가 없는 화면은 데이터가 없어 staleTime과 무관하게 평소대로 받는다 — 아직 한 번도
+        // 받지 않은 쿼리도 `dataUpdatedAt`이 0이라 아래 분기를 타지만, react-query는 데이터가
+        // 없는 쿼리를 staleTime을 보기 전에 stale로 판정한다(우연히 맞는 것이 아니다).
         staleTime: query =>
             query.state.dataUpdatedAt === ASSET_INFO_SEED_UPDATED_AT.resolved
                 ? Infinity

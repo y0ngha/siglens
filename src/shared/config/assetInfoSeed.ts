@@ -1,8 +1,7 @@
-/**
- * 이 파일을 `queryConfig.ts`에 합치지 않는 이유: 종목 라우트 테스트 다수가 `queryConfig`를
- * 부분 목으로 갈아끼운다. 거기에 export를 더하면 손대지 않은 테스트가
- * `No "x" export is defined on the mock`으로 무더기 실패한다.
- */
+// 이 파일을 `queryConfig.ts`에 합치지 않는 이유: 종목 라우트 테스트 다수가 `queryConfig`를
+// 부분 목으로 갈아끼운다. 거기에 export를 더하면 손대지 않은 테스트가
+// `No "x" export is defined on the mock`으로 무더기 실패한다.
+
 /**
  * 서버가 심는 assetInfo 시드의 `updatedAt`.
  *
