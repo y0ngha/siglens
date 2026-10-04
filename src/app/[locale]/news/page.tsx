@@ -6,7 +6,7 @@ import {
     localeAlternatesFrom,
     localeCanonical,
     localeOpenGraph,
-    localeRobots,
+    localePageRobots,
 } from '@/shared/lib/seoAlternates';
 import {
     CATEGORY_CONFIG,
@@ -116,7 +116,7 @@ export async function generateMetadata({
         }),
         robots: degraded
             ? { index: false, follow: true }
-            : localeRobots(locale),
+            : localePageRobots(locale),
         openGraph: {
             type: 'website',
             siteName: SITE_NAME,

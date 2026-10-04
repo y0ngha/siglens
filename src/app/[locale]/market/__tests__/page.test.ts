@@ -126,6 +126,7 @@ import {
     KR_DASHBOARD_SCOPE,
     US_DASHBOARD_SCOPE,
 } from '@/shared/config/dashboardScope';
+import { INDEXABLE_PAGE_ROBOTS } from '@/shared/test-utils/indexablePageRobots';
 
 describe('Market page', () => {
     describe('ISR route config', () => {
@@ -186,7 +187,7 @@ describe('Market page', () => {
             const metadata = await generateMetadata({
                 params: Promise.resolve({ locale: 'ko' }),
             });
-            expect(metadata.robots).toEqual({ index: true, follow: true });
+            expect(metadata.robots).toMatchObject(INDEXABLE_PAGE_ROBOTS);
         });
 
         /**
@@ -228,7 +229,7 @@ describe('Market page', () => {
             expect(metadata.alternates?.canonical).toBe(
                 'https://siglens.io/market'
             );
-            expect(metadata.robots).toEqual({ index: true, follow: true });
+            expect(metadata.robots).toMatchObject(INDEXABLE_PAGE_ROBOTS);
         });
 
         it('두 loader가 모두 throw해도 degrade 경로로 폴백해 canonical=null + noindex', async () => {

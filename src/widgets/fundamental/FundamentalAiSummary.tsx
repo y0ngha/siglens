@@ -12,6 +12,8 @@ import { cn } from '@/shared/lib/cn';
 import { useDefaultModelId } from '@/features/symbol-model/hooks/useDefaultModelId';
 import { useDefaultReasoning } from '@/features/symbol-model/hooks/useDefaultReasoning';
 import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
+import { useAiAutoRunAllowed } from '@/features/symbol-model/hooks/useAiAutoRunAllowed';
+import { AiAnalysisAwaitingSection } from '@/shared/ui/AiAnalysisAwaitingSection';
 import { useFundamentalAnalysis } from './hooks/useFundamentalAnalysis';
 import { FundamentalAiSummaryError } from './FundamentalAiSummaryError';
 import { FundamentalAiSummarySkeleton } from './FundamentalAiSummarySkeleton';
@@ -156,14 +158,17 @@ export function FundamentalAiSummary({
     symbol,
     hideView = false,
 }: FundamentalAiSummaryProps) {
+    const t = useTranslations('widgets.fundamental');
     const modelId = useDefaultModelId();
     const reasoning = useDefaultReasoning();
     const isSettingsHydrated = useAnalysisSettingsHydrated();
+    const { allowed: autoRunAllowed, grant } = useAiAutoRunAllowed(symbol);
     const state = useFundamentalAnalysis(
         symbol,
         modelId,
         reasoning,
-        isSettingsHydrated
+        isSettingsHydrated,
+        autoRunAllowed
     );
 
     useRegisterShareable({
@@ -187,6 +192,16 @@ export function FundamentalAiSummary({
 
     if (state.status === 'loading') {
         return <FundamentalAiSummarySkeleton />;
+    }
+
+    if (state.status === 'awaiting_interaction') {
+        return (
+            <AiAnalysisAwaitingSection
+                heading={t('FundamentalAiSummary.17769c')}
+                idPrefix="ai-summary"
+                onStart={grant}
+            />
+        );
     }
 
     if (state.status === 'error') {

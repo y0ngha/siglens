@@ -396,6 +396,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ <NewsAiSummary />  // component name is self-explanatory
     → Recurring: 3 instances in PR #413 (R7 NewsAugment, R10 news/page, plus component removal)
 
+15.51. Comment/JSDoc blocks must be rewrapped when lengthened during edits
+    → When editing a comment or JSDoc block, if the edit causes a line to exceed the file's existing wrap width, re-wrap the entire block to match the surrounding style
+    → Inconsistent line wrapping within a file creates visual noise and makes diffs harder to review
+    → Applies to: inline comments, JSDoc blocks, multi-line documentation strings
+    ❌ // Existing comment with consistent 80-char wrap width
+       // after edit: lengthened line now 95 chars, breaks file style
+    ✅ // Existing comment with consistent 80-char wrap width
+       // after edit: rewrapped to match existing style
+       // across multiple lines as needed
+    → Recurring: PR #939 (about/page.tsx brand-name edit), PR #940 (robots metadata JSDoc edit) — 2 occurrences
+
 15.7. Market/scope/region-specific strings hardcoded instead of derived from context
     → Market names ('미국 증시', '한국 증시'), error messages, and region-specific text must not be hardcoded in components
     → Always derive from context (scope object, props, constants) passed explicitly to the component

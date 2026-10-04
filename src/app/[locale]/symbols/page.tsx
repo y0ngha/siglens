@@ -4,7 +4,7 @@ import { resolveLocale } from '@/shared/i18n/locales';
 import {
     localeAlternatesFrom,
     localePageSocial,
-    localeRobots,
+    localePageRobots,
 } from '@/shared/lib/seoAlternates';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
@@ -74,7 +74,7 @@ export async function generateMetadata({
         // URL을 만든다(ko 절대 URL을 넘기면 `/en/…`이 ko를 가리켜 hreflang 상호참조가
         // 깨진다).
         alternates: await localeAlternatesFrom(params, PATH),
-        robots: localeRobots(locale),
+        robots: localePageRobots(locale),
         // 소셜 카드는 `localePageSocial`로 통째로 선언한다 — `og:url`이 canonical과
         // 같은 로케일별 URL이 되고(`/en/symbols`가 ko URL을 가리키지 않게), 정적
         // `/og-image.png`도 함께 실린다(2026-09-18 실측: 이 라우트만 `og:image`가

@@ -161,6 +161,7 @@ describe('useOptionsAnalysis', () => {
                     companyName: 'Apple Inc.',
                     expirationDate: '2025-06-20',
                     modelId: 'gemini-3.5-flash-lite',
+                    cacheOnly: true,
                 }),
             { wrapper }
         );

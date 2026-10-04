@@ -113,6 +113,12 @@ type TechnicalParams = {
      * 그래서 이 값을 믿어도 (symbol, timeframe)당 5분에 한 번 이상 LLM을 태울 수 없다.
      */
     reanalyze?: boolean;
+    /**
+     * 캐시만 읽고 미스면 생성하지 않는다(`miss_no_trigger`). 큐레이션 밖 종목에서
+     * 첫 신뢰 입력 전에 클라이언트가 보낸다(`useAiAutoRunAllowed`). 생략·`false`면
+     * 지금과 같은 동작이라 클라이언트가 이 값을 속여도 새 비용 경로가 생기지 않는다.
+     */
+    cacheOnly?: boolean;
 };
 
 /**
@@ -457,7 +463,8 @@ const DISPATCH: Record<
             params.modelId as ModelId,
             locale,
             params.reasoning as boolean | undefined,
-            signal
+            signal,
+            params.cacheOnly as boolean | undefined
         ),
 
     financials: (params, signal, locale) =>
@@ -466,7 +473,8 @@ const DISPATCH: Record<
             params.modelId as ModelId,
             locale,
             params.reasoning as boolean | undefined,
-            signal
+            signal,
+            params.cacheOnly as boolean | undefined
         ),
 
     news: (params, signal, locale) =>
@@ -476,7 +484,8 @@ const DISPATCH: Record<
             params.modelId as ModelId,
             locale,
             params.reasoning as boolean | undefined,
-            signal
+            signal,
+            params.cacheOnly as boolean | undefined
         ),
 
     marketNewsDigest: (params, signal, locale) =>
@@ -504,7 +513,8 @@ const DISPATCH: Record<
             params.modelId as ModelId,
             locale,
             params.reasoning as boolean | undefined,
-            signal
+            signal,
+            params.cacheOnly as boolean | undefined
         ),
 
     /**
@@ -794,6 +804,7 @@ export async function POST(request: Request): Promise<Response> {
             modelId,
             reasoning,
             reanalyze,
+            cacheOnly,
         } = body.params;
 
         try {
@@ -941,8 +952,9 @@ export async function POST(request: Request): Promise<Response> {
             const options: SubmitAnalysisOptions = {
                 modelId,
                 // 2026-09-27: 더 이상 UA로 갈라 넣지 않는다 — 파일 상단 불변식.
-                // 봇의 캐시 미스도 사람과 똑같이 core에 생성을 맡긴다.
-                skipEnqueueIfMiss: false,
+                // 봇의 캐시 미스도 사람과 똑같이 core에 생성을 맡긴다. `cacheOnly`는
+                // UA가 아니라 클라이언트의 AI 자동 실행 게이트에서 온다.
+                skipEnqueueIfMiss: cacheOnly === true,
                 marketDataProvider,
                 assetClass,
                 // core는 심볼에서 통화를 추론하지 않는다 — 거래소 프로파일을

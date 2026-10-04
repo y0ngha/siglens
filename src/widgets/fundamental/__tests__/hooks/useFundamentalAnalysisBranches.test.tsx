@@ -1,8 +1,7 @@
 /**
  * Branch coverage tests for useFundamentalAnalysis — targets uncovered branches in
- * fetchFundamentalAnalysis: miss_no_trigger (falls through to the generic
- * unexpected error — this axis hardcodes skipEnqueueIfMiss:false, so core
- * never actually returns this status), gate blocked, fetch_failed, key_error,
+ * fetchFundamentalAnalysis: miss_no_trigger (→ awaiting_interaction —
+ * core returns it only for the AI auto-run gate's cacheOnly reads), gate blocked, fetch_failed, key_error,
  * non-Error query error wrapping, and the hydration gate path.
  *
  * Poll/cancel machinery has been removed; run* functions return results directly.
@@ -79,11 +78,9 @@ describe('useFundamentalAnalysis — branch coverage', () => {
         });
     });
 
-    it('falls through to the generic unexpected error when submit returns miss_no_trigger', async () => {
-        // Core-only status: skipEnqueueIfMiss is hardcoded false for this
-        // axis (see api/analysis/stream/route.ts top invariant), so core
-        // never actually returns this in production. Verifies the
-        // exhaustiveness fallback resolves to a plain error, not dead UI.
+    it('miss_no_trigger(게이트가 막은 캐시 전용 조회의 미스)는 오류가 아니라 awaiting_interaction이다', async () => {
+        // 서버는 cacheOnly 요청에만 이 상태를 돌려준다(AI 자동 실행 게이트). 오류 화면이
+        // 아니라 \"AI 분석 보기\" 대기 상태가 되어야 한다.
         mockSubmit.mockResolvedValue({ status: 'miss_no_trigger' } as never);
 
         const { result } = renderHook(
@@ -92,14 +89,8 @@ describe('useFundamentalAnalysis — branch coverage', () => {
         );
 
         await waitFor(() => {
-            expect(result.current.status).toBe('error');
+            expect(result.current.status).toBe('awaiting_interaction');
         });
-
-        if (result.current.status !== 'error')
-            throw new Error('expected error');
-        expect(result.current.error.message).toBe(
-            koMessages.app.api.stream.unexpected
-        );
     });
 
     it('returns error when gate blocked', async () => {
@@ -272,5 +263,92 @@ describe('useFundamentalAnalysis — branch coverage', () => {
         rerender();
 
         expect(mockSubmit).toHaveBeenCalledTimes(1);
+    });
+});
+
+/**
+ * AI 자동 실행 게이트(`useAiAutoRunAllowed`) 계약. 큐레이션 밖 종목에서 첫 입력 전에는
+ * 캐시만 읽고, 미스면 대기하다가 게이트가 열리면 일반 요청을 한 번 보낸다.
+ * 요청 판별은 순서가 아니라 `cacheOnly` 인자로 한다(mock.calls 인덱스 단언 금지).
+ */
+describe('useFundamentalAnalysis — AI 자동 실행 게이트', () => {
+    beforeEach(() => {
+        mockSubmit.mockReset();
+    });
+    afterEach(() => {
+        queryClients.splice(0).forEach(client => client.clear());
+    });
+
+    const paramsOf = (call: unknown[]) =>
+        (call[0] as { params: Record<string, unknown> }).params;
+
+    it('게이트가 열려 있으면 cacheOnly 없이 요청한다(큐레이션 종목의 기존 동작)', async () => {
+        mockSubmit.mockResolvedValue({ status: 'cached', result: RESULT });
+        const { result } = renderHook(
+            () =>
+                useFundamentalAnalysis(
+                    'AAPL',
+                    'gemini-3.5-flash-lite',
+                    false,
+                    true,
+                    true
+                ),
+            { wrapper: makeWrapper() }
+        );
+        await waitFor(() => expect(result.current.status).toBe('done'));
+        expect(
+            mockSubmit.mock.calls.every(c => !('cacheOnly' in paramsOf(c)))
+        ).toBe(true);
+    });
+
+    it('게이트가 닫혀 있어도 캐시 HIT이면 바로 done이다', async () => {
+        mockSubmit.mockResolvedValue({ status: 'cached', result: RESULT });
+        const { result } = renderHook(
+            () =>
+                useFundamentalAnalysis(
+                    'PCLOF',
+                    'gemini-3.5-flash-lite',
+                    false,
+                    true,
+                    false
+                ),
+            { wrapper: makeWrapper() }
+        );
+        await waitFor(() => expect(result.current.status).toBe('done'));
+        expect(
+            mockSubmit.mock.calls.some(c => paramsOf(c).cacheOnly === true)
+        ).toBe(true);
+    });
+
+    it('닫힌 게이트의 미스 → awaiting_interaction → 열리면 일반 요청 1회 → done', async () => {
+        mockSubmit.mockImplementation(
+            async ({ params }: { params: Record<string, unknown> }) =>
+                params.cacheOnly === true
+                    ? { status: 'miss_no_trigger' }
+                    : { status: 'done', result: RESULT }
+        );
+        const { result, rerender } = renderHook(
+            ({ allowed }) =>
+                useFundamentalAnalysis(
+                    'PCLOF',
+                    'gemini-3.5-flash-lite',
+                    false,
+                    true,
+                    allowed
+                ),
+            { wrapper: makeWrapper(), initialProps: { allowed: false } }
+        );
+
+        await waitFor(() =>
+            expect(result.current.status).toBe('awaiting_interaction')
+        );
+
+        rerender({ allowed: true });
+
+        await waitFor(() => expect(result.current.status).toBe('done'));
+        const generating = mockSubmit.mock.calls.filter(
+            c => paramsOf(c).cacheOnly !== true
+        );
+        expect(generating).toHaveLength(1);
     });
 });

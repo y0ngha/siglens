@@ -32,10 +32,14 @@ interface UseWaitForNewsCardsReturn {
  * `pollError` becomes non-null after `MAX_CONSECUTIVE_FAILURES` consecutive
  * polling errors so the consuming component can rethrow it for the surrounding
  * error boundary to catch.
+ *
+ * `enabled`가 `false`면 폴링하지 않는다 — 카드 보강(`useNewsAnalysisTrigger`)이 AI 자동
+ * 실행 게이트로 미뤄진 동안에는 기다려도 카드가 생기지 않는다. 참이 되면 그때 시작한다.
  */
 export function useWaitForNewsCards(
     symbol: string,
-    initiallyReady: boolean
+    initiallyReady: boolean,
+    enabled = true
 ): UseWaitForNewsCardsReturn {
     const [isReady, setIsReady] = useState(initiallyReady);
     const [pollError, setPollError] = useState<Error | null>(null);
@@ -53,7 +57,7 @@ export function useWaitForNewsCards(
     }
 
     useEffect(() => {
-        if (initiallyReady) return;
+        if (initiallyReady || !enabled) return;
 
         let consecutiveFailures = 0;
         let pollCount = 0;
@@ -114,7 +118,7 @@ export function useWaitForNewsCards(
             cancelled = true;
             clearInterval(intervalId);
         };
-    }, [symbol, initiallyReady]);
+    }, [symbol, initiallyReady, enabled]);
 
     return { isReady, pollError };
 }
