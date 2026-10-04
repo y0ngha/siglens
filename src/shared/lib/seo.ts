@@ -123,6 +123,34 @@ export const SITE_URL = resolveSiteUrl();
 export const SITE_NAME = 'Siglens';
 
 /**
+ * 브랜드의 한글 표기. 번역 대상이 아니라 고유명사라 카탈로그가 아닌 상수다.
+ *
+ * 영문 `Siglens`는 로그 관리 프로젝트 SigLens(siglens.com)와 이름이 겹쳐,
+ * 검색엔진과 AI 답변 엔진이 두 주체를 구분할 단서가 없었다(2026-10-04 조사:
+ * 브랜드 검색 상위가 전부 그쪽이고, 한글 표기는 사이트 어디에도 없었다).
+ * `WebSite`·`Organization`의 `alternateName`과 ko 화면(푸터·소개·홈 FAQ)에
+ * 같은 표기를 심어 한글 브랜드 검색이 이 사이트로 귀결되게 한다.
+ *
+ * 화면에 넣을 때는 ko 로케일에서만 보인다 — 다른 로케일 독자에게 한글 독음은
+ * 의미가 없다. 구조화 데이터의 `alternateName`은 로케일과 무관하게 싣는다.
+ */
+export const SITE_NAME_KO = '시그렌즈';
+
+/**
+ * 문장에서 브랜드를 **처음 소개할 때** 쓰는 표기. ko는 한글 표기에 영문을
+ * 괄호로 붙여 두 표기가 같은 서비스임을 한 번에 밝히고, 다른 로케일은 영문만 쓴다.
+ *
+ * 카탈로그 문구에 한글 표기를 직접 적지 않고 인자로 넘기는 이유: ko 문장만
+ * 길어지면 번역 검증의 길이 게이트(`i18n:verify` 6번)가 다른 로케일을 잘린
+ * 번역으로 본다.
+ */
+export function brandIntroName(locale: Locale): string {
+    return locale === DEFAULT_LOCALE
+        ? `${SITE_NAME_KO}(${SITE_NAME})`
+        : SITE_NAME;
+}
+
+/**
  * 종목 디렉터리 경로. 페이지·푸터·sitemap이 같은 상수를 본다 — 한 곳만 바뀌면
  * 푸터가 404로 가는데 빌드도 테스트도 조용하다.
  */

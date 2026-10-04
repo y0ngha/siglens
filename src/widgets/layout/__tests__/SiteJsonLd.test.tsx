@@ -1,5 +1,6 @@
 vi.mock('@/shared/lib/seo', () => ({
     SITE_NAME: 'Siglens',
+    SITE_NAME_KO: '시그렌즈',
     SITE_URL: 'https://siglens.io',
 }));
 vi.mock('@/shared/ui/JsonLd', () => ({
@@ -35,6 +36,20 @@ describe('SiteJsonLd', () => {
 
         expect(data.name).toBe('Siglens');
         expect(data.url).toBe('https://siglens.io');
+    });
+
+    /**
+     * 영문 `Siglens`는 동명 프로젝트(SigLens)와 겹친다. 한글 표기를 `alternateName`
+     * 첫 후보로 실어야 "시그렌즈" 검색이 이 사이트로 귀결된다 — 빠지면 구조화
+     * 데이터에 한글 브랜드가 한 군데도 남지 않는다.
+     */
+    it('alternateName에 한글 표기를 첫 후보로 싣는다', () => {
+        render(<SiteJsonLd />);
+
+        const script = screen.getByTestId('json-ld');
+        const data = JSON.parse(script.innerHTML);
+
+        expect(data.alternateName).toEqual(['시그렌즈', 'SIGLENS']);
     });
 
     /**

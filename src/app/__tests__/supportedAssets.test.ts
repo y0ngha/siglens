@@ -73,7 +73,7 @@ describe('자산군 커버리지 동기화', () => {
         );
     };
 
-    const FAQ = buildHomeFaq(tJsonLd);
+    const FAQ = buildHomeFaq(tJsonLd, 'ko');
 
     const SURFACES: Array<[string, string]> = [
         ['ROOT_TITLE', ROOT_TITLE],
