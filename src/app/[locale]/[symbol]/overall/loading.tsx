@@ -1,6 +1,7 @@
 import { SectionSkeleton } from '@/views/symbol/SectionSkeleton';
+import { SYMBOL_TAB_SECTION_COUNT } from '@/views/symbol/tabSkeletonSections';
 
-const SKELETON_SECTION_COUNT = 3;
+const SKELETON_SECTION_COUNT = SYMBOL_TAB_SECTION_COUNT.overall;
 
 export default function OverallLoading() {
     return (
