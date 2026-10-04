@@ -1,6 +1,11 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { getTranslations } from 'next-intl/server';
-import type { FearGreedLabel, FearGreedSnapshot } from '@y0ngha/siglens-core';
+import type {
+    Bar,
+    FearGreedLabel,
+    FearGreedReading,
+    FearGreedSnapshot,
+} from '@y0ngha/siglens-core';
 import {
     buildFearGreedFactorLines,
     buildFearGreedGroupComparisonLine,
@@ -8,6 +13,9 @@ import {
     buildFearGreedPeriodComparisonLine,
     buildFearGreedRegimeDistributionLine,
     buildFearGreedYearRangeLine,
+    buildFearGreedTransitionLine,
+    buildFearGreedMarketGapLine,
+    buildExtremeZoneTable,
     scoredHistory,
 } from '../utils/fearGreedFacts';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
@@ -580,5 +588,185 @@ describe('시계열 문장 (P1/P2/P5)', () => {
             // 300개를 넣어도 창은 마지막 252개다.
             expect(line).toContain('최근 1년 252거래일 중');
         });
+    });
+});
+
+/** 라벨 순서대로 하루씩 이어지는 판독 시계열(2026-01-01부터). */
+function readings(labels: (FearGreedLabel | null)[]): FearGreedReading[] {
+    const scoreOf: Record<FearGreedLabel, number> = {
+        EXTREME_FEAR: 10,
+        FEAR: 35,
+        NEUTRAL: 50,
+        GREED: 65,
+        EXTREME_GREED: 85,
+    };
+    return labels.map((label, i) => ({
+        date: new Date(Date.UTC(2026, 0, 1 + i)).toISOString().slice(0, 10),
+        score: label === null ? null : scoreOf[label],
+        label,
+    }));
+}
+
+function flatBars(closes: number[]): Bar[] {
+    return closes.map((close, i) => ({
+        time: Date.UTC(2026, 0, 1 + i) / 1000,
+        open: close,
+        high: close,
+        low: close,
+        close,
+        volume: 1,
+    }));
+}
+
+describe('buildFearGreedTransitionLine', () => {
+    it('최근 전환을 날짜·이전·이후 라벨로 나열한다', () => {
+        const line = buildFearGreedTransitionLine(
+            readings(['FEAR', 'NEUTRAL', 'NEUTRAL']),
+            t,
+            tFacts
+        );
+
+        expect(line).toBe('최근 구간 전환은 2026년 1월 2일 공포 → 중립입니다.');
+    });
+
+    it('전환이 없으면 null이다', () => {
+        expect(
+            buildFearGreedTransitionLine(readings(['FEAR', 'FEAR']), t, tFacts)
+        ).toBeNull();
+    });
+});
+
+describe('buildFearGreedMarketGapLine', () => {
+    const history = readings(['GREED']); // 2026-01-01, 65점
+
+    it('종목 점수가 높으면 차이를 "높습니다"로 쓴다', () => {
+        const line = buildFearGreedMarketGapLine(
+            history,
+            { date: '2026-01-01', score: 50, label: 'NEUTRAL' },
+            '미국 증시',
+            tFacts
+        );
+
+        expect(line).toBe(
+            '같은 날(2026년 1월 1일) 미국 증시 공포·탐욕 지수 50점보다 15점 높습니다.'
+        );
+    });
+
+    it('종목 점수가 낮으면 "낮습니다"로 쓴다', () => {
+        const line = buildFearGreedMarketGapLine(
+            history,
+            { date: '2026-01-01', score: 70, label: 'GREED' },
+            '미국 증시',
+            tFacts
+        );
+
+        expect(line).toContain('5점 낮습니다');
+    });
+
+    it('반올림한 점수가 같으면 "같습니다"로 쓴다', () => {
+        const line = buildFearGreedMarketGapLine(
+            history,
+            { date: '2026-01-01', score: 65.2, label: 'GREED' },
+            '미국 증시',
+            tFacts
+        );
+
+        expect(line).toBe(
+            '같은 날(2026년 1월 1일) 미국 증시 공포·탐욕 지수 65점과 같습니다.'
+        );
+    });
+
+    it('시장 판독이 없거나 같은 날짜가 없으면 null이다', () => {
+        expect(
+            buildFearGreedMarketGapLine(history, null, '미국 증시', tFacts)
+        ).toBeNull();
+        expect(
+            buildFearGreedMarketGapLine(
+                history,
+                { date: '2026-01-02', score: 50, label: 'NEUTRAL' },
+                '미국 증시',
+                tFacts
+            )
+        ).toBeNull();
+    });
+});
+
+describe('buildExtremeZoneTable', () => {
+    it('점수가 계산된 첫·마지막 거래일과 기본 구간(5·20·60)을 담는다', () => {
+        const table = buildExtremeZoneTable(
+            readings([null, 'NEUTRAL', 'FEAR']),
+            flatBars([1, 1, 1]),
+            t,
+            tFacts
+        );
+
+        expect(table?.from).toBe('2026년 1월 2일');
+        expect(table?.to).toBe('2026년 1월 3일');
+        expect(table?.horizons).toEqual([5, 20, 60]);
+    });
+
+    it('진입이 없는 구간은 행에서 뺀다', () => {
+        const table = buildExtremeZoneTable(
+            readings(['NEUTRAL', 'EXTREME_FEAR', 'NEUTRAL']),
+            flatBars([1, 1, 1]),
+            t,
+            tFacts
+        );
+
+        expect(table?.rows.map(r => r.zone)).toEqual(['EXTREME_FEAR']);
+        expect(table?.rows[0]?.label).toBe('극심한 공포');
+        expect(table?.rows[0]?.entryCount).toBe(1);
+    });
+
+    it('표본이 기준 미만인 칸은 중앙값을 null로 둔다', () => {
+        const table = buildExtremeZoneTable(
+            readings(['NEUTRAL', 'EXTREME_FEAR', ...Array(10).fill('NEUTRAL')]),
+            flatBars(Array(12).fill(100)),
+            t,
+            tFacts
+        );
+
+        const fiveDay = table?.rows[0]?.cells.find(c => c.horizon === 5);
+        expect(fiveDay?.sampleSize).toBe(1);
+        expect(fiveDay?.median).toBeNull();
+    });
+
+    it('중앙값은 부호와 소수 첫째 자리까지 붙인 퍼센트 문자열이다', () => {
+        // 진입 5회, 각 진입 5세션 뒤 종가: +12.34%, +5%, 0%, -3%, +20%.
+        // 묶음 하나는 25세션 — core의 재진입 간격(20세션)보다 길어야 진입마다 센다.
+        const BLOCK = 25;
+        const rises = [0.1234, 0.05, 0, -0.03, 0.2];
+        const labels = rises.flatMap((): FearGreedLabel[] =>
+            Array.from({ length: BLOCK }, (_, i) =>
+                i === 1 ? 'EXTREME_FEAR' : 'NEUTRAL'
+            )
+        );
+        const closes = rises.flatMap(r =>
+            Array.from({ length: BLOCK }, (_, i) =>
+                i === 6 ? 100 * (1 + r) : 100
+            )
+        );
+
+        const table = buildExtremeZoneTable(
+            readings(labels),
+            flatBars(closes),
+            t,
+            tFacts
+        );
+
+        const fiveDay = table?.rows[0]?.cells.find(c => c.horizon === 5);
+        expect(fiveDay?.sampleSize).toBe(5);
+        expect(fiveDay?.median).toBe('+5.0%');
+    });
+
+    it('점수가 계산된 날이 없으면 null이다', () => {
+        expect(
+            buildExtremeZoneTable(
+                readings([null, null]),
+                flatBars([1, 1]),
+                t,
+                tFacts
+            )
+        ).toBeNull();
     });
 });

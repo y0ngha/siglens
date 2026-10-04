@@ -76,6 +76,10 @@ vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
         mockGetAssetInfoResilient(ticker),
 }));
 
+// 시장 판독은 시장 허브 정적 캐시(FMP·Redis)를 읽는다 — 이 테스트의 관심사가 아니다.
+vi.mock('@/entities/market-fear-greed/api/marketFearGreedReading', () => ({
+    getMarketFearGreedReading: vi.fn(async () => null),
+}));
 vi.mock('@/entities/bars/lib/barsStaticCache', () => ({
     // 세션 spec 유도는 이제 헬퍼 내부 책임이라 여기서는 위임 인자
     // (ticker, timeframe, marketProfile, fmpSymbol)만 포착한다.

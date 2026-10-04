@@ -5,6 +5,7 @@ import {
     computeFearGreedHistory,
     type Bar,
     type BuySellVolumeResult,
+    type FearGreedReading,
 } from '@y0ngha/siglens-core';
 import {
     SENTIMENT_LABEL_KEY,
@@ -18,8 +19,12 @@ import {
     buildFearGreedPeriodComparisonLine,
     buildFearGreedYearRangeLine,
     buildFearGreedRegimeDistributionLine,
+    buildFearGreedTransitionLine,
+    buildFearGreedMarketGapLine,
+    buildExtremeZoneTable,
     scoredHistory,
 } from './utils/fearGreedFacts';
+import { FearGreedExtremeZoneTable } from './FearGreedExtremeZoneTable';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
@@ -32,6 +37,13 @@ interface FearGreedFactsSummaryProps {
     marketProfile: MarketProfileId;
     bars: Bar[];
     buySellVolume: BuySellVolumeResult[];
+    /**
+     * 이 종목이 속한 시장의 최신 공포·탐욕 판독. 같은 날짜 점수가 있을 때만 차이
+     * 문장을 낸다. 조회 실패·미제공은 `null`.
+     */
+    marketReading?: FearGreedReading | null;
+    /** 차이 문장에 넣는 시장 이름(예: `미국 증시`). */
+    marketLabel?: string;
 }
 
 /**
@@ -47,6 +59,8 @@ export function FearGreedFactsSummary({
     marketProfile,
     bars,
     buySellVolume,
+    marketReading = null,
+    marketLabel = '',
 }: FearGreedFactsSummaryProps) {
     const t = useTranslations('views.symbol');
     // extract.mjs의 동적 키 탐지는 "이 파일 안에서 번역자를 직접 호출하는
@@ -104,12 +118,29 @@ export function FearGreedFactsSummary({
     const asOfLabel =
         asOf === undefined ? null : toUtcIsoDate(new Date(asOf * 1000));
 
-    const points = scoredHistory(computeFearGreedHistory(bars, buySellVolume));
+    const history = computeFearGreedHistory(bars, buySellVolume);
+    const points = scoredHistory(history);
     const timeSeriesLines = [
         buildFearGreedPeriodComparisonLine(points, tLabel, tFacts),
         buildFearGreedYearRangeLine(points, tFacts),
         buildFearGreedRegimeDistributionLine(points, tLabel, tFacts),
+        // 구간 전환 날짜와 같은 날 시장 대비 차이 — 종목마다 다른 사실이라 이 탭의
+        // 템플릿 비율을 낮춘다(siglens-core#252).
+        buildFearGreedTransitionLine(history, tLabel, tFacts),
+        buildFearGreedMarketGapLine(
+            history,
+            marketReading,
+            marketLabel,
+            tFacts
+        ),
     ].filter((line): line is string => line !== null);
+    // 같은 `history`·`bars`로 계산한다 — core 함수가 둘의 인덱스 정렬을 전제한다.
+    const extremeZoneTable = buildExtremeZoneTable(
+        history,
+        bars,
+        tLabel,
+        tFacts
+    );
 
     return (
         <section
@@ -158,6 +189,9 @@ export function FearGreedFactsSummary({
                     v1: tFearGreed(confidenceLabelKey(snapshot.confidence)),
                 })}
             </p>
+            {extremeZoneTable !== null && (
+                <FearGreedExtremeZoneTable table={extremeZoneTable} />
+            )}
             {/* AI 서술 없이 규칙으로만 계산한 점수라는 고지. 요약 문장 전부 아래에 둔다. */}
             <AnalysisProvenanceNote
                 marketProfile={marketProfile}

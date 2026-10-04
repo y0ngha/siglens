@@ -2941,5 +2941,21 @@
     "widgets.chart.ChartOverlayMenu.ac1149": "ac1149bd10de",
     "widgets.chart.ChartOverlayMenu.bfe4b6": "bfe4b6f3078a",
     "widgets.chart.ChartOverlayMenu.c178bc": "c178bcee15e6",
-    "widgets.layout.xAccountAria": "25108d4b24aa"
+    "widgets.layout.xAccountAria": "25108d4b24aa",
+    "views.symbol.fearGreedFacts.regimeTransitionItem": "8fd79771e204",
+    "views.symbol.fearGreedFacts.regimeTransitions": "6bda095ae512",
+    "views.symbol.fearGreedFacts.regimeMarketGapUp": "29c6bc813c79",
+    "views.symbol.fearGreedFacts.regimeMarketGapDown": "89aaa0e566b4",
+    "views.symbol.fearGreedFacts.regimeMarketGapSame": "e5f56b46419a",
+    "views.symbol.fearGreedFacts.extremeZoneTitle": "ce2f1fab63b2",
+    "views.symbol.fearGreedFacts.extremeZonePeriod": "bc09b1ae8980",
+    "views.symbol.fearGreedFacts.extremeZoneNone": "0146bd1fc8a6",
+    "views.symbol.fearGreedFacts.extremeZoneCaption": "0e9f60aa15f6",
+    "views.symbol.fearGreedFacts.extremeZoneColZone": "7af1fcf55cc2",
+    "views.symbol.fearGreedFacts.extremeZoneColEntries": "addc9b10910a",
+    "views.symbol.fearGreedFacts.extremeZoneColHorizon": "99573bcf1440",
+    "views.symbol.fearGreedFacts.extremeZoneEntries": "4f4c72af594c",
+    "views.symbol.fearGreedFacts.extremeZoneCell": "19322d85d76e",
+    "views.symbol.fearGreedFacts.extremeZoneInsufficient": "9c9f43e2f266",
+    "views.symbol.fearGreedFacts.extremeZoneNotice": "18300fd40020"
 }

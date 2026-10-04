@@ -16,6 +16,7 @@ import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { getSeedBarsStatic } from '@/entities/bars/lib/barsStaticCache';
+import { getMarketFearGreedReading } from '@/entities/market-fear-greed/api/marketFearGreedReading';
 import {
     getDescriptor,
     marketProfileOf,
@@ -244,15 +245,20 @@ export default async function SymbolFearGreedPage({ params }: Props) {
     // 유지하므로 SSR 출력은 입력이 같아 **바이트 동일**하다 — SEO·hydration 영향 없음.
     // 클라이언트는 마운트 직후 `useBars`가 전체를 다시 받는다(seed의 updatedAt이 마지막 봉
     // 시각이라 30초 staleTime 기준 항상 stale).
-    const quantizedFromHelper = await getSeedBarsStatic(
-        ticker,
-        DEFAULT_TIMEFRAME,
-        marketProfileOf(assetInfo),
-        assetInfo.fmpSymbol
-    ).catch((e: unknown) => {
-        console.error('[FearGreedPage] getSeedBarsStatic failed:', e);
-        return null;
-    });
+    // 시장 판독은 봉 조회와 독립이라 병렬로 받는다. 시장 허브와 같은 정적 캐시를 읽으며,
+    // 실패는 `getMarketFearGreedReading` 안에서 `null`로 삼킨다(보조 문장 하나뿐이다).
+    const [quantizedFromHelper, marketReading] = await Promise.all([
+        getSeedBarsStatic(
+            ticker,
+            DEFAULT_TIMEFRAME,
+            marketProfileOf(assetInfo),
+            assetInfo.fmpSymbol
+        ).catch((e: unknown) => {
+            console.error('[FearGreedPage] getSeedBarsStatic failed:', e);
+            return null;
+        }),
+        getMarketFearGreedReading(marketProfile),
+    ]);
     // quantizedFgBars also feeds FearGreedFactsSummary (SSR factor summary below) —
     // hoisted out of the if-block so both the RQ seed and the SSR fact layer share
     // the same lockstep-quantized bars/indicators.
@@ -320,6 +326,8 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                         marketProfile={marketProfile}
                         bars={quantizedFgBars.bars}
                         buySellVolume={quantizedFgBars.indicators.buySellVolume}
+                        marketReading={marketReading}
+                        marketLabel={t(marketFearGreedLink.marketLabelKey)}
                     />
                 )}
                 <HydrationBoundary state={dehydrate(queryClient)}>
