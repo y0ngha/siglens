@@ -20,6 +20,7 @@ import {
     type DashboardScope,
 } from '@/shared/config/dashboardScope';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import { marketSummarySeed } from '@/entities/market-summary/lib/marketSummarySeed';
 import { ISO_DATE_HOUR_SLICE_END } from '@/shared/config/time';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
@@ -62,7 +63,7 @@ function buildDehydratedSeed(
     const queryClient = new QueryClient();
     queryClient.setQueryData(
         QUERY_KEYS.marketSummary(scope.id),
-        { summary },
+        marketSummarySeed(scope.id, summary),
         { updatedAt: stableUpdatedAt }
     );
     queryClient.setQueryData(
