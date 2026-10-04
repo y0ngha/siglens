@@ -28,6 +28,35 @@ describe('toUrlSetXml', () => {
         expect(xml).toContain('<priority>0.8</priority>');
     });
 
+    it('lastModified가 없는 엔트리는 <lastmod> 태그를 내지 않는다', () => {
+        const entries: SitemapEntry[] = [
+            {
+                url: 'https://siglens.io/symbols',
+                changeFrequency: 'monthly',
+                priority: 0.6,
+            },
+            {
+                url: 'https://siglens.io/AAPL',
+                lastModified: FIXED_DATE,
+                changeFrequency: 'daily',
+                priority: 0.8,
+            },
+        ];
+        const xml = toUrlSetXml(entries);
+        const [symbolsBlock, aaplBlock] = xml
+            .split('<url>')
+            .slice(1)
+            .map(block => block.split('</url>')[0]);
+
+        expect(symbolsBlock).toContain('<loc>https://siglens.io/symbols</loc>');
+        expect(symbolsBlock).not.toContain('<lastmod>');
+        // 태그를 건너뛰어도 뒤따르는 요소는 그대로 나간다.
+        expect(symbolsBlock).toContain('<changefreq>monthly</changefreq>');
+        expect(aaplBlock).toContain(
+            `<lastmod>${FIXED_DATE.toISOString()}</lastmod>`
+        );
+    });
+
     it('URL에 ampersand 등 특수문자가 있으면 XML 이스케이프한다', () => {
         const entries: SitemapEntry[] = [
             {

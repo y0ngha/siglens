@@ -225,15 +225,21 @@ describe('DrizzleSeoSnapshotRepository.findGeneratedAtMap', () => {
 });
 
 describe('DrizzleSeoSnapshotRepository.listFreshSymbolTabs', () => {
-    it('탭·독자 로케일 폴백·신선도로 거르고 본문 없이 (symbol, tab)만 읽는다', async () => {
-        const where = vi
-            .fn()
-            .mockResolvedValue([{ symbol: 'AAPL', tab: 'overall' }]);
+    function repoReturning(rows: unknown[]) {
+        const where = vi.fn().mockResolvedValue(rows);
         const from = vi.fn(() => ({ where }));
-        const selectDistinct = vi.fn(() => ({ from }));
+        const select = vi.fn(() => ({ from }));
         const repo = new DrizzleSeoSnapshotRepository({
-            selectDistinct,
+            select,
         } as unknown as SiglensDatabase);
+        return { repo, select, where };
+    }
+
+    it('탭·독자 로케일 폴백·신선도로 거르고 본문 없이 (symbol, tab, generatedAt)만 읽는다', async () => {
+        const generatedAt = new Date('2026-09-20T03:00:00.000Z');
+        const { repo, select, where } = repoReturning([
+            { symbol: 'AAPL', tab: 'overall', locale: 'ko', generatedAt },
+        ]);
         const since = new Date('2026-09-10T00:00:00.000Z');
 
         const result = await repo.listFreshSymbolTabs(
@@ -242,11 +248,15 @@ describe('DrizzleSeoSnapshotRepository.listFreshSymbolTabs', () => {
             since
         );
 
-        expect(result).toEqual([{ symbol: 'AAPL', tab: 'overall' }]);
+        expect(result).toEqual([
+            { symbol: 'AAPL', tab: 'overall', generatedAt },
+        ]);
         // 본문(JSONB)을 끌어오지 않는다 — sitemap 한 번에 수십 MB가 된다.
-        expect(selectDistinct).toHaveBeenCalledWith({
+        expect(select).toHaveBeenCalledWith({
             symbol: seoAnalysisSnapshots.symbol,
             tab: seoAnalysisSnapshots.tab,
+            locale: seoAnalysisSnapshots.locale,
+            generatedAt: seoAnalysisSnapshots.generatedAt,
         });
         expect(where.mock.calls[0]?.[0]).toEqual(
             and(
@@ -255,5 +265,63 @@ describe('DrizzleSeoSnapshotRepository.listFreshSymbolTabs', () => {
                 gte(seoAnalysisSnapshots.generatedAt, since)
             )
         );
+    });
+
+    it('같은 (symbol, tab)의 로케일별 행은 폴백 순서가 앞선 한 행으로 합친다 — 페이지가 렌더하는 행의 시각이다', async () => {
+        const koAt = new Date('2026-09-20T03:00:00.000Z');
+        const enAt = new Date('2026-09-21T03:00:00.000Z');
+        // en 행이 더 최근이어도 ko 요청의 폴백 체인은 ko가 먼저다.
+        const { repo } = repoReturning([
+            { symbol: 'AAPL', tab: 'news', locale: 'en', generatedAt: enAt },
+            { symbol: 'AAPL', tab: 'news', locale: 'ko', generatedAt: koAt },
+            { symbol: 'MSFT', tab: 'news', locale: 'en', generatedAt: enAt },
+        ]);
+
+        const result = await repo.listFreshSymbolTabs(
+            ['news'],
+            'ko',
+            new Date(0)
+        );
+
+        expect(result).toHaveLength(2);
+        expect(result).toContainEqual({
+            symbol: 'AAPL',
+            tab: 'news',
+            generatedAt: koAt,
+        });
+        // ko 행이 없는 종목은 en 폴백 행의 시각을 쓴다.
+        expect(result).toContainEqual({
+            symbol: 'MSFT',
+            tab: 'news',
+            generatedAt: enAt,
+        });
+    });
+
+    it('같은 symbol의 서로 다른 탭은 각자 한 행이다', async () => {
+        const { repo } = repoReturning([
+            {
+                symbol: 'AAPL',
+                tab: 'news',
+                locale: 'ko',
+                generatedAt: new Date('2026-09-20T03:00:00.000Z'),
+            },
+            {
+                symbol: 'AAPL',
+                tab: 'technical',
+                locale: 'ko',
+                generatedAt: new Date('2026-09-20T23:00:00.000Z'),
+            },
+        ]);
+
+        const result = await repo.listFreshSymbolTabs(
+            ['technical', 'news'],
+            'ko',
+            new Date(0)
+        );
+
+        expect(result.map(r => `${r.symbol}:${r.tab}`).toSorted()).toEqual([
+            'AAPL:news',
+            'AAPL:technical',
+        ]);
     });
 });

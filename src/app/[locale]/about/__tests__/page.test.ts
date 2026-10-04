@@ -64,6 +64,7 @@ import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
 import {
     ABOUT_UPDATED_AT,
     OPERATOR_PERSON_JSON_LD_ID,
+    OPERATOR_SAME_AS,
 } from '@/shared/lib/legal';
 import { ORGANIZATION_JSON_LD_ID } from '@/shared/lib/seo';
 
@@ -142,7 +143,12 @@ describe('About page', () => {
         expect(person?.name).toBe('y0ngha');
         expect(person?.['@id']).toBe(OPERATOR_PERSON_JSON_LD_ID);
         expect(person?.email).toBe('mailto:dev.y0ngha@gmail.com');
-        expect(person?.sameAs).toEqual(['https://github.com/y0ngha']);
+        expect(person?.sameAs).toEqual([
+            'https://github.com/y0ngha',
+            'https://velog.io/@y0ngha',
+        ]);
+        // 홈 founder와 같은 상수 — 두 Person 노드가 갈리지 않는다.
+        expect(person?.sameAs).toBe(OPERATOR_SAME_AS);
         expect(person?.affiliation).toEqual({
             '@id': ORGANIZATION_JSON_LD_ID,
         });

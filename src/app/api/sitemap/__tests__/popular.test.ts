@@ -9,7 +9,9 @@ vi.mock('@/entities/sitemap-entry/lib/buildPopularEntries', () => ({
 vi.mock('@/entities/sitemap-entry/lib/xml', () => ({
     toUrlSetXml: vi.fn().mockReturnValue('<?xml version="1.0"?><urlset/>'),
 }));
-const PROSE_INPUTS = { symbolTabsWithProse: new Set(['AAPL:overall']) };
+const PROSE_INPUTS = {
+    snapshotGeneratedAt: new Map([['AAPL:overall', new Date(0)]]),
+};
 vi.mock('@/entities/sitemap-entry/server', () => ({
     loadPopularSitemapInputs: vi.fn(async () => PROSE_INPUTS),
 }));

@@ -15,12 +15,20 @@
 # 그래서 배포가 끝나면 **중요한 URL부터** 직접 한 번 긁어 캐시를 채운다.
 # sitemap 순서가 곧 중요도 순서다(`POPULAR_TICKERS`가 노출 내림차순).
 #
-# 사용법: scripts/warm-isr.sh [origin] [limit]   (기본 https://siglens.io 150)
+# 2026-10-04 갱신: 예열 범위가 150개였는데 sitemap은 1,140개(static 21 · popular
+# 1,032 · crypto 87)다 — 나머지 약 990개는 배포 뒤 첫 크롤러가 콜드 렌더를 맞았다.
+# 같은 날 Googlebot UA로 동시 4요청 전수 크롤을 하니 종목 페이지 응답이 중앙값
+# 1.2~1.6초, p95 4.3~5초였다. 그래서 sitemap 셋(static → popular → crypto, 중요도
+# 순)을 전부 읽고 기본 상한을 1,500으로 올렸다(전체를 덮는다). 오리진이 응답하지 않는
+# 최악의 경우를 끊으려고 URL당 `--max-time`은 30초에서 20초로 낮췄다 — 정상 응답의
+# p95가 5초 안팎이라 20초면 충분하다.
+#
+# 사용법: scripts/warm-isr.sh [origin] [limit]   (기본 https://siglens.io 1500)
 #   예열은 배포 성공 여부를 바꾸지 않는다 — 실패해도 항상 0으로 끝난다.
 set -uo pipefail
 
 ORIGIN="${1:-https://siglens.io}"
-LIMIT="${2:-150}"
+LIMIT="${2:-1500}"
 CONCURRENCY="${WARM_CONCURRENCY:-4}"
 # 봇으로 판정되지 않는 평범한 UA를 쓴다 — `isBot`이 참이면 종목 페이지의 분석
 # 생성 트리거가 꺼져 사람이 받는 것과 다른 경로를 예열하게 된다.
@@ -33,7 +41,7 @@ trap 'rm -f "$urls_file"' EXIT
 # 치환이 통째로 실패해 URL 대신 `<loc>…</loc>` 문자열을 긁는다(로컬 실측).
 # `awk NR<=LIMIT`를 쓴다 — `head`는 상한에 닿는 순간 파이프를 닫아 앞단 curl이
 # SIGPIPE로 죽고 `curl: (56)`을 찍는다(예열은 멀쩡히 되지만 로그가 거짓말을 한다).
-for sitemap in sitemap-static.xml sitemap-popular.xml; do
+for sitemap in sitemap-static.xml sitemap-popular.xml sitemap-crypto.xml; do
     curl -sS --compressed --max-time 30 "${ORIGIN}/${sitemap}" |
         grep -o '<loc>[^<]*</loc>' | sed -e 's|<loc>||g' -e 's|</loc>||g'
 done | awk -v n="$LIMIT" 'NR<=n' > "$urls_file"
@@ -53,7 +61,7 @@ export UA
 # `--compressed` 필수: 기본 curl은 Accept-Encoding을 아예 보내지 않아 비압축 본문이
 # CF 캐시에 굳고, 그 뒤 모든 사용자가 5~11배 본문을 받는다(CDN_CACHING.md의 2026-08 사고).
 results=$(xargs -P "$CONCURRENCY" -I{} \
-    curl -sS --compressed --max-time 30 -o /dev/null \
+    curl -sS --compressed --max-time 20 -o /dev/null \
     -H "user-agent: $UA" -w '%{http_code}\n' {} < "$urls_file")
 elapsed=$(( $(date +%s) - start ))
 
