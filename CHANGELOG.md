@@ -1,5 +1,26 @@
 # Changelog
 
+# [0.98.0](https://github.com/y0ngha/siglens/compare/v0.97.0...v0.98.0) (2026-10-04)
+
+### Bug Fixes
+
+* /market/kr 서버 하이드레이션 스코프 시드 누락으로 인한 CLS 개선 ([#944](https://github.com/y0ngha/siglens/issues/944)) ([7bc3d26](https://github.com/y0ngha/siglens/commit/7bc3d26e0d302d39cd4eee80a28547af267f7433))
+* 허브·소개 페이지의 검색 미리보기 지시를 되살리고, AI 글 출처 고지에 자동 검사 내용을 밝힌다 ([#940](https://github.com/y0ngha/siglens/issues/940)) ([fda48b1](https://github.com/y0ngha/siglens/commit/fda48b10a26d8ceca013a9b863e9f25f145c84cf))
+* 헤더와 정책 페이지 CLS 개선 ([#942](https://github.com/y0ngha/siglens/issues/942)) ([252b36a](https://github.com/y0ngha/siglens/commit/252b36a5ba8722b44e3e8329b83f47c0d049f113))
+
+### Features
+
+* 라우트 펜딩 skeleton을 모든 라우트로 확장 ([#943](https://github.com/y0ngha/siglens/issues/943)) ([93198c2](https://github.com/y0ngha/siglens/commit/93198c2cec6e13b2ca48f559b1d1e2d1e993dc76))
+* 종목 공포·탐욕 페이지에 구간 전환 기록·극단 구간 사후 집계·시장 대비 차이를 보인다 ([#948](https://github.com/y0ngha/siglens/issues/948)) ([114ce5a](https://github.com/y0ngha/siglens/commit/114ce5a917a631e25d49940328cd0c6f98f9a4ba))
+* **seo:** 한국 브랜드명 "시그렌즈" SEO 최적화 ([#939](https://github.com/y0ngha/siglens/issues/939)) ([97c7d28](https://github.com/y0ngha/siglens/commit/97c7d286451e34075e879cba0c0f4f6edadd4661))
+
+### Performance Improvements
+
+* 서버 요청 중복 제거 ([#946](https://github.com/y0ngha/siglens/issues/946)) ([a8490f5](https://github.com/y0ngha/siglens/commit/a8490f5a22da10cb3be6b04e4ec1505f906e28e3))
+* 심볼 페이지 하이드레이션 Server Actions 순서 최적화 ([#945](https://github.com/y0ngha/siglens/issues/945)) ([7da1d47](https://github.com/y0ngha/siglens/commit/7da1d47d686abaef768b7f63f5ab76a3a0b03165))
+* 초기 로드 JS 감량으로 페이지 성능 개선 ([#947](https://github.com/y0ngha/siglens/issues/947)) ([f5954f5](https://github.com/y0ngha/siglens/commit/f5954f5c0c48994deb07abda44c8d5cbe0bd22f1))
+* **ai:** 큐레이션 밖 종목의 AI 분석 생성을 첫 신뢰 입력 뒤로 미룬다 ([#941](https://github.com/y0ngha/siglens/issues/941)) ([6330b5c](https://github.com/y0ngha/siglens/commit/6330b5c3b09c4a172fb8747b6bb9dbc83309ebef))
+
 # [0.97.0](https://github.com/y0ngha/siglens/compare/v0.96.3...v0.97.0) (2026-10-04)
 
 ### Bug Fixes
