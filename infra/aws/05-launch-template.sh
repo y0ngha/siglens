@@ -64,6 +64,9 @@ log "user-data: $(wc -c < "$UD_SRC" | tr -d ' ')B raw → ${UD_BYTES}B gzip (상
 # 로컬 ISR 캐시를 버티려던 값이라 지금은 매달 30GB만큼 과금만 된다. 다시 차오르면 그건
 # 캐시 외부화가 깨진 것이므로(`siglens-disk-high` 알람, 85%) 볼륨을 키우기보다 원인을 본다.
 # 골든 AMI 스냅샷이 8GB라 그보다 작게는 못 줄인다.
+# 다시 재는 법: 사용량은 `aws ssm send-command --targets Key=tag:aws:autoscaling:groupName,Values=siglens-asg
+#   --document-name AWS-RunShellScript --parameters 'commands=["df -h /","docker system df"]'`,
+#   스냅샷 하한은 `aws ec2 describe-images --image-ids "$AMI" --query 'Images[0].BlockDeviceMappings[0].Ebs.VolumeSize'`.
 ROOT_VOLUME_GB=20
 
 LTDATA=$(jq -n \
