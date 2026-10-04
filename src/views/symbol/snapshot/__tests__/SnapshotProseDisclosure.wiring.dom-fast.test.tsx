@@ -2,7 +2,7 @@
  * 라이브 `PlainAnalysisSwitch`와 `SnapshotProseDisclosure`를 실제로 함께 마운트해
  * `data-analysis-view` 채널이 진짜로 연결돼 있는지 확인하는 배선(wiring) 테스트다.
  *
- * `SnapshotSummarySection.test.tsx`의 "지난 AI 분석 접기" 스위트는 표식을
+ * `SnapshotSummarySection.dom-fast.test.tsx`의 "지난 AI 분석 접기" 스위트는 표식을
  * `document.documentElement.dataset.analysisView = 'plain'`으로 **수동 주입**해
  * `SnapshotProseDisclosure` 자체의 접힘 로직만 검증한다. 그 테스트는 `PlainAnalysisSwitch`의
  * `useEffect`가 실제로 그 표식을 세우는지는 증명하지 않는다 — `MutationObserver` 배선이

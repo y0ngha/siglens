@@ -8,7 +8,7 @@ import { settlePwaBanner } from '../support/pwaBanner';
  * so it appears below lg (< 1024px) — the breakpoint moved up from `md` when the
  * nav labels grew a market prefix ("미국 시장 분석" 등) and started wrapping inside
  * the fixed 56px header row. It must stay paired with `Header.tsx`'s
- * `hidden lg:flex` (see `widgets/layout/__tests__/navBreakpointPairing.test.tsx`).
+ * `hidden lg:flex` (see `widgets/layout/__tests__/navBreakpointPairing.dom-fast.test.tsx`).
  * The webkit project uses
  * `devices['iPhone 14']` (~390px), so the hamburger renders there.
  *

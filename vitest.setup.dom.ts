@@ -128,3 +128,64 @@ if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
         dispatchEvent: () => false,
     })) as typeof window.matchMedia;
 }
+
+/*
+ * happy-dom 네트워크 가드.
+ *
+ * `vitest.setup.base.ts`의 거부형 `fetch`는 **전역** `fetch`만 막는다. happy-dom은
+ * 그와 별개로 자기 창 내부의 fetch 구현을 들고 있고, `navigator.sendBeacon`·
+ * `XMLHttpRequest`·리소스 로딩이 전역을 거치지 않고 그 내부 구현을 직접 부른다.
+ * jsdom에서 happy-dom으로 바꾸면서 실제로 드러난 경로가 `sendBeacon`이다 —
+ * jsdom에는 없어서 `reportClientError`가 조기 반환했는데, happy-dom에는 있어서
+ * 에러 경계를 렌더하는 테스트들이 `http://localhost:4200/api/client-error`로 진짜
+ * 요청을 보냈다(로컬 dev 서버가 떠 있으면 그 서버에 도달한다).
+ *
+ * 그래서 두 겹으로 막는다.
+ *
+ * 1. 인터셉터 — happy-dom 내부 fetch가 나가기 전에 던진다. 전역 가드와 같은
+ *    원칙이다: 목이 없는 네트워크 호출은 조용히 나가지 않고 시끄럽게 실패한다.
+ * 2. `sendBeacon` 제거 — jsdom과 같은 "없음" 상태로 맞춘다. 남겨 두면 에러 경계를
+ *    렌더하는 테스트마다 1번 가드가 unhandled rejection으로 터진다(전송은
+ *    fire-and-forget이라 잡을 곳이 없다). 전송 자체를 검증하는 테스트는 jsdom
+ *    때와 똑같이 각자 `sendBeacon`을 정의해서 쓴다.
+ *
+ * `// @vitest-environment jsdom` 파일에서는 `happyDOM` 전역이 없으므로 통째로 건너뛴다.
+ */
+interface HappyDomNetworkSettings {
+    settings: {
+        fetch: {
+            interceptor: {
+                beforeAsyncRequest: (context: {
+                    request: { url: string };
+                }) => Promise<never>;
+                beforeSyncRequest: (context: {
+                    request: { url: string };
+                }) => never;
+            } | null;
+        };
+    };
+}
+
+const happyDomApi = (globalThis as { happyDOM?: HappyDomNetworkSettings })
+    .happyDOM;
+
+if (happyDomApi !== undefined) {
+    const unmockedNetworkError = (url: string): Error =>
+        new Error(
+            `Unmocked network call from happy-dom (${url}) — mock it explicitly. A real network call from a test is not allowed.`
+        );
+
+    happyDomApi.settings.fetch.interceptor = {
+        beforeAsyncRequest: ({ request }) =>
+            Promise.reject(unmockedNetworkError(request.url)),
+        beforeSyncRequest: ({ request }) => {
+            throw unmockedNetworkError(request.url);
+        },
+    };
+
+    Object.defineProperty(navigator, 'sendBeacon', {
+        value: undefined,
+        writable: true,
+        configurable: true,
+    });
+}

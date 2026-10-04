@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * `PositionHoldingCard` tests — per-holding cell of the `/portfolio` grid.
  * Covers the lazy-visibility gate (no bars fetch until the card scrolls into
