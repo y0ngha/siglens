@@ -1,25 +1,25 @@
 #!/bin/sh
 set -e
 
-# docs/는 .gitignore가 예외로 연 경로(공개 문서)만 커밋할 수 있다. 나머지는 로컬
-# 전용인데, `git add -f`로 강제 추가하거나 추적 해제 전부터 인덱스에 남은 파일은
-# ignore를 뚫고 들어온다. 허용 목록의 정본은 .gitignore 하나라 여기서 경로를 다시
+# docs/는 .gitignore가 예외로 연 경로(공개 문서)만 커밋할 수 있고, .claude/agent-memory/는
+# 통째로 로컬 전용이다. 둘 다 `git add -f`로 강제 추가하거나 추적 해제 전부터 인덱스에
+# 남은 파일은 ignore를 뚫고 들어온다. 허용 목록의 정본은 .gitignore 하나라 여기서 경로를 다시
 # 적지 않고 `check-ignore --no-index`로 판정한다(추적 여부와 무관하게 규칙만 본다).
 # 삭제는 추적 해제 커밋이 통과해야 하므로 검사하지 않는다(--diff-filter=d).
 # 검사 자체가 실패하면 통과가 아니라 거부한다(fail-closed). POSIX sh엔 pipefail이
 # 없어 파이프로 이으면 앞 명령의 실패가 묻히므로, 단계마다 파일로 받고 종료 코드를 본다.
-staged_docs=$(mktemp) && ignored_docs=$(mktemp) || exit 1
-trap 'rm -f "$staged_docs" "$ignored_docs"' EXIT
-git diff --cached --name-only -z --diff-filter=d -- docs > "$staged_docs"
+staged_local=$(mktemp) && ignored_local=$(mktemp) || exit 1
+trap 'rm -f "$staged_local" "$ignored_local"' EXIT
+git diff --cached --name-only -z --diff-filter=d -- docs .claude/agent-memory > "$staged_local"
 rc=0
-git check-ignore --no-index --stdin -z < "$staged_docs" > "$ignored_docs" || rc=$?
+git check-ignore --no-index --stdin -z < "$staged_local" > "$ignored_local" || rc=$?
 if [ "$rc" -gt 1 ]; then # 0 = ignore 대상 있음, 1 = 없음, 그 밖 = git 오류
-  echo "✖ docs 공개 범위 검사가 실패했다(git check-ignore exit $rc) — 커밋을 막는다." >&2
+  echo "✖ 로컬 전용 파일 검사가 실패했다(git check-ignore exit $rc) — 커밋을 막는다." >&2
   exit 1
 fi
-if [ -s "$ignored_docs" ]; then
-  echo "✖ 로컬 전용 docs가 스테이징됐다 — .gitignore가 허용한 docs 경로만 커밋할 수 있다:" >&2
-  tr '\0' '\n' < "$ignored_docs" | sed 's/^/    /' >&2
+if [ -s "$ignored_local" ]; then
+  echo "✖ 로컬 전용 파일(docs·agent-memory)이 스테이징됐다 — .gitignore가 허용한 경로만 커밋할 수 있다:" >&2
+  tr '\0' '\n' < "$ignored_local" | sed 's/^/    /' >&2
   echo "  스테이징 해제: git restore --staged <path>  (파일은 로컬에 그대로 남는다)" >&2
   exit 1
 fi
