@@ -17,12 +17,12 @@ import { config } from './config.mjs';
 const NEXT_CACHE_TAGS_HEADER = 'x-next-cache-tags';
 
 // FETCH 엔트리는 **크기로 갈라** 작은 것만 프로세스 내 LRU에 둔다 — 분포 근거는
-// memStore.mjs 상단. 요약: `fetch/` 객체의 88%가 8KB 이하인데 용량은 3%뿐이라
+// memStore.mjs 상단. 요약: `fetch/` 객체의 88%가 (gzip 기준) 8KB 이하인데 용량은 3%뿐이라
 // S3 PUT 요청비만 만들고 있었다. 반대로 `bars-static` 같은 큰 엔트리는 재생성이
 // 비싸고 인스턴스 간 공유가 값을 하므로 S3에 남긴다.
 //
 // FETCH에는 `fmpGet`뿐 아니라 Next `unstable_cache` 전체가 섞여 있고 그중 일부는
-// Redis가 아니라 Neon DB가 백엔드다. 크기 게이트가 그 비싼 쪽을 S3에 붙잡아 둔다.
+// Redis가 아니라 DB가 백엔드다. 크기 게이트가 그 비싼 쪽을 S3에 붙잡아 둔다.
 //
 // get은 메모리 → S3 순으로 본다. 같은 키가 커져서 S3로 승격되면 set이 메모리 사본을
 // 지우므로, 메모리 히트가 낡은 값을 가릴 일은 없다.
