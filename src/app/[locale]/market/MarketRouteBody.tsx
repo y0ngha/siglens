@@ -14,13 +14,13 @@ import { SectorSignalPanel } from '@/widgets/dashboard/SectorSignalPanel';
 import { SectorSignalPanelSkeleton } from '@/widgets/dashboard/SectorSignalPanelSkeleton';
 import { SignalTypeGuide } from '@/widgets/dashboard/SignalTypeGuide';
 import { peekBriefingStatic } from '@/entities/market-summary/api/briefingStaticCache';
+import { marketSummarySeed } from '@/entities/market-summary/lib/marketSummarySeed';
 import { DEFAULT_DASHBOARD_TIMEFRAME } from '@/shared/config/dashboard-tickers';
 import {
     toClientScope,
     type DashboardScope,
 } from '@/shared/config/dashboardScope';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import { marketSummarySeed } from '@/entities/market-summary/lib/marketSummarySeed';
 import { ISO_DATE_HOUR_SLICE_END } from '@/shared/config/time';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
