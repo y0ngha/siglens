@@ -8,6 +8,12 @@ import {
 
 const mockState = vi.fn();
 
+const { mockUseAiAutoRunAllowed } = vi.hoisted(() => ({
+    mockUseAiAutoRunAllowed: vi.fn(() => ({ allowed: true, grant: vi.fn() })),
+}));
+vi.mock('@/features/symbol-model/hooks/useAiAutoRunAllowed', () => ({
+    useAiAutoRunAllowed: mockUseAiAutoRunAllowed,
+}));
 vi.mock('@/widgets/options/hooks/useOptionsAnalysis', () => ({
     useOptionsAnalysis: () => mockState(),
 }));

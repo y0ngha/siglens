@@ -1770,6 +1770,10 @@
             "position": "自分のポジション"
         },
         "ui": {
+            "AiAnalysisAwaitingSection": {
+                "3e7fd8": "この銘柄のAI分析はまだありません。ボタンを押すとすぐに分析を始めます。",
+                "ddb88e": "AI分析を見る"
+            },
             "AiSummaryErrorSection": {
                 "0c767c": "再試行"
             },
@@ -2012,6 +2016,7 @@
                 "93c3a3": "チャートにはプレマーケット、アフターマーケットの株価は反映されません。 | ",
                 "d12df8": "AI分析中…",
                 "d1a23e": "パネル幅調整",
+                "f69071": "AIチャート分析",
                 "ff6b09": "相場データは最大15分遅延します。"
             },
             "CongressSnapshotProse": {
@@ -2873,6 +2878,9 @@
                 "de5545": "議会取引開示リスト",
                 "e6fa15": "取引日",
                 "fdf8d2": "開示検索"
+            },
+            "CongressTrendSummary": {
+                "bbb041": "AI動向分析"
             },
             "CongressTrendSummaryEmpty": {
                 "34ec4b": "最近の議会取引がなく、動向分析を生成していません。",

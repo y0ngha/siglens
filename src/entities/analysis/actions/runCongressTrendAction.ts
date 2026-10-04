@@ -59,10 +59,16 @@ export async function runCongressTrendAction(
      * for member/pro tiers.
      */
     reasoning?: boolean,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    /**
+     * 캐시만 읽고 미스면 생성하지 않는다(`miss_no_trigger`). 큐레이션 밖 종목에서
+     * 첫 신뢰 입력 전에 클라이언트가 보낸다(`useAiAutoRunAllowed`).
+     */
+    cacheOnly?: boolean
 ): Promise<RunCongressTrendActionResult> {
     return runGatedAnalysis({
         actionName: 'runCongressTrendAction',
+        cacheOnly,
         modelId,
         locale,
         reasoning,

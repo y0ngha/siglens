@@ -1770,6 +1770,10 @@
             "position": "我的持仓"
         },
         "ui": {
+            "AiAnalysisAwaitingSection": {
+                "3e7fd8": "该股票暂无AI分析。点击按钮即可立即开始分析。",
+                "ddb88e": "查看AI分析"
+            },
             "AiSummaryErrorSection": {
                 "0c767c": "重试"
             },
@@ -2012,6 +2016,7 @@
                 "93c3a3": "图表不反映盘前、盘后股价。 | ",
                 "d12df8": "AI 分析中…",
                 "d1a23e": "调整面板宽度",
+                "f69071": "AI图表分析",
                 "ff6b09": "行情数据最多延迟15分钟。"
             },
             "CongressSnapshotProse": {
@@ -2873,6 +2878,9 @@
                 "de5545": "国会交易披露列表",
                 "e6fa15": "交易日期",
                 "fdf8d2": "披露搜索"
+            },
+            "CongressTrendSummary": {
+                "bbb041": "AI 趋势解读"
             },
             "CongressTrendSummaryEmpty": {
                 "34ec4b": "近期没有国会交易，未生成趋势解读。",

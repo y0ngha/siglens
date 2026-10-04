@@ -49,6 +49,8 @@ import { useSymbolPageContext } from './SymbolPageContext';
 import { TechnicalFactsSummary } from './TechnicalFactsSummary';
 import type { AnalysisStatus } from './utils/analysisStatus';
 import { getAnalysisStatus } from './utils/analysisStatus';
+import { useAiAutoRunAllowed } from '@/features/symbol-model/hooks/useAiAutoRunAllowed';
+import { AiAnalysisAwaitingSection } from '@/shared/ui/AiAnalysisAwaitingSection';
 import { buildTechnicalFacts } from '@/entities/bars/lib/technicalFacts';
 import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
 import { deriveChartStatus } from '@/features/share/lib/deriveChartStatus';
@@ -173,6 +175,9 @@ export function ChartContent({
         isTierHydrated,
         openSignupNudge,
     } = useSymbolModel();
+    // 큐레이션 밖 종목은 SSR 시드가 비었을 때의 자동 재시도를 첫 신뢰 입력 뒤로 미룬다.
+    const { allowed: autoRunAllowed, grant: grantAutoRun } =
+        useAiAutoRunAllowed(symbol);
 
     // analysis → symbol-page 역방향 import를 제거하기 위해 여기서 context를 읽어 내려보낸다.
     const { indicatorCount, skillCount } = useSymbolPageContext();
@@ -188,6 +193,7 @@ export function ChartContent({
         cooldownNotice,
         isPersonalized,
         plain,
+        isAwaitingInteraction,
     } = useAnalysis({
         symbol,
         companyName,
@@ -203,6 +209,7 @@ export function ChartContent({
         isReasoningHydrated,
         isTierHydrated,
         tier,
+        autoRunAllowed,
     });
 
     const { displayAnalyzing, handleProgressFinished } =
@@ -387,6 +394,12 @@ export function ChartContent({
                         tipIndex={progressTipIndex}
                         isFreeUser={isFreeUser}
                     />
+                ) : isAwaitingInteraction ? (
+                    <AiAnalysisAwaitingSection
+                        heading={t('ChartContent.f69071')}
+                        idPrefix="chart-analysis"
+                        onStart={grantAutoRun}
+                    />
                 ) : (
                     <AnalysisStatusBanner status={analysisStatus} />
                 )}
@@ -457,6 +470,9 @@ export function ChartContent({
         clusteredKeyLevels,
         timeframe,
         displayAnalyzing,
+        isAwaitingInteraction,
+        grantAutoRun,
+        t,
         progressPhaseIndex,
         progressTipIndex,
         handleReanalyze,
