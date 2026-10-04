@@ -6,12 +6,34 @@ import { useFearGreedFromSymbol } from './hooks/useFearGreedFromSymbol';
 import { FearGreedHero } from './FearGreedHero';
 import { FearGreedComparisonGauges } from './FearGreedComparisonGauges';
 import { FearGreedGroupBar } from './FearGreedGroupBar';
-import { FearGreedHistoricalChart } from '@/widgets/fear-greed/FearGreedHistoricalChart';
+import dynamic from 'next/dynamic';
 import { SelfNormWarningBadge } from './SelfNormWarningBadge';
 import { confidenceLabelKey } from '@/shared/lib/fearGreedLabels';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+
+/**
+ * 추이 차트는 `lightweight-charts`(원본 ~177KB)를 쓴다. 정적으로 import하면 이 탭의 첫 JS에
+ * 실리는데 차트는 하이드레이션 뒤에야 그려지고 첫 화면 아래에 있다(2026-10-05 JS 커버리지:
+ * `/AAPL/fear-greed`에서 이 청크 95% 미사용). 차트 탭처럼 지연 로드한다. 자리는 차트와 같은
+ * 높이로 미리 잡아 도착할 때 아래 내용이 밀리지 않게 한다.
+ */
+const FearGreedHistoricalChart = dynamic(
+    () =>
+        import('@/widgets/fear-greed/FearGreedHistoricalChart').then(
+            m => m.FearGreedHistoricalChart
+        ),
+    {
+        ssr: false,
+        loading: () => (
+            <div
+                aria-hidden="true"
+                className="h-[240px] w-full animate-pulse rounded bg-secondary-800/40 motion-reduce:animate-none"
+            />
+        ),
+    }
+);
 
 interface FearGreedPageProps {
     symbol: string;

@@ -97,8 +97,10 @@ vi.mock('@tanstack/react-query', () => ({
 }));
 
 vi.mock('@/app/[locale]/[symbol]/SymbolLayoutClient', () => ({
-    SymbolLayoutJail: () => null,
     SymbolLayoutProviders: () => null,
+}));
+vi.mock('@/app/[locale]/[symbol]/SymbolLayoutJail', () => ({
+    SymbolLayoutJail: () => null,
 }));
 vi.mock('@/views/symbol/SymbolLayoutHeader', () => ({
     SymbolLayoutHeader: () => null,
@@ -156,7 +158,7 @@ vi.mock('@/features/visitor-ping/ui/SymbolViewPing', () => ({
 import SymbolLayout, {
     SymbolLayoutChrome,
 } from '@/app/[locale]/[symbol]/layout';
-import { SymbolLayoutJail } from '@/app/[locale]/[symbol]/SymbolLayoutClient';
+import { SymbolLayoutJail } from '@/app/[locale]/[symbol]/SymbolLayoutJail';
 import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
 import { AskAiFab } from '@/widgets/ask-ai-fab/AskAiFab';
 import { SymbolViewPing } from '@/features/visitor-ping/ui/SymbolViewPing';

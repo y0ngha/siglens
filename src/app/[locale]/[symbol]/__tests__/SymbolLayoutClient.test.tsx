@@ -4,10 +4,8 @@ vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
     ),
 }));
 import { render, screen } from '@testing-library/react';
-import {
-    SymbolLayoutProviders,
-    SymbolLayoutJail,
-} from '@/app/[locale]/[symbol]/SymbolLayoutClient';
+import { SymbolLayoutProviders } from '@/app/[locale]/[symbol]/SymbolLayoutClient';
+import { SymbolLayoutJail } from '@/app/[locale]/[symbol]/SymbolLayoutJail';
 
 describe('SymbolLayoutProviders', () => {
     it('renders children inside SymbolModelProvider', () => {
