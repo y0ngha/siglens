@@ -629,6 +629,18 @@ body:has([data-vaul-drawer]) [data-mobile-sheet-placeholder] {
 }
 
 /*
+ * 다른 라우트로 떠나는 중에는 모바일 분석 시트를 감춘다.
+ *
+ * 루트 pending 슬롯(`RoutePendingSlot`)은 떠나온 페이지를 `hidden`으로 가리고 목적지
+ * 골격을 그리는데, vaul 시트는 body로 포털돼 그 가림 밖에 있다 — 그대로 두면 시장·뉴스
+ * 골격 위에 떠나온 종목의 분석 시트가 떠 있다. 시트를 언마운트하지 않고 가리기만 하는
+ * 이유는 이동이 취소되면(뒤로가기) 떠나온 화면이 상태 그대로 돌아와야 하기 때문이다.
+ */
+body:has([data-route-pending]) [data-vaul-drawer] {
+    visibility: hidden;
+}
+
+/*
  * 상단 내비게이션 진행 바(`features/ticker-search/ui/NavigationProgressBar`).
  * 종목 이동은 RSC 왕복이라 LAX 경로에서 2~3초가 걸리는데, 그동안 화면은 떠나온
  * 종목 그대로다. 진행 중임을 알리되 아무것도 막지 않는다.

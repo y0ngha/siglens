@@ -18,11 +18,8 @@ import { VisitorPing } from '@/features/visitor-ping/ui/VisitorPing';
 import { NoticePopupLoader } from '@/widgets/notice-popup/ui/NoticePopupLoader';
 import { ReactQueryProvider } from '@/app/providers';
 import { SearchOverlayProvider } from '@/features/ticker-search/model/SearchOverlayContext';
-import {
-    NavigationPendingProvider,
-    SymbolEntryPendingSlot,
-} from '@/shared/model/NavigationPendingContext';
-import { SymbolEntrySkeleton } from './[symbol]/SymbolEntrySkeleton';
+import { NavigationPendingProvider } from '@/shared/model/NavigationPendingContext';
+import { RoutePendingSlot } from '@/app/_components/RoutePendingSlot';
 import { ADSENSE_ENABLED } from '@/shared/lib/adsense';
 import { CF_BEACON_TOKEN } from '@/shared/lib/cloudflareAnalytics';
 import { GoogleAdsTag } from '@/app/_components/GoogleAdsTag';
@@ -223,14 +220,12 @@ export default async function RootLayout({
                                     {/* 인증 헤더는 클라이언트에서 렌더된다(cookies()를 static render
                         트리에서 제거 → 전 라우트 ISR 가능). 상세는 AuthSessionHeaderClient JSDoc. */}
                                     <AuthSessionHeaderClient />
-                                    {/* 다른 페이지 → 종목 이동은 클릭 즉시 종목 골격으로 바꾼다.
-                                    클라이언트 상태라 직접 접속·SSR·404에는 관여하지 않는다
-                                    (`NavigationPendingContext` JSDoc). */}
-                                    <SymbolEntryPendingSlot
-                                        fallback={<SymbolEntrySkeleton />}
-                                    >
+                                    {/* 다른 라우트로 가는 이동은 클릭 즉시 목적지 모양의 골격으로
+                                    바꾼다. 클라이언트 상태라 직접 접속·SSR·404에는 관여하지
+                                    않는다(`RoutePendingSlot` JSDoc). */}
+                                    <RoutePendingSlot>
                                         {children}
-                                    </SymbolEntryPendingSlot>
+                                    </RoutePendingSlot>
                                     {/* Footer를 root layout에 두는 이유: home/404/legal 페이지에만
                         footer가 있어 /market, /backtesting, /[symbol]/* 등 대부분 라우트
                         에 내부 링크가 누수됐다. 차트 페이지(/[symbol])는 SymbolLayout의
