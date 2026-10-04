@@ -62,6 +62,7 @@ vi.mock('@/entities/skill/api', () => ({
     FileSkillsLoader: vi.fn(),
 }));
 vi.mock('@/shared/lib/seo', () => ({
+    brandIntroName: () => 'Siglens',
     buildFaqJsonLd: () => ({}),
     buildWebPageJsonLd: () => ({}),
     GITHUB_URL: 'https://github.com/y0ngha/siglens',
@@ -69,6 +70,7 @@ vi.mock('@/shared/lib/seo', () => ({
     localizedAbsoluteUrl: (url: string) => url,
     SITE_DESCRIPTION: 'test description',
     SITE_NAME: 'Siglens',
+    SITE_NAME_KO: '시그렌즈',
     SITE_URL: 'https://siglens.io',
     ORGANIZATION_JSON_LD_ID: 'https://siglens.io#organization',
 }));

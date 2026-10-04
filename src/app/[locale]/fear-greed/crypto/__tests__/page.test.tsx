@@ -28,6 +28,7 @@ import type { MarketFearGreedCryptoView } from '@/entities/market-fear-greed/mod
 import { CRYPTO_FEAR_GREED_FACTOR_KEYS } from '@y0ngha/siglens-core';
 import { SITE_URL } from '@/shared/lib/seo';
 import { koMessage } from '@/shared/test-utils/koMessage';
+import { INDEXABLE_PAGE_ROBOTS } from '@/shared/test-utils/indexablePageRobots';
 
 const mockLoader = getMarketFearGreedCryptoStatic as MockedFunction<
     typeof getMarketFearGreedCryptoStatic
@@ -95,7 +96,7 @@ describe('/fear-greed/crypto page', () => {
             expect(meta.alternates?.canonical).toBe(
                 `${SITE_URL}/fear-greed/crypto`
             );
-            expect(meta.robots).toEqual({ index: true, follow: true });
+            expect(meta.robots).toMatchObject(INDEXABLE_PAGE_ROBOTS);
         });
 
         it('noindexes without canonical when the sample is insufficient', async () => {

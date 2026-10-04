@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useNewsAnalysisTrigger } from '@/entities/news-article/hooks/useNewsAnalysisTrigger';
+import { useAiAutoRunAllowed } from '@/features/symbol-model/hooks/useAiAutoRunAllowed';
 import { useWaitForNewsCards } from '@/entities/news-article/hooks/useWaitForNewsCards';
 import { useOverallAnalysis } from './hooks/useOverallAnalysis';
 import { OverallTriggerCta } from './OverallTriggerCta';
@@ -72,10 +73,15 @@ export function OverallContent({
     // /news와 동일 패턴: 마운트 시 개별 카드 분석 fire-and-forget trigger + cards ready 폴링.
     // 새 뉴스 fetch+분석을 사용자 클릭 전에 시작해두면 trigger 시점엔 분석 완료 row만
     // input으로 들어가 submitNewsAnalysis cache key가 /news와 일치한다(axis hit).
-    useNewsAnalysisTrigger(symbol);
+    // 종합 분석 자체는 CTA 클릭으로만 시작하지만, 카드 보강은 마운트에 돈다 — 큐레이션
+    // 밖 종목은 첫 신뢰 입력까지 미룬다(`useAiAutoRunAllowed`). CTA 클릭이 곧 입력이라
+    // 사용자가 누르는 시점엔 보강이 이미 시작돼 있다.
+    const { allowed: autoRunAllowed } = useAiAutoRunAllowed(symbol);
+    useNewsAnalysisTrigger(symbol, autoRunAllowed);
     const { isReady: isCardsReady, pollError } = useWaitForNewsCards(
         symbol,
-        hasEnrichedNews
+        hasEnrichedNews,
+        autoRunAllowed
     );
 
     // tf는 서버가 아니라 client가 URL에서 읽어 [symbol] ISR(정적 렌더)을 유지한다.

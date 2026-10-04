@@ -631,7 +631,8 @@ describe('POST /api/analysis/stream', () => {
                 'gemini-3.6-flash',
                 'ko',
                 undefined,
-                expect.any(AbortSignal)
+                expect.any(AbortSignal),
+                undefined
             );
         });
 
@@ -653,7 +654,8 @@ describe('POST /api/analysis/stream', () => {
                 'gemini-3.6-flash',
                 'ko',
                 undefined,
-                expect.any(AbortSignal)
+                expect.any(AbortSignal),
+                undefined
             );
         });
 
@@ -680,7 +682,8 @@ describe('POST /api/analysis/stream', () => {
                 'gemini-3.6-flash',
                 'ko',
                 undefined,
-                expect.any(AbortSignal)
+                expect.any(AbortSignal),
+                undefined
             );
         });
 
@@ -786,7 +789,8 @@ describe('POST /api/analysis/stream', () => {
                 'gemini-3.6-flash',
                 'ko',
                 undefined,
-                expect.any(AbortSignal)
+                expect.any(AbortSignal),
+                undefined
             );
         });
 
@@ -818,7 +822,8 @@ describe('POST /api/analysis/stream', () => {
                     'gemini-3.6-flash',
                     locale,
                     undefined,
-                    expect.any(AbortSignal)
+                    expect.any(AbortSignal),
+                    undefined
                 );
             }
         );
@@ -841,7 +846,8 @@ describe('POST /api/analysis/stream', () => {
                 'gemini-3.6-flash',
                 'ko',
                 undefined,
-                expect.any(AbortSignal)
+                expect.any(AbortSignal),
+                undefined
             );
         });
 
@@ -1607,6 +1613,65 @@ describe('POST /api/analysis/stream', () => {
                 .mock.calls.find(c => c[0] === 'AAPL');
             const opts = call?.[5] as Record<string, unknown> | undefined;
             expect(opts?.skipEnqueueIfMiss).toBe(false);
+        });
+    });
+
+    /**
+     * `cacheOnly`는 UA가 아니라 클라이언트의 AI 자동 실행 게이트에서 온다
+     * (큐레이션 밖 종목의 첫 입력 전 조회). 이 값만이 `skipEnqueueIfMiss`를 켠다.
+     */
+    describe('cacheOnly — 클라이언트 게이트가 요청한 캐시 전용 조회', () => {
+        beforeEach(() => {
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'miss_no_trigger' as const,
+            } as never);
+        });
+
+        it('technical: cacheOnly: true면 skipEnqueueIfMiss: true를 전달한다', async () => {
+            const parsed = JSON.parse(TECHNICAL_BODY) as {
+                params: Record<string, unknown>;
+            };
+            const body = JSON.stringify({
+                ...parsed,
+                params: { ...parsed.params, cacheOnly: true },
+            });
+
+            const response = await POST(makeRequest(undefined, body));
+            await collectSseEvents(response);
+
+            const call = vi
+                .mocked(runAnalysis)
+                .mock.calls.find(c => c[0] === 'AAPL');
+            const opts = call?.[5] as Record<string, unknown> | undefined;
+            expect(opts?.skipEnqueueIfMiss).toBe(true);
+        });
+
+        it('DISPATCH(fundamental): params.cacheOnly를 액션 마지막 인자로 넘긴다', async () => {
+            vi.mocked(runFundamentalAnalysisAction).mockResolvedValue({
+                status: 'miss_no_trigger',
+            } as never);
+            const body = JSON.stringify({
+                type: 'fundamental',
+                params: {
+                    symbol: 'PCLOF',
+                    modelId: 'gemini-3.6-flash',
+                    cacheOnly: true,
+                },
+            });
+
+            const response = await POST(makeRequest(undefined, body));
+            await collectSseEvents(response);
+
+            expect(
+                vi.mocked(runFundamentalAnalysisAction)
+            ).toHaveBeenCalledWith(
+                'PCLOF',
+                'gemini-3.6-flash',
+                'ko',
+                undefined,
+                expect.any(AbortSignal),
+                true
+            );
         });
     });
 

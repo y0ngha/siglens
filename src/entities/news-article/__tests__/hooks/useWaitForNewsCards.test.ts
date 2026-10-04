@@ -65,6 +65,24 @@ describe('useWaitForNewsCards', () => {
         });
     });
 
+    it('enabled=false면 폴링하지 않고, true가 되면 폴링을 시작해 준비 상태가 된다', async () => {
+        mockGetCards.mockResolvedValue([ENRICHED_ITEM]);
+        const { result, rerender } = renderHook(
+            ({ enabled }) => useWaitForNewsCards('PCLOF', false, enabled),
+            { initialProps: { enabled: false } }
+        );
+
+        await new Promise(resolve => setTimeout(resolve, 120));
+        expect(mockGetCards).not.toHaveBeenCalled();
+        expect(result.current.isReady).toBe(false);
+
+        rerender({ enabled: true });
+
+        await waitFor(() => {
+            expect(result.current.isReady).toBe(true);
+        });
+    });
+
     it('does not call getNewsCardsAction when initiallyReady is true', () => {
         renderHook(() => useWaitForNewsCards('AAPL', true));
         expect(mockGetCards).not.toHaveBeenCalled();

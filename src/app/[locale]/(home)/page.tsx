@@ -19,6 +19,7 @@ import {
     localizedAbsoluteUrl,
     ORGANIZATION_JSON_LD_ID,
     SITE_NAME,
+    SITE_NAME_KO,
     SITE_URL,
     X_URL,
 } from '@/shared/lib/seo';
@@ -183,7 +184,7 @@ export default async function Home({
     // `@id`를 쓰면서 전부 `ko`를 자처했고, 형제 `WebPage`는 `inLanguage: en`을
     // 선언해 **같은 문서가 두 언어를 주장**했다.
     // JSON-LD와 화면 `<FaqSection>`의 단일 소스 — 두 번 만들지 않는다.
-    const homeFaq = buildHomeFaq(tJsonLd);
+    const homeFaq = buildHomeFaq(tJsonLd, locale);
 
     const webApplicationId = `${localizedAbsoluteUrl(SITE_URL, locale)}#webapplication`;
     const jsonLd = {
@@ -236,6 +237,9 @@ export default async function Home({
         '@type': 'Organization',
         '@id': ORGANIZATION_JSON_LD_ID,
         name: SITE_NAME,
+        // `WebSite.alternateName`과 같은 한글 표기 — 발행 주체 노드에도 실어
+        // "시그렌즈"가 이 Organization을 가리키게 한다.
+        alternateName: SITE_NAME_KO,
         url: SITE_URL,
         logo: `${SITE_URL}/icon512.png`,
         description: tSeo('root.description'),

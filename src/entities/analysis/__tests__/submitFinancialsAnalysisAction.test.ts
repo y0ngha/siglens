@@ -295,6 +295,23 @@ describe('runFinancialsAnalysisAction 함수는', () => {
         );
     });
 
+    it('cacheOnly이면 skipEnqueueIfMiss: true를 core에 넘긴다(AI 자동 실행 게이트의 첫 입력 전 조회)', async () => {
+        mockRunFinancialsAnalysis.mockResolvedValueOnce(CACHED_RESULT);
+
+        await runFinancialsAnalysisAction(
+            'AAPL',
+            MODEL_ID,
+            'ko',
+            undefined,
+            undefined,
+            true
+        );
+
+        expect(mockRunFinancialsAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ skipEnqueueIfMiss: true })
+        );
+    });
+
     describe('reasoning forwarding', () => {
         it('forwards reasoning: true for member tier when client requests it', async () => {
             mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);

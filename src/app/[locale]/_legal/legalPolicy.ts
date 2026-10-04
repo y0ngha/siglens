@@ -17,7 +17,7 @@ import {
 import {
     localeAlternatesFrom,
     localeOpenGraph,
-    localeRobots,
+    localePageRobots,
 } from '@/shared/lib/seoAlternates';
 
 /**
@@ -88,7 +88,7 @@ export async function legalPolicyMetadata(
         title: policy.title(tSeo),
         description,
         robots: indexable
-            ? localeRobots(locale)
+            ? localePageRobots(locale)
             : { index: false, follow: true },
         alternates: await localeAlternatesFrom(params, policy.path, {
             canonical: indexable ? undefined : null,

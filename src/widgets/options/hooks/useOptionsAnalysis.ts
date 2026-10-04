@@ -14,6 +14,8 @@ import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { CacheOnlyMissError } from '@/shared/lib/CacheOnlyMissError';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
 import { readPlain, type WithPlain } from '@/shared/lib/plainEnvelope';
+import { AwaitingInteractionError } from '@/shared/lib/AwaitingInteractionError';
+import { useRefetchWhenAllowed } from '@/shared/hooks/useRefetchWhenAllowed';
 
 export type OptionsAnalysisState =
     | { status: 'loading'; trigger: () => void }
@@ -25,6 +27,7 @@ export type OptionsAnalysisState =
           trigger: () => void;
       }
     | { status: 'cache_miss'; trigger: () => void }
+    | { status: 'awaiting_interaction'; trigger: () => void }
     | { status: 'error'; error: Error; retry: () => void; trigger: () => void };
 
 /**
@@ -39,7 +42,12 @@ async function fetchOptionsAnalysis(
     reasoning: boolean,
     messages: StreamErrorMessages,
     signal?: AbortSignal,
-    cacheOnly?: boolean
+    cacheOnly?: boolean,
+    /**
+     * 게이트 때문에 캐시만 읽는 경우. 미스의 의미가 `cacheOnly`(OI stale — 입력해도
+     * 만들지 않는다)와 달라 센티넬을 나눈다: 이쪽은 입력하면 생성한다.
+     */
+    awaitingInteraction = false
 ): Promise<WithPlain<OptionsAnalysisResponse>> {
     const result = await runAnalysisStream<SubmitOptionsAnalysisActionResult>({
         type: 'options',
@@ -49,7 +57,7 @@ async function fetchOptionsAnalysis(
             expirationDate,
             modelId,
             reasoning,
-            cacheOnly,
+            cacheOnly: cacheOnly || awaitingInteraction,
         },
         signal,
         messages,
@@ -58,7 +66,9 @@ async function fetchOptionsAnalysis(
     if (result.status === 'cached' || result.status === 'done')
         return { data: result.result, plain: readPlain(result) };
     if (result.status === 'miss_no_trigger') {
-        throw new CacheOnlyMissError();
+        // OI stale 캐시 전용이 우선이다 — 그 경우엔 입력해도 생성하지 않는다.
+        if (cacheOnly) throw new CacheOnlyMissError();
+        throw new AwaitingInteractionError();
     }
     if (result.status === 'no_chains_error') {
         /**
@@ -113,6 +123,11 @@ interface UseOptionsAnalysisInput {
      * 한 세션에서 두 모드가 같은 키를 두고 경쟁하지 않는다.
      */
     cacheOnly?: boolean;
+    /**
+     * AI 분석을 생성까지 요청해도 되는지(`useAiAutoRunAllowed().allowed`). `false`면
+     * 캐시만 조회하고, 미스면 `awaiting_interaction`으로 둔다. 기본값 `true`.
+     */
+    autoRunAllowed?: boolean;
 }
 
 /**
@@ -129,6 +144,7 @@ export function useOptionsAnalysis({
     reasoning = false,
     isSettingsHydrated = true,
     cacheOnly = false,
+    autoRunAllowed = true,
 }: UseOptionsAnalysisInput): OptionsAnalysisState {
     const tError = useTranslations('shared.ui.analysisError');
     const locale = useCurrentLocale();
@@ -167,7 +183,8 @@ export function useOptionsAnalysis({
                 qReasoning,
                 streamMessages,
                 signal,
-                cacheOnly
+                cacheOnly,
+                !autoRunAllowed
             ),
         // 캐시가 없을 때만 1회 자동 실행한다. staleTime: Infinity라 캐시가 있으면
         // 조용히 재사용되고(재요청 없음), 포커스/재연결 재요청은 꺼서 실패 이후
@@ -191,7 +208,18 @@ export function useOptionsAnalysis({
         void refetch();
     }, [refetch]);
 
+    const isAwaitingInteraction =
+        query.error instanceof AwaitingInteractionError;
+    useRefetchWhenAllowed(autoRunAllowed, isAwaitingInteraction, refetch);
+
     if (query.isError) {
+        if (isAwaitingInteraction) {
+            // 게이트가 열려 다시 부르는 동안에는 React Query가 직전 오류를 유지한다 —
+            // 그대로 두면 생성이 도는 내내 "AI 분석 보기" 버튼이 남는다.
+            return query.isFetching
+                ? { status: 'loading', trigger: retry }
+                : { status: 'awaiting_interaction', trigger: retry };
+        }
         if (query.error instanceof CacheOnlyMissError) {
             return { status: 'cache_miss', trigger: retry };
         }
