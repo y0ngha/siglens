@@ -4,7 +4,7 @@ import { CongressDegraded } from '@/app/[locale]/[symbol]/congress/CongressDegra
 
 describe('CongressDegraded', () => {
     // 단일 렌더를 공유하되 facet별로 it()을 나눠 실패 지점을 명확히 한다
-    // (FinancialsDegraded.test.tsx와 동일 패턴).
+    // (FinancialsDegraded.dom-fast.test.tsx와 동일 패턴).
     beforeEach(() => {
         render(<CongressDegraded displayName="애플" symbol="AAPL" />);
     });

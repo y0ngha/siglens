@@ -136,6 +136,43 @@ const coverageConfig = {
     },
 };
 
+const DOM_TEST_PATTERNS = [
+    'src/**/__tests__/**/*.test.tsx',
+    'src/__integration__/**/*.test.tsx',
+];
+
+/**
+ * `dom-fast` 레인 — 파일 이름으로 **명시적으로** 들어온다(`X.dom-fast.test.tsx`).
+ *
+ * `isolate: false`라 워커 하나가 여러 파일을 같은 모듈 캐시·같은 DOM 위에서 이어
+ * 돌린다. 파일마다 환경을 새로 만들고 모듈을 다시 평가하는 비용이 사라져, 도입
+ * 시점의 166개 파일이 한 자릿수 초로 끝난다(2026-10-04 로컬 실측 약 3초).
+ *
+ * 들어올 수 있는 조건:
+ * - `vi.mock`·`vi.doMock`·`vi.hoisted`를 쓰지 않는다. 격리를 끄면 mock 레지스트리와
+ *   평가된 모듈이 워커 안에서 공유돼, 한 파일의 모듈 목이 다음 파일로 샌다.
+ * - 파일·`beforeAll` 스코프에 건 스파이·전역 스텁·가짜 타이머에 기대지 않는다 —
+ *   `vitest.setup.dom-fast.ts`가 매 테스트 뒤에 되돌린다.
+ * - 환경 주석(`@vitest-environment`)이 없다. 이 레인은 happy-dom 고정이다.
+ *
+ * 조건이 깨지면 접미사를 떼서 격리 레인(`dom`)으로 되돌린다. 기본값이 격리인 이유:
+ * 새 테스트가 조건을 모르고 들어와도 안전한 쪽으로 떨어져야 한다.
+ */
+const DOM_FAST_TEST_PATTERNS = [
+    'src/**/__tests__/**/*.dom-fast.test.tsx',
+    'src/__integration__/**/*.dom-fast.test.tsx',
+];
+
+/**
+ * dom 테스트의 기본 환경은 happy-dom이다(환경 준비가 jsdom보다 가벼워 dom 프로젝트가
+ * 로컬 실측 82초 → 63초). jsdom 동작에 기대는 파일은 `// @vitest-environment jsdom`
+ * 주석으로 파일 단위 전환한다 — 그 파일에도 같은 URL이 적용되도록 두 키를 다 둔다.
+ */
+const DOM_ENVIRONMENT_OPTIONS = {
+    jsdom: { url: 'http://localhost:4200' },
+    happyDOM: { url: 'http://localhost:4200' },
+};
+
 export default defineConfig({
     ...sharedConfig,
     test: {
@@ -168,16 +205,28 @@ export default defineConfig({
                     ...sharedTestConfig,
                     name: 'dom',
                     setupFiles: ['./vitest.setup.dom.ts'],
-                    include: [
-                        'src/**/__tests__/**/*.test.tsx',
-                        'src/__integration__/**/*.test.tsx',
+                    include: DOM_TEST_PATTERNS,
+                    exclude: [
+                        ...sharedTestConfig.exclude,
+                        ...DOM_FAST_TEST_PATTERNS,
                     ],
-                    environment: 'jsdom',
-                    environmentOptions: {
-                        jsdom: {
-                            url: 'http://localhost:4200',
-                        },
-                    },
+                    environment: 'happy-dom',
+                    environmentOptions: DOM_ENVIRONMENT_OPTIONS,
+                },
+            },
+            {
+                ...sharedConfig,
+                test: {
+                    ...sharedTestConfig,
+                    name: 'dom-fast',
+                    isolate: false,
+                    setupFiles: [
+                        './vitest.setup.dom.ts',
+                        './vitest.setup.dom-fast.ts',
+                    ],
+                    include: DOM_FAST_TEST_PATTERNS,
+                    environment: 'happy-dom',
+                    environmentOptions: DOM_ENVIRONMENT_OPTIONS,
                 },
             },
         ],

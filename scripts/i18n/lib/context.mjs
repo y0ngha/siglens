@@ -165,6 +165,15 @@ const ASSET_TERM_DATA_RE = /src\/shared\/config\/supportedAssets\.ts$/;
  * 못 읽기 때문이다. 번역하면 기능이 망가진다.
  */
 const NATIVE_LABEL_DECLARATOR = 'LOCALE_NATIVE_LABEL';
+/**
+ * **브랜드의 한글 표기.**
+ *
+ * `SITE_NAME_KO`(시그렌즈)는 문구가 아니라 고유명사다. 구조화 데이터의
+ * `alternateName`은 로케일과 무관하게 이 값을 그대로 실어야 하고, 번역하면
+ * 한글 브랜드 검색을 이 사이트로 묶는다는 목적이 사라진다. 선언자 이름 하나만
+ * 면제한다 — 같은 파일의 다른 한국어 상수는 계속 잡힌다.
+ */
+const BRAND_NATIVE_NAME_DECLARATOR = 'SITE_NAME_KO';
 
 const KO_GRAMMAR_RE =
     /src\/shared\/lib\/(koParticle|formatKoreanDateTime)\.ts$/;
@@ -258,6 +267,16 @@ export function classify({ candidate, filePath, code }) {
         )
     ) {
         return { applicable: false, reason: 'native-language-label' };
+    }
+    if (
+        parents.some(
+            p =>
+                p.type === 'VariableDeclarator' &&
+                p.id?.type === 'Identifier' &&
+                p.id.name === BRAND_NATIVE_NAME_DECLARATOR
+        )
+    ) {
+        return { applicable: false, reason: 'brand-native-name' };
     }
     /**
      * **AI 프롬프트 빌더.**

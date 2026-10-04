@@ -138,8 +138,14 @@ export default defineConfig({
         },
     ],
     webServer: {
+        // E2E_PREBUILT=1이면 빌드를 건너뛰고 이미 있는 `.next`로 서버만 띄운다.
+        // e2e.yml이 Playwright 브라우저 설치와 겹쳐서 같은 명령(`dotenv -e .env.e2e
+        // -- yarn build`)으로 미리 빌드한 뒤 이 값을 준다. 로컬(`yarn e2e`)은 값을
+        // 주지 않으므로 종전대로 여기서 빌드한다.
         command:
-            "node_modules/.bin/dotenv -e .env.e2e -- sh -c 'yarn build && yarn start -p 4300'",
+            process.env.E2E_PREBUILT === '1'
+                ? "node_modules/.bin/dotenv -e .env.e2e -- sh -c 'yarn start -p 4300'"
+                : "node_modules/.bin/dotenv -e .env.e2e -- sh -c 'yarn build && yarn start -p 4300'",
         url: 'http://localhost:4300',
         reuseExistingServer: !process.env.CI,
         // 콜드 `next build`(production 빌드)가 180s를 넘길 수 있어 300s로 상향.

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { render, screen } from '@testing-library/react';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
 import { IndexCard } from '@/widgets/dashboard/IndexCard';
