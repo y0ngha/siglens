@@ -2,7 +2,7 @@ vi.mock('next/navigation', () => ({
     usePathname: vi.fn(() => '/market'),
 }));
 
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { render } from '@testing-library/react';
@@ -10,55 +10,50 @@ import { HeaderNav } from '../HeaderNav';
 import { NAV_TREE } from '../headerNavTree';
 
 /**
- * `HeaderNavStatic`(Suspense fallback)과 `HeaderNav`(본체)의 패널 id는 서로
- * 달라야 한다.
+ * 헤더 내비의 패널 id는 문서에서 하나뿐이어야 한다.
  *
- * 무엇이 깨졌었나: 둘 다 `HeaderNavMenu`를 렌더하고 같은 트리 위치에 있어
- * `useId()`가 **같은 값**을 발급했다. fallback은 스트리밍 후에도 문서에서
- * 제거되지 않고 숨겨질 뿐이라 같은 id가 두 번 남고, `getElementById`는 첫
- * 매치를 돌려주므로 **보이는 메뉴의 `aria-controls`가 숨겨진 fallback의 패널을
- * 가리켰다**. 실측(서빙 HTML `/news`): `aria-label="주요 네비게이션"` nav 2개,
- * 중복 id 4개, 각 id의 참조 2개. master도 동일했다(선재 결함).
+ * 무엇이 깨졌었나: 예전에는 `Header`가 내비를 `<Suspense>`로 감싸고 fallback으로
+ * 같은 `HeaderNavMenu`를 렌더하는 정적 판(`HeaderNavStatic`)을 뒀다. 둘이 같은 트리
+ * 위치라 `useId()`가 **같은 값**을 발급했고, 서빙 HTML에는 fallback과 본체가 둘 다
+ * 들어가 같은 id가 두 번 남았다 — **보이는 메뉴의 `aria-controls`가 숨겨진
+ * fallback의 패널을 가리켰다**(실측 `/news`: 주요 내비 nav 2개, 중복 id 4개).
+ * `idScope`로 id를 갈라 막았지만, 같은 7.5KB 마크업이 전 페이지 HTML에 두 번
+ * 실리는 것은 그대로였다(2026-10-04 운영 HTML: `<template id="B:0">` fallback +
+ * `<div hidden id="S:0">` 본체).
  *
- * **왜 소스 가드인가.** 이 충돌은 렌더 테스트로 재현되지 않는다. 한 번의
- * `render()`에 형제로 넣으면 트리 위치가 갈려 id가 자연히 달라지고, 루트를
- * 나눠 두 번 렌더해도 `useId` 카운터가 전역이라 역시 갈린다 — 두 방법 모두
- * `idScope`를 지운 뮤테이션에서 초록이었다. 조건은 스트리밍 SSR에서만 성립하고
- * jsdom에는 그 경로가 없다. 그래서 이 파일은 실제로 결함을 막는 **계약**을
- * 직접 본다: 두 호출부가 서로 다른 `idScope`를 넘기는가.
+ * 지금은 경계와 정적 판을 없앴다. 경계가 필요했던 이유(PPR 정적 셸)는
+ * `cacheComponents`가 꺼진 지금 성립하지 않고, ISR 응답은 통째로 버퍼링돼
+ * 스트리밍 이득도 없다.
+ *
+ * **왜 소스 가드인가.** id 충돌은 스트리밍 SSR에서만 성립하고 jsdom에는 그 경로가
+ * 없어 렌더 테스트로 재현되지 않는다. 그래서 결함의 전제 — 같은 메뉴를 그리는
+ * 호출부가 둘이 되는 것, 헤더가 내비를 경계로 감싸는 것 — 을 직접 본다.
  */
 
 const LAYOUT_DIR = path.resolve(__dirname, '..');
 
-/** `<HeaderNavMenu ... idScope="X"` 에서 X를 뽑는다. */
-function idScopeIn(file: string): string | null {
-    const source = readFileSync(path.join(LAYOUT_DIR, file), 'utf8');
-    const at = source.indexOf('<HeaderNavMenu');
-    if (at === -1) return null;
-    const tag = source.slice(at, source.indexOf('/>', at));
-    return /idScope="([^"]+)"/.exec(tag)?.[1] ?? null;
+/** 테스트가 아닌 레이아웃 소스 중 `<HeaderNavMenu`를 렌더하는 파일. */
+function navMenuCallSites(): string[] {
+    return readdirSync(LAYOUT_DIR)
+        .filter(file => file.endsWith('.tsx'))
+        .filter(file =>
+            readFileSync(path.join(LAYOUT_DIR, file), 'utf8').includes(
+                '<HeaderNavMenu'
+            )
+        );
 }
 
 describe('nav 패널 id 유일성', () => {
-    it('두 호출부가 서로 다른 idScope를 넘긴다', () => {
-        const body = idScopeIn('HeaderNav.tsx');
-        const fallback = idScopeIn('HeaderNavStatic.tsx');
-
-        expect(body, 'HeaderNav가 idScope를 안 넘긴다').not.toBeNull();
-        expect(
-            fallback,
-            'HeaderNavStatic이 idScope를 안 넘긴다'
-        ).not.toBeNull();
-        expect(body).not.toBe(fallback);
+    it('HeaderNavMenu 호출부는 HeaderNav 하나뿐이다', () => {
+        expect(navMenuCallSites()).toEqual(['HeaderNav.tsx']);
     });
 
-    it('검출기가 실제로 잡는다', () => {
-        // 두 파일 모두 `<HeaderNavMenu`를 정확히 하나씩 렌더한다는 전제 위에
-        // 서 있다. 전제가 깨지면 위 검사가 조용히 무의미해지므로 함께 본다.
-        for (const file of ['HeaderNav.tsx', 'HeaderNavStatic.tsx']) {
-            const source = readFileSync(path.join(LAYOUT_DIR, file), 'utf8');
-            expect(source.split('<HeaderNavMenu').length - 1, file).toBe(1);
-        }
+    it('헤더는 내비를 Suspense로 감싸지 않는다', () => {
+        const source = readFileSync(
+            path.join(LAYOUT_DIR, 'Header.tsx'),
+            'utf8'
+        );
+        expect(source).not.toContain('<Suspense');
     });
 
     /**

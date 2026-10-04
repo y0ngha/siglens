@@ -3487,9 +3487,6 @@
             "HeaderNavMenu": {
                 "shortcutLabel": "{v0} 快捷入口"
             },
-            "HeaderNavStatic": {
-                "5281d7": "主导航"
-            },
             "HeaderUserMenu": {
                 "3a7424": "头像图片",
                 "622fae": "账户设置",

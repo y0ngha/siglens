@@ -120,7 +120,7 @@ describe('HeaderMobileMenu', () => {
     it('nav links are accessible via document when drawer is closed', () => {
         /*
          * After the portal refactor the drawer is client-rendered. The desktop
-         * HeaderNavStatic/HeaderNav already renders the same NAV_TREE server-side
+         * HeaderNav already renders the same NAV_TREE server-side
          * for crawlers. Here we just confirm the links exist in the document (via portal)
          * so testing-library can find them even when the drawer is closed.
          */

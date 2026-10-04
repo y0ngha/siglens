@@ -3611,9 +3611,6 @@
             "HeaderNavMenu": {
                 "shortcutLabel": "{v0} 바로가기"
             },
-            "HeaderNavStatic": {
-                "5281d7": "주요 네비게이션"
-            },
             "HeaderUserMenu": {
                 "3a7424": "아바타 이미지",
                 "622fae": "계정 설정",
