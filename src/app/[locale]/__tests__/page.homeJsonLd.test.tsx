@@ -69,8 +69,8 @@ import Home from '@/app/[locale]/(home)/page';
 import { buildHomeFaq } from '@/app/[locale]/homeJsonLd';
 import { expectFaqSingleSource } from '@/__tests__/utils/expectFaqSingleSource';
 import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
-import { GITHUB_URL } from '@/shared/lib/seo';
-import { SITE_OPERATOR } from '@/shared/lib/legal';
+import { GITHUB_URL, X_URL } from '@/shared/lib/seo';
+import { OPERATOR_SAME_AS, SITE_OPERATOR } from '@/shared/lib/legal';
 
 async function renderHome() {
     return await Home({ params: Promise.resolve({ locale: 'ko' }) });
@@ -111,14 +111,34 @@ describe('홈 Organization 노드', () => {
      * 서비스 저장소만 주장하고 있었다 — 파서가 두 프로필을 같은 주체로 묶을
      * 근거가 없다. 두 주소를 모두 선언해 그래프를 닫는다.
      */
-    it('sameAs에 운영자 저장소와 서비스 저장소가 모두 있다', async () => {
+    it('sameAs에 운영자·서비스 저장소와 velog·X가 모두 있다', async () => {
         const organization = collectJsonLdData(await renderHome()).find(
             d => d['@type'] === 'Organization'
         ) as { sameAs: string[] } | undefined;
 
         expect(organization?.sameAs).toEqual([
+            'https://github.com/y0ngha',
+            'https://github.com/y0ngha/siglens',
+            'https://velog.io/@y0ngha',
+            'https://x.com/siglens_io',
+        ]);
+        expect(organization?.sameAs).toEqual([
             SITE_OPERATOR.githubUrl,
             GITHUB_URL,
+            SITE_OPERATOR.velogUrl,
+            X_URL,
         ]);
+    });
+
+    it('founder.sameAs는 운영자 프로필 두 곳(GitHub·velog)이다', async () => {
+        const organization = collectJsonLdData(await renderHome()).find(
+            d => d['@type'] === 'Organization'
+        ) as { founder: { sameAs: string[] } } | undefined;
+
+        expect(organization?.founder.sameAs).toEqual([
+            'https://github.com/y0ngha',
+            'https://velog.io/@y0ngha',
+        ]);
+        expect(organization?.founder.sameAs).toEqual([...OPERATOR_SAME_AS]);
     });
 });

@@ -10,7 +10,11 @@ import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { floorToHour } from './floorToHour';
 // 게이트 정의(탭 목록·옵션 타입)는 `proseGate.ts`가 소유한다 — 크립토 빌더와
 // `server.ts`도 거기서 직접 가져온다.
-import { makeProseGate, type BuildPopularEntriesOptions } from './proseGate';
+import {
+    makeProseGate,
+    makeSnapshotTimeLookup,
+    type BuildPopularEntriesOptions,
+} from './proseGate';
 import type { SitemapEntry } from '../model';
 
 /**
@@ -47,25 +51,33 @@ function withSymbolAlternates(entries: SitemapEntry[]): SitemapEntry[] {
  * 뉴스는 스냅샷 산문이 있는 종목만 싣는다({@link BuildPopularEntriesOptions}) — 산문이
  * 없으면 noindex일 수 있다(대상 탭은 `lib/proseGate.ts`의 `PROSE_GATED_SITEMAP_TABS`).
  *
- * `lastmod`는 `lastClosedSessionCloseUtc` — **마지막으로 마감된 정규 세션의 마감
- * 순간**이다. 국내 상장 종목은 KRX 세션(15:30 KST), 나머지는 NYSE 세션(16:00 ET,
+ * 차트 탭(`/{ticker}`)의 `lastmod`는 `max(직전 마감 세션, technical 스냅샷
+ * generatedAt)`이다. 기반값은 `lastClosedSessionCloseUtc` — **마지막으로 마감된 정규
+ * 세션의 마감 순간**이다. 국내 상장 종목은 KRX 세션(15:30 KST), 나머지는 NYSE 세션(16:00 ET,
  * 반장은 13:00)으로 각각 계산한다. 한 벌만 쓰면 한국 종목 lastmod가 미국 마감 시각으로
  * 나가고, NYSE 휴장일(KRX는 개장)에는 하루 전으로 되감겨 실제보다 오래된 신호를 준다.
  * 공유 헬퍼는 주말 되감기와 DST를 모두 처리하고, bars EOD 캐시 키가 쓰는 것과 같은
  * "마지막 마감 세션" 정의를 공유한다. 공포탐욕 탭도 같은 일봉으로 계산되므로 같은
- * 값을 쓴다.
+ * 값을 쓴다(그 탭은 스냅샷 산문이 없어 세션 마감 그대로다).
  *
- * `/{ticker}/news`만 1시간 슬라이딩을 유지한다 — 뉴스는 실제로 시간 단위로 바뀌고
- * on-demand `revalidateTag`가 ISR 창 안에서도 갱신하므로 슬라이딩이 사실에 가깝다.
- * 다만 `now`를 그대로 쓰지 않고 정시로 내림한다(`floorToHour`) — 그렇지 않으면
- * 매 호출(=매 크롤)마다 값이 달라져 `maxLastModified`가 고르는 sitemap index
- * lastmod가 끝없이 "방금 바뀜"으로 나가 freshness 신호가 무력화된다.
+ * 2차 정직화(2026-10-04): 차트 탭 본문에는 technical 스냅샷 산문이 실리는데, 그 산문은
+ * 세션 마감 **1.7~3.7시간 뒤**에 구워진다. 마감 시각만 광고하면 그 사이에 크롤한
+ * 크롤러는 산문이 바뀌었다는 신호를 못 받는다 — 그래서 스냅샷이 더 늦으면 그 시각을
+ * 쓴다. 스냅샷이 없으면(또는 로더 실패) 세션 마감 그대로다.
+ *
+ * `/{ticker}/news`는 **그 종목 뉴스 스냅샷의 `generatedAt`**이다. 예전에는 `now − 1h`
+ * (정시 내림)였는데, 실측(2026-10-04, 주말) 365개 전부가 같은 값이었고 페이지에 실제로
+ * 렌더되는 뉴스 스냅샷은 중앙값 32시간 전에 구워진 것이었다 — 거짓 신선도 신호다.
+ * 스냅샷 시각을 못 읽었을 때(로더 실패 = 맵 없음)만 예전 폴백(`now`를 정시로 내림한
+ * 1시간 전, `floorToHour`)을 쓴다 — 그렇지 않으면 매 호출마다 값이 달라져
+ * `maxLastModified`의 index lastmod가 끝없이 "방금 바뀜"이 된다.
  */
 export function buildPopularEntries(
     now: Date,
-    { symbolTabsWithProse }: BuildPopularEntriesOptions = {}
+    options: BuildPopularEntriesOptions = {}
 ): SitemapEntry[] {
-    const hasProse = makeProseGate({ symbolTabsWithProse });
+    const hasProse = makeProseGate(options);
+    const snapshotTimeOf = makeSnapshotTimeLookup(options);
     const usClose = lastClosedSessionCloseUtc(US_EQUITY_SESSION, now);
     const krClose = lastClosedSessionCloseUtc(KR_EQUITY_SESSION, now);
     const oneHourAgo = floorToHour(new Date(now.getTime() - MS_PER_HOUR));
@@ -73,10 +85,18 @@ export function buildPopularEntries(
     return withSymbolAlternates(
         POPULAR_TICKERS.flatMap((ticker): SitemapEntry[] => {
             const todayClose = isKrEquitySymbol(ticker) ? krClose : usClose;
+            // 차트 탭만 technical 스냅샷 시각과 겨룬다 — 공포탐욕 탭은 같은 일봉에서
+            // 결정적으로 계산돼 스냅샷 산문이 없으므로 세션 마감이 사실이다.
+            const technicalAt = snapshotTimeOf(ticker, 'technical');
+            const chartLastModified =
+                technicalAt !== undefined &&
+                technicalAt.getTime() > todayClose.getTime()
+                    ? technicalAt
+                    : todayClose;
             return [
                 {
                     url: `${SITE_URL}/${ticker}`,
-                    lastModified: todayClose,
+                    lastModified: chartLastModified,
                     changeFrequency: 'daily',
                     priority: 0.8,
                 },
@@ -84,7 +104,8 @@ export function buildPopularEntries(
                     ? [
                           {
                               url: `${SITE_URL}/${ticker}/news`,
-                              lastModified: oneHourAgo,
+                              lastModified:
+                                  snapshotTimeOf(ticker, 'news') ?? oneHourAgo,
                               // ternary 안의 inline array literal은 outer flatMap의
                               // SitemapEntry[] annotation이 닿지 않아 'hourly'가 string
                               // 으로 widening된다 — `as const`로 좁힌다.
@@ -94,9 +115,14 @@ export function buildPopularEntries(
                       ]
                     : []),
                 // 공포탐욕 탭은 2026-10-01부터 색인한다(`[symbol]/fear-greed/page.tsx`
-                // generateMetadata 주석). 봉이 없는 종목은 페이지가 `no-price-data`로
-                // noindex지만, 그런 종목은 화이트리스트에서 정리해 왔다(2026-09-17
-                // 15종 제거) — 차트 엔트리와 같은 조건이다.
+                // generateMetadata 주석). 페이지는 **점수를 낼 수 있을 때만** index다
+                // (`hasFearGreedScore` — 2026-10-04부터 봉 유무가 아니라 점수 표본 기준).
+                //
+                // ⚠️ 알려진 예외: 이 빌더는 봉을 읽지 않으므로(종목 수 × 봉 조회) 점수
+                // 표본이 모자란 종목도 여기 실린다. 2026-10-04 기준 `TOSCF`·`SLROF` 두
+                // 종목이 그 상태라 sitemap에 noindex URL 2개가 있다. 표본이 쌓이면
+                // 스스로 풀리므로 회귀로 보고 고치지 말 것 — 늘어나면 그때 빌더 입력에
+                // 점수 가능 여부를 싣는다(설계 2026-10-04 §2 A3).
                 {
                     url: `${SITE_URL}/${ticker}/fear-greed`,
                     lastModified: todayClose,

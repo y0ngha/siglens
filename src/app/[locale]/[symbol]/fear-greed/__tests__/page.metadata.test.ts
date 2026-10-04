@@ -3,9 +3,14 @@
  *
  * 2026-09-17 운영 렌더 감사는 이 탭을 항상 noindex로 돌렸으나(본문 92%가 공통 문장),
  * 롱테일 수요를 받을 페이지가 사라져 되돌렸다. 대신 차트 라우트와 같은 콘텐츠 게이트를
- * 탄다 — 봉 조회 실패는 degrade, 봉 부족(`buildTechnicalFacts` null)은 `no-price-data`,
- * 화이트리스트 밖 롱테일은 중앙 게이트로 noindex다. 공유 카드용 title과 follow는
- * 모든 경로에서 유지된다.
+ * 탄다 — 봉 조회 실패는 degrade, **점수 산출 불가**(`hasFearGreedScore` false)는
+ * `no-price-data`, 화이트리스트 밖 롱테일은 중앙 게이트로 noindex다. 공유 카드용
+ * title과 follow는 모든 경로에서 유지된다.
+ *
+ * 게이트 술어는 본문 `FearGreedFactsSummary`가 점수를 그리는 조건과 같다 — 2026-10-04
+ * `/TOSCF`·`/SLROF`는 봉은 있으나 점수 표본이 모자라 본문이 도입 문단뿐인데도
+ * `buildTechnicalFacts` 게이트(봉 2개 이상) 때문에 색인돼 있었다. 점수 계산은 실제
+ * `computeFearGreedIndex`를 쓴다(모킹하면 두 술어가 갈리는 구간을 못 본다).
  */
 
 // MISTAKES §17: all vi.mock + vi.hoisted declarations must come before imports.
@@ -39,18 +44,12 @@ vi.mock('next/navigation', () => ({ notFound: vi.fn() }));
 
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { generateMetadata } from '@/app/[locale]/[symbol]/fear-greed/page';
+import { buildFearGreedSeedBars } from '@/__tests__/utils/fearGreedSeedBars';
 
-const BARS_WITH_DATA = {
-    bars: [
-        { time: 1, open: 1, high: 2, low: 0.5, close: 1.5, volume: 100 },
-        { time: 2, open: 1.5, high: 2.5, low: 1, close: 2, volume: 120 },
-    ],
-    indicators: {
-        rsi: [50, 55],
-        macd: [{ histogram: 0.1 }, { histogram: 0.2 }],
-        buySellVolume: [],
-    },
-};
+// 실제 `computeFearGreedIndex`가 점수를 내는 봉 수(300). 같은 fixture를 20봉으로 자르면
+// `buildTechnicalFacts`는 값을 내지만 점수는 null이다.
+const BARS_WITH_DATA = buildFearGreedSeedBars(300);
+const BARS_WITHOUT_SCORE = buildFearGreedSeedBars(20);
 
 const ASSET_INFO = {
     assetInfo: {
@@ -100,11 +99,19 @@ describe('fear-greed generateMetadata — 색인 대상 (콘텐츠 게이트 통
         spy.mockRestore();
     });
 
-    it('봉이 모자라 요약이 안 그려지면(no-price-data) noindex', async () => {
-        mockGetSeedBarsStatic.mockResolvedValue({
-            bars: [BARS_WITH_DATA.bars[0]],
-            indicators: BARS_WITH_DATA.indicators,
+    it('봉은 있으나 점수 표본이 모자라 점수가 안 그려지면(no-price-data) noindex', async () => {
+        mockGetSeedBarsStatic.mockResolvedValue(BARS_WITHOUT_SCORE);
+
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
+
+        expect(metadata.robots).toEqual({ index: false, follow: true });
+        expect(metadata.alternates?.canonical).toBeNull();
+    });
+
+    it('봉이 1개뿐이어도 noindex', async () => {
+        mockGetSeedBarsStatic.mockResolvedValue(buildFearGreedSeedBars(1));
 
         const metadata = await generateMetadata({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),

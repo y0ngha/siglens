@@ -52,6 +52,7 @@ import {
     SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
+import { ABOUT_PATH } from '@/shared/lib/legal';
 import { loadTabSnapshotMeta } from '@/app/[locale]/[symbol]/symbolSnapshotDescription';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import type { Metadata } from 'next';
@@ -452,10 +453,12 @@ export default async function NewsPage({ params }: Props) {
         // schema image와 OG meta가 불일치하는 회귀가 발생한다. 정적 자원은
         // 영구 URL이라 schema image 신뢰도 측면에서 더 유리.
         image: [`${SITE_URL}/og-image.png`],
+        // author URL은 홈이 아니라 `/about` — 누가 어떻게 만든 요약인지(운영 주체·
+        // 생성 방식)를 설명하는 페이지를 가리켜야 저작 주체 신호가 된다.
         author: {
             '@type': 'Organization',
             name: SITE_NAME,
-            url: SITE_URL,
+            url: `${SITE_URL}${ABOUT_PATH}`,
         },
         publisher: {
             '@type': 'Organization',
@@ -483,12 +486,13 @@ export default async function NewsPage({ params }: Props) {
                       .map((item, idx) => ({
                           '@type': 'ListItem',
                           position: idx + 1,
-                          item: {
-                              '@type': 'NewsArticle',
-                              headline: resolveNewsTitle(item, locale),
-                              url: item.url,
-                              datePublished: item.publishedAt,
-                          },
+                          // `NewsArticle`로 선언하지 않는다(2026-10-04 감사):
+                          // `url`은 외부 매체가 발행한 기사인데 헤드라인만 우리가
+                          // 번역한 것이다. `NewsArticle` + `datePublished`는 이
+                          // 페이지가 호스팅하지 않는 콘텐츠의 저작을 주장하게 되므로
+                          // 목록 항목(위치·URL·이름)까지만 말한다.
+                          url: item.url,
+                          name: resolveNewsTitle(item, locale),
                       })),
               }
             : null;
