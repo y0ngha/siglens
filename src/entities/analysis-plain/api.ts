@@ -204,6 +204,9 @@ function withDeadline<T>(work: Promise<T>, ms: number): Promise<T | null> {
  * 크기 접미사(`magnitude_suffix`)·문자 혼입 등 다른 거부는 도려내서 고쳐지지 않으므로
  * 그대로 재시도한다.
  *
+ * 조언 문구(`advice`, 2026-10-04 도입)도 같은 경로로 도려낸다. 다만 25% 상한은 숫자 위반
+ * 실측에서 나온 값이고 조언 쪽은 측정이 없다 — 로그의 `kind`로 두 분포를 갈라 다시 본다.
+ *
  * ## 위 수치를 다시 세는 법
  *
  * 거부는 `attempt()`가 `console.warn('[analysisPlain] guard rejected', { symbol, locale,
@@ -239,10 +242,12 @@ function salvageBeforeRetry(
     failure: PlainGuardFailure,
     allowed: GuardInput['allowed']
 ): SalvagedBeforeRetry | null {
-    if (failure.kind !== 'unsupported_numbers') return null;
+    // 조언 문구(`advice`)도 같은 이유로 도려낸다 — 위반이 문장 한두 개라 재생성할 이유가 없다.
+    if (failure.kind !== 'unsupported_numbers' && failure.kind !== 'advice')
+        return null;
     const salvaged = salvageByRemovingSentences(text, allowed);
     if (salvaged === null) return null;
-    // `text`가 빈 문자열일 수 없다 — `unsupported_numbers`는 `guardPlainText`가 `trim()` 뒤
+    // `text`가 빈 문자열일 수 없다 — 두 종류 모두 `guardPlainText`가 `trim()` 뒤
     // 비어 있지 않음을 확인한 다음에야 나오는 종류다(빈 입력은 `empty`로 먼저 끝난다).
     // 설령 0이 되어도 `0 / 0`은 NaN이고 `NaN <= 상한`은 거짓이라 null로 떨어져 안전하다.
     const lossRatio = (text.length - salvaged.length) / text.length;
@@ -408,6 +413,7 @@ export async function rewriteToPlainLanguage(
                     console.info('[analysisPlain] salvaged without retry', {
                         symbol,
                         locale,
+                        kind: failure.kind,
                         originalChars: text.length,
                         removedChars: text.length - salvagedFirst.text.length,
                         lossRatio: Number(
@@ -432,8 +438,16 @@ export async function rewriteToPlainLanguage(
              *
              * 크기 접미사(`1,573.1B`)는 살리지 않는다 — 자릿수가 틀린 금액이라
              * 문장을 빼는 것으로 고쳐지지 않고, 남겨 두면 10배 오류가 그대로 나간다.
+             *
+             * 조언 문구(`advice`)는 살린다 — 독자에게 행동을 권하는 문장 한두 개만
+             * 빼면 나머지는 멀쩡한 설명이다. 여기서 버리면 그 종목은 쉽게보기가 통째로
+             * 사라져 크롤러가 받는 본문이 전문 용어 원문으로 돌아간다.
              */
-            if (failure.kind !== 'unsupported_numbers') return null;
+            if (
+                failure.kind !== 'unsupported_numbers' &&
+                failure.kind !== 'advice'
+            )
+                return null;
             const salvaged = salvageByRemovingSentences(text, allowed);
             if (salvaged !== null) {
                 console.info('[analysisPlain] salvaged by sentence removal', {
