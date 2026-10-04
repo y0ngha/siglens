@@ -1,3 +1,9 @@
+const { mockUseAiAutoRunAllowed } = vi.hoisted(() => ({
+    mockUseAiAutoRunAllowed: vi.fn(() => ({ allowed: true, grant: vi.fn() })),
+}));
+vi.mock('@/features/symbol-model/hooks/useAiAutoRunAllowed', () => ({
+    useAiAutoRunAllowed: mockUseAiAutoRunAllowed,
+}));
 vi.mock('@/shared/lib/cn', () => ({
     cn: (...args: unknown[]) =>
         args
@@ -24,7 +30,7 @@ vi.mock('../FundamentalAiSummarySkeleton', () => ({
     FundamentalAiSummarySkeleton: () => <div data-testid="skeleton" />,
 }));
 
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 
 import {
     ShareableAnalysisProvider,
@@ -92,6 +98,32 @@ describe('FundamentalAiSummary', () => {
         render(<FundamentalAiSummary symbol="AAPL" />);
 
         expect(screen.getByTestId('skeleton')).toBeInTheDocument();
+    });
+
+    it('대기 상태면 "AI 분석 보기" 버튼을 렌더하고, 누르면 게이트를 연다', () => {
+        const grant = vi.fn();
+        mockUseAiAutoRunAllowed.mockReturnValue({ allowed: false, grant });
+        vi.mocked(useFundamentalAnalysis).mockReturnValue({
+            status: 'awaiting_interaction',
+            trigger: vi.fn(),
+        });
+
+        render(<FundamentalAiSummary symbol="PCLOF" />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'AI 분석 보기' }));
+        expect(grant).toHaveBeenCalledTimes(1);
+        // 게이트 값이 훅에 그대로 전달되는지 — 위젯이 값을 잃으면 미허용 종목도 생성한다.
+        expect(vi.mocked(useFundamentalAnalysis)).toHaveBeenCalledWith(
+            'PCLOF',
+            expect.anything(),
+            expect.anything(),
+            expect.anything(),
+            false
+        );
+        mockUseAiAutoRunAllowed.mockReturnValue({
+            allowed: true,
+            grant: vi.fn(),
+        });
     });
 
     it('renders error component on error', () => {

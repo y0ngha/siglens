@@ -1,4 +1,10 @@
 // vi.mock → imports 순서 (MISTAKES.md Tests §17)
+const { mockUseAiAutoRunAllowed } = vi.hoisted(() => ({
+    mockUseAiAutoRunAllowed: vi.fn(() => ({ allowed: true, grant: vi.fn() })),
+}));
+vi.mock('@/features/symbol-model/hooks/useAiAutoRunAllowed', () => ({
+    useAiAutoRunAllowed: mockUseAiAutoRunAllowed,
+}));
 vi.mock('@/shared/lib/cn', () => ({
     cn: (...args: unknown[]) =>
         args

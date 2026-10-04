@@ -138,6 +138,7 @@ function analysisReturn(
         reanalyzeCooldownMs: 0,
         cooldownNotice: null,
         isPersonalized: false,
+        isAwaitingInteraction: false,
         plain: null,
         ...overrides,
     };

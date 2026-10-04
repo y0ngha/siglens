@@ -13,6 +13,8 @@ import { formatAnalyzedAt } from '@/shared/lib/formatAnalyzedAt';
 import { OptionsAiAnalysisError } from './OptionsAiAnalysisError';
 import { OptionsAiAnalysisSkeleton } from './OptionsAiAnalysisSkeleton';
 import { useOptionsAnalysis } from './hooks/useOptionsAnalysis';
+import { useAiAutoRunAllowed } from '@/features/symbol-model/hooks/useAiAutoRunAllowed';
+import { AiAnalysisAwaitingSection } from '@/shared/ui/AiAnalysisAwaitingSection';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
 import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
 import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
@@ -267,6 +269,8 @@ export function OptionsAiAnalysis({
     hideView = false,
     cacheOnly = false,
 }: OptionsAiAnalysisProps) {
+    const t = useTranslations('widgets.options');
+    const { allowed: autoRunAllowed, grant } = useAiAutoRunAllowed(symbol);
     const state = useOptionsAnalysis({
         symbol,
         companyName,
@@ -275,6 +279,7 @@ export function OptionsAiAnalysis({
         reasoning,
         isSettingsHydrated,
         cacheOnly,
+        autoRunAllowed,
     });
 
     useRegisterShareable({
@@ -306,6 +311,16 @@ export function OptionsAiAnalysis({
     // JSDoc), so this never reaches a visible page.
     if (state.status === 'cache_miss') {
         return null;
+    }
+
+    if (state.status === 'awaiting_interaction') {
+        return (
+            <AiAnalysisAwaitingSection
+                heading={t('OptionsAiAnalysis.eefb95')}
+                idPrefix="options-ai-analysis"
+                onStart={grant}
+            />
+        );
     }
 
     if (state.status === 'error') {

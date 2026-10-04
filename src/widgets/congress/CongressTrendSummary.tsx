@@ -1,8 +1,11 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useDefaultModelId } from '@/features/symbol-model/hooks/useDefaultModelId';
 import { useDefaultReasoning } from '@/features/symbol-model/hooks/useDefaultReasoning';
 import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
+import { useAiAutoRunAllowed } from '@/features/symbol-model/hooks/useAiAutoRunAllowed';
+import { AiAnalysisAwaitingSection } from '@/shared/ui/AiAnalysisAwaitingSection';
 import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
 import { mapAnalysisStatus } from '@/features/share/lib/mapAnalysisStatus';
 import { useCongressTrend } from './hooks/useCongressTrend';
@@ -30,14 +33,17 @@ export function CongressTrendSummary({
     symbol,
     hideView = false,
 }: CongressTrendSummaryProps) {
+    const t = useTranslations('widgets.congress');
     const modelId = useDefaultModelId();
     const reasoning = useDefaultReasoning();
     const isSettingsHydrated = useAnalysisSettingsHydrated();
+    const { allowed: autoRunAllowed, grant } = useAiAutoRunAllowed(symbol);
     const state = useCongressTrend(
         symbol,
         modelId,
         reasoning,
-        isSettingsHydrated
+        isSettingsHydrated,
+        autoRunAllowed
     );
 
     useRegisterShareable({
@@ -65,6 +71,16 @@ export function CongressTrendSummary({
 
     if (state.status === 'no_trades') {
         return <CongressTrendSummaryEmpty />;
+    }
+
+    if (state.status === 'awaiting_interaction') {
+        return (
+            <AiAnalysisAwaitingSection
+                heading={t('CongressTrendSummary.bbb041')}
+                idPrefix="congress-trend-summary"
+                onStart={grant}
+            />
+        );
     }
 
     if (state.status === 'error') {

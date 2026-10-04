@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import {
@@ -12,6 +12,12 @@ const ensureNewsCardsAnalyzedActionSpy = vi.hoisted(() =>
 const mockWaitResult = vi.fn();
 const mockAnalysisResult = vi.fn();
 
+const { mockUseAiAutoRunAllowed } = vi.hoisted(() => ({
+    mockUseAiAutoRunAllowed: vi.fn(() => ({ allowed: true, grant: vi.fn() })),
+}));
+vi.mock('@/features/symbol-model/hooks/useAiAutoRunAllowed', () => ({
+    useAiAutoRunAllowed: mockUseAiAutoRunAllowed,
+}));
 vi.mock(
     '@/entities/news-article/actions/ensureNewsCardsAnalyzedAction',
     () => ({
@@ -162,6 +168,37 @@ describe('NewsAiSummary', () => {
         expect(
             screen.getByText(/뉴스 데이터를 수집하고 있어요/)
         ).toBeInTheDocument();
+    });
+
+    it('게이트가 닫혀 카드 보강이 미뤄진 동안에는 수집 스피너 대신 "AI 분석 보기"를 보여 준다', () => {
+        const grant = vi.fn();
+        mockUseAiAutoRunAllowed.mockReturnValue({ allowed: false, grant });
+        mockWaitResult.mockReturnValue({
+            isReady: false,
+            pollError: null,
+        });
+        mockAnalysisResult.mockReturnValue({
+            status: 'loading',
+            trigger: vi.fn(),
+        });
+
+        render(
+            <NewsAiSummary
+                symbol="PCLOF"
+                companyName="Pacific"
+                hasEnrichedNews={false}
+            />
+        );
+
+        expect(
+            screen.queryByText(/뉴스 데이터를 수집하고 있어요/)
+        ).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'AI 분석 보기' }));
+        expect(grant).toHaveBeenCalledTimes(1);
+        mockUseAiAutoRunAllowed.mockReturnValue({
+            allowed: true,
+            grant: vi.fn(),
+        });
     });
 
     it('renders analyzing phase when cards ready but analysis loading', () => {

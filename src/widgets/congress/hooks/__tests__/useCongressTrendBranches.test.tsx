@@ -6,7 +6,6 @@
  * Poll/cancel machinery has been removed; run* functions return results directly.
  */
 
-import koMessages from '../../../../../messages/ko.json';
 import type { Mock, MockedFunction } from 'vitest';
 import { useCongressTrend } from '@/widgets/congress/hooks/useCongressTrend';
 import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
@@ -120,11 +119,9 @@ describe('useCongressTrend — branch coverage', () => {
             );
         });
 
-        it('falls through to the generic unexpected error when submit returns miss_no_trigger', async () => {
-            // Core-only status: skipEnqueueIfMiss is hardcoded false for this
-            // axis (see api/analysis/stream/route.ts top invariant), so core
-            // never actually returns this in production. Verifies the
-            // exhaustiveness fallback resolves to a plain error, not dead UI.
+        it('miss_no_trigger(게이트가 막은 캐시 전용 조회의 미스)는 오류가 아니라 awaiting_interaction이다', async () => {
+            // 서버는 cacheOnly 요청에만 이 상태를 돌려준다(AI 자동 실행 게이트). 오류 화면이
+            // 아니라 \"AI 분석 보기\" 대기 상태가 되어야 한다.
             mockSubmit.mockResolvedValue({
                 status: 'miss_no_trigger',
             } as never);
@@ -136,15 +133,8 @@ describe('useCongressTrend — branch coverage', () => {
             );
 
             await waitFor(() => {
-                expect(result.current.status).toBe('error');
+                expect(result.current.status).toBe('awaiting_interaction');
             });
-
-            if (result.current.status !== 'error') {
-                throw new Error('expected error state');
-            }
-            expect(result.current.error.message).toBe(
-                koMessages.app.api.stream.unexpected
-            );
         });
     });
 

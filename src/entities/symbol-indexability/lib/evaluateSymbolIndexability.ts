@@ -3,6 +3,7 @@ import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { SYMBOL_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 import { APPROVED_LONGTAIL_TICKERS } from '../config/approved-longtail-tickers';
+import { isCuratedSymbol } from './isCuratedSymbol';
 import type {
     SymbolIndexabilityDecision,
     SymbolIndexabilityInput,
@@ -52,10 +53,7 @@ export function evaluateSymbolIndexability({
         // of the thin degraded shell. Non-whitelisted or snapshot-less degraded
         // pages stay noindex (this must NOT move below the whitelist checks below,
         // or a degraded, snapshot-less popular symbol would get indexed).
-        const whitelisted =
-            POPULAR_TICKER_SET.has(upper) ||
-            POPULAR_CRYPTO_SET.has(upper) ||
-            APPROVED_LONGTAIL_SET.has(upper);
+        const whitelisted = isCuratedSymbol(upper);
         if (hasSnapshot === true && whitelisted) {
             return { indexable: true, reason: 'degraded-with-snapshot' };
         }

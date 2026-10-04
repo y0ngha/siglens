@@ -62,6 +62,11 @@ interface AnalyzeMutationVariables {
     fmpSymbol?: string;
     modelId?: ModelId;
     reasoning?: boolean;
+    /**
+     * 캐시만 읽고 미스면 생성하지 않는다. 큐레이션 밖 종목의 첫 신뢰 입력 전,
+     * 마운트 재시도에서만 쓴다(`autoRunAllowed` 옵션 참고).
+     */
+    cacheOnly?: boolean;
 }
 
 /**
@@ -128,6 +133,16 @@ interface UseAnalysisOptions {
     isReasoningHydrated?: boolean;
     isTierHydrated?: boolean;
     tier?: Tier;
+    /**
+     * AI 분석을 생성까지 요청해도 되는지(`useAiAutoRunAllowed().allowed`).
+     * undefined면 `true`(게이트 없음, 하위 호환).
+     *
+     * 영향을 받는 것은 **SSR 시드가 실패한 마운트의 자동 재시도 하나뿐**이다. `false`면
+     * 그 재시도를 캐시 전용(`cacheOnly`)으로 보내고, 미스면 `isAwaitingInteraction`을
+     * 세운 채 기다리다가 `true`가 되는 순간 일반 제출을 한 번 보낸다. 타임프레임·모델·
+     * reasoning 변경과 재분석 버튼은 사용자 조작이라 게이트하지 않는다(그 조작이 곧 입력이다).
+     */
+    autoRunAllowed?: boolean;
 }
 
 // symbol-page → analysis는 허용된 하향 의존(cross-widget cross-import).
@@ -160,6 +175,11 @@ export interface UseAnalysisResult {
      * 자유 티어 등으로 홀딩이 있어도 no-bucket으로 디그레이드될 수 있다).
      */
     isPersonalized: boolean;
+    /**
+     * 캐시에 분석이 없고 AI 자동 실행 게이트가 닫혀 생성을 미뤄 둔 상태.
+     * 호출부는 "AI 분석 보기" 대기 화면을 보여 준다(`AiAnalysisAwaitingSection`).
+     */
+    isAwaitingInteraction: boolean;
 }
 
 export function useAnalysis({
@@ -177,6 +197,7 @@ export function useAnalysis({
     isReasoningHydrated,
     isTierHydrated,
     tier,
+    autoRunAllowed = true,
 }: UseAnalysisOptions): UseAnalysisResult {
     const streamMessages = useStreamErrorMessages();
     // 1. useState
@@ -201,6 +222,7 @@ export function useAnalysis({
     // SSE 분석 라우트의 `personalized` 플래그를 그대로 미러링 — 배지의
     // 유일한 진실값(personalized-analysis-by-position-bucket spec, Subsystem C).
     const [isPersonalized, setIsPersonalized] = useState(false);
+    const [isAwaitingInteraction, setIsAwaitingInteraction] = useState(false);
     /**
      * onMutate가 화면을 비우기 직전의 상태 스냅샷.
      *
@@ -243,6 +265,16 @@ export function useAnalysis({
     const latestReasoningRef = useRef<boolean | undefined>(reasoning);
     const latestTierRef = useRef<Tier | undefined>(tier);
     const prevTimeframeChangeCountRef = useRef(0);
+    /**
+     * SSR 시드 실패 시 마운트 재시도의 게이트 단계. `cache_only`는 게이트가 닫힌 채
+     * 캐시만 물어본 상태이고, 그 조회가 HIT이면 `done`이 된다. 게이트가 닫혀 있는
+     * 동안의 중복 조회와, 열린 직후 이미 받은 분석을 다시 제출하는 것만 막는다 —
+     * 게이트가 열려 있을 때의 기존 동작(deps가 바뀌면 다시 제출)은 건드리지 않는다.
+     */
+    const mountRetryPhaseRef = useRef<'pending' | 'cache_only' | 'done'>(
+        'pending'
+    );
+    const prevAutoRunAllowedRef = useRef(autoRunAllowed);
     const prevModelIdRef = useRef<ModelId | undefined>(modelId);
     const prevReasoningRef = useRef<boolean | undefined>(reasoning);
     const prevTierRef = useRef<Tier | undefined>(tier);
@@ -273,6 +305,7 @@ export function useAnalysis({
     const {
         error: submitError,
         isPending: isSubmitting,
+        variables: submitVariables,
         reset,
         mutate,
     } = useMutation<RunAnalysisActionResult, Error, AnalyzeMutationVariables>({
@@ -283,6 +316,7 @@ export function useAnalysis({
             fmpSymbol: mutFmpSymbol,
             modelId: mutModelId,
             reasoning: mutReasoning,
+            cacheOnly: mutCacheOnly,
         }) => {
             /**
              * Cancel any still-open SSE connection from a previous submit before
@@ -308,22 +342,22 @@ export function useAnalysis({
                     modelId: mutModelId,
                     reasoning: mutReasoning,
                     ...(mutForce ? { reanalyze: true } : {}),
+                    ...(mutCacheOnly ? { cacheOnly: true } : {}),
                 },
                 signal: controller.signal,
             })
                 .then(result => {
                     // Throw for non-success outcomes so they reach onError and
-                    // surface via submitError. Only 'cached', 'done', and
-                    // 'reanalyze_cooldown' are returned; everything else
-                    // (including the core-only `miss_no_trigger` — this axis
-                    // hardcodes `skipEnqueueIfMiss: false`, see
-                    // `api/analysis/stream/route.ts` top invariant, so it
-                    // never actually occurs) falls through to the generic
-                    // `unexpected` error below.
+                    // surface via submitError. Only 'cached', 'done',
+                    // 'reanalyze_cooldown' and 'miss_no_trigger' are returned.
+                    // `miss_no_trigger` comes back only for a `cacheOnly`
+                    // submit (AI 자동 실행 게이트가 닫힌 마운트 재시도) and
+                    // means "waiting for input", not a failure.
                     if (
                         result.status === 'cached' ||
                         result.status === 'done' ||
-                        result.status === 'reanalyze_cooldown'
+                        result.status === 'reanalyze_cooldown' ||
+                        result.status === 'miss_no_trigger'
                     ) {
                         return result;
                     }
@@ -359,6 +393,10 @@ export function useAnalysis({
                 });
         },
         onMutate: () => {
+            // 대기 상태는 "캐시 미스, 입력을 기다리는 중"이라는 뜻이라 그 입력으로 시작한
+            // 제출보다 오래 남으면 안 된다. 여기서 내리지 않으면 뒤이은 제출이 실패했을 때
+            // 오류 배너 대신 이미 열린 게이트의 "AI 분석 보기" 버튼이 남는다(리뷰 라운드 1).
+            setIsAwaitingInteraction(false);
             // 서버가 쿨다운을 이유로 새 분석을 거절할 수 있다(`reanalyze_cooldown`).
             // 그 경우 화면을 비운 채 아무 결과도 오지 않으므로, 되돌릴 수 있도록
             // 직전 상태를 스냅샷해 둔다.
@@ -376,7 +414,15 @@ export function useAnalysis({
             setIsPersonalized(false);
         },
         onSuccess: (data, variables) => {
+            if (data.status === 'miss_no_trigger') {
+                setIsAwaitingInteraction(true);
+                return;
+            }
             if (data.status === 'cached' || data.status === 'done') {
+                setIsAwaitingInteraction(false);
+                if (variables.cacheOnly === true) {
+                    mountRetryPhaseRef.current = 'done';
+                }
                 setIsPersonalized(data.personalized ?? false);
                 if (
                     latestTierRef.current === 'free' &&
@@ -477,8 +523,11 @@ export function useAnalysis({
     );
 
     // 5. Derived variables
+    // 캐시 전용 제출(게이트가 닫힌 마운트 재시도)은 생성이 아니라 캐시 조회라 "분석 중"
+    // 진행 화면을 띄우지 않는다 — HIT이면 바로 결과, 미스면 대기 화면으로 넘어간다.
+    const isCacheOnlySubmit = submitVariables?.cacheOnly === true;
     const isAnalyzing =
-        isSubmitting ||
+        (isSubmitting && !isCacheOnlySubmit) ||
         (initialAnalysisFailedAtMount &&
             (isModelHydrated === false ||
                 isReasoningHydrated === false ||
@@ -552,13 +601,28 @@ export function useAnalysis({
     // 서버가 이 재시도에서도 자체적으로 홀딩을 다시 읽어 개인화하므로 정합성 문제는 아니지만,
     // 다른 hydration 게이트와 일관되게 홀딩 쿼리가 아직 진행 중인 채로 재시도가 나가는 것을
     // 피한다.
+    //
+    // AI 자동 실행 게이트(`autoRunAllowed`)가 닫혀 있으면 먼저 캐시만 묻는다. 미스면
+    // `isAwaitingInteraction`으로 기다리다가 게이트가 열리는 순간 이 effect가 다시 돌아
+    // 일반 제출을 한 번 보낸다(`mountRetryPhaseRef`가 단계를 지켜 중복 제출을 막는다).
     useEffect(() => {
         if (!initialAnalysisFailedAtMount) return;
         if (isModelHydrated === false) return;
         if (isReasoningHydrated === false) return;
         if (isTierHydrated === false) return;
         if (!isHoldingResolved) return;
-        // 초기 실패 재시도는 이미 reset/cancel 없이 진행 — 진행 중인 작업이 없는 상태에서만 도달한다.
+        const wasAllowed = prevAutoRunAllowedRef.current;
+        prevAutoRunAllowedRef.current = autoRunAllowed;
+        const phase = mountRetryPhaseRef.current;
+        if (!autoRunAllowed) {
+            if (phase !== 'pending') return;
+            mountRetryPhaseRef.current = 'cache_only';
+        } else if (!wasAllowed && phase === 'done') {
+            // 닫혀 있던 동안의 캐시 전용 조회가 이미 HIT — 같은 분석을 다시 받지 않는다.
+            return;
+        }
+        // 초기 실패 재시도는 이미 reset/cancel 없이 진행 — 진행 중인 작업이 없는 상태에서만
+        // 도달한다(게이트가 열린 뒤의 일반 제출은 앞선 캐시 전용 스트림을 mutationFn이 끊는다).
         mutate({
             symbol: latestRef.current.symbol,
             companyName: latestRef.current.companyName,
@@ -566,6 +630,7 @@ export function useAnalysis({
             fmpSymbol: latestRef.current.fmpSymbol,
             modelId: latestModelIdRef.current,
             reasoning: latestReasoningRef.current,
+            ...(autoRunAllowed ? {} : { cacheOnly: true }),
         });
     }, [
         mutate,
@@ -574,6 +639,7 @@ export function useAnalysis({
         isTierHydrated,
         isHoldingResolved,
         initialAnalysisFailedAtMount,
+        autoRunAllowed,
     ]);
 
     // 타임프레임 변경 시 이전 mutation 상태를 초기화한 뒤 새 분석을 자동 실행한다.
@@ -766,5 +832,6 @@ export function useAnalysis({
         cooldownNotice,
         isPersonalized,
         plain,
+        isAwaitingInteraction,
     };
 }
