@@ -73,6 +73,7 @@ export const MEM_ROUTE_MAX_BYTES = readPositiveBound(
 
 // 엔트리 수 상한. 2026-08 실측(소형 ~10,850개)으로 20,000을 잡았지만 2026-10에는 상한에
 // 상시 붙어 하루 ~14만 건을 축출했다(적중률 26%, 계상 ~7MB) — 크롤 범위가 넓어진 탓이다.
+// (재측정: 아래 MAX_TOTAL_BYTES 주석의 "위 실측치를 다시 재는 법" — `fetch-mem` 누적 카운터 차이.)
 // 운영값은 SSM `/siglens/ISR_FETCH_CACHE_MAX_ENTRIES`(2026-10: 100000)로 올렸고, 이 기본값은
 // SSM이 없을 때의 하한이다. 실질 제동은 아래 바이트 예산이 건다.
 const MAX_ENTRIES = readPositiveBound('ISR_FETCH_CACHE_MAX_ENTRIES', 20000);
@@ -84,13 +85,42 @@ const MAX_ENTRIES = readPositiveBound('ISR_FETCH_CACHE_MAX_ENTRIES', 20000);
 // 개수 상한을 10만으로 올리고 게이트를 압축 전 32KB로 바로잡으면 상주량이 늘어난다
 // (예전 게이트 기준 평균 0.35KB × 10만 ≈ 35MB만으로 32MB를 넘는다. 게이트를 넓혀 평균이
 // 커지면 예산이 개수 상한보다 먼저 걸릴 수 있다 — 배포 후 `fetch-mem` 로그로 확인할 것).
-// 계상은 본문 길이뿐이라 headers·url·tags·Map 노드를 더한 실제 상주는 10만 개에서
-// +250~350MB까지 갈 수 있다. 2026-10-04 실측 컨테이너 610MiB / 상한 2.5GiB(`--memory`),
-// 힙 한도 1536MB라 여유 안이다.
 //
-// `approximateBytes`가 본문 길이만 세고 headers/url/tags와 Map 노드 오버헤드는 빼므로
-// **실제 상주 메모리는 계상값보다 크다**(한국어 JSON은 V8이 2바이트 문자열로 잡아
-// 최대 2배). 64MB 예산이 가득 차면 본문만 ~128MB까지 상주할 수 있다(위 문단의 +250~350MB 추정 참고).
+// ## 이 파일의 상주량 숫자는 서로 다른 조건을 센다
+//
+// `approximateBytes`는 `data.body`의 **문자열 길이(UTF-16 코드 유닛 수)** 만 계상한다.
+// headers·url·tags·키 문자열·Map/LRU 노드·V8 객체 헤더는 계상에 들어가지 않는다.
+// 그래서 `MAX_TOTAL_BYTES`(64MB)가 묶는 것은 "본문 글자 수의 합"이고 RSS가 아니다.
+//
+//   - **~128MB** = 바이트 예산이 먼저 걸려 본문만 64M 글자로 찼을 때의 **본문 상주** 상한.
+//     한국어 JSON은 V8이 2바이트 문자열로 저장하므로 글자당 최대 2바이트라 계상값의 2배다
+//     (ASCII뿐이면 1바이트라 ~64MB). 엔트리별 오버헤드는 포함하지 않는다.
+//   - **+250~350MB** = 개수 상한이 먼저 걸리는 경우, 즉 10만 개가 평균 0.35KB쯤 되는 작은
+//     엔트리로 차서 계상은 ~35MB로 예산 아래인 상태에서, 엔트리당 오버헤드(위 목록)와
+//     UTF-16 저장까지 얹은 **RSS 증가 추정**이다. 실측이 아니라 추정이며, 배포 후
+//     `docker stats`의 컨테이너 메모리 증가분으로 확인해야 한다(아래 재측정 방법).
+//
+// 두 숫자는 합산하지 않는다 — 같은 상태를 다른 잣대로 센 것이 아니라 서로 다른 상태다.
+// 예산이 먼저 걸리면 엔트리 수가 10만 미만이라 오버헤드 총량도 그만큼 작다. 어느 쪽이
+// 걸리는지는 `fetch-mem` 로그의 `size`(10만 근처인가)와 `bytes`(64MB 근처인가)로 가린다.
+// 2026-10-04 실측 컨테이너 610MiB / 상한 2.5GiB(`--memory`), 힙 한도 1536MB라
+// 어느 쪽이든 여유 안이다.
+//
+// ## 위 실측치(2026-10)를 다시 재는 법
+//
+// `fetch-mem`은 5분마다 JSON 한 줄을 남긴다(`logStatsThrottled`). 필드는
+// `size`(엔트리 수)·`bytes`(계상 바이트)·`hit`·`miss`·`evicted`이고, 셋은 **프로세스 시작
+// 이후 누적 카운터**다 — 구간 값은 차이로 구해야 하고 인스턴스(스트림)마다 따로 본다.
+// CloudWatch Logs Insights, 로그 그룹 `/siglens/app`:
+//
+//     fields @timestamp, @logStream, size, bytes, hit, miss, evicted
+//     | filter event = "fetch-mem"
+//     | sort @timestamp desc
+//
+// 적중률 = hit / (hit + miss), 하루 축출 건수 = 스트림별 `max(evicted) - min(evicted)`의 합
+// (`stats max(evicted) - min(evicted) by @logStream`; 재시작이 끼면 카운터가 0으로 돌아가니
+// 구간을 재시작 사이로 자를 것). 컨테이너 메모리(610MiB)는 SSM으로 인스턴스에 들어가
+// `docker stats --no-stream`의 MEM USAGE / LIMIT 열을 본다.
 // 운영 중 조정은 SSM `/siglens/ISR_FETCH_CACHE_MAX_BYTES`로 가능하다(코드 변경 불필요).
 // 하한이 `MEM_ROUTE_MAX_BYTES`인 이유: 두 값이 독립 env라 운영자가 총 예산을 라우팅
 // 게이트보다 작게 잡을 수 있다. 그러면 게이트를 통과한 엔트리가 삽입 직후 `evictToFit`에
