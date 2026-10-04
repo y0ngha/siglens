@@ -1056,6 +1056,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Reset mocks in beforeEach; run failure-path tests in isolation
    → Recurring: feat/bot-cost-caching R1, test/views-coverage-include, fix/bars-seed-fold R2 (3 occurrences)
 
+8.7. Barrel exports breaking partial mocks — adding exports to a mocked barrel
+   → When a module is partially mocked in tests (vi.mock('<barrel>', { SpecificExport: vi.fn() })), adding new exports to that module can break tests that expected the mock to be complete
+   → Barrel modules that are partially mocked in multiple test files must document which exports are mocked and require all new exports to be added to every partial mock
+   → When adding exports to a barrel that is mocked elsewhere: grep for `vi.mock('<barrel>'` calls in test files, update mocks to include the new exports
+   → Alternatively: put new exports in separate files instead of adding them to frequently-mocked barrels
+   ❌ feat/symbol-chat-to-ai-host adds fallbackAnalysis to entities/analysis barrel; src/__integration__/analysisFlow.test.tsx partially mocks the barrel and misses the new export
+   ❌ perf/symbol-hydration-action-chain adds export to queryConfig.ts; partial mocks of that module in 14 untouched tests now fail
+   ✅ Before adding export to a barrel: grep test files for `vi.mock('path/to/barrel'` and verify all mock implementations include the new export
+   ✅ Or: put the new export in a separate file (e.g., `queryConfig/newFeature.ts`) and import from there, avoiding barrel modification
+   → Recurring: feat/symbol-chat-to-ai-host Round 1–2, perf/symbol-hydration-action-chain — 2 occurrences
+
 9. Test describe text promises assertions not verified by its it() cases
    → describe() block name must describe only the preconditions/feature shared by all its it() cases
    → If a test case contradicts the describe text, move it to a separate describe block
