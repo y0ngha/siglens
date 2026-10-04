@@ -81,6 +81,7 @@ import {
     shortenRevalidateIfDatabaseMissingAtBuild,
     shortenRevalidateIfFmpFailedAtBuild,
 } from '@/shared/cache/buildDegradedRevalidate';
+import { INDEXABLE_PAGE_ROBOTS } from '@/shared/test-utils/indexablePageRobots';
 
 const mockGetSnapshot = vi.mocked(getEconomySnapshotStatic);
 const mockPeekStatic = vi.mocked(peekMacroBriefingStatic);
@@ -131,7 +132,7 @@ describe('/economy page.tsx integration', () => {
                 params: Promise.resolve({ locale: 'ko' }),
             });
 
-            expect(meta.robots).toEqual({ index: true, follow: true });
+            expect(meta.robots).toMatchObject(INDEXABLE_PAGE_ROBOTS);
             expect(meta.alternates?.canonical).toBe(
                 'https://siglens.io/economy'
             );

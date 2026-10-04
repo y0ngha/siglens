@@ -5,6 +5,7 @@ import {
     buildAiHomeMetadata,
 } from '@/app/ai/[locale]/aiSeo';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
+import { INDEXABLE_PAGE_ROBOTS } from '@/shared/test-utils/indexablePageRobots';
 
 const copy = {
     title: '주식·코인 AI 챗봇 — 시세·차트·뉴스 물어보기 | SIGLENS AI',
@@ -17,7 +18,7 @@ describe('buildAiHomeMetadata', () => {
         const m = buildAiHomeMetadata('ko', copy);
         expect(m.title).toEqual({ absolute: copy.title });
         expect(m.description).toBe(copy.description);
-        expect(m.robots).toEqual({ index: true, follow: true });
+        expect(m.robots).toMatchObject(INDEXABLE_PAGE_ROBOTS);
         expect(m.alternates?.canonical).toBe(`${AI_SITE_URL}/`);
         expect(m.openGraph).toMatchObject({
             siteName: 'SIGLENS AI',
@@ -29,7 +30,11 @@ describe('buildAiHomeMetadata', () => {
 
     it('a locale outside the static index gate is noindex (still followed) and keeps its own canonical', () => {
         const m = buildAiHomeMetadata('en', copy);
-        expect(m.robots).toEqual({ index: false, follow: true });
+        expect(m.robots).toMatchObject({
+            index: false,
+            follow: true,
+            googleBot: { index: false },
+        });
         expect(m.alternates?.canonical).toBe(`${AI_SITE_URL}/en`);
         // A one-locale cluster is not a cluster: no hreflang map.
         expect(m.alternates?.languages).toBeUndefined();
@@ -39,14 +44,18 @@ describe('buildAiHomeMetadata', () => {
 describe('buildAiAboutMetadata', () => {
     it('indexes /about with its own canonical and OG url, not the home', () => {
         const m = buildAiAboutMetadata('ko', copy);
-        expect(m.robots).toEqual({ index: true, follow: true });
+        expect(m.robots).toMatchObject(INDEXABLE_PAGE_ROBOTS);
         expect(m.alternates?.canonical).toBe(`${AI_SITE_URL}/about`);
         expect(m.openGraph).toMatchObject({ url: `${AI_SITE_URL}/about` });
     });
 
     it('keeps the locale prefix and the same index gate as the home', () => {
         const m = buildAiAboutMetadata('en', copy);
-        expect(m.robots).toEqual({ index: false, follow: true });
+        expect(m.robots).toMatchObject({
+            index: false,
+            follow: true,
+            googleBot: { index: false },
+        });
         expect(m.alternates?.canonical).toBe(`${AI_SITE_URL}/en/about`);
     });
 });

@@ -15,7 +15,7 @@ import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
 import { SymbolViewPing } from '@/features/visitor-ping/ui/SymbolViewPing';
 import { SymbolHeaderShellFallback } from './SymbolHeaderShellFallback';
 import { SymbolTabPendingSlot } from '@/views/symbol/SymbolTabPendingContext';
-import SymbolLoading from './loading';
+import { SymbolTabSkeleton } from './SymbolTabSkeleton';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
@@ -133,7 +133,7 @@ export default async function SymbolLayout({
                             params={params}
                         />
                     </Suspense>
-                    <SymbolTabPendingSlot fallback={<SymbolLoading />}>
+                    <SymbolTabPendingSlot fallback={<SymbolTabSkeleton />}>
                         {children}
                     </SymbolTabPendingSlot>
                 </SymbolLayoutJail>

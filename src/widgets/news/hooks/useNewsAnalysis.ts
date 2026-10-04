@@ -11,6 +11,8 @@ import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import { isGateBlockedResult } from '@/entities/analysis/lib/gate';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { readPlain, type WithPlain } from '@/shared/lib/plainEnvelope';
+import { AwaitingInteractionError } from '@/shared/lib/AwaitingInteractionError';
+import { useRefetchWhenAllowed } from '@/shared/hooks/useRefetchWhenAllowed';
 
 export type NewsAnalysisState =
     | { status: 'loading'; trigger: () => void }
@@ -21,6 +23,7 @@ export type NewsAnalysisState =
           plain: string | null;
           trigger: () => void;
       }
+    | { status: 'awaiting_interaction'; trigger: () => void }
     | { status: 'error'; error: Error; retry: () => void; trigger: () => void };
 
 /**
@@ -33,20 +36,29 @@ async function fetchNewsAnalysis(
     modelId: ModelId,
     reasoning: boolean,
     messages: StreamErrorMessages,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    cacheOnly = false
 ): Promise<WithPlain<NewsAnalysisResponse>> {
     const result = await runAnalysisStream<SubmitNewsAnalysisActionResult>({
         type: 'news',
-        params: { symbol, companyName, modelId, reasoning },
+        params: {
+            symbol,
+            companyName,
+            modelId,
+            reasoning,
+            ...(cacheOnly ? { cacheOnly: true } : {}),
+        },
         signal,
         messages,
     });
 
     if (result.status === 'cached' || result.status === 'done')
         return { data: result.result, plain: readPlain(result) };
-    // `miss_no_trigger`: core-only status. `skipEnqueueIfMiss` is hardcoded
-    // false for this axis (see `api/analysis/stream/route.ts` top invariant),
-    // so it falls through to the generic `unexpected` throw below.
+    // `miss_no_trigger`: AI 자동 실행 게이트가 막은 상태의 캐시 전용 조회가 미스였다
+    // (`useAiAutoRunAllowed`). 오류가 아니라 대기 상태다 — 입력이 들어오면 다시 부른다.
+    if (result.status === 'miss_no_trigger') {
+        throw new AwaitingInteractionError();
+    }
     if (result.status === 'error') {
         if (isGateBlockedResult(result)) {
             throw new Error(result.error.message);
@@ -87,6 +99,11 @@ interface UseNewsAnalysisOptions {
      * `useAnalysisSettingsHydrated()`로 넘긴다. 기본값 `true`는 단위 테스트용.
      */
     isSettingsHydrated?: boolean;
+    /**
+     * AI 분석을 생성까지 요청해도 되는지(`useAiAutoRunAllowed().allowed`). `false`면
+     * 캐시만 조회하고, 미스면 `awaiting_interaction`으로 둔다. 기본값 `true`.
+     */
+    autoRunAllowed?: boolean;
 }
 
 export function useNewsAnalysis(
@@ -97,6 +114,7 @@ export function useNewsAnalysis(
         enabled = true,
         reasoning = false,
         isSettingsHydrated = true,
+        autoRunAllowed = true,
     }: UseNewsAnalysisOptions = {}
 ): NewsAnalysisState {
     const tError = useTranslations('shared.ui.analysisError');
@@ -123,7 +141,8 @@ export function useNewsAnalysis(
                 qModelId,
                 qReasoning,
                 streamMessages,
-                signal
+                signal,
+                !autoRunAllowed
             ),
         enabled: isSettingsHydrated && enabled,
         retry: false,
@@ -140,7 +159,18 @@ export function useNewsAnalysis(
         void refetch();
     };
 
+    const isAwaitingInteraction =
+        query.error instanceof AwaitingInteractionError;
+    useRefetchWhenAllowed(autoRunAllowed, isAwaitingInteraction, refetch);
+
     if (query.isError) {
+        if (isAwaitingInteraction) {
+            // 게이트가 열려 다시 부르는 동안에는 React Query가 직전 오류를 유지한다 —
+            // 그대로 두면 생성이 도는 내내 "AI 분석 보기" 버튼이 남는다.
+            return query.isFetching
+                ? { status: 'loading', trigger: retry }
+                : { status: 'awaiting_interaction', trigger: retry };
+        }
         return {
             status: 'error',
             error:

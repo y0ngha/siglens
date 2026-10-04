@@ -23,8 +23,12 @@ interface GatedAnalysisOptions {
      * 2026-09-27: 더 이상 UA로 가르지 않는다 — 봇의 캐시 미스도 사람과 같은 본문을
      * 생성해야 한다(`src/app/api/analysis/stream/route.ts` 상단 불변식과 동일 원칙).
      * 예전에는 봇이면 생성을 막아 Googlebot이 실제 분석 대신 "봇 트래픽" 안내문을 색인했다.
+     *
+     * `true`는 클라이언트가 `cacheOnly`를 요청했을 때뿐이다(큐레이션 밖 종목의 첫 입력
+     * 전 조회 — `useAiAutoRunAllowed`). 그 값은 UA가 아니라 클라이언트 게이트에서 오고,
+     * 생략·`false`면 지금과 같은 동작이라 클라이언트가 속여도 새 비용 경로가 없다.
      */
-    readonly skipEnqueueIfMiss: false;
+    readonly skipEnqueueIfMiss: boolean;
     /** Member's stored BYOK key, present only when the gate charged it. */
     readonly userApiKey?: string;
 }
@@ -46,6 +50,11 @@ interface RunGatedAnalysisParams<R> {
     readonly e2eResult: () => Promise<R>;
     /** The core `run*` call, given the gate-derived options. */
     readonly submit: (gated: GatedAnalysisOptions) => Promise<R>;
+    /**
+     * 캐시만 읽고 미스면 생성하지 않는다(core가 `miss_no_trigger`). 클라이언트의
+     * AI 자동 실행 게이트가 첫 입력 전 조회에 쓴다.
+     */
+    readonly cacheOnly?: boolean;
 }
 
 /**
@@ -67,6 +76,7 @@ export async function runGatedAnalysis<R>({
     reasoning,
     e2eResult,
     submit,
+    cacheOnly,
 }: RunGatedAnalysisParams<R>): Promise<R | AnalysisGateBlockedResult> {
     try {
         if (isE2E()) {
@@ -86,7 +96,7 @@ export async function runGatedAnalysis<R>({
         return await submit({
             tier: gate.tier,
             reasoning: resolveReasoning(gate.tier, reasoning),
-            skipEnqueueIfMiss: false,
+            skipEnqueueIfMiss: cacheOnly === true,
             ...(gate.userApiKey !== undefined
                 ? { userApiKey: gate.userApiKey }
                 : {}),

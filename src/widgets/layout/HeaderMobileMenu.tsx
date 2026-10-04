@@ -108,8 +108,8 @@ export function HeaderMobileMenu({
      * cover only the header area, not the full screen. Portaling to document.body
      * restores standard viewport-relative fixed positioning.
      *
-     * Nav links remain crawlable because the desktop `HeaderNavStatic` / `HeaderNav`
-     * already renders the same `NAV_TREE` server-side; the mobile drawer being
+     * Nav links remain crawlable because the desktop `HeaderNav` already renders
+     * the same `NAV_TREE` server-side; the mobile drawer being
      * client-only does not affect discoverability.
      *
      * The drawer is always rendered (when mounted) and shown/hidden via translate-x

@@ -88,6 +88,12 @@ export function termsDescription(t: SeoTranslator): string {
     return t('terms.description');
 }
 
+/**
+ * 본문 제목·브레드크럼·푸터 링크 라벨(`Siglens 소개`). 한글 표기(`SITE_NAME_KO`)를
+ * 일부러 넣지 않았다 — 한글 브랜드는 메타 제목·설명·히어로 윗줄에서 한 번 소개하면
+ * 충분하고, 전 페이지 푸터 링크 라벨까지 길어지는 건 과하다(2026-10-04 사용자 결정:
+ * 과하지 않게 넣는다).
+ */
 export function aboutTitle(t: SeoTranslator): string {
     return t('about.title');
 }

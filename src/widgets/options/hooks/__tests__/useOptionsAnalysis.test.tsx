@@ -162,9 +162,10 @@ describe('useOptionsAnalysis — trigger coverage', () => {
         mockSubmit.mockResolvedValue({ status: 'miss_no_trigger' });
 
         const wrapper = makeWrapper();
-        const { result } = renderHook(() => useOptionsAnalysis(INPUT), {
-            wrapper,
-        });
+        const { result } = renderHook(
+            () => useOptionsAnalysis({ ...INPUT, cacheOnly: true }),
+            { wrapper }
+        );
 
         await waitFor(() => {
             expect(result.current.status).toBe('cache_miss');
@@ -188,5 +189,41 @@ describe('useOptionsAnalysis — trigger coverage', () => {
             expect(result.current.status).toBe('error');
         });
         expect(typeof result.current.trigger).toBe('function');
+    });
+});
+
+describe('useOptionsAnalysis — AI 자동 실행 게이트', () => {
+    beforeEach(() => {
+        mockSubmit.mockReset();
+    });
+
+    it('게이트가 닫혀 있으면 캐시 전용으로 묻고, 미스면 cache_miss가 아니라 awaiting_interaction이다', async () => {
+        mockSubmit.mockResolvedValue({ status: 'miss_no_trigger' });
+        const { result } = renderHook(
+            () => useOptionsAnalysis({ ...INPUT, autoRunAllowed: false }),
+            { wrapper: makeWrapper() }
+        );
+        await waitFor(() =>
+            expect(result.current.status).toBe('awaiting_interaction')
+        );
+        expect(mockSubmit).toHaveBeenCalledWith(
+            expect.objectContaining({
+                params: expect.objectContaining({ cacheOnly: true }),
+            })
+        );
+    });
+
+    it('OI stale(cacheOnly)이면 게이트와 무관하게 cache_miss다 — 입력해도 생성하지 않는다', async () => {
+        mockSubmit.mockResolvedValue({ status: 'miss_no_trigger' });
+        const { result } = renderHook(
+            () =>
+                useOptionsAnalysis({
+                    ...INPUT,
+                    cacheOnly: true,
+                    autoRunAllowed: false,
+                }),
+            { wrapper: makeWrapper() }
+        );
+        await waitFor(() => expect(result.current.status).toBe('cache_miss'));
     });
 });

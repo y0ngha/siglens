@@ -56,7 +56,17 @@ vi.mock('next/navigation', () => ({
     notFound: vi.fn(),
 }));
 
-import { generateMetadata } from '@/app/[locale]/terms/page';
+import { Suspense, type ReactElement, type ReactNode } from 'react';
+import TermsPage, { generateMetadata } from '@/app/[locale]/terms/page';
+
+/** 페이지가 돌려준 트리에서 Suspense 경계를 찾는다(자식 컴포넌트 안쪽은 보지 않는다). */
+function hasSuspense(node: ReactNode): boolean {
+    if (Array.isArray(node)) return node.some(hasSuspense);
+    if (node === null || typeof node !== 'object' || !('type' in node))
+        return false;
+    const element = node as ReactElement<{ children?: ReactNode }>;
+    return element.type === Suspense || hasSuspense(element.props.children);
+}
 
 const metadataFor = (locale = 'ko') =>
     generateMetadata({ params: Promise.resolve({ locale }) });
@@ -91,5 +101,16 @@ describe('Terms page', () => {
         expect(metadata.twitter).toEqual(
             expect.objectContaining({ card: 'summary' })
         );
+    });
+    /**
+     * ISR 응답은 통째로 버퍼링돼 스트리밍 이득이 없는데, React는 500B를 넘는 경계를
+     * fallback + 숨김 청크로 내보낸다. 빈 fallback 자리에 푸터가 먼저 그려졌다가
+     * 본문이 풀리며 밀려 모바일 CLS가 0.74였다(2026-10-04 운영 Lighthouse).
+     */
+    it('본문을 Suspense로 감싸지 않는다', async () => {
+        const tree = await TermsPage({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
+        expect(hasSuspense(tree)).toBe(false);
     });
 });

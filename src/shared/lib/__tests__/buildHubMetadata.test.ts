@@ -4,7 +4,7 @@ import {
     localeAlternatesFrom,
     localeCanonical,
     localeOpenGraph,
-    localeRobots,
+    localePageRobots,
 } from '@/shared/lib/seoAlternates';
 import { SITE_NAME } from '@/shared/lib/seo';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
@@ -34,7 +34,7 @@ async function legacyHubMetadata(
         ),
         robots: degraded
             ? { index: false, follow: true }
-            : localeRobots(locale),
+            : localePageRobots(locale),
         openGraph: {
             title: fullTitle,
             description,
