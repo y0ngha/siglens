@@ -129,3 +129,26 @@ AWS CLI v2가 자동 페이지네이션하므로 수동 페이징은 불필요.
 
 `06-asg.sh`가 max-size=4를 단일 소스로 설정한다. `08-scaling.sh`는 더 이상
 max-size를 건드리지 않는다(이전 06=2/08=4 표류 제거).
+
+2026-10부터 `08-scaling.sh`는 target-tracking 정책(`siglens-tt-albreq`, `siglens-tt-cpu`)을
+**삭제만** 한다(정책마다 관리형 알람 2개, 총 4개가 무료 티어를 차지하고 신호가치가 없었다). 증설은
+`siglens-capacity-needed` 알람(P1)을 받은 운영자가 `set-desired-capacity`로 수동 수행한다.
+max-size 4는 배포의 instance refresh가 일시적으로 2대 이상을 요구해 유지한다.
+
+## 알람 (2026-10 무료 티어 통합)
+
+CloudWatch 무료 티어(알람 지표 10개, 커스텀 메트릭 10개) 안에 맞추려고 원인별 알람을
+점수 알람 2개로 합쳤다. 상세 설계와 가중치는 `07-alarms.sh` 머리말이 정본이다.
+
+- 원인별 로그 필터 → `Siglens/Alerts`의 `P1Score`(5분 합) / `P2Score`(15분 합)에 가중치를
+  발행하고, 합계 100 이상이면 `siglens-p1` / `siglens-p2`가 울린다. 필터에 `defaultValue`가
+  없어서 사건이 없으면 메트릭도 과금되지 않는다(알람은 `FILL(m1,0)`으로 OK로 돌아온다).
+- **실행 순서: `07` → `13` → `14` → siglens-trader `infra/aws/provision.sh`.** 07이 옛 알람을
+  지우므로, 나머지가 필터를 점수 메트릭으로 옮기기 전까지는 그 원인들이 무알람이다.
+- **예산 여유 0.** 알람 지표는 siglens 9개(p1, p2, capacity-needed, disk-high, mem-high,
+  agent-spend, rds 수식 안의 3개) + trader instance-down 1개 = 10개다. 알람을 더하면 유료가
+  된다. `11-readiness-canary.sh`의 카나리 알람은 현재 배포돼 있지 않다. 새 신호는 알람이 아니라
+  점수 필터로 더한다.
+- 점수 알람은 원인별로 따로 울리지 않는다. P2가 ALARM인 동안 다른 원인이 더해져도 새 메일이
+  없고, 한 창이 조용히 지나 OK가 된 뒤에야 다시 알린다. 메일이 오면 Logs Insights로 그
+  시간대의 원인을 모두 확인한다(쿼리는 `07-alarms.sh` 머리말과 DEPLOY_RUNBOOK §3).

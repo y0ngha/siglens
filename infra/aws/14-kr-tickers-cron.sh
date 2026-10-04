@@ -4,7 +4,7 @@
 #
 # `PATCH /api/cron/kr-tickers`를 EventBridge classic Rule → API Destination으로
 # 하루 한 번 호출한다. 13-seo-prewarm.sh와 같은 배선이지만 **의도적으로 훨씬 작다**:
-# 그쪽은 5분 간격 10분짜리 LLM 배치라 Redis 루트 락·wall-clock 데드라인·알람 8종이
+# 그쪽은 5분 간격 10분짜리 LLM 배치라 Redis 루트 락·wall-clock 데드라인·알람 8종(현재는 점수 알람 하나로 통합)이
 # 필요했고, 이쪽은 하루 한 번 도는 10초짜리 멱등 작업이다. 겹쳐 돌아도 upsert와
 # 상폐 표시가 모두 멱등이라 락이 막아 줄 것이 없다.
 #
@@ -20,8 +20,7 @@
 #     bash infra/aws/14-kr-tickers-cron.sh
 #
 # 전제: --profile siglens (또는 AWS_PROFILE)로 events:*, iam:CreateRole/GetRole/
-#       PutRolePolicy, logs:PutMetricFilter, cloudwatch:PutMetricAlarm, sns:CreateTopic,
-#       secretsmanager:* 권한. CRON_SECRET은 04-params.sh가 SSM에 게시했어야 하고,
+#       PutRolePolicy, logs:PutMetricFilter, secretsmanager:* 권한(알람·SNS는 07-alarms.sh 소관). CRON_SECRET은 04-params.sh가 SSM에 게시했어야 하고,
 #       DATA_GO_KR_SERVICE_KEY도 SSM에 있어야 한다(없으면 라우트가 sync failed를 남긴다).
 #
 set -euo pipefail
@@ -127,50 +126,27 @@ aws events put-targets --rule "$RULE_NAME" --region "$REGION" \
   >/dev/null
 log "target wired: $RULE_NAME -> $DESTINATION_NAME"
 
-### 6) 알람 두 개 ###
-# 알람을 둘로 한정한 이유: 이 작업의 실패 모드는 두 가지뿐이다 — 호출이 아예 안
-# 갔거나(FailedInvocations), 갔는데 안에서 터졌거나(sync failed 로그). 유닛 단위
-# 부분 실패도, 데드라인도, 예산도 없어서 seo-prewarm의 나머지 알람이 대응할 대상이 없다.
-ALARM_SNS="${ALARM_SNS:-$(aws sns create-topic --name siglens-alerts --query TopicArn --output text --region "$REGION")}"
-[[ -n "${ALARM_EMAIL:-}" ]] && aws sns subscribe --topic-arn "$ALARM_SNS" --protocol email \
-  --notification-endpoint "$ALARM_EMAIL" --region "$REGION" >/dev/null 2>&1 || true
-# 07-alarms.sh와 같은 2단 체계. 티커 동기화 크론은 P2다 — 한 회차 실패해도 사용자에게
-# 즉시 보이는 장애가 아니고 다음 회차가 따라잡는다. 복구 알림은 보내지 않는다.
-ALARM_SNS_LOW="${ALARM_SNS_LOW:-$(aws sns create-topic --name siglens-alerts-low --query TopicArn --output text --region "$REGION")}"
-# 구독은 여기서도 건다(멱등). 07-alarms.sh만 구독하던 시절 이 스크립트들의 알람은
-# **구독자 0명인 토픽**으로 발동했다 — 콘솔만 빨개지고 아무에게도 안 갔다.
-LOW_EMAIL="${ALARM_EMAIL_LOW:-${ALARM_EMAIL:-}}"
-[[ -n "$LOW_EMAIL" ]] && aws sns subscribe --topic-arn "$ALARM_SNS_LOW" --protocol email \
-  --notification-endpoint "$LOW_EMAIL" --region "$REGION" >/dev/null 2>&1 || true
-ACTIONS="--alarm-actions $ALARM_SNS_LOW"
+### 6) 로그 메트릭 필터 (알람은 07-alarms.sh의 `siglens-p2` 점수 알람 하나로 통합) ###
+# 2026-10 CloudWatch 무료 티어 통합으로 이 스크립트의 알람 2개를 폐기했다.
+#   - `siglens-kr-tickers-delivery-failed`(EventBridge FailedInvocations): 하루 한 번 도는
+#     작업이라 딜리버리가 끊기면 sync 로그가 멎는다. 종목 마스터가 낡는 건 사용자에게
+#     즉시 보이는 장애가 아니므로 알람 지표 10개(무료 티어)를 쓰지 않는다.
+#   - `siglens-kr-tickers-sync-failed`: 필터는 유지하되 `Siglens/Alerts P2Score`에 가중치
+#     100(1건=즉시 발화)으로 발행하고, 알람은 07-alarms.sh의 `siglens-p2`가 합산 평가한다.
+# SNS 토픽·구독과 옛 알람 삭제(OBSOLETE_ALARMS)는 07-alarms.sh가 소유한다.
+# 필터에는 `defaultValue`를 붙이지 않는다(매 시간 0을 발행해 커스텀 메트릭 과금 — 07-alarms.sh의
+# FILL 설명 참조).
 
-# (a) 딜리버리 부재 — EventBridge가 타겟 호출 자체에 실패하면 앱 로그에 흔적이 없다.
-# shellcheck disable=SC2086
-aws cloudwatch put-metric-alarm --alarm-name "siglens-kr-tickers-delivery-failed" \
-  --namespace AWS/Events --metric-name FailedInvocations \
-  --dimensions Name=RuleName,Value="$RULE_NAME" \
-  --statistic Sum --period 300 --evaluation-periods 1 --threshold 0 \
-  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching \
-  $ACTIONS --region "$REGION"
-log "alarm siglens-kr-tickers-delivery-failed ready"
-
-# (b) 동기화 실패 — 라우트 안에서 던진 경우. ASCII 접두만 필터에 쓴다(13-seo-prewarm.sh
+# 동기화 실패 — 라우트 안에서 던진 경우. ASCII 접두만 필터에 쓴다(13-seo-prewarm.sh
 # FIX F와 같은 근거: 따옴표 안 non-ASCII 토큰 매칭이 검증되지 않았다).
 # 로그 그룹이 아직 없으면 put-metric-filter가 실패하지만 `|| true`로 넘어가므로,
 # 첫 배포에서는 10-logs.sh(또는 첫 인스턴스 부팅) 뒤에 이 스크립트를 **재실행**할 것.
 aws logs put-metric-filter --log-group-name "$LOG_GROUP" \
   --filter-name siglens-kr-tickers-sync-failed \
   --filter-pattern '"[kr-tickers] sync failed"' \
-  --metric-transformations "metricName=SiglensKrTickersSyncFailed,metricNamespace=Siglens,metricValue=1,defaultValue=0" \
+  --metric-transformations "metricName=P2Score,metricNamespace=Siglens/Alerts,metricValue=100" \
   --region "$REGION" >/dev/null 2>&1 || log "WARNING: put-metric-filter failed (log group $LOG_GROUP missing?) — re-run this script after 10-logs.sh"
-
-# shellcheck disable=SC2086
-aws cloudwatch put-metric-alarm --alarm-name "siglens-kr-tickers-sync-failed" \
-  --namespace Siglens --metric-name SiglensKrTickersSyncFailed \
-  --statistic Sum --period 86400 --evaluation-periods 1 --threshold 0 \
-  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching \
-  $ACTIONS --region "$REGION"
-log "alarm siglens-kr-tickers-sync-failed ready"
+log "metric filter siglens-kr-tickers-sync-failed ready (P2Score=100; alarm is siglens-p2 in 07-alarms.sh)"
 
 log "kr-tickers cron ready — verify with a manual invoke before trusting the schedule:"
 log "  curl -i -X PATCH https://siglens.io/api/cron/kr-tickers -H \"Authorization: Bearer \$CRON_SECRET\"  # expect 202"
