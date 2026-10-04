@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import type { AssetInfo } from '@/shared/lib/types';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
 import { isE2E } from '@/shared/api/e2eEnv';
@@ -41,8 +42,17 @@ export interface ResilientAssetInfo {
  * 제거하고 degrade 렌더가 ISR로 캐시되는 것을 허용한다 — degrade는 `degraded:true`로 noindex라
  * 검색 노출 위험이 없고, 다음 revalidate(또는 데이터 갱신 시 on-demand 무효화)에 인프라가 복구돼
  * 있으면 정상 데이터로 자동 갱신된다. 500(깨진 페이지)보다 degraded 200(noindex, fallback UX)이 낫다.
+ *
+ * 요청 스코프 메모(React `cache`): 한 종목 페이지를 그리는 동안 레이아웃·페이지·
+ * `generateMetadata`가 각자 이 함수를 같은 ticker로 부른다. `unstable_cache` HIT이어도
+ * 그때마다 incremental-cache를 읽는데, cache-handler가 S3로 외부화된 운영에서는 그게
+ * 실제 네트워크 왕복이다. 메모는 `unstable_cache` **위**에 둬야 한다 — 아래 층에 두면
+ * 캐시 HIT 경로가 콜백을 실행하지 않아 메모를 건너뛴다. 인자가 원시값(ticker 문자열)이라
+ * 호출부가 같은 표기(대문자)로 부르면 접힌다. 메모는 실패도 함께 접는다 — 위의 rethrow
+ * (`DYNAMIC_SERVER_USAGE`)는 같은 렌더의 다른 호출부에도 그대로 재생된다. 호출부가 전부
+ * 그 에러를 Next로 올려 보내므로 의도한 동작이다.
  */
-export async function getAssetInfoResilient(
+export const getAssetInfoResilient = cache(async function getAssetInfoResilient(
     ticker: string
 ): Promise<ResilientAssetInfo> {
     try {
@@ -65,4 +75,4 @@ export async function getAssetInfoResilient(
         }
         return { assetInfo: { symbol: ticker, name: ticker }, degraded: true };
     }
-}
+});
