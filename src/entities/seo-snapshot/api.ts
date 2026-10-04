@@ -191,31 +191,26 @@ export class DrizzleSeoSnapshotRepository {
                 )
             );
 
-        const best = new Map<
-            string,
-            {
-                symbol: string;
-                tab: SeoSnapshotTab;
-                generatedAt: Date;
-                rank: number;
-            }
-        >();
-        for (const row of rows) {
-            const rank = chain.indexOf(
-                toContentLocale(row.locale) ?? LEGACY_CONTENT_LOCALE
-            );
-            const key = `${row.symbol}:${row.tab}`;
-            const current = best.get(key);
-            if (current === undefined || rank < current.rank) {
-                best.set(key, {
-                    symbol: row.symbol,
-                    tab: row.tab as SeoSnapshotTab,
-                    generatedAt: row.generatedAt,
-                    rank,
-                });
-            }
-        }
-        return [...best.values()].map(({ symbol, tab, generatedAt }) => ({
+        // 같은 (symbol, tab)에 로케일별 행이 여러 개일 수 있다 — 폴백 체인에서 가장
+        // 앞선 로케일의 행 하나만 남긴다.
+        const ranked = rows
+            .map(row => ({
+                symbol: row.symbol,
+                tab: row.tab as SeoSnapshotTab,
+                generatedAt: row.generatedAt,
+                rank: chain.indexOf(
+                    toContentLocale(row.locale) ?? LEGACY_CONTENT_LOCALE
+                ),
+            }))
+            .toSorted((a, b) => a.rank - b.rank);
+        const firstPerKey = ranked.reduce<typeof ranked>(
+            (kept, row) =>
+                kept.some(k => k.symbol === row.symbol && k.tab === row.tab)
+                    ? kept
+                    : [...kept, row],
+            []
+        );
+        return firstPerKey.map(({ symbol, tab, generatedAt }) => ({
             symbol,
             tab,
             generatedAt,

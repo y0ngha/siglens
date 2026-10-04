@@ -274,11 +274,8 @@ export default async function SymbolFearGreedPage({ params }: Props) {
         );
     }
 
-    // 요약을 그릴지는 `FearGreedFactsSummary`가 정한다 — 같은 봉으로
-    // `computeFearGreedIndex`를 돌려 null이면 아무것도 그리지 않는다. 게이트
-    // (generateMetadata)의 `hasFearGreedScore`도 같은 core 함수·같은 입력이라 색인과
-    // 화면이 어긋나지 않는다(MISTAKES §2). 여기서 술어를 한 번 더 돌리면 ISR 렌더마다
-    // 같은 계산이 두 번 돌 뿐 결과는 같으므로 두지 않는다(2026-10-04 리뷰).
+    // 요약 여부는 `FearGreedFactsSummary`가 정한다(점수가 없으면 null). 게이트의
+    // `hasFearGreedScore`와 같은 core 계산·같은 입력이라 색인과 화면이 갈리지 않는다.
 
     return (
         <>

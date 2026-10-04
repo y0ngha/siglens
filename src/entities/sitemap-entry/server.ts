@@ -25,6 +25,7 @@ import {
     SITEMAP_SNAPSHOT_TABS,
     snapshotKey,
     type BuildPopularEntriesOptions,
+    type SitemapSnapshotTab,
 } from './lib/proseGate';
 import { buildRemovalEntries } from './lib/buildRemovalEntries';
 import {
@@ -256,7 +257,7 @@ async function loadUncachedPopularSitemapInputs(): Promise<SerializedPopularSite
             row =>
                 [
                     // safe: 쿼리가 `SITEMAP_SNAPSHOT_TABS`로 거른 행이다.
-                    snapshotKey(row.symbol, row.tab as 'technical' | 'news'),
+                    snapshotKey(row.symbol, row.tab as SitemapSnapshotTab),
                     row.generatedAt.toISOString(),
                 ] as const
         ),
