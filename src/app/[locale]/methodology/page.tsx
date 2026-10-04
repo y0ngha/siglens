@@ -4,7 +4,7 @@ import { resolveLocale } from '@/shared/i18n/locales';
 import {
     localeAlternatesFrom,
     localeOpenGraph,
-    localeRobots,
+    localePageRobots,
 } from '@/shared/lib/seoAlternates';
 import type { Metadata } from 'next';
 import { JsonLd } from '@/shared/ui/JsonLd';
@@ -97,7 +97,7 @@ export async function generateMetadata({
         title: { absolute: methodologyFullTitle(tSeo) },
         description: methodologyDescription(tSeo),
         // 색인은 `STATIC_INDEXABLE_LOCALES`(ko)만 — 판정은 `localeRobots`가 소유한다.
-        robots: localeRobots(locale),
+        robots: localePageRobots(locale),
         alternates: await localeAlternatesFrom(params, METHODOLOGY_PATH),
         openGraph: {
             type: 'article',

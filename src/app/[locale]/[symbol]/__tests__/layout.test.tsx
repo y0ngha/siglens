@@ -289,6 +289,25 @@ describe('SymbolLayoutChrome — 봉 seed 없이 공포·탐욕 스냅샷만 내
     });
 
     /**
+     * 장애 폴백으로 푼 assetInfo는 다른 고정값으로 심는다 — 클라이언트(`useAssetInfo`)가
+     * 그 시드만 stale로 보고 다시 받아 스스로 고친다. 정상 시드와 같은 값이면 장애 중에
+     * 구워진 ISR HTML의 폴백 값이 새로고침 전까지 남는다.
+     */
+    it('degraded면 시드를 다른 고정 updatedAt으로 심는다 (값은 재생성마다 같다)', async () => {
+        await SymbolLayoutChrome({
+            assetInfo: ASSET_INFO,
+            degraded: true,
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+
+        const assetSeedCalls = mockSetQueryData.mock.calls.filter(
+            ([key]) => Array.isArray(key) && key[0] === 'assetInfo'
+        );
+        expect(assetSeedCalls).toHaveLength(1);
+        expect(assetSeedCalls[0][2]).toEqual({ updatedAt: 1 });
+    });
+
+    /**
      * 봉 조회 인자는 그대로 유지해야 한다 — page.tsx와 같은 인자여야 `React.cache`
      * 메모가 접혀 quantize가 요청당 한 번만 돈다. seed를 없앴다고 이 호출까지
      * 없앨 수는 없다(스냅샷 계산에 봉이 필요하다).

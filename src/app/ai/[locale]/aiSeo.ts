@@ -14,6 +14,7 @@ import {
     type Locale,
 } from '@/shared/i18n/locales';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
+import { localePageRobots } from '@/shared/lib/seoAlternates';
 import { ORGANIZATION_JSON_LD_ID, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 
 /** Product name as it appears in titles, cards and structured data. */
@@ -60,7 +61,6 @@ function buildAiPageMetadata(
     path: AiIndexablePath,
     copy: AiSeoCopy
 ): Metadata {
-    const indexable = STATIC_INDEXABLE_LOCALES.includes(locale);
     const languages: Record<string, string> = {};
     if (STATIC_INDEXABLE_LOCALES.length > 1) {
         for (const l of LOCALES) {
@@ -83,9 +83,9 @@ function buildAiPageMetadata(
             canonical: aiUrl(locale, path),
             ...(Object.keys(languages).length > 0 ? { languages } : {}),
         },
-        robots: indexable
-            ? { index: true, follow: true }
-            : { index: false, follow: true },
+        // 메인 사이트와 같은 헬퍼 — 레이아웃의 `robots`를 통째로 덮으므로 구글
+        // 미리보기 지시도 여기서 함께 낸다. 색인 게이트는 `STATIC_INDEXABLE_LOCALES`다.
+        robots: localePageRobots(locale),
         openGraph: {
             type: 'website',
             siteName: AI_PRODUCT_NAME,

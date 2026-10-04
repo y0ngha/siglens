@@ -14,6 +14,12 @@ import {
 // ticker.ts JSDoc 참조).
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { RESERVED_FIRST_SEGMENTS } from '@/shared/config/reservedFirstSegments';
+// 가드 경로 목록은 클라이언트(`NavigationPendingContext`)가 도착지를 예측할 때도 쓴다.
+// 외부 의존이 0인 상수 파일이라 edge runtime에서 안전하다.
+import {
+    AUTH_REQUIRED_PATHS,
+    GUEST_ONLY_PATHS,
+} from '@/shared/config/authGuardPaths';
 // 로케일 상수도 외부 의존이 0인 파일이라 edge runtime에서 안전하다(위 주석과 같은 이유).
 import {
     DEFAULT_LOCALE,
@@ -488,15 +494,6 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     // `[locale]` 세그먼트로의 내부 rewrite가 일어난다.
     return intlMiddleware(req);
 }
-
-const GUEST_ONLY_PATHS = new Set([
-    '/login',
-    '/signup',
-    '/forgot-password',
-    '/reset-password',
-]);
-
-const AUTH_REQUIRED_PATHS = ['/account', '/portfolio'];
 
 export const config = {
     matcher: [

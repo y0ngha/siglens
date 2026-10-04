@@ -126,6 +126,7 @@ import {
     KR_DASHBOARD_SCOPE,
     US_DASHBOARD_SCOPE,
 } from '@/shared/config/dashboardScope';
+import { INDEXABLE_PAGE_ROBOTS } from '@/shared/test-utils/indexablePageRobots';
 
 describe('Market page', () => {
     describe('ISR route config', () => {
@@ -186,7 +187,7 @@ describe('Market page', () => {
             const metadata = await generateMetadata({
                 params: Promise.resolve({ locale: 'ko' }),
             });
-            expect(metadata.robots).toEqual({ index: true, follow: true });
+            expect(metadata.robots).toMatchObject(INDEXABLE_PAGE_ROBOTS);
         });
 
         /**
@@ -228,7 +229,7 @@ describe('Market page', () => {
             expect(metadata.alternates?.canonical).toBe(
                 'https://siglens.io/market'
             );
-            expect(metadata.robots).toEqual({ index: true, follow: true });
+            expect(metadata.robots).toMatchObject(INDEXABLE_PAGE_ROBOTS);
         });
 
         it('두 loader가 모두 throw해도 degrade 경로로 폴백해 canonical=null + noindex', async () => {
@@ -309,6 +310,7 @@ describe('Market page', () => {
                         indices: [],
                         sectors: [],
                     }),
+                    scope: 'us',
                 }),
                 expect.objectContaining({ updatedAt: expect.any(Number) })
             );
@@ -339,9 +341,12 @@ describe('Market page', () => {
                 expect.any(String),
                 KR_DASHBOARD_SCOPE
             );
+            // 시드는 자기 시장을 밝혀야 한다 — `useMarketSummary`는 미국 밖 시장에서
+            // `scope`가 일치하지 않는 데이터를 버리므로, 빠지면 `/market/kr`의 서버
+            // HTML에 지수·섹터 카드가 하나도 안 그려진다.
             expect(mockSetQueryData).toHaveBeenCalledWith(
                 ['market-summary', 'kr'],
-                expect.anything(),
+                expect.objectContaining({ scope: 'kr' }),
                 expect.anything()
             );
             expect(mockSetQueryData).toHaveBeenCalledWith(

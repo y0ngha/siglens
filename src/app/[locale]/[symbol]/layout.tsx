@@ -15,7 +15,7 @@ import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
 import { SymbolViewPing } from '@/features/visitor-ping/ui/SymbolViewPing';
 import { SymbolHeaderShellFallback } from './SymbolHeaderShellFallback';
 import { SymbolTabPendingSlot } from '@/views/symbol/SymbolTabPendingContext';
-import SymbolLoading from './loading';
+import { SymbolTabSkeleton } from './SymbolTabSkeleton';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
@@ -24,6 +24,7 @@ import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilie
 import { pickAssetName } from '@/entities/ticker/lib/ticker';
 import { marketProfileOf } from '@/shared/config/marketProfile/registry';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
+import { assetInfoSeedUpdatedAt } from '@/shared/config/assetInfoSeed';
 import { computeFearGreedIndex } from '@y0ngha/siglens-core';
 import type { AssetInfo } from '@/shared/lib/types';
 import { enterLocale } from '@/shared/lib/enterLocale';
@@ -128,10 +129,11 @@ export default async function SymbolLayout({
                     <Suspense fallback={<SymbolHeaderShellFallback />}>
                         <SymbolLayoutChrome
                             assetInfo={assetInfo}
+                            degraded={degraded}
                             params={params}
                         />
                     </Suspense>
-                    <SymbolTabPendingSlot fallback={<SymbolLoading />}>
+                    <SymbolTabPendingSlot fallback={<SymbolTabSkeleton />}>
                         {children}
                     </SymbolTabPendingSlot>
                 </SymbolLayoutJail>
@@ -193,6 +195,8 @@ interface SymbolLayoutSegmentProps {
 
 interface SymbolLayoutChromeProps extends SymbolLayoutSegmentProps {
     assetInfo: AssetInfo;
+    /** `getAssetInfoResilient`가 폴백으로 푼 값인가. 시드의 `updatedAt`을 가른다. */
+    degraded?: boolean;
 }
 
 /**
@@ -211,6 +215,7 @@ interface SymbolLayoutChromeProps extends SymbolLayoutSegmentProps {
  */
 export async function SymbolLayoutChrome({
     assetInfo,
+    degraded = false,
     params,
 }: SymbolLayoutChromeProps) {
     const { symbol } = await params;
@@ -226,11 +231,13 @@ export async function SymbolLayoutChrome({
         defaultOptions: { queries: { staleTime: QUERY_STALE_TIME_MS } },
     });
 
-    // assetInfo는 fundamental data로 거의 불변 — updatedAt 0으로 고정해 ISR HTML 결정성 보장.
+    // assetInfo는 fundamental data로 거의 불변 — updatedAt을 고정값으로 심어 ISR HTML 결정성 보장.
     // Date.now() 기본값은 매 ISR 재생성마다 다른 timestamp가 dehydrated state에 박혀 write churn 유발.
+    // 고정값은 정상 조회와 장애 폴백(degraded)이 다르다 — 클라이언트가 폴백 시드만 다시 받는다
+    // (`ASSET_INFO_SEED_UPDATED_AT`).
     // (null 분기는 없다 — 레이아웃 가드가 null assetInfo를 이미 404로 끊는다.)
     queryClient.setQueryData(QUERY_KEYS.assetInfo(symbol), assetInfo, {
-        updatedAt: 0,
+        updatedAt: assetInfoSeedUpdatedAt(degraded),
     });
 
     // ISR write churn 차단: quantize로 forming 봉을 제거 + setQueryData에 안정 updatedAt

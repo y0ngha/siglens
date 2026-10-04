@@ -29,6 +29,11 @@ import { join } from 'node:path';
 import { NextResponse, type NextRequest } from 'next/server';
 import { proxy } from '@/proxy';
 import { LOCALES } from '@/shared/i18n/locales';
+import {
+    AUTH_REQUIRED_PATHS,
+    GUEST_ONLY_PATHS,
+    predictGuardedLanding,
+} from '@/shared/config/authGuardPaths';
 
 const mockRedirect = NextResponse.redirect as MockedFunction<
     typeof NextResponse.redirect
@@ -136,6 +141,36 @@ describe('proxy', () => {
             expect(mockPass).toHaveBeenCalledTimes(1);
             expect(mockRedirect).not.toHaveBeenCalled();
         });
+    });
+
+    /**
+     * 가드 경로 목록은 `shared/config/authGuardPaths`에 있고 클라이언트도 같은 목록으로
+     * 도착지를 예측한다(`predictGuardedLanding`). 프록시가 그 목록대로 **실제로 동작하는지**와
+     * 예측이 프록시의 결과와 **같은 곳을 가리키는지**를 목록 전체에 대해 본다 — 한쪽만
+     * 고쳐지면 클릭 직후 엉뚱한 골격이 뜨거나 골격이 풀리지 않는다.
+     */
+    describe('가드 경로 목록과 도착지 예측의 일치', () => {
+        it.each([...GUEST_ONLY_PATHS])(
+            '%s — 세션이 있으면 프록시도 예측도 홈으로 보낸다',
+            async path => {
+                await proxy(makeRequest('valid-token', path));
+
+                expect(mockRedirect).toHaveBeenCalledTimes(1);
+                const landed = (mockRedirect.mock.calls[0]![0] as URL).pathname;
+                expect(landed).toBe(predictGuardedLanding(path, true));
+            }
+        );
+
+        it.each([...AUTH_REQUIRED_PATHS])(
+            '%s — 세션이 없으면 프록시도 예측도 로그인으로 보낸다',
+            async path => {
+                await proxy(makeRequest(undefined, path));
+
+                expect(mockRedirect).toHaveBeenCalledTimes(1);
+                const landed = (mockRedirect.mock.calls[0]![0] as URL).pathname;
+                expect(landed).toBe(predictGuardedLanding(path, false));
+            }
+        );
     });
 
     describe('전방 가드 — auth-required 경로', () => {

@@ -1,4 +1,3 @@
-import { Suspense } from 'react';
 import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -133,9 +132,10 @@ export default async function TermsPage({
 }) {
     const { locale: rawLocale } = await params;
     const locale = enterLocale(rawLocale);
-    // **`<Suspense>` 밖에서** 조회하고 `notFound()`를 던진다. 안에서 던지면 셸이
-    // 이미 스트리밍을 시작한 뒤라 Next가 응답을 200으로 확정해 버려, 화면은 404인데
-    // 상태 코드는 200인 soft-404가 된다(2026-09 구글 정책 감사 M7).
+    // 조회와 `notFound()`는 **Suspense 경계 밖**(여기)에서 한다. 경계 안에서 던지면
+    // 셸이 이미 스트리밍을 시작한 뒤라 Next가 응답을 200으로 확정해 버려, 화면은
+    // 404인데 상태 코드는 200인 soft-404가 된다(2026-09 구글 정책 감사 M7).
+    // 이 페이지에 경계를 다시 넣게 되더라도 이 줄들은 그 위에 남아야 한다.
     const [load, tSeo] = await Promise.all([
         loadLegalTerms(POLICY.kind, locale),
         getTranslations({ locale, namespace: 'shared.seo' }),
@@ -149,11 +149,11 @@ export default async function TermsPage({
         <>
             <JsonLd data={legalPolicyWebPageJsonLd(POLICY, tSeo, locale)} />
             <JsonLd data={legalPolicyBreadcrumbJsonLd(POLICY, tSeo, locale)} />
-            <Suspense
-                fallback={<div className="animate-pulse" aria-hidden="true" />}
-            >
-                <TermsContent locale={locale} terms={terms} />
-            </Suspense>
+            {/* 본문을 Suspense로 감싸지 않는다. ISR 응답은 통째로 버퍼링돼 스트리밍
+                이득이 없는데, React는 500B를 넘는 경계를 fallback + 숨김 청크로
+                내보낸다 — 빈 fallback 자리에 푸터가 먼저 그려졌다가 본문이 풀리며
+                밀려 모바일 CLS가 0.74였다(2026-10-04 운영 Lighthouse). */}
+            <TermsContent locale={locale} terms={terms} />
         </>
     );
 }

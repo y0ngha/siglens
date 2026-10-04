@@ -396,6 +396,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ <NewsAiSummary />  // component name is self-explanatory
     → Recurring: 3 instances in PR #413 (R7 NewsAugment, R10 news/page, plus component removal)
 
+15.51. Comment/JSDoc blocks must be rewrapped when lengthened during edits
+    → When editing a comment or JSDoc block, if the edit causes a line to exceed the file's existing wrap width, re-wrap the entire block to match the surrounding style
+    → Inconsistent line wrapping within a file creates visual noise and makes diffs harder to review
+    → Applies to: inline comments, JSDoc blocks, multi-line documentation strings
+    ❌ // Existing comment with consistent 80-char wrap width
+       // after edit: lengthened line now 95 chars, breaks file style
+    ✅ // Existing comment with consistent 80-char wrap width
+       // after edit: rewrapped to match existing style
+       // across multiple lines as needed
+    → Recurring: PR #939 (about/page.tsx brand-name edit), PR #940 (robots metadata JSDoc edit) — 2 occurrences
+
 15.7. Market/scope/region-specific strings hardcoded instead of derived from context
     → Market names ('미국 증시', '한국 증시'), error messages, and region-specific text must not be hardcoded in components
     → Always derive from context (scope object, props, constants) passed explicitly to the component
@@ -1055,6 +1066,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Mock returns once {status:'processing'}, then never-settling promise; loop yields cleanly
    ✅ Reset mocks in beforeEach; run failure-path tests in isolation
    → Recurring: feat/bot-cost-caching R1, test/views-coverage-include, fix/bars-seed-fold R2 (3 occurrences)
+
+8.7. Barrel exports breaking partial mocks — adding exports to a mocked barrel
+   → When a module is partially mocked in tests (vi.mock('<barrel>', { SpecificExport: vi.fn() })), adding new exports to that module can break tests that expected the mock to be complete
+   → Barrel modules that are partially mocked in multiple test files must document which exports are mocked and require all new exports to be added to every partial mock
+   → When adding exports to a barrel that is mocked elsewhere: grep for `vi.mock('<barrel>'` calls in test files, update mocks to include the new exports
+   → Alternatively: put new exports in separate files instead of adding them to frequently-mocked barrels
+   ❌ feat/symbol-chat-to-ai-host adds fallbackAnalysis to entities/analysis barrel; src/__integration__/analysisFlow.test.tsx partially mocks the barrel and misses the new export
+   ❌ perf/symbol-hydration-action-chain adds export to queryConfig.ts; partial mocks of that module in 14 untouched tests now fail
+   ✅ Before adding export to a barrel: grep test files for `vi.mock('path/to/barrel'` and verify all mock implementations include the new export
+   ✅ Or: put the new export in a separate file (e.g., `queryConfig/newFeature.ts`) and import from there, avoiding barrel modification
+   → Recurring: feat/symbol-chat-to-ai-host Round 1–2, perf/symbol-hydration-action-chain — 2 occurrences
 
 9. Test describe text promises assertions not verified by its it() cases
    → describe() block name must describe only the preconditions/feature shared by all its it() cases
@@ -2125,4 +2147,61 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Always update body and digest together; re-run `yarn skills:digest-update` after editing either one to recompute digest_hash
    ✅ Commit digest_hash change; if hash stays the same, verify both digest and body reflect current truth
    → Recurring: fix/washout-entry-verdict R1 (digest/body sync); fix/skills-computed-lines R1 (digest edited without body sync) — 2 occurrences confirmed only in digest-verify log
+```
+
+---
+
+## Test Isolation & Global State Management
+
+```
+1. Non-isolated test lanes must restore every global mutation in afterEach
+   → Vitest `unstubAllGlobals()` and `restoreAllMocks()` do not undo Object.defineProperty, setTimeout overrides, or direct prototype mutations
+   → Files moved to non-isolated lanes (for performance) that mutate globals must capture the original state before the test and restore it per-test, not just per-lane
+   → The shared afterEach in a non-isolated lane must also reset root-element attributes (data-theme, style.colorScheme) that survive across document clearing
+   ❌ Files using Object.defineProperty('window', 'matchMedia', { ... }) moved to non-isolated lane; afterEach calls unstubAllGlobals() only
+      → descriptor leaks to next file in the worker, causing matching logic to fail
+   ❌ Non-isolated lane resets only document.body children; <html> and <body> attributes (data-theme, style.colorScheme) survive into next test
+   ✅ Capture descriptor at module top: const originalDescriptor = Object.getOwnPropertyDescriptor(window, 'matchMedia');
+      afterEach restores: Object.defineProperty(window, 'matchMedia', originalDescriptor)
+   ✅ Root-element reset in afterEach: document.documentElement.removeAttribute('data-theme'); document.documentElement.style.colorScheme = ''
+   → Recurring: feat/hub-ai-prewarm R2 (test isolation accidental), chore/ci-speedup R1 (non-isolated afterEach incomplete) — 2 occurrences
+
+2. Test files must explicitly mock external dependencies; accidental protection by global stubs is false isolation
+   → When test files exercise real I/O paths (LLM, Redis, HTTP), they must declare explicit `vi.mock()` statements for each dependency
+   → Accidental protection (a global fetch stub, top-level environment gate) hides the need for explicit mocking
+   → When global protection is removed or configuration changes, tests that relied on accident-protection will silently start exercising real endpoints
+   ❌ Three sibling test files call real LLM/Redis hub logic, protected only by a global fetch stub that was intended for unrelated E2E tests
+      → Real dependencies exercised; no explicit vi.mock in the test files
+      → If the global stub is removed or configuration changes, tests will start calling real services
+   ✅ Add explicit `vi.mock('../hubs', { default: { ... } })` to all test files that exercise external dependencies
+   ✅ Verify isolation by removing the global stub; tests must still pass (or explicitly fail on the mocked failure)
+   → Recurring: feat/hub-ai-prewarm R2 (accidental protection discovered during code review) — 2 occurrences across sibling files
+```
+
+---
+
+## Third-Party Library Contracts
+
+```
+1. Transport/driver changes must verify security semantics before and after
+   → When replacing a transport layer (DB driver, HTTP client, cache backend), security properties (TLS verification, encryption mode, authentication) must be compared explicitly
+   → A change from one driver to another can silently downgrade security: e.g., postgres-js `sslmode=require` means encrypt-without-verify (unlike pg which defaults to verify-full)
+   → Verify with a production build against a test server using self-signed TLS; assert the negotiated cipher suite and TLS version are preserved
+   ❌ Swap neon-http (HTTPS, verified) for postgres-js (TCP + sslmode) without checking: sslmode=require downgrades to encrypt-without-verify
+   ❌ Comment claims "strong TLS" but sslmode mode lacks certificate verification; silent downgrade accepted by peer review until production probe
+   ✅ resolveSslOption() upgrades require/prefer to verify-full for non-local hosts; revert conditional logic after verifying test server rejects self-signed certs
+   ✅ Unit test: self-signed server probe with throwaway cert; assert Node.js rejects the connection; only successful after sslmode → verify-full upgrade
+   → Recurring: refactor/db-postgres-js-driver R1 (TLS downgrade); multiple driver changes across infrastructure migrations — 2 occurrences
+
+2. Cache/serialization behavior must be verified against the real third-party client, not mocks
+   → Unit tests with mocked third-party clients define mock behavior, not the real library's contract
+   → Serialization (compression, encoding, type coercion), request/response formatting, and pipelining behavior differ between real and stubbed clients
+   → A design depending on a third-party client's serialization must verify the contract with the real client over a stubbed transport (fetch, network), not with a fully mocked client
+   ❌ redis-cache-compression design assumes @upstash/redis sends/receives strings verbatim; verified only against a Map mock
+      → Real client base64-encodes responses; contract mismatch causes silent decompression failures
+   ❌ Cache key participation assumptions (which field affects the key) verified only with mock; real pipelining behavior unknown
+   ✅ cacheValueCodec.upstashContract.test.ts: instantiate real `new Redis({url, token})` with stubbed fetch that returns canned Upstash REST responses
+      → Assert actual request encoding (what the client sends) and response decoding (how real client parses it)
+   ✅ Verify pipelining: multiple requests batched → verify request order and response ordering matches
+   → Recurring: perf/redis-cache-compression R1 (Upstash contract test added); fixes silent mismatch between design assumptions and real behavior — 2 occurrences
 ```

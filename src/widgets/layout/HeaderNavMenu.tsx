@@ -16,17 +16,17 @@ import { isHrefActive, isVerticalActive } from './navActiveState';
 
 interface HeaderNavMenuProps {
     readonly vertical: NavVerticalNode;
-    /** 현재 경로. 정적 fallback(`HeaderNavStatic`)은 `null`을 넘겨 활성 표시를 끈다. */
+    /** 현재 경로. `null`이면 활성 표시를 끈다. */
     readonly pathname: string | null;
     /**
      * 패널 id의 네임스페이스. **호출부마다 달라야 한다.**
      *
-     * `HeaderNavStatic`(Suspense fallback)과 `HeaderNav`(본체)는 같은 트리
-     * 위치라 `useId()`가 **같은 값**을 발급한다. 둘 다 문서에 남으므로
-     * (fallback은 숨겨질 뿐 제거되지 않는다) 같은 id가 두 번 나오고,
-     * `getElementById`는 첫 매치를 돌려준다 — 즉 **보이는 메뉴의
-     * `aria-controls`가 숨겨진 fallback의 패널을 가리켰다**. 실측: 서빙 HTML에
-     * `aria-label="주요 네비게이션"` nav 2개, 중복 id 4개, 각 id의 참조 2개.
+     * 같은 트리 위치에서 이 메뉴를 두 번 렌더하면(예: Suspense fallback과 본체)
+     * `useId()`가 **같은 값**을 발급한다. 둘 다 서빙 HTML에 남아 같은 id가 두 번
+     * 나오고 `getElementById`는 첫 매치를 돌려준다 — 예전에 정적 fallback 판이
+     * 있었을 때 **보이는 메뉴의 `aria-controls`가 숨겨진 fallback의 패널을
+     * 가리켰다**. 지금 호출부는 `HeaderNav` 하나뿐이지만
+     * (`navPanelIdUniqueness.test.tsx`가 고정), 호출부가 다시 늘면 이 값으로 가른다.
      */
     readonly idScope: string;
 }

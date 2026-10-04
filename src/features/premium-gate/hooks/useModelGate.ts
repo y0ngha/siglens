@@ -8,6 +8,7 @@ import {
 } from '@y0ngha/siglens-core';
 import type { GateMode } from '@/shared/lib/types';
 import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
+import { useAuthHint } from '@/entities/auth/hooks/useAuthHint';
 import { getRegisteredProvidersAction } from '@/entities/api-key/actions/getRegisteredProvidersAction';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -60,11 +61,16 @@ export function useModelGate({
     // 다른 staleTime·gcTime으로 따로 정의해, 같은 캐시 항목의 재조회 기준이
     // 옵저버마다 달랐다.
     const { data: currentUser } = useCurrentUser();
+    const hasAuthHint = useAuthHint();
 
+    // 등록한 API 키는 회원에게만 있다. 게스트에게는 요청하지 않는다 — Server Action은
+    // 한 번에 하나씩만 나가서, 답이 항상 빈 목록인 이 요청도 뒤에 줄 선 요청을 한 번의
+    // 왕복(운영 실측 ~0.3s)만큼 늦춘다. 힌트 쿠키가 있으면 지금처럼 즉시, 없으면
+    // `currentUser`가 회원으로 확정된 뒤에 요청한다.
     const { data: registeredProviders = [] } = useQuery({
         queryKey: QUERY_KEYS.registeredProviders(),
         queryFn: getRegisteredProvidersAction,
-        enabled: isHydrated,
+        enabled: isHydrated && (hasAuthHint || currentUser != null),
         staleTime: REGISTERED_PROVIDERS_STALE_TIME_MS,
     });
 

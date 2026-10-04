@@ -800,7 +800,13 @@ export function useAnalysis({
 
     // 마운트 / symbol·timeframe 변경 시 서버 쿨다운 진실값을 동기화한다.
     // setState는 async IIFE 내부에서 호출되므로 react-hooks/set-state-in-effect 규칙 위반이 아니다.
+    //
+    // tier가 확정된 뒤에 보낸다. Server Action은 한 번에 하나씩만 나가는데, 이 요청이
+    // `currentUser`보다 먼저 줄을 서면 첫 분석 요청(tier 확정을 기다린다)이 한 번의 왕복만큼
+    // 늦어진다. 쿨다운 표시는 재분석 버튼에만 쓰이고, 그 버튼도 tier 확정 전에는 동작하지
+    // 않는다(`handleReanalyze`).
     useEffect(() => {
+        if (isTierHydrated === false) return;
         let cancelled = false;
         void (async () => {
             const remaining = await fetchReanalyzeCooldownMs(symbol, timeframe);
@@ -810,7 +816,7 @@ export function useAnalysis({
         return () => {
             cancelled = true;
         };
-    }, [symbol, timeframe]);
+    }, [symbol, timeframe, isTierHydrated]);
 
     // Abort the in-flight SSE stream on unmount so the ALB connection is
     // released and the browser does not process stale events for an
