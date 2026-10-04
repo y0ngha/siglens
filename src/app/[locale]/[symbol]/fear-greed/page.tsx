@@ -21,6 +21,7 @@ import {
     marketProfileOf,
 } from '@/shared/config/marketProfile/registry';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
+import { assetInfoSeedUpdatedAt } from '@/shared/config/assetInfoSeed';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
@@ -227,7 +228,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
         defaultOptions: { queries: { staleTime: QUERY_STALE_TIME_MS } },
     });
     queryClient.setQueryData(QUERY_KEYS.assetInfo(symbol), assetInfo, {
-        updatedAt: 0,
+        updatedAt: assetInfoSeedUpdatedAt(degraded),
     });
     // **`getSeedBarsStatic`을 쓴다** — layout.tsx와 같은 헬퍼·같은 인자(대문자 ticker)여야
     // 요청 스코프 메모가 접혀 지표가 한 벌만 직렬화된다.

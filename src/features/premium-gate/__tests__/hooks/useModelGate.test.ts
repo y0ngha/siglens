@@ -4,19 +4,33 @@ import { useModelGate } from '@/features/premium-gate/hooks/useModelGate';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import type { ModelId, LlmProvider } from '@y0ngha/siglens-core';
 
-let mockCurrentUser: { tier: string } | null = null;
+let mockCurrentUser: { tier: string } | null | undefined = null;
 let mockRegisteredProviders: { provider: string }[] = [];
+let mockHasAuthHint = false;
+/** 등록 프로바이더 쿼리가 마지막 렌더에서 받은 `enabled`. */
+let providersEnabled: boolean | undefined;
 
 vi.mock('@tanstack/react-query', () => ({
-    useQuery: ({ queryKey }: { queryKey: readonly string[] }) => {
+    useQuery: ({
+        queryKey,
+        enabled,
+    }: {
+        queryKey: readonly string[];
+        enabled?: boolean;
+    }) => {
         if (queryKey[0] === QUERY_KEYS.currentUser()[0]) {
             return { data: mockCurrentUser };
         }
         if (queryKey[0] === QUERY_KEYS.registeredProviders()[0]) {
+            providersEnabled = enabled;
             return { data: mockRegisteredProviders };
         }
         return { data: undefined };
     },
+}));
+
+vi.mock('@/entities/auth/hooks/useAuthHint', () => ({
+    useAuthHint: () => mockHasAuthHint,
 }));
 
 vi.mock('@y0ngha/siglens-core', () => ({
@@ -52,6 +66,46 @@ describe('useModelGate', () => {
         vi.clearAllMocks();
         mockCurrentUser = null;
         mockRegisteredProviders = [];
+        mockHasAuthHint = false;
+        providersEnabled = undefined;
+    });
+
+    /**
+     * 등록한 API 키는 회원에게만 있다. 게스트에게 이 요청을 보내면 답은 항상 빈 목록인데
+     * Server Action 큐에서 뒤에 선 요청이 한 번의 왕복만큼 늦어진다.
+     */
+    describe('등록 프로바이더 조회 조건', () => {
+        const mount = async () => {
+            const view = renderHook(() => useModelGate({ onAllow: vi.fn() }));
+            // useHydrated가 켜진 뒤의 값을 본다.
+            await act(async () => {});
+            return view;
+        };
+
+        it('게스트로 확정되면 조회하지 않는다', async () => {
+            mockCurrentUser = null;
+            await mount();
+            expect(providersEnabled).toBe(false);
+        });
+
+        it('회원 여부를 아직 모르면 조회하지 않는다', async () => {
+            mockCurrentUser = undefined;
+            await mount();
+            expect(providersEnabled).toBe(false);
+        });
+
+        it('회원으로 확정되면 조회한다', async () => {
+            mockCurrentUser = { tier: 'member' };
+            await mount();
+            expect(providersEnabled).toBe(true);
+        });
+
+        it('힌트 쿠키가 있으면 회원 확정을 기다리지 않고 조회한다', async () => {
+            mockCurrentUser = undefined;
+            mockHasAuthHint = true;
+            await mount();
+            expect(providersEnabled).toBe(true);
+        });
     });
 
     it('returns null gateModal initially', () => {

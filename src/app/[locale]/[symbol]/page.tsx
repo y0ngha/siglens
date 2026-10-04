@@ -31,6 +31,7 @@ import {
 } from '@/entities/bars/lib/barsStaticCache';
 import { countSkillFiles } from '@/entities/skill/api';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
+import { assetInfoSeedUpdatedAt } from '@/shared/config/assetInfoSeed';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
@@ -285,7 +286,7 @@ export default async function SymbolPage({ params }: Props) {
     });
 
     queryClient.setQueryData(QUERY_KEYS.assetInfo(symbol), assetInfo, {
-        updatedAt: 0,
+        updatedAt: assetInfoSeedUpdatedAt(degraded),
     });
 
     // prefetchQuery(bars 재호출)는 제거 — forming 봉이 포함된 라이브 bars가

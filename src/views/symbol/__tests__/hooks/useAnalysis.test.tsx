@@ -3,7 +3,7 @@ import { useAnalysis } from '@/views/symbol/hooks/useAnalysis';
 import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import { getReanalyzeCooldownMs } from '@/entities/analysis/lib/reanalyzeCooldown';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import type {
     AnalysisResponse,
     Tier,
@@ -109,6 +109,56 @@ describe('useAnalysis', () => {
 
     afterEach(() => {
         queryClients.splice(0).forEach(client => client.clear());
+    });
+
+    /**
+     * 쿨다운 조회는 Server Action이라 다른 액션과 한 줄로 나간다. tier 확정(`currentUser`)보다
+     * 먼저 줄을 서면 첫 분석 요청이 한 번의 왕복만큼 늦어지므로 tier 확정 뒤에 보낸다.
+     */
+    describe('쿨다운 동기화 시점', () => {
+        it('tier가 아직 확정되지 않았으면 쿨다운을 조회하지 않는다', async () => {
+            (getReanalyzeCooldownMs as Mock).mockClear();
+
+            renderHook(
+                () => useAnalysis(makeOptions({ isTierHydrated: false })),
+                { wrapper: makeWrapper() }
+            );
+            await act(async () => {});
+
+            expect(getReanalyzeCooldownMs).not.toHaveBeenCalled();
+        });
+
+        it('tier가 확정되면 그때 조회한다', async () => {
+            (getReanalyzeCooldownMs as Mock).mockClear();
+            (getReanalyzeCooldownMs as Mock).mockResolvedValue(42_000);
+
+            const { result, rerender } = renderHook(
+                ({ hydrated }: { hydrated: boolean }) =>
+                    useAnalysis(makeOptions({ isTierHydrated: hydrated })),
+                { wrapper: makeWrapper(), initialProps: { hydrated: false } }
+            );
+            await act(async () => {});
+            expect(getReanalyzeCooldownMs).not.toHaveBeenCalled();
+
+            rerender({ hydrated: true });
+
+            await waitFor(() =>
+                expect(result.current.reanalyzeCooldownMs).toBe(42_000)
+            );
+            expect(getReanalyzeCooldownMs).toHaveBeenCalledTimes(1);
+        });
+
+        it('tier 게이트를 쓰지 않는 호출부(undefined)는 지금처럼 마운트 때 조회한다', async () => {
+            (getReanalyzeCooldownMs as Mock).mockClear();
+
+            renderHook(() => useAnalysis(makeOptions()), {
+                wrapper: makeWrapper(),
+            });
+
+            await waitFor(() =>
+                expect(getReanalyzeCooldownMs).toHaveBeenCalledTimes(1)
+            );
+        });
     });
 
     describe('isModelHydrated', () => {

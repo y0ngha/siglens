@@ -7,6 +7,24 @@ vi.mock('@/entities/portfolio/actions/savePortfolioHoldingAction', () => ({
 vi.mock('@/entities/portfolio/actions/deletePortfolioHoldingAction', () => ({
     deletePortfolioHoldingAction: vi.fn(),
 }));
+// 회원 여부의 두 신호. 기본값은 "힌트 쿠키가 있는 회원" — 아래 기존 케이스들은 회원의
+// 보유종목 흐름을 본다. 게스트·미확정 케이스는 '회원 여부에 따른 요청' 블록이 바꿔 쓴다.
+const identity = vi.hoisted(() => ({
+    hasAuthHint: true,
+    currentUser: undefined as { id: string } | null | undefined,
+    /** `currentUser` 조회가 실패로 끝났는가 — 데이터는 없지만 더 이상 pending이 아니다. */
+    userQueryFailed: false,
+}));
+vi.mock('@/entities/auth/hooks/useAuthHint', () => ({
+    useAuthHint: () => identity.hasAuthHint,
+}));
+vi.mock('@/entities/auth/hooks/useCurrentUser', () => ({
+    useCurrentUser: () => ({
+        data: identity.currentUser,
+        isPending:
+            identity.currentUser === undefined && !identity.userQueryFailed,
+    }),
+}));
 
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -58,6 +76,9 @@ describe('usePortfolioHoldings', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockGetPortfolioHoldingsAction.mockResolvedValue([]);
+        identity.hasAuthHint = true;
+        identity.currentUser = undefined;
+        identity.userQueryFailed = false;
     });
 
     afterEach(() => {
@@ -204,5 +225,97 @@ describe('usePortfolioHoldings', () => {
 
         expect(mockGetPortfolioHoldingsAction).toHaveBeenCalledTimes(1);
         expect(result.current.holdings).toEqual([HOLDING]);
+    });
+
+    /**
+     * 보유종목은 회원 전용이라 게스트의 답은 항상 빈 목록이다. 그 요청을 보내면
+     * Server Action 큐에서 뒤에 선 요청(분석 스트림을 여는 데 필요한 것들)이 한 번의
+     * 왕복만큼 늦어진다.
+     */
+    describe('회원 여부에 따른 요청', () => {
+        it('게스트로 확정되면 요청 없이 빈 목록으로 끝난다', async () => {
+            identity.hasAuthHint = false;
+            identity.currentUser = null;
+
+            const { result } = renderHook(() => usePortfolioHoldings(), {
+                wrapper: makeWrapper(),
+            });
+
+            await waitFor(() => expect(result.current.isHydrated).toBe(true));
+            expect(result.current.isLoading).toBe(false);
+            expect(result.current.holdings).toEqual([]);
+            expect(mockGetPortfolioHoldingsAction).not.toHaveBeenCalled();
+        });
+
+        it('힌트도 없고 회원 여부도 아직 모르면 요청하지 않되 로딩으로 알린다', async () => {
+            identity.hasAuthHint = false;
+            identity.currentUser = undefined;
+
+            const { result } = renderHook(() => usePortfolioHoldings(), {
+                wrapper: makeWrapper(),
+            });
+
+            await waitFor(() => expect(result.current.isHydrated).toBe(true));
+            // "아직 모름"을 "빈 목록으로 확정"으로 읽으면 힌트 쿠키만 사라진 회원의
+            // 분석이 보유종목 없이 먼저 시작된다.
+            expect(result.current.isLoading).toBe(true);
+            expect(mockGetPortfolioHoldingsAction).not.toHaveBeenCalled();
+        });
+
+        it('힌트가 없어도 회원으로 확정되면 그때 요청한다', async () => {
+            identity.hasAuthHint = false;
+            identity.currentUser = undefined;
+            mockGetPortfolioHoldingsAction.mockResolvedValue([HOLDING]);
+
+            const { result, rerender } = renderHook(
+                () => usePortfolioHoldings(),
+                { wrapper: makeWrapper() }
+            );
+            await waitFor(() => expect(result.current.isHydrated).toBe(true));
+            expect(mockGetPortfolioHoldingsAction).not.toHaveBeenCalled();
+
+            identity.currentUser = { id: 'user-1' };
+            rerender();
+
+            // 회원으로 확정된 그 렌더부터 로딩이어야 한다 — 사이에 "확정된 빈 목록"으로
+            // 보이는 렌더가 끼면 분석이 보유종목 없이 출발한다.
+            expect(result.current.isLoading).toBe(true);
+            await waitFor(() =>
+                expect(result.current.holdings).toEqual([HOLDING])
+            );
+            expect(result.current.isLoading).toBe(false);
+        });
+
+        /**
+         * `currentUser` 조회가 실패하면 데이터는 계속 `undefined`다. 그걸 "아직 모름"으로
+         * 읽으면 로딩이 영영 안 풀려 첫 분석이 막힌다(분석은 보유종목 확정을 기다린다).
+         */
+        it('회원 조회가 실패로 끝나면 로딩을 풀고 빈 목록으로 둔다', async () => {
+            identity.hasAuthHint = false;
+            identity.currentUser = undefined;
+            identity.userQueryFailed = true;
+
+            const { result } = renderHook(() => usePortfolioHoldings(), {
+                wrapper: makeWrapper(),
+            });
+
+            await waitFor(() => expect(result.current.isHydrated).toBe(true));
+            expect(result.current.isLoading).toBe(false);
+            expect(result.current.holdings).toEqual([]);
+            expect(mockGetPortfolioHoldingsAction).not.toHaveBeenCalled();
+        });
+
+        it('힌트 쿠키가 있으면 회원 확정을 기다리지 않고 바로 요청한다', async () => {
+            identity.hasAuthHint = true;
+            identity.currentUser = undefined;
+
+            renderHook(() => usePortfolioHoldings(), {
+                wrapper: makeWrapper(),
+            });
+
+            await waitFor(() =>
+                expect(mockGetPortfolioHoldingsAction).toHaveBeenCalledTimes(1)
+            );
+        });
     });
 });
