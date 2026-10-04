@@ -61,6 +61,11 @@ const ANALYSIS = {
     keyLevels: { support: [{ price: 183.6, reason: '지지 근거'.repeat(20) }] },
 };
 const GOOD = `${'좋은 문장입니다. '.repeat(30)}\n\n지지선은 183.60달러입니다.`;
+/**
+ * 근거 없는 숫자 문장이 원문의 25%를 넘게 차지하는 꼬리 — 재시도 전 도려내기
+ * (`SALVAGE_BEFORE_RETRY_MAX_LOSS`)로는 너무 많이 잃어 재생성 경로를 타게 한다.
+ */
+const LARGE_BAD_TAIL = `\n\n${'목표가는 999.99달러입니다. '.repeat(8)}`;
 
 /**
  * 호출 기록은 인덱스가 아니라 판별 인자로 찾는다 — 앞선 비동기 호출이 먼저
@@ -223,9 +228,9 @@ describe('rewriteToPlainLanguage', () => {
         expect(callAiProviderRouter).toHaveBeenCalledOnce();
     });
 
-    it('가드가 걸리면 지적을 덧붙여 한 번만 재시도한다', async () => {
+    it('근거 없는 숫자를 도려내면 25%를 넘게 잃을 때는 지적을 덧붙여 한 번만 재시도한다', async () => {
         callAiProviderRouter
-            .mockResolvedValueOnce(`${GOOD} 목표가 999.99달러`)
+            .mockResolvedValueOnce(`${GOOD}${LARGE_BAD_TAIL}`)
             .mockResolvedValueOnce(GOOD);
 
         expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBe(
@@ -242,9 +247,7 @@ describe('rewriteToPlainLanguage', () => {
      * 사라지는 것보다 낫다.
      */
     it('재시도도 실패하면 어긋난 문장을 도려내고 살린다', async () => {
-        callAiProviderRouter.mockResolvedValue(
-            `${GOOD}\n\n목표가 999.99달러입니다.`
-        );
+        callAiProviderRouter.mockResolvedValue(`${GOOD}${LARGE_BAD_TAIL}`);
 
         const result = await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
 
@@ -255,6 +258,42 @@ describe('rewriteToPlainLanguage', () => {
         // 살려낸 결과도 저장한다 — 다음 조회가 같은 왕복을 반복하지 않는다.
         expect(repoInsert).toHaveBeenCalledOnce();
         expect(insertCallFor(result as string)).toBeDefined();
+    });
+
+    /**
+     * 위반이 짧으면(원문의 25% 이하) 재생성하지 않고 그 문장만 도려낸다 — 첫 시도 거부의
+     * 73%가 근거 없는 숫자였고 대개 문장 한두 개라, LLM을 한 번 더 부를 이유가 없다.
+     */
+    it('근거 없는 숫자가 짧게 끼면 재시도 없이 도려내 저장한다', async () => {
+        const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+        callAiProviderRouter.mockResolvedValueOnce(
+            `${GOOD}\n\n목표가 999.99달러입니다.`
+        );
+
+        const result = await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
+
+        expect(result).not.toBeNull();
+        expect(result).not.toContain('999.99');
+        expect(result).toContain('지지선은 183.60달러입니다');
+        expect(callAiProviderRouter).toHaveBeenCalledOnce();
+        expect(insertCallFor(result as string)).toBeDefined();
+        expect(infoSpy).toHaveBeenCalledWith(
+            '[analysisPlain] salvaged without retry',
+            expect.objectContaining({ symbol: 'AAPL' })
+        );
+        infoSpy.mockRestore();
+    });
+
+    /** 크기 접미사는 도려내서 고쳐지지 않으므로(10배 금액 오류) 짧아도 재시도한다. */
+    it('크기 접미사 위반은 짧아도 재시도한다', async () => {
+        callAiProviderRouter
+            .mockResolvedValueOnce(`${GOOD}\n\n시가총액은 1,573.1B달러입니다.`)
+            .mockResolvedValueOnce(GOOD);
+
+        expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBe(
+            GOOD.trim()
+        );
+        expect(callAiProviderRouter).toHaveBeenCalledTimes(2);
     });
 
     /** 모든 문장이 어긋난 숫자를 품고 있으면 도려낸 뒤 남는 것이 없어 버린다. */
