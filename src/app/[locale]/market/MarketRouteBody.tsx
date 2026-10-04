@@ -14,6 +14,7 @@ import { SectorSignalPanel } from '@/widgets/dashboard/SectorSignalPanel';
 import { SectorSignalPanelSkeleton } from '@/widgets/dashboard/SectorSignalPanelSkeleton';
 import { SignalTypeGuide } from '@/widgets/dashboard/SignalTypeGuide';
 import { peekBriefingStatic } from '@/entities/market-summary/api/briefingStaticCache';
+import { marketSummarySeed } from '@/entities/market-summary/lib/marketSummarySeed';
 import { DEFAULT_DASHBOARD_TIMEFRAME } from '@/shared/config/dashboard-tickers';
 import {
     toClientScope,
@@ -62,7 +63,7 @@ function buildDehydratedSeed(
     const queryClient = new QueryClient();
     queryClient.setQueryData(
         QUERY_KEYS.marketSummary(scope.id),
-        { summary },
+        marketSummarySeed(scope.id, summary),
         { updatedAt: stableUpdatedAt }
     );
     queryClient.setQueryData(
