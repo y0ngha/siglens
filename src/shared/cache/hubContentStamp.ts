@@ -26,7 +26,14 @@ import { getRedisClient } from '@/shared/cache/redisClient';
  * 바뀌지 않는 동안에는 키가 만료되지 않고 `at`이 첫 확인 시각으로 남는다. 크론이 7일 넘게
  * 확인하지 못한 표면(삭제된 카테고리 등)만 만료돼 저장량이 묶인다.
  */
-export const STAMP_TTL_SECONDS = 7 * SECONDS_PER_DAY;
+const STAMP_TTL_DAYS = 7;
+export const STAMP_TTL_SECONDS = STAMP_TTL_DAYS * SECONDS_PER_DAY;
+
+/**
+ * 남은 TTL이 전체의 이 비율 이상이면 되돌리지 않는다 — tick마다 표면 수만큼 SET을 내지
+ * 않으려는 것이고, 이 밑으로 내려오면 되돌리므로 만료는 일어나지 않는다.
+ */
+const STAMP_REFRESH_THRESHOLD_RATIO = 0.5;
 
 const KEY_PREFIX = 'hub-content-stamp';
 
@@ -103,13 +110,12 @@ export async function readHubContentStamp(
  * 본문을 확인했음을 기록한다.
  *
  * 해시가 저장된 것과 같으면 **`at`을 그대로 두고** TTL만 되돌린다 — `at`이 "그 내용이 처음
- * 나타난 시각"으로 남아야 한다(RSS `pubDate`). 크론은 같은 본문을 5분마다 다시 확인하므로
+ * 나타난 시각"으로 남아야 한다(RSS `pubDate`). 크론은 매 tick 같은 본문을 다시 확인하므로
  * 매번 덮어쓰면 pubDate가 항상 "방금"이 된다. TTL을 되돌리지 않으면 7일 넘게 안 바뀐 본문의
  * 키가 만료돼 다음 확인 때 `at`이 늦은 시각으로 새로 찍힌다 — 그래서 크론이 본문을 계속
  * 확인하는 한 pubDate는 첫 확인 시각으로 유지된다.
  *
- * 남은 TTL이 절반 이상이면 쓰지 않는다. tick마다(5분) 표면 수만큼 SET을 내지 않으려는 것이고,
- * 절반 밑으로 내려오면 되돌리므로 만료는 일어나지 않는다.
+ * 남은 TTL이 `STAMP_REFRESH_THRESHOLD_RATIO` 이상이면 쓰지 않는다(상수 JSDoc 참고).
  *
  * 실패는 삼킨다 — 부가 저장이 프리웜의 본업(생성·무효화)을 막으면 안 된다.
  */
@@ -127,7 +133,8 @@ export async function recordHubContentStamp(
             const remaining = await redis.ttl(keyFor(surface));
             // -1(만료 없음)·-2(키 없음)도 되돌린다 — 정상 흐름에서는 나오지 않는 값이라
             // 만료 없는 키가 남았다면 TTL을 다시 붙이는 쪽이 안전하다.
-            if (remaining >= STAMP_TTL_SECONDS / 2) return;
+            if (remaining >= STAMP_TTL_SECONDS * STAMP_REFRESH_THRESHOLD_RATIO)
+                return;
             await redis.set(
                 keyFor(surface),
                 { hash: existing.hash, at: existing.at },

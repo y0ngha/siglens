@@ -1143,6 +1143,11 @@ describe('runHubPrewarm — 새로 구운 허브 URL (IndexNow 제출용)', () =
     it('전부 새로 구우면 모든 허브의 공개 URL을 돌려준다', async () => {
         const result = await runHubPrewarm();
 
+        // 거시 브리핑과 미국 캘린더가 같은 `/economy`를 가리키지만 한 번만 담긴다.
+        expect(result.generatedUrls).toHaveLength(
+            new Set(result.generatedUrls).size
+        );
+
         expect(new Set(result.generatedUrls)).toEqual(
             new Set([
                 `${SITE_URL}/market`,

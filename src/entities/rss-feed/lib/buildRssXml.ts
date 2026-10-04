@@ -3,13 +3,14 @@ import type { RssChannel, RssItem } from '../model';
 
 /**
  * XML 1.0이 허용하지 않는 제어 문자(탭·개행·캐리지리턴 제외)와 비문자 코드 포인트.
+ * 제어 문자는 유니코드 속성 `Cc`로 표현한다 — 리터럴 범위를 쓰면 no-control-regex에 걸린다.
+ * `Cc`는 U+007F–U+009F(C1)도 포함하는데, XML 1.0이 허용은 하지만 쓰지 말라고 권하는
+ * 문자라 함께 지워도 잃는 것이 없다.
  *
  * 하나라도 남으면 문서 전체가 파싱 실패한다 — 리더가 피드를 통째로 버린다. 산문은 LLM
  * 출력이라 어떤 문자가 섞일지 보장할 수 없어 출력단에서 강제한다.
  */
-const XML_ILLEGAL_CHARS =
-    // eslint-disable-next-line no-control-regex -- XML 1.0이 허용하지 않는 제어 문자를 지우는 것이 이 정규식의 목적이다
-    /[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g;
+const XML_ILLEGAL_CHARS = /[^\P{Cc}\t\n\r]|[\uFFFE\uFFFF]/gu;
 
 function text(value: string): string {
     return escapeXml(value.replace(XML_ILLEGAL_CHARS, ''));

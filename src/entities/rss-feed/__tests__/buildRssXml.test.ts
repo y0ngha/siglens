@@ -142,16 +142,13 @@ describe('buildRssXml', () => {
             channel([
                 item({
                     description:
-                        'a\u0000b\u0008c\u000Bd\te\nf\u001Fg\uFFFEh\uFFFFi',
+                        'a\u0000b\u0008c\u000Bd\te\nf\u001Fg\uFFFEh\uFFFFi\u0085j',
                 }),
             ])
         );
 
-        expect(xml).toContain('<description>abcd\te\nfghi</description>');
-        expect(xml).not.toMatch(
-            // eslint-disable-next-line no-control-regex -- XML 1.0이 허용하지 않는 제어 문자를 지우는 것이 이 정규식의 목적이다
-            /[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/
-        );
+        expect(xml).toContain('<description>abcd\te\nfghij</description>');
+        expect(xml).not.toMatch(/[^\P{Cc}\t\n\r]|[\uFFFE\uFFFF]/u);
     });
 
     it('한글은 그대로 UTF-8로 낸다', () => {

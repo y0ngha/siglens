@@ -22,10 +22,10 @@ import {
 } from '@/shared/lib/seo';
 import { rssSources, type RssSource } from './sources';
 
-// sitemap과 같은 이유로 force-dynamic + CDN 캐시다. 항목은 Redis 스탬프에 달려 있어
-// 빌드 시점에 굳히면 안 된다.
 const { HTTP_STATUS_SERVICE_UNAVAILABLE } = constants;
 
+// sitemap과 같은 이유로 force-dynamic + CDN 캐시다. 항목은 Redis 스탬프에 달려 있어
+// 빌드 시점에 굳히면 안 된다.
 export const dynamic = 'force-dynamic';
 
 /** 항목 설명 상한(code point). 리더 목록 미리보기에 쓰이는 길이다. */

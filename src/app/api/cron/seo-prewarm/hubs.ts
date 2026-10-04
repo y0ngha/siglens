@@ -610,10 +610,16 @@ export async function runHubPrewarm(
     let skippedByCooldown = 0;
     let generatedUrls: readonly string[] = [];
 
-    /** 새로 구운 대상의 공개 URL을 모은다. 화면 없는 대상(`path: null`)은 건너뛴다. */
+    /**
+     * 새로 구운 대상의 공개 URL을 모은다. 화면 없는 대상(`path: null`)은 건너뛴다.
+     * 거시 브리핑과 미국 캘린더처럼 두 대상이 같은 페이지(`/economy`)를 가리킬 수 있어
+     * 이미 담긴 URL은 다시 넣지 않는다.
+     */
     const recordGenerated = (target: HubTarget): void => {
         if (target.path === null) return;
-        generatedUrls = [...generatedUrls, `${SITE_URL}${target.path}`];
+        const url = `${SITE_URL}${target.path}`;
+        if (generatedUrls.includes(url)) return;
+        generatedUrls = [...generatedUrls, url];
     };
 
     for (const target of targets) {
