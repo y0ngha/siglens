@@ -1770,6 +1770,10 @@
             "position": "My Position"
         },
         "ui": {
+            "AiAnalysisAwaitingSection": {
+                "3e7fd8": "There's no AI analysis for this stock yet. Press the button to start one right away.",
+                "ddb88e": "View AI analysis"
+            },
             "AiSummaryErrorSection": {
                 "0c767c": "Try again"
             },
@@ -2012,6 +2016,7 @@
                 "93c3a3": "The chart does not reflect Pre-market, After-market prices. | ",
                 "d12df8": "AI Analysis...",
                 "d1a23e": "Adjust Panel Width",
+                "f69071": "AI Chart Analysis",
                 "ff6b09": "Quote data is delayed by up to 15 minutes."
             },
             "CongressSnapshotProse": {
@@ -2873,6 +2878,9 @@
                 "de5545": "Congressional Trades Disclosure List",
                 "e6fa15": "Transaction Date",
                 "fdf8d2": "Disclosure Search"
+            },
+            "CongressTrendSummary": {
+                "bbb041": "AI Trend Analysis"
             },
             "CongressTrendSummaryEmpty": {
                 "34ec4b": "No recent Congressional trades, so no trend analysis was generated.",

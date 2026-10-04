@@ -7,6 +7,8 @@ import { useWaitForNewsCards } from '@/entities/news-article/hooks/useWaitForNew
 import { useDefaultModelId } from '@/features/symbol-model/hooks/useDefaultModelId';
 import { useDefaultReasoning } from '@/features/symbol-model/hooks/useDefaultReasoning';
 import { useAnalysisSettingsHydrated } from '@/features/symbol-model/hooks/useAnalysisSettingsHydrated';
+import { useAiAutoRunAllowed } from '@/features/symbol-model/hooks/useAiAutoRunAllowed';
+import { AiAnalysisAwaitingSection } from '@/shared/ui/AiAnalysisAwaitingSection';
 import { cn } from '@/shared/lib/cn';
 import {
     type NewsAnalysisResponse,
@@ -261,11 +263,14 @@ export function NewsAiSummary({
     hasEnrichedNews,
     hideView = false,
 }: NewsAiSummaryProps) {
-    useNewsAnalysisTrigger(symbol);
+    const t = useTranslations('widgets.news');
+    const { allowed: autoRunAllowed, grant } = useAiAutoRunAllowed(symbol);
+    useNewsAnalysisTrigger(symbol, autoRunAllowed);
 
     const { isReady: isCardsReady, pollError } = useWaitForNewsCards(
         symbol,
-        hasEnrichedNews
+        hasEnrichedNews,
+        autoRunAllowed
     );
     const modelId = useDefaultModelId();
     const reasoning = useDefaultReasoning();
@@ -278,6 +283,7 @@ export function NewsAiSummary({
         enabled: isCardsReady,
         reasoning,
         isSettingsHydrated,
+        autoRunAllowed,
     });
 
     // When enriched news cards are not yet ready the analysis query is disabled
@@ -309,6 +315,22 @@ export function NewsAiSummary({
 
     // 훅과 pollError 전파는 그대로 두고 렌더만 건너뛴다 — 공유 데이터 등록은 유지된다.
     if (hideView) return null;
+
+    // 게이트가 닫혀 있으면 카드 보강 자체가 미뤄져 있다 — "수집 중" 스피너를 띄우면
+    // 끝나지 않는 로딩처럼 보인다. 분석 미스 대기와 같은 화면을 쓴다.
+    if (
+        analysis.status === 'awaiting_interaction' ||
+        (!isCardsReady && !autoRunAllowed)
+    ) {
+        return (
+            <AiAnalysisAwaitingSection
+                heading={t('NewsAiSummary.a74178')}
+                idPrefix="news-ai-summary"
+                onStart={grant}
+                className="w-full max-w-full min-w-0"
+            />
+        );
+    }
 
     if (!isCardsReady) {
         return <StatusCard phase="fetching" />;

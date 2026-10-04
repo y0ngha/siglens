@@ -47,6 +47,20 @@ describe('useNewsAnalysisTrigger', () => {
         expect(ensureSpy).toHaveBeenNthCalledWith(2, 'TSLA');
     });
 
+    it('enabled=false인 동안 호출하지 않고, true가 되면 그 symbol로 1회 호출한다', () => {
+        const { rerender } = renderHook(
+            ({ enabled }) => useNewsAnalysisTrigger('PCLOF', enabled),
+            { initialProps: { enabled: false } }
+        );
+        expect(ensureSpy).not.toHaveBeenCalled();
+
+        rerender({ enabled: true });
+        rerender({ enabled: true });
+
+        expect(ensureSpy).toHaveBeenCalledTimes(1);
+        expect(ensureSpy).toHaveBeenCalledWith('PCLOF');
+    });
+
     it('액션이 reject해도 throw하지 않고 에러를 로깅한다(fire-and-forget)', async () => {
         const errorSpy = vi
             .spyOn(console, 'error')
