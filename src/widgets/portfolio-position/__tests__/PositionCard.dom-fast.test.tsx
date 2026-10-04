@@ -106,7 +106,7 @@ describe('PositionCard', () => {
         expect(queryByText(/\$/)).not.toBeInTheDocument();
     });
 
-    it('sub-$1 crypto 평단(예: avg=0.0006)은 "$0"으로 뭉개지지 않는다(회귀 방지 — PositionBuilding.test.tsx와 동일 케이스)', () => {
+    it('sub-$1 crypto 평단(예: avg=0.0006)은 "$0"으로 뭉개지지 않는다(회귀 방지 — PositionBuilding.dom-fast.test.tsx와 동일 케이스)', () => {
         const { getByText, queryByText } = renderCard(
             {
                 low52w: 0.0004,

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
 import { THEME_CHANGE_EVENT } from '@/shared/lib/theme';

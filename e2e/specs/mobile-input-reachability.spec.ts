@@ -129,7 +129,7 @@ test.describe('모바일 차트 페이지 입력 도달성 (authed, 시트 마�
 
         // 다이얼로그의 접근 가능한 이름은 `aria-labelledby`가 가리키는 <h2>
         // "분석 설정" 그대로다(트리거의 동적 라벨과 달리 고정 문자열) —
-        // AnalysisSettingsMenu.test.tsx가 이미 이 이름을 고정한다.
+        // AnalysisSettingsMenu.dom-fast.test.tsx가 이미 이 이름을 고정한다.
         const dialog = page.getByRole('dialog', { name: '분석 설정' });
         await expect(dialog).toBeVisible();
 

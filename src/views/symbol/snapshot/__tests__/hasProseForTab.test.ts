@@ -22,7 +22,7 @@ import { hasProseForTab } from '../hasProseForTab';
 // content. Every fixture below is typed against the SAME core response type
 // the corresponding renderer test uses, so a core field rename breaks this
 // file at compile time too (mirrors the pattern already established in
-// TechnicalSnapshotProse.test.tsx et al.).
+// TechnicalSnapshotProse.dom-fast.test.tsx et al.).
 
 const TECHNICAL_FIXTURE: FilteredAnalysisResponse = {
     summary: 'AAPL은 단기 이동평균선이 장기 이동평균선을 상향 돌파했습니다.',
