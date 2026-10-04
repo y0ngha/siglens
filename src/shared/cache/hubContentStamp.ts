@@ -48,6 +48,12 @@ function keyFor(surface: string): string {
     return `${KEY_PREFIX}:${surface}`;
 }
 
+/** 코드 단위 순서 비교. `localeCompare`는 로케일에 따라 순서가 달라져 해시가 흔들린다. */
+function compareCodeUnits(a: string, b: string): number {
+    if (a === b) return 0;
+    return a < b ? -1 : 1;
+}
+
 /**
  * 키 순서에 영향받지 않는 JSON 직렬화. 객체 키를 재귀적으로 정렬한다.
  *
@@ -67,7 +73,7 @@ function stableStringify(value: unknown): string {
         }
         const entries = Object.entries(value as Record<string, unknown>)
             .filter(([, v]) => v !== undefined && typeof v !== 'function')
-            .toSorted(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+            .toSorted(([a], [b]) => compareCodeUnits(a, b))
             .map(([k, v]) => `${JSON.stringify(k)}:${stableStringify(v)}`);
         return `{${entries.join(',')}}`;
     }
@@ -116,6 +122,9 @@ export async function readHubContentStamp(
  * 확인하는 한 pubDate는 첫 확인 시각으로 유지된다.
  *
  * 남은 TTL이 `STAMP_REFRESH_THRESHOLD_RATIO` 이상이면 쓰지 않는다(상수 JSDoc 참고).
+ *
+ * GET 뒤 SET이라 원자적이지 않다. 프리웜 크론 락(`seo-prewarm:lock`)이 한 번에 하나의
+ * 실행만 허용한다는 전제에 기댄다 — 락 없이 두 실행이 겹치면 `at`이 늦은 쪽으로 덮일 수 있다.
  *
  * 실패는 삼킨다 — 부가 저장이 프리웜의 본업(생성·무효화)을 막으면 안 된다.
  */

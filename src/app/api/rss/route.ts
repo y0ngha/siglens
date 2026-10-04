@@ -85,6 +85,17 @@ async function toItem(
     };
 }
 
+/** 정적 sitemap이 선언한 URL 집합. 못 읽으면 `null`(로그는 여기서 남긴다). */
+async function loadDeclaredUrls(): Promise<ReadonlySet<string> | null> {
+    try {
+        const entries = await loadStaticChildEntries(new Date());
+        return new Set(entries.map(entry => entry.url));
+    } catch (error) {
+        console.error('[rss] static sitemap entries failed:', error);
+        return null;
+    }
+}
+
 export async function GET(request: Request): Promise<Response> {
     const aiHostRejection = rejectAiHost(request);
     if (aiHostRejection) return aiHostRejection;
@@ -92,13 +103,8 @@ export async function GET(request: Request): Promise<Response> {
     // 정적 sitemap 엔트리를 못 읽으면 어떤 허브가 색인 대상인지 모른다 — 빈 피드를 200으로
     // 내면 CDN이 1시간 캐시하고 구독자는 "항목 없음"으로 읽는다. sitemap 라우트와 같이
     // 503 + Retry-After로 답한다(`Cache-Control`은 두지 않는다 — 장애를 캐시하지 않는다).
-    let declaredUrls: ReadonlySet<string>;
-    try {
-        declaredUrls = new Set(
-            (await loadStaticChildEntries(new Date())).map(entry => entry.url)
-        );
-    } catch (error) {
-        console.error('[rss] static sitemap entries failed:', error);
+    const declaredUrls = await loadDeclaredUrls();
+    if (declaredUrls === null) {
         return new NextResponse(SITEMAP_UNAVAILABLE_BODY, {
             status: HTTP_STATUS_SERVICE_UNAVAILABLE,
             headers: { 'Retry-After': SITEMAP_RETRY_AFTER_SECONDS },

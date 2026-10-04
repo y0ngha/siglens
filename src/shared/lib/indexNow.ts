@@ -1,4 +1,5 @@
 import 'server-only';
+import { constants } from 'node:http2';
 import { isE2E } from '@/shared/api/e2eEnv';
 import {
     INDEXNOW_ENDPOINTS,
@@ -42,16 +43,13 @@ export function isIndexNowEnabled(): boolean {
 }
 
 /** 중복을 없애고 운영 호스트의 URL만 남긴다. 입력 순서는 유지한다. */
+function isSiteHostUrl(url: string): boolean {
+    // 파싱되지 않는 값은 보낼 수 없다 — 조용히 버린다.
+    return URL.canParse(url) && new URL(url).host === SITE_HOST;
+}
+
 function selectSubmittableUrls(urls: readonly string[]): string[] {
-    const seen = new Set<string>();
-    for (const url of urls) {
-        try {
-            if (new URL(url).host === SITE_HOST) seen.add(url);
-        } catch {
-            // 파싱되지 않는 값은 보낼 수 없다 — 조용히 버린다.
-        }
-    }
-    return [...seen];
+    return [...new Set(urls.filter(isSiteHostUrl))];
 }
 
 function chunk<T>(items: readonly T[], size: number): T[][] {
@@ -60,8 +58,10 @@ function chunk<T>(items: readonly T[], size: number): T[][] {
     );
 }
 
+const { HTTP_STATUS_OK, HTTP_STATUS_ACCEPTED } = constants;
+
 function isAccepted(status: number): boolean {
-    return status === 200 || status === 202;
+    return status === HTTP_STATUS_OK || status === HTTP_STATUS_ACCEPTED;
 }
 
 /**
