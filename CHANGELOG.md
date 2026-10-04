@@ -1,5 +1,22 @@
 # Changelog
 
+# [0.97.0](https://github.com/y0ngha/siglens/compare/v0.96.3...v0.97.0) (2026-10-04)
+
+### Bug Fixes
+
+* **analysis-plain:** 쉬운 설명 프롬프트의 예시 문장 누출과 조언 문구를 막는다 ([#932](https://github.com/y0ngha/siglens/issues/932)) ([a0fdd77](https://github.com/y0ngha/siglens/commit/a0fdd7769f0131dbfa0cb9e78e616bd3fb72537c))
+* **seo:** 크롤러가 읽는 신호를 페이지 실제와 맞춘다 — sameAs·뉴스 JSON-LD·공포탐욕 색인·description·sitemap lastmod·예열 범위 ([#933](https://github.com/y0ngha/siglens/issues/933)) ([629506b](https://github.com/y0ngha/siglens/commit/629506b5712269889c2b51a34bb647062f8ff37c))
+
+### Features
+
+* **seo:** 분석 방법 페이지(/methodology)와 AI 분석 출처 고지, 푸터 X 링크 ([#935](https://github.com/y0ngha/siglens/issues/935)) ([b2c384f](https://github.com/y0ngha/siglens/commit/b2c384fc9711134a8e765d1e8d863cd459d877ad))
+* **seo:** 프리웜이 바뀐 색인 URL을 IndexNow로 알리고, 허브 브리핑 RSS(/rss.xml)를 연다 ([#934](https://github.com/y0ngha/siglens/issues/934)) ([4cdf6ff](https://github.com/y0ngha/siglens/commit/4cdf6ff7c11784ea38d1982cc02e208400dae75d))
+
+### Performance Improvements
+
+* ISR FETCH in-memory cache 크기 조정 기본값 ([#930](https://github.com/y0ngha/siglens/issues/930)) ([d7e4ee6](https://github.com/y0ngha/siglens/commit/d7e4ee627bee43f8f25ad0d02f0613487ce97c21))
+* plain-language 재분석 비용 절감 ([#931](https://github.com/y0ngha/siglens/issues/931)) ([60a6182](https://github.com/y0ngha/siglens/commit/60a6182c6ebef62c3ec871eb71c199370181291b))
+
 ## [0.96.3](https://github.com/y0ngha/siglens/compare/v0.96.2...v0.96.3) (2026-10-04)
 
 ## [0.96.2](https://github.com/y0ngha/siglens/compare/v0.96.1...v0.96.2) (2026-10-03)
