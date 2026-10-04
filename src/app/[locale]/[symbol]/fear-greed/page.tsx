@@ -326,8 +326,16 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                         marketProfile={marketProfile}
                         bars={quantizedFgBars.bars}
                         buySellVolume={quantizedFgBars.indicators.buySellVolume}
-                        marketReading={marketReading}
-                        marketLabel={t(marketFearGreedLink.marketLabelKey)}
+                        market={
+                            marketReading === null
+                                ? null
+                                : {
+                                      reading: marketReading,
+                                      label: t(
+                                          marketFearGreedLink.marketLabelKey
+                                      ),
+                                  }
+                        }
                     />
                 )}
                 <HydrationBoundary state={dehydrate(queryClient)}>

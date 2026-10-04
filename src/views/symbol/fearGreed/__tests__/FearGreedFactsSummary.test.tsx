@@ -322,12 +322,14 @@ describe('FearGreedFactsSummary', () => {
                     marketProfile="us-equity"
                     bars={realisticBars}
                     buySellVolume={realisticBsv}
-                    marketReading={{
-                        date: lastScored.date,
-                        score: Math.round(lastScored.score!) - 10,
-                        label: 'NEUTRAL',
+                    market={{
+                        reading: {
+                            date: lastScored.date,
+                            score: Math.round(lastScored.score!) - 10,
+                            label: 'NEUTRAL',
+                        },
+                        label: '미국 증시',
                     }}
-                    marketLabel="미국 증시"
                 />
             );
 

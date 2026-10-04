@@ -1,5 +1,6 @@
 import { useTranslations } from 'next-intl';
 import { useId } from 'react';
+import { EXTREME_ZONE_REENTRY_GAP } from '@y0ngha/siglens-core';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import type { ExtremeZoneTable } from './utils/fearGreedFacts';
 
@@ -25,7 +26,13 @@ export function FearGreedExtremeZoneTable({
 }: FearGreedExtremeZoneTableProps) {
     const t = useTranslations('views.symbol.fearGreedFacts');
     const headingId = useId();
-    const period = t('extremeZonePeriod', { v0: table.from, v1: table.to });
+    // 재진입 간격은 core가 정한다 — 문구에 숫자를 박아 두면 core 값이 바뀔 때
+    // 화면 설명만 거짓이 된다.
+    const period = t('extremeZonePeriod', {
+        v0: table.from,
+        v1: table.to,
+        v2: EXTREME_ZONE_REENTRY_GAP,
+    });
 
     return (
         <div aria-labelledby={headingId} role="group" className="space-y-2">

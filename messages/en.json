@@ -2140,7 +2140,7 @@
                 "extremeZoneInsufficient": "Too few samples ({v0})",
                 "extremeZoneNone": "During this period the score never newly entered Extreme Fear or Extreme Greed.",
                 "extremeZoneNotice": "These are after-the-fact aggregates of past data. Windows from different entries can overlap and results depend on the period; they do not predict future prices or recommend buying or selling.",
-                "extremeZonePeriod": "Period: {v0} to {v1} (trading days with a score for this symbol). Medians compare the close on the day the zone was entered with the close N trading days later; a return to the same zone within 20 trading days is not counted as a new entry.",
+                "extremeZonePeriod": "Period: {v0} to {v1} (trading days with a score for this symbol). Medians compare the close on the day the zone was entered with the close N trading days later; a return to the same zone within {v2} trading days is not counted as a new entry.",
                 "extremeZoneTitle": "Close changes after entering an extreme zone",
                 "factorHigh": "high against the last 200 trading days",
                 "factorLine": "{v0}: {v1} ({v2}th percentile) — {v3}.",

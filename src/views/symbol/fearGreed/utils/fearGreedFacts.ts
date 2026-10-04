@@ -469,18 +469,22 @@ export interface ExtremeZoneRow {
 
 /** 극단 구간 사후 집계 표 전체. 진입이 한 번도 없으면 `rows`가 비어 있다. */
 export interface ExtremeZoneTable {
-    /** 점수가 계산된 첫 거래일(`YYYY년 M월 D일`). */
+    /** 점수가 계산된 첫 거래일 — `formatIsoDate`가 로케일 카탈로그(`isoDate`)로 포맷한 날짜. */
     readonly from: string;
-    /** 점수가 계산된 마지막 거래일. */
+    /** 점수가 계산된 마지막 거래일(포맷은 `from`과 같다). */
     readonly to: string;
     readonly horizons: readonly number[];
     readonly rows: readonly ExtremeZoneRow[];
 }
 
+/** 중앙값 퍼센트의 소수 자릿수. 반올림 인자와 `toFixed`가 이 하나에서 파생된다. */
+const PERCENT_DECIMALS = 1;
+const PERCENT_ROUNDING = 10 ** PERCENT_DECIMALS;
+
 function formatSignedPercent(value: number): string {
-    const rounded = Math.round(value * 10) / 10;
+    const rounded = Math.round(value * PERCENT_ROUNDING) / PERCENT_ROUNDING;
     const sign = rounded > 0 ? '+' : '';
-    return `${sign}${rounded.toFixed(1)}%`;
+    return `${sign}${rounded.toFixed(PERCENT_DECIMALS)}%`;
 }
 
 /**
