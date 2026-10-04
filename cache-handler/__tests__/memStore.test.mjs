@@ -233,10 +233,11 @@ describe('memStore는', () => {
         expect(store.statsForTest().size).toBe(40);
     });
 
-    it('상태 로그는 알람이 파싱할 수 있는 JSON 한 줄이다', async () => {
-        // infra/aws/07-alarms.sh의 `{ $.event = "fetch-mem" }` 필터와 `$.evicted`
-        // 등의 추출 경로가 이 형태에 걸려 있다 — 외부 계약이라 깨지면 알람이 조용히 죽는다.
-        // (공백 구분 `key=value` 로그로 되돌리면 CloudWatch가 숫자를 못 뽑는다.)
+    it('상태 로그는 Logs Insights가 필드로 읽을 수 있는 JSON 한 줄이다', async () => {
+        // infra/aws/07-alarms.sh와 memStore.mjs 머리말의 Logs Insights 쿼리
+        // (`filter event = "fetch-mem"`, `size`·`bytes`·`evicted` 필드)가 이 형태에 걸려 있다.
+        // 메트릭 필터·알람은 지금 없지만, 다시 걸 때도 JSON이어야 `$.evicted`를 뽑는다
+        // (공백 구분 `key=value` 로그로 되돌리면 CloudWatch가 숫자를 못 뽑는다).
         const store = await freshStore({ maxEntries: 1 });
         const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
         store.setEntry('a', fetchEntry(10));

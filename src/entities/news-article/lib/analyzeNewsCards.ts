@@ -26,8 +26,9 @@ async function analyzeAndPersist(
     // 되돌리기 전까지 복구 불가. 경제 이벤트·지표 번역 경로와 같은 skip 정책이다
     // (`ensureEconomicEventsAnalyzedAction`).
     //
-    // DeepSeek 어댑터는 `responseSchema`를 무시하고 `json_object`만 걸어(JSON
-    // 유효성만 보장, 필드·enum은 미보장) 이 경로가 실제로 열려 있다.
+    // core 2.8.1부터 뉴스 카드는 DeepSeek로 돌고, DeepSeek 어댑터는 core #193부터
+    // `responseSchema`를 Responses API `json_schema`로 강제한다. 그래도 빈 응답·파싱
+    // 실패 뒤 정규화 fallback은 여전히 이 모양으로 떨어지므로 가드는 유지한다.
     //
     // 조건을 "둘 다 빈 경우"로 좁힌 이유는 재시도 비용이다. titleKo가 채워진 응답은
     // 모델이 실제로 만들어낸 결과이지 fallback이 아니므로 저장하는 편이 맞고,
