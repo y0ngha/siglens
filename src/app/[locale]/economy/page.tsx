@@ -128,6 +128,35 @@ async function EconomyContent() {
     const tSeo = await getTranslations('shared.seo');
     const requestLocale = await getLocale();
     const locale = resolveLocale(requestLocale);
+    // 캘린더는 스냅샷·브리핑과 무관한 DB 조회다. 예전에는 그 둘을 다 기다린 뒤에야
+    // 시작해 콜드 렌더가 조회 세 개를 한 줄로 기다렸다. 여기서 먼저 출발시키고 아래에서
+    // 받는다. ET-오늘은 1회 계산해 reader 앵커 + 그리드 기본 선택일로 공유한다
+    // (ISR 안전: 결정론적 Intl 변환, dynamic API 미사용).
+    //
+    // 대가: 스냅샷이 degrade면(아래에서 일찍 반환) 이 조회의 결과를 쓰지 않고 버린다.
+    // degrade 렌더는 드물고 버리는 것은 캐시된 읽기 한 번이라 감수한다. 두 promise 모두
+    // `.catch`가 붙어 있어 미처리 rejection은 남지 않지만, DB 없는 배포 빌드가 FMP까지
+    // degrade인 경우 예전에는 없던 `getCalendarFromDb failed` 로그가 한 줄 남을 수 있다.
+    const now = new Date();
+    const todayEt = etDateOf(now);
+    const calendarEventsPromise = getCalendarFromDb(
+        todayEt,
+        CALENDAR_COUNTRY,
+        locale
+    ).catch((e: unknown) => {
+        console.error('[EconomyContent] getCalendarFromDb failed:', e);
+        return [];
+    });
+    // dict → DB 캐시 → 영어 fallback 체인. 미매핑은 클라 훅이 AI 트리거(SP-B 설계).
+    // 캘린더에만 의존하므로 캘린더가 오는 즉시 이어 붙인다.
+    const indicatorLabelsPromise = calendarEventsPromise.then(events =>
+        resolveIndicatorLabels(events, locale).catch((e: unknown) => {
+            console.error('[EconomyContent] resolveIndicatorLabels failed:', e);
+            // empty object is always a valid Record<string, string>
+            return {} as Record<string, string>;
+        })
+    );
+
     // 외부 I/O 오류(Redis 등)는 graceful 처리 — 빈 캐시 동결을 막기 위해 throw 대신
     // null로 폴백해 EconomyDegraded를 반환한다. generateMetadata와 동일한 catch 패턴.
     const snapshot = await getEconomySnapshotStatic().catch(e => {
@@ -164,22 +193,12 @@ async function EconomyContent() {
     );
 
     // 캘린더는 Redis 스냅샷이 아니라 DB-backed 이력 레이어에서 읽는다(SP-A). 지표/treasury는
-    // 스냅샷 그대로. ET-오늘을 1회 계산해 reader 앵커 + 그리드 기본 선택일로 공유한다
-    // (ISR 안전: 결정론적 Intl 변환, dynamic API 미사용).
-    const now = new Date();
-    const todayEt = etDateOf(now);
+    // 스냅샷 그대로. 조회는 위에서 이미 출발했다.
     // 그리드 기본 선택일 = 현재 인스턴트의 KST 달력일. 그리드가 이벤트를 ET-인스턴트의
     // kstDateKey로 그룹화하므로(EconomicCalendarGrid groupEventsByKstDay) 앵커도 같은 KST
     // keyspace여야 한다. 정오-ET 합성은 KST 다음날로 밀려 오늘 그룹을 건너뛰므로 금지.
     const todayKstKey = kstDateKey(now);
-    const calendarEvents = await getCalendarFromDb(
-        todayEt,
-        CALENDAR_COUNTRY,
-        locale
-    ).catch((e: unknown) => {
-        console.error('[EconomyContent] getCalendarFromDb failed:', e);
-        return [];
-    });
+    const calendarEvents = await calendarEventsPromise;
 
     // `analyzedAt`은 `EconomicCalendarGrid`(클라이언트)에서 역참조되지 않는다. 타입에서
     // 빼는 것만으로는 런타임 값이 그대로 flight에 실리므로 여기서 실제로 떼어낸다.
@@ -187,15 +206,7 @@ async function EconomyContent() {
         ({ analyzedAt: _analyzedAt, ...rest }) => rest
     );
 
-    // dict → DB 캐시 → 영어 fallback 체인. 미매핑은 클라 훅이 AI 트리거(SP-B 설계).
-    const indicatorLabels = await resolveIndicatorLabels(
-        calendarEvents,
-        locale
-    ).catch((e: unknown) => {
-        console.error('[EconomyContent] resolveIndicatorLabels failed:', e);
-        // empty object is always a valid Record<string, string>
-        return {} as Record<string, string>;
-    });
+    const indicatorLabels = await indicatorLabelsPromise;
 
     return (
         <div className="space-y-6">
