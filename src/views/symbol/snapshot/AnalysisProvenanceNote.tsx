@@ -6,7 +6,8 @@ import { LocaleLink } from '@/shared/ui/LocaleLink';
 
 /**
  * `ai`: AI가 쓴 산문 아래 — 규칙으로 계산한 값을 AI가 문장으로 정리했고, 어떤 자동
- * 검사를 거치며 사람이 한 편씩 읽지는 않는다는 고지. `rule-based`: 공포·탐욕 탭 — AI 서술이 없고 규칙 계산뿐이라는 고지.
+ * 검사를 거치며 사람이 한 편씩 읽지는 않는다는 고지.
+ * `rule-based`: 공포·탐욕 탭 — AI 서술이 없고 규칙 계산뿐이라는 고지.
  */
 export type AnalysisProvenanceVariant = 'ai' | 'rule-based';
 
