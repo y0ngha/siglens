@@ -69,35 +69,30 @@ describe('EconomyContent 로더 출발 순서', () => {
     });
 });
 
-type AsyncElement = {
+type ContentElement = {
     type: (props: unknown) => Promise<unknown>;
     props: unknown;
 };
 
-/** 트리에서 async 함수 컴포넌트 요소(EconomyContent)를 찾는다. */
-function findAsyncChild(node: unknown): AsyncElement {
-    const found = search(node);
-    if (!found) throw new Error('async 본문 컴포넌트를 찾지 못했다');
-    return found;
+/** 페이지 셸에서 async 본문 컴포넌트(`EconomyContent`) 요소를 이름으로 찾는다. */
+function findAsyncChild(node: unknown): ContentElement {
+    const found = collectElements(node).find(
+        element =>
+            typeof element.type === 'function' &&
+            element.type.name === 'EconomyContent'
+    );
+    if (!found) throw new Error('EconomyContent 요소를 찾지 못했다');
+    return found as unknown as ContentElement;
 }
 
-function search(node: unknown): AsyncElement | null {
-    if (Array.isArray(node)) {
-        for (const child of node) {
-            const hit = search(child);
-            if (hit) return hit;
-        }
-        return null;
-    }
+type AnyElement = { type: unknown; props: { children?: unknown } };
+
+/** 트리의 모든 React 요소를 깊이 우선으로 펼친다. */
+function collectElements(node: unknown): AnyElement[] {
+    if (Array.isArray(node)) return node.flatMap(collectElements);
     if (node === null || typeof node !== 'object' || !('type' in node)) {
-        return null;
+        return [];
     }
-    const element = node as { type: unknown; props: { children?: unknown } };
-    if (
-        typeof element.type === 'function' &&
-        element.type.constructor.name === 'AsyncFunction'
-    ) {
-        return element as unknown as AsyncElement;
-    }
-    return search(element.props?.children);
+    const element = node as AnyElement;
+    return [element, ...collectElements(element.props?.children)];
 }

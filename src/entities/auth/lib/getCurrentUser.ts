@@ -14,9 +14,16 @@ import { getDatabaseClient } from '@/shared/db/client';
  * 함수를 불러 같은 조회가 2~3번 돌았다 — `/c/[id]`는 페이지 + 대화 조회 + 대화 목록에서
  * 세 번, `/account`는 페이지 + 등록 프로바이더 조회에서 두 번.
  *
- * `cache`는 React 서버 렌더 안에서만 메모이즈한다. 렌더 밖(Route Handler, Server Action
- * 본문)의 호출은 지금처럼 매번 조회하므로, 세션을 만들거나 지운 직후에 다시 읽는 코드는
- * 영향받지 않는다.
+ * `cache`는 **진행 중인 Flight 렌더 안에서만** 메모이즈한다. 근거는 Next에 들어 있는 React
+ * 소스다: `cache()`는 `dispatcher.getCacheForType()`으로 캐시를 얻는데, 그 함수는
+ * `resolveRequest()`가 현재 Flight 요청을 돌려줄 때만 그 요청의 캐시를 쓰고 없으면 호출마다
+ * 새 `Map`을 만든다(`next/dist/compiled/react-server-dom-turbopack/cjs/
+ * react-server-dom-turbopack-server.node.production.js`의 `getCacheForType`·`resolveRequest`,
+ * Next 16.3.6 기준). Route Handler와 Server Action 본문은 Flight 요청 밖에서 실행되므로
+ * 지금처럼 매번 조회하고, 액션 뒤의 재렌더는 새 Flight 요청이라 캐시가 따로다. 그래서
+ * 세션을 만들거나 지운 직후에 다시 읽는 코드(`logoutAction` 등)는 영향받지 않는다 —
+ * 로그아웃·탈퇴 뒤 화면 상태는 E2E(`account-logout`·`account-delete`)가 본다.
+ * Next나 React를 올리면 위 두 함수가 그대로인지 다시 확인한다.
  */
 export const getCurrentUser = cache(
     async (): Promise<AuthUserRecord | null> => {
