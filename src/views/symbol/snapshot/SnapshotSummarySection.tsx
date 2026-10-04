@@ -3,6 +3,7 @@ import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { useId, type ReactNode } from 'react';
 import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
 import { SnapshotProseDisclosure } from './SnapshotProseDisclosure';
+import { AnalysisProvenanceNote } from './AnalysisProvenanceNote';
 import { formatSnapshotAsOf } from '@/shared/lib/formatSnapshotAsOf';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
@@ -188,6 +189,13 @@ export function SnapshotSummarySection({
             >
                 {children}
             </PlainAnalysisSwitch>
+            {/*
+                출처 고지는 이 셸이 **한 번만** 그린다 — 일곱 개 산문 렌더러가 모두
+                이 셸을 감싸므로 렌더러마다 넣으면 일곱 곳을 고쳐야 하고 하나를
+                빠뜨리면 그 탭만 고지 없이 나간다. `body` 안이라 `duplicatesLiveWidget`일
+                때는 접히는 `<details>` 안에 들어간다(고지는 산문에 딸린 것이다).
+            */}
+            <AnalysisProvenanceNote marketProfile={marketProfile} />
         </>
     );
 

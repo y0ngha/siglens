@@ -3,6 +3,8 @@ import { sitemapAlternates } from './sitemapAlternates';
 import {
     ABOUT_PATH,
     ABOUT_UPDATED_AT,
+    METHODOLOGY_PATH,
+    METHODOLOGY_UPDATED_AT,
     PRIVACY_PATH,
     TERMS_PATH,
 } from '@/shared/lib/legal';
@@ -76,7 +78,8 @@ function latestOf(
  * 바뀌지 않은 페이지에도 매번 freshness 신호를 보내게 된다. 네 등급으로 나눈다:
  *
  *  1. **콘텐츠 자체의 갱신 시각** — 그 값을 알 수 있는 페이지. `/about`은
- *     `ABOUT_UPDATED_AT`(본문 상수), `/privacy`·`/terms`는 활성 약관 버전의
+ *     `ABOUT_UPDATED_AT`, `/methodology`는 `METHODOLOGY_UPDATED_AT`(둘 다 본문
+ *     상수), `/privacy`·`/terms`는 활성 약관 버전의
  *     발효일(`legalEffectiveDates`), news 계열은 그 버킷의 최신 기사
  *     `publishedAt`(`newsLatestPublishedAt`), `/backtesting`은 정적 데이터셋의
  *     마지막 진입일(`backtestingDataDate`)이다. 주입되지 않으면 4등급으로
@@ -293,6 +296,19 @@ export function buildStaticEntries(
             changeFrequency: 'yearly',
             priority: 0.4,
             alternates: sitemapAlternates(ABOUT_PATH, STATIC_INDEXABLE_LOCALES),
+        },
+        // `/methodology` — 분석 방법·데이터 출처·한계·정정 정책. `/about`과 같은
+        // 등급(YMYL 신뢰 앵커, 본문이 코드 상수라 lastmod도 `METHODOLOGY_UPDATED_AT`).
+        // 종목 산문 하단의 출처 고지(`AnalysisProvenanceNote`)가 이 페이지로 건다.
+        {
+            url: `${SITE_URL}${METHODOLOGY_PATH}`,
+            lastModified: METHODOLOGY_UPDATED_AT,
+            changeFrequency: 'yearly',
+            priority: 0.4,
+            alternates: sitemapAlternates(
+                METHODOLOGY_PATH,
+                STATIC_INDEXABLE_LOCALES
+            ),
         },
     ];
 }

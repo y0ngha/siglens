@@ -146,8 +146,7 @@ export const ORGANIZATION_JSON_LD_ID = `${SITE_URL}#organization`;
 export const GITHUB_URL = 'https://github.com/y0ngha/siglens';
 
 /**
- * 서비스 공식 X(트위터) 계정. 홈 `Organization.sameAs`가 소비한다.
- * 푸터 아이콘 링크는 별도 작업(묶음 B)이 같은 상수를 읽는다.
+ * 서비스 공식 X(트위터) 계정. 홈 `Organization.sameAs`와 푸터 아이콘 링크가 소비한다.
  */
 export const X_URL = 'https://x.com/siglens_io';
 

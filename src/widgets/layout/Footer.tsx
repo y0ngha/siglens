@@ -8,16 +8,19 @@ import {
     type NavVertical,
 } from '@/shared/config/assetClassNav';
 import { GithubIcon } from '@/shared/ui/GithubIcon';
+import { XIcon } from '@/shared/ui/XIcon';
 import {
     ABOUT_PATH,
     aboutTitle,
     INVESTMENT_DISCLAIMER_KEY,
+    METHODOLOGY_PATH,
+    methodologyTitle,
     PRIVACY_PATH,
     privacyTitle,
     TERMS_PATH,
     termsTitle,
 } from '@/shared/lib/legal';
-import { GITHUB_URL, SITE_NAME, SYMBOLS_PATH } from '@/shared/lib/seo';
+import { GITHUB_URL, SITE_NAME, SYMBOLS_PATH, X_URL } from '@/shared/lib/seo';
 import { LABEL_GROUP } from '@/shared/lib/typographyStyles';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
@@ -172,6 +175,20 @@ export function Footer() {
                         >
                             <GithubIcon className="h-5 w-5" />
                         </a>
+                        <a
+                            href={X_URL}
+                            target="_blank"
+                            // GitHub 링크와 같다 — 외부 탭은 opener를 끊는다.
+                            rel="noopener noreferrer"
+                            aria-label={t('xAccountAria', { v0: SITE_NAME })}
+                            // 아이콘은 20px이지만 터치 영역은 44px(`size-11`)이어야 한다.
+                            // 음수 마진(`-m-3`)이 늘어난 12px씩을 되돌려 레이아웃 몫은 20px
+                            // 그대로다 — 옆 링크와의 간격(`gap-x-4` = 16px)을 넘어서
+                            // 이웃의 터치 영역을 덮지 않는다.
+                            className="-m-3 inline-flex size-11 items-center justify-center rounded text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                        >
+                            <XIcon className="h-5 w-5" />
+                        </a>
                         <nav
                             aria-label={t('Footer.5f5d12')}
                             className="flex flex-wrap items-center gap-x-4 gap-y-2"
@@ -191,6 +208,15 @@ export function Footer() {
                                     SITE_NAME,
                                     SITE_NAME.toUpperCase()
                                 )}
+                            </Link>
+                            {/* 분석 방법은 소개 바로 뒤 — 산문 하단의 출처 고지와 `/about`이
+                                모두 이 페이지로 건다. 전 페이지에서 크롤 가능한 링크다. */}
+                            <Link
+                                href={METHODOLOGY_PATH}
+                                prefetch={false}
+                                className={LINK_CLASSES}
+                            >
+                                {methodologyTitle(tSeo)}
                             </Link>
                             {/*
                              * 종목 디렉터리 — 이 링크가 있는 이유는 크롤 구조다.
