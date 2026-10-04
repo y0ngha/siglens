@@ -5,7 +5,15 @@ import type {
     FearGreedLabel,
     FearGreedSnapshot,
 } from '@y0ngha/siglens-core';
-import { POC_WINDOW_DEFAULT } from '@y0ngha/siglens-core';
+import {
+    computeLabelTransitions,
+    computeMarketScoreGap,
+    POC_WINDOW_DEFAULT,
+    summarizeExtremeZoneOutcomes,
+    type Bar,
+    type ExtremeFearGreedZone,
+    type FearGreedReading,
+} from '@y0ngha/siglens-core';
 import {
     formatFactorRaw,
     sentimentLabelText,
@@ -380,4 +388,145 @@ export function buildFearGreedRegimeDistributionLine(
         v1: window.length,
         v2: parts.join(', '),
     });
+}
+
+/** 구간 전환 문장에 싣는 최근 전환 수. 더 길면 문장이 목록이 된다. */
+const RECENT_TRANSITION_COUNT = 3;
+
+/**
+ * 최근 5단계 구간 전환 날짜를 나열한 문장.
+ *
+ * 날짜와 전후 라벨이 종목마다 달라 이 탭의 고유 텍스트를 늘린다. 전환이 없으면(1년
+ * 내내 한 구간) `null` — 빈 문장을 내지 않는다.
+ */
+export function buildFearGreedTransitionLine(
+    history: readonly FearGreedReading[],
+    t: EnumLabelTranslator,
+    tFacts: SeoTranslator
+): string | null {
+    const transitions = computeLabelTransitions(
+        history,
+        RECENT_TRANSITION_COUNT
+    );
+    if (transitions.length === 0) return null;
+    const items = transitions.map(tr =>
+        tFacts('regimeTransitionItem', {
+            v0: formatIsoDate(tr.date, tFacts),
+            v1: labelText(tr.from, t),
+            v2: labelText(tr.to, t),
+        })
+    );
+    return tFacts('regimeTransitions', {
+        v0: items.join(tFacts('clauseJoin')),
+    });
+}
+
+/**
+ * 같은 날 시장 점수와의 차이 문장. 날짜가 맞는 쌍이 없으면 `null`이다 — 종목의
+ * 마지막 봉과 시장 스냅샷의 기준일이 다를 수 있고, 다른 날끼리 비교하지 않는다.
+ */
+export function buildFearGreedMarketGapLine(
+    history: readonly FearGreedReading[],
+    market: FearGreedReading | null,
+    marketLabel: string,
+    tFacts: SeoTranslator
+): string | null {
+    if (market === null) return null;
+    const gap = computeMarketScoreGap(history, market);
+    if (gap === null) return null;
+    const symbolScore = Math.round(gap.symbolScore);
+    const marketScore = Math.round(gap.marketScore);
+    const diff = symbolScore - marketScore;
+    const key =
+        diff === 0
+            ? 'regimeMarketGapSame'
+            : diff > 0
+              ? 'regimeMarketGapUp'
+              : 'regimeMarketGapDown';
+    return tFacts(key, {
+        v0: formatIsoDate(gap.date, tFacts),
+        v1: marketLabel,
+        v2: marketScore,
+        v3: Math.abs(diff),
+    });
+}
+
+/** 극단 구간 사후 집계 표의 한 칸 — 중앙값 문자열 또는 표본 부족. */
+export interface ExtremeZoneCell {
+    readonly horizon: number;
+    readonly sampleSize: number;
+    /** `+3.2%` 꼴, 중앙값을 숨긴 칸은 `null`. */
+    readonly median: string | null;
+}
+
+/** 극단 구간 사후 집계 표의 한 행. */
+export interface ExtremeZoneRow {
+    readonly zone: ExtremeFearGreedZone;
+    readonly label: string;
+    readonly entryCount: number;
+    readonly cells: readonly ExtremeZoneCell[];
+}
+
+/** 극단 구간 사후 집계 표 전체. 진입이 한 번도 없으면 `rows`가 비어 있다. */
+export interface ExtremeZoneTable {
+    /** 점수가 계산된 첫 거래일 — `formatIsoDate`가 로케일 카탈로그(`isoDate`)로 포맷한 날짜. */
+    readonly from: string;
+    /** 점수가 계산된 마지막 거래일(포맷은 `from`과 같다). */
+    readonly to: string;
+    readonly horizons: readonly number[];
+    readonly rows: readonly ExtremeZoneRow[];
+}
+
+/** 중앙값 퍼센트의 소수 자릿수. 반올림 인자와 `toFixed`가 이 하나에서 파생된다. */
+const PERCENT_DECIMALS = 1;
+const PERCENT_ROUNDING = 10 ** PERCENT_DECIMALS;
+
+function formatSignedPercent(value: number): string {
+    const rounded = Math.round(value * PERCENT_ROUNDING) / PERCENT_ROUNDING;
+    const sign = rounded > 0 ? '+' : '';
+    return `${sign}${rounded.toFixed(PERCENT_DECIMALS)}%`;
+}
+
+/**
+ * 극심한 공포·극심한 탐욕 구간에 **진입한 뒤** 종가가 어떻게 움직였는지의 과거 집계.
+ *
+ * 투자 권유로 읽히지 않게 지키는 것(사용자 지시 2026-10-05):
+ *  - 평균·승률이 아니라 **중앙값과 표본 수**만 보인다(core가 그렇게만 돌려준다).
+ *  - 표본이 기준 미만인 칸은 숫자를 지우고 "표본 부족"으로 둔다.
+ *  - 화면은 집계 기간과 "과거 사후 집계, 예측·권유 아님" 고지를 반드시 함께 그린다
+ *    (`FearGreedFactsSummary`). 이 함수는 숫자만 만들고 해석 문장을 만들지 않는다.
+ *
+ * 점수가 계산된 구간이 없으면 `null`이다.
+ */
+export function buildExtremeZoneTable(
+    history: readonly FearGreedReading[],
+    bars: readonly Bar[],
+    t: EnumLabelTranslator,
+    tFacts: SeoTranslator
+): ExtremeZoneTable | null {
+    const scored = history.filter(p => p.score !== null);
+    const first = scored.at(0);
+    const last = scored.at(-1);
+    if (first === undefined || last === undefined) return null;
+    const outcomes = summarizeExtremeZoneOutcomes(history, bars);
+    const horizons = outcomes[0]?.forward.map(f => f.horizon) ?? [];
+    const rows = outcomes
+        .filter(o => o.entryCount > 0)
+        .map(o => ({
+            zone: o.zone,
+            label: labelText(o.zone, t),
+            entryCount: o.entryCount,
+            cells: o.forward.map(f => ({
+                horizon: f.horizon,
+                sampleSize: f.sampleSize,
+                median:
+                    f.median === null ? null : formatSignedPercent(f.median),
+            })),
+        }));
+    return {
+        from: formatIsoDate(first.date, tFacts),
+        to: formatIsoDate(last.date, tFacts),
+        horizons,
+        rows,
+    };
 }

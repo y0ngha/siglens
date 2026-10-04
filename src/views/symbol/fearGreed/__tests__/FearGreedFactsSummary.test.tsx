@@ -1,6 +1,7 @@
 import type { Mock } from 'vitest';
 import { render } from '@testing-library/react';
 import {
+    computeFearGreedHistory,
     computeFearGreedIndex,
     type Bar,
     type BuySellVolumeResult,
@@ -300,6 +301,66 @@ describe('FearGreedFactsSummary', () => {
             expect(getByText(/중립 12일/)).toBeInTheDocument();
             expect(getByText(/탐욕 23일/)).toBeInTheDocument();
             expect(getByText(/극심한 탐욕 17일/)).toBeInTheDocument();
+        });
+
+        /**
+         * siglens-core#252: 구간 전환 날짜, 같은 날 시장 대비 차이, 극단 구간 사후 집계.
+         * 사후 집계는 집계 기간과 "예측·권유 아님" 고지가 **같은 블록에서 함께** 보여야
+         * 한다 — 표만 떼어 읽히면 수익률 안내처럼 보인다.
+         */
+        it('구간 전환·시장 대비 차이 문장과 사후 집계 블록(기간·고지 포함)을 렌더한다', () => {
+            (computeFearGreedIndex as Mock).mockReturnValue(FIXTURE_SNAPSHOT);
+            const history = computeFearGreedHistory(
+                realisticBars,
+                realisticBsv
+            );
+            const lastScored = history.filter(p => p.score !== null).at(-1)!;
+
+            const { getByText, getByRole } = render(
+                <FearGreedFactsSummary
+                    symbol="AAPL"
+                    marketProfile="us-equity"
+                    bars={realisticBars}
+                    buySellVolume={realisticBsv}
+                    market={{
+                        reading: {
+                            date: lastScored.date,
+                            score: Math.round(lastScored.score!) - 10,
+                            label: 'NEUTRAL',
+                        },
+                        label: '미국 증시',
+                    }}
+                />
+            );
+
+            expect(
+                getByText(/최근 구간 전환은 .+ → .+입니다\./)
+            ).toBeInTheDocument();
+            expect(
+                getByText(/미국 증시 공포·탐욕 지수 \d+점보다 10점 높습니다/)
+            ).toBeInTheDocument();
+            const block = getByRole('group', {
+                name: '극단 구간 진입 이후 종가 변화',
+            });
+            expect(block).toHaveTextContent('집계 기간:');
+            expect(block).toHaveTextContent(
+                '앞으로의 가격을 예측하거나 매수·매도를 권하지 않아요'
+            );
+        });
+
+        it('시장 판독이 없으면 시장 대비 문장을 내지 않는다', () => {
+            (computeFearGreedIndex as Mock).mockReturnValue(FIXTURE_SNAPSHOT);
+
+            const { container } = render(
+                <FearGreedFactsSummary
+                    symbol="AAPL"
+                    marketProfile="us-equity"
+                    bars={realisticBars}
+                    buySellVolume={realisticBsv}
+                />
+            );
+
+            expect(container.textContent).not.toContain('같은 날(');
         });
     });
 });
