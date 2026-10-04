@@ -23,10 +23,12 @@ import {
     X_URL,
 } from '@/shared/lib/seo';
 import {
+    DEFAULT_LOCALE,
     LOCALE_HREFLANG,
     localePath,
     resolveLocale,
 } from '@/shared/i18n/locales';
+import { RSS_ALTERNATE_TYPES } from '@/shared/config/rssFeed';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { FaqSection } from '@/shared/ui/FaqSection';
 import { BetaBadge } from '@/shared/ui/BetaBadge';
@@ -82,7 +84,11 @@ export async function generateMetadata({
         // 돌려주는 순간 조용히 접미사가 돌아왔다.
         title: { absolute: title },
         description,
-        alternates: await localeAlternatesFrom(params, '/'),
+        // RSS 발견 링크는 색인 로케일(ko)에만 건다. 레이아웃에 두면 이 페이지가
+        // `alternates`를 선언하면서 교체해 버려 홈 head에 나가지 않는다.
+        alternates: await localeAlternatesFrom(params, '/', {
+            types: locale === DEFAULT_LOCALE ? RSS_ALTERNATE_TYPES : undefined,
+        }),
         openGraph: {
             type: 'website',
             siteName: SITE_NAME,

@@ -77,12 +77,20 @@ export function localeCanonical(locale: Locale, path: string): string {
 export interface LocaleAlternatesResult {
     readonly canonical: string | null;
     readonly languages?: LanguageAlternates;
+    /** `<link rel="alternate" type=…>` 발견 링크(RSS 등). 옵션으로 줬을 때만 나간다. */
+    readonly types?: Readonly<Record<string, string>>;
 }
 
 /** `localeAlternates`·`localeAlternatesFrom`가 공유하는 선택 인자. */
 export interface LocaleAlternatesOptions {
     readonly canonical?: string | null;
     readonly available?: readonly Locale[];
+    /**
+     * 발견 링크(`types`). 페이지가 `alternates`를 선언하면 레이아웃의 `types`는 교체돼
+     * 사라지므로(위 hreflang과 같은 규칙) 필요한 페이지가 여기로 넘긴다. canonical이
+     * `null`인 noindex 분기에는 붙이지 않는다.
+     */
+    readonly types?: Readonly<Record<string, string>>;
 }
 
 export function localeAlternates(
@@ -105,11 +113,12 @@ export function localeAlternates(
      * 두 번째 로케일을 넣는 순간 준비되지 않은 나머지 두 로케일에서 바로 난다.
      */
     const available = options.available ?? STATIC_INDEXABLE_LOCALES;
-    if (!available.includes(locale)) return { canonical };
+    const types = options.types === undefined ? {} : { types: options.types };
+    if (!available.includes(locale)) return { canonical, ...types };
     const languages = buildLanguageAlternates(path, available);
     return Object.keys(languages).length > 0
-        ? { canonical, languages }
-        : { canonical };
+        ? { canonical, languages, ...types }
+        : { canonical, ...types };
 }
 
 /**

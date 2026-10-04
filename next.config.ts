@@ -198,6 +198,10 @@ const nextConfig: NextConfig = {
     // 노출한다 — sitemap index에서 노출하는 sub-sitemap URL과 실제 라우트가
     // 일치해야 crawler가 정상 fetch.
     rewrites: async () => [
+        // RSS 피드. sitemap과 같은 이유로 rewrite다 — 루트의 라우트 파일은 `[symbol]`
+        // 동적 라우트에 진다. `.xml`이라 프록시 matcher를 타지 않고, ai 호스트는 라우트가
+        // 404로 거른다. 경로 상수는 `shared/config/rssFeed.ts`(RSS_FEED_PATH)와 같아야 한다.
+        { source: '/rss.xml', destination: '/api/rss' },
         { source: '/sitemap.xml', destination: '/api/sitemap' },
         { source: '/sitemap-static.xml', destination: '/api/sitemap/static' },
         { source: '/sitemap-popular.xml', destination: '/api/sitemap/popular' },
