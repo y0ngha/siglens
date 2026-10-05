@@ -31,7 +31,7 @@ import { ProfitabilityCard } from '@/widgets/fundamental/sections/ProfitabilityC
 import { ValuationCard } from '@/widgets/fundamental/sections/ValuationCard';
 import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import { FundamentalSnapshotProse } from '@/views/symbol/snapshot/renderers/FundamentalSnapshotProse';
-import { hasFundamentalProse } from '@/views/symbol/snapshot/renderers/fundamentalContent';
+import { hasFundamentalProse } from '@/entities/seo-snapshot/lib/fundamentalContent';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { SectionSkeleton } from '@/views/symbol/SectionSkeleton';
 import { JsonLd } from '@/shared/ui/JsonLd';
@@ -50,7 +50,7 @@ import {
     buildSymbolFundamentalSeoContent,
     buildSymbolSeoContent,
     symbolMetadataFromSeo,
-    NOINDEX_SYMBOL_METADATA,
+    noindexInvalidSymbolMetadata,
     noindexSymbolMetadata,
 } from '@/shared/lib/seo';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
@@ -93,7 +93,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const upper = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
     if (!isAdmissibleSymbolShape(upper)) {
-        return NOINDEX_SYMBOL_METADATA;
+        return noindexInvalidSymbolMetadata(symbol, locale, 'fundamental');
     }
     // 본문 `isTabAllowedForSymbol` 가드와 일관: 크립토 심볼은 fundamental 탭이 없으므로
     // generateMetadata도 동일 조건에서 NOINDEX로 반환한다. 가드 없이 계속 진행하면
@@ -511,7 +511,9 @@ export default async function FundamentalPage({ params }: Props) {
         getAssetInfoResilient(upper),
         getSeoSnapshotsStatic(upper, revalidate, locale),
     ]);
-    const fundamentalSnapshot = snapshots.find(s => s.tab === 'fundamental');
+    const fundamentalSnapshot = (snapshots ?? []).find(
+        s => s.tab === 'fundamental'
+    );
     // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasFundamentalProse)
     // 그것만 보여준다. 클라이언트 AI 위젯은 계속 마운트하되 `hideView`로 UI만 끈다 —
     // 위젯을 아예 렌더하지 않으면 `useRegisterShareable`이 돌지 않아 헤더 공유

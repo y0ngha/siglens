@@ -66,10 +66,22 @@ vi.mock(
 );
 // `indicators`는 BarsData의 필수 필드다 — 비워 두면 seed 축소(getSeedBarsStatic)가
 // undefined를 읽는다. 실제 shape에 맞춰 빈 지표를 함께 준다.
+// 빈 봉은 `getBarsStatic`이 `EmptyBarsError`로 던져(캐시에 넣지 않으려고) 호출부가 degrade로 읽는다 —
+// 정상 경로 픽스처는 봉이 하나 이상 있어야 한다.
 vi.mock('@/entities/bars/lib/loadBarsData', () => ({
-    loadBarsData: vi
-        .fn()
-        .mockResolvedValue({ bars: [], indicators: { ma: {}, ema: {} } }),
+    loadBarsData: vi.fn().mockResolvedValue({
+        bars: [
+            { time: 1, open: 1, high: 2, low: 0.5, close: 1.5, volume: 100 },
+            { time: 2, open: 1.5, high: 2.5, low: 1, close: 2, volume: 120 },
+        ],
+        indicators: {
+            ma: {},
+            ema: {},
+            rsi: [50],
+            macd: [{ macd: 1, signal: 1, histogram: 1 }],
+            buySellVolume: [],
+        },
+    }),
 }));
 // page.tsx calls sessionSpecFor(marketProfile) before quantize — stub it out so the
 // core-level constants (US_EQUITY_SESSION) are not required in the partial core mock above.
@@ -364,9 +376,11 @@ describe('Symbol page', () => {
                 assetInfo,
                 degraded: false,
                 hasSnapshot: undefined,
-                // 이 파일의 bars 모킹은 `bars: []`를 돌려주므로 콘텐츠 게이트가
-                // false를 본다(2026-08-24 추가 — 봉 없는 죽은 티커 차단).
-                hasPriceData: false,
+                // 이 파일의 bars 모킹은 2봉을 돌려주므로(빈 봉은 `getBarsStatic`이 던져 degrade가
+                // 된다) 콘텐츠 게이트가 true를 본다.
+                hasPriceData: true,
+                // 큐레이션 밖 롱테일은 산문 판정용 스냅샷 읽기를 하지 않는다.
+                prose: undefined,
                 // 로케일도 판정 입력이다 — 본문이 아직 한국어로만 생성되는
                 // 로케일은 색인에서 뺀다(`locale-not-ready` 게이트).
                 locale: 'ko',

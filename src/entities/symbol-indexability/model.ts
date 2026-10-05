@@ -1,6 +1,18 @@
 import type { Locale } from '@/shared/i18n/locales';
 import type { AssetInfo } from '@/shared/lib/types';
 
+/**
+ * 이 탭의 AI 분석 산문이 **렌더 가능한 형태로 있는가**.
+ *
+ * - `present`: 이 탭의 스냅샷 행이 있고 `has*Prose`(렌더러와 같은 판정)를 통과한다.
+ * - `absent`: 스냅샷을 정상적으로 읽었는데 이 탭에 렌더 가능한 산문이 없다(행 없음·
+ *   내용이 렌더러 narrowing을 못 통과).
+ * - `unknown`: 스냅샷 **읽기 자체가 실패했다**(`getSeoSnapshotsStatic`이 `null`). 모르는 것을
+ *   "없음"으로 읽으면 DB가 한 번 흔들릴 때 산문이 멀쩡한 큐레이션 종목이 noindex로 굳는다 —
+ *   색인 게이트는 fail-open이다.
+ */
+export type SnapshotProseState = 'present' | 'absent' | 'unknown';
+
 export interface SymbolIndexabilityInput {
     symbol: string;
     assetInfo: AssetInfo | null;
@@ -42,6 +54,21 @@ export interface SymbolIndexabilityInput {
      * 그대로 유지된다(현재는 차트 라우트만 전달).
      */
     hasPriceData?: boolean;
+    /**
+     * 이 탭의 산문 보유 상태 — **차트(`technical`)·뉴스(`news`) 탭만** 넘긴다. 이 둘은
+     * 종목 고유 텍스트가 AI 스냅샷 산문뿐이라(`SEO_RECOVERY_2026_09.md` §5 A3), 산문이 없으면
+     * 남는 건 제목·크롬·수치 요약이라 thin 페이지다.
+     *
+     * `absent`면 화이트리스트와 무관하게 noindex(`no-prose`)다. 평가 순서는 degraded **다음**,
+     * 화이트리스트 **앞**이다 — degraded는 스스로 스냅샷 유무를 보는 별도 규칙(
+     * `degraded-with-snapshot`)을 갖고, 산문 게이트는 정상 렌더에서만 의미가 있다.
+     * `unknown`은 게이트를 건너뛴다(fail-open). 생략하면(`undefined`) 그 탭은 산문 게이트가
+     * 없다 — 기존 판정이 그대로 유지된다.
+     *
+     * sitemap(`PROSE_GATED_SITEMAP_TABS`)이 같은 판정(`hasProseForTab`)으로 URL을 싣거나
+     * 빼므로, 페이지와 sitemap이 어긋나지 않는다(parity 테스트).
+     */
+    prose?: SnapshotProseState;
 }
 
 type SymbolIndexabilityReason =
@@ -53,6 +80,7 @@ type SymbolIndexabilityReason =
     | 'no-price-data'
     | 'degraded'
     | 'degraded-with-snapshot'
+    | 'no-prose'
     | 'longtail-default-blocked'
     | 'locale-not-ready';
 

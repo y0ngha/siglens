@@ -1,53 +1,14 @@
 vi.mock('@/entities/sitemap-entry/server', () => ({
     loadRemovalSitemapEntries: vi.fn(),
 }));
-vi.mock('@/entities/sitemap-entry/lib/removalXml', async importOriginal => ({
-    ...(await importOriginal<
-        typeof import('@/entities/sitemap-entry/lib/removalXml')
-    >()),
-    toRemovalUrlSetXml: vi
-        .fn()
-        .mockReturnValue('<?xml version="1.0"?><urlset/>'),
-}));
 
 import { constants } from 'node:http2';
 import { dynamic, GET } from '@/app/api/sitemap/removal/[kind]/route';
-import {
-    SITEMAP_CACHE_CONTROL,
-    SITEMAP_RETRY_AFTER_SECONDS,
-    SITEMAP_UNAVAILABLE_BODY,
-} from '@/app/api/sitemap/_shared/constants';
-import {
-    REMOVAL_SITEMAP_KINDS,
-    SITEMAP_MAX_URLS_PER_FILE,
-    type RemovalSitemapEntry,
-} from '@/entities/sitemap-entry/model';
-import { toRemovalUrlSetXml } from '@/entities/sitemap-entry/lib/removalXml';
+import { SITEMAP_CACHE_CONTROL } from '@/app/api/sitemap/_shared/constants';
+import { REMOVAL_SITEMAP_KINDS } from '@/entities/sitemap-entry/model';
 import { loadRemovalSitemapEntries } from '@/entities/sitemap-entry/server';
-import type { MockedFunction, MockInstance } from 'vitest';
 
-const {
-    HTTP_STATUS_INTERNAL_SERVER_ERROR,
-    HTTP_STATUS_NOT_FOUND,
-    HTTP_STATUS_OK,
-    HTTP_STATUS_SERVICE_UNAVAILABLE,
-} = constants;
-
-const mockLoadRemovalSitemapEntries =
-    loadRemovalSitemapEntries as MockedFunction<
-        typeof loadRemovalSitemapEntries
-    >;
-const mockToRemovalUrlSetXml = toRemovalUrlSetXml as MockedFunction<
-    typeof toRemovalUrlSetXml
->;
-
-const entry: RemovalSitemapEntry = {
-    url: 'https://siglens.io/AAPL/chart',
-    lastModified: new Date('2026-07-08T00:00:00.000Z'),
-};
-
-let errorSpy: MockInstance;
-let infoSpy: MockInstance;
+const { HTTP_STATUS_GONE, HTTP_STATUS_NOT_FOUND } = constants;
 
 function callGET(kind: string): Promise<Response> {
     return GET(new Request(`https://siglens.io/api/sitemap/removal/${kind}`), {
@@ -58,165 +19,37 @@ function callGET(kind: string): Promise<Response> {
 describe('GET /api/sitemap/removal/[kind]', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        errorSpy = vi
-            .spyOn(console, 'error')
-            .mockImplementation(() => undefined);
-        infoSpy = vi.spyOn(console, 'info').mockImplementation(() => undefined);
-        mockLoadRemovalSitemapEntries.mockResolvedValue([entry]);
     });
 
-    afterEach(() => {
-        errorSpy.mockRestore();
-        infoSpy.mockRestore();
+    it('forces dynamic rendering', () => {
+        expect(dynamic).toBe('force-dynamic');
     });
 
-    describe('when the route module is loaded', () => {
-        it('forces dynamic rendering', () => {
-            expect(dynamic).toBe('force-dynamic');
-        });
-    });
+    // 2026-10-05: 제거 sitemap은 §8이 금지한 82K 롱테일 재발견을 계속 먹이는 표면이라 은퇴했다.
+    it.each(REMOVAL_SITEMAP_KINDS)(
+        'returns 410 Gone for the retired %s removal sitemap',
+        async kind => {
+            const response = await callGET(kind);
 
-    describe('when the removal sitemap kind is valid', () => {
-        it.each(REMOVAL_SITEMAP_KINDS)(
-            'returns the %s sitemap as cacheable XML',
-            async kind => {
-                const response = await callGET(kind);
-
-                expect(response.status).toBe(HTTP_STATUS_OK);
-                expect(response.headers.get('Content-Type')).toBe(
-                    'application/xml; charset=utf-8'
-                );
-                expect(response.headers.get('Cache-Control')).toBe(
-                    SITEMAP_CACHE_CONTROL
-                );
-                await expect(response.text()).resolves.toBe(
-                    '<?xml version="1.0"?><urlset/>'
-                );
-                expect(mockLoadRemovalSitemapEntries).toHaveBeenCalledWith(
-                    kind
-                );
-                expect(mockToRemovalUrlSetXml).toHaveBeenCalledWith([entry]);
-                expect(errorSpy).not.toHaveBeenCalled();
-                expect(infoSpy).toHaveBeenCalledWith(
-                    '[removal-sitemap] generated',
-                    { kind, count: 1 }
-                );
-            }
-        );
-    });
-
-    describe('when the removal sitemap kind is invalid', () => {
-        it('returns 404 without loading or serializing entries', async () => {
-            const response = await callGET('invalid');
-
-            expect(response.status).toBe(HTTP_STATUS_NOT_FOUND);
-            expect(mockLoadRemovalSitemapEntries).not.toHaveBeenCalled();
-            expect(mockToRemovalUrlSetXml).not.toHaveBeenCalled();
-            expect(errorSpy).not.toHaveBeenCalled();
-            expect(infoSpy).not.toHaveBeenCalled();
-        });
-    });
-
-    describe('when the removal sitemap loader rejects', () => {
-        it('returns a retryable unavailable response and logs sanitized loading diagnostics', async () => {
-            mockLoadRemovalSitemapEntries.mockRejectedValue(
-                new Error('database credentials')
-            );
-
-            const response = await callGET('chart');
-
-            expect(response.status).toBe(HTTP_STATUS_SERVICE_UNAVAILABLE);
-            expect(response.headers.get('Retry-After')).toBe(
-                SITEMAP_RETRY_AFTER_SECONDS
+            expect(response.status).toBe(HTTP_STATUS_GONE);
+            expect(response.headers.get('Cache-Control')).toBe(
+                SITEMAP_CACHE_CONTROL
             );
             await expect(response.text()).resolves.toBe(
-                SITEMAP_UNAVAILABLE_BODY
+                'Removal sitemap retired'
             );
-            expect(errorSpy).toHaveBeenCalledWith(
-                '[removal-sitemap] entry loading failed',
-                { kind: 'chart', errorName: 'Error' }
-            );
-            expect(errorSpy).toHaveBeenCalledOnce();
-            expect(mockToRemovalUrlSetXml).not.toHaveBeenCalled();
-            expect(infoSpy).not.toHaveBeenCalled();
-        });
+        }
+    );
 
-        it('sanitizes non-Error loader rejections', async () => {
-            mockLoadRemovalSitemapEntries.mockRejectedValue(
-                'postgres://private-database'
-            );
+    it('does not read the database or build any entry (the builder is kept, the route no longer calls it)', async () => {
+        await callGET('chart');
 
-            await callGET('news');
-
-            expect(errorSpy).toHaveBeenCalledWith(
-                '[removal-sitemap] entry loading failed',
-                { kind: 'news', errorName: 'UnknownError' }
-            );
-            expect(errorSpy).toHaveBeenCalledOnce();
-        });
+        expect(loadRemovalSitemapEntries).not.toHaveBeenCalled();
     });
 
-    describe('when XML serialization fails', () => {
-        it('returns a retryable unavailable response and logs sanitized phase diagnostics', async () => {
-            mockToRemovalUrlSetXml.mockImplementationOnce(() => {
-                throw new TypeError('private symbol payload');
-            });
+    it('keeps 404 for a kind that never existed', async () => {
+        const response = await callGET('invalid');
 
-            const response = await callGET('chart');
-
-            expect(response.status).toBe(HTTP_STATUS_SERVICE_UNAVAILABLE);
-            expect(response.headers.get('Retry-After')).toBe(
-                SITEMAP_RETRY_AFTER_SECONDS
-            );
-            await expect(response.text()).resolves.toBe(
-                SITEMAP_UNAVAILABLE_BODY
-            );
-            expect(errorSpy).toHaveBeenCalledWith(
-                '[removal-sitemap] XML serialization failed',
-                { kind: 'chart', count: 1, errorName: 'TypeError' }
-            );
-            expect(errorSpy).toHaveBeenCalledOnce();
-            expect(infoSpy).not.toHaveBeenCalled();
-        });
-    });
-
-    describe('when the removal sitemap exceeds the URL limit', () => {
-        it('returns 500, logs kind and count, and does not serialize', async () => {
-            const entries = Array.from(
-                { length: SITEMAP_MAX_URLS_PER_FILE + 1 },
-                () => entry
-            );
-            mockLoadRemovalSitemapEntries.mockResolvedValue(entries);
-
-            const response = await callGET('chart');
-
-            expect(response.status).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR);
-            expect(errorSpy).toHaveBeenCalledWith(
-                '[removal-sitemap] entry limit exceeded',
-                { kind: 'chart', count: SITEMAP_MAX_URLS_PER_FILE + 1 }
-            );
-            expect(mockToRemovalUrlSetXml).not.toHaveBeenCalled();
-            expect(infoSpy).not.toHaveBeenCalled();
-        });
-    });
-
-    describe('when the removal sitemap is at the exact URL limit', () => {
-        it('returns 200 and serializes every entry', async () => {
-            const entries = Array.from(
-                { length: SITEMAP_MAX_URLS_PER_FILE },
-                () => entry
-            );
-            mockLoadRemovalSitemapEntries.mockResolvedValue(entries);
-
-            const response = await callGET('chart');
-
-            expect(response.status).toBe(HTTP_STATUS_OK);
-            expect(mockToRemovalUrlSetXml).toHaveBeenCalledWith(entries);
-            expect(errorSpy).not.toHaveBeenCalled();
-            expect(infoSpy).toHaveBeenCalledWith(
-                '[removal-sitemap] generated',
-                { kind: 'chart', count: SITEMAP_MAX_URLS_PER_FILE }
-            );
-        });
+        expect(response.status).toBe(HTTP_STATUS_NOT_FOUND);
     });
 });

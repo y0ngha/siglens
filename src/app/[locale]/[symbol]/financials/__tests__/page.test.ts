@@ -123,7 +123,10 @@ describe('generateMetadata', () => {
         });
 
         expect(metadata.robots).toEqual({ index: false, follow: true });
-        expect(metadata.alternates?.canonical).toBeNull();
+        // 심볼이 아닌 세그먼트도 canonical은 **실제 요청 URL**(탭 경로 포함)이다(홈 canonical 상속·null 아님).
+        expect(metadata.alternates?.canonical).toBe(
+            'https://siglens.io/!!!invalid/financials'
+        );
     });
 
     it('returns noindex when assetInfo is degraded', async () => {
@@ -137,7 +140,9 @@ describe('generateMetadata', () => {
         });
 
         expect(metadata.robots).toEqual({ index: false, follow: true });
-        expect(metadata.alternates?.canonical).toBeNull();
+        expect(metadata.alternates?.canonical).toBe(
+            'https://siglens.io/AAPL/financials'
+        );
     });
 
     it('returns canonical /{symbol}/financials for a valid existing symbol', async () => {
