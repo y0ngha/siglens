@@ -44,7 +44,7 @@ export function Breadcrumb({ trail }: BreadcrumbProps) {
                         // 전 허브에 공통 렌더 — 진입 경로마다 다른 `_rsc` 해시로
                         // `/`의 캐시를 파편화시킨다(CDN_CACHING.md §1).
                         prefetch={false}
-                        className="transition-colors hover:text-secondary-300"
+                        className="tap-target transition-colors hover:text-secondary-300"
                     >
                         {SITE_NAME}
                     </Link>
@@ -64,7 +64,7 @@ export function Breadcrumb({ trail }: BreadcrumbProps) {
                                     <Link
                                         href={crumb.href}
                                         prefetch={false}
-                                        className="transition-colors hover:text-secondary-300"
+                                        className="tap-target transition-colors hover:text-secondary-300"
                                     >
                                         {crumb.label}
                                     </Link>

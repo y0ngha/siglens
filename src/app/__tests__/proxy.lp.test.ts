@@ -1,8 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/shared/config/cookieNames', () => ({
     AUTH_SESSION_COOKIE_NAME: 'siglens_session',
     GUEST_ID_COOKIE_NAME: 'siglens_guest',
+    AI_SSO_PROBED_COOKIE_NAME: 'siglens_ai_sso_probed',
+    AI_SSO_PROBED_MAX_AGE_SECONDS: 1800,
 }));
 const { mockIntlMiddleware } = vi.hoisted(() => ({
     mockIntlMiddleware: vi.fn(() => ({ type: 'intl' })),
@@ -43,6 +45,7 @@ vi.mock('next/server', () => {
 
 import type { NextRequest } from 'next/server';
 import { proxy } from '@/proxy';
+import { AI_SITE_URL, MAIN_SITE_URL } from '@/shared/config/aiHost';
 
 interface Res {
     type: string;
@@ -87,18 +90,37 @@ describe('proxy — ad landing pages (/lp/*)', () => {
     });
 
     it.each([
-        [MAIN, '/lp/stock-chat'],
-        [AI, '/lp/stock-analysis'],
+        [MAIN, '/lp/stock-chat', new URL(AI_SITE_URL).origin],
+        [AI, '/lp/stock-analysis', new URL(MAIN_SITE_URL).origin],
+    ])(
+        '%s%s → 308 to the other host, keeping path and query',
+        async (host, path, origin) => {
+            const res = await run(host, `${path}?gclid=abc&utm_source=google`);
+            expect(res.type).toBe('redirect');
+            expect(res.status).toBe(308);
+            expect(res.url?.origin).toBe(origin);
+            expect(res.url?.pathname).toBe(path);
+            expect(res.url?.search).toBe('?gclid=abc&utm_source=google');
+            expect(res.headers.get('X-Robots-Tag')).toBe('noindex, nofollow');
+            expect(mockIntlMiddleware).not.toHaveBeenCalled();
+        }
+    );
+
+    it.each([
         [MAIN, '/lp'],
         [MAIN, '/lp/unknown'],
         [AI, '/lp/unknown'],
         [AI, '/lp/stock-chat/extra'],
-    ])('%s%s → 404 with a noindex header', async (host, path) => {
-        const res = await run(host, path);
-        expect(res.status).toBe(404);
-        expect(res.headers.get('X-Robots-Tag')).toBe('noindex, nofollow');
-        expect(mockIntlMiddleware).not.toHaveBeenCalled();
-    });
+    ])(
+        '%s%s → rewritten to a path no route matches, so the root not-found renders a 404',
+        async (host, path) => {
+            const res = await run(host, path);
+            expect(res.type).toBe('rewrite');
+            expect(res.url?.pathname).toBe('/__lp_not_found__/x/y/z');
+            expect(res.headers.get('X-Robots-Tag')).toBe('noindex, nofollow');
+            expect(mockIntlMiddleware).not.toHaveBeenCalled();
+        }
+    );
 
     it('lp is a reserved segment: /ko/lp/... drops the prefix without uppercasing', async () => {
         const res = await run(MAIN, '/ko/lp/stock-analysis');
@@ -132,5 +154,32 @@ describe('proxy — ad landing pages (/lp/*)', () => {
         const res = await run(AI, '/sitemap.xml');
         expect(res.body).toContain('<urlset');
         expect(res.body).not.toContain('/lp');
+    });
+});
+
+/**
+ * 두 호스트 설정(`NEXT_PUBLIC_SITE_URL`·`NEXT_PUBLIC_AI_SITE_URL`)이 같은 오리진을 가리키는
+ * 환경(로컬 개발에서 ai 호스트를 따로 안 띄운 경우)에서 308은 자기 자신으로 돌아와 무한
+ * 루프가 된다. 그땐 리다이렉트를 포기하고 404로 끝나야 한다.
+ */
+describe('proxy — ad landing redirect loop guard', () => {
+    afterEach(() => {
+        vi.unstubAllEnvs();
+        vi.resetModules();
+    });
+
+    it('목적지 오리진이 요청 호스트와 같으면 308 대신 404 rewrite다', async () => {
+        vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://siglens.io');
+        vi.stubEnv('NEXT_PUBLIC_AI_SITE_URL', 'https://siglens.io');
+        vi.resetModules();
+        const { proxy: freshProxy } = await import('@/proxy');
+
+        const res = (await freshProxy(
+            request(MAIN, '/lp/stock-chat?gclid=x')
+        )) as unknown as Res;
+
+        expect(res.type).toBe('rewrite');
+        expect(res.url?.pathname).toBe('/__lp_not_found__/x/y/z');
+        expect(res.headers.get('X-Robots-Tag')).toBe('noindex, nofollow');
     });
 });

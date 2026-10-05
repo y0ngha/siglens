@@ -27,6 +27,7 @@ import {
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
 import {
     getQuantizedBarsStatic,
     getSeedBarsStatic,
@@ -41,7 +42,6 @@ import {
     resolveSymbolSeoContent,
     symbolMetadataFromSeo,
     noindexInvalidSymbolMetadata,
-    noindexSymbolMetadata,
 } from '@/shared/lib/seo';
 import {
     dehydrate,
@@ -75,27 +75,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (!isAdmissibleSymbolShape(ticker)) {
         return noindexInvalidSymbolMetadata(symbol, locale);
     }
-    const { assetInfo, degraded } = await getAssetInfoResilient(ticker);
+    // 존재하지 않는 심볼은 레이아웃과 같은 판정으로 여기서도 404다 — 티커를 단
+    // noindex 메타데이터를 돌려주면 404 응답에 정상 페이지 제목이 얹힌다.
+    const { assetInfo, degraded } = await requireResolvableAsset(ticker);
     // 봉 유무를 게이트에 넘기기 위해 metadata 단계에서 먼저 확정한다. 본문이
     // **같은 인자**로 부르는 `getQuantizedBarsStatic`은 `React.cache`라 요청
     // 스코프에서 접히므로 왕복이 늘지 않는다(둘 중 먼저 도는 쪽이 채우고 뒤는
     // 메모 히트 — `getSeoSnapshotsStatic`을 여기서 다시 부르는 것과 같은 패턴).
-    // assetInfo가 없으면 marketProfile을 유도할 수 없으므로 조회를 건너뛴다 —
-    // 그 경우는 아래 `asset-missing` 분기가 이미 noindex로 처리한다.
-    const metadataBars = assetInfo
-        ? await getQuantizedBarsStatic(
-              ticker,
-              DEFAULT_TIMEFRAME,
-              marketProfileOf(assetInfo),
-              assetInfo.fmpSymbol
-          ).catch((e: unknown) => {
-              console.error(
-                  '[SymbolPage] generateMetadata getQuantizedBarsStatic failed:',
-                  e
-              );
-              return null;
-          })
-        : null;
+    const metadataBars = await getQuantizedBarsStatic(
+        ticker,
+        DEFAULT_TIMEFRAME,
+        marketProfileOf(assetInfo),
+        assetInfo.fmpSymbol
+    ).catch((e: unknown) => {
+        console.error(
+            '[SymbolPage] generateMetadata getQuantizedBarsStatic failed:',
+            e
+        );
+        return null;
+    });
     const blockedMetadata = await getBlockedSymbolMetadata({
         locale,
         symbol: ticker,
@@ -132,7 +130,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
                   ) !== null,
     });
     if (blockedMetadata) return blockedMetadata;
-    if (!assetInfo) return noindexSymbolMetadata(ticker, tSeo, locale);
 
     const displayName = buildDisplayName(assetInfo, ticker, locale);
     const profile = marketProfileOf(assetInfo);

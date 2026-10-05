@@ -2,7 +2,10 @@ import 'server-only';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { isBot } from '@/shared/api/isBot';
-import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
+import {
+    AI_SSO_PROBED_COOKIE_NAME,
+    AUTH_SESSION_COOKIE_NAME,
+} from '@/shared/config/cookieNames';
 import { localePath, resolveLocale } from '@/shared/i18n/locales';
 
 /**
@@ -23,7 +26,8 @@ const CARRIED_PARAMS = [
 ] as const;
 
 /**
- * No ai-host session and no `?sso=none` → bounce through the SSO handoff once
+ * No ai-host session and no `?sso=none` (nor the probed cookie the proxy sets
+ * for it) → bounce through the SSO handoff once
  * (spec §9-4). The bounce goes to the ai-host `/api/auth/handoff/start` route
  * (relative, so it stays on the ai host in every environment) because the
  * browser-binding state cookie must be set first and a Server Component render
@@ -42,8 +46,14 @@ export async function maybeHandoffRedirect(
     path: string,
     searchParams: Record<string, string | string[] | undefined>
 ): Promise<void> {
-    const hasSession = (await cookies()).get(AUTH_SESSION_COOKIE_NAME)?.value;
-    if (hasSession || searchParams.sso === 'none') return;
+    const cookieStore = await cookies();
+    const hasSession = cookieStore.get(AUTH_SESSION_COOKIE_NAME)?.value;
+    // `?sso=none` 쿠키 판(`proxy.ts`가 심는다)도 같은 뜻이다 — 파라미터는 주소창
+    // 정리나 내부 링크 이동으로 사라지지만 프로브가 이미 끝났다는 사실은 남아야 한다.
+    const alreadyProbed =
+        searchParams.sso === 'none' ||
+        cookieStore.get(AI_SSO_PROBED_COOKIE_NAME)?.value !== undefined;
+    if (hasSession || alreadyProbed) return;
     // Crawlers have no session anywhere; bouncing them through two hosts only
     // hands them a meta-refresh page instead of the landing they should index.
     if (isBot(await headers())) return;

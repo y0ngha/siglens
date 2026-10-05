@@ -21,6 +21,9 @@ import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
  * (Suspense 경계보다 위라 진짜 404가 나가는 유일한 지점). 9개 자식 page.tsx에도 같은
  * 가드가 남아 있는데, 그건 `generateMetadata`와 짝을 이루고 레이아웃 없이 페이지
  * 컴포넌트만 렌더하는 단위 테스트 경로를 지키기 위한 것이다 — **지우지 말 것**.
+ * 레이아웃과 모든 탭의 `generateMetadata`는 같은 판정을 `requireResolvableAsset`
+ * (`app/[locale]/[symbol]/`)으로 부른다 — 메타데이터가 이 판정과 어긋나면 404 응답에
+ * 티커를 단 정상 페이지 제목이 얹힌다.
  * ```ts
  * const { assetInfo, degraded } = await getAssetInfoResilient(ticker);
  * if (isUnresolvableDegraded(ticker, degraded)) notFound();

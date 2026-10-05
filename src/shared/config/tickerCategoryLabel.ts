@@ -26,6 +26,8 @@ export const TICKER_CATEGORY_LABEL_KEY: Record<string, string> = {
     금융·지주: 'tickerCategory.Financialsholdings',
     코스닥: 'tickerCategory.KOSDAQ',
     '관심 급상승': 'tickerCategory.Trendinginterest',
+    메이저: 'tickerCategory.Major',
+    알트코인: 'tickerCategory.Altcoins',
 };
 
 /**

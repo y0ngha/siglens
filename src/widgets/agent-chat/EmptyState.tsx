@@ -148,8 +148,14 @@ export function EmptyState({
     const t = useTranslations('widgets.agent-chat');
     // Localized fallback — kept inside the component (not hoisted) so the
     // extraction codemod can find them as real `t()` calls.
+    // The first card is the portfolio question for members. A guest has no
+    // holdings to ask about — the assistant would answer "log in", so the card
+    // that greets every anonymous visitor (and the crawlers that index this
+    // landing) is a question anyone can ask. Six cards either way.
     const fallback = [
-        t('EmptyState.suggestionPortfolio'),
+        signedIn
+            ? t('EmptyState.suggestionPortfolio')
+            : t('EmptyState.suggestionKospi'),
         t('EmptyState.suggestionSamsung'),
         t('EmptyState.suggestionAapl'),
         t('EmptyState.suggestionNews'),

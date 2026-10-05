@@ -44,6 +44,7 @@ import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotSt
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
 import {
     ALWAYS_NOINDEX_TAB_ROBOTS,
     buildBreadcrumbJsonLd,
@@ -95,6 +96,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (!isAdmissibleSymbolShape(upper)) {
         return noindexInvalidSymbolMetadata(symbol, locale, 'fundamental');
     }
+    // 존재하지 않는 심볼은 레이아웃과 같은 판정으로 여기서도 404다(`requireResolvableAsset`).
+    const { assetInfo, degraded } = await requireResolvableAsset(upper);
     // 본문 `isTabAllowedForSymbol` 가드와 일관: 크립토 심볼은 fundamental 탭이 없으므로
     // generateMetadata도 동일 조건에서 NOINDEX로 반환한다. 가드 없이 계속 진행하면
     // 본문은 notFound()(noindex)인데 메타데이터는 canonical + index:true인 soft-404가 만들어진다.
@@ -103,7 +106,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             tab: 'fundamental',
         });
     }
-    const { assetInfo, degraded } = await getAssetInfoResilient(upper);
     const blockedMetadata = await getBlockedSymbolMetadata({
         locale,
         symbol: upper,
@@ -114,13 +116,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     });
     if (blockedMetadata) return blockedMetadata;
 
-    const displayName = assetInfo
-        ? buildDisplayName(assetInfo, upper, locale)
-        : upper;
+    const displayName = buildDisplayName(assetInfo, upper, locale);
     const seo = buildSymbolFundamentalSeoContent(upper, tSeo, {
         displayName,
-        koreanName: assetInfo?.koreanName,
-        englishName: assetInfo?.name,
+        koreanName: assetInfo.koreanName,
+        englishName: assetInfo.name,
         locale,
     });
     // **항상 noindex** (2026-10-01 SEO 감사, `SEO_RECOVERY_2026_09.md` §10).

@@ -222,7 +222,7 @@ function DisclosureCell({
                         ? t('disclosureSearch')
                         : t('disclosureDocument'),
                 })}
-                className="rounded text-xs text-primary-400 underline transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                className="tap-target rounded text-xs text-primary-400 underline transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
                 {isSenate
                     ? t('CongressTradesTable.fdf8d2')
