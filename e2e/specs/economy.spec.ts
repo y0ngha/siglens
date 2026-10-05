@@ -1,3 +1,4 @@
+import type { Page } from '@playwright/test';
 import { test, expect } from '../support/fixtures';
 import { clickHeaderNavRegion } from '../support/headerNav';
 
@@ -12,6 +13,21 @@ import { clickHeaderNavRegion } from '../support/headerNav';
  * 활성화 방법: E2E_TEST=1 E2E_ECONOMY_FORCE_EMPTY=1 yarn build && yarn start -p 4300
  */
 const FORCE_EMPTY = process.env['E2E_ECONOMY_FORCE_EMPTY'] === '1';
+
+/**
+ * 캘린더는 오늘이 속한 주보다 앞선 주 줄을 "지난 일정 보기" 뒤로 접는다(DOM에는
+ * 남는다). fixture는 오늘 기준 -2일 이벤트를 갖고 있어 요일에 따라 그 칸이 접힌 줄에
+ * 들어가므로, 날짜 버튼을 누르기 전에 접혀 있다면 펼친다.
+ */
+async function ensureDayButtonVisible(
+    page: Page,
+    dateKey: string
+): Promise<void> {
+    const dayBtn = page.locator(`#day-btn-${dateKey}`);
+    if (await dayBtn.isVisible()) return;
+    await page.getByRole('button', { name: '지난 일정 보기' }).click();
+    await expect(dayBtn).toBeVisible();
+}
 
 /**
  * /economy — Tier 3 render outcomes.
@@ -332,6 +348,7 @@ test.describe('economy calendar — SP-B/C/D feature coverage', () => {
         const mbaPanelId = await mbaMortgagePanel.getAttribute('id');
         expect(mbaPanelId).not.toBeNull();
         const mbaDateKey = mbaPanelId!.replace('panel-', '');
+        await ensureDayButtonVisible(page, mbaDateKey);
         await page.locator(`#day-btn-${mbaDateKey}`).click();
 
         // 패널이 선택됐으므로 패널 자체는 visible.
@@ -389,6 +406,7 @@ test.describe('economy calendar — SP-B/C/D feature coverage', () => {
         const dateKey = panelId!.replace('panel-', '');
         const dayBtn = page.locator(`#day-btn-${dateKey}`);
 
+        await ensureDayButtonVisible(page, dateKey);
         await dayBtn.click();
 
         // 클릭 후 패널 visible (hidden 속성 제거)

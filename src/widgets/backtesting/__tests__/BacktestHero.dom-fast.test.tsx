@@ -111,4 +111,20 @@ describe('BacktestHero', () => {
         const value = screen.getByText('-1.2%');
         expect(value).toHaveClass('text-ui-danger-text');
     });
+
+    /**
+     * 모바일(390px)에서 11px 서브라벨·눈썹 문구는 읽히지 않았다. 모두 12px(`text-xs`)
+     * 이상이어야 한다 — 임의 값(`text-[0.6875rem]`, `text-[11px]`)으로 되돌리면 실패한다.
+     */
+    it('통계 서브라벨과 눈썹 문구는 12px(text-xs) 미만으로 내려가지 않는다', () => {
+        const { container } = render(<BacktestHero stats={STATS} />);
+
+        expect(container.innerHTML).not.toMatch(
+            /text-\[(0\.6\d*rem|9px|10px|11px)\]/
+        );
+        for (const el of screen.getAllByTestId('stat-sub-label')) {
+            expect(el).toHaveClass('text-xs');
+        }
+        expect(screen.getByText(/BACKTESTING RESULTS/)).toHaveClass('text-xs');
+    });
 });

@@ -495,7 +495,7 @@ describe('PositionPage — per-symbol current-price-position content (Task 1; re
         expect(className).not.toContain('sr-only');
 
         // low=85, high=110, lastClose=100 → (100-85)/(110-85) = 0.6 → 60%,
-        // floorIndex=floor(0.6*5)=3 → "4층 · 고층"(describeAvgFloor의 BAND_COUNT=5
+        // floorIndex=floor(0.6*5)=3 → "4층 · 고층"(describeFloor의 BAND_COUNT=5
         // 표와 동일한 매핑 — PositionBuilding.dom-fast.test.tsx의 avgPos=0.6 케이스 참고).
         // percentile(60)은 JSX 안에서 인접 텍스트('% 지점')와 별개 자식 노드로
         // 렌더되므로(숫자 보간), JSON.stringify 결과에서 "60%"로 붙어있지 않다 —

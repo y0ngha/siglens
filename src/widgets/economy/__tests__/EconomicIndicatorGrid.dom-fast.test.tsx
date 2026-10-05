@@ -66,6 +66,56 @@ describe('EconomicIndicatorGrid', () => {
         expect(badge).toHaveClass('text-secondary-300');
     });
 
+    /**
+     * 값에 천 단위 구분자가 없으면 `159044`처럼 자릿수를 세어야 읽힌다. 변화량도
+     * 같은 규칙을 따르고, `%` 지표의 변화량 단위는 `%p`(en `pp`)다.
+     */
+    it('큰 값에는 천 단위 구분자를 쓴다 (159,044)', () => {
+        render(
+            <EconomicIndicatorGrid
+                snapshot={snap({
+                    indicators: [
+                        {
+                            name: 'totalNonfarmPayroll',
+                            latest: POINT('2026-05-01', 159044),
+                            previous: POINT('2026-04-01', 158000),
+                            trend: [],
+                        },
+                    ],
+                })}
+            />
+        );
+        expect(screen.getByText('159,044')).toBeInTheDocument();
+        expect(screen.queryByText('159044')).not.toBeInTheDocument();
+        expect(screen.getByText(/\+1,044천명/)).toBeInTheDocument();
+    });
+
+    it('% 지표의 변화량 단위는 ko에서 %p다', () => {
+        render(<EconomicIndicatorGrid snapshot={snap()} />);
+        // 값 단위는 그대로 `%`, 변화량만 `%p`.
+        expect(screen.getByText(/\+0\.05%p/)).toBeInTheDocument();
+    });
+
+    it('% 지표의 변화량 단위는 en에서 pp다', () => {
+        renderWithIntl(<EconomicIndicatorGrid snapshot={snap()} />, {
+            locale: 'en',
+        });
+        expect(
+            screen.getByText(/vs\. Previous Period \+0\.05pp/)
+        ).toBeInTheDocument();
+    });
+
+    it('2s10s 스프레드 단위도 같은 %p 규칙을 쓴다', () => {
+        const { container } = render(
+            <EconomicIndicatorGrid snapshot={snap()} />
+        );
+        const spreadCard = screen
+            .getByText('2s10s 스프레드')
+            .closest('article');
+        expect(spreadCard).toHaveTextContent('+0.40%p');
+        expect(container.textContent).not.toMatch(/\+0\.40%(?!p)/);
+    });
+
     it('금리 섹션은 treasury 카드 3종(2Y·10Y·2s10s) 렌더', () => {
         render(<EconomicIndicatorGrid snapshot={snap()} />);
         expect(screen.getByText('2년물 국채')).toBeInTheDocument();
@@ -146,14 +196,14 @@ describe('EconomicIndicatorGrid', () => {
             />
         );
         const payrollValue =
-            screen.getByText('158449').closest('div')?.textContent ?? '';
+            screen.getByText('158,449').closest('div')?.textContent ?? '';
         expect(payrollValue).toContain('천명');
         expect(screen.getByText(/\+41천명/)).toBeInTheDocument();
 
         const claimsValue =
-            screen.getByText('220000').closest('div')?.textContent ?? '';
+            screen.getByText('220,000').closest('div')?.textContent ?? '';
         expect(claimsValue).toContain('건');
-        expect(screen.getByText(/-6000건/)).toBeInTheDocument();
+        expect(screen.getByText(/-6,000건/)).toBeInTheDocument();
     });
 
     it('en 로케일에서는 단위가 K/claims로 번역되고 한글이 남지 않는다', () => {
@@ -183,19 +233,19 @@ describe('EconomicIndicatorGrid', () => {
         // 여전히 ko 고정이다 — 그래서 컨테이너 전체가 아니라 단위가 실제로 찍히는
         // 값 줄(값+단위 span)과 DeltaBadge 문장만 좁혀서 한글 없음을 확인한다.
         const payrollValue =
-            screen.getByText('158449').closest('div')?.textContent ?? '';
-        expect(payrollValue).toBe('158449K');
+            screen.getByText('158,449').closest('div')?.textContent ?? '';
+        expect(payrollValue).toBe('158,449K');
         expect(payrollValue).not.toMatch(/[가-힣]/);
         expect(
             screen.getByText(/vs\. Previous Period \+41K/)
         ).toBeInTheDocument();
 
         const claimsValue =
-            screen.getByText('220000').closest('div')?.textContent ?? '';
-        expect(claimsValue).toBe('220000 claims');
+            screen.getByText('220,000').closest('div')?.textContent ?? '';
+        expect(claimsValue).toBe('220,000 claims');
         expect(claimsValue).not.toMatch(/[가-힣]/);
         expect(
-            screen.getByText(/vs\. Previous Period -6000 claims/)
+            screen.getByText(/vs\. Previous Period -6,000 claims/)
         ).toBeInTheDocument();
     });
 });

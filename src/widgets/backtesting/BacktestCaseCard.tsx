@@ -35,7 +35,7 @@ function EntryRecBadge({ recommendation }: EntryRecBadgeProps) {
         <span
             translate="no"
             className={cn(
-                'rounded border px-1.5 py-0.5 text-[9px] font-semibold',
+                'rounded border px-1.5 py-0.5 text-xs font-semibold',
                 config.cls
             )}
         >
@@ -44,11 +44,41 @@ function EntryRecBadge({ recommendation }: EntryRecBadgeProps) {
     );
 }
 
+/**
+ * 위험도 값 → `shared.enumLabel.backtestRiskLevel` 키.
+ *
+ * core의 `BacktestRiskLevel`은 `low | moderate | high | extreme`인데 **공개 데이터
+ * (`data.json`)에는 `medium`이 실제로 72건 들어 있다**(`moderate`는 0건). 타입을 믿고
+ * `moderate`만 매핑하면 가장 흔한 값이 라벨 없이 새므로 둘 다 "보통"으로 매핑한다.
+ * 알 수 없는 값은 배지를 그리지 않는다 — 대문자 원문(`HIGH`)을 그대로 찍지 않는다.
+ */
+const RISK_LEVEL_LABEL_KEY: Record<BacktestRiskLevel | 'medium', string> = {
+    low: 'backtestRiskLevel.low',
+    medium: 'backtestRiskLevel.medium',
+    moderate: 'backtestRiskLevel.moderate',
+    high: 'backtestRiskLevel.high',
+    extreme: 'backtestRiskLevel.extreme',
+};
+
+function isKnownRiskLevel(
+    level: string
+): level is keyof typeof RISK_LEVEL_LABEL_KEY {
+    // `in`은 프로토타입까지 본다 — 자기 키만 인정한다.
+    return Object.hasOwn(RISK_LEVEL_LABEL_KEY, level);
+}
+
 interface RiskBadgeProps {
-    level: BacktestRiskLevel;
+    /** core 타입은 `BacktestRiskLevel`이지만 데이터에는 타입에 없는 `medium`이 있다 — 위 상수 참조. */
+    level: string;
 }
 
 function RiskBadge({ level }: RiskBadgeProps) {
+    // extract.mjs의 동적 키 탐지는 "이 파일 안에서 번역자를 직접 호출하는
+    // 패턴"만 본다 — `tLabel(key)`를 여기서 직접 불러야 `shared.enumLabel`이
+    // 이 라우트의 클라이언트 번들에 실린다.
+    const tLabel = useTranslations('shared.enumLabel');
+    if (!isKnownRiskLevel(level)) return null;
+    const key = RISK_LEVEL_LABEL_KEY[level];
     const isHigh = level === 'high' || level === 'extreme';
     const isLow = level === 'low';
     const cls = isHigh
@@ -59,11 +89,11 @@ function RiskBadge({ level }: RiskBadgeProps) {
     return (
         <span
             className={cn(
-                'rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase',
+                'rounded border px-1.5 py-0.5 text-xs font-semibold',
                 cls
             )}
         >
-            {level}
+            {tLabel(key)}
         </span>
     );
 }
@@ -164,7 +194,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                     >
                         →
                     </span>
-                    <span className="shrink-0 text-[10px] whitespace-nowrap text-secondary-500">
+                    <span className="shrink-0 text-xs whitespace-nowrap text-secondary-500">
                         {t.rich('BacktestCaseCard.06cf3e', {
                             v0: c.holdingDays,
                             n: chunks => (
@@ -250,7 +280,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                     // `SURFACE_NESTED`의 표면값을 쓴다(반경은 이 자리의
                     // `rounded-r`을 지켜야 해서 상수 전체가 아니라 배경만).
                     // 다크 1.108 / 라이트 1.071로 양쪽이 대칭이다.
-                    'text-secondary-400 line-clamp-3 rounded-r border-l-2 bg-secondary-700/40 px-3 py-2 text-[11px] leading-relaxed',
+                    'text-secondary-400 rounded-r border-l-2 bg-secondary-700/40 px-3 py-2 text-xs leading-relaxed',
                     v.aiSummary
                 )}
             >
@@ -263,7 +293,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                         <span
                             key={tag}
                             className={cn(
-                                'rounded px-1.5 py-0.5 text-[10px]',
+                                'rounded px-1.5 py-0.5 text-xs',
                                 v.tag
                             )}
                         >
@@ -276,7 +306,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
             {showPredictionBlock && (
                 // 위 요약 밴드와 같은 인셋 처방. `bg-secondary-900/60`이었는데
                 // 양 테마 모두 카드와 1.02:1이라 패널로 읽히지 않았다.
-                <div className="mt-2 rounded bg-secondary-700/40 px-3 py-2 text-[10px] text-secondary-400">
+                <div className="mt-2 rounded bg-secondary-700/40 px-3 py-2 text-xs text-secondary-400">
                     <div className="mb-1 flex items-center gap-2">
                         <span className="text-xs font-semibold text-secondary-500">
                             {t('BacktestCaseCard.58b71d')}
@@ -313,7 +343,9 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                         )}
                         {c.aiAnalysis.takeProfit !== undefined && (
                             <div>
-                                <span className="text-secondary-500">TP: </span>
+                                <span className="text-secondary-500">
+                                    {t('BacktestCaseCard.efb7c2')}{' '}
+                                </span>
                                 <span className="text-ui-success-text">
                                     {formatUsdCurrency(c.aiAnalysis.takeProfit)}
                                 </span>
@@ -326,7 +358,9 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                         )}
                         {c.aiAnalysis.stopLoss !== undefined && (
                             <div>
-                                <span className="text-secondary-500">SL: </span>
+                                <span className="text-secondary-500">
+                                    {t('BacktestCaseCard.315575')}{' '}
+                                </span>
                                 <span className="text-ui-danger-text">
                                     {formatUsdCurrency(c.aiAnalysis.stopLoss)}
                                 </span>
@@ -340,7 +374,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                     </div>
 
                     {firstBullishTarget?.basis && (
-                        <p className="mt-1 line-clamp-1 text-[9px] text-secondary-500">
+                        <p className="mt-1 text-xs text-secondary-500">
                             {t('BacktestCaseCard.75a556')}{' '}
                             {firstBullishTarget.basis}
                         </p>

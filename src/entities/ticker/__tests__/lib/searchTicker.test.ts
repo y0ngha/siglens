@@ -141,6 +141,56 @@ describe('searchTicker', () => {
         expect(results.map(r => r.symbol)).toEqual(['011070.KS', 'LGINF']);
     });
 
+    /**
+     * [회귀] `삼성`은 접두 일치가 한꺼번에 쏟아지는 질의다. DB 순서가 그대로 쓰이던 때는
+     * 삼성바이오로직스가 삼성전자보다 앞섰다. 동점 처리(짧은 이름 → 인기 순위)가 삼성전자를
+     * 맨 위로 올리고, OTC 중복(SSNLF)은 여전히 그 **바로 뒤**에 붙어야 한다.
+     */
+    it('삼성: 삼성전자가 맨 위, OTC 중복(SSNLF)은 바로 그 뒤에 온다', async () => {
+        searchBySymbolMock.mockResolvedValue([]);
+        searchByNameMock.mockResolvedValue([]);
+        searchByKoreanNameMock.mockResolvedValue([
+            {
+                symbol: 'SSNLF',
+                name: 'Samsung Electronics Co., Ltd.',
+                koreanName: '삼성전자',
+                exchange: 'OTC',
+                exchangeFullName: 'Other OTC',
+            },
+            {
+                symbol: '207940.KS',
+                name: 'Samsung Biologics Co., Ltd.',
+                koreanName: '삼성바이오로직스',
+                exchange: 'KOSPI',
+                exchangeFullName: 'Korea Exchange (KOSPI)',
+            },
+            {
+                symbol: '028260.KS',
+                name: 'Samsung C&T Corporation',
+                koreanName: '삼성물산',
+                exchange: 'KOSPI',
+                exchangeFullName: 'Korea Exchange (KOSPI)',
+            },
+            {
+                symbol: '005930.KS',
+                name: 'Samsung Electronics Co., Ltd.',
+                koreanName: '삼성전자',
+                exchange: 'KOSPI',
+                exchangeFullName: 'Korea Exchange (KOSPI)',
+            },
+        ]);
+        getKoreanNamesMock.mockResolvedValue({});
+
+        const results = await searchTicker('삼성');
+
+        expect(results.map(r => r.symbol)).toEqual([
+            '005930.KS',
+            'SSNLF',
+            '028260.KS',
+            '207940.KS',
+        ]);
+    });
+
     it('같은 이름의 KRX 상장이 없으면 OTC를 내리지 않는다', async () => {
         // 강등은 "같은 회사의 주 상장이 이미 목록에 있을 때"만 걸려야 한다 —
         // 무조건 OTC를 뒤로 밀면 OTC만 있는 종목의 순위가 이유 없이 떨어진다.
@@ -398,7 +448,7 @@ describe('searchTicker', () => {
             },
         ]);
         expect(mockCache.set).toHaveBeenCalledWith(
-            'ticker:search:v2:aapl',
+            'ticker:search:v3:aapl',
             result,
             expect.any(Number)
         );

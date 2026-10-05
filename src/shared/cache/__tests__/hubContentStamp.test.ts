@@ -133,6 +133,31 @@ describe('hubContentStamp', () => {
         });
     });
 
+    it('새 해시를 썼는지 돌려준다 — 처음·본문 변경은 true, 같은 본문 재확인은 false', async () => {
+        useInMemoryRedis();
+
+        await expect(
+            recordHubContentStamp('rss:economy', { a: 1 }, T1)
+        ).resolves.toBe(true);
+        await expect(
+            recordHubContentStamp('rss:economy', { a: 1 }, T2)
+        ).resolves.toBe(false);
+        await expect(
+            recordHubContentStamp('rss:economy', { a: 2 }, T2)
+        ).resolves.toBe(true);
+    });
+
+    it('TTL만 되돌린 경우도 false — 본문이 바뀐 것이 아니다', async () => {
+        useInMemoryRedis();
+        await recordHubContentStamp('rss:economy', { a: 1 }, T1);
+        // 남은 TTL이 절반 밑이 되게 한다.
+        mockTtl.mockResolvedValue(10);
+
+        await expect(
+            recordHubContentStamp('rss:economy', { a: 1 }, T2)
+        ).resolves.toBe(false);
+    });
+
     it('7일 TTL로 저장한다', async () => {
         useInMemoryRedis();
 
@@ -271,7 +296,7 @@ describe('hubContentStamp', () => {
         await expect(readHubContentStamp('rss:economy')).resolves.toBeNull();
         await expect(
             recordHubContentStamp('rss:economy', { a: 1 }, T1)
-        ).resolves.toBeUndefined();
+        ).resolves.toBe(false);
         expect(mockSet).not.toHaveBeenCalled();
     });
 
@@ -285,7 +310,7 @@ describe('hubContentStamp', () => {
         await expect(readHubContentStamp('rss:economy')).resolves.toBeNull();
         await expect(
             recordHubContentStamp('rss:economy', { a: 1 }, T1)
-        ).resolves.toBeUndefined();
+        ).resolves.toBe(false);
         expect(errorSpy).toHaveBeenCalledTimes(2);
         errorSpy.mockRestore();
     });
@@ -299,7 +324,7 @@ describe('hubContentStamp', () => {
 
         await expect(
             recordHubContentStamp('rss:economy', { a: 1 }, T1)
-        ).resolves.toBeUndefined();
+        ).resolves.toBe(false);
         expect(errorSpy).toHaveBeenCalledTimes(1);
         errorSpy.mockRestore();
     });

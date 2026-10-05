@@ -184,6 +184,20 @@ type HubOutcome =
      */
     | 'cooldown';
 
+/**
+ * `HubTarget.run`의 반환. `stampChanged`는 이번에 확인한 본문이 **이전 확인과 달라졌는가**
+ * (`recordHubContentStamp`가 새 해시를 썼는가) — `alreadyFresh`여도 참일 수 있다(캐시에는
+ * 있었지만 RSS·IndexNow가 처음 보는 본문).
+ */
+interface HubRunResult {
+    readonly outcome: HubOutcome;
+    readonly stampChanged: boolean;
+}
+
+function runResult(outcome: HubOutcome, stampChanged = false): HubRunResult {
+    return { outcome, stampChanged };
+}
+
 export interface HubPrewarmResult {
     readonly attempted: number;
     readonly generated: number;
@@ -206,11 +220,17 @@ export interface HubPrewarmResult {
      * 제출되므로 여기서는 sitemap 판정을 반복하지 않는다.
      */
     readonly generatedUrls: readonly string[];
+    /**
+     * 본문이 바뀐 것으로 확인됐지만 **새로 굽지는 않은**(`alreadyFresh` + 스탬프 변경) 허브의
+     * 공개 URL. `generatedUrls`와 겹치지 않는다. 크론이 태그를 털지 않았으므로 IndexNow 지연이
+     * 더 길다(`indexNowDelays`).
+     */
+    readonly changedUrls: readonly string[];
 }
 
 interface HubTarget {
     readonly label: string;
-    readonly run: () => Promise<HubOutcome>;
+    readonly run: () => Promise<HubRunResult>;
     /** 새로 구웠을 때만 털 태그 — 이걸 안 털면 `peek*Static`이 TTL 내내 옛 `null`을 준다. */
     readonly tag: string;
     /**
@@ -257,7 +277,7 @@ function stampBody(
     surface: string,
     body: unknown,
     now: () => number
-): Promise<void> {
+): Promise<boolean> {
     return recordHubContentStamp(surface, body, new Date(now()));
 }
 
@@ -284,24 +304,28 @@ function marketBriefingTargets(now: () => number): HubTarget[] {
                 if (cached !== null) {
                     // 이미 손에 있는 값이다 — seed를 최신으로 유지하는 비용은 SET 한 번.
                     await writeHubSsrSeed(surface, cached);
-                    await stampBody(stampSurface, cached, now);
-                    return 'alreadyFresh';
+                    return runResult(
+                        'alreadyFresh',
+                        await stampBody(stampSurface, cached, now)
+                    );
                 }
                 // 페이지 peek는 키가 빗나가도 직전에 써 둔 SSR seed로 물러나므로 화면은
                 // 대개 그 브리핑을 보여 준다 — 다만 값이 있는지 확인한 건 아니라
                 // `alreadyFresh`가 아니다(`HubOutcome`의 `cooldown` 주석).
                 if (await marketBriefingCooldown.isSet(scope.id)) {
-                    return 'cooldown';
+                    return runResult('cooldown');
                 }
                 await runBriefing(summary, context);
                 // 생성 시도 직후에 세운다 — 되읽기 실패(`keyMismatch`)여도 LLM 비용은 이미
                 // 나갔으므로, 다음 tick에 같은 호출을 반복하지 않게 한다.
                 await marketBriefingCooldown.mark(scope.id);
                 const readBack = await readBackWithRetry(peek);
-                if (readBack === null) return 'keyMismatch';
+                if (readBack === null) return runResult('keyMismatch');
                 await writeHubSsrSeed(surface, readBack);
-                await stampBody(stampSurface, readBack, now);
-                return 'generated';
+                return runResult(
+                    'generated',
+                    await stampBody(stampSurface, readBack, now)
+                );
             },
         }));
 }
@@ -412,7 +436,7 @@ function economyCalendarTargets(): HubTarget[] {
                 (ingested?.status === 'ok' && ingested.changed > 0) ||
                 (analyzed?.status === 'ok' && analyzed.persisted > 0) ||
                 translated > 0;
-            return changed ? 'generated' : 'alreadyFresh';
+            return runResult(changed ? 'generated' : 'alreadyFresh');
         },
     }));
 }
@@ -432,15 +456,19 @@ function macroBriefingTarget(now: () => number): HubTarget {
             const cached = await peek();
             if (cached !== null) {
                 await writeHubSsrSeed(MACRO_BRIEFING_SEED_SURFACE, cached);
-                await stampBody(RSS_ECONOMY_SURFACE, cached.briefing, now);
-                return 'alreadyFresh';
+                return runResult(
+                    'alreadyFresh',
+                    await stampBody(RSS_ECONOMY_SURFACE, cached.briefing, now)
+                );
             }
             await runMacroBriefing(snapshot);
             const readBack = await readBackWithRetry(peek);
-            if (readBack === null) return 'keyMismatch';
+            if (readBack === null) return runResult('keyMismatch');
             await writeHubSsrSeed(MACRO_BRIEFING_SEED_SURFACE, readBack);
-            await stampBody(RSS_ECONOMY_SURFACE, readBack.briefing, now);
-            return 'generated';
+            return runResult(
+                'generated',
+                await stampBody(RSS_ECONOMY_SURFACE, readBack.briefing, now)
+            );
         },
     };
 }
@@ -535,7 +563,7 @@ function newsDigestTargets(now: () => number): HubTarget[] {
                 if (news.length === 0) {
                     // 기사가 하나도 없으면 다이제스트도 없다. 실패가 아니라 할 일
                     // 없음이다 — 다만 `generated`와는 갈라 센다(HubOutcome 주석 ②).
-                    return 'noData';
+                    return runResult('noData');
                 }
                 const options = {
                     // `'kr'`은 core union 밖이지만 core가 값으로 분기하지 않고
@@ -557,8 +585,10 @@ function newsDigestTargets(now: () => number): HubTarget[] {
                 const stampSurface = rssNewsSurface(category);
                 const cached = await peek();
                 if (cached !== null) {
-                    await stampBody(stampSurface, cached, now);
-                    return 'alreadyFresh';
+                    return runResult(
+                        'alreadyFresh',
+                        await stampBody(stampSurface, cached, now)
+                    );
                 }
                 // 프로바이더 폴백은 **키 성분이 아니다.** 이 레포의 모든 프리웜·
                 // 백필 호출부가 켜 두는 값이고, core JSDoc도 "SEO prewarm"을 그
@@ -571,9 +601,11 @@ function newsDigestTargets(now: () => number): HubTarget[] {
                 // 다이제스트는 seed를 두지 않는다 — 입력이 DB 행 목록이라 분 단위로
                 // 안 움직이고, 정적 peek이 같은 쿼리로 입력을 다시 만들어 키가 맞는다.
                 const readBack = await readBackWithRetry(peek);
-                if (readBack === null) return 'keyMismatch';
-                await stampBody(stampSurface, readBack, now);
-                return 'generated';
+                if (readBack === null) return runResult('keyMismatch');
+                return runResult(
+                    'generated',
+                    await stampBody(stampSurface, readBack, now)
+                );
             },
         })
     );
@@ -611,6 +643,7 @@ export async function runHubPrewarm(
     let skippedByDeadline = 0;
     let skippedByCooldown = 0;
     let generatedUrls: readonly string[] = [];
+    let changedUrls: readonly string[] = [];
 
     /**
      * 새로 구운 대상의 공개 URL을 모은다. 화면 없는 대상(`path: null`)은 건너뛴다.
@@ -623,6 +656,16 @@ export async function runHubPrewarm(
         if (generatedUrls.includes(url)) return;
         generatedUrls = [...generatedUrls, url];
     };
+    /**
+     * 새로 굽진 않았지만 본문이 바뀐 것으로 확인된 허브의 URL. 같은 페이지를 가리키는 다른
+     * 대상이 새로 구웠다면(`generatedUrls`) 이미 알림 대상이라 여기에는 넣지 않는다.
+     */
+    const recordChanged = (target: HubTarget): void => {
+        if (target.path === null) return;
+        const url = `${SITE_URL}${target.path}`;
+        if (generatedUrls.includes(url) || changedUrls.includes(url)) return;
+        changedUrls = [...changedUrls, url];
+    };
 
     for (const target of targets) {
         if (now() - startedAt >= HUB_DEADLINE_MS) {
@@ -632,7 +675,7 @@ export async function runHubPrewarm(
         try {
             // 개별 호출을 상한으로 감싼다 — 단계 마감은 대상 **사이**에서만 보므로
             // 한 건이 멎으면 아무것도 못 막는다(`HUB_UNIT_TIMEOUT_MS` 주석).
-            const outcome = await Promise.race([
+            const { outcome, stampChanged } = await Promise.race([
                 target.run(),
                 sleep(HUB_UNIT_TIMEOUT_MS).then<never>(() => {
                     throw new Error(
@@ -657,6 +700,7 @@ export async function runHubPrewarm(
             }
             if (outcome === 'alreadyFresh') {
                 alreadyFresh += 1;
+                if (stampChanged) recordChanged(target);
                 // 값은 이미 있는데 페이지가 비어 있는 채로 렌더된 적이 있으면(방문자가
                 // 먼저 생성했거나 렌더 직후 캐시가 찼다) 그때만 턴다 — `markSsrMiss`
                 // JSDoc. 무조건 털면 tick마다 ISR 쓰기가 나간다.
@@ -704,5 +748,7 @@ export async function runHubPrewarm(
         skippedByDeadline,
         skippedByCooldown,
         generatedUrls,
+        // 같은 tick에 다른 대상이 같은 페이지를 새로 구웠다면 그쪽이 이긴다.
+        changedUrls: changedUrls.filter(url => !generatedUrls.includes(url)),
     };
 }

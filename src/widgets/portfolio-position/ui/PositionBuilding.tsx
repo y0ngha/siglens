@@ -22,11 +22,12 @@ import {
     avgFloorPrefixGlyph,
     avgFloorVisualNote,
     buildAriaLabel,
+    buildAriaLabelCurrentOnly,
     buildFloorTooltips,
     CENTER_X,
     computeActiveFloorTooltipContent,
     CURRENT_LABEL_PREFIX_KEY,
-    describeAvgFloor,
+    describeFloor,
     formatAmount,
     formatCompactForSvgLabel,
     formatFloorTooltipText,
@@ -43,7 +44,16 @@ interface PositionBuildingProps {
     low52w: number;
     high52w: number;
     current: number;
-    avg: number;
+    /**
+     * 회원 평단. `null`이면 **현재가만** 그린다 — ★평단 마커·라벨·층 안내와
+     * 수익률 리드아웃, 그리고 두 마커를 벌려 놓는 dodge가 전부 빠지고 현재가
+     * 마커는 수익/손실 색 대신 중립색을 쓴다. 비회원·미보유 회원에게 건물을
+     * 먼저 보여주는 CTA(`PositionCta`)가 이 모드를 쓴다. 호출부는 그때
+     * `computePosition({ ...range, current, avg: current })`로 model을 만든다
+     * (`avg`는 양수 가드에만 쓰이고 currentPos/currentClamped에는 영향이 없다 —
+     * `[symbol]/position/page.tsx`의 `resolveCurrentPricePosition`과 같은 근거).
+     */
+    avg: number | null;
     className?: string;
     /**
      * 5개 가격대(밴드)별 최근(52주/252봉) 거래량 비중(%), index 0=최저가
@@ -326,34 +336,48 @@ export function PositionBuilding({
         tPos
     );
 
-    // model.bands.length는 volumeByBand 인덱싱(아래)과 describeAvgFloor 둘 다에
+    // model.bands.length는 volumeByBand 인덱싱(아래)과 describeFloor 둘 다에
     // 필요해 파생 변수 구간에서 한 번만 계산한다(단일 source, 중복 선언 금지).
     // 모든 hook 호출(useState/useRef/useOnClickOutside/useEscapeKey/useMemo) 뒤에
     // 둔다(Custom Hook Declaration Order — CONVENTIONS.md).
     const bandCount = model.bands.length;
 
-    const avgDisplay = formatAmount(avg, symbol);
+    const hasAvg = avg !== null;
     const currentDisplay = formatAmount(current, symbol);
-    const avgFloorNote = describeAvgFloor(
-        model.avgPos,
-        model.avgClamped,
+    // ★평단 관련 파생값은 평단이 있을 때만 의미가 있다. 평단 없는 모드에서는
+    // model.avgPos가 currentPos의 복제일 뿐이라 이 값들을 만들지 않는다.
+    const avgDisplay = hasAvg ? formatAmount(avg, symbol) : null;
+    const avgFloorNote = hasAvg
+        ? describeFloor(model.avgPos, model.avgClamped, bandCount, tPos)
+        : '';
+    // 시각 노트는 폭 제약을 받아 범위 밖에서 phrase만, aria-label은 전체 문구.
+    const avgFloorNoteVisual = hasAvg
+        ? avgFloorVisualNote(model.avgClamped, avgFloorNote, tPos)
+        : '';
+    // 평단 없는 모드의 요약은 현재가가 놓인 층을 말한다.
+    const currentFloorNote = describeFloor(
+        model.currentPos,
+        model.currentClamped,
         bandCount,
         tPos
     );
-    // 시각 노트는 폭 제약을 받아 범위 밖에서 phrase만, aria-label은 전체 문구.
-    const avgFloorNoteVisual = avgFloorVisualNote(
-        model.avgClamped,
-        avgFloorNote,
-        tPos
-    );
-    const ariaLabel = buildAriaLabel(
-        symbol,
-        model,
-        avgDisplay,
-        currentDisplay,
-        avgFloorNote,
-        tPos
-    );
+    const ariaLabel =
+        avgDisplay === null
+            ? buildAriaLabelCurrentOnly(
+                  symbol,
+                  model,
+                  currentDisplay,
+                  currentFloorNote,
+                  tPos
+              )
+            : buildAriaLabel(
+                  symbol,
+                  model,
+                  avgDisplay,
+                  currentDisplay,
+                  avgFloorNote,
+                  tPos
+              );
 
     const currentNote = outOfRangeNote(model.currentClamped, tPos);
 
@@ -371,13 +395,15 @@ export function PositionBuilding({
 
     // avg≈current면 두 마커(★/●)가 같은 좌표에서 겹쳐 하나로 보인다 — 좌우로
     // 벌려 break-even(가장 흔한 상태)에서도 두 마커가 구분되게 한다.
-    const isDodged = Math.abs(model.avgPos - model.currentPos) < DODGE_EPSILON;
+    // 평단이 없으면 겹칠 마커가 하나뿐이라 dodge하지 않는다(현재가가 중앙선 위).
+    const isDodged =
+        hasAvg && Math.abs(model.avgPos - model.currentPos) < DODGE_EPSILON;
     const avgX = CENTER_X - (isDodged ? DODGE_X_OFFSET : 0);
     const currentX = CENTER_X + (isDodged ? DODGE_X_OFFSET : 0);
     const avgY = frontY(model.avgPos, model.avgClamped);
     const currentY = frontY(model.currentPos, model.currentClamped);
 
-    const avgDisplaySvg = formatCompactForSvgLabel(avg, symbol);
+    const avgDisplaySvg = hasAvg ? formatCompactForSvgLabel(avg, symbol) : null;
     const currentDisplaySvg = formatCompactForSvgLabel(current, symbol);
 
     const returnSign =
@@ -388,10 +414,12 @@ export function PositionBuilding({
             : returnSign === 'loss'
               ? 'text-ui-danger-text'
               : 'text-secondary-400';
+    // 평단이 없으면 수익/손실이 정의되지 않으므로 중립색(수익률 0%의 'flat'과 같은
+    // 색)을 쓴다 — 색이 의미를 가진 척하지 않는다.
     const markerIconTokenClass =
-        returnSign === 'gain'
+        hasAvg && returnSign === 'gain'
             ? 'text-ui-success-text'
-            : returnSign === 'loss'
+            : hasAvg && returnSign === 'loss'
               ? 'text-ui-danger-text'
               : 'text-secondary-100';
 
@@ -622,47 +650,50 @@ export function PositionBuilding({
                     aria-hidden="true"
                 />
 
-                {/* 내 평단 (★) */}
-                <g
-                    data-testid="avg-marker"
-                    transform={`translate(${avgX} ${avgY})`}
-                >
-                    <polygon
-                        points={`0,${-MARKER_HALF} ${MARKER_HALF * 0.35},${-MARKER_HALF * 0.35} ${MARKER_HALF},0 ${MARKER_HALF * 0.35},${MARKER_HALF * 0.35} 0,${MARKER_HALF} ${-MARKER_HALF * 0.35},${MARKER_HALF * 0.35} ${-MARKER_HALF},0 ${-MARKER_HALF * 0.35},${-MARKER_HALF * 0.35}`}
-                        fill="currentColor"
-                        className="text-secondary-100"
-                    />
-                </g>
-                <text
-                    x={CENTER_X - ISO_DX - LABEL_GAP}
-                    y={avgY}
-                    textAnchor="end"
-                    dominantBaseline="middle"
-                    className="fill-current text-[10px] font-medium tabular-nums"
-                >
-                    <tspan className="fill-secondary-400">
-                        {tPos(AVG_LABEL_PREFIX_KEY)}
-                    </tspan>
-                    <tspan className="fill-secondary-100">
-                        {avgDisplaySvg}
-                    </tspan>
-                </text>
-                {/* ★평단 층 안내 — 범위 밖(above/below)이면 기존 옥상 위/지하 문구를,
-                    범위 안이면(clamped=null) describeAvgFloor가 계산한 실제 층수를
-                    보여준다(이전엔 범위 안일 때 아무 안내도 없었다). 위치 서술만
-                    담당 — 매수/매도 판단 언어 금지(scope fence, 위 describeAvgFloor
-                    주석 참고). */}
-                <text
-                    data-testid="avg-floor-note"
-                    x={CENTER_X - ISO_DX - LABEL_GAP}
-                    y={avgY + NOTE_Y_OFFSET}
-                    textAnchor="end"
-                    className="fill-secondary-400 text-[10px]"
-                >
-                    {/* nested ternary 대신 early-return 헬퍼로 분기(FF.md §1-E) */}
-                    {avgFloorPrefixGlyph(model.avgClamped)}
-                    {avgFloorNoteVisual}
-                </text>
+                {hasAvg && (
+                    <>
+                        <g
+                            data-testid="avg-marker"
+                            transform={`translate(${avgX} ${avgY})`}
+                        >
+                            <polygon
+                                points={`0,${-MARKER_HALF} ${MARKER_HALF * 0.35},${-MARKER_HALF * 0.35} ${MARKER_HALF},0 ${MARKER_HALF * 0.35},${MARKER_HALF * 0.35} 0,${MARKER_HALF} ${-MARKER_HALF * 0.35},${MARKER_HALF * 0.35} ${-MARKER_HALF},0 ${-MARKER_HALF * 0.35},${-MARKER_HALF * 0.35}`}
+                                fill="currentColor"
+                                className="text-secondary-100"
+                            />
+                        </g>
+                        <text
+                            x={CENTER_X - ISO_DX - LABEL_GAP}
+                            y={avgY}
+                            textAnchor="end"
+                            dominantBaseline="middle"
+                            className="fill-current text-[10px] font-medium tabular-nums"
+                        >
+                            <tspan className="fill-secondary-400">
+                                {tPos(AVG_LABEL_PREFIX_KEY)}
+                            </tspan>
+                            <tspan className="fill-secondary-100">
+                                {avgDisplaySvg}
+                            </tspan>
+                        </text>
+                        {/* ★평단 층 안내 — 범위 밖(above/below)이면 기존 옥상 위/지하 문구를,
+                            범위 안이면(clamped=null) describeFloor가 계산한 실제 층수를
+                            보여준다(이전엔 범위 안일 때 아무 안내도 없었다). 위치 서술만
+                            담당 — 매수/매도 판단 언어 금지(scope fence, 위 describeFloor
+                            주석 참고). */}
+                        <text
+                            data-testid="avg-floor-note"
+                            x={CENTER_X - ISO_DX - LABEL_GAP}
+                            y={avgY + NOTE_Y_OFFSET}
+                            textAnchor="end"
+                            className="fill-secondary-400 text-[10px]"
+                        >
+                            {/* nested ternary 대신 early-return 헬퍼로 분기(FF.md §1-E) */}
+                            {avgFloorPrefixGlyph(model.avgClamped)}
+                            {avgFloorNoteVisual}
+                        </text>
+                    </>
+                )}
 
                 {/* 현재가 (●) */}
                 <g
@@ -704,18 +735,20 @@ export function PositionBuilding({
             </svg>
 
             {/* 수익/손실 리드아웃 — 위치 서술만(범위 내 어디), good/bad entry 판단 금지 */}
-            <p
-                data-testid="return-readout"
-                className={cn(
-                    'text-center text-xs tabular-nums',
-                    returnTokenClass
-                )}
-            >
-                {t('PositionBuilding.305967', {
-                    v0: formatSignedPercent(model.returnPct),
-                    v1: model.rangePositionPct.toFixed(0),
-                })}
-            </p>
+            {hasAvg && (
+                <p
+                    data-testid="return-readout"
+                    className={cn(
+                        'text-center text-xs tabular-nums',
+                        returnTokenClass
+                    )}
+                >
+                    {t('PositionBuilding.305967', {
+                        v0: formatSignedPercent(model.returnPct),
+                        v1: model.rangePositionPct.toFixed(0),
+                    })}
+                </p>
+            )}
 
             {/* 층 hover/탭 리드아웃 — 마우스/터치를 쓰는 시각 사용자 전용 보강 표시다
                 (층 <g>는 role="img" 자손이라 키보드 포커스를 받지 않는다, 위 렌더

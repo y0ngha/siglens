@@ -34,6 +34,9 @@ const SKIP_TTL_SECONDS = 21600; // 6h
  */
 export const TRANSIENT_SKIP_TTL_SECONDS = 1800; // 30min
 
+/** 기준일 재생성 마커(`claimBasisForce`)의 최소 TTL — 경계 직전에 세워도 1시간은 남긴다. */
+const BASIS_FORCE_MIN_TTL_SECONDS = 3600;
+
 /**
  * "최근 30일 뉴스가 없다"의 backoff TTL.
  *
@@ -187,6 +190,35 @@ export async function markSkipped(
     await redis.set(`seo-prewarm:skip:${symbol.toUpperCase()}:${tab}`, '1', {
         ex: ttlSeconds,
     });
+}
+
+/**
+ * 기준일 재생성 마커 — 한 경계 안에서 `(symbol, tab)`당 **한 번만** 강제 재생성을 허락한다.
+ *
+ * harvest가 캐시된 옛 분석을 집어 올렸을 때(기준 시각이 직전 완료 세션보다 앞) 한 번
+ * `force=true`로 다시 만든다. 그 결과도 같은 이유로 stale이면(데이터 미발행) 다음 tick이
+ * 또 강제해선 안 된다 — LLM 호출이 5분마다 반복되는 루프가 된다. SET NX로 첫 시도만
+ * 통과시킨다.
+ *
+ * 키에 경계 시각(ms)을 넣어 경계가 롤하면 새 키가 되게 한다. TTL은 다음 경계까지(최소 1시간)다.
+ *
+ * @returns 이 호출이 마커를 **처음** 세웠으면 true(= 강제해도 된다). 이미 있거나 Redis를
+ * 쓸 수 없으면 false — 비용이 드는 강제 호출은 중복을 막을 수단이 없을 때 하지 않는다.
+ */
+export async function claimBasisForce(
+    symbol: string,
+    tab: string,
+    boundaryMs: number,
+    ttlSeconds: number
+): Promise<boolean> {
+    const redis = getRedisClient();
+    if (redis === null) return false;
+    const result = await redis.set(
+        `seo-prewarm:basis-forced:${symbol.toUpperCase()}:${tab}:${boundaryMs}`,
+        '1',
+        { nx: true, ex: Math.max(ttlSeconds, BASIS_FORCE_MIN_TTL_SECONDS) }
+    );
+    return result === 'OK';
 }
 
 /**
