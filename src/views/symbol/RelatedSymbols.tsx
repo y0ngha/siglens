@@ -125,7 +125,7 @@ export async function RelatedSymbols({ symbol }: RelatedSymbolsProps) {
     return (
         <nav
             aria-labelledby="related-symbols-heading"
-            className="my-8 rounded-lg border border-secondary-700 bg-secondary-800/30 p-5"
+            className="mx-4 my-8 rounded-lg border border-secondary-700 bg-secondary-800/30 p-5"
         >
             <h2 id="related-symbols-heading" className={HEADING_SECTION}>
                 {t('RelatedSymbols.c35191')}
