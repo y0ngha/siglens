@@ -4,7 +4,7 @@ import { resolveLocale } from '@/shared/i18n/locales';
 import { MobileSheetPlaceholder } from '@/views/symbol/MobileSheetPlaceholder';
 import { TechnicalFactsSummary } from '@/views/symbol/TechnicalFactsSummary';
 import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
-import { hasTechnicalProse } from '@/views/symbol/snapshot/renderers/technicalContent';
+import { hasTechnicalProse } from '@/entities/seo-snapshot/lib/technicalContent';
 import { loadTabSnapshotMeta } from '@/app/[locale]/[symbol]/symbolSnapshotDescription';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import { buildTechnicalFacts } from '@/entities/bars/lib/technicalFacts';
@@ -38,7 +38,7 @@ import {
     buildBreadcrumbJsonLd,
     resolveSymbolSeoContent,
     symbolMetadataFromSeo,
-    NOINDEX_SYMBOL_METADATA,
+    noindexInvalidSymbolMetadata,
 } from '@/shared/lib/seo';
 import {
     dehydrate,
@@ -70,7 +70,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const ticker = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
     if (!isAdmissibleSymbolShape(ticker)) {
-        return NOINDEX_SYMBOL_METADATA;
+        return noindexInvalidSymbolMetadata(symbol, locale);
     }
     // 존재하지 않는 심볼은 레이아웃과 같은 판정으로 여기서도 404다 — 티커를 단
     // noindex 메타데이터를 돌려주면 404 응답에 정상 페이지 제목이 얹힌다.
@@ -99,7 +99,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         // ("degraded → 이 탭의 렌더 가능한 스냅샷이 있을 때만 색인")이 그대로
         // 적용된다: 일시 장애 중에 330자짜리 껍데기가 색인되지 않고, 저장된
         // technical 스냅샷이 있으면 본문이 실제로 서술을 그리므로 색인은 유지된다.
-        // 조회가 회복되면 다음 ISR 재생성에서 자동으로 원래 판정으로 돌아간다.
+        // 조회가 회복되면 다음 ISR 재생성에서 자동으로 원래 판정으로 돌아간다 — 큐레이션
+        // 종목의 이 렌더는 revalidate가 300초로 낮춰져(`shortenRevalidateForRuntimeDegrade`)
+        // 노출 창이 6h가 아니라 약 5분이다.
         // (예전에는 `hasPriceData: undefined`로만 남겨, 장애 중 crawl이 빈 페이지를
         //  `index, follow`로 받아갔다 — 2026-09-17 정책 감사 M6.)
         degraded: degraded || metadataBars === null,
@@ -108,6 +110,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         // 조회가 **실패**한 경우(`null`)와 조회 결과 봉이 **없는** 경우를 구분한다.
         // 실패는 위 `degraded`가 받으므로 여기서는 `undefined`로 남긴다 — 봉이
         // 정말 없는 것("no-price-data", 스냅샷이 있어도 색인 불가)과 섞지 않는다.
+        // 봉 0개는 `getBarsStatic`이 (장기 캐시에는 넣지 않되) **빈 `BarsData`로 돌려주므로**
+        // 여기서 `false`가 되고, `degraded-with-snapshot`이 그 판정을 구해 주지 않는다.
         //
         // 술어는 **본문과 동일하게** `buildTechnicalFacts`로 판정한다. `bars.length > 0`
         // 으로 두었더니 CTK(상장폐지, 봉 1개)가 새어 나갔다 — 그 헬퍼는 등락률 분모로
@@ -173,7 +177,9 @@ export default async function SymbolPage({ params }: Props) {
             getSeoSnapshotsStatic(ticker, revalidate, locale),
         ]
     );
-    const technicalSnapshot = snapshots.find(s => s.tab === 'technical');
+    const technicalSnapshot = (snapshots ?? []).find(
+        s => s.tab === 'technical'
+    );
     // 확장된 게이트(SYMBOL_EDGE_RE)는 crypto 심볼을 수용하기 위해 이전 VALID_TICKER_RE보다
     // 넓다. 정상 조건에서 crypto 심볼은 crypto_assets DB에서 직접 해결된다(degrade 없음).
     // crypto_assets DB와 FMP가 동시에 다운된 경우에만 예외적으로 degrade 가능하며, 이는

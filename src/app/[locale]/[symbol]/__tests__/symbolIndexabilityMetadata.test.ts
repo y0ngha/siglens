@@ -25,6 +25,17 @@ import type { AssetInfo } from '@/shared/lib/types';
 import type { Metadata } from 'next';
 
 const ASSET_INFO = { symbol: 'AAPL', name: 'Apple Inc.' } as AssetInfo;
+// 렌더러 narrowing을 통과하는 최소 산문.
+const TECHNICAL_ROW = {
+    symbol: 'AAPL',
+    tab: 'technical',
+    content: { summary: '유효한 기술적 분석 요약 텍스트입니다.' },
+};
+const NEWS_ROW = {
+    symbol: 'AAPL',
+    tab: 'news',
+    content: { currentDriverKo: '뉴스 동인 문단입니다.' },
+};
 
 /**
  * 차단(noindex) 결과의 계약.
@@ -47,7 +58,10 @@ function expectBlockedWithOwnIdentity(
 ): void {
     expect(result).not.toBeNull();
     expect(result!.robots).toEqual(NOINDEX_SYMBOL_METADATA.robots);
-    expect(result!.alternates).toEqual(NOINDEX_SYMBOL_METADATA.alternates);
+    // self-canonical(2026-10-05) — `canonical: null`이 아니라 자기 URL을 가리키고 hreflang은 싣지 않는다.
+    expect(result!.alternates).toEqual({
+        canonical: `https://siglens.io/${symbol}${tabPath}`,
+    });
     expect(result!.title).toEqual({
         absolute: expect.stringContaining(symbol) as unknown as string,
     });
@@ -60,9 +74,11 @@ function expectBlockedWithOwnIdentity(
 describe('getBlockedSymbolMetadata', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockGetSeoSnapshotsStatic.mockResolvedValue([]);
     });
 
-    it('does not read snapshots on the non-degraded path and returns null when indexable', async () => {
+    it('차트·뉴스 탭의 정상 경로는 스냅샷을 읽어 prose 상태를 게이트에 넘긴다(산문 있음 → 색인)', async () => {
+        mockGetSeoSnapshotsStatic.mockResolvedValue([TECHNICAL_ROW]);
         mockEvaluateSymbolIndexability.mockReturnValue({
             indexable: true,
             reason: 'popular',
@@ -77,14 +93,19 @@ describe('getBlockedSymbolMetadata', () => {
             tab: 'technical',
         });
 
-        expect(mockGetSeoSnapshotsStatic).not.toHaveBeenCalled();
-        expect(mockEvaluateSymbolIndexability).toHaveBeenCalledWith({
-            symbol: 'AAPL',
-            assetInfo: ASSET_INFO,
-            degraded: false,
-            locale: 'ko',
-            hasSnapshot: undefined,
-        });
+        expect(mockGetSeoSnapshotsStatic).toHaveBeenCalledWith(
+            'AAPL',
+            21600,
+            'ko'
+        );
+        expect(mockEvaluateSymbolIndexability).toHaveBeenCalledWith(
+            expect.objectContaining({
+                symbol: 'AAPL',
+                degraded: false,
+                hasSnapshot: undefined,
+                prose: 'present',
+            })
+        );
         expect(result).toBeNull();
     });
 
@@ -179,13 +200,15 @@ describe('getBlockedSymbolMetadata', () => {
             21600,
             'ko'
         );
-        expect(mockEvaluateSymbolIndexability).toHaveBeenCalledWith({
-            symbol: 'AAPL',
-            assetInfo: ASSET_INFO,
-            degraded: true,
-            locale: 'ko',
-            hasSnapshot: true,
-        });
+        expect(mockEvaluateSymbolIndexability).toHaveBeenCalledWith(
+            expect.objectContaining({
+                symbol: 'AAPL',
+                assetInfo: ASSET_INFO,
+                degraded: true,
+                locale: 'ko',
+                hasSnapshot: true,
+            })
+        );
         expect(result).toBeNull();
     });
 
@@ -210,13 +233,15 @@ describe('getBlockedSymbolMetadata', () => {
             43200,
             'ko'
         );
-        expect(mockEvaluateSymbolIndexability).toHaveBeenCalledWith({
-            symbol: 'AAPL',
-            assetInfo: ASSET_INFO,
-            degraded: true,
-            locale: 'ko',
-            hasSnapshot: false,
-        });
+        expect(mockEvaluateSymbolIndexability).toHaveBeenCalledWith(
+            expect.objectContaining({
+                symbol: 'AAPL',
+                assetInfo: ASSET_INFO,
+                degraded: true,
+                locale: 'ko',
+                hasSnapshot: false,
+            })
+        );
         expectBlockedWithOwnIdentity(result, 'AAPL');
     });
 
@@ -249,13 +274,15 @@ describe('getBlockedSymbolMetadata', () => {
             86400,
             'ko'
         );
-        expect(mockEvaluateSymbolIndexability).toHaveBeenCalledWith({
-            symbol: 'AAPL',
-            assetInfo: ASSET_INFO,
-            degraded: true,
-            locale: 'ko',
-            hasSnapshot: false,
-        });
+        expect(mockEvaluateSymbolIndexability).toHaveBeenCalledWith(
+            expect.objectContaining({
+                symbol: 'AAPL',
+                assetInfo: ASSET_INFO,
+                degraded: true,
+                locale: 'ko',
+                hasSnapshot: false,
+            })
+        );
         expectBlockedWithOwnIdentity(result, 'AAPL', '/news');
     });
 
@@ -286,13 +313,15 @@ describe('getBlockedSymbolMetadata', () => {
             });
 
             expect(mockGetSeoSnapshotsStatic).not.toHaveBeenCalled();
-            expect(mockEvaluateSymbolIndexability).toHaveBeenCalledWith({
-                symbol: 'AAPL',
-                assetInfo: ASSET_INFO,
-                degraded: true,
-                locale: 'ko',
-                hasSnapshot: undefined,
-            });
+            expect(mockEvaluateSymbolIndexability).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    symbol: 'AAPL',
+                    assetInfo: ASSET_INFO,
+                    degraded: true,
+                    locale: 'ko',
+                    hasSnapshot: undefined,
+                })
+            );
             expectBlockedWithOwnIdentity(result, 'AAPL', `/${tab}`);
         }
     );
@@ -329,13 +358,15 @@ describe('getBlockedSymbolMetadata', () => {
             21600,
             'ko'
         );
-        expect(mockEvaluateSymbolIndexability).toHaveBeenCalledWith({
-            symbol: 'AAPL',
-            assetInfo: ASSET_INFO,
-            degraded: true,
-            locale: 'ko',
-            hasSnapshot: false,
-        });
+        expect(mockEvaluateSymbolIndexability).toHaveBeenCalledWith(
+            expect.objectContaining({
+                symbol: 'AAPL',
+                assetInfo: ASSET_INFO,
+                degraded: true,
+                locale: 'ko',
+                hasSnapshot: false,
+            })
+        );
         expectBlockedWithOwnIdentity(result, 'AAPL');
     });
 
@@ -357,13 +388,15 @@ describe('getBlockedSymbolMetadata', () => {
         });
 
         expect(mockGetSeoSnapshotsStatic).not.toHaveBeenCalled();
-        expect(mockEvaluateSymbolIndexability).toHaveBeenCalledWith({
-            symbol: 'AAPL',
-            assetInfo: ASSET_INFO,
-            degraded: true,
-            locale: 'ko',
-            hasSnapshot: undefined,
-        });
+        expect(mockEvaluateSymbolIndexability).toHaveBeenCalledWith(
+            expect.objectContaining({
+                symbol: 'AAPL',
+                assetInfo: ASSET_INFO,
+                degraded: true,
+                locale: 'ko',
+                hasSnapshot: undefined,
+            })
+        );
         expectBlockedWithOwnIdentity(result, 'AAPL');
     });
 
@@ -386,16 +419,132 @@ describe('getBlockedSymbolMetadata', () => {
             ...input,
             tab: 'fear-greed',
         }))!;
+        // 스냅샷 탭이 아니므로 읽지 않는다.
+        expect(mockGetSeoSnapshotsStatic).not.toHaveBeenCalled();
         const chart = (await getBlockedSymbolMetadata({
             ...input,
             tab: 'technical',
             degraded: false,
         }))!;
 
-        expect(mockGetSeoSnapshotsStatic).not.toHaveBeenCalled();
         const titleOf = (m: Metadata): string =>
             (m.title as { absolute: string }).absolute;
         expect(titleOf(fearGreed)).not.toBe(titleOf(chart));
         expect(titleOf(fearGreed)).toContain('공포 탐욕');
+    });
+
+    // 2026-10-05: 산문 게이트 — 차트·뉴스 탭은 렌더 가능한 산문이 없으면 noindex(no-prose)다.
+    describe('prose 상태(present/absent/unknown)', () => {
+        const call = (tab: 'technical' | 'news', symbol = 'AAPL') =>
+            getBlockedSymbolMetadata({
+                symbol,
+                assetInfo: ASSET_INFO,
+                degraded: false,
+                locale: 'ko',
+                revalidateSeconds: 21600,
+                tab,
+            });
+        const proseSent = () =>
+            (
+                mockEvaluateSymbolIndexability.mock.calls.find(
+                    c => c[0].symbol !== undefined
+                )?.[0] as { prose?: string } | undefined
+            )?.prose;
+
+        beforeEach(() => {
+            mockEvaluateSymbolIndexability.mockReturnValue({
+                indexable: true,
+                reason: 'popular',
+            });
+        });
+
+        it('행이 있어도 content가 렌더러 narrowing을 못 통과하면 absent다', async () => {
+            mockGetSeoSnapshotsStatic.mockResolvedValue([
+                { symbol: 'AAPL', tab: 'technical', content: { foo: 'bar' } },
+            ]);
+
+            await call('technical');
+
+            expect(proseSent()).toBe('absent');
+        });
+
+        it('이 탭의 행이 없으면(다른 탭 행만 있으면) absent다', async () => {
+            mockGetSeoSnapshotsStatic.mockResolvedValue([TECHNICAL_ROW]);
+
+            await call('news');
+
+            expect(proseSent()).toBe('absent');
+        });
+
+        it('뉴스 탭은 산문 기준이다 — 산문 행이 있으면 present', async () => {
+            mockGetSeoSnapshotsStatic.mockResolvedValue([NEWS_ROW]);
+
+            await call('news');
+
+            expect(proseSent()).toBe('present');
+        });
+
+        it('스냅샷 읽기 실패(null)는 unknown이다 — 모르는 것을 absent로 읽지 않는다(fail-open)', async () => {
+            mockGetSeoSnapshotsStatic.mockResolvedValue(null);
+
+            await call('technical');
+
+            expect(proseSent()).toBe('unknown');
+        });
+
+        it('degraded + 읽기 실패(unknown)는 hasSnapshot=false다(degraded는 보수적)', async () => {
+            mockGetSeoSnapshotsStatic.mockResolvedValue(null);
+
+            await getBlockedSymbolMetadata({
+                symbol: 'AAPL',
+                assetInfo: ASSET_INFO,
+                degraded: true,
+                locale: 'ko',
+                revalidateSeconds: 21600,
+                tab: 'technical',
+            });
+
+            expect(mockEvaluateSymbolIndexability).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    hasSnapshot: false,
+                    prose: 'unknown',
+                })
+            );
+        });
+
+        it('큐레이션 밖 롱테일은 어차피 noindex라 산문 판정용 읽기를 하지 않는다', async () => {
+            await call('technical', 'ZZZOF');
+
+            expect(mockGetSeoSnapshotsStatic).not.toHaveBeenCalled();
+            expect(proseSent()).toBeUndefined();
+        });
+
+        it('로케일 미준비(en)는 읽지 않는다 — 로케일 게이트가 먼저 결론을 낸다', async () => {
+            await getBlockedSymbolMetadata({
+                symbol: 'AAPL',
+                assetInfo: ASSET_INFO,
+                degraded: false,
+                locale: 'en',
+                revalidateSeconds: 21600,
+                tab: 'technical',
+            });
+
+            expect(mockGetSeoSnapshotsStatic).not.toHaveBeenCalled();
+        });
+
+        it('no-prose 차단은 self-canonical·follow:true로 낸다(항상-noindex 탭과 같은 방식)', async () => {
+            mockGetSeoSnapshotsStatic.mockResolvedValue([]);
+            mockEvaluateSymbolIndexability.mockReturnValue({
+                indexable: false,
+                reason: 'no-prose',
+            });
+
+            const result = await call('news');
+
+            expect(result?.robots).toEqual({ index: false, follow: true });
+            expect(result?.alternates).toEqual({
+                canonical: 'https://siglens.io/AAPL/news',
+            });
+        });
     });
 });

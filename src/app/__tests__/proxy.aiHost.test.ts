@@ -274,9 +274,22 @@ describe('proxy — ai host', () => {
             makeRequest('ai.siglens.io', '/robots.txt')
         )) as unknown as { body: string };
         expect(res.body).toBe(
-            'User-agent: *\nAllow: /\nDisallow: /c/\nDisallow: /*/c/\nDisallow: /api/\n\nSitemap: https://ai.siglens.io/sitemap.xml\n'
+            'User-agent: *\nAllow: /\nDisallow: /c/\nDisallow: /*/c/\nAllow: /api/ai/og\nDisallow: /api/\n\nSitemap: https://ai.siglens.io/sitemap.xml\n'
         );
         expect(mockRewrite).not.toHaveBeenCalled();
+    });
+    // 홈·/about의 og:image가 /api/ai/og라 `Disallow: /api/`만 있으면 미리보기 봇이 이미지를 못 가져간다.
+    // 파일 순서대로 첫 일치를 쓰는 파서가 있어 Allow가 Disallow 앞이어야 한다.
+    it('robots.txt — /api/ai/og Allow는 Disallow: /api/ 앞에 온다', async () => {
+        const res = (await proxy(
+            makeRequest('ai.siglens.io', '/robots.txt')
+        )) as unknown as { body: string };
+        const lines = res.body.split('\n');
+        expect(lines.indexOf('Allow: /api/ai/og')).toBeGreaterThan(-1);
+        expect(lines.indexOf('Disallow: /api/')).toBeGreaterThan(-1);
+        expect(lines.indexOf('Allow: /api/ai/og')).toBeLessThan(
+            lines.indexOf('Disallow: /api/')
+        );
     });
     it('sitemap.xml — 색인 가능한 로케일의 홈과 /about만, 대화 URL 없음', async () => {
         const res = (await proxy(

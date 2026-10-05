@@ -8,7 +8,7 @@ import { CongressTradesTable } from '@/widgets/congress/CongressTradesTable';
 import { CongressTrendSummary } from '@/widgets/congress/CongressTrendSummary';
 import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import { CongressSnapshotProse } from '@/views/symbol/snapshot/renderers/CongressSnapshotProse';
-import { hasCongressProse } from '@/views/symbol/snapshot/renderers/congressContent';
+import { hasCongressProse } from '@/entities/seo-snapshot/lib/congressContent';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { type SymbolRouteParams } from '@/shared/config/market';
@@ -25,7 +25,7 @@ import {
     buildSymbolCongressSeoContent,
     buildSymbolSeoContent,
     symbolMetadataFromSeo,
-    NOINDEX_SYMBOL_METADATA,
+    noindexInvalidSymbolMetadata,
     noindexSymbolMetadata,
 } from '@/shared/lib/seo';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
@@ -57,7 +57,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const upper = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
     if (!isAdmissibleSymbolShape(upper)) {
-        return NOINDEX_SYMBOL_METADATA;
+        return noindexInvalidSymbolMetadata(symbol, locale, 'congress');
     }
     // 존재하지 않는 심볼은 레이아웃과 같은 판정으로 여기서도 404다(`requireResolvableAsset`).
     const { assetInfo, degraded } = await requireResolvableAsset(upper);
@@ -122,7 +122,7 @@ export default async function CongressPage({ params }: Props) {
         getAssetInfoResilient(upper),
         getSeoSnapshotsStatic(upper, revalidate, locale),
     ]);
-    const congressSnapshot = snapshots.find(s => s.tab === 'congress');
+    const congressSnapshot = (snapshots ?? []).find(s => s.tab === 'congress');
     // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasCongressProse)
     // 그것만 보여준다. 클라이언트 AI 위젯은 계속 마운트하되 `hideView`로 UI만 끈다 —
     // 위젯을 아예 렌더하지 않으면 `useRegisterShareable`이 돌지 않아 헤더 공유
@@ -138,7 +138,7 @@ export default async function CongressPage({ params }: Props) {
     // → 차트 페이지와 동일한 notFound 처리로 sibling 일관성 유지.
     if (isUnresolvableDegraded(upper, degraded)) notFound();
 
-    // assetInfo degraded → generateMetadata returns NOINDEX_SYMBOL_METADATA (above),
+    // assetInfo degraded → generateMetadata returns noindex metadata (above),
     // while the page body renders a 200 with `displayName = upper` as ticker fallback.
     // This mirrors the financials/fundamental pages: a soft-200 keeps the user-facing
     // page navigable while noindex prevents stale/degraded content from being indexed.

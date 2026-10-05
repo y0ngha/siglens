@@ -147,9 +147,8 @@ export async function prewarmTechnical(
     const marketProfile = await resolveMarketProfile(symbol);
     const descriptor = getDescriptor(marketProfile);
     const { assetClass } = descriptor;
-    const marketDataProvider = getCachedMarketDataProvider(
-        sessionSpecFor(marketProfile)
-    );
+    const session = sessionSpecFor(marketProfile);
+    const marketDataProvider = getCachedMarketDataProvider(session);
     const timeframe = '1Day';
 
     // Task S3 (prior-analysis-context) — read BEFORE the core call,
@@ -194,6 +193,8 @@ export async function prewarmTechnical(
             modelId: DEEPSEEK_V4_1_FLASH_MODEL,
             skipEnqueueIfMiss: false,
             marketDataProvider,
+            // provider와 같은 세션 — 분석 캐시 만료를 해당 시장의 다음 마감에 맞춘다.
+            session,
             assetClass,
             // 스트림 경로와 같은 5축 정합을 유지한다 — 통화가 빠지면 prewarm이 쓴
             // 캐시와 방문자 요청의 산출 텍스트가 갈린다.
@@ -363,9 +364,8 @@ export async function prewarmOverall(
     const marketProfile = await resolveMarketProfile(symbol);
     const descriptor = getDescriptor(marketProfile);
     const { assetClass } = descriptor;
-    const marketDataProvider = getCachedMarketDataProvider(
-        sessionSpecFor(marketProfile)
-    );
+    const session = sessionSpecFor(marketProfile);
+    const marketDataProvider = getCachedMarketDataProvider(session);
     const timeframe = '1Day';
 
     // Task S3 (prior-analysis-context) — same cache-key parity rationale as
@@ -433,6 +433,8 @@ export async function prewarmOverall(
             tierContext: { userId: null, tier: 'free' },
             priorAnalyses: technicalPriorAnalyses,
             marketEvents,
+            // provider와 같은 세션 — technical 축 캐시 만료를 해당 시장의 다음 마감에 맞춘다.
+            session,
         },
         tier: 'free',
         reasoning: false,

@@ -6,7 +6,7 @@ import {
 } from '@/widgets/portfolio-position/lib/positionGeometry';
 import { computeVolumeByBand } from '@/widgets/portfolio-position/lib/volumeByBand';
 import {
-    describeAvgFloor,
+    describeFloor,
     formatAmountAligned,
 } from '@/widgets/portfolio-position/lib/positionBuildingNotes';
 import { PositionTabContent } from '@/widgets/portfolio-position/ui/PositionTabContent';
@@ -35,6 +35,7 @@ import {
     buildSymbolSeoContent,
     clampSeoDescription,
     NOINDEX_SYMBOL_METADATA,
+    noindexInvalidSymbolMetadata,
     noindexSymbolMetadata,
     SITE_NAME,
     SITE_URL,
@@ -72,7 +73,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const upper = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
     if (!isAdmissibleSymbolShape(upper)) {
-        return NOINDEX_SYMBOL_METADATA;
+        return noindexInvalidSymbolMetadata(symbol, locale, 'position');
     }
     // 존재하지 않는 심볼은 레이아웃과 같은 판정으로 여기서도 404다(`requireResolvableAsset`).
     const { assetInfo, degraded } = await requireResolvableAsset(upper);
@@ -113,8 +114,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
      * 1순위라 이 탭은 빼는 것이 맞다.
      *
      * 훅 카피(title/OG/Twitter)는 그대로 둔다 — 공유 카드는 noindex와 무관하게
-     * 필요하다. `NOINDEX_SYMBOL_METADATA`를 뒤에 스프레드해 robots와
-     * `canonical: null`만 덮는다(`noindexSymbolMetadata`와 같은 순서 계약).
+     * 필요하다. `NOINDEX_SYMBOL_METADATA`를 뒤에 스프레드해 robots만
+     * 덮는다 — canonical은 `symbolMetadataFromSeo`의 self-canonical을 그대로 둔다.
      */
     return {
         ...symbolMetadataFromSeo(
@@ -318,7 +319,7 @@ function rangeToneKey(currentPos: number): string {
  *
  * 회원 전용 `PositionBuilding`이 쓰는 것과 같은 어휘(저층/중층/고층/펜트하우스,
  * 옥상 위/지하 세대)를 내기 위해 `widgets/portfolio-position`의
- * `computePosition`·`describeAvgFloor`를 그대로 재사용한다 — 두 표현이 따로
+ * `computePosition`·`describeFloor`를 그대로 재사용한다 — 두 표현이 따로
  * 갈라지면(MISTAKES #2) 이 페이지와 로그인 후 빌딩 시각화가 같은 위치를 다른
  * 말로 설명하게 된다.
  *
@@ -347,13 +348,13 @@ function resolveCurrentPricePosition(
     const percentile = Math.round(model.currentPos * 100);
     return {
         percentile,
-        floorLabel: describeAvgFloor(
+        floorLabel: describeFloor(
             model.currentPos,
             model.currentClamped,
             BAND_COUNT,
             tPos
         ),
-        // 반올림된 퍼센타일이 아니라 `describeAvgFloor`가 받는 것과 **같은**
+        // 반올림된 퍼센타일이 아니라 `describeFloor`가 받는 것과 **같은**
         // 원본 위치를 넘긴다 — 반올림을 거치면 경계에서 둘이 또 갈린다.
         tone: tBand(rangeToneKey(model.currentPos)),
     };

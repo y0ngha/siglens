@@ -28,7 +28,7 @@ import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
 import { regionsOf, type NavRegionId } from '@/shared/config/assetClassNav';
-import { cacheNonEmpty } from '@/shared/cache/cacheNonEmpty';
+import { cacheNonEmptyOrNull } from '@/shared/cache/cacheNonEmpty';
 import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import {
@@ -43,6 +43,7 @@ import { enterLocale } from '@/shared/lib/enterLocale';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { cn } from '@/shared/lib/cn';
 import { isDatabaseConfigured } from '@/shared/db/config';
+import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 
 // 12h ISR — 신선도는 ensureMarketNewsCardsAnalyzedAction의 on-demand
 // revalidateTag('market-news:<sentinel>', 'max')가 보장, 시간 기반은 상한만.
@@ -142,15 +143,22 @@ async function loadCategorySnapshot(
     const cfg = CATEGORY_CONFIG[category];
     // `cacheNonEmpty` — 빈 목록은 캐시하지 않는다. 기사가 적재되기 전 순간의 `[]`가
     // 12h 굳으면, 허브 프리웜이 다이제스트를 구운 뒤에도 목록만 "불러오지 못했어요"로
-    // 남는다(2026-10-01 `/news/articles` 실측). DB 읽기 실패도 같은 `[]`로 흡수돼
+    // 남는다(2026-10-01 `/news/articles` 실측). DB 읽기 실패는 `null`로 구분돼 흡수되고
     // (ISR에 0-byte 결과가 굳는 것 방지) 기존 `MarketNewsDegraded` 분기로 빠진다.
-    const rows = await cacheNonEmpty(
+    const loaded = await cacheNonEmptyOrNull(
         ['market-news:list', cfg.sentinel, ...contentLocaleKeyPart(locale)],
         cfg.sentinel,
         () => getMarketNewsCards(cfg.sentinel, locale),
         [`${MARKET_NEWS_CACHE_TAG_PREFIX}:${cfg.sentinel}`],
         SECONDS_PER_HALF_DAY
     );
+    // 읽기가 **실패**했을 때만(`null`) 이 렌더의 revalidate를 300초로 낮춘다. 건강한 빈 상태(`[]`
+    // — 기사가 정말 없는 카테고리)는 라우트 기본 revalidate를 유지한다: 장애가 아닌데 5분마다
+    // 재생성하면 `/news/forex` 같은 만성 빈 카테고리가 크롤마다 DB를 다시 읽는다. 둘 다
+    // noindex·self-canonical 렌더라는 점은 같다. `cacheNonEmptyOrNull` **바깥**(페이지 렌더
+    // 경로)이라 하향이 먹고, `generateMetadata`와 본문이 이 헬퍼를 함께 거쳐 한 곳에서 처리한다.
+    if (loaded === null) await shortenRevalidateForRuntimeDegrade();
+    const rows = loaded ?? [];
     // 읽기 자체가 카드 투영이라 여기서 다시 거를 것이 없다 — 서버 전용 컬럼
     // (bodyEn/symbol/analyzedAt)은 애초에 select되지 않는다.
     return { items: rows, isEmpty: rows.length === 0 };
@@ -178,24 +186,46 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const cfg = CATEGORY_CONFIG[cat];
     const { isEmpty } = await loadCategorySnapshot(cat, locale);
 
+    const canonicalPath = `/news/${cfg.slug}`;
+
     // 데이터 없으면 noindex — 페이지 본문의 degrade 메시지와 일관.
     if (isEmpty) {
+        const emptyTitle = tSeo('newsCategory.emptyTitleTemplate', {
+            label: tRoot(cfg.labelKey),
+        });
+        const emptyDescription = tSeo('newsCategory.emptyDescriptionTemplate', {
+            label: tRoot(cfg.labelKey),
+        });
+        const emptyUrl = `${SITE_URL}${localePath(locale, canonicalPath)}`;
         return {
-            title: tSeo('newsCategory.emptyTitleTemplate', {
-                label: tRoot(cfg.labelKey),
-            }),
-            description: tSeo('newsCategory.emptyDescriptionTemplate', {
-                label: tRoot(cfg.labelKey),
-            }),
+            title: emptyTitle,
+            description: emptyDescription,
             // `follow: true` — 헤더가 전 페이지에서 이 URL을 링크한다. 콜드 배포
             // 직후의 빈 상태를 `nofollow`로 두면 사이트 전역에서 링크 주스가 끊기는
             // 막다른 길이 된다. 자매 KR 라우트(`/market/kr` 등)도 전부 follow다.
             robots: { index: false, follow: true },
-            alternates: { canonical: null },
+            // self-canonical — `canonical: null`이면 루트의 홈 canonical을 상속하지 않는 대신
+            // 신호가 비어 크롤러가 군집을 추정한다. 항상-noindex 탭과 같은 방식으로 자기
+            // URL을 가리킨다. hreflang 군집(`languages`)은 noindex라 싣지 않는다.
+            alternates: { canonical: emptyUrl },
+            // og/twitter를 비우면 루트 레이아웃의 홈 값을 상속해 이 URL이 `og:url`로 홈을
+            // 선언한다 — 자기 제목·설명·URL을 낸다.
+            openGraph: {
+                type: 'website',
+                siteName: SITE_NAME,
+                title: emptyTitle,
+                description: emptyDescription,
+                url: emptyUrl,
+                ...localeOpenGraph(locale),
+            },
+            twitter: {
+                card: 'summary_large_image',
+                title: emptyTitle,
+                description: emptyDescription,
+            },
         };
     }
 
-    const canonicalPath = `/news/${cfg.slug}`;
     const title = buildCategoryPageTitle(tRoot(cfg.labelKey), tSeo);
     const fullTitle = `${title} | ${SITE_NAME}`;
     const description = buildCategoryPageDescription(

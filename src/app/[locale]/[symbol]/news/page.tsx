@@ -23,7 +23,7 @@ import { EventCalendar } from '@/widgets/news/sections/EventCalendar';
 import { NewsList } from '@/widgets/news/sections/NewsList';
 import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import { NewsSnapshotProse } from '@/views/symbol/snapshot/renderers/NewsSnapshotProse';
-import { hasNewsProse } from '@/views/symbol/snapshot/renderers/newsContent';
+import { hasNewsProse } from '@/entities/seo-snapshot/lib/newsContent';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { SectionSkeleton } from '@/views/symbol/SectionSkeleton';
 import { JsonLd } from '@/shared/ui/JsonLd';
@@ -48,7 +48,7 @@ import {
     localizedAbsoluteUrl,
     resolveSymbolNewsSeoContent,
     symbolMetadataFromSeo,
-    NOINDEX_SYMBOL_METADATA,
+    noindexInvalidSymbolMetadata,
     SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
@@ -87,7 +87,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const upper = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
     if (!isAdmissibleSymbolShape(upper)) {
-        return NOINDEX_SYMBOL_METADATA;
+        return noindexInvalidSymbolMetadata(symbol, locale, 'news');
     }
     // 존재하지 않는 심볼은 레이아웃과 같은 판정으로 여기서도 404다(`requireResolvableAsset`).
     const { assetInfo, degraded } = await requireResolvableAsset(upper);
@@ -112,55 +112,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const metadata = symbolMetadataFromSeo(seo, locale);
 
     // snapshot-derived unique description (spec 2026-07-24 Task 8).
-    const { snap, description: snapshotDescription } =
-        await loadTabSnapshotMeta({
-            symbol: upper,
-            tab: 'news',
-            revalidate,
-            locale,
-            displayName,
-            assetClass: assetClass,
-            tSeo,
-        });
-
-    // **thin-content 게이트** — `congress/page.tsx`와 같은 모양이다.
-    //
-    // 뉴스 탭의 종목 고유 텍스트는 두 군데서만 나온다: 렌더 가능한 AI 스냅샷
-    // 산문(`NewsSnapshotProse`)과, 감정이 채워진 뉴스 카드(`NewsFactsSummary`가
-    // 그 분포를 문장으로 요약한다). 둘 다 없으면 남는 건 제목·FAQ·크롬뿐이라
-    // 2026-08 실측의 thin 대역(실콘텐츠 300~400자)으로 떨어진다.
-    //
-    // 술어는 **본문과 동일**해야 한다(MISTAKES §2): 아래 본문의 `showNewsProse`가
-    // 쓰는 `hasNewsProse`, `hasEnrichedNews`가 쓰는 `sentiment !== null` 그대로다.
-    // 존재 여부(`snap !== undefined`)로 판정하면 내용이 빈 스냅샷 행이 남아 있을 때
-    // 본문은 산문을 안 그리는데 메타만 색인 가능이 되어 갈라진다.
-    //
-    // `getNewsList`는 본문과 **같은 캐시 키**로 읽으므로 왕복이 늘지 않는다.
-    // 읽기 실패는 `[]`로 degrade한다 — 본문도 같은 실패를 보므로 그 렌더는 실제로
-    // thin이고, noindex가 맞는 판정이다.
-    //
-    // `NOINDEX_SYMBOL_METADATA`(canonical:null)는 쓰지 않는다. 페이지는 멀쩡히
-    // 살아 있으므로 self-canonical과 제목은 그대로 둔다.
-    const newsItemsForGate = await staticSymbolCache(
-        [NEWS_LIST_CACHE_KEY, upper, ...contentLocaleKeyPart(locale)],
-        upper,
-        () => getNewsList(upper, locale),
-        [newsCacheTag(upper)],
-        SECONDS_PER_HALF_DAY
-    ).catch((e: unknown) => {
-        console.error(
-            '[NewsPage] generateMetadata getNewsList failed, degrading to []:',
-            e
-        );
-        return [] as Awaited<ReturnType<typeof getNewsList>>;
+    const { description: snapshotDescription } = await loadTabSnapshotMeta({
+        symbol: upper,
+        tab: 'news',
+        revalidate,
+        locale,
+        displayName,
+        assetClass: assetClass,
+        tSeo,
     });
-    if (
-        !hasNewsProse(snap?.content) &&
-        !newsItemsForGate.some(item => item.sentiment !== null)
-    ) {
-        return { ...metadata, robots: { index: false, follow: true } };
-    }
 
+    // **산문 게이트는 `getBlockedSymbolMetadata`가 한다** (위 `tab: 'news'`).
+    //
+    // 뉴스 탭의 색인 기준은 **렌더 가능한 AI 스냅샷 산문**(`hasNewsProse`) 하나다. 예전에는
+    // "감정이 채워진 뉴스 카드(`NewsFactsSummary`의 분포 요약)가 있으면 산문이 없어도 색인"
+    // 예외가 있었는데, 문서(`SEO_RECOVERY_2026_09.md` §5 A3)와 sitemap(`PROSE_GATED_SITEMAP_TABS`)은
+    // 산문 기준이라 페이지만 느슨했다 — sitemap에 없는데 색인되는 URL이 생겼다. 카드만 있는
+    // 페이지는 종목 고유 문장이 수치 요약뿐이라 thin이다. 판정이 한 곳(`prose: present|absent|
+    // unknown`)이라 페이지·sitemap이 같은 `hasProseForTab`을 본다. 스냅샷을 못 읽은 렌더
+    // (`unknown`)는 색인을 유지하고 5분(런타임 degrade 핀) 뒤 다시 판정한다.
+    //
+    // 차단 시 canonical은 `noindexSymbolMetadata`의 self-canonical이다 — 페이지는 멀쩡히
+    // 살아 있으므로 자기 URL을 가리킨다.
     return snapshotDescription
         ? { ...metadata, description: snapshotDescription }
         : metadata;
@@ -356,7 +329,7 @@ export default async function NewsPage({ params }: Props) {
         // `export const revalidate` literal above.
         getSeoSnapshotsStatic(upper, revalidate, locale),
     ]);
-    const newsSnapshot = snapshots.find(s => s.tab === 'news');
+    const newsSnapshot = (snapshots ?? []).find(s => s.tab === 'news');
     // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasNewsProse)
     // 그것만 보여준다. 클라이언트 AI 위젯은 계속 마운트하되 `hideView`로 UI만 끈다 —
     // 위젯을 아예 렌더하지 않으면 `useRegisterShareable`이 돌지 않아 헤더 공유

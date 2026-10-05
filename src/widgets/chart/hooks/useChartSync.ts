@@ -8,11 +8,24 @@ interface ChartSyncHandlers {
     handleStockChartRemove: () => void;
     handleVolumeChartReady: (chart: IChartApi) => void;
     handleVolumeChartRemove: () => void;
+    /**
+     * 두 차트 시간축의 오른쪽 여백(px). 레벨선 제목이 마지막 캔들을 덮지 않게
+     * 마지막 봉을 그만큼 왼쪽으로 민다. 두 차트에 **같은 값**을 줘야 보이는 범위
+     * 동기화가 어긋나지 않는다. 값은 기억해 뒀다가 나중에 만들어지는(remount) 차트에도
+     * 적용한다.
+     */
+    setRightOffsetPixels: (pixels: number) => void;
+}
+
+function applyRightOffsetPixels(chart: IChartApi, pixels: number): void {
+    chart.applyOptions({ timeScale: { rightOffsetPixels: pixels } });
 }
 
 export function useChartSync(): ChartSyncHandlers {
     const stockChartRef = useRef<IChartApi | null>(null);
     const volumeChartRef = useRef<IChartApi | null>(null);
+    // 0 = 여백 없음. 차트가 (재)생성될 때 이 값을 다시 입힌다.
+    const rightOffsetPixelsRef = useRef(0);
     const stockHandlerRef = useRef<
         ((range: LogicalRange | null) => void) | null
     >(null);
@@ -22,6 +35,9 @@ export function useChartSync(): ChartSyncHandlers {
 
     const handleStockChartReady = useCallback((chart: IChartApi): void => {
         stockChartRef.current = chart;
+        if (rightOffsetPixelsRef.current > 0) {
+            applyRightOffsetPixels(chart, rightOffsetPixelsRef.current);
+        }
         const handler = (range: LogicalRange | null) => {
             if (range !== null && volumeChartRef.current !== null) {
                 volumeChartRef.current
@@ -45,6 +61,9 @@ export function useChartSync(): ChartSyncHandlers {
 
     const handleVolumeChartReady = useCallback((chart: IChartApi): void => {
         volumeChartRef.current = chart;
+        if (rightOffsetPixelsRef.current > 0) {
+            applyRightOffsetPixels(chart, rightOffsetPixelsRef.current);
+        }
         const handler = (range: LogicalRange | null) => {
             if (range !== null && stockChartRef.current !== null) {
                 stockChartRef.current.timeScale().setVisibleLogicalRange(range);
@@ -64,10 +83,19 @@ export function useChartSync(): ChartSyncHandlers {
         volumeHandlerRef.current = null;
     }, []);
 
+    const setRightOffsetPixels = useCallback((pixels: number): void => {
+        if (rightOffsetPixelsRef.current === pixels) return;
+        rightOffsetPixelsRef.current = pixels;
+        for (const chart of [stockChartRef.current, volumeChartRef.current]) {
+            if (chart !== null) applyRightOffsetPixels(chart, pixels);
+        }
+    }, []);
+
     return {
         handleStockChartReady,
         handleStockChartRemove,
         handleVolumeChartReady,
         handleVolumeChartRemove,
+        setRightOffsetPixels,
     };
 }

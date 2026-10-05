@@ -50,10 +50,16 @@ vi.mock('@/widgets/market-news/MarketNewsList', () => ({
 
 vi.mock('next/cache', () => ({ revalidateTag: vi.fn() }));
 
+// 로더 실패(null) 렌더가 revalidate를 300초로 낮추는 헬퍼 — 실제 `unstable_cache`는 렌더 스토어가 필요하다.
+vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
+    shortenRevalidateForRuntimeDegrade: vi.fn(async () => undefined),
+}));
+
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { generateMetadata } from '../page';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
+import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import CategoryNewsPage from '../page';
 import { koMessage } from '@/shared/test-utils/koMessage';
 
@@ -79,14 +85,60 @@ describe('/news/[category] generateMetadata는', () => {
         expect(String(meta.title)).toBeTruthy();
     });
 
-    it('유효 카테고리이지만 스냅샷이 비어 있으면 noindex + canonical null을 반환한다', async () => {
+    it('건강한 빈 상태(기사 0건)는 noindex·follow + self-canonical + 자기 og/twitter이고 revalidate는 낮추지 않는다', async () => {
         vi.mocked(staticSymbolCache).mockResolvedValueOnce([]);
+        vi.mocked(shortenRevalidateForRuntimeDegrade).mockClear();
 
         const meta = await generateMetadata({
             params: Promise.resolve({ locale: 'ko', category: 'crypto' }),
         });
-        expect(meta.robots).toMatchObject({ index: false });
-        expect(meta.alternates?.canonical).toBeNull();
+        expect(meta.robots).toEqual({ index: false, follow: true });
+        // canonical:null이면 신호가 비고, 비운 og/twitter는 루트의 홈 값을 상속한다.
+        expect(meta.alternates).toEqual({
+            canonical: 'https://siglens.io/news/crypto',
+        });
+        expect(meta.openGraph).toMatchObject({
+            url: 'https://siglens.io/news/crypto',
+            title: meta.title,
+            description: meta.description,
+        });
+        expect(meta.twitter).toMatchObject({
+            title: meta.title,
+            description: meta.description,
+        });
+        // 장애가 아니므로 만성 빈 카테고리가 5분마다 DB를 다시 읽지 않는다.
+        expect(shortenRevalidateForRuntimeDegrade).not.toHaveBeenCalled();
+    });
+
+    it('읽기 실패는 같은 noindex 메타데이터를 내되 revalidate를 300초로 낮춘다', async () => {
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+        vi.mocked(staticSymbolCache).mockRejectedValueOnce(
+            new Error('DB connection refused')
+        );
+        vi.mocked(shortenRevalidateForRuntimeDegrade).mockClear();
+
+        const meta = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko', category: 'crypto' }),
+        });
+
+        expect(meta.robots).toEqual({ index: false, follow: true });
+        expect(meta.alternates).toEqual({
+            canonical: 'https://siglens.io/news/crypto',
+        });
+        expect(shortenRevalidateForRuntimeDegrade).toHaveBeenCalled();
+        errorSpy.mockRestore();
+    });
+
+    it('데이터가 있으면 revalidate를 낮추지 않는다', async () => {
+        vi.mocked(shortenRevalidateForRuntimeDegrade).mockClear();
+
+        await generateMetadata({
+            params: Promise.resolve({ locale: 'ko', category: 'crypto' }),
+        });
+
+        expect(shortenRevalidateForRuntimeDegrade).not.toHaveBeenCalled();
     });
 });
 

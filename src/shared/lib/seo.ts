@@ -185,9 +185,9 @@ export const X_URL = 'https://x.com/siglens_io';
  * 색인을 차트·뉴스·공포탐욕 세 탭으로 좁혔다. overall·fundamental·financials·
  * congress·options 다섯 탭은 이 값을 쓴다.
  *
- * `NOINDEX_SYMBOL_METADATA`와 달리 canonical을 지우지 않는다 — 그쪽은 실존하지 않는
- * 종목·degrade용이고, 이 페이지들은 정상 페이지라 self-canonical과 제목·설명을 그대로
- * 둔다. `follow: true`인 이유는 `NOINDEX_SYMBOL_METADATA` 주석과 같다(형제 탭 크롤 경로).
+ * `NOINDEX_SYMBOL_METADATA`(실존하지 않는 종목·degrade용)와 같은 robots이고 둘 다
+ * self-canonical을 쓴다 — 이 페이지들은 정상 페이지라 제목·설명도 그대로 둔다.
+ * `follow: true`인 이유는 `NOINDEX_SYMBOL_METADATA` 주석과 같다(형제 탭 크롤 경로).
  *
  * 다섯 페이지가 같은 상수를 써야 sitemap 빌더(`buildPopularEntries`)의 "이 탭은
  * 싣지 않는다"와 한 곳에서 대응된다. 탭을 다시 열 때는 여기가 아니라 각 페이지에서
@@ -199,25 +199,52 @@ export const ALWAYS_NOINDEX_TAB_ROBOTS = {
 } as const satisfies NonNullable<Metadata['robots']>;
 
 /**
- * Shared metadata for the noindex early-returns on the `[symbol]` routes
- * (invalid ticker, infra-degraded asset, FMP-degraded profile).
+ * `[symbol]` 라우트 noindex 분기의 robots — **색인은 막고 링크는 따라가게** 둔다.
  *
- * `canonical: null` is the important part: it OVERRIDES the root layout's
- * `alternates.canonical: SITE_URL`, so a noindexed symbol page does not falsely
- * advertise the homepage as its canonical. Without it these early-returns
- * inherit the layout canonical (a wrong cross-page signal).
+ * `follow: true`인 이유: 차단된 심볼 페이지도 본문에 같은 심볼의 다른 탭(뉴스·공포탐욕…)
+ * 링크를 렌더하므로, nofollow는 크롤러가 그 형제 탭에 도달하는 유일한 경로를 막는다.
+ * `[symbol]/options/page.tsx`가 옵션 없는 종목에 대해 이미 `{ index: false, follow: true }`를
+ * 쓰고 같은 근거를 남겨 뒀다.
+ *
+ * **canonical은 이 상수의 몫이 아니다 (2026-10-05).** 예전에는 `alternates: { canonical: null }`을
+ * 함께 담아 루트 레이아웃의 홈 canonical 상속을 막았는데, canonical이 없는 noindex 페이지는
+ * 신호가 비어 크롤러가 URL 군집을 스스로 추정하게 둔다. 항상-noindex 탭(`ALWAYS_NOINDEX_TAB_ROBOTS`)
+ * 과 같은 방식 — **자기 URL을 가리키는 self-canonical** — 으로 통일했다. 그래서:
+ *  - 심볼을 아는 분기는 `noindexSymbolMetadata`가 `symbolMetadataFromSeo`의 self-canonical을 낸다.
+ *  - 심볼이라 믿을 수 없는 세그먼트(`!isAdmissibleSymbolShape`)는 `noindexInvalidSymbolMetadata`가
+ *    **실제 요청 URL**을 canonical로 낸다.
+ * 이 상수를 그대로 반환하면 루트 레이아웃의 홈 canonical을 상속하므로 라우트에서 직접
+ * 반환하지 않는다 — robots가 필요한 곳(스프레드·테스트)에서만 쓴다.
  */
 export const NOINDEX_SYMBOL_METADATA: Metadata = {
-    // `follow: true` — 색인은 막되 링크는 따라가게 둔다. noindex 페이지에
-    // nofollow를 얹으면 그 페이지를 통과하는 크롤 경로가 전부 끊긴다: 차단된
-    // 심볼 페이지도 본문에 같은 심볼의 다른 탭(뉴스·펀더멘털·옵션…) 링크를
-    // 렌더하므로, nofollow는 크롤러가 그 형제 탭에 도달하는 유일한 경로를
-    // 막는다. `[symbol]/options/page.tsx`가 옵션 없는 종목에 대해 이미
-    // `{ index: false, follow: true }`를 쓰고 같은 근거를 주석으로 남겨 뒀다 —
-    // 이 상수만 반대로 돼 있어 정본이 불일치했다.
     robots: { index: false, follow: true },
-    alternates: { canonical: null },
 };
+
+/**
+ * 심볼 형식이 아닌 `[symbol]` 세그먼트의 noindex 메타데이터. 세그먼트가 심볼이라고 신뢰할 수
+ * 없어(임의 문자열이 title에 박힌다) 카피는 루트 레이아웃 것을 상속하고, canonical만
+ * **실제 요청 URL**로 못 박는다 — 홈 canonical을 상속하면 존재하지 않는 경로가 홈을
+ * 가리킨다. 본문은 `notFound()`라 404가 나가는 경로다.
+ *
+ * `tabSegment`는 탭 라우트(`/{symbol}/news` 등)가 자기 경로 꼬리를 넘기는 자리다 — 생략하면
+ * 심볼 루트(`/{symbol}`)다. 탭 라우트가 루트 URL을 canonical로 내면 "실제 요청 URL"이 아니다
+ * (`/!!!/news` → `/%21%21%21/news`가 아니라 `/!!!`로 나간다). 심볼 조각은 `encodeURIComponent`로
+ * 인코딩하고, 탭 조각은 코드 상수(`news`·`fear-greed`…)라 그대로 붙인다.
+ */
+export function noindexInvalidSymbolMetadata(
+    rawSymbol: string,
+    locale: Locale,
+    tabSegment?: string
+): Metadata {
+    const path = localePath(
+        locale,
+        `/${encodeURIComponent(rawSymbol)}${tabSegment ? `/${tabSegment}` : ''}`
+    );
+    return {
+        ...NOINDEX_SYMBOL_METADATA,
+        alternates: { canonical: `${SITE_URL}${path}` },
+    };
+}
 
 /**
  * noindex인 `[symbol]` 라우트의 메타데이터 — **심볼을 알 때** 쓴다.
@@ -233,12 +260,13 @@ export const NOINDEX_SYMBOL_METADATA: Metadata = {
  *
  * **`[symbol]/**\/page.tsx`의 noindex 분기는 하나의 예외만 빼고 전부 이걸 쓴다.**
  * 예외는 `!isAdmissibleSymbolShape` 가드뿐이다 — 거기서는 세그먼트가 심볼이라고
- * 신뢰할 수 없으므로(임의 문자열이 title에 그대로 박힌다) `NOINDEX_SYMBOL_METADATA`
- * 상수로 남긴다. 나머지(tab-not-allowed, FMP profile degrade, 빈 재무 스냅샷,
- * congress trades degrade, overall 캐시 미스)는 전부 심볼이 확정된 뒤라 자기
- * 정체성을 가질 수 있고, 그중 degrade 계열은 **실존 티커가 200을 반환하는 경로**라
- * 홈 메타 상속이 실제로 크롤된다. (assetInfo 없음·장애 중 형상 불합격은 더 이상
- * 여기로 오지 않는다 — `requireResolvableAsset`이 `notFound()`로 404 경계에 넘긴다.)
+ * 신뢰할 수 없으므로(임의 문자열이 title에 그대로 박힌다) 카피 없이
+ * `noindexInvalidSymbolMetadata`(robots + 실제 URL canonical)로 남긴다. 나머지
+ * (tab-not-allowed, FMP profile degrade, 빈 재무 스냅샷, congress trades degrade,
+ * overall 캐시 미스)는 전부 심볼이 확정된 뒤라 자기 정체성을 가질 수 있고, 그중
+ * degrade 계열은 **실존 티커가 200을 반환하는 경로**라 홈 메타 상속이 실제로
+ * 크롤된다. (assetInfo 없음·장애 중 형상 불합격은 더 이상 여기로 오지 않는다 —
+ * `requireResolvableAsset`이 `notFound()`로 404 경계에 넘긴다.)
  *
  * 탭 단위가 아니라 **심볼 단위**로만 구분한다(`og:url`이 탭이 아니라 심볼 루트를
  * 가리킨다). 어차피 noindex라 탭별 정밀도는 측정 가능한 이득이 없고, 목표는
@@ -362,10 +390,13 @@ export function noindexSymbolMetadata(
         opts.tab === undefined
             ? buildSymbolSeoContent
             : SYMBOL_SEO_TAB_BUILDERS[opts.tab];
+    const base = symbolMetadataFromSeo(build(symbol, t, opts), locale);
     return {
-        ...symbolMetadataFromSeo(build(symbol, t, opts), locale),
-        // 스프레드 순서가 중요하다 — robots(noindex)와 canonical:null이
-        // symbolMetadataFromSeo의 index 기본값·self-canonical을 덮어야 한다.
+        ...base,
+        // self-canonical은 유지하고 hreflang 군집(`languages`)만 뺀다 — noindex 페이지가
+        // 다른 로케일 URL과 상호 참조(return tag)를 주장할 이유가 없다.
+        alternates: { canonical: base.alternates?.canonical ?? null },
+        // robots(noindex)가 symbolMetadataFromSeo의 index 기본값을 덮는다.
         ...NOINDEX_SYMBOL_METADATA,
     };
 }

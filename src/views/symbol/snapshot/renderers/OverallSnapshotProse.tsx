@@ -3,7 +3,10 @@ import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { SnapshotBulletList } from '../SnapshotBulletList';
 import { LIVE_ANALYSIS_CROSS_REF_KEY } from '../lib/liveAnalysisCrossRef';
-import { ScenarioBullet, narrowOverallContent } from './overallContent';
+import {
+    ScenarioBullet,
+    narrowOverallContent,
+} from '@/entities/seo-snapshot/lib/overallContent';
 
 interface OverallSnapshotProseProps {
     /**

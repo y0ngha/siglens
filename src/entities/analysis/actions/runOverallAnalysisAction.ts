@@ -232,9 +232,8 @@ export async function runOverallAnalysisAction(
         const marketProfile = await resolveMarketProfile(symbol);
         const descriptor = getDescriptor(marketProfile);
         const { assetClass } = descriptor;
-        const marketDataProvider = getCachedMarketDataProvider(
-            sessionSpecFor(marketProfile)
-        );
+        const session = sessionSpecFor(marketProfile);
+        const marketDataProvider = getCachedMarketDataProvider(session);
         // 보유 종목이 있는 회원의 technical 탭은 `:pos=` 키로 캐시된다. technical
         // 축에도 같은 버킷을 넘겨야 그 키를 그대로 맞힌다 — 빠지면 overall을 열
         // 때마다 technical을 한 번 더 생성했다(2026-09-29 감사). SSE 라우트의
@@ -263,6 +262,9 @@ export async function runOverallAnalysisAction(
             macroCalendar,
             technical: {
                 tierContext: { userId, tier: gate.tier },
+                // provider와 같은 세션 — technical 축 캐시 만료를 해당 시장의 다음
+                // 마감에 맞춘다(생략 시 KST 05:00 경계).
+                session,
                 // technical 탭과 캐시 키를 맞춘다 — 위 `technicalPriorAnalyses`
                 // JSDoc 참고. overall 축 전용인 `options.priorAnalyses`와는
                 // 다른 값이다.

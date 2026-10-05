@@ -12,7 +12,10 @@ import {
     SEO_SNAPSHOT_TABS,
     type SeoSnapshotTab,
 } from '@/entities/seo-snapshot/model';
-import { hasProseForTab } from '../hasProseForTab';
+import {
+    hasProseForTab,
+    PROSE_SOURCE_FIELDS,
+} from '@/entities/seo-snapshot/lib/hasProseForTab';
 
 // PROSE_PREDICATE_BY_TAB is a 7-tab dispatch map with no dedicated tests
 // before this file (MISTAKES.md §Tests 22) — the renderer suites only
@@ -265,6 +268,109 @@ describe('hasProseForTab', () => {
                 hasProseForTab(unknownTab, TECHNICAL_FIXTURE)
             ).not.toThrow();
             expect(hasProseForTab(unknownTab, TECHNICAL_FIXTURE)).toBe(false);
+        });
+    });
+});
+
+/**
+ * sitemap 로더는 `content` 전체가 아니라 `PROSE_SOURCE_FIELDS`만 SQL에서 투영해 같은 판정
+ * 함수에 넣는다. 투영이 판정을 바꾸면 sitemap과 페이지가 어긋난다 — 두 방향을 고정한다:
+ * (1) 투영한 객체의 판정이 원본과 같다, (2) 투영 필드를 뺀 나머지만으로는 거짓이다
+ * (= 산문의 원천이 전부 목록에 있다).
+ */
+describe('PROSE_SOURCE_FIELDS — sitemap 투영이 판정을 바꾸지 않는다', () => {
+    const FIXTURES = {
+        technical: {
+            ...TECHNICAL_FIXTURE,
+            patternSummaries: [
+                { patternName: '더블탑', trend: 'bearish', summary: '요약' },
+            ],
+        },
+        news: NEWS_FIXTURE,
+    } as const;
+
+    const pick = (content: object, fields: readonly string[]) =>
+        Object.fromEntries(
+            Object.entries(content).filter(([key]) => fields.includes(key))
+        );
+    const omit = (content: object, fields: readonly string[]) =>
+        Object.fromEntries(
+            Object.entries(content).filter(([key]) => !fields.includes(key))
+        );
+
+    it.each(Object.keys(PROSE_SOURCE_FIELDS) as (keyof typeof FIXTURES)[])(
+        '%s: 투영한 객체도 원본과 같은 판정(true)이다',
+        tab => {
+            const fixture = FIXTURES[tab];
+            expect(hasProseForTab(tab, fixture)).toBe(true);
+            expect(
+                hasProseForTab(tab, pick(fixture, PROSE_SOURCE_FIELDS[tab]))
+            ).toBe(true);
+        }
+    );
+
+    it.each(Object.keys(PROSE_SOURCE_FIELDS) as (keyof typeof FIXTURES)[])(
+        '%s: 투영 필드를 뺀 나머지만으로는 산문이 아니다 — 원천이 전부 목록에 있다',
+        tab => {
+            const fixture = FIXTURES[tab];
+            expect(
+                hasProseForTab(tab, omit(fixture, PROSE_SOURCE_FIELDS[tab]))
+            ).toBe(false);
+        }
+    );
+
+    it('sitemap 게이트 탭은 전부 투영 대상이다', async () => {
+        const { PROSE_GATED_SITEMAP_TABS } =
+            await import('@/entities/sitemap-entry/lib/proseGate');
+        for (const tab of PROSE_GATED_SITEMAP_TABS) {
+            expect(PROSE_SOURCE_FIELDS).toHaveProperty(tab);
+        }
+    });
+
+    /**
+     * `PROSE_SOURCE_FIELDS`는 손으로 적은 목록이라 TS 판정 함수가 읽는 필드와 어긋나도 컴파일이
+     * 통과한다. 리터럴을 복사해 비교하지 않고, 판정 함수에 **읽기를 기록하는 Proxy**를 넘겨 실제로
+     * 읽는 최상위 필드를 유도한 뒤, 그중 산문 여부를 바꾸는 필드(= 그 필드만으로 `hasProse`가
+     * 참이 되는 것)를 `PROSE_SOURCE_FIELDS`와 비교한다. 필드가 읽히지만 판정에 영향이 없는 것
+     * (`trend`·`overallSentiment`)은 투영 대상이 아니다.
+     */
+    describe('판정 함수가 읽는 필드에서 유도한 목록과 일치한다', () => {
+        // 산문 후보 값 — 문자열 문단·문자열 목록·스킬 감지 객체 목록 형태를 모두 시도한다.
+        const PROBE_VALUES: readonly unknown[] = [
+            '산문 문단입니다.',
+            ['산문 항목입니다.'],
+            [{ patternName: '패턴', trend: 'bullish', summary: '요약입니다.' }],
+        ];
+
+        function proseBearingFields(tab: keyof typeof PROSE_SOURCE_FIELDS) {
+            const reads = new Set<string>();
+            const spy = new Proxy(
+                {},
+                {
+                    get(_target, prop) {
+                        if (typeof prop === 'string') reads.add(prop);
+                        return undefined;
+                    },
+                }
+            );
+            hasProseForTab(tab, spy);
+            return [...reads]
+                .filter(field =>
+                    PROBE_VALUES.some(value =>
+                        hasProseForTab(tab, { [field]: value })
+                    )
+                )
+                .toSorted();
+        }
+
+        it.each(
+            Object.keys(
+                PROSE_SOURCE_FIELDS
+            ) as (keyof typeof PROSE_SOURCE_FIELDS)[]
+        )('%s', tab => {
+            expect([...PROSE_SOURCE_FIELDS[tab]].toSorted()).toEqual(
+                proseBearingFields(tab)
+            );
         });
     });
 });

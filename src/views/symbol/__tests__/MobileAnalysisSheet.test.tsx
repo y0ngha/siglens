@@ -1,7 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import type { MockInstance } from 'vitest';
 import { MobileAnalysisSheet } from '@/views/symbol/MobileAnalysisSheet';
-import { SNAP_HALF } from '@/views/symbol/constants/mobileSheet';
+import {
+    SNAP_FULL,
+    SNAP_HALF,
+    SNAP_PEEK,
+} from '@/views/symbol/constants/mobileSheet';
 import { useMobileAnalysisSheet } from '@/views/symbol/hooks/useMobileAnalysisSheet';
 
 const { drawerRootProps } = vi.hoisted(() => ({
@@ -26,11 +30,16 @@ vi.mock('vaul', () => {
 
     const DrawerContent = ({
         children,
+        'data-sheet-expanded': sheetExpanded,
     }: {
         children: React.ReactNode;
         [key: string]: unknown;
     }) => (
-        <div data-testid="drawer-content" aria-live="polite">
+        <div
+            data-testid="drawer-content"
+            aria-live="polite"
+            data-sheet-expanded={sheetExpanded as string | undefined}
+        >
             {children}
         </div>
     );
@@ -110,6 +119,39 @@ describe('MobileAnalysisSheet', () => {
         expect(drawerRootProps).toHaveBeenCalledWith(
             expect.objectContaining({ modal: false, dismissible: false })
         );
+    });
+
+    // AskAiFab(z-60)이 펼친 시트(z-50) 위로 떠 본문을 가리는 문제 — globals.css가
+    // 이 속성으로 FAB을 숨긴다. PEEK에서는 FAB이 남아야 하므로 속성이 없어야 한다.
+    describe('data-sheet-expanded (Ask-AI FAB 숨김 신호)', () => {
+        const renderAt = (snap: number) =>
+            render(
+                <MobileAnalysisSheet
+                    activeSnap={snap}
+                    onActiveSnapChange={vi.fn()}
+                >
+                    <span>content</span>
+                </MobileAnalysisSheet>
+            );
+
+        it('PEEK에서는 붙지 않는다', () => {
+            renderAt(SNAP_PEEK);
+
+            expect(screen.getByTestId('drawer-content')).not.toHaveAttribute(
+                'data-sheet-expanded'
+            );
+        });
+
+        it.each([
+            ['HALF', SNAP_HALF],
+            ['FULL', SNAP_FULL],
+        ])('%s에서는 붙는다', (_label, snap) => {
+            renderAt(snap);
+
+            expect(screen.getByTestId('drawer-content')).toHaveAttribute(
+                'data-sheet-expanded'
+            );
+        });
     });
 
     it('renders children inside the drawer', () => {

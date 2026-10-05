@@ -428,11 +428,12 @@ export const runFreshAnalysisTool: ToolExecutor = async (
                             profile
                         ),
                     ]);
+                const session = sessionSpecFor(profile);
                 const options: SubmitAnalysisOptions = {
                     modelId: runtime.analysisModel,
-                    marketDataProvider: getCachedMarketDataProvider(
-                        sessionSpecFor(profile)
-                    ),
+                    marketDataProvider: getCachedMarketDataProvider(session),
+                    // provider와 같은 세션 — 분석 캐시 만료를 해당 시장의 다음 마감에 맞춘다.
+                    session,
                     assetClass: descriptor.assetClass,
                     currency: descriptor.priceFormat.currency,
                     tierContext: { userId: ctx.userId, tier: ctx.tier },

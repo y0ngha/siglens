@@ -1562,7 +1562,6 @@
     "views.ai-about.tool.search": "b9a99e85b11e",
     "views.ai-about.tool.web": "86d2d09cef62",
     "views.symbol.ChartContent.93c3a3": "93c3a34c0d01",
-    "views.symbol.ChartContent.d12df8": "d12df884e14d",
     "views.symbol.ChartContent.d1a23e": "d1a23eae89c3",
     "views.symbol.ChartContent.ff6b09": "ff6b09760ed4",
     "views.symbol.CongressSnapshotProse.739702": "73970291cf59",
@@ -2636,7 +2635,6 @@
     "widgets.portfolio-position.PositionCard.ffe45d": "ffe45d29218e",
     "widgets.portfolio-position.PositionCta.019ed7": "019ed7c0b327",
     "widgets.portfolio-position.PositionCta.2bf3cd": "2bf3cd42152b",
-    "widgets.portfolio-position.PositionCta.5cd686": "5cd686eeb783",
     "widgets.portfolio-position.PositionCta.5edaf2": "5edaf27232b4",
     "widgets.portfolio-position.PositionStatusSummary.160873": "160873ed1649",
     "widgets.portfolio-position.PositionStatusSummary.44acd6": "44acd676e780",
@@ -3040,5 +3038,7 @@
     "shared.skillSummary.하락쐐기": "eff482cb3783",
     "shared.skillSummary.하이 타이트 플래그": "7a81bcd0a444",
     "shared.skillSummary.헤드앤숄더": "0cf1eef9a0b6",
-    "shared.skillSummary.확장형 패턴(브로드닝)": "a512f4869b98"
+    "shared.skillSummary.확장형 패턴(브로드닝)": "a512f4869b98",
+    "widgets.portfolio-position.PositionCta.8df3cf": "8df3cf79ee25",
+    "widgets.portfolio-position.positionNote.ariaSummaryCurrentOnly": "1a68fd654cff"
 }

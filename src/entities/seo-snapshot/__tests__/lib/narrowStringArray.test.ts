@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { narrowStringArray } from '../narrowStringArray';
+import { narrowStringArray } from '@/entities/seo-snapshot/lib/narrowStringArray';
 
 describe('narrowStringArray', () => {
     it('returns an empty array for an empty array', () => {

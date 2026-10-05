@@ -6,6 +6,8 @@ const m = vi.hoisted(() => ({
     news: vi.fn(),
     options: vi.fn(),
     profile: vi.fn(async () => 'us-equity'),
+    // 프로필마다 서로 다른 세션 sentinel — 시장별 `session` 전달을 구분해 단언한다.
+    sessionSpecFor: vi.fn((profile: string) => ({ tag: `session:${profile}` })),
     assetInfo: vi.fn(async () => ({ name: 'Apple', fmpSymbol: 'AAPL' })),
     // Task S5 (prior-analysis-context) — history/events/positionBucket
     // wiring added to runFreshAnalysis's technical/overall cases.
@@ -40,7 +42,7 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: () => ({}),
 }));
 vi.mock('@/shared/api/market/sessionSpecFor', () => ({
-    sessionSpecFor: () => ({}),
+    sessionSpecFor: m.sessionSpecFor,
 }));
 vi.mock('@/shared/config/marketProfile/registry', () => ({
     getDescriptor: () => ({
@@ -307,6 +309,33 @@ describe('runFreshAnalysisTool', () => {
             positionBucket: 'above_avg_10_25',
         });
     });
+
+    /**
+     * core는 `session`이 없으면 모든 시장에 KST 05:00 만료를 쓴다 — 챗이 방금
+     * 만든 KR·크립토 분석 캐시가 직전 세션 가격을 들고 있게 된다. 호출은 심볼로 고른다.
+     */
+    it.each([
+        ['us-equity', 'AAPL'],
+        ['kr-equity', '005930.KS'],
+        ['crypto', 'BTCUSD'],
+    ] as const)(
+        'technical: %s → 해당 프로필의 세션을 runAnalysis 옵션 session으로 넘긴다',
+        async (profile, symbol) => {
+            m.profile.mockResolvedValue(profile);
+            m.runAnalysis.mockResolvedValue({
+                status: 'done',
+                result: { summary: 's', trend: 'bullish' },
+            });
+
+            await runFreshAnalysisTool({ symbol, kind: 'technical' }, ctx, rt);
+
+            const call = m.runAnalysis.mock.calls.find(c => c[0] === symbol);
+            expect(call).toBeDefined();
+            expect(call![5]).toMatchObject({
+                session: { tag: `session:${profile}` },
+            });
+        }
+    );
 
     it('technical: 게스트는 positionBucket 조회 자체를 건너뛴다', async () => {
         m.runAnalysis.mockResolvedValue({
