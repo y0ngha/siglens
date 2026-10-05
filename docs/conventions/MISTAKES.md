@@ -579,12 +579,12 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → Recurring: PR #796 (skip markers drift after source edits), PR #875 (clientKeys stale after import changes) — 2 occurrences
 
 27. i18n catalog updates must be synchronized across all locale files
-    → When editing i18n content (skill descriptions, UI strings, key removal), changes must be applied to all 4 locale catalogs (ko.json, en.json, ja.json, zh.json) simultaneously
+    → When editing i18n content (skill display names/summaries, UI strings, key removal), changes must be applied to all 4 locale catalogs (ko.json, en.json, ja.json, zh.json) simultaneously
     → Updating a key in only one locale file leaves orphan entries in others, triggering CI key-parity validation failure
     → When removing a key, remove it from every locale file; when renaming or updating content, apply the change uniformly across all locales
-    ❌ Update skill description in shared.skillDescription catalog, add to ko.json only → en.json, ja.json, zh.json still reference old description key
+    ❌ Add a skill and its `shared.skillSummary.<skill name>` line to ko.json only → en.json, ja.json, zh.json have no entry; the showcase card falls back to the raw English `description`
     ❌ Remove i18n key from messages/ko.json after refactor → messages/en.json, messages/ja.json, messages/zh.json still contain orphan key → CI `yarn i18n:verify` fails
-    ✅ When editing skill `description` frontmatter, update catalog keys in all 4 locales + recompute hash in `messages/_meta/hashes.json`
+    ✅ Skill cards are keyed by the skill `name` (frontmatter, never renamed — it is part of prompts and cache fingerprints): `shared.skillName.<name>` is the display name, `shared.skillSummary.<name>` the one-line summary. Adding or changing a skill → add/update both keys in all 4 locales (en/ja/zh via `yarn i18n:translate`) + `messages/_meta/hashes.json` (sha1(ko value)[:12]); the coverage tests (`skillLabel`/`skillDescription` `.dom-fast.test.tsx`) fail when a visible skill lacks either. Editing only the frontmatter `description` needs no catalog change — the card does not show it
     ✅ When removing a key, remove from all locale files simultaneously; verify with `yarn i18n:verify` passing before commit
     → Recurring: claude/siglens-analysis-technique-review (skill description catalog inconsistency), PR #882 (key removal parity across locales) — 2 occurrences
 
@@ -1619,15 +1619,15 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Skill documents (skills/*.md) are consumed by analysis prompts and front-end tools
    → Claims in skill body (numeric evidence, assumptions, gating status) must match the actual implementation/rules/prompt injection
    → When a skill's rule, category, or gating status changes, update the body text AND digest metadata to match
-   → When a skill's description (frontmatter) is edited, update i18n catalog keys in all 4 locales (ko, en, ja, zh) + messages/_meta/hashes.json (sha1(ko value)[:12])
+   → When a skill is added or its display name/summary changes, update `shared.skillName.<name>` and `shared.skillSummary.<name>` in all 4 locales (ko, en, ja, zh) + messages/_meta/hashes.json (sha1(ko value)[:12]); the frontmatter `description` itself is not shown on the showcase
    → Numeric claims in skill documentation must be verified against the referenced design doc or measurement before publishing
    ❌ Skill digest says "Continuation" but body was rewritten to "neutral"; entry stayed under wrong heading, prompts inject stale grouping
    ❌ Skill body claims "guide always available" but file was event-gated; prompt gets injected only on signal fire, contradicting claim
-   ❌ Skill description changed to "new wording" but i18n key exists only in ko.json — en/ja/zh left pointing to old key, missing translation
+   ❌ Skill summary reworded in ko.json's `shared.skillSummary` but en/ja/zh keep the old translation (hash stale) — three locales silently describe a different behavior
    ❌ Skill claims "averaged -0.06%" but the referenced design doc shows per-period range; numeric claim contradicts source
    ✅ When rewriting a skill's category (neutral vs continuation), update heading grouping in index.md AND update digest
    ✅ When gating changes, update body text to say "injected when signal fires" instead of "always available"
-   ✅ When editing description, update messages/{ko,en,ja,zh}.json AND messages/_meta/hashes.json; digest metadata (token_cost/digest_hash) separately via `yarn skills:digest-update`
+   ✅ When editing a skill's summary/display name, update messages/{ko,en,ja,zh}.json AND messages/_meta/hashes.json; digest metadata (token_cost/digest_hash) separately via `yarn skills:digest-update`
    ✅ Verify numeric claims against source: design doc, measurement, or referenced data before writing the skill
    → Recurring: claude/siglens-analysis-technique-review-wvfffz R1–2 (numeric evidence, i18n catalog sync), feat/skills-evidence-refresh R1 (category/gating sync) — 4 occurrences across 2 PRs
 ```

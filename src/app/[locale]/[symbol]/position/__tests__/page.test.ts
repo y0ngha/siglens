@@ -116,9 +116,33 @@ describe('generateMetadata', () => {
         expect(metadata.robots).toEqual({ index: false, follow: true });
     });
 
-    it('returns noindex when infra-degraded (unresolvable)', async () => {
+    it('404s (notFound) when the asset does not exist — never a ticker-titled noindex page', async () => {
         mockGetAssetInfoResilient.mockResolvedValue({
             assetInfo: null,
+            degraded: false,
+        } as never);
+        await expect(
+            generateMetadata({
+                params: Promise.resolve({ locale: 'ko', symbol: 'zzzq' }),
+            })
+        ).rejects.toThrow('NEXT_NOT_FOUND');
+    });
+
+    it('404s (notFound) when infra-degraded and the shape cannot be vouched for', async () => {
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: { symbol: '1INCHUSD', name: '1INCHUSD' },
+            degraded: true,
+        } as never);
+        await expect(
+            generateMetadata({
+                params: Promise.resolve({ locale: 'ko', symbol: '1inchusd' }),
+            })
+        ).rejects.toThrow('NEXT_NOT_FOUND');
+    });
+
+    it('keeps 200 + noindex when infra-degraded but the shape is a plausible US ticker', async () => {
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: { symbol: 'AAPL', name: 'AAPL' },
             degraded: true,
         } as never);
         const metadata = await generateMetadata({

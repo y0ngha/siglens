@@ -14,6 +14,7 @@ import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotSt
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
 import { mapExpirationsToSlots } from '@y0ngha/siglens-core';
 import {
     fetchOptionsSnapshot,
@@ -66,34 +67,32 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (!isAdmissibleSymbolShape(upper)) {
         return NOINDEX_SYMBOL_METADATA;
     }
+    // 존재하지 않는 심볼은 레이아웃과 같은 판정으로 여기서도 404다(`requireResolvableAsset`).
+    const { assetInfo, degraded } = await requireResolvableAsset(upper);
     // 본문 `isTabAllowedForSymbol` 가드와 일관: 크립토 심볼은 options 탭이 없으므로
     // generateMetadata도 동일 조건에서 NOINDEX로 반환한다. 가드 없이 계속 진행하면
     // 본문은 notFound()(noindex)인데 메타데이터는 canonical + index:true인 soft-404가 만들어진다.
     if (!(await isTabAllowedForSymbol(upper, 'options'))) {
         return noindexSymbolMetadata(upper, tSeo, locale, { tab: 'options' });
     }
-    const [{ assetInfo, degraded }, hasOptions] = await Promise.all([
-        getAssetInfoResilient(upper),
-        // hasOptionsMarket는 Yahoo 인프라 실패 시 throw한다. getAssetInfoResilient와
-        // 함께 Promise.all로 묶여 있어, 여기서 흡수하지 않으면 throw가 degraded 조기 반환
-        // 전에 Promise.all을 reject시켜 generateMetadata가 ISR cold-gen에서 500을 낸다.
-        // 옵션 시장 여부를 모르면 false(노출 안 함)로 degrade → noindex로 안전하게 처리한다.
-        // (이 fetch는 staticSymbolCache로 감싸져 DSU를 throw하지 않고, DSU가 발생하더라도
-        // 같은 Promise.all의 getAssetInfoResilient가 rethrow하므로 제어 흐름은 보존된다.)
-        staticSymbolCache(
-            ['options:has', upper],
-            upper,
-            () => hasOptionsMarket(upper),
-            [],
-            SECONDS_PER_HALF_DAY
-        ).catch((e: unknown) => {
-            console.error(
-                '[generateMetadata:options] hasOptionsMarket infra failure, degrading to false:',
-                e
-            );
-            return false;
-        }),
-    ]);
+    // hasOptionsMarket는 Yahoo 인프라 실패 시 throw한다. 여기서 흡수하지 않으면 throw가
+    // generateMetadata를 reject시켜 ISR cold-gen에서 500을 낸다. 옵션 시장 여부를 모르면
+    // false(노출 안 함)로 degrade → noindex로 안전하게 처리한다. (이 fetch는
+    // staticSymbolCache로 감싸져 DSU를 throw하지 않고, DSU가 발생하더라도 위
+    // `requireResolvableAsset`이 이미 같은 요청 안에서 rethrow했으므로 제어 흐름은 보존된다.)
+    const hasOptions = await staticSymbolCache(
+        ['options:has', upper],
+        upper,
+        () => hasOptionsMarket(upper),
+        [],
+        SECONDS_PER_HALF_DAY
+    ).catch((e: unknown) => {
+        console.error(
+            '[generateMetadata:options] hasOptionsMarket infra failure, degrading to false:',
+            e
+        );
+        return false;
+    });
     const blockedMetadata = await getBlockedSymbolMetadata({
         locale,
         symbol: upper,
@@ -103,8 +102,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         tab: 'options',
     });
     if (blockedMetadata) return blockedMetadata;
-    if (!assetInfo)
-        return noindexSymbolMetadata(upper, tSeo, locale, { tab: 'options' });
 
     const displayName = buildDisplayName(assetInfo, upper, locale);
     const seo = buildSymbolOptionsSeoContent(upper, tSeo, {

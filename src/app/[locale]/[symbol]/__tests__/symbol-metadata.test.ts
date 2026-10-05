@@ -549,57 +549,74 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
         );
     });
 
-    describe('실존하지 않는 ticker (assetInfo null) — noindex 전 라우트', () => {
+    describe('실존하지 않는 ticker (assetInfo null) — 전 라우트가 notFound()', () => {
         /**
          * 형식은 유효하나 FMP에 실재하지 않는 ticker는 getAssetInfoResilient가
-         * { assetInfo: null, degraded: false }를 반환한다. 본문은 `if (!assetInfo)
-         * notFound()`로 404/not-found(noindex)를 렌더하므로, generateMetadata도 noindex +
-         * canonical null로 맞춰야 한다. 가드가 없으면 한 페이지에 robots index(메타)와
-         * noindex(not-found)가 충돌하고 존재하지 않는 URL을 canonical로 자기참조하는
-         * soft-404가 발생한다 (실측: HTTP 200 + robots ['index, follow', 'noindex']).
+         * { assetInfo: null, degraded: false }를 반환한다. 레이아웃은 `notFound()`로
+         * 404를 내보내는데, generateMetadata가 티커를 단 noindex 메타데이터를 돌려주면
+         * **404 응답에 정상 페이지 제목**(`ZZZQ 기술적 분석 …`)이 얹힌다(2026-10-05 감사).
+         * 같은 판정(`requireResolvableAsset`)으로 메타데이터도 `notFound()`를 던져
+         * 404 경계의 제목이 쓰이게 한다.
          *
-         * fundamental은 제외 — 이 탭은 항상 noindex + self-canonical이라 아래 별도
-         * describe에서 검증한다.
+         * 이 목록을 줄이면 해당 탭만 티커 제목의 404로 돌아간다 — 탭이 늘면 여기도 늘린다.
          */
         const nonExistentCases = [
             {
                 name: '[symbol] 루트',
-                fn: () => generateSymbolMetadata(makeParamsWithSearch('zzzq')),
+                fn: (symbol: string) =>
+                    generateSymbolMetadata(makeParamsWithSearch(symbol)),
             },
             {
                 name: 'news',
-                fn: () => generateNewsMetadata(makeParams('zzzq')),
+                fn: (symbol: string) =>
+                    generateNewsMetadata(makeParams(symbol)),
+            },
+            {
+                name: 'fundamental',
+                fn: (symbol: string) =>
+                    generateFundamentalMetadata(makeParams(symbol)),
             },
             {
                 name: 'options',
-                fn: () => generateOptionsMetadata(makeParams('zzzq')),
+                fn: (symbol: string) =>
+                    generateOptionsMetadata(makeParams(symbol)),
             },
             {
                 name: 'fear-greed',
-                fn: () => generateFearGreedMetadata(makeParams('zzzq')),
+                fn: (symbol: string) =>
+                    generateFearGreedMetadata(makeParams(symbol)),
             },
             {
                 name: 'overall',
-                fn: () => generateOverallMetadata(makeParamsWithSearch('zzzq')),
+                fn: (symbol: string) =>
+                    generateOverallMetadata(makeParamsWithSearch(symbol)),
             },
         ] as const;
 
-        beforeEach(() => {
-            mockGetAssetInfoResilient.mockResolvedValue({
-                assetInfo: null,
-                degraded: false,
-            });
-        });
+        it.each(nonExistentCases)(
+            '$name — assetInfo null 시 notFound()',
+            async ({ fn }) => {
+                mockGetAssetInfoResilient.mockResolvedValue({
+                    assetInfo: null,
+                    degraded: false,
+                });
+
+                await expect(fn('zzzq')).rejects.toThrow('NOT_FOUND');
+                expect(mockEvaluateSymbolIndexability).not.toHaveBeenCalled();
+            }
+        );
 
         it.each(nonExistentCases)(
-            '$name — assetInfo null 시 noindex + canonical null',
+            '$name — FMP·DB 동시 장애 중 형상도 못 살리는 심볼은 notFound()',
             async ({ fn }) => {
-                const metadata = await fn();
-                expect(metadata.robots).toEqual({
-                    index: false,
-                    follow: true,
+                // 숫자로 시작하는 크립토 — `isUnresolvableDegraded`가 장애 중에는 존재를
+                // 확인할 수 없다고 본다. 레이아웃이 404를 내므로 메타데이터도 같아야 한다.
+                mockGetAssetInfoResilient.mockResolvedValue({
+                    assetInfo: { symbol: '1INCHUSD', name: '1INCHUSD' },
+                    degraded: true,
                 });
-                expect(metadata.alternates?.canonical).toBeNull();
+
+                await expect(fn('1inchusd')).rejects.toThrow('NOT_FOUND');
             }
         );
     });

@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-query';
 import { SymbolLayoutProviders } from '@/app/[locale]/[symbol]/SymbolLayoutClient';
 import { SymbolLayoutJail } from '@/app/[locale]/[symbol]/SymbolLayoutJail';
+import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
 import { SymbolLayoutHeader } from '@/views/symbol/SymbolLayoutHeader';
 import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
 import { SymbolViewPing } from '@/features/visitor-ping/ui/SymbolViewPing';
@@ -16,10 +17,8 @@ import { SymbolTabPendingSlot } from '@/views/symbol/SymbolTabPendingContext';
 import { SymbolTabSkeleton } from './SymbolTabSkeleton';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
-import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { getQuantizedBarsStatic } from '@/entities/bars/lib/barsStaticCache';
 import { symbolFearGreedSnapshot } from '@/entities/bars/lib/symbolFearGreed';
-import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { pickAssetName } from '@/entities/ticker/lib/ticker';
 import { marketProfileOf } from '@/shared/config/marketProfile/registry';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
@@ -116,8 +115,8 @@ export default async function SymbolLayout({
     // 살려두므로, 자릿수 초과·숫자 시작 크립토(`1INCHUSD`, `1000SATSUSD`)는 하드 404가 된다.
     // 그 404가 stale로 굳지는 않는다 — cache-handler가 `status >= 400` 엔트리를 저장하지
     // 않으므로(cache-handler/index.mjs) 장애 복구 즉시 다음 요청에서 정상 렌더된다.
-    const { assetInfo, degraded } = await getAssetInfoResilient(ticker);
-    if (isUnresolvableDegraded(ticker, degraded) || !assetInfo) notFound();
+    // 같은 판정을 모든 탭의 `generateMetadata`도 부른다(`requireResolvableAsset`).
+    const { assetInfo, degraded } = await requireResolvableAsset(ticker);
     return (
         // 이 서브트리가 실제로 쓰는 메시지만 클라이언트로 내려보낸다 —
         // 루트 레이아웃은 크롬만 싣는다(`RouteMessages` JSDoc 참고).

@@ -62,7 +62,7 @@ export default async function LoginPage({
                     <p>
                         <AuthCrossLink
                             href="/forgot-password"
-                            className="font-medium text-primary-400 underline-offset-4 hover:text-primary-300 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                            className="tap-target font-medium text-primary-400 underline-offset-4 hover:text-primary-300 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
                             {t('page.313efe')}
                         </AuthCrossLink>
@@ -71,7 +71,7 @@ export default async function LoginPage({
                         {t('page.15bb24')}{' '}
                         <AuthCrossLink
                             href="/signup"
-                            className="font-medium text-primary-400 underline-offset-4 hover:text-primary-300 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                            className="tap-target font-medium text-primary-400 underline-offset-4 hover:text-primary-300 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
                             {t('page.49f561')}
                         </AuthCrossLink>

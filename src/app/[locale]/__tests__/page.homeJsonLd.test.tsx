@@ -41,6 +41,7 @@ vi.mock('@/entities/skill/api', () => ({
         fundamental: 2,
         news: 1,
     }),
+    loadShowcaseSkills: vi.fn().mockResolvedValue([]),
     FileSkillsLoader: vi.fn().mockImplementation(() => ({
         loadSkills: vi.fn().mockResolvedValue([]),
     })),

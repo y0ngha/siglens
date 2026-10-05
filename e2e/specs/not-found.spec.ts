@@ -29,6 +29,7 @@ import { test, expect } from '../support/fixtures';
  */
 const NOT_FOUND_URLS = [
     '/this-route-does-not-exist-zzz',
+    '/foo/bar', // 어떤 라우트에도 매칭되지 않음 → 루트 `not-found.tsx` (자체 문서)
     '/INVALIDTICKER1', // resolvable-shape but unknown asset → unresolvable path
     '/HVO.L', // 해외 거래소 접미사 → 형상 게이트에서 FMP 호출 전 차단
     '/HVO.L/options', // 자체 loading.tsx가 있는 탭 — 200이 새던 바로 그 구성
@@ -91,5 +92,76 @@ test.describe('not found', () => {
                 .getByRole('banner')
                 .getByRole('combobox', { name: '종목 티커 검색' })
         ).toBeVisible();
+    });
+
+    /**
+     * 404의 `<title>`·`lang`·본문 언어. 이 경계들은 서로 다른 파일에서 오고(`[locale]/not-found.tsx`
+     * 는 `[symbol]` 레이아웃의 `notFound()`, 루트 `not-found.tsx`는 매칭 실패) 둘 다 로케일을
+     * 알아야 한다. 예전에는 존재하지 않는 심볼의 제목이 티커를 단 정상 페이지 제목이었고
+     * (`generateMetadata`가 noindex 메타데이터를 돌려줬다), 매칭 실패 404는 ko·en 병기였다.
+     */
+    const TITLE_CASES = [
+        {
+            url: '/INVALIDTICKER1',
+            title: '페이지를 찾을 수 없습니다 | Siglens',
+        },
+        { url: '/foo/bar', title: '페이지를 찾을 수 없습니다 | Siglens' },
+        { url: '/en/foo/bar', title: 'Page not found | Siglens' },
+    ] as const;
+
+    for (const { url, title } of TITLE_CASES) {
+        test(`${url} 제목은 404 제목이다 — 티커·병기 제목이 아니다`, async ({
+            page,
+        }) => {
+            const response = await page.goto(url);
+            expect(response?.status()).toBe(404);
+
+            await expect(page).toHaveTitle(title);
+        });
+    }
+
+    test('/en/foo/bar는 영어 한 언어로만 렌더하고 html lang이 en이다', async ({
+        page,
+    }) => {
+        await page.goto('/en/foo/bar');
+
+        await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+        await expect(
+            page.getByRole('heading', { name: 'Page not found' })
+        ).toBeVisible();
+        await expect(page.getByText('페이지를 찾을 수 없습니다')).toHaveCount(
+            0
+        );
+    });
+
+    /**
+     * 루트 `not-found.tsx`는 `<html>`까지 직접 SSR한다 — JS 없이 받는 크롤러도 제목·본문·홈
+     * 링크를 본다(`[locale]/not-found.tsx`의 알려진 한계와 다른 점).
+     */
+    test('/foo/bar는 JS 없이도 본문과 홈 링크를 SSR한다', async ({
+        request,
+    }) => {
+        const res = await request.get('/foo/bar');
+        expect(res.status()).toBe(404);
+
+        const html = await res.text();
+        expect(html).toContain('<html lang="ko"');
+        expect(html).toMatch(/<h1[^>]*>페이지를 찾을 수 없습니다<\/h1>/);
+        expect(html).toMatch(/<a [^>]*href="\/"[^>]*>/);
+    });
+
+    test('SiglensAI 호스트의 없는 경로도 같은 문서로 404이고 제목이 SIGLENS AI다', async ({
+        request,
+    }) => {
+        const res = await request.get('http://ai.localhost:4300/foo/bar');
+        expect(res.status()).toBe(404);
+
+        const html = await res.text();
+        expect(html).toContain(
+            '<title>페이지를 찾을 수 없습니다 | SIGLENS AI</title>'
+        );
+        expect(html).toContain('새 대화 시작');
+        // 메인 사이트의 시장 내비는 SiglensAI에 없다.
+        expect(html).not.toContain('시장 분석');
     });
 });
