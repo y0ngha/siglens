@@ -15,6 +15,7 @@ import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
 import { getQuantizedBarsStatic } from '@/entities/bars/lib/barsStaticCache';
 import {
     clientSymbolFearGreed,
@@ -34,7 +35,6 @@ import {
     resolveSymbolFearGreedSeoContent,
     symbolMetadataFromSeo,
     noindexInvalidSymbolMetadata,
-    noindexSymbolMetadata,
 } from '@/shared/lib/seo';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import {
@@ -106,7 +106,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (!isAdmissibleSymbolShape(ticker)) {
         return noindexInvalidSymbolMetadata(symbol, locale, 'fear-greed');
     }
-    const { assetInfo, degraded } = await getAssetInfoResilient(ticker);
+    // 존재하지 않는 심볼은 레이아웃과 같은 판정으로 여기서도 404다(`requireResolvableAsset`).
+    const { assetInfo, degraded } = await requireResolvableAsset(ticker);
     // 콘텐츠 게이트 — 본문의 `FearGreedFactsSummary`와 **같은 입력·같은 술어**
     // (`hasFearGreedScore`)로 판정한다(MISTAKES §2). 본문이 쓰는 `getQuantizedBarsStatic`과
     // 같은 인자라 요청 스코프 메모가 접혀 왕복이 늘지 않는다. 차트 라우트
@@ -118,20 +119,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     //     상장 종목 등) 요약이 그려지지 않아 본문이 도입 문단뿐이다 → `no-price-data`로
     //     noindex. 예전에는 `buildTechnicalFacts`(봉 2개 이상)로 판정해 봉은 있으나
     //     점수가 없는 종목(`/TOSCF`·`/SLROF`, 2026-10-04)이 색인돼 있었다.
-    const metadataBars = assetInfo
-        ? await getQuantizedBarsStatic(
-              ticker,
-              DEFAULT_TIMEFRAME,
-              marketProfileOf(assetInfo),
-              assetInfo.fmpSymbol
-          ).catch((e: unknown) => {
-              console.error(
-                  '[SymbolFearGreedPage] generateMetadata getQuantizedBarsStatic failed:',
-                  e
-              );
-              return null;
-          })
-        : null;
+    const metadataBars = await getQuantizedBarsStatic(
+        ticker,
+        DEFAULT_TIMEFRAME,
+        marketProfileOf(assetInfo),
+        assetInfo.fmpSymbol
+    ).catch((e: unknown) => {
+        console.error(
+            '[SymbolFearGreedPage] generateMetadata getQuantizedBarsStatic failed:',
+            e
+        );
+        return null;
+    });
     const blockedMetadata = await getBlockedSymbolMetadata({
         locale,
         symbol: ticker,
@@ -145,7 +144,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         tab: 'fear-greed',
     });
     if (blockedMetadata) return blockedMetadata;
-    if (!assetInfo) return noindexSymbolMetadata(ticker, tSeo, locale);
 
     const displayName = buildDisplayName(assetInfo, ticker, locale);
     const assetClass = getDescriptor(marketProfileOf(assetInfo)).assetClass;

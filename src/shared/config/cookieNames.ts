@@ -1,3 +1,5 @@
+import { SECONDS_PER_MINUTE } from './time';
+
 /** HttpOnly session cookie — server-only, used for authentication. */
 export const AUTH_SESSION_COOKIE_NAME = 'siglens_session';
 
@@ -19,3 +21,16 @@ export const GUEST_ID_COOKIE_NAME = 'siglens_guest';
  * a bare "signed up" marker leaks nothing to sibling subdomains.
  */
 export const SIGNUP_CONVERSION_COOKIE_NAME = 'siglens_signup_conversion';
+
+/**
+ * ai.siglens.io-only marker set when a visit arrives with `?sso=none` — the SSO
+ * handoff already ran and found no main-site session. The page-level bounce
+ * (`handoffRedirect.ts`) skips while it is present, so following any link away
+ * from the landing (the `sso` param is stripped from the URL) does not start
+ * the handoff round trip again. Short-lived on purpose: signing in on the main
+ * site in the meantime should be picked up within one visit, not days later.
+ * HttpOnly, per-host (ai.siglens.io only), value is always "1".
+ */
+export const AI_SSO_PROBED_COOKIE_NAME = 'siglens_ai_sso_probed';
+/** 30분 — 한 번의 SSO 프로브 결과를 그 정도만 기억하면 재방문 루프를 막기에 충분하다. */
+export const AI_SSO_PROBED_MAX_AGE_SECONDS = 30 * SECONDS_PER_MINUTE;

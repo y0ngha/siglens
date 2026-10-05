@@ -103,4 +103,22 @@ describe('Breadcrumb', () => {
                 .filter(text => text !== '/')
         ).toEqual([SITE_NAME, '뉴스', '미국 시장 뉴스']);
     });
+
+    /**
+     * 작은 텍스트 링크(12px)의 터치 영역 — 레이아웃은 그대로 두고 `::after`가 24×24 이상으로
+     * 히트 영역을 넓힌다(`globals.css`의 `.tap-target`, WCAG 2.2 SC 2.5.8).
+     */
+    it('홈 마디와 링크 마디는 터치 영역 확장 클래스를 쓴다', () => {
+        renderCrumb([
+            { label: '미국 시장', href: '/market' },
+            { label: '현황' },
+        ]);
+
+        expect(screen.getByRole('link', { name: SITE_NAME })).toHaveClass(
+            'tap-target'
+        );
+        expect(screen.getByRole('link', { name: '미국 시장' })).toHaveClass(
+            'tap-target'
+        );
+    });
 });

@@ -68,6 +68,8 @@ vi.mock('../hooks/useSkillsShowcase', () => ({
 
 import { render, screen } from '@testing-library/react';
 import { renderWithIntl } from '@/shared/test-utils/renderWithIntl';
+import koMessages from '../../../../messages/ko.json';
+import enMessages from '../../../../messages/en.json';
 import userEvent from '@testing-library/user-event';
 import {
     HIGH_CONFIDENCE_WEIGHT,
@@ -138,9 +140,10 @@ describe('SkillsShowcase', () => {
 
     /**
      * 이름은 카탈로그로 옮겼는데 설명은 안 옮겨서 "영어 제목 + 한국어 본문"이
-     * 남았던 결함(실측: `/en`·`/ja` 홈). 실제 스킬 md의 한국어 설명으로 확인한다.
+     * 남았던 결함(실측: `/en`·`/ja` 홈). 본문은 front-matter `description`이 아니라
+     * **이름으로 찾는 한 줄 요약**(`shared.skillSummary`)이다.
      */
-    it('en: 한국어 스킬 설명을 카탈로그로 표시한다', () => {
+    it('en: 스킬 설명 자리에 front-matter 원문 대신 영어 요약이 나온다', () => {
         const skill: SkillShowcaseItem = {
             name: '다중 시간대 분석',
             type: 'strategy',
@@ -154,11 +157,40 @@ describe('SkillsShowcase', () => {
         // (숨김 패널도 크롤러 접근성을 위해 DOM에 남긴다) — 개수만 확인한다.
         expect(
             screen.getAllByText(
-                /confirms trend direction on a higher timeframe/
+                enMessages.shared.skillSummary['다중 시간대 분석']
             ).length
         ).toBeGreaterThanOrEqual(1);
         expect(
             screen.queryByText(/상위 시간대에서 추세 방향을/)
+        ).not.toBeInTheDocument();
+    });
+
+    /**
+     * 영문 이름 스킬(캔들 패턴 19 + 지표 35)은 한국어 페이지에서 **영어 제목 + 영어 본문**
+     * ("… interpretation guide with Bulkowski measured rates")으로 나갔다. 표시명과 한 줄
+     * 요약이 모두 한국어여야 하고, 모델용 영어 원문은 화면에 없어야 한다.
+     */
+    it('ko: 영문 이름 스킬도 한국어 표시명과 한국어 요약으로 나온다', () => {
+        const skill: SkillShowcaseItem = {
+            name: 'Bearish Engulfing Guide',
+            type: 'candlestick',
+            description:
+                'Bearish Engulfing two-candle reversal interpretation guide with Bulkowski measured rates',
+            confidenceWeight: 0.8,
+        };
+        renderWithIntl(<SkillsShowcase skills={[skill]} />, { locale: 'ko' });
+
+        expect(
+            screen.getAllByText('하락 장악형').length
+        ).toBeGreaterThanOrEqual(1);
+        expect(
+            screen.getAllByText(
+                koMessages.shared.skillSummary['Bearish Engulfing Guide']
+            ).length
+        ).toBeGreaterThanOrEqual(1);
+        expect(screen.queryByText(/Bulkowski/)).not.toBeInTheDocument();
+        expect(
+            screen.queryByText('Bearish Engulfing Guide')
         ).not.toBeInTheDocument();
     });
 

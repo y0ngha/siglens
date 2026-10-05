@@ -1,6 +1,6 @@
 import { readdir, readFile } from 'node:fs/promises';
 import type { Dirent } from 'node:fs';
-import { join } from 'node:path';
+import { join, sep } from 'node:path';
 import type {
     Skill,
     SkillCategory,
@@ -19,6 +19,14 @@ import { countSkillsByType } from '@/shared/lib/skillUtils';
 import type { SkillsProvider } from './model';
 
 const SKILLS_DIR = join(process.cwd(), 'skills');
+
+/**
+ * 프롬프트에 **항상 주입되는 압축 요약**(`Candle Reading Primer`·`Indicator Core
+ * Reference`·`Pattern Index Reference`)이 사는 디렉터리. 사용자가 읽는 가이드가 아니라
+ * 모델용 내부 자료라 공개 쇼케이스에서는 뺀다 — 카드로 나가면 홈에 "압축 primer — 상시
+ * 주입되는 코어" 같은 내부 문장이 그대로 노출된다.
+ */
+const CORE_SKILLS_DIR = join(SKILLS_DIR, '_core');
 
 const SKILL_CATEGORIES = [
     'reversal_bullish',
@@ -549,21 +557,36 @@ export const dedupeByName = (skills: Skill[]): Skill[] => {
     });
 };
 
+const readSkills = async (mdFiles: readonly string[]): Promise<Skill[]> => {
+    const skills = await Promise.all(
+        mdFiles.map(async file => {
+            const raw = await readFile(file, 'utf-8');
+            const parsed = parseFrontmatter(raw);
+            if (!parsed) return null;
+            return toSkill(parsed.data, parsed.content);
+        })
+    );
+
+    return dedupeByName(skills.filter((s): s is Skill => s !== null));
+};
+
 export class FileSkillsLoader implements SkillsProvider {
     async loadSkills(): Promise<Skill[]> {
-        const mdFiles = await collectMdFiles(SKILLS_DIR);
-
-        const skills = await Promise.all(
-            mdFiles.map(async file => {
-                const raw = await readFile(file, 'utf-8');
-                const parsed = parseFrontmatter(raw);
-                if (!parsed) return null;
-                return toSkill(parsed.data, parsed.content);
-            })
-        );
-
-        return dedupeByName(skills.filter((s): s is Skill => s !== null));
+        return readSkills(await collectMdFiles(SKILLS_DIR));
     }
+}
+
+/**
+ * 홈 스킬 쇼케이스에 보여줄 스킬 — `skills/_core/`를 제외한 전부.
+ *
+ * 개수 집계(`countSkillFiles`·`StatsBar`)는 이 함수를 쓰지 않는다. 그쪽은 `loadSkills()`가
+ * 소스이고 집계 기준은 별도 작업이 소유한다 — 여기서 `_core`를 빼도 숫자는 바뀌지 않는다.
+ */
+export async function loadShowcaseSkills(): Promise<Skill[]> {
+    const mdFiles = await collectMdFiles(SKILLS_DIR);
+    return readSkills(
+        mdFiles.filter(file => !file.startsWith(`${CORE_SKILLS_DIR}${sep}`))
+    );
 }
 
 // cacheComponents 비활성 기간 동안 'use cache' 제거.

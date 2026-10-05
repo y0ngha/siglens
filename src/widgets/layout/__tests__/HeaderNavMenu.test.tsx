@@ -44,6 +44,17 @@ function renderMenu(vertical = MARKET, pathname: string | null = '/') {
 }
 
 describe('HeaderNavMenu 트리거는', () => {
+    /**
+     * 영어 라벨(`Fear & Greed Index`처럼 공백이 있는 것)은 헤더 폭이 모자라면 트리거 안에서
+     * 줄바꿈돼 `h-14` 행 밖으로 삐져나간다(`/en`, 2026-10-05 감사). 한글은 공백이 없어
+     * 가려져 있던 문제다 — jsdom에는 레이아웃이 없어 클래스로 고정한다.
+     */
+    it('라벨이 줄바꿈되지 않는다', () => {
+        const { trigger } = renderMenu();
+
+        expect(trigger.className).toContain('whitespace-nowrap');
+    });
+
     it('클릭하면 열리고 다시 클릭하면 닫힌다', () => {
         const { trigger, panel } = renderMenu();
 

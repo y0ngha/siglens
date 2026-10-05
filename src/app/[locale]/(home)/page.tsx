@@ -1,5 +1,9 @@
 import { getTranslations } from 'next-intl/server';
-import { countSkillFiles, FileSkillsLoader } from '@/entities/skill/api';
+import {
+    countSkillFiles,
+    FileSkillsLoader,
+    loadShowcaseSkills,
+} from '@/entities/skill/api';
 import {
     localeAlternatesFrom,
     localeOpenGraph,
@@ -132,13 +136,24 @@ const loadSkills = cache(async () => {
     }
 });
 
+// 쇼케이스는 `_core/`(모델용 압축 요약)를 뺀 목록을 쓴다 — 개수(`StatsBar`)는 위
+// `loadSkills`를 그대로 쓰므로 집계 기준은 바뀌지 않는다.
+const loadShowcase = cache(async () => {
+    try {
+        return await loadShowcaseSkills();
+    } catch (e) {
+        console.error('[Home] loadShowcaseSkills failed:', e);
+        return [];
+    }
+});
+
 async function AsyncStatsBar() {
     const skills = await loadSkills();
     return <StatsBar skills={skills} />;
 }
 
 async function SkillsShowcaseServer() {
-    const skills = await loadSkills();
+    const skills = await loadShowcase();
     // 프로젝션이 **필수**다 — 왜인지는 `toSkillShowcaseItems`의 JSDoc에 있다.
     return <SkillsShowcase skills={toSkillShowcaseItems(skills)} />;
 }

@@ -10,6 +10,8 @@ import {
 vi.mock('@/shared/config/cookieNames', () => ({
     AUTH_SESSION_COOKIE_NAME: 'siglens_session',
     GUEST_ID_COOKIE_NAME: 'siglens_guest',
+    AI_SSO_PROBED_COOKIE_NAME: 'siglens_ai_sso_probed',
+    AI_SSO_PROBED_MAX_AGE_SECONDS: 1800,
 }));
 const { mockIntlMiddleware } = vi.hoisted(() => ({
     mockIntlMiddleware: vi.fn(() => ({ type: 'intl' })),
@@ -166,6 +168,76 @@ describe('proxy — ai host', () => {
             })
         )) as unknown as { cookies: { set: CookieSetter } };
         expect(res.cookies.set).not.toHaveBeenCalled();
+    });
+    /**
+     * `?sso=none` — 핸드오프를 한 번 돌았는데 세션이 없었다는 표식. 파라미터는 주소창
+     * 정리·내부 링크 이동으로 사라지므로 프로브 완료를 짧은 쿠키로도 남긴다. 리다이렉트로
+     * `sso`를 지우지 않는다(첫 방문 응답이 한 홉 늘고 `gclid` 유입 첫 요청이 두 번 온다).
+     */
+    describe('?sso=none', () => {
+        const signedGuest = () => signGuestId(VALID_UUID);
+
+        it('200 rewrite에 프로브 쿠키를 얹고 리다이렉트하지 않는다', async () => {
+            const res = (await proxy(
+                makeRequest('ai.siglens.io', '/?sso=none&gclid=G1', {
+                    siglens_guest: await signedGuest(),
+                })
+            )) as unknown as { cookies: { set: CookieSetter } };
+
+            expect(mockRedirect).not.toHaveBeenCalled();
+            expect(mockRewrite).toHaveBeenCalledTimes(1);
+            expect(res.cookies.set).toHaveBeenCalledTimes(1);
+            const [name, value, options] = res.cookies.set.mock.calls[0]!;
+            expect(name).toBe('siglens_ai_sso_probed');
+            expect(value).toBe('1');
+            expect(options).toEqual({
+                httpOnly: true,
+                secure: false,
+                sameSite: 'lax',
+                path: '/',
+                maxAge: 1800,
+            });
+        });
+
+        it('rewrite 목적지의 쿼리(sso 포함)는 그대로 둔다 — 페이지가 읽는다', async () => {
+            await proxy(
+                makeRequest('ai.siglens.io', '/en?q=hi&sso=none&utm_source=x')
+            );
+
+            const url = mockRewrite.mock.calls[0]![0] as URL;
+            expect(url.pathname).toBe('/ai/en');
+            expect(url.search).toBe('?q=hi&sso=none&utm_source=x');
+        });
+
+        it('게스트 쿠키가 없으면 게스트 쿠키와 프로브 쿠키를 둘 다 심는다', async () => {
+            const res = (await proxy(
+                makeRequest('ai.siglens.io', '/c/abc?sso=none')
+            )) as unknown as { cookies: { set: CookieSetter } };
+
+            expect(
+                res.cookies.set.mock.calls.map(call => call[0]).toSorted()
+            ).toEqual(['siglens_ai_sso_probed', 'siglens_guest']);
+        });
+
+        it('sso 파라미터가 없으면 프로브 쿠키를 심지 않는다', async () => {
+            const res = (await proxy(
+                makeRequest('ai.siglens.io', '/?q=hi', {
+                    siglens_guest: await signedGuest(),
+                })
+            )) as unknown as { cookies: { set: CookieSetter } };
+
+            expect(res.cookies.set).not.toHaveBeenCalled();
+        });
+
+        it('sso 값이 none이 아니면 심지 않는다', async () => {
+            const res = (await proxy(
+                makeRequest('ai.siglens.io', '/?sso=other', {
+                    siglens_guest: await signedGuest(),
+                })
+            )) as unknown as { cookies: { set: CookieSetter } };
+
+            expect(res.cookies.set).not.toHaveBeenCalled();
+        });
     });
     it('robots.txt 응답에는 게스트 쿠키를 심지 않는다', async () => {
         const res = (await proxy(

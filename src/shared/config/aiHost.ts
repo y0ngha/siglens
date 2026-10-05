@@ -13,7 +13,16 @@ export const AI_INDEXABLE_PATHS = ['/', '/about'] as const;
 export type AiIndexablePath = (typeof AI_INDEXABLE_PATHS)[number];
 
 export const AI_SITE_URL =
-    process.env.NEXT_PUBLIC_AI_SITE_URL ?? 'https://ai.siglens.io';
+    process.env.NEXT_PUBLIC_AI_SITE_URL || 'https://ai.siglens.io';
+
+/**
+ * Main site origin for the edge `proxy.ts`. `shared/lib/seo`'s `SITE_URL` is the
+ * same value but lives in a module with a build-time production guard and a large
+ * import graph, which the edge runtime should not pull in — this file has zero
+ * dependencies (same reason `AI_SITE_URL` is defined here).
+ */
+export const MAIN_SITE_URL =
+    process.env.NEXT_PUBLIC_SITE_URL || 'https://siglens.io';
 
 /** Title, description and OG label for an ai-host page's metadata. */
 export interface AiSeoCopy {
