@@ -304,11 +304,11 @@ describe('FearGreedFactsSummary', () => {
         });
 
         /**
-         * siglens-core#252: 구간 전환 날짜, 같은 날 시장 대비 차이, 극단 구간 사후 집계.
-         * 사후 집계는 집계 기간과 "예측·권유 아님" 고지가 **같은 블록에서 함께** 보여야
-         * 한다 — 표만 떼어 읽히면 수익률 안내처럼 보인다.
+         * siglens-core#252·#256: 구간 전환 날짜, 같은 날 시장 대비 차이, 극단 구간 기록.
+         * 기록은 집계 기간과 "예측·권유 아님" 고지가 **같은 블록에서 함께** 보여야
+         * 한다 — 표만 떼어 읽히면 매매 신호처럼 보인다.
          */
-        it('구간 전환·시장 대비 차이 문장과 사후 집계 블록(기간·고지 포함)을 렌더한다', () => {
+        it('구간 전환·시장 대비 차이 문장과 극단 구간 기록 블록(기간·고지 포함)을 렌더한다', () => {
             (computeFearGreedIndex as Mock).mockReturnValue(FIXTURE_SNAPSHOT);
             const history = computeFearGreedHistory(
                 realisticBars,
@@ -340,7 +340,7 @@ describe('FearGreedFactsSummary', () => {
                 getByText(/미국 증시 공포·탐욕 지수 \d+점보다 10점 높습니다/)
             ).toBeInTheDocument();
             const block = getByRole('group', {
-                name: '극단 구간 진입 이후 종가 변화',
+                name: '극단 구간 기록',
             });
             expect(block).toHaveTextContent('집계 기간:');
             expect(block).toHaveTextContent(
