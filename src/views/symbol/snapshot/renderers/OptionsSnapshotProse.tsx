@@ -7,14 +7,7 @@ import {
     narrowOptionsContent,
     SIGNAL_KIND_LABEL_KEY,
     TONE_LABEL_KEY,
-} from './optionsContent';
-
-/*
- * 판별 함수는 컴포넌트 없는 `optionsContent.ts`에 있다. 재-export로 기존
- * 소비자(`hasProseForTab`)의 import 경로를 유지하되, 그쪽은 이제 컴포넌트를
- * 거치지 않고 `.ts`를 직접 가져간다 — 서버 전용 메타데이터 헬퍼가 React
- * 트리를 끌어오던 체인을 끊기 위한 분리다.
- */
+} from '@/entities/seo-snapshot/lib/optionsContent';
 
 interface OptionsSnapshotProseProps {
     /**

@@ -1,11 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { mockQuantize } = vi.hoisted(() => ({ mockQuantize: vi.fn() }));
+const { mockQuantize, mockShortenRevalidate } = vi.hoisted(() => ({
+    mockQuantize: vi.fn(),
+    mockShortenRevalidate: vi.fn(async () => undefined),
+}));
 import type { BarsData, IndicatorResult } from '@y0ngha/siglens-core';
 import { buildTechnicalFacts } from '@/entities/bars/lib/technicalFacts';
 
 vi.mock('next/cache', () => ({
     unstable_cache: (fn: (...a: unknown[]) => unknown) => fn, // identity로 통과 검증
+}));
+vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
+    shortenRevalidateForRuntimeDegrade: mockShortenRevalidate,
 }));
 vi.mock('@/entities/bars/lib/loadBarsData', () => ({
     loadBarsData: vi.fn(),
@@ -30,6 +36,80 @@ const mockBars = vi.mocked(loadBarsData);
 
 describe('getBarsStatic', () => {
     beforeEach(() => vi.clearAllMocks());
+
+    // 2026-10-05: 빈 봉·실패를 장기 캐시에 넣지 않는다 — 콜백 안에서 throw, 바깥에서 구분 처리.
+    describe('빈 봉·실패 (장기 캐시에 넣지 않는다)', () => {
+        const EMPTY = { bars: [], indicators: {} } as unknown as BarsData;
+
+        it('봉이 0개면 에러가 아니라 빈 BarsData를 돌려준다 — 호출부가 no-price-data로 판정하게', async () => {
+            mockBars.mockResolvedValue(EMPTY);
+
+            await expect(getBarsStatic('AAPL', '1Day')).resolves.toBe(EMPTY);
+        });
+
+        it('빈 결과도 큐레이션 종목이면 revalidate를 300초로 낮춘다(장기 캐시에 안 들어가므로 재생성이 다시 읽는다)', async () => {
+            mockBars.mockResolvedValue(EMPTY);
+
+            await getBarsStatic('AAPL', '1Day');
+
+            expect(mockShortenRevalidate).toHaveBeenCalledTimes(1);
+        });
+
+        it('provider 예외는 그대로 던진다 — degraded 경로(.catch → null)', async () => {
+            mockBars.mockRejectedValue(new Error('FMP 402'));
+
+            await expect(getBarsStatic('AAPL', '1Day')).rejects.toThrow(
+                'FMP 402'
+            );
+            expect(mockShortenRevalidate).toHaveBeenCalledTimes(1);
+        });
+
+        it('빈 결과와 provider 예외는 서로 다른 결과다(복원 vs 던짐)', async () => {
+            mockBars.mockResolvedValueOnce(EMPTY);
+            const empty = await getBarsStatic('MSFT', '1Day');
+            mockBars.mockRejectedValueOnce(new Error('boom'));
+            const failure = await getBarsStatic('MSFT', '1Day').then(
+                () => 'resolved',
+                () => 'rejected'
+            );
+
+            expect(empty.bars).toHaveLength(0);
+            expect(failure).toBe('rejected');
+        });
+
+        it('롱테일(큐레이션 밖) 실패·빈 결과는 재생성 비용을 쓰지 않는다', async () => {
+            mockBars.mockResolvedValueOnce(EMPTY);
+            await getBarsStatic('ZZZZQ', '1Day');
+            mockBars.mockRejectedValueOnce(new Error('boom'));
+            await expect(getBarsStatic('ZZZZQ', '1Day')).rejects.toThrow();
+
+            expect(mockShortenRevalidate).not.toHaveBeenCalled();
+        });
+
+        it('Next 제어 흐름 에러(DYNAMIC_SERVER_USAGE)는 degrade 처리 없이 그대로 던진다', async () => {
+            mockBars.mockRejectedValue(
+                Object.assign(new Error('Dynamic server usage'), {
+                    digest: 'DYNAMIC_SERVER_USAGE',
+                })
+            );
+
+            await expect(getBarsStatic('AAPL', '1Day')).rejects.toThrow(
+                'Dynamic server usage'
+            );
+            expect(mockShortenRevalidate).not.toHaveBeenCalled();
+        });
+
+        it('정상 봉이면 degrade 처리를 하지 않는다', async () => {
+            mockBars.mockResolvedValue({
+                bars: [{ time: 1 }],
+                indicators: {},
+            } as unknown as BarsData);
+
+            await getBarsStatic('AAPL', '1Day');
+
+            expect(mockShortenRevalidate).not.toHaveBeenCalled();
+        });
+    });
 
     it('delegates to loadBarsData with the same args and returns its data', async () => {
         const data = {
@@ -64,7 +144,10 @@ describe('getBarsStatic', () => {
     });
 
     it('fmpSymbol 없을 때 loadBarsData을 undefined로 호출하고 캐시 키는 빈 문자열 사용', async () => {
-        const data = { bars: [], indicators: {} } as unknown as BarsData;
+        const data = {
+            bars: [{ time: 1 }],
+            indicators: {},
+        } as unknown as BarsData;
         mockBars.mockResolvedValue(data);
 
         // fmpSymbol 미제공 — ?? '' 분기 커버리지
@@ -75,7 +158,10 @@ describe('getBarsStatic', () => {
     });
 
     it('대소문자 정규화: 소문자 symbol을 대문자로 canonical화해 loadBarsData에 전달 (캐시 키 분기 방지)', async () => {
-        const data = { bars: [], indicators: {} } as unknown as BarsData;
+        const data = {
+            bars: [{ time: 1 }],
+            indicators: {},
+        } as unknown as BarsData;
         mockBars.mockResolvedValue(data);
 
         await getBarsStatic('aapl', '1Day', 'aapl');
@@ -117,7 +203,10 @@ describe('getQuantizedBarsStatic', () => {
     });
 
     it('crypto marketProfile → quantize에 always-open 세션을 넘긴다', async () => {
-        mockBars.mockResolvedValue({ bars: [], indicators: {} } as never);
+        mockBars.mockResolvedValue({
+            bars: [{ time: 1 }],
+            indicators: {},
+        } as never);
 
         await getQuantizedBarsStatic('BTCUSD', '1Day', 'crypto', 'BTCUSD');
 
@@ -129,7 +218,10 @@ describe('getQuantizedBarsStatic', () => {
     });
 
     it('us-equity marketProfile → quantize에 정규장 스케줄 세션을 넘긴다', async () => {
-        mockBars.mockResolvedValue({ bars: [], indicators: {} } as never);
+        mockBars.mockResolvedValue({
+            bars: [{ time: 1 }],
+            indicators: {},
+        } as never);
 
         await getQuantizedBarsStatic('AAPL', '1Day', 'us-equity', 'AAPL');
 

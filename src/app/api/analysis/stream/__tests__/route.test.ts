@@ -2260,6 +2260,54 @@ describe('POST /api/analysis/stream', () => {
 
             expect(vi.mocked(sessionSpecFor)).toHaveBeenCalledWith('crypto');
         });
+
+        /**
+         * core는 `session`이 없으면 모든 시장에 KST 05:00(미장 마감) 만료를 쓴다 —
+         * KR·크립토 분석이 직전 세션 가격을 들고 있게 된다. 시장별로 서로 다른
+         * 세션이 provider와 **같은 값으로** `runAnalysis` 옵션에 실려야 한다.
+         * 호출은 심볼로 고른다(`mock.calls[0]` 금지).
+         */
+        it.each([
+            ['us-equity', US_EQUITY, 'AAPL', 'Apple Inc.'],
+            ['kr-equity', KR_EQUITY, '005930.KS', '삼성전자'],
+            ['crypto', CRYPTO, 'BTCUSD', 'Bitcoin'],
+        ] as const)(
+            '%s 프로필 → 해당 프로필의 세션을 runAnalysis 옵션 session으로 넘긴다',
+            async (profile, descriptor, symbol, companyName) => {
+                const SESSIONS = {
+                    'us-equity': { tag: 'us-session' },
+                    'kr-equity': { tag: 'kr-session' },
+                    crypto: { tag: 'crypto-session' },
+                } as const;
+                vi.mocked(resolveMarketProfile).mockResolvedValue(
+                    profile as never
+                );
+                vi.mocked(getDescriptor).mockReturnValue(descriptor);
+                vi.mocked(sessionSpecFor).mockImplementation(
+                    id => SESSIONS[id as keyof typeof SESSIONS] as never
+                );
+
+                const body = JSON.stringify({
+                    type: 'technical',
+                    params: { symbol, companyName, timeframe: '1Day' },
+                });
+                const response = await POST(makeRequest(undefined, body));
+                await collectSseEvents(response);
+
+                const call = vi
+                    .mocked(runAnalysis)
+                    .mock.calls.find(c => c[0] === symbol);
+                expect(
+                    call,
+                    `runAnalysis가 ${symbol}로 호출되지 않았다`
+                ).toBeDefined();
+                const opts = call?.[5] as Record<string, unknown>;
+                expect(opts.session).toBe(SESSIONS[profile]);
+                expect(
+                    vi.mocked(getCachedMarketDataProvider)
+                ).toHaveBeenCalledWith(SESSIONS[profile]);
+            }
+        );
     });
 
     /**

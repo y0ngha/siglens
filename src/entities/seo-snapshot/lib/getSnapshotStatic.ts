@@ -1,10 +1,14 @@
 import 'server-only';
+import { cache } from 'react';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
 import { SNAPSHOT_MAX_AGE_MS, type SeoAnalysisSnapshot } from '../model';
 import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';
 import type { Locale } from '@/shared/i18n/locales';
+import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
+import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
+import { isCuratedSymbol } from '@/entities/symbol-indexability/lib/isCuratedSymbol';
 
 /**
  * ISR static-safe read of a symbol's SEO snapshots (spec 2026-07-24 §5 NB-2).
@@ -24,63 +28,102 @@ import type { Locale } from '@/shared/i18n/locales';
  * stay permanently indexable on a stale row. Filtering to `[]` degrades to the
  * existing placeholder path, which is already the safe fail-open behavior —
  * no new failure mode is introduced.
+ *
+ * ## 읽기 실패 = `null`("모름")이다 — `[]`("행 없음")와 다르다 (2026-10-05 감사)
+ *
+ * 예전에는 fetcher 안쪽 `catch`가 실패를 `[]`로 삼켰고, 그 `[]`가 `revalidateSeconds`
+ * (6~24h) 동안 **캐시에 저장됐다.** DB가 몇 초 흔들린 순간의 렌더가 "스냅샷 없음"으로
+ * 굳어, 산문이 멀쩡한 큐레이션 종목이 반나절 넘게 noindex(또는 산문 없는 껍데기)로
+ * 서빙됐다. 이제 실패는 fetcher 안에서 **throw**한다 — `unstable_cache`는 throw하면 저장을
+ * 건너뛰고(stale 엔트리가 있으면 그것을 돌려준다), 바깥 `catch`가 `null`을 돌려준다.
+ * 소비자는 `null`을 "모름"으로 읽는다: 색인 게이트는 fail-open(색인 유지), 본문은 `?? []`로
+ * 플레이스홀더를 그린다. 정말 행이 없는 종목의 `[]`는 정상 결과라 그대로 캐시된다.
+ *
+ * 큐레이션 종목의 읽기 실패 렌더는 revalidate를 300초로 낮춘다
+ * (`shortenRevalidateForRuntimeDegrade`) — 사람에게 에러 화면을 보이지 않으면서(throw/500 대신)
+ * 이 degrade 렌더가 6~24h 굳는 것을 막는다. **반드시 `unstable_cache` 콜백 바깥**(여기)에서
+ * 불러야 효과가 있다. 롱테일은 어차피 noindex라 재생성 비용을 쓰지 않는다.
+ *
+ * React `cache`로 감싸 한 렌더 안의 여러 호출(`generateMetadata`·본문·description 로더)이
+ * 같은 읽기를 공유한다. 인자는 원시값이다 — 호출부는 대문자 ticker를 넘긴다.
  */
-export async function getSeoSnapshotsStatic(
+export const getSeoSnapshotsStatic = cache(async function getSeoSnapshotsStatic(
     symbol: string,
     revalidateSeconds: number,
     locale: Locale
-): Promise<SeoAnalysisSnapshot[]> {
+): Promise<SeoAnalysisSnapshot[] | null> {
     const upper = symbol.toUpperCase();
-    const rows = await staticSymbolCache(
+    let rows: SeoAnalysisSnapshot[];
+    try {
+        rows = await readSnapshotRows(upper, revalidateSeconds, locale);
+    } catch (error) {
+        // Next 제어 흐름(DYNAMIC_SERVER_USAGE 등)은 degrade가 아니다 — 그대로 올려 보낸다.
+        if (isDynamicServerError(error)) throw error;
+        console.error(
+            '[getSeoSnapshotsStatic] read failed, degrading to unknown (null):',
+            error
+        );
+        if (isCuratedSymbol(upper)) await shortenRevalidateForRuntimeDegrade();
+        return null;
+    }
+    return rehydrateSnapshots(upper, rows);
+});
+
+/**
+ * 캐시 경계 안쪽 읽기. **실패하면 throw한다** — 삼키면 `unstable_cache`가 그 결과를 저장한다.
+ */
+function readSnapshotRows(
+    upper: string,
+    revalidateSeconds: number,
+    locale: Locale
+): Promise<SeoAnalysisSnapshot[]> {
+    return staticSymbolCache(
         // 로케일이 캐시 키에 들어가야 한다 — 스냅샷 본문이 로케일별로 갈리므로,
         // 키를 공유하면 먼저 생성한 로케일의 분석 산문이 전 로케일에 굳는다
         // (감사 라운드 1 required #2).
         ['seo-snapshots', upper, ...contentLocaleKeyPart(locale)],
         upper,
         async () => {
-            try {
-                const { db } = getDatabaseClient();
-                const rows = await new DrizzleSeoSnapshotRepository(
-                    db
-                ).findBySymbol(upper, locale);
-                const cutoff = Date.now() - SNAPSHOT_MAX_AGE_MS;
-                const fresh = rows.filter(
-                    row => row.generatedAt.getTime() >= cutoff
+            const { db } = getDatabaseClient();
+            const rows = await new DrizzleSeoSnapshotRepository(
+                db
+            ).findBySymbol(upper, locale);
+            const cutoff = Date.now() - SNAPSHOT_MAX_AGE_MS;
+            const fresh = rows.filter(
+                row => row.generatedAt.getTime() >= cutoff
+            );
+            const droppedCount = rows.length - fresh.length;
+            if (droppedCount > 0) {
+                // FIX D (audit): the operator's only signal that the cron
+                // has been dead long enough for §max-age to bite — absent
+                // this, prose would just silently stop appearing with no
+                // explanation in the logs.
+                console.warn(
+                    `[getSeoSnapshotsStatic] ${upper}: dropped ${droppedCount} row(s) older than ${SNAPSHOT_MAX_AGE_MS}ms (cron likely stalled)`
                 );
-                const droppedCount = rows.length - fresh.length;
-                if (droppedCount > 0) {
-                    // FIX D (audit): the operator's only signal that the cron
-                    // has been dead long enough for §max-age to bite — absent
-                    // this, prose would just silently stop appearing with no
-                    // explanation in the logs.
-                    console.warn(
-                        `[getSeoSnapshotsStatic] ${upper}: dropped ${droppedCount} row(s) older than ${SNAPSHOT_MAX_AGE_MS}ms (cron likely stalled)`
-                    );
-                }
-                // Observability (audit fix FIX 7): if every renderer
-                // null-renders (malformed content, a core schema drift, a
-                // tab-key mismatch), the system otherwise emits ZERO
-                // output — indistinguishable from "working as intended,
-                // just no snapshot yet". This runs once per symbol per
-                // cache-fill (inside the unstable_cache fetcher, not per
-                // request), so volume is bounded — greppable in CloudWatch
-                // `/siglens/app` as ground truth that reads are happening.
-                console.info(
-                    `[getSeoSnapshotsStatic] ${upper}: ${fresh.length} snapshot row(s)`
-                );
-                return fresh;
-            } catch (error) {
-                console.error(
-                    '[getSeoSnapshotsStatic] read failed, degrading:',
-                    error
-                );
-                return [];
             }
+            // Observability (audit fix FIX 7): if every renderer
+            // null-renders (malformed content, a core schema drift, a
+            // tab-key mismatch), the system otherwise emits ZERO
+            // output — indistinguishable from "working as intended,
+            // just no snapshot yet". This runs once per symbol per
+            // cache-fill (inside the unstable_cache fetcher, not per
+            // request), so volume is bounded — greppable in CloudWatch
+            // `/siglens/app` as ground truth that reads are happening.
+            console.info(
+                `[getSeoSnapshotsStatic] ${upper}: ${fresh.length} snapshot row(s)`
+            );
+            return fresh;
         },
         [`seo-snapshot:${upper}`],
         revalidateSeconds
     );
+}
 
+function rehydrateSnapshots(
+    upper: string,
+    rows: readonly SeoAnalysisSnapshot[]
+): SeoAnalysisSnapshot[] {
     /*
      * `unstable_cache`는 결과를 JSON으로 직렬화한다(`JSON.stringify` → 히트 시
      * `JSON.parse`). `Date`는 이 왕복을 견디지 못해, 타입은 `Date`인 채로 값만

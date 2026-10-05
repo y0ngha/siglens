@@ -225,3 +225,66 @@ describe('evaluateSymbolIndexability — hasPriceData 게이트', () => {
         ).toEqual({ indexable: false, reason: 'asset-missing' });
     });
 });
+
+// 2026-10-05: 차트·뉴스 탭의 산문 게이트. 평가 순서는 degraded 다음, 화이트리스트 앞이다.
+describe('evaluateSymbolIndexability — prose 게이트', () => {
+    const base = {
+        symbol: 'AAPL',
+        assetInfo: asset('AAPL'),
+        degraded: false,
+        locale: 'ko',
+    } as const;
+
+    it('absent → 큐레이션 종목이라도 no-prose noindex', () => {
+        expect(
+            evaluateSymbolIndexability({ ...base, prose: 'absent' })
+        ).toEqual({ indexable: false, reason: 'no-prose' });
+    });
+
+    it('present → 기존 판정(popular)을 그대로 따른다', () => {
+        expect(
+            evaluateSymbolIndexability({ ...base, prose: 'present' })
+        ).toEqual({ indexable: true, reason: 'popular' });
+    });
+
+    it('unknown(스냅샷 읽기 실패) → fail-open, 색인을 유지한다', () => {
+        expect(
+            evaluateSymbolIndexability({ ...base, prose: 'unknown' })
+        ).toEqual({ indexable: true, reason: 'popular' });
+    });
+
+    it('생략(undefined) → 이 탭은 산문 게이트가 없다', () => {
+        expect(evaluateSymbolIndexability(base)).toEqual({
+            indexable: true,
+            reason: 'popular',
+        });
+    });
+
+    it('degraded는 산문 게이트보다 먼저 평가된다 — degraded-with-snapshot이 prose=absent에 가려지지 않는다', () => {
+        expect(
+            evaluateSymbolIndexability({
+                ...base,
+                degraded: true,
+                hasSnapshot: true,
+                prose: 'absent',
+            })
+        ).toEqual({ indexable: true, reason: 'degraded-with-snapshot' });
+    });
+
+    it('로케일·asset·가격 게이트가 산문 게이트보다 먼저다', () => {
+        expect(
+            evaluateSymbolIndexability({
+                ...base,
+                locale: 'en',
+                prose: 'absent',
+            }).reason
+        ).toBe('locale-not-ready');
+        expect(
+            evaluateSymbolIndexability({
+                ...base,
+                hasPriceData: false,
+                prose: 'absent',
+            }).reason
+        ).toBe('no-price-data');
+    });
+});

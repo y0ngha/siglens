@@ -10,21 +10,27 @@ const NOW = new Date('2026-05-23T21:00:00.000Z');
 const LAST_SESSION_CLOSE = new Date('2026-05-22T20:00:00.000Z');
 
 describe('buildPopularEntries', () => {
-    // 2026-09-17 운영 크롤: noindex 탭이 sitemap에 실렸다. 지금은 산문 게이트 대상이
-    // news 하나뿐이라, 산문 보유 집합이 있으면 /news만 거기 맞춘다.
-    it('산문 스냅샷 집합이 주어지면 news는 그 종목만 싣고 차트·공포탐욕은 그대로 둔다', () => {
+    // 2026-09-17 운영 크롤: noindex 탭이 sitemap에 실렸다. 산문 게이트 대상은 차트·뉴스이고,
+    // 산문 보유 집합이 있으면 두 탭이 거기 맞춰진다. 공포탐욕은 산문이 없는 탭이라 그대로다.
+    it('산문 스냅샷 집합이 주어지면 차트·뉴스는 그 종목만 싣고 공포탐욕은 그대로 둔다', () => {
         const urls = buildPopularEntries(NOW, {
             snapshotGeneratedAt: new Map([
                 ['AAPL:news', new Date('2026-05-22T09:00:00.000Z')],
+                ['AAPL:technical', new Date('2026-05-22T09:00:00.000Z')],
+                ['MSFT:technical', new Date('2026-05-22T09:00:00.000Z')],
             ]),
         }).map(e => e.url);
 
         // 집합에 든 조합은 실제로 실린다 — 키 형식이 어긋나면 이 단언이 깨진다.
         expect(urls).toContain(`${SITE_URL}/AAPL/news`);
+        expect(urls).toContain(`${SITE_URL}/AAPL`);
         // 2026-09-18: 산문 없는 종목의 /news가 sitemap에 noindex로 남아 있었다.
         expect(urls).not.toContain(`${SITE_URL}/MSFT/news`);
         expect(urls).toContain(`${SITE_URL}/MSFT`);
+        // technical 산문이 없는 종목은 차트 탭도 빠진다(페이지 no-prose).
+        expect(urls).not.toContain(`${SITE_URL}/NVDA`);
         expect(urls).toContain(`${SITE_URL}/MSFT/fear-greed`);
+        expect(urls).toContain(`${SITE_URL}/NVDA/fear-greed`);
     });
 
     it('산문 집합이 없으면(로더 실패) news를 전부 싣는다', () => {
@@ -302,16 +308,17 @@ describe('buildPopularEntries — 스냅샷 generatedAt lastmod', () => {
         ).toBe(LAST_SESSION_CLOSE.toISOString());
     });
 
-    it('technical 스냅샷이 없는 종목은 세션 마감 그대로다', () => {
+    it('technical 산문이 없는 종목은 차트 탭이 sitemap에서 빠진다 — 페이지가 noindex(no-prose)다', () => {
         const entries = buildPopularEntries(NOW, {
             snapshotGeneratedAt: new Map([
                 ['MSFT:technical', new Date('2026-05-22T22:30:00.000Z')],
             ]),
         });
 
-        expect(
-            lastModOf(entries, `${SITE_URL}/${US_TICKER}`).toISOString()
-        ).toBe(LAST_SESSION_CLOSE.toISOString());
+        const urls = entries.map(e => e.url);
+        expect(urls).not.toContain(`${SITE_URL}/${US_TICKER}`);
+        // 산문이 있는 종목은 싣는다.
+        expect(urls).toContain(`${SITE_URL}/MSFT`);
     });
 
     it('한국 종목도 자기 거래소 세션 마감과 겨룬다', () => {
@@ -328,14 +335,20 @@ describe('buildPopularEntries — 스냅샷 generatedAt lastmod', () => {
         ).toBe(technicalAt.toISOString());
     });
 
-    it('맵이 비어 있어도(산문 없음) 차트·공포탐욕은 세션 마감이고 뉴스 탭은 빠진다', () => {
+    it('맵이 비어 있으면(산문 없음) 차트·뉴스 탭은 빠지고 공포탐욕은 세션 마감으로 남는다', () => {
         const entries = buildPopularEntries(NOW, {
             snapshotGeneratedAt: new Map(),
         });
 
         expect(entries.some(e => e.url.endsWith('/news'))).toBe(false);
+        expect(entries.some(e => e.url === `${SITE_URL}/${US_TICKER}`)).toBe(
+            false
+        );
         expect(
-            lastModOf(entries, `${SITE_URL}/${US_TICKER}`).toISOString()
+            lastModOf(
+                entries,
+                `${SITE_URL}/${US_TICKER}/fear-greed`
+            ).toISOString()
         ).toBe(LAST_SESSION_CLOSE.toISOString());
     });
 });

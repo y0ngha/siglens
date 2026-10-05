@@ -5,7 +5,10 @@ import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { LIVE_ANALYSIS_CROSS_REF_KEY } from '../lib/liveAnalysisCrossRef';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
-import { TREND_LABEL_KEY, narrowTechnicalContent } from './technicalContent';
+import {
+    TREND_LABEL_KEY,
+    narrowTechnicalContent,
+} from '@/entities/seo-snapshot/lib/technicalContent';
 
 interface TechnicalSnapshotProseProps {
     /**

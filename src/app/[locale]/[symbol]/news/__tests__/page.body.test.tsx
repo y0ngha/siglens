@@ -575,7 +575,7 @@ describe('NewsPage — Article JSON-LD 게이트와 dateModified', () => {
     it('firstGeneratedAt이 있으면 datePublished로 싣는다', async () => {
         vi.mocked(getSeoSnapshotsStatic).mockResolvedValue([
             {
-                ...PROSE_SNAPSHOT[0],
+                ...PROSE_SNAPSHOT![0],
                 // 픽스처의 최신 기사(2026-05-06)보다 **앞선** 시각이어야 한다 —
                 // 뒤면 아래 클램프 규칙에 걸려 필드가 생략된다.
                 firstGeneratedAt: new Date('2026-04-02T03:00:00.000Z'),
@@ -615,7 +615,7 @@ describe('NewsPage — Article JSON-LD 게이트와 dateModified', () => {
     it('datePublished가 dateModified보다 늦으면 생략한다', async () => {
         vi.mocked(getSeoSnapshotsStatic).mockResolvedValue([
             {
-                ...PROSE_SNAPSHOT[0],
+                ...PROSE_SNAPSHOT![0],
                 firstGeneratedAt: new Date('2026-09-10T00:00:00.000Z'),
             },
         ] as unknown as Awaited<ReturnType<typeof getSeoSnapshotsStatic>>);

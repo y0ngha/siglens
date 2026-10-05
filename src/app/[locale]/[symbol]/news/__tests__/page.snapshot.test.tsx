@@ -287,14 +287,20 @@ describe('NewsPage generateMetadata — snapshot-derived description (Task 8)', 
         expect(og.description).toBe('d');
     });
 
-    it('falls back to the templated description when no news snapshot exists', async () => {
+    // 2026-10-05: 뉴스 탭은 산문이 없으면 noindex(no-prose)다 — 차단 메타는 템플릿 설명을 쓰고,
+    // 스냅샷 파생 설명은 쓰지 않는다.
+    it('falls back to the templated description (and noindex) when no news snapshot exists', async () => {
         mockGetSeoSnapshotsStatic.mockResolvedValue([]);
 
         const metadata = await generateMetadata({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        expect(metadata.description).toBe('d');
+        expect(metadata.robots).toEqual({ index: false, follow: true });
+        expect(metadata.description).toEqual(expect.any(String));
+        expect(metadata.description).not.toContain(
+            SNAPSHOT_CONTENT.currentDriverKo
+        );
     });
 
     it('getSeoSnapshotsStatic is called with the page revalidate literal (43200) in generateMetadata too', async () => {
