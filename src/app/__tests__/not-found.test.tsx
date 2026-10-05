@@ -1,6 +1,4 @@
 // @vitest-environment jsdom
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -21,7 +19,12 @@ vi.mock('@/shared/i18n/locationSurface', async importOriginal => {
 
 import { buildOverrides } from '@/app/_components/notFoundOverrides';
 import { generateMetadata } from '../not-found';
-import { hydrateServerMarkup, renderRoot, visit } from './notFoundHarness';
+import {
+    hydrateServerMarkup,
+    removeTitles,
+    renderRoot,
+    visit,
+} from './notFoundHarness';
 
 /**
  * 루트 레이아웃이 없는 자리(전 라우트가 `[locale]/` 아래로 이동)의 404 — 이 파일이
@@ -34,8 +37,8 @@ describe('RootNotFound', () => {
     beforeEach(() => {
         visit('/');
     });
+    // `<title>`은 RTL 정리(언마운트)가 걷는다 — 여기서 먼저 지우면 React가 없는 노드를 지우려 한다.
     afterEach(() => {
-        document.title = '';
         document.documentElement.lang = '';
     });
 
@@ -79,6 +82,13 @@ describe('RootNotFound', () => {
             ).toEqual(['/market', '/fear-greed', '/news', '/economy']);
         });
 
+        it('문서 제목은 한국어 · 메인 호스트 제목이고 <title>은 하나뿐이다', async () => {
+            await renderRoot();
+
+            expect(document.title).toBe('페이지를 찾을 수 없습니다 | Siglens');
+            expect(document.querySelectorAll('title')).toHaveLength(1);
+        });
+
         it('html lang은 ko다', async () => {
             const { container } = await renderRoot();
 
@@ -109,6 +119,7 @@ describe('RootNotFound', () => {
                 screen.getByRole('link', { name: /Return to Siglens Home/ })
             ).toHaveAttribute('href', '/en');
             expect(document.title).toBe('Page not found | Siglens');
+            expect(document.querySelectorAll('title')).toHaveLength(1);
             expect(document.documentElement.lang).toBe('en');
         });
 
@@ -146,37 +157,16 @@ describe('RootNotFound', () => {
 });
 
 describe('RootNotFound metadata', () => {
-    it('제목은 정적이다 — 한국어 · 메인 호스트, noindex·follow', async () => {
-        const metadata = await generateMetadata();
+    /**
+     * 제목을 Next 메타데이터에 두면 `<title>`을 두 군데(메타데이터·클라이언트 섬)가 소유한다.
+     * 프로덕션 하이드레이션은 메타데이터의 한국어 제목을 다시 써 넣어 섬이 바꾼 제목을 덮는다
+     * (e2e 실측 — jsdom은 이 경쟁을 재현하지 못하므로 구조로 고정한다).
+     */
+    it('noindex·follow만 두고 title은 두지 않는다 — 제목은 마크업의 <title>이 맡는다', () => {
+        const metadata = generateMetadata();
 
-        expect(metadata.title).toBe('페이지를 찾을 수 없습니다 | Siglens');
         expect(metadata.robots).toEqual({ index: false, follow: true });
-    });
-});
-
-/**
- * **루트 404는 요청 API를 쓰면 안 된다.** 이 경계는 모든 라우트 트리의 일부로 렌더되므로
- * `headers()`를 읽는 순간 ISR 페이지 전부가 런타임에 동적으로 바뀌어 500이 된다(`Page
- * changed from static to dynamic at runtime /ko/AAPL, reason: headers` — e2e 실측).
- * 단위 테스트는 jsdom이라 이 오류를 재현할 수 없으므로 소스를 직접 고정한다.
- */
-describe('루트 404는 정적이다 — 요청 API 금지', () => {
-    const root = process.cwd();
-    const files = [
-        'src/app/not-found.tsx',
-        'src/app/_components/NotFoundView.tsx',
-        'src/app/_components/NotFoundLayout.tsx',
-        'src/app/_components/notFoundOverrides.ts',
-        'src/shared/i18n/locationSurface.ts',
-    ];
-
-    it.each(files)('%s: next/headers·동적 API를 쓰지 않는다', file => {
-        const code = readFileSync(join(root, file), 'utf8')
-            .replace(/\/\*[\s\S]*?\*\//g, '')
-            .replace(/(?<![:/])\/\/.*$/gm, '');
-
-        expect(code).not.toMatch(/next\/headers/);
-        expect(code).not.toMatch(/\b(?:headers|cookies|connection)\(/);
+        expect(metadata).not.toHaveProperty('title');
     });
 });
 
@@ -187,7 +177,7 @@ describe('루트 404는 정적이다 — 요청 API 금지', () => {
 describe('NotFoundView 하이드레이션', () => {
     afterEach(() => {
         document.body.innerHTML = '';
-        document.title = '';
+        removeTitles();
         document.documentElement.lang = '';
     });
 

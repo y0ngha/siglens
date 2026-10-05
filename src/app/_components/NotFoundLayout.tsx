@@ -7,6 +7,11 @@ export interface NotFoundLink {
 export interface NotFoundLayoutProps {
     readonly wordmark: string;
     readonly homeHref: string;
+    /**
+     * 문서 제목(`<title>`). React가 `<head>`로 끌어올려 렌더한다 — 제목을 마크업의 일부로 두는
+     * 이유는 `NotFoundView`의 JSDoc 참고(`document.title` 직접 대입은 하이드레이션에 덮인다).
+     */
+    readonly documentTitle: string;
     /** 시장 내비. 비어 있으면(SiglensAI·비기본 표면) 내비를 그리지 않는다. */
     readonly navLabel?: string;
     readonly navLinks?: readonly NotFoundLink[];
@@ -32,12 +37,16 @@ const SECONDARY_LINK_CLASSES =
  * (`NotFoundView`)이 비기본 표면(다른 로케일·ai 호스트)을 최소 문구로 그린다.
  * `'use client'`가 없는 순수 프레젠테이션이라 양쪽에서 import할 수 있다.
  *
+ * `<title>`도 이 마크업의 일부다 — 표면이 바뀌면 이전 표면의 제목이 언마운트되고 새 제목이
+ * 마운트되므로 React가 `<head>`의 단일 `<title>`을 일관되게 소유한다.
+ *
  * 헤더 위젯(`Header`)은 클라이언트 프로바이더·검색·사용자 메뉴가 얽혀 있어 프로바이더가
  * 없는 루트에서 쓸 수 없다 — 같은 높이(`h-14`)와 하단 보더만 맞춘 워드마크 + 내비다.
  */
 export function NotFoundLayout({
     wordmark,
     homeHref,
+    documentTitle,
     navLabel,
     navLinks = [],
     title,
@@ -47,6 +56,7 @@ export function NotFoundLayout({
 }: NotFoundLayoutProps) {
     return (
         <>
+            <title>{documentTitle}</title>
             <header className="border-b border-secondary-700 bg-secondary-900">
                 <div className="flex h-14 items-center gap-2 px-4 sm:gap-4">
                     <a
