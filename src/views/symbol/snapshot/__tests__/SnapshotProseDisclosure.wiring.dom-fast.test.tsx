@@ -11,7 +11,9 @@
  * 여기서는 두 컴포넌트를 같은 DOM에 실제로 마운트해 신호가 끝까지 전달되는지 본다.
  */
 import { render, screen, waitFor } from '@testing-library/react';
+import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { MOBILE_VIEWPORT_MEDIA_QUERY } from '@/shared/config/viewport';
 import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
 import { SnapshotProseDisclosure } from '../SnapshotProseDisclosure';
 
@@ -82,5 +84,67 @@ describe('PlainAnalysisSwitch ↔ SnapshotProseDisclosure 배선', () => {
                 (document.querySelector('details') as HTMLDetailsElement).open
             ).toBe(true)
         );
+    });
+});
+
+function stubViewport(isMobile: boolean) {
+    Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        writable: true,
+        value: (query: string) => ({
+            matches: query === MOBILE_VIEWPORT_MEDIA_QUERY ? isMobile : false,
+            media: query,
+            addEventListener: () => {},
+            removeEventListener: () => {},
+        }),
+    });
+}
+
+describe('SnapshotProseDisclosure — 모바일 뷰포트', () => {
+    afterEach(() => {
+        delete document.documentElement.dataset.analysisView;
+    });
+
+    it('라이브 분석 표식이 없어도 모바일이면 접힌다(시트와 본문의 중복 분석 방지)', async () => {
+        stubViewport(true);
+        render(
+            <SnapshotProseDisclosure summaryLabel="지난 AI 분석 보기">
+                <p>스냅샷 산문</p>
+            </SnapshotProseDisclosure>
+        );
+
+        await waitFor(() =>
+            expect(
+                (document.querySelector('details') as HTMLDetailsElement).open
+            ).toBe(false)
+        );
+        // 접혀도 텍스트는 DOM에 남는다(SEO 자산).
+        expect(screen.getByText('스냅샷 산문')).toBeInTheDocument();
+    });
+
+    it('데스크톱이고 표식도 없으면 펼쳐져 있다', async () => {
+        stubViewport(false);
+        render(
+            <SnapshotProseDisclosure summaryLabel="지난 AI 분석 보기">
+                <p>스냅샷 산문</p>
+            </SnapshotProseDisclosure>
+        );
+
+        expect(
+            (document.querySelector('details') as HTMLDetailsElement).open
+        ).toBe(true);
+    });
+
+    it('서버 렌더 HTML은 뷰포트와 무관하게 open이다(하이드레이션 불일치 방지)', () => {
+        // 서버에는 matchMedia가 없다. 첫 렌더가 false에서 시작하므로 effect가 돌기 전
+        // 마크업은 항상 open이어야 한다.
+        stubViewport(true);
+        const html = renderToString(
+            <SnapshotProseDisclosure summaryLabel="지난 AI 분석 보기">
+                <p>스냅샷 산문</p>
+            </SnapshotProseDisclosure>
+        );
+
+        expect(html).toMatch(/<details[^>]*\sopen=""/);
     });
 });

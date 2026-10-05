@@ -80,6 +80,12 @@ import {
 } from './utils/overlayItems';
 import { type FibLevelTexts } from './utils/fibLevelLabel';
 import { levelTitleFor } from './utils/levelTitle';
+import {
+    createCanvasTextMeasurer,
+    LEVEL_TITLE_FONT,
+    levelLabelGutterPx,
+    type TextMeasurer,
+} from './utils/levelLabelGutter';
 import { type OutcomeLevelTexts } from './utils/outcomeLevelLabel';
 import { CHART_OVERLAY_COLORS } from './model/chartOverlayCategories';
 import {
@@ -135,7 +141,18 @@ interface StockChartProps {
     onSetOverlayVisible?: (keys: readonly string[], visible: boolean) => void;
     /** 메뉴 항목 hover·focus로 강조를 바꾼다(`null`이면 해제). */
     onHighlightOverlay?: (key: string | null) => void;
+    /**
+     * 레벨선 제목이 마지막 캔들을 덮지 않도록 비워 둘 오른쪽 여백(px)이 정해지거나
+     * 바뀌면 호출된다(제목이 없으면 `0`). 소비처가 이 값을 두 차트의 시간축
+     * `rightOffsetPixels`로 적용한다(`useChartSync.setRightOffsetPixels`).
+     */
+    onRightGutterChange?: (pixels: number) => void;
+    /** 제목 폭 측정기 — 기본은 차트 글꼴의 캔버스 `measureText`. 테스트가 주입한다. */
+    measureText?: TextMeasurer;
 }
+
+// 모듈 단위로 하나 — 캔버스·컨텍스트를 인스턴스마다 만들지 않는다.
+const defaultMeasureText = createCanvasTextMeasurer(LEVEL_TITLE_FONT);
 
 export function StockChart({
     bars,
@@ -155,6 +172,8 @@ export function StockChart({
     highlightedOverlayKey = null,
     onSetOverlayVisible = NOOP_SET_VISIBLE,
     onHighlightOverlay,
+    onRightGutterChange,
+    measureText = defaultMeasureText,
 }: StockChartProps) {
     const t = useTranslations('widgets.chart');
     const tMisc = useTranslations('shared.ui.misc');
@@ -244,6 +263,7 @@ export function StockChart({
     );
     const onChartReadyRef = useRef(onChartReady);
     const onChartRemoveRef = useRef(onChartRemove);
+    const onRightGutterChangeRef = useRef(onRightGutterChange);
     // paneIndices effect의 첫 mount skip 마커 (아래 useEffect 참조).
     const isInitialPaneRenderRef = useRef(true);
     // mount-only 차트 생성 effect가 deps 없이([]) priceDecimals를 읽을 수 있도록 ref로 미러링.
@@ -277,6 +297,7 @@ export function StockChart({
     useEffect(() => {
         onChartReadyRef.current = onChartReady;
         onChartRemoveRef.current = onChartRemove;
+        onRightGutterChangeRef.current = onRightGutterChange;
         priceDecimalsRef.current = priceDecimals;
     });
 
@@ -592,11 +613,13 @@ export function StockChart({
         [chartOverlays, hiddenOverlayKeys, barTimes, lastBarTime]
     );
 
-    const overlaySpecs = useMemo(
-        () =>
+    // 강조(hover)·혼잡 여부만 인자로 뺀다 — 같은 입력에서 "화면에 그릴 specs"와
+    // "여백 계산용 제목 목록"을 둘 다 뽑기 위해서다(아래 `rightGutterPx`).
+    const buildSpecs = useCallback(
+        (highlightedKey: string | null, crowded: boolean) =>
             buildOverlayLineSpecs(chartOverlays, {
                 hiddenKeys: hiddenOverlayKeys,
-                highlightedKey: highlightedOverlayKey,
+                highlightedKey,
                 barTimes,
                 lastBarTime,
                 rsiPaneIndex: visible.rsi ? paneIndices.rsi : null,
@@ -613,8 +636,8 @@ export function StockChart({
                 levelLabelFor: (label, overlay) =>
                     levelTitleFor(label, overlay, {
                         cardName: patternLabels.get(overlay.sourceRef),
-                        highlightedKey: highlightedOverlayKey,
-                        crowded: outcomeLabelsCrowded,
+                        highlightedKey,
+                        crowded,
                         breakoutTitle,
                         outcomeTexts: outcomeLevelTexts,
                         fibTexts: fibLevelTexts,
@@ -624,7 +647,6 @@ export function StockChart({
         [
             chartOverlays,
             hiddenOverlayKeys,
-            highlightedOverlayKey,
             barTimes,
             lastBarTime,
             visible.rsi,
@@ -634,10 +656,14 @@ export function StockChart({
             patternLabels,
             fibLevelTexts,
             outcomeLevelTexts,
-            outcomeLabelsCrowded,
             patternPalette,
             levelRightExtend,
         ]
+    );
+
+    const overlaySpecs = useMemo(
+        () => buildSpecs(highlightedOverlayKey, outcomeLabelsCrowded),
+        [buildSpecs, highlightedOverlayKey, outcomeLabelsCrowded]
     );
 
     useChartOverlays({
@@ -730,6 +756,27 @@ export function StockChart({
     usePricePaneStretch(chartRef, paneIndices);
 
     const pricePaneSize = usePricePaneSize(chartRef, wrapperRef, paneIndices);
+
+    /*
+     * 레벨선 제목이 마지막 캔들을 덮지 않도록 비울 오른쪽 여백.
+     *
+     * 제목은 **강조·혼잡을 뺀** 목록으로 잰다. 결과선이 몰리면(`crowded`) 강조되지 않은
+     * 제목은 `''`로 숨고 강조된 것만 남는데, 그 상태로 재면 카드에 마우스를 올릴 때마다
+     * 여백이 늘었다 줄고 — `rightOffsetPixels`를 바꾸면 스크롤 위치가 오른쪽 끝으로
+     * 돌아가므로 — 차트가 흔들린다. 최대 폭으로 고정해 두면 hover는 여백을 건드리지 않는다.
+     */
+    const levelTitles = useMemo(
+        () => buildSpecs(null, false).map(spec => spec.title),
+        [buildSpecs]
+    );
+    const rightGutterPx = useMemo(
+        () => levelLabelGutterPx(levelTitles, measureText, pricePaneSize.width),
+        [levelTitles, measureText, pricePaneSize.width]
+    );
+
+    useEffect(() => {
+        onRightGutterChangeRef.current?.(rightGutterPx);
+    }, [rightGutterPx]);
 
     /**
      * 오버레이/period 지표처럼 별도 훅 반환값을 받는 항목의 오버라이드 맵.

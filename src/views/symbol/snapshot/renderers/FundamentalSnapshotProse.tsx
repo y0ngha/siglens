@@ -8,7 +8,7 @@ import {
     CATEGORY_LABEL_KEY,
     SENTIMENT_LABEL_KEY,
     narrowFundamentalContent,
-} from './fundamentalContent';
+} from '@/entities/seo-snapshot/lib/fundamentalContent';
 
 interface FundamentalSnapshotProseProps {
     /**

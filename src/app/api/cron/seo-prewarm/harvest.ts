@@ -1,6 +1,7 @@
 import 'server-only';
 import { DEEPSEEK_V4_1_FLASH_MODEL } from '@y0ngha/siglens-core';
 import type { SeoSnapshotTab } from '@/entities/seo-snapshot/model';
+import { hasProseForTab } from '@/entities/seo-snapshot/lib/hasProseForTab';
 import type { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
 import {
     prewarmTechnical,
@@ -172,6 +173,22 @@ export async function resolveHarvest(
     }
 
     if (result.status === 'cached' || result.status === 'done') {
+        /**
+         * 렌더 가능한 산문이 없는 결과는 **저장하지 않는다.** 페이지는 산문이 없으면 noindex
+         * (`no-prose`)이고 sitemap도 뺀다 — 서사 필드가 빈 결과로 옛 행을 덮으면 멀쩡하던 종목이
+         * 곧바로 색인에서 빠진다. 저장을 건너뛰면 옛 행이 `SNAPSHOT_MAX_AGE_MS`(7일) 동안
+         * 남아 일시 실패에 대한 히스테리시스가 된다. 평이화(LLM) 호출 **전에** 끊어 비용도
+         * 아낀다. 일시적 빈 응답일 수 있어 TRANSIENT backoff를 건다(영구 확정 아님).
+         */
+        if (!hasProseForTab(tab, result.result)) {
+            console.warn(
+                `[seo-prewarm] skip ${symbol}:${tab} — result has no renderable prose (upsert skipped)`
+            );
+            await markSkipped(symbol, tab, TRANSIENT_SKIP_TTL_SECONDS);
+            await clearInFlight(symbol, tab);
+            return false;
+        }
+
         /**
          * 평이화("쉽게보기")를 스냅샷과 **같은 시점에** 굽는다.
          *

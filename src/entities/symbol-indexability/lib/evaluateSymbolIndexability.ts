@@ -20,6 +20,7 @@ export function evaluateSymbolIndexability({
     hasSnapshot,
     locale,
     hasPriceData,
+    prose,
 }: SymbolIndexabilityInput): SymbolIndexabilityDecision {
     const upper = symbol.toUpperCase();
 
@@ -58,6 +59,14 @@ export function evaluateSymbolIndexability({
             return { indexable: true, reason: 'degraded-with-snapshot' };
         }
         return { indexable: false, reason: 'degraded' };
+    }
+
+    // 산문 게이트는 degraded **다음**, 화이트리스트 **앞**이다. `absent`만 막는다 —
+    // `unknown`(스냅샷 읽기 실패)은 색인을 유지한다(fail-open): 모르는 걸 "없음"으로
+    // 읽으면 DB 일시 장애가 산문이 멀쩡한 종목을 noindex로 만든다. 그 렌더는 호출부가
+    // 300초로 고정해 곧 다시 판정된다.
+    if (prose === 'absent') {
+        return { indexable: false, reason: 'no-prose' };
     }
 
     if (POPULAR_TICKER_SET.has(upper)) {

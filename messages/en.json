@@ -2015,7 +2015,6 @@
             },
             "ChartContent": {
                 "93c3a3": "The chart does not reflect Pre-market, After-market prices. | ",
-                "d12df8": "AI Analysis...",
                 "d1a23e": "Adjust Panel Width",
                 "f69071": "AI Chart Analysis",
                 "quoteAsOfLoad": "Prices are as of page load time.",
@@ -3906,8 +3905,8 @@
             "PositionCta": {
                 "019ed7": "Register your Holdings to see your purchase floor.",
                 "2bf3cd": "Recent Range {v0}",
-                "5cd686": "Register your average price and quantity to view your position within the recent price range\n                as an isometric building.",
-                "5edaf2": "Register Holdings"
+                "5edaf2": "Register Holdings",
+                "8df3cf": "If you register your average price and quantity, the floor you bought (★) in this building will also be displayed."
             },
             "PositionHoldingCard": {
                 "0ac914": "Avg. Price {v0}",
@@ -3937,6 +3936,7 @@
             "positionNote": {
                 "aboveHigh": "above the recent high",
                 "ariaSummary": "{v0} position: average {v1}, current {v2}, return {v3}{v4}%, at {v5}% of the recent range, {v6}",
+                "ariaSummaryCurrentOnly": "{v0} current price position: current price {v1}, at {v2}% of the recent range, {v3}",
                 "avgPrefix": "★ Avg ",
                 "bandMain": "{v0}–{v1} · {v2}% occupancy",
                 "bandQualifier": "based on 52-week volume",

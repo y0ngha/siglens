@@ -5,6 +5,7 @@ const {
     mockRepoCtor,
     mockStaticSymbolCache,
     mockGetDatabaseClient,
+    mockShortenRevalidate,
 } = vi.hoisted(() => {
     const mockFindBySymbol = vi.fn();
     // Regular function (not arrow) so vi.fn()'s wrapped implementation is
@@ -24,7 +25,9 @@ const {
         ) => fetcher()
     );
     const mockGetDatabaseClient = vi.fn(() => ({ db: {} }));
+    const mockShortenRevalidate = vi.fn(async () => undefined);
     return {
+        mockShortenRevalidate,
         mockFindBySymbol,
         mockRepoCtor,
         mockStaticSymbolCache,
@@ -38,6 +41,10 @@ vi.mock('@/shared/cache/staticSymbolCache', () => ({
 
 vi.mock('@/entities/seo-snapshot/api', () => ({
     DrizzleSeoSnapshotRepository: mockRepoCtor,
+}));
+
+vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
+    shortenRevalidateForRuntimeDegrade: mockShortenRevalidate,
 }));
 
 vi.mock('@/shared/db/client', () => ({
@@ -118,21 +125,86 @@ describe('getSeoSnapshotsStatic', () => {
         infoSpy.mockRestore();
     });
 
-    it('findBySymbol이 reject해도 throw하지 않고 []로 fail-open degrade한다', async () => {
-        const errorSpy = vi
-            .spyOn(console, 'error')
-            .mockImplementation(() => {});
-        mockFindBySymbol.mockRejectedValue(new Error('DB unavailable'));
+    // 2026-10-05: 실패는 `[]`("행 없음")가 아니라 `null`("모름")이다. 안쪽에서 `[]`로 삼키면
+    // `unstable_cache`가 그것을 6~24h 저장해 산문이 멀쩡한 종목이 noindex로 굳었다.
+    describe('읽기 실패 = null(모름)', () => {
+        let errorSpy: ReturnType<typeof vi.spyOn>;
 
-        const result = await getSeoSnapshotsStatic('AAPL', 3600, 'ko');
+        beforeEach(() => {
+            errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        });
+        afterEach(() => {
+            errorSpy.mockRestore();
+        });
 
-        expect(result).toEqual([]);
-        expect(errorSpy).toHaveBeenCalledWith(
-            '[getSeoSnapshotsStatic] read failed, degrading:',
-            expect.objectContaining({ message: 'DB unavailable' })
-        );
+        it('findBySymbol이 reject해도 throw하지 않고 null을 돌려준다', async () => {
+            mockFindBySymbol.mockRejectedValue(new Error('DB unavailable'));
 
-        errorSpy.mockRestore();
+            const result = await getSeoSnapshotsStatic('AAPL', 3600, 'ko');
+
+            expect(result).toBeNull();
+            expect(errorSpy).toHaveBeenCalledWith(
+                '[getSeoSnapshotsStatic] read failed, degrading to unknown (null):',
+                expect.objectContaining({ message: 'DB unavailable' })
+            );
+        });
+
+        it('fetcher(캐시 콜백)는 실패를 삼키지 않고 throw한다 — 삼키면 캐시가 그 결과를 저장한다', async () => {
+            mockFindBySymbol.mockRejectedValue(new Error('DB unavailable'));
+            let fetcherError: unknown;
+            mockStaticSymbolCache.mockImplementationOnce(async (...args) => {
+                try {
+                    return await args[2]();
+                } catch (error) {
+                    fetcherError = error;
+                    throw error;
+                }
+            });
+
+            await getSeoSnapshotsStatic('AAPL', 3600, 'ko');
+
+            expect(fetcherError).toBeInstanceOf(Error);
+            expect((fetcherError as Error).message).toBe('DB unavailable');
+        });
+
+        it('행이 없는 정상 결과는 `[]`다 — null이 아니다', async () => {
+            mockFindBySymbol.mockResolvedValue([]);
+
+            await expect(
+                getSeoSnapshotsStatic('AAPL', 3600, 'ko')
+            ).resolves.toEqual([]);
+            expect(mockShortenRevalidate).not.toHaveBeenCalled();
+        });
+
+        it('큐레이션 종목의 읽기 실패 렌더는 revalidate를 300초로 낮춘다', async () => {
+            mockFindBySymbol.mockRejectedValue(new Error('DB unavailable'));
+
+            await getSeoSnapshotsStatic('AAPL', 3600, 'ko');
+
+            expect(mockShortenRevalidate).toHaveBeenCalledTimes(1);
+        });
+
+        it('롱테일(큐레이션 밖) 읽기 실패는 300초 재생성 비용을 쓰지 않는다', async () => {
+            mockFindBySymbol.mockRejectedValue(new Error('DB unavailable'));
+
+            const result = await getSeoSnapshotsStatic('ZZZZQ', 3600, 'ko');
+
+            expect(result).toBeNull();
+            expect(mockShortenRevalidate).not.toHaveBeenCalled();
+        });
+
+        it('Next 제어 흐름 에러(DYNAMIC_SERVER_USAGE)는 degrade하지 않고 그대로 던진다', async () => {
+            mockFindBySymbol.mockRejectedValue(
+                Object.assign(new Error('Dynamic server usage'), {
+                    digest: 'DYNAMIC_SERVER_USAGE',
+                })
+            );
+
+            await expect(
+                getSeoSnapshotsStatic('AAPL', 3600, 'ko')
+            ).rejects.toThrow('Dynamic server usage');
+            expect(mockShortenRevalidate).not.toHaveBeenCalled();
+        });
     });
 
     describe('FIX D(감사) — max-age 필터', () => {
@@ -261,7 +333,7 @@ describe('getSeoSnapshotsStatic', () => {
 
             const result = await getSeoSnapshotsStatic('AAPL', 3600, 'ko');
 
-            expect(result.map(row => row.tab)).toEqual(['technical']);
+            expect(result?.map(row => row.tab)).toEqual(['technical']);
         });
     });
 
@@ -288,8 +360,8 @@ describe('getSeoSnapshotsStatic', () => {
 
             const result = await getSeoSnapshotsStatic('AAPL', 3600, 'ko');
 
-            expect(result[0].generatedAt).toBeInstanceOf(Date);
-            expect(result[0].updatedAt).toBeInstanceOf(Date);
+            expect(result![0].generatedAt).toBeInstanceOf(Date);
+            expect(result![0].updatedAt).toBeInstanceOf(Date);
             // 실제 증상까지 재현: 되살리지 않으면 여기서 RangeError가 난다.
             expect(() =>
                 new Intl.DateTimeFormat('ko-KR', {
@@ -297,7 +369,7 @@ describe('getSeoSnapshotsStatic', () => {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',
-                }).format(result[0].generatedAt)
+                }).format(result![0].generatedAt)
             ).not.toThrow();
         });
 
@@ -323,8 +395,8 @@ describe('getSeoSnapshotsStatic', () => {
 
             const result = await getSeoSnapshotsStatic('AAPL', 3600, 'ko');
 
-            const technical = result.find(r => r.tab === 'technical');
-            const news = result.find(r => r.tab === 'news');
+            const technical = result!.find(r => r.tab === 'technical');
+            const news = result!.find(r => r.tab === 'news');
             expect(technical?.firstGeneratedAt).toBeInstanceOf(Date);
             expect(technical?.firstGeneratedAt?.toISOString()).toBe(
                 '2026-06-02T03:00:00.000Z'
@@ -357,7 +429,7 @@ describe('getSeoSnapshotsStatic', () => {
 
             const result = await getSeoSnapshotsStatic('AAPL', 3600, 'ko');
 
-            expect(result[0].firstGeneratedAt).toBeNull();
+            expect(result![0].firstGeneratedAt).toBeNull();
         });
 
         // A1(감사): 캐시-히트 rehydrate가 malformed generatedAt(예: 손상된

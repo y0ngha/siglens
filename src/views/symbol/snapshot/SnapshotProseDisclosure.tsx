@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
+import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
 
 interface SnapshotProseDisclosureProps {
     /** `<summary>`에 그릴 한 줄. 예: "지난 AI 분석 보기 · Apple Inc. · … 기준". */
@@ -26,6 +27,12 @@ interface SnapshotProseDisclosureProps {
  * SSR·JS 미실행·콜드 캐시에서는 표식이 없으므로 `open`으로 렌더된다 — 접기 이전과
  * 동일하게 펼쳐진 화면이고, 하이드레이션 불일치도 없다(초기 상태가 서버와 같다).
  *
+ * 모바일(`md` 미만)에서는 표식과 무관하게 접는다. 모바일은 분석을 바텀시트로 따로
+ * 띄우는데 이 스냅샷 산문은 본문 아래에 그대로 펼쳐져 있어, 같은 분석이 시트와 본문에
+ * 두 번 보였다(UX 감사 2026-10-05). `useIsMobileViewport`는 서버·첫 하이드레이션
+ * 렌더에서 `false`라 서버 HTML은 계속 `open`이고(하이드레이션 불일치 없음, 접기 전과
+ * 같은 SSR), 마운트 뒤에야 모바일이면 접힌다. 텍스트는 접혀도 DOM에 남는다.
+ *
  * `open`을 제어 상태로 붙들지 않는다. 사용자가 직접 펼치면 그건 DOM만의 변화이고,
  * 이 컴포넌트는 표식이 바뀔 때(= 사용자가 쉽게보기를 전환할 때)만 다시 렌더되므로
  * 그 손조작이 다음 전환까지 유지된다. 그 시점에 다시 맞춰지는 것이 옳다.
@@ -35,6 +42,7 @@ export function SnapshotProseDisclosure({
     children,
 }: SnapshotProseDisclosureProps) {
     const [liveAnalysisShowing, setLiveAnalysisShowing] = useState(false);
+    const isMobileViewport = useIsMobileViewport();
 
     useEffect(() => {
         const root = document.documentElement;
@@ -52,7 +60,10 @@ export function SnapshotProseDisclosure({
     }, []);
 
     return (
-        <details className="group" open={!liveAnalysisShowing}>
+        <details
+            className="group"
+            open={!(liveAnalysisShowing || isMobileViewport)}
+        >
             {/* 접기 어포던스는 제품에 이미 있는 것(ai.siglens.io/about FAQ)을 그대로 쓴다 —
                 열리면 45° 도는 `+`. 새 아이콘을 들이지 않는다. */}
             <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded text-xs text-secondary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none [&::-webkit-details-marker]:hidden">

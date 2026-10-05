@@ -22,8 +22,9 @@ const tPos = (key: string, values?: Record<string, string | number>) => {
 
 import {
     AVG_LABEL_PREFIX_KEY,
+    CENTER_X,
     CURRENT_LABEL_PREFIX_KEY,
-    describeAvgFloor,
+    describeFloor,
     estimateSvgLabelWidth,
     formatCompactForSvgLabel,
     SVG_LABEL_AVAILABLE_WIDTH,
@@ -701,21 +702,126 @@ describe('PositionBuilding', () => {
     });
 });
 
-describe('describeAvgFloor', () => {
+/**
+ * `avg={null}` — 비회원·미보유 회원 CTA가 쓰는 현재가 전용 모드. 평단이 없으니 ★평단 마커·
+ * 라벨·층 안내, 수익률 리드아웃, 두 마커를 벌리는 dodge가 모두 빠지고 현재가 마커는
+ * 수익/손실 색 대신 중립색을 쓴다. model은 호출부(PositionCta)와 같이 avg=current로 만든다.
+ */
+describe('PositionBuilding — avg=null(현재가 전용)', () => {
+    function renderCurrentOnly(
+        input: { low52w?: number; high52w?: number; current?: number } = {}
+    ) {
+        const low52w = input.low52w ?? 100;
+        const high52w = input.high52w ?? 200;
+        const current = input.current ?? 180;
+        const m = computePosition({
+            low52w,
+            high52w,
+            current,
+            avg: current,
+        }) as PositionModel;
+        return render(
+            <PositionBuilding
+                symbol="AAPL"
+                model={m}
+                low52w={low52w}
+                high52w={high52w}
+                current={current}
+                avg={null}
+            />
+        );
+    }
+
+    it('★평단 마커·평단 라벨·평단 층 안내·수익률 리드아웃을 그리지 않는다', () => {
+        const { container } = renderCurrentOnly();
+
+        expect(
+            container.querySelector('[data-testid="avg-marker"]')
+        ).toBeNull();
+        expect(
+            container.querySelector('[data-testid="avg-floor-note"]')
+        ).toBeNull();
+        expect(
+            container.querySelector('[data-testid="return-readout"]')
+        ).toBeNull();
+        expect(container.textContent).not.toContain(tPos(AVG_LABEL_PREFIX_KEY));
+    });
+
+    it('현재가 마커와 라벨은 그대로 그린다', () => {
+        const { container } = renderCurrentOnly();
+
+        expect(
+            container.querySelector('[data-testid="current-marker"]')
+        ).not.toBeNull();
+        expect(container.textContent).toContain(tPos(CURRENT_LABEL_PREFIX_KEY));
+        expect(container.textContent).toContain('$180');
+    });
+
+    it('현재가 마커는 건물 정면 모서리(중앙 x)에 놓인다 — 벌려 놓을 평단 마커가 없어 dodge하지 않는다', () => {
+        const { container } = renderCurrentOnly();
+
+        const current = transformXY(
+            container.querySelector('[data-testid="current-marker"]')
+        );
+        expect(current.x).toBe(CENTER_X);
+    });
+
+    it('현재가 마커는 수익/손실 색이 아니라 중립색을 쓴다', () => {
+        const { container } = renderCurrentOnly();
+
+        const circle = container.querySelector(
+            '[data-testid="current-marker"] circle'
+        );
+        expect(circle?.getAttribute('class')).toContain('text-secondary-100');
+        expect(circle?.getAttribute('class')).not.toContain(
+            'text-ui-success-text'
+        );
+        expect(circle?.getAttribute('class')).not.toContain(
+            'text-ui-danger-text'
+        );
+    });
+
+    it('aria-label은 현재가 요약 키를 쓰고 평단·수익률을 담지 않는다', () => {
+        const { container } = renderCurrentOnly();
+
+        const label =
+            container
+                .querySelector('svg[role="img"]')
+                ?.getAttribute('aria-label') ?? '';
+        expect(label).toBe(
+            'AAPL 현재가 위치: 현재가 $180, 최근 범위의 80% 지점, 5층 · 펜트하우스'
+        );
+    });
+
+    it('현재가가 범위 밖이면 옥상 위 문구로 요약하고 현재가 범위 밖 안내는 그대로 그린다', () => {
+        const { container } = renderCurrentOnly({ current: 250 });
+
+        const label =
+            container
+                .querySelector('svg[role="img"]')
+                ?.getAttribute('aria-label') ?? '';
+        expect(label).toContain('옥상 위 · 최근 고점보다 높은 곳');
+        expect(
+            container.querySelector('[data-testid="current-out-of-range-note"]')
+        ).not.toBeNull();
+    });
+});
+
+describe('describeFloor', () => {
     it('avgClamped=below면 지하 문구(옥상/층 계산과 무관, avgPos 값은 쓰이지 않는다)', () => {
-        expect(describeAvgFloor(0, 'below', BAND_COUNT, tPos)).toBe(
+        expect(describeFloor(0, 'below', BAND_COUNT, tPos)).toBe(
             '지하 세대 · 최근 저점보다 낮은 곳'
         );
-        expect(describeAvgFloor(0.99, 'below', BAND_COUNT, tPos)).toBe(
+        expect(describeFloor(0.99, 'below', BAND_COUNT, tPos)).toBe(
             '지하 세대 · 최근 저점보다 낮은 곳'
         );
     });
 
     it('avgClamped=above면 옥상 위 문구(옥상/층 계산과 무관, avgPos 값은 쓰이지 않는다)', () => {
-        expect(describeAvgFloor(0, 'above', BAND_COUNT, tPos)).toBe(
+        expect(describeFloor(0, 'above', BAND_COUNT, tPos)).toBe(
             '옥상 위 · 최근 고점보다 높은 곳'
         );
-        expect(describeAvgFloor(1, 'above', BAND_COUNT, tPos)).toBe(
+        expect(describeFloor(1, 'above', BAND_COUNT, tPos)).toBe(
             '옥상 위 · 최근 고점보다 높은 곳'
         );
     });
@@ -733,15 +839,15 @@ describe('describeAvgFloor', () => {
     ])(
         'avgClamped=null, avgPos=$avgPos → $expected',
         ({ avgPos, expected }) => {
-            expect(describeAvgFloor(avgPos, null, BAND_COUNT, tPos)).toBe(
+            expect(describeFloor(avgPos, null, BAND_COUNT, tPos)).toBe(
                 expected
             );
         }
     );
 
     it('bandCount이 달라져도(테스트용 임의 값) 최하층=저층, 최상층=펜트하우스 경계를 지킨다', () => {
-        expect(describeAvgFloor(0, null, 3, tPos)).toBe('1층 · 저층');
-        expect(describeAvgFloor(1, null, 3, tPos)).toBe('3층 · 펜트하우스');
-        expect(describeAvgFloor(0.5, null, 3, tPos)).toBe('2층 · 중층');
+        expect(describeFloor(0, null, 3, tPos)).toBe('1층 · 저층');
+        expect(describeFloor(1, null, 3, tPos)).toBe('3층 · 펜트하우스');
+        expect(describeFloor(0.5, null, 3, tPos)).toBe('2층 · 중층');
     });
 });

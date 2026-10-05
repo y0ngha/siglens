@@ -4,7 +4,7 @@ import { resolveLocale } from '@/shared/i18n/locales';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import { OptionsSnapshotProse } from '@/views/symbol/snapshot/renderers/OptionsSnapshotProse';
-import { hasOptionsProse } from '@/views/symbol/snapshot/renderers/optionsContent';
+import { hasOptionsProse } from '@/entities/seo-snapshot/lib/optionsContent';
 import { OptionsEmptyState } from '@/widgets/options/OptionsEmptyState';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { SymbolRouteParams } from '@/shared/config/market';
@@ -28,7 +28,7 @@ import {
     buildSymbolOptionsSeoContent,
     buildSymbolSeoContent,
     symbolMetadataFromSeo,
-    NOINDEX_SYMBOL_METADATA,
+    noindexInvalidSymbolMetadata,
     noindexSymbolMetadata,
 } from '@/shared/lib/seo';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
@@ -64,7 +64,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const upper = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
     if (!isAdmissibleSymbolShape(upper)) {
-        return NOINDEX_SYMBOL_METADATA;
+        return noindexInvalidSymbolMetadata(symbol, locale, 'options');
     }
     // 본문 `isTabAllowedForSymbol` 가드와 일관: 크립토 심볼은 options 탭이 없으므로
     // generateMetadata도 동일 조건에서 NOINDEX로 반환한다. 가드 없이 계속 진행하면
@@ -159,7 +159,7 @@ export default async function OptionsPage({ params }: Props) {
         // `export const revalidate` literal above.
         getSeoSnapshotsStatic(upper, revalidate, locale),
     ]);
-    const optionsSnapshot = snapshots.find(s => s.tab === 'options');
+    const optionsSnapshot = (snapshots ?? []).find(s => s.tab === 'options');
     // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasOptionsProse)
     // 그것만 보여주고, 클라이언트 AI 위젯(OptionsAiAnalysis, OptionsPageClient
     // 내부)는 계속 마운트하되 `hideView`로 UI만 끈다 — 렌더 자체를 건너뛰면

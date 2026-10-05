@@ -6,6 +6,8 @@ vi.mock('next/cache', () => ({
 import { unstable_cache } from 'next/cache';
 import {
     BUILD_DEGRADED_REVALIDATE_SECONDS,
+    RUNTIME_DEGRADED_REVALIDATE_SECONDS,
+    shortenRevalidateForRuntimeDegrade,
     shortenRevalidateForBuildDegrade,
     shortenRevalidateIfDatabaseMissingAtBuild,
     shortenRevalidateIfFmpFailedAtBuild,
@@ -15,9 +17,14 @@ import {
     tripFmpBuildBreaker,
 } from '@/shared/api/offlineBuild';
 
+// 래퍼는 모듈 로드 시점에 한 번 만들어진다 — 어떤 `clearAllMocks`보다 먼저 호출 기록을 캡처한다.
+const WRAPPER_OPTIONS = vi
+    .mocked(unstable_cache)
+    .mock.calls.map(call => call[2]);
+
 describe('shortenRevalidateIfFmpFailedAtBuild', () => {
-    // 모듈 로드 시점에 한 번 만들어지는 래퍼 — clearAllMocks 전에 캡처한다.
-    const wrapperOptions = vi.mocked(unstable_cache).mock.calls.at(-1)?.[2];
+    // 래퍼는 빌드(60초)·런타임(300초) 두 개라 revalidate로 찾는다 — 순서에 기대지 않는다.
+    const wrapperOptions = WRAPPER_OPTIONS.find(o => o?.revalidate === 60);
 
     beforeEach(() => {
         pinMock.mockClear();
@@ -121,5 +128,38 @@ describe('shortenRevalidateIfDatabaseMissingAtBuild', () => {
 
         await shortenRevalidateIfDatabaseMissingAtBuild();
         expect(pinMock).not.toHaveBeenCalled();
+    });
+});
+
+describe('shortenRevalidateForRuntimeDegrade', () => {
+    beforeEach(() => {
+        pinMock.mockClear();
+    });
+
+    it('런타임 degrade 핀은 300초다 — 빌드 핀(60초)과 별개 값이다', () => {
+        expect(RUNTIME_DEGRADED_REVALIDATE_SECONDS).toBe(300);
+        expect(BUILD_DEGRADED_REVALIDATE_SECONDS).toBe(60);
+        expect(WRAPPER_OPTIONS.some(o => o?.revalidate === 300)).toBe(true);
+    });
+
+    it('FMP·DB 상태와 무관하게 래퍼를 호출한다', async () => {
+        await shortenRevalidateForRuntimeDegrade();
+        expect(pinMock).toHaveBeenCalledOnce();
+    });
+
+    // 호출부는 degrade를 처리하는 catch 블록이다 — 핀이 던지면 원래 에러를 덮어써 500이 된다.
+    it('렌더 컨텍스트 밖이라 래퍼가 던져도 삼키고 warn만 남긴다(호출부를 던지게 하지 않는다)', async () => {
+        const warnSpy = vi
+            .spyOn(console, 'warn')
+            .mockImplementation(() => undefined);
+        pinMock.mockRejectedValueOnce(
+            new Error('Invariant: incrementalCache missing in unstable_cache')
+        );
+
+        await expect(
+            shortenRevalidateForRuntimeDegrade()
+        ).resolves.toBeUndefined();
+        expect(warnSpy).toHaveBeenCalledOnce();
+        warnSpy.mockRestore();
     });
 });

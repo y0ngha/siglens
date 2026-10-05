@@ -33,10 +33,13 @@ export function SymbolHeaderShellFallback() {
         <header className="py-3" aria-hidden="true">
             <div className="flex items-center gap-2 px-4 sm:gap-4">
                 <div className="flex min-w-0 flex-1 items-center gap-2">
-                    <span className="font-mono text-xs tracking-[0.2em] text-secondary-500 uppercase">
+                    {/* 실제 헤더처럼 모바일(sm 미만)에서는 브레드크럼을 감춘다. */}
+                    <span className="hidden font-mono text-xs tracking-[0.2em] text-secondary-500 uppercase sm:inline">
                         SIGLENS
                     </span>
-                    <span className="text-secondary-500">/</span>
+                    <span className="hidden text-secondary-500 sm:inline">
+                        /
+                    </span>
                     <span className="inline-block h-7 w-32 animate-pulse rounded bg-secondary-700" />
                     {/* 실제 헤더는 이 자리에 데스크톱용 FearGreedHeaderChip을
                         인라인으로 둔다(모바일 인스턴스는 아래 행). 스냅샷이

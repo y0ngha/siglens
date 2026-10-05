@@ -36,7 +36,14 @@ const ZERO = { indexNowSubmitted: 0, indexNowOk: 0, indexNowFailed: 0 };
 
 // 목은 로더만 대신한다 — 엔트리는 실제 sitemap 빌더가 만든다. 손으로 만든 엔트리는
 // 빌더의 색인 판정(항상 noindex 탭 제외, 뉴스 산문 게이트)을 건너뛴다.
-const snapshotGeneratedAt = new Map<string, Date>([['AAPL:news', NOW]]);
+// 키 = 렌더 가능한 산문이 있는 조합. 차트(technical)도 산문 게이트 대상이라 차트 URL이 실리려면 키가 필요하다.
+// AAPL은 뉴스 산문까지, MSFT·BTCUSD는 차트 산문만 있다(뉴스 탭은 sitemap에서 빠진다).
+const snapshotGeneratedAt = new Map<string, Date>([
+    ['AAPL:news', NOW],
+    ['AAPL:technical', NOW],
+    ['MSFT:technical', NOW],
+    ['BTCUSD:technical', NOW],
+]);
 
 /** 제출 호출의 URL 목록. 호출 순서가 아니라 호출 자체를 단언한다. */
 function submittedUrls(): readonly string[] {
@@ -157,7 +164,8 @@ describe('submitIndexNowForBatch', () => {
         const staleForex = new Date(NOW.getTime() - 30 * 24 * 60 * 60 * 1000);
         mockLoadStatic.mockResolvedValue(
             buildStaticEntries(NOW, {
-                newsLatestPublishedAt: { forex: staleForex },
+                // 로더가 성공한 입력 — 키가 없는 카테고리(기사 0건)는 빠진다. stock만 최신이다.
+                newsLatestPublishedAt: { forex: staleForex, stock: NOW },
             })
         );
 
