@@ -81,6 +81,7 @@ import {
     markStructurallyUnavailable,
     clearStructurallyUnavailable,
     loadStructurallyUnavailable,
+    claimBasisForce,
 } from '../lock';
 
 describe('seo-prewarm lock', () => {
@@ -499,6 +500,54 @@ describe('seo-prewarm lock', () => {
                 expect(set.size).toBe(0);
                 expect(mockSmembers).not.toHaveBeenCalled();
             });
+        });
+    });
+
+    describe('claimBasisForce', () => {
+        it('SET NX EX로 심볼·탭·경계 ms가 든 키를 세우고, 처음이면 true', async () => {
+            mockSet.mockResolvedValue('OK');
+
+            const claimed = await claimBasisForce(
+                'aapl',
+                'technical',
+                1790971200000,
+                7200
+            );
+
+            expect(claimed).toBe(true);
+            expect(mockSet).toHaveBeenCalledWith(
+                'seo-prewarm:basis-forced:AAPL:technical:1790971200000',
+                '1',
+                { nx: true, ex: 7200 }
+            );
+        });
+
+        it('이미 마커가 있으면(Upstash NX 실패 = null) false', async () => {
+            mockSet.mockResolvedValue(null);
+
+            expect(await claimBasisForce('AAPL', 'technical', 1, 7200)).toBe(
+                false
+            );
+        });
+
+        it('TTL은 최소 1시간이다', async () => {
+            mockSet.mockResolvedValue('OK');
+
+            await claimBasisForce('AAPL', 'technical', 1, 60);
+
+            expect(mockSet).toHaveBeenCalledWith(expect.any(String), '1', {
+                nx: true,
+                ex: 3600,
+            });
+        });
+
+        it('Redis가 없으면 false — 중복을 막을 수단이 없으면 강제하지 않는다', async () => {
+            vi.mocked(getRedisClient).mockReturnValue(null);
+
+            expect(await claimBasisForce('AAPL', 'technical', 1, 7200)).toBe(
+                false
+            );
+            expect(mockSet).not.toHaveBeenCalled();
         });
     });
 });

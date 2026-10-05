@@ -58,6 +58,14 @@ describe('QuoteHeader — layout: index (기본값)', () => {
         );
     });
 
+    it('index 레이아웃은 방향 색과 화살표를 그대로 쓴다', () => {
+        const { container } = render(
+            <QuoteHeader tickerIsReadable currencySymbol="$" data={BASE} />
+        );
+        expect(container.querySelector('.text-green')).not.toBeNull();
+        expect(screen.queryByText('전일비')).not.toBeInTheDocument();
+    });
+
     it('화살표 아이콘에 aria-hidden이 설정된다', () => {
         render(<QuoteHeader tickerIsReadable currencySymbol="$" data={BASE} />);
         // aria-hidden="true" 요소가 정확히 1개(화살표 span)
@@ -125,6 +133,72 @@ describe('QuoteHeader — layout: signal', () => {
             />
         );
         expect(screen.getByText('$189.50')).toBeInTheDocument();
+    });
+
+    /**
+     * 신호 카드의 등락률은 전일 대비 값이라 카드가 속한 섹션(상승 신호 등)의 방향과
+     * 무관하다. 상승 신호 섹션에서 빨간 ▼가 뜨면 한 카드가 두 방향을 말한다.
+     */
+    describe('등락률은 방향 색·화살표 없이 "전일비" 라벨로 중립 표기한다', () => {
+        it.each([
+            ['상승', 1.23, '+1.23%'],
+            ['하락', -2.5, '2.50%'],
+        ])(
+            '%s: 상승/하락 색 클래스와 화살표가 없다',
+            (_label, changePercent, text) => {
+                const { container } = render(
+                    <QuoteHeader
+                        tickerIsReadable
+                        currencySymbol="$"
+                        data={{ ...BASE, changePercent }}
+                        layout="signal"
+                    />
+                );
+                const changeEl = screen.getByText(t => t.includes(text));
+                expect(changeEl.className).not.toMatch(
+                    /text-ui-success-text|text-ui-danger-text|text-green|text-red/
+                );
+                expect(container.innerHTML).not.toMatch(/text-green|text-red/);
+                expect(container.textContent).not.toMatch(/[▲▼]/);
+                expect(
+                    container.querySelector('[aria-hidden="true"]')
+                ).toBeNull();
+            }
+        );
+
+        it('중립 색(text-secondary-300)과 "전일비" 라벨을 렌더한다', () => {
+            const { container } = render(
+                <QuoteHeader
+                    tickerIsReadable
+                    currencySymbol="$"
+                    data={BASE}
+                    layout="signal"
+                />
+            );
+            expect(screen.getByText('전일비')).toBeInTheDocument();
+            expect(
+                container.querySelector('.text-secondary-300')
+            ).toHaveTextContent('+1.23%');
+        });
+
+        it('방향은 부호와 스크린리더용 단어로만 전한다', () => {
+            render(
+                <QuoteHeader
+                    tickerIsReadable
+                    currencySymbol="$"
+                    data={{ ...BASE, changePercent: -2.5 }}
+                    layout="signal"
+                />
+            );
+            const srOnly = document.querySelectorAll('.sr-only');
+            expect(srOnly).toHaveLength(1);
+            expect(srOnly[0]).toHaveTextContent(
+                koMessage('shared.lib.priceMove.down')
+            );
+            expect(
+                screen.getByText(text => text.includes('-2.50%'))
+            ).toBeInTheDocument();
+        });
     });
 });
 

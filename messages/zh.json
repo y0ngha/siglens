@@ -61,6 +61,7 @@
             }
         },
         "backtesting": {
+            "breadcrumb": "回测",
             "page": {
                 "693b62": "投资免责声明",
                 "8e0330": "* 本结果基于历史数据回测，不保证未来收益。\n                        投资判断的责任由投资者本人承担。"
@@ -142,7 +143,7 @@
                         "question": "也能分析加密货币吗？"
                     },
                     "q2": {
-                        "answer": "Siglens 的 /market 页面每天扫描 11 个板块的龙头标的，列出捕捉到金叉、死叉、RSI 背离、布林挤压等技术信号的代码。点击感兴趣的标的即可进入其详细的 AI 分析页面。",
+                        "answer": "Siglens 的 /market 页面每天扫描美国 {v1} 个行业（GICS 板块）以及量子计算、太空等 {v2} 个主题的龙头标的，列出捕捉到金叉、死叉、RSI 背离、布林挤压等技术信号的代码。点击感兴趣的标的即可进入其详细的 AI 分析页面。",
                         "question": "今日市场概况能看到哪些信号？"
                     },
                     "q8": {
@@ -1105,6 +1106,13 @@
             }
         },
         "enumLabel": {
+            "backtestRiskLevel": {
+                "extreme": "风险极高",
+                "high": "风险高",
+                "low": "风险低",
+                "medium": "风险中等",
+                "moderate": "风险中等"
+            },
             "chamber": {
                 "house": "众议院",
                 "senate": "参议院"
@@ -1121,6 +1129,7 @@
             },
             "economyUnit": {
                 "count": "件",
+                "percentagePoint": "个百分点",
                 "thousandPeople": "千人"
             },
             "entryRecommendation": {
@@ -1173,6 +1182,14 @@
                 "neutral": "中性",
                 "recovery": "复苏",
                 "slowdown": "放缓"
+            },
+            "newsCategory": {
+                "earnings": "财报",
+                "guidance": "业绩指引",
+                "m_and_a": "并购",
+                "macro": "宏观经济",
+                "product": "产品与服务",
+                "regulation": "监管"
             },
             "newsImpact": {
                 "high": "价格影响大",
@@ -1773,6 +1790,9 @@
             "InfoTooltip": {
                 "9b3193": "附加信息"
             },
+            "NewsCardShell": {
+                "074b02": "(新标签页)"
+            },
             "PasswordField": {
                 "483994": "隐藏密码",
                 "3ddfb5": "大写锁定已开启。",
@@ -2154,7 +2174,7 @@
             },
             "SnapshotSummarySection": {
                 "220156": "上次AI分析",
-                "asOfCrypto": "UTC 时点",
+                "asOfCrypto": "UTC 行情时点",
                 "asOfCryptoFallback": "按前一日 UTC 零点",
                 "asOfKrEquity": "韩股收盘时点",
                 "asOfKrEquityFallback": "按前一交易日韩股收盘",
@@ -2816,22 +2836,25 @@
         },
         "backtesting": {
             "BacktestCaseCard": {
+                "315575": "止损价:",
                 "456225": "目标价:",
                 "06cf3e": "<n>{v0}</n> 天",
                 "0f8bf6": "AI 入场建议",
                 "1e38a3": "止损",
                 "31e4d3": "买入",
-                "540e42": "AI 观望",
+                "540e42": "AI建议观望",
                 "58b71d": "AI 预测级别",
                 "62a65c": "卖出",
                 "6c8ca5": "AI 规避建议",
                 "75a556": "依据:",
                 "b19f09": "亏损",
                 "bd6b14": "收益",
+                "efb7c2": "止盈价:",
                 "fa9de3": "✓ 达成"
             },
             "BacktestCaseList": {
-                "9018e2": "该股票无相关案例。"
+                "9018e2": "该股票无相关案例。",
+                "caseCount": "{v0}例"
             },
             "BacktestHero": {
                 "116858": "这是通过实际市场数据验证的回测结果。",
@@ -3047,6 +3070,9 @@
             "MarketSummaryPanelSkeleton": {
                 "dc6348": "市场概况加载中"
             },
+            "QuoteHeader": {
+                "92387b": "较前日"
+            },
             "SectorFactsSummary": {
                 "581217": "查看各板块信号",
                 "9550ad": "目前没有捕捉到技术信号的股票。请稍后再次查看。",
@@ -3061,6 +3087,7 @@
                 "880a67": "下跌迹象",
                 "976db4": "上涨迹象",
                 "9c8687": "方向不明，建议谨慎观察。",
+                "ab2e36": "该板块目前没有捕捉到信号。请查看其他板块。",
                 "ede11c": "上涨信号和下跌信号强度相似的股票。"
             },
             "SectorSignalPanelSkeleton": {
@@ -3074,7 +3101,7 @@
                 "fe2ec0": "上涨 {v0} 次 / 下跌 {v1} 次 已检测"
             },
             "SignalSubsection": {
-                "fe9464": "今天没有捕捉到该信号的股票。请查看其他板块。"
+                "48f780": "无相关股票"
             },
             "SignalTypeGuide": {
                 "03876a": "信号类型指南"
@@ -3130,21 +3157,28 @@
             "stockCount": "{v0} 只股票"
         },
         "economy": {
+            "DeltaBadge": {
+                "releaseUnchanged": "与上次发布相比无变化",
+                "unchanged": "环比无变化",
+                "changeSincePeriod": "环比 {v0}{v1}{v2}",
+                "changeSinceRelease": "较上次发布 {v0}{v1}{v2}"
+            },
             "EconomicCalendarGrid": {
                 "703910": "{v0}项",
-                "3ebd79": "预期 {v0} · 前值 {v1}",
                 "490b3a": "{v0}年 {v1}",
                 "4ccace": "(韩国时间)",
                 "596fce": "经济日历",
+                "actualPart": "实际 {v0}",
                 "dc712b": "{v0}{v1}日（{v2}）",
-                "e1d376": "· 实际 {v0}",
-                "f9d9dc": "即将到来的 {v0} 经济发布日程暂无。"
+                "f9d9dc": "即将到来的 {v0} 经济发布日程暂无。",
+                "forecastPart": "预测 {v0}",
+                "pastCollapse": "收起过往日程",
+                "pastExpand": "查看过往日程",
+                "previousPart": "前值 {v0}"
             },
             "EconomicIndicatorGrid": {
                 "868089": "10年期收益率减去2年期收益率的值。如果为负，则表示长短期利率倒挂，通常被视为经济衰退的信号。",
-                "015416": "环比无变化",
                 "2388de": "2s10s 利差",
-                "58c098": "环比 {v0}{v1}{v2}",
                 "c2a5bf": "经济指标"
             },
             "EconomyKrMacroFacts": {
@@ -3160,7 +3194,6 @@
                 "cc4968": "重要性筛选"
             },
             "KrEconomicIndicatorGrid": {
-                "9fc30a": "较上次发布 {v0}{v1}{v2}",
                 "c2a5bf": "经济指标"
             },
             "MacroBriefing": {
@@ -3495,10 +3528,10 @@
                 "deac8e": "Siglens 分析规模"
             },
             "TickerCategories": {
-                "227844": "韩国各板块热门股票",
-                "0ab969": "探索美国各板块热门股票",
-                "bc06f5": "探索韩国各板块热门股票",
-                "f6087a": "美国各板块热门股票"
+                "227844": "韩国主题热门股票",
+                "0ab969": "探索美国主题热门股票",
+                "bc06f5": "探索韩国主题热门股票",
+                "f6087a": "美国主题热门股票"
             },
             "categoryDescription": {
                 "AIsemiconductors": "制造AI算力芯片与服务器的公司 — 随数据中心投资周期波动。",

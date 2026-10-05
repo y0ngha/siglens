@@ -6,6 +6,7 @@ import {
     shouldDeferPrewarmWhileOpen,
     snapshotBoundaryFor,
     snapshotCloseBoundaryFor,
+    secondsUntilNextSnapshotBoundary,
 } from '../lib/freshness';
 
 describe('lastCompletedEtCloseWithBuffer', () => {
@@ -164,10 +165,68 @@ describe('snapshotCloseBoundaryFor — 시장별 경계', () => {
         );
     });
 
-    it('크립토는 종전대로 ET 앵커를 공유한다', () => {
+    // 크립토 경계 = 오늘 00:00Z + 30분(정착 버퍼), 그 전이면 전날 것. ET 마감 경계(~20:00Z)를
+    // 빌려 쓰던 시절에는 새 UTC 일봉이 열린 뒤에도 전날 스냅샷이 20시간 fresh로 통과했다.
+    it.each([
+        // [now, 기대 경계]
+        ['2026-10-05T00:29:59Z', '2026-10-04T00:30:00.000Z'], // 버퍼 직전 → 전날 것
+        ['2026-10-05T00:30:00Z', '2026-10-05T00:30:00.000Z'], // 버퍼 정확히 → 오늘 것
+        ['2026-10-05T09:00:00Z', '2026-10-05T00:30:00.000Z'], // 한낮
+        ['2026-10-05T23:59:59Z', '2026-10-05T00:30:00.000Z'], // 자정 직전
+        ['2026-10-03T12:00:00Z', '2026-10-03T00:30:00.000Z'], // 토요일 — 주말에도 롤한다
+        ['2026-10-04T12:00:00Z', '2026-10-04T00:30:00.000Z'], // 일요일
+        ['2026-10-05T12:00:00Z', '2026-10-05T00:30:00.000Z'], // 월요일
+    ])('크립토 now=%s → 경계 %s', (now, expected) => {
+        expect(
+            snapshotCloseBoundaryFor('BTCUSD', new Date(now)).toISOString()
+        ).toBe(expected);
+    });
+
+    it('크립토 경계는 ET 마감 경계와 다르다(일봉 마감 기준)', () => {
         const now = new Date('2026-11-27T01:00:00Z');
-        expect(snapshotCloseBoundaryFor('BTCUSD', now).getTime()).toBe(
+        expect(snapshotCloseBoundaryFor('BTCUSD', now).getTime()).not.toBe(
             lastCompletedEtCloseWithBuffer(now).getTime()
+        );
+    });
+
+    it('크립토 스냅샷은 UTC 자정+30분 이후에 만들어졌을 때만 fresh다', () => {
+        const now = new Date('2026-10-05T09:00:00Z');
+        const boundary = snapshotCloseBoundaryFor('BTCUSD', now);
+        expect(
+            isSnapshotFresh(new Date('2026-10-04T21:00:00Z'), boundary)
+        ).toBe(false);
+        expect(
+            isSnapshotFresh(new Date('2026-10-05T00:31:00Z'), boundary)
+        ).toBe(true);
+    });
+});
+
+describe('secondsUntilNextSnapshotBoundary', () => {
+    it('크립토: 다음 00:30Z까지', () => {
+        expect(
+            secondsUntilNextSnapshotBoundary(
+                'BTCUSD',
+                new Date('2026-10-05T09:00:00Z')
+            )
+        ).toBe(15.5 * 3600);
+        expect(
+            secondsUntilNextSnapshotBoundary(
+                'BTCUSD',
+                new Date('2026-10-05T00:10:00Z')
+            )
+        ).toBe(20 * 60);
+    });
+
+    it('미국 주식: 다음 거래일 마감 + 버퍼까지(주말을 건넌다)', () => {
+        // 금요일 2026-10-02 21:00Z(마감 후) → 다음 롤은 월요일 10-05 20:30Z
+        const seconds = secondsUntilNextSnapshotBoundary(
+            'AAPL',
+            new Date('2026-10-02T21:00:00Z')
+        );
+        expect(seconds).toBe(
+            (Date.parse('2026-10-05T20:30:00Z') -
+                Date.parse('2026-10-02T21:00:00Z')) /
+                1000
         );
     });
 });

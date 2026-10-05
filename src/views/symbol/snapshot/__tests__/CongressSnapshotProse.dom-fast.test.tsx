@@ -168,7 +168,7 @@ describe('CongressSnapshotProse — 기준일 표기 (C1 감사)', () => {
                 symbol="AAPL"
                 displayName="Apple Inc."
                 marketProfile="us-equity"
-                generatedAt={new Date('2026-07-31T20:00:00Z')}
+                generatedAt={new Date('2026-07-31T21:00:00Z')}
             />
         );
 

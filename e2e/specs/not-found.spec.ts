@@ -135,8 +135,11 @@ test.describe('not found', () => {
     });
 
     /**
-     * 루트 `not-found.tsx`는 `<html>`까지 직접 SSR한다 — JS 없이 받는 크롤러도 제목·본문·홈
-     * 링크를 본다(`[locale]/not-found.tsx`의 알려진 한계와 다른 점).
+     * 루트 `not-found.tsx`는 `<html>`까지 직접 SSR한다 — JS 없이 받는 크롤러도 한국어 제목·본문·
+     * 홈 링크를 본다(`[locale]/not-found.tsx`의 알려진 한계와 다른 점). 이 문서는 **정적**이라
+     * 로케일·호스트와 무관하게 늘 한국어 · 메인 호스트 한 벌이고, 실제 로케일·호스트는
+     * 하이드레이션 뒤 클라이언트 섬이 주소로 알아내 바꾼다(위 `/en/foo/bar` 단언은 그래서
+     * 하이드레이션을 기다린다).
      */
     test('/foo/bar는 JS 없이도 본문과 홈 링크를 SSR한다', async ({
         request,
@@ -150,18 +153,19 @@ test.describe('not found', () => {
         expect(html).toMatch(/<a [^>]*href="\/"[^>]*>/);
     });
 
-    test('SiglensAI 호스트의 없는 경로도 같은 문서로 404이고 제목이 SIGLENS AI다', async ({
-        request,
+    test('SiglensAI 호스트의 없는 경로는 404이고, 하이드레이션 뒤 SIGLENS AI 문구로 바뀐다', async ({
+        page,
     }) => {
-        const res = await request.get('http://ai.localhost:4300/foo/bar');
-        expect(res.status()).toBe(404);
+        const response = await page.goto('http://ai.localhost:4300/foo/bar');
+        expect(response?.status()).toBe(404);
 
-        const html = await res.text();
-        expect(html).toContain(
-            '<title>페이지를 찾을 수 없습니다 | SIGLENS AI</title>'
+        await expect(page).toHaveTitle(
+            '페이지를 찾을 수 없습니다 | SIGLENS AI'
         );
-        expect(html).toContain('새 대화 시작');
+        await expect(
+            page.getByRole('link', { name: '새 대화 시작' })
+        ).toBeVisible();
         // 메인 사이트의 시장 내비는 SiglensAI에 없다.
-        expect(html).not.toContain('시장 분석');
+        await expect(page.getByRole('navigation')).toHaveCount(0);
     });
 });

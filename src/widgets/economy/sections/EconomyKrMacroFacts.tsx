@@ -1,7 +1,9 @@
 import { useTranslations } from 'next-intl';
 import type { KrIndicatorCard } from '@/entities/economy/api/getKrIndicatorCards';
 import { KR_INDICATOR_EVENT } from '@/shared/config/economyIndicatorsKr';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
+import { formatFixed } from '@/shared/lib/formatNum';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface EconomyKrMacroFactsProps {
@@ -58,12 +60,15 @@ function buildMacroSentence(
 export function EconomyKrMacroFacts({ cards }: EconomyKrMacroFactsProps) {
     const t = useTranslations('widgets.economy');
     const tFacts = useTranslations('widgets.economy.krMacroFacts');
+    const locale = useResolvedLocale();
 
     const byEvent = new Map(
         cards.map(card => [card.meta.event, card] as const)
     );
     const format = (card: KrIndicatorCard | undefined): string | null =>
-        card === undefined ? null : card.latest.toFixed(card.meta.precision);
+        card === undefined
+            ? null
+            : formatFixed(card.latest, card.meta.precision, locale);
 
     const baseRate = byEvent.get(KR_INDICATOR_EVENT.baseRate);
     const ktb10y = byEvent.get(KR_INDICATOR_EVENT.ktb10y);
@@ -92,7 +97,7 @@ export function EconomyKrMacroFacts({ cards }: EconomyKrMacroFactsProps) {
             ? tFacts('cpiChange', {
                   // 부호는 값에 붙인다 — 문장 안에 `+`를 두면 로케일마다 자리가
                   // 달라져 번역이 어긋난다(미국판과 같은 규칙).
-                  v0: `${cpiChange >= 0 ? '+' : ''}${cpiChange.toFixed(cpi.meta.precision)}`,
+                  v0: `${cpiChange >= 0 ? '+' : ''}${formatFixed(cpiChange, cpi.meta.precision, locale)}`,
               })
             : null;
 

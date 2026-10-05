@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { formatSnapshotAsOf } from '../formatSnapshotAsOf';
+import { formatSnapshotAsOf, resolveSnapshotAsOf } from '../formatSnapshotAsOf';
 
 describe('formatSnapshotAsOf(us-equity)', () => {
     it('미국 동부 기준 날짜를 한국어로 포맷한다', () => {
@@ -152,5 +152,121 @@ describe('formatSnapshotAsOf — 로케일', () => {
         expect(formatSnapshotAsOf(INSTANT, 'us-equity', 'en')).toBe(
             'July 31, 2026'
         );
+    });
+});
+
+describe('formatSnapshotAsOf(withTime)', () => {
+    it('크립토는 날짜 뒤에 UTC HH:mm을 붙인다', () => {
+        expect(
+            formatSnapshotAsOf(
+                new Date('2026-10-05T09:07:00Z'),
+                'crypto',
+                'ko',
+                { withTime: true }
+            )
+        ).toBe('2026년 10월 5일 09:07');
+    });
+
+    it('withTime이 아니면 날짜만 낸다', () => {
+        expect(
+            formatSnapshotAsOf(new Date('2026-10-05T09:07:00Z'), 'crypto', 'ko')
+        ).toBe('2026년 10월 5일');
+    });
+
+    it('Invalid Date는 withTime이어도 null', () => {
+        expect(
+            formatSnapshotAsOf(new Date(NaN), 'crypto', 'ko', {
+                withTime: true,
+            })
+        ).toBeNull();
+    });
+});
+
+describe('resolveSnapshotAsOf', () => {
+    const fmt = (
+        r: ReturnType<typeof resolveSnapshotAsOf>,
+        profile: 'us-equity' | 'kr-equity' | 'crypto'
+    ) =>
+        r &&
+        formatSnapshotAsOf(r.instant, profile, 'ko', {
+            withTime: r.withTime,
+        });
+
+    it('KR: 전날 저녁에 분석해 다음 날 아침 행으로 저장돼도 분석 기준 세션 날짜를 표기한다', () => {
+        // analyzedAt 10/02 02:00Z(KRX 장중 11:00 KST) → 직전 완료 세션은 10/01.
+        // generatedAt은 10/05 22:00Z(다음 영업일 아침)이지만 쓰이지 않는다.
+        const resolved = resolveSnapshotAsOf(
+            {
+                analyzedAtMs: Date.parse('2026-10-02T02:00:00Z'),
+                generatedAtMs: Date.parse('2026-10-05T22:00:00Z'),
+            },
+            'kr-equity'
+        );
+        expect(fmt(resolved, 'kr-equity')).toBe('2026년 10월 1일');
+        expect(resolved?.withTime).toBe(false);
+    });
+
+    it('barTime이 analyzedAt·generatedAt보다 우선한다 — 봉이 속한 세션 날짜', () => {
+        // 미국 일봉 10/02(금) 00:00Z 시작. 분석은 10/05에 돌았지만 데이터는 10/02 봉.
+        const resolved = resolveSnapshotAsOf(
+            {
+                barTimeMs: Date.parse('2026-10-02T00:00:00Z'),
+                analyzedAtMs: Date.parse('2026-10-05T21:30:00Z'),
+                generatedAtMs: Date.parse('2026-10-05T22:00:00Z'),
+            },
+            'us-equity'
+        );
+        expect(fmt(resolved, 'us-equity')).toBe('2026년 10월 2일');
+    });
+
+    it('KR barTime(KST 자정 시작)도 그 봉의 세션 날짜가 된다', () => {
+        // 2026-10-01 00:00 KST = 09-30 15:00Z
+        const resolved = resolveSnapshotAsOf(
+            { barTimeMs: Date.parse('2026-09-30T15:00:00Z') },
+            'kr-equity'
+        );
+        expect(fmt(resolved, 'kr-equity')).toBe('2026년 10월 1일');
+    });
+
+    it('휴장일(미국 추수감사절 다음 날 이전)을 건너뛴다 — 목요일 휴장 후 금요일 새벽 분석', () => {
+        // 2026-11-26(목)은 NYSE 휴장. 11-27(금) 03:00Z 분석 → 직전 완료 세션은 11-25(수).
+        const resolved = resolveSnapshotAsOf(
+            { analyzedAtMs: Date.parse('2026-11-27T03:00:00Z') },
+            'us-equity'
+        );
+        expect(fmt(resolved, 'us-equity')).toBe('2026년 11월 25일');
+    });
+
+    it('크립토는 날짜와 시각을 낸다(analyzedAt → generatedAt → barTime)', () => {
+        const resolved = resolveSnapshotAsOf(
+            {
+                barTimeMs: Date.parse('2026-10-05T00:00:00Z'),
+                analyzedAtMs: Date.parse('2026-10-05T09:00:00Z'),
+            },
+            'crypto'
+        );
+        expect(fmt(resolved, 'crypto')).toBe('2026년 10월 5일 09:00');
+        expect(resolved?.withTime).toBe(true);
+    });
+
+    it('후보가 없거나 모두 Invalid면 null', () => {
+        expect(resolveSnapshotAsOf({}, 'us-equity')).toBeNull();
+        expect(
+            resolveSnapshotAsOf(
+                { generatedAtMs: NaN, analyzedAtMs: null },
+                'crypto'
+            )
+        ).toBeNull();
+    });
+
+    it('Invalid인 앞선 후보는 건너뛰고 다음 후보를 쓴다', () => {
+        const resolved = resolveSnapshotAsOf(
+            {
+                analyzedAtMs: NaN,
+                generatedAtMs: Date.parse('2026-10-05T22:00:00Z'),
+            },
+            'us-equity'
+        );
+        expect(fmt(resolved, 'us-equity')).toBe('2026년 10월 5일');
     });
 });

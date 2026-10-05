@@ -19,6 +19,8 @@ interface UseBacktestFilterReturn {
     activeTab: string;
     setActiveTab: (tab: string) => void;
     filtered: BacktestCase[];
+    /** 특정 종목이 골라진 상태인가("전체"가 아님). */
+    isFiltered: boolean;
 }
 
 /** 구독자를 등록만 하고 절대 알리지 않는다. 그 결과, 같은 pathname에서
@@ -112,5 +114,11 @@ export function useBacktestFilter(
         [pathname, router, tabItems]
     );
 
-    return { tabItems, activeTab, setActiveTab, filtered };
+    return {
+        tabItems,
+        activeTab,
+        setActiveTab,
+        filtered,
+        isFiltered: activeTab !== ALL_TAB,
+    };
 }

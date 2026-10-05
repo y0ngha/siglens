@@ -79,9 +79,134 @@ describe('BacktestCaseList', () => {
         render(<BacktestCaseList cases={cases} />);
 
         const headings = screen.getAllByRole('heading', { level: 2 });
+        // 최신 월이 위다.
         expect(headings.map(h => h.textContent)).toEqual([
-            '2024년 6월',
             '2024년 7월',
+            '2024년 6월',
+        ]);
+    });
+});
+
+/**
+ * 100건·17개월을 오래된 순으로 전부 펼쳐 놓던 것을, 월마다 접는 `<details>`로 바꾸고
+ * 최신 순으로 뒤집었다. 접힌 월의 카드도 DOM에는 남아야 크롤러가 읽는다.
+ */
+describe('BacktestCaseList — 월별 접이식', () => {
+    // 2024-01 ~ 2024-05, 월마다 1건. 입력은 오래된 순(데이터 원본과 같다).
+    const FIVE_MONTHS = [
+        makeCase('JAN', '2024-01-10'),
+        makeCase('FEB', '2024-02-10'),
+        makeCase('MAR', '2024-03-10'),
+        makeCase('APR', '2024-04-10'),
+        makeCase('MAY', '2024-05-10'),
+    ];
+
+    const months = () =>
+        Array.from(document.querySelectorAll('details')).map(d => ({
+            label: d.querySelector('h2')?.textContent,
+            open: d.open,
+        }));
+
+    it('월이 최신순으로 나열된다', () => {
+        render(<BacktestCaseList cases={FIVE_MONTHS} />);
+
+        expect(months().map(m => m.label)).toEqual([
+            '2024년 5월',
+            '2024년 4월',
+            '2024년 3월',
+            '2024년 2월',
+            '2024년 1월',
+        ]);
+    });
+
+    it('월 안의 케이스도 최신순이다', () => {
+        render(
+            <BacktestCaseList
+                cases={[
+                    makeCase('EARLY', '2024-06-01'),
+                    makeCase('MID', '2024-06-15'),
+                    makeCase('LATE', '2024-06-28'),
+                ]}
+            />
+        );
+
+        const order = Array.from(
+            document.querySelectorAll('[data-testid^="case-"]')
+        ).map(el => el.textContent);
+        expect(order).toEqual(['LATE', 'MID', 'EARLY']);
+    });
+
+    it('최신 3개월만 펼치고 나머지는 접는다', () => {
+        render(<BacktestCaseList cases={FIVE_MONTHS} />);
+
+        expect(months().map(m => m.open)).toEqual([
+            true,
+            true,
+            true,
+            false,
+            false,
+        ]);
+    });
+
+    it('접힌 월의 카드도 DOM에 남아 있다 (크롤러 색인)', () => {
+        render(<BacktestCaseList cases={FIVE_MONTHS} />);
+
+        for (const ticker of ['JAN', 'FEB', 'MAR', 'APR', 'MAY']) {
+            expect(screen.getByTestId(`case-${ticker}`)).toBeInTheDocument();
+        }
+        // JAN은 접힌 <details> 안에 있다.
+        expect(
+            screen.getByTestId('case-JAN').closest('details')
+        ).not.toHaveAttribute('open');
+    });
+
+    it('openAll이면(종목 필터 활성) 모든 월을 펼친다', () => {
+        render(<BacktestCaseList cases={FIVE_MONTHS} openAll />);
+
+        expect(months().every(m => m.open)).toBe(true);
+    });
+
+    it('월이 3개 이하면 전부 펼쳐진다', () => {
+        render(<BacktestCaseList cases={FIVE_MONTHS.slice(0, 2)} />);
+
+        expect(months().every(m => m.open)).toBe(true);
+    });
+
+    it('요약 줄에 월 헤딩과 건수가 함께 있다 (헤딩은 summary 안)', () => {
+        render(
+            <BacktestCaseList
+                cases={[
+                    makeCase('AAPL', '2024-06-15'),
+                    makeCase('NVDA', '2024-06-20'),
+                    makeCase('TSLA', '2024-07-01'),
+                ]}
+            />
+        );
+
+        const summaries = Array.from(document.querySelectorAll('summary'));
+        expect(summaries.map(s => s.textContent)).toEqual([
+            '2024년 7월1건',
+            '2024년 6월2건',
+        ]);
+        for (const summary of summaries) {
+            expect(summary.querySelector('h2')).not.toBeNull();
+        }
+    });
+
+    it('같은 달 안에서 월 경계를 넘어 섞여 들어와도 한 그룹으로 모은다', () => {
+        render(
+            <BacktestCaseList
+                cases={[
+                    makeCase('A', '2024-06-20'),
+                    makeCase('B', '2024-07-01'),
+                    makeCase('C', '2024-06-02'),
+                ]}
+            />
+        );
+
+        expect(months().map(m => m.label)).toEqual([
+            '2024년 7월',
+            '2024년 6월',
         ]);
     });
 });

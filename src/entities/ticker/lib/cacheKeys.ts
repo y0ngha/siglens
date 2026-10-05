@@ -29,9 +29,10 @@ export const CRYPTO_FMP_LIST_CACHE_KEY = 'crypto:fmp-list';
  * 이미지 롤아웃으로 비워지지 않고 TTL은 24시간이다 — 배포 전 워밍된 질의는 하루
  * 내내 옛 결과를 그대로 돌려주고, 고친 게 배포 안 된 것처럼 보인다.
  * v2: KRX 주 상장을 미국 OTC 중복 앞에 두는 정렬 도입(2026-08).
+ * v3: 동점 처리 추가 — 일치한 필드가 짧은 쪽 → 인기 순위 → 입력 순서(2026-10).
  */
 export function buildTickerSearchCacheKey(query: string): string {
-    return `ticker:search:v2:${query.toLowerCase()}`;
+    return `ticker:search:v3:${query.toLowerCase()}`;
 }
 
 /**
