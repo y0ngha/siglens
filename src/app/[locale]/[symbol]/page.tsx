@@ -13,6 +13,8 @@ import { buildFallbackAnalysis } from '@/entities/analysis/lib/fallbackAnalysis'
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import { DEEPSEEK_V4_1_FLASH_MODEL } from '@y0ngha/siglens-core';
+import { hasFormingBar } from '@/entities/bars/lib/quantizeBars';
+import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { normalizeAnalysisResponse } from '@/entities/analysis/lib/normalizeAnalysisResponse';
 import { peekAnalysisStatic } from '@/entities/analysis/lib/peekAnalysisStaticCache';
 import { DEFAULT_TIMEFRAME, SymbolRouteParams } from '@/shared/config/market';
@@ -436,6 +438,13 @@ export default async function SymbolPage({ params }: Props) {
                                     skillCounts.strategies
                                 }
                                 marketProfile={marketProfile}
+                                // seed가 형성 중 봉을 뺀 채로 나갔는가(= quantize와 같은 술어).
+                                // 그렇다면 클라이언트는 입력을 기다리지 않고 라이브 봉을 받아야
+                                // 분석 작도가 맞는다(`useBars` JSDoc).
+                                seedHasFormingBarTrimmed={hasFormingBar(
+                                    sessionSpecFor(marketProfile),
+                                    new Date()
+                                )}
                             />
                         </Suspense>
                     </HydrationBoundary>

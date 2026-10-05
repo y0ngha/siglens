@@ -6,11 +6,11 @@ const pendingTab = vi.fn<() => string | null>();
 vi.mock('@/views/symbol/SymbolTabPendingContext', () => ({
     usePendingSymbolTab: () => pendingTab(),
 }));
-vi.mock('../loading', () => ({
-    default: () => <div data-testid="chart-loading" />,
+vi.mock('@/views/symbol/skeletons/ChartTabSkeleton', () => ({
+    ChartTabSkeleton: () => <div data-testid="chart-loading" />,
 }));
-vi.mock('../options/loading', () => ({
-    default: () => <div data-testid="options-loading" />,
+vi.mock('@/views/symbol/skeletons/OptionsTabSkeleton', () => ({
+    OptionsTabSkeleton: () => <div data-testid="options-loading" />,
 }));
 
 const sectionCount = (container: HTMLElement) =>

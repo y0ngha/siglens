@@ -4,11 +4,9 @@ import type { Metadata } from 'next';
 import { getLocale } from 'next-intl/server';
 import { type Locale, resolveLocale } from '@/shared/i18n/locales';
 import { buildHubMetadata } from '@/shared/lib/seoAlternates';
-import { Suspense } from 'react';
 
 import { EconomicCalendarGrid as EconomicCalendar } from '@/widgets/economy/sections/EconomicCalendarGrid';
 import { EconomyKrMacroFacts } from '@/widgets/economy/sections/EconomyKrMacroFacts';
-import { EconomySkeleton } from '@/widgets/economy/sections/EconomySkeleton';
 import { KrEconomicIndicatorGrid } from '@/widgets/economy/sections/KrEconomicIndicatorGrid';
 // entities/economy/api/*는 server-only(`@upstash/redis` + `next/cache`) 의존이다.
 // app 레이어(RSC)에서만 import하므로 클라이언트 번들 누출 위험이 없다.
@@ -327,14 +325,9 @@ export default async function EconomyKrPage({
                 <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-50 sm:text-3xl">
                     {economyKrTitle(tSeo)}
                 </h1>
-                {/*
-                    한국 레지스트리를 넘긴다 — 기본값(미국)은 국채 카드 3장을 포함한
-                    12장짜리라, 국채 카드가 없고 고용이 1장뿐인 이 화면에서는 자리를
-                    과하게 예약해 콘텐츠 도착 시 위로 당겨진다.
-                */}
-                <Suspense fallback={<EconomySkeleton variant="kr" />}>
-                    <KrEconomyContent />
-                </Suspense>
+                {/* 서버 데이터(`KrEconomyContent`)는 Suspense로 감싸지 않는다 — fallback→본문
+                    교체가 사라져 CLS도 줄고, raw HTML에 숨김 청크가 남지 않는다(2026-10-05). */}
+                <KrEconomyContent />
                 <section aria-labelledby="economy-kr-faq-heading">
                     <h2 id="economy-kr-faq-heading" className={HEADING_SECTION}>
                         {t('page.ae2ce9')}

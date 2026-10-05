@@ -298,6 +298,20 @@ export type SymbolSeoTab =
     | 'fear-greed';
 
 /**
+ * 색인되는 `[symbol]` 탭(= `ALWAYS_NOINDEX_TAB_ROBOTS`를 쓰지 않는 탭). 차트(`technical`)·뉴스·
+ * 공포탐욕 세 개다.
+ *
+ * 항상-noindex 탭으로 가는 링크는 크롤 예산만 쓰고 색인 신호를 만들지 못한다 — 그런 링크를 내는
+ * 곳(카드 그리드 등)이 이 목록으로 대상을 좁힌다. 탭을 다시 열 때는 `ALWAYS_NOINDEX_TAB_ROBOTS`와
+ * sitemap 빌더에 더해 여기에도 추가한다.
+ */
+export const INDEXABLE_SYMBOL_TABS = [
+    'technical',
+    'news',
+    'fear-greed',
+] as const satisfies readonly SymbolSeoTab[];
+
+/**
  * 탭별 `titleCore` 카탈로그 키 — 자산군 분기가 있는 탭만 `crypto`를 갖는다.
  *
  * `SYMBOL_SEO_TAB_BUILDERS`/`resolveSymbol*SeoContent`가 제목을 만들 때 쓰는

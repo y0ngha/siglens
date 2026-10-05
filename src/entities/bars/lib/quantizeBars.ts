@@ -69,6 +69,20 @@ function dropLastIndicatorBar(indicators: IndicatorResult): IndicatorResult {
 }
 
 /**
+ * 지금 **형성 중(forming) 봉이 있는가** — 정규장이 열려 있으면 참이다(crypto는 24/7이라 항상 참).
+ *
+ * 이 조건이 참일 때 SSR seed는 마지막 봉을 뺀 상태(`quantizeBarsDataToLastClosed`)로 나가고,
+ * 클라이언트의 라이브 봉(`getBarsAction`)은 그 봉을 끝에 달고 있다. 그래서 두 곳이 같은 술어를
+ * 쓴다: (1) 이 파일의 quantize, (2) "seed가 형성 중 봉을 뺐다"를 클라이언트에 알리거나(`page.tsx`),
+ * 뷰 시점에 확인해(`ChartContent`) seed 복원 재조회를 열지 정하는 곳. 형성 중 봉이 있으면 서버가
+ * 형성 중 봉 시각을 참조하는 분석 작도(`chartOverlays`)는 seed 봉에 맞지 않아 "차트 작도" 메뉴가
+ * 비므로(`isOverlayAlignedToBars`), 그 재조회는 사람 입력을 기다리면 안 된다.
+ */
+export function hasFormingBar(session: MarketSessionSpec, now: Date): boolean {
+    return isRegularSessionOpen(session, now);
+}
+
+/**
  * SSR 직렬화 전용: 정규장 중에는 진행 중(forming) 당일 봉을 bars와 indicators 양쪽에서
  * lockstep으로 제외해 SSR 출력이 장 마감 시 하루 1회만 변경되게 한다(ISR write churn 제거).
  *
@@ -89,8 +103,7 @@ export function quantizeBarsDataToLastClosed(
     now: Date,
     session: MarketSessionSpec = US_EQUITY_SESSION
 ): BarsData {
-    if (data.bars.length === 0 || !isRegularSessionOpen(session, now))
-        return data;
+    if (data.bars.length === 0 || !hasFormingBar(session, now)) return data;
     return {
         ...data,
         bars: data.bars.slice(0, -1),

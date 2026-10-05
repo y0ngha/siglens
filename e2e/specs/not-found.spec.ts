@@ -18,8 +18,10 @@ import { test, expect } from '../support/fixtures';
  * Until 2026-07-26 these routes answered **200** with the 404 UI (a soft 404 —
  * Google counts it as thin content). Cause: in Next 16.2 a `notFound()` thrown
  * inside a Suspense boundary leaves the status at 200, and `[symbol]/loading.tsx`
- * plus the layout's own Suspense put every tab inside one. The fix hoists the
- * decision into `[symbol]/layout.tsx`, above those boundaries.
+ * plus the layout's own Suspense put every tab inside one. The fix hoisted the
+ * existence decision into `[symbol]/layout.tsx`, above those boundaries; since
+ * 2026-10-05 the boundaries themselves are gone (no `loading.tsx` under `[symbol]`,
+ * chrome not in Suspense), so tab-availability `notFound()` is a real 404 too.
  *
  * This spec is the ONLY committed test that can observe a real HTTP status
  * against a production build — the unit tests can only assert that `notFound()`
@@ -32,7 +34,7 @@ const NOT_FOUND_URLS = [
     '/foo/bar', // 어떤 라우트에도 매칭되지 않음 → 루트 `not-found.tsx` (자체 문서)
     '/INVALIDTICKER1', // resolvable-shape but unknown asset → unresolvable path
     '/HVO.L', // 해외 거래소 접미사 → 형상 게이트에서 FMP 호출 전 차단
-    '/HVO.L/options', // 자체 loading.tsx가 있는 탭 — 200이 새던 바로 그 구성
+    '/HVO.L/options', // 예전엔 자체 loading.tsx가 있던 탭 — 200이 새던 구성
 ] as const;
 
 test.describe('not found', () => {

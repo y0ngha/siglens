@@ -1,6 +1,8 @@
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { SECTOR_ETFS, SECTOR_STOCKS } from '@/shared/config/dashboard-tickers';
 import { evaluateSymbolIndexability } from '@/entities/symbol-indexability/lib/evaluateSymbolIndexability';
+import { isCuratedSymbol } from '@/entities/symbol-indexability/lib/isCuratedSymbol';
+import { DASHBOARD_SCOPES } from '@/shared/config/dashboardScope';
 import type { AssetInfo } from '@/shared/lib/types';
 
 /**
@@ -47,4 +49,26 @@ describe('/market 섹터 허브 링크 대상의 색인 가능성', () => {
         );
         expect(blocked).toEqual([]);
     });
+});
+
+/**
+ * `SectorFactsSummary`(`/market`·`/market/kr` 영구 서버 sibling)는 섹터 신호가 잡힌 종목의
+ * `/{symbol}` 앵커를 **큐레이션 검사 없이** 낸다. 그 근거가 이 불변식이다 — 스캔 대상
+ * (`DashboardScope.sectorStocks`: 미국·한국·암호화폐 전부)은 항상 큐레이션 집합(`isCuratedSymbol`)
+ * 안에 있어, 앵커가 noindex 롱테일로 가는 일이 없다. 스캔 목록에 심볼을 더할 때 큐레이션
+ * 집합(`POPULAR_TICKERS`/`POPULAR_CRYPTOS`)에도 더하지 않으면 이 테스트가 실패한다 — 그때는
+ * 목록을 고치거나 `SectorFactsSummary`에 `isCuratedSymbol` 분기를 넣는다(`SignalStockCard` 방식).
+ */
+describe('대시보드 스캔 대상(sectorStocks)은 전부 큐레이션 집합이다', () => {
+    it.each(Object.entries(DASHBOARD_SCOPES))(
+        '%s 스코프의 sectorStocks가 전부 isCuratedSymbol이다',
+        (_id, scope) => {
+            expect(scope.sectorStocks.length).toBeGreaterThan(0);
+            expect(
+                scope.sectorStocks
+                    .map(stock => stock.symbol)
+                    .filter(symbol => !isCuratedSymbol(symbol))
+            ).toEqual([]);
+        }
+    );
 });

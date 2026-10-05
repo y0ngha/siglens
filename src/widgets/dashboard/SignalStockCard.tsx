@@ -1,6 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { useAssetLabel } from '@/shared/i18n/assetLabel';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { isCuratedSymbol } from '@/entities/symbol-indexability/lib/isCuratedSymbol';
 import { CARD_LINK_CLASSES } from '@/shared/lib/cardStyles';
 import { cn } from '@/shared/lib/cn';
 import type { StockWithConflict } from '@y0ngha/siglens-core';
@@ -22,6 +23,56 @@ export function SignalStockCard({
 }: SignalStockCardProps) {
     const t = useTranslations('widgets.dashboard');
     const assetLabel = useAssetLabel();
+    const content = (
+        <div className="flex flex-col gap-1">
+            <QuoteHeader
+                layout="signal"
+                data={{
+                    symbol: data.symbol,
+                    // `koreanName`은 한국어 데이터다 — 표시는 카탈로그로.
+                    displayName: assetLabel(data.symbol, data.koreanName),
+                    price: data.price,
+                    changePercent: data.changePercent,
+                }}
+                currencySymbol={currencySymbol}
+                tickerIsReadable={tickerIsReadable}
+            />
+            {data.signals.length > 0 && (
+                <div className="flex flex-wrap gap-x-1.5 gap-y-0.5 pt-1">
+                    {data.signals.map((s, i) => (
+                        <span key={s.type} className="contents">
+                            {i > 0 && (
+                                <span
+                                    className="text-secondary-500"
+                                    aria-hidden="true"
+                                >
+                                    ·
+                                </span>
+                            )}
+                            <SignalBadge type={s.type} />
+                        </span>
+                    ))}
+                </div>
+            )}
+            {data.conflict && (
+                <p className="mt-1 text-xs text-secondary-500">
+                    {t('SignalStockCard.fe2ec0', {
+                        v0: data.conflict.bullishCount,
+                        v1: data.conflict.bearishCount,
+                    })}
+                </p>
+            )}
+        </div>
+    );
+    // 큐레이션 밖 종목은 링크 없는 카드다 — 그 페이지는 noindex 롱테일이라 링크는 크롤 예산만
+    // 쓴다(`isCuratedSymbol`, 2026-10-05 크롤 감사). 같은 시각 틀을 유지해 그리드가 흔들리지 않는다.
+    if (!isCuratedSymbol(data.symbol)) {
+        return (
+            <div className="block rounded-lg border border-secondary-700 bg-secondary-800/50 p-3">
+                {content}
+            </div>
+        );
+    }
     return (
         <Link
             href={`/${data.symbol}`}
@@ -33,45 +84,7 @@ export function SignalStockCard({
                 CARD_LINK_CLASSES
             )}
         >
-            <div className="flex flex-col gap-1">
-                <QuoteHeader
-                    layout="signal"
-                    data={{
-                        symbol: data.symbol,
-                        // `koreanName`은 한국어 데이터다 — 표시는 카탈로그로.
-                        displayName: assetLabel(data.symbol, data.koreanName),
-                        price: data.price,
-                        changePercent: data.changePercent,
-                    }}
-                    currencySymbol={currencySymbol}
-                    tickerIsReadable={tickerIsReadable}
-                />
-                {data.signals.length > 0 && (
-                    <div className="flex flex-wrap gap-x-1.5 gap-y-0.5 pt-1">
-                        {data.signals.map((s, i) => (
-                            <span key={s.type} className="contents">
-                                {i > 0 && (
-                                    <span
-                                        className="text-secondary-500"
-                                        aria-hidden="true"
-                                    >
-                                        ·
-                                    </span>
-                                )}
-                                <SignalBadge type={s.type} />
-                            </span>
-                        ))}
-                    </div>
-                )}
-                {data.conflict && (
-                    <p className="mt-1 text-xs text-secondary-500">
-                        {t('SignalStockCard.fe2ec0', {
-                            v0: data.conflict.bullishCount,
-                            v1: data.conflict.bearishCount,
-                        })}
-                    </p>
-                )}
-            </div>
+            {content}
         </Link>
     );
 }

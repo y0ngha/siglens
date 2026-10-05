@@ -33,24 +33,23 @@ import { LABEL_GROUP } from '@/shared/lib/typographyStyles';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 
 /**
- * 푸터 링크 하나. 화면에는 짧은 라벨만 보이고, 전체 이름은 `aria-label`이 진다.
+ * 푸터 링크 하나. 화면에 보이는 텍스트가 곧 **전체 이름**이다(`미국 시장 분석`).
  *
- * **왜 짧은 라벨인가**: 카테고리 열로 묶으면 `시장 분석` 아래에 `미국 시장 분석`을
- * 다시 적는 게 시각적으로 군더더기다 — 헤더 드롭다운도 이 자리에서 `미국`만 쓴다.
+ * **왜 풀 라벨을 보이게 하는가 (2026-10-05 크롤 감사)**: 예전에는 열 제목 아래에서 `미국`·`한국`
+ * 같은 짧은 라벨만 보이고 전체 이름은 `aria-label`이 졌다. 그런데 앵커 텍스트로 쓰이는 건
+ * 보이는 글자라, 전 페이지 푸터의 `/market`·`/market/kr`·`/news/us` … 링크가 전부 "미국"/"한국"만
+ * 말해 목적지 주제를 알려 주지 못했다. 열 제목과 시각적으로 겹치는 비용(`시장 분석` 아래
+ * `미국 시장 분석`)을 내고 앵커가 주제를 말하게 한다.
  *
- * **숨김 텍스트는 두지 않는다.** 예전에는 `fullLabel`에서 잘라낸 앞뒤 조각을
- * `sr-only` span으로 링크 안에 넣어 크롤러가 읽는 앵커 텍스트만 길게 유지했다.
- * 그건 목적이 "검색엔진에게만 보이는 텍스트"였고, 전 페이지에 렌더되는 전역
- * 링크 집합에서 그 형태는 구글의 숨김 텍스트 정책에 정면으로 걸린다. 접근성은
- * `aria-label`로 충족되고(보조기술이 전체 이름을 읽는다), WCAG 2.5.3(Label in
- * Name)도 이름이 보이는 글자를 포함하므로 그대로 만족한다.
+ * **숨김 텍스트는 두지 않는다.** 보이는 글자가 곧 이름이라 `aria-label`도 `sr-only` 조각도
+ * 필요 없다(전 페이지 전역 링크의 숨김 텍스트는 구글 정책에 걸린다 — 2026-09-17 감사가
+ * 걷어낸 결정이 유효하다). 헤더 드롭다운은 같은 이유로 짧은 라벨(`미국`) 그대로 두고
+ * 숨김 조각을 붙이지 않는다.
  */
 interface FooterLink {
     readonly href: string;
-    /** 화면에 보이는 짧은 라벨. */
-    readonly visible: string;
-    /** 보조기술이 읽는 전체 이름. */
-    readonly fullLabel: string;
+    /** 화면에 보이는 전체 이름. */
+    readonly label: string;
 }
 
 interface FooterColumn {
@@ -70,11 +69,10 @@ function columnOf(
     tNav: (key: string, values?: Record<string, string>) => string
 ): FooterColumn {
     const label = tNav(vertical.labelKey);
-    const token = tNav('shared.config.nav.overviewToken');
     const allLabel = tNav('shared.config.nav.overviewAll', { v0: label });
     const overview: readonly FooterLink[] = hasRegionForRoot(vertical)
         ? []
-        : [{ href: vertical.rootHref, fullLabel: allLabel, visible: token }];
+        : [{ href: vertical.rootHref, label: allLabel }];
     return {
         id: vertical.id,
         label,
@@ -82,8 +80,7 @@ function columnOf(
             ...overview,
             ...vertical.regions.map(region => ({
                 href: region.href,
-                fullLabel: tNav(region.fullLabelKey),
-                visible: tNav(region.labelKey),
+                label: tNav(region.fullLabelKey),
             })),
         ],
     };
@@ -116,14 +113,13 @@ function FooterNavColumn({ column }: FooterNavColumnProps) {
                     <li key={link.href}>
                         <Link
                             href={link.href}
-                            aria-label={link.fullLabel}
                             // 전역 푸터 — 모든 페이지에서 렌더된다. prefetch는 진입
                             // 페이지마다 다른 `_rsc` 해시를 만들어 캐시를 파편화시킨다
                             // (docs/architecture/CDN_CACHING.md §1).
                             prefetch={false}
                             className={LINK_CLASSES}
                         >
-                            {link.visible}
+                            {link.label}
                         </Link>
                     </li>
                 ))}

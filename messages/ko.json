@@ -101,7 +101,8 @@
                 "4749c9": "일시적인 오류로 지수를 표시하지 못했어요. 잠시 후 다시 시도해\n                주세요.",
                 "e533f3": "공포 탐욕 지수를 불러오지 못했어요",
                 "eb2523": "{v0} 홈으로"
-            }
+            },
+            "symbolListTitle": "종목별 공포·탐욕 지수"
         },
         "forgot-password": {
             "page": {
@@ -1067,7 +1068,6 @@
                     }
                 },
                 "overviewAll": "{v0} 전체",
-                "overviewToken": "전체",
                 "region": {
                     "crypto": "암호화폐",
                     "kr": "한국",
@@ -3311,9 +3311,6 @@
             },
             "EconomyMacroFacts": {
                 "59ed20": "거시 경제 한눈에"
-            },
-            "EconomySkeleton": {
-                "e0e86d": "경제 지표 로딩 중"
             },
             "ImpactFilter": {
                 "cc4968": "중요도 필터"

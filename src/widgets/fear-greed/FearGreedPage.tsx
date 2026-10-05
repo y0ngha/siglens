@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
 import { useFearGreedFromSymbol } from './hooks/useFearGreedFromSymbol';
+import { useHumanInteracted } from '@/shared/hooks/useHumanInteracted';
 import { FearGreedHero } from './FearGreedHero';
 import { FearGreedComparisonGauges } from './FearGreedComparisonGauges';
 import { FearGreedGroupBar } from './FearGreedGroupBar';
@@ -106,7 +107,13 @@ export function FearGreedPage({
     const t = useTranslations('widgets.fear-greed');
     const themeVersion = useThemeVersion();
     const isHydrated = useHydrated();
-    const { snapshot, history } = useFearGreedFromSymbol({ symbol, fmpSymbol });
+    // seed 재조회는 사람 입력 이후로 미룬다 — 크롤러 렌더마다 나가던 Server Action을 없앤다.
+    const humanInteracted = useHumanInteracted();
+    const { snapshot, history } = useFearGreedFromSymbol({
+        symbol,
+        fmpSymbol,
+        refetchEnabled: humanInteracted,
+    });
 
     useRegisterShareable({
         kind: 'fear-greed',

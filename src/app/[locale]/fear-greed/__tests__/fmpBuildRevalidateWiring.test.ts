@@ -27,6 +27,10 @@ vi.mock(
 );
 vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
     shortenRevalidateIfFmpFailedAtBuild: vi.fn(async () => undefined),
+    shortenRevalidateIfDatabaseMissingAtBuild: vi.fn(async () => undefined),
+}));
+vi.mock('@/entities/ticker/lib/loadSymbolNames', () => ({
+    loadSymbolNames: vi.fn(async () => new Map<string, string>()),
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

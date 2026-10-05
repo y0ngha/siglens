@@ -110,10 +110,21 @@ describe('SectorFactsSummary', () => {
                 data={makeResult([makeStock('AAPL', 'XLK', 'bullish')])}
             />
         );
-        expect(screen.getByRole('link', { name: 'AAPL' })).toHaveAttribute(
-            'href',
-            '/AAPL'
+        // 앵커 텍스트는 `이름 (티커)` — 티커만 있는 앵커는 검색어와 거리가 멀다.
+        expect(
+            screen.getByRole('link', { name: '애플 (AAPL)' })
+        ).toHaveAttribute('href', '/AAPL');
+    });
+
+    it('(Happy) 카탈로그에 없는 종목은 데이터의 koreanName으로 앵커를 만든다', () => {
+        render(
+            <SectorFactsSummary
+                data={makeResult([makeStock('ZZZQ', 'XLK', 'bullish')])}
+            />
         );
+        expect(
+            screen.getByRole('link', { name: 'ZZZQ-KR (ZZZQ)' })
+        ).toHaveAttribute('href', '/ZZZQ');
     });
 
     it('(Happy) 여러 섹터가 모두 렌더된다', () => {

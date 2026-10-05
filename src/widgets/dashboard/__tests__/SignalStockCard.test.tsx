@@ -146,4 +146,23 @@ describe('SignalStockCard', () => {
         );
         expect(screen.queryByText(/상승.*건/)).not.toBeInTheDocument();
     });
+
+    it('큐레이션 밖(noindex 롱테일) 종목은 링크 없는 카드로 렌더한다', () => {
+        render(
+            <SignalStockCard
+                tickerIsReadable
+                currencySymbol="$"
+                data={{ ...STOCK, symbol: 'ZZZNOTREAL', koreanName: '미상' }}
+            />
+        );
+        expect(screen.queryByRole('link')).toBeNull();
+        expect(screen.getByText('ZZZNOTREAL')).toBeInTheDocument();
+    });
+
+    it('큐레이션 종목은 /{symbol} 링크 카드다', () => {
+        render(
+            <SignalStockCard tickerIsReadable currencySymbol="$" data={STOCK} />
+        );
+        expect(screen.getByRole('link')).toHaveAttribute('href', '/AAPL');
+    });
 });

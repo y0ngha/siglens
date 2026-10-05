@@ -26,7 +26,7 @@ export class DrizzleNoticeRepository implements NoticeRepository {
 
     async findActive(locale: Locale): Promise<NoticeRecord[]> {
         // findActive는 non-critical 경로(공지)라 withRetry를 쓰지 않는다.
-        // 호출부(getActiveNoticesAction)가 실패를 빈 배열로 흡수한다.
+        // 호출부(`GET /api/notices`)가 실패를 빈 배열로 흡수한다.
         const rows = await this.db
             .select({
                 id: notices.id,

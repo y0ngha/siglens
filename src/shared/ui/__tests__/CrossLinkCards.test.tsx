@@ -139,4 +139,51 @@ describe('CrossLinkCards — crypto profile', () => {
         expect(screen.getByText('공포 탐욕 지수')).toBeInTheDocument();
         expect(screen.getByText('AI 종합 분석')).toBeInTheDocument();
     });
+
+    describe('indexableOnly', () => {
+        it('색인되는 탭(차트·뉴스·공포탐욕) 3카드만 내고 항상-noindex 탭 링크는 없다', () => {
+            const { container } = render(
+                <CrossLinkCards
+                    symbol="AAPL"
+                    current="news"
+                    marketProfile="us-equity"
+                    indexableOnly
+                />
+            );
+            const hrefs = [...container.querySelectorAll('a')].map(a =>
+                a.getAttribute('href')
+            );
+            expect(container.querySelectorAll('h3')).toHaveLength(3);
+            expect(hrefs.sort()).toEqual(['/AAPL', '/AAPL/fear-greed']);
+            for (const tab of [
+                'overall',
+                'fundamental',
+                'financials',
+                'options',
+                'congress',
+            ]) {
+                expect(hrefs).not.toContain(`/AAPL/${tab}`);
+            }
+        });
+
+        it('크립토에서도 overall 카드를 빼 3카드가 된다', () => {
+            const { container } = render(
+                <CrossLinkCards
+                    symbol="BTCUSD"
+                    current="fear-greed"
+                    marketProfile="crypto"
+                    indexableOnly
+                />
+            );
+            expect(container.querySelectorAll('h3')).toHaveLength(3);
+            expect(container.querySelector('a[href$="/overall"]')).toBeNull();
+        });
+
+        it('플래그를 주지 않으면 기존대로 전체 카드를 낸다', () => {
+            const { container } = render(
+                <CrossLinkCards symbol="AAPL" current="news" />
+            );
+            expect(container.querySelectorAll('h3')).toHaveLength(8);
+        });
+    });
 });

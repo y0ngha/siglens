@@ -101,7 +101,8 @@
                 "4749c9": "The index could not be displayed due to a temporary error. Please try again shortly.",
                 "e533f3": "Failed to load Fear & Greed Index",
                 "eb2523": "{v0} Home"
-            }
+            },
+            "symbolListTitle": "Fear & Greed Index by Symbol"
         },
         "forgot-password": {
             "page": {
@@ -1067,7 +1068,6 @@
                     }
                 },
                 "overviewAll": "All {v0}",
-                "overviewToken": "All",
                 "region": {
                     "crypto": "Cryptocurrency",
                     "kr": "Korea",
@@ -3186,9 +3186,6 @@
             },
             "EconomyMacroFacts": {
                 "59ed20": "Macro Economy at a Glance"
-            },
-            "EconomySkeleton": {
-                "e0e86d": "Loading Economic Indicators"
             },
             "ImpactFilter": {
                 "cc4968": "Importance Filter"

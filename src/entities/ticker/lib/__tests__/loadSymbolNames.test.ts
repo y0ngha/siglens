@@ -37,7 +37,7 @@ vi.mock('@/entities/ticker/lib/cryptoAssetStore', () => ({
     getCryptoAsset: mockCryptoAsset,
 }));
 
-import { loadSymbolNames } from '@/app/[locale]/symbols/loadSymbolNames';
+import { loadSymbolNames } from '@/entities/ticker/lib/loadSymbolNames';
 
 describe('loadSymbolNames', () => {
     beforeEach(() => {

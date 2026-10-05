@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { SITE_URL } from '@/shared/lib/seo';
-import { LOCALES } from '@/shared/i18n/locales';
+import { DEFAULT_LOCALE, LOCALES } from '@/shared/i18n/locales';
 
 /**
  * AI 크롤러 공통 crawl-delay(초). 차단 대신 빈도만 낮추는 그룹이 재사용하므로
@@ -163,6 +163,38 @@ const HUB_SOCIAL_IMAGE_ALLOW = LOCALES.flatMap(locale =>
     ])
 );
 
+/**
+ * 종목 **색인 탭**(차트·뉴스·공포탐욕)의 한국어 OG 이미지만 Googlebot에 되돌려 준다.
+ *
+ * 위 Googlebot 그룹이 `/*​/opengraph-image`를 통째로 막은 근거(크롤 예산 61GB)는 **색인되지 않는
+ * 탭과 롱테일**까지 포함한 물량이었다. 색인 페이지(차트·뉴스·공포탐욕 × 인기 종목, 약 1.1K
+ * 이미지)는 이미지가 없으면 Discover·이미지 검색·rich result 카드가 비는데, 정작 그 URL만
+ * 차단돼 있었다(2026-10-05 크롤 감사). 롱테일 종목의 이미지도 같이 열리지만 그 페이지가
+ * noindex라 실제 수집은 적다(수용).
+ *
+ * **패턴이 `/ko/*​/opengraph-image` 하나인 이유**: `*`는 `/`까지 먹으므로 이 Allow는 종목 차트
+ * (`/ko/AAPL/opengraph-image`)와 하위 탭(`/ko/AAPL/news/opengraph-image`)을 한 번에 연다. 열면
+ * 안 되는 쪽은 **더 긴 Disallow**로 되돌린다(아래) — "더 긴 일치가 우선"이라는 표준 규칙이다.
+ * - 항상 noindex인 탭(`ALWAYS_NOINDEX_TAB_ROBOTS`: overall·fundamental·financials·options·
+ *   congress, 그리고 position) → `NOINDEX_TAB_OG_DISALLOW`
+ * - 공유 카드(`/ko/share/{id}/opengraph-image`, 사용자 생성 URL) → `SHARE_OG_DISALLOW`
+ *
+ * `twitter-image`와 비-ko 로케일은 계속 막힌다(Allow가 `/ko/`에서 시작하고 `opengraph-image`만
+ * 가리킨다). 탭 목록은 `seo.ts`를 import하지 않고 적는다 — 이 파일은 `SITE_URL`만 의존하도록
+ * 두었고(`robots.test.ts`가 그것만 목한다), 탭을 다시 열 때 `ALWAYS_NOINDEX_TAB_ROBOTS`와 함께
+ * 여기를 고친다. `robots.test.ts`의 허용/차단 행렬이 두 방향을 고정한다.
+ */
+const SYMBOL_OG_ALLOW = [`/${DEFAULT_LOCALE}/*/opengraph-image`];
+const NOINDEX_TAB_OG_DISALLOW = [
+    'overall',
+    'financials',
+    'fundamental',
+    'options',
+    'congress',
+    'position',
+].map(tab => `/${DEFAULT_LOCALE}/*/${tab}/opengraph-image`);
+const SHARE_OG_DISALLOW = [`/${DEFAULT_LOCALE}/share/*/opengraph-image`];
+
 export default function robots(): MetadataRoute.Robots {
     return {
         rules: [
@@ -214,8 +246,9 @@ export default function robots(): MetadataRoute.Robots {
                 // 별도 그룹을 만들 필요가 없다 — 이 disallow가 Google 이미지 검색에서도 함께
                 // 적용된다.
                 //
-                // Trade-off: Google 이미지 검색에서 이 OG/twitter-image가 빠지는 손실은
-                // 감수한다(원래 이미지 검색 노출 목적으로 만든 자산이 아니다).
+                // Trade-off: Google 이미지 검색에서 롱테일·noindex 탭의 OG/twitter-image가
+                // 빠지는 손실은 감수한다(원래 이미지 검색 노출 목적으로 만든 자산이 아니다).
+                // 색인되는 탭의 **한국어 OG 이미지**만 `SYMBOL_OG_ALLOW`로 되돌려 둔다.
                 //
                 // ⚠️ **이 disallow를 `*` 그룹으로 올리지 말 것.** 소셜 카드 크롤러가
                 // `*` 그룹을 따르기 때문이다. facebookexternalhit은 robots.txt를 사실상
@@ -225,11 +258,17 @@ export default function robots(): MetadataRoute.Robots {
                 // 굳이 확대하려면 `*`가 아니라 Bingbot/Yeti/Daumoa 전용 그룹을 만들어야
                 // 하고, 그 그룹들도 baseline을 복제해야 한다.
                 userAgent: 'Googlebot',
-                allow: [...BASELINE_ALLOW, ...HUB_SOCIAL_IMAGE_ALLOW],
+                allow: [
+                    ...BASELINE_ALLOW,
+                    ...HUB_SOCIAL_IMAGE_ALLOW,
+                    ...SYMBOL_OG_ALLOW,
+                ],
                 disallow: [
                     ...BASELINE_DISALLOW,
                     '/*/opengraph-image',
                     '/*/twitter-image',
+                    ...NOINDEX_TAB_OG_DISALLOW,
+                    ...SHARE_OG_DISALLOW,
                 ],
             },
             {
