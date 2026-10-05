@@ -458,7 +458,8 @@ export default async function SymbolPage({ params }: Props) {
                     프로즈로 렌더되지 않고 initialAnalysis로 CSR-bailout
                     클라이언트에만 seed되므로(위 SymbolPageClient) 여기엔 중복
                     위험이 없다. 스냅샷이 없으면 TechnicalSnapshotProse가 null을
-                    반환해 빈 셸도 없다.
+                    반환한다 — 아래 여백 래퍼는 남지만 `empty:hidden`으로 접혀
+                    빈 카드나 여백이 보이지 않는다.
                     audit fix FIX 1: 위 chart wrapper 뒤로 옮겨 (a) h1보다 DOM에서
                     뒤에 오게 하고(heading 위계, WCAG 1.3.1), (b) chart+AI 영역의
                     flex 분배에서 완전히 제외해(wrapper가 shrink-0) 더 이상 첫 viewport
