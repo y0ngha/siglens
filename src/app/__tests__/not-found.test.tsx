@@ -19,15 +19,12 @@ vi.mock('@/shared/i18n/locationSurface', async importOriginal => {
 
 import { buildOverrides } from '@/app/_components/notFoundOverrides';
 import { generateMetadata } from '../not-found';
-import { hydrateServerMarkup, renderRoot, visit } from './notFoundHarness';
-
-/**
- * `<title>`은 React가 소유한 호이스터블이다 — `document.title = ''`는 없던 `<title>`을 만든다.
- * 하이드레이션 테스트는 루트를 언마운트하지 않으므로 직접 걷어야 한다.
- */
-function removeTitles(): void {
-    document.querySelectorAll('title').forEach(title => title.remove());
-}
+import {
+    hydrateServerMarkup,
+    removeTitles,
+    renderRoot,
+    visit,
+} from './notFoundHarness';
 
 /**
  * 루트 레이아웃이 없는 자리(전 라우트가 `[locale]/` 아래로 이동)의 404 — 이 파일이

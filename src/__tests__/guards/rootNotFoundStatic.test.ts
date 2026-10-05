@@ -26,19 +26,39 @@ function stripComments(source: string): string {
         .replace(/(?<![:/])\/\/.*$/gm, '');
 }
 
+const RESOLVE_SUFFIXES = ['', '.ts', '.tsx', '/index.ts', '/index.tsx'];
+
+function specifierBase(spec: string, from: string): string | null {
+    if (spec.startsWith('@/')) return path.join(SRC, spec.slice(2));
+    return spec.startsWith('.') ? path.resolve(path.dirname(from), spec) : null;
+}
+
 function resolveSpecifier(spec: string, from: string): string | null {
-    let base: string;
-    if (spec.startsWith('@/')) base = path.join(SRC, spec.slice(2));
-    else if (spec.startsWith('.'))
-        base = path.resolve(path.dirname(from), spec);
-    else return null;
-    const candidates = ['', '.ts', '.tsx', '/index.ts', '/index.tsx'].map(
-        ext => base + ext
-    );
+    const base = specifierBase(spec, from);
+    if (base === null) return null;
     return (
-        candidates.find(file => existsSync(file) && /\.(ts|tsx)$/.test(file)) ??
-        null
+        RESOLVE_SUFFIXES.map(suffix => base + suffix).find(
+            file => existsSync(file) && /\.(ts|tsx)$/.test(file)
+        ) ?? null
     );
+}
+
+interface ImportEdge {
+    readonly spec: string;
+    readonly from: string;
+    readonly resolved: string | null;
+}
+
+function importsOf(file: string): readonly ImportEdge[] {
+    const code = stripComments(readFileSync(file, 'utf8'));
+    return [...code.matchAll(IMPORT_RE)]
+        .map(match => match[1] ?? match[2] ?? match[3])
+        .filter((spec): spec is string => spec !== undefined)
+        .map(spec => ({
+            spec,
+            from: file,
+            resolved: resolveSpecifier(spec, file),
+        }));
 }
 
 interface Graph {
@@ -46,28 +66,41 @@ interface Graph {
     readonly externalSpecifiers: ReadonlyMap<string, readonly string[]>;
 }
 
+interface Walk {
+    readonly seen: ReadonlySet<string>;
+    readonly edges: readonly ImportEdge[];
+}
+
+/** 깊이 우선으로 저장소 내부 import를 따라간다 — 이미 본 파일은 다시 열지 않는다. */
+function walk(file: string, acc: Walk): Walk {
+    if (acc.seen.has(file)) return acc;
+    const edges = importsOf(file);
+    const visited: Walk = {
+        seen: new Set([...acc.seen, file]),
+        edges: [...acc.edges, ...edges],
+    };
+    return edges
+        .flatMap(edge => (edge.resolved === null ? [] : [edge.resolved]))
+        .reduce((next, child) => walk(child, next), visited);
+}
+
 function collectGraph(entry: string): Graph {
-    const seen = new Set<string>();
-    const external = new Map<string, string[]>();
-    const queue = [entry];
-    while (queue.length > 0) {
-        const file = queue.pop()!;
-        if (seen.has(file)) continue;
-        seen.add(file);
-        const code = stripComments(readFileSync(file, 'utf8'));
-        for (const match of code.matchAll(IMPORT_RE)) {
-            const spec = match[1] ?? match[2] ?? match[3];
-            if (spec === undefined) continue;
-            const resolved = resolveSpecifier(spec, file);
-            if (resolved) queue.push(resolved);
-            else external.set(spec, [...(external.get(spec) ?? []), file]);
-        }
-    }
+    const { seen, edges } = walk(entry, { seen: new Set(), edges: [] });
+    const external = edges
+        .filter(edge => edge.resolved === null)
+        .reduce<ReadonlyMap<string, readonly string[]>>(
+            (map, edge) =>
+                new Map(map).set(edge.spec, [
+                    ...(map.get(edge.spec) ?? []),
+                    edge.from,
+                ]),
+            new Map()
+        );
     return { files: [...seen].toSorted(), externalSpecifiers: external };
 }
 
 const graph = collectGraph(ENTRY);
-const rel = (file: string) => path.relative(SRC, file);
+const rel = (file: string): string => path.relative(SRC, file);
 
 describe('루트 404 import 그래프는 정적이다 — 요청 API 금지', () => {
     it('그래프가 비어 있지 않다(탐색이 깨지면 가드가 공회전한다)', () => {
