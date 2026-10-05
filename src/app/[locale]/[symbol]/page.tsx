@@ -472,15 +472,20 @@ export default async function SymbolPage({ params }: Props) {
                     (롱테일 `<티커> 주가`)이고, 봇은 라이브 위젯의 평이화를 받지
                     못하므로(봇 가드) 여기서 실어 보내지 않으면 색인되는 본문이
                     전문 산문으로만 남는다. */}
-                <TechnicalSnapshotProse
-                    content={technicalSnapshot?.content}
-                    symbol={ticker}
-                    displayName={displayName}
-                    marketProfile={marketProfile}
-                    generatedAt={technicalSnapshot?.generatedAt}
-                    plain={technicalSnapshot?.plain}
-                    duplicatesLiveWidget
-                />
+                {/* 차트 바로 밑에 붙으면 접기 카드가 차트의 일부처럼 읽힌다(사용자
+                    제보) — 위로 띄운다. 스냅샷이 없으면 TechnicalSnapshotProse가
+                    null이라 래퍼가 비고, `empty:hidden`이 그 여백까지 걷어낸다. */}
+                <div className="mt-6 empty:hidden">
+                    <TechnicalSnapshotProse
+                        content={technicalSnapshot?.content}
+                        symbol={ticker}
+                        displayName={displayName}
+                        marketProfile={marketProfile}
+                        generatedAt={technicalSnapshot?.generatedAt}
+                        plain={technicalSnapshot?.plain}
+                        duplicatesLiveWidget
+                    />
+                </div>
             </main>
         </>
     );
