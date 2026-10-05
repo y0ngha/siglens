@@ -1,33 +1,14 @@
 import 'server-only';
+import { STATIC_PAGE_PATHS } from '@/entities/sitemap-entry/lib/staticPagePaths';
 import type { SitemapEntry } from '@/entities/sitemap-entry/model';
 import { getRedisClient } from '@/shared/cache/redisClient';
-import {
-    ABOUT_PATH,
-    METHODOLOGY_PATH,
-    PRIVACY_PATH,
-    TERMS_PATH,
-} from '@/shared/lib/legal';
 import { SITE_URL } from '@/shared/lib/seo';
 
 /** 마지막으로 IndexNow에 알린 정적 페이지 lastmod(해시: URL → ISO). */
 export const STATIC_LASTMOD_KEY = 'indexnow:static-lastmod';
 
-/**
- * lastmod 변화를 감시하는 정적 페이지.
- *
- * 본문이 상수·약관·정적 데이터라 프리웜이 건드리지 않는다 — 바뀌는 시점은 sitemap의
- * `lastmod`(약관 발효일, 소개·방법론 갱신일, 백테스트 데이터일)가 유일하게 알려 준다.
- */
-const TRACKED_STATIC_PATHS = [
-    ABOUT_PATH,
-    METHODOLOGY_PATH,
-    PRIVACY_PATH,
-    TERMS_PATH,
-    '/backtesting',
-] as const;
-
 const TRACKED_STATIC_URLS: ReadonlySet<string> = new Set(
-    TRACKED_STATIC_PATHS.map(path => `${SITE_URL}${path}`)
+    STATIC_PAGE_PATHS.map(path => `${SITE_URL}${path}`)
 );
 
 export interface StaticLastmodDiff {

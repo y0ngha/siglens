@@ -58,11 +58,16 @@ function formatterFor(locale: Locale, marketProfile: MarketProfileId) {
  * `asOf === undefined`와 동일하게 취급해 고정 캡션으로 폴백해야 한다 — 잘못된
  * 값은 렌더를 멈추는 게 아니라 항상 안전하게 degrade해야 한다.
  */
+export interface FormatSnapshotAsOfOptions {
+    /** 날짜 뒤에 UTC `HH:mm`을 붙인다 — 크립토처럼 시각이 의미 있는 기준에서만. */
+    readonly withTime?: boolean;
+}
+
 export function formatSnapshotAsOf(
     date: Date,
     marketProfile: MarketProfileId,
     locale: Locale,
-    withTime = false
+    { withTime = false }: FormatSnapshotAsOfOptions = {}
 ): string | null {
     if (Number.isNaN(date.getTime())) return null;
     const formatted = formatterFor(locale, marketProfile).format(date);

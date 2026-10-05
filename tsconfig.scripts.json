@@ -18,7 +18,9 @@
         // 전부 `server-only` TS2882로 깨진다 — 자세한 사정은 그 파일 주석에.
         "scripts/next-ambient.d.ts",
         "scripts/backfillEconomicCalendar.ts",
+        "scripts/indexnow-backfill.ts",
         "scripts/lib/chunkDateRange.ts",
+        "scripts/lib/indexNowBackfill.ts",
         "scripts/lib/cryptoPoolInsert.ts",
         "scripts/lib/krTrendingInsert.ts",
         "scripts/lib/normalizeIndicatorBaseName.ts",

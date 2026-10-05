@@ -24,9 +24,9 @@ import {
     INDEXNOW_ENDPOINTS,
     INDEXNOW_KEY,
     INDEXNOW_KEY_LOCATION,
-} from '../src/shared/config/indexNow';
-import { POPULAR_CRYPTOS } from '../src/shared/config/popular-cryptos';
-import { POPULAR_TICKERS } from '../src/shared/config/popular-tickers';
+} from '@/shared/config/indexNow';
+import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
+import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import {
     BACKFILL_CHUNK_SIZE,
     BACKFILL_HOST,
@@ -45,20 +45,22 @@ import {
 const SAMPLE_SIZE = 10;
 const ACCEPTED_STATUSES = new Set([200, 202]);
 
-/** 한 sitemap이라도 못 받으면 던진다 — 부분 목록으로 진행하지 않는다. */
+/** 한 sitemap이라도 못 받으면 던진다 — 부분 목록으로 진행하지 않는다. 결과는 kind 순서를 유지한다. */
 async function fetchRemovalUrls(): Promise<string[]> {
-    const collected: string[] = [];
-    for (const kind of REMOVAL_SITEMAP_KINDS) {
-        const url = removalSitemapUrl(kind);
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`removal sitemap ${kind}: HTTP ${response.status}`);
-        }
-        const locs = parseSitemapLocs(await response.text());
-        console.log(`removal sitemap ${kind}: ${locs.length} URLs`);
-        collected.push(...locs);
-    }
-    return collected;
+    const perKind = await Promise.all(
+        REMOVAL_SITEMAP_KINDS.map(async kind => {
+            const response = await fetch(removalSitemapUrl(kind));
+            if (!response.ok) {
+                throw new Error(
+                    `removal sitemap ${kind}: HTTP ${response.status}`
+                );
+            }
+            const locs = parseSitemapLocs(await response.text());
+            console.log(`removal sitemap ${kind}: ${locs.length} URLs`);
+            return locs;
+        })
+    );
+    return perKind.flat();
 }
 
 /** 던지지 않는다 — 실패(비-OK·네트워크 오류)는 `false`로 돌려 호출부가 번호와 재개 명령을 찍게 한다. */

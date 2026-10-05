@@ -167,12 +167,9 @@ export function SnapshotSummarySection({
     const formattedAsOf =
         resolvedAsOf === null
             ? null
-            : formatSnapshotAsOf(
-                  resolvedAsOf.instant,
-                  marketProfile,
-                  locale,
-                  resolvedAsOf.withTime
-              );
+            : formatSnapshotAsOf(resolvedAsOf.instant, marketProfile, locale, {
+                  withTime: resolvedAsOf.withTime,
+              });
     const captionKey = AS_OF_CAPTION_KEY[marketProfile];
     const caption =
         formattedAsOf === null

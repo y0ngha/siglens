@@ -1,10 +1,5 @@
 import { MS_PER_HOUR, MS_PER_MINUTE } from '@/shared/config/time';
-import {
-    ABOUT_PATH,
-    METHODOLOGY_PATH,
-    PRIVACY_PATH,
-    TERMS_PATH,
-} from '@/shared/lib/legal';
+import { STATIC_PAGE_PATHS } from './staticPagePaths';
 
 /**
  * IndexNow 제출을 **얼마나 미룰지**의 표 — URL 종류별 지연.
@@ -43,13 +38,7 @@ export const INDEXNOW_DELAY_HOURS: Readonly<Record<IndexNowRouteKind, number>> =
 /** 페이지가 재생성을 끝냈을 것이라고 보는 데 더하는 여유. */
 const SAFETY_MARGIN_MS = 15 * MS_PER_MINUTE;
 
-const STATIC_PAGE_PATHS: ReadonlySet<string> = new Set([
-    ABOUT_PATH,
-    METHODOLOGY_PATH,
-    PRIVACY_PATH,
-    TERMS_PATH,
-    '/backtesting',
-]);
+const STATIC_PAGE_PATH_SET: ReadonlySet<string> = new Set(STATIC_PAGE_PATHS);
 
 /** 주기 제출 대상이 아닌 경로 — 홈·`/symbols`는 본문이 상수라 배포로만 바뀐다. */
 const NEVER_SUBMIT_PATHS: ReadonlySet<string> = new Set(['/', '/symbols']);
@@ -64,7 +53,7 @@ export function classifyIndexNowUrl(url: string): IndexNowRouteKind | null {
     if (!URL.canParse(url)) return null;
     const path = new URL(url).pathname.replace(/\/$/, '') || '/';
     if (NEVER_SUBMIT_PATHS.has(path)) return null;
-    if (STATIC_PAGE_PATHS.has(path)) return 'staticPage';
+    if (STATIC_PAGE_PATH_SET.has(path)) return 'staticPage';
     if (path === '/market' || path.startsWith('/market/')) return 'marketHub';
     if (path === '/economy' || path.startsWith('/economy/')) return 'economy';
     if (path === '/fear-greed' || path.startsWith('/fear-greed/')) {

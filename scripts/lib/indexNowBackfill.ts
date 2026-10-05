@@ -9,7 +9,7 @@
  *  3. 큐레이션 종목·크립토의 **항상-noindex 탭** 6종 URL(차트·뉴스·공포탐욕을 뺀 나머지 중 노출됐던 탭).
  */
 
-import { SITE_HOST } from '../../src/shared/lib/seo';
+import { SITE_HOST } from '@/shared/lib/seo';
 
 /**
  * 호스트의 단일 소스는 `SITE_HOST`다. 백필은 항상 **운영** 호스트를 대상으로 하므로 `SITE_URL`

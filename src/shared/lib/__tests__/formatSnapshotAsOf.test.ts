@@ -162,7 +162,7 @@ describe('formatSnapshotAsOf(withTime)', () => {
                 new Date('2026-10-05T09:07:00Z'),
                 'crypto',
                 'ko',
-                true
+                { withTime: true }
             )
         ).toBe('2026년 10월 5일 09:07');
     });
@@ -175,7 +175,9 @@ describe('formatSnapshotAsOf(withTime)', () => {
 
     it('Invalid Date는 withTime이어도 null', () => {
         expect(
-            formatSnapshotAsOf(new Date(NaN), 'crypto', 'ko', true)
+            formatSnapshotAsOf(new Date(NaN), 'crypto', 'ko', {
+                withTime: true,
+            })
         ).toBeNull();
     });
 });
@@ -184,7 +186,11 @@ describe('resolveSnapshotAsOf', () => {
     const fmt = (
         r: ReturnType<typeof resolveSnapshotAsOf>,
         profile: 'us-equity' | 'kr-equity' | 'crypto'
-    ) => r && formatSnapshotAsOf(r.instant, profile, 'ko', r.withTime);
+    ) =>
+        r &&
+        formatSnapshotAsOf(r.instant, profile, 'ko', {
+            withTime: r.withTime,
+        });
 
     it('KR: 전날 저녁에 분석해 다음 날 아침 행으로 저장돼도 분석 기준 세션 날짜를 표기한다', () => {
         // analyzedAt 10/02 02:00Z(KRX 장중 11:00 KST) → 직전 완료 세션은 10/01.

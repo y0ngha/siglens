@@ -69,13 +69,17 @@ export async function enqueueIndexNow(
     const redis = getRedisClient();
     if (redis === null || entries.length === 0) return 0;
 
-    // 같은 URL이 여럿이면 **첫** 항목만 남긴다.
-    const [first, ...rest] = entries
-        .filter(
-            (entry, index) =>
-                entries.findIndex(other => other.url === entry.url) === index
-        )
-        .map(({ url, notBeforeMs }) => ({ member: url, score: notBeforeMs }));
+    // 같은 URL이 여럿이면 **첫** 항목만 남긴다. reduce 누산기(Map) 하나를 한 번 훑는다 — 선형이고
+    // 바깥 상태를 건드리지 않는다.
+    const [first, ...rest] = [
+        ...entries.reduce(
+            (firstByUrl, { url, notBeforeMs }) =>
+                firstByUrl.has(url)
+                    ? firstByUrl
+                    : firstByUrl.set(url, notBeforeMs),
+            new Map<string, number>()
+        ),
+    ].map(([member, score]) => ({ member, score }));
     const added = await redis.zadd(
         INDEXNOW_PENDING_KEY,
         { nx: true },

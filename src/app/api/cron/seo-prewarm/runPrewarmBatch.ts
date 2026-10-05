@@ -732,7 +732,7 @@ async function processSymbol(
     const fmpSymbol = assetInfo?.fmpSymbol;
 
     // 이번 실행으로 스냅샷 행을 새로 쓴(harvest된) 탭 — 태그 무효화와 IndexNow 제출의 근거다.
-    const harvestedTabs: SeoSnapshotTab[] = [];
+    let harvestedTabs: readonly SeoSnapshotTab[] = [];
     // 실제로 TAB_SEAMS[tab](submit)을 호출한(=새 FMP 호출이 발생했을 수 있는) 탭 수.
     // 이미 fresh거나 backoff(skip) 중인 탭, 그리고 poll-resume(신규 submit 아님)은 제외한다.
     let seamsRunForSymbol = 0;
@@ -807,7 +807,7 @@ async function processSymbol(
                     // 기준일 검사·강제 재생성이 같은 심볼 문맥과 달력 시각을 쓴다.
                     { seam: { symbol: u.symbol, companyName, fmpSymbol }, now }
                 );
-                if (harvested) harvestedTabs.push(tab);
+                if (harvested) harvestedTabs = [...harvestedTabs, tab];
             } finally {
                 // 완료(done/error) 즉시 마커를 제거해 다음 tick이 TTL(30min) 만료를
                 // 기다리지 않고 바로 최신 상태를 반영하게 한다.

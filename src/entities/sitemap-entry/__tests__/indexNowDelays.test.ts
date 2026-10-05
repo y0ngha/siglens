@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { SITE_URL } from '@/shared/lib/seo';
+import { STATIC_PAGE_PATHS } from '../lib/staticPagePaths';
 import {
     INDEXNOW_DELAY_HOURS,
     classifyIndexNowUrl,
@@ -52,6 +54,32 @@ describe('classifyIndexNowUrl', () => {
         expect(classifyIndexNowUrl('https://siglens.io/AAPL/')).toBe(
             'symbolChart'
         );
+    });
+});
+
+describe('STATIC_PAGE_PATHS — 감시 대상 정적 페이지', () => {
+    it.each([...STATIC_PAGE_PATHS])(
+        '%s는 정적 페이지로 분류돼 제출 지연이 정해진다(null이면 변화가 감지돼도 제출되지 않는다)',
+        path => {
+            expect(classifyIndexNowUrl(`${SITE_URL}${path}`)).toBe(
+                'staticPage'
+            );
+            expect(
+                indexNowNotBeforeMs(`${SITE_URL}${path}`, NOW, {
+                    invalidatedByCron: false,
+                })
+            ).not.toBeNull();
+        }
+    );
+
+    it('다섯 페이지다(소개·방법론·방침·약관·백테스팅)', () => {
+        expect([...STATIC_PAGE_PATHS]).toEqual([
+            '/about',
+            '/methodology',
+            '/privacy',
+            '/terms',
+            '/backtesting',
+        ]);
     });
 });
 
