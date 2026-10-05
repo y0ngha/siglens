@@ -291,13 +291,25 @@ describe('drainIndexNow', () => {
         }
     );
 
-    it('403(키 검증 실패)은 지우지 않는다 — URL이 아니라 설정 문제다', async () => {
+    it('403(키 검증 실패)은 지우지 않고 1시간 backoff를 세운다 — 깨진 키로 매 tick 다시 POST하지 않는다', async () => {
         stubQueue(['https://siglens.io/AAPL']);
         submit.mockResolvedValue(result({ kind: 'rejected', status: 403 }, 1));
 
         await drainIndexNow(NOW, submit);
 
         expect(redisFns.zrem).not.toHaveBeenCalled();
+        expect(redisFns.set).toHaveBeenCalledWith(INDEXNOW_BACKOFF_KEY, '1', {
+            ex: 3600,
+        });
+    });
+
+    it('URL 문제(400·422)는 backoff 없이 지우기만 한다', async () => {
+        stubQueue(['https://siglens.io/bad']);
+        submit.mockResolvedValue(result({ kind: 'rejected', status: 422 }, 1));
+
+        await drainIndexNow(NOW, submit);
+
+        expect(redisFns.zrem).toHaveBeenCalled();
         expect(redisFns.set).not.toHaveBeenCalled();
     });
 
@@ -308,6 +320,7 @@ describe('drainIndexNow', () => {
         await drainIndexNow(NOW, submit);
 
         expect(redisFns.zrem).not.toHaveBeenCalled();
+        expect(redisFns.set).not.toHaveBeenCalled();
     });
 
     it('만기분이 없으면 제출하지 않는다', async () => {

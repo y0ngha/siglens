@@ -29,6 +29,7 @@ import { POPULAR_CRYPTOS } from '../src/shared/config/popular-cryptos';
 import { POPULAR_TICKERS } from '../src/shared/config/popular-tickers';
 import {
     BACKFILL_CHUNK_SIZE,
+    BACKFILL_HOST,
     REMOVAL_SITEMAP_KINDS,
     alwaysNoindexTabUrls,
     chunkUrls,
@@ -41,7 +42,6 @@ import {
     removedSegmentUrls,
 } from './lib/indexNowBackfill';
 
-const HOST = 'siglens.io';
 const SAMPLE_SIZE = 10;
 const ACCEPTED_STATUSES = new Set([200, 202]);
 
@@ -69,7 +69,7 @@ async function submitChunk(urlList: readonly string[]): Promise<boolean> {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json; charset=utf-8' },
                 body: JSON.stringify({
-                    host: HOST,
+                    host: BACKFILL_HOST,
                     key: INDEXNOW_KEY,
                     keyLocation: INDEXNOW_KEY_LOCATION,
                     urlList,

@@ -191,8 +191,8 @@ describe('resolveSnapshotAsOf', () => {
         // generatedAt은 10/05 22:00Z(다음 영업일 아침)이지만 쓰이지 않는다.
         const resolved = resolveSnapshotAsOf(
             {
-                analyzedAt: new Date('2026-10-02T02:00:00Z'),
-                generatedAt: new Date('2026-10-05T22:00:00Z'),
+                analyzedAtMs: Date.parse('2026-10-02T02:00:00Z'),
+                generatedAtMs: Date.parse('2026-10-05T22:00:00Z'),
             },
             'kr-equity'
         );
@@ -204,9 +204,9 @@ describe('resolveSnapshotAsOf', () => {
         // 미국 일봉 10/02(금) 00:00Z 시작. 분석은 10/05에 돌았지만 데이터는 10/02 봉.
         const resolved = resolveSnapshotAsOf(
             {
-                barTime: new Date('2026-10-02T00:00:00Z'),
-                analyzedAt: new Date('2026-10-05T21:30:00Z'),
-                generatedAt: new Date('2026-10-05T22:00:00Z'),
+                barTimeMs: Date.parse('2026-10-02T00:00:00Z'),
+                analyzedAtMs: Date.parse('2026-10-05T21:30:00Z'),
+                generatedAtMs: Date.parse('2026-10-05T22:00:00Z'),
             },
             'us-equity'
         );
@@ -216,7 +216,7 @@ describe('resolveSnapshotAsOf', () => {
     it('KR barTime(KST 자정 시작)도 그 봉의 세션 날짜가 된다', () => {
         // 2026-10-01 00:00 KST = 09-30 15:00Z
         const resolved = resolveSnapshotAsOf(
-            { barTime: new Date('2026-09-30T15:00:00Z') },
+            { barTimeMs: Date.parse('2026-09-30T15:00:00Z') },
             'kr-equity'
         );
         expect(fmt(resolved, 'kr-equity')).toBe('2026년 10월 1일');
@@ -225,7 +225,7 @@ describe('resolveSnapshotAsOf', () => {
     it('휴장일(미국 추수감사절 다음 날 이전)을 건너뛴다 — 목요일 휴장 후 금요일 새벽 분석', () => {
         // 2026-11-26(목)은 NYSE 휴장. 11-27(금) 03:00Z 분석 → 직전 완료 세션은 11-25(수).
         const resolved = resolveSnapshotAsOf(
-            { analyzedAt: new Date('2026-11-27T03:00:00Z') },
+            { analyzedAtMs: Date.parse('2026-11-27T03:00:00Z') },
             'us-equity'
         );
         expect(fmt(resolved, 'us-equity')).toBe('2026년 11월 25일');
@@ -234,8 +234,8 @@ describe('resolveSnapshotAsOf', () => {
     it('크립토는 날짜와 시각을 낸다(analyzedAt → generatedAt → barTime)', () => {
         const resolved = resolveSnapshotAsOf(
             {
-                barTime: new Date('2026-10-05T00:00:00Z'),
-                analyzedAt: new Date('2026-10-05T09:00:00Z'),
+                barTimeMs: Date.parse('2026-10-05T00:00:00Z'),
+                analyzedAtMs: Date.parse('2026-10-05T09:00:00Z'),
             },
             'crypto'
         );
@@ -247,7 +247,7 @@ describe('resolveSnapshotAsOf', () => {
         expect(resolveSnapshotAsOf({}, 'us-equity')).toBeNull();
         expect(
             resolveSnapshotAsOf(
-                { generatedAt: new Date(NaN), analyzedAt: null },
+                { generatedAtMs: NaN, analyzedAtMs: null },
                 'crypto'
             )
         ).toBeNull();
@@ -256,8 +256,8 @@ describe('resolveSnapshotAsOf', () => {
     it('Invalid인 앞선 후보는 건너뛰고 다음 후보를 쓴다', () => {
         const resolved = resolveSnapshotAsOf(
             {
-                analyzedAt: new Date(NaN),
-                generatedAt: new Date('2026-10-05T22:00:00Z'),
+                analyzedAtMs: NaN,
+                generatedAtMs: Date.parse('2026-10-05T22:00:00Z'),
             },
             'us-equity'
         );

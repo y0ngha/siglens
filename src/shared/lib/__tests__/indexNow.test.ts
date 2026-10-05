@@ -7,6 +7,7 @@ import {
 } from '@/shared/config/indexNow';
 import {
     isIndexNowEnabled,
+    isUrlRejectionStatus,
     parseRetryAfterSeconds,
     submitIndexNow,
 } from '../indexNow';
@@ -413,5 +414,15 @@ describe('parseRetryAfterSeconds', () => {
         expect(parseRetryAfterSeconds(null, NOW)).toBeNull();
         expect(parseRetryAfterSeconds('soon', NOW)).toBeNull();
         expect(parseRetryAfterSeconds('-5', NOW)).toBeNull();
+    });
+});
+
+describe('isUrlRejectionStatus', () => {
+    it.each([400, 422])('%i는 URL 자체의 문제다', status => {
+        expect(isUrlRejectionStatus(status)).toBe(true);
+    });
+
+    it.each([401, 403, 404, 429, 500])('%i는 URL 문제가 아니다', status => {
+        expect(isUrlRejectionStatus(status)).toBe(false);
     });
 });

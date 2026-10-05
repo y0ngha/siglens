@@ -9,6 +9,13 @@ export const MS_PER_HOUR = SECONDS_PER_HOUR * MS_PER_SECOND;
 export const MS_PER_DAY = SECONDS_PER_DAY * MS_PER_SECOND;
 export const KST_OFFSET_HOURS = 9;
 
+/**
+ * 30min — 장 마감 뒤 EOD 데이터 정착 대기(spec §6). 스냅샷 신선도 경계
+ * (`seo-snapshot/lib/freshness`)와 캡션의 "직전 완료 세션" 판정(`formatSnapshotAsOf`)이
+ * **같은 값**을 써야 한다 — 따로 두면 캡션이 말하는 세션과 신선도가 보는 세션이 갈린다.
+ */
+export const SETTLE_BUFFER_MINUTES = 30;
+
 /** 12h — 뉴스/옵션/종합 페이지 캐시 TTL(페이지 revalidate와 맞춰 s-maxage clamp 방지). */
 export const SECONDS_PER_HALF_DAY = SECONDS_PER_HOUR * 12;
 /** 6h — 종목 차트(bars/analysis peek) 캐시 TTL = 공유 layout이 만드는 symbol 라우트 floor. */

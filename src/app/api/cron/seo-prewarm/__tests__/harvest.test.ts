@@ -819,6 +819,59 @@ describe('resolveHarvest — 기준일 검사(technical)', () => {
         );
     });
 
+    it('가격 비교는 dataAsOf.close를 우선한다 — planCheck.currentPrice가 달라도 dataAsOf가 맞으면 재생성하지 않는다', async () => {
+        mockFetchPageLastClose.mockResolvedValue(110);
+
+        await resolveHarvest(
+            'AAPL',
+            'technical',
+            {
+                status: 'cached',
+                result: {
+                    ...FRESH_RESULT,
+                    dataAsOf: { ...FRESH_RESULT.dataAsOf, close: 110 },
+                    planCheck: { currentPrice: 50 },
+                },
+            },
+            repo as never,
+            counts,
+            ctx
+        );
+
+        expect(mockPrewarmTechnical).not.toHaveBeenCalled();
+    });
+
+    it('dataAsOf가 없으면 planCheck.currentPrice로 물러나 비교한다', async () => {
+        mockFetchPageLastClose.mockResolvedValue(110);
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'done',
+            result: FRESH_RESULT,
+        });
+
+        await resolveHarvest(
+            'AAPL',
+            'technical',
+            {
+                status: 'cached',
+                // 시각은 신선하고(analyzedAt 경계 이후) dataAsOf는 없다.
+                result: {
+                    analyzedAt: '2026-10-02T20:45:00.000Z',
+                    planCheck: { currentPrice: 100 },
+                },
+            },
+            repo as never,
+            counts,
+            ctx
+        );
+
+        expect(mockPrewarmTechnical).toHaveBeenCalledWith(
+            'AAPL',
+            'Apple Inc.',
+            undefined,
+            true
+        );
+    });
+
     it('가격 차이가 0.3% 이내면 재생성하지 않는다', async () => {
         mockFetchPageLastClose.mockResolvedValue(110);
 

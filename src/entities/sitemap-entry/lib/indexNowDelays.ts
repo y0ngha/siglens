@@ -73,7 +73,6 @@ export function classifyIndexNowUrl(url: string): IndexNowRouteKind | null {
     if (path === '/news' || path === '/news/us') return 'newsIndex';
     if (path.startsWith('/news/')) return 'newsCategory';
 
-    // 나머지는 `/{SYMBOL}` 또는 `/{SYMBOL}/{tab}` 형태다.
     const segments = path.split('/').filter(segment => segment.length > 0);
     if (segments.length === 1) return 'symbolChart';
     if (segments.length === 2 && segments[1] === 'news') return 'symbolNews';

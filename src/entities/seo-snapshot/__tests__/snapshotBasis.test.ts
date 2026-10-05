@@ -29,6 +29,15 @@ describe('readSnapshotBasis', () => {
         });
     });
 
+    it('dataAsOf.close가 있으면 planCheck.currentPrice보다 우선한다', () => {
+        expect(
+            readSnapshotBasis({
+                dataAsOf: { barTime: sec('2026-10-02T00:00:00Z'), close: 110 },
+                planCheck: { currentPrice: 999 },
+            }).close
+        ).toBe(110);
+    });
+
     it.each([
         null,
         undefined,

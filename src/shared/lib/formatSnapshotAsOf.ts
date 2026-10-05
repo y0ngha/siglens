@@ -1,6 +1,6 @@
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
-import { MS_PER_DAY } from '@/shared/config/time';
+import { MS_PER_DAY, SETTLE_BUFFER_MINUTES } from '@/shared/config/time';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { cachedDateTimeFormat } from '@/shared/lib/intlFormatCache';
 import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
@@ -82,12 +82,12 @@ function utcClockTime(date: Date): string {
 
 /** 스냅샷 `content`와 행에서 읽은 기준 후보. 없으면 `null`/생략. */
 export interface SnapshotAsOfCandidates {
-    /** 분석에 쓴 마지막 봉의 시작 시각(`dataAsOf.barTime`). */
-    readonly barTime?: Date | null;
-    /** 분석 실행 시각(`analyzedAt`). */
-    readonly analyzedAt?: Date | null;
-    /** 스냅샷 행의 생성 시각 — 마지막 폴백. */
-    readonly generatedAt?: Date | null;
+    /** 분석에 쓴 마지막 봉의 시작 시각(ms, `dataAsOf.barTime`). */
+    readonly barTimeMs?: number | null;
+    /** 분석 실행 시각(ms, `analyzedAt`). */
+    readonly analyzedAtMs?: number | null;
+    /** 스냅샷 행의 생성 시각(ms) — 마지막 폴백. */
+    readonly generatedAtMs?: number | null;
 }
 
 export interface ResolvedSnapshotAsOf {
@@ -97,11 +97,10 @@ export interface ResolvedSnapshotAsOf {
     readonly withTime: boolean;
 }
 
-/** 캡션 정착 버퍼 — `entities/seo-snapshot/lib/freshness`의 30분과 같은 값이다. */
-const CAPTION_SETTLE_BUFFER_MINUTES = 30;
-
-function validDate(date: Date | null | undefined): Date | null {
-    return date != null && !Number.isNaN(date.getTime()) ? date : null;
+function validDate(ms: number | null | undefined): Date | null {
+    if (ms === null || ms === undefined) return null;
+    const date = new Date(ms);
+    return Number.isNaN(date.getTime()) ? null : date;
 }
 
 /**
@@ -129,9 +128,9 @@ export function resolveSnapshotAsOf(
     candidates: SnapshotAsOfCandidates,
     marketProfile: MarketProfileId
 ): ResolvedSnapshotAsOf | null {
-    const barTime = validDate(candidates.barTime);
-    const analyzedAt = validDate(candidates.analyzedAt);
-    const generatedAt = validDate(candidates.generatedAt);
+    const barTime = validDate(candidates.barTimeMs);
+    const analyzedAt = validDate(candidates.analyzedAtMs);
+    const generatedAt = validDate(candidates.generatedAtMs);
 
     if (marketProfile === 'crypto') {
         const instant = analyzedAt ?? generatedAt ?? barTime;
@@ -144,7 +143,7 @@ export function resolveSnapshotAsOf(
             instant: lastClosedSessionCloseUtc(
                 spec,
                 new Date(barTime.getTime() + MS_PER_DAY),
-                CAPTION_SETTLE_BUFFER_MINUTES
+                SETTLE_BUFFER_MINUTES
             ),
             withTime: false,
         };
@@ -156,7 +155,7 @@ export function resolveSnapshotAsOf(
               instant: lastClosedSessionCloseUtc(
                   spec,
                   instant,
-                  CAPTION_SETTLE_BUFFER_MINUTES
+                  SETTLE_BUFFER_MINUTES
               ),
               withTime: false,
           };

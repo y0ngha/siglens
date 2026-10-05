@@ -9,7 +9,14 @@
  *  3. 큐레이션 종목·크립토의 **항상-noindex 탭** 6종 URL(차트·뉴스·공포탐욕을 뺀 나머지 중 노출됐던 탭).
  */
 
-export const BACKFILL_SITE_URL = 'https://siglens.io';
+import { SITE_HOST } from '../../src/shared/lib/seo';
+
+/**
+ * 호스트의 단일 소스는 `SITE_HOST`다. 백필은 항상 **운영** 호스트를 대상으로 하므로 `SITE_URL`
+ * (환경 변수로 바뀐다)이 아니라 호스트에서 URL을 만든다.
+ */
+export const BACKFILL_HOST = SITE_HOST;
+export const BACKFILL_SITE_URL = `https://${BACKFILL_HOST}`;
 
 /** IndexNow 요청 하나의 `urlList` 상한(`INDEXNOW_MAX_URLS_PER_REQUEST`와 같다). */
 export const BACKFILL_CHUNK_SIZE = 10_000;
@@ -121,13 +128,13 @@ export function alwaysNoindexTabUrls(symbols: readonly string[]): string[] {
 
 /** 중복을 없애고(순서 유지) 운영 호스트의 URL만 남긴다. */
 export function normalizeBackfillUrls(urls: readonly string[]): string[] {
-    const seen = new Set<string>();
-    for (const url of urls) {
-        if (URL.canParse(url) && new URL(url).host === 'siglens.io') {
-            seen.add(url);
-        }
-    }
-    return [...seen];
+    return [
+        ...new Set(
+            urls.filter(
+                url => URL.canParse(url) && new URL(url).host === BACKFILL_HOST
+            )
+        ),
+    ];
 }
 
 export function chunkUrls(urls: readonly string[], size: number): string[][] {

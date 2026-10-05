@@ -20,7 +20,9 @@ import { SITE_HOST, SITE_URL } from '@/shared/lib/seo';
  *  - `empty`: 보낼 수 있는 URL이 하나도 없다(호스트 불일치·파싱 불가).
  *  - `rateLimited`: 429. `Retry-After`가 있으면 초 단위로 싣는다(없으면 `null`).
  *  - `rejected`: 그 밖의 4xx — 같은 요청을 다시 보내도 같은 답이다. 400·422는 **URL 자체가**
- *    잘못이고(대기열에서 지운다), 403은 키 검증 실패라 URL이 아니라 설정이 문제다(남겨 둔다).
+ *    잘못이라 대기열에서 지운다. 그 밖(403 = 키 검증 실패 등)은 URL이 아니라 설정·상대 쪽 문제라
+ *    **지우지 않고** 1시간 쉰다. 이 정책의 판정은 `isUrlRejectionStatus` 한 곳이 소유한다 —
+ *    대기열(`indexNowQueue`)은 그 함수만 부른다.
  *  - `transient`: 5xx·408·네트워크 오류·타임아웃. 다시 보내면 통할 수 있다(`status`는 없으면 `null`).
  */
 export type IndexNowOutcome =
@@ -101,8 +103,22 @@ const {
     HTTP_STATUS_TOO_MANY_REQUESTS,
     HTTP_STATUS_REQUEST_TIMEOUT,
     HTTP_STATUS_BAD_REQUEST,
+    HTTP_STATUS_UNPROCESSABLE_ENTITY,
     HTTP_STATUS_INTERNAL_SERVER_ERROR,
 } = constants;
+
+/**
+ * 이 거절 상태가 **URL 자체의 문제**인가(= 다시 보내도 같은 답이라 대기열에서 지운다).
+ *
+ * 400(형식 오류)·422(호스트 불일치)만이다. 403·그 밖의 4xx는 URL이 아니라 키·설정 문제라
+ * 해당하지 않는다(`IndexNowOutcome`의 `rejected` 설명).
+ */
+export function isUrlRejectionStatus(status: number): boolean {
+    return (
+        status === HTTP_STATUS_BAD_REQUEST ||
+        status === HTTP_STATUS_UNPROCESSABLE_ENTITY
+    );
+}
 
 function isAccepted(status: number): boolean {
     return status === HTTP_STATUS_OK || status === HTTP_STATUS_ACCEPTED;
@@ -203,11 +219,10 @@ const OUTCOME_PRECEDENCE: readonly IndexNowOutcome['kind'][] = [
 ];
 
 function foldOutcomes(outcomes: readonly IndexNowOutcome[]): IndexNowOutcome {
-    for (const kind of OUTCOME_PRECEDENCE) {
-        const found = outcomes.find(outcome => outcome.kind === kind);
-        if (found !== undefined) return found;
-    }
-    return { kind: 'ok' };
+    const [mostActionable] = OUTCOME_PRECEDENCE.flatMap(kind =>
+        outcomes.filter(outcome => outcome.kind === kind)
+    );
+    return mostActionable ?? { kind: 'ok' };
 }
 
 /**

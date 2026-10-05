@@ -2,9 +2,10 @@ import {
     MS_PER_HOUR,
     MS_PER_MINUTE,
     MS_PER_SECOND,
+    SETTLE_BUFFER_MINUTES,
 } from '@/shared/config/time';
 import { prewarmSessionSpecFor } from './applicability';
-import { SETTLE_BUFFER_MINUTES, snapshotCloseBoundaryFor } from './freshness';
+import { snapshotCloseBoundaryFor } from './freshness';
 
 const CRYPTO_SETTLE_BUFFER_MS = SETTLE_BUFFER_MINUTES * MS_PER_MINUTE;
 

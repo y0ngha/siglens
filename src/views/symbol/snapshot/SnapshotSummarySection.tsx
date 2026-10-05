@@ -4,7 +4,7 @@ import { useId, type ReactNode } from 'react';
 import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
 import { SnapshotProseDisclosure } from './SnapshotProseDisclosure';
 import { AnalysisProvenanceNote } from './AnalysisProvenanceNote';
-import { readSnapshotBasis } from '@/entities/seo-snapshot/lib/snapshotBasis';
+import type { SnapshotBasis } from '@/entities/seo-snapshot/lib/snapshotBasis';
 import {
     formatSnapshotAsOf,
     resolveSnapshotAsOf,
@@ -34,12 +34,13 @@ interface SnapshotSummarySectionProps {
      */
     asOf?: Date;
     /**
-     * 스냅샷 `content`(저장소에는 `unknown`). 있으면 캡션 날짜를 행의 `generatedAt`이 아니라
-     * 글이 실제로 쓴 **데이터 기준**(`dataAsOf.barTime` → `analyzedAt`)에서 만든다
-     * (`resolveSnapshotAsOf`). 없거나 그 필드가 없으면 `asOf`(`generatedAt`)로 폴백한다.
-     * 실제 분석 시각을 싣는 탭(차트)만 넘기면 된다.
+     * 스냅샷 `content`에서 읽은 데이터 기준(`readSnapshotBasis` — 부모 렌더러가 계산한다).
+     * 있으면 캡션 날짜를 행의 `generatedAt`이 아니라 글이 실제로 쓴 **데이터 기준**
+     * (`dataAsOf.barTime` → `analyzedAt`)에서 만든다(`resolveSnapshotAsOf`). 없거나 그
+     * 필드가 비어 있으면 `asOf`(`generatedAt`)로 폴백한다. 실제 분석 시각을 싣는 탭(차트)만
+     * 넘기면 된다.
      */
-    basis?: unknown;
+    basis?: SnapshotBasis;
     /**
      * 프리웜이 함께 구워 둔 평이화("쉽게보기") 산문. 있으면 이 셸이 토글을
      * 띄우고 산문/원문을 갈아 끼운다.
@@ -155,12 +156,11 @@ export function SnapshotSummarySection({
     const locale = useResolvedLocale();
     const headingId = useId();
     // 배지와 캡션이 같은 조건에서 갈리도록 해석 결과(null 포함)에서 한 번에 만든다.
-    const { barTimeMs, analyzedAtMs } = readSnapshotBasis(basis);
     const resolvedAsOf = resolveSnapshotAsOf(
         {
-            barTime: barTimeMs === null ? null : new Date(barTimeMs),
-            analyzedAt: analyzedAtMs === null ? null : new Date(analyzedAtMs),
-            generatedAt: asOf ?? null,
+            barTimeMs: basis?.barTimeMs,
+            analyzedAtMs: basis?.analyzedAtMs,
+            generatedAtMs: asOf?.getTime(),
         },
         marketProfile
     );

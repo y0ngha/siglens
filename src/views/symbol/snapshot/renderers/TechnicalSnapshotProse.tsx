@@ -3,6 +3,7 @@ import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { useSkillLabel } from '@/shared/i18n/skillLabel';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { LIVE_ANALYSIS_CROSS_REF_KEY } from '../lib/liveAnalysisCrossRef';
+import { readSnapshotBasis } from '@/entities/seo-snapshot/lib/snapshotBasis';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
 import { TREND_LABEL_KEY, narrowTechnicalContent } from './technicalContent';
@@ -76,7 +77,7 @@ export function TechnicalSnapshotProse({
             displayName={displayName}
             marketProfile={marketProfile}
             asOf={generatedAt}
-            basis={content}
+            basis={readSnapshotBasis(content)}
             plain={plain}
             duplicatesLiveWidget={duplicatesLiveWidget}
         >

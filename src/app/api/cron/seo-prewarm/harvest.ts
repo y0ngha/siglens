@@ -139,10 +139,15 @@ export const TAB_SEAMS: Record<SeoSnapshotTab, TabSeamDispatch> = {
 /**
  * 기준일 검사 대상 탭.
  *
- * technical만이다. 이 탭의 결과(`AnalysisResponse`)가 `analyzedAt`·`dataAsOf`를 싣는다.
- * overall은 프리웜 대상(`PREWARM_TABS`)이 아니고 결과에 타임스탬프 필드가 없어 읽을 기준이
- * 없다 — 프리웜이 다시 켜지고 core가 필드를 싣게 되면 이 집합에 더한다.
- * news도 타임스탬프가 없다(뉴스 탭의 신선도는 기사 적재가 정한다).
+ * technical만이다. 이 탭의 결과(`AnalysisResponse`)가 `analyzedAt`·`dataAsOf`를 싣고, 신선도가
+ * **시장 세션 마감**에 묶여 있다(분석 글의 가격이 페이지 종가와 같아야 한다).
+ *
+ * 다른 탭이 빠진 이유는 서로 다르다:
+ *  - options: 결과(`OptionsAnalysisResponse`)에 `analyzedAt`이 있지만 프리웜 대상이 아니고
+ *    (`PREWARM_TABS`), 옵션 체인은 세션 마감 가격과 묶인 글이 아니라 기준 봉도 가격도 없다.
+ *  - overall·fundamental·financials·congress·news: 결과에 읽을 타임스탬프 필드가 없다
+ *    (뉴스 탭의 신선도는 기사 적재가 정한다). 프리웜이 다시 켜지고 core가 필드를 싣게 되면
+ *    이 집합에 더한다.
  */
 const BASIS_CHECKED_TABS: ReadonlySet<SeoSnapshotTab> = new Set(['technical']);
 
@@ -183,6 +188,12 @@ function isHarvestable(result: SeamOutcome | null): result is SeamOutcome {
  * `cached` 결과에 한해, 비크립토에서 글의 기준 가격을 페이지가 보여 주는 종가와 대조한다
  * (0.3% 초과면 stale). 크립토는 일봉이 장중에도 계속 움직여 비교가 성립하지 않는다.
  * 종가를 못 읽으면(`null`) 비교를 건너뛴다 — 보조 검사가 배치를 막지 않는다.
+ *
+ * 글의 기준 가격은 `dataAsOf.close`(분석에 쓴 바로 그 봉의 종가)를 우선하고, `dataAsOf`가 없는
+ * 옛 결과에서만 `planCheck.currentPrice`로 물러난다(`readSnapshotBasis`). **장중에 만들어진
+ * `cached` 결과는 마감 종가와 달라 정당하게 stale로 센다** — 시각 검사가 이미 같은 결론을
+ * 내리지만, 시각 정보가 없는 결과에서도 가격이 그것을 잡는다. 어느 쪽이든 강제 재생성은
+ * 경계당 한 번이다.
  */
 async function isOutcomeStale(
     symbol: string,
@@ -278,6 +289,26 @@ async function evaluateBasis(
 }
 
 /**
+ * 기준일 검사 대상이면 `evaluateBasis`를, 아니면(문맥 없음·대상 탭 아님·harvest 불가 결과)
+ * 결과를 그대로 `stale: false`로 돌려준다.
+ */
+async function resolveBasis(
+    symbol: string,
+    tab: SeoSnapshotTab,
+    seamResult: SeamOutcome | null,
+    basis: HarvestBasisContext | undefined
+): Promise<BasisEvaluation> {
+    if (
+        basis === undefined ||
+        !BASIS_CHECKED_TABS.has(tab) ||
+        !isHarvestable(seamResult)
+    ) {
+        return { outcome: seamResult, stale: false };
+    }
+    return evaluateBasis(symbol, tab, seamResult, basis);
+}
+
+/**
  * seam 결과를 저장소에 반영한다 (Task 9 결의 — freshness는 오직
  * `seo_analysis_snapshots.generatedAt`으로만 판단한다).
  *
@@ -294,7 +325,7 @@ async function evaluateBasis(
  * "지금 만든 것"을 뜻하지 않기 때문이다 — 캐시에 있던 분석이 직전 세션 마감 전 데이터로
  * 쓰였다면 `generatedAt`만 오늘인 옛 글이 된다. 그 경우 경계당 한 번 강제 재생성하고,
  * 그래도 stale이면 실제 기준 시각을 담은 채 저장하고 일시적 backoff를 건다.
- * (여기서 말하는 "타임스탬프 필드 없음"은 technical·options 외 탭 이야기다.)
+ * 기준일 검사 대상 탭과 그 이유는 `BASIS_CHECKED_TABS`에 있다.
  *
  * run* 함수는 블로킹이므로 `cached`/`done` 외 모든 상태는 terminal skip이다.
  *
@@ -320,20 +351,12 @@ export async function resolveHarvest(
     counts: PrewarmBatchCounts,
     basis?: HarvestBasisContext
 ): Promise<boolean> {
-    let result = seamResult;
-    let basisStale = false;
-    if (
-        basis !== undefined &&
-        BASIS_CHECKED_TABS.has(tab) &&
-        isHarvestable(seamResult)
-    ) {
-        ({ outcome: result, stale: basisStale } = await evaluateBasis(
-            symbol,
-            tab,
-            seamResult,
-            basis
-        ));
-    }
+    const { outcome: result, stale: basisStale } = await resolveBasis(
+        symbol,
+        tab,
+        seamResult,
+        basis
+    );
 
     if (result === null) {
         /**

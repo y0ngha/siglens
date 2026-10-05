@@ -162,30 +162,33 @@ async function collectQueueEntries(
     const staticDiff = diffStaticLastmod(staticEntries, storedLastmods);
     const declaredStatic = new Set(staticEntries.map(entry => entry.url));
 
-    const entries: IndexNowQueueEntry[] = [];
-    const push = (
-        urls: readonly string[],
-        invalidatedByCron: boolean
-    ): void => {
-        for (const url of urls) {
+    // 정적 페이지는 크론이 태그를 털지 않는다 — 다음 방문이 만료 후 재생성한다(2배).
+    const groups: readonly {
+        readonly urls: readonly string[];
+        readonly invalidatedByCron: boolean;
+    }[] = [
+        {
+            urls: selectIndexNowUrls(harvested, symbolEntries),
+            invalidatedByCron: true,
+        },
+        {
+            urls: hubUrls.filter(url => declaredStatic.has(url)),
+            invalidatedByCron: true,
+        },
+        {
+            urls: changedHubUrls.filter(url => declaredStatic.has(url)),
+            invalidatedByCron: false,
+        },
+        { urls: staticDiff.changedUrls, invalidatedByCron: false },
+    ];
+    const entries = groups.flatMap(({ urls, invalidatedByCron }) =>
+        urls.flatMap((url): IndexNowQueueEntry[] => {
             const notBeforeMs = indexNowNotBeforeMs(url, nowMs, {
                 invalidatedByCron,
             });
-            if (notBeforeMs !== null) entries.push({ url, notBeforeMs });
-        }
-    };
-    push(selectIndexNowUrls(harvested, symbolEntries), true);
-    // 정적 sitemap에 실린 허브만 남긴다 — 없는 허브·정체돼 빠진 카테고리는 제출하지 않는다.
-    push(
-        hubUrls.filter(url => declaredStatic.has(url)),
-        true
+            return notBeforeMs === null ? [] : [{ url, notBeforeMs }];
+        })
     );
-    push(
-        changedHubUrls.filter(url => declaredStatic.has(url)),
-        false
-    );
-    // 정적 페이지는 크론이 태그를 털지 않는다 — 다음 방문이 만료 후 재생성한다(2배).
-    push(staticDiff.changedUrls, false);
 
     return { entries, staticUpdates: staticDiff.updates };
 }

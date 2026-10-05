@@ -47,13 +47,18 @@ export function diffStaticLastmod(
     entries: readonly SitemapEntry[],
     stored: Readonly<Record<string, string>>
 ): StaticLastmodDiff {
-    const updates: Record<string, string> = {};
-    for (const entry of entries) {
-        if (!TRACKED_STATIC_URLS.has(entry.url)) continue;
-        if (entry.lastModified === undefined) continue;
-        const current = entry.lastModified.toISOString();
-        if (stored[entry.url] !== current) updates[entry.url] = current;
-    }
+    const updates = Object.fromEntries(
+        entries
+            .filter(
+                (entry): entry is SitemapEntry & { lastModified: Date } =>
+                    TRACKED_STATIC_URLS.has(entry.url) &&
+                    entry.lastModified !== undefined
+            )
+            .map(
+                entry => [entry.url, entry.lastModified.toISOString()] as const
+            )
+            .filter(([url, current]) => stored[url] !== current)
+    );
     return { changedUrls: Object.keys(updates), updates };
 }
 

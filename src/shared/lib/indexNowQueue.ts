@@ -6,6 +6,7 @@ import {
     SECONDS_PER_HOUR,
 } from '@/shared/config/time';
 import {
+    isUrlRejectionStatus,
     submitIndexNow,
     type IndexNowOutcome,
     type IndexNowResult,
@@ -68,14 +69,13 @@ export async function enqueueIndexNow(
     const redis = getRedisClient();
     if (redis === null || entries.length === 0) return 0;
 
-    const byUrl = new Map<string, number>();
-    for (const { url, notBeforeMs } of entries) {
-        if (!byUrl.has(url)) byUrl.set(url, notBeforeMs);
-    }
-    const [first, ...rest] = [...byUrl].map(([member, score]) => ({
-        member,
-        score,
-    }));
+    // 같은 URL이 여럿이면 **첫** 항목만 남긴다.
+    const [first, ...rest] = entries
+        .filter(
+            (entry, index) =>
+                entries.findIndex(other => other.url === entry.url) === index
+        )
+        .map(({ url, notBeforeMs }) => ({ member: url, score: notBeforeMs }));
     const added = await redis.zadd(
         INDEXNOW_PENDING_KEY,
         { nx: true },
@@ -118,12 +118,11 @@ const NOT_RUN: IndexNowDrainResult = {
     outcome: null,
 };
 
-/** 400·422는 **URL 자체**가 잘못이다 — 다시 보내도 같은 답이라 대기열에서 지운다. */
+/** URL 자체가 잘못이라 다시 보내도 소용없는 결과 — 대기열에서 지운다(`isUrlRejectionStatus`). */
 function isUnsubmittableOutcome(outcome: IndexNowOutcome): boolean {
     return (
         outcome.kind === 'empty' ||
-        (outcome.kind === 'rejected' &&
-            (outcome.status === 400 || outcome.status === 422))
+        (outcome.kind === 'rejected' && isUrlRejectionStatus(outcome.status))
     );
 }
 
@@ -180,7 +179,10 @@ async function readQueueState(
  *  - `rateLimited`(429): 지우지 않고 `indexnow:backoff`를 세운다(`Retry-After ?? 3600`초).
  *    backoff 중에는 제출하지 않는다.
  *  - `rejected` 400·422 / `empty`: 이 URL들은 다시 보내도 소용없다 — 지우고 에러를 남긴다.
- *  - `rejected` 403(키 검증 실패)·`transient`: 지우지 않는다. URL이 아니라 설정·상대 쪽 문제다.
+ *  - `rejected` 그 밖(403 키 검증 실패 등): 지우지 않고 1시간 backoff를 세운다. URL이 아니라
+ *    키·설정 문제라 매 tick 같은 요청을 다시 POST해 봐야 같은 거절이다. 대기열은 그대로 두므로
+ *    정체 알람(`oldestDueAgeMs`)은 계속 울린다.
+ *  - `transient`: 지우지 않는다. 다음 tick이 다시 시도한다.
  *  - `disabled`: 아무것도 하지 않는다.
  *
  * 제출이 끝난 **뒤에만** 지운다 — 5초 타임아웃에 걸려 이 함수가 중단돼도 대기열은 그대로라
@@ -229,6 +231,11 @@ export async function drainIndexNow(
     } else if (outcome.kind === 'rateLimited') {
         await redis.set(INDEXNOW_BACKOFF_KEY, '1', {
             ex: backoffSecondsFor(outcome.retryAfterSeconds),
+        });
+    } else if (outcome.kind === 'rejected') {
+        // `isUnsubmittableOutcome`가 걸러 낸 뒤라 URL 문제가 아닌 거절(403 등)이다.
+        await redis.set(INDEXNOW_BACKOFF_KEY, '1', {
+            ex: backoffSecondsFor(null),
         });
     }
 

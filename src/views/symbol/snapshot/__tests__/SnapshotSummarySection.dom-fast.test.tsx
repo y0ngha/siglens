@@ -232,7 +232,11 @@ describe('SnapshotSummarySection — 시장별 캡션(kr-equity/crypto)', () => 
                 displayName="삼성전자"
                 marketProfile="kr-equity"
                 asOf={new Date('2026-10-05T22:00:00Z')}
-                basis={{ analyzedAt: '2026-10-02T02:00:00.000Z' }}
+                basis={{
+                    barTimeMs: null,
+                    analyzedAtMs: Date.parse('2026-10-02T02:00:00.000Z'),
+                    close: null,
+                }}
             >
                 <p>본문</p>
             </SnapshotSummarySection>
@@ -250,11 +254,9 @@ describe('SnapshotSummarySection — 시장별 캡션(kr-equity/crypto)', () => 
                 marketProfile="us-equity"
                 asOf={new Date('2026-10-05T22:00:00Z')}
                 basis={{
-                    analyzedAt: '2026-10-05T21:30:00.000Z',
-                    dataAsOf: {
-                        barTime: Date.parse('2026-10-02T00:00:00Z') / 1000,
-                        close: 100,
-                    },
+                    barTimeMs: Date.parse('2026-10-02T00:00:00Z'),
+                    analyzedAtMs: Date.parse('2026-10-05T21:30:00.000Z'),
+                    close: 100,
                 }}
             >
                 <p>본문</p>
@@ -272,7 +274,11 @@ describe('SnapshotSummarySection — 시장별 캡션(kr-equity/crypto)', () => 
                 displayName="비트코인"
                 marketProfile="crypto"
                 asOf={new Date('2026-10-05T22:00:00Z')}
-                basis={{ analyzedAt: '2026-10-05T09:00:00.000Z' }}
+                basis={{
+                    barTimeMs: null,
+                    analyzedAtMs: Date.parse('2026-10-05T09:00:00.000Z'),
+                    close: null,
+                }}
             >
                 <p>본문</p>
             </SnapshotSummarySection>
@@ -283,13 +289,13 @@ describe('SnapshotSummarySection — 시장별 캡션(kr-equity/crypto)', () => 
         ).toBeInTheDocument();
     });
 
-    it('basis가 모양이 맞지 않으면 asOf(generatedAt)로 폴백한다', () => {
+    it('basis에 기준 시각이 하나도 없으면 asOf(generatedAt)로 폴백한다', () => {
         render(
             <SnapshotSummarySection
                 displayName="Apple Inc."
                 marketProfile="us-equity"
                 asOf={new Date('2026-07-31T21:00:00Z')}
-                basis="garbage"
+                basis={{ barTimeMs: null, analyzedAtMs: null, close: null }}
             >
                 <p>본문</p>
             </SnapshotSummarySection>

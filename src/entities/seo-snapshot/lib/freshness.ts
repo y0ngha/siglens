@@ -1,16 +1,18 @@
 import { US_EQUITY_SESSION, isRegularSessionOpen } from '@y0ngha/siglens-core';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
-import { MS_PER_DAY, MS_PER_MINUTE, MS_PER_SECOND } from '@/shared/config/time';
+import {
+    MS_PER_DAY,
+    MS_PER_MINUTE,
+    MS_PER_SECOND,
+    SETTLE_BUFFER_MINUTES,
+} from '@/shared/config/time';
 import {
     lastClosedSessionCloseUtc,
     secondsUntilSessionRoll,
 } from '@/shared/lib/marketSessionDate';
 import type { SeoSnapshotTab } from '../model';
 import { prewarmSessionSpecFor } from './applicability';
-
-/** 30min — EOD 데이터 정착 대기 (spec §6). */
-export const SETTLE_BUFFER_MINUTES = 30;
 
 /**
  * "가장 최근에 완료된 ET 정규장 마감" — 정착 버퍼 30분이 지난 것만 완료로 본다.
