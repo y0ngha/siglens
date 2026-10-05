@@ -14,7 +14,7 @@ describe('AiAnalysisAwaitingSection', () => {
         expect(
             screen.getByRole('region', { name: 'AI 펀더멘털 분석' })
         ).toBeInTheDocument();
-        fireEvent.click(screen.getByRole('button', { name: 'AI 분석 보기' }));
+        fireEvent.click(screen.getByRole('button', { name: 'AI 분석 시작' }));
         expect(onStart).toHaveBeenCalledTimes(1);
     });
 });

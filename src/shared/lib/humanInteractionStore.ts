@@ -75,7 +75,7 @@ export function hasHumanInteracted(): boolean {
 }
 
 /**
- * 입력을 인정한다. 리스너가 받은 신뢰 입력, 또는 "AI 분석 보기" 버튼처럼 명시적인
+ * 입력을 인정한다. 리스너가 받은 신뢰 입력, 또는 "AI 분석 시작" 버튼처럼 명시적인
  * 사용자 조작에서 부른다(키보드·보조기기로 버튼을 눌러도 확실히 인정되도록).
  */
 export function markHumanInteracted(): void {

@@ -1469,3 +1469,40 @@ describe('useAnalysis — AI 자동 실행 게이트(리뷰 라운드 1)', () =>
         );
     });
 });
+
+describe('useAnalysis — 게이트가 닫힌 마운트의 하이드레이션 구간', () => {
+    afterEach(() => {
+        queryClients.splice(0).forEach(client => client.clear());
+    });
+
+    it('게이트가 닫혀 있으면 설정 하이드레이션을 기다리는 동안에도 분석 중이 아니다', () => {
+        const { result } = renderHook(
+            () =>
+                useAnalysis({
+                    ...makeOptions({
+                        symbol: 'PCLOF',
+                        initialAnalysisFailed: true,
+                        isModelHydrated: false,
+                    }),
+                    autoRunAllowed: false,
+                }),
+            { wrapper: makeWrapper() }
+        );
+        expect(result.current.isAnalyzing).toBe(false);
+    });
+
+    it('게이트가 열려 있으면 기존처럼 하이드레이션 대기 중에도 분석 중이다', () => {
+        const { result } = renderHook(
+            () =>
+                useAnalysis({
+                    ...makeOptions({
+                        initialAnalysisFailed: true,
+                        isModelHydrated: false,
+                    }),
+                    autoRunAllowed: true,
+                }),
+            { wrapper: makeWrapper() }
+        );
+        expect(result.current.isAnalyzing).toBe(true);
+    });
+});

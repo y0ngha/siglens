@@ -1771,8 +1771,8 @@
         },
         "ui": {
             "AiAnalysisAwaitingSection": {
-                "3e7fd8": "该股票暂无AI分析。点击按钮即可立即开始分析。",
-                "ddb88e": "查看AI分析"
+                "05d860": "开始AI分析",
+                "3e7fd8": "该股票暂无AI分析。点击按钮即可立即开始分析。"
             },
             "AiSummaryErrorSection": {
                 "0c767c": "重试"

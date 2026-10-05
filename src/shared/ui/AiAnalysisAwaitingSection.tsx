@@ -10,7 +10,7 @@ export interface AiAnalysisAwaitingSectionProps {
     heading: string;
     /** heading id 접두사 — 문서 안에서 유일해야 한다. */
     idPrefix: string;
-    /** "AI 분석 보기" — 보통 `useAiAutoRunAllowed().grant`. */
+    /** "AI 분석 시작" — 보통 `useAiAutoRunAllowed().grant`. */
     onStart: () => void;
     className?: string;
 }
@@ -51,7 +51,7 @@ export function AiAnalysisAwaitingSection({
                 onClick={onStart}
                 className="mt-4 inline-flex min-h-11 touch-manipulation items-center rounded bg-primary-600 px-3 py-2 text-xs text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
             >
-                {t('AiAnalysisAwaitingSection.ddb88e')}
+                {t('AiAnalysisAwaitingSection.05d860')}
             </button>
         </section>
     );

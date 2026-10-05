@@ -124,7 +124,7 @@ describe('useAnalysis — branch coverage', () => {
     describe('submit status: miss_no_trigger (L208-214)', () => {
         it('miss_no_trigger는 오류가 아니라 대기 상태다(AI 자동 실행 게이트의 캐시 전용 조회)', async () => {
             // 서버는 cacheOnly 제출에만 이 상태를 돌려준다. 오류 배너가 아니라
-            // "AI 분석 보기" 대기 화면이 되어야 한다.
+            // "AI 분석 시작" 대기 화면이 되어야 한다.
             mockSubmit.mockResolvedValue({
                 status: 'miss_no_trigger',
             });

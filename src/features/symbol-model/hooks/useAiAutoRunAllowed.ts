@@ -8,10 +8,10 @@ import { useSymbolModel } from '../model/SymbolModelContext';
 export interface AiAutoRunGate {
     /**
      * AI 분석을 생성까지 자동으로 요청해도 되는지. `false`면 호출부는 캐시만
-     * 조회(`cacheOnly`)하고, 미스면 "AI 분석 보기" 대기 상태로 둔다.
+     * 조회(`cacheOnly`)하고, 미스면 "AI 분석 시작" 대기 상태로 둔다.
      */
     allowed: boolean;
-    /** "AI 분석 보기" 버튼 — 입력을 즉시 인정해 대기 중인 분석을 시작시킨다. */
+    /** "AI 분석 시작" 버튼 — 입력을 즉시 인정해 대기 중인 분석을 시작시킨다. */
     grant: () => void;
 }
 
