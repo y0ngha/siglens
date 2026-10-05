@@ -26,20 +26,23 @@ vi.mock('@/shared/ui/tabs/TabsUnderline', () => ({
         </div>
     ),
 }));
+const { mockUseBacktestFilter } = vi.hoisted(() => ({
+    mockUseBacktestFilter: vi.fn(),
+}));
 vi.mock('@/features/backtest-filter/hooks/useBacktestFilter', () => ({
-    useBacktestFilter: vi.fn(() => ({
-        tabItems: [
-            { value: 'all', label: '전체' },
-            { value: 'AAPL', label: 'AAPL' },
-        ],
-        activeTab: 'all',
-        setActiveTab: vi.fn(),
-        filtered: [],
-    })),
+    useBacktestFilter: mockUseBacktestFilter,
 }));
 vi.mock('../BacktestCaseList', () => ({
-    BacktestCaseList: ({ cases }: { cases: unknown[] }) => (
-        <div data-testid="case-list">{cases.length} cases</div>
+    BacktestCaseList: ({
+        cases,
+        openAll,
+    }: {
+        cases: unknown[];
+        openAll?: boolean;
+    }) => (
+        <div data-testid="case-list" data-open-all={String(openAll)}>
+            {cases.length} cases
+        </div>
     ),
 }));
 
@@ -47,7 +50,47 @@ import { render, screen } from '@testing-library/react';
 
 import { BacktestTabs } from '../BacktestTabs';
 
+function filterState(overrides: Record<string, unknown> = {}) {
+    return {
+        tabItems: [
+            { value: 'all', label: '전체' },
+            { value: 'AAPL', label: 'AAPL' },
+        ],
+        activeTab: 'all',
+        setActiveTab: vi.fn(),
+        filtered: [],
+        isFiltered: false,
+        ...overrides,
+    };
+}
+
 describe('BacktestTabs', () => {
+    beforeEach(() => {
+        mockUseBacktestFilter.mockReset();
+        mockUseBacktestFilter.mockReturnValue(filterState());
+    });
+
+    it('전체 탭에서는 월을 기본 접힘 상태로 둔다 (openAll=false)', () => {
+        render(<BacktestTabs cases={[]} tickers={['AAPL']} />);
+
+        expect(screen.getByTestId('case-list')).toHaveAttribute(
+            'data-open-all',
+            'false'
+        );
+    });
+
+    it('종목 필터가 걸리면 모든 월을 펼친다 (openAll=true)', () => {
+        mockUseBacktestFilter.mockReturnValue(
+            filterState({ activeTab: 'AAPL', isFiltered: true })
+        );
+        render(<BacktestTabs cases={[]} tickers={['AAPL']} />);
+
+        expect(screen.getByTestId('case-list')).toHaveAttribute(
+            'data-open-all',
+            'true'
+        );
+    });
+
     it('renders the tab list', () => {
         render(<BacktestTabs cases={[]} tickers={['AAPL']} />);
 

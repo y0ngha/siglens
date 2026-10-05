@@ -8,6 +8,7 @@ import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
 import { cn } from '@/shared/lib/cn';
 import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
 import { NewsCardShell } from '@/shared/ui/NewsCardShell';
+import { NewsCategoryBadge } from '@/shared/ui/NewsCategoryBadge';
 import {
     resolveNewsSummary,
     resolveNewsTitle,
@@ -106,11 +107,13 @@ function TickerChips({ category, tickers }: TickerChipsProps) {
                             aria-label={t('MarketNewsCard.goToSymbol', {
                                 v0: ticker,
                             })}
+                            // `relative z-10`: 제목 링크의 `::after`(stretched link)가 카드 전체를
+                            // 덮으므로 칩이 그 위로 올라와야 눌린다(#959).
                             // 뉴스 카드마다 티커 칩이 붙어 다수 렌더 —
                             // docs/architecture/CDN_CACHING.md §1
                             prefetch={false}
                             data-testid="ticker-chip"
-                            className="inline-flex min-h-6 min-w-6 items-center justify-center rounded px-1.5 py-0.5 text-xs font-medium text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                            className="relative z-10 inline-flex min-h-6 min-w-6 items-center justify-center rounded px-1.5 py-0.5 text-xs font-medium text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
                             {ticker}
                         </Link>
@@ -201,6 +204,7 @@ export function MarketNewsCard({ category, item }: MarketNewsCardProps) {
     return (
         <NewsCardShell
             title={resolveNewsTitle(item, locale)}
+            fallbackTitle={item.source}
             isHighImpact={isHighImpact}
             pending={pending}
             url={item.url}
@@ -214,11 +218,10 @@ export function MarketNewsCard({ category, item }: MarketNewsCardProps) {
                     {item.priceImpact !== null && (
                         <ImpactBadge value={item.priceImpact} />
                     )}
-                    {item.category !== null && (
-                        <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-300">
-                            {item.category}
-                        </span>
-                    )}
+                    <NewsCategoryBadge
+                        value={item.category}
+                        className="text-secondary-300"
+                    />
                     <time
                         dateTime={item.publishedAt}
                         className="text-xs text-secondary-400"

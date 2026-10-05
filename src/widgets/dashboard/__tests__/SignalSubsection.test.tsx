@@ -104,9 +104,9 @@ describe('SignalSubsection', () => {
                 stocks={[]}
             />
         );
-        expect(
-            screen.getByText(/이 신호가 잡힌 종목이 없어요/)
-        ).toBeInTheDocument();
+        expect(screen.getByText('해당 종목 없음')).toBeInTheDocument();
+        // 시간대·기간을 단정하는 문구("오늘은")는 쓰지 않는다 — 1시간·1일 어느 탭에서나 맞아야 한다.
+        expect(screen.queryByText(/오늘은/)).not.toBeInTheDocument();
     });
 
     it('renders stock cards when stocks are present', () => {

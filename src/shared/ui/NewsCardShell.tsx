@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
@@ -9,6 +10,13 @@ export interface NewsCardShellProps {
      * 호출 측에서 `item.titleKo ?? item.titleEn`으로 전달한다.
      */
     title: string | null;
+
+    /**
+     * 제목이 비었을 때 링크 텍스트로 쓸 출처 이름. 없으면 URL 호스트를 쓴다.
+     * 제목이 없어도 카드는 여전히 stretched link여야 한다 — 링크가 사라지면 카드 전체가
+     * 눌러도 반응 없는 죽은 영역이 되고, 하단 "원문 보기" 단서만 남아 거짓말이 된다.
+     */
+    fallbackTitle?: string;
 
     /** priceImpact === 'high'일 때 amber 왼쪽 border accent를 표시한다. */
     isHighImpact: boolean;
@@ -48,15 +56,38 @@ export interface NewsCardShellProps {
     bodySection: ReactNode;
 
     /**
-     * "원문 보기" 링크의 자식 노드.
-     * NewsList: `원문 보기 →` (텍스트 노드) — 화살표를 가시 텍스트로 포함해 스크린리더가 읽는다.
-     * MarketNewsCard: `원문 보기 <span aria-hidden>→</span>` — 화살표를 aria-hidden으로 감싸
-     * 스크린리더가 "화살표"를 두 번 읽지 않도록 한다 (버튼 레이블에 방향 기호가 혼재하는 맥락).
+     * 카드 하단의 "원문 보기 →" **시각 단서**의 자식 노드.
+     *
+     * 링크가 아니다. 카드 전체가 제목 링크의 stretched-link로 눌리므로 이 문구는
+     * "눌러 볼 수 있다"는 힌트일 뿐이고, 스크린리더에는 제목 링크가 이미 이름을
+     * 주므로 `aria-hidden`으로 감춘다(같은 목적지를 가리키는 링크를 두 번 읽지 않게).
+     * pending(분석 중) 카드에는 그리지 않는다.
      */
     linkChildren: ReactNode;
 
-    /** 원문 URL — pending일 때는 링크 자체를 렌더하지 않는다. */
+    /** 원문 URL — 제목 링크의 목적지. pending일 때도 제목은 링크다. */
     url: string;
+}
+
+/** URL의 호스트. 파싱에 실패하면 빈 문자열(링크 텍스트로 쓸 수 없다). */
+function hostOf(url: string): string {
+    try {
+        return new URL(url).hostname;
+    } catch {
+        return '';
+    }
+}
+
+/** 링크 텍스트: 제목 → 출처 이름 → URL 호스트. 모두 비면 `''`(링크를 그리지 않는다). */
+function resolveLinkText(
+    title: string | null,
+    fallbackTitle: string | undefined,
+    url: string
+): string {
+    if (title !== null && title.trim() !== '') return title;
+    if (fallbackTitle !== undefined && fallbackTitle.trim() !== '')
+        return fallbackTitle;
+    return hostOf(url);
 }
 
 /**
@@ -66,9 +97,17 @@ export interface NewsCardShellProps {
  * 외곽 article wrapper · 제목 · pending/ready 분기 구조를 단일 소스로 관리한다.
  * 서피스별로 다른 레이블·클래스 맵·DOM 세부사항은 props/children으로 주입되므로
  * 최종 렌더 DOM은 서피스마다 다를 수 있다.
+ *
+ * **카드 전체가 하나의 링크다(stretched link).** 예전에는 카드 맨 아래 작은 글씨
+ * "원문 보기"만 링크였고, 그마저 분석 중에는 그려지지 않았다 — 카드 본체와 제목을
+ * 눌러도 아무 일이 없었다. 지금은 제목 `<a>`의 `::after`가 `relative`인 article을
+ * 덮어 어디를 눌러도 원문이 열린다. 안에 다른 상호작용 요소(티커 칩 링크)가 있으면
+ * `relative z-10`으로 `::after` 위에 올려야 눌린다. `<a>` 안에 `<a>`를 중첩하지
+ * 않는 구조라 HTML이 유효하다.
  */
 export function NewsCardShell({
     title,
+    fallbackTitle,
     isHighImpact,
     pending,
     analysisSkeleton,
@@ -79,11 +118,13 @@ export function NewsCardShell({
     linkChildren,
     url,
 }: NewsCardShellProps) {
+    const t = useTranslations('shared.ui');
+    const linkText = resolveLinkText(title, fallbackTitle, url);
     return (
         <article
             className={cn(
                 SURFACE_CARD,
-                'hover:border-primary-500/50 w-full max-w-full min-w-0 overflow-hidden p-4 transition-[colors,transform] hover:-translate-y-px',
+                'hover:border-primary-500/50 relative w-full max-w-full min-w-0 overflow-hidden p-4 transition-[colors,transform] hover:-translate-y-px',
                 // content가 3px 바에 붙지 않도록 pl-5로 패딩을 보정한다.
                 isHighImpact && 'border-l-ui-warning border-l-[3px] pl-5'
             )}
@@ -104,7 +145,19 @@ export function NewsCardShell({
                     pending && 'opacity-80'
                 )}
             >
-                {title}
+                {linkText !== '' && (
+                    <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-sm after:absolute after:inset-0 after:content-[''] hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                    >
+                        {linkText}{' '}
+                        <span className="sr-only">
+                            {t('NewsCardShell.074b02')}
+                        </span>
+                    </a>
+                )}
             </h3>
 
             {pending ? analysisSkeleton : badgeRow}
@@ -114,14 +167,12 @@ export function NewsCardShell({
             {pending ? summarySkeletonLine : bodySection}
 
             {!pending && (
-                <a
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 inline-block text-xs text-primary-400 transition-opacity hover:opacity-70 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                <span
+                    aria-hidden="true"
+                    className="mt-2 inline-block text-xs text-primary-400"
                 >
                     {linkChildren}
-                </a>
+                </span>
             )}
         </article>
     );

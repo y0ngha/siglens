@@ -108,7 +108,7 @@ export function SignalSubsection({
                     className="py-4 text-center text-xs text-secondary-500 italic"
                     role="status"
                 >
-                    {t('SignalSubsection.fe9464')}
+                    {t('SignalSubsection.48f780')}
                 </p>
             ) : (
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">

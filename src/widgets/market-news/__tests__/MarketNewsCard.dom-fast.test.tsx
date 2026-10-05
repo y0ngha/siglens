@@ -64,6 +64,110 @@ describe('MarketNewsCard는', () => {
         expect(chip).toHaveAttribute('data-testid', 'ticker-chip');
     });
 
+    /**
+     * 제목 링크의 `::after`가 카드 전체를 덮으므로, 안에 있는 다른 링크는
+     * `relative z-10`으로 그 위에 올라와야 눌린다. 빠지면 칩이 덮여 죽는다.
+     */
+    it('주식 티커 칩 링크는 stretched link 위로 올라온다 (relative z-10)', () => {
+        render(
+            <MarketNewsCard
+                category="stock"
+                item={{ ...BASE, tickers: ['AAPL'] }}
+            />
+        );
+        const chip = screen.getByText('AAPL').closest('a');
+        expect(chip).toHaveClass('relative', 'z-10');
+    });
+
+    it('제목이 원문 새 탭 링크이고 링크 안에 링크가 없다', () => {
+        const { container } = render(
+            <MarketNewsCard
+                category="stock"
+                item={{ ...BASE, tickers: ['AAPL'] }}
+            />
+        );
+        const titleLink = screen.getByRole('link', { name: /BTC 상승/ });
+        expect(titleLink).toHaveAttribute('href', 'https://example.com/btc');
+        expect(titleLink).toHaveAttribute('target', '_blank');
+        expect(container.querySelectorAll('a a')).toHaveLength(0);
+    });
+
+    it('제목이 비어 있으면 출처 이름이 링크 텍스트가 된다', () => {
+        render(
+            <MarketNewsCard
+                category="general"
+                item={{ ...BASE, titleKo: null, titleEn: '' }}
+            />
+        );
+        expect(screen.getByRole('link', { name: /CoinWire/ })).toHaveAttribute(
+            'href',
+            'https://example.com/btc'
+        );
+    });
+
+    it('분석 중(pending)인 카드도 제목은 링크다', () => {
+        render(
+            <MarketNewsCard
+                category="general"
+                item={{
+                    ...BASE,
+                    sentiment: null,
+                    priceImpact: null,
+                    category: null,
+                    summaryKo: null,
+                }}
+            />
+        );
+        expect(screen.getByRole('link', { name: /BTC 상승/ })).toHaveAttribute(
+            'href',
+            'https://example.com/btc'
+        );
+    });
+
+    describe('카테고리 배지', () => {
+        it.each([
+            ['earnings', '실적'],
+            ['m_and_a', '인수·합병'],
+            ['guidance', '가이던스'],
+            ['regulation', '규제'],
+            ['macro', '거시경제'],
+            ['product', '제품·서비스'],
+        ] as const)(
+            '%s → "%s"로 한국어 라벨을 보여 주고 raw enum은 노출하지 않는다',
+            (value, label) => {
+                const { container } = render(
+                    <MarketNewsCard
+                        category="general"
+                        item={{ ...BASE, category: value }}
+                    />
+                );
+                expect(screen.getByText(label)).toBeInTheDocument();
+                expect(container.textContent).not.toContain(value);
+            }
+        );
+
+        it('other는 배지를 그리지 않는다', () => {
+            const { container } = render(
+                <MarketNewsCard
+                    category="general"
+                    item={{ ...BASE, category: 'other' }}
+                />
+            );
+            expect(container.textContent).not.toMatch(/other|기타/);
+        });
+
+        it('알 수 없는 값도 배지를 그리지 않는다', () => {
+            const unknown = JSON.parse('"brand_new"');
+            const { container } = render(
+                <MarketNewsCard
+                    category="general"
+                    item={{ ...BASE, category: unknown }}
+                />
+            );
+            expect(container.textContent).not.toContain('brand_new');
+        });
+    });
+
     it('티커가 없으면 칩 영역을 렌더하지 않는다', () => {
         render(
             <MarketNewsCard

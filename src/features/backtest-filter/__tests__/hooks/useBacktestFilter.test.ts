@@ -60,6 +60,18 @@ describe('useBacktestFilter', () => {
 
         expect(result.current.activeTab).toBe(ALL_TAB);
         expect(result.current.filtered).toEqual(cases);
+        expect(result.current.isFiltered).toBe(false);
+    });
+
+    it('isFiltered는 종목 탭이 골라지면 true다 (월 접힘을 풀어 주는 신호)', () => {
+        window.history.pushState({}, '', '/backtesting?ticker=AAPL');
+
+        const { result } = renderHook(
+            () => useBacktestFilter(cases, tickers),
+            withIntl
+        );
+
+        expect(result.current.isFiltered).toBe(true);
     });
 
     it('filters cases by the ticker present in the URL on mount', () => {

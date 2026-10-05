@@ -100,12 +100,29 @@ describe('/symbols 디렉터리 페이지', () => {
         expect(ko).toContain(`>${POPULAR_TICKERS[5]}<`);
     });
 
+    /**
+     * 모바일은 두 칸이라 긴 한글 이름이 말줄임으로 잘리면 어느 종목인지 알 수 없다.
+     * 줄바꿈(`break-keep wrap-break-word`)이 기본이고 `truncate`는 `sm` 이상에서만 건다.
+     */
+    it('종목 링크는 모바일에서 줄바꿈하고 sm 이상에서만 말줄임한다', async () => {
+        const html = await renderPage('ko');
+
+        const classOfLink = html.match(
+            /<a[^>]*href="\/AAPL"[^>]*class="([^"]*)"|<a[^>]*class="([^"]*)"[^>]*href="\/AAPL"/
+        );
+        const className = classOfLink?.[1] ?? classOfLink?.[2] ?? '';
+        expect(className).toContain('break-keep');
+        expect(className).toContain('wrap-break-word');
+        expect(className).toContain('sm:truncate');
+        expect(className.split(/\s+/)).not.toContain('truncate');
+    });
+
     it('h1은 하나고 자산군 섹션마다 h2가 붙는다', async () => {
         const html = await renderPage('ko');
 
         expect([...html.matchAll(/<h1\b/g)]).toHaveLength(1);
         expect([...html.matchAll(/<h2\b/g)]).toHaveLength(
-            buildSymbolDirectory().length
+            buildSymbolDirectory(new Map(), 'ko-KR').length
         );
     });
 

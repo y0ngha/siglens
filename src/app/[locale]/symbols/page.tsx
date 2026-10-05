@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
-import { resolveLocale } from '@/shared/i18n/locales';
+import { INTL_LOCALE, resolveLocale } from '@/shared/i18n/locales';
 import {
     localeAlternatesFrom,
     localePageSocial,
@@ -107,7 +107,7 @@ export default async function SymbolsDirectoryPage({
         [...POPULAR_TICKERS, ...POPULAR_CRYPTOS],
         locale
     );
-    const sections = buildSymbolDirectory(names);
+    const sections = buildSymbolDirectory(names, INTL_LOCALE[locale]);
 
     const webPageJsonLd = buildWebPageJsonLd({
         url: `${SITE_URL}${PATH}`,
@@ -167,7 +167,11 @@ export default async function SymbolsDirectoryPage({
                                         // 수백 개 `_rsc` 요청이 나간다
                                         // (docs/architecture/CDN_CACHING.md §1).
                                         prefetch={false}
-                                        className="block truncate rounded text-sm text-secondary-300 transition-colors hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                        // 모바일은 두 칸이라 `삼성바이오로직스 (207940.KS)`가
+                                        // 말줄임으로 잘리면 어느 종목인지 알 수 없다 — 줄바꿈하고
+                                        // (한글은 어절 단위 `break-keep`, 긴 티커는 `wrap-break-word`),
+                                        // 칸이 넓은 `sm` 이상에서만 한 줄 말줄임을 쓴다.
+                                        className="block rounded text-sm wrap-break-word break-keep text-secondary-300 transition-colors hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none sm:truncate"
                                     >
                                         {item.label}
                                     </Link>

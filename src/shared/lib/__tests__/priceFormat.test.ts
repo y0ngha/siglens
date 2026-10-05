@@ -8,6 +8,7 @@ import {
     dynamicDecimals,
     currencyFractionDigits,
     signColorClass,
+    quotePrefixFor,
 } from '@/shared/lib/priceFormat';
 import type { PricePrecision } from '@/shared/config/marketProfile/types';
 
@@ -195,5 +196,32 @@ describe('formatPrice', () => {
         expect(formatPrice(0.00001234, { ...usd, precision: dyn })).toMatch(
             /0\.00001/
         );
+    });
+});
+
+describe('quotePrefixFor', () => {
+    it('지수(^…)는 포인트라 통화 기호를 붙이지 않는다', () => {
+        expect(quotePrefixFor('^GSPC', '$')).toBe('');
+        expect(quotePrefixFor('^VIX', '$')).toBe('');
+        expect(quotePrefixFor('^KS11', '₩')).toBe('');
+        expect(quotePrefixFor('^KQ11', '₩')).toBe('');
+    });
+
+    it('환율(…=X)은 시장 통화 기호를 유지한다', () => {
+        expect(quotePrefixFor('KRW=X', '₩')).toBe('₩');
+        expect(quotePrefixFor('EURUSD=X', '$')).toBe('$');
+    });
+
+    it('ETF·종목은 시장 통화 기호를 쓴다', () => {
+        expect(quotePrefixFor('SPY', '$')).toBe('$');
+        expect(quotePrefixFor('091160.KS', '₩')).toBe('₩');
+    });
+
+    it('^가 앞이 아니라 중간에 있으면 지수가 아니다', () => {
+        expect(quotePrefixFor('A^B', '$')).toBe('$');
+    });
+
+    it('빈 접두를 그대로 돌려준다(통화 기호가 빈 시장)', () => {
+        expect(quotePrefixFor('SPY', '')).toBe('');
     });
 });

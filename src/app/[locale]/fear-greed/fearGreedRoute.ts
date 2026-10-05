@@ -4,7 +4,7 @@ import type {
     MarketFearGreedView,
     MarketFearGreedViewSnapshot,
 } from '@/entities/market-fear-greed/model';
-import { resolveLocale, type Locale } from '@/shared/i18n/locales';
+import { INTL_LOCALE, resolveLocale, type Locale } from '@/shared/i18n/locales';
 import type { FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
 import { buildHubMetadata } from '@/shared/lib/seoAlternates';
 import {
@@ -127,7 +127,8 @@ export async function loadFearGreedSymbolLinks(
         locale
     );
     return (
-        buildSymbolDirectory(names).find(section => section.id === market)
-            ?.items ?? []
+        buildSymbolDirectory(names, INTL_LOCALE[locale]).find(
+            section => section.id === market
+        )?.items ?? []
     );
 }

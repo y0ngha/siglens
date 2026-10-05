@@ -55,10 +55,10 @@ describe('TickerCategories — KR 종목 크롤 커버리지', () => {
         render(<TickerCategories />);
 
         expect(
-            screen.getByRole('heading', { name: '미국 섹터별 인기 종목' })
+            screen.getByRole('heading', { name: '미국 테마별 인기 종목' })
         ).toBeInTheDocument();
         expect(
-            screen.getByRole('heading', { name: '한국 섹터별 인기 종목' })
+            screen.getByRole('heading', { name: '한국 테마별 인기 종목' })
         ).toBeInTheDocument();
     });
 
@@ -66,7 +66,7 @@ describe('TickerCategories — KR 종목 크롤 커버리지', () => {
         render(<TickerCategories />);
 
         const krSection = screen.getByRole('navigation', {
-            name: '한국 섹터별 인기 종목 탐색',
+            name: '한국 테마별 인기 종목 탐색',
         });
         const krPopular = POPULAR_TICKERS.filter(t => /\.K[SQ]$/.test(t));
         const krHrefs = new Set(
@@ -83,7 +83,7 @@ describe('TickerCategories — KR 종목 크롤 커버리지', () => {
         // 미국 섹션에 KR 종목이 남아 있으면 제목이 거짓말이 되고 같은 링크가
         // 두 번 렌더된다.
         const usSection = screen.getByRole('navigation', {
-            name: '미국 섹터별 인기 종목 탐색',
+            name: '미국 테마별 인기 종목 탐색',
         });
         const usHrefs = Array.from(usSection.querySelectorAll('a')).map(a =>
             a.getAttribute('href')

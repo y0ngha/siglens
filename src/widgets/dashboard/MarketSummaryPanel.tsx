@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
+import { quotePrefixFor } from '@/shared/lib/priceFormat';
 import { HEADING_SECTION, LABEL_KO } from '@/shared/lib/typographyStyles';
 import { IndexCard } from './IndexCard';
 import {
@@ -132,7 +133,12 @@ export function MarketSummaryPanel({
                         <IndexCard
                             key={idx.fmpSymbol}
                             data={idx}
-                            currencySymbol={scope.currencySymbol}
+                            // 지수 값은 포인트라 통화 기호를 붙이지 않는다(`^`로 시작하는
+                            // 공급자 심볼). 환율·ETF는 그 시장의 통화를 쓴다.
+                            currencySymbol={quotePrefixFor(
+                                idx.fmpSymbol,
+                                scope.currencySymbol
+                            )}
                             tickerIsReadable={scope.tickerIsReadable}
                         />
                     ))}

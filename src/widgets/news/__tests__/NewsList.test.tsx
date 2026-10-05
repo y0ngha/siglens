@@ -105,6 +105,70 @@ describe('NewsList', () => {
         ).toBeInTheDocument();
     });
 
+    it('제목이 원문 새 탭 링크이고 하단 "원문 보기 →"는 링크가 아닌 시각 단서다', () => {
+        mockUseNewsPollingWithInvalidation.mockReturnValue({
+            items: [READY_ITEM],
+            isPolling: false,
+            pollError: null,
+        });
+
+        const { container } = renderWithClient(
+            <NewsList items={[READY_ITEM]} symbol="AAPL" />
+        );
+
+        const link = screen.getByRole('link', { name: /애플, 신제품 발표/ });
+        expect(link).toHaveAttribute('href', 'https://example.com/news-1');
+        expect(link).toHaveAttribute('target', '_blank');
+        expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+        expect(screen.getAllByRole('link')).toHaveLength(1);
+        expect(
+            screen.getByText('원문 보기 →', { ignore: 'none' }).closest('a')
+        ).toBeNull();
+        expect(container.querySelectorAll('a a')).toHaveLength(0);
+    });
+
+    describe('카테고리 배지', () => {
+        const renderWithCategory = (category: NewsDisplayItem['category']) => {
+            const item: NewsDisplayItem = { ...READY_ITEM, category };
+            mockUseNewsPollingWithInvalidation.mockReturnValue({
+                items: [item],
+                isPolling: false,
+                pollError: null,
+            });
+            return renderWithClient(<NewsList items={[item]} symbol="AAPL" />);
+        };
+
+        it('regulation → "규제" (raw enum 대신 한국어 라벨)', () => {
+            const { container } = renderWithCategory('regulation');
+            expect(screen.getByText('규제')).toBeInTheDocument();
+            expect(container.textContent).not.toContain('regulation');
+        });
+
+        it('m_and_a → "인수·합병"', () => {
+            const { container } = renderWithCategory('m_and_a');
+            expect(screen.getByText('인수·합병')).toBeInTheDocument();
+            expect(container.textContent).not.toContain('m_and_a');
+        });
+
+        it('other는 배지를 그리지 않는다', () => {
+            const { container } = renderWithCategory('other');
+            expect(container.textContent).not.toMatch(/other|기타/);
+        });
+
+        it('알 수 없는 값은 배지를 그리지 않는다', () => {
+            // DB에는 core가 나중에 추가한 값이 남아 있을 수 있다 — `any`를 돌려주는 파서로 만든다.
+            const unknown = JSON.parse('"brand_new"');
+            const { container } = renderWithCategory(unknown);
+            expect(container.textContent).not.toContain('brand_new');
+        });
+
+        it('null이면 배지를 그리지 않는다', () => {
+            renderWithCategory(null);
+            // READY_ITEM의 기본 카테고리(earnings → "실적")가 새지 않는다.
+            expect(screen.queryByText('실적')).not.toBeInTheDocument();
+        });
+    });
+
     it('뉴스 시간을 한국시간 기준으로 표시한다', () => {
         expect(formatNewsPublishedAt('2026-05-05T22:35:21.000Z', 'ko')).toBe(
             '2026년 5월 6일 오전 07:35 KST'
@@ -288,7 +352,12 @@ describe('NewsList', () => {
         expect(screen.getByText('AI 분석 중…')).toBeInTheDocument();
         // Ready-state badges/body must not render while pending.
         expect(screen.queryByText('본문')).not.toBeInTheDocument();
+        // 하단 "원문 보기 →" 단서는 ready 카드에만 그린다. 하지만 제목은 분석 중에도
+        // 원문으로 가는 링크다(예전에는 하단 링크가 통째로 없어 눌러도 반응이 없었다).
         expect(screen.queryByText('원문 보기 →')).not.toBeInTheDocument();
+        expect(
+            screen.getByRole('link', { name: /애플, 신제품 발표/ })
+        ).toHaveAttribute('href', 'https://example.com/news-1');
     });
 
     it('symbol이 바뀌면 더보기로 늘어난 visibleCount를 페이지 크기로 되돌린다', () => {
