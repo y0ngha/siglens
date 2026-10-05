@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => ({
     runMacroBriefing: vi.fn(),
     runMarketNewsDigest: vi.fn(),
     peekBriefingCache: vi.fn(),
-    peekMacroBriefingCache: vi.fn(),
+    peekMacroBriefingCacheEntry: vi.fn(),
     peekMarketNewsDigestCache: vi.fn(),
     revalidateTag: vi.fn(),
     getCachedMarketSummary: vi.fn(),
@@ -39,7 +39,7 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => ({
     runMacroBriefing: mocks.runMacroBriefing,
     runMarketNewsDigest: mocks.runMarketNewsDigest,
     peekBriefingCache: mocks.peekBriefingCache,
-    peekMacroBriefingCache: mocks.peekMacroBriefingCache,
+    peekMacroBriefingCacheEntry: mocks.peekMacroBriefingCacheEntry,
     peekMarketNewsDigestCache: mocks.peekMarketNewsDigestCache,
 }));
 vi.mock('@/entities/market-summary/api/marketSummaryCache', () => ({
@@ -181,6 +181,16 @@ function calendarUnchanged(): void {
     mocks.translateUnresolvedCalendarIndicators.mockResolvedValue(0);
 }
 
+/**
+ * core `peekMacroBriefingCacheEntry`가 돌려주는 봉투. seed에는 이 봉투째 실려
+ * 화면이 "생성 시각"을 그릴 수 있고, RSS 스탬프는 `briefing`만 대조한다.
+ */
+const MACRO_GENERATED_AT = '2026-10-04T04:30:00.000Z';
+const MACRO_ENTRY = {
+    briefing: { briefing: 'y' },
+    generatedAt: MACRO_GENERATED_AT,
+};
+
 function allSucceed(): void {
     mocks.cooldownIsSet.mockResolvedValue(false);
     mocks.cooldownMark.mockResolvedValue(undefined);
@@ -217,8 +227,8 @@ function allSucceed(): void {
     mocks.peekBriefingCache.mockImplementation(
         fillsAfterRun(mocks.runBriefing, { briefing: 'x' })
     );
-    mocks.peekMacroBriefingCache.mockImplementation(
-        fillsAfterRun(mocks.runMacroBriefing, { briefing: 'y' })
+    mocks.peekMacroBriefingCacheEntry.mockImplementation(
+        fillsAfterRun(mocks.runMacroBriefing, MACRO_ENTRY)
     );
     mocks.peekMarketNewsDigestCache.mockImplementation(
         fillsAfterRun(mocks.runMarketNewsDigest, { currentDriverKo: 'z' })
@@ -351,7 +361,7 @@ describe('runHubPrewarm', () => {
      * 플레이스홀더로 남는다 — 이 기능이 고치려던 증상 그대로다.
      */
     it('되읽기가 끝내 비면 불일치로 세되 태그는 턴다', async () => {
-        mocks.peekMacroBriefingCache.mockResolvedValue(null);
+        mocks.peekMacroBriefingCacheEntry.mockResolvedValue(null);
         const errorSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => {});
@@ -376,11 +386,11 @@ describe('runHubPrewarm', () => {
      * 재시도가 없으면 정상 동작이 "불일치"로 오보된다.
      */
     it('첫 되읽기가 비어도 뒤이어 값이 보이면 성공으로 센다', async () => {
-        mocks.peekMacroBriefingCache
+        mocks.peekMacroBriefingCacheEntry
             // ① 사전 peek(캐시 미스) ② 첫 되읽기(아직 안 착지한 SET과 경합)
             .mockResolvedValueOnce(null)
             .mockResolvedValueOnce(null)
-            .mockResolvedValue({ briefing: 'y' });
+            .mockResolvedValue(MACRO_ENTRY);
         // 실제 타이머로 두면 재시도 간격만큼 진짜로 대기한다. 가짜 타이머로 넘긴다.
         vi.useFakeTimers();
 
@@ -469,7 +479,7 @@ describe('runHubPrewarm', () => {
      */
     it('이미 캐시에 있으면 생성도 무효화도 하지 않는다', async () => {
         mocks.peekBriefingCache.mockResolvedValue({ briefing: 'x' });
-        mocks.peekMacroBriefingCache.mockResolvedValue({ briefing: 'y' });
+        mocks.peekMacroBriefingCacheEntry.mockResolvedValue(MACRO_ENTRY);
         mocks.peekMarketNewsDigestCache.mockResolvedValue({
             currentDriverKo: 'z',
         });
@@ -513,13 +523,13 @@ describe('runHubPrewarm', () => {
         }
         expect(mocks.writeHubSsrSeed).toHaveBeenCalledWith(
             MACRO_BRIEFING_SEED_SURFACE,
-            { briefing: 'y' }
+            MACRO_ENTRY
         );
     });
 
     it('이미 캐시에 있어도 seed는 갱신한다 — 값이 이미 손에 있다', async () => {
         mocks.peekBriefingCache.mockResolvedValue({ briefing: 'x' });
-        mocks.peekMacroBriefingCache.mockResolvedValue({ briefing: 'y' });
+        mocks.peekMacroBriefingCacheEntry.mockResolvedValue(MACRO_ENTRY);
         mocks.peekMarketNewsDigestCache.mockResolvedValue({
             currentDriverKo: 'z',
         });
@@ -537,7 +547,7 @@ describe('runHubPrewarm', () => {
         }
         expect(mocks.writeHubSsrSeed).toHaveBeenCalledWith(
             MACRO_BRIEFING_SEED_SURFACE,
-            { briefing: 'y' }
+            MACRO_ENTRY
         );
     });
 
@@ -914,7 +924,7 @@ describe('runHubPrewarm — SSR miss 표시', () => {
 
     function alreadyFreshAll(): void {
         mocks.peekBriefingCache.mockResolvedValue({ briefing: 'x' });
-        mocks.peekMacroBriefingCache.mockResolvedValue({ briefing: 'y' });
+        mocks.peekMacroBriefingCacheEntry.mockResolvedValue(MACRO_ENTRY);
         mocks.peekMarketNewsDigestCache.mockResolvedValue({
             currentDriverKo: 'z',
         });
@@ -1163,7 +1173,7 @@ describe('runHubPrewarm — 새로 구운 허브 URL (IndexNow 제출용)', () =
 
     it('이미 캐시에 있어 굽지 않은 허브는 싣지 않는다', async () => {
         mocks.peekBriefingCache.mockResolvedValue({ briefing: 'x' });
-        mocks.peekMacroBriefingCache.mockResolvedValue({ briefing: 'y' });
+        mocks.peekMacroBriefingCacheEntry.mockResolvedValue(MACRO_ENTRY);
         mocks.peekMarketNewsDigestCache.mockResolvedValue({
             currentDriverKo: 'z',
         });
@@ -1177,7 +1187,7 @@ describe('runHubPrewarm — 새로 구운 허브 URL (IndexNow 제출용)', () =
 
     it('이미 캐시에 있지만 본문 스탬프가 바뀐 허브는 changedUrls에 싣는다 — generatedUrls와 겹치지 않는다', async () => {
         mocks.peekBriefingCache.mockResolvedValue({ briefing: 'x' });
-        mocks.peekMacroBriefingCache.mockResolvedValue({ briefing: 'y' });
+        mocks.peekMacroBriefingCacheEntry.mockResolvedValue(MACRO_ENTRY);
         mocks.peekMarketNewsDigestCache.mockResolvedValue({
             currentDriverKo: 'z',
         });
@@ -1204,7 +1214,7 @@ describe('runHubPrewarm — 새로 구운 허브 URL (IndexNow 제출용)', () =
 
     it('스탬프가 그대로(같은 본문)면 changedUrls는 비어 있다', async () => {
         mocks.peekBriefingCache.mockResolvedValue({ briefing: 'x' });
-        mocks.peekMacroBriefingCache.mockResolvedValue({ briefing: 'y' });
+        mocks.peekMacroBriefingCacheEntry.mockResolvedValue(MACRO_ENTRY);
         mocks.peekMarketNewsDigestCache.mockResolvedValue({
             currentDriverKo: 'z',
         });
@@ -1285,7 +1295,7 @@ describe('runHubPrewarm — 새로 구운 허브 URL (IndexNow 제출용)', () =
     it('캘린더가 바뀌지 않은 국가는 싣지 않는다 — 경제 캘린더는 스스로 무효화하는 대상이다', async () => {
         calendarUnchanged();
         // 거시 브리핑이 이미 캐시에 있어 `/economy`가 다른 경로로 실리지 않게 한다.
-        mocks.peekMacroBriefingCache.mockResolvedValue({ briefing: 'y' });
+        mocks.peekMacroBriefingCacheEntry.mockResolvedValue(MACRO_ENTRY);
 
         const result = await runHubPrewarm();
 
@@ -1294,7 +1304,7 @@ describe('runHubPrewarm — 새로 구운 허브 URL (IndexNow 제출용)', () =
     });
 
     it('캘린더가 바뀐 국가는 selfInvalidating 경로로도 싣는다', async () => {
-        mocks.peekMacroBriefingCache.mockResolvedValue({ briefing: 'y' });
+        mocks.peekMacroBriefingCacheEntry.mockResolvedValue(MACRO_ENTRY);
 
         const result = await runHubPrewarm();
 
@@ -1347,8 +1357,9 @@ describe('runHubPrewarm — 본문 스탬프(RSS pubDate 근거)', () => {
 
     it('이미 캐시에 있던 본문도 스탬프를 남긴다 — 같은 해시면 시각이 유지되므로 매 tick 불러도 안전하다', async () => {
         mocks.peekBriefingCache.mockResolvedValue({ briefing: 'cached-m' });
-        mocks.peekMacroBriefingCache.mockResolvedValue({
-            briefing: 'cached-e',
+        mocks.peekMacroBriefingCacheEntry.mockResolvedValue({
+            briefing: { briefing: 'cached-e' },
+            generatedAt: MACRO_GENERATED_AT,
         });
         mocks.peekMarketNewsDigestCache.mockResolvedValue({
             currentDriverKo: 'cached-n',

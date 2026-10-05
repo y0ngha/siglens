@@ -33,6 +33,15 @@ export interface PlainFacts {
      * 호출자가 시세에서 넘긴다. 없으면(조회 실패·타임아웃) 생략한다.
      */
     readonly currentPrice?: number;
+    /**
+     * 가격이 **언제 기준인지**(`'9월 29일 종가'`·`'10월 5일 장중'`·`'10월 5일 UTC'`).
+     *
+     * 평이화 글은 만든 뒤 며칠씩 저장·색인되는데, 모델이 "지금 329.4달러"처럼 읽는 시점에
+     * 기대어 쓰면 그 문장이 며칠 뒤에도 "지금"으로 남는다. 이 값을 가격 앞에 그대로 붙이게
+     * 해서 읽는 시점과 무관한 문장으로 만든다(`buildPriceAsOf`). 날짜 숫자도 담고 있으므로
+     * `buildAllowedNumbers`에 함께 넘겨 숫자 가드가 날짜를 환각으로 잡지 않게 한다.
+     */
+    readonly asOf?: string;
     readonly numbers: readonly number[];
 }
 
@@ -83,7 +92,9 @@ export function collectFacts(
     /** 출력 언어. 통화 표기를 그 언어로 고른다. 모르는 값은 한국어로 떨어진다. */
     locale = 'ko',
     /** 현재 주가. 호출자가 시세에서 넘긴다. */
-    currentPrice?: number
+    currentPrice?: number,
+    /** 가격 기준 시점 문구. 호출자가 `buildPriceAsOf`로 만들어 넘긴다. */
+    asOf?: string
 ): PlainFacts {
     const record =
         typeof analysis === 'object' && analysis !== null
@@ -105,6 +116,7 @@ export function collectFacts(
         ...(typeof currentPrice === 'number' && Number.isFinite(currentPrice)
             ? { currentPrice }
             : {}),
+        ...(typeof asOf === 'string' && asOf.length > 0 ? { asOf } : {}),
         // 현재가도 허용 숫자에 넣는다 — 넣지 않으면 모델이 그 값을 쓰는 순간
         // 숫자 가드가 환각으로 잡아 재작성을 통째로 버린다.
         numbers: [

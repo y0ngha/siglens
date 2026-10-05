@@ -8,8 +8,13 @@ import { getRedisClient } from '@/shared/cache/redisClient';
  *
  * ## 왜 있는가
  *
- * 허브 AI 본문(시장·거시 브리핑, 뉴스 다이제스트)의 캐시 값에는 생성 시각이 없다
- * (core `peek*Cache`는 본문만 돌려주고, `hubSsrSeed`도 본문만 저장한다). RSS 항목에는
+ * 허브 AI 본문(시장·거시 브리핑, 뉴스 다이제스트)의 캐시 값에는 믿을 만한 생성 시각이
+ * 없다(core `peekBriefingCache`·`peekMarketNewsDigestCache`는 본문만 돌려주고, 시장
+ * 브리핑 `hubSsrSeed`도 본문만 저장한다). 거시 브리핑만 예외다 — core
+ * `peekMacroBriefingCacheEntry`가 `generatedAt`을 주고 그 seed는 `{ briefing, generatedAt }`
+ * 봉투라 화면이 "생성 시각"을 그린다. 그래도 **RSS는 그 값을 쓰지 않는다**: 본문이 같으면
+ * 시각이 유지돼야 하고, 다른 표면과 같은 방식으로 일관되게 다루려면 아래 해시 대조가
+ * 필요하다(스탬프 해시는 봉투가 아니라 `briefing` 본문만 대조한다). RSS 항목에는
  * 실제 시각이 필요하고 지어낸 날짜는 쓰지 않는다. 그래서 크론이 본문을 확인할 때마다
  * 본문 해시를 이 자리에 대조해, **내용이 바뀐 순간**만 시각을 갱신한다.
  *

@@ -5,11 +5,8 @@ import {
 } from '@y0ngha/siglens-core';
 import { getEconomySnapshotStatic } from '@/entities/economy/api/economySnapshotStaticCache';
 import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingStaticCache';
-import {
-    ISO_DATE_HOUR_SLICE_END,
-    MS_PER_DAY,
-    MS_PER_HOUR,
-} from '@/shared/config/time';
+import { macroBriefingDayKey } from '@/entities/economy/lib/macroBriefingDayKey';
+import { MS_PER_DAY, MS_PER_HOUR } from '@/shared/config/time';
 import { fmpCalendarDateTimeToIso } from '@/shared/lib/etTimeUtils';
 import type { ToolExecutor } from '@/app/api/ai/chat/tools/chatTools';
 import { roundNumber } from '@/entities/bars/lib/roundIndicators';
@@ -60,10 +57,12 @@ export const getEconomyTool: ToolExecutor = async () => {
     const snapshot = await getEconomySnapshotStatic().catch(() => null);
     if (!snapshot) return { available: false, reason: 'snapshot_unavailable' };
 
-    const dateHour = new Date().toISOString().slice(0, ISO_DATE_HOUR_SLICE_END);
-    const briefing = await peekMacroBriefingStatic(snapshot, dateHour).catch(
-        () => null
-    );
+    const briefing = await peekMacroBriefingStatic(
+        snapshot,
+        macroBriefingDayKey()
+    )
+        .then(entry => entry?.briefing ?? null)
+        .catch(() => null);
 
     const now = Date.now();
     const windowEnd = now + CALENDAR_WINDOW_DAYS * MS_PER_DAY;

@@ -16,7 +16,10 @@ import { logActionError } from '@/shared/lib/logActionError';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
-import { resolveCurrentPrice } from '@/entities/analysis-plain/lib/currentPrice';
+import {
+    resolveCurrentPrice,
+    resolvePriceAsOf,
+} from '@/entities/analysis-plain/lib/currentPrice';
 import { rewriteToPlainLanguage } from '@/entities/analysis-plain/api';
 import { isE2E } from '@/shared/api/e2eEnv';
 import {
@@ -698,7 +701,8 @@ async function withPlainLanguage<T>(
         symbol,
         locale,
         currencyForSymbol(symbol),
-        await resolveCurrentPrice(symbol, payload)
+        await resolveCurrentPrice(symbol, payload),
+        await resolvePriceAsOf(symbol, locale, payload)
     );
     return { ...(result as object), plain } as WithPlain<T>;
 }

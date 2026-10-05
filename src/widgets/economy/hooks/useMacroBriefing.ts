@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
 import type {
-    MacroBriefingResponse,
+    MacroBriefingCacheEntry,
     SubmitMacroBriefingCached,
     RunMacroBriefingResult,
 } from '@y0ngha/siglens-core';
@@ -15,15 +15,15 @@ import type { MacroBriefingActionResult } from '@/shared/lib/types';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 
 /**
- * peekSeed 경유의 초기 표시용 cached variant — 서버 generatedAt 없이 briefing만 있다.
- * core의 `SubmitMacroBriefingCached`를 확장해 `generatedAt`을 null로 오버라이드한다.
- * (core는 generatedAt을 string으로 강제하지만, seed 단계는 아직 서버 타임스탬프가 없다.)
+ * peekSeed 경유의 초기 표시용 cached variant. 서버가 캐시에서 읽어 온 `generatedAt`을
+ * 그대로 싣는다. 생성 시각이 저장되지 않은 옛 항목만 `null`이다.
+ * (core의 `SubmitMacroBriefingCached`는 generatedAt을 string으로 강제하므로 `string | null`로 넓힌다.)
  */
 interface SeedMacroBriefingCached extends Omit<
     SubmitMacroBriefingCached,
     'generatedAt'
 > {
-    generatedAt: null;
+    generatedAt: string | null;
 }
 
 /**
@@ -32,9 +32,9 @@ interface SeedMacroBriefingCached extends Omit<
  * - `'error'`: server action이 ok=false를 반환했을 때 inline notice 렌더.
  * - `RunMacroBriefingResult`: 정상 — cached/done 모두 본문 렌더.
  *
- * seed 경유의 cached variant는 generatedAt이 null일 수 있다(아직 서버에서
- * 생성된 타임스탬프가 없는 초기 peekSeed 표시 단계). 빈 문자열 sentinel 대신
- * null로 명시해 타입을 더 정확하게 표현한다.
+ * seed 경유의 cached variant는 generatedAt이 null일 수 있다(생성 시각이 저장되기
+ * 전에 쓰인 옛 캐시·seed 항목). 빈 문자열 sentinel 대신 null로 명시해 타입을 더
+ * 정확하게 표현한다.
  */
 type MacroBriefingInput =
     | RunMacroBriefingResult
@@ -50,12 +50,12 @@ export interface UseMacroBriefingReturn {
 
 /**
  * 마운트 후 SSE 스트림으로 거시 브리핑을 트리거한다.
- * peekSeed가 있으면 초기 표시(generatedAt이 null) 후 action 결과로 교체.
+ * peekSeed가 있으면 초기 표시(서버가 읽은 generatedAt 포함) 후 action 결과로 교체.
  * server action 실패면 'error'(inline notice). market briefing 훅과
  * 동일한 골격이되 silent infinite skeleton 회귀 방지를 위해 error variant 명시.
  */
 export function useMacroBriefing(
-    peekSeed?: MacroBriefingResponse | null
+    peekSeed?: MacroBriefingCacheEntry | null
 ): UseMacroBriefingReturn {
     const locale = useCurrentLocale();
     const streamMessages = useStreamErrorMessages();
@@ -88,7 +88,11 @@ export function useMacroBriefing(
     };
 
     const seedInput: SeedMacroBriefingCached | undefined = peekSeed
-        ? { status: 'cached', briefing: peekSeed, generatedAt: null }
+        ? {
+              status: 'cached',
+              briefing: peekSeed.briefing,
+              generatedAt: peekSeed.generatedAt,
+          }
         : undefined;
 
     // 스트림이 error 이벤트로 끝나면 `runAnalysisStream`이 throw하므로 data가 없다 —
@@ -104,7 +108,8 @@ export function useMacroBriefing(
     //
     // 그래도 이쪽이 맞다. 대안은 실제 내용이 있는데도 에러 카드를 띄우는 것이고, 그러면
     // 크롤러가 렌더한 DOM에서 이 페이지의 유일한 AI 서술이 사라진다. seed는 "오래됐을 수
-    // 있는 진짜 내용"이지 거짓이 아니며, `generatedAt: null`로 신선한 척도 하지 않는다.
+    // 있는 진짜 내용"이지 거짓이 아니며, 서버가 읽은 `generatedAt`을 그대로 실어 신선한
+    // 척하지 않는다(화면이 "생성 시각"으로 나이를 드러낸다).
     if (isError) return { input: seedInput ?? 'error', refetch };
     if (!data) return { input: seedInput, refetch };
     if ('ok' in data) return { input: seedInput ?? 'error', refetch };

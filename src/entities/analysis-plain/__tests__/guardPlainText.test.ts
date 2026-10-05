@@ -4,6 +4,7 @@ import {
     salvageByRemovingSentences,
     describeFailure,
     findAdvicePhrases,
+    findStaleDeixis,
     findUnsupportedNumbers,
     guardPlainText,
 } from '../lib/guardPlainText';
@@ -609,5 +610,126 @@ describe('salvageByRemovingSentences — 조언 문장', () => {
     it('조언이 없으면 원문을 그대로 돌려준다', () => {
         const text = '지지선은 183.60달러입니다. 이 아래로 내려가면 깨집니다.';
         expect(salvageByRemovingSentences(text, allowed)).toBe(text);
+    });
+});
+
+describe('buildAllowedNumbers — facts.asOf 날짜 숫자', () => {
+    it('asOf 문구 안의 월·일 숫자를 허용 집합에 넣는다', () => {
+        const allowed = buildAllowedNumbers([], ['9월 29일 종가']);
+        expect(allowed).toEqual(expect.arrayContaining([9, 29]));
+    });
+});
+
+describe('findStaleDeixis — 가격 값을 읽는 시점에 기대어 말하는 표현', () => {
+    it.each([
+        ['지금 주가는 329.40달러입니다', '지금 주가는'],
+        ['현재 가격이 183.6달러입니다', '현재 가격이'],
+        ['현재의 가격은 약 330달러입니다', '현재의 가격은'],
+        ['오늘 시세 $330 부근입니다', '오늘 시세'],
+        ['지금주가가 329달러입니다', '지금주가가'],
+        ['주가는 지금 329.4달러입니다', '주가는 지금'],
+        ['가격은 현재 약 183.6달러입니다', '가격은 현재'],
+        ['지금 329.4달러에 거래됩니다', '지금 329.4달러'],
+        ['현재 70,000원입니다', '현재 70,000원'],
+    ])('걸린다: %s', (text, token) => {
+        expect(findStaleDeixis(text)).toEqual([token]);
+    });
+
+    /**
+     * 합성어와 숫자 없는 상태 서술은 시점에 기대어 값을 말하는 것이 아니다. 걸리면 멀쩡한 글을
+     * 두 번 쓰게 한다.
+     */
+    it.each([
+        '9월 29일 종가 기준 주가는 329.40달러입니다',
+        '현재 가격대는 320달러에서 330달러 사이입니다',
+        '현재 주가수익비율은 25배입니다',
+        '현재 주가순자산비율은 3.2배입니다',
+        '가격은 현재 저항선에 막혀 있습니다',
+        '지금 주가가 지지선 근처에 있습니다',
+        '그동안 주가가 꾸준히 올랐습니다',
+        '현재 상황에서 거래량이 늘었습니다',
+        '지금까지 가격이 한 방향으로 움직였습니다',
+        '현재가와 목표가 사이의 거리입니다',
+        '오늘날의 시장 구조와 다릅니다',
+        '가격이 지금의 두 배가 되려면',
+        '현재 시세는 변동이 큰 편입니다',
+    ])('걸리지 않는다: %s', text => {
+        expect(findStaleDeixis(text)).toEqual([]);
+    });
+
+    it('한국어 패턴이므로 ko가 아니면 검사하지 않는다', () => {
+        expect(findStaleDeixis('The current price is 329.40', 'en')).toEqual(
+            []
+        );
+        expect(findStaleDeixis('지금 주가는 329달러', 'ja')).toEqual([]);
+    });
+});
+
+describe('guardPlainText — stale_deixis (연성)', () => {
+    it('시점 표현이 있으면 stale_deixis로 보고한다', () => {
+        expect(
+            guardPlainText({
+                text: '지금 주가는 183.60달러입니다.',
+                allowed: [183.6],
+            })
+        ).toEqual({
+            kind: 'stale_deixis',
+            tokens: ['지금 주가는'],
+        });
+    });
+
+    it('숫자 위반이 함께 있으면 경성 위반이 먼저 보고된다', () => {
+        expect(
+            guardPlainText({
+                text: '지금 주가는 999.99달러입니다.',
+                allowed: [183.6],
+            })
+        ).toMatchObject({ kind: 'unsupported_numbers' });
+    });
+
+    it('조언 위반이 함께 있으면 조언이 먼저 보고된다', () => {
+        expect(
+            guardPlainText({
+                text: '지금 주가는 183.60달러이니 기다리세요.',
+                allowed: [183.6],
+            })
+        ).toMatchObject({ kind: 'advice' });
+    });
+
+    it('기준 시점을 붙인 문장은 통과한다', () => {
+        expect(
+            guardPlainText({
+                text: '9월 29일 종가 기준 주가는 183.60달러입니다.',
+                allowed: [183.6],
+            })
+        ).toBeNull();
+    });
+
+    it('비-ko에서는 걸리지 않는다', () => {
+        expect(
+            guardPlainText({
+                text: 'The current price is high.',
+                allowed: [],
+                locale: 'en',
+            })
+        ).toBeNull();
+    });
+
+    it('문장 도려내기 대상이 아니다 — 연성 위반은 글을 깎지 않는다', () => {
+        const text = '지금 주가는 183.60달러입니다. 거래량도 많습니다.';
+        expect(salvageByRemovingSentences(text, [183.6])).toBe(text);
+    });
+});
+
+describe('describeFailure — stale_deixis', () => {
+    it('걸린 표현과 asOf를 쓰라는 지시를 담되 예시 문장은 넣지 않는다', () => {
+        const hint = describeFailure({
+            kind: 'stale_deixis',
+            tokens: ['지금 주가는'],
+        });
+        expect(hint).toContain('지금 주가는');
+        expect(hint).toContain('facts.asOf');
+        // 이 프롬프트의 예시는 출력으로 샌다 — 따옴표 예시 문장이 없어야 한다.
+        expect(hint).not.toMatch(/["“”']/);
     });
 });

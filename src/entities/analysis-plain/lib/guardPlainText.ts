@@ -284,6 +284,52 @@ export function findAdvicePhrases(text: string, locale = 'ko'): string[] {
     );
 }
 
+/**
+ * 가격 **값**을 읽는 시점에 기대어 말하는 한국어 표현 — "지금 주가는 329.4달러", "현재 가격이
+ * 183.6달러", "주가는 지금 329달러", "지금 329.4달러".
+ *
+ * 평이화 글은 만든 뒤 며칠씩 저장·색인된다. "지금 329.4달러"는 쓴 순간에는 맞아도 읽는
+ * 사람에게는 며칠 전 값이다. 프롬프트가 `facts.asOf`를 가격 앞에 붙이라고 하지만 규칙에만
+ * 기대지 않고 결과 문자열도 본다.
+ *
+ * **이 검사는 연성(soft)이다.** 걸리면 지적 문구와 함께 한 번만 다시 쓰게 하고, 그래도
+ * 남으면(또는 재시도가 실패하면) 첫 글을 그대로 받아들인다(`api.ts`). 숫자 오류나 조언처럼
+ * 틀린 내용이 아니라 시점 표현이 거칠 뿐이라, 글 전체를 버려 쉽게보기가 사라지는 비용이 더
+ * 크다. 그래서 문장 도려내기(`salvageByRemovingSentences`) 대상에도 넣지 않는다.
+ *
+ * **정밀도를 우선한다 — 시점어가 가격 숫자에 직접 붙은 형태만 본다.** "주가/가격/시세"라는
+ * 명사만 보면 합성어("현재 가격대", "현재 주가수익비율", "현재 주가순자산비율")와 숫자 없는
+ * 상태 서술("가격은 현재 저항선에 막혀 있습니다")까지 걸려 멀쩡한 글을 두 번 쓰게 한다.
+ * 그래서 가격 명사 바로 뒤(조사 하나까지)에 숫자가 오거나, 시점어가 숫자+통화에 바로 붙은
+ * 경우만 센다. 숫자 앞의 `약`·`대략`·`$`는 건너뛴다.
+ */
+const PRICE_FIGURE_AHEAD = String.raw`(?=\s*(?:약\s*|대략\s*)?\$?\d)`;
+const STALE_DEIXIS_PATTERNS: readonly RegExp[] = [
+    // 지금 주가는 329.4달러 / 현재의 가격이 183.6달러 / 오늘 시세 약 330달러
+    new RegExp(
+        String.raw`(?:지금|현재|오늘)(?:의)?\s*(?:주가|가격|시세)[은는이가도만을를]?${PRICE_FIGURE_AHEAD}`,
+        'g'
+    ),
+    // 주가는 지금 329달러 / 가격은 현재 약 183.6달러
+    new RegExp(
+        String.raw`(?:주가|가격|시세)[은는]\s*(?:지금|현재)${PRICE_FIGURE_AHEAD}`,
+        'g'
+    ),
+    // 지금 329.4달러 / 현재 70,000원 — 시점어가 가격 숫자에 바로 붙은 경우
+    /(?<!(?:주가|가격|시세)[은는]\s*)(?:지금|현재|오늘)\s*\$?\d[\d,.]*\s*(?:달러|원)/g,
+];
+
+/**
+ * 가격을 읽는 시점에 기대어 말하는 표현을 찾아 일치한 부분 문자열을 돌려준다. 한국어
+ * 패턴만 있으므로 `ko`가 아니면 항상 빈 배열이다(`findAdvicePhrases`와 같다).
+ */
+export function findStaleDeixis(text: string, locale = 'ko'): string[] {
+    if (locale !== 'ko') return [];
+    return STALE_DEIXIS_PATTERNS.flatMap(pattern =>
+        [...text.matchAll(pattern)].map(m => m[0])
+    );
+}
+
 /** 산출물이 통과하지 못한 이유. 재시도 프롬프트에 그대로 실린다. */
 export type PlainGuardFailure =
     | { readonly kind: 'empty' }
@@ -293,7 +339,12 @@ export type PlainGuardFailure =
           readonly kind: 'unsupported_numbers';
           readonly tokens: readonly string[];
       }
-    | { readonly kind: 'advice'; readonly tokens: readonly string[] };
+    | { readonly kind: 'advice'; readonly tokens: readonly string[] }
+    /**
+     * 연성 실패 — 한 번 다시 쓰게 하고, 그래도 남으면 받아들인다. 다른 종류와 달리
+     * 재시도 뒤에도 글을 버리지 않는다(`findStaleDeixis` 참고).
+     */
+    | { readonly kind: 'stale_deixis'; readonly tokens: readonly string[] };
 
 export interface GuardInput {
     readonly text: string;
@@ -345,6 +396,12 @@ export function guardPlainText({
     // 한국어 패턴이므로 ko에서만 건다.
     const advice = findAdvicePhrases(trimmed, locale);
     if (advice.length > 0) return { kind: 'advice', tokens: advice };
+
+    // 연성 검사라 가장 마지막이다 — 숫자·조언 같은 경성 위반이 있으면 그쪽이 먼저 보고된다.
+    const staleDeixis = findStaleDeixis(trimmed, locale);
+    if (staleDeixis.length > 0) {
+        return { kind: 'stale_deixis', tokens: staleDeixis };
+    }
 
     return null;
 }
@@ -450,5 +507,8 @@ export function describeFailure(
         case 'advice':
             // 모델이 베낄 예시 문장을 넣지 않는다 — 이 프롬프트의 예시는 출력으로 샌다.
             return `이전 응답이 독자에게 무엇을 하라고 말하거나 행동이 유리하다, 불리하다고 평가했습니다(${failure.tokens.join(', ')}). 그 부분을 가격과 조건, 그 조건에서 벌어지는 결과로 다시 쓰세요. 문장의 주어는 독자의 행동이 아니라 가격, 거리, 조건이어야 합니다.`;
+        case 'stale_deixis':
+            // 모델이 베낄 예시 문장을 넣지 않는다 — 이 프롬프트의 예시는 출력으로 샌다.
+            return `이전 응답이 가격을 읽는 시점에 기대어 말했습니다(${failure.tokens.join(', ')}). 지금, 현재, 오늘 같은 말을 가격이나 상태에 붙이지 말고, facts.asOf에 적힌 기준 시점을 가격 앞에 그대로 밝혀 다시 쓰세요.`;
     }
 }
