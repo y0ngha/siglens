@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import type { Bar, BuySellVolumeResult } from '@y0ngha/siglens-core';
 import { VolumeChart } from '@/widgets/chart/VolumeChart';
+import { usePaneLabels } from '@/widgets/chart/hooks/usePaneLabels';
 
 const { mockCreateChart } = vi.hoisted(() => {
     const mockCreateChart = vi.fn(() => ({
@@ -125,5 +126,14 @@ describe('VolumeChart', () => {
             'aria-label',
             '거래량 차트'
         );
+    });
+
+    it('패널 범례의 매수/매도 라벨을 한국어로 넘긴다', () => {
+        render(
+            <VolumeChart bars={mockBars} buySellVolume={mockBuySellVolume} />
+        );
+
+        const { labels } = vi.mocked(usePaneLabels).mock.calls.at(-1)![0];
+        expect(labels[0].subLabels.map(l => l.name)).toEqual(['매수', '매도']);
     });
 });

@@ -1,8 +1,13 @@
 // @vitest-environment jsdom
 // @vitest-environment-options {"url": "https://ai.siglens.io/foo/bar"}
-import { screen, within } from '@testing-library/react';
+import { cleanup, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { hydrateServerMarkup, renderRoot, visit } from './notFoundHarness';
+import {
+    hydrateServerMarkup,
+    removeTitles,
+    renderRoot,
+    visit,
+} from './notFoundHarness';
 
 /**
  * ai 호스트 주소(`ai.siglens.io`)에서의 루트 404. jsdom의 기본 URL을 이 파일에서만 ai 호스트로
@@ -11,8 +16,11 @@ import { hydrateServerMarkup, renderRoot, visit } from './notFoundHarness';
  */
 describe('RootNotFound — ai 호스트', () => {
     afterEach(() => {
+        // RTL 렌더가 소유한 `<title>`은 언마운트로 걷고, 하이드레이션 테스트(언마운트 없음)가
+        // 남긴 것은 직접 걷는다 — 순서가 바뀌면 React가 이미 사라진 `<title>`을 지우려다 깨진다.
+        cleanup();
         document.body.innerHTML = '';
-        document.title = '';
+        removeTitles();
         document.documentElement.lang = '';
         visit('/foo/bar');
     });

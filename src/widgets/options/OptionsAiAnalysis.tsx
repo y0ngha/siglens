@@ -10,6 +10,8 @@ import type {
 
 import { cn } from '@/shared/lib/cn';
 import { formatAnalyzedAt } from '@/shared/lib/formatAnalyzedAt';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { formatCapturedAtKst } from './utils/formatCapturedAtKst';
 import { OptionsAiAnalysisError } from './OptionsAiAnalysisError';
 import { OptionsAiAnalysisSkeleton } from './OptionsAiAnalysisSkeleton';
 import { useOptionsAnalysis } from './hooks/useOptionsAnalysis';
@@ -126,9 +128,19 @@ function SignalBadge({ kind }: SignalBadgeProps) {
 
 interface OptionsAiAnalysisViewProps {
     result: OptionsAnalysisResponse;
+    /**
+     * 분석이 읽은 옵션 데이터의 기준을 밝히는 한 줄(예: "분석 기준: 직전 정규장 · 10월 3일
+     * 05:00 KST 수집"). `analyzedAt`은 분석을 **만든** 시각일 뿐 입력 데이터의 시점이
+     * 아니라서, 정규장 밖에 직전 정규장 스냅샷을 쓰는 경우에만 별도로 알린다.
+     * 공유 패널처럼 스냅샷 정보가 없는 호출부는 넘기지 않는다.
+     */
+    basisCaption?: string | null;
 }
 
-export function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
+export function OptionsAiAnalysisView({
+    result,
+    basisCaption = null,
+}: OptionsAiAnalysisViewProps) {
     const t = useTranslations('widgets.options');
     const isEmpty =
         result.summary === '' &&
@@ -160,6 +172,12 @@ export function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
                     </time>
                 ) : null}
             </div>
+
+            {basisCaption !== null && (
+                <p className="mb-3 text-[10px] text-secondary-500">
+                    {basisCaption}
+                </p>
+            )}
 
             {result.summary ? (
                 <p className="mb-5 text-sm leading-relaxed text-secondary-300">
@@ -257,6 +275,13 @@ interface OptionsAiAnalysisProps {
      * 자세한 근거는 `useOptionsAnalysis`의 동명 옵션 JSDoc 참조.
      */
     cacheOnly?: boolean;
+    /** 옵션 스냅샷 수집 시각(ISO). `showSnapshotBasis`가 켜질 때만 읽는다. */
+    snapshotCapturedAt?: string;
+    /**
+     * 정규장 밖에 직전 정규장 스냅샷으로 분석한 경우 `true`(지표 카드의 캡션과 같은 조건).
+     * 부모가 마운트 이후에만 켠다 — 서버·첫 렌더는 항상 `false`.
+     */
+    showSnapshotBasis?: boolean;
 }
 
 export function OptionsAiAnalysis({
@@ -268,8 +293,11 @@ export function OptionsAiAnalysis({
     isSettingsHydrated,
     hideView = false,
     cacheOnly = false,
+    snapshotCapturedAt,
+    showSnapshotBasis = false,
 }: OptionsAiAnalysisProps) {
     const t = useTranslations('widgets.options');
+    const locale = useResolvedLocale();
     const { allowed: autoRunAllowed, grant } = useAiAutoRunAllowed(symbol);
     const state = useOptionsAnalysis({
         symbol,
@@ -301,6 +329,17 @@ export function OptionsAiAnalysis({
     // 훅은 모두 실행된 뒤에 렌더만 건너뛴다 — 공유 데이터 등록은 유지된다.
     if (hideView) return null;
 
+    const capturedAtKst =
+        showSnapshotBasis && snapshotCapturedAt !== undefined
+            ? formatCapturedAtKst(snapshotCapturedAt, locale)
+            : null;
+    const basisCaption =
+        capturedAtKst === null
+            ? null
+            : t('OptionsAiAnalysis.previousSessionBasis', {
+                  v0: capturedAtKst,
+              });
+
     if (state.status === 'loading') {
         return <OptionsAiAnalysisSkeleton />;
     }
@@ -329,7 +368,10 @@ export function OptionsAiAnalysis({
 
     return (
         <PlainAnalysisSwitch plain={state.plain}>
-            <OptionsAiAnalysisView result={state.result} />
+            <OptionsAiAnalysisView
+                result={state.result}
+                basisCaption={basisCaption}
+            />
         </PlainAnalysisSwitch>
     );
 }

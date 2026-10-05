@@ -16,6 +16,7 @@ import {
     type Timeframe,
 } from '@y0ngha/siglens-core';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import dynamic from 'next/dynamic';
 import type { ReactNode } from 'react';
 import React, {
@@ -201,6 +202,7 @@ export function ChartContent({
 
     // analysis → symbol-page 역방향 import를 제거하기 위해 여기서 context를 읽어 내려보낸다.
     const { indicatorCount, skillCount } = useSymbolPageContext();
+    const { quoteDelayMinutes } = getDescriptor(marketProfile);
 
     const {
         analysis,
@@ -413,6 +415,8 @@ export function ChartContent({
                         phaseIndex={progressPhaseIndex}
                         tipIndex={progressTipIndex}
                         isFreeUser={isFreeUser}
+                        indicatorCount={indicatorCount}
+                        skillCount={skillCount}
                     />
                 ) : isAwaitingInteraction ? (
                     <AiAnalysisAwaitingSection
@@ -682,7 +686,14 @@ export function ChartContent({
                      * crypto 마켓 프로파일에서는 이 문구를 표시하지 않는다.
                      */}
                     {marketProfile !== 'crypto' && t('ChartContent.93c3a3')}
-                    {t('ChartContent.ff6b09')}
+                    {/* 지연 분(分)은 시장 프로파일이 안다(미국·암호화폐 0, 국내 20).
+                        예전에는 전 시장에 "최대 15분 지연"을 박아 실시간인 시장에도
+                        지연이라고 말했다. */}
+                    {quoteDelayMinutes > 0
+                        ? t('ChartContent.quoteDelayed', {
+                              v0: quoteDelayMinutes,
+                          })
+                        : t('ChartContent.quoteAsOfLoad')}
                 </p>
             </div>
 

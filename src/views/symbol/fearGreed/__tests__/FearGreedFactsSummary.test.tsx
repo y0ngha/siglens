@@ -70,17 +70,19 @@ describe('FearGreedFactsSummary', () => {
         expect(getByText(/62 \/ 100/)).toBeInTheDocument();
         expect(getByText(/\(탐욕\)/)).toBeInTheDocument();
         // 5개 factor 라벨 전부 노출.
-        expect(getByText(/거래량 z/)).toBeInTheDocument();
-        expect(getByText(/Buy\/Sell 불균형/)).toBeInTheDocument();
-        expect(getByText(/POC 거리/)).toBeInTheDocument();
-        expect(getByText(/MA200 거리/)).toBeInTheDocument();
+        expect(getByText(/거래량 급증도\(방향 반영\)/)).toBeInTheDocument();
+        expect(getByText(/매수·매도 거래량 불균형/)).toBeInTheDocument();
+        expect(getByText(/매물대 중심과의 거리/)).toBeInTheDocument();
+        expect(getByText(/200일 이동평균과의 거리/)).toBeInTheDocument();
         // FIX 6's factor-ranking narrative sentence also mentions "최근
         // 252봉 위치" (it's this fixture's most extreme factor) — anchor on
         // the per-factor line's "라벨: 값" shape so this assertion targets
         // only that line, not both.
         expect(getByText(/최근 252봉 위치: /)).toBeInTheDocument();
-        // confidence footer.
-        expect(getByText(/표본 220/)).toBeInTheDocument();
+        // sample-size footer.
+        expect(
+            getByText('지난 220거래일과 비교해 매긴 점수예요.')
+        ).toBeInTheDocument();
     });
 
     /**
@@ -393,7 +395,7 @@ describe('FearGreedFactsSummary — DOM 순서', () => {
         expect(section.firstElementChild?.tagName).toBe('H2');
         // 신뢰도 각주는 점수 <dl> 뒤에 오고, 그 뒤에 출처 고지가 섹션을 닫는다.
         const footnote = [...section.querySelectorAll('p')].find(p =>
-            p.textContent?.includes('표본 220')
+            p.textContent?.includes('지난 220거래일')
         )!;
         expect(dl.compareDocumentPosition(footnote) & following).toBe(
             following

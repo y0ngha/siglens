@@ -40,6 +40,8 @@ const METRICS: OptionsExpirationMetrics = {
     topOiBidAskSummary: [],
 };
 
+const CAPTURED_AT = '2025-06-13T20:00:00.000Z';
+
 describe('OptionsMetricsRow', () => {
     it('renders all four metric cards', () => {
         render(
@@ -48,12 +50,78 @@ describe('OptionsMetricsRow', () => {
                 metrics={METRICS}
                 nearestExpiry="2025-06-20"
                 oiStale={false}
+                capturedAt={CAPTURED_AT}
+                showCapturedCaption={false}
             />
         );
-        expect(screen.getByText('Max Pain')).toBeInTheDocument();
-        expect(screen.getByText('P/C Ratio')).toBeInTheDocument();
-        expect(screen.getByText('ATM IV')).toBeInTheDocument();
-        expect(screen.getByText('Imp. Move')).toBeInTheDocument();
+        expect(screen.getByText('맥스 페인')).toBeInTheDocument();
+        expect(screen.getByText('풋/콜 비율')).toBeInTheDocument();
+        expect(screen.getByText('ATM 내재변동성')).toBeInTheDocument();
+        expect(screen.getByText('예상 변동폭')).toBeInTheDocument();
+    });
+
+    it('카드 라벨을 대문자·넓은 자간으로 강제하지 않는다', () => {
+        render(
+            <OptionsMetricsRow
+                expirationDate="2025-06-20"
+                metrics={METRICS}
+                nearestExpiry="2025-06-20"
+                oiStale={false}
+                capturedAt={CAPTURED_AT}
+                showCapturedCaption={false}
+            />
+        );
+        const label = screen.getByText('맥스 페인');
+        expect(label.className).not.toMatch(/uppercase|tracking-widest/);
+    });
+
+    describe('직전 정규장 캡션', () => {
+        it('showCapturedCaption이 켜지면 수집 시각(KST)을 중립 문구로 밝힌다', () => {
+            render(
+                <OptionsMetricsRow
+                    expirationDate="2025-06-20"
+                    metrics={METRICS}
+                    nearestExpiry="2025-06-20"
+                    oiStale={false}
+                    capturedAt="2025-06-13T20:00:00.000Z"
+                    showCapturedCaption
+                />
+            );
+            // 20:00 UTC = 다음 날 05:00 KST.
+            expect(
+                screen.getByText(
+                    /직전 정규장 기준 · .*6월 14일.*05:00 KST 수집/
+                )
+            ).toBeInTheDocument();
+        });
+
+        it('showCapturedCaption이 꺼져 있으면 캡션이 없다', () => {
+            render(
+                <OptionsMetricsRow
+                    expirationDate="2025-06-20"
+                    metrics={METRICS}
+                    nearestExpiry="2025-06-20"
+                    oiStale={false}
+                    capturedAt={CAPTURED_AT}
+                    showCapturedCaption={false}
+                />
+            );
+            expect(screen.queryByText(/직전 정규장 기준/)).toBeNull();
+        });
+
+        it('수집 시각이 잘못된 값이면 캡션을 그리지 않는다(throw 금지)', () => {
+            render(
+                <OptionsMetricsRow
+                    expirationDate="2025-06-20"
+                    metrics={METRICS}
+                    nearestExpiry="2025-06-20"
+                    oiStale={false}
+                    capturedAt="not-a-date"
+                    showCapturedCaption
+                />
+            );
+            expect(screen.queryByText(/직전 정규장 기준/)).toBeNull();
+        });
     });
 
     it('renders formatted metric values', () => {
@@ -63,6 +131,8 @@ describe('OptionsMetricsRow', () => {
                 metrics={METRICS}
                 nearestExpiry="2025-06-20"
                 oiStale={false}
+                capturedAt={CAPTURED_AT}
+                showCapturedCaption={false}
             />
         );
         expect(screen.getByText('$150')).toBeInTheDocument();
@@ -78,6 +148,8 @@ describe('OptionsMetricsRow', () => {
                 metrics={METRICS}
                 nearestExpiry="2025-06-20"
                 oiStale={true}
+                capturedAt={CAPTURED_AT}
+                showCapturedCaption={false}
             />
         );
         const dashes = screen.getAllByText('—');
@@ -91,6 +163,8 @@ describe('OptionsMetricsRow', () => {
                 metrics={METRICS}
                 nearestExpiry="2025-06-20"
                 oiStale={false}
+                capturedAt={CAPTURED_AT}
+                showCapturedCaption={false}
             />
         );
         expect(screen.getByText(/전체 만기 합산/)).toBeInTheDocument();
@@ -103,6 +177,8 @@ describe('OptionsMetricsRow', () => {
                 metrics={null}
                 nearestExpiry="2025-06-20"
                 oiStale={false}
+                capturedAt={CAPTURED_AT}
+                showCapturedCaption={false}
             />
         );
         const dashes = screen.getAllByText('—');
@@ -116,6 +192,8 @@ describe('OptionsMetricsRow', () => {
                 metrics={METRICS}
                 nearestExpiry="2025-06-20"
                 oiStale={false}
+                capturedAt={CAPTURED_AT}
+                showCapturedCaption={false}
             />
         );
         expect(screen.queryByText(/전체 만기 합산/)).not.toBeInTheDocument();

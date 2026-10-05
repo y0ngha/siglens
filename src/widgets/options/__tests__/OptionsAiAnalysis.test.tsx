@@ -176,4 +176,57 @@ describe('OptionsAiAnalysis', () => {
             screen.getByText('Large call sweeps detected')
         ).toBeInTheDocument();
     });
+
+    describe('분석 기준(스냅샷 수집 시각) 캡션', () => {
+        const renderDone = (
+            extra: Partial<React.ComponentProps<typeof OptionsAiAnalysis>>
+        ) => {
+            mockState.mockReturnValue({
+                status: 'done',
+                result: RESULT,
+                trigger: vi.fn(),
+            });
+            render(
+                <OptionsAiAnalysis
+                    symbol="AAPL"
+                    companyName="Apple"
+                    expirationDate="2025-06-20"
+                    modelId={'gemini-3.5-flash-lite'}
+                    {...extra}
+                />
+            );
+        };
+
+        it('직전 정규장 스냅샷으로 분석했다면 수집 시각(KST)을 밝힌다', () => {
+            // 20:00 UTC = 다음 날 05:00 KST.
+            renderDone({
+                snapshotCapturedAt: '2025-06-13T20:00:00.000Z',
+                showSnapshotBasis: true,
+            });
+            expect(
+                screen.getByText(
+                    /분석 기준: 직전 정규장 옵션 데이터 · .*6월 14일.*05:00 KST 수집/
+                )
+            ).toBeInTheDocument();
+        });
+
+        it('showSnapshotBasis가 꺼져 있으면(정규장 중·서버 렌더) 캡션이 없다', () => {
+            renderDone({
+                snapshotCapturedAt: '2025-06-13T20:00:00.000Z',
+                showSnapshotBasis: false,
+            });
+            expect(screen.queryByText(/분석 기준/)).toBeNull();
+        });
+
+        it('수집 시각이 잘못된 값이면 캡션 없이 결과만 그린다', () => {
+            renderDone({
+                snapshotCapturedAt: 'not-a-date',
+                showSnapshotBasis: true,
+            });
+            expect(screen.queryByText(/분석 기준/)).toBeNull();
+            expect(
+                screen.getByText('Bullish options flow')
+            ).toBeInTheDocument();
+        });
+    });
 });

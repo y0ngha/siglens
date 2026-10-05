@@ -5,6 +5,7 @@ import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
 import { SNAPSHOT_MAX_AGE_MS, type SeoAnalysisSnapshot } from '../model';
 import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';
+import { isPrewarmTab } from './applicability';
 import type { Locale } from '@/shared/i18n/locales';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
@@ -174,5 +175,16 @@ function rehydrateSnapshots(
         );
     }
 
-    return valid;
+    /*
+     * 프리웜 대상이 아닌 탭(overall·fundamental·financials·congress·options)의 행은
+     * 버린다. 프리웜을 technical·news 두 탭으로 줄인(2026-10-01) 뒤로 그 행들은 더 이상
+     * 갱신되지 않는데, 7일 컷오프(`SNAPSHOT_MAX_AGE_MS`)만으로는 마지막 굽기 뒤 일주일
+     * 동안 "지난 AI 분석"이 낡은 가격·만기와 함께 살아남아 화면에 남았다(2026-10-05 감사:
+     * 이미 지난 만기의 옵션 분석). 이 탭들은 클라이언트 위젯이 방문 시점에 새로 만든다.
+     *
+     * **캐시 fetcher 안이 아니라 여기서 거른다** — 배포 전에 이미 `unstable_cache`에 담긴
+     * 항목도 같이 걸러져야 하므로, 캐시 값을 읽은 뒤에 적용해야 TTL(최대 24h) 동안의
+     * 낡은 항목이 남지 않는다.
+     */
+    return valid.filter(row => isPrewarmTab(row.tab));
 }

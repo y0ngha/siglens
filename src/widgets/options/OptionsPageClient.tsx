@@ -87,10 +87,9 @@ export function OptionsPageClient({
     // 각자 pickActiveChain + summarizeChainForLlm을 동일 입력으로 3번
     // 돌렸다. chip 전환 시마다 같은 계산이 세 번 반복되던 비용을 제거한다.
     const chainMetrics = useOptionsChainMetrics(snapshot, expirationDate);
-    const oiStale =
-        now !== null &&
-        !isEtRegularSessionOpen(now) &&
-        isOpenInterestSnapshotStale(snapshot);
+    // 마운트 이후 + 미국 정규장 밖. 서버·첫 렌더는 항상 false.
+    const afterHours = now !== null && !isEtRegularSessionOpen(now);
+    const oiStale = afterHours && isOpenInterestSnapshotStale(snapshot);
     const nearestExpiry = snapshot.chains[0]?.expirationDate ?? '';
     // handlers — useEffectEvent 는 stable reference 이므로 deps 에 넣지 않는다
     // (MISTAKES.md Predictability §3). 본문은 startTransition 으로 격리해
@@ -150,6 +149,8 @@ export function OptionsPageClient({
                         isSettingsHydrated={isSettingsHydrated}
                         hideView={hasSnapshotProse}
                         cacheOnly={oiStale}
+                        snapshotCapturedAt={snapshot.capturedAt}
+                        showSnapshotBasis={afterHours && !oiStale}
                     />
                 </ErrorBoundary>
             )}
@@ -159,6 +160,8 @@ export function OptionsPageClient({
                 metrics={chainMetrics.metrics}
                 nearestExpiry={nearestExpiry}
                 oiStale={oiStale}
+                capturedAt={snapshot.capturedAt}
+                showCapturedCaption={afterHours && !oiStale}
             />
 
             <div className="space-y-4">

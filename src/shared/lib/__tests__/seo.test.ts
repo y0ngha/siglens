@@ -686,6 +686,24 @@ describe('buildSymbolOptionsSeoContent', () => {
         const content = buildSymbolOptionsSeoContent('AAPL', t);
         expect(content.title).toContain('Max Pain');
     });
+
+    // 조사를 문장에 박으면("{subject}는") 받침 있는 이름에서 "셀트리온는"이 된다 —
+    // "에는"은 받침과 무관해 어떤 이름에도 맞는다.
+    it.each(['셀트리온', '카카오', 'AAPL'])(
+        '옵션 시장이 없는 종목 설명은 받침과 무관한 "에는"을 쓴다 (%s)',
+        name => {
+            const content = buildSymbolOptionsSeoContent('AAPL', t, {
+                hasOptions: false,
+                koreanName: name,
+            });
+            expect(content.description).toContain(
+                '에는 현재 옵션 시장이 형성되어 있지 않습니다'
+            );
+            expect(content.description).not.toMatch(
+                /[^에][은는] 현재 옵션 시장/
+            );
+        }
+    );
 });
 
 describe('buildSnapshotMetaDescription', () => {

@@ -61,6 +61,9 @@ export function VolumeChart({
     const bullishColor = CHART_COLORS.bullish;
     const bearishColor = CHART_COLORS.bearish;
 
+    const buyLabel = t('VolumeChart.buy');
+    const sellLabel = t('VolumeChart.sell');
+
     /* 메모 자체는 필요하다 — 매 렌더 새 배열을 주면 `usePaneLabels`의 효과가
        매번 다시 돌아 라벨 DOM을 다시 만든다. */
     const volumeLabels = useMemo<PaneLabelConfig[]>(
@@ -68,12 +71,12 @@ export function VolumeChart({
             {
                 paneIndex: 0,
                 subLabels: [
-                    { name: 'Buy', color: bullishColor },
-                    { name: 'Sell', color: bearishColor },
+                    { name: buyLabel, color: bullishColor },
+                    { name: sellLabel, color: bearishColor },
                 ],
             },
         ],
-        [bullishColor, bearishColor]
+        [buyLabel, sellLabel, bullishColor, bearishColor]
     );
 
     usePaneLabels({

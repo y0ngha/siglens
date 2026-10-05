@@ -311,7 +311,22 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                         ),
                     })}
                 </p>
-                {/* 서버 계산 factor 요약 — crawler는 JS 미실행이라 아래 클라 게이지
+                {/* 게이지를 먼저 보여준다 — 사용자는 점수를 보러 왔고, 서버 계산 요약은
+                    그 아래에서 근거를 풀어 쓴다. 크롤러는 DOM 순서와 무관하게 요약만
+                    본다(게이지는 `useHydrated` 게이트). */}
+                <HydrationBoundary state={dehydrate(queryClient)}>
+                    <ErrorBoundary FallbackComponent={FearGreedPageError}>
+                        <FearGreedPage
+                            symbol={ticker}
+                            fmpSymbol={assetInfo.fmpSymbol}
+                            // 아래 `FearGreedFactsSummary`가 같은 경고 문구와 표본 수
+                            // 안내를 이미 서버 렌더한다 — 둘 다 그리면 중복이다.
+                            hideSelfNormWarning
+                            hideSampleFooter
+                        />
+                    </ErrorBoundary>
+                </HydrationBoundary>
+                {/* 서버 계산 factor 요약 — crawler는 JS 미실행이라 위 클라 게이지
                     (FearGreedPage)의 점수·factor 수치를 절대 못 본다. 여기서
                     이미 로드된 5년 일봉(`symbolFearGreedInputs`)으로 동일 수치를
                     SSR HTML에 박아 크롤 가능하게 한다(결정적, AI/pre-warm 무관).
@@ -334,17 +349,6 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                         }
                     />
                 )}
-                <HydrationBoundary state={dehydrate(queryClient)}>
-                    <ErrorBoundary FallbackComponent={FearGreedPageError}>
-                        <FearGreedPage
-                            symbol={ticker}
-                            fmpSymbol={assetInfo.fmpSymbol}
-                            // 위 `FearGreedFactsSummary`가 같은 경고 문구를 이미
-                            // 서버 렌더한다 — 둘 다 그리면 중복이다.
-                            hideSelfNormWarning
-                        />
-                    </ErrorBoundary>
-                </HydrationBoundary>
                 <CrossLinkCards
                     symbol={ticker}
                     current="fear-greed"

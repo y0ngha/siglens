@@ -1,4 +1,3 @@
-import type { SnapshotConfidence } from '@/shared/lib/types';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { cachedNumberFormat } from '@/shared/lib/intlFormatCache';
@@ -9,11 +8,9 @@ import {
 } from '@y0ngha/siglens-core';
 
 /**
- * confidence 표시 **키** — `shared.lib.fearGreed` 네임스페이스.
- * Hero/Card footer 양쪽에서 같은 키를 쓴다.
+ * sampleSize 부족 시 헤더 칩에 붙는 라벨 **키** — `shared.lib.fearGreed` 네임스페이스.
+ * 하단 표본 안내 문장은 소비 파일이 `sampleFooterNormal`/`sampleFooterLimited`를 직접 부른다.
  */
-export const CONFIDENCE_NORMAL_KEY = 'confidenceNormal';
-/** sampleSize 부족 시 표기. */
 export const CONFIDENCE_LIMITED_KEY = 'confidenceLimited';
 
 /**
@@ -109,20 +106,4 @@ export function formatFactorRaw(
         case 'ma200_distance':
             return factorFormatter('percent2', locale).format(rawValue);
     }
-}
-
-/**
- * Confidence footer의 라벨 **키**를 고른다.
- *
- * 조립(`표본 {v0} — {v1}`)까지 여기서 하지 않는 이유: 이 모듈은 번역자를
- * **인자로 받으므로** 추출기가 통째로 건너뛴다(`translatorNamespace.size === 0`).
- * 여기서 `t('confidenceFooter')`를 부르면 그 키가 클라이언트 페이로드에 안 실려
- * `/en/AAPL/fear-greed`의 footer가 키 문자열을 그대로 렌더한다 — 실제로 종목
- * 페이지 h1에서 한 번 낸 결함이다. 그래서 `t()` 리터럴 호출은 번역자를 선언한
- * 소비 파일에서만 한다.
- */
-export function confidenceLabelKey(confidence: SnapshotConfidence): string {
-    return confidence === 'normal'
-        ? CONFIDENCE_NORMAL_KEY
-        : CONFIDENCE_LIMITED_KEY;
 }

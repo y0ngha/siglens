@@ -86,21 +86,47 @@ describe('FearGreedPage', () => {
                 });
             });
 
-            it('renders Hero score and confidence footer', () => {
+            it('renders Hero score and the sample-size footer', () => {
                 const { getByText, getAllByText } = render(
                     <FearGreedPage symbol="NVDA" />
                 );
                 // Hero focal-stack score `50` and the gauge tick label `50` both render,
                 // so we expect at least 2 matches (one for the focal score, one for the tick).
                 expect(getAllByText('50').length).toBeGreaterThanOrEqual(2);
-                expect(getByText(/표본 200/)).toBeInTheDocument();
-                expect(getByText(/정상 산출/)).toBeInTheDocument();
+                expect(
+                    getByText('지난 200거래일과 비교해 매긴 점수예요.')
+                ).toBeInTheDocument();
+            });
+
+            it('limited confidence swaps in the reduced-accuracy footer', () => {
+                mockUseFearGreedFromSymbol.mockReturnValue({
+                    snapshot: {
+                        ...baseSnapshot,
+                        confidence: 'limited',
+                        sampleSize: 45,
+                    },
+                    history: [],
+                });
+                const { getByText } = render(<FearGreedPage symbol="NVDA" />);
+                expect(
+                    getByText(
+                        '비교할 기록이 45거래일뿐이라 점수가 덜 정확할 수 있어요.'
+                    )
+                ).toBeInTheDocument();
+            });
+
+            it('hideSampleFooter removes the footer but keeps the rest', () => {
+                const { queryByText, getAllByText } = render(
+                    <FearGreedPage symbol="NVDA" hideSampleFooter />
+                );
+                expect(queryByText(/거래일/)).toBeNull();
+                expect(getAllByText('50').length).toBeGreaterThanOrEqual(2);
             });
 
             it('renders all groups', () => {
                 const { getByText } = render(<FearGreedPage symbol="NVDA" />);
-                expect(getByText('Flow Group')).toBeInTheDocument();
-                expect(getByText('Trend Group')).toBeInTheDocument();
+                expect(getByText('수급 그룹')).toBeInTheDocument();
+                expect(getByText('추세 그룹')).toBeInTheDocument();
             });
         });
 
@@ -151,12 +177,16 @@ describe('FearGreedPage', () => {
                     </ShareableAnalysisProvider>
                 );
 
-                expect(getByText(/표본 200/)).toBeInTheDocument();
+                expect(
+                    getByText('지난 200거래일과 비교해 매긴 점수예요.')
+                ).toBeInTheDocument();
                 expect(() =>
                     getByRole('button', { name: 'invoke-trigger' }).click()
                 ).not.toThrow();
                 // Trigger is a pure no-op — the same snapshot text still renders.
-                expect(getByText(/표본 200/)).toBeInTheDocument();
+                expect(
+                    getByText('지난 200거래일과 비교해 매긴 점수예요.')
+                ).toBeInTheDocument();
             });
         });
 
@@ -166,13 +196,16 @@ describe('FearGreedPage', () => {
                     snapshot: { ...baseSnapshot, confidence: 'limited' },
                     history: [],
                 });
-                const { getAllByText } = render(
+                const { getAllByText, getByText } = render(
                     <FearGreedPage symbol="NVDA" />
                 );
-                // '신뢰도 제한'은 뱃지와 푸터 두 곳에 렌더링되므로 getAllByText로 확인한다.
+                // 배지('신뢰도 제한')와 하단 안내문이 함께 제한 상태를 알린다.
                 expect(
                     getAllByText(/신뢰도 제한/).length
-                ).toBeGreaterThanOrEqual(2);
+                ).toBeGreaterThanOrEqual(1);
+                expect(
+                    getByText(/점수가 덜 정확할 수 있어요/)
+                ).toBeInTheDocument();
             });
         });
     });

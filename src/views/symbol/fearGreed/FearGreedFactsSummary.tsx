@@ -9,7 +9,6 @@ import { computeSymbolFearGreedSeries } from '@/entities/bars/lib/symbolFearGree
 import {
     SENTIMENT_LABEL_KEY,
     WARNING_TEXT_KEY,
-    confidenceLabelKey,
 } from '@/shared/lib/fearGreedLabels';
 import {
     buildFearGreedFactorLines,
@@ -25,6 +24,7 @@ import {
 } from './utils/fearGreedFacts';
 import { FearGreedExtremeZoneRecord } from './FearGreedExtremeZoneRecord';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { SampleFooterText } from '@/shared/ui/SampleFooterText';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
@@ -184,10 +184,10 @@ export function FearGreedFactsSummary({
                 </div>
             </dl>
             <p className="text-xs text-secondary-400">
-                {tFearGreed('confidenceFooter', {
-                    v0: snapshot.sampleSize,
-                    v1: tFearGreed(confidenceLabelKey(snapshot.confidence)),
-                })}
+                <SampleFooterText
+                    confidence={snapshot.confidence}
+                    sampleSize={snapshot.sampleSize}
+                />
             </p>
             {extremeZoneRecord !== null && (
                 <FearGreedExtremeZoneRecord record={extremeZoneRecord} />
