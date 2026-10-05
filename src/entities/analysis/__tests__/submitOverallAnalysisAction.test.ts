@@ -106,14 +106,15 @@ vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: vi.fn().mockResolvedValue('us-equity'),
 }));
 
-vi.mock('@/shared/api/market/sessionSpecFor', async () => {
-    const { US_EQUITY_SESSION, CRYPTO_SESSION } = await vi.importActual<
-        typeof import('@y0ngha/siglens-core')
-    >('@y0ngha/siglens-core');
+// 실제 매핑을 그대로 쓴다 — KR 세션이 US와 구별돼야 `session` 전달을 시장별로 단언할 수 있다.
+vi.mock('@/shared/api/market/sessionSpecFor', async importOriginal => {
+    const actual =
+        await importOriginal<
+            typeof import('@/shared/api/market/sessionSpecFor')
+        >();
     return {
-        sessionSpecFor: vi.fn((profile: string) =>
-            profile === 'crypto' ? CRYPTO_SESSION : US_EQUITY_SESSION
-        ),
+        ...actual,
+        sessionSpecFor: vi.fn(actual.sessionSpecFor),
     };
 });
 
@@ -144,6 +145,7 @@ import type { AnalysisGateError } from '@/shared/lib/types';
 import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 
 const mockProvider = {} as import('@y0ngha/siglens-core').MarketDataProvider;
 
@@ -537,6 +539,7 @@ describe('runOverallAnalysisAction 함수는', () => {
             tierContext: { userId: 'u1', tier: 'member' },
             priorAnalyses: technicalPriorAnalyses,
             marketEvents,
+            session: US_EQUITY_SESSION,
         });
         // 최상위 priorAnalyses(overall 프롬프트용)는 technical 축과 다른 값을
         // 그대로 유지한다 — 둘이 같은 배열로 뭉개지면 안 된다.
@@ -1054,6 +1057,38 @@ describe('runOverallAnalysisAction 함수는', () => {
                 US_EQUITY_SESSION
             );
         });
+    });
+
+    describe('technical 축 session — 시장별 세션을 core에 넘긴다', () => {
+        // core는 session이 없으면 모든 시장에 KST 05:00 만료를 쓴다.
+        it.each([
+            ['us-equity', 'AAPL', US_EQUITY_SESSION],
+            ['kr-equity', '005930.KS', KR_EQUITY_SESSION],
+            ['crypto', 'BTCUSD', CRYPTO_SESSION],
+        ] as const)(
+            '%s → technical.session이 해당 시장 세션이고 provider에 준 것과 같다',
+            async (profile, symbol, expectedSession) => {
+                mockResolveMarketProfile.mockResolvedValueOnce(profile);
+                mockRunOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
+
+                await runOverallAnalysisAction(
+                    symbol,
+                    'Name',
+                    '1Day',
+                    MODEL_ID,
+                    'ko'
+                );
+
+                const call = mockRunOverallAnalysis.mock.calls.find(
+                    c => c[0].symbol === symbol
+                );
+                expect(call).toBeDefined();
+                expect(call![0].technical?.session).toBe(expectedSession);
+                expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(
+                    expectedSession
+                );
+            }
+        );
     });
 
     describe('assetClass forwarding', () => {
