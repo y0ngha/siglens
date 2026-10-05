@@ -21,7 +21,7 @@ export function stripUtmParams(url: string): string {
     const base = beforeHash.slice(0, queryAt);
     const pairs = beforeHash.slice(queryAt + 1).split('&');
     const kept = pairs.filter(
-        pair => !pair.split('=')[0]!.toLowerCase().startsWith('utm_')
+        pair => !(pair.split('=')[0] ?? '').toLowerCase().startsWith('utm_')
     );
     if (kept.length === pairs.length) return url;
 

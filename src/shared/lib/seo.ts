@@ -387,6 +387,10 @@ export const SITE_BUILD_DATE = parseBuildDate();
  * 데스크톱은 ~120자 안팎에서 절단되므로 120자를 상한으로 둔다.
  * 현재 모든 빌더는 이미 90~115자 범위로 짧지만, 입력(displayName/sector)
  * 변화로 인한 회귀를 막기 위해 출력단에서 한 번 더 강제한다.
+ *
+ * **템플릿 description에만 적용한다.** 스냅샷 본문 발췌(`buildSnapshotMetaDescription`)와
+ * 그 계열(공포·탐욕 사실 설명)은 문장 단위로만 자르므로 더 넉넉한
+ * {@link SEO_SNAPSHOT_DESCRIPTION_MAX_LENGTH}(160)를 쓴다.
  */
 export const SEO_DESCRIPTION_MAX_LENGTH = 120;
 

@@ -2,7 +2,9 @@ import type { Metadata } from 'next';
 
 /**
  * 서비스 공식 X 계정의 핸들. `twitter:site`로 나간다 — 카드가 공유될 때 X가
- * 어느 계정의 콘텐츠인지 알 수 있는 유일한 신호다. `seo.ts`의 `X_URL`과 같은 계정이다 — 한쪽을 바꾸면 다른 쪽도 바꾼다.
+ * 어느 계정의 콘텐츠인지 알 수 있는 유일한 신호다. `seo.ts`의 `X_URL`과 같은 계정이어야 한다. `seo.ts`를 import해 파생하면 `seo`를 부분 목킹하는
+ * 테스트가 깨지므로 상수를 따로 두고, 동기화는 `__tests__/twitterMetadata.test.ts`의
+ * `핸들이 X_URL 계정과 같다` 테스트가 강제한다 — 한쪽만 바꾸면 그 테스트가 실패한다.
  */
 export const X_HANDLE = '@siglens_io';
 

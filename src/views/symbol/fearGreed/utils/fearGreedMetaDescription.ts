@@ -1,10 +1,10 @@
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 import { sentimentLabelText } from '@/shared/lib/fearGreedLabels';
-import type { SeoTranslator } from '@/shared/lib/seo';
+import {
+    SEO_SNAPSHOT_DESCRIPTION_MAX_LENGTH,
+    type SeoTranslator,
+} from '@/shared/lib/seo';
 import type { FearGreedMetaFacts } from './fearGreedFacts';
-
-/** 검색 결과 설명 상한(code point). 두 번째 문장이 안 들어가면 첫 문장만 쓴다. */
-const DESCRIPTION_MAX_LENGTH = 160;
 
 const PERIOD_KEY = {
     week: 'factsPeriodWeek',
@@ -61,7 +61,7 @@ function secondSentence(
  *
  * 종목마다 다른 사실(날짜·점수·과거 점수·범위)로만 만든 설명이다 — 예전 템플릿은 종목명만
  * 바뀌어 공포탐욕 탭 전체가 같은 설명을 냈다. `tSeo`는 `shared.seo` 번역자, `tLabel`은
- * `shared.enumLabel` 번역자다. 두 번째 문장이 예산을 넘으면 첫 문장만 쓴다(문장 중간을
+ * `shared.enumLabel` 번역자다. 두 번째 문장이 예산(`SEO_SNAPSHOT_DESCRIPTION_MAX_LENGTH`)을 넘으면 첫 문장만 쓴다(문장 중간을
  * 자르지 않는다).
  */
 export function composeFearGreedDescription(
@@ -88,5 +88,7 @@ export function composeFearGreedDescription(
     // 이어 붙는 쪽이 자연스럽고, 로케일 카탈로그가 문장부호를 정한다.
     const gap = /[.!?]$/.test(lead) ? ' ' : '';
     const full = second === '' ? lead : `${lead}${gap}${second}`;
-    return [...full].length <= DESCRIPTION_MAX_LENGTH ? full : lead;
+    return [...full].length <= SEO_SNAPSHOT_DESCRIPTION_MAX_LENGTH
+        ? full
+        : lead;
 }
