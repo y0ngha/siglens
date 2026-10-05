@@ -131,51 +131,38 @@ const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);
 const mockGetNewsList = vi.mocked(getNewsList);
 
 /**
- * Collect all Suspense children ReactNodes from the element tree.
+ * Find an element whose type name matches `fnName` anywhere in the element tree.
  *
  * EventCalendarSection and AnalystActionsSection are local async RSC functions
  * defined in page.tsx. When the page is invoked in a test (not rendered), they
  * appear as JSX elements whose `type` is the local function. Since we can't
- * import those local functions, we instead collect the *children* of every
- * Suspense in the tree and check the function names via `.type.name`.
+ * import those local functions, we check the function names via `.type.name`.
  *
- * The inner traversal is extracted as `walkSuspense` (module-level, explicit
- * `results` parameter) to avoid a nested closure that captures the outer array
- * implicitly — see MISTAKES §20.
+ * 서버 섹션은 더는 Suspense로 감싸지 않는다(2026-10-05) — 그래서 "Suspense 자식"이 아니라
+ * 트리 어디에든 직접 있는지 본다. 재귀는 모듈 레벨 함수로 둔다(MISTAKES §20).
  */
-function walkSuspense(node: ReactNode, results: ReactNode[]): void {
+function findElementByName(node: ReactNode, fnName: string): boolean {
     if (Array.isArray(node)) {
-        node.forEach(n => walkSuspense(n, results));
-        return;
+        return node.some(n => findElementByName(n, fnName));
     }
-    if (!isValidElement(node)) return;
-    if (node.type === Suspense) {
-        const children = (node.props as { children?: ReactNode }).children;
-        if (children !== undefined) results.push(children);
-    }
+    if (!isValidElement(node)) return false;
+    const t = node.type as { name?: string } | string;
+    if (typeof t === 'function' && t.name === fnName) return true;
     const childProp = (node.props as { children?: ReactNode }).children;
-    if (childProp) walkSuspense(childProp, results);
+    return childProp ? findElementByName(childProp, fnName) : false;
 }
 
-function findAllSuspenseChildren(tree: ReactNode): ReactNode[] {
-    const results: ReactNode[] = [];
-    walkSuspense(tree, results);
-    return results;
-}
-
-/**
- * Find an element whose type name matches `fnName` in the Suspense children
- * collected from the tree. Works for local async RSC functions that can't be
- * imported from the outside.
- */
-function findSuspenseChildByName(tree: ReactNode, fnName: string): boolean {
-    return findAllSuspenseChildren(tree).some(child => {
-        if (!isValidElement(child)) return false;
-        const t = child.type as { name?: string } | string;
-        return (
-            typeof t === 'function' && (t as { name?: string }).name === fnName
-        );
-    });
+/** 서버 섹션이 Suspense 경계 **안에** 들어 있는가 — 이 탭에서는 없어야 한다. */
+function hasSuspenseAround(node: ReactNode, fnName: string): boolean {
+    if (Array.isArray(node)) {
+        return node.some(n => hasSuspenseAround(n, fnName));
+    }
+    if (!isValidElement(node)) return false;
+    const children = (node.props as { children?: ReactNode }).children;
+    if (node.type === Suspense && findElementByName(children, fnName)) {
+        return true;
+    }
+    return children ? hasSuspenseAround(children, fnName) : false;
 }
 
 const EQUITY_ASSET_INFO = {
@@ -274,28 +261,41 @@ describe('NewsPage — isEquity body section-gating', () => {
         mockGetNewsList.mockResolvedValue([]);
     });
 
-    it('equity symbol → EventCalendarSection present as Suspense child', async () => {
+    it('equity symbol → EventCalendarSection present (no Suspense wrapper)', async () => {
         mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
 
         const tree = await NewsPage({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        expect(findSuspenseChildByName(tree, 'EventCalendarSection')).toBe(
-            true
-        );
+        expect(findElementByName(tree, 'EventCalendarSection')).toBe(true);
     });
 
-    it('equity symbol → AnalystActionsSection present as Suspense child', async () => {
+    it('서버 섹션(뉴스 목록·캘린더·의견)은 Suspense 경계 안에 있지 않다', async () => {
         mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
 
         const tree = await NewsPage({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        expect(findSuspenseChildByName(tree, 'AnalystActionsSection')).toBe(
-            true
-        );
+        for (const name of [
+            'NewsListSection',
+            'EventCalendarSection',
+            'AnalystActionsSection',
+        ]) {
+            expect(findElementByName(tree, name)).toBe(true);
+            expect(hasSuspenseAround(tree, name)).toBe(false);
+        }
+    });
+
+    it('equity symbol → AnalystActionsSection present (no Suspense wrapper)', async () => {
+        mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
+
+        const tree = await NewsPage({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+
+        expect(findElementByName(tree, 'AnalystActionsSection')).toBe(true);
     });
 
     it('crypto symbol → EventCalendarSection NOT present (hidden by isEquity gate)', async () => {
@@ -305,9 +305,7 @@ describe('NewsPage — isEquity body section-gating', () => {
             params: Promise.resolve({ locale: 'ko', symbol: 'BTCUSD' }),
         });
 
-        expect(findSuspenseChildByName(tree, 'EventCalendarSection')).toBe(
-            false
-        );
+        expect(findElementByName(tree, 'EventCalendarSection')).toBe(false);
     });
 
     it('crypto symbol → AnalystActionsSection NOT present (hidden by isEquity gate)', async () => {
@@ -317,9 +315,7 @@ describe('NewsPage — isEquity body section-gating', () => {
             params: Promise.resolve({ locale: 'ko', symbol: 'BTCUSD' }),
         });
 
-        expect(findSuspenseChildByName(tree, 'AnalystActionsSection')).toBe(
-            false
-        );
+        expect(findElementByName(tree, 'AnalystActionsSection')).toBe(false);
     });
 
     it('crypto symbol → page heading uses crypto copy (최신 코인 뉴스)', async () => {

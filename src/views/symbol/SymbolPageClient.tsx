@@ -90,6 +90,11 @@ interface SymbolPageClientProps {
      * Defaults to 'us-equity' when omitted (backward compat).
      */
     marketProfile?: MarketProfileId;
+    /**
+     * 서버 seed가 형성 중 봉을 뺀 채로 만들어졌는가(`hasFormingBar` — 생성 시점). `ChartContent`가
+     * 입력 전에도 seed 복원 재조회를 열지 정하는 입력이다. 생략하면 `true`(옛 동작: 항상 연다).
+     */
+    seedHasFormingBarTrimmed?: boolean;
 }
 
 export function SymbolPageClient({
@@ -102,6 +107,7 @@ export function SymbolPageClient({
     indicatorCount,
     skillCount,
     marketProfile,
+    seedHasFormingBarTrimmed,
 }: SymbolPageClientProps) {
     const t = useTranslations('views.symbol');
     const { tier, isTierHydrated } = useSymbolModel();
@@ -227,6 +233,9 @@ export function SymbolPageClient({
                                 initialLockedInfoDepth={initialLockedInfoDepth}
                                 initialAnalysisFailed={initialAnalysisFailed}
                                 onMobileSheetContent={setMobileSheetContent}
+                                seedHasFormingBarTrimmed={
+                                    seedHasFormingBarTrimmed
+                                }
                                 fmpSymbol={assetInfo?.fmpSymbol}
                                 marketProfile={
                                     marketProfile ??

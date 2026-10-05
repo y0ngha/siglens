@@ -2,6 +2,7 @@ import { useTranslations } from 'next-intl';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { isCuratedSymbol } from '@/entities/symbol-indexability/lib/isCuratedSymbol';
 import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
 
 import { cn } from '@/shared/lib/cn';
@@ -80,8 +81,11 @@ interface TickerChipsProps {
 /**
  * Renders ticker chips for market-news cards.
  *
- * - `stock` category: each chip is an `<a>` linking to `/${ticker}` so
- *   users can navigate directly to the symbol page.
+ * - `stock` category: **curated** tickers (`isCuratedSymbol`) are an `<a>`
+ *   linking to `/${ticker}/news` — the symbol's indexed news tab, which is the
+ *   page this card's story belongs to. Non-curated tickers are a plain
+ *   `<span>`: their pages are noindex long-tail, so a link only spends crawl
+ *   budget (2026-10-05 crawl audit).
  * - All other categories: each chip is a plain `<span>` (display only —
  *   no per-symbol page exists for crypto sentinels like `BTCUSD`).
  * - Empty `tickers`: the container is NOT rendered (callers must guard on
@@ -95,22 +99,34 @@ function TickerChips({ category, tickers }: TickerChipsProps) {
                 data-testid="ticker-chips"
                 className="mt-1.5 flex flex-wrap gap-1.5"
             >
-                {tickers.map(ticker => (
-                    <Link
-                        key={ticker}
-                        href={`/${ticker}`}
-                        aria-label={t('MarketNewsCard.goToSymbol', {
-                            v0: ticker,
-                        })}
-                        // 뉴스 카드마다 티커 칩이 붙어 다수 렌더 —
-                        // docs/architecture/CDN_CACHING.md §1
-                        prefetch={false}
-                        data-testid="ticker-chip"
-                        className="relative z-10 inline-flex min-h-6 min-w-6 items-center justify-center rounded px-1.5 py-0.5 text-xs font-medium text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
-                    >
-                        {ticker}
-                    </Link>
-                ))}
+                {tickers.map(ticker =>
+                    isCuratedSymbol(ticker) ? (
+                        <Link
+                            key={ticker}
+                            href={`/${ticker}/news`}
+                            aria-label={t('MarketNewsCard.goToSymbol', {
+                                v0: ticker,
+                            })}
+                            // `relative z-10`: 제목 링크의 `::after`(stretched link)가 카드 전체를
+                            // 덮으므로 칩이 그 위로 올라와야 눌린다(#959).
+                            // 뉴스 카드마다 티커 칩이 붙어 다수 렌더 —
+                            // docs/architecture/CDN_CACHING.md §1
+                            prefetch={false}
+                            data-testid="ticker-chip"
+                            className="relative z-10 inline-flex min-h-6 min-w-6 items-center justify-center rounded px-1.5 py-0.5 text-xs font-medium text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                        >
+                            {ticker}
+                        </Link>
+                    ) : (
+                        <span
+                            key={ticker}
+                            data-testid="ticker-chip"
+                            className="rounded bg-secondary-700 px-1.5 py-0.5 text-xs font-medium text-secondary-300"
+                        >
+                            {ticker}
+                        </span>
+                    )
+                )}
             </div>
         );
     }

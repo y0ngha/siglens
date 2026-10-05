@@ -25,7 +25,6 @@ import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import { NewsSnapshotProse } from '@/views/symbol/snapshot/renderers/NewsSnapshotProse';
 import { hasNewsProse } from '@/entities/seo-snapshot/lib/newsContent';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
-import { SectionSkeleton } from '@/views/symbol/SectionSkeleton';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { SymbolRouteParams } from '@/shared/config/market';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
@@ -543,29 +542,29 @@ export default async function NewsPage({ params }: Props) {
                  * 던진다. 바운더리가 없으면 그 throw가 `[symbol]/error.tsx`까지
                  * 올라가 헤더·탭 레일·관련 종목까지 **심볼 라우트 전체**를
                  * 내린다(감사 실측: 본문 1,079 → 582자).
+                 *
+                 * 아래 세 서버 섹션(뉴스 목록·이벤트 캘린더·애널리스트 의견)은
+                 * **Suspense로 감싸지 않는다**(2026-10-05 크롤 감사). 서버 데이터
+                 * Suspense는 raw HTML에 `<template>` 숨김 청크 + 교체 스크립트를
+                 * 남겨, JS를 실행하지 않는 크롤러(Naver Yeti·Daumoa)에게 본문이
+                 * 문서 끝쪽으로 밀리거나 보이지 않게 하고, 경계 안쪽 `notFound()`
+                 * 류가 200으로 새게 한다. 이 라우트는 ISR 정적 응답이라 워엄에서는
+                 * 대기가 없고, 콜드젠 지연은 문서 전체가 함께 기다린다(레이아웃과
+                 * 같은 트레이드오프). 클라 전용 경계(`NewsAiSummary`)는 위에서 유지한다.
                  */}
                 <NewsListErrorBoundary>
-                    <Suspense fallback={<SectionSkeleton />}>
-                        <NewsListSection symbol={upper} locale={locale} />
-                    </Suspense>
+                    <NewsListSection symbol={upper} locale={locale} />
                 </NewsListErrorBoundary>
 
-                {isEquity && (
-                    <Suspense fallback={<SectionSkeleton />}>
-                        <EventCalendarSection symbol={upper} />
-                    </Suspense>
-                )}
+                {isEquity && <EventCalendarSection symbol={upper} />}
 
-                {isEquity && (
-                    <Suspense fallback={<SectionSkeleton />}>
-                        <AnalystActionsSection symbol={upper} />
-                    </Suspense>
-                )}
+                {isEquity && <AnalystActionsSection symbol={upper} />}
 
                 <CrossLinkCards
                     symbol={upper}
                     current="news"
                     marketProfile={marketProfile}
+                    indexableOnly
                 />
             </main>
         </>

@@ -23,6 +23,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { currentUserAction } from '@/entities/auth/actions/currentUserAction';
 import { useUserTier } from '@/features/symbol-model/hooks/useUserTier';
+import { AUTH_HINT_COOKIE_NAME } from '@/shared/config/cookieNames';
 
 const queryClients: QueryClient[] = [];
 
@@ -41,8 +42,15 @@ function makeWrapper() {
 }
 
 describe('useUserTier', () => {
+    // `useCurrentUser`는 로그인 힌트 쿠키가 없으면 서버 액션을 부르지 않고 null로 확정한다.
+    // 액션 결과를 보는 테스트는 로그인 상태(힌트 있음)를 전제한다.
+    beforeEach(() => {
+        document.cookie = `${AUTH_HINT_COOKIE_NAME}=1; path=/`;
+    });
+
     afterEach(() => {
         queryClients.splice(0).forEach(c => c.clear());
+        document.cookie = `${AUTH_HINT_COOKIE_NAME}=; max-age=0; path=/`;
     });
 
     it('returns DEFAULT_TIER while loading', () => {

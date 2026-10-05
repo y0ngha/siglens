@@ -4,6 +4,7 @@ import { splitAgentFollowUps } from '@y0ngha/siglens-core';
 import { useTranslations } from 'next-intl';
 import {
     useEffect,
+    useId,
     useLayoutEffect,
     useRef,
     useState,
@@ -84,16 +85,15 @@ interface FollowUpsProps {
  */
 function FollowUps({ items, onPick }: FollowUpsProps) {
     const t = useTranslations('widgets.agent-chat');
+    // Per-instance id: every assistant turn could render this component.
+    const labelId = useId();
     if (items.length === 0) return null;
     return (
         <div className="mt-4">
-            <p className="mb-2 text-xs text-secondary-400">
+            <p id={labelId} className="mb-2 text-xs text-secondary-400">
                 {t('MessageList.followUpsLabel')}
             </p>
-            <ul
-                aria-label={t('MessageList.followUpsLabel')}
-                className="flex flex-wrap gap-2"
-            >
+            <ul aria-labelledby={labelId} className="flex flex-wrap gap-2">
                 {items.map((item, i) => (
                     // Index in the key: the model may repeat an item, and a
                     // collision would silently drop a chip.

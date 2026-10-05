@@ -6,6 +6,7 @@ import {
     lastClosedSessionDate,
     zonedDate,
 } from '@/shared/lib/marketSessionDate';
+import { MS_PER_SECOND, SECONDS_PER_DAY } from '@/shared/config/time';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
 
 /**
@@ -107,8 +108,6 @@ export function buildPriceAsOf(
     return formatAsOf(lastClosedSessionDate(spec, now, 0), 'close', locale);
 }
 
-const SECONDS_PER_DAY = 86_400;
-
 /** ISO 문자열을 `Date`로. 문자열이 아니거나 해석할 수 없으면 `null`. */
 function parseInstant(value: unknown): Date | null {
     if (typeof value !== 'string') return null;
@@ -143,7 +142,7 @@ export function buildDataAsOfLabel(
     if (typeof barTimeSec !== 'number' || !Number.isFinite(barTimeSec)) {
         return null;
     }
-    const barDate = new Date(barTimeSec * 1000);
+    const barDate = new Date(barTimeSec * MS_PER_SECOND);
     if (Number.isNaN(barDate.getTime())) return null;
 
     if (spec.kind === 'always-open') {

@@ -5,7 +5,7 @@
  * 로케일별 색인 지시가 다른 정적 페이지와 같은지.
  */
 // 이름 조회는 DB를 탄다 — 이 파일의 관심사는 링크 집합과 표기 형태라 고정 맵으로 막는다.
-vi.mock('@/app/[locale]/symbols/loadSymbolNames', () => ({
+vi.mock('@/entities/ticker/lib/loadSymbolNames', () => ({
     loadSymbolNames: (symbols: readonly string[], locale: string) =>
         Promise.resolve(
             new Map(

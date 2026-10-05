@@ -374,9 +374,20 @@ export async function rewriteToPlainLanguage(
         /**
          * 연성 실패(`stale_deixis`)로 거부된 **첫 시도의 글**. 숫자·문자·조언 가드는 모두
          * 통과한 글이라 재시도가 실패해도 쓸 수 있다 — 재시도가 경성 위반으로 끝나 도려내기마저
-         * `null`이거나, 마감을 넘기거나, 던져도 쉽게보기가 통째로 사라지지 않게 붙들어 둔다.
+         * `null`이거나, 마감을 넘기거나, 던져도 쉽게보기가 통째로 사라지지 않게 `attempt()`가
+         * 이 값으로 돌려준다(저장도 재시도도 하지 않은 상태). 호출자가 재시도를 이어 간다.
          */
-        let softFallback: string | null = null;
+        interface SoftFirstDraft {
+            readonly soft: string;
+            readonly tokens: readonly string[];
+            readonly retryHint: string;
+        }
+        type AttemptResult = string | null | SoftFirstDraft;
+        const isSoftFirstDraft = (r: AttemptResult): r is SoftFirstDraft =>
+            r !== null && typeof r === 'object';
+        // 재시도 단계에서는 첫 시도 초안이 나올 수 없다 — 나오더라도 글은 버리지 않는다.
+        const toFinalText = (r: AttemptResult): string | null =>
+            isSoftFirstDraft(r) ? r.soft : r;
 
         const acceptSoft = (
             text: string,
@@ -393,7 +404,7 @@ export async function rewriteToPlainLanguage(
             return text;
         };
 
-        const attempt = async (retryHint?: string): Promise<string | null> => {
+        const attempt = async (retryHint?: string): Promise<AttemptResult> => {
             const prompt =
                 retryHint === undefined
                     ? basePrompt
@@ -433,14 +444,13 @@ export async function rewriteToPlainLanguage(
             });
             if (retryHint === undefined) {
                 if (failure.kind === 'stale_deixis') {
-                    // 한 번만 다시 쓰게 한다. 재시도가 아무것도 못 돌려주면(경성 위반 +
-                    // 도려내기 실패, 프로바이더 오류) 이 첫 글을 받아들인다. 마감 초과는
-                    // 이 함수 바깥(`withDeadline` 뒤)에서 같은 값으로 물러난다.
-                    softFallback = text;
-                    const retried = await attempt(
-                        describeFailure(failure, locale)
-                    ).catch(() => null);
-                    return retried ?? acceptSoft(text, failure.tokens);
+                    // 아직 저장하지 않는다 — 호출자가 한 번만 다시 쓰게 하고, 재시도가 아무것도
+                    // 못 돌려주면 이 글을 받아들인다. 마감 초과일 때도 호출자가 이 값으로 물러난다.
+                    return {
+                        soft: text,
+                        tokens: failure.tokens,
+                        retryHint: describeFailure(failure, locale),
+                    };
                 }
                 const salvagedFirst = salvageBeforeRetry(
                     text,
@@ -465,7 +475,9 @@ export async function rewriteToPlainLanguage(
                     writeStored(salvagedFirst.text);
                     return salvagedFirst.text;
                 }
-                return attempt(describeFailure(failure, locale));
+                return toFinalText(
+                    await attempt(describeFailure(failure, locale))
+                );
             }
 
             // 재시도 뒤에도 시점 표현이 남았다 — 한 번 더 부르지 않고 받아들인다.
@@ -505,10 +517,29 @@ export async function rewriteToPlainLanguage(
             return salvaged;
         };
 
-        const result = await withDeadline(attempt(), deadlineMs);
+        const first = attempt();
+        // 마감 뒤에 보려고 미리 만들어 둔다 — 그때 이미 끝나 있어야 아래 `race`에서 이긴다.
+        const firstSettled = first.catch(() => null);
+        const pipeline = first.then(async (r): Promise<string | null> => {
+            if (!isSoftFirstDraft(r)) return r;
+            // 한 번만 다시 쓰게 한다. 재시도가 아무것도 못 돌려주면(경성 위반 + 도려내기 실패,
+            // 프로바이더 오류) 첫 글을 받아들인다.
+            const retried = await attempt(r.retryHint).then(
+                toFinalText,
+                () => null
+            );
+            return retried ?? acceptSoft(r.soft, r.tokens);
+        });
+        const result = await withDeadline(pipeline, deadlineMs);
+        if (result !== null) return result;
         // 마감을 넘겼는데 첫 글이 연성 실패뿐이었다면 그 글을 돌려준다. 저장은 하지 않는다 —
-        // 늦게 끝나는 재시도가 스스로 더 나은 글이나 이 첫 글을 저장한다(`attempt()` 내부).
-        return result ?? softFallback;
+        // 늦게 끝나는 `pipeline`이 스스로 더 나은 글이나 이 첫 글을 저장한다. 이미 끝난
+        // 프라미스는 이미 해결된 값보다 먼저 `race`를 이기므로, 첫 시도가 끝났는지 이렇게 본다.
+        const settled = await Promise.race([
+            firstSettled,
+            Promise.resolve(null),
+        ]);
+        return isSoftFirstDraft(settled) ? settled.soft : null;
     } catch (error) {
         // 조용히 삼키지 않는다 — 키 오설정이나 모델 장애가 전 사용자에게 쉽게보기를
         // 없애는데 화면에는 아무 에러도 안 뜬다(원본이 나온다).

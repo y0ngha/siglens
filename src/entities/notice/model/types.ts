@@ -17,3 +17,11 @@ export interface NoticeRecord {
     pathPattern: string | null;
     createdAt: Date;
 }
+
+/**
+ * `GET /api/notices`의 JSON 본문 한 건 — `NoticeRecord`에서 `createdAt`만 직렬화된
+ * ISO 문자열이다. 클라이언트가 `Date`로 되돌린다(`lib/toNoticeRecord`).
+ */
+export interface NoticeWireRecord extends Omit<NoticeRecord, 'createdAt'> {
+    createdAt: string;
+}

@@ -59,15 +59,13 @@ vi.mock('@/widgets/economy/sections/EconomicCalendarGrid', () => ({
 vi.mock('@/widgets/economy/sections/EconomyMacroFacts', () => ({
     EconomyMacroFacts: () => <p data-testid="macro-facts" />,
 }));
-vi.mock('@/widgets/economy/sections/EconomySkeleton', () => ({
-    EconomySkeleton: () => <div data-testid="economy-skeleton" />,
-}));
 vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
     shortenRevalidateIfFmpFailedAtBuild: vi.fn(async () => undefined),
     shortenRevalidateIfDatabaseMissingAtBuild: vi.fn(async () => undefined),
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
 import { render, screen } from '@testing-library/react';
 import type { EconomySnapshot } from '@y0ngha/siglens-core';
 import { generateMetadata } from '@/app/[locale]/economy/page';
@@ -174,15 +172,17 @@ describe('/economy page.tsx integration', () => {
 
             // EconomyPage는 sync 컴포넌트, EconomyContent가 async RSC.
             // EconomyContent를 직접 꺼낼 수 없으므로, RTL로 EconomyPage를 렌더하되
-            // Suspense children(EconomyContent) 결과를 React.act+await로 flush한다.
+            // 트리의 async 서버 컴포넌트(EconomyContent)를 풀어(resolveAsyncServerTree) 렌더한다.
             // 단, 테스트 환경에서 async RSC는 완전 지원 안 됨 — EconomyDegraded의
             // 텍스트가 보이는지 assert함으로써 degrade 분기를 검증한다.
             const { act } = await import('@testing-library/react');
             await act(async () => {
                 render(
-                    await EconomyPage({
-                        params: Promise.resolve({ locale: 'ko' }),
-                    })
+                    await resolveAsyncServerTree(
+                        await EconomyPage({
+                            params: Promise.resolve({ locale: 'ko' }),
+                        })
+                    )
                 );
             });
 
@@ -205,9 +205,11 @@ describe('/economy page.tsx integration', () => {
             const { act } = await import('@testing-library/react');
             await act(async () => {
                 render(
-                    await EconomyPage({
-                        params: Promise.resolve({ locale: 'ko' }),
-                    })
+                    await resolveAsyncServerTree(
+                        await EconomyPage({
+                            params: Promise.resolve({ locale: 'ko' }),
+                        })
+                    )
                 );
             });
 
@@ -239,9 +241,11 @@ describe('/economy page.tsx integration', () => {
             const { act } = await import('@testing-library/react');
             await act(async () => {
                 render(
-                    await EconomyPage({
-                        params: Promise.resolve({ locale: 'ko' }),
-                    })
+                    await resolveAsyncServerTree(
+                        await EconomyPage({
+                            params: Promise.resolve({ locale: 'ko' }),
+                        })
+                    )
                 );
             });
 
@@ -271,9 +275,11 @@ describe('/economy page.tsx integration', () => {
             const { act } = await import('@testing-library/react');
             await act(async () => {
                 render(
-                    await EconomyPage({
-                        params: Promise.resolve({ locale: 'ko' }),
-                    })
+                    await resolveAsyncServerTree(
+                        await EconomyPage({
+                            params: Promise.resolve({ locale: 'ko' }),
+                        })
+                    )
                 );
             });
 
@@ -299,9 +305,11 @@ describe('/economy page.tsx integration', () => {
             const { act } = await import('@testing-library/react');
             await act(async () => {
                 render(
-                    await EconomyPage({
-                        params: Promise.resolve({ locale: 'ko' }),
-                    })
+                    await resolveAsyncServerTree(
+                        await EconomyPage({
+                            params: Promise.resolve({ locale: 'ko' }),
+                        })
+                    )
                 );
             });
 
@@ -346,7 +354,11 @@ describe('/economy page.tsx integration', () => {
             const { default: EconomyPage } =
                 await import('@/app/[locale]/economy/page');
             render(
-                await EconomyPage({ params: Promise.resolve({ locale: 'ko' }) })
+                await resolveAsyncServerTree(
+                    await EconomyPage({
+                        params: Promise.resolve({ locale: 'ko' }),
+                    })
+                )
             );
 
             const types = mockJsonLdComponent.mock.calls.map(

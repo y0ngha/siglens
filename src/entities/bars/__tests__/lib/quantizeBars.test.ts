@@ -8,7 +8,10 @@ vi.mock('@y0ngha/siglens-core', async () => ({
 import { describe, expect, it, vi } from 'vitest';
 import type { Bar, BarsData } from '@y0ngha/siglens-core';
 import { US_EQUITY_SESSION, isRegularSessionOpen } from '@y0ngha/siglens-core';
-import { quantizeBarsDataToLastClosed } from '@/entities/bars/lib/quantizeBars';
+import {
+    hasFormingBar,
+    quantizeBarsDataToLastClosed,
+} from '@/entities/bars/lib/quantizeBars';
 
 const mockOpen = vi.mocked(isRegularSessionOpen);
 const now = new Date('2026-06-05T18:00:00Z');
@@ -382,5 +385,29 @@ describe('quantizeBarsDataToLastClosed — fearGreedBars', () => {
         );
 
         expect('fearGreedBars' in result).toBe(false);
+    });
+});
+
+/**
+ * `hasFormingBar`는 quantize가 마지막 봉을 떼는 조건과 **같은 술어**다 — 서버가 seed 상태를 클라이언트에
+ * 알리고(`page.tsx`), 클라이언트가 뷰 시점을 판정하는(`ChartContent`) 근거이므로 둘이 갈라지면 안 된다.
+ */
+describe('hasFormingBar', () => {
+    it('세션이 정규장 중이면 참, 아니면 거짓이다 (session 판정을 그대로 위임)', () => {
+        mockOpen.mockReturnValue(true);
+        expect(hasFormingBar(US_EQUITY_SESSION, now)).toBe(true);
+        mockOpen.mockReturnValue(false);
+        expect(hasFormingBar(US_EQUITY_SESSION, now)).toBe(false);
+    });
+
+    it('quantize가 봉을 떼는 경우와 정확히 일치한다', () => {
+        const data = makeData();
+        for (const open of [true, false]) {
+            mockOpen.mockReturnValue(open);
+            const trimmed =
+                quantizeBarsDataToLastClosed(data, now, US_EQUITY_SESSION).bars
+                    .length < data.bars.length;
+            expect(trimmed).toBe(hasFormingBar(US_EQUITY_SESSION, now));
+        }
     });
 });

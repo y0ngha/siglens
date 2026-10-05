@@ -7,9 +7,11 @@
 // `NextIntlClientProvider`에서 로케일을 받으므로 요청 스코프가 필요 없다.
 import { useTranslations } from 'next-intl';
 // Layout (`/[symbol]/layout.tsx`) already renders the breadcrumb + tabs, so this
-// fallback only fills the page slot below the layout header while the chart page
-// resolves its data. The chart page renders its own TimeframeSelector once mounted.
-export default function SymbolLoading() {
+// skeleton only fills the page slot below the layout header while the chart page
+// resolves its data. 내비게이션 중 `SymbolTabSkeleton`(클라 pending slot)이 그린다 —
+// 예전엔 `[symbol]/loading.tsx`의 본문이었으나 그 파일은 서버 Suspense 경계를 만들어
+// 직접 접속 HTML에 숨김 청크를 남기고 탭 가용성 `notFound()`를 200으로 새게 해 지웠다.
+export function ChartTabSkeleton() {
     const t = useTranslations('app.symbol');
     return (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-secondary-900 text-secondary-200">

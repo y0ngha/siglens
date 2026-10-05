@@ -20,6 +20,12 @@ vi.mock('next/link', () => ({
     ),
 }));
 
+const mockSegment = vi.hoisted(() => ({ current: null as string | null }));
+vi.mock('next/navigation', async importOriginal => ({
+    ...(await importOriginal<typeof import('next/navigation')>()),
+    useSelectedLayoutSegment: () => mockSegment.current,
+}));
+
 vi.mock('@/entities/ticker/hooks/useAssetInfo', () => ({
     useAssetInfo: vi.fn(() => ({
         name: 'Apple Inc.',
@@ -151,6 +157,7 @@ vi.mock('@/features/portfolio-holding/ui/PortfolioChipMounted', () => ({
 describe('SymbolLayoutHeader', () => {
     beforeEach(() => {
         mockOpenSignupNudge.mockReset();
+        mockSegment.current = null;
         mockUseSymbolModel.mockReturnValue(symbolModelValue());
         mockFearGreedChip.mockImplementation(() => (
             <span data-testid="fear-greed-chip">FG</span>
@@ -182,6 +189,24 @@ describe('SymbolLayoutHeader', () => {
         render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
         expect(screen.getByText(/애플/)).toBeDefined();
     });
+
+    it('차트 탭(/{T})에서는 종목명이 링크가 아니다 (자기 자신)', () => {
+        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
+        expect(screen.getByText('(AAPL)').closest('a')).toBeNull();
+    });
+
+    it.each(['news', 'fundamental', 'fear-greed', 'overall'])(
+        '하위 탭(%s)에서는 종목명이 차트 /{T}로 가는 링크다',
+        segment => {
+            mockSegment.current = segment;
+            render(
+                <SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />
+            );
+            const link = screen.getByText('(AAPL)').closest('a');
+            expect(link).toHaveAttribute('href', '/AAPL');
+            expect(link).toHaveTextContent('Apple Inc.');
+        }
+    );
 
     it('renders the 분석 설정 gear (model selector + reasoning toggle are consolidated behind it)', () => {
         render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);

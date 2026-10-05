@@ -11,7 +11,6 @@ import { SymbolLayoutJail } from '@/app/[locale]/[symbol]/SymbolLayoutJail';
 import { SymbolLayoutHeader } from '@/views/symbol/SymbolLayoutHeader';
 import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
 import { SymbolViewPing } from '@/features/visitor-ping/ui/SymbolViewPing';
-import { SymbolHeaderShellFallback } from './SymbolHeaderShellFallback';
 import { SymbolTabPendingSlot } from '@/views/symbol/SymbolTabPendingContext';
 import { SymbolTabSkeleton } from './SymbolTabSkeleton';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
@@ -53,14 +52,15 @@ interface SymbolLayoutProps {
 // 시점에 remove돼 jail이 PwaBanner 토글에 일관되게 반응한다. 두 변수 모두 한 곳에서만
 // 관리되므로 chrome 높이 변경 시 jail 계산식을 수정할 필요가 없다.
 //
-// `params` is async (Next.js 16). The chrome's remaining async work (bars prefetch)
-// lives behind Suspense with a header-shaped skeleton.
+// `params` is async (Next.js 16). The chrome's remaining async work (bars → 공포·탐욕
+// 스냅샷) is awaited by the shell — 크롬은 Suspense 뒤에 두지 않는다(아래 설명).
 //
 // ⚠️ 이 레이아웃은 **의도적으로 blocking**이다 — `children`을 반환하기 전에 심볼 존재
 // 여부를 확정해야 하기 때문이다(바로 아래 soft 404 설명 참조). 예전 주석은 "children이
 // Suspense 밖이라 page LCP가 레이아웃 async 작업을 기다리지 않는다"고 했지만, 이제
-// `getAssetInfoResilient` **한 번**은 문서 shell 전체가 기다린다. 여전히 Suspense 뒤에
-// 남는 건 `getQuantizedBarsStatic`(느린 쪽)이다.
+// `getAssetInfoResilient` **한 번**과 크롬의 `getQuantizedBarsStatic`까지 문서
+// shell이 기다린다(2026-10-05부터 크롬을 감싸던 Suspense를 걷어냈다 — 서버 데이터 Suspense는
+// raw HTML에 `<template>` 숨김 청크를 남겨 JS 없는 크롤러에게 헤더·탭을 가린다).
 //
 // 비용이 감당 가능한 이유: 이 라우트들은 `generateStaticParams: []` ISR이라 blocking은
 // **cold-gen/재검증 렌더에만** 발생하고, 워엄 요청은 캐시된 HTML로 응답한다. 게다가
@@ -81,20 +81,23 @@ interface SymbolLayoutProps {
 //   page 호출 + 명시적 <Suspense>       → 200 ❌
 //   page 호출 + client 컴포넌트 래핑    → 404 ✅  (client 래핑은 무관)
 //
-// 이 라우트 트리는 index/news/overall/fundamental/options에 `loading.tsx`가 있고
-// 레이아웃 자체도 Suspense를 쓰므로, page.tsx의 `notFound()`는 9개 탭 전부에서
-// 200으로 새어 나갔다 — Google 입장에선 전형적인 soft 404다. 레이아웃은 그 경계들보다
-// 위에 있으므로 여기서 던져야 진짜 404가 나간다.
+// 예전에는 index/news/overall/fundamental/options에 `loading.tsx`가 있고 레이아웃 크롬도
+// Suspense였기 때문에 page.tsx의 `notFound()`가 9개 탭 전부에서 200으로 새어 나갔다. 이제
+// `[symbol]` 아래에는 **`loading.tsx`가 하나도 없고**(`src/__tests__/guards/
+// symbolNoLoadingBoundaries.test.ts`가 목록을 고정한다) 레이아웃 크롬도 Suspense 밖이다 —
+// 내비게이션 중 골격은 클라 pending slot(`SymbolTabPendingSlot` → `SymbolTabSkeleton`,
+// 본문은 `views/symbol/skeletons/`)이 그린다. 그래서 page.tsx의 `notFound()`도 진짜 404가
+// 된다. 탭 전용 서버 섹션 Suspense(뉴스 탭의 목록·캘린더·의견)도 걷어냈고, 남은 Suspense는
+// 클라 전용 경계(NewsAiSummary 등)뿐이다.
 //
-// 📌 위 규칙은 **심볼 존재 판정에만** 적용된다. 탭 가용성 판정(`isTabAllowedForSymbol`)은
-// 탭이 어디인지 알아야 하므로 레이아웃으로 끌어올릴 수 없고, 자식 page.tsx에 남아
-// **여전히 200(soft 404)** 이다. 영향 범위는 크립토 × 주식 전용 4개 탭
-// (options/fundamental/financials/congress)이다 — `position`은 CRYPTO_DESCRIPTOR.tabs에
-// 포함돼 크립토도 정상 렌더된다(marketProfile/crypto.ts). 부모 세그먼트의 `loading.tsx`가 자식 세그먼트
-// 레이아웃까지 감싸므로 탭별 layout.tsx를 만들어도 해결되지 않는다(실측 확인).
-// 노출 범위는 제한적이다 — 크립토 sitemap(`sitemap-crypto.xml`)은 `/`,`/overall`,`/news`,
-// `/fear-greed`만 싣고 탭 바도 크립토에선 해당 탭을 숨기므로 내부 링크가 없다.
-// `e2e/specs/crypto-symbol.spec.ts`가 이 잔여 동작을 200으로 명시 단언한다.
+// 📌 **심볼 존재 판정은 그래도 이 레이아웃 최상단에 둔다.** 이유는 비용이다: 존재하지 않는
+// 심볼이 페이지 렌더(AI·봉 조회)까지 가기 전에 한 번의 `getAssetInfoResilient`로 끊긴다.
+// 탭 가용성 판정(`isTabAllowedForSymbol`)은 탭이 어디인지 알아야 해서 레이아웃으로 올릴 수
+// 없고 자식 page.tsx에 남지만, 경계가 없어졌으므로 더는 soft 404가 아니다 — 크립토 ×
+// 주식 전용 탭(options/fundamental/financials/congress), KR × options/congress가 404를 낸다.
+// `e2e/specs/crypto-symbol.spec.ts`·`kr-equity-seo.spec.ts`가 이를 단언한다.
+// 노출 범위는 원래도 제한적이다 — 크립토 sitemap은 `/`,`/overall`,`/news`,`/fear-greed`만
+// 싣고 탭 바도 해당 탭을 숨기므로 내부 링크가 없다.
 //
 // 자식 page.tsx의 동일한 **심볼 존재** 가드는 제거하지 않았다. 그쪽은 `generateMetadata`와
 // 짝을 이루고, 레이아웃 없이 페이지 컴포넌트를 직접 렌더하는 단위 테스트 경로도 지켜야 한다.
@@ -124,13 +127,13 @@ export default async function SymbolLayout({
         <RouteMessages route="[symbol]" locale={locale}>
             <SymbolLayoutProviders>
                 <SymbolLayoutJail>
-                    <Suspense fallback={<SymbolHeaderShellFallback />}>
-                        <SymbolLayoutChrome
-                            assetInfo={assetInfo}
-                            degraded={degraded}
-                            params={params}
-                        />
-                    </Suspense>
+                    {/* 크롬(헤더 + 탭)은 Suspense로 감싸지 않는다 — 서버 데이터 경계는 raw
+                        HTML에 숨김 청크를 남기고 notFound()를 200으로 새게 한다(위 주석). */}
+                    <SymbolLayoutChrome
+                        assetInfo={assetInfo}
+                        degraded={degraded}
+                        params={params}
+                    />
                     <SymbolTabPendingSlot fallback={<SymbolTabSkeleton />}>
                         {children}
                     </SymbolTabPendingSlot>
@@ -152,16 +155,11 @@ export default async function SymbolLayout({
                 남짓이고, 오히려 모든 탭이 다른 종목으로 나가는 간선을 갖게 돼
                 내부링크 그래프가 촘촘해진다.
 
-                ⚠️ 두 가지가 이 이동으로 **새로 생긴다**(리뷰 round 1 지적):
+                ⚠️ 이 이동으로 **새로 생긴 것**(리뷰 round 1 지적):
 
-                1. **잔여 soft-404 탭에도 뜬다.** 크립토가 options/fundamental/
-                   financials/congress를 방문하면 그 page.tsx가 `notFound()`를
-                   던지지만 세그먼트 `loading.tsx`의 Suspense 경계 때문에 200으로
-                   샌다(이 파일 상단 주석의 알려진 잔여 동작). 레이아웃은 그보다
-                   위라 칩이 그대로 렌더된다.
-                   그대로 둔다 — `app/not-found.tsx`가 이미 `TickerCategories`로
-                   종목 링크 그리드를 띄운다. 찾지 못한 페이지에서 탐색로를 주는 건
-                   이 사이트의 의도된 동작이고, 칩만 예외로 막을 이유가 없다.
+                1. **탭 가용성 404 페이지에도 렌더된다?** 아니다 — `notFound()`가 이제 진짜
+                   404를 내므로 `app/not-found.tsx`가 응답을 대신한다. (예전엔 세그먼트
+                   `loading.tsx` 경계 때문에 200으로 새서 칩이 같이 떴다.)
 
                 2. **콜드젠 blocking I/O가 1탭 → 9탭으로 늘었다.** 칩은 피어 8종의
                    한글명을 `getAssetInfoResilient`로 조회한다(`Promise.all` 1왕복).
@@ -208,8 +206,8 @@ interface SymbolLayoutChromeProps extends SymbolLayoutSegmentProps {
  * (`unstable_cache` 데이터 캐시 HIT), **incremental-cache read 한 번**은 더 일어났고 —
  * S3로 외부화된 cache-handler에서는 그게 실제 네트워크 왕복이다. 게다가 "두 번째 호출이
  * 반드시 HIT"이라는 건 어떤 테스트도 고정하지 않는 암묵적 불변식이었다. prop으로 내리면
- * 의존 자체가 사라진다. 스트리밍에는 영향 없다 — 값은 Suspense 서브트리가 렌더되기 전에
- * 이미 확정돼 있고, 느린 `getQuantizedBarsStatic`은 그대로 경계 뒤에 남는다.
+ * 의존 자체가 사라진다. 크롬은 더는 Suspense 뒤에 있지 않다 — 값은 크롬이 렌더되기 전에
+ * 이미 확정돼 있고, 느린 `getQuantizedBarsStatic`은 문서 shell이 함께 기다린다.
  */
 export async function SymbolLayoutChrome({
     assetInfo,

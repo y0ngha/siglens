@@ -94,12 +94,9 @@ export async function resolvePriceAsOf(
     analysis?: unknown,
     now: Date = new Date()
 ): Promise<string> {
-    let profile: Awaited<ReturnType<typeof resolveMarketProfile>>;
-    try {
-        profile = await resolveMarketProfile(symbol);
-    } catch {
-        profile = profileIdForSymbol(symbol);
-    }
+    const profile = await resolveMarketProfile(symbol).catch(() =>
+        profileIdForSymbol(symbol)
+    );
     const spec = sessionSpecFor(profile);
     return (
         buildDataAsOfLabel(

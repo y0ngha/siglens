@@ -1,8 +1,15 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
 import { buildFallbackAnalysis } from '@/entities/analysis/lib/fallbackAnalysis';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 import { ChartContent } from '@/views/symbol/ChartContent';
+import { useBars } from '@/entities/bars/hooks/useBars';
+import { __resetStoredChartPreferencesCacheForTests } from '@/widgets/chart/hooks/useHasStoredChartPreferences';
+import {
+    HUMAN_INTERACTION_STORAGE_KEY,
+    __resetHumanInteractionForTests,
+    markHumanInteracted,
+} from '@/shared/lib/humanInteractionStore';
 
 // 폴백은 이제 로케일별 빌더다 — 예전 `FALLBACK_ANALYSIS` 상수는 한국어 요약을
 // 들고 있어 `/en/AAPL`이 영어 화면에 한국어 폴백을 렌더했다.
@@ -183,6 +190,121 @@ describe('ChartContent', () => {
         // 패널(차트 사이드)에서는 제거됐다. 회귀 방지용 단언.
         render(<ChartContent {...defaultProps} />);
         expect(screen.queryByTestId('fear-greed-card')).toBeNull();
+    });
+
+    describe('seed 복원 재조회 게이트 (useBars refetchEnabled)', () => {
+        /** `useBars` 목이 **마지막으로** 받은 옵션 — 호출 인덱스가 아니라 최신 렌더 기준이다. */
+        function lastRefetchEnabled(): boolean | undefined {
+            const calls = vi.mocked(useBars).mock.calls;
+            return calls[calls.length - 1]?.[0].refetchEnabled;
+        }
+
+        beforeEach(() => {
+            __resetHumanInteractionForTests();
+            window.sessionStorage.removeItem(HUMAN_INTERACTION_STORAGE_KEY);
+            window.localStorage.clear();
+            __resetStoredChartPreferencesCacheForTests();
+        });
+
+        afterEach(() => {
+            __resetHumanInteractionForTests();
+            window.sessionStorage.removeItem(HUMAN_INTERACTION_STORAGE_KEY);
+            window.localStorage.clear();
+            __resetStoredChartPreferencesCacheForTests();
+        });
+
+        // 장 마감 중(토요일)과 정규장 중(수요일 15:00 UTC = 11:00 ET)의 고정 시각.
+        const MARKET_CLOSED_AT = new Date('2026-10-03T15:00:00Z');
+        const MARKET_OPEN_AT = new Date('2026-10-07T15:00:00Z');
+
+        /** `Date`만 고정한다 — 타이머를 가짜로 바꾸면 RTL의 `waitFor`가 멈춘다. */
+        function setNow(now: Date): void {
+            vi.useFakeTimers({ toFake: ['Date'], now });
+        }
+
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it('seed가 완전하고(장 마감 중 생성) 지금도 장 마감이면 입력 전까지 재조회를 미룬다 (크롤러·첫 방문)', () => {
+            setNow(MARKET_CLOSED_AT);
+            render(
+                <ChartContent
+                    {...defaultProps}
+                    seedHasFormingBarTrimmed={false}
+                />
+            );
+            expect(lastRefetchEnabled()).toBe(false);
+        });
+
+        it('seed가 형성 중 봉을 뺀 채 만들어졌으면(장중 생성) 지금 장 마감이어도 입력 없이 연다', () => {
+            setNow(MARKET_CLOSED_AT);
+            render(
+                <ChartContent
+                    {...defaultProps}
+                    seedHasFormingBarTrimmed={true}
+                />
+            );
+            expect(lastRefetchEnabled()).toBe(true);
+        });
+
+        it('지금 정규장 중이면 seed가 완전해도 입력 없이 연다 (장 마감 중 만든 ISR을 장중에 본 경우)', () => {
+            setNow(MARKET_OPEN_AT);
+            render(
+                <ChartContent
+                    {...defaultProps}
+                    seedHasFormingBarTrimmed={false}
+                />
+            );
+            expect(lastRefetchEnabled()).toBe(true);
+        });
+
+        it('크립토는 24/7이라 형성 중 봉이 항상 있다 — 입력 없이 연다', () => {
+            setNow(MARKET_CLOSED_AT);
+            render(
+                <ChartContent
+                    {...defaultProps}
+                    symbol="BTCUSD"
+                    marketProfile="crypto"
+                    seedHasFormingBarTrimmed={false}
+                />
+            );
+            expect(lastRefetchEnabled()).toBe(true);
+        });
+
+        it('prop을 생략하면 옛 동작대로 연다', () => {
+            setNow(MARKET_CLOSED_AT);
+            render(<ChartContent {...defaultProps} />);
+            expect(lastRefetchEnabled()).toBe(true);
+        });
+
+        it('사람 입력이 있으면 재조회를 연다', async () => {
+            setNow(MARKET_CLOSED_AT);
+            render(
+                <ChartContent
+                    {...defaultProps}
+                    seedHasFormingBarTrimmed={false}
+                />
+            );
+            expect(lastRefetchEnabled()).toBe(false);
+            act(() => markHumanInteracted());
+            await waitFor(() => expect(lastRefetchEnabled()).toBe(true));
+        });
+
+        it('저장된 차트 설정이 있는 재방문자는 입력 전에도 연다 (첫 페인트부터 전체 지표가 필요)', () => {
+            setNow(MARKET_CLOSED_AT);
+            window.localStorage.setItem(
+                'siglens.chart.overlay.bollinger',
+                'true'
+            );
+            render(
+                <ChartContent
+                    {...defaultProps}
+                    seedHasFormingBarTrimmed={false}
+                />
+            );
+            expect(lastRefetchEnabled()).toBe(true);
+        });
     });
 
     it('renders the drag handle separator', () => {

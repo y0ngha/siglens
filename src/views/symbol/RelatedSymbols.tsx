@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { RelatedSymbolLink } from '@/views/symbol/RelatedSymbolLink';
 import {
     relatedSymbolsFor,
     type RelatedSymbol,
@@ -143,26 +143,22 @@ export async function RelatedSymbols({ symbol }: RelatedSymbolsProps) {
                                 koreanNames.get(item.symbol) ?? item.koreanName;
                             return (
                                 <li key={item.symbol}>
-                                    <Link
-                                        href={`/${item.symbol}`}
-                                        // prefetch={false}: 칩이 8개라 기본 prefetch면
-                                        // 뷰포트 진입 시 RSC 페이로드 8벌(심볼당 ~35KB
-                                        // gzip)을 한꺼번에 당긴다. 이 스트립은 탐색
-                                        // 보조라 즉시성이 필요 없다.
-                                        prefetch={false}
+                                    {/* href는 현재 탭에 맞춘다(뉴스·공포탐욕 탭이면
+                                        그 탭 유지) — 이유는 `RelatedSymbolLink` JSDoc. */}
+                                    <RelatedSymbolLink
+                                        symbol={item.symbol}
                                         className="inline-flex items-baseline gap-1.5 rounded-full border border-border-control bg-secondary-900/60 px-3 py-1.5 text-sm text-secondary-300 transition-colors hover:border-primary-500 hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                                     >
                                         {koreanName !== undefined && (
                                             <span>{koreanName}</span>
                                         )}
-                                        {/* href는 canonical `symbol`, 표기는 접미사를
-                                            뗀 `displayTicker` — 국내 종목의 `.KS`/`.KQ`는
-                                            검색량이 0이고 사이트의 title 표기도 이미
-                                            떼고 있다(RelatedSymbol JSDoc). */}
+                                        {/* 표기는 접미사를 뗀 `displayTicker` — 국내 종목의
+                                            `.KS`/`.KQ`는 검색량이 0이고 사이트의 title
+                                            표기도 이미 떼고 있다(RelatedSymbol JSDoc). */}
                                         <span className="font-mono text-xs text-secondary-400">
                                             {item.displayTicker}
                                         </span>
-                                    </Link>
+                                    </RelatedSymbolLink>
                                 </li>
                             );
                         })}

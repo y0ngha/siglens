@@ -775,7 +775,6 @@
     "shared.config.nav.full.news.kr": "79e0c2dc6d9b",
     "shared.config.nav.full.news.us": "d311d2ffe207",
     "shared.config.nav.overviewAll": "f9bfbc16902c",
-    "shared.config.nav.overviewToken": "934dd25ec5f7",
     "shared.config.nav.region.crypto": "73eab86fea2b",
     "shared.config.nav.region.kr": "900e95b6971a",
     "shared.config.nav.region.us": "8a9d64bd994a",
@@ -2186,7 +2185,6 @@
     "widgets.economy.EconomicIndicatorGrid.c2a5bf": "c2a5bf1331d6",
     "widgets.economy.EconomyKrMacroFacts.59ed20": "59ed20a754b1",
     "widgets.economy.EconomyMacroFacts.59ed20": "59ed20a754b1",
-    "widgets.economy.EconomySkeleton.e0e86d": "e0e86d9e1a74",
     "widgets.economy.ImpactFilter.cc4968": "cc4968a5f49f",
     "widgets.economy.KrEconomicIndicatorGrid.c2a5bf": "c2a5bf1331d6",
     "widgets.economy.MacroBriefing.0c767c": "0c767cecf65e",
@@ -2962,6 +2960,9 @@
     "views.symbol.fearGreedFacts.extremeZoneOngoing": "8d7890c086ad",
     "views.symbol.fearGreedFacts.extremeZoneSessions": "fea5f10b8157",
     "views.symbol.fearGreedFacts.extremeZoneSummary": "66edfca7aa55",
+    "app.fear-greed.symbolListTitle": "82904cde1b94",
+    "widgets.portfolio-position.PositionCta.8df3cf": "8df3cf79ee25",
+    "widgets.portfolio-position.positionNote.ariaSummaryCurrentOnly": "1a68fd654cff",
     "app.backtesting.breadcrumb": "175b9028ef07",
     "shared.enumLabel.backtestRiskLevel.extreme": "45625aed636e",
     "shared.enumLabel.backtestRiskLevel.high": "160ea7712adc",
@@ -2991,7 +2992,5 @@
     "widgets.economy.DeltaBadge.unchanged": "015416364f3e",
     "widgets.economy.DeltaBadge.changeSincePeriod": "58c098f342d8",
     "widgets.economy.DeltaBadge.changeSinceRelease": "9fc30a7f4758",
-    "widgets.portfolio-position.PositionCta.8df3cf": "8df3cf79ee25",
-    "widgets.portfolio-position.positionNote.ariaSummaryCurrentOnly": "1a68fd654cff",
     "widgets.agent-chat.MessageList.followUpsLabel": "f8b1936b12ed"
 }
