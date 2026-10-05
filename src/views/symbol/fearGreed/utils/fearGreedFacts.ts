@@ -9,8 +9,7 @@ import {
     computeLabelTransitions,
     computeMarketScoreGap,
     POC_WINDOW_DEFAULT,
-    summarizeExtremeZoneOutcomes,
-    type Bar,
+    summarizeExtremeZoneEpisodes,
     type ExtremeFearGreedZone,
     type FearGreedReading,
 } from '@y0ngha/siglens-core';
@@ -451,82 +450,110 @@ export function buildFearGreedMarketGapLine(
     });
 }
 
-/** 극단 구간 사후 집계 표의 한 칸 — 중앙값 문자열 또는 표본 부족. */
-export interface ExtremeZoneCell {
-    readonly horizon: number;
-    readonly sampleSize: number;
-    /** `+3.2%` 꼴, 중앙값을 숨긴 칸은 `null`. */
-    readonly median: string | null;
+/** 극단 구간 기록 표의 한 행 — 구간에 한 번 들어가 머문 기록. */
+export interface ExtremeZoneEpisodeRow {
+    /** 진입일 — `formatIsoDate`가 로케일 카탈로그(`isoDate`)로 포맷한 날짜. */
+    readonly startDate: string;
+    /** 그 기록에서 구간에 있던 마지막 날(포맷은 `startDate`와 같다). */
+    readonly endDate: string;
+    /** 구간 라벨이었던 거래일 수(잠깐 빠졌다 돌아온 날은 세지 않는다). */
+    readonly sessions: number;
+    /** 공포는 가장 낮은 점수, 탐욕은 가장 높은 점수. 점수가 없는 비정상 입력만 `null`. */
+    readonly peakScore: number | null;
+    /** 마지막 거래일이 이 기록 안에서 아직 그 구간이다. */
+    readonly ongoing: boolean;
 }
 
-/** 극단 구간 사후 집계 표의 한 행. */
-export interface ExtremeZoneRow {
+/** 극단 구간 하나의 기록 묶음. */
+export interface ExtremeZoneSection {
     readonly zone: ExtremeFearGreedZone;
     readonly label: string;
     readonly entryCount: number;
-    readonly cells: readonly ExtremeZoneCell[];
+    /** 기록별 머문 거래일 수의 중앙값. */
+    readonly medianSessions: number;
+    /** 최신순, 최대 {@link EXTREME_ZONE_RECORD_MAX_ROWS}개. */
+    readonly rows: readonly ExtremeZoneEpisodeRow[];
+    /** 표에서 뺀 더 오래된 기록 수. */
+    readonly omittedCount: number;
 }
 
-/** 극단 구간 사후 집계 표 전체. 진입이 한 번도 없으면 `rows`가 비어 있다. */
-export interface ExtremeZoneTable {
+/** 극단 구간 기록 전체. 진입이 한 번도 없으면 `sections`가 비어 있다. */
+export interface ExtremeZoneRecord {
     /** 점수가 계산된 첫 거래일 — `formatIsoDate`가 로케일 카탈로그(`isoDate`)로 포맷한 날짜. */
     readonly from: string;
     /** 점수가 계산된 마지막 거래일(포맷은 `from`과 같다). */
     readonly to: string;
-    readonly horizons: readonly number[];
-    readonly rows: readonly ExtremeZoneRow[];
-}
-
-/** 중앙값 퍼센트의 소수 자릿수. 반올림 인자와 `toFixed`가 이 하나에서 파생된다. */
-const PERCENT_DECIMALS = 1;
-const PERCENT_ROUNDING = 10 ** PERCENT_DECIMALS;
-
-function formatSignedPercent(value: number): string {
-    const rounded = Math.round(value * PERCENT_ROUNDING) / PERCENT_ROUNDING;
-    const sign = rounded > 0 ? '+' : '';
-    return `${sign}${rounded.toFixed(PERCENT_DECIMALS)}%`;
+    readonly sections: readonly ExtremeZoneSection[];
 }
 
 /**
- * 극심한 공포·극심한 탐욕 구간에 **진입한 뒤** 종가가 어떻게 움직였는지의 과거 집계.
+ * 구간마다 표에 싣는 최근 기록 수. 5년 기준 대형주는 구간당 5~15회라, 다 실으면 두 표가
+ * 화면 하나를 넘는다. 더 오래된 기록은 개수만 밝힌다.
+ */
+export const EXTREME_ZONE_RECORD_MAX_ROWS = 8;
+
+/**
+ * 극심한 공포·극심한 탐욕 구간에 **언제 들어가 얼마나 머물렀는지**의 기록.
  *
- * 투자 권유로 읽히지 않게 지키는 것(사용자 지시 2026-10-05):
- *  - 평균·승률이 아니라 **중앙값과 표본 수**만 보인다(core가 그렇게만 돌려준다).
- *  - 표본이 기준 미만인 칸은 숫자를 지우고 "표본 부족"으로 둔다.
- *  - 화면은 집계 기간과 "과거 사후 집계, 예측·권유 아님" 고지를 반드시 함께 그린다
- *    (`FearGreedFactsSummary`). 이 함수는 숫자만 만들고 해석 문장을 만들지 않는다.
+ * 예전에는 진입 뒤 5·20·60거래일 종가 변화의 중앙값을 보였다. 20개 종목·5년으로 재 보니
+ * 그 중앙값이 같은 수의 무작위 날짜 중앙값과 구별되지 않았다(siglens-core#256, 117칸 중
+ * p<0.10이 10칸 — 우연 수준). 잡음이 숫자로 보이면 패턴처럼 읽혀 투자 권유 위험까지
+ * 생기므로, 흔들리지 않는 사실(진입일·마지막 날·머문 거래일·극값 점수)만 보인다.
+ * 수익률·평균·승률은 계산하지 않는다(core가 돌려주지 않는다).
+ *
+ * 화면은 집계 기간과 "과거 기록, 예측·권유 아님" 고지를 함께 그린다
+ * (`FearGreedExtremeZoneRecord`). 이 함수는 표 데이터만 만들고 해석 문장을 만들지 않는다.
  *
  * 점수가 계산된 구간이 없으면 `null`이다.
  */
-export function buildExtremeZoneTable(
+export function buildExtremeZoneRecord(
     history: readonly FearGreedReading[],
-    bars: readonly Bar[],
     t: EnumLabelTranslator,
     tFacts: SeoTranslator
-): ExtremeZoneTable | null {
+): ExtremeZoneRecord | null {
     const scored = history.filter(p => p.score !== null);
     const first = scored.at(0);
     const last = scored.at(-1);
     if (first === undefined || last === undefined) return null;
-    const outcomes = summarizeExtremeZoneOutcomes(history, bars);
-    const horizons = outcomes[0]?.forward.map(f => f.horizon) ?? [];
-    const rows = outcomes
-        .filter(o => o.entryCount > 0)
-        .map(o => ({
-            zone: o.zone,
-            label: labelText(o.zone, t),
-            entryCount: o.entryCount,
-            cells: o.forward.map(f => ({
-                horizon: f.horizon,
-                sampleSize: f.sampleSize,
-                median:
-                    f.median === null ? null : formatSignedPercent(f.median),
-            })),
-        }));
+    const sections = summarizeExtremeZoneEpisodes(history).flatMap(
+        (record): ExtremeZoneSection[] =>
+            record.medianSessionsInZone === null
+                ? []
+                : [
+                      {
+                          zone: record.zone,
+                          label: labelText(record.zone, t),
+                          entryCount: record.entryCount,
+                          medianSessions: record.medianSessionsInZone,
+                          rows: record.episodes
+                              .slice(0, EXTREME_ZONE_RECORD_MAX_ROWS)
+                              .map(episode => ({
+                                  startDate: formatIsoDate(
+                                      episode.startDate,
+                                      tFacts
+                                  ),
+                                  endDate: formatIsoDate(
+                                      episode.endDate,
+                                      tFacts
+                                  ),
+                                  sessions: episode.sessionsInZone,
+                                  peakScore:
+                                      episode.peakScore === null
+                                          ? null
+                                          : Math.round(episode.peakScore),
+                                  ongoing: episode.ongoing,
+                              })),
+                          omittedCount: Math.max(
+                              0,
+                              record.episodes.length -
+                                  EXTREME_ZONE_RECORD_MAX_ROWS
+                          ),
+                      },
+                  ]
+    );
     return {
         from: formatIsoDate(first.date, tFacts),
         to: formatIsoDate(last.date, tFacts),
-        horizons,
-        rows,
+        sections,
     };
 }

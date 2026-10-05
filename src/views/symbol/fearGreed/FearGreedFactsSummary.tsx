@@ -20,10 +20,10 @@ import {
     buildFearGreedRegimeDistributionLine,
     buildFearGreedTransitionLine,
     buildFearGreedMarketGapLine,
-    buildExtremeZoneTable,
+    buildExtremeZoneRecord,
     scoredHistory,
 } from './utils/fearGreedFacts';
-import { FearGreedExtremeZoneTable } from './FearGreedExtremeZoneTable';
+import { FearGreedExtremeZoneRecord } from './FearGreedExtremeZoneRecord';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
@@ -139,13 +139,8 @@ export function FearGreedFactsSummary({
                   tFacts
               ),
     ].filter((line): line is string => line !== null);
-    // 같은 `history`·`bars`로 계산한다 — core 함수가 둘의 인덱스 정렬을 전제한다.
-    const extremeZoneTable = buildExtremeZoneTable(
-        history,
-        bars,
-        tLabel,
-        tFacts
-    );
+    // 같은 `history`로 계산한다 — 위 문장들과 기록 표의 기간이 갈리지 않는다.
+    const extremeZoneRecord = buildExtremeZoneRecord(history, tLabel, tFacts);
 
     return (
         <section
@@ -194,8 +189,8 @@ export function FearGreedFactsSummary({
                     v1: tFearGreed(confidenceLabelKey(snapshot.confidence)),
                 })}
             </p>
-            {extremeZoneTable !== null && (
-                <FearGreedExtremeZoneTable table={extremeZoneTable} />
+            {extremeZoneRecord !== null && (
+                <FearGreedExtremeZoneRecord record={extremeZoneRecord} />
             )}
             {/* AI 서술 없이 규칙으로만 계산한 점수라는 고지. 요약 문장 전부 아래에 둔다. */}
             <AnalysisProvenanceNote

@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { getTranslations } from 'next-intl/server';
 import type {
-    Bar,
     FearGreedLabel,
     FearGreedReading,
     FearGreedSnapshot,
@@ -15,7 +14,8 @@ import {
     buildFearGreedYearRangeLine,
     buildFearGreedTransitionLine,
     buildFearGreedMarketGapLine,
-    buildExtremeZoneTable,
+    buildExtremeZoneRecord,
+    EXTREME_ZONE_RECORD_MAX_ROWS,
     scoredHistory,
 } from '../utils/fearGreedFacts';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
@@ -607,17 +607,6 @@ function readings(labels: (FearGreedLabel | null)[]): FearGreedReading[] {
     }));
 }
 
-function flatBars(closes: number[]): Bar[] {
-    return closes.map((close, i) => ({
-        time: Date.UTC(2026, 0, 1 + i) / 1000,
-        open: close,
-        high: close,
-        low: close,
-        close,
-        volume: 1,
-    }));
-}
-
 describe('buildFearGreedTransitionLine', () => {
     it('최근 전환을 날짜·이전·이후 라벨로 나열한다', () => {
         const line = buildFearGreedTransitionLine(
@@ -691,82 +680,87 @@ describe('buildFearGreedMarketGapLine', () => {
     });
 });
 
-describe('buildExtremeZoneTable', () => {
-    it('점수가 계산된 첫·마지막 거래일과 기본 구간(5·20·60)을 담는다', () => {
-        const table = buildExtremeZoneTable(
+describe('buildExtremeZoneRecord', () => {
+    /** 진입 하나 = 중립 하루 + 구간 `stay`일 + 중립 25일(재진입 간격 20보다 길게). */
+    const episode = (
+        zone: 'EXTREME_FEAR' | 'EXTREME_GREED',
+        stay: number
+    ): FearGreedLabel[] => [
+        'NEUTRAL',
+        ...Array<FearGreedLabel>(stay).fill(zone),
+        ...Array<FearGreedLabel>(25).fill('NEUTRAL'),
+    ];
+
+    it('점수가 계산된 첫·마지막 거래일을 기간으로 담는다', () => {
+        const record = buildExtremeZoneRecord(
             readings([null, 'NEUTRAL', 'FEAR']),
-            flatBars([1, 1, 1]),
             t,
             tFacts
         );
 
-        expect(table?.from).toBe('2026년 1월 2일');
-        expect(table?.to).toBe('2026년 1월 3일');
-        expect(table?.horizons).toEqual([5, 20, 60]);
+        expect(record?.from).toBe('2026년 1월 2일');
+        expect(record?.to).toBe('2026년 1월 3일');
+        expect(record?.sections).toEqual([]);
     });
 
-    it('진입이 없는 구간은 행에서 뺀다', () => {
-        const table = buildExtremeZoneTable(
-            readings(['NEUTRAL', 'EXTREME_FEAR', 'NEUTRAL']),
-            flatBars([1, 1, 1]),
+    it('진입이 있는 구간만 담고, 행에는 진입일·마지막 날·머문 거래일·극값을 둔다', () => {
+        const record = buildExtremeZoneRecord(
+            readings(episode('EXTREME_FEAR', 3)),
             t,
             tFacts
         );
 
-        expect(table?.rows.map(r => r.zone)).toEqual(['EXTREME_FEAR']);
-        expect(table?.rows[0]?.label).toBe('극심한 공포');
-        expect(table?.rows[0]?.entryCount).toBe(1);
+        expect(record?.sections).toEqual([
+            {
+                zone: 'EXTREME_FEAR',
+                label: '극심한 공포',
+                entryCount: 1,
+                medianSessions: 3,
+                rows: [
+                    {
+                        startDate: '2026년 1월 2일',
+                        endDate: '2026년 1월 4일',
+                        sessions: 3,
+                        peakScore: 10,
+                        ongoing: false,
+                    },
+                ],
+                omittedCount: 0,
+            },
+        ]);
     });
 
-    it('표본이 기준 미만인 칸은 중앙값을 null로 둔다', () => {
-        const table = buildExtremeZoneTable(
-            readings(['NEUTRAL', 'EXTREME_FEAR', ...Array(10).fill('NEUTRAL')]),
-            flatBars(Array(12).fill(100)),
+    it('마지막 거래일까지 구간에 있으면 진행 중으로 표시한다', () => {
+        const record = buildExtremeZoneRecord(
+            readings(['NEUTRAL', 'EXTREME_GREED', 'EXTREME_GREED']),
             t,
             tFacts
         );
 
-        const fiveDay = table?.rows[0]?.cells.find(c => c.horizon === 5);
-        expect(fiveDay?.sampleSize).toBe(1);
-        expect(fiveDay?.median).toBeNull();
+        expect(record?.sections[0]?.rows[0]).toEqual(
+            expect.objectContaining({ ongoing: true, peakScore: 85 })
+        );
     });
 
-    it('중앙값은 부호와 소수 첫째 자리까지 붙인 퍼센트 문자열이다', () => {
-        // 진입 5회, 각 진입 5세션 뒤 종가: +12.34%, +5%, 0%, -3%, +20%.
-        // 묶음 하나는 25세션 — core의 재진입 간격(20세션)보다 길어야 진입마다 센다.
-        const BLOCK = 25;
-        const rises = [0.1234, 0.05, 0, -0.03, 0.2];
-        const labels = rises.flatMap((): FearGreedLabel[] =>
-            Array.from({ length: BLOCK }, (_, i) =>
-                i === 1 ? 'EXTREME_FEAR' : 'NEUTRAL'
-            )
-        );
-        const closes = rises.flatMap(r =>
-            Array.from({ length: BLOCK }, (_, i) =>
-                i === 6 ? 100 * (1 + r) : 100
-            )
-        );
+    it(`기록이 ${EXTREME_ZONE_RECORD_MAX_ROWS}개를 넘으면 최신 것만 싣고 나머지는 개수로 남긴다`, () => {
+        const total = EXTREME_ZONE_RECORD_MAX_ROWS + 2;
+        const labels = Array.from({ length: total }, (_, k) =>
+            episode('EXTREME_FEAR', k + 1)
+        ).flat();
 
-        const table = buildExtremeZoneTable(
-            readings(labels),
-            flatBars(closes),
-            t,
-            tFacts
-        );
+        const section = buildExtremeZoneRecord(readings(labels), t, tFacts)
+            ?.sections[0];
 
-        const fiveDay = table?.rows[0]?.cells.find(c => c.horizon === 5);
-        expect(fiveDay?.sampleSize).toBe(5);
-        expect(fiveDay?.median).toBe('+5.0%');
+        expect(section?.entryCount).toBe(total);
+        expect(section?.rows).toHaveLength(EXTREME_ZONE_RECORD_MAX_ROWS);
+        expect(section?.omittedCount).toBe(2);
+        // 최신순 — 마지막에 넣은(가장 오래 머문) 기록이 맨 앞이다.
+        expect(section?.rows[0]?.sessions).toBe(total);
     });
 
     it('점수가 계산된 날이 없으면 null이다', () => {
         expect(
-            buildExtremeZoneTable(
-                readings([null, null]),
-                flatBars([1, 1]),
-                t,
-                tFacts
-            )
+            buildExtremeZoneRecord(readings([null, null]), t, tFacts)
         ).toBeNull();
     });
 });
