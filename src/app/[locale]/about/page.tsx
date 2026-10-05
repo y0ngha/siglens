@@ -1,4 +1,3 @@
-import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import { getTranslations } from 'next-intl/server';
 import { countSkillFiles } from '@/entities/skill/api';
 import { resolveLocale } from '@/shared/i18n/locales';
@@ -29,6 +28,7 @@ import {
     SITE_URL,
     localizedAbsoluteUrl,
 } from '@/shared/lib/seo';
+import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import type { SeoTranslator } from '@/shared/lib/seo';
 import type { Locale } from '@/shared/i18n/locales';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';

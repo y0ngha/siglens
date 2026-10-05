@@ -80,23 +80,19 @@ export function buildFearGreedFactorTable(
     tFactor: SeoTranslator,
     locale: Locale
 ): FearGreedFactorTable {
-    const rows: FearGreedFactorRow[] = [];
-    const outliers: { label: string; level: 'high' | 'low' }[] = [];
-    for (const group of snapshot.groups) {
-        for (const factor of group.factors) {
-            const percentile = Math.round(factor.percentile);
-            const label = tFactor(`symbolLabel.${factor.key}`, {
-                v0: POC_WINDOW_DEFAULT,
-            });
-            rows.push({
-                label,
-                value: formatFactorRaw(factor.key, factor.rawValue, locale),
-                percentile,
-            });
-            const level = factorLevel(percentile);
-            if (level !== 'mid') outliers.push({ label, level });
-        }
-    }
+    const factors = snapshot.groups.flatMap(group => group.factors);
+    const rows = factors.map((factor): FearGreedFactorRow => ({
+        label: tFactor(`symbolLabel.${factor.key}`, {
+            v0: POC_WINDOW_DEFAULT,
+        }),
+        value: formatFactorRaw(factor.key, factor.rawValue, locale),
+        percentile: Math.round(factor.percentile),
+    }));
+    // 해석 대상은 평소 범위(25~75 퍼센타일) 밖 지표뿐이다. 행과 같은 순서(Flow → Trend).
+    const outliers = rows.flatMap(row => {
+        const level = factorLevel(row.percentile);
+        return level === 'mid' ? [] : [{ label: row.label, level }];
+    });
     return { rows, outliers };
 }
 
@@ -197,7 +193,11 @@ export function buildFearGreedFactorRankingLine(
  * `computeFearGreedHistory`가 돌려준 시계열에서 warm-up(`score === null`)을 걷어낸다.
  * 아래 시계열 문장 3종이 공유하는 전처리다.
  */
-type ScoredPoint = { date: string; score: number; label: FearGreedLabel };
+export type ScoredPoint = {
+    date: string;
+    score: number;
+    label: FearGreedLabel;
+};
 
 export function scoredHistory(
     history: readonly FearGreedHistoryPoint[]

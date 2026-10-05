@@ -1,4 +1,3 @@
-import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import { getTranslations } from 'next-intl/server';
 import { countSkillFiles, FileSkillsLoader } from '@/entities/skill/api';
 import {
@@ -25,6 +24,7 @@ import {
     SITE_URL,
     X_URL,
 } from '@/shared/lib/seo';
+import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import {
     DEFAULT_LOCALE,
     LOCALE_HREFLANG,

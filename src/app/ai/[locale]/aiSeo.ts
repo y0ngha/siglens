@@ -1,4 +1,3 @@
-import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import type { Metadata } from 'next';
 import {
     AI_SITE_URL,
@@ -17,6 +16,7 @@ import {
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { localePageRobots } from '@/shared/lib/seoAlternates';
 import { ORGANIZATION_JSON_LD_ID, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
+import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 
 /** Product name as it appears in titles, cards and structured data. */
 export const AI_PRODUCT_NAME = 'SIGLENS AI';

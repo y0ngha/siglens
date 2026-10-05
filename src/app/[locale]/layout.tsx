@@ -1,4 +1,3 @@
-import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import type { Metadata, Viewport } from 'next';
 import { localePageRobots, localeOpenGraph } from '@/shared/lib/seoAlternates';
 import type { ReactNode } from 'react';
@@ -31,6 +30,7 @@ import {
     SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
+import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import {
     isLocale,

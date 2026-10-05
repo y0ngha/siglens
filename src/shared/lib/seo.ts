@@ -7,12 +7,12 @@ import {
 } from '@/shared/i18n/locales';
 import { SYMBOL_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 import { localeAlternates, localeOpenGraph } from '@/shared/lib/seoAlternates';
+import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { type AssetClass } from '@/shared/config/marketProfile/types';
 import { KR_EXCHANGE_SUFFIX_RE } from '@/shared/config/ticker';
 import { stripSnapshotMarkdown } from '@/shared/lib/stripSnapshotMarkdown';
 import { truncateWithEllipsis } from '@/shared/lib/truncate';
-import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 
 export interface BreadcrumbItem {
     name: string;

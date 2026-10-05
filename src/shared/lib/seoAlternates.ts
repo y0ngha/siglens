@@ -1,6 +1,6 @@
-import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { SITE_NAME } from '@/shared/lib/seo';
+import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import type { Metadata } from 'next';
 import {
     DEFAULT_LOCALE,

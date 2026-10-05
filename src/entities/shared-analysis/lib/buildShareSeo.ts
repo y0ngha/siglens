@@ -1,4 +1,3 @@
-import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import type { Locale } from '@/shared/i18n/locales';
 import { localeOpenGraph } from '@/shared/lib/seoAlternates';
 
@@ -11,6 +10,7 @@ import type { Metadata } from 'next';
 import type { SharedAnalysisLookup } from '../types';
 import { buildOgText, type OgTranslator } from '../server/buildOgText';
 import { SITE_NAME, localizedAbsoluteUrl } from '@/shared/lib/seo';
+import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 
 /**
  * 공유 페이지(`/share/[id]`) generateMetadata 반환값 빌더.

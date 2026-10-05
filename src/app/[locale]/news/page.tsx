@@ -1,6 +1,6 @@
-import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import { getTranslations } from 'next-intl/server';
 import type { SeoTranslator } from '@/shared/lib/seo';
+import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import type { Metadata } from 'next';
 import { resolveLocale } from '@/shared/i18n/locales';
 import {

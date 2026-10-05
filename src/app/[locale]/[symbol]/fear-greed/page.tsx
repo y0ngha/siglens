@@ -7,9 +7,9 @@ import { FearGreedPageError } from '@/widgets/fear-greed/FearGreedPageError';
 import { FearGreedFactsSummary } from '@/views/symbol/fearGreed/FearGreedFactsSummary';
 import { hasFearGreedScore } from '@/views/symbol/fearGreed/utils/hasFearGreedScore';
 import {
-    buildFearGreedMetaFacts,
-    scoredHistory,
-} from '@/views/symbol/fearGreed/utils/fearGreedFacts';
+    buildFearGreedMetaFactsFromBars,
+    lastScoredDateFromBars,
+} from '@/views/symbol/fearGreed/utils/fearGreedFromBars';
 import { composeFearGreedDescription } from '@/views/symbol/fearGreed/utils/fearGreedMetaDescription';
 import { fearGreedDateModified } from '@/views/symbol/fearGreed/utils/fearGreedDateModified';
 import { symbolFactsSubject } from '@/views/symbol/utils/factsSubject';
@@ -25,7 +25,6 @@ import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilie
 import { getQuantizedBarsStatic } from '@/entities/bars/lib/barsStaticCache';
 import {
     clientSymbolFearGreed,
-    computeSymbolFearGreedSeries,
     symbolFearGreedInputs,
 } from '@/entities/bars/lib/symbolFearGreed';
 import { getMarketFearGreedReading } from '@/entities/market-fear-greed/api/marketFearGreedReading';
@@ -187,17 +186,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const metaFacts =
         metadataBars === null
             ? null
-            : (() => {
-                  const input = symbolFearGreedInputs(metadataBars);
-                  return buildFearGreedMetaFacts(
-                      scoredHistory(
-                          computeSymbolFearGreedSeries(
-                              input.bars,
-                              input.buySellVolume
-                          ).history
-                      )
-                  );
-              })();
+            : buildFearGreedMetaFactsFromBars(metadataBars);
     if (metaFacts === null) return metadata;
     const tLabel = await getTranslations({
         locale,
@@ -315,14 +304,9 @@ export default async function SymbolFearGreedPage({ params }: Props) {
     // `dateModified`는 마지막 점수 봉의 세션 마감 — sitemap `lastmod`와 같은 정의다
     // (`fearGreedDateModified`). 점수가 없으면 신선도를 주장하지 않는다(필드 생략).
     const lastScoredDate =
-        fearGreedInput === null
+        quantizedFgBars === null
             ? undefined
-            : scoredHistory(
-                  computeSymbolFearGreedSeries(
-                      fearGreedInput.bars,
-                      fearGreedInput.buySellVolume
-                  ).history
-              ).at(-1)?.date;
+            : lastScoredDateFromBars(quantizedFgBars);
     const webPageJsonLd = buildSymbolWebPageJsonLd({
         url,
         name: fullTitle,

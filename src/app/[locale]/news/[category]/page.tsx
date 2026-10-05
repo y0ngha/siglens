@@ -1,4 +1,3 @@
-import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import { useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
@@ -40,6 +39,7 @@ import {
     SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
+import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import { resolveNewsTitle } from '@/shared/lib/news/resolveNewsTitle';
 import { buildCategoryPageTitle, buildCategoryPageDescription } from './seo';
 import { enterLocale } from '@/shared/lib/enterLocale';

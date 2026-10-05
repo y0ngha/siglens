@@ -1,4 +1,3 @@
-import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
 import { type Locale, resolveLocale } from '@/shared/i18n/locales';
@@ -18,6 +17,7 @@ import {
     type SeoTranslator,
     localizedAbsoluteUrl,
 } from '@/shared/lib/seo';
+import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { TERMS_PATH } from '@/shared/lib/legal';
 import { BacktestHero } from '@/widgets/backtesting/BacktestHero';
