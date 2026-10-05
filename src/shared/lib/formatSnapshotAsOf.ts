@@ -1,6 +1,9 @@
+import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
+import { MS_PER_DAY } from '@/shared/config/time';
 import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { cachedDateTimeFormat } from '@/shared/lib/intlFormatCache';
+import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
 
 /**
  * 스냅샷 프로즈의 "기준일" 캡션용 포맷터 — 시장별로 하나씩 고정한다.
@@ -58,8 +61,103 @@ function formatterFor(locale: Locale, marketProfile: MarketProfileId) {
 export function formatSnapshotAsOf(
     date: Date,
     marketProfile: MarketProfileId,
-    locale: Locale
+    locale: Locale,
+    withTime = false
 ): string | null {
     if (Number.isNaN(date.getTime())) return null;
-    return formatterFor(locale, marketProfile).format(date);
+    const formatted = formatterFor(locale, marketProfile).format(date);
+    return withTime ? `${formatted} ${utcClockTime(date)}` : formatted;
+}
+
+/**
+ * `HH:mm`(UTC). `Intl`의 시간 옵션을 쓰지 않는다 — 시·분 표기는 로케일·ICU 버전마다 달라
+ * (`h23`·오전/오후·"at") 서버 이미지의 ICU 차이가 곧 hydration mismatch가 된다
+ * (`scripts/assert-icu-locale.mjs`가 막는 부류). 숫자 두 자리는 환경과 무관하다.
+ */
+function utcClockTime(date: Date): string {
+    const hh = String(date.getUTCHours()).padStart(2, '0');
+    const mm = String(date.getUTCMinutes()).padStart(2, '0');
+    return `${hh}:${mm}`;
+}
+
+/** 스냅샷 `content`와 행에서 읽은 기준 후보. 없으면 `null`/생략. */
+export interface SnapshotAsOfCandidates {
+    /** 분석에 쓴 마지막 봉의 시작 시각(`dataAsOf.barTime`). */
+    readonly barTime?: Date | null;
+    /** 분석 실행 시각(`analyzedAt`). */
+    readonly analyzedAt?: Date | null;
+    /** 스냅샷 행의 생성 시각 — 마지막 폴백. */
+    readonly generatedAt?: Date | null;
+}
+
+export interface ResolvedSnapshotAsOf {
+    /** `formatSnapshotAsOf`에 넘길 순간. */
+    readonly instant: Date;
+    /** 시각(HH:mm UTC)까지 표시하는가 — 크립토만. */
+    readonly withTime: boolean;
+}
+
+/** 캡션 정착 버퍼 — `entities/seo-snapshot/lib/freshness`의 30분과 같은 값이다. */
+const CAPTION_SETTLE_BUFFER_MINUTES = 30;
+
+function validDate(date: Date | null | undefined): Date | null {
+    return date != null && !Number.isNaN(date.getTime()) ? date : null;
+}
+
+/**
+ * 캡션이 말할 **데이터 기준일**을 정한다. 렌더 중 `new Date()`를 쓰지 않는다 — 입력은
+ * 전부 저장된 값이라 같은 스냅샷은 언제 렌더해도 같은 문자열이다.
+ *
+ * 예전 캡션은 행의 `generatedAt`(프리웜이 행을 쓴 날)을 그대로 찍었다. 그러나 글은 그 시점의
+ * 데이터가 아니라 **분석에 쓴 봉**의 글이다 — 한국 종목을 전날 저녁에 만든 분석이 다음 날
+ * 아침 행으로 저장되면 "오늘 기준"으로 읽혔다.
+ *
+ * **주식(US·KR)**: 기준 시각에서 그 시장의 **직전 완료 세션**의 날짜를 낸다(정착 버퍼 30분 동일).
+ * 기준 후보 순서는 `barTime` → `analyzedAt` → `generatedAt`이다.
+ *  - `analyzedAt`·`generatedAt`은 "그 순간 이전의 마지막 완료 세션"이다.
+ *  - `barTime`은 봉의 **시작**이라 그 순간 이전에는 아직 그 세션이 마감되지 않았다. 하루를
+ *    더해서 "그 봉이 속한 세션"이 직전 완료 세션이 되게 한다(시장 타임존 자정이든 UTC 자정이든
+ *    봉 시작은 해당 세션 당일 안에 있고 마감은 24시간 안에 온다).
+ *
+ * **크립토**: 일봉이 장중에도 움직여 분석 가격은 특정 **시각**의 시세다 — 날짜와 시각(UTC)까지
+ * 낸다. 일봉 시작(`barTime`)은 항상 00:00이라 시세 시각을 말해 주지 못하므로 `analyzedAt` →
+ * `generatedAt` → `barTime` 순으로 읽는다.
+ *
+ * 후보가 하나도 유효하지 않으면 `null` — 호출부는 고정 폴백 캡션을 쓴다.
+ */
+export function resolveSnapshotAsOf(
+    candidates: SnapshotAsOfCandidates,
+    marketProfile: MarketProfileId
+): ResolvedSnapshotAsOf | null {
+    const barTime = validDate(candidates.barTime);
+    const analyzedAt = validDate(candidates.analyzedAt);
+    const generatedAt = validDate(candidates.generatedAt);
+
+    if (marketProfile === 'crypto') {
+        const instant = analyzedAt ?? generatedAt ?? barTime;
+        return instant === null ? null : { instant, withTime: true };
+    }
+
+    const spec = sessionSpecFor(marketProfile);
+    if (barTime !== null) {
+        return {
+            instant: lastClosedSessionCloseUtc(
+                spec,
+                new Date(barTime.getTime() + MS_PER_DAY),
+                CAPTION_SETTLE_BUFFER_MINUTES
+            ),
+            withTime: false,
+        };
+    }
+    const instant = analyzedAt ?? generatedAt;
+    return instant === null
+        ? null
+        : {
+              instant: lastClosedSessionCloseUtc(
+                  spec,
+                  instant,
+                  CAPTION_SETTLE_BUFFER_MINUTES
+              ),
+              withTime: false,
+          };
 }

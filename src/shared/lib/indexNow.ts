@@ -8,7 +8,31 @@ import {
     INDEXNOW_MAX_URLS_PER_REQUEST,
     INDEXNOW_TIMEOUT_MS,
 } from '@/shared/config/indexNow';
+import { MS_PER_SECOND } from '@/shared/config/time';
 import { SITE_HOST, SITE_URL } from '@/shared/lib/seo';
+
+/**
+ * 한 번의 제출이 **어떻게 끝났는가**. 호출부(`indexNowQueue`)가 대기열 멤버를 지울지,
+ * 얼마나 쉴지, 그냥 두고 다음 tick에 다시 시도할지를 이것으로 정한다.
+ *
+ *  - `ok`: 모든 엔드포인트가 200/202.
+ *  - `disabled`: 운영 호스트가 아니거나 E2E — 아무것도 보내지 않았다.
+ *  - `empty`: 보낼 수 있는 URL이 하나도 없다(호스트 불일치·파싱 불가).
+ *  - `rateLimited`: 429. `Retry-After`가 있으면 초 단위로 싣는다(없으면 `null`).
+ *  - `rejected`: 그 밖의 4xx — 같은 요청을 다시 보내도 같은 답이다. 400·422는 **URL 자체가**
+ *    잘못이고(대기열에서 지운다), 403은 키 검증 실패라 URL이 아니라 설정이 문제다(남겨 둔다).
+ *  - `transient`: 5xx·408·네트워크 오류·타임아웃. 다시 보내면 통할 수 있다(`status`는 없으면 `null`).
+ */
+export type IndexNowOutcome =
+    | { readonly kind: 'ok' }
+    | { readonly kind: 'disabled' }
+    | { readonly kind: 'empty' }
+    | {
+          readonly kind: 'rateLimited';
+          readonly retryAfterSeconds: number | null;
+      }
+    | { readonly kind: 'rejected'; readonly status: number }
+    | { readonly kind: 'transient'; readonly status: number | null };
 
 export interface IndexNowResult {
     /** 보낸 URL 수. 꺼져 있거나 보낼 URL이 없으면 0. */
@@ -17,6 +41,7 @@ export interface IndexNowResult {
     readonly ok: number;
     /** 실패했거나 타임아웃된 엔드포인트 수. */
     readonly failed: number;
+    readonly outcome: IndexNowOutcome;
 }
 
 export interface SubmitIndexNowOptions {
@@ -24,7 +49,19 @@ export interface SubmitIndexNowOptions {
     readonly maxUrlsPerRequest?: number;
 }
 
-const DISABLED_RESULT: IndexNowResult = { submitted: 0, ok: 0, failed: 0 };
+const DISABLED_RESULT: IndexNowResult = {
+    submitted: 0,
+    ok: 0,
+    failed: 0,
+    outcome: { kind: 'disabled' },
+};
+
+const EMPTY_RESULT: IndexNowResult = {
+    submitted: 0,
+    ok: 0,
+    failed: 0,
+    outcome: { kind: 'empty' },
+};
 
 /**
  * 운영 호스트에서만 켠다.
@@ -58,14 +95,61 @@ function chunk<T>(items: readonly T[], size: number): T[][] {
     );
 }
 
-const { HTTP_STATUS_OK, HTTP_STATUS_ACCEPTED } = constants;
+const {
+    HTTP_STATUS_OK,
+    HTTP_STATUS_ACCEPTED,
+    HTTP_STATUS_TOO_MANY_REQUESTS,
+    HTTP_STATUS_REQUEST_TIMEOUT,
+    HTTP_STATUS_BAD_REQUEST,
+    HTTP_STATUS_INTERNAL_SERVER_ERROR,
+} = constants;
 
 function isAccepted(status: number): boolean {
     return status === HTTP_STATUS_OK || status === HTTP_STATUS_ACCEPTED;
 }
 
 /**
- * 엔드포인트 하나에 모든 청크를 순서대로 보낸다. 성공 여부만 돌려준다.
+ * `Retry-After`를 초로 읽는다 — 정수 초 또는 HTTP 날짜. 없거나 읽을 수 없으면 `null`.
+ *
+ * 과거 날짜는 0초로 접는다(음수 대기는 없다). `nowMs`는 테스트가 고정한다.
+ */
+export function parseRetryAfterSeconds(
+    value: string | null,
+    nowMs: number = Date.now()
+): number | null {
+    if (value === null) return null;
+    const trimmed = value.trim();
+    if (/^\d+$/.test(trimmed)) return Number(trimmed);
+    // HTTP 날짜는 요일·월 이름이 있다 — 숫자만 있는 이상한 값을 `Date.parse`가 날짜로 읽지 않게 한다.
+    if (!/[A-Za-z]/.test(trimmed)) return null;
+    const at = Date.parse(trimmed);
+    if (Number.isNaN(at)) return null;
+    return Math.max(0, Math.ceil((at - nowMs) / MS_PER_SECOND));
+}
+
+function classifyFailure(response: Response): IndexNowOutcome {
+    const { status } = response;
+    if (status === HTTP_STATUS_TOO_MANY_REQUESTS) {
+        return {
+            kind: 'rateLimited',
+            retryAfterSeconds: parseRetryAfterSeconds(
+                response.headers.get('retry-after')
+            ),
+        };
+    }
+    // 408은 4xx지만 "다시 보내면 된다"는 뜻이라 일시적 실패다.
+    if (
+        status >= HTTP_STATUS_BAD_REQUEST &&
+        status < HTTP_STATUS_INTERNAL_SERVER_ERROR &&
+        status !== HTTP_STATUS_REQUEST_TIMEOUT
+    ) {
+        return { kind: 'rejected', status };
+    }
+    return { kind: 'transient', status };
+}
+
+/**
+ * 엔드포인트 하나에 모든 청크를 순서대로 보낸다. 결과 종류를 돌려준다.
  *
  * 타임아웃 신호를 **엔드포인트당 하나**로 공유한다 — 청크마다 새로 만들면 청크 수에
  * 비례해 상한이 늘어, "이 제출은 5초 안에 끝난다"는 크론 쪽 전제가 깨진다.
@@ -75,7 +159,7 @@ function isAccepted(status: number): boolean {
 async function postToEndpoint(
     endpoint: string,
     chunks: readonly (readonly string[])[]
-): Promise<boolean> {
+): Promise<IndexNowOutcome> {
     const signal = AbortSignal.timeout(INDEXNOW_TIMEOUT_MS);
     for (const urlList of chunks) {
         try {
@@ -98,14 +182,32 @@ async function postToEndpoint(
                     endpoint,
                     status: response.status,
                 });
-                return false;
+                return classifyFailure(response);
             }
         } catch (error) {
             console.error('[indexnow] submit failed', { endpoint, error });
-            return false;
+            return { kind: 'transient', status: null };
         }
     }
-    return true;
+    return { kind: 'ok' };
+}
+
+/**
+ * 엔드포인트별 결과를 하나로 접는다. 더 **조치가 필요한** 쪽이 이긴다:
+ * 속도 제한(쉬어야 한다) > 거절(다시 보내도 소용없다) > 일시 실패 > 성공.
+ */
+const OUTCOME_PRECEDENCE: readonly IndexNowOutcome['kind'][] = [
+    'rateLimited',
+    'rejected',
+    'transient',
+];
+
+function foldOutcomes(outcomes: readonly IndexNowOutcome[]): IndexNowOutcome {
+    for (const kind of OUTCOME_PRECEDENCE) {
+        const found = outcomes.find(outcome => outcome.kind === kind);
+        if (found !== undefined) return found;
+    }
+    return { kind: 'ok' };
 }
 
 /**
@@ -122,22 +224,26 @@ export async function submitIndexNow(
     if (!isIndexNowEnabled()) return DISABLED_RESULT;
 
     const submittable = selectSubmittableUrls(urls);
-    if (submittable.length === 0) return DISABLED_RESULT;
+    if (submittable.length === 0) return EMPTY_RESULT;
 
     const { maxUrlsPerRequest = INDEXNOW_MAX_URLS_PER_REQUEST } = options;
     const chunks = chunk(submittable, maxUrlsPerRequest);
 
-    const outcomes = await Promise.allSettled(
+    const settled = await Promise.allSettled(
         INDEXNOW_ENDPOINTS.map(endpoint => postToEndpoint(endpoint, chunks))
     );
     // `postToEndpoint`는 던지지 않지만, 미래 수정이 던지게 만들어도 거절된 약속을
-    // 실패로 세어 이 함수의 "던지지 않는다" 계약이 유지되게 한다.
-    const ok = outcomes.filter(
-        outcome => outcome.status === 'fulfilled' && outcome.value
-    ).length;
+    // 일시 실패로 세어 이 함수의 "던지지 않는다" 계약이 유지되게 한다.
+    const outcomes = settled.map((entry): IndexNowOutcome =>
+        entry.status === 'fulfilled'
+            ? entry.value
+            : { kind: 'transient', status: null }
+    );
+    const ok = outcomes.filter(outcome => outcome.kind === 'ok').length;
     return {
         submitted: submittable.length,
         ok,
         failed: outcomes.length - ok,
+        outcome: foldOutcomes(outcomes),
     };
 }

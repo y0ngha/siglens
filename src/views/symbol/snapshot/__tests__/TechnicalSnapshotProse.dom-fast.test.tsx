@@ -349,7 +349,7 @@ describe('TechnicalSnapshotProse — 기준일 표기 + 라이브 분석 상호�
                 symbol="AAPL"
                 displayName="Apple Inc."
                 marketProfile="us-equity"
-                generatedAt={new Date('2026-07-31T20:00:00Z')}
+                generatedAt={new Date('2026-07-31T21:00:00Z')}
             />
         );
 
@@ -369,7 +369,7 @@ describe('TechnicalSnapshotProse — 기준일 표기 + 라이브 분석 상호�
                 symbol="005930.KS"
                 displayName="삼성전자"
                 marketProfile="kr-equity"
-                generatedAt={new Date('2026-08-14T06:30:00Z')}
+                generatedAt={new Date('2026-08-14T07:30:00Z')}
             />
         );
 
@@ -379,7 +379,7 @@ describe('TechnicalSnapshotProse — 기준일 표기 + 라이브 분석 상호�
         expect(screen.queryByText(/미국 장마감 기준/)).not.toBeInTheDocument();
     });
 
-    it('crypto로 렌더하면 "UTC 기준" 캡션을 쓴다 — "장마감"을 쓰지 않는다', () => {
+    it('crypto로 렌더하면 "UTC 시세 기준" 캡션을 쓴다 — "장마감"을 쓰지 않는다', () => {
         render(
             <TechnicalSnapshotProse
                 content={buildFixture()}
@@ -391,7 +391,7 @@ describe('TechnicalSnapshotProse — 기준일 표기 + 라이브 분석 상호�
         );
 
         expect(
-            screen.getByText(/2026년 8월 14일 UTC 기준/)
+            screen.getByText(/2026년 8월 14일 00:00 UTC 시세 기준/)
         ).toBeInTheDocument();
         expect(screen.queryByText(/장마감/)).not.toBeInTheDocument();
     });

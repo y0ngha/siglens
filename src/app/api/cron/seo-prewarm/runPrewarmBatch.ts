@@ -16,6 +16,7 @@ import {
     snapshotBoundaryFor,
 } from '@/entities/seo-snapshot/lib/freshness';
 import { type SeoSnapshotTab } from '@/entities/seo-snapshot/model';
+import type { HarvestedUnits } from '@/entities/sitemap-entry/lib/indexNowUrls';
 import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
 import { getDatabaseClient } from '@/shared/db/client';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
@@ -351,7 +352,7 @@ function logStarvationWatch(
  *
  * select(공정 선별 — `selectFairBatch`) → run(탭별 seam force=false 호출 +
  * submitted면 즉시 poll-resume까지) → harvest(cached/done 결과 upsert) →
- * revalidate(전 탭 fresh 시 태그 무효화) 순으로 진행한다. 유닛(심볼×탭) 단위로
+ * revalidate(하나라도 harvest되면 태그 무효화 + IndexNow 큐) 순으로 진행한다. 유닛(심볼×탭) 단위로
  * 에러를 격리해 하나가 실패해도 배치 전체는 중단되지 않는다(fail-open —
  * 오래된 스냅샷이 그대로 남을 뿐).
  */
@@ -487,8 +488,8 @@ export async function runPrewarmBatch(
     // 루프로 청크 경계마다 데드라인을 검사한다. 격리는 각 processSymbol 호출의
     // `.catch`가 보장하므로 Promise.all 기반 청크 처리와 동일하게 안전하다.
     let droppedByDeadline = 0;
-    // `revalidateTag`까지 간 심볼 — 배치 끝에 IndexNow로 한 번에 알린다.
-    let revalidatedSymbols: readonly string[] = [];
+    // 이번에 harvest된 (심볼, 탭) — 배치 끝에 IndexNow 큐에 한 번에 넣는다.
+    let harvestedUnits: readonly HarvestedUnits[] = [];
     for (let i = 0; i < batch.length; i += SYMBOL_CONCURRENCY) {
         if (isPastDeadline()) {
             const remainingCount = batch.length - i;
@@ -514,7 +515,7 @@ export async function runPrewarmBatch(
                     return {
                         symbol: u.symbol,
                         tabsDropped: 0,
-                        revalidated: false,
+                        harvestedTabs: [],
                     };
                 })
             )
@@ -523,9 +524,11 @@ export async function runPrewarmBatch(
             (sum, outcome) => sum + outcome.tabsDropped,
             0
         );
-        revalidatedSymbols = [
-            ...revalidatedSymbols,
-            ...outcomes.filter(o => o.revalidated).map(o => o.symbol),
+        harvestedUnits = [
+            ...harvestedUnits,
+            ...outcomes
+                .filter(o => o.harvestedTabs.length > 0)
+                .map(o => ({ symbol: o.symbol, tabs: o.harvestedTabs })),
         ];
     }
 
@@ -558,8 +561,9 @@ export async function runPrewarmBatch(
      * 배치 전체를 실패로 로그한다. 스냅샷 반영은 이미 끝난 일이다.
      */
     const indexNow = await submitIndexNowForBatch({
-        symbols: revalidatedSymbols,
+        harvested: harvestedUnits,
         hubUrls: hubs?.generatedUrls ?? [],
+        changedHubUrls: hubs?.changedUrls ?? [],
         now,
     }).catch(error => {
         console.error('[seo-prewarm] indexnow submission threw:', error);
@@ -697,12 +701,15 @@ async function classifySymbol(
     return anyActionable ? 'fresh' : 'blocked';
 }
 
-/** `processSymbol`의 결과 — 데드라인으로 버려진 탭 수와 태그 무효화 여부. */
+/** `processSymbol`의 결과 — 데드라인으로 버려진 탭 수와 이번에 harvest된 탭. */
 interface SymbolOutcome {
     readonly symbol: string;
     readonly tabsDropped: number;
-    /** 전 탭이 fresh라 `revalidateTag`까지 갔는가 — IndexNow 제출 대상이 되는 조건이다. */
-    readonly revalidated: boolean;
+    /**
+     * 이번 실행으로 스냅샷이 새로 쓰인 탭. 비어 있지 않으면 `revalidateTag`까지 갔고,
+     * IndexNow에는 **이 탭의 URL만** 나간다(`indexNowUrls.selectIndexNowUrls`).
+     */
+    readonly harvestedTabs: readonly SeoSnapshotTab[];
 }
 
 async function processSymbol(
@@ -724,7 +731,8 @@ async function processSymbol(
     const companyName = assetInfo?.name ?? u.symbol;
     const fmpSymbol = assetInfo?.fmpSymbol;
 
-    let freshTabCount = 0;
+    // 이번 실행으로 스냅샷 행을 새로 쓴(harvest된) 탭 — 태그 무효화와 IndexNow 제출의 근거다.
+    const harvestedTabs: SeoSnapshotTab[] = [];
     // 실제로 TAB_SEAMS[tab](submit)을 호출한(=새 FMP 호출이 발생했을 수 있는) 탭 수.
     // 이미 fresh거나 backoff(skip) 중인 탭, 그리고 poll-resume(신규 submit 아님)은 제외한다.
     let seamsRunForSymbol = 0;
@@ -733,20 +741,14 @@ async function processSymbol(
     for (const tab of TAB_ORDER) {
         if (!u.tabs.includes(tab)) continue;
 
-        // 데드라인 검사보다 **먼저** 신선도를 본다. 순서가 반대면 두 가지가 깨진다:
-        // ① 이미 fresh한 탭까지 "데드라인으로 버려짐"으로 세어 마커 수치가 부풀고,
-        // ② `freshTabCount`가 안 올라가 아래 "전 탭 fresh" 게이트가 실패한다 —
-        //    그러면 방금 harvest한 스냅샷의 `revalidateTag`가 안 돌고, 다음 tick엔
-        //    그 심볼이 stale 목록에서 빠져 페이지 revalidate TTL(6~24h)까지 노출이
-        //    지연된다. 신선도 판정은 로컬 맵 조회라 비용도 없다.
+        // 데드라인 검사보다 **먼저** 신선도를 본다. 순서가 반대면 이미 fresh한 탭까지
+        // "데드라인으로 버려짐"으로 세어 마커 수치가 부풀고, 이미 fresh한 탭에 seam을
+        // 부르게 된다. 신선도 판정은 로컬 맵 조회라 비용도 없다.
         const alreadyFresh = isSnapshotFresh(
             generatedAtMap.get(snapshotKey(u.symbol, tab)),
             snapshotBoundaryFor(u.symbol, tab, now)
         );
-        if (alreadyFresh) {
-            freshTabCount++;
-            continue;
-        }
+        if (alreadyFresh) continue;
 
         if (isPastDeadline()) {
             // 실제로 할 일이 남은 탭만 센다. 조용히 건너뛰기만 하면 데드라인으로
@@ -801,9 +803,11 @@ async function processSymbol(
                     tab,
                     raceResult.value,
                     repo,
-                    counts
+                    counts,
+                    // 기준일 검사·강제 재생성이 같은 심볼 문맥과 달력 시각을 쓴다.
+                    { seam: { symbol: u.symbol, companyName, fmpSymbol }, now }
                 );
-                if (harvested) freshTabCount++;
+                if (harvested) harvestedTabs.push(tab);
             } finally {
                 // 완료(done/error) 즉시 마커를 제거해 다음 tick이 TTL(30min) 만료를
                 // 기다리지 않고 바로 최신 상태를 반영하게 한다.
@@ -842,24 +846,29 @@ async function processSymbol(
         await addFmpBudget(fmpCallsPerTab * seamsRunForSymbol);
     }
 
-    let revalidated = false;
-    if (u.tabs.length > 0 && freshTabCount === u.tabs.length) {
-        // FIX B(감사) — 이 태그는 더 이상 소비자 없는 no-op이 아니다. Phase 2가
-        // `getSeoSnapshotsStatic`(entities/seo-snapshot/lib/getSnapshotStatic.ts)에서
-        // `seo-snapshot:{SYMBOL}` 태그로 읽고, 7개 탭 페이지 + `generateMetadata`가
-        // 전부 그걸 구독한다. 즉 이 호출이 없으면 새로 harvest한 스냅샷이 각
-        // 페이지의 `revalidate` TTL(6~24h)까지 조용히 지연 노출된다 — 이 라인이
-        // 바로 "cron이 채운 데이터를 SSR HTML에 즉시 반영"시키는 지점이다.
-        // revalidatePath는 쓰지 않는다: 스냅샷을 태그 없이 재생성만 하는 순수
-        // ISR-write 비용이라 여기선 이점이 없다(태그 무효화가 정확한 지점).
+    /*
+     * **하나라도 harvest됐으면** 태그를 턴다. 예전에는 "전 탭이 fresh"일 때만 털었는데,
+     * 그러면 뉴스 탭이 backoff(기사 없음·LLM 실패)에 걸린 심볼은 방금 새로 구운 차트
+     * 스냅샷이 페이지 revalidate TTL(6~24h)까지 노출되지 않고 IndexNow에도 안 나갔다.
+     * 무효화는 멱등이고, 새 행이 하나도 없는 심볼에는 털 이유가 없다.
+     *
+     * FIX B(감사) — 이 태그는 더 이상 소비자 없는 no-op이 아니다. Phase 2가
+     * `getSeoSnapshotsStatic`(entities/seo-snapshot/lib/getSnapshotStatic.ts)에서
+     * `seo-snapshot:{SYMBOL}` 태그로 읽고, 7개 탭 페이지 + `generateMetadata`가
+     * 전부 그걸 구독한다. 즉 이 호출이 없으면 새로 harvest한 스냅샷이 각
+     * 페이지의 `revalidate` TTL(6~24h)까지 조용히 지연 노출된다 — 이 라인이
+     * 바로 "cron이 채운 데이터를 SSR HTML에 즉시 반영"시키는 지점이다.
+     * revalidatePath는 쓰지 않는다: 스냅샷을 태그 없이 재생성만 하는 순수
+     * ISR-write 비용이라 여기선 이점이 없다(태그 무효화가 정확한 지점).
+     */
+    if (harvestedTabs.length > 0) {
         revalidateTag(`seo-snapshot:${u.symbol.toUpperCase()}`, 'max');
         counts.revalidated++;
-        revalidated = true;
     }
 
     return {
         symbol: u.symbol,
         tabsDropped: tabsDroppedByDeadline,
-        revalidated,
+        harvestedTabs,
     };
 }

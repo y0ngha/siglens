@@ -76,6 +76,7 @@ export function TechnicalSnapshotProse({
             displayName={displayName}
             marketProfile={marketProfile}
             asOf={generatedAt}
+            basis={content}
             plain={plain}
             duplicatesLiveWidget={duplicatesLiveWidget}
         >

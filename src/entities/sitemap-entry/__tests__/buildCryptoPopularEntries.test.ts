@@ -47,11 +47,11 @@ describe('buildCryptoPopularEntries', () => {
         expect(entries).toHaveLength(POPULAR_CRYPTOS.length * 3);
     });
 
-    it('chart route uses the 6h-boundary lastmod (not rolling)', () => {
+    it('chart route uses the UTC-midnight lastmod (the daily-bar close), not a 6h floor', () => {
         const entries = buildCryptoPopularEntries(now);
-        // now = 10:00 UTC → boundary = 06:00 UTC same day.
+        // now = 10:00 UTC → the most recent UTC midnight, not 06:00.
         const expected6hBoundary = new Date(
-            '2026-06-21T06:00:00Z'
+            '2026-06-21T00:00:00Z'
         ).toISOString();
         const chartEntry = entries.find(
             e => e.url === 'https://siglens.io/BTCUSD'
@@ -115,7 +115,7 @@ describe('buildCryptoPopularEntries', () => {
         expect(fearGreedEntry?.priority).toBe(0.75);
     });
 
-    it('6h boundary quantizes correctly: midnight → 00:00', () => {
+    it('chart lastmod right after midnight → 00:00', () => {
         const midnight = new Date('2026-06-21T00:30:00Z');
         const entries = buildCryptoPopularEntries(midnight);
         const expected = new Date('2026-06-21T00:00:00Z').toISOString();
@@ -125,10 +125,10 @@ describe('buildCryptoPopularEntries', () => {
         expect(chartEntry?.lastModified?.toISOString()).toBe(expected);
     });
 
-    it('6h boundary quantizes correctly: 17:59 → 12:00', () => {
+    it('late-day chart lastmod stays at UTC midnight: 17:59 → 00:00', () => {
         const late = new Date('2026-06-21T17:59:00Z');
         const entries = buildCryptoPopularEntries(late);
-        const expected = new Date('2026-06-21T12:00:00Z').toISOString();
+        const expected = new Date('2026-06-21T00:00:00Z').toISOString();
         const chartEntry = entries.find(
             e => e.url === 'https://siglens.io/BTCUSD'
         );
@@ -163,8 +163,8 @@ describe('buildCryptoPopularEntries', () => {
             ).toBe(generatedAt.toISOString());
         });
 
-        it('chart route uses the later of the 6h boundary and the technical snapshot', () => {
-            // now 10:00Z → boundary 06:00Z. 스냅샷이 08:45Z에 구워졌다.
+        it('chart route uses the later of UTC midnight and the technical snapshot', () => {
+            // now 10:00Z → midnight 00:00Z. 스냅샷이 08:45Z에 구워졌다.
             const technicalAt = new Date('2026-06-21T08:45:00Z');
             const entries = buildCryptoPopularEntries(now, {
                 snapshotGeneratedAt: new Map([
@@ -180,10 +180,10 @@ describe('buildCryptoPopularEntries', () => {
             ).toBe(technicalAt.toISOString());
         });
 
-        it('chart route keeps the 6h boundary when the technical snapshot is older', () => {
+        it('chart route keeps UTC midnight when the technical snapshot is older', () => {
             const entries = buildCryptoPopularEntries(now, {
                 snapshotGeneratedAt: new Map([
-                    ['BTCUSD:technical', new Date('2026-06-21T01:00:00Z')],
+                    ['BTCUSD:technical', new Date('2026-06-20T23:00:00Z')],
                 ]),
             });
 
@@ -192,10 +192,10 @@ describe('buildCryptoPopularEntries', () => {
                     entries,
                     'https://siglens.io/BTCUSD'
                 )?.lastModified?.toISOString()
-            ).toBe('2026-06-21T06:00:00.000Z');
+            ).toBe('2026-06-21T00:00:00.000Z');
         });
 
-        it('chart route keeps the 6h boundary for a coin without a technical snapshot', () => {
+        it('chart route keeps UTC midnight for a coin without a technical snapshot', () => {
             const entries = buildCryptoPopularEntries(now, {
                 snapshotGeneratedAt: new Map([
                     ['ETHUSD:technical', new Date('2026-06-21T08:45:00Z')],
@@ -207,7 +207,7 @@ describe('buildCryptoPopularEntries', () => {
                     entries,
                     'https://siglens.io/BTCUSD'
                 )?.lastModified?.toISOString()
-            ).toBe('2026-06-21T06:00:00.000Z');
+            ).toBe('2026-06-21T00:00:00.000Z');
         });
 
         it('fear-greed stays at UTC midnight regardless of snapshots', () => {

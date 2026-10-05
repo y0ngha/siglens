@@ -1,7 +1,7 @@
 /**
  * 프리웜 배치 → IndexNow 제출 배선 가드.
  *
- * 제출 함수(`submitIndexNow`)와 sitemap 입력 로더만 목으로 두고 `indexNowSubmission`은
+ * 대기열(`indexNowQueue`)과 sitemap 입력 로더만 목으로 두고 `indexNowSubmission`은
  * 실물을 쓴다. 그래야 "새로 구운 심볼 → sitemap에 실린 URL"이라는 연결 전체가 검증된다.
  * 어느 쪽 배선이 빠져도(심볼 수집 누락, 허브 URL 누락, 호출 위치 이동) 아래 테스트가 깨진다.
  *
@@ -24,11 +24,14 @@ const {
     mockPrewarmTechnical,
     mockBuildPrewarmUniverse,
     mockRunHubPrewarm,
-    mockSubmitIndexNow,
+    mockEnqueue,
+    mockDrain,
     mockIsIndexNowEnabled,
     mockLoadPopular,
     mockLoadCrypto,
     mockLoadStatic,
+    mockReadStaticLastmods,
+    mockWriteStaticLastmods,
 } = vi.hoisted(() => ({
     mockGetInFlightMarker: vi.fn(),
     mockIsSkipped: vi.fn(),
@@ -45,11 +48,14 @@ const {
     mockPrewarmTechnical: vi.fn(),
     mockBuildPrewarmUniverse: vi.fn(),
     mockRunHubPrewarm: vi.fn(),
-    mockSubmitIndexNow: vi.fn(),
+    mockEnqueue: vi.fn(),
+    mockDrain: vi.fn(),
     mockIsIndexNowEnabled: vi.fn(),
     mockLoadPopular: vi.fn(),
     mockLoadCrypto: vi.fn(),
     mockLoadStatic: vi.fn(),
+    mockReadStaticLastmods: vi.fn(),
+    mockWriteStaticLastmods: vi.fn(),
 }));
 
 vi.mock('../hubs', () => ({ runHubPrewarm: mockRunHubPrewarm }));
@@ -126,9 +132,18 @@ vi.mock('@/entities/options-chain/api', () => ({
 }));
 
 vi.mock('@/shared/lib/indexNow', () => ({
-    submitIndexNow: mockSubmitIndexNow,
     isIndexNowEnabled: mockIsIndexNowEnabled,
 }));
+vi.mock('@/shared/lib/indexNowQueue', () => ({
+    enqueueIndexNow: mockEnqueue,
+    drainIndexNow: mockDrain,
+}));
+vi.mock('../indexNowStaticPages', async importOriginal => ({
+    ...(await importOriginal<typeof import('../indexNowStaticPages')>()),
+    readStaticLastmods: mockReadStaticLastmods,
+    writeStaticLastmods: mockWriteStaticLastmods,
+}));
+vi.mock('../lastClose', () => ({ fetchPageLastClose: vi.fn() }));
 
 vi.mock('@/app/api/sitemap/_shared/childEntries', () => ({
     loadPopularChildEntries: mockLoadPopular,
@@ -154,18 +169,34 @@ const HUBS_NOTHING_GENERATED = {
     skippedByDeadline: 0,
     skippedByCooldown: 0,
     generatedUrls: [] as readonly string[],
+    changedUrls: [] as readonly string[],
 };
-const AAPL_URLS = [
-    `${SITE_URL}/AAPL`,
-    `${SITE_URL}/AAPL/news`,
-    `${SITE_URL}/AAPL/fear-greed`,
-];
+// 차트(technical)만 harvest되는 배치 — 뉴스·공포탐욕 URL은 나가지 않는다.
+const AAPL_URLS = [`${SITE_URL}/AAPL`];
 const snapshotGeneratedAt = new Map<string, Date>([['AAPL:news', NOW]]);
 
-/** 제출 호출의 URL 목록 — 호출이 정확히 한 번이라는 사실까지 함께 고정한다. */
-function submittedUrls(): readonly string[] {
-    expect(mockSubmitIndexNow).toHaveBeenCalledTimes(1);
-    return mockSubmitIndexNow.mock.calls[0]?.[0] as readonly string[];
+/** 큐에 넣은 URL 목록 — 호출이 정확히 한 번이라는 사실까지 함께 고정한다. */
+function queuedUrls(): readonly string[] {
+    expect(mockEnqueue).toHaveBeenCalledTimes(1);
+    // 배치가 넘긴 `now`(고정된 시스템 시각)로 이 배치의 호출을 찾는다.
+    const call = mockEnqueue.mock.calls.find(
+        ([, at]) => at instanceof Date && at.getTime() === NOW.getTime()
+    );
+    expect(call).toBeDefined();
+    return (call?.[0] as { url: string }[]).map(entry => entry.url);
+}
+
+/** 정적 페이지가 이미 시드된 상태 — 정적 페이지가 큐에 섞이지 않게 한다. */
+function seededStaticLastmods(): Record<string, string> {
+    return Object.fromEntries(
+        buildStaticEntries(NOW)
+            .filter(entry =>
+                ['/about', '/methodology', '/privacy', '/terms', '/backtesting']
+                    .map(path => `${SITE_URL}${path}`)
+                    .includes(entry.url)
+            )
+            .map(entry => [entry.url, entry.lastModified!.toISOString()])
+    );
 }
 
 describe('runPrewarmBatch — IndexNow 제출', () => {
@@ -205,10 +236,15 @@ describe('runPrewarmBatch — IndexNow 제출', () => {
         ]);
 
         mockIsIndexNowEnabled.mockReturnValue(true);
-        mockSubmitIndexNow.mockResolvedValue({
+        mockEnqueue.mockResolvedValue(0);
+        mockWriteStaticLastmods.mockResolvedValue(undefined);
+        mockReadStaticLastmods.mockResolvedValue(seededStaticLastmods());
+        mockDrain.mockResolvedValue({
             submitted: 3,
             ok: 1,
             failed: 0,
+            skipped: null,
+            outcome: { kind: 'ok' },
         });
         mockLoadPopular.mockResolvedValue(
             buildPopularEntries(NOW, { snapshotGeneratedAt })
@@ -224,18 +260,21 @@ describe('runPrewarmBatch — IndexNow 제출', () => {
         vi.restoreAllMocks();
     });
 
-    it('심볼 하나를 새로 구워 반영했으면 그 심볼의 sitemap URL로 한 번 제출한다', async () => {
+    it('심볼 하나를 새로 구워 반영했으면 harvest된 탭의 sitemap URL만 큐에 넣고 drain한다', async () => {
         const counts = await runPrewarmBatch();
 
         expect(counts.revalidated).toBe(1);
-        expect(submittedUrls()).toEqual(AAPL_URLS);
+        expect(queuedUrls()).toEqual(AAPL_URLS);
+        expect(mockDrain).toHaveBeenCalledTimes(1);
     });
 
     it('제출 결과를 배치 카운트에 싣는다', async () => {
-        mockSubmitIndexNow.mockResolvedValue({
+        mockDrain.mockResolvedValue({
             submitted: 3,
             ok: 1,
             failed: 1,
+            skipped: null,
+            outcome: { kind: 'transient', status: 503 },
         });
 
         const counts = await runPrewarmBatch();
@@ -247,7 +286,7 @@ describe('runPrewarmBatch — IndexNow 제출', () => {
         });
     });
 
-    it('반영된 것이 없으면 제출도 sitemap 입력 로딩도 하지 않는다', async () => {
+    it('반영된 것이 없어도 만기분 drain은 하지만 종목 sitemap 입력은 읽지 않는다', async () => {
         // 모든 탭이 이미 fresh라 이번 배치에 처리할 심볼이 없다.
         mockFindGeneratedAtMap.mockResolvedValue(
             new Map([['AAPL:technical', new Date('2026-10-04T11:59:00.000Z')]])
@@ -256,11 +295,12 @@ describe('runPrewarmBatch — IndexNow 제출', () => {
         const counts = await runPrewarmBatch();
 
         expect(counts.revalidated).toBe(0);
-        expect(mockSubmitIndexNow).not.toHaveBeenCalled();
+        expect(mockDrain).toHaveBeenCalledTimes(1);
+        expect(queuedUrls()).toEqual([]);
         expect(mockLoadPopular).not.toHaveBeenCalled();
         expect(counts).toMatchObject({
-            indexNowSubmitted: 0,
-            indexNowOk: 0,
+            indexNowSubmitted: 3,
+            indexNowOk: 1,
             indexNowFailed: 0,
         });
     });
@@ -278,12 +318,12 @@ describe('runPrewarmBatch — IndexNow 제출', () => {
         const counts = await runPrewarmBatch();
 
         expect(counts.revalidated).toBe(1);
-        const urls = submittedUrls();
+        const urls = queuedUrls();
         expect(urls).toEqual(AAPL_URLS);
         expect(urls.some(url => url.includes('/MSFT'))).toBe(false);
     });
 
-    it('새로 구운 허브 URL은 심볼 URL과 같은 한 번의 호출로 제출한다', async () => {
+    it('새로 구운 허브 URL은 심볼 URL과 같은 한 번의 큐 쓰기로 넣는다', async () => {
         mockRunHubPrewarm.mockResolvedValue({
             ...HUBS_NOTHING_GENERATED,
             generated: 2,
@@ -292,14 +332,14 @@ describe('runPrewarmBatch — IndexNow 제출', () => {
 
         await runPrewarmBatch();
 
-        expect(submittedUrls()).toEqual([
+        expect(queuedUrls()).toEqual([
             ...AAPL_URLS,
             `${SITE_URL}/market/kr`,
             `${SITE_URL}/economy`,
         ]);
     });
 
-    it('심볼을 하나도 반영하지 않았어도 새로 구운 허브는 제출한다', async () => {
+    it('심볼을 하나도 반영하지 않았어도 새로 구운 허브는 큐에 넣는다', async () => {
         mockBuildPrewarmUniverse.mockReturnValue([]);
         mockRunHubPrewarm.mockResolvedValue({
             ...HUBS_NOTHING_GENERATED,
@@ -309,8 +349,35 @@ describe('runPrewarmBatch — IndexNow 제출', () => {
 
         await runPrewarmBatch();
 
-        expect(submittedUrls()).toEqual([`${SITE_URL}/market`]);
+        expect(queuedUrls()).toEqual([`${SITE_URL}/market`]);
         expect(mockLoadPopular).not.toHaveBeenCalled();
+    });
+
+    it('본문이 바뀐 것으로만 확인된 허브 URL도 큐에 넣는다', async () => {
+        mockBuildPrewarmUniverse.mockReturnValue([]);
+        mockRunHubPrewarm.mockResolvedValue({
+            ...HUBS_NOTHING_GENERATED,
+            alreadyFresh: 1,
+            changedUrls: [`${SITE_URL}/market/kr`],
+        });
+
+        await runPrewarmBatch();
+
+        expect(queuedUrls()).toEqual([`${SITE_URL}/market/kr`]);
+    });
+
+    it('차트만 harvest되고 뉴스 탭은 backoff여도 차트는 revalidate·큐에 들어간다', async () => {
+        mockBuildPrewarmUniverse.mockReturnValue([
+            { symbol: 'AAPL', tabs: ['technical', 'news'] },
+        ]);
+        mockIsSkipped.mockImplementation(
+            async (_symbol: string, tab: string) => tab === 'news'
+        );
+
+        const counts = await runPrewarmBatch();
+
+        expect(counts.revalidated).toBe(1);
+        expect(queuedUrls()).toEqual([`${SITE_URL}/AAPL`]);
     });
 
     it('허브 단계가 통째로 실패해도 심볼 제출은 계속된다', async () => {
@@ -318,20 +385,20 @@ describe('runPrewarmBatch — IndexNow 제출', () => {
 
         await runPrewarmBatch();
 
-        expect(submittedUrls()).toEqual(AAPL_URLS);
+        expect(queuedUrls()).toEqual(AAPL_URLS);
     });
 
     it('제출은 심볼 처리가 끝난 뒤에 일어난다', async () => {
         await runPrewarmBatch();
 
         const seamOrder = mockPrewarmTechnical.mock.invocationCallOrder[0];
-        const submitOrder = mockSubmitIndexNow.mock.invocationCallOrder[0];
+        const submitOrder = mockDrain.mock.invocationCallOrder[0];
         expect(seamOrder).toBeDefined();
         expect(submitOrder).toBeGreaterThan(seamOrder ?? Infinity);
     });
 
     it('제출이 reject해도 배치는 정상 종료하고 카운트는 그대로 돌려준다', async () => {
-        mockSubmitIndexNow.mockRejectedValue(new Error('boom'));
+        mockDrain.mockRejectedValue(new Error('boom'));
 
         const counts = await runPrewarmBatch();
 
@@ -361,7 +428,8 @@ describe('runPrewarmBatch — IndexNow 제출', () => {
         const counts = await runPrewarmBatch();
 
         expect(counts.revalidated).toBe(1);
-        expect(mockSubmitIndexNow).not.toHaveBeenCalled();
+        expect(mockEnqueue).not.toHaveBeenCalled();
+        expect(mockDrain).not.toHaveBeenCalled();
         expect(mockLoadPopular).not.toHaveBeenCalled();
         expect(counts).toMatchObject({
             indexNowSubmitted: 0,

@@ -2084,7 +2084,7 @@
             },
             "SnapshotSummarySection": {
                 "220156": "上次AI分析",
-                "asOfCrypto": "UTC 时点",
+                "asOfCrypto": "UTC 行情时点",
                 "asOfCryptoFallback": "按前一日 UTC 零点",
                 "asOfKrEquity": "韩股收盘时点",
                 "asOfKrEquityFallback": "按前一交易日韩股收盘",

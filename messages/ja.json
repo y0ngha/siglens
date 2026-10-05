@@ -2084,7 +2084,7 @@
             },
             "SnapshotSummarySection": {
                 "220156": "前回のAI分析",
-                "asOfCrypto": "UTC基準",
+                "asOfCrypto": "UTC時点の価格",
                 "asOfCryptoFallback": "前日UTC0時時点",
                 "asOfKrEquity": "韓国市場終値時点",
                 "asOfKrEquityFallback": "前営業日の韓国終値時点",

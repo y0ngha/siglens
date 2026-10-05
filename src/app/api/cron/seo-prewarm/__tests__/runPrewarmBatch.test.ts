@@ -72,6 +72,7 @@ vi.mock('../hubs', () => ({
         skippedByDeadline: 0,
         skippedByCooldown: 0,
         generatedUrls: [],
+        changedUrls: [],
     }),
 }));
 
@@ -362,7 +363,7 @@ describe('runPrewarmBatch', () => {
         expect(mockPrewarmTechnical).not.toHaveBeenCalled();
     });
 
-    it('cached 결과는 upsert하고, 전 탭이 fresh해지면 revalidate한다', async () => {
+    it('cached 결과는 upsert하고, harvest된 탭이 있으면 revalidate한다', async () => {
         universe({ symbol: 'MSFT', tabs: ['technical', 'overall'] });
         mockFindGeneratedAtMap.mockResolvedValue(new Map());
         mockGetAssetInfoResilient.mockResolvedValue({
@@ -625,7 +626,7 @@ describe('runPrewarmBatch', () => {
         errSpy.mockRestore();
     });
 
-    it('일부 탭이 이미 fresh인 심볼은 그 탭의 seam을 호출하지 않고도 freshTabCount에 반영하며, 나머지 탭이 harvest되면 revalidate한다', async () => {
+    it('일부 탭이 이미 fresh인 심볼은 그 탭의 seam을 건너뛰고 나머지 탭을 harvest하며, harvest된 탭이 있으면 revalidate한다', async () => {
         universe({ symbol: 'H', tabs: ['technical', 'overall'] });
         mockFindGeneratedAtMap.mockResolvedValue(
             new Map([[key('H', 'technical'), BOUNDARY]])
@@ -646,7 +647,9 @@ describe('runPrewarmBatch', () => {
         expect(mockAddFmpBudget).toHaveBeenCalledWith(3);
     });
 
-    it('한 심볼의 일부 탭이 miss_no_trigger로 남으면 revalidate하지 않는다', async () => {
+    it('한 심볼의 일부 탭이 miss_no_trigger로 남아도 harvest된 탭이 있으면 revalidate한다', async () => {
+        // 예전에는 "전 탭 fresh"일 때만 털었다 — 뉴스 backoff 심볼의 새 차트 스냅샷이
+        // 페이지 revalidate TTL(6~24h)까지 노출되지 않았다.
         universe({ symbol: 'G', tabs: ['technical', 'overall'] });
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
@@ -660,6 +663,19 @@ describe('runPrewarmBatch', () => {
         const counts = await runPrewarmBatch(clock);
 
         expect(counts.harvested).toBe(1);
+        expect(mockRevalidateTag).toHaveBeenCalledWith('seo-snapshot:G', 'max');
+        expect(counts.revalidated).toBe(1);
+    });
+
+    it('harvest된 탭이 하나도 없으면 revalidate하지 않는다', async () => {
+        universe({ symbol: 'G', tabs: ['technical', 'overall'] });
+        mockPrewarmTechnical.mockResolvedValue({ status: 'miss_no_trigger' });
+        mockPrewarmOverall.mockResolvedValue({ status: 'miss_no_trigger' });
+
+        const clock = makeSimClock(FIXED_NOW.getTime());
+        const counts = await runPrewarmBatch(clock);
+
+        expect(counts.harvested).toBe(0);
         expect(mockRevalidateTag).not.toHaveBeenCalled();
         expect(counts.revalidated).toBe(0);
     });
@@ -1575,6 +1591,7 @@ describe('runPrewarmBatch', () => {
                 skippedByDeadline: 0,
                 skippedByCooldown: 0,
                 generatedUrls: [],
+                changedUrls: [],
             };
         });
 
@@ -1647,6 +1664,7 @@ describe('runPrewarmBatch', () => {
                 skippedByDeadline: 0,
                 skippedByCooldown: 0,
                 generatedUrls: [],
+                changedUrls: [],
             };
         });
 

@@ -5,7 +5,11 @@ import {
     INDEXNOW_KEY_LOCATION,
     INDEXNOW_TIMEOUT_MS,
 } from '@/shared/config/indexNow';
-import { isIndexNowEnabled, submitIndexNow } from '../indexNow';
+import {
+    isIndexNowEnabled,
+    parseRetryAfterSeconds,
+    submitIndexNow,
+} from '../indexNow';
 
 const API_ENDPOINT = INDEXNOW_ENDPOINTS[0];
 
@@ -13,8 +17,11 @@ const API_ENDPOINT = INDEXNOW_ENDPOINTS[0];
 // 테스트가 실제 api.indexnow.org·searchadvisor.naver.com로 요청을 내보낼 수 있다.
 const fetchMock = vi.fn<typeof fetch>();
 
-function okResponse(status = 200): Response {
-    return { ok: status >= 200 && status < 300, status } as Response;
+function okResponse(
+    status = 200,
+    headers: Record<string, string> = {}
+): Response {
+    return new Response(null, { status, headers });
 }
 
 interface RecordedCall {
@@ -102,7 +109,12 @@ describe('submitIndexNow', () => {
 
             const result = await submitIndexNow([URL_A]);
 
-            expect(result).toEqual({ submitted: 0, ok: 0, failed: 0 });
+            expect(result).toEqual({
+                submitted: 0,
+                ok: 0,
+                failed: 0,
+                outcome: { kind: 'disabled' },
+            });
             expect(fetchMock).not.toHaveBeenCalled();
         });
 
@@ -112,7 +124,12 @@ describe('submitIndexNow', () => {
 
             const result = await submitIndexNow([URL_A]);
 
-            expect(result).toEqual({ submitted: 0, ok: 0, failed: 0 });
+            expect(result).toEqual({
+                submitted: 0,
+                ok: 0,
+                failed: 0,
+                outcome: { kind: 'disabled' },
+            });
             expect(fetchMock).not.toHaveBeenCalled();
         });
     });
@@ -126,7 +143,12 @@ describe('submitIndexNow', () => {
         it('공용 IndexNow 엔드포인트 한 곳에만 { host, key, keyLocation, urlList }를 JSON으로 POST한다', async () => {
             const result = await submitIndexNow([URL_A, URL_B]);
 
-            expect(result).toEqual({ submitted: 2, ok: 1, failed: 0 });
+            expect(result).toEqual({
+                submitted: 2,
+                ok: 1,
+                failed: 0,
+                outcome: { kind: 'ok' },
+            });
             // 참여 엔진(Bing·Naver·Yandex 등)은 제출을 서로 공유한다 — 다른 곳에 또
             // 보내면 중복 제출이고 429 위험만 는다.
             expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -156,7 +178,12 @@ describe('submitIndexNow', () => {
 
             const result = await submitIndexNow([URL_A]);
 
-            expect(result).toEqual({ submitted: 1, ok: 1, failed: 0 });
+            expect(result).toEqual({
+                submitted: 1,
+                ok: 1,
+                failed: 0,
+                outcome: { kind: 'ok' },
+            });
         });
 
         it('중복 URL은 한 번만 보내고 운영 호스트가 아닌 URL은 버린다', async () => {
@@ -182,29 +209,61 @@ describe('submitIndexNow', () => {
                 'garbage',
             ]);
 
-            expect(result).toEqual({ submitted: 0, ok: 0, failed: 0 });
+            expect(result).toEqual({
+                submitted: 0,
+                ok: 0,
+                failed: 0,
+                outcome: { kind: 'empty' },
+            });
             expect(fetchMock).not.toHaveBeenCalled();
         });
 
         it('빈 입력이면 fetch를 부르지 않는다', async () => {
             const result = await submitIndexNow([]);
 
-            expect(result).toEqual({ submitted: 0, ok: 0, failed: 0 });
+            expect(result).toEqual({
+                submitted: 0,
+                ok: 0,
+                failed: 0,
+                outcome: { kind: 'empty' },
+            });
             expect(fetchMock).not.toHaveBeenCalled();
         });
 
-        it.each([403, 422, 429, 500])(
-            '상태 %i는 실패로 세고 던지지 않는다',
-            async status => {
+        it.each([
+            [400, { kind: 'rejected', status: 400 }],
+            [403, { kind: 'rejected', status: 403 }],
+            [422, { kind: 'rejected', status: 422 }],
+            [429, { kind: 'rateLimited', retryAfterSeconds: null }],
+            [500, { kind: 'transient', status: 500 }],
+            [503, { kind: 'transient', status: 503 }],
+            [408, { kind: 'transient', status: 408 }],
+        ])(
+            '상태 %i는 실패로 세고 던지지 않으며 outcome으로 분류한다',
+            async (status, outcome) => {
                 fetchMock.mockResolvedValue(okResponse(status));
 
                 await expect(submitIndexNow([URL_A])).resolves.toEqual({
                     submitted: 1,
                     ok: 0,
                     failed: 1,
+                    outcome,
                 });
             }
         );
+
+        it('429의 Retry-After(초)를 읽는다', async () => {
+            fetchMock.mockResolvedValue(
+                okResponse(429, { 'Retry-After': '120' })
+            );
+
+            const result = await submitIndexNow([URL_A]);
+
+            expect(result.outcome).toEqual({
+                kind: 'rateLimited',
+                retryAfterSeconds: 120,
+            });
+        });
 
         it('네트워크 오류로 reject돼도 던지지 않고 실패로 센다', async () => {
             fetchMock.mockRejectedValue(new Error('boom'));
@@ -213,6 +272,7 @@ describe('submitIndexNow', () => {
                 submitted: 1,
                 ok: 0,
                 failed: 1,
+                outcome: { kind: 'transient', status: null },
             });
         });
 
@@ -286,6 +346,7 @@ describe('submitIndexNow', () => {
                 submitted: 1,
                 ok: 0,
                 failed: 1,
+                outcome: { kind: 'transient', status: null },
             });
         });
 
@@ -296,7 +357,12 @@ describe('submitIndexNow', () => {
                 maxUrlsPerRequest: 2,
             });
 
-            expect(result).toEqual({ submitted: 5, ok: 1, failed: 0 });
+            expect(result).toEqual({
+                submitted: 5,
+                ok: 1,
+                failed: 0,
+                outcome: { kind: 'ok' },
+            });
             expect(callsTo(API_ENDPOINT).map(c => c.body.urlList)).toEqual([
                 urls.slice(0, 2),
                 urls.slice(2, 4),
@@ -312,8 +378,40 @@ describe('submitIndexNow', () => {
                 maxUrlsPerRequest: 2,
             });
 
-            expect(result).toEqual({ submitted: 4, ok: 0, failed: 1 });
+            expect(result).toEqual({
+                submitted: 4,
+                ok: 0,
+                failed: 1,
+                outcome: { kind: 'rateLimited', retryAfterSeconds: null },
+            });
             expect(callsTo(API_ENDPOINT)).toHaveLength(1);
         });
+    });
+});
+
+describe('parseRetryAfterSeconds', () => {
+    const NOW = Date.parse('2026-10-05T00:00:00Z');
+
+    it('정수 초를 읽는다', () => {
+        expect(parseRetryAfterSeconds('90', NOW)).toBe(90);
+        expect(parseRetryAfterSeconds(' 0 ', NOW)).toBe(0);
+    });
+
+    it('HTTP 날짜는 지금부터 남은 초(올림)로 바꾼다', () => {
+        expect(
+            parseRetryAfterSeconds('Mon, 05 Oct 2026 00:01:30 GMT', NOW)
+        ).toBe(90);
+    });
+
+    it('과거 날짜는 0으로 접는다', () => {
+        expect(
+            parseRetryAfterSeconds('Sun, 04 Oct 2026 00:00:00 GMT', NOW)
+        ).toBe(0);
+    });
+
+    it('없거나 읽을 수 없으면 null', () => {
+        expect(parseRetryAfterSeconds(null, NOW)).toBeNull();
+        expect(parseRetryAfterSeconds('soon', NOW)).toBeNull();
+        expect(parseRetryAfterSeconds('-5', NOW)).toBeNull();
     });
 });

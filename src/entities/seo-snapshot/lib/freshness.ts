@@ -1,12 +1,16 @@
 import { US_EQUITY_SESSION, isRegularSessionOpen } from '@y0ngha/siglens-core';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
-import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
+import { MS_PER_DAY, MS_PER_MINUTE, MS_PER_SECOND } from '@/shared/config/time';
+import {
+    lastClosedSessionCloseUtc,
+    secondsUntilSessionRoll,
+} from '@/shared/lib/marketSessionDate';
 import type { SeoSnapshotTab } from '../model';
 import { prewarmSessionSpecFor } from './applicability';
 
 /** 30min — EOD 데이터 정착 대기 (spec §6). */
-const SETTLE_BUFFER_MINUTES = 30;
+export const SETTLE_BUFFER_MINUTES = 30;
 
 /**
  * "가장 최근에 완료된 ET 정규장 마감" — 정착 버퍼 30분이 지난 것만 완료로 본다.
@@ -36,6 +40,29 @@ function lastCompletedKrCloseWithBuffer(now: Date): Date {
 }
 
 /**
+ * 크립토의 "가장 최근에 완료된 일봉 마감" — **오늘 00:00Z + 정착 버퍼 30분**, 그 전이면 전날 것.
+ *
+ * 크립토 일봉은 UTC 자정에 닫힌다. 예전에는 크립토에 ET 마감 경계(~20:00Z)를 빌려 썼는데,
+ * 그 경계는 일봉 마감과 20시간 어긋나 있다 — 새 UTC 일봉이 열린 뒤에도 전날 스냅샷이
+ * 20:00Z까지 fresh로 통과했다.
+ *
+ * `lastClosedSessionCloseUtc(CRYPTO_SESSION)`을 쓰지 않는 이유: 그 함수는 always-open에서
+ * **어제** 00:00Z를 돌려주고(마지막으로 "완결된" 일봉의 시작), 버퍼 인자를 무시한다.
+ * 여기서 필요한 것은 "오늘 일봉이 막 닫혀 정착된 시각"이다.
+ */
+function lastCompletedCryptoCloseWithBuffer(now: Date): Date {
+    const utcMidnightMs = Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate()
+    );
+    const settledMs = utcMidnightMs + SETTLE_BUFFER_MINUTES * MS_PER_MINUTE;
+    return new Date(
+        now.getTime() >= settledMs ? settledMs : settledMs - MS_PER_DAY
+    );
+}
+
+/**
  * 심볼이 속한 시장의 마감 경계를 고른다.
  *
  * 종전에는 전 심볼에 ET 경계 하나를 썼다. 국내 종목에는 두 방향으로 다 틀린다 —
@@ -43,13 +70,38 @@ function lastCompletedKrCloseWithBuffer(now: Date): Date {
  * fresh로 통과하고, 반대로 한국 공휴일에는 미국 마감을 따라 롤해서 바뀐 게 없는데도
  * 전 국내 종목을 다시 생성한다.
  *
- * 크립토는 ET 경계를 그대로 쓴다(spec §6 "크립토는 동일 일일 앵커 사용") — 24/7이라
- * 자기 마감이 없고, 하루 한 번 도는 앵커면 무엇이든 역할이 같다.
+ * 크립토는 UTC 일봉 마감(00:00Z + 정착 버퍼)을 쓴다 — 24/7이라 거래소 마감은 없지만
+ * 일봉이 닫히는 순간은 있고, 화면의 종가와 AI 글의 기준이 그 봉에서 갈린다.
+ * 크립토 판정은 `prewarmSessionSpecFor`의 3분기 해석을 그대로 쓴다(KR/US 2분기로
+ * 나누면 크립토가 조용히 미국 주식으로 분류된다).
  */
 export function snapshotCloseBoundaryFor(symbol: string, now: Date): Date {
+    if (prewarmSessionSpecFor(symbol).kind === 'always-open') {
+        return lastCompletedCryptoCloseWithBuffer(now);
+    }
     return isKrEquitySymbol(symbol)
         ? lastCompletedKrCloseWithBuffer(now)
         : lastCompletedEtCloseWithBuffer(now);
+}
+
+/**
+ * `snapshotCloseBoundaryFor`가 **다음에 롤하기까지** 남은 초.
+ *
+ * 한 경계 안에서 한 번만 하려는 일(기준일 재생성 마커)의 TTL을 정하는 데 쓴다 —
+ * 마커가 경계보다 먼저 사라지면 같은 경계에서 다시 강제하고, 경계가 롤한 뒤에도 남으면
+ * 새 경계의 첫 시도를 막는다. 마커 키에 경계 시각이 들어 있어 후자는 키가 달라 무해하다.
+ */
+export function secondsUntilNextSnapshotBoundary(
+    symbol: string,
+    now: Date
+): number {
+    const spec = prewarmSessionSpecFor(symbol);
+    if (spec.kind === 'always-open') {
+        const nextMs =
+            lastCompletedCryptoCloseWithBuffer(now).getTime() + MS_PER_DAY;
+        return Math.ceil((nextMs - now.getTime()) / MS_PER_SECOND);
+    }
+    return secondsUntilSessionRoll(spec, now, SETTLE_BUFFER_MINUTES);
 }
 
 /**
