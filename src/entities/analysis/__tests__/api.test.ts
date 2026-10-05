@@ -6,11 +6,13 @@ import { fileURLToPath } from 'node:url';
 const {
     MOCK_CRYPTO_SESSION,
     MOCK_EQUITY_SESSION,
+    MOCK_KR_SESSION,
     mockFindRecentForPrompt,
     mockSaveAnalysisHistory,
 } = vi.hoisted(() => ({
     MOCK_CRYPTO_SESSION: { type: 'crypto' } as never,
     MOCK_EQUITY_SESSION: { type: 'equity' } as never,
+    MOCK_KR_SESSION: { type: 'kr-equity' } as never,
     // Task S3/S2 (prior-analysis-context wiring gap, PR #784 review) —
     // hoisted so individual tests can assert what prewarmTechnical/
     // prewarmOverall read from and write to analysis_history.
@@ -38,7 +40,11 @@ vi.mock('@y0ngha/siglens-core', async () => {
 
 vi.mock('@/shared/api/market/sessionSpecFor', () => ({
     sessionSpecFor: vi.fn((profile: string) =>
-        profile === 'crypto' ? MOCK_CRYPTO_SESSION : MOCK_EQUITY_SESSION
+        profile === 'crypto'
+            ? MOCK_CRYPTO_SESSION
+            : profile === 'kr-equity'
+              ? MOCK_KR_SESSION
+              : MOCK_EQUITY_SESSION
     ),
 }));
 
@@ -264,6 +270,7 @@ describe('prewarmTechnical', () => {
                 modelId: DEEPSEEK_V4_1_FLASH_MODEL,
                 skipEnqueueIfMiss: false,
                 marketDataProvider: mockProvider,
+                session: MOCK_EQUITY_SESSION,
                 assetClass: 'equity',
                 currency: 'USD',
                 tierContext: { userId: null, tier: 'free' },
@@ -305,6 +312,32 @@ describe('prewarmTechnical', () => {
             expect.objectContaining({ marketDataProvider: mockProvider })
         );
     });
+
+    /**
+     * core는 `session`이 없으면 모든 시장에 KST 05:00 만료를 쓴다. provider와 같은
+     * 세션이 시장별로 옵션에 실려야 한다. 호출은 심볼로 고른다(`calls[0]` 금지).
+     */
+    it.each([
+        ['us-equity', 'AAPL', MOCK_EQUITY_SESSION],
+        ['kr-equity', '005930.KS', MOCK_KR_SESSION],
+        ['crypto', 'BTCUSD', MOCK_CRYPTO_SESSION],
+    ] as const)(
+        '%s → 해당 시장의 session을 runAnalysis 옵션으로 넘긴다',
+        async (profile, symbol, expectedSession) => {
+            mockResolveMarketProfile.mockResolvedValue(profile);
+
+            await prewarmTechnical(symbol, 'Name', undefined, false);
+
+            const call = mockRunAnalysis.mock.calls.find(c => c[0] === symbol);
+            expect(call).toBeDefined();
+            expect((call![5] as { session?: unknown }).session).toBe(
+                expectedSession
+            );
+            expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(
+                expectedSession
+            );
+        }
+    );
 
     describe('analysis_history 배선 (Task S3, PR #784 리뷰 지적)', () => {
         it('history를 symbol/timeframe/tab:technical로 읽어 priorAnalyses로 그대로 넘긴다', async () => {
@@ -674,6 +707,25 @@ describe('prewarmOverall', () => {
         mockSaveAnalysisHistory.mockResolvedValue(undefined);
     });
 
+    it.each([
+        ['us-equity', 'AAPL', MOCK_EQUITY_SESSION],
+        ['kr-equity', '005930.KS', MOCK_KR_SESSION],
+        ['crypto', 'BTCUSD', MOCK_CRYPTO_SESSION],
+    ] as const)(
+        '%s → technical 축 session을 해당 시장 세션으로 넘긴다',
+        async (profile, symbol, expectedSession) => {
+            mockResolveMarketProfile.mockResolvedValue(profile);
+
+            await prewarmOverall(symbol, 'Name', false);
+
+            const call = mockRunOverallAnalysis.mock.calls.find(
+                c => c[0].symbol === symbol
+            );
+            expect(call).toBeDefined();
+            expect(call![0].technical?.session).toBe(expectedSession);
+        }
+    );
+
     it('calls runOverallAnalysis with the anonymous-free branch shape', async () => {
         await prewarmOverall('AAPL', 'Apple Inc.', false);
 
@@ -692,6 +744,7 @@ describe('prewarmOverall', () => {
                     tierContext: { userId: null, tier: 'free' },
                     priorAnalyses: [],
                     marketEvents: [],
+                    session: MOCK_EQUITY_SESSION,
                 },
                 tier: 'free',
                 reasoning: false,
