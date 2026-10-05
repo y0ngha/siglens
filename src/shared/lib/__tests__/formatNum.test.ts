@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatNum } from '../formatNum';
+import { formatFixed, formatNum } from '../formatNum';
 
 describe('formatNum', () => {
     it('null → "N/A" (단위 무관)', () => {
@@ -43,4 +43,32 @@ describe('formatNum', () => {
             expect(formatNum(1500, '%', locale)).toBe('1,500%');
         }
     );
+});
+
+describe('formatFixed', () => {
+    it('천 단위 구분자를 붙인다', () => {
+        expect(formatFixed(159044, 0, 'ko')).toBe('159,044');
+        expect(formatFixed(1234567.891, 1, 'en')).toBe('1,234,567.9');
+    });
+
+    it('자릿수를 고정한다 (최소 = 최대) — 끝자리 0을 지키고 넘치면 반올림한다', () => {
+        expect(formatFixed(3.6, 2, 'ko')).toBe('3.60');
+        expect(formatFixed(3.634, 2, 'ko')).toBe('3.63');
+        expect(formatFixed(3.635, 1, 'en')).toBe('3.6');
+        expect(formatFixed(5, 0, 'en')).toBe('5');
+    });
+
+    it('음수는 부호를 유지한다', () => {
+        expect(formatFixed(-0.4, 1, 'ko')).toBe('-0.4');
+        expect(formatFixed(-6000, 0, 'en')).toBe('-6,000');
+    });
+
+    it('로케일 규칙을 따른다 (INTL_LOCALE)', () => {
+        expect(formatFixed(1234.5, 2, 'ja')).toBe('1,234.50');
+        expect(formatFixed(1234.5, 2, 'zh')).toBe('1,234.50');
+    });
+
+    it('단위 접미사를 붙이지 않는다', () => {
+        expect(formatFixed(2.5, 1, 'ko')).not.toMatch(/[^\d.,-]/);
+    });
 });

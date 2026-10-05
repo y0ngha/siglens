@@ -130,6 +130,8 @@ next-env.d.ts
 # MAU/DAU 조회 스크립트 — `yarn metrics`가 이 파일을 실행한다. 추적하지 않으면
 # fresh checkout에서 스크립트가 사라진다.
 !/scripts/metrics.ts
+# IndexNow 1회성 백필(색인에서 빠진 URL 재크롤 요청) — 순수 helper는 scripts/lib에 있다.
+!/scripts/indexnow-backfill.ts
 
 # Local Lighthouse audit outputs (psi_*.json, desktop.json, mobile.json, headers.txt)
 /lighthouse/

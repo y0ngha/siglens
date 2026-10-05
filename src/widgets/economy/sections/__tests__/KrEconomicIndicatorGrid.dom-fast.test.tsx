@@ -65,6 +65,63 @@ describe('KrEconomicIndicatorGrid', () => {
         expect(screen.getByText(/직전 발표 대비/)).toHaveTextContent('-0.4%');
     });
 
+    it('shows % changes as percentage points with a neutral chevron, not red/teal', () => {
+        const { container } = render(
+            <KrEconomicIndicatorGrid
+                cards={[
+                    card('Interest Rate Decision', {
+                        latest: 2.75,
+                        changeFromPrevious: 0.25,
+                    }),
+                ]}
+            />
+        );
+
+        const change = screen.getByText(/직전 발표 대비/);
+        expect(change).toHaveTextContent('+0.25%p');
+        expect(change).toHaveClass('text-secondary-300');
+        // 상승=적색은 같은 화면의 미국 카드와 반대 해석을 강요했다.
+        expect(container.innerHTML).not.toMatch(
+            /text-ui-danger-text|text-ui-success-text/
+        );
+        expect(change.querySelector('svg')).not.toBeNull();
+    });
+
+    it('does not color a decrease either', () => {
+        const { container } = render(
+            <KrEconomicIndicatorGrid
+                cards={[
+                    card('Inflation Rate YoY', { changeFromPrevious: -0.4 }),
+                ]}
+            />
+        );
+        expect(container.innerHTML).not.toMatch(
+            /text-ui-danger-text|text-ui-success-text/
+        );
+    });
+
+    it('groups thousands in the value', () => {
+        render(
+            <KrEconomicIndicatorGrid
+                cards={[card('Unemployment Rate', { latest: 12345.6 })]}
+            />
+        );
+        expect(screen.getByText(/^12,345\.\d+$/)).toBeInTheDocument();
+    });
+
+    it('says there is no change when the delta rounds to zero', () => {
+        render(
+            <KrEconomicIndicatorGrid
+                cards={[
+                    card('Inflation Rate YoY', { changeFromPrevious: 0.001 }),
+                ]}
+            />
+        );
+        expect(
+            screen.getByText('직전 발표 대비 변화 없음')
+        ).toBeInTheDocument();
+    });
+
     it('omits the change line when there is no prior announcement', () => {
         render(
             <KrEconomicIndicatorGrid

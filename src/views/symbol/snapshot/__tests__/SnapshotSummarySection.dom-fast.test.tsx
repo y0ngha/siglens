@@ -108,7 +108,7 @@ describe('SnapshotSummarySection — 기준일 표기', () => {
             <SnapshotSummarySection
                 displayName="Apple Inc."
                 marketProfile="us-equity"
-                asOf={new Date('2026-07-31T20:00:00Z')}
+                asOf={new Date('2026-07-31T21:00:00Z')}
             >
                 <p>본문</p>
             </SnapshotSummarySection>
@@ -120,20 +120,20 @@ describe('SnapshotSummarySection — 기준일 표기', () => {
         ).toBeInTheDocument();
     });
 
-    // C5(감사): 이전에는 1일 전 케이스와 완전히 같은 날짜(2026-07-31T20:00:00Z)를
+    // C5(감사): 이전에는 1일 전 케이스와 완전히 같은 날짜(2026-07-31T21:00:00Z)를
     // 재사용해 "7일 된 스냅샷"이라는 제목이 실제로는 아무것도 검증하지 않았다.
     // 서로 다른 age의 두 스냅샷을 각각 렌더해, 둘 다 "전일"이 아니라 각자의
     // 실제 기준일을 렌더하는지 확인한다.
     it.each([
         {
             label: '1일 된 스냅샷',
-            asOf: new Date('2026-07-31T20:00:00Z'),
+            asOf: new Date('2026-07-31T21:00:00Z'),
             expectedDate: '2026년 7월 31일',
         },
         {
             label: '6일 23시간 된 스냅샷',
-            asOf: new Date('2026-07-25T21:00:00Z'),
-            expectedDate: '2026년 7월 25일',
+            asOf: new Date('2026-07-24T21:00:00Z'),
+            expectedDate: '2026년 7월 24일',
         },
     ])(
         'asOf가 있으면 "전일" 고정 문구 대신 자신의 실제 기준일을 렌더한다 — $label',
@@ -184,7 +184,7 @@ describe('SnapshotSummarySection — 시장별 캡션(kr-equity/crypto)', () => 
             <SnapshotSummarySection
                 displayName="삼성전자"
                 marketProfile="kr-equity"
-                asOf={new Date('2026-08-14T06:30:00Z')}
+                asOf={new Date('2026-08-14T07:30:00Z')}
             >
                 <p>본문</p>
             </SnapshotSummarySection>
@@ -209,7 +209,7 @@ describe('SnapshotSummarySection — 시장별 캡션(kr-equity/crypto)', () => 
         expect(screen.getByText(/전일 국내 장마감 기준/)).toBeInTheDocument();
     });
 
-    it('crypto는 asOf가 있으면 "UTC 기준"을 렌더한다 — "장마감"을 쓰지 않는다', () => {
+    it('crypto는 asOf가 있으면 "UTC 시세 기준"을 렌더한다 — "장마감"을 쓰지 않는다', () => {
         render(
             <SnapshotSummarySection
                 displayName="비트코인"
@@ -221,9 +221,89 @@ describe('SnapshotSummarySection — 시장별 캡션(kr-equity/crypto)', () => 
         );
 
         expect(
-            screen.getByText(/2026년 8월 14일 UTC 기준/)
+            screen.getByText(/2026년 8월 14일 00:00 UTC 시세 기준/)
         ).toBeInTheDocument();
         expect(screen.queryByText(/장마감/)).not.toBeInTheDocument();
+    });
+
+    it('basis(content)의 analyzedAt이 있으면 generatedAt이 아니라 그 데이터 기준 세션 날짜를 표기한다 — KR', () => {
+        render(
+            <SnapshotSummarySection
+                displayName="삼성전자"
+                marketProfile="kr-equity"
+                asOf={new Date('2026-10-05T22:00:00Z')}
+                basis={{
+                    barTimeMs: null,
+                    analyzedAtMs: Date.parse('2026-10-02T02:00:00.000Z'),
+                    close: null,
+                }}
+            >
+                <p>본문</p>
+            </SnapshotSummarySection>
+        );
+
+        expect(
+            screen.getByText(/2026년 10월 1일 국내 장마감 기준/)
+        ).toBeInTheDocument();
+    });
+
+    it('basis의 dataAsOf.barTime이 analyzedAt보다 우선한다 — US', () => {
+        render(
+            <SnapshotSummarySection
+                displayName="Apple Inc."
+                marketProfile="us-equity"
+                asOf={new Date('2026-10-05T22:00:00Z')}
+                basis={{
+                    barTimeMs: Date.parse('2026-10-02T00:00:00Z'),
+                    analyzedAtMs: Date.parse('2026-10-05T21:30:00.000Z'),
+                    close: 100,
+                }}
+            >
+                <p>본문</p>
+            </SnapshotSummarySection>
+        );
+
+        expect(
+            screen.getByText(/2026년 10월 2일 미국 장마감 기준/)
+        ).toBeInTheDocument();
+    });
+
+    it('크립토는 basis의 analyzedAt 시각(UTC)까지 표기한다', () => {
+        render(
+            <SnapshotSummarySection
+                displayName="비트코인"
+                marketProfile="crypto"
+                asOf={new Date('2026-10-05T22:00:00Z')}
+                basis={{
+                    barTimeMs: null,
+                    analyzedAtMs: Date.parse('2026-10-05T09:00:00.000Z'),
+                    close: null,
+                }}
+            >
+                <p>본문</p>
+            </SnapshotSummarySection>
+        );
+
+        expect(
+            screen.getByText(/2026년 10월 5일 09:00 UTC 시세 기준/)
+        ).toBeInTheDocument();
+    });
+
+    it('basis에 기준 시각이 하나도 없으면 asOf(generatedAt)로 폴백한다', () => {
+        render(
+            <SnapshotSummarySection
+                displayName="Apple Inc."
+                marketProfile="us-equity"
+                asOf={new Date('2026-07-31T21:00:00Z')}
+                basis={{ barTimeMs: null, analyzedAtMs: null, close: null }}
+            >
+                <p>본문</p>
+            </SnapshotSummarySection>
+        );
+
+        expect(
+            screen.getByText(/2026년 7월 31일 미국 장마감 기준/)
+        ).toBeInTheDocument();
     });
 
     it('crypto는 asOf가 없으면 "전일 UTC 자정 기준"으로 폴백한다', () => {

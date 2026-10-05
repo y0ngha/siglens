@@ -1,7 +1,6 @@
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { SYMBOL_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 import { sitemapAlternates } from './sitemapAlternates';
-import { CRYPTO_CHART_ISR_PERIOD_HOURS } from '@/shared/config/isr';
 import { MS_PER_HOUR } from '@/shared/config/time';
 import { SITE_URL } from '@/shared/lib/seo';
 import { floorToHour } from './floorToHour';
@@ -11,30 +10,6 @@ import {
     makeSnapshotTimeLookup,
     type BuildPopularEntriesOptions,
 } from './proseGate';
-
-/**
- * Quantize `now` down to the most-recent 6h boundary (UTC midnight, 06:00, 12:00, 18:00).
- * Mirrors the ISR revalidate=21600 cadence of the crypto chart page so lastmod reflects
- * when the page was actually last regenerated rather than a rolling "now" that would
- * send a false signal to Googlebot and create unnecessary recrawl pressure.
- */
-function quantizeTo6hBoundary(now: Date): Date {
-    const utcHour = now.getUTCHours();
-    const boundaryHour =
-        Math.floor(utcHour / CRYPTO_CHART_ISR_PERIOD_HOURS) *
-        CRYPTO_CHART_ISR_PERIOD_HOURS;
-    return new Date(
-        Date.UTC(
-            now.getUTCFullYear(),
-            now.getUTCMonth(),
-            now.getUTCDate(),
-            boundaryHour,
-            0,
-            0,
-            0
-        )
-    );
-}
 
 /**
  * 종목 sitemap 엔트리에 다국어 대체본을 붙인다.
@@ -59,17 +34,19 @@ function withSymbolAlternates(entries: SitemapEntry[]): SitemapEntry[] {
 /**
  * Crypto popular sitemap entries.
  *
- * lastmod uses the chart ISR period (6h, `CRYPTO_CHART_ISR_PERIOD_HOURS`) as a
- * common baseline via `quantizeTo6hBoundary`. Since the 2026-10-04 honesty pass (round 2)
- * the two snapshot-backed tabs also carry the time their prose was actually baked:
- *   - chart: `max(6h boundary, technical snapshot generatedAt)` — the prose is generated
- *     after the boundary, so a crawl in between would otherwise miss the change.
+ * lastmod is anchored to the UTC daily-bar close (the most recent UTC midnight): a crypto
+ * daily bar closes at 00:00Z, so nothing about the chart's data basis changes more often
+ * (the old 6h floor over-claimed freshness four times a day, 2026-10-05 audit). Since the
+ * 2026-10-04 honesty pass (round 2) the two snapshot-backed tabs also carry the time their
+ * prose was actually baked:
+ *   - chart: `max(UTC midnight, technical snapshot generatedAt)` — the prose is generated
+ *     after the midnight, so a crawl in between would otherwise miss the change.
  *   - news: the news snapshot's `generatedAt`. Measured 2026-10-04: every news entry
  *     carried `now − 1h` while the rendered snapshot was a median of 32h old. Only when the
  *     loader failed (no snapshot map) does it fall back to the old floored `now − 1h`.
  *
  * `changeFrequency` per tab reflects editorial intent and is independent of lastmod:
- *   - chart (`revalidate=21600`, 6h) → `changeFrequency: 'daily'`.
+ *   - chart (`revalidate=21600`, 6h ISR) → `changeFrequency: 'daily'`.
  *   - news (`revalidate=43200`, 12h) → `changeFrequency: 'daily'`; the fallback lastmod is
  *     floored to the hour (`floorToHour`) so repeated calls within the same hour agree
  *     (on-demand revalidateTag can refresh the page inside the ISR window).
@@ -90,7 +67,6 @@ export function buildCryptoPopularEntries(
 ): SitemapEntry[] {
     const hasProse = makeProseGate(options);
     const snapshotTimeOf = makeSnapshotTimeLookup(options);
-    const boundary6h = quantizeTo6hBoundary(now);
     const utcMidnight = new Date(
         Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
     );
@@ -103,9 +79,9 @@ export function buildCryptoPopularEntries(
             const technicalAt = snapshotTimeOf(sym, 'technical');
             const chartLastModified =
                 technicalAt !== undefined &&
-                technicalAt.getTime() > boundary6h.getTime()
+                technicalAt.getTime() > utcMidnight.getTime()
                     ? technicalAt
-                    : boundary6h;
+                    : utcMidnight;
             return [
                 // 차트 탭도 산문 게이트 대상이다(`buildPopularEntries`와 같은 규칙) — 렌더 가능한
                 // technical 산문이 없으면 페이지가 noindex(`no-prose`)다.

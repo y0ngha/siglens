@@ -350,6 +350,20 @@ aws logs put-metric-filter --log-group-name /siglens/app \
   --metric-transformations metricName=P2Score,metricNamespace=Siglens/Alerts,metricValue=34 \
   --region "$REGION" || true
 
+# IndexNow 대기열 정체 — 제출 대기열(`indexnow:pending`)에서 가장 오래된 만기 항목이 48시간을 넘었다.
+#
+# 크론은 매 tick 만기분을 drain하며 순수 JSON 한 줄 `{"event":"indexnow.drain",...,"oldestDueAgeMs"}`을
+# 남긴다(`shared/lib/indexNowQueue.ts`). 429 backoff·키 검증 실패(403)·반복되는 장애는 로그에 에러만
+# 남고 크론은 성공으로 끝나므로, 이 필터가 없으면 알림이 며칠씩 밀려도 아무 신호가 없다.
+# 정상이라면 만기분은 같은 tick에 비워져 값이 0에 가깝다. JSON 필터라 로그 줄 전체가 JSON이어야 한다.
+#
+# 가중치 34: tick이 5분이라 15분 창에 최대 3줄 → 정체가 이어지면 102점으로 siglens-p2(≥100)가 발화한다.
+aws logs put-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-seo-prewarm-indexnow-stalled \
+  --filter-pattern '{ ($.event = "indexnow.drain") && ($.oldestDueAgeMs > 172800000) }' \
+  --metric-transformations metricName=P2Score,metricNamespace=Siglens/Alerts,metricValue=34 \
+  --region "$REGION" || true
+
 log "skipped fmp-429 filter: no stable log marker exists yet (see comment above) — batch-failed filter covers structural failure in the meantime"
 
-log "seo-prewarm metric filters ready (batch-failed=34, unit-error/timeout=5, deadline-reached=34 -> Siglens/Alerts P2Score; alarm is siglens-p2 in 07-alarms.sh; redis-unavailable is in siglens-config-signal filter)"
+log "seo-prewarm metric filters ready (batch-failed=34, unit-error/timeout=5, deadline-reached=34, indexnow-stalled=34 -> Siglens/Alerts P2Score; alarm is siglens-p2 in 07-alarms.sh; redis-unavailable is in siglens-config-signal filter)"

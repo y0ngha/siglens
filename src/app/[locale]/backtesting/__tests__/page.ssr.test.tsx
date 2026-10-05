@@ -109,9 +109,9 @@ describe('/backtesting 가시 브레드크럼', () => {
         });
 
         expect(buildBreadcrumbJsonLd).toHaveBeenCalledWith(
-            [expect.objectContaining({ name: 'AI 백테스팅' })],
+            [expect.objectContaining({ name: '백테스트' })],
             'ko'
         );
-        expectVisibleBreadcrumbLabels(tree, ['AI 백테스팅']);
+        expectVisibleBreadcrumbLabels(tree, ['백테스트']);
     });
 });

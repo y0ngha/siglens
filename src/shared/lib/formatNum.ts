@@ -20,3 +20,25 @@ export function formatNum(
     // `!Number.isFinite` guard above ensures v is a finite number here.
     return `${formatter.format(v as number)}${unit}`;
 }
+
+/**
+ * 고정 소수 자릿수 + 로케일 천 단위 구분자.
+ *
+ * `toFixed()`는 로케일도 천 단위 구분자도 모른다 — 거시 지표 카드에 `159044`가
+ * 그대로 찍혔다. 자릿수는 `precision`으로 고정(최소=최대)해 `3.60`이 `3.6`으로
+ * 줄지 않게 한다. 단위 접미사는 붙이지 않는다(카드마다 값과 단위를 따로 그린다).
+ *
+ * @param value - 포맷할 유한수. 호출부가 null을 먼저 걸러야 한다.
+ * @param precision - 소수 자릿수.
+ * @param locale - 표시 로케일. 기본값을 두지 않는다.
+ */
+export function formatFixed(
+    value: number,
+    precision: number,
+    locale: Locale
+): string {
+    return cachedNumberFormat(INTL_LOCALE[locale], {
+        minimumFractionDigits: precision,
+        maximumFractionDigits: precision,
+    }).format(value);
+}

@@ -316,6 +316,50 @@ describe('DrizzleMarketNewsRepository.listCardsByCategory는', () => {
             repo.listCardsByCategory('__NEWS_CRYPTO__', 1000, 'ko')
         ).resolves.toEqual([]);
     });
+
+    /**
+     * 필터는 **원제목(`titleEn`)** 에만 건다 — 화면 제목은 번역본(`titleKo`)일 수 있다.
+     * 그래서 이 행은 `titleKo`가 한국어여도 걸러져야 하고, 반대로 `titleKo`에 영어 광고
+     * 문구가 있어도 `titleEn`이 정상이면 남아야 한다.
+     */
+    it('로펌 원고 모집 광고 행은 번역 제목이 있어도 걸러내고, 남은 행의 tickers를 어긋남 없이 붙인다', async () => {
+        const solicitation = {
+            ...cardDbRow,
+            id: 'ad',
+            url: 'https://x.com/rosen',
+            titleEn:
+                'ROSEN, A LEADING INVESTOR RIGHTS FIRM, Encourages Apple Inc. Investors to Secure Counsel Before Important Deadline in Securities Class Action',
+            titleKo: '로젠 법률사무소, 애플 투자자에게 변호사 선임 권유',
+            tickers: ['AAPL'],
+        };
+        const normal = { ...cardDbRow, id: 'ok', tickers: ['BTCUSD'] };
+        const { db } = makeSelectDb([solicitation, normal]);
+        const repo = new DrizzleMarketNewsRepository(db);
+
+        const result = await repo.listCardsByCategory(
+            '__NEWS_CRYPTO__',
+            1000,
+            'ko'
+        );
+
+        expect(result.map(r => r.id)).toEqual(['ok']);
+        expect(result[0]?.tickers).toEqual(['BTCUSD']);
+    });
+
+    it('정상 기사는 titleKo에 영어 광고 문구가 섞여 있어도 남긴다 (판정은 titleEn 기준)', async () => {
+        const { db } = makeSelectDb([
+            {
+                ...cardDbRow,
+                titleEn: 'Boeing settles shareholder class action',
+                titleKo: 'Rosen Law Firm Reminds Investors of Class Action',
+            },
+        ]);
+        const result = await new DrizzleMarketNewsRepository(
+            db
+        ).listCardsByCategory('__NEWS_CRYPTO__', 1000, 'ko');
+
+        expect(result).toHaveLength(1);
+    });
 });
 
 describe('DrizzleMarketNewsRepository.listAnalyzedIds는', () => {
@@ -413,6 +457,23 @@ describe('DrizzleMarketNewsRepository.listByCategory는', () => {
         expect(row.sentiment).toBeNull();
         expect(row.category).toBeNull();
         expect(row.priceImpact).toBeNull();
+    });
+
+    it('로펌 원고 모집 광고 행은 걸러낸다 (다이제스트 입력에서도 빠진다)', async () => {
+        const { db } = makeSelectDb([
+            {
+                ...baseDbRow,
+                id: 'ad',
+                titleEn:
+                    'Pomerantz Law Firm Reminds Investors of Securities Class Action',
+            },
+            { ...baseDbRow, id: 'ok' },
+        ]);
+        const results = await new DrizzleMarketNewsRepository(
+            db
+        ).listByCategory('__NEWS_CRYPTO__', 86_400_000);
+
+        expect(results.map(r => r.id)).toEqual(['ok']);
     });
 
     it('결과가 없으면 빈 배열을 반환한다', async () => {

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
     scoreSearchRelevance,
+    matchSearchRelevance,
     rankByRelevance,
     isPopularSymbol,
     EXACT_MATCH_SCORE,
@@ -170,6 +171,142 @@ describe('rankByRelevance', () => {
             makeResult(`SYM${i}`, `Symbol ${i}`)
         );
         expect(rankByRelevance(results, 'sym')).toHaveLength(15);
+    });
+});
+
+describe('matchSearchRelevance', () => {
+    it('score는 scoreSearchRelevance와 같다', () => {
+        const r = makeResult('BTCUSD', 'Bitcoin USD', '비트코인');
+        expect(matchSearchRelevance(r, '비트', true).score).toBe(
+            scoreSearchRelevance(r, '비트', true)
+        );
+    });
+
+    it('matchLength는 최고 점수를 낸 필드의 길이다', () => {
+        const r = makeResult('BTCUSD', 'Bitcoin USD', '비트코인');
+        expect(matchSearchRelevance(r, '비트', false).matchLength).toBe(
+            '비트코인'.length
+        );
+        // name에서만 부분 일치 → name 길이
+        expect(matchSearchRelevance(r, 'usd', false).matchLength).toBe(
+            'BTCUSD'.length
+        );
+    });
+
+    it('여러 필드가 같은 점수면 더 짧은 필드의 길이를 쓴다', () => {
+        // symbol 'SAM'과 name 'Samsung Electronics' 둘 다 접두 일치(70)
+        const r = makeResult('SAM', 'Samsung Electronics');
+        expect(matchSearchRelevance(r, 'sam', false).matchLength).toBe(3);
+    });
+
+    it('일치한 필드가 없으면(폴백) 가장 나쁜 길이로 동률에서 뒤로 간다', () => {
+        const r = makeResult('AAA', 'Alpha', '알파');
+        expect(matchSearchRelevance(r, 'xyz', false).matchLength).toBe(
+            Number.MAX_SAFE_INTEGER
+        );
+    });
+});
+
+describe('rankByRelevance — 동점 처리', () => {
+    /**
+     * `삼성`은 접두 일치(70)가 한꺼번에 쏟아지는 질의다. 예전에는 점수가 같으면 DB 순서를
+     * 그대로 써서, 가장 알아볼 만한 `삼성전자`가 `삼성바이오로직스` 뒤에 올 수 있었다.
+     * 픽스처의 DB 순서는 일부러 기대 순서의 반대다.
+     */
+    it('삼성: 같은 점수면 짧은 이름이 먼저, 그다음 인기 순위 (삼성전자 first)', () => {
+        const results = [
+            makeResult('207940.KS', 'Samsung Biologics', '삼성바이오로직스'),
+            makeResult('028260.KS', 'Samsung C&T', '삼성물산'),
+            makeResult('005930.KS', 'Samsung Electronics', '삼성전자'),
+        ];
+        const ranked = rankByRelevance(results, '삼성');
+        // 셋 다 인기(+15) 접두(70) = 85. 삼성전자·삼성물산은 4자, 바이오로직스는 8자.
+        // 4자끼리는 인기 순위: 005930.KS가 028260.KS보다 앞선다.
+        expect(ranked.map(r => r.symbol)).toEqual([
+            '005930.KS',
+            '028260.KS',
+            '207940.KS',
+        ]);
+    });
+
+    it('비인기 종목끼리도 짧은 이름이 먼저다 (matchLength만으로 갈린다)', () => {
+        const results = [
+            makeResult('TST3.KS', 'Long', '삼성에스디에스'),
+            makeResult('TST2.KS', 'Mid', '삼성SDI'),
+            makeResult('TST1.KS', 'Short', '삼성증권'),
+        ];
+        const ranked = rankByRelevance(results, '삼성');
+        expect(ranked.map(r => r.symbol)).toEqual([
+            'TST1.KS',
+            'TST2.KS',
+            'TST3.KS',
+        ]);
+    });
+
+    it('길이가 같으면 인기 목록의 앞선 종목이 먼저다 (POPULAR_TICKERS 순서)', () => {
+        // 둘 다 4자, 둘 다 인기(85). 028260.KS가 입력에서 앞서지만 005930.KS가 목록에서 앞선다.
+        const ranked = rankByRelevance(
+            [
+                makeResult('028260.KS', 'Samsung C&T', '삼성물산'),
+                makeResult('005930.KS', 'Samsung Electronics', '삼성전자'),
+            ],
+            '삼성'
+        );
+        expect(ranked.map(r => r.symbol)).toEqual(['005930.KS', '028260.KS']);
+    });
+
+    it('인기 종목은 같은 길이의 비인기 종목보다 먼저다 (점수 +15가 우선)', () => {
+        const ranked = rankByRelevance(
+            [
+                makeResult('TST1.KS', 'X', '삼성증권'),
+                makeResult('005930.KS', 'Samsung Electronics', '삼성전자'),
+            ],
+            '삼성'
+        );
+        expect(ranked[0].symbol).toBe('005930.KS');
+    });
+
+    it('길이·인기까지 같으면 입력 순서를 유지한다', () => {
+        const ranked = rankByRelevance(
+            [
+                makeResult('TST2.KS', 'B', '삼성뭐'),
+                makeResult('TST1.KS', 'A', '삼성가'),
+                makeResult('TST3.KS', 'C', '삼성나'),
+            ],
+            '삼성'
+        );
+        expect(ranked.map(r => r.symbol)).toEqual([
+            'TST2.KS',
+            'TST1.KS',
+            'TST3.KS',
+        ]);
+    });
+
+    it('정확 일치는 접두 일치보다 항상 앞선다 (점수가 길이보다 우선)', () => {
+        const ranked = rankByRelevance(
+            [
+                makeResult('TST3.KS', 'C', '삼성전자우'),
+                makeResult('TST2.KS', 'B', '삼성전자'),
+            ],
+            '삼성전자'
+        );
+        expect(ranked.map(r => r.symbol)).toEqual(['TST2.KS', 'TST3.KS']);
+
+        // 정확 일치가 입력에서 뒤에 있어도, 길이가 더 긴 접두 일치가 앞서지 못한다.
+        const longerExact = rankByRelevance(
+            [
+                makeResult('TST1.KS', 'A', '삼성전'),
+                makeResult('TST2.KS', 'B', '삼성전자우선주'),
+                makeResult('TST3.KS', 'C', '삼성전자우선'),
+            ],
+            '삼성전자우선'
+        );
+        // '삼성전자우선'은 TST3에서 정확 일치(100), TST2는 접두(70), TST1은 폴백(10).
+        expect(longerExact.map(r => r.symbol)).toEqual([
+            'TST3.KS',
+            'TST2.KS',
+            'TST1.KS',
+        ]);
     });
 });
 

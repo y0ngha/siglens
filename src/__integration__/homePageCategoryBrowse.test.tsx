@@ -61,7 +61,7 @@ describe('Home Page Category Browse', () => {
         render(<TickerCategories />);
         expect(
             screen.getByRole('navigation', {
-                name: '미국 섹터별 인기 종목 탐색',
+                name: '미국 테마별 인기 종목 탐색',
             })
         ).toBeInTheDocument();
     });
@@ -69,7 +69,7 @@ describe('Home Page Category Browse', () => {
     it('renders section heading', () => {
         render(<TickerCategories />);
         expect(
-            screen.getByRole('heading', { name: '미국 섹터별 인기 종목' })
+            screen.getByRole('heading', { name: '미국 테마별 인기 종목' })
         ).toBeInTheDocument();
     });
 
