@@ -629,6 +629,18 @@ body:has([data-vaul-drawer]) [data-mobile-sheet-placeholder] {
 }
 
 /*
+ * 모바일 분석 시트가 PEEK 밖(HALF/FULL)으로 펼쳐지면 Ask-AI FAB을 숨긴다.
+ *
+ * FAB은 z-60, 시트는 z-50이라 펼친 시트 위로 떠서 분석 본문 오른쪽 아래 글자를
+ * 가린다. `MobileAnalysisSheet`가 PEEK가 아닐 때만 `data-sheet-expanded`를 붙이므로,
+ * PEEK(띠만 보임)에서는 FAB이 그대로 남는다. 데스크톱은 시트(`md:hidden`)가 없어
+ * 이 규칙이 매칭되지 않는다.
+ */
+body:has([data-vaul-drawer][data-sheet-expanded]) [data-ask-ai-fab] {
+    display: none;
+}
+
+/*
  * 다른 라우트로 떠나는 중에는 모바일 분석 시트를 감춘다.
  *
  * 루트 pending 슬롯(`RoutePendingSlot`)은 떠나온 페이지를 `hidden`으로 가리고 목적지

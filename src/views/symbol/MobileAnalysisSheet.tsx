@@ -4,7 +4,11 @@ import { useTranslations } from 'next-intl';
 import { type ReactNode } from 'react';
 import { Drawer } from 'vaul';
 import { cn } from '@/shared/lib/cn';
-import { SNAP_POINTS_MUTABLE, type SnapPoint } from './constants/mobileSheet';
+import {
+    SNAP_PEEK,
+    SNAP_POINTS_MUTABLE,
+    type SnapPoint,
+} from './constants/mobileSheet';
 import { useMobileAnalysisSheet } from './hooks/useMobileAnalysisSheet';
 import { useMobileSheetDrag } from './hooks/useMobileSheetDrag';
 
@@ -78,6 +82,13 @@ export function MobileAnalysisSheet({
                     // 완전히 뷰포트 밖으로 밀려나는 "사라짐" 버그가 발생한다.
                     className="fixed inset-x-0 bottom-0 z-50 flex h-[97svh] flex-col overflow-hidden overscroll-contain rounded-t-lg border-t border-secondary-700 bg-secondary-900 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-8px_rgba(0,0,0,0.6)] md:hidden"
                     aria-live="polite"
+                    // PEEK 밖(HALF/FULL)에서만 붙는다 — globals.css가 이 속성으로
+                    // AskAiFab(z-60)을 숨긴다. 시트(z-50) 위로 떠서 분석 본문의
+                    // 오른쪽 아래 글자를 가리는 걸 막기 위해서다. PEEK는 띠만
+                    // 보이므로 FAB이 그대로 남는다.
+                    data-sheet-expanded={
+                        activeSnap !== SNAP_PEEK ? '' : undefined
+                    }
                 >
                     <Drawer.Handle
                         className="shrink-0"

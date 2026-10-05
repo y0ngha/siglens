@@ -2966,5 +2966,7 @@
     "views.symbol.fearGreedFacts.extremeZoneOmitted": "3bd94d6d1361",
     "views.symbol.fearGreedFacts.extremeZoneOngoing": "8d7890c086ad",
     "views.symbol.fearGreedFacts.extremeZoneSessions": "fea5f10b8157",
-    "views.symbol.fearGreedFacts.extremeZoneSummary": "66edfca7aa55"
+    "views.symbol.fearGreedFacts.extremeZoneSummary": "66edfca7aa55",
+    "widgets.portfolio-position.PositionCta.8df3cf": "8df3cf79ee25",
+    "widgets.portfolio-position.positionNote.ariaSummaryCurrentOnly": "1a68fd654cff"
 }

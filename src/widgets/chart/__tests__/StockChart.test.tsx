@@ -176,6 +176,14 @@ vi.mock('@/shared/lib/chartColors', () => ({
     }),
 }));
 
+// jsdom에는 캔버스 2D 컨텍스트가 없다 — 기본 측정기가 getContext를 부르지 않게 막는다.
+vi.mock('@/widgets/chart/utils/levelLabelGutter', async importOriginal => ({
+    ...(await importOriginal<
+        typeof import('@/widgets/chart/utils/levelLabelGutter')
+    >()),
+    createCanvasTextMeasurer: () => (text: string) => text.length * 7,
+}));
+
 vi.mock('@/shared/lib/timeFormat', () => ({
     getTimeFormatter: () => (time: number) => String(time),
 }));
@@ -1102,6 +1110,154 @@ describe('StockChart', () => {
                 const specs = lastSpecs();
                 expect(specs).toHaveLength(1);
                 expect(specs?.[0].paneIndex).toBe(0);
+            });
+        });
+
+        /**
+         * 레벨선 제목이 마지막 캔들을 덮지 않도록 오른쪽 여백(px)을 소비처로 알린다.
+         * 폭 측정은 캔버스 `measureText`라 jsdom에서 못 하므로 측정기를 주입한다
+         * (글자당 10px). pane 폭은 wrapper `clientWidth`를 심어 만든다.
+         */
+        describe('오른쪽 여백(onRightGutterChange)', () => {
+            const TEN_PX_PER_CHAR = (text: string): number => text.length * 10;
+
+            const patternWithBreakout: ChartOverlay = {
+                id: 'pattern:double_bottom:100',
+                kind: 'pattern',
+                skill: 'double_bottom',
+                sourceRef: 'p1',
+                variant: 'primary',
+                segments: [],
+                levels: [{ price: 11, fromTime: 100, label: 'breakout' }],
+                labels: [],
+            };
+
+            async function renderWithWidth(
+                width: number,
+                props: Partial<Parameters<typeof StockChart>[0]> = {}
+            ) {
+                const restore = stubClientWidth(width);
+                try {
+                    const result = render(
+                        <StockChart
+                            bars={mockBars}
+                            timeframe="1Day"
+                            measureText={TEN_PX_PER_CHAR}
+                            {...props}
+                        />
+                    );
+                    await flushFrame();
+                    return result;
+                } finally {
+                    restore();
+                }
+            }
+
+            it('돌파선 제목이 있으면 가장 긴 제목 폭 + 12px 여백(양수)을 알린다', async () => {
+                const onRightGutterChange = vi.fn();
+
+                await renderWithWidth(1000, {
+                    chartOverlays: [patternWithBreakout],
+                    onRightGutterChange,
+                });
+
+                // '돌파 기준' = 5자 → 50px + 12px.
+                expect(onRightGutterChange).toHaveBeenLastCalledWith(62);
+            });
+
+            it('제목이 없으면 0을 알린다', async () => {
+                const onRightGutterChange = vi.fn();
+
+                await renderWithWidth(1000, { onRightGutterChange });
+
+                expect(onRightGutterChange).toHaveBeenLastCalledWith(0);
+            });
+
+            it('여백은 pane 폭의 30%를 넘지 않는다', async () => {
+                const onRightGutterChange = vi.fn();
+
+                await renderWithWidth(100, {
+                    chartOverlays: [patternWithBreakout],
+                    onRightGutterChange,
+                });
+
+                expect(onRightGutterChange).toHaveBeenLastCalledWith(30);
+            });
+
+            // 결과선(무효화)이 셋 이상이면 혼잡 — 강조되지 않은 제목은 `''`로 숨는다.
+            // 그 상태로 여백을 재면 카드 hover마다 값이 0↔92로 흔들려 차트가 튄다.
+            it('결과선이 몰려 제목이 숨는 상태에서도 최대 폭으로 잡고, 카드 hover(강조)로 흔들리지 않는다', async () => {
+                const refs = ['p1', 'p2', 'p3'];
+                const outcomePattern = (sourceRef: string): ChartOverlay => ({
+                    id: `pattern:double_top:${sourceRef}`,
+                    kind: 'pattern',
+                    skill: 'double_top',
+                    sourceRef,
+                    variant: 'primary',
+                    segments: [],
+                    levels: [
+                        { price: 14, fromTime: 100, label: 'invalidation' },
+                    ],
+                    labels: [],
+                });
+                const items = refs.map(ref => ({
+                    key: ref,
+                    kind: 'pattern' as const,
+                    label: `패턴${ref}`,
+                }));
+                const onRightGutterChange = vi.fn();
+                const restore = stubClientWidth(1000);
+                try {
+                    const { rerender } = render(
+                        <StockChart
+                            bars={mockBars}
+                            timeframe="1Day"
+                            measureText={TEN_PX_PER_CHAR}
+                            chartOverlays={refs.map(outcomePattern)}
+                            overlayItems={items}
+                            onRightGutterChange={onRightGutterChange}
+                        />
+                    );
+                    await flushFrame();
+                    // 화면 제목은 전부 ''이지만(혼잡) 여백은 '패턴p1 무효화'(8자) 기준이다.
+                    expect(
+                        vi
+                            .mocked(useChartOverlays)
+                            .mock.calls.at(-1)?.[0]
+                            .specs.map(spec => spec.title)
+                    ).toEqual(['', '', '']);
+                    expect(onRightGutterChange).toHaveBeenLastCalledWith(92);
+                    onRightGutterChange.mockClear();
+
+                    rerender(
+                        <StockChart
+                            bars={mockBars}
+                            timeframe="1Day"
+                            measureText={TEN_PX_PER_CHAR}
+                            chartOverlays={refs.map(outcomePattern)}
+                            overlayItems={items}
+                            highlightedOverlayKey="p2"
+                            onRightGutterChange={onRightGutterChange}
+                        />
+                    );
+                    await flushFrame();
+                } finally {
+                    restore();
+                }
+
+                expect(onRightGutterChange).not.toHaveBeenCalled();
+            });
+
+            it('꺼진 항목의 제목은 여백에 반영하지 않는다', async () => {
+                const onRightGutterChange = vi.fn();
+
+                await renderWithWidth(1000, {
+                    chartOverlays: [patternWithBreakout],
+                    hiddenOverlayKeys: new Set(['p1']),
+                    onRightGutterChange,
+                });
+
+                expect(onRightGutterChange).toHaveBeenLastCalledWith(0);
             });
         });
     });

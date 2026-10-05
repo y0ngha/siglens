@@ -70,7 +70,13 @@ export function PositionTabContent({
 
     if (!user) {
         return (
-            <PositionCta symbol={symbol} low52w={low52w} high52w={high52w} />
+            <PositionCta
+                symbol={symbol}
+                low52w={low52w}
+                high52w={high52w}
+                lastClose={lastClose}
+                volumeByBand={volumeByBand}
+            />
         );
     }
 
