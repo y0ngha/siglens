@@ -354,18 +354,20 @@ export function PositionBuilding({
     const avgFloorNoteVisual = hasAvg
         ? avgFloorVisualNote(model.avgClamped, avgFloorNote, tPos)
         : '';
+    // 평단 없는 모드의 요약은 현재가가 놓인 층을 말한다.
+    const currentFloorNote = describeFloor(
+        model.currentPos,
+        model.currentClamped,
+        bandCount,
+        tPos
+    );
     const ariaLabel =
         avgDisplay === null
             ? buildAriaLabelCurrentOnly(
                   symbol,
                   model,
                   currentDisplay,
-                  describeFloor(
-                      model.currentPos,
-                      model.currentClamped,
-                      bandCount,
-                      tPos
-                  ),
+                  currentFloorNote,
                   tPos
               )
             : buildAriaLabel(
@@ -648,7 +650,6 @@ export function PositionBuilding({
                     aria-hidden="true"
                 />
 
-                {/* 내 평단 (★) — 평단이 있을 때만(avg=null이면 현재가만 그린다). */}
                 {hasAvg && (
                     <>
                         <g

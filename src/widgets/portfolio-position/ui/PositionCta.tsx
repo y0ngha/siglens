@@ -42,6 +42,37 @@ const PositionBuildingWithReadout = dynamic(loadPositionBuilding, {
     loading: () => <BuildingPlaceholder withReadout />,
 });
 
+interface CtaBuildingInput {
+    model: NonNullable<ReturnType<typeof computePosition>>;
+    low52w: number;
+    high52w: number;
+    current: number;
+}
+
+/**
+ * 평단 없이 현재가만 담은 건물의 입력. 평단 자리에 `avg: current`를 넣는다 —
+ * `avg`는 양수 가드에만 쓰이고 이 화면이 읽는 currentPos/currentClamped는
+ * `current`만으로 정해진다(`[symbol]/position/page.tsx`의
+ * resolveCurrentPricePosition과 같은 근거). 범위·현재가가 비었거나 퇴화
+ * 입력이면 null → 건물 없이 문구 CTA만.
+ */
+function resolveCtaBuilding(
+    low52w: number | null,
+    high52w: number | null,
+    lastClose: number | null
+): CtaBuildingInput | null {
+    if (low52w === null || high52w === null || lastClose === null) return null;
+    const model = computePosition({
+        low52w,
+        high52w,
+        current: lastClose,
+        avg: lastClose,
+    });
+    return model === null
+        ? null
+        : { model, low52w, high52w, current: lastClose };
+}
+
 interface PositionCtaProps {
     symbol: string;
     low52w: number | null;
@@ -71,24 +102,7 @@ export function PositionCta({
     volumeByBand,
 }: PositionCtaProps) {
     const t = useTranslations('widgets.portfolio-position');
-    // 평단이 없으니 `avg: current`로 모델을 만든다 — `avg`는 양수 가드에만 쓰이고
-    // 이 화면이 읽는 currentPos/currentClamped는 `current`만으로 정해진다
-    // (`[symbol]/position/page.tsx`의 resolveCurrentPricePosition과 같은 근거).
-    // 범위·현재가가 비었거나 퇴화 입력이면 null → 건물 없이 문구 CTA만.
-    const model =
-        low52w !== null && high52w !== null && lastClose !== null
-            ? computePosition({
-                  low52w,
-                  high52w,
-                  current: lastClose,
-                  avg: lastClose,
-              })
-            : null;
-    const showBuilding =
-        model !== null &&
-        low52w !== null &&
-        high52w !== null &&
-        lastClose !== null;
+    const building = resolveCtaBuilding(low52w, high52w, lastClose);
     const Building = volumeByBand
         ? PositionBuildingWithReadout
         : PositionBuilding;
@@ -99,13 +113,13 @@ export function PositionCta({
         >
             {/* 평단 없이 현재가만 그린 건물 — 회원 건물과 같은 컴포넌트·같은 aria
                 의미(role="img" + 요약 label)다. ★평단 자리는 아래 문구가 안내한다. */}
-            {showBuilding && (
+            {building !== null && (
                 <Building
                     symbol={symbol}
-                    model={model}
-                    low52w={low52w}
-                    high52w={high52w}
-                    current={lastClose}
+                    model={building.model}
+                    low52w={building.low52w}
+                    high52w={building.high52w}
+                    current={building.current}
                     avg={null}
                     volumeByBand={volumeByBand}
                     className="w-full"
