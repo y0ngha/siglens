@@ -1,5 +1,18 @@
 # Changelog
 
+# [0.99.0](https://github.com/y0ngha/siglens/compare/v0.98.0...v0.99.0) (2026-10-05)
+
+### Bug Fixes
+
+* 대기 버튼을 "AI 분석 시작"으로 바꾸고, 게이트가 닫힌 차트의 가짜 진행 화면을 없앤다 ([#950](https://github.com/y0ngha/siglens/issues/950)) ([93c9f20](https://github.com/y0ngha/siglens/commit/93c9f2011db9805c2384d0c8fe924ddf88705672))
+* 종목 페이지 섹션 간격 정렬 ([#952](https://github.com/y0ngha/siglens/issues/952)) ([04cadce](https://github.com/y0ngha/siglens/commit/04cadce4c6584415fee3ec8a9077982e86867ff8))
+* **seo:** noindex 공포탐욕 페이지가 차트 탭과 같은 title을 쓰지 않게 한다 ([#949](https://github.com/y0ngha/siglens/issues/949)) ([8b855c4](https://github.com/y0ngha/siglens/commit/8b855c40a3783d3f89968e9ca71ac26dbcb4b496))
+
+### Features
+
+* 종목 공포·탐욕 페이지의 극단 구간 표를 진입 이후 수익률 대신 머문 기록으로 바꾼다 ([#953](https://github.com/y0ngha/siglens/issues/953)) ([978104c](https://github.com/y0ngha/siglens/commit/978104c3431fb47098d7f643571cda812039ded6))
+* 종목·시장 공포·탐욕 지수를 최근 5년 일봉으로 계산한다 ([#951](https://github.com/y0ngha/siglens/issues/951)) ([3b0ab1c](https://github.com/y0ngha/siglens/commit/3b0ab1cf1877ca4d442849bfe0e908ee1642c4db)), closes [254/#255](https://github.com/y0ngha/siglens/issues/255)
+
 # [0.98.0](https://github.com/y0ngha/siglens/compare/v0.97.0...v0.98.0) (2026-10-04)
 
 ### Bug Fixes
