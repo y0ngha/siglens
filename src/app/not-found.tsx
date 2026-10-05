@@ -20,18 +20,11 @@ const HOME_NAMESPACE = 'app.home';
 const NAV_LABEL_KEY = 'widgets.layout.HeaderNav.5281d7';
 
 /**
- * 제목은 정적이다 — 한국어 · 메인 호스트. 다른 로케일·호스트의 제목은 클라이언트 섬이
- * 마운트 뒤 `document.title`로 바꾼다(`NotFoundView`).
+ * ⚠️ `title`을 두지 않는다 — 제목은 `NotFoundLayout`의 `<title>`이 맡는다. Next 메타데이터의
+ * `<title>`은 하이드레이션 때 다시 써져서 클라이언트 섬이 바꾼 제목(`NotFoundView`)을 덮는다.
  */
-export async function generateMetadata(): Promise<Metadata> {
-    const t = await getTranslations({
-        locale: DEFAULT_LOCALE,
-        namespace: HOME_NAMESPACE,
-    });
-    return {
-        title: documentTitleOf(t('not-found.6cbd6d'), SITE_NAME),
-        robots: { index: false, follow: true },
-    };
+export function generateMetadata(): Metadata {
+    return { robots: { index: false, follow: true } };
 }
 
 /**
@@ -81,6 +74,10 @@ export default async function RootNotFound() {
                     <NotFoundLayout
                         wordmark={SITE_NAME}
                         homeHref={localePath(DEFAULT_LOCALE, '/')}
+                        documentTitle={documentTitleOf(
+                            t('not-found.6cbd6d'),
+                            SITE_NAME
+                        )}
                         navLabel={tNav(NAV_LABEL_KEY)}
                         navLinks={NAV_VERTICALS.map(vertical => ({
                             id: vertical.id,

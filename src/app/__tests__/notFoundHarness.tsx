@@ -24,6 +24,14 @@ export function visit(path: string): void {
     window.history.pushState({}, '', path);
 }
 
+/**
+ * `<title>`은 React가 소유한 호이스터블이다 — `document.title = ''`는 없던 `<title>`을 만든다.
+ * 하이드레이션 테스트는 루트를 언마운트하지 않으므로 직접 걷어야 한다.
+ */
+export function removeTitles(): void {
+    document.querySelectorAll('title').forEach(title => title.remove());
+}
+
 export interface HydrationOutcome {
     readonly recoverableErrors: unknown[];
     readonly consoleErrors: unknown[][];
@@ -36,6 +44,7 @@ async function islandElement() {
             <NotFoundLayout
                 wordmark="Siglens"
                 homeHref="/"
+                documentTitle="페이지를 찾을 수 없습니다 | Siglens"
                 title="페이지를 찾을 수 없습니다"
                 homeLabel="홈"
             />

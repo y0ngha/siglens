@@ -66,9 +66,15 @@ test.describe('ad landing pages', () => {
         expect(analysisOnAi.headers()['x-robots-tag']).toBe(
             'noindex, nofollow'
         );
-        const analysisTarget = new URL(analysisOnAi.headers()['location']!);
-        expect(analysisTarget.pathname).toBe('/lp/stock-analysis');
-        expect(analysisTarget.search).toBe('?gclid=abc');
+        // 목적지(메인)가 서버의 바인딩 오리진(`localhost:4300`)과 같아서 Next가 Location을
+        // 상대 경로로 줄여 보낸다(`resolve-routes`의 `getRelativeURL`). 프로덕션에서는 목적지가
+        // `siglens.io`고 서버 바인딩이 `localhost:<port>`라 절대 URL이다 — 그 경우는 단위 테스트
+        // (`proxy.lp.test.ts`)가 오리진까지 고정한다. 어느 쪽이든 **ai 호스트로 되돌아가는**
+        // 값이면 안 되므로 허용 값을 둘로 못 박는다.
+        expect([
+            `${MAIN}/lp/stock-analysis?gclid=abc`,
+            '/lp/stock-analysis?gclid=abc',
+        ]).toContain(analysisOnAi.headers()['location']);
     });
 
     test('an unknown /lp/* path 404s with the root not-found document, still noindex', async ({
