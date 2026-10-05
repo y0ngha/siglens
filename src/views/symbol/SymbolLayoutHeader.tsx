@@ -104,36 +104,58 @@ export function SymbolLayoutHeader({
         <header className="relative z-40 py-3">
             <div className="flex items-center gap-2 px-4 sm:gap-4">
                 <div className="flex min-w-0 flex-1 items-center gap-2">
+                    {/* 모바일(sm 미만)에서는 "SIGLENS /" 브레드크럼과 영문명을 감춘다.
+                        375px에서 이 둘이 폭을 먹어 한국어 종목명이 "애플, App…"처럼
+                        잘렸다 — 모바일 헤더에서 사용자가 알아봐야 하는 건 종목명과
+                        티커뿐이고, 홈은 사이트 헤더 로고가 이미 가리킨다. */}
                     <Link
                         href="/"
                         // 모든 심볼 페이지의 브레드크럼에 렌더되므로 사실상 전역 링크다.
                         // 진입 심볼마다 다른 `_rsc` 해시로 `/`의 캐시를 파편화시킨다
                         // (docs/architecture/CDN_CACHING.md §1).
                         prefetch={false}
-                        className="font-mono text-xs tracking-[0.2em] text-secondary-400 uppercase transition-colors hover:text-secondary-300"
+                        className="hidden font-mono text-xs tracking-[0.2em] text-secondary-400 uppercase transition-colors hover:text-secondary-300 sm:inline"
                     >
                         SIGLENS
                     </Link>
-                    <span className="text-secondary-500">/</span>
+                    <span className="hidden text-secondary-500 sm:inline">
+                        /
+                    </span>
                     {/* 종목 브레드크럼은 5개 sibling 페이지(/[symbol], /news,
                         /fundamental, /options, /overall, /fear-greed)에 공통으로
                         렌더되므로 h1으로 두면 페이지별 sr-only h1과 충돌해 페이지당
                         h1이 2개가 된다. 페이지마다 실제 주제가 다르므로 페이지 h1을
                         살리고, 여기는 시각 스타일만 유지한 채 의미론적 위계에서는
                         제외한다. role 미부여(plain span)로 두면 layout banner 영역의
-                        breadcrumb 정도로 처리되어 의도와 일치한다. */}
-                    <span className="truncate text-lg font-semibold tracking-wide text-secondary-100">
+                        breadcrumb 정도로 처리되어 의도와 일치한다.
+
+                        모바일은 최대 2줄까지 줄바꿈한다(`line-clamp-2`, text-base) —
+                        2줄 높이(40px)가 컨트롤(size-11 = 44px)보다 작아 헤더 높이,
+                        곧 `--symbol-chrome-h`는 그대로다. sm 이상은 기존의 한 줄 말줄임. */}
+                    <span className="line-clamp-2 text-base leading-tight font-semibold tracking-wide text-secondary-100 sm:line-clamp-none sm:truncate sm:text-lg">
                         {showKoreanName && (
                             <span className="text-secondary-300">
                                 {assetInfo.koreanName}
-                                {hasCompanyName ? ', ' : ' '}
                             </span>
                         )}
-                        {assetInfo && hasCompanyName && (
-                            <span className="text-secondary-200">
-                                {assetInfo.name}{' '}
-                            </span>
-                        )}
+                        {/* 한국어명이 앞서는 경우 영문명(과 앞의 ", ")은 sm 이상에서만
+                            보인다 — 모바일은 "애플 (AAPL)". 한국어명이 없으면 영문명이
+                            곧 종목명이라 항상 보인다. 쉼표를 영문명과 같은 span에 두지
+                            않고 바깥 래퍼에 둬서, 영문명 텍스트가 자기 노드로 남게 한다. */}
+                        {assetInfo &&
+                            hasCompanyName &&
+                            (showKoreanName ? (
+                                <span className="hidden sm:inline">
+                                    ,{' '}
+                                    <span className="text-secondary-200">
+                                        {assetInfo.name}
+                                    </span>
+                                </span>
+                            ) : (
+                                <span className="text-secondary-200">
+                                    {assetInfo.name}
+                                </span>
+                            ))}{' '}
                         ({ticker})
                     </span>
                     {/* 칩은 서버가 계산한 스냅샷을 그대로 렌더하는 순수 컴포넌트다 —

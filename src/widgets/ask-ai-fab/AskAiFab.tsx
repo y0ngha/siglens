@@ -32,6 +32,9 @@ export async function AskAiFab({ name, localePrefix }: AskAiFabProps) {
             target="_blank"
             rel="noopener"
             aria-label={t('ariaLabel')}
+            // 모바일 분석 시트가 HALF/FULL로 펼쳐지면 globals.css가 이 속성으로
+            // 버튼을 숨긴다(`MobileAnalysisSheet`의 data-sheet-expanded 참고).
+            data-ask-ai-fab
             className="fixed right-4 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-60 inline-flex min-h-11 items-center gap-2 rounded-full bg-primary-600 px-4 text-sm font-medium text-white shadow-lg transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none md:right-6 md:bottom-6"
         >
             {/* 별 아이콘은 "즐겨찾기"로 오독된다 — AI 스파클(두 개의 다이아몬드)로

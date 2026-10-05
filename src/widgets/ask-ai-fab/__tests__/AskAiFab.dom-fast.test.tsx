@@ -23,6 +23,12 @@ describe('AskAiFab', () => {
         expect(link).toHaveAttribute('href', aiAskUrl('/', expectedQuestion));
     });
 
+    it('모바일 시트가 펼쳐질 때 CSS가 숨길 수 있게 data-ask-ai-fab 속성을 단다', async () => {
+        await renderFab('애플', '/');
+
+        expect(screen.getByRole('link')).toHaveAttribute('data-ask-ai-fab');
+    });
+
     it('새 탭으로 열린다 (target=_blank, rel=noopener)', async () => {
         await renderFab('애플', '/');
 
