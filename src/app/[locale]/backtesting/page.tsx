@@ -116,6 +116,7 @@ export async function generateMetadata({
 /**
  * @param t      `shared.seo` 번역자 — `backtestingTitle`/`backtestingDescription`이 쓴다.
  * @param tPage  `app.backtesting.seo` 번역자 — Dataset 전용 문구가 쓴다.
+ * @param breadcrumbLabel  화면 브레드크럼과 `BreadcrumbList`가 함께 쓰는 짧은 이름.
  *
  * **번역자를 둘 받는다.** 예전에는 `t` 하나로 `t('datasetName')`까지 불렀는데,
  * 그 키는 `app.backtesting.seo` 아래에 있어 `shared.seo.datasetName`을 찾다
@@ -127,6 +128,7 @@ export async function generateMetadata({
 function buildBacktestingJsonLd(
     t: SeoTranslator,
     tPage: SeoTranslator,
+    breadcrumbLabel: string,
     locale: Locale
 ) {
     const title = backtestingTitle(t);
@@ -144,7 +146,7 @@ function buildBacktestingJsonLd(
             }),
         },
         breadcrumbJsonLd: buildBreadcrumbJsonLd(
-            [{ name: title, url: BACKTESTING_URL }],
+            [{ name: breadcrumbLabel, url: BACKTESTING_URL }],
             locale
         ),
         datasetJsonLd: {
@@ -206,10 +208,14 @@ export default async function BacktestingPage({
     const locale = enterLocale(rawLocale);
     const t = await getTranslations('app.backtesting');
     const tSeo = await getTranslations('shared.seo');
+    // 브레드크럼 마디는 `<title>`용 긴 제목(`AI 백테스팅 — …`)이 아니라 짧은 이름이다.
+    // 화면에 보이는 마디와 `BreadcrumbList`의 `name`이 같아야 구글이 마크업을 무시하지 않는다.
+    const breadcrumbLabel = t('breadcrumb');
     const { webPageJsonLd, breadcrumbJsonLd, datasetJsonLd } =
         buildBacktestingJsonLd(
             tSeo,
             await getTranslations('app.backtesting.seo'),
+            breadcrumbLabel,
             locale
         );
     return (
@@ -224,7 +230,7 @@ export default async function BacktestingPage({
                 <div className="px-6 pt-6">
                     {/* 가시 브레드크럼 — 텍스트가 BreadcrumbList JSON-LD의 `name`과
                         같아야 구글이 마크업을 무시하지 않는다. */}
-                    <Breadcrumb trail={[{ label: backtestingTitle(tSeo) }]} />
+                    <Breadcrumb trail={[{ label: breadcrumbLabel }]} />
                 </div>
                 <BacktestHero stats={STATS} />
                 <BacktestMethodology />

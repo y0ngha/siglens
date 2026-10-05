@@ -9,6 +9,7 @@ import { NEWS_LIST_PERIOD_KEY } from '@/shared/lib/news/periodLabels';
 import { useState } from 'react';
 import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
 import { NewsCardShell } from '@/shared/ui/NewsCardShell';
+import { NewsCategoryBadge } from '@/shared/ui/NewsCategoryBadge';
 import { Spinner } from '@/shared/ui/Spinner';
 import { NEWS_LIST_PAGE_SIZE } from '@/shared/config/newsSerialization';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
@@ -205,6 +206,7 @@ function NewsCard({ item }: { item: NewsDisplayItem }) {
     return (
         <NewsCardShell
             title={resolveNewsTitle(item, locale)}
+            fallbackTitle={item.source}
             isHighImpact={isHighImpact}
             pending={pending}
             url={item.url}
@@ -218,11 +220,10 @@ function NewsCard({ item }: { item: NewsDisplayItem }) {
                     {item.priceImpact !== null && (
                         <ImpactBadge value={item.priceImpact} />
                     )}
-                    {item.category !== null && (
-                        <span className="rounded bg-secondary-700 px-2 py-0.5 text-xs text-secondary-400">
-                            {item.category}
-                        </span>
-                    )}
+                    <NewsCategoryBadge
+                        value={item.category}
+                        className="text-secondary-400"
+                    />
                     <time
                         dateTime={item.publishedAt}
                         className="text-xs text-secondary-400"

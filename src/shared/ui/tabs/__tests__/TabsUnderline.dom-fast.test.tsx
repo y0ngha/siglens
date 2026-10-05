@@ -9,6 +9,24 @@ const tabs = [
 ] as const;
 
 describe('TabsUnderline', () => {
+    it('xs 탭 버튼은 12px(text-xs)이고 10px 임의 크기를 쓰지 않는다', () => {
+        render(
+            <TabsUnderline
+                tabs={tabs}
+                activeTab="overview"
+                onChange={vi.fn()}
+                ariaLabel="Navigation"
+                size="xs"
+            />
+        );
+        for (const tab of screen.getAllByRole('tab')) {
+            expect(tab).toHaveClass('text-xs');
+            expect(tab.className).not.toMatch(/text-\[\d+px\]/);
+            // 터치 영역: 세로 패딩이 유지돼 24px 기준을 넘는다.
+            expect(tab).toHaveClass('py-2.5');
+        }
+    });
+
     it('renders a tablist with all tabs', () => {
         render(
             <TabsUnderline

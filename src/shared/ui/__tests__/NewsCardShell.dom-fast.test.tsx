@@ -59,17 +59,119 @@ describe('NewsCardShell', () => {
         expect(screen.queryByTestId('body-section')).not.toBeInTheDocument();
     });
 
-    it('pending=false일 때 원문 링크를 렌더한다', () => {
-        render(<NewsCardShell {...defaultProps} pending={false} />);
-        const link = screen.getByRole('link', { name: /원문 보기/ });
-        expect(link).toHaveAttribute('href', 'https://example.com/news/1');
-        expect(link).toHaveAttribute('target', '_blank');
-        expect(link).toHaveAttribute('rel', 'noopener noreferrer');
-    });
+    describe('제목 stretched link', () => {
+        it('제목이 원문으로 가는 새 탭 링크다 (h3 안의 a)', () => {
+            render(<NewsCardShell {...defaultProps} pending={false} />);
+            const link = screen.getByRole('link', {
+                name: /테스트 뉴스 제목/,
+            });
+            expect(link).toHaveAttribute('href', 'https://example.com/news/1');
+            expect(link).toHaveAttribute('target', '_blank');
+            expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+            expect(link.closest('h3')).toBe(
+                screen.getByRole('heading', { level: 3 })
+            );
+        });
 
-    it('pending=true일 때 원문 링크를 렌더하지 않는다', () => {
-        render(<NewsCardShell {...defaultProps} pending={true} />);
-        expect(screen.queryByRole('link')).not.toBeInTheDocument();
+        it('링크 이름에 새 탭 안내가 스크린리더용으로 붙는다', () => {
+            render(<NewsCardShell {...defaultProps} />);
+            const link = screen.getByRole('link');
+            expect(link).toHaveAccessibleName('테스트 뉴스 제목 (새 탭)');
+            expect(link.querySelector('.sr-only')).toHaveTextContent('(새 탭)');
+        });
+
+        it('::after가 relative인 article 전체를 덮는다', () => {
+            const { container } = render(<NewsCardShell {...defaultProps} />);
+            expect(container.firstChild).toHaveClass('relative');
+            const link = screen.getByRole('link');
+            expect(link).toHaveClass(
+                'after:absolute',
+                'after:inset-0',
+                "after:content-['']"
+            );
+            // 링크 자신이 positioned면 ::after가 제목 크기로 갇힌다.
+            expect(link).not.toHaveClass('relative');
+            expect(link).not.toHaveClass('absolute');
+        });
+
+        it('분석 중(pending)에도 제목은 링크다', () => {
+            render(<NewsCardShell {...defaultProps} pending={true} />);
+            expect(
+                screen.getByRole('link', { name: /테스트 뉴스 제목/ })
+            ).toHaveAttribute('href', 'https://example.com/news/1');
+        });
+
+        it('링크가 제목 하나뿐이다 — 하단 "원문 보기"는 링크가 아니다', () => {
+            render(<NewsCardShell {...defaultProps} pending={false} />);
+            expect(screen.getAllByRole('link')).toHaveLength(1);
+            const cue = screen.getByText('원문 보기 →', { ignore: 'none' });
+            expect(cue.closest('a')).toBeNull();
+            expect(cue).toHaveAttribute('aria-hidden', 'true');
+        });
+
+        it('분석 중에는 하단 "원문 보기" 단서를 그리지 않는다', () => {
+            render(<NewsCardShell {...defaultProps} pending={true} />);
+            expect(screen.queryByText('원문 보기 →')).not.toBeInTheDocument();
+        });
+
+        it('a 안에 a를 중첩하지 않는다 (티커 칩 같은 슬롯 링크는 형제)', () => {
+            const { container } = render(
+                <NewsCardShell
+                    {...defaultProps}
+                    tickerChipSlot={
+                        <a
+                            href="https://example.com/chip"
+                            className="relative z-10"
+                        >
+                            AAPL
+                        </a>
+                    }
+                />
+            );
+            expect(container.querySelectorAll('a a')).toHaveLength(0);
+            expect(container.querySelectorAll('a')).toHaveLength(2);
+        });
+
+        it('제목이 없으면 출처 이름을 링크 텍스트로 쓴다 (stretched link 유지)', () => {
+            render(
+                <NewsCardShell
+                    {...defaultProps}
+                    title={null}
+                    fallbackTitle="Reuters"
+                />
+            );
+            const link = screen.getByRole('link', { name: /Reuters/ });
+            expect(link).toHaveAttribute('href', 'https://example.com/news/1');
+            expect(link).toHaveClass('after:absolute', 'after:inset-0');
+            expect(link.closest('h3')).not.toBeNull();
+        });
+
+        it('빈 문자열 제목도 같은 폴백을 쓴다', () => {
+            render(
+                <NewsCardShell
+                    {...defaultProps}
+                    title=""
+                    fallbackTitle="Reuters"
+                />
+            );
+            expect(
+                screen.getByRole('link', { name: /Reuters/ })
+            ).toBeInTheDocument();
+        });
+
+        it('제목도 출처도 없으면 URL 호스트를 쓴다', () => {
+            render(<NewsCardShell {...defaultProps} title={null} />);
+            expect(
+                screen.getByRole('link', { name: /example\.com/ })
+            ).toHaveAttribute('href', 'https://example.com/news/1');
+        });
+
+        it('제목·출처가 없고 URL도 파싱되지 않으면 링크를 그리지 않는다', () => {
+            render(
+                <NewsCardShell {...defaultProps} title={null} url="not a url" />
+            );
+            expect(screen.queryByRole('link')).not.toBeInTheDocument();
+        });
     });
 
     it('isHighImpact=true일 때 amber border 클래스를 article에 적용한다', () => {
@@ -103,8 +205,10 @@ describe('NewsCardShell', () => {
         expect(screen.queryByTestId('ticker-chip')).not.toBeInTheDocument();
     });
 
-    it('title이 null이면 h3를 빈 내용으로 렌더한다', () => {
-        render(<NewsCardShell {...defaultProps} title={null} />);
+    it('제목·출처·호스트가 모두 없으면 h3를 빈 내용으로 렌더한다', () => {
+        render(
+            <NewsCardShell {...defaultProps} title={null} url="not a url" />
+        );
         const heading = screen.getByRole('heading', { level: 3 });
         expect(heading).toBeEmptyDOMElement();
     });

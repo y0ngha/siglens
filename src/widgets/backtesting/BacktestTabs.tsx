@@ -16,10 +16,8 @@ const TABS_ID_PREFIX = 'backtest';
 
 export function BacktestTabs({ cases, tickers }: BacktestTabsProps) {
     const t = useTranslations('widgets.backtesting');
-    const { tabItems, activeTab, setActiveTab, filtered } = useBacktestFilter(
-        cases,
-        tickers
-    );
+    const { tabItems, activeTab, setActiveTab, filtered, isFiltered } =
+        useBacktestFilter(cases, tickers);
 
     return (
         <div>
@@ -37,7 +35,8 @@ export function BacktestTabs({ cases, tickers }: BacktestTabsProps) {
                 role="tabpanel"
                 aria-labelledby={buildTabId(TABS_ID_PREFIX, activeTab)}
             >
-                <BacktestCaseList cases={filtered} />
+                {/* 종목을 골랐으면 그 종목의 케이스를 월 접힘 없이 전부 보여 준다. */}
+                <BacktestCaseList cases={filtered} openAll={isFiltered} />
             </div>
         </div>
     );

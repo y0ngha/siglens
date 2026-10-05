@@ -58,6 +58,74 @@ describe('FmpMarketNewsClient.fetchCategoryNews는', () => {
         expect(items[0].titleEn).toBe('BTC up');
     });
 
+    describe('로펌 원고 모집 보도자료 필터', () => {
+        const SOLICITATION =
+            'ROSEN, A LEADING INVESTOR RIGHTS FIRM, Encourages Apple Inc. Investors to Secure Counsel Before Important Deadline in Securities Class Action';
+
+        it('latest 피드(general/stock/…)에서 걸러내고 정상 기사는 남긴다', async () => {
+            mockFetchOnce([
+                {
+                    symbol: 'AAPL',
+                    publishedDate: '2026-06-15 10:00:00',
+                    title: SOLICITATION,
+                    text: 'ad',
+                    site: 'GlobeNewswire',
+                    url: 'https://x.com/rosen',
+                },
+                {
+                    symbol: 'AAPL',
+                    publishedDate: '2026-06-15 11:00:00',
+                    title: 'Apple reports record quarter',
+                    text: 'body',
+                    site: 'Reuters',
+                    url: 'https://x.com/aapl',
+                },
+                {
+                    symbol: 'BA',
+                    publishedDate: '2026-06-15 12:00:00',
+                    title: 'Boeing settles shareholder class action',
+                    text: 'body',
+                    site: 'Reuters',
+                    url: 'https://x.com/ba',
+                },
+            ]);
+            const items = await new FmpMarketNewsClient().fetchCategoryNews(
+                'stock',
+                MARKET_NEWS_LOOKBACK_MS
+            );
+            expect(items.map(i => i.url)).toEqual([
+                'https://x.com/aapl',
+                'https://x.com/ba',
+            ]);
+        });
+
+        it('articles 피드에서도 걸러낸다', async () => {
+            mockFetchOnce([
+                {
+                    title: SOLICITATION,
+                    date: '2026-06-15 10:00:00',
+                    content: 'ad',
+                    tickers: 'NASDAQ:AAPL',
+                    link: 'https://x.com/rosen-article',
+                    site: 'GlobeNewswire',
+                },
+                {
+                    title: 'How to read a balance sheet',
+                    date: '2026-06-15 11:00:00',
+                    content: 'body',
+                    tickers: '',
+                    link: 'https://x.com/guide',
+                    site: 'FMP',
+                },
+            ]);
+            const items = await new FmpMarketNewsClient().fetchCategoryNews(
+                'articles',
+                MARKET_NEWS_LOOKBACK_MS
+            );
+            expect(items.map(i => i.url)).toEqual(['https://x.com/guide']);
+        });
+    });
+
     it('lookback 이전 기사는 제외한다', async () => {
         vi.spyOn(Date, 'now').mockReturnValue(
             new Date('2026-06-16T00:00:00Z').getTime()

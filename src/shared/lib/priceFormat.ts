@@ -237,6 +237,26 @@ export function signColorClass(value: number): string {
     return value >= 0 ? 'text-ui-success-text' : 'text-ui-danger-text';
 }
 
+/** 지수 심볼의 접두 문자(`^GSPC`, `^KS11`, `^VIX`). */
+const INDEX_SYMBOL_PREFIX = '^';
+
+/**
+ * 시세 카드에서 가격 앞에 붙일 통화 기호를 고른다.
+ *
+ * 지수 값은 **통화가 아니라 포인트**다 — `S&P 500 $6,740`·`KOSPI ₩2,650`·`VIX $18.3`은
+ * 달러·원으로 읽혀 틀린 말이다. 공급자 심볼이 `^`로 시작하면(지수) 기호를 붙이지 않는다.
+ * 환율(`KRW=X`)과 ETF·종목은 그 시장의 통화로 표시한다.
+ *
+ * @param providerSymbol - 시세 공급자 심볼(`IndexTicker.fmpSymbol`). 지수는 `^…`.
+ * @param scopeCurrency - 시장 범위의 통화 기호(`DashboardScope.currencySymbol`).
+ */
+export function quotePrefixFor(
+    providerSymbol: string,
+    scopeCurrency: string
+): string {
+    return providerSymbol.startsWith(INDEX_SYMBOL_PREFIX) ? '' : scopeCurrency;
+}
+
 export function formatPriceChange(percent: number): PriceChangeDisplay {
     const isUp = percent >= 0;
     return {

@@ -60,7 +60,7 @@ function StatCard({ value, label, valueClassName, subLabel }: StatCardProps) {
                 바닥선을 맞추려면 한 줄치 높이를 항상 예약해야 한다. */}
             <div
                 data-testid="stat-sub-label"
-                className="mt-0.5 min-h-4 text-[0.6875rem] text-secondary-500"
+                className="mt-0.5 min-h-4 text-xs text-secondary-500"
             >
                 {subLabel}
             </div>
@@ -77,7 +77,7 @@ export function BacktestHero({ stats }: BacktestHeroProps) {
     return (
         <header className="border-b border-secondary-700 py-10 text-center">
             <div className="page-container">
-                <p className="mb-2 font-mono text-[0.6875rem] tracking-[0.14em] text-secondary-400 uppercase">
+                <p className="mb-2 font-mono text-xs tracking-[0.14em] text-secondary-400 uppercase">
                     BACKTESTING RESULTS · {period}
                 </p>
                 <h1 className="mb-3 text-2xl font-bold text-balance text-secondary-50 sm:text-3xl">
