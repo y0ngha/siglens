@@ -247,11 +247,16 @@ export const NOINDEX_SYMBOL_METADATA: Metadata = {
  * displayName이 티커로 폴백해 동작은 같고, 있으면 description이 사명까지 담는다.
  */
 /**
- * Tabs that have their own SEO copy builder. Mirrors `SeoSnapshotTab`
- * (`entities/seo-snapshot`), which `shared` may not import — the builders live
- * here, so the union is declared here and the entity's values flow in.
- * `technical` is the chart route (the symbol root), whose copy is the base
- * {@link buildSymbolSeoContent}.
+ * Tabs that have their own SEO copy builder. The seven snapshot tabs mirror
+ * `SeoSnapshotTab` (`entities/seo-snapshot`), which `shared` may not import —
+ * the builders live here, so the union is declared here and the entity's
+ * values flow in. `technical` is the chart route (the symbol root), whose copy
+ * is the base {@link buildSymbolSeoContent}.
+ *
+ * `fear-greed`는 스냅샷 탭이 아니지만 자기 제목 카피가 있다. 여기 없으면 점수가 안 나와
+ * noindex로 막힌 공포·탐욕 페이지가 차트 탭 제목을 그대로 써 한 종목에 같은 title이
+ * 두 개가 된다(2026-10-05 운영 재크롤: TOSCF·SLROF). 스냅샷 탭과 갈라야 하는 곳은
+ * `isSeoSnapshotTab`(entities/seo-snapshot)으로 거른다.
  */
 export type SymbolSeoTab =
     | 'technical'
@@ -260,7 +265,8 @@ export type SymbolSeoTab =
     | 'financials'
     | 'congress'
     | 'news'
-    | 'options';
+    | 'options'
+    | 'fear-greed';
 
 /**
  * 탭별 `titleCore` 카탈로그 키 — 자산군 분기가 있는 탭만 `crypto`를 갖는다.
@@ -290,6 +296,8 @@ const SYMBOL_TAB_LABEL_KEYS: Record<
         crypto: 'symbol.cryptoNews.titleCore',
     },
     options: { equity: 'symbol.options.titleCore' },
+    // 크립토 빌더도 같은 키를 쓴다(`buildCryptoSymbolFearGreedSeoContent`).
+    'fear-greed': { equity: 'symbol.fearGreed.titleCore' },
 };
 
 /**
@@ -328,6 +336,7 @@ const SYMBOL_SEO_TAB_BUILDERS: Record<
     congress: buildSymbolCongressSeoContent,
     news: buildSymbolNewsSeoContent,
     options: buildSymbolOptionsSeoContent,
+    'fear-greed': buildSymbolFearGreedSeoContent,
 };
 
 export interface NoindexSymbolMetadataOptions extends BuildSymbolSeoOptions {
@@ -336,8 +345,8 @@ export interface NoindexSymbolMetadataOptions extends BuildSymbolSeoOptions {
      * repeats the chart page's title and description, which Naver Search
      * Advisor reports as duplicate `<title>`/`<meta name="description">`
      * documents (2026-09-17: `/QQQ/financials` carried the `/QQQ` title).
-     * Omit on routes with no tab copy (`fear-greed`, `position`) — they keep
-     * the base symbol copy.
+     * Omit on routes with no tab copy (`position`) — they keep the base
+     * symbol copy.
      */
     tab?: SymbolSeoTab;
 }

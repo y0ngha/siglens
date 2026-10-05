@@ -101,6 +101,7 @@ describe('getBlockedSymbolMetadata', () => {
             'congress',
             'news',
             'options',
+            'fear-greed',
         ] as const satisfies readonly SymbolSeoTab[];
         const blockedFor = async (tab: SymbolSeoTab): Promise<Metadata> =>
             (await getBlockedSymbolMetadata({
@@ -119,7 +120,7 @@ describe('getBlockedSymbolMetadata', () => {
         expect(new Set(titles).size).toBe(titles.length);
         const descriptions = results.map(m => m.description);
         expect(new Set(descriptions).size).toBe(descriptions.length);
-        // 탭 없는 라우트(fear-greed/position)는 기존대로 기본 심볼 카피를 쓴다.
+        // 탭 없는 라우트(position)는 기존대로 기본 심볼 카피를 쓴다.
         const tabless = (await getBlockedSymbolMetadata({
             symbol: 'QQQ',
             assetInfo: ASSET_INFO,
@@ -338,10 +339,10 @@ describe('getBlockedSymbolMetadata', () => {
         expectBlockedWithOwnIdentity(result, 'AAPL');
     });
 
-    // fear-greed/position pass no `tab` — the DB read must be skipped entirely
+    // position passes no `tab` — the DB read must be skipped entirely
     // and hasSnapshot must stay undefined so the existing degraded→noindex
     // behavior is preserved (never flipped indexable by another tab's row).
-    it('skips the DB read entirely and keeps hasSnapshot=undefined when no tab is given (fear-greed/position)', async () => {
+    it('skips the DB read entirely and keeps hasSnapshot=undefined when no tab is given (position)', async () => {
         mockEvaluateSymbolIndexability.mockReturnValue({
             indexable: false,
             reason: 'degraded',
@@ -364,5 +365,37 @@ describe('getBlockedSymbolMetadata', () => {
             hasSnapshot: undefined,
         });
         expectBlockedWithOwnIdentity(result, 'AAPL');
+    });
+
+    // fear-greed는 제목 카피용 탭이다 — 스냅샷 탭이 아니므로 degraded여도 DB를 읽지 않고,
+    // 차단 메타는 차트 탭이 아니라 공포·탐욕 제목을 쓴다(2026-10-05 TOSCF·SLROF 중복 title).
+    it('fear-greed tab skips the DB read but blocks with its own title, not the chart title', async () => {
+        mockEvaluateSymbolIndexability.mockReturnValue({
+            indexable: false,
+            reason: 'no-price-data',
+        });
+        const input = {
+            symbol: 'AAPL',
+            assetInfo: ASSET_INFO,
+            degraded: true,
+            locale: 'ko' as const,
+            revalidateSeconds: 86400,
+        };
+
+        const fearGreed = (await getBlockedSymbolMetadata({
+            ...input,
+            tab: 'fear-greed',
+        }))!;
+        const chart = (await getBlockedSymbolMetadata({
+            ...input,
+            tab: 'technical',
+            degraded: false,
+        }))!;
+
+        expect(mockGetSeoSnapshotsStatic).not.toHaveBeenCalled();
+        const titleOf = (m: Metadata): string =>
+            (m.title as { absolute: string }).absolute;
+        expect(titleOf(fearGreed)).not.toBe(titleOf(chart));
+        expect(titleOf(fearGreed)).toContain('공포 탐욕');
     });
 });
