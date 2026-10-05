@@ -158,7 +158,7 @@ interface LatestIndicatorsView {
     /**
      * RSI(2), 1Day only (`null` elsewhere or below 200 bars). Core computes it
      * inside `evaluatePullback`, not in `IndicatorResult`; it is surfaced here
-     * so it survives when the washout reading is `none` and `pullback` is null.
+     * so it survives when the sell-off reading is `none` and `pullback` is null.
      */
     rsi2: number | null;
 }
@@ -323,7 +323,7 @@ interface PullbackView {
     williamsR: number;
     rsi2: number | null;
     closeVsMa200Pct: number;
-    /** The measured exit reference: the washout is treated as resolved on the first daily close above it. */
+    /** The measured exit reference: the sell-off is treated as resolved on the first daily close above it. */
     ma5: number | null;
     /**
      * What the reading has historically meant. Carried in the tool result so the
@@ -334,12 +334,12 @@ interface PullbackView {
 }
 
 /**
- * The short-term washout reading siglens-trader switched to on 2026-09-24,
+ * The short-term sell-off reading siglens-trader switched to on 2026-09-24,
  * re-measured on independent data for siglens
  * (docs/superpowers/specs/2026-09-25-mean-reversion-evidence-design.md).
  * Classification, thresholds and base-rate wording all live in core
  * (`evaluatePullback`, `PULLBACK_BASE_RATES`) — the same reading the analysis
- * prompt renders as `### Short-Term Washout`, so the chat and the analysis
+ * prompt renders as `### Short-term sell-off check (computed, 1Day bars)`, so the chat and the analysis
  * page cannot drift apart. The field names are the contract core's
  * `get_bars_indicators` tool description promises the model.
  *
@@ -356,7 +356,7 @@ function pullbackSnapshot(
 }
 
 /**
- * The model-facing washout block. **`none` is `null`** (2026-10-03): with a
+ * The model-facing sell-off block. **`none` is `null`** (2026-10-03): with a
  * `{reading: 'none', …}` block in hand the model reported it anyway ("워시오프
  * 판독은 없음입니다. Williams %R …") despite the prompt saying to reflect only a
  * lit reading — the same lesson as the confluence rule states: the model cannot

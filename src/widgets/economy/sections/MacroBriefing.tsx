@@ -1,7 +1,10 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import type { MacroBriefingResponse } from '@y0ngha/siglens-core';
+import type {
+    MacroBriefingCacheEntry,
+    MacroBriefingResponse,
+} from '@y0ngha/siglens-core';
 
 import { cn } from '@/shared/lib/cn';
 import { formatKoreanDateTime } from '@/shared/lib/formatKoreanDateTime';
@@ -30,12 +33,12 @@ const REGIME_COLORS: Record<MacroBriefingResponse['regime'], string> = {
 };
 
 interface MacroBriefingProps {
-    peekSeed: MacroBriefingResponse | null;
+    peekSeed: MacroBriefingCacheEntry | null;
 }
 
 interface MacroBriefingViewProps {
     briefing: MacroBriefingResponse;
-    /** null when displaying peekSeed before the real generatedAt is available from the server. */
+    /** null only for a legacy cache/seed entry stored without a generation time. */
     generatedAt: string | null;
 }
 

@@ -2,7 +2,7 @@ import 'server-only';
 import { revalidateTag } from 'next/cache';
 import {
     peekBriefingCache,
-    peekMacroBriefingCache,
+    peekMacroBriefingCacheEntry,
     peekMarketNewsDigestCache,
     runBriefing,
     runMacroBriefing,
@@ -426,18 +426,20 @@ function macroBriefingTarget(now: () => number): HubTarget {
         run: async () => {
             const snapshot = await getEconomySnapshot();
             await repairDegradedEconomySnapshot(snapshot);
-            const peek = () => peekMacroBriefingCache(snapshot);
+            const peek = () => peekMacroBriefingCacheEntry(snapshot);
+            // seed에는 본문과 함께 생성 시각을 둔다 — 화면이 seed로 그려진 브리핑에도
+            // "생성 시각"을 보여 준다. RSS 스탬프 해시는 본문(briefing)만 대조한다.
             const cached = await peek();
             if (cached !== null) {
                 await writeHubSsrSeed(MACRO_BRIEFING_SEED_SURFACE, cached);
-                await stampBody(RSS_ECONOMY_SURFACE, cached, now);
+                await stampBody(RSS_ECONOMY_SURFACE, cached.briefing, now);
                 return 'alreadyFresh';
             }
             await runMacroBriefing(snapshot);
             const readBack = await readBackWithRetry(peek);
             if (readBack === null) return 'keyMismatch';
             await writeHubSsrSeed(MACRO_BRIEFING_SEED_SURFACE, readBack);
-            await stampBody(RSS_ECONOMY_SURFACE, readBack, now);
+            await stampBody(RSS_ECONOMY_SURFACE, readBack.briefing, now);
             return 'generated';
         },
     };

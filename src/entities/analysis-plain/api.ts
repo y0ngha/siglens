@@ -288,6 +288,11 @@ export async function rewriteToPlainLanguage(
     /** 현재 주가. payload에 값이 없는 분석 타입에서 특히 중요하다. */
     currentPrice?: number,
     /**
+     * 가격 기준 시점 문구(`resolvePriceAsOf`). 호출자가 시장 세션에서 만들어 넘긴다.
+     * 생략하면 프롬프트에 기준 시점이 없어 모델이 읽는 시점에 기대어 쓸 수 있다.
+     */
+    asOf?: string,
+    /**
      * 마감(ms). 생략하면 `PLAIN_DEADLINE_MS`(15초) — 사용자가 화면 앞에서
      * 기다리는 SSE 경로가 이 기본값을 쓴다. 기다리는 사람이 없는 호출자
      * (프리웜 크론)만 더 긴 값을 넘긴다. 자세한 근거는 각 호출부 주석 참고.
@@ -330,12 +335,15 @@ export async function rewriteToPlainLanguage(
             symbol,
             currency,
             locale,
-            currentPrice
+            currentPrice,
+            asOf
         );
-        const allowed = buildAllowedNumbers(
-            facts.numbers,
-            entries.map(e => e.text)
-        );
+        // `facts.asOf`도 숫자 출처로 넘긴다 — 날짜(`9월 29일`)의 숫자가 허용 집합에 없으면
+        // 모델이 그 날짜를 옮기는 순간 숫자 가드가 근거 없는 숫자로 볼 수 있다.
+        const allowed = buildAllowedNumbers(facts.numbers, [
+            ...entries.map(e => e.text),
+            ...(facts.asOf !== undefined ? [facts.asOf] : []),
+        ]);
 
         const basePrompt = buildPlainPrompt({ entries, facts, locale });
         const inputDigest = buildInputDigest(basePrompt);
@@ -361,6 +369,28 @@ export async function rewriteToPlainLanguage(
             repository
                 ?.insert(PLAIN_PROMPT_VERSION, locale, inputDigest, text)
                 .catch(() => undefined);
+        };
+
+        /**
+         * 연성 실패(`stale_deixis`)로 거부된 **첫 시도의 글**. 숫자·문자·조언 가드는 모두
+         * 통과한 글이라 재시도가 실패해도 쓸 수 있다 — 재시도가 경성 위반으로 끝나 도려내기마저
+         * `null`이거나, 마감을 넘기거나, 던져도 쉽게보기가 통째로 사라지지 않게 붙들어 둔다.
+         */
+        let softFallback: string | null = null;
+
+        const acceptSoft = (
+            text: string,
+            tokens: readonly string[]
+        ): string => {
+            // 연성 실패 — 시점 표현이 거칠 뿐 내용이 틀린 글이 아니라, 버리면 쉽게보기가
+            // 통째로 사라진다. 그대로 받아들여 저장한다.
+            console.info('[analysisPlain] accepted with stale deixis', {
+                symbol,
+                locale,
+                tokens,
+            });
+            writeStored(text);
+            return text;
         };
 
         const attempt = async (retryHint?: string): Promise<string | null> => {
@@ -402,6 +432,16 @@ export async function rewriteToPlainLanguage(
                 tokens: 'tokens' in failure ? failure.tokens : undefined,
             });
             if (retryHint === undefined) {
+                if (failure.kind === 'stale_deixis') {
+                    // 한 번만 다시 쓰게 한다. 재시도가 아무것도 못 돌려주면(경성 위반 +
+                    // 도려내기 실패, 프로바이더 오류) 이 첫 글을 받아들인다. 마감 초과는
+                    // 이 함수 바깥(`withDeadline` 뒤)에서 같은 값으로 물러난다.
+                    softFallback = text;
+                    const retried = await attempt(
+                        describeFailure(failure, locale)
+                    ).catch(() => null);
+                    return retried ?? acceptSoft(text, failure.tokens);
+                }
                 const salvagedFirst = salvageBeforeRetry(
                     text,
                     failure,
@@ -426,6 +466,11 @@ export async function rewriteToPlainLanguage(
                     return salvagedFirst.text;
                 }
                 return attempt(describeFailure(failure, locale));
+            }
+
+            // 재시도 뒤에도 시점 표현이 남았다 — 한 번 더 부르지 않고 받아들인다.
+            if (failure.kind === 'stale_deixis') {
+                return acceptSoft(text, failure.tokens);
             }
 
             /**
@@ -460,7 +505,10 @@ export async function rewriteToPlainLanguage(
             return salvaged;
         };
 
-        return await withDeadline(attempt(), deadlineMs);
+        const result = await withDeadline(attempt(), deadlineMs);
+        // 마감을 넘겼는데 첫 글이 연성 실패뿐이었다면 그 글을 돌려준다. 저장은 하지 않는다 —
+        // 늦게 끝나는 재시도가 스스로 더 나은 글이나 이 첫 글을 저장한다(`attempt()` 내부).
+        return result ?? softFallback;
     } catch (error) {
         // 조용히 삼키지 않는다 — 키 오설정이나 모델 장애가 전 사용자에게 쉽게보기를
         // 없애는데 화면에는 아무 에러도 안 뜬다(원본이 나온다).

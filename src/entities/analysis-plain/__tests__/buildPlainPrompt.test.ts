@@ -48,8 +48,38 @@ describe('buildPlainPrompt', () => {
         expect(prompt).not.toContain('손절 기준이나 목표 가격');
     });
 
-    it('프롬프트 버전은 v15다', () => {
-        expect(PLAIN_PROMPT_VERSION).toBe('v15');
+    it('프롬프트 버전은 v16이다', () => {
+        expect(PLAIN_PROMPT_VERSION).toBe('v16');
+    });
+
+    /**
+     * 평이화 글은 저장·색인되어 며칠 뒤에도 읽힌다. "지금 329.4달러"처럼 읽는 시점에
+     * 기대어 쓰면 그 문장이 오래된 값을 "지금"으로 남긴다. 규칙은 문장이 아니라 범주로
+     * 적는다 — 이 프롬프트의 예시는 출력으로 샌다(v15 이력).
+     */
+    it('가격에 읽는 시점에 기대는 말을 붙이지 말고 facts.asOf를 앞세우라고 범주로 지시한다', () => {
+        const prompt = buildPlainPrompt({
+            entries: [{ path: 'summary', text: '테스트 산문' }],
+            facts: { symbol: 'AAPL', numbers: [] },
+            locale: 'ko',
+        });
+        const rules = prompt.slice(0, prompt.indexOf('prose:'));
+
+        expect(rules).toContain('지금, 현재, 오늘, 이번 주');
+        expect(rules).toContain('facts.asOf');
+        expect(rules).toContain(
+            'facts.currentPrice가 있으면 글 앞부분에서 facts.asOf 기준 주가'
+        );
+        // 옛 규칙("지금 주가가 얼마인지 밝히세요")은 남아 있으면 새 규칙과 충돌한다.
+        expect(rules).not.toContain('지금 주가가 얼마인지');
+        expect(rules).not.toContain('지금 값이 얼마인지');
+    });
+
+    it('asOf가 든 facts를 그대로 직렬화한다', () => {
+        const withAsOf = { ...facts, asOf: '9월 29일 종가' };
+        expect(
+            buildPlainPrompt({ entries, facts: withAsOf, locale: 'ko' })
+        ).toContain(JSON.stringify(withAsOf));
     });
 
     it('경로를 키로 하는 prose 맵을 싣는다', () => {

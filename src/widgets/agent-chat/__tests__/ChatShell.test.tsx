@@ -645,6 +645,32 @@ describe('ChatShell — MessageList key (spec §3.9)', () => {
         expect(mockStream.edit).not.toHaveBeenCalled();
     });
 
+    it('clicking a follow-up chip under the last answer sends it through the stream (same path as the composer)', () => {
+        mockStream.messages = [
+            {
+                id: '1',
+                role: 'user' as const,
+                content: 'q',
+                tools: [],
+                status: 'complete' as const,
+            },
+            {
+                id: '2',
+                role: 'assistant' as const,
+                content:
+                    '답변입니다.\n[[followups]] 실적은 어때? | 뉴스도 알려줘',
+                tools: [],
+                status: 'complete' as const,
+            },
+        ];
+        mockStream.status = 'idle';
+        mockStream.send.mockClear();
+        renderShell();
+        fireEvent.click(screen.getByRole('button', { name: '뉴스도 알려줘' }));
+        expect(mockStream.send).toHaveBeenCalledTimes(1);
+        expect(mockStream.send).toHaveBeenCalledWith('뉴스도 알려줘');
+    });
+
     it('editing the last user message and submitting calls stream.edit with its seq and new text', () => {
         mockStream.messages = [
             {

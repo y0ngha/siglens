@@ -224,6 +224,8 @@ vi.mock('@/entities/analysis-plain/lib/currentPrice', () => ({
      * 프로바이더까지 끌려온다.
      */
     resolveCurrentPrice: vi.fn(async () => undefined),
+    // 기준 시점 계산은 analysis-plain 단위 테스트가 실물로 검증한다 — 여기서는 배선만 본다.
+    resolvePriceAsOf: vi.fn(async () => '9월 29일 종가'),
 }));
 vi.mock('@/entities/analysis/lib/reanalyzeCooldown', () => ({
     tryAcquireReanalyzeCooldown: vi.fn().mockResolvedValue({ ok: true }),
@@ -244,6 +246,7 @@ import {
     resolveReasoning,
 } from '@/shared/lib/byokGate';
 import { rewriteToPlainLanguage } from '@/entities/analysis-plain/api';
+import { resolvePriceAsOf } from '@/entities/analysis-plain/lib/currentPrice';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { DrizzleAnalysisHistoryRepository } from '@/entities/analysis/analysisHistoryRepository';
@@ -2918,7 +2921,8 @@ describe('POST /api/analysis/stream', () => {
                 'AAPL',
                 'ko',
                 'USD',
-                undefined
+                undefined,
+                '9월 29일 종가'
             );
         });
 
@@ -2948,7 +2952,8 @@ describe('POST /api/analysis/stream', () => {
                 '005930.KS',
                 'ko',
                 'KRW',
-                undefined
+                undefined,
+                '9월 29일 종가'
             );
         });
 
@@ -2976,7 +2981,14 @@ describe('POST /api/analysis/stream', () => {
                 'AAPL',
                 'ko',
                 'USD',
-                undefined
+                undefined,
+                '9월 29일 종가'
+            );
+            // 기준 시점도 같은 payload에서 만든다 — `dataAsOf`는 payload에 있고 봉투에는 없다.
+            expect(resolvePriceAsOf).toHaveBeenCalledWith(
+                'AAPL',
+                'ko',
+                payload
             );
             const passed = vi.mocked(rewriteToPlainLanguage).mock.calls[0][0];
             expect(passed).not.toHaveProperty('status');
@@ -3063,7 +3075,8 @@ describe('POST /api/analysis/stream', () => {
                 'AAPL',
                 'ko',
                 'USD',
-                undefined
+                undefined,
+                '9월 29일 종가'
             );
         });
 

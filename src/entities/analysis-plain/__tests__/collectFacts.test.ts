@@ -107,3 +107,25 @@ describe('collectFacts — 현재 주가', () => {
         ).not.toHaveProperty('currentPrice');
     });
 });
+
+describe('collectFacts — 가격 기준 시점(asOf)', () => {
+    it('asOf를 facts에 싣는다', () => {
+        expect(
+            collectFacts({}, 'AAPL', 'USD', 'ko', 319.7, '9월 29일 종가').asOf
+        ).toBe('9월 29일 종가');
+    });
+
+    it('생략하거나 빈 문자열이면 키를 만들지 않는다', () => {
+        expect(collectFacts({ p: 1 }, 'AAPL')).not.toHaveProperty('asOf');
+        expect(
+            collectFacts({ p: 1 }, 'AAPL', 'USD', 'ko', undefined, '')
+        ).not.toHaveProperty('asOf');
+    });
+
+    it('asOf는 허용 숫자에 섞지 않는다 — 날짜 숫자는 호출자가 산문 출처로 따로 넘긴다', () => {
+        expect(
+            collectFacts({}, 'AAPL', 'USD', 'ko', 319.7, '9월 29일 종가')
+                .numbers
+        ).toEqual([319.7]);
+    });
+});

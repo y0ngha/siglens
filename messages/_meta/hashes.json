@@ -2966,5 +2966,6 @@
     "views.symbol.fearGreedFacts.extremeZoneOmitted": "3bd94d6d1361",
     "views.symbol.fearGreedFacts.extremeZoneOngoing": "8d7890c086ad",
     "views.symbol.fearGreedFacts.extremeZoneSessions": "fea5f10b8157",
-    "views.symbol.fearGreedFacts.extremeZoneSummary": "66edfca7aa55"
+    "views.symbol.fearGreedFacts.extremeZoneSummary": "66edfca7aa55",
+    "widgets.agent-chat.MessageList.followUpsLabel": "f8b1936b12ed"
 }

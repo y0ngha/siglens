@@ -290,6 +290,7 @@ export function ChatShell({
                         streaming={stream.status === 'streaming'}
                         onRegenerate={() => void stream.regenerate()}
                         onEdit={(seq, text) => void stream.edit(seq, text)}
+                        onSend={text => void stream.send(text)}
                         siteUrl={siteUrl}
                         localePrefix={localePrefix}
                     />

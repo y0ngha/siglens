@@ -63,4 +63,41 @@ describe('MacroBriefing', () => {
         expect(screen.getByText('고용 견조')).toBeInTheDocument();
         expect(screen.getByText('인플레이션 하향')).toBeInTheDocument();
     });
+
+    it('seed로 그린 브리핑도 서버가 읽은 생성 시각을 보여 준다', () => {
+        mockUseBriefing.mockReturnValue({
+            input: {
+                status: 'cached',
+                briefing: BRIEFING,
+                generatedAt: '2026-10-05T03:20:00.000Z',
+            },
+            refetch: noop,
+        });
+        render(
+            <MacroBriefing
+                peekSeed={{
+                    briefing: BRIEFING,
+                    generatedAt: '2026-10-05T03:20:00.000Z',
+                }}
+            />
+        );
+        expect(screen.getByText(/생성 시각:/)).toBeInTheDocument();
+    });
+
+    it('생성 시각을 모르는 옛 seed는 생성 시각 줄을 그리지 않는다', () => {
+        mockUseBriefing.mockReturnValue({
+            input: {
+                status: 'cached',
+                briefing: BRIEFING,
+                generatedAt: null,
+            },
+            refetch: noop,
+        });
+        render(
+            <MacroBriefing
+                peekSeed={{ briefing: BRIEFING, generatedAt: null }}
+            />
+        );
+        expect(screen.queryByText(/생성 시각:/)).not.toBeInTheDocument();
+    });
 });

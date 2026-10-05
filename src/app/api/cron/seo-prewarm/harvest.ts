@@ -15,7 +15,10 @@ import {
 } from '@/entities/news-article/api';
 import { hasAnalyzableNews } from '@/entities/news-article/lib/hasAnalyzableNews';
 import { rewriteToPlainLanguage } from '@/entities/analysis-plain/api';
-import { resolveCurrentPrice } from '@/entities/analysis-plain/lib/currentPrice';
+import {
+    resolveCurrentPrice,
+    resolvePriceAsOf,
+} from '@/entities/analysis-plain/lib/currentPrice';
 import { currencyForSymbol } from '@/shared/config/marketProfile/registry';
 import { prewarmOptions } from '@/entities/options-chain/api';
 import {
@@ -202,6 +205,8 @@ export async function resolveHarvest(
             DEFAULT_LOCALE,
             currencyForSymbol(symbol),
             await resolveCurrentPrice(symbol, result.result),
+            // 가격 기준 시점 — 구운 글이 며칠 뒤에도 "지금"으로 읽히지 않게 한다.
+            await resolvePriceAsOf(symbol, DEFAULT_LOCALE, result.result),
             PREWARM_PLAIN_DEADLINE_MS
         );
 
