@@ -7,7 +7,6 @@ vi.mock('@/widgets/home/SkillsShowcase', () => ({
 }));
 vi.mock('@/widgets/home/StatsBar', () => ({
     StatsBar: () => null,
-    StatsBarSkeleton: () => null,
 }));
 vi.mock('@/widgets/home/TickerCategories', () => ({
     TickerCategories: () => null,
@@ -25,9 +24,6 @@ vi.mock('@/entities/skill/api', () => ({
         supportResistance: 3,
     }),
     loadShowcaseSkills: vi.fn().mockResolvedValue([]),
-    FileSkillsLoader: vi.fn().mockImplementation(() => ({
-        loadSkills: vi.fn().mockResolvedValue([]),
-    })),
 }));
 /**
  * **부분 목이다.** 통째로 갈아끼우면 이 모듈에 새 export가 생길 때마다

@@ -143,7 +143,7 @@ describe('buildTechnicalFactsNarrative', () => {
         expect(
             buildTechnicalFactsNarrative('AAPL', facts!, 'us-equity', tFacts)
         ).toEqual([
-            'AAPL은 최근 종가 $110.00 기준으로 직전 봉 대비 10.00% 상승했습니다.',
+            'AAPL의 최근 종가 $110.00 기준, 직전 봉 대비 10.00% 상승했습니다.',
             'RSI 62.5로 중립 구간이며, MACD 히스토그램은 양수라 단기 모멘텀은 상승 쪽입니다.',
             `최근 ${RECENT_BARS_WINDOW}개 봉 고점 대비 -8.3%, 저점 대비 +22.2% 위치에 있습니다.`,
         ]);
@@ -161,9 +161,29 @@ describe('buildTechnicalFactsNarrative', () => {
         expect(
             buildTechnicalFactsNarrative('AAPL', facts!, 'us-equity', tFacts)
         ).toEqual([
-            'AAPL은 최근 종가 $90.00 기준으로 직전 봉 대비 10.00% 하락했습니다.',
+            'AAPL의 최근 종가 $90.00 기준, 직전 봉 대비 10.00% 하락했습니다.',
             `최근 ${RECENT_BARS_WINDOW}개 봉 고점 대비 -25.0%, 저점 대비 +12.5% 위치에 있습니다.`,
         ]);
+    });
+
+    it('종목 이름 받침과 무관하게 같은 조사("의")를 쓴다', () => {
+        const facts = buildTechnicalFacts(
+            [bar(100, 120, 90), bar(110, 115, 100)],
+            indicators({ rsi: [null, null], macd: [] })
+        );
+
+        for (const name of ['셀트리온', '카카오', 'NVDA']) {
+            expect(
+                buildTechnicalFactsNarrative(
+                    name,
+                    facts!,
+                    'us-equity',
+                    tFacts
+                )[0]
+            ).toBe(
+                `${name}의 최근 종가 $110.00 기준, 직전 봉 대비 10.00% 상승했습니다.`
+            );
+        }
     });
 
     it('MACD histogram이 0이면 서사에서 중립에 가까운 상태로 표현한다', () => {
@@ -178,7 +198,7 @@ describe('buildTechnicalFactsNarrative', () => {
         expect(
             buildTechnicalFactsNarrative('AAPL', facts!, 'us-equity', tFacts)
         ).toEqual([
-            'AAPL은 최근 종가 $110.00 기준으로 직전 봉 대비 10.00% 상승했습니다.',
+            'AAPL의 최근 종가 $110.00 기준, 직전 봉 대비 10.00% 상승했습니다.',
             'RSI 50.0로 중립 구간이며, MACD 히스토그램은 0이라 단기 모멘텀은 중립에 가까운 상태입니다.',
             `최근 ${RECENT_BARS_WINDOW}개 봉 고점 대비 -8.3%, 저점 대비 +22.2% 위치에 있습니다.`,
         ]);

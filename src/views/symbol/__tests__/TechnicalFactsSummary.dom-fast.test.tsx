@@ -194,7 +194,7 @@ describe('TechnicalFactsSummary', () => {
 
         expect(
             screen.getByText(
-                'AAPL은 최근 종가 $110.00 기준으로 직전 봉 대비 10.00% 상승했습니다.'
+                'AAPL의 최근 종가 $110.00 기준, 직전 봉 대비 10.00% 상승했습니다.'
             )
         ).toBeInTheDocument();
         expect(

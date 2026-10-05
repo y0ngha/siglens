@@ -426,9 +426,13 @@ describe('TechnicalSnapshotProse — 기준일 표기 + 라이브 분석 상호�
             />
         );
 
+        // 저장된 지난 분석이라는 사실만 쉬운 말로 알린다 — "캐시" 같은 구현 용어 금지.
         expect(
-            screen.getByText(koMessage('shared.ui.misc.liveCrossRef'))
+            screen.getByText(
+                '미리 저장해 둔 지난 분석이라 지금 시세와 다를 수 있어요.'
+            )
         ).toBeInTheDocument();
+        expect(koMessage('shared.ui.misc.liveCrossRef')).not.toMatch(/캐시/);
     });
 
     it('generatedAt이 없어도 헤딩은 그대로 렌더한다', () => {

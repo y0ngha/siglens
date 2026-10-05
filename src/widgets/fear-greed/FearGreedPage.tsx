@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { SampleFooterText } from '@/shared/ui/SampleFooterText';
 import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
 import { useFearGreedFromSymbol } from './hooks/useFearGreedFromSymbol';
 import { useHumanInteracted } from '@/shared/hooks/useHumanInteracted';
@@ -9,7 +10,6 @@ import { FearGreedComparisonGauges } from './FearGreedComparisonGauges';
 import { FearGreedGroupBar } from './FearGreedGroupBar';
 import dynamic from 'next/dynamic';
 import { SelfNormWarningBadge } from './SelfNormWarningBadge';
-import { confidenceLabelKey } from '@/shared/lib/fearGreedLabels';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
@@ -52,6 +52,14 @@ interface FearGreedPageProps {
      * 서버 쪽이다. 그래서 XOR 방향이 "클라이언트를 끈다"로 정해진다.
      */
     hideSelfNormWarning?: boolean;
+    /**
+     * 하단 표본 수 안내(`<footer>`)를 숨긴다.
+     *
+     * `hideSelfNormWarning`과 같은 이유다 — `/[symbol]/fear-greed`는 이 컴포넌트 **아래에**
+     * 서버 렌더된 `FearGreedFactsSummary`를 그리고, 거기에 같은 문장이 이미 있다.
+     * 게이지가 먼저 보이도록 순서를 바꾼 뒤에도 두 문장이 한 화면에 남으면 중복이다.
+     */
+    hideSampleFooter?: boolean;
 }
 
 /**
@@ -102,8 +110,8 @@ export function FearGreedPage({
     symbol,
     fmpSymbol,
     hideSelfNormWarning = false,
+    hideSampleFooter = false,
 }: FearGreedPageProps) {
-    const tFearGreed = useTranslations('shared.lib.fearGreed');
     const t = useTranslations('widgets.fear-greed');
     const themeVersion = useThemeVersion();
     const isHydrated = useHydrated();
@@ -182,12 +190,14 @@ export function FearGreedPage({
                 />
             </section>
 
-            <footer className="text-xs text-secondary-500">
-                {tFearGreed('confidenceFooter', {
-                    v0: snapshot.sampleSize,
-                    v1: tFearGreed(confidenceLabelKey(snapshot.confidence)),
-                })}
-            </footer>
+            {!hideSampleFooter && (
+                <footer className="text-xs text-secondary-500">
+                    <SampleFooterText
+                        confidence={snapshot.confidence}
+                        sampleSize={snapshot.sampleSize}
+                    />
+                </footer>
+            )}
         </div>
     );
 }

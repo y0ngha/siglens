@@ -56,8 +56,11 @@ import {
     hasOptionsMarket,
     fetchOptionsSnapshot,
     HAS_OPTIONS_MARKET_TTL_SECONDS,
+    LAST_GOOD_SNAPSHOT_TTL_SECONDS,
     OPTIONS_SNAPSHOT_TTL_SECONDS,
+    SUBSTITUTED_SNAPSHOT_MIN_TTL_SECONDS,
 } from '../lib/optionsDataCache';
+import { getOptionsCacheLifeProfile } from '../lib/optionsCacheLife';
 
 /**
  * optionsDataCache가 module-scope에서 Redis 인스턴스를 캐싱(`cachedRedis`)하므로
@@ -368,6 +371,290 @@ describe('fetchOptionsSnapshot — Redis 캐시 레이어', () => {
 
         expect(errSpy).toHaveBeenCalled();
         expect(result).toEqual(sampleSnapshot);
+        errSpy.mockRestore();
+    });
+});
+
+describe('fetchOptionsSnapshot — last-good fallback', () => {
+    const REDIS_ENV = { url: 'https://example.upstash.io', token: 'tok' };
+    const LAST_GOOD_KEY = 'options:snapshot:last-good:AAPL';
+    const MAIN_KEY = 'options:snapshot:AAPL';
+
+    // 2026-10-05(월) 05:00 UTC = 14:00 KST = 01:00 ET → 미국 정규장 밖.
+    const SESSION_CLOSED_NOW = new Date('2026-10-05T05:00:00.000Z');
+    // 2026-10-05(월) 15:00 UTC = 11:00 ET → 미국 정규장 중.
+    const SESSION_OPEN_NOW = new Date('2026-10-05T15:00:00.000Z');
+
+    function contract(openInterest: number) {
+        return {
+            contractSymbol: 'AAPL261009C00195000',
+            strike: 195,
+            lastPrice: 1,
+            bid: 1,
+            ask: 1,
+            volume: 0,
+            openInterest,
+            impliedVolatility: 0.3,
+            inTheMoney: false,
+        };
+    }
+
+    function snapshotWith(
+        openInterest: number,
+        expirations: Array<[string, number]>,
+        capturedAt = '2026-10-02T20:00:00.000Z'
+    ) {
+        return {
+            symbol: 'AAPL',
+            underlyingPrice: 195,
+            capturedAt,
+            chains: expirations.map(([expirationDate, daysToExpiration]) => ({
+                expirationDate,
+                daysToExpiration,
+                calls: [contract(openInterest)],
+                puts: [contract(openInterest)],
+            })),
+        };
+    }
+
+    // Yahoo가 정규장 밖에 돌려주는, 미결제약정이 전부 0인 스냅샷.
+    const staleFresh = snapshotWith(
+        0,
+        [
+            ['2026-10-09', 4],
+            ['2026-10-16', 11],
+        ],
+        '2026-10-05T05:00:00.000Z'
+    );
+    const healthyFresh = snapshotWith(
+        500,
+        [
+            ['2026-10-09', 4],
+            ['2026-10-16', 11],
+        ],
+        '2026-10-05T15:00:00.000Z'
+    );
+    // 금요일 장 마감 직후 저장된 정상 스냅샷 — 만기 2026-10-02는 이미 지났다.
+    const storedLastGood = snapshotWith(500, [
+        ['2026-10-02', 0],
+        ['2026-10-09', 7],
+        ['2026-10-16', 14],
+    ]);
+
+    /** key별로 다른 값을 돌려주는 Redis get — mock.calls 인덱스에 기대지 않는다. */
+    function redisHolds(values: Record<string, unknown>): void {
+        mockRedisGet.mockImplementation(async (key: string) =>
+            key in values ? values[key] : null
+        );
+    }
+
+    function setCallsFor(key: string) {
+        return mockRedisSet.mock.calls.filter(([k]) => k === key);
+    }
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockRedisSet.mockResolvedValue('OK');
+        vi.useFakeTimers({ toFake: ['Date'] });
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    it('OI가 채워진 스냅샷이면 last-good을 5일 TTL로 저장한다', async () => {
+        vi.setSystemTime(SESSION_OPEN_NOW);
+        redisHolds({});
+        mockFetchSnapshot.mockResolvedValue(healthyFresh);
+
+        const mod = await loadWithEnv(REDIS_ENV);
+        const result = await mod.fetchOptionsSnapshot('AAPL');
+
+        expect(result).toEqual(healthyFresh);
+        expect(setCallsFor(LAST_GOOD_KEY)).toEqual([
+            [
+                LAST_GOOD_KEY,
+                healthyFresh,
+                { ex: LAST_GOOD_SNAPSHOT_TTL_SECONDS },
+            ],
+        ]);
+    });
+
+    it('last-good TTL은 주말·연휴를 덮는 5일이다', () => {
+        expect(LAST_GOOD_SNAPSHOT_TTL_SECONDS).toBe(5 * 24 * 60 * 60);
+    });
+
+    it('OI가 비어 있는 스냅샷으로는 last-good을 덮어쓰지 않는다', async () => {
+        vi.setSystemTime(SESSION_OPEN_NOW);
+        redisHolds({});
+        mockFetchSnapshot.mockResolvedValue(staleFresh);
+
+        const mod = await loadWithEnv(REDIS_ENV);
+        await mod.fetchOptionsSnapshot('AAPL');
+
+        expect(setCallsFor(LAST_GOOD_KEY)).toHaveLength(0);
+    });
+
+    it('정규장 밖에 stale이 오면 last-good을 오늘 기준으로 맞춰 대신 낸다', async () => {
+        vi.setSystemTime(SESSION_CLOSED_NOW);
+        redisHolds({ [LAST_GOOD_KEY]: storedLastGood });
+        mockFetchSnapshot.mockResolvedValue(staleFresh);
+
+        const mod = await loadWithEnv(REDIS_ENV);
+        const result = await mod.fetchOptionsSnapshot('AAPL');
+
+        expect(result?.chains.map(c => c.expirationDate)).toEqual([
+            '2026-10-09',
+            '2026-10-16',
+        ]);
+        // 2026-10-05 ET 기준 4일·11일 — 저장 당시 7·14가 아니다.
+        expect(result?.chains.map(c => c.daysToExpiration)).toEqual([4, 11]);
+        expect(result?.chains[0].calls[0].openInterest).toBe(500);
+        // 수집 시각은 저장 당시 값 그대로 — 화면이 "직전 정규장 기준"을 밝히는 근거다.
+        expect(result?.capturedAt).toBe(storedLastGood.capturedAt);
+    });
+
+    it('대체한 결과를 일반 캐시 키에도 저장해 다음 요청이 Yahoo를 다시 치지 않게 한다', async () => {
+        vi.setSystemTime(SESSION_CLOSED_NOW);
+        redisHolds({ [LAST_GOOD_KEY]: storedLastGood });
+        mockFetchSnapshot.mockResolvedValue(staleFresh);
+
+        const mod = await loadWithEnv(REDIS_ENV);
+        const result = await mod.fetchOptionsSnapshot('AAPL');
+
+        const mainWrites = setCallsFor(MAIN_KEY);
+        expect(mainWrites).toHaveLength(1);
+        expect(mainWrites[0][1]).toEqual(result);
+        // 대체 결과가 last-good을 덮어쓰지는 않는다.
+        expect(setCallsFor(LAST_GOOD_KEY)).toHaveLength(0);
+    });
+
+    describe('대체 값의 일반 캐시 TTL', () => {
+        // getOptionsCacheLifeProfile은 이 파일에서 'options-market-open'으로 목이다 —
+        // 케이스별로 닫힘/주말 프로파일을 돌려준다.
+        const mockProfile = vi.mocked(getOptionsCacheLifeProfile);
+
+        async function substitutedMainTtl(now: Date): Promise<number> {
+            vi.setSystemTime(now);
+            redisHolds({ [LAST_GOOD_KEY]: storedLastGood });
+            mockFetchSnapshot.mockResolvedValue(staleFresh);
+            const mod = await loadWithEnv(REDIS_ENV);
+            await mod.fetchOptionsSnapshot('AAPL');
+            const [write] = setCallsFor(MAIN_KEY);
+            return (write[2] as { ex: number }).ex;
+        }
+
+        afterEach(() => {
+            mockProfile.mockReturnValue('options-market-open');
+        });
+
+        it('개장까지 한참 남았으면 닫힘 프로파일 TTL(30분) 그대로다', async () => {
+            mockProfile.mockReturnValue('options-market-closed');
+            // 월요일 01:00 ET → 개장까지 8.5시간.
+            expect(await substitutedMainTtl(SESSION_CLOSED_NOW)).toBe(
+                OPTIONS_SNAPSHOT_TTL_SECONDS['options-market-closed']
+            );
+        });
+
+        it('개장 10분 전이면 개장까지 남은 시간(600초)으로 줄어든다', async () => {
+            mockProfile.mockReturnValue('options-market-closed');
+            // 2026-10-05 13:20 UTC = 09:20 EDT.
+            expect(
+                await substitutedMainTtl(new Date('2026-10-05T13:20:00.000Z'))
+            ).toBe(600);
+        });
+
+        it('주말 프로파일(4h)도 개장 전 남은 시간을 넘지 않는다', async () => {
+            mockProfile.mockReturnValue('options-weekend');
+            // 휴장일 프로파일이 걸린 평일 개장 30분 전(예시) — 4h보다 짧은 1800초가 된다.
+            expect(
+                await substitutedMainTtl(new Date('2026-10-05T13:00:00.000Z'))
+            ).toBe(1800);
+        });
+
+        it('개장 직전(30초 전)에도 60초 아래로 내려가지 않는다', async () => {
+            mockProfile.mockReturnValue('options-market-closed');
+            expect(
+                await substitutedMainTtl(new Date('2026-10-05T13:29:30.000Z'))
+            ).toBe(SUBSTITUTED_SNAPSHOT_MIN_TTL_SECONDS);
+        });
+
+        it('대체가 아닌 일반 fresh 값의 TTL은 프로파일 그대로다', async () => {
+            vi.setSystemTime(new Date('2026-10-05T13:29:30.000Z'));
+            mockProfile.mockReturnValue('options-market-closed');
+            redisHolds({});
+            mockFetchSnapshot.mockResolvedValue(healthyFresh);
+            const mod = await loadWithEnv(REDIS_ENV);
+            await mod.fetchOptionsSnapshot('AAPL');
+
+            const [write] = setCallsFor(MAIN_KEY);
+            expect(write[2]).toEqual({
+                ex: OPTIONS_SNAPSHOT_TTL_SECONDS['options-market-closed'],
+            });
+        });
+    });
+
+    it('정규장 중에는 stale이어도 대체하지 않는다', async () => {
+        vi.setSystemTime(SESSION_OPEN_NOW);
+        redisHolds({ [LAST_GOOD_KEY]: storedLastGood });
+        mockFetchSnapshot.mockResolvedValue(staleFresh);
+
+        const mod = await loadWithEnv(REDIS_ENV);
+        const result = await mod.fetchOptionsSnapshot('AAPL');
+
+        expect(result).toEqual(staleFresh);
+        expect(mockRedisGet).not.toHaveBeenCalledWith(LAST_GOOD_KEY);
+    });
+
+    it('만기가 모두 지난 last-good은 쓰지 않고 fresh를 낸다', async () => {
+        vi.setSystemTime(SESSION_CLOSED_NOW);
+        redisHolds({
+            [LAST_GOOD_KEY]: snapshotWith(500, [['2026-10-02', 0]]),
+        });
+        mockFetchSnapshot.mockResolvedValue(staleFresh);
+
+        const mod = await loadWithEnv(REDIS_ENV);
+        const result = await mod.fetchOptionsSnapshot('AAPL');
+
+        expect(result).toEqual(staleFresh);
+    });
+
+    it('last-good이 없으면 stale fresh를 그대로 낸다', async () => {
+        vi.setSystemTime(SESSION_CLOSED_NOW);
+        redisHolds({});
+        mockFetchSnapshot.mockResolvedValue(staleFresh);
+
+        const mod = await loadWithEnv(REDIS_ENV);
+        const result = await mod.fetchOptionsSnapshot('AAPL');
+
+        expect(result).toEqual(staleFresh);
+    });
+
+    it('Redis가 없으면 보관할 곳이 없으므로 대체 없이 fresh를 낸다', async () => {
+        vi.setSystemTime(SESSION_CLOSED_NOW);
+        mockFetchSnapshot.mockResolvedValue(staleFresh);
+
+        const mod = await loadWithEnv({});
+        const result = await mod.fetchOptionsSnapshot('AAPL');
+
+        expect(result).toEqual(staleFresh);
+        expect(mockRedisGet).not.toHaveBeenCalled();
+    });
+
+    it('last-good 읽기가 실패해도 fresh로 진행한다', async () => {
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        vi.setSystemTime(SESSION_CLOSED_NOW);
+        mockRedisGet.mockImplementation(async (key: string) => {
+            if (key === LAST_GOOD_KEY) throw new Error('redis down');
+            return null;
+        });
+        mockFetchSnapshot.mockResolvedValue(staleFresh);
+
+        const mod = await loadWithEnv(REDIS_ENV);
+        const result = await mod.fetchOptionsSnapshot('AAPL');
+
+        expect(result).toEqual(staleFresh);
+        expect(errSpy).toHaveBeenCalled();
         errSpy.mockRestore();
     });
 });

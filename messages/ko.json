@@ -1325,9 +1325,9 @@
                 "titleTooLong": "제목은 {v0}자 이내로 입력해 주세요."
             },
             "fearGreed": {
-                "confidenceFooter": "표본 {v0} — {v1}",
                 "confidenceLimited": "신뢰도 제한",
-                "confidenceNormal": "정상 산출",
+                "sampleFooterLimited": "비교할 기록이 {v0, number}거래일뿐이라 점수가 덜 정확할 수 있어요.",
+                "sampleFooterNormal": "지난 {v0, number}거래일과 비교해 매긴 점수예요.",
                 "warningChronicStrength": "이 종목은 장기 강세 흐름이에요. 점수는 이 종목의 평소 흐름 안에서의 상대적 위치를 보여줘 절대적인 강도와 다를 수 있어요. 참고만 해 주세요.",
                 "warningChronicWeakness": "이 종목은 장기 약세 흐름이에요. 점수는 이 종목의 평소 흐름 안에서의 상대적 위치를 보여줘 절대적인 강도와 다를 수 있어요. 참고만 해 주세요."
             },
@@ -1366,11 +1366,11 @@
                     "volume_flow": "거래대금 흐름"
                 },
                 "symbolLabel": {
-                    "buysell_imbalance": "Buy/Sell 불균형",
-                    "ma200_distance": "MA200 거리",
-                    "poc_distance": "POC 거리({v0}bar)",
+                    "buysell_imbalance": "매수·매도 거래량 불균형",
+                    "ma200_distance": "200일 이동평균과의 거리",
+                    "poc_distance": "최근 {v0}봉 매물대 중심과의 거리",
                     "range_position": "최근 252봉 위치",
-                    "volume_z": "거래량 z (방향성)"
+                    "volume_z": "거래량 급증도(방향 반영)"
                 }
             },
             "legal": {
@@ -1633,7 +1633,7 @@
                 },
                 "options": {
                     "description": "{subject} 옵션 시장을 AI가 한국어로 해석합니다. 만기별 Max Pain·Put/Call·ATM IV·Implied Move와 Strike별 OI로 시장이 어디에 베팅하는지 봅니다.",
-                    "descriptionNoMarket": "{subject}는 현재 옵션 시장이 형성되어 있지 않습니다. 차트·펀더멘털·뉴스 분석으로 종목을 살펴보세요.",
+                    "descriptionNoMarket": "{subject}에는 현재 옵션 시장이 형성되어 있지 않습니다. 차트·펀더멘털·뉴스 분석으로 종목을 살펴보세요.",
                     "titleCore": "옵션 분석",
                     "titleTail": "Max Pain·OI·Put/Call"
                 },
@@ -1924,7 +1924,7 @@
                 "flatChange": "0.00% 보합",
                 "holdingAverage": "평단 {v0} · {v1}주",
                 "lastNDays": "최근 {v0}일",
-                "liveCrossRef": "실시간 AI 분석은 분석 패널에서 제공됩니다. 캐시가 없으면 다음 갱신 후 표시됩니다.",
+                "liveCrossRef": "미리 저장해 둔 지난 분석이라 지금 시세와 다를 수 있어요.",
                 "naverNews": "네이버뉴스",
                 "noticeWrittenOn": "{v0}.{v1}.{v2} 작성",
                 "openingChat": "채팅을 여는 중…",
@@ -2450,7 +2450,8 @@
                 "93c3a3": "차트는 Pre-market, After-market 주가를 반영하지 않습니다. | ",
                 "d1a23e": "패널 너비 조절",
                 "f69071": "AI 차트 분석",
-                "ff6b09": "시세 데이터는 최대 15분 지연됩니다."
+                "quoteAsOfLoad": "시세는 페이지를 불러온 시점 기준이에요.",
+                "quoteDelayed": "시세 데이터는 약 {v0}분 지연됩니다."
             },
             "CongressSnapshotProse": {
                 "739702": "{v0} 의회 거래 동향: {v1}",
@@ -2624,7 +2625,7 @@
                 "evBattery": "전기차·2차전지",
                 "internetPlatform": "인터넷·플랫폼",
                 "leveragedEtf": "레버리지·인버스 ETF",
-                "sameMarket": "같은 시장 종목",
+                "sameMarket": "다른 종목 둘러보기",
                 "sector": {
                     "XLB": "소재 섹터",
                     "XLC": "통신서비스 섹터",
@@ -2647,7 +2648,7 @@
                 }
             },
             "technicalFacts": {
-                "closeSummary": "{v0}은 최근 종가 {v1} 기준으로 직전 봉 대비 {v2}% {v3}했습니다.",
+                "closeSummary": "{v0}의 최근 종가 {v1} 기준, 직전 봉 대비 {v2}% {v3}했습니다.",
                 "directionDown": "하락",
                 "directionFlat": "보합",
                 "directionUp": "상승",
@@ -2912,14 +2913,14 @@
             "progress": {
                 "phase": {
                     "p0": "시장 데이터 정렬 중",
-                    "p1": "{v0}개 이상의 보조지표 시그널 분석 중",
+                    "p1": "{v0}개 보조지표 시그널 분석 중",
                     "p2": "캔들 패턴 및 차트 패턴 탐지 중",
-                    "p3": "{v1}개 이상의 스킬을 조합하여 시그널 매칭 중",
+                    "p3": "{v1}개 스킬을 조합하여 시그널 매칭 중",
                     "p4": "시나리오·리스크 정리 중",
                     "p5": "AI 종합 해석 작성 중"
                 },
                 "tip": {
-                    "t0": "{v0}개 이상의 보조지표와 {v1}개 이상의 스킬을 조합해 분석합니다.",
+                    "t0": "{v0}종 보조지표와 {v1}개 분석 스킬을 조합해 분석합니다.",
                     "t1": "AI 분석은 보통 5분 정도 걸려요. 길어지면 최대 15분까지 걸릴 수 있어요.",
                     "t2": "화면을 띄워 놓고 다른 작업을 하셔도 됩니다. 분석이 완료되면 자동으로 결과가 표시돼요.",
                     "t3": "RSI, MACD, 볼린저 밴드 등 보조지표의 시그널을 종합하여 추세를 판단하고 있어요.",
@@ -3076,7 +3077,9 @@
                 "fd0418": "권한을 확인하는 중입니다."
             },
             "VolumeChart": {
-                "1ae051": "거래량 차트"
+                "1ae051": "거래량 차트",
+                "buy": "매수",
+                "sell": "매도"
             },
             "actionOverlay": {
                 "entryPoint": "진입점 #{v0}",
@@ -3351,10 +3354,14 @@
         },
         "fear-greed": {
             "FearGreedGroupBar": {
-                "groupScore": "{v0} 그룹 점수 {v1}"
+                "groupNameFlow": "수급",
+                "groupNameTrend": "추세",
+                "groupScore": "{v0} 그룹 점수 {v1}",
+                "groupTitle": "{v0} 그룹",
+                "percentile": "{v0}백분위"
             },
             "FearGreedPage": {
-                "0506ae": "Flow와 Trend 그룹별 score breakdown",
+                "0506ae": "수급·추세 그룹별 점수 상세",
                 "180c65": "공포 탐욕 지수 추이 (최근 1년)",
                 "29eed9": "현재 공포 탐욕 지수와 기간별 비교",
                 "7da634": "공포 탐욕 지수 로딩 중",
@@ -3366,7 +3373,7 @@
                 "f9482c": "공포 탐욕 지수"
             },
             "FearGreedShareView": {
-                "0506ae": "Flow와 Trend 그룹별 score breakdown",
+                "0506ae": "수급·추세 그룹별 점수 상세",
                 "d9e96a": "현재 공포 탐욕 지수"
             },
             "gauge": {
@@ -3375,7 +3382,7 @@
                 "ariaScoreWithPeriod": "{v0} 공포 탐욕 지수 {v1}점, {v2}",
                 "confidenceLimited": "신뢰도 제한",
                 "confidenceLimitedNote": "거래 데이터가 충분하지 않아 신뢰도가 제한돼요.",
-                "confidenceLimitedRecovery": "표본이 쌓이면 자동으로 정상 산출로 전환됩니다.",
+                "confidenceLimitedRecovery": "기록이 더 쌓이면 점수가 더 정확해져요.",
                 "confidenceNormal": "신뢰도 정상",
                 "confidenceNormalNote": "표본 수가 충분해 신뢰도 높은 점수예요.",
                 "indicatorStable": "지표가 안정적으로 동작하고 있습니다."
@@ -3923,7 +3930,8 @@
                 "598bf4": "▸ 시그널",
                 "e0c6a1": "옵션 시그널 목록",
                 "e26a05": "▸ 만기별 해석",
-                "eefb95": "AI 옵션 분석"
+                "eefb95": "AI 옵션 분석",
+                "previousSessionBasis": "분석 기준: 직전 정규장 옵션 데이터 · {v0} 수집"
             },
             "OptionsAiAnalysisError": {
                 "e756f5": "옵션 분석을 가져오지 못했어요. 잠시 후 다시 시도해주세요.",
@@ -3948,20 +3956,23 @@
             "OptionsEmptyState": {
                 "68a411": "옵션 시장 정보 없음",
                 "840bca": "다른 분석 페이지",
-                "97e04b": "{v0}는 현재 옵션 시장이 형성되어 있지 않습니다.",
+                "97e04b": "{v0}에는 현재 옵션 시장이 형성되어 있지 않습니다.",
                 "9e8562": "다른 분석 페이지에서 종목을 살펴보세요."
             },
             "OptionsMetricsRow": {
-                "6db40b": "전체 만기 합산 — 가장 가까운 만기({v0}) 기준으로 표시합니다."
+                "6db40b": "전체 만기 합산 — 가장 가까운 만기({v0}) 기준으로 표시합니다.",
+                "atmIv": "ATM 내재변동성",
+                "impliedMove": "예상 변동폭",
+                "maxPain": "맥스 페인",
+                "previousSessionCaption": "직전 정규장 기준 · {v0} 수집",
+                "putCallRatio": "풋/콜 비율"
             },
             "OptionsStaleDataBanner": {
-                "2696b9": "한국 시간으로는 서머타임(EDT) 기간이면 {v0}, 표준시(EST) 기간이면 {v1}이에요.",
                 "6ac929": "옵션 OI 데이터가 비어 있어요",
                 "6bdf35": "지금은 {v0} 기간이니, {v1}에 확인해 주세요.",
                 "92d2c9": "표준시(EST)",
                 "951cc7": "서머타임(EDT)",
-                "baed2a": "미국 정규장 마감 후에는 Yahoo가 Open Interest, 호가, IV 같은\n                    수치를 갱신하지 않아 일시적으로 공백이에요.",
-                "c5ab1a": "정확한 수치는 미국 정규장 시간({v0}, 휴장일을 뺀 평일)에 다시 확인해 주세요. 미국 증시 휴장일과 조기 마감일(13:00 ET)에는 그 시간대에도 갱신되지 않아요."
+                "baed2a": "미국 정규장 마감 후에는 Yahoo가 Open Interest, 호가, IV 같은\n                    수치를 갱신하지 않아 일시적으로 공백이에요."
             },
             "StrikeVolumeChart": {
                 "2156df": "Call과 Put의 오늘 거래량을 strike 가격대별로 막대그래프로\n                    표시합니다. 현재 주가는 세로선으로 강조됩니다.",

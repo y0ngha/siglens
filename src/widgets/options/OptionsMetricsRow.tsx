@@ -19,6 +19,8 @@ import {
 } from './utils/optionsTooltips';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { cn } from '@/shared/lib/cn';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { formatCapturedAtKst } from './utils/formatCapturedAtKst';
 
 interface MetricCardProps {
     label: string;
@@ -30,9 +32,7 @@ function MetricCard({ label, value, tooltip }: MetricCardProps) {
     return (
         <div className={cn(SURFACE_CARD, 'p-4')}>
             <div className="flex items-center">
-                <span className="text-xs tracking-widest text-secondary-400 uppercase">
-                    {label}
-                </span>
+                <span className="text-xs text-secondary-400">{label}</span>
                 <InfoTooltip>{tooltip}</InfoTooltip>
             </div>
             <p className="mt-1 font-mono text-xl font-semibold text-secondary-100 tabular-nums">
@@ -56,6 +56,18 @@ interface OptionsMetricsRowProps {
      * (예: $50, 0.0%)를 신뢰성 있게 보이도록 노출하게 된다.
      */
     oiStale: boolean;
+    /**
+     * 스냅샷 수집 시각(ISO). `showCapturedCaption`이 켜질 때만 읽는다.
+     */
+    capturedAt: string;
+    /**
+     * 미국 정규장이 닫혀 있는 동안 정상 데이터(OI가 채워진 것)를 보여 주는 중이면
+     * `true` — "직전 정규장 기준"임을 중립적으로 밝히는 캡션을 켠다.
+     *
+     * 부모가 마운트 이후에만 켠다(`now`가 client-only). 서버·첫 클라이언트 렌더는
+     * 항상 `false`라 하이드레이션 불일치가 없다.
+     */
+    showCapturedCaption: boolean;
 }
 
 export function OptionsMetricsRow({
@@ -63,35 +75,41 @@ export function OptionsMetricsRow({
     metrics,
     nearestExpiry,
     oiStale,
+    capturedAt,
+    showCapturedCaption,
 }: OptionsMetricsRowProps) {
     const t = useTranslations('widgets.options');
+    const locale = useResolvedLocale();
+    const capturedAtKst = showCapturedCaption
+        ? formatCapturedAtKst(capturedAt, locale)
+        : null;
     // siglens-core R12: maxPain / putCallRatio are now `number | null`
     // (formatters tolerate the union explicitly), so pass through directly
     // without the legacy `?? NaN` coercion.
     const metricCards = [
         {
-            label: 'Max Pain',
+            label: t('OptionsMetricsRow.maxPain'),
             value: oiStale
                 ? METRIC_PLACEHOLDER
                 : formatMaxPain(metrics?.maxPain ?? null),
             tooltip: MaxPainTooltip,
         },
         {
-            label: 'P/C Ratio',
+            label: t('OptionsMetricsRow.putCallRatio'),
             value: oiStale
                 ? METRIC_PLACEHOLDER
                 : formatPutCallRatio(metrics?.putCallRatio ?? null),
             tooltip: PutCallRatioTooltip,
         },
         {
-            label: 'ATM IV',
+            label: t('OptionsMetricsRow.atmIv'),
             value: oiStale
                 ? METRIC_PLACEHOLDER
                 : formatAtmIv(metrics?.atmImpliedVolatility ?? null),
             tooltip: <AtmIvTooltip />,
         },
         {
-            label: 'Imp. Move',
+            label: t('OptionsMetricsRow.impliedMove'),
             value: oiStale
                 ? METRIC_PLACEHOLDER
                 : formatImpliedMove(metrics?.impliedMovePercent ?? null),
@@ -111,6 +129,13 @@ export function OptionsMetricsRow({
                     />
                 ))}
             </div>
+            {capturedAtKst !== null && (
+                <p className="text-[10px] text-secondary-500">
+                    {t('OptionsMetricsRow.previousSessionCaption', {
+                        v0: capturedAtKst,
+                    })}
+                </p>
+            )}
             {expirationDate === 'all' && nearestExpiry && (
                 <p className="text-[10px] text-secondary-500">
                     {t('OptionsMetricsRow.6db40b', { v0: nearestExpiry })}

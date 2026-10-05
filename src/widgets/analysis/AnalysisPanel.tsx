@@ -970,8 +970,8 @@ interface AnalysisPanelProps {
      */
     indicatorCount?: number;
     /**
-     * 회원이 적용받는 전체 차트 패턴 + 전략 스킬 카탈로그 수. free 안내 카드에서
-     * "회원가입 후 N개 스킬" 문구에 사용한다.
+     * 차트 분석에 쓰이는 전체 스킬 수(`chartSkillTotal`: 지표·캔들·패턴·전략·지지/저항).
+     * free 안내 카드의 "회원가입 후 N개 스킬"과 분석 진행 문구가 같은 값을 쓴다.
      */
     skillCount?: number;
     /**
@@ -1296,6 +1296,8 @@ export function AnalysisPanel({
                             phaseIndex={progressPhaseIndex}
                             tipIndex={progressTipIndex}
                             isFreeUser={isFreeUser}
+                            indicatorCount={indicatorCount}
+                            skillCount={skillCount}
                         />
                     ) : (
                         // TrendBadge와 동일한 신호(isFallbackAnalysis)로 가드한다.

@@ -33,6 +33,7 @@ import {
     getSeedBarsStatic,
 } from '@/entities/bars/lib/barsStaticCache';
 import { countSkillFiles } from '@/entities/skill/api';
+import { chartSkillTotal } from '@/shared/lib/skillStats';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { assetInfoSeedUpdatedAt } from '@/shared/config/assetInfoSeed';
 import { MS_PER_SECOND } from '@/shared/config/time';
@@ -433,10 +434,7 @@ export default async function SymbolPage({ params }: Props) {
                                 // 항상 true를 유지한다(봇은 enqueue가 skip되어 생성 안 됨).
                                 initialAnalysisFailed={true}
                                 indicatorCount={skillCounts.indicators}
-                                skillCount={
-                                    skillCounts.patterns +
-                                    skillCounts.strategies
-                                }
+                                skillCount={chartSkillTotal(skillCounts)}
                                 marketProfile={marketProfile}
                                 // seed가 형성 중 봉을 뺀 채로 나갔는가(= quantize와 같은 술어).
                                 // 그렇다면 클라이언트는 입력을 기다리지 않고 라이브 봉을 받아야

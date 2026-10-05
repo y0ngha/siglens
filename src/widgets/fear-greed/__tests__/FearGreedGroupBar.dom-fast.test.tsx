@@ -42,7 +42,7 @@ describe('FearGreedGroupBar', () => {
             const { getByText } = render(
                 <FearGreedGroupBar group={flowGroup} />
             );
-            expect(getByText('Flow Group')).toBeInTheDocument();
+            expect(getByText('수급 그룹')).toBeInTheDocument();
             expect(getByText('31 / 100')).toBeInTheDocument(); // 30.6 rounded
         });
 
@@ -60,7 +60,7 @@ describe('FearGreedGroupBar', () => {
                 getByText(FG.symbolLabel.poc_distance, { exact: false })
             ).toBeInTheDocument();
             // percentile rendering
-            expect(getByText(/80th/)).toBeInTheDocument();
+            expect(getByText(/80백분위/)).toBeInTheDocument();
         });
 
         it('exposes accessible bar score via aria-label', () => {
@@ -68,7 +68,7 @@ describe('FearGreedGroupBar', () => {
                 <FearGreedGroupBar group={flowGroup} />
             );
             const bar = container.querySelector('[aria-label]');
-            expect(bar?.getAttribute('aria-label')).toBe('Flow 그룹 점수 31');
+            expect(bar?.getAttribute('aria-label')).toBe('수급 그룹 점수 31');
         });
 
         it('rounds score 0.4 down to 0', () => {
@@ -81,6 +81,23 @@ describe('FearGreedGroupBar', () => {
             const oneish = { ...flowGroup, score: 99.6 };
             const { getByText } = render(<FearGreedGroupBar group={oneish} />);
             expect(getByText('100 / 100')).toBeInTheDocument();
+        });
+    });
+
+    describe('한국어 라벨', () => {
+        it('Trend 그룹은 "추세 그룹"으로 그리고 영문 식별자를 노출하지 않는다', () => {
+            const trendGroup: FearGreedGroup = {
+                name: 'Trend',
+                score: 70,
+                factors: [
+                    { key: 'ma200_distance', rawValue: 0.1, percentile: 75 },
+                ],
+            };
+            const { getByText, container } = render(
+                <FearGreedGroupBar group={trendGroup} />
+            );
+            expect(getByText('추세 그룹')).toBeInTheDocument();
+            expect(container.textContent).not.toMatch(/Trend|Flow|Group|\dth/);
         });
     });
 
@@ -99,7 +116,7 @@ describe('FearGreedGroupBar', () => {
                 <FearGreedGroupBar group={flowGroup} />
             );
             // POC 거리 has percentile 5 → extreme low
-            const extremePctile = getByText(/5th/);
+            const extremePctile = getByText(/5백분위/);
             expect(extremePctile.className).toContain('font-semibold');
         });
 
@@ -108,7 +125,7 @@ describe('FearGreedGroupBar', () => {
                 <FearGreedGroupBar group={flowGroup} />
             );
             // Buy/Sell 불균형 has percentile 60 → not extreme
-            const normalPctile = getByText(/60th/);
+            const normalPctile = getByText(/60백분위/);
             expect(normalPctile.className).not.toContain('font-semibold');
         });
 
@@ -127,7 +144,7 @@ describe('FearGreedGroupBar', () => {
             const { getByText } = render(
                 <FearGreedGroupBar group={highExtreme} />
             );
-            const extremePctile = getByText(/92nd|92th/);
+            const extremePctile = getByText(/92백분위/);
             expect(extremePctile.className).toContain('font-semibold');
         });
     });
