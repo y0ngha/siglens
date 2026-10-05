@@ -66,17 +66,6 @@ const VolumeChart = dynamic(
     { ssr: false, loading: () => <ChartSkeleton /> }
 );
 
-function AnalyzingBanner() {
-    const t = useTranslations('views.symbol');
-    return (
-        <div className="flex items-center gap-2 rounded bg-secondary-700/40 px-3 py-2">
-            <span className="text-sm text-secondary-400">
-                {t('ChartContent.d12df8')}
-            </span>
-        </div>
-    );
-}
-
 interface ErrorBannerProps {
     message: string;
 }
@@ -98,12 +87,10 @@ function AnalysisStatusBanner({
     status,
     className,
 }: AnalysisStatusBannerProps) {
-    if (status.type === 'analyzing')
-        return (
-            <div className={className}>
-                <AnalyzingBanner />
-            </div>
-        );
+    // 'analyzing'은 의도적으로 그리지 않는다. 분석이 끝나 화면에 떠 있는 동안의 재분석은
+    // AnalysisPanel의 펄스 점·진행 표시가 이미 알리므로, 같은 뜻의 "AI 분석 중…" 줄이
+    // 한 번 더 뜨면 모바일 Peek 같은 좁은 영역에서 중복 신호가 된다. 첫 분석(서사 없음)은
+    // 위쪽 분기가 AnalysisProgress를 따로 그린다.
     if (status.type === 'error')
         return (
             <div className={className}>
@@ -164,6 +151,7 @@ export function ChartContent({
         handleStockChartRemove,
         handleVolumeChartReady,
         handleVolumeChartRemove,
+        setRightOffsetPixels,
     } = useChartSync();
 
     const {
@@ -628,6 +616,7 @@ export function ChartContent({
                         reconciledActionPrices={reconciledActionLines}
                         actionPricesVisible={actionPricesVisible}
                         onChartReady={handleStockChartReady}
+                        onRightGutterChange={setRightOffsetPixels}
                         onChartRemove={handleStockChartRemove}
                         ticker={symbol}
                         marketProfile={marketProfile}
@@ -691,9 +680,15 @@ export function ChartContent({
                 2026-09-27). v0.79.1이 고친 "스크롤바 셋" 제보(v0.79.0 시점)의 원인
                 중 jail·`<main>`은 여전히 스크롤러가 아니다 — 문서 + 이 패널, 둘이다.
                 `md:h-full`이 아니라 변수를 쓰는 건 행이 `items-start`라 stretch로
-                높이를 받지 못하기 때문이다. */}
+                높이를 받지 못하기 때문이다.
+                `md:pb-32`: Ask-AI FAB(`md:bottom-6` 24px + 높이 44px = 바닥에서 68px)이
+                패널 위에 떠 있어, 패널 끝까지 스크롤해도 마지막 줄(재분석 버튼)이 FAB 밑에
+                깔린다. 게다가 `--symbol-chrome-h`가 시간 단위 줄을 세지 않아 문서 스크롤
+                0에서 패널 아래 끝이 첫 뷰포트보다 약 44px 아래에 있다(1512×823 실측:
+                패널 bottom 867px). 44 + 68 + 여유 12 = 124px → 128px(pb-32)로 스크롤
+                끝에서 마지막 줄이 FAB 위로 올라오게 한다. */}
             <aside
-                className="relative hidden flex-none border-l border-secondary-700 p-4 md:flex md:h-(--symbol-chart-h) md:w-(--panel-width) md:flex-col md:overflow-y-auto"
+                className="relative hidden flex-none border-l border-secondary-700 p-4 md:flex md:h-(--symbol-chart-h) md:w-(--panel-width) md:flex-col md:overflow-y-auto md:pb-32"
                 style={
                     {
                         // panelWidth는 드래그 상태에서 런타임에 결정되므로 정적 Tailwind 클래스로 표현 불가

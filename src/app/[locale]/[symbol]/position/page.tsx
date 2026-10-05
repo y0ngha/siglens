@@ -6,7 +6,7 @@ import {
 } from '@/widgets/portfolio-position/lib/positionGeometry';
 import { computeVolumeByBand } from '@/widgets/portfolio-position/lib/volumeByBand';
 import {
-    describeAvgFloor,
+    describeFloor,
     formatAmountAligned,
 } from '@/widgets/portfolio-position/lib/positionBuildingNotes';
 import { PositionTabContent } from '@/widgets/portfolio-position/ui/PositionTabContent';
@@ -319,7 +319,7 @@ function rangeToneKey(currentPos: number): string {
  *
  * 회원 전용 `PositionBuilding`이 쓰는 것과 같은 어휘(저층/중층/고층/펜트하우스,
  * 옥상 위/지하 세대)를 내기 위해 `widgets/portfolio-position`의
- * `computePosition`·`describeAvgFloor`를 그대로 재사용한다 — 두 표현이 따로
+ * `computePosition`·`describeFloor`를 그대로 재사용한다 — 두 표현이 따로
  * 갈라지면(MISTAKES #2) 이 페이지와 로그인 후 빌딩 시각화가 같은 위치를 다른
  * 말로 설명하게 된다.
  *
@@ -348,13 +348,13 @@ function resolveCurrentPricePosition(
     const percentile = Math.round(model.currentPos * 100);
     return {
         percentile,
-        floorLabel: describeAvgFloor(
+        floorLabel: describeFloor(
             model.currentPos,
             model.currentClamped,
             BAND_COUNT,
             tPos
         ),
-        // 반올림된 퍼센타일이 아니라 `describeAvgFloor`가 받는 것과 **같은**
+        // 반올림된 퍼센타일이 아니라 `describeFloor`가 받는 것과 **같은**
         // 원본 위치를 넘긴다 — 반올림을 거치면 경계에서 둘이 또 갈린다.
         tone: tBand(rangeToneKey(model.currentPos)),
     };

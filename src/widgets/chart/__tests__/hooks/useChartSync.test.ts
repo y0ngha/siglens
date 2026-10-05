@@ -12,6 +12,7 @@ function makeMockChart() {
     };
     return {
         timeScale: () => ts,
+        applyOptions: vi.fn(),
         _timeScaleMock: ts,
     };
 }
@@ -24,6 +25,7 @@ describe('useChartSync', () => {
         expect(typeof result.current.handleStockChartRemove).toBe('function');
         expect(typeof result.current.handleVolumeChartReady).toBe('function');
         expect(typeof result.current.handleVolumeChartRemove).toBe('function');
+        expect(typeof result.current.setRightOffsetPixels).toBe('function');
     });
 
     it('provides stable handler references across re-renders', () => {
@@ -260,5 +262,99 @@ describe('useChartSync', () => {
                 .calls[0][0];
 
         expect(() => handler({ from: 0, to: 100 })).not.toThrow();
+    });
+
+    describe('setRightOffsetPixels', () => {
+        type Chart = Parameters<
+            ReturnType<typeof useChartSync>['handleStockChartReady']
+        >[0];
+        const asChart = (chart: unknown) => chart as Chart;
+
+        it('가격·거래량 차트 둘 다 시간축 rightOffsetPixels를 적용한다', () => {
+            const { result } = renderHook(() => useChartSync());
+            const stockChart = makeMockChart();
+            const volumeChart = makeMockChart();
+            result.current.handleStockChartReady(asChart(stockChart));
+            result.current.handleVolumeChartReady(asChart(volumeChart));
+
+            result.current.setRightOffsetPixels(88);
+
+            expect(stockChart.applyOptions).toHaveBeenCalledWith({
+                timeScale: { rightOffsetPixels: 88 },
+            });
+            expect(volumeChart.applyOptions).toHaveBeenCalledWith({
+                timeScale: { rightOffsetPixels: 88 },
+            });
+        });
+
+        it('같은 값을 다시 주면 다시 적용하지 않는다(스크롤 위치를 불필요하게 되돌리지 않는다)', () => {
+            const { result } = renderHook(() => useChartSync());
+            const stockChart = makeMockChart();
+            result.current.handleStockChartReady(asChart(stockChart));
+
+            result.current.setRightOffsetPixels(88);
+            result.current.setRightOffsetPixels(88);
+
+            expect(stockChart.applyOptions).toHaveBeenCalledTimes(1);
+        });
+
+        it('0으로 되돌리면 여백을 해제한다', () => {
+            const { result } = renderHook(() => useChartSync());
+            const stockChart = makeMockChart();
+            result.current.handleStockChartReady(asChart(stockChart));
+            result.current.setRightOffsetPixels(88);
+
+            result.current.setRightOffsetPixels(0);
+
+            expect(stockChart.applyOptions).toHaveBeenLastCalledWith({
+                timeScale: { rightOffsetPixels: 0 },
+            });
+        });
+
+        it('차트가 아직 없으면 던지지 않고, 나중에 준비되는 두 차트에 기억해 둔 값을 입힌다', () => {
+            const { result } = renderHook(() => useChartSync());
+            expect(() => result.current.setRightOffsetPixels(64)).not.toThrow();
+
+            const stockChart = makeMockChart();
+            const volumeChart = makeMockChart();
+            result.current.handleStockChartReady(asChart(stockChart));
+            result.current.handleVolumeChartReady(asChart(volumeChart));
+
+            expect(stockChart.applyOptions).toHaveBeenCalledWith({
+                timeScale: { rightOffsetPixels: 64 },
+            });
+            expect(volumeChart.applyOptions).toHaveBeenCalledWith({
+                timeScale: { rightOffsetPixels: 64 },
+            });
+        });
+
+        it('여백이 0이면 새로 준비되는 차트에 옵션을 건드리지 않는다', () => {
+            const { result } = renderHook(() => useChartSync());
+            const stockChart = makeMockChart();
+
+            result.current.handleStockChartReady(asChart(stockChart));
+
+            expect(stockChart.applyOptions).not.toHaveBeenCalled();
+        });
+
+        it('제거된 차트에는 적용하지 않는다', () => {
+            const { result } = renderHook(() => useChartSync());
+            const stockChart = makeMockChart();
+            result.current.handleStockChartReady(asChart(stockChart));
+            result.current.handleStockChartRemove();
+
+            result.current.setRightOffsetPixels(50);
+
+            expect(stockChart.applyOptions).not.toHaveBeenCalled();
+        });
+
+        it('참조가 렌더 사이에 안정적이다', () => {
+            const { result, rerender } = renderHook(() => useChartSync());
+            const first = result.current.setRightOffsetPixels;
+
+            rerender();
+
+            expect(result.current.setRightOffsetPixels).toBe(first);
+        });
     });
 });
