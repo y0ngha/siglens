@@ -91,26 +91,17 @@ test.describe('KR equity SEO (crawler-facing)', () => {
 
     /**
      * 국내에는 공직자 매매 공시 제도가 없고 yahoo가 KRX 옵션 체인을 주지 않아, 두 탭은
-     * `KR_EQUITY_DESCRIPTOR.tabs`에 없다. 본문 가드가 `notFound()`를 던지지만 **상태는
-     * 200으로 남는다** — Next 16.2가 Suspense 경계 안에서 던진 `notFound()`의 상태를
-     * 200으로 두기 때문이고, 탭 가용성 판정은 어느 탭인지 알아야 해서 `[symbol]/layout.tsx`로
-     * 올릴 수 없다(부모 `loading.tsx`의 Suspense가 자식 세그먼트 레이아웃까지 감싼다).
-     * `crypto-symbol.spec.ts`의 `/BTCUSD/options`가 같은 잔여 동작을 이미 고정하고 있다.
-     *
-     * **그래서 여기서 지켜야 할 것은 상태 코드가 아니라 noindex다.** 색인만 막히면 이
-     * 응답은 크롤 예산 낭비지 색인 사고가 아니다. sitemap도 이 두 URL을 싣지 않는다.
-     * 언젠가 404로 바뀌면 이 단언이 깨지므로, 그때 두 스펙을 함께 갱신하면 된다.
+     * `KR_EQUITY_DESCRIPTOR.tabs`에 없다. 본문 가드의 `notFound()`는 이제 **진짜 404**를 낸다
+     * — 예전엔 `[symbol]/loading.tsx`·크롬 Suspense 경계 안쪽이라 200으로 샜지만(soft 404)
+     * 2026-10-05에 그 서버 경계를 걷어냈다(`symbolNoLoadingBoundaries` 가드). 그래서 상태
+     * 코드까지 단언한다. 404 응답에도 not-found UI의 noindex 메타가 실린다.
      */
-    test('국내 종목에 없는 탭은 not-found UI + noindex로 나간다', async ({
-        page,
-    }) => {
+    test('국내 종목에 없는 탭은 404 + noindex로 나간다', async ({ page }) => {
         for (const tab of ['congress', 'options']) {
             const response = await page.request.get(`/${KR_SYMBOL}/${tab}`);
-            expect(response.status()).toBe(200);
-
-            // 형제 스펙(`symbol-seo.spec.ts`)이 쓰는 것과 같은 직렬화 형태로 맞춘다.
+            expect(response.status()).toBe(404);
             expect(await response.text()).toMatch(
-                /<meta name="robots" content="noindex, follow"\/?>/
+                /<meta name="robots" content="noindex/
             );
         }
     });

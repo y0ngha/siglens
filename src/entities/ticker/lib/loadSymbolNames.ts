@@ -23,7 +23,8 @@ const NAMES_CACHE_KEY = 'symbols-directory-names';
 export const SYMBOL_NAMES_TTL_SECONDS = SECONDS_PER_DAY;
 
 /**
- * `/symbols` 디렉터리의 표기 이름을 한 번에 읽는다.
+ * 종목 목록 화면(`/symbols` 디렉터리, 공포·탐욕 허브의 종목 목록)의 표기 이름을 한 번에
+ * 읽는다. 두 소비자가 같은 인자(전체 인기 목록)로 불러 캐시 엔트리를 공유한다.
  *
  * 주식·ETF는 `korean_tickers`(정본 한글명 오버라이드 포함), 암호화폐는
  * `crypto_assets`에 있다. 두 테이블이 나뉜 것은 이력이고, 이 페이지는 둘을 함께

@@ -4,6 +4,8 @@ import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
 import { Suspense } from 'react';
+import { useSelectedLayoutSegment } from 'next/navigation';
+import { cn } from '@/shared/lib/cn';
 import { ErrorBoundary } from 'react-error-boundary';
 import { SymbolTabs } from './SymbolTabs';
 import { SymbolTabsSkeleton } from './SymbolTabsSkeleton';
@@ -46,6 +48,9 @@ export function SymbolLayoutHeader({
 }: SymbolLayoutHeaderProps) {
     const assetInfo = useAssetInfo(symbol);
     const ticker = symbol.toUpperCase();
+    // 차트(`/{T}`)의 세그먼트는 `null`이다. 하위 탭(`/{T}/news` …)에서는 종목명을 차트로
+    // 가는 링크로 만든다 — 아래 `nameClassName` 주석 참고.
+    const isChartRoute = useSelectedLayoutSegment() === null;
     // `buildDisplayName`과 판정 자체를 공유한다(`entities/ticker`의
     // `shouldShowEnglishName`) — 이쪽은 문자열 하나를 만들고 여기는 색을 나눠 span으로
     // 렌더해서 렌더링까지 공유할 수는 없지만, 판정이 갈리면 같은 페이지의 메타와
@@ -87,6 +92,29 @@ export function SymbolLayoutHeader({
         openSignupNudge,
     } = useSymbolModel();
 
+    /**
+     * 종목명 줄. 하위 탭(뉴스·펀더멘털·…)에서는 이 이름이 **차트 `/{T}`로 가는 링크**다 —
+     * 예전에는 그냥 텍스트라 하위 탭 페이지에서 그 종목의 대표 페이지로 올라가는 앵커가
+     * 없었다(2026-10-05 크롤 감사). 차트 탭에서는 자기 자신이라 링크로 만들지 않는다.
+     * `truncate`는 링크가 되어도 유지한다(좁은 화면 한 줄 규약 — `SymbolHeaderShellFallback` 주석).
+     */
+    const nameClassName =
+        'truncate text-lg font-semibold tracking-wide text-secondary-100';
+    const nameContent = (
+        <>
+            {showKoreanName && (
+                <span className="text-secondary-300">
+                    {assetInfo.koreanName}
+                    {hasCompanyName ? ', ' : ' '}
+                </span>
+            )}
+            {assetInfo && hasCompanyName && (
+                <span className="text-secondary-200">{assetInfo.name} </span>
+            )}
+            ({ticker})
+        </>
+    );
+
     /*
      * 상단 크롬(브레드크럼·탭)은 **전폭 `px-4`**로 둔다. 서브탭 본문이 쓰는
      * `symbol-container`(1024px 중앙)를 크롬에도 걸면 기본 탭인 차트와 어긋난다
@@ -122,20 +150,22 @@ export function SymbolLayoutHeader({
                         살리고, 여기는 시각 스타일만 유지한 채 의미론적 위계에서는
                         제외한다. role 미부여(plain span)로 두면 layout banner 영역의
                         breadcrumb 정도로 처리되어 의도와 일치한다. */}
-                    <span className="truncate text-lg font-semibold tracking-wide text-secondary-100">
-                        {showKoreanName && (
-                            <span className="text-secondary-300">
-                                {assetInfo.koreanName}
-                                {hasCompanyName ? ', ' : ' '}
-                            </span>
-                        )}
-                        {assetInfo && hasCompanyName && (
-                            <span className="text-secondary-200">
-                                {assetInfo.name}{' '}
-                            </span>
-                        )}
-                        ({ticker})
-                    </span>
+                    {isChartRoute ? (
+                        <span className={nameClassName}>{nameContent}</span>
+                    ) : (
+                        <Link
+                            href={`/${ticker}`}
+                            // 하위 탭 하나하나에 렌더되는 헤더 링크 — prefetch는 `_rsc` 해시를
+                            // 탭×진입 경로별로 파편화한다(docs/architecture/CDN_CACHING.md §1).
+                            prefetch={false}
+                            className={cn(
+                                nameClassName,
+                                'transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none'
+                            )}
+                        >
+                            {nameContent}
+                        </Link>
+                    )}
                     {/* 칩은 서버가 계산한 스냅샷을 그대로 렌더하는 순수 컴포넌트다 —
                         훅도 fetch도 없으므로 suspend하거나 throw하지 않는다. 경계를
                         그대로 두는 건 방어용이다: 칩이 어떤 이유로든 터져도 헤더

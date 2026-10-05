@@ -1,9 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { getActiveNoticesAction } from '@/entities/notice/actions/getActiveNoticesAction';
 import { matchPath } from '@/entities/notice/lib/matchPath';
-import { type NoticeRecord } from '@/entities/notice/model/types';
+import { toNoticeRecord } from '@/entities/notice/lib/toNoticeRecord';
+import {
+    type NoticeRecord,
+    type NoticeWireRecord,
+} from '@/entities/notice/model/types';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import { loadDismissedNoticeIds, dismissNotice } from '../utils/noticeStorage';
 
 /** useNoticePopup의 반환 형태 — 노출 큐와 큐 진행 핸들러. */
@@ -11,6 +15,23 @@ export interface UseNoticePopupResult {
     queue: NoticeRecord[];
     advance: () => void;
     dontShowAgain: () => void;
+}
+
+/**
+ * 활성 공지를 `GET /api/notices`로 읽는다. 로케일은 쿼리로 넘긴다 — CDN 캐시 키에
+ * 로케일이 들어가야 먼저 캐시된 언어가 다른 언어 방문자에게 가지 않는다.
+ */
+async function fetchActiveNotices(
+    locale: string,
+    signal: AbortSignal
+): Promise<NoticeRecord[]> {
+    const response = await fetch(
+        `/api/notices?locale=${encodeURIComponent(locale)}`,
+        { signal }
+    );
+    if (!response.ok) throw new Error(`notices HTTP ${response.status}`);
+    const wire = (await response.json()) as NoticeWireRecord[];
+    return wire.map(toNoticeRecord);
 }
 
 /**
@@ -28,6 +49,7 @@ export interface UseNoticePopupResult {
 export function useNoticePopup(pathname: string): UseNoticePopupResult {
     const [allNotices, setAllNotices] = useState<NoticeRecord[]>([]);
     const [consumedIds, setConsumedIds] = useState<readonly string[]>([]);
+    const locale = useCurrentLocale();
 
     // consumedIds 변경 시 재계산되며, 그때 localStorage(dismissed)도 최신으로 재평가한다.
     // dismissed는 deps에 없지만, 이 훅에서 dismissed에 쓰는 유일한 경로인 dontShowAgain이
@@ -65,21 +87,22 @@ export function useNoticePopup(pathname: string): UseNoticePopupResult {
     }, [queue, consume]);
 
     // 활성 공지 fetch는 외부 시스템 동기화 effect. canonical hook order(effects last)에 따라
-    // useMemo/useCallback 뒤에 둔다.
+    // useMemo/useCallback 뒤에 둔다. 서버 액션(POST)이 아니라 GET이라 CDN이 응답을 나눠 쓴다.
     useEffect(() => {
-        let cancelled = false;
-        getActiveNoticesAction()
+        const controller = new AbortController();
+        fetchActiveNotices(locale, controller.signal)
             .then(notices => {
-                if (!cancelled) setAllNotices(notices);
+                if (!controller.signal.aborted) setAllNotices(notices);
             })
             .catch(err => {
+                if (controller.signal.aborted) return;
                 // 공지 fetch 실패는 무시(부가 기능)하되 디버깅 가능하도록 warn
                 console.warn('[useNoticePopup] fetch notices failed:', err);
             });
         return () => {
-            cancelled = true;
+            controller.abort();
         };
-    }, []);
+    }, [locale]);
 
     return { queue, advance, dontShowAgain };
 }

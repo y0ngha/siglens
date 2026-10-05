@@ -21,7 +21,7 @@ import {
 import { buildSymbolDirectory } from '@/shared/lib/symbolDirectory';
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
-import { loadSymbolNames } from './loadSymbolNames';
+import { loadSymbolNames } from '@/entities/ticker/lib/loadSymbolNames';
 import { enterLocale } from '@/shared/lib/enterLocale';
 import { shortenRevalidateIfDatabaseMissingAtBuild } from '@/shared/cache/buildDegradedRevalidate';
 

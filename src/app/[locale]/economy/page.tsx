@@ -2,12 +2,10 @@ import type { Metadata } from 'next';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { type Locale, resolveLocale } from '@/shared/i18n/locales';
 import { buildHubMetadata } from '@/shared/lib/seoAlternates';
-import { Suspense } from 'react';
 
 import { EconomicCalendarGrid as EconomicCalendar } from '@/widgets/economy/sections/EconomicCalendarGrid';
 import { EconomicIndicatorGrid } from '@/widgets/economy/sections/EconomicIndicatorGrid';
 import { EconomyMacroFacts } from '@/widgets/economy/sections/EconomyMacroFacts';
-import { EconomySkeleton } from '@/widgets/economy/sections/EconomySkeleton';
 import { MacroBriefing } from '@/widgets/economy/sections/MacroBriefing';
 // entities/economy/api/*는 server-only(`@upstash/redis` + `next/cache`) 의존이다.
 // app 레이어(RSC)에서만 import하므로 클라이언트 번들 누출 위험이 없다.
@@ -46,7 +44,7 @@ import {
     shortenRevalidateIfFmpFailedAtBuild,
 } from '@/shared/cache/buildDegradedRevalidate';
 
-/** 페이지 최상단 h1 — Suspense 위에 렌더되어 ready와 degraded 양 경로에서 항상 표시된다. */
+/** 페이지 최상단 h1 — `EconomyContent` 위에 렌더되어 ready와 degraded 양 경로에서 항상 표시된다. */
 function EconomyHeroH1({ title }: { title: string }) {
     return (
         <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-50 sm:text-3xl">
@@ -303,9 +301,9 @@ export default async function EconomyPage({
                     같아야 구글이 마크업을 무시하지 않는다. */}
                 <Breadcrumb trail={[{ label: economyTitle(tSeo) }]} />
                 <EconomyHeroH1 title={economyTitle(tSeo)} />
-                <Suspense fallback={<EconomySkeleton />}>
-                    <EconomyContent />
-                </Suspense>
+                {/* 서버 데이터(`EconomyContent`)는 Suspense로 감싸지 않는다 — fallback→본문
+                    교체가 사라져 CLS도 줄고, raw HTML에 숨김 청크가 남지 않는다(2026-10-05). */}
+                <EconomyContent />
                 <FaqSection heading={t('page.ae2ce9')} items={faq} />
             </main>
         </>

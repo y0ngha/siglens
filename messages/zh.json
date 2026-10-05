@@ -99,7 +99,8 @@
                 "4749c9": "由于临时错误，无法显示指数。请稍后重试。",
                 "e533f3": "无法加载恐惧与贪婪指数",
                 "eb2523": "{v0} 主页"
-            }
+            },
+            "symbolListTitle": "各标的恐惧与贪婪指数"
         },
         "forgot-password": {
             "page": {
@@ -1065,7 +1066,6 @@
                     }
                 },
                 "overviewAll": "{v0} 全部",
-                "overviewToken": "全部",
                 "region": {
                     "crypto": "加密货币",
                     "kr": "韩国",
@@ -3082,9 +3082,6 @@
             },
             "EconomyMacroFacts": {
                 "59ed20": "宏观经济一览"
-            },
-            "EconomySkeleton": {
-                "e0e86d": "经济指标加载中"
             },
             "ImpactFilter": {
                 "cc4968": "重要性筛选"

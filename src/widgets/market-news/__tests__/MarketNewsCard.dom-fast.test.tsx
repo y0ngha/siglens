@@ -39,7 +39,7 @@ describe('MarketNewsCard는', () => {
         expect(chip.closest('a')).toBeNull();
     });
 
-    it('주식 티커 칩은 /[symbol]로 딥링크한다', () => {
+    it('큐레이션 주식 티커 칩은 색인되는 뉴스 탭 /[symbol]/news로 딥링크한다', () => {
         render(
             <MarketNewsCard
                 category="stock"
@@ -48,8 +48,20 @@ describe('MarketNewsCard는', () => {
         );
         expect(screen.getByText('AAPL').closest('a')).toHaveAttribute(
             'href',
-            '/AAPL'
+            '/AAPL/news'
         );
+    });
+
+    it('큐레이션 밖(noindex 롱테일) 주식 티커 칩은 링크 없는 텍스트다', () => {
+        render(
+            <MarketNewsCard
+                category="stock"
+                item={{ ...BASE, tickers: ['ZZZNOTREAL'] }}
+            />
+        );
+        const chip = screen.getByText('ZZZNOTREAL');
+        expect(chip.closest('a')).toBeNull();
+        expect(chip).toHaveAttribute('data-testid', 'ticker-chip');
     });
 
     it('티커가 없으면 칩 영역을 렌더하지 않는다', () => {
@@ -176,7 +188,7 @@ describe('MarketNewsCard는', () => {
         );
         const chips = screen.getAllByTestId('ticker-chip');
         expect(chips).toHaveLength(2);
-        expect(chips[0]).toHaveAttribute('href', '/AAPL');
-        expect(chips[1]).toHaveAttribute('href', '/MSFT');
+        expect(chips[0]).toHaveAttribute('href', '/AAPL/news');
+        expect(chips[1]).toHaveAttribute('href', '/MSFT/news');
     });
 });

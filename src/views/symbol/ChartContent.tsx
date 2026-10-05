@@ -32,6 +32,8 @@ import { useAnalysisDerivedData } from './hooks/useAnalysisDerivedData';
 import { useAnalysisDisplay } from './hooks/useAnalysisDisplay';
 import { useAnalysisProgress } from '@/widgets/analysis/hooks/useAnalysisProgress';
 import { useBars } from '@/entities/bars/hooks/useBars';
+import { useHumanInteracted } from '@/shared/hooks/useHumanInteracted';
+import { useHasStoredChartPreferences } from '@/widgets/chart/hooks/useHasStoredChartPreferences';
 import {
     ACTION_PRICES_ITEM_KEY,
     buildOverlayMenuItems,
@@ -154,7 +156,16 @@ export function ChartContent({
     // 비회원 회원가입 유도(Part B) — 같은 심볼에 대한 중복 카운트 방지용.
     const notifiedSymbolRef = useRef<string | null>(null);
 
-    const { bars, indicators } = useBars({ symbol, timeframe, fmpSymbol });
+    // seed의 축소 지표를 전체로 복원하는 재조회는 사람 입력 이후(또는 저장된 차트 설정이 있는
+    // 재방문자)로 미룬다 — 크롤러 렌더마다 나가던 `getBarsAction` POST를 없앤다(`useBars` JSDoc).
+    const humanInteracted = useHumanInteracted();
+    const hasStoredChartPreferences = useHasStoredChartPreferences();
+    const { bars, indicators } = useBars({
+        symbol,
+        timeframe,
+        fmpSymbol,
+        refetchEnabled: humanInteracted || hasStoredChartPreferences,
+    });
 
     const { panelWidth, isDragging, handleDragStart, handleKeyDown } =
         usePanelResize();

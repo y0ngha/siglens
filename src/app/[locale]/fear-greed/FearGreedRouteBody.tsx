@@ -23,7 +23,9 @@ import {
     buildWebPageJsonLd,
 } from '@/shared/lib/seo';
 import { type FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
+import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import { FEAR_GREED_BANDS, fearGreedCopyFor } from './copy';
+import type { FearGreedSymbolLink } from './fearGreedRoute';
 
 interface FearGreedRouteBodyProps {
     readonly market: FearGreedMarketId;
@@ -33,6 +35,12 @@ interface FearGreedRouteBodyProps {
      * 호출하고 그 자리에는 React 컨텍스트가 없어 `useLocale()`이 던진다.
      */
     readonly locale: Locale;
+    /**
+     * 허브 하단 "종목별 공포·탐욕 지수" 목록(그 시장의 색인 종목). 서버 페이지가 미리
+     * 읽어 넘긴다 — 이 컴포넌트는 함수로 직접 호출되는 동기 컴포넌트라 자기 I/O를 갖지
+     * 않는다. 비면 섹션을 생략한다.
+     */
+    readonly symbolLinks?: readonly FearGreedSymbolLink[];
 }
 
 /**
@@ -59,6 +67,7 @@ export function FearGreedRouteBody({
     market,
     view,
     locale,
+    symbolLinks = [],
 }: FearGreedRouteBodyProps) {
     const t = useTranslations('app.fear-greed');
     const tSeo = useTranslations('shared.seo');
@@ -194,6 +203,35 @@ export function FearGreedRouteBody({
                         ))}
                     </dl>
                 </section>
+                {symbolLinks.length > 0 && (
+                    <section
+                        aria-labelledby="market-fear-greed-symbols-heading"
+                        className="page-container pt-6 pb-8"
+                    >
+                        <h2
+                            id="market-fear-greed-symbols-heading"
+                            className={HEADING_SECTION}
+                        >
+                            {t('symbolListTitle')}
+                        </h2>
+                        <ul className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3 lg:grid-cols-4">
+                            {symbolLinks.map(item => (
+                                <li key={item.symbol} className="min-w-0">
+                                    <Link
+                                        href={`/${item.symbol}/fear-greed`}
+                                        // 허브당 수백 개 링크 — prefetch가 붙으면 진입만으로
+                                        // 수백 개 `_rsc` 요청이 나간다
+                                        // (docs/architecture/CDN_CACHING.md §1).
+                                        prefetch={false}
+                                        className="block truncate rounded text-sm text-secondary-300 transition-colors hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                                    >
+                                        {item.label}
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                )}
             </main>
         </>
     );

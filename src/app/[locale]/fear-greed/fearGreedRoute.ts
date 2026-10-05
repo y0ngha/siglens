@@ -4,11 +4,21 @@ import type {
     MarketFearGreedView,
     MarketFearGreedViewSnapshot,
 } from '@/entities/market-fear-greed/model';
-import { resolveLocale } from '@/shared/i18n/locales';
+import { resolveLocale, type Locale } from '@/shared/i18n/locales';
 import type { FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
 import { buildHubMetadata } from '@/shared/lib/seoAlternates';
-import { shortenRevalidateIfFmpFailedAtBuild } from '@/shared/cache/buildDegradedRevalidate';
+import {
+    shortenRevalidateIfDatabaseMissingAtBuild,
+    shortenRevalidateIfFmpFailedAtBuild,
+} from '@/shared/cache/buildDegradedRevalidate';
 import { scopeUsesFmp } from '@/shared/api/market/getMarketDataProvider';
+import { loadSymbolNames } from '@/entities/ticker/lib/loadSymbolNames';
+import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
+import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
+import {
+    buildSymbolDirectory,
+    type SymbolDirectorySection,
+} from '@/shared/lib/symbolDirectory';
 import { fearGreedCopyFor } from './copy';
 
 type FearGreedRouteView = MarketFearGreedView<MarketFearGreedViewSnapshot>;
@@ -83,4 +93,41 @@ export async function loadFearGreedView(
     if (scopeUsesFmp(source.market))
         await shortenRevalidateIfFmpFailedAtBuild();
     return view;
+}
+
+/** 허브가 나열하는 종목 한 줄(`애플 (AAPL)` 라벨 + canonical 심볼). */
+export type FearGreedSymbolLink = SymbolDirectorySection['items'][number];
+
+/**
+ * 허브 하단 "종목별 공포·탐욕 지수" 목록 — **그 시장의 색인 종목 전부**.
+ *
+ * ## 왜 있는가 (2026-10-05 운영 크롤)
+ *
+ * 색인되는 종목 공포탐욕 탭(`/{T}/fear-greed`)으로 들어가는 외부 유입 링크가 거의 없었다.
+ * 허브(`/fear-greed`·`/kr`·`/crypto`)는 시장 전체 지수만 보여주고 종목 탭으로는 한 줄도
+ * 잇지 않았다. 이 목록이 허브 → 종목 탭 간선을 만든다.
+ *
+ * ## 왜 점수를 싣지 않는가
+ *
+ * 종목별 점수를 보이려면 종목마다 5년 일봉을 읽어 계산해야 한다(허브 하나에 봉 326회 로드).
+ * 이 목록의 목적은 크롤 경로라 앵커 텍스트(`애플 (AAPL)`)만 있으면 된다.
+ *
+ * 이름은 `/symbols`와 **같은 입구**(`loadSymbolNames`)·같은 인자라 캐시 엔트리도 공유한다.
+ * 이름 조회가 실패해도(빈 맵) 티커만 찍힌 채 링크는 남는다.
+ */
+export async function loadFearGreedSymbolLinks(
+    market: FearGreedMarketId,
+    locale: Locale
+): Promise<readonly FearGreedSymbolLink[]> {
+    // 이름은 DB에서 온다 — DB 없는 배포 빌드가 티커만 찍힌 목록을 1시간 동안 굳히지
+    // 않게 이 렌더를 60초 뒤 재생성하게 한다(`/symbols`와 같은 규약).
+    await shortenRevalidateIfDatabaseMissingAtBuild();
+    const names = await loadSymbolNames(
+        [...POPULAR_TICKERS, ...POPULAR_CRYPTOS],
+        locale
+    );
+    return (
+        buildSymbolDirectory(names).find(section => section.id === market)
+            ?.items ?? []
+    );
 }

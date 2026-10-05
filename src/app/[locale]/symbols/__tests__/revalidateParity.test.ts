@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { SYMBOL_NAMES_TTL_SECONDS } from '@/app/[locale]/symbols/loadSymbolNames';
+import { SYMBOL_NAMES_TTL_SECONDS } from '@/entities/ticker/lib/loadSymbolNames';
 
 /**
  * 페이지의 `revalidate`와 이름 캐시 TTL은 같은 주기여야 한다.
