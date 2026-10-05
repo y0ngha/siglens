@@ -338,6 +338,18 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ // Called by chart, fear-greed, and overview routes — updated comment to enumerate callers
     → Recurring: feat/symbol-metadata-simplify Round 1, claude/magical-sagan-56eoov-hub-data Round 1 — 2 occurrences
 
+15.6b. Comments/JSDoc must be updated when code they reference changes
+    → When a function's inputs/implementation/location change, grep all files for comments/JSDoc mentioning that function/file and update them in the same change
+    → When a rule or implementation changes, update all comments that describe the old behavior
+    → When a file/function is removed, grep comments for references to it and remove stale claims
+    ❌ Function's data source changes from 2-year to 5-year bars; comments still describe "2-year bar input" in 6+ locations
+    ❌ Test file removed; comments in other files still reference the old filename
+    ❌ Rule implementation changes; comments describing the old rule stay behind in calling code
+    ✅ After changing function inputs: grep callers and update comments that describe the input contract
+    ✅ Before removing a file: grep repo for its filename in comments and remove references
+    ✅ When updating a rule: grep for comments explaining the old rule and update them in the same change
+    → Recurring: fix/news-ingest-firehose-gate R1, feat/fear-greed-5y R1×2 (3 occurrences)
+
 15.62. Layout refactoring — Stale geometry comments persist when reversing a layout contract
     → When reversing a layout contract (size relationship, flex direction, overflow behavior), comments and test names describing the OLD contract stay behind in sibling files outside the diff
     → After major layout changes, audit both test assertion text and inline comments describing geometry across the whole repo (src/, e2e/, docs/), not only changed files

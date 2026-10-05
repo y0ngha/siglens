@@ -691,12 +691,17 @@ describe('Symbol page', () => {
             // 내부링크)가 프로즈 뒤에 추가되면서 마지막 자리가 바뀌었는데, FIX 1이
             // 지키려던 것은 "마지막"이 아니라 "차트 wrapper보다 뒤"다. 위치를 절대
             // 인덱스로 고정하면 그 뒤에 뭘 붙일 때마다 의미 없이 깨진다.
-            const proseIndex = mainChildren.findIndex(
+            // 프로즈는 차트와 띄우는 여백 래퍼(`empty:hidden`) 안에 있다 — 래퍼의
+            // 자식이 실제로 TechnicalSnapshotProse인지까지 확인한다.
+            const proseWrapperIndex = mainChildren.findIndex(
                 child =>
-                    (child as { type?: unknown } | null)?.type ===
-                    TechnicalSnapshotProse
+                    (
+                        child as {
+                            props?: { children?: { type?: unknown } };
+                        } | null
+                    )?.props?.children?.type === TechnicalSnapshotProse
             );
-            expect(proseIndex).toBeGreaterThan(-1);
+            expect(proseWrapperIndex).toBeGreaterThan(-1);
             // 차트 wrapper = 뷰포트 높이를 예약하는 shrink-0 div (Suspense 경계를
             // 품는 자식). 높이는 `--symbol-chart-h`가 들고 있다.
             const chartWrapperIndex = mainChildren.findIndex(child => {
@@ -710,7 +715,7 @@ describe('Symbol page', () => {
                 );
             });
             expect(chartWrapperIndex).toBeGreaterThan(-1);
-            expect(proseIndex).toBeGreaterThan(chartWrapperIndex);
+            expect(proseWrapperIndex).toBeGreaterThan(chartWrapperIndex);
         });
 
         /**

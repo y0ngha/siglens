@@ -458,7 +458,8 @@ export default async function SymbolPage({ params }: Props) {
                     프로즈로 렌더되지 않고 initialAnalysis로 CSR-bailout
                     클라이언트에만 seed되므로(위 SymbolPageClient) 여기엔 중복
                     위험이 없다. 스냅샷이 없으면 TechnicalSnapshotProse가 null을
-                    반환해 빈 셸도 없다.
+                    반환한다 — 아래 여백 래퍼는 남지만 `empty:hidden`으로 접혀
+                    빈 카드나 여백이 보이지 않는다.
                     audit fix FIX 1: 위 chart wrapper 뒤로 옮겨 (a) h1보다 DOM에서
                     뒤에 오게 하고(heading 위계, WCAG 1.3.1), (b) chart+AI 영역의
                     flex 분배에서 완전히 제외해(wrapper가 shrink-0) 더 이상 첫 viewport
@@ -472,15 +473,21 @@ export default async function SymbolPage({ params }: Props) {
                     (롱테일 `<티커> 주가`)이고, 봇은 라이브 위젯의 평이화를 받지
                     못하므로(봇 가드) 여기서 실어 보내지 않으면 색인되는 본문이
                     전문 산문으로만 남는다. */}
-                <TechnicalSnapshotProse
-                    content={technicalSnapshot?.content}
-                    symbol={ticker}
-                    displayName={displayName}
-                    marketProfile={marketProfile}
-                    generatedAt={technicalSnapshot?.generatedAt}
-                    plain={technicalSnapshot?.plain}
-                    duplicatesLiveWidget
-                />
+                {/* 차트 바로 밑에 붙으면 접기 카드가 차트의 일부처럼 읽힌다(사용자
+                    제보) — 위·양옆으로 띄운다(좌우는 다른 탭 `<main>`의 `px-4`와 같다).
+                    스냅샷이 없으면 TechnicalSnapshotProse가 null이라 래퍼가 비고,
+                    `empty:hidden`이 그 여백까지 걷어낸다. */}
+                <div className="mt-6 px-4 empty:hidden">
+                    <TechnicalSnapshotProse
+                        content={technicalSnapshot?.content}
+                        symbol={ticker}
+                        displayName={displayName}
+                        marketProfile={marketProfile}
+                        generatedAt={technicalSnapshot?.generatedAt}
+                        plain={technicalSnapshot?.plain}
+                        duplicatesLiveWidget
+                    />
+                </div>
             </main>
         </>
     );
