@@ -82,6 +82,25 @@ function etMidnight(now: Date): Date {
     return new Date(Date.UTC(year, month - 1, day, ET_NOON_UTC_HOUR));
 }
 
+/**
+ * Calendar days from today (ET) to `expirationDate` (`YYYY-MM-DD`), floored at 0.
+ *
+ * Shared by the Yahoo normalizer and the last-good fallback
+ * (`rebaseOptionsSnapshot`) so a re-served snapshot counts days the same way a
+ * freshly normalized one does.
+ */
+export function daysToExpirationFrom(
+    expirationDate: string,
+    now: Date
+): number {
+    const expMidnight = new Date(`${expirationDate}T00:00:00.000Z`);
+    const refMidnight = etMidnight(now);
+    return Math.max(
+        0,
+        Math.round((expMidnight.getTime() - refMidnight.getTime()) / MS_PER_DAY)
+    );
+}
+
 /** Normalize a single call or put contract from yahoo-finance2 into an OptionsContract. */
 export function normalizeYahooContract(c: YahooCallOrPut): OptionsContract {
     return {
@@ -108,12 +127,7 @@ export function normalizeYahooExpiration(
 ): OptionsChain {
     const expirationDate = toUtcIsoDate(yexp.expirationDate);
 
-    const expMidnight = new Date(`${expirationDate}T00:00:00.000Z`);
-    const refMidnight = etMidnight(now);
-    const daysToExpiration = Math.max(
-        0,
-        Math.round((expMidnight.getTime() - refMidnight.getTime()) / MS_PER_DAY)
-    );
+    const daysToExpiration = daysToExpirationFrom(expirationDate, now);
 
     const calls = yexp.calls
         .map(normalizeYahooContract)

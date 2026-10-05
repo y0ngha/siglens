@@ -42,7 +42,7 @@ import {
     SkillsShowcase,
     SkillsShowcaseSkeleton,
 } from '@/widgets/home/SkillsShowcase';
-import { StatsBar, StatsBarSkeleton } from '@/widgets/home/StatsBar';
+import { StatsBar } from '@/widgets/home/StatsBar';
 import { TickerCategories } from '@/widgets/home/TickerCategories';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import type { Metadata } from 'next';
@@ -131,11 +131,6 @@ const loadSkills = cache(async () => {
         return [];
     }
 });
-
-async function AsyncStatsBar() {
-    const skills = await loadSkills();
-    return <StatsBar skills={skills} />;
-}
 
 async function SkillsShowcaseServer() {
     const skills = await loadSkills();
@@ -398,9 +393,9 @@ export default async function Home({
                         </div>
                     </div>
                     <div className="relative mt-10">
-                        <Suspense fallback={<StatsBarSkeleton />}>
-                            <AsyncStatsBar />
-                        </Suspense>
+                        {/* 위에서 이미 읽은 `skillCounts`(히어로 카피와 같은 소스)를 그대로 쓴다 —
+                            종목 페이지의 진행 문구·가입 업셀과 같은 수를 말한다. */}
+                        <StatsBar counts={skillCounts} />
                     </div>
                 </section>
                 <section className="page-container pb-8">
@@ -446,6 +441,7 @@ export default async function Home({
                     <FaqSection
                         heading={tSeo('faqHeading.home')}
                         items={homeFaq}
+                        linkifyPaths
                     />
                 </section>
             </main>

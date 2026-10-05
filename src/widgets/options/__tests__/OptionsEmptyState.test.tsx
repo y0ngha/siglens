@@ -26,6 +26,19 @@ describe('OptionsEmptyState', () => {
         ).toBeInTheDocument();
     });
 
+    it.each(['TSLA', '삼성전자', '셀트리온'])(
+        '조사는 받침과 무관한 "에는"이다 (%s)',
+        symbol => {
+            render(<OptionsEmptyState symbol={symbol} />);
+            expect(
+                screen.getByText(
+                    `${symbol}에는 현재 옵션 시장이 형성되어 있지 않습니다.`,
+                    { exact: false }
+                )
+            ).toBeInTheDocument();
+        }
+    );
+
     it('renders fallback navigation links', () => {
         render(<OptionsEmptyState symbol="TSLA" />);
         const links = screen.getAllByRole('link');

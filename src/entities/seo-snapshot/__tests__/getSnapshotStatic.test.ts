@@ -207,6 +207,64 @@ describe('getSeoSnapshotsStatic', () => {
         });
     });
 
+    describe('프리웜 대상이 아닌 탭 필터', () => {
+        const freshAt = () => new Date(FIXED_NOW.getTime() - 1000);
+
+        it.each([
+            'overall',
+            'fundamental',
+            'financials',
+            'congress',
+            'options',
+        ])(
+            '%s 행은 7일 안이어도 버린다(더 이상 갱신되지 않는 낡은 분석)',
+            async tab => {
+                mockFindBySymbol.mockResolvedValue([
+                    snapshotAt(freshAt(), tab),
+                ]);
+
+                const result = await getSeoSnapshotsStatic('AAPL', 3600, 'ko');
+
+                expect(result).toEqual([]);
+            }
+        );
+
+        it('technical·news 행은 그대로 통과한다', async () => {
+            const technical = snapshotAt(freshAt(), 'technical');
+            const news = snapshotAt(freshAt(), 'news');
+            mockFindBySymbol.mockResolvedValue([
+                technical,
+                snapshotAt(freshAt(), 'options'),
+                news,
+            ]);
+
+            const result = await getSeoSnapshotsStatic('AAPL', 3600, 'ko');
+
+            expect(result).toEqual([technical, news]);
+        });
+
+        it('이미 캐시에 담긴 값(fetcher를 거치지 않은 JSON 왕복 행)에도 적용된다', async () => {
+            // 캐시 히트 경로는 fetcher 안의 필터를 지나지 않는다 — 배포 전에 저장된
+            // options 행이 TTL 동안 남지 않으려면 캐시 값을 읽은 뒤에 걸러야 한다.
+            const cached = (tab: string) => ({
+                symbol: 'AAPL',
+                tab,
+                locale: 'ko',
+                content: {},
+                model: 'test-model',
+                generatedAt: freshAt().toISOString(),
+                updatedAt: freshAt().toISOString(),
+            });
+            mockStaticSymbolCache.mockImplementationOnce(() =>
+                Promise.resolve([cached('options'), cached('technical')])
+            );
+
+            const result = await getSeoSnapshotsStatic('AAPL', 3600, 'ko');
+
+            expect(result.map(row => row.tab)).toEqual(['technical']);
+        });
+    });
+
     describe('캐시 히트 JSON 왕복 rehydrate', () => {
         it('캐시 히트로 JSON 왕복을 거친 행도 Date로 되살린다', async () => {
             // unstable_cache는 결과를 JSON.stringify → JSON.parse 한다. Date가 ISO

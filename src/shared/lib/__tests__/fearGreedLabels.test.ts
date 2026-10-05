@@ -1,15 +1,12 @@
 import {
     CONFIDENCE_LIMITED_KEY,
-    CONFIDENCE_NORMAL_KEY,
-    confidenceLabelKey,
     formatFactorRaw,
 } from '@/shared/lib/fearGreedLabels';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 
 // 문구는 `shared.lib.fearGreed` 카탈로그로 옮겼다 — 예전엔 모듈 상수라
-// `/en/AAPL/fear-greed` footer가 `표본 200 — 정상 산출`을 그대로 렌더했다.
+// `/en/AAPL/fear-greed` footer가 한국어 문장을 그대로 렌더했다.
 const NS = 'shared.lib.fearGreed';
-const tEn = catalogTranslator(NS, 'en');
 
 describe('formatFactorRaw', () => {
     it('volume_z는 소수 둘째 자리 일반 포맷으로 출력한다', () => {
@@ -34,22 +31,14 @@ describe('formatFactorRaw', () => {
     });
 });
 
-describe('confidenceLabelKey', () => {
-    it('confidence가 normal이면 정상 라벨 키를 고른다', () => {
-        expect(confidenceLabelKey('normal')).toBe(CONFIDENCE_NORMAL_KEY);
-    });
-
-    it('confidence가 limited이면 제한 라벨 키를 고른다', () => {
-        expect(confidenceLabelKey('limited')).toBe(CONFIDENCE_LIMITED_KEY);
-    });
-
+describe('sample-size footer catalog', () => {
     it.each(['ko', 'en', 'ja', 'zh'] as const)(
-        '%s: footer 템플릿과 두 라벨이 카탈로그에 다 있다',
+        '%s: 정상·제한 두 문장과 헤더 칩 라벨이 카탈로그에 다 있다',
         locale => {
             const t = catalogTranslator(NS, locale);
             for (const key of [
-                'confidenceFooter',
-                CONFIDENCE_NORMAL_KEY,
+                'sampleFooterNormal',
+                'sampleFooterLimited',
                 CONFIDENCE_LIMITED_KEY,
             ]) {
                 expect(t(key), `${locale}.${key}`).toBeTruthy();
@@ -57,11 +46,26 @@ describe('confidenceLabelKey', () => {
         }
     );
 
-    it('en 카탈로그로 조립하면 한글이 남지 않는다', () => {
-        const footer = tEn('confidenceFooter', {
-            v0: 45,
-            v1: tEn(confidenceLabelKey('limited')),
-        });
-        expect(footer).not.toMatch(/[가-힣]/);
+    it('ko 문장은 개발자 용어("표본", "산출") 없이 거래일 수만 말한다', () => {
+        const tKo = catalogTranslator(NS, 'ko');
+        for (const key of ['sampleFooterNormal', 'sampleFooterLimited']) {
+            const text = tKo(key, { v0: 45 });
+            expect(text).not.toMatch(/표본|산출/);
+        }
+    });
+
+    it('en 문장에 한글이 남지 않는다', () => {
+        const tEn = catalogTranslator(NS, 'en');
+        for (const key of ['sampleFooterNormal', 'sampleFooterLimited']) {
+            expect(tEn(key, { v0: 45 })).not.toMatch(/[가-힣]/);
+        }
+    });
+
+    it('옛 confidenceFooter/confidenceNormal 키는 모든 카탈로그에서 사라졌다', () => {
+        for (const locale of ['ko', 'en', 'ja', 'zh'] as const) {
+            const t = catalogTranslator(NS, locale);
+            expect(() => t('confidenceFooter')).toThrow();
+            expect(() => t('confidenceNormal')).toThrow();
+        }
     });
 });

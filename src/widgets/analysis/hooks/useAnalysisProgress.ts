@@ -3,9 +3,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { MS_PER_MINUTE } from '@/shared/config/time';
 
-export const PRO_INDICATOR_COUNT = 30;
-export const SKILL_COUNT = 60;
-
 /**
  * 단계·팁 **개수**만 코드가 안다. 문구는 `widgets.analysis.progress`에 있다.
  *

@@ -1307,9 +1307,9 @@
                 "titleTooLong": "Keep the subject to {v0} characters or fewer."
             },
             "fearGreed": {
-                "confidenceFooter": "Sample {v0} — {v1}",
                 "confidenceLimited": "Limited confidence",
-                "confidenceNormal": "Normal",
+                "sampleFooterLimited": "Only {v0, number} trading days of history to compare, so the score may be less accurate.",
+                "sampleFooterNormal": "Score based on comparison with the last {v0, number} trading days.",
                 "warningChronicStrength": "This ticker is in a long-run uptrend. The score shows where it sits relative to its own usual range, which can differ from absolute strength — treat it as a reference only.",
                 "warningChronicWeakness": "This ticker is in a long-run downtrend. The score shows where it sits relative to its own usual range, which can differ from absolute strength — treat it as a reference only."
             },
@@ -1340,11 +1340,11 @@
                     "volume_flow": "Volume flow"
                 },
                 "symbolLabel": {
-                    "buysell_imbalance": "Buy/sell imbalance",
-                    "ma200_distance": "Distance from MA200",
-                    "poc_distance": "Distance from POC ({v0} bars)",
+                    "buysell_imbalance": "Buy/Sell Volume Imbalance",
+                    "ma200_distance": "Distance from 200-day Moving Average",
+                    "poc_distance": "Distance from Point of Control of last {v0} bars",
                     "range_position": "Position in last 252 bars",
-                    "volume_z": "Volume z-score (direction)"
+                    "volume_z": "Volume Surge (directional)"
                 },
                 "descriptionCrypto": {
                     "momentum": "The further Bitcoin sits above its 125-day moving average, the greedier",
@@ -1833,7 +1833,7 @@
                 "flatChange": "0.00% flat",
                 "holdingAverage": "Avg {v0} · {v1} shares",
                 "lastNDays": "Last {v0} days",
-                "liveCrossRef": "Live AI analysis appears in the analysis panel; if none is cached it shows after the next refresh.",
+                "liveCrossRef": "This is a previously saved analysis and may differ from current prices.",
                 "naverNews": "Naver News",
                 "noticeWrittenOn": "Written {v0}.{v1}.{v2}",
                 "openingChat": "Opening chat…",
@@ -2018,7 +2018,8 @@
                 "d12df8": "AI Analysis...",
                 "d1a23e": "Adjust Panel Width",
                 "f69071": "AI Chart Analysis",
-                "ff6b09": "Quote data is delayed by up to 15 minutes."
+                "quoteAsOfLoad": "Prices are as of page load time.",
+                "quoteDelayed": "Price data is delayed by approximately {v0} minutes."
             },
             "CongressSnapshotProse": {
                 "739702": "{v0} Congressional Trades Trend: {v1}",
@@ -2192,7 +2193,7 @@
                 "evBattery": "EVs & batteries",
                 "internetPlatform": "Internet & platforms",
                 "leveragedEtf": "Leveraged & inverse ETFs",
-                "sameMarket": "Same market",
+                "sameMarket": "Explore other stocks",
                 "sector": {
                     "XLB": "Materials sector",
                     "XLC": "Communication services sector",
@@ -2697,14 +2698,14 @@
             "progress": {
                 "phase": {
                     "p0": "Sorting market data",
-                    "p1": "Analyzing signals from {v0}+ indicators",
+                    "p1": "Analyzing {v0} indicator signals",
                     "p2": "Detecting Candlestick Patterns and chart patterns",
-                    "p3": "Matching signals across {v1}+ skills",
+                    "p3": "Matching signals by combining {v1} skills",
                     "p4": "Summarizing scenarios and risk",
                     "p5": "Writing the AI overall reading"
                 },
                 "tip": {
-                    "t0": "The analysis combines {v0}+ indicators with {v1}+ skills.",
+                    "t0": "Analysis combines {v0} types of indicators and {v1} analysis skills.",
                     "t1": "AI analysis usually takes about five minutes, and up to fifteen when it runs long.",
                     "t2": "You can leave this open and do something else — the result appears on its own when the analysis finishes.",
                     "t3": "It reads the trend by combining signals from indicators such as RSI, MACD and Bollinger Bands.",
@@ -2838,7 +2839,9 @@
                 "fd0418": "Checking permissions."
             },
             "VolumeChart": {
-                "1ae051": "Volume Chart"
+                "1ae051": "Volume Chart",
+                "buy": "Buy",
+                "sell": "Sell"
             },
             "actionOverlay": {
                 "entryPoint": "Entry #{v0}",
@@ -3126,10 +3129,14 @@
         },
         "fear-greed": {
             "FearGreedGroupBar": {
-                "groupScore": "{v0} group score {v1}"
+                "groupNameFlow": "Flow",
+                "groupNameTrend": "Trend",
+                "groupScore": "{v0} group score {v1}",
+                "groupTitle": "{v0} Group",
+                "percentile": "Percentile {v0}"
             },
             "FearGreedPage": {
-                "0506ae": "Score breakdown by Flow and Trend groups",
+                "0506ae": "Detailed Scores by Flow and Trend Group",
                 "180c65": "Fear & Greed Index Trend (Last 1 Year)",
                 "29eed9": "Current Fear & Greed Index and Period Comparison",
                 "7da634": "Fear & Greed Index Loading",
@@ -3141,7 +3148,7 @@
                 "f9482c": "Fear & Greed Index"
             },
             "FearGreedShareView": {
-                "0506ae": "Score breakdown by Flow and Trend groups",
+                "0506ae": "Detailed Scores by Flow and Trend Group",
                 "d9e96a": "Current Fear & Greed Index"
             },
             "gauge": {
@@ -3150,7 +3157,7 @@
                 "ariaScoreWithPeriod": "{v0} Fear & Greed Index {v1}, {v2}",
                 "confidenceLimited": "Limited confidence",
                 "confidenceLimitedNote": "There is not enough trading data, so confidence is limited.",
-                "confidenceLimitedRecovery": "It switches back to a normal reading once enough samples accumulate.",
+                "confidenceLimitedRecovery": "As more data accumulates, the score will become more accurate.",
                 "confidenceNormal": "Normal confidence",
                 "confidenceNormalNote": "The sample is large enough for a high-confidence score.",
                 "indicatorStable": "The indicator is running stably."
@@ -3696,7 +3703,8 @@
                 "598bf4": "▸ Signals",
                 "e0c6a1": "Option Signal List",
                 "e26a05": "▸ Interpretation by Expiration",
-                "eefb95": "AI Option Analysis"
+                "eefb95": "AI Option Analysis",
+                "previousSessionBasis": "Analysis Basis: Options data from previous regular session · Collected {v0}"
             },
             "OptionsAiAnalysisError": {
                 "e756f5": "Failed to fetch options analysis. Please try again shortly.",
@@ -3725,16 +3733,19 @@
                 "9e8562": "Explore the stock on other analysis pages."
             },
             "OptionsMetricsRow": {
-                "6db40b": "Total across all expiries — displayed based on the nearest expiry ({v0})."
+                "6db40b": "Total across all expiries — displayed based on the nearest expiry ({v0}).",
+                "atmIv": "ATM Implied Volatility",
+                "impliedMove": "Implied Move",
+                "maxPain": "Max Pain",
+                "previousSessionCaption": "Based on the last regular session · collected {v0}",
+                "putCallRatio": "Put/Call Ratio"
             },
             "OptionsStaleDataBanner": {
-                "2696b9": "In Korean time, during Daylight Saving Time (EDT) it's {v0}, and during Standard Time (EST) it's {v1}.",
                 "6ac929": "Options OI data is empty",
                 "6bdf35": "It is currently {v0}, please check again at {v1}.",
                 "92d2c9": "Standard Time (EST)",
                 "951cc7": "Daylight Saving Time (EDT)",
-                "baed2a": "After the close of the US regular trading session, Yahoo does not update values such as Open Interest, quotes, and IV, so it is temporarily unavailable.",
-                "c5ab1a": "Please check for accurate figures again during U.S. regular market hours ({v0}, weekdays excluding holidays). On U.S. market holidays and early closing days (13:00 ET), data is not updated even during those times."
+                "baed2a": "After the close of the US regular trading session, Yahoo does not update values such as Open Interest, quotes, and IV, so it is temporarily unavailable."
             },
             "StrikeVolumeChart": {
                 "2156df": "Displays today's Call and Put Volume by strike price as a bar chart.\n                    The current stock price is highlighted with a vertical line.",

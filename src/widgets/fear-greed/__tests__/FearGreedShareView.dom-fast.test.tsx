@@ -105,8 +105,8 @@ describe('FearGreedShareView', () => {
 
         it('renders each group name', () => {
             render(<FearGreedShareView snapshot={makeSnapshot()} />);
-            expect(screen.getByText('Flow Group')).toBeInTheDocument();
-            expect(screen.getByText('Trend Group')).toBeInTheDocument();
+            expect(screen.getByText('수급 그룹')).toBeInTheDocument();
+            expect(screen.getByText('추세 그룹')).toBeInTheDocument();
         });
     });
 

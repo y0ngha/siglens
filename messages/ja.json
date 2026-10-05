@@ -1307,9 +1307,9 @@
                 "titleTooLong": "件名は{v0}文字以内で入力してください。"
             },
             "fearGreed": {
-                "confidenceFooter": "サンプル {v0} — {v1}",
                 "confidenceLimited": "信頼度に制限",
-                "confidenceNormal": "正常算出",
+                "sampleFooterLimited": "{v0, number}取引日分の記録しかないため、スコアの精度が低い可能性があります。",
+                "sampleFooterNormal": "過去{v0, number}取引日と比較したスコアです。",
                 "warningChronicStrength": "この銘柄は長期的な強含みの流れにあります。スコアはこの銘柄の平常の動きの中での相対的な位置を示すため、絶対的な強さとは異なることがあります。参考程度にご覧ください。",
                 "warningChronicWeakness": "この銘柄は長期的な弱含みの流れにあります。スコアはこの銘柄の平常の動きの中での相対的な位置を示すため、絶対的な強さとは異なることがあります。参考程度にご覧ください。"
             },
@@ -1340,11 +1340,11 @@
                     "volume_flow": "取引代金の流れ"
                 },
                 "symbolLabel": {
-                    "buysell_imbalance": "売買インバランス",
-                    "ma200_distance": "MA200からの距離",
-                    "poc_distance": "POCからの距離（{v0}バー）",
+                    "buysell_imbalance": "売買出来高の不均衡",
+                    "ma200_distance": "200日移動平均線との乖離",
+                    "poc_distance": "直近{v0}本の価格帯別出来高の中心との乖離",
                     "range_position": "直近252本の位置",
-                    "volume_z": "出来高zスコア（方向性）"
+                    "volume_z": "出来高急増度(方向性考慮)"
                 },
                 "descriptionCrypto": {
                     "momentum": "ビットコインが125日移動平均線より上にあるほど強欲",
@@ -1615,7 +1615,7 @@
                 },
                 "options": {
                     "description": "{subject}のオプション市場をAIが解説します。満期別のMax Pain・Put/Call・ATM IV・Implied Moveと、権利行使価格別OIから市場の賭けどころを読み取れます。",
-                    "descriptionNoMarket": "{subject}には現在オプション市場がありません。チャート・ファンダメンタルズ・ニュース分析で銘柄をご確認ください。",
+                    "descriptionNoMarket": "{subject}には現在オプション市場が形成されていません。チャート・ファンダメンタルズ・ニュース分析で銘柄を調べてみてください。",
                     "titleCore": "オプション分析",
                     "titleTail": "Max Pain・OI・Put/Call"
                 },
@@ -1833,7 +1833,7 @@
                 "flatChange": "0.00% 横ばい",
                 "holdingAverage": "平均取得 {v0}・{v1}株",
                 "lastNDays": "直近{v0}日",
-                "liveCrossRef": "リアルタイムのAI分析は分析パネルで提供されます。キャッシュがない場合は次回更新後に表示されます。",
+                "liveCrossRef": "事前に保存された過去の分析のため、現在の相場と異なる場合があります。",
                 "naverNews": "ネイバーニュース",
                 "noticeWrittenOn": "{v0}.{v1}.{v2} 作成",
                 "openingChat": "チャットを開いています…",
@@ -2018,7 +2018,8 @@
                 "d12df8": "AI分析中…",
                 "d1a23e": "パネル幅調整",
                 "f69071": "AIチャート分析",
-                "ff6b09": "相場データは最大15分遅延します。"
+                "quoteAsOfLoad": "相場はページ読み込み時点のものです。",
+                "quoteDelayed": "相場データは約{v0}分遅延しています。"
             },
             "CongressSnapshotProse": {
                 "739702": "{v0} 議会取引動向: {v1}",
@@ -2192,7 +2193,7 @@
                 "evBattery": "EV・二次電池",
                 "internetPlatform": "インターネット・プラットフォーム",
                 "leveragedEtf": "レバレッジ・インバースETF",
-                "sameMarket": "同じ市場の銘柄",
+                "sameMarket": "他の銘柄を見る",
                 "sector": {
                     "XLB": "素材セクター",
                     "XLC": "コミュニケーションサービスセクター",
@@ -2215,7 +2216,7 @@
                 }
             },
             "technicalFacts": {
-                "closeSummary": "{v0}は直近終値{v1}を基準に、直前の足に比べて{v2}%{v3}しました。",
+                "closeSummary": "{v0}の直近終値{v1}を基準に、直前のローソク足と比較して{v2}% {v3}しました。",
                 "directionDown": "下落",
                 "directionFlat": "横ばい",
                 "directionUp": "上昇",
@@ -2697,14 +2698,14 @@
             "progress": {
                 "phase": {
                     "p0": "市場データを整理中",
-                    "p1": "{v0}種類以上のインジケーターのシグナルを分析中",
+                    "p1": "{v0}個のテクニカル指標シグナルを分析中",
                     "p2": "ローソク足パターンとチャートパターンを検出中",
-                    "p3": "{v1}種類以上のスキルを組み合わせてシグナルを照合中",
+                    "p3": "{v1}個のスキルを組み合わせてシグナルをマッチング中",
                     "p4": "シナリオ・リスクを整理中",
                     "p5": "AIによる総合解釈を作成中"
                 },
                 "tip": {
-                    "t0": "{v0}種類以上のインジケーターと{v1}種類以上のスキルを組み合わせて分析します。",
+                    "t0": "{v0}種類のテクニカル指標と{v1}個の分析スキルを組み合わせて分析します。",
                     "t1": "AI分析は通常5分ほどかかります。長いときは最大15分かかることがあります。",
                     "t2": "この画面を開いたまま他の作業をしていて大丈夫です。分析が完了すると自動で結果が表示されます。",
                     "t3": "RSI、MACD、ボリンジャーバンドなどのインジケーターのシグナルを総合してトレンドを判断しています。",
@@ -2838,7 +2839,9 @@
                 "fd0418": "権限を確認中です。"
             },
             "VolumeChart": {
-                "1ae051": "出来高チャート"
+                "1ae051": "出来高チャート",
+                "buy": "買い",
+                "sell": "売り"
             },
             "actionOverlay": {
                 "entryPoint": "エントリー #{v0}",
@@ -3126,10 +3129,14 @@
         },
         "fear-greed": {
             "FearGreedGroupBar": {
-                "groupScore": "{v0}グループのスコア {v1}"
+                "groupNameFlow": "需給",
+                "groupNameTrend": "トレンド",
+                "groupScore": "{v0}グループのスコア {v1}",
+                "groupTitle": "{v0}グループ",
+                "percentile": "{v0}パーセンタイル"
             },
             "FearGreedPage": {
-                "0506ae": "FlowとTrendグループ別score breakdown",
+                "0506ae": "需給・トレンドグループ別スコア詳細",
                 "180c65": "恐怖・強欲指数推移 (過去1年間)",
                 "29eed9": "現在の恐怖・強欲指数と期間別比較",
                 "7da634": "恐怖・強欲指数読み込み中",
@@ -3141,7 +3148,7 @@
                 "f9482c": "恐怖・強欲指数"
             },
             "FearGreedShareView": {
-                "0506ae": "FlowとTrendグループ別score breakdown",
+                "0506ae": "需給・トレンドグループ別スコア詳細",
                 "d9e96a": "現在の恐怖・強欲指数"
             },
             "gauge": {
@@ -3150,7 +3157,7 @@
                 "ariaScoreWithPeriod": "{v0} 恐怖・強欲指数 {v1}点、{v2}",
                 "confidenceLimited": "信頼度 制限",
                 "confidenceLimitedNote": "取引データが十分でないため、信頼度が制限されます。",
-                "confidenceLimitedRecovery": "サンプルが蓄積されると、自動的に通常の算出に切り替わります。",
+                "confidenceLimitedRecovery": "記録がさらに蓄積されると、スコアの精度が向上します。",
                 "confidenceNormal": "信頼度 正常",
                 "confidenceNormalNote": "サンプル数が十分で、信頼度の高いスコアです。",
                 "indicatorStable": "指標は安定して動作しています。"
@@ -3696,7 +3703,8 @@
                 "598bf4": "▸ シグナル",
                 "e0c6a1": "オプションシグナルリスト",
                 "e26a05": "▸ 満期別解釈",
-                "eefb95": "AIオプション分析"
+                "eefb95": "AIオプション分析",
+                "previousSessionBasis": "分析基準: 直前通常取引時間オプションデータ・{v0}収集"
             },
             "OptionsAiAnalysisError": {
                 "e756f5": "オプション分析を取得できませんでした。しばらくしてからもう一度お試しください。",
@@ -3721,20 +3729,23 @@
             "OptionsEmptyState": {
                 "68a411": "オプション市場情報なし",
                 "840bca": "他の分析ページ",
-                "97e04b": "{v0} には現在オプション市場がありません。",
+                "97e04b": "{v0}には現在オプション市場が形成されていません。",
                 "9e8562": "他の分析ページで銘柄を調べてみてください。"
             },
             "OptionsMetricsRow": {
-                "6db40b": "全満期合計 — 最も近い満期({v0})を基準に表示しています。"
+                "6db40b": "全満期合計 — 最も近い満期({v0})を基準に表示しています。",
+                "atmIv": "ATMインプライドボラティリティ",
+                "impliedMove": "予想変動幅",
+                "maxPain": "マックスペイン",
+                "previousSessionCaption": "直前の通常取引セッション基準 · {v0} 収集",
+                "putCallRatio": "プット/コール比率"
             },
             "OptionsStaleDataBanner": {
-                "2696b9": "韓国時間では、夏時間(EDT)期間であれば{v0}、標準時(EST)期間であれば{v1}です。",
                 "6ac929": "オプションOIデータが空です",
                 "6bdf35": "現在は{v0}期間ですので、{v1}にご確認ください。",
                 "92d2c9": "標準時(EST)",
                 "951cc7": "夏時間(EDT)",
-                "baed2a": "米国通常取引終了後にはYahooがOpen Interest、気配値、IVなどの\n                    数値を更新しないため、一時的に空白となります。",
-                "c5ab1a": "正確な数値は、米国市場の取引時間中（{v0}、休場日を除く平日）に再度ご確認ください。米国市場の休場日および早期終了日（13:00 ET）には、その時間帯でも更新されません。"
+                "baed2a": "米国通常取引終了後にはYahooがOpen Interest、気配値、IVなどの\n                    数値を更新しないため、一時的に空白となります。"
             },
             "StrikeVolumeChart": {
                 "2156df": "コールとプットの本日出来高をストライク価格帯別に棒グラフで\n                    表示します。現在の株価は縦線で強調表示されます。",

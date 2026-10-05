@@ -9,7 +9,6 @@ import { computeSymbolFearGreedSeries } from '@/entities/bars/lib/symbolFearGree
 import {
     SENTIMENT_LABEL_KEY,
     WARNING_TEXT_KEY,
-    confidenceLabelKey,
 } from '@/shared/lib/fearGreedLabels';
 import {
     buildFearGreedFactorLines,
@@ -184,10 +183,13 @@ export function FearGreedFactsSummary({
                 </div>
             </dl>
             <p className="text-xs text-secondary-400">
-                {tFearGreed('confidenceFooter', {
-                    v0: snapshot.sampleSize,
-                    v1: tFearGreed(confidenceLabelKey(snapshot.confidence)),
-                })}
+                {snapshot.confidence === 'normal'
+                    ? tFearGreed('sampleFooterNormal', {
+                          v0: snapshot.sampleSize,
+                      })
+                    : tFearGreed('sampleFooterLimited', {
+                          v0: snapshot.sampleSize,
+                      })}
             </p>
             {extremeZoneRecord !== null && (
                 <FearGreedExtremeZoneRecord record={extremeZoneRecord} />

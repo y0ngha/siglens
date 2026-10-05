@@ -1307,9 +1307,9 @@
                 "titleTooLong": "标题请控制在 {v0} 个字符以内。"
             },
             "fearGreed": {
-                "confidenceFooter": "样本 {v0} — {v1}",
                 "confidenceLimited": "置信度受限",
-                "confidenceNormal": "正常计算",
+                "sampleFooterLimited": "由于只有{v0, number}个交易日的记录可供比较，分数可能不太准确。",
+                "sampleFooterNormal": "这是与过去{v0, number}个交易日相比得出的分数。",
                 "warningChronicStrength": "该标的处于长期强势走势。分数反映的是它在自身常态区间内的相对位置，可能与绝对强度不同，请仅作参考。",
                 "warningChronicWeakness": "该标的处于长期弱势走势。分数反映的是它在自身常态区间内的相对位置，可能与绝对强度不同，请仅作参考。"
             },
@@ -1340,11 +1340,11 @@
                     "volume_flow": "成交额流向"
                 },
                 "symbolLabel": {
-                    "buysell_imbalance": "买卖失衡",
-                    "ma200_distance": "与MA200的距离",
-                    "poc_distance": "与POC的距离（{v0}根）",
+                    "buysell_imbalance": "买卖成交量不平衡",
+                    "ma200_distance": "与200日移动平均线的距离",
+                    "poc_distance": "与最近{v0}根K线筹码密集区中心的距离",
                     "range_position": "近252根K线的位置",
-                    "volume_z": "成交量 z 值（方向）"
+                    "volume_z": "成交量激增程度（反映方向）"
                 },
                 "descriptionCrypto": {
                     "momentum": "比特币高于125日移动平均线越多，越贪婪",
@@ -1615,7 +1615,7 @@
                 },
                 "options": {
                     "description": "AI解读{subject}的期权市场。查看各到期日的Max Pain、认沽认购比、平值隐含波动率与隐含波幅,以及各行权价的未平仓量,洞察市场押注方向。",
-                    "descriptionNoMarket": "{subject}目前没有活跃的期权市场。请查看图表、基本面与新闻分析了解该标的。",
+                    "descriptionNoMarket": "{subject}目前尚未形成期权市场。请通过图表、基本面和新闻分析来查看该股票。",
                     "titleCore": "期权分析",
                     "titleTail": "Max Pain·未平仓·认沽认购比"
                 },
@@ -1833,7 +1833,7 @@
                 "flatChange": "0.00% 持平",
                 "holdingAverage": "成本价 {v0} · {v1} 股",
                 "lastNDays": "最近 {v0} 天",
-                "liveCrossRef": "实时 AI 分析在分析面板中提供。若无缓存，将在下次更新后显示。",
+                "liveCrossRef": "这是预先保存的过往分析，可能与当前市价不同。",
                 "naverNews": "Naver 新闻",
                 "noticeWrittenOn": "撰写于 {v0}.{v1}.{v2}",
                 "openingChat": "正在打开聊天…",
@@ -2018,7 +2018,8 @@
                 "d12df8": "AI 分析中…",
                 "d1a23e": "调整面板宽度",
                 "f69071": "AI图表分析",
-                "ff6b09": "行情数据最多延迟15分钟。"
+                "quoteAsOfLoad": "行情以页面加载时为准。",
+                "quoteDelayed": "行情数据大约延迟{v0}分钟。"
             },
             "CongressSnapshotProse": {
                 "739702": "{v0} 国会交易趋势: {v1}",
@@ -2192,7 +2193,7 @@
                 "evBattery": "电动车与二次电池",
                 "internetPlatform": "互联网与平台",
                 "leveragedEtf": "杠杆与反向ETF",
-                "sameMarket": "同一市场的标的",
+                "sameMarket": "查看其他股票",
                 "sector": {
                     "XLB": "材料板块",
                     "XLC": "通信服务板块",
@@ -2215,7 +2216,7 @@
                 }
             },
             "technicalFacts": {
-                "closeSummary": "{v0} 以最新收盘价 {v1} 计，较前一根K线{v3}{v2}%。",
+                "closeSummary": "截至{v0}的最新收盘价{v1}，较前一根K线{v3}{v2}%。",
                 "directionDown": "下跌",
                 "directionFlat": "持平",
                 "directionUp": "上涨",
@@ -2697,14 +2698,14 @@
             "progress": {
                 "phase": {
                     "p0": "正在整理市场数据",
-                    "p1": "正在分析 {v0} 种以上技术指标的信号",
+                    "p1": "正在分析{v0}个辅助指标信号",
                     "p2": "正在检测K线形态与图表形态",
-                    "p3": "正在组合 {v1} 种以上技能进行信号匹配",
+                    "p3": "正在组合{v1}个技能进行信号匹配",
                     "p4": "正在整理情景与风险",
                     "p5": "正在撰写 AI 综合解读"
                 },
                 "tip": {
-                    "t0": "分析会组合 {v0} 种以上技术指标与 {v1} 种以上技能。",
+                    "t0": "结合{v0}种辅助指标和{v1}个分析技能进行分析。",
                     "t1": "AI 分析通常约需 5 分钟，较慢时最多可能需要 15 分钟。",
                     "t2": "你可以让页面开着去做别的事，分析完成后会自动显示结果。",
                     "t3": "正在综合 RSI、MACD、布林带等技术指标的信号来判断趋势。",
@@ -2838,7 +2839,9 @@
                 "fd0418": "正在验证权限。"
             },
             "VolumeChart": {
-                "1ae051": "成交量图表"
+                "1ae051": "成交量图表",
+                "buy": "买入",
+                "sell": "卖出"
             },
             "actionOverlay": {
                 "entryPoint": "入场点 #{v0}",
@@ -3126,10 +3129,14 @@
         },
         "fear-greed": {
             "FearGreedGroupBar": {
-                "groupScore": "{v0}组得分 {v1}"
+                "groupNameFlow": "供需",
+                "groupNameTrend": "趋势",
+                "groupScore": "{v0}组得分 {v1}",
+                "groupTitle": "{v0}组",
+                "percentile": "{v0}百分位"
             },
             "FearGreedPage": {
-                "0506ae": "Flow和Trend按组分数细分",
+                "0506ae": "供需·趋势分组分数详情",
                 "180c65": "恐惧与贪婪指数趋势 (近1年)",
                 "29eed9": "当前恐惧与贪婪指数与按期间比较",
                 "7da634": "恐惧与贪婪指数加载中",
@@ -3141,7 +3148,7 @@
                 "f9482c": "恐惧与贪婪指数"
             },
             "FearGreedShareView": {
-                "0506ae": "Flow和Trend按组分数细分",
+                "0506ae": "供需·趋势分组分数详情",
                 "d9e96a": "当前恐惧与贪婪指数"
             },
             "gauge": {
@@ -3150,7 +3157,7 @@
                 "ariaScoreWithPeriod": "{v0} 恐惧贪婪指数 {v1} 分，{v2}",
                 "confidenceLimited": "置信度受限",
                 "confidenceLimitedNote": "交易数据不足，因此置信度受限。",
-                "confidenceLimitedRecovery": "样本积累足够后会自动切换为正常计算。",
+                "confidenceLimitedRecovery": "随着记录的增加，分数会更准确。",
                 "confidenceNormal": "置信度正常",
                 "confidenceNormalNote": "样本量充足，分数置信度较高。",
                 "indicatorStable": "指标运行稳定。"
@@ -3696,7 +3703,8 @@
                 "598bf4": "▸ 信号",
                 "e0c6a1": "期权信号列表",
                 "e26a05": "▸ 按到期日划分的解读",
-                "eefb95": "AI 期权分析"
+                "eefb95": "AI 期权分析",
+                "previousSessionBasis": "分析依据: 前一常规交易时段期权数据 · {v0} 收集"
             },
             "OptionsAiAnalysisError": {
                 "e756f5": "未能获取期权分析。请稍后重试。",
@@ -3721,20 +3729,23 @@
             "OptionsEmptyState": {
                 "68a411": "无期权市场信息",
                 "840bca": "其他分析页面",
-                "97e04b": "{v0} 目前没有期权市场。",
+                "97e04b": "{v0}目前尚未形成期权市场。",
                 "9e8562": "请在其他分析页面查看股票。"
             },
             "OptionsMetricsRow": {
-                "6db40b": "所有到期日合计 — 以最近到期日 ({v0}) 为准显示。"
+                "6db40b": "所有到期日合计 — 以最近到期日 ({v0}) 为准显示。",
+                "atmIv": "ATM隐含波动率",
+                "impliedMove": "预期波动幅度",
+                "maxPain": "最大痛点",
+                "previousSessionCaption": "以上一个常规交易时段为准 · {v0} 收集",
+                "putCallRatio": "看跌/看涨比率"
             },
             "OptionsStaleDataBanner": {
-                "2696b9": "韩国时间，夏令时 (EDT) 期间为 {v0}，标准时 (EST) 期间为 {v1}。",
                 "6ac929": "期权OI数据为空",
                 "6bdf35": "现在是 {v0} 期间，请在 {v1} 查看。",
                 "92d2c9": "标准时(EST)",
                 "951cc7": "夏令时(EDT)",
-                "baed2a": "美国常规交易时段结束后，Yahoo不更新Open Interest、报价、IV等数据，因此暂时为空。",
-                "c5ab1a": "请在美国常规交易时间 ({v0}，不含休市日的平日) 再次确认准确数值。美国股市休市日和提前收盘日 (13:00 ET) 在该时间段也不会更新。"
+                "baed2a": "美国常规交易时段结束后，Yahoo不更新Open Interest、报价、IV等数据，因此暂时为空。"
             },
             "StrikeVolumeChart": {
                 "2156df": "以柱状图显示Call和Put今日按行权价划分的成交量。当前股价以竖线突出显示。",

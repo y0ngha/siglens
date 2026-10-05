@@ -1174,7 +1174,7 @@ confidence_weight: 0.5
         expect(counts.news).toBe(2);
     });
 
-    it('서브디렉토리 외부의 _core/* 스킬도 type 기준으로 합산된다', async () => {
+    it('_core/* 내부 primer는 type이 indicator_guide/candlestick이어도 세지 않는다', async () => {
         const files: Record<string, string> = {
             [path.join(SKILLS_DIR, 'indicators/rsi.md')]: skillMd(
                 'RSI',
@@ -1211,10 +1211,10 @@ confidence_weight: 0.5
 
         const counts = await countSkillFiles();
 
-        // _core/indicator-core.md가 type=indicator_guide라 indicators에 합산
-        expect(counts.indicators).toBe(2);
-        // _core/candle-primer.md가 type=candlestick이라 candlesticks에 합산
-        expect(counts.candlesticks).toBe(1);
+        // _core/indicator-core.md(type=indicator_guide)는 내부 primer라 빠지고 RSI만 남는다
+        expect(counts.indicators).toBe(1);
+        // _core/candle-primer.md(type=candlestick)도 내부 primer라 센 값에 들지 않는다
+        expect(counts.candlesticks).toBe(0);
         // 다른 버킷이 누설/오집계되지 않음을 보장
         expect(counts.patterns).toBe(0);
         expect(counts.strategies).toBe(0);

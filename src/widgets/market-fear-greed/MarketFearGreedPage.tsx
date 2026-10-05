@@ -5,7 +5,6 @@ import type {
 } from '@/entities/market-fear-greed/model';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { FearGreedGauge } from '@/shared/ui/FearGreedGauge';
-import { confidenceLabelKey } from '@/shared/lib/fearGreedLabels';
 import type { FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
 import { MarketFearGreedComparison } from './MarketFearGreedComparison';
 import { MarketFearGreedFactorBar } from './MarketFearGreedFactorBar';
@@ -104,10 +103,13 @@ export function MarketFearGreedPage({
             <footer className="flex flex-col gap-1 text-xs text-secondary-500">
                 <p>{tPage(CNN_DIFFERENCE_KEY[market])}</p>
                 <p>
-                    {tFearGreed('confidenceFooter', {
-                        v0: snapshot.sampleSize,
-                        v1: tFearGreed(confidenceLabelKey(snapshot.confidence)),
-                    })}
+                    {snapshot.confidence === 'normal'
+                        ? tFearGreed('sampleFooterNormal', {
+                              v0: snapshot.sampleSize,
+                          })
+                        : tFearGreed('sampleFooterLimited', {
+                              v0: snapshot.sampleSize,
+                          })}
                 </p>
             </footer>
         </div>

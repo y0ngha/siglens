@@ -221,14 +221,34 @@ describe('ChartContent', () => {
                 )
             ).toBeNull();
         });
+    });
 
-        it('crypto에서도 시세 지연 안내는 그대로 렌더한다', () => {
-            // FMP는 crypto도 동일하게 최대 15분 지연 데이터를 제공한다.
-            render(<ChartContent {...defaultProps} marketProfile="crypto" />);
+    describe('시세 지연 안내 — 시장 프로파일의 quoteDelayMinutes를 따른다', () => {
+        it('국내 종목은 20분 지연이라고 말한다', () => {
+            render(
+                <ChartContent {...defaultProps} marketProfile="kr-equity" />
+            );
             expect(
-                screen.getByText(/시세 데이터는 최대 15분 지연됩니다/)
+                screen.getByText(/시세 데이터는 약 20분 지연됩니다/)
             ).toBeDefined();
+            expect(screen.queryByText(/최대 15분/)).toBeNull();
         });
+
+        it.each(['us-equity', 'crypto'] as const)(
+            '%s는 실시간이라 지연 문구 대신 기준 시점을 말한다',
+            marketProfile => {
+                render(
+                    <ChartContent
+                        {...defaultProps}
+                        marketProfile={marketProfile}
+                    />
+                );
+                expect(
+                    screen.getByText(/시세는 페이지를 불러온 시점 기준이에요/)
+                ).toBeDefined();
+                expect(screen.queryByText(/지연됩니다/)).toBeNull();
+            }
+        );
     });
 
     it('renders analysis panel in aside', () => {

@@ -133,7 +133,7 @@ export async function RelatedSymbols({ symbol }: RelatedSymbolsProps) {
             {[...groups].map(([label, items]) => (
                 <div key={label} className="mt-3">
                     {/* 칩만 나열하면 왜 관련 종목인지 알 수 없다 — 그룹의 근거를
-                        한 줄로 밝힌다(테마명 · 섹터명 · "같은 시장 종목"). */}
+                        한 줄로 밝힌다(테마명 · 섹터명 · "다른 종목 둘러보기"). */}
                     <p className="text-xs text-secondary-500">{tRoot(label)}</p>
                     <ul className="mt-1.5 flex flex-wrap gap-2">
                         {items.map(item => {

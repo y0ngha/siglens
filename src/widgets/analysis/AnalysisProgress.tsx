@@ -2,11 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { cn } from '@/shared/lib/cn';
-import {
-    ANALYSIS_PHASE_COUNT,
-    PRO_INDICATOR_COUNT,
-    SKILL_COUNT,
-} from './hooks/useAnalysisProgress';
+import { ANALYSIS_PHASE_COUNT } from './hooks/useAnalysisProgress';
 import { AdBanner } from './AdBanner';
 
 /**
@@ -25,12 +21,21 @@ interface AnalysisProgressProps {
     tipIndex: number;
     /** false이면 광고를 표시하지 않는다. Pro 사용자에게는 false를 전달한다. */
     isFreeUser?: boolean;
+    /**
+     * 진행 문구가 말하는 보조지표 수 — `countSkillFiles().indicators`.
+     * 예전에는 상수(30·60)였고 실제 스킬 수와 어긋났다.
+     */
+    indicatorCount: number;
+    /** 진행 문구가 말하는 분석 스킬 수 — `chartSkillTotal(countSkillFiles())`. */
+    skillCount: number;
 }
 
 export function AnalysisProgress({
     phaseIndex,
     tipIndex,
     isFreeUser = true,
+    indicatorCount,
+    skillCount,
 }: AnalysisProgressProps) {
     const tProgress = useTranslations('widgets.analysis.progress');
     const t = useTranslations('widgets.analysis');
@@ -49,8 +54,8 @@ export function AnalysisProgress({
                 <div className="flex min-w-0 flex-1 flex-col">
                     <span className="text-sm font-medium text-secondary-200">
                         {tProgress(`phase.p${phaseIndex}`, {
-                            v0: PRO_INDICATOR_COUNT,
-                            v1: SKILL_COUNT,
+                            v0: indicatorCount,
+                            v1: skillCount,
                         })}
                         <span className="ml-1 inline-block animate-pulse text-primary-400">
                             …
@@ -62,8 +67,8 @@ export function AnalysisProgress({
                         style={{ animation: 'fade-in 0.6s ease-in' }}
                     >
                         {tProgress(`tip.t${tipIndex}`, {
-                            v0: PRO_INDICATOR_COUNT,
-                            v1: SKILL_COUNT,
+                            v0: indicatorCount,
+                            v1: skillCount,
                         })}
                     </span>
                 </div>

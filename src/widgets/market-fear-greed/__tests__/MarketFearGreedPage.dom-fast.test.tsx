@@ -7,18 +7,9 @@ import type {
     MarketFearGreedView,
 } from '@/entities/market-fear-greed/model';
 import { MarketFearGreedPage } from '@/widgets/market-fear-greed/MarketFearGreedPage';
-import {
-    CONFIDENCE_LIMITED_KEY,
-    CONFIDENCE_NORMAL_KEY,
-    sentimentLabelText,
-} from '@/shared/lib/fearGreedLabels';
+import { sentimentLabelText } from '@/shared/lib/fearGreedLabels';
 import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 import koMessages from '@/../messages/ko.json';
-import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
-
-// 문구는 `shared.lib.fearGreed` 카탈로그에서 온다 — 예전엔 모듈 상수라
-// 비-ko 로케일에서도 한국어 경고가 그대로 나갔다.
-const tFearGreedKo = catalogTranslator('shared.lib.fearGreed', 'ko');
 
 /** ko 카탈로그의 팩터 라벨 — 소스 상수를 대체한다. */
 const FG = koMessages.shared.lib.fearGreedFactor as unknown as {
@@ -111,7 +102,7 @@ describe('MarketFearGreedPage', () => {
                 <MarketFearGreedPage market="us" view={view} />
             );
             expect(
-                getByText(`표본 412 — ${tFearGreedKo(CONFIDENCE_NORMAL_KEY)}`)
+                getByText('지난 412거래일과 비교해 매긴 점수예요.')
             ).toBeInTheDocument();
         });
     });
@@ -130,7 +121,9 @@ describe('MarketFearGreedPage', () => {
                 <MarketFearGreedPage market="us" view={limitedView} />
             );
             expect(
-                getByText(`표본 45 — ${tFearGreedKo(CONFIDENCE_LIMITED_KEY)}`)
+                getByText(
+                    '비교할 기록이 45거래일뿐이라 점수가 덜 정확할 수 있어요.'
+                )
             ).toBeInTheDocument();
         });
     });

@@ -30,6 +30,7 @@ import {
     getSeedBarsStatic,
 } from '@/entities/bars/lib/barsStaticCache';
 import { countSkillFiles } from '@/entities/skill/api';
+import { chartSkillTotal } from '@/shared/lib/skillStats';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { assetInfoSeedUpdatedAt } from '@/shared/config/assetInfoSeed';
 import { MS_PER_SECOND } from '@/shared/config/time';
@@ -428,10 +429,7 @@ export default async function SymbolPage({ params }: Props) {
                                 // 항상 true를 유지한다(봇은 enqueue가 skip되어 생성 안 됨).
                                 initialAnalysisFailed={true}
                                 indicatorCount={skillCounts.indicators}
-                                skillCount={
-                                    skillCounts.patterns +
-                                    skillCounts.strategies
-                                }
+                                skillCount={chartSkillTotal(skillCounts)}
                                 marketProfile={marketProfile}
                             />
                         </Suspense>

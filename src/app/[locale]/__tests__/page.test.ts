@@ -7,7 +7,6 @@ vi.mock('@/widgets/home/SkillsShowcase', () => ({
 }));
 vi.mock('@/widgets/home/StatsBar', () => ({
     StatsBar: () => null,
-    StatsBarSkeleton: () => null,
 }));
 vi.mock('@/widgets/home/TickerCategories', () => ({
     TickerCategories: () => null,
