@@ -64,7 +64,7 @@ describe('CongressDegraded', () => {
                     notableMembersKo: [],
                     riskNoteKo: '',
                 }}
-                snapshotGeneratedAt={new Date('2026-07-31T20:00:00Z')}
+                snapshotGeneratedAt={new Date('2026-07-31T21:00:00Z')}
             />
         );
 

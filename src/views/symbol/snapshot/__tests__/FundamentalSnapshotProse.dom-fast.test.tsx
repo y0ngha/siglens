@@ -186,7 +186,7 @@ describe('FundamentalSnapshotProse — 기준일 표기 (C1 감사)', () => {
                 symbol="AAPL"
                 displayName="Apple Inc."
                 marketProfile="us-equity"
-                generatedAt={new Date('2026-07-31T20:00:00Z')}
+                generatedAt={new Date('2026-07-31T21:00:00Z')}
             />
         );
 
@@ -206,7 +206,7 @@ describe('FundamentalSnapshotProse — 기준일 표기 (C1 감사)', () => {
                 symbol="005930.KS"
                 displayName="삼성전자"
                 marketProfile="kr-equity"
-                generatedAt={new Date('2026-08-14T06:30:00Z')}
+                generatedAt={new Date('2026-08-14T07:30:00Z')}
             />
         );
 

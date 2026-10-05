@@ -4,7 +4,11 @@ import { useId, type ReactNode } from 'react';
 import { PlainAnalysisSwitch } from '@/shared/ui/PlainAnalysisSwitch';
 import { SnapshotProseDisclosure } from './SnapshotProseDisclosure';
 import { AnalysisProvenanceNote } from './AnalysisProvenanceNote';
-import { formatSnapshotAsOf } from '@/shared/lib/formatSnapshotAsOf';
+import type { SnapshotBasis } from '@/entities/seo-snapshot/lib/snapshotBasis';
+import {
+    formatSnapshotAsOf,
+    resolveSnapshotAsOf,
+} from '@/shared/lib/formatSnapshotAsOf';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
@@ -29,6 +33,14 @@ interface SnapshotSummarySectionProps {
      * 없음) — `AS_OF_CAPTION_COPY[marketProfile].fallback`.
      */
     asOf?: Date;
+    /**
+     * 스냅샷 `content`에서 읽은 데이터 기준(`readSnapshotBasis` — 부모 렌더러가 계산한다).
+     * 있으면 캡션 날짜를 행의 `generatedAt`이 아니라 글이 실제로 쓴 **데이터 기준**
+     * (`dataAsOf.barTime` → `analyzedAt`)에서 만든다(`resolveSnapshotAsOf`). 없거나 그
+     * 필드가 비어 있으면 `asOf`(`generatedAt`)로 폴백한다. 실제 분석 시각을 싣는 탭(차트)만
+     * 넘기면 된다.
+     */
+    basis?: SnapshotBasis;
     /**
      * 프리웜이 함께 구워 둔 평이화("쉽게보기") 산문. 있으면 이 셸이 토글을
      * 띄우고 산문/원문을 갈아 끼운다.
@@ -108,8 +120,9 @@ const AS_OF_CAPTION_KEY: Record<
  * 마운트하지 않아야 한다(예: `TechnicalSnapshotProse`가 summary 부재 시
  * `null`을 반환해 이 셸을 감싸지 않는 것과 동일한 계약).
  *
- * 캡션은 `asOf`가 주어지면 스냅샷 행의 실제 기준일(`formatSnapshotAsOf`로
- * `marketProfile`의 타임존으로 포맷)을 노출하고, 없으면 `marketProfile`별 고정
+ * 캡션은 데이터 기준일을 노출한다 — `basis`(content)의 `dataAsOf.barTime` → `analyzedAt` →
+ * `asOf`(행의 `generatedAt`) 순으로 기준 시각을 고르고, 주식은 그 시장의 **직전 완료 세션
+ * 날짜**, 크립토는 UTC 시각까지 낸다(`resolveSnapshotAsOf`). 기준이 하나도 없으면 `marketProfile`별 고정
  * 캡션(`AS_OF_CAPTION_COPY[marketProfile].fallback`)으로 폴백한다. 두 경로 모두
  * 렌더 중 `new Date()`를 호출하지 않는다 — `asOf`는 항상 DB 행의 `generatedAt`
  * 에서 와야 하며, 그래야 같은 캐시 엔트리가 재검증 시점과 무관하게 항상 같은
@@ -131,6 +144,7 @@ export function SnapshotSummarySection({
     displayName,
     marketProfile,
     asOf,
+    basis,
     plain,
     duplicatesLiveWidget = false,
     children,
@@ -141,10 +155,21 @@ export function SnapshotSummarySection({
     const resolvedTitle = title ?? tMisc('recentSummary');
     const locale = useResolvedLocale();
     const headingId = useId();
+    // 배지와 캡션이 같은 조건에서 갈리도록 해석 결과(null 포함)에서 한 번에 만든다.
+    const resolvedAsOf = resolveSnapshotAsOf(
+        {
+            barTimeMs: basis?.barTimeMs,
+            analyzedAtMs: basis?.analyzedAtMs,
+            generatedAtMs: asOf?.getTime(),
+        },
+        marketProfile
+    );
     const formattedAsOf =
-        asOf === undefined
+        resolvedAsOf === null
             ? null
-            : formatSnapshotAsOf(asOf, marketProfile, locale);
+            : formatSnapshotAsOf(resolvedAsOf.instant, marketProfile, locale, {
+                  withTime: resolvedAsOf.withTime,
+              });
     const captionKey = AS_OF_CAPTION_KEY[marketProfile];
     const caption =
         formattedAsOf === null

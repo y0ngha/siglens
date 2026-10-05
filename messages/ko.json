@@ -2425,7 +2425,7 @@
             },
             "SnapshotSummarySection": {
                 "220156": "지난 AI 분석",
-                "asOfCrypto": "UTC 기준",
+                "asOfCrypto": "UTC 시세 기준",
                 "asOfCryptoFallback": "전일 UTC 자정 기준",
                 "asOfKrEquity": "국내 장마감 기준",
                 "asOfKrEquityFallback": "전일 국내 장마감 기준",
