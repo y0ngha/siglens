@@ -2957,5 +2957,9 @@
     "views.symbol.fearGreedFacts.extremeZoneEntries": "4f4c72af594c",
     "views.symbol.fearGreedFacts.extremeZoneCell": "19322d85d76e",
     "views.symbol.fearGreedFacts.extremeZoneInsufficient": "9c9f43e2f266",
-    "views.symbol.fearGreedFacts.extremeZoneNotice": "18300fd40020"
+    "views.symbol.fearGreedFacts.extremeZoneNotice": "18300fd40020",
+    "shared.ui.AiAnalysisAwaitingSection.3e7fd8": "3e7fd8197b80",
+    "shared.ui.AiAnalysisAwaitingSection.05d860": "05d860affa53",
+    "widgets.congress.CongressTrendSummary.bbb041": "bbb04132d90f",
+    "views.symbol.ChartContent.f69071": "f690712a2d85"
 }

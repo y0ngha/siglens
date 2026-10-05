@@ -61,7 +61,7 @@ describe('useNewsAnalysis — branch coverage', () => {
 
     it('miss_no_trigger(게이트가 막은 캐시 전용 조회의 미스)는 오류가 아니라 awaiting_interaction이다', async () => {
         // 서버는 cacheOnly 요청에만 이 상태를 돌려준다(AI 자동 실행 게이트). 오류 화면이
-        // 아니라 \"AI 분석 보기\" 대기 상태가 되어야 한다.
+        // 아니라 "AI 분석 시작" 대기 상태가 되어야 한다.
         mockSubmit.mockResolvedValue({ status: 'miss_no_trigger' } as never);
 
         const { result } = renderHook(

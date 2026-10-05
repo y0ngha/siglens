@@ -170,7 +170,7 @@ describe('NewsAiSummary', () => {
         ).toBeInTheDocument();
     });
 
-    it('게이트가 닫혀 카드 보강이 미뤄진 동안에는 수집 스피너 대신 "AI 분석 보기"를 보여 준다', () => {
+    it('게이트가 닫혀 카드 보강이 미뤄진 동안에는 수집 스피너 대신 "AI 분석 시작"을 보여 준다', () => {
         const grant = vi.fn();
         mockUseAiAutoRunAllowed.mockReturnValue({ allowed: false, grant });
         mockWaitResult.mockReturnValue({
@@ -193,7 +193,7 @@ describe('NewsAiSummary', () => {
         expect(
             screen.queryByText(/뉴스 데이터를 수집하고 있어요/)
         ).not.toBeInTheDocument();
-        fireEvent.click(screen.getByRole('button', { name: 'AI 분석 보기' }));
+        fireEvent.click(screen.getByRole('button', { name: 'AI 분석 시작' }));
         expect(grant).toHaveBeenCalledTimes(1);
         mockUseAiAutoRunAllowed.mockReturnValue({
             allowed: true,

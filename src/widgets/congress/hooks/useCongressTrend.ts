@@ -152,7 +152,7 @@ export function useCongressTrend(
     if (query.isError) {
         if (isAwaitingInteraction) {
             // 게이트가 열려 다시 부르는 동안에는 React Query가 직전 오류를 유지한다 —
-            // 그대로 두면 생성이 도는 내내 "AI 분석 보기" 버튼이 남는다.
+            // 그대로 두면 생성이 도는 내내 "AI 분석 시작" 버튼이 남는다.
             return query.isFetching
                 ? { status: 'loading', trigger: retry }
                 : { status: 'awaiting_interaction', trigger: retry };

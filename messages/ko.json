@@ -1771,8 +1771,8 @@
         },
         "ui": {
             "AiAnalysisAwaitingSection": {
-                "3e7fd8": "아직 이 종목의 AI 분석이 없어요. 버튼을 누르면 바로 분석을 시작해요.",
-                "ddb88e": "AI 분석 보기"
+                "05d860": "AI 분석 시작",
+                "3e7fd8": "아직 이 종목의 AI 분석이 없어요. 버튼을 누르면 바로 분석을 시작해요."
             },
             "AiSummaryErrorSection": {
                 "0c767c": "다시 시도"

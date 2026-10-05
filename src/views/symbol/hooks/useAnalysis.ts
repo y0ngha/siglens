@@ -177,7 +177,7 @@ export interface UseAnalysisResult {
     isPersonalized: boolean;
     /**
      * 캐시에 분석이 없고 AI 자동 실행 게이트가 닫혀 생성을 미뤄 둔 상태.
-     * 호출부는 "AI 분석 보기" 대기 화면을 보여 준다(`AiAnalysisAwaitingSection`).
+     * 호출부는 "AI 분석 시작" 대기 화면을 보여 준다(`AiAnalysisAwaitingSection`).
      */
     isAwaitingInteraction: boolean;
 }
@@ -395,7 +395,7 @@ export function useAnalysis({
         onMutate: () => {
             // 대기 상태는 "캐시 미스, 입력을 기다리는 중"이라는 뜻이라 그 입력으로 시작한
             // 제출보다 오래 남으면 안 된다. 여기서 내리지 않으면 뒤이은 제출이 실패했을 때
-            // 오류 배너 대신 이미 열린 게이트의 "AI 분석 보기" 버튼이 남는다(리뷰 라운드 1).
+            // 오류 배너 대신 이미 열린 게이트의 "AI 분석 시작" 버튼이 남는다(리뷰 라운드 1).
             setIsAwaitingInteraction(false);
             // 서버가 쿨다운을 이유로 새 분석을 거절할 수 있다(`reanalyze_cooldown`).
             // 그 경우 화면을 비운 채 아무 결과도 오지 않으므로, 되돌릴 수 있도록
@@ -526,9 +526,15 @@ export function useAnalysis({
     // 캐시 전용 제출(게이트가 닫힌 마운트 재시도)은 생성이 아니라 캐시 조회라 "분석 중"
     // 진행 화면을 띄우지 않는다 — HIT이면 바로 결과, 미스면 대기 화면으로 넘어간다.
     const isCacheOnlySubmit = submitVariables?.cacheOnly === true;
+    //
+    // 같은 이유로, 설정 하이드레이션을 기다리는 마운트 직후 구간도 게이트가 닫혀 있으면
+    // 분석 중이 아니다 — 그 뒤에 오는 것은 생성이 아니라 캐시 조회다. 이 구간에 한 번이라도
+    // 참이 되면 진행 화면이 마무리 애니메이션(`useAnalysisProgress`, 약 10초)을 끝까지 돌아
+    // 캐시 미스 대기 화면이 그만큼 늦게 뜬다(운영 실측 2026-10-05: 응답 1.5초, 화면 ~15초).
     const isAnalyzing =
         (isSubmitting && !isCacheOnlySubmit) ||
         (initialAnalysisFailedAtMount &&
+            autoRunAllowed &&
             (isModelHydrated === false ||
                 isReasoningHydrated === false ||
                 isTierHydrated === false ||

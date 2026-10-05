@@ -1771,8 +1771,8 @@
         },
         "ui": {
             "AiAnalysisAwaitingSection": {
-                "3e7fd8": "There's no AI analysis for this stock yet. Press the button to start one right away.",
-                "ddb88e": "View AI analysis"
+                "05d860": "Start AI analysis",
+                "3e7fd8": "There's no AI analysis for this stock yet. Press the button to start one right away."
             },
             "AiSummaryErrorSection": {
                 "0c767c": "Try again"
