@@ -110,6 +110,38 @@ async function readLastGoodSnapshot(
     }
 }
 
+interface ResolvedSnapshot {
+    snapshot: OptionsSnapshot;
+    /** last-good으로 대체했는지 — 일반 캐시 키의 TTL 상한을 정하는 근거. */
+    substituted: boolean;
+}
+
+/**
+ * Yahoo가 돌려준 `fresh`를 낼 값으로 확정한다.
+ *
+ * - 정상(OI 채워진) 스냅샷이면 last-good을 갱신하고 그대로 낸다.
+ * - stale이고 정규장 밖이면 last-good(오늘 기준으로 맞춘 것)로 대체한다. 없으면 fresh.
+ * - stale이어도 정규장 중이면 대체하지 않는다.
+ */
+async function resolveWithLastGood(
+    redis: NonNullable<ReturnType<typeof getRedisClient>>,
+    symbol: string,
+    fresh: OptionsSnapshot,
+    now: Date
+): Promise<ResolvedSnapshot> {
+    if (!isOpenInterestSnapshotStale(fresh)) {
+        await writeLastGoodSnapshot(redis, symbol, fresh);
+        return { snapshot: fresh, substituted: false } as const;
+    }
+    if (isEtRegularSessionOpen(now)) {
+        return { snapshot: fresh, substituted: false } as const;
+    }
+    const lastGood = await readLastGoodSnapshot(redis, symbol, now);
+    return lastGood === null
+        ? ({ snapshot: fresh, substituted: false } as const)
+        : ({ snapshot: lastGood, substituted: true } as const);
+}
+
 /**
  * 옵션 시장이 형성된 종목인지 확인한다.
  *
@@ -219,19 +251,13 @@ export const fetchOptionsSnapshot = cache(
         // last-good으로 대체한다. 대체 결과도 아래에서 같은 key·TTL로 저장해, 같은
         // 시간대의 다음 요청이 Yahoo를 다시 치지 않게 한다.
         const now = new Date();
-        const freshIsStale = isOpenInterestSnapshotStale(fresh);
-        let result = fresh;
-        let substituted = false;
         if (redis !== null) {
-            if (!freshIsStale) {
-                await writeLastGoodSnapshot(redis, symbol, fresh);
-            } else if (!isEtRegularSessionOpen(now)) {
-                const lastGood = await readLastGoodSnapshot(redis, symbol, now);
-                if (lastGood !== null) {
-                    result = lastGood;
-                    substituted = true;
-                }
-            }
+            const { snapshot: result, substituted } = await resolveWithLastGood(
+                redis,
+                symbol,
+                fresh,
+                now
+            );
 
             const profileTtl =
                 OPTIONS_SNAPSHOT_TTL_SECONDS[getOptionsCacheLifeProfile(now)];
@@ -253,7 +279,8 @@ export const fetchOptionsSnapshot = cache(
                     error
                 );
             }
+            return result;
         }
-        return result;
+        return fresh;
     }
 );

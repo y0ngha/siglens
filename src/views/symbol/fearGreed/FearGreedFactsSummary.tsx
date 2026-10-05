@@ -24,6 +24,7 @@ import {
 } from './utils/fearGreedFacts';
 import { FearGreedExtremeZoneRecord } from './FearGreedExtremeZoneRecord';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { SampleFooterText } from '@/shared/ui/SampleFooterText';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
@@ -183,13 +184,10 @@ export function FearGreedFactsSummary({
                 </div>
             </dl>
             <p className="text-xs text-secondary-400">
-                {snapshot.confidence === 'normal'
-                    ? tFearGreed('sampleFooterNormal', {
-                          v0: snapshot.sampleSize,
-                      })
-                    : tFearGreed('sampleFooterLimited', {
-                          v0: snapshot.sampleSize,
-                      })}
+                <SampleFooterText
+                    confidence={snapshot.confidence}
+                    sampleSize={snapshot.sampleSize}
+                />
             </p>
             {extremeZoneRecord !== null && (
                 <FearGreedExtremeZoneRecord record={extremeZoneRecord} />

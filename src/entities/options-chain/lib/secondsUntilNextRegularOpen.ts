@@ -6,8 +6,8 @@ import {
 import { MS_PER_DAY, MS_PER_SECOND } from '@/shared/config/time';
 import { getEasternOffsetHours } from '@/shared/lib/eastern';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
+import { ET_TIME_ZONE } from './etTimeZone';
 
-const ET_TIME_ZONE = 'America/New_York';
 const ET_NOON_UTC_HOUR = 12;
 // 연휴(주말 + 공휴일 연속)를 덮고도 남는 탐색 상한. 못 찾으면 그만큼을 돌려준다.
 const MAX_LOOKAHEAD_DAYS = 10;

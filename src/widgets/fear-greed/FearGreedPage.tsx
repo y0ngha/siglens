@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { SampleFooterText } from '@/shared/ui/SampleFooterText';
 import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
 import { useFearGreedFromSymbol } from './hooks/useFearGreedFromSymbol';
 import { FearGreedHero } from './FearGreedHero';
@@ -110,7 +111,6 @@ export function FearGreedPage({
     hideSelfNormWarning = false,
     hideSampleFooter = false,
 }: FearGreedPageProps) {
-    const tFearGreed = useTranslations('shared.lib.fearGreed');
     const t = useTranslations('widgets.fear-greed');
     const themeVersion = useThemeVersion();
     const isHydrated = useHydrated();
@@ -185,13 +185,10 @@ export function FearGreedPage({
 
             {!hideSampleFooter && (
                 <footer className="text-xs text-secondary-500">
-                    {snapshot.confidence === 'normal'
-                        ? tFearGreed('sampleFooterNormal', {
-                              v0: snapshot.sampleSize,
-                          })
-                        : tFearGreed('sampleFooterLimited', {
-                              v0: snapshot.sampleSize,
-                          })}
+                    <SampleFooterText
+                        confidence={snapshot.confidence}
+                        sampleSize={snapshot.sampleSize}
+                    />
                 </footer>
             )}
         </div>

@@ -13,6 +13,7 @@ import type {
 import { MS_PER_DAY } from '@/shared/config/time';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
+import { ET_TIME_ZONE } from './etTimeZone';
 
 /**
  * Structural types mirroring yahoo-finance2 v3 CallOrPut / Option / OptionsResult.
@@ -56,8 +57,6 @@ export interface YahooOptionsResult {
     quote: { regularMarketPrice?: number };
     options: YahooOption[];
 }
-
-const ET_TIME_ZONE = 'America/New_York';
 
 // 정오(UTC) — ET 캘린더 날짜를 UTC 인스턴트로 매핑할 때 DST 전이 윈도우
 // (봄·가을 각 몇 시간씩 시각이 모호한 구간)에 걸리지 않도록 하루의 중간

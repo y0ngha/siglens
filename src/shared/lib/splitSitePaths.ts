@@ -22,22 +22,32 @@ export type SitePathSegment =
     | { readonly kind: 'text'; readonly value: string }
     | { readonly kind: 'path'; readonly value: string };
 
+const textSegment = (value: string): SitePathSegment => ({
+    kind: 'text',
+    value,
+});
+
 export function splitSitePaths(text: string): SitePathSegment[] {
-    const segments: SitePathSegment[] = [];
-    let cursor = 0;
-    for (const match of text.matchAll(SITE_PATH_PATTERN)) {
-        const [path] = match;
-        if (match.index > cursor) {
-            segments.push({
-                kind: 'text',
-                value: text.slice(cursor, match.index),
-            });
-        }
-        segments.push({ kind: 'path', value: path });
-        cursor = match.index + path.length;
-    }
-    if (cursor < text.length) {
-        segments.push({ kind: 'text', value: text.slice(cursor) });
-    }
-    return segments;
+    const matches = [...text.matchAll(SITE_PATH_PATTERN)];
+    const endOf = (match: RegExpMatchArray): number =>
+        (match.index ?? 0) + match[0].length;
+
+    // 각 경로 앞의 일반 글자(직전 경로 끝 ~ 이번 경로 시작)와 경로 자신을 순서대로 낸다.
+    const upToLastPath = matches.flatMap((match, i): SitePathSegment[] => {
+        const start = match.index ?? 0;
+        const previousEnd = i === 0 ? 0 : endOf(matches[i - 1]);
+        return [
+            ...(start > previousEnd
+                ? [textSegment(text.slice(previousEnd, start))]
+                : []),
+            { kind: 'path', value: match[0] },
+        ];
+    });
+
+    const lastEnd =
+        matches.length === 0 ? 0 : endOf(matches[matches.length - 1]);
+    return [
+        ...upToLastPath,
+        ...(lastEnd < text.length ? [textSegment(text.slice(lastEnd))] : []),
+    ];
 }

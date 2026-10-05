@@ -5,10 +5,9 @@ import {
 } from '@y0ngha/siglens-core';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
 import { cachedDateTimeFormat } from '@/shared/lib/intlFormatCache';
+import { MINUTES_PER_HOUR } from '@/shared/config/time';
+import { ET_TIME_ZONE } from './etTimeZone';
 import { daysToExpirationFrom } from './yahooNormalize';
-
-const ET_TIME_ZONE = 'America/New_York';
-const MINUTES_PER_HOUR = 60;
 
 /** `now`의 ET 벽시계를 자정 이후 분(分)으로. DST는 IANA 타임존이 처리한다. */
 function etMinutesOfDay(now: Date): number {

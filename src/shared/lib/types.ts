@@ -13,7 +13,7 @@ import type { DashboardScopeId } from '@/shared/config/dashboardScope';
  * `FearGreedSnapshot.confidence`의 narrowed 형태(`'normal' | 'limited'`).
  * core는 `FearGreedConfidence`에 `'insufficient'`를 포함하지만, snapshot이 반환되는
  * 시점에는 이미 그 케이스가 걸러져 있다(composition.ts의 LIMITED gate). UI 컴포넌트
- * 와 lib/fearGreedLabels의 `confidenceLabelKey`에서 공통으로 사용.
+ * 와 하단 표본 안내(`SampleFooterText`)가 공통으로 사용.
  */
 export type SnapshotConfidence = Exclude<FearGreedConfidence, 'insufficient'>;
 
