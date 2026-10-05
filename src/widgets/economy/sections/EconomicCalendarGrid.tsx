@@ -30,7 +30,11 @@ import {
 } from '@/shared/lib/sentimentDisplay';
 import { cn } from '@/shared/lib/cn';
 import { formatNum } from '@/shared/lib/formatNum';
-import { fmpCalendarDateTimeToKst } from '@/shared/lib/etTimeUtils';
+import {
+    fmpCalendarDateTimeToKst,
+    kstDateKey,
+    kstDateKeyDaysBefore,
+} from '@/shared/lib/etTimeUtils';
 import { useEconomicCalendarTrigger } from '../hooks/useEconomicCalendarTrigger';
 import { useIndicatorTranslationTrigger } from '../hooks/useIndicatorTranslationTrigger';
 import { ImpactFilter } from './ImpactFilter';
@@ -257,6 +261,54 @@ function displayEventLabel(
     return Object.hasOwn(labels, rawEvent) ? labels[rawEvent] : rawEvent;
 }
 
+type ValuePartKey =
+    | 'EconomicCalendarGrid.forecastPart'
+    | 'EconomicCalendarGrid.previousPart'
+    | 'EconomicCalendarGrid.actualPart';
+
+/** 값 줄 조각을 푸는 번역 함수 — `widgets.economy` 번역자를 좁힌 형태. */
+type ValuePartTranslator = (
+    key: ValuePartKey,
+    values: { v0: string }
+) => string;
+
+/**
+ * 예상·이전·실제 값 줄을 **값이 있는 것만** 이어 붙인다.
+ *
+ * 예전에는 `예상 {v0} · 이전 {v1}`를 항상 찍어서 FMP가 값을 안 주는 지표(대부분
+ * 연설·경매 일정)에 `예상 N/A · 이전 N/A`가 줄지어 떴다. `N/A`는 정보가 아니라
+ * 소음이라, 유한수가 아닌 값은 라벨째 뺀다.
+ *
+ * 예상·이전이 둘 다 없는데 실제가 `0`이면 FMP가 아직 안 채운 자리표시값이므로
+ * 실제도 뺀다 — 그대로 두면 `실제 0%`가 마치 발표된 결과처럼 읽힌다.
+ */
+function buildValueParts(
+    ev: CalendarGridEvent,
+    t: ValuePartTranslator,
+    locale: Locale
+): string[] {
+    const { estimate, previous, actual, unit } = ev;
+    const hasBaseline = Number.isFinite(estimate) || Number.isFinite(previous);
+    const showActual = Number.isFinite(actual) && (hasBaseline || actual !== 0);
+    return [
+        Number.isFinite(estimate)
+            ? t('EconomicCalendarGrid.forecastPart', {
+                  v0: formatNum(estimate, unit, locale),
+              })
+            : null,
+        Number.isFinite(previous)
+            ? t('EconomicCalendarGrid.previousPart', {
+                  v0: formatNum(previous, unit, locale),
+              })
+            : null,
+        showActual
+            ? t('EconomicCalendarGrid.actualPart', {
+                  v0: formatNum(actual, unit, locale),
+              })
+            : null,
+    ].filter((part): part is string => part !== null);
+}
+
 interface DayDetailPanelProps {
     group: DayGroup;
     isSelected: boolean;
@@ -315,6 +367,11 @@ function DayDetailPanel({
                 {group.events.map(ev => {
                     const hasSummaryContent =
                         (ev.original.summaryKo?.trim().length ?? 0) > 0;
+                    const valueParts = buildValueParts(
+                        ev.original,
+                        (key, values) => t(key, values),
+                        locale
+                    );
                     return (
                         <li
                             key={`${ev.iso}:${ev.original.event}:${ev.original.actual ?? ''}`}
@@ -337,35 +394,11 @@ function DayDetailPanel({
                                             labels
                                         )}
                                     </p>
-                                    <p className="mt-0.5 text-xs text-secondary-400">
-                                        {t('EconomicCalendarGrid.3ebd79', {
-                                            v0: formatNum(
-                                                ev.original.estimate,
-                                                ev.original.unit,
-                                                locale
-                                            ),
-                                            v1: formatNum(
-                                                ev.original.previous,
-                                                ev.original.unit,
-                                                locale
-                                            ),
-                                        })}
-                                        {ev.original.actual !== null && (
-                                            <>
-                                                {' '}
-                                                {t(
-                                                    'EconomicCalendarGrid.e1d376',
-                                                    {
-                                                        v0: formatNum(
-                                                            ev.original.actual,
-                                                            ev.original.unit,
-                                                            locale
-                                                        ),
-                                                    }
-                                                )}
-                                            </>
-                                        )}
-                                    </p>
+                                    {valueParts.length > 0 && (
+                                        <p className="mt-0.5 text-xs text-secondary-400">
+                                            {valueParts.join(' · ')}
+                                        </p>
+                                    )}
                                 </div>
                                 <span
                                     className={cn(
@@ -422,6 +455,8 @@ function DayDetailPanel({
 interface DayCellProps {
     group: DayGroup;
     isSelected: boolean;
+    /** 오늘(KST) 칸 — `aria-current="date"`와 옅은 링으로 표시한다. */
+    isToday: boolean;
     activeImpacts: ReadonlySet<CalendarImpact>;
     onSelect: (dateKey: string) => void;
     labels: Record<string, string>;
@@ -430,6 +465,7 @@ interface DayCellProps {
 function DayCell({
     group,
     isSelected,
+    isToday,
     activeImpacts,
     onSelect,
     labels,
@@ -486,6 +522,7 @@ function DayCell({
                           }))
                 }
                 aria-pressed={isSelected}
+                aria-current={isToday ? 'date' : undefined}
                 aria-controls={`panel-${dateKey}`}
                 onClick={() => onSelect(dateKey)}
                 className={cn(
@@ -498,15 +535,19 @@ function DayCell({
                     'motion-reduce:transition-none',
                     isSelected
                         ? 'bg-primary-900/30 ring-primary-500 ring-2'
-                        : 'hover:bg-secondary-700/40'
+                        : 'hover:bg-secondary-700/40',
+                    // 선택 링(2px primary)이 이미 있으면 오늘 링은 얹지 않는다 —
+                    // 두 링이 겹치면 box-shadow가 서로 덮어 둘 다 흐려진다.
+                    isToday && !isSelected && 'ring-secondary-500 ring-1'
                 )}
             >
                 <span
                     className={cn(
-                        'block text-right text-[11px] leading-none tabular-nums',
+                        'block text-right text-xs leading-none tabular-nums',
                         isSelected
                             ? 'text-primary-400 font-semibold'
-                            : 'text-secondary-200 font-medium'
+                            : 'text-secondary-200 font-medium',
+                        isToday && 'font-bold'
                     )}
                 >
                     {day}
@@ -531,7 +572,7 @@ function DayCell({
                     ))}
                 </span>
 
-                <span className="mt-0.5 block text-[10px] text-secondary-300 tabular-nums">
+                <span className="mt-0.5 block text-xs text-secondary-300 tabular-nums">
                     {t('EconomicCalendarGrid.703910', { v0: count })}
                 </span>
 
@@ -539,14 +580,14 @@ function DayCell({
                     {visibleEvents.slice(0, INLINE_EVENT_MAX).map(ev => (
                         <span
                             key={`${ev.iso}:${ev.original.event}`}
-                            className="block min-w-0 truncate text-[10px] leading-tight text-secondary-400"
+                            className="block min-w-0 truncate text-xs leading-tight text-secondary-400"
                         >
                             {ev.inlineTimeLabel}{' '}
                             {displayEventLabel(ev.original.event, labels)}
                         </span>
                     ))}
                     {count > INLINE_EVENT_MAX && (
-                        <span className="block text-[10px] text-secondary-500">
+                        <span className="block text-xs text-secondary-500">
                             +{count - INLINE_EVENT_MAX}
                         </span>
                     )}
@@ -556,12 +597,105 @@ function DayCell({
     );
 }
 
+/** 월 그리드의 한 칸 — 이벤트가 없는 날도 날짜는 있다. */
+interface MonthDay {
+    dateKey: string;
+    day: number;
+    /** 그날 이벤트. 없으면 `null`(버튼 대신 숫자만 그린다). */
+    group: DayGroup | null;
+}
+
+/** 7칸짜리 주 한 줄. `null`은 그 달 밖의 앞뒤 패딩. */
+type MonthWeekCells = (MonthDay | null)[];
+
+interface MonthWeek {
+    cells: MonthWeekCells;
+    /** 지난 주 — "지난 일정 보기"를 누르기 전까지 `hidden`(DOM에는 남는다). */
+    isPast: boolean;
+}
+
+function hasEvents(week: MonthWeekCells): boolean {
+    return week.some(cell => cell?.group != null);
+}
+
+/**
+ * 한 달을 7칸씩 끊은 주 목록. **모든 날짜**를 칸으로 만든다 — 이벤트 없는 날을
+ * 빈 `<td>`로 두면 `20, 22, 25`처럼 날짜가 듬성듬성 건너뛰어 달력으로 읽히지 않는다.
+ *
+ * 이벤트가 하나도 없는 **앞뒤** 주는 뺀다. 이 캘린더는 과거 14일 ~ 미래 14일 창만
+ * 갖고 있어서, 창 밖의 첫 주·끝 주는 숫자만 있는 빈 줄일 뿐이다. 중간의 빈 주는
+ * 달력의 연속성을 위해 남긴다.
+ */
+function buildMonthWeeks(
+    year: number,
+    month: number,
+    groupMap: Map<string, DayGroup>
+): MonthWeekCells[] {
+    const totalDays = daysInMonth(year, month);
+    /** 1일의 요일 (0=일 … 6=토) */
+    const firstDow = new Date(Date.UTC(year, month, 1)).getUTCDay();
+
+    const rawCells: MonthWeekCells = [
+        ...Array<null>(firstDow).fill(null),
+        ...Array.from({ length: totalDays }, (_, i): MonthDay => {
+            const day = i + 1;
+            const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            return { dateKey, day, group: groupMap.get(dateKey) ?? null };
+        }),
+    ];
+    const padCount = (7 - (rawCells.length % 7)) % 7;
+    const cells =
+        padCount > 0
+            ? [...rawCells, ...Array<null>(padCount).fill(null)]
+            : rawCells;
+
+    const weeks = Array.from({ length: cells.length / 7 }, (_, i) =>
+        cells.slice(i * 7, i * 7 + 7)
+    );
+    const first = weeks.findIndex(hasEvents);
+    const last = weeks.findLastIndex(hasEvents);
+    return first === -1 ? [] : weeks.slice(first, last + 1);
+}
+
+/** 주의 마지막 실제 날짜 키(패딩 제외). */
+function weekEndKey(week: MonthWeekCells): string {
+    return week.findLast(cell => cell !== null)?.dateKey ?? '';
+}
+
+interface EmptyDayCellProps {
+    day: number;
+    isToday: boolean;
+}
+
+/**
+ * 이벤트 없는 날 — 숫자만 있는 비대화형 칸. 누를 수 있는 것처럼 보이지 않도록
+ * 버튼이 아니라 `<span>`이고, 색도 이벤트 있는 날보다 한 단계 낮춘다.
+ */
+function EmptyDayCell({ day, isToday }: EmptyDayCellProps) {
+    return (
+        <td className="p-0.5 align-top">
+            <span
+                aria-current={isToday ? 'date' : undefined}
+                className={cn(
+                    'block min-h-[4rem] rounded-lg p-1 text-right text-xs leading-none text-secondary-400 tabular-nums',
+                    isToday && 'ring-secondary-500 font-bold ring-1'
+                )}
+            >
+                {day}
+            </span>
+        </td>
+    );
+}
+
 interface MonthCalendarProps {
     year: number;
     /** 0-indexed */
     month: number;
-    groupMap: Map<string, DayGroup>;
+    weeks: MonthWeek[];
     selectedDateKey: string;
+    todayKey: string;
+    /** 지난 주를 펼쳤는가. */
+    showPast: boolean;
     activeImpacts: ReadonlySet<CalendarImpact>;
     onSelect: (dateKey: string) => void;
     labels: Record<string, string>;
@@ -570,45 +704,26 @@ interface MonthCalendarProps {
 function MonthCalendar({
     year,
     month,
-    groupMap,
+    weeks,
     selectedDateKey,
+    todayKey,
+    showPast,
     activeImpacts,
     onSelect,
     labels,
 }: MonthCalendarProps) {
     const t = useTranslations('widgets.economy');
     const locale = useCurrentLocale();
-    const weeks = useMemo(() => {
-        const totalDays = daysInMonth(year, month);
-        /** 1일의 요일 (0=일 … 6=토) */
-        const firstDow = new Date(Date.UTC(year, month, 1)).getUTCDay();
-
-        const rawCells: (DayGroup | null)[] = [
-            ...Array<null>(firstDow).fill(null),
-            ...Array.from({ length: totalDays }, (_, i) => {
-                const d = i + 1;
-                const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                return groupMap.get(key) ?? null;
-            }),
-        ];
-        const padCount = (7 - (rawCells.length % 7)) % 7;
-        const cells =
-            padCount > 0
-                ? [...rawCells, ...Array<null>(padCount).fill(null)]
-                : rawCells;
-
-        return Array.from({ length: cells.length / 7 }, (_, i) =>
-            cells.slice(i * 7, i * 7 + 7)
-        ) as (DayGroup | null)[][];
-    }, [year, month, groupMap]);
 
     const captionText = t('EconomicCalendarGrid.490b3a', {
         v0: year,
         v1: monthLabel(locale, month),
     });
+    // 그 달이 통째로 지난 주뿐이면 제목·요일 줄까지 같이 숨긴다.
+    const isMonthHidden = !showPast && weeks.every(week => week.isPast);
 
     return (
-        <div>
+        <div hidden={isMonthHidden}>
             <p
                 className="mb-2 text-sm font-medium text-secondary-300"
                 aria-hidden="true"
@@ -626,7 +741,7 @@ function MonthCalendar({
                             <th
                                 key={label}
                                 scope="col"
-                                className="py-1 text-center text-[11px] font-medium text-secondary-400"
+                                className="py-1 text-center text-xs font-medium text-secondary-400"
                             >
                                 {label}
                             </th>
@@ -634,34 +749,64 @@ function MonthCalendar({
                     </tr>
                 </thead>
                 <tbody>
-                    {weeks.map((week, wi) => (
-                        <tr key={wi}>
-                            {week.map((cell, ci) =>
-                                cell !== null ? (
+                    {weeks.map(({ cells, isPast }, wi) => (
+                        <tr key={wi} hidden={isPast && !showPast}>
+                            {cells.map((cell, ci) => {
+                                if (cell === null) {
+                                    return (
+                                        <td
+                                            key={`empty-${wi}-${ci}`}
+                                            aria-hidden="true"
+                                            className="p-0.5"
+                                        />
+                                    );
+                                }
+                                const isToday = cell.dateKey === todayKey;
+                                return cell.group !== null ? (
                                     <DayCell
                                         key={cell.dateKey}
-                                        group={cell}
+                                        group={cell.group}
                                         isSelected={
                                             selectedDateKey === cell.dateKey
                                         }
+                                        isToday={isToday}
                                         activeImpacts={activeImpacts}
                                         onSelect={onSelect}
                                         labels={labels}
                                     />
                                 ) : (
-                                    <td
-                                        key={`empty-${wi}-${ci}`}
-                                        aria-hidden="true"
-                                        className="p-0.5"
+                                    <EmptyDayCell
+                                        key={cell.dateKey}
+                                        day={cell.day}
+                                        isToday={isToday}
                                     />
-                                )
-                            )}
+                                );
+                            })}
                         </tr>
                     ))}
                 </tbody>
             </table>
         </div>
     );
+}
+
+/**
+ * 사용자가 날짜를 눌렀을 때 그날 상세 패널로 화면을 옮긴다.
+ *
+ * 월 그리드가 길어서 칸을 눌러도 상세 패널이 화면 아래에 있으면 아무 일도 안 일어난
+ * 것처럼 보였다. `block: 'nearest'`라 이미 보이면 움직이지 않는다.
+ * `typeof` 가드는 `scrollIntoView`가 없는 환경(jsdom)에서 effect가 죽지 않게 한다.
+ */
+function scrollPanelIntoView(dateKey: string): void {
+    const panel = document.getElementById(`panel-${dateKey}`);
+    if (panel === null || typeof panel.scrollIntoView !== 'function') return;
+    const prefersReducedMotion =
+        window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ??
+        false;
+    panel.scrollIntoView({
+        block: 'nearest',
+        behavior: prefersReducedMotion ? 'auto' : 'smooth',
+    });
 }
 
 /**
@@ -725,6 +870,22 @@ export function EconomicCalendarGrid({
     const tCountry = useTranslations('entities.economy.calendarCountry');
     const locale = useCurrentLocale();
     const [selectedDateKey, setSelectedDateKey] = useState('');
+    /**
+     * 사용자가 직접 누른 날짜. 스크롤 effect의 트리거다 — 기본 선택(`syncDefault`)은
+     * 이 값을 건드리지 않으므로 페이지가 열리자마자 화면이 튀지 않는다. 클릭마다
+     * 새 객체라 같은 날짜를 다시 눌러도 effect가 다시 돈다.
+     */
+    const [userSelection, setUserSelection] = useState<{
+        dateKey: string;
+    } | null>(null);
+    /**
+     * 오늘(KST) 날짜 키. 서버가 ISR로 구운 `today`로 시작하고, 마운트 후 실제
+     * 시각으로 갱신한다 — ISR 페이지는 최대 하루 묵어 있을 수 있어 서버 값만으로는
+     * "오늘" 표시가 어제 칸에 붙는다. 렌더 중 `new Date()`를 부르면 SSR과 어긋나
+     * 하이드레이션이 깨지므로 effect에서만 읽는다.
+     */
+    const [todayKey, setTodayKey] = useState(today);
+    const [showPast, setShowPast] = useState(false);
     const [activeImpacts, setActiveImpacts] = useState<
         ReadonlySet<CalendarImpact>
     >(() => new Set(DEFAULT_ACTIVE_IMPACTS));
@@ -739,6 +900,42 @@ export function EconomicCalendarGrid({
         [groups]
     );
     const months = useMemo(() => spannedMonths(groups), [groups]);
+    const monthWeeks = useMemo(
+        () =>
+            months.map(({ year, month }) => ({
+                year,
+                month,
+                weeks: buildMonthWeeks(year, month, groupMap),
+            })),
+        [months, groupMap]
+    );
+
+    /**
+     * "지난 주" 기준 = 오늘이 속한 주(일요일 시작)의 시작일. 마지막 날이 그 전인 주가
+     * 지난 주다. 앞으로 남은 이벤트가 하나도 없으면(전부 과거) 접으면 화면이 텅 비므로
+     * 접지 않는다. 선택된 날이 든 주도 항상 보인다 — 선택한 칸이 사라지면 안 된다.
+     */
+    const currentWeekStart =
+        todayKey === ''
+            ? ''
+            : kstDateKeyDaysBefore(todayKey, dayOfWeekFromKey(todayKey));
+    const collapsePast =
+        currentWeekStart !== '' &&
+        groups.some(g => g.dateKey >= currentWeekStart);
+    const monthViews = monthWeeks.map(({ year, month, weeks }) => ({
+        year,
+        month,
+        weeks: weeks.map((cells): MonthWeek => ({
+            cells,
+            isPast:
+                collapsePast &&
+                weekEndKey(cells) < currentWeekStart &&
+                !cells.some(cell => cell?.dateKey === selectedDateKey),
+        })),
+    }));
+    const hasPastWeeks = monthViews.some(({ weeks }) =>
+        weeks.some(week => week.isPast)
+    );
 
     /**
      * events/today가 바뀔 때 기본 선택 날짜를 재동기화한다(오늘 → 가장 가까운 미래 →
@@ -750,6 +947,17 @@ export function EconomicCalendarGrid({
             setSelectedDateKey(pickDefaultDateKey(groups, today));
         });
     });
+
+    const syncToday = useEffectEvent((): void => {
+        startTransition(() => {
+            setTodayKey(kstDateKey(new Date()));
+        });
+    });
+
+    function handleSelect(dateKey: string): void {
+        setSelectedDateKey(dateKey);
+        setUserSelection({ dateKey });
+    }
 
     function toggleImpact(impact: CalendarImpact): void {
         setActiveImpacts(prev => {
@@ -766,6 +974,18 @@ export function EconomicCalendarGrid({
     useEffect(() => {
         syncDefault();
     }, [groups, today]);
+
+    useEffect(() => {
+        syncToday();
+    }, [today]);
+
+    // 패널이 `hidden`에서 풀린 **뒤**(커밋 후)에 옮겨야 한다. 클릭 핸들러에서 바로
+    // 부르면 아직 숨겨진 요소라 아무 데도 가지 않는다. rAF는 쓰지 않는다 —
+    // 백그라운드 탭에서는 rAF가 돌지 않아 스크롤이 영영 안 일어난다.
+    useEffect(() => {
+        if (userSelection === null) return;
+        scrollPanelIntoView(userSelection.dateKey);
+    }, [userSelection]);
 
     if (events.length === 0) {
         return (
@@ -804,16 +1024,30 @@ export function EconomicCalendarGrid({
                 <ImpactFilter value={activeImpacts} onToggle={toggleImpact} />
             </div>
 
-            <div className="space-y-6 rounded-lg border border-secondary-700 p-3 sm:p-4">
-                {months.map(({ year, month }) => (
+            <div className="flex flex-col gap-6 rounded-lg border border-secondary-700 p-3 sm:p-4">
+                {hasPastWeeks && (
+                    <button
+                        type="button"
+                        aria-expanded={showPast}
+                        onClick={() => setShowPast(prev => !prev)}
+                        className="inline-flex min-h-11 touch-manipulation items-center self-start rounded-full border border-border-control px-3 py-1.5 text-sm font-medium text-secondary-300 transition-colors hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none motion-reduce:transition-none"
+                    >
+                        {showPast
+                            ? t('EconomicCalendarGrid.pastCollapse')
+                            : t('EconomicCalendarGrid.pastExpand')}
+                    </button>
+                )}
+                {monthViews.map(({ year, month, weeks }) => (
                     <MonthCalendar
                         key={`${year}-${month}`}
                         year={year}
                         month={month}
-                        groupMap={groupMap}
+                        weeks={weeks}
                         selectedDateKey={selectedDateKey}
+                        todayKey={todayKey}
+                        showPast={showPast}
                         activeImpacts={activeImpacts}
-                        onSelect={setSelectedDateKey}
+                        onSelect={handleSelect}
                         labels={labels}
                     />
                 ))}

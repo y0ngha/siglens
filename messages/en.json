@@ -60,6 +60,7 @@
             }
         },
         "backtesting": {
+            "breadcrumb": "Backtest",
             "page": {
                 "693b62": "Investment Disclaimer",
                 "8e0330": "* These results are based on historical data backtesting and do not\n                        guarantee future returns. The responsibility for investment decisions rests with the investor."
@@ -141,7 +142,7 @@
                         "question": "Can it analyze crypto too?"
                     },
                     "q2": {
-                        "answer": "The /market page scans the leading names across 11 sectors every day and lists the tickers where technical signals were caught — golden cross, death cross, RSI divergence, Bollinger squeeze. Click one to open its detailed AI analysis page.",
+                        "answer": "The /market page scans the leading names across {v1} US industry groups (GICS sectors) and {v2} themes such as quantum computing and space every day, and lists the tickers where technical signals were caught — golden cross, death cross, RSI divergence, Bollinger squeeze. Click one to open its detailed AI analysis page.",
                         "question": "What signals does the market overview show?"
                     },
                     "q8": {
@@ -1104,6 +1105,13 @@
             }
         },
         "enumLabel": {
+            "backtestRiskLevel": {
+                "extreme": "Extreme Risk",
+                "high": "High Risk",
+                "low": "Low Risk",
+                "medium": "Medium Risk",
+                "moderate": "Medium Risk"
+            },
             "chamber": {
                 "house": "House",
                 "senate": "Senate"
@@ -1120,6 +1128,7 @@
             },
             "economyUnit": {
                 "count": " claims",
+                "percentagePoint": "pp",
                 "thousandPeople": "K"
             },
             "entryRecommendation": {
@@ -1172,6 +1181,14 @@
                 "neutral": "Neutral",
                 "recovery": "Recovery",
                 "slowdown": "Slowdown"
+            },
+            "newsCategory": {
+                "earnings": "Earnings",
+                "guidance": "Guidance",
+                "m_and_a": "M&A",
+                "macro": "Macro",
+                "product": "Products & Services",
+                "regulation": "Regulation"
             },
             "newsImpact": {
                 "high": "High price impact",
@@ -1798,6 +1815,9 @@
             },
             "InfoTooltip": {
                 "9b3193": "Additional Information"
+            },
+            "NewsCardShell": {
+                "074b02": "(New tab)"
             },
             "PasswordField": {
                 "483994": "Hide Password",
@@ -2746,22 +2766,25 @@
         },
         "backtesting": {
             "BacktestCaseCard": {
+                "315575": "Stop Loss:",
                 "456225": "Target Price:",
                 "06cf3e": "<n>{v0}</n> {v0, plural, one {day} other {days}}",
                 "0f8bf6": "AI Entry Recommendation",
                 "1e38a3": "Stop Loss",
                 "31e4d3": "Buy",
-                "540e42": "AI Hold",
+                "540e42": "AI Hold Recommendation",
                 "58b71d": "AI Prediction Level",
                 "62a65c": "Sell",
                 "6c8ca5": "AI Avoid Recommendation",
                 "75a556": "Reason:",
                 "b19f09": "Loss",
                 "bd6b14": "Profit",
+                "efb7c2": "Take Profit:",
                 "fa9de3": "✓ Reached"
             },
             "BacktestCaseList": {
-                "9018e2": "No cases for this stock."
+                "9018e2": "No cases for this stock.",
+                "caseCount": "{v0} cases"
             },
             "BacktestHero": {
                 "116858": "Backtesting results verified with actual market data.",
@@ -2977,6 +3000,9 @@
             "MarketSummaryPanelSkeleton": {
                 "dc6348": "Loading Market Summary"
             },
+            "QuoteHeader": {
+                "92387b": "1D"
+            },
             "SectorFactsSummary": {
                 "581217": "Sector Signals Overview",
                 "9550ad": "No stocks with technical signals currently. Please check again shortly.\n                    ",
@@ -2991,6 +3017,7 @@
                 "880a67": "Bearish Signs",
                 "976db4": "Bullish Signs",
                 "9c8687": "The direction of movement is unclear, so it's advisable to be cautious.\n                                ",
+                "ab2e36": "No signals detected in this sector. Explore other sectors.",
                 "ede11c": "These are stocks where the strength of uptrend and downtrend signals is similar.\n                                "
             },
             "SectorSignalPanelSkeleton": {
@@ -3004,7 +3031,7 @@
                 "fe2ec0": "{v0} bullish / {v1} bearish detected"
             },
             "SignalSubsection": {
-                "fe9464": "No stocks detected with this signal today. Explore other sectors."
+                "48f780": "No matching stocks"
             },
             "SignalTypeGuide": {
                 "03876a": "Signal Type Guide"
@@ -3060,15 +3087,21 @@
             "stockCount": "{v0} stocks"
         },
         "economy": {
+            "DeltaBadge": {
+                "releaseUnchanged": "No change from previous release"
+            },
             "EconomicCalendarGrid": {
                 "703910": "{v0} events",
-                "3ebd79": "Forecast {v0} · Previous {v1}",
                 "490b3a": "{v0} {v1}",
                 "4ccace": "(KST)",
                 "596fce": "Economic Calendar",
+                "actualPart": "Actual {v0}",
                 "dc712b": "{v0} {v1} ({v2})",
-                "e1d376": "· Actual {v0}",
-                "f9d9dc": "There are no upcoming {v0} economic announcements scheduled yet."
+                "f9d9dc": "There are no upcoming {v0} economic announcements scheduled yet.",
+                "forecastPart": "Forecast {v0}",
+                "pastCollapse": "Hide past events",
+                "pastExpand": "Show past events",
+                "previousPart": "Previous {v0}"
             },
             "EconomicIndicatorGrid": {
                 "868089": "This is the 10-year yield minus the 2-year yield. If it turns negative,\n                    long-term and short-term interest rates are inverted, which is often seen as a recession signal.",
@@ -3425,10 +3458,10 @@
                 "deac8e": "Siglens Analysis Scale"
             },
             "TickerCategories": {
-                "227844": "Popular Korean Stocks by Sector",
-                "0ab969": "Explore Popular US Stocks by Sector",
-                "bc06f5": "Explore Popular Korean Stocks by Sector",
-                "f6087a": "Popular US Stocks by Sector"
+                "227844": "Popular Korean Stocks by Theme",
+                "0ab969": "Explore Popular US Stocks by Theme",
+                "bc06f5": "Explore Popular Korean Stocks by Theme",
+                "f6087a": "Popular US Stocks by Theme"
             },
             "categoryDescription": {
                 "AIsemiconductors": "Companies building the chips and servers behind AI compute — they track the data-center investment cycle.",

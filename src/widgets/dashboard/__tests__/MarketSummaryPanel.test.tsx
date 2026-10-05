@@ -486,7 +486,7 @@ describe('MarketSummaryPanel — KR scope', () => {
             indices: [
                 {
                     symbol: 'KS11',
-                    fmpSymbol: 'KS11',
+                    fmpSymbol: '^KS11',
                     displayName: 'KOSPI',
                     koreanName: '코스피',
                     price: 6869.83,
@@ -499,7 +499,75 @@ describe('MarketSummaryPanel — KR scope', () => {
 
         const card = screen.getByTestId('index-KS11');
         expect(card).toHaveAttribute('data-ticker-readable', 'false');
-        expect(card).toHaveAttribute('data-currency', '₩');
+    });
+
+    /**
+     * 지수 값은 통화가 아니라 포인트다. `KOSPI ₩6,869`·`S&P 500 $6,740`·`VIX $18.3`은
+     * 틀린 표기인데, 지수 카드가 scope 통화 기호를 그대로 받아 붙이고 있었다. 환율
+     * (`KRW=X`)·ETF는 통화 값이라 기호를 유지해야 한다 — 지수만 빼고 나머지는 그대로.
+     */
+    describe('지수 카드 가격 접두', () => {
+        const quote = (symbol: string, fmpSymbol: string) => ({
+            symbol,
+            fmpSymbol,
+            displayName: symbol,
+            koreanName: symbol,
+            price: 100,
+            changesPercentage: 0.5,
+        });
+
+        const renderIndices = (
+            scope: typeof TEST_SCOPE,
+            indices: ReturnType<typeof quote>[]
+        ) => {
+            mockUseMarketSummary.mockReturnValue({
+                ...defaultSummaryReturn,
+                indices,
+            });
+            render(<MarketSummaryPanel scope={scope} />);
+        };
+
+        it('미국: ^GSPC·^VIX는 기호가 없고, 환율·ETF 풍의 비지수 심볼은 $를 유지한다', () => {
+            renderIndices(TEST_SCOPE, [
+                quote('GSPC', '^GSPC'),
+                quote('VIX', '^VIX'),
+                quote('SPY', 'SPY'),
+            ]);
+
+            expect(screen.getByTestId('index-GSPC')).toHaveAttribute(
+                'data-currency',
+                ''
+            );
+            expect(screen.getByTestId('index-VIX')).toHaveAttribute(
+                'data-currency',
+                ''
+            );
+            expect(screen.getByTestId('index-SPY')).toHaveAttribute(
+                'data-currency',
+                '$'
+            );
+        });
+
+        it('한국: ^KS11·^KQ11은 기호가 없고, USDKRW(KRW=X)는 ₩를 유지한다', () => {
+            renderIndices(KR_SCOPE, [
+                quote('KS11', '^KS11'),
+                quote('KQ11', '^KQ11'),
+                quote('USDKRW', 'KRW=X'),
+            ]);
+
+            expect(screen.getByTestId('index-KS11')).toHaveAttribute(
+                'data-currency',
+                ''
+            );
+            expect(screen.getByTestId('index-KQ11')).toHaveAttribute(
+                'data-currency',
+                ''
+            );
+            expect(screen.getByTestId('index-USDKRW')).toHaveAttribute(
+                'data-currency',
+                '₩'
+            );
+        });
     });
 
     it('섹터 카드에 링크를 붙이지 않고 통화 기호를 ₩로 넘긴다', () => {

@@ -1,5 +1,7 @@
-import { vi, describe, it, expect } from 'vitest';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { renderToString } from 'react-dom/server';
 import { render, screen, fireEvent, within } from '@testing-library/react';
+import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
 import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
 import { EconomicCalendarGrid } from '@/widgets/economy/sections/EconomicCalendarGrid';
 
@@ -554,5 +556,402 @@ describe('날짜 셀의 심각도 노출', () => {
             name: /6월 21일.*이벤트 0건/,
         });
         expect(btn.getAttribute('aria-label')).not.toContain('중요도');
+    });
+});
+
+/**
+ * 월 그리드 UX — 오늘 표시, 빈 날짜 숫자, 지난 주 접기, 선택 시 스크롤, N/A 제거.
+ *
+ * "오늘"은 마운트 후 `kstDateKey(new Date())`로 갱신되므로 `Date`만 고정한다
+ * (타이머까지 가짜로 만들면 RTL의 비동기 헬퍼가 멈춘다). 고정 시각은 KST
+ * 2026-06-17(수) 12:00 — 이 날이 속한 주(일요일 시작)는 6/14~6/20이다.
+ */
+describe('EconomicCalendarGrid — 월 그리드 UX', () => {
+    const ev = (
+        date: string,
+        patch: Partial<EconomicCalendarEvent> = {}
+    ): EconomicCalendarEvent => ({
+        date: `${date} 08:30:00`,
+        event: `E ${date}`,
+        impact: 'High',
+        actual: null,
+        estimate: 1,
+        previous: 1,
+        unit: '%',
+        ...patch,
+    });
+
+    beforeEach(() => {
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(new Date('2026-06-17T03:00:00Z'));
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    describe('오늘 표시', () => {
+        it('이벤트가 있는 오늘 칸은 aria-current="date"를 갖고 다른 칸은 갖지 않는다', () => {
+            render(
+                <EconomicCalendarGrid
+                    country="US"
+                    events={[ev('2026-06-17'), ev('2026-06-18')]}
+                    today="2026-06-17"
+                />
+            );
+            expect(
+                screen.getByRole('button', { name: /6월 17일/ })
+            ).toHaveAttribute('aria-current', 'date');
+            expect(
+                screen.getByRole('button', { name: /6월 18일/ })
+            ).not.toHaveAttribute('aria-current');
+        });
+
+        it('이벤트 없는 오늘 칸도 aria-current="date"를 갖는다', () => {
+            const { container } = render(
+                <EconomicCalendarGrid
+                    country="US"
+                    events={[ev('2026-06-16'), ev('2026-06-18')]}
+                    today="2026-06-17"
+                />
+            );
+            const current = container.querySelectorAll('[aria-current="date"]');
+            expect(current).toHaveLength(1);
+            expect(current[0]).toHaveTextContent('17');
+            expect(current[0].tagName).toBe('SPAN');
+        });
+
+        it('ISR로 묵은 today prop 대신 마운트 후 실제 오늘을 표시한다', () => {
+            const { container } = render(
+                <EconomicCalendarGrid
+                    country="US"
+                    events={[ev('2026-06-16'), ev('2026-06-18')]}
+                    today="2026-06-16"
+                />
+            );
+            const current = container.querySelectorAll('[aria-current="date"]');
+            expect(current).toHaveLength(1);
+            expect(current[0]).toHaveTextContent('17');
+        });
+    });
+
+    describe('이벤트 없는 날', () => {
+        it('날짜 숫자를 비대화형으로 렌더한다', () => {
+            render(
+                <EconomicCalendarGrid
+                    country="US"
+                    events={[ev('2026-06-18'), ev('2026-06-22')]}
+                    today="2026-06-17"
+                />
+            );
+            for (const day of ['19', '20', '21']) {
+                const cell = screen.getByText(day);
+                expect(cell.closest('button')).toBeNull();
+                expect(cell.tagName).toBe('SPAN');
+            }
+        });
+
+        it('이벤트가 없는 앞뒤 주 줄은 렌더하지 않는다', () => {
+            const { container } = render(
+                <EconomicCalendarGrid
+                    country="US"
+                    events={[ev('2026-06-17')]}
+                    today="2026-06-17"
+                />
+            );
+            // 6/14~6/20 주 한 줄만 남는다 — 6/1~6/13, 6/21~6/30은 이벤트가 없다.
+            expect(container.querySelectorAll('tbody tr')).toHaveLength(1);
+        });
+    });
+
+    describe('지난 주 접기', () => {
+        const EVENTS = [ev('2026-06-09'), ev('2026-06-18')];
+
+        it('지난 주 줄은 DOM에 남되 hidden이고, 토글 버튼은 aria-expanded=false다', () => {
+            const { container } = render(
+                <EconomicCalendarGrid
+                    country="US"
+                    events={EVENTS}
+                    today="2026-06-17"
+                />
+            );
+            const pastBtn = container.querySelector('#day-btn-2026-06-09');
+            expect(pastBtn).not.toBeNull();
+            expect(pastBtn?.closest('tr')).toHaveAttribute('hidden');
+            expect(
+                screen.queryByRole('button', { name: /6월 9일/ })
+            ).not.toBeInTheDocument();
+            expect(
+                container.querySelector('#day-btn-2026-06-18')?.closest('tr')
+            ).not.toHaveAttribute('hidden');
+            expect(
+                screen.getByRole('button', { name: '지난 일정 보기' })
+            ).toHaveAttribute('aria-expanded', 'false');
+        });
+
+        it('지난 일정 보기를 누르면 지난 주가 나타나고 aria-expanded가 true가 된다', () => {
+            render(
+                <EconomicCalendarGrid
+                    country="US"
+                    events={EVENTS}
+                    today="2026-06-17"
+                />
+            );
+            fireEvent.click(
+                screen.getByRole('button', { name: '지난 일정 보기' })
+            );
+            expect(
+                screen.getByRole('button', { name: /6월 9일/ })
+            ).toBeInTheDocument();
+            expect(
+                screen.getByRole('button', { name: '지난 일정 접기' })
+            ).toHaveAttribute('aria-expanded', 'true');
+        });
+
+        it('다시 누르면 접힌다', () => {
+            render(
+                <EconomicCalendarGrid
+                    country="US"
+                    events={EVENTS}
+                    today="2026-06-17"
+                />
+            );
+            fireEvent.click(
+                screen.getByRole('button', { name: '지난 일정 보기' })
+            );
+            fireEvent.click(
+                screen.getByRole('button', { name: '지난 일정 접기' })
+            );
+            expect(
+                screen.queryByRole('button', { name: /6월 9일/ })
+            ).not.toBeInTheDocument();
+        });
+
+        it('지난 주의 상세 패널도 DOM에 남는다(크롤러 색인)', () => {
+            const { container } = render(
+                <EconomicCalendarGrid
+                    country="US"
+                    events={EVENTS}
+                    today="2026-06-17"
+                />
+            );
+            expect(
+                container.querySelector('#panel-2026-06-09')
+            ).toHaveTextContent('E 2026-06-09');
+        });
+
+        it('선택된 날이 든 주는 지난 주여도 접지 않는다 (선택한 칸이 사라지면 안 된다)', () => {
+            // ISR로 묵은 today(6/9)가 기본 선택을 6/9로 정했지만, 실제 오늘은 6/17이다.
+            const { container } = render(
+                <EconomicCalendarGrid
+                    country="US"
+                    events={EVENTS}
+                    today="2026-06-09"
+                />
+            );
+            expect(
+                container.querySelector('#day-btn-2026-06-09')
+            ).toHaveAttribute('aria-pressed', 'true');
+            expect(
+                container.querySelector('#day-btn-2026-06-09')?.closest('tr')
+            ).not.toHaveAttribute('hidden');
+        });
+
+        it('앞으로 남은 이벤트가 없으면(전부 과거) 접지 않고 토글도 없다', () => {
+            render(
+                <EconomicCalendarGrid
+                    country="US"
+                    events={[ev('2026-06-02'), ev('2026-06-09')]}
+                    today="2026-06-17"
+                />
+            );
+            expect(
+                screen.queryByRole('button', { name: '지난 일정 보기' })
+            ).not.toBeInTheDocument();
+            expect(
+                screen.getByRole('button', { name: /6월 2일/ })
+            ).toBeInTheDocument();
+        });
+
+        it('today prop이 없어도 마운트 후 실제 오늘(고정 Date) 기준으로 접는다', () => {
+            // today가 없으면 기본 선택은 가장 이른 날(6/2)이라 그 주는 선택 예외로 남는다.
+            // 6/9 주가 접히는지를 본다.
+            const { container } = render(
+                <EconomicCalendarGrid
+                    country="US"
+                    events={[ev('2026-06-02'), ...EVENTS]}
+                />
+            );
+            expect(
+                container.querySelector('#day-btn-2026-06-09')?.closest('tr')
+            ).toHaveAttribute('hidden');
+            expect(
+                screen.getByRole('button', { name: '지난 일정 보기' })
+            ).toBeInTheDocument();
+        });
+
+        /**
+         * 첫 렌더(SSR 포함)에는 오늘을 모른다 — today prop이 없으면 `todayKey`가 `''`다.
+         * 이때 접으면 안 되고(기준일이 없다), 가드가 없으면 `''`로 날짜 산술을 하다
+         * 던진다. effect가 돌기 전의 렌더를 `renderToString`으로 그대로 본다.
+         */
+        it('오늘을 아직 모르는 첫 렌더(today 없음)는 아무 주도 접지 않고 토글도 없다', () => {
+            const html = renderToString(
+                <IntlTestProvider>
+                    <EconomicCalendarGrid country="US" events={EVENTS} />
+                </IntlTestProvider>
+            );
+            expect(html).not.toMatch(/<tr[^>]*\bhidden/);
+            expect(html).not.toContain('지난 일정 보기');
+            expect(html).toContain('id="day-btn-2026-06-09"');
+        });
+    });
+
+    describe('선택 시 상세 패널로 스크롤', () => {
+        const scrollSpy = vi.fn();
+        const original = Element.prototype.scrollIntoView;
+
+        beforeEach(() => {
+            scrollSpy.mockReset();
+            Element.prototype.scrollIntoView = scrollSpy;
+        });
+
+        afterEach(() => {
+            Element.prototype.scrollIntoView = original;
+        });
+
+        it('기본 선택(마운트 시 syncDefault)은 스크롤하지 않는다', () => {
+            render(
+                <EconomicCalendarGrid
+                    country="US"
+                    events={[ev('2026-06-17'), ev('2026-06-18')]}
+                    today="2026-06-17"
+                />
+            );
+            expect(scrollSpy).not.toHaveBeenCalled();
+        });
+
+        it('날짜 칸을 누르면 그날 패널을 nearest로 스크롤한다', () => {
+            render(
+                <EconomicCalendarGrid
+                    country="US"
+                    events={[ev('2026-06-17'), ev('2026-06-18')]}
+                    today="2026-06-17"
+                />
+            );
+            fireEvent.click(screen.getByRole('button', { name: /6월 18일/ }));
+            expect(scrollSpy).toHaveBeenCalledTimes(1);
+            expect(scrollSpy).toHaveBeenCalledWith({
+                block: 'nearest',
+                behavior: 'smooth',
+            });
+            expect(scrollSpy.mock.contexts[0]).toHaveAttribute(
+                'id',
+                'panel-2026-06-18'
+            );
+            // 스크롤 시점에는 패널이 이미 hidden에서 풀려 있어야 한다.
+            expect(scrollSpy.mock.contexts[0]).not.toHaveAttribute('hidden');
+        });
+
+        it('같은 날짜를 다시 눌러도 다시 스크롤한다', () => {
+            render(
+                <EconomicCalendarGrid
+                    country="US"
+                    events={[ev('2026-06-17'), ev('2026-06-18')]}
+                    today="2026-06-17"
+                />
+            );
+            const btn = screen.getByRole('button', { name: /6월 18일/ });
+            fireEvent.click(btn);
+            fireEvent.click(btn);
+            expect(scrollSpy).toHaveBeenCalledTimes(2);
+        });
+
+        it('모션 감소 선호면 smooth 대신 auto를 쓴다', () => {
+            const matchMedia = vi.spyOn(window, 'matchMedia').mockReturnValue({
+                matches: true,
+            } as MediaQueryList);
+            try {
+                render(
+                    <EconomicCalendarGrid
+                        country="US"
+                        events={[ev('2026-06-17'), ev('2026-06-18')]}
+                        today="2026-06-17"
+                    />
+                );
+                fireEvent.click(
+                    screen.getByRole('button', { name: /6월 18일/ })
+                );
+                expect(scrollSpy).toHaveBeenCalledWith({
+                    block: 'nearest',
+                    behavior: 'auto',
+                });
+            } finally {
+                matchMedia.mockRestore();
+            }
+        });
+    });
+
+    describe('값 줄의 N/A 제거', () => {
+        const renderOne = (patch: Partial<EconomicCalendarEvent>) =>
+            render(
+                <EconomicCalendarGrid
+                    country="US"
+                    events={[ev('2026-06-18', patch)]}
+                    today="2026-06-18"
+                />
+            );
+
+        it('예상·이전이 모두 null이면 라벨도 N/A도 렌더하지 않는다', () => {
+            const { container } = renderOne({ estimate: null, previous: null });
+            expect(container.textContent).not.toMatch(/N\/A/);
+            expect(screen.queryByText(/예상/)).not.toBeInTheDocument();
+            expect(screen.queryByText(/이전/)).not.toBeInTheDocument();
+            // 값 줄 <p> 자체가 없다.
+            expect(
+                container.querySelector(
+                    '#panel-2026-06-18 p.text-secondary-400'
+                )
+            ).toBeNull();
+        });
+
+        it('예상만 있으면 예상만 렌더한다', () => {
+            const { container } = renderOne({ estimate: 2.5, previous: null });
+            expect(screen.getByText('예상 2.5%')).toBeInTheDocument();
+            expect(container.textContent).not.toMatch(/N\/A|이전/);
+        });
+
+        it('이전만 있으면 이전만 렌더한다', () => {
+            renderOne({ estimate: null, previous: 2.3 });
+            expect(screen.getByText('이전 2.3%')).toBeInTheDocument();
+            expect(screen.queryByText(/예상/)).not.toBeInTheDocument();
+        });
+
+        it('둘 다 있으면 가운뎃점으로 이어 붙인다', () => {
+            renderOne({ estimate: 2.5, previous: 2.3, actual: 2.4 });
+            expect(
+                screen.getByText('예상 2.5% · 이전 2.3% · 실제 2.4%')
+            ).toBeInTheDocument();
+        });
+
+        it('예상·이전이 없는데 실제가 0이면 자리표시값이라 실제도 숨긴다', () => {
+            const { container } = renderOne({
+                estimate: null,
+                previous: null,
+                actual: 0,
+            });
+            expect(screen.queryByText(/실제/)).not.toBeInTheDocument();
+            expect(container.textContent).not.toMatch(/N\/A/);
+        });
+
+        it('예상·이전이 없고 실제가 0이 아니면 실제는 보여 준다', () => {
+            renderOne({ estimate: null, previous: null, actual: 3.1 });
+            expect(screen.getByText('실제 3.1%')).toBeInTheDocument();
+        });
+
+        it('예상이 있으면 실제 0도 진짜 값이라 보여 준다', () => {
+            renderOne({ estimate: 0.1, previous: null, actual: 0 });
+            expect(screen.getByText('예상 0.1% · 실제 0%')).toBeInTheDocument();
+        });
     });
 });

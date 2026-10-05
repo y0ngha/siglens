@@ -21,8 +21,8 @@ describe('ticker cache constants', () => {
 
 describe('ticker cache key builders', () => {
     it('buildTickerSearchCacheKey lowercases the query', () => {
-        expect(buildTickerSearchCacheKey('AAPL')).toBe('ticker:search:v2:aapl');
-        expect(buildTickerSearchCacheKey('애플')).toBe('ticker:search:v2:애플');
+        expect(buildTickerSearchCacheKey('AAPL')).toBe('ticker:search:v3:aapl');
+        expect(buildTickerSearchCacheKey('애플')).toBe('ticker:search:v3:애플');
     });
 
     it('buildAssetInfoProvisionalCacheKey uppercases the symbol and never collides with the legacy asset-info:<SYM> key', () => {

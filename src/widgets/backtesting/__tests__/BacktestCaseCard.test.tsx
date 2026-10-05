@@ -77,7 +77,7 @@ describe('BacktestCaseCard', () => {
     it('renders risk badge', () => {
         render(<BacktestCaseCard case_={makeCase()} />);
 
-        expect(screen.getByText('low')).toBeInTheDocument();
+        expect(screen.getByText('위험 낮음')).toBeInTheDocument();
     });
 
     it('renders formatted prices', () => {
@@ -148,5 +148,101 @@ describe('티커 링크', () => {
     it('티커 배지가 종목 페이지로 간다', () => {
         render(<BacktestCaseCard case_={makeCase({ ticker: 'GOOGL' })} />);
         expect(screen.getByText('GOOGL')).toHaveAttribute('href', '/GOOGL');
+    });
+});
+
+/**
+ * 위험도 배지는 원문 enum 대문자(`HIGH`)를 그대로 찍지 않고 라벨로 푼다. 공개 데이터에는
+ * core 타입에 없는 `medium`이 실제로 들어 있다(72건) — `moderate`만 매핑하면 가장 흔한
+ * 값이 새므로 둘 다 "보통"이어야 한다.
+ */
+describe('위험도 배지 라벨', () => {
+    const withRisk = (riskLevel: string) => {
+        const base = makeCase();
+        return makeCase({
+            aiAnalysis: {
+                ...base.aiAnalysis,
+                // 데이터에는 타입에 없는 값이 있다 — JSON 파서처럼 any로 만든다.
+                riskLevel: JSON.parse(JSON.stringify(riskLevel)),
+            },
+        });
+    };
+
+    it.each([
+        ['low', '위험 낮음'],
+        ['medium', '위험 보통'],
+        ['moderate', '위험 보통'],
+        ['high', '위험 높음'],
+        ['extreme', '위험 매우 높음'],
+    ])('%s → %s', (level, label) => {
+        const { container } = render(
+            <BacktestCaseCard case_={withRisk(level)} />
+        );
+        expect(screen.getByText(label)).toBeInTheDocument();
+        expect(container.textContent).not.toContain(level.toUpperCase());
+        expect(container.textContent).not.toMatch(new RegExp(`\\b${level}\\b`));
+    });
+
+    it('알 수 없는 값은 배지를 그리지 않는다', () => {
+        const { container } = render(
+            <BacktestCaseCard case_={withRisk('mystery')} />
+        );
+        expect(container.textContent).not.toMatch(/mystery|MYSTERY|위험/);
+    });
+});
+
+describe('라벨 한글화', () => {
+    it('TP/SL 대신 익절가·손절가로 표기한다', () => {
+        const { container } = render(<BacktestCaseCard case_={makeCase()} />);
+        expect(screen.getByText(/익절가:/)).toBeInTheDocument();
+        expect(screen.getByText(/손절가:/)).toBeInTheDocument();
+        expect(container.textContent).not.toMatch(/\bTP:|\bSL:/);
+    });
+
+    it('관망 권고 배지는 "AI 관망 권고"다', () => {
+        const base = makeCase();
+        render(
+            <BacktestCaseCard
+                case_={makeCase({
+                    aiAnalysis: {
+                        ...base.aiAnalysis,
+                        entryRecommendation: 'wait',
+                    },
+                })}
+            />
+        );
+        expect(screen.getByText('AI 관망 권고')).toBeInTheDocument();
+    });
+});
+
+/**
+ * 9~11px 글자는 읽기 어렵고, 근거(`basis`)를 `line-clamp-1`로 자르면 AI가 쓴 근거가
+ * 통째로 보이지 않는다. 모두 12px(`text-xs`)로 올리고 말줄임을 걷었다.
+ */
+describe('가독성', () => {
+    it('9/10/11px 임의 글자 크기를 쓰지 않는다', () => {
+        const { container } = render(<BacktestCaseCard case_={makeCase()} />);
+        expect(container.innerHTML).not.toMatch(/text-\[(9|10|11)px\]/);
+    });
+
+    it('요약과 근거를 잘라 내지 않는다 (line-clamp 없음, 전문 노출)', () => {
+        const base = makeCase();
+        const longBasis =
+            '이전 고점 돌파 후 거래량 동반 안착이 확인되어야 한다는 긴 근거 문장';
+        const longSummary = '요약 '.repeat(80).trim();
+        const { container } = render(
+            <BacktestCaseCard
+                case_={makeCase({
+                    aiAnalysis: {
+                        ...base.aiAnalysis,
+                        summary: longSummary,
+                        bullishTargets: [{ price: 210, basis: longBasis }],
+                    },
+                })}
+            />
+        );
+        expect(container.innerHTML).not.toContain('line-clamp');
+        expect(screen.getByText(longSummary)).toBeInTheDocument();
+        expect(screen.getByText(new RegExp(longBasis))).toBeInTheDocument();
     });
 });

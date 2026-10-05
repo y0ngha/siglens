@@ -28,12 +28,25 @@ import {
     toNewsImpact,
     toNewsSentiment,
 } from '@/shared/lib/news/newsEnumCoercion';
+import { isLawFirmSolicitation } from '@/shared/lib/news/isLawFirmSolicitation';
 import { toLocalizedDisplayItems } from '@/shared/lib/news/toLocalizedDisplayItems';
 import { createRedisFlag } from '@/shared/cache/createRedisFlag';
 import { SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from '@/shared/config/time';
 import type { MarketNewsItem } from '../lib/marketNewsClientPort';
 import { MARKET_NEWS_LOOKBACK_MS } from '../lib/marketNewsConstants';
 import type { MarketNewsRow } from '../model';
+
+/**
+ * 읽기 경로의 로펌 원고 모집 광고 필터.
+ *
+ * 적재 시점(`FmpMarketNewsClient`)에서도 거르지만, 필터가 생기기 전에 이미 들어간 행이
+ * 7일 창 안에 남아 있다. 판정은 **원제목(`titleEn`)** 에만 한다 — 화면에 나가는 제목은
+ * 번역본(`titleKo`)일 수 있어 정규식이 맞지 않는다. 정규식은 SQL로 내릴 수 없어 받은 뒤
+ * 거른다(7일 창 한 버킷 규모라 부담이 없다).
+ */
+function dropSolicitations<T extends { titleEn: string }>(rows: T[]): T[] {
+    return rows.filter(row => !isLawFirmSolicitation(row.titleEn));
+}
 
 export class DrizzleMarketNewsRepository {
     constructor(private readonly db: SiglensDatabase) {}
@@ -176,7 +189,7 @@ export class DrizzleMarketNewsRepository {
             DB_TRANSIENT_RETRY
         );
 
-        return rows.map(toMarketNewsRow);
+        return dropSolicitations(rows).map(toMarketNewsRow);
     }
 
     /**
@@ -228,16 +241,20 @@ export class DrizzleMarketNewsRepository {
             DB_TRANSIENT_RETRY
         );
 
+        // 거른 **뒤** 지역화한다 — `rows[index]`로 tickers를 되붙이므로 두 배열의
+        // 길이·순서가 같아야 한다.
+        const visibleRows = dropSolicitations(rows);
+
         // 카드 투영·해석은 종목 뉴스와 같은 함수를 쓴다 — 컬럼도 소비자도
         // 같은데 슬라이스마다 따로 구현하면 한쪽만 고쳐진다.
         const localized = await toLocalizedDisplayItems(
-            rows,
+            visibleRows,
             locale,
             TRANSLATABLE_ENTITY.marketNews
         );
         return localized.map((item, index) => ({
             ...item,
-            tickers: rows[index]!.tickers,
+            tickers: visibleRows[index]!.tickers,
         }));
     }
 

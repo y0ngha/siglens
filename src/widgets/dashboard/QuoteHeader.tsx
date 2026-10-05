@@ -55,25 +55,49 @@ export function QuoteHeader({
     currencySymbol,
     tickerIsReadable,
 }: QuoteHeaderProps) {
+    const t = useTranslations('widgets.dashboard');
     const tMove = useTranslations('shared.lib.priceMove');
     const { sign, colorClass, arrow, arrowLabelKey } = formatPriceChange(
         data.changePercent
     );
 
-    /** 변동폭 span — 두 레이아웃에서 동일하게 사용 */
-    const changeSpan = (
-        <span
-            className={cn(
-                'flex shrink-0 items-center gap-0.5 font-mono text-xs tabular-nums',
-                colorClass
-            )}
-        >
-            <span aria-hidden="true">{arrow}</span>
-            <span className="sr-only">{tMove(arrowLabelKey)}</span>
-            {sign}
-            {data.changePercent.toFixed(2)}%
-        </span>
-    );
+    /**
+     * 변동폭 span.
+     *
+     * `index` 레이아웃은 지수 카드라 등락 방향 자체가 정보라서 상승/하락 색과
+     * 화살표를 그대로 쓴다.
+     *
+     * `signal` 레이아웃(섹터 신호 카드)은 다르다. 이 값은 **전일 대비 등락률**일 뿐
+     * 카드가 속한 신호 섹션(상승 신호·하락 신호)의 방향과 무관한데, 상승 신호 섹션
+     * 안에서 빨간 `▼-2.1%`가 뜨면 같은 카드가 두 방향을 동시에 말하는 것처럼
+     * 읽힌다. 그래서 중립 색 + 화살표 없음 + "전일비" 라벨로 값의 정체를 밝히고,
+     * 방향은 부호와 스크린리더용 단어로만 전한다.
+     */
+    const changeSpan =
+        layout === 'signal' ? (
+            <span className="flex shrink-0 items-center gap-1 font-mono text-xs text-secondary-300 tabular-nums">
+                <span className="text-secondary-400">
+                    {t('QuoteHeader.92387b')}
+                </span>
+                <span className="sr-only">{tMove(arrowLabelKey)}</span>
+                <span>
+                    {sign}
+                    {data.changePercent.toFixed(2)}%
+                </span>
+            </span>
+        ) : (
+            <span
+                className={cn(
+                    'flex shrink-0 items-center gap-0.5 font-mono text-xs tabular-nums',
+                    colorClass
+                )}
+            >
+                <span aria-hidden="true">{arrow}</span>
+                <span className="sr-only">{tMove(arrowLabelKey)}</span>
+                {sign}
+                {data.changePercent.toFixed(2)}%
+            </span>
+        );
 
     // 티커는 어느 자리에 가든 번역 대상이 아니다 — `translate="no"`가 값을 따라간다.
     const primary = tickerIsReadable ? (

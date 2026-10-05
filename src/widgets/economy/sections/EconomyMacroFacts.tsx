@@ -1,6 +1,8 @@
 import { useTranslations } from 'next-intl';
 import { computeYieldSpread, type EconomySnapshot } from '@y0ngha/siglens-core';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { cn } from '@/shared/lib/cn';
+import { formatFixed } from '@/shared/lib/formatNum';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
 interface EconomyMacroFactsProps {
@@ -25,6 +27,9 @@ interface EconomyMacroFactsProps {
 export function EconomyMacroFacts({ snapshot }: EconomyMacroFactsProps) {
     const t = useTranslations('widgets.economy');
     const tFacts = useTranslations('widgets.economy.macroFacts');
+    const locale = useResolvedLocale();
+    const fixed = (value: number, precision: number): string =>
+        formatFixed(value, precision, locale);
     const { indicators, treasury } = snapshot;
 
     const seriesByName = new Map(indicators.map(s => [s.name, s] as const));
@@ -47,28 +52,28 @@ export function EconomyMacroFacts({ snapshot }: EconomyMacroFactsProps) {
         year10 !== null &&
         spread !== null
             ? tFacts('ratesWithSpread', {
-                  v0: federalFunds.toFixed(2),
-                  v1: year2.toFixed(2),
-                  v2: year10.toFixed(2),
+                  v0: fixed(federalFunds, 2),
+                  v1: fixed(year2, 2),
+                  v2: fixed(year10, 2),
                   // 부호는 값에 붙인다 — 문장 안에 `+`를 두면 로케일마다 자리가
                   // 달라져 번역이 어긋난다.
-                  v3: `${spread >= 0 ? '+' : ''}${spread.toFixed(2)}`,
+                  v3: `${spread >= 0 ? '+' : ''}${fixed(spread, 2)}`,
               })
             : federalFunds !== null
-              ? tFacts('ratesOnly', { v0: federalFunds.toFixed(2) })
+              ? tFacts('ratesOnly', { v0: fixed(federalFunds, 2) })
               : null;
 
     const macroSentence =
         cpi !== null && unemploymentRate !== null
             ? tFacts('cpiAndUnemployment', {
-                  v0: cpi.toFixed(1),
-                  v1: unemploymentRate.toFixed(1),
+                  v0: fixed(cpi, 1),
+                  v1: fixed(unemploymentRate, 1),
               })
             : cpi !== null
-              ? tFacts('cpiOnly', { v0: cpi.toFixed(1) })
+              ? tFacts('cpiOnly', { v0: fixed(cpi, 1) })
               : unemploymentRate !== null
                 ? tFacts('unemploymentOnly', {
-                      v0: unemploymentRate.toFixed(1),
+                      v0: fixed(unemploymentRate, 1),
                   })
                 : null;
 

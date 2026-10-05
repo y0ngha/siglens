@@ -8,8 +8,11 @@ import {
     ECONOMY_INDICATOR_CATEGORIES,
     type EconomyCategoryKey,
 } from '@/shared/config/economyIndicators';
-import { cn } from '@/shared/lib/cn';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { formatFixed } from '@/shared/lib/formatNum';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
+import { deltaUnitLabel } from '../utils/unitLabel';
+import { DeltaBadge } from './DeltaBadge';
 import {
     HEADING_SECTION,
     HEADING_SUBSECTION,
@@ -81,8 +84,9 @@ interface IndicatorCardProps {
 }
 
 function IndicatorCard({ card }: IndicatorCardProps) {
-    const t = useTranslations('widgets.economy');
     const tCfg = useTranslations('shared.config');
+    const tLabel = useTranslations('shared.enumLabel');
+    const locale = useResolvedLocale();
     const { meta, latest, latestDate, changeFromPrevious } = card;
     return (
         <article className="rounded-lg border border-secondary-700 bg-secondary-800/30 p-4">
@@ -96,33 +100,17 @@ function IndicatorCard({ card }: IndicatorCardProps) {
             </div>
             <p className="mt-1 flex items-baseline gap-1">
                 <span className="text-2xl font-bold text-secondary-100">
-                    {latest.toFixed(meta.precision)}
+                    {formatFixed(latest, meta.precision, locale)}
                 </span>
                 <span className="text-xs text-secondary-400">{meta.unit}</span>
             </p>
             {changeFromPrevious !== null && (
-                <p
-                    className={cn(
-                        'mt-1 text-xs',
-                        changeFromPrevious > 0
-                            ? 'text-ui-danger-text'
-                            : changeFromPrevious < 0
-                              ? 'text-ui-success-text'
-                              : 'text-secondary-400'
-                    )}
-                >
-                    {/*
-                        색은 "좋다/나쁘다"가 아니라 방향만 뜻한다 — 실업률이 오르면
-                        나쁘고 성장률이 오르면 좋은데, 지표마다 방향의 의미가 달라
-                        해석까지 색으로 단정하지 않는다. 상승=적색은 국내 증시
-                        관행(상승 적색)과 같은 방향이라 오독이 적다.
-                    */}
-                    {t('KrEconomicIndicatorGrid.9fc30a', {
-                        v0: changeFromPrevious > 0 ? '+' : '',
-                        v1: changeFromPrevious.toFixed(meta.precision),
-                        v2: meta.unit,
-                    })}
-                </p>
+                <DeltaBadge
+                    delta={changeFromPrevious}
+                    precision={meta.precision}
+                    unit={deltaUnitLabel(meta.unit, tLabel)}
+                    basis="release"
+                />
             )}
             <p className="mt-1 text-xs text-secondary-500">{latestDate}</p>
         </article>
