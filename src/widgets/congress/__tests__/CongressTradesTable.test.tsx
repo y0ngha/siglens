@@ -170,6 +170,13 @@ describe('CongressTradesTable', () => {
             expect(rel).toContain('noreferrer');
         });
 
+        it('disclosure link uses the tap-target class (12px text link needs a 24px hit area)', () => {
+            render(<CongressTradesTable trades={[BASE_TRADE]} />);
+            expect(screen.getByRole('link', { name: /공시/ })).toHaveClass(
+                'tap-target'
+            );
+        });
+
         it('senate row: href routes to efdsearch search page (not the deep link)', () => {
             render(<CongressTradesTable trades={[BASE_TRADE]} />);
             const link = screen.getByRole('link', { name: /공시/ });

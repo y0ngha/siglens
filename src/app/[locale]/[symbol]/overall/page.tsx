@@ -17,6 +17,7 @@ import { Suspense } from 'react';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
 import { getNewsList } from '@/entities/news-article/api';
 import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article/lib/cacheKeys';
 import {
@@ -26,7 +27,6 @@ import {
     resolveSymbolOverallSeoContent,
     symbolMetadataFromSeo,
     noindexInvalidSymbolMetadata,
-    noindexSymbolMetadata,
     type SeoTranslator,
 } from '@/shared/lib/seo';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
@@ -102,7 +102,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (!isAdmissibleSymbolShape(upper)) {
         return noindexInvalidSymbolMetadata(symbol, locale, 'overall');
     }
-    const { assetInfo, degraded } = await getAssetInfoResilient(upper);
+    // 존재하지 않는 심볼은 레이아웃과 같은 판정으로 여기서도 404다(`requireResolvableAsset`).
+    const { assetInfo, degraded } = await requireResolvableAsset(upper);
     const blockedMetadata = await getBlockedSymbolMetadata({
         locale,
         symbol: upper,
@@ -112,8 +113,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         tab: 'overall',
     });
     if (blockedMetadata) return blockedMetadata;
-    if (!assetInfo)
-        return noindexSymbolMetadata(upper, tSeo, locale, { tab: 'overall' });
 
     const displayName = buildDisplayName(assetInfo, upper, locale);
     const assetClass = getDescriptor(marketProfileOf(assetInfo)).assetClass;

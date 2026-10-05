@@ -1,6 +1,7 @@
 {
     "_comment": "미등록 시 `yarn i18n:extract --write`가 그 키를 조용히 지운다 — `i18n:verify`의 고아 키 검사와 CI의 extract 드리프트 게이트가 사후에 잡지만, 등록을 먼저 하는 게 맞다. preserve = 스캔에 안 잡히는(동적 조회) 키라 ko.json 재생성 시 지우지 않는다. chromeWide = 그중 어느 라우트가 쓰는지 알 수 없어 크롬에 통째로 싣는 네임스페이스 — 전역 내비/카테고리 라벨만 넣는다. 라우트 전용 키를 여기 넣으면 카탈로그가 전 라우트에 실려 first-load가 부푼다.",
     "preserve": [
+        "app.ai.not-found.pageTitle",
         "app.api.stream",
         "app.backtesting.seo",
         "app.home.jsonLd",
@@ -73,8 +74,8 @@
         "shared.seo.manifest",
         "shared.seo.oauthConsentFullTitle",
         "shared.seo.oauthConsentTitle",
-        "shared.skillDescription",
         "shared.skillName",
+        "shared.skillSummary",
         "shared.symbolTab",
         "shared.ui.analysisError",
         "shared.ui.misc",

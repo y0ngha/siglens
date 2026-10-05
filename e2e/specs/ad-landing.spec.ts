@@ -45,14 +45,43 @@ test.describe('ad landing pages', () => {
         });
     }
 
-    test('each page 404s on the other host', async ({ request }) => {
-        const chatOnMain = await request.get(`${MAIN}/lp/stock-chat`, {
-            maxRedirects: 0,
-        });
-        expect(chatOnMain.status()).toBe(404);
-        const analysisOnAi = await request.get(`${AI}/lp/stock-analysis`, {
-            maxRedirects: 0,
-        });
-        expect(analysisOnAi.status()).toBe(404);
+    test('each page 308-redirects to its own host, keeping the query', async ({
+        request,
+    }) => {
+        const chatOnMain = await request.get(
+            `${MAIN}/lp/stock-chat?gclid=abc&utm_source=google`,
+            { maxRedirects: 0 }
+        );
+        expect(chatOnMain.status()).toBe(308);
+        expect(chatOnMain.headers()['x-robots-tag']).toBe('noindex, nofollow');
+        const chatTarget = new URL(chatOnMain.headers()['location']!);
+        expect(chatTarget.pathname).toBe('/lp/stock-chat');
+        expect(chatTarget.search).toBe('?gclid=abc&utm_source=google');
+
+        const analysisOnAi = await request.get(
+            `${AI}/lp/stock-analysis?gclid=abc`,
+            { maxRedirects: 0 }
+        );
+        expect(analysisOnAi.status()).toBe(308);
+        expect(analysisOnAi.headers()['x-robots-tag']).toBe(
+            'noindex, nofollow'
+        );
+        const analysisTarget = new URL(analysisOnAi.headers()['location']!);
+        expect(analysisTarget.pathname).toBe('/lp/stock-analysis');
+        expect(analysisTarget.search).toBe('?gclid=abc');
+    });
+
+    test('an unknown /lp/* path 404s with the root not-found document, still noindex', async ({
+        request,
+    }) => {
+        for (const base of [MAIN, AI]) {
+            const res = await request.get(`${base}/lp/zzz`, {
+                maxRedirects: 0,
+            });
+            expect(res.status()).toBe(404);
+            expect(res.headers()['x-robots-tag']).toBe('noindex, nofollow');
+            // Not the bare `Not Found` text the proxy used to send.
+            expect(await res.text()).toContain('<h1');
+        }
     });
 });

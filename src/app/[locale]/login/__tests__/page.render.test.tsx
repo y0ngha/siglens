@@ -41,10 +41,16 @@ vi.mock('next/link', () => ({
     default: ({
         href,
         children,
+        className,
     }: {
         href: string;
         children: React.ReactNode;
-    }) => <a href={href}>{children}</a>,
+        className?: string;
+    }) => (
+        <a href={href} className={className}>
+            {children}
+        </a>
+    ),
 }));
 
 import LoginPage from '@/app/[locale]/login/page';
@@ -71,6 +77,15 @@ describe('LoginPage render', () => {
             name: '비밀번호를 잊으셨나요?',
         });
         expect(link).toHaveAttribute('href', '/forgot-password');
+    });
+
+    it('footer cross links use the tap-target class', async () => {
+        render(await LoginPage({ params: Promise.resolve({ locale: 'ko' }) }));
+        for (const name of ['비밀번호를 잊으셨나요?', '회원가입 →']) {
+            expect(screen.getByRole('link', { name })).toHaveClass(
+                'tap-target'
+            );
+        }
     });
 
     it('renders the signup link in the footer', async () => {

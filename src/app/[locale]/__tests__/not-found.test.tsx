@@ -140,6 +140,26 @@ describe('NotFound page', () => {
         }
     );
 
+    /**
+     * 존재하지 않는 URL이 홈의 `canonical`·`og:url`을 상속하면 "내 정규 주소는 홈"이라고
+     * 선언하는 셈이다. `alternates.canonical: null`이 레이아웃의 self-canonical을 지우고,
+     * `openGraph`는 `url` 없이 제목·설명만 싣는다(자식 openGraph가 부모 값을 통째로 대체).
+     */
+    it.each(['ko', 'en'])(
+        '%s: canonical과 og:url을 비워 홈 주소를 광고하지 않는다',
+        async locale => {
+            const metadata = await generateMetadata({
+                params: Promise.resolve({ locale }),
+            });
+
+            expect(metadata.alternates).toEqual({ canonical: null });
+            expect(metadata.openGraph).toBeDefined();
+            expect(metadata.openGraph).not.toHaveProperty('url');
+            expect(metadata.openGraph?.title).toBe(metadata.title);
+            expect(metadata.openGraph?.description).toBe(metadata.description);
+        }
+    );
+
     /*
      * 테마 적용은 `ContactDialog`가 한다(그 파일의 주석 참고 — 전용 컴포넌트를
      * 두면 홈 first-load가 17.3KB 늘어난다). 여기서는 그 컴포넌트가 렌더되는지만

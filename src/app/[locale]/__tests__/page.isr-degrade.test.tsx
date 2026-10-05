@@ -60,6 +60,7 @@ vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
 vi.mock('@/entities/skill/api', () => ({
     countSkillFiles: vi.fn(),
     FileSkillsLoader: vi.fn(),
+    loadShowcaseSkills: vi.fn(),
 }));
 vi.mock('@/shared/lib/seo', () => ({
     brandIntroName: () => 'Siglens',

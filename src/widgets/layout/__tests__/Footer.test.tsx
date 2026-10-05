@@ -295,6 +295,38 @@ describe('Footer', () => {
         );
     });
 
+    it('GitHub 아이콘도 X와 같은 44px 터치 영역이다 — 음수 마진으로 레이아웃 몫은 20px 그대로', () => {
+        render(<Footer />);
+
+        const link = screen.getByRole('link', { name: /GitHub 저장소/ });
+        expect(link.className.split(/\s+/)).toEqual(
+            expect.arrayContaining(['size-11', '-m-3'])
+        );
+    });
+
+    it('GitHub·X 터치 상자가 겹치지 않는다 — 행 간격이 두 상자의 바깥 여백 합(12+12=24px)이다', () => {
+        render(<Footer />);
+
+        const row = screen.getByRole('link', {
+            name: /GitHub 저장소/,
+        }).parentElement!;
+        const classes = row.className.split(/\s+/);
+        expect(classes).toContain('gap-x-6');
+        expect(classes).not.toContain('gap-x-4');
+        expect(
+            screen.getByRole('link', { name: /X\(트위터\) 계정/ }).parentElement
+        ).toBe(row);
+    });
+
+    it('사이트맵 링크는 터치 영역 확장 클래스를 쓴다', () => {
+        render(<Footer />);
+
+        const sitemap = screen.getAllByRole('list')[0]!;
+        for (const link of within(sitemap).getAllByRole('link')) {
+            expect(link).toHaveClass('tap-target');
+        }
+    });
+
     it('X_URL은 https x.com 프로필 주소다', () => {
         expect(X_URL).toBe('https://x.com/siglens_io');
     });
