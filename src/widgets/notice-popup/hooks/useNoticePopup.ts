@@ -18,8 +18,10 @@ export interface UseNoticePopupResult {
 }
 
 /**
- * 활성 공지를 `GET /api/notices`로 읽는다. 로케일은 쿼리로 넘긴다 — CDN 캐시 키에
- * 로케일이 들어가야 먼저 캐시된 언어가 다른 언어 방문자에게 가지 않는다.
+ * 활성 공지를 `GET /api/notices`로 읽는다. 서버 액션(POST)과 달리 캐시 가능한 GET이지만,
+ * 엣지에서 공유되는 것은 **`/api/notices`용 CDN 규칙이 추가될 때뿐**이다(지금 Cloudflare 규칙은
+ * `/api`를 제외한다 — `app/api/notices/route.ts` JSDoc). 로케일을 쿼리로 넘기는 이유는 그때를
+ * 위한 것이다: 캐시 키에 로케일이 들어가야 먼저 캐시된 언어가 다른 언어 방문자에게 가지 않는다.
  */
 async function fetchActiveNotices(
     locale: string,
@@ -87,7 +89,7 @@ export function useNoticePopup(pathname: string): UseNoticePopupResult {
     }, [queue, consume]);
 
     // 활성 공지 fetch는 외부 시스템 동기화 effect. canonical hook order(effects last)에 따라
-    // useMemo/useCallback 뒤에 둔다. 서버 액션(POST)이 아니라 GET이라 CDN이 응답을 나눠 쓴다.
+    // useMemo/useCallback 뒤에 둔다. 서버 액션(POST) 대신 GET이라 Googlebot 렌더러가 건너뛰는 `/api/` 경로로 간다(CDN 공유는 규칙이 붙을 때만).
     useEffect(() => {
         const controller = new AbortController();
         fetchActiveNotices(locale, controller.signal)

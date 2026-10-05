@@ -77,6 +77,22 @@ describe('허브의 "종목별 공포·탐욕 지수" 목록', () => {
             expect(links.find(l => l.symbol === 'AAPL')?.label).toBe('AAPL');
         });
 
+        /**
+         * `/symbols` 페이지와 **같은 캐시 엔트리**를 쓰는 근거: `unstable_cache`의 키는
+         * `[NAMES_CACHE_KEY]` + 호출 인자(목록, 로케일)이고 태그·revalidate(24h)는 래퍼 한 곳에
+         * 있다. 두 호출부가 같은 인자로 부르면 콜드 렌더가 DB를 한 번 더 치지 않는다.
+         */
+        it('/symbols 페이지와 같은 인자(전체 인기 목록, 로케일)로 이름을 읽는다', async () => {
+            for (const market of ['us', 'kr', 'crypto'] as const) {
+                mockLoadNames.mockClear();
+                await loadFearGreedSymbolLinks(market, 'ko');
+                expect(mockLoadNames).toHaveBeenCalledWith(
+                    [...POPULAR_TICKERS, ...POPULAR_CRYPTOS],
+                    'ko'
+                );
+            }
+        });
+
         it('DB 없는 빌드의 degrade revalidate 핀을 건다', async () => {
             await loadFearGreedSymbolLinks('us', 'ko');
             expect(mockShortenDb).toHaveBeenCalledOnce();

@@ -69,6 +69,10 @@ export function SectorFactsSummary({ data }: SectorFactsSummaryProps) {
                                     <span className="ml-2 text-secondary-500">
                                         {/* parens as JSX expressions → no stray whitespace around them */}
                                         {'('}
+                                        {/* `isCuratedSymbol` 검사 없이 링크한다 — 스캔 대상(`DashboardScope.sectorStocks`)은
+                                            전부 큐레이션(색인) 집합이라 noindex 롱테일로 가는 앵커가 없다.
+                                            그 불변식은 `shared/config/__tests__/marketHubIndexability.test.ts`가
+                                            미국·한국·암호화폐 전 스코프에서 강제한다. */}
                                         {fact.topStocks.map((stock, i) => (
                                             <span key={stock.symbol}>
                                                 {i > 0 && ', '}

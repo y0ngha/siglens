@@ -9,12 +9,10 @@ const getServerSnapshot = (): boolean => false;
 /** localStorage에 `siglens.chart.*` 키가 하나라도 있는가. 접근이 막힌 환경은 `false`. */
 function scanStoredChartPreferences(): boolean {
     try {
-        for (let i = 0; i < window.localStorage.length; i += 1) {
-            if (window.localStorage.key(i)?.startsWith(`${STORAGE_PREFIX}.`)) {
-                return true;
-            }
-        }
-        return false;
+        const { localStorage } = window;
+        return Array.from({ length: localStorage.length }, (_, i) =>
+            localStorage.key(i)
+        ).some(key => key?.startsWith(`${STORAGE_PREFIX}.`));
     } catch {
         return false;
     }
