@@ -130,7 +130,8 @@ export function keepLastNonNull<T>(
  *   그래서 seed에는 **마지막 non-null 항목 하나씩만** 담는다(`keepLastNonNull`).
  *   501개를 실어 1개를 쓰던 구조였고, 2026-08 실측 기준 종목 라우트마다
  *   macd 27KB + rsi 3.8KB였다(gzip −13~17%).
- * - `buySellVolume` — 거래량 차트와 공포·탐욕 지수가 전 구간을 쓴다. 접지 않는다.
+ * - `buySellVolume` — 거래량 차트가 전 구간을 쓴다. 접지 않는다. (공포·탐욕 지수는
+ *   이 seed가 아니라 원본 `getQuantizedBarsStatic`의 5년 일봉으로 계산한다.)
  *
  * ## 왜 안전한가
  *
@@ -188,15 +189,12 @@ export const getSeedBarsStatic = cache(
                     data.indicators.macd,
                     m => m.histogram !== null
                 ),
-                // buySellVolume은 전 구간을 쓴다(거래량 차트·공포탐욕 지수) — 접지 않는다.
+                // buySellVolume은 거래량 차트가 전 구간을 쓴다 — 접지 않는다.
                 // 다만 `undefined` 정규화는 rsi·macd와 동일하게 적용한다. 그대로 흘리면
                 // `EMPTY_INDICATOR_RESULT`의 `[]` 기본값을 `undefined`로 덮어쓰고,
-                // 방어 없는 소비자 둘이 즉시 터진다:
-                //  - `app/[symbol]/fear-greed/page.tsx`의 `FearGreedFactsSummary` →
-                //    `computeFearGreedIndex(bars, buySellVolume)`는 SSR 본문에서 **동기**
-                //    호출이고 근처 ErrorBoundary 바깥이라 페이지 렌더가 죽는다.
-                //  - `widgets/chart/hooks/useVolumeChartData.ts`의 `buySellVolume.length`
-                //    (옵셔널 체이닝 없음) — 30초 뒤 재요청이 치유하기 전에 터진다.
+                // 방어 없는 소비자가 즉시 터진다: `widgets/chart/hooks/useVolumeChartData.ts`의
+                // `buySellVolume.length`(옵셔널 체이닝 없음) — 30초 뒤 재요청이 치유하기
+                // 전에 터진다.
                 buySellVolume: data.indicators.buySellVolume ?? [],
             },
         };

@@ -728,8 +728,11 @@ function fearGreedView(
     timeframe: Timeframe
 ): SymbolFearGreedView | null {
     if (timeframe !== '1Day') return null;
-    // 화면과 같은 입구 — 5년 일봉(`fearGreedBars`)이 있으면 그것으로 계산한다. 2년 봉으로
-    // 계산하면 모델이 화면과 다른 점수를 말한다.
+    // 화면과 같은 입력 선택 — 5년 일봉(`fearGreedBars`)이 있으면 그것으로 계산한다. 2년 봉으로
+    // 계산하면 모델이 화면과 다른 점수를 말한다. 공용 입구(`entities/bars/lib/symbolFearGreed`)의
+    // `symbolFearGreedSnapshot`을 쓰지 않는 이유: 그 함수는 history까지 함께 계산하는데(종목당
+    // 100ms대) 여기는 스냅샷만 필요하고, route handler라 `React.cache` 메모도 없다. 입력 선택은
+    // 같은 core `fearGreedInputs`라 표면 간 점수는 갈리지 않는다.
     const { bars, buySellVolume: flow } = fearGreedInputs(data);
     // core는 `buySellVolume`을 봉과 **1:1로 나란한 배열**로 전제하고 인덱스로 읽는다.
     // 짧거나 없는 배열이 들어오면 거기서 throw가 나 도구 전체가 죽는다 — 공포·탐욕

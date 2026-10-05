@@ -28,7 +28,8 @@ export const MARKET_FEAR_GREED_SYMBOLS = {
 /**
  * Calendar-day lookback requested from FMP. The index needs 125 sessions to
  * warm up the momentum window plus 60 more for `confidence: 'normal'`, and the
- * page renders a "1 year ago" comparison. *
+ * page renders a "1 year ago" comparison.
+ *
  * Five years since core 2.10.0 (`FEAR_GREED_LOOKBACK_DAYS`): every reading is a
  * percentile against this history, so per-instrument and market-wide indices
  * share one window — two years left too few extreme-zone episodes to say

@@ -1,4 +1,5 @@
 import { FEAR_GREED_LOOKBACK_DAYS } from '@y0ngha/siglens-core';
+
 /**
  * 암호화폐 시장 공포·탐욕 지수의 FMP 티커 표.
  *

@@ -17,7 +17,9 @@ import {
  * core 2.10.0부터 일봉 결과에 5년 일봉(`fearGreedBars`)이 붙고, 점수는 그 5년
  * 기준 백분위다. 헤더 배지·공포탐욕 페이지·색인 게이트·클라이언트 게이지·AI 챗
  * 도구가 **같은 5년 시계열**을 봐야 같은 날 점수가 표면마다 갈리지 않는다. 그래서
- * 입력 고르기(`fearGreedInputs`)와 계산을 여기 한 곳에 둔다.
+ * 입력 고르기(`fearGreedInputs`)와 계산을 여기 한 곳에 둔다. 예외는 AI 챗 도구
+ * (`app/api/ai/chat/tools/getBarsIndicators.ts`) 하나다 — 스냅샷만 필요해 history
+ * 계산을 피하려고 core `fearGreedInputs` + `computeFearGreedIndex`를 직접 부른다.
  *
  * `React.cache`로 감싼 이유: 한 요청에서 레이아웃(배지)·`generateMetadata`(게이트)·
  * 페이지(요약·시드)가 같은 `BarsData` 객체(`getQuantizedBarsStatic`도 요청 스코프

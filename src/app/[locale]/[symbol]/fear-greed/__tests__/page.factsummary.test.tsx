@@ -10,9 +10,9 @@
  *
  * `computeFearGreedIndex` itself is unit-tested by
  * FearGreedFactsSummary.test.tsx; this suite only verifies page-level wiring,
- * so `computeFearGreedIndex` is mocked to a fixed snapshot (mirrors
- * useFearGreed.test.tsx / FearGreedFactsSummary.test.tsx convention — real
- * walk-forward fixtures need 90+ bars, irrelevant to wiring).
+ * so `computeFearGreedIndex` is mocked to a fixed snapshot (mirrors the
+ * FearGreedFactsSummary.test.tsx convention — real walk-forward fixtures need
+ * 90+ bars, irrelevant to wiring).
  */
 
 // MISTAKES §17: all vi.mock + vi.hoisted declarations must come before imports.
