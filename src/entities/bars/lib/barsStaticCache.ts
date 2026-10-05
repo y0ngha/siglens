@@ -10,6 +10,24 @@ import {
 } from '@y0ngha/siglens-core';
 import { loadBarsData } from './loadBarsData';
 import { SECONDS_PER_QUARTER_DAY } from '@/shared/config/time';
+import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
+import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
+import { isCuratedSymbol } from '@/entities/symbol-indexability/lib/isCuratedSymbol';
+
+/**
+ * 봉이 하나도 없는 결과를 장기 캐시에 넣지 않으려 `unstable_cache` 콜백 안에서 던지는 sentinel
+ * (`cacheNonEmpty`·`cacheNonNull`과 같은 방식). **바깥에서 잡아 빈 `BarsData`로 돌려준다** —
+ * "provider가 예외를 던짐"(degraded)과 "봉이 정말 0개"(`no-price-data`)는 다른 상태라 호출부가
+ * 구분할 수 있어야 한다. 빈 결과를 담아 두는 이유다.
+ */
+export class EmptyBarsError extends Error {
+    constructor(
+        symbol: string,
+        readonly data: BarsData
+    ) {
+        super(symbol);
+    }
+}
 
 /**
  * ISR static-safe bars fetch. `loadBarsData`(redis getOrSetCache + FMP)를 Next data
@@ -30,20 +48,51 @@ import { SECONDS_PER_QUARTER_DAY } from '@/shared/config/time';
  * 'AAPL') 양쪽으로 호출하므로, 정규화하지 않으면 같은 종목이 'AAPL'/'aapl' 두 unstable_cache
  * 엔트리·태그로 분기돼 캐시 중복 + revalidateTag('symbol:AAPL') 무효화 누락이 생긴다.
  * fmpSymbol은 FMP 고유 심볼이라 대소문자를 보존한다.
+ *
+ * ## 실패·빈 결과를 장기 캐시에 넣지 않는다 (2026-10-05 감사)
+ *
+ * provider가 일시 장애를 삼키고 **빈 봉**을 resolve하면 그 결과가 6h 동안 캐시에 굳어,
+ * 큐레이션 종목이 `no-price-data`로 noindex되는 렌더가 반나절 서빙된다. 그래서 빈 봉이면 콜백
+ * 안에서 `EmptyBarsError`를 던져 저장을 건너뛴다(`unstable_cache`는 throw하면 저장하지 않고,
+ * stale 엔트리가 있으면 그 값을 돌려준다). 던지는 쪽이 콜백 **안**, 잡는 쪽이 **밖**이어야 한다.
+ * 두 경우를 **구분해서** 돌려준다:
+ * - **provider 예외** → 그대로 다시 던진다. 호출부의 `.catch(() => null)`이 degraded로 처리하고,
+ *   그 탭은 `degraded-with-snapshot` 규칙을 탈 수 있다.
+ * - **빈 결과(봉 0개)** → 빈 `BarsData`를 **돌려준다**(null 아님). 호출부가 `hasPriceData === false`
+ *   (`no-price-data`, 스냅샷이 있어도 색인 불가)에 도달하고, `degraded-with-snapshot`이 이 판정을
+ *   구해 주지 않는다. 장기 캐시에는 들어가지 않으므로 다음 재생성이 다시 읽는다.
+ *
+ * 큐레이션 종목이 실패하거나 빈 결과면 이 렌더의 revalidate를 300초로 낮춘다
+ * (`shortenRevalidateForRuntimeDegrade`, 콜백 바깥에서 불러야 효과가 있다) — 노출 창이 6h 대신
+ * 5분이다. 롱테일은 어차피 noindex라 재생성 비용을 쓰지 않는다.
  */
-export function getBarsStatic(
+export async function getBarsStatic(
     symbol: string,
     timeframe: Timeframe,
     fmpSymbol?: string
 ): Promise<BarsData> {
     const ticker = symbol.toUpperCase();
-    return unstable_cache(
-        () => loadBarsData(ticker, timeframe, fmpSymbol),
-        // `-v2`: 값에 공포·탐욕용 5년 일봉(`fearGreedBars`)이 붙었다. 옛 항목에는 없어
-        // 서버 점수가 2년 기준으로 돌아가므로 키를 갈아 옛 항목을 읽지 않는다.
-        ['bars-static-v2', ticker, timeframe, fmpSymbol ?? ''],
-        { revalidate: SECONDS_PER_QUARTER_DAY, tags: [`symbol:${ticker}`] }
-    )();
+    try {
+        return await unstable_cache(
+            async () => {
+                const data = await loadBarsData(ticker, timeframe, fmpSymbol);
+                if (data.bars.length === 0)
+                    throw new EmptyBarsError(ticker, data);
+                return data;
+            },
+            // `-v2`: 값에 공포·탐욕용 5년 일봉(`fearGreedBars`)이 붙었다. 옛 항목에는 없어
+            // 서버 점수가 2년 기준으로 돌아가므로 키를 갈아 옛 항목을 읽지 않는다.
+            ['bars-static-v2', ticker, timeframe, fmpSymbol ?? ''],
+            { revalidate: SECONDS_PER_QUARTER_DAY, tags: [`symbol:${ticker}`] }
+        )();
+    } catch (error) {
+        // Next 제어 흐름은 degrade가 아니다.
+        if (isDynamicServerError(error)) throw error;
+        if (isCuratedSymbol(ticker)) await shortenRevalidateForRuntimeDegrade();
+        // 빈 결과는 "장애"가 아니라 "봉 0개"다 — 빈 데이터를 돌려 호출부가 no-price-data로 판정한다.
+        if (error instanceof EmptyBarsError) return error.data;
+        throw error;
+    }
 }
 
 /**

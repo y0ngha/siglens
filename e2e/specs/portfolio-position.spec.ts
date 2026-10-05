@@ -184,7 +184,7 @@ test.describe('position widget placement (authed storageState)', () => {
     test('[symbol]/position tab: a member without a holding sees the CTA; adding one renders the building', async ({
         page,
     }) => {
-        // ---- 1. No holding (post-reset) → CTA to /portfolio, no building ----
+        // ---- 1. No holding (post-reset) → CTA to /portfolio + a current-price-only building ----
         await page.goto('/AAPL/position');
         await expect(
             page.getByRole('heading', { level: 1, name: /AAPL/ })
@@ -198,7 +198,14 @@ test.describe('position widget placement (authed storageState)', () => {
         await expect(
             cta.getByRole('link', { name: '보유종목 등록하기' })
         ).toHaveAttribute('href', '/portfolio?symbol=AAPL');
-        await expect(page.getByTestId('position-building')).toHaveCount(0);
+        // 보유가 없어도 CTA 위에 현재가 층만 그린 건물을 보여 준다 — 평단(★)
+        // 마커는 없고, 요약은 현재가 위치만 말한다.
+        const ctaBuilding = cta.getByTestId('position-building');
+        await expect(ctaBuilding).toBeVisible({ timeout: SETTLE_TIMEOUT_MS });
+        await expect(ctaBuilding.getByTestId('avg-marker')).toHaveCount(0);
+        await expect(
+            ctaBuilding.getByRole('img', { name: /^AAPL 현재가 위치:/ })
+        ).toBeVisible();
 
         // ---- 2. Add an AAPL holding, revisit → the building + readout card render ----
         await addAaplHolding(page, '10', '192');

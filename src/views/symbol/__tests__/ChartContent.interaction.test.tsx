@@ -348,6 +348,19 @@ describe('ChartContent', () => {
         });
     });
 
+    describe('데스크톱 분석 패널', () => {
+        // 패널 아래 끝이 첫 뷰포트 아래 끝과 겹쳐 Ask-AI FAB(바닥에서 68px)이
+        // 마지막 줄을 덮는다 — 스크롤 끝에서 FAB을 넘기는 하단 패딩(128px = pb-32: 뷰포트 밖 44px + FAB 68px + 여유).
+        it('Ask-AI FAB이 마지막 줄을 가리지 않도록 md:pb-32 하단 여유를 둔다', () => {
+            renderChart();
+
+            const panel = getSeparator().nextElementSibling as HTMLElement;
+            expect(panel.tagName).toBe('ASIDE');
+            expect(panel.className).toContain('md:pb-32');
+            expect(panel.className).toContain('md:overflow-y-auto');
+        });
+    });
+
     describe('상태 배너', () => {
         it('분석 중(서사 없음)이면 텍스트 배너가 아닌 AnalysisProgress 로딩 인디케이터를 렌더한다', () => {
             displayMock.mockReturnValue({
@@ -374,6 +387,32 @@ describe('ChartContent', () => {
             renderChart();
             expect(
                 screen.getByText('네트워크 오류로 분석에 실패했습니다.')
+            ).toBeInTheDocument();
+        });
+
+        it('완성된 분석이 화면에 있는 채 재분석 중이면 "AI 분석 중…" 줄을 한 번 더 그리지 않는다', () => {
+            analysisMock.mockReturnValue(
+                analysisReturn({ analysis: NARRATIVE_ANALYSIS })
+            );
+            displayMock.mockReturnValue({
+                displayAnalyzing: true,
+                handleProgressFinished: vi.fn(),
+            });
+            renderChart();
+            // 진행 신호는 AnalysisPanel(펄스 점·진행 표시)이 맡는다.
+            expect(screen.queryByText('AI 분석 중…')).toBeNull();
+        });
+
+        it('완성된 분석이 있어도 에러면 에러 배너는 그대로 렌더한다', () => {
+            analysisMock.mockReturnValue(
+                analysisReturn({
+                    analysis: NARRATIVE_ANALYSIS,
+                    analysisError: '재분석에 실패했습니다.',
+                })
+            );
+            renderChart();
+            expect(
+                screen.getByText('재분석에 실패했습니다.')
             ).toBeInTheDocument();
         });
 

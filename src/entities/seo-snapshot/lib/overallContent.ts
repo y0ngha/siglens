@@ -1,7 +1,7 @@
 import type { OverallScenarioName } from '@y0ngha/siglens-core';
 import { stripSnapshotMarkdown } from '@/shared/lib/stripSnapshotMarkdown';
-import { createEnumGuard } from '../lib/createEnumGuard';
-import { narrowStringArray } from '../lib/narrowStringArray';
+import { createEnumGuard } from './createEnumGuard';
+import { narrowStringArray } from './narrowStringArray';
 
 // Guard-only key map — the scenario section headings below are hardcoded
 // Korean strings ("강세 시나리오" / ...), not derived from this map, but its
