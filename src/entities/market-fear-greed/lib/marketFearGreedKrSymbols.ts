@@ -1,6 +1,7 @@
 import {
     MARKET_FEAR_GREED_SERIES_KEYS,
     type MarketFearGreedSeriesKey,
+    FEAR_GREED_LOOKBACK_DAYS,
 } from '@y0ngha/siglens-core';
 
 /**
@@ -46,11 +47,12 @@ export const MARKET_FEAR_GREED_KR_SYMBOLS = {
 } as const satisfies Record<Exclude<MarketFearGreedSeriesKey, 'vix'>, string>;
 
 /**
- * Calendar-day lookback requested from yahoo. 미국판과 같은 3년 —
- * 모멘텀 창 125세션 + `confidence: 'normal'`에 필요한 60세션을 채우고,
- * 페이지가 그리는 "1년 전" 비교까지 덮는다.
+ * Calendar-day lookback requested from yahoo. 미국판·종목 지수와 같은 5년
+ * (core `FEAR_GREED_LOOKBACK_DAYS`) — 점수가 이 기간 대비 백분위라 모든 공포·탐욕
+ * 지수가 같은 기간을 쓴다. 모멘텀 창 125세션 + `confidence: 'normal'` 60세션과
+ * "1년 전" 비교도 덮는다.
  */
-export const MARKET_FEAR_GREED_KR_LOOKBACK_DAYS = 1095;
+export const MARKET_FEAR_GREED_KR_LOOKBACK_DAYS = FEAR_GREED_LOOKBACK_DAYS;
 
 /** 티커가 있는 시리즈들, 안정된 순서로. `vix`는 파생이라 제외된다. */
 export const MARKET_FEAR_GREED_KR_SERIES =

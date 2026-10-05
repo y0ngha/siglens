@@ -1895,6 +1895,7 @@
                 "aboutPublished": "The About page was first opened, and the operator was disclosed.",
                 "aboutRewritten": "The About page was rewritten.",
                 "crawlerParity": "Changed to ensure search crawlers generate stock analyses in the same way as humans.",
+                "fearGreedFiveYears": "The per-symbol and market-wide Fear & Greed Index now compares against about five years of history, so scores may differ from before.",
                 "indexableTabs": "Reduced the stock tabs indexed in search results to three: Chart, News, and Fear & Greed. Also removed FAQs that only replaced stock names.",
                 "methodologyPublished": "The Analysis Methodology page (this page) was opened.",
                 "sub": "Changes to methods or policies are recorded here.",
@@ -1934,7 +1935,7 @@
             "fearGreed": {
                 "crypto": "Cryptocurrency",
                 "cryptoBody": "Six factors are considered: whether Bitcoin is above its 125-day average, whether Bitcoin's downside Volatility over the past 30 days is low, whether Bitcoin's 20-day return outperforms gold, whether a large proportion of the top 20 large-cap coins are above their 50-day average, whether a large proportion of altcoins have outperformed Bitcoin over the past 90 days, and whether a large proportion of the trading Volume over the past 30 days occurred on days when Bitcoin rose.",
-                "how": "Each component is ranked against its own historical values, and these ranks are summed to produce a score. If there are insufficient historical values for comparison, no score is generated.",
+                "how": "Each component is ranked against its own values over roughly the past five years, and the ranks are combined into the score. If there is not enough history to compare against, no score is produced.",
                 "kr": "Overall Korean Market",
                 "krBody": "Five factors are considered: whether the ETF tracking KOSPI 200 (KODEX 200) is above its 125-trading day average, whether the KOSPI index's 20-trading day realized Volatility is lower than its 50-trading day average, whether stocks have outperformed the 30-year Korean Treasury bond ETF in 20-trading day returns, whether the corporate bond ETF has outperformed the 3-year Korean Treasury bond ETF, and whether the KOSPI 200 equal-weighted ETF has outperformed the Market Cap-weighted ETF. Since there is no way to obtain a VIX-equivalent index (VKOSPI) in Korea, realized Volatility calculated directly from the KOSPI closing price is used instead.",
                 "labels": "Scores are divided into five levels: below 25 is Extreme Fear, 25 to below 45 is Fear, 45 to below 55 is Neutral, 55 to below 75 is Greed, and 75 or above is Extreme Greed.",

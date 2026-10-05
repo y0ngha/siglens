@@ -66,8 +66,8 @@ vi.mock(
 );
 // `indicators`는 BarsData의 필수 필드다 — 비워 두면 seed 축소(getSeedBarsStatic)가
 // undefined를 읽는다. 실제 shape에 맞춰 빈 지표를 함께 준다.
-vi.mock('@/entities/bars/actions/getBarsAction', () => ({
-    getBarsAction: vi
+vi.mock('@/entities/bars/lib/loadBarsData', () => ({
+    loadBarsData: vi
         .fn()
         .mockResolvedValue({ bars: [], indicators: { ma: {}, ema: {} } }),
 }));
@@ -146,7 +146,7 @@ import { evaluateSymbolIndexability } from '@/entities/symbol-indexability/lib/e
 import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
 import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
 import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
-import { getBarsAction } from '@/entities/bars/actions/getBarsAction';
+import { loadBarsData } from '@/entities/bars/lib/loadBarsData';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { isValidElement, type ReactNode } from 'react';
 import { notFound } from 'next/navigation';
@@ -164,7 +164,7 @@ const mockEvaluateSymbolIndexability =
     >;
 // 콘텐츠 게이트(hasPriceData) 배선 검증용 — page.tsx는 getQuantizedBarsStatic을
 // 거치지만 그 안쪽이 결국 이 액션을 부른다.
-const mockGetBarsAction = getBarsAction as MockedFunction<typeof getBarsAction>;
+const mockGetBarsAction = loadBarsData as MockedFunction<typeof loadBarsData>;
 
 interface ClientSeedProps {
     initialAnalysis: unknown;

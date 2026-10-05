@@ -10,19 +10,21 @@
  *
  * `computeFearGreedIndex` itself is unit-tested by
  * FearGreedFactsSummary.test.tsx; this suite only verifies page-level wiring,
- * so `computeFearGreedIndex` is mocked to a fixed snapshot (mirrors
- * useFearGreed.test.tsx / FearGreedFactsSummary.test.tsx convention — real
- * walk-forward fixtures need 90+ bars, irrelevant to wiring).
+ * so `computeFearGreedIndex` is mocked to a fixed snapshot (mirrors the
+ * FearGreedFactsSummary.test.tsx convention — real walk-forward fixtures need
+ * 90+ bars, irrelevant to wiring).
  */
 
 // MISTAKES §17: all vi.mock + vi.hoisted declarations must come before imports.
 const {
     mockGetAssetInfoResilient,
-    mockGetSeedBarsStatic,
     mockGetQuantizedBarsStatic,
+    mockGetSeedBarsStatic,
     mockComputeFearGreedIndex,
+    mockSetQueryData,
     FIXED_SNAPSHOT,
 } = vi.hoisted(() => ({
+    mockSetQueryData: vi.fn(),
     mockComputeFearGreedIndex: vi.fn(),
     FIXED_SNAPSHOT: {
         score: 71,
@@ -67,9 +69,10 @@ const {
         warning: null,
     },
     mockGetAssetInfoResilient: vi.fn(),
-    mockGetSeedBarsStatic: vi.fn(),
-    // 축소되지 않은 전체 지표 헬퍼. 이 페이지는 절대 부르면 안 된다 — 아래 회귀 테스트 참조.
+    // 원본(`getQuantizedBarsStatic`). 페이지가 공포·탐욕 5년 일봉을 읽는 경로다.
     mockGetQuantizedBarsStatic: vi.fn(),
+    // 축소판(`getSeedBarsStatic`). 5년 일봉을 버리므로 이 페이지는 부르면 안 된다.
+    mockGetSeedBarsStatic: vi.fn(),
 }));
 
 vi.mock('@y0ngha/siglens-core', async () => {
@@ -85,7 +88,7 @@ vi.mock('@tanstack/react-query', () => ({
     dehydrate: () => ({}),
     HydrationBoundary: () => null,
     QueryClient: function MockQueryClientClass() {
-        return { setQueryData: vi.fn() };
+        return { setQueryData: mockSetQueryData };
     },
 }));
 
@@ -103,8 +106,9 @@ vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
 }));
 
 vi.mock('@/entities/bars/lib/barsStaticCache', () => ({
-    getSeedBarsStatic: mockGetSeedBarsStatic,
+    // 페이지는 공포·탐욕 5년 일봉이 필요해 원본(getQuantizedBarsStatic)을 쓴다.
     getQuantizedBarsStatic: mockGetQuantizedBarsStatic,
+    getSeedBarsStatic: mockGetSeedBarsStatic,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -194,30 +198,29 @@ describe('SymbolFearGreedPage — SSR factor summary wiring', () => {
         mockGetAssetInfoResilient.mockReset();
         // 리셋하지 않으면 앞 테스트의 mockResolvedValue가 새어 들어와, 실패 경로
         // 테스트가 실제로는 성공 경로를 타면서 통과한다(리뷰 R2에서 적발).
-        mockGetSeedBarsStatic.mockReset();
         mockGetQuantizedBarsStatic.mockReset();
+        mockGetSeedBarsStatic.mockReset();
         mockGetAssetInfoResilient.mockResolvedValue({
             assetInfo: EQUITY_ASSET_INFO,
             degraded: false,
         });
     });
 
-    it('회귀 방지: RQ seed는 축소판 헬퍼만 쓰고 전체 지표 헬퍼는 부르지 않는다', async () => {
-        // 이 페이지만 `getQuantizedBarsStatic`(44개 지표 전부)을 seed하던 시기가 있었다.
-        // layout은 `getSeedBarsStatic`(rsi·macd·buySellVolume만)을 seed하므로 참조가 갈려
-        // **지표가 두 벌** 직렬화됐다 — 2026-08 프로덕션 실측 기준 flight 630KB 중 441KB,
-        // gzip 149.9KB로 사이트 최대 페이지였다. 헬퍼를 되돌리면 그대로 재발한다.
-        //
-        // SSR 출력은 영향받지 않는다: 유일한 지표 소비자인 FearGreedFactsSummary의 props는
-        // bars/buySellVolume 둘뿐이고, getSeedBarsStatic이 그 둘을 **같은 참조로** 넘긴다.
-        mockGetSeedBarsStatic.mockResolvedValue(BARS_WITH_DATA);
+    it('회귀 방지: 봉·지표를 seed하지 않고 서버가 계산한 공포·탐욕 결과만 seed한다', async () => {
+        // 클라이언트 게이지는 서버 계산 결과(`useFearGreedFromSymbol`)를 쓴다. 예전처럼
+        // `QUERY_KEYS.bars`를 seed하면 일봉 500개+지표가 RSC에 다시 실린다 — 이 탭은
+        // 한때 flight 630KB로 사이트 최대 페이지였다(2026-08 실측).
+        // 축소판(`getSeedBarsStatic`)은 5년 일봉을 버리므로 부르지 않는다.
+        mockGetQuantizedBarsStatic.mockResolvedValue(BARS_WITH_DATA);
 
         await SymbolFearGreedPage({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        expect(mockGetSeedBarsStatic).toHaveBeenCalled();
-        expect(mockGetQuantizedBarsStatic).not.toHaveBeenCalled();
+        const seededKeys = mockSetQueryData.mock.calls.map(([key]) => key[0]);
+        expect(seededKeys).toContain('symbol-fear-greed');
+        expect(seededKeys).not.toContain('bars');
+        expect(mockGetSeedBarsStatic).not.toHaveBeenCalled();
     });
 
     /**
@@ -225,7 +228,7 @@ describe('SymbolFearGreedPage — SSR factor summary wiring', () => {
      * 근거는 `expectSymbolBreadcrumbName` JSDoc 참고.
      */
     it('BreadcrumbList가 티커가 아니라 displayName을 쓴다', async () => {
-        mockGetSeedBarsStatic.mockResolvedValue(BARS_WITH_DATA);
+        mockGetQuantizedBarsStatic.mockResolvedValue(BARS_WITH_DATA);
 
         await SymbolFearGreedPage({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
@@ -235,7 +238,7 @@ describe('SymbolFearGreedPage — SSR factor summary wiring', () => {
     });
 
     it('Happy: bars 있으면 SSR HTML에 FearGreedFactsSummary 텍스트(점수·factor)가 렌더된다', async () => {
-        mockGetSeedBarsStatic.mockResolvedValue(BARS_WITH_DATA);
+        mockGetQuantizedBarsStatic.mockResolvedValue(BARS_WITH_DATA);
 
         const tree = await SymbolFearGreedPage({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
@@ -255,7 +258,7 @@ describe('SymbolFearGreedPage — SSR factor summary wiring', () => {
     });
 
     it('Worst: bars 빈 배열이면 factor summary가 없고 페이지는 정상 resolve된다', async () => {
-        mockGetSeedBarsStatic.mockResolvedValue({
+        mockGetQuantizedBarsStatic.mockResolvedValue({
             bars: [],
             indicators: {},
         });
@@ -277,7 +280,7 @@ describe('SymbolFearGreedPage — SSR factor summary wiring', () => {
      */
     it('Worst: 봉은 있으나 점수가 null이면 factor summary가 없다', async () => {
         mockComputeFearGreedIndex.mockReturnValue(null);
-        mockGetSeedBarsStatic.mockResolvedValue(BARS_WITH_DATA);
+        mockGetQuantizedBarsStatic.mockResolvedValue(BARS_WITH_DATA);
 
         const tree = await SymbolFearGreedPage({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
@@ -291,7 +294,9 @@ describe('SymbolFearGreedPage — SSR factor summary wiring', () => {
     });
 
     it('Worst: getSeedBarsStatic 실패(throw)해도 페이지가 깨지지 않고 factor summary는 생략된다', async () => {
-        mockGetSeedBarsStatic.mockRejectedValue(new Error('bars infra down'));
+        mockGetQuantizedBarsStatic.mockRejectedValue(
+            new Error('bars infra down')
+        );
 
         const tree = await SymbolFearGreedPage({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
@@ -310,7 +315,7 @@ describe('SymbolFearGreedPage — SSR factor summary wiring', () => {
      * 유효한지만 보는 테스트로는 이 결함이 잡히지 않는다.
      */
     it('화면 FAQ는 렌더하고 FAQPage 구조화데이터는 싣지 않는다', async () => {
-        mockGetSeedBarsStatic.mockResolvedValue(BARS_WITH_DATA);
+        mockGetQuantizedBarsStatic.mockResolvedValue(BARS_WITH_DATA);
 
         const tree = await SymbolFearGreedPage({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
@@ -327,8 +332,8 @@ describe('SymbolFearGreedPage — SSR factor summary wiring', () => {
 describe('SymbolFearGreedPage — 시장 지수 링크', () => {
     beforeEach(() => {
         mockGetAssetInfoResilient.mockReset();
-        mockGetSeedBarsStatic.mockReset();
-        mockGetSeedBarsStatic.mockResolvedValue(BARS_WITH_DATA);
+        mockGetQuantizedBarsStatic.mockReset();
+        mockGetQuantizedBarsStatic.mockResolvedValue(BARS_WITH_DATA);
     });
 
     it('암호화폐 종목은 /fear-greed/crypto로 링크한다', async () => {

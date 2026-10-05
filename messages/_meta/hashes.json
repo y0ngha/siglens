@@ -2877,7 +2877,7 @@
     "views.methodology.data.yahoo": "02959cce0c87",
     "views.methodology.fearGreed.crypto": "73eab86fea2b",
     "views.methodology.fearGreed.cryptoBody": "54e076cf8ad7",
-    "views.methodology.fearGreed.how": "02a560b276bb",
+    "views.methodology.fearGreed.how": "cb6fdaede970",
     "views.methodology.fearGreed.kr": "313d741851e4",
     "views.methodology.fearGreed.krBody": "6b13e90a5727",
     "views.methodology.fearGreed.labels": "c4ffa8a5b210",
@@ -2961,5 +2961,6 @@
     "shared.ui.AiAnalysisAwaitingSection.3e7fd8": "3e7fd8197b80",
     "shared.ui.AiAnalysisAwaitingSection.05d860": "05d860affa53",
     "widgets.congress.CongressTrendSummary.bbb041": "bbb04132d90f",
-    "views.symbol.ChartContent.f69071": "f690712a2d85"
+    "views.symbol.ChartContent.f69071": "f690712a2d85",
+    "views.methodology.changelog.fearGreedFiveYears": "6a85a5c8db3a"
 }

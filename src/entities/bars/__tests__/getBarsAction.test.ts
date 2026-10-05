@@ -185,6 +185,22 @@ describe('getBarsAction 함수는', () => {
             expect(result.bars).toStrictEqual(mockBarsData.bars);
         });
 
+        /**
+         * 5년 일봉은 서버 전용이다. 이 액션은 브라우저로 나가는 경계라 그 필드를 떼야
+         * 한다 — 그대로 두면 차트·공포탐욕 탭 응답이 약 2.5배가 된다.
+         */
+        it('공포·탐욕용 5년 일봉(fearGreedBars)은 클라이언트로 보내지 않는다', async () => {
+            mockFetchBarsWithIndicators.mockResolvedValueOnce({
+                ...mockBarsData,
+                fearGreedBars: [...mockBarsData.bars, ...mockBarsData.bars],
+            });
+
+            const result = await getBarsAction('AAPL', '1Day');
+
+            expect('fearGreedBars' in result).toBe(false);
+            expect(result.bars).toStrictEqual(mockBarsData.bars);
+        });
+
         it('member는 분봉도 올바르게 위임한다', async () => {
             mockFetchBarsWithIndicators.mockResolvedValueOnce(mockBarsData);
             mockGetCurrentUser.mockResolvedValueOnce({

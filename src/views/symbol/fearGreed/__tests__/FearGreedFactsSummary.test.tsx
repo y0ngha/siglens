@@ -10,8 +10,8 @@ import {
 import { FearGreedFactsSummary } from '../FearGreedFactsSummary';
 
 // computeFearGreedIndex의 실제 walk-forward 로직은 90+ bar 픽스처가 필요해
-// 컴포넌트 스위트에서 재현하지 않는다 — useFearGreed.test.tsx와 동일하게
-// mock으로 snapshot 산출부를 대체하고, 이 스위트는 렌더링/텍스트 배선만 검증한다.
+// 컴포넌트 스위트에서 재현하지 않는다 — mock으로 snapshot 산출부를 대체하고,
+// 이 스위트는 렌더링/텍스트 배선만 검증한다.
 vi.mock('@y0ngha/siglens-core', async () => {
     const actual = await vi.importActual('@y0ngha/siglens-core');
     return {

@@ -52,7 +52,7 @@ export const ABOUT_UPDATED_AT = new Date('2026-10-04T00:00:00+09:00');
  * 화면 하단 "마지막 업데이트", JSON-LD `WebPage.dateModified`, 정적 sitemap `lastmod`가
  * 이 값 하나를 읽는다 — 배포 시각을 쓰면 본문을 안 고친 배포까지 "갱신됨"으로 나간다.
  */
-export const METHODOLOGY_UPDATED_AT = new Date('2026-10-04T00:00:00+09:00');
+export const METHODOLOGY_UPDATED_AT = new Date('2026-10-05T00:00:00+09:00');
 
 /**
  * `/about`의 `Person` 노드와 홈 `Organization.founder`가 공유하는 `@id`.

@@ -28,9 +28,10 @@ export const ASSET_INFO_STALE_TIME_MS = 30 * MS_PER_MINUTE;
 export const BARS_STALE_TIME_MS = 30_000;
 
 /**
- * fearGreed snapshot은 underlying bars의 staleTime을 그대로 따라간다 —
- * useBars 결과로부터 즉석 산출하므로 자체 staleTime은 의미 없다. 별도 상수 미정의.
+ * 종목 공포·탐욕은 서버가 5년 일봉으로 계산해 보낸다(`getSymbolFearGreedAction`).
+ * 입력이 봉 캐시라 봉과 같은 주기로 갱신한다.
  */
+export const SYMBOL_FEAR_GREED_STALE_TIME_MS = BARS_STALE_TIME_MS;
 
 /** Registered LLM providers list refreshes only after the user adds/removes a key — short stale is fine. */
 export const REGISTERED_PROVIDERS_STALE_TIME_MS = MS_PER_MINUTE;
@@ -52,6 +53,9 @@ export const QUERY_KEYS = {
         upper(symbol),
         timeframe,
     ],
+    /** 종목 공포·탐욕(서버 계산, 5년 기준). fmpSymbol이 봉을 바꾸므로 키에 포함. */
+    symbolFearGreed: (symbol: string, fmpSymbol?: string) =>
+        ['symbol-fear-greed', upper(symbol), fmpSymbol] as const,
     tickerSearch: (query: string) => ['ticker-search', query] as const,
     assetInfo: (symbol: string) => ['asset-info', upper(symbol)] as const,
     /** Order-insensitive: the same symbols in any order share one lookup. */

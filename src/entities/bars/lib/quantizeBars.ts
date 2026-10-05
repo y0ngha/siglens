@@ -95,5 +95,10 @@ export function quantizeBarsDataToLastClosed(
         ...data,
         bars: data.bars.slice(0, -1),
         indicators: dropLastIndicatorBar(data.indicators),
+        // 공포·탐욕용 5년 일봉도 같은 형성 중 봉을 끝에 달고 있다 — 함께 떼어야
+        // 서버 점수가 표준 봉과 같은 날까지만 본다.
+        ...(data.fearGreedBars !== undefined
+            ? { fearGreedBars: data.fearGreedBars.slice(0, -1) }
+            : {}),
     };
 }

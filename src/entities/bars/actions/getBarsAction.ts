@@ -6,16 +6,7 @@ import {
     type Timeframe,
     isTimeframeAllowed,
 } from '@y0ngha/siglens-core';
-import { getCachedBarsWithIndicators } from '../lib/barsDataCache';
-import { getTranslations } from 'next-intl/server';
-import { roundIndicators } from '../lib/roundIndicators';
-import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
-import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
-import {
-    translateFmpError,
-    logFmpPaymentRequiredError,
-} from '@/shared/api/fmp/fmpUserMessage';
+import { loadBarsData } from '../lib/loadBarsData';
 import { resolveCallerTier } from '@/entities/auth/lib/resolveCallerTier';
 
 async function resolveBarsTier(): Promise<Tier> {
@@ -33,31 +24,10 @@ export async function getBarsAction(
             `Timeframe ${timeframe} is not available for ${tier} tier.`
         );
     }
-
-    try {
-        // Resolve profile once via cached getAssetInfo (DB-first → FMP); derive the
-        // session spec directly from it — no assetClass→profileId round-trip.
-        const marketProfile = await resolveMarketProfile(symbol);
-        const session = sessionSpecFor(marketProfile);
-        const data = await getCachedBarsWithIndicators(
-            getCachedMarketDataProvider(session),
-            symbol,
-            timeframe,
-            fmpSymbol,
-            session
-        );
-        // 클라이언트 직렬화 경계 — 여기서만 지표 정밀도를 줄인다. 캐시에 들어간 값은
-        // 원본 그대로이고(캐시 키·계산 불변), 나가는 페이로드만 약 34% 작아진다.
-        // 이 함수가 `getBarsStatic`(unstable_cache 래퍼)의 안쪽이라 정적 생성 경로도
-        // 같이 커버된다. 근거: roundIndicators JSDoc.
-        return { ...data, indicators: roundIndicators(data.indicators) };
-    } catch (error) {
-        logFmpPaymentRequiredError(error);
-        // 서버 액션이라 훅이 없다. 루트 번역자를 직접 만든다.
-        const message = translateFmpError(error, await getTranslations());
-        if (message !== null) {
-            throw new Error(message, { cause: error });
-        }
-        throw error;
-    }
+    const data = await loadBarsData(symbol, timeframe, fmpSymbol);
+    // `fearGreedBars`(5년 일봉)는 서버 전용이다 — 클라이언트로 보내면 차트·공포탐욕
+    // 탭의 응답이 약 2.5배가 된다. 클라이언트 공포·탐욕은 서버가 계산한 결과를
+    // `getSymbolFearGreedAction`으로 받는다.
+    const { fearGreedBars: _serverOnly, ...clientData } = data;
+    return clientData;
 }

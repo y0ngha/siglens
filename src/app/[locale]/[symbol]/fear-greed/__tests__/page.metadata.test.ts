@@ -32,8 +32,9 @@ vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
 }));
 
 vi.mock('@/entities/bars/lib/barsStaticCache', () => ({
-    getSeedBarsStatic: mockGetSeedBarsStatic,
-    getQuantizedBarsStatic: vi.fn(),
+    // 페이지는 공포·탐욕 5년 일봉이 필요해 원본(getQuantizedBarsStatic)을 쓴다.
+    getQuantizedBarsStatic: mockGetSeedBarsStatic,
+    getSeedBarsStatic: vi.fn(),
 }));
 
 vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({

@@ -1,6 +1,7 @@
 import {
     MARKET_FEAR_GREED_SERIES_KEYS,
     type MarketFearGreedSeriesKey,
+    FEAR_GREED_LOOKBACK_DAYS,
 } from '@y0ngha/siglens-core';
 
 /**
@@ -26,11 +27,16 @@ export const MARKET_FEAR_GREED_SYMBOLS = {
 
 /**
  * Calendar-day lookback requested from FMP. The index needs 125 sessions to
- * warm up the momentum window plus 60 more for `confidence: 'normal'`; three
- * calendar years yields roughly 750 sessions, which also covers the "1 year
- * ago" comparison the page renders.
+ * warm up the momentum window plus 60 more for `confidence: 'normal'`, and the
+ * page renders a "1 year ago" comparison.
+ *
+ * Five years since core 2.10.0 (`FEAR_GREED_LOOKBACK_DAYS`): every reading is a
+ * percentile against this history, so per-instrument and market-wide indices
+ * share one window — two years left too few extreme-zone episodes to say
+ * anything, and a longer past steadies the baseline. Changing this changes every
+ * score, so it follows the core constant rather than a local number.
  */
-export const MARKET_FEAR_GREED_LOOKBACK_DAYS = 1095;
+export const MARKET_FEAR_GREED_LOOKBACK_DAYS = FEAR_GREED_LOOKBACK_DAYS;
 
 /** Every series key paired with its FMP ticker, in a stable order. */
 export const MARKET_FEAR_GREED_SERIES = MARKET_FEAR_GREED_SERIES_KEYS.map(

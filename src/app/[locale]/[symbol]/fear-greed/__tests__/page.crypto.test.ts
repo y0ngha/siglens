@@ -48,6 +48,11 @@ vi.mock('@y0ngha/siglens-core', () => ({
     // 페이지가 `hasFearGreedScore`로 요약 렌더 여부를 판정한다. 이 스위트는 요약이
     // 아니라 헬퍼 인자·about 노드만 보므로 점수 없음(null)으로 고정해 요약을 건너뛴다.
     computeFearGreedIndex: () => null,
+    computeFearGreedHistory: () => [],
+    fearGreedInputs: (d: {
+        bars: unknown[];
+        indicators: { buySellVolume: unknown[] };
+    }) => ({ bars: d.bars, buySellVolume: d.indicators.buySellVolume }),
 }));
 
 vi.mock('@tanstack/react-query', () => ({
@@ -83,7 +88,8 @@ vi.mock('@/entities/market-fear-greed/api/marketFearGreedReading', () => ({
 vi.mock('@/entities/bars/lib/barsStaticCache', () => ({
     // 세션 spec 유도는 이제 헬퍼 내부 책임이라 여기서는 위임 인자
     // (ticker, timeframe, marketProfile, fmpSymbol)만 포착한다.
-    getSeedBarsStatic: mockGetSeedBarsStatic,
+    // 페이지는 공포·탐욕 5년 일봉이 필요해 원본(getQuantizedBarsStatic)을 쓴다.
+    getQuantizedBarsStatic: mockGetSeedBarsStatic,
 }));
 
 vi.mock('next/navigation', () => ({

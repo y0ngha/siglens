@@ -25,9 +25,10 @@ import { SECONDS_PER_DAY } from '@/shared/config/time';
  * `getAssetInfoResilient`의 import 체인은 client component(useRecentSearches 등) 그래프에
  * 닿을 수 있다(과거 ticker barrel 경유로 실제로 닿았다). clean lib를 직접 감싸면 lib → db → client(postgres +
  * 'server-only') 체인이 client bundle로 끌려와 빌드가 깨진다(Module not
- * found: fs/net/tls). `'use server'` 경계가 이 체인을 firewall하므로 action을 감싼다 —
- * `getBarsStatic`(getBarsAction 래핑)과 동일한 패턴. action body는 `getAssetInfo(upper)`
- * 호출뿐이라 dynamic API가 없어 DSU 정적화 의도는 그대로 충족된다.
+ * found: fs/net/tls). `'use server'` 경계가 이 체인을 firewall하므로 action을 감싼다.
+ * action body는 `getAssetInfo(upper)` 호출뿐이라 dynamic API가 없어 DSU 정적화 의도는
+ * 그대로 충족된다. (`getBarsStatic`도 예전엔 같은 이유로 `getBarsAction`을 감쌌지만,
+ * 지금은 server 페이지에서만 import되는 서버 전용 로더 `loadBarsData`를 감싼다.)
  *
  * 전제(축 0): 이 정적화는 root layout cookies() 제거가 선결돼야 효과가 있다 — layout이 전
  * 라우트를 dynamic으로 강제하면 unstable_cache 래핑도 무력하다.
