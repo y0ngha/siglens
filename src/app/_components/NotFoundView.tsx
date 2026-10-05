@@ -74,8 +74,18 @@ function parseSnapshot(snapshot: string): LocationSurface {
  * 루트 `not-found.tsx`는 정적이어야 해서 서버는 한국어 · 메인 호스트 한 벌만 그린다
  * (`children`). 이 컴포넌트는 서버·하이드레이션 렌더에서 기본 표면을 쓰고
  * (`getServerSnapshot` — 그래서 하이드레이션 불일치가 없다), 하이드레이션이 끝난 뒤
- * 주소로 알아낸 실제 로케일·호스트가 비기본이면 최소 문구로 바꾸고 `document.title`·
- * `<html lang>`을 맞춘다. JS 없이 받는 크롤러는 기본(한국어) 문서를 받는다.
+ * 주소로 알아낸 실제 로케일·호스트가 비기본이면 최소 문구로 바꾸고 `<title>`·`<html lang>`을
+ * 맞춘다. JS 없이 받는 크롤러는 기본(한국어) 문서를 받는다.
+ *
+ * ## 제목을 `document.title`로 대입하지 않는 이유
+ *
+ * 제목은 `NotFoundLayout`이 렌더하는 `<title>`(React가 `<head>`로 끌어올림)이다. 예전에는
+ * Next 메타데이터의 `<title>`을 두고 이펙트에서 `document.title = …`로 바꿨는데, 프로덕션
+ * 빌드에서 **하이드레이션이 이 대입을 덮어썼다** — React는 `<title>` 호이스터블을 하이드레이트할
+ * 때 기존 `<title>`에 자기 props(한국어)를 다시 써 넣고, 그 시점이 이펙트 뒤였다(e2e 실측:
+ * `/en/foo/bar`의 제목이 한국어로 남았고 본문·`lang`만 바뀌었다). `<title>`을 표면별 마크업에
+ * 넣으면 한 번에 하나의 `<title>`만 React가 소유하므로 경쟁이 없다. 그래서 `not-found.tsx`는
+ * 메타데이터에 `title`을 두지 않는다(Next가 두 번째 `<title>`을 소유하게 된다).
  */
 export function NotFoundView({ overrides, children }: NotFoundViewProps) {
     const snapshot = useSyncExternalStore(
@@ -87,14 +97,13 @@ export function NotFoundView({ overrides, children }: NotFoundViewProps) {
     const override = (surface.onAiHost ? overrides.ai : overrides.site)[
         surface.locale
     ];
-    const documentTitle = override?.documentTitle;
     const lang = LOCALE_HREFLANG[surface.locale];
+    const hasOverride = override !== undefined;
 
     useEffect(() => {
-        if (documentTitle === undefined) return;
-        document.title = documentTitle;
+        if (!hasOverride) return;
         document.documentElement.lang = lang;
-    }, [documentTitle, lang]);
+    }, [hasOverride, lang]);
 
     if (override === undefined) return children;
     return (
@@ -103,6 +112,7 @@ export function NotFoundView({ overrides, children }: NotFoundViewProps) {
                 surface.onAiHost ? overrides.aiWordmark : overrides.siteWordmark
             }
             homeHref={localePath(surface.locale, '/')}
+            documentTitle={override.documentTitle}
             title={override.headline}
             description={override.body}
             homeLabel={override.homeLabel}

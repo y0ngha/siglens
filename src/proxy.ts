@@ -141,7 +141,17 @@ function landingResponseFor(req: NextRequest, host: LandingHost): NextResponse {
         );
         // 두 호스트 설정이 같은 오리진을 가리키면(로컬 개발 등) 308이 자기 자신으로
         // 돌아와 무한 루프가 된다 — 그땐 404로 끝낸다.
-        if (target.host !== url.host) return NextResponse.redirect(target, 308);
+        //
+        // 비교 대상은 `req.url`의 호스트가 아니라 **Host 헤더**다. 프로덕션 `next start`는
+        // `req.url`을 요청 헤더가 아니라 서버가 바인딩한 `localhost:<port>`로 다시 만들어
+        // (`resolve-routes`의 `initUrl`) Host가 `ai.localhost:4300`이어도 URL은 `localhost:4300`이다.
+        // `url.host`로 비교하면 ai 호스트에서 메인으로 가는 308이 로컬·e2e에서만(메인 오리진이
+        // 서버 바인딩 주소와 같을 때) 자기 자신으로 오인돼 404가 된다. 호스트 판정(`isAiHost`)이
+        // 이미 Host 헤더를 쓰므로 같은 기준으로 맞춘다. `target.host`는 URL이 소문자로
+        // 정규화하므로 헤더도 소문자로 맞춘다(대소문자만 다른 Host가 불필요한 308을 타지 않게).
+        const requestHost = (req.headers.get('host') ?? url.host).toLowerCase();
+        if (target.host !== requestHost)
+            return NextResponse.redirect(target, 308);
     }
     return NextResponse.rewrite(new URL(LP_NOT_FOUND_PATH, url));
 }

@@ -168,6 +168,30 @@ describe('proxy — ad landing redirect loop guard', () => {
         vi.resetModules();
     });
 
+    /**
+     * `next start`는 `req.url`을 Host 헤더가 아니라 서버 바인딩 주소(`localhost:<port>`)로
+     * 만든다 — 로컬·e2e에서는 Host가 `ai.localhost:4300`이어도 `req.url`은 `localhost:4300`이다.
+     * 루프 가드가 `req.url`의 호스트를 쓰면 메인 오리진과 우연히 같아져 308이 404로 바뀐다.
+     */
+    it('req.url의 호스트가 Host 헤더와 달라도(next start) Host 헤더 기준으로 308을 낸다', async () => {
+        vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'http://localhost:4300');
+        vi.stubEnv('NEXT_PUBLIC_AI_SITE_URL', 'http://ai.localhost:4300');
+        vi.resetModules();
+        const { proxy: freshProxy } = await import('@/proxy');
+        const req = {
+            url: 'http://localhost:4300/lp/stock-analysis?gclid=abc',
+            headers: new Headers({ host: 'ai.localhost:4300' }),
+            cookies: { get: () => undefined },
+        } as unknown as NextRequest;
+
+        const res = (await freshProxy(req)) as unknown as Res;
+
+        expect(res.type).toBe('redirect');
+        expect(res.status).toBe(308);
+        expect(res.url?.origin).toBe('http://localhost:4300');
+        expect(res.url?.search).toBe('?gclid=abc');
+    });
+
     it('목적지 오리진이 요청 호스트와 같으면 308 대신 404 rewrite다', async () => {
         vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://siglens.io');
         vi.stubEnv('NEXT_PUBLIC_AI_SITE_URL', 'https://siglens.io');
@@ -181,5 +205,23 @@ describe('proxy — ad landing redirect loop guard', () => {
         expect(res.type).toBe('rewrite');
         expect(res.url?.pathname).toBe('/__lp_not_found__/x/y/z');
         expect(res.headers.get('X-Robots-Tag')).toBe('noindex, nofollow');
+    });
+
+    /** `target.host`는 URL이 소문자로 정규화한다 — 대문자 Host도 같은 호스트로 봐야 루프 가드가 선다. */
+    it('Host 헤더가 대문자여도 같은 오리진이면 404 rewrite다', async () => {
+        vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://siglens.io');
+        vi.stubEnv('NEXT_PUBLIC_AI_SITE_URL', 'https://siglens.io');
+        vi.resetModules();
+        const { proxy: freshProxy } = await import('@/proxy');
+        const req = {
+            url: 'https://siglens.io/lp/stock-chat?gclid=x',
+            headers: new Headers({ host: 'SIGLENS.IO' }),
+            cookies: { get: () => undefined },
+        } as unknown as NextRequest;
+
+        const res = (await freshProxy(req)) as unknown as Res;
+
+        expect(res.type).toBe('rewrite');
+        expect(res.url?.pathname).toBe('/__lp_not_found__/x/y/z');
     });
 });

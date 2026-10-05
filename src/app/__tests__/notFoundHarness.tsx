@@ -36,6 +36,7 @@ async function islandElement() {
             <NotFoundLayout
                 wordmark="Siglens"
                 homeHref="/"
+                documentTitle="페이지를 찾을 수 없습니다 | Siglens"
                 title="페이지를 찾을 수 없습니다"
                 homeLabel="홈"
             />
