@@ -1,3 +1,4 @@
+import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { test, expect } from '../support/fixtures';
 
 /**
@@ -152,15 +153,25 @@ test.describe('KR equity SEO (crawler-facing)', () => {
         expect(html).toContain(`href="/${KR_SYMBOL}"`);
     });
 
-    test('sitemap이 광고하는 국내 종목이 전부 홈에서 링크된다', async ({
+    test('sitemap이 광고할 수 있는 국내 종목이 전부 홈에서 링크된다', async ({
         page,
     }) => {
+        // 차트 sitemap 엔트리는 산문(technical 스냅샷)이 있을 때만 실린다. E2E에는
+        // LLM 키가 없어 스냅샷이 비므로 sitemap에서 국내 종목을 읽으면 빈 집합이 되어
+        // 검사가 무의미해진다. 그래서 sitemap이 광고할 수 있는 전체 후보(큐레이션
+        // 국내 종목)를 기준으로 홈 링크를 보고, sitemap이 실은 국내 종목은 그 후보의
+        // 부분집합인지 따로 확인한다.
         const sitemap = await (
             await page.request.get('/sitemap-popular.xml')
         ).text();
         const home = await (await page.request.get('/')).text();
 
-        const krSymbols = [
+        const curatedKr: readonly string[] = POPULAR_TICKERS.filter(symbol =>
+            /^\d{6}\.K[SQ]$/.test(symbol)
+        );
+        expect(curatedKr.length).toBeGreaterThan(0);
+
+        const advertisedKr = [
             ...new Set(
                 Array.from(
                     sitemap.matchAll(/<loc>[^<]*\/(\d{6}\.K[SQ])<\/loc>/g),
@@ -168,9 +179,11 @@ test.describe('KR equity SEO (crawler-facing)', () => {
                 )
             ),
         ];
-        expect(krSymbols.length).toBeGreaterThan(0);
+        expect(
+            advertisedKr.filter(symbol => !curatedKr.includes(symbol))
+        ).toEqual([]);
 
-        const orphans = krSymbols.filter(
+        const orphans = curatedKr.filter(
             symbol => !home.includes(`href="/${symbol}"`)
         );
         expect(orphans).toEqual([]);

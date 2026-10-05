@@ -307,7 +307,6 @@
                 "shared.ui.misc.submitting",
                 "shared.ui.misc.volumeChartAria",
                 "views.symbol.ChartContent.93c3a3",
-                "views.symbol.ChartContent.d12df8",
                 "views.symbol.ChartContent.d1a23e",
                 "views.symbol.ChartContent.f69071",
                 "views.symbol.ChartContent.ff6b09",
@@ -1642,8 +1641,8 @@
                 "widgets.portfolio-position.PositionCard.ffe45d",
                 "widgets.portfolio-position.PositionCta.019ed7",
                 "widgets.portfolio-position.PositionCta.2bf3cd",
-                "widgets.portfolio-position.PositionCta.5cd686",
                 "widgets.portfolio-position.PositionCta.5edaf2",
+                "widgets.portfolio-position.PositionCta.8df3cf",
                 "widgets.portfolio-position.PositionTabContent.0b16bc",
                 "widgets.portfolio-position.PositionTabMemberContent.0b16bc",
                 "widgets.portfolio-position.PositionTabMemberContent.9990b5"

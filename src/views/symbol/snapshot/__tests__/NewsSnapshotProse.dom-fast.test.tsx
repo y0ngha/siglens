@@ -170,7 +170,7 @@ describe('NewsSnapshotProse — 기준일 표기 (C1 감사)', () => {
                 symbol="AAPL"
                 displayName="Apple Inc."
                 marketProfile="us-equity"
-                generatedAt={new Date('2026-07-31T20:00:00Z')}
+                generatedAt={new Date('2026-07-31T21:00:00Z')}
             />
         );
 
@@ -183,7 +183,7 @@ describe('NewsSnapshotProse — 기준일 표기 (C1 감사)', () => {
     // SEO 감사(2026-08-18): news 탭은 세 시장 전부 렌더한다 — marketProfile을
     // SnapshotSummarySection까지 실제로 전달하는지 crypto로 직접 겨냥한다("장마감"
     // 자체가 없는 24/7 시장이라 문구가 통째로 달라야 한다).
-    it('crypto로 렌더하면 "UTC 기준" 캡션을 쓴다 — "장마감"을 쓰지 않는다', () => {
+    it('crypto로 렌더하면 "UTC 시세 기준" 캡션을 쓴다 — "장마감"을 쓰지 않는다', () => {
         render(
             <NewsSnapshotProse
                 content={buildFixture()}
@@ -195,7 +195,7 @@ describe('NewsSnapshotProse — 기준일 표기 (C1 감사)', () => {
         );
 
         expect(
-            screen.getByText(/2026년 8월 14일 UTC 기준/)
+            screen.getByText(/2026년 8월 14일 00:00 UTC 시세 기준/)
         ).toBeInTheDocument();
         expect(screen.queryByText(/장마감/)).not.toBeInTheDocument();
     });

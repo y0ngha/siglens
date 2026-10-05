@@ -19,7 +19,7 @@ interface PositionBand {
 /**
  * avg/current가 52주 범위를 벗어났을 때 어느 방향인지('above'=고점 초과,
  * 'below'=저점 미만), 범위 안이면 null. avgClamped/currentClamped와
- * PositionBuilding의 파생 함수들(outOfRangeNote, frontY, describeAvgFloor,
+ * PositionBuilding의 파생 함수들(outOfRangeNote, frontY, describeFloor,
  * avgFloorVisualNote)이 모두 이 하나의 타입을 공유한다 — union literal을
  * 파일마다 따로 반복 선언하지 않는다(CONVENTIONS: 2개 이상 멤버 union literal은
  * 타입 alias로 추출).

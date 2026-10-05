@@ -1,6 +1,6 @@
 import type { OptionsSignalKind, OptionsTone } from '@y0ngha/siglens-core';
 import { stripSnapshotMarkdown } from '@/shared/lib/stripSnapshotMarkdown';
-import { createEnumGuard } from '../lib/createEnumGuard';
+import { createEnumGuard } from './createEnumGuard';
 
 /** OptionsTone → `shared.enumLabel` 카탈로그 키. 값 자체는 더 이상 한글이 아니다 — 렌더 시점에 `tLabel`로 조회한다. */
 export const TONE_LABEL_KEY: Record<OptionsTone, string> = {

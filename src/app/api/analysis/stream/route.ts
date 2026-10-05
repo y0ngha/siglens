@@ -870,9 +870,8 @@ export async function POST(request: Request): Promise<Response> {
             const marketProfile = await resolveMarketProfile(symbol);
             const descriptor = getDescriptor(marketProfile);
             const { assetClass } = descriptor;
-            const marketDataProvider = getCachedMarketDataProvider(
-                sessionSpecFor(marketProfile)
-            );
+            const session = sessionSpecFor(marketProfile);
+            const marketDataProvider = getCachedMarketDataProvider(session);
 
             // --- 2e. Tier + BYOK gate ---
             let tier: 'free' | 'member' | 'pro';
@@ -956,6 +955,11 @@ export async function POST(request: Request): Promise<Response> {
                 // UA가 아니라 클라이언트의 AI 자동 실행 게이트에서 온다.
                 skipEnqueueIfMiss: cacheOnly === true,
                 marketDataProvider,
+                // provider에 넘긴 세션과 **같은 값**을 core에 넘긴다 — 분석 캐시 TTL이
+                // 그 시장의 다음 정규장 마감 + 30분(크립토는 다음 00:00 UTC)에 맞춰진다.
+                // 생략하면 모든 시장이 KST 05:00(미장 마감) 경계를 써서 KR·크립토
+                // 분석이 직전 세션 가격을 들고 있었다.
+                session,
                 assetClass,
                 // core는 심볼에서 통화를 추론하지 않는다 — 거래소 프로파일을
                 // 아는 쪽이 여기다. 넘기지 않으면 원화 종목의 손절·목표가가

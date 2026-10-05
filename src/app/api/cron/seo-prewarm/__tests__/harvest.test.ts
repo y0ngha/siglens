@@ -17,6 +17,9 @@ const {
     mockHasAnalyzableNews,
     mockRewriteToPlainLanguage,
     mockResolveCurrentPrice,
+    mockClaimBasisForce,
+    mockFetchPageLastClose,
+    mockAddFmpBudget,
 } = vi.hoisted(() => ({
     mockMarkSkipped: vi.fn(),
     mockClearInFlight: vi.fn(),
@@ -32,6 +35,9 @@ const {
     mockHasAnalyzableNews: vi.fn(),
     mockRewriteToPlainLanguage: vi.fn(),
     mockResolveCurrentPrice: vi.fn(),
+    mockClaimBasisForce: vi.fn(),
+    mockFetchPageLastClose: vi.fn(),
+    mockAddFmpBudget: vi.fn(),
 }));
 
 vi.mock('../lock', () => ({
@@ -39,6 +45,8 @@ vi.mock('../lock', () => ({
     clearInFlight: mockClearInFlight,
     markStructurallyUnavailable: mockMarkStructural,
     clearStructurallyUnavailable: mockClearStructural,
+    claimBasisForce: mockClaimBasisForce,
+    addFmpBudget: mockAddFmpBudget,
     // 구현과 동일한 값(lock.ts). 일시적 실패 backoff TTL.
     TRANSIENT_SKIP_TTL_SECONDS: 1800,
     // 구현과 동일한 값(lock.ts). "최근 뉴스 없음" backoff TTL.
@@ -59,6 +67,10 @@ vi.mock('@/entities/news-article/api', () => ({
 }));
 vi.mock('@/entities/news-article/lib/hasAnalyzableNews', () => ({
     hasAnalyzableNews: mockHasAnalyzableNews,
+}));
+
+vi.mock('../lastClose', () => ({
+    fetchPageLastClose: mockFetchPageLastClose,
 }));
 
 vi.mock('@/shared/db/client', () => ({
@@ -163,6 +175,9 @@ describe('TAB_SEAMS', () => {
     });
 });
 
+// 렌더 가능한 산문이 있는 결과 — harvest는 `hasProseForTab`을 통과하지 못하는 결과를 저장하지 않는다.
+const OVERALL_PROSE = { headlineKo: '종합 분석 헤드라인입니다.' } as const;
+
 describe('resolveHarvest', () => {
     let repo: { upsert: ReturnType<typeof vi.fn> };
     let counts: PrewarmBatchCounts;
@@ -199,7 +214,7 @@ describe('resolveHarvest', () => {
     it('upserts cached result with PREWARM model + generatedAt, returns true, clears in-flight', async () => {
         const cached: SeamOutcome = {
             status: 'cached',
-            result: { foo: 'bar' },
+            result: OVERALL_PROSE,
         };
 
         const ok = await resolveHarvest(
@@ -215,7 +230,7 @@ describe('resolveHarvest', () => {
         const call = repo.upsert.mock.calls[0][0];
         expect(call.symbol).toBe('AAPL');
         expect(call.tab).toBe('overall');
-        expect(call.content).toEqual({ foo: 'bar' });
+        expect(call.content).toEqual(OVERALL_PROSE);
         expect(call.model).toBe(DEEPSEEK_V4_1_FLASH_MODEL);
         expect(typeof call.model).toBe('string');
         expect(call.model.length).toBeGreaterThan(0);
@@ -229,13 +244,13 @@ describe('resolveHarvest', () => {
         mockRewriteToPlainLanguage.mockResolvedValue('쉽게 쓴 글');
         const done: SeamOutcome = {
             status: 'done',
-            result: { foo: 'bar' },
+            result: OVERALL_PROSE,
         };
 
         await resolveHarvest('AAPL', 'overall', done, repo as never, counts);
 
         expect(mockRewriteToPlainLanguage).toHaveBeenCalledWith(
-            { foo: 'bar' },
+            OVERALL_PROSE,
             'AAPL',
             'ko',
             'USD',
@@ -248,7 +263,7 @@ describe('resolveHarvest', () => {
     it('status=done도 cached와 동일하게 upsert하고 true를 반환한다', async () => {
         const done: SeamOutcome = {
             status: 'done',
-            result: { foo: 'bar' },
+            result: OVERALL_PROSE,
         };
 
         const ok = await resolveHarvest(
@@ -578,7 +593,10 @@ describe('resolveHarvest', () => {
             await resolveHarvest(
                 'AAPL',
                 'congress',
-                { status: 'done', result: { any: 'payload' } } as never,
+                {
+                    status: 'done',
+                    result: { summaryKo: '의회 거래 요약 문단입니다.' },
+                } as never,
                 repo as never,
                 counts
             );
@@ -589,5 +607,498 @@ describe('resolveHarvest', () => {
                 'congress'
             );
         });
+    });
+});
+
+describe('resolveHarvest — 렌더 가능한 산문이 없는 결과', () => {
+    let repo: { upsert: ReturnType<typeof vi.fn> };
+    let counts: PrewarmBatchCounts;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        repo = { upsert: vi.fn() };
+        counts = makeCounts();
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it.each([
+        ['technical', { foo: 'bar' }],
+        ['news', { currentDriverKo: '   ', keyEventsKo: [] }],
+    ] as const)(
+        '%s: upsert를 건너뛰고(옛 행 보존) 평이화도 부르지 않고 TRANSIENT backoff를 건다',
+        async (tab, content) => {
+            const ok = await resolveHarvest(
+                'AAPL',
+                tab,
+                { status: 'done', result: content } as never,
+                repo as never,
+                counts
+            );
+
+            expect(ok).toBe(false);
+            expect(repo.upsert).not.toHaveBeenCalled();
+            expect(mockRewriteToPlainLanguage).not.toHaveBeenCalled();
+            expect(counts.harvested).toBe(0);
+            expect(mockMarkSkipped).toHaveBeenCalledWith('AAPL', tab, 1800);
+            expect(mockClearInFlight).toHaveBeenCalledWith('AAPL', tab);
+            expect(mockClearStructural).not.toHaveBeenCalled();
+        }
+    );
+});
+
+/**
+ * 기준일 검사 — harvest가 `cached`를 "방금 만든 것"으로 오인해 옛 분석에 오늘 날짜를 찍던
+ * 결함(2026-10-05 운영 감사)의 회귀 방지.
+ */
+describe('resolveHarvest — 기준일 검사(technical)', () => {
+    // 금요일 2026-10-02 EDT 마감 20:00Z(경계). now는 같은 날 21:00Z.
+    const NOW = new Date('2026-10-02T21:00:00Z');
+    const seam = {
+        symbol: 'AAPL',
+        companyName: 'Apple Inc.',
+        fmpSymbol: undefined,
+    };
+    const ctx = { seam, now: NOW };
+    // harvest는 렌더 가능한 산문(`hasProseForTab`)이 없는 결과를 저장하지 않는다 — 모든 픽스처가 산문을 싣는다.
+    const PROSE = {
+        summary: '추세와 거래량을 요약한 분석 문장입니다.',
+    } as const;
+    const STALE_RESULT = {
+        ...PROSE,
+        analyzedAt: '2026-10-02T18:00:00.000Z', // 장중 분석
+        planCheck: { currentPrice: 100 },
+    };
+    const FRESH_RESULT = {
+        ...PROSE,
+        analyzedAt: '2026-10-02T20:45:00.000Z',
+        dataAsOf: {
+            barTime: Date.parse('2026-10-02T00:00:00Z') / 1000,
+            close: 110,
+        },
+    };
+    let repo: { upsert: ReturnType<typeof vi.fn> };
+    let counts: PrewarmBatchCounts;
+
+    /** `(symbol, tab)`로 upsert 호출을 찾는다 — 호출 인덱스에 기대지 않는다. */
+    function upsertedContent(symbol: string, tab: string): unknown {
+        const call = repo.upsert.mock.calls.find(
+            ([row]) => row.symbol === symbol && row.tab === tab
+        );
+        expect(call).toBeDefined();
+        return call?.[0].content;
+    }
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        repo = { upsert: vi.fn().mockResolvedValue(undefined) };
+        counts = makeCounts();
+        mockRewriteToPlainLanguage.mockResolvedValue(null);
+        mockResolveCurrentPrice.mockResolvedValue(undefined);
+        mockClaimBasisForce.mockResolvedValue(true);
+        mockFetchPageLastClose.mockResolvedValue(null);
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
+    });
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('기준이 신선하면 강제 없이 그대로 저장한다', async () => {
+        const ok = await resolveHarvest(
+            'AAPL',
+            'technical',
+            { status: 'cached', result: FRESH_RESULT },
+            repo as never,
+            counts,
+            ctx
+        );
+
+        expect(ok).toBe(true);
+        expect(mockClaimBasisForce).not.toHaveBeenCalled();
+        expect(mockPrewarmTechnical).not.toHaveBeenCalled();
+        expect(upsertedContent('AAPL', 'technical')).toEqual(FRESH_RESULT);
+        expect(mockMarkSkipped).not.toHaveBeenCalled();
+    });
+
+    it('stale cached → 마커를 잡고 force=true로 한 번 재생성해 그 결과를 저장한다', async () => {
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'done',
+            result: FRESH_RESULT,
+        });
+
+        const ok = await resolveHarvest(
+            'AAPL',
+            'technical',
+            { status: 'cached', result: STALE_RESULT },
+            repo as never,
+            counts,
+            ctx
+        );
+
+        expect(ok).toBe(true);
+        const claim = mockClaimBasisForce.mock.calls.find(
+            ([symbol, tab]) => symbol === 'AAPL' && tab === 'technical'
+        );
+        expect(claim).toBeDefined();
+        // 경계 시각(ms)이 키에 들어간다 — 10-02 20:00Z(마감 순간, 정착 버퍼는 "완료 판정"에만 쓰인다).
+        expect(claim![2]).toBe(Date.parse('2026-10-02T20:00:00Z'));
+        expect(mockPrewarmTechnical).toHaveBeenCalledWith(
+            'AAPL',
+            'Apple Inc.',
+            undefined,
+            true
+        );
+        expect(upsertedContent('AAPL', 'technical')).toEqual(FRESH_RESULT);
+        expect(mockMarkSkipped).not.toHaveBeenCalled();
+        expect(counts.harvested).toBe(1);
+    });
+
+    it('마커가 이미 있으면 다시 강제하지 않고 옛 결과를 실제 기준과 함께 저장한 뒤 일시적 backoff를 건다', async () => {
+        mockClaimBasisForce.mockResolvedValue(false);
+
+        const ok = await resolveHarvest(
+            'AAPL',
+            'technical',
+            { status: 'cached', result: STALE_RESULT },
+            repo as never,
+            counts,
+            ctx
+        );
+
+        expect(ok).toBe(true);
+        expect(mockPrewarmTechnical).not.toHaveBeenCalled();
+        // content가 그대로라 analyzedAt이 실제 기준 시각으로 남는다(캡션이 정직해진다).
+        expect(upsertedContent('AAPL', 'technical')).toEqual(STALE_RESULT);
+        expect(mockMarkSkipped).toHaveBeenCalledWith('AAPL', 'technical', 1800);
+    });
+
+    it('강제 결과도 stale이면(데이터 미발행) 저장하고 markSkipped(TRANSIENT) — 루프 없음', async () => {
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'done',
+            result: {
+                ...PROSE,
+                analyzedAt: '2026-10-02T20:50:00.000Z',
+                dataAsOf: {
+                    barTime: Date.parse('2026-10-01T00:00:00Z') / 1000,
+                    close: 100,
+                },
+            },
+        });
+
+        const ok = await resolveHarvest(
+            'AAPL',
+            'technical',
+            { status: 'cached', result: STALE_RESULT },
+            repo as never,
+            counts,
+            ctx
+        );
+
+        expect(ok).toBe(true);
+        expect(mockPrewarmTechnical).toHaveBeenCalledTimes(1);
+        expect(mockMarkSkipped).toHaveBeenCalledWith('AAPL', 'technical', 1800);
+        expect(repo.upsert).toHaveBeenCalledTimes(1);
+    });
+
+    it('강제 재생성 결과에 렌더 가능한 산문이 없으면 저장하지 않는다(산문 게이트가 강제 결과에도 적용된다)', async () => {
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'done',
+            result: {
+                analyzedAt: '2026-10-02T20:50:00.000Z',
+                dataAsOf: FRESH_RESULT.dataAsOf,
+            },
+        });
+
+        const ok = await resolveHarvest(
+            'AAPL',
+            'technical',
+            { status: 'cached', result: STALE_RESULT },
+            repo as never,
+            counts,
+            ctx
+        );
+
+        expect(ok).toBe(false);
+        expect(mockPrewarmTechnical).toHaveBeenCalledTimes(1);
+        expect(repo.upsert).not.toHaveBeenCalled();
+        expect(mockMarkSkipped).toHaveBeenCalledWith('AAPL', 'technical', 1800);
+    });
+
+    it('status=done이 stale이면 재강제하지 않는다(방금 만든 결과다)', async () => {
+        const ok = await resolveHarvest(
+            'AAPL',
+            'technical',
+            { status: 'done', result: STALE_RESULT },
+            repo as never,
+            counts,
+            ctx
+        );
+
+        expect(ok).toBe(true);
+        expect(mockClaimBasisForce).not.toHaveBeenCalled();
+        expect(mockPrewarmTechnical).not.toHaveBeenCalled();
+        expect(mockMarkSkipped).toHaveBeenCalledWith('AAPL', 'technical', 1800);
+    });
+
+    it('강제 호출이 error를 돌려주면 저장하지 않고 일시적 backoff만 건다', async () => {
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'error',
+            code: 'fetch_failed',
+        });
+
+        const ok = await resolveHarvest(
+            'AAPL',
+            'technical',
+            { status: 'cached', result: STALE_RESULT },
+            repo as never,
+            counts,
+            ctx
+        );
+
+        expect(ok).toBe(false);
+        expect(repo.upsert).not.toHaveBeenCalled();
+        expect(mockMarkSkipped).toHaveBeenCalledWith('AAPL', 'technical', 1800);
+    });
+
+    it('시각이 신선해도 글의 가격이 페이지 종가와 0.3% 넘게 다르면 stale로 보고 재생성한다', async () => {
+        mockFetchPageLastClose.mockResolvedValue(110);
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'done',
+            result: {
+                ...FRESH_RESULT,
+                dataAsOf: { ...FRESH_RESULT.dataAsOf, close: 110 },
+            },
+        });
+
+        await resolveHarvest(
+            'AAPL',
+            'technical',
+            {
+                status: 'cached',
+                result: {
+                    ...FRESH_RESULT,
+                    dataAsOf: { ...FRESH_RESULT.dataAsOf, close: 105 },
+                },
+            },
+            repo as never,
+            counts,
+            ctx
+        );
+
+        expect(mockPrewarmTechnical).toHaveBeenCalledWith(
+            'AAPL',
+            'Apple Inc.',
+            undefined,
+            true
+        );
+    });
+
+    it('가격 비교는 dataAsOf.close를 우선한다 — planCheck.currentPrice가 달라도 dataAsOf가 맞으면 재생성하지 않는다', async () => {
+        mockFetchPageLastClose.mockResolvedValue(110);
+
+        await resolveHarvest(
+            'AAPL',
+            'technical',
+            {
+                status: 'cached',
+                result: {
+                    ...FRESH_RESULT,
+                    dataAsOf: { ...FRESH_RESULT.dataAsOf, close: 110 },
+                    planCheck: { currentPrice: 50 },
+                },
+            },
+            repo as never,
+            counts,
+            ctx
+        );
+
+        expect(mockPrewarmTechnical).not.toHaveBeenCalled();
+    });
+
+    it('dataAsOf가 없으면 planCheck.currentPrice로 물러나 비교한다', async () => {
+        mockFetchPageLastClose.mockResolvedValue(110);
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'done',
+            result: FRESH_RESULT,
+        });
+
+        await resolveHarvest(
+            'AAPL',
+            'technical',
+            {
+                status: 'cached',
+                // 시각은 신선하고(analyzedAt 경계 이후) dataAsOf는 없다.
+                result: {
+                    ...PROSE,
+                    analyzedAt: '2026-10-02T20:45:00.000Z',
+                    planCheck: { currentPrice: 100 },
+                },
+            },
+            repo as never,
+            counts,
+            ctx
+        );
+
+        expect(mockPrewarmTechnical).toHaveBeenCalledWith(
+            'AAPL',
+            'Apple Inc.',
+            undefined,
+            true
+        );
+    });
+
+    it('가격 차이가 0.3% 이내면 재생성하지 않는다', async () => {
+        mockFetchPageLastClose.mockResolvedValue(110);
+
+        await resolveHarvest(
+            'AAPL',
+            'technical',
+            {
+                status: 'cached',
+                result: {
+                    ...FRESH_RESULT,
+                    dataAsOf: { ...FRESH_RESULT.dataAsOf, close: 110.2 },
+                },
+            },
+            repo as never,
+            counts,
+            ctx
+        );
+
+        expect(mockPrewarmTechnical).not.toHaveBeenCalled();
+    });
+
+    it('종가 조회가 상한(12초) 안에 끝나지 않으면 가격 비교를 건너뛴다', async () => {
+        vi.useFakeTimers();
+        mockFetchPageLastClose.mockReturnValue(new Promise(() => undefined));
+
+        const pending = resolveHarvest(
+            'AAPL',
+            'technical',
+            { status: 'cached', result: FRESH_RESULT },
+            repo as never,
+            counts,
+            ctx
+        );
+        await vi.advanceTimersByTimeAsync(12_000);
+        await pending;
+        vi.useRealTimers();
+
+        expect(mockPrewarmTechnical).not.toHaveBeenCalled();
+        expect(upsertedContent('AAPL', 'technical')).toEqual(FRESH_RESULT);
+    });
+
+    it('종가 조회가 실제로 돈 비KR 종목은 FMP 예산에 센다', async () => {
+        mockFetchPageLastClose.mockResolvedValue(110);
+
+        await resolveHarvest(
+            'AAPL',
+            'technical',
+            { status: 'cached', result: FRESH_RESULT },
+            repo as never,
+            counts,
+            ctx
+        );
+
+        expect(mockAddFmpBudget).toHaveBeenCalledWith(1);
+    });
+
+    it('KR 종목(Yahoo)과 조회하지 않은 경우(done·시각 stale·크립토)는 FMP 예산에 세지 않는다', async () => {
+        await resolveHarvest(
+            '005930.KS',
+            'technical',
+            { status: 'cached', result: FRESH_RESULT },
+            repo as never,
+            counts,
+            { seam: { ...seam, symbol: '005930.KS' }, now: NOW }
+        );
+        await resolveHarvest(
+            'AAPL',
+            'technical',
+            { status: 'done', result: FRESH_RESULT },
+            repo as never,
+            counts,
+            ctx
+        );
+
+        expect(mockAddFmpBudget).not.toHaveBeenCalled();
+    });
+
+    it('종가를 못 읽으면(null) 가격 비교를 건너뛴다', async () => {
+        mockFetchPageLastClose.mockResolvedValue(null);
+
+        await resolveHarvest(
+            'AAPL',
+            'technical',
+            { status: 'cached', result: FRESH_RESULT },
+            repo as never,
+            counts,
+            ctx
+        );
+
+        expect(mockPrewarmTechnical).not.toHaveBeenCalled();
+        expect(repo.upsert).toHaveBeenCalledTimes(1);
+    });
+
+    it('크립토는 가격 비교를 하지 않는다', async () => {
+        mockFetchPageLastClose.mockResolvedValue(50_000);
+
+        await resolveHarvest(
+            'BTCUSD',
+            'technical',
+            {
+                status: 'cached',
+                result: {
+                    ...PROSE,
+                    analyzedAt: '2026-10-02T21:00:00.000Z',
+                    dataAsOf: {
+                        barTime: Date.parse('2026-10-02T00:00:00Z') / 1000,
+                        close: 100,
+                    },
+                },
+            },
+            repo as never,
+            counts,
+            { seam: { ...seam, symbol: 'BTCUSD' }, now: NOW }
+        );
+
+        expect(mockFetchPageLastClose).not.toHaveBeenCalled();
+        expect(mockPrewarmTechnical).not.toHaveBeenCalled();
+    });
+
+    it('technical이 아닌 탭은 검사하지 않는다', async () => {
+        await resolveHarvest(
+            'AAPL',
+            'news',
+            {
+                status: 'cached',
+                result: {
+                    ...STALE_RESULT,
+                    currentDriverKo: '뉴스 동인 문장입니다.',
+                },
+            },
+            repo as never,
+            counts,
+            ctx
+        );
+
+        expect(mockClaimBasisForce).not.toHaveBeenCalled();
+        expect(repo.upsert).toHaveBeenCalledTimes(1);
+    });
+
+    it('basis 문맥이 없으면(기존 호출부) 검사하지 않는다', async () => {
+        await resolveHarvest(
+            'AAPL',
+            'technical',
+            { status: 'cached', result: STALE_RESULT },
+            repo as never,
+            counts
+        );
+
+        expect(mockClaimBasisForce).not.toHaveBeenCalled();
+        expect(mockPrewarmTechnical).not.toHaveBeenCalled();
     });
 });

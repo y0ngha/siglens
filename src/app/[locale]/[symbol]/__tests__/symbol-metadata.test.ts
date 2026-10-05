@@ -249,6 +249,18 @@ import { generateMetadata as generateFearGreedMetadata } from '@/app/[locale]/[s
 import { generateMetadata as generateOptionsMetadata } from '@/app/[locale]/[symbol]/options/page';
 import { evaluateSymbolIndexability } from '@/entities/symbol-indexability/lib/evaluateSymbolIndexability';
 import type { MockedFunction } from 'vitest';
+import type { Metadata } from 'next';
+
+/**
+ * noindex 분기의 canonical은 `null`도, 루트 레이아웃의 홈도 아니라 **자기 URL**이다
+ * (`og:url`과 같은 값). 항상-noindex 탭과 같은 방식으로 통일했다.
+ */
+function expectSelfCanonical(metadata: Metadata): void {
+    const canonical = metadata.alternates?.canonical;
+    expect(canonical).not.toBeNull();
+    expect(canonical).not.toBe('https://siglens.io');
+    expect(canonical).toBe(metadata.openGraph?.url);
+}
 
 const mockEvaluateSymbolIndexability =
     evaluateSymbolIndexability as MockedFunction<
@@ -324,7 +336,7 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
             );
         });
 
-        it('central indexability gate blocks unapproved longtail with noindex + canonical null', async () => {
+        it('central indexability gate blocks unapproved longtail with noindex + self-canonical', async () => {
             mockGetAssetInfoResilient.mockResolvedValue({
                 assetInfo: { symbol: '0NEUSD', name: 'Stone USD' },
                 degraded: false,
@@ -339,7 +351,7 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
             );
 
             expect(metadata.robots).toEqual({ index: false, follow: true });
-            expect(metadata.alternates?.canonical).toBeNull();
+            expectSelfCanonical(metadata);
         });
     });
 
@@ -368,7 +380,7 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
                     index: false,
                     follow: true,
                 });
-                expect(metadata.alternates?.canonical).toBeNull();
+                expectSelfCanonical(metadata);
             }
         );
     });
@@ -543,8 +555,8 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
                     follow: true,
                 });
                 // M1: degraded/invalid noindex는 루트 레이아웃의 home canonical을
-                // 상속하지 않는다(canonical: null로 omit).
-                expect(metadata.alternates?.canonical).toBeNull();
+                // 상속하지 않는다 — 자기 URL을 가리키는 self-canonical이다(2026-10-05).
+                expectSelfCanonical(metadata);
             }
         );
     });
@@ -592,14 +604,14 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
         });
 
         it.each(nonExistentCases)(
-            '$name — assetInfo null 시 noindex + canonical null',
+            '$name — assetInfo null 시 noindex + self-canonical',
             async ({ fn }) => {
                 const metadata = await fn();
                 expect(metadata.robots).toEqual({
                     index: false,
                     follow: true,
                 });
-                expect(metadata.alternates?.canonical).toBeNull();
+                expectSelfCanonical(metadata);
             }
         );
     });

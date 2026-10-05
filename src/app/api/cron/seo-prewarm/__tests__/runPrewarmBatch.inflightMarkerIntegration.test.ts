@@ -143,6 +143,13 @@ function universe(...symbols: PrewarmSymbol[]): void {
     mockBuildPrewarmUniverse.mockReturnValue(symbols);
 }
 
+// harvest는 렌더 가능한 산문이 없는 결과를 저장하지 않는다(`hasProseForTab`) — 어느 탭이든 통과하는 최소 산문.
+const ANY_TAB_PROSE = {
+    summary: '기술적 분석 요약 문단입니다.',
+    currentDriverKo: '뉴스 동인 문단입니다.',
+    headlineKo: '종합 분석 헤드라인입니다.',
+} as const;
+
 describe('runPrewarmBatch × 실제 lock.ts 왕복 (FIX 3, 실증 회귀 가드)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -193,7 +200,7 @@ describe('runPrewarmBatch × 실제 lock.ts 왕복 (FIX 3, 실증 회귀 가드)
             });
             mockPrewarmTechnical.mockResolvedValue({
                 status: 'cached',
-                result: {},
+                result: ANY_TAB_PROSE,
             });
 
             const counts = await runPrewarmBatch();
