@@ -17,6 +17,11 @@ vi.mock('@/widgets/market-news/MarketNewsList', () => ({
     MarketNewsList: () => null,
 }));
 
+// 로더 실패(null) 렌더가 revalidate를 300초로 낮추는 헬퍼 — 실제 `unstable_cache`는 렌더 스토어가 필요하다.
+vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
+    shortenRevalidateForRuntimeDegrade: vi.fn(async () => undefined),
+}));
+
 import { NEWS_CATEGORY_SLUGS } from '@/entities/market-news/lib/categoryConfig';
 import { generateStaticParams } from '../page';
 

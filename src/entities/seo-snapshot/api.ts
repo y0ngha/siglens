@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { and, eq, gte, inArray } from 'drizzle-orm';
+import { and, eq, gte, inArray, sql, type SQL } from 'drizzle-orm';
 import { seoAnalysisSnapshots } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type {
@@ -14,6 +14,7 @@ import {
     toContentLocale,
 } from '@/shared/db/contentLocale';
 import { DEFAULT_LOCALE, LOCALES, type Locale } from '@/shared/i18n/locales';
+import { hasProseForTab, PROSE_SOURCE_FIELDS } from './lib/hasProseForTab';
 
 export interface FindBySymbolOptions {
     /** See `DrizzleSeoSnapshotRepository.findBySymbol`. */
@@ -155,24 +156,35 @@ export class DrizzleSeoSnapshotRepository {
 
     /**
      * sitemap용: `tabs` 중 하나에 `since` 이후 생성된 스냅샷이 있는 `(symbol, tab)`과
-     * 그 스냅샷의 `generatedAt`. `generatedAt`은 sitemap `lastmod`의 근거다 — 산문이
-     * 실제로 구워진 시각이 "페이지 내용이 바뀐 시각"이다.
+     * 그 스냅샷의 `generatedAt`, 그리고 **그 행이 렌더 가능한 산문을 담고 있는지**(`hasProse`).
+     * `generatedAt`은 sitemap `lastmod`의 근거다 — 산문이 실제로 구워진 시각이 "페이지 내용이
+     * 바뀐 시각"이다.
      *
      * 같은 `(symbol, tab)`에 로케일별 행이 여럿일 수 있으므로(unique가
      * `(symbol, tab, locale)`) 페이지 읽기 경로(`pickSnapshotPerTab`)와 같은 폴백
-     * 순서로 **한 행**을 고른다 — 페이지가 렌더하는 행의 시각이어야 정직하다.
+     * 순서로 **한 행**을 고른다 — 페이지가 렌더하는 행의 시각·산문이어야 정직하다.
      *
      * 로케일은 `locale`의 독자 폴백(`CONTENT_LOCALE_FALLBACK`)과 같은 범위로 본다 —
      * 페이지가 `findBySymbol(symbol, locale)`로 읽을 수 있는 행이어야 색인 게이트를
-     * 통과한다. **본문(`content`)은 읽지 않는다** — 수백 행의 JSONB를 끌어오면
-     * sitemap 한 번에 수십 MB다.
+     * 통과한다.
+     *
+     * **`content` 전체는 읽지 않는다** — 수백 행의 JSONB를 끌어오면 sitemap 한 번에 수십 MB다.
+     * 대신 `PROSE_SOURCE_FIELDS`가 정한 산문 원천 필드만 SQL에서 투영해 받고, 판정은 페이지가
+     * 쓰는 것과 **같은 함수**(`hasProseForTab`)로 한다. 행 존재 여부로 "산문 있음"을 판정하면
+     * 서사 필드가 빈 행(손상 JSONB·스키마 드리프트)이 sitemap에는 실리고 페이지는 noindex가
+     * 된다. 투영 대상이 아닌 탭은 `hasProse`를 행 존재로 둔다(`true`).
      */
     async listFreshSymbolTabs(
         tabs: readonly SeoSnapshotTab[],
         locale: Locale,
         since: Date
     ): Promise<
-        Array<{ symbol: string; tab: SeoSnapshotTab; generatedAt: Date }>
+        Array<{
+            symbol: string;
+            tab: SeoSnapshotTab;
+            generatedAt: Date;
+            hasProse: boolean;
+        }>
     > {
         const chain = CONTENT_LOCALE_FALLBACK[locale];
         const rows = await this.db
@@ -181,6 +193,7 @@ export class DrizzleSeoSnapshotRepository {
                 tab: seoAnalysisSnapshots.tab,
                 locale: seoAnalysisSnapshots.locale,
                 generatedAt: seoAnalysisSnapshots.generatedAt,
+                prose: proseProjection(),
             })
             .from(seoAnalysisSnapshots)
             .where(
@@ -198,6 +211,7 @@ export class DrizzleSeoSnapshotRepository {
                 symbol: row.symbol,
                 tab: row.tab as SeoSnapshotTab,
                 generatedAt: row.generatedAt,
+                prose: row.prose,
                 rank: chain.indexOf(
                     toContentLocale(row.locale) ?? LEGACY_CONTENT_LOCALE
                 ),
@@ -210,10 +224,14 @@ export class DrizzleSeoSnapshotRepository {
                     : [...kept, row],
             []
         );
-        return firstPerKey.map(({ symbol, tab, generatedAt }) => ({
+        return firstPerKey.map(({ symbol, tab, generatedAt, prose }) => ({
             symbol,
             tab,
             generatedAt,
+            hasProse:
+                tab in PROSE_SOURCE_FIELDS
+                    ? hasProseForTab(tab, parseProjected(prose))
+                    : true,
         }));
     }
 
@@ -240,6 +258,49 @@ export class DrizzleSeoSnapshotRepository {
             rows.map(row => [`${row.symbol}:${row.tab}`, row.generatedAt])
         );
     }
+}
+
+/** 드라이버가 jsonb 식 결과를 문자열로 줘도 같은 판정이 되도록 한 번 푼다. */
+function parseProjected(value: unknown): unknown {
+    if (typeof value !== 'string') return value;
+    try {
+        return JSON.parse(value);
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * `PROSE_SOURCE_FIELDS`의 탭마다 산문 원천 필드만 담은 jsonb 객체를 만드는 SQL 식.
+ * 대상이 아닌 탭은 `null`이다.
+ *
+ * 필드 이름은 **코드 상수**(사용자 입력 아님)지만 `sql.raw`로 박으므로 식별자 모양을 한 번
+ * 더 검증한다. `->`의 우변을 바인드 파라미터로 두면 Postgres가 `jsonb -> text`와
+ * `jsonb -> integer` 중 연산자를 고르지 못한다.
+ */
+function proseProjection(): SQL<unknown> {
+    // ⚠️ 동기화 대상: 이 투영은 TS 판정 함수 `hasTechnicalProse`(→ `narrowTechnicalContent`)와
+    // `hasNewsProse`(→ `narrowNewsContent`)가 **산문 근거로 읽는 최상위 필드**를 그대로 뽑는다
+    // (`PROSE_SOURCE_FIELDS`, `lib/hasProseForTab.ts`). 그 함수들이 읽는 필드가 바뀌면 여기도
+    // 함께 바꿔야 한다 — 어긋나면 sitemap이 페이지보다 보수적이 된다(산문이 있는데 없다고 판정).
+    // 이 레포 CI에는 Postgres를 직접 때리는 vitest 통합 스위트가 없어(e2e만 Docker Postgres)
+    // SQL 자체는 실행 검증하지 못한다. 대신 `hasProseForTab.test.ts`가 TS 함수가 읽는 필드를
+    // Proxy로 **유도**해 `PROSE_SOURCE_FIELDS`와 비교한다.
+    const branches = Object.entries(PROSE_SOURCE_FIELDS).map(
+        ([tab, fields]) => {
+            const pairs = fields.flatMap(field => {
+                if (!/^[A-Za-z]+$/.test(field)) {
+                    throw new Error(`invalid prose field name: ${field}`);
+                }
+                return [
+                    sql.raw(`'${field}'`),
+                    sql`${seoAnalysisSnapshots.content} -> ${sql.raw(`'${field}'`)}`,
+                ];
+            });
+            return sql`when ${tab} then jsonb_build_object(${sql.join(pairs, sql`, `)})`;
+        }
+    );
+    return sql<unknown>`case ${seoAnalysisSnapshots.tab} ${sql.join(branches, sql` `)} else null end`;
 }
 
 /** 동점 해소 순서: 요청 로케일 → 한국어(원본) → 나머지. */

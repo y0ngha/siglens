@@ -1,4 +1,5 @@
 import { and, eq, gte, inArray } from 'drizzle-orm';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import { seoAnalysisSnapshots } from '@/shared/db/schema';
 import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
 import type { SiglensDatabase } from '@/shared/db/types';
@@ -228,43 +229,118 @@ describe('DrizzleSeoSnapshotRepository.listFreshSymbolTabs', () => {
     function repoReturning(rows: unknown[]) {
         const where = vi.fn().mockResolvedValue(rows);
         const from = vi.fn(() => ({ where }));
-        const select = vi.fn(() => ({ from }));
+        const select = vi.fn((_fields: Record<string, unknown>) => ({ from }));
         const repo = new DrizzleSeoSnapshotRepository({
             select,
         } as unknown as SiglensDatabase);
         return { repo, select, where };
     }
 
-    it('탭·독자 로케일 폴백·신선도로 거르고 본문 없이 (symbol, tab, generatedAt)만 읽는다', async () => {
+    it('탭·독자 로케일 폴백·신선도로 거르고 본문 전체 없이 산문 원천 필드 투영만 읽는다', async () => {
         const generatedAt = new Date('2026-09-20T03:00:00.000Z');
         const { repo, select, where } = repoReturning([
-            { symbol: 'AAPL', tab: 'overall', locale: 'ko', generatedAt },
+            {
+                symbol: 'AAPL',
+                tab: 'news',
+                locale: 'ko',
+                generatedAt,
+                prose: { currentDriverKo: '뉴스 동인 문단' },
+            },
         ]);
         const since = new Date('2026-09-10T00:00:00.000Z');
 
         const result = await repo.listFreshSymbolTabs(
-            ['congress', 'overall'],
+            ['technical', 'news'],
             'ko',
             since
         );
 
         expect(result).toEqual([
-            { symbol: 'AAPL', tab: 'overall', generatedAt },
+            { symbol: 'AAPL', tab: 'news', generatedAt, hasProse: true },
         ]);
-        // 본문(JSONB)을 끌어오지 않는다 — sitemap 한 번에 수십 MB가 된다.
-        expect(select).toHaveBeenCalledWith({
-            symbol: seoAnalysisSnapshots.symbol,
-            tab: seoAnalysisSnapshots.tab,
-            locale: seoAnalysisSnapshots.locale,
-            generatedAt: seoAnalysisSnapshots.generatedAt,
-        });
+        // 본문(JSONB) 전체가 아니라 `prose` 투영만 끌어온다 — sitemap 한 번에 수십 MB가 된다.
+        // 호출 순서에 기대지 않고 판별 인자(`prose` 키)로 찾는다.
+        const selected = select.mock.calls.find(
+            ([fields]) => 'prose' in fields
+        )![0];
+        expect(Object.keys(selected).toSorted()).toEqual([
+            'generatedAt',
+            'locale',
+            'prose',
+            'symbol',
+            'tab',
+        ]);
+        expect(selected).not.toHaveProperty('content');
+        // 투영 SQL은 PROSE_SOURCE_FIELDS의 필드만 jsonb_build_object로 뽑는다.
+        const { sql: projectionSql } = new PgDialect().sqlToQuery(
+            selected.prose as never
+        );
+        expect(projectionSql).toContain('jsonb_build_object(');
+        for (const field of [
+            'summary',
+            'patternSummaries',
+            'strategyResults',
+            'currentDriverKo',
+            'keyEventsKo',
+            'upcomingEventsKo',
+        ]) {
+            expect(projectionSql).toContain(`'${field}'`);
+        }
         expect(where.mock.calls[0]?.[0]).toEqual(
             and(
-                inArray(seoAnalysisSnapshots.tab, ['congress', 'overall']),
+                inArray(seoAnalysisSnapshots.tab, ['technical', 'news']),
                 inArray(seoAnalysisSnapshots.locale, ['ko', 'en']),
                 gte(seoAnalysisSnapshots.generatedAt, since)
             )
         );
+    });
+
+    it('투영된 산문이 렌더 가능하지 않으면 hasProse=false다 — 행 존재만으로 "산문 있음"이 되지 않는다', async () => {
+        const generatedAt = new Date('2026-09-20T03:00:00.000Z');
+        const { repo } = repoReturning([
+            {
+                symbol: 'AAPL',
+                tab: 'technical',
+                locale: 'ko',
+                generatedAt,
+                prose: { summary: null, patternSummaries: null },
+            },
+            {
+                symbol: 'MSFT',
+                tab: 'news',
+                locale: 'ko',
+                generatedAt,
+                prose: { currentDriverKo: '  ', keyEventsKo: [] },
+            },
+            {
+                symbol: 'NVDA',
+                tab: 'technical',
+                locale: 'ko',
+                generatedAt,
+                prose: null,
+            },
+            {
+                symbol: 'TSLA',
+                tab: 'technical',
+                locale: 'ko',
+                generatedAt,
+                // 드라이버가 jsonb 식 결과를 문자열로 줘도 같은 판정이다.
+                prose: JSON.stringify({ summary: '요약 문단입니다.' }),
+            },
+        ]);
+
+        const result = await repo.listFreshSymbolTabs(
+            ['technical', 'news'],
+            'ko',
+            new Date(0)
+        );
+
+        const hasProseOf = (symbol: string) =>
+            result.find(r => r.symbol === symbol)?.hasProse;
+        expect(hasProseOf('AAPL')).toBe(false);
+        expect(hasProseOf('MSFT')).toBe(false);
+        expect(hasProseOf('NVDA')).toBe(false);
+        expect(hasProseOf('TSLA')).toBe(true);
     });
 
     it('같은 (symbol, tab)의 로케일별 행은 폴백 순서가 앞선 한 행으로 합친다 — 페이지가 렌더하는 행의 시각이다', async () => {
@@ -272,9 +348,27 @@ describe('DrizzleSeoSnapshotRepository.listFreshSymbolTabs', () => {
         const enAt = new Date('2026-09-21T03:00:00.000Z');
         // en 행이 더 최근이어도 ko 요청의 폴백 체인은 ko가 먼저다.
         const { repo } = repoReturning([
-            { symbol: 'AAPL', tab: 'news', locale: 'en', generatedAt: enAt },
-            { symbol: 'AAPL', tab: 'news', locale: 'ko', generatedAt: koAt },
-            { symbol: 'MSFT', tab: 'news', locale: 'en', generatedAt: enAt },
+            {
+                symbol: 'AAPL',
+                tab: 'news',
+                locale: 'en',
+                generatedAt: enAt,
+                prose: null,
+            },
+            {
+                symbol: 'AAPL',
+                tab: 'news',
+                locale: 'ko',
+                generatedAt: koAt,
+                prose: null,
+            },
+            {
+                symbol: 'MSFT',
+                tab: 'news',
+                locale: 'en',
+                generatedAt: enAt,
+                prose: null,
+            },
         ]);
 
         const result = await repo.listFreshSymbolTabs(
@@ -288,12 +382,14 @@ describe('DrizzleSeoSnapshotRepository.listFreshSymbolTabs', () => {
             symbol: 'AAPL',
             tab: 'news',
             generatedAt: koAt,
+            hasProse: false,
         });
         // ko 행이 없는 종목은 en 폴백 행의 시각을 쓴다.
         expect(result).toContainEqual({
             symbol: 'MSFT',
             tab: 'news',
             generatedAt: enAt,
+            hasProse: false,
         });
     });
 

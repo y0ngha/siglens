@@ -145,10 +145,11 @@ describe('generateMetadata', () => {
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
         expect(metadata.robots).toEqual({ index: false, follow: true });
-        // noindex 페이지는 self-canonical을 내지 않는다(`NOINDEX_SYMBOL_METADATA`
-        // 계약). canonical과 noindex가 같이 나가면 "표준인데 색인 금지"라는
-        // 모순 신호가 된다.
-        expect(metadata.alternates).toEqual({ canonical: null });
+        // 항상-noindex 탭은 self-canonical을 낸다(2026-10-05 — `canonical: null`은 신호를
+        // 비워 크롤러가 군집을 추정하게 둔다). noindex는 robots가, 표준 URL은 canonical이 말한다.
+        expect(metadata.alternates?.canonical).toBe(
+            'https://siglens.io/AAPL/position'
+        );
     });
 
     it('bars가 degrade돼도 같은 noindex — 메타데이터가 더 이상 가격 범위를 읽지 않는다', async () => {

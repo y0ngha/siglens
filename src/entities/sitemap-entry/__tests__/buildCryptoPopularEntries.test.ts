@@ -27,19 +27,25 @@ describe('buildCryptoPopularEntries', () => {
         expect(paths).not.toContain('/BTCUSD/congress');
     });
 
-    // 뉴스 탭은 산문 스냅샷이 없으면 noindex일 수 있다 — 주식 sitemap과 같은 게이트.
-    it('with a prose set, emits /news only for cryptos that have prose', () => {
+    // 차트·뉴스 탭은 렌더 가능한 산문 스냅샷이 없으면 noindex다 — 주식 sitemap과 같은 게이트.
+    it('with a prose set, emits /news and the chart only for cryptos that have prose', () => {
         const entries = buildCryptoPopularEntries(now, {
             snapshotGeneratedAt: new Map([
                 ['BTCUSD:news', new Date('2026-06-21T03:00:00Z')],
+                ['BTCUSD:technical', new Date('2026-06-21T03:00:00Z')],
+                ['ETHUSD:technical', new Date('2026-06-21T03:00:00Z')],
             ]),
         });
         const urls = entries.map(e => e.url);
         // 집합에 든 조합은 실제로 실린다 — 키 형식이 어긋나면 이 단언이 깨진다.
         expect(urls).toContain('https://siglens.io/BTCUSD/news');
+        expect(urls).toContain('https://siglens.io/BTCUSD');
         expect(urls).toContain('https://siglens.io/ETHUSD');
         expect(urls).toContain('https://siglens.io/ETHUSD/fear-greed');
         expect(urls).not.toContain('https://siglens.io/ETHUSD/news');
+        // technical 산문이 없는 코인은 차트 탭도 빠진다(페이지 no-prose).
+        expect(urls).not.toContain('https://siglens.io/SOLUSD');
+        expect(urls).toContain('https://siglens.io/SOLUSD/fear-greed');
     });
 
     it('emits exactly POPULAR_CRYPTOS.length × 3 total entries', () => {
@@ -195,7 +201,7 @@ describe('buildCryptoPopularEntries', () => {
             ).toBe('2026-06-21T06:00:00.000Z');
         });
 
-        it('chart route keeps the 6h boundary for a coin without a technical snapshot', () => {
+        it('chart route is omitted for a coin without renderable technical prose', () => {
             const entries = buildCryptoPopularEntries(now, {
                 snapshotGeneratedAt: new Map([
                     ['ETHUSD:technical', new Date('2026-06-21T08:45:00Z')],
@@ -203,11 +209,14 @@ describe('buildCryptoPopularEntries', () => {
             });
 
             expect(
+                entryOf(entries, 'https://siglens.io/BTCUSD')
+            ).toBeUndefined();
+            expect(
                 entryOf(
                     entries,
-                    'https://siglens.io/BTCUSD'
+                    'https://siglens.io/ETHUSD'
                 )?.lastModified?.toISOString()
-            ).toBe('2026-06-21T06:00:00.000Z');
+            ).toBe('2026-06-21T08:45:00.000Z');
         });
 
         it('fear-greed stays at UTC midnight regardless of snapshots', () => {

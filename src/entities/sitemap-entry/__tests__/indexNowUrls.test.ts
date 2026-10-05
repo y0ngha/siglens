@@ -7,11 +7,16 @@ import type { SitemapEntry } from '../model';
 
 const NOW = new Date('2026-10-04T12:00:00Z');
 
-// AAPL·005930.KS·BTCUSD는 큐레이션 목록 멤버다. MSFT는 목록 멤버지만 뉴스 산문이
+// AAPL·005930.KS·BTCUSD는 큐레이션 목록 멤버다. 차트(technical)도 산문 게이트 대상이라
+// 키가 있어야 차트 URL이 실린다. MSFT·BTCUSD는 목록 멤버지만 뉴스 산문이
 // 없는 것으로 둬서 sitemap 빌더가 `/MSFT/news`를 싣지 않게 한다.
 const snapshotGeneratedAt = new Map<string, Date>([
     ['AAPL:news', NOW],
+    ['AAPL:technical', NOW],
     ['005930.KS:news', NOW],
+    ['005930.KS:technical', NOW],
+    ['MSFT:technical', NOW],
+    ['BTCUSD:technical', NOW],
 ]);
 
 const popularEntries = buildPopularEntries(NOW, { snapshotGeneratedAt });

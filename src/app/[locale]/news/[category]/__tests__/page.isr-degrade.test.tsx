@@ -50,6 +50,11 @@ vi.mock('@/widgets/market-news/MarketNewsList', () => ({
 
 vi.mock('next/cache', () => ({ revalidateTag: vi.fn() }));
 
+// 로더 실패(null) 렌더가 revalidate를 300초로 낮추는 헬퍼 — 실제 `unstable_cache`는 렌더 스토어가 필요하다.
+vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
+    shortenRevalidateForRuntimeDegrade: vi.fn(async () => undefined),
+}));
+
 import { NEWS_ROW_SERIALIZATION_LIMIT as MARKET_NEWS_ROW_SERIALIZATION_LIMIT } from '@/shared/config/newsSerialization';
 
 import {
@@ -117,11 +122,13 @@ describe('/news/[category] ISR empty-cache prevention', () => {
             params: Promise.resolve({ locale: 'ko', category: 'crypto' }),
         });
 
-        // isEmpty:true → noindex + canonical null (same as the existing empty-data path).
+        // isEmpty:true → noindex + self-canonical (same as the existing empty-data path).
         expect((meta.robots as { index: boolean } | undefined)?.index).toBe(
             false
         );
-        expect(meta.alternates?.canonical).toBeNull();
+        expect(meta.alternates?.canonical).toBe(
+            'https://siglens.io/news/crypto'
+        );
     });
 
     it('success path unchanged — normal data → MarketNewsDegraded NOT shown', async () => {

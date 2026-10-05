@@ -34,6 +34,7 @@ import {
     buildSymbolSeoContent,
     clampSeoDescription,
     NOINDEX_SYMBOL_METADATA,
+    noindexInvalidSymbolMetadata,
     noindexSymbolMetadata,
     SITE_NAME,
     SITE_URL,
@@ -71,7 +72,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const upper = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
     if (!isAdmissibleSymbolShape(upper)) {
-        return NOINDEX_SYMBOL_METADATA;
+        return noindexInvalidSymbolMetadata(symbol, locale, 'position');
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(upper);
     const blockedMetadata = await getBlockedSymbolMetadata({
@@ -113,8 +114,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
      * 1순위라 이 탭은 빼는 것이 맞다.
      *
      * 훅 카피(title/OG/Twitter)는 그대로 둔다 — 공유 카드는 noindex와 무관하게
-     * 필요하다. `NOINDEX_SYMBOL_METADATA`를 뒤에 스프레드해 robots와
-     * `canonical: null`만 덮는다(`noindexSymbolMetadata`와 같은 순서 계약).
+     * 필요하다. `NOINDEX_SYMBOL_METADATA`를 뒤에 스프레드해 robots만
+     * 덮는다 — canonical은 `symbolMetadataFromSeo`의 self-canonical을 그대로 둔다.
      */
     return {
         ...symbolMetadataFromSeo(
