@@ -6,6 +6,7 @@ import {
     type AssetClass,
 } from '@/shared/config/marketProfile/types';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
+import { INDEXABLE_SYMBOL_TABS, type SymbolSeoTab } from '@/shared/lib/seo';
 
 /** All cross-linked page types in the symbol sub-navigation. */
 const ALL_PAGES = [
@@ -40,6 +41,26 @@ function descriptionKey(page: PageKey, assetClass: AssetClass): string {
     }
     return `description.${page}`;
 }
+
+/** 카드 키 → 탭 SEO 키. 차트 탭만 이름이 갈린다(`chart` ↔ `technical`). */
+const SEO_TAB_OF_PAGE: Record<PageKey, SymbolSeoTab> = {
+    chart: 'technical',
+    news: 'news',
+    fundamental: 'fundamental',
+    financials: 'financials',
+    options: 'options',
+    'fear-greed': 'fear-greed',
+    congress: 'congress',
+    overall: 'overall',
+};
+
+const INDEXABLE_PAGES: ReadonlySet<PageKey> = new Set(
+    ALL_PAGES.filter(p =>
+        (INDEXABLE_SYMBOL_TABS as readonly SymbolSeoTab[]).includes(
+            SEO_TAB_OF_PAGE[p]
+        )
+    )
+);
 
 const HREF: Record<PageKey, (symbol: string) => string> = {
     chart: symbol => `/${symbol}`,
@@ -85,6 +106,14 @@ interface CrossLinkCardsProps {
      * stops being safe — pass `marketProfile` explicitly there too.
      */
     marketProfile?: MarketProfileId;
+    /**
+     * true면 **색인되는 탭**(차트·뉴스·공포탐욕, `INDEXABLE_SYMBOL_TABS`)의 카드만 낸다.
+     *
+     * 항상-noindex 탭(overall·fundamental·financials·options·congress)으로 가는 카드는 크롤
+     * 예산만 쓴다. 상단 탭 바는 그대로 두므로(내부 nofollow는 PageRank를 모으지 않고 버린다 —
+     * Google 비권장) 사용자 내비게이션은 줄지 않는다. 뉴스·공포탐욕 페이지가 쓴다.
+     */
+    indexableOnly?: boolean;
 }
 
 // 현재 페이지 카드는 self-link로 두지 않고 비활성 div + aria-current="page"로 표시한다.
@@ -94,6 +123,7 @@ export function CrossLinkCards({
     symbol,
     current,
     marketProfile = 'us-equity',
+    indexableOnly = false,
 }: CrossLinkCardsProps) {
     const t = useTranslations('shared.ui');
     // 전용 네임스페이스 — 카드 라벨·설명은 페이지 키로 조회한다.
@@ -101,7 +131,9 @@ export function CrossLinkCards({
     const descriptor = getDescriptor(marketProfile);
     const allowedTabKeys = new Set(descriptor.tabs);
     const assetClass = descriptor.assetClass;
-    const visiblePages = ALL_PAGES.filter(p => allowedTabKeys.has(p));
+    const visiblePages = ALL_PAGES.filter(
+        p => allowedTabKeys.has(p) && (!indexableOnly || INDEXABLE_PAGES.has(p))
+    );
 
     return (
         <section

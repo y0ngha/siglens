@@ -189,12 +189,10 @@ describe('Footer', () => {
     });
 
     /**
-     * 카테고리 열로 묶이면서 **보이는 글자**는 짧은 라벨(`미국`)로 줄었다. 그래도
-     * 접근성 이름과 크롤러가 읽는 앵커 텍스트는 `fullLabel` 그대로여야 한다 —
-     * 푸터는 전 페이지에 렌더되는 전역 링크라 앵커 텍스트 변경의 사정거리가
-     * 사이트 전체다. 숨은 조각(`sr-only`)이 그 차이를 메운다.
+     * 푸터는 전 페이지에 렌더되는 전역 링크라 앵커 텍스트의 사정거리가 사이트 전체다.
+     * 보이는 글자가 곧 `fullLabel`이라 접근성 이름·크롤러 앵커 텍스트가 같다.
      */
-    it('링크의 접근성 이름은 여전히 fullLabel이다 (앵커 텍스트 보존)', () => {
+    it('링크의 접근성 이름은 fullLabel이다 (보이는 글자 = 이름)', () => {
         render(<Footer />);
 
         for (const region of ALL_NAV_REGION_LINKS) {
@@ -329,7 +327,11 @@ describe('Footer', () => {
         expect(first).toHaveAccessibleName('뉴스 전체');
     });
 
-    it('보이는 글자는 짧은 라벨이다', () => {
+    /**
+     * 2026-10-05 크롤 감사: 푸터 앵커가 `미국`/`한국`만 말해 목적지 주제를 알려 주지 못했다.
+     * 보이는 글자가 곧 전체 이름이다 — 열 제목과 겹치는 비용을 내고 앵커가 주제를 말한다.
+     */
+    it('보이는 글자는 전체 이름이다', () => {
         render(<Footer />);
 
         const marketList = screen.getByRole('list', { name: '시장 분석' });
@@ -337,25 +339,22 @@ describe('Footer', () => {
             within(marketList)
                 .getAllByRole('link')
                 .map(a => a.textContent)
-        ).toEqual(['미국', '한국']);
+        ).toEqual(['미국 시장 분석', '한국 시장 분석']);
     });
 
     /**
-     * 회귀 가드: 예전에는 링크 안에 `sr-only` span 두 개로 전체 이름을 숨겨 넣어
-     * 크롤러가 읽는 앵커 텍스트만 길게 유지했다. 전 페이지에 렌더되는 전역 링크
-     * 집합에서 그건 "검색엔진에게만 보이는 텍스트"이고, 구글 숨김 텍스트 정책에
-     * 정면으로 걸린다. 접근성 이름은 `aria-label`이 그대로 책임진다.
+     * 보이는 글자가 이름이라 `aria-label`도, 숨김 텍스트(`sr-only`)도 필요 없다. 전 페이지에
+     * 렌더되는 전역 링크 집합의 숨김 텍스트는 구글 정책에 걸린다.
      */
-    it('링크 안에 숨김 텍스트가 없다 — 이름은 aria-label이 진다', () => {
+    it('링크에 aria-label도 숨김 텍스트도 없다 — 보이는 글자가 이름이다', () => {
         const { container } = render(<Footer />);
 
         const sitemap = screen.getByRole('navigation', { name: '사이트맵' });
         expect(sitemap.querySelectorAll('.sr-only')).toHaveLength(0);
         expect(container.querySelectorAll('a .sr-only')).toHaveLength(0);
-
-        expect(
-            screen.getByRole('link', { name: '미국 시장 분석' })
-        ).toHaveTextContent('미국');
+        for (const link of within(sitemap).getAllByRole('link')) {
+            expect(link).not.toHaveAttribute('aria-label');
+        }
     });
 
     it('exposes both market regions', () => {

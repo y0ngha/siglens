@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { NoticePopup } from '@/widgets/notice-popup/ui/NoticePopup';
-import { getActiveNoticesAction } from '@/entities/notice/actions/getActiveNoticesAction';
+import { stubNoticesFetch } from './noticesFetchStub';
 import type { NoticeRecord } from '@/entities/notice/model/types';
 import { DISMISSED_NOTICES_STORAGE_KEY } from '../utils/noticeStorage';
 
@@ -10,11 +10,7 @@ const { mockPathname } = vi.hoisted(() => ({
 }));
 vi.mock('next/navigation', () => ({ usePathname: mockPathname }));
 
-vi.mock('@/entities/notice/actions/getActiveNoticesAction', () => ({
-    getActiveNoticesAction: vi.fn(),
-}));
-
-const mockedAction = vi.mocked(getActiveNoticesAction);
+let mockedAction: ReturnType<typeof stubNoticesFetch>;
 
 function notice(overrides: Partial<NoticeRecord> = {}): NoticeRecord {
     return {
@@ -34,12 +30,17 @@ describe('NoticePopup', () => {
         vi.clearAllMocks();
         localStorage.clear();
         mockPathname.mockReturnValue('/');
+        mockedAction = stubNoticesFetch();
+    });
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
     });
 
     it('활성 공지가 없으면 아무것도 렌더하지 않는다', async () => {
         mockedAction.mockResolvedValue([]);
         const { container } = render(<NoticePopup />);
-        // fetch-once + client-side filter 구조: action 호출 후 filter effect가
+        // fetch-once + client-side filter 구조: fetch 호출 후 filter effect가
         // 추가로 한 번 실행되므로 container가 비었을 때까지 waitFor로 대기한다.
         await waitFor(() => {
             expect(mockedAction).toHaveBeenCalledTimes(1);
@@ -241,6 +242,11 @@ describe('NoticePopup — 로케일 접두사', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         localStorage.clear();
+        mockedAction = stubNoticesFetch();
+    });
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
     });
 
     /**

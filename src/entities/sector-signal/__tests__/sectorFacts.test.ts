@@ -72,6 +72,21 @@ describe('buildSectorFacts', () => {
         expect(fact.topSymbols).toEqual(['AAPL', 'NVDA', 'MSFT']);
     });
 
+    it('(Happy) topStocks는 topSymbols와 같은 종목·순서에 koreanName을 붙인다', () => {
+        const data = makeResult([
+            makeStock('MSFT', 'XLK', ['bearish']),
+            makeStock('NVDA', 'XLK', ['bullish']),
+            makeStock('AAPL', 'XLK', ['bullish']),
+        ]);
+        const [fact] = buildSectorFacts(data);
+        expect(fact.topStocks).toEqual([
+            { symbol: 'AAPL', koreanName: 'AAPL-KR' },
+            { symbol: 'NVDA', koreanName: 'NVDA-KR' },
+            { symbol: 'MSFT', koreanName: 'MSFT-KR' },
+        ]);
+        expect(fact.topStocks.map(s => s.symbol)).toEqual([...fact.topSymbols]);
+    });
+
     it('(Edge) bearish-only 종목이 2개 이상이면 알파벳 순으로 정렬된다 (comparator 구동)', () => {
         // bullish가 없어 topSymbols가 bearish-only 그룹만으로 채워지고, 입력 역순으로
         // 넣어 bearishOnlySymbols.toSorted 비교 콜백이 실제 실행되는지 검증한다.

@@ -1,15 +1,11 @@
 // @vitest-environment jsdom
-vi.mock('@/entities/notice/actions/getActiveNoticesAction', () => ({
-    getActiveNoticesAction: vi.fn(),
-}));
-
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { useNoticePopup } from '@/widgets/notice-popup/hooks/useNoticePopup';
-import { getActiveNoticesAction } from '@/entities/notice/actions/getActiveNoticesAction';
+import { stubNoticesFetch } from './noticesFetchStub';
 import type { NoticeRecord } from '@/entities/notice/model/types';
 import { DISMISSED_NOTICES_STORAGE_KEY } from '../utils/noticeStorage';
 
-const mockedAction = vi.mocked(getActiveNoticesAction);
+let mockedAction: ReturnType<typeof stubNoticesFetch>;
 
 function notice(overrides: Partial<NoticeRecord> = {}): NoticeRecord {
     return {
@@ -28,6 +24,11 @@ describe('useNoticePopup', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         localStorage.clear();
+        mockedAction = stubNoticesFetch();
+    });
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
     });
 
     it('공지를 fetch해서 pathname 매칭 큐를 구성한다', async () => {
@@ -35,6 +36,22 @@ describe('useNoticePopup', () => {
         const { result } = renderHook(() => useNoticePopup('/'));
         await waitFor(() => expect(result.current.queue).toHaveLength(1));
         expect(result.current.queue[0].id).toBe('n1');
+    });
+
+    it('서버 액션이 아니라 GET /api/notices?locale= 로 읽고 createdAt을 Date로 되돌린다', async () => {
+        mockedAction.mockResolvedValue([notice()]);
+        const { result } = renderHook(() => useNoticePopup('/'));
+        await waitFor(() => expect(result.current.queue).toHaveLength(1));
+        const fetchMock = vi.mocked(globalThis.fetch);
+        // 호출 인덱스가 아니라 URL로 찾는다 — 앞선 테스트의 늦은 호출에 흔들리지 않게.
+        const urls = fetchMock.mock.calls.map(call => String(call[0]));
+        expect(
+            urls.filter(url => url === '/api/notices?locale=ko')
+        ).toHaveLength(1);
+        expect(result.current.queue[0].createdAt).toBeInstanceOf(Date);
+        expect(result.current.queue[0].createdAt.getTime()).toBe(
+            new Date(2026, 5, 3).getTime()
+        );
     });
 
     it('advance는 큐에서 첫 공지를 제거한다', async () => {

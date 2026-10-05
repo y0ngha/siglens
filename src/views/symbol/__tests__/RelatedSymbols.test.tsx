@@ -7,6 +7,13 @@ vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
     getAssetInfoResilient: vi.fn(),
 }));
 
+const mockSegment = vi.hoisted(() => ({ current: null as string | null }));
+
+vi.mock('next/navigation', async importOriginal => ({
+    ...(await importOriginal<typeof import('next/navigation')>()),
+    useSelectedLayoutSegment: () => mockSegment.current,
+}));
+
 import { RelatedSymbols } from '../RelatedSymbols';
 import { relatedSymbolsFor } from '@/shared/config/relatedSymbols';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
@@ -24,6 +31,7 @@ async function renderRelated(symbol: string) {
 describe('RelatedSymbols', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockSegment.current = null;
         // 기본은 "DB에 이름 없음" — 큐레이션 폴백 경로를 밟는다.
         mockGetAssetInfoResilient.mockResolvedValue({
             assetInfo: null,
@@ -46,6 +54,32 @@ describe('RelatedSymbols', () => {
             expect(link).toHaveAttribute('href', `/${item.symbol}`);
         }
     });
+
+    /**
+     * 뉴스·공포탐욕 탭은 외부 유입 링크가 0이었다(2026-10-05 운영 크롤). 칩이 현재
+     * 탭을 유지해야 같은 탭끼리 격자가 생긴다.
+     */
+    it.each([
+        ['news', '/news'],
+        ['fear-greed', '/fear-greed'],
+        ['overall', ''],
+        [null, ''],
+    ])(
+        '현재 탭 세그먼트가 %s면 칩 href 접미사는 "%s"다',
+        async (segment, suffix) => {
+            mockSegment.current = segment;
+            await renderRelated('NVDA');
+            const expected = relatedSymbolsFor('NVDA');
+            // 칩은 캡션별로 묶여 선정 순서와 다르게 나오므로 집합으로 비교한다.
+            const hrefs = screen
+                .getAllByRole('link')
+                .map(a => a.getAttribute('href'))
+                .sort();
+            expect(hrefs).toEqual(
+                expected.map(r => `/${r.symbol}${suffix}`).sort()
+            );
+        }
+    );
 
     /**
      * 이 컴포넌트의 존재 이유가 크롤 가능한 내부링크다. `<a href>`가 아니라
