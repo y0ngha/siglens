@@ -63,14 +63,14 @@ const proseSnapshot = [
 
 const params = Promise.resolve({ locale: 'ko', symbol: 'aapl' });
 
-describe('news generateMetadata — thin-content 게이트', () => {
+describe('news generateMetadata — 산문 게이트(prose: present|absent|unknown)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockGetAssetInfoResilient.mockResolvedValue(ASSET_INFO);
         vi.mocked(getSeoSnapshotsStatic).mockResolvedValue([] as Snapshots);
     });
 
-    it('산문만 있어도 색인한다', async () => {
+    it('산문이 있으면 감정 카드가 없어도 색인한다', async () => {
         vi.mocked(getSeoSnapshotsStatic).mockResolvedValue(proseSnapshot);
         mockGetNewsList.mockResolvedValue(withoutSentiment);
 
@@ -79,15 +79,17 @@ describe('news generateMetadata — thin-content 게이트', () => {
         expect(metadata.robots).toBeUndefined();
     });
 
-    it('감정이 채워진 카드만 있어도 색인한다', async () => {
+    // 2026-10-05: 뉴스 탭은 **산문 기준**으로만 색인한다. 예전에는 감정 카드만 있어도 색인하는
+    // 예외가 있어 문서·sitemap(산문 기준)과 어긋났다 — sitemap에 없는데 색인되는 URL이었다.
+    it('감정이 채워진 카드만 있고 산문이 없으면 noindex다(예외 제거)', async () => {
         mockGetNewsList.mockResolvedValue(withSentiment);
 
         const metadata = await generateMetadata({ params });
 
-        expect(metadata.robots).toBeUndefined();
+        expect(metadata.robots).toEqual({ index: false, follow: true });
     });
 
-    it('둘 다 없으면 noindex — self-canonical과 제목은 유지한다', async () => {
+    it('산문이 없으면 noindex — self-canonical과 제목은 유지한다', async () => {
         mockGetNewsList.mockResolvedValue(withoutSentiment);
 
         const metadata = await generateMetadata({ params });
@@ -111,5 +113,14 @@ describe('news generateMetadata — thin-content 게이트', () => {
         const metadata = await generateMetadata({ params });
 
         expect(metadata.robots).toEqual({ index: false, follow: true });
+    });
+
+    it('스냅샷 읽기 실패(null = 모름)는 색인을 유지한다(fail-open)', async () => {
+        vi.mocked(getSeoSnapshotsStatic).mockResolvedValue(null);
+        mockGetNewsList.mockResolvedValue(withoutSentiment);
+
+        const metadata = await generateMetadata({ params });
+
+        expect(metadata.robots).toBeUndefined();
     });
 });

@@ -160,13 +160,27 @@ const AAPL_URLS = [
     `${SITE_URL}/AAPL/news`,
     `${SITE_URL}/AAPL/fear-greed`,
 ];
-const snapshotGeneratedAt = new Map<string, Date>([['AAPL:news', NOW]]);
+// 키 = 렌더 가능한 산문이 있는 조합. 차트(technical)도 산문 게이트 대상이라 차트 URL이 실리려면 키가 필요하다.
+// AAPL은 뉴스 산문까지, MSFT·BTCUSD는 차트 산문만 있다(뉴스 탭은 sitemap에서 빠진다).
+const snapshotGeneratedAt = new Map<string, Date>([
+    ['AAPL:news', NOW],
+    ['AAPL:technical', NOW],
+    ['MSFT:technical', NOW],
+    ['BTCUSD:technical', NOW],
+]);
 
 /** 제출 호출의 URL 목록 — 호출이 정확히 한 번이라는 사실까지 함께 고정한다. */
 function submittedUrls(): readonly string[] {
     expect(mockSubmitIndexNow).toHaveBeenCalledTimes(1);
     return mockSubmitIndexNow.mock.calls[0]?.[0] as readonly string[];
 }
+
+// harvest는 렌더 가능한 산문이 없는 결과를 저장하지 않는다(`hasProseForTab`) — 어느 탭이든 통과하는 최소 산문.
+const ANY_TAB_PROSE = {
+    summary: '기술적 분석 요약 문단입니다.',
+    currentDriverKo: '뉴스 동인 문단입니다.',
+    headlineKo: '종합 분석 헤드라인입니다.',
+} as const;
 
 describe('runPrewarmBatch — IndexNow 제출', () => {
     beforeEach(() => {
@@ -198,7 +212,7 @@ describe('runPrewarmBatch — IndexNow 제출', () => {
         );
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
         mockBuildPrewarmUniverse.mockReturnValue([
             { symbol: 'AAPL', tabs: ['technical'] },
@@ -272,7 +286,7 @@ describe('runPrewarmBatch — IndexNow 제출', () => {
         ]);
         mockPrewarmTechnical.mockImplementation(async (symbol: string) => {
             if (symbol === 'MSFT') throw new Error('provider down');
-            return { status: 'cached', result: {} };
+            return { status: 'cached', result: ANY_TAB_PROSE };
         });
 
         const counts = await runPrewarmBatch();

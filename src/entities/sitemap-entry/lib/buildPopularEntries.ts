@@ -48,8 +48,9 @@ function withSymbolAlternates(entries: SitemapEntry[]): SitemapEntry[] {
  * noindex다(2026-09-11). noindex URL을 sitemap에 실으면 크롤 예산만 태우고 GSC 오류가
  * 된다. 탭을 다시 열 때는 페이지의 noindex를 걷어내고 여기에 엔트리를 되돌린다.
  *
- * 뉴스는 스냅샷 산문이 있는 종목만 싣는다({@link BuildPopularEntriesOptions}) — 산문이
- * 없으면 noindex일 수 있다(대상 탭은 `lib/proseGate.ts`의 `PROSE_GATED_SITEMAP_TABS`).
+ * 차트·뉴스는 **렌더 가능한 스냅샷 산문이 있는 종목만** 싣는다({@link BuildPopularEntriesOptions}) —
+ * 산문이 없으면 페이지가 noindex(`no-prose`)다(대상 탭은 `lib/proseGate.ts`의
+ * `PROSE_GATED_SITEMAP_TABS`). 공포탐욕 탭은 스냅샷 산문이 없는 탭이라 게이트 대상이 아니다.
  *
  * 차트 탭(`/{ticker}`)의 `lastmod`는 `max(직전 마감 세션, technical 스냅샷
  * generatedAt)`이다. 기반값은 `lastClosedSessionCloseUtc` — **마지막으로 마감된 정규
@@ -94,12 +95,18 @@ export function buildPopularEntries(
                     ? technicalAt
                     : todayClose;
             return [
-                {
-                    url: `${SITE_URL}/${ticker}`,
-                    lastModified: chartLastModified,
-                    changeFrequency: 'daily',
-                    priority: 0.8,
-                },
+                // 차트 탭도 산문 게이트 대상이다 — 렌더 가능한 technical 산문이 없으면 페이지가
+                // noindex(`no-prose`)이므로 sitemap에서 뺀다. 로더 실패(맵 없음)는 전부 싣는다.
+                ...(hasProse(ticker, 'technical')
+                    ? [
+                          {
+                              url: `${SITE_URL}/${ticker}`,
+                              lastModified: chartLastModified,
+                              changeFrequency: 'daily' as const,
+                              priority: 0.8,
+                          },
+                      ]
+                    : []),
                 ...(hasProse(ticker, 'news')
                     ? [
                           {

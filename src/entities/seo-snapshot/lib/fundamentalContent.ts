@@ -1,6 +1,6 @@
 import { stripSnapshotMarkdown } from '@/shared/lib/stripSnapshotMarkdown';
-import { createEnumGuard } from '../lib/createEnumGuard';
-import { narrowStringArray } from '../lib/narrowStringArray';
+import { createEnumGuard } from './createEnumGuard';
+import { narrowStringArray } from './narrowStringArray';
 
 import type {
     FundamentalCategory,

@@ -4,7 +4,10 @@ import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { SnapshotBulletList } from '../SnapshotBulletList';
 import { cn } from '@/shared/lib/cn';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
-import { SENTIMENT_LABEL_KEY, narrowCongressContent } from './congressContent';
+import {
+    SENTIMENT_LABEL_KEY,
+    narrowCongressContent,
+} from '@/entities/seo-snapshot/lib/congressContent';
 
 interface CongressSnapshotProseProps {
     /**

@@ -6,7 +6,9 @@ vi.mock('next/cache', () => ({
 import { unstable_cache } from 'next/cache';
 import {
     BUILD_DEGRADED_REVALIDATE_SECONDS,
-    shortenRevalidateForBuildDegrade,
+    RUNTIME_DEGRADED_REVALIDATE_SECONDS,
+    shortenRevalidateForRuntimeDegrade,
+    shortenRevalidateForDegrade,
     shortenRevalidateIfDatabaseMissingAtBuild,
     shortenRevalidateIfFmpFailedAtBuild,
 } from '@/shared/cache/buildDegradedRevalidate';
@@ -15,9 +17,14 @@ import {
     tripFmpBuildBreaker,
 } from '@/shared/api/offlineBuild';
 
+// 래퍼는 모듈 로드 시점에 한 번 만들어진다 — 어떤 `clearAllMocks`보다 먼저 호출 기록을 캡처한다.
+const WRAPPER_OPTIONS = vi
+    .mocked(unstable_cache)
+    .mock.calls.map(call => call[2]);
+
 describe('shortenRevalidateIfFmpFailedAtBuild', () => {
-    // 모듈 로드 시점에 한 번 만들어지는 래퍼 — clearAllMocks 전에 캡처한다.
-    const wrapperOptions = vi.mocked(unstable_cache).mock.calls.at(-1)?.[2];
+    // 래퍼는 빌드(60초)·런타임(300초) 두 개라 revalidate로 찾는다 — 순서에 기대지 않는다.
+    const wrapperOptions = WRAPPER_OPTIONS.find(o => o?.revalidate === 60);
 
     beforeEach(() => {
         pinMock.mockClear();
@@ -68,14 +75,14 @@ describe('shortenRevalidateIfFmpFailedAtBuild', () => {
     });
 });
 
-describe('shortenRevalidateForBuildDegrade', () => {
+describe('shortenRevalidateForDegrade', () => {
     beforeEach(() => {
         pinMock.mockClear();
         __resetFmpBuildBreakerForTests();
     });
 
     it('FMP 상태와 무관하게 래퍼를 호출해 이 렌더의 revalidate를 낮춘다', async () => {
-        await shortenRevalidateForBuildDegrade();
+        await shortenRevalidateForDegrade();
         expect(pinMock).toHaveBeenCalledOnce();
     });
 });
@@ -121,5 +128,22 @@ describe('shortenRevalidateIfDatabaseMissingAtBuild', () => {
 
         await shortenRevalidateIfDatabaseMissingAtBuild();
         expect(pinMock).not.toHaveBeenCalled();
+    });
+});
+
+describe('shortenRevalidateForRuntimeDegrade', () => {
+    beforeEach(() => {
+        pinMock.mockClear();
+    });
+
+    it('런타임 degrade 핀은 300초다 — 빌드 핀(60초)과 별개 값이다', () => {
+        expect(RUNTIME_DEGRADED_REVALIDATE_SECONDS).toBe(300);
+        expect(BUILD_DEGRADED_REVALIDATE_SECONDS).toBe(60);
+        expect(WRAPPER_OPTIONS.some(o => o?.revalidate === 300)).toBe(true);
+    });
+
+    it('FMP·DB 상태와 무관하게 래퍼를 호출한다', async () => {
+        await shortenRevalidateForRuntimeDegrade();
+        expect(pinMock).toHaveBeenCalledOnce();
     });
 });
