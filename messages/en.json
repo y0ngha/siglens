@@ -2103,7 +2103,7 @@
             },
             "SnapshotSummarySection": {
                 "220156": "Previous AI Analysis",
-                "asOfCrypto": "UTC",
+                "asOfCrypto": "UTC price",
                 "asOfCryptoFallback": "As of the previous UTC midnight",
                 "asOfKrEquity": "Korean market close",
                 "asOfKrEquityFallback": "As of the previous Korean close",
