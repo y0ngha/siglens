@@ -2182,16 +2182,13 @@
     "widgets.economy.EconomicCalendarGrid.dc712b": "de0cc2e51188",
     "widgets.economy.EconomicCalendarGrid.e1d376": "e1d37632457c",
     "widgets.economy.EconomicCalendarGrid.f9d9dc": "f9d9dc6c2da1",
-    "widgets.economy.EconomicIndicatorGrid.015416": "015416364f3e",
     "widgets.economy.EconomicIndicatorGrid.2388de": "2388def6e8a0",
-    "widgets.economy.EconomicIndicatorGrid.58c098": "58c098f342d8",
     "widgets.economy.EconomicIndicatorGrid.868089": "868089bf379f",
     "widgets.economy.EconomicIndicatorGrid.c2a5bf": "c2a5bf1331d6",
     "widgets.economy.EconomyKrMacroFacts.59ed20": "59ed20a754b1",
     "widgets.economy.EconomyMacroFacts.59ed20": "59ed20a754b1",
     "widgets.economy.EconomySkeleton.e0e86d": "e0e86d9e1a74",
     "widgets.economy.ImpactFilter.cc4968": "cc4968a5f49f",
-    "widgets.economy.KrEconomicIndicatorGrid.9fc30a": "9fc30a7f4758",
     "widgets.economy.KrEconomicIndicatorGrid.c2a5bf": "c2a5bf1331d6",
     "widgets.economy.MacroBriefing.0c767c": "0c767cecf65e",
     "widgets.economy.MacroBriefing.15d863": "15d863d3db46",
@@ -2992,5 +2989,8 @@
     "widgets.economy.EconomicCalendarGrid.forecastPart": "dc77471964f1",
     "widgets.economy.EconomicCalendarGrid.pastCollapse": "8cc203c84119",
     "widgets.economy.EconomicCalendarGrid.pastExpand": "4ade5e8a8cb2",
-    "widgets.economy.EconomicCalendarGrid.previousPart": "49ff2c1cf18c"
+    "widgets.economy.EconomicCalendarGrid.previousPart": "49ff2c1cf18c",
+    "widgets.economy.DeltaBadge.unchanged": "015416364f3e",
+    "widgets.economy.DeltaBadge.changeSincePeriod": "58c098f342d8",
+    "widgets.economy.DeltaBadge.changeSinceRelease": "9fc30a7f4758"
 }

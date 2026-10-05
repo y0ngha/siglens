@@ -11,7 +11,7 @@ import {
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { formatFixed } from '@/shared/lib/formatNum';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
-import { deltaUnitLabel } from '../utils/unitLabel';
+import { deltaUnitLabel, unitLabel } from '../utils/unitLabel';
 import { DeltaBadge } from './DeltaBadge';
 import {
     HEADING_SECTION,
@@ -102,7 +102,9 @@ function IndicatorCard({ card }: IndicatorCardProps) {
                 <span className="text-2xl font-bold text-secondary-100">
                     {formatFixed(latest, meta.precision, locale)}
                 </span>
-                <span className="text-xs text-secondary-400">{meta.unit}</span>
+                <span className="text-xs text-secondary-400">
+                    {unitLabel(meta.unit, tLabel)}
+                </span>
             </p>
             {changeFromPrevious !== null && (
                 <DeltaBadge

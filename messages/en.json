@@ -3088,7 +3088,10 @@
         },
         "economy": {
             "DeltaBadge": {
-                "releaseUnchanged": "No change from previous release"
+                "releaseUnchanged": "No change from previous release",
+                "unchanged": "No change from previous period",
+                "changeSincePeriod": "vs. Previous Period {v0}{v1}{v2}",
+                "changeSinceRelease": "vs. Previous Release {v0}{v1}{v2}"
             },
             "EconomicCalendarGrid": {
                 "703910": "{v0} events",
@@ -3105,9 +3108,7 @@
             },
             "EconomicIndicatorGrid": {
                 "868089": "This is the 10-year yield minus the 2-year yield. If it turns negative,\n                    long-term and short-term interest rates are inverted, which is often seen as a recession signal.",
-                "015416": "No change from previous period",
                 "2388de": "2s10s Spread",
-                "58c098": "vs. Previous Period {v0}{v1}{v2}",
                 "c2a5bf": "Economic Indicators"
             },
             "EconomyKrMacroFacts": {
@@ -3123,7 +3124,6 @@
                 "cc4968": "Importance Filter"
             },
             "KrEconomicIndicatorGrid": {
-                "9fc30a": "vs. Previous Release {v0}{v1}{v2}",
                 "c2a5bf": "Economic Indicators"
             },
             "MacroBriefing": {

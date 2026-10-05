@@ -41,7 +41,7 @@ export function DeltaBadge({
             <span className="mt-1 inline-block text-xs text-secondary-400">
                 {basis === 'release'
                     ? t('DeltaBadge.releaseUnchanged')
-                    : t('EconomicIndicatorGrid.015416')}
+                    : t('DeltaBadge.unchanged')}
             </span>
         );
     }
@@ -66,8 +66,8 @@ export function DeltaBadge({
                 )}
             </svg>
             {basis === 'release'
-                ? t('KrEconomicIndicatorGrid.9fc30a', values)
-                : t('EconomicIndicatorGrid.58c098', values)}
+                ? t('DeltaBadge.changeSinceRelease', values)
+                : t('DeltaBadge.changeSincePeriod', values)}
         </span>
     );
 }

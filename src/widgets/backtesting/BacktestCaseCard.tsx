@@ -1,6 +1,6 @@
 import { useTranslations } from 'next-intl';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
-import type { BacktestCase } from '@y0ngha/siglens-core';
+import type { BacktestCase, BacktestRiskLevel } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import {
     formatSignedPercent,
@@ -52,13 +52,20 @@ function EntryRecBadge({ recommendation }: EntryRecBadgeProps) {
  * `moderate`만 매핑하면 가장 흔한 값이 라벨 없이 새므로 둘 다 "보통"으로 매핑한다.
  * 알 수 없는 값은 배지를 그리지 않는다 — 대문자 원문(`HIGH`)을 그대로 찍지 않는다.
  */
-const RISK_LEVEL_LABEL_KEY: Record<string, string> = {
+const RISK_LEVEL_LABEL_KEY: Record<BacktestRiskLevel | 'medium', string> = {
     low: 'backtestRiskLevel.low',
     medium: 'backtestRiskLevel.medium',
     moderate: 'backtestRiskLevel.moderate',
     high: 'backtestRiskLevel.high',
     extreme: 'backtestRiskLevel.extreme',
 };
+
+function isKnownRiskLevel(
+    level: string
+): level is keyof typeof RISK_LEVEL_LABEL_KEY {
+    // `in`은 프로토타입까지 본다 — 자기 키만 인정한다.
+    return Object.hasOwn(RISK_LEVEL_LABEL_KEY, level);
+}
 
 interface RiskBadgeProps {
     /** core 타입은 `BacktestRiskLevel`이지만 데이터에는 타입에 없는 `medium`이 있다 — 위 상수 참조. */
@@ -70,7 +77,7 @@ function RiskBadge({ level }: RiskBadgeProps) {
     // 패턴"만 본다 — `tLabel(key)`를 여기서 직접 불러야 `shared.enumLabel`이
     // 이 라우트의 클라이언트 번들에 실린다.
     const tLabel = useTranslations('shared.enumLabel');
-    if (!Object.hasOwn(RISK_LEVEL_LABEL_KEY, level)) return null;
+    if (!isKnownRiskLevel(level)) return null;
     const key = RISK_LEVEL_LABEL_KEY[level];
     const isHigh = level === 'high' || level === 'extreme';
     const isLow = level === 'low';

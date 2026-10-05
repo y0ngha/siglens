@@ -3212,7 +3212,10 @@
         },
         "economy": {
             "DeltaBadge": {
-                "releaseUnchanged": "직전 발표 대비 변화 없음"
+                "changeSincePeriod": "전기 대비 {v0}{v1}{v2}",
+                "changeSinceRelease": "직전 발표 대비 {v0}{v1}{v2}",
+                "releaseUnchanged": "직전 발표 대비 변화 없음",
+                "unchanged": "전기 대비 변화 없음"
             },
             "EconomicCalendarGrid": {
                 "703910": "{v0}건",
@@ -3229,9 +3232,7 @@
             },
             "EconomicIndicatorGrid": {
                 "868089": "10년물 수익률에서 2년물을 뺀 값이에요. 마이너스가 되면\n                    장단기 금리가 뒤집힌 것으로, 흔히 경기침체 신호로 봐요.",
-                "015416": "전기 대비 변화 없음",
                 "2388de": "2s10s 스프레드",
-                "58c098": "전기 대비 {v0}{v1}{v2}",
                 "c2a5bf": "경제지표"
             },
             "EconomyKrMacroFacts": {
@@ -3247,7 +3248,6 @@
                 "cc4968": "중요도 필터"
             },
             "KrEconomicIndicatorGrid": {
-                "9fc30a": "직전 발표 대비 {v0}{v1}{v2}",
                 "c2a5bf": "경제지표"
             },
             "MacroBriefing": {

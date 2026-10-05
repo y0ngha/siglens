@@ -3088,7 +3088,10 @@
         },
         "economy": {
             "DeltaBadge": {
-                "releaseUnchanged": "前回発表からの変化なし"
+                "releaseUnchanged": "前回発表からの変化なし",
+                "unchanged": "前期比変化なし",
+                "changeSincePeriod": "前期比{v0}{v1}{v2}",
+                "changeSinceRelease": "前回発表比{v0}{v1}{v2}"
             },
             "EconomicCalendarGrid": {
                 "703910": "{v0}件",
@@ -3105,9 +3108,7 @@
             },
             "EconomicIndicatorGrid": {
                 "868089": "10年物利回りから2年物を引いた値です。マイナスになると\n                    長短金利が逆転したことになり、一般的に景気後退のシグナルと見なされます。",
-                "015416": "前期比変化なし",
                 "2388de": "2s10sスプレッド",
-                "58c098": "前期比{v0}{v1}{v2}",
                 "c2a5bf": "経済指標"
             },
             "EconomyKrMacroFacts": {
@@ -3123,7 +3124,6 @@
                 "cc4968": "重要度フィルター"
             },
             "KrEconomicIndicatorGrid": {
-                "9fc30a": "前回発表比{v0}{v1}{v2}",
                 "c2a5bf": "経済指標"
             },
             "MacroBriefing": {

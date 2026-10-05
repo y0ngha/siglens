@@ -58,22 +58,20 @@ export function BacktestCaseList({
         b.entryDate.localeCompare(a.entryDate)
     );
 
-    // 케이스마다 배열을 복제하지 않고 마지막 그룹에 밀어 넣는다(O(n)).
-    const groups: MonthGroup[] = [];
-    for (const c of newestFirst) {
+    // 월 키로 묶는다. `newestFirst`가 이미 정렬돼 있고 `Map`은 삽입 순서를 지키므로
+    // 그룹 순서는 최신 월 → 오래된 월이다. 기존 배열을 변형하지 않고 새 배열로 이어 붙인다.
+    const byMonth = newestFirst.reduce((acc, c) => {
         const key = c.entryDate.slice(0, 7);
-        const last = groups[groups.length - 1];
-        if (!last || last.key !== key) {
-            const { year, month } = monthParts(c.entryDate);
-            groups.push({
-                key,
-                label: tMisc('backtestMonth', { v0: year, v1: month }),
-                items: [c],
-            });
-        } else {
-            last.items.push(c);
-        }
-    }
+        return acc.set(key, [...(acc.get(key) ?? []), c]);
+    }, new Map<string, BacktestCase[]>());
+    const groups: MonthGroup[] = [...byMonth].map(([key, items]) => {
+        const { year, month } = monthParts(`${key}-01`);
+        return {
+            key,
+            label: tMisc('backtestMonth', { v0: year, v1: month }),
+            items,
+        };
+    });
 
     return (
         <div className="page-container flex flex-col gap-2 pb-6">

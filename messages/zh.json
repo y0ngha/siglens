@@ -3088,7 +3088,10 @@
         },
         "economy": {
             "DeltaBadge": {
-                "releaseUnchanged": "与上次发布相比无变化"
+                "releaseUnchanged": "与上次发布相比无变化",
+                "unchanged": "环比无变化",
+                "changeSincePeriod": "环比 {v0}{v1}{v2}",
+                "changeSinceRelease": "较上次发布 {v0}{v1}{v2}"
             },
             "EconomicCalendarGrid": {
                 "703910": "{v0}项",
@@ -3105,9 +3108,7 @@
             },
             "EconomicIndicatorGrid": {
                 "868089": "10年期收益率减去2年期收益率的值。如果为负，则表示长短期利率倒挂，通常被视为经济衰退的信号。",
-                "015416": "环比无变化",
                 "2388de": "2s10s 利差",
-                "58c098": "环比 {v0}{v1}{v2}",
                 "c2a5bf": "经济指标"
             },
             "EconomyKrMacroFacts": {
@@ -3123,7 +3124,6 @@
                 "cc4968": "重要性筛选"
             },
             "KrEconomicIndicatorGrid": {
-                "9fc30a": "较上次发布 {v0}{v1}{v2}",
                 "c2a5bf": "经济指标"
             },
             "MacroBriefing": {

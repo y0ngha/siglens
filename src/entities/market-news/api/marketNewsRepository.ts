@@ -264,6 +264,12 @@ export class DrizzleMarketNewsRepository {
      * 집계를 SQL로 내린다(`listCardsByCategory`가 컬럼을 줄인 것과 같은 이유).
      *
      * 발표가 없는 버킷은 결과에서 빠진다(빈 `MAX`는 행 자체가 없다).
+     *
+     * **로펌 원고 모집 광고(`isLawFirmSolicitation`)는 거르지 않는다.** 읽기 경로는 화면에서
+     * 그 행을 숨기지만 이 `MAX`는 숨겨진 행의 시각도 포함하므로, 광고가 가장 최신이면
+     * sitemap `lastmod`가 실제 노출 기사보다 앞설 수 있다. 받아들이는 이유: lastmod는
+     * 힌트일 뿐이고 어긋나도 해가 없으며(크롤러가 한 번 더 들를 뿐), 거르려면 정규식을
+     * SQL로 내리거나 행을 받아 와야 해서 이 집계를 둔 목적(전송량 절감)과 충돌한다.
      */
     async listLatestPublishedAt(
         sentinels: readonly string[]

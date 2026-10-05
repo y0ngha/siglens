@@ -261,6 +261,9 @@ function displayEventLabel(
     return Object.hasOwn(labels, rawEvent) ? labels[rawEvent] : rawEvent;
 }
 
+/** 값 줄의 예상·이전·실제 조각 구분자. */
+const VALUE_PART_SEPARATOR = ' · ';
+
 type ValuePartKey =
     | 'EconomicCalendarGrid.forecastPart'
     | 'EconomicCalendarGrid.previousPart'
@@ -396,7 +399,9 @@ function DayDetailPanel({
                                     </p>
                                     {valueParts.length > 0 && (
                                         <p className="mt-0.5 text-xs text-secondary-400">
-                                            {valueParts.join(' · ')}
+                                            {valueParts.join(
+                                                VALUE_PART_SEPARATOR
+                                            )}
                                         </p>
                                     )}
                                 </div>
