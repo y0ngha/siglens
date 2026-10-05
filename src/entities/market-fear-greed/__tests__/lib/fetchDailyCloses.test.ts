@@ -203,8 +203,9 @@ describe('lookbackStartDate', () => {
     it(`고정 시각 기준 MARKET_FEAR_GREED_LOOKBACK_DAYS(${MARKET_FEAR_GREED_LOOKBACK_DAYS})일 전 ISO 날짜를 반환한다`, () => {
         const now = new Date('2026-08-15T00:00:00Z');
 
-        // 2026-08-15 - 1095일 = 2023-08-16 (실제 clock을 쓰지 않고 고정 시각으로 계산).
-        expect(lookbackStartDate(now)).toBe('2023-08-16');
+        // 2026-08-15 - 1830일(core FEAR_GREED_LOOKBACK_DAYS, 약 5년) = 2021-08-11
+        // (실제 clock을 쓰지 않고 고정 시각으로 계산).
+        expect(lookbackStartDate(now)).toBe('2021-08-11');
     });
 });
 

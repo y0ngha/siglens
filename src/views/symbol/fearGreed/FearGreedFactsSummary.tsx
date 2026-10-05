@@ -1,12 +1,11 @@
 import { useTranslations } from 'next-intl';
 import { useId } from 'react';
-import {
-    computeFearGreedIndex,
-    computeFearGreedHistory,
-    type Bar,
-    type BuySellVolumeResult,
-    type FearGreedReading,
+import type {
+    Bar,
+    BuySellVolumeResult,
+    FearGreedReading,
 } from '@y0ngha/siglens-core';
+import { computeSymbolFearGreedSeries } from '@/entities/bars/lib/symbolFearGreed';
 import {
     SENTIMENT_LABEL_KEY,
     WARNING_TEXT_KEY,
@@ -76,7 +75,12 @@ export function FearGreedFactsSummary({
     const tFearGreed = useTranslations('shared.lib.fearGreed');
     const locale = useResolvedLocale();
     const headingId = useId();
-    const snapshot = computeFearGreedIndex(bars, buySellVolume);
+    // 헤더 배지·색인 게이트·클라이언트 seed와 같은 계산을 공유한다(요청 스코프 메모).
+    // `bars`·`buySellVolume`은 페이지가 `symbolFearGreedInputs`로 넘긴 5년 시계열이다.
+    const { snapshot, history } = computeSymbolFearGreedSeries(
+        bars,
+        buySellVolume
+    );
     if (!snapshot) return null;
 
     const score = Math.round(snapshot.score);
@@ -100,9 +104,8 @@ export function FearGreedFactsSummary({
         tFactor
     );
 
-    // 시계열 문장 3종. `useFearGreed`가 **매 클라이언트 로드마다** 이미 부르는 계산이라,
-    // ISR 재생성(24h)당 한 번 서버에서 도는 건 총량으로는 오히려 싸다. 새 fetch도,
-    // 새 의존성도 없다 — 같은 `bars`/`buySellVolume`을 그대로 쓴다.
+    // 시계열 문장 3종. 위에서 계산한 같은 `history`(5년 일봉, 요청 스코프 메모로 헤더
+    // 배지·클라이언트 seed와 공유)를 쓴다 — 새 fetch도, 새 계산도 없다.
     //
     // 왜 필요한가: 이 페이지는 283개 URL이 서로 76.7% 겹치는 준중복 상태였고(5-gram
     // Jaccard 실측, 형제 탭은 21~27%), 심볼별로 실제 달라지는 텍스트가 페이지의 4%뿐이었다.
@@ -119,7 +122,6 @@ export function FearGreedFactsSummary({
     const asOfLabel =
         asOf === undefined ? null : toUtcIsoDate(new Date(asOf * 1000));
 
-    const history = computeFearGreedHistory(bars, buySellVolume);
     const points = scoredHistory(history);
     const timeSeriesLines = [
         buildFearGreedPeriodComparisonLine(points, tLabel, tFacts),

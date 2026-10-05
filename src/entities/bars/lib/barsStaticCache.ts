@@ -8,11 +8,11 @@ import {
     type BarsData,
     type Timeframe,
 } from '@y0ngha/siglens-core';
-import { getBarsAction } from '@/entities/bars/actions/getBarsAction';
+import { loadBarsData } from './loadBarsData';
 import { SECONDS_PER_QUARTER_DAY } from '@/shared/config/time';
 
 /**
- * ISR static-safe bars fetch. `getBarsAction`(redis getOrSetCache + FMP)을 Next data
+ * ISR static-safe bars fetch. `loadBarsData`(redis getOrSetCache + FMP)를 Next data
  * cache로 감싸 static generate가 no-store fetch에 막히지 않게 한다. 종목당 캐시이며
  * revalidate=6h 상한으로 주기 갱신한다. 호출부는 본 함수만 쓴다.
  *
@@ -38,8 +38,10 @@ export function getBarsStatic(
 ): Promise<BarsData> {
     const ticker = symbol.toUpperCase();
     return unstable_cache(
-        () => getBarsAction(ticker, timeframe, fmpSymbol),
-        ['bars-static', ticker, timeframe, fmpSymbol ?? ''],
+        () => loadBarsData(ticker, timeframe, fmpSymbol),
+        // `-v2`: 값에 공포·탐욕용 5년 일봉(`fearGreedBars`)이 붙었다. 옛 항목에는 없어
+        // 서버 점수가 2년 기준으로 돌아가므로 키를 갈아 옛 항목을 읽지 않는다.
+        ['bars-static-v2', ticker, timeframe, fmpSymbol ?? ''],
         { revalidate: SECONDS_PER_QUARTER_DAY, tags: [`symbol:${ticker}`] }
     )();
 }

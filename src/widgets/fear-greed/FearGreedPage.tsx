@@ -56,18 +56,18 @@ interface FearGreedPageProps {
 /**
  * Skeleton shown during SSR and the synchronous first-client render.
  *
- * useFearGreedFromSymbol → useBars → useSuspenseQuery has staleTime:30 s.
- * The dehydrated seed (quantized, forming-bar-stripped) is always stale on
- * the client (daily bar updatedAt << Date.now()), so React Query fires a
- * background refetch immediately after mount.  For crypto (CRYPTO_SESSION,
- * always-open), the SSR seed strips the forming bar but the refetched bars
- * include it → SSR score ≠ first-client score → React #418.
+ * useFearGreedFromSymbol → getSymbolFearGreedAction (server-computed from the
+ * 5-year daily series) → useSuspenseQuery with staleTime 30 s. The page seeds
+ * the query with a score computed from **quantized** bars (forming bar
+ * stripped), and that seed is always stale on the client (updatedAt = last
+ * closed bar << Date.now()), so React Query refetches right after mount. The
+ * action reads the **unquantized** bar cache, so during a session (and always
+ * for crypto) the refetched score includes the forming bar → SSR score ≠
+ * first-client score → React #418.
  *
- * The fix: render a stable, score-free
- * skeleton during hydration so SSR HTML and the first sync client render are
- * identical, then swap in the real score-driven UI after useEffect fires.
- * This is intentional: the page comment notes "점수는 클라가 bars로 계산"
- * (score is computed client-side); the skeleton makes that explicit.
+ * The fix: render a stable, score-free skeleton during hydration so SSR HTML
+ * and the first sync client render are identical, then swap in the real
+ * score-driven UI after useEffect fires.
  */
 function FearGreedPageSkeleton() {
     const t = useTranslations('widgets.fear-greed');

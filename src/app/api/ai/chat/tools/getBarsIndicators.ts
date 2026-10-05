@@ -3,6 +3,7 @@ import {
     aggregateBarsToWeekly,
     calculateIndicators,
     computeFearGreedIndex,
+    fearGreedInputs,
     calculateMA,
     classifyMaStack,
     classifyTrend,
@@ -16,6 +17,7 @@ import {
     scoreConfluence,
     selectLastCandlePatternEntries,
     type Bar,
+    type BarsData,
     type BollingerResult,
     type CandlePattern,
     type DMIResult,
@@ -708,9 +710,10 @@ interface SymbolFearGreedView {
 
 /**
  * The symbol's own Fear & Greed reading — the same number `/{symbol}/fear-greed`
- * shows, from the same core function over the same inputs the page uses
- * (`useFearGreedFromSymbol`: daily bars + `indicators.buySellVolume`). Nothing
- * extra is fetched; both were already in hand.
+ * shows, from the same core function over the same input the page uses
+ * (`fearGreedInputs`: the 5-year daily `fearGreedBars` carried by the cached
+ * bars data, falling back to the standard bars). Nothing extra is fetched —
+ * the long series arrives with the same daily bars request.
  *
  * **Daily only.** The page pins the index to `1Day` bars by spec, so computing
  * it off a 4-hour or 30-minute series would hand the model a score that no
@@ -721,15 +724,16 @@ interface SymbolFearGreedView {
  * percentiles (a young listing, or a short loaded history).
  */
 function fearGreedView(
-    bars: readonly Bar[],
-    indicators: IndicatorResult,
+    data: BarsData,
     timeframe: Timeframe
 ): SymbolFearGreedView | null {
     if (timeframe !== '1Day') return null;
+    // 화면과 같은 입구 — 5년 일봉(`fearGreedBars`)이 있으면 그것으로 계산한다. 2년 봉으로
+    // 계산하면 모델이 화면과 다른 점수를 말한다.
+    const { bars, buySellVolume: flow } = fearGreedInputs(data);
     // core는 `buySellVolume`을 봉과 **1:1로 나란한 배열**로 전제하고 인덱스로 읽는다.
     // 짧거나 없는 배열이 들어오면 거기서 throw가 나 도구 전체가 죽는다 — 공포·탐욕
     // 한 필드 때문에 시세·지표 답변을 통째로 잃을 이유는 없다.
-    const flow = indicators.buySellVolume;
     if (!Array.isArray(flow) || flow.length < bars.length) return null;
     const snapshot = computeFearGreedIndex([...bars], flow);
     if (!snapshot) return null;
@@ -755,13 +759,14 @@ export const getBarsIndicatorsTool: ToolExecutor = async args => {
     ]);
     const session = sessionSpecFor(profile);
     const provider = getCachedMarketDataProvider(session);
-    const { bars, indicators } = await getCachedBarsWithIndicators(
+    const barsData = await getCachedBarsWithIndicators(
         provider,
         symbol,
         timeframe,
         asset?.fmpSymbol,
         session
     );
+    const { bars, indicators } = barsData;
     if (bars.length === 0) return { symbol, timeframe, found: false };
     const requestedBars: BarPoint[] = bars.slice(-count).map(b => ({
         t: isoTimestamp(b.time, timeframe),
@@ -803,7 +808,7 @@ export const getBarsIndicatorsTool: ToolExecutor = async args => {
         roundOrNull(pullbackSnap?.rsi2 ?? null)
     );
     const candlePatterns = latestCandlePatterns(bars, timeframe);
-    const fearGreed = fearGreedView(bars, indicators, timeframe);
+    const fearGreed = fearGreedView(barsData, timeframe);
     const asOf = isoTimestamp(bars[bars.length - 1]!.time, timeframe);
 
     return fitBarsToBudget(

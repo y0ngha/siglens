@@ -83,6 +83,20 @@ vi.mock('@y0ngha/siglens-core', () => ({
     // 칩 값을 서버에서 확정하는 순수 함수. 이 파일의 관심사는 seed 부재와 조회
     // 인자이지 지수 계산이 아니므로 결정적 스텁으로 고정한다.
     computeFearGreedIndex: mockComputeFearGreedIndex,
+    // `symbolFearGreed`(공용 입구)가 쓰는 core 함수. 입력 고르기는 실제와 같은 규칙으로
+    // 둔다 — 5년 봉이 있으면 그것, 없으면 표준 봉.
+    computeFearGreedHistory: () => [],
+    fearGreedInputs: (d: {
+        bars: unknown[];
+        indicators: { buySellVolume: unknown[] };
+        fearGreedBars?: unknown[];
+    }) =>
+        d.fearGreedBars !== undefined && d.fearGreedBars.length > 0
+            ? {
+                  bars: d.fearGreedBars,
+                  buySellVolume: d.fearGreedBars.map(() => ({})),
+              }
+            : { bars: d.bars, buySellVolume: d.indicators.buySellVolume },
 }));
 
 vi.mock('@tanstack/react-query', () => ({
@@ -141,8 +155,8 @@ vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
         mockGetAssetInfoResilient(ticker),
 }));
 
-// layout은 seed만 하므로 축소판(getSeedBarsStatic)을 쓴다. 이 mock이 원본
-// (getQuantizedBarsStatic)을 가리키면 축소 여부를 검증할 수 없으니 분리해 둔다.
+// layout은 칩 계산에 원본(getQuantizedBarsStatic)을 쓴다 — 축소판은 공포·탐욕용
+// 5년 일봉(`fearGreedBars`)을 버린다. 둘을 분리해 두어 어느 쪽을 불렀는지 검증한다.
 vi.mock('@/entities/bars/lib/barsStaticCache', () => ({
     getQuantizedBarsStatic: mockGetQuantizedBarsStatic,
     getSeedBarsStatic: mockGetSeedBarsStatic,
@@ -194,7 +208,7 @@ describe('SymbolLayoutChrome — 봉 seed 없이 공포·탐욕 스냅샷만 내
             assetInfo: ASSET_INFO,
             degraded: false,
         });
-        mockGetSeedBarsStatic.mockResolvedValue(QUANTIZED);
+        mockGetQuantizedBarsStatic.mockResolvedValue(QUANTIZED);
     });
 
     /**
@@ -247,9 +261,7 @@ describe('SymbolLayoutChrome — 봉 seed 없이 공포·탐욕 스냅샷만 내
 
     /**
      * 인자 순서 회귀 가드 — `computeFearGreedIndex(bars, buySellVolume)`이다.
-     * 뒤바꿔도 타입이 통과하는 자리가 아니지만(배열 타입이 다름), 지표 축소판
-     * (`getSeedBarsStatic`)이 `buySellVolume`을 보존한다는 전제가 깨지면 조용히
-     * 빈 배열이 넘어간다 — 그 경우 점수가 항상 같은 값으로 굳는다.
+     * 5년 일봉이 없는 데이터(옛 캐시 항목 등)는 표준 봉과 그 `buySellVolume`으로 계산한다.
      */
     it('봉과 buySellVolume을 그 순서로 넘겨 계산한다', async () => {
         await SymbolLayoutChrome({
@@ -263,8 +275,30 @@ describe('SymbolLayoutChrome — 봉 seed 없이 공포·탐욕 스냅샷만 내
         );
     });
 
+    /**
+     * 배지 점수는 공포·탐욕 페이지·색인 게이트와 같은 5년 일봉으로 계산해야 한다.
+     * 표준(2년) 봉으로 계산하면 같은 날 배지와 페이지 점수가 달라진다.
+     */
+    it('5년 일봉(fearGreedBars)이 있으면 그 봉으로 배지 점수를 계산한다', async () => {
+        const longBars = [...QUANTIZED.bars, ...QUANTIZED.bars];
+        mockGetQuantizedBarsStatic.mockResolvedValue({
+            ...QUANTIZED,
+            fearGreedBars: longBars,
+        });
+
+        await SymbolLayoutChrome({
+            assetInfo: ASSET_INFO,
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+
+        expect(mockComputeFearGreedIndex).toHaveBeenCalledWith(
+            longBars,
+            expect.any(Array)
+        );
+    });
+
     it('봉 조회 실패 시 스냅샷은 null (칩이 "데이터 부족"으로 폴백)', async () => {
-        mockGetSeedBarsStatic.mockRejectedValue(new Error('FMP down'));
+        mockGetQuantizedBarsStatic.mockRejectedValue(new Error('FMP down'));
 
         const tree = await SymbolLayoutChrome({
             assetInfo: ASSET_INFO,
@@ -320,7 +354,7 @@ describe('SymbolLayoutChrome — 봉 seed 없이 공포·탐욕 스냅샷만 내
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        expect(mockGetSeedBarsStatic).toHaveBeenCalledWith(
+        expect(mockGetQuantizedBarsStatic).toHaveBeenCalledWith(
             'AAPL',
             '1Day',
             'us-equity',
@@ -344,7 +378,7 @@ describe('SymbolLayoutChrome — 봉 seed 없이 공포·탐욕 스냅샷만 내
             params: Promise.resolve({ locale: 'ko', symbol: 'btcusd' }),
         });
 
-        expect(mockGetSeedBarsStatic).toHaveBeenCalledWith(
+        expect(mockGetQuantizedBarsStatic).toHaveBeenCalledWith(
             'BTCUSD',
             '1Day',
             'crypto',
@@ -357,7 +391,7 @@ describe('SymbolLayoutChrome — 봉 seed 없이 공포·탐욕 스냅샷만 내
      * 칩은 null 스냅샷에서 "데이터 부족" 문구로 폴백한다.
      */
     it('봉 조회 실패 시 throw하지 않는다', async () => {
-        mockGetSeedBarsStatic.mockRejectedValue(new Error('FMP down'));
+        mockGetQuantizedBarsStatic.mockRejectedValue(new Error('FMP down'));
 
         await expect(
             SymbolLayoutChrome({

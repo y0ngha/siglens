@@ -82,7 +82,7 @@ describe('getCachedBarsWithIndicators', () => {
             'AAPL',
             '1Day'
         );
-        expect(mockRedisGet).toHaveBeenCalledWith('bars:AAPL:1Day');
+        expect(mockRedisGet).toHaveBeenCalledWith('bars:v2:AAPL:1Day');
         expect(mockFetch).not.toHaveBeenCalled();
         expect(r).toEqual(sampleBars);
     });
@@ -97,7 +97,7 @@ describe('getCachedBarsWithIndicators', () => {
         });
         await mod.getCachedBarsWithIndicators(mockProvider, 'AAPL', '1Day');
         expect(mockRedisSet).toHaveBeenCalledWith(
-            'bars:AAPL:1Day',
+            'bars:v2:AAPL:1Day',
             { data: sampleBars },
             { ex: 60 }
         );
@@ -116,7 +116,7 @@ describe('getCachedBarsWithIndicators', () => {
             '1Day',
             '^SPX'
         );
-        expect(mockRedisGet).toHaveBeenCalledWith('bars:SPX:1Day:^SPX');
+        expect(mockRedisGet).toHaveBeenCalledWith('bars:v2:SPX:1Day:^SPX');
     });
 
     it('빈 봉은 캐시하지 않음', async () => {

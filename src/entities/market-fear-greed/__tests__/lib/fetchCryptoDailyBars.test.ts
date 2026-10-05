@@ -106,9 +106,9 @@ describe('조회 창', () => {
         );
     });
 
-    it('하한은 1095 달력일 전이다', () => {
+    it('하한은 1830 달력일(core FEAR_GREED_LOOKBACK_DAYS, 약 5년) 전이다', () => {
         expect(cryptoLookbackStartDate(new Date('2026-09-25T12:00:00Z'))).toBe(
-            '2023-09-26'
+            '2021-09-21'
         );
     });
 });

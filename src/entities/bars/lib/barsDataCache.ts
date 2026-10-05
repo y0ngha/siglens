@@ -11,6 +11,14 @@ import {
     computeBarsEffectiveTtl,
 } from '@y0ngha/siglens-core';
 
+/**
+ * 캐시 값의 모양 버전. core 2.10.0부터 일봉 결과에 공포·탐욕용 5년 일봉
+ * (`fearGreedBars`)이 붙는다. 옛 항목에는 그 필드가 없어 `fearGreedInputs`가
+ * 2년 봉으로 돌아가므로, 키를 올리지 않으면 캐시가 만료될 때까지 같은 종목의
+ * 점수가 항목 나이에 따라 갈린다. 값의 모양이 바뀌면 이 숫자를 올린다.
+ */
+const BARS_CACHE_VERSION = 'v2';
+
 /** fmpSymbol이 OHLCV 결과를 바꾸므로(예: '^SPX' vs 'SPX') 키에 포함. */
 function buildBarsKey(
     symbol: string,
@@ -18,7 +26,7 @@ function buildBarsKey(
     fmpSymbol?: string
 ): string {
     const suffix = fmpSymbol ? `:${fmpSymbol.toUpperCase()}` : '';
-    return `bars:${symbol.toUpperCase()}:${timeframe}${suffix}`;
+    return `bars:${BARS_CACHE_VERSION}:${symbol.toUpperCase()}:${timeframe}${suffix}`;
 }
 
 /**

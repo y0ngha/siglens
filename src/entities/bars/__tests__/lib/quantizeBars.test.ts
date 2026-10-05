@@ -349,3 +349,38 @@ describe('quantizeBarsDataToLastClosed', () => {
         });
     });
 });
+
+/**
+ * 공포·탐욕용 5년 일봉도 같은 형성 중 봉을 끝에 달고 있다. 표준 봉만 떼면 서버
+ * 공포·탐욕 점수가 하루 더 앞선 봉(형성 중)까지 보고, 차트·요약의 기준일과 어긋난다.
+ */
+describe('quantizeBarsDataToLastClosed — fearGreedBars', () => {
+    it('정규장 중이면 5년 일봉의 마지막(형성 중) 봉도 함께 뗀다', () => {
+        mockOpen.mockReturnValue(true);
+        const data: BarsData = {
+            ...makeData(),
+            fearGreedBars: [bar(0), bar(1), bar(2), bar(3)],
+        };
+
+        const result = quantizeBarsDataToLastClosed(
+            data,
+            now,
+            US_EQUITY_SESSION
+        );
+
+        expect(result.fearGreedBars).toEqual([bar(0), bar(1), bar(2)]);
+        expect(result.bars.at(-1)).toEqual(result.fearGreedBars?.at(-1));
+    });
+
+    it('5년 일봉이 없는 데이터에는 필드를 만들지 않는다', () => {
+        mockOpen.mockReturnValue(true);
+
+        const result = quantizeBarsDataToLastClosed(
+            makeData(),
+            now,
+            US_EQUITY_SESSION
+        );
+
+        expect('fearGreedBars' in result).toBe(false);
+    });
+});

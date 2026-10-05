@@ -1,3 +1,4 @@
+import { FEAR_GREED_LOOKBACK_DAYS } from '@y0ngha/siglens-core';
 /**
  * 암호화폐 시장 공포·탐욕 지수의 FMP 티커 표.
  *
@@ -36,5 +37,9 @@ export const MARKET_FEAR_GREED_CRYPTO_UNIVERSE = [
     'NEARUSD',
 ] as const;
 
-/** 조회 창(달력일). 미국·한국판과 같은 3년 — 워밍업 124세션과 "1년 전" 비교를 덮는다. */
-export const MARKET_FEAR_GREED_CRYPTO_LOOKBACK_DAYS = 1095;
+/**
+ * 조회 창(달력일). 미국·한국판·종목 지수와 같은 5년(core `FEAR_GREED_LOOKBACK_DAYS`) —
+ * 점수가 이 기간 대비 백분위라 모든 공포·탐욕 지수가 같은 기간을 쓴다. 워밍업
+ * 124세션과 "1년 전" 비교도 덮는다.
+ */
+export const MARKET_FEAR_GREED_CRYPTO_LOOKBACK_DAYS = FEAR_GREED_LOOKBACK_DAYS;

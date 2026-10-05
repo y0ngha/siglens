@@ -7,8 +7,8 @@ import { buildTechnicalFacts } from '@/entities/bars/lib/technicalFacts';
 vi.mock('next/cache', () => ({
     unstable_cache: (fn: (...a: unknown[]) => unknown) => fn, // identity로 통과 검증
 }));
-vi.mock('@/entities/bars/actions/getBarsAction', () => ({
-    getBarsAction: vi.fn(),
+vi.mock('@/entities/bars/lib/loadBarsData', () => ({
+    loadBarsData: vi.fn(),
 }));
 vi.mock('@/entities/bars/lib/quantizeBars', () => ({
     quantizeBarsDataToLastClosed: (
@@ -24,14 +24,14 @@ import {
     getQuantizedBarsStatic,
     getSeedBarsStatic,
 } from '@/entities/bars/lib/barsStaticCache';
-import { getBarsAction } from '@/entities/bars/actions/getBarsAction';
+import { loadBarsData } from '@/entities/bars/lib/loadBarsData';
 
-const mockBars = vi.mocked(getBarsAction);
+const mockBars = vi.mocked(loadBarsData);
 
 describe('getBarsStatic', () => {
     beforeEach(() => vi.clearAllMocks());
 
-    it('delegates to getBarsAction with the same args and returns its data', async () => {
+    it('delegates to loadBarsData with the same args and returns its data', async () => {
         const data = {
             // `buildTechnicalFacts`는 MIN_BARS_FOR_FACTS=2 미만이면 null을 반환하고,
             // prev.close === 0이어도 null이다 — 둘 다 피해야 출력 비교가 공허해지지 않는다.
@@ -63,7 +63,7 @@ describe('getBarsStatic', () => {
         expect(mockBars).toHaveBeenCalledWith('AAPL', '1Day', 'AAPL');
     });
 
-    it('fmpSymbol 없을 때 getBarsAction을 undefined로 호출하고 캐시 키는 빈 문자열 사용', async () => {
+    it('fmpSymbol 없을 때 loadBarsData을 undefined로 호출하고 캐시 키는 빈 문자열 사용', async () => {
         const data = { bars: [], indicators: {} } as unknown as BarsData;
         mockBars.mockResolvedValue(data);
 
@@ -74,7 +74,7 @@ describe('getBarsStatic', () => {
         expect(mockBars).toHaveBeenCalledWith('AAPL', '1Day', undefined);
     });
 
-    it('대소문자 정규화: 소문자 symbol을 대문자로 canonical화해 getBarsAction에 전달 (캐시 키 분기 방지)', async () => {
+    it('대소문자 정규화: 소문자 symbol을 대문자로 canonical화해 loadBarsData에 전달 (캐시 키 분기 방지)', async () => {
         const data = { bars: [], indicators: {} } as unknown as BarsData;
         mockBars.mockResolvedValue(data);
 
@@ -99,7 +99,7 @@ describe('getQuantizedBarsStatic', () => {
         mockQuantize.mockImplementation((data: unknown) => data);
     });
 
-    it('getBarsAction에 대문자 ticker를 위임하고 quantize 결과를 돌려준다', async () => {
+    it('loadBarsData에 대문자 ticker를 위임하고 quantize 결과를 돌려준다', async () => {
         const raw = { bars: [{ time: 1 }], indicators: {} } as never;
         const quantized = { bars: [], indicators: {} } as never;
         mockBars.mockResolvedValue(raw);
@@ -140,7 +140,7 @@ describe('getQuantizedBarsStatic', () => {
         );
     });
 
-    it('getBarsAction이 throw하면 그대로 전파한다 (호출부가 catch해 seed를 건너뛴다)', async () => {
+    it('loadBarsData이 throw하면 그대로 전파한다 (호출부가 catch해 seed를 건너뛴다)', async () => {
         mockBars.mockRejectedValue(new Error('FMP down'));
 
         await expect(

@@ -15,7 +15,11 @@ import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
-import { getSeedBarsStatic } from '@/entities/bars/lib/barsStaticCache';
+import { getQuantizedBarsStatic } from '@/entities/bars/lib/barsStaticCache';
+import {
+    clientSymbolFearGreed,
+    symbolFearGreedInputs,
+} from '@/entities/bars/lib/symbolFearGreed';
 import { getMarketFearGreedReading } from '@/entities/market-fear-greed/api/marketFearGreedReading';
 import {
     getDescriptor,
@@ -104,7 +108,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(ticker);
     // 콘텐츠 게이트 — 본문의 `FearGreedFactsSummary`와 **같은 입력·같은 술어**
-    // (`hasFearGreedScore`)로 판정한다(MISTAKES §2). 본문이 쓰는 `getSeedBarsStatic`과
+    // (`hasFearGreedScore`)로 판정한다(MISTAKES §2). 본문이 쓰는 `getQuantizedBarsStatic`과
     // 같은 인자라 요청 스코프 메모가 접혀 왕복이 늘지 않는다. 차트 라우트
     // (`[symbol]/page.tsx`)와 같은 모양이다:
     //   - 조회 **실패**(`null`) → degraded로 넘긴다. 이 탭에는 스냅샷이 없으므로
@@ -115,14 +119,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     //     noindex. 예전에는 `buildTechnicalFacts`(봉 2개 이상)로 판정해 봉은 있으나
     //     점수가 없는 종목(`/TOSCF`·`/SLROF`, 2026-10-04)이 색인돼 있었다.
     const metadataBars = assetInfo
-        ? await getSeedBarsStatic(
+        ? await getQuantizedBarsStatic(
               ticker,
               DEFAULT_TIMEFRAME,
               marketProfileOf(assetInfo),
               assetInfo.fmpSymbol
           ).catch((e: unknown) => {
               console.error(
-                  '[SymbolFearGreedPage] generateMetadata getSeedBarsStatic failed:',
+                  '[SymbolFearGreedPage] generateMetadata getQuantizedBarsStatic failed:',
                   e
               );
               return null;
@@ -235,53 +239,43 @@ export default async function SymbolFearGreedPage({ params }: Props) {
     queryClient.setQueryData(QUERY_KEYS.assetInfo(symbol), assetInfo, {
         updatedAt: assetInfoSeedUpdatedAt(degraded),
     });
-    // **`getSeedBarsStatic`을 쓴다** — layout.tsx와 같은 헬퍼·같은 인자(대문자 ticker)여야
-    // 요청 스코프 메모가 접혀 지표가 한 벌만 직렬화된다.
+    // **`getQuantizedBarsStatic`(원본)을 쓴다** — 공포·탐욕은 5년 일봉(`fearGreedBars`)으로
+    // 계산하는데 축소판(`getSeedBarsStatic`)은 그 필드를 버린다. layout(헤더 배지)·
+    // generateMetadata(색인 게이트)와 같은 헬퍼·같은 인자라 요청 스코프 메모가 접혀
+    // 조회도, 5년 계산(`symbolFearGreed`의 React.cache)도 한 번이다.
     //
-    // 이전에는 이 페이지만 `getQuantizedBarsStatic`(전체 지표)을 seed했다. layout은
-    // 축소판을 seed하므로 참조가 갈려 **지표가 두 벌** 실렸다 — 2026-08 프로덕션 실측:
-    // `/AAPL/fear-greed`의 flight 630KB 중 441KB가 44개 지표를 전부 채운 두 번째 블록이었고,
-    // 첫 번째 블록(53KB, 축소판)과 별개였다. 이 라우트는 gzip 149.9KB로 사이트 최대였다.
+    // **봉을 seed하지 않는다.** 예전에는 클라이언트 게이지가 `useBars`의 일봉으로 직접
+    // 계산해서 이 페이지가 `QUERY_KEYS.bars`를 seed했다. 이제 게이지는 서버가 계산한
+    // 결과(`useFearGreedFromSymbol` → `getSymbolFearGreedAction`)를 쓰므로, 그 결과만
+    // seed한다 — 일봉 500개+지표 대신 점수와 최근 2년 history라 이 탭의 RSC가 가벼워진다.
     //
-    // 축소판으로 충분한 근거: 이 페이지에서 지표를 읽는 유일한 소비자는 아래
-    // `FearGreedFactsSummary`이고, 그 props는 `bars`와 `buySellVolume` 둘뿐이다
-    // (`computeFearGreedIndex(bars, buySellVolume)`). `getSeedBarsStatic`이 `buySellVolume`을
-    // 유지하므로 SSR 출력은 입력이 같아 **바이트 동일**하다 — SEO·hydration 영향 없음.
-    // 클라이언트는 마운트 직후 `useBars`가 전체를 다시 받는다(seed의 updatedAt이 마지막 봉
-    // 시각이라 30초 staleTime 기준 항상 stale).
     // 시장 판독은 봉 조회와 독립이라 병렬로 받는다. 시장 허브와 같은 정적 캐시를 읽으며,
     // 실패는 `getMarketFearGreedReading` 안에서 `null`로 삼킨다(보조 문장 하나뿐이다).
-    const [quantizedFromHelper, marketReading] = await Promise.all([
-        getSeedBarsStatic(
+    const [quantizedFgBars, marketReading] = await Promise.all([
+        getQuantizedBarsStatic(
             ticker,
             DEFAULT_TIMEFRAME,
             marketProfileOf(assetInfo),
             assetInfo.fmpSymbol
-        ).catch((e: unknown) => {
-            console.error('[FearGreedPage] getSeedBarsStatic failed:', e);
+        ).catch((e: unknown): BarsData | null => {
+            console.error('[FearGreedPage] getQuantizedBarsStatic failed:', e);
             return null;
         }),
         getMarketFearGreedReading(marketProfile),
     ]);
-    // quantizedFgBars also feeds FearGreedFactsSummary (SSR factor summary below) —
-    // hoisted out of the if-block so both the RQ seed and the SSR fact layer share
-    // the same lockstep-quantized bars/indicators.
-    let quantizedFgBars: BarsData | null = null;
-    if (quantizedFromHelper !== null) {
-        // updatedAt 명시: RQ dehydrate 기본은 Date.now()라 매 ISR 재생성마다 다른 timestamp가
-        // HTML에 박혀 ISR write churn 발생. 마지막 완료 봉의 time으로 고정.
-        // Session arg mirrors the chart page pattern: crypto (always-open) must strip
-        // the forming bar with CRYPTO_SESSION, not US_EQUITY_SESSION (the default).
-        // 헬퍼가 이미 quantize까지 마쳤다 — 여기서 다시 감싸면 새 객체가 생겨
-        // layout seed와 참조가 갈리고 지표가 두 벌 실린다.
-        quantizedFgBars = quantizedFromHelper;
-        // Bar.time은 seconds (epoch) — RQ dataUpdatedAt은 milliseconds.
+    const fearGreedInput =
+        quantizedFgBars === null
+            ? null
+            : symbolFearGreedInputs(quantizedFgBars);
+    if (quantizedFgBars !== null) {
+        // updatedAt 명시: RQ dehydrate 기본은 Date.now()라 매 ISR 재생성마다 다른
+        // timestamp가 HTML에 박혀 ISR write churn이 생긴다. 마지막 완료 봉의 time으로
+        // 고정한다(Bar.time은 초, dataUpdatedAt은 밀리초).
         const lastBarSec = quantizedFgBars.bars.at(-1)?.time ?? 0;
-        const stableUpdatedAt = lastBarSec * MS_PER_SECOND;
         queryClient.setQueryData(
-            QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME, assetInfo.fmpSymbol),
-            quantizedFgBars,
-            { updatedAt: stableUpdatedAt }
+            QUERY_KEYS.symbolFearGreed(symbol, assetInfo.fmpSymbol),
+            clientSymbolFearGreed(quantizedFgBars),
+            { updatedAt: lastBarSec * MS_PER_SECOND }
         );
     }
 
@@ -321,15 +315,15 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                 </p>
                 {/* 서버 계산 factor 요약 — crawler는 JS 미실행이라 아래 클라 게이지
                     (FearGreedPage)의 점수·factor 수치를 절대 못 본다. 여기서
-                    이미 로드된 quantizedFgBars(bars+indicators)로 동일 수치를
+                    이미 로드된 5년 일봉(`symbolFearGreedInputs`)으로 동일 수치를
                     SSR HTML에 박아 크롤 가능하게 한다(결정적, AI/pre-warm 무관).
                     사용자에게도 동일하게 보이므로 클로킹 아님. */}
-                {quantizedFgBars !== null && (
+                {fearGreedInput !== null && (
                     <FearGreedFactsSummary
                         symbol={ticker}
                         marketProfile={marketProfile}
-                        bars={quantizedFgBars.bars}
-                        buySellVolume={quantizedFgBars.indicators.buySellVolume}
+                        bars={fearGreedInput.bars}
+                        buySellVolume={fearGreedInput.buySellVolume}
                         market={
                             marketReading === null
                                 ? null

@@ -193,6 +193,53 @@ describe('getBarsIndicatorsTool', () => {
         expect(shortFlow.trend).toBe('uptrend');
     });
 
+    /**
+     * 모델이 말하는 점수는 화면과 같은 5년 일봉으로 계산해야 한다. 캐시된 일봉에
+     * `fearGreedBars`가 있으면 그 배열을 core에 넘기는지 고정한다 — 표준 봉으로
+     * 되돌아가면 이 테스트가 깨진다.
+     */
+    it('일봉에 5년 시계열(fearGreedBars)이 있으면 그 봉으로 공포·탐욕을 계산한다', async () => {
+        profile.mockResolvedValue('us-equity');
+        classify.mockReturnValue('uptrend');
+        detect.mockReturnValue([]);
+        const stdBars = Array.from({ length: 30 }, (_, i) => ({
+            time: 1_700_000_000 + (i + 50) * 86_400,
+            open: 100,
+            high: 101,
+            low: 99,
+            close: 100,
+            volume: 1_000,
+        }));
+        const longBars = Array.from({ length: 80 }, (_, i) => ({
+            ...stdBars[0]!,
+            time: 1_700_000_000 + i * 86_400,
+        }));
+        getCachedBars.mockResolvedValue({
+            bars: stdBars,
+            indicators: {
+                ...indicators,
+                buySellVolume: stdBars.map(() => ({
+                    buyVolume: 500,
+                    sellVolume: 500,
+                })),
+            },
+            fearGreedBars: longBars,
+        });
+
+        await getBarsIndicatorsTool(
+            { symbol: 'AAPL', timeframe: '1Day' },
+            ctx,
+            rt
+        );
+
+        const call = computeFearGreed.mock.calls.find(
+            ([bars]) => (bars as unknown[]).length === longBars.length
+        );
+        expect(call).toBeDefined();
+        expect(call![0]).toEqual(longBars);
+        expect((call![1] as unknown[]).length).toBe(longBars.length);
+    });
+
     it('core가 표본 부족으로 기권(null)하면 fearGreed만 null이고 나머지 페이로드는 그대로 나간다', async () => {
         profile.mockResolvedValue('us-equity');
         classify.mockReturnValue('uptrend');
