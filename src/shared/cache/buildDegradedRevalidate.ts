@@ -1,12 +1,17 @@
 /**
- * 빌드타임 degrade 렌더의 revalidate를 60초로 낮추는 공용 핀.
+ * degrade 렌더의 revalidate를 낮추는 공용 핀 두 개. 같은 메커니즘(렌더 중 짧은 `revalidate`의
+ * `unstable_cache`를 불러 렌더 스토어 값을 낮춘다 — 아래 `pin*` 주석)을 쓰되 **값과 쓰임이 다르다**:
  *
- * 두 가지 원인이 같은 메커니즘을 쓴다:
- *  - FMP 실패(회로 열림 / `FMP_AT_BUILD=off`) — `shortenRevalidateIfFmpFailedAtBuild`
- *  - DB 없는 빌드(배포 빌드의 사설 RDS) — `shortenRevalidateIfDatabaseMissingAtBuild`,
- *    그리고 판정이 이미 끝난 호출부용 무조건 변형 `shortenRevalidateForDegrade`
+ * 1. **빌드타임 핀 — 60초**(`BUILD_DEGRADED_REVALIDATE_SECONDS`). 빌드가 degrade된 채로 구워진 HTML이
+ *    배포 후 첫 요청에서 곧 실데이터로 재생성되게 한다.
+ *    - FMP 실패(회로 열림 / `FMP_AT_BUILD=off`) — `shortenRevalidateIfFmpFailedAtBuild`
+ *    - DB 없는 빌드(배포 빌드의 사설 RDS) — `shortenRevalidateIfDatabaseMissingAtBuild`
+ *    - 판정이 이미 끝난 호출부용 무조건 변형 — `shortenRevalidateForBuildDegrade`
+ * 2. **런타임 핀 — 300초**(`RUNTIME_DEGRADED_REVALIDATE_SECONDS`). 큐레이션 종목의 런타임 읽기 실패
+ *    (봉·스냅샷·뉴스 카테고리 목록) 렌더가 6~24h 굳지 않게 한다 — `shortenRevalidateForRuntimeDegrade`.
+ *    provider 지속 장애(예: FMP 402)를 매분 다시 부르지 않으려 빌드 값보다 길다.
  *
- * 원인별 판정은 각 함수가 맡고, 이 파일은 "이번 렌더의 revalidate를 60초로"만 책임진다.
+ * 원인별 판정은 각 호출부가 맡고, 이 파일은 "이번 렌더의 revalidate를 N초로"만 책임진다.
  */
 import 'server-only';
 import { unstable_cache } from 'next/cache';
@@ -99,7 +104,7 @@ export async function shortenRevalidateIfDatabaseMissingAtBuild(): Promise<void>
  * `shortenRevalidateIfFmpFailedAtBuild`와 동일한 제약이 붙는다: 다른 `unstable_cache` 콜백 안에서
  * 부르면 효과가 없고, 페이지/레이아웃 렌더 경로에서 불러야 한다.
  */
-export async function shortenRevalidateForDegrade(): Promise<void> {
+export async function shortenRevalidateForBuildDegrade(): Promise<void> {
     await pinBuildDegradedRevalidate();
 }
 
@@ -118,5 +123,18 @@ export async function shortenRevalidateForDegrade(): Promise<void> {
  * 효과가 없다.
  */
 export async function shortenRevalidateForRuntimeDegrade(): Promise<void> {
-    await pinRuntimeDegradedRevalidate();
+    // 핀은 **최선 노력**이다 — 실패해도 호출부(degrade 처리 중인 catch 블록)를 던지게 만들면 안 된다.
+    // 호출부는 이미 원래 에러를 처리하는 중이라, 여기서 던진 에러가 그 에러를 덮어쓰고 degrade가
+    // 500이 된다. 던질 수 있는 경로는 Next 렌더/라우트 컨텍스트 밖(`incrementalCache` 없음 —
+    // `unstable-cache.js`의 `Invariant: incrementalCache missing`)뿐이다. 페이지 렌더 안에서는 아무
+    // 일도 일어나지 않고, 라우트 핸들러(`request` 스토어)·다른 `unstable_cache` 콜백 안(중첩)에서는
+    // revalidate를 낮추지 못할 뿐 부작용이 없다(`unstableCacheRevalidateLowering.test.ts`).
+    try {
+        await pinRuntimeDegradedRevalidate();
+    } catch (error) {
+        console.warn(
+            '[shortenRevalidateForRuntimeDegrade] pin skipped (outside a Next render?):',
+            error
+        );
+    }
 }

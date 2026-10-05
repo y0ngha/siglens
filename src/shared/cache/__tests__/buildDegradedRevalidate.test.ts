@@ -8,7 +8,7 @@ import {
     BUILD_DEGRADED_REVALIDATE_SECONDS,
     RUNTIME_DEGRADED_REVALIDATE_SECONDS,
     shortenRevalidateForRuntimeDegrade,
-    shortenRevalidateForDegrade,
+    shortenRevalidateForBuildDegrade,
     shortenRevalidateIfDatabaseMissingAtBuild,
     shortenRevalidateIfFmpFailedAtBuild,
 } from '@/shared/cache/buildDegradedRevalidate';
@@ -75,14 +75,14 @@ describe('shortenRevalidateIfFmpFailedAtBuild', () => {
     });
 });
 
-describe('shortenRevalidateForDegrade', () => {
+describe('shortenRevalidateForBuildDegrade', () => {
     beforeEach(() => {
         pinMock.mockClear();
         __resetFmpBuildBreakerForTests();
     });
 
     it('FMP 상태와 무관하게 래퍼를 호출해 이 렌더의 revalidate를 낮춘다', async () => {
-        await shortenRevalidateForDegrade();
+        await shortenRevalidateForBuildDegrade();
         expect(pinMock).toHaveBeenCalledOnce();
     });
 });
@@ -145,5 +145,21 @@ describe('shortenRevalidateForRuntimeDegrade', () => {
     it('FMP·DB 상태와 무관하게 래퍼를 호출한다', async () => {
         await shortenRevalidateForRuntimeDegrade();
         expect(pinMock).toHaveBeenCalledOnce();
+    });
+
+    // 호출부는 degrade를 처리하는 catch 블록이다 — 핀이 던지면 원래 에러를 덮어써 500이 된다.
+    it('렌더 컨텍스트 밖이라 래퍼가 던져도 삼키고 warn만 남긴다(호출부를 던지게 하지 않는다)', async () => {
+        const warnSpy = vi
+            .spyOn(console, 'warn')
+            .mockImplementation(() => undefined);
+        pinMock.mockRejectedValueOnce(
+            new Error('Invariant: incrementalCache missing in unstable_cache')
+        );
+
+        await expect(
+            shortenRevalidateForRuntimeDegrade()
+        ).resolves.toBeUndefined();
+        expect(warnSpy).toHaveBeenCalledOnce();
+        warnSpy.mockRestore();
     });
 });

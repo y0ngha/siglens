@@ -1,5 +1,5 @@
 import { LegalUnavailable } from '@/widgets/legal/LegalUnavailable';
-import { shortenRevalidateForDegrade } from '@/shared/cache/buildDegradedRevalidate';
+import { shortenRevalidateForBuildDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import {
     PRIVACY_PATH,
     privacyTitle,
@@ -25,7 +25,7 @@ export async function renderLegalUnavailable(
     eyebrow: string,
     tSeo: SeoTranslator
 ): Promise<React.JSX.Element> {
-    await shortenRevalidateForDegrade();
+    await shortenRevalidateForBuildDegrade();
     return (
         <LegalUnavailable
             breadcrumbTitle={policy.title(tSeo)}

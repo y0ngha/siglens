@@ -28,7 +28,7 @@ vi.mock('next-intl/server', () => ({
     getTranslations: vi.fn(async () => (key: string) => key),
 }));
 vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
-    shortenRevalidateForDegrade: mockShortenRevalidate,
+    shortenRevalidateForBuildDegrade: mockShortenRevalidate,
 }));
 vi.mock('@/shared/ui/LocaleLink', () => ({
     LocaleLink: ({

@@ -1,7 +1,19 @@
+// Next 서버 부트스트랩이 하는 일을 흉내 낸다 — `async-local-storage.js`가 이 전역을 요구한다. 실제
+// `next/cache`를 import하는 `buildDegradedRevalidate`보다 **먼저** 설정돼야 하므로 `vi.hoisted`다.
+// 파일 안에서만 쓰이고(vitest 파일별 격리) 다른 테스트로 새지 않는다.
+await vi.hoisted(async () => {
+    const { AsyncLocalStorage } = await import('node:async_hooks');
+    Object.assign(globalThis, { AsyncLocalStorage });
+});
+
 import { readFileSync } from 'node:fs';
-import { AsyncLocalStorage } from 'node:async_hooks';
 import { createRequire } from 'node:module';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
+
+// 전역 셋업(`vitest.setup.base.ts`)이 `next/cache`를 목으로 바꿔 둔다 — 이 가드는 실제 Next 구현을
+// 실행해야 의미가 있으므로 이 파일에서만 되돌린다(`buildDegradedRevalidate`가 실제 `unstable_cache`를 쓴다).
+vi.unmock('next/cache');
 
 /**
  * `src/shared/cache/buildDegradedRevalidate.ts` 전제 가드.
@@ -57,9 +69,6 @@ describe('next unstable_cache — prerender revalidate 하향 분기', () => {
  * `revalidate`를 응답의 s-maxage·재생성 주기(`collectedRevalidate`)로 쓴다.
  */
 const nextRequire = createRequire(import.meta.url);
-// Next 서버 부트스트랩이 하는 일을 흉내 낸다 — `async-local-storage.js`가 이 전역을 요구한다.
-// 파일 안에서만 쓰이고(vitest 파일별 격리) 다른 테스트로 새지 않는다.
-Object.assign(globalThis, { AsyncLocalStorage });
 const { unstable_cache } = nextRequire(
     'next/dist/server/web/spec-extension/unstable-cache.js'
 ) as typeof import('next/cache');
@@ -240,5 +249,87 @@ describe('next unstable_cache — 런타임 ISR 재생성에서의 동작', () =
         await expect(runAsIsr(store, null, () => failing())).rejects.toThrow(
             'db down'
         );
+    });
+
+    /**
+     * `shortenRevalidateForRuntimeDegrade`는 degrade를 처리하는 catch 블록 안에서 불린다. 페이지 렌더
+     * 밖(크론·라우트 핸들러)이나 다른 `unstable_cache` 콜백 안에서 불려도 **던지지 않고 부작용이
+     * 없어야** 한다 — 던지면 원래 에러를 덮어써 degrade가 500이 된다. 실제 Next 구현으로 확인한다.
+     */
+    describe('shortenRevalidateForRuntimeDegrade — 페이지 렌더 밖에서도 무해하다', () => {
+        it('prerender-legacy 렌더(페이지·ISR)에서는 스토어 revalidate를 300으로 낮춘다', async () => {
+            const store = legacyStore();
+
+            await runAsIsr(store, null, () =>
+                shortenRevalidateForRuntimeDegrade()
+            );
+
+            expect(store.revalidate, HINT).toBe(300);
+        });
+
+        it('다른 unstable_cache 콜백 안(중첩)에서는 던지지 않고 바깥 스토어도 바꾸지 않는다', async () => {
+            const outer = legacyStore();
+            const wrapper = unstable_cache(
+                async () => {
+                    await shortenRevalidateForRuntimeDegrade();
+                    return true;
+                },
+                ['nested-host'],
+                { revalidate: 21600 }
+            );
+
+            await expect(runAsIsr(outer, null, () => wrapper())).resolves.toBe(
+                true
+            );
+
+            // 바깥 호스트 `unstable_cache`(21600)만 반영된다 — 중첩 핀(300)은 전파되지 않는다.
+            expect(outer.revalidate, HINT).toBe(21600);
+        });
+
+        it('라우트 핸들러·크론 같은 request 스토어에서는 던지지 않고 revalidate를 바꾸지 않는다', async () => {
+            const requestStore = {
+                type: 'request',
+                phase: 'action',
+                revalidate: INFINITE_CACHE,
+                tags: null,
+                implicitTags: { tags: [] },
+            };
+            const workStore = {
+                route: '/api/cron/seo-prewarm',
+                isStaticGeneration: false,
+                isOnDemandRevalidate: false,
+                isDraftMode: false,
+                fetchCache: undefined,
+                nextFetchId: 1,
+                pendingRevalidates: undefined,
+                incrementalCache: fakeIncrementalCache(null),
+            };
+
+            await expect(
+                workAsyncStorage.run(workStore, () =>
+                    workUnitAsyncStorage.run(requestStore, () =>
+                        shortenRevalidateForRuntimeDegrade()
+                    )
+                )
+            ).resolves.toBeUndefined();
+
+            expect(requestStore.revalidate, HINT).toBe(INFINITE_CACHE);
+        });
+
+        it('Next 컨텍스트 밖(incrementalCache 없음)에서는 unstable_cache가 던지지만 이 핀은 삼킨다', async () => {
+            const pin = unstable_cache(async () => true, ['bare-pin'], {
+                revalidate: 300,
+            });
+            // 이 던짐이 가드의 존재 이유다 — 그 자체는 Next의 불변식(`incrementalCache missing`)이다.
+            await expect(pin()).rejects.toThrow('incrementalCache missing');
+
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => undefined);
+            await expect(
+                shortenRevalidateForRuntimeDegrade()
+            ).resolves.toBeUndefined();
+            expect(warnSpy).toHaveBeenCalledOnce();
+        });
     });
 });

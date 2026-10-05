@@ -19,7 +19,7 @@ interface LegalUnavailableProps {
  * 약관·방침 본문을 DB에서 읽지 못한 렌더(배포 빌드에 DB가 없을 때)의 안내 페이지.
  *
  * 빈 화면이나 404 대신 **비어 있지 않은** 안내를 낸다 — 이 HTML이 ISR 캐시에 굳더라도
- * 60초 뒤 재생성되고(`shortenRevalidateForDegrade`), 그동안 크롤러가 색인하지 않도록
+ * 60초 뒤 재생성되고(`shortenRevalidateForBuildDegrade`), 그동안 크롤러가 색인하지 않도록
  * 라우트가 noindex 메타데이터를 함께 낸다. 시행일·목차는 본문이 있어야 의미가 있어
  * `LegalPageShell`을 쓰지 않는다.
  */

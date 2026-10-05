@@ -42,9 +42,12 @@ export function buildShareMetadata(
             title,
             description,
             robots: { index: false, follow: false },
-            // canonical: null mirrors the NOINDEX_SYMBOL_METADATA pattern:
-            // noindex pages should not declare a canonical URL so crawlers do
-            // not accidentally attribute the snapshot URL as authoritative.
+            // 공유 스냅샷 URL은 사용자가 만든 일회성 페이지라 이 URL을 어떤 문서의 표준(canonical)
+            // 으로도 광고하지 않는다 — noindex,nofollow인 페이지가 자기를 표준이라 선언하면
+            // 크롤러가 스냅샷 URL을 권위 있는 문서로 귀속시킬 수 있다. `null`은 루트 레이아웃이
+            // 모든 페이지에 깔아 둔 홈 canonical(`SITE_URL`) 상속도 함께 막는다 — 상속되면 모든
+            // 공유 URL이 홈을 표준으로 가리키게 된다. (종목 탭 noindex 페이지는 반대로 실제
+            // 페이지가 살아 있는 URL이라 self-canonical을 쓴다 — 이 페이지와 성격이 다르다.)
             alternates: { canonical: null },
             openGraph: {
                 type: 'website',

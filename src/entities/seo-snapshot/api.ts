@@ -286,7 +286,6 @@ function proseProjection(): SQL<unknown> {
     // 이 레포 CI에는 Postgres를 직접 때리는 vitest 통합 스위트가 없어(e2e만 Docker Postgres)
     // SQL 자체는 실행 검증하지 못한다. 대신 `hasProseForTab.test.ts`가 TS 함수가 읽는 필드를
     // Proxy로 **유도**해 `PROSE_SOURCE_FIELDS`와 비교한다.
-
     const branches = Object.entries(PROSE_SOURCE_FIELDS).map(
         ([tab, fields]) => {
             const pairs = fields.flatMap(field => {
