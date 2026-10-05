@@ -4,7 +4,9 @@ import { cn } from '@/shared/lib/cn';
 import { useTabs } from '@/shared/ui/tabs/hooks/useTabs';
 import type { TabItem } from '@/shared/ui/tabs/utils/tabIds';
 
-// 'xs' — BacktestTabs 스타일 (10px, font-medium, active: primary text+border)
+// 'xs' — BacktestTabs 스타일 (12px, font-medium, active: primary text+border)
+//        10px였는데 모바일에서 읽히지 않아 12px(`text-xs`)로 올렸다. 높이는
+//        `py-2.5`라 탭 터치 영역(≈38px)이 24px 기준을 넘는다.
 // 'sm' — SectorTabs 스타일 (14px, active: primary border only)
 //        유일한 소비자가 SectorTabs이고 그 라벨은 전부 섹터 한국어명이라
 //        uppercase는 효과가 없고 0.12em 자간은 한글을 흩뜨렸다. 둘을 걷어내고
@@ -28,7 +30,7 @@ const SIZE_STYLES: Record<TabsUnderlineSize, SizeStyles> = {
         // `min-w-max`가 `max-width`를 이기므로 탭이 1200px를 넘으면 그대로
         // 늘어나 가로 스크롤이 유지된다.
         innerWrapper: 'page-container flex min-w-max',
-        button: 'cursor-pointer [touch-action:manipulation] border-b-2 px-3.5 py-2.5 text-[10px] font-medium transition-colors focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-900 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-none',
+        button: 'cursor-pointer [touch-action:manipulation] border-b-2 px-3.5 py-2.5 text-xs font-medium transition-colors focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-900 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-none',
         active: 'border-primary-400 text-primary-400',
         inactive:
             'text-secondary-500 hover:text-secondary-300 border-transparent',

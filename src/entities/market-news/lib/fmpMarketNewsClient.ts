@@ -2,6 +2,7 @@ import { fmpGet } from '@/shared/api/fmp/httpClient';
 import { normalizeFmpPublishedDate } from '@/shared/api/fmp/normalizeFmpPublishedDate';
 import { detectTruncatedBody } from '@/shared/lib/news/detectTruncatedBody';
 import { hashUrlToId } from '@/shared/lib/news/hashUrlToId';
+import { isLawFirmSolicitation } from '@/shared/lib/news/isLawFirmSolicitation';
 import { CATEGORY_CONFIG, type NewsFeedCategoryId } from './categoryConfig';
 import type {
     MarketNewsClientPort,
@@ -126,6 +127,12 @@ export class FmpMarketNewsClient implements MarketNewsClientPort {
      * the given lookback window. The sentinel symbol from `CATEGORY_CONFIG` is
      * applied to every returned item so the repository can bucket correctly.
      *
+     * Plaintiff-firm solicitation press releases (`isLawFirmSolicitation`) are
+     * dropped **before mapping**, while the untranslated English `title` is still
+     * in hand — they are ads, not news, and would otherwise cost a card-analysis
+     * LLM call each. Rows ingested before this filter existed are hidden on the
+     * repository read paths.
+     *
      * Two distinct FMP response shapes are handled:
      * - **latest** (`general`/`stock`/`crypto`/`forex`): `{ symbol, publishedDate, publisher, title, site, text, url }`.
      * - **articles**: `{ title, date, content, tickers, link, author, site }`.
@@ -160,7 +167,8 @@ export class FmpMarketNewsClient implements MarketNewsClientPort {
                 .filter(
                     (n): n is DatedArticleRaw =>
                         n.publishedAt !== null &&
-                        new Date(n.publishedAt) >= cutoff
+                        new Date(n.publishedAt) >= cutoff &&
+                        !isLawFirmSolicitation(n.raw.title)
                 )
                 .map(({ raw, publishedAt }) =>
                     mapArticleRawToItem(raw, publishedAt, sentinel)
@@ -177,7 +185,9 @@ export class FmpMarketNewsClient implements MarketNewsClientPort {
             }))
             .filter(
                 (n): n is DatedLatestRaw =>
-                    n.publishedAt !== null && new Date(n.publishedAt) >= cutoff
+                    n.publishedAt !== null &&
+                    new Date(n.publishedAt) >= cutoff &&
+                    !isLawFirmSolicitation(n.raw.title)
             )
             .map(({ raw, publishedAt }) =>
                 mapLatestRawToItem(raw, publishedAt, sentinel)

@@ -18,14 +18,17 @@ import {
     type EconomyIndicatorMeta,
 } from '@/shared/config/economyIndicators';
 import { cn } from '@/shared/lib/cn';
+import { formatFixed } from '@/shared/lib/formatNum';
 import { signColorClass } from '@/shared/lib/priceFormat';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import {
     HEADING_SECTION,
     HEADING_SUBSECTION,
 } from '@/shared/lib/typographyStyles';
-import type { EnumLabelTranslator } from '@/shared/lib/enumLabelTranslator';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
+import { deltaUnitLabel, unitLabel } from '../utils/unitLabel';
+import { DeltaBadge } from './DeltaBadge';
 
 /**
  * 국채 수익률·2s10s 스프레드 카드의 표시 소수 자리수.
@@ -33,23 +36,6 @@ import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
  * 모듈 상수로 별도 관리한다(MISTAKES §15 매직 넘버 추출).
  */
 const TREASURY_YIELD_PRECISION = 2;
-
-/**
- * `EconomyIndicatorMeta.unit` 중 카탈로그 키로 대체된 한국어 카운터 단위만
- * `shared.enumLabel.economyUnit`으로 조회한다. 예전엔 이 값이 `'천명'`·`'건'`
- * 리터럴이라 `/en/economy`가 `vs. Previous Period +41천명`·`-6000건`을 그대로
- * 찍었다. `'%'`·`'pt'`·`'B$'` 같은 로케일 불변 기호는 맵에 없으므로 그대로
- * 통과한다.
- */
-const ECONOMY_UNIT_LABEL_KEY: Partial<Record<string, string>> = {
-    thousandPeople: 'economyUnit.thousandPeople',
-    count: 'economyUnit.count',
-};
-
-function unitLabel(unit: string, tLabel: EnumLabelTranslator): string {
-    const key = ECONOMY_UNIT_LABEL_KEY[unit];
-    return key ? tLabel(key) : unit;
-}
 
 interface TreasuryCardMeta {
     /** `widgets.economy.treasuryCard` 키. */
@@ -98,12 +84,6 @@ interface TreasuryYieldCardProps {
 
 interface YieldSpreadCardProps {
     snapshot: TreasuryRateSnapshot;
-}
-
-interface DeltaBadgeProps {
-    delta: number;
-    precision: number;
-    unit: string;
 }
 
 /**
@@ -202,11 +182,14 @@ function IndicatorCard({ meta, series }: IndicatorCardProps) {
     // 이 라우트의 클라이언트 번들에 실린다(fearGreedLabels.ts의 SENTIMENT_LABEL_KEY
     // export 주석 참고).
     const tLabel = useTranslations('shared.enumLabel');
+    const locale = useResolvedLocale();
     const latest = series.latest;
     if (latest === null) return null;
     const prev = series.previous;
     const delta = prev !== null ? latest.value - prev.value : null;
     const unit = unitLabel(meta.unit, tLabel);
+    // 변화량의 단위는 값의 단위와 다를 수 있다(`%` → `%p`).
+    const deltaUnit = deltaUnitLabel(meta.unit, tLabel);
     return (
         <article className={cn(SURFACE_CARD, 'p-4')}>
             <header className="mb-2 flex items-center gap-1 text-sm text-secondary-300">
@@ -218,14 +201,14 @@ function IndicatorCard({ meta, series }: IndicatorCardProps) {
                 <InfoTooltip>{meta.tooltip}</InfoTooltip>
             </header>
             <div className="text-2xl font-semibold text-secondary-100">
-                {latest.value.toFixed(meta.precision)}
+                {formatFixed(latest.value, meta.precision, locale)}
                 <span className="ml-1 text-sm text-secondary-400">{unit}</span>
             </div>
             {delta !== null && (
                 <DeltaBadge
                     delta={delta}
                     precision={meta.precision}
-                    unit={unit}
+                    unit={deltaUnit}
                 />
             )}
             <p className="mt-1 text-xs text-secondary-400">{latest.date}</p>
@@ -236,6 +219,7 @@ function IndicatorCard({ meta, series }: IndicatorCardProps) {
 function TreasuryYieldCard({ snapshot, maturity }: TreasuryYieldCardProps) {
     // 훅은 조기 반환보다 위에 — 값이 null인 렌더에서만 훅이 사라지면 안 된다.
     const tCard = useTranslations('widgets.economy.treasuryCard');
+    const locale = useResolvedLocale();
     const value = snapshot[maturity];
     if (value === null) return null;
     const { labelKey, tooltipKey, unit } = TREASURY_CARD_META[maturity];
@@ -246,7 +230,7 @@ function TreasuryYieldCard({ snapshot, maturity }: TreasuryYieldCardProps) {
                 <InfoTooltip>{tCard(tooltipKey)}</InfoTooltip>
             </header>
             <div className="text-2xl font-semibold text-secondary-100">
-                {value.toFixed(TREASURY_YIELD_PRECISION)}
+                {formatFixed(value, TREASURY_YIELD_PRECISION, locale)}
                 <span className="ml-1 text-sm text-secondary-400">{unit}</span>
             </div>
             <p className="mt-1 text-xs text-secondary-400">{snapshot.date}</p>
@@ -256,6 +240,8 @@ function TreasuryYieldCard({ snapshot, maturity }: TreasuryYieldCardProps) {
 
 function YieldSpreadCard({ snapshot }: YieldSpreadCardProps) {
     const t = useTranslations('widgets.economy');
+    const tLabel = useTranslations('shared.enumLabel');
+    const locale = useResolvedLocale();
     const spread = computeYieldSpread(snapshot);
     if (spread === null) return null;
     const positive = spread >= 0;
@@ -269,50 +255,12 @@ function YieldSpreadCard({ snapshot }: YieldSpreadCardProps) {
                 className={cn('text-2xl font-semibold', signColorClass(spread))}
             >
                 {positive ? '+' : ''}
-                {spread.toFixed(TREASURY_YIELD_PRECISION)}
-                <span className="ml-1 text-sm text-secondary-400">%p</span>
+                {formatFixed(spread, TREASURY_YIELD_PRECISION, locale)}
+                <span className="ml-1 text-sm text-secondary-400">
+                    {deltaUnitLabel('%', tLabel)}
+                </span>
             </div>
             <p className="mt-1 text-xs text-secondary-400">{snapshot.date}</p>
         </article>
-    );
-}
-
-function DeltaBadge({ delta, precision, unit }: DeltaBadgeProps) {
-    const t = useTranslations('widgets.economy');
-    // 부동소수점 잔차나 표시 정밀도 미만 변화(예: delta=0.003, precision=2)도
-    // 화면에서는 변화 없음이므로 포맷팅된 값을 기준으로 0 판정한다.
-    const formatted = delta.toFixed(precision);
-    if (parseFloat(formatted) === 0) {
-        return (
-            <span className="mt-1 inline-block text-xs text-secondary-400">
-                {t('EconomicIndicatorGrid.015416')}
-            </span>
-        );
-    }
-    const positive = delta > 0;
-    const sign = positive ? '+' : '';
-    // Direction chevrons convey movement without implying good/bad valence —
-    // green/red would be semantically wrong for indicators like CPI or
-    // unemployment where rising values are not positive outcomes.
-    return (
-        <span className="mt-1 inline-flex items-center gap-1 text-xs text-secondary-300">
-            <svg
-                aria-hidden="true"
-                viewBox="0 0 10 10"
-                className="h-2.5 w-2.5 fill-none stroke-current"
-                strokeWidth={1.5}
-            >
-                {positive ? (
-                    <path d="M2 6.5 5 3.5 8 6.5" />
-                ) : (
-                    <path d="M2 3.5 5 6.5 8 3.5" />
-                )}
-            </svg>
-            {t('EconomicIndicatorGrid.58c098', {
-                v0: sign,
-                v1: formatted,
-                v2: unit,
-            })}
-        </span>
     );
 }

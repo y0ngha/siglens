@@ -46,6 +46,14 @@ export function SectorSignalPanel({
         initialData,
     });
 
+    /**
+     * 섹터에 신호가 하나도 없으면 다섯 구획이 전부 같은 "종목 없음" 문구를 되풀이한다.
+     * 한 줄로 합쳐 빈 화면을 5겹으로 보여 주지 않는다.
+     */
+    const isSectorEmpty =
+        mixedStocks.length === 0 &&
+        Object.values(quadrants).every(stocks => stocks.length === 0);
+
     return (
         <section
             aria-label={t('SectorSignalPanel.581217')}
@@ -72,52 +80,63 @@ export function SectorSignalPanel({
                 aria-labelledby={`sector-tab-${activeSector}`}
                 className="mt-6 flex flex-col gap-4"
             >
-                <SignalSubsection
-                    currencySymbol={scope.currencySymbol}
-                    tickerIsReadable={scope.tickerIsReadable}
-                    title={t('SectorSignalPanel.080a8a')}
-                    marker="▲"
-                    variant="confirmed"
-                    stocks={quadrants.bullishConfirmed}
-                />
-                <SignalSubsection
-                    currencySymbol={scope.currencySymbol}
-                    tickerIsReadable={scope.tickerIsReadable}
-                    title={t('SectorSignalPanel.976db4')}
-                    marker="△"
-                    variant="expected"
-                    stocks={quadrants.bullishExpected}
-                />
-                <SignalSubsection
-                    currencySymbol={scope.currencySymbol}
-                    tickerIsReadable={scope.tickerIsReadable}
-                    title={t('SectorSignalPanel.760c9a')}
-                    marker="◈"
-                    variant="mixed"
-                    stocks={mixedStocks}
-                    infoMessage={
-                        <>
-                            <p>{t('SectorSignalPanel.ede11c')}</p>
-                            <p>{t('SectorSignalPanel.9c8687')}</p>
-                        </>
-                    }
-                />
-                <SignalSubsection
-                    currencySymbol={scope.currencySymbol}
-                    tickerIsReadable={scope.tickerIsReadable}
-                    title={t('SectorSignalPanel.880a67')}
-                    marker="▽"
-                    variant="expected"
-                    stocks={quadrants.bearishExpected}
-                />
-                <SignalSubsection
-                    currencySymbol={scope.currencySymbol}
-                    tickerIsReadable={scope.tickerIsReadable}
-                    title={t('SectorSignalPanel.12526e')}
-                    marker="▼"
-                    variant="confirmed"
-                    stocks={quadrants.bearishConfirmed}
-                />
+                {isSectorEmpty ? (
+                    <p
+                        role="status"
+                        className="py-8 text-center text-sm text-secondary-400"
+                    >
+                        {t('SectorSignalPanel.ab2e36')}
+                    </p>
+                ) : (
+                    <>
+                        <SignalSubsection
+                            currencySymbol={scope.currencySymbol}
+                            tickerIsReadable={scope.tickerIsReadable}
+                            title={t('SectorSignalPanel.080a8a')}
+                            marker="▲"
+                            variant="confirmed"
+                            stocks={quadrants.bullishConfirmed}
+                        />
+                        <SignalSubsection
+                            currencySymbol={scope.currencySymbol}
+                            tickerIsReadable={scope.tickerIsReadable}
+                            title={t('SectorSignalPanel.976db4')}
+                            marker="△"
+                            variant="expected"
+                            stocks={quadrants.bullishExpected}
+                        />
+                        <SignalSubsection
+                            currencySymbol={scope.currencySymbol}
+                            tickerIsReadable={scope.tickerIsReadable}
+                            title={t('SectorSignalPanel.760c9a')}
+                            marker="◈"
+                            variant="mixed"
+                            stocks={mixedStocks}
+                            infoMessage={
+                                <>
+                                    <p>{t('SectorSignalPanel.ede11c')}</p>
+                                    <p>{t('SectorSignalPanel.9c8687')}</p>
+                                </>
+                            }
+                        />
+                        <SignalSubsection
+                            currencySymbol={scope.currencySymbol}
+                            tickerIsReadable={scope.tickerIsReadable}
+                            title={t('SectorSignalPanel.880a67')}
+                            marker="▽"
+                            variant="expected"
+                            stocks={quadrants.bearishExpected}
+                        />
+                        <SignalSubsection
+                            currencySymbol={scope.currencySymbol}
+                            tickerIsReadable={scope.tickerIsReadable}
+                            title={t('SectorSignalPanel.12526e')}
+                            marker="▼"
+                            variant="confirmed"
+                            stocks={quadrants.bearishConfirmed}
+                        />
+                    </>
+                )}
             </div>
         </section>
     );

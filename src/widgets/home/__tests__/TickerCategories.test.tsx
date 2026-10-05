@@ -74,7 +74,7 @@ describe('TickerCategories', () => {
         render(<TickerCategories />);
         expect(
             screen.queryByRole('navigation', {
-                name: '한국 섹터별 인기 종목 탐색',
+                name: '한국 테마별 인기 종목 탐색',
             })
         ).toBeNull();
     });
@@ -83,7 +83,7 @@ describe('TickerCategories', () => {
         render(<TickerCategories />);
 
         expect(
-            screen.getByRole('heading', { name: '미국 섹터별 인기 종목' })
+            screen.getByRole('heading', { name: '미국 테마별 인기 종목' })
         ).toBeInTheDocument();
     });
 
@@ -92,7 +92,7 @@ describe('TickerCategories', () => {
 
         expect(
             screen.getByRole('navigation', {
-                name: '미국 섹터별 인기 종목 탐색',
+                name: '미국 테마별 인기 종목 탐색',
             })
         ).toBeInTheDocument();
     });

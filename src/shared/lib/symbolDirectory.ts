@@ -29,6 +29,15 @@ export interface SymbolDirectorySection {
 }
 
 /**
+ * 코드 유닛 비교 — 서버 ICU 로케일에 의존하지 않는다. 동률 해소용이라 "사람이 읽는
+ * 순서"가 아니라 **어디서 돌려도 같은 순서**가 필요하다(`localeCompare()`는 런타임
+ * 기본 로케일을 쓴다).
+ */
+function compareCodeUnits(a: string, b: string): number {
+    return a < b ? -1 : a > b ? 1 : 0;
+}
+
+/**
  * `/symbols` 디렉터리의 자산군 구성.
  *
  * **왜 이 페이지가 필요한가**: 2026-09-18 실측에서 sitemap 심볼 416개 중 147개가
@@ -43,17 +52,36 @@ export interface SymbolDirectorySection {
  * 라벨을 새로 번역할 것이 없고(내비의 지역 이름 재사용), 크롤러가 얻는 것은
  * 동일하다 — 링크의 존재 자체다.
  *
+ * **정렬은 표시 이름 기준이고 로케일을 따른다**: `intlLocale`은 `INTL_LOCALE[locale]`
+ * (BCP 47)이다. 로케일을 모르는 기본값을 두지 않는다 — 빠지면 한글 목록이 조용히
+ * 엉뚱한 collation으로 정렬된다.
+ *
  * **이름은 호출부가 넘긴다**: 416개 중 상수로 이름을 아는 건 84개뿐이고 나머지는
  * DB(`korean_tickers`·`crypto_assets`)에 있다. 이 모듈은 순수하게 두고, 페이지가
  * 로케일에 맞는 이름(한국어/영문)을 읽어 맵으로 넘긴다 — 여기서 DB를 읽으면
  * 순수 함수 테스트가 통째로 DB에 묶인다.
  */
 export function buildSymbolDirectory(
-    names: SymbolNameMap = new Map()
+    names: SymbolNameMap,
+    intlLocale: string
 ): readonly SymbolDirectorySection[] {
+    // 화면에 찍히는 **이름** 순으로 정렬한다. 예전엔 티커 순이라 `삼성전자 (005930.KS)`가
+    // `애플 (AAPL)` 사이 어디쯤 박혀 한글 목록이 가나다순으로 읽히지 않았다. 숫자는 숫자
+    // 크기로(`numeric`), 대소문자·악센트는 무시(`sensitivity: 'base'`)해 사람이 찾는 순서에
+    // 맞춘다. 이름을 모르는 종목은 `symbolLabel`이 티커만 찍으므로 티커가 곧 이름이다.
+    // 이름이 같으면 티커로 결정론적으로 가른다.
+    const collator = new Intl.Collator(intlLocale, {
+        numeric: true,
+        sensitivity: 'base',
+    });
+    const displayName = (symbol: string): string => names.get(symbol) || symbol;
     const sorted = (symbols: readonly string[]) =>
-        [...symbols]
-            .sort((a, b) => a.localeCompare(b))
+        symbols
+            .toSorted(
+                (a, b) =>
+                    collator.compare(displayName(a), displayName(b)) ||
+                    compareCodeUnits(a, b)
+            )
             .map(symbol => ({ symbol, label: labelFor(symbol, names) }));
 
     const krTickers = POPULAR_TICKERS.filter(isKrEquitySymbol);

@@ -1,4 +1,5 @@
 import type { Locale } from '@/shared/i18n/locales';
+import { SECTOR_ETFS, SIGNAL_SECTORS } from '@/shared/config/dashboard-tickers';
 import {
     brandIntroName,
     SITE_NAME,
@@ -40,6 +41,16 @@ const HOME_FAQ_KEYS = ['q0', 'q2', 'q8', 'q9', 'q10', 'q11'] as const;
  */
 const BRAND_INTRO_FAQ_KEY = 'q0';
 
+/**
+ * `/market` 스캐너가 훑는 업종·테마 개수.
+ *
+ * 탭은 13개지만 **업종은 11개뿐**이다 — 나머지 둘(양자·우주)은 GICS 섹터가 아니라 ETF가 없는
+ * 가상 테마다. 문구가 "11개 섹터"만 말하면 화면의 13개 탭과 어긋나고, "13개 섹터"라 하면
+ * 테마를 섹터로 부풀린다. 둘 다 설정에서 파생해, 탭을 늘려도 FAQ가 조용히 낡지 않는다.
+ */
+const SCANNER_INDUSTRY_COUNT = SECTOR_ETFS.length;
+const SCANNER_THEME_COUNT = SIGNAL_SECTORS.length - SECTOR_ETFS.length;
+
 export function buildHomeFaq(t: SeoTranslator, locale: Locale): FaqItem[] {
     return HOME_FAQ_KEYS.map(key => ({
         question: t(`faq.${key}.question`, {
@@ -48,6 +59,11 @@ export function buildHomeFaq(t: SeoTranslator, locale: Locale): FaqItem[] {
                     ? brandIntroName(locale)
                     : SITE_NAME,
         }),
-        answer: t(`faq.${key}.answer`, { v0: SITE_NAME }),
+        // 값은 모든 답변에 넘긴다 — 쓰지 않는 답변은 무시한다(next-intl은 남는 값을 안 본다).
+        answer: t(`faq.${key}.answer`, {
+            v0: SITE_NAME,
+            v1: SCANNER_INDUSTRY_COUNT,
+            v2: SCANNER_THEME_COUNT,
+        }),
     }));
 }
