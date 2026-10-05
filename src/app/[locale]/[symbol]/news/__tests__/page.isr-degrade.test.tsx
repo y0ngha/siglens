@@ -149,6 +149,7 @@ import NewsPage, {
     EventCalendarSection,
     AnalystActionsSection,
 } from '@/app/[locale]/[symbol]/news/page';
+import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { getNewsList } from '@/entities/news-article/api';
 import {
@@ -215,12 +216,15 @@ describe('/[symbol]/news ISR empty-cache prevention', () => {
     it('getNewsList throw → page heading still renders (chrome intact)', async () => {
         mockGetNewsList.mockRejectedValue(new Error('DB connection refused'));
 
-        // The page-level chrome (heading) lives outside Suspense — render the
-        // full page to verify the heading is present even when the section degrades.
+        // 서버 섹션은 더는 Suspense로 감싸지 않아 트리에 async 서버 컴포넌트가 그대로 있다.
+        // 클라이언트 `render()`는 그걸 못 돌리므로, 트리의 async 컴포넌트를 먼저 풀어 전체
+        // 페이지를 렌더한다 — 섹션이 degrade해도 헤딩(크롬)이 남아야 한다.
         render(
-            await NewsPage({
-                params: Promise.resolve({ locale: 'ko', symbol: 'AAPL' }),
-            })
+            await resolveAsyncServerTree(
+                await NewsPage({
+                    params: Promise.resolve({ locale: 'ko', symbol: 'AAPL' }),
+                })
+            )
         );
 
         expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();

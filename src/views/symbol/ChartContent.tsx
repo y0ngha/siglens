@@ -24,6 +24,7 @@ import React, {
     useEffectEvent,
     useMemo,
     useRef,
+    useState,
 } from 'react';
 import { PEEK_RESERVE_CSS } from './constants/mobileSheet';
 import { useOverlayItemVisibility } from './hooks/useOverlayItemVisibility';
@@ -32,6 +33,11 @@ import { useAnalysisDerivedData } from './hooks/useAnalysisDerivedData';
 import { useAnalysisDisplay } from './hooks/useAnalysisDisplay';
 import { useAnalysisProgress } from '@/widgets/analysis/hooks/useAnalysisProgress';
 import { useBars } from '@/entities/bars/hooks/useBars';
+import { hasFormingBar } from '@/entities/bars/lib/quantizeBars';
+import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
+import { shouldRefetchBarsSeed } from './utils/shouldRefetchBarsSeed';
+import { useHumanInteracted } from '@/shared/hooks/useHumanInteracted';
+import { useHasStoredChartPreferences } from '@/widgets/chart/hooks/useHasStoredChartPreferences';
 import {
     ACTION_PRICES_ITEM_KEY,
     buildOverlayMenuItems,
@@ -121,6 +127,11 @@ interface ChartContentProps {
      * and technical-facts price. Defaults to 'us-equity'.
      */
     marketProfile?: MarketProfileId;
+    /**
+     * 서버 seed가 형성 중 봉을 뺀 채로 만들어졌는가(생성 시점). 참이면 입력을 기다리지 않고 seed
+     * 복원 재조회를 연다(`shouldRefetchBarsSeed`). 생략하면 참 — 옛 동작(항상 연다)을 유지한다.
+     */
+    seedHasFormingBarTrimmed?: boolean;
 }
 
 export function ChartContent({
@@ -135,6 +146,7 @@ export function ChartContent({
     onMobileSheetContent,
     fmpSymbol,
     marketProfile = 'us-equity',
+    seedHasFormingBarTrimmed = true,
 }: ChartContentProps) {
     const t = useTranslations('views.symbol');
     const tFallback = useTranslations('entities.analysis.fallback');
@@ -144,7 +156,27 @@ export function ChartContent({
     // 비회원 회원가입 유도(Part B) — 같은 심볼에 대한 중복 카운트 방지용.
     const notifiedSymbolRef = useRef<string | null>(null);
 
-    const { bars, indicators } = useBars({ symbol, timeframe, fmpSymbol });
+    // seed의 축소 지표를 전체로 복원하는 재조회는 **seed가 완전할 때만** 사람 입력 이후(또는 저장된
+    // 차트 설정이 있는 재방문자)로 미룬다 — 크롤러 렌더마다 나가던 `getBarsAction` POST를 없앤다.
+    // 형성 중 봉이 빠진 seed(정규장 중이거나 장중에 만들어진 HTML)는 분석 작도가 맞지 않아
+    // 입력 없이도 바로 복원한다(`shouldRefetchBarsSeed`·`useBars` JSDoc).
+    const humanInteracted = useHumanInteracted();
+    const hasStoredChartPreferences = useHasStoredChartPreferences();
+    // 뷰 시점 판정은 마운트 때 한 번이면 충분하다(장 개폐 경계를 넘는 탭은 입력이 게이트를 연다).
+    const [formingBarNow] = useState(() =>
+        hasFormingBar(sessionSpecFor(marketProfile), new Date())
+    );
+    const { bars, indicators } = useBars({
+        symbol,
+        timeframe,
+        fmpSymbol,
+        refetchEnabled: shouldRefetchBarsSeed({
+            humanInteracted,
+            hasStoredChartPreferences,
+            seedHasFormingBarTrimmed,
+            formingBarNow,
+        }),
+    });
 
     const { panelWidth, isDragging, handleDragStart, handleKeyDown } =
         usePanelResize();

@@ -391,6 +391,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                     symbol={ticker}
                     current="fear-greed"
                     marketProfile={marketProfile}
+                    indexableOnly
                 />
             </main>
         </>

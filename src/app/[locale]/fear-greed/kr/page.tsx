@@ -4,6 +4,7 @@ import { enterLocale } from '@/shared/lib/enterLocale';
 import { FearGreedRouteBody } from '../FearGreedRouteBody';
 import {
     fearGreedMetadata,
+    loadFearGreedSymbolLinks,
     loadFearGreedView,
     type FearGreedRouteSource,
 } from '../fearGreedRoute';
@@ -31,12 +32,16 @@ export async function generateMetadata({
 
 export default async function FearGreedKrRoutePage({ params }: LocaleParams) {
     const locale = enterLocale((await params).locale);
-    const view = await loadFearGreedView(SOURCE);
+    const [view, symbolLinks] = await Promise.all([
+        loadFearGreedView(SOURCE),
+        loadFearGreedSymbolLinks(SOURCE.market, locale),
+    ]);
     return (
         <FearGreedRouteBody
             market={SOURCE.market}
             view={view}
             locale={locale}
+            symbolLinks={symbolLinks}
         />
     );
 }

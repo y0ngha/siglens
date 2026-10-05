@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react';
-import SymbolLoading from '@/app/[locale]/[symbol]/loading';
+import { ChartTabSkeleton } from '@/views/symbol/skeletons/ChartTabSkeleton';
 
-describe('SymbolLoading', () => {
+describe('ChartTabSkeleton', () => {
     it('renders a loading message', () => {
-        render(<SymbolLoading />);
+        render(<ChartTabSkeleton />);
 
         expect(screen.getByText('데이터 로딩 중…')).toBeInTheDocument();
     });

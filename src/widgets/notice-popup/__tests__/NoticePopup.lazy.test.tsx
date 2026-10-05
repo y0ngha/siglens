@@ -23,15 +23,12 @@ vi.mock('@/shared/ui/MarkdownText', () => {
     };
 });
 vi.mock('next/navigation', () => ({ usePathname: () => '/' }));
-vi.mock('@/entities/notice/actions/getActiveNoticesAction', () => ({
-    getActiveNoticesAction: vi.fn(),
-}));
 
 import { NoticePopup } from '@/widgets/notice-popup/ui/NoticePopup';
-import { getActiveNoticesAction } from '@/entities/notice/actions/getActiveNoticesAction';
+import { stubNoticesFetch } from './noticesFetchStub';
 
 it('띄울 공지가 없으면 마크다운 청크를 받지 않는다', async () => {
-    vi.mocked(getActiveNoticesAction).mockResolvedValue([]);
+    stubNoticesFetch().mockResolvedValue([]);
     const { container } = render(<NoticePopup />);
     await waitFor(() => expect(container).toBeEmptyDOMElement());
     // 정적 import로 되돌리면 모듈이 import 시점에 평가돼 1이 된다.

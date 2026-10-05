@@ -1,4 +1,6 @@
+import { resolveAsyncServerTree } from '@/shared/test-utils/resolveAsyncServerTree';
 import { render, screen } from '@testing-library/react';
+import { Suspense, isValidElement } from 'react';
 import {
     describe,
     it,
@@ -8,19 +10,8 @@ import {
     type MockedFunction,
 } from 'vitest';
 
-/** 자리표가 어떤 variant로 불렸는지 기록한다 — 배선은 여기서만 잡힌다. */
-const skeletonVariants: unknown[] = [];
-
 vi.mock('@/widgets/economy/sections/EconomicCalendarGrid', () => ({
     EconomicCalendarGrid: () => null,
-}));
-vi.mock('@/widgets/economy/sections/EconomySkeleton', () => ({
-    // 컴포넌트 쪽 테스트는 "kr을 받으면 맞게 그린다"까지만 보장한다.
-    // 이 화면이 실제로 kr을 넘기는지는 이 스텁이 아니면 아무도 안 본다.
-    EconomySkeleton: ({ variant }: { variant?: string }) => {
-        skeletonVariants.push(variant);
-        return null;
-    },
 }));
 vi.mock('@/widgets/economy/sections/KrEconomicIndicatorGrid', () => ({
     KrEconomicIndicatorGrid: ({ cards }: { cards: unknown[] }) => (
@@ -110,7 +101,11 @@ describe('/economy/kr page', () => {
         mockCards.mockResolvedValue([CARD]);
 
         render(
-            await EconomyKrPage({ params: Promise.resolve({ locale: 'ko' }) })
+            await resolveAsyncServerTree(
+                await EconomyKrPage({
+                    params: Promise.resolve({ locale: 'ko' }),
+                })
+            )
         );
         await vi.waitFor(() => {
             expect(
@@ -127,9 +122,13 @@ describe('/economy/kr page', () => {
         mockCards.mockResolvedValue([CARD]);
 
         render(
-            await EconomyKrPage({ params: Promise.resolve({ locale: 'ko' }) })
+            await resolveAsyncServerTree(
+                await EconomyKrPage({
+                    params: Promise.resolve({ locale: 'ko' }),
+                })
+            )
         );
-        // Suspense 안 async 컴포넌트라 렌더만으로는 호출되지 않을 수 있어 직접 확인한다.
+        // async 서버 컴포넌트가 데이터를 읽는 시점이 렌더 뒤일 수 있어 직접 기다려 확인한다.
         const { getCalendarFromDb: reader } =
             await import('@/entities/economy/api/getCalendarFromDb');
         await vi.waitFor(() => {
@@ -139,7 +138,11 @@ describe('/economy/kr page', () => {
 
     it('renders a KR title, never the US one', async () => {
         render(
-            await EconomyKrPage({ params: Promise.resolve({ locale: 'ko' }) })
+            await resolveAsyncServerTree(
+                await EconomyKrPage({
+                    params: Promise.resolve({ locale: 'ko' }),
+                })
+            )
         );
         const h1 = screen.getByRole('heading', { level: 1 });
         expect(h1).toHaveTextContent('한국 경제');
@@ -148,7 +151,11 @@ describe('/economy/kr page', () => {
 
     it('renders the region tab strip', async () => {
         render(
-            await EconomyKrPage({ params: Promise.resolve({ locale: 'ko' }) })
+            await resolveAsyncServerTree(
+                await EconomyKrPage({
+                    params: Promise.resolve({ locale: 'ko' }),
+                })
+            )
         );
         const nav = screen.getByRole('navigation', { name: '지역 선택' });
         expect(nav).toHaveTextContent('미국');
@@ -163,7 +170,11 @@ describe('/economy/kr page', () => {
      */
     it('셸에서는 FAQ 구조화데이터만 낸다', async () => {
         const { container } = render(
-            await EconomyKrPage({ params: Promise.resolve({ locale: 'ko' }) })
+            await resolveAsyncServerTree(
+                await EconomyKrPage({
+                    params: Promise.resolve({ locale: 'ko' }),
+                })
+            )
         );
         const types = Array.from(
             container.querySelectorAll('script[type="application/ld+json"]')
@@ -180,17 +191,24 @@ describe('/economy/kr page', () => {
 });
 
 /**
- * 자리표 배선. 컴포넌트 테스트(`EconomySkeleton.dom-fast.test.tsx`)는 "kr을 받으면 한국 형상으로
- * 그린다"까지만 보장한다 — 이 화면이 실제로 `kr`을 넘기지 않으면 미국 형상(거시 카드 2개
- * + 국채 3장)이 그대로 예약돼 콘텐츠 도착 시 위로 당겨진다.
+ * 서버 데이터 섹션(`KrEconomyContent`)은 Suspense로 감싸지 않는다(2026-10-05) — 서버 데이터
+ * 경계는 raw HTML에 `<template>` 숨김 청크를 남겨 JS 없는 크롤러에게 본문을 가린다.
  */
-describe('/economy/kr Suspense 자리표는', () => {
-    it('variant="kr"로 렌더된다', async () => {
-        skeletonVariants.length = 0;
-        render(
-            await EconomyKrPage({ params: Promise.resolve({ locale: 'ko' }) })
+describe('/economy/kr 서버 데이터는 Suspense 경계 밖에 있다', () => {
+    function containsSuspense(node: unknown): boolean {
+        if (Array.isArray(node)) return node.some(containsSuspense);
+        if (!isValidElement(node)) return false;
+        if (node.type === Suspense) return true;
+        return containsSuspense(
+            (node.props as { children?: unknown }).children
         );
-        expect(skeletonVariants).toContain('kr');
+    }
+
+    it('페이지 트리에 Suspense가 없다', async () => {
+        const tree = await EconomyKrPage({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
+        expect(containsSuspense(tree)).toBe(false);
     });
 });
 

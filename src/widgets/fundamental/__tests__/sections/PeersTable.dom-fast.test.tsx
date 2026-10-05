@@ -37,4 +37,33 @@ describe('PeersTable', () => {
             )
         ).toBeInTheDocument();
     });
+
+    it('큐레이션 peer는 색인되는 차트 /{peer}로 링크한다 (항상-noindex 펀더멘털 탭이 아니라)', () => {
+        render(<PeersTable peers={SAMPLE_PEERS} />);
+        expect(screen.getByText('MSFT').closest('a')).toHaveAttribute(
+            'href',
+            '/MSFT'
+        );
+        expect(screen.getByText('GOOGL').closest('a')).toHaveAttribute(
+            'href',
+            '/GOOGL'
+        );
+    });
+
+    it('큐레이션 밖 peer는 링크 없는 텍스트다 (noindex 롱테일로 크롤 예산을 쓰지 않는다)', () => {
+        render(
+            <PeersTable
+                peers={[
+                    {
+                        symbol: 'ZZZNOTREAL',
+                        companyName: 'Unlisted Co.',
+                        marketCap: 1_000_000,
+                    },
+                ]}
+            />
+        );
+        const cell = screen.getByText('ZZZNOTREAL');
+        expect(cell.closest('a')).toBeNull();
+        expect(screen.queryAllByRole('link')).toHaveLength(0);
+    });
 });

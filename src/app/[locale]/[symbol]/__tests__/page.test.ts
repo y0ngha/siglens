@@ -156,6 +156,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { evaluateSymbolIndexability } from '@/entities/symbol-indexability/lib/evaluateSymbolIndexability';
 import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
+import { isRegularSessionOpen } from '@y0ngha/siglens-core';
 import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
 import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
 import { loadBarsData } from '@/entities/bars/lib/loadBarsData';
@@ -182,6 +183,7 @@ interface ClientSeedProps {
     initialAnalysis: unknown;
     initialAnalysisFailed: unknown;
     initialLockedInfoDepth: unknown;
+    seedHasFormingBarTrimmed: unknown;
 }
 
 describe('Symbol page', () => {
@@ -511,6 +513,28 @@ describe('Symbol page', () => {
             }
             return client.props as ClientSeedProps;
         }
+
+        /**
+         * 장중에 생성된 seed는 형성 중 봉을 뺀 채라, 클라이언트가 입력 없이 라이브 봉을 받아야
+         * 분석 작도가 맞는다(PR #957 `chart-overlays` e2e 회귀). 그 신호를 서버가 quantize와
+         * 같은 술어로 넘긴다.
+         */
+        it.each([
+            [true, true],
+            [false, false],
+        ])(
+            '정규장 %s이면 seedHasFormingBarTrimmed=%s를 클라이언트에 넘긴다',
+            async (open, expected) => {
+                mockPeekAnalysisCache.mockResolvedValue(null as never);
+                vi.mocked(isRegularSessionOpen).mockReturnValue(open);
+                try {
+                    const props = await getClientProps();
+                    expect(props.seedHasFormingBarTrimmed).toBe(expected);
+                } finally {
+                    vi.mocked(isRegularSessionOpen).mockReturnValue(false);
+                }
+            }
+        );
 
         it('peek HIT 시 캐시된 분석을 initialAnalysis로 전달한다', async () => {
             const cached = { result: { summary: 'cached analysis' } };

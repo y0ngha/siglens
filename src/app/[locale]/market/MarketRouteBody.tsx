@@ -84,7 +84,7 @@ function buildDehydratedSeed(
  *   1. getMarketSummaryStatic / getSectorSignalsStatic — unstable_cache (1h)
  *   2. peekBriefingStatic — read cached briefing for SSR seed (no side effects)
  *   3. QueryClient.setQueryData — seeds React Query for instant hydration
- *   4. SectorFactsSummary — SSR crawl text (axis 2: useSearchParams bailout workaround)
+ *   4. SectorFactsSummary — 영구 서버 sibling(패널 아래), SSR crawl text (axis 2: useSearchParams bailout workaround)
  */
 interface MarketScopeProps {
     readonly scope: DashboardScope;
@@ -145,18 +145,11 @@ export async function MarketContent({
                     />
                 </Suspense>
             </HydrationBoundary>
+            {/* `useSearchParams` 경계 — fallback은 **스켈레톤만** 둔다. 크롤 텍스트(섹터 신호
+                요약)는 fallback이 아니라 아래 영구 sibling이 맡는다(fallback은 경계가 resolve
+                되면 클라에서 파괴되고 raw HTML에서는 숨김 청크 뒤로 밀린다). */}
             <Suspense
-                fallback={
-                    <>
-                        {/* Axis 2: SSR crawl text while SectorSignalPanel (CSR) hydrates.
-                            SectorSignalPanel uses useSearchParams → CSR bailout → empty SSR HTML.
-                            SectorFactsSummary renders the same data as static server-rendered text
-                            so crawlers see actual signal content without JS. Not cloaking — users
-                            see the same data once JS loads. */}
-                        <SectorFactsSummary data={sectorDataSeed} />
-                        <SectorSignalPanelSkeleton scope={clientScope} />
-                    </>
-                }
+                fallback={<SectorSignalPanelSkeleton scope={clientScope} />}
             >
                 <SectorSignalPanel
                     scope={clientScope}
@@ -165,6 +158,12 @@ export async function MarketContent({
                     initialData={sectorDataSeed}
                 />
             </Suspense>
+            {/* Axis 2: SSR crawl text. SectorSignalPanel uses useSearchParams → CSR bailout →
+                empty SSR HTML. SectorFactsSummary renders the same data as static
+                server-rendered text (with `이름 (TICKER)` anchors) so crawlers see actual
+                signal content and `/{symbol}` links without JS. Not cloaking — users see the
+                same data in the panel above. */}
+            <SectorFactsSummary data={sectorDataSeed} />
             <SignalTypeGuide />
         </>
     );
@@ -193,8 +192,6 @@ export async function MarketRouteBody({
     // 클라이언트 페이로드 금지 네임스페이스에 걸린다(clientKeyCoverage 가드).
     const tLayout = await getTranslations('widgets.layout');
     const copy = marketCopyFor(scope.id, t);
-    // 스켈레톤도 클라이언트 컴포넌트다 — `MarketContent`와 같은 이유로 좁힌다.
-    const clientScope = toClientScope(scope);
     const url = `${SITE_URL}${copy.path}`;
     const fullTitle = `${copy.title} | ${SITE_NAME}`;
 
@@ -273,16 +270,11 @@ export async function MarketRouteBody({
                         {copy.title}
                     </h1>
                 </div>
-                <Suspense
-                    fallback={
-                        <>
-                            <MarketSummaryPanelSkeleton scope={clientScope} />
-                            <SectorSignalPanelSkeleton scope={clientScope} />
-                        </>
-                    }
-                >
-                    <MarketContent scope={scope} />
-                </Suspense>
+                {/* 서버 데이터(`MarketContent`)는 Suspense로 감싸지 않는다 — 서버 데이터 경계는
+                    raw HTML에 숨김 청크를 남겨 JS 없는 크롤러에게 본문을 가린다(2026-10-05).
+                    클라 전용 경계(`MarketSummaryPanel`·`SectorSignalPanel`)는 `MarketContent`
+                    안에서 유지한다. */}
+                <MarketContent scope={scope} />
                 {/*
                  * 디렉터리 진입 — 이 페이지는 섹터 신호가 잡힌 종목만 보여주므로
                  * 조용한 장에는 목록이 짧다. 그때 다른 종목으로 가는 길이 사라지지
