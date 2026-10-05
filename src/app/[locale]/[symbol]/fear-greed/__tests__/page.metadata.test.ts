@@ -87,6 +87,31 @@ describe('fear-greed generateMetadata — 색인 대상 (콘텐츠 게이트 통
         expect(JSON.stringify(metadata.title)).toContain('AAPL');
     });
 
+    it('설명은 점수에서 만든 종목별 사실이다 — 날짜·점수·1주/1개월 전·1년 범위', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+
+        expect(metadata.description).toMatch(
+            /^AAPL 공포 탐욕 지수는 \d+월 \d+일 종가 기준 \d+점\([^)]+\)입니다\. 1주 전 \d+점, 1개월 전 \d+점/
+        );
+        expect(metadata.description).toMatch(
+            /최근 1년 동안 \d+~\d+점 사이에서 움직였습니다\.$/
+        );
+        // 기존 템플릿 문구가 아니다.
+        expect(metadata.description).not.toContain('매수세');
+        expect(metadata.description).not.toMatch(/매수|매도|매매/);
+    });
+
+    it('설명을 만들려고 봉을 다시 읽지 않는다(요청 단위 캐시를 그대로 쓴다)', async () => {
+        await generateMetadata({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+
+        // 색인 게이트와 설명이 같은 한 번의 조회를 공유한다.
+        expect(mockGetSeedBarsStatic).toHaveBeenCalledTimes(1);
+    });
+
     it('봉 조회가 실패하면 degrade로 보고 noindex(follow 유지)', async () => {
         const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
         mockGetSeedBarsStatic.mockRejectedValue(new Error('bars infra down'));

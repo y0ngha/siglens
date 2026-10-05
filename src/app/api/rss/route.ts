@@ -17,9 +17,13 @@ import {
 import {
     clampAtSentenceBoundary,
     collapseToSingleLine,
+    brandIntroName,
     SITE_URL,
     takeWholeSentences,
 } from '@/shared/lib/seo';
+import { DEFAULT_LOCALE } from '@/shared/i18n/locales';
+import { stripSnapshotMarkdown } from '@/shared/lib/stripSnapshotMarkdown';
+import { rssItemTitle } from './rssItemTitle';
 import { rssSources, type RssSource } from './sources';
 
 const { HTTP_STATUS_SERVICE_UNAVAILABLE } = constants;
@@ -28,13 +32,14 @@ const { HTTP_STATUS_SERVICE_UNAVAILABLE } = constants;
 // 빌드 시점에 굳히면 안 된다.
 export const dynamic = 'force-dynamic';
 
-/** 항목 설명 상한(code point). 리더 목록 미리보기에 쓰이는 길이다. */
-const DESCRIPTION_MAX_LENGTH = 300;
+/** 항목 설명 상한(code point). 리더 목록 미리보기에 쓰이는 길이다 — 전문은 `content:encoded`가 싣는다. */
+const DESCRIPTION_MAX_LENGTH = 500;
 /** 스탬프 해시에서 guid에 쓰는 앞자리 수. */
 const GUID_HASH_LENGTH = 12;
 
 const CHANNEL = {
-    title: 'Siglens 시장 브리핑',
+    // 한글 표기와 영문 표기를 함께 — 피드 구독 목록·검색에서 "시그렌즈"로도 찾힌다.
+    title: `${brandIntroName(DEFAULT_LOCALE)} 시장 브리핑`,
     description:
         '시장 브리핑과 뉴스 요약 — 규칙으로 계산한 값을 AI가 문장으로 정리했습니다.',
     language: 'ko',
@@ -47,6 +52,14 @@ function toDescription(prose: string): string {
         takeWholeSentences(plain, DESCRIPTION_MAX_LENGTH) ??
         clampAtSentenceBoundary(plain, DESCRIPTION_MAX_LENGTH)
     );
+}
+
+/** 본문 전체를 마크다운을 떼고 문단(줄) 단위 평문으로 나눈다. `content:encoded`용. */
+function toParagraphs(prose: string): string[] {
+    return stripSnapshotMarkdown(prose)
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line !== '');
 }
 
 /**
@@ -77,11 +90,12 @@ async function toItem(
     if (description === '') return null;
 
     return {
-        title: source.title,
+        title: rssItemTitle(source.title, pubDate),
         link,
         guid: `${link}#${stamp.hash.slice(0, GUID_HASH_LENGTH)}`,
         pubDate,
         description,
+        paragraphs: toParagraphs(read.prose),
     };
 }
 

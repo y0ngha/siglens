@@ -1,3 +1,4 @@
+import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import type { Locale } from '@/shared/i18n/locales';
 import { localeOpenGraph } from '@/shared/lib/seoAlternates';
 
@@ -65,11 +66,7 @@ export function buildShareMetadata(
                 // 둘은 서로 상충하지 않는다.
                 url: localizedAbsoluteUrl(`/share/${id}`, locale),
             },
-            twitter: {
-                card: 'summary_large_image',
-                title,
-                description,
-            },
+            twitter: buildTwitterMetadata({ title, description }),
         };
     }
 

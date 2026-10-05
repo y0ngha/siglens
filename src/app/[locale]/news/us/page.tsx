@@ -1,3 +1,4 @@
+import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import { getTranslations } from 'next-intl/server';
 import type { SeoTranslator } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
@@ -110,12 +111,11 @@ export async function generateMetadata({
             // 빌드/렌더에는 아무 에러도 나지 않아 조용히 넘어간다.
             images: [`${SITE_URL}/news/opengraph-image`],
         },
-        twitter: {
-            card: 'summary_large_image',
+        twitter: buildTwitterMetadata({
             title: newsUsFullTitle(tSeo),
             description: newsUsDescription(tSeo),
             images: [`${SITE_URL}/news/opengraph-image`],
-        },
+        }),
     };
 }
 

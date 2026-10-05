@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { type Locale, resolveLocale } from '@/shared/i18n/locales';
 import { buildHubMetadata } from '@/shared/lib/seoAlternates';
+import { rssAlternateTypes } from '@/shared/config/rssFeed';
 import { Suspense } from 'react';
 
 import { EconomicCalendarGrid as EconomicCalendar } from '@/widgets/economy/sections/EconomicCalendarGrid';
@@ -118,6 +119,7 @@ export async function generateMetadata({
         description,
         keywords: ECONOMY_KEYWORDS,
         degraded,
+        alternateTypes: rssAlternateTypes(locale),
     });
 }
 

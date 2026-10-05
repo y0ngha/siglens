@@ -141,10 +141,15 @@ describe('buildTechnicalFactsNarrative', () => {
         );
 
         expect(
-            buildTechnicalFactsNarrative('AAPL', facts!, 'us-equity', tFacts)
+            buildTechnicalFactsNarrative(
+                '애플(AAPL)',
+                facts!,
+                'us-equity',
+                tFacts
+            )
         ).toEqual([
-            'AAPL은 최근 종가 $110.00 기준으로 직전 봉 대비 10.00% 상승했습니다.',
-            'RSI 62.5로 중립 구간이며, MACD 히스토그램은 양수라 단기 모멘텀은 상승 쪽입니다.',
+            '애플(AAPL)의 최근 종가는 $110.00이고, 직전 봉 대비 10.00% 상승했습니다.',
+            'RSI는 62.5(중립 구간)이며, MACD 히스토그램은 양수라 단기 모멘텀은 상승 쪽입니다.',
             `최근 ${RECENT_BARS_WINDOW}개 봉 고점 대비 -8.3%, 저점 대비 +22.2% 위치에 있습니다.`,
         ]);
     });
@@ -159,9 +164,14 @@ describe('buildTechnicalFactsNarrative', () => {
         );
 
         expect(
-            buildTechnicalFactsNarrative('AAPL', facts!, 'us-equity', tFacts)
+            buildTechnicalFactsNarrative(
+                '애플(AAPL)',
+                facts!,
+                'us-equity',
+                tFacts
+            )
         ).toEqual([
-            'AAPL은 최근 종가 $90.00 기준으로 직전 봉 대비 10.00% 하락했습니다.',
+            '애플(AAPL)의 최근 종가는 $90.00이고, 직전 봉 대비 10.00% 하락했습니다.',
             `최근 ${RECENT_BARS_WINDOW}개 봉 고점 대비 -25.0%, 저점 대비 +12.5% 위치에 있습니다.`,
         ]);
     });
@@ -176,12 +186,51 @@ describe('buildTechnicalFactsNarrative', () => {
         );
 
         expect(
-            buildTechnicalFactsNarrative('AAPL', facts!, 'us-equity', tFacts)
+            buildTechnicalFactsNarrative(
+                '애플(AAPL)',
+                facts!,
+                'us-equity',
+                tFacts
+            )
         ).toEqual([
-            'AAPL은 최근 종가 $110.00 기준으로 직전 봉 대비 10.00% 상승했습니다.',
-            'RSI 50.0로 중립 구간이며, MACD 히스토그램은 0이라 단기 모멘텀은 중립에 가까운 상태입니다.',
+            '애플(AAPL)의 최근 종가는 $110.00이고, 직전 봉 대비 10.00% 상승했습니다.',
+            'RSI는 50.0(중립 구간)이며, MACD 히스토그램은 0이라 단기 모멘텀은 중립에 가까운 상태입니다.',
             `최근 ${RECENT_BARS_WINDOW}개 봉 고점 대비 -8.3%, 저점 대비 +22.2% 위치에 있습니다.`,
         ]);
+    });
+
+    it('보합이면 방향 동사 대신 "직전 봉과 같은 가격입니다"로 끝난다', () => {
+        const facts = buildTechnicalFacts(
+            [bar(100, 120, 80), bar(100, 105, 95)],
+            indicators({})
+        );
+
+        expect(
+            buildTechnicalFactsNarrative(
+                '삼성전자(005930)',
+                facts!,
+                'us-equity',
+                tFacts
+            )[0]
+        ).toBe(
+            '삼성전자(005930)의 최근 종가는 $100.00이고, 직전 봉과 같은 가격입니다.'
+        );
+    });
+
+    it('첫 문장은 주어에 붙는 조사가 받침에 의존하지 않는다(`의`로 시작)', () => {
+        const facts = buildTechnicalFacts(
+            [bar(100, 120, 80), bar(110, 115, 100)],
+            indicators({})
+        );
+        for (const subject of ['애플(AAPL)', '삼성전자(005930)', '리플(XRP)']) {
+            const [first] = buildTechnicalFactsNarrative(
+                subject,
+                facts!,
+                'us-equity',
+                tFacts
+            );
+            expect(first?.startsWith(`${subject}의 최근 종가는 `)).toBe(true);
+        }
     });
 
     it('crypto sub-cent 가격은 crypto precision으로 서사에 표시한다', () => {
@@ -197,7 +246,7 @@ describe('buildTechnicalFactsNarrative', () => {
             tFacts
         );
 
-        expect(narrative[0]).toContain('$0.05816 기준');
-        expect(narrative[0]).not.toContain('$0.06 기준');
+        expect(narrative[0]).toContain('$0.05816이고');
+        expect(narrative[0]).not.toContain('$0.06이고');
     });
 });

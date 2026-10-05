@@ -182,9 +182,8 @@
             },
             "page": {
                 "167f34": "查看用主要10只股票的历史数据对技术分析和AI情景\n                                进行事后检验的结果。",
-                "1d43d2": "AI分析并完成的SIGLENS",
                 "24e60c": "跳过至搜索",
-                "2f20c8": "股票与加密货币投资的新标准",
+                "2f20c8": "股票与加密货币分析服务",
                 "79bd8f": "轻松便捷地查看分析新闻、基本面和恐惧与贪婪指数的AI\n                                报告。",
                 "c26658": "AI分析，增加投资信心",
                 "dfbacd": "基于历史数据验证的结果",
@@ -345,11 +344,11 @@
                 "2ab959": "当前价格位于这栋楼的第几层？",
                 "3c87a9": "未能加载财报日程。",
                 "465a63": "{v0} 财务报表",
-                "4e7e6f": "<link>{v1}</link>汇总多类资产、呈现{v0}整体情绪，而本页仅针对{v2}这一只标的，将其成交量走向、成交流向与价格位置放在该标的自身的分布中换算成分数。",
+                "4e7e6f": "{v2}的恐惧与贪婪指数，是将成交量走向、成交流向和价格位置与该标的自身历史值相比，换算成0~100的分数。{v0}整体走势可在<link>{v1}</link>查看。",
                 "5c38df": "未能加载分析师趋势。",
                 "6723ea": "财报日程",
                 "69d338": "我的持仓",
-                "6cd32e": "{v0} 恐惧与贪婪指数和短期买入情绪",
+                "6cd32e": "{v0} 恐惧与贪婪指数 — 0-100分与近期走势",
                 "7b06ac": "国会交易",
                 "8b7ae7": "AI综合分析",
                 "9e0659": "{v0} 财务指标和分析师意见",
@@ -1084,7 +1083,7 @@
             "description": {
                 "chart": "技术指标＋AI综合报告",
                 "congress": "参众两院议员交易披露与AI趋势解读",
-                "fear-greed": "短期交易情绪0~100分",
+                "fear-greed": "基于成交量与价格位置的0-100分",
                 "financials": "利润表、资产负债表与现金流量表",
                 "fundamental": "财务、估值与分析师展望",
                 "news": "实时新闻＋分析师观点分析",
@@ -1340,11 +1339,11 @@
                     "volume_flow": "成交额流向"
                 },
                 "symbolLabel": {
-                    "buysell_imbalance": "买卖失衡",
-                    "ma200_distance": "与MA200的距离",
-                    "poc_distance": "与POC的距离（{v0}根）",
-                    "range_position": "近252根K线的位置",
-                    "volume_z": "成交量 z 值（方向）"
+                    "buysell_imbalance": "买卖成交量差",
+                    "ma200_distance": "与200日移动平均线的距离",
+                    "poc_distance": "与成交密集价位的距离（近{v0}根）",
+                    "range_position": "近1年价格区间内的位置",
+                    "volume_z": "相对平时的成交量偏离（含涨跌方向）"
                 },
                 "descriptionCrypto": {
                     "momentum": "比特币高于125日移动平均线越多，越贪婪",
@@ -1560,7 +1559,7 @@
                 "description": "用一个代码全面分析美股、韩股与加密货币。指标图表与技术信号、基本面与新闻、恐惧贪婪指数汇总为一份 AI 综合分析。",
                 "headline": "美股、韩股与加密货币 AI 分析",
                 "ogImageAlt": "{v0} — 图表、基本面、新闻、期权、恐惧贪婪指数与综合分析",
-                "title": "美股、韩股与加密货币 AI 分析 — 图表与新闻综合分析"
+                "title": "{v0} — 美股、韩股与加密货币 AI 分析"
             },
             "signup": {
                 "description": "注册Siglens会员即可享受更多权益。注册为可选项,非会员同样可使用全部基础功能。",
@@ -1583,7 +1582,7 @@
                     "titleCore": "行情分析"
                 },
                 "cryptoNews": {
-                    "description": "通过最新新闻了解推动{subject}价格的利好与利空因素。AI汇总加密货币市场情绪与核心议题。",
+                    "description": "整理{subject}最新新闻中的利好与利空因素及加密货币市场情绪。AI汇总核心议题。",
                     "titleCore": "币圈新闻",
                     "titleTail": "利好利空与市场情绪"
                 },
@@ -1595,7 +1594,19 @@
                 "fearGreed": {
                     "description": "通过基于成交量走势与价格位置计算的0-100分,查看{subject}买盘力度的强弱。同时提供从极度恐惧到极度贪婪的5档情绪及近1年走势。",
                     "titleCore": "恐惧与贪婪指数",
-                    "titleTail": "0-100分·5档"
+                    "titleTail": "0-100分与近期走势",
+                    "factsDate": "{month}月{day}日",
+                    "factsLead": "{subject}的恐惧与贪婪指数截至{date}收盘为{score}分（{label}）。",
+                    "factsPeriodWeek": "1周前",
+                    "factsPeriodMonth": "1个月前",
+                    "factsPeriodYear": "1年前",
+                    "factsPast": "{period}{score}分",
+                    "factsPastJoin": "，",
+                    "factsPastRange": "{past}，{span}在{min}~{max}分之间波动。",
+                    "factsPastOnly": "{past}。",
+                    "factsRangeOnly": "{span}在{min}~{max}分之间波动。",
+                    "factsSpanYear": "近1年",
+                    "factsSpanDays": "近{days}个交易日"
                 },
                 "financials": {
                     "description": "一目了然查看{subject}的损益、财务状况与现金流,以及成长性、盈利能力、稳定性和现金创造力评分。",
@@ -1609,9 +1620,9 @@
                     "titleTail": "PER·ROE与一致预期"
                 },
                 "news": {
-                    "description": "通过最新新闻了解{subject}股价波动的原因。每篇文章都标注利好/利空氛围与要点,并附下次财报日期及分析师目标价与评级变动。",
+                    "description": "按文章整理{subject}最新新闻的利好/利空氛围与要点，并附下次财报日期及分析师目标价与评级变动。",
                     "titleCore": "新闻",
-                    "titleTail": "利好氛围与分析师评级"
+                    "titleTail": "要闻与目标价"
                 },
                 "options": {
                     "description": "AI解读{subject}的期权市场。查看各到期日的Max Pain、认沽认购比、平值隐含波动率与隐含波幅,以及各行权价的未平仓量,洞察市场押注方向。",
@@ -1935,7 +1946,7 @@
             "fearGreed": {
                 "crypto": "加密货币",
                 "cryptoBody": "考察六个方面：比特币是否高于125日平均线；近30日比特币下跌波动率是否较小；近20日收益率中比特币是否领先黄金；20个大型币种中高于50日平均线的比例是否较大；近90日内涨幅超过比特币的山寨币比例是否较大；近30日成交额中比特币上涨日所占比例是否较大。",
-                "how": "每个构成要素都与其自身最近约5年的数值比较并换算为排名，再把排名合并成分数。可比较的历史数据不足时，不产生分数。",
+                "how": "每个构成要素都与其自身的过去数值（最长约5年）比较并换算为排名，再把排名合并成分数。可比较的历史数据不足时，不产生分数。",
                 "kr": "韩国市场整体",
                 "krBody": "考察五个方面：追踪KOSPI 200的ETF（KODEX 200）是否高于125个交易日平均线；KOSPI指数的20个交易日实际波动率是否低于50个交易日平均线；近20个交易日收益率中股票是否领先30年期国债ETF；公司债ETF是否领先3年期国债ETF；KOSPI 200等权重ETF是否领先市值加权ETF。韩国无法获取与VIX对应的指数（VKOSPI），因此以KOSPI收盘价直接计算的实际波动率代替。",
                 "labels": "分数分为五个等级：低于25为极度恐惧，25至45（不含）为恐惧，45至55（不含）为中性，55至75（不含）为贪婪，75及以上为极度贪婪。",
@@ -1947,7 +1958,8 @@
                 "symbolBody": "考察日K线图的五个方面：供需方面，考察与近20根K线平均值相比的成交量（上涨日为正，下跌日为负，反映方向），买卖成交量的不平衡，以及与近60根K线中成交最密集价格的距离。趋势方面，考察与200根K线平均线的距离，以及近252根K线内的价格位置。",
                 "title": "恐惧与贪婪指数",
                 "us": "美国市场整体",
-                "usBody": "考察五个方面：追踪S&P 500的ETF（SPY）是否高于125个交易日平均线；VIX是否低于50个交易日平均线；近20个交易日收益率中股票是否领先长期国债ETF（TLT）；高收益公司债ETF（HYG）是否领先投资级公司债ETF（LQD）；等权重ETF（RSP）是否领先市值加权ETF（SPY）。"
+                "usBody": "考察五个方面：追踪S&P 500的ETF（SPY）是否高于125个交易日平均线；VIX是否低于50个交易日平均线；近20个交易日收益率中股票是否领先长期国债ETF（TLT）；高收益公司债ETF（HYG）是否领先投资级公司债ETF（LQD）；等权重ETF（RSP）是否领先市值加权ETF（SPY）。",
+                "episodes": "极度恐惧、极度贪婪区间的记录中，{v0}个交易日内再次进入同一区间的，归入同一条记录。这样可避免把短暂离开又返回算作一次新的进入。"
             },
             "hero": {
                 "eyebrow": "Siglens分析方法",
@@ -2011,7 +2023,7 @@
                 },
                 "methodLink": "分析方法",
                 "reportLink": "报告错误",
-                "ruleBody": "这是仅通过规则计算的得分，没有AI叙述。仅显示市场情绪，不预测未来价格。数据来源：{source}。"
+                "ruleBody": "这是仅通过规则计算的得分，没有AI叙述。数据来源：{source}。"
             },
             "ChartContent": {
                 "93c3a3": "图表不反映盘前、盘后股价。 | ",
@@ -2143,14 +2155,10 @@
                 "extremeZoneNotice": "这是对过去的记录整理，不预测未来价格，也不建议买入或卖出。",
                 "extremeZoneOmitted": "更早的{v0}条记录未显示。",
                 "extremeZoneOngoing": "{v0}（持续中）",
-                "extremeZonePeriod": "统计期间：{v0}至{v1}（该标的有分数的交易日）。{v2}个交易日内再次进入同一区间的，归入同一条记录。",
+                "extremeZonePeriod": "统计期间：{v0}至{v1}（该标的有分数的交易日）。",
                 "extremeZoneSessions": "{v0}天",
                 "extremeZoneSummary": "{v0}：进入{v1}次，停留时长中位数{v2}个交易日",
                 "extremeZoneTitle": "极端区间记录",
-                "factorHigh": "相对近200个交易日分布偏高",
-                "factorLine": "{v0}：{v1}（第{v2}百分位）— {v3}。",
-                "factorLow": "相对近200个交易日分布偏低",
-                "factorMid": "处于近200个交易日分布的平均区间",
                 "groupBalanced": "{v0}组与{v1}组均为{v2}分，走势较为均衡。",
                 "groupFlow": "资金流",
                 "groupLead": "{v0}组得分（{v1}分）比{v2}组（{v3}分）高{v4}分，由{v0}主导。",
@@ -2176,7 +2184,17 @@
                 "regimeTransitionItem": "{v0} {v1} → {v2}",
                 "regimeTransitions": "最近的区间切换为{v0}。",
                 "topFactor": "在{v0}个指标中，{v1}最为突出，处于第{v2}百分位，较平时{v3}。",
-                "vsAnchor": "较{v0} {v1}分 "
+                "vsAnchor": "较{v0} {v1}分 ",
+                "factorColName": "指标",
+                "factorColValue": "当前值",
+                "factorColPercentile": "百分位",
+                "factorTableCaption": "各指标的当前值，以及与该标的过去数值（最长约5年）相比的百分位（0~100）",
+                "factorOutliers": "超出平常范围（25~75百分位）的指标有：{v0}。",
+                "factorOutlierItem": "{v0}（{v1}）",
+                "factorHighShort": "偏高",
+                "factorLowShort": "偏低",
+                "factorAllInRange": "所有指标均处于平常范围（25~75百分位）内。",
+                "extremeZoneMethodLink": "查看记录的归并规则"
             },
             "mobileSheet": {
                 "aiAnalysis": "AI 分析"
@@ -2215,9 +2233,8 @@
                 }
             },
             "technicalFacts": {
-                "closeSummary": "{v0} 以最新收盘价 {v1} 计，较前一根K线{v3}{v2}%。",
+                "closeSummary": "{v0} 最新收盘价为 {v1}，较前一根K线{v3}{v2}%。",
                 "directionDown": "下跌",
-                "directionFlat": "持平",
                 "directionUp": "上涨",
                 "macdDown": "MACD 柱状图为负，短期动能偏下行",
                 "macdFlat": "MACD 柱状图为零，短期动能接近中性",
@@ -2228,7 +2245,8 @@
                 "rsiNeutral": "中性",
                 "rsiOverbought": "超买",
                 "rsiOversold": "超卖",
-                "rsiZone": "RSI 为 {v0}，处于{v1}区间"
+                "rsiZone": "RSI 为 {v0}（{v1}区间）",
+                "closeSummaryFlat": "{v0} 最新收盘价为 {v1}，与前一根K线持平。"
             }
         },
         "ai-about": {

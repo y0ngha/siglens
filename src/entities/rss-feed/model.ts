@@ -12,8 +12,13 @@ export interface RssItem {
     readonly guid: string;
     /** 이 본문이 처음 확인된 시각. */
     readonly pubDate: Date;
-    /** 평문. 호출부가 마크다운을 떼고 300 code point 이내 문장 경계로 줄여 넘긴다. */
+    /** 평문. 호출부가 마크다운을 떼고 500 code point 이내 문장 경계로 줄여 넘긴다. */
     readonly description: string;
+    /**
+     * 같은 본문 전체의 문단(평문). 있으면 `content:encoded`에 `<p>` 문단으로 싣는다 — 리더가
+     * 요약(`description`) 대신 전문을 보여 줄 수 있다. 호출부가 마크다운을 뗀 뒤 넘긴다.
+     */
+    readonly paragraphs?: readonly string[];
 }
 
 export interface RssChannel {

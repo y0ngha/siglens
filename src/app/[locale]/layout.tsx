@@ -1,3 +1,4 @@
+import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import type { Metadata, Viewport } from 'next';
 import { localePageRobots, localeOpenGraph } from '@/shared/lib/seoAlternates';
 import type { ReactNode } from 'react';
@@ -24,7 +25,12 @@ import { ADSENSE_ENABLED } from '@/shared/lib/adsense';
 import { CF_BEACON_TOKEN } from '@/shared/lib/cloudflareAnalytics';
 import { GoogleAdsTag } from '@/app/_components/GoogleAdsTag';
 import { GOOGLE_ADS_ID } from '@/shared/config/googleAds';
-import { ROOT_KEYWORDS, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
+import {
+    brandIntroName,
+    ROOT_KEYWORDS,
+    SITE_NAME,
+    SITE_URL,
+} from '@/shared/lib/seo';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import {
     isLocale,
@@ -75,11 +81,15 @@ export async function generateMetadata({
     // 루트 메타데이터도 카탈로그를 쓴다 — 예전에는 `ROOT_TITLE`·`SITE_DESCRIPTION`
     // 한국어 상수라 `/en`·`/ja`·`/zh`의 탭 제목과 공유 카드가 통째로 한국어였다.
     const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
+    // 브랜드가 제목에 들어간다(2026-10-05 감사: 홈 제목에 브랜드가 없어 "시그렌즈"·"Siglens"
+    // 검색이 홈으로 귀결되지 않았다). 한글 표기는 인자로 넘긴다 — 카탈로그에 직접 적으면
+    // ko 문장만 길어져 번역 검증의 길이 게이트가 다른 로케일을 잘린 번역으로 본다.
+    const rootTitle = tSeo('root.title', { v0: brandIntroName(locale) });
 
     return {
         metadataBase: new URL(SITE_URL),
         title: {
-            default: tSeo('root.title'),
+            default: rootTitle,
             template: `%s | ${SITE_NAME}`,
         },
         description: tSeo('root.description'),
@@ -93,7 +103,7 @@ export async function generateMetadata({
         openGraph: {
             type: 'website',
             siteName: SITE_NAME,
-            title: `${tSeo('root.title')} | ${SITE_NAME}`,
+            title: rootTitle,
             description: tSeo('root.description'),
             url: siteUrl,
             // 색인 게이트를 존중하는 단일 출처를 쓴다. 여기 하드코딩을 남겨두면
@@ -111,12 +121,11 @@ export async function generateMetadata({
                 },
             ],
         },
-        twitter: {
-            card: 'summary_large_image',
-            title: `${tSeo('root.title')} | ${SITE_NAME}`,
+        twitter: buildTwitterMetadata({
+            title: rootTitle,
             description: tSeo('root.description'),
             images: ['/og-image.png'],
-        },
+        }),
         // apple-touch-icon은 file-based 규약(src/app/apple-icon.png)이 <link rel="apple-touch-icon">
         // 을 자동 생성하므로 metadata.icons로 중복 선언하지 않는다. 이전엔 둘이 공존해 동일
         // 이미지(184×180)가 두 번 링크됐고, 수동 선언의 sizes='180x180'도 실제와 불일치했다.

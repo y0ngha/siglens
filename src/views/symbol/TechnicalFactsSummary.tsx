@@ -42,6 +42,11 @@ function formatVisibleChange(changePercent: number): ChangeDisplay {
 
 interface TechnicalFactsSummaryProps {
     symbol: string;
+    /**
+     * 서술 문장·소제목의 주어(`애플(AAPL)`). 생략하면 티커(`symbol`)를 쓴다.
+     * 첫 문장이 검색 스니펫으로 쓰이므로 호출부가 `symbolFactsSubject`로 만들어 넘긴다.
+     */
+    subject?: string;
     bars: readonly Bar[];
     indicators: IndicatorResult;
     /**
@@ -59,6 +64,7 @@ interface TechnicalFactsSummaryProps {
  */
 export function TechnicalFactsSummary({
     symbol,
+    subject = symbol,
     bars,
     indicators,
     marketProfile = 'us-equity',
@@ -80,7 +86,7 @@ export function TechnicalFactsSummary({
     const change = formatVisibleChange(facts.changePercent);
     const { quoteDelayMinutes, priceFormat } = getDescriptor(marketProfile);
     const narrative = buildTechnicalFactsNarrative(
-        symbol,
+        subject,
         facts,
         marketProfile,
         tFacts
@@ -95,7 +101,7 @@ export function TechnicalFactsSummary({
                 id={headingId}
                 className="text-sm font-semibold text-secondary-200"
             >
-                {t('TechnicalFactsSummary.170a59', { v0: symbol })}
+                {t('TechnicalFactsSummary.170a59', { v0: subject })}
             </h2>
             {/* 서술 문장이 표(`<dl>`)보다 **DOM에서 앞서야** 한다 — 네이버는 본문
                 첫 텍스트로 스니펫을 만드는데, 예전 순서에서는 그것이 "현재가 : $25.40

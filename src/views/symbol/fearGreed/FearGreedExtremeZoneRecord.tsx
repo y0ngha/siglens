@@ -1,7 +1,8 @@
 import { useTranslations } from 'next-intl';
 import { useId } from 'react';
-import { EXTREME_ZONE_REENTRY_GAP } from '@y0ngha/siglens-core';
 import { HEADING_SUBSECTION } from '@/shared/lib/typographyStyles';
+import { METHODOLOGY_PATH } from '@/shared/lib/legal';
+import { LocaleLink } from '@/shared/ui/LocaleLink';
 import type {
     ExtremeZoneRecord,
     ExtremeZoneSection,
@@ -29,12 +30,11 @@ export function FearGreedExtremeZoneRecord({
 }: FearGreedExtremeZoneRecordProps) {
     const t = useTranslations('views.symbol.fearGreedFacts');
     const headingId = useId();
-    // 재진입 간격은 core가 정한다 — 문구에 숫자를 박아 두면 core 값이 바뀔 때
-    // 화면 설명만 거짓이 된다.
+    // 같은 구간으로 다시 들어온 날을 한 기록으로 묶는 기준(재진입 간격)은 `/methodology`가
+    // 설명한다 — 모든 종목 페이지에서 같은 문장이 반복되지 않게 링크로 대신한다.
     const period = t('extremeZonePeriod', {
         v0: record.from,
         v1: record.to,
-        v2: EXTREME_ZONE_REENTRY_GAP,
     });
 
     return (
@@ -42,7 +42,16 @@ export function FearGreedExtremeZoneRecord({
             <h3 id={headingId} className={HEADING_SUBSECTION}>
                 {t('extremeZoneTitle')}
             </h3>
-            <p className="text-sm leading-6 text-secondary-300">{period}</p>
+            <p className="text-sm leading-6 text-secondary-300">
+                {period}{' '}
+                <LocaleLink
+                    href={`${METHODOLOGY_PATH}#fear-greed`}
+                    prefetch={false}
+                    className="inline-flex min-h-11 items-center rounded text-secondary-300 underline underline-offset-2 hover:text-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                >
+                    {t('extremeZoneMethodLink')}
+                </LocaleLink>
+            </p>
             {record.sections.length === 0 ? (
                 <p className="text-sm leading-6 text-secondary-300">
                     {t('extremeZoneNone')}

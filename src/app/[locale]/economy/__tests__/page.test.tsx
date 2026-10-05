@@ -124,6 +124,19 @@ describe('/economy page.tsx integration', () => {
             expect(meta.alternates?.canonical).toBeNull();
         });
 
+        it('ko는 RSS 발견 링크를 단다(거시 브리핑이 피드에 실린다)', async () => {
+            mockGetSnapshot.mockResolvedValue(FULL_SNAPSHOT);
+            mockIsEmpty.mockReturnValue(false);
+
+            const meta = await generateMetadata({
+                params: Promise.resolve({ locale: 'ko' }),
+            });
+
+            expect(meta.alternates?.types).toEqual({
+                'application/rss+xml': 'https://siglens.io/rss.xml',
+            });
+        });
+
         it('정상 스냅샷이면 metadata.robots가 index:true(명시)이고 canonical이 ECONOMY_URL', async () => {
             mockGetSnapshot.mockResolvedValue(FULL_SNAPSHOT);
             mockIsEmpty.mockReturnValue(false);

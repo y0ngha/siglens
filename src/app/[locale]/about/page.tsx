@@ -1,3 +1,4 @@
+import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import { getTranslations } from 'next-intl/server';
 import { countSkillFiles } from '@/entities/skill/api';
 import { resolveLocale } from '@/shared/i18n/locales';
@@ -134,12 +135,12 @@ export async function generateMetadata({
                 },
             ],
         },
-        twitter: {
+        twitter: buildTwitterMetadata({
             card: 'summary',
             title: aboutFullTitle(tSeo),
             description: aboutDescription(tSeo),
             images: ['/og-image.png'],
-        },
+        }),
     };
 }
 

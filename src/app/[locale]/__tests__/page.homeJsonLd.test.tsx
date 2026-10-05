@@ -65,16 +65,60 @@ import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { render } from '@testing-library/react';
 
-import Home from '@/app/[locale]/(home)/page';
+import Home, { generateMetadata } from '@/app/[locale]/(home)/page';
 import { buildHomeFaq } from '@/app/[locale]/homeJsonLd';
 import { expectFaqSingleSource } from '@/__tests__/utils/expectFaqSingleSource';
 import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
-import { GITHUB_URL, X_URL } from '@/shared/lib/seo';
+import {
+    brandIntroName,
+    GITHUB_URL,
+    SEO_TITLE_MAX_WIDTH,
+    seoTitleWidth,
+    SITE_NAME_KO,
+    X_URL,
+} from '@/shared/lib/seo';
 import { OPERATOR_SAME_AS, SITE_OPERATOR } from '@/shared/lib/legal';
 
 async function renderHome() {
     return await Home({ params: Promise.resolve({ locale: 'ko' }) });
 }
+
+describe('홈 메타데이터·H1·WebPage — 브랜드', () => {
+    it('title·og·twitter 제목에 한글·영문 브랜드가 들어가고 폭이 55 이하다', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
+        const title = (metadata.title as { absolute: string }).absolute;
+
+        expect(title).toContain(SITE_NAME_KO);
+        expect(title.startsWith(brandIntroName('ko'))).toBe(true);
+        expect(seoTitleWidth(title)).toBeLessThanOrEqual(SEO_TITLE_MAX_WIDTH);
+        expect(metadata.openGraph?.title).toBe(title);
+        expect(metadata.twitter?.title).toBe(title);
+        expect(metadata.twitter).toMatchObject({ site: '@siglens_io' });
+    });
+
+    it('H1이 시그렌즈(Siglens)를 담고 마케팅 문구("새로운 기준")는 없다', async () => {
+        const { container } = render(await renderHome());
+        const h1 = container.querySelector('h1')!;
+
+        expect(h1.textContent).toContain(brandIntroName('ko'));
+        expect(h1.textContent).not.toContain('새로운 기준');
+    });
+
+    it('WebPage JSON-LD name이 title과 같다', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko' }),
+        });
+        const webPage = collectJsonLdData(await renderHome()).find(
+            d => d['@type'] === 'WebPage'
+        ) as { name: string } | undefined;
+
+        expect(webPage?.name).toBe(
+            (metadata.title as { absolute: string }).absolute
+        );
+    });
+});
 
 describe('홈 FAQ', () => {
     it('FAQPage 구조화데이터가 화면 FaqSection과 같은 질문·답변을 쓴다', async () => {
@@ -107,27 +151,22 @@ describe('홈 FAQ', () => {
 
 describe('홈 Organization 노드', () => {
     /**
-     * `founder.sameAs`는 운영자 개인 저장소를 가리키는데 `Organization.sameAs`는
-     * 서비스 저장소만 주장하고 있었다 — 파서가 두 프로필을 같은 주체로 묶을
-     * 근거가 없다. 두 주소를 모두 선언해 그래프를 닫는다.
+     * `Organization.sameAs`는 **조직**의 외부 프로필(서비스 저장소·서비스 X 계정)만 싣는다.
+     * 운영자 개인 GitHub·velog는 사람의 프로필이라 `founder.sameAs`에만 둔다 — 개인 계정이
+     * 조직 노드에 섞이면 파서가 조직과 운영자를 같은 주체로 읽는다(2026-10-05 감사).
      */
-    it('sameAs에 운영자·서비스 저장소와 velog·X가 모두 있다', async () => {
+    it('sameAs는 서비스 저장소와 서비스 X 계정뿐이다(개인 GitHub·velog 제외)', async () => {
         const organization = collectJsonLdData(await renderHome()).find(
             d => d['@type'] === 'Organization'
         ) as { sameAs: string[] } | undefined;
 
         expect(organization?.sameAs).toEqual([
-            'https://github.com/y0ngha',
             'https://github.com/y0ngha/siglens',
-            'https://velog.io/@y0ngha',
             'https://x.com/siglens_io',
         ]);
-        expect(organization?.sameAs).toEqual([
-            SITE_OPERATOR.githubUrl,
-            GITHUB_URL,
-            SITE_OPERATOR.velogUrl,
-            X_URL,
-        ]);
+        expect(organization?.sameAs).toEqual([GITHUB_URL, X_URL]);
+        expect(organization?.sameAs).not.toContain(SITE_OPERATOR.githubUrl);
+        expect(organization?.sameAs).not.toContain(SITE_OPERATOR.velogUrl);
     });
 
     it('founder.sameAs는 운영자 프로필 두 곳(GitHub·velog)이다', async () => {

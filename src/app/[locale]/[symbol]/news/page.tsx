@@ -44,6 +44,7 @@ import { translateFmpError } from '@/shared/api/fmp/fmpUserMessage';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolSeoContent,
+    buildTitleSubject,
     localizedAbsoluteUrl,
     resolveSymbolNewsSeoContent,
     symbolMetadataFromSeo,
@@ -119,7 +120,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             tab: 'news',
             revalidate,
             locale,
-            displayName,
+            // 접두는 짧은 주어(`애플(AAPL)`) — 긴 표시명이 문장 예산을 먹는다.
+            subject: buildTitleSubject(upper, assetInfo.koreanName),
             assetClass: assetClass,
             tSeo,
         });
@@ -384,15 +386,15 @@ export default async function NewsPage({ params }: Props) {
         generatedAt: showNewsProse ? newsSnapshot?.generatedAt : null,
     });
 
-    // 뉴스 목록은 최신순(`orderBy desc(publishedAt)`)이라 [0]이 가장 최근 발행분이다.
-    // `publishedAt`은 이미 ISO 문자열, `generatedAt`은 Date(캐시 왕복 후에는
-    // 문자열)라 `new Date(...)`로 한 번 정규화한다.
-    const articleModifiedSource =
-        newsItems[0]?.publishedAt ?? newsSnapshot?.generatedAt ?? null;
+    // `dateModified`는 **화면에 그려지는 산문이 만들어진 시각**, 곧 스냅샷 `generatedAt`이다
+    // — 위 `WebPage.dateModified`·sitemap `lastmod`와 같은 값이다. 예전에는 가장 최근 뉴스
+    // 기사의 발행 시각을 썼는데, 그건 이 페이지가 아니라 외부 기사의 시각이라 같은 문서의
+    // 두 노드(WebPage·Article)가 서로 다른 수정 시각을 말했다.
+    // `generatedAt`은 Date(캐시 왕복 후에는 문자열)라 `new Date(...)`로 한 번 정규화한다.
     const articleModifiedAt =
-        articleModifiedSource === null
+        newsSnapshot?.generatedAt == null
             ? null
-            : new Date(articleModifiedSource).toISOString();
+            : new Date(newsSnapshot.generatedAt).toISOString();
     // 발행일은 이 종목의 뉴스 요약이 **처음** 만들어진 시각(`firstGeneratedAt`)이다.
     // 값이 없는 행(컬럼 도입 전 + 백필이 소스를 못 찾은 경우)은 필드를 생략한다 —
     // 모르는 발행일을 지어내는 대신 아무 말도 하지 않는다.
@@ -430,9 +432,8 @@ export default async function NewsPage({ params }: Props) {
         // "ticker별 최초 시각을 알 수 없다"가 사실이 아니었다 — `first_generated_at`
         // 컬럼과 1회 백필(뉴스 탭은 심볼별 `min(news.fetched_at)`)로 확보했다.
         //
-        // dateModified는 **이 페이지에 실제로 실린 것**의 시각이다: 가장 최신 뉴스의
-        // 발행 시각, 없으면 스냅샷 생성 시각, 둘 다 없으면 필드를 생략한다.
-        // 예전에는 `getTodayIsoDay()`(오늘 0시)였는데, 그건 "크롤된 날"이지
+        // dateModified는 **이 페이지에 실제로 실린 산문**의 시각이다(스냅샷 생성 시각).
+        // 없으면 필드를 생략한다. 예전에는 `getTodayIsoDay()`(오늘 0시)였는데, 그건 "크롤된 날"이지
         // 내용이 바뀐 날이 아니라 전 종목이 매일 갱신된다고 주장하는 거짓 신선도
         // 신호였다(2026-09-17 정책 감사 M2).
         ...(articlePublishedAtForJsonLd !== null && {

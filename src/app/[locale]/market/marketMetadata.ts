@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import type { DashboardScope } from '@/shared/config/dashboardScope';
 import { resolveLocale } from '@/shared/i18n/locales';
 import { buildHubMetadata } from '@/shared/lib/seoAlternates';
+import { rssAlternateTypes } from '@/shared/config/rssFeed';
 import { marketCopyFor } from './copy';
 import { loadMarketSignals } from './loadMarketSignals';
 
@@ -31,5 +32,6 @@ export async function marketMetadata(
         description: copy.description,
         keywords: copy.keywords,
         degraded,
+        alternateTypes: rssAlternateTypes(locale),
     });
 }

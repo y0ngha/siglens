@@ -86,11 +86,12 @@ function bodies(): Record<string, unknown> {
 }
 
 /** 모든 표면에 대해 "크론이 이 본문을 확인했다"는 스탬프를 준다. */
-function stampsMatching(stored: Record<string, unknown>): void {
+function stampsMatching(
+    stored: Record<string, unknown>,
+    at: string = STAMP_AT
+): void {
     mocks.readHubContentStamp.mockImplementation(async (surface: string) =>
-        surface in stored
-            ? { hash: hashHubBody(stored[surface]), at: STAMP_AT }
-            : null
+        surface in stored ? { hash: hashHubBody(stored[surface]), at } : null
     );
 }
 
@@ -174,15 +175,44 @@ describe('GET /api/rss', () => {
         );
     });
 
-    it('제목은 한국어 표제다 — 카테고리명은 카테고리 설정의 ko 라벨을 쓴다', async () => {
+    it('제목은 한국어 표제 + 스탬프의 KST 날짜다 — 카테고리명은 카테고리 설정의 ko 라벨을 쓴다', async () => {
         const xml = await (await GET(request())).text();
 
-        expect(xml).toContain('<title>미국 시장 브리핑</title>');
-        expect(xml).toContain('<title>한국 시장 브리핑</title>');
-        expect(xml).toContain('<title>거시 경제 브리핑</title>');
+        // STAMP_AT = 2026-10-04T03:00Z = KST 10월 4일 12:00.
+        expect(xml).toContain('<title>미국 시장 브리핑 — 10월 4일</title>');
+        expect(xml).toContain('<title>한국 시장 브리핑 — 10월 4일</title>');
+        expect(xml).toContain('<title>거시 경제 브리핑 — 10월 4일</title>');
         for (const config of Object.values(CATEGORY_CONFIG)) {
-            expect(xml).toContain(`<title>${config.koLabel} 뉴스 요약</title>`);
+            expect(xml).toContain(
+                `<title>${config.koLabel} 뉴스 요약 — 10월 4일</title>`
+            );
         }
+    });
+
+    it('채널 제목은 한글·영문 브랜드를 함께 쓴다', async () => {
+        const xml = await (await GET(request())).text();
+
+        expect(xml).toContain('<title>시그렌즈(Siglens) 시장 브리핑</title>');
+    });
+
+    it('날짜는 UTC가 아니라 KST로 센다 — UTC 15시 이후 스탬프는 다음 날이다', async () => {
+        const stored = bodies();
+        stampsMatching(stored, '2026-10-04T16:00:00.000Z');
+
+        const xml = await (await GET(request())).text();
+
+        expect(xml).toContain('<title>미국 시장 브리핑 — 10월 5일</title>');
+    });
+
+    it('content:encoded에 같은 본문 전체를 CDATA <p> 문단으로 싣는다', async () => {
+        const xml = await (await GET(request())).text();
+
+        expect(xml).toContain(
+            'xmlns:content="http://purl.org/rss/1.0/modules/content/"'
+        );
+        expect(xml).toContain(
+            '<content:encoded><![CDATA[<p>미국 지수는 상승했습니다. 기술주가 이끌었습니다.</p>]]></content:encoded>'
+        );
     });
 
     it('설명은 소스별 본문 필드를 마크다운을 떼고 쓴다 — 시장·거시는 summary, 뉴스는 currentDriverKo', async () => {
@@ -202,7 +232,7 @@ describe('GET /api/rss', () => {
         expect(xml).not.toContain('금리 동결');
     });
 
-    it('긴 본문은 300 code point 이내 문장 경계에서 끊는다', async () => {
+    it('긴 본문은 500 code point 이내 문장 경계에서 끊는다', async () => {
         const sentence = '지수는 하루 종일 좁은 범위에서 움직였습니다. ';
         const long = { summary: sentence.repeat(30).trim() };
         const stored = { ...bodies(), [rssMarketSurface('us')]: long };
@@ -217,7 +247,9 @@ describe('GET /api/rss', () => {
             )
         )?.[1];
         expect(description).toBeDefined();
-        expect([...(description ?? '')].length).toBeLessThanOrEqual(300);
+        expect([...(description ?? '')].length).toBeLessThanOrEqual(500);
+        // 300자 상한 시절보다 길다 — 문장 단위로 더 담는다.
+        expect([...(description ?? '')].length).toBeGreaterThan(300);
         expect(description?.endsWith('습니다.')).toBe(true);
     });
 

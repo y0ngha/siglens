@@ -6,6 +6,13 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { FearGreedPageError } from '@/widgets/fear-greed/FearGreedPageError';
 import { FearGreedFactsSummary } from '@/views/symbol/fearGreed/FearGreedFactsSummary';
 import { hasFearGreedScore } from '@/views/symbol/fearGreed/utils/hasFearGreedScore';
+import {
+    buildFearGreedMetaFacts,
+    scoredHistory,
+} from '@/views/symbol/fearGreed/utils/fearGreedFacts';
+import { composeFearGreedDescription } from '@/views/symbol/fearGreed/utils/fearGreedMetaDescription';
+import { fearGreedDateModified } from '@/views/symbol/fearGreed/utils/fearGreedDateModified';
+import { symbolFactsSubject } from '@/views/symbol/utils/factsSubject';
 import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { JsonLd } from '@/shared/ui/JsonLd';
@@ -18,6 +25,7 @@ import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilie
 import { getQuantizedBarsStatic } from '@/entities/bars/lib/barsStaticCache';
 import {
     clientSymbolFearGreed,
+    computeSymbolFearGreedSeries,
     symbolFearGreedInputs,
 } from '@/entities/bars/lib/symbolFearGreed';
 import { getMarketFearGreedReading } from '@/entities/market-fear-greed/api/marketFearGreedReading';
@@ -170,7 +178,40 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
      * 되돌림 신호: GSC `크롤링됨-현재 색인 생성되지 않음`에 `/fear-greed` URL이
      * 쌓이거나, 사이트 평균 게재순위가 나빠지면 이 탭을 다시 noindex로 돌린다.
      */
-    return symbolMetadataFromSeo(seo, locale);
+    const metadata = symbolMetadataFromSeo(seo, locale);
+
+    // 점수에서 만든 종목별 설명. 본문(`FearGreedFactsSummary`)과 같은 봉·같은 계산이다 —
+    // `metadataBars`는 위에서 이미 읽은 값이고 `computeSymbolFearGreedSeries`는 같은 입력
+    // 배열이면 요청 안에서 한 번만 계산(`React.cache`)하므로 추가 provider 호출이 없다.
+    // 점수를 못 내면(봉 부족) 템플릿 설명을 그대로 둔다.
+    const metaFacts =
+        metadataBars === null
+            ? null
+            : (() => {
+                  const input = symbolFearGreedInputs(metadataBars);
+                  return buildFearGreedMetaFacts(
+                      scoredHistory(
+                          computeSymbolFearGreedSeries(
+                              input.bars,
+                              input.buySellVolume
+                          ).history
+                      )
+                  );
+              })();
+    if (metaFacts === null) return metadata;
+    const tLabel = await getTranslations({
+        locale,
+        namespace: 'shared.enumLabel',
+    });
+    return {
+        ...metadata,
+        description: composeFearGreedDescription(
+            metaFacts,
+            symbolFactsSubject(ticker, assetInfo.koreanName, locale),
+            tSeo,
+            tLabel
+        ),
+    };
 }
 
 export default async function SymbolFearGreedPage({ params }: Props) {
@@ -217,14 +258,6 @@ export default async function SymbolFearGreedPage({ params }: Props) {
         assetInfo.fmpSymbol,
         assetClass
     );
-    const webPageJsonLd = buildSymbolWebPageJsonLd({
-        url,
-        name: fullTitle,
-        description,
-        about: aboutNode,
-        locale,
-    });
-
     const breadcrumbJsonLd = buildBreadcrumbJsonLd(
         [
             { name: displayName, url: buildSymbolSeoContent(ticker, tSeo).url },
@@ -278,6 +311,29 @@ export default async function SymbolFearGreedPage({ params }: Props) {
             { updatedAt: lastBarSec * MS_PER_SECOND }
         );
     }
+
+    // `dateModified`는 마지막 점수 봉의 세션 마감 — sitemap `lastmod`와 같은 정의다
+    // (`fearGreedDateModified`). 점수가 없으면 신선도를 주장하지 않는다(필드 생략).
+    const lastScoredDate =
+        fearGreedInput === null
+            ? undefined
+            : scoredHistory(
+                  computeSymbolFearGreedSeries(
+                      fearGreedInput.bars,
+                      fearGreedInput.buySellVolume
+                  ).history
+              ).at(-1)?.date;
+    const webPageJsonLd = buildSymbolWebPageJsonLd({
+        url,
+        name: fullTitle,
+        description,
+        about: aboutNode,
+        locale,
+        generatedAt:
+            lastScoredDate === undefined
+                ? null
+                : fearGreedDateModified(lastScoredDate, marketProfile),
+    });
 
     // 요약 여부는 `FearGreedFactsSummary`가 정한다(점수가 없으면 null). 게이트의
     // `hasFearGreedScore`와 같은 core 계산·같은 입력이라 색인과 화면이 갈리지 않는다.

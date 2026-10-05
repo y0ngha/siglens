@@ -183,6 +183,7 @@ describe('TechnicalFactsSummary', () => {
         render(
             <TechnicalFactsSummary
                 symbol="AAPL"
+                subject="애플(AAPL)"
                 bars={[bar(100, 120, 90), bar(110, 115, 100)]}
                 indicators={{
                     ...emptyIndicators,
@@ -194,12 +195,12 @@ describe('TechnicalFactsSummary', () => {
 
         expect(
             screen.getByText(
-                'AAPL은 최근 종가 $110.00 기준으로 직전 봉 대비 10.00% 상승했습니다.'
+                '애플(AAPL)의 최근 종가는 $110.00이고, 직전 봉 대비 10.00% 상승했습니다.'
             )
         ).toBeInTheDocument();
         expect(
             screen.getByText(
-                new RegExp(`RSI ${NEUTRAL_RSI.toFixed(1)}로 중립 구간`)
+                new RegExp(`RSI는 ${NEUTRAL_RSI.toFixed(1)}\\(중립 구간\\)`)
             )
         ).toBeInTheDocument();
     });

@@ -1,3 +1,4 @@
+import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { cache } from 'react';
@@ -109,12 +110,12 @@ export async function legalPolicyMetadata(
                 },
             ],
         },
-        twitter: {
+        twitter: buildTwitterMetadata({
             card: 'summary',
             title: fullTitle,
             description,
             images: ['/og-image.png'],
-        },
+        }),
     };
 }
 

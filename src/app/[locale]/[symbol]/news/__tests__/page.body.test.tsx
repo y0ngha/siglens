@@ -488,8 +488,10 @@ describe('NewsPage — BreadcrumbList 이름', () => {
  *
  * - 화면에 보이는 AI 산문이 없으면 Article 노드 자체를 싣지 않는다(마크업이
  *   페이지에 없는 콘텐츠를 주장하지 않는다).
- * - `dateModified`는 **이 페이지에 실제로 실린 것**의 시각이다. 예전에는
- *   `getTodayIsoDay()`(오늘 0시)라 전 종목이 매일 갱신된다고 주장했다.
+ * - `dateModified`는 **이 페이지에 실린 산문이 만들어진 시각**, 곧 스냅샷 `generatedAt`이다
+ *   (WebPage·sitemap과 같은 값, 2026-10-05). 예전에는 `getTodayIsoDay()`(오늘 0시)라 전
+ *   종목이 매일 갱신된다고 주장했고, 그다음엔 외부 기사의 발행 시각을 써서 같은 문서의
+ *   WebPage와 Article이 서로 다른 수정 시각을 말했다.
  */
 describe('NewsPage — Article JSON-LD 게이트와 dateModified', () => {
     const PROSE_SNAPSHOT = [
@@ -544,7 +546,7 @@ describe('NewsPage — Article JSON-LD 게이트와 dateModified', () => {
         });
     });
 
-    it('산문이 있으면 최신 뉴스 발행 시각을 dateModified로 쓴다', async () => {
+    it('산문이 있으면 스냅샷 생성 시각을 dateModified로 쓴다 — 최신 기사 발행 시각이 아니다', async () => {
         vi.mocked(getSeoSnapshotsStatic).mockResolvedValue(PROSE_SNAPSHOT);
         mockGetNewsList.mockResolvedValue(READY_NEWS);
 
@@ -552,10 +554,15 @@ describe('NewsPage — Article JSON-LD 게이트와 dateModified', () => {
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        expect(findArticle(tree)?.dateModified).toBe(READY_NEWS[0].publishedAt);
+        expect(findArticle(tree)?.dateModified).toBe(
+            '2026-09-01T03:04:05.000Z'
+        );
+        expect(findArticle(tree)?.dateModified).not.toBe(
+            READY_NEWS[0].publishedAt
+        );
     });
 
-    it('뉴스가 없으면 스냅샷 생성 시각으로 폴백한다', async () => {
+    it('뉴스가 없어도 스냅샷 생성 시각을 쓴다', async () => {
         vi.mocked(getSeoSnapshotsStatic).mockResolvedValue(PROSE_SNAPSHOT);
 
         const tree = await NewsPage({
@@ -590,7 +597,7 @@ describe('NewsPage — Article JSON-LD 게이트와 dateModified', () => {
         );
 
         expect(article?.datePublished).toBe('2026-04-02T03:00:00.000Z');
-        expect(article?.dateModified).toBe(READY_NEWS[0].publishedAt);
+        expect(article?.dateModified).toBe('2026-09-01T03:04:05.000Z');
     });
 
     it('firstGeneratedAt이 없으면 datePublished를 생략한다 — 모르는 발행일을 지어내지 않는다', async () => {
@@ -608,9 +615,8 @@ describe('NewsPage — Article JSON-LD 게이트와 dateModified', () => {
     });
 
     /**
-     * 뉴스가 끊긴 종목에서 실제로 나올 수 있는 조합이다: `dateModified`는 마지막
-     * 기사 발행일이라 백필된 최초 생성 시각보다 **앞설** 수 있다. 발행이 수정보다
-     * 늦다고 주장하는 마크업은 스스로 모순이라 그때는 함께 생략한다.
+     * 백필된 최초 생성 시각이 현재 스냅샷의 생성 시각보다 **늦을** 수 있다. 발행이 수정보다
+     * 늦다고 주장하는 마크업은 스스로 모순이라 그때는 `datePublished`를 생략한다.
      */
     it('datePublished가 dateModified보다 늦으면 생략한다', async () => {
         vi.mocked(getSeoSnapshotsStatic).mockResolvedValue([
@@ -619,10 +625,7 @@ describe('NewsPage — Article JSON-LD 게이트와 dateModified', () => {
                 firstGeneratedAt: new Date('2026-09-10T00:00:00.000Z'),
             },
         ] as unknown as Awaited<ReturnType<typeof getSeoSnapshotsStatic>>);
-        // 마지막 기사가 firstGeneratedAt보다 오래된 상황.
-        mockGetNewsList.mockResolvedValue([
-            { ...READY_NEWS[0], publishedAt: '2026-08-01T00:00:00.000Z' },
-        ]);
+        mockGetNewsList.mockResolvedValue(READY_NEWS);
 
         const article = findArticle(
             await NewsPage({
@@ -630,7 +633,7 @@ describe('NewsPage — Article JSON-LD 게이트와 dateModified', () => {
             })
         );
 
-        expect(article?.dateModified).toBe('2026-08-01T00:00:00.000Z');
+        expect(article?.dateModified).toBe('2026-09-01T03:04:05.000Z');
         expect('datePublished' in article!).toBe(false);
     });
 

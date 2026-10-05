@@ -6,7 +6,7 @@ import type {
     FearGreedSnapshot,
 } from '@y0ngha/siglens-core';
 import {
-    buildFearGreedFactorLines,
+    buildFearGreedFactorTable,
     buildFearGreedGroupComparisonLine,
     buildFearGreedFactorRankingLine,
     buildFearGreedPeriodComparisonLine,
@@ -64,10 +64,8 @@ beforeAll(async () => {
 });
 
 /**
- * factorInterpretation은 3구간(<25 low / >=75 high / 그 사이 middle)이다.
- * 감사 지적: <25 구간이 어떤 기존 테스트에서도 실행된 적이 없고, 해석 문구
- * 자체(각 구간의 리터럴 텍스트)도 단언된 적이 없었다. 이 스위트는 경계값
- * (24/25, 74/75)을 포함해 세 구간 전부와 완성된 한 줄 문장 텍스트를 검증한다.
+ * 지표 표는 평소 범위(25~75 퍼센타일) 밖만 해석 대상으로 올린다. 경계값(24/25, 74/75)을
+ * 포함해 세 구간을 모두 검증한다 — <25 구간은 한때 어떤 테스트에서도 실행된 적이 없었다.
  */
 function buildSnapshot(percentile: number): FearGreedSnapshot {
     return {
@@ -86,119 +84,60 @@ function buildSnapshot(percentile: number): FearGreedSnapshot {
     };
 }
 
-function expectedLine(percentile: number, interpretation: string): string {
-    const pctile = Math.round(percentile);
-    // FIX 6 (audit): "82th 퍼센타일" mixed an English ordinal suffix into
-    // Korean text — native Korean ordinal "번째" replaces it.
-    return `${(koMessages.shared.lib.fearGreedFactor as unknown as { symbolLabel: Record<string, string> }).symbolLabel.volume_z}: ${formatFactorRaw('volume_z', 1.2345, 'ko')} (${pctile}번째 퍼센타일) — ${interpretation}.`;
-}
+const volumeLabel = (
+    koMessages.shared.lib.fearGreedFactor as unknown as {
+        symbolLabel: Record<string, string>;
+    }
+).symbolLabel.volume_z;
 
-describe('buildFearGreedFactorLines', () => {
-    it('낮음 구간(<25)이면 "낮은 편"으로 해석하고 전체 문장을 그대로 생성한다', () => {
-        const lines = buildFearGreedFactorLines(
-            buildSnapshot(10),
-            tFacts,
-            tFactor,
-            'ko'
-        );
-
-        expect(lines).toEqual([
-            expectedLine(10, '최근 200영업일 분포 대비 낮은 편'),
-        ]);
-    });
-
-    it('경계값 24는 여전히 낮음 구간이다', () => {
-        const lines = buildFearGreedFactorLines(
-            buildSnapshot(24),
-            tFacts,
-            tFactor,
-            'ko'
-        );
-
-        expect(lines).toEqual([
-            expectedLine(24, '최근 200영업일 분포 대비 낮은 편'),
-        ]);
-    });
-
-    it('경계값 25는 낮음에서 평균 범위로 넘어간다', () => {
-        const lines = buildFearGreedFactorLines(
-            buildSnapshot(25),
-            tFacts,
-            tFactor,
-            'ko'
-        );
-
-        expect(lines).toEqual([
-            expectedLine(25, '최근 200영업일 분포의 평균 범위 안'),
-        ]);
-    });
-
-    it('중간 구간(25~74)이면 "평균 범위 안"으로 해석한다', () => {
-        const lines = buildFearGreedFactorLines(
-            buildSnapshot(50),
-            tFacts,
-            tFactor,
-            'ko'
-        );
-
-        expect(lines).toEqual([
-            expectedLine(50, '최근 200영업일 분포의 평균 범위 안'),
-        ]);
-    });
-
-    it('경계값 74는 여전히 평균 범위다', () => {
-        const lines = buildFearGreedFactorLines(
-            buildSnapshot(74),
-            tFacts,
-            tFactor,
-            'ko'
-        );
-
-        expect(lines).toEqual([
-            expectedLine(74, '최근 200영업일 분포의 평균 범위 안'),
-        ]);
-    });
-
-    it('경계값 75는 평균 범위에서 높음으로 넘어간다', () => {
-        const lines = buildFearGreedFactorLines(
-            buildSnapshot(75),
-            tFacts,
-            tFactor,
-            'ko'
-        );
-
-        expect(lines).toEqual([
-            expectedLine(75, '최근 200영업일 분포 대비 높은 편'),
-        ]);
-    });
-
-    it('높음 구간(>=75)이면 "높은 편"으로 해석하고 전체 문장을 그대로 생성한다', () => {
-        const lines = buildFearGreedFactorLines(
-            buildSnapshot(90),
-            tFacts,
-            tFactor,
-            'ko'
-        );
-
-        expect(lines).toEqual([
-            expectedLine(90, '최근 200영업일 분포 대비 높은 편'),
-        ]);
-    });
-
-    it('percentile은 반올림 후 구간을 판정한다(83.6 → 84th, 높음 구간)', () => {
-        const lines = buildFearGreedFactorLines(
+describe('buildFearGreedFactorTable', () => {
+    it('행에 일반어 라벨·서식 적용된 현재 값·반올림한 퍼센타일을 싣는다', () => {
+        const { rows } = buildFearGreedFactorTable(
             buildSnapshot(83.6),
-            tFacts,
             tFactor,
             'ko'
         );
 
-        expect(lines).toEqual([
-            expectedLine(84, '최근 200영업일 분포 대비 높은 편'),
+        expect(rows).toEqual([
+            {
+                label: volumeLabel,
+                value: formatFactorRaw('volume_z', 1.2345, 'ko'),
+                percentile: 84,
+            },
         ]);
+        // 일반어 라벨 — 약어(`MA200`·`POC`·`z`)를 그대로 노출하지 않는다.
+        expect(volumeLabel).not.toMatch(/\bz\b/);
     });
 
-    it('groups 원 순서(Flow → Trend)를 그대로 따라 여러 factor를 flatMap한다', () => {
+    it.each([
+        [10, 'low'],
+        [24, 'low'],
+        [75, 'high'],
+        [84, 'high'],
+    ] as const)('퍼센타일 %i는 평소 범위 밖(%s)이다', (percentile, level) => {
+        const { outliers } = buildFearGreedFactorTable(
+            buildSnapshot(percentile),
+            tFactor,
+            'ko'
+        );
+
+        expect(outliers).toEqual([{ label: volumeLabel, level }]);
+    });
+
+    it.each([25, 50, 74])(
+        '퍼센타일 %i는 평소 범위 안이라 해석 대상이 아니다',
+        percentile => {
+            const { outliers } = buildFearGreedFactorTable(
+                buildSnapshot(percentile),
+                tFactor,
+                'ko'
+            );
+
+            expect(outliers).toEqual([]);
+        }
+    );
+
+    it('groups 원 순서(Flow → Trend)를 따라 행을 만들고 범위 밖 지표만 outliers에 담는다', () => {
         const snapshot: FearGreedSnapshot = {
             score: 50,
             label: 'NEUTRAL',
@@ -232,35 +171,26 @@ describe('buildFearGreedFactorLines', () => {
             warning: null,
         };
 
-        const lines = buildFearGreedFactorLines(
+        const { rows, outliers } = buildFearGreedFactorTable(
             snapshot,
-            tFacts,
             tFactor,
             'ko'
         );
 
-        expect(lines).toHaveLength(3);
-        expect(lines[0]).toContain(
-            (
-                koMessages.shared.lib.fearGreedFactor as unknown as {
-                    symbolLabel: Record<string, string>;
-                }
-            ).symbolLabel.volume_z
-        );
-        expect(lines[1]).toContain(
-            (
-                koMessages.shared.lib.fearGreedFactor as unknown as {
-                    symbolLabel: Record<string, string>;
-                }
-            ).symbolLabel.buysell_imbalance
-        );
-        expect(lines[2]).toContain(
-            (
-                koMessages.shared.lib.fearGreedFactor as unknown as {
-                    symbolLabel: Record<string, string>;
-                }
-            ).symbolLabel.ma200_distance
-        );
+        const labels = (
+            koMessages.shared.lib.fearGreedFactor as unknown as {
+                symbolLabel: Record<string, string>;
+            }
+        ).symbolLabel;
+        expect(rows.map(r => r.label)).toEqual([
+            labels.volume_z,
+            labels.buysell_imbalance,
+            labels.ma200_distance,
+        ]);
+        expect(outliers).toEqual([
+            { label: labels.volume_z, level: 'low' },
+            { label: labels.ma200_distance, level: 'high' },
+        ]);
     });
 });
 
@@ -359,7 +289,7 @@ describe('buildFearGreedFactorRankingLine', () => {
         const snapshot = buildFlowTrendSnapshot(52, 92);
         const line = buildFearGreedFactorRankingLine(snapshot, tFacts, tFactor);
         expect(line).toBe(
-            `2개 지표 중 가장 두드러진 지표는 ${(koMessages.shared.lib.fearGreedFactor as unknown as { symbolLabel: Record<string, string> }).symbolLabel.ma200_distance}로, 92번째 퍼센타일을 기록해 평소보다 높게 나타나고 있습니다.`
+            `2개 지표 중 평소 범위에서 가장 멀리 벗어난 것은 ${(koMessages.shared.lib.fearGreedFactor as unknown as { symbolLabel: Record<string, string> }).symbolLabel.ma200_distance}입니다. 92번째 퍼센타일로 평소보다 높게 나타납니다.`
         );
     });
 
@@ -367,7 +297,7 @@ describe('buildFearGreedFactorRankingLine', () => {
         const snapshot = buildFlowTrendSnapshot(8, 48);
         const line = buildFearGreedFactorRankingLine(snapshot, tFacts, tFactor);
         expect(line).toBe(
-            `2개 지표 중 가장 두드러진 지표는 ${(koMessages.shared.lib.fearGreedFactor as unknown as { symbolLabel: Record<string, string> }).symbolLabel.volume_z}로, 8번째 퍼센타일을 기록해 평소보다 낮게 나타나고 있습니다.`
+            `2개 지표 중 평소 범위에서 가장 멀리 벗어난 것은 ${(koMessages.shared.lib.fearGreedFactor as unknown as { symbolLabel: Record<string, string> }).symbolLabel.volume_z}입니다. 8번째 퍼센타일로 평소보다 낮게 나타납니다.`
         );
     });
 

@@ -9,6 +9,8 @@ import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
 import { MOBILE_VIEWPORT_MEDIA_QUERY } from '@/shared/config/viewport';
 import { ChartContent } from './ChartContent';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { symbolFactsSubject } from './utils/factsSubject';
 import { useMobileSheet } from './hooks/useMobileSheet';
 import { SNAP_FULL } from './constants/mobileSheet';
 import { useTimeframeChange } from './hooks/useTimeframeChange';
@@ -123,6 +125,7 @@ export function SymbolPageClient({
         handleTimeframeChange,
     } = useTimeframeChange(symbol, isFreeTier, isTierHydrated);
     const assetInfo = useAssetInfo(symbol);
+    const locale = useResolvedLocale();
     const isHydrated = useHydrated();
     const isMobileViewport = useIsMobileViewport();
 
@@ -221,6 +224,11 @@ export function SymbolPageClient({
                             <ChartContent
                                 symbol={symbol}
                                 companyName={companyName}
+                                factsSubject={symbolFactsSubject(
+                                    symbol,
+                                    assetInfo?.koreanName,
+                                    locale
+                                )}
                                 timeframe={timeframe}
                                 timeframeChangeCount={timeframeChangeCount}
                                 initialAnalysis={initialAnalysis}

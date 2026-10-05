@@ -37,41 +37,67 @@ const MEDIAN_PERCENTILE = 50;
 // 한국어는 비-ko 페이지에서 그대로 색인된다. 순수 함수를 유지하려고 훅을
 // 부르지 않고 번역자를 인자로 받는다(호출부는 컴포넌트 하나뿐).
 
-function factorInterpretation(pctile: number, t: SeoTranslator): string {
-    if (pctile < LOW_PERCENTILE_MAX) return t('factorLow');
-    if (pctile >= HIGH_PERCENTILE_MIN) return t('factorHigh');
-    return t('factorMid');
+/** 평소 범위(25~75 퍼센타일) 기준 위치. */
+type FactorLevel = 'high' | 'mid' | 'low';
+
+function factorLevel(pctile: number): FactorLevel {
+    if (pctile < LOW_PERCENTILE_MAX) return 'low';
+    if (pctile >= HIGH_PERCENTILE_MIN) return 'high';
+    return 'mid';
+}
+
+/** 지표 표의 한 행. */
+export interface FearGreedFactorRow {
+    readonly label: string;
+    /** 로케일 서식이 적용된 현재 값. */
+    readonly value: string;
+    /** 반올림한 0~100 퍼센타일. */
+    readonly percentile: number;
+}
+
+/** 지표 표 + 평소 범위(25~75 퍼센타일)를 벗어난 지표. */
+export interface FearGreedFactorTable {
+    readonly rows: readonly FearGreedFactorRow[];
+    /** 평소 범위 밖 지표 — 표 순서(Flow → Trend)를 따른다. */
+    readonly outliers: readonly {
+        readonly label: string;
+        readonly level: 'high' | 'low';
+    }[];
 }
 
 /**
- * snapshot의 5-factor breakdown(Flow 3개 + Trend 2개)을 크롤 가능한 한 줄
- * 문장으로 변환한다. `snapshot.groups`의 원 순서(Flow → Trend)를 그대로
- * 따른다. 순수 함수 — 시간/난수 의존 없음.
+ * snapshot의 5-factor(Flow 3개 + Trend 2개)를 **표 하나**의 행으로 만든다.
  *
- * `${pctile}번째 퍼센타일`(FIX 6, audit) — 이전엔 `${pctile}th 퍼센타일`로
- * 영어 서수 접미사가 한국어 문장에 섞여 있었다.
+ * 예전에는 지표마다 `라벨: 값 (N번째 퍼센타일) — 평소 범위…` 한 줄씩 5줄이었다. 줄마다
+ * 같은 해석 문구가 반복돼 종목 간 공통 문장 비율을 끌어올렸다. 이제 기준은 표 캡션에
+ * 한 번만 적고, 해석은 평소 범위(25~75 퍼센타일)를 벗어난 지표에만 붙인다.
+ * 순수 함수 — 시간/난수 의존 없음.
  */
-export function buildFearGreedFactorLines(
+export function buildFearGreedFactorTable(
     snapshot: FearGreedSnapshot,
-    t: SeoTranslator,
     // 팩터 라벨은 `shared.lib.fearGreedFactor`에 있다 — 위젯(`FearGreedGroupBar`)과
     // 공유하는 표라 이 뷰 네임스페이스로 옮기면 두 벌이 된다.
     tFactor: SeoTranslator,
     locale: Locale
-): string[] {
-    return snapshot.groups.flatMap(group =>
-        group.factors.map(factor => {
-            const pctile = Math.round(factor.percentile);
-            return t('factorLine', {
-                v0: tFactor(`symbolLabel.${factor.key}`, {
-                    v0: POC_WINDOW_DEFAULT,
-                }),
-                v1: formatFactorRaw(factor.key, factor.rawValue, locale),
-                v2: pctile,
-                v3: factorInterpretation(pctile, t),
+): FearGreedFactorTable {
+    const rows: FearGreedFactorRow[] = [];
+    const outliers: { label: string; level: 'high' | 'low' }[] = [];
+    for (const group of snapshot.groups) {
+        for (const factor of group.factors) {
+            const percentile = Math.round(factor.percentile);
+            const label = tFactor(`symbolLabel.${factor.key}`, {
+                v0: POC_WINDOW_DEFAULT,
             });
-        })
-    );
+            rows.push({
+                label,
+                value: formatFactorRaw(factor.key, factor.rawValue, locale),
+                percentile,
+            });
+            const level = factorLevel(percentile);
+            if (level !== 'mid') outliers.push({ label, level });
+        }
+    }
+    return { rows, outliers };
 }
 
 /** `views.symbol.fearGreedFacts` 기준 상대 키. */
@@ -82,7 +108,7 @@ const GROUP_LABEL: Record<FearGreedGroupName, string> = {
 
 /**
  * Flow/Trend 두 그룹 점수를 비교하는 심볼별 서사 문장을 만든다(audit fix
- * FIX 6, option b). 기존 `buildFearGreedFactorLines`는 factor 5개 각각을
+ * FIX 6, option b). 기존 factor 줄(지금은 `buildFearGreedFactorTable`)은 factor 5개 각각을
  * 3가지 고정 해석 문구 중 하나로만 서술해(low/mid/high) unique:boilerplate
  * 비율이 낮았다(~45자 unique vs ~270자 boilerplate) — 이는 2026-07 노출
  * 붕괴를 촉발한 thin-content와 구조적으로 동일하다. `snapshot.groups`에
@@ -555,5 +581,70 @@ export function buildExtremeZoneRecord(
         from: formatIsoDate(first.date, tFacts),
         to: formatIsoDate(last.date, tFacts),
         sections,
+    };
+}
+
+/** 메타 설명에 싣는 사실 — 구조만 담고 문구는 호출부(`composeFearGreedDescription`)가 만든다. */
+export interface FearGreedMetaFacts {
+    /** 마지막 점수 봉의 날짜 `YYYY-MM-DD`. */
+    readonly date: string;
+    readonly score: number;
+    readonly label: FearGreedLabel;
+    /** 확보된 비교 시점만(1주·1개월·1년 전). */
+    readonly past: readonly {
+        readonly period: 'week' | 'month' | 'year';
+        readonly score: number;
+    }[];
+    /** 최근 1년(또는 확보된 거래일) 점수 범위. 표본이 60개 미만이면 `null`. */
+    readonly range: {
+        readonly min: number;
+        readonly max: number;
+        /** 252거래일 이상이면 `null`("최근 1년"), 아니면 실제 거래일 수. */
+        readonly days: number | null;
+    } | null;
+}
+
+/**
+ * 공포·탐욕 탭 `<meta description>`용 사실. 본문의 시계열 문장
+ * (`buildFearGreedPeriodComparisonLine`·`buildFearGreedYearRangeLine`)과 **같은 기준**
+ * (거래일 환산·60개 표본 하한)을 쓴다 — 설명과 본문의 숫자가 갈리지 않는다.
+ * 점수가 하나도 없으면 `null`(호출부가 템플릿 설명으로 떨어진다).
+ */
+export function buildFearGreedMetaFacts(
+    points: readonly ScoredPoint[]
+): FearGreedMetaFacts | null {
+    const current = points.at(-1);
+    if (current === undefined) return null;
+
+    const past = (
+        [
+            ['week', TRADING_DAYS.week],
+            ['month', TRADING_DAYS.month],
+            ['year', TRADING_DAYS.year],
+        ] as const
+    ).flatMap(([period, back]) => {
+        const point = pointBefore(points, back);
+        return point === null
+            ? []
+            : [{ period, score: Math.round(point.score) }];
+    });
+
+    const window = points.slice(-TRADING_DAYS.year);
+    const range =
+        window.length < MIN_DISTRIBUTION_SAMPLE
+            ? null
+            : {
+                  min: Math.round(Math.min(...window.map(p => p.score))),
+                  max: Math.round(Math.max(...window.map(p => p.score))),
+                  days:
+                      window.length >= TRADING_DAYS.year ? null : window.length,
+              };
+
+    return {
+        date: current.date,
+        score: Math.round(current.score),
+        label: current.label,
+        past,
+        range,
     };
 }

@@ -1,3 +1,4 @@
+import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import type { Metadata } from 'next';
 import {
     AI_SITE_URL,
@@ -95,12 +96,11 @@ function buildAiPageMetadata(
             locale: LOCALE_OG[locale],
             images: [image],
         },
-        twitter: {
-            card: 'summary_large_image',
+        twitter: buildTwitterMetadata({
             title: copy.title,
             description: copy.description,
             images: [image.url],
-        },
+        }),
     };
 }
 

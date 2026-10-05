@@ -3,6 +3,7 @@ import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
 import { resolveLocale } from '@/shared/i18n/locales';
 import { MobileSheetPlaceholder } from '@/views/symbol/MobileSheetPlaceholder';
 import { TechnicalFactsSummary } from '@/views/symbol/TechnicalFactsSummary';
+import { symbolFactsSubject } from '@/views/symbol/utils/factsSubject';
 import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
 import { hasTechnicalProse } from '@/views/symbol/snapshot/renderers/technicalContent';
 import { loadTabSnapshotMeta } from '@/app/[locale]/[symbol]/symbolSnapshotDescription';
@@ -35,6 +36,7 @@ import { assetInfoSeedUpdatedAt } from '@/shared/config/assetInfoSeed';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
+    buildTitleSubject,
     resolveSymbolSeoContent,
     symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
@@ -144,7 +146,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         tab: 'technical',
         revalidate,
         locale,
-        displayName,
+        // 접두는 짧은 주어(`애플(AAPL)`) — 긴 표시명이 문장 예산을 먹는다.
+        subject: buildTitleSubject(ticker, assetInfo.koreanName),
         assetClass: assetClass,
         tSeo,
         preferPlain: true,
@@ -399,6 +402,11 @@ export default async function SymbolPage({ params }: Props) {
                                         quantizedFactBars.bars.length > 0 ? (
                                             <TechnicalFactsSummary
                                                 symbol={ticker}
+                                                subject={symbolFactsSubject(
+                                                    ticker,
+                                                    assetInfo.koreanName,
+                                                    locale
+                                                )}
                                                 bars={quantizedFactBars.bars}
                                                 indicators={
                                                     quantizedFactBars.indicators

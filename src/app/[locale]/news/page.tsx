@@ -1,3 +1,4 @@
+import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import { getTranslations } from 'next-intl/server';
 import type { SeoTranslator } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
@@ -125,11 +126,10 @@ export async function generateMetadata({
             url,
             ...ogLocale,
         },
-        twitter: {
-            card: 'summary_large_image',
+        twitter: buildTwitterMetadata({
             title: newsHubFullTitle(tSeo),
             description: newsHubDescription(tSeo),
-        },
+        }),
     };
 }
 

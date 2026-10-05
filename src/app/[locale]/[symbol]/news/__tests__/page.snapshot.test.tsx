@@ -279,7 +279,7 @@ describe('NewsPage generateMetadata — snapshot-derived description (Task 8)', 
         // name (subject; buildDisplayName mocked above to `assetInfo.name`)
         // before clamping.
         expect(metadata.description).toBe(
-            `Apple Inc. 뉴스 — ${SNAPSHOT_CONTENT.currentDriverKo}`
+            `애플(AAPL) 뉴스 — ${SNAPSHOT_CONTENT.currentDriverKo}`
         );
         // og description keeps the templated copy — only the search-facing
         // <meta name="description"> is overridden.
