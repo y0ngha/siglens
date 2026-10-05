@@ -6,6 +6,7 @@ import {
     buildSymbolFinancialsSeoContent,
     buildSymbolFundamentalSeoContent,
     buildSymbolOptionsSeoContent,
+    resolveSymbolFearGreedSeoContent,
     resolveSymbolNewsSeoContent,
     resolveSymbolOverallSeoContent,
     resolveSymbolSeoContent,
@@ -81,6 +82,16 @@ const CASES: ReadonlyArray<
         tr => buildSymbolCongressSeoContent('AAPL', tr, opts),
     ],
     ['options', 'equity', tr => buildSymbolOptionsSeoContent('AAPL', tr, opts)],
+    [
+        'fear-greed',
+        'equity',
+        tr => resolveSymbolFearGreedSeoContent('AAPL', 'equity', tr, opts),
+    ],
+    [
+        'fear-greed',
+        'crypto',
+        tr => resolveSymbolFearGreedSeoContent('BTCUSD', 'crypto', tr, opts),
+    ],
 ];
 
 describe('symbolTabDescriptionLabel', () => {
@@ -100,6 +111,7 @@ describe('symbolTabDescriptionLabel', () => {
             'financials',
             'congress',
             'options',
+            'fear-greed',
         ] as const) {
             expect(symbolTabDescriptionLabel(tab, 'crypto', t)).toBe(
                 symbolTabDescriptionLabel(tab, 'equity', t)

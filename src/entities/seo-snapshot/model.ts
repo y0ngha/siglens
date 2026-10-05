@@ -15,6 +15,14 @@ export const SEO_SNAPSHOT_TABS = [
 export type SeoSnapshotTab = (typeof SEO_SNAPSHOT_TABS)[number];
 
 /**
+ * 스냅샷 탭인지 판정한다. SEO 카피 탭(`SymbolSeoTab`)은 스냅샷이 없는 `fear-greed`까지
+ * 포함하는 상위 집합이라, 스냅샷을 읽는 경로는 이 가드로 먼저 거른다.
+ */
+export function isSeoSnapshotTab(tab: string): tab is SeoSnapshotTab {
+    return (SEO_SNAPSHOT_TABS as readonly string[]).includes(tab);
+}
+
+/**
  * FIX D(감사) — 읽기 경로(`getSeoSnapshotsStatic`)의 max-age 상한. cron이
  * 죽거나 배치가 며칠간 실패해도, 이 값보다 오래된 행은 "전일 장마감 기준"이라는
  * 캡션과 함께 서빙되지 않도록 필터링한다(정확성/E-E-A-T 리스크 — 금융 사이트에서

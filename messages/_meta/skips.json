@@ -3085,1189 +3085,1189 @@
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 949,
+        "line": 958,
         "reason": "seo-keywords-ko-only",
         "text": "미국 주식 AI 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 950,
+        "line": 959,
         "reason": "seo-keywords-ko-only",
         "text": "미국 주식 차트 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 951,
+        "line": 960,
         "reason": "seo-keywords-ko-only",
         "text": "미국 주식 펀더멘털"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 952,
+        "line": 961,
         "reason": "seo-keywords-ko-only",
         "text": "미국 주식 뉴스"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 953,
+        "line": 962,
         "reason": "seo-keywords-ko-only",
         "text": "미국 주식 옵션"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 954,
-        "reason": "seo-keywords-ko-only",
-        "text": "AI 종합 분석"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 955,
-        "reason": "seo-keywords-ko-only",
-        "text": "공포 탐욕 지수"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 956,
-        "reason": "seo-keywords-ko-only",
-        "text": "AI 주식 백테스팅"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 957,
-        "reason": "seo-keywords-ko-only",
-        "text": "오늘의 미국 주식"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 958,
-        "reason": "seo-keywords-ko-only",
-        "text": "섹터별 주식 분석"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 959,
-        "reason": "seo-keywords-ko-only",
-        "text": "미국 주식 PER"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 960,
-        "reason": "seo-keywords-ko-only",
-        "text": "한국 주식 AI 분석"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 961,
-        "reason": "seo-keywords-ko-only",
-        "text": "코스피 종목 분석"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 962,
-        "reason": "seo-keywords-ko-only",
-        "text": "코스닥 종목 분석"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
         "line": 963,
         "reason": "seo-keywords-ko-only",
-        "text": "국내 주식 차트 분석"
+        "text": "AI 종합 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 964,
         "reason": "seo-keywords-ko-only",
-        "text": "암호화폐 분석"
+        "text": "공포 탐욕 지수"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 965,
         "reason": "seo-keywords-ko-only",
-        "text": "비트코인 시세"
+        "text": "AI 주식 백테스팅"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 966,
         "reason": "seo-keywords-ko-only",
-        "text": "이더리움 시세"
+        "text": "오늘의 미국 주식"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 967,
         "reason": "seo-keywords-ko-only",
-        "text": "코인 AI 분석"
+        "text": "섹터별 주식 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 968,
         "reason": "seo-keywords-ko-only",
-        "text": "암호화폐 차트 분석"
+        "text": "미국 주식 PER"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 969,
         "reason": "seo-keywords-ko-only",
+        "text": "한국 주식 AI 분석"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 970,
+        "reason": "seo-keywords-ko-only",
+        "text": "코스피 종목 분석"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 971,
+        "reason": "seo-keywords-ko-only",
+        "text": "코스닥 종목 분석"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 972,
+        "reason": "seo-keywords-ko-only",
+        "text": "국내 주식 차트 분석"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 973,
+        "reason": "seo-keywords-ko-only",
+        "text": "암호화폐 분석"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 974,
+        "reason": "seo-keywords-ko-only",
+        "text": "비트코인 시세"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 975,
+        "reason": "seo-keywords-ko-only",
+        "text": "이더리움 시세"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 976,
+        "reason": "seo-keywords-ko-only",
+        "text": "코인 AI 분석"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 977,
+        "reason": "seo-keywords-ko-only",
+        "text": "암호화폐 차트 분석"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 978,
+        "reason": "seo-keywords-ko-only",
         "text": "비트코인 차트"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1050,
+        "line": 1059,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 주가`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1051,
+        "line": 1060,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 차트`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1052,
+        "line": 1061,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 차트 분석`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1053,
+        "line": 1062,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 기술적 신호`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1054,
+        "line": 1063,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 기술적 분석`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1055,
+        "line": 1064,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} AI 분석`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1056,
+        "line": 1065,
         "reason": "seo-keywords-ko-only",
         "text": "`${displayName} 주가 분석`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1057,
+        "line": 1066,
         "reason": "seo-keywords-ko-only",
         "text": "`${displayName} 차트 분석`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1060,
+        "line": 1069,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 주가`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1060,
+        "line": 1069,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 차트 분석`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1268,
+        "line": 1277,
         "reason": "seo-keywords-ko-only",
         "text": "주식 AI 백테스팅"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1269,
+        "line": 1278,
         "reason": "seo-keywords-ko-only",
         "text": "기술적 분석 백테스팅"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1270,
+        "line": 1279,
         "reason": "seo-keywords-ko-only",
         "text": "AI 주식 분석 백테스트"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1271,
+        "line": 1280,
         "reason": "seo-keywords-ko-only",
         "text": "기술적 분석 백테스트 결과"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1272,
+        "line": 1281,
         "reason": "seo-keywords-ko-only",
         "text": "RSI 신호 백테스팅"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1273,
+        "line": 1282,
         "reason": "seo-keywords-ko-only",
         "text": "MACD 백테스팅"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1274,
+        "line": 1283,
         "reason": "seo-keywords-ko-only",
         "text": "AI 분석 백테스트 방법론"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1275,
+        "line": 1284,
         "reason": "seo-keywords-ko-only",
         "text": "Magnificent 7 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1276,
+        "line": 1285,
         "reason": "seo-keywords-ko-only",
         "text": "AI 시나리오 사후 검증"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1277,
+        "line": 1286,
         "reason": "seo-keywords-ko-only",
         "text": "기술적 분석 백테스트 무료"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1278,
+        "line": 1287,
         "reason": "seo-keywords-ko-only",
         "text": "기술적 신호 사후 검증"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1279,
+        "line": 1288,
         "reason": "seo-keywords-ko-only",
         "text": "미국 주식 백테스트"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1324,
+        "line": 1333,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 재무제표`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1325,
+        "line": 1334,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 손익계산서`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1326,
+        "line": 1335,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 재무상태표`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1327,
+        "line": 1336,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 현금흐름표`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1328,
+        "line": 1337,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 매출 성장`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1329,
+        "line": 1338,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 영업이익`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1330,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 재무 분석`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1333,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${koreanName} 재무제표`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1334,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${koreanName} 손익계산서`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1335,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${koreanName} 재무 분석`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1336,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${koreanName} 현금흐름`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
         "line": 1339,
         "reason": "seo-keywords-ko-only",
-        "text": "재무제표 분석"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1340,
-        "reason": "seo-keywords-ko-only",
-        "text": "손익계산서"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1341,
-        "reason": "seo-keywords-ko-only",
-        "text": "재무상태표"
+        "text": "`${ticker} 재무 분석`"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 1342,
         "reason": "seo-keywords-ko-only",
-        "text": "현금흐름표"
+        "text": "`${koreanName} 재무제표`"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 1343,
         "reason": "seo-keywords-ko-only",
-        "text": "매출 성장"
+        "text": "`${koreanName} 손익계산서`"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 1344,
         "reason": "seo-keywords-ko-only",
-        "text": "영업이익"
+        "text": "`${koreanName} 재무 분석`"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 1345,
         "reason": "seo-keywords-ko-only",
+        "text": "`${koreanName} 현금흐름`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1348,
+        "reason": "seo-keywords-ko-only",
+        "text": "재무제표 분석"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1349,
+        "reason": "seo-keywords-ko-only",
+        "text": "손익계산서"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1350,
+        "reason": "seo-keywords-ko-only",
+        "text": "재무상태표"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1351,
+        "reason": "seo-keywords-ko-only",
+        "text": "현금흐름표"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1352,
+        "reason": "seo-keywords-ko-only",
+        "text": "매출 성장"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1353,
+        "reason": "seo-keywords-ko-only",
+        "text": "영업이익"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1354,
+        "reason": "seo-keywords-ko-only",
         "text": "순이익"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1346,
+        "line": 1355,
         "reason": "seo-keywords-ko-only",
         "text": "재무 건전성"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1393,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 의회 거래`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1394,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 의원 매매`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1395,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 상원 의원 매매`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1396,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 하원 의원 매매`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1397,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 정치인 매매`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1398,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 공시`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1401,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${koreanName} 의회 거래`"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 1402,
         "reason": "seo-keywords-ko-only",
-        "text": "`${koreanName} 의원 매매`"
+        "text": "`${ticker} 의회 거래`"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 1403,
         "reason": "seo-keywords-ko-only",
-        "text": "`${koreanName} 정치인 매매`"
+        "text": "`${ticker} 의원 매매`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1404,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 상원 의원 매매`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1405,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 하원 의원 매매`"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 1406,
         "reason": "seo-keywords-ko-only",
-        "text": "의회 거래"
+        "text": "`${ticker} 정치인 매매`"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 1407,
         "reason": "seo-keywords-ko-only",
-        "text": "의원 매매"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1408,
-        "reason": "seo-keywords-ko-only",
-        "text": "상원 의원 매매"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1409,
-        "reason": "seo-keywords-ko-only",
-        "text": "하원 의원 매매"
+        "text": "`${ticker} 공시`"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 1410,
         "reason": "seo-keywords-ko-only",
-        "text": "정치인 주식 매매"
+        "text": "`${koreanName} 의회 거래`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1411,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${koreanName} 의원 매매`"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 1412,
         "reason": "seo-keywords-ko-only",
+        "text": "`${koreanName} 정치인 매매`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1415,
+        "reason": "seo-keywords-ko-only",
+        "text": "의회 거래"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1416,
+        "reason": "seo-keywords-ko-only",
+        "text": "의원 매매"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1417,
+        "reason": "seo-keywords-ko-only",
+        "text": "상원 의원 매매"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1418,
+        "reason": "seo-keywords-ko-only",
+        "text": "하원 의원 매매"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1419,
+        "reason": "seo-keywords-ko-only",
+        "text": "정치인 주식 매매"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1421,
+        "reason": "seo-keywords-ko-only",
         "text": "의회 공시"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1466,
+        "line": 1475,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 펀더멘털 분석`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1467,
+        "line": 1476,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 재무 분석`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1468,
+        "line": 1477,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 밸류에이션`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1469,
+        "line": 1478,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 애널리스트 컨센서스`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1472,
+        "line": 1481,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 펀더멘털`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1473,
+        "line": 1482,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 재무 분석`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1474,
+        "line": 1483,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 밸류에이션`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1477,
+        "line": 1486,
         "reason": "seo-keywords-ko-only",
         "text": "`${sector} 섹터 펀더멘털`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1478,
+        "line": 1487,
         "reason": "seo-keywords-ko-only",
         "text": "펀더멘털 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1483,
+        "line": 1492,
         "reason": "seo-keywords-ko-only",
         "text": "재무 건전성"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1484,
+        "line": 1493,
         "reason": "seo-keywords-ko-only",
         "text": "애널리스트 컨센서스"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1541,
+        "line": 1550,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 옵션`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1542,
+        "line": 1551,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 옵션 분석`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1549,
+        "line": 1558,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 옵션`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1550,
+        "line": 1559,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 옵션 시장`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1551,
+        "line": 1560,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 옵션 분석`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1554,
+        "line": 1563,
         "reason": "seo-keywords-ko-only",
         "text": "옵션 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1555,
+        "line": 1564,
         "reason": "seo-keywords-ko-only",
         "text": "옵션 시장"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1602,
+        "line": 1611,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 뉴스`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1603,
+        "line": 1612,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 호재`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1604,
+        "line": 1613,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 악재`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1605,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 뉴스 분위기`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1606,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 소식`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1607,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 이슈`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1608,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 분석 의견`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1609,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 어닝 일정`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1610,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 실적 발표`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1611,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 애널리스트 등급`"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 1614,
         "reason": "seo-keywords-ko-only",
-        "text": "`${koreanName} 뉴스`"
+        "text": "`${ticker} 뉴스 분위기`"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 1615,
         "reason": "seo-keywords-ko-only",
-        "text": "`${koreanName} 호재`"
+        "text": "`${ticker} 소식`"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 1616,
         "reason": "seo-keywords-ko-only",
-        "text": "`${koreanName} 어닝`"
+        "text": "`${ticker} 이슈`"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 1617,
         "reason": "seo-keywords-ko-only",
-        "text": "`${koreanName} 실적`"
+        "text": "`${ticker} 분석 의견`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1618,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 어닝 일정`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1619,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 실적 발표`"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 1620,
         "reason": "seo-keywords-ko-only",
-        "text": "뉴스 분석"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1621,
-        "reason": "seo-keywords-ko-only",
-        "text": "뉴스 분위기"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1622,
-        "reason": "seo-keywords-ko-only",
-        "text": "뉴스 분석 의견"
+        "text": "`${ticker} 애널리스트 등급`"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 1623,
         "reason": "seo-keywords-ko-only",
-        "text": "주식 호재"
+        "text": "`${koreanName} 뉴스`"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 1624,
         "reason": "seo-keywords-ko-only",
-        "text": "주식 악재"
+        "text": "`${koreanName} 호재`"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 1625,
         "reason": "seo-keywords-ko-only",
-        "text": "주식 이슈"
+        "text": "`${koreanName} 어닝`"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 1626,
         "reason": "seo-keywords-ko-only",
-        "text": "주식 소식"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1627,
-        "reason": "seo-keywords-ko-only",
-        "text": "어닝 발표"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1628,
-        "reason": "seo-keywords-ko-only",
-        "text": "실적 발표"
+        "text": "`${koreanName} 실적`"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 1629,
         "reason": "seo-keywords-ko-only",
-        "text": "애널리스트 등급"
+        "text": "뉴스 분석"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 1630,
         "reason": "seo-keywords-ko-only",
+        "text": "뉴스 분위기"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1631,
+        "reason": "seo-keywords-ko-only",
+        "text": "뉴스 분석 의견"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1632,
+        "reason": "seo-keywords-ko-only",
+        "text": "주식 호재"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1633,
+        "reason": "seo-keywords-ko-only",
+        "text": "주식 악재"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1634,
+        "reason": "seo-keywords-ko-only",
+        "text": "주식 이슈"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1635,
+        "reason": "seo-keywords-ko-only",
+        "text": "주식 소식"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1636,
+        "reason": "seo-keywords-ko-only",
+        "text": "어닝 발표"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1637,
+        "reason": "seo-keywords-ko-only",
+        "text": "실적 발표"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1638,
+        "reason": "seo-keywords-ko-only",
+        "text": "애널리스트 등급"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1639,
+        "reason": "seo-keywords-ko-only",
         "text": "주식 뉴스"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1676,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} AI 종합 분석`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1677,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 종합 분석`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1678,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 시나리오 분석`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1679,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 시나리오`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1680,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 위험 요인`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1681,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 매수 분위기`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1682,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 4축 분석`"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 1685,
         "reason": "seo-keywords-ko-only",
-        "text": "`${koreanName} 종합 분석`"
+        "text": "`${ticker} AI 종합 분석`"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 1686,
         "reason": "seo-keywords-ko-only",
-        "text": "`${koreanName} AI 분석`"
+        "text": "`${ticker} 종합 분석`"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 1687,
         "reason": "seo-keywords-ko-only",
-        "text": "`${koreanName} 시나리오 분석`"
+        "text": "`${ticker} 시나리오 분석`"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 1688,
         "reason": "seo-keywords-ko-only",
-        "text": "`${koreanName} 매수 분위기`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1691,
-        "reason": "seo-keywords-ko-only",
-        "text": "AI 종합 분석"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1692,
-        "reason": "seo-keywords-ko-only",
-        "text": "시나리오 분석"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1693,
-        "reason": "seo-keywords-ko-only",
-        "text": "4축 분석"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1694,
-        "reason": "seo-keywords-ko-only",
-        "text": "기술적 분석"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1695,
-        "reason": "seo-keywords-ko-only",
-        "text": "펀더멘털 분석"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1696,
-        "reason": "seo-keywords-ko-only",
-        "text": "뉴스 분석"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1712,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 시세`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1713,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 가격`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1714,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 차트`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1715,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 차트 분석`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1716,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 기술적 신호`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1717,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 기술적 분석`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1718,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} AI 분석`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1719,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${displayName} 시세 분석`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1720,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${displayName} 차트 분석`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1838,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 뉴스`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1839,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 코인 뉴스`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1840,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 호재`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1841,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 악재`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1842,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 뉴스 분위기`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1843,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 시장 이슈`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1844,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 크립토 뉴스`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1845,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 소식`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1846,
-        "reason": "seo-keywords-ko-only",
-        "text": "`코인 뉴스 분석`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1847,
-        "reason": "seo-keywords-ko-only",
-        "text": "`크립토 뉴스`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1848,
-        "reason": "seo-keywords-ko-only",
-        "text": "`코인 호재`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1849,
-        "reason": "seo-keywords-ko-only",
-        "text": "`코인 악재`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1850,
-        "reason": "seo-keywords-ko-only",
-        "text": "`암호화폐 뉴스`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1851,
-        "reason": "seo-keywords-ko-only",
-        "text": "`코인 시장 분위기`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1852,
-        "reason": "seo-keywords-ko-only",
-        "text": "`비트코인 뉴스`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1915,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} AI 종합 분석`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1916,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 코인 종합 분석`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1917,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 시나리오 분석`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1918,
-        "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 시나리오`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1919,
+        "line": 1689,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 위험 요인`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1920,
+        "line": 1690,
         "reason": "seo-keywords-ko-only",
         "text": "`${ticker} 매수 분위기`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1921,
+        "line": 1691,
         "reason": "seo-keywords-ko-only",
-        "text": "`AI 종합 분석`"
+        "text": "`${ticker} 4축 분석`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1922,
+        "line": 1694,
         "reason": "seo-keywords-ko-only",
-        "text": "`코인 시나리오 분석`"
+        "text": "`${koreanName} 종합 분석`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1923,
+        "line": 1695,
         "reason": "seo-keywords-ko-only",
-        "text": "`크립토 종합 분석`"
+        "text": "`${koreanName} AI 분석`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1924,
+        "line": 1696,
         "reason": "seo-keywords-ko-only",
-        "text": "`코인 기술적 분석`"
+        "text": "`${koreanName} 시나리오 분석`"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 1925,
-        "reason": "seo-keywords-ko-only",
-        "text": "`암호화폐 AI 분석`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1992,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 공포 지수`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1993,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 탐욕 지수`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1994,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 코인 매수 분위기`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1995,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 매수세`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1996,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 단기 흐름`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1997,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 단기 심리`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1998,
-        "reason": "seo-keywords-ko-only",
-        "text": "`공포 탐욕 지수`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 1999,
-        "reason": "seo-keywords-ko-only",
-        "text": "`코인 투자 심리`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 2000,
-        "reason": "seo-keywords-ko-only",
-        "text": "`코인 매수 분위기`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 2002,
-        "reason": "seo-keywords-ko-only",
-        "text": "`크립토 투자 심리`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 2003,
-        "reason": "seo-keywords-ko-only",
-        "text": "`암호화폐 매수 분위기`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 2004,
-        "reason": "seo-keywords-ko-only",
-        "text": "`코인 단기 매매 심리`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 2083,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 공포 지수`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 2084,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 탐욕 지수`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 2085,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 매수 분위기`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 2086,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 매수세`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 2087,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 단기 흐름`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 2088,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${ticker} 단기 심리`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 2089,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${sector} 섹터 매수 분위기`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 2092,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${koreanName} 공포 지수`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 2093,
-        "reason": "seo-keywords-ko-only",
-        "text": "`${koreanName} 탐욕 지수`"
-    },
-    {
-        "file": "src/shared/lib/seo.ts",
-        "line": 2094,
+        "line": 1697,
         "reason": "seo-keywords-ko-only",
         "text": "`${koreanName} 매수 분위기`"
     },
     {
         "file": "src/shared/lib/seo.ts",
+        "line": 1700,
+        "reason": "seo-keywords-ko-only",
+        "text": "AI 종합 분석"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1701,
+        "reason": "seo-keywords-ko-only",
+        "text": "시나리오 분석"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1702,
+        "reason": "seo-keywords-ko-only",
+        "text": "4축 분석"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1703,
+        "reason": "seo-keywords-ko-only",
+        "text": "기술적 분석"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1704,
+        "reason": "seo-keywords-ko-only",
+        "text": "펀더멘털 분석"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1705,
+        "reason": "seo-keywords-ko-only",
+        "text": "뉴스 분석"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1721,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 시세`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1722,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 가격`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1723,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 차트`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1724,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 차트 분석`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1725,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 기술적 신호`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1726,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 기술적 분석`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1727,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} AI 분석`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1728,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${displayName} 시세 분석`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1729,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${displayName} 차트 분석`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1847,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 뉴스`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1848,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 코인 뉴스`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1849,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 호재`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1850,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 악재`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1851,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 뉴스 분위기`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1852,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 시장 이슈`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1853,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 크립토 뉴스`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1854,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 소식`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1855,
+        "reason": "seo-keywords-ko-only",
+        "text": "`코인 뉴스 분석`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1856,
+        "reason": "seo-keywords-ko-only",
+        "text": "`크립토 뉴스`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1857,
+        "reason": "seo-keywords-ko-only",
+        "text": "`코인 호재`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1858,
+        "reason": "seo-keywords-ko-only",
+        "text": "`코인 악재`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1859,
+        "reason": "seo-keywords-ko-only",
+        "text": "`암호화폐 뉴스`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1860,
+        "reason": "seo-keywords-ko-only",
+        "text": "`코인 시장 분위기`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1861,
+        "reason": "seo-keywords-ko-only",
+        "text": "`비트코인 뉴스`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1924,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} AI 종합 분석`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1925,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 코인 종합 분석`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1926,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 시나리오 분석`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1927,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 시나리오`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1928,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 위험 요인`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1929,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 매수 분위기`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1930,
+        "reason": "seo-keywords-ko-only",
+        "text": "`AI 종합 분석`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1931,
+        "reason": "seo-keywords-ko-only",
+        "text": "`코인 시나리오 분석`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1932,
+        "reason": "seo-keywords-ko-only",
+        "text": "`크립토 종합 분석`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1933,
+        "reason": "seo-keywords-ko-only",
+        "text": "`코인 기술적 분석`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 1934,
+        "reason": "seo-keywords-ko-only",
+        "text": "`암호화폐 AI 분석`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 2001,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 공포 지수`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 2002,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 탐욕 지수`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 2003,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 코인 매수 분위기`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 2004,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 매수세`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 2005,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 단기 흐름`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 2006,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 단기 심리`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 2007,
+        "reason": "seo-keywords-ko-only",
+        "text": "`공포 탐욕 지수`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 2008,
+        "reason": "seo-keywords-ko-only",
+        "text": "`코인 투자 심리`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 2009,
+        "reason": "seo-keywords-ko-only",
+        "text": "`코인 매수 분위기`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 2011,
+        "reason": "seo-keywords-ko-only",
+        "text": "`크립토 투자 심리`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 2012,
+        "reason": "seo-keywords-ko-only",
+        "text": "`암호화폐 매수 분위기`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 2013,
+        "reason": "seo-keywords-ko-only",
+        "text": "`코인 단기 매매 심리`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 2092,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 공포 지수`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 2093,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 탐욕 지수`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 2094,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 매수 분위기`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 2095,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 매수세`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 2096,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${ticker} 단기 흐름`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
         "line": 2097,
         "reason": "seo-keywords-ko-only",
-        "text": "공포 탐욕 지수"
+        "text": "`${ticker} 단기 심리`"
     },
     {
         "file": "src/shared/lib/seo.ts",
         "line": 2098,
         "reason": "seo-keywords-ko-only",
+        "text": "`${sector} 섹터 매수 분위기`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 2101,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${koreanName} 공포 지수`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 2102,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${koreanName} 탐욕 지수`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 2103,
+        "reason": "seo-keywords-ko-only",
+        "text": "`${koreanName} 매수 분위기`"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 2106,
+        "reason": "seo-keywords-ko-only",
+        "text": "공포 탐욕 지수"
+    },
+    {
+        "file": "src/shared/lib/seo.ts",
+        "line": 2107,
+        "reason": "seo-keywords-ko-only",
         "text": "투자 심리 지표"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 2100,
+        "line": 2109,
         "reason": "seo-keywords-ko-only",
         "text": "주식 매수 분위기"
     },
     {
         "file": "src/shared/lib/seo.ts",
-        "line": 2101,
+        "line": 2110,
         "reason": "seo-keywords-ko-only",
         "text": "단기 매매 심리"
     }
