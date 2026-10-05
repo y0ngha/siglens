@@ -307,8 +307,11 @@ describe('GET /api/rss', () => {
         const now = new Date('2026-10-04T12:00:00Z');
         mocks.loadStaticChildEntries.mockResolvedValue(
             buildStaticEntries(now, {
+                // 로더가 성공했을 때 키가 없는 카테고리는 제외된다 — 실려야 하는
+                // stock은 최근 기사 시각을 명시한다.
                 newsLatestPublishedAt: {
                     forex: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
+                    stock: new Date(now.getTime() - 60 * 60 * 1000),
                 },
             })
         );

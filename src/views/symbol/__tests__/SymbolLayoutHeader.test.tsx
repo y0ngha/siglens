@@ -331,6 +331,81 @@ describe('SymbolLayoutHeader', () => {
         expect(screen.getByTestId('gate-modal')).toBeInTheDocument();
     });
 
+    describe('모바일 헤더 축약(375px에서 종목명이 잘리던 문제)', () => {
+        it('SIGLENS 링크와 구분 슬래시는 모바일에서 감추고 sm 이상에서만 보인다', () => {
+            render(
+                <SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />
+            );
+
+            const link = screen.getByText('SIGLENS').closest('a');
+            expect(link?.className).toContain('hidden');
+            expect(link?.className).toContain('sm:inline');
+            const slash = screen.getByText('/');
+            expect(slash.className).toContain('hidden');
+            expect(slash.className).toContain('sm:inline');
+        });
+
+        it('한국어명이 있으면 영문명(과 쉼표)만 모바일에서 감춘다', () => {
+            render(
+                <SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />
+            );
+
+            const english = screen.getByText('Apple Inc.');
+            const hiddenWrapper = english.parentElement as HTMLElement;
+            expect(hiddenWrapper.className).toContain('hidden');
+            expect(hiddenWrapper.className).toContain('sm:inline');
+            // 쉼표는 감춰지는 래퍼 안에 있어 모바일에서는 "애플 (AAPL)"이 된다.
+            expect(hiddenWrapper.textContent).toBe(', Apple Inc.');
+            // 한국어명과 티커는 감추지 않는다.
+            const korean = screen.getByText('애플');
+            expect(korean.className).not.toContain('hidden');
+            expect(screen.getByText('(AAPL)').className).not.toContain(
+                'hidden'
+            );
+        });
+
+        it('한국어명이 없으면 영문명이 곧 종목명이라 모바일에서도 보인다', () => {
+            vi.mocked(useAssetInfo).mockReturnValueOnce({
+                name: 'Apple Inc.',
+                koreanName: undefined,
+                fmpSymbol: 'AAPL',
+            } as ReturnType<typeof useAssetInfo>);
+
+            render(
+                <SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />
+            );
+
+            const english = screen.getByText('Apple Inc.');
+            expect(english.className).not.toContain('hidden');
+            expect(english.parentElement?.className).not.toContain('hidden');
+        });
+
+        it('이름 span은 모바일 2줄 clamp, sm 이상은 한 줄 말줄임으로 크기도 갈린다', () => {
+            render(
+                <SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />
+            );
+
+            const nameSpan = screen.getByText('(AAPL)');
+            expect(nameSpan.className).toContain('line-clamp-2');
+            expect(nameSpan.className).toContain('text-base');
+            expect(nameSpan.className).toContain('leading-tight');
+            expect(nameSpan.className).toContain('sm:text-lg');
+            expect(nameSpan.className).toContain('sm:truncate');
+            expect(nameSpan.className).toContain('sm:line-clamp-none');
+        });
+
+        it('전체 이름 텍스트는 한 줄 그대로다(데스크톱 표기 불변)', () => {
+            render(
+                <SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />
+            );
+
+            const nameSpan = screen.getByText('(AAPL)');
+            expect(nameSpan.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+                '애플, Apple Inc. (AAPL)'
+            );
+        });
+    });
+
     it('omits the company-name segment when the name is just the ticker', () => {
         // Unseeded symbols come back with name === ticker. Rendering
         // "AAPL, AAPL (AAPL)" would be nonsense, so the breadcrumb drops the

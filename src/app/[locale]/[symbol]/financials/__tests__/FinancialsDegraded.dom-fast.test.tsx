@@ -77,7 +77,7 @@ describe('FinancialsDegraded', () => {
                     axisAssessments: [],
                     riskFactorsKo: [],
                 }}
-                snapshotGeneratedAt={new Date('2026-07-31T20:00:00Z')}
+                snapshotGeneratedAt={new Date('2026-07-31T21:00:00Z')}
             />
         );
 
@@ -101,7 +101,7 @@ describe('FinancialsDegraded', () => {
                     axisAssessments: [],
                     riskFactorsKo: [],
                 }}
-                snapshotGeneratedAt={new Date('2026-08-14T06:30:00Z')}
+                snapshotGeneratedAt={new Date('2026-08-14T07:30:00Z')}
             />
         );
 

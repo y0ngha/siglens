@@ -107,6 +107,27 @@ export function buildAriaLabel(
     });
 }
 
+/**
+ * 평단 없이 현재가만 그리는 건물(`PositionBuilding`의 `avg={null}`)의 aria 요약.
+ * 평단·수익률은 정의되지 않으므로 문구에 넣지 않는다 — `rangePositionPct`는 평단
+ * 위치라서 쓰지 않고 `currentPos`를 직접 퍼센트로 바꾼다. `currentFloorNote`는
+ * 현재가의 층 안내(`describeFloor(model.currentPos, ...)`).
+ */
+export function buildAriaLabelCurrentOnly(
+    symbol: string,
+    model: PositionModel,
+    currentDisplay: string,
+    currentFloorNote: string,
+    t: PositionTranslator
+): string {
+    return t('ariaSummaryCurrentOnly', {
+        v0: symbol,
+        v1: currentDisplay,
+        v2: (model.currentPos * 100).toFixed(0),
+        v3: currentFloorNote,
+    });
+}
+
 export function outOfRangeNote(
     clamped: RangeClamp,
     t: PositionTranslator
@@ -147,13 +168,13 @@ function describeFloorTier(
  * 모든 소비처가 이 하나의 빌더를 거쳐 파생해 문구 드리프트를 막는다
  * (buildFloorTooltipContent와 동일 원칙).
  */
-/** 범위 밖 ★평단의 아파트 메타포 phrase(방향만) — describeAvgFloor(전체 문구)와
+/** 범위 밖 ★평단의 아파트 메타포 phrase(방향만) — describeFloor(전체 문구)와
  * avgFloorVisualNote(시각 노트, 폭 제약)가 함께 파생하는 단일 소스라 리터럴을
  * 양쪽에 중복 선언하지 않는다. */
 const ROOFTOP_METAPHOR_KEY = 'rooftop';
 const BASEMENT_METAPHOR_KEY = 'basement';
 
-export function describeAvgFloor(
+export function describeFloor(
     avgPos: number,
     avgClamped: RangeClamp,
     bandCount: number,
@@ -183,7 +204,7 @@ export function describeAvgFloor(
  * audit). 마커가 지붕 위/바닥 아래 중앙에 떠 방향은 위치가 이미 말해주고,
  * return-readout의 "최근 범위의 N% 지점"도 함께 보여 시각 정보 손실은 없다.
  * 범위 안이면 "N층 · tier"(78px, 폭 안전)를 그대로 보여준다. 설명 절을 포함한
- * 전체 문구는 aria-label(describeAvgFloor)이 계속 담아 AT 정보량은 유지한다.
+ * 전체 문구는 aria-label(describeFloor)이 계속 담아 AT 정보량은 유지한다.
  */
 export function avgFloorVisualNote(
     avgClamped: RangeClamp,

@@ -21,6 +21,8 @@ class EmptyResultError extends Error {}
  *     굳어, 다이제스트는 25건으로 생성됐는데 목록은 "불러오지 못했어요"인 화면이
  *     나왔다(2026-10-01 운영, `/news/articles`).
  *
+ * 장애와 건강한 빈 상태를 구분해야 하면 `cacheNonEmptyOrNull`을 쓴다.
+ *
  * 트레이드오프: 정말로 비어 있는 키는 매 요청 fetcher를 다시 부른다. 대신 일시적
  * 빈 상태가 캐시를 오염시키는 문제를 없앤다.
  *
@@ -35,6 +37,35 @@ export async function cacheNonEmpty<T>(
     extraTags: readonly string[],
     revalidateSeconds: number
 ): Promise<T[]> {
+    return (
+        (await cacheNonEmptyOrNull(
+            keyParts,
+            symbol,
+            fetcher,
+            extraTags,
+            revalidateSeconds
+        )) ?? []
+    );
+}
+
+/**
+ * `cacheNonEmpty`의 **실패 신호 버전**. 같은 캐시 규칙(빈 결과는 저장하지 않는다)을 쓰되,
+ * 결과를 셋으로 구분해 돌려준다:
+ *  - 행이 있음 → `T[]`
+ *  - 정상적으로 **비어 있음** → `[]` (sentinel — 건강한 빈 상태)
+ *  - 읽기가 **실패**함 → `null` (로그를 남기고 삼킨다)
+ *
+ * 호출부가 "건강한 빈 상태"와 "장애"를 다르게 다뤄야 할 때 쓴다 — 예: 장애일 때만 이 렌더의
+ * revalidate를 낮추고(`shortenRevalidateForRuntimeDegrade`) 건강한 빈 상태는 라우트 기본
+ * revalidate를 유지한다. 던지는 쪽(콜백 안)과 잡는 쪽(바깥)이 갈리는 구조는 그대로다.
+ */
+export async function cacheNonEmptyOrNull<T>(
+    keyParts: readonly string[],
+    symbol: string,
+    fetcher: () => Promise<T[]>,
+    extraTags: readonly string[],
+    revalidateSeconds: number
+): Promise<T[] | null> {
     try {
         return await staticSymbolCache(
             keyParts,
@@ -52,9 +83,8 @@ export async function cacheNonEmpty<T>(
     } catch (err) {
         // sentinel(의도적 빈 결과)은 무음. 그 외(staticSymbolCache/fetcher의
         // 예상치 못한 throw)는 로깅해 프로덕션 캐시 장애를 추적 가능하게 한다.
-        if (!(err instanceof EmptyResultError)) {
-            console.error('[cacheNonEmpty] unexpected cache error:', err);
-        }
-        return [];
+        if (err instanceof EmptyResultError) return [];
+        console.error('[cacheNonEmpty] unexpected cache error:', err);
+        return null;
     }
 }

@@ -142,6 +142,13 @@ const GENERATED_THU = new Date('2026-09-17T20:35:00.000Z');
 // 일별 마감 경계는 그 날 20:00 UTC로 롤하지만, 주 2회 앵커는 여전히 09-16(수)다.
 const CHECK_FRI = new Date('2026-09-18T20:35:00.000Z');
 
+// harvest는 렌더 가능한 산문이 없는 결과를 저장하지 않는다(`hasProseForTab`) — 어느 탭이든 통과하는 최소 산문.
+const ANY_TAB_PROSE = {
+    summary: '기술적 분석 요약 문단입니다.',
+    currentDriverKo: '뉴스 동인 문단입니다.',
+    headlineKo: '종합 분석 헤드라인입니다.',
+} as const;
+
 describe('slow-refresh 캐던스(fundamental/financials/congress) 배선', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -175,11 +182,11 @@ describe('slow-refresh 캐던스(fundamental/financials/congress) 배선', () =>
         );
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
         mockPrewarmFundamental.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
     });
 

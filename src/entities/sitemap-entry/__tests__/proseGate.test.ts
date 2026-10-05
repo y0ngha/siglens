@@ -5,7 +5,6 @@
  */
 import {
     PROSE_GATED_SITEMAP_TABS,
-    SITEMAP_SNAPSHOT_TABS,
     makeProseGate,
     makeSnapshotTimeLookup,
     snapshotKey,
@@ -14,8 +13,8 @@ import {
 const AT = new Date('2026-10-03T02:00:00.000Z');
 
 describe('makeProseGate', () => {
-    it('게이트 대상 탭은 news 하나뿐이다 — overall·congress는 항상 noindex라 빠졌다', () => {
-        expect([...PROSE_GATED_SITEMAP_TABS]).toEqual(['news']);
+    it('게이트 대상 탭은 차트(technical)·뉴스(news)다 — overall·congress는 항상 noindex라 빠졌다', () => {
+        expect([...PROSE_GATED_SITEMAP_TABS]).toEqual(['technical', 'news']);
     });
 
     it('집합이 없으면(로더 실패) 모든 조합을 통과시킨다 — sitemap이 통째로 비는 쪽이 더 나쁘다', () => {
@@ -52,20 +51,19 @@ describe('makeProseGate', () => {
     });
 });
 
-describe('SITEMAP_SNAPSHOT_TABS', () => {
-    it('게이트 탭(news)에 더해 lastmod용 technical을 읽는다', () => {
-        expect([...SITEMAP_SNAPSHOT_TABS]).toEqual(['technical', 'news']);
-        for (const tab of PROSE_GATED_SITEMAP_TABS) {
-            expect(SITEMAP_SNAPSHOT_TABS).toContain(tab);
-        }
-    });
-
-    it('technical 키만 있는 종목은 news 게이트를 통과하지 못한다 — lastmod 입력이 게이트가 되지 않는다', () => {
-        const hasProse = makeProseGate({
+describe('탭별 독립 판정', () => {
+    it('technical 키만 있는 종목은 news 게이트를 통과하지 못하고, 그 반대도 같다', () => {
+        const technicalOnly = makeProseGate({
             snapshotGeneratedAt: new Map([['AAPL:technical', AT]]),
         });
+        const newsOnly = makeProseGate({
+            snapshotGeneratedAt: new Map([['AAPL:news', AT]]),
+        });
 
-        expect(hasProse('AAPL', 'news')).toBe(false);
+        expect(technicalOnly('AAPL', 'technical')).toBe(true);
+        expect(technicalOnly('AAPL', 'news')).toBe(false);
+        expect(newsOnly('AAPL', 'news')).toBe(true);
+        expect(newsOnly('AAPL', 'technical')).toBe(false);
     });
 });
 

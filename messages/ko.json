@@ -2369,7 +2369,6 @@
             },
             "ChartContent": {
                 "93c3a3": "차트는 Pre-market, After-market 주가를 반영하지 않습니다. | ",
-                "d12df8": "AI 분석 중…",
                 "d1a23e": "패널 너비 조절",
                 "f69071": "AI 차트 분석",
                 "ff6b09": "시세 데이터는 최대 15분 지연됩니다."
@@ -2438,7 +2437,7 @@
             },
             "SnapshotSummarySection": {
                 "220156": "지난 AI 분석",
-                "asOfCrypto": "UTC 기준",
+                "asOfCrypto": "UTC 시세 기준",
                 "asOfCryptoFallback": "전일 UTC 자정 기준",
                 "asOfKrEquity": "국내 장마감 기준",
                 "asOfKrEquityFallback": "전일 국내 장마감 기준",
@@ -4037,8 +4036,8 @@
             "PositionCta": {
                 "019ed7": "보유종목을 등록하면 내 매수 층이 표시돼요",
                 "2bf3cd": "최근 범위 {v0}",
-                "5cd686": "평단과 수량을 등록하면 최근 가격 범위 안에서 내 위치를\n                아이소메트릭 빌딩으로 확인할 수 있어요.",
-                "5edaf2": "보유종목 등록하기"
+                "5edaf2": "보유종목 등록하기",
+                "8df3cf": "평단과 수량을 등록하면 이 건물에 내가 산 층(★)도 함께 표시돼요."
             },
             "PositionHoldingCard": {
                 "0ac914": "평단 {v0}",
@@ -4068,6 +4067,7 @@
             "positionNote": {
                 "aboveHigh": "최근 고점보다 높은 곳",
                 "ariaSummary": "{v0} 내 위치: 평단 {v1}, 현재가 {v2}, 수익률 {v3}{v4}%, 최근 범위의 {v5}% 지점, {v6}",
+                "ariaSummaryCurrentOnly": "{v0} 현재가 위치: 현재가 {v1}, 최근 범위의 {v2}% 지점, {v3}",
                 "avgPrefix": "★ 평단 ",
                 "bandMain": "{v0}–{v1} · 거주율 {v2}%",
                 "bandQualifier": "최근 52주 거래량 기준",

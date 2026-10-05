@@ -14,6 +14,7 @@ vi.mock('@/shared/lib/legal', async importOriginal => ({
     METHODOLOGY_UPDATED_AT: new Date('2026-10-07T00:00:00+09:00'),
 }));
 
+import { MARKET_NEWS_LOOKBACK_MS } from '@/entities/market-news/lib/marketNewsConstants';
 import { buildStaticEntries } from '../lib/buildStaticEntries';
 import { SITE_URL } from '@/shared/lib/seo';
 import {
@@ -342,10 +343,8 @@ describe('buildStaticEntries — 주입된 콘텐츠 갱신 시각', () => {
         expect(crypto!.lastModified?.getTime()).toBe(CRYPTO_NEWS_AT.getTime());
     });
 
-    it('주입되지 않은 카테고리는 UTC 일 경계로 떨어진다', () => {
-        const entries = buildStaticEntries(NOW, {
-            newsLatestPublishedAt: { crypto: CRYPTO_NEWS_AT },
-        });
+    it('로더가 실패해 시각을 못 읽었으면(주입 없음) lastmod는 UTC 일 경계로 떨어진다', () => {
+        const entries = buildStaticEntries(NOW);
         const general = entries.find(e => e.url === `${SITE_URL}/news/general`);
         expect(general!.lastModified?.getTime()).toBe(
             new Date('2026-05-23T00:00:00.000Z').getTime()
@@ -374,7 +373,7 @@ describe('buildStaticEntries — 주입된 콘텐츠 갱신 시각', () => {
      * 2026-09-17 운영 크롤: `/news/forex`가 3주째 기사 없는 빈 카테고리라 페이지는
      * noindex인데 sitemap에는 실려 있었다. sitemap은 색인 대상만 실어야 한다.
      */
-    it('마지막 기사가 14일보다 오래된 카테고리는 싣지 않는다', () => {
+    it('마지막 기사가 페이지 색인 창(7일 − 12시간)보다 오래된 카테고리는 싣지 않는다', () => {
         const staleAt = new Date('2026-05-01T00:00:00.000Z'); // NOW - 22일
         const entries = buildStaticEntries(NOW, {
             newsLatestPublishedAt: {
@@ -387,10 +386,14 @@ describe('buildStaticEntries — 주입된 콘텐츠 갱신 시각', () => {
         expect(urls).toContain(`${SITE_URL}/news/crypto`);
     });
 
-    // 경계: 정확히 14일이면 뺀다(`<` 비교), 1초 모자라면 싣는다.
+    // 경계: 페이지는 최대 12시간 묵은 목록을 서빙하므로 창은 `MARKET_NEWS_LOOKBACK_MS − 12h`다.
+    // 정확히 그 나이면 뺀다(`<` 비교), 1초 모자라면 싣는다. 예전 14일 기준에서는 7~14일 구간이
+    // "sitemap에 있는데 noindex"였다.
+    const WINDOW_MS = MARKET_NEWS_LOOKBACK_MS - 12 * 60 * 60 * 1000;
     it.each([
-        ['14일 정각', 14 * 24 * 60 * 60 * 1000, false],
-        ['14일에서 1초 모자람', 14 * 24 * 60 * 60 * 1000 - 1000, true],
+        ['창 정각', WINDOW_MS, false],
+        ['창에서 1초 모자람', WINDOW_MS - 1000, true],
+        ['7일(옛 14일 기준이면 포함되던 구간)', 7 * 24 * 60 * 60 * 1000, false],
     ])('%s 지난 카테고리 포함 여부=%s', (_label, ageMs, included) => {
         const entries = buildStaticEntries(NOW, {
             newsLatestPublishedAt: {
@@ -402,10 +405,17 @@ describe('buildStaticEntries — 주입된 콘텐츠 갱신 시각', () => {
         );
     });
 
-    it('최신 기사 시각을 못 읽은 카테고리는 그대로 싣는다 (로더 장애로 sitemap이 비지 않게)', () => {
+    it('로더가 성공했는데 키가 없는 카테고리(기사 0건 = 페이지 빈 상태)는 뺀다', () => {
         const entries = buildStaticEntries(NOW, {
             newsLatestPublishedAt: { crypto: CRYPTO_NEWS_AT },
         });
+        const urls = entries.map(e => e.url);
+        expect(urls).toContain(`${SITE_URL}/news/crypto`);
+        expect(urls).not.toContain(`${SITE_URL}/news/forex`);
+    });
+
+    it('최신 기사 시각을 못 읽었으면(로더 실패 = 입력 없음) 전 카테고리를 싣는다 (로더 장애로 sitemap이 비지 않게)', () => {
+        const entries = buildStaticEntries(NOW);
         expect(entries.map(e => e.url)).toContain(`${SITE_URL}/news/forex`);
     });
 

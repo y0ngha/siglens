@@ -8,7 +8,7 @@ import {
     AXIS_LABEL_KEY,
     SENTIMENT_LABEL_KEY,
     narrowFinancialsContent,
-} from './financialsContent';
+} from '@/entities/seo-snapshot/lib/financialsContent';
 
 interface FinancialsSnapshotProseProps {
     /**

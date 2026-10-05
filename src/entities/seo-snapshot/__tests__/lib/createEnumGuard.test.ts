@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createEnumGuard } from '../createEnumGuard';
+import { createEnumGuard } from '@/entities/seo-snapshot/lib/createEnumGuard';
 
 const LABEL_MAP = {
     bullish: '강세',

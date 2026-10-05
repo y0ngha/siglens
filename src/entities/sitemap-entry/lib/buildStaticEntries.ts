@@ -9,7 +9,8 @@ import {
     TERMS_PATH,
 } from '@/shared/lib/legal';
 import { SITE_BUILD_DATE, SITE_URL } from '@/shared/lib/seo';
-import { MS_PER_DAY } from '@/shared/config/time';
+import { MS_PER_HOUR } from '@/shared/config/time';
+import { MARKET_NEWS_LOOKBACK_MS } from '@/entities/market-news/lib/marketNewsConstants';
 import { US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { KR_EQUITY_SESSION } from '@/shared/api/market/sessionSpecFor';
 import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
@@ -35,6 +36,11 @@ export interface BuildStaticEntriesOptions {
      * 카테고리 버킷별 최신 기사 `publishedAt`. news hub(`/news`)와
      * `/news/us`는 여기서 파생한다 — 허브 값을 따로 주입받으면 카테고리와
      * 어긋난 lastmod를 발행할 수 있다(허브가 보여주는 것이 정확히 그 카테고리들이다).
+     *
+     * **`undefined`(로더 실패)와 `{}`(로더 성공, 기사 0건)는 다르다.** 전자는 판단 근거가
+     * 없으니 전 카테고리를 싣는다(페이지의 fail-open과 일치 — 로더 장애로 카테고리가
+     * 통째로 사라지는 쪽이 더 나쁘다). 후자의 키 없는 카테고리는 행이 하나도 없어 페이지가
+     * 빈 상태(noindex)이므로 **뺀다.**
      */
     readonly newsLatestPublishedAt?: Partial<Record<NewsFeedCategoryId, Date>>;
     /** 활성 약관·방침 버전의 발효일. 없으면 `SITE_BUILD_DATE`로 떨어진다. */
@@ -51,13 +57,17 @@ export interface BuildStaticEntriesOptions {
 }
 
 /**
- * 뉴스 카테고리를 sitemap에서 빼는 정체 기준.
+ * 뉴스 카테고리를 sitemap에서 빼는 정체 기준 — **페이지의 색인 기준과 같은 창**이다.
  *
- * 카테고리 페이지는 카드가 하나도 없으면 noindex다(`news/[category]/page.tsx`).
- * 2026-09-17 운영 크롤에서 `/news/forex`가 정확히 그 상태로 sitemap에 실려 있었다 —
- * 마지막 기사가 3주 전이었다. sitemap은 색인 대상만 실어야 한다.
+ * 카테고리 페이지는 `MARKET_NEWS_LOOKBACK_MS`(7일) 안의 카드가 하나도 없으면 noindex다
+ * (`news/[category]/page.tsx`). 그런데 페이지는 ISR로 최대 12시간 묵은 목록을 서빙하므로,
+ * sitemap은 **"지금 시각 기준 최신 기사가 창 안"이 아니라 "12시간 전에 페이지가 읽었을 때도
+ * 창 안이었음"**이 확실한 카테고리만 싣는다 — 최신 기사 시각이 `창 − 12h`보다 최근이어야
+ * 한다. 예전에는 임의의 14일을 썼다: 페이지가 이미 noindex가 된 7~14일 구간의 카테고리가
+ * sitemap에 남아 "sitemap에 있는데 noindex"(GSC 오류)였다. 2026-09-17 운영 크롤의
+ * `/news/forex`(마지막 기사 3주 전)가 그 계열이다.
  */
-const STALE_NEWS_CATEGORY_MS = 14 * MS_PER_DAY;
+const STALE_NEWS_CATEGORY_MS = MARKET_NEWS_LOOKBACK_MS - 12 * MS_PER_HOUR;
 
 /** 후보 중 가장 최근 값. 후보가 없으면 `fallback`. */
 function latestOf(
@@ -117,10 +127,13 @@ export function buildStaticEntries(
     options: BuildStaticEntriesOptions = {}
 ): SitemapEntry[] {
     const {
-        newsLatestPublishedAt = {},
+        newsLatestPublishedAt,
         legalEffectiveDates = {},
         backtestingDataDate,
     } = options;
+    // 아래 lastmod 조회용 — 로더 실패(undefined)면 어떤 카테고리도 시각을 모른다.
+    const latestOfCategory = (cat: NewsFeedCategoryId): Date | undefined =>
+        newsLatestPublishedAt?.[cat];
     const todayUtc = startOfUtcDay(now);
     // `/fear-greed`·`/market`은 봉이 입력이라 "직전 마감"이 곧 lastmod다. 두 지역이
     // 서로 다른 거래소를 보므로 세션도 따로 계산한다 — KRX는 06:30 UTC, NYSE는
@@ -136,18 +149,20 @@ export function buildStaticEntries(
     const allNewsCategories = Object.keys(
         CATEGORY_CONFIG
     ) as NewsFeedCategoryId[];
-    // 최신 기사 시각을 못 읽었으면(주입 실패) 싣는다 — 로더 장애로 sitemap에서
-    // 카테고리가 통째로 사라지는 쪽이 더 나쁘다.
+    // 로더가 실패했으면(`newsLatestPublishedAt` 없음) 전부 싣는다 — 로더 장애로 sitemap에서
+    // 카테고리가 통째로 사라지는 쪽이 더 나쁘다. 로더가 성공했으면 키가 없는 카테고리(기사
+    // 0건 = 페이지가 빈 상태)와 창 밖으로 정체된 카테고리를 뺀다.
     const newsCategories = allNewsCategories.filter(cat => {
+        if (newsLatestPublishedAt === undefined) return true;
         const latest = newsLatestPublishedAt[cat];
         return (
-            latest === undefined ||
+            latest !== undefined &&
             now.getTime() - latest.getTime() < STALE_NEWS_CATEGORY_MS
         );
     });
     const newsCategoryEntries: SitemapEntry[] = newsCategories.map(cat => ({
         url: `${SITE_URL}/news/${CATEGORY_CONFIG[cat].slug}`,
-        lastModified: newsLatestPublishedAt[cat] ?? todayUtc,
+        lastModified: latestOfCategory(cat) ?? todayUtc,
         changeFrequency: 'daily' as const,
         priority: 0.8,
         alternates: sitemapAlternates(
@@ -158,7 +173,7 @@ export function buildStaticEntries(
     // 허브는 자기가 나열하는 카테고리들의 최신값이다 — 별도 조회를 두면 두 값이
     // 어긋나 "허브가 카테고리보다 신선하다"는 불가능한 주장을 하게 된다.
     const newsHubLastModified = latestOf(
-        newsCategories.map(cat => newsLatestPublishedAt[cat]),
+        newsCategories.map(latestOfCategory),
         todayUtc
     );
     // `/news/us`도 **싣는 카테고리만** 본다. 정체돼 sitemap에서 빠진 카테고리의
@@ -167,7 +182,7 @@ export function buildStaticEntries(
         newsCategories.includes(cat)
     );
     const newsUsLastModified = latestOf(
-        freshUsCategories.map(cat => newsLatestPublishedAt[cat]),
+        freshUsCategories.map(latestOfCategory),
         todayUtc
     );
 

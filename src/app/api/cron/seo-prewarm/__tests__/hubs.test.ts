@@ -1117,6 +1117,8 @@ describe('runHubPrewarm — 새로 구운 허브 URL (IndexNow 제출용)', () =
     beforeEach(() => {
         vi.clearAllMocks();
         allSucceed();
+        // 기본은 "본문 변경 없음" — 개별 테스트가 true로 바꾸므로 구현이 새지 않게 되돌린다.
+        mocks.recordHubContentStamp.mockResolvedValue(false);
     });
 
     const NEWS_URLS = Object.values(CATEGORY_CONFIG).map(
@@ -1171,6 +1173,56 @@ describe('runHubPrewarm — 새로 구운 허브 URL (IndexNow 제출용)', () =
 
         expect(result.alreadyFresh).toBe(hubTargets().length);
         expect(result.generatedUrls).toEqual([]);
+    });
+
+    it('이미 캐시에 있지만 본문 스탬프가 바뀐 허브는 changedUrls에 싣는다 — generatedUrls와 겹치지 않는다', async () => {
+        mocks.peekBriefingCache.mockResolvedValue({ briefing: 'x' });
+        mocks.peekMacroBriefingCache.mockResolvedValue({ briefing: 'y' });
+        mocks.peekMarketNewsDigestCache.mockResolvedValue({
+            currentDriverKo: 'z',
+        });
+        calendarUnchanged();
+        // 처음 보는 본문(새 해시를 썼다).
+        mocks.recordHubContentStamp.mockResolvedValue(true);
+
+        const result = await runHubPrewarm();
+
+        expect(result.generatedUrls).toEqual([]);
+        expect(result.changedUrls).toEqual(
+            expect.arrayContaining([
+                `${SITE_URL}/market`,
+                `${SITE_URL}/market/kr`,
+                `${SITE_URL}/economy`,
+                ...NEWS_URLS,
+            ])
+        );
+        // 경제 허브처럼 두 대상이 같은 페이지를 가리켜도 한 번만 나온다.
+        expect(new Set(result.changedUrls).size).toBe(
+            result.changedUrls.length
+        );
+    });
+
+    it('스탬프가 그대로(같은 본문)면 changedUrls는 비어 있다', async () => {
+        mocks.peekBriefingCache.mockResolvedValue({ briefing: 'x' });
+        mocks.peekMacroBriefingCache.mockResolvedValue({ briefing: 'y' });
+        mocks.peekMarketNewsDigestCache.mockResolvedValue({
+            currentDriverKo: 'z',
+        });
+        calendarUnchanged();
+        mocks.recordHubContentStamp.mockResolvedValue(false);
+
+        const result = await runHubPrewarm();
+
+        expect(result.changedUrls).toEqual([]);
+    });
+
+    it('새로 구운 허브는 스탬프가 바뀌어도 generatedUrls에만 싣는다', async () => {
+        mocks.recordHubContentStamp.mockResolvedValue(true);
+
+        const result = await runHubPrewarm();
+
+        expect(result.generatedUrls).toContain(`${SITE_URL}/market`);
+        expect(result.changedUrls).not.toContain(`${SITE_URL}/market`);
     });
 
     it('기사가 없어 만들 게 없던 뉴스 카테고리는 싣지 않는다', async () => {

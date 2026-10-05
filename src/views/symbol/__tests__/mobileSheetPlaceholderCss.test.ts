@@ -31,3 +31,31 @@ describe('globals.css — 모바일 시트 껍데기 해제 규칙', () => {
         expect(css).toContain('[data-vaul-drawer]');
     });
 });
+
+describe('globals.css — 펼친 모바일 시트의 Ask-AI FAB 숨김 규칙', () => {
+    const css = readFileSync(
+        join(process.cwd(), 'src/app/globals.css'),
+        'utf-8'
+    );
+    const normalized = css.replace(/\s+/g, ' ');
+
+    it('시트가 PEEK 밖으로 펼쳐지면 FAB을 숨기는 규칙이 있다', () => {
+        expect(normalized).toContain(
+            'body:has([data-vaul-drawer][data-sheet-expanded]) [data-ask-ai-fab] { display: none; }'
+        );
+    });
+
+    it('규칙이 시트·FAB 컴포넌트가 실제로 다는 속성명을 쓴다', () => {
+        const sheet = readFileSync(
+            join(process.cwd(), 'src/views/symbol/MobileAnalysisSheet.tsx'),
+            'utf-8'
+        );
+        const fab = readFileSync(
+            join(process.cwd(), 'src/widgets/ask-ai-fab/AskAiFab.tsx'),
+            'utf-8'
+        );
+
+        expect(sheet).toContain('data-sheet-expanded');
+        expect(fab).toContain('data-ask-ai-fab');
+    });
+});

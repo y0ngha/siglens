@@ -142,7 +142,9 @@ describe('generateMetadata', () => {
         });
 
         expect(metadata.robots).toEqual({ index: false, follow: true });
-        expect(metadata.alternates?.canonical).toBeNull();
+        expect(metadata.alternates?.canonical).toBe(
+            'https://siglens.io/!!!invalid/congress'
+        );
     });
 
     it('returns noindex when assetInfo is degraded', async () => {
@@ -156,7 +158,9 @@ describe('generateMetadata', () => {
         });
 
         expect(metadata.robots).toEqual({ index: false, follow: true });
-        expect(metadata.alternates?.canonical).toBeNull();
+        expect(metadata.alternates?.canonical).toBe(
+            'https://siglens.io/AAPL/congress'
+        );
     });
 
     // 2026-10-01 SEO 감사: 의회 거래 탭은 **항상 noindex**다. 프로필·거래·스냅샷

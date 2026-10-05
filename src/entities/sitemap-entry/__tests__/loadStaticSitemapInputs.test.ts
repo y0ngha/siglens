@@ -87,24 +87,51 @@ describe('loadStaticSitemapInputs', () => {
         expect(() => maxLastModified(entries, new Date())).not.toThrow();
     });
 
-    it('뉴스 조회가 실패해도 약관 값은 살아남는다', async () => {
+    it('뉴스 조회가 실패해도 약관 값은 살아남는다 — 뉴스 입력은 `{}`가 아니라 **없음**이다', async () => {
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
         mockListLatest.mockRejectedValue(new Error('neon down'));
         mockFindActive.mockResolvedValue({ effectiveDate: TOS_AT });
 
         const inputs = await loadStaticSitemapInputs();
 
-        expect(inputs.newsLatestPublishedAt).toEqual({});
+        // `{}`(로더 성공, 기사 0건)와 구별돼야 한다 — 빌더는 `{}`면 모든 뉴스 카테고리를 뺀다.
+        expect(inputs).not.toHaveProperty('newsLatestPublishedAt');
         expect(inputs.legalEffectiveDates).toEqual({
             privacy: TOS_AT,
             tos: TOS_AT,
         });
+        spy.mockRestore();
+    });
+
+    it('뉴스 조회 실패는 캐시에 저장되지 않는다 — 다음 호출이 다시 읽는다', async () => {
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        mockListLatest.mockRejectedValueOnce(new Error('neon blip'));
+        mockListLatest.mockResolvedValue(
+            new Map([[CATEGORY_CONFIG.crypto.sentinel, CRYPTO_AT]])
+        );
+
+        const first = await loadStaticSitemapInputs();
+        const second = await loadStaticSitemapInputs();
+
+        expect(first).not.toHaveProperty('newsLatestPublishedAt');
+        expect(second.newsLatestPublishedAt).toEqual({ crypto: CRYPTO_AT });
+        spy.mockRestore();
+    });
+
+    it('기사가 하나도 없으면 빈 객체다(로더 성공) — 실패(없음)와 다르다', async () => {
+        const inputs = await loadStaticSitemapInputs();
+
+        expect(inputs.newsLatestPublishedAt).toEqual({});
     });
 
     it('DB 클라이언트 자체가 죽으면 빈 옵션을 돌려준다', async () => {
-        mockGetDatabaseClient.mockImplementationOnce(() => {
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        mockGetDatabaseClient.mockImplementation(() => {
             throw new Error('no DATABASE_URL');
         });
 
         await expect(loadStaticSitemapInputs()).resolves.toEqual({});
+        mockGetDatabaseClient.mockImplementation(() => ({ db: {} }));
+        spy.mockRestore();
     });
 });

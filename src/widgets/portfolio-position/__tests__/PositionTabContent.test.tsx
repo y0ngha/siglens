@@ -107,6 +107,42 @@ describe('PositionTabContent', () => {
         expect(mockUseSymbolHolding).not.toHaveBeenCalled();
     });
 
+    it('draws the current-price-only building inside the guest CTA (lastClose + volumeByBand threaded through)', async () => {
+        mockUseHydrated.mockReturnValue(true);
+        setCurrentUser(null);
+        render(
+            <PositionTabContent
+                symbol="AAPL"
+                low52w={100}
+                high52w={200}
+                lastClose={180}
+                volumeByBand={[10, 20, 30, 25, 15]}
+            />
+        );
+        const building = await screen.findByTestId('position-building');
+        expect(screen.getByTestId('position-cta')).toContainElement(building);
+        expect(screen.queryByTestId('avg-marker')).not.toBeInTheDocument();
+        expect(screen.getByTestId('floor-volume-readout')).toBeInTheDocument();
+        expect(mockUseSymbolHolding).not.toHaveBeenCalled();
+    });
+
+    it('also draws it for a member with no holding on this symbol', async () => {
+        mockUseHydrated.mockReturnValue(true);
+        setCurrentUser(USER);
+        // beforeEach 기본값: holding null.
+        render(
+            <PositionTabContent
+                symbol="AAPL"
+                low52w={100}
+                high52w={200}
+                lastClose={180}
+            />
+        );
+        const building = await screen.findByTestId('position-building');
+        expect(screen.getByTestId('position-cta')).toContainElement(building);
+        expect(screen.queryByTestId('avg-marker')).not.toBeInTheDocument();
+    });
+
     it('renders the range as neutral context text inside the guest CTA', () => {
         mockUseHydrated.mockReturnValue(true);
         setCurrentUser(null);
