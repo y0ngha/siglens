@@ -216,6 +216,13 @@ function makeFrozenClock(nowMs: number): PrewarmClock {
     return { now: () => nowMs, sleep: () => new Promise<void>(() => {}) };
 }
 
+// harvest는 렌더 가능한 산문이 없는 결과를 저장하지 않는다(`hasProseForTab`) — 어느 탭이든 통과하는 최소 산문.
+const ANY_TAB_PROSE = {
+    summary: '기술적 분석 요약 문단입니다.',
+    currentDriverKo: '뉴스 동인 문단입니다.',
+    headlineKo: '종합 분석 헤드라인입니다.',
+} as const;
+
 describe('runPrewarmBatch', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -268,7 +275,7 @@ describe('runPrewarmBatch', () => {
         );
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
 
         const counts = await runPrewarmBatch();
@@ -314,7 +321,7 @@ describe('runPrewarmBatch', () => {
         );
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
 
         const counts = await runPrewarmBatch();
@@ -335,7 +342,7 @@ describe('runPrewarmBatch', () => {
         mockFindGeneratedAtMap.mockResolvedValue(new Map()); // 둘 다 stale.
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
 
         const counts = await runPrewarmBatch();
@@ -374,8 +381,14 @@ describe('runPrewarmBatch', () => {
             },
             degraded: false,
         });
-        const technicalResult = { status: 'cached', result: { a: 1 } };
-        const overallResult = { status: 'cached', result: { b: 2 } };
+        const technicalResult = {
+            status: 'cached',
+            result: { ...ANY_TAB_PROSE, a: 1 },
+        };
+        const overallResult = {
+            status: 'cached',
+            result: { ...ANY_TAB_PROSE, b: 2 },
+        };
         mockPrewarmTechnical.mockResolvedValue(technicalResult);
         mockPrewarmOverall.mockResolvedValue(overallResult);
 
@@ -396,7 +409,7 @@ describe('runPrewarmBatch', () => {
             expect.objectContaining({
                 symbol: 'MSFT',
                 tab: 'technical',
-                content: { a: 1 },
+                content: { ...ANY_TAB_PROSE, a: 1 },
                 generatedAt: FIXED_NOW,
             })
         );
@@ -404,7 +417,7 @@ describe('runPrewarmBatch', () => {
             expect.objectContaining({
                 symbol: 'MSFT',
                 tab: 'overall',
-                content: { b: 2 },
+                content: { ...ANY_TAB_PROSE, b: 2 },
                 generatedAt: FIXED_NOW,
             })
         );
@@ -426,9 +439,12 @@ describe('runPrewarmBatch', () => {
         const error402 = new Error('FMP /profile 402');
         mockPrewarmTechnical.mockImplementation((symbol: string) => {
             if (symbol === 'A') return Promise.reject(error402);
-            return Promise.resolve({ status: 'cached', result: {} });
+            return Promise.resolve({ status: 'cached', result: ANY_TAB_PROSE });
         });
-        mockPrewarmOverall.mockResolvedValue({ status: 'cached', result: {} });
+        mockPrewarmOverall.mockResolvedValue({
+            status: 'cached',
+            result: ANY_TAB_PROSE,
+        });
         mockGetFmpErrorStatus.mockImplementation(err =>
             err === error402 ? 402 : null
         );
@@ -448,7 +464,10 @@ describe('runPrewarmBatch', () => {
         universe({ symbol: 'C', tabs: ['technical', 'overall'] });
         const genericError = new Error('boom');
         mockPrewarmTechnical.mockRejectedValue(genericError);
-        mockPrewarmOverall.mockResolvedValue({ status: 'cached', result: {} });
+        mockPrewarmOverall.mockResolvedValue({
+            status: 'cached',
+            result: ANY_TAB_PROSE,
+        });
         mockGetFmpErrorStatus.mockReturnValue(null);
         const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -474,7 +493,7 @@ describe('runPrewarmBatch', () => {
         universe(...symbols);
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -514,7 +533,7 @@ describe('runPrewarmBatch', () => {
         universe({ symbol: 'BTCUSD', tabs: ['technical'] });
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
 
         await runPrewarmBatch();
@@ -534,7 +553,7 @@ describe('runPrewarmBatch', () => {
         });
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
 
         await runPrewarmBatch();
@@ -555,7 +574,7 @@ describe('runPrewarmBatch', () => {
         });
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
 
         await runPrewarmBatch();
@@ -572,7 +591,7 @@ describe('runPrewarmBatch', () => {
         universe({ symbol: 'F', tabs: ['technical'] });
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
         mockGetFmpBudgetUsed.mockResolvedValue(123);
 
@@ -599,7 +618,7 @@ describe('runPrewarmBatch', () => {
         });
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
         const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -633,7 +652,7 @@ describe('runPrewarmBatch', () => {
         );
         mockPrewarmOverall.mockResolvedValue({
             status: 'cached',
-            result: { c: 3 },
+            result: { ...ANY_TAB_PROSE, c: 3 },
         });
 
         const counts = await runPrewarmBatch();
@@ -653,7 +672,7 @@ describe('runPrewarmBatch', () => {
         universe({ symbol: 'G', tabs: ['technical', 'overall'] });
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
         mockPrewarmOverall.mockResolvedValue({
             status: 'miss_no_trigger',
@@ -707,7 +726,7 @@ describe('runPrewarmBatch', () => {
         mockFindGeneratedAtMap.mockResolvedValue(new Map());
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
 
         // advanceRotationCursor는 "전진 전"(=이번 tick이 쓸) 값을 반환한다.
@@ -772,7 +791,7 @@ describe('runPrewarmBatch', () => {
         mockFindGeneratedAtMap.mockResolvedValue(new Map());
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
         mockAdvanceRotationCursor.mockImplementation(
             makeStatefulRotationCursor(0)
@@ -824,7 +843,7 @@ describe('runPrewarmBatch', () => {
         mockFindGeneratedAtMap.mockResolvedValue(new Map());
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
         // 커서는 "실행 횟수"에만 묶인다 — 아래에서 clock을 4틱만큼 앞당겨도 이
         // mock의 전진 폭에는 아무 영향이 없다(그 자체가 FIX B의 핵심 주장이다).
@@ -898,7 +917,7 @@ describe('runPrewarmBatch', () => {
         );
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
 
         // 실제 Redis INCRBY를 흉내내되(makeStatefulRotationCursor와 동일 계약),
@@ -1039,7 +1058,7 @@ describe('runPrewarmBatch', () => {
         );
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
 
         const counts = await runPrewarmBatch();
@@ -1077,7 +1096,7 @@ describe('runPrewarmBatch', () => {
         });
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
 
         const counts = await runPrewarmBatch();
@@ -1103,7 +1122,7 @@ describe('runPrewarmBatch', () => {
         );
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
 
         const counts = await runPrewarmBatch();
@@ -1150,7 +1169,7 @@ describe('runPrewarmBatch', () => {
         mockGetInFlightMarker.mockResolvedValue({ present: true });
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
 
         const counts = await runPrewarmBatch();
@@ -1174,7 +1193,7 @@ describe('runPrewarmBatch', () => {
         });
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
 
         const counts = await runPrewarmBatch();
@@ -1191,7 +1210,7 @@ describe('runPrewarmBatch', () => {
         universe({ symbol: 'MULTI', tabs: ['technical', 'fundamental'] });
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -1220,11 +1239,11 @@ describe('runPrewarmBatch', () => {
         universe({ symbol: 'MULTI', tabs: ['technical', 'fundamental'] });
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
         mockPrewarmFundamental.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
 
         const base = FIXED_NOW.getTime();
@@ -1249,7 +1268,7 @@ describe('runPrewarmBatch', () => {
         universe({ symbol: 'BTCUSD', tabs: ['technical'] });
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
 
         const cryptoCounts = await runPrewarmBatch();
@@ -1284,7 +1303,7 @@ describe('runPrewarmBatch', () => {
         universe(...symbols);
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -1332,7 +1351,7 @@ describe('runPrewarmBatch', () => {
         // 12가 되어 실패한다.
         mockPrewarmTechnical.mockImplementation(async () => {
             await clock.sleep(BATCH_DEADLINE_MS + 1);
-            return { status: 'cached', result: {} };
+            return { status: 'cached', result: ANY_TAB_PROSE };
         });
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -1355,7 +1374,7 @@ describe('runPrewarmBatch', () => {
         universe({ symbol: 'NORMAL', tabs: ['technical'] });
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -1374,7 +1393,7 @@ describe('runPrewarmBatch', () => {
         universe({ symbol: 'COLD', tabs: ['technical'] });
         mockPrewarmTechnical.mockResolvedValue({
             status: 'done',
-            result: { warmed: true },
+            result: { ...ANY_TAB_PROSE, warmed: true },
         });
 
         const counts = await runPrewarmBatch();
@@ -1383,7 +1402,7 @@ describe('runPrewarmBatch', () => {
             expect.objectContaining({
                 symbol: 'COLD',
                 tab: 'technical',
-                content: { warmed: true },
+                content: { ...ANY_TAB_PROSE, warmed: true },
             })
         );
         expect(counts.harvested).toBe(1);
@@ -1464,7 +1483,10 @@ describe('runPrewarmBatch', () => {
         universe({ symbol: 'HUNG2', tabs: ['technical', 'overall'] });
         // technical만 타임아웃, overall은 정상 완료.
         mockPrewarmTechnical.mockReturnValue(new Promise(() => {}));
-        mockPrewarmOverall.mockResolvedValue({ status: 'cached', result: {} });
+        mockPrewarmOverall.mockResolvedValue({
+            status: 'cached',
+            result: ANY_TAB_PROSE,
+        });
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
         const clock = makeSimClock(FIXED_NOW.getTime());
@@ -1543,7 +1565,7 @@ describe('runPrewarmBatch', () => {
         });
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
 
         // makeSimClock: sleep 호출마다 t를 즉시 advance한다.
@@ -1573,7 +1595,7 @@ describe('runPrewarmBatch', () => {
         });
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
 
         const HUB_ELAPSED_MS = 90_000;
@@ -1646,7 +1668,7 @@ describe('runPrewarmBatch', () => {
             mockPrewarmOptions,
             mockPrewarmOverall,
         ]) {
-            seam.mockResolvedValue({ status: 'cached', result: {} });
+            seam.mockResolvedValue({ status: 'cached', result: ANY_TAB_PROSE });
         }
 
         // 허브가 자기 최악(단계 마감 120초 + 유닛 타임아웃 45초)을 다 쓴 상황.
@@ -1682,7 +1704,7 @@ describe('runPrewarmBatch', () => {
         mockFindGeneratedAtMap.mockResolvedValue(new Map());
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -1706,7 +1728,7 @@ describe('runPrewarmBatch', () => {
         );
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -1730,7 +1752,7 @@ describe('runPrewarmBatch', () => {
         mockFindGeneratedAtMap.mockResolvedValue(new Map());
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -1786,7 +1808,7 @@ describe('runPrewarmBatch', () => {
         );
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -1840,7 +1862,7 @@ describe('runPrewarmBatch', () => {
         );
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -1888,7 +1910,7 @@ describe('runPrewarmBatch', () => {
         );
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -1935,7 +1957,7 @@ describe('runPrewarmBatch', () => {
         );
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -1970,7 +1992,7 @@ describe('runPrewarmBatch', () => {
         );
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
-            result: {},
+            result: ANY_TAB_PROSE,
         });
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -2000,7 +2022,10 @@ describe('runPrewarmBatch', () => {
             },
             degraded: false,
         });
-        mockPrewarmOverall.mockResolvedValue({ status: 'cached', result: {} });
+        mockPrewarmOverall.mockResolvedValue({
+            status: 'cached',
+            result: ANY_TAB_PROSE,
+        });
 
         // technical 탭만 isSkipped=true. overall은 false.
         mockIsSkipped.mockImplementation((_symbol: string, tab: string) =>

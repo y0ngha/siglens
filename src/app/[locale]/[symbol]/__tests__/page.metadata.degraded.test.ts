@@ -71,13 +71,14 @@ describe('chart generateMetadata — 봉 조회 실패는 degrade다', () => {
         vi.mocked(getSeoSnapshotsStatic).mockResolvedValue([] as Snapshots);
     });
 
-    it('조회 실패 + 스냅샷 없음 → noindex + canonical null', async () => {
+    it('조회 실패 + 스냅샷 없음 → noindex + self-canonical', async () => {
         mockGetQuantizedBarsStatic.mockRejectedValue(new Error('bars down'));
 
         const metadata = await generateMetadata({ params });
 
         expect(metadata.robots).toEqual({ index: false, follow: true });
-        expect(metadata.alternates?.canonical).toBeNull();
+        // self-canonical(2026-10-05) — `canonical: null`이 아니다.
+        expect(metadata.alternates?.canonical).toBe('https://siglens.io/AAPL');
     });
 
     it('조회 실패 + 렌더 가능한 technical 스냅샷 → 색인 유지(degraded-with-snapshot)', async () => {
@@ -95,8 +96,35 @@ describe('chart generateMetadata — 봉 조회 실패는 degrade다', () => {
         expect(metadata.robots).toBeUndefined();
     });
 
-    it('조회 성공 + 봉 있음 → 스냅샷이 없어도 색인한다(회귀 가드)', async () => {
+    // 2026-10-05: 차트 탭은 렌더 가능한 산문이 있어야 색인한다(SEO_RECOVERY §5 A3). 봉만 있고
+    // 스냅샷이 없으면 제목·크롬·수치 요약뿐이라 thin → noindex(no-prose, self-canonical).
+    it('조회 성공 + 봉 있음 + 렌더 가능한 technical 산문 → 색인한다', async () => {
         mockGetQuantizedBarsStatic.mockResolvedValue(BARS_WITH_DATA);
+        vi.mocked(getSeoSnapshotsStatic).mockResolvedValue([
+            {
+                tab: 'technical',
+                content: { summary: '추세가 유지되고 있다.' },
+                generatedAt: new Date('2026-09-01'),
+            },
+        ] as unknown as Snapshots);
+
+        const metadata = await generateMetadata({ params });
+
+        expect(metadata.robots).toBeUndefined();
+    });
+
+    it('조회 성공 + 봉 있음 + 산문 없음 → noindex(no-prose)이고 self-canonical을 유지한다', async () => {
+        mockGetQuantizedBarsStatic.mockResolvedValue(BARS_WITH_DATA);
+
+        const metadata = await generateMetadata({ params });
+
+        expect(metadata.robots).toEqual({ index: false, follow: true });
+        expect(metadata.alternates?.canonical).toBe('https://siglens.io/AAPL');
+    });
+
+    it('스냅샷 읽기 실패(null = 모름) → 색인을 유지한다(fail-open)', async () => {
+        mockGetQuantizedBarsStatic.mockResolvedValue(BARS_WITH_DATA);
+        vi.mocked(getSeoSnapshotsStatic).mockResolvedValue(null);
 
         const metadata = await generateMetadata({ params });
 

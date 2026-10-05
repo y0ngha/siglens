@@ -52,7 +52,14 @@ const MARGIN = 15 * 60_000;
 
 // 목은 로더만 대신한다 — 엔트리는 실제 sitemap 빌더가 만든다. 손으로 만든 엔트리는
 // 빌더의 색인 판정(항상 noindex 탭 제외, 뉴스 산문 게이트)을 건너뛴다.
-const snapshotGeneratedAt = new Map<string, Date>([['AAPL:news', NOW]]);
+// 키 = 렌더 가능한 산문이 있는 조합. 차트(technical)도 산문 게이트 대상이라 차트 URL이 실리려면 키가 필요하다.
+// AAPL은 뉴스 산문까지, MSFT·BTCUSD는 차트 산문만 있다(뉴스 탭은 sitemap에서 빠진다).
+const snapshotGeneratedAt = new Map<string, Date>([
+    ['AAPL:news', NOW],
+    ['AAPL:technical', NOW],
+    ['MSFT:technical', NOW],
+    ['BTCUSD:technical', NOW],
+]);
 
 /** 정적 페이지가 이미 시드돼 있는 상태 — 정적 페이지가 큐에 섞여 들어오지 않게. */
 function seededStaticLastmods(): Record<string, string> {
@@ -187,7 +194,9 @@ describe('submitIndexNowForBatch', () => {
 
     it('심볼이 sitemap에 싣지 않은 탭(산문 게이트 미통과 뉴스)은 큐에 넣지 않는다', async () => {
         mockLoadPopular.mockResolvedValue(
-            buildPopularEntries(NOW, { snapshotGeneratedAt: new Map() })
+            buildPopularEntries(NOW, {
+                snapshotGeneratedAt: new Map([['AAPL:technical', NOW]]),
+            })
         );
 
         await submitIndexNowForBatch({
@@ -226,7 +235,10 @@ describe('submitIndexNowForBatch', () => {
     it('정체돼 sitemap에서 빠진 뉴스 카테고리 허브는 새로 구웠어도 큐에 넣지 않는다', async () => {
         const stale = new Date(NOW.getTime() - 30 * 86_400_000);
         mockLoadStatic.mockResolvedValue(
-            buildStaticEntries(NOW, { newsLatestPublishedAt: { forex: stale } })
+            buildStaticEntries(NOW, {
+                // 로더가 성공한 입력 — 키가 없는 카테고리(기사 0건)는 빠진다. stock만 최신이다.
+                newsLatestPublishedAt: { forex: stale, stock: NOW },
+            })
         );
 
         await submitIndexNowForBatch({

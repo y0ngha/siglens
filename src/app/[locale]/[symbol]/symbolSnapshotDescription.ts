@@ -29,7 +29,7 @@ interface TabSnapshotInput {
 }
 
 export interface TabSnapshotMeta {
-    /** 이 탭의 SEO 스냅샷 행. thin-content 게이트가 같은 행을 본다. */
+    /** 이 탭의 SEO 스냅샷 행. */
     readonly snap: SeoAnalysisSnapshot | undefined;
     /** 스냅샷에서 만든 검색용 설명. 스냅샷이 없으면 `null`(템플릿 설명 유지). */
     readonly description: string | null;
@@ -53,9 +53,11 @@ export async function loadTabSnapshotMeta({
     tSeo,
     preferPlain = false,
 }: TabSnapshotInput): Promise<TabSnapshotMeta> {
-    const snap = (await getSeoSnapshotsStatic(symbol, revalidate, locale)).find(
-        s => s.tab === tab
-    );
+    // `null`(읽기 실패)은 "스냅샷 없음"과 같게 템플릿 설명으로 떨어진다 — 설명 문구는
+    // 색인 여부와 무관하다(색인 판정은 `getBlockedSymbolMetadata`가 `unknown`으로 구분한다).
+    const snap = (
+        (await getSeoSnapshotsStatic(symbol, revalidate, locale)) ?? []
+    ).find(s => s.tab === tab);
     const description = snap
         ? buildSnapshotMetaDescription(
               tab,

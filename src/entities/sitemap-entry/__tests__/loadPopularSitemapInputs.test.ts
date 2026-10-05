@@ -42,11 +42,13 @@ describe('loadPopularSitemapInputs', () => {
                 symbol: 'AAPL',
                 tab: 'news',
                 generatedAt: new Date('2026-10-03T02:00:00.000Z'),
+                hasProse: true,
             },
             {
                 symbol: 'AAPL',
                 tab: 'technical',
                 generatedAt: new Date('2026-10-03T23:30:00.000Z'),
+                hasProse: true,
             },
         ]);
         const before = Date.now();
@@ -62,7 +64,7 @@ describe('loadPopularSitemapInputs', () => {
         const [tabs, locale, since] = mockListFreshSymbolTabs.mock.calls.find(
             call => Array.isArray(call[0])
         )!;
-        // 게이트 탭(news)과 lastmod용 탭(technical)을 한 번에 읽는다.
+        // 게이트 탭(차트·뉴스)을 한 번에 읽는다 — lastmod도 같은 행에서 나온다.
         expect(tabs).toEqual(['technical', 'news']);
         expect(mockListFreshSymbolTabs).toHaveBeenCalledTimes(1);
         expect(locale).toBe('ko');
@@ -75,6 +77,29 @@ describe('loadPopularSitemapInputs', () => {
         );
     });
 
+    it('렌더 가능한 산문이 없는 행(hasProse=false)은 맵에 넣지 않는다 — 키가 곧 페이지가 색인 대상이라는 뜻이다', async () => {
+        mockListFreshSymbolTabs.mockResolvedValue([
+            {
+                symbol: 'AAPL',
+                tab: 'news',
+                generatedAt: new Date('2026-10-03T02:00:00.000Z'),
+                hasProse: false,
+            },
+            {
+                symbol: 'AAPL',
+                tab: 'technical',
+                generatedAt: new Date('2026-10-03T23:30:00.000Z'),
+                hasProse: true,
+            },
+        ]);
+
+        const inputs = await loadPopularSitemapInputs();
+
+        expect([...(inputs.snapshotGeneratedAt?.keys() ?? [])]).toEqual([
+            'AAPL:technical',
+        ]);
+    });
+
     it('캐시 경계(JSON 직렬화)를 지나도 값은 Date 인스턴스로 복원된다', async () => {
         // 이 모듈의 `unstable_cache` 목은 JSON 왕복을 한다 — 복원하지 않으면 값이 ISO
         // 문자열이라 빌더가 `.getTime()`에서 죽는다.
@@ -83,6 +108,7 @@ describe('loadPopularSitemapInputs', () => {
                 symbol: 'AAPL',
                 tab: 'news',
                 generatedAt: new Date('2026-10-03T02:00:00.000Z'),
+                hasProse: true,
             },
         ]);
 

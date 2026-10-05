@@ -175,6 +175,9 @@ describe('TAB_SEAMS', () => {
     });
 });
 
+// 렌더 가능한 산문이 있는 결과 — harvest는 `hasProseForTab`을 통과하지 못하는 결과를 저장하지 않는다.
+const OVERALL_PROSE = { headlineKo: '종합 분석 헤드라인입니다.' } as const;
+
 describe('resolveHarvest', () => {
     let repo: { upsert: ReturnType<typeof vi.fn> };
     let counts: PrewarmBatchCounts;
@@ -211,7 +214,7 @@ describe('resolveHarvest', () => {
     it('upserts cached result with PREWARM model + generatedAt, returns true, clears in-flight', async () => {
         const cached: SeamOutcome = {
             status: 'cached',
-            result: { foo: 'bar' },
+            result: OVERALL_PROSE,
         };
 
         const ok = await resolveHarvest(
@@ -227,7 +230,7 @@ describe('resolveHarvest', () => {
         const call = repo.upsert.mock.calls[0][0];
         expect(call.symbol).toBe('AAPL');
         expect(call.tab).toBe('overall');
-        expect(call.content).toEqual({ foo: 'bar' });
+        expect(call.content).toEqual(OVERALL_PROSE);
         expect(call.model).toBe(DEEPSEEK_V4_1_FLASH_MODEL);
         expect(typeof call.model).toBe('string');
         expect(call.model.length).toBeGreaterThan(0);
@@ -241,13 +244,13 @@ describe('resolveHarvest', () => {
         mockRewriteToPlainLanguage.mockResolvedValue('쉽게 쓴 글');
         const done: SeamOutcome = {
             status: 'done',
-            result: { foo: 'bar' },
+            result: OVERALL_PROSE,
         };
 
         await resolveHarvest('AAPL', 'overall', done, repo as never, counts);
 
         expect(mockRewriteToPlainLanguage).toHaveBeenCalledWith(
-            { foo: 'bar' },
+            OVERALL_PROSE,
             'AAPL',
             'ko',
             'USD',
@@ -260,7 +263,7 @@ describe('resolveHarvest', () => {
     it('status=done도 cached와 동일하게 upsert하고 true를 반환한다', async () => {
         const done: SeamOutcome = {
             status: 'done',
-            result: { foo: 'bar' },
+            result: OVERALL_PROSE,
         };
 
         const ok = await resolveHarvest(
@@ -590,7 +593,10 @@ describe('resolveHarvest', () => {
             await resolveHarvest(
                 'AAPL',
                 'congress',
-                { status: 'done', result: { any: 'payload' } } as never,
+                {
+                    status: 'done',
+                    result: { summaryKo: '의회 거래 요약 문단입니다.' },
+                } as never,
                 repo as never,
                 counts
             );
@@ -602,6 +608,46 @@ describe('resolveHarvest', () => {
             );
         });
     });
+});
+
+describe('resolveHarvest — 렌더 가능한 산문이 없는 결과', () => {
+    let repo: { upsert: ReturnType<typeof vi.fn> };
+    let counts: PrewarmBatchCounts;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        repo = { upsert: vi.fn() };
+        counts = makeCounts();
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it.each([
+        ['technical', { foo: 'bar' }],
+        ['news', { currentDriverKo: '   ', keyEventsKo: [] }],
+    ] as const)(
+        '%s: upsert를 건너뛰고(옛 행 보존) 평이화도 부르지 않고 TRANSIENT backoff를 건다',
+        async (tab, content) => {
+            const ok = await resolveHarvest(
+                'AAPL',
+                tab,
+                { status: 'done', result: content } as never,
+                repo as never,
+                counts
+            );
+
+            expect(ok).toBe(false);
+            expect(repo.upsert).not.toHaveBeenCalled();
+            expect(mockRewriteToPlainLanguage).not.toHaveBeenCalled();
+            expect(counts.harvested).toBe(0);
+            expect(mockMarkSkipped).toHaveBeenCalledWith('AAPL', tab, 1800);
+            expect(mockClearInFlight).toHaveBeenCalledWith('AAPL', tab);
+            expect(mockClearStructural).not.toHaveBeenCalled();
+        }
+    );
 });
 
 /**
@@ -617,11 +663,17 @@ describe('resolveHarvest — 기준일 검사(technical)', () => {
         fmpSymbol: undefined,
     };
     const ctx = { seam, now: NOW };
+    // harvest는 렌더 가능한 산문(`hasProseForTab`)이 없는 결과를 저장하지 않는다 — 모든 픽스처가 산문을 싣는다.
+    const PROSE = {
+        summary: '추세와 거래량을 요약한 분석 문장입니다.',
+    } as const;
     const STALE_RESULT = {
+        ...PROSE,
         analyzedAt: '2026-10-02T18:00:00.000Z', // 장중 분석
         planCheck: { currentPrice: 100 },
     };
     const FRESH_RESULT = {
+        ...PROSE,
         analyzedAt: '2026-10-02T20:45:00.000Z',
         dataAsOf: {
             barTime: Date.parse('2026-10-02T00:00:00Z') / 1000,
@@ -727,6 +779,7 @@ describe('resolveHarvest — 기준일 검사(technical)', () => {
         mockPrewarmTechnical.mockResolvedValue({
             status: 'done',
             result: {
+                ...PROSE,
                 analyzedAt: '2026-10-02T20:50:00.000Z',
                 dataAsOf: {
                     barTime: Date.parse('2026-10-01T00:00:00Z') / 1000,
@@ -748,6 +801,30 @@ describe('resolveHarvest — 기준일 검사(technical)', () => {
         expect(mockPrewarmTechnical).toHaveBeenCalledTimes(1);
         expect(mockMarkSkipped).toHaveBeenCalledWith('AAPL', 'technical', 1800);
         expect(repo.upsert).toHaveBeenCalledTimes(1);
+    });
+
+    it('강제 재생성 결과에 렌더 가능한 산문이 없으면 저장하지 않는다(산문 게이트가 강제 결과에도 적용된다)', async () => {
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'done',
+            result: {
+                analyzedAt: '2026-10-02T20:50:00.000Z',
+                dataAsOf: FRESH_RESULT.dataAsOf,
+            },
+        });
+
+        const ok = await resolveHarvest(
+            'AAPL',
+            'technical',
+            { status: 'cached', result: STALE_RESULT },
+            repo as never,
+            counts,
+            ctx
+        );
+
+        expect(ok).toBe(false);
+        expect(mockPrewarmTechnical).toHaveBeenCalledTimes(1);
+        expect(repo.upsert).not.toHaveBeenCalled();
+        expect(mockMarkSkipped).toHaveBeenCalledWith('AAPL', 'technical', 1800);
     });
 
     it('status=done이 stale이면 재강제하지 않는다(방금 만든 결과다)', async () => {
@@ -855,6 +932,7 @@ describe('resolveHarvest — 기준일 검사(technical)', () => {
                 status: 'cached',
                 // 시각은 신선하고(analyzedAt 경계 이후) dataAsOf는 없다.
                 result: {
+                    ...PROSE,
                     analyzedAt: '2026-10-02T20:45:00.000Z',
                     planCheck: { currentPrice: 100 },
                 },
@@ -974,6 +1052,7 @@ describe('resolveHarvest — 기준일 검사(technical)', () => {
             {
                 status: 'cached',
                 result: {
+                    ...PROSE,
                     analyzedAt: '2026-10-02T21:00:00.000Z',
                     dataAsOf: {
                         barTime: Date.parse('2026-10-02T00:00:00Z') / 1000,
@@ -994,7 +1073,13 @@ describe('resolveHarvest — 기준일 검사(technical)', () => {
         await resolveHarvest(
             'AAPL',
             'news',
-            { status: 'cached', result: STALE_RESULT },
+            {
+                status: 'cached',
+                result: {
+                    ...STALE_RESULT,
+                    currentDriverKo: '뉴스 동인 문장입니다.',
+                },
+            },
             repo as never,
             counts,
             ctx

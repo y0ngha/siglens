@@ -61,8 +61,8 @@ function withSymbolAlternates(entries: SitemapEntry[]): SitemapEntry[] {
  */
 export function buildCryptoPopularEntries(
     now: Date,
-    // `buildPopularEntries`와 같은 산문 게이트 — 뉴스 탭은 자산군과 무관하게
-    // 산문이 없으면 noindex일 수 있다. 없으면(로더 실패) 필터를 끈다.
+    // `buildPopularEntries`와 같은 산문 게이트 — 차트·뉴스 탭은 자산군과 무관하게
+    // 렌더 가능한 산문이 없으면 noindex다. 없으면(로더 실패) 필터를 끈다.
     options: BuildPopularEntriesOptions = {}
 ): SitemapEntry[] {
     const hasProse = makeProseGate(options);
@@ -83,12 +83,18 @@ export function buildCryptoPopularEntries(
                     ? technicalAt
                     : utcMidnight;
             return [
-                {
-                    url: `${SITE_URL}/${sym}`,
-                    lastModified: chartLastModified,
-                    changeFrequency: 'daily',
-                    priority: 0.8,
-                },
+                // 차트 탭도 산문 게이트 대상이다(`buildPopularEntries`와 같은 규칙) — 렌더 가능한
+                // technical 산문이 없으면 페이지가 noindex(`no-prose`)다.
+                ...(hasProse(sym, 'technical')
+                    ? [
+                          {
+                              url: `${SITE_URL}/${sym}`,
+                              lastModified: chartLastModified,
+                              changeFrequency: 'daily' as const,
+                              priority: 0.8,
+                          },
+                      ]
+                    : []),
                 ...(hasProse(sym, 'news')
                     ? [
                           {

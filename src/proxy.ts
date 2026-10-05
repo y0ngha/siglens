@@ -58,8 +58,13 @@ const AI_CSP =
  * 볼 수 있는 사적 기록이라 크롤러에 열 이유가 없고, 게스트에게는 404다.
  * `/api/`는 크롤러가 쓸 이유가 아예 없는 SSE 엔드포인트라 함께 막는다 —
  * `POST /api/ai/chat/stream`은 어차피 Origin 검사로 브라우저 세션만 받는다.
+ *
+ * 단 `/api/ai/og`(공유 미리보기 OG 이미지)는 **열어 둔다** — 홈·`/about`의 `og:image`가 이 경로라
+ * `Disallow: /api/`만 있으면 크롤러·링크 미리보기 봇이 이미지를 못 가져간다. Google은 더 구체적인
+ * (긴) 규칙이 이긴다지만 일부 파서는 파일 순서대로 첫 일치를 쓰므로 `Allow`를 **`Disallow: /api/`
+ * 앞에** 둔다(순서는 테스트가 고정한다).
  */
-const AI_ROBOTS_BODY = `User-agent: *\nAllow: /\nDisallow: /c/\nDisallow: /*/c/\nDisallow: /api/\n\nSitemap: ${AI_SITE_URL}/sitemap.xml\n`;
+const AI_ROBOTS_BODY = `User-agent: *\nAllow: /\nDisallow: /c/\nDisallow: /*/c/\nAllow: /api/ai/og\nDisallow: /api/\n\nSitemap: ${AI_SITE_URL}/sitemap.xml\n`;
 
 /**
  * 색인 가능한 로케일의 공개 페이지(`AI_INDEXABLE_PATHS`: 홈·`/about`)만 싣는다 — 메인 사이트 정적 페이지와 같은 게이트
