@@ -2,9 +2,9 @@ import { getTranslations } from 'next-intl/server';
 import { evaluateSymbolIndexability } from '@/entities/symbol-indexability/lib/evaluateSymbolIndexability';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import { isPrewarmTab } from '@/entities/seo-snapshot/lib/applicability';
-import type { SeoSnapshotTab } from '@/entities/seo-snapshot/model';
+import { isSeoSnapshotTab } from '@/entities/seo-snapshot/model';
 import { hasProseForTab } from '@/views/symbol/snapshot/hasProseForTab';
-import { noindexSymbolMetadata } from '@/shared/lib/seo';
+import { noindexSymbolMetadata, type SymbolSeoTab } from '@/shared/lib/seo';
 import { buildDisplayName } from '@/entities/ticker/lib/ticker';
 import type { AssetInfo } from '@/shared/lib/types';
 import type { Locale } from '@/shared/i18n/locales';
@@ -33,11 +33,13 @@ interface BlockedSymbolMetadataInput {
      * SAME `has*Prose` predicate each `*SnapshotProse` renderer uses
      * internally, so this gate and the renderer body can never disagree.
      *
-     * Omit for routes with no snapshot renderer (`fear-greed`, `position`) —
-     * `hasSnapshot` then stays `undefined` and the existing degraded→noindex
-     * behavior is preserved (the DB read is skipped entirely).
+     * Routes with no snapshot renderer either omit it (`position`) or pass a
+     * copy-only tab (`fear-greed`). Either way `hasSnapshot` stays `undefined`
+     * and the existing degraded→noindex behavior is preserved (the DB read is
+     * skipped entirely). `fear-greed` is passed only so the blocked metadata
+     * uses that tab's own title instead of the chart tab's.
      */
-    tab?: SeoSnapshotTab;
+    tab?: SymbolSeoTab;
     /** URL 로케일. 준비되지 않은 로케일은 다른 조건과 무관하게 noindex다. */
     locale: Locale;
     /**
@@ -83,7 +85,9 @@ export async function getBlockedSymbolMetadata({
     // 끝나므로 `hasSnapshot`이 결과를 바꿀 수 없고, 남은 옛 행에 메타 경로가 묶이지
     // 않게 한다. `tab` 자체는 계속 받는다 — 아래 차단 메타의 탭별 카피에 쓴다.
     const snapshotTab =
-        tab !== undefined && isPrewarmTab(tab) ? tab : undefined;
+        tab !== undefined && isSeoSnapshotTab(tab) && isPrewarmTab(tab)
+            ? tab
+            : undefined;
     const hasSnapshot =
         localeReady && degraded && snapshotTab !== undefined
             ? (await getSeoSnapshotsStatic(symbol, revalidateSeconds, locale))

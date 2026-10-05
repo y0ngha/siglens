@@ -108,7 +108,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // 같은 인자라 요청 스코프 메모가 접혀 왕복이 늘지 않는다. 차트 라우트
     // (`[symbol]/page.tsx`)와 같은 모양이다:
     //   - 조회 **실패**(`null`) → degraded로 넘긴다. 이 탭에는 스냅샷이 없으므로
-    //     (`tab` 생략) degraded는 곧 noindex — 장애 중 빈 껍데기가 색인되지 않는다.
+    //     (`tab: 'fear-greed'`는 제목 카피용이라 스냅샷을 읽지 않는다) degraded는 곧
+    //     noindex — 장애 중 빈 껍데기가 색인되지 않는다.
     //   - 조회는 됐는데 **점수가 안 나오면**(봉 부족·점수 표본 부족, 상장폐지·신규
     //     상장 종목 등) 요약이 그려지지 않아 본문이 도입 문단뿐이다 → `no-price-data`로
     //     noindex. 예전에는 `buildTechnicalFacts`(봉 2개 이상)로 판정해 봉은 있으나
@@ -135,6 +136,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         revalidateSeconds: revalidate,
         hasPriceData:
             metadataBars === null ? undefined : hasFearGreedScore(metadataBars),
+        // 차단될 때도 이 탭의 제목을 쓴다 — 없으면 차트 탭 제목으로 떨어져 한 종목에
+        // 같은 title이 두 개가 된다. 스냅샷 탭이 아니라 DB는 읽지 않는다.
+        tab: 'fear-greed',
     });
     if (blockedMetadata) return blockedMetadata;
     if (!assetInfo) return noindexSymbolMetadata(ticker, tSeo, locale);

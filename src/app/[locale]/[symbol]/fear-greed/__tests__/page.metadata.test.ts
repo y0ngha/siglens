@@ -108,6 +108,8 @@ describe('fear-greed generateMetadata — 색인 대상 (콘텐츠 게이트 통
 
         expect(metadata.robots).toEqual({ index: false, follow: true });
         expect(metadata.alternates?.canonical).toBeNull();
+        // 막혀도 차트 탭 제목이 아니라 이 탭의 제목이다(2026-10-05 중복 title).
+        expect(JSON.stringify(metadata.title)).toContain('공포 탐욕');
     });
 
     it('봉이 1개뿐이어도 noindex', async () => {
