@@ -10,7 +10,7 @@ import { seedNotices } from '../support/noticeSeeder';
  * beforeEach에서 초기화해 dismiss 상태 누출을 차단한다.
  *
  * NoticePopup 동작 요약:
- *   - 마운트 시 `getActiveNoticesAction()` (서버 액션) 호출 → 경로 매칭 + dismiss 필터 후 큐
+ *   - 마운트 시 `GET /api/notices?locale=` 호출 → 경로 매칭 + dismiss 필터 후 큐
  *   - X 버튼(aria-label="팝업 닫기") / "닫기" 버튼 / Esc / 배경 클릭 = 임시 닫기
  *     (localStorage에 저장되지 않으므로 다음 방문 시 재노출)
  *   - "다시 보지 않기" = id를 localStorage(`siglens_dismissed_notices_v1`)에 영구 저장

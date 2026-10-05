@@ -236,7 +236,7 @@ const ALLOWED_ELEMENTS: ReadonlySet<string> = new Set([
     // 장식이지 컨트롤의 경계가 아니다(globals.css 정책의 "카드·패널 장식 보더
     // 제외"). 칩(rounded-full, 텍스트 한 줄)은 보더가 곧 경계라 이 예외에 들지
     // 않는다 — RelatedSymbols·CategoryCardGrid의 칩은 경계 토큰으로 고쳤다.
-    'widgets/dashboard/SignalStockCard.tsx:26',
+    'widgets/dashboard/SignalStockCard.tsx:77',
 ]);
 
 const CLASSNAME_RE = /className="([^"]*)"/;

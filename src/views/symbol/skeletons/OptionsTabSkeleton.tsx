@@ -29,7 +29,7 @@ const CHAIN_TABLE_ROW_COUNT = 6;
 // CrossLinkCards는 3개 (overall, fundamental, news 등) 가로 그리드.
 const CROSS_LINK_CARD_COUNT = 3;
 
-export default function OptionsLoading() {
+export function OptionsTabSkeleton() {
     const t = useTranslations('app.symbol');
     return (
         <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-6">

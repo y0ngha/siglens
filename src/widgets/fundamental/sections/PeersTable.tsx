@@ -1,6 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
+import { isCuratedSymbol } from '@/entities/symbol-indexability/lib/isCuratedSymbol';
 import type { FundamentalPeerInput } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from '@/shared/ui/EmptySectionCard';
 import { formatCompactCurrency } from '@/shared/lib/priceFormat';
@@ -58,15 +59,29 @@ export function PeersTable({ peers }: PeersTableProps) {
                                 className="border-b border-secondary-700/50 transition-colors last:border-b-0 hover:bg-secondary-800/40"
                             >
                                 <td className="py-2.5 pr-4">
-                                    <Link
-                                        href={`/${peer.symbol}/fundamental`}
-                                        // 표로 다수 렌더 — docs/architecture/CDN_CACHING.md §1
-                                        prefetch={false}
-                                        className="rounded font-mono font-medium text-primary-400 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
-                                        translate="no"
-                                    >
-                                        {peer.symbol}
-                                    </Link>
+                                    {/* 큐레이션 밖 티커는 링크 없는 텍스트다 — 그 페이지는 항상
+                                        noindex라 링크는 크롤 예산만 쓴다(`isCuratedSymbol`). 큐레이션
+                                        peer는 색인되는 차트 `/{peer}`로 보낸다(이 표가 있는
+                                        펀더멘털 탭은 항상 noindex라 `/{peer}/fundamental`은 막다른
+                                        길이었다). */}
+                                    {isCuratedSymbol(peer.symbol) ? (
+                                        <Link
+                                            href={`/${peer.symbol}`}
+                                            // 표로 다수 렌더 — docs/architecture/CDN_CACHING.md §1
+                                            prefetch={false}
+                                            className="rounded font-mono font-medium text-primary-400 hover:underline focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-800 focus-visible:outline-none"
+                                            translate="no"
+                                        >
+                                            {peer.symbol}
+                                        </Link>
+                                    ) : (
+                                        <span
+                                            className="font-mono font-medium text-secondary-300"
+                                            translate="no"
+                                        >
+                                            {peer.symbol}
+                                        </span>
+                                    )}
                                 </td>
                                 <td className="py-2.5 pr-4 text-secondary-400">
                                     {peer.companyName}

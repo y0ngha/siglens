@@ -367,20 +367,81 @@ describe('robots', () => {
             }
         });
 
-        it('종목 OG/twitter-image는 여전히 차단된다 — 크롤 예산 61GB를 회수한 근거가 살아 있어야 한다', () => {
-            expect(isAllowedForGooglebot('/ko/AAPL/opengraph-image')).toBe(
-                false
-            );
-            // 허브 패턴이 `*`로 `/AAPL`을 삼켜 열리는 회귀를 정확히 겨냥한다.
-            expect(isAllowedForGooglebot('/ko/AAPL/news/opengraph-image')).toBe(
-                false
-            );
-            expect(
-                isAllowedForGooglebot('/ko/AAPL/options/twitter-image')
-            ).toBe(false);
-            expect(isAllowedForGooglebot('/ko/share/abc/opengraph-image')).toBe(
-                false
-            );
+        /**
+         * 종목 OG 허용/차단 행렬 — 표준 판정(일치 패턴 중 **가장 긴 것**이 이김)으로 고정한다.
+         * 규칙: 색인 탭(차트·뉴스·공포탐욕)의 **ko `opengraph-image`만** 열고, noindex 탭·공유
+         * 카드·`twitter-image`·비-ko·접두사 없는 형태는 계속 막는다.
+         */
+        describe('종목 OG 이미지 허용/차단 행렬 (longest-match)', () => {
+            const ALLOWED = [
+                // 차트
+                '/ko/AAPL/opengraph-image',
+                '/ko/005930.KS/opengraph-image',
+                '/ko/BTCUSD/opengraph-image',
+                // 색인되는 하위 탭
+                '/ko/AAPL/news/opengraph-image',
+                '/ko/AAPL/fear-greed/opengraph-image',
+                '/ko/005930.KS/fear-greed/opengraph-image',
+                // 뉴스 허브(기존 규칙 유지)
+                '/ko/news/opengraph-image',
+                '/ko/news/stock/opengraph-image',
+            ];
+            const BLOCKED = [
+                // 항상 noindex인 탭 6종 — 더 긴 Disallow가 이긴다
+                '/ko/AAPL/overall/opengraph-image',
+                '/ko/AAPL/financials/opengraph-image',
+                '/ko/AAPL/fundamental/opengraph-image',
+                '/ko/AAPL/options/opengraph-image',
+                '/ko/AAPL/congress/opengraph-image',
+                '/ko/AAPL/position/opengraph-image',
+                // 공유 카드
+                '/ko/share/abc123/opengraph-image',
+                // twitter-image는 어디서나 차단
+                '/ko/AAPL/twitter-image',
+                '/ko/AAPL/news/twitter-image',
+                '/ko/AAPL/options/twitter-image',
+                // 비-ko 로케일, 접두사 없는 형태
+                '/en/AAPL/opengraph-image',
+                '/en/AAPL/news/opengraph-image',
+                '/ja/AAPL/opengraph-image',
+                '/zh/AAPL/opengraph-image',
+                '/AAPL/opengraph-image',
+                '/AAPL/news/opengraph-image',
+            ];
+
+            it.each(ALLOWED)('허용: %s', path => {
+                expect(isAllowedForGooglebot(path)).toBe(true);
+            });
+
+            it.each(BLOCKED)('차단: %s', path => {
+                expect(isAllowedForGooglebot(path)).toBe(false);
+            });
+
+            it('Allow가 `/ko/*/opengraph-image`로 시작하고 noindex 탭 6종 + 공유 카드의 더 긴 Disallow가 짝으로 있다', () => {
+                const group = findGroupByUserAgent(robots().rules, 'Googlebot');
+                const allow = [group?.allow ?? []].flat();
+                const disallow = [group?.disallow ?? []].flat();
+                expect(allow).toContain('/ko/*/opengraph-image');
+                for (const tab of [
+                    'overall',
+                    'financials',
+                    'fundamental',
+                    'options',
+                    'congress',
+                    'position',
+                ]) {
+                    const pattern = `/ko/*/${tab}/opengraph-image`;
+                    expect(disallow).toContain(pattern);
+                    // 더 길어야 longest-match에서 Allow를 이긴다.
+                    expect(pattern.length).toBeGreaterThan(
+                        '/ko/*/opengraph-image'.length
+                    );
+                }
+                expect(disallow).toContain('/ko/share/*/opengraph-image');
+                // twitter-image·비-ko 차단 규칙은 그대로 있다.
+                expect(disallow).toContain('/*/twitter-image');
+                expect(disallow).toContain('/*/opengraph-image');
+            });
         });
 
         it('일반 콘텐츠 경로는 그대로 허용된다', () => {

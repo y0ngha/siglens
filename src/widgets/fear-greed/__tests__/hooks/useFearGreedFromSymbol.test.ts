@@ -67,4 +67,65 @@ describe('useFearGreedFromSymbol', () => {
         expect(result.current).toEqual(SERVER_RESULT);
         expect(mockAction).not.toHaveBeenCalled();
     });
+
+    /**
+     * seed의 `dataUpdatedAt`이 오래돼 있으면 30초 staleTime에서 마운트 직후 재조회가 돈다.
+     * 크롤러 렌더마다 나가던 Server Action이라 사람 입력 전에는 미루고, 입력 뒤 한 번만 돈다.
+     */
+    describe('refetchEnabled (seed 재조회 게이트)', () => {
+        function seededClient(): QueryClient {
+            const client = new QueryClient({
+                defaultOptions: { queries: { retry: false } },
+            });
+            client.setQueryData(
+                QUERY_KEYS.symbolFearGreed('NVDA', undefined),
+                SERVER_RESULT,
+                { updatedAt: 1_000 }
+            );
+            return client;
+        }
+
+        beforeEach(() => {
+            // 기본은 거부 — 값을 정하지 않은 호출이 조용히 성공하지 않게.
+            mockAction.mockRejectedValue(new Error('action not stubbed'));
+        });
+
+        it('false인 동안은 오래된 seed가 있어도 재조회하지 않는다', async () => {
+            const { result } = renderHook(
+                () =>
+                    useFearGreedFromSymbol({
+                        symbol: 'NVDA',
+                        refetchEnabled: false,
+                    }),
+                { wrapper: wrapperWith(seededClient()) }
+            );
+            await new Promise(resolve => setTimeout(resolve, 20));
+            expect(result.current).toEqual(SERVER_RESULT);
+            expect(mockAction).not.toHaveBeenCalled();
+        });
+
+        it('true로 바뀌면 stale seed를 정확히 한 번 재조회한다', async () => {
+            mockAction.mockResolvedValue(SERVER_RESULT);
+            const { rerender } = renderHook(
+                ({ enabled }: { enabled: boolean }) =>
+                    useFearGreedFromSymbol({
+                        symbol: 'NVDA',
+                        refetchEnabled: enabled,
+                    }),
+                {
+                    wrapper: wrapperWith(seededClient()),
+                    initialProps: { enabled: false },
+                }
+            );
+            await new Promise(resolve => setTimeout(resolve, 20));
+            expect(mockAction).not.toHaveBeenCalled();
+
+            rerender({ enabled: true });
+            await waitFor(() => expect(mockAction).toHaveBeenCalledTimes(1));
+
+            rerender({ enabled: true });
+            await new Promise(resolve => setTimeout(resolve, 20));
+            expect(mockAction).toHaveBeenCalledTimes(1);
+        });
+    });
 });

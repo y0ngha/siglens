@@ -16,6 +16,18 @@ export interface SectorFact {
     readonly bearishCount: number;
     /** Up to 3 top stock symbols in this sector (by bullish-first, then alphabetical). */
     readonly topSymbols: readonly string[];
+    /**
+     * `topSymbols`와 같은 종목·같은 순서에 한글 상수명(`koreanName`)을 붙인 목록. 링크 앵커
+     * 텍스트("애플 (AAPL)")를 만드는 데 쓴다 — 티커만 있는 앵커는 검색어와 거리가 멀다.
+     */
+    readonly topStocks: readonly SectorFactStock[];
+}
+
+/** 섹터 요약의 대표 종목 한 건. */
+export interface SectorFactStock {
+    readonly symbol: string;
+    /** 한국어 상수명 — 표시는 호출부가 카탈로그(`useAssetLabel`)로 로케일화한다. */
+    readonly koreanName: string;
 }
 
 const MAX_TOP_SYMBOLS = 3;
@@ -58,18 +70,24 @@ export function buildSectorFacts(
 
         // Top symbols: bullish first, then bearish-only, both sorted alphabetically within group.
         // Locale pinned to 'en' for environment-independent stable ordering.
-        const bullishSymbols = bullishStocks
-            .map(s => s.symbol)
-            .toSorted((a, b) => a.localeCompare(b, 'en'));
-        const bearishOnlySymbols = bearishStocks
-            .flatMap(s => (isBullish(s) ? [] : [s.symbol]))
-            .toSorted((a, b) => a.localeCompare(b, 'en'));
-        const topSymbols = [...bullishSymbols, ...bearishOnlySymbols].slice(
-            0,
-            MAX_TOP_SYMBOLS
-        );
+        const bySymbol = (a: StockSignalResult, b: StockSignalResult) =>
+            a.symbol.localeCompare(b.symbol, 'en');
+        const bullishSorted = bullishStocks.toSorted(bySymbol);
+        const bearishOnlySorted = bearishStocks
+            .filter(s => !isBullish(s))
+            .toSorted(bySymbol);
+        const topStocks = [...bullishSorted, ...bearishOnlySorted]
+            .slice(0, MAX_TOP_SYMBOLS)
+            .map(s => ({ symbol: s.symbol, koreanName: s.koreanName }));
+        const topSymbols = topStocks.map(s => s.symbol);
 
-        return { sectorSymbol, bullishCount, bearishCount, topSymbols };
+        return {
+            sectorSymbol,
+            bullishCount,
+            bearishCount,
+            topSymbols,
+            topStocks,
+        };
     });
 
     // Sort sectors alphabetically for stable output (locale pinned to 'en')

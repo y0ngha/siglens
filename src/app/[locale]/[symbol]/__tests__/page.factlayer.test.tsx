@@ -94,6 +94,10 @@ vi.mock('@/entities/bars/lib/barsStaticCache', () => ({
 vi.mock('@/shared/api/market/sessionSpecFor', () => ({
     sessionSpecFor: vi.fn(() => ({})),
 }));
+// page.tsx가 seed 상태 판정(`hasFormingBar`)에 쓴다 — 이 파일의 core 목에는 세션 함수가 없다.
+vi.mock('@/entities/bars/lib/quantizeBars', () => ({
+    hasFormingBar: vi.fn(() => false),
+}));
 vi.mock('@/entities/skill/api', () => ({
     countSkillFiles: vi.fn().mockResolvedValue({
         indicators: 13,
