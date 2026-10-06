@@ -47,11 +47,16 @@ const mockPass = mockIntlMiddleware;
 
 function makeRequest(
     sessionValue: string | undefined,
-    path = '/login'
+    path = '/login',
+    {
+        method = 'GET',
+        headers = {},
+    }: { method?: string; headers?: HeadersInit } = {}
 ): NextRequest {
     return {
         url: `https://example.com${path}`,
-        headers: new Headers(),
+        method,
+        headers: new Headers(headers),
         cookies: {
             get: vi.fn((name: string) =>
                 name === 'siglens_session' && sessionValue !== undefined
@@ -196,6 +201,63 @@ describe('proxy', () => {
                 expect(mockRedirect).not.toHaveBeenCalled();
             }
         );
+    });
+
+    // 열어 둔 가드 페이지에서 세션이 사라지면 그 페이지의 서버 액션 POST가 /login으로
+    // 307돼 "Failed to find Server Action" → 버전 스큐 전체 새로고침이 났다.
+    // 액션은 각자 getCurrentUser()로 인증하므로 프록시는 액션 요청을 가드하지 않는다.
+    describe('서버 액션 요청(Next-Action POST)은 인증 가드를 건너뛴다', () => {
+        const actionInit = {
+            method: 'POST',
+            headers: { 'Next-Action': 'abc123' },
+        };
+
+        it.each(['/account', '/account/delete', '/portfolio', '/ja/portfolio'])(
+            '%s — 세션 없는 액션 POST는 /login으로 보내지 않고 통과시킨다',
+            async path => {
+                await proxy(makeRequest(undefined, path, actionInit));
+                expect(mockRedirect).not.toHaveBeenCalled();
+                expect(mockPass).toHaveBeenCalledTimes(1);
+            }
+        );
+
+        it.each(['/login', '/signup', '/en/login'])(
+            '%s — 세션 있는 액션 POST는 홈으로 튕기지 않고 통과시킨다',
+            async path => {
+                await proxy(makeRequest('valid-token', path, actionInit));
+                expect(mockRedirect).not.toHaveBeenCalled();
+                expect(mockPass).toHaveBeenCalledTimes(1);
+            }
+        );
+
+        it('Next-Action 헤더 없는 POST는 여전히 /login으로 보낸다', async () => {
+            await proxy(
+                makeRequest(undefined, '/portfolio', { method: 'POST' })
+            );
+            expect(mockRedirect).toHaveBeenCalledTimes(1);
+            expect((mockRedirect.mock.calls[0]![0] as URL).pathname).toBe(
+                '/login'
+            );
+        });
+
+        it('Next-Action 헤더만 붙인 GET은 여전히 가드를 탄다', async () => {
+            await proxy(
+                makeRequest(undefined, '/account', {
+                    headers: { 'Next-Action': 'abc123' },
+                })
+            );
+            expect(mockRedirect).toHaveBeenCalledTimes(1);
+            expect((mockRedirect.mock.calls[0]![0] as URL).pathname).toBe(
+                '/login'
+            );
+            expect(mockPass).not.toHaveBeenCalled();
+        });
+
+        it('세션 있는 일반 /login 요청은 여전히 홈으로 보낸다', async () => {
+            await proxy(makeRequest('valid-token', '/login'));
+            expect(mockRedirect).toHaveBeenCalledTimes(1);
+            expect((mockRedirect.mock.calls[0]![0] as URL).pathname).toBe('/');
+        });
     });
 });
 
