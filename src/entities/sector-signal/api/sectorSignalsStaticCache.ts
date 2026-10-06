@@ -8,10 +8,8 @@ import {
     getCachedSectorSignals,
     sectorStocksConfigFingerprint,
 } from './sectorSignalsCache';
-import {
-    marketDataProviderFor,
-    scopeUsesFmp,
-} from '@/shared/api/market/getMarketDataProvider';
+import { scopeUsesFmp } from '@/shared/api/market/getMarketDataProvider';
+import { sectorSignalsProviderFor } from './sectorSignalsProvider';
 import type { DashboardScope } from '@/shared/config/dashboardScope';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import { assertFmpAvailableAtBuild } from '@/shared/api/offlineBuild';
@@ -27,7 +25,7 @@ export function getSectorSignalsStatic(
     return unstable_cache(
         async () => {
             const result = await getCachedSectorSignals(
-                marketDataProviderFor(scope.id),
+                sectorSignalsProviderFor(scope.id, timeframe),
                 scope,
                 timeframe
             );

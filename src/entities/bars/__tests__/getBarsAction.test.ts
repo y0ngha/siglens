@@ -47,6 +47,7 @@ vi.mock('@/shared/api/market/sessionSpecFor', async () => {
 
 import type { MockedFunction } from 'vitest';
 import { getBarsAction } from '../actions/getBarsAction';
+import { __resetBarsMemoryForTests } from '../lib/barsDataCache';
 import {
     EMPTY_SMC_RESULT,
     fetchBarsWithIndicators,
@@ -142,6 +143,9 @@ const mockBarsData: BarsData = {
 
 describe('getBarsAction 함수는', () => {
     beforeEach(() => {
+        // 파생 봉 데이터는 인스턴스 메모리에 남는다 — 케이스마다 비워야 앞 케이스의
+        // 결과가 다음 케이스의 fetch를 가리지 않는다.
+        __resetBarsMemoryForTests();
         mockFetchBarsWithIndicators.mockReset();
         mockGetCurrentUser.mockResolvedValue(null);
         mockResolveTierOnly.mockResolvedValue('free');

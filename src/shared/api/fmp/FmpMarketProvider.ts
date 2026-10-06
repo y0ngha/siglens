@@ -19,6 +19,13 @@ import {
 } from '@/shared/lib/eastern';
 
 const ISO_DATE_PREFIX_LENGTH = 10; // "YYYY-MM-DD"
+
+/**
+ * FMP가 미국 상장 종목의 인트라데이 시각 문자열과 `from`/`to` 날짜를 해석하는 타임존.
+ * 아래 `fmpIntradayDateToUtcSeconds`가 모든 인트라데이 시각을 이 타임존으로 읽는다 —
+ * 캐시 계층(`CachedMarketDataProvider`)이 같은 날짜 경계로 히스토리와 오늘 tail을 나눈다.
+ */
+export const FMP_EXCHANGE_TIME_ZONE = 'America/New_York';
 const ISO_DATE_PART_INDEX = 0;
 
 // FMP ET→UTC timestamp conversion. Canonical home after the market-provider

@@ -173,6 +173,30 @@ describe('getCachedMarketDataProvider', () => {
         expect(ctorCalls.at(-1)?.[1]).toBe(US_EQUITY_SESSION);
     });
 
+    /**
+     * 인트라데이 히스토리/tail 분리는 날짜 인자를 미 동부 날짜로 해석하는 FMP에서만 켠다.
+     * yahoo(KR)에 켜면 `before`/`from`의 날짜 의미가 달라 두 구간 사이에 봉이 빠질 수 있다.
+     */
+    it('FMP 기반(US·크립토)만 인트라데이 분리 옵션을 받는다', async () => {
+        const { getCachedMarketDataProvider } =
+            await import('@/shared/api/market/getCachedMarketDataProvider');
+        const { KR_EQUITY_SESSION } =
+            await import('@/shared/api/market/sessionSpecFor');
+
+        getCachedMarketDataProvider(KR_EQUITY_SESSION);
+        expect(ctorCalls.at(-1)?.[2]).toBeUndefined();
+
+        getCachedMarketDataProvider(CRYPTO_SESSION);
+        expect(ctorCalls.at(-1)?.[2]).toEqual({
+            intradayDateTimeZone: 'America/New_York',
+        });
+
+        getCachedMarketDataProvider(US_EQUITY_SESSION);
+        expect(ctorCalls.at(-1)?.[2]).toEqual({
+            intradayDateTimeZone: 'America/New_York',
+        });
+    });
+
     it('E2E면 KR_EQUITY_SESSION도 raw provider를 반환한다(네트워크 차단)', async () => {
         mockIsE2E.mockReturnValue(true);
         const { getCachedMarketDataProvider } =
