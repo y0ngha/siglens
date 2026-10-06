@@ -56,7 +56,7 @@ const STEP_MS = {
 
 /**
  * Example reports for `ReportReplay`: a US stock, a Korean stock and a coin,
- * so the three markets Siglens covers each get a turn. The "question" is the
+ * so the three markets SIGLENS covers each get a turn. The "question" is the
  * ticker typed into the address bar after `siglens.io/`.
  *
  * Every string is a literal `t()` / `t.raw()` call so the i18n extractor sees

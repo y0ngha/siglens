@@ -1,8 +1,8 @@
 import type { Locale } from '@/shared/i18n/locales';
 import { SECTOR_ETFS, SIGNAL_SECTORS } from '@/shared/config/dashboard-tickers';
+import { brandName } from '@/shared/lib/brandName';
 import {
     brandIntroName,
-    SITE_NAME,
     type FaqItem,
     type SeoTranslator,
 } from '@/shared/lib/seo';
@@ -37,7 +37,7 @@ const HOME_FAQ_KEYS = ['q0', 'q2', 'q8', 'q9', 'q10', 'q11'] as const;
 /**
  * "어떤 서비스인가요?" — 브랜드를 소개하는 문항. 이 질문에서만 ko가 한글 표기를
  * 함께 적는다(`brandIntroName`). 화면 FAQ와 FAQPage 마크업이 같은 배열을 쓰므로
- * "시그렌즈"와 "Siglens"가 같은 서비스라는 문장이 두 표면에 똑같이 실린다.
+ * "시그렌즈"와 "SIGLENS"가 같은 서비스라는 문장이 두 표면에 똑같이 실린다.
  */
 const BRAND_INTRO_FAQ_KEY = 'q0';
 
@@ -57,11 +57,11 @@ export function buildHomeFaq(t: SeoTranslator, locale: Locale): FaqItem[] {
             v0:
                 key === BRAND_INTRO_FAQ_KEY
                     ? brandIntroName(locale)
-                    : SITE_NAME,
+                    : brandName(locale),
         }),
         // 값은 모든 답변에 넘긴다 — 쓰지 않는 답변은 무시한다(next-intl은 남는 값을 안 본다).
         answer: t(`faq.${key}.answer`, {
-            v0: SITE_NAME,
+            v0: brandName(locale),
             v1: SCANNER_INDUSTRY_COUNT,
             v2: SCANNER_THEME_COUNT,
         }),

@@ -113,19 +113,19 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
     buildSymbolSeoContent: vi.fn().mockReturnValue({
         title: 'T',
-        fullTitle: 'T | Siglens',
+        fullTitle: 'T | SIGLENS',
         description: 'd',
         url: 'https://siglens.io/AAPL',
         keywords: [],
     }),
     resolveSymbolNewsSeoContent: vi.fn().mockReturnValue({
         title: 'T',
-        fullTitle: 'T | Siglens',
+        fullTitle: 'T | SIGLENS',
         description: 'd',
         url: 'https://siglens.io/AAPL',
         keywords: [],
     }),
-    SITE_NAME: 'Siglens',
+    SITE_NAME: 'SIGLENS',
     SITE_URL: 'https://siglens.io',
 }));
 

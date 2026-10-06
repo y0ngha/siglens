@@ -80,7 +80,7 @@ export async function generateMetadata({
      * 통째로 사라져 공유 카드에서 미리보기 이미지가 없어졌다.
      */
     return {
-        // `absolute`가 없으면 루트 레이아웃의 `title.template`(`%s | Siglens`)이
+        // `absolute`가 없으면 루트 레이아웃의 `title.template`(`%s | SIGLENS`)이
         // 먹는다 — v0.48.0에서 SERP 폭을 되찾으려고 일부러 뗀 접미사다.
         // 마스터의 홈은 `title`을 아예 반환하지 않아 레이아웃의 `default`가
         // 그대로 나갔고(템플릿 미적용), 로케일 카탈로그로 옮기면서 문자열을

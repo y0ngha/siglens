@@ -12,7 +12,7 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     buildWebPageJsonLd: () => ({}),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
     SITE_BUILD_DATE: new Date('2025-01-01'),
-    SITE_NAME: 'Siglens',
+    SITE_NAME: 'SIGLENS',
     SITE_URL: 'https://siglens.io',
 }));
 vi.mock('@/shared/lib/og', () => ({

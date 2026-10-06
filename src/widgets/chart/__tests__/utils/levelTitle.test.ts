@@ -30,8 +30,6 @@ const fib: ChartOverlay = {
 
 const ctx: LevelTitleContext = {
     cardName: '이중천장',
-    highlightedKey: null,
-    crowded: false,
     breakoutTitle: name => (name ? `${name} 돌파` : '돌파 기준'),
     outcomeTexts: {
         invalidation: owner => (owner ? `${owner} 무효화` : '무효화'),
@@ -72,40 +70,14 @@ describe('levelTitleFor', () => {
         ).toBe('돌파 기준');
     });
 
-    it('혼잡하지 않으면 결과선 문구를 보인다', () => {
+    it('결과선은 작도 수와 무관하게 문구를 보인다', () => {
         expect(levelTitleFor('invalidation', pattern, ctx)).toBe(
             '이중천장 무효화'
         );
     });
 
-    it('혼잡하고 강조되지 않았으면 숨긴다(빈 문자열)', () => {
-        expect(
-            levelTitleFor('invalidation', pattern, {
-                ...ctx,
-                crowded: true,
-                highlightedKey: 'other_0',
-            })
-        ).toBe('');
-    });
-
-    it('혼잡해도 강조된 항목이면 보인다', () => {
-        expect(
-            levelTitleFor('target', pattern, {
-                ...ctx,
-                crowded: true,
-                highlightedKey: 'double_top_0',
-            })
-        ).toBe('이중천장 목표');
-    });
-
     it('피보나치 라벨은 다리 방향에 맞는 문구', () => {
         expect(levelTitleFor('61.8%', fib, ctx)).toBe('눌림 61.8%');
-    });
-
-    it('혼잡 여부는 피보나치 제목에 영향이 없다', () => {
-        expect(levelTitleFor('61.8%', fib, { ...ctx, crowded: true })).toBe(
-            '눌림 61.8%'
-        );
     });
 
     it('모르는 라벨은 그대로 돌려준다', () => {

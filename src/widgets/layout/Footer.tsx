@@ -167,7 +167,7 @@ export function Footer() {
                         12px씩 바깥으로 나와 있다. 이웃 상자끼리 겹치지 않으려면 두 상자의
                         바깥 여백 합(12 + 12)만큼은 간격이 있어야 하므로 24px이다. */}
                     <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-                        {/* `whitespace-nowrap`: 320px에서 `© 2026` / `Siglens`
+                        {/* `whitespace-nowrap`: 320px에서 `© 2026` / `SIGLENS`
                             두 줄로 쪼개지던 회귀가 있었다(2026-08-25 사용자 제보). */}
                         <p className="text-sm whitespace-nowrap text-secondary-400">
                             © <CurrentYear /> {SITE_NAME.toUpperCase()}
@@ -217,13 +217,7 @@ export function Footer() {
                                 prefetch={false}
                                 className={LINK_CLASSES}
                             >
-                                {/* 브랜드는 워드마크와 같은 대문자 표기로 보인다.
-                                    `about.title`은 페이지 제목과 공유라 카탈로그는 두고
-                                    푸터 표기만 맞춘다. */}
-                                {aboutTitle(tSeo).replace(
-                                    SITE_NAME,
-                                    SITE_NAME.toUpperCase()
-                                )}
+                                {aboutTitle(tSeo)}
                             </Link>
                             {/* 분석 방법은 소개 바로 뒤 — 산문 하단의 출처 고지와 `/about`이
                                 모두 이 페이지로 건다. 전 페이지에서 크롤 가능한 링크다. */}

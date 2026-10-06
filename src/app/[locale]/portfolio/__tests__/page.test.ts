@@ -30,7 +30,7 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn().mockReturnValue({ db: {} }),
 }));
 vi.mock('@/shared/lib/seo', () => ({
-    SITE_NAME: 'Siglens',
+    SITE_NAME: 'SIGLENS',
     SITE_URL: 'https://siglens.io',
 }));
 vi.mock('next/link', () => ({ default: () => null }));

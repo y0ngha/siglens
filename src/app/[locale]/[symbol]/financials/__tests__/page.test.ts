@@ -66,13 +66,13 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
         .mockReturnValue({ url: 'https://siglens.io/AAPL' }),
     buildSymbolFinancialsSeoContent: vi.fn().mockReturnValue({
         title: 'AAPL 재무제표 — 매출·이익·현금흐름 5년 추이',
-        fullTitle: 'AAPL 재무제표 — 매출·이익·현금흐름 5년 추이 | Siglens',
+        fullTitle: 'AAPL 재무제표 — 매출·이익·현금흐름 5년 추이 | SIGLENS',
         description:
             'AAPL의 손익·재무상태·현금흐름과 성장성·수익성·안정성·현금창출력 점수를 한눈에 확인합니다.',
         url: 'https://siglens.io/AAPL/financials',
         keywords: ['AAPL', 'AAPL 재무제표'],
     }),
-    SITE_NAME: 'Siglens',
+    SITE_NAME: 'SIGLENS',
     SITE_URL: 'https://siglens.io',
 }));
 vi.mock('next/navigation', () => ({
@@ -200,7 +200,7 @@ describe('generateMetadata', () => {
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        expect(metadata.openGraph?.siteName).toBe('Siglens');
+        expect(metadata.openGraph?.siteName).toBe('SIGLENS');
     });
 });
 

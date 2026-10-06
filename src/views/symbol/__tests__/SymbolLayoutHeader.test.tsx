@@ -203,7 +203,7 @@ describe('SymbolLayoutHeader', () => {
                 {...CRUMB_PROPS}
             />
         );
-        const link = screen.getByText('Siglens');
+        const link = screen.getByText('SIGLENS');
         expect(link.closest('a')?.getAttribute('href')).toBe('/');
         expect(link.className).toContain('uppercase');
     });
@@ -518,10 +518,10 @@ describe('SymbolLayoutHeader', () => {
             );
 
             // 반응형 감춤은 마디(`<li>`)가 맡는다 — 안의 링크에 같은 클래스를 겹쳐 두지 않는다.
-            const crumb = screen.getByText('Siglens').closest('li');
+            const crumb = screen.getByText('SIGLENS').closest('li');
             expect(crumb?.className).toContain('hidden');
             expect(crumb?.className).toContain('sm:inline');
-            expect(screen.getByText('Siglens').className).not.toContain(
+            expect(screen.getByText('SIGLENS').className).not.toContain(
                 'hidden'
             );
             const slash = screen.getByText('/');

@@ -44,7 +44,7 @@ describe('FaqSection', () => {
         const PATH_ITEMS = [
             {
                 question: '어디서 보나요?',
-                answer: 'Siglens의 /market 페이지에서 PER/PBR을 봅니다. 예: /NVDA/overall.',
+                answer: 'SIGLENS의 /market 페이지에서 PER/PBR을 봅니다. 예: /NVDA/overall.',
             },
         ];
 

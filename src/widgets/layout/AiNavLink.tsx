@@ -3,6 +3,7 @@
 import { AI_SITE_URL } from '@/shared/config/aiHost';
 import { useCurrentLocale, useHrefBase } from '@/shared/i18n/LocaleContext';
 import { localePath } from '@/shared/i18n/locales';
+import { brandName } from '@/shared/lib/brandName';
 import { cn } from '@/shared/lib/cn';
 import { BetaBadge } from '@/shared/ui/BetaBadge';
 
@@ -14,7 +15,8 @@ interface Props {
      * (same mono/tracking grammar as the wordmark, brand colour). `pill` — the
      * labelled entry in the mobile drawer. `text` — a plain inline link (footer
      * sitemap row): no Beta badge, no `aria-label` override since the visible
-     * text already is the full product name.
+     * text already is the full product name. Unlike the other two (brand
+     * marks), it sits among prose labels, so it reads `시그렌즈 AI` in ko.
      */
     readonly variant?: 'pill' | 'wordmark' | 'text';
 }
@@ -39,6 +41,7 @@ function useAiHomeHref(): string {
  */
 export function AiNavLink({ className, tabIndex, variant = 'pill' }: Props) {
     const onAiHost = useHrefBase() !== '';
+    const locale = useCurrentLocale();
     const href = useAiHomeHref();
     if (variant === 'text') {
         return (
@@ -49,7 +52,7 @@ export function AiNavLink({ className, tabIndex, variant = 'pill' }: Props) {
                 tabIndex={tabIndex}
                 className={className}
             >
-                SIGLENS AI
+                {`${brandName(locale)} AI`}
             </a>
         );
     }

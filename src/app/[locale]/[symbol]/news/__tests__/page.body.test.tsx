@@ -92,19 +92,19 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
     buildSymbolSeoContent: vi.fn().mockReturnValue({
         title: 'T',
-        fullTitle: 'T | Siglens',
+        fullTitle: 'T | SIGLENS',
         description: 'd',
         url: 'https://siglens.io/AAPL',
         keywords: [],
     }),
     resolveSymbolNewsSeoContent: vi.fn().mockReturnValue({
         title: 'T',
-        fullTitle: 'T | Siglens',
+        fullTitle: 'T | SIGLENS',
         description: 'd',
         url: 'https://siglens.io/AAPL',
         keywords: [],
     }),
-    SITE_NAME: 'Siglens',
+    SITE_NAME: 'SIGLENS',
     SITE_URL: 'https://siglens.io',
 }));
 
@@ -529,13 +529,13 @@ describe('NewsPage — Article JSON-LD 게이트와 dateModified', () => {
         expect(article?.author).toEqual({
             '@type': 'Organization',
             '@id': ORGANIZATION_JSON_LD_ID,
-            name: 'Siglens',
+            name: 'SIGLENS',
             url: 'https://siglens.io/about',
         });
         expect(article?.publisher).toEqual({
             '@type': 'Organization',
             '@id': ORGANIZATION_JSON_LD_ID,
-            name: 'Siglens',
+            name: 'SIGLENS',
             url: 'https://siglens.io',
             logo: {
                 '@type': 'ImageObject',

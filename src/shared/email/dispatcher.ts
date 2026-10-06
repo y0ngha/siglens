@@ -7,7 +7,7 @@ import { isE2E } from '@/shared/api/e2eEnv';
 const RESEND_API_KEY_ENV = 'RESEND_API_KEY';
 const EMAIL_SEND_TIMEOUT_MS = 10_000;
 const EMAIL_FROM_ENV = 'EMAIL_FROM';
-const DEFAULT_FROM = 'Siglens <noreply@siglens.io>';
+const DEFAULT_FROM = 'SIGLENS <noreply@siglens.io>';
 
 interface ResendConfig {
     apiKey: string;

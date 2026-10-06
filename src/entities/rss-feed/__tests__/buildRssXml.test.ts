@@ -15,7 +15,7 @@ function item(overrides: Partial<RssItem> = {}): RssItem {
 
 function channel(items: readonly RssItem[] = [item()]): RssChannel {
     return {
-        title: 'Siglens 시장 브리핑',
+        title: 'SIGLENS 시장 브리핑',
         link: 'https://siglens.io',
         description: '시장 브리핑과 뉴스 요약',
         language: 'ko',
@@ -93,7 +93,7 @@ describe('buildRssXml', () => {
         const xml = buildRssXml(channel([]));
 
         expect(xml).toContain('<channel>');
-        expect(xml).toContain('<title>Siglens 시장 브리핑</title>');
+        expect(xml).toContain('<title>SIGLENS 시장 브리핑</title>');
         expect(xml).not.toContain('<item>');
         expect(xml).not.toContain('lastBuildDate');
         expect(xml.trimEnd().endsWith('</rss>')).toBe(true);

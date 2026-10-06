@@ -126,7 +126,7 @@ export class FakeFundamentalDataProvider implements FundamentalProviderWithRawPe
     }
 
     /**
-     * Siglens-specific extra (not on the core port) — some injection points
+     * SIGLENS-specific extra (not on the core port) — some injection points
      * (newsData.ts, earnings-report의 api.ts getNextEarningsReport) call it on the concrete client.
      * Returning an empty list keeps the earnings-report DB upsert a no-op.
      */

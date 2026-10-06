@@ -31,8 +31,8 @@ vi.mock('@/entities/skill/api', () => ({
  */
 vi.mock('@/shared/lib/legal', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/legal')>()),
-    aboutTitle: () => 'Siglens 소개',
-    aboutFullTitle: () => 'Siglens 소개 Full Title',
+    aboutTitle: () => 'SIGLENS 소개',
+    aboutFullTitle: () => 'SIGLENS 소개 Full Title',
     aboutDescription: () => 'about desc',
     formatKoreanDate: vi.fn().mockReturnValue('2026년 9월 11일'),
 }));
@@ -51,7 +51,7 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
     }),
-    SITE_NAME: 'Siglens',
+    SITE_NAME: 'SIGLENS',
     SITE_URL: 'https://siglens.io',
 }));
 
@@ -97,9 +97,9 @@ const metadataFor = (locale = 'ko') =>
     generateMetadata({ params: Promise.resolve({ locale }) });
 
 describe('About page', () => {
-    it('메타 타이틀은 레이아웃 템플릿을 타지 않는다 — 이미 Siglens로 시작한다', async () => {
+    it('메타 타이틀은 레이아웃 템플릿을 타지 않는다 — 이미 SIGLENS로 시작한다', async () => {
         const metadata = await metadataFor();
-        expect(metadata.title).toEqual({ absolute: 'Siglens 소개 Full Title' });
+        expect(metadata.title).toEqual({ absolute: 'SIGLENS 소개 Full Title' });
     });
 
     it('allows indexing', async () => {
@@ -157,7 +157,7 @@ describe('About page', () => {
     it('홈과 같은 소스(countSkillFiles)의 카운트를 뷰에 넘긴다', async () => {
         const view = findViewProps(await renderRoute());
         expect(view?.counts.indicators).toBe(13);
-        expect(view?.title).toBe('Siglens 소개');
+        expect(view?.title).toBe('SIGLENS 소개');
         expect(view?.updatedAt).toBe('2026년 9월 11일');
     });
 

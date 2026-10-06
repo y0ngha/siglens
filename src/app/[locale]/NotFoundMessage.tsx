@@ -2,7 +2,8 @@
 
 import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import { useTranslations } from 'next-intl';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import { brandName } from '@/shared/lib/brandName';
 
 /**
  * 만료·미존재 공유 스냅샷은 `share/[id]/page.tsx`가 `notFound()`로 보낸다
@@ -22,6 +23,7 @@ export function NotFoundMessage() {
     // 접두사를 뗀 경로(`/share/xxx`) — 비교용 경로는 항상 `useAppPathname`으로 받는다
     // (`useAppPathname.ts` JSDoc). 세그먼트 포함 검사라 접두사 유무와 무관하지만
     // 레포 가드(`useAppPathname.test.ts`)가 직접 사용을 막는다.
+    const locale = useCurrentLocale();
     const pathname = useAppPathname();
     const isExpiredShare = pathname.includes(SHARE_PATH_SEGMENT);
 
@@ -37,7 +39,7 @@ export function NotFoundMessage() {
             </h1>
             <p className="mt-3 max-w-md text-sm leading-relaxed text-secondary-400">
                 {isExpiredShare
-                    ? t('NotFoundMessage.7c95d5', { v0: SITE_NAME })
+                    ? t('NotFoundMessage.7c95d5', { v0: brandName(locale) })
                     : t('not-found.03ecab')}
             </p>
         </>

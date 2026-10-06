@@ -62,7 +62,7 @@ describe('RootNotFound', () => {
 
             const wordmark = within(screen.getByRole('banner')).getByRole(
                 'link',
-                { name: 'Siglens' }
+                { name: 'SIGLENS' }
             );
             expect(wordmark.tagName).toBe('A');
             expect(wordmark).toHaveAttribute('href', '/');
@@ -85,7 +85,7 @@ describe('RootNotFound', () => {
         it('문서 제목은 한국어 · 메인 호스트 제목이고 <title>은 하나뿐이다', async () => {
             await renderRoot();
 
-            expect(document.title).toBe('페이지를 찾을 수 없습니다 | Siglens');
+            expect(document.title).toBe('페이지를 찾을 수 없습니다 | SIGLENS');
             expect(document.querySelectorAll('title')).toHaveLength(1);
         });
 
@@ -110,15 +110,15 @@ describe('RootNotFound', () => {
             expect(screen.queryByText('페이지를 찾을 수 없습니다')).toBeNull();
             expect(
                 within(screen.getByRole('banner')).getByRole('link', {
-                    name: 'Siglens',
+                    name: 'SIGLENS',
                 })
             ).toHaveAttribute('href', '/en');
             // 비기본 표면은 홈 링크만 — 내비·바로가기는 한국어 서버 마크업에만 있다.
             expect(screen.queryByRole('navigation')).toBeNull();
             expect(
-                screen.getByRole('link', { name: /Return to Siglens Home/ })
+                screen.getByRole('link', { name: /Return to SIGLENS Home/ })
             ).toHaveAttribute('href', '/en');
-            expect(document.title).toBe('Page not found | Siglens');
+            expect(document.title).toBe('Page not found | SIGLENS');
             expect(document.querySelectorAll('title')).toHaveLength(1);
             expect(document.documentElement.lang).toBe('en');
         });
@@ -201,10 +201,10 @@ describe('NotFoundView 하이드레이션', () => {
         );
         expect(
             within(out.container).getByRole('link', {
-                name: /Return to Siglens Home/,
+                name: /Return to SIGLENS Home/,
             })
         ).toHaveAttribute('href', '/en');
-        expect(document.title).toBe('Page not found | Siglens');
+        expect(document.title).toBe('Page not found | SIGLENS');
         expect(document.documentElement.lang).toBe('en');
     });
 });

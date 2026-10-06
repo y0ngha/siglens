@@ -77,12 +77,12 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     }),
     resolveSymbolOverallSeoContent: vi.fn().mockReturnValue({
         title: 'T',
-        fullTitle: 'T | Siglens',
+        fullTitle: 'T | SIGLENS',
         description: 'd',
         url: 'https://siglens.io/AAPL/overall',
         keywords: [],
     }),
-    SITE_NAME: 'Siglens',
+    SITE_NAME: 'SIGLENS',
     SITE_URL: 'https://siglens.io',
 }));
 

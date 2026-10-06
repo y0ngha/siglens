@@ -4,18 +4,41 @@ import { useChartSync } from '../../hooks/useChartSync';
 
 vi.mock('lightweight-charts', () => ({}));
 
-function makeMockChart() {
+function makeMockChart(scaleWidth = 0) {
     const ts = {
         subscribeVisibleLogicalRangeChange: vi.fn(),
         unsubscribeVisibleLogicalRangeChange: vi.fn(),
+        subscribeSizeChange: vi.fn(),
+        unsubscribeSizeChange: vi.fn(),
         setVisibleLogicalRange: vi.fn(),
+    };
+    const priceScale = {
+        width: vi.fn(() => scaleWidth),
+        applyOptions: vi.fn(),
     };
     return {
         timeScale: () => ts,
+        priceScale: () => priceScale,
         applyOptions: vi.fn(),
         _timeScaleMock: ts,
+        _priceScaleMock: priceScale,
     };
 }
+
+const frames: FrameRequestCallback[] = [];
+/** 예약된 프레임을 실행한다 — 브라우저처럼 예약 호출이 끝난 뒤에 돈다. */
+function flushFrames(): void {
+    for (const cb of frames.splice(0)) cb(0);
+}
+
+beforeEach(() => {
+    frames.length = 0;
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation(cb => {
+        frames.push(cb);
+        return frames.length;
+    });
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
+});
 
 describe('useChartSync', () => {
     it('returns four handler functions', () => {
@@ -355,6 +378,200 @@ describe('useChartSync', () => {
             rerender();
 
             expect(result.current.setRightOffsetPixels).toBe(first);
+        });
+    });
+
+    describe('가격축 폭 맞추기', () => {
+        type Chart = Parameters<
+            ReturnType<typeof useChartSync>['handleStockChartReady']
+        >[0];
+
+        it('두 차트의 오른쪽 가격축 최소 폭을 넓은 쪽에 맞춘다', () => {
+            const { result } = renderHook(() => useChartSync());
+            const stock = makeMockChart(64);
+            const volume = makeMockChart(56);
+
+            result.current.handleStockChartReady(stock as unknown as Chart);
+            result.current.handleVolumeChartReady(volume as unknown as Chart);
+            flushFrames();
+
+            expect(stock._priceScaleMock.applyOptions).toHaveBeenCalledWith({
+                minimumWidth: 64,
+            });
+            expect(volume._priceScaleMock.applyOptions).toHaveBeenCalledWith({
+                minimumWidth: 64,
+            });
+        });
+
+        it('차트가 하나뿐이면 맞추지 않는다', () => {
+            const { result } = renderHook(() => useChartSync());
+            const stock = makeMockChart(64);
+
+            result.current.handleStockChartReady(stock as unknown as Chart);
+            flushFrames();
+
+            expect(stock._priceScaleMock.applyOptions).not.toHaveBeenCalled();
+        });
+
+        it('축 폭이 바뀌면(크기 변화 신호) 다시 맞추고, 같은 폭은 다시 입히지 않는다', () => {
+            const { result } = renderHook(() => useChartSync());
+            const stock = makeMockChart(64);
+            const volume = makeMockChart(56);
+            result.current.handleStockChartReady(stock as unknown as Chart);
+            result.current.handleVolumeChartReady(volume as unknown as Chart);
+            flushFrames();
+            volume._priceScaleMock.applyOptions.mockClear();
+
+            const onSize = volume._timeScaleMock.subscribeSizeChange.mock
+                .calls[0]![0] as () => void;
+            onSize();
+            flushFrames();
+            expect(volume._priceScaleMock.applyOptions).not.toHaveBeenCalled();
+
+            volume._priceScaleMock.width.mockReturnValue(72);
+            onSize();
+            flushFrames();
+            expect(volume._priceScaleMock.applyOptions).toHaveBeenCalledWith({
+                minimumWidth: 72,
+            });
+            expect(stock._priceScaleMock.applyOptions).toHaveBeenLastCalledWith(
+                { minimumWidth: 72 }
+            );
+        });
+
+        it('넓은 라벨이 사라져 자연 폭이 줄어도 하한을 다시 입히지 않는다(래칫)', () => {
+            const { result } = renderHook(() => useChartSync());
+            const stock = makeMockChart(64);
+            const volume = makeMockChart(56);
+            result.current.handleStockChartReady(stock as unknown as Chart);
+            result.current.handleVolumeChartReady(volume as unknown as Chart);
+            flushFrames();
+            stock._priceScaleMock.applyOptions.mockClear();
+            volume._priceScaleMock.applyOptions.mockClear();
+
+            // 하한 64가 걸린 상태에서는 width()가 64 아래로 내려가지 않는다.
+            stock._priceScaleMock.width.mockReturnValue(64);
+            volume._priceScaleMock.width.mockReturnValue(64);
+            const onRange = stock._timeScaleMock
+                .subscribeVisibleLogicalRangeChange.mock
+                .calls[1]![0] as () => void;
+            onRange();
+            flushFrames();
+            expect(stock._priceScaleMock.applyOptions).not.toHaveBeenCalled();
+            expect(volume._priceScaleMock.applyOptions).not.toHaveBeenCalled();
+        });
+
+        it('한 프레임에 신호가 몰려도 한 번만 잰다', () => {
+            const { result } = renderHook(() => useChartSync());
+            const stock = makeMockChart(64);
+            const volume = makeMockChart(56);
+            result.current.handleStockChartReady(stock as unknown as Chart);
+            result.current.handleVolumeChartReady(volume as unknown as Chart);
+            const onSize = stock._timeScaleMock.subscribeSizeChange.mock
+                .calls[0]![0] as () => void;
+            onSize();
+            onSize();
+            expect(frames).toHaveLength(1);
+            flushFrames();
+            expect(stock._priceScaleMock.width).toHaveBeenCalledTimes(1);
+        });
+
+        it('두 차트가 모두 사라진 뒤 도는 예약 프레임은 아무것도 하지 않는다', () => {
+            const { result } = renderHook(() => useChartSync());
+            const stock = makeMockChart(64);
+            const volume = makeMockChart(56);
+            result.current.handleStockChartReady(stock as unknown as Chart);
+            result.current.handleVolumeChartReady(volume as unknown as Chart);
+            result.current.handleStockChartRemove();
+            result.current.handleVolumeChartRemove();
+            stock._priceScaleMock.applyOptions.mockClear();
+            volume._priceScaleMock.applyOptions.mockClear();
+
+            expect(window.cancelAnimationFrame).toHaveBeenCalled();
+            expect(() => flushFrames()).not.toThrow();
+            expect(stock._priceScaleMock.width).not.toHaveBeenCalled();
+            expect(stock._priceScaleMock.applyOptions).not.toHaveBeenCalled();
+            expect(volume._priceScaleMock.applyOptions).not.toHaveBeenCalled();
+        });
+
+        it('한쪽이 사라지면 남은 차트의 하한을 풀고, 새 짝과는 다시 잰다', () => {
+            const { result } = renderHook(() => useChartSync());
+            const stock = makeMockChart(64);
+            const volume = makeMockChart(80);
+            result.current.handleStockChartReady(stock as unknown as Chart);
+            result.current.handleVolumeChartReady(volume as unknown as Chart);
+            flushFrames();
+            expect(stock._priceScaleMock.applyOptions).toHaveBeenLastCalledWith(
+                {
+                    minimumWidth: 80,
+                }
+            );
+
+            result.current.handleVolumeChartRemove();
+            expect(stock._priceScaleMock.applyOptions).toHaveBeenLastCalledWith(
+                {
+                    minimumWidth: 0,
+                }
+            );
+
+            stock._priceScaleMock.width.mockReturnValue(64);
+            const nextVolume = makeMockChart(56);
+            result.current.handleVolumeChartReady(
+                nextVolume as unknown as Chart
+            );
+            flushFrames();
+            expect(stock._priceScaleMock.applyOptions).toHaveBeenLastCalledWith(
+                {
+                    minimumWidth: 64,
+                }
+            );
+            expect(
+                nextVolume._priceScaleMock.applyOptions
+            ).toHaveBeenLastCalledWith({ minimumWidth: 64 });
+        });
+
+        it('이미 dispose된 차트를 제거해도 throw하지 않고 정리를 끝낸다', () => {
+            const { result } = renderHook(() => useChartSync());
+            const stock = makeMockChart(64);
+            const volume = makeMockChart(56);
+            result.current.handleStockChartReady(stock as unknown as Chart);
+            result.current.handleVolumeChartReady(volume as unknown as Chart);
+            const disposed = new Error('Object is disposed');
+            volume._timeScaleMock.unsubscribeVisibleLogicalRangeChange.mockImplementation(
+                () => {
+                    throw disposed;
+                }
+            );
+            stock._priceScaleMock.applyOptions.mockImplementation(() => {
+                throw disposed;
+            });
+
+            expect(() =>
+                result.current.handleVolumeChartRemove()
+            ).not.toThrow();
+            // 정리가 끝까지 갔다 — 새 짝이 붙으면 다시 잰다.
+            stock._priceScaleMock.applyOptions.mockReset();
+            const nextVolume = makeMockChart(56);
+            result.current.handleVolumeChartReady(
+                nextVolume as unknown as Chart
+            );
+            flushFrames();
+            expect(
+                nextVolume._priceScaleMock.applyOptions
+            ).toHaveBeenCalledWith({ minimumWidth: 64 });
+        });
+
+        it('제거된 차트의 크기 구독을 푼다', () => {
+            const { result } = renderHook(() => useChartSync());
+            const volume = makeMockChart(56);
+            result.current.handleVolumeChartReady(volume as unknown as Chart);
+            result.current.handleVolumeChartRemove();
+
+            expect(
+                volume._timeScaleMock.unsubscribeSizeChange
+            ).toHaveBeenCalledWith(
+                volume._timeScaleMock.subscribeSizeChange.mock.calls[0]![0]
+            );
         });
     });
 });

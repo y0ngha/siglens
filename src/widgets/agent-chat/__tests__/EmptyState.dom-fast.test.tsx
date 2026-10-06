@@ -106,10 +106,10 @@ describe('EmptyState', () => {
             />
         );
         expect(
-            screen.getByRole('link', { name: /SIGLENS 계정으로 로그인/ })
+            screen.getByRole('link', { name: /시그렌즈 계정으로 로그인/ })
         ).toHaveAttribute('href', 'https://siglens.io/login?next=x');
         expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
-            'SIGLENS AI'
+            '시그렌즈 AI'
         );
         const examples = screen.getByRole('list', {
             name: '이런 질문에 답할 수 있어요',
@@ -141,7 +141,7 @@ describe('EmptyState', () => {
         );
         expect(screen.getByText('Beta')).toHaveAttribute('translate', 'no');
         expect(
-            screen.getByRole('list', { name: 'SIGLENS AI가 찾아보는 데이터' })
+            screen.getByRole('list', { name: '시그렌즈 AI가 찾아보는 데이터' })
         ).toHaveTextContent('최신 시세');
     });
 
@@ -156,7 +156,7 @@ describe('EmptyState', () => {
         );
         expect(
             screen.getByRole('link', {
-                name: /SIGLENS AI가 어떻게 답하는지 보기/,
+                name: /시그렌즈 AI가 어떻게 답하는지 보기/,
             })
         ).toHaveAttribute('href', '/en/about');
         for (const name of ['답변은 어디서 오나요', '자주 묻는 질문'])

@@ -153,30 +153,3 @@ export function patternPaletteByKey(
         patterns.map((item, i) => [item.key, palette[i % palette.length]])
     );
 }
-
-/** 켜진 작도가 이 수 이하면 무효화·목표 축 라벨을 전부 띄운다. 넘으면 강조한 작도 것만. */
-export const MAX_OVERLAYS_WITH_OUTCOME_LABELS = 2;
-
-/** 무효화·목표·5파 상한 선을 내는 작도 종류 — core는 패턴과 엘리어트에만 싣는다. */
-const OUTCOME_LEVEL_KINDS: ReadonlySet<OverlayMenuGroupKind> = new Set([
-    'pattern',
-    'elliott',
-]);
-
-/**
- * 결과선(무효화·목표)을 내는 켜진 작도가 MAX_OVERLAYS_WITH_OUTCOME_LABELS를 넘는가 —
- * 넘으면 그 축 라벨을 강조한 작도 것만 띄운다. 작도 8개에서 라벨이 20개 넘게 쌓여
- * 서로 가렸다(2026-10-02 렌더 점검). 추세선·피보나치·다이버전스는 결과선이 없으니
- * 세지 않는다. 선은 늘 그린다.
- */
-export function areOutcomeLabelsCrowded(
-    items: readonly OverlayMenuItem[],
-    hiddenKeys: ReadonlySet<string>
-): boolean {
-    return (
-        items.filter(
-            item =>
-                OUTCOME_LEVEL_KINDS.has(item.kind) && !hiddenKeys.has(item.key)
-        ).length > MAX_OVERLAYS_WITH_OUTCOME_LABELS
-    );
-}
