@@ -171,6 +171,8 @@ export async function prewarmTechnical(
             symbol,
             timeframe,
             tab: 'technical',
+            // core에 넘기는 것과 같은 세션 — 이력 경계가 core 캐시 키 경계와 맞는다.
+            session,
         }),
         findMarketEventsForPrompt(prewarmDb, {
             symbol,
@@ -391,12 +393,15 @@ export async function prewarmOverall(
             // trend/riskLevel이 없다). 스트림과 **같은 tab**을 읽어야 core가 캐시 키에
             // 접는 history fingerprint가 갈리지 않는다.
             tab: 'technical',
+            // `technical.session`으로 core에 넘기는 것과 같은 세션.
+            session,
         }),
         historyRepo.findRecentForPrompt({
             symbol,
             timeframe,
             tab: 'technical',
             axis: 'overall',
+            session,
         }),
         findMarketEventsForPrompt(db, {
             symbol,

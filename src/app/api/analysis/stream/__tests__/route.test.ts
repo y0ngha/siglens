@@ -1857,6 +1857,7 @@ describe('POST /api/analysis/stream', () => {
                 symbol: 'AAPL',
                 timeframe: '1Day',
                 tab: 'technical',
+                session: {},
             });
             const opts = vi.mocked(runAnalysis).mock.calls[0]?.[5] as Record<
                 string,
@@ -1939,6 +1940,7 @@ describe('POST /api/analysis/stream', () => {
                 symbol: 'AAPL',
                 timeframe: '1Day',
                 tab: 'technical',
+                session: {},
             });
             const call = vi
                 .mocked(runAnalysis)
@@ -1976,6 +1978,7 @@ describe('POST /api/analysis/stream', () => {
                 symbol: 'AAPL',
                 timeframe: '1Day',
                 tab: 'technical',
+                session: {},
             });
             expect(vi.mocked(runOverallAnalysisAction)).toHaveBeenCalledWith(
                 'AAPL',
@@ -2015,6 +2018,7 @@ describe('POST /api/analysis/stream', () => {
                 symbol: 'AAPL',
                 timeframe: '1Day',
                 tab: 'technical',
+                session: {},
             });
             expect(vi.mocked(runOverallAnalysisAction)).toHaveBeenCalledWith(
                 'AAPL',
@@ -2077,12 +2081,14 @@ describe('POST /api/analysis/stream', () => {
                 symbol: 'AAPL',
                 timeframe: '1Day',
                 tab: 'technical',
+                session: {},
             });
             expect(mockFindRecentForPrompt).toHaveBeenCalledWith({
                 symbol: 'AAPL',
                 timeframe: '1Day',
                 tab: 'technical',
                 axis: 'overall',
+                session: {},
             });
             expect(vi.mocked(runOverallAnalysisAction)).toHaveBeenCalledWith(
                 'AAPL',
@@ -2462,8 +2468,59 @@ describe('POST /api/analysis/stream', () => {
                 expect(
                     vi.mocked(getCachedMarketDataProvider)
                 ).toHaveBeenCalledWith(SESSIONS[profile]);
+                // 이력 쿼리도 같은 세션 — `generatedBeforeMs`가 core 캐시 키
+                // 경계(세션 마감)와 맞아야 한다(core 2.14.0).
+                const historyCall = mockFindRecentForPrompt.mock.calls.find(
+                    c => (c[0] as { symbol?: string }).symbol === symbol
+                );
+                expect(
+                    (historyCall?.[0] as { session?: unknown }).session
+                ).toBe(SESSIONS[profile]);
             }
         );
+
+        it('overall: 두 축 이력 쿼리 모두 technical 축에 넘기는 것과 같은 시장 세션을 받는다', async () => {
+            const KR_SESSION = { tag: 'kr-session' };
+            vi.mocked(resolveMarketProfile).mockResolvedValue(
+                'kr-equity' as never
+            );
+            vi.mocked(getDescriptor).mockReturnValue(KR_EQUITY);
+            vi.mocked(sessionSpecFor).mockImplementation(
+                id => (id === 'kr-equity' ? KR_SESSION : {}) as never
+            );
+            vi.mocked(runOverallAnalysisAction).mockResolvedValue({
+                status: 'miss_no_trigger',
+            } as never);
+
+            const body = JSON.stringify({
+                type: 'overall',
+                params: {
+                    symbol: '005930.KS',
+                    companyName: '삼성전자',
+                    timeframe: '1Day',
+                    modelId: 'gemini-3.6-flash',
+                },
+            });
+            await collectSseEvents(await POST(makeRequest(undefined, body)));
+
+            const historyCalls = mockFindRecentForPrompt.mock.calls
+                .map(
+                    c =>
+                        c[0] as {
+                            symbol?: string;
+                            axis?: string;
+                            session?: unknown;
+                        }
+                )
+                .filter(input => input.symbol === '005930.KS');
+            expect(historyCalls.map(input => input.axis)).toEqual([
+                undefined,
+                'overall',
+            ]);
+            for (const input of historyCalls) {
+                expect(input.session).toBe(KR_SESSION);
+            }
+        });
     });
 
     /**
