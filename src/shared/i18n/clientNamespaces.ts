@@ -62,6 +62,11 @@ export function routeClientPaths(routeId: string): readonly string[] {
  * 상위 라우트는 자기 `layout.tsx`에서 `RouteMessages`를 렌더하므로(`routeLayout`·`[symbol]`
  * 레이아웃) 그 메시지는 하위 서브트리의 `MergedIntlProvider`가 이어받는다. 이 전제는
  * `clientNamespaces.test.ts`가 "접두사 라우트마다 메시지 레이아웃이 있다"로 고정한다.
+ *
+ * 페이지 단위 엔트리 `<route>/(page)`(자기 `RouteMessages`를 렌더하는 페이지 — 지금은
+ * `[symbol]` 차트 탭뿐이다)도 같은 규칙을 탄다. 접두사 `<route>`가 레이아웃 엔트리라
+ * 레이아웃이 실은 키는 빼고 페이지 몫만 보낸다. 반대로 `(page)` 엔트리는 다른 라우트의
+ * 접두사가 아니므로 형제 탭은 그 키를 받지 않는다 — 이게 이 엔트리를 따로 두는 이유다.
  */
 export function ancestorClientPaths(routeId: string): readonly string[] {
     const segments = routeId.split('/');
