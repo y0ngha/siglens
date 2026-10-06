@@ -139,8 +139,8 @@ export function quantizeBarsDataToLastClosed(
     now: Date,
     session: MarketSessionSpec = US_EQUITY_SESSION
 ): BarsData {
-    if (data.bars.length === 0 || !hasFormingBar(session, now)) return data;
-    const lastBar = data.bars[data.bars.length - 1]!;
+    const lastBar = data.bars.at(-1);
+    if (lastBar === undefined || !hasFormingBar(session, now)) return data;
     if (!lastBarIsCurrentSession(lastBar.time, session, now)) return data;
     return {
         ...data,

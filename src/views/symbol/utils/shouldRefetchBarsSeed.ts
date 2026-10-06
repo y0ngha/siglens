@@ -22,8 +22,8 @@ interface BarsSeedRefetchInputs {
  * 마지막 봉이 오늘(현재 세션 날짜) 봉이면 그 봉을 뺀 채로 나가는데(`quantizeBarsDataToLastClosed`),
  * 그 사이 만들어진 분석의 작도(`chartOverlays`)는 형성 중 봉 시각을 참조한다. seed 봉에 그
  * 시각이 없으면 작도가 정렬되지 않아(`isOverlayAlignedToBars`) "차트 작도" 메뉴가 비고, 사람은
- * 마우스를 움직이기 전까지
- * 한 봉 뒤처진 차트를 본다(PR #957 e2e `chart-overlays.spec.ts` 회귀, 장중 한정).
+ * 마우스를 움직이기 전까지 한 봉 뒤처진 차트를 본다(PR #957 e2e `chart-overlays.spec.ts` 회귀,
+ * 장중 한정).
  *
  * 형성 중 봉이 빠졌는지는 두 시점에서 본다 — 둘 중 하나면 연다.
  * - **생성 시점**(`seedHasFormingBarTrimmed`): ISR HTML이 장중에 만들어져 장 마감 뒤에 열린 경우,
