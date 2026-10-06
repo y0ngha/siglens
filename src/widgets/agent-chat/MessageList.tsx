@@ -5,21 +5,17 @@ import {
     useEffect,
     useId,
     useLayoutEffect,
-    useMemo,
     useRef,
     useState,
     type UIEvent,
 } from 'react';
-import {
-    relatedSymbolPages,
-    type RelatedSymbolPage,
-} from '@/features/agent-chat/lib/relatedSymbolPages';
+import type { RelatedSymbolPage } from '@/features/agent-chat/lib/relatedSymbolPages';
 import type { AgentUiMessage } from '@/features/agent-chat/model/types';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { BUTTON_GHOST, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { useCopyToClipboard } from '@/shared/hooks/useCopyToClipboard';
-import { useSymbolLabels } from './hooks/useSymbolLabels';
+import { useRelatedPages } from './hooks/useRelatedPages';
 import { AgentMarkdown } from './AgentMarkdown';
 import { ArrowDownIcon, ArrowUpRightIcon } from '@/shared/ui/StrokeIcons';
 import { SiglensMark } from './SiglensMark';
@@ -177,55 +173,6 @@ function RelatedPages({
     );
 }
 
-interface RelatedPagesIndex {
-    readonly pagesById: ReadonlyMap<string, RelatedSymbolPage[]>;
-    /** 대화 전체 심볼(중복 제거·정렬) — 라벨 쿼리 키로 쓰이므로 순서가 프레임마다 같아야 한다. */
-    readonly symbols: readonly string[];
-}
-
-/**
- * 끝난 답변의 링크 계산 결과를 **메시지 객체별로** 기억한다. 스트리밍 중에는 마지막
- * 말풍선만 새 객체가 되고(`patchLast`) 앞 답변들은 같은 객체로 남으므로, 매 프레임
- * 렌더에서도 다시 계산되는 건 없다. 객체가 버려지면 항목도 함께 사라진다(WeakMap).
- */
-const relatedPagesCache = new WeakMap<AgentUiMessage, RelatedSymbolPage[]>();
-
-function pagesFor(message: AgentUiMessage): RelatedSymbolPage[] {
-    const cached = relatedPagesCache.get(message);
-    if (cached) return cached;
-    const pages = relatedSymbolPages(message.tools);
-    relatedPagesCache.set(message, pages);
-    return pages;
-}
-
-/**
- * 끝난 답변마다의 "siglens에서 보기" 링크와 대화 전체 심볼. 표시 이름은 답변마다 묻지
- * 않고 대화 전체 심볼을 모아 한 번에 묻는다(긴 대화를 열 때 답변 수만큼 POST가 줄 서지
- * 않게).
- */
-function relatedPagesOf(
-    messages: readonly AgentUiMessage[]
-): RelatedPagesIndex {
-    const pagesById = new Map(
-        messages
-            .filter(
-                m =>
-                    m.role === 'assistant' &&
-                    m.status !== 'streaming' &&
-                    m.content !== ''
-            )
-            .map(m => [m.id, pagesFor(m)] as const)
-    );
-    const symbols = [
-        ...new Set(
-            [...pagesById.values()].flatMap(pages =>
-                pages.map(page => page.symbol)
-            )
-        ),
-    ].toSorted();
-    return { pagesById, symbols };
-}
-
 /**
  * Three dots that breathe while the first token is still on its way. Not a
  * live region of its own — it only renders inside the streaming turn's
@@ -341,16 +288,12 @@ export function MessageList({
      */
     const followPeakTopRef = useRef(0);
 
+    // 끝난 답변의 링크·표시 이름 — 프레임마다 다시 계산하지 않는다(`useRelatedPages`).
+    const { pagesById: relatedPagesById, labels: symbolLabels } =
+        useRelatedPages(messages);
+
     const lastAssistant = messages.findLast(m => m.role === 'assistant');
     const lastUser = messages.findLast(m => m.role === 'user');
-    // 스트리밍 중 매 프레임 렌더에서도 끝난 답변의 링크 계산을 다시 하지 않는다 —
-    // `relatedPagesOf`가 메시지 객체별로 기억하고, 이 memo는 transcript가 그대로인
-    // 렌더(스크롤 버튼·편집 상태 등)에서 통째로 건너뛴다.
-    const { pagesById: relatedPagesById, symbols: relatedSymbols } = useMemo(
-        () => relatedPagesOf(messages),
-        [messages]
-    );
-    const symbolLabels = useSymbolLabels(relatedSymbols);
 
     const copyMessage = (m: AgentUiMessage): void => {
         setCopiedId(m.id);

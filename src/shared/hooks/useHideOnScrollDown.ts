@@ -19,21 +19,6 @@ const USER_INPUT_EVENTS = [
     'keydown',
 ] as const;
 
-/*
- * `BELOW_LG_MEDIA_QUERY` matches the `lg` breakpoint the callers already hide
- * their chrome at (`Header.tsx`'s `max-lg:-translate-y-full`, `ChatShell.tsx`'s
- * `lg:hidden` bar). Callers apply `inert` to the whole element when this hook
- * reports `true`, and `inert` cannot be scoped to a media query the way those
- * translate/display classes are — so the hook itself must never report
- * "hidden" on a viewport where the CSS keeps the chrome pinned in place.
- * Without this, a desktop user scrolling down on the ai host would get a
- * header that still looks fully visible but is silently non-interactive.
- *
- * Not `MOBILE_VIEWPORT_MEDIA_QUERY` (`shared/config/viewport.ts`) — that one
- * is the Tailwind `md` (768px) boundary used elsewhere; this hook needs `lg`
- * (1024px) to match the breakpoint its own callers hide at.
- */
-
 interface ScrollChromeState {
     readonly hidden: boolean;
     readonly belowLg: boolean;
@@ -55,6 +40,11 @@ function update(next: Partial<ScrollChromeState>): void {
 
 /** Attaches the window listeners once, for all subscribers. */
 function startListening(): () => void {
+    // `lg` 경계여야 한다 — 호출부가 크롬을 숨기는 경계(`Header.tsx`의
+    // `max-lg:-translate-y-full`, `ChatShell.tsx`의 `lg:hidden` 바)와 같아야 하기 때문이다.
+    // 호출부는 `true`일 때 요소 전체에 `inert`를 거는데, `inert`는 미디어 쿼리로 범위를
+    // 좁힐 수 없다. 데스크톱에서 "숨김"을 보고하면 멀쩡히 보이는 헤더가 조용히 먹통이
+    // 된다. `MOBILE_VIEWPORT_MEDIA_QUERY`(md 768px)가 아닌 이유도 같다.
     const mediaQueryList = window.matchMedia(BELOW_LG_MEDIA_QUERY);
     const syncBreakpoint = () => update({ belowLg: mediaQueryList.matches });
     syncBreakpoint();

@@ -1,4 +1,20 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+/** core 판정 호출 횟수를 세려고 감싼다(동작은 원본 그대로). */
+const { splitCalls } = vi.hoisted(() => ({ splitCalls: vi.fn() }));
+vi.mock('@y0ngha/siglens-core', async importOriginal => {
+    const actual =
+        await importOriginal<typeof import('@y0ngha/siglens-core')>();
+    return {
+        ...actual,
+        splitAgentFollowUps: (text: string) => {
+            splitCalls(text);
+            return actual.splitAgentFollowUps(text);
+        },
+    };
+});
+
+import { splitAgentFollowUps } from '@y0ngha/siglens-core';
 import {
     createFollowUpTextFilter,
     followUpLine,
@@ -51,6 +67,81 @@ describe('createFollowUpTextFilter', () => {
         expect(filter.push('나레이션\n[')).toBe('나레이션');
         filter.reset();
         expect(filter.push('새 답변')).toBe('새 답변');
+    });
+});
+
+/**
+ * 증분 구현 이전의 정의 그대로 — 매 조각 누적 원문 전체를 core에 넘겨 본문을 구하고,
+ * 이미 보낸 접두사를 본문이 이어 쓸 때만 늘어난 만큼 내보낸다.
+ */
+function reference(deltas: readonly string[]): string[] {
+    let raw = '';
+    let sent = '';
+    return deltas.map(delta => {
+        raw += delta;
+        const { body } = splitAgentFollowUps(raw);
+        if (body.length <= sent.length || !body.startsWith(sent)) return '';
+        const next = body.slice(sent.length);
+        sent = body;
+        return next;
+    });
+}
+
+/** 시드 고정 의사난수 — 실패를 재현할 수 있게. */
+function seeded(seed: number): () => number {
+    let x = seed;
+    return () => {
+        x = (x * 1103515245 + 12345) % 2147483648;
+        return x / 2147483648;
+    };
+}
+
+describe('createFollowUpTextFilter — 증분 처리', () => {
+    const SAMPLES = [
+        '본문입니다.\n\n[[followups]] 실적은? | 뉴스는?',
+        '본문\n  [[followups]] A | B  \n\n',
+        '본문\n[[followups]]\n',
+        '본문\n[[followups]] | | ',
+        '앞\n[[followups]] 중간\n뒤에 이어지는 문장',
+        '[1] 출처 표기로 시작하는 줄\n다음 줄',
+        '[',
+        '\n\n   \n',
+        '문단\n\n- 목록\n[[foll',
+        '탭\t뒤\r\n[[followups]] A\r\n',
+        '[[followups]] 첫 줄부터 마커',
+        '😀 이모지\n[[followups]] 😀',
+    ];
+
+    it('어떤 조각 나누기에서도 이전 정의(누적 원문 전체 판정)와 같은 조각을 내보낸다', () => {
+        const random = seeded(42);
+        for (const sample of SAMPLES) {
+            for (let trial = 0; trial < 50; trial++) {
+                const deltas: string[] = [];
+                let at = 0;
+                while (at < sample.length) {
+                    const size = 1 + Math.floor(random() * 6);
+                    deltas.push(sample.slice(at, at + size));
+                    at += size;
+                }
+                expect(run(deltas), `${JSON.stringify(deltas)}`).toEqual(
+                    reference(deltas)
+                );
+            }
+        }
+    });
+
+    it('마커가 될 수 없는 줄(첫 글자가 `[`가 아님)에서는 core 판정을 부르지 않는다', () => {
+        splitCalls.mockClear();
+        const long = '가나다라마바사 '.repeat(500);
+        run([...long, '\n', ...'둘째 줄도 길다']);
+        expect(splitCalls).not.toHaveBeenCalled();
+    });
+
+    it('core에는 누적 원문이 아니라 마지막 줄부터의 꼬리만 넘긴다', () => {
+        splitCalls.mockClear();
+        run(['긴 본문 '.repeat(200), '\n[', '[followups]] A']);
+        for (const [text] of splitCalls.mock.calls)
+            expect((text as string).startsWith('[')).toBe(true);
     });
 });
 

@@ -14,11 +14,18 @@ import {
  * 본문(`body`)과 칩 항목(`followUps`)을 함께 싣는다.
  *
  * 규칙: 지금까지 받은 원문 `raw`에서 `splitAgentFollowUps(raw).body`가 "보여 줘도
- * 되는 본문"이다. 이미 보낸 접두사 `sent`를 그 본문이 이어 쓰면 늘어난 만큼만 내보낸다.
- * 본문이 `sent`보다 짧아지는 경우(끝줄이 마커로 보이기 시작해 줄바꿈·공백이 잘린
- * 경우)는 아무것도 보내지 않는다. 둘 다 같은 `raw`의 접두사라 한쪽은 반드시 다른 쪽의
- * 접두사다 — 내보낸 텍스트를 되돌릴 일은 없다(남는 건 끝 공백뿐이고, `done`의
- * `body`가 최종값으로 덮는다).
+ * 되는 본문"이다. 이미 보낸 길이보다 본문이 길어지면 늘어난 만큼만 내보낸다. 본문이
+ * 짧아지는 경우(끝줄이 마커로 보이기 시작해 줄바꿈·공백이 잘린 경우)는 아무것도 보내지
+ * 않는다. 본문과 보낸 글은 둘 다 같은 `raw`의 접두사라 한쪽은 반드시 다른 쪽의 접두사다
+ * — 길이만 비교하면 되고, 내보낸 텍스트를 되돌릴 일은 없다(남는 건 끝 공백뿐이고,
+ * `done`의 `body`가 최종값으로 덮는다).
+ *
+ * **증분 처리.** 조각마다 누적 원문 전체를 `splitAgentFollowUps`에 넘기면 답변 길이에
+ * 대해 O(n²)이다. 그런데 그 판정은 **마지막 비어 있지 않은 줄**만 본다 — 그보다 앞의 줄은
+ * 뒤에 내용 있는 줄이 생긴 순간 본문으로 확정된다. 그래서 새 조각의 글자만 훑어 그
+ * 줄의 시작 위치와 첫 비공백 글자를 갱신하고, 그 줄이 `[`로 시작할 때만(마커가 될 수
+ * 있는 유일한 경우: `[` 한 글자 또는 `[[`로 시작) 그 줄부터의 꼬리만 core에 넘긴다.
+ * 숨겨질 때 본문 길이는 꼬리 앞부분의 끝 공백을 걷어 낸 길이로, core의 `trimEnd()`와 같다.
  */
 export interface FollowUpTextFilter {
     /** 원문 조각을 받아 지금 클라이언트에 보내도 되는 조각을 돌려준다(없으면 `''`). */
@@ -27,21 +34,78 @@ export interface FollowUpTextFilter {
     reset(): void;
 }
 
+/** `String.prototype.trim`이 걷어 내는 공백과 같은 집합. */
+const WHITESPACE_RE = /\s/;
+
+/** `text.slice(0, end).trimEnd().length` — 끝의 공백 구간만 거꾸로 훑는다. */
+function trimmedEndLength(text: string, end: number): number {
+    let length = end;
+    while (length > 0 && WHITESPACE_RE.test(text[length - 1]!)) length -= 1;
+    return length;
+}
+
+/** 필터의 증분 상태. 조각을 받을 때마다 새 조각의 글자만 반영한다. */
+interface FilterState {
+    raw: string;
+    sentLength: number;
+    /** 지금 쓰이는(마지막) 줄의 시작 위치와, 그 줄의 첫 비공백 글자(`''` = 아직 빈 줄). */
+    lineStart: number;
+    lineFirstChar: string;
+    /** 마지막 비어 있지 않은 줄의 시작 위치와 첫 비공백 글자. */
+    tailStart: number;
+    tailFirstChar: string;
+}
+
+const initialState = (): FilterState => ({
+    raw: '',
+    sentLength: 0,
+    lineStart: 0,
+    lineFirstChar: '',
+    tailStart: 0,
+    tailFirstChar: '',
+});
+
+/** 새 조각의 글자만 훑어 줄 위치를 갱신한다(조각 길이에 비례). */
+function scanDelta(state: FilterState, delta: string, offset: number): void {
+    for (let i = 0; i < delta.length; i++) {
+        const ch = delta[i]!;
+        if (ch === '\n') {
+            state.lineStart = offset + i + 1;
+            state.lineFirstChar = '';
+        } else if (state.lineFirstChar === '' && !WHITESPACE_RE.test(ch)) {
+            state.lineFirstChar = ch;
+            state.tailStart = state.lineStart;
+            state.tailFirstChar = ch;
+        }
+    }
+}
+
+/** `splitAgentFollowUps(raw).body.length`와 같은 값 — 꼬리만 보고 구한다. */
+function visibleLength(state: FilterState): number {
+    if (state.tailFirstChar !== '[') return state.raw.length;
+    const tail = state.raw.slice(state.tailStart);
+    // 꼬리의 마지막 비어 있지 않은 줄은 첫 줄이므로, 숨겨지면 body가 꼬리와 달라진다.
+    const hidden = splitAgentFollowUps(tail).body !== tail;
+    return hidden
+        ? trimmedEndLength(state.raw, state.tailStart)
+        : state.raw.length;
+}
+
 export function createFollowUpTextFilter(): FollowUpTextFilter {
-    let raw = '';
-    let sent = '';
+    let state = initialState();
     return {
         push(delta: string): string {
-            raw += delta;
-            const { body } = splitAgentFollowUps(raw);
-            if (body.length <= sent.length || !body.startsWith(sent)) return '';
-            const next = body.slice(sent.length);
-            sent = body;
+            const offset = state.raw.length;
+            state.raw += delta;
+            scanDelta(state, delta, offset);
+            const bodyLength = visibleLength(state);
+            if (bodyLength <= state.sentLength) return '';
+            const next = state.raw.slice(state.sentLength, bodyLength);
+            state.sentLength = bodyLength;
             return next;
         },
         reset(): void {
-            raw = '';
-            sent = '';
+            state = initialState();
         },
     };
 }
