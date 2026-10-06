@@ -66,6 +66,9 @@ async function resolveQuotaIdentity(
 /** Cloudflare가 매 요청 덮어쓰는 클라이언트 IP 헤더(`getClientIp` JSDoc). */
 const CLOUDFLARE_IP_HEADER = 'cf-connecting-ip';
 
+/** 크롤러 주장을 읽는 헤더. 검증 시도 여부만 정한다({@link isVerifiedCrawlerRequest}). */
+const USER_AGENT_HEADER = 'user-agent';
+
 /**
  * 이 요청이 DNS로 검증된 검색 크롤러인가(`isVerifiedCrawler`).
  *
@@ -83,7 +86,10 @@ async function isVerifiedCrawlerRequest(
 ): Promise<boolean> {
     const cloudflareIp = requestHeaders.get(CLOUDFLARE_IP_HEADER)?.trim();
     if (!cloudflareIp) return false;
-    return isVerifiedCrawler(cloudflareIp, requestHeaders.get('user-agent'));
+    return isVerifiedCrawler(
+        cloudflareIp,
+        requestHeaders.get(USER_AGENT_HEADER)
+    );
 }
 
 /**

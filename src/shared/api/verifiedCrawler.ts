@@ -216,6 +216,8 @@ async function verifyByDns(
         const hostnames = (await dnsResolver().reverse(ip))
             .filter(hostname => hostMatches(hostname, crawler))
             .slice(0, MAX_PTR_HOSTS);
+        // 순차 조회가 의도다 — 대부분 첫 PTR에서 확정되므로 병렬로 나머지까지 질의하면
+        // DNS 부하만 늘어난다(스푸핑 IP마다 곱해진다). 최대 MAX_PTR_HOSTS건이라 지연 상한도 작다.
         for (const hostname of hostnames) {
             if (await forwardIncludes(hostname, ip)) return 'verified';
         }
