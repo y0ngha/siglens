@@ -36,6 +36,10 @@ vi.mock('@/shared/api/guestId', () => ({
 vi.mock('@/shared/api/getClientIp', () => ({
     getClientIp: vi.fn().mockResolvedValue('203.0.113.1'),
 }));
+// 크롤러 DNS 검증 — 기본은 미검증(평소 한도). 검증 자체는 `verifiedCrawler.test.ts`가 본다.
+vi.mock('@/shared/api/verifiedCrawler', () => ({
+    isVerifiedCrawler: vi.fn().mockResolvedValue(false),
+}));
 
 vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
     getCurrentUser: vi.fn().mockResolvedValue(null),
@@ -289,6 +293,7 @@ import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { DrizzleAnalysisHistoryRepository } from '@/entities/analysis/analysisHistoryRepository';
 import { isBot } from '@/shared/api/isBot';
+import { isVerifiedCrawler } from '@/shared/api/verifiedCrawler';
 import { isE2E } from '@/shared/api/e2eEnv';
 import {
     e2eCachedTechnical,
@@ -3695,11 +3700,13 @@ describe('POST /api/analysis/stream', () => {
         beforeEach(() => {
             allowQuota();
             mockQuotaRefund.mockResolvedValue(undefined);
+            vi.mocked(isVerifiedCrawler).mockResolvedValue(false);
             __resetActiveStreamsForTests();
         });
 
         afterEach(() => {
             allowQuota();
+            vi.mocked(isVerifiedCrawler).mockResolvedValue(false);
         });
 
         it('technical: 한도 초과 + 캐시 없음 → skipEnqueueIfMiss로 강등하고 rate_limited 이벤트로 끝낸다', async () => {
@@ -4016,6 +4023,206 @@ describe('POST /api/analysis/stream', () => {
             } as never);
             await collectSseEvents(await POST(makeRequest(undefined, body)));
             expect(mockQuotaRefund).not.toHaveBeenCalled();
+        });
+
+        describe('검증된 검색 크롤러 면제', () => {
+            const GOOGLEBOT_UA =
+                'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)';
+            const CRAWLER_IP = '66.249.66.1';
+
+            function fundamentalBody(symbol: string): string {
+                return JSON.stringify({
+                    type: 'fundamental',
+                    params: { symbol, modelId: 'gemini-3.6-flash' },
+                });
+            }
+
+            /** Cloudflare를 거친 크롤러 요청 — `cf-connecting-ip`는 CF가 덮어쓴다. */
+            function crawlerRequest(
+                body: string = TECHNICAL_BODY,
+                ipHeaders: Record<string, string> = {
+                    'cf-connecting-ip': CRAWLER_IP,
+                }
+            ): Request {
+                return new Request('http://localhost/api/analysis/stream', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'User-Agent': GOOGLEBOT_UA,
+                        ...ipHeaders,
+                    },
+                    body,
+                });
+            }
+
+            /** technical 호출 중 `symbol`의 core 옵션(인덱스가 아니라 심볼로 찾는다). */
+            function technicalOptionsFor(
+                symbol: string
+            ): Record<string, unknown> | undefined {
+                return vi
+                    .mocked(runAnalysis)
+                    .mock.calls.find(call => call[0] === symbol)?.[5] as
+                    | Record<string, unknown>
+                    | undefined;
+            }
+
+            /** fundamental 호출 중 `symbol`의 `cacheOnly` 인자. */
+            function fundamentalCacheOnlyFor(symbol: string): unknown {
+                return vi
+                    .mocked(runFundamentalAnalysisAction)
+                    .mock.calls.find(call => call[0] === symbol)?.[5];
+            }
+
+            it('technical: DNS로 검증된 크롤러는 한도가 차 있어도 예약 없이 생성한다', async () => {
+                denyQuota();
+                vi.mocked(isVerifiedCrawler).mockResolvedValue(true);
+                vi.mocked(runAnalysis).mockResolvedValue({
+                    status: 'done',
+                    result: {},
+                } as never);
+
+                const events = await collectSseEvents(
+                    await POST(crawlerRequest())
+                );
+
+                expect(vi.mocked(isVerifiedCrawler)).toHaveBeenCalledWith(
+                    CRAWLER_IP,
+                    GOOGLEBOT_UA
+                );
+                expect(mockReserveAnalysisGeneration).not.toHaveBeenCalled();
+                expect(technicalOptionsFor('AAPL')?.skipEnqueueIfMiss).toBe(
+                    false
+                );
+                expect(events.some(e => e.includes('event: done'))).toBe(true);
+                expect(events.some(e => e.includes('rate_limited'))).toBe(
+                    false
+                );
+                expect(mockQuotaRefund).not.toHaveBeenCalled();
+            });
+
+            it('technical: 크롤러 UA만 단 위조 요청(DNS 미검증)은 평소 한도에 걸린다', async () => {
+                denyQuota();
+                vi.mocked(isVerifiedCrawler).mockResolvedValue(false);
+                vi.mocked(runAnalysis).mockResolvedValue({
+                    status: 'miss_no_trigger',
+                });
+
+                const events = await collectSseEvents(
+                    await POST(crawlerRequest())
+                );
+
+                expect(mockReserveAnalysisGeneration).toHaveBeenCalledOnce();
+                expect(technicalOptionsFor('AAPL')?.skipEnqueueIfMiss).toBe(
+                    true
+                );
+                expect(
+                    events.some(e => e.includes('event: rate_limited'))
+                ).toBe(true);
+            });
+
+            it('technical: cf-connecting-ip 없이 X-Forwarded-For만 단 크롤러 요청은 DNS 검증에 가지 않고 한도에 걸린다', async () => {
+                denyQuota();
+                // 검증이 불리면 통과시키는 목 — 불리지 않아야 한다.
+                vi.mocked(isVerifiedCrawler).mockResolvedValue(true);
+                vi.mocked(runAnalysis).mockResolvedValue({
+                    status: 'miss_no_trigger',
+                });
+
+                const events = await collectSseEvents(
+                    await POST(
+                        crawlerRequest(TECHNICAL_BODY, {
+                            'x-forwarded-for': CRAWLER_IP,
+                        })
+                    )
+                );
+
+                expect(vi.mocked(isVerifiedCrawler)).not.toHaveBeenCalled();
+                expect(mockReserveAnalysisGeneration).toHaveBeenCalledOnce();
+                expect(
+                    events.some(e => e.includes('event: rate_limited'))
+                ).toBe(true);
+            });
+
+            it('DISPATCH(fundamental): 검증된 크롤러는 예약 없이 생성한다', async () => {
+                denyQuota();
+                vi.mocked(isVerifiedCrawler).mockResolvedValue(true);
+                vi.mocked(runFundamentalAnalysisAction).mockResolvedValue({
+                    status: 'done',
+                } as never);
+
+                const events = await collectSseEvents(
+                    await POST(crawlerRequest(fundamentalBody('AAPL')))
+                );
+
+                expect(mockReserveAnalysisGeneration).not.toHaveBeenCalled();
+                expect(fundamentalCacheOnlyFor('AAPL')).toBe(false);
+                expect(events.some(e => e.includes('rate_limited'))).toBe(
+                    false
+                );
+            });
+
+            it('DISPATCH(fundamental): DNS 미검증 크롤러 UA는 캐시 전용으로 강등된다', async () => {
+                denyQuota();
+                vi.mocked(isVerifiedCrawler).mockResolvedValue(false);
+                vi.mocked(runFundamentalAnalysisAction).mockResolvedValue({
+                    status: 'miss_no_trigger',
+                } as never);
+
+                const events = await collectSseEvents(
+                    await POST(crawlerRequest(fundamentalBody('MSFT')))
+                );
+
+                expect(mockReserveAnalysisGeneration).toHaveBeenCalledOnce();
+                expect(fundamentalCacheOnlyFor('MSFT')).toBe(true);
+                expect(
+                    events.some(e => e.includes('event: rate_limited'))
+                ).toBe(true);
+            });
+
+            it('검증된 크롤러도 동시성 상한은 그대로 받는다(503)', async () => {
+                vi.mocked(isVerifiedCrawler).mockResolvedValue(true);
+                for (let i = 0; i < MAX_CONCURRENT_ANALYSIS_STREAMS; i++) {
+                    incrementActiveStreams();
+                }
+
+                const technical = await POST(crawlerRequest());
+                const dispatched = await POST(
+                    crawlerRequest(fundamentalBody('AAPL'))
+                );
+
+                expect(technical.status).toBe(503);
+                expect(dispatched.status).toBe(503);
+                expect(mockReserveAnalysisGeneration).not.toHaveBeenCalled();
+                expect(mockQuotaRefund).not.toHaveBeenCalled();
+                __resetActiveStreamsForTests();
+            });
+
+            it('일반 브라우저 요청은 cf-connecting-ip와 UA를 그대로 검증 함수에 넘기고 평소대로 예약한다', async () => {
+                vi.mocked(runAnalysis).mockResolvedValue({
+                    status: 'cached',
+                    result: {},
+                } as never);
+
+                await collectSseEvents(
+                    await POST(
+                        new Request('http://localhost/api/analysis/stream', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'User-Agent': 'Mozilla/5.0 Chrome/130.0',
+                                'cf-connecting-ip': '203.0.113.1',
+                            },
+                            body: TECHNICAL_BODY,
+                        })
+                    )
+                );
+
+                expect(vi.mocked(isVerifiedCrawler)).toHaveBeenCalledWith(
+                    '203.0.113.1',
+                    'Mozilla/5.0 Chrome/130.0'
+                );
+                expect(mockReserveAnalysisGeneration).toHaveBeenCalledOnce();
+            });
         });
 
         it('DISPATCH(overall): 프롬프트 조립 콜백으로 생성 여부를 판정하고, 강등 중에는 재분석 쿨다운을 잡지 않는다', async () => {

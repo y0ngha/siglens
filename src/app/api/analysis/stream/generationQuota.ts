@@ -6,6 +6,7 @@ import {
 } from '@/entities/analysis/server/analysisGenerationQuota';
 import { getClientIp } from '@/shared/api/getClientIp';
 import { mintGuestIdOnResponse, readGuestId } from '@/shared/api/guestId';
+import { isVerifiedCrawler } from '@/shared/api/verifiedCrawler';
 import { isAiProviderFailure } from '@/shared/lib/aiProviderFailure';
 import { LocalizedStreamError } from '@/shared/lib/sse/LocalizedStreamError';
 import {
@@ -20,7 +21,11 @@ import {
  * - `allowed`: 예약됨. 생성이 일어나지 않았으면 `refund`로 되돌린다.
  * - `rate_limited`: 한도 초과(또는 비회원 저장소 장애). 캐시 전용으로 강등하고,
  *   캐시도 없으면 `rate_limited` SSE 이벤트로 끝낸다.
- * - `exempt`: 클라이언트가 이미 캐시 전용을 요청했다 — 생성이 불가능하니 셀 것이 없다.
+ * - `exempt`: 셀 것이 없다 — 예약도 환불도 하지 않는다. 두 경우다.
+ *   - 클라이언트가 이미 캐시 전용을 요청했다 — 생성이 불가능하다.
+ *   - DNS로 검증된 검색 크롤러다(`isVerifiedCrawler`). 크롤러는 쿠키가 없어 IP 시간 축에
+ *     몰리고, 그 축이 차면 렌더된 DOM에 "잠시 후 다시" 배너가 남아 색인된다. 동시성 상한
+ *     (`canAcceptAnalysisStream`) 등 나머지 제한은 그대로 받는다.
  */
 export type GenerationGate =
     | {
@@ -58,8 +63,35 @@ async function resolveQuotaIdentity(
     return { kind: 'guest', guestId, clientIp };
 }
 
+/** Cloudflare가 매 요청 덮어쓰는 클라이언트 IP 헤더(`getClientIp` JSDoc). */
+const CLOUDFLARE_IP_HEADER = 'cf-connecting-ip';
+
+/**
+ * 이 요청이 DNS로 검증된 검색 크롤러인가(`isVerifiedCrawler`).
+ *
+ * - UA는 **검증을 시도할지만** 정한다 — 역방향·순방향 DNS가 UA가 주장하는 크롤러
+ *   도메인과 맞물려야 면제된다. 크롤러를 주장하지 않는 UA는 DNS·캐시 조회 없이 끝난다.
+ * - IP는 **`cf-connecting-ip`만** 쓴다. `getClientIp`는 그 헤더가 없으면
+ *   `X-Forwarded-For` 첫 값으로 물러나는데, 그 값은 호출자가 심을 수 있다 — 오리진에
+ *   직접 `X-Forwarded-For: 66.249.66.1` + Googlebot UA를 보내면 진짜 Googlebot IP로
+ *   DNS 검증을 통과해 무제한 생성을 얻는다. 한도(제한 쪽)는 위조돼도 엄격해질 뿐이라
+ *   폴백을 감수하지만, 면제(완화 쪽)는 위조 가능한 값에 걸 수 없다. 헤더가 없거나 IP가
+ *   아니면 DNS 조회 없이 미검증이다.
+ */
+async function isVerifiedCrawlerRequest(
+    requestHeaders: Headers
+): Promise<boolean> {
+    const cloudflareIp = requestHeaders.get(CLOUDFLARE_IP_HEADER)?.trim();
+    if (!cloudflareIp) return false;
+    return isVerifiedCrawler(cloudflareIp, requestHeaders.get('user-agent'));
+}
+
 /**
  * 생성 가능성이 있는 요청이면 예약하고, 클라이언트가 캐시 전용을 요청했으면 건너뛴다.
+ *
+ * 비회원 요청이 검증된 검색 크롤러면 한도를 통째로 건너뛴다(`exempt`) —
+ * {@link isVerifiedCrawlerRequest} 참고. `requestHeaders`에서는 그 판정에 쓰는
+ * `user-agent`·`cf-connecting-ip`만 읽는다.
  *
  * **던지지 않는다.** 신원 해석(`cookies()`/`headers()`)이 실패하면 장애와 같게
  * 다룬다 — 비회원은 캐시 전용(fail-closed), 회원은 통과(fail-open, 저장소 정책과 같다).
@@ -67,13 +99,19 @@ async function resolveQuotaIdentity(
  */
 export async function reserveGenerationGate(
     userId: string | null,
-    clientCacheOnly: boolean
+    clientCacheOnly: boolean,
+    requestHeaders: Headers
 ): Promise<GenerationGate> {
     if (clientCacheOnly) return EXEMPT;
     try {
-        const reservation = await reserveAnalysisGeneration(
-            await resolveQuotaIdentity(userId)
-        );
+        const identity = await resolveQuotaIdentity(userId);
+        if (
+            identity.kind === 'guest' &&
+            (await isVerifiedCrawlerRequest(requestHeaders))
+        ) {
+            return EXEMPT;
+        }
+        const reservation = await reserveAnalysisGeneration(identity);
         return reservation.ok
             ? { kind: 'allowed', refund: reservation.refund }
             : {
@@ -186,7 +224,8 @@ export function createPromptAssemblyTracker(): {
 export interface GenerationGateSlot {
     readonly reserve: (
         userId: string | null,
-        clientCacheOnly: boolean
+        clientCacheOnly: boolean,
+        requestHeaders: Headers
     ) => Promise<GenerationGate>;
     readonly release: () => Promise<void>;
 }
@@ -195,8 +234,12 @@ export function createGenerationGateSlot(): GenerationGateSlot {
     /** 예약(try 안)과 해제(바깥 catch)가 다른 스코프라 결과를 클로저 칸으로 넘긴다. */
     const slot: { gate: GenerationGate } = { gate: EXEMPT };
     return {
-        reserve: async (userId, clientCacheOnly) => {
-            slot.gate = await reserveGenerationGate(userId, clientCacheOnly);
+        reserve: async (userId, clientCacheOnly, requestHeaders) => {
+            slot.gate = await reserveGenerationGate(
+                userId,
+                clientCacheOnly,
+                requestHeaders
+            );
             return slot.gate;
         },
         // 한 번 되돌린 칸은 비운다 — 바깥 catch가 여러 번 불려도 refund는 한 번이다.

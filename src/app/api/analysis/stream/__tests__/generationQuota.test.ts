@@ -1,23 +1,28 @@
-const { mockCookieStore, mockReserve, mockGetClientIp } = vi.hoisted(() => {
-    const jar = new Map<string, string>();
-    return {
-        mockCookieStore: {
-            jar,
-            get: vi.fn((name: string) =>
-                jar.has(name) ? { name, value: jar.get(name) } : undefined
-            ),
-            set: vi.fn(),
-        },
-        mockReserve: vi.fn(),
-        mockGetClientIp: vi.fn(),
-    };
-});
+const { mockCookieStore, mockReserve, mockGetClientIp, mockIsVerifiedCrawler } =
+    vi.hoisted(() => {
+        const jar = new Map<string, string>();
+        return {
+            mockCookieStore: {
+                jar,
+                get: vi.fn((name: string) =>
+                    jar.has(name) ? { name, value: jar.get(name) } : undefined
+                ),
+                set: vi.fn(),
+            },
+            mockReserve: vi.fn(),
+            mockGetClientIp: vi.fn(),
+            mockIsVerifiedCrawler: vi.fn(),
+        };
+    });
 
 vi.mock('server-only', () => ({}));
 vi.mock('next/headers', () => ({
     cookies: async () => mockCookieStore,
 }));
 vi.mock('@/shared/api/getClientIp', () => ({ getClientIp: mockGetClientIp }));
+vi.mock('@/shared/api/verifiedCrawler', () => ({
+    isVerifiedCrawler: mockIsVerifiedCrawler,
+}));
 vi.mock(
     '@/entities/analysis/server/analysisGenerationQuota',
     async importOriginal => ({
@@ -41,12 +46,27 @@ import { GUEST_ID_COOKIE_NAME } from '@/shared/config/cookieNames';
 import { LocalizedStreamError } from '@/shared/lib/sse/LocalizedStreamError';
 import { RateLimitedStreamError } from '@/shared/lib/sse/analysisRateLimit';
 
+const BROWSER_UA =
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
+const GOOGLEBOT_UA =
+    'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)';
+const BROWSER_HEADERS = new Headers({
+    'user-agent': BROWSER_UA,
+    'cf-connecting-ip': '203.0.113.9',
+});
+/** Cloudflare를 거친 진짜 Googlebot 요청의 헤더 모양. */
+const CRAWLER_HEADERS = new Headers({
+    'user-agent': GOOGLEBOT_UA,
+    'cf-connecting-ip': '66.249.66.1',
+});
+
 describe('reserveGenerationGate — guest identity on siglens.io', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockCookieStore.jar.clear();
         vi.stubEnv('OAUTH_STATE_HMAC_SECRET', 'test-secret');
         mockGetClientIp.mockResolvedValue('203.0.113.9');
+        mockIsVerifiedCrawler.mockResolvedValue(false);
         mockReserve.mockResolvedValue({
             ok: true,
             audience: 'guest',
@@ -59,7 +79,7 @@ describe('reserveGenerationGate — guest identity on siglens.io', () => {
     });
 
     it('mints a signed host-only guest cookie on the response and counts the first request on the IP axis only', async () => {
-        await reserveGenerationGate(null, false);
+        await reserveGenerationGate(null, false, BROWSER_HEADERS);
 
         expect(mockCookieStore.set).toHaveBeenCalledOnce();
         const [name, value, options] = mockCookieStore.set.mock.calls[0];
@@ -76,12 +96,12 @@ describe('reserveGenerationGate — guest identity on siglens.io', () => {
     });
 
     it('uses the personal axis once the request carries the minted cookie, without minting again', async () => {
-        await reserveGenerationGate(null, false);
+        await reserveGenerationGate(null, false, BROWSER_HEADERS);
         const minted = mockCookieStore.set.mock.calls[0][1] as string;
         mockCookieStore.jar.set(GUEST_ID_COOKIE_NAME, minted);
         mockCookieStore.set.mockClear();
 
-        await reserveGenerationGate(null, false);
+        await reserveGenerationGate(null, false, BROWSER_HEADERS);
 
         expect(mockCookieStore.set).not.toHaveBeenCalled();
         expect(mockReserve).toHaveBeenLastCalledWith({
@@ -97,7 +117,7 @@ describe('reserveGenerationGate — guest identity on siglens.io', () => {
             '00000000-0000-4000-8000-000000000000.forged'
         );
 
-        await reserveGenerationGate(null, false);
+        await reserveGenerationGate(null, false, BROWSER_HEADERS);
 
         expect(mockReserve).toHaveBeenCalledWith(
             expect.objectContaining({ guestId: null })
@@ -106,7 +126,7 @@ describe('reserveGenerationGate — guest identity on siglens.io', () => {
     });
 
     it('members are keyed by userId and never get a guest cookie', async () => {
-        await reserveGenerationGate('user-1', false);
+        await reserveGenerationGate('user-1', false, BROWSER_HEADERS);
 
         expect(mockReserve).toHaveBeenCalledWith({
             kind: 'member',
@@ -119,7 +139,7 @@ describe('reserveGenerationGate — guest identity on siglens.io', () => {
         vi.spyOn(console, 'error').mockImplementation(() => {});
         mockGetClientIp.mockRejectedValue(new Error('headers() outside scope'));
 
-        const gate = await reserveGenerationGate(null, false);
+        const gate = await reserveGenerationGate(null, false, BROWSER_HEADERS);
 
         expect(gate).toMatchObject({
             kind: 'rate_limited',
@@ -130,11 +150,127 @@ describe('reserveGenerationGate — guest identity on siglens.io', () => {
     });
 
     it('skips the reservation (and the cookie) when the client asked for cache-only', async () => {
-        expect(await reserveGenerationGate(null, true)).toEqual({
+        expect(
+            await reserveGenerationGate(null, true, BROWSER_HEADERS)
+        ).toEqual({
             kind: 'exempt',
         });
         expect(mockReserve).not.toHaveBeenCalled();
         expect(mockCookieStore.set).not.toHaveBeenCalled();
+    });
+});
+
+describe('reserveGenerationGate — verified search crawlers', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockCookieStore.jar.clear();
+        vi.stubEnv('OAUTH_STATE_HMAC_SECRET', 'test-secret');
+        mockGetClientIp.mockResolvedValue('66.249.66.1');
+        mockReserve.mockResolvedValue({
+            ok: true,
+            audience: 'guest',
+            refund: vi.fn(),
+        });
+    });
+
+    afterEach(() => {
+        vi.unstubAllEnvs();
+    });
+
+    it('a DNS-verified crawler skips the quota entirely (no reserve, nothing to refund)', async () => {
+        mockIsVerifiedCrawler.mockResolvedValue(true);
+
+        const gate = await reserveGenerationGate(null, false, CRAWLER_HEADERS);
+
+        expect(gate).toEqual({ kind: 'exempt' });
+        expect(mockIsVerifiedCrawler).toHaveBeenCalledWith(
+            '66.249.66.1',
+            GOOGLEBOT_UA
+        );
+        expect(mockReserve).not.toHaveBeenCalled();
+    });
+
+    it('a spoofed crawler UA that fails DNS verification is still limited', async () => {
+        mockIsVerifiedCrawler.mockResolvedValue(false);
+        mockReserve.mockResolvedValue({
+            ok: false,
+            audience: 'guest',
+            reason: 'quota',
+            retryAt: 1,
+        });
+
+        const gate = await reserveGenerationGate(null, false, CRAWLER_HEADERS);
+
+        expect(gate).toMatchObject({ kind: 'rate_limited', reason: 'quota' });
+        expect(mockReserve).toHaveBeenCalledWith(
+            expect.objectContaining({ kind: 'guest', clientIp: '66.249.66.1' })
+        );
+    });
+
+    it('an X-Forwarded-For-only request (no cf-connecting-ip) never reaches DNS verification and stays limited', async () => {
+        // getClientIp는 XFF 첫 값으로 물러난다 — 호출자가 심은 Googlebot IP다.
+        mockGetClientIp.mockResolvedValue('66.249.66.1');
+        mockIsVerifiedCrawler.mockResolvedValue(true);
+        mockReserve.mockResolvedValue({
+            ok: false,
+            audience: 'guest',
+            reason: 'quota',
+            retryAt: 1,
+        });
+
+        const gate = await reserveGenerationGate(
+            null,
+            false,
+            new Headers({
+                'user-agent': GOOGLEBOT_UA,
+                'x-forwarded-for': '66.249.66.1',
+            })
+        );
+
+        expect(mockIsVerifiedCrawler).not.toHaveBeenCalled();
+        expect(gate).toMatchObject({ kind: 'rate_limited', reason: 'quota' });
+        expect(mockReserve).toHaveBeenCalledWith(
+            expect.objectContaining({ kind: 'guest', clientIp: '66.249.66.1' })
+        );
+    });
+
+    it('a blank cf-connecting-ip is treated as absent', async () => {
+        await reserveGenerationGate(
+            null,
+            false,
+            new Headers({ 'user-agent': GOOGLEBOT_UA, 'cf-connecting-ip': ' ' })
+        );
+
+        expect(mockIsVerifiedCrawler).not.toHaveBeenCalled();
+        expect(mockReserve).toHaveBeenCalledOnce();
+    });
+
+    it('members are never routed through crawler verification', async () => {
+        mockIsVerifiedCrawler.mockResolvedValue(true);
+
+        const gate = await reserveGenerationGate(
+            'user-1',
+            false,
+            CRAWLER_HEADERS
+        );
+
+        expect(gate.kind).toBe('allowed');
+        expect(mockIsVerifiedCrawler).not.toHaveBeenCalled();
+        expect(mockReserve).toHaveBeenCalledWith({
+            kind: 'member',
+            userId: 'user-1',
+        });
+    });
+
+    it('a verified-crawler exemption from the slot is never refunded', async () => {
+        mockIsVerifiedCrawler.mockResolvedValue(true);
+        const slot = createGenerationGateSlot();
+
+        expect(await slot.reserve(null, false, CRAWLER_HEADERS)).toEqual({
+            kind: 'exempt',
+        });
+        await expect(slot.release()).resolves.toBeUndefined();
+        expect(mockReserve).not.toHaveBeenCalled();
     });
 });
 
@@ -176,6 +312,7 @@ describe('createGenerationGateSlot', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockGetClientIp.mockResolvedValue('203.0.113.9');
+        mockIsVerifiedCrawler.mockResolvedValue(false);
     });
 
     it('release before reserve is a safe no-op', async () => {
@@ -189,7 +326,7 @@ describe('createGenerationGateSlot', () => {
         mockReserve.mockResolvedValue({ ok: true, audience: 'member', refund });
         const slot = createGenerationGateSlot();
 
-        const gate = await slot.reserve('user-1', false);
+        const gate = await slot.reserve('user-1', false, BROWSER_HEADERS);
         await slot.release();
         await slot.release();
 
@@ -205,11 +342,13 @@ describe('createGenerationGateSlot', () => {
             retryAt: 1,
         });
         const denied = createGenerationGateSlot();
-        await denied.reserve(null, false);
+        await denied.reserve(null, false, BROWSER_HEADERS);
         await expect(denied.release()).resolves.toBeUndefined();
 
         const exempt = createGenerationGateSlot();
-        expect(await exempt.reserve(null, true)).toEqual({ kind: 'exempt' });
+        expect(await exempt.reserve(null, true, BROWSER_HEADERS)).toEqual({
+            kind: 'exempt',
+        });
         await expect(exempt.release()).resolves.toBeUndefined();
     });
 });
