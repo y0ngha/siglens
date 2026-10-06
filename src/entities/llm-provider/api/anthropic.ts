@@ -1,5 +1,10 @@
 import 'server-only';
-import { toProviderTurns, findSpecByApiModelId } from '../lib/utils';
+import {
+    toProviderTurns,
+    findSpecByApiModelId,
+    resolveMaxOutputTokens,
+    toSdkTransportOptions,
+} from '../lib/utils';
 import Anthropic from '@anthropic-ai/sdk';
 import type { AiContents } from '@y0ngha/siglens-core';
 import {
@@ -71,6 +76,7 @@ export async function callAnthropicChat({
     contents,
     systemInstruction,
     jobId = CHAT_JOB_ID,
+    limits,
 }: ProviderCallOptions): Promise<string> {
     const spec = findSpecByApiModelId(model);
     if (!spec) {
@@ -82,10 +88,10 @@ export async function callAnthropicChat({
     const adaptiveConfig = adaptiveThinking
         ? resolveReasoningConfig(spec.reasoning, undefined)
         : undefined;
-    const maxTokens = spec.maxOutputTokens;
+    const maxTokens = resolveMaxOutputTokens(spec.maxOutputTokens, limits);
 
     const startedAt = Date.now();
-    const client = new Anthropic({ apiKey });
+    const client = new Anthropic({ apiKey, ...toSdkTransportOptions(limits) });
     // Two prompt-cache breakpoints keep repeated chat turns cheap: the stable
     // system prefix (persona + analysis context + few-shot) and the conversation
     // prefix up to the previous turn are cached, so each new turn only bills the

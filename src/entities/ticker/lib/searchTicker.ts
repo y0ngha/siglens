@@ -223,7 +223,14 @@ export async function searchTicker(
         koreanName: koreanNames[result.symbol],
     }));
 
-    const unmapped = enriched.filter(r => !r.koreanName);
+    const ranked = preferPrimaryListing(rankByRelevance(enriched, trimmed));
+    const final = ranked.slice(0, MAX_SEARCH_RESULTS);
+
+    // 화면에 나가는 상위 `MAX_SEARCH_RESULTS`개만 번역한다. 예전에는 병합 결과 전체(FMP
+    // 심볼·이름 검색 각 20건 + 크립토 + KRX, 최대 ~45건)를 번역해, 보이지도 않는 이름에
+    // LLM 출력 토큰을 썼다(2026-10 비용 감사 L2). 잘린 종목은 다른 질의에서 상위에
+    // 오를 때 그때 번역된다.
+    const unmapped = final.filter(r => !r.koreanName);
     if (unmapped.length > 0) {
         fireAndForget(
             translateAndCache(unmapped).catch(e =>
@@ -232,9 +239,6 @@ export async function searchTicker(
             options
         );
     }
-
-    const ranked = preferPrimaryListing(rankByRelevance(enriched, trimmed));
-    const final = ranked.slice(0, MAX_SEARCH_RESULTS);
 
     if (cache) {
         fireAndForget(

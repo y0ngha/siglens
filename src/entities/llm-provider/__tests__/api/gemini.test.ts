@@ -185,6 +185,28 @@ describe('callGeminiChat', () => {
             expect(call).not.toHaveProperty('config');
         });
 
+        it('limits를 받으면 출력 상한·timeout·재시도 횟수를 config에 싣는다', async () => {
+            mockGenerateContent.mockResolvedValue({ text: 'ok' });
+
+            await callGeminiChat({
+                ...BASE_OPTIONS,
+                limits: {
+                    maxOutputTokens: 1500,
+                    timeoutMs: 30_000,
+                    maxRetries: 0,
+                },
+            });
+
+            expect(mockGenerateContent.mock.calls[0][0].config).toEqual({
+                maxOutputTokens: 1500,
+                httpOptions: {
+                    timeout: 30_000,
+                    // 첫 시도를 포함한 횟수라 재시도 0 → 1이다.
+                    retryOptions: { attempts: 1 },
+                },
+            });
+        });
+
         it('thinkingLevel과 systemInstruction을 함께 전달하면 config에 모두 포함한다', async () => {
             mockGenerateContent.mockResolvedValue({ text: 'ok' });
 

@@ -48,6 +48,26 @@ describe('callOpenaiChat', () => {
             expect(MockOpenAI).toHaveBeenCalledTimes(1);
         });
 
+        it('limits를 받으면 출력 상한·timeout·재시도를 그 값으로 건다', async () => {
+            mockCreate.mockResolvedValue({ output_text: 'Hi' });
+
+            await callOpenaiChat({
+                ...BASE_OPTIONS,
+                limits: {
+                    maxOutputTokens: 1500,
+                    timeoutMs: 30_000,
+                    maxRetries: 0,
+                },
+            });
+
+            expect(MockOpenAI).toHaveBeenCalledWith({
+                apiKey: 'server-key',
+                timeout: 30_000,
+                maxRetries: 0,
+            });
+            expect(mockCreate.mock.calls[0][0].max_output_tokens).toBe(1500);
+        });
+
         it('호출이 실패하면 에러가 전파된다', async () => {
             mockCreate.mockRejectedValue(new Error('api error'));
 

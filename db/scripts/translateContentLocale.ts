@@ -181,7 +181,14 @@ async function callModel(prompt: string): Promise<Record<string, string>> {
     const response = await client.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: prompt,
-        config: { responseMimeType: 'application/json', temperature: 0 },
+        config: {
+            responseMimeType: 'application/json',
+            temperature: 0,
+            // 번역은 결정적 변환이라 추론 이득이 없다. 생략하면 2.5 Flash의 기본 동적
+            // 사고가 켜져 배치마다 사고 토큰이 출력 단가로 청구된다. 2.5 Flash는 숫자 0을
+            // 받는다(3세대 Gemini와 달리 — `llm-provider/api/gemini.ts`의 thinkingLevel 주석).
+            thinkingConfig: { thinkingBudget: 0 },
+        },
     });
     return parseModelJson(response.text ?? '');
 }

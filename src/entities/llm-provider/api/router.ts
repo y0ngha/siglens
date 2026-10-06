@@ -25,10 +25,12 @@ import type { ProviderCallOptions } from '../model';
  * already forwards it. Widening the parameter here lets a router-dispatched
  * caller label its own `[Usage]` telemetry instead of being forced to call a
  * provider adapter directly — which is how a Gemini config once reached
- * `callDeepseekChat` and threw on every request.
+ * `callDeepseekChat` and threw on every request. `limits` (output/timeout/retry
+ * caps, `ProviderCallLimits`) rides the same spread for the same reason.
  */
 export async function callAiProviderRouter(
-    options: CallAiProviderOptions & { jobId?: string }
+    options: CallAiProviderOptions &
+        Pick<ProviderCallOptions, 'jobId' | 'limits'>
 ): Promise<string> {
     // Validate the model first so the explicit `[router] Unknown model` error
     // surfaces with our message instead of being shadowed by the generic throw
