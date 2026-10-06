@@ -1,4 +1,5 @@
 import {
+    MS_PER_DAY,
     MS_PER_HOUR,
     MS_PER_MINUTE,
     MS_PER_SECOND,
@@ -8,6 +9,20 @@ import { prewarmSessionSpecFor } from './applicability';
 import { snapshotCloseBoundaryFor } from './freshness';
 
 const CRYPTO_SETTLE_BUFFER_MS = SETTLE_BUFFER_MINUTES * MS_PER_MINUTE;
+
+/** 크립토 판정 — `isSnapshotBasisStale` JSDoc의 크립토 항목 참고. */
+function isCryptoBasisStale(
+    barTimeMs: number,
+    analyzedAtMs: number | null,
+    boundaryMs: number
+): boolean {
+    const dayStartMs = boundaryMs - CRYPTO_SETTLE_BUFFER_MS;
+    if (barTimeMs >= dayStartMs) return false;
+    const usedLastCompletedBar = barTimeMs >= dayStartMs - MS_PER_DAY;
+    const analyzedAfterItCompleted =
+        analyzedAtMs !== null && analyzedAtMs >= dayStartMs;
+    return !(usedLastCompletedBar && analyzedAfterItCompleted);
+}
 
 /**
  * 스냅샷 `content`(jsonb)가 **어느 데이터 시점의 글인지** 읽는다.
@@ -87,9 +102,20 @@ const EQUITY_BAR_START_TOLERANCE_MS = 25 * MS_PER_HOUR;
  *
  *  - 주식: 봉 시작이 마감 경계보다 25시간 넘게 앞서면 stale(직전 세션 봉이 아니다).
  *  - 크립토: 경계는 `오늘 00:00Z + 30분`이고 core의 분석 캐시는 버퍼 없이 00:00Z에 만료된다.
- *    그래서 00:00~00:30Z 사이에 만든 분석은 `analyzedAt`이 경계보다 이르지만 **오늘 형성 중인
- *    일봉**을 쓴 최신 글이다. 크립토의 기준 봉은 경계 − 30분(= 오늘 00:00Z, 경계가 롤하기 전에는
- *    어제 00:00Z)이고, 봉 시작이 그보다 이르면 stale이다(형성 중인 오늘 봉은 현재로 센다).
+ *    "오늘"의 시작(경계 − 30분)을 기준으로 둘 중 하나면 현재다.
+ *    여기서 "오늘 00:00Z"는 **현재 신선도 경계가 속한 날의 시작**(= 경계 − 30분)이지 달력상
+ *    오늘이 아니다. 경계가 롤하기 전(00:00~00:30Z)에는 경계가 아직 전날 00:30Z이므로 이 값도
+ *    전날 00:00Z다 — 의도된 동작이다. 신선도는 그 경계 기준으로 판정하고, 00:30Z에 경계가
+ *    롤하면 스냅샷은 새 기준으로 다시 판정된다.
+ *    - 오늘 형성 중인 일봉을 썼다(봉 시작 ≥ 오늘 00:00Z). 00:00~00:30Z 사이에 만든 분석이
+ *      여기에 해당한다 — `analyzedAt`이 경계보다 이르지만 최신 글이다.
+ *    - **어제 일봉**을 썼고 분석이 오늘 00:00Z 이후에 실행됐다. 그 봉이 이미 완료된 뒤의 분석이라
+ *      페이지 상단 "최근 종가"(완료 일봉)와 같은 가격을 말한다. FMP는 자정 직후 한동안 오늘 봉을
+ *      내지 않으므로, 이걸 stale로 보면 크립토 전 종목이 매일 강제 재생성되고도 여전히 stale로
+ *      남는다(2026-10-06 00:45~00:56Z 운영 로그에서 크립토 29종목 전부 — CloudWatch
+ *      `/siglens/app`, `filter @message like "stale-basis"`).
+ *    어제 봉이라도 분석이 어제 실행됐으면(장중 가격) stale이다. 봉 시작만으로는 둘을 가를 수
+ *    없어 실행 시각을 함께 본다.
  *
  * 어느 쪽 신호도 없으면 판단 근거가 없으므로 stale이 아니다 — 모르는 것을 매 tick 재생성하면
  * 비용만 든다.
@@ -101,11 +127,14 @@ export function isSnapshotBasisStale(
 ): boolean {
     const boundaryMs = snapshotCloseBoundaryFor(symbol, now).getTime();
     if (basis.barTimeMs !== null) {
-        const isCrypto = prewarmSessionSpecFor(symbol).kind === 'always-open';
-        const floorMs = isCrypto
-            ? boundaryMs - CRYPTO_SETTLE_BUFFER_MS
-            : boundaryMs - EQUITY_BAR_START_TOLERANCE_MS;
-        return basis.barTimeMs < floorMs;
+        if (prewarmSessionSpecFor(symbol).kind === 'always-open') {
+            return isCryptoBasisStale(
+                basis.barTimeMs,
+                basis.analyzedAtMs,
+                boundaryMs
+            );
+        }
+        return basis.barTimeMs < boundaryMs - EQUITY_BAR_START_TOLERANCE_MS;
     }
     return basis.analyzedAtMs !== null && basis.analyzedAtMs < boundaryMs;
 }
