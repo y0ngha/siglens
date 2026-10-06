@@ -1630,6 +1630,18 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ When editing a skill's summary/display name, update messages/{ko,en,ja,zh}.json AND messages/_meta/hashes.json; digest metadata (token_cost/digest_hash) separately via `yarn skills:digest-update`
    ✅ Verify numeric claims against source: design doc, measurement, or referenced data before writing the skill
    → Recurring: claude/siglens-analysis-technique-review-wvfffz R1–2 (numeric evidence, i18n catalog sync), feat/skills-evidence-refresh R1 (category/gating sync) — 4 occurrences across 2 PRs
+
+8. State only facts that were verified; cite the source of any measured number
+   → Operational/architectural comments must not make claims beyond what was actually verified
+   → A measured figure (e.g., "X reduced by 50%") must cite the query/log/script/doc that produced it, so a reviewer can reproduce it
+   → Converse: a claim with no measurement cited is an unverified assertion; state the limitation ("no baseline yet", "expected to be X but unverified")
+   ❌ "strong ETags block Cloudflare compression" (unverified claim; no measurement cited)
+   ❌ "30-day firing count: 4 times" (measured figure with no source; how was it counted?)
+   ❌ Runbook: "downtime window should be Saturday KST 02:00–06:00" (derived from business hours, not from actual cron schedule)
+   ✅ "strong ETag blocks Cloudflare compression — `/NRICX` origin gzip 39KB → edge HIT 209KB" (names the URL and both measured sizes; probe repeatable)
+   ✅ "30-day firing count: 4 times (Logs Insights bin count on alarm_name='RDS_FreeableMemory')" (source documented)
+   ✅ Runbook: "downtime window: trade-server crons run 13–21 UTC Mon–Fri (CRON_JOBS in server/app.ts) = KST 22:00–06:59 Sat morning" (source cited by file)
+   → Recurring: PR #929 (weight reasoning without baseline), PR #879 (ETag claim unverified) — 2 occurrences
 ```
 
 ---
