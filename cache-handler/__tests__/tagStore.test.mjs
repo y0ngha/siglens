@@ -28,6 +28,7 @@ vi.mock('../upstashRest.mjs', () => ({
 import {
     markRevalidated,
     maxRevalidatedAt,
+    maxExpiredAt,
     ensureTagsFresh,
     publishRevalidated,
     _resetForTest,
@@ -41,7 +42,7 @@ const HOUR_MS = 60 * 60 * 1000;
 // 잘못된 기대값으로 통과한다 — tagStore.mjs를 수정하면 여기도 함께 갱신할 것.
 const RETENTION_MS = 7 * DAY_MS;
 const KEY_TTL_SECONDS = 30 * 24 * 60 * 60;
-const REFRESH_INTERVAL_MS = 5_000;
+const REFRESH_INTERVAL_MS = 30_000;
 const BOOTSTRAP_AWAIT_MS = 1_000;
 
 const NOW = 1_700_000_000_000;
@@ -133,7 +134,7 @@ describe('tagStore — ensureTagsFresh (원격 → 로컬 병합)', () => {
 
     it('두 번째 sync는 증분 — 지난 sync 시각에서 오버랩만 뺀 지점부터 읽는다', async () => {
         await ensureTagsFresh();
-        vi.setSystemTime(NOW + 10_000);
+        vi.setSystemTime(NOW + REFRESH_INTERVAL_MS);
         await ensureTagsFresh();
         expect(zrangeFromScore).toHaveBeenLastCalledWith(
             'siglens:isr:tags',
@@ -150,7 +151,7 @@ describe('tagStore — ensureTagsFresh (원격 → 로컬 병합)', () => {
 
     it('refresh 간격이 지나면 백그라운드로 다시 동기화한다', async () => {
         await ensureTagsFresh();
-        vi.setSystemTime(NOW + 5_001);
+        vi.setSystemTime(NOW + REFRESH_INTERVAL_MS + 1);
         expect(ensureTagsFresh()).toBeUndefined(); // read 경로에 지연 없음
         await vi.waitFor(() =>
             expect(zrangeFromScore).toHaveBeenCalledTimes(2)
@@ -259,7 +260,7 @@ describe('tagStore — ensureTagsFresh (원격 → 로컬 병합)', () => {
         );
         await flushAsync();
 
-        const afterRecovery = recoverAt + 5_000;
+        const afterRecovery = recoverAt + REFRESH_INTERVAL_MS;
         vi.setSystemTime(afterRecovery);
         ensureTagsFresh();
         await vi.waitFor(() =>
@@ -275,7 +276,7 @@ describe('tagStore — ensureTagsFresh (원격 → 로컬 병합)', () => {
 });
 
 describe('tagStore — 실패 백오프', () => {
-    it('실패 후 다음 재시도는 5초가 아니라 1초 뒤에 허용된다', async () => {
+    it('실패 후 다음 재시도는 정상 주기가 아니라 1초 뒤에 허용된다', async () => {
         zrangeFromScore.mockRejectedValueOnce(new Error('boom'));
         await ensureTagsFresh(); // 부트스트랩 실패 → consecutiveFailures=1
 
@@ -353,7 +354,7 @@ describe('tagStore — 실패 백오프', () => {
         );
     });
 
-    it('성공하면 재시도 카운터가 리셋되고 정상 주기(5초)로 돌아온다', async () => {
+    it('성공하면 재시도 카운터가 리셋되고 정상 주기로 돌아온다', async () => {
         zrangeFromScore.mockRejectedValueOnce(new Error('boom'));
         await ensureTagsFresh(); // cf=1, gap=1s
 
@@ -365,11 +366,11 @@ describe('tagStore — 실패 백오프', () => {
         ); // 성공 → cf=0
         await flushAsync(); // cf 리셋 반영 대기
 
-        vi.setSystemTime(NOW + 1_000 + 4_999);
+        vi.setSystemTime(NOW + 1_000 + REFRESH_INTERVAL_MS - 1);
         expect(ensureTagsFresh()).toBeUndefined();
-        expect(zrangeFromScore).toHaveBeenCalledTimes(2); // 5초 미만이면 재시도 안 함
+        expect(zrangeFromScore).toHaveBeenCalledTimes(2); // 정상 주기 미만이면 재시도 안 함
 
-        vi.setSystemTime(NOW + 1_000 + 5_000);
+        vi.setSystemTime(NOW + 1_000 + REFRESH_INTERVAL_MS);
         expect(ensureTagsFresh()).toBeUndefined();
         await vi.waitFor(() =>
             expect(zrangeFromScore).toHaveBeenCalledTimes(3)
@@ -614,5 +615,78 @@ describe('tagStore — publishRevalidated (durable 기록)', () => {
             'siglens:isr:tags',
             KEY_TTL_SECONDS
         );
+    });
+});
+
+// stale(SWR)과 expired(블로킹) 무효화의 구분 — Next FileSystemCache.revalidateTag 의미론.
+describe('tagStore — stale / expired 구분', () => {
+    const EXPIRED = tag => `\u0000expired:${tag}`;
+
+    it('기본 markRevalidated는 stale만 기록한다', () => {
+        markRevalidated('a', NOW - 1_000);
+        expect(maxRevalidatedAt(['a'])).toBe(NOW - 1_000);
+        expect(maxExpiredAt(['a'])).toBe(0);
+    });
+
+    it('expired 무효화는 stale도 함께 기록한다(만료는 stale을 함의)', () => {
+        markRevalidated('a', NOW - 1_000, { expired: true });
+        expect(maxExpiredAt(['a'])).toBe(NOW - 1_000);
+        expect(maxRevalidatedAt(['a'])).toBe(NOW - 1_000);
+    });
+
+    it('expired 무효화는 원격에 평문 멤버와 만료 멤버를 함께 기록한다', async () => {
+        await publishRevalidated(['a'], NOW, { expired: true });
+        expect(zaddGreater).toHaveBeenCalledWith('siglens:isr:tags', [
+            [NOW, 'a'],
+            [NOW, EXPIRED('a')],
+        ]);
+    });
+
+    it('stale 무효화는 평문 멤버만 기록한다', async () => {
+        await publishRevalidated(['a'], NOW);
+        expect(zaddGreater).toHaveBeenCalledWith('siglens:isr:tags', [
+            [NOW, 'a'],
+        ]);
+    });
+
+    it('sync는 만료 멤버를 expired로, 평문 멤버를 stale로 병합한다', async () => {
+        zrangeFromScore.mockResolvedValueOnce({
+            pairs: [
+                ['soft', NOW - 2_000],
+                ['hard', NOW - 1_000],
+                [EXPIRED('hard'), NOW - 1_000],
+            ],
+            rawLength: 6,
+        });
+        await ensureTagsFresh();
+        expect(maxRevalidatedAt(['soft'])).toBe(NOW - 2_000);
+        expect(maxExpiredAt(['soft'])).toBe(0);
+        expect(maxExpiredAt(['hard'])).toBe(NOW - 1_000);
+        expect(maxRevalidatedAt(['hard'])).toBe(NOW - 1_000);
+    });
+
+    it('만료 멤버만 와도 stale로 함께 병합한다', async () => {
+        zrangeFromScore.mockResolvedValueOnce({
+            pairs: [[EXPIRED('hard'), NOW - 1_000]],
+            rawLength: 2,
+        });
+        await ensureTagsFresh();
+        expect(maxRevalidatedAt(['hard'])).toBe(NOW - 1_000);
+    });
+
+    it('접두사만 있고 태그가 빈 멤버는 버린다', async () => {
+        zrangeFromScore.mockResolvedValueOnce({
+            pairs: [[EXPIRED(''), NOW - 1_000]],
+            rawLength: 2,
+        });
+        await ensureTagsFresh();
+        expect(maxRevalidatedAt([''])).toBe(0);
+        expect(maxExpiredAt([''])).toBe(0);
+    });
+
+    it('보존 기간이 지난 expired 기록도 정리된다', async () => {
+        markRevalidated('old', NOW - 8 * DAY_MS, { expired: true });
+        await ensureTagsFresh();
+        expect(maxExpiredAt(['old'])).toBe(0);
     });
 });

@@ -21,7 +21,7 @@ vi.mock('../config.mjs', () => ({
 }));
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { getEntry, setEntry } from '../s3Store.mjs';
+import { getEntry, lookupEntry, setEntry } from '../s3Store.mjs';
 
 beforeEach(() => send.mockReset());
 
@@ -31,6 +31,14 @@ describe('s3Store build phase', () => {
         await expect(
             setEntry('/AAPL', 'APP_PAGE', { value: 1 })
         ).resolves.toBeUndefined();
+        expect(send).not.toHaveBeenCalled();
+    });
+
+    it('lookupEntry는 skipped — 네거티브 캐시에 들어가지 않는다', async () => {
+        await expect(lookupEntry('/AAPL', 'FETCH')).resolves.toEqual({
+            status: 'skipped',
+            entry: null,
+        });
         expect(send).not.toHaveBeenCalled();
     });
 });
