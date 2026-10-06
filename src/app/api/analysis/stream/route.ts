@@ -380,6 +380,12 @@ const DISPATCH: Record<
         // 한쪽은 틀린 창으로 읽은 이력을 갖게 됐다.
         const overallDb = getDatabaseClient().db;
         const historyRepo = new DrizzleAnalysisHistoryRepository(overallDb);
+        // 이벤트 창의 세션 — `runOverallAnalysisAction`이 technical 축에 넘기는 것과 같은
+        // 프로필에서 만든다. 이벤트는 technical 탭과 공유하는 캐시 키에 접히므로, 여기서
+        // 다른 세션을 쓰면 overall이 technical을 한 번 더 생성한다.
+        const eventsSession = sessionSpecFor(
+            await resolveMarketProfile(symbol)
+        );
         const [technicalPriorAnalyses, overallPriorAnalyses, marketEvents] =
             await Promise.all([
                 // overall의 **technical 축**이 참고할 이력 — technical 탭과
@@ -412,7 +418,7 @@ const DISPATCH: Record<
                 }),
                 findMarketEventsForPrompt(overallDb, {
                     symbol,
-                    ...marketEventsLookback(timeframe),
+                    ...marketEventsLookback(timeframe, eventsSession),
                 }),
             ]);
 
@@ -1119,7 +1125,8 @@ export async function POST(request: Request): Promise<Response> {
                     }),
                     findMarketEventsForPrompt(technicalDb, {
                         symbol,
-                        ...marketEventsLookback(timeframe),
+                        // core에 넘기는 것과 같은 세션 — 1Day 창이 core 만료 경계와 맞는다.
+                        ...marketEventsLookback(timeframe, session),
                     }),
                 ]);
 

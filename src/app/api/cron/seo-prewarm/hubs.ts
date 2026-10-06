@@ -22,12 +22,18 @@ import {
     marketBriefingCacheTag,
     marketBriefingSeedSurface,
 } from '@/entities/market-summary/api/briefingStaticCache';
+import {
+    releaseMarketBriefingSlot,
+    tryAcquireMarketBriefingSlot,
+} from '@/entities/market-summary/api/marketBriefingCooldown';
+import { writeLatestMarketBriefing } from '@/entities/market-summary/api/latestMarketBriefing';
 import { getEconomySnapshot } from '@/entities/economy/api/economySnapshotCache';
 import {
     MACRO_BRIEFING_CACHE_TAG,
     MACRO_BRIEFING_SEED_SURFACE,
 } from '@/entities/economy/api/macroBriefingStaticCache';
 import { marketNewsDigestCacheTag } from '@/entities/market-news/api/marketNewsDigestStaticCache';
+import { writeLatestMarketNewsDigest } from '@/entities/market-news/api/marketNewsDigestCooldown';
 import {
     getMarketNewsList,
     isCronIngestedRecently,
@@ -58,8 +64,6 @@ import {
     rssNewsSurface,
 } from '@/entities/rss-feed/model';
 import { consumeSsrMiss } from '@/shared/cache/ssrMissMarker';
-import { createRedisFlag } from '@/shared/cache/createRedisFlag';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import { ECONOMY_SNAPSHOT_CACHE_TAG } from '@/entities/economy/api/economySnapshotStaticCache';
 import { shouldCacheEconomySnapshot } from '@/entities/economy/lib/economyCompleteness';
 import { ingestEconomicCalendar } from '@/entities/economy/api/ingestEconomicCalendar';
@@ -249,23 +253,6 @@ interface HubTarget {
 }
 
 /**
- * 시장 브리핑의 크론 생성 간격(1시간, 시장별).
- *
- * 브리핑의 core 캐시 키는 시세 요약(`MarketSummaryData`)에서 파생된다. 장이 열려 있는
- * 동안은 요약이 tick마다 바뀌어 키가 갈리고, 이 단계는 5분마다 새로 구웠다 — 크론 창
- * 일부가 KRX·미국 장중과 겹친다(설계 문서 "비용" 절이 미뤄 둔 그 위험). 페이지 ISR이
- * 1시간이라 그보다 자주 구워도 화면에는 시간당 한 벌만 나간다. 방문자 생성 경로
- * (`submitMarketBriefingAction`)는 건드리지 않는다.
- */
-const MARKET_BRIEFING_COOLDOWN_SECONDS = SECONDS_PER_HOUR;
-
-const marketBriefingCooldown = createRedisFlag(
-    (scopeId: string) => `hub-prewarm:market-briefing-cooldown:${scopeId}`,
-    MARKET_BRIEFING_COOLDOWN_SECONDS,
-    '[hub-prewarm:market-briefing-cooldown]'
-);
-
-/**
  * 확인한 본문의 스탬프를 남긴다 — RSS `pubDate`의 근거(`hubContentStamp`).
  *
  * `generated`·`alreadyFresh` 둘 다에서 부른다: 본문이 바뀐 순간만 시각이 갱신되므로
@@ -312,13 +299,33 @@ function marketBriefingTargets(now: () => number): HubTarget[] {
                 // 페이지 peek는 키가 빗나가도 직전에 써 둔 SSR seed로 물러나므로 화면은
                 // 대개 그 브리핑을 보여 준다 — 다만 값이 있는지 확인한 건 아니라
                 // `alreadyFresh`가 아니다(`HubOutcome`의 `cooldown` 주석).
-                if (await marketBriefingCooldown.isSet(scope.id)) {
+                // 생성 슬롯은 방문자 경로(`submitMarketBriefingAction`)와 공유한다 —
+                // 장중에는 요약 갱신마다 core 키가 갈려 이 단계가 tick마다 구웠고, 방문자도
+                // 거의 매분 생성했다. 어느 쪽이 먼저 잡든 그 시장은 1시간 동안 다시 만들지
+                // 않는다(`marketBriefingCooldown.ts`). 생성 **전에** `SET NX`로 잡는다 —
+                // 확인과 표시가 갈라져 있으면 이 생성(최대 `HUB_UNIT_TIMEOUT_MS`) 동안
+                // 방문자가 슬롯을 잡아 같은 브리핑을 한 번 더 만들고, 유닛이 시간 초과로
+                // 끊기면 표시가 아예 남지 않는다.
+                if (!(await tryAcquireMarketBriefingSlot(scope.id))) {
                     return runResult('cooldown');
                 }
-                await runBriefing(summary, context);
-                // 생성 시도 직후에 세운다 — 되읽기 실패(`keyMismatch`)여도 LLM 비용은 이미
-                // 나갔으므로, 다음 tick에 같은 호출을 반복하지 않게 한다.
-                await marketBriefingCooldown.mark(scope.id);
+                const generated = await runBriefing(summary, context).catch(
+                    async (error: unknown) => {
+                        // 생성 자체가 실패하면 비용이 나가지 않았으므로 슬롯을 돌려준다.
+                        await releaseMarketBriefingSlot(scope.id);
+                        throw error;
+                    }
+                );
+                // 여기부터는 슬롯을 돌려주지 않는다 — 되읽기 실패(`keyMismatch`)여도 LLM
+                // 비용은 이미 나갔으므로, 다음 tick에 같은 호출을 반복하지 않게 한다.
+                // 쿨다운에 막힌 방문자가 받을 마지막 생성본. 되읽기와 무관하게 손에 있는
+                // 값이다(`keyMismatch`여도 본문 자체는 정상이다).
+                if (generated.status === 'done') {
+                    await writeLatestMarketBriefing(scope, {
+                        briefing: generated.briefing,
+                        generatedAt: generated.generatedAt,
+                    });
+                }
                 const readBack = await readBackWithRetry(peek);
                 if (readBack === null) return runResult('keyMismatch');
                 await writeHubSsrSeed(surface, readBack);
@@ -594,10 +601,19 @@ function newsDigestTargets(now: () => number): HubTarget[] {
                 // 백필 호출부가 켜 두는 값이고, core JSDoc도 "SEO prewarm"을 그
                 // 대상으로 명시한다 — 지켜보는 사람이 없어 수동 재시도가 불가능한
                 // 경로라 DeepSeek가 흔들리면 Gemini로 넘어가야 한다.
-                await runMarketNewsDigest({
+                const generated = await runMarketNewsDigest({
                     ...options,
                     providerFallback: PREWARM_PROVIDER_FALLBACK,
                 });
+                // 방문자 생성 슬롯(`marketNewsDigestCooldown`)에 막힌 방문자가 받을
+                // 마지막 생성본. 되읽기와 무관하게 손에 있는 값이다.
+                if (generated.status === 'done') {
+                    await writeLatestMarketNewsDigest(
+                        category,
+                        DEFAULT_LOCALE,
+                        generated.result
+                    );
+                }
                 // 다이제스트는 seed를 두지 않는다 — 입력이 DB 행 목록이라 분 단위로
                 // 안 움직이고, 정적 peek이 같은 쿼리로 입력을 다시 만들어 키가 맞는다.
                 const readBack = await readBackWithRetry(peek);

@@ -6,8 +6,10 @@
  * 둘 다 화면·빌드에는 아무 흔적이 없어서 테스트로만 잡힌다.
  */
 const mocks = vi.hoisted(() => ({
-    cooldownIsSet: vi.fn(),
-    cooldownMark: vi.fn(),
+    slotAcquire: vi.fn(),
+    slotRelease: vi.fn(),
+    writeLatestMarketBriefing: vi.fn(),
+    writeLatestMarketNewsDigest: vi.fn(),
     runBriefing: vi.fn(),
     runMacroBriefing: vi.fn(),
     runMarketNewsDigest: vi.fn(),
@@ -87,13 +89,16 @@ vi.mock('@/shared/cache/hubContentStamp', () => ({
 vi.mock('@/shared/cache/ssrMissMarker', () => ({
     consumeSsrMiss: mocks.consumeSsrMiss,
 }));
-// 시장 브리핑 쿨다운 플래그(`hubs.ts` 모듈 로드 시 생성). 다른 모듈이 만드는 플래그도
-// 이 목을 받지만, 이 파일은 그쪽 함수를 전부 따로 목으로 갈아 끼우므로 영향이 없다.
-vi.mock('@/shared/cache/createRedisFlag', () => ({
-    createRedisFlag: () => ({
-        isSet: mocks.cooldownIsSet,
-        mark: mocks.cooldownMark,
-    }),
+// 시장 브리핑 생성 슬롯(방문자 경로와 공유하는 `SET NX` 키).
+vi.mock('@/entities/market-summary/api/marketBriefingCooldown', () => ({
+    tryAcquireMarketBriefingSlot: mocks.slotAcquire,
+    releaseMarketBriefingSlot: mocks.slotRelease,
+}));
+vi.mock('@/entities/market-news/api/marketNewsDigestCooldown', () => ({
+    writeLatestMarketNewsDigest: mocks.writeLatestMarketNewsDigest,
+}));
+vi.mock('@/entities/market-summary/api/latestMarketBriefing', () => ({
+    writeLatestMarketBriefing: mocks.writeLatestMarketBriefing,
 }));
 vi.mock('@/entities/economy/lib/economyCompleteness', () => ({
     shouldCacheEconomySnapshot: mocks.shouldCacheEconomySnapshot,
@@ -192,8 +197,8 @@ const MACRO_ENTRY = {
 };
 
 function allSucceed(): void {
-    mocks.cooldownIsSet.mockResolvedValue(false);
-    mocks.cooldownMark.mockResolvedValue(undefined);
+    mocks.slotAcquire.mockResolvedValue(true);
+    mocks.slotRelease.mockResolvedValue(undefined);
     mocks.getCachedMarketSummary.mockResolvedValue({ summary: true });
     mocks.marketBriefingContextOf.mockReturnValue({ ctx: true });
     mocks.getEconomySnapshot.mockResolvedValue({ snapshot: true });
@@ -505,6 +510,24 @@ describe('runHubPrewarm', () => {
         expect(mocks.runMarketNewsDigest).toHaveBeenCalledWith(
             expect.objectContaining({ reasoning: false, locale: 'ko' })
         );
+    });
+
+    it('다이제스트를 실제로 생성(done)했으면 방문자 쿨다운 폴백용 마지막 생성본을 남긴다', async () => {
+        const digest = { currentDriverKo: 'fresh' };
+        mocks.runMarketNewsDigest.mockResolvedValue({
+            status: 'done',
+            result: digest,
+        });
+
+        await runHubPrewarm();
+
+        for (const category of Object.keys(CATEGORY_CONFIG)) {
+            expect(mocks.writeLatestMarketNewsDigest).toHaveBeenCalledWith(
+                category,
+                'ko',
+                digest
+            );
+        }
     });
 
     /**
@@ -1032,17 +1055,72 @@ describe('runHubPrewarm — 시장 브리핑 쿨다운', () => {
         allSucceed();
     });
 
-    it('새로 구우면 시장별로 쿨다운을 세운다', async () => {
+    it('굽기 전에 시장별 생성 슬롯을 잡는다 — 방문자와 같은 `SET NX` 키', async () => {
         await runHubPrewarm();
 
         expect(mocks.runBriefing).toHaveBeenCalledTimes(PAGE_SCOPES.length);
         for (const scope of PAGE_SCOPES) {
-            expect(mocks.cooldownMark).toHaveBeenCalledWith(scope.id);
+            expect(mocks.slotAcquire).toHaveBeenCalledWith(scope.id);
+        }
+        // 슬롯은 runBriefing보다 먼저 잡혀야 한다 — 생성 중 방문자 중복 생성을 막는 요점.
+        expect(mocks.slotAcquire.mock.invocationCallOrder[0]).toBeLessThan(
+            mocks.runBriefing.mock.invocationCallOrder[0]!
+        );
+        expect(mocks.slotRelease).not.toHaveBeenCalled();
+    });
+
+    it('생성(runBriefing)이 실패하면 슬롯을 돌려준다', async () => {
+        mocks.runBriefing.mockRejectedValue(new Error('llm down'));
+        // 실패한 run도 `fillsAfterRun`이 "채워짐"으로 세므로, peek를 늘 비워
+        // 시장마다 생성 경로를 타게 한다.
+        mocks.peekBriefingCache.mockResolvedValue(null);
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+
+        await runHubPrewarm();
+
+        for (const scope of PAGE_SCOPES) {
+            expect(mocks.slotRelease).toHaveBeenCalledWith(scope.id);
+        }
+        errorSpy.mockRestore();
+    });
+
+    it('실제로 생성(done)했으면 방문자 쿨다운 폴백용 마지막 생성본을 시장별로 남긴다', async () => {
+        const done = {
+            status: 'done',
+            briefing: { summary: 'fresh' },
+            generatedAt: '2026-10-06T14:00:00Z',
+        };
+        mocks.runBriefing.mockResolvedValue(done);
+        mocks.peekBriefingCache.mockImplementation(
+            fillsAfterRun(mocks.runBriefing, done.briefing)
+        );
+
+        await runHubPrewarm();
+
+        for (const scope of PAGE_SCOPES) {
+            expect(mocks.writeLatestMarketBriefing).toHaveBeenCalledWith(
+                scope,
+                { briefing: done.briefing, generatedAt: done.generatedAt }
+            );
         }
     });
 
+    it('runBriefing이 cached를 돌려주면(생성 아님) 마지막 생성본을 덮어쓰지 않는다', async () => {
+        mocks.runBriefing.mockResolvedValue({
+            status: 'cached',
+            briefing: { summary: 'old' },
+            generatedAt: '2026-10-06T13:00:00Z',
+        });
+
+        await runHubPrewarm();
+
+        expect(mocks.writeLatestMarketBriefing).not.toHaveBeenCalled();
+    });
+
     it('쿨다운 중이면 굽지 않고 cooldown으로 센다 — 표시도 태그도 건드리지 않는다', async () => {
-        mocks.cooldownIsSet.mockResolvedValue(true);
+        mocks.slotAcquire.mockResolvedValue(false);
 
         mocks.consumeSsrMiss.mockResolvedValue(true);
 
@@ -1050,7 +1128,7 @@ describe('runHubPrewarm — 시장 브리핑 쿨다운', () => {
 
         expect(result.skippedByCooldown).toBe(PAGE_SCOPES.length);
         expect(mocks.runBriefing).not.toHaveBeenCalled();
-        expect(mocks.cooldownMark).not.toHaveBeenCalled();
+        expect(mocks.slotRelease).not.toHaveBeenCalled();
         // 값이 있는지 모르므로 SSR miss 표시를 소비하거나 태그를 털지 않는다 —
         // 털면 페이지가 다시 null로 렌더되며 tick당 쓰기 루프가 된다.
         for (const scope of PAGE_SCOPES) {
@@ -1062,16 +1140,16 @@ describe('runHubPrewarm — 시장 브리핑 쿨다운', () => {
         expect(mocks.runMacroBriefing).toHaveBeenCalledTimes(1);
     });
 
-    it('캐시 HIT이면 쿨다운을 보지도 세우지도 않는다 — seed만 갱신한다', async () => {
+    it('캐시 HIT이면 슬롯을 잡지 않는다 — seed만 갱신한다', async () => {
         mocks.peekBriefingCache.mockResolvedValue({ briefing: 'x' });
 
         await runHubPrewarm();
 
         expect(mocks.runBriefing).not.toHaveBeenCalled();
-        expect(mocks.cooldownMark).not.toHaveBeenCalled();
+        expect(mocks.slotAcquire).not.toHaveBeenCalled();
     });
 
-    it('되읽기에 실패해도(keyMismatch) 쿨다운은 세운다 — LLM 비용은 이미 나갔다', async () => {
+    it('되읽기에 실패해도(keyMismatch) 슬롯은 돌려주지 않는다 — LLM 비용은 이미 나갔다', async () => {
         mocks.peekBriefingCache.mockResolvedValue(null);
         const errorSpy = vi
             .spyOn(console, 'error')
@@ -1079,7 +1157,8 @@ describe('runHubPrewarm — 시장 브리핑 쿨다운', () => {
 
         await runHubPrewarm();
 
-        expect(mocks.cooldownMark).toHaveBeenCalledTimes(PAGE_SCOPES.length);
+        expect(mocks.slotAcquire).toHaveBeenCalledTimes(PAGE_SCOPES.length);
+        expect(mocks.slotRelease).not.toHaveBeenCalled();
         errorSpy.mockRestore();
     });
 });
@@ -1283,7 +1362,7 @@ describe('runHubPrewarm — 새로 구운 허브 URL (IndexNow 제출용)', () =
     });
 
     it('쿨다운 중인 시장 브리핑은 싣지 않는다', async () => {
-        mocks.cooldownIsSet.mockResolvedValue(true);
+        mocks.slotAcquire.mockResolvedValue(false);
 
         const result = await runHubPrewarm();
 
@@ -1385,7 +1464,7 @@ describe('runHubPrewarm — 본문 스탬프(RSS pubDate 근거)', () => {
     });
 
     it('쿨다운 중인 시장 브리핑은 확인한 본문이 없으므로 스탬프를 남기지 않는다', async () => {
-        mocks.cooldownIsSet.mockResolvedValue(true);
+        mocks.slotAcquire.mockResolvedValue(false);
 
         await runHubPrewarm();
 

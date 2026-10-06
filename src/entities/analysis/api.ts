@@ -174,7 +174,7 @@ export async function prewarmTechnical(
         }),
         findMarketEventsForPrompt(prewarmDb, {
             symbol,
-            ...marketEventsLookback(timeframe),
+            ...marketEventsLookback(timeframe, session),
         }),
     ]);
 
@@ -400,7 +400,7 @@ export async function prewarmOverall(
         }),
         findMarketEventsForPrompt(db, {
             symbol,
-            ...marketEventsLookback(timeframe),
+            ...marketEventsLookback(timeframe, session),
         }),
         loadNewsMacroCalendar(),
     ]);

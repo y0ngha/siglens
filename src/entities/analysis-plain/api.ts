@@ -64,8 +64,9 @@ import {
 const PLAIN_DEADLINE_MS = 15_000;
 
 /**
- * 저장 키의 `input_digest`. **원문 산문 + 사실 블록 전체의 해시**이고, 로케일과
- * 프롬프트 버전은 복합 PK의 다른 열이다(`analysis_plain_texts`).
+ * 저장 키의 `input_digest`. **원문 산문 + 사실 블록의 해시**이고, 로케일과
+ * 프롬프트 버전은 복합 PK의 다른 열이다(`analysis_plain_texts`). 사실 블록 중
+ * 실시간 현재가(`facts.currentPrice`)만은 해시에서 뺀다 — 이유는 호출부 주석.
  *
  * 심볼·모델·타임프레임을 키에 넣지 않는다 — 같은 입력이면 결과가 같고, 입력이
  * 조금이라도 바뀌면 해시가 달라져 스스로 무효화된다.
@@ -346,7 +347,29 @@ export async function rewriteToPlainLanguage(
         ]);
 
         const basePrompt = buildPlainPrompt({ entries, facts, locale });
-        const inputDigest = buildInputDigest(basePrompt);
+        // 키는 **현재가를 뺀** 프롬프트로 만든다. 현재가는 숫자 없는 분석(fundamental·news·
+        // financials)에만 실리는 실시간 시세라(`resolveCurrentPrice`), 프롬프트째 해시하면
+        // 장중(크립토는 상시) 시세가 움직일 때마다 같은 분석문이 새 키를 얻어 평이화를 다시
+        // 돌렸다 — 분석 1건이 아니라 조회 1분당 1~2회 과금. 기준일 문구(`asOf`)는 키에 남긴다:
+        // 그날 처음 만든 글을 그날 안에서 재사용하고(가격 앞에 그 날짜가 박혀 있어 참이다),
+        // 날짜나 장중→종가가 바뀌면 새로 만든다. 현재가가 없는 경로(technical 등)는
+        // `digestPrompt === basePrompt`라 기존 저장 행의 키가 그대로다.
+        const digestPrompt =
+            currentPrice === undefined
+                ? basePrompt
+                : buildPlainPrompt({
+                      entries,
+                      facts: collectFacts(
+                          analysis,
+                          symbol,
+                          currency,
+                          locale,
+                          undefined,
+                          asOf
+                      ),
+                      locale,
+                  });
+        const inputDigest = buildInputDigest(digestPrompt);
 
         const repository = tryCreateRepository();
         const stored = await findStored(repository, locale, inputDigest);

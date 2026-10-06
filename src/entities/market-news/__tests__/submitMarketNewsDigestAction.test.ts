@@ -7,6 +7,16 @@ vi.mock('@/shared/api/isBot', () => ({ isBot: vi.fn(() => false) }));
 vi.mock('@y0ngha/siglens-core', async orig => ({
     ...(await orig()),
     runMarketNewsDigest: vi.fn(),
+    peekMarketNewsDigestCache: vi.fn(),
+}));
+
+// 생성 쿨다운 — 기본은 "캐시 miss + 슬롯 획득"(아래 beforeEach). 쿨다운 분기는
+// '생성 쿨다운' describe에서 바꾼다.
+vi.mock('@/entities/market-news/api/marketNewsDigestCooldown', () => ({
+    tryAcquireMarketNewsDigestSlot: vi.fn(),
+    releaseMarketNewsDigestSlot: vi.fn(),
+    readLatestMarketNewsDigest: vi.fn(),
+    writeLatestMarketNewsDigest: vi.fn(),
 }));
 
 // getMarketNewsList는 enriched row 형태의 최소 픽스처를 반환한다.
@@ -58,12 +68,22 @@ import koMessages from '../../../../messages/ko.json';
 import { isBot } from '@/shared/api/isBot';
 import * as core from '@y0ngha/siglens-core';
 import { DEFAULT_DIGEST_MODEL_ID } from '../lib/marketNewsConstants';
+import {
+    readLatestMarketNewsDigest,
+    releaseMarketNewsDigestSlot,
+    tryAcquireMarketNewsDigestSlot,
+    writeLatestMarketNewsDigest,
+} from '@/entities/market-news/api/marketNewsDigestCooldown';
+import { getMarketNewsList } from '@/entities/market-news/api/marketNewsRepository';
 
 // 3. 테스트
 
 describe('submitMarketNewsDigestAction은', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.mocked(core.peekMarketNewsDigestCache).mockResolvedValue(null);
+        vi.mocked(tryAcquireMarketNewsDigestSlot).mockResolvedValue(true);
+        vi.mocked(readLatestMarketNewsDigest).mockResolvedValue(null);
     });
 
     /**
@@ -192,5 +212,131 @@ describe('submitMarketNewsDigestAction은', () => {
         expect(r.status).toBe('error');
         // CATEGORY_CONFIG에 없는 키이므로 core가 호출되어서는 안 된다.
         expect(core.runMarketNewsDigest).not.toHaveBeenCalled();
+    });
+    /**
+     * 생성 쿨다운(2026-10 비용 감사). core 키가 기사 목록에서 파생돼 새 기사가
+     * 분석될 때마다 갈리므로, 키 miss마다 생성하던 때는 그때마다 LLM을 불렀다.
+     */
+    describe('생성 쿨다운', () => {
+        const DIGEST = {
+            currentDriverKo: '흐름',
+            keyEventsKo: [],
+            upcomingEventsKo: [],
+            overallSentiment: 'bullish',
+        } as const;
+
+        it('캐시 hit이면 슬롯을 잡지 않고 core의 cached 결과를 돌려준다', async () => {
+            vi.mocked(core.peekMarketNewsDigestCache).mockResolvedValue(
+                DIGEST as never
+            );
+            vi.mocked(core.runMarketNewsDigest).mockResolvedValue({
+                status: 'cached',
+                result: DIGEST as never,
+            });
+
+            const { submitMarketNewsDigestAction } =
+                await import('../actions/submitMarketNewsDigestAction');
+            const r = await submitMarketNewsDigestAction('crypto', 'ko');
+
+            expect(r.status).toBe('cached');
+            expect(tryAcquireMarketNewsDigestSlot).not.toHaveBeenCalled();
+            expect(writeLatestMarketNewsDigest).not.toHaveBeenCalled();
+        });
+
+        it('miss + 슬롯 획득이면 생성하고 마지막 생성본을 남긴다', async () => {
+            vi.mocked(core.runMarketNewsDigest).mockResolvedValue({
+                status: 'done',
+                result: DIGEST as never,
+            });
+
+            const { submitMarketNewsDigestAction } =
+                await import('../actions/submitMarketNewsDigestAction');
+            const r = await submitMarketNewsDigestAction('crypto', 'en');
+
+            expect(r.status).toBe('done');
+            expect(tryAcquireMarketNewsDigestSlot).toHaveBeenCalledWith(
+                'crypto',
+                'en'
+            );
+            expect(writeLatestMarketNewsDigest).toHaveBeenCalledWith(
+                'crypto',
+                'en',
+                DIGEST
+            );
+        });
+
+        it('miss + 슬롯을 못 잡으면 core 호출 없이 마지막 생성본을 cached로 돌려준다', async () => {
+            vi.mocked(tryAcquireMarketNewsDigestSlot).mockResolvedValue(false);
+            vi.mocked(readLatestMarketNewsDigest).mockResolvedValue(
+                DIGEST as never
+            );
+
+            const { submitMarketNewsDigestAction } =
+                await import('../actions/submitMarketNewsDigestAction');
+            const r = await submitMarketNewsDigestAction('crypto', 'ko');
+
+            expect(r).toEqual({ status: 'cached', result: DIGEST });
+            expect(core.runMarketNewsDigest).not.toHaveBeenCalled();
+        });
+
+        it('슬롯을 못 잡았는데 마지막 생성본도 없으면 생성한다(콜드 스타트)', async () => {
+            vi.mocked(tryAcquireMarketNewsDigestSlot).mockResolvedValue(false);
+            vi.mocked(core.runMarketNewsDigest).mockResolvedValue({
+                status: 'done',
+                result: DIGEST as never,
+            });
+
+            const { submitMarketNewsDigestAction } =
+                await import('../actions/submitMarketNewsDigestAction');
+            const r = await submitMarketNewsDigestAction('crypto', 'ko');
+
+            expect(r.status).toBe('done');
+            expect(writeLatestMarketNewsDigest).toHaveBeenCalled();
+        });
+
+        it('슬롯을 잡은 생성이 실패하면 슬롯을 돌려준다', async () => {
+            vi.mocked(core.runMarketNewsDigest).mockRejectedValue(
+                new Error('llm down')
+            );
+
+            const { submitMarketNewsDigestAction } =
+                await import('../actions/submitMarketNewsDigestAction');
+            const r = await submitMarketNewsDigestAction('crypto', 'ko');
+
+            expect(r.status).toBe('error');
+            expect(releaseMarketNewsDigestSlot).toHaveBeenCalledWith(
+                'crypto',
+                'ko'
+            );
+        });
+
+        it('남이 잡은 슬롯(콜드 스타트 생성)은 실패해도 돌려주지 않는다', async () => {
+            vi.mocked(tryAcquireMarketNewsDigestSlot).mockResolvedValue(false);
+            vi.mocked(core.runMarketNewsDigest).mockRejectedValue(
+                new Error('llm down')
+            );
+
+            const { submitMarketNewsDigestAction } =
+                await import('../actions/submitMarketNewsDigestAction');
+            const r = await submitMarketNewsDigestAction('crypto', 'ko');
+
+            expect(r.status).toBe('error');
+            expect(releaseMarketNewsDigestSlot).not.toHaveBeenCalled();
+        });
+
+        it('기사가 0건이면 peek·슬롯 없이 core로 넘긴다(no_news는 LLM을 부르지 않는다)', async () => {
+            vi.mocked(getMarketNewsList).mockResolvedValueOnce([]);
+            vi.mocked(core.runMarketNewsDigest).mockResolvedValue({
+                status: 'no_news',
+            });
+
+            const { submitMarketNewsDigestAction } =
+                await import('../actions/submitMarketNewsDigestAction');
+            const r = await submitMarketNewsDigestAction('crypto', 'ko');
+
+            expect(r.status).toBe('no_news');
+            expect(core.peekMarketNewsDigestCache).not.toHaveBeenCalled();
+            expect(tryAcquireMarketNewsDigestSlot).not.toHaveBeenCalled();
+        });
     });
 });

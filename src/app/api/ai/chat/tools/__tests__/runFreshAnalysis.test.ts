@@ -61,6 +61,15 @@ vi.mock('@/entities/analysis/analysisHistoryRepository', () => ({
 vi.mock('@/entities/news-article/marketEventsRepository', () => ({
     findMarketEventsForPrompt: m.findMarketEventsForPrompt,
 }));
+// 조회 창 계산은 `marketEventsLookback.test.ts`가 실제 세션 스펙으로 검증한다. 여기서는
+// 이 파일의 세션 목(태그 객체)이 실제 스펙이 아니므로 스텁으로 두고, 호출부가 core에
+// 넘기는 것과 **같은 세션**을 창 계산에 넘기는지(캐시 키 일치의 전제)만 본다.
+vi.mock('@/entities/news-article/lib/marketEventsLookback', () => ({
+    marketEventsLookback: vi.fn(() => ({
+        from: new Date('2026-06-01T00:00:00Z'),
+        to: new Date('2026-08-01T00:00:00Z'),
+    })),
+}));
 vi.mock('@/entities/portfolio/lib/resolveHoldingPositionBucket', () => ({
     resolveHoldingPositionBucket: m.resolveHoldingPositionBucket,
 }));
@@ -73,6 +82,7 @@ import {
     CACHED_ANALYSIS_MAX_CHARS,
     truncateToolResult,
 } from '@/app/api/ai/chat/tools/truncate';
+import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
 import {
     __activeStreamCount,
     __resetActiveStreamsForTests,
@@ -334,8 +344,33 @@ describe('runFreshAnalysisTool', () => {
             expect(call![5]).toMatchObject({
                 session: { tag: `session:${profile}` },
             });
+            // 이벤트 창도 같은 세션 — 1Day 창이 core 만료 경계와 맞아야 사이트와 같은 키다.
+            expect(vi.mocked(marketEventsLookback)).toHaveBeenCalledWith(
+                '1Day',
+                {
+                    tag: `session:${profile}`,
+                }
+            );
         }
     );
+
+    it('overall: kr-equity면 이벤트 창을 KR 세션으로 계산한다(technical 축 키 일치)', async () => {
+        m.profile.mockResolvedValue('kr-equity');
+        m.overall.mockResolvedValue({
+            status: 'done',
+            result: { headlineKo: 'h' },
+        });
+
+        await runFreshAnalysisTool(
+            { symbol: '005930.KS', kind: 'overall' },
+            ctx,
+            rt
+        );
+
+        expect(vi.mocked(marketEventsLookback)).toHaveBeenCalledWith('1Day', {
+            tag: 'session:kr-equity',
+        });
+    });
 
     it('technical: 게스트는 positionBucket 조회 자체를 건너뛴다', async () => {
         m.runAnalysis.mockResolvedValue({
