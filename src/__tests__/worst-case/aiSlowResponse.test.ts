@@ -52,6 +52,14 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
 vi.mock('@/shared/api/market/sessionSpecFor', () => ({
     sessionSpecFor: vi.fn().mockReturnValue({}),
 }));
+// 위 세션 목(`{}`)은 실제 세션 스펙이 아니라 조회 창 계산이 그대로 돌면 던진다. 창 계산은
+// `marketEventsLookback.test.ts`가 실제 스펙으로 검증하므로 여기서는 고정 창으로 둔다.
+vi.mock('@/entities/news-article/lib/marketEventsLookback', () => ({
+    marketEventsLookback: vi.fn(() => ({
+        from: new Date('2026-06-01T00:00:00Z'),
+        to: new Date('2026-08-01T00:00:00Z'),
+    })),
+}));
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn().mockReturnValue({ db: {} }),
 }));
