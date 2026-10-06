@@ -16,8 +16,9 @@ const SCENARIO_LABEL: Record<OverallScenario['name'], string> = {
 };
 
 /**
- * 종합 분석의 결정적 텍스트를 크롤 가능한 SSR HTML로 노출한다(OverallContent가
- * useSearchParams로 CSR bailout하므로 fallback 경로로 SEO 텍스트를 박는다).
+ * 종합 분석의 결정적 텍스트를 크롤 가능한 SSR HTML로 노출한다. 종합 탭의 Suspense
+ * fallback으로 쓰인다 — `OverallContent`는 이제 서버에서 렌더되므로(`useUrlSearchParam`)
+ * 이 경로는 서버 렌더가 suspend하는 예외에서만 HTML에 남는 안전망이다.
  *
  * 노출 필드: headlineKo(헤드라인), integratedConclusionKo(4축 종합 결론),
  * scenarios[](강세·중립·약세 시나리오 — 조건·가격대), riskFactorsKo[](위험 요인).

@@ -10,7 +10,6 @@ import { FearGreedComparisonGauges } from './FearGreedComparisonGauges';
 import { FearGreedGroupBar } from './FearGreedGroupBar';
 import dynamic from 'next/dynamic';
 import { SelfNormWarningBadge } from './SelfNormWarningBadge';
-import { useHydrated } from '@/shared/hooks/useHydrated';
 import { useRegisterShareable } from '@/features/share/model/ShareableAnalysisContext';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 
@@ -47,9 +46,9 @@ interface FearGreedPageProps {
      * (`WARNING_TEXT_KEY`)가 문단으로 들어간다. 둘 다 그리면 하이드레이션 뒤
      * 같은 90자 문장이 DOM에 두 번 남고 스크린리더도 두 번 읽는다.
      *
-     * 서버 쪽을 지울 수는 없다 — 이 컴포넌트는 `useHydrated` 게이트라
-     * 크롤러에게는 아무것도 안 보이고, 그 문구가 크롤 텍스트에 남는 유일한 경로가
-     * 서버 쪽이다. 그래서 XOR 방향이 "클라이언트를 끈다"로 정해진다.
+     * 서버 쪽(`FearGreedFactsSummary`)을 남기고 이쪽을 끈다 — 그 요약은 이 페이지가
+     * 서버에서 계산한 근거 문단이라 문구가 거기 있는 편이 자연스럽다. 그래서 XOR 방향이
+     * "클라이언트를 끈다"로 정해진다.
      */
     hideSelfNormWarning?: boolean;
     /**
@@ -62,50 +61,6 @@ interface FearGreedPageProps {
     hideSampleFooter?: boolean;
 }
 
-/**
- * Skeleton shown during SSR and the synchronous first-client render.
- *
- * useFearGreedFromSymbol → getSymbolFearGreedAction (server-computed from the
- * 5-year daily series) → useSuspenseQuery with staleTime 30 s. The page seeds
- * the query with a score computed from **quantized** bars (forming bar
- * stripped), and that seed is always stale on the client (updatedAt = last
- * closed bar << Date.now()), so React Query refetches right after mount. The
- * action reads the **unquantized** bar cache, so during a session (and always
- * for crypto) the refetched score includes the forming bar → SSR score ≠
- * first-client score → React #418.
- *
- * The fix: render a stable, score-free skeleton during hydration so SSR HTML
- * and the first sync client render are identical, then swap in the real
- * score-driven UI after useEffect fires.
- */
-function FearGreedPageSkeleton() {
-    const t = useTranslations('widgets.fear-greed');
-    return (
-        <div
-            role="status"
-            className="flex flex-col gap-6 p-4 md:p-6"
-            aria-busy="true"
-            aria-label={t('FearGreedPage.7da634')}
-        >
-            <div className="grid gap-6 md:grid-cols-2">
-                <section className="flex flex-col gap-3">
-                    <div className="h-4 w-40 animate-pulse rounded bg-secondary-700/40" />
-                    <div className="h-48 w-full animate-pulse rounded bg-secondary-700/40" />
-                    <div className="h-16 w-full animate-pulse rounded bg-secondary-700/40" />
-                </section>
-                <section className="flex flex-col gap-3">
-                    <div className="h-20 w-full animate-pulse rounded bg-secondary-700/40" />
-                    <div className="h-20 w-full animate-pulse rounded bg-secondary-700/40" />
-                </section>
-            </div>
-            <section className="flex flex-col gap-2">
-                <div className="h-4 w-32 animate-pulse rounded bg-secondary-700/40" />
-                <div className="h-40 w-full animate-pulse rounded bg-secondary-700/40" />
-            </section>
-        </div>
-    );
-}
-
 export function FearGreedPage({
     symbol,
     fmpSymbol,
@@ -114,7 +69,6 @@ export function FearGreedPage({
 }: FearGreedPageProps) {
     const t = useTranslations('widgets.fear-greed');
     const themeVersion = useThemeVersion();
-    const isHydrated = useHydrated();
     // seed 재조회는 사람 입력 이후로 미룬다 — 크롤러 렌더마다 나가던 Server Action을 없앤다.
     const humanInteracted = useHumanInteracted();
     const { snapshot, history } = useFearGreedFromSymbol({
@@ -138,17 +92,14 @@ export function FearGreedPage({
         trigger: () => {},
     });
 
-    // During SSR and the first synchronous client render, suppress the
-    // score-driven output entirely.  The snapshot value may differ between
-    // the SSR-quantized seed and the client's first refetch (especially for
-    // crypto, which always has a forming bar), so rendering it during
-    // hydration trips React #418.  After useEffect fires (isHydrated=true)
-    // the client owns the score and any divergence is a normal React update,
-    // not a hydration error.
-    if (!isHydrated) {
-        return <FearGreedPageSkeleton />;
-    }
-
+    // 게이지·칩·그룹은 서버 seed로 **SSR한다**(하이드레이션 게이트 없음).
+    //
+    // 예전엔 하이드레이션 동안 점수 없는 스켈레톤을 그렸다: seed는 quantize된 봉(형성 중 봉
+    // 제외)으로 계산되고 클라는 마운트 직후 quantize 없는 봉으로 재조회했으므로, 장중(크립토는
+    // 항상) SSR 점수와 첫 클라 점수가 갈려 React #418이 났다. 지금은 재조회가 사람 입력
+    // 이후로 미뤄져 있다(`refetchEnabled: humanInteracted` → 그 전엔 `staleTime: Infinity`).
+    // 하이드레이션 렌더는 SSR과 **같은 seed**를 읽으므로 텍스트가 갈리지 않고, 입력 뒤의
+    // 재조회 결과는 평범한 React 업데이트다. 추이 차트만 `ssr: false`로 브라우저에서 그린다.
     if (!snapshot) {
         return (
             <div className="flex flex-col gap-2 p-6 text-sm text-secondary-400">

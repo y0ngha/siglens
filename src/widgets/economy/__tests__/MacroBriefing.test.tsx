@@ -30,6 +30,35 @@ describe('MacroBriefing', () => {
         ).toBeInTheDocument();
     });
 
+    describe('로딩 스켈레톤의 자리 예약', () => {
+        function renderSkeleton(): HTMLElement {
+            mockUseBriefing.mockReturnValue({
+                input: undefined,
+                refetch: noop,
+            });
+            render(<MacroBriefing peekSeed={null} />);
+            return screen.getByLabelText('거시 경제 브리핑 로딩 중');
+        }
+
+        it('추정 카드 높이(min-h-72)를 미리 잡는다', () => {
+            expect(renderSkeleton()).toHaveClass('min-h-72');
+        });
+
+        it('최종 카드처럼 요약 4줄·하이라이트 3줄·생성 시각 줄의 골격을 그린다', () => {
+            const skeleton = renderSkeleton();
+            // 요약 문단 줄(text-base leading-relaxed = 26px)
+            expect(skeleton.querySelectorAll('.h-6\\.5')).toHaveLength(4);
+            // 하이라이트 항목(불릿 점 + 줄)
+            expect(skeleton.querySelectorAll('.rounded-full')).toHaveLength(3);
+            // 생성 시각 줄
+            expect(skeleton.querySelectorAll('.mt-3')).toHaveLength(1);
+        });
+
+        it('스켈레톤에는 텍스트가 없다(스크린리더는 aria-label만 읽는다)', () => {
+            expect(renderSkeleton().textContent).toBe('');
+        });
+    });
+
     it("input='error' → 오류 inline notice (role=alert)", () => {
         mockUseBriefing.mockReturnValue({ input: 'error', refetch: noop });
         render(<MacroBriefing peekSeed={null} />);

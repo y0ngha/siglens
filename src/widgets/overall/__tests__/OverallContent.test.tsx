@@ -86,12 +86,7 @@ vi.mock('@/entities/news-article/actions/submitNewsAnalysisAction', () => ({
 vi.mock('@/entities/options-chain/actions/optionsActions', () => ({
     submitOptionsAnalysisAction: vi.fn(),
 }));
-// useSearchParams를 테스트별로 바꿀 수 있도록 mutable ref로 모킹한다(§18 tf 분기 검증용).
-const { searchParamsRef } = vi.hoisted(() => ({
-    searchParamsRef: { value: new URLSearchParams() },
-}));
 vi.mock('next/navigation', () => ({
-    useSearchParams: () => searchParamsRef.value,
     useRouter: () => ({ replace: vi.fn() }),
 }));
 
@@ -107,6 +102,18 @@ import { runOverallAnalysisAction } from '@/entities/analysis/actions/runOverall
 import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
 import { useNewsAnalysisTrigger } from '@/entities/news-article/hooks/useNewsAnalysisTrigger';
 import { useWaitForNewsCards } from '@/entities/news-article/hooks/useWaitForNewsCards';
+
+/**
+ * `OverallContent`는 `tf`를 `useUrlSearchParam`(window.location)으로 읽는다 —
+ * 테스트별 쿼리는 실제 주소로 세팅한다.
+ */
+function setSearch(search: string): void {
+    window.history.replaceState(
+        null,
+        '',
+        search === '' ? '/AAPL/overall' : `/AAPL/overall?${search}`
+    );
+}
 
 const mockUseOverallAnalysis = useOverallAnalysis as MockedFunction<
     typeof useOverallAnalysis
@@ -146,15 +153,15 @@ describe('OverallContent tf 쿼리 파라미터 처리 (§18 분기)', () => {
             state: { status: 'idle' },
             trigger: vi.fn(),
         });
-        searchParamsRef.value = new URLSearchParams();
+        setSearch('');
     });
 
     afterEach(() => {
-        searchParamsRef.value = new URLSearchParams();
+        setSearch('');
     });
 
     it('유효한 tf가 있으면 그 timeframe으로 useOverallAnalysis를 호출한다 (참 분기)', () => {
-        searchParamsRef.value = new URLSearchParams('tf=1Hour');
+        setSearch('tf=1Hour');
         render(
             <OverallContent
                 symbol="AAPL"
@@ -175,7 +182,7 @@ describe('OverallContent tf 쿼리 파라미터 처리 (§18 분기)', () => {
     });
 
     it('유효하지 않은 tf는 DEFAULT_TIMEFRAME(1Day)으로 폴백한다 (거짓 분기)', () => {
-        searchParamsRef.value = new URLSearchParams('tf=not-a-timeframe');
+        setSearch('tf=not-a-timeframe');
         render(
             <OverallContent
                 symbol="AAPL"

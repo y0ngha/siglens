@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 
 import type { ReactNode } from 'react';
 import { cn } from '@/shared/lib/cn';
@@ -34,7 +35,20 @@ interface PlainAnalysisSwitchProps {
     hideToggle?: boolean;
     /** 티어 게이트로 가려진 정보가 있는지. 쉽게보기 하단 잠금 안내를 켠다. */
     hasLockedDetails?: boolean;
-    /** 원본 뷰. 쉽게보기일 때는 **마운트하지 않는다**. */
+    /**
+     * 쉽게보기일 때 원본을 지우지 않고 **닫힌 `<details>` 안에 남긴다**(기본 false).
+     *
+     * SSR 스냅샷 섹션(`SnapshotSummarySection`)만 쓴다. 그 섹션은 크롤러에게 본문을 싣는
+     * 자리인데, 기본 표시가 쉽게보기라 원본(전문가 분석 — 지표·패턴 고유명)이 서버 HTML에서
+     * 통째로 빠졌다. 접힌 아코디언 안의 텍스트는 구글이 펼친 텍스트와 동등하게 취급하고
+     * (`display:none`과 다르다), 사람도 요약 줄을 눌러 그대로 펼쳐 볼 수 있으므로 **클로킹이
+     * 아니다** — 봇과 사람이 같은 DOM·같은 토글을 받는다. 닫힌 `<details>`의 내용은
+     * 스크린리더도 읽지 않으므로 평이화와 원본을 이중으로 낭독하지 않는다.
+     *
+     * 라이브 위젯에는 쓰지 않는다 — 거기선 원본을 마운트하지 않는 것이 의도다(아래 JSDoc).
+     */
+    keepRawCollapsed?: boolean;
+    /** 원본 뷰. 쉽게보기일 때는 **마운트하지 않는다**(`keepRawCollapsed`면 닫힌 채 남긴다). */
     children: ReactNode;
     /**
      * 토글을 놓을 자리. 각 위젯의 헤더 모양이 달라 렌더 위치를 위임한다.
@@ -42,6 +56,32 @@ interface PlainAnalysisSwitchProps {
      */
     renderToggle?: (toggle: ReactNode) => ReactNode;
     className?: string;
+}
+
+interface RawAnalysisDisclosureProps {
+    children: ReactNode;
+}
+
+/**
+ * 쉽게보기 아래에 원본(전문가 분석)을 접어 두는 아코디언. 닫힌 채로 렌더한다.
+ *
+ * 요약 줄은 터치 타깃 44px(`min-h-11`)·포커스 링을 갖고, 닫혀 있으면 `+`, 열리면 `−`를
+ * 보인다(`group-open`). 접기 모양은 같은 섹션의 `SnapshotProseDisclosure`와 맞춘다.
+ */
+function RawAnalysisDisclosure({ children }: RawAnalysisDisclosureProps) {
+    const t = useTranslations('widgets.analysis.viewToggle');
+    return (
+        <details className="group border-t border-secondary-700/70 pt-1">
+            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded text-xs text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none motion-reduce:transition-none [&::-webkit-details-marker]:hidden">
+                {t('rawDisclosure')}
+                <span aria-hidden="true" className="text-sm text-secondary-400">
+                    <span className="group-open:hidden">+</span>
+                    <span className="hidden group-open:inline">−</span>
+                </span>
+            </summary>
+            <div className="mt-3 flex flex-col gap-4">{children}</div>
+        </details>
+    );
 }
 
 /**
@@ -58,6 +98,7 @@ export function PlainAnalysisSwitch({
     plain,
     hideToggle = false,
     hasLockedDetails = false,
+    keepRawCollapsed = false,
     children,
     renderToggle,
     className,
@@ -119,14 +160,23 @@ export function PlainAnalysisSwitch({
             <AnalysisViewToggle mode={mode} onChange={setMode} />
         ) : null;
 
-    const body = showPlain ? (
+    const plainView = showPlain ? (
         <PlainAnalysisView
             text={plain as string}
             hasLockedDetails={hasLockedDetails}
             onShowRaw={() => setMode('raw')}
         />
-    ) : (
+    ) : null;
+
+    const body = !showPlain ? (
         children
+    ) : keepRawCollapsed ? (
+        <>
+            {plainView}
+            <RawAnalysisDisclosure>{children}</RawAnalysisDisclosure>
+        </>
+    ) : (
+        plainView
     );
 
     if (renderToggle !== undefined) {

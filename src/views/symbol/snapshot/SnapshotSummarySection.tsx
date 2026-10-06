@@ -218,10 +218,17 @@ export function SnapshotSummarySection({
                 passed directly to Client Components"). 기본 레이아웃이 이미
                 토글을 우측 정렬로 올리므로 결과도 같다.
             */}
+            {/*
+                `keepRawCollapsed` — 쉽게보기가 기본이라도 전문가 분석 원문을 닫힌
+                `<details>`로 DOM에 남긴다. 이 섹션은 크롤러에게 본문을 싣는 자리라 원문(지표·
+                패턴 고유명)이 SSR HTML에서 빠지면 안 되고, 사람도 같은 토글로 펼쳐 볼 수
+                있어 클로킹이 아니다(`PlainAnalysisSwitch` JSDoc).
+            */}
             <PlainAnalysisSwitch
                 plain={plain}
                 hideToggle={duplicatesLiveWidget}
                 hasLockedDetails={false}
+                keepRawCollapsed
             >
                 {children}
             </PlainAnalysisSwitch>

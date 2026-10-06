@@ -96,11 +96,22 @@ PPR(`cacheComponents`) 비활성 상태에서 동적 세그먼트를 ISR로 정�
    라우트(news)는 `news:${symbol}` 그룹 태그를 추가로 달고, 데이터 변경(뉴스 ingestion) 직후
    `revalidateTag('news:${symbol}', 'max')`로 **on-demand 무효화**해 1h를 기다리지 않고 갱신한다
    (Next 16의 `revalidateTag`는 2번째 profile 인자 필수 — 단일 인자는 deprecated).
-3. **(축 2) `useSearchParams` CSR bailout 밖으로 SEO 콘텐츠 분리.** `useSearchParams`(예:
-   timeframe)를 쓰는 클라 위젯은 SSR HTML이 비므로, 크롤 가능 텍스트(FactLayer)는
-   Suspense fallback에 경량 순수 서버 컴포넌트로 박는다(`TechnicalFactsSummary`/`OverallFactsSummary`).
-   단 fallback은 원시 HTML에만 남는다 — 하이드레이션 때 React가 클라 위젯으로 교체하므로 렌더하는
-   크롤러(Googlebot)의 DOM에는 없다. 렌더 후에도 보여야 하는 산문은 Suspense 밖 영구 서버 sibling으로 둔다.
+3. **(축 2) URL 쿼리는 `useSearchParams`가 아니라 `useUrlSearchParam`으로 읽는다.** `useSearchParams`는
+   가장 가까운 Suspense까지 서브트리를 CSR bailout시켜 SSR HTML에 fallback만 남긴다.
+   `useUrlSearchParam`(서버 스냅샷 `null`)은 서버·하이드레이션 렌더를 기본값으로 그리고 하이드레이션 직후
+   URL 값을 반영하므로 위젯 자체가 SSR된다(차트 탭·종합 탭·`/market` 섹터 패널). 종합 탭·`/market`의
+   Suspense fallback은 안전망으로만 남고, 차트 탭은 페이지 경계를 아예 두지 않는다 — React Fizz는
+   완료된 경계라도 12.8KB(`progressiveChunkSize`)를 넘으면 fallback을 인라인에 두고 본문을 숨김 청크로
+   **아웃라인**하므로, fallback에 h1이 있으면 raw HTML에 h1이 둘 남는다. 같은 이유로 **클라 위젯 안의
+   경계에 든 크롤 텍스트는 JS 없는 크롤러(Naver Yeti·Daumoa)에게 숨김 청크(`<div hidden id="S:n">`)로
+   간다.** 차트 탭의 기술적 사실 요약(`TechnicalFactsSummary`)은 AI 패널이 차트 경계(ChartSkeleton) 안에서
+   그리므로, 페이지가 경계 밖에 영구 서버 사본(`placement="page"`, 메타데이터 `hasPriceData`와 같은
+   `buildTechnicalFacts` 게이트·같은 `symbolFactsSubject`)을 인라인으로 한 벌 더 두고, 사람에게는
+   `globals.css`의 `body:has([data-technical-facts='panel'])` 규칙이 그 사본을 감춘다(e2e
+   `symbol-seo`가 숨김 청크보다 앞에 있는지 단언한다).
+   서버 데이터를 기다리는 async 컴포넌트는 Suspense로 감싸지 않는다(숨김 청크 —
+   `src/__tests__/guards/serverDataSuspenseBoundaries.test.ts`). 렌더 후에도 보여야 하는 산문은 영구 서버
+   sibling으로 둔다.
    server-only 정적화 헬퍼(`staticSymbolCache` 등)는 서버 파일에서만 import한다(client 번들 누출 방지).
 4. **(축 3) `generateStaticParams=[]` + `revalidate`(리터럴) 유지.** revalidate 값은 페이지마다 다르다 —
    [`docs/architecture/ISR_REVALIDATE.md`](../../docs/architecture/ISR_REVALIDATE.md) 참조.

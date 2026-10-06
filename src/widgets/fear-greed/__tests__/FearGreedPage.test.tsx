@@ -1,4 +1,6 @@
 import { render } from '@testing-library/react';
+import { renderToString } from 'react-dom/server';
+import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
 import { FearGreedPage } from '@/widgets/fear-greed/FearGreedPage';
 import {
@@ -18,17 +20,12 @@ const baseSnapshot: FearGreedSnapshot = {
     warning: null,
 };
 
-const { mockUseFearGreedFromSymbol, mockUseHydrated } = vi.hoisted(() => ({
+const { mockUseFearGreedFromSymbol } = vi.hoisted(() => ({
     mockUseFearGreedFromSymbol: vi.fn(),
-    mockUseHydrated: vi.fn(),
 }));
 vi.mock('@/widgets/fear-greed/hooks/useFearGreedFromSymbol', () => ({
     useFearGreedFromSymbol: (...args: unknown[]) =>
         mockUseFearGreedFromSymbol(...args),
-}));
-
-vi.mock('@/shared/hooks/useHydrated', () => ({
-    useHydrated: () => mockUseHydrated(),
 }));
 
 // Mock the chart subcomponent (it uses lightweight-charts and is hard to render under jsdom).
@@ -37,47 +34,47 @@ vi.mock('@/widgets/fear-greed/FearGreedHistoricalChart', () => ({
 }));
 
 describe('FearGreedPage', () => {
-    describe('before hydration (isHydrated=false)', () => {
+    /**
+     * 게이지·칩·그룹은 서버 seed로 SSR된다 — 예전의 하이드레이션 게이트(점수 없는
+     * 스켈레톤)는 없다. 재조회가 사람 입력 이후로 미뤄져 하이드레이션 렌더가 SSR과
+     * 같은 seed를 읽으므로 #418 위험이 없다(`FearGreedPage` 본문 주석).
+     */
+    describe('server render (renderToString)', () => {
         beforeEach(() => {
-            mockUseHydrated.mockReturnValue(false);
             mockUseFearGreedFromSymbol.mockReturnValue({
                 snapshot: baseSnapshot,
                 history: [],
             });
         });
 
-        it('renders loading skeleton — no score text visible', () => {
-            const { queryByText, getByRole } = render(
-                <FearGreedPage symbol="BTCUSD" />
+        function renderServerHtml(): string {
+            return renderToString(
+                <IntlTestProvider>
+                    <FearGreedPage symbol="BTCUSD" />
+                </IntlTestProvider>
             );
-            // Score and label must NOT be in the DOM during SSR/first render.
-            // This prevents React #418 for crypto (forming-bar divergence).
-            expect(queryByText('50')).toBeNull();
-            expect(queryByText(/탐욕|공포|중립/)).toBeNull();
-            // role="status" announces to screen readers that loading is in progress.
-            expect(
-                getByRole('status', { name: /공포 탐욕 지수 로딩 중/ })
-            ).toBeInTheDocument();
+        }
+
+        it('점수와 라벨 칩을 서버 HTML에 싣는다', () => {
+            const html = renderServerHtml();
+            expect(html).toContain('>50<');
+            expect(html).toContain('중립');
         });
 
-        it('still renders skeleton even when snapshot is null (no #418 on null path)', () => {
-            mockUseFearGreedFromSymbol.mockReturnValue({
-                snapshot: null,
-                history: [],
-            });
-            const { queryByText } = render(<FearGreedPage symbol="BTCUSD" />);
-            // Insufficient-data text must NOT appear before hydration either.
-            expect(
-                queryByText(/공포 탐욕 지수 산출에 필요한 데이터가 부족합니다/)
-            ).toBeNull();
+        it('그룹 막대를 서버 HTML에 싣는다', () => {
+            const html = renderServerHtml();
+            expect(html).toContain('수급 그룹');
+            expect(html).toContain('추세 그룹');
+        });
+
+        it('로딩 스켈레톤(status)을 내지 않는다', () => {
+            const html = renderServerHtml();
+            expect(html).not.toContain('role="status"');
+            expect(html).not.toContain('aria-busy="true"');
         });
     });
 
-    describe('after hydration (isHydrated=true)', () => {
-        beforeEach(() => {
-            mockUseHydrated.mockReturnValue(true);
-        });
-
+    describe('client render', () => {
         describe('with snapshot', () => {
             beforeEach(() => {
                 mockUseFearGreedFromSymbol.mockReturnValue({

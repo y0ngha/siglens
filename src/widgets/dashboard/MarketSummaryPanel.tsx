@@ -28,7 +28,9 @@ interface BriefingRegionProps {
 }
 
 function BriefingRegion({ input, scope }: BriefingRegionProps) {
-    if (input === undefined) return null;
+    // 아직 결과가 없다(서버 seed 없음 + 스트림 진행 전·중). `null` 대신 자리를 잡은 로딩
+    // 카드를 그린다 — 서버 HTML에도 나가므로 브리핑 도착 시 아래 패널이 밀리지 않는다.
+    if (input === undefined) return <BriefingLoadingCard />;
     if (input === 'error') return <BriefingErrorCard />;
     // Both 'cached' and 'done' have briefing + generatedAt — no Suspense needed
     // because run* is blocking and always returns a complete result.

@@ -3,7 +3,6 @@ vi.mock('@/widgets/home/HeroIllustration', () => ({
 }));
 vi.mock('@/widgets/home/SkillsShowcase', () => ({
     SkillsShowcase: () => null,
-    SkillsShowcaseSkeleton: () => null,
 }));
 vi.mock('@/widgets/home/StatsBar', () => ({
     StatsBar: () => null,

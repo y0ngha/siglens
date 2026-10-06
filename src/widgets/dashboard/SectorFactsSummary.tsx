@@ -14,9 +14,10 @@ interface SectorFactsSummaryProps {
 /**
  * Server component that renders sector signal counts as crawlable SSR text.
  *
- * `SectorSignalPanel` uses `useSearchParams` which causes a CSR bailout, leaving
- * the SSR HTML empty for crawlers. This component fills that gap by rendering the
- * same underlying signal data as a static text summary.
+ * `SectorSignalPanel` is server-rendered now (it reads `?sector=`/`?timeframe=` via
+ * `useUrlSearchParam`, so there is no CSR bailout), but it only shows the **active**
+ * sector. This component lists every sector's signal counts and top symbols as a
+ * compact static summary, so the SSR HTML carries the whole snapshot.
  *
  * ## 영구 서버 sibling이다 — Suspense fallback에 넣지 않는다 (2026-10-05)
  *
@@ -33,8 +34,8 @@ interface SectorFactsSummaryProps {
  *
  * `topSymbols` render as real `<Link href="/{symbol}">` anchors (not plain text)
  * so this server-rendered hub page passes crawlable internal links into the
- * per-symbol pages — the interactive `SectorSignalPanel` (CSR) is invisible to
- * crawlers, so without these this page would ship zero server-side `/{symbol}` links.
+ * per-symbol pages — the interactive `SectorSignalPanel` links only the active
+ * sector's stocks, so without these most sectors would ship zero `/{symbol}` links.
  */
 export function SectorFactsSummary({ data }: SectorFactsSummaryProps) {
     const t = useTranslations('widgets.dashboard');

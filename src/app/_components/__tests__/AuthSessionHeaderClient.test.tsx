@@ -29,7 +29,7 @@ vi.mock('@tanstack/react-query', () => ({
     useQueryClient: () => ({ refetchQueries: refetchSpy }),
 }));
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, render } from '@testing-library/react';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import { AuthSessionHeaderClient } from '@/app/_components/AuthSessionHeaderClient';
@@ -249,5 +249,90 @@ describe('AuthSessionHeaderClient', () => {
         const { rerender } = render(<AuthSessionHeaderClient />);
         rerender(<AuthSessionHeaderClient />);
         expect(refetchSpy).toHaveBeenCalledTimes(1);
+    });
+
+    /**
+     * 첫 페인트 전 스크립트는 힌트 쿠키만 본다. 세션이 확정되면 실제 상태로 `<html
+     * data-auth-hint>`를 다시 찍어, 헤더 폭 예약(`[data-header-auth-slot]`)이 실제 렌더를
+     * 따라가게 한다.
+     */
+    describe('<html data-auth-hint> 동기화', () => {
+        afterEach(() => {
+            document.documentElement.removeAttribute('data-auth-hint');
+        });
+
+        it('세션이 회원으로 확정되면 member를 찍는다', () => {
+            document.documentElement.setAttribute('data-auth-hint', 'guest');
+            mockAuthHint.mockReturnValue(false);
+            mockCurrentUser.mockReturnValue({
+                data: user,
+                isPending: false,
+            } as never);
+            render(<AuthSessionHeaderClient />);
+            expect(
+                document.documentElement.getAttribute('data-auth-hint')
+            ).toBe('member');
+        });
+
+        it('힌트 쿠키는 남았지만 세션이 없으면(null) guest로 바로잡는다', () => {
+            document.documentElement.setAttribute('data-auth-hint', 'member');
+            mockAuthHint.mockReturnValue(true);
+            mockCurrentUser.mockReturnValue({
+                data: null,
+                isPending: false,
+            } as never);
+            render(<AuthSessionHeaderClient />);
+            expect(
+                document.documentElement.getAttribute('data-auth-hint')
+            ).toBe('guest');
+        });
+
+        it('확정 전(pending)에는 스크립트가 찍은 값을 건드리지 않는다', () => {
+            document.documentElement.setAttribute('data-auth-hint', 'member');
+            mockAuthHint.mockReturnValue(true);
+            mockCurrentUser.mockReturnValue({
+                data: undefined,
+                isPending: true,
+            } as never);
+            render(<AuthSessionHeaderClient />);
+            expect(
+                document.documentElement.getAttribute('data-auth-hint')
+            ).toBe('member');
+        });
+
+        it('전송 실패(에러 + 데이터 없음)는 로그아웃이 아니다 — 값을 유지한다', () => {
+            document.documentElement.setAttribute('data-auth-hint', 'member');
+            mockAuthHint.mockReturnValue(true);
+            mockCurrentUser.mockReturnValue({
+                data: undefined,
+                isPending: false,
+                isError: true,
+            } as never);
+            render(<AuthSessionHeaderClient />);
+            expect(
+                document.documentElement.getAttribute('data-auth-hint')
+            ).toBe('member');
+        });
+
+        it('로그아웃으로 세션이 바뀌면 다시 찍는다', () => {
+            mockAuthHint.mockReturnValue(true);
+            mockCurrentUser.mockReturnValue({
+                data: user,
+                isPending: false,
+            } as never);
+            const { rerender } = render(<AuthSessionHeaderClient />);
+            expect(
+                document.documentElement.getAttribute('data-auth-hint')
+            ).toBe('member');
+
+            mockCurrentUser.mockReturnValue({
+                data: null,
+                isPending: false,
+            } as never);
+            rerender(<AuthSessionHeaderClient />);
+            expect(
+                document.documentElement.getAttribute('data-auth-hint')
+            ).toBe('guest');
+        });
     });
 });

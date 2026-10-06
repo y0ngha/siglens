@@ -5,8 +5,9 @@
  * propagate — it must degrade to the section's existing null/empty-state UI
  * while keeping the page non-empty.
  *
- * Architecture note: FundamentalPage returns a Suspense-wrapped RSC tree where
- * each section (ValuationSection, PeersSection, …) is a lazy async RSC child.
+ * Architecture note: FundamentalPage returns an RSC tree where each section
+ * (ValuationSection, PeersSection, …) is a lazy async RSC child (no Suspense —
+ * the sections render in parallel with the document shell).
  * These children are NOT awaited when FundamentalPage() is invoked directly in
  * tests — they only execute when React's async streaming pipeline renders them.
  * Because of this, testing "loader throw → section degrade" at the RSC-call
@@ -163,11 +164,19 @@ vi.mock('@/widgets/fundamental/sections/PeersTable', () => ({
     ),
 }));
 vi.mock('@/widgets/fundamental/sections/ProfileCard', () => ({
-    ProfileCard: ({ profile }: { profile: unknown }) => (
+    ProfileCard: ({
+        profile,
+        descriptionSlot,
+    }: {
+        profile: unknown;
+        descriptionSlot: React.ReactNode;
+    }) => (
         <div
             data-testid="profile-card"
             data-degraded={profile === null ? 'true' : 'false'}
-        />
+        >
+            {descriptionSlot}
+        </div>
     ),
 }));
 vi.mock('@/widgets/fundamental/sections/ProfitabilityCard', () => ({
@@ -226,9 +235,9 @@ import {
 import React from 'react';
 import { isValidElement } from 'react';
 import { render, screen } from '@testing-library/react';
+import { PROFILE_DESCRIPTION_TIMEOUT_MS } from '@/app/[locale]/[symbol]/fundamental/profileDescription';
 import FundamentalPage, {
     ProfileSection,
-    ProfileDescriptionSection,
     ValuationSection,
     PeersSection,
     ProfitabilitySection,
@@ -380,34 +389,152 @@ describe('Fundamental page ISR empty-cache prevention — section layer (Layer B
         consoleSpy.mockRestore();
     });
 
-    it('ProfileDescriptionSection: loader throw → renders fallback text, does not throw', async () => {
-        mockGetProfileDescription.mockRejectedValue(
-            new Error('translation service 503')
-        );
-        const consoleSpy = vi
-            .spyOn(console, 'error')
-            .mockImplementation(() => {});
+    describe('ProfileSection 회사 설명(AI 번역)', () => {
+        const PROFILE = {
+            sector: 'Technology',
+            description: 'English description fallback',
+        } as Awaited<ReturnType<typeof getProfile>>;
 
-        // Must not throw — .catch() in ProfileDescriptionSection absorbs the rejection
-        // and returns null so descriptionKo ?? fallback renders the fallback string.
-        render(
-            await ProfileDescriptionSection({
-                symbol: 'AAPL',
-                locale: 'ko',
-                fallback: 'English description fallback',
-            })
-        );
+        it('번역 설명이 있으면 원문 대신 그것을 렌더한다', async () => {
+            mockGetProfile.mockResolvedValue(PROFILE);
+            mockGetProfileDescription.mockResolvedValue('번역된 설명');
 
-        // Degraded output: the <p> renders the fallback (English description) instead of null.
-        expect(
-            screen.getByText('English description fallback')
-        ).toBeInTheDocument();
-        expect(consoleSpy).toHaveBeenCalledWith(
-            expect.stringContaining('[ProfileDescriptionSection]'),
-            expect.any(Error)
-        );
+            render(await ProfileSection({ symbol: 'AAPL', locale: 'ko' }));
 
-        consoleSpy.mockRestore();
+            expect(screen.getByText('번역된 설명')).toBeInTheDocument();
+            expect(
+                screen.queryByText('English description fallback')
+            ).not.toBeInTheDocument();
+            expect(shortenRevalidateForRuntimeDegrade).not.toHaveBeenCalled();
+        });
+
+        /** 비-ko에서 번역 행이 없어 `null`인 것은 정상 결과다 — revalidate를 낮추지 않는다. */
+        it('설명이 정상적으로 null이면 원문으로 렌더하되 revalidate는 낮추지 않는다', async () => {
+            mockGetProfile.mockResolvedValue(PROFILE);
+            mockGetProfileDescription.mockResolvedValue(null);
+
+            render(await ProfileSection({ symbol: 'AAPL', locale: 'en' }));
+
+            expect(
+                screen.getByText('English description fallback')
+            ).toBeInTheDocument();
+            expect(shortenRevalidateForRuntimeDegrade).not.toHaveBeenCalled();
+        });
+
+        it('설명 로더가 throw하면 원문으로 렌더하고 섹션은 던지지 않는다', async () => {
+            mockGetProfile.mockResolvedValue(PROFILE);
+            mockGetProfileDescription.mockRejectedValue(
+                new Error('translation service 503')
+            );
+            const consoleSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+
+            render(await ProfileSection({ symbol: 'AAPL', locale: 'ko' }));
+
+            expect(
+                screen.getByText('English description fallback')
+            ).toBeInTheDocument();
+            expect(consoleSpy).toHaveBeenCalledWith(
+                expect.stringContaining('[loadProfileDescription]'),
+                expect.any(Error)
+            );
+            // 원문 폴백이 24h 동안 굳지 않게 이 렌더의 revalidate를 낮춘다.
+            expect(shortenRevalidateForRuntimeDegrade).toHaveBeenCalledTimes(1);
+            consoleSpy.mockRestore();
+        });
+
+        it('설명이 PROFILE_DESCRIPTION_TIMEOUT_MS를 넘기면 기다리지 않고 원문으로 렌더한다', async () => {
+            vi.useFakeTimers();
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
+            try {
+                mockGetProfile.mockResolvedValue(PROFILE);
+                // 끝나지 않는 번역(LLM 지연)
+                mockGetProfileDescription.mockReturnValue(
+                    new Promise<string | null>(() => {})
+                );
+
+                const pending = ProfileSection({
+                    symbol: 'AAPL',
+                    locale: 'ko',
+                });
+                await vi.advanceTimersByTimeAsync(
+                    PROFILE_DESCRIPTION_TIMEOUT_MS
+                );
+                const element = await pending;
+                vi.useRealTimers();
+                render(element);
+
+                expect(
+                    screen.getByText('English description fallback')
+                ).toBeInTheDocument();
+                expect(warnSpy).toHaveBeenCalledWith(
+                    expect.stringContaining('exceeded')
+                );
+                expect(
+                    shortenRevalidateForRuntimeDegrade
+                ).toHaveBeenCalledTimes(1);
+            } finally {
+                vi.useRealTimers();
+                warnSpy.mockRestore();
+            }
+        });
+
+        it('설명이 상한 직전에 도착하면 번역본을 쓴다', async () => {
+            vi.useFakeTimers();
+            try {
+                mockGetProfile.mockResolvedValue(PROFILE);
+                let resolveDescription: (value: string) => void = () => {};
+                mockGetProfileDescription.mockReturnValue(
+                    new Promise<string | null>(resolve => {
+                        resolveDescription = resolve;
+                    })
+                );
+
+                const pending = ProfileSection({
+                    symbol: 'AAPL',
+                    locale: 'ko',
+                });
+                await vi.advanceTimersByTimeAsync(
+                    PROFILE_DESCRIPTION_TIMEOUT_MS - 1
+                );
+                resolveDescription('늦었지만 상한 안의 번역');
+                const element = await pending;
+                vi.useRealTimers();
+                render(element);
+
+                expect(
+                    screen.getByText('늦었지만 상한 안의 번역')
+                ).toBeInTheDocument();
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('설명 조회를 프로필이 끝나기 전에 시작한다(직렬 왕복 없음)', async () => {
+            let resolveProfile: (value: typeof PROFILE) => void = () => {};
+            mockGetProfile.mockReturnValue(
+                new Promise(resolve => {
+                    resolveProfile = resolve;
+                })
+            );
+            mockGetProfileDescription.mockResolvedValue('번역된 설명');
+
+            const pending = ProfileSection({ symbol: 'AAPL', locale: 'ko' });
+            // 프로필이 아직 미해결인데도 설명 조회가 이미 나갔다.
+            await Promise.resolve();
+            expect(mockGetProfile).toHaveBeenCalledTimes(1);
+            expect(mockGetProfileDescription).toHaveBeenCalledWith(
+                'AAPL',
+                'ko'
+            );
+
+            resolveProfile(PROFILE);
+            render(await pending);
+            expect(screen.getByText('번역된 설명')).toBeInTheDocument();
+        });
     });
 
     it('ValuationSection: loader throw → renders degraded card (data-degraded="true"), does not throw', async () => {

@@ -143,6 +143,44 @@ test.describe('symbol SEO + ISR (crawler-facing)', () => {
         expect(countH1(html)).toBe(1);
     });
 
+    /**
+     * 기술적 사실 요약은 JS 없는 크롤러(Naver Yeti·Daumoa)가 받는 본문이다. AI 패널 사본은 차트의
+     * Suspense 경계 안이라, 경계가 React progressive chunk(약 12.8KB)를 넘으면
+     * `<div hidden id="S:n">` 숨김 청크로 아웃라인된다. 페이지가 경계 밖에 둔 영구 사본
+     * (`data-technical-facts="page"`)이 **첫 숨김 청크보다 앞에**, 인라인으로 있어야 한다.
+     */
+    test('/AAPL raw HTML carries the technical facts summary inline, before any outlined hidden chunk', async ({
+        page,
+    }) => {
+        const html = await (await page.request.get('/AAPL')).text();
+        const factsAt = html.indexOf('data-technical-facts="page"');
+        expect(factsAt).toBeGreaterThan(-1);
+        const firstHiddenChunk = html.indexOf('<div hidden id="S:');
+        if (firstHiddenChunk !== -1) {
+            expect(factsAt).toBeLessThan(firstHiddenChunk);
+        }
+        // 그 사본 안에 실제 요약 문장(현재가 표기)이 있다 — 껍데기만 있는 게 아니다.
+        const pageCopy = html.slice(
+            factsAt,
+            html.indexOf('</section>', factsAt)
+        );
+        expect(normalizeReactSsrText(pageCopy)).toMatch(/기술적 지표 요약/);
+        expect(normalizeReactSsrText(pageCopy)).toMatch(/\$\d/);
+    });
+
+    /** 사람에게는 화면이 예전과 같다 — 패널 사본이 보이고 크롤용 page 사본은 CSS로 감춰진다. */
+    test('/AAPL in a browser shows the panel facts and hides the crawler copy', async ({
+        page,
+    }) => {
+        await page.goto('/AAPL');
+        await expect(
+            page.locator('[data-technical-facts="panel"]').first()
+        ).toBeVisible();
+        await expect(
+            page.locator('[data-technical-facts-page-slot]')
+        ).toBeHidden();
+    });
+
     test('/AAPL is served from the ISR cache (x-nextjs-cache HIT on a warmed request)', async ({
         page,
     }) => {
