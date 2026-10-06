@@ -6,7 +6,11 @@ import {
 } from '@y0ngha/siglens-core';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { getUpstashWriterCredentials } from '@/shared/cache/redisClient';
-import { MS_PER_HOUR, MS_PER_MINUTE } from '@/shared/config/time';
+import {
+    MS_PER_HOUR,
+    MS_PER_MINUTE,
+    MS_PER_SECOND,
+} from '@/shared/config/time';
 import type {
     AnalysisRateLimitAudience,
     AnalysisRateLimitReason,
@@ -50,7 +54,7 @@ const QUOTA_OUTAGE_RETRY_MS = 5 * MS_PER_MINUTE;
  * 예약 전체(창 최대 3개 순차 소비)에 거는 시간 상한. 넘기면 장애로 본다 — 한도
  * 판정이 분석 응답의 첫 바이트를 Upstash 지연만큼 붙잡으면 안 된다.
  */
-export const QUOTA_RESERVE_TIMEOUT_MS = 1_000;
+export const QUOTA_RESERVE_TIMEOUT_MS = MS_PER_SECOND;
 
 /** 같은 경고를 인스턴스당 이 간격에 한 번만 남긴다(장애 중 로그 폭주 방지). */
 const WARN_INTERVAL_MS = MS_PER_MINUTE;

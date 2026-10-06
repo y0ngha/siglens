@@ -1,6 +1,7 @@
 import 'server-only';
 import { cookies } from 'next/headers';
 import { GUEST_ID_COOKIE_NAME } from '@/shared/config/cookieNames';
+import { MS_PER_MINUTE } from '@/shared/config/time';
 import {
     guestIdCookieOptions,
     mintGuestCookieValue,
@@ -20,6 +21,10 @@ export async function readGuestId(): Promise<string | null> {
     return verifyGuestCookie(store.get(GUEST_ID_COOKIE_NAME)?.value);
 }
 
+/** 서명 시크릿 누락 같은 설정 오류는 매 요청 반복되므로 분당 한 번만 남긴다. */
+const MINT_ERROR_LOG_INTERVAL_MS = MS_PER_MINUTE;
+let lastMintErrorAt = 0;
+
 /**
  * 새 게스트 id를 서명해 **현재 응답**에 `siglens_guest` 쿠키로 심는다. 실패하면
  * 심지 않고 로그만 남긴다(던지지 않는다).
@@ -34,10 +39,6 @@ export async function readGuestId(): Promise<string | null> {
  * 호스트 전용 쿠키다(`Domain` 없음). ai.siglens.io의 같은 이름 쿠키와 형식·서명이
  * 같지만 서로 섞이지 않는다(`GUEST_ID_COOKIE_NAME` JSDoc: 호스트별로 따로 발급).
  */
-let lastMintErrorAt = 0;
-/** 서명 시크릿 누락 같은 설정 오류는 매 요청 반복되므로 분당 한 번만 남긴다. */
-const MINT_ERROR_LOG_INTERVAL_MS = 60_000;
-
 export async function mintGuestIdOnResponse(): Promise<void> {
     try {
         const store = await cookies();

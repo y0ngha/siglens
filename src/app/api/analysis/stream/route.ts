@@ -50,6 +50,8 @@ import { findMarketEventsForPrompt } from '@/entities/news-article/marketEventsR
 // 쿨다운을 지우고 재요청하는 루프로 무력화된다). 아래 `releaseOnFailure` 참고.
 import { releaseReanalyzeCooldown } from '@y0ngha/siglens-core';
 import {
+    createGenerationGateSlot,
+    createPromptAssemblyTracker,
     DONE_STATUS_PROBE,
     promptAssembledProbe,
     releaseGenerationGate,
@@ -861,8 +863,8 @@ export async function POST(request: Request): Promise<Response> {
         } = body.params;
 
         // 예약은 try 안에서 하지만, 예기치 못한 예외(아래 catch)에서도 되돌릴 수 있게
-        // 바깥에 둔다. 환불은 멱등이라 정산 경로와 겹쳐도 두 번 빼지 않는다.
-        let quota: GenerationGate = { kind: 'exempt' };
+        // 칸을 바깥에 둔다. 환불은 멱등이라 정산 경로와 겹쳐도 두 번 빼지 않는다.
+        const quotaSlot = createGenerationGateSlot();
 
         try {
             // 번역자는 핸들러 진입부에서 한 번만 확보한다 — E2E 분기부터 마지막
@@ -998,7 +1000,7 @@ export async function POST(request: Request): Promise<Response> {
             // 캐시가 있으면 평소대로 내주고, 없으면 `settleGenerationGate`가
             // `rate_limited` 이벤트로 바꾼다. 재분석 의도도 함께 무시한다 — 캐시
             // 우회는 곧 새 생성이다.
-            quota = await reserveGenerationGate(userId, cacheOnly === true);
+            const quota = await quotaSlot.reserve(userId, cacheOnly === true);
             const quotaLimited = quota.kind === 'rate_limited';
 
             // --- 2g. Build work promise and stream ---
@@ -1286,7 +1288,7 @@ export async function POST(request: Request): Promise<Response> {
             );
         } catch (err) {
             console.error('[streamAnalysisRoute] unexpected error:', err);
-            await releaseGenerationGate(quota);
+            await quotaSlot.release();
             return Response.json(
                 {
                     status: 'error',
@@ -1349,13 +1351,11 @@ export async function POST(request: Request): Promise<Response> {
               )?.id ?? null,
               clientCacheOnly
           );
-    let promptAssembled = false;
+    const promptTracker = createPromptAssemblyTracker();
     const quotaContext: DispatchQuotaContext = {
         cacheOnly: clientCacheOnly || quota.kind === 'rate_limited',
         rateLimited: quota.kind === 'rate_limited',
-        onPromptAssembled: () => {
-            promptAssembled = true;
-        },
+        onPromptAssembled: promptTracker.onPromptAssembled,
     };
 
     // 동시 분석 상한 — 사람/봇 구분 없이 같은 값을 쓴다. 근거는
@@ -1378,7 +1378,7 @@ export async function POST(request: Request): Promise<Response> {
             ),
             quota,
             PROMPT_PROBED_TYPES.has(body.type)
-                ? promptAssembledProbe(() => promptAssembled)
+                ? promptTracker.probe
                 : DONE_STATUS_PROBE
         );
         return new Response(

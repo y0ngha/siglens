@@ -7,7 +7,7 @@ import { registerActiveStream } from './activeStreams';
 import {
     RATE_LIMITED_SSE_EVENT,
     RateLimitedStreamError,
-} from './analysisRateLimit';
+} from '@/shared/lib/sse/analysisRateLimit';
 
 /**
  * ALB `idle_timeout`이 60초다(실측: heartbeat 없이 61.1초에 끊김). 그 절반 이하로 잡아

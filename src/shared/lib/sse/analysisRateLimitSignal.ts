@@ -1,4 +1,4 @@
-import type { AnalysisRateLimitPayload } from './analysisRateLimit';
+import type { AnalysisRateLimitPayload } from '@/shared/lib/sse/analysisRateLimit';
 
 type Listener = (payload: AnalysisRateLimitPayload) => void;
 
@@ -17,7 +17,7 @@ const listeners = new Set<Listener>();
 export function publishAnalysisRateLimited(
     payload: AnalysisRateLimitPayload
 ): void {
-    for (const listener of listeners) listener(payload);
+    listeners.forEach(listener => listener(payload));
 }
 
 /** 구독하고, 해제 함수를 돌려준다. */

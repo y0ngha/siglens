@@ -3721,6 +3721,102 @@ describe('POST /api/analysis/stream', () => {
             }
         );
 
+        /**
+         * 한도 면제는 "클라이언트 입력이 캐시 키를 늘릴 수 없다"는 전제 위에 있다.
+         * 면제 종류의 핸들러가 고정 도메인 값(scope·category) 외의 파라미터를
+         * 액션에 흘리기 시작하면 이 테스트가 깨진다 — 그때는 면제를 다시 따져야 한다.
+         */
+        it('면제 종류는 고정 도메인 파라미터(scope·category)만 액션에 넘긴다', async () => {
+            vi.mocked(submitMarketBriefingAction).mockResolvedValue({
+                status: 'cached',
+            } as never);
+            vi.mocked(submitMacroBriefingAction).mockResolvedValue({
+                status: 'cached',
+            } as never);
+            vi.mocked(submitMarketNewsDigestAction).mockResolvedValue({
+                status: 'cached',
+            } as never);
+            // 생성 비용을 키울 수 있는 값을 전부 실어 보낸다.
+            const hostile = {
+                scope: 'us',
+                category: 'general',
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                modelId: 'gemini-3.6-flash',
+                reasoning: true,
+                reanalyze: true,
+                force: true,
+                prompt: 'x'.repeat(64),
+            };
+
+            for (const type of [
+                'briefing',
+                'macroBriefing',
+                'marketNewsDigest',
+            ]) {
+                await collectSseEvents(
+                    await POST(
+                        makeRequest(
+                            undefined,
+                            JSON.stringify({ type, params: hostile })
+                        )
+                    )
+                );
+            }
+
+            expect(vi.mocked(submitMarketBriefingAction).mock.calls).toEqual([
+                ['us', expect.any(AbortSignal)],
+            ]);
+            expect(vi.mocked(submitMacroBriefingAction).mock.calls).toEqual([
+                [expect.any(AbortSignal)],
+            ]);
+            expect(vi.mocked(submitMarketNewsDigestAction).mock.calls).toEqual([
+                ['general', 'ko', expect.any(AbortSignal)],
+            ]);
+            expect(mockReserveAnalysisGeneration).not.toHaveBeenCalled();
+        });
+
+        it.each([
+            'overall',
+            'fundamental',
+            'financials',
+            'news',
+            'options',
+            'congress',
+        ])(
+            '%s: 면제 목록 밖의 종류는 모두 생성 한도를 예약한다',
+            async type => {
+                const cached = { status: 'cached' } as never;
+                vi.mocked(runOverallAnalysisAction).mockResolvedValue(cached);
+                vi.mocked(runFundamentalAnalysisAction).mockResolvedValue(
+                    cached
+                );
+                vi.mocked(runFinancialsAnalysisAction).mockResolvedValue(
+                    cached
+                );
+                vi.mocked(submitNewsAnalysisAction).mockResolvedValue(cached);
+                vi.mocked(submitOptionsAnalysisAction).mockResolvedValue(
+                    cached
+                );
+                vi.mocked(runCongressTrendAction).mockResolvedValue(cached);
+                const body = JSON.stringify({
+                    type,
+                    params: {
+                        symbol: 'AAPL',
+                        companyName: 'Apple',
+                        timeframe: '1Day',
+                        expirationDate: 'nearest',
+                    },
+                });
+
+                await collectSseEvents(
+                    await POST(makeRequest(undefined, body))
+                );
+
+                expect(mockReserveAnalysisGeneration).toHaveBeenCalledOnce();
+            }
+        );
+
         it('DISPATCH(fundamental): 한도 초과면 cacheOnly로 강등하고, 미스면 rate_limited로 끝낸다', async () => {
             denyQuota();
             vi.mocked(runFundamentalAnalysisAction).mockResolvedValue({

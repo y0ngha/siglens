@@ -152,6 +152,47 @@ export function promptAssembledProbe(
 }
 
 /**
+ * 프롬프트 조립 여부를 기억하는 추적기. core에 넘길 콜백과 그 결과를 읽는 판정을
+ * 한 쌍으로 돌려준다 — 호출부가 플래그 변수를 직접 바꾸지 않게 한다.
+ */
+export function createPromptAssemblyTracker(): {
+    readonly onPromptAssembled: () => void;
+    readonly probe: GenerationProbe<unknown>;
+} {
+    const state = { assembled: false };
+    return {
+        onPromptAssembled: () => {
+            state.assembled = true;
+        },
+        probe: promptAssembledProbe(() => state.assembled),
+    };
+}
+
+/**
+ * 요청 하나의 예약을 담는 칸. 예약은 try 안에서 하지만 예기치 못한 예외(바깥
+ * catch)에서도 되돌려야 해서, 예약 결과를 그 catch까지 들고 가는 용도다. 예약 전에
+ * 던졌으면 되돌릴 것이 없다(`exempt`). 되돌리기는 멱등이다(`releaseGenerationGate`).
+ */
+export interface GenerationGateSlot {
+    readonly reserve: (
+        userId: string | null,
+        clientCacheOnly: boolean
+    ) => Promise<GenerationGate>;
+    readonly release: () => Promise<void>;
+}
+
+export function createGenerationGateSlot(): GenerationGateSlot {
+    const slot: { gate: GenerationGate } = { gate: EXEMPT };
+    return {
+        reserve: async (userId, clientCacheOnly) => {
+            slot.gate = await reserveGenerationGate(userId, clientCacheOnly);
+            return slot.gate;
+        },
+        release: () => releaseGenerationGate(slot.gate),
+    };
+}
+
+/**
  * `work`에 한도 정산을 붙인다.
  *
  * - 허락된 예약: 생성이 없었으면 환불한다(캐시 적중이 무료인 이유).
