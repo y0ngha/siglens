@@ -1,6 +1,11 @@
 import 'server-only';
 import { resolveReasoningConfig } from '@y0ngha/siglens-core';
-import { toProviderTurns, findSpecByApiModelId } from '../lib/utils';
+import {
+    toProviderTurns,
+    findSpecByApiModelId,
+    resolveMaxOutputTokens,
+    toSdkTransportOptions,
+} from '../lib/utils';
 import type { ProviderCallOptions } from '../model';
 import type { OpenAiCompatibleUsageLike } from '../lib/usage';
 import {
@@ -41,6 +46,7 @@ export async function callDeepseekChat({
     contents,
     systemInstruction,
     jobId = CHAT_JOB_ID,
+    limits,
 }: ProviderCallOptions): Promise<string> {
     const spec = findSpecByApiModelId(model);
     if (!spec) {
@@ -54,6 +60,7 @@ export async function callDeepseekChat({
     const client = new OpenAI({
         apiKey,
         baseURL: 'https://api.deepseek.com',
+        ...toSdkTransportOptions(limits),
     });
 
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
@@ -80,7 +87,7 @@ export async function callDeepseekChat({
         // Chat returns natural conversational text (default `text` mode) — the
         // sibling openai/gemini chat adapters do NOT force JSON. Forcing
         // `json_object` here would make the chatbot emit JSON instead of prose.
-        max_tokens: spec.maxOutputTokens,
+        max_tokens: resolveMaxOutputTokens(spec.maxOutputTokens, limits),
         thinking,
         // temperature only applies in non-thinking mode.
         ...(!useThinking ? { temperature: spec.temperature } : {}),

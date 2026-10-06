@@ -25,4 +25,28 @@ export interface ProviderCallOptions extends Omit<
      * want; direct adapter callers (e.g. the Korean translator) pass their own.
      */
     jobId?: string;
+    /** Optional per-call caps. Omitted → each adapter's previous defaults. */
+    limits?: ProviderCallLimits;
+}
+
+/**
+ * Per-call caps for callers that know their output is short and that a hung call
+ * should not be billed repeatedly.
+ *
+ * Without these, every adapter falls back to the model spec's `maxOutputTokens`
+ * (393,216 for DeepSeek) and the SDK's transport defaults (OpenAI/Anthropic: 10-minute
+ * timeout × 3 attempts). That is right for the chatbot, whose answers are long and
+ * whose stream has its own abort, but a one-paragraph rewrite that hangs can then be
+ * billed up to three times in the background after its caller has already given up.
+ *
+ * Every field is optional and independent — an omitted field keeps the adapter's old
+ * behaviour, so existing callers are unchanged.
+ */
+export interface ProviderCallLimits {
+    /** Output-token ceiling. Clamped to the spec's own maximum, never raised above it. */
+    readonly maxOutputTokens?: number;
+    /** Per-request transport timeout (ms). */
+    readonly timeoutMs?: number;
+    /** SDK-level retries after the first attempt. `0` disables them. */
+    readonly maxRetries?: number;
 }
