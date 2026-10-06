@@ -113,9 +113,25 @@ async function readCapped(
     }
 }
 
+/** IP를 못 읽은 요청이 모이는 공용 버킷 키. */
+const UNKNOWN_REPORTER = 'unknown';
+
+/**
+ * 한도 키로 쓸 IP. **던지지 않는다** — IP 해석(`headers()`)이 실패해도 이 엔드포인트는
+ * 살아 있어야 한다(파일 상단: 사고 중에 이 경로가 죽으면 사고가 안 보인다). 실패하면
+ * 공용 버킷 하나로 센다 — 상한은 그대로 걸리므로 남용 방어도 유지된다.
+ */
+async function reporterKey(): Promise<string> {
+    try {
+        return await getClientIp();
+    } catch {
+        return UNKNOWN_REPORTER;
+    }
+}
+
 export async function POST(request: Request): Promise<Response> {
     // 한도 초과면 본문을 읽지도 않는다 — 읽는 것 자체가 이 남용의 비용이다.
-    if (!admitReport(await getClientIp(), Date.now())) {
+    if (!admitReport(await reporterKey(), Date.now())) {
         return new Response(null, { status: HTTP_STATUS_NO_CONTENT });
     }
 

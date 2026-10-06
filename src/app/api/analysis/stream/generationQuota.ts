@@ -1,11 +1,11 @@
 import 'server-only';
 import {
+    QUOTA_OUTAGE_RETRY_MS,
     reserveAnalysisGeneration,
     type AnalysisQuotaIdentity,
 } from '@/entities/analysis/server/analysisGenerationQuota';
 import { getClientIp } from '@/shared/api/getClientIp';
 import { mintGuestIdOnResponse, readGuestId } from '@/shared/api/guestId';
-import { MS_PER_MINUTE } from '@/shared/config/time';
 import { isAiProviderFailure } from '@/shared/lib/aiProviderFailure';
 import { LocalizedStreamError } from '@/shared/lib/sse/LocalizedStreamError';
 import {
@@ -36,9 +36,6 @@ export type GenerationGate =
     | { readonly kind: 'exempt' };
 
 const EXEMPT: GenerationGate = { kind: 'exempt' };
-
-/** 신원 해석 자체가 실패했을 때 비회원에게 알려 줄 재시도 간격. */
-const IDENTITY_FAILURE_RETRY_MS = 5 * MS_PER_MINUTE;
 
 /**
  * 한도 주체를 정한다. 회원은 userId, 비회원은 이 요청이 들고 온 서명된 게스트
@@ -93,7 +90,7 @@ export async function reserveGenerationGate(
                   kind: 'rate_limited',
                   audience: 'guest',
                   reason: 'unavailable',
-                  retryAt: Date.now() + IDENTITY_FAILURE_RETRY_MS,
+                  retryAt: Date.now() + QUOTA_OUTAGE_RETRY_MS,
               };
     }
 }

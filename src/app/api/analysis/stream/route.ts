@@ -325,23 +325,6 @@ function schedulePersistAnalysisHistory(input: {
 }
 
 /**
- * Dispatch table: maps each non-technical analysis type to a function that
- * receives the raw `params` bag and an optional `AbortSignal`, and returns a
- * Promise. The returned promise is piped into `heartbeatStream`, keeping the
- * browser SSE connection alive for the full LLM round-trip. Each entry
- * delegates to the entity action that already owns auth, tier/BYOK gating,
- * E2E short-circuit, bot detection, and data-fetch — no logic is duplicated
- * here. The `signal` each entry receives is the **deadline** controller owned by
- * `withDeadline` — never the client's `request.signal`. See the long comment above
- * `withDeadline` for why threading a per-client signal into core is forbidden.
- */
-/**
- * ⚠️ `locale`은 **반드시 여기로 흘러야 한다.** 액션이 돌려주는 게이트 오류
- * (`{ status: 'error', error: { code, message } }`)는 훅이 그대로 화면에 던지는
- * 사용자 문구인데, `/api/*`는 next-intl matcher에서 제외돼 있어 액션이 스스로
- * 로케일을 알아낼 방법이 없다(`byokGate.ts`의 `gateMessage` JSDoc 참고).
- */
-/**
  * 생성 한도가 디스패치 핸들러에 넘기는 값. 한도 초과면 `cacheOnly`가 켜져 캐시만
  * 조회하고, 재분석(캐시 우회 = 새 생성) 의도도 무시한다.
  */
@@ -353,6 +336,22 @@ interface DispatchQuotaContext {
     readonly onPromptAssembled: () => void;
 }
 
+/**
+ * Dispatch table: maps each non-technical analysis type to a function that
+ * receives the raw `params` bag and an optional `AbortSignal`, and returns a
+ * Promise. The returned promise is piped into `heartbeatStream`, keeping the
+ * browser SSE connection alive for the full LLM round-trip. Each entry
+ * delegates to the entity action that already owns auth, tier/BYOK gating,
+ * E2E short-circuit, bot detection, and data-fetch — no logic is duplicated
+ * here. The `signal` each entry receives is the **deadline** controller owned by
+ * `withDeadline` — never the client's `request.signal`. See the long comment above
+ * `withDeadline` for why threading a per-client signal into core is forbidden.
+ *
+ * ⚠️ `locale`은 **반드시 여기로 흘러야 한다.** 액션이 돌려주는 게이트 오류
+ * (`{ status: 'error', error: { code, message } }`)는 훅이 그대로 화면에 던지는
+ * 사용자 문구인데, `/api/*`는 next-intl matcher에서 제외돼 있어 액션이 스스로
+ * 로케일을 알아낼 방법이 없다(`byokGate.ts`의 `gateMessage` JSDoc 참고).
+ */
 const DISPATCH: Record<
     Exclude<AnalysisType, 'technical'>,
     (

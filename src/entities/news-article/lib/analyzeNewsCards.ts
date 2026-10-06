@@ -140,10 +140,10 @@ export async function analyzeNewsCards(
     // 던진 것과 빈 응답 둘 다 실패다 — 어느 쪽이든 `analyzedAt`이 비어 다음 패스가
     // 다시 집는다. `settled`는 입력 순서를 지킨다(`withConcurrencyLimit` 계약).
     const failedIds = targets
-        .filter((_, i) => {
-            const outcome = settled[i];
-            return outcome.status === 'rejected' || !outcome.value;
-        })
-        .map(t => t.id);
+        .map((target, i) => ({ id: target.id, outcome: settled[i] }))
+        .filter(
+            ({ outcome }) => outcome.status === 'rejected' || !outcome.value
+        )
+        .map(({ id }) => id);
     await recordNewsCardFailures(failedIds, failures, now);
 }

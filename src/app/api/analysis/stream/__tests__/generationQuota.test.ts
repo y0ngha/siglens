@@ -18,9 +18,15 @@ vi.mock('next/headers', () => ({
     cookies: async () => mockCookieStore,
 }));
 vi.mock('@/shared/api/getClientIp', () => ({ getClientIp: mockGetClientIp }));
-vi.mock('@/entities/analysis/server/analysisGenerationQuota', () => ({
-    reserveAnalysisGeneration: mockReserve,
-}));
+vi.mock(
+    '@/entities/analysis/server/analysisGenerationQuota',
+    async importOriginal => ({
+        ...(await importOriginal<
+            typeof import('@/entities/analysis/server/analysisGenerationQuota')
+        >()),
+        reserveAnalysisGeneration: mockReserve,
+    })
+);
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {

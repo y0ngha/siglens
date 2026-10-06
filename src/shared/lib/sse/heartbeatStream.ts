@@ -25,8 +25,9 @@ export const HEARTBEAT_INTERVAL_MS = 25_000;
  *                Prevents the ALB idle-timeout (60 s, measured) from cutting the connection.
  * - `done`:      Fired with `{ result }` when the promise resolves. Stream closes after.
  * - `error`:     Fired with `{ message }` when the promise rejects. Stream closes after.
- * - `rate_limited`: Fired with `{ audience, retryAt }` when the promise rejects with
- *                {@link RateLimitedStreamError}. Not logged as a failure. Stream closes after.
+ * - `rate_limited`: Fired with `{ audience, reason, retryAt }` when the promise
+ *                rejects with {@link RateLimitedStreamError}. Not logged as a
+ *                failure. Stream closes after.
  *
  * ## Timer-leak defense (mirrors the production-verified `sse-probe` pattern)
  *

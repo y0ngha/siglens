@@ -96,15 +96,13 @@ export async function recordNewsCardFailures(
     if (redis === null || ids.length === 0) return;
     try {
         const pipeline = redis.pipeline();
-        for (const id of ids) {
+        ids.forEach(id =>
             pipeline.set(
                 failureKey(id),
                 nextFailureState(previous.get(id), now),
-                {
-                    ex: FAILURE_RECORD_TTL_SECONDS,
-                }
-            );
-        }
+                { ex: FAILURE_RECORD_TTL_SECONDS }
+            )
+        );
         await pipeline.exec();
     } catch (error) {
         console.error('[newsCardFailureBackoff] record failed', error);

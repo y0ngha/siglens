@@ -119,6 +119,21 @@ describe('POST /api/client-error', () => {
         expect(spy).toHaveBeenCalledTimes(LIMIT);
     });
 
+    it('IP 해석이 던져도 500 없이 기록하고, 그런 요청들은 한 공용 버킷의 상한을 함께 쓴다', async () => {
+        // 메모리 버킷이 모듈 상태라, 공용 버킷을 쓰는 단언은 이 테스트 하나에 모은다.
+        mockGetClientIp.mockRejectedValue(new Error('headers() unavailable'));
+
+        const first = await POST(postBody('{"n":0}'));
+        expect(first.status).toBe(HTTP_STATUS_NO_CONTENT);
+        expect(spy).toHaveBeenCalledOnce();
+
+        for (let i = 1; i <= 30; i += 1) {
+            const res = await POST(postBody(`{"n":${i}}`));
+            expect(res.status).toBe(HTTP_STATUS_NO_CONTENT);
+        }
+        expect(spy).toHaveBeenCalledTimes(30);
+    });
+
     it('한 IP가 상한에 걸려도 다른 IP의 보고는 기록한다', async () => {
         for (let i = 0; i < 31; i += 1) {
             await POST(postBody('{"n":1}'));

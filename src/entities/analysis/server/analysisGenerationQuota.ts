@@ -24,17 +24,21 @@ import {
  * `/api/analysis/stream`의 **새 LLM 생성** 한도. 캐시 적중은 세지 않는다
  * (예약 후 환불 — {@link reserveAnalysisGeneration}).
  *
- * 숫자는 사용자 승인 설계값이다.
+ * 값은 사용자 승인 설계값이고, 바로 아래 상수가 단일 출처다(문구에 숫자를 옮겨
+ * 적지 않는다 — 상수만 바뀌고 설명이 낡는 것을 막는다).
  *
- * - **개인 축**(서명된 게스트 쿠키를 들고 온 비회원): 20/시간, 60/일.
- * - **IP 축**(모든 비회원): 200/일. 쿠키 없이 온 요청은 개인을 구분할 수 없으므로
- *   개인 축 대신 IP 시간 축(60/시간)을 건다 — 통신사 NAT·사무실처럼 여러 사람이
- *   한 IP를 쓰는 곳이 개인 한도(20/시간) 하나를 나눠 쓰지 않게 한다. 쿠키는 그
- *   요청의 응답에서 발급되므로 다음 요청부터 개인 축으로 옮겨 간다.
- * - **IP 미상**: 전부 한 버킷(`unknown`)이라 엄격하게 묶는다. 운영은 Cloudflare
+ * - **개인 축**(서명된 게스트 쿠키를 들고 온 비회원):
+ *   `ANALYSIS_GUEST_GENERATIONS_PER_HOUR` / `ANALYSIS_GUEST_GENERATIONS_PER_DAY`.
+ * - **IP 축**(모든 비회원): `ANALYSIS_GUEST_IP_GENERATIONS_PER_DAY`. 쿠키 없이 온
+ *   요청은 개인을 구분할 수 없으므로 개인 축 대신 IP 시간 축
+ *   (`ANALYSIS_COOKIELESS_IP_GENERATIONS_PER_HOUR`)을 건다 — 통신사 NAT·사무실처럼
+ *   여러 사람이 한 IP를 쓰는 곳이 개인 시간 한도 하나를 나눠 쓰지 않게 한다. 쿠키는
+ *   그 요청의 응답에서 발급되므로 다음 요청부터 개인 축으로 옮겨 간다.
+ * - **IP 미상**: 전부 한 버킷(`unknown`)이라 엄격하게 묶는다
+ *   (`ANALYSIS_UNKNOWN_IP_GENERATIONS_PER_HOUR` / `_PER_DAY`). 운영은 Cloudflare
  *   터널로만 들어와 `cf-connecting-ip`가 항상 있으므로, 이 버킷이 차면 그 자체가
  *   설정 이상 신호다.
- * - **회원**: userId당 300/일.
+ * - **회원**: userId당 `ANALYSIS_MEMBER_GENERATIONS_PER_DAY`.
  */
 export const ANALYSIS_GUEST_GENERATIONS_PER_HOUR = 20;
 export const ANALYSIS_GUEST_GENERATIONS_PER_DAY = 60;
@@ -45,10 +49,11 @@ export const ANALYSIS_UNKNOWN_IP_GENERATIONS_PER_DAY = 60;
 export const ANALYSIS_MEMBER_GENERATIONS_PER_DAY = 300;
 
 /**
- * 비회원 한도 저장소(Redis)가 죽었을 때 클라이언트에 알려 줄 재시도 시각까지의 간격.
+ * 비회원 한도 저장소(Redis)가 죽었거나 신원 해석이 실패했을 때 클라이언트에 알려 줄
+ * 재시도 시각까지의 간격(`generationQuota.ts`도 이 값을 쓴다).
  * 장애는 대개 분 단위로 회복되므로, 일 단위 경계를 알려 주면 과하게 막는다.
  */
-const QUOTA_OUTAGE_RETRY_MS = 5 * MS_PER_MINUTE;
+export const QUOTA_OUTAGE_RETRY_MS = 5 * MS_PER_MINUTE;
 
 /**
  * 예약 전체(창 최대 3개 순차 소비)에 거는 시간 상한. 넘기면 장애로 본다 — 한도
@@ -301,41 +306,46 @@ function outage(
           };
 }
 
+/**
+ * 창을 앞에서부터 **하나씩** 소비한다(재귀). 순차여야 한다 — 병렬로 소비하면 거절된
+ * 창 뒤의 창까지 이미 올라가 있다. `consumed`는 지금까지 소비한 창이고, 거절·장애 시
+ * 그것만 되돌린다(넘친 창 자신은 core가 이미 되돌린다).
+ */
 async function claimAll(
     audience: AnalysisRateLimitAudience,
-    claims: readonly WindowClaim[],
-    now: Date
+    remaining: readonly WindowClaim[],
+    now: Date,
+    consumed: readonly WindowClaim[] = []
 ): Promise<AnalysisQuotaReservation> {
-    const consumed: WindowClaim[] = [];
-    try {
-        for (const claim of claims) {
-            // 순차여야 한다 — 병렬로 소비하면 거절된 창 뒤의 창까지 이미 올라가 있다.
-            const allowed = await claim.store.consume(
-                claim.subject,
-                claim.limit
+    const [claim, ...rest] = remaining;
+    if (claim === undefined) {
+        return { ok: true, audience, refund: onceRefund(consumed) };
+    }
+    const allowed = await claim.store
+        .consume(claim.subject, claim.limit)
+        .catch((error: unknown) => {
+            // fail-closed 저장소(비회원)만 여기로 온다 — core가 이미 알람 마커를 남겼다.
+            warnThrottled(
+                'unavailable',
+                '[analysis-quota] store unavailable, cache-only',
+                error
             );
-            if (!allowed) {
-                await refundAll(consumed);
-                return {
-                    ok: false,
-                    audience,
-                    reason: 'quota',
-                    retryAt: claim.retryAt,
-                };
-            }
-            consumed.push(claim);
-        }
-    } catch (error) {
-        // fail-closed 저장소(비회원)만 여기로 온다 — core가 이미 알람 마커를 남겼다.
-        warnThrottled(
-            'unavailable',
-            '[analysis-quota] store unavailable, cache-only',
-            error
-        );
+            return null;
+        });
+    if (allowed === null) {
         await refundAll(consumed);
         return outage(audience, now);
     }
-    return { ok: true, audience, refund: onceRefund(consumed) };
+    if (!allowed) {
+        await refundAll(consumed);
+        return {
+            ok: false,
+            audience,
+            reason: 'quota',
+            retryAt: claim.retryAt,
+        };
+    }
+    return claimAll(audience, rest, now, [...consumed, claim]);
 }
 
 const TIMED_OUT = Symbol('timed-out');
