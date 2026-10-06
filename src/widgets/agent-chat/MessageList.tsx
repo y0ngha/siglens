@@ -1,8 +1,10 @@
 'use client';
 
+import { splitAgentFollowUps } from '@y0ngha/siglens-core';
 import { useTranslations } from 'next-intl';
 import {
     useEffect,
+    useId,
     useLayoutEffect,
     useRef,
     useState,
@@ -14,6 +16,7 @@ import {
 } from '@/features/agent-chat/lib/relatedSymbolPages';
 import type { AgentUiMessage } from '@/features/agent-chat/model/types';
 import { cn } from '@/shared/lib/cn';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { BUTTON_GHOST, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { useCopyToClipboard } from '@/shared/hooks/useCopyToClipboard';
 import { useSymbolLabels } from './hooks/useSymbolLabels';
@@ -45,6 +48,8 @@ interface Props {
     readonly streaming: boolean;
     readonly onRegenerate: () => void;
     readonly onEdit: (seq: number, text: string) => void;
+    /** Sends a follow-up chip's text as the next user turn (same path as the composer). */
+    readonly onSend: (text: string) => void;
     /** Main-site origin + locale prefix, for the "open on siglens" links under an answer. */
     readonly siteUrl: string;
     readonly localePrefix: string;
@@ -57,6 +62,56 @@ const ACTION =
 const COPIED_RESET_MS = 1_500;
 
 const EDIT_ACTION_SIZE = 'min-h-9 px-3 text-sm';
+
+/**
+ * Quiet suggestion chip for a follow-up question. Same surface as the empty
+ * state's `SuggestionCards` card, but shorter (`min-h-11` — the finger-target
+ * floor) because it sits under an answer rather than being the screen's focus.
+ */
+const FOLLOW_UP_CHIP = cn(
+    SURFACE_CARD,
+    'group inline-flex min-h-11 max-w-full items-center justify-between gap-3 px-3.5 py-2 text-left text-sm leading-5 text-secondary-200 transition-colors hover:border-primary-400 hover:text-secondary-100 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none motion-reduce:transition-none'
+);
+
+interface FollowUpsProps {
+    readonly items: readonly string[];
+    readonly onPick: (text: string) => void;
+}
+
+/**
+ * Follow-up questions the agent offered on its last line, as tappable chips.
+ * Rendered only under the last finished answer: a chip under an old answer
+ * would send a question about a conversation that has moved on.
+ */
+function FollowUps({ items, onPick }: FollowUpsProps) {
+    const t = useTranslations('widgets.agent-chat');
+    // Per-instance id: every assistant turn could render this component.
+    const labelId = useId();
+    if (items.length === 0) return null;
+    return (
+        <div className="mt-4">
+            <p id={labelId} className="mb-2 text-xs text-secondary-400">
+                {t('MessageList.followUpsLabel')}
+            </p>
+            <ul aria-labelledby={labelId} className="flex flex-wrap gap-2">
+                {items.map((item, i) => (
+                    // Index in the key: the model may repeat an item, and a
+                    // collision would silently drop a chip.
+                    <li key={`${i}-${item}`} className="max-w-full">
+                        <button
+                            type="button"
+                            onClick={() => onPick(item)}
+                            className={FOLLOW_UP_CHIP}
+                        >
+                            <span className="min-w-0 break-words">{item}</span>
+                            <ArrowUpRightIcon className="size-4 shrink-0 text-secondary-400 transition-colors group-hover:text-primary-400 motion-reduce:transition-none" />
+                        </button>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+}
 
 interface RelatedPagesProps {
     readonly pages: RelatedSymbolPage[];
@@ -127,6 +182,7 @@ export function MessageList({
     streaming,
     onRegenerate,
     onEdit,
+    onSend,
     siteUrl,
     localePrefix,
 }: Props) {
@@ -196,7 +252,13 @@ export function MessageList({
 
     const copyMessage = (m: AgentUiMessage): void => {
         setCopiedId(m.id);
-        void copy(m.content);
+        // Copy what the reader saw — the follow-up marker line is UI, not
+        // answer text. A user turn is the user's own words, never split.
+        void copy(
+            m.role === 'assistant'
+                ? splitAgentFollowUps(m.content).body
+                : m.content
+        );
     };
 
     const handleScroll = (e: UIEvent<HTMLDivElement>): void => {
@@ -423,6 +485,16 @@ export function MessageList({
                         }
 
                         const isStreaming = m.status === 'streaming';
+                        // Split on every render, streaming included: the body is
+                        // safe to show chunk by chunk (a half-typed marker line
+                        // is hidden), but the items can still grow mid-stream.
+                        const { body, followUps } = splitAgentFollowUps(
+                            m.content
+                        );
+                        const showFollowUps =
+                            m === lastAssistant &&
+                            m.status === 'complete' &&
+                            !streaming;
                         return (
                             <article
                                 key={m.id}
@@ -442,9 +514,9 @@ export function MessageList({
                                         className="min-w-0 flex-1 text-[15px] leading-7 break-words text-secondary-100"
                                     >
                                         <ToolActivity tools={m.tools} />
-                                        {m.content ? (
+                                        {body ? (
                                             <AgentMarkdown>
-                                                {m.content}
+                                                {body}
                                             </AgentMarkdown>
                                         ) : isStreaming && m.draft ? (
                                             <div>
@@ -481,13 +553,19 @@ export function MessageList({
                                                 {t('MessageList.259976')}
                                             </p>
                                         ) : null}
-                                        {!isStreaming && m.content ? (
+                                        {!isStreaming && body ? (
                                             <RelatedPages
                                                 pages={relatedSymbolPages(
                                                     m.tools
                                                 )}
                                                 siteUrl={siteUrl}
                                                 localePrefix={localePrefix}
+                                            />
+                                        ) : null}
+                                        {showFollowUps ? (
+                                            <FollowUps
+                                                items={followUps}
+                                                onPick={onSend}
                                             />
                                         ) : null}
                                     </div>

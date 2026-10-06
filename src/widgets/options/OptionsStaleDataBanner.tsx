@@ -2,7 +2,6 @@
 
 import { useTranslations } from 'next-intl';
 import {
-    ET_MARKET_HOURS_DISPLAY,
     KST_EDT_HOURS_DISPLAY,
     KST_EST_HOURS_DISPLAY,
 } from '@/shared/lib/options/marketHoursDisplay';
@@ -10,6 +9,9 @@ import { EDT_OFFSET_HOURS, getEasternOffsetHours } from '@/shared/lib/eastern';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 
 /**
+ * 마지막 정상 스냅샷이 없을 때만 뜬다(`fetchOptionsSnapshot`이 정규장 밖 stale을
+ * last-good으로 대체하므로). 그래서 짧게 — 제목, 이유 한 문장, 지금 확인할 시간대만 말한다.
+ *
  * Surfaces a "data temporarily empty" notice when the upstream provider
  * (Yahoo Finance) returns zero open interest on every strike of every chain.
  *
@@ -61,17 +63,6 @@ export function OptionsStaleDataBanner() {
             </p>
             <div className="mt-1 space-y-1">
                 <p>{t('OptionsStaleDataBanner.baed2a')}</p>
-                <p>
-                    {t('OptionsStaleDataBanner.c5ab1a', {
-                        v0: ET_MARKET_HOURS_DISPLAY,
-                    })}
-                </p>
-                <p>
-                    {t('OptionsStaleDataBanner.2696b9', {
-                        v0: KST_EDT_HOURS_DISPLAY,
-                        v1: KST_EST_HOURS_DISPLAY,
-                    })}
-                </p>
                 {isHydrated && (
                     <p>
                         {t('OptionsStaleDataBanner.6bdf35', {

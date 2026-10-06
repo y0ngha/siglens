@@ -1,7 +1,7 @@
 /**
  * ISR empty-cache prevention tests for the home page (app/page.tsx).
  *
- * loadSkills() and countSkillFiles() failures during ISR cold-gen must NOT
+ * loadShowcaseSkills() and countSkillFiles() failures during ISR cold-gen must NOT
  * propagate — the Home({ params: Promise.resolve({ locale: 'ko' }) }) RSC must resolve to a non-empty element using the
  * graceful fallback paths already in place ([] / zeroed counts).
  *
@@ -18,7 +18,6 @@ vi.mock('@/widgets/home/SkillsShowcase', () => ({
 }));
 vi.mock('@/widgets/home/StatsBar', () => ({
     StatsBar: () => null,
-    StatsBarSkeleton: () => null,
 }));
 vi.mock('@/widgets/home/TickerCategories', () => ({
     TickerCategories: () => null,
@@ -48,7 +47,6 @@ vi.mock('@/widgets/home/SkillsShowcase', () => ({
 }));
 vi.mock('@/widgets/home/StatsBar', () => ({
     StatsBar: () => null,
-    StatsBarSkeleton: () => null,
 }));
 vi.mock('@/widgets/home/TickerCategories', () => ({
     TickerCategories: () => null,
@@ -59,7 +57,7 @@ vi.mock('@/features/ticker-search/ui/SymbolSearchPanel', () => ({
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
 vi.mock('@/entities/skill/api', () => ({
     countSkillFiles: vi.fn(),
-    FileSkillsLoader: vi.fn(),
+    loadShowcaseSkills: vi.fn(),
 }));
 vi.mock('@/shared/lib/seo', () => ({
     brandIntroName: () => 'Siglens',
@@ -99,18 +97,17 @@ import {
     vi,
     beforeEach,
     type MockedFunction,
-    type MockedClass,
 } from 'vitest';
 import { isValidElement } from 'react';
 import { render, screen } from '@testing-library/react';
 import Home from '@/app/[locale]/(home)/page';
-import { countSkillFiles, FileSkillsLoader } from '@/entities/skill/api';
+import { countSkillFiles, loadShowcaseSkills } from '@/entities/skill/api';
 
 const mockCountSkillFiles = countSkillFiles as MockedFunction<
     typeof countSkillFiles
 >;
-const MockFileSkillsLoader = FileSkillsLoader as MockedClass<
-    typeof FileSkillsLoader
+const mockLoadShowcaseSkills = loadShowcaseSkills as MockedFunction<
+    typeof loadShowcaseSkills
 >;
 
 describe('Home page ISR empty-cache prevention', () => {
@@ -123,12 +120,7 @@ describe('Home page ISR empty-cache prevention', () => {
         mockCountSkillFiles.mockRejectedValue(
             new Error('ENOENT: skill dir missing')
         );
-        MockFileSkillsLoader.mockImplementation(
-            () =>
-                ({
-                    loadSkills: vi.fn().mockResolvedValue([]),
-                }) as unknown as InstanceType<typeof FileSkillsLoader>
-        );
+        mockLoadShowcaseSkills.mockResolvedValue([]);
 
         // Must NOT reject — the .catch() in Home({ params: Promise.resolve({ locale: 'ko' }) }) must absorb and use zero counts.
         const element = await Home({
@@ -145,12 +137,7 @@ describe('Home page ISR empty-cache prevention', () => {
      */
     it('degrade 상태에서도 히어로 퀵링크를 렌더한다', async () => {
         mockCountSkillFiles.mockRejectedValue(new Error('ENOENT'));
-        MockFileSkillsLoader.mockImplementation(
-            () =>
-                ({
-                    loadSkills: vi.fn().mockResolvedValue([]),
-                }) as unknown as InstanceType<typeof FileSkillsLoader>
-        );
+        mockLoadShowcaseSkills.mockResolvedValue([]);
 
         render(await Home({ params: Promise.resolve({ locale: 'ko' }) }));
 
@@ -166,8 +153,8 @@ describe('Home page ISR empty-cache prevention', () => {
         ).toHaveAttribute('href', '/market');
     });
 
-    it('loadSkills throw → Home resolves (non-empty element, does not throw)', async () => {
-        // countSkillFiles succeeds but FileSkillsLoader.loadSkills rejects.
+    it('loadShowcaseSkills throw → Home resolves (non-empty element, does not throw)', async () => {
+        // countSkillFiles succeeds but loadShowcaseSkills rejects.
         mockCountSkillFiles.mockResolvedValue({
             indicators: 0,
             candlesticks: 0,
@@ -177,16 +164,11 @@ describe('Home page ISR empty-cache prevention', () => {
             fundamental: 0,
             news: 0,
         });
-        MockFileSkillsLoader.mockImplementation(
-            () =>
-                ({
-                    loadSkills: vi
-                        .fn()
-                        .mockRejectedValue(new Error('skills dir unreadable')),
-                }) as unknown as InstanceType<typeof FileSkillsLoader>
+        mockLoadShowcaseSkills.mockRejectedValue(
+            new Error('skills dir unreadable')
         );
 
-        // Must NOT reject — the try/catch in loadSkills() must absorb and return [].
+        // Must NOT reject — the try/catch in loadShowcase() must absorb and return [].
         const element = await Home({
             params: Promise.resolve({ locale: 'ko' }),
         });
@@ -194,16 +176,9 @@ describe('Home page ISR empty-cache prevention', () => {
         expect(isValidElement(element)).toBe(true);
     });
 
-    it('both countSkillFiles and loadSkills throw → Home still resolves non-empty', async () => {
+    it('both countSkillFiles and loadShowcaseSkills throw → Home still resolves non-empty', async () => {
         mockCountSkillFiles.mockRejectedValue(new Error('fs error'));
-        MockFileSkillsLoader.mockImplementation(
-            () =>
-                ({
-                    loadSkills: vi
-                        .fn()
-                        .mockRejectedValue(new Error('fs error')),
-                }) as unknown as InstanceType<typeof FileSkillsLoader>
-        );
+        mockLoadShowcaseSkills.mockRejectedValue(new Error('fs error'));
 
         const element = await Home({
             params: Promise.resolve({ locale: 'ko' }),

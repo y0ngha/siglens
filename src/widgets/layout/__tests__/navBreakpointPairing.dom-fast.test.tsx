@@ -16,7 +16,9 @@ const read = (f: string) => readFileSync(join(layoutDir, f), 'utf8');
 
 describe('헤더 내비 브레이크포인트', () => {
     it('데스크톱 내비는 lg 이상에서만 보인다', () => {
-        expect(read('Header.tsx')).toContain('className="hidden lg:flex"');
+        expect(read('Header.tsx')).toContain(
+            'className="hidden shrink-0 lg:flex"'
+        );
     });
 
     it('햄버거는 lg 미만에서만 보인다', () => {
@@ -24,7 +26,9 @@ describe('헤더 내비 브레이크포인트', () => {
     });
 
     it('두 브레이크포인트가 같은 접두를 쓴다', () => {
-        const desktop = read('Header.tsx').match(/hidden (\w+):flex/)?.[1];
+        const desktop = read('Header.tsx').match(
+            /hidden (?:shrink-0 )?(\w+):flex/
+        )?.[1];
         const mobile = read('HeaderMobileMenu.tsx').match(
             /"(\w+):hidden"/
         )?.[1];

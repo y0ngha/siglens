@@ -117,8 +117,12 @@ describe('EmptyState', () => {
         const buttons = examples.querySelectorAll('button');
         expect(buttons).toHaveLength(6);
         expect(examples.querySelectorAll('a')).toHaveLength(0);
+        // The portfolio question needs a login; the guest's first card is open to all.
+        expect(
+            screen.queryByRole('button', { name: /내 보유 종목 지금 어때/ })
+        ).toBeNull();
         buttons[0]!.click();
-        expect(onPick).toHaveBeenCalledWith('내 보유 종목 지금 어때?');
+        expect(onPick).toHaveBeenCalledWith('오늘 코스피 분위기 어때?');
         // Personalised suggestions are for members; guests get the static six.
         expect(screen.queryByText('무시돼야 할 개인화 제안')).toBeNull();
         expect(

@@ -176,6 +176,26 @@ describe('buildTechnicalFactsNarrative', () => {
         ]);
     });
 
+    it('종목 이름 받침과 무관하게 같은 조사("의")를 쓴다', () => {
+        const facts = buildTechnicalFacts(
+            [bar(100, 120, 90), bar(110, 115, 100)],
+            indicators({ rsi: [null, null], macd: [] })
+        );
+
+        for (const name of ['셀트리온', '카카오', 'NVDA']) {
+            expect(
+                buildTechnicalFactsNarrative(
+                    name,
+                    facts!,
+                    'us-equity',
+                    tFacts
+                )[0]
+            ).toBe(
+                `${name}의 최근 종가는 $110.00이고, 직전 봉 대비 10.00% 상승했습니다.`
+            );
+        }
+    });
+
     it('MACD histogram이 0이면 서사에서 중립에 가까운 상태로 표현한다', () => {
         const facts = buildTechnicalFacts(
             [bar(100, 120, 90), bar(110, 115, 100)],

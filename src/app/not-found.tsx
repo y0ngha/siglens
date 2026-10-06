@@ -1,21 +1,35 @@
 /* eslint-disable nextjs/no-html-link-for-pages --
- * 아래 홈 링크는 `<Link>`가 아니라 `<a>`여야 한다. 이 파일은 루트 레이아웃
- * 바깥에서 자체 문서를 렌더하는 자리라 앱 라우터 컨텍스트가 없고, 전체 페이지
- * 로드로 앱을 처음부터 세우는 것이 유일하게 정상 동작하는 경로다. */
+ * 아래 링크는 `<Link>`가 아니라 `<a>`여야 한다. 이 파일은 루트 레이아웃 바깥에서
+ * 자체 문서를 렌더하는 자리라 앱 라우터 컨텍스트가 없고, 전체 페이지 로드로 앱을
+ * 처음부터 세우는 것이 유일하게 정상 동작하는 경로다. */
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
+import { NotFoundLayout } from '@/app/_components/NotFoundLayout';
+import {
+    documentTitleOf,
+    buildOverrides,
+} from '@/app/_components/notFoundOverrides';
+import { NotFoundView } from '@/app/_components/NotFoundView';
+import { NAV_VERTICALS } from '@/shared/config/assetClassNav';
+import { DEFAULT_LOCALE, localePath } from '@/shared/i18n/locales';
+import { SITE_NAME } from '@/shared/lib/seo';
+import { ThemeInitScript } from '@/shared/ui/ThemeInitScript';
 import './globals.css';
 
-/**
- * 루트 레이아웃 바깥이라 로케일을 알 수 없다 — `global-error.tsx`와 같은 이유로
- * ko·en 병기다. 제목 자체가 없으면 브라우저 탭과 크롤러가 URL을 그대로 보여준다.
- */
-export const metadata: Metadata = {
-    title: '페이지를 찾을 수 없습니다 / Page not found',
-    robots: { index: false, follow: true },
-};
+const HOME_NAMESPACE = 'app.home';
+const NAV_LABEL_KEY = 'widgets.layout.HeaderNav.5281d7';
 
 /**
- * 루트 404.
+ * ⚠️ `title`을 두지 않는다 — 제목은 `NotFoundLayout`의 `<title>`이 맡는다. Next 메타데이터의
+ * `<title>`은 하이드레이션 때 다시 써져서 클라이언트 섬이 바꾼 제목(`NotFoundView`)을 덮는다.
+ */
+export function generateMetadata(): Metadata {
+    return { robots: { index: false, follow: true } };
+}
+
+/**
+ * 루트 404 — 어떤 라우트에도 매칭되지 않은 URL(`/foo/bar`, `/en/foo/bar`,
+ * 알 수 없는 `/lp/*`, SiglensAI 호스트의 없는 경로)이 닿는다.
  *
  * ## 왜 필요한가
  *
@@ -23,39 +37,72 @@ export const metadata: Metadata = {
  * `<html>`/`<body>`를 렌더하지 않는 패스스루로 남았다 — 그건 `[locale]/layout.tsx`가
  * 로케일별로 맡는다. 그러면 **어떤 라우트에도 매칭되지 않은 URL**은 로케일 레이아웃
  * 바깥에서 처리되고, Next의 내부 셸(`<html id="__next_error__">`, `lang` 없음, 본문 없음)이
- * 뜬다. 실측: `/nonexistent-page-xyz`, `/ZZZZZZZZZ`, `/en/nonexistent-page-xyz`가
- * 전부 제목만 있고 본문이 비어 있었다 — **한국어 사용자 포함 모든 404**가
- * 그랬고, 상태 코드는 404로 정확했기 때문에 상태만 검사하는 테스트로는 안 보였다.
+ * 뜬다. 그래서 이 파일이 `<html>`/`<body>`와 스타일시트를 직접 맡는다
+ * (`global-error.tsx`와 같은 이유).
  *
- * 루트 레이아웃이 `<html>`/`<body>`를 렌더하지 않으므로 이 파일이 그것과 스타일시트를
- * 직접 맡는다(`global-error.tsx`와 같은 이유). 로케일을 알 수 없는 자리라 한국어·영어를
- * 병기하고, 링크는 전체 페이지 로드가 되도록 맨 `<a>`를 쓴다.
+ * ## ⚠️ 반드시 정적이어야 한다 — 요청 API 금지
+ *
+ * 이 경계는 **모든 라우트 트리의 일부로 함께 렌더된다.** 여기서 `headers()`·`cookies()`·
+ * `connection()` 같은 동적 API를 부르면 ISR/정적 페이지 전부가 런타임에 "static에서
+ * dynamic으로 바뀌었다"(`Page changed from static to dynamic at runtime /ko/AAPL, reason:
+ * headers`)며 500이 된다 — 실측(e2e): `/ko/AAPL`과 알 수 없는 경로가 모두 500이었다.
+ * `getTranslations({ locale, namespace })`는 로케일을 인자로 받아 요청 API를 쓰지 않으므로
+ * 안전하다.
+ *
+ * ## 언어·호스트
+ *
+ * 서버는 한국어 · 메인 호스트 **전체 마크업**을 SSR해 `children`으로 넘기고, 클라이언트 섬
+ * (`NotFoundView`)에는 비기본 표면(en/ja/zh 메인, 4개 로케일 ai)의 **최소 문구**만 props로
+ * 넘긴다 — 이 요소는 모든 페이지의 Flight 페이로드에 실리므로 props를 키우지 않는다.
+ * 섬이 마운트 뒤 주소로 로케일·호스트를 알아내 문구를 바꾼다 — JS 없이 받는 크롤러는
+ * 한국어 문서를 받는다.
+ * 링크는 전체 페이지 로드가 되도록 맨 `<a>`다.
  */
-export default function RootNotFound() {
+export default async function RootNotFound() {
+    const [overrides, t, tNav] = await Promise.all([
+        buildOverrides(),
+        getTranslations({ locale: DEFAULT_LOCALE, namespace: HOME_NAMESPACE }),
+        getTranslations({ locale: DEFAULT_LOCALE }),
+    ]);
     return (
-        <html lang="ko">
-            <body className="flex min-h-dvh flex-col items-center justify-center bg-secondary-900 px-6 text-center text-secondary-50">
-                <p className="font-mono text-sm tracking-widest text-primary-400">
-                    404
-                </p>
-                <h1 className="mt-4 text-2xl font-bold text-secondary-100">
-                    페이지를 찾을 수 없습니다
-                    <span className="mt-1 block text-lg font-medium text-secondary-300">
-                        Page not found
-                    </span>
-                </h1>
-                <p className="mt-3 max-w-md text-sm leading-relaxed text-secondary-400">
-                    주소가 바뀌었거나 삭제된 페이지입니다.
-                    <span className="mt-1 block">
-                        The page may have moved or been removed.
-                    </span>
-                </p>
-                <a
-                    href="/"
-                    className="mt-8 inline-flex min-h-11 items-center rounded-lg bg-primary-600 px-6 text-sm font-medium text-white transition-colors hover:bg-primary-700"
-                >
-                    홈으로 / Home
-                </a>
+        <html lang={DEFAULT_LOCALE} suppressHydrationWarning>
+            <head>
+                <ThemeInitScript />
+            </head>
+            <body className="flex min-h-dvh flex-col bg-secondary-900 text-secondary-50">
+                <NotFoundView overrides={overrides}>
+                    <NotFoundLayout
+                        wordmark={SITE_NAME}
+                        homeHref={localePath(DEFAULT_LOCALE, '/')}
+                        documentTitle={documentTitleOf(
+                            t('not-found.6cbd6d'),
+                            SITE_NAME
+                        )}
+                        navLabel={tNav(NAV_LABEL_KEY)}
+                        navLinks={NAV_VERTICALS.map(vertical => ({
+                            id: vertical.id,
+                            href: localePath(DEFAULT_LOCALE, vertical.rootHref),
+                            label: tNav(vertical.labelKey),
+                        }))}
+                        title={t('not-found.6cbd6d')}
+                        description={t('not-found.03ecab')
+                            .replace(/\s+/gu, ' ')
+                            .trim()}
+                        homeLabel={t('not-found.ba81f0', { v0: SITE_NAME })}
+                        shortcuts={[
+                            {
+                                id: 'market',
+                                href: localePath(DEFAULT_LOCALE, '/market'),
+                                label: t('NotFoundContent.ade95e'),
+                            },
+                            {
+                                id: 'news',
+                                href: localePath(DEFAULT_LOCALE, '/news'),
+                                label: t('NotFoundContent.91dd85'),
+                            },
+                        ]}
+                    />
+                </NotFoundView>
             </body>
         </html>
     );

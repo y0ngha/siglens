@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import { countSkillFiles, FileSkillsLoader } from '@/entities/skill/api';
+import { countSkillFiles, loadShowcaseSkills } from '@/entities/skill/api';
 import {
     localeAlternatesFrom,
     localeOpenGraph,
@@ -44,7 +44,7 @@ import {
     SkillsShowcase,
     SkillsShowcaseSkeleton,
 } from '@/widgets/home/SkillsShowcase';
-import { StatsBar, StatsBarSkeleton } from '@/widgets/home/StatsBar';
+import { StatsBar } from '@/widgets/home/StatsBar';
 import { TickerCategories } from '@/widgets/home/TickerCategories';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import type { Metadata } from 'next';
@@ -126,22 +126,20 @@ export const revalidate = 86400; // 24h — skills는 배포 시 갱신되므로
 
 // skills 파일시스템 읽기 오류는 graceful 처리 — 빈 배열/0으로 폴백해 페이지 렌더를
 // 계속한다. ISR 빈 캐시 동결 방지: throw하면 0-byte HTML이 캐시에 박힌다.
-const loadSkills = cache(async () => {
+//
+// 쇼케이스는 `_core/`(모델용 압축 요약)를 뺀 목록을 쓴다. 개수(`StatsBar`·히어로)는 위
+// `countSkillFiles`가 같은 기준(`_core` 제외)으로 센다.
+const loadShowcase = cache(async () => {
     try {
-        return await new FileSkillsLoader().loadSkills();
+        return await loadShowcaseSkills();
     } catch (e) {
-        console.error('[Home] loadSkills failed:', e);
+        console.error('[Home] loadShowcaseSkills failed:', e);
         return [];
     }
 });
 
-async function AsyncStatsBar() {
-    const skills = await loadSkills();
-    return <StatsBar skills={skills} />;
-}
-
 async function SkillsShowcaseServer() {
-    const skills = await loadSkills();
+    const skills = await loadShowcase();
     // 프로젝션이 **필수**다 — 왜인지는 `toSkillShowcaseItems`의 JSDoc에 있다.
     return <SkillsShowcase skills={toSkillShowcaseItems(skills)} />;
 }
@@ -398,9 +396,9 @@ export default async function Home({
                         </div>
                     </div>
                     <div className="relative mt-10">
-                        <Suspense fallback={<StatsBarSkeleton />}>
-                            <AsyncStatsBar />
-                        </Suspense>
+                        {/* 위에서 이미 읽은 `skillCounts`(히어로 카피와 같은 소스)를 그대로 쓴다 —
+                            종목 페이지의 진행 문구·가입 업셀과 같은 수를 말한다. */}
+                        <StatsBar counts={skillCounts} />
                     </div>
                 </section>
                 <section className="page-container pb-8">
@@ -446,6 +444,7 @@ export default async function Home({
                     <FaqSection
                         heading={tSeo('faqHeading.home')}
                         items={homeFaq}
+                        linkifyPaths
                     />
                 </section>
             </main>

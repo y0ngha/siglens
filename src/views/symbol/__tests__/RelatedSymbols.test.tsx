@@ -170,7 +170,7 @@ describe('RelatedSymbols', () => {
 
     /**
      * 칩만 나열하면 왜 관련 종목인지 알 수 없다(2026-09-17 정책 감사 L). 그룹마다
-     * 근거를 한 줄로 밝힌다 — 테마명·섹터명, 링 이웃은 "같은 시장 종목".
+     * 근거를 한 줄로 밝힌다 — 테마명·섹터명, 링 이웃은 "다른 종목 둘러보기".
      */
     describe('그룹 캡션', () => {
         it('선정 순서를 유지한 채 라벨별로 묶고 캡션을 단다', async () => {
@@ -189,13 +189,13 @@ describe('RelatedSymbols', () => {
             );
         });
 
-        it('링 이웃 그룹은 "같은 시장 종목" 캡션을 쓴다', async () => {
+        it('링 이웃 그룹은 "다른 종목 둘러보기" 캡션을 쓴다', async () => {
             const related = relatedSymbolsFor('NVDA');
             expect(related.some(r => r.reason === 'ring')).toBe(true);
 
             await renderRelated('NVDA');
 
-            expect(screen.getByText('같은 시장 종목')).toBeInTheDocument();
+            expect(screen.getByText('다른 종목 둘러보기')).toBeInTheDocument();
         });
 
         it('테마 피어 캡션은 그 테마 이름이다 (키 문자열이 아니라 번역된 텍스트)', async () => {

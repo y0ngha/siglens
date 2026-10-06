@@ -19,6 +19,7 @@ import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { buildDisplayName } from '@/entities/ticker/lib/ticker';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { getQuantizedBarsStatic } from '@/entities/bars/lib/barsStaticCache';
 import {
@@ -74,7 +75,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (!isAdmissibleSymbolShape(upper)) {
         return noindexInvalidSymbolMetadata(symbol, locale, 'position');
     }
-    const { assetInfo, degraded } = await getAssetInfoResilient(upper);
+    // 존재하지 않는 심볼은 레이아웃과 같은 판정으로 여기서도 404다(`requireResolvableAsset`).
+    const { assetInfo, degraded } = await requireResolvableAsset(upper);
     const blockedMetadata = await getBlockedSymbolMetadata({
         locale,
         symbol: upper,
@@ -83,14 +85,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         revalidateSeconds: revalidate,
     });
     if (blockedMetadata) return blockedMetadata;
-    if (!assetInfo) return noindexSymbolMetadata(upper, tSeo, locale);
     // fundamental 선례와 동일: 탭 허용 여부가 본문 notFound와 어긋나면 soft-404
     // (index:true인데 body는 404)가 생긴다. 현재는 모든 market profile이
     // 'position'을 지원하지만, 이 가드는 미래에 탭 미지원 프로필이 추가돼도
     // notFound()/noindex가 함께 어긋나지 않도록 유지한다.
-    // `displayName`을 가드보다 위에서 계산한다 — 바로 위 `!assetInfo` 가드를
-    // 통과했으므로 여기서는 non-null이 보장되고, 아래 noindex 분기도 사명까지 담은
-    // title/description을 가질 수 있다.
+    // `displayName`을 가드보다 위에서 계산한다 — `requireResolvableAsset`이 non-null을
+    // 보장하므로, 아래 noindex 분기도 사명까지 담은 title/description을 가질 수 있다.
     const displayName = buildDisplayName(assetInfo, upper, locale);
 
     if (!(await isTabAllowedForSymbol(upper, 'position'))) {

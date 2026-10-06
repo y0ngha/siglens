@@ -262,10 +262,12 @@ export function noindexInvalidSymbolMetadata(
  * **`[symbol]/**\/page.tsx`의 noindex 분기는 하나의 예외만 빼고 전부 이걸 쓴다.**
  * 예외는 `!isAdmissibleSymbolShape` 가드뿐이다 — 거기서는 세그먼트가 심볼이라고
  * 신뢰할 수 없으므로(임의 문자열이 title에 그대로 박힌다) 카피 없이
- * `noindexInvalidSymbolMetadata`(robots + 실제 URL canonical)로 남긴다. 나머지(tab-not-allowed, assetInfo 없음, FMP profile degrade,
- * 빈 재무 스냅샷, congress trades degrade, overall 캐시 미스)는 전부 심볼이
- * 확정된 뒤라 자기 정체성을 가질 수 있고, 그중 degrade 계열은 **실존 티커가
- * 200을 반환하는 경로**라 홈 메타 상속이 실제로 크롤된다.
+ * `noindexInvalidSymbolMetadata`(robots + 실제 URL canonical)로 남긴다. 나머지
+ * (tab-not-allowed, FMP profile degrade, 빈 재무 스냅샷, congress trades degrade,
+ * overall 캐시 미스)는 전부 심볼이 확정된 뒤라 자기 정체성을 가질 수 있고, 그중
+ * degrade 계열은 **실존 티커가 200을 반환하는 경로**라 홈 메타 상속이 실제로
+ * 크롤된다. (assetInfo 없음·장애 중 형상 불합격은 더 이상 여기로 오지 않는다 —
+ * `requireResolvableAsset`이 `notFound()`로 404 경계에 넘긴다.)
  *
  * 탭 단위가 아니라 **심볼 단위**로만 구분한다(`og:url`이 탭이 아니라 심볼 루트를
  * 가리킨다). 어차피 noindex라 탭별 정밀도는 측정 가능한 이득이 없고, 목표는

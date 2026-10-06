@@ -277,6 +277,32 @@ describe('/economy page.tsx integration', () => {
         });
     });
 
+    describe('EconomyContent — macro briefing seed key', () => {
+        it('peekMacroBriefingStatic을 core와 같은 UTC 날짜 키(YYYY-MM-DD)로 부른다', async () => {
+            mockGetSnapshot.mockResolvedValue(FULL_SNAPSHOT);
+            mockIsEmpty.mockReturnValue(false);
+            mockPeekStatic.mockResolvedValue(null);
+
+            const { default: EconomyPage } =
+                await import('@/app/[locale]/economy/page');
+            const { act } = await import('@testing-library/react');
+            await act(async () => {
+                render(
+                    await resolveAsyncServerTree(
+                        await EconomyPage({
+                            params: Promise.resolve({ locale: 'ko' }),
+                        })
+                    )
+                );
+            });
+
+            expect(mockPeekStatic).toHaveBeenCalledWith(
+                FULL_SNAPSHOT,
+                expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/)
+            );
+        });
+    });
+
     describe('EconomyContent — peek error resilience', () => {
         it('peekMacroBriefingStatic이 throw해도 grid·calendar가 렌더되고 console.error가 호출된다', async () => {
             mockGetSnapshot.mockResolvedValue(FULL_SNAPSHOT);

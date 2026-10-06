@@ -225,10 +225,11 @@ describe('라우트별 클라이언트 메시지 커버리지', () => {
         ).length;
         // 합집합이던 시절 24,299바이트(60.9%)였다.
         //
-        // 한때 `shared.skillDescription` 때문에 0.238까지 부풀어 임계값을
-        // 0.25로 올렸는데, 원인은 그 테이블이 아니라 **배럴 import 하나**였다.
-        // 그걸 잡고 나서 임계값을 0.10으로 되돌렸다 — 실측치를 수용하려고
-        // 상한을 올리는 건 가드를 끄는 것과 같다.
+        // 한때 `shared.skillDescription`(지금은 이름으로 찾는 `skillSummary`로
+        // 대체) 때문에 0.238까지 부풀어 임계값을 0.25로 올렸는데, 원인은 그
+        // 테이블이 아니라 **배럴 import 하나**였다. 그걸 잡고 나서 임계값을
+        // 0.10으로 되돌렸다 — 실측치를 수용하려고 상한을 올리는 건 가드를
+        // 끄는 것과 같다.
         //
         // 크롬은 모든 라우트에 상속 없이 복제되므로(중첩 프로바이더가 부모
         // 메시지를 교체) 크롬 크기가 곧 전 라우트 first-load의 하한이다.
@@ -280,14 +281,14 @@ describe('동적 조회 테이블이 소비 라우트에만 실린다', () => {
      * 스킬 카탈로그는 **홈과 종목 라우트에만** 실린다.
      *
      * 한때 크롬에 있었다 — 홈이 자기 세그먼트 레이아웃이 없어 크롬 프로바이더를
-     * 썼기 때문이다. 그 결과 `shared.skillDescription`(8.4KB)이 `/login`·
+     * 썼기 때문이다. 그 결과 스킬 설명 카탈로그(옛 `shared.skillDescription`, 8.4KB)가 `/login`·
      * `/terms`까지 따라다녔고 크롬이 카탈로그의 23.8%였다. 홈을 라우트 그룹
      * `(home)`으로 옮기고, 404 경계가 `@/widgets/home` **배럴**을 타던 것을
      * 파일 직접 import로 끊어 7.3%가 됐다.
      */
     it.each([
         ['(home)', 'skillName'],
-        ['(home)', 'skillDescription'],
+        ['(home)', 'skillSummary'],
         ['[symbol]', 'skillName'],
     ] as const)('%s 는 shared.%s 을 받는다', (routeId, table) => {
         const picked = pickMessages(messages, routeClientPaths(routeId)) as {
@@ -299,7 +300,7 @@ describe('동적 조회 테이블이 소비 라우트에만 실린다', () => {
         ).toBeGreaterThan(20);
     });
 
-    it.each(['skillName', 'skillDescription'] as const)(
+    it.each(['skillName', 'skillSummary'] as const)(
         '크롬에는 shared.%s 이 없다',
         table => {
             const picked = pickMessages(messages, CHROME_CLIENT_PATHS) as {

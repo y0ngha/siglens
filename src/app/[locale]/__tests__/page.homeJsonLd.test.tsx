@@ -23,7 +23,6 @@ vi.mock('@/widgets/home/SkillsShowcase', () => ({
 }));
 vi.mock('@/widgets/home/StatsBar', () => ({
     StatsBar: () => null,
-    StatsBarSkeleton: () => null,
 }));
 vi.mock('@/widgets/home/TickerCategories', () => ({
     TickerCategories: () => null,
@@ -41,9 +40,7 @@ vi.mock('@/entities/skill/api', () => ({
         fundamental: 2,
         news: 1,
     }),
-    FileSkillsLoader: vi.fn().mockImplementation(() => ({
-        loadSkills: vi.fn().mockResolvedValue([]),
-    })),
+    loadShowcaseSkills: vi.fn().mockResolvedValue([]),
 }));
 vi.mock('next/link', () => ({
     default: ({
@@ -77,6 +74,8 @@ import {
     SITE_NAME_KO,
     X_URL,
 } from '@/shared/lib/seo';
+import { findElementByType } from '@/__tests__/utils/findElementByType';
+import { StatsBar } from '@/widgets/home/StatsBar';
 import { OPERATOR_SAME_AS, SITE_OPERATOR } from '@/shared/lib/legal';
 
 async function renderHome() {
@@ -137,6 +136,48 @@ describe('홈 FAQ', () => {
         expect(container.querySelectorAll('dt')).toHaveLength(
             faq!.mainEntity.length
         );
+    });
+
+    it('답변 속 사이트 경로(/market 등)는 화면에서 링크가 되고 구조화데이터에는 원문이 간다', async () => {
+        const tree = await renderHome();
+        const { container } = render(tree);
+
+        const hrefs = [...container.querySelectorAll('dd a')].map(a =>
+            a.getAttribute('href')
+        );
+        expect(hrefs).toContain('/market');
+        expect(hrefs).toContain('/NVDA/overall');
+
+        const faq = collectJsonLdData(tree).find(
+            d => d['@type'] === 'FAQPage'
+        ) as { mainEntity: { acceptedAnswer: { text: string } }[] };
+        for (const { acceptedAnswer } of faq.mainEntity) {
+            expect(acceptedAnswer.text).not.toMatch(/<a\b|<\/a>/);
+        }
+        expect(
+            faq.mainEntity.some(e => e.acceptedAnswer.text.includes('/market '))
+        ).toBe(true);
+    });
+
+    it('PER/PBR·24/7 같은 글자는 링크가 되지 않는다', async () => {
+        const { container } = render(await renderHome());
+
+        const linkTexts = [...container.querySelectorAll('dd a')].map(
+            a => a.textContent
+        );
+        expect(linkTexts.every(text => /^\/[A-Za-z]/.test(text ?? ''))).toBe(
+            true
+        );
+        expect(linkTexts).not.toContain('/7');
+    });
+
+    it('StatsBar는 히어로 카피와 같은 skillCounts를 받는다', async () => {
+        const tree = await renderHome();
+
+        const statsBar = findElementByType(tree, StatsBar);
+        expect(statsBar?.props).toMatchObject({
+            counts: { indicators: 13, candlesticks: 30, patterns: 5 },
+        });
     });
 
     /**

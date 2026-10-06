@@ -1,83 +1,85 @@
-import { buildSkillStats } from '@/shared/lib/skillStats';
-import type { SkillShowcaseItem } from '@y0ngha/siglens-core';
+import { buildSkillStats, chartSkillTotal } from '@/shared/lib/skillStats';
+import type { SkillCounts } from '@y0ngha/siglens-core';
 
-function buildSkill(
-    overrides: Partial<SkillShowcaseItem> = {}
-): SkillShowcaseItem {
-    return {
-        name: 'test-skill',
-        description: '',
-        type: 'indicator_guide',
-        confidenceWeight: 0.9,
-        ...overrides,
-    };
-}
+const COUNTS: SkillCounts = {
+    indicators: 37,
+    candlesticks: 19,
+    patterns: 22,
+    strategies: 10,
+    supportResistance: 1,
+    fundamental: 3,
+    news: 3,
+};
+
+describe('chartSkillTotal', () => {
+    it('지표·캔들·패턴·전략·지지/저항만 더한다', () => {
+        expect(chartSkillTotal(COUNTS)).toBe(37 + 19 + 22 + 10 + 1);
+    });
+
+    it('펀더멘털·뉴스 스킬은 차트 분석 스킬이 아니라서 뺀다', () => {
+        expect(
+            chartSkillTotal({ ...COUNTS, fundamental: 100, news: 100 })
+        ).toBe(chartSkillTotal(COUNTS));
+    });
+
+    it('모두 0이면 0이다', () => {
+        expect(
+            chartSkillTotal({
+                indicators: 0,
+                candlesticks: 0,
+                patterns: 0,
+                strategies: 0,
+                supportResistance: 0,
+                fundamental: 0,
+                news: 0,
+            })
+        ).toBe(0);
+    });
+});
 
 describe('buildSkillStats', () => {
-    describe('빈 배열', () => {
-        it('모든 항목의 value가 0인 배열을 반환한다', () => {
-            const result = buildSkillStats([]);
-            expect(result[0].value).toBe(0);
-            result.slice(1).forEach(s => expect(s.value).toBe(0));
+    it('total은 chartSkillTotal과 같고 타입별 개수는 카운트에서 그대로 온다', () => {
+        const result = buildSkillStats(COUNTS);
+
+        expect(result[0]).toEqual({
+            key: 'total',
+            value: chartSkillTotal(COUNTS),
         });
+        expect(result.find(s => s.key === 'indicator_guide')?.value).toBe(37);
+        expect(result.find(s => s.key === 'pattern')?.value).toBe(22);
+        expect(result.find(s => s.key === 'strategy')?.value).toBe(10);
+        expect(result.find(s => s.key === 'candlestick')?.value).toBe(19);
+        expect(result.find(s => s.key === 'support_resistance')?.value).toBe(1);
     });
 
-    describe('모든 타입이 포함된 경우', () => {
-        it('타입별 개수를 정확히 반환한다', () => {
-            const skills: SkillShowcaseItem[] = [
-                buildSkill({ type: 'indicator_guide' }),
-                buildSkill({ type: 'indicator_guide' }),
-                buildSkill({ type: 'pattern' }),
-                buildSkill({ type: 'strategy' }),
-                buildSkill({ type: 'candlestick' }),
-                buildSkill({ type: 'support_resistance' }),
-            ];
-            const result = buildSkillStats(skills);
-            expect(result[0].key).toBe('total');
-            expect(result[0].value).toBe(6);
-            expect(result.find(s => s.key === 'indicator_guide')?.value).toBe(
-                2
-            );
-            expect(result.find(s => s.key === 'pattern')?.value).toBe(1);
-            expect(result.find(s => s.key === 'strategy')?.value).toBe(1);
-            expect(result.find(s => s.key === 'candlestick')?.value).toBe(1);
-            expect(
-                result.find(s => s.key === 'support_resistance')?.value
-            ).toBe(1);
-        });
+    it('타입별 개수의 합이 total과 같다(홈 StatsBar가 자기모순을 말하지 않는다)', () => {
+        const [total, ...rest] = buildSkillStats(COUNTS);
+
+        expect(rest.reduce((sum, s) => sum + s.value, 0)).toBe(total.value);
     });
 
-    describe('일부 타입이 없는 경우', () => {
-        it('누락된 타입은 0을 반환한다', () => {
-            const skills: SkillShowcaseItem[] = [
-                buildSkill({ type: 'indicator_guide' }),
-            ];
-            const result = buildSkillStats(skills);
-            expect(result.find(s => s.key === 'pattern')?.value).toBe(0);
-            expect(result.find(s => s.key === 'strategy')?.value).toBe(0);
-        });
+    it('key는 shared.lib.skillStats.count의 서브키와 일치한다', () => {
+        expect(buildSkillStats(COUNTS).map(s => s.key)).toEqual([
+            'total',
+            'indicator_guide',
+            'pattern',
+            'strategy',
+            'candlestick',
+            'support_resistance',
+        ]);
     });
 
-    describe('반환 구조', () => {
-        it('key와 value 필드를 가진 SkillStat[] 를 반환한다', () => {
-            const result = buildSkillStats([buildSkill()]);
-            result.forEach(s => {
-                expect(typeof s.value).toBe('number');
-                expect(typeof s.key).toBe('string');
-            });
-        });
+    it('카운트가 전부 0이면 모든 value가 0이다', () => {
+        const zero: SkillCounts = {
+            indicators: 0,
+            candlesticks: 0,
+            patterns: 0,
+            strategies: 0,
+            supportResistance: 0,
+            fundamental: 0,
+            news: 0,
+        };
 
-        it('key는 shared.lib.skillStats.count의 서브키와 일치한다', () => {
-            const result = buildSkillStats([buildSkill()]);
-            const keys = result.map(s => s.key);
-            expect(keys).toEqual([
-                'total',
-                'indicator_guide',
-                'pattern',
-                'strategy',
-                'candlestick',
-                'support_resistance',
-            ]);
-        });
+        buildSkillStats(zero).forEach(s => expect(s.value).toBe(0));
     });
 });

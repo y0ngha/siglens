@@ -20,10 +20,12 @@ import { getRedisClient } from '@/shared/cache/redisClient';
  */
 
 /**
- * TTL이 **유일한 신선도 방어선**이다.
+ * TTL이 **신선도 방어선**이다.
  *
- * seed에는 생성 시각이 없다 — 저장하는 것이 본문뿐이고, 소비자(`BriefingCard`)는
- * 시각이 falsy면 그 행을 아예 숨긴다. 즉 seed로 그려진 내용은 나이를 드러내지 않는다.
+ * 이 모듈은 값의 모양을 모른다(호출부가 소유). 시장 브리핑 seed는 본문만 저장하고
+ * 소비자(`BriefingCard`)는 시각이 falsy면 그 행을 아예 숨긴다 — 그 seed로 그려진 내용은
+ * 나이를 드러내지 않으므로 TTL이 유일한 방어선이다. 거시 브리핑 seed는 `{ briefing,
+ * generatedAt }` 봉투를 저장해 화면이 "생성 시각"으로 나이를 드러낸다(그래도 TTL은 같다).
  *
  * 그래서 프리웜 크론 창 사이 최대 공백(09:55→20:30 UTC ≈ 10시간 35분,
  * `docs/reference/CRON.md`) 바로 위로만 잡는다. 반나절(12h)이면 그 공백을 덮으면서 최악 노출을

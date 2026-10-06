@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NextIntlClientProvider } from 'next-intl';
 import {
@@ -91,6 +91,7 @@ describe('MessageList', () => {
                 streaming={false}
                 onRegenerate={vi.fn()}
                 onEdit={vi.fn()}
+                onSend={vi.fn()}
             />
         );
         // Tools are named in the reader's language, never by function name.
@@ -131,6 +132,7 @@ describe('MessageList', () => {
                 streaming={false}
                 onRegenerate={vi.fn()}
                 onEdit={vi.fn()}
+                onSend={vi.fn()}
             />
         );
         expect(
@@ -159,6 +161,7 @@ describe('MessageList', () => {
                 streaming
                 onRegenerate={vi.fn()}
                 onEdit={vi.fn()}
+                onSend={vi.fn()}
             />
         );
         expect(
@@ -199,6 +202,7 @@ describe('MessageList', () => {
                 streaming
                 onRegenerate={vi.fn()}
                 onEdit={vi.fn()}
+                onSend={vi.fn()}
             />
         );
         const log = screen.getByRole('log');
@@ -237,6 +241,7 @@ describe('MessageList', () => {
                 streaming={false}
                 onRegenerate={vi.fn()}
                 onEdit={vi.fn()}
+                onSend={vi.fn()}
             />
         );
         const body = screen
@@ -265,6 +270,7 @@ describe('MessageList', () => {
                 streaming={false}
                 onRegenerate={vi.fn()}
                 onEdit={onEdit}
+                onSend={vi.fn()}
             />
         );
         expect(
@@ -293,6 +299,7 @@ describe('MessageList', () => {
                     streaming={false}
                     onRegenerate={vi.fn()}
                     onEdit={vi.fn()}
+                    onSend={vi.fn()}
                 />
             );
             expect(() =>
@@ -375,6 +382,7 @@ describe('MessageList', () => {
                             streaming={props.streaming}
                             onRegenerate={vi.fn()}
                             onEdit={vi.fn()}
+                            onSend={vi.fn()}
                         />
                     </NextIntlClientProvider>
                 </QueryClientProvider>
@@ -390,6 +398,7 @@ describe('MessageList', () => {
                     streaming={false}
                     onRegenerate={vi.fn()}
                     onEdit={vi.fn()}
+                    onSend={vi.fn()}
                 />
             );
             expect(scrollIntoViewSpy).toHaveBeenCalledWith({ block: 'end' });
@@ -410,6 +419,7 @@ describe('MessageList', () => {
                     streaming={false}
                     onRegenerate={vi.fn()}
                     onEdit={vi.fn()}
+                    onSend={vi.fn()}
                 />
             );
             scrollIntoViewSpy.mockClear();
@@ -441,6 +451,7 @@ describe('MessageList', () => {
                     streaming={false}
                     onRegenerate={vi.fn()}
                     onEdit={vi.fn()}
+                    onSend={vi.fn()}
                 />
             );
             const log = screen.getByRole('log');
@@ -480,6 +491,7 @@ describe('MessageList', () => {
                     streaming={false}
                     onRegenerate={vi.fn()}
                     onEdit={vi.fn()}
+                    onSend={vi.fn()}
                 />
             );
             const log = screen.getByRole('log');
@@ -542,6 +554,7 @@ describe('MessageList', () => {
                     streaming={false}
                     onRegenerate={vi.fn()}
                     onEdit={vi.fn()}
+                    onSend={vi.fn()}
                 />
             );
             const log = screen.getByRole('log');
@@ -588,6 +601,7 @@ describe('MessageList', () => {
                     streaming
                     onRegenerate={vi.fn()}
                     onEdit={vi.fn()}
+                    onSend={vi.fn()}
                 />
             );
             scrollIntoViewSpy.mockClear();
@@ -616,6 +630,7 @@ describe('MessageList', () => {
                             streaming
                             onRegenerate={vi.fn()}
                             onEdit={vi.fn()}
+                            onSend={vi.fn()}
                         />
                     </NextIntlClientProvider>
                 </QueryClientProvider>
@@ -632,6 +647,7 @@ describe('MessageList', () => {
                     streaming={false}
                     onRegenerate={vi.fn()}
                     onEdit={vi.fn()}
+                    onSend={vi.fn()}
                 />
             );
             expect(
@@ -678,6 +694,7 @@ describe('MessageList', () => {
                         streaming={false}
                         onRegenerate={vi.fn()}
                         onEdit={vi.fn()}
+                        onSend={vi.fn()}
                     />
                 );
                 const log = screen.getByRole('log');
@@ -764,6 +781,7 @@ describe('MessageList', () => {
                         streaming
                         onRegenerate={vi.fn()}
                         onEdit={vi.fn()}
+                        onSend={vi.fn()}
                     />
                 );
                 const log = screen.getByRole('log');
@@ -794,6 +812,7 @@ describe('MessageList', () => {
                         streaming
                         onRegenerate={vi.fn()}
                         onEdit={vi.fn()}
+                        onSend={vi.fn()}
                     />
                 );
                 const log = screen.getByRole('log');
@@ -810,6 +829,261 @@ describe('MessageList', () => {
                     screen.queryByRole('button', { name: /최신 메시지로 이동/ })
                 ).toBeNull();
             });
+        });
+    });
+
+    /**
+     * 에이전트는 답변 마지막 줄에 `[[followups]] A | B | C`를 덧붙인다. 그 줄은 화면에서
+     * 빼고 칩으로 바꾼다 — 단 마지막으로 **끝난** 답변 밑에서만. 스트리밍 중에는 항목이
+     * 자라는 중이라 칩을 그리면 깜빡이고, 지난 답변 밑의 칩은 이미 지나간 대화에 대한
+     * 질문을 보낸다.
+     */
+    describe('follow-up chips', () => {
+        const MARKER_ANSWER =
+            '삼성전자는 약세입니다.\n\n[[followups]] 실적은 어때? | 뉴스도 알려줘';
+
+        const userMsg = (id: string, content: string, seq: number) =>
+            ({
+                id,
+                role: 'user',
+                content,
+                tools: [],
+                status: 'complete',
+                seq,
+            }) satisfies AgentUiMessage;
+        const assistantMsg = (
+            id: string,
+            content: string,
+            status: AgentUiMessage['status'] = 'complete'
+        ) =>
+            ({
+                id,
+                role: 'assistant',
+                content,
+                tools: [],
+                status,
+            }) satisfies AgentUiMessage;
+
+        const renderList = (
+            messages: AgentUiMessage[],
+            extra: { streaming?: boolean; onSend?: (text: string) => void } = {}
+        ) =>
+            wrap(
+                <MessageList
+                    siteUrl="https://siglens.io"
+                    localePrefix=""
+                    messages={messages}
+                    streaming={extra.streaming ?? false}
+                    onRegenerate={vi.fn()}
+                    onEdit={vi.fn()}
+                    onSend={extra.onSend ?? vi.fn()}
+                />
+            );
+
+        it('마커 줄은 본문에서 빼고 항목을 칩으로 그린다 (min-h-11)', () => {
+            renderList([
+                userMsg('1', 'q', 1),
+                assistantMsg('2', MARKER_ANSWER),
+            ]);
+
+            expect(
+                screen.getByText('삼성전자는 약세입니다.')
+            ).toBeInTheDocument();
+            expect(screen.queryByText(/\[\[followups\]\]/)).toBeNull();
+            const group = screen.getByRole('list', { name: '이어서 물어보기' });
+            const chips = within(group).getAllByRole('button');
+            expect(chips.map(c => c.textContent)).toEqual([
+                '실적은 어때?',
+                '뉴스도 알려줘',
+            ]);
+            for (const chip of chips) expect(chip).toHaveClass('min-h-11');
+        });
+
+        it('칩을 누르면 그 문구를 onSend로 보낸다', () => {
+            const onSend = vi.fn();
+            renderList(
+                [userMsg('1', 'q', 1), assistantMsg('2', MARKER_ANSWER)],
+                {
+                    onSend,
+                }
+            );
+
+            fireEvent.click(
+                screen.getByRole('button', { name: '뉴스도 알려줘' })
+            );
+
+            expect(onSend).toHaveBeenCalledTimes(1);
+            expect(onSend).toHaveBeenCalledWith('뉴스도 알려줘');
+        });
+
+        it('마지막 끝난 답변에만 칩을 그린다 — 지난 답변의 마커는 줄만 빼고 칩은 없다', () => {
+            renderList([
+                userMsg('1', 'q1', 1),
+                assistantMsg('2', '첫 답변입니다.\n[[followups]] 지난 질문'),
+                userMsg('3', 'q2', 2),
+                assistantMsg('4', MARKER_ANSWER),
+            ]);
+
+            expect(
+                screen.queryByRole('button', { name: '지난 질문' })
+            ).toBeNull();
+            expect(screen.queryByText(/\[\[followups\]\]/)).toBeNull();
+            expect(screen.getByText('첫 답변입니다.')).toBeInTheDocument();
+            expect(
+                screen.getByRole('button', { name: '실적은 어때?' })
+            ).toBeInTheDocument();
+            expect(
+                screen.getAllByRole('list', { name: '이어서 물어보기' })
+            ).toHaveLength(1);
+        });
+
+        it('스트리밍 중에는 칩을 그리지 않고 마커 줄도 보이지 않는다', () => {
+            renderList(
+                [
+                    userMsg('1', 'q', 1),
+                    assistantMsg('2', MARKER_ANSWER, 'streaming'),
+                ],
+                { streaming: true }
+            );
+
+            expect(
+                screen.getByText('삼성전자는 약세입니다.')
+            ).toBeInTheDocument();
+            expect(
+                screen.queryByRole('button', { name: '실적은 어때?' })
+            ).toBeNull();
+            expect(screen.queryByText('이어서 물어보기')).toBeNull();
+            expect(screen.queryByText(/\[\[followups\]\]/)).toBeNull();
+        });
+
+        it('스트리밍 중 반쯤 쓰인 마커 줄(`[[foll`)은 화면에 비치지 않는다', () => {
+            renderList(
+                [
+                    userMsg('1', 'q', 1),
+                    assistantMsg('2', '답변 본문입니다.\n[[foll', 'streaming'),
+                ],
+                { streaming: true }
+            );
+
+            expect(screen.getByText('답변 본문입니다.')).toBeInTheDocument();
+            expect(screen.queryByText(/\[\[/)).toBeNull();
+        });
+
+        it('답변이 끝났어도 스트림이 아직 진행 중이면(streaming prop) 칩을 그리지 않는다', () => {
+            renderList(
+                [userMsg('1', 'q', 1), assistantMsg('2', MARKER_ANSWER)],
+                { streaming: true }
+            );
+
+            expect(
+                screen.queryByRole('button', { name: '실적은 어때?' })
+            ).toBeNull();
+        });
+
+        it('중단되거나 실패한 답변에는 칩을 그리지 않는다', () => {
+            renderList([
+                userMsg('1', 'q', 1),
+                assistantMsg('2', MARKER_ANSWER, 'aborted'),
+            ]);
+
+            expect(
+                screen.queryByRole('button', { name: '실적은 어때?' })
+            ).toBeNull();
+        });
+
+        it('복사는 마커 줄을 뺀 본문만 복사한다', async () => {
+            const writeText = vi.fn().mockResolvedValue(undefined);
+            const original = navigator.clipboard;
+            Object.defineProperty(navigator, 'clipboard', {
+                value: { writeText },
+                configurable: true,
+            });
+            try {
+                renderList([
+                    userMsg('1', 'q', 1),
+                    assistantMsg('2', MARKER_ANSWER),
+                ]);
+                const assistant = screen
+                    .getByText('삼성전자는 약세입니다.')
+                    .closest('article') as HTMLElement;
+
+                await act(async () => {
+                    fireEvent.click(
+                        within(assistant).getByRole('button', { name: /복사/ })
+                    );
+                });
+
+                expect(writeText).toHaveBeenCalledWith(
+                    '삼성전자는 약세입니다.'
+                );
+            } finally {
+                Object.defineProperty(navigator, 'clipboard', {
+                    value: original,
+                    configurable: true,
+                });
+            }
+        });
+
+        it('사용자 메시지는 마커가 있어도 나누지 않고 그대로 복사한다', async () => {
+            const writeText = vi.fn().mockResolvedValue(undefined);
+            const original = navigator.clipboard;
+            Object.defineProperty(navigator, 'clipboard', {
+                value: { writeText },
+                configurable: true,
+            });
+            const typed = '이렇게 써 줘\n[[followups]] A | B';
+            try {
+                renderList([userMsg('1', typed, 1)]);
+                const user = screen
+                    .getByText(/이렇게 써 줘/)
+                    .closest('article') as HTMLElement;
+
+                await act(async () => {
+                    fireEvent.click(
+                        within(user).getByRole('button', { name: /복사/ })
+                    );
+                });
+
+                expect(writeText).toHaveBeenCalledWith(typed);
+            } finally {
+                Object.defineProperty(navigator, 'clipboard', {
+                    value: original,
+                    configurable: true,
+                });
+            }
+        });
+
+        it('형식이 어긋난 마커는 원문을 그대로 보여 주고 칩은 그리지 않는다', () => {
+            // 마지막 줄이 아니라 중간에 있는 마커 — 일반 텍스트다.
+            const malformed =
+                '앞부분\n[[followups]] 중간 항목\n뒷부분이 이어집니다.';
+            renderList([userMsg('1', 'q', 1), assistantMsg('2', malformed)]);
+
+            expect(
+                screen.getByText(/\[\[followups\]\] 중간 항목/)
+            ).toBeInTheDocument();
+            expect(screen.queryByText('이어서 물어보기')).toBeNull();
+            expect(
+                screen.queryByRole('list', { name: '이어서 물어보기' })
+            ).toBeNull();
+        });
+
+        it('항목이 하나도 없는 마커 줄은 원문 그대로 두고 칩 영역을 만들지 않는다', () => {
+            renderList([
+                userMsg('1', 'q', 1),
+                assistantMsg('2', '본문입니다.\n[[followups]] | | '),
+            ]);
+
+            expect(screen.queryByText('이어서 물어보기')).toBeNull();
+        });
+
+        it('마커가 없는 답변에는 칩 영역이 없다', () => {
+            renderList([
+                userMsg('1', 'q', 1),
+                assistantMsg('2', '평범한 답변입니다.'),
+            ]);
+
+            expect(screen.queryByText('이어서 물어보기')).toBeNull();
         });
     });
 });

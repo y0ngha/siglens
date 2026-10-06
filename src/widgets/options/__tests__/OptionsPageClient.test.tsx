@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { OptionsPageClient } from '@/widgets/options/OptionsPageClient';
 import type { OptionsSnapshot, SlotMapping } from '@y0ngha/siglens-core';
 
@@ -27,11 +27,23 @@ vi.mock('@/widgets/options/ExpirationSelector', () => ({
 // 마운트 유지가 계약의 핵심 — 트리에서 빠지면 useRegisterShareable이 돌지
 // 않아 헤더 공유 버튼이 이 탭의 분석 결과를 등록받지 못한다.
 vi.mock('@/widgets/options/OptionsAiAnalysis', () => ({
-    OptionsAiAnalysis: ({ hideView = false }: { hideView?: boolean }) =>
+    OptionsAiAnalysis: ({
+        hideView = false,
+        snapshotCapturedAt,
+        showSnapshotBasis,
+    }: {
+        hideView?: boolean;
+        snapshotCapturedAt?: string;
+        showSnapshotBasis?: boolean;
+    }) =>
         hideView ? (
             <div data-testid="ai-analysis-headless" />
         ) : (
-            <div data-testid="ai-analysis" />
+            <div
+                data-testid="ai-analysis"
+                data-captured-at={snapshotCapturedAt}
+                data-show-basis={String(showSnapshotBasis)}
+            />
         ),
 }));
 
@@ -56,7 +68,19 @@ vi.mock('@/widgets/options/StrikeVolumeChart', () => ({
 }));
 
 vi.mock('@/widgets/options/OptionsMetricsRow', () => ({
-    OptionsMetricsRow: () => <div data-testid="metrics-row" />,
+    OptionsMetricsRow: ({
+        capturedAt,
+        showCapturedCaption,
+    }: {
+        capturedAt: string;
+        showCapturedCaption: boolean;
+    }) => (
+        <div
+            data-testid="metrics-row"
+            data-captured-at={capturedAt}
+            data-show-caption={String(showCapturedCaption)}
+        />
+    ),
 }));
 
 vi.mock('@/widgets/options/OptionsStaleDataBanner', () => ({
@@ -201,6 +225,115 @@ describe('OptionsPageClient', () => {
         expect(
             screen.queryByTestId('ai-analysis-headless')
         ).not.toBeInTheDocument();
+    });
+
+    describe('정규장 밖 + 마지막 정상 스냅샷(OI 있음)', () => {
+        beforeEach(() => {
+            mockSessionOpen.mockReturnValue(false);
+            mockOiSnapshotStale.mockReturnValue(false);
+        });
+
+        it('stale 배너와 안내 카드를 띄우지 않고 AI 위젯을 정상 렌더한다', () => {
+            render(
+                <OptionsPageClient
+                    symbol="AAPL"
+                    companyName="Apple"
+                    snapshot={SNAPSHOT}
+                    slots={SLOTS}
+                />
+            );
+
+            expect(screen.queryByTestId('stale-banner')).toBeNull();
+            expect(screen.queryByTestId('stale-notice')).toBeNull();
+            expect(screen.getByTestId('ai-analysis')).toBeInTheDocument();
+        });
+
+        it('AI 분석 카드에도 같은 수집 시각과 기준 표시를 넘긴다', () => {
+            render(
+                <OptionsPageClient
+                    symbol="AAPL"
+                    companyName="Apple"
+                    snapshot={SNAPSHOT}
+                    slots={SLOTS}
+                />
+            );
+
+            const card = screen.getByTestId('ai-analysis');
+            expect(card).toHaveAttribute(
+                'data-captured-at',
+                SNAPSHOT.capturedAt
+            );
+            expect(card).toHaveAttribute('data-show-basis', 'true');
+        });
+
+        it('지표 행에 수집 시각을 넘기고 직전 정규장 캡션을 켠다', () => {
+            render(
+                <OptionsPageClient
+                    symbol="AAPL"
+                    companyName="Apple"
+                    snapshot={SNAPSHOT}
+                    slots={SLOTS}
+                />
+            );
+
+            const row = screen.getByTestId('metrics-row');
+            expect(row).toHaveAttribute(
+                'data-captured-at',
+                SNAPSHOT.capturedAt
+            );
+            expect(row).toHaveAttribute('data-show-caption', 'true');
+        });
+    });
+
+    it('정규장 중에는 캡션을 켜지 않는다', () => {
+        mockSessionOpen.mockReturnValue(true);
+
+        render(
+            <OptionsPageClient
+                symbol="AAPL"
+                companyName="Apple"
+                snapshot={SNAPSHOT}
+                slots={SLOTS}
+            />
+        );
+        expect(screen.getByTestId('ai-analysis')).toHaveAttribute(
+            'data-show-basis',
+            'false'
+        );
+        cleanup();
+
+        render(
+            <OptionsPageClient
+                symbol="AAPL"
+                companyName="Apple"
+                snapshot={SNAPSHOT}
+                slots={SLOTS}
+            />
+        );
+
+        expect(screen.getByTestId('metrics-row')).toHaveAttribute(
+            'data-show-caption',
+            'false'
+        );
+    });
+
+    it('정규장 밖이어도 stale이면(배너가 뜨는 경우) 캡션을 켜지 않는다', () => {
+        setOiStale();
+
+        render(
+            <OptionsPageClient
+                symbol="AAPL"
+                companyName="Apple"
+                snapshot={SNAPSHOT}
+                slots={SLOTS}
+            />
+        );
+
+        expect(screen.getByTestId('stale-banner')).toBeInTheDocument();
+        expect(screen.getByTestId('metrics-row')).toHaveAttribute(
+            'data-show-caption',
+            'false'
+        );
     });
 
     it('renders metrics row', () => {

@@ -33,18 +33,23 @@ describe('OptionsStaleDataBanner', () => {
         expect(screen.getByRole('status')).toBeInTheDocument();
     });
 
-    it('renders ET market hours', () => {
+    it('이유는 한 문장만 말하고 정규장 시간·KST 환산 문단은 싣지 않는다', () => {
         mockUseHydrated.mockReturnValue(true);
         renderWithIntl(<OptionsStaleDataBanner />);
-        expect(screen.getByText(/9:30~16:00 ET/)).toBeInTheDocument();
+        const paragraphs = screen.getByRole('status').querySelectorAll('p');
+        // 제목 + 이유 한 문장 + "지금은 …" 문장.
+        expect(paragraphs).toHaveLength(3);
+        const text = screen.getByRole('status').textContent ?? '';
+        expect(text).not.toContain('9:30~16:00 ET');
+        expect(text).not.toContain('조기 마감일');
     });
 
-    it('renders both KST windows', () => {
+    it('지금 확인할 KST 시간대만 안내한다(현재 서머타임 기준)', () => {
         mockUseHydrated.mockReturnValue(true);
         renderWithIntl(<OptionsStaleDataBanner />);
         const text = screen.getByRole('status').textContent ?? '';
         expect(text).toContain('22:30~05:00');
-        expect(text).toContain('23:30~06:00');
+        expect(text).not.toContain('23:30~06:00');
     });
 
     describe('useHydrated=false (SSR / first render)', () => {

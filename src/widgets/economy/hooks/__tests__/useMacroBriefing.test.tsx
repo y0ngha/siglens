@@ -4,7 +4,10 @@ vi.mock('@/shared/hooks/useHydrated');
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { MacroBriefingResponse } from '@y0ngha/siglens-core';
+import type {
+    MacroBriefingCacheEntry,
+    MacroBriefingResponse,
+} from '@y0ngha/siglens-core';
 
 import { useMacroBriefing } from '@/widgets/economy/hooks/useMacroBriefing';
 import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
@@ -17,6 +20,11 @@ const PEEK: MacroBriefingResponse = {
     summary: 'peek summary',
     highlights: [],
     regime: 'neutral',
+};
+
+const PEEK_ENTRY: MacroBriefingCacheEntry = {
+    briefing: PEEK,
+    generatedAt: '2026-10-05T03:20:00.000Z',
 };
 
 interface WrapperProps {
@@ -42,11 +50,24 @@ describe('useMacroBriefing', () => {
         mockUseHydrated.mockReturnValue(true);
     });
 
-    it('peekSeed가 있으면 hydrate 이전엔 cached seedInput으로 노출 (generatedAt=null)', async () => {
+    it('peekSeed가 있으면 hydrate 이전엔 cached seedInput으로 노출하고 서버가 읽은 generatedAt을 그대로 싣는다', async () => {
         mockUseHydrated.mockReturnValueOnce(false);
-        const { result } = renderHook(() => useMacroBriefing(PEEK), {
+        const { result } = renderHook(() => useMacroBriefing(PEEK_ENTRY), {
             wrapper: makeWrapper(),
         });
+        expect(result.current.input).toEqual({
+            status: 'cached',
+            briefing: PEEK,
+            generatedAt: '2026-10-05T03:20:00.000Z',
+        });
+    });
+
+    it('생성 시각이 없는 옛 seed는 generatedAt=null로 노출한다', async () => {
+        mockUseHydrated.mockReturnValueOnce(false);
+        const { result } = renderHook(
+            () => useMacroBriefing({ briefing: PEEK, generatedAt: null }),
+            { wrapper: makeWrapper() }
+        );
         expect(result.current.input).toEqual({
             status: 'cached',
             briefing: PEEK,
@@ -143,11 +164,11 @@ describe('useMacroBriefing', () => {
          * **실제 캐시 본문**이고, 이걸 버리면 Googlebot WRS가 렌더한 DOM에서 이 페이지의
          * 유일한 AI 서술이 안내문으로 교체돼 색인 대상 텍스트가 사라진다.
          *
-         * "오래됨"은 seed variant의 `generatedAt: null`로 이미 표현된다(뷰가 타임스탬프를
-         * 표시하지 않는다) — 신선한 척하지 않으면서 내용은 지키는 쪽이 맞다.
+         * "오래됨"은 seed variant가 실은 `generatedAt`으로 표현된다(뷰가 "생성 시각"을
+         * 보여 준다) — 신선한 척하지 않으면서 내용은 지키는 쪽이 맞다.
          */
         mockSubmit.mockResolvedValue({ ok: false, error: 'server_error' });
-        const { result } = renderHook(() => useMacroBriefing(PEEK), {
+        const { result } = renderHook(() => useMacroBriefing(PEEK_ENTRY), {
             wrapper: makeWrapper(),
         });
 
@@ -160,7 +181,7 @@ describe('useMacroBriefing', () => {
     // 없으면 'error'를 노출해 스켈레톤이 영원히 남는 걸 막는다.
     it('스트림이 throw해도 peekSeed가 있으면 seed를 계속 보여 준다', async () => {
         mockSubmit.mockRejectedValue(new Error('분석 시간이 초과되었습니다.'));
-        const { result } = renderHook(() => useMacroBriefing(PEEK), {
+        const { result } = renderHook(() => useMacroBriefing(PEEK_ENTRY), {
             wrapper: makeWrapper(),
         });
 

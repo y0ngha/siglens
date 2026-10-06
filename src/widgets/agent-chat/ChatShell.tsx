@@ -17,6 +17,7 @@ import { GUEST_TURNS_PER_DAY } from './guestTurnLimit';
 import { MenuIcon } from '@/shared/ui/StrokeIcons';
 import { loginHref } from './loginHref';
 import { MessageList } from './MessageList';
+import { withoutSsoParam } from './utils/withoutSsoParam';
 import { ConversationSkeleton } from './ConversationSkeleton';
 import { Sidebar } from './Sidebar';
 
@@ -105,6 +106,17 @@ export function ChatShell({
             ]);
         },
     });
+
+    // `?sso=none` is the server's "handoff already ran" signal (`proxy.ts` also
+    // remembers it in a cookie) and means nothing to the visitor. Left in the
+    // address bar it rides along on reload, share and bookmark. Only `sso` goes —
+    // `q` and the ad click ids must survive.
+    useEffect(() => {
+        const cleaned = withoutSsoParam(window.location.href);
+        if (cleaned !== null) {
+            window.history.replaceState(window.history.state, '', cleaned);
+        }
+    }, []);
 
     // A session that expired mid-visit surfaces as a 401 on the stream route —
     // bounce through the same handoff flow the login CTA uses instead of
@@ -290,6 +302,7 @@ export function ChatShell({
                         streaming={stream.status === 'streaming'}
                         onRegenerate={() => void stream.regenerate()}
                         onEdit={(seq, text) => void stream.edit(seq, text)}
+                        onSend={text => void stream.send(text)}
                         siteUrl={siteUrl}
                         localePrefix={localePrefix}
                     />

@@ -1,12 +1,20 @@
 import 'server-only';
 import { cache } from 'react';
+import { isEtRegularSessionOpen } from '@y0ngha/siglens-core';
 import { getRedisClient } from '@/shared/cache/redisClient';
-import { SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from '@/shared/config/time';
+import {
+    SECONDS_PER_DAY,
+    SECONDS_PER_HOUR,
+    SECONDS_PER_MINUTE,
+} from '@/shared/config/time';
+import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
 import { getOptionsProvider } from './getOptionsProvider';
 import {
     getOptionsCacheLifeProfile,
     type OptionsCacheLifeProfile,
 } from './optionsCacheLife';
+import { rebaseOptionsSnapshot } from './rebaseOptionsSnapshot';
+import { secondsUntilNextRegularOpen } from './secondsUntilNextRegularOpen';
 import type { OptionsSnapshot } from '@y0ngha/siglens-core';
 
 const adapter = getOptionsProvider();
@@ -38,12 +46,100 @@ export const OPTIONS_SNAPSHOT_TTL_SECONDS: Record<
     'options-weekend': 4 * SECONDS_PER_HOUR,
 };
 
+/**
+ * 마지막 "정상" 스냅샷(미결제약정이 채워진 것)의 보관 기간.
+ *
+ * 금요일 장 마감 → 월요일 정규장 사이(주말 + 공휴일 연휴)를 덮어야 한다. 정상 값이
+ * 새로 들어오면 덮어쓰므로 길게 잡아도 낡은 값이 오래 남지 않는다.
+ */
+export const LAST_GOOD_SNAPSHOT_TTL_SECONDS = 5 * SECONDS_PER_DAY;
+
+/** 대체 값(last-good)을 일반 캐시 키에 둘 때의 TTL 하한 — 개장 직전에도 재조회 폭주를 막는다. */
+export const SUBSTITUTED_SNAPSHOT_MIN_TTL_SECONDS = SECONDS_PER_MINUTE;
+
 function buildHasOptionsKey(symbol: string): string {
     return `options:has-market:${symbol.toUpperCase()}`;
 }
 
 function buildSnapshotKey(symbol: string): string {
     return `options:snapshot:${symbol.toUpperCase()}`;
+}
+
+function buildLastGoodSnapshotKey(symbol: string): string {
+    return `options:snapshot:last-good:${symbol.toUpperCase()}`;
+}
+
+/**
+ * 미결제약정이 비어 있지 않은 스냅샷만 last-good으로 저장한다 — 호출자가 걸러서 넘긴다.
+ * 저장 실패는 흡수한다(없어도 기존 동작과 같다).
+ */
+async function writeLastGoodSnapshot(
+    redis: NonNullable<ReturnType<typeof getRedisClient>>,
+    symbol: string,
+    snapshot: OptionsSnapshot
+): Promise<void> {
+    const key = buildLastGoodSnapshotKey(symbol);
+    try {
+        await redis.set(key, snapshot, { ex: LAST_GOOD_SNAPSHOT_TTL_SECONDS });
+    } catch (error) {
+        console.error('[optionsDataCache] Redis set failed for', key, error);
+    }
+}
+
+/**
+ * 저장해 둔 last-good을 오늘 기준으로 맞춰 꺼낸다. 없거나, 맞추고 나면 남는 만기가
+ * 없거나, 맞춘 결과가 다시 stale로 판정되면 `null`(되살릴 가치가 없다).
+ */
+async function readLastGoodSnapshot(
+    redis: NonNullable<ReturnType<typeof getRedisClient>>,
+    symbol: string,
+    now: Date
+): Promise<OptionsSnapshot | null> {
+    const key = buildLastGoodSnapshotKey(symbol);
+    try {
+        const stored = await redis.get<OptionsSnapshot>(key);
+        if (stored === null) return null;
+        const rebased = rebaseOptionsSnapshot(stored, now);
+        if (rebased === null || isOpenInterestSnapshotStale(rebased)) {
+            return null;
+        }
+        return rebased;
+    } catch (error) {
+        console.error('[optionsDataCache] Redis get failed for', key, error);
+        return null;
+    }
+}
+
+interface ResolvedSnapshot {
+    snapshot: OptionsSnapshot;
+    /** last-good으로 대체했는지 — 일반 캐시 키의 TTL 상한을 정하는 근거. */
+    substituted: boolean;
+}
+
+/**
+ * Yahoo가 돌려준 `fresh`를 낼 값으로 확정한다.
+ *
+ * - 정상(OI 채워진) 스냅샷이면 last-good을 갱신하고 그대로 낸다.
+ * - stale이고 정규장 밖이면 last-good(오늘 기준으로 맞춘 것)로 대체한다. 없으면 fresh.
+ * - stale이어도 정규장 중이면 대체하지 않는다.
+ */
+async function resolveWithLastGood(
+    redis: NonNullable<ReturnType<typeof getRedisClient>>,
+    symbol: string,
+    fresh: OptionsSnapshot,
+    now: Date
+): Promise<ResolvedSnapshot> {
+    if (!isOpenInterestSnapshotStale(fresh)) {
+        await writeLastGoodSnapshot(redis, symbol, fresh);
+        return { snapshot: fresh, substituted: false } as const;
+    }
+    if (isEtRegularSessionOpen(now)) {
+        return { snapshot: fresh, substituted: false } as const;
+    }
+    const lastGood = await readLastGoodSnapshot(redis, symbol, now);
+    return lastGood === null
+        ? ({ snapshot: fresh, substituted: false } as const)
+        : ({ snapshot: lastGood, substituted: true } as const);
 }
 
 /**
@@ -116,6 +212,14 @@ export const hasOptionsMarket = cache(
  *      을 적용해 활성 트레이딩 중에는 짧게, 주말은 길게 캐시한다. Redis 미설정 시
  *      graceful fallback으로 Yahoo 직접 호출.
  *
+ * **한국 시간 낮(미국 정규장 밖)에는 Yahoo가 대부분의 미결제약정을 0으로 비워 돌려준다**
+ * (`isOpenInterestSnapshotStale`). 그 값을 그대로 쓰면 옵션 탭이 통째로 "—"가 된다.
+ * 그래서 정상 스냅샷은 `options:snapshot:last-good:SYM`에 따로 5일 보관하고, 정규장
+ * 밖에 stale이 오면 그 last-good(만기·DTE를 오늘 기준으로 다시 맞춘 것)을 대신 낸다.
+ * `capturedAt`은 저장 당시 값 그대로라 화면이 "직전 정규장 기준"임을 밝힐 수 있다.
+ * 정규장 중에는 대체하지 않는다 — 그 시간대의 stale은 진짜 데이터 문제다.
+ * Redis가 없으면 보관할 곳이 없으므로 대체도 없다.
+ *
  * `null` 결과(옵션 없는 ticker, Yahoo 일시 장애)는 negative cache로 저장하지 않는다 —
  * Yahoo가 일시적으로 실패한 경우 TTL 동안 잘못된 'no data' 상태가 굳어버릴 위험이
  * 크기 때문. `hasOptionsMarket`은 옵션 존재 여부만 묻는 가벼운 probe라 negative
@@ -141,11 +245,33 @@ export const fetchOptionsSnapshot = cache(
         const fresh = await adapter.fetchSnapshot(symbol);
 
         // null은 캐시하지 않음 — 위 docstring 참고.
-        if (fresh !== null && redis !== null) {
-            const ttl =
-                OPTIONS_SNAPSHOT_TTL_SECONDS[getOptionsCacheLifeProfile()];
+        if (fresh === null) return null;
+
+        // 정상(OI 채워진) 스냅샷이면 last-good을 갱신하고, 정규장 밖의 stale이면
+        // last-good으로 대체한다. 대체 결과도 아래에서 같은 key·TTL로 저장해, 같은
+        // 시간대의 다음 요청이 Yahoo를 다시 치지 않게 한다.
+        const now = new Date();
+        if (redis !== null) {
+            const { snapshot: result, substituted } = await resolveWithLastGood(
+                redis,
+                symbol,
+                fresh,
+                now
+            );
+
+            const profileTtl =
+                OPTIONS_SNAPSHOT_TTL_SECONDS[getOptionsCacheLifeProfile(now)];
+            // 대체 값은 "정규장이 닫혀 있는 동안"만 유효하다. 주말 프로파일(4h)이나 닫힘
+            // 프로파일(30분)의 TTL을 그대로 쓰면 개장 직전에 저장된 값이 개장 뒤에도 남아,
+            // 장중에 어제 값이 나간다. 다음 개장까지의 시간으로 상한을 둔다(최소 60초).
+            const ttl = substituted
+                ? Math.max(
+                      SUBSTITUTED_SNAPSHOT_MIN_TTL_SECONDS,
+                      Math.min(profileTtl, secondsUntilNextRegularOpen(now))
+                  )
+                : profileTtl;
             try {
-                await redis.set(key, fresh, { ex: ttl });
+                await redis.set(key, result, { ex: ttl });
             } catch (error) {
                 console.error(
                     '[optionsDataCache] Redis set failed for',
@@ -153,6 +279,7 @@ export const fetchOptionsSnapshot = cache(
                     error
                 );
             }
+            return result;
         }
         return fresh;
     }

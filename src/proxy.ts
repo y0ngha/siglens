@@ -1,4 +1,6 @@
 import {
+    AI_SSO_PROBED_COOKIE_NAME,
+    AI_SSO_PROBED_MAX_AGE_SECONDS,
     AUTH_SESSION_COOKIE_NAME,
     GUEST_ID_COOKIE_NAME,
 } from '@/shared/config/cookieNames';
@@ -38,6 +40,7 @@ import {
     AI_INDEXABLE_PATHS,
     AI_SITE_URL,
     isAiHost,
+    MAIN_SITE_URL,
 } from '@/shared/config/aiHost';
 import createIntlMiddleware from 'next-intl/middleware';
 import { NextResponse, type NextRequest } from 'next/server';
@@ -83,11 +86,19 @@ function aiSitemapXml(): string {
  * 광고 전용 랜딩(`src/app/lp/`). 호스트마다 정확히 한 페이지만 연다.
  *
  * 로케일 rewrite(메인의 next-intl, ai의 `/ai/[locale]`)를 타지 않는 별도 루트라
- * 두 호스트 모두 `/lp/*`를 그대로 라우터에 넘긴다. 다른 호스트의 페이지나 모르는
- * `/lp/*`는 여기서 404로 끊는다 — 넘기면 `[locale]/[symbol]`이 `lp`를 로케일로
- * 받아 레이아웃 `notFound()`의 빈 404가 된다.
+ * 두 호스트 모두 `/lp/*`를 그대로 라우터에 넘긴다. 아래 두 경우는 그냥 넘기면 안 된다.
  *
- * 페이지 메타데이터도 noindex지만, 404까지 덮도록 헤더로도 막는다.
+ * - **다른 호스트의 랜딩**: 404가 아니라 그 호스트로 **308**. 광고 최종 URL을 호스트
+ *   착각으로 잘못 걸어도(예: `siglens.io/lp/stock-chat`) 방문자가 맞는 페이지에 닿는다.
+ *   308은 메서드·본문을 보존하는 영구 이동이고 쿼리(`gclid`·`utm_*`)를 그대로 싣는다 —
+ *   전환 측정이 끊기지 않는다. 목적지 호스트는 의존성 0인 `aiHost` 설정에서 읽는다
+ *   (이 파일은 엣지 런타임이라 `shared/lib/seo`를 끌어오지 않는다).
+ * - **모르는 `/lp/*`**: 그대로 넘기면 `[locale]/[symbol]`이 `lp`를 로케일로 받아 레이아웃
+ *   `notFound()`의 빈 404가 되고, 직접 `NextResponse('Not Found')`를 쓰면 본문이 한
+ *   줄짜리 텍스트다. 어떤 라우트에도 매칭되지 않는 경로로 **rewrite**해 루트
+ *   `not-found.tsx`(브랜드 바·홈 링크가 있는 404)가 404 상태로 렌더되게 한다.
+ *
+ * 페이지 메타데이터도 noindex지만, 리다이렉트·404까지 덮도록 헤더로도 막는다.
  * (spec `docs/superpowers/specs/2026-09-26-ad-landing-pages-design.md`)
  */
 const LP_PATH_BY_HOST = {
@@ -95,21 +106,61 @@ const LP_PATH_BY_HOST = {
     ai: '/lp/stock-chat',
 } as const;
 
+type LandingHost = keyof typeof LP_PATH_BY_HOST;
+
+const OTHER_LANDING_HOST: Record<LandingHost, LandingHost> = {
+    main: 'ai',
+    ai: 'main',
+};
+
+const LANDING_HOST_ORIGIN: Record<LandingHost, string> = {
+    main: MAIN_SITE_URL,
+    ai: AI_SITE_URL,
+};
+
+/**
+ * 어떤 라우트에도 매칭되지 않는 경로 — 모르는 `/lp/*`를 루트 `not-found.tsx`로 보내는
+ * rewrite 목적지다. `[locale]/[symbol]/<탭>` 구조가 3세그먼트까지 매칭하므로 4세그먼트에
+ * 실재하지 않는 첫 세그먼트를 쓴다.
+ */
+const LP_NOT_FOUND_PATH = '/__lp_not_found__/x/y/z';
+
 function isLandingPath(pathname: string): boolean {
     return pathname === '/lp' || pathname.startsWith('/lp/');
 }
 
+function landingResponseFor(req: NextRequest, host: LandingHost): NextResponse {
+    const url = new URL(req.url);
+    if (url.pathname === LP_PATH_BY_HOST[host]) {
+        return host === 'ai' ? NextResponse.rewrite(url) : NextResponse.next();
+    }
+    if (url.pathname === LP_PATH_BY_HOST[OTHER_LANDING_HOST[host]]) {
+        const target = new URL(
+            `${url.pathname}${url.search}`,
+            LANDING_HOST_ORIGIN[OTHER_LANDING_HOST[host]]
+        );
+        // 두 호스트 설정이 같은 오리진을 가리키면(로컬 개발 등) 308이 자기 자신으로
+        // 돌아와 무한 루프가 된다 — 그땐 404로 끝낸다.
+        //
+        // 비교 대상은 `req.url`의 호스트가 아니라 **Host 헤더**다. 프로덕션 `next start`는
+        // `req.url`을 요청 헤더가 아니라 서버가 바인딩한 `localhost:<port>`로 다시 만들어
+        // (`resolve-routes`의 `initUrl`) Host가 `ai.localhost:4300`이어도 URL은 `localhost:4300`이다.
+        // `url.host`로 비교하면 ai 호스트에서 메인으로 가는 308이 로컬·e2e에서만(메인 오리진이
+        // 서버 바인딩 주소와 같을 때) 자기 자신으로 오인돼 404가 된다. 호스트 판정(`isAiHost`)이
+        // 이미 Host 헤더를 쓰므로 같은 기준으로 맞춘다. `target.host`는 URL이 소문자로
+        // 정규화하므로 헤더도 소문자로 맞춘다(대소문자만 다른 Host가 불필요한 308을 타지 않게).
+        const requestHost = (req.headers.get('host') ?? url.host).toLowerCase();
+        if (target.host !== requestHost)
+            return NextResponse.redirect(target, 308);
+    }
+    return NextResponse.rewrite(new URL(LP_NOT_FOUND_PATH, url));
+}
+
 function landingPageResponse(
     req: NextRequest,
-    host: keyof typeof LP_PATH_BY_HOST
+    host: LandingHost
 ): NextResponse {
-    const { pathname } = new URL(req.url);
-    const response =
-        pathname !== LP_PATH_BY_HOST[host]
-            ? new NextResponse('Not Found', { status: 404 })
-            : host === 'ai'
-              ? NextResponse.rewrite(new URL(req.url))
-              : NextResponse.next();
+    const response = landingResponseFor(req, host);
     response.headers.set('X-Robots-Tag', 'noindex, nofollow');
     return response;
 }
@@ -169,6 +220,26 @@ async function handleAiHost(req: NextRequest): Promise<NextResponse> {
     // 페이지 메타데이터도 noindex지만, 404·에러 응답까지 확실히 덮도록 헤더로도 막는다.
     if (path === '/c' || path.startsWith('/c/'))
         response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+    /**
+     * `?sso=none`은 핸드오프를 한 번 돌았는데 메인 사이트 세션이 없었다는 표식이다.
+     * 페이지는 이 파라미터만 보고 재시도를 건너뛰는데, 방문자가 랜딩에서 다른 링크로
+     * 나가면(그리고 클라이언트가 주소창에서 `sso`를 지우면) 파라미터가 사라져 **같은
+     * 왕복이 다시** 돈다. 그래서 프로브 완료를 쿠키로도 남겨 짧게 기억한다.
+     *
+     * ⚠️ 여기서 **리다이렉트하지 않는다** — `sso`를 지우는 리다이렉트는 크롤러·광고
+     * 클릭 식별자(`gclid`)가 있는 첫 방문의 응답을 한 홉 늘리고, 이 프록시는 모든
+     * ai 호스트 요청이 지나는 자리다. 200 rewrite에 쿠키만 얹고, 주소창 정리는 클라이언트
+     * (`ChatShell`의 `replaceState`)가 한다.
+     */
+    if (url.searchParams.get('sso') === 'none') {
+        response.cookies.set(AI_SSO_PROBED_COOKIE_NAME, '1', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/',
+            maxAge: AI_SSO_PROBED_MAX_AGE_SECONDS,
+        });
+    }
     /**
      * 게스트 쿠키는 여기, 페이지 뷰에서만 발급한다 — `/api/ai/chat/stream`은
      * 이 쿠키가 서명까지 유효해야만 게스트를 받는다(`readGuestId`, 절대 스스로

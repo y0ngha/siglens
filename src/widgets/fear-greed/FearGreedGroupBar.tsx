@@ -18,10 +18,18 @@ export function FearGreedGroupBar({ group }: FearGreedGroupBarProps) {
     const tFactor = useTranslations('shared.lib.fearGreedFactor');
     const score = Math.round(group.score);
     const locale = useResolvedLocale();
+    // core의 그룹 이름('Flow'/'Trend')은 식별자일 뿐 화면 문구가 아니다 — 그대로 찍으면
+    // 한국어 화면에 "Flow Group"이 박힌다. 번역자 호출이 리터럴이어야 추출기가 키를 싣는다.
+    const groupName =
+        group.name === 'Flow'
+            ? t('FearGreedGroupBar.groupNameFlow')
+            : t('FearGreedGroupBar.groupNameTrend');
     return (
         <section className="flex flex-col gap-2 rounded bg-secondary-800/40 p-3">
             <header className="flex items-center justify-between">
-                <h3 className={HEADING_SUBSECTION}>{group.name} Group</h3>
+                <h3 className={HEADING_SUBSECTION}>
+                    {t('FearGreedGroupBar.groupTitle', { v0: groupName })}
+                </h3>
                 <span className="font-mono text-sm text-secondary-100">
                     {score} / 100
                 </span>
@@ -29,7 +37,7 @@ export function FearGreedGroupBar({ group }: FearGreedGroupBarProps) {
             <FearGreedScoreBar
                 value={score}
                 label={t('FearGreedGroupBar.groupScore', {
-                    v0: group.name,
+                    v0: groupName,
                     v1: score,
                 })}
             />
@@ -60,7 +68,11 @@ export function FearGreedGroupBar({ group }: FearGreedGroupBarProps) {
                                             : 'text-secondary-500'
                                     )}
                                 >
-                                    ({pctile}th)
+                                    (
+                                    {t('FearGreedGroupBar.percentile', {
+                                        v0: pctile,
+                                    })}
+                                    )
                                 </span>
                             </span>
                         </li>

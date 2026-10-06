@@ -87,7 +87,7 @@ function columnOf(
 }
 
 const LINK_CLASSES =
-    'rounded text-sm text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
+    'tap-target rounded text-sm text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none';
 
 interface FooterNavColumnProps {
     readonly column: FooterColumn;
@@ -163,7 +163,10 @@ export function Footer() {
             <div className="w-full px-4 py-10">
                 <div className="flex flex-col-reverse gap-10 lg:flex-row lg:items-start lg:justify-between lg:gap-16">
                     {/* 왼쪽 — 저작권·저장소·약관·문의. 한 줄로 흐르되 좁아지면 감싼다. */}
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+                    {/* `gap-x-6`: GitHub·X 아이콘의 터치 상자(44px)는 음수 마진(`-m-3`)으로 레이아웃에서
+                        12px씩 바깥으로 나와 있다. 이웃 상자끼리 겹치지 않으려면 두 상자의
+                        바깥 여백 합(12 + 12)만큼은 간격이 있어야 하므로 24px이다. */}
+                    <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
                         {/* `whitespace-nowrap`: 320px에서 `© 2026` / `Siglens`
                             두 줄로 쪼개지던 회귀가 있었다(2026-08-25 사용자 제보). */}
                         <p className="text-sm whitespace-nowrap text-secondary-400">
@@ -182,7 +185,9 @@ export function Footer() {
                             // `noopener`를 포함하지만 둘 다 적어 의도를 남긴다.
                             rel="noopener noreferrer"
                             aria-label={t('githubRepoAria', { v0: SITE_NAME })}
-                            className="rounded text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                            // 아이콘은 20px이지만 터치 영역은 44px(`size-11`)이다 —
+                            // 아래 X 링크와 같은 처리(음수 마진 근거는 그쪽 주석).
+                            className="-m-3 inline-flex size-11 items-center justify-center rounded text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
                             <GithubIcon className="h-5 w-5" />
                         </a>
@@ -194,8 +199,8 @@ export function Footer() {
                             aria-label={t('xAccountAria', { v0: SITE_NAME })}
                             // 아이콘은 20px이지만 터치 영역은 44px(`size-11`)이어야 한다.
                             // 음수 마진(`-m-3`)이 늘어난 12px씩을 되돌려 레이아웃 몫은 20px
-                            // 그대로다 — 옆 링크와의 간격(`gap-x-4` = 16px)을 넘어서
-                            // 이웃의 터치 영역을 덮지 않는다.
+                            // 그대로다. 행 간격(`gap-x-6` = 24px)이 이웃 상자와의 바깥 여백
+                            // 합(12 + 12)과 같아 GitHub 상자와 X 상자가 겹치지 않는다.
                             className="-m-3 inline-flex size-11 items-center justify-center rounded text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         >
                             <XIcon className="h-5 w-5" />

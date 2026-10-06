@@ -5,7 +5,7 @@ import type {
 } from '@/entities/market-fear-greed/model';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { FearGreedGauge } from '@/shared/ui/FearGreedGauge';
-import { confidenceLabelKey } from '@/shared/lib/fearGreedLabels';
+import { SampleFooterText } from '@/shared/ui/SampleFooterText';
 import type { FearGreedMarketId } from '@/shared/lib/marketFearGreedLabels';
 import { MarketFearGreedComparison } from './MarketFearGreedComparison';
 import { MarketFearGreedFactorBar } from './MarketFearGreedFactorBar';
@@ -51,7 +51,6 @@ export function MarketFearGreedPage({
 }: MarketFearGreedPageProps) {
     const t = useTranslations('widgets.market-fear-greed');
     const tPage = useTranslations('widgets.market-fear-greed.page');
-    const tFearGreed = useTranslations('shared.lib.fearGreed');
     const { snapshot, comparisons } = view;
 
     if (!snapshot) {
@@ -104,10 +103,10 @@ export function MarketFearGreedPage({
             <footer className="flex flex-col gap-1 text-xs text-secondary-500">
                 <p>{tPage(CNN_DIFFERENCE_KEY[market])}</p>
                 <p>
-                    {tFearGreed('confidenceFooter', {
-                        v0: snapshot.sampleSize,
-                        v1: tFearGreed(confidenceLabelKey(snapshot.confidence)),
-                    })}
+                    <SampleFooterText
+                        confidence={snapshot.confidence}
+                        sampleSize={snapshot.sampleSize}
+                    />
                 </p>
             </footer>
         </div>

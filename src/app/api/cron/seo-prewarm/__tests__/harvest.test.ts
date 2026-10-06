@@ -17,6 +17,7 @@ const {
     mockHasAnalyzableNews,
     mockRewriteToPlainLanguage,
     mockResolveCurrentPrice,
+    mockResolvePriceAsOf,
     mockClaimBasisForce,
     mockFetchPageLastClose,
     mockAddFmpBudget,
@@ -35,6 +36,7 @@ const {
     mockHasAnalyzableNews: vi.fn(),
     mockRewriteToPlainLanguage: vi.fn(),
     mockResolveCurrentPrice: vi.fn(),
+    mockResolvePriceAsOf: vi.fn(),
     mockClaimBasisForce: vi.fn(),
     mockFetchPageLastClose: vi.fn(),
     mockAddFmpBudget: vi.fn(),
@@ -86,6 +88,7 @@ vi.mock('@/entities/analysis-plain/api', () => ({
 }));
 vi.mock('@/entities/analysis-plain/lib/currentPrice', () => ({
     resolveCurrentPrice: mockResolveCurrentPrice,
+    resolvePriceAsOf: mockResolvePriceAsOf,
 }));
 
 import { TAB_SEAMS, resolveHarvest } from '../harvest';
@@ -241,6 +244,7 @@ describe('resolveHarvest', () => {
 
     it('평이화를 프리웜 전용 30초 마감으로 호출하고 그 결과를 함께 저장한다', async () => {
         mockResolveCurrentPrice.mockResolvedValue(123.45);
+        mockResolvePriceAsOf.mockResolvedValue('9월 29일 종가');
         mockRewriteToPlainLanguage.mockResolvedValue('쉽게 쓴 글');
         const done: SeamOutcome = {
             status: 'done',
@@ -249,12 +253,19 @@ describe('resolveHarvest', () => {
 
         await resolveHarvest('AAPL', 'overall', done, repo as never, counts);
 
+        // 기준 시점은 구운 분석(`dataAsOf`가 든 payload)에서 만든다.
+        expect(mockResolvePriceAsOf).toHaveBeenCalledWith(
+            'AAPL',
+            'ko',
+            OVERALL_PROSE
+        );
         expect(mockRewriteToPlainLanguage).toHaveBeenCalledWith(
             OVERALL_PROSE,
             'AAPL',
             'ko',
             'USD',
             123.45,
+            '9월 29일 종가',
             30_000
         );
         expect(repo.upsert.mock.calls[0][0].plain).toBe('쉽게 쓴 글');

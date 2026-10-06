@@ -38,7 +38,19 @@ vi.mock('@/entities/analysis/lib/staleThreshold', () => ({
 // indicatorCount는 이제 AnalysisPanel에 prop으로 전달한다.
 // useSymbolPageContext / ANALYSIS_PHASES / ANALYSIS_TIPS mock이 더 이상 필요 없다.
 vi.mock('../AnalysisProgress', () => ({
-    AnalysisProgress: () => <div data-testid="analysis-progress" />,
+    AnalysisProgress: ({
+        indicatorCount,
+        skillCount,
+    }: {
+        indicatorCount: number;
+        skillCount: number;
+    }) => (
+        <div
+            data-testid="analysis-progress"
+            data-indicator-count={indicatorCount}
+            data-skill-count={skillCount}
+        />
+    ),
 }));
 vi.mock('../AnalysisToast', () => ({
     AnalysisToast: () => null,
@@ -380,6 +392,24 @@ describe('AnalysisPanel', () => {
 
         expect(screen.getByTestId('analysis-progress')).toBeInTheDocument();
         expect(screen.queryByText('요약 텍스트')).not.toBeInTheDocument();
+    });
+
+    it('진행 화면에 보조지표·스킬 수를 그대로 넘긴다(업셀과 같은 값)', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis()}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                showProgress={true}
+                indicatorCount={37}
+                skillCount={89}
+            />
+        );
+
+        const progress = screen.getByTestId('analysis-progress');
+        expect(progress).toHaveAttribute('data-indicator-count', '37');
+        expect(progress).toHaveAttribute('data-skill-count', '89');
     });
 
     it('renders the reanalyze button when onReanalyze is provided', () => {

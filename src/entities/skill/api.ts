@@ -1,6 +1,6 @@
 import { readdir, readFile } from 'node:fs/promises';
 import type { Dirent } from 'node:fs';
-import { join } from 'node:path';
+import { join, sep } from 'node:path';
 import type {
     Skill,
     SkillCategory,
@@ -19,6 +19,14 @@ import { countSkillsByType } from '@/shared/lib/skillUtils';
 import type { SkillsProvider } from './model';
 
 const SKILLS_DIR = join(process.cwd(), 'skills');
+
+/**
+ * 프롬프트에 **항상 주입되는 압축 요약**(`Candle Reading Primer`·`Indicator Core
+ * Reference`·`Pattern Index Reference`)이 사는 디렉터리. 사용자가 읽는 가이드가 아니라
+ * 모델용 내부 자료라 공개 쇼케이스에서는 뺀다 — 카드로 나가면 홈에 "압축 primer — 상시
+ * 주입되는 코어" 같은 내부 문장이 그대로 노출된다.
+ */
+const CORE_SKILLS_DIR = join(SKILLS_DIR, '_core');
 
 const SKILL_CATEGORIES = [
     'reversal_bullish',
@@ -549,33 +557,51 @@ export const dedupeByName = (skills: Skill[]): Skill[] => {
     });
 };
 
+const readSkills = async (mdFiles: readonly string[]): Promise<Skill[]> => {
+    const skills = await Promise.all(
+        mdFiles.map(async file => {
+            const raw = await readFile(file, 'utf-8');
+            const parsed = parseFrontmatter(raw);
+            if (!parsed) return null;
+            return toSkill(parsed.data, parsed.content);
+        })
+    );
+
+    return dedupeByName(skills.filter((s): s is Skill => s !== null));
+};
+
 export class FileSkillsLoader implements SkillsProvider {
     async loadSkills(): Promise<Skill[]> {
-        const mdFiles = await collectMdFiles(SKILLS_DIR);
-
-        const skills = await Promise.all(
-            mdFiles.map(async file => {
-                const raw = await readFile(file, 'utf-8');
-                const parsed = parseFrontmatter(raw);
-                if (!parsed) return null;
-                return toSkill(parsed.data, parsed.content);
-            })
-        );
-
-        return dedupeByName(skills.filter((s): s is Skill => s !== null));
+        return readSkills(await collectMdFiles(SKILLS_DIR));
     }
+}
+
+const isCoreSkillFile = (file: string): boolean =>
+    file.startsWith(`${CORE_SKILLS_DIR}${sep}`);
+
+/**
+ * 홈 스킬 쇼케이스에 보여줄 스킬 — `skills/_core/`를 제외한 전부.
+ *
+ * 개수 집계(`countSkillFiles`)도 같은 기준(`_core` 제외)을 쓴다. 프롬프트 주입 경로
+ * (`FileSkillsLoader`)만 `_core`까지 읽는다.
+ */
+export async function loadShowcaseSkills(): Promise<Skill[]> {
+    const mdFiles = await collectMdFiles(SKILLS_DIR);
+    return readSkills(mdFiles.filter(file => !isCoreSkillFile(file)));
 }
 
 // cacheComponents 비활성 기간 동안 'use cache' 제거.
 // skills 디렉토리는 빌드 산출물이라 매 요청 fs.readdir이 사실상 OS page cache hit.
 //
-// 스킬 카탈로그 규모를 frontmatter 기준으로 집계한다.
-// 디렉터리 기준이 아닌 `type`/`category` 필드 기준이라, `_core/` 등 보조 디렉터리에
-// 위치한 스킬도 본래 분류(indicator_guide/candlestick 등)로 잡힌다.
-// StatsBar(`buildSkillStats`)와 동일 소스를 사용해 hero 카피와 StatsBar 수치가
-// 어긋나지 않도록 한다.
+// 스킬 카탈로그 규모를 frontmatter 기준으로 집계한다(`type`/`category` 필드 기준, 디렉터리
+// 기준 아님). 단 `_core/` 내부 primer는 센 값에서 뺀다(`CORE_SKILLS_DIR` 참고).
+// 홈 히어로·StatsBar, /about, /methodology, 종목 페이지의 진행 문구·가입 업셀이 모두
+// 이 함수 하나를 소스로 써서 서로 다른 수를 말하지 않는다.
 export async function countSkillFiles(): Promise<SkillCounts> {
-    const skills = await new FileSkillsLoader().loadSkills();
+    const mdFiles = await collectMdFiles(SKILLS_DIR);
+    const skills = await readSkills(
+        mdFiles.filter(file => !isCoreSkillFile(file))
+    );
     const byType = countSkillsByType(skills);
     // 스킬마다 객체를 복제하지 않고 로컬 누적기를 증가시킨다(O(n)).
     const byCategory: Partial<Record<SkillCategory, number>> = {};

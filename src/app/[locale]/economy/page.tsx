@@ -15,6 +15,7 @@ import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingSta
 import { getCalendarFromDb } from '@/entities/economy/api/getCalendarFromDb';
 import { resolveIndicatorLabels } from '@/entities/economy/api/resolveIndicatorLabels';
 import { etDateOf } from '@/entities/economy/lib/calendarWindow';
+import { macroBriefingDayKey } from '@/entities/economy/lib/macroBriefingDayKey';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
 import { CALENDAR_COUNTRY } from '@/entities/economy/lib/economyCalendarConstants';
 import { isEmptyEconomySnapshot } from '@/entities/economy/lib/economyCompleteness';
@@ -28,10 +29,7 @@ import {
     type FaqItem,
     type SeoTranslator,
 } from '@/shared/lib/seo';
-import {
-    ISO_DATE_HOUR_SLICE_END,
-    SECONDS_PER_HOUR,
-} from '@/shared/config/time';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { FaqSection } from '@/shared/ui/FaqSection';
@@ -179,18 +177,16 @@ async function EconomyContent() {
      * 모순이 된다. `/economy/kr`과 `/news/[category]`가 같은 규칙을 쓴다.
      */
 
-    // 1-hour date-hour 버킷 키로 macro briefing peek seed 조회. miss는 null → 클라가 submit.
-    const dateHour = new Date().toISOString().slice(0, ISO_DATE_HOUR_SLICE_END);
+    // UTC 날짜 버킷 키(core 거시 브리핑 캐시 키와 같은 경계)로 macro briefing peek seed 조회.
+    // miss는 null → 클라가 submit.
     // 외부 I/O 오류는 graceful 처리하되 silent하게 삼키지 않는다(MISTAKES §Infra §4).
-    const peekSeed = await peekMacroBriefingStatic(snapshot, dateHour).catch(
-        e => {
-            console.error(
-                '[EconomyContent] peekMacroBriefingStatic failed:',
-                e
-            );
-            return null;
-        }
-    );
+    const peekSeed = await peekMacroBriefingStatic(
+        snapshot,
+        macroBriefingDayKey(now)
+    ).catch(e => {
+        console.error('[EconomyContent] peekMacroBriefingStatic failed:', e);
+        return null;
+    });
 
     // 캘린더는 Redis 스냅샷이 아니라 DB-backed 이력 레이어에서 읽는다(SP-A). 지표/treasury는
     // 스냅샷 그대로. 조회는 위에서 이미 출발했다.

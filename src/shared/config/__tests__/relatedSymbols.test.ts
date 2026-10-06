@@ -467,7 +467,7 @@ describe('relatedSymbolsFor', () => {
             expect(missing).toEqual([]);
         });
 
-        it('링 이웃은 "같은 시장 종목" 캡션을, 테마 피어는 그 그룹 캡션을 단다', () => {
+        it('링 이웃은 "다른 종목 둘러보기" 캡션을, 테마 피어는 그 그룹 캡션을 단다', () => {
             for (const symbol of UNIVERSE) {
                 for (const related of relatedSymbolsFor(symbol)) {
                     if (related.reason === 'ring') {

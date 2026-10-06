@@ -1,5 +1,7 @@
 import type { FaqItem } from '@/shared/lib/seo';
+import { splitSitePaths } from '@/shared/lib/splitSitePaths';
 import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
+import { LocaleLink } from '@/shared/ui/LocaleLink';
 
 // 한 페이지에 FAQ 섹션은 하나뿐이라 id는 상수로 충분하다.
 const FAQ_HEADING_ID = 'faq-heading';
@@ -8,6 +10,36 @@ interface FaqSectionProps {
     /** 섹션 h2. */
     heading: string;
     items: readonly FaqItem[];
+    /**
+     * 답변 속 사이트 경로(`/market`, `/NVDA/overall`)를 링크로 그린다. 홈 전용이다.
+     *
+     * 화면에서만 바꾼다 — 같은 `items`가 `buildFaqJsonLd`로도 가므로 구조화데이터에는
+     * 원문 문자열이 그대로 남는다(링크 마크업이 `acceptedAnswer.text`에 섞이지 않는다).
+     * 기본값을 끄는 이유는 다른 허브의 답변에 우연히 경로처럼 생긴 글자가 있어도
+     * 링크가 되지 않게 하려는 것이다.
+     */
+    linkifyPaths?: boolean;
+}
+
+function AnswerWithLinks({ answer }: { answer: string }) {
+    return (
+        <>
+            {splitSitePaths(answer).map((segment, index) =>
+                segment.kind === 'path' ? (
+                    <LocaleLink
+                        key={`${index}-${segment.value}`}
+                        href={segment.value}
+                        prefetch={false}
+                        className="text-primary-400 underline-offset-4 hover:text-primary-300 hover:underline"
+                    >
+                        {segment.value}
+                    </LocaleLink>
+                ) : (
+                    segment.value
+                )
+            )}
+        </>
+    );
 }
 
 /**
@@ -26,7 +58,11 @@ interface FaqSectionProps {
  * 마크업(`dl`/`dt`/`dd`)과 클래스는 `/economy/kr`·`/fear-greed`가 이미 쓰던 것을
  * 그대로 옮겼다. 카드 테두리는 `/[symbol]/overall`의 안내 섹션과 동일하다.
  */
-export function FaqSection({ heading, items }: FaqSectionProps) {
+export function FaqSection({
+    heading,
+    items,
+    linkifyPaths = false,
+}: FaqSectionProps) {
     return (
         <section
             aria-labelledby={FAQ_HEADING_ID}
@@ -41,7 +77,13 @@ export function FaqSection({ heading, items }: FaqSectionProps) {
                         <dt className="font-medium text-secondary-300">
                             {question}
                         </dt>
-                        <dd className="mt-1">{answer}</dd>
+                        <dd className="mt-1">
+                            {linkifyPaths ? (
+                                <AnswerWithLinks answer={answer} />
+                            ) : (
+                                answer
+                            )}
+                        </dd>
                     </div>
                 ))}
             </dl>

@@ -45,7 +45,7 @@ const MAX_RING_REACH = 4;
  */
 type RelatedSymbolReason = 'theme' | 'category' | 'ring';
 
-/** 링 이웃(관련성 데이터 없음)의 캡션 — "같은 시장 종목". */
+/** 링 이웃(관련성 데이터 없음)의 캡션 — "다른 종목 둘러보기". 키 이름은 옛 문구(sameMarket) 그대로다. */
 export const RING_GROUP_LABEL_KEY = 'views.symbol.relatedGroup.sameMarket';
 
 export interface RelatedSymbol {

@@ -645,6 +645,32 @@ describe('ChatShell — MessageList key (spec §3.9)', () => {
         expect(mockStream.edit).not.toHaveBeenCalled();
     });
 
+    it('clicking a follow-up chip under the last answer sends it through the stream (same path as the composer)', () => {
+        mockStream.messages = [
+            {
+                id: '1',
+                role: 'user' as const,
+                content: 'q',
+                tools: [],
+                status: 'complete' as const,
+            },
+            {
+                id: '2',
+                role: 'assistant' as const,
+                content:
+                    '답변입니다.\n[[followups]] 실적은 어때? | 뉴스도 알려줘',
+                tools: [],
+                status: 'complete' as const,
+            },
+        ];
+        mockStream.status = 'idle';
+        mockStream.send.mockClear();
+        renderShell();
+        fireEvent.click(screen.getByRole('button', { name: '뉴스도 알려줘' }));
+        expect(mockStream.send).toHaveBeenCalledTimes(1);
+        expect(mockStream.send).toHaveBeenCalledWith('뉴스도 알려줘');
+    });
+
     it('editing the last user message and submitting calls stream.edit with its seq and new text', () => {
         mockStream.messages = [
             {
@@ -909,5 +935,48 @@ describe('ChatShell sidebar rename/delete wiring', () => {
         ).toBeGreaterThan(0);
         expect(router.push).toHaveBeenCalledWith('/');
         mockStream.conversationId = 'c1';
+    });
+});
+
+/**
+ * `?sso=none`은 서버가 핸드오프 재시도를 건너뛰는 신호일 뿐(`proxy.ts`가 쿠키로도
+ * 기억한다) 방문자에게는 의미가 없다. 주소창에 남으면 새로고침·공유·북마크에 실려
+ * 나간다. 마운트 때 `sso`만 지우고 `q`·광고 식별자·해시는 지켜야 한다.
+ */
+describe('ChatShell — ?sso=none 주소창 정리', () => {
+    beforeAll(() => {
+        Element.prototype.scrollIntoView = vi.fn();
+    });
+    afterEach(() => {
+        window.history.replaceState(null, '', '/');
+        vi.restoreAllMocks();
+    });
+
+    it('sso만 지우고 q·gclid·utm·해시는 보존한다', () => {
+        window.history.replaceState(
+            null,
+            '',
+            '/?q=NVDA%20%EC%96%B4%EB%95%8C&sso=none&gclid=G1&utm_source=google#composer'
+        );
+        const replaceState = vi.spyOn(window.history, 'replaceState');
+
+        renderShell();
+
+        expect(replaceState).toHaveBeenCalledTimes(1);
+        expect(window.location.search).toBe(
+            '?q=NVDA%20%EC%96%B4%EB%95%8C&gclid=G1&utm_source=google'
+        );
+        expect(window.location.hash).toBe('#composer');
+        expect(window.location.pathname).toBe('/');
+    });
+
+    it('sso가 없으면 주소창을 건드리지 않는다', () => {
+        window.history.replaceState(null, '', '/?q=hi');
+        const replaceState = vi.spyOn(window.history, 'replaceState');
+
+        renderShell();
+
+        expect(replaceState).not.toHaveBeenCalled();
+        expect(window.location.search).toBe('?q=hi');
     });
 });

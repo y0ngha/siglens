@@ -501,6 +501,7 @@ describe('rewriteToPlainLanguage', () => {
                 'ko',
                 undefined,
                 undefined,
+                undefined,
                 30_000
             );
             await vi.advanceTimersByTimeAsync(30_000);
@@ -707,5 +708,275 @@ describe('rewriteToPlainLanguage', () => {
                 errSpy.mockRestore();
             }
         });
+    });
+});
+
+describe('가격 기준 시점(asOf)과 stale_deixis 연성 가드', () => {
+    const AS_OF = '9월 29일 종가';
+    /** 숫자·조언·문자 가드는 통과하고 시점 표현만 거친 글. */
+    const STALE = `${'좋은 문장입니다. '.repeat(30)}\n\n지금 주가는 183.60달러입니다.`;
+    const clean = (): string =>
+        `${'좋은 문장입니다. '.repeat(30)}\n\n9월 29일 종가 기준 주가는 183.60달러입니다.`;
+
+    const promptOf = (callIndex: number): string =>
+        callAiProviderRouter.mock.calls[callIndex][0].contents as string;
+
+    it('asOf를 사실 블록에 실어 프롬프트에 넣는다', async () => {
+        await rewriteToPlainLanguage(
+            ANALYSIS,
+            'AAPL',
+            'ko',
+            'USD',
+            undefined,
+            AS_OF
+        );
+
+        const facts = promptOf(0).split('facts:\n')[1];
+        expect(JSON.parse(facts.split('\n')[0])).toMatchObject({
+            asOf: AS_OF,
+        });
+    });
+
+    it('asOf가 다르면 저장 키(입력 다이제스트)가 달라진다', async () => {
+        await rewriteToPlainLanguage(
+            ANALYSIS,
+            'AAPL',
+            'ko',
+            'USD',
+            undefined,
+            AS_OF
+        );
+        const first = findCallFor('ko')?.[2];
+        vi.clearAllMocks();
+        repoFind.mockResolvedValue(null);
+        repoInsert.mockResolvedValue(undefined);
+        tryReadPlainModelConfig.mockReturnValue({
+            serverApiKey: 'k',
+            model: 'deepseek-v4.1-flash',
+        });
+        tryGetDatabaseClient.mockReturnValue({ db: {} });
+        callAiProviderRouter.mockResolvedValue(GOOD);
+        await rewriteToPlainLanguage(
+            ANALYSIS,
+            'AAPL',
+            'ko',
+            'USD',
+            undefined,
+            '9월 30일 종가'
+        );
+        expect(findCallFor('ko')?.[2]).not.toBe(first);
+    });
+
+    /**
+     * 실제 asOf 문구(`9월 29일`)의 숫자는 2자리라 가격형 토큰 검사에 걸리지 않는다. 그래서
+     * 배선만 보려고 3자리 이상 숫자가 든 asOf를 일부러 쓴다 — `buildAllowedNumbers`에
+     * `facts.asOf`를 넘기지 않으면 아래 글은 근거 없는 숫자로 재작성이 통째로 버려진다.
+     */
+    it('facts.asOf의 숫자도 허용 집합에 넣어 숫자 가드가 그 값을 환각으로 잡지 않는다', async () => {
+        const dated = `${'좋은 문장입니다. '.repeat(30)}\n\n기준 777.70달러에서 지지선은 183.60달러입니다.`;
+        callAiProviderRouter.mockResolvedValue(dated);
+
+        expect(
+            await rewriteToPlainLanguage(
+                ANALYSIS,
+                'AAPL',
+                'ko',
+                'USD',
+                undefined,
+                '기준 777.70 종가'
+            )
+        ).toBe(dated.trim());
+        expect(callAiProviderRouter).toHaveBeenCalledOnce();
+    });
+
+    it('시점 표현이 걸리면 지적 문구와 함께 한 번 다시 쓰고, 고쳐지면 고친 글을 쓴다', async () => {
+        callAiProviderRouter
+            .mockResolvedValueOnce(STALE)
+            .mockResolvedValueOnce(clean());
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const result = await rewriteToPlainLanguage(
+            ANALYSIS,
+            'AAPL',
+            'ko',
+            'USD',
+            undefined,
+            AS_OF
+        );
+
+        expect(result).toBe(clean().trim());
+        expect(callAiProviderRouter).toHaveBeenCalledTimes(2);
+        expect(promptOf(0)).not.toContain('이전 응답이 가격을 읽는 시점에');
+        expect(promptOf(1)).toContain('이전 응답이 가격을 읽는 시점에');
+        expect(promptOf(1)).toContain('지금 주가는');
+        expect(warnSpy).toHaveBeenCalledWith(
+            '[analysisPlain] guard rejected',
+            expect.objectContaining({ kind: 'stale_deixis', retry: false })
+        );
+        expect(repoInsert).toHaveBeenCalledOnce();
+        expect(insertCallFor(clean().trim())).toBeDefined();
+    });
+
+    it('다시 써도 시점 표현이 남으면 버리지 않고 그대로 받아들인다', async () => {
+        callAiProviderRouter.mockResolvedValue(STALE);
+        const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const result = await rewriteToPlainLanguage(
+            ANALYSIS,
+            'AAPL',
+            'ko',
+            'USD',
+            undefined,
+            AS_OF
+        );
+
+        expect(result).toBe(STALE.trim());
+        // 한 번만 다시 쓴다 — 두 번째 시도에서 같은 위반이 나와도 더 부르지 않는다.
+        expect(callAiProviderRouter).toHaveBeenCalledTimes(2);
+        expect(insertCallFor(STALE.trim())).toBeDefined();
+        expect(infoSpy).toHaveBeenCalledWith(
+            '[analysisPlain] accepted with stale deixis',
+            expect.objectContaining({ tokens: ['지금 주가는'] })
+        );
+    });
+
+    /**
+     * 첫 글은 숫자·조언·문자 가드를 모두 통과했고 시점 표현만 거칠다. 재시도가 그 글보다
+     * 못한 결과(경성 위반, 오류, 마감 초과)로 끝나도 쉽게보기가 통째로 사라지면 안 된다.
+     */
+    describe('재시도가 실패해도 첫 글을 받아들인다', () => {
+        it('재시도가 경성 위반이고 도려내기도 실패하면 첫 글을 쓰고 저장한다', async () => {
+            const allBad = '목표가는 999.99달러입니다. '.repeat(8).trim();
+            callAiProviderRouter
+                .mockResolvedValueOnce(STALE)
+                .mockResolvedValueOnce(allBad);
+            vi.spyOn(console, 'warn').mockImplementation(() => {});
+            const infoSpy = vi
+                .spyOn(console, 'info')
+                .mockImplementation(() => {});
+
+            const result = await rewriteToPlainLanguage(
+                ANALYSIS,
+                'AAPL',
+                'ko',
+                'USD',
+                undefined,
+                AS_OF
+            );
+
+            expect(result).toBe(STALE.trim());
+            expect(callAiProviderRouter).toHaveBeenCalledTimes(2);
+            expect(repoInsert).toHaveBeenCalledOnce();
+            expect(insertCallFor(STALE.trim())).toBeDefined();
+            expect(infoSpy).toHaveBeenCalledWith(
+                '[analysisPlain] accepted with stale deixis',
+                expect.objectContaining({ tokens: ['지금 주가는'] })
+            );
+        });
+
+        it('재시도가 던져도 첫 글을 쓴다', async () => {
+            callAiProviderRouter
+                .mockResolvedValueOnce(STALE)
+                .mockRejectedValueOnce(new Error('provider down'));
+            vi.spyOn(console, 'warn').mockImplementation(() => {});
+            vi.spyOn(console, 'info').mockImplementation(() => {});
+
+            const result = await rewriteToPlainLanguage(
+                ANALYSIS,
+                'AAPL',
+                'ko',
+                'USD',
+                undefined,
+                AS_OF
+            );
+
+            expect(result).toBe(STALE.trim());
+            expect(insertCallFor(STALE.trim())).toBeDefined();
+        });
+
+        it('재시도가 마감을 넘기면 첫 글을 돌려주되 그 자리에서는 저장하지 않는다', async () => {
+            vi.useFakeTimers();
+            vi.spyOn(console, 'warn').mockImplementation(() => {});
+            try {
+                callAiProviderRouter
+                    .mockResolvedValueOnce(STALE)
+                    .mockReturnValueOnce(new Promise<string>(() => {}));
+
+                const promise = rewriteToPlainLanguage(
+                    ANALYSIS,
+                    'AAPL',
+                    'ko',
+                    'USD',
+                    undefined,
+                    AS_OF
+                );
+                await vi.advanceTimersByTimeAsync(15_000);
+
+                expect(await promise).toBe(STALE.trim());
+                expect(callAiProviderRouter).toHaveBeenCalledTimes(2);
+                // 늦게 끝나는 재시도가 더 나은 글을 저장할 수 있으므로 여기서 먼저 쓰지 않는다.
+                expect(repoInsert).not.toHaveBeenCalled();
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('마감을 넘긴 재시도가 늦게 경성 위반으로 끝나면 그제야 첫 글을 저장한다', async () => {
+            vi.useFakeTimers();
+            vi.spyOn(console, 'warn').mockImplementation(() => {});
+            vi.spyOn(console, 'info').mockImplementation(() => {});
+            try {
+                let resolveRetry: (v: string) => void = () => {};
+                callAiProviderRouter
+                    .mockResolvedValueOnce(STALE)
+                    .mockReturnValueOnce(
+                        new Promise<string>(resolve => {
+                            resolveRetry = resolve;
+                        })
+                    );
+
+                const promise = rewriteToPlainLanguage(
+                    ANALYSIS,
+                    'AAPL',
+                    'ko',
+                    'USD',
+                    undefined,
+                    AS_OF
+                );
+                await vi.advanceTimersByTimeAsync(15_000);
+                expect(await promise).toBe(STALE.trim());
+
+                resolveRetry('목표가는 999.99달러입니다. '.repeat(8).trim());
+                await vi.advanceTimersByTimeAsync(0);
+                expect(insertCallFor(STALE.trim())).toBeDefined();
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('첫 시도 자체가 마감을 넘기면 여전히 null이다 (붙들 첫 글이 없다)', async () => {
+            vi.useFakeTimers();
+            try {
+                callAiProviderRouter.mockReturnValue(
+                    new Promise<string>(() => {})
+                );
+                const promise = rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
+                await vi.advanceTimersByTimeAsync(15_000);
+                expect(await promise).toBeNull();
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+    });
+
+    it('비-ko 출력에는 시점 검사를 걸지 않는다', async () => {
+        const english = `${'A good sentence. '.repeat(30)}\n\nThe current price is 183.60 dollars.`;
+        callAiProviderRouter.mockResolvedValue(english);
+
+        expect(
+            await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'en', 'USD')
+        ).toBe(english.trim());
+        expect(callAiProviderRouter).toHaveBeenCalledOnce();
     });
 });

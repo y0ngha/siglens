@@ -85,7 +85,7 @@ export function Header({
                     전까지 하지 않는다 — 드롭다운 트리거에 caret(▾)이 붙어
                     항목당 폭이 라벨 길이만으로 결정되지 않는다.
                 */}
-                <div className="hidden lg:flex">
+                <div className="hidden shrink-0 lg:flex">
                     <HeaderNav items={NAV_TREE} />
                 </div>
                 {/* 모바일은 아이콘 트리거 + 전체화면 오버레이, 데스크톱은 기존 인라인

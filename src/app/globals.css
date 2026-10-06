@@ -405,6 +405,32 @@
     }
 
     /*
+     * 작은 텍스트 링크의 터치 영역 확장.
+     *
+     * 레이아웃 크기는 그대로 두고 **가운데 정렬된 가상 상자**(::after)만 최소
+     * 24×24px로 넓힌다 — WCAG 2.2 SC 2.5.8(Target Size Minimum). 링크 자체에
+     * `min-h-6`을 주면 푸터 열·브레드크럼 줄 간격이 벌어지는데, 이 클래스는
+     * 히트 영역만 키워서 시각 배치를 건드리지 않는다.
+     *
+     * 이미 24px 이상인 링크에는 `max(100%, 24px)`가 100%로 떨어져 무해하다.
+     * `relative`를 가져가므로 이 클래스를 쓰는 요소에 별도 위치 지정(absolute·
+     * sticky)을 얹지 않는다.
+     */
+    .tap-target {
+        position: relative;
+    }
+
+    .tap-target::after {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: max(100%, 24px);
+        height: max(100%, 24px);
+        content: '';
+        transform: translate(-50%, -50%);
+    }
+
+    /*
      * 심볼 라우트(`/[symbol]/*`) 전용 폭.
      *
      * 이 구역은 사이트 나머지(1200px)보다 좁은 1024px을 쓴다 — 주 콘텐츠가 AI

@@ -18,8 +18,11 @@ export async function generateMetadata({
         locale: resolveLocale(locale),
         namespace: 'app.home',
     });
+    const title = t('not-found.6cbd6d');
+    // JSX 들여쓰기에서 온 줄바꿈·연속 공백은 메타 태그에 그대로 실리면 안 되므로 한 줄로 접는다.
+    const description = t('not-found.03ecab').replace(/\s+/gu, ' ').trim();
     return {
-        title: t('not-found.6cbd6d'),
+        title,
         /**
          * `description`을 비워 두면 Next가 **루트 레이아웃 값을 상속**시킨다 —
          * 즉 존재하지 않는 모든 URL이 홈과 **똑같은** `<meta name="description">`을
@@ -31,11 +34,19 @@ export async function generateMetadata({
          * 갖는 것과 같은 처방이다.
          *
          * 본문(`NotFoundContent`)이 이미 쓰는 안내 문구를 재사용한다 — 4개 로케일에
-         * 번역돼 있고, 페이지가 실제로 말하는 내용과 일치한다. JSX 들여쓰기에서 온
-         * 줄바꿈·연속 공백은 메타 태그에 그대로 실리면 안 되므로 한 줄로 접는다.
+         * 번역돼 있고, 페이지가 실제로 말하는 내용과 일치한다.
          */
-        description: t('not-found.03ecab').replace(/\s+/gu, ' ').trim(),
+        description,
         robots: { index: false, follow: true },
+        /**
+         * 홈의 `canonical`·`og:url`을 상속하지 않게 비운다. 존재하지 않는 URL이
+         * 전부 "내 정규 주소는 홈"이라고 선언하면 크롤러에게 홈의 중복 URL이 무한히
+         * 생기는 모양이 된다 — `noindex`는 색인만 막을 뿐 이 선언까지 막지 못한다.
+         * `openGraph`는 자식 값이 부모 값을 **통째로 대체**하므로(Next 메타데이터
+         * 병합 규칙) `url`을 빼고 제목·설명만 싣는다.
+         */
+        alternates: { canonical: null },
+        openGraph: { title, description },
     };
 }
 

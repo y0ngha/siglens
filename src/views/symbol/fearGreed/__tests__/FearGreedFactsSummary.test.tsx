@@ -73,10 +73,10 @@ describe('FearGreedFactsSummary', () => {
         expect(getByRole('table')).toBeInTheDocument();
         for (const label of [
             /평소 대비 거래량 이탈/,
-            /매수·매도 체결 비중 차이/,
-            /거래가 몰린 가격과의 거리/,
-            /200일 이동평균선과의 거리/,
-            /최근 1년 가격 범위 안 위치/,
+            /매수·매도 거래량 불균형/,
+            /매물대 중심과의 거리/,
+            /200일 이동평균과의 거리/,
+            /최근 252봉 위치/,
         ]) {
             expect(getByRole('rowheader', { name: label })).toBeInTheDocument();
         }
@@ -84,8 +84,10 @@ describe('FearGreedFactsSummary', () => {
         expect(
             getByText(/과거 값\(최대 약 5년\)과 견준 퍼센타일/)
         ).toBeInTheDocument();
-        // confidence footer.
-        expect(getByText(/표본 220/)).toBeInTheDocument();
+        // sample-size footer.
+        expect(
+            getByText('지난 220거래일과 비교해 매긴 점수예요.')
+        ).toBeInTheDocument();
     });
 
     /**
@@ -172,7 +174,7 @@ describe('FearGreedFactsSummary', () => {
         ).toBeInTheDocument();
         expect(
             getByText(
-                /평소 범위에서 가장 멀리 벗어난 것은 최근 1년 가격 범위 안 위치입니다\. 95번째 퍼센타일/
+                /평소 범위에서 가장 멀리 벗어난 것은 최근 252봉 위치입니다\. 95번째 퍼센타일/
             )
         ).toBeInTheDocument();
     });
@@ -399,7 +401,7 @@ describe('FearGreedFactsSummary — DOM 순서', () => {
         expect(section.firstElementChild?.tagName).toBe('H2');
         // 신뢰도 각주는 점수 <dl> 뒤에 오고, 그 뒤에 출처 고지가 섹션을 닫는다.
         const footnote = [...section.querySelectorAll('p')].find(p =>
-            p.textContent?.includes('표본 220')
+            p.textContent?.includes('지난 220거래일')
         )!;
         expect(dl.compareDocumentPosition(footnote) & following).toBe(
             following
@@ -429,7 +431,7 @@ describe('FearGreedFactsSummary — DOM 순서', () => {
         // FIXTURE: 80·90·95는 범위 밖(높은 편), 65·55는 범위 안.
         expect(
             getByText(
-                /평소 범위\(25~75번째 퍼센타일\)를 벗어난 지표는 평소 대비 거래량 이탈\(등락 방향 반영\)\(높은 편\), 200일 이동평균선과의 거리\(높은 편\), 최근 1년 가격 범위 안 위치\(높은 편\)입니다\./
+                /평소 범위\(25~75번째 퍼센타일\)를 벗어난 지표는 평소 대비 거래량 이탈\(등락 방향 반영\)\(높은 편\), 200일 이동평균과의 거리\(높은 편\), 최근 252봉 위치\(높은 편\)입니다\./
             )
         ).toBeInTheDocument();
     });

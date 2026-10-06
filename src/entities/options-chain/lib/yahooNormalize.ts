@@ -13,6 +13,7 @@ import type {
 import { MS_PER_DAY } from '@/shared/config/time';
 import { zonedDate } from '@/shared/lib/marketSessionDate';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
+import { ET_TIME_ZONE } from './etTimeZone';
 
 /**
  * Structural types mirroring yahoo-finance2 v3 CallOrPut / Option / OptionsResult.
@@ -57,8 +58,6 @@ export interface YahooOptionsResult {
     options: YahooOption[];
 }
 
-const ET_TIME_ZONE = 'America/New_York';
-
 // 정오(UTC) — ET 캘린더 날짜를 UTC 인스턴트로 매핑할 때 DST 전이 윈도우
 // (봄·가을 각 몇 시간씩 시각이 모호한 구간)에 걸리지 않도록 하루의 중간
 // 시점에 앵커링한다. 자정 대신 정오를 쓰는 이유는 자정 자체가 DST
@@ -80,6 +79,25 @@ function etMidnight(now: Date): Date {
         .split('-')
         .map(Number);
     return new Date(Date.UTC(year, month - 1, day, ET_NOON_UTC_HOUR));
+}
+
+/**
+ * Calendar days from today (ET) to `expirationDate` (`YYYY-MM-DD`), floored at 0.
+ *
+ * Shared by the Yahoo normalizer and the last-good fallback
+ * (`rebaseOptionsSnapshot`) so a re-served snapshot counts days the same way a
+ * freshly normalized one does.
+ */
+export function daysToExpirationFrom(
+    expirationDate: string,
+    now: Date
+): number {
+    const expMidnight = new Date(`${expirationDate}T00:00:00.000Z`);
+    const refMidnight = etMidnight(now);
+    return Math.max(
+        0,
+        Math.round((expMidnight.getTime() - refMidnight.getTime()) / MS_PER_DAY)
+    );
 }
 
 /** Normalize a single call or put contract from yahoo-finance2 into an OptionsContract. */
@@ -108,12 +126,7 @@ export function normalizeYahooExpiration(
 ): OptionsChain {
     const expirationDate = toUtcIsoDate(yexp.expirationDate);
 
-    const expMidnight = new Date(`${expirationDate}T00:00:00.000Z`);
-    const refMidnight = etMidnight(now);
-    const daysToExpiration = Math.max(
-        0,
-        Math.round((expMidnight.getTime() - refMidnight.getTime()) / MS_PER_DAY)
-    );
+    const daysToExpiration = daysToExpirationFrom(expirationDate, now);
 
     const calls = yexp.calls
         .map(normalizeYahooContract)

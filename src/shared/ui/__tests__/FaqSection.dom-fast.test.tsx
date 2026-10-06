@@ -39,4 +39,53 @@ describe('FaqSection', () => {
         const entities = buildFaqJsonLd(ITEMS).mainEntity as unknown[];
         expect(document.querySelectorAll('dt')).toHaveLength(entities.length);
     });
+
+    describe('linkifyPaths', () => {
+        const PATH_ITEMS = [
+            {
+                question: '어디서 보나요?',
+                answer: 'Siglens의 /market 페이지에서 PER/PBR을 봅니다. 예: /NVDA/overall.',
+            },
+        ];
+
+        it('옵트인하면 답변 속 사이트 경로만 링크로 그린다', () => {
+            render(
+                <FaqSection
+                    heading="자주 묻는 질문"
+                    items={PATH_ITEMS}
+                    linkifyPaths
+                />
+            );
+
+            const links = screen.getAllByRole('link');
+            expect(links.map(l => l.textContent)).toEqual([
+                '/market',
+                '/NVDA/overall',
+            ]);
+            expect(links.map(l => l.getAttribute('href'))).toEqual([
+                '/market',
+                '/NVDA/overall',
+            ]);
+            // 링크 마크업을 걷어낸 글자는 원문과 같다 — 마침표도 그대로 남는다.
+            expect(document.querySelector('dd')?.textContent).toBe(
+                PATH_ITEMS[0].answer
+            );
+        });
+
+        it('옵트인하지 않으면 같은 답변도 링크 없이 글자로만 그린다', () => {
+            render(<FaqSection heading="자주 묻는 질문" items={PATH_ITEMS} />);
+
+            expect(screen.queryAllByRole('link')).toHaveLength(0);
+            expect(screen.getByText(PATH_ITEMS[0].answer)).toBeInTheDocument();
+        });
+
+        it('구조화데이터에는 마크업 없는 원문이 간다', () => {
+            const entities = buildFaqJsonLd(PATH_ITEMS).mainEntity as {
+                acceptedAnswer: { text: string };
+            }[];
+
+            expect(entities[0].acceptedAnswer.text).toBe(PATH_ITEMS[0].answer);
+            expect(entities[0].acceptedAnswer.text).not.toMatch(/<a\b/);
+        });
+    });
 });

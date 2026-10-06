@@ -86,7 +86,9 @@ vi.mock('@y0ngha/siglens-core', async () => {
 
 vi.mock('@tanstack/react-query', () => ({
     dehydrate: () => ({}),
-    HydrationBoundary: () => null,
+    // children을 그대로 내보낸다 — 게이지(FearGreedPage 표식)가 요약보다 앞서는지 DOM으로 본다.
+    HydrationBoundary: ({ children }: { children: React.ReactNode }) =>
+        children,
     QueryClient: function MockQueryClientClass() {
         return { setQueryData: mockSetQueryData };
     },
@@ -117,8 +119,18 @@ vi.mock('next/navigation', () => ({
     }),
 }));
 
+// 순서·중복 억제 prop을 보려고 표식만 그린다. 게이지 자체는 FearGreedPage.test.tsx 소관.
 vi.mock('@/widgets/fear-greed/FearGreedPage', () => ({
-    FearGreedPage: () => null,
+    FearGreedPage: (props: {
+        hideSelfNormWarning?: boolean;
+        hideSampleFooter?: boolean;
+    }) => (
+        <div
+            data-testid="fear-greed-gauge"
+            data-hide-self-norm={String(props.hideSelfNormWarning === true)}
+            data-hide-sample-footer={String(props.hideSampleFooter === true)}
+        />
+    ),
 }));
 vi.mock('@/widgets/fear-greed/FearGreedPageError', () => ({
     FearGreedPageError: () => null,
@@ -254,8 +266,41 @@ describe('SymbolFearGreedPage — SSR factor summary wiring', () => {
             screen.getByRole('rowheader', { name: /평소 대비 거래량 이탈/ })
         ).toBeInTheDocument();
         expect(
-            screen.getByRole('rowheader', { name: /최근 1년 가격 범위/ })
+            screen.getByRole('rowheader', { name: /최근 252봉 위치/ })
         ).toBeInTheDocument();
+    });
+
+    it('게이지(FearGreedPage)가 서버 계산 요약(FearGreedFactsSummary)보다 DOM에서 앞선다', async () => {
+        mockGetQuantizedBarsStatic.mockResolvedValue(BARS_WITH_DATA);
+
+        const tree = await SymbolFearGreedPage({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+        render(tree);
+
+        const gauge = screen.getByTestId('fear-greed-gauge');
+        const summary = screen
+            .getByText(/AAPL 공포 탐욕 지수 요약/)
+            .closest('section');
+        expect(summary).not.toBeNull();
+        expect(
+            gauge.compareDocumentPosition(summary as Element) &
+                Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+    });
+
+    it('요약이 같은 문구를 그리므로 게이지의 경고 배지와 표본 안내를 끈다', async () => {
+        mockGetQuantizedBarsStatic.mockResolvedValue(BARS_WITH_DATA);
+
+        render(
+            await SymbolFearGreedPage({
+                params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+            })
+        );
+
+        const gauge = screen.getByTestId('fear-greed-gauge');
+        expect(gauge).toHaveAttribute('data-hide-self-norm', 'true');
+        expect(gauge).toHaveAttribute('data-hide-sample-footer', 'true');
     });
 
     it('Worst: bars 빈 배열이면 factor summary가 없고 페이지는 정상 resolve된다', async () => {

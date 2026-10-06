@@ -8,6 +8,7 @@ import { peekBriefingStatic } from '@/entities/market-summary/api/briefingStatic
 import { getMarketSummaryStatic } from '@/entities/market-summary/api/marketSummaryStaticCache';
 import { getEconomySnapshotStatic } from '@/entities/economy/api/economySnapshotStaticCache';
 import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingStaticCache';
+import { macroBriefingDayKey } from '@/entities/economy/lib/macroBriefingDayKey';
 import { peekMarketNewsDigestStatic } from '@/entities/market-news/api/marketNewsDigestStaticCache';
 import {
     CATEGORY_CONFIG,
@@ -80,9 +81,13 @@ const macroSource: RssSource = {
     title: '거시 경제 브리핑',
     read: async () => {
         const snapshot = await getEconomySnapshotStatic();
-        const body: MacroBriefingResponse | null =
-            await peekMacroBriefingStatic(snapshot, currentDateHour());
-        if (body === null) return null;
+        const entry = await peekMacroBriefingStatic(
+            snapshot,
+            macroBriefingDayKey()
+        );
+        if (entry === null) return null;
+        // 스탬프 해시는 본문 기준이다 — 생성 시각을 섞으면 같은 본문이 매번 새 항목이 된다.
+        const body: MacroBriefingResponse = entry.briefing;
         return { body, prose: body.summary };
     },
 };

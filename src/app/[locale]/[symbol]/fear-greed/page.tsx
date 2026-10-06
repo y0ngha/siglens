@@ -22,6 +22,7 @@ import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
 import { getQuantizedBarsStatic } from '@/entities/bars/lib/barsStaticCache';
 import {
     clientSymbolFearGreed,
@@ -41,7 +42,6 @@ import {
     resolveSymbolFearGreedSeoContent,
     symbolMetadataFromSeo,
     noindexInvalidSymbolMetadata,
-    noindexSymbolMetadata,
 } from '@/shared/lib/seo';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import {
@@ -113,7 +113,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (!isAdmissibleSymbolShape(ticker)) {
         return noindexInvalidSymbolMetadata(symbol, locale, 'fear-greed');
     }
-    const { assetInfo, degraded } = await getAssetInfoResilient(ticker);
+    // 존재하지 않는 심볼은 레이아웃과 같은 판정으로 여기서도 404다(`requireResolvableAsset`).
+    const { assetInfo, degraded } = await requireResolvableAsset(ticker);
     // 콘텐츠 게이트 — 본문의 `FearGreedFactsSummary`와 **같은 입력·같은 술어**
     // (`hasFearGreedScore`)로 판정한다(MISTAKES §2). 본문이 쓰는 `getQuantizedBarsStatic`과
     // 같은 인자라 요청 스코프 메모가 접혀 왕복이 늘지 않는다. 차트 라우트
@@ -125,20 +126,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     //     상장 종목 등) 요약이 그려지지 않아 본문이 도입 문단뿐이다 → `no-price-data`로
     //     noindex. 예전에는 `buildTechnicalFacts`(봉 2개 이상)로 판정해 봉은 있으나
     //     점수가 없는 종목(`/TOSCF`·`/SLROF`, 2026-10-04)이 색인돼 있었다.
-    const metadataBars = assetInfo
-        ? await getQuantizedBarsStatic(
-              ticker,
-              DEFAULT_TIMEFRAME,
-              marketProfileOf(assetInfo),
-              assetInfo.fmpSymbol
-          ).catch((e: unknown) => {
-              console.error(
-                  '[SymbolFearGreedPage] generateMetadata getQuantizedBarsStatic failed:',
-                  e
-              );
-              return null;
-          })
-        : null;
+    const metadataBars = await getQuantizedBarsStatic(
+        ticker,
+        DEFAULT_TIMEFRAME,
+        marketProfileOf(assetInfo),
+        assetInfo.fmpSymbol
+    ).catch((e: unknown) => {
+        console.error(
+            '[SymbolFearGreedPage] generateMetadata getQuantizedBarsStatic failed:',
+            e
+        );
+        return null;
+    });
     const blockedMetadata = await getBlockedSymbolMetadata({
         locale,
         symbol: ticker,
@@ -152,7 +151,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         tab: 'fear-greed',
     });
     if (blockedMetadata) return blockedMetadata;
-    if (!assetInfo) return noindexSymbolMetadata(ticker, tSeo, locale);
 
     const displayName = buildDisplayName(assetInfo, ticker, locale);
     const assetClass = getDescriptor(marketProfileOf(assetInfo)).assetClass;
@@ -353,7 +351,22 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                         ),
                     })}
                 </p>
-                {/* 서버 계산 factor 요약 — crawler는 JS 미실행이라 아래 클라 게이지
+                {/* 게이지를 먼저 보여준다 — 사용자는 점수를 보러 왔고, 서버 계산 요약은
+                    그 아래에서 근거를 풀어 쓴다. 크롤러는 DOM 순서와 무관하게 요약만
+                    본다(게이지는 `useHydrated` 게이트). */}
+                <HydrationBoundary state={dehydrate(queryClient)}>
+                    <ErrorBoundary FallbackComponent={FearGreedPageError}>
+                        <FearGreedPage
+                            symbol={ticker}
+                            fmpSymbol={assetInfo.fmpSymbol}
+                            // 아래 `FearGreedFactsSummary`가 같은 경고 문구와 표본 수
+                            // 안내를 이미 서버 렌더한다 — 둘 다 그리면 중복이다.
+                            hideSelfNormWarning
+                            hideSampleFooter
+                        />
+                    </ErrorBoundary>
+                </HydrationBoundary>
+                {/* 서버 계산 factor 요약 — crawler는 JS 미실행이라 위 클라 게이지
                     (FearGreedPage)의 점수·factor 수치를 절대 못 본다. 여기서
                     이미 로드된 5년 일봉(`symbolFearGreedInputs`)으로 동일 수치를
                     SSR HTML에 박아 크롤 가능하게 한다(결정적, AI/pre-warm 무관).
@@ -376,17 +389,6 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                         }
                     />
                 )}
-                <HydrationBoundary state={dehydrate(queryClient)}>
-                    <ErrorBoundary FallbackComponent={FearGreedPageError}>
-                        <FearGreedPage
-                            symbol={ticker}
-                            fmpSymbol={assetInfo.fmpSymbol}
-                            // 위 `FearGreedFactsSummary`가 같은 경고 문구를 이미
-                            // 서버 렌더한다 — 둘 다 그리면 중복이다.
-                            hideSelfNormWarning
-                        />
-                    </ErrorBoundary>
-                </HydrationBoundary>
                 <CrossLinkCards
                     symbol={ticker}
                     current="fear-greed"

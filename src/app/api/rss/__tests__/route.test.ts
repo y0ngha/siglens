@@ -105,8 +105,11 @@ function wirePageReaders(current: Record<string, unknown>): void {
             current[rssMarketSurface(scope.id)] ?? null
     );
     mocks.getEconomySnapshotStatic.mockResolvedValue({ snapshot: true });
+    // 거시 브리핑 reader는 `{ briefing, generatedAt }` 봉투를 돌려준다.
     mocks.peekMacroBriefingStatic.mockResolvedValue(
-        current[RSS_ECONOMY_SURFACE] ?? null
+        RSS_ECONOMY_SURFACE in current
+            ? { briefing: current[RSS_ECONOMY_SURFACE], generatedAt: null }
+            : null
     );
     mocks.peekMarketNewsDigestStatic.mockImplementation(
         async (category: string) => current[rssNewsSurface(category)] ?? null

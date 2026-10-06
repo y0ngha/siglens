@@ -17,8 +17,6 @@ vi.mock('@/shared/db/client', () => ({
 vi.mock('@/widgets/analysis/hooks/useAnalysisProgress', () => ({
     ANALYSIS_PHASE_COUNT: 6,
     ANALYSIS_TIP_COUNT: 8,
-    PRO_INDICATOR_COUNT: 30,
-    SKILL_COUNT: 60,
 }));
 
 describe('Journey: Error Recovery', () => {
@@ -89,23 +87,44 @@ describe('Journey: Error Recovery', () => {
 
     describe('Analysis progress indicator — AnalysisProgress', () => {
         it('renders progress status with aria attributes', () => {
-            render(<AnalysisProgress phaseIndex={0} tipIndex={0} />);
+            render(
+                <AnalysisProgress
+                    phaseIndex={0}
+                    tipIndex={0}
+                    indicatorCount={30}
+                    skillCount={60}
+                />
+            );
             expect(
                 screen.getByRole('status', { name: 'AI 분석 진행 중' })
             ).toBeInTheDocument();
         });
 
         it('displays current phase message', () => {
-            render(<AnalysisProgress phaseIndex={1} tipIndex={0} />);
+            render(
+                <AnalysisProgress
+                    phaseIndex={1}
+                    tipIndex={0}
+                    indicatorCount={30}
+                    skillCount={60}
+                />
+            );
 
             // 문구는 카탈로그에서 온다 — mock 문자열이 아니라 실제 값을 단언한다.
             expect(
-                screen.getByText('30개 이상의 보조지표 시그널 분석 중')
+                screen.getByText('30개 보조지표 시그널 분석 중')
             ).toBeInTheDocument();
         });
 
         it('displays current tip', () => {
-            render(<AnalysisProgress phaseIndex={0} tipIndex={1} />);
+            render(
+                <AnalysisProgress
+                    phaseIndex={0}
+                    tipIndex={1}
+                    indicatorCount={30}
+                    skillCount={60}
+                />
+            );
 
             expect(
                 screen.getByText(

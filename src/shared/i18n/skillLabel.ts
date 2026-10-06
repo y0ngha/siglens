@@ -10,13 +10,16 @@ import { useTranslations } from 'next-intl';
  * 스킬 표시명(패턴·전략·지표) → 로케일 문구.
  *
  * 이름은 `skills/**.md` front-matter의 `name`이고 core가 그대로 응답에 싣는다.
- * 36개가 한국어라 영어 페이지에서 아코디언 **제목만** 한국어로 남았다.
+ * 41개가 한국어, 54개(캔들 패턴 19 + 지표 35)가 영어 이름이다. 카탈로그 키는 **원본 이름
+ * 그대로**이고 값이 로케일별 표시명이다 — 한국어 사이트에서 영어 이름("Bearish Engulfing
+ * Guide")이 그대로 보이던 것을 "하락 장악형"으로 옮긴다.
  *
- * 원본 문자열은 못 바꾼다 — `AnalysisPanel`에서 **dedupe 키**로도 쓰여
- * 번역하면 중복 제거가 깨진다. 그래서 표시 시점에만 바꾼다.
+ * 원본 문자열은 못 바꾼다 — `AnalysisPanel`에서 **dedupe 키**로도 쓰이고, 프롬프트와 캐시
+ * 지문에도 들어간다. 그래서 표시 시점에만 바꾼다.
  *
  * 전용 네임스페이스와 훅 형태인 이유는 `useAssetLabel`과 같다.
- * 카탈로그에 없는 이름(영문 스킬 45종, 신규 스킬)은 원문으로 떨어진다.
+ * 카탈로그에 없는 이름(신규 스킬)은 원문으로 떨어진다 — `skillLabel` 커버리지 테스트가
+ * 새 스킬의 등록 누락을 잡는다.
  */
 export function useSkillLabel(): (name: string) => string {
     const t = useTranslations('shared.skillName');

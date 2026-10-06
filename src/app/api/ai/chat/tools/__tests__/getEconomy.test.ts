@@ -90,9 +90,12 @@ describe('getEconomyTool', () => {
             ],
         });
         briefing.mockResolvedValue({
-            summary: '완만한 성장세가 이어지고 있습니다.',
-            highlights: [],
-            regime: 'expansion',
+            briefing: {
+                summary: '완만한 성장세가 이어지고 있습니다.',
+                highlights: [],
+                regime: 'expansion',
+            },
+            generatedAt: '2026-09-13T10:00:00.000Z',
         });
 
         const r = (await getEconomyTool({}, ctx, rt)) as {
@@ -104,6 +107,8 @@ describe('getEconomyTool', () => {
         expect(r.upcomingCalendar).toHaveLength(1);
         expect(r.upcomingCalendar[0]!.event).toBe('CPI YoY');
         expect(r.briefing.regime).toBe('expansion');
+        // 시스템 시각 2026-09-14T00:00Z → core와 같은 UTC 날짜 버킷.
+        expect(briefing).toHaveBeenCalledWith(expect.anything(), '2026-09-14');
     });
 
     it('FMP의 존 표시 없는 UTC 일시를 ISO 인스턴트로 바꿔 창 필터와 사용자 시간대 변환이 맞게 된다', async () => {

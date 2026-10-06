@@ -176,12 +176,13 @@ export function SkillCard({
     onToggleExpand,
 }: SkillCardProps) {
     const t = useTranslations('widgets.home');
-    // 스킬명은 `skills/**.md` front-matter라 36개가 한국어다. 원문은 dedupe·토글
-    // 키로도 쓰이므로 바꿀 수 없고, **표시 시점**에만 카탈로그로 옮긴다
-    // (`AnalysisPanel`과 같은 훅). 홈은 이 표시명의 최대 노출 지점이다.
+    // 스킬명은 `skills/**.md` front-matter `name`이고 프롬프트·캐시 지문에 들어가므로
+    // 바꿀 수 없다(dedupe·토글 키로도 쓰인다). **표시 시점**에만 카탈로그로 옮긴다
+    // (`AnalysisPanel`과 같은 훅) — 영문 이름 54종도 한국어 표시명을 갖는다.
+    // 홈은 이 표시명의 최대 노출 지점이다.
     const skillLabel = useSkillLabel();
-    // 설명도 같은 이유로 표시 시점에만 옮긴다 — 74개가 한국어(영문 스킬 7종은
-    // 이미 영어)라 안 옮기면 "영어 제목 + 한국어 본문"이 그대로 남는다.
+    // 카드 본문은 front-matter `description`(영어 원문·내부 용어 섞임)이 아니라 **이름으로
+    // 찾는 한 줄 요약**이다. 카탈로그에 없으면 그때만 원문으로 떨어진다.
     const skillDescription = useSkillDescription();
     // 클램프 측정은 접힘 상태에서만 유효(펼치면 판정이 뒤집힘) → enabled=!isExpanded.
     const { ref: descRef, isClamped } = useIsClamped(!isExpanded);
@@ -259,7 +260,7 @@ export function SkillCard({
                         !isExpanded && 'line-clamp-2'
                     )}
                 >
-                    {skillDescription(skill.description)}
+                    {skillDescription(skill.name, skill.description)}
                 </p>
             </div>
             <div className="flex items-center gap-2">
