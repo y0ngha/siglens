@@ -39,9 +39,9 @@ function commentRanges(source: string): { pos: number; end: number }[] {
         sourceType: 'module',
         errorRecovery: true,
         plugins: ['typescript', 'jsx'],
-        // 주석 목록(`ast.comments`)만 쓰고 노드에 붙일 필요는 없다 — 붙이는 단계를
-        // 끄면 트리 전체 파스가 15%쯤 빨라진다(2026-10-06 로컬 실측). 목록 자체는 같다(`sourceScanParity`가
-        // 기본 옵션 파스와 대조해 지킨다).
+        // 주석 목록(`ast.comments`)만 쓰고 노드에 붙일 필요는 없다. 붙이는
+        // 단계를 끄면 트리 전체 파스가 15%쯤 빨라진다(2026-10-06 로컬 실측).
+        // 목록 자체는 같다 — `sourceScanParity`가 기본 옵션 파스와 대조해 지킨다.
         attachComment: false,
     });
     return (ast.comments ?? [])
@@ -72,17 +72,21 @@ export function blankComments(source: string): string {
     // 글자 배열(`split('')`)로 만들지 않고 구간 단위로 잇는다 — 파일마다 글자 수만큼
     // 문자열을 만들던 예전 방식은 트리 전체에서 약 0.35초, 구간 잇기는 약 0.1초였다
     // (2026-10-06 로컬 실측, 파스 제외). 출력은 바이트 단위로 같다.
-    let blanked = '';
-    let copied = 0;
-    for (const { pos, end } of commentRanges(source)) {
-        const stop = Math.min(end, source.length);
-        if (pos < copied) continue;
-        blanked +=
-            source.slice(copied, pos) +
-            source.slice(pos, stop).replace(/[^\n]/g, ' ');
-        copied = stop;
-    }
-    blanked += source.slice(copied);
+    const { done, copied } = commentRanges(source).reduce(
+        (acc, { pos, end }) => {
+            if (pos < acc.copied) return acc;
+            const stop = Math.min(end, source.length);
+            return {
+                done:
+                    acc.done +
+                    source.slice(acc.copied, pos) +
+                    source.slice(pos, stop).replace(/[^\n]/g, ' '),
+                copied: stop,
+            };
+        },
+        { done: '', copied: 0 }
+    );
+    const blanked = done + source.slice(copied);
     blankedCache.set(source, blanked);
     return blanked;
 }

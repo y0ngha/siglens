@@ -132,17 +132,20 @@ function offenders(): Offence[] {
 
         // 1) `fill-`/`stroke-`는 어디에 적혀 있든 본다. 상수에 담겨 태그와
         //    떨어져 있는 형태가 실제 결함이었다(`COLOR_CLASSES.bullish.fill`).
-        //    줄 시작 오프셋은 누적해서 구한다 — 줄마다 앞부분을 다시 split·join하면
-        //    파일 길이의 제곱이 되고, 큰 파일 몇 개가 이 가드 시간의 대부분을 먹었다.
-        let at = 0;
-        for (const line of source.split('\n')) {
+        //    줄 시작 오프셋은 줄바꿈 위치에서 한 번에 구한다 — 줄마다 앞부분을 다시
+        //    split·join하면 파일 길이의 제곱이 되고, 큰 파일 몇 개가 이 가드 시간의
+        //    대부분을 먹었다.
+        const lineStarts = [
+            0,
+            ...Array.from(source.matchAll(/\n/g), m => m.index + 1),
+        ];
+        source.split('\n').forEach((line, i) => {
             for (const token of classTokens(line)) {
                 const { bare } = stripVariants(token);
                 if (!/^(fill|stroke)-/.test(bare)) continue;
-                push(out, file, at, source, token);
+                push(out, file, lineStarts[i], source, token);
             }
-            at += line.length + 1;
-        }
+        });
 
         // 2) `bg-`는 **자식 없는 도형 태그**에서만 본다.
         if (!file.endsWith('.tsx')) continue;

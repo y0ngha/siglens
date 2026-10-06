@@ -20,8 +20,8 @@ import {
 } from 'vitest';
 import { AGENT_ERROR_CODES } from '@/features/agent-chat/lib/errorCodes';
 import { BELOW_LG_MEDIA_QUERY } from '@/shared/config/viewport';
-import ko from '../../../../messages/ko.json';
 import { MODULE_LOAD_TIMEOUT_MS } from '@/shared/test-utils/testTimeouts';
+import ko from '../../../../messages/ko.json';
 
 const router = vi.hoisted(() => ({ refresh: vi.fn(), push: vi.fn() }));
 vi.mock('next/navigation', () => ({ useRouter: () => router }));

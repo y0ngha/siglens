@@ -6,15 +6,6 @@ const ORIGINAL = process.env.DB_CONTENT_LOCALE;
 const SWITCH_STATES = ['off', 'on'] as const;
 type SwitchState = (typeof SWITCH_STATES)[number];
 
-/*
- * 스위치 상태마다 모듈을 **한 번** 새로 적재한다(아래 `beforeAll`).
- *
- * 예전엔 케이스마다 `vi.resetModules()` 뒤 drizzle과 리포지터리(→ DB 스키마 전체)를
- * 다시 import했고, 병렬 전체 실행에서 첫 케이스가 기본 5초를 넘겨 실패했다
- * (2026-10-06). 적재를 상태별 훅으로 올리되 "그 env로 막 뜬 프로세스"라는 조건은
- * 그대로 둔다 — 스위치가 언젠가 모듈 평가 시점에 읽히게 바뀌어도 이 파일이 잡는다.
- */
-
 function setSwitch(state: SwitchState): void {
     if (state === 'on') process.env.DB_CONTENT_LOCALE = '1';
     else delete process.env.DB_CONTENT_LOCALE;
@@ -24,6 +15,20 @@ afterEach(() => {
     if (ORIGINAL === undefined) delete process.env.DB_CONTENT_LOCALE;
     else process.env.DB_CONTENT_LOCALE = ORIGINAL;
 });
+
+interface UpsertModules {
+    drizzle: (typeof import('drizzle-orm/postgres-js'))['drizzle'];
+    DrizzleSeoSnapshotRepository: (typeof import('@/entities/seo-snapshot/api'))['DrizzleSeoSnapshotRepository'];
+}
+
+/** 쿼리 빌더와 진짜 리포지터리(→ DB 스키마 전체)를 함께 적재한다. */
+async function loadModules(): Promise<UpsertModules> {
+    const [{ drizzle }, { DrizzleSeoSnapshotRepository }] = await Promise.all([
+        import('drizzle-orm/postgres-js'),
+        import('@/entities/seo-snapshot/api'),
+    ]);
+    return { drizzle, DrizzleSeoSnapshotRepository };
+}
 
 /**
  * **생성된 SQL을 본다 — values 객체가 아니라. 그리고 프로덕션 코드를 통해서.**
@@ -38,18 +43,10 @@ afterEach(() => {
  * 함께 틀린다. 지금은 진짜 `DrizzleSeoSnapshotRepository.upsert`를 부르고,
  * 그것이 만든 쿼리를 가로채 SQL을 뽑는다.
  */
-async function loadModules() {
-    const [{ drizzle }, { DrizzleSeoSnapshotRepository }] = await Promise.all([
-        import('drizzle-orm/postgres-js'),
-        import('@/entities/seo-snapshot/api'),
-    ]);
-    return { drizzle, DrizzleSeoSnapshotRepository };
-}
-
 async function upsertSql({
     drizzle,
     DrizzleSeoSnapshotRepository,
-}: Awaited<ReturnType<typeof loadModules>>): Promise<string> {
+}: UpsertModules): Promise<string> {
     // 세션 없는 drizzle — 쿼리 빌드는 되지만 실행하면 던진다. 실행 직전에
     // 가로채므로 DB가 필요 없다.
     const real = drizzle({} as never, { schema: {} });
@@ -86,10 +83,18 @@ async function upsertSql({
     return captured;
 }
 
+/**
+ * 스위치 상태마다 모듈을 **한 번** 새로 적재한다(`beforeAll`).
+ *
+ * 예전엔 케이스마다 `vi.resetModules()` 뒤 drizzle과 리포지터리(→ DB 스키마 전체)를
+ * 다시 import했고, 병렬 전체 실행에서 첫 케이스가 기본 5초를 넘겨 실패했다
+ * (2026-10-06). 적재를 상태별 훅으로 올리되 "그 env로 막 뜬 프로세스"라는 조건은
+ * 그대로 둔다 — 스위치가 언젠가 모듈 평가 시점에 읽히게 바뀌어도 이 파일이 잡는다.
+ */
 describe.each(SWITCH_STATES)(
     'seo_analysis_snapshots upsert SQL — 스위치 %s',
     state => {
-        let modules: Awaited<ReturnType<typeof loadModules>>;
+        let modules: UpsertModules;
 
         beforeAll(async () => {
             setSwitch(state);

@@ -21,13 +21,6 @@ import { MODULE_LOAD_TIMEOUT_MS } from '@/shared/test-utils/testTimeouts';
  * `vi.resetModules()`로 모듈 레지스트리를 비운 뒤 다시 import한다.
  */
 describe('SymbolPageClient — 시트 청크 선인출 가드', () => {
-    // 케이스마다 `vi.resetModules()` 뒤 `SymbolPageClient`의 **모듈 그래프 전체**를
-    // 다시 평가한다 — 본문이 하는 일이 곧 모듈 적재라 적재 훅과 같은 상한을 쓴다.
-    // 릴리스처럼 다른 게이트와 CPU를 나눠 쓸 때만 터졌고(pre-push 2회 연속 차단,
-    // 2026-08-24), `yes`로 코어를 채우면 로컬에서도 확정적으로 재현된다. 콜드 변환을
-    // 아래 `beforeAll`로 뺀 뒤엔 케이스당 0.2초 남짓이다(2026-10-06 병렬 전체 실행).
-    vi.setConfig({ testTimeout: MODULE_LOAD_TIMEOUT_MS });
-
     const originalMatchMedia = globalThis.window?.matchMedia;
 
     /**
@@ -37,7 +30,8 @@ describe('SymbolPageClient — 시트 청크 선인출 가드', () => {
      * 남는다. 이 적재는 `matchMedia`가 있는 기본 환경에서 일어나지만, 각 케이스는
      * 여전히 리셋 뒤 자기 환경에서 모듈 최상위를 새로 평가하므로 단언은 그대로다.
      * 예전엔 이 콜드 비용을 첫 케이스가 본문에서 치러, 병렬 전체 실행에서 30초
-     * 상한마저 넘겼다(2026-10-06).
+     * 상한마저 넘겼다(2026-10-06). 뺀 뒤엔 케이스 본문(리셋 뒤 재평가)이 0.2초
+     * 남짓이라 본문은 기본 타임아웃을 그대로 쓴다.
      */
     beforeAll(async () => {
         await import('@/views/symbol/SymbolPageClient');

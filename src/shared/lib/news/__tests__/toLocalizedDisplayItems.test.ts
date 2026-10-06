@@ -1,58 +1,17 @@
 // vi.mock → imports 순서 (MISTAKES.md Tests §17)
 
-type SidecarCell = { field: string; locale: string; value: string };
-
-/**
- * 사이드카 상태. `null`이면 **실물** `contentTranslationClient`를 그대로 탄다
- * (스위치 OFF 경로를 대역 없이 검증), 배열이면 `ROW.id`에 그 셀만 가진
- * 리포지터리를 돌려준다.
- *
- * 예전엔 케이스마다 `vi.resetModules()` 뒤 대상 모듈을 다시 import했고(스위치
- * ON 케이스는 `vi.doMock`까지), 그때마다 DB 스키마·drizzle 그래프가 새로
- * 평가돼 병렬 부하에서 기본 5초에 근접했다. 스위치는 호출 시점에 env를 읽으므로
- * 파일 단위 mock 하나가 상태를 읽게 하면 모듈은 한 번만 적재된다.
- */
-const sidecar = vi.hoisted(() => ({
-    rowId: '',
-    cells: null as SidecarCell[] | null,
-}));
+/** 사이드카 상태 — `@/shared/test-utils/contentTranslationSidecar` 참고. */
+const sidecar = vi.hoisted((): SidecarState => ({ cells: null }));
 
 vi.mock('@/shared/db/contentTranslationClient', async importOriginal => {
-    const real =
+    const { sidecarAwareClient } =
+        await import('@/shared/test-utils/contentTranslationSidecar');
+    return sidecarAwareClient(
         await importOriginal<
             typeof import('@/shared/db/contentTranslationClient')
-        >();
-    const { ContentTranslations } =
-        await import('@/shared/db/contentTranslationRepository');
-    const { TRANSLATION_SOURCE } =
-        await import('@/shared/db/contentTranslationFields');
-
-    function sidecarRepository(rowId: string, cells: SidecarCell[]) {
-        return {
-            findForEntity: async () => {
-                const byField = new Map();
-                for (const cell of cells) {
-                    const byLocale = byField.get(cell.field) ?? new Map();
-                    byLocale.set(cell.locale, {
-                        value: cell.value,
-                        source: TRANSLATION_SOURCE.ai,
-                    });
-                    byField.set(cell.field, byLocale);
-                }
-                return new ContentTranslations(new Map([[rowId, byField]]));
-            },
-        };
-    }
-
-    return {
-        ...real,
-        isContentLocaleEnabled: () =>
-            sidecar.cells === null ? real.isContentLocaleEnabled() : true,
-        getContentTranslationRepository: () =>
-            sidecar.cells === null
-                ? real.getContentTranslationRepository()
-                : sidecarRepository(sidecar.rowId, sidecar.cells),
-    };
+        >(),
+        sidecar
+    );
 });
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -62,6 +21,10 @@ import {
 } from '@/shared/db/contentTranslationFields';
 import type { NewsCardDbRow } from '@/shared/lib/news/toLocalizedDisplayItems';
 import { toLocalizedDisplayItems } from '@/shared/lib/news/toLocalizedDisplayItems';
+import type {
+    SidecarCell,
+    SidecarState,
+} from '@/shared/test-utils/contentTranslationSidecar';
 
 const ORIGINAL = process.env.DB_CONTENT_LOCALE;
 
@@ -170,9 +133,11 @@ describe('toLocalizedDisplayItems', () => {
      * 잡았다.
      */
     describe('스위치 ON', () => {
-        function withSidecar(cells: SidecarCell[]): void {
-            sidecar.rowId = ROW.id;
-            sidecar.cells = cells;
+        /** `ROW`의 사이드카 번역을 깐다. */
+        function withSidecar(
+            cells: ReadonlyArray<Omit<SidecarCell, 'id'>>
+        ): void {
+            sidecar.cells = cells.map(cell => ({ ...cell, id: ROW.id }));
         }
 
         it('사이드카 번역은 세 필드 모두 붙는다', async () => {

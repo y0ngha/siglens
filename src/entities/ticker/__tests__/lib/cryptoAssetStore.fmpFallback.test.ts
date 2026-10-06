@@ -10,12 +10,11 @@ const {
     fmpCryptoMembershipMock: vi.fn(),
 }));
 
-// Plain factory, NOT `importOriginal`: spreading the real module loads the
-// whole DB stack (drizzle + Neon driver + schema) just to keep exports that
-// `cryptoAssetStore` never touches — it imports only `tryGetDatabaseClient`.
-// That load was the dominant cost of this file and pushed it past the 5s
-// default under parallel workers (here it was paid on every test, because
-// `vi.resetModules()` re-runs the factory before each re-import).
+// `importOriginal` 없이 필요한 export만 만든다. 실물을 펼치면 `cryptoAssetStore`가
+// 쓰지도 않는 export를 남기려고 DB 스택 전체(drizzle + Neon 드라이버 + 스키마)를
+// 적재한다 — 이 모듈이 import하는 건 `tryGetDatabaseClient` 하나뿐이다. 그 적재가
+// 이 파일 비용의 대부분이었고 병렬 워커 부하에서 기본 5초를 넘기게 했다
+// (여기선 `vi.resetModules()`가 재import 전에 팩토리를 다시 돌려 케이스마다 치렀다).
 vi.mock('@/shared/db/client', () => ({
     tryGetDatabaseClient: () => tryGetDatabaseClientMock(),
 }));
