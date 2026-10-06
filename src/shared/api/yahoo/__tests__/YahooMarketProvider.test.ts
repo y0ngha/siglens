@@ -295,6 +295,49 @@ describe('YahooMarketProvider', () => {
             });
         });
 
+        it('treats zero OHL (off-hours quote) as missing and falls back to close', async () => {
+            // 2026-10 KRX 휴장 직후 실측: regularMarketOpen/DayHigh/DayLow가 0으로 온다.
+            quote.mockResolvedValue({
+                regularMarketPrice: 371000,
+                regularMarketOpen: 0,
+                regularMarketDayHigh: 0,
+                regularMarketDayLow: 0,
+                regularMarketVolume: 0,
+                regularMarketTime: new Date('2026-10-02T06:30:00.000Z'),
+            });
+
+            expect(
+                await new YahooMarketProvider().getTodayBar('373220.KS')
+            ).toEqual({
+                time: Math.floor(Date.parse('2026-10-02T00:00:00Z') / 1000),
+                open: 371000,
+                high: 371000,
+                low: 371000,
+                close: 371000,
+                volume: 0,
+            });
+        });
+
+        it('treats negative and NaN OHL as missing, keeping a positive partial field', async () => {
+            quote.mockResolvedValue({
+                regularMarketPrice: 100,
+                regularMarketOpen: NaN,
+                regularMarketDayHigh: 105,
+                regularMarketDayLow: -1,
+                regularMarketTime: new Date('2026-08-14T00:00:00.000Z'),
+            });
+
+            const bar = await new YahooMarketProvider().getTodayBar(
+                '005930.KS'
+            );
+            expect(bar).toMatchObject({
+                open: 100,
+                high: 105,
+                low: 100,
+                close: 100,
+            });
+        });
+
         it('returns null for an unlisted symbol', async () => {
             quote.mockResolvedValue(undefined);
             expect(

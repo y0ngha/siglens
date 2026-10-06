@@ -7,7 +7,12 @@ vi.mock('@y0ngha/siglens-core', async () => ({
 
 import { describe, expect, it, vi } from 'vitest';
 import type { Bar, BarsData } from '@y0ngha/siglens-core';
-import { US_EQUITY_SESSION, isRegularSessionOpen } from '@y0ngha/siglens-core';
+import {
+    CRYPTO_SESSION,
+    US_EQUITY_SESSION,
+    isRegularSessionOpen,
+} from '@y0ngha/siglens-core';
+import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import {
     hasFormingBar,
     quantizeBarsDataToLastClosed,
@@ -15,10 +20,17 @@ import {
 
 const mockOpen = vi.mocked(isRegularSessionOpen);
 const now = new Date('2026-06-05T18:00:00Z');
+const SECONDS_PER_DAY = 86_400;
+const secOf = (isoDate: string) => Date.parse(`${isoDate}T00:00:00Z`) / 1000;
+const TODAY_SEC = secOf('2026-06-05');
 
+/**
+ * `bar(3)`이 `now`의 세션 날짜(오늘) 봉이고, `bar(2)`는 하루 전, `bar(1)`은 이틀 전이다.
+ * 기존 fixture(3봉)에서 마지막 봉이 "형성 중인 오늘 봉"이 되도록 시각을 맞춘다.
+ */
 function bar(close: number): Bar {
     return {
-        time: close,
+        time: TODAY_SEC - (3 - close) * SECONDS_PER_DAY,
         open: close,
         high: close,
         low: close,
@@ -400,7 +412,7 @@ describe('hasFormingBar', () => {
         expect(hasFormingBar(US_EQUITY_SESSION, now)).toBe(false);
     });
 
-    it('quantize가 봉을 떼는 경우와 정확히 일치한다', () => {
+    it('마지막 봉이 오늘 봉인 시리즈에서는 quantize가 봉을 떼는 경우와 일치한다 (오늘 봉이 없으면 떼지 않는다 — 아래 describe)', () => {
         const data = makeData();
         for (const open of [true, false]) {
             mockOpen.mockReturnValue(open);
@@ -409,5 +421,120 @@ describe('hasFormingBar', () => {
                     .length < data.bars.length;
             expect(trimmed).toBe(hasFormingBar(US_EQUITY_SESSION, now));
         }
+    });
+});
+
+/**
+ * 2026-10-06 운영 장애(373220.KS): 정규장 중인데 시리즈에 오늘 봉이 아직 없으면(휴장 직후·개장 직후)
+ * 옛 quantize는 확정된 직전 거래일 봉을 형성 중 봉으로 오인해 떼었다 → 한 세션 뒤처진 종가.
+ */
+describe('quantizeBarsDataToLastClosed — 마지막 봉이 현재 세션 봉일 때만 뗀다', () => {
+    const KR = sessionSpecFor('kr-equity');
+    // 2026-10-06 화 10:00 KST(= 01:00Z), KRX 정규장 중.
+    const krNow = new Date('2026-10-06T01:00:00Z');
+
+    const ohlc = (isoDate: string, close: number): Bar => ({
+        time: secOf(isoDate),
+        open: close,
+        high: close,
+        low: close,
+        close,
+        volume: 1,
+    });
+    const dataOf = (bars: Bar[]): BarsData => ({
+        bars,
+        indicators: { rsi: bars.map(b => b.close), ma: {}, ema: {} } as never,
+    });
+
+    it('KR 정규장 중 시리즈가 직전 거래일(10-02)에서 끝나면 아무것도 떼지 않는다', () => {
+        mockOpen.mockReturnValue(true);
+        const data = dataOf([
+            ohlc('2026-09-30', 357000),
+            ohlc('2026-10-01', 360000),
+            ohlc('2026-10-02', 371000),
+        ]);
+
+        const result = quantizeBarsDataToLastClosed(data, krNow, KR);
+
+        expect(result).toBe(data);
+        expect(result.bars.at(-1)?.close).toBe(371000);
+    });
+
+    it('KR 정규장 중 시리즈 끝이 오늘(10-06) 봉이면 그 봉만 뗀다', () => {
+        mockOpen.mockReturnValue(true);
+        const data = dataOf([
+            ohlc('2026-10-01', 360000),
+            ohlc('2026-10-02', 371000),
+            ohlc('2026-10-06', 372000),
+        ]);
+
+        const result = quantizeBarsDataToLastClosed(data, krNow, KR);
+
+        expect(result.bars.map(b => b.close)).toEqual([360000, 371000]);
+        expect(result.indicators.rsi).toEqual([360000, 371000]);
+    });
+
+    it('KR은 거래소 현지(KST) 날짜로 오늘을 정한다 — UTC로는 아직 전날인 새벽 시각', () => {
+        mockOpen.mockReturnValue(true);
+        // 2026-10-06 09:10 KST = 2026-10-06 00:10Z. 10-06 봉은 오늘이다.
+        const early = new Date('2026-10-06T00:10:00Z');
+        const data = dataOf([
+            ohlc('2026-10-02', 371000),
+            ohlc('2026-10-06', 372000),
+        ]);
+
+        expect(
+            quantizeBarsDataToLastClosed(data, early, KR).bars.map(b => b.close)
+        ).toEqual([371000]);
+    });
+
+    it('KR 장 마감 중에는 오늘 봉이 있어도 떼지 않는다', () => {
+        mockOpen.mockReturnValue(false);
+        const data = dataOf([
+            ohlc('2026-10-02', 371000),
+            ohlc('2026-10-06', 372000),
+        ]);
+
+        expect(quantizeBarsDataToLastClosed(data, krNow, KR)).toBe(data);
+    });
+
+    it('crypto(24/7): 마지막 봉이 오늘(UTC) 봉이면 떼고, 어제 봉이면 보존한다', () => {
+        mockOpen.mockReturnValue(true);
+        const cryptoNow = new Date('2026-10-06T00:30:00Z');
+
+        const withToday = dataOf([
+            ohlc('2026-10-04', 1),
+            ohlc('2026-10-05', 2),
+            ohlc('2026-10-06', 3),
+        ]);
+        expect(
+            quantizeBarsDataToLastClosed(
+                withToday,
+                cryptoNow,
+                CRYPTO_SESSION
+            ).bars.map(b => b.close)
+        ).toEqual([1, 2]);
+
+        const withoutToday = dataOf([
+            ohlc('2026-10-04', 1),
+            ohlc('2026-10-05', 2),
+        ]);
+        expect(
+            quantizeBarsDataToLastClosed(
+                withoutToday,
+                cryptoNow,
+                CRYPTO_SESSION
+            )
+        ).toBe(withoutToday);
+    });
+
+    it('US 정규장 중 시리즈가 전 거래일에서 끝나면 보존한다', () => {
+        mockOpen.mockReturnValue(true);
+        // 2026-06-05 금 14:00 ET.
+        const data = dataOf([ohlc('2026-06-03', 1), ohlc('2026-06-04', 2)]);
+
+        expect(quantizeBarsDataToLastClosed(data, now, US_EQUITY_SESSION)).toBe(
+            data
+        );
     });
 });

@@ -444,9 +444,13 @@ export default async function SymbolPage({ params }: Props) {
                                 indicatorCount={skillCounts.indicators}
                                 skillCount={chartSkillTotal(skillCounts)}
                                 marketProfile={marketProfile}
-                                // seed가 형성 중 봉을 뺀 채로 나갔는가(= quantize와 같은 술어).
-                                // 그렇다면 클라이언트는 입력을 기다리지 않고 라이브 봉을 받아야
-                                // 분석 작도가 맞는다(`useBars` JSDoc).
+                                // 이 HTML을 만든 시점에 정규장이 열려 있었는가(= 형성 중 봉이 있을 수
+                                // 있었는가). 클라이언트의 seed 복원 재조회만 게이트한다: 장중에 만든
+                                // ISR HTML을 장 마감 뒤에 열면 분석 작도가 그날 봉을 참조하는데 seed에는
+                                // 없을 수 있어, 입력을 기다리지 않고 라이브 봉을 받아야 한다
+                                // (`shouldRefetchBarsSeed`, PR #957). 실제로 봉을 뗐는지가 아니라 세션
+                                // 기준이다 — 좁히면 그 회귀 경로가 다시 열린다(오늘 봉이 없으면 quantize는
+                                // 아무것도 안 떼지만, 그 시각 뒤 생긴 오늘 봉을 분석이 참조할 수 있다).
                                 seedHasFormingBarTrimmed={hasFormingBar(
                                     sessionSpecFor(marketProfile),
                                     new Date()

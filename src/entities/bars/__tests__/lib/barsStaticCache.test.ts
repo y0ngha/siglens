@@ -1,8 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { mockQuantize, mockShortenRevalidate } = vi.hoisted(() => ({
+const { mockQuantize, mockShortenRevalidate, memoStores } = vi.hoisted(() => ({
     mockQuantize: vi.fn(),
     mockShortenRevalidate: vi.fn(async () => undefined),
+    // React.cache는 서버 렌더 컨텍스트 밖에서는 메모이즈하지 않는다 — 요청 스코프 메모를
+    // 인자 키 Map으로 흉내 내고, 테스트마다 비운다.
+    memoStores: [] as Map<string, unknown>[],
+}));
+vi.mock('react', async importOriginal => ({
+    ...(await importOriginal<typeof import('react')>()),
+    cache: <A extends unknown[], R>(fn: (...args: A) => R) => {
+        const store = new Map<string, unknown>();
+        memoStores.push(store);
+        return (...args: A): R => {
+            const key = JSON.stringify(args);
+            if (!store.has(key)) store.set(key, fn(...args));
+            return store.get(key) as R;
+        };
+    },
 }));
 import type { BarsData, IndicatorResult } from '@y0ngha/siglens-core';
 import { buildTechnicalFacts } from '@/entities/bars/lib/technicalFacts';
@@ -33,6 +48,10 @@ import {
 import { loadBarsData } from '@/entities/bars/lib/loadBarsData';
 
 const mockBars = vi.mocked(loadBarsData);
+
+beforeEach(() => {
+    for (const store of memoStores) store.clear();
+});
 
 describe('getBarsStatic', () => {
     beforeEach(() => vi.clearAllMocks());
@@ -238,6 +257,64 @@ describe('getQuantizedBarsStatic', () => {
         await expect(
             getQuantizedBarsStatic('AAPL', '1Day', 'us-equity', 'AAPL')
         ).rejects.toThrow('FMP down');
+    });
+});
+
+/**
+ * 요청 스코프 메모 계약 — layout과 page가 같은 인자로 부르면 로드·quantize는 한 번이고 **같은 객체**를
+ * 받는다(Flight 직렬화기가 참조 동일성으로 접는다, `getQuantizedBarsStatic` JSDoc). quantize가
+ * 매번 새 객체를 만드는 구현이어도(장중) 메모가 그 참조를 고정해야 한다.
+ */
+describe('getQuantizedBarsStatic 요청 스코프 메모', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockBars.mockResolvedValue({
+            bars: [{ time: 1 }, { time: 2 }],
+            indicators: {},
+        } as never);
+        // 장중 quantize처럼 호출마다 새 객체를 할당한다.
+        mockQuantize.mockImplementation((data: BarsData) => ({
+            ...data,
+            bars: data.bars.slice(0, -1),
+        }));
+    });
+
+    it('같은 인자로 반복 호출하면 loadBarsData·quantize는 한 번이고 같은 객체를 돌려준다', async () => {
+        const first = await getQuantizedBarsStatic(
+            'AAPL',
+            '1Day',
+            'us-equity',
+            'AAPL'
+        );
+        const second = await getQuantizedBarsStatic(
+            'AAPL',
+            '1Day',
+            'us-equity',
+            'AAPL'
+        );
+
+        expect(second).toBe(first);
+        expect(mockBars).toHaveBeenCalledTimes(1);
+        expect(mockQuantize).toHaveBeenCalledTimes(1);
+    });
+
+    it('인자가 다르면(다른 종목) 따로 계산한다', async () => {
+        const aapl = await getQuantizedBarsStatic(
+            'AAPL',
+            '1Day',
+            'us-equity',
+            'AAPL'
+        );
+        const msft = await getQuantizedBarsStatic(
+            'MSFT',
+            '1Day',
+            'us-equity',
+            'MSFT'
+        );
+
+        expect(msft).not.toBe(aapl);
+        expect(mockBars).toHaveBeenCalledTimes(2);
+        expect(mockQuantize).toHaveBeenCalledTimes(2);
     });
 });
 

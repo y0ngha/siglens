@@ -656,7 +656,7 @@ describe('CachedMarketDataProvider', () => {
             expect(result.map(b => b.time)).toEqual([histTime, todayTime]);
         });
 
-        it('merge: today wins on same-time overlap', async () => {
+        it('merge: finalized EOD bar wins on same-time overlap (quote bar never overrides it)', async () => {
             const sharedTime = Math.floor(
                 Date.parse('2026-06-30T00:00:00Z') / 1000
             );
@@ -670,11 +670,11 @@ describe('CachedMarketDataProvider', () => {
             };
             const todayBarObj: Bar = {
                 time: sharedTime,
-                open: 200,
-                high: 220,
-                low: 180,
-                close: 210,
-                volume: 9999,
+                open: 0,
+                high: 0,
+                low: 0,
+                close: 105,
+                volume: 0,
             };
             const getBars = vi.fn(async () => [histBar]);
             const getTodayBar = vi.fn(async () => todayBarObj);
@@ -683,9 +683,52 @@ describe('CachedMarketDataProvider', () => {
             );
 
             const result = await provider.getBars(longOpts);
-            expect(result).toHaveLength(1);
-            // today (close=210) wins over history (close=105)
-            expect(result[0]!.close).toBe(210);
+            expect(result).toEqual([histBar]);
+        });
+
+        it('[FMP lag] history ends before lastClosed; a quote bar dated <= lastClosed but after the history tail IS merged (fills the gap)', async () => {
+            // System time: 2026-06-30T15:00Z → lastClosed = 2026-06-29 (Mon).
+            // EOD history lags: newest bar is Fri 06-26. The quote bar is dated Mon 06-29
+            // (== lastClosed, so NOT strictly after it) yet is strictly after the history
+            // tail. The cutoff is the history tail, not lastClosed — a `> lastClosed`
+            // cutoff would drop this bar and leave the series a session short.
+            const histTail = Math.floor(
+                Date.parse('2026-06-26T00:00:00Z') / 1000
+            );
+            const lastClosedTime = Math.floor(
+                Date.parse('2026-06-29T00:00:00Z') / 1000
+            );
+            const quoteBar: Bar = {
+                time: lastClosedTime,
+                open: 7,
+                high: 8,
+                low: 6,
+                close: 7.5,
+                volume: 50,
+            };
+            const getBars = vi.fn(async () => [bar(histTail)]);
+            const getTodayBar = vi.fn(async () => quoteBar);
+            const provider = new CachedMarketDataProvider(
+                makeInner({ getBars, getTodayBar })
+            );
+
+            const result = await provider.getBars(longOpts);
+
+            expect(result.map(b => b.time)).toEqual([histTail, lastClosedTime]);
+            expect(result.at(-1)).toEqual(quoteBar);
+        });
+
+        it('merge: quote bar dated before the EOD tail is dropped, series stays at the EOD tail', async () => {
+            const t1 = Math.floor(Date.parse('2026-06-26T00:00:00Z') / 1000);
+            const t2 = Math.floor(Date.parse('2026-06-29T00:00:00Z') / 1000);
+            const getBars = vi.fn(async () => [bar(t1), bar(t2)]);
+            const getTodayBar = vi.fn(async () => bar(t1));
+            const provider = new CachedMarketDataProvider(
+                makeInner({ getBars, getTodayBar })
+            );
+
+            const result = await provider.getBars(longOpts);
+            expect(result.map(b => b.time)).toEqual([t1, t2]);
         });
 
         // ── guard branches ────────────────────────────────────────────────────

@@ -63,6 +63,16 @@ function toBar(raw: YahooChartQuote): Bar | null {
     };
 }
 
+/** 양의 유한수만 그대로 쓰고, 없음·0·음수·NaN은 `fallback`으로 대체한다. */
+function positiveOr(
+    value: number | undefined | null,
+    fallback: number
+): number {
+    return typeof value === 'number' && Number.isFinite(value) && value > 0
+        ? value
+        : fallback;
+}
+
 /** YYYY-MM-DD → UTC 자정 unix초. 일봉 `Bar.time` 규약(FMP 어댑터와 동일). */
 function utcMidnightSeconds(isoDate: string): number {
     return Math.floor(Date.parse(isoDate + 'T00:00:00Z') / MS_PER_SECOND);
@@ -183,13 +193,28 @@ export class YahooMarketProvider implements SiglensMarketProvider {
                     : new Date();
             const close = q.regularMarketPrice;
 
+            // 장 시작 전·마감 뒤에는 open/high/low가 비어 오거나 **0으로** 온다(실측:
+            // 2026-10 KRX 휴장 직후 `regularMarketOpen/DayHigh/DayLow = 0`). `?? close`는
+            // undefined만 잡아 0이 그대로 통과하므로, 양의 유한수가 아닌 값은 전부
+            // 없는 값으로 보고 종가로 채운다 — 0으로 무너진 봉은 core `hasUsablePrices`에
+            // 걸려 시리즈에서 사라지고, 같은 날짜의 확정 EOD 봉까지 가리는 원인이 됐다.
+            const open = positiveOr(q.regularMarketOpen, close);
+            const high = Math.max(
+                positiveOr(q.regularMarketDayHigh, close),
+                open,
+                close
+            );
+            const low = Math.min(
+                positiveOr(q.regularMarketDayLow, close),
+                open,
+                close
+            );
+
             return {
                 time: utcMidnightSeconds(kstDateKey(at)),
-                // 장 시작 전에는 open/high/low가 비어 올 수 있다 — 종가로 채워
-                // 0으로 무너진 봉(지표를 크게 왜곡)이 생기지 않게 한다.
-                open: q.regularMarketOpen ?? close,
-                high: q.regularMarketDayHigh ?? close,
-                low: q.regularMarketDayLow ?? close,
+                open,
+                high,
+                low,
                 close,
                 volume: q.regularMarketVolume ?? 0,
             };
