@@ -19,6 +19,8 @@ import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
 import { PremiumModelGateModal } from '@/features/premium-gate/ui/PremiumModelGateModal';
 import { PortfolioChipMounted } from '@/features/portfolio-holding/ui/PortfolioChipMounted';
 import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
+import { SITE_NAME } from '@/shared/lib/seo';
+import type { SymbolSubTabKey } from './utils/symbolTabsConfig';
 
 interface SymbolLayoutHeaderProps {
     /** Ticker from the dynamic route param. Internally upper-cased for the breadcrumb. */
@@ -30,6 +32,27 @@ interface SymbolLayoutHeaderProps {
      * 데이터가 없으면(FMP 키 없음·degrade) null.
      */
     fearGreedSnapshot: FearGreedSnapshot | null;
+    /** 가시 브레드크럼 `<nav>`의 접근 가능한 이름. 서버(레이아웃)가 번역해 넘긴다. */
+    breadcrumbLabel: string;
+    /**
+     * 하위 탭 세그먼트 → 브레드크럼 셋째 마디 라벨. 각 탭 페이지의 `BreadcrumbList` JSON-LD
+     * 셋째 마디 `name`과 **같은 카탈로그 키(`shared.symbolTab`)**에서 나와야 한다 — 구글은
+     * 마크업과 화면 텍스트가 다르면 breadcrumb 리치 결과에서 마크업을 무시한다.
+     */
+    tabCrumbLabels: Readonly<Record<SymbolSubTabKey, string>>;
+}
+
+/**
+ * `useSelectedLayoutSegment()`가 돌려준 세그먼트가 하위 탭인지 — 차트(`null`)나
+ * 알 수 없는 세그먼트면 셋째 마디를 그리지 않는다.
+ */
+function subTabOf(
+    segment: string | null,
+    labels: Readonly<Record<SymbolSubTabKey, string>>
+): SymbolSubTabKey | null {
+    return segment !== null && Object.hasOwn(labels, segment)
+        ? (segment as SymbolSubTabKey)
+        : null;
 }
 
 /**
@@ -45,12 +68,16 @@ interface SymbolLayoutHeaderProps {
 export function SymbolLayoutHeader({
     symbol,
     fearGreedSnapshot,
+    breadcrumbLabel,
+    tabCrumbLabels,
 }: SymbolLayoutHeaderProps) {
     const assetInfo = useAssetInfo(symbol);
     const ticker = symbol.toUpperCase();
     // 차트(`/{T}`)의 세그먼트는 `null`이다. 하위 탭(`/{T}/news` …)에서는 종목명을 차트로
     // 가는 링크로 만든다 — 아래 `nameClassName` 주석 참고.
-    const isChartRoute = useSelectedLayoutSegment() === null;
+    const segment = useSelectedLayoutSegment();
+    const isChartRoute = segment === null;
+    const subTab = subTabOf(segment, tabCrumbLabels);
     // `buildDisplayName`과 판정 자체를 공유한다(`entities/ticker`의
     // `shouldShowEnglishName`) — 이쪽은 문자열 하나를 만들고 여기는 색을 나눠 span으로
     // 렌더해서 렌더링까지 공유할 수는 없지만, 판정이 갈리면 같은 페이지의 메타와
@@ -141,54 +168,101 @@ export function SymbolLayoutHeader({
      * `px-4`는 차트 제목 줄과 **같은 값**이어야 한다. 둘 중 하나만 바뀌면 다시
      * 어긋난다(`views/symbol/SymbolPageClient.tsx`의 타임프레임 바).
      */
+    /*
+     * 최상위 요소는 `<header>`가 아니라 `<div>`다. 이 크롬은 `<main>` 밖에 있어 `<header>`면
+     * `banner` 랜드마크가 되는데, 사이트 헤더가 이미 banner라 한 페이지에 banner가 둘이 된다
+     * (보조기술의 랜드마크 탐색이 "배너 2개"로 읽는다). 안의 브레드크럼 `<nav>`와 탭 `<nav>`가
+     * 각자 랜드마크라 이 래퍼에는 역할이 필요 없다.
+     */
     return (
-        <header className="relative z-40 py-3">
+        <div className="relative z-40 py-3">
             <div className="flex items-center gap-2 px-4 sm:gap-4">
                 <div className="flex min-w-0 flex-1 items-center gap-2">
-                    {/* 모바일(sm 미만)에서는 "SIGLENS /" 브레드크럼과 영문명을 감춘다.
+                    {/* 가시 브레드크럼 — 각 탭 페이지의 `BreadcrumbList` JSON-LD
+                        (`Siglens › 종목명 › 탭`)과 같은 마디를 같은 문자열로 그린다. 예전에는
+                        같은 줄을 링크·span 나열로만 그려 구조가 없었다. `<ol>`은 기존 줄과 같은
+                        flex·gap이라 시각 배치는 그대로다. 홈 마디 텍스트는 JSON-LD와 같은
+                        `SITE_NAME`이고 대문자는 CSS(`uppercase`)가 만든다. */}
+                    <nav aria-label={breadcrumbLabel} className="min-w-0">
+                        <ol className="flex min-w-0 items-center gap-2">
+                            {/* 모바일(sm 미만)에서는 "SIGLENS /" 브레드크럼과 영문명을 감춘다.
                         375px에서 이 둘이 폭을 먹어 한국어 종목명이 "애플, App…"처럼
                         잘렸다 — 모바일 헤더에서 사용자가 알아봐야 하는 건 종목명과
                         티커뿐이고, 홈은 사이트 헤더 로고가 이미 가리킨다. */}
-                    <Link
-                        href="/"
-                        // 모든 심볼 페이지의 브레드크럼에 렌더되므로 사실상 전역 링크다.
-                        // 진입 심볼마다 다른 `_rsc` 해시로 `/`의 캐시를 파편화시킨다
-                        // (docs/architecture/CDN_CACHING.md §1).
-                        prefetch={false}
-                        className="hidden font-mono text-xs tracking-[0.2em] text-secondary-400 uppercase transition-colors hover:text-secondary-300 sm:inline"
-                    >
-                        SIGLENS
-                    </Link>
-                    <span className="hidden text-secondary-500 sm:inline">
-                        /
-                    </span>
-                    {/* 종목 브레드크럼은 5개 sibling 페이지(/[symbol], /news,
+                            <li className="hidden sm:inline">
+                                <Link
+                                    href="/"
+                                    // 모든 심볼 페이지의 브레드크럼에 렌더되므로 사실상 전역 링크다.
+                                    // 진입 심볼마다 다른 `_rsc` 해시로 `/`의 캐시를 파편화시킨다
+                                    // (docs/architecture/CDN_CACHING.md §1).
+                                    prefetch={false}
+                                    className="hidden font-mono text-xs tracking-[0.2em] text-secondary-400 uppercase transition-colors hover:text-secondary-300 sm:inline"
+                                >
+                                    {SITE_NAME}
+                                </Link>
+                            </li>
+                            <li
+                                aria-hidden="true"
+                                className="hidden text-secondary-500 sm:inline"
+                            >
+                                /
+                            </li>
+                            {/* 종목 브레드크럼은 5개 sibling 페이지(/[symbol], /news,
                         /fundamental, /options, /overall, /fear-greed)에 공통으로
                         렌더되므로 h1으로 두면 페이지별 sr-only h1과 충돌해 페이지당
                         h1이 2개가 된다. 페이지마다 실제 주제가 다르므로 페이지 h1을
                         살리고, 여기는 시각 스타일만 유지한 채 의미론적 위계에서는
-                        제외한다. role 미부여(plain span)로 두면 layout banner 영역의
-                        breadcrumb 정도로 처리되어 의도와 일치한다.
+                        제외한다 — 브레드크럼 `<ol>`의 한 마디로만 둔다.
 
                         모바일은 최대 2줄까지 줄바꿈한다(`line-clamp-2`, text-base) —
                         2줄 높이(40px)가 컨트롤(size-11 = 44px)보다 작아 헤더 높이,
                         곧 `--symbol-chrome-h`는 그대로다. sm 이상은 기존의 한 줄 말줄임. */}
-                    {isChartRoute ? (
-                        <span className={nameClassName}>{nameContent}</span>
-                    ) : (
-                        <Link
-                            href={`/${ticker}`}
-                            // 하위 탭 하나하나에 렌더되는 헤더 링크 — prefetch는 `_rsc` 해시를
-                            // 탭×진입 경로별로 파편화한다(docs/architecture/CDN_CACHING.md §1).
-                            prefetch={false}
-                            className={cn(
-                                nameClassName,
-                                'transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none'
+                            <li
+                                className="min-w-0"
+                                {...(isChartRoute
+                                    ? { 'aria-current': 'page' as const }
+                                    : {})}
+                            >
+                                {isChartRoute ? (
+                                    <span className={nameClassName}>
+                                        {nameContent}
+                                    </span>
+                                ) : (
+                                    <Link
+                                        href={`/${ticker}`}
+                                        // 하위 탭 하나하나에 렌더되는 헤더 링크 — prefetch는 `_rsc` 해시를
+                                        // 탭×진입 경로별로 파편화한다(docs/architecture/CDN_CACHING.md §1).
+                                        prefetch={false}
+                                        className={cn(
+                                            nameClassName,
+                                            'transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none'
+                                        )}
+                                    >
+                                        {nameContent}
+                                    </Link>
+                                )}
+                            </li>
+                            {/* 셋째 마디(현재 탭)는 sm 이상에서만 보인다 — 모바일은 종목명이 폭을
+                        다 쓰고(위 SIGLENS 마디와 같은 이유), 바로 아래 탭 레일의 활성 탭이 같은
+                        정보를 이미 보여 준다. */}
+                            {subTab !== null && (
+                                <>
+                                    <li
+                                        aria-hidden="true"
+                                        className="hidden text-secondary-500 sm:inline"
+                                    >
+                                        /
+                                    </li>
+                                    <li
+                                        aria-current="page"
+                                        className="hidden shrink-0 text-sm whitespace-nowrap text-secondary-400 sm:inline"
+                                    >
+                                        {tabCrumbLabels[subTab]}
+                                    </li>
+                                </>
                             )}
-                        >
-                            {nameContent}
-                        </Link>
-                    )}
+                        </ol>
+                    </nav>
                     {/* 칩은 서버가 계산한 스냅샷을 그대로 렌더하는 순수 컴포넌트다 —
                         훅도 fetch도 없으므로 suspend하거나 throw하지 않는다. 경계를
                         그대로 두는 건 방어용이다: 칩이 어떤 이유로든 터져도 헤더
@@ -262,6 +336,6 @@ export function SymbolLayoutHeader({
             )}
             {/* The signup-nudge modal is rendered once by SymbolModelProvider
                 (shared with ChartContent's auto-nudge) — not here. */}
-        </header>
+        </div>
     );
 }

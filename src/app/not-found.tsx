@@ -65,6 +65,10 @@ export default async function RootNotFound() {
         getTranslations({ locale: DEFAULT_LOCALE }),
     ]);
     return (
+        // `lang`은 서버에서 요청 로케일로 정할 수 없다 — 그 신호(경로·헤더)를 읽는 순간 위
+        // "반드시 정적" 제약이 깨진다. 기본 로케일로 SSR하고, `/en/…` 등은 하이드레이션 뒤
+        // `NotFoundView`가 `document.documentElement.lang`을 주소의 로케일로 바꾼다
+        // (`suppressHydrationWarning`이 그 불일치를 허용한다). e2e `not-found.spec.ts`가 둘 다 본다.
         <html lang={DEFAULT_LOCALE} suppressHydrationWarning>
             <head>
                 <ThemeInitScript />

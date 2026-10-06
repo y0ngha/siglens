@@ -20,6 +20,20 @@ vi.mock('next/link', () => ({
     ),
 }));
 
+const CRUMB_PROPS = {
+    breadcrumbLabel: '이동 경로',
+    tabCrumbLabels: {
+        news: '뉴스',
+        fundamental: '펀더멘털',
+        financials: '재무제표',
+        congress: '의회 거래',
+        options: '옵션',
+        'fear-greed': '공포 탐욕 지수',
+        overall: '종합',
+        position: '내 위치',
+    },
+} as const;
+
 const mockSegment = vi.hoisted(() => ({ current: null as string | null }));
 vi.mock('next/navigation', async importOriginal => ({
     ...(await importOriginal<typeof import('next/navigation')>()),
@@ -164,34 +178,107 @@ describe('SymbolLayoutHeader', () => {
         ));
     });
 
-    it('renders a header element', () => {
-        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
-        expect(screen.getByRole('banner')).toBeDefined();
+    /**
+     * 이 크롬은 `<main>` 밖이라 `<header>`면 banner 랜드마크가 되고, 사이트 헤더와 함께
+     * banner가 둘이 된다. 브레드크럼은 이름 붙은 `<nav>` 랜드마크다.
+     */
+    it('banner 랜드마크를 만들지 않고, 브레드크럼은 이름 붙은 nav>ol이다', () => {
+        render(
+            <SymbolLayoutHeader
+                symbol="aapl"
+                fearGreedSnapshot={null}
+                {...CRUMB_PROPS}
+            />
+        );
+        expect(screen.queryByRole('banner')).toBeNull();
+        const nav = screen.getByRole('navigation', { name: '이동 경로' });
+        expect(nav.querySelector('ol')).not.toBeNull();
     });
 
-    it('renders the SIGLENS logo link', () => {
-        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
-        const link = screen.getByText('SIGLENS');
+    it('renders the SIGLENS logo link (JSON-LD와 같은 SITE_NAME 텍스트, 대문자는 CSS)', () => {
+        render(
+            <SymbolLayoutHeader
+                symbol="aapl"
+                fearGreedSnapshot={null}
+                {...CRUMB_PROPS}
+            />
+        );
+        const link = screen.getByText('Siglens');
         expect(link.closest('a')?.getAttribute('href')).toBe('/');
+        expect(link.className).toContain('uppercase');
+    });
+
+    it('차트 탭에서는 종목명 마디가 현재 페이지이고 셋째 마디가 없다', () => {
+        render(
+            <SymbolLayoutHeader
+                symbol="aapl"
+                fearGreedSnapshot={null}
+                {...CRUMB_PROPS}
+            />
+        );
+        const current = screen
+            .getByRole('navigation', { name: '이동 경로' })
+            .querySelector('[aria-current="page"]');
+        expect(current).toHaveTextContent('(AAPL)');
+        expect(screen.queryByText('뉴스')).toBeNull();
+    });
+
+    it('하위 탭에서는 탭 라벨이 셋째 마디(현재 페이지)로 sm 이상에서 보인다', () => {
+        mockSegment.current = 'news';
+        render(
+            <SymbolLayoutHeader
+                symbol="aapl"
+                fearGreedSnapshot={null}
+                {...CRUMB_PROPS}
+            />
+        );
+        const crumb = screen.getByText('뉴스');
+        expect(crumb.tagName).toBe('LI');
+        expect(crumb).toHaveAttribute('aria-current', 'page');
+        expect(crumb.className).toContain('sm:inline');
     });
 
     it('renders the uppercased ticker', () => {
-        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
+        render(
+            <SymbolLayoutHeader
+                symbol="aapl"
+                fearGreedSnapshot={null}
+                {...CRUMB_PROPS}
+            />
+        );
         expect(screen.getByText('(AAPL)')).toBeDefined();
     });
 
     it('renders the company name', () => {
-        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
+        render(
+            <SymbolLayoutHeader
+                symbol="aapl"
+                fearGreedSnapshot={null}
+                {...CRUMB_PROPS}
+            />
+        );
         expect(screen.getByText('Apple Inc.')).toBeDefined();
     });
 
     it('renders the korean name', () => {
-        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
+        render(
+            <SymbolLayoutHeader
+                symbol="aapl"
+                fearGreedSnapshot={null}
+                {...CRUMB_PROPS}
+            />
+        );
         expect(screen.getByText(/애플/)).toBeDefined();
     });
 
     it('차트 탭(/{T})에서는 종목명이 링크가 아니다 (자기 자신)', () => {
-        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
+        render(
+            <SymbolLayoutHeader
+                symbol="aapl"
+                fearGreedSnapshot={null}
+                {...CRUMB_PROPS}
+            />
+        );
         expect(screen.getByText('(AAPL)').closest('a')).toBeNull();
     });
 
@@ -200,7 +287,11 @@ describe('SymbolLayoutHeader', () => {
         segment => {
             mockSegment.current = segment;
             render(
-                <SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />
+                <SymbolLayoutHeader
+                    symbol="aapl"
+                    fearGreedSnapshot={null}
+                    {...CRUMB_PROPS}
+                />
             );
             const link = screen.getByText('(AAPL)').closest('a');
             expect(link).toHaveAttribute('href', '/AAPL');
@@ -209,7 +300,13 @@ describe('SymbolLayoutHeader', () => {
     );
 
     it('renders the 분석 설정 gear (model selector + reasoning toggle are consolidated behind it)', () => {
-        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
+        render(
+            <SymbolLayoutHeader
+                symbol="aapl"
+                fearGreedSnapshot={null}
+                {...CRUMB_PROPS}
+            />
+        );
         expect(screen.getByTestId('settings-gear')).toBeDefined();
         // Collapsed by default — the model selector isn't in the DOM until
         // the gear is opened, mirroring the real AnalysisSettingsMenu.
@@ -217,13 +314,25 @@ describe('SymbolLayoutHeader', () => {
     });
 
     it('opening the gear reveals the model selector', () => {
-        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
+        render(
+            <SymbolLayoutHeader
+                symbol="aapl"
+                fearGreedSnapshot={null}
+                {...CRUMB_PROPS}
+            />
+        );
         fireEvent.click(screen.getByTestId('settings-gear'));
         expect(screen.getByTestId('model-selector')).toBeDefined();
     });
 
     it('renders the portfolio holding chip', () => {
-        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
+        render(
+            <SymbolLayoutHeader
+                symbol="aapl"
+                fearGreedSnapshot={null}
+                {...CRUMB_PROPS}
+            />
+        );
         expect(screen.getByTestId('portfolio-chip')).toBeDefined();
     });
 
@@ -232,7 +341,13 @@ describe('SymbolLayoutHeader', () => {
             symbolModelValue({ canUseReasoning: false })
         );
 
-        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
+        render(
+            <SymbolLayoutHeader
+                symbol="aapl"
+                fearGreedSnapshot={null}
+                {...CRUMB_PROPS}
+            />
+        );
         fireEvent.click(screen.getByTestId('settings-gear'));
         const toggle = screen.getByTestId('reasoning-toggle');
         expect(toggle).toBeDefined();
@@ -244,7 +359,13 @@ describe('SymbolLayoutHeader', () => {
             symbolModelValue({ reasoning: true, canUseReasoning: true })
         );
 
-        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
+        render(
+            <SymbolLayoutHeader
+                symbol="aapl"
+                fearGreedSnapshot={null}
+                {...CRUMB_PROPS}
+            />
+        );
         fireEvent.click(screen.getByTestId('settings-gear'));
         const toggle = screen.getByTestId('reasoning-toggle');
         expect(toggle).toBeDefined();
@@ -257,7 +378,13 @@ describe('SymbolLayoutHeader', () => {
             symbolModelValue({ setReasoning, canUseReasoning: true })
         );
 
-        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
+        render(
+            <SymbolLayoutHeader
+                symbol="aapl"
+                fearGreedSnapshot={null}
+                {...CRUMB_PROPS}
+            />
+        );
         fireEvent.click(screen.getByTestId('settings-gear'));
         fireEvent.click(screen.getByTestId('reasoning-toggle'));
 
@@ -271,7 +398,13 @@ describe('SymbolLayoutHeader', () => {
             symbolModelValue({ canUseReasoning: false })
         );
 
-        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
+        render(
+            <SymbolLayoutHeader
+                symbol="aapl"
+                fearGreedSnapshot={null}
+                {...CRUMB_PROPS}
+            />
+        );
         fireEvent.click(screen.getByTestId('settings-gear'));
         // The header does NOT render the modal itself — the provider owns the
         // single instance. Clicking the locked toggle only calls the opener.
@@ -299,11 +432,17 @@ describe('SymbolLayoutHeader', () => {
         // leak the console.error mock into sibling tests.
         try {
             render(
-                <SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />
+                <SymbolLayoutHeader
+                    symbol="aapl"
+                    fearGreedSnapshot={null}
+                    {...CRUMB_PROPS}
+                />
             );
 
             expect(screen.queryByTestId('fear-greed-chip')).toBeNull();
-            expect(screen.getByRole('banner')).toBeDefined();
+            expect(
+                screen.getByRole('navigation', { name: '이동 경로' })
+            ).toBeDefined();
             expect(screen.getByText('(AAPL)')).toBeDefined();
             // ErrorBoundary가 에러를 잡으면 React가 console.error로 보고한다 —
             // 에러 경로가 실제로 실행됐음을 검증.
@@ -323,7 +462,13 @@ describe('SymbolLayoutHeader', () => {
     // 형제이고, 그 클러스터는 모바일 공포·탐욕 칩과 같은 단일 컨트롤 행의
     // 형제다(더 이상 별도의 '외톨이 칩 행'이 없다).
     it('모바일 컨트롤 단일 행: 공포·탐욕 칩과 [평단 칩][공유][분석 설정 기어] 클러스터가 하나의 컨트롤 행에 모인다', () => {
-        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
+        render(
+            <SymbolLayoutHeader
+                symbol="aapl"
+                fearGreedSnapshot={null}
+                {...CRUMB_PROPS}
+            />
+        );
 
         // 공유 버튼·보유종목 칩·설정 기어는 같은 버튼 클러스터의 형제다.
         const buttonCluster = screen.getByTestId('share-button').parentElement;
@@ -351,7 +496,13 @@ describe('SymbolLayoutHeader', () => {
             })
         );
 
-        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
+        render(
+            <SymbolLayoutHeader
+                symbol="aapl"
+                fearGreedSnapshot={null}
+                {...CRUMB_PROPS}
+            />
+        );
 
         expect(screen.getByTestId('gate-modal')).toBeInTheDocument();
     });
@@ -359,10 +510,14 @@ describe('SymbolLayoutHeader', () => {
     describe('모바일 헤더 축약(375px에서 종목명이 잘리던 문제)', () => {
         it('SIGLENS 링크와 구분 슬래시는 모바일에서 감추고 sm 이상에서만 보인다', () => {
             render(
-                <SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />
+                <SymbolLayoutHeader
+                    symbol="aapl"
+                    fearGreedSnapshot={null}
+                    {...CRUMB_PROPS}
+                />
             );
 
-            const link = screen.getByText('SIGLENS').closest('a');
+            const link = screen.getByText('Siglens').closest('a');
             expect(link?.className).toContain('hidden');
             expect(link?.className).toContain('sm:inline');
             const slash = screen.getByText('/');
@@ -372,7 +527,11 @@ describe('SymbolLayoutHeader', () => {
 
         it('한국어명이 있으면 영문명(과 쉼표)만 모바일에서 감춘다', () => {
             render(
-                <SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />
+                <SymbolLayoutHeader
+                    symbol="aapl"
+                    fearGreedSnapshot={null}
+                    {...CRUMB_PROPS}
+                />
             );
 
             const english = screen.getByText('Apple Inc.');
@@ -397,7 +556,11 @@ describe('SymbolLayoutHeader', () => {
             } as ReturnType<typeof useAssetInfo>);
 
             render(
-                <SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />
+                <SymbolLayoutHeader
+                    symbol="aapl"
+                    fearGreedSnapshot={null}
+                    {...CRUMB_PROPS}
+                />
             );
 
             const english = screen.getByText('Apple Inc.');
@@ -407,7 +570,11 @@ describe('SymbolLayoutHeader', () => {
 
         it('이름 span은 모바일 2줄 clamp, sm 이상은 한 줄 말줄임으로 크기도 갈린다', () => {
             render(
-                <SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />
+                <SymbolLayoutHeader
+                    symbol="aapl"
+                    fearGreedSnapshot={null}
+                    {...CRUMB_PROPS}
+                />
             );
 
             const nameSpan = screen.getByText('(AAPL)');
@@ -421,7 +588,11 @@ describe('SymbolLayoutHeader', () => {
 
         it('전체 이름 텍스트는 한 줄 그대로다(데스크톱 표기 불변)', () => {
             render(
-                <SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />
+                <SymbolLayoutHeader
+                    symbol="aapl"
+                    fearGreedSnapshot={null}
+                    {...CRUMB_PROPS}
+                />
             );
 
             const nameSpan = screen.getByText('(AAPL)');
@@ -442,7 +613,13 @@ describe('SymbolLayoutHeader', () => {
             fmpSymbol: 'AAPL',
         } as ReturnType<typeof useAssetInfo>);
 
-        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
+        render(
+            <SymbolLayoutHeader
+                symbol="aapl"
+                fearGreedSnapshot={null}
+                {...CRUMB_PROPS}
+            />
+        );
 
         expect(screen.getByText('(AAPL)')).toBeInTheDocument();
         expect(screen.getByText(/애플/)).toBeInTheDocument();
@@ -464,7 +641,11 @@ describe('SymbolLayoutHeader', () => {
         } as ReturnType<typeof useAssetInfo>);
 
         render(
-            <SymbolLayoutHeader symbol="005930.KS" fearGreedSnapshot={null} />
+            <SymbolLayoutHeader
+                symbol="005930.KS"
+                fearGreedSnapshot={null}
+                {...CRUMB_PROPS}
+            />
         );
 
         expect(screen.getByText('(005930.KS)')).toBeInTheDocument();
@@ -483,7 +664,13 @@ describe('SymbolLayoutHeader', () => {
             koreanName: '애플',
         } as ReturnType<typeof useAssetInfo>);
 
-        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
+        render(
+            <SymbolLayoutHeader
+                symbol="aapl"
+                fearGreedSnapshot={null}
+                {...CRUMB_PROPS}
+            />
+        );
 
         expect(screen.queryByText(/애플,/)).not.toBeInTheDocument();
     });
@@ -499,7 +686,13 @@ describe('SymbolLayoutHeader', () => {
             koreanName: '애플',
         } as ReturnType<typeof useAssetInfo>);
 
-        render(<SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />);
+        render(
+            <SymbolLayoutHeader
+                symbol="aapl"
+                fearGreedSnapshot={null}
+                {...CRUMB_PROPS}
+            />
+        );
 
         expect(screen.getByText('(AAPL)')).toBeInTheDocument();
         expect(screen.getByText(/애플/)).toBeInTheDocument();
@@ -523,7 +716,11 @@ describe('SymbolLayoutHeader — 로케일별 이름', () => {
             } as ReturnType<typeof useAssetInfo>);
 
             renderWithIntl(
-                <SymbolLayoutHeader symbol="aapl" fearGreedSnapshot={null} />,
+                <SymbolLayoutHeader
+                    symbol="aapl"
+                    fearGreedSnapshot={null}
+                    {...CRUMB_PROPS}
+                />,
                 { locale }
             );
 
@@ -544,7 +741,11 @@ describe('SymbolLayoutHeader — 로케일별 이름', () => {
         } as ReturnType<typeof useAssetInfo>);
 
         renderWithIntl(
-            <SymbolLayoutHeader symbol="005930.KS" fearGreedSnapshot={null} />,
+            <SymbolLayoutHeader
+                symbol="005930.KS"
+                fearGreedSnapshot={null}
+                {...CRUMB_PROPS}
+            />,
             {
                 locale: 'en',
             }

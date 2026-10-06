@@ -78,7 +78,7 @@ export function FearGreedRouteBody({
     const url = `${SITE_URL}${copy.path}`;
     /*
      * 표본이 부족하면 이 페이지는 설명문만 남고 판독값이 없다. 그 상태에서
-     * `generateMetadata`는 canonical을 비우고 noindex를 건다 — 구조화데이터가
+     * `generateMetadata`는 noindex를 건다(canonical은 self, hreflang 없음) — 구조화데이터가
      * 그대로 나가면 "색인하지 말라"면서 "이 URL이 정식 WebPage"라고 주장하는
      * 모순이 된다. `/news/[category]`가 같은 상태에서 JSON-LD를 통째로 빼는 규칙을
      * 이미 쓴다.

@@ -13,7 +13,7 @@ import { loadMarketSignals } from './loadMarketSignals';
  * variant URL(?sector=, ?timeframe=)은 noindex 대신 clean canonical(/market)로
  * 색인 통합한다 — canonical과 noindex를 동시에 거는 신호 충돌을 제거. 단, 두
  * loader가 모두 실패해 본문이 빈 렌더로 떨어지면 economy/fear-greed와 동일하게
- * canonical을 비우고 noindex를 걸어 임시 상태를 색인하지 않는다.
+ * noindex + self-canonical(hreflang 없음)로 임시 상태를 색인하지 않는다.
  */
 export async function marketMetadata(
     params: Promise<{ locale: string }>,

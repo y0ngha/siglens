@@ -73,14 +73,4 @@ describe('[symbol] OG images', () => {
             expect(result).toBeInstanceOf(Response);
         });
     });
-
-    describe('twitter-image (re-export)', () => {
-        it('re-exports same size/contentType/alt from opengraph-image', async () => {
-            const twitter =
-                await import('@/app/[locale]/[symbol]/twitter-image');
-            expect(twitter.size).toEqual(size);
-            expect(twitter.contentType).toBe(contentType);
-            expect(twitter.alt).toBe(alt);
-        });
-    });
 });

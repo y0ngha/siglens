@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { resolveLocale } from '@/shared/i18n/locales';
+import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import { NotFoundContent } from './NotFoundContent';
 
 /**
@@ -39,7 +40,8 @@ export async function generateMetadata({
         description,
         robots: { index: false, follow: true },
         /**
-         * 홈의 `canonical`·`og:url`을 상속하지 않게 비운다. 존재하지 않는 URL이
+         * canonical을 명시적으로 비우고 홈의 `og:url`을 상속하지 않게 한다(루트 레이아웃은
+         * canonical을 깔지 않는다 — 여기 `null`은 "정본 없음"의 명시다). 존재하지 않는 URL이
          * 전부 "내 정규 주소는 홈"이라고 선언하면 크롤러에게 홈의 중복 URL이 무한히
          * 생기는 모양이 된다 — `noindex`는 색인만 막을 뿐 이 선언까지 막지 못한다.
          * `openGraph`는 자식 값이 부모 값을 **통째로 대체**하므로(Next 메타데이터
@@ -47,6 +49,12 @@ export async function generateMetadata({
          */
         alternates: { canonical: null },
         openGraph: { title, description },
+        /**
+         * `twitter`도 부모 값을 통째로 대체하는 키라, 비워 두면 루트 레이아웃의 홈 제목·설명·
+         * 홈 OG 이미지가 그대로 실린다 — 404 URL을 X에 붙여 넣으면 홈 카드가 뜬다. 이미지 없이
+         * 제목·설명만 싣는 `summary` 카드로 둔다.
+         */
+        twitter: buildTwitterMetadata({ title, description, card: 'summary' }),
     };
 }
 

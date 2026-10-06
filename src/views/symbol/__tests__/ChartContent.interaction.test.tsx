@@ -355,7 +355,7 @@ describe('ChartContent', () => {
             renderChart();
 
             const panel = getSeparator().nextElementSibling as HTMLElement;
-            expect(panel.tagName).toBe('ASIDE');
+            expect(panel.tagName).toBe('SECTION');
             expect(panel.className).toContain('md:pb-32');
             expect(panel.className).toContain('md:overflow-y-auto');
         });
@@ -544,7 +544,7 @@ describe('ChartContent', () => {
             expect(getSeparator()).toHaveClass('border-primary-500');
             expect(container.querySelector('.fixed.inset-0')).not.toBeNull();
 
-            // separator는 오른쪽 분석 패널(aside) 왼쪽 경계다. 오른쪽으로 끌면 패널이
+            // separator는 오른쪽 분석 패널(section) 왼쪽 경계다. 오른쪽으로 끌면 패널이
             // 줄어든다 — usePanelResize는 nextWidth = startWidth - deltaX로 계산하고
             // deltaX = moveX - startX다. 500→560(+60) → 640 - 60 = 580.
             fireEvent.mouseMove(document, { clientX: 560 });

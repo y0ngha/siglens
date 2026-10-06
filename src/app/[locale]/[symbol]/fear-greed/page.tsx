@@ -41,7 +41,6 @@ import {
     buildSymbolSeoContent,
     resolveSymbolFearGreedSeoContent,
     symbolMetadataFromSeo,
-    noindexInvalidSymbolMetadata,
 } from '@/shared/lib/seo';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import {
@@ -109,10 +108,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const locale = resolveLocale(rawLocale);
     const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     const ticker = symbol.toUpperCase();
-    // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
-    if (!isAdmissibleSymbolShape(ticker)) {
-        return noindexInvalidSymbolMetadata(symbol, locale, 'fear-greed');
-    }
+    // 본문·레이아웃 notFound()와 일관: 형식이 잘못된 세그먼트는 메타데이터 단계에서도 404다.
+    // 레이아웃이 notFound()를 던져도 이 페이지의 generateMetadata 결과가 이기므로, 여기서
+    // 메타를 돌려주면 404 응답에 홈 상속 title·og가 얹힌다(e2e `not-found.spec.ts`).
+    if (!isAdmissibleSymbolShape(ticker)) notFound();
     // 존재하지 않는 심볼은 레이아웃과 같은 판정으로 여기서도 404다(`requireResolvableAsset`).
     const { assetInfo, degraded } = await requireResolvableAsset(ticker);
     // 콘텐츠 게이트 — 본문의 `FearGreedFactsSummary`와 **같은 입력·같은 술어**
@@ -245,10 +244,13 @@ export default async function SymbolFearGreedPage({ params }: Props) {
         assetInfo.fmpSymbol,
         assetClass
     );
+    // 셋째 마디 이름은 헤더 가시 브레드크럼(`SymbolLayoutHeader`)과 같은 `shared.symbolTab` 키다 —
+    // 구글은 마크업과 화면 텍스트가 다르면 breadcrumb 마크업을 무시한다.
+    const tTab = await getTranslations('shared.symbolTab');
     const breadcrumbJsonLd = buildBreadcrumbJsonLd(
         [
             { name: displayName, url: buildSymbolSeoContent(ticker, tSeo).url },
-            { name: t('page.f9482c'), url },
+            { name: tTab('fear-greed'), url },
         ],
         locale
     );

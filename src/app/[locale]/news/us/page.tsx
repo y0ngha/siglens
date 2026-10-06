@@ -5,6 +5,7 @@ import type { Metadata } from 'next';
 import { resolveLocale } from '@/shared/i18n/locales';
 import {
     localeAlternatesFrom,
+    selfCanonicalAlternates,
     localeCanonical,
     localeOpenGraph,
     localePageRobots,
@@ -89,12 +90,12 @@ export async function generateMetadata({
             'AI 뉴스 다이제스트',
             'Siglens 뉴스',
         ],
-        alternates: await localeAlternatesFrom(params, PATH, {
-            // canonical은 넘기지 않는다 — `localeAlternatesFrom`이 로케일별
-            // 자기참조 URL을 만든다. ko 절대 URL을 넘기면 `/en/…`이 ko를
-            // canonical로 가리켜 hreflang 상호참조가 깨진다.
-            canonical: degraded ? null : undefined,
-        }),
+        // canonical은 넘기지 않는다 — `localeAlternatesFrom`이 로케일별 자기참조 URL을
+        // 만든다. ko 절대 URL을 넘기면 `/en/…`이 ko를 canonical로 가리켜 hreflang 상호참조가
+        // 깨진다. degraded(noindex)는 self-canonical만 내고 hreflang 군집은 싣지 않는다.
+        alternates: degraded
+            ? selfCanonicalAlternates(locale, PATH)
+            : await localeAlternatesFrom(params, PATH),
         robots: degraded
             ? { index: false, follow: true }
             : localePageRobots(locale),

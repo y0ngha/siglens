@@ -137,13 +137,15 @@ describe('DB 없는 빌드(NEXT_PHASE=build, DATABASE_URL 없음)', () => {
     );
 
     it.each(ROUTES)(
-        '$name: generateMetadata가 noindex + canonical 없음을 낸다',
-        async ({ metadata }) => {
+        '$name: generateMetadata가 noindex + self-canonical(hreflang 없음)을 낸다',
+        async ({ name, metadata }) => {
             const result = await metadata({ params: params() });
 
             expect(mockGetActiveTerms).not.toHaveBeenCalled();
             expect(result.robots).toEqual({ index: false, follow: true });
-            expect(result.alternates?.canonical).toBeNull();
+            expect(result.alternates).toEqual({
+                canonical: `https://siglens.io${name}`,
+            });
         }
     );
 

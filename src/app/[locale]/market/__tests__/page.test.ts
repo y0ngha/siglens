@@ -225,7 +225,10 @@ describe('Market page', () => {
                 params: Promise.resolve({ locale: 'ko' }),
             });
 
-            expect(metadata.alternates?.canonical).toBeNull();
+            // degraded(noindex)도 self-canonical — null로 비우면 신호가 사라진다. hreflang은 없다.
+            expect(metadata.alternates).toEqual({
+                canonical: 'https://siglens.io/market',
+            });
             expect(metadata.robots).toEqual({ index: false, follow: true });
         });
 
@@ -259,7 +262,10 @@ describe('Market page', () => {
                 params: Promise.resolve({ locale: 'ko' }),
             });
 
-            expect(metadata.alternates?.canonical).toBeNull();
+            // degraded(noindex)도 self-canonical — null로 비우면 신호가 사라진다. hreflang은 없다.
+            expect(metadata.alternates).toEqual({
+                canonical: 'https://siglens.io/market',
+            });
             expect(metadata.robots).toEqual({ index: false, follow: true });
 
             consoleSpy.mockRestore();

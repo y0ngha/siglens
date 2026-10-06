@@ -120,6 +120,25 @@ describe('SnapshotSummarySection — 기준일 표기', () => {
         ).toBeInTheDocument();
     });
 
+    it('기준일 캡션은 기계가 읽는 시각을 단 <time dateTime>이다', () => {
+        render(
+            <SnapshotSummarySection
+                displayName="Apple Inc."
+                marketProfile="us-equity"
+                asOf={new Date('2026-07-31T21:00:00Z')}
+            >
+                <p>본문</p>
+            </SnapshotSummarySection>
+        );
+
+        const time = screen.getByText(/2026년 7월 31일 미국 장마감 기준/);
+        expect(time.tagName).toBe('TIME');
+        // 값은 `resolveSnapshotAsOf`가 고른 기준 시각(ISO 8601)이다 — 형식만 고정한다.
+        expect(time.getAttribute('dateTime')).toMatch(
+            /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
+        );
+    });
+
     // C5(감사): 이전에는 1일 전 케이스와 완전히 같은 날짜(2026-07-31T21:00:00Z)를
     // 재사용해 "7일 된 스냅샷"이라는 제목이 실제로는 아무것도 검증하지 않았다.
     // 서로 다른 age의 두 스냅샷을 각각 렌더해, 둘 다 "전일"이 아니라 각자의

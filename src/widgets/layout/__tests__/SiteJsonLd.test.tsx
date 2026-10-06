@@ -2,7 +2,24 @@ vi.mock('@/shared/lib/seo', () => ({
     SITE_NAME: 'Siglens',
     SITE_NAME_KO: '시그렌즈',
     SITE_URL: 'https://siglens.io',
+    ORGANIZATION_JSON_LD_ID: 'https://siglens.io#organization',
+    buildOrganizationCoreJsonLd: () => ({
+        '@type': 'Organization',
+        '@id': 'https://siglens.io#organization',
+        name: 'Siglens',
+        url: 'https://siglens.io',
+    }),
 }));
+
+/** `@graph`에서 `@type`으로 노드 하나를 꺼낸다. */
+function nodeOf(
+    data: { '@graph': Record<string, unknown>[] },
+    type: string
+): Record<string, unknown> {
+    const node = data['@graph'].find(n => n['@type'] === type);
+    expect(node).toBeDefined();
+    return node as Record<string, unknown>;
+}
 vi.mock('@/shared/ui/JsonLd', () => ({
     JsonLd: ({ data }: { data: Record<string, unknown> }) => (
         <script
@@ -22,17 +39,19 @@ describe('SiteJsonLd', () => {
         render(<SiteJsonLd />);
 
         const script = screen.getByTestId('json-ld');
-        const data = JSON.parse(script.innerHTML);
+        const data = nodeOf(JSON.parse(script.innerHTML), 'WebSite');
 
         expect(data['@type']).toBe('WebSite');
-        expect(data['@context']).toBe('https://schema.org');
+        expect(JSON.parse(script.innerHTML)['@context']).toBe(
+            'https://schema.org'
+        );
     });
 
     it('includes site name and URL', () => {
         render(<SiteJsonLd />);
 
         const script = screen.getByTestId('json-ld');
-        const data = JSON.parse(script.innerHTML);
+        const data = nodeOf(JSON.parse(script.innerHTML), 'WebSite');
 
         expect(data.name).toBe('Siglens');
         expect(data.url).toBe('https://siglens.io');
@@ -47,7 +66,7 @@ describe('SiteJsonLd', () => {
         render(<SiteJsonLd />);
 
         const script = screen.getByTestId('json-ld');
-        const data = JSON.parse(script.innerHTML);
+        const data = nodeOf(JSON.parse(script.innerHTML), 'WebSite');
 
         expect(data.alternateName).toEqual(['시그렌즈', 'SIGLENS']);
     });
@@ -61,7 +80,7 @@ describe('SiteJsonLd', () => {
         render(<SiteJsonLd />);
 
         const script = screen.getByTestId('json-ld');
-        const data = JSON.parse(script.innerHTML);
+        const data = nodeOf(JSON.parse(script.innerHTML), 'WebSite');
 
         expect('potentialAction' in data).toBe(false);
         expect(script.innerHTML).not.toContain('SearchAction');
@@ -71,8 +90,35 @@ describe('SiteJsonLd', () => {
         render(<SiteJsonLd />);
 
         const script = screen.getByTestId('json-ld');
-        const data = JSON.parse(script.innerHTML);
+        const data = nodeOf(JSON.parse(script.innerHTML), 'WebSite');
 
         expect(data['@id']).toBe('https://siglens.io#website');
+    });
+
+    it('publisher가 홈의 Organization 노드를 @id로 가리킨다(그래프에 붙인다)', () => {
+        render(<SiteJsonLd />);
+
+        const graph = JSON.parse(screen.getByTestId('json-ld').innerHTML);
+
+        expect(nodeOf(graph, 'WebSite').publisher).toEqual({
+            '@id': 'https://siglens.io#organization',
+        });
+    });
+
+    /**
+     * `publisher`의 참조 대상이 같은 문서 안에 있어야 홈이 아닌 페이지에서도 풀린다. 홈의 풍부한
+     * Organization 노드와 같은 `@id`라 핵심 속성 값은 단일 소스(`buildOrganizationCoreJsonLd`)다.
+     */
+    it('publisher가 가리키는 Organization 최소 노드를 같은 @graph에 싣는다', () => {
+        render(<SiteJsonLd />);
+
+        const graph = JSON.parse(screen.getByTestId('json-ld').innerHTML);
+
+        expect(nodeOf(graph, 'Organization')).toEqual({
+            '@type': 'Organization',
+            '@id': 'https://siglens.io#organization',
+            name: 'Siglens',
+            url: 'https://siglens.io',
+        });
     });
 });

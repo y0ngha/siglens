@@ -10,6 +10,11 @@ import { SymbolLayoutProviders } from '@/app/[locale]/[symbol]/SymbolLayoutClien
 import { SymbolLayoutJail } from '@/app/[locale]/[symbol]/SymbolLayoutJail';
 import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
 import { SymbolLayoutHeader } from '@/views/symbol/SymbolLayoutHeader';
+import {
+    SYMBOL_SUB_TAB_KEYS,
+    type SymbolSubTabKey,
+} from '@/views/symbol/utils/symbolTabsConfig';
+import { getTranslations } from 'next-intl/server';
 import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
 import { SymbolViewPing } from '@/features/visitor-ping/ui/SymbolViewPing';
 import { SymbolTabPendingSlot } from '@/views/symbol/SymbolTabPendingContext';
@@ -213,7 +218,8 @@ export async function SymbolLayoutChrome({
     degraded = false,
     params,
 }: SymbolLayoutChromeProps) {
-    const { symbol } = await params;
+    const { locale: rawLocale, symbol } = await params;
+    const locale = resolveLocale(rawLocale);
 
     // 이 QueryClient는 이제 `assetInfo`만 seed한다. 헤더의 공포·탐욕 칩이 봉을
     // 요구하던 것이 봉 seed의 유일한 이유였는데, 지금은 서버가 계산한 스냅샷을
@@ -293,12 +299,25 @@ export async function SymbolLayoutChrome({
     // "데이터 부족" 문구로 폴백한다.
     const fearGreedSnapshot =
         quantized === null ? null : symbolFearGreedSnapshot(quantized);
+    // 가시 브레드크럼 라벨은 서버에서 번역해 내린다. 셋째 마디(탭) 라벨은 각 탭 페이지의
+    // `BreadcrumbList` JSON-LD와 같은 `shared.symbolTab` 키에서 나와야 둘이 글자까지 같다.
+    const [tUi, tTab] = await Promise.all([
+        getTranslations({ locale, namespace: 'shared.ui' }),
+        getTranslations({ locale, namespace: 'shared.symbolTab' }),
+    ]);
+    // `Object.fromEntries`는 키 타입을 `string`으로 넓힌다 — 키가 `SYMBOL_SUB_TAB_KEYS` 전수라
+    // 레코드는 빠짐없이 채워진다.
+    const tabCrumbLabels = Object.fromEntries(
+        SYMBOL_SUB_TAB_KEYS.map(key => [key, tTab(key)])
+    ) as Record<SymbolSubTabKey, string>;
 
     return (
         <HydrationBoundary state={dehydrate(queryClient)}>
             <SymbolLayoutHeader
                 symbol={symbol}
                 fearGreedSnapshot={fearGreedSnapshot}
+                breadcrumbLabel={tUi('Breadcrumb.46c31f')}
+                tabCrumbLabels={tabCrumbLabels}
             />
         </HydrationBoundary>
     );

@@ -1,5 +1,8 @@
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
-import { type MarketProfileId } from '@/shared/config/marketProfile/types';
+import {
+    type MarketProfileId,
+    type TabKey,
+} from '@/shared/config/marketProfile/types';
 
 /**
  * Single source of truth for the symbol analysis tabs. Kept in a non-`'use client'`
@@ -62,3 +65,15 @@ export function tabsFor(profile: MarketProfileId): (typeof TABS)[number][] {
     const allowed = new Set(getDescriptor(profile).tabs);
     return TABS.filter(t => allowed.has(t.key));
 }
+
+/** 차트(종목 루트 `/{T}`)를 뺀 하위 탭 — 브레드크럼에서 종목명 다음 셋째 마디가 되는 탭들. */
+export type SymbolSubTabKey = Exclude<TabKey, 'chart'>;
+
+function isSubTabKey(key: TabKey): key is SymbolSubTabKey {
+    return key !== 'chart';
+}
+
+/** `TABS` 순서 그대로의 하위 탭 키. */
+export const SYMBOL_SUB_TAB_KEYS: readonly SymbolSubTabKey[] = TABS.map(
+    tab => tab.key
+).filter(isSubTabKey);

@@ -105,8 +105,9 @@ export async function generateMetadata({
         return null;
     });
     const degraded = snapshot === null || isEmptyEconomySnapshot(snapshot);
-    // degraded 시 canonical을 null로 비워 크롤러가 임시 상태를 색인하지 않도록 한다.
-    // follow: true는 유지해 링크 주스가 내부 링크로 계속 흐르게 한다.
+    // degraded 시 noindex + self-canonical(hreflang 없음)로 임시 상태를 색인하지 않게 한다
+    // (`buildHubMetadata` → `selfCanonicalAlternates`). follow: true는 유지해 링크 주스가
+    // 내부 링크로 계속 흐르게 한다.
     return buildHubMetadata({
         params,
         locale,

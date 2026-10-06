@@ -2,6 +2,8 @@ import { cache } from 'react';
 import type { AssetInfo } from '@/shared/lib/types';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
 import { isE2E } from '@/shared/api/e2eEnv';
+import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
+import { isCuratedSymbol } from '@/entities/symbol-indexability/lib/isCuratedSymbol';
 import { getAssetInfoStatic } from './getAssetInfoStatic';
 
 export interface ResilientAssetInfo {
@@ -43,6 +45,13 @@ export interface ResilientAssetInfo {
  * 검색 노출 위험이 없고, 다음 revalidate(또는 데이터 갱신 시 on-demand 무효화)에 인프라가 복구돼
  * 있으면 정상 데이터로 자동 갱신된다. 500(깨진 페이지)보다 degraded 200(noindex, fallback UX)이 낫다.
  *
+ * 다만 **큐레이션 종목**의 degrade 렌더는 이 렌더의 revalidate를 300초로 낮춘다
+ * (`shortenRevalidateForRuntimeDegrade`) — 봉·스냅샷 읽기 실패(`getBarsStatic`·
+ * `getSeoSnapshotsStatic`)와 같은 규칙이다. 그대로 두면 색인 대상 페이지의 noindex degrade가
+ * 라우트 고유 revalidate(6~24h)만큼 굳는다. 롱테일은 어차피 noindex라 재생성 비용을 쓰지 않는다.
+ * 핀은 `unstable_cache` 콜백 **바깥**(이 catch)에서 불러야 효과가 있고, 렌더 컨텍스트 밖
+ * (cron 라우트 핸들러 등)에서는 아무 일도 하지 않는 최선 노력 호출이다.
+ *
  * 요청 스코프 메모(React `cache`): 한 종목 페이지를 그리는 동안 레이아웃·페이지·
  * `generateMetadata`가 각자 이 함수를 같은 ticker로 부른다. `unstable_cache` HIT이어도
  * 그때마다 incremental-cache를 읽는데, cache-handler가 S3로 외부화된 운영에서는 그게
@@ -73,6 +82,7 @@ export const getAssetInfoResilient = cache(async function getAssetInfoResilient(
                 e
             );
         }
+        if (isCuratedSymbol(ticker)) await shortenRevalidateForRuntimeDegrade();
         return { assetInfo: { symbol: ticker, name: ticker }, degraded: true };
     }
 });

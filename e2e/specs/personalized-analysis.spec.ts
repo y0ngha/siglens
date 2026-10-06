@@ -50,11 +50,11 @@ import {
  * (mirrors `symbol-analysis.spec.ts`) as proof the real (non-fallback)
  * analysis has rendered before asserting the badge.
  *
- * The badge, like the fixture summary, renders inside the desktop `<aside>`
- * (implicit `role="complementary"`, `md:flex` — visible at Desktop Chrome's
+ * The badge, like the fixture summary, renders inside the desktop analysis panel
+ * (named `<section>` → `role="region"` "AI 차트 분석", `md:flex` — visible at Desktop Chrome's
  * default 1280px viewport). The same `AnalysisPanel` tree is also queued for
  * the (off-screen at this viewport, but still present in the DOM) mobile
- * bottom-sheet copy, so locators are scoped to `role=complementary` throughout
+ * bottom-sheet copy, so locators are scoped to that region throughout
  * to avoid a strict-mode violation, exactly as `symbol-analysis.spec.ts` does.
  *
  * Routing — `playwright.config.ts`'s `ACCOUNT_SPECS` regex was widened to also
@@ -98,7 +98,7 @@ function aaplRow(page: Page): Locator {
 
 /** Scopes to the desktop analysis `<aside>` — see the file-level comment on why. */
 function analysisAside(page: Page): Locator {
-    return page.getByRole('complementary');
+    return page.getByRole('region', { name: 'AI 차트 분석' });
 }
 
 /**

@@ -188,26 +188,17 @@ describe('Financials generateMetadata crypto NOINDEX guard', () => {
         vi.clearAllMocks();
     });
 
-    it('crypto symbol (isTabAllowedForSymbol → false) → returns NOINDEX_SYMBOL_METADATA', async () => {
+    it('crypto symbol (isTabAllowedForSymbol → false) → notFound()를 던진다 — 404에 탭 카피·self-canonical이 얹히지 않는다', async () => {
         mockIsTabAllowed.mockResolvedValue(false);
 
-        const result = await generateMetadata({
-            params: Promise.resolve({ locale: 'ko', symbol: 'BTCUSD' }),
-        });
+        await expect(
+            generateMetadata({
+                params: Promise.resolve({ locale: 'ko', symbol: 'BTCUSD' }),
+            })
+        ).rejects.toThrow('NEXT_NOT_FOUND');
 
         expect(mockIsTabAllowed).toHaveBeenCalledWith('BTCUSD', 'financials');
-        // noindex 계약: robots index:false + self-canonical. 상수와의 동등성이
-        // 아니라 계약을 단언한다 — 2026-08-24부터 이 분기는 심볼 고유
-        // title/description/og:url을 함께 낸다(`noindexSymbolMetadata`). 상수
-        // 동등성으로 두면 "루트 레이아웃 메타 상속" 회귀를 영영 못 잡는다.
-        expect(result.robots).toEqual(NOINDEX_SYMBOL_METADATA.robots);
-        // self-canonical(2026-10-05) — `canonical: null`이 아니다.
-        expect(result.alternates).toEqual({
-            canonical: 'https://siglens.io/BTCUSD/financials',
-        });
-        expect(result.title).toEqual({
-            absolute: expect.stringContaining('BTCUSD'),
-        });
+        expect(mockNotFound).toHaveBeenCalled();
     });
 
     it('equity symbol (isTabAllowedForSymbol → true) → noindex(follow 유지)이되 canonical은 null이 아니다', async () => {
