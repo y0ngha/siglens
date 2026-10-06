@@ -380,21 +380,21 @@ export default async function SymbolPage({ params }: Props) {
                     먼저 오므로 heading 위계(WCAG 1.3.1)는 그대로 유지된다. */}
                 <main className="flex flex-1 flex-col">
                     {/* 모바일에서는 이 wrapper가 첫 뷰포트 높이를 확정하고 안쪽 flex
-                    체인(SymbolPageClient → 차트 행)이 그 잔여를 나눈다 — 기존 동작
-                    그대로다. 데스크톱(md+)에서는 높이를 놓고, 차트 컬럼과 AI 패널이
-                    각자 `--symbol-chart-h`로 확정 높이를 스스로 들고 있다. */}
+                        체인(SymbolPageClient → 차트 행)이 그 잔여를 나눈다 — 기존 동작
+                        그대로다. 데스크톱(md+)에서는 높이를 놓고, 차트 컬럼과 AI 패널이
+                        각자 `--symbol-chart-h`로 확정 높이를 스스로 들고 있다. */}
                     <div className="flex h-(--symbol-chart-h) shrink-0 flex-col md:h-auto">
                         <HydrationBoundary state={dehydrate(queryClient)}>
                             {/* `SymbolPageClient`를 Suspense로 감싸지 않는다. URL `tf`를
-                            `useSearchParams`가 아니라 `useUrlSearchParam`으로 읽어 CSR bailout이
-                            없으므로, 차트·AI 패널(사실 요약 포함)·가시 h1이 SSR HTML에 바로 박힌다.
-                            예전의 경계(fallback = sr-only h1 + 사실 요약)는 그 bailout 때문에 있던
-                            것인데, 남겨 두면 RSC 스트림 타이밍에 따라 경계가 `$?`(대기)로 플러시돼
-                            raw HTML에 fallback h1 + 숨김 청크의 진짜 h1이 **둘 다** 남았다(e2e
-                            `symbol-seo` "exactly one h1" 실측). 경계가 없으면 문서 셸이 이 내용을
-                            기다려 인라인으로 싣는다 — ISR이라 그 대기는 생성 때 한 번뿐이다.
-                            차트 내부의 클라이언트 전환용 경계(`SymbolPageClient`의 ChartSkeleton)는
-                            그대로다. */}
+                                `useSearchParams`가 아니라 `useUrlSearchParam`으로 읽어 CSR bailout이
+                                없으므로, 차트·AI 패널(사실 요약 포함)·가시 h1이 SSR HTML에 바로 박힌다.
+                                예전의 경계(fallback = sr-only h1 + 사실 요약)는 그 bailout 때문에 있던
+                                것인데, 남겨 두면 RSC 스트림 타이밍에 따라 경계가 `$?`(대기)로 플러시돼
+                                raw HTML에 fallback h1 + 숨김 청크의 진짜 h1이 **둘 다** 남았다(e2e
+                                `symbol-seo` "exactly one h1" 실측). 경계가 없으면 문서 셸이 이 내용을
+                                기다려 인라인으로 싣는다 — ISR이라 그 대기는 생성 때 한 번뿐이다.
+                                차트 내부의 클라이언트 전환용 경계(`SymbolPageClient`의 ChartSkeleton)는
+                                그대로다. */}
                             <SymbolPageClient
                                 symbol={symbol}
                                 companyName={assetInfo.name}
@@ -426,15 +426,15 @@ export default async function SymbolPage({ params }: Props) {
                         </HydrationBoundary>
                     </div>
                     {/* 크롤용 기술적 사실 요약 — PERSISTENT server sibling. 같은 요약을 AI 패널
-                    (`ChartContent`)도 그리지만, 그건 차트의 Suspense 경계 안이라 경계가 React의
-                    progressive chunk(약 12.8KB)를 넘으면 raw HTML의 `<div hidden id="S:n">`
-                    숨김 청크로 아웃라인된다 — JS를 실행하지 않는 크롤러(Naver Yeti·Daumoa)는
-                    그 안을 보지 않는다. 그래서 경계 **밖**에 인라인으로 한 벌 더 둔다.
-                    게이트는 메타데이터 `hasPriceData`와 같은 술어(`buildTechnicalFacts`)이고,
-                    주어도 패널과 같은 `symbolFactsSubject`다. 사람에게는 패널 사본이 DOM에
-                    있는 순간 `globals.css`의 `body:has([data-technical-facts='panel'])` 규칙이
-                    이 사본(여백 래퍼째)을 감춰 화면이 예전과 같다(첫 뷰포트 아래라 CLS에 들지 않는다).
-                    차트가 실패해 패널이 없으면 이 사본이 그대로 남는다. */}
+                        (`ChartContent`)도 그리지만, 그건 차트의 Suspense 경계 안이라 경계가 React의
+                        progressive chunk(약 12.8KB)를 넘으면 raw HTML의 `<div hidden id="S:n">`
+                        숨김 청크로 아웃라인된다 — JS를 실행하지 않는 크롤러(Naver Yeti·Daumoa)는
+                        그 안을 보지 않는다. 그래서 경계 **밖**에 인라인으로 한 벌 더 둔다.
+                        게이트는 메타데이터 `hasPriceData`와 같은 술어(`buildTechnicalFacts`)이고,
+                        주어도 패널과 같은 `symbolFactsSubject`다. 사람에게는 패널 사본이 DOM에
+                        있는 순간 `globals.css`의 `body:has([data-technical-facts='panel'])` 규칙이
+                        이 사본(여백 래퍼째)을 감춰 화면이 예전과 같다(첫 뷰포트 아래라 CLS에 들지 않는다).
+                        차트가 실패해 패널이 없으면 이 사본이 그대로 남는다. */}
                     {quantizedFactBars !== null &&
                         buildTechnicalFacts(
                             quantizedFactBars.bars,
@@ -459,45 +459,45 @@ export default async function SymbolPage({ params }: Props) {
                             </div>
                         )}
                     {/* 모바일 바텀시트 SSR 껍데기 — 바로 아래 TechnicalSnapshotProse와 같은
-                    이유로 PERSISTENT server sibling이다. Suspense fallback에 두면 boundary가
-                    resolve되는 순간(하이드레이션 ≈4.1초) React가 이 서브트리를 파괴하는데,
-                    실제 vaul 시트는 그보다 늦은 ≈4.9초에 마운트되므로 그 사이 화면 하단이
-                    다시 비어버린다. 껍데기는 실제 시트가 DOM에 들어오면 globals.css의
-                    `body:has([data-vaul-drawer])` 규칙으로 CSS만 사라진다. 실측 타임라인은
-                    MobileSheetPlaceholder의 JSDoc 참고. */}
+                        이유로 PERSISTENT server sibling이다. Suspense fallback에 두면 boundary가
+                        resolve되는 순간(하이드레이션 ≈4.1초) React가 이 서브트리를 파괴하는데,
+                        실제 vaul 시트는 그보다 늦은 ≈4.9초에 마운트되므로 그 사이 화면 하단이
+                        다시 비어버린다. 껍데기는 실제 시트가 DOM에 들어오면 globals.css의
+                        `body:has([data-vaul-drawer])` 규칙으로 CSS만 사라진다. 실측 타임라인은
+                        MobileSheetPlaceholder의 JSDoc 참고. */}
                     <MobileSheetPlaceholder
                         label={tViews('mobileSheet.aiAnalysis')}
                     />
                     {/* AI 스냅샷 프로즈는 Suspense fallback이 아니라 PERSISTENT server
-                    sibling으로 마운트한다(audit fix — spec §7의 "SSR-only" 의도와
-                    달리 Suspense fallback 안에 두면 React가 boundary resolve 시
-                    클라이언트에서 그 서브트리를 DESTROY한다: Next.js 정적 HTML에는
-                    fallback이 박히지만, hydration 후 JS를 실행하는 크롤러(Googlebot
-                    렌더러 포함)에게는 사라진다). 나머지 5개 sibling 탭(fundamental/
-                    financials/congress/options/news)과 동일하게 plain SSR sibling
-                    패턴을 따른다. peekAnalysisStatic 결과(cachedAnalysis)는 SSR
-                    프로즈로 렌더되지 않고 initialAnalysis로 클라이언트
-                    위젯에만 seed되므로(위 SymbolPageClient) 여기엔 중복
-                    위험이 없다. 스냅샷이 없으면 TechnicalSnapshotProse가 null을
-                    반환한다 — 아래 여백 래퍼는 남지만 `empty:hidden`으로 접혀
-                    빈 카드나 여백이 보이지 않는다.
-                    audit fix FIX 1: 위 chart wrapper 뒤로 옮겨 (a) h1보다 DOM에서
-                    뒤에 오게 하고(heading 위계, WCAG 1.3.1), (b) chart+AI 영역의
-                    flex 분배에서 완전히 제외해(wrapper가 shrink-0) 더 이상 첫 viewport
-                    높이를 두고 경쟁하지 않는다. */}
+                        sibling으로 마운트한다(audit fix — spec §7의 "SSR-only" 의도와
+                        달리 Suspense fallback 안에 두면 React가 boundary resolve 시
+                        클라이언트에서 그 서브트리를 DESTROY한다: Next.js 정적 HTML에는
+                        fallback이 박히지만, hydration 후 JS를 실행하는 크롤러(Googlebot
+                        렌더러 포함)에게는 사라진다). 나머지 5개 sibling 탭(fundamental/
+                        financials/congress/options/news)과 동일하게 plain SSR sibling
+                        패턴을 따른다. peekAnalysisStatic 결과(cachedAnalysis)는 SSR
+                        프로즈로 렌더되지 않고 initialAnalysis로 클라이언트
+                        위젯에만 seed되므로(위 SymbolPageClient) 여기엔 중복
+                        위험이 없다. 스냅샷이 없으면 TechnicalSnapshotProse가 null을
+                        반환한다 — 아래 여백 래퍼는 남지만 `empty:hidden`으로 접혀
+                        빈 카드나 여백이 보이지 않는다.
+                        audit fix FIX 1: 위 chart wrapper 뒤로 옮겨 (a) h1보다 DOM에서
+                        뒤에 오게 하고(heading 위계, WCAG 1.3.1), (b) chart+AI 영역의
+                        flex 분배에서 완전히 제외해(wrapper가 shrink-0) 더 이상 첫 viewport
+                        높이를 두고 경쟁하지 않는다. */}
                     {/*
-                    차트 탭에는 라이브 `AnalysisPanel`이 함께 있다. 그래서
-                    `duplicatesLiveWidget`을 세운다 — 이 섹션은 자체 토글을 그리지
-                    않고, 라이브 위젯의 평이화가 뜨면 CSS로 숨는다.
+                        차트 탭에는 라이브 `AnalysisPanel`이 함께 있다. 그래서
+                        `duplicatesLiveWidget`을 세운다 — 이 섹션은 자체 토글을 그리지
+                        않고, 라이브 위젯의 평이화가 뜨면 CSS로 숨는다.
 
-                    그래도 `plain`은 넘긴다. 이 탭이 이 사이트 유입의 본진
-                    (롱테일 `<티커> 주가`)이고, 봇은 라이브 위젯의 평이화를 받지
-                    못하므로(봇 가드) 여기서 실어 보내지 않으면 색인되는 본문이
-                    전문 산문으로만 남는다. */}
+                        그래도 `plain`은 넘긴다. 이 탭이 이 사이트 유입의 본진
+                        (롱테일 `<티커> 주가`)이고, 봇은 라이브 위젯의 평이화를 받지
+                        못하므로(봇 가드) 여기서 실어 보내지 않으면 색인되는 본문이
+                        전문 산문으로만 남는다. */}
                     {/* 차트 바로 밑에 붙으면 접기 카드가 차트의 일부처럼 읽힌다(사용자
-                    제보) — 위·양옆으로 띄운다(좌우는 다른 탭 `<main>`의 `px-4`와 같다).
-                    스냅샷이 없으면 TechnicalSnapshotProse가 null이라 래퍼가 비고,
-                    `empty:hidden`이 그 여백까지 걷어낸다. */}
+                        제보) — 위·양옆으로 띄운다(좌우는 다른 탭 `<main>`의 `px-4`와 같다).
+                        스냅샷이 없으면 TechnicalSnapshotProse가 null이라 래퍼가 비고,
+                        `empty:hidden`이 그 여백까지 걷어낸다. */}
                     <div className="mt-6 px-4 empty:hidden">
                         <TechnicalSnapshotProse
                             content={technicalSnapshot?.content}

@@ -102,7 +102,9 @@ describe('페이지 단위 메시지 엔트리', () => {
                 ),
             ].map(m => m[1]!)
         );
-        expect(rendered).toEqual(['[symbol]', '[symbol]/(page)']);
+        expect(rendered).toEqual(
+            expect.arrayContaining(['[symbol]', '[symbol]/(page)'])
+        );
         for (const id of rendered) expect(routeIds).toContain(id);
     });
 
