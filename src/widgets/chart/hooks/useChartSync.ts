@@ -100,6 +100,18 @@ export function useChartSync(): ChartSyncHandlers {
         });
     }, []);
 
+    /** 새 차트를 축 폭 맞추기에 건다 — `detachChart`의 짝. */
+    const attachScaleWidthSync = useCallback(
+        (chart: IChartApi): void => {
+            chart
+                .timeScale()
+                .subscribeVisibleLogicalRangeChange(scheduleScaleWidthSync);
+            chart.timeScale().subscribeSizeChange(scheduleScaleWidthSync);
+            scheduleScaleWidthSync();
+        },
+        [scheduleScaleWidthSync]
+    );
+
     /**
      * 사라지는 차트의 구독을 푼다. 차트가 먼저 dispose된 경우(언마운트 순서)에
      * 구독 해제가 throw해도 나머지 정리(ref 비우기·하한 풀기)는 계속돼야 한다.
@@ -141,13 +153,9 @@ export function useChartSync(): ChartSyncHandlers {
             };
             stockHandlerRef.current = handler;
             chart.timeScale().subscribeVisibleLogicalRangeChange(handler);
-            chart
-                .timeScale()
-                .subscribeVisibleLogicalRangeChange(scheduleScaleWidthSync);
-            chart.timeScale().subscribeSizeChange(scheduleScaleWidthSync);
-            scheduleScaleWidthSync();
+            attachScaleWidthSync(chart);
         },
-        [scheduleScaleWidthSync]
+        [attachScaleWidthSync]
     );
 
     const handleStockChartRemove = useCallback((): void => {
@@ -172,13 +180,9 @@ export function useChartSync(): ChartSyncHandlers {
             };
             volumeHandlerRef.current = handler;
             chart.timeScale().subscribeVisibleLogicalRangeChange(handler);
-            chart
-                .timeScale()
-                .subscribeVisibleLogicalRangeChange(scheduleScaleWidthSync);
-            chart.timeScale().subscribeSizeChange(scheduleScaleWidthSync);
-            scheduleScaleWidthSync();
+            attachScaleWidthSync(chart);
         },
-        [scheduleScaleWidthSync]
+        [attachScaleWidthSync]
     );
 
     const handleVolumeChartRemove = useCallback((): void => {

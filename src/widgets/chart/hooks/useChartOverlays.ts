@@ -39,7 +39,11 @@ interface TitledSeries {
     title: string;
     price: number;
     priority: number;
-    /** 지금 시리즈에 입혀 둔 제목 — 같은 값을 다시 `applyOptions`하지 않으려고 둔다. */
+    /**
+     * 지금 시리즈에 입혀 둔 제목 — 같은 값을 다시 `applyOptions`하지 않으려고 둔다.
+     * 불변성 규칙의 의도된 예외다: 렌더와 무관한 effect 안의 명령형 캐시이고, 이 배열은
+     * 그 effect 클로저 밖으로 나가지 않는다.
+     */
     shown: string;
 }
 
@@ -49,6 +53,10 @@ interface TitledSeries {
  * 라벨 y좌표는 스크롤·확대·가격축 드래그·리사이즈마다 바뀐다. 시간축 범위·크기 변화는
  * 구독으로, 가격축 드래그·휠은 차트 DOM의 포인터 이벤트로 잡고, 한 프레임에 한 번만
  * 다시 잰다.
+ *
+ * 한계: 실시간 봉 갱신으로 자동 스케일만 조금 바뀌는 경우는 잡지 않는다 —
+ * lightweight-charts에 가격축 범위 변경 이벤트가 없다. 그 변화는 몇 px 수준이라
+ * 겹침 판정이 바뀌는 일이 드물고, 다음 스크롤·포인터 조작에서 다시 판정된다.
  */
 function attachLabelCulling(
     chart: IChartApi,
