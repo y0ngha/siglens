@@ -3,6 +3,7 @@ import { act, renderHook } from '@testing-library/react';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { getNewsCardsAction } from '@/entities/news-article/actions/getNewsCardsAction';
 import { useNewsCardPolling } from '@/widgets/news/hooks/useNewsCardPolling';
+import { useWaitForNewsCards } from '@/entities/news-article/hooks/useWaitForNewsCards';
 import {
     EMPTY_SNAPSHOT_MAX_POLLS,
     MAX_CONSECUTIVE_FAILURES,
@@ -10,6 +11,8 @@ import {
     POLL_INTERVAL_MS,
     STAGNATION_FLOOR_POLLS,
 } from '@/shared/config/cardPollingConfig';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
 
 vi.mock('@/entities/news-article/actions/getNewsCardsAction', () => ({
     getNewsCardsAction: vi.fn(),
@@ -55,6 +58,20 @@ async function advancePolls(count: number) {
     }
 }
 
+/** 폴러가 `useQuery`로 돈다 — 테스트마다 새 QueryClient(캐시 공유 없음). */
+function makeQueryWrapper() {
+    const client = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+    });
+    return function QueryWrapper({ children }: { children: ReactNode }) {
+        return (
+            <QueryClientProvider client={client}>
+                {children}
+            </QueryClientProvider>
+        );
+    };
+}
+
 describe('useNewsCardPolling', () => {
     beforeEach(() => {
         vi.useFakeTimers();
@@ -85,7 +102,9 @@ describe('useNewsCardPolling', () => {
         // 라운드 18). 지우면 보강된 카드가 화면에 반영되지 않는다.
         const onComplete = vi.fn();
 
-        renderHook(() => useNewsCardPolling('AAPL', [], onComplete));
+        renderHook(() => useNewsCardPolling('AAPL', [], onComplete), {
+            wrapper: makeQueryWrapper(),
+        });
 
         await advancePolls(20);
         const settled = mockGetNewsCardsAction.mock.calls.length;
@@ -120,7 +139,9 @@ describe('useNewsCardPolling', () => {
             ]);
         });
 
-        renderHook(() => useNewsCardPolling('AAPL', []));
+        renderHook(() => useNewsCardPolling('AAPL', []), {
+            wrapper: makeQueryWrapper(),
+        });
 
         await advancePolls(30);
 
@@ -131,7 +152,9 @@ describe('useNewsCardPolling', () => {
     it('초기 뉴스가 비어 있으면 폴링 상태로 시작하고 새 카드를 반영한 뒤 확인 카드를 닫는다', async () => {
         mockGetNewsCardsAction.mockResolvedValue([READY_ITEM]);
 
-        const { result } = renderHook(() => useNewsCardPolling('AAPL', []));
+        const { result } = renderHook(() => useNewsCardPolling('AAPL', []), {
+            wrapper: makeQueryWrapper(),
+        });
 
         expect(result.current.items).toEqual([]);
         expect(result.current.isPolling).toBe(true);
@@ -151,9 +174,12 @@ describe('useNewsCardPolling', () => {
     it('초기 뉴스가 비어 있고 계속 비어 있으면 제한 이후 폴링을 멈춘다', async () => {
         mockGetNewsCardsAction.mockResolvedValue([]);
 
-        const { result } = renderHook(() => useNewsCardPolling('AAPL', []));
+        const { result } = renderHook(() => useNewsCardPolling('AAPL', []), {
+            wrapper: makeQueryWrapper(),
+        });
 
-        await advancePolls(EMPTY_SNAPSHOT_MAX_POLLS);
+        // 마운트 조회가 첫 번째 폴이다.
+        await advancePolls(EMPTY_SNAPSHOT_MAX_POLLS - 1);
 
         expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(
             EMPTY_SNAPSHOT_MAX_POLLS
@@ -169,11 +195,13 @@ describe('useNewsCardPolling', () => {
             return callCount <= 5 ? [PENDING_ITEM] : [READY_ITEM];
         });
 
-        const { result } = renderHook(() =>
-            useNewsCardPolling('AAPL', [PENDING_ITEM])
+        const { result } = renderHook(
+            () => useNewsCardPolling('AAPL', [PENDING_ITEM]),
+            { wrapper: makeQueryWrapper() }
         );
 
-        await advancePolls(5);
+        // 마운트 때 한 번 조회하므로(useQuery) 다섯 번째 조회는 네 번째 틱이다.
+        await advancePolls(4);
 
         expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(5);
         expect(result.current.items).toEqual([PENDING_ITEM]);
@@ -194,11 +222,13 @@ describe('useNewsCardPolling', () => {
                 : [READY_ITEM];
         });
 
-        const { result } = renderHook(() =>
-            useNewsCardPolling('AAPL', [PENDING_ITEM])
+        const { result } = renderHook(
+            () => useNewsCardPolling('AAPL', [PENDING_ITEM]),
+            { wrapper: makeQueryWrapper() }
         );
 
-        await advancePolls(EMPTY_SNAPSHOT_MAX_POLLS);
+        // 마운트 조회가 첫 번째 폴이다.
+        await advancePolls(EMPTY_SNAPSHOT_MAX_POLLS - 1);
 
         expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(
             EMPTY_SNAPSHOT_MAX_POLLS
@@ -215,14 +245,16 @@ describe('useNewsCardPolling', () => {
     it('초기 뉴스가 모두 분석 완료 상태여도 최신 뉴스 확인을 짧게 폴링한다', async () => {
         mockGetNewsCardsAction.mockResolvedValue([READY_ITEM]);
 
-        const { result } = renderHook(() =>
-            useNewsCardPolling('AAPL', [READY_ITEM])
+        const { result } = renderHook(
+            () => useNewsCardPolling('AAPL', [READY_ITEM]),
+            { wrapper: makeQueryWrapper() }
         );
 
         expect(result.current.items).toEqual([READY_ITEM]);
         expect(result.current.isPolling).toBe(true);
 
-        await advancePolls(5);
+        // 마운트 때 한 번 조회하므로(useQuery) 다섯 번째 조회는 네 번째 틱이다.
+        await advancePolls(4);
 
         expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(5);
         expect(result.current.isPolling).toBe(false);
@@ -232,7 +264,9 @@ describe('useNewsCardPolling', () => {
         const onComplete = vi.fn();
         mockGetNewsCardsAction.mockResolvedValue([READY_ITEM]);
 
-        renderHook(() => useNewsCardPolling('AAPL', [READY_ITEM], onComplete));
+        renderHook(() => useNewsCardPolling('AAPL', [READY_ITEM], onComplete), {
+            wrapper: makeQueryWrapper(),
+        });
 
         await advancePolls(5);
 
@@ -245,8 +279,9 @@ describe('useNewsCardPolling', () => {
         // PENDING items never become READY → polling continues until timeout
         mockGetNewsCardsAction.mockResolvedValue([PENDING_ITEM]);
 
-        renderHook(() =>
-            useNewsCardPolling('AAPL', [PENDING_ITEM], onComplete)
+        renderHook(
+            () => useNewsCardPolling('AAPL', [PENDING_ITEM], onComplete),
+            { wrapper: makeQueryWrapper() }
         );
 
         await advancePolls(MAX_POLL_DURATION_MS / POLL_INTERVAL_MS + 1);
@@ -259,7 +294,9 @@ describe('useNewsCardPolling', () => {
         const onComplete = vi.fn();
         mockGetNewsCardsAction.mockResolvedValue([]);
 
-        renderHook(() => useNewsCardPolling('AAPL', [], onComplete));
+        renderHook(() => useNewsCardPolling('AAPL', [], onComplete), {
+            wrapper: makeQueryWrapper(),
+        });
 
         await advancePolls(EMPTY_SNAPSHOT_MAX_POLLS);
 
@@ -273,7 +310,9 @@ describe('useNewsCardPolling', () => {
             .spyOn(console, 'error')
             .mockImplementation(() => {});
 
-        renderHook(() => useNewsCardPolling('AAPL', [READY_ITEM], onComplete));
+        renderHook(() => useNewsCardPolling('AAPL', [READY_ITEM], onComplete), {
+            wrapper: makeQueryWrapper(),
+        });
 
         await advancePolls(MAX_CONSECUTIVE_FAILURES);
 
@@ -292,8 +331,9 @@ describe('useNewsCardPolling', () => {
             .spyOn(console, 'error')
             .mockImplementation(() => {});
 
-        const { result } = renderHook(() =>
-            useNewsCardPolling('AAPL', [READY_ITEM])
+        const { result } = renderHook(
+            () => useNewsCardPolling('AAPL', [READY_ITEM]),
+            { wrapper: makeQueryWrapper() }
         );
 
         // MAX_CONSECUTIVE_FAILURES 회 연속 실패 시 pollError가 설정되고 인터벌이 정리된다.
@@ -316,5 +356,59 @@ describe('useNewsCardPolling', () => {
             expect.any(Error)
         );
         errorSpy.mockRestore();
+    });
+
+    /**
+     * 뉴스 탭은 카드 목록(이 훅)과 AI 요약 대기(`useWaitForNewsCards`)를 함께 마운트한다.
+     * 예전에는 둘이 따로 3초마다 같은 Server Action을 불렀다.
+     */
+    it('같은 화면의 AI 요약 대기 폴러와 요청을 나눠 써서 틱마다 한 번만 조회한다', async () => {
+        mockGetNewsCardsAction.mockResolvedValue([PENDING_ITEM]);
+
+        const { result } = renderHook(
+            () => ({
+                list: useNewsCardPolling('AAPL', [PENDING_ITEM]),
+                wait: useWaitForNewsCards('AAPL', false),
+            }),
+            { wrapper: makeQueryWrapper() }
+        );
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(0);
+        });
+        await advancePolls(3);
+
+        expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(4);
+        expect(result.current.wait.isReady).toBe(false);
+
+        mockGetNewsCardsAction.mockResolvedValue([READY_ITEM]);
+        await advancePolls(1);
+
+        expect(result.current.list.items).toEqual([READY_ITEM]);
+        expect(result.current.wait.isReady).toBe(true);
+    });
+
+    it('같은 종목을 다시 방문하면 이전 방문의 캐시가 아니라 새 서버 스냅샷을 먼저 보여 준다', async () => {
+        mockGetNewsCardsAction.mockResolvedValue([PENDING_ITEM]);
+        const wrapper = makeQueryWrapper();
+
+        const first = renderHook(
+            () => useNewsCardPolling('AAPL', [PENDING_ITEM]),
+            { wrapper }
+        );
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(0);
+        });
+        first.unmount();
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(0);
+        });
+
+        mockGetNewsCardsAction.mockImplementation(() => new Promise(() => {}));
+        const second = renderHook(
+            () => useNewsCardPolling('AAPL', [READY_ITEM]),
+            { wrapper }
+        );
+
+        expect(second.result.current.items).toEqual([READY_ITEM]);
     });
 });

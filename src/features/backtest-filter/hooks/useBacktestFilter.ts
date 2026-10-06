@@ -2,8 +2,6 @@
 
 import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
-import type { BacktestCase } from '@y0ngha/siglens-core';
 import type { TabItem } from '@/shared/ui/tabs/utils/tabIds';
 
 /**
@@ -18,7 +16,6 @@ interface UseBacktestFilterReturn {
     tabItems: readonly TabItem<string>[];
     activeTab: string;
     setActiveTab: (tab: string) => void;
-    filtered: BacktestCase[];
     /** 특정 종목이 골라진 상태인가("전체"가 아님). */
     isFiltered: boolean;
 }
@@ -28,7 +25,7 @@ interface UseBacktestFilterReturn {
  *  훅을 재렌더시키지 않는다 — popstate를 듣지 않던 예전 useEffect 버전도 같은
  *  한계였다(그때도 `[tabItems]` 의존 effect만 돌고 URL 변화 자체는 별도로
  *  감지하지 않았다). 이 페이지에서 `?ticker=`를 실제로 쓰는 쪽은 `setActiveTab`
- *  하나뿐이고, 그 경로는 `router.replace` 전에 `setExplicitTab`을 먼저 불러
+ *  하나뿐이고, 그 경로는 `history.replaceState` 전에 `setExplicitTab`을 먼저 불러
  *  `explicitTab`으로 이미 반영된다(`activeTab = explicitTab ?? urlTab ?? ALL_TAB`).
  *  `getUrlTicker`(아래) 자체는 `useSyncExternalStore`의 `getSnapshot` 계약대로
  *  **매 렌더마다** 호출되므로, 다른 이유로 이 훅이 재렌더되면 그 렌더는 항상
@@ -53,10 +50,10 @@ function getServerUrlTicker(): null {
 // `useSyncExternalStore`로 `?ticker=`를 읽어 ?ticker= 딥링크를 동기화하므로,
 // 초기 렌더(=SSR 정적 셸/하이드레이션 렌더)는 항상 전체 케이스 목록과 일치하고
 // (`getServerUrlTicker`가 `null`), 실제 값은 하이드레이션 이후에만 반영된다.
-export function useBacktestFilter(
-    cases: BacktestCase[],
-    tickers: string[]
-): UseBacktestFilterReturn {
+//
+// 케이스 목록 자체는 다루지 않는다 — 목록은 서버 컴포넌트로 렌더되고, 이 훅이 정한 탭에 맞춰
+// 보이는 범위를 고르는 일은 `BacktestTabs`가 한다(그쪽 JSDoc).
+export function useBacktestFilter(tickers: string[]): UseBacktestFilterReturn {
     // 사용자가 명시적으로 고른 탭. `null`이면 아직 고르지 않은 것이고, 그때만
     // 아래 `urlTicker`가 초기 탭을 정한다 — 한 번 고르면 그 뒤로는 이 값이 이긴다
     // (예전 useEffect 버전도 같았다: `setActiveTab`이 URL을 함께 갱신해 `[tabItems]`
@@ -67,9 +64,6 @@ export function useBacktestFilter(
         getUrlTicker,
         getServerUrlTicker
     );
-
-    const router = useRouter();
-    const pathname = usePathname();
 
     const tMisc = useTranslations('shared.ui.misc');
     const allLabel = tMisc('filterAll');
@@ -89,36 +83,34 @@ export function useBacktestFilter(
     );
     const activeTab = explicitTab ?? urlTab ?? ALL_TAB;
 
-    const filtered = useMemo(
-        () =>
-            activeTab === ALL_TAB
-                ? cases
-                : cases.filter(c => c.ticker === activeTab),
-        [cases, activeTab]
-    );
-
     const setActiveTab = useCallback(
         (next: string) => {
             const resolved =
                 tabItems.find(t => t.value === next)?.value ?? ALL_TAB;
             setExplicitTab(resolved);
 
+            // router.replace가 아니라 history.replaceState — 서버는 `?ticker=`를 읽지 않으므로
+            // (목록 전체가 정적 HTML에 있다) 탭 클릭마다 RSC 왕복을 태울 이유가 없다.
+            // `useTimeframeChange`와 같은 패턴이다. 현재 주소의 경로를 그대로 쓰므로
+            // 로케일 접두사(`/en/backtesting`)도 유지된다.
             const params = new URLSearchParams(window.location.search);
             if (resolved === ALL_TAB) params.delete(TICKER_QUERY_PARAM);
             else params.set(TICKER_QUERY_PARAM, resolved);
             const qs = params.toString();
-            router.replace(qs === '' ? pathname : `${pathname}?${qs}`, {
-                scroll: false,
-            });
+            const { pathname, hash } = window.location;
+            window.history.replaceState(
+                null,
+                '',
+                `${pathname}${qs === '' ? '' : `?${qs}`}${hash}`
+            );
         },
-        [pathname, router, tabItems]
+        [tabItems]
     );
 
     return {
         tabItems,
         activeTab,
         setActiveTab,
-        filtered,
         isFiltered: activeTab !== ALL_TAB,
     };
 }

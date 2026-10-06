@@ -555,7 +555,10 @@ describe('useAnalysis — branch coverage', () => {
                 wrapper: makeWrapper(),
             });
 
-            // Let the async effect resolve
+            // 쿨다운은 재분석 버튼에 다가갈 때 읽는다(syncReanalyzeCooldown).
+            act(() => {
+                result.current.syncReanalyzeCooldown();
+            });
             await act(async () => {
                 await vi.advanceTimersByTimeAsync(0);
             });

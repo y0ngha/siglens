@@ -179,7 +179,7 @@ const KO_GRAMMAR_RE =
     /src\/shared\/lib\/(koParticle|formatKoreanDateTime)\.ts$/;
 
 const E2E_STUB_RE =
-    /src\/shared\/api\/e2eAnalysisStub\.ts$|src\/entities\/llm-provider\/api\/FakeChatProvider\.ts$|src\/entities\/ticker\/actions\/searchTickerAction\.ts$/;
+    /src\/shared\/api\/e2eAnalysisStub\.ts$|src\/entities\/llm-provider\/api\/FakeChatProvider\.ts$|src\/entities\/ticker\/lib\/searchTickerQuery\.ts$/;
 
 /**
  * **로그·폴백용 한국어 원문을 담는 use-case 모듈.**

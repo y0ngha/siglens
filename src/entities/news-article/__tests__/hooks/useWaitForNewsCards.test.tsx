@@ -7,6 +7,8 @@ import {
     MAX_POLL_DURATION_MS,
     EMPTY_SNAPSHOT_MAX_POLLS,
 } from '@/shared/config/cardPollingConfig';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
 
 vi.mock('@/entities/news-article/actions/getNewsCardsAction', () => ({
     getNewsCardsAction: vi.fn(),
@@ -38,6 +40,20 @@ const PENDING_ITEM = {
     priceImpact: null,
 } as unknown as NewsDisplayItem;
 
+/** 폴러가 `useQuery`로 돈다 — 테스트마다 새 QueryClient(캐시 공유 없음). */
+function makeQueryWrapper() {
+    const client = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+    });
+    return function QueryWrapper({ children }: { children: ReactNode }) {
+        return (
+            <QueryClientProvider client={client}>
+                {children}
+            </QueryClientProvider>
+        );
+    };
+}
+
 describe('useWaitForNewsCards', () => {
     afterEach(() => {
         mockGetCards.mockReset();
@@ -45,20 +61,28 @@ describe('useWaitForNewsCards', () => {
     });
 
     it('returns isReady true immediately when initiallyReady is true', () => {
-        const { result } = renderHook(() => useWaitForNewsCards('AAPL', true));
+        const { result } = renderHook(() => useWaitForNewsCards('AAPL', true), {
+            wrapper: makeQueryWrapper(),
+        });
         expect(result.current.isReady).toBe(true);
         expect(result.current.pollError).toBeNull();
     });
 
     it('returns isReady false initially when initiallyReady is false', () => {
         mockGetCards.mockResolvedValue([PENDING_ITEM]);
-        const { result } = renderHook(() => useWaitForNewsCards('AAPL', false));
+        const { result } = renderHook(
+            () => useWaitForNewsCards('AAPL', false),
+            { wrapper: makeQueryWrapper() }
+        );
         expect(result.current.isReady).toBe(false);
     });
 
     it('becomes ready when polling returns enriched cards', async () => {
         mockGetCards.mockResolvedValue([ENRICHED_ITEM]);
-        const { result } = renderHook(() => useWaitForNewsCards('AAPL', false));
+        const { result } = renderHook(
+            () => useWaitForNewsCards('AAPL', false),
+            { wrapper: makeQueryWrapper() }
+        );
 
         await waitFor(() => {
             expect(result.current.isReady).toBe(true);
@@ -69,7 +93,7 @@ describe('useWaitForNewsCards', () => {
         mockGetCards.mockResolvedValue([ENRICHED_ITEM]);
         const { result, rerender } = renderHook(
             ({ enabled }) => useWaitForNewsCards('PCLOF', false, enabled),
-            { initialProps: { enabled: false } }
+            { wrapper: makeQueryWrapper(), initialProps: { enabled: false } }
         );
 
         await new Promise(resolve => setTimeout(resolve, 120));
@@ -84,7 +108,9 @@ describe('useWaitForNewsCards', () => {
     });
 
     it('does not call getNewsCardsAction when initiallyReady is true', () => {
-        renderHook(() => useWaitForNewsCards('AAPL', true));
+        renderHook(() => useWaitForNewsCards('AAPL', true), {
+            wrapper: makeQueryWrapper(),
+        });
         expect(mockGetCards).not.toHaveBeenCalled();
     });
 
@@ -100,22 +126,30 @@ describe('useWaitForNewsCards', () => {
         const t0 = 1_700_000_000_000;
         nowSpy.mockReturnValue(t0);
 
-        renderHook(() => useWaitForNewsCards('AAPL', false));
+        renderHook(() => useWaitForNewsCards('AAPL', false), {
+            wrapper: makeQueryWrapper(),
+        });
 
         await waitFor(() => expect(mockGetCards).toHaveBeenCalled());
         const callsBeforeDeadline = mockGetCards.mock.calls.length;
 
-        // 시계를 상한 너머로 밀면 다음 tick에서 스스로 접는다.
+        // 시계를 상한 너머로 밀면 그 뒤 첫 결과에서 스스로 접는다 — 판정이 결과마다
+        // 돌기 때문에 상한을 넘긴 뒤 요청이 최대 한 번 더 나갈 수 있다.
         nowSpy.mockReturnValue(t0 + MAX_POLL_DURATION_MS + 1);
         await new Promise(resolve => setTimeout(resolve, 160)); // 3 tick 분량
+        const callsAfterDeadline = mockGetCards.mock.calls.length;
+        await new Promise(resolve => setTimeout(resolve, 160));
 
-        expect(mockGetCards.mock.calls.length).toBe(callsBeforeDeadline);
+        expect(callsAfterDeadline).toBeLessThanOrEqual(callsBeforeDeadline + 1);
+        expect(mockGetCards.mock.calls.length).toBe(callsAfterDeadline);
     });
 
     it('기사가 아예 없으면 EMPTY_SNAPSHOT_MAX_POLLS에서 접는다', async () => {
         // 빈 목록은 보강될 것이 없다 — 5분을 다 기다릴 이유가 없다.
         mockGetCards.mockResolvedValue([]);
-        renderHook(() => useWaitForNewsCards('AAPL', false));
+        renderHook(() => useWaitForNewsCards('AAPL', false), {
+            wrapper: makeQueryWrapper(),
+        });
 
         await waitFor(
             () =>
@@ -135,7 +169,9 @@ describe('useWaitForNewsCards', () => {
         // 20회(60초)에서 접혀 5분 계약이 사라지고, 하필 LLM 보강을 기다리는
         // 꼬리 케이스가 그 대상이다(감사 라운드 14).
         mockGetCards.mockResolvedValue([PENDING_ITEM]);
-        renderHook(() => useWaitForNewsCards('AAPL', false));
+        renderHook(() => useWaitForNewsCards('AAPL', false), {
+            wrapper: makeQueryWrapper(),
+        });
 
         await waitFor(
             () =>
@@ -161,7 +197,7 @@ describe('useWaitForNewsCards', () => {
 
         const { rerender, result } = renderHook(
             ({ symbol }) => useWaitForNewsCards(symbol, false),
-            { initialProps: { symbol: 'AAPL' } }
+            { wrapper: makeQueryWrapper(), initialProps: { symbol: 'AAPL' } }
         );
 
         await waitFor(() => expect(resolveStale).toBeDefined());
@@ -179,7 +215,10 @@ describe('useWaitForNewsCards', () => {
 
     it('sets pollError after consecutive failures', async () => {
         mockGetCards.mockRejectedValue(new Error('fetch failed'));
-        const { result } = renderHook(() => useWaitForNewsCards('AAPL', false));
+        const { result } = renderHook(
+            () => useWaitForNewsCards('AAPL', false),
+            { wrapper: makeQueryWrapper() }
+        );
 
         await waitFor(() => {
             expect(result.current.pollError).not.toBeNull();

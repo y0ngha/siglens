@@ -36,7 +36,7 @@ import type { Locator, Page } from '@playwright/test';
  * onSelect(symbol) synchronously (the Enter branch uses
  * `query.trim().toUpperCase()` verbatim) — Enter is used throughout below so
  * the flow needs no dependency on the E2E ticker-search fixture's exact
- * result set (searchTickerAction, hermetic under E2E_TEST — see
+ * result set (searchTickerQuery behind GET /api/search, hermetic under E2E_TEST — see
  * symbol-search.spec.ts), and so the worst-case test can drive a
  * shape-invalid symbol (embedded space) that the fixture would never return
  * as a selectable option.

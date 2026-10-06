@@ -29,7 +29,7 @@ import { test, expect } from '../support/fixtures';
  *     company name is known) inside the `#search` hero region, alongside a
  *     "최근 검색" header.
  *
- *   - AUTOCOMPLETE under E2E is fed by a deterministic fixture: searchTickerAction
+ *   - AUTOCOMPLETE under E2E is fed by a deterministic fixture: searchTickerQuery (GET /api/search)
  *     short-circuits on E2E_TEST=1 and returns an AAPL-family set (AAPL + AAPU/AAPD)
  *     WITHOUT calling FMP, so typing `aapl` populates the role="listbox"
  *     (#ticker-autocomplete-listbox) and we can exercise the dropdown-click path,

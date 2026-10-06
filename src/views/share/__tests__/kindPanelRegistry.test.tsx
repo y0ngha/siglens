@@ -10,13 +10,17 @@
  *     validateKeyLevels + clusterKeyLevels and passes them to AnalysisPanel.
  *  6. The chart adapter renders ShareCandlestickChart when chartBars is provided,
  *     and omits it when chartBars is absent (graceful degradation for old snapshots).
+ *  7. Panel widgets are loaded per kind (`next/dynamic`), never statically — so the
+ *     assertions on widget mocks wait for the lazily loaded module.
  *
  * Mocks use deep paths that match the imports in kindPanelRegistry.tsx — so the
  * mock resolves at the same module boundary that the registry uses, preventing
  * undefined-component regressions.
  */
 
-import { render } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { render, waitFor } from '@testing-library/react';
 import type { Bar, ClusteredKeyLevels } from '@y0ngha/siglens-core';
 import { SHAREABLE_KIND_VALUES } from '@/shared/db/constants';
 import { SHARE_KIND_PANEL_REGISTRY } from '@/views/share/kindPanelRegistry';
@@ -149,7 +153,7 @@ describe('SHARE_KIND_PANEL_REGISTRY', () => {
             mockValidateKeyLevels.mockClear();
         });
 
-        it('derives ClusteredKeyLevels from result.keyLevels via validateKeyLevels + clusterKeyLevels and passes to AnalysisPanel', () => {
+        it('derives ClusteredKeyLevels from result.keyLevels via validateKeyLevels + clusterKeyLevels and passes to AnalysisPanel', async () => {
             /**
              * ChartSharePanel derives keyLevels from the snapshot result:
              * - validateKeyLevels filters invalid entries from result.keyLevels
@@ -187,28 +191,34 @@ describe('SHARE_KIND_PANEL_REGISTRY', () => {
                 0
             );
             // AnalysisPanel receives the clustered output and the real ticker
-            expect(mockAnalysisPanel).toHaveBeenCalledTimes(1);
-            expect(mockAnalysisPanel).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    analysis: fakeResult,
-                    keyLevels: STUB_CLUSTERED,
-                    timeframe: '1Day',
-                    symbol: 'AAPL',
-                })
+            await waitFor(() =>
+                expect(mockAnalysisPanel).toHaveBeenCalledTimes(1)
+            );
+            await waitFor(() =>
+                expect(mockAnalysisPanel).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        analysis: fakeResult,
+                        keyLevels: STUB_CLUSTERED,
+                        timeframe: '1Day',
+                        symbol: 'AAPL',
+                    })
+                )
             );
         });
 
-        it('uses empty string when symbol is omitted (backwards compat for callers that omit symbol)', () => {
+        it('uses empty string when symbol is omitted (backwards compat for callers that omit symbol)', async () => {
             const fakeResult = { trend: 'bullish', summary: '상승 추세' };
             render(
                 SHARE_KIND_PANEL_REGISTRY.chart({ result: fakeResult as never })
             );
-            expect(mockAnalysisPanel).toHaveBeenCalledWith(
-                expect.objectContaining({ symbol: '' })
+            await waitFor(() =>
+                expect(mockAnalysisPanel).toHaveBeenCalledWith(
+                    expect.objectContaining({ symbol: '' })
+                )
             );
         });
 
-        it('falls back to empty clustered structure when result.keyLevels is absent', () => {
+        it('falls back to empty clustered structure when result.keyLevels is absent', async () => {
             const fakeResult = { trend: 'bullish', summary: '상승 추세' };
             render(
                 SHARE_KIND_PANEL_REGISTRY.chart({ result: fakeResult as never })
@@ -219,19 +229,23 @@ describe('SHARE_KIND_PANEL_REGISTRY', () => {
                 support: [],
                 resistance: [],
             });
-            expect(mockAnalysisPanel).toHaveBeenCalledTimes(1);
+            await waitFor(() =>
+                expect(mockAnalysisPanel).toHaveBeenCalledTimes(1)
+            );
             // The clustered output (mocked as STUB_CLUSTERED) is still passed through
-            expect(mockAnalysisPanel).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    analysis: fakeResult,
-                    keyLevels: STUB_CLUSTERED,
-                })
+            await waitFor(() =>
+                expect(mockAnalysisPanel).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        analysis: fakeResult,
+                        keyLevels: STUB_CLUSTERED,
+                    })
+                )
             );
         });
 
         // T6: snapshot-time chart rendering via ShareCandlestickChart
 
-        it('renders ShareCandlestickChart when chartBars is provided, forwarding ticker for aria-label (S2)', () => {
+        it('renders ShareCandlestickChart when chartBars is provided, forwarding ticker for aria-label (S2)', async () => {
             mockShareCandlestickChart.mockClear();
             const fakeResult = { trend: 'bullish', summary: '차트 분석' };
             const stubBars: Bar[] = [
@@ -251,25 +265,31 @@ describe('SHARE_KIND_PANEL_REGISTRY', () => {
                     symbol: 'TSLA',
                 })
             );
-            expect(mockShareCandlestickChart).toHaveBeenCalledTimes(1);
+            await waitFor(() =>
+                expect(mockShareCandlestickChart).toHaveBeenCalledTimes(1)
+            );
             // ticker must be forwarded so aria-label reads "TSLA 스냅샷 캔들 차트"
-            expect(mockShareCandlestickChart).toHaveBeenCalledWith(
-                expect.objectContaining({ bars: stubBars, ticker: 'TSLA' })
+            await waitFor(() =>
+                expect(mockShareCandlestickChart).toHaveBeenCalledWith(
+                    expect.objectContaining({ bars: stubBars, ticker: 'TSLA' })
+                )
             );
         });
 
-        it('does not render ShareCandlestickChart when chartBars is absent (old snapshot graceful degradation)', () => {
+        it('does not render ShareCandlestickChart when chartBars is absent (old snapshot graceful degradation)', async () => {
             mockShareCandlestickChart.mockClear();
             const fakeResult = { trend: 'bullish', summary: '차트 분석' };
             render(
                 SHARE_KIND_PANEL_REGISTRY.chart({ result: fakeResult as never })
             );
-            expect(mockShareCandlestickChart).not.toHaveBeenCalled();
             // AnalysisPanel still renders without the chart
-            expect(mockAnalysisPanel).toHaveBeenCalledTimes(1);
+            await waitFor(() =>
+                expect(mockAnalysisPanel).toHaveBeenCalledTimes(1)
+            );
+            expect(mockShareCandlestickChart).not.toHaveBeenCalled();
         });
 
-        it('does not render ShareCandlestickChart when chartBars is an empty array', () => {
+        it('does not render ShareCandlestickChart when chartBars is an empty array', async () => {
             mockShareCandlestickChart.mockClear();
             const fakeResult = { trend: 'bullish', summary: '차트 분석' };
             render(
@@ -278,7 +298,24 @@ describe('SHARE_KIND_PANEL_REGISTRY', () => {
                     chartBars: [],
                 })
             );
+            await waitFor(() => expect(mockAnalysisPanel).toHaveBeenCalled());
             expect(mockShareCandlestickChart).not.toHaveBeenCalled();
         });
+    });
+
+    /**
+     * 공유 링크는 kind 하나만 보여 주므로 패널 위젯을 정적으로 import하면 8개 패널과
+     * `lightweight-charts`가 모든 공유 페이지 first-load에 실린다. 누가 편의상 정적
+     * import로 되돌리면 동작은 그대로라 다른 테스트로는 잡히지 않는다.
+     */
+    it('패널 위젯을 정적으로 import하지 않는다(kind별 next/dynamic)', () => {
+        const source = readFileSync(
+            join(process.cwd(), 'src/views/share/kindPanelRegistry.tsx'),
+            'utf8'
+        );
+        expect(source).not.toMatch(/^import [^;]* from '@\/widgets\//m);
+        expect(source).toMatch(
+            /import\('@\/widgets\/analysis\/AnalysisPanel'\)/
+        );
     });
 });

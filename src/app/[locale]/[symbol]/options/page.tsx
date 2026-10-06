@@ -20,7 +20,7 @@ import {
     fetchOptionsSnapshot,
     hasOptionsMarket,
 } from '@/entities/options-chain/lib/optionsDataCache';
-import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
+import { toClientOptionsSnapshot } from '@/entities/options-chain/lib/clientOptionsSnapshot';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import {
@@ -31,11 +31,6 @@ import {
     symbolMetadataFromSeo,
 } from '@/shared/lib/seo';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
-import {
-    dehydrate,
-    HydrationBoundary,
-    QueryClient,
-} from '@tanstack/react-query';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
@@ -254,16 +249,9 @@ export default async function OptionsPage({ params }: Props) {
     const expirations = snapshot.chains.map(c => c.expirationDate);
     const slots = mapExpirationsToSlots(expirations, new Date());
 
-    const queryClient = new QueryClient({
-        defaultOptions: { queries: { staleTime: QUERY_STALE_TIME_MS } },
-    });
-    // updatedAt 명시: RQ dehydrate 기본은 Date.now()라 매 ISR 재생성마다 다른 timestamp가
-    // HTML에 박혀 ISR write churn 발생. snapshot의 capturedAt(provider 시점)로 고정 —
-    // staticSymbolCache 윈도우 안에서는 동일 snapshot이라 capturedAt도 동일.
-    const stableUpdatedAt = new Date(snapshot.capturedAt).getTime();
-    queryClient.setQueryData(QUERY_KEYS.optionsSnapshot(upper), snapshot, {
-        updatedAt: stableUpdatedAt,
-    });
+    // 클라이언트가 읽는 계약 필드만 보낸다(`toClientOptionsSnapshot` JSDoc). 예전에는 같은
+    // 스냅샷이 prop과 `HydrationBoundary`(읽는 쿼리 없음)로 두 번 실렸다.
+    const clientSnapshot = toClientOptionsSnapshot(snapshot);
 
     // hasOptions: true 하드코딩은 의도적 — 위 OptionsEmptyState 분기(line 79, 83)를
     // 통과한 시점이라 옵션 시장이 존재함이 보장된다. generateMetadata와 달리 본문
@@ -352,15 +340,13 @@ export default async function OptionsPage({ params }: Props) {
                     generatedAt={optionsSnapshot?.generatedAt}
                     plain={optionsSnapshot?.plain}
                 />
-                <HydrationBoundary state={dehydrate(queryClient)}>
-                    <OptionsPageClient
-                        symbol={upper}
-                        companyName={displayName}
-                        snapshot={snapshot}
-                        slots={slots}
-                        hasSnapshotProse={showOptionsProse}
-                    />
-                </HydrationBoundary>
+                <OptionsPageClient
+                    symbol={upper}
+                    companyName={displayName}
+                    snapshot={clientSnapshot}
+                    slots={slots}
+                    hasSnapshotProse={showOptionsProse}
+                />
             </main>
         </>
     );

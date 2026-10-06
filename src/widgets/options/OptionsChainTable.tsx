@@ -3,10 +3,13 @@
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import {
-    type OptionsChain,
     type OptionsExpirationMetrics,
     aggregateOpenInterest,
 } from '@y0ngha/siglens-core';
+import {
+    type ClientOptionsChain,
+    toCoreOptionsChain,
+} from '@/entities/options-chain/lib/clientOptionsSnapshot';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { OpenInterestTooltip } from './utils/optionsTooltips';
 import { findNearestStrikeIndex } from '@/entities/options-chain/lib/findNearestStrike';
@@ -44,7 +47,7 @@ interface OptionsChainTableProps {
     /** Spot price used to anchor the ATM-row highlight. */
     underlyingPrice: number;
     /** Chain matching the selected expiration; null when absent. */
-    chain: OptionsChain | null;
+    chain: ClientOptionsChain | null;
     /** Pre-computed metrics; `maxPain` drives the 📍 row marker. */
     metrics: OptionsExpirationMetrics | null;
     /** First-chain expiration date for the "종합 만기" caption. */
@@ -78,7 +81,9 @@ export function OptionsChainTable({
                 maxPainStrike: null as number | null,
             };
         }
-        const aggregatedStrikes = aggregateOpenInterest(chain);
+        const aggregatedStrikes = aggregateOpenInterest(
+            toCoreOptionsChain(chain, underlyingPrice)
+        );
         const callByStrike = new Map(chain.calls.map(c => [c.strike, c]));
         const putByStrike = new Map(chain.puts.map(p => [p.strike, p]));
         const allStrikes = aggregatedStrikes.map(s => s.strike);

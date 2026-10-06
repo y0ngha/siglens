@@ -1,72 +1,86 @@
 'use client';
 
 import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConfig';
-import { useState, useEffect, useRef } from 'react';
-
+import { useRef, useState } from 'react';
+import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
 import { POLL_INTERVAL_MS } from '@/shared/config/cardPollingConfig';
-import { waitForMarketNewsCardsStep } from '../utils/waitForMarketNewsCardsStep';
+import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import { usePollingQuery } from '@/shared/hooks/usePollingQuery';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import {
+    type CardWaitPollPolicy,
+    decideCardWaitPoll,
+    hasAnyEnrichedCard,
+    INITIAL_CARD_POLL_COUNTERS,
+} from '@/entities/news-article/lib/cardPollDecision';
+import { fetchMarketNewsCards } from '../utils/fetchMarketNewsCards';
 
 export interface WaitForMarketNewsCardsResult {
     isReady: boolean;
     waitError: Error | null;
 }
 
+const WAIT_POLICY: CardWaitPollPolicy = {
+    stopOnEmpty: false,
+    // 다이제스트는 5분을 넘기면 대기 실패 화면(재시도)으로 넘어간다 — FMP가 빈 결과를 주거나
+    // LLM 작업이 조용히 전부 실패해도 끝없이 기다리지 않게.
+    timeoutIsError: true,
+};
+
 /**
- * Poll `getMarketNewsCardsAction` until at least one enriched card (sentiment
- * !== null) is available, then resolve. Returns `isReady = true` immediately
- * if `initiallyReady` is true.
+ * Poll market-news cards until at least one enriched card (sentiment !== null)
+ * is available, then resolve. Returns `isReady = true` immediately if
+ * `initiallyReady` is true.
  *
- * Adapted for market-news categories (keyed by sentinel symbol).
+ * 같은 화면의 카드 목록 폴러(`useMarketNewsCardPolling`)와 쿼리(`marketNewsCards`)를 나눠
+ * 쓴다. 그래서 준비 여부는 이 훅이 받은 응답이 아니라 **쿼리 데이터**로 판정한다.
  */
 export function useWaitForMarketNewsCards(
     category: NewsFeedCategoryId,
     initiallyReady: boolean
 ): WaitForMarketNewsCardsResult {
-    const [isReady, setIsReady] = useState(initiallyReady);
     const [waitError, setWaitError] = useState<Error | null>(null);
     const [prevCategory, setPrevCategory] = useState(category);
-    const intervalIdRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    // 카테고리별 카운터. 카테고리가 바뀌면(같은 인스턴스가 남는 경우) 처음부터 센다.
+    const countersRef = useRef({
+        category,
+        counters: INITIAL_CARD_POLL_COUNTERS,
+    });
+
+    const locale = useCurrentLocale();
+    const data = usePollingQuery<MarketNewsCardItem[]>({
+        queryKey: QUERY_KEYS.marketNewsCards(category, locale),
+        queryFn: () => fetchMarketNewsCards(category),
+        intervalMs: POLL_INTERVAL_MS,
+        enabled: !initiallyReady,
+        onSettled: (outcome, elapsedMs) => {
+            const step = decideCardWaitPoll(
+                countersRef.current.category === category
+                    ? countersRef.current.counters
+                    : INITIAL_CARD_POLL_COUNTERS,
+                outcome,
+                elapsedMs,
+                WAIT_POLICY
+            );
+            if (step.failedPollError !== null) {
+                console.error(
+                    '[useWaitForMarketNewsCards] poll failed:',
+                    step.failedPollError
+                );
+            }
+            countersRef.current = { category, counters: step.counters };
+            if (step.error !== null) setWaitError(step.error);
+            return step.stop ? 'stop' : 'continue';
+        },
+    });
 
     if (prevCategory !== category) {
         setPrevCategory(category);
-        setIsReady(initiallyReady);
         setWaitError(null);
     }
 
-    useEffect(() => {
-        if (initiallyReady) return;
-
-        const stateRef = { consecutiveFailures: 0, startedAt: Date.now() };
-
-        intervalIdRef.current = setInterval(() => {
-            void waitForMarketNewsCardsStep({
-                category,
-                startedAt: stateRef.startedAt,
-                incrementFailures: () => {
-                    stateRef.consecutiveFailures += 1;
-                },
-                resetFailures: () => {
-                    stateRef.consecutiveFailures = 0;
-                },
-                getConsecutiveFailures: () => stateRef.consecutiveFailures,
-                setIsReady,
-                setWaitError,
-                clearInterval: () => {
-                    if (intervalIdRef.current !== null) {
-                        clearInterval(intervalIdRef.current);
-                        intervalIdRef.current = null;
-                    }
-                },
-            });
-        }, POLL_INTERVAL_MS);
-
-        return () => {
-            if (intervalIdRef.current !== null) {
-                clearInterval(intervalIdRef.current);
-                intervalIdRef.current = null;
-            }
-        };
-    }, [category, initiallyReady]);
+    const isReady =
+        initiallyReady || (data !== undefined && hasAnyEnrichedCard(data));
 
     return { isReady, waitError };
 }

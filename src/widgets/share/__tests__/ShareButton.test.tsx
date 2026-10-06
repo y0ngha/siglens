@@ -225,14 +225,14 @@ describe('ShareButton', () => {
     });
 
     describe('status === "idle"', () => {
-        it('opens ShareTriggerDialog on click', () => {
+        it('opens ShareTriggerDialog on click', async () => {
             mockUseShareable.mockReturnValue(makeReg('idle'));
             renderButton();
             fireEvent.click(
                 screen.getByRole('button', { name: '분석 결과 공유' })
             );
             expect(
-                screen.getByRole('dialog', {
+                await screen.findByRole('dialog', {
                     name: '공유하기 전에 분석을 준비할게요',
                 })
             ).toBeInTheDocument();
@@ -240,14 +240,14 @@ describe('ShareButton', () => {
     });
 
     describe('status === "pending"', () => {
-        it('opens SharePreparingModal on click', () => {
+        it('opens SharePreparingModal on click', async () => {
             mockUseShareable.mockReturnValue(makeReg('pending'));
             renderButton();
             fireEvent.click(
                 screen.getByRole('button', { name: '분석 결과 공유' })
             );
             expect(
-                screen.getByRole('dialog', { name: '분석 준비 중' })
+                await screen.findByRole('dialog', { name: '분석 준비 중' })
             ).toBeInTheDocument();
         });
     });
@@ -328,7 +328,7 @@ describe('ShareButton', () => {
                 screen.getByRole('button', { name: '분석 결과 공유' })
             );
             expect(
-                screen.getByRole('dialog', { name: '분석 준비 중' })
+                await screen.findByRole('dialog', { name: '분석 준비 중' })
             ).toBeInTheDocument();
 
             // Simulate analysis completing: status transitions to 'success'.
@@ -354,7 +354,7 @@ describe('ShareButton', () => {
                 screen.getByRole('button', { name: '분석 결과 공유' })
             );
             expect(
-                screen.getByRole('dialog', { name: '분석 준비 중' })
+                await screen.findByRole('dialog', { name: '분석 준비 중' })
             ).toBeInTheDocument();
 
             // Simulate analysis error.
@@ -382,7 +382,7 @@ describe('ShareButton', () => {
                 screen.getByRole('button', { name: '분석 결과 공유' })
             );
             expect(
-                screen.getByRole('dialog', {
+                await screen.findByRole('dialog', {
                     name: '공유하기 전에 분석을 준비할게요',
                 })
             ).toBeInTheDocument();
@@ -393,7 +393,7 @@ describe('ShareButton', () => {
             );
             expect(idleReg.trigger).toHaveBeenCalledTimes(1);
             expect(
-                screen.getByRole('dialog', { name: '분석 준비 중' })
+                await screen.findByRole('dialog', { name: '분석 준비 중' })
             ).toBeInTheDocument();
 
             // Simulate analysis completing.
@@ -428,7 +428,7 @@ describe('ShareButton', () => {
                 screen.getByRole('button', { name: '분석 결과 공유' })
             );
             expect(
-                screen.getByRole('dialog', { name: '분석 준비 중' })
+                await screen.findByRole('dialog', { name: '분석 준비 중' })
             ).toBeInTheDocument();
 
             // Advance status to 'success' → auto-advance effect fires → mutation → native share.
@@ -468,7 +468,7 @@ describe('ShareButton', () => {
                 screen.getByRole('button', { name: '분석 결과 공유' })
             );
             expect(
-                screen.getByRole('dialog', { name: '분석 준비 중' })
+                await screen.findByRole('dialog', { name: '분석 준비 중' })
             ).toBeInTheDocument();
 
             mockUseShareable.mockReturnValue(makeReg('success'));

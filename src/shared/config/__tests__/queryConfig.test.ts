@@ -188,6 +188,31 @@ describe('QUERY_KEYS — 나머지 키 팩토리', () => {
         ]);
     });
 
+    it('newsCards: symbol 대문자 정규화 + 로케일(카드 문구가 로케일별)', () => {
+        expect(QUERY_KEYS.newsCards('aapl', 'ko')).toEqual([
+            'news-cards',
+            'AAPL',
+            'ko',
+        ]);
+        expect(QUERY_KEYS.newsCards('aapl', 'ko')).not.toEqual(
+            QUERY_KEYS.newsCards('aapl', 'en')
+        );
+    });
+
+    it('marketNewsCards: 카테고리·로케일별로 갈린다', () => {
+        expect(QUERY_KEYS.marketNewsCards('macro', 'ko')).toEqual([
+            'market-news-cards',
+            'macro',
+            'ko',
+        ]);
+        expect(QUERY_KEYS.marketNewsCards('macro', 'ko')).not.toEqual(
+            QUERY_KEYS.marketNewsCards('tech', 'ko')
+        );
+        expect(QUERY_KEYS.marketNewsCards('macro', 'ko')).not.toEqual(
+            QUERY_KEYS.marketNewsCards('macro', 'en')
+        );
+    });
+
     it('assetInfo: symbol 대문자 정규화', () => {
         expect(QUERY_KEYS.assetInfo('tsla')).toEqual(['asset-info', 'TSLA']);
     });
@@ -306,13 +331,6 @@ describe('QUERY_KEYS — 나머지 키 팩토리', () => {
         expect(QUERY_KEYS.sectorSignals('kr', DASHBOARD_TF)).not.toEqual(
             QUERY_KEYS.sectorSignals('us', DASHBOARD_TF)
         );
-    });
-
-    it('optionsSnapshot: symbol 대문자 정규화', () => {
-        expect(QUERY_KEYS.optionsSnapshot('aapl')).toEqual([
-            'options-snapshot',
-            'AAPL',
-        ]);
     });
 
     it('optionsAnalysis: symbol + companyName + expirationDate + modelId + reasoning(기본 false)', () => {

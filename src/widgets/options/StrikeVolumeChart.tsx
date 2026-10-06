@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
-import type { OptionsChain } from '@y0ngha/siglens-core';
+import type { ClientOptionsChain } from '@/entities/options-chain/lib/clientOptionsSnapshot';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { CallVolumeTooltip, PutVolumeTooltip } from './utils/optionsTooltips';
 import { pickLabelIndices } from './utils/pickLabelIndices';
@@ -59,7 +59,7 @@ interface StrikeVolumeChartProps {
     /** Spot price used to anchor the current-price guide line. */
     underlyingPrice: number;
     /** Chain matching the parent's selected expiration; null when absent. */
-    chain: OptionsChain | null;
+    chain: ClientOptionsChain | null;
 }
 
 // 모든 strike의 volume이 0일 때 globalMax가 0이 되어 barPixelHeight에서

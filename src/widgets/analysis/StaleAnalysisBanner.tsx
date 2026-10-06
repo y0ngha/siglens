@@ -7,11 +7,14 @@ const COOLDOWN_TOOLTIP_ID = 'stale-banner-cooldown-tooltip';
 
 interface StaleAnalysisBannerProps {
     onReanalyze: () => void;
+    /** 버튼에 포인터·포커스가 갈 때 — 쿨다운 조회 시점(`AnalysisPanel` 참고). */
+    onReanalyzeIntent?: () => void;
     reanalyzeCooldownMs: number;
 }
 
 export function StaleAnalysisBanner({
     onReanalyze,
+    onReanalyzeIntent,
     reanalyzeCooldownMs,
 }: StaleAnalysisBannerProps) {
     const t = useTranslations('widgets.analysis.staleBanner');
@@ -27,6 +30,8 @@ export function StaleAnalysisBanner({
                 <button
                     type="button"
                     onClick={onReanalyze}
+                    onPointerEnter={onReanalyzeIntent}
+                    onFocus={onReanalyzeIntent}
                     disabled={isCoolingDown}
                     aria-describedby={
                         isCoolingDown ? COOLDOWN_TOOLTIP_ID : undefined

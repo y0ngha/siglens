@@ -636,7 +636,7 @@ export function clampSeoTitle(
  *
  * 중복 판정(`koreanName`이 티커와 사실상 같은 값)은 대소문자를 무시한다
  * (`kr.toUpperCase() !== upper`) — 티커 레이어의 나머지 비교도 전부
- * 대소문자 무시다(`searchTickerAction.ts`의 `.toLowerCase()`, `api.ts`의
+ * 대소문자 무시다(`searchTickerQuery.ts`의 `.toLowerCase()`, `api.ts`의
  * SQL `lower(...)`). `ticker`가 빈 문자열이면 `koreanName`만 반환해
  * `'애플()'` 같은 빈 괄호 출력을 막는다.
  *

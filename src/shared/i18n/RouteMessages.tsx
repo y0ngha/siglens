@@ -1,7 +1,8 @@
-import { NextIntlClientProvider } from 'next-intl';
 import type { ReactNode } from 'react';
-import { routeClientPaths } from './clientNamespaces';
+import { ancestorClientPaths, routeClientPaths } from './clientNamespaces';
 import { loadMessages, pickMessages } from './loadMessages';
+import { MergedIntlProvider } from './MergedIntlProvider';
+import { omitMessages } from './messageDiff';
 import type { Locale } from './locales';
 
 interface RouteMessagesProps {
@@ -21,6 +22,11 @@ interface RouteMessagesProps {
  * 자기 몫만 싣는다. 크롬은 `{children}` 바깥에서 렌더되므로 루트 프로바이더를
  * 그대로 쓴다 — 이 프로바이더는 페이지 서브트리에만 적용된다.
  *
+ * **상위 프로바이더에 이미 있는 키는 다시 보내지 않는다.** 크롬(루트 레이아웃)과 경로상
+ * 상위 라우트(예: 탭 `[symbol]/news`의 `[symbol]`)가 실은 키를 빼고 차이만 보내며,
+ * 클라이언트의 `MergedIntlProvider`가 부모 메시지와 합친다. 예전에는 중첩 프로바이더가
+ * 부모를 교체했기 때문에 라우트마다 크롬 키를 통째로 다시 실었다(탭 페이지에서 2~3번).
+ *
  * 서버 컴포넌트는 이 프로바이더와 무관하다. `request.ts`가 요청 설정에서
  * 카탈로그 전체를 주므로 서버 렌더는 항상 모든 키를 본다.
  *
@@ -36,12 +42,13 @@ export async function RouteMessages({
     children,
 }: RouteMessagesProps) {
     const messages = await loadMessages(locale);
+    const delta = omitMessages(
+        pickMessages(messages, routeClientPaths(route)),
+        pickMessages(messages, ancestorClientPaths(route))
+    );
     return (
-        <NextIntlClientProvider
-            locale={locale}
-            messages={pickMessages(messages, routeClientPaths(route))}
-        >
+        <MergedIntlProvider locale={locale} messages={delta}>
             {children}
-        </NextIntlClientProvider>
+        </MergedIntlProvider>
     );
 }

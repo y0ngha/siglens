@@ -8,7 +8,7 @@ import {
     QUERY_KEYS,
     TICKER_SEARCH_STALE_TIME_MS,
 } from '@/shared/config/queryConfig';
-import { searchTickerAction } from '@/entities/ticker/actions/searchTickerAction';
+import { fetchTickerSearch } from '@/entities/ticker/lib/fetchTickerSearch';
 import type { TickerSearchResult } from '@/shared/lib/types';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 
@@ -39,7 +39,9 @@ export function useTickerSearch(query: string): UseTickerSearchResult {
 
     const { data, isError, error, status, isFetching } = useQuery({
         queryKey: QUERY_KEYS.tickerSearch(debouncedQuery),
-        queryFn: ({ queryKey: [, qQuery] }) => searchTickerAction(qQuery),
+        // 캐시 가능한 GET이다(`fetchTickerSearch` JSDoc). `signal`로 지난 키 입력의 요청을 끊는다.
+        queryFn: ({ queryKey: [, qQuery], signal }) =>
+            fetchTickerSearch(qQuery, signal),
         enabled: isEnabled,
         /**
          * 오프라인에서도 **시도하고 실패로 끝맺는다**.
@@ -48,7 +50,7 @@ export function useTickerSearch(query: string): UseTickerSearchResult {
          * 하지 않고 `fetchStatus: 'paused'`에 세워 둔다. 그러면 `isError`가 끝내
          * false라 아래 실패 UI도 `reportClientError`도 실행되지 않고, 사용자는
          * 끝나지 않는 "검색 중…"만 본다. 이 쿼리는 서드파티가 아니라 우리 오리진의
-         * 서버 액션을 부르므로, 시도해 보고 "불러오지 못했어요"를 보여주는 편이 정직하다.
+         * 라우트(`GET /api/search`)를 부르므로, 시도해 보고 "불러오지 못했어요"를 보여주는 편이 정직하다.
          *
          * 재시도가 **탭이 숨겨져 있을 때** 멈추는 것은 이 옵션과 무관한 별개 장치다
          * (`focusManager`). 보고 있지 않은 탭에서 재시도를 태우지 않는 건 의도된 동작이라
@@ -78,7 +80,7 @@ export function useTickerSearch(query: string): UseTickerSearchResult {
      * 돌려줬는데, 그러면 검색 서버가 통째로 죽어도 화면에는 "검색 결과가 없습니다"가
      * 뜬다 — 한글 질의에는 "티커로 검색해 보세요"라는 **틀린 안내**까지 나간다.
      * 게다가 클라이언트·서버 어느 쪽에도 신호가 남지 않아 사용자가 제보하기 전까지
-     * 아무도 모른다(서버 액션에는 메트릭 필터가 없다).
+     * 아무도 모른다(라우트의 `console.error`만으로는 사용자 쪽 실패가 집계되지 않는다).
      */
     useEffect(() => {
         if (!isError || !error) return;

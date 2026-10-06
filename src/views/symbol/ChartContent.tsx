@@ -219,6 +219,8 @@ export function ChartContent({
         isPersonalized,
         plain,
         isAwaitingInteraction,
+        isInstantResponse,
+        syncReanalyzeCooldown,
     } = useAnalysis({
         symbol,
         companyName,
@@ -237,8 +239,10 @@ export function ChartContent({
         autoRunAllowed,
     });
 
-    const { displayAnalyzing, handleProgressFinished } =
-        useAnalysisDisplay(isAnalyzing);
+    const { displayAnalyzing, handleProgressFinished } = useAnalysisDisplay(
+        isAnalyzing,
+        isInstantResponse
+    );
 
     // 차트 작도 on/off — 차트 메뉴와 AI 패널 버튼이 같은 상태를 쓴다. 새 분석이 오면
     // 전부 켜진 기본 상태로 돌아간다(`useOverlayItemVisibility` JSDoc).
@@ -296,6 +300,7 @@ export function ChartContent({
     const { phaseIndex: progressPhaseIndex, tipIndex: progressTipIndex } =
         useAnalysisProgress({
             isAnalyzing,
+            skipFinishing: isInstantResponse,
             onFinished: handleProgressFinished,
         });
 
@@ -458,6 +463,7 @@ export function ChartContent({
                     progressPhaseIndex={progressPhaseIndex}
                     progressTipIndex={progressTipIndex}
                     onReanalyze={handleReanalyze}
+                    onReanalyzeIntent={syncReanalyzeCooldown}
                     reanalyzeCooldownMs={reanalyzeCooldownMs}
                     cooldownNotice={cooldownNotice}
                     actionPricesVisible={actionPricesVisible}
@@ -506,6 +512,7 @@ export function ChartContent({
         progressPhaseIndex,
         progressTipIndex,
         handleReanalyze,
+        syncReanalyzeCooldown,
         reanalyzeCooldownMs,
         cooldownNotice,
         actionPricesVisible,

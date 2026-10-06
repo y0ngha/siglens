@@ -1,13 +1,13 @@
 [
     {
         "file": "src/app/[locale]/backtesting/page.tsx",
-        "line": 188,
+        "line": 167,
         "reason": "seo-keywords-ko-only",
         "text": "주식 기술적 분석 백테스팅"
     },
     {
         "file": "src/app/[locale]/backtesting/page.tsx",
-        "line": 189,
+        "line": 168,
         "reason": "seo-keywords-ko-only",
         "text": "AI 주식 분석 백테스트"
     },
@@ -954,24 +954,6 @@
         "text": "코스피·코스닥 등 국내 증시 주요 뉴스를 네이버 뉴스에서 모았습니다."
     },
     {
-        "file": "src/entities/ticker/actions/searchTickerAction.ts",
-        "line": 24,
-        "reason": "e2e-stub",
-        "text": "애플"
-    },
-    {
-        "file": "src/entities/ticker/actions/searchTickerAction.ts",
-        "line": 43,
-        "reason": "e2e-stub",
-        "text": "비트코인"
-    },
-    {
-        "file": "src/entities/ticker/actions/searchTickerAction.ts",
-        "line": 51,
-        "reason": "e2e-stub",
-        "text": "이더리움"
-    },
-    {
         "file": "src/entities/ticker/lib/koreanTranslator.ts",
         "line": 9,
         "reason": "ai-prompt",
@@ -988,6 +970,24 @@
         "line": 90,
         "reason": "developer-diagnostic",
         "text": "[symbols] 이름 조회 실패 — 티커만 표시한다"
+    },
+    {
+        "file": "src/entities/ticker/lib/searchTickerQuery.ts",
+        "line": 22,
+        "reason": "e2e-stub",
+        "text": "애플"
+    },
+    {
+        "file": "src/entities/ticker/lib/searchTickerQuery.ts",
+        "line": 41,
+        "reason": "e2e-stub",
+        "text": "비트코인"
+    },
+    {
+        "file": "src/entities/ticker/lib/searchTickerQuery.ts",
+        "line": 49,
+        "reason": "e2e-stub",
+        "text": "이더리움"
     },
     {
         "file": "src/features/pwa-install/hooks/usePwaInstall.ts",
@@ -1033,19 +1033,19 @@
     },
     {
         "file": "src/shared/api/e2eAnalysisStub.ts",
-        "line": 114,
+        "line": 132,
         "reason": "e2e-stub",
         "text": "E2E 강제 분석 실패 (resilience 테스트용)"
     },
     {
         "file": "src/shared/api/e2eAnalysisStub.ts",
-        "line": 127,
+        "line": 145,
         "reason": "e2e-stub",
         "text": "E2E 강제 재무제표 분석 실패 (resilience 테스트용)"
     },
     {
         "file": "src/shared/api/e2eAnalysisStub.ts",
-        "line": 153,
+        "line": 171,
         "reason": "e2e-stub",
         "text": "E2E 강제 congress 동향 분석 실패 (resilience 테스트용)"
     },

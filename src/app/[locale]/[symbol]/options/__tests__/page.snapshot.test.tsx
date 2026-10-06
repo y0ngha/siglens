@@ -89,13 +89,6 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     SITE_NAME: 'Siglens',
     SITE_URL: 'https://siglens.io',
 }));
-vi.mock('@tanstack/react-query', () => ({
-    dehydrate: vi.fn().mockReturnValue({}),
-    HydrationBoundary: ({ children }: { children: unknown }) => children,
-    QueryClient: class {
-        setQueryData = vi.fn();
-    },
-}));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ReactNode } from 'react';
@@ -181,6 +174,53 @@ describe('OptionsPage — SEO snapshot prose (Task 7b)', () => {
         expect(
             (client?.props as { hasSnapshotProse: unknown }).hasSnapshotProse
         ).toBe(true);
+    });
+
+    it('OptionsPageClient에는 클라이언트가 읽는 계약 필드만 투영해 넘긴다', async () => {
+        mockHasOptionsMarket.mockResolvedValue(true);
+        mockFetchOptionsSnapshot.mockResolvedValue({
+            ...OPTIONS_SNAPSHOT,
+            chains: [
+                {
+                    expirationDate: '2026-08-01',
+                    daysToExpiration: 8,
+                    calls: [
+                        {
+                            contractSymbol: 'AAPL260801C00190000',
+                            strike: 190,
+                            lastPrice: 12.5,
+                            bid: 12.4,
+                            ask: 12.6,
+                            volume: 30,
+                            openInterest: 400,
+                            impliedVolatility: 0.31,
+                            inTheMoney: true,
+                        },
+                    ],
+                    puts: [],
+                },
+            ],
+        } as unknown as Awaited<ReturnType<typeof fetchOptionsSnapshot>>);
+        mockGetSeoSnapshotsStatic.mockResolvedValue([]);
+
+        const tree = await OptionsPage({
+            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+        });
+
+        const client = findElementByType(tree, OptionsPageClient);
+        const sent = (
+            client?.props as {
+                snapshot: { chains: { calls: Record<string, unknown>[] }[] };
+            }
+        ).snapshot;
+        expect(sent.chains[0]?.calls[0]).toEqual({
+            strike: 190,
+            bid: 12.4,
+            ask: 12.6,
+            volume: 30,
+            openInterest: 400,
+            impliedVolatility: 0.31,
+        });
     });
 
     /**

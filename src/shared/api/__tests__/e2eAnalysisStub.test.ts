@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
     e2eCachedTechnical,
+    e2eGeneratedTechnical,
     e2eCachedOverall,
     e2eCachedFundamental,
     e2eCachedNews,
@@ -28,6 +29,16 @@ describe('e2eCached* fixture getters', () => {
         if (result.status !== 'cached') throw new Error('unreachable');
         expect(result.lockedInfoDepth).toEqual([]);
         expect(result.result).toHaveProperty('riskLevel');
+    });
+
+    it('e2eGeneratedTechnical returns the done shape a real force re-analysis returns', () => {
+        const result = e2eGeneratedTechnical();
+        expect(result.status).toBe('done');
+        if (result.status !== 'done') throw new Error('unreachable');
+        expect(result.result.summary).toContain('E2E 고정 분석 결과');
+        expect(result.lockedInfoDepth).toContain('partial_detail');
+        // 필터 전 원본은 필터와 무관하게 전 필드를 갖는다(운영 `done`과 같은 계약).
+        expect(result.unfilteredResult.riskLevel).not.toBeNull();
     });
 
     it('e2eCachedOverall returns a cached overall result', () => {

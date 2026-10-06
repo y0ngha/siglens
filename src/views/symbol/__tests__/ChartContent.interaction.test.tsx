@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { act, render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { buildFallbackAnalysis } from '@/entities/analysis/lib/fallbackAnalysis';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
@@ -133,6 +133,8 @@ function analysisReturn(
         cooldownNotice: null,
         isPersonalized: false,
         isAwaitingInteraction: false,
+        isInstantResponse: false,
+        syncReanalyzeCooldown: vi.fn(),
         plain: null,
         ...overrides,
     };
@@ -535,7 +537,17 @@ describe('ChartContent', () => {
             );
         });
 
+        // 드래그 반영은 프레임당 한 번이다(`useDragListener`) — mousemove 뒤에 프레임을 넘긴다.
+        function flushFrame(): void {
+            act(() => {
+                vi.advanceTimersToNextFrame();
+            });
+        }
+
         it('마우스 드래그로 패널 너비를 줄이고 드래그 중 오버레이를 표시한다', () => {
+            vi.useFakeTimers({
+                toFake: ['requestAnimationFrame', 'cancelAnimationFrame'],
+            });
             const { container } = renderChart();
 
             // 드래그 시작 — clientX 기준점 500.
@@ -548,6 +560,7 @@ describe('ChartContent', () => {
             // 줄어든다 — usePanelResize는 nextWidth = startWidth - deltaX로 계산하고
             // deltaX = moveX - startX다. 500→560(+60) → 640 - 60 = 580.
             fireEvent.mouseMove(document, { clientX: 560 });
+            flushFrame();
             expect(getSeparator()).toHaveAttribute(
                 'aria-valuenow',
                 String(PANEL_MAX_WIDTH - 60)
@@ -557,9 +570,13 @@ describe('ChartContent', () => {
             fireEvent.mouseUp(document);
             expect(getSeparator()).not.toHaveClass('border-primary-500');
             expect(container.querySelector('.fixed.inset-0')).toBeNull();
+            vi.useRealTimers();
         });
 
         it('드래그로 하한 아래까지 끌어도 PANEL_MIN_WIDTH에서 클램프된다', () => {
+            vi.useFakeTimers({
+                toFake: ['requestAnimationFrame', 'cancelAnimationFrame'],
+            });
             renderChart();
 
             fireEvent.mouseDown(getSeparator(), { button: 0, clientX: 0 });
@@ -567,11 +584,13 @@ describe('ChartContent', () => {
             fireEvent.mouseMove(document, {
                 clientX: PANEL_MAX_WIDTH - PANEL_MIN_WIDTH + 200,
             });
+            flushFrame();
             expect(getSeparator()).toHaveAttribute(
                 'aria-valuenow',
                 String(PANEL_MIN_WIDTH)
             );
             fireEvent.mouseUp(document);
+            vi.useRealTimers();
         });
 
         it('우클릭(button≠0)은 드래그를 시작하지 않는다', () => {
