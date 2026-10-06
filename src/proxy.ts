@@ -302,13 +302,19 @@ async function handleAiHost(req: NextRequest): Promise<NextResponse> {
  *    붙이면 통과한다.
  *  - 액션 ID는 경로가 아니라 서버 액션 매니페스트로 찾는다. 회원 액션 대부분
  *    (보유종목 조회·저장·삭제 등)은 가드 밖 페이지(`/[symbol]/*`) 워커에도 등록돼
- *    있다(2026-10 빌드의 `.next/server/server-reference-manifest.json` 기준). Next
- *    16.3.6은 현재 라우트 워커에 액션이 없으면 등록된 워커로 포워딩한다
- *    (`next/dist/server/app-render/action-handler.js` `selectWorkerForForwarding`).
+ *    있고, Next는 현재 라우트 워커에 액션이 없으면 등록된 워커로 포워딩한다.
+ *    (2026-10-06, Next 16.3.6 기준 확인. 다시 확인하는 법: 포워딩은
+ *    `node_modules/next/dist/server/app-render/action-handler.js`에서
+ *    `selectWorkerForForwarding`를 grep(정의는 같은 폴더 `manifests-singleton.js`).
+ *    워커 등록은 `yarn build` 뒤 `.next/server/server-reference-manifest.json`의
+ *    `node[<actionId>].workers` 키 목록 — `exportedName`이 예컨대
+ *    `getPortfolioHoldingsAction`인 항목에 `app/[locale]/[symbol]/…/page`가 있는지 본다.)
  *  - 그래서 인증은 각 액션이 `getCurrentUser()`로 직접 한다. 사용자 데이터를 읽거나
  *    쓰는 액션(portfolio·api-key·chat-conversation·account-delete)은 전부 세션이 없으면
  *    빈 결과·`unauthenticated` 에러·`/login` 리다이렉트를 돌려주고 아무것도 바꾸지
- *    않는다 — 2026-10 서버 액션 인증 감사에서 전수 확인했다. 새 회원
+ *    않는다. 이 규칙은 `src/__tests__/guards/serverActionsSelfAuth.test.ts`가 강제한다 —
+ *    회원 범위 저장소를 import하는 `'use server'` 모듈의 export마다 `getCurrentUser(`
+ *    호출을 요구하고, 가입·로그인 전 흐름만 이유와 함께 허용 목록에 둔다. 새 회원
  *    전용 액션도 이 규칙을 따라야 한다. 이 프록시에 기대면 안 된다.
  *
  * 페이지 내비게이션은 그대로 가드를 탄다. 액션은 항상 POST라 메서드도 함께 본다 —
