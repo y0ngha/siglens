@@ -233,6 +233,32 @@ export function lastClosedSessionCloseUtc(
 }
 
 /**
+ * 지정한 **세션 날짜**(현지 `YYYY-MM-DD`)의 마감 순간(UTC Date).
+ *
+ * `lastClosedSessionCloseUtc`가 "지금 기준 직전 마감"을 돌려주는 것과 달리, 이미 아는 봉의
+ * 날짜에서 그 봉이 마감된 순간을 구한다 — 공포·탐욕 탭 JSON-LD `dateModified`가 마지막 점수
+ * 봉의 마감을 쓰고, sitemap `lastmod`(직전 마감 세션)와 같은 값이 나와야 한다. 같은 날짜면
+ * 두 함수는 같은 순간을 돌려준다(DST·반장 포함).
+ *
+ * `always-open`은 마감이 없으므로 그 날(UTC)이 끝나는 순간, 곧 다음 UTC 자정이다 — 일봉이
+ * 완결되는 시점이다. 휴장일 날짜를 넘기면 0분 마감이라 그 날 자정이 나온다(호출부가 거래일
+ * 봉의 날짜만 넘기는 것이 계약이다).
+ */
+export function sessionCloseUtcOnDate(
+    spec: MarketSessionSpec,
+    isoDate: string
+): Date {
+    if (spec.kind === 'always-open') {
+        return new Date(`${nextIsoDate(isoDate)}T00:00:00Z`);
+    }
+    return zonedWallClockToUtc(
+        isoDate,
+        closeMinuteOn(spec, isoDate),
+        spec.timeZone
+    );
+}
+
+/**
  * {@link lastClosedSessionDate}가 지금 값에서 **다음 세션 날짜로 넘어가기까지** 남은 초.
  *
  * 세션 날짜를 키에 넣은 캐시(`bars:eodhist:<SYM>:<lastClosed>`)는 날짜가 넘어가는 순간

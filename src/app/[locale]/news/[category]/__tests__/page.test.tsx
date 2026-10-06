@@ -13,7 +13,7 @@ vi.mock('@/shared/cache/staticSymbolCache', () => ({
             id: 'r1',
             symbol: '__NEWS_CRYPTO__',
             source: 'CoinWire',
-            url: 'https://example.com/btc',
+            url: 'https://example.com/btc?utm_source=feed&id=7&utm_medium=rss',
             publishedAt: '2026-06-15T10:00:00.000Z',
             titleEn: 'BTC up',
             titleKo: '비트코인 상승',
@@ -74,6 +74,20 @@ describe('/news/[category] generateMetadata는', () => {
             'https://siglens.io/news/crypto'
         );
         expect(String(meta.title)).toContain('암호화폐');
+    });
+
+    it('ko에는 RSS 발견 링크를 걸고 비-ko에는 걸지 않는다(피드가 한국어 전용)', async () => {
+        const ko = await generateMetadata({
+            params: Promise.resolve({ locale: 'ko', category: 'crypto' }),
+        });
+        const en = await generateMetadata({
+            params: Promise.resolve({ locale: 'en', category: 'crypto' }),
+        });
+
+        expect(ko.alternates?.types).toEqual({
+            'application/rss+xml': 'https://siglens.io/rss.xml',
+        });
+        expect(en.alternates?.types).toBeUndefined();
     });
 
     it('유효하지 않은 카테고리면 robots 없이 title/description만 반환한다 (noindex는 not-found.tsx가 담당)', async () => {
@@ -194,20 +208,26 @@ describe('/news/[category] CategoryNewsPage default export는', () => {
         });
         expect(itemListScript).toBeDefined();
 
-        // D5 (M-10): no per-article image exists, so the shared category OG image
-        // must not be backfilled onto every article — the field should be absent.
+        // 제3자 기사를 `Article`로 선언하지 않는다(2026-10-05) — 이 페이지가 호스팅하지 않는
+        // 콘텐츠의 저작(`datePublished`·`author`·`publisher`)을 주장하게 된다. ListItem은
+        // 위치·URL·이름까지만 말한다.
         const itemListData = JSON.parse(itemListScript!.textContent ?? '');
-        const firstArticle = itemListData.itemListElement?.[0]?.item;
-        expect(firstArticle?.image).toBeUndefined();
-
-        // C-3 R2: publisher.name should be the original article source, not SITE_NAME
-        expect(firstArticle?.publisher?.name).toBe('CoinWire');
+        const first = itemListData.itemListElement?.[0];
+        expect(first).toEqual({
+            '@type': 'ListItem',
+            position: 1,
+            // `utm_*` 추적 파라미터는 떼고, 다른 쿼리는 그대로 둔다.
+            url: 'https://example.com/btc?id=7',
+            name: '비트코인 상승',
+        });
+        expect(JSON.stringify(itemListData)).not.toContain('"Article"');
+        expect(JSON.stringify(itemListData)).not.toContain('CoinWire');
     });
 
     // audit fix item 2: JSON-LD headline이 `item.titleKo ?? item.titleEn`을
     // 직접 써서 resolveNewsTitle을 우회했다 — `/en/news/crypto`의 카드는
     // titleEn을 보여주면서 구조화 데이터만 titleKo를 실었다.
-    it('locale=en이면 JSON-LD headline이 titleEn을 쓴다(resolveNewsTitle 회귀 가드)', async () => {
+    it('locale=en이면 JSON-LD ListItem name이 titleEn을 쓴다(resolveNewsTitle 회귀 가드)', async () => {
         const { container } = render(
             await CategoryNewsPage({
                 params: Promise.resolve({ locale: 'en', category: 'crypto' }),
@@ -225,9 +245,9 @@ describe('/news/[category] CategoryNewsPage default export는', () => {
             }
         });
         const itemListData = JSON.parse(itemListScript!.textContent ?? '');
-        const headline = itemListData.itemListElement?.[0]?.item?.headline;
-        expect(headline).toBe('BTC up');
-        expect(headline).not.toMatch(/[가-힣]/);
+        const name = itemListData.itemListElement?.[0]?.name;
+        expect(name).toBe('BTC up');
+        expect(name).not.toMatch(/[가-힣]/);
     });
 
     it('스냅샷이 비어 있으면(빈 DB) graceful empty state를 렌더한다', async () => {

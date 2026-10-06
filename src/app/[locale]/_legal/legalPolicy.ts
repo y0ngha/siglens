@@ -14,6 +14,7 @@ import {
     SITE_URL,
     type SeoTranslator,
 } from '@/shared/lib/seo';
+import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import {
     localeAlternatesFrom,
     localeOpenGraph,
@@ -109,12 +110,12 @@ export async function legalPolicyMetadata(
                 },
             ],
         },
-        twitter: {
+        twitter: buildTwitterMetadata({
             card: 'summary',
             title: fullTitle,
             description,
             images: ['/og-image.png'],
-        },
+        }),
     };
 }
 

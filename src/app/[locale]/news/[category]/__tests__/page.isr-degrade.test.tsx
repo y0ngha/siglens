@@ -175,7 +175,11 @@ describe('/news/[category] 직렬화 행 상한', () => {
     it('상한을 넘으면 상한만큼만 클라이언트로 넘긴다', async () => {
         const rows = Array.from(
             { length: MARKET_NEWS_ROW_SERIALIZATION_LIMIT + 87 },
-            (_, i) => ({ id: `c${i}`, sentiment: null })
+            (_, i) => ({
+                id: `c${i}`,
+                url: `https://example.com/c${i}`,
+                sentiment: null,
+            })
         ) as unknown as Awaited<ReturnType<typeof getMarketNewsCards>>;
         mockGetMarketNewsList.mockResolvedValue(rows);
 

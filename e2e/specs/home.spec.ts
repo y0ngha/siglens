@@ -24,7 +24,7 @@ test.describe('home page', () => {
         await expect(
             page.getByRole('heading', {
                 level: 1,
-                name: /AI가 분석하고 완성하는 SIGLENS/,
+                name: /주식과 코인 분석 서비스\s*시그렌즈\(Siglens\)/,
             })
         ).toBeVisible();
 

@@ -21,13 +21,39 @@ function rfc822(date: Date): string {
     return date.toUTCString();
 }
 
+/**
+ * 문단 텍스트를 HTML로 이스케이프한다. `>`를 `&gt;`로 바꾸므로 CDATA를 조기에 닫는 `]]>`가
+ * 만들어질 수 없다 — 별도 처리가 필요 없다. `escapeXml`의 `&apos;`는 일부 리더가 모르는
+ * 엔티티라 쓰지 않는다.
+ */
+function escapeHtmlText(value: string): string {
+    return value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+/**
+ * `content:encoded` — 문단을 `<p>`로 감싼 HTML을 CDATA에 담는다. 비어 있으면 요소를 내지
+ * 않는다.
+ */
+function contentEncoded(paragraphs: readonly string[] | undefined): string {
+    const html = (paragraphs ?? [])
+        .map(paragraph => paragraph.replace(XML_ILLEGAL_CHARS, '').trim())
+        .filter(paragraph => paragraph !== '')
+        .map(paragraph => `<p>${escapeHtmlText(paragraph)}</p>`)
+        .join('');
+    if (html === '') return '';
+    return `\n      <content:encoded><![CDATA[${html}]]></content:encoded>`;
+}
+
 function itemXml(item: RssItem): string {
     return `    <item>
       <title>${text(item.title)}</title>
       <link>${text(item.link)}</link>
       <guid isPermaLink="false">${text(item.guid)}</guid>
       <pubDate>${rfc822(item.pubDate)}</pubDate>
-      <description>${text(item.description)}</description>
+      <description>${text(item.description)}</description>${contentEncoded(item.paragraphs)}
     </item>`;
 }
 
@@ -45,7 +71,7 @@ export function buildRssXml(channel: RssChannel): string {
     const newest = items[0];
     const lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
-        '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">',
+        '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">',
         '  <channel>',
         `    <title>${text(channel.title)}</title>`,
         `    <link>${text(channel.link)}</link>`,

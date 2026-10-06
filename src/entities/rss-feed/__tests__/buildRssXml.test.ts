@@ -39,7 +39,7 @@ describe('buildRssXml', () => {
             true
         );
         expect(xml).toContain(
-            '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">'
+            '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">'
         );
         expect(xml).toContain(
             '<atom:link href="https://siglens.io/rss.xml" rel="self" type="application/rss+xml"/>'
@@ -155,5 +155,39 @@ describe('buildRssXml', () => {
         expect(buildRssXml(channel())).toContain(
             '<title>미국 시장 브리핑</title>'
         );
+    });
+
+    describe('content:encoded', () => {
+        it('문단을 <p>로 감싼 HTML을 CDATA에 담는다', () => {
+            const xml = buildRssXml(
+                channel([
+                    item({
+                        paragraphs: ['첫 문단입니다.', '둘째 문단입니다.'],
+                    }),
+                ])
+            );
+
+            expect(xml).toContain(
+                '<content:encoded><![CDATA[<p>첫 문단입니다.</p><p>둘째 문단입니다.</p>]]></content:encoded>'
+            );
+        });
+
+        it('HTML 특수문자는 이스케이프한다 — `>`도 바꾸므로 CDATA를 닫는 `]]>`가 생기지 않는다', () => {
+            const xml = buildRssXml(
+                channel([item({ paragraphs: ['a < b & c ]]> d'] })])
+            );
+
+            expect(xml).toContain('<p>a &lt; b &amp; c ]]&gt; d</p>');
+            expect(xml.match(/\]\]>/g)).toHaveLength(1);
+        });
+
+        it('문단이 없거나 전부 비면 요소를 내지 않는다', () => {
+            expect(buildRssXml(channel([item()]))).not.toContain(
+                'content:encoded'
+            );
+            expect(
+                buildRssXml(channel([item({ paragraphs: ['  ', ''] })]))
+            ).not.toContain('content:encoded');
+        });
     });
 });
