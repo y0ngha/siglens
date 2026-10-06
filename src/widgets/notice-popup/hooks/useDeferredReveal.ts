@@ -1,6 +1,6 @@
 'use client';
 
-import { startTransition, useEffect, useState } from 'react';
+import { startTransition, useEffect, useRef, useState } from 'react';
 import { MS_PER_SECOND } from '@/shared/config/time';
 
 /**
@@ -67,27 +67,30 @@ export function useDeferredReveal(
     fallbackMs: number = NOTICE_IDLE_FALLBACK_MS
 ): boolean {
     const [revealed, setRevealed] = useState(false);
+    // 타이머 만료 뒤에야 생기는 유휴 콜백 취소 함수 — effect 정리가 늦게 예약된 것까지
+    // 취소할 수 있게 ref에 둔다.
+    const cancelIdleRef = useRef<() => void>(() => {});
 
     useEffect(() => {
-        let cancelIdle: () => void = () => {};
         const reveal = (): void => {
             startTransition(() => setRevealed(true));
         };
         const timer = setTimeout(() => {
-            cancelIdle = scheduleIdle(reveal);
+            cancelIdleRef.current = scheduleIdle(reveal);
         }, fallbackMs);
-        for (const event of INTERACTION_EVENTS) {
+        INTERACTION_EVENTS.forEach(event =>
             window.addEventListener(event, reveal, {
                 once: true,
                 passive: true,
-            });
-        }
+            })
+        );
         return () => {
             clearTimeout(timer);
-            cancelIdle();
-            for (const event of INTERACTION_EVENTS) {
-                window.removeEventListener(event, reveal);
-            }
+            cancelIdleRef.current();
+            cancelIdleRef.current = () => {};
+            INTERACTION_EVENTS.forEach(event =>
+                window.removeEventListener(event, reveal)
+            );
         };
     }, [fallbackMs]);
 

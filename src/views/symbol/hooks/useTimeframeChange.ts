@@ -157,10 +157,10 @@ export function useTimeframeChange(
         // 폭풍과 겹쳐 navigation transition이 인터럽트되며 history 커밋이 조용히
         // 드롭된다(약 절반 확률). 그러면 tf가 intraday로 남지만 effect의 의존성은
         // 변하지 않아 재시도되지 않고, e2e waitForURL이 60s 타임아웃한다. 대신
-        // window.history.replaceState는 URL을 동기적으로 바꾸고 Next가 useSearchParams와
-        // 동기화하므로(공식 검색 파라미터 갱신 패턴) 캐노니컬라이즈가 결정적으로 완료된다.
-        // (이 훅 자신은 `useUrlSearchParam`으로 읽으므로 이 쓰기를 구독하지 않는다 —
-        // 화면은 이미 위의 게이트가 DEFAULT로 맞춰 두었다.)
+        // window.history.replaceState는 URL을 동기적으로 바꾸므로 캐노니컬라이즈가
+        // 결정적으로 완료된다(Next 공식 검색 파라미터 갱신 패턴). 이 훅은
+        // `useUrlSearchParam`으로 읽고, 그 저장소는 popstate만 구독하므로 이 쓰기를
+        // 다시 읽지 않는다 — 화면은 이미 위의 게이트가 DEFAULT로 맞춰 두었다.
         // 라우터를 우회하는 경로라 로케일 접두사를 직접 붙여야 한다 — 빼면
         // `/en/AAPL?tf=1Hour` 진입 시 URL이 조용히 `/AAPL?tf=1Day`가 되어
         // 사용자가 고른 언어가 브라우저 주소에서 사라진다(네트워크·라우터

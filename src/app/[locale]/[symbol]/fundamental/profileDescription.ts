@@ -19,6 +19,30 @@ export const PROFILE_DESCRIPTION_TIMEOUT_MS = 4 * MS_PER_SECOND;
 const DEGRADED = Symbol('profile-description-degraded');
 
 /**
+ * `promise`와 `ms` 타이머를 경주시켜 먼저 끝난 쪽을 돌려준다. 시간 초과면 `onTimeout`을
+ * 부르고 `DEGRADED`. 타이머는 `unref()`로 프로세스 종료를 붙잡지 않고, 승패와 무관하게 정리된다.
+ */
+async function raceWithTimeout<T>(
+    promise: Promise<T>,
+    ms: number,
+    onTimeout: () => void
+): Promise<T | typeof DEGRADED> {
+    const timer: { id?: ReturnType<typeof setTimeout> } = {};
+    const timeout = new Promise<typeof DEGRADED>(resolve => {
+        timer.id = setTimeout(() => {
+            onTimeout();
+            resolve(DEGRADED);
+        }, ms);
+        timer.id.unref();
+    });
+    try {
+        return await Promise.race([promise, timeout]);
+    } finally {
+        clearTimeout(timer.id);
+    }
+}
+
+/**
  * 요청 로케일의 회사 설명을 읽되, 실패하거나 `PROFILE_DESCRIPTION_TIMEOUT_MS`를 넘기면
  * `null`을 돌려준다(호출부가 원문으로 폴백한다).
  *
@@ -46,22 +70,15 @@ export async function loadProfileDescription(
         );
         return DEGRADED;
     });
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const timeout = new Promise<typeof DEGRADED>(resolve => {
-        timer = setTimeout(() => {
+    const result = await raceWithTimeout(
+        description,
+        PROFILE_DESCRIPTION_TIMEOUT_MS,
+        () =>
             console.warn(
                 `[loadProfileDescription] ${symbol} description exceeded ${PROFILE_DESCRIPTION_TIMEOUT_MS}ms, rendering original`
-            );
-            resolve(DEGRADED);
-        }, PROFILE_DESCRIPTION_TIMEOUT_MS);
-        timer.unref();
-    });
-    try {
-        const result = await Promise.race([description, timeout]);
-        if (result !== DEGRADED) return result;
-        await shortenRevalidateForRuntimeDegrade();
-        return null;
-    } finally {
-        clearTimeout(timer);
-    }
+            )
+    );
+    if (result !== DEGRADED) return result;
+    await shortenRevalidateForRuntimeDegrade();
+    return null;
 }
