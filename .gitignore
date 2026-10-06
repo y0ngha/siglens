@@ -115,6 +115,8 @@ next-env.d.ts
 !/scripts/assert-icu-locale.mjs
 # Infra: 배포 직후 ISR·엣지 캐시 예열 (deploy.yml 마지막 단계).
 !/scripts/warm-isr.sh
+# Infra: 배포 직후 Cloudflare HTML 태그 퍼지 (deploy.yml, 실패 시 purge_everything 폴백).
+!/scripts/purge-cdn-cache.sh
 # Infra: CDN 엣지 캐시 실측 프로브 (docs/architecture/CDN_CACHING.md §6에서 참조).
 !/scripts/probe-cdn-cache.sh
 # 로컬 개발 DB(Docker)·운영 DB SSM 터널·운영 비개인 데이터 시드. package.json db:dev:* / db:tunnel이 실행한다.

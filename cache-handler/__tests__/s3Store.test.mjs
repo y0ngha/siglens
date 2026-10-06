@@ -25,6 +25,7 @@ vi.mock('../config.mjs', () => ({
         region: 'ap-northeast-2',
         keyPrefix: 'siglens-isr',
         buildId: 'sha123',
+        dataScope: 'data-v1-next16.3.6',
     },
 }));
 
@@ -35,13 +36,20 @@ import { serialize } from '../serialize.mjs';
 beforeEach(() => send.mockReset());
 
 describe('s3Store key scheme', () => {
-    it('pages/fetch kind를 prefix로 분리하고 buildId를 포함한다', () => {
+    it('페이지 kind는 빌드 스코프(buildId) prefix에 둔다', () => {
         expect(s3KeyForTest('/AAPL', 'APP_PAGE')).toBe(
             'siglens-isr/sha123/pages/%2FAAPL.cache'
         );
-        expect(s3KeyForTest('/AAPL', 'FETCH')).toBe(
-            'siglens-isr/sha123/fetch/%2FAAPL.cache'
+        // OG/twitter 이미지(APP_ROUTE)도 렌더 코드의 산출물이라 빌드에 묶는다.
+        expect(s3KeyForTest('/AAPL/opengraph-image', 'APP_ROUTE')).toBe(
+            'siglens-isr/sha123/pages/%2FAAPL%2Fopengraph-image.cache'
         );
+    });
+
+    it('FETCH는 배포를 넘어 공유되는 데이터 스코프 prefix에 둔다(buildId 없음)', () => {
+        const k = s3KeyForTest('/AAPL', 'FETCH');
+        expect(k).toBe('siglens-isr/data-v1-next16.3.6/fetch/%2FAAPL.cache');
+        expect(k).not.toContain('sha123');
     });
 
     it('짧은 키는 %2F encodeURIComponent 형태로 둔다', () => {

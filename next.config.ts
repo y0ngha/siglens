@@ -2,6 +2,7 @@ import type { NextConfig } from 'next';
 import bundleAnalyzer from '@next/bundle-analyzer';
 import createNextIntlPlugin from 'next-intl/plugin';
 import { createRequire } from 'module';
+import { CDN_CACHE_TAG_HEADER_RULES } from './src/shared/config/cdnCacheTags';
 
 const require = createRequire(import.meta.url);
 
@@ -245,6 +246,9 @@ const nextConfig: NextConfig = {
                 },
             ],
         },
+        // 배포가 HTML만 골라 퍼지하도록 응답마다 Cloudflare `Cache-Tag`를 단다. 규칙 순서가
+        // 의미이므로(뒤가 이긴다) 펼친 그대로 둔다 — `src/shared/config/cdnCacheTags.ts` 참고.
+        ...CDN_CACHE_TAG_HEADER_RULES,
     ],
 };
 

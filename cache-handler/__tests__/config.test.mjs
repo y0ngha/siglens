@@ -36,6 +36,31 @@ describe('config (real module, env defaults)', () => {
         expect(config.bucket).toBe('my-bucket');
     });
 
+    // 데이터 캐시 prefix가 GIT_SHA를 따라가면 배포마다 데이터 캐시가 통째로 비워진다.
+    it('dataScope는 GIT_SHA와 무관하고 DATA_CACHE_VERSION·Next 버전으로 정해진다', async () => {
+        vi.stubEnv('GIT_SHA', 'v1.0.0');
+        const first = await import('../config.mjs');
+        vi.resetModules();
+        vi.stubEnv('GIT_SHA', 'v1.0.1');
+        const second = await import('../config.mjs');
+        const { version: nextVersion } = await import('next/package.json', {
+            with: { type: 'json' },
+        }).then(m => m.default);
+
+        expect(first.config.dataScope).toBe(second.config.dataScope);
+        expect(first.config.dataScope).toBe(
+            `data-v${first.DATA_CACHE_VERSION}-next${nextVersion}`
+        );
+        expect(first.config.dataScope).not.toContain('v1.0.0');
+    });
+
+    it('dataScopeFor는 버전이나 Next 버전이 바뀌면 다른 scope를 만든다', async () => {
+        const { dataScopeFor } = await import('../config.mjs');
+        expect(dataScopeFor(1, '16.3.6')).toBe('data-v1-next16.3.6');
+        expect(dataScopeFor(2, '16.3.6')).not.toBe(dataScopeFor(1, '16.3.6'));
+        expect(dataScopeFor(1, '16.4.0')).not.toBe(dataScopeFor(1, '16.3.6'));
+    });
+
     it("ISR_CACHE_DISABLED='true'를 boolean true로 파싱한다", async () => {
         vi.stubEnv('ISR_CACHE_DISABLED', 'true');
         const { config } = await import('../config.mjs');

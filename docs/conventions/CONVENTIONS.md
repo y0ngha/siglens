@@ -916,6 +916,38 @@ const { data: barsData } = useQuery({
 
 ---
 
+## Server Data Cache Rules (`unstable_cache` / `fetch`)
+
+In production the Next data cache (every `unstable_cache` entry and every cached `fetch()`)
+lives in S3 under a prefix that is **shared across deploys**:
+`siglens-isr/data-v<DATA_CACHE_VERSION>-next<next version>/fetch/`
+(`cache-handler/config.mjs`). Page/HTML entries stay build-scoped. A deploy therefore does
+**not** clear cached data, and during a rolling deploy old and new builds read each other's
+entries. If you change what a cached function returns without changing its key, the new code
+reads values in the old shape (and the old code reads the new shape).
+
+When you change the **shape or meaning** of a cached value, change its key in the same PR:
+
+| Change | Do this |
+|---|---|
+| One cache entry's return shape (fields added/removed/renamed, units, enum values) | Bump that call site's versioned keyPart: `['bars-static-v2', …]` → `'bars-static-v3'`. If the key has no version yet, add `-v1` now. |
+| A helper shared by many cached call sites changes shape, or the entry wrapper/serialization changes (`cache-handler/serialize.mjs`, `index.mjs` entry) | Bump `DATA_CACHE_VERSION` in `cache-handler/config.mjs` (the whole data cache restarts cold once). |
+| The data must be re-read on every deploy (e.g. legal terms published "effective on deploy") | Put the release id (`process.env.GIT_SHA`) in the keyParts — see `TERMS_RELEASE_ID` in `entities/terms/api.ts`. Use sparingly: that entry goes cold every deploy. |
+| A Next.js upgrade | Nothing — the Next version is part of the prefix. |
+| Only the request changes (`fetch()` URL, headers, body) or the TTL/tags | Nothing — the key or the read-time check already changes. |
+
+```typescript
+// ✅ shape changed (added `vwap`) → key version bumped in the same PR
+unstable_cache(load, ['bars-static-v3', ticker, timeframe], { revalidate, tags });
+
+// ❌ shape changed but key kept → old/new builds share incompatible entries
+unstable_cache(load, ['bars-static-v2', ticker, timeframe], { revalidate, tags });
+```
+
+The old prefix/keys are not deleted by hand; the bucket's 7-day lifecycle removes them.
+
+---
+
 ## URL State Rules
 
 UI state that should survive page refresh or be shareable via link must be reflected in the URL.

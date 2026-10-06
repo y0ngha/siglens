@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # 배포 직후 ISR·엣지 캐시 예열.
 #
-# ISR 캐시는 배포마다 비워진다 — `cache-handler`가 `siglens-isr/{GIT_SHA}/`를
-# prefix로 쓰기 때문이다(ISR_CACHE_HANDLER.md). 게다가 배포 마지막 단계가
-# Cloudflare 캐시를 통째로 퍼지하므로, 새 릴리스 직후에는 **모든** 페이지가
+# ISR 페이지 캐시는 배포마다 비워진다 — `cache-handler`가 페이지를
+# `siglens-isr/{GIT_SHA}/pages/`에 두기 때문이다(ISR_CACHE_HANDLER.md; 데이터 캐시
+# `fetch/`는 배포를 넘어 공유된다). 게다가 배포 마지막 단계가 Cloudflare의 HTML
+# 태그(`siglens-html`, 켜기 전엔 전체)를 퍼지하므로, 새 릴리스 직후에는 **모든** 페이지가
 # CF MISS + ISR MISS다.
 #
 # 2026-09-17 실측(v0.79.1 배포 40분 뒤 Googlebot UA 전수 크롤): 3,185개 응답 중
