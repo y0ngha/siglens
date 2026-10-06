@@ -829,6 +829,272 @@ describe('MessageList', () => {
                     screen.queryByRole('button', { name: /최신 메시지로 이동/ })
                 ).toBeNull();
             });
+
+            describe('"맨 아래로" 버튼을 스트리밍 중에 누르면 그 답변을 따라간다(opt-in)', () => {
+                const BUTTON_NAME = /최신 메시지로 이동/;
+
+                /**
+                 * `scrollTop`을 쓰기 가능한 접근자로 바꿔 `container.scrollTop = …`
+                 * 대입이 실제로 보이게 한다(jsdom 기본 setter는 값을 저장하지 않는다).
+                 * `scrollHeight`는 `geometry.scrollHeight`를 읽으므로 테스트가 키운다.
+                 * 브라우저처럼 `scrollTop`은 `scrollHeight - clientHeight`로 clamp된다
+                 * (콘텐츠가 줄면 읽는 값도 따라 내려간다).
+                 */
+                const installLog = (
+                    log: HTMLElement,
+                    initial: { scrollTop: number; scrollHeight: number }
+                ) => {
+                    const geometry = {
+                        scrollTop: initial.scrollTop,
+                        scrollHeight: initial.scrollHeight,
+                    };
+                    Object.defineProperty(log, 'clientHeight', {
+                        value: 400,
+                        configurable: true,
+                    });
+                    Object.defineProperty(log, 'scrollHeight', {
+                        get: () => geometry.scrollHeight,
+                        configurable: true,
+                    });
+                    Object.defineProperty(log, 'scrollTop', {
+                        get: () => {
+                            // clamp를 저장해, 콘텐츠가 줄었다 다시 자라도 옛 값이 되살아나지 않는다.
+                            geometry.scrollTop = Math.min(
+                                geometry.scrollTop,
+                                geometry.scrollHeight - 400
+                            );
+                            return geometry.scrollTop;
+                        },
+                        set: (v: number) => {
+                            geometry.scrollTop = Math.min(
+                                v,
+                                geometry.scrollHeight - 400
+                            );
+                        },
+                        configurable: true,
+                    });
+                    return geometry;
+                };
+
+                const renderStreaming = (streaming: boolean) =>
+                    wrap(
+                        <MessageList
+                            siteUrl="https://siglens.io"
+                            localePrefix=""
+                            messages={[
+                                userMsg('1', 'q1', 1),
+                                assistantMsg(
+                                    '2',
+                                    'partial',
+                                    streaming ? 'streaming' : 'complete'
+                                ),
+                            ]}
+                            streaming={streaming}
+                            onRegenerate={vi.fn()}
+                            onEdit={vi.fn()}
+                            onSend={vi.fn()}
+                        />
+                    );
+
+                /** 위로 스크롤해 둔 로그 + 버튼을 띄운 상태까지 준비한다. */
+                const setupScrolledUp = (streaming: boolean) => {
+                    const view = renderStreaming(streaming);
+                    const log = screen.getByRole('log');
+                    const geometry = installLog(log, {
+                        scrollTop: 100,
+                        scrollHeight: 1000,
+                    });
+                    fireEvent.scroll(log);
+                    return { ...view, log, geometry };
+                };
+
+                it('누르지 않으면 콘텐츠가 자라도 scrollTop을 건드리지 않는다', () => {
+                    const { log, geometry } = setupScrolledUp(true);
+
+                    geometry.scrollHeight = 1600;
+                    act(() => resizeCallback?.());
+
+                    expect(geometry.scrollTop).toBe(100);
+                    expect(
+                        screen.getByRole('button', { name: BUTTON_NAME })
+                    ).toBeInTheDocument();
+                    expect(log.scrollTo).toHaveBeenCalledTimes(0);
+                });
+
+                it('누른 뒤에는 콘텐츠가 자랄 때마다 맨 아래로 붙는다', () => {
+                    const { log, geometry } = setupScrolledUp(true);
+
+                    screen.getByRole('button', { name: BUTTON_NAME }).click();
+                    // 스무스 스크롤 자체는 jsdom에서 일어나지 않으므로 도착을 흉내 낸다.
+                    geometry.scrollTop = 600;
+                    fireEvent.scroll(log);
+
+                    geometry.scrollHeight = 1300;
+                    act(() => resizeCallback?.());
+                    expect(log.scrollTop).toBe(900);
+
+                    geometry.scrollHeight = 1800;
+                    act(() => resizeCallback?.());
+                    expect(log.scrollTop).toBe(1400);
+                });
+
+                it('사용자가 위로 스크롤하면 따라가기를 멈춘다', () => {
+                    const { log, geometry } = setupScrolledUp(true);
+
+                    screen.getByRole('button', { name: BUTTON_NAME }).click();
+                    geometry.scrollTop = 600;
+                    fireEvent.scroll(log);
+                    geometry.scrollHeight = 1300;
+                    act(() => resizeCallback?.());
+                    expect(log.scrollTop).toBe(900);
+
+                    // 사용자가 위로 올린다(휠/터치/키보드 공통으로 scrollTop 감소).
+                    geometry.scrollTop = 700;
+                    fireEvent.scroll(log);
+
+                    geometry.scrollHeight = 1900;
+                    act(() => resizeCallback?.());
+                    expect(log.scrollTop).toBe(700);
+                });
+
+                it('아래로 향하는 스크롤(스무스 스크롤 진행 등)은 따라가기를 멈추지 않는다', () => {
+                    const { log, geometry } = setupScrolledUp(true);
+
+                    screen.getByRole('button', { name: BUTTON_NAME }).click();
+                    geometry.scrollTop = 300;
+                    fireEvent.scroll(log);
+                    geometry.scrollTop = 450;
+                    fireEvent.scroll(log);
+
+                    geometry.scrollHeight = 1400;
+                    act(() => resizeCallback?.());
+                    expect(log.scrollTop).toBe(1000);
+                });
+
+                it('스트림이 끝나면 따라가기를 멈춘다', () => {
+                    const { log, geometry, rerender } = setupScrolledUp(true);
+
+                    screen.getByRole('button', { name: BUTTON_NAME }).click();
+                    geometry.scrollTop = 600;
+                    fireEvent.scroll(log);
+                    geometry.scrollHeight = 1300;
+                    act(() => resizeCallback?.());
+                    expect(log.scrollTop).toBe(900);
+
+                    rerenderWith(rerender, {
+                        messages: [
+                            userMsg('1', 'q1', 1),
+                            assistantMsg('2', 'done'),
+                        ],
+                        streaming: false,
+                    });
+                    // 사용자 스크롤 없이도(예: 칩이 붙어 콘텐츠가 자람) 더는 붙지 않는다.
+                    geometry.scrollHeight = 1700;
+                    act(() => resizeCallback?.());
+                    expect(log.scrollTop).toBe(900);
+                });
+
+                /** 클릭 → 하단 도착 → 한 번 핀까지 마친, 따라가는 중 상태. */
+                const setupFollowing = () => {
+                    const ctx = setupScrolledUp(true);
+                    screen.getByRole('button', { name: BUTTON_NAME }).click();
+                    ctx.geometry.scrollTop = 600;
+                    fireEvent.scroll(ctx.log);
+                    ctx.geometry.scrollHeight = 1300;
+                    act(() => resizeCallback?.());
+                    expect(ctx.log.scrollTop).toBe(900);
+                    return ctx;
+                };
+
+                it('느린 위로 스크롤(2px씩 여러 번)도 누적되어 따라가기를 끝낸다', () => {
+                    const { log, geometry } = setupFollowing();
+
+                    // 이벤트 하나는 허용 오차(4px) 아래지만 하단 밴드를 벗어난 뒤 누적되면 이탈이다.
+                    for (let i = 1; i <= 6; i++) {
+                        geometry.scrollTop = 900 - i * 2;
+                        fireEvent.scroll(log);
+                    }
+                    geometry.scrollHeight = 1900;
+                    act(() => resizeCallback?.());
+
+                    expect(log.scrollTop).toBe(888);
+                });
+
+                it('위로 스크롤하는 동안 콘텐츠 갱신이 끼어들어도(스크롤 핸들러가 누적을 보기 전에) 다시 끌어내리지 않는다', () => {
+                    const { log, geometry } = setupFollowing();
+
+                    // 스크롤 이벤트가 아직 처리되지 않은 채(허용 오차 4px 밖으로 5px) 갱신이 온다.
+                    geometry.scrollTop = 895;
+                    geometry.scrollHeight = 1400;
+                    act(() => resizeCallback?.());
+
+                    expect(log.scrollTop).toBe(895);
+                });
+
+                it('하단 허용 오차 안에 머무는 급락(레이아웃 clamp/iOS 고무줄 복귀)은 이탈로 보지 않는다', () => {
+                    const { log, geometry } = setupFollowing();
+
+                    // 콘텐츠가 줄어 scrollTop이 최대값(=600)으로 clamp된다: 300px
+                    // 떨어졌지만 거리 0이라 하단에 있다.
+                    geometry.scrollHeight = 1000;
+                    expect(log.scrollTop).toBe(600);
+                    fireEvent.scroll(log);
+                    geometry.scrollHeight = 1500;
+                    act(() => resizeCallback?.());
+
+                    expect(log.scrollTop).toBe(1100);
+                });
+
+                it('따라가는 중 새 사용자 메시지가 오면(앵커-온-센드) 따라가기를 끝낸다', () => {
+                    const { log, geometry, rerender } = setupFollowing();
+
+                    rerenderWith(rerender, {
+                        messages: [
+                            userMsg('1', 'q1', 1),
+                            assistantMsg('2', 'done'),
+                            userMsg('3', 'q2', 2),
+                            assistantMsg('4', '', 'streaming'),
+                        ],
+                        streaming: true,
+                    });
+                    geometry.scrollHeight = 2000;
+                    act(() => resizeCallback?.());
+
+                    expect(log.scrollTop).toBe(900);
+                });
+
+                it('스트리밍이 아닐 때 누르면 따라가기가 시작되지 않는다', () => {
+                    const { log, geometry } = setupScrolledUp(false);
+
+                    screen.getByRole('button', { name: BUTTON_NAME }).click();
+                    geometry.scrollTop = 600;
+                    fireEvent.scroll(log);
+                    geometry.scrollHeight = 1300;
+                    act(() => resizeCallback?.());
+
+                    expect(log.scrollTop).toBe(600);
+                });
+
+                it('누른 뒤 버튼이 사라져도 포커스가 body로 떨어지지 않고 로그에 남는다', () => {
+                    const { log, geometry } = setupScrolledUp(true);
+
+                    const button = screen.getByRole('button', {
+                        name: BUTTON_NAME,
+                    });
+                    button.focus();
+                    expect(document.activeElement).toBe(button);
+                    button.click();
+                    // 하단에 도착해 버튼이 언마운트된다.
+                    geometry.scrollTop = 600;
+                    fireEvent.scroll(log);
+
+                    expect(
+                        screen.queryByRole('button', { name: BUTTON_NAME })
+                    ).toBeNull();
+                    expect(document.activeElement).toBe(log);
+                    expect(document.activeElement).not.toBe(document.body);
+                });
+            });
         });
     });
 

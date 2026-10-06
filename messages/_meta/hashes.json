@@ -3100,5 +3100,6 @@
     "widgets.economy.DeltaBadge.unchanged": "015416364f3e",
     "widgets.economy.DeltaBadge.changeSincePeriod": "58c098f342d8",
     "widgets.economy.DeltaBadge.changeSinceRelease": "9fc30a7f4758",
-    "widgets.agent-chat.MessageList.followUpsLabel": "f8b1936b12ed"
+    "widgets.agent-chat.MessageList.followUpsLabel": "f8b1936b12ed",
+    "widgets.agent-chat.MessageList.logLabel": "f84413578532"
 }
