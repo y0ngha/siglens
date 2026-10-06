@@ -106,8 +106,8 @@ export function __activeStreamCount(): number {
  * 넘으면 과부하이거나 남용이다.
  *
  * ponytail: 프로세스 로컬 카운터다. 인스턴스가 늘면 상한도 같이 늘어난다(의도).
- * 사용자·IP 단위 제한이 필요하면 Cloudflare rate limiting이나 Upstash 토큰 버킷으로
- * 별도로 올려야 한다.
+ * 사용자·IP 단위 생성 한도는 별도 층이다 — `entities/analysis/server/analysisGenerationQuota.ts`
+ * (Upstash 고정 창, 캐시 적중은 환불).
  */
 export const MAX_CONCURRENT_ANALYSIS_STREAMS = 24;
 
@@ -125,7 +125,7 @@ export const MAX_CONCURRENT_ANALYSIS_STREAMS = 24;
  * **감수하는 트레이드오프**: 사람 트래픽이 상한을 다 채운 순간과 겹치면
  * 크롤러가 503을 받을 수 있다. 정상 동시 접속은 이 근처에도 오지 않으므로
  * (위 `MAX_CONCURRENT_ANALYSIS_STREAMS` 주석 참고) 드물 것으로 판단한다.
- * IP/세션 단위 rate limiting은 별도 후속 과제.
+ * IP/세션 단위 생성 한도는 `analysisGenerationQuota.ts`가 맡는다.
  */
 export function canAcceptAnalysisStream(): boolean {
     return count < MAX_CONCURRENT_ANALYSIS_STREAMS;

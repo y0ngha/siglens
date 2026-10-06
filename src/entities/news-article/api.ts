@@ -34,6 +34,7 @@ import {
 } from './lib/newsLookback';
 import { buildAnalysisNewsItems } from './lib/buildAnalysisNewsItems';
 import { analyzeNewsCards } from './lib/analyzeNewsCards';
+import { withNewsCardAnalysisLock } from './lib/newsCardAnalysisLock';
 import { PREWARM_NEWS_CARD_LIMIT } from './lib/newsAnalysisConstants';
 import { selectUnanalyzed } from './lib/selectUnanalyzed';
 import {
@@ -442,14 +443,22 @@ export async function prewarmNews(
     // 함수의 주석에 있고, 챗 경로(`ensureSymbolNewsFresh`)와 같은 판단을 쓴다.
     const unanalyzed =
         ingested === null ? [] : selectUnanalyzed(ingested.fresh, rows);
+    //
+    // 방문자 경로가 같은 심볼을 분석 중이면 건너뛴다(`withNewsCardAnalysisLock`) —
+    // 겹치면 같은 기사에 LLM을 두 번 태운다. 그 tick은 이미 보강된 행으로 진행하고,
+    // 남은 기사는 다음 tick이 이어받는다.
     if (unanalyzed.length > 0) {
-        await analyzeNewsCards(unanalyzed, repo, {
-            limit: PREWARM_NEWS_CARD_LIMIT,
-            logLabel: 'prewarmNews',
-        });
+        const analyzed = await withNewsCardAnalysisLock(symbol, () =>
+            analyzeNewsCards(unanalyzed, repo, {
+                limit: PREWARM_NEWS_CARD_LIMIT,
+                logLabel: 'prewarmNews',
+            })
+        );
         // 방금 채운 보강 결과를 반영해 다시 읽는다 — 이 재조회가 없으면 이번 tick은
         // 보강 비용만 쓰고 여전히 빈 입력으로 분석을 부른다.
-        rows = await repo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS);
+        if (analyzed) {
+            rows = await repo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS);
+        }
     }
 
     const enrichedNews: ReadonlyArray<EnrichedNewsItem> =

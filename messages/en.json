@@ -57,7 +57,9 @@
                 "timeout": "The analysis timed out. Please try again.",
                 "unexpected": "An unexpected error occurred.",
                 "unreadable": "Could not read the analysis result. Please try again.",
-                "unstable": "The AI server is unstable, so the analysis couldn't finish. Change the model from the gear icon at the top right."
+                "unstable": "The AI server is unstable, so the analysis couldn't finish. Change the model from the gear icon at the top right.",
+                "rateLimited": "You've reached the limit for new analyses. Saved analyses are still available, and you can request a new one after {v0}.",
+                "rateLimitUnavailable": "New analyses can't start right now. Please try again shortly."
             }
         },
         "backtesting": {
@@ -825,6 +827,13 @@
                 "triggerLabel": "Open symbol search",
                 "typeToSearch": "Type to search"
             }
+        },
+        "analysis-rate-limit": {
+            "title": "You've reached the free analysis limit",
+            "description": "Sign up or log in to get more new analyses. The guest limit resets at {v0}.",
+            "signup": "Sign up for free",
+            "login": "Log in",
+            "close": "Close"
         }
     },
     "shared": {

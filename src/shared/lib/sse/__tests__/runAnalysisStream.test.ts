@@ -1,6 +1,10 @@
 import { TEST_STREAM_MESSAGES } from '@/shared/test-utils/streamMessagesFixture';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
+import {
+    AnalysisRateLimitedError,
+    runAnalysisStream,
+} from '@/shared/lib/sse/runAnalysisStream';
+import { subscribeAnalysisRateLimited } from '@/shared/lib/sse/analysisRateLimitSignal';
 
 /**
  * SSE 프레임을 임의의 청크 경계로 쪼개 흘려보내는 가짜 Response.
@@ -144,6 +148,77 @@ describe('runAnalysisStream', () => {
                 messages: TEST_STREAM_MESSAGES,
             })
         ).rejects.toThrow('분석 시간이 초과되었습니다.');
+    });
+
+    it('rate_limited 이벤트는 한도 문구로 throw하고 화면 전체에 발행한다', async () => {
+        const payload = {
+            audience: 'guest',
+            reason: 'quota',
+            retryAt: 1_790_000_000_000,
+        };
+        fetchMock.mockResolvedValue(
+            sseResponse([
+                'event: open\ndata: {}\n\n',
+                `event: rate_limited\ndata: ${JSON.stringify(payload)}\n\n`,
+            ])
+        );
+        const listener = vi.fn();
+        const unsubscribe = subscribeAnalysisRateLimited(listener);
+
+        const run = runAnalysisStream({
+            type: 'technical',
+            params: {},
+            messages: TEST_STREAM_MESSAGES,
+        });
+
+        await expect(run).rejects.toBeInstanceOf(AnalysisRateLimitedError);
+        await expect(run).rejects.toThrow(
+            TEST_STREAM_MESSAGES.rateLimited(payload.retryAt)
+        );
+        expect(listener).toHaveBeenCalledWith(payload);
+        unsubscribe();
+    });
+
+    it('저장소 장애(reason: unavailable)는 시각 없는 "잠시 후" 문구로 throw한다', async () => {
+        const payload = {
+            audience: 'guest',
+            reason: 'unavailable',
+            retryAt: 1_790_000_000_000,
+        };
+        fetchMock.mockResolvedValue(
+            sseResponse([
+                `event: rate_limited\ndata: ${JSON.stringify(payload)}\n\n`,
+            ])
+        );
+
+        await expect(
+            runAnalysisStream({
+                type: 'technical',
+                params: {},
+                messages: TEST_STREAM_MESSAGES,
+            })
+        ).rejects.toThrow(TEST_STREAM_MESSAGES.rateLimitUnavailable);
+    });
+
+    it('rate_limited 프레임의 data가 계약 모양이 아니면 발행하지 않고 읽기 실패로 처리한다', async () => {
+        fetchMock.mockResolvedValue(
+            sseResponse([
+                'event: open\ndata: {}\n\n',
+                'event: rate_limited\ndata: {"audience":"admin","retryAt":"soon"}\n\n',
+            ])
+        );
+        const listener = vi.fn();
+        const unsubscribe = subscribeAnalysisRateLimited(listener);
+
+        await expect(
+            runAnalysisStream({
+                type: 'technical',
+                params: {},
+                messages: TEST_STREAM_MESSAGES,
+            })
+        ).rejects.toThrow(TEST_STREAM_MESSAGES.unreadable);
+        expect(listener).not.toHaveBeenCalled();
+        unsubscribe();
     });
 
     it('done/error 없이 스트림이 끝나면 중도 절단으로 구분해 알린다', async () => {

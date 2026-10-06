@@ -2,6 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import { formatRetryAt } from '@/shared/lib/formatRetryAt';
 import type { StreamErrorMessages } from '@/shared/lib/sse/runAnalysisStream';
 
 /**
@@ -14,6 +16,7 @@ import type { StreamErrorMessages } from '@/shared/lib/sse/runAnalysisStream';
  */
 export function useStreamErrorMessages(): StreamErrorMessages {
     const t = useTranslations('app.api.stream');
+    const locale = useCurrentLocale();
     return useMemo(
         () => ({
             busy: t('busy'),
@@ -33,7 +36,10 @@ export function useStreamErrorMessages(): StreamErrorMessages {
             digestUnavailable: t('digestUnavailable'),
             reanalyzeCooldown: (seconds: number) =>
                 t('reanalyzeCooldown', { v0: seconds }),
+            rateLimited: (retryAt: number) =>
+                t('rateLimited', { v0: formatRetryAt(retryAt, locale) }),
+            rateLimitUnavailable: t('rateLimitUnavailable'),
         }),
-        [t]
+        [t, locale]
     );
 }

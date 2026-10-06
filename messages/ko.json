@@ -52,6 +52,8 @@
                 "limitExceeded": "오늘 사용 가능한 분석 횟수를 모두 사용했습니다. 내일 다시 시도해 주세요.",
                 "noNews": "분석할 뉴스가 없습니다. 잠시 후 다시 시도해 주세요.",
                 "noOptionsChains": "분석할 옵션 데이터가 없습니다.",
+                "rateLimitUnavailable": "지금은 새 분석을 시작할 수 없어요. 잠시 후 다시 시도해 주세요.",
+                "rateLimited": "새 분석 요청 한도에 도달했어요. 저장된 분석은 계속 볼 수 있고, {v0} 이후에 새 분석을 요청할 수 있어요.",
                 "reanalyzeCooldown": "재분석은 {v0}초 후에 다시 시도할 수 있어요.",
                 "timeframeNotAllowed": "선택한 타임프레임은 현재 등급에서 사용할 수 없습니다.",
                 "timeout": "분석 시간이 초과되었습니다. 다시 시도해 주세요.",
@@ -563,6 +565,13 @@
                 "84ff73": "더 깊은 분석을 원하세요?",
                 "94b7db": "닫기"
             }
+        },
+        "analysis-rate-limit": {
+            "close": "닫기",
+            "description": "회원가입하거나 로그인하면 더 많은 새 분석을 받을 수 있어요. 비회원 한도는 {v0}에 다시 채워져요.",
+            "login": "로그인",
+            "signup": "무료 회원가입",
+            "title": "무료 분석 한도에 도달했어요"
         },
         "api-key-management": {
             "ApiKeyInput": {

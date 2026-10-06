@@ -726,6 +726,21 @@ describe('runOverallAnalysisAction 함수는', () => {
         );
     });
 
+    it('passes skipEnqueueIfMiss: true when the route downgrades to cacheOnly (generation quota)', async () => {
+        await runOverallAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            '1Day',
+            MODEL_ID,
+            'ko',
+            { cacheOnly: true }
+        );
+
+        expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ skipEnqueueIfMiss: true })
+        );
+    });
+
     describe('options axis integration', () => {
         it('passes optionsSnapshot + optionsOiStale to core', async () => {
             mockFetchSnapshot.mockResolvedValueOnce(makeSnapshot());

@@ -1,5 +1,13 @@
-const { mockRunNewsCardAnalysis } = vi.hoisted(() => ({
-    mockRunNewsCardAnalysis: vi.fn(),
+const { mockRunNewsCardAnalysis, mockLoadFailures, mockRecordFailures } =
+    vi.hoisted(() => ({
+        mockRunNewsCardAnalysis: vi.fn(),
+        mockLoadFailures: vi.fn(),
+        mockRecordFailures: vi.fn(),
+    }));
+
+vi.mock('@/entities/news-article/lib/newsCardFailureBackoff', () => ({
+    loadNewsCardFailures: mockLoadFailures,
+    recordNewsCardFailures: mockRecordFailures,
 }));
 
 // `vi.mock`은 import 위로 호이스트되어야 static import보다 먼저 평가된다
@@ -52,6 +60,8 @@ function makeRepo() {
 describe('analyzeNewsCards', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockLoadFailures.mockResolvedValue(new Map());
+        mockRecordFailures.mockResolvedValue(undefined);
         mockRunNewsCardAnalysis.mockResolvedValue({
             status: 'done',
             result: ANALYSIS,
@@ -175,6 +185,79 @@ describe('analyzeNewsCards', () => {
             });
 
             expect(attachAnalysis).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('실패 백오프(네거티브 캐시)', () => {
+        it('백오프 중인 기사는 건너뛰고 상한 슬롯도 차지하지 않는다', async () => {
+            const { repo, attachAnalysis } = makeRepo();
+            mockLoadFailures.mockResolvedValue(
+                new Map([
+                    [
+                        'newest',
+                        { attempts: 1, retryAfter: Date.now() + 60_000 },
+                    ],
+                ])
+            );
+
+            await analyzeNewsCards(
+                [
+                    item('newest', '2026-08-03T00:00:00Z'),
+                    item('older', '2026-08-02T00:00:00Z'),
+                ],
+                repo,
+                { limit: 1, logLabel: 'test' }
+            );
+
+            expect(attachAnalysis.mock.calls.map(c => c[0])).toEqual(['older']);
+        });
+
+        it('백오프가 끝난 기사는 다시 분석한다', async () => {
+            const { repo, attachAnalysis } = makeRepo();
+            mockLoadFailures.mockResolvedValue(
+                new Map([['a', { attempts: 3, retryAfter: 0 }]])
+            );
+
+            await analyzeNewsCards([item('a', '2026-08-01T00:00:00Z')], repo, {
+                logLabel: 'test',
+            });
+
+            expect(attachAnalysis).toHaveBeenCalledOnce();
+        });
+
+        it('던진 기사와 빈 응답 기사를 실패로 기록하고, 성공은 기록하지 않는다', async () => {
+            vi.spyOn(console, 'error').mockImplementation(() => undefined);
+            vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+            const { repo } = makeRepo();
+            const previous = new Map();
+            mockLoadFailures.mockResolvedValue(previous);
+            mockRunNewsCardAnalysis.mockImplementation(
+                async ({ item: { id } }: { item: NewsItem }) => {
+                    if (id === 'throws') throw new Error('llm');
+                    return {
+                        status: 'done',
+                        result:
+                            id === 'empty'
+                                ? { ...ANALYSIS, titleKo: '', summaryKo: '' }
+                                : ANALYSIS,
+                    };
+                }
+            );
+
+            await analyzeNewsCards(
+                [
+                    item('ok', '2026-08-03T00:00:00Z'),
+                    item('throws', '2026-08-02T00:00:00Z'),
+                    item('empty', '2026-08-01T00:00:00Z'),
+                ],
+                repo,
+                { logLabel: 'test' }
+            );
+
+            expect(mockRecordFailures).toHaveBeenCalledOnce();
+            const [ids, prev] = mockRecordFailures.mock.calls[0];
+            expect([...ids].toSorted()).toEqual(['empty', 'throws']);
+            expect(prev).toBe(previous);
         });
     });
 });

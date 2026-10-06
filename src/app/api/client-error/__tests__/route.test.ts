@@ -1,3 +1,6 @@
+const { mockGetClientIp } = vi.hoisted(() => ({ mockGetClientIp: vi.fn() }));
+vi.mock('@/shared/api/getClientIp', () => ({ getClientIp: mockGetClientIp }));
+
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { constants } from 'node:http2';
 import { POST } from '@/app/api/client-error/route';
@@ -26,11 +29,23 @@ function chunkedRequest(bytes: number): Request {
     } as RequestInit & { duplex: 'half' });
 }
 
+/** 레이트 리밋 창은 모듈 메모리라 테스트마다 다른 IP로 격리한다. */
+let ipSeq = 0;
+
+function postBody(body: string): Request {
+    return new Request('https://siglens.io/api/client-error', {
+        method: 'POST',
+        body,
+    });
+}
+
 describe('POST /api/client-error', () => {
     let spy: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
         spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        ipSeq += 1;
+        mockGetClientIp.mockResolvedValue(`203.0.113.${ipSeq}`);
     });
     afterEach(() => {
         spy.mockRestore();
@@ -46,8 +61,15 @@ describe('POST /api/client-error', () => {
         );
 
         expect(res.status).toBe(HTTP_STATUS_NO_CONTENT);
-        // 메트릭 필터가 이 리터럴을 센다 — 바뀌면 알람이 조용히 죽는다.
-        expect(spy).toHaveBeenCalledWith('[client-error]', payload);
+        // Logs Insights 기준선 쿼리가 이 리터럴로 거른다. 본문은 인코딩돼 실리지만
+        // 손실 없이 되돌아와야 한다.
+        expect(spy).toHaveBeenCalledWith(
+            '[client-error]',
+            encodeURIComponent(payload)
+        );
+        expect(decodeURIComponent(spy.mock.calls[0]?.[1] as string)).toBe(
+            payload
+        );
     });
 
     it('개행을 지운다 — 위조 로그 줄로 P1 알람을 발동시킬 수 없다', async () => {
@@ -63,8 +85,50 @@ describe('POST /api/client-error', () => {
         expect(res.status).toBe(HTTP_STATUS_NO_CONTENT);
         const logged = spy.mock.calls[0]?.[1] as string;
         expect(logged).not.toMatch(/[\r\n]/);
-        // 내용 자체는 남는다(진단용). 잘리는 건 줄바꿈뿐이다.
-        expect(logged).toContain('JavaScript heap out of memory');
+    });
+
+    it.each([
+        'JavaScript heap out of memory',
+        '[selfcheck]',
+        '[analysis-stream] failed',
+        'NAVER_CLIENT_ID/SECRET',
+        '[agent] quota store unavailable',
+    ])(
+        '개행 없는 한 줄에 알람 구문(%s)을 넣어도 로그 줄에 그 구문이 나타나지 않는다',
+        async phrase => {
+            // 점수 필터는 줄 어디서든 맞는 따옴표 구문 매치라, 개행 제거만으로는
+            // 위조를 못 막았다(감사 aws-cost #8).
+            await POST(postBody(`{"message":"${phrase}"}`));
+
+            const logged = spy.mock.calls[0]?.[1] as string;
+            expect(logged).not.toContain(phrase);
+            expect(decodeURIComponent(logged)).toContain(phrase);
+        }
+    );
+
+    it('같은 IP의 분당 상한을 넘긴 보고는 기록하지 않고 204로 답한다', async () => {
+        const LIMIT = 30;
+        for (let i = 0; i < LIMIT; i += 1) {
+            await POST(postBody(`{"n":${i}}`));
+        }
+        expect(spy).toHaveBeenCalledTimes(LIMIT);
+
+        const res = await POST(postBody('{"n":"over"}'));
+
+        expect(res.status).toBe(HTTP_STATUS_NO_CONTENT);
+        expect(spy).toHaveBeenCalledTimes(LIMIT);
+    });
+
+    it('한 IP가 상한에 걸려도 다른 IP의 보고는 기록한다', async () => {
+        for (let i = 0; i < 31; i += 1) {
+            await POST(postBody('{"n":1}'));
+        }
+        spy.mockClear();
+        mockGetClientIp.mockResolvedValue('198.51.100.7');
+
+        await POST(postBody('{"n":2}'));
+
+        expect(spy).toHaveBeenCalledOnce();
     });
 
     it('content-length가 상한을 넘으면 본문을 읽지도 않는다', async () => {

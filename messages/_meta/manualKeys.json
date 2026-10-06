@@ -36,6 +36,7 @@
         "entities.portfolio.action",
         "entities.shared-analysis.og",
         "entities.shared-analysis.seo",
+        "features.analysis-rate-limit",
         "features.auth-signup.SignupForm.stepCode",
         "features.auth-signup.SignupForm.stepDetails",
         "features.auth-signup.SignupForm.stepEmail",
