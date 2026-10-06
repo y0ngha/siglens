@@ -309,7 +309,7 @@ export interface HubMetadataInput {
     readonly locale: Locale;
     /** 로케일 접두사가 없는 경로(`/market`, `/economy/kr`). */
     readonly path: string;
-    /** 브랜드 없는 제목 — `<title>`은 레이아웃 템플릿이, 소셜 카드는 여기서 `| Siglens`를 붙인다. */
+    /** 브랜드 없는 제목 — `<title>`은 레이아웃 템플릿이, 소셜 카드는 여기서 `| SIGLENS`를 붙인다. */
     readonly title: string;
     readonly description: string;
     readonly keywords: readonly string[];

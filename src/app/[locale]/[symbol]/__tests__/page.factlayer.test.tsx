@@ -125,12 +125,12 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
     buildSymbolSeoContent: vi.fn().mockReturnValue({
         title: 'AAPL 차트',
-        fullTitle: 'AAPL 차트 | Siglens',
+        fullTitle: 'AAPL 차트 | SIGLENS',
         description: 'desc',
         url: 'https://siglens.io/AAPL',
         keywords: ['AAPL'],
     }),
-    SITE_NAME: 'Siglens',
+    SITE_NAME: 'SIGLENS',
     SITE_URL: 'https://siglens.io',
 }));
 vi.mock('@tanstack/react-query', () => ({

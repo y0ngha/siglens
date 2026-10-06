@@ -67,7 +67,7 @@ const components: Components = {
     },
 };
 
-/** Render legal terms markdown body with SigLens design system classes.
+/** Render legal terms markdown body with SIGLENS design system classes.
  *  Internal links are converted to next/link; external links open in a new tab. */
 export function PolicyMarkdownBody({ markdown }: PolicyMarkdownBodyProps) {
     return (

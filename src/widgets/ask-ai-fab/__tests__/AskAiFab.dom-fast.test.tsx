@@ -9,10 +9,10 @@ async function renderFab(name: string, localePrefix: string) {
 }
 
 describe('AskAiFab', () => {
-    it('SIGLENS AI에게 물어보기 라벨을 렌더한다', async () => {
+    it('시그렌즈 AI에게 물어보기 라벨을 렌더한다', async () => {
         await renderFab('애플', '/');
 
-        expect(screen.getByText('SIGLENS AI에게 물어보기')).toBeVisible();
+        expect(screen.getByText('시그렌즈 AI에게 물어보기')).toBeVisible();
     });
 
     it('href가 aiAskUrl(localePrefix, question)과 같다 — 질문에 종목명이 들어간다', async () => {
@@ -44,7 +44,7 @@ describe('AskAiFab', () => {
         const shortLabel = screen.getByText('AI에게 묻기');
         expect(shortLabel.className).toContain('sm:hidden');
 
-        const fullLabel = screen.getByText('SIGLENS AI에게 물어보기');
+        const fullLabel = screen.getByText('시그렌즈 AI에게 물어보기');
         expect(fullLabel.className).toContain('hidden');
         expect(fullLabel.className).toContain('sm:inline');
     });

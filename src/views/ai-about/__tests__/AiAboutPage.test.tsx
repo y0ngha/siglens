@@ -53,7 +53,7 @@ describe('AiAboutPage', () => {
             '이런 점이 답답했다면',
             '답하기 전에 이런 걸 찾아봐요',
             '자주 묻는 질문',
-            'SIGLENS에서 더 보기',
+            '시그렌즈에서 더 보기',
             '지금 바로 물어보세요',
         ]);
     });
@@ -61,7 +61,7 @@ describe('AiAboutPage', () => {
     it('plays a whole example conversation in the server HTML (first scenario, complete)', async () => {
         await renderPage();
         const region = screen.getByRole('region', {
-            name: 'SIGLENS AI 예시 대화',
+            name: '시그렌즈 AI 예시 대화',
         });
         expect(region).toHaveTextContent('삼성전자 요즘 흐름 어때?');
         expect(region).toHaveTextContent('71,800원');
@@ -93,15 +93,15 @@ describe('AiAboutPage', () => {
         await renderPage();
         for (const name of [
             '물어보기',
-            'SIGLENS AI에게 물어보기',
-            'SIGLENS AI 열기',
+            '시그렌즈 AI에게 물어보기',
+            '시그렌즈 AI 열기',
         ])
             expect(screen.getByRole('link', { name })).toHaveAttribute(
                 'href',
                 '/'
             );
         const more = screen.getByRole('navigation', {
-            name: 'SIGLENS에서 더 보기',
+            name: '시그렌즈에서 더 보기',
         });
         expect(
             within(more).getByRole('link', { name: '한국 주식 시장 분석' })
@@ -112,15 +112,15 @@ describe('AiAboutPage', () => {
         await renderPage('/en');
         for (const name of [
             '물어보기',
-            'SIGLENS AI에게 물어보기',
-            'SIGLENS AI 열기',
+            '시그렌즈 AI에게 물어보기',
+            '시그렌즈 AI 열기',
         ])
             expect(screen.getByRole('link', { name })).toHaveAttribute(
                 'href',
                 '/en'
             );
         const more = screen.getByRole('navigation', {
-            name: 'SIGLENS에서 더 보기',
+            name: '시그렌즈에서 더 보기',
         });
         expect(
             within(more).getByRole('link', { name: '한국 주식 시장 분석' })

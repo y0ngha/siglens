@@ -27,7 +27,7 @@ test.describe('SiglensAI agent chat', () => {
             banner.getByRole('button', { name: /테마/ })
         ).toBeVisible();
         await expect(
-            page.getByRole('heading', { level: 1, name: /SIGLENS AI/ })
+            page.getByRole('heading', { level: 1, name: /시그렌즈 AI/ })
         ).toBeVisible();
         await page
             .getByRole('textbox', { name: /메시지 입력/ })
@@ -41,7 +41,7 @@ test.describe('SiglensAI agent chat', () => {
         // The symbol the answer read links back to its siglens.io page.
         await expect(
             // Named by company once the label lookup lands; the href is the contract.
-            page.getByRole('link', { name: /^SIGLENS에서 .+ 보기/ })
+            page.getByRole('link', { name: /^시그렌즈에서 .+ 보기/ })
         ).toHaveAttribute('href', `${MAIN}/AAPL`);
         // The text frame arrives from the provider mid-turn, but the assistant row
         // is only persisted after `runAgentTurn` returns. `다시 생성` renders exactly
@@ -89,7 +89,7 @@ test.describe('SiglensAI agent chat', () => {
         await page.goto(`${AI}/`);
         await expect(page).toHaveURL(/sso=none/);
         await expect(
-            page.getByRole('link', { name: /SIGLENS 계정으로 로그인/ }).first()
+            page.getByRole('link', { name: /시그렌즈 계정으로 로그인/ }).first()
         ).toHaveAttribute('href', /localhost:4300\/(ko\/)?login\?next=/);
         await page
             .getByRole('textbox', { name: /메시지 입력/ })

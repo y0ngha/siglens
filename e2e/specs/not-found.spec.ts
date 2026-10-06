@@ -105,20 +105,20 @@ test.describe('not found', () => {
     const TITLE_CASES = [
         {
             url: '/INVALIDTICKER1',
-            title: '페이지를 찾을 수 없습니다 | Siglens',
+            title: '페이지를 찾을 수 없습니다 | SIGLENS',
         },
-        { url: '/foo/bar', title: '페이지를 찾을 수 없습니다 | Siglens' },
-        { url: '/en/foo/bar', title: 'Page not found | Siglens' },
+        { url: '/foo/bar', title: '페이지를 찾을 수 없습니다 | SIGLENS' },
+        { url: '/en/foo/bar', title: 'Page not found | SIGLENS' },
         // 형식 불합격 심볼·만료 공유 링크 — generateMetadata가 메타를 돌려주던 시절에는 404 위에
         // 홈 제목(형식 불합격)·`공유 분석`(공유)이 얹혔다. 지금은 메타 단계에서도 notFound()다.
-        { url: '/HVO.L', title: '페이지를 찾을 수 없습니다 | Siglens' },
-        { url: '/share/x', title: '페이지를 찾을 수 없습니다 | Siglens' },
+        { url: '/HVO.L', title: '페이지를 찾을 수 없습니다 | SIGLENS' },
+        { url: '/share/x', title: '페이지를 찾을 수 없습니다 | SIGLENS' },
         // 탭 미지원(크립토 펀더멘털 — BTCUSD는 시드돼 있다)·잘못된 뉴스 카테고리도 같은 경계다.
         {
             url: '/BTCUSD/fundamental',
-            title: '페이지를 찾을 수 없습니다 | Siglens',
+            title: '페이지를 찾을 수 없습니다 | SIGLENS',
         },
-        { url: '/news/bogus', title: '페이지를 찾을 수 없습니다 | Siglens' },
+        { url: '/news/bogus', title: '페이지를 찾을 수 없습니다 | SIGLENS' },
     ] as const;
 
     for (const { url, title } of TITLE_CASES) {

@@ -195,7 +195,7 @@ export function StockAnalysisLanding() {
                             scenarios={SCENARIOS}
                             labels={{
                                 host: SITE_HOST,
-                                region: 'SIGLENS 분석 과정 예시',
+                                region: '시그렌즈 분석 과정 예시',
                                 badge: '예시 화면',
                                 pause: '일시정지',
                                 resume: '다시 재생',

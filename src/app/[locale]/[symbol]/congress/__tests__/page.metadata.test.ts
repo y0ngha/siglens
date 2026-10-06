@@ -58,13 +58,13 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
         .mockReturnValue({ url: 'https://siglens.io/AAPL' }),
     buildSymbolCongressSeoContent: vi.fn().mockReturnValue({
         title: 'AAPL 의회 거래 — 상원·하원 의원 매매 공시',
-        fullTitle: 'AAPL 의회 거래 — 상원·하원 의원 매매 공시 | Siglens',
+        fullTitle: 'AAPL 의회 거래 — 상원·하원 의원 매매 공시 | SIGLENS',
         description:
             '미국 상원·하원 의원의 AAPL 매매 공시 내역을 공시지연 약 45일을 감안해 AI가 동향으로 요약합니다.',
         url: 'https://siglens.io/AAPL/congress',
         keywords: ['AAPL', 'AAPL 의회 거래'],
     }),
-    SITE_NAME: 'Siglens',
+    SITE_NAME: 'SIGLENS',
     SITE_URL: 'https://siglens.io',
 }));
 vi.mock('next/navigation', () => ({
@@ -211,7 +211,7 @@ describe('generateMetadata', () => {
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        expect(metadata.openGraph?.siteName).toBe('Siglens');
+        expect(metadata.openGraph?.siteName).toBe('SIGLENS');
     });
 });
 

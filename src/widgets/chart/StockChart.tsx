@@ -73,7 +73,6 @@ import {
     overlayColorFor,
 } from './utils/chartOverlayUtils';
 import {
-    areOutcomeLabelsCrowded,
     patternLabelsByKey,
     patternPaletteByKey,
     type OverlayMenuItem,
@@ -204,10 +203,6 @@ export function StockChart({
                 CHART_COLORS.overlayPattern6,
             ]),
         [overlayItems]
-    );
-    const outcomeLabelsCrowded = useMemo(
-        () => areOutcomeLabelsCrowded(overlayItems, hiddenOverlayKeys),
-        [overlayItems, hiddenOverlayKeys]
     );
     // core 피보나치 레벨 라벨(`61.8%`, `ext 127.2%`, `ABC 127.2%`)의 화면 문구 —
     // 다리 방향에 따라 역할(반등·눌림·목표)로 읽히게 한다.
@@ -613,10 +608,10 @@ export function StockChart({
         [chartOverlays, hiddenOverlayKeys, barTimes, lastBarTime]
     );
 
-    // 강조(hover)·혼잡 여부만 인자로 뺀다 — 같은 입력에서 "화면에 그릴 specs"와
+    // 강조(hover) 항목만 인자로 뺀다 — 같은 입력에서 "화면에 그릴 specs"와
     // "여백 계산용 제목 목록"을 둘 다 뽑기 위해서다(아래 `rightGutterPx`).
     const buildSpecs = useCallback(
-        (highlightedKey: string | null, crowded: boolean) =>
+        (highlightedKey: string | null) =>
             buildOverlayLineSpecs(chartOverlays, {
                 hiddenKeys: hiddenOverlayKeys,
                 highlightedKey,
@@ -636,8 +631,6 @@ export function StockChart({
                 levelLabelFor: (label, overlay) =>
                     levelTitleFor(label, overlay, {
                         cardName: patternLabels.get(overlay.sourceRef),
-                        highlightedKey,
-                        crowded,
                         breakoutTitle,
                         outcomeTexts: outcomeLevelTexts,
                         fibTexts: fibLevelTexts,
@@ -662,8 +655,8 @@ export function StockChart({
     );
 
     const overlaySpecs = useMemo(
-        () => buildSpecs(highlightedOverlayKey, outcomeLabelsCrowded),
-        [buildSpecs, highlightedOverlayKey, outcomeLabelsCrowded]
+        () => buildSpecs(highlightedOverlayKey),
+        [buildSpecs, highlightedOverlayKey]
     );
 
     useChartOverlays({
@@ -760,13 +753,14 @@ export function StockChart({
     /*
      * 레벨선 제목이 마지막 캔들을 덮지 않도록 비울 오른쪽 여백.
      *
-     * 제목은 **강조·혼잡을 뺀** 목록으로 잰다. 결과선이 몰리면(`crowded`) 강조되지 않은
-     * 제목은 `''`로 숨고 강조된 것만 남는데, 그 상태로 재면 카드에 마우스를 올릴 때마다
-     * 여백이 늘었다 줄고 — `rightOffsetPixels`를 바꾸면 스크롤 위치가 오른쪽 끝으로
-     * 돌아가므로 — 차트가 흔들린다. 최대 폭으로 고정해 두면 hover는 여백을 건드리지 않는다.
+     * 제목은 **강조를 뺀 전체** 목록으로 잰다. 겹치는 라벨은 그릴 때 좌표로 숨기고
+     * (`useChartOverlays`) 강조한 작도가 우선 자리를 잡는데, 보이는 라벨로 재면 카드에
+     * 마우스를 올릴 때마다 여백이 늘었다 줄고 — `rightOffsetPixels`를 바꾸면 스크롤
+     * 위치가 오른쪽 끝으로 돌아가므로 — 차트가 흔들린다. 최대 폭으로 고정해 두면 hover는
+     * 여백을 건드리지 않는다.
      */
     const levelTitles = useMemo(
-        () => buildSpecs(null, false).map(spec => spec.title),
+        () => buildSpecs(null).map(spec => spec.title),
         [buildSpecs]
     );
     const rightGutterPx = useMemo(

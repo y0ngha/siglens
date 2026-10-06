@@ -5,7 +5,6 @@ import {
 } from '@y0ngha/siglens-core';
 import {
     ACTION_PRICES_ITEM_KEY,
-    areOutcomeLabelsCrowded,
     buildOverlayMenuItems,
     patternLabelsByKey,
     patternPaletteByKey,
@@ -276,45 +275,5 @@ describe('patternPaletteByKey', () => {
             ['p2', '#b'],
             ['p3', '#a'],
         ]);
-    });
-});
-
-describe('areOutcomeLabelsCrowded', () => {
-    const items: OverlayMenuItem[] = [
-        { key: ACTION_PRICES_ITEM_KEY, kind: 'action' },
-        patternItem('p1'),
-        patternItem('p2'),
-        patternItem('p3'),
-    ];
-
-    it('결과선을 내는 패턴·엘리어트가 셋 이상 켜지면 붐빈다', () => {
-        expect(areOutcomeLabelsCrowded(items, new Set())).toBe(true);
-    });
-
-    it('추세선·피보나치처럼 결과선이 없는 작도는 세지 않는다', () => {
-        const mixed: OverlayMenuItem[] = [
-            patternItem('p1'),
-            { key: 't1', kind: 'trendline', direction: 'up', index: 1 },
-            { key: 't2', kind: 'trendline', direction: 'down', index: 1 },
-            { key: 'kind:fibonacci', kind: 'fibonacci', label: null },
-        ];
-        expect(areOutcomeLabelsCrowded(mixed, new Set())).toBe(false);
-        expect(
-            areOutcomeLabelsCrowded(
-                [
-                    ...mixed,
-                    patternItem('p2'),
-                    { key: 'kind:elliott', kind: 'elliott', label: null },
-                ],
-                new Set()
-            )
-        ).toBe(true);
-    });
-
-    it('꺼진 항목은 세지 않는다 — 둘 이하면 라벨을 전부 띄운다', () => {
-        expect(areOutcomeLabelsCrowded(items, new Set(['p3']))).toBe(false);
-        expect(
-            areOutcomeLabelsCrowded(items, new Set([ACTION_PRICES_ITEM_KEY]))
-        ).toBe(true);
     });
 });

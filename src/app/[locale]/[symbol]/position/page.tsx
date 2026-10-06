@@ -308,7 +308,7 @@ export default async function PositionPage({ params }: Props) {
         ),
         locale,
     });
-    // sibling 탭과 동일한 3단계 — buildBreadcrumbJsonLd가 Siglens를 자동 prepend한다.
+    // sibling 탭과 동일한 3단계 — buildBreadcrumbJsonLd가 SIGLENS를 자동 prepend한다.
     // 셋째 마디 이름은 헤더 가시 브레드크럼(`SymbolLayoutHeader`)과 같은 `shared.symbolTab` 키다 —
     // 구글은 마크업과 화면 텍스트가 다르면 breadcrumb 마크업을 무시한다.
     const tTab = await getTranslations('shared.symbolTab');

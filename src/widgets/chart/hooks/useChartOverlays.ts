@@ -13,6 +13,7 @@ import {
 import type { OverlayLineSpec } from '../utils/chartOverlayUtils';
 import { DEFAULT_LINE_WIDTH } from '../constants';
 import { createRightExtendPrimitive } from '../utils/rightExtendPrimitive';
+import { visibleLevelLabels } from '../utils/levelLabelCulling';
 
 /** lightweight-charts `LineWidth` 상한. */
 const MAX_LINE_WIDTH = 4;
@@ -24,6 +25,91 @@ const OVERLAY_SERIES_OPTIONS = {
     // 오버레이가 가격축 범위를 넓히면 캔들이 납작해진다 — 자동 스케일에서 뺀다.
     autoscaleInfoProvider: () => null,
 } as const;
+
+/**
+ * 가격축 라벨 두 개가 겹치지 않을 중심 간 최소 거리 — 글자 크기에 위아래 여백을 더한다.
+ * lightweight-charts의 축 라벨 높이(글자 + 상하 패딩)와 맞춘 값이다.
+ */
+const LABEL_VERTICAL_PADDING_PX = 8;
+/** 차트 옵션에 글자 크기가 없을 때 — lightweight-charts `layout.fontSize` 기본값. */
+const DEFAULT_AXIS_FONT_SIZE_PX = 12;
+
+interface TitledSeries {
+    series: ISeriesApi<'Line'>;
+    title: string;
+    price: number;
+    priority: number;
+    /**
+     * 지금 시리즈에 입혀 둔 제목 — 같은 값을 다시 `applyOptions`하지 않으려고 둔다.
+     * 불변성 규칙의 의도된 예외다: 렌더와 무관한 effect 안의 명령형 캐시이고, 이 배열은
+     * 그 effect 클로저 밖으로 나가지 않는다.
+     */
+    shown: string;
+}
+
+/**
+ * 겹치는 레벨 라벨을 숨기고 겹치지 않게 된 라벨은 되살린다.
+ *
+ * 라벨 y좌표는 스크롤·확대·가격축 드래그·리사이즈마다 바뀐다. 시간축 범위·크기 변화는
+ * 구독으로, 가격축 드래그·휠은 차트 DOM의 포인터 이벤트로 잡고, 한 프레임에 한 번만
+ * 다시 잰다.
+ *
+ * 한계: 실시간 봉 갱신으로 자동 스케일만 조금 바뀌는 경우는 잡지 않는다 —
+ * lightweight-charts에 가격축 범위 변경 이벤트가 없다. 그 변화는 몇 px 수준이라
+ * 겹침 판정이 바뀌는 일이 드물고, 다음 스크롤·포인터 조작에서 다시 판정된다.
+ */
+function attachLabelCulling(
+    chart: IChartApi,
+    titled: TitledSeries[]
+): () => void {
+    if (titled.length === 0) return () => {};
+
+    const apply = () => {
+        const minGap =
+            (chart.options().layout.fontSize ?? DEFAULT_AXIS_FONT_SIZE_PX) +
+            LABEL_VERTICAL_PADDING_PX;
+        const visible = visibleLevelLabels(
+            titled.map(t => ({
+                y: t.series.priceToCoordinate(t.price),
+                priority: t.priority,
+            })),
+            minGap
+        );
+        titled.forEach((t, i) => {
+            const next = visible.has(i) ? t.title : '';
+            if (next === t.shown) return;
+            t.shown = next;
+            t.series.applyOptions({ title: next });
+        });
+    };
+
+    let frame: number | null = null;
+    const schedule = () => {
+        if (frame !== null) return;
+        frame = requestAnimationFrame(() => {
+            frame = null;
+            apply();
+        });
+    };
+
+    const timeScale = chart.timeScale();
+    const element = chart.chartElement();
+    timeScale.subscribeVisibleLogicalRangeChange(schedule);
+    timeScale.subscribeSizeChange(schedule);
+    element.addEventListener('pointerup', schedule);
+    element.addEventListener('wheel', schedule, { passive: true });
+    element.addEventListener('dblclick', schedule);
+    schedule();
+
+    return () => {
+        if (frame !== null) cancelAnimationFrame(frame);
+        timeScale.unsubscribeVisibleLogicalRangeChange(schedule);
+        timeScale.unsubscribeSizeChange(schedule);
+        element.removeEventListener('pointerup', schedule);
+        element.removeEventListener('wheel', schedule);
+        element.removeEventListener('dblclick', schedule);
+    };
+}
 
 function withOpacity(hex: string, opacity: number): string {
     if (opacity >= 1 || !/^#[0-9a-f]{6}$/i.test(hex)) return hex;
@@ -42,6 +128,7 @@ interface UseChartOverlaysParams {
  * `chartOverlays[]`(패턴·추세선·다이버전스·피보나치·엘리어트)를 `LineSeries`로
  * 그린다. 하나의 스펙 = 선분 하나(2점) 또는 레벨 하나(수평선) = 시리즈 하나.
  * 레벨 스펙(`extendRight`)은 primitive로 마지막 봉 ~ 가격축 앞까지 덧그린다.
+ * 레벨 제목끼리 화면에서 겹치면 우선순위가 낮은 쪽을 숨긴다(`attachLabelCulling`).
  *
  * 라벨(HS의 LS/H/RS 등)은 선분/레벨 시리즈 위가 아니라 **라벨 전용 투명
  * 시리즈**에 마커로 단다 — 라벨 시각이 선분의 두 끝점 밖일 수 있어(예: 헤드
@@ -59,6 +146,7 @@ export function useChartOverlays({
         const chart = chartRef.current;
         if (!chart) return;
 
+        const titled: TitledSeries[] = [];
         const created = specs
             .map(spec => {
                 // lightweight-charts `LineWidth`는 1~4 리터럴이다 — 양 끝을 잘라
@@ -88,6 +176,15 @@ export function useChartOverlays({
                         value: p.value,
                     }))
                 );
+                if (spec.title !== '') {
+                    titled.push({
+                        series,
+                        title: spec.title,
+                        price: spec.points[1].value,
+                        priority: spec.labelPriority,
+                        shown: spec.title,
+                    });
+                }
                 if (spec.extendRight) {
                     const [, end] = spec.points;
                     // core 작도 시각은 봉 시각과 같은 UTC 초(UTCTimestamp)라 `Time`으로
@@ -150,7 +247,13 @@ export function useChartOverlays({
             .flat();
 
         seriesRef.current = created;
+        const detachCulling = attachLabelCulling(chart, titled);
         return () => {
+            try {
+                detachCulling();
+            } catch {
+                // 차트가 먼저 제거된 경우(언마운트 순서) — 아래 시리즈 정리는 계속한다.
+            }
             for (const s of seriesRef.current) {
                 try {
                     chart.removeSeries(s);

@@ -23,7 +23,7 @@ vi.mock('../CurrentYear', () => ({
 }));
 vi.mock('@/shared/lib/legal', () => ({
     ABOUT_PATH: '/about',
-    aboutTitle: () => 'Siglens 소개',
+    aboutTitle: () => 'SIGLENS 소개',
     INVESTMENT_DISCLAIMER_KEY: 'investmentDisclaimer',
     METHODOLOGY_PATH: '/methodology',
     methodologyTitle: () => '분석 방법',
@@ -90,14 +90,11 @@ describe('Footer', () => {
         }
     );
 
-    it('renders the about link, uppercasing the brand token in the title', () => {
+    it('renders the about link with the catalog title', () => {
         render(<Footer />);
 
-        // The mock returns 'Siglens 소개' (mixed case) — this only passes if
-        // Footer's `.replace(SITE_NAME, SITE_NAME.toUpperCase())` actually ran.
         const link = screen.getByRole('link', { name: /SIGLENS 소개/ });
         expect(link).toHaveTextContent('SIGLENS 소개');
-        expect(link).not.toHaveTextContent('Siglens 소개');
         expect(link).toHaveAttribute('href', '/about');
     });
 
@@ -133,10 +130,10 @@ describe('Footer', () => {
         expect(link).toHaveAttribute('href', '/symbols');
     });
 
-    it('renders a link to ai.siglens.io named "SIGLENS AI"', () => {
+    it('renders a link to ai.siglens.io named "시그렌즈 AI" in ko', () => {
         render(<Footer />);
 
-        const link = screen.getByRole('link', { name: 'SIGLENS AI' });
+        const link = screen.getByRole('link', { name: '시그렌즈 AI' });
         expect(link).toHaveAttribute(
             'href',
             `${AI_SITE_URL}${localePath('ko', '/')}`
@@ -204,7 +201,7 @@ describe('Footer', () => {
     });
 
     /**
-     * 저작권 표기가 `© 2026` / `Siglens` 두 줄로 쪼개졌다(2026-08-25 사용자 제보
+     * 저작권 표기가 `© 2026` / `SIGLENS` 두 줄로 쪼개졌다(2026-08-25 사용자 제보
      * 스크린샷). 당시 원인은 옆에 있던 `flex-wrap` nav가 `justify-between` 아래에서
      * 폭을 뺏은 것이라 `shrink-0`이 함께 필요했다. 카테고리 열로 바뀌며 그 형제
      * nav가 사라져 `shrink-0`은 근거를 잃었지만, 좁은 화면에서 저작권 한 줄이
@@ -402,9 +399,8 @@ describe('Footer', () => {
 });
 
 /**
- * Footer의 `aboutTitle(tSeo).replace(SITE_NAME, SITE_NAME.toUpperCase())`는
- * 카탈로그 문구가 `SITE_NAME`을 그대로 담고 있을 때만 동작한다 — 번역이 그
- * 토큰을 빼면 `.replace`가 조용히 아무것도 안 바꾼다. `Footer.test.tsx`는
+ * Footer는 `aboutTitle(tSeo)`를 그대로 그린다 — ko는 한글 표기(`시그렌즈 소개`),
+ * 나머지는 영문 표기(`SIGLENS`)를 카탈로그가 직접 담아야 한다. `Footer.test.tsx`는
  * `aboutTitle`을 모킹하므로 실제 카탈로그 값은 이 테스트가 아니면 아무도
  * 검증하지 않는다.
  */
@@ -414,8 +410,10 @@ describe('shared.seo.about.title 카탈로그', () => {
         ['en', en],
         ['ja', ja],
         ['zh', zh],
-    ])('%s 카탈로그는 SITE_NAME을 담고 있다', (_locale, messages) => {
-        expect(messages.shared.seo.about.title).toContain(SITE_NAME);
+    ])('%s 카탈로그는 브랜드 표기를 담고 있다', (locale, messages) => {
+        expect(messages.shared.seo.about.title).toContain(
+            locale === 'ko' ? SITE_NAME_KO : SITE_NAME
+        );
     });
 });
 

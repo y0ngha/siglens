@@ -55,9 +55,9 @@ async function metadataFor(locale: string) {
 }
 
 /**
- * 브랜드는 제목 자체에 들어 있다(`시그렌즈(Siglens) — …`) — 2026-10-05 감사에서 홈 제목에
- * 브랜드가 없어 "시그렌즈"·"Siglens" 검색이 홈으로 귀결되지 않았다. 그래서 og/twitter도
- * 접미사(`| Siglens`)를 따로 붙이지 않고 같은 제목을 쓴다(둘 다 한글 표기를 담는다).
+ * 브랜드는 제목 자체에 들어 있다(`시그렌즈(SIGLENS) — …`) — 2026-10-05 감사에서 홈 제목에
+ * 브랜드가 없어 "시그렌즈"·"SIGLENS" 검색이 홈으로 귀결되지 않았다. 그래서 og/twitter도
+ * 접미사(`| SIGLENS`)를 따로 붙이지 않고 같은 제목을 쓴다(둘 다 한글 표기를 담는다).
  */
 describe('RootLayout metadata', () => {
     it('title.default는 브랜드가 들어간 ROOT_TITLE 그대로다(폭 ≤ 55)', async () => {

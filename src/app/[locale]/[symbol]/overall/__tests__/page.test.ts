@@ -50,12 +50,12 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
         .mockReturnValue({ url: 'https://siglens.io/AAPL' }),
     buildSymbolOverallSeoContent: vi.fn().mockReturnValue({
         title: 'AAPL 종합 분석',
-        fullTitle: 'AAPL 종합 분석 | Siglens',
+        fullTitle: 'AAPL 종합 분석 | SIGLENS',
         description: 'desc',
         url: 'https://siglens.io/AAPL/overall',
         keywords: ['AAPL'],
     }),
-    SITE_NAME: 'Siglens',
+    SITE_NAME: 'SIGLENS',
     SITE_URL: 'https://siglens.io',
 }));
 vi.mock('@y0ngha/siglens-core', () => ({

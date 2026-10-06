@@ -20,7 +20,7 @@ test.describe('symbol page → SIGLENS AI floating link', () => {
         await page.goto(`/${SYMBOL}`);
 
         const link = page.getByRole('link', {
-            name: /SIGLENS AI에게 물어보기/,
+            name: /시그렌즈 AI에게 물어보기/,
         });
         await expect(link).toBeVisible();
         await expect(link).toHaveAttribute('target', '_blank');
