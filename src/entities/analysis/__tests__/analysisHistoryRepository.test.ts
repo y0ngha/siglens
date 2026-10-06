@@ -369,7 +369,8 @@ describe('DrizzleAnalysisHistoryRepository.findRecentForPrompt', () => {
         expect(analysisHistoryQuerySpy).toHaveBeenCalledWith(
             '1Day',
             'technical',
-            NOW
+            NOW,
+            undefined
         );
 
         expect(eqSpy).toHaveBeenCalledWith(analysisHistory.symbol, 'AAPL');
@@ -403,8 +404,42 @@ describe('DrizzleAnalysisHistoryRepository.findRecentForPrompt', () => {
         expect(analysisHistoryQuerySpy).toHaveBeenCalledWith(
             '1Day',
             'overall',
-            NOW
+            NOW,
+            undefined
         );
+    });
+
+    it('forwards the session spec to analysisHistoryQuery so generatedBeforeMs lands on the session boundary', async () => {
+        const { db, spies } = makeSelectDb([]);
+        const repository = new DrizzleAnalysisHistoryRepository(db);
+        const session = { tag: 'kr-session' } as never;
+        const SESSION_BOUNDARY_MS = NOW.getTime() - 3 * 60 * 60 * 1000;
+        analysisHistoryQuerySpy.mockReturnValueOnce({
+            limit: 4,
+            sinceMs: 60 * 60 * 1000,
+            generatedBeforeMs: SESSION_BOUNDARY_MS,
+        });
+
+        await repository.findRecentForPrompt({
+            symbol: '005930.KS',
+            timeframe: '1Day',
+            tab: 'technical',
+            now: NOW,
+            session,
+        });
+
+        expect(analysisHistoryQuerySpy).toHaveBeenCalledWith(
+            '1Day',
+            'technical',
+            NOW,
+            session
+        );
+        // The session-derived bound is what reaches the WHERE clause.
+        expect(ltSpy).toHaveBeenCalledWith(
+            analysisHistory.generatedAt,
+            new Date(SESSION_BOUNDARY_MS)
+        );
+        expect(spies.limit).toHaveBeenCalledWith(4);
     });
 
     it('excludes rows inside the current cache bucket by default (the eviction-loop fix)', async () => {

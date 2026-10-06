@@ -349,6 +349,13 @@ describe('prewarmTechnical', () => {
                 '1Day',
                 expectedSession
             );
+            // 이력 쿼리도 같은 세션 — `generatedBeforeMs`가 core 캐시 키 경계와 맞는다.
+            const historyCall = mockFindRecentForPrompt.mock.calls.find(
+                c => (c[0] as { symbol?: string }).symbol === symbol
+            );
+            expect((historyCall?.[0] as { session?: unknown }).session).toBe(
+                expectedSession
+            );
         }
     );
 
@@ -369,6 +376,7 @@ describe('prewarmTechnical', () => {
                 symbol: 'AAPL',
                 timeframe: '1Day',
                 tab: 'technical',
+                session: MOCK_EQUITY_SESSION,
             });
             expect(mockRunAnalysis).toHaveBeenCalledWith(
                 'AAPL',
@@ -736,6 +744,15 @@ describe('prewarmOverall', () => {
             );
             expect(call).toBeDefined();
             expect(call![0].technical?.session).toBe(expectedSession);
+            // 두 축 이력 쿼리 모두 `technical.session`과 같은 세션 — 이력 경계가
+            // core 캐시 키 경계와 맞는다(core 2.14.0).
+            const historyCalls = mockFindRecentForPrompt.mock.calls
+                .map(c => c[0] as { symbol?: string; session?: unknown })
+                .filter(input => input.symbol === symbol);
+            expect(historyCalls).toHaveLength(2);
+            for (const input of historyCalls) {
+                expect(input.session).toBe(expectedSession);
+            }
         }
     );
 
@@ -960,6 +977,7 @@ describe('prewarmOverall', () => {
                 symbol: 'AAPL',
                 timeframe: '1Day',
                 tab: 'technical',
+                session: MOCK_EQUITY_SESSION,
             });
             expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -1001,6 +1019,7 @@ describe('prewarmOverall', () => {
                 timeframe: '1Day',
                 tab: 'technical',
                 axis: 'overall',
+                session: MOCK_EQUITY_SESSION,
             });
             expect(mockRunOverallAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({

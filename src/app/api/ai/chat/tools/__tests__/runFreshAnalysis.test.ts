@@ -311,6 +311,7 @@ describe('runFreshAnalysisTool', () => {
             symbol: 'AAPL',
             timeframe: '1Day',
             tab: 'technical',
+            session: { tag: 'session:us-equity' },
         });
         const [, , , , , options] = m.runAnalysis.mock.calls[0]!;
         expect(options).toMatchObject({
@@ -351,6 +352,13 @@ describe('runFreshAnalysisTool', () => {
                     tag: `session:${profile}`,
                 }
             );
+            // 이력 쿼리도 같은 세션 — `generatedBeforeMs`가 core 캐시 키 경계와 맞는다.
+            expect(m.findRecentForPrompt).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    symbol,
+                    session: { tag: `session:${profile}` },
+                })
+            );
         }
     );
 
@@ -369,6 +377,20 @@ describe('runFreshAnalysisTool', () => {
 
         expect(vi.mocked(marketEventsLookback)).toHaveBeenCalledWith('1Day', {
             tag: 'session:kr-equity',
+        });
+        // 두 축 이력 쿼리 모두 `technical.session`과 같은 KR 세션으로 경계를 잡는다.
+        expect(m.findRecentForPrompt).toHaveBeenCalledWith({
+            symbol: '005930.KS',
+            timeframe: '1Day',
+            tab: 'technical',
+            session: { tag: 'session:kr-equity' },
+        });
+        expect(m.findRecentForPrompt).toHaveBeenCalledWith({
+            symbol: '005930.KS',
+            timeframe: '1Day',
+            tab: 'technical',
+            axis: 'overall',
+            session: { tag: 'session:kr-equity' },
         });
     });
 
@@ -416,12 +438,14 @@ describe('runFreshAnalysisTool', () => {
             symbol: 'AAPL',
             timeframe: '1Day',
             tab: 'technical',
+            session: { tag: 'session:us-equity' },
         });
         expect(m.findRecentForPrompt).toHaveBeenCalledWith({
             symbol: 'AAPL',
             timeframe: '1Day',
             tab: 'technical',
             axis: 'overall',
+            session: { tag: 'session:us-equity' },
         });
         expect(m.overall).toHaveBeenCalledWith(
             'AAPL',

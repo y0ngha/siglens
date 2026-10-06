@@ -514,7 +514,9 @@ export const getCachedAnalysisTool: ToolExecutor = async (
         // eviction-loop 방지용 `generatedBeforeMs` 제외는 여기 적용 대상이
         // 아니다(그 제외는 core 캐시 키 fingerprint용이지, 챗이 사용자에게
         // 보여줄 "최근 분석"의 정의가 아니다). 그래서 현재 캐시 버킷 안의
-        // 행도 포함해서 읽는다.
+        // 행도 포함해서 읽는다. `session`을 넘기지 않는 것도 같은 이유다 —
+        // core 2.14.0에서 session은 `generatedBeforeMs`에만 영향을 주는데,
+        // `includeCurrentWindow`가 그 경계를 아예 쓰지 않는다.
         const [latest] = await new DrizzleAnalysisHistoryRepository(
             db
         ).findRecentForPrompt({
