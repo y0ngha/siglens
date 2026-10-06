@@ -32,17 +32,34 @@ describe('globals.css — 모바일 시트 껍데기 해제 규칙', () => {
     });
 });
 
-describe('globals.css — 펼친 모바일 시트의 Ask-AI FAB 숨김 규칙', () => {
+describe('globals.css — 펼친 모바일 시트의 Ask-AI FAB·PWA 배너 규칙', () => {
     const css = readFileSync(
         join(process.cwd(), 'src/app/globals.css'),
         'utf-8'
     );
     const normalized = css.replace(/\s+/g, ' ');
 
-    it('시트가 PEEK 밖으로 펼쳐지면 FAB을 숨기는 규칙이 있다', () => {
+    it('시트가 PEEK 밖으로 펼쳐지면 FAB과 PWA 설치 배너를 숨기는 규칙이 있다', () => {
         expect(normalized).toContain(
-            'body:has([data-vaul-drawer][data-sheet-expanded]) [data-ask-ai-fab] { display: none; }'
+            'body:has([data-vaul-drawer][data-sheet-expanded]) [data-ask-ai-fab], body:has([data-vaul-drawer][data-sheet-expanded]) [data-pwa-banner] { display: none; }'
         );
+    });
+
+    /**
+     * 배너와 FAB은 모바일에서 같은 오른쪽 아래 자리에 고정된다. 배너가 떠 있는 동안
+     * FAB을 배너 높이(3rem)+간격(0.5rem) 위로 올리지 않으면 둘이 겹친다.
+     */
+    it('모바일에서 PWA 배너가 떠 있으면 FAB을 배너 위로 올린다', () => {
+        expect(normalized).toContain(
+            '@media (width < 40rem) { body:has([data-pwa-banner]) [data-ask-ai-fab] { bottom: calc(0.75rem + env(safe-area-inset-bottom) + 3.5rem); } }'
+        );
+        const banner = readFileSync(
+            join(process.cwd(), 'src/features/pwa-install/ui/PwaBanner.tsx'),
+            'utf-8'
+        );
+        expect(banner).toContain('data-pwa-banner');
+        // 들어올림 값(3.5rem)은 배너 높이 h-12(3rem)를 전제로 한다.
+        expect(banner).toContain('h-12');
     });
 
     it('규칙이 시트·FAB 컴포넌트가 실제로 다는 속성명을 쓴다', () => {

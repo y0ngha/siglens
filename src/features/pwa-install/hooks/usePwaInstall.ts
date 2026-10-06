@@ -3,6 +3,10 @@
 import { registerServiceWorker } from '../lib/registerServiceWorker';
 import { type PwaEnvironment } from '@/shared/lib/types';
 import { detectPwaEnvironment } from '../lib/detectPwaEnvironment';
+import {
+    readBannerDismissed,
+    writeBannerDismissed,
+} from '../lib/bannerDismissal';
 import { useEffect, useRef, useState } from 'react';
 
 type PromptOutcome = 'accepted' | 'dismissed';
@@ -24,22 +28,18 @@ export interface UsePwaInstallReturn {
 /**
  * 배너를 띄우는 **첫 사용자 입력** 이벤트.
  *
- * 예전에는 마운트 100ms 뒤 타이머로 띄웠다. 배너가 흐름에 삽입되면서 본문이
- * 3rem 밀리는데, 그 시점이 하이드레이션 직후(실측 약 2초)라 그대로 CLS가 됐다
- * (2026-09-18 모바일 실측: 종목 페이지 0.0605, 홈 0).
+ * 배너는 이제 하단 고정 오버레이라(`PwaBanner` JSDoc) 나타나도 레이아웃이 밀리지
+ * 않는다 — 예전처럼 흐름에 삽입되던 시절에는 이 입력 게이트가 CLS 방지 장치였다
+ * (입력 500ms 안의 이동은 CLS에서 제외. 2026-09-18 모바일 실측: 타이머로 띄우면
+ * 종목 페이지 0.0605). 다만 스크롤 시작의 `pointerdown`도 입력으로 치는지는
+ * 브라우저 판정에 달려 있어 그 보호가 완전하지 않았고, 그래서 오버레이로 바꿨다.
  *
- * 레이아웃 이동은 **사용자 입력 500ms 안에 일어나면 CLS에서 제외**된다. 그래서
- * 첫 `pointerdown`/`keydown`까지 기다린다 — 모바일 스크롤도 `pointerdown`으로
- * 시작하므로 사실상 첫 상호작용 시점이다. `scroll`은 이 목적의 "입력"으로 치지
- * 않으므로 넣지 않는다(넣으면 제외되지 않는 이동이 다시 생긴다).
+ * 게이트 자체는 남긴다. **첫 화면을 배너가 가리지 않는다** — 검색 유입의 첫인상과
+ * 구글 모바일 인터스티셜 판정(진입 직후 본문을 가리는 오버레이) 양쪽에 낫다.
+ * `scroll`은 입력 이벤트가 아니라 넣지 않는다.
  *
- * 예전에는 분석 완료(`siglens:pwa-trigger`)도 방아쇠였는데 함께 없앴다. 그 경로는
- * 입력과 무관하게 열린다 — 회원(tier !== 'free')은 마운트 시 `restartAnalysis()`가
- * 자동으로 돌고, 서버 초기 분석이 실패한 페이지도 자동 재시도한다. 두 경우 모두
- * SSE 완료 시점에 배너가 삽입돼 제외 창 밖의 이동이 된다. 입력 게이트가 생긴 뒤로는
- * 중복이기도 하다 — 분석을 돌리려면 어차피 탭을 해야 하고, 그 탭이 이미 배너를 띄운다.
- *
- * 부수 효과로 첫 화면을 배너가 가리지 않는다 — 검색 유입 첫인상에도 낫다.
+ * 분석 완료(`siglens:pwa-trigger`)는 방아쇠가 아니다. 그 경로는 입력과 무관하게
+ * 열린다 — 회원은 마운트 시 분석이 자동으로 돌아 입력 없이 배너가 떴다.
  */
 const BANNER_TRIGGER_EVENTS = ['pointerdown', 'keydown'] as const;
 
@@ -82,6 +82,7 @@ export function usePwaInstall(): UsePwaInstallReturn {
                 const { outcome } = await prompt.userChoice;
                 if (outcome === 'accepted') {
                     setShowBanner(false);
+                    writeBannerDismissed();
                 }
             } catch (err) {
                 console.warn('[PWA] prompt 실패', err);
@@ -91,6 +92,7 @@ export function usePwaInstall(): UsePwaInstallReturn {
 
     const handleDismiss = () => {
         setShowBanner(false);
+        writeBannerDismissed();
     };
 
     const handleModalClose = () => setShowIosModal(false);
@@ -102,7 +104,8 @@ export function usePwaInstall(): UsePwaInstallReturn {
     useEffect(() => {
         const canShow =
             env.isMobile && !env.isStandalone && !env.isInAppBrowser;
-        if (!canShow) return;
+        // 한 번 닫았거나 설치를 수락한 브라우저에는 다시 띄우지 않는다.
+        if (!canShow || readBannerDismissed()) return;
 
         const handlePrompt = (e: Event) => {
             e.preventDefault();

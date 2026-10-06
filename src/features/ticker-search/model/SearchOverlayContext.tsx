@@ -11,7 +11,10 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useHrefBase } from '@/shared/i18n/LocaleContext';
 import { useLocalePath } from '@/shared/i18n/useLocalePath';
-import { useNavigationPending } from '@/shared/model/NavigationPendingContext';
+import {
+    usePendingHref,
+    useStartNavigation,
+} from '@/shared/model/NavigationPendingContext';
 import {
     assignLocation,
     replaceLocation,
@@ -60,7 +63,8 @@ export function SearchOverlayProvider({ children }: { children: ReactNode }) {
     const base = useHrefBase();
     // 진행 표시는 전역 pending이 소유한다 — 링크 클릭·검색 선택 모두 같은 스위치다.
     // 도착(경로 변경)·뒤로가기(popstate)로 풀리는 규칙도 거기 있다.
-    const { pendingHref, startNavigation } = useNavigationPending();
+    const pendingHref = usePendingHref();
+    const startNavigation = useStartNavigation();
 
     /**
      * 종목으로 이동한다. **오버레이는 즉시 닫고** 이동은 뒤에서 진행시킨다.

@@ -37,8 +37,7 @@ interface SymbolLayoutProps {
 //
 // Sticky-footer jail (SymbolLayoutJail): SymbolLayoutHeader + page main을 viewport
 // 잔여 영역에 맞춘 컨테이너로 감싼다. viewport에서 site Header(`var(--header-h)` = 3.5rem)
-// + PwaBanner(`var(--pwa-banner-h, 0px)`, banner 표시 중일 때만 3rem)를 빼면 jail이 첫
-// 화면의 잔여 영역을 정확히 차지하고, 그 안에서 layout header가 자기 자리 + page main이
+// 를 빼면 jail이 첫 화면의 잔여 영역을 정확히 차지하고, 그 안에서 layout header가 자기 자리 + page main이
 // 나머지를 차지한다. footer는 root layout에서 jail의 형제로 위치하므로 자연스럽게 jail
 // 아래로 push되어 스크롤해야 보인다.
 //
@@ -47,9 +46,9 @@ interface SymbolLayoutProps {
 // 내부 스크롤되게 하고, sibling 탭은 `min-h-[calc(...)]`으로 콘텐츠 길이에 따라 자란다.
 //
 // `--header-h`는 globals.css의 @theme에서 3.5rem 기본값으로 정의되어 site Header h-14와
-// 동기화된다. `--pwa-banner-h`는 PwaBanner mount 시점에 3rem으로 set, dismiss/unmount
-// 시점에 remove돼 jail이 PwaBanner 토글에 일관되게 반응한다. 두 변수 모두 한 곳에서만
-// 관리되므로 chrome 높이 변경 시 jail 계산식을 수정할 필요가 없다.
+// 동기화된다. PWA 설치 배너는 하단 고정 오버레이라 흐름 높이를 차지하지 않으므로
+// 계산식에 들어가지 않는다(예전 `--pwa-banner-h`는 배너가 흐름 위쪽에 삽입되던 시절의
+// 보정값이다 — `PwaBanner` JSDoc).
 //
 // `params` is async (Next.js 16). The chrome's remaining async work (bars → 공포·탐욕
 // 스냅샷) is awaited by the shell — 크롬은 Suspense 뒤에 두지 않는다(아래 설명).

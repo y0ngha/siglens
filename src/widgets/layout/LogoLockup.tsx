@@ -51,6 +51,13 @@ export function LogoLockup() {
                     `unoptimized`를 제거해 next/image가 24/48 responsive 변형을
                     자동 생성·서빙하도록 한다(WebP 변환 포함, 실제 전송 바이트는
                     원본보다 작다).
+
+                    `priority`(Next 16에서는 `preload`)를 걸지 않는다. 24px 로고는 어느
+                    페이지에서도 LCP 요소가 아닌데, 모든 페이지 `<head>`에 고우선
+                    preload를 박아 LCP 후보(히어로 텍스트·차트)와 대역을 다퉜다.
+                    크기가 고정이라 늦게 도착해도 레이아웃이 밀리지 않는다. 다만 늘
+                    첫 화면(헤더)에 있으므로 `loading="eager"`로 lazy 판정 지연만 없앤다 —
+                    preload 링크 없이 보통 우선순위로 받는다.
                 */}
                 <Image
                     src="/icon96.png"
@@ -58,7 +65,7 @@ export function LogoLockup() {
                     width={24}
                     height={24}
                     className="h-6 w-6"
-                    priority
+                    loading="eager"
                 />
                 <span
                     translate="no"

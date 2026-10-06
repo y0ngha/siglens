@@ -35,14 +35,14 @@ import { LocaleLink } from '../LocaleLink';
 import { LocaleProvider } from '@/shared/i18n/LocaleContext';
 import {
     NavigationPendingProvider,
-    useNavigationPending,
+    usePendingHref,
 } from '@/shared/model/NavigationPendingContext';
 import type { Locale } from '@/shared/i18n/locales';
 
 const mockPathname = usePathname as ReturnType<typeof vi.fn>;
 
 function PendingProbe() {
-    const { pendingHref } = useNavigationPending();
+    const pendingHref = usePendingHref();
     return <span data-testid="pending">{pendingHref ?? 'none'}</span>;
 }
 

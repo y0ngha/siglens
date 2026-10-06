@@ -10,7 +10,7 @@ import {
     useState,
 } from 'react';
 import { useRouter } from 'next/navigation';
-import { useNavigationPending } from '@/shared/model/NavigationPendingContext';
+import { useStartNavigation } from '@/shared/model/NavigationPendingContext';
 import { useHrefBase } from '@/shared/i18n/LocaleContext';
 import { useLocalePath } from '@/shared/i18n/useLocalePath';
 import type { TickerSearchResult } from '@/shared/lib/types';
@@ -96,7 +96,7 @@ export function useAutocomplete({
 
     const router = useRouter();
     // 목적지 골격·진행 바를 RSC 도착 전에 띄운다(`NavigationPendingContext`).
-    const { startNavigation } = useNavigationPending();
+    const startNavigation = useStartNavigation();
     const toLocalePath = useLocalePath();
     const base = useHrefBase();
     const { results, isSearching, hasQuery, isError, debouncedQuery } =

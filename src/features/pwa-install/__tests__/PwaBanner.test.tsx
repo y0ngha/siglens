@@ -18,18 +18,19 @@ describe('PwaBanner', () => {
         });
         render(<PwaBanner />);
         const shell = screen.getByTestId('pwa-banner-shell');
-        expect(shell.className).toContain('h-12');
-        expect(shell.className).not.toContain('invisible');
-        expect(shell).toHaveAttribute('aria-hidden', 'false');
+        // 하단 고정 오버레이 — 흐름에 끼어 본문을 밀지 않는다(CLS 0).
+        expect(shell.className).toContain('fixed');
+        expect(shell.className).toContain(
+            'bottom-[calc(0.75rem+env(safe-area-inset-bottom))]'
+        );
+        // globals.css의 FAB 들어올림·시트 펼침 숨김 규칙이 이 속성을 본다.
+        expect(shell).toHaveAttribute('data-pwa-banner');
         expect(
             screen.getByRole('button', { name: '설치하기' })
         ).toBeInTheDocument();
         expect(
             screen.getByRole('button', { name: '배너 닫기' })
         ).toBeInTheDocument();
-        expect(
-            screen.getByRole('button', { name: '설치하기' })
-        ).toHaveAttribute('tabindex', '0');
     });
 
     it('닫기 버튼 클릭 → handleDismiss 호출', () => {
@@ -62,7 +63,7 @@ describe('PwaBanner', () => {
         expect(handleInstall).toHaveBeenCalledTimes(1);
     });
 
-    it('showBanner=false이면 아무것도 렌더하지 않는다 (CLS 방지 shell도 제거)', () => {
+    it('showBanner=false이면 아무것도 렌더하지 않는다', () => {
         mockUsePwaInstall.mockReturnValue({
             showBanner: false,
             showIosModal: false,
@@ -73,12 +74,14 @@ describe('PwaBanner', () => {
         });
         const { container } = render(<PwaBanner />);
         expect(container).toBeEmptyDOMElement();
-        expect(
-            document.documentElement.style.getPropertyValue('--pwa-banner-h')
-        ).toBe('');
     });
 
-    it('showBanner가 true→false로 바뀌면 --pwa-banner-h 변수를 제거한다', () => {
+    /**
+     * 회귀: 흐름 삽입 시절에는 `/[symbol]` jail이 배너 높이를 빼도록 루트에
+     * `--pwa-banner-h`를 걸었다. 오버레이는 흐름 높이가 없으므로 어떤 레이아웃
+     * 변수도 건드리지 않아야 한다.
+     */
+    it('배너가 떠도 루트에 레이아웃 보정 변수를 걸지 않는다', () => {
         mockUsePwaInstall.mockReturnValue({
             showBanner: true,
             showIosModal: false,
@@ -87,24 +90,8 @@ describe('PwaBanner', () => {
             handleDismiss: vi.fn(),
             handleModalClose: vi.fn(),
         });
-        const { rerender } = render(<PwaBanner />);
-        expect(
-            document.documentElement.style.getPropertyValue('--pwa-banner-h')
-        ).toBe('3rem');
-
-        mockUsePwaInstall.mockReturnValue({
-            showBanner: false,
-            showIosModal: false,
-            isIos: false,
-            handleInstall: vi.fn(),
-            handleDismiss: vi.fn(),
-            handleModalClose: vi.fn(),
-        });
-        rerender(<PwaBanner />);
-
-        expect(
-            document.documentElement.style.getPropertyValue('--pwa-banner-h')
-        ).toBe('');
+        render(<PwaBanner />);
+        expect(document.documentElement.getAttribute('style') ?? '').toBe('');
     });
 
     it('isIos=true && showIosModal=true → IosInstallModal 렌더', () => {

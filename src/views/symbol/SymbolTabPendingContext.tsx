@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import { symbolOfAppPath } from '@/shared/config/reservedFirstSegments';
-import { useNavigationPending } from '@/shared/model/NavigationPendingContext';
+import { usePendingHref } from '@/shared/model/NavigationPendingContext';
 import { PendingSlot } from '@/shared/ui/PendingSlot';
 
 /**
@@ -16,7 +16,7 @@ import { PendingSlot } from '@/shared/ui/PendingSlot';
  * 종목의 탭 이동"만 골라낸다(다른 종목으로 가는 이동은 루트의 종목 진입 슬롯 몫).
  */
 export function usePendingSymbolTab(): string | null {
-    const { pendingHref } = useNavigationPending();
+    const pendingHref = usePendingHref();
     const current = useAppPathname();
     if (pendingHref === null) return null;
     const symbol = symbolOfAppPath(current);

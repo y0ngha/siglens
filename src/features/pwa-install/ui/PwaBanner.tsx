@@ -1,28 +1,35 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useEffect } from 'react';
 import { usePwaInstall } from '../hooks/usePwaInstall';
 import { IosInstallModal } from './IosInstallModal';
 import { cn } from '@/shared/lib/cn';
 import { BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
+import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { CloseIcon } from '@/shared/ui/StrokeIcons';
 
-// CLS: 배너는 흐름에 삽입돼 아래를 3rem 민다. 그래도 CLS가 되지 않는 이유는 **첫 사용자
-// 입력 직후에만** 나타나기 때문이다 — 입력 500ms 안의 레이아웃 이동은 CLS에서 제외된다
-// (`usePwaInstall`의 `BANNER_TRIGGER_EVENTS` JSDoc). 그래서 숨김 상태에서는 아무것도
-// 렌더하지 않는다. 예전에는 높이를 미리 잡는 빈 껍데기를 늘 렌더했는데, 배너를 보지
-// 않을 대다수 방문자에게서 첫 화면 3rem을 빼앗았다. 방아쇠를 타이머·비입력 이벤트로
-// 바꾸면 그 순간 다시 CLS가 된다.
-//
-// PWA_BANNER_HEIGHT_CSS와 BANNER_SHELL_CLASS의 h-12는 동일한 값(3rem)을 다른 형태로
-// 표현한 것이다. /[symbol] 라우트의 sticky-footer jail이 `--pwa-banner-h` CSS variable을
-// 통해 banner 높이를 차감하므로, banner shell의 height 클래스를 바꿀 때는 반드시
-// PWA_BANNER_HEIGHT_CSS도 함께 갱신해야 한다.
-const BANNER_SHELL_CLASS =
-    'border-secondary-700 bg-secondary-800 flex h-12 items-center gap-2 border-b px-3';
-const PWA_BANNER_HEIGHT_CSS = '3rem';
-
+/**
+ * PWA 설치 배너 — 화면 **하단에 떠 있는** 오버레이.
+ *
+ * 예전에는 헤더 위 흐름에 `h-12`로 삽입돼 본문 전체를 3rem 밀었다. 첫 입력 직후에만
+ * 띄워 CLS 제외 창(입력 500ms)에 기대었지만, 스크롤로 시작하는 `pointerdown`이
+ * 그 "입력"으로 인정되는지는 브라우저 판정에 달려 있어 레이아웃 이동이 남았다.
+ * 게다가 `/[symbol]`의 jail·차트 높이가 `--pwa-banner-h`로 배너 높이를 빼야 했다.
+ * 고정 오버레이는 흐름 높이를 차지하지 않으므로 두 문제가 같이 사라진다.
+ *
+ * ## 배치와 겹침 (z-65)
+ *
+ * - 모바일(<640px): 좌우 여백을 둔 전폭 카드. 오른쪽 아래 `AskAiFab`(z-60)과 같은
+ *   자리라, 배너가 떠 있는 동안 globals.css가 FAB을 배너 위로 올린다
+ *   (`[data-pwa-banner]` 규칙). 배너가 FAB보다 위(z-65)인 이유는 그 규칙이 깨져도
+ *   설치·닫기 버튼이 가려지지 않게 하기 위해서다.
+ * - sm 이상: 왼쪽 아래 `w-96` 카드. FAB은 오른쪽이라 겹치지 않는다.
+ * - 모바일 분석 시트(z-50): PEEK 띠 위에는 배너가 뜨고(FAB과 같은 관계), 시트가
+ *   HALF/FULL로 펼쳐지면 globals.css가 배너를 숨긴다 — 분석 본문을 가리지 않는다.
+ * - 검색 오버레이·모바일 메뉴(z-70), 진행 바(z-80), 공지·모달(z-9999)은 배너 위다.
+ *
+ * 하단 safe-area(홈 인디케이터)만큼 띄운다 — 앱은 `viewportFit: 'cover'`다.
+ */
 export function PwaBanner() {
     const t = useTranslations('features.pwa-install');
     const {
@@ -34,20 +41,6 @@ export function PwaBanner() {
         handleModalClose,
     } = usePwaInstall();
 
-    // Banner가 보일 때 root에 --pwa-banner-h를 3rem(=h-12)으로 set한다.
-    // /[symbol] 라우트의 sticky-footer jail이 `calc(100dvh - 3.5rem - var(--pwa-banner-h, 0px))`로
-    // chrome 높이를 차감하므로, banner 토글이 jail viewport-fill과 일관되게 동작한다.
-    useEffect(() => {
-        const root = document.documentElement;
-        if (showBanner) {
-            root.style.setProperty('--pwa-banner-h', PWA_BANNER_HEIGHT_CSS);
-            return () => {
-                root.style.removeProperty('--pwa-banner-h');
-            };
-        }
-        return undefined;
-    }, [showBanner]);
-
     if (!showBanner) {
         return null;
     }
@@ -56,25 +49,26 @@ export function PwaBanner() {
         <>
             <div
                 data-testid="pwa-banner-shell"
-                aria-hidden={!showBanner}
+                data-pwa-banner
                 className={cn(
-                    BANNER_SHELL_CLASS,
-                    !showBanner && 'pointer-events-none invisible'
+                    SURFACE_CARD,
+                    'fixed right-[max(0.75rem,env(safe-area-inset-right))] bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-[max(0.75rem,env(safe-area-inset-left))] z-65 flex h-12 items-center gap-2 pr-1.5 pl-3 shadow-lg sm:right-auto sm:left-4 sm:w-96'
                 )}
             >
                 <span className="text-base" aria-hidden="true">
                     📈
                 </span>
-                <span className="min-w-0 flex-1 truncate text-xs text-secondary-200">
+                {/* 두 줄까지 허용한다 — 카드가 좌우 여백을 가진 뒤로 390px에서 한 줄
+                    말줄임이 문장 끝("있어요")을 잘랐다. text-xs 두 줄(2rem)은 h-12 안에 든다. */}
+                <span className="line-clamp-2 min-w-0 flex-1 text-xs leading-4 text-secondary-200">
                     {t('PwaBanner.ba5aad')}
                 </span>
                 <button
                     type="button"
                     onClick={handleInstall}
-                    tabIndex={showBanner ? 0 : -1}
                     className={cn(
                         BUTTON_PRIMARY,
-                        'shrink-0 rounded-full px-3 py-1 text-xs'
+                        'shrink-0 touch-manipulation rounded-full px-3 py-1 text-xs'
                     )}
                 >
                     {t('PwaBanner.15236a')}
@@ -83,8 +77,9 @@ export function PwaBanner() {
                     type="button"
                     onClick={handleDismiss}
                     aria-label={t('PwaBanner.9631f3')}
-                    tabIndex={showBanner ? 0 : -1}
-                    className="shrink-0 rounded text-secondary-500 transition-colors hover:text-secondary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                    // 아이콘은 16px지만 누르는 면은 36px — 손가락으로 X를 정확히 맞히지
+                    // 않아도 닫힌다. 카드 높이(h-12) 안에 들어가는 최대 크기다.
+                    className="inline-flex size-9 shrink-0 touch-manipulation items-center justify-center rounded text-secondary-400 transition-colors hover:text-secondary-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     <CloseIcon className="size-4" />
                 </button>
