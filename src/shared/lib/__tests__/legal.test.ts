@@ -21,7 +21,7 @@ import {
     methodologyDescription,
     formatKoreanDate,
 } from '@/shared/lib/legal';
-import { SITE_NAME, type SeoTranslator } from '@/shared/lib/seo';
+import { SITE_NAME, SITE_NAME_KO, type SeoTranslator } from '@/shared/lib/seo';
 import { catalogTranslator } from '@/shared/test-utils/catalogTranslator';
 
 // title/description은 이제 `shared.seo` 카탈로그 번역자를 받는 함수다
@@ -70,8 +70,8 @@ describe('legal constants', () => {
         expect(privacyFullTitle(t)).toBe(`${privacyTitle(t)} | ${SITE_NAME}`);
     });
 
-    it('privacyDescription(t) includes site name', () => {
-        expect(privacyDescription(t)).toContain(SITE_NAME);
+    it('privacyDescription(t) includes the Korean site name', () => {
+        expect(privacyDescription(t)).toContain(SITE_NAME_KO);
     });
 
     it('termsTitle(t) is Korean terms title', () => {
@@ -82,18 +82,18 @@ describe('legal constants', () => {
         expect(termsFullTitle(t)).toBe(`${termsTitle(t)} | ${SITE_NAME}`);
     });
 
-    it('termsDescription(t) includes site name', () => {
-        expect(termsDescription(t)).toContain(SITE_NAME);
+    it('termsDescription(t) includes the Korean site name', () => {
+        expect(termsDescription(t)).toContain(SITE_NAME_KO);
     });
 
     /**
-     * `/about`은 다른 법무 페이지와 달리 `<title>`이 `${title} | Siglens`
+     * `/about`은 다른 법무 페이지와 달리 `<title>`이 `${title} | SIGLENS`
      * 형식이 아니다 — `aboutFullTitle` JSDoc 참고(브랜드로 이미 시작하는
      * 별도 metaTitle 키를 쓴다). `aboutTitle`(본문 h1)과는 다른 값이어야
      * 그 구분이 실제로 성립한다.
      */
     it('aboutTitle(t) is Korean about title', () => {
-        expect(aboutTitle(t)).toBe('Siglens 소개');
+        expect(aboutTitle(t)).toBe('시그렌즈 소개');
     });
 
     it('aboutFullTitle(t)은 aboutTitle과 다른 전용 metaTitle 키를 쓴다', () => {
@@ -110,16 +110,16 @@ describe('legal constants', () => {
     });
 
     /**
-     * `/methodology`도 `/about`처럼 `Siglens`로 이미 시작하는 전용 metaTitle을 쓴다 —
-     * 레이아웃 템플릿(`| Siglens`)을 타면 브랜드가 두 번 붙는다.
+     * `/methodology`도 `/about`처럼 `시그렌즈`로 이미 시작하는 전용 metaTitle을 쓴다 —
+     * 레이아웃 템플릿(`| SIGLENS`)을 타면 브랜드가 두 번 붙는다.
      */
     it('methodologyTitle(t) is the short Korean title the footer and breadcrumb show', () => {
         expect(methodologyTitle(t)).toBe('분석 방법');
     });
 
-    it('methodologyFullTitle(t)은 Siglens로 시작하고 methodologyTitle과 다르다', () => {
+    it('methodologyFullTitle(t)은 시그렌즈로 시작하고 methodologyTitle과 다르다', () => {
         expect(methodologyFullTitle(t)).not.toBe(methodologyTitle(t));
-        expect(methodologyFullTitle(t).startsWith(SITE_NAME)).toBe(true);
+        expect(methodologyFullTitle(t).startsWith(SITE_NAME_KO)).toBe(true);
     });
 
     it('methodologyDescription(t) is a non-empty description', () => {

@@ -147,6 +147,6 @@
         "shared.lib.byokGate"
     ],
     "routeWide": {
-        "views.symbol.technicalFacts": ["[symbol]"]
+        "views.symbol.technicalFacts": ["[symbol]/(page)"]
     }
 }

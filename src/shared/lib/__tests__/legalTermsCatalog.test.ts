@@ -11,8 +11,8 @@ const legalOf = (messages: unknown): LegalTable =>
 /**
  * 약관 화면 문구의 한국어 조사.
  *
- * `{v0}`에 들어가는 `SITE_NAME`(`Siglens`)은 받침 없이 끝나는 영문이라 `은(는)`·`이(가)`
- * 같은 이중 표기를 쓰면 화면에 그대로 "Siglens은(는)"이 찍힌다. 조사를 고정하되 DB 약관
+ * `{v0}`에 들어가는 `SITE_NAME`(`SIGLENS`)은 받침 없이 끝나는 영문이라 `은(는)`·`이(가)`
+ * 같은 이중 표기를 쓰면 화면에 그대로 "SIGLENS은(는)"이 찍힌다. 조사를 고정하되 DB 약관
  * 본문(`db/seeds`)은 버전·시행일이 걸린 별도 문서라 이 카탈로그와 따로 다룬다.
  */
 describe('shared.lib.legal 약관 문구', () => {
@@ -81,9 +81,9 @@ describe('shared.lib.legal 약관 문구', () => {
     });
 
     it('카탈로그 조사는 실제 SITE_NAME과 이어 읽어도 어색하지 않다', () => {
-        expect(SITE_NAME).toBe('Siglens');
+        expect(SITE_NAME).toBe('SIGLENS');
         expect(ko.termsNoticeBody.replace('{v0}', SITE_NAME)).toMatch(
-            /^Siglens는 투자 자문이나/
+            /^SIGLENS는 투자 자문이나/
         );
     });
 });

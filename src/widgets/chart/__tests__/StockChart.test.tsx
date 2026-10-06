@@ -1006,6 +1006,10 @@ describe('StockChart', () => {
                 (lastSpecs() ?? [])
                     .filter(spec => spec.points[0].value === 14)
                     .map(spec => spec.title);
+            const outcomePriorities = () =>
+                (lastSpecs() ?? [])
+                    .filter(spec => spec.points[0].value === 14)
+                    .map(spec => spec.labelPriority);
 
             it('무효화 선 라벨에 패턴 이름을 붙인다', () => {
                 render(
@@ -1019,7 +1023,7 @@ describe('StockChart', () => {
                 expect(outcomeTitles()).toEqual(['패턴p1 무효화']);
             });
 
-            it('결과선 작도가 셋 이상이면 강조한 작도의 무효화 라벨만 남긴다(선은 그대로)', () => {
+            it('결과선 작도가 셋 이상이어도 라벨을 숨기지 않고, 강조한 작도의 라벨이 겹침 우선순위를 갖는다', () => {
                 const refs = ['p1', 'p2', 'p3'];
                 const { rerender } = render(
                     <StockChart
@@ -1029,7 +1033,13 @@ describe('StockChart', () => {
                         overlayItems={patternItems(refs)}
                     />
                 );
-                expect(outcomeTitles()).toEqual(['', '', '']);
+                // 겹침은 그릴 때 화면 좌표로 판정한다(useChartOverlays) — 개수로 숨기지 않는다.
+                expect(outcomeTitles()).toEqual([
+                    '패턴p1 무효화',
+                    '패턴p2 무효화',
+                    '패턴p3 무효화',
+                ]);
+                expect(outcomePriorities()).toEqual([1, 1, 1]);
                 rerender(
                     <StockChart
                         bars={mockBars}
@@ -1039,7 +1049,12 @@ describe('StockChart', () => {
                         highlightedOverlayKey="p2"
                     />
                 );
-                expect(outcomeTitles()).toEqual(['', '패턴p2 무효화', '']);
+                expect(outcomeTitles()).toEqual([
+                    '패턴p1 무효화',
+                    '패턴p2 무효화',
+                    '패턴p3 무효화',
+                ]);
+                expect(outcomePriorities()).toEqual([1, 3, 1]);
             });
 
             it('패턴이 둘 이상이면 팔레트 색, 하나면 스킬 색을 쓴다', () => {
@@ -1186,7 +1201,7 @@ describe('StockChart', () => {
 
             // 결과선(무효화)이 셋 이상이면 혼잡 — 강조되지 않은 제목은 `''`로 숨는다.
             // 그 상태로 여백을 재면 카드 hover마다 값이 0↔92로 흔들려 차트가 튄다.
-            it('결과선이 몰려 제목이 숨는 상태에서도 최대 폭으로 잡고, 카드 hover(강조)로 흔들리지 않는다', async () => {
+            it('결과선 제목 전체의 최대 폭으로 잡고, 카드 hover(강조)로 흔들리지 않는다', async () => {
                 const refs = ['p1', 'p2', 'p3'];
                 const outcomePattern = (sourceRef: string): ChartOverlay => ({
                     id: `pattern:double_top:${sourceRef}`,
@@ -1219,13 +1234,7 @@ describe('StockChart', () => {
                         />
                     );
                     await flushFrame();
-                    // 화면 제목은 전부 ''이지만(혼잡) 여백은 '패턴p1 무효화'(8자) 기준이다.
-                    expect(
-                        vi
-                            .mocked(useChartOverlays)
-                            .mock.calls.at(-1)?.[0]
-                            .specs.map(spec => spec.title)
-                    ).toEqual(['', '', '']);
+                    // 여백은 '패턴p1 무효화'(8자) 기준이다.
                     expect(onRightGutterChange).toHaveBeenLastCalledWith(92);
                     onRightGutterChange.mockClear();
 

@@ -22,7 +22,7 @@ const TURN_MESSAGE_HEADING = '\n## Message\n';
  * The user's own words from the latest user message. Since core 2.14.0 the
  * provider sees that message prefixed with a clock note ("## Now", UTC·ET·KST
  * times) — reading the whole content would pick "UTC" as the ticker and echo
- * the note back. Siglens persists the plain text, so only this fake (which
+ * the note back. SIGLENS persists the plain text, so only this fake (which
  * echoes its input) ever saw the note.
  */
 function userWords(content: string): string {

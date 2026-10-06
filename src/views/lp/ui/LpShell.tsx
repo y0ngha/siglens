@@ -78,7 +78,7 @@ export function LpDisclaimer() {
             aria-label="투자 유의사항"
             className="mt-16 rounded-lg border border-secondary-700 px-5 py-4 text-sm leading-6 text-secondary-400"
         >
-            SIGLENS가 보여주는 분석과 답변은 공개 데이터를 정리한 참고 자료이며
+            시그렌즈가 보여주는 분석과 답변은 공개 데이터를 정리한 참고 자료이며
             특정 종목의 매수나 매도를 권유하지 않습니다. 투자 판단과 그 결과는
             투자자 본인에게 있습니다.
         </section>

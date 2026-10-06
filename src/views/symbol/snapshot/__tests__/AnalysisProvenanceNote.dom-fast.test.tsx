@@ -8,7 +8,7 @@ import { AnalysisProvenanceNote } from '../AnalysisProvenanceNote';
 const NOTE = ko.views.symbol.AnalysisProvenanceNote;
 
 const AI_SENTENCE =
-    'Siglens가 규칙으로 계산한 값을 AI가 문장으로 정리한 글이에요. 쉽게 보기 글은 계산에 없는 가격이 섞이면 자동으로 다시 쓰거나 그 문장을 빼요. 사람이 한 편씩 읽어 보지는 않으며, 투자 권유가 아니에요.';
+    '시그렌즈가 규칙으로 계산한 값을 AI가 문장으로 정리한 글이에요. 쉽게 보기 글은 계산에 없는 가격이 섞이면 자동으로 다시 쓰거나 그 문장을 빼요. 사람이 한 편씩 읽어 보지는 않으며, 투자 권유가 아니에요.';
 
 describe('AnalysisProvenanceNote', () => {
     describe('variant="ai" (default)', () => {

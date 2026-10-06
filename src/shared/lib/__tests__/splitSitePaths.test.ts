@@ -12,9 +12,9 @@ const paths = (text: string): string[] =>
 describe('splitSitePaths', () => {
     it('문장 중간의 /market을 경로로 뽑는다', () => {
         expect(
-            splitSitePaths('Siglens의 /market 페이지에서는 스캔합니다.')
+            splitSitePaths('SIGLENS의 /market 페이지에서는 스캔합니다.')
         ).toEqual([
-            { kind: 'text', value: 'Siglens의 ' },
+            { kind: 'text', value: 'SIGLENS의 ' },
             { kind: 'path', value: '/market' },
             { kind: 'text', value: ' 페이지에서는 스캔합니다.' },
         ]);
@@ -68,7 +68,7 @@ describe('splitSitePaths', () => {
     });
 
     it('조각을 이어 붙이면 원문과 같다', () => {
-        const text = 'Siglens의 /market 페이지, 예: /NVDA/overall.';
+        const text = 'SIGLENS의 /market 페이지, 예: /NVDA/overall.';
         expect(
             splitSitePaths(text)
                 .map(s => s.value)
@@ -81,7 +81,7 @@ describe('splitSitePaths', () => {
     });
 
     it('일본어·중국어처럼 띄어쓰기 없는 문장에서도 경로를 뽑는다', () => {
-        expect(paths('Siglensの/marketページ')).toEqual(['/market']);
+        expect(paths('SIGLENSの/marketページ')).toEqual(['/market']);
         expect(paths('NVIDIAは/NVDA/overallです。')).toEqual(['/NVDA/overall']);
         expect(paths('例：/BTCUSD。')).toEqual(['/BTCUSD']);
         expect(paths('英伟达对应 /NVDA/overall。')).toEqual(['/NVDA/overall']);

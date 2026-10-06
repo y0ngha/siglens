@@ -42,9 +42,9 @@ async function islandElement() {
     return (
         <NotFoundView overrides={await buildOverrides()}>
             <NotFoundLayout
-                wordmark="Siglens"
+                wordmark="SIGLENS"
                 homeHref="/"
-                documentTitle="페이지를 찾을 수 없습니다 | Siglens"
+                documentTitle="페이지를 찾을 수 없습니다 | SIGLENS"
                 title="페이지를 찾을 수 없습니다"
                 homeLabel="홈"
             />

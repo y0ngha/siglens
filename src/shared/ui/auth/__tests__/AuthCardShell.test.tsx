@@ -18,7 +18,7 @@ vi.mock('next/image', () => ({
 }));
 
 vi.mock('@/shared/lib/seo', () => ({
-    SITE_NAME: 'Siglens',
+    SITE_NAME: 'SIGLENS',
 }));
 
 describe('AuthCardShell', () => {
@@ -78,7 +78,7 @@ describe('AuthCardShell', () => {
 
     it('renders the site name', () => {
         render(<AuthCardShell title="Sign In">content</AuthCardShell>);
-        expect(screen.getByText('Siglens')).toBeInTheDocument();
+        expect(screen.getByText('SIGLENS')).toBeInTheDocument();
     });
 
     it('has a main landmark', () => {

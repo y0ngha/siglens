@@ -6,7 +6,7 @@
  * 않고, 화면에서만 이 함수로 조각내 링크로 그린다.
  *
  * 경계는 **공백이 아니라 문자 종류**로 정한다. 일본어·중국어 답변은 띄어쓰기 없이
- * `Siglensの/marketページ`, `NVIDIAは/NVDA/overallです`, `例：/BTCUSD。`처럼 쓰므로
+ * `SIGLENSの/marketページ`, `NVIDIAは/NVDA/overallです`, `例：/BTCUSD。`처럼 쓰므로
  * 공백·ASCII 구두점만 경계로 보면 두 로케일의 경로 대부분이 링크가 되지 않았다.
  *
  * 경로로 보는 조건:

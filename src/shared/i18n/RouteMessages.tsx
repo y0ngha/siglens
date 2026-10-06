@@ -9,6 +9,8 @@ interface RouteMessagesProps {
     /**
      * `src/app/[locale]/` 기준 라우트 경로. 홈은 `'.'`.
      * `messages/_meta/clientKeys.json`의 키와 일치해야 한다.
+     * 페이지가 직접 렌더할 때는 `<route>/(page)`다 — 추출기가 그 페이지 키를 레이아웃
+     * 엔트리에서 떼어 형제 라우트에 상속되지 않게 한다(`ancestorClientPaths` JSDoc).
      */
     readonly route: string;
     readonly locale: Locale;

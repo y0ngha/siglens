@@ -195,7 +195,7 @@ describe('GET /api/rss', () => {
     it('채널 제목은 한글·영문 브랜드를 함께 쓴다', async () => {
         const xml = await (await GET(request())).text();
 
-        expect(xml).toContain('<title>시그렌즈(Siglens) 시장 브리핑</title>');
+        expect(xml).toContain('<title>시그렌즈(SIGLENS) 시장 브리핑</title>');
     });
 
     it('날짜는 UTC가 아니라 KST로 센다 — UTC 15시 이후 스탬프는 다음 날이다', async () => {

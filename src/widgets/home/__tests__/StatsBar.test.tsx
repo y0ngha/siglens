@@ -35,7 +35,7 @@ describe('StatsBar', () => {
         render(<StatsBar counts={EMPTY_COUNTS} />);
 
         expect(
-            screen.getByRole('list', { name: /Siglens 분석 규모/ })
+            screen.getByRole('list', { name: /시그렌즈 분석 규모/ })
         ).toBeInTheDocument();
     });
 

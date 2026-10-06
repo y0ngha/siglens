@@ -178,7 +178,7 @@ export function SymbolLayoutHeader({
             <div className="flex items-center gap-2 px-4 sm:gap-4">
                 <div className="flex min-w-0 flex-1 items-center gap-2">
                     {/* 가시 브레드크럼 — 각 탭 페이지의 `BreadcrumbList` JSON-LD
-                        (`Siglens › 종목명 › 탭`)과 같은 마디를 같은 문자열로 그린다. 예전에는
+                        (`SIGLENS › 종목명 › 탭`)과 같은 마디를 같은 문자열로 그린다. 예전에는
                         같은 줄을 링크·span 나열로만 그려 구조가 없었다. `<ol>`은 기존 줄과 같은
                         flex·gap이라 시각 배치는 그대로다. 홈 마디 텍스트는 JSON-LD와 같은
                         `SITE_NAME`이고 대문자는 CSS(`uppercase`)가 만든다. */}

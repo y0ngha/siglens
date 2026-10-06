@@ -5,7 +5,7 @@ const YAHOO_SYMBOL_ALIASES: Readonly<Record<string, string>> = {
 };
 
 /**
- * Converts a SigLens ticker to Yahoo's provider-specific notation.
+ * Converts a SIGLENS ticker to Yahoo's provider-specific notation.
  *
  * Yahoo도 FMP와 마찬가지로 미국 dual-class를 하이픈으로 쓴다(`BRK.B` → `BRK-B`).
  * 검증된 별칭이 먼저이고, 없으면 {@link SUPPORTED_DOT_SUFFIXES}에 속하는 접미사에만

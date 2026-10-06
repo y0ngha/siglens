@@ -1,12 +1,12 @@
 vi.mock('@/shared/lib/seo', () => ({
-    SITE_NAME: 'Siglens',
+    SITE_NAME: 'SIGLENS',
     SITE_NAME_KO: '시그렌즈',
     SITE_URL: 'https://siglens.io',
     ORGANIZATION_JSON_LD_ID: 'https://siglens.io#organization',
     buildOrganizationCoreJsonLd: () => ({
         '@type': 'Organization',
         '@id': 'https://siglens.io#organization',
-        name: 'Siglens',
+        name: 'SIGLENS',
         url: 'https://siglens.io',
     }),
 }));
@@ -53,12 +53,12 @@ describe('SiteJsonLd', () => {
         const script = screen.getByTestId('json-ld');
         const data = nodeOf(JSON.parse(script.innerHTML), 'WebSite');
 
-        expect(data.name).toBe('Siglens');
+        expect(data.name).toBe('SIGLENS');
         expect(data.url).toBe('https://siglens.io');
     });
 
     /**
-     * 영문 `Siglens`는 동명 프로젝트(SigLens)와 겹친다. 한글 표기를 `alternateName`
+     * 영문 `SIGLENS`는 동명 프로젝트(SIGLENS)와 겹친다. 한글 표기를 `alternateName`
      * 첫 후보로 실어야 "시그렌즈" 검색이 이 사이트로 귀결된다 — 빠지면 구조화
      * 데이터에 한글 브랜드가 한 군데도 남지 않는다.
      */
@@ -117,7 +117,7 @@ describe('SiteJsonLd', () => {
         expect(nodeOf(graph, 'Organization')).toEqual({
             '@type': 'Organization',
             '@id': 'https://siglens.io#organization',
-            name: 'Siglens',
+            name: 'SIGLENS',
             url: 'https://siglens.io',
         });
     });

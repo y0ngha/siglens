@@ -126,7 +126,7 @@ function PainRow({ was, now, wasLabel }: PainRowProps) {
                     className="text-xs font-semibold text-secondary-100"
                     translate="no"
                 >
-                    Siglens
+                    SIGLENS
                 </p>
                 <p className="mt-1 text-[15px] leading-6 text-secondary-100">
                     {now}
@@ -214,7 +214,7 @@ interface OperatorCardProps {
     readonly labels: OperatorLabels;
 }
 
-/** Who runs Siglens and how to reach them — the page's E-E-A-T anchor. */
+/** Who runs SIGLENS and how to reach them — the page's E-E-A-T anchor. */
 function OperatorCard({ labels }: OperatorCardProps) {
     return (
         <div className={cn(SURFACE_CARD, 'mt-7 p-5 sm:p-6')}>
@@ -378,7 +378,7 @@ function buildDataTiles(
 }
 
 /**
- * `siglens.io/about`: what Siglens is, shown rather than told — an
+ * `siglens.io/about`: what SIGLENS is, shown rather than told — an
  * auto-playing example report, the complaints it answers,
  * what one ticker page covers, how an analysis is made, who runs it, its
  * limits and the FAQ (spec

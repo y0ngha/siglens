@@ -301,7 +301,7 @@
                 "925d56": "Become a member to see more",
                 "9922a0": "Already have an account?",
                 "e2d231": "Log In →",
-                "f0c59b": "You will sign up for SigLens with the information below"
+                "f0c59b": "You will sign up for SIGLENS with the information below"
             }
         },
         "symbol": {
@@ -749,7 +749,7 @@
                 "step1Title": "Tap the Share button at the bottom of Safari",
                 "step2Desc": "Scroll down in the share menu to find it",
                 "step2Title": "Choose “Add to Home Screen”",
-                "step3Desc": "The SigLens icon is added to your home screen",
+                "step3Desc": "The SIGLENS icon is added to your home screen",
                 "step3Title": "Tap “Add” in the top right — done!"
             }
         },
@@ -767,7 +767,7 @@
         },
         "share": {
             "useShareFlow": {
-                "shareText": "See the {v0} AI analysis on SigLens",
+                "shareText": "See the {v0} AI analysis on SIGLENS",
                 "shareTitle": "{v0} AI Analysis"
             }
         },
@@ -1409,12 +1409,12 @@
                 "investmentDisclaimerSummary": "Investment disclaimer summary"
             },
             "about": {
-                "description": "Siglens is a free service that takes one ticker and has AI analyze its chart, financial statements, news, and options together. It covers US stocks, Korean stocks, and crypto. This page explains its data sources, how the analysis is made, who runs it, and its limits.",
-                "title": "About Siglens",
-                "metaTitle": "About Siglens: AI Analysis for US & Korean Stocks and Crypto"
+                "description": "SIGLENS is a free service that takes one ticker and has AI analyze its chart, financial statements, news, and options together. It covers US stocks, Korean stocks, and crypto. This page explains its data sources, how the analysis is made, who runs it, and its limits.",
+                "title": "About SIGLENS",
+                "metaTitle": "About SIGLENS: AI Analysis for US & Korean Stocks and Crypto"
             },
             "account": {
-                "description": "Siglens account settings page",
+                "description": "SIGLENS account settings page",
                 "title": "Account Settings"
             },
             "accountDeleteFullTitle": "{v0} — delete account",
@@ -1504,11 +1504,11 @@
                 }
             },
             "forgotPassword": {
-                "description": "Send a Siglens password reset link",
+                "description": "Send a SIGLENS password reset link",
                 "title": "Forgot Password"
             },
             "login": {
-                "description": "Log in to Siglens to access member-only features.",
+                "description": "Log in to SIGLENS to access member-only features.",
                 "title": "Log In"
             },
             "manifest": {
@@ -1532,8 +1532,8 @@
                 }
             },
             "methodology": {
-                "description": "Explains what data and rules Siglens analysis uses for calculations, and what AI does. Includes data sources by market, constituent indicators of the Fear & Greed Index, limitations, how to report errors, and change history.",
-                "metaTitle": "Siglens Analysis Methodology: Data Sources and AI Analysis Process",
+                "description": "Explains what data and rules SIGLENS analysis uses for calculations, and what AI does. Includes data sources by market, constituent indicators of the Fear & Greed Index, limitations, how to report errors, and change history.",
+                "metaTitle": "SIGLENS Analysis Methodology: Data Sources and AI Analysis Process",
                 "title": "Analysis Methodology"
             },
             "newsCategory": {
@@ -1554,7 +1554,7 @@
             "oauthConsentFullTitle": "{v0} — social sign-up terms consent",
             "oauthConsentTitle": "Social sign-up consent",
             "portfolio": {
-                "description": "A personalized Siglens page showing where your average cost sits within each holding's recent price range.",
+                "description": "A personalized SIGLENS page showing where your average cost sits within each holding's recent price range.",
                 "title": "Portfolio"
             },
             "position": {
@@ -1563,11 +1563,11 @@
                 "title": "Where does my cost basis sit? — {v0} My Position"
             },
             "privacy": {
-                "description": "Read Siglens's Privacy Policy — what personal data we collect during sign-up and service use, why, how long we keep it, whether it's shared with third parties, and your rights to access, correct, or delete it.",
+                "description": "Read SIGLENS's Privacy Policy — what personal data we collect during sign-up and service use, why, how long we keep it, whether it's shared with third parties, and your rights to access, correct, or delete it.",
                 "title": "Privacy Policy"
             },
             "resetPassword": {
-                "description": "Set a new Siglens password",
+                "description": "Set a new SIGLENS password",
                 "title": "Reset Password"
             },
             "root": {
@@ -1577,7 +1577,7 @@
                 "title": "{v0} — US & Korean Stocks and Crypto AI Analysis"
             },
             "signup": {
-                "description": "Sign up for extra Siglens benefits. Membership is optional — non-members can still use all core features.",
+                "description": "Sign up for extra SIGLENS benefits. Membership is optional — non-members can still use all core features.",
                 "title": "Sign Up"
             },
             "symbol": {
@@ -1652,11 +1652,11 @@
                 }
             },
             "symbols": {
-                "description": "The US and Korean stocks and crypto people look up most on Siglens. Pick one to open its chart, fundamentals, news and overall AI analysis.",
+                "description": "The US and Korean stocks and crypto people look up most on SIGLENS. Pick one to open its chart, fundamentals, news and overall AI analysis.",
                 "title": "Most-viewed symbols — US and Korean stocks and crypto"
             },
             "terms": {
-                "description": "Read Siglens's Terms of Service — sign-up and usage conditions, disclaimers for AI analysis and backtesting, account and content rules, and the rights and obligations of users and the company.",
+                "description": "Read SIGLENS's Terms of Service — sign-up and usage conditions, disclaimers for AI analysis and backtesting, account and content rules, and the rights and obligations of users and the company.",
                 "title": "Terms of Service"
             }
         },
@@ -1985,7 +1985,7 @@
                 "title": "What AI Does and Does Not Do"
             },
             "backtesting": {
-                "body": "The Backtesting page shows the results of applying Siglens' AI analysis to data as of past dates and subsequently verifying what actually happened. The targets are a selection of pre-determined large-cap stocks. If the Stop Loss or Take Profit price is reached first within a maximum of 10 trading days after entry, the trade is considered closed there; otherwise, it's closed at the closing price on the 10th trading day.",
+                "body": "The Backtesting page shows the results of applying SIGLENS' AI analysis to data as of past dates and subsequently verifying what actually happened. The targets are a selection of pre-determined large-cap stocks. If the Stop Loss or Take Profit price is reached first within a maximum of 10 trading days after entry, the trade is considered closed there; otherwise, it's closed at the closing price on the 10th trading day.",
                 "caveat": "Fees and slippage were not included, and there may be survivorship bias due to ex-post stock selection. The number of cases and period are stated with the results, and past results do not guarantee future performance.",
                 "link": "View Backtesting Results",
                 "title": "Backtesting"
@@ -2050,8 +2050,8 @@
                 "episodes": "In the extreme-zone record, a return to the same zone within {v0} trading days counts as part of the same stay. This keeps a brief exit and re-entry from being counted as a new entry."
             },
             "hero": {
-                "eyebrow": "Siglens Analysis Methodology",
-                "lede": "Siglens' analysis articles are written by AI. This page details where data is sourced, what is calculated by rules, what AI does, and what limitations exist.",
+                "eyebrow": "SIGLENS Analysis Methodology",
+                "lede": "SIGLENS' analysis articles are written by AI. This page details where data is sourced, what is calculated by rules, what AI does, and what limitations exist.",
                 "title": "How Analysis Is Generated"
             },
             "indicators": {
@@ -2097,7 +2097,7 @@
         },
         "symbol": {
             "AnalysisProvenanceNote": {
-                "aiBody": "AI wrote this text from values Siglens calculated with fixed rules. In the easy-to-understand version, a sentence with a price not found in the calculation is automatically rewritten or removed. No person reads each piece, and it is not investment advice. Data: {source}, etc.",
+                "aiBody": "AI wrote this text from values SIGLENS calculated with fixed rules. In the easy-to-understand version, a sentence with a price not found in the calculation is automatically rewritten or removed. No person reads each piece, and it is not investment advice. Data: {source}, etc.",
                 "calcLink": "Calculation Method",
                 "dataSource": {
                     "crypto": "Quotes & News Financial Modeling Prep",
@@ -2509,9 +2509,9 @@
         },
         "about": {
             "hero": {
-                "eyebrow": "About Siglens",
+                "eyebrow": "About SIGLENS",
                 "title": "Enter one ticker. AI analyzes all of it at once.",
-                "lede": "Charts, financial statements, news, and options usually live in different places. Siglens gathers them, runs the numbers, and writes it up as a report you can actually read. US stocks, Korean stocks, and crypto all work."
+                "lede": "Charts, financial statements, news, and options usually live in different places. SIGLENS gathers them, runs the numbers, and writes it up as a report you can actually read. US stocks, Korean stocks, and crypto all work."
             },
             "example": {
                 "aapl": "Apple",
@@ -2523,7 +2523,7 @@
                 "title": "Here's what happens when you open a ticker page",
                 "body": "It gathers the data, computes everything by fixed rules, and then AI explains the results in plain words.",
                 "badge": "Example",
-                "region": "Example of how Siglens analyzes a ticker",
+                "region": "Example of how SIGLENS analyzes a ticker",
                 "pause": "Pause",
                 "resume": "Play",
                 "sources": "Based on",
@@ -2575,7 +2575,7 @@
             },
             "pain": {
                 "title": "If this sounds familiar",
-                "body": "Common frustrations with finding stock information, and how Siglens handles them.",
+                "body": "Common frustrations with finding stock information, and how SIGLENS handles them.",
                 "wasLabel": "Before",
                 "scattered": "Charts on one site, financials on another, news somewhere else.",
                 "scatteredFix": "One ticker page holds the chart, financial statements, news, options, and congressional trades.",
@@ -2630,7 +2630,7 @@
             },
             "operator": {
                 "title": "Who builds and runs it",
-                "body": "Siglens is built and run alone by independent developer {name}. Costs are paid out of pocket, there's no brokerage or asset-manager affiliation, and no payment is taken to promote any stock. There's no trading or order feature, and no brokerage account connection.",
+                "body": "SIGLENS is built and run alone by independent developer {name}. Costs are paid out of pocket, there's no brokerage or asset-manager affiliation, and no payment is taken to promote any stock. There's no trading or order feature, and no brokerage account connection.",
                 "role": "Development & operations",
                 "email": "Email",
                 "github": "GitHub profile",
@@ -2643,12 +2643,12 @@
                 "personal": "It doesn't account for your personal finances or goals.",
                 "variance": "A different model or prompt can produce different text for the same data.",
                 "levels": "Entry, stop loss, and target levels in an analysis are reference numbers the AI proposes after reading the chart structure. The code checks that the stop loss and the first target fall within a reasonable range given volatility, and shows a correction when they do not. They explain what to check at each price; they are not instructions to trade.",
-                "disclaimer": "Siglens analysis is for reference only. It doesn't recommend buying or selling or give investment advice, and investment decisions are your own responsibility.",
+                "disclaimer": "SIGLENS analysis is for reference only. It doesn't recommend buying or selling or give investment advice, and investment decisions are your own responsibility.",
                 "terms": "Terms of Service"
             },
             "faq": {
                 "title": "Frequently asked questions",
-                "whatQ": "What is Siglens?",
+                "whatQ": "What is SIGLENS?",
                 "whatA": "A web service where you enter a company name or ticker and AI analyzes its chart, indicators, candlestick patterns, financial statements, news, options, US congressional trades, and the Fear & Greed Index together. It covers US stocks, Korean stocks (KOSPI and KOSDAQ), and crypto.",
                 "freeQ": "Is it free? Do I need an account?",
                 "freeA": "Basic analysis is free with no sign-up. Members can pick stronger AI models and reasoning options, and see a few more details such as entry, stop loss, and target levels.",
@@ -2657,9 +2657,9 @@
                 "accuracyQ": "Does the AI make up numbers?",
                 "accuracyA": "Indicators and signals are computed by fixed rules, not by AI. AI receives the computed values and only explains them, and plain-language text that contains a number the computation didn't produce is filtered out. Mistakes can still slip into the text, so check important numbers against the chart.",
                 "adviceQ": "Does it tell me what to buy or sell?",
-                "adviceA": "No. Siglens doesn't give investment advice. The analysis is reference material to help you decide; the decision and its responsibility are yours.",
+                "adviceA": "No. SIGLENS doesn't give investment advice. The analysis is reference material to help you decide; the decision and its responsibility are yours.",
                 "aiQ": "How is it different from SIGLENS AI?",
-                "aiA": "Siglens shows an analysis report in a fixed format when you enter a ticker. SIGLENS AI (ai.siglens.io) answers questions you ask in conversation, looking up prices, news, and analysis as it goes. Siglens is handy for digging into one ticker; SIGLENS AI for a string of follow-up questions.",
+                "aiA": "SIGLENS shows an analysis report in a fixed format when you enter a ticker. SIGLENS AI (ai.siglens.io) answers questions you ask in conversation, looking up prices, news, and analysis as it goes. SIGLENS is handy for digging into one ticker; SIGLENS AI for a string of follow-up questions.",
                 "contactQ": "Where do I report something wrong?",
                 "contactA": "Send an email or use the contact link at the bottom of the page. The operator reads and answers it personally."
             },
@@ -2748,7 +2748,7 @@
             },
             "adBanner": {
                 "analyzing": "The AI is running a detailed analysis… Ad revenue funds better AI models and server costs.",
-                "done": "Was this analysis useful? Using the affiliate links below helps keep Siglens running."
+                "done": "Was this analysis useful? Using the affiliate links below helps keep SIGLENS running."
             },
             "duration": {
                 "minutesSeconds": "{v0}m {v1}s",
@@ -2877,7 +2877,7 @@
                 "116858": "Backtesting results verified with actual market data.",
                 "394fff": "Indicator Signal Hit Rate (Historical)",
                 "5a254c": "AI Scenario Hit Rate (Historical)",
-                "caee31": "Shows what happened when the AI analysis Siglens provides today is applied, as-is, to past data. Based on historical data; it does not guarantee future results.",
+                "caee31": "Shows what happened when the AI analysis SIGLENS provides today is applied, as-is, to past data. Based on historical data; it does not guarantee future results.",
                 "d8b543": "Backtest — Verified Against Historical Data",
                 "f92294": "Total Cases",
                 "aiTrendHitRateLabel": "AI Trend Direction Hit Rate (Historical)",
@@ -3543,7 +3543,7 @@
                 "ebff92": "Reliability score of the analysis technique."
             },
             "StatsBar": {
-                "deac8e": "Siglens Analysis Scale"
+                "deac8e": "SIGLENS Analysis Scale"
             },
             "TickerCategories": {
                 "227844": "Popular Korean Stocks by Theme",
@@ -3562,7 +3562,7 @@
                 "Fintechcrypto": "Payments, brokerage and crypto-trading firms — they react to both interest rates and coin prices.",
                 "Healthcarebiotech": "Pharma, medical-device and drug-development firms — trial results and regulatory approvals move the price.",
                 "Internetplatforms": "Korean portal, commerce and gaming firms — watched through ad spending and user metrics.",
-                "Trendinginterest": "Korean stocks SigLens visitors looked up most this week.",
+                "Trendinginterest": "Korean stocks SIGLENS visitors looked up most this week.",
                 "KOSDAQ": "The biggest KOSDAQ names by market cap — higher volatility than the KOSPI market.",
                 "LeveragedETFs": "ETFs that track 2–3x the daily index return — high volatility, with compounding decay when held long.",
                 "Major": "The largest cryptocurrencies by market cap — the benchmark for the whole market.",
@@ -3597,7 +3597,7 @@
                 "Fintechcrypto": "Fintech & crypto",
                 "Healthcarebiotech": "Healthcare & biotech",
                 "Internetplatforms": "Internet & platforms",
-                "Trendinginterest": "Trending on SigLens",
+                "Trendinginterest": "Trending on SIGLENS",
                 "KOSDAQ": "KOSDAQ",
                 "LeveragedETFs": "Leveraged ETFs",
                 "Megacapsindices": "Mega caps & indices",

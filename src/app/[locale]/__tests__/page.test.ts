@@ -33,7 +33,7 @@ vi.mock('@/entities/skill/api', () => ({
 vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
     SITE_DESCRIPTION: 'test description',
-    SITE_NAME: 'Siglens',
+    SITE_NAME: 'SIGLENS',
     SITE_URL: 'https://siglens.io',
 }));
 vi.mock('next/link', () => ({ default: () => null }));
@@ -68,7 +68,7 @@ describe('홈 generateMetadata', () => {
             const meta = await load(locale);
 
             // `absolute`여야 한다 — 문자열로 돌려주면 루트 레이아웃의
-            // `title.template`(`%s | Siglens`)이 먹는다. 마스터의 홈은 title을
+            // `title.template`(`%s | SIGLENS`)이 먹는다. 마스터의 홈은 title을
             // 아예 반환하지 않아 레이아웃 `default`가 그대로 나갔고(템플릿
             // 미적용), 카탈로그로 옮기며 문자열을 돌려주는 순간 v0.48.0에서
             // 일부러 뗀 접미사가 조용히 돌아왔다.
@@ -76,7 +76,7 @@ describe('홈 generateMetadata', () => {
             expect(typeof title).toBe('object');
             const absolute = (title as { absolute?: string }).absolute;
             expect(absolute).toBeTruthy();
-            expect(absolute).not.toContain('| Siglens');
+            expect(absolute).not.toContain('| SIGLENS');
             expect(meta.description).toBeTruthy();
             if (locale !== 'ko') {
                 expect(String(absolute)).not.toMatch(/[가-힣]/);
