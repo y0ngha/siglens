@@ -200,7 +200,7 @@ jobs:
                       --build-arg NEXT_PUBLIC_ADSENSE_SLOT_PROGRESS=2260139933 \
                       --build-arg NEXT_PUBLIC_ADSENSE_SLOT_PANEL_BOTTOM=5816241560 \
                       --build-arg NEXT_PUBLIC_ADSENSE_ENABLED=false \
-                      `# GIT_SHA carries the release version (IMAGE_TAG), not a commit SHA. It is baked as buildId and used as the per-release S3 cache prefix (siglens-isr/<GIT_SHA>/...).` \
+                      `# GIT_SHA carries the release version (IMAGE_TAG), not a commit SHA. It is baked as buildId and used as the per-release S3 page-cache prefix (siglens-isr/<GIT_SHA>/pages/...); the data cache uses DATA_CACHE_VERSION instead (cache-handler/config.mjs).` \
                       --build-arg PRERENDER_LOCALES=${{ vars.PRERENDER_LOCALES }} \
                       --build-arg FMP_AT_BUILD=${{ vars.FMP_AT_BUILD || 'best-effort' }} \
                       --build-arg GIT_SHA=${IMAGE_TAG} \
@@ -241,9 +241,22 @@ jobs:
               run: echo "Deployed siglens:${IMAGE_TAG}; ASG instance refresh completed successfully."
 
             # Purge the Cloudflare cache after a successful deploy so the new build is served
-            # immediately. Content-hashed /_next/static assets bust on their own, but cached
-            # HTML pages would otherwise serve old markup (and reference old CSS) until the
-            # s-maxage window expires — which is why a style change wasn't appearing without this.
+            # immediately. Cached HTML would otherwise serve old markup (and reference old CSS)
+            # until the s-maxage window expires — which is why a style change wasn't appearing
+            # without this.
+            #
+            # The origin tags every response (src/shared/config/cdnCacheTags.ts). With the repo
+            # variable CF_TAG_PURGE_ENABLED=true only the `siglens-html` tag is purged
+            # (scripts/purge-cdn-cache.sh), so content-hashed /_next/static assets, images and OG
+            # images stay cached across deploys. If the tag purge call fails the script falls back
+            # to purge_everything and logs a warning annotation.
+            #
+            # Without that variable (the default) the step still does purge_everything. That is
+            # the safe default: entries cached before the origin emitted Cache-Tag carry no tag,
+            # so a tag purge would leave old HTML pointing at old chunks. Turn the variable on
+            # only after the first release that emits Cache-Tag has deployed (and purged
+            # everything); unset it to go back to full purges.
+            #
             # continue-on-error: a purge hiccup (or a not-yet-configured token) must NOT mark an
             # already-completed rollout as failed.
             - name: Purge Cloudflare cache
@@ -251,22 +264,11 @@ jobs:
               env:
                   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
                   CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
-              run: |
-                  resp=$(curl -sS -X POST \
-                    "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache" \
-                    -H "Authorization: Bearer ${CF_API_TOKEN}" \
-                    -H "Content-Type: application/json" \
-                    --data '{"purge_everything":true}')
-                  echo "$resp"
-                  if echo "$resp" | grep -q '"success":true'; then
-                    echo "✅ Cloudflare cache purged"
-                  else
-                    echo "⚠️ Cloudflare purge failed — verify CF_API_TOKEN secret (Zone:Cache Purge) and CF_ZONE_ID"
-                    exit 1
-                  fi
+                  CF_TAG_PURGE_ENABLED: ${{ vars.CF_TAG_PURGE_ENABLED }}
+              run: bash scripts/purge-cdn-cache.sh
 
-            # 퍼지 **뒤에** 예열한다. ISR 캐시는 배포마다 `siglens-isr/{GIT_SHA}/`로
-            # 갈리고 CF는 방금 통째로 비웠으므로, 이 단계가 없으면 배포 직후 크롤·방문이
+            # 퍼지 **뒤에** 예열한다. ISR 페이지 캐시는 배포마다 `siglens-isr/{GIT_SHA}/pages/`로
+            # 갈리고 CF는 방금 HTML(또는 전체)을 비웠으므로, 이 단계가 없으면 배포 직후 크롤·방문이
             # 전부 콜드 렌더를 맞는다(2026-09-17 실측: 응답 중앙값 1.05초, p99 4.5초).
             # continue-on-error: 예열 실패가 이미 끝난 롤아웃을 실패로 만들면 안 된다.
             #

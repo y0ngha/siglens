@@ -44,7 +44,11 @@ vi.mock('next/cache', () => ({
         },
 }));
 
-import { DrizzleTermsRepository, getActiveTerms } from '@/entities/terms/api';
+import {
+    DrizzleTermsRepository,
+    getActiveTerms,
+    TERMS_RELEASE_ID,
+} from '@/entities/terms/api';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type { TermsKind } from '@/shared/db/constants';
@@ -395,7 +399,9 @@ describe('getActiveTerms', () => {
 
     // 배포 빌드에는 DB가 없어 legal 페이지 본문은 런타임 ISR 재생성이 채운다. 그 재생성은
     // 정적 렌더라 캐시 밖 DB 조회는 DYNAMIC_SERVER_USAGE로 500이 된다(v0.96.0 장애).
-    it('조회를 kind·locale별 키와 약관 태그로 unstable_cache 안에서 한다', async () => {
+    // 데이터 캐시는 배포를 넘어 공유되므로, 키에 릴리스 식별자가 없으면 "발효 직후 배포로
+    // 즉시 재생성" 절차가 옛 약관 본문을 다시 읽는다.
+    it('조회를 kind·locale·릴리스별 키와 약관 태그로 unstable_cache 안에서 한다', async () => {
         delete process.env.SIGLENS_OFFLINE_BUILD;
         vi.spyOn(
             DrizzleTermsRepository.prototype,
@@ -407,13 +413,24 @@ describe('getActiveTerms', () => {
 
         expect(unstableCacheCalls).toEqual([
             {
-                keyParts: ['terms:active', 'tos', 'ja'],
+                keyParts: ['terms:active', 'tos', 'ja', TERMS_RELEASE_ID],
                 options: {
                     revalidate: SECONDS_PER_DAY,
                     tags: ['terms:active'],
                 },
             },
         ]);
+    });
+
+    it('릴리스 식별자는 컨테이너 env GIT_SHA(릴리스 버전)다', async () => {
+        vi.stubEnv('GIT_SHA', 'v9.9.9');
+        vi.resetModules();
+        try {
+            const fresh = await import('@/entities/terms/api');
+            expect(fresh.TERMS_RELEASE_ID).toBe('v9.9.9');
+        } finally {
+            vi.unstubAllEnvs();
+        }
     });
 
     it('활성 약관이 없으면 null을 그대로 돌려준다', async () => {

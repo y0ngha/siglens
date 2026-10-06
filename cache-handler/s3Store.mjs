@@ -47,15 +47,19 @@ function s3() {
 // S3 키 1024바이트 한계 아래 헤드룸(.cache 접미사 + prefix 길이 감안).
 const S3_KEY_HASH_THRESHOLD = 900;
 
+// 데이터(FETCH)는 배포를 넘어 공유하고 페이지는 빌드에 묶는다 — 근거와 버전 규칙은
+// config.mjs `DATA_CACHE_VERSION`.
 function s3Key(key, kind) {
-    const sub = kind === 'FETCH' ? 'fetch' : 'pages';
+    const isFetch = kind === 'FETCH';
+    const scope = isFetch ? config.dataScope : config.buildId;
+    const sub = isFetch ? 'fetch' : 'pages';
     const encoded = encodeURIComponent(key);
     // S3 키 1024바이트 한계 — 초과 시 sha256으로 대체(고유성 보존).
     const id =
         Buffer.byteLength(encoded) > S3_KEY_HASH_THRESHOLD
             ? createHash('sha256').update(key).digest('hex')
             : encoded;
-    return `${config.keyPrefix}/${config.buildId}/${sub}/${id}.cache`;
+    return `${config.keyPrefix}/${scope}/${sub}/${id}.cache`;
 }
 
 /**
