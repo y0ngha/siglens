@@ -2,9 +2,12 @@ import { readFmpConfig } from '@y0ngha/siglens-core';
 import { withRetry } from '@/shared/lib/withRetry';
 import { FmpHttpError } from '@/shared/api/fmp/FmpHttpError';
 import {
+    FMP_RENDER_FETCH_TIMEOUT_MS,
+    FMP_RENDER_RETRY,
     FMP_TRANSIENT_RETRY,
     isFmpTransientError,
 } from '@/shared/api/fmp/fmpRetry';
+import { isRenderBudgetActive } from '@/shared/lib/renderBudget';
 import { logFmpPaymentRequiredError } from '@/shared/api/fmp/fmpUserMessage';
 import { toFmpSymbol } from '@/shared/lib/fmpSymbol';
 import {
@@ -18,7 +21,7 @@ import {
 /** Base URL for all FMP `/stable/*` endpoints. */
 export const FMP_STABLE_BASE = 'https://financialmodelingprep.com/stable';
 
-/** Timeout for all FMP fetch calls (ms). */
+/** Timeout for FMP fetch calls outside a page render (ms). Render path: `FMP_RENDER_FETCH_TIMEOUT_MS`. */
 const FMP_FETCH_TIMEOUT_MS = 10_000;
 
 /** Options for {@link fmpGet}. */
@@ -40,7 +43,11 @@ function parseRetryAfterSeconds(header: string | null): number | null {
  * GET FMP /stable/<path>; appends apikey automatically.
  *
  * Transient errors (429, 5xx, network failures, timeouts) are retried up to 3
- * times with exponential backoff. Non-transient 4xx errors are thrown
+ * times with exponential backoff. Inside a page render (`runWithRenderBudget`,
+ * entered by the render cache wrappers such as `staticSymbolCache`) the short
+ * `FMP_RENDER_RETRY` budget applies instead — 1 retry, 3s per attempt — so a
+ * slow FMP degrades the page instead of stalling the ISR render for up to a
+ * minute. Non-transient 4xx errors are thrown
  * immediately as `FmpHttpError`. `readFmpConfig()` and `URLSearchParams` run
  * once per call — only `fetch()` is inside the retry loop so each attempt gets
  * a fresh `AbortSignal` timeout.
@@ -70,6 +77,11 @@ export async function fmpGet<T>(
             ? { ...query, symbol: toFmpSymbol(query.symbol) }
             : query;
     const params = new URLSearchParams({ ...normalized, apikey: apiKey });
+    // 호출 시점의 비동기 컨텍스트로 한 번 정한다 — 재시도도 같은 예산을 쓴다.
+    const inRender = isRenderBudgetActive();
+    const timeoutMs = inRender
+        ? FMP_RENDER_FETCH_TIMEOUT_MS
+        : FMP_FETCH_TIMEOUT_MS;
 
     const fetchOnce = async (): Promise<T> => {
         const res = await fetch(
@@ -78,7 +90,7 @@ export async function fmpGet<T>(
                 ...(opts.revalidate !== undefined
                     ? { next: { revalidate: opts.revalidate } }
                     : { cache: 'no-store' }),
-                signal: AbortSignal.timeout(FMP_FETCH_TIMEOUT_MS),
+                signal: AbortSignal.timeout(timeoutMs),
             }
         );
         if (!res.ok) {
@@ -105,7 +117,12 @@ export async function fmpGet<T>(
         return (await res.json()) as T;
     };
 
-    if (!isBuildPhase()) return withRetry(fetchOnce, FMP_TRANSIENT_RETRY);
+    if (!isBuildPhase()) {
+        return withRetry(
+            fetchOnce,
+            inRender ? FMP_RENDER_RETRY : FMP_TRANSIENT_RETRY
+        );
+    }
     try {
         return await fetchOnce();
     } catch (error) {

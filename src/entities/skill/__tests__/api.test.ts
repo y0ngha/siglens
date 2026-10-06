@@ -1,4 +1,8 @@
-import { countSkillFiles, FileSkillsLoader } from '@/entities/skill/api';
+import {
+    __resetSkillCountsForTests,
+    countSkillFiles,
+    FileSkillsLoader,
+} from '@/entities/skill/api';
 import type { Skill } from '@y0ngha/siglens-core';
 import { dedupeByName, parseGating } from '../api';
 import path from 'node:path';
@@ -1065,6 +1069,7 @@ confidence_weight: 0.5
     beforeEach(() => {
         mockReaddir.mockReset();
         mockReadFile.mockReset();
+        __resetSkillCountsForTests();
     });
 
     it('frontmatter의 type/category 기준으로 카운트한다', async () => {
@@ -1268,6 +1273,29 @@ confidence_weight: 0.5
         mockReaddir.mockRejectedValue(error);
 
         await expect(countSkillFiles()).rejects.toThrow('EACCES');
+    });
+
+    it('프로세스당 한 번만 센다 — 두 번째 호출은 파일시스템을 다시 읽지 않는다', async () => {
+        mockReaddir.mockResolvedValue([]);
+
+        const first = await countSkillFiles();
+        const second = await countSkillFiles();
+
+        expect(second).toBe(first);
+        expect(mockReaddir).toHaveBeenCalledTimes(1);
+    });
+
+    it('실패는 메모하지 않는다 — 다음 호출이 다시 센다', async () => {
+        const error = Object.assign(new Error('EACCES: permission denied'), {
+            code: 'EACCES',
+        });
+        mockReaddir.mockRejectedValueOnce(error).mockResolvedValue([]);
+
+        await expect(countSkillFiles()).rejects.toThrow('EACCES');
+        await expect(countSkillFiles()).resolves.toMatchObject({
+            indicators: 0,
+        });
+        expect(mockReaddir).toHaveBeenCalledTimes(2);
     });
 });
 

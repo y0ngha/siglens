@@ -590,14 +590,40 @@ export async function loadShowcaseSkills(): Promise<Skill[]> {
     return readSkills(mdFiles.filter(file => !isCoreSkillFile(file)));
 }
 
-// cacheComponents 비활성 기간 동안 'use cache' 제거.
-// skills 디렉토리는 빌드 산출물이라 매 요청 fs.readdir이 사실상 OS page cache hit.
-//
-// 스킬 카탈로그 규모를 frontmatter 기준으로 집계한다(`type`/`category` 필드 기준, 디렉터리
-// 기준 아님). 단 `_core/` 내부 primer는 센 값에서 뺀다(`CORE_SKILLS_DIR` 참고).
-// 홈 히어로·StatsBar, /about, /methodology, 종목 페이지의 진행 문구·가입 업셀이 모두
-// 이 함수 하나를 소스로 써서 서로 다른 수를 말하지 않는다.
-export async function countSkillFiles(): Promise<SkillCounts> {
+/**
+ * `countSkillFiles` 결과의 프로세스 메모. 성공한 집계만 남는다(실패하면 비워 다음 호출이 다시 센다).
+ */
+let skillCountsMemo: Promise<SkillCounts> | null = null;
+
+/**
+ * 스킬 카탈로그 규모를 frontmatter 기준으로 집계한다(`type`/`category` 필드 기준, 디렉터리
+ * 기준 아님). 단 `_core/` 내부 primer는 센 값에서 뺀다(`CORE_SKILLS_DIR` 참고).
+ * 홈 히어로·StatsBar, /about, /methodology, 종목 페이지의 진행 문구·가입 업셀이 모두
+ * 이 함수 하나를 소스로 써서 서로 다른 수를 말하지 않는다.
+ *
+ * **프로세스 수명 동안 한 번만 센다.** `skills/`는 빌드 산출물이라 실행 중에는 바뀌지 않는데,
+ * 예전에는 렌더마다 디렉터리를 훑고 `.md` 약 100개를 읽어 frontmatter를 파싱했다 — 종목 차트
+ * 탭 렌더마다였다(2026-10 서버 성능 감사 L6). 동시 호출도 같은 프라미스를 받는다.
+ * 실패(EACCES 등)는 메모하지 않는다 — 호출부가 0으로 degrade한 뒤 다음 렌더가 다시 시도한다.
+ * 개발 서버에서 스킬 파일을 고쳤다면 서버를 재시작해야 수가 바뀐다.
+ */
+export function countSkillFiles(): Promise<SkillCounts> {
+    if (skillCountsMemo === null) {
+        const pending = computeSkillCounts();
+        skillCountsMemo = pending;
+        pending.catch(() => {
+            if (skillCountsMemo === pending) skillCountsMemo = null;
+        });
+    }
+    return skillCountsMemo;
+}
+
+/** 테스트 전용 — `countSkillFiles` 메모를 비운다. */
+export function __resetSkillCountsForTests(): void {
+    skillCountsMemo = null;
+}
+
+async function computeSkillCounts(): Promise<SkillCounts> {
     const mdFiles = await collectMdFiles(SKILLS_DIR);
     const skills = await readSkills(
         mdFiles.filter(file => !isCoreSkillFile(file))

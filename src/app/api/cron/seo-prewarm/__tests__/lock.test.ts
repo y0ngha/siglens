@@ -122,6 +122,35 @@ describe('seo-prewarm lock', () => {
             expect(await acquirePrewarmLock()).toBeNull();
         });
 
+        it('SET이 timeout으로 던지면 같은 토큰으로 정리 eval을 시도한 뒤 원래 에러를 던진다', async () => {
+            const timeout = new DOMException('timed out', 'TimeoutError');
+            mockSet.mockRejectedValueOnce(timeout);
+            mockEval.mockResolvedValueOnce(0);
+
+            await expect(acquirePrewarmLock()).rejects.toBe(timeout);
+            expect(mockEval).toHaveBeenCalledWith(
+                expect.stringContaining("redis.call('get', KEYS[1])"),
+                ['seo-prewarm:lock'],
+                ['token-1']
+            );
+        });
+
+        it('정리 eval까지 실패해도 원래 SET 에러를 던진다', async () => {
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
+            const original = new Error('set down');
+            mockSet.mockRejectedValueOnce(original);
+            mockEval.mockRejectedValueOnce(new Error('eval down'));
+
+            await expect(acquirePrewarmLock()).rejects.toBe(original);
+            expect(warnSpy).toHaveBeenCalledWith(
+                '[seo-prewarm] lock cleanup failed',
+                expect.any(Error)
+            );
+            warnSpy.mockRestore();
+        });
+
         it('redis null이면 null 반환, throw 없음', async () => {
             vi.mocked(getRedisClient).mockReturnValue(null);
             const errSpy = vi

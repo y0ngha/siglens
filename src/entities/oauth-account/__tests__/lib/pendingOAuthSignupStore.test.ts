@@ -198,10 +198,15 @@ describe('createPendingOAuthSignupStoreFromEnv', () => {
         expect(typeof store?.save).toBe('function');
         expect(typeof store?.consume).toBe('function');
         expect(mockRedisConstructor).toHaveBeenCalledTimes(1);
-        expect(mockRedisConstructor).toHaveBeenCalledWith({
-            url: 'https://redis.upstash.io',
-            token: 'token',
-        });
+        // 공유 클라이언트(`redisClient.ts`)는 자격증명 외에 timeout·재시도 옵션도 넘긴다.
+        expect(mockRedisConstructor).toHaveBeenCalledWith(
+            expect.objectContaining({
+                url: 'https://redis.upstash.io',
+                token: 'token',
+                retry: { retries: 1 },
+                signal: expect.any(Function),
+            })
+        );
     });
 
     it('returns null when UPSTASH_REDIS_REST_URL is not set', async () => {

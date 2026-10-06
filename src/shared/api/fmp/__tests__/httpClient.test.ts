@@ -25,6 +25,8 @@ import { readFmpConfig } from '@y0ngha/siglens-core';
 import { FMP_STABLE_BASE, fmpGet } from '@/shared/api/fmp/httpClient';
 import { FmpHttpError } from '@/shared/api/fmp/FmpHttpError';
 import { sleep } from '@/shared/lib/sleep';
+import { runWithRenderBudget } from '@/shared/lib/renderBudget';
+import { FMP_RENDER_FETCH_TIMEOUT_MS } from '@/shared/api/fmp/fmpRetry';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import {
     __resetFmpBuildBreakerForTests,
@@ -185,6 +187,48 @@ describe('fmpGet 함수는', () => {
             const error = await fmpGet('profile').catch((e: unknown) => e);
             expect(error).toBeInstanceOf(FmpHttpError);
             expect((error as FmpHttpError).retryAfterSeconds).toBeNull();
+        });
+    });
+
+    describe('렌더 예산(runWithRenderBudget) 안에서는', () => {
+        it('재시도를 1회로 줄인다 — 5xx 두 번이면 총 2회 시도 후 던진다', async () => {
+            mockError(500);
+            mockError(500);
+            mockError(500);
+
+            await expect(
+                runWithRenderBudget(() => fmpGet('profile'))
+            ).rejects.toThrow(FmpHttpError);
+            expect(mockFetch).toHaveBeenCalledTimes(2);
+        });
+
+        it('429의 10초 대기는 예산을 넘으므로 기다리지 않고 즉시 던진다', async () => {
+            mockError(429);
+            mockError(429);
+
+            await expect(
+                runWithRenderBudget(() => fmpGet('profile'))
+            ).rejects.toThrow(FmpHttpError);
+            expect(mockFetch).toHaveBeenCalledTimes(1);
+            expect(sleepMock).not.toHaveBeenCalled();
+        });
+
+        it('시도당 timeout을 렌더 예산 값으로 건다', async () => {
+            const timeoutSpy = vi.spyOn(AbortSignal, 'timeout');
+            mockOk({});
+
+            await runWithRenderBudget(() => fmpGet('profile'));
+            expect(timeoutSpy).toHaveBeenCalledWith(
+                FMP_RENDER_FETCH_TIMEOUT_MS
+            );
+        });
+
+        it('예산 밖 호출은 기존 10초 timeout을 유지한다', async () => {
+            const timeoutSpy = vi.spyOn(AbortSignal, 'timeout');
+            mockOk({});
+
+            await fmpGet('profile');
+            expect(timeoutSpy).toHaveBeenCalledWith(10_000);
         });
     });
 

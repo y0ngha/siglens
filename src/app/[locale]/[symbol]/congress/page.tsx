@@ -18,6 +18,8 @@ import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotSt
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { startWhenResolvable } from '@/app/[locale]/[symbol]/startWhenResolvable';
+import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
 import {
     ALWAYS_NOINDEX_TAB_ROBOTS,
@@ -104,6 +106,14 @@ export default async function CongressPage({ params }: Props) {
     // Hard-404 crypto symbols — this tab is equity-only.
     if (!(await isTabAllowedForSymbol(upper, 'congress'))) notFound();
 
+    // 의회 거래 fetch는 profile·스냅샷 게이트를 기다리지 않는다 — 캐시된 자산 해석이 이 심볼을
+    // 실재(non-null, 비 degrade)로 확인하는 즉시 시작해 나머지 게이트와 겹친다(감사 L2,
+    // `startWhenResolvable` JSDoc). 존재하지 않는 심볼에는 FMP를 쏘지 않는다.
+    const assetPromise = getAssetInfoResilient(upper);
+    const tradesPromise = startWhenResolvable(assetPromise, () =>
+        getCongressPageData(upper)
+    );
+
     // getProfileResilient uses ['fundamental:profile', upper] key, shared with
     // ProfileSection inside the fundamental page, so there is no extra FMP round-trip.
     // snapshots: ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
@@ -115,7 +125,7 @@ export default async function CongressPage({ params }: Props) {
         snapshots,
     ] = await Promise.all([
         getProfileResilient(upper),
-        getAssetInfoResilient(upper),
+        assetPromise,
         getSeoSnapshotsStatic(upper, revalidate, locale),
     ]);
     const congressSnapshot = (snapshots ?? []).find(s => s.tab === 'congress');
@@ -164,10 +174,13 @@ export default async function CongressPage({ params }: Props) {
     // `degraded` semantically differs from financials: ONLY FMP infra failure
     // is degrade. `trades.length === 0` is a normal indexable state — sparse
     // tickers legitimately have no congress trades on record.
+    // 위에서 자산 해석 직후 시작했다. 자산이 미해석·degrade라 시작하지 않았다면 지금 읽는다.
     const { trades, degraded: tradesDegraded } =
-        await getCongressPageData(upper);
+        (await tradesPromise) ?? (await getCongressPageData(upper));
 
     if (tradesDegraded) {
+        // FMP 장애(렌더 예산 초과 포함)로 degrade된 렌더가 24h 굳지 않게 5분으로 낮춘다.
+        await shortenRevalidateForRuntimeDegrade();
         return (
             <CongressDegraded
                 displayName={displayName}

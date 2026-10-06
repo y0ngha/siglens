@@ -83,6 +83,7 @@ import { NOINDEX_SYMBOL_METADATA } from '@/shared/lib/seo';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
+import { getCongressPageData } from '@/app/[locale]/[symbol]/congress/congressData';
 import { notFound } from 'next/navigation';
 import CongressPage, {
     generateMetadata,
@@ -110,6 +111,11 @@ describe('Congress page ISR route config', () => {
 describe('Congress page tab guard', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // 의회 거래 fetch는 profile 게이트와 병렬로 시작된다 — 프라미스를 돌려줘야 한다.
+        vi.mocked(getCongressPageData).mockResolvedValue({
+            trades: [],
+            degraded: false,
+        });
     });
 
     it('calls notFound() for a crypto symbol (isTabAllowedForSymbol → false)', async () => {
@@ -162,6 +168,8 @@ describe('Congress page tab guard', () => {
 
         // getProfileResilient must NOT have been called — the guard prevented it.
         expect(mockGetProfileResilient).not.toHaveBeenCalled();
+        // 병렬로 당겨 시작한 의회 거래 fetch도 가드 뒤에 있다 — 크립토에는 FMP를 부르지 않는다.
+        expect(getCongressPageData).not.toHaveBeenCalled();
     });
 });
 

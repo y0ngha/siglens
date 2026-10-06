@@ -28,6 +28,10 @@
  */
 
 // vi.mock calls are hoisted above imports by vitest.
+// degrade 섹션은 렌더 revalidate를 5분으로 낮춘다 — 호출 여부만 관찰한다.
+vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
+    shortenRevalidateForRuntimeDegrade: vi.fn().mockResolvedValue(undefined),
+}));
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: vi.fn().mockResolvedValue(true),
 }));
@@ -234,6 +238,7 @@ import FundamentalPage, {
 } from '@/app/[locale]/[symbol]/fundamental/page';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
+import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import {
     getProfile,
     getProfileDescription,
@@ -460,6 +465,8 @@ describe('Fundamental page ISR empty-cache prevention — section layer (Layer B
             expect.stringContaining('[ProfitabilitySection]'),
             expect.any(Error)
         );
+        // 렌더 예산 초과 등으로 degrade된 카드가 24h 굳지 않게 revalidate를 낮춘다.
+        expect(shortenRevalidateForRuntimeDegrade).toHaveBeenCalled();
 
         consoleSpy.mockRestore();
     });

@@ -57,6 +57,15 @@ export async function acquireTurnLock(
         if (result !== 'OK') return null;
     } catch (error) {
         console.warn(STORE_UNAVAILABLE_LOG, { op: 'turn-lock', error });
+        // 명령 timeout(`REDIS_COMMAND_TIMEOUT_MS`)은 "서버는 SET을 반영했는데 응답만 늦은" 경우에도
+        // 던진다. 그대로 두면 아무도 모르는 토큰의 락이 TTL(12분) 동안 남아 이 사용자의 다음 턴이
+        // 전부 server_busy가 된다. 우리 토큰으로 compare-and-delete를 한 번 시도해 둔다 — 반영되지
+        // 않았다면 no-op이라 안전하다(멱등). 응답을 붙잡지 않도록 기다리지 않는다.
+        void redis
+            .eval(RELEASE_LOCK_SCRIPT, [key], [token])
+            .catch((releaseError: unknown) =>
+                console.warn('[agent] turn lock cleanup failed', releaseError)
+            );
         return null;
     }
     return {

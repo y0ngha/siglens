@@ -17,6 +17,45 @@ describe('acquireTurnLock', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockGetRedisClient.mockReturnValue(redis);
+        redis.eval.mockReset().mockResolvedValue(1);
+    });
+
+    /**
+     * 명령 timeout은 서버가 SET을 반영한 뒤에도 날 수 있다. 그 락이 모르는 토큰으로 12분 남으면
+     * 사용자의 다음 턴이 전부 server_busy가 되므로, 같은 토큰으로 compare-and-delete를 시도한다.
+     */
+    it('set이 timeout으로 던지면 같은 토큰으로 정리 eval을 시도한다(반영 안 됐으면 no-op)', async () => {
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        try {
+            redis.set.mockRejectedValue(
+                new DOMException('timed out', 'TimeoutError')
+            );
+            expect(await acquireTurnLock('u1')).toBeNull();
+            const setToken = redis.set.mock.calls[0]?.[1];
+            expect(redis.eval).toHaveBeenCalledWith(
+                expect.stringContaining("redis.call('get', KEYS[1])"),
+                ['agent:turn-lock:u1'],
+                [setToken]
+            );
+        } finally {
+            warnSpy.mockRestore();
+        }
+    });
+
+    it('정리 eval이 실패해도 acquire는 null로 끝나고 던지지 않는다', async () => {
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        try {
+            redis.set.mockRejectedValue(new Error('down'));
+            redis.eval.mockRejectedValue(new Error('still down'));
+            expect(await acquireTurnLock('u1')).toBeNull();
+            await new Promise(resolve => setTimeout(resolve, 0));
+            expect(warnSpy).toHaveBeenCalledWith(
+                '[agent] turn lock cleanup failed',
+                expect.any(Error)
+            );
+        } finally {
+            warnSpy.mockRestore();
+        }
     });
 
     it('SET NX EX 600, release는 저장된 토큰과 일치하는 compare-and-delete eval을 호출한다', async () => {

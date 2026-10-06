@@ -7,9 +7,11 @@
  *    - FMP 실패(회로 열림 / `FMP_AT_BUILD=off`) — `shortenRevalidateIfFmpFailedAtBuild`
  *    - DB 없는 빌드(배포 빌드의 사설 RDS) — `shortenRevalidateIfDatabaseMissingAtBuild`
  *    - 판정이 이미 끝난 호출부용 무조건 변형 — `shortenRevalidateForBuildDegrade`
- * 2. **런타임 핀 — 300초**(`RUNTIME_DEGRADED_REVALIDATE_SECONDS`). 큐레이션 종목의 런타임 읽기 실패
- *    (봉·스냅샷·뉴스 카테고리 목록) 렌더가 6~24h 굳지 않게 한다 — `shortenRevalidateForRuntimeDegrade`.
- *    provider 지속 장애(예: FMP 402)를 매분 다시 부르지 않으려 빌드 값보다 길다.
+ * 2. **런타임 핀 — 300초**(`RUNTIME_DEGRADED_REVALIDATE_SECONDS`). 런타임 읽기 실패로 degrade된
+ *    렌더가 6~24h 굳지 않게 한다 — `shortenRevalidateForRuntimeDegrade`. 대상 범위는 호출부가
+ *    정한다: 봉·스냅샷은 큐레이션 종목만, FMP 탭 데이터(프로필·재무·의회·펀더멘털 섹션·실적/등급)와
+ *    뉴스 카테고리 목록은 전 종목. provider 지속 장애(예: FMP 402)를 매분 다시 부르지 않으려 빌드
+ *    값보다 길다.
  *
  * 원인별 판정은 각 호출부가 맡고, 이 파일은 "이번 렌더의 revalidate를 N초로"만 책임진다.
  */
@@ -23,7 +25,8 @@ import { isDatabaseMissingAtBuild } from '@/shared/db/config';
 export const BUILD_DEGRADED_REVALIDATE_SECONDS = 60;
 
 /**
- * 큐레이션 종목의 **런타임** degrade 렌더(봉·스냅샷·카테고리 목록 읽기 실패)의 revalidate(초).
+ * **런타임** degrade 렌더(봉·스냅샷·카테고리 목록·FMP 탭 데이터 읽기 실패)의 revalidate(초).
+ * 큐레이션 종목만 낮출지 전 종목을 낮출지는 호출부가 정한다(`shortenRevalidateForRuntimeDegrade`).
  *
  * 빌드타임 값(60초)과 **일부러 다르다.** 런타임 degrade의 흔한 원인은 provider의 지속 장애(예: FMP
  * 402)인데, 60초면 장애 중인 provider를 종목마다 매분 다시 부른다. 5분이면 noindex 노출 창은
@@ -130,12 +133,19 @@ export async function shortenRevalidateForBuildDegrade(): Promise<void> {
 }
 
 /**
- * 큐레이션 종목의 **런타임** degrade 렌더의 revalidate를 300초로 낮춘다
- * (`RUNTIME_DEGRADED_REVALIDATE_SECONDS`).
+ * **런타임** degrade 렌더의 revalidate를 300초로 낮춘다(`RUNTIME_DEGRADED_REVALIDATE_SECONDS`).
+ * 이 함수는 범위를 판정하지 않는다 — 호출부가 정한다.
  *
- * 쓰는 곳: 큐레이션 종목의 봉·스냅샷 읽기 실패(`getBarsStatic`·`getSeoSnapshotsStatic`)와 뉴스
- * 카테고리 목록 읽기 실패. 라우트 고유 revalidate(6~24h) 그대로면 그 degraded noindex가 반나절 넘게
- * 굳는다. throw(500) 대신 이 핀을 쓰면 콜드 렌더에서 사람이 에러 화면을 보지 않고, 노출 창이 5분으로
+ * 쓰는 곳:
+ *  - 큐레이션 종목만: 봉·스냅샷 읽기 실패(`getBarsStatic`·세션 봉·`getSeoSnapshotsStatic`·
+ *    `getAssetInfoResilient`). 롱테일은 noindex라 재생성 비용을 쓰지 않는다.
+ *  - 전 종목: FMP 탭 데이터 실패(`getProfileResilient`, 펀더멘털 섹션 `degradeSection`, 재무 빈
+ *    스냅샷, 의회 거래 degrade, 뉴스 탭 실적·등급)와 뉴스 카테고리 목록 실패. 렌더 경로 FMP는 짧은
+ *    예산(`renderBudget.ts`)으로 돌아 일시 지연만으로도 degrade될 수 있어, 방문자가 보는 빈 카드가
+ *    24h 굳지 않게 한다. ISR은 방문이 있어야 재생성하므로 비용은 장애가 이어지는 동안 방문당 최대
+ *    5분에 한 번의 재렌더다.
+ *
+ * 라우트 고유 revalidate(6~24h) 그대로면 그 degraded 렌더가 반나절 넘게 굳는다. throw(500) 대신 이 핀을 쓰면 콜드 렌더에서 사람이 에러 화면을 보지 않고, 노출 창이 5분으로
  * 줄어든다. 60초가 아닌 이유는 `RUNTIME_DEGRADED_REVALIDATE_SECONDS` 주석 참고.
  *
  * 런타임 ISR에서도 동작한다 — Next 16.3 `unstable-cache.js`가 `prerender-legacy` 스토어의

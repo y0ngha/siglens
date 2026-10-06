@@ -67,6 +67,13 @@ test.describe('auth password reset', () => {
         // in proxy.ts — a logged-in request is reverse-guarded to '/'. Clear the
         // session cookies so the forgot-password form actually renders. (The
         // reset flow is meant to be used by a signed-out user anyway.)
+        //
+        // Leave the post-signup landing page (/portfolio) FIRST. Its hydration-time
+        // React Query fetches are server actions; one still in flight when the
+        // cookies vanish gets 307'd by the proxy auth guard to /login, which does
+        // not register that action → "Failed to find Server Action" → the client's
+        // version-skew full reload, which aborts the page.goto below (PR #981 e2e).
+        await page.goto('about:blank');
         await page.context().clearCookies();
 
         // Clear the debug key the SIGNUP email left behind: it holds a record
