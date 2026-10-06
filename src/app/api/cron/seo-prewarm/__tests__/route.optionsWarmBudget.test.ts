@@ -38,6 +38,14 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: mockGetDatabaseClient,
 }));
 
+// 만료 행 정리는 자체 테스트(pruneExpiredRows.test.ts)가 덮는다 — 여기선 호출 순서만 본다.
+vi.mock('../pruneExpiredRows', () => ({
+    pruneExpiredRows: vi.fn().mockResolvedValue({
+        sessionsDeleted: 0,
+        sharedAnalysesDeleted: 0,
+    }),
+}));
+
 vi.mock('@/entities/analysis/analysisHistoryRepository', () => ({
     DrizzleAnalysisHistoryRepository: vi.fn().mockImplementation(function () {
         return { pruneAnalysisHistory: mockPruneAnalysisHistory };

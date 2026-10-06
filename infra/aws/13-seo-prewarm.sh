@@ -87,12 +87,15 @@
 set -euo pipefail
 
 source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/lib-cron.sh"
 source "$(dirname "$0")/.env"
 
 REGION="${AWS_REGION:-ap-northeast-2}"
 
 ROLE_NAME=siglens-seo-prewarm-eventbridge
-CONNECTION_NAME=siglens-seo-prewarm
+# 공유 Connection(`siglens-cron`)은 lib-cron.sh가 소유한다. 아래는 공유 이전의 전용
+# Connection 이름으로, 이관 후 삭제 대상이다(lib-cron.sh 머리말).
+LEGACY_CONNECTION_NAME=siglens-seo-prewarm
 DESTINATION_NAME=siglens-seo-prewarm
 RULE_EVENING=siglens-seo-prewarm-evening
 RULE_EVENING_LATE=siglens-seo-prewarm-evening-late
@@ -133,58 +136,17 @@ aws iam put-role-policy --role-name "$ROLE_NAME" --policy-name siglens-seo-prewa
 ROLE_ARN="$(aws iam get-role --role-name "$ROLE_NAME" --query 'Role.Arn' --output text)"
 log "role $ROLE_NAME ready ($ROLE_ARN)"
 
-### 3) Connection — API_KEY 인증으로 Authorization 헤더를 주입 ###
-if aws events describe-connection --name "$CONNECTION_NAME" --region "$REGION" >/dev/null 2>&1; then
-  aws events update-connection --name "$CONNECTION_NAME" --authorization-type API_KEY \
-    --auth-parameters "ApiKeyAuthParameters={ApiKeyName=Authorization,ApiKeyValue=Bearer ${CRON_SECRET}}" \
-    --region "$REGION" >/dev/null
-  log "connection $CONNECTION_NAME updated (secret refreshed)"
-else
-  aws events create-connection --name "$CONNECTION_NAME" --authorization-type API_KEY \
-    --auth-parameters "ApiKeyAuthParameters={ApiKeyName=Authorization,ApiKeyValue=Bearer ${CRON_SECRET}}" \
-    --region "$REGION" >/dev/null
-  log "connection $CONNECTION_NAME created"
-fi
-CONNECTION_ARN="$(aws events describe-connection --name "$CONNECTION_NAME" \
-  --query ConnectionArn --output text --region "$REGION")"
+### 3) Connection — Authorization: Bearer <CRON_SECRET> 주입 (13/14 공유, lib-cron.sh) ###
+ensure_cron_connection "$REGION" "$CRON_SECRET"
 
-# Connection 생성/갱신은 비동기로 AUTHORIZED 상태에 도달한다(관리형 시크릿 생성 포함).
-# API Destination이 이 Connection을 인증에 쓰므로, AUTHORIZED 전에 스케줄이 돌면
-# 초기 호출들이 조용히 인증 실패할 수 있다 — 짧게 폴링해 상태를 눈으로 확인한다.
-# 실패해도 스크립트 전체를 죽이지 않는다(나머지 리소스는 여전히 유용하고, 딜리버리
-# 스파이크 검증 단계에서 어차피 재확인한다).
-CONN_POLL_ATTEMPTS=12
-CONN_POLL_INTERVAL_SECONDS=5
-conn_authorized=false
-for ((i = 1; i <= CONN_POLL_ATTEMPTS; i++)); do
-  CONN_STATE="$(aws events describe-connection --name "$CONNECTION_NAME" \
-    --query ConnectionState --output text --region "$REGION" 2>/dev/null || echo "UNKNOWN")"
-  if [ "$CONN_STATE" = "AUTHORIZED" ]; then
-    conn_authorized=true
-    log "connection $CONNECTION_NAME is AUTHORIZED (attempt $i/$CONN_POLL_ATTEMPTS)"
-    break
-  fi
-  log "connection $CONNECTION_NAME state=$CONN_STATE, waiting... (attempt $i/$CONN_POLL_ATTEMPTS)"
-  sleep "$CONN_POLL_INTERVAL_SECONDS"
-done
-if [ "$conn_authorized" != true ]; then
-  log "WARNING: connection $CONNECTION_NAME did not reach AUTHORIZED within $((CONN_POLL_ATTEMPTS * CONN_POLL_INTERVAL_SECONDS))s (state=$CONN_STATE) — continuing script, but verify manually before trusting the schedule (aws events describe-connection --name $CONNECTION_NAME)"
+### 4) API Destination — 이미 있으면 공유 Connection으로 갈아 끼운 뒤 옛 전용 Connection 삭제 ###
+ensure_api_destination "$REGION" "$DESTINATION_NAME" "$ENDPOINT" "$CONNECTION_ARN"
+delete_legacy_connection "$REGION" "$LEGACY_CONNECTION_NAME"
+# 공유 Connection이 AUTHORIZED가 아니면 위 두 함수가 이관·삭제를 건너뛰었다(lib-cron.sh).
+# 스케줄은 아래에서 그대로 갱신되고, 기존 Destination은 옛 Connection으로 계속 동작한다.
+if [ "$CRON_CONNECTION_AUTHORIZED" != true ]; then
+  log "WARNING: cron connection migration incomplete — $CRON_RERUN_HINT"
 fi
-
-### 4) API Destination — PATCH https://siglens.io/api/cron/seo-prewarm ###
-if ! aws events describe-api-destination --name "$DESTINATION_NAME" --region "$REGION" >/dev/null 2>&1; then
-  aws events create-api-destination --name "$DESTINATION_NAME" \
-    --connection-arn "$CONNECTION_ARN" \
-    --invocation-endpoint "$ENDPOINT" \
-    --http-method PATCH \
-    --invocation-rate-limit-per-second 1 \
-    --region "$REGION" >/dev/null
-  log "api destination $DESTINATION_NAME created"
-else
-  log "api destination $DESTINATION_NAME exists"
-fi
-DEST_ARN="$(aws events describe-api-destination --name "$DESTINATION_NAME" \
-  --query ApiDestinationArn --output text --region "$REGION")"
 
 ### 5) Rule 5개 (UTC) — EventBridge cron은 UTC 고정이라 미국 마감 창을 자정
 ###    경계로 쪼개고, 20시대는 AWS cron이 "시간별로 다른 분(minute) 필터"를

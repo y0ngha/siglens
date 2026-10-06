@@ -1,6 +1,6 @@
 import type { Tier } from '@y0ngha/siglens-core';
 import type { OAuthProvider } from '@/shared/lib/types';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, lt, sql } from 'drizzle-orm';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { oauthAccounts, sessions, users } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
@@ -37,6 +37,15 @@ const sessionColumns = {
  * by this constant.
  */
 const SIGNED_UP_USER_TIER: Tier = 'member';
+
+/**
+ * {@link DrizzleSessionRepository.pruneExpiredSessions} 한 번이 지우는 최대 행 수.
+ *
+ * Postgres DELETE에는 `LIMIT`이 없어 `id IN (SELECT … LIMIT N)`으로 캡을 건다
+ * (`analysisHistoryRepository`의 `PRUNE_BATCH_SIZE`와 같은 이유 — 몇 달 치 누적을
+ * 한 문장으로 지우면 오래 잠근다). 남은 몫은 다음 seo-prewarm tick이 이어서 지운다.
+ */
+export const EXPIRED_SESSION_PRUNE_BATCH_SIZE = 500;
 
 /** Drizzle ORM implementation of {@link SessionRepository} backed by PostgreSQL. */
 export class DrizzleSessionRepository implements SessionRepository {
@@ -82,6 +91,34 @@ export class DrizzleSessionRepository implements SessionRepository {
         );
 
         return deletedSessions.length > 0;
+    }
+
+    /**
+     * 만료된 세션 행을 최대 {@link EXPIRED_SESSION_PRUNE_BATCH_SIZE}개 지우고 지운 수를 반환한다.
+     *
+     * 만료 세션은 로그인 판정에 쓰이지 않지만(조회 측이 `expiresAt`을 본다) 지우는 곳이
+     * 로그아웃(`deleteSession`)뿐이라, 로그아웃 없이 만료된 세션은 영원히 남았다.
+     * `WHERE expires_at < now`는 `sessions_expires_at_idx`를 탄다.
+     *
+     * 세션은 만료 시각을 연장하는 경로가 없으므로(생성·삭제만 있다) 서브쿼리로 고른 id를
+     * 그대로 지워도 경합이 없다. 실패는 호출부가 격리한다(seo-prewarm cron).
+     */
+    async pruneExpiredSessions(now: Date = new Date()): Promise<number> {
+        const expiredIds = this.db
+            .select({ id: sessions.id })
+            .from(sessions)
+            .where(lt(sessions.expiresAt, now))
+            .limit(EXPIRED_SESSION_PRUNE_BATCH_SIZE);
+
+        const deleted = await withRetry(
+            () =>
+                this.db
+                    .delete(sessions)
+                    .where(inArray(sessions.id, expiredIds))
+                    .returning({ id: sessions.id }),
+            DB_TRANSIENT_RETRY
+        );
+        return deleted.length;
     }
 }
 

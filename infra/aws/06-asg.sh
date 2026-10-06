@@ -13,8 +13,23 @@ source "$(dirname "$0")/lib.sh"; source "$(dirname "$0")/.env"; source "$(dirnam
 # EC2 SG는 인그레스 규칙이 0개이고, ACM 인증서도 CF IP 허용목록도 필요 없다.
 #
 # ALB가 하던 배포 시퀀싱은 라이프사이클 훅 2개가 대체한다(아래에서 생성).
-SUBNETS=$(aws ec2 describe-subnets --filters Name=vpc-id,Values="$VPC_ID" "Name=availability-zone,Values=ap-northeast-2a,ap-northeast-2b" Name=default-for-az,Values=true --query 'Subnets[].SubnetId' --output text)
+#
+# ── AZ 고정 ─────────────────────────────────────────────────────────────────
+# ASG는 **2a 하나에만** 인스턴스를 띄운다. RDS(15-rds.sh)가 Single-AZ 2a에 고정돼
+# 있어서, 앱 EC2가 2b에 뜨면 모든 DB 왕복이 AZ 간 전송(양방향 $0.01/GB)과 추가 RTT를
+# 탄다. 예전에는 2a,2b 두 서브넷을 줬고 desired=1이라 ASG가 AZ 균형을 맞추며 roll마다
+# 어느 쪽에 뜰지 정해지지 않았다 — 15-rds.sh의 "앱 EC2가 2a에 있다"는 전제가 절반만
+# 참이었다.
+#
+# 대가: 2a AZ 장애 시 ASG가 다른 AZ로 대체 인스턴스를 띄우지 못한다. 다만 RDS도
+# Single-AZ 2a라 그 상황에선 앱이 어차피 DB에 닿지 못한다 — 2b로 넘어가도 얻는 게 없다.
+# HA가 필요해지면(RDS Multi-AZ 승격과 **함께**) 아래 기본값에 2b를 다시 더한다:
+#     ASG_AZS=ap-northeast-2a,ap-northeast-2b bash infra/aws/06-asg.sh
+ASG_AZS="${ASG_AZS:-ap-northeast-2a}"
+SUBNETS=$(aws ec2 describe-subnets --filters Name=vpc-id,Values="$VPC_ID" "Name=availability-zone,Values=$ASG_AZS" Name=default-for-az,Values=true --query 'Subnets[].SubnetId' --output text)
+[ -n "$SUBNETS" ] && [ "$SUBNETS" != "None" ] || { log "ERROR: $VPC_ID에서 $ASG_AZS 기본 서브넷을 찾지 못했다"; exit 1; }
 SUBNET_CSV=$(echo $SUBNETS | tr ' ' ',')
+log "ASG subnets ($ASG_AZS): $SUBNET_CSV"
 
 # ASG (멱등)
 #
