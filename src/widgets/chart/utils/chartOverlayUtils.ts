@@ -1,6 +1,7 @@
 import type { ChartOverlay, OverlayLabel } from '@y0ngha/siglens-core';
 import {
     ALTERNATE_OVERLAY_OPACITY,
+    BREAKOUT_LEVEL_LABEL,
     DIMMED_OVERLAY_OPACITY,
     HIGHLIGHT_LINE_WIDTH_MULT,
     type OverlayColorTable,
@@ -31,6 +32,11 @@ export interface OverlayLineSpec {
     lineWidthMult: number;
     /** 레벨 라벨(가격축 옆 title). */
     title: string;
+    /**
+     * 라벨끼리 겹칠 때 누가 남는가 — 클수록 우선(`visibleLevelLabels`).
+     * 강조한 작도 > 돌파선 > 그 밖의 레벨. 제목이 없는 선분은 0.
+     */
+    labelPriority: number;
     markers: OverlayMarker[];
     /** 마지막 봉 ~ 가격축 앞까지 덧그릴지(수평 레벨만). */
     extendRight: boolean;
@@ -163,6 +169,11 @@ const toMarker = (l: OverlayLabel): OverlayMarker => ({
     price: l.at.price,
 });
 
+function levelLabelPriority(label: string, highlighted: boolean): number {
+    if (highlighted) return 3;
+    return label === BREAKOUT_LEVEL_LABEL ? 2 : 1;
+}
+
 export function buildOverlayLineSpecs(
     overlays: readonly ChartOverlay[],
     opts: OverlayLineSpecOptions
@@ -206,6 +217,7 @@ export function buildOverlayLineSpecs(
                         opacity,
                         lineWidthMult,
                         title: '',
+                        labelPriority: 0,
                         markers: [],
                         extendRight: false,
                     },
@@ -229,6 +241,10 @@ export function buildOverlayLineSpecs(
                           title: opts.levelLabelFor
                               ? opts.levelLabelFor(l.label, overlay)
                               : l.label,
+                          labelPriority: levelLabelPriority(
+                              l.label,
+                              highlighted
+                          ),
                           markers: [],
                           extendRight: opts.extendLevelsRight,
                       },
