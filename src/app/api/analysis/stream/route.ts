@@ -433,6 +433,10 @@ const DISPATCH: Record<
                     // "이 종목을 이전엔 이렇게 봤다"는 technical 판단은 여기서도
                     // 그대로 유효한 참고다.
                     tab: 'technical',
+                    // `runOverallAnalysisAction`이 `technical.session`으로 core에
+                    // 넘기는 것과 같은 세션 — 이력 쿼리의 `generatedBeforeMs`가
+                    // core의 캐시 키 경계(세션 마감)와 맞아야 한다.
+                    session: eventsSession,
                 }),
                 // overall **자신의** top-level `priorAnalyses` — overall의
                 // recency 윈도우(`OVERALL_CACHE_TTL_SECONDS`)로 읽는다.
@@ -441,6 +445,7 @@ const DISPATCH: Record<
                     timeframe,
                     tab: 'technical',
                     axis: 'overall',
+                    session: eventsSession,
                 }),
                 findMarketEventsForPrompt(overallDb, {
                     symbol,
@@ -1187,6 +1192,8 @@ export async function POST(request: Request): Promise<Response> {
                         symbol,
                         timeframe,
                         tab: 'technical',
+                        // core에 넘기는 것과 같은 세션 — 이력 경계가 core 캐시 키 경계와 맞는다.
+                        session,
                     }),
                     findMarketEventsForPrompt(technicalDb, {
                         symbol,

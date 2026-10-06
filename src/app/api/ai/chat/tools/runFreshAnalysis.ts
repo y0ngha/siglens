@@ -407,6 +407,10 @@ export const runFreshAnalysisTool: ToolExecutor = async (
                 // and `get_cached_analysis`, so a fresh analysis triggered
                 // from chat writes the SAME cache key the site reads/writes.
                 const historyDb = getDatabaseClient().db;
+                // One spec for history, events and core — the history query's
+                // `generatedBeforeMs` must sit on the same session boundary core
+                // uses to cut the cache-key history.
+                const session = sessionSpecFor(profile);
                 const [priorAnalyses, marketEvents, positionBucket] =
                     await Promise.all([
                         new DrizzleAnalysisHistoryRepository(
@@ -415,13 +419,11 @@ export const runFreshAnalysisTool: ToolExecutor = async (
                             symbol,
                             timeframe,
                             tab: 'technical',
+                            session,
                         }),
                         findMarketEventsForPrompt(historyDb, {
                             symbol,
-                            ...marketEventsLookback(
-                                timeframe,
-                                sessionSpecFor(profile)
-                            ),
+                            ...marketEventsLookback(timeframe, session),
                         }),
                         positionBucketFor(
                             ctx.userId,
@@ -431,7 +433,6 @@ export const runFreshAnalysisTool: ToolExecutor = async (
                             profile
                         ),
                     ]);
-                const session = sessionSpecFor(profile);
                 const options: SubmitAnalysisOptions = {
                     modelId: runtime.analysisModel,
                     marketDataProvider: getCachedMarketDataProvider(session),
@@ -473,6 +474,9 @@ export const runFreshAnalysisTool: ToolExecutor = async (
                 const overallHistoryRepo = new DrizzleAnalysisHistoryRepository(
                     overallDb
                 );
+                // Same spec `runOverallAnalysisAction` hands core as
+                // `technical.session` (both derive it from this profile).
+                const session = sessionSpecFor(profile);
                 const [
                     technicalPriorAnalyses,
                     overallPriorAnalyses,
@@ -482,19 +486,18 @@ export const runFreshAnalysisTool: ToolExecutor = async (
                         symbol,
                         timeframe,
                         tab: 'technical',
+                        session,
                     }),
                     overallHistoryRepo.findRecentForPrompt({
                         symbol,
                         timeframe,
                         tab: 'technical',
                         axis: 'overall',
+                        session,
                     }),
                     findMarketEventsForPrompt(overallDb, {
                         symbol,
-                        ...marketEventsLookback(
-                            timeframe,
-                            sessionSpecFor(profile)
-                        ),
+                        ...marketEventsLookback(timeframe, session),
                     }),
                 ]);
                 return unwrap(
