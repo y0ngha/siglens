@@ -3,11 +3,17 @@ import { runNewsCardAnalysis, type NewsItem } from '@y0ngha/siglens-core';
 import type { DrizzleNewsRepository } from '../api';
 import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';
 import { NEWS_CARD_ANALYSIS_PARALLEL_LIMIT } from './newsAnalysisConstants';
+import {
+    loadNewsCardFailures,
+    recordNewsCardFailures,
+} from './newsCardFailureBackoff';
 
 /**
  * 기사 한 건을 카드 분석(번역 + 라벨링)해 DB에 반영한다.
  *
  * 호출자가 `item`이 아직 미분석(`analyzedAt === null`)임을 보장한다.
+ *
+ * @returns 저장했으면 `true`, 빈 응답이라 건너뛰었으면 `false`(실패로 센다).
  *
  * 추론 on/off는 여기서 정하지 않는다 — `runNewsCardAnalysis`가 use-case 정책으로
  * `reasoning: false`를 고정한다(번역 + 라벨링은 결정적 변환).
@@ -15,7 +21,7 @@ import { NEWS_CARD_ANALYSIS_PARALLEL_LIMIT } from './newsAnalysisConstants';
 async function analyzeAndPersist(
     item: NewsItem,
     repo: DrizzleNewsRepository
-): Promise<void> {
+): Promise<boolean> {
     const analyzed = await runNewsCardAnalysis({ item });
 
     // titleKo와 summaryKo가 **둘 다** 비면 core normalizer의 crash-safe fallback을
@@ -39,10 +45,11 @@ async function analyzeAndPersist(
         console.warn(
             `[analyzeNewsCards] empty card analysis — skipping persist for ${item.id}`
         );
-        return;
+        return false;
     }
 
     await repo.attachAnalysis(item.id, analyzed.result, new Date());
+    return true;
 }
 
 export interface AnalyzeNewsCardsOptions {
@@ -92,12 +99,21 @@ export async function analyzeNewsCards(
     repo: DrizzleNewsRepository,
     options: AnalyzeNewsCardsOptions
 ): Promise<void> {
+    // 최근에 실패한 기사는 백오프가 끝날 때까지 건너뛴다(`newsCardFailureBackoff`).
+    // 상한 적용 **앞에** 거른다 — 백오프 중인 기사가 상한 슬롯을 차지하면 분석할 수
+    // 있는 다른 기사가 밀려난다.
+    const failures = await loadNewsCardFailures(candidates.map(c => c.id));
+    const now = Date.now();
+    const eligible = candidates.filter(
+        c => (failures.get(c.id)?.retryAfter ?? 0) <= now
+    );
+
     // 최신 기사가 분석 가치가 가장 높다. 상한에 걸려 잘려도 잘리는 쪽이 오래된
     // 기사가 되도록 정렬을 상한 적용 **앞에** 둔다.
     const targets =
         options.limit === undefined
-            ? candidates
-            : candidates
+            ? eligible
+            : eligible
                   .toSorted((a, b) =>
                       b.publishedAt.localeCompare(a.publishedAt)
                   )
@@ -113,11 +129,21 @@ export async function analyzeNewsCards(
         NEWS_CARD_ANALYSIS_PARALLEL_LIMIT,
         item => analyzeAndPersist(item, repo)
     );
-    const failures = settled.filter(r => r.status === 'rejected');
-    if (failures.length > 0) {
+    const rejected = settled.filter(r => r.status === 'rejected');
+    if (rejected.length > 0) {
         console.error(
-            `[${options.logLabel}] ${failures.length}/${targets.length} analyzeAndPersist failed`,
-            failures.map(f => (f.status === 'rejected' ? f.reason : null))
+            `[${options.logLabel}] ${rejected.length}/${targets.length} analyzeAndPersist failed`,
+            rejected.map(f => (f.status === 'rejected' ? f.reason : null))
         );
     }
+
+    // 던진 것과 빈 응답 둘 다 실패다 — 어느 쪽이든 `analyzedAt`이 비어 다음 패스가
+    // 다시 집는다. `settled`는 입력 순서를 지킨다(`withConcurrencyLimit` 계약).
+    const failedIds = targets
+        .map((target, i) => ({ id: target.id, outcome: settled[i] }))
+        .filter(
+            ({ outcome }) => outcome.status === 'rejected' || !outcome.value
+        )
+        .map(({ id }) => id);
+    await recordNewsCardFailures(failedIds, failures, now);
 }

@@ -4,6 +4,7 @@ import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
+import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 
 export interface ResilientProfile {
     /**
@@ -39,6 +40,13 @@ export interface ResilientProfile {
  * 1h it clamped those routes' effective `s-maxage` to 1h (Next takes the shortest
  * cache TTL read during render); 24h lets the shared bars (6h) be the floor
  * instead. On-demand `revalidateTag('symbol:X')` still forces a refresh.
+ *
+ * Degrade pins this render's revalidate to 5 minutes
+ * (`shortenRevalidateForRuntimeDegrade`). Render-path FMP calls run under a
+ * short budget (3s per attempt, 1 retry, no 429 wait — `renderBudget.ts`), so a
+ * transient slowdown can trip the degrade; without the pin that degraded page
+ * would stay in ISR for the route's full 24h. Callers are page renders only
+ * (fundamental/financials/congress), so the pin always lands on a render store.
  */
 export async function getProfileResilient(
     upper: string
@@ -63,6 +71,7 @@ export async function getProfileResilient(
                 e
             );
         }
+        await shortenRevalidateForRuntimeDegrade();
         return { profile: null, degraded: true };
     }
 }

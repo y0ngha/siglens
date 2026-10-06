@@ -1,6 +1,7 @@
 import { constants } from 'node:http2';
 import { isAuthorizedCronRequest } from '@/shared/lib/auth/isAuthorizedCronRequest';
 import { afterWithDrain } from '@/shared/lib/afterWithDrain';
+import { runAsBatchWork } from '@/shared/lib/renderBudget';
 import { syncKrListedTickers } from '@/entities/ticker/lib/syncKrListedTickers';
 
 const { HTTP_STATUS_UNAUTHORIZED, HTTP_STATUS_ACCEPTED } = constants;
@@ -24,14 +25,17 @@ export async function PATCH(request: Request): Promise<Response> {
 
     // SIGTERM 시 drain이 동기화 완료를 기다리도록 등록한다. after()만 쓰면 배포 중
     // 인스턴스 교체가 콜백을 고아로 만들어 그날 동기화가 조용히 사라진다.
-    afterWithDrain(async () => {
-        try {
-            const counts = await syncKrListedTickers();
-            console.log('[kr-tickers] sync done:', JSON.stringify(counts));
-        } catch (error) {
-            console.error('[kr-tickers] sync failed:', error);
-        }
-    });
+    // 배치 표식: FMP·Redis가 렌더 예산이 아니라 배치 정책을 쓴다(`renderBudget.ts`).
+    afterWithDrain(() =>
+        runAsBatchWork(async () => {
+            try {
+                const counts = await syncKrListedTickers();
+                console.log('[kr-tickers] sync done:', JSON.stringify(counts));
+            } catch (error) {
+                console.error('[kr-tickers] sync failed:', error);
+            }
+        })
+    );
 
     return new Response(null, { status: HTTP_STATUS_ACCEPTED });
 }

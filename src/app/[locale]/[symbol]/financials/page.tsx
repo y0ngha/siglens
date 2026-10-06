@@ -21,6 +21,8 @@ import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotSt
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
+import { startWhenResolvable } from '@/app/[locale]/[symbol]/startWhenResolvable';
+import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
 import {
     ALWAYS_NOINDEX_TAB_ROBOTS,
@@ -112,6 +114,14 @@ export default async function FinancialsPage({ params }: Props) {
     // Hard-404 crypto symbols — this tab is equity-only.
     if (!(await isTabAllowedForSymbol(upper, 'financials'))) notFound();
 
+    // 재무 6종 fetch는 profile·스냅샷 게이트를 기다리지 않는다 — 캐시된 자산 해석이 이 심볼을
+    // 실재(non-null, 비 degrade)로 확인하는 즉시 시작해 나머지 게이트와 겹친다(감사 L2,
+    // `startWhenResolvable` JSDoc). 존재하지 않는 심볼에는 FMP를 쏘지 않는다.
+    const assetPromise = getAssetInfoResilient(upper);
+    const pageDataPromise = startWhenResolvable(assetPromise, () =>
+        getFinancialsPageData(upper)
+    );
+
     // Gate via profile — same pattern as the fundamental page.
     // getProfileResilient uses ['fundamental:profile', upper] key, shared with
     // ProfileSection inside the fundamental page, so there is no extra FMP round-trip.
@@ -124,7 +134,7 @@ export default async function FinancialsPage({ params }: Props) {
         snapshots,
     ] = await Promise.all([
         getProfileResilient(upper),
-        getAssetInfoResilient(upper),
+        assetPromise,
         getSeoSnapshotsStatic(upper, revalidate, locale),
     ]);
     const financialsSnapshot = (snapshots ?? []).find(
@@ -180,13 +190,19 @@ export default async function FinancialsPage({ params }: Props) {
         notFound();
     }
 
-    // Fetch the annual snapshot + scorecard in a single call.
-    const { snapshot, scorecard } = await getFinancialsPageData(upper);
+    // Annual snapshot + scorecard — started above once the asset resolved; if it
+    // didn't (unresolved/degraded asset but a valid FMP profile), fetch it now.
+    const { snapshot, scorecard } =
+        (await pageDataPromise) ?? (await getFinancialsPageData(upper));
 
     // profile은 정상이나 6종 재무 fetch가 모두 비면(FMP 일시 장애) scorecard가 전 축 F로
     // 오인 렌더되고 색인된다. all-empty면 degrade UI로 전환하고(메타도 noindex로 일치),
     // 다음 revalidate에 데이터가 복구되면 자동 정상화된다. 스냅샷이 있으면 이 분기에서도 유지.
     if (isEmptyFinancialsSnapshot(snapshot)) {
+        // 빈 결과는 대개 FMP 일시 장애(렌더 예산 초과 포함)다 — degrade 렌더가 24h 굳지 않게
+        // 5분으로 낮춘다. 진짜로 재무가 없는 종목도 같은 값이 되지만, ISR은 방문이 있어야 재생성하므로
+        // 비용은 방문당 최대 5분에 한 번의 재렌더다.
+        await shortenRevalidateForRuntimeDegrade();
         return (
             <FinancialsDegraded
                 displayName={displayName}

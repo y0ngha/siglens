@@ -6,8 +6,20 @@ vi.mock('next/cache', () => ({
 }));
 
 vi.mock('../lib/newsRefreshFlag', () => ({
-    isRecentlyFetched: vi.fn(),
+    tryClaimNewsRefresh: vi.fn(),
+    shortenNewsRefreshClaim: vi.fn(),
     markFetched: vi.fn(),
+}));
+
+// 잠금은 기본적으로 항상 잡힌다(=그대로 실행). 다른 경로가 진행 중인 경우는 개별
+// 테스트가 덮어쓴다. 잠금 자체의 원자성·해제는 newsCardAnalysisLock.test.ts가 본다.
+vi.mock('../lib/newsCardAnalysisLock', () => ({
+    withNewsCardAnalysisLock: vi.fn(
+        async (_symbol: string, run: () => Promise<void>) => {
+            await run();
+            return true;
+        }
+    ),
 }));
 
 vi.mock('@y0ngha/siglens-core', async () => ({
@@ -65,14 +77,19 @@ import type {
     RunNewsCardAnalysisResult,
 } from '@y0ngha/siglens-core';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
-import { isRecentlyFetched, markFetched } from '../lib/newsRefreshFlag';
+import {
+    tryClaimNewsRefresh,
+    shortenNewsRefreshClaim,
+    markFetched,
+} from '../lib/newsRefreshFlag';
+import { withNewsCardAnalysisLock } from '../lib/newsCardAnalysisLock';
 import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
 import { NewsIngestWriteError } from '../lib/ingestNewsForSymbol';
 
 const MockNewsRepository = DrizzleNewsRepository as MockedClass<
     typeof DrizzleNewsRepository
 >;
-const mockIsRecentlyFetched = isRecentlyFetched as Mock;
+const mockTryClaimNewsRefresh = tryClaimNewsRefresh as Mock;
 const mockMarkFetched = markFetched as Mock;
 const mockGetNewsClient = getNewsClient as Mock;
 const mockIsE2E = isE2E as MockedFunction<typeof isE2E>;
@@ -127,7 +144,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         vi.clearAllMocks();
         mockRunNewsCardAnalysis.mockReset();
         mockRunNewsCardAnalysis.mockReset();
-        mockIsRecentlyFetched.mockResolvedValue(false);
+        mockTryClaimNewsRefresh.mockResolvedValue(true);
         mockMarkFetched.mockResolvedValue(undefined);
         mockIsE2E.mockReturnValue(false);
 
@@ -660,7 +677,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
 
     describe('skipAnalysis 옵션은', () => {
         it('true이면 FMP fetch와 DB upsert는 수행하지만 LLM 분석은 건너뛴다', async () => {
-            mockIsRecentlyFetched.mockResolvedValue(false);
+            mockTryClaimNewsRefresh.mockResolvedValue(true);
             mockFetchNewsForPeriod.mockResolvedValue([
                 NEWS_ITEM_1,
                 NEWS_ITEM_2,
@@ -680,7 +697,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         });
 
         it('false이면 기존과 동일하게 LLM 분석까지 수행한다', async () => {
-            mockIsRecentlyFetched.mockResolvedValue(false);
+            mockTryClaimNewsRefresh.mockResolvedValue(true);
             mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
             mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
             mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
@@ -810,9 +827,60 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         });
     });
 
+    describe('공개 액션 입력·동시성 가드는', () => {
+        it.each([
+            ['문자열이 아닌 값', 42],
+            ['종목 형상이 아닌 문자열', '../../etc/passwd'],
+            ['빈 문자열', ''],
+        ])(
+            '%s이면 Redis·FMP·LLM 어디에도 닿지 않는다',
+            async (_label, input) => {
+                await ensureNewsCardsAnalyzedAction(input);
+
+                expect(mockTryClaimNewsRefresh).not.toHaveBeenCalled();
+                expect(mockFetchNewsForPeriod).not.toHaveBeenCalled();
+                expect(mockRunNewsCardAnalysis).not.toHaveBeenCalled();
+            }
+        );
+
+        it('FMP 적재가 실패(null)하면 10분 선점을 짧은 재시도 간격으로 줄인다', async () => {
+            vi.spyOn(console, 'error').mockImplementation(() => undefined);
+            mockTryClaimNewsRefresh.mockResolvedValue(true);
+            mockFetchNewsForPeriod.mockRejectedValue(new Error('fmp 500'));
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            expect(shortenNewsRefreshClaim).toHaveBeenCalledWith('AAPL');
+            expect(mockRunNewsCardAnalysis).not.toHaveBeenCalled();
+        });
+
+        it('적재가 성공하면 선점을 줄이지 않는다(10분 창 유지)', async () => {
+            mockTryClaimNewsRefresh.mockResolvedValue(true);
+            mockFetchNewsForPeriod.mockResolvedValue([]);
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            expect(shortenNewsRefreshClaim).not.toHaveBeenCalled();
+        });
+
+        it('같은 심볼을 다른 경로가 분석 중이면 카드 분석을 건너뛴다', async () => {
+            vi.mocked(withNewsCardAnalysisLock).mockResolvedValueOnce(false);
+            mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
+            mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            expect(withNewsCardAnalysisLock).toHaveBeenCalledWith(
+                'AAPL',
+                expect.any(Function)
+            );
+            expect(mockRunNewsCardAnalysis).not.toHaveBeenCalled();
+        });
+    });
+
     describe('봇 경로 refresh 가드는', () => {
         it('봇 + 최근 fetch됨 → FMP fetch와 DB upsert를 스킵한다', async () => {
-            mockIsRecentlyFetched.mockResolvedValue(true);
+            mockTryClaimNewsRefresh.mockResolvedValue(false);
 
             await ensureNewsCardsAnalyzedAction('AAPL', {
                 skipAnalysis: true,
@@ -823,7 +891,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         });
 
         it('봇 + 미fetch → fetch + upsert + markFetched 호출', async () => {
-            mockIsRecentlyFetched.mockResolvedValue(false);
+            mockTryClaimNewsRefresh.mockResolvedValue(true);
             mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
 
             await ensureNewsCardsAnalyzedAction('AAPL', {
@@ -839,7 +907,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         });
 
         it('봇 경로 + 뉴스 없음(fresh=[]) → markFetched는 여전히 호출된다', async () => {
-            mockIsRecentlyFetched.mockResolvedValue(false);
+            mockTryClaimNewsRefresh.mockResolvedValue(true);
             mockFetchNewsForPeriod.mockResolvedValue([]);
             await ensureNewsCardsAnalyzedAction('AAPL', { skipAnalysis: true });
             expect(mockMarkFetched).toHaveBeenCalledWith('AAPL');
@@ -856,7 +924,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             //
             // 시장 뉴스 형제 경로(`ensureMarketNewsCardsAnalyzedAction`)가 같은
             // 플래그를 이미 봇·사람 구분 없이 같은 TTL로 걸고 있다 — 이제 정책이 같다.
-            mockIsRecentlyFetched.mockResolvedValue(true);
+            mockTryClaimNewsRefresh.mockResolvedValue(false);
             mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
             mockRunNewsCardAnalysis.mockResolvedValue(DONE_RESULT);
 
@@ -871,7 +939,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             const errorSpy = vi
                 .spyOn(console, 'error')
                 .mockImplementation(() => undefined);
-            mockIsRecentlyFetched.mockResolvedValue(false);
+            mockTryClaimNewsRefresh.mockResolvedValue(true);
             mockFetchNewsForPeriod.mockResolvedValue([
                 NEWS_ITEM_1,
                 NEWS_ITEM_2,

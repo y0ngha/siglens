@@ -13,6 +13,30 @@
 
 // --- Module mocks (hoisted before imports) ---
 
+// 생성 한도 — 기본은 항상 허락(예약·환불 관측은 개별 테스트가 덮어쓴다).
+// 신원 해석이 `cookies()`/`headers()`를 부르므로 그 둘도 막는다.
+const { mockReserveAnalysisGeneration, mockQuotaRefund } = vi.hoisted(() => {
+    const mockQuotaRefund = vi.fn().mockResolvedValue(undefined);
+    return {
+        mockQuotaRefund,
+        mockReserveAnalysisGeneration: vi.fn().mockResolvedValue({
+            ok: true,
+            audience: 'guest',
+            refund: mockQuotaRefund,
+        }),
+    };
+});
+vi.mock('@/entities/analysis/server/analysisGenerationQuota', () => ({
+    reserveAnalysisGeneration: mockReserveAnalysisGeneration,
+}));
+vi.mock('@/shared/api/guestId', () => ({
+    readGuestId: vi.fn().mockResolvedValue(null),
+    mintGuestIdOnResponse: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock('@/shared/api/getClientIp', () => ({
+    getClientIp: vi.fn().mockResolvedValue('203.0.113.1'),
+}));
+
 vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
     getCurrentUser: vi.fn().mockResolvedValue(null),
 }));
@@ -572,6 +596,67 @@ describe('POST /api/analysis/stream', () => {
             expect(errorEvent).toBeDefined();
             expect(errorEvent).toContain('프리미엄');
         });
+
+        /**
+         * 게이트와 시장 프로필 해석은 병렬로 돈다(감사 L5). 게이트가 막히면 프로필 결과는
+         * 버려지고, 분석·재분석 쿨다운에는 닿지 않아야 한다 — 순서가 바뀌어도 부작용은 같다.
+         */
+        it('게이트가 막히면 프로필 해석과 병렬이어도 쿨다운·분석에 닿지 않는다', async () => {
+            vi.mocked(resolveTierAndByok).mockResolvedValue({
+                kind: 'blocked',
+                error: { code: 'tier_premium_blocked', message: 'blocked' },
+            });
+
+            const body = JSON.stringify({
+                type: 'technical',
+                params: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple Inc.',
+                    timeframe: '1Day',
+                    modelId: 'claude-opus-4-5',
+                    reanalyze: true,
+                },
+            });
+            const response = await POST(makeRequest(undefined, body));
+            const events = await collectSseEvents(response);
+
+            expect(events.some(e => e.includes('event: error'))).toBe(true);
+            expect(vi.mocked(resolveMarketProfile)).toHaveBeenCalledWith(
+                'AAPL'
+            );
+            expect(
+                vi.mocked(tryAcquireReanalyzeCooldown)
+            ).not.toHaveBeenCalled();
+            expect(vi.mocked(runAnalysis)).not.toHaveBeenCalled();
+        });
+
+        it('프로필 해석이 실패하면 게이트 결과와 무관하게 기존처럼 500 unexpected_error다', async () => {
+            const errorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            vi.mocked(resolveTierAndByok).mockResolvedValue({
+                kind: 'blocked',
+                error: { code: 'tier_premium_blocked', message: 'blocked' },
+            });
+            vi.mocked(resolveMarketProfile).mockRejectedValueOnce(
+                new Error('db down')
+            );
+
+            const body = JSON.stringify({
+                type: 'technical',
+                params: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple Inc.',
+                    timeframe: '1Day',
+                    modelId: 'claude-opus-4-5',
+                },
+            });
+            const response = await POST(makeRequest(undefined, body));
+
+            expect(response.status).toBe(500);
+            expect(vi.mocked(runAnalysis)).not.toHaveBeenCalled();
+            errorSpy.mockRestore();
+        });
     });
 
     describe('DISPATCH — 각 타입이 올바른 액션으로 위임된다', () => {
@@ -602,8 +687,9 @@ describe('POST /api/analysis/stream', () => {
 
             // overall 핸들러 시그니처: (symbol, companyName, timeframe, modelId, { force, reasoning, priorAnalyses }, signal)
             // reanalyze 없음 → cooldown=null → force=false, reasoning=undefined(params에 없음)
-            // `onPromptAssembled`는 넘기지 않는다 — overall 결과는 이력으로 저장할 수
-            // 없어(그 응답에 trend/riskLevel이 없다) 프롬프트를 캡처할 이유가 없다.
+            // `onPromptAssembled`는 이력 저장용이 아니라 생성 한도 정산용이다 —
+            // overall 결과는 이력으로 저장하지 않는다(trend/riskLevel이 없다).
+            // `cacheOnly: false` = 한도 안이라 강등되지 않았다.
             // priorAnalyses: Task S3(prior-analysis-context) 읽기 — `getDatabaseClient`가
             // 이 파일에서 `{ db: {} }`로 뭉개져 있어(위 mock) 실제 select가 실패하고
             // best-effort로 `[]`가 된다. 값 자체보다 "항상 필드가 전달된다"가 이 테스트의
@@ -620,6 +706,8 @@ describe('POST /api/analysis/stream', () => {
                     priorAnalyses: [],
                     technicalPriorAnalyses: [],
                     marketEvents: undefined,
+                    cacheOnly: false,
+                    onPromptAssembled: expect.any(Function),
                 },
                 expect.any(AbortSignal)
             );
@@ -646,7 +734,7 @@ describe('POST /api/analysis/stream', () => {
                 'ko',
                 undefined,
                 expect.any(AbortSignal),
-                undefined
+                false
             );
         });
 
@@ -669,7 +757,7 @@ describe('POST /api/analysis/stream', () => {
                 'ko',
                 undefined,
                 expect.any(AbortSignal),
-                undefined
+                false
             );
         });
 
@@ -697,7 +785,7 @@ describe('POST /api/analysis/stream', () => {
                 'ko',
                 undefined,
                 expect.any(AbortSignal),
-                undefined
+                false
             );
         });
 
@@ -746,7 +834,7 @@ describe('POST /api/analysis/stream', () => {
                 'ko',
                 undefined,
                 expect.any(AbortSignal),
-                undefined
+                false
             );
         });
 
@@ -804,7 +892,7 @@ describe('POST /api/analysis/stream', () => {
                 'ko',
                 undefined,
                 expect.any(AbortSignal),
-                undefined
+                false
             );
         });
 
@@ -837,7 +925,7 @@ describe('POST /api/analysis/stream', () => {
                     locale,
                     undefined,
                     expect.any(AbortSignal),
-                    undefined
+                    false
                 );
             }
         );
@@ -861,7 +949,7 @@ describe('POST /api/analysis/stream', () => {
                 'ko',
                 undefined,
                 expect.any(AbortSignal),
-                undefined
+                false
             );
         });
 
@@ -3478,6 +3566,388 @@ describe('POST /api/analysis/stream', () => {
 
             expect(mockAfter).not.toHaveBeenCalled();
             expect(mockSaveAnalysisHistory).not.toHaveBeenCalled();
+        });
+    });
+
+    /**
+     * 생성 한도(reserve → refund). 캐시 적중은 무료여야 하고, 한도 초과는 캐시
+     * 전용으로 강등돼 캐시가 있으면 내주고 없으면 `rate_limited`로 끝나야 한다.
+     */
+    describe('생성 한도 — 예약·환불·강등', () => {
+        const RETRY_AT = Date.parse('2026-10-07T00:00:00.000Z');
+
+        function allowQuota(): void {
+            mockReserveAnalysisGeneration.mockResolvedValue({
+                ok: true,
+                audience: 'guest',
+                refund: mockQuotaRefund,
+            });
+        }
+
+        function denyQuota(audience: 'guest' | 'member' = 'guest'): void {
+            mockReserveAnalysisGeneration.mockResolvedValue({
+                ok: false,
+                audience,
+                reason: 'quota',
+                retryAt: RETRY_AT,
+            });
+        }
+
+        beforeEach(() => {
+            allowQuota();
+            mockQuotaRefund.mockResolvedValue(undefined);
+            __resetActiveStreamsForTests();
+        });
+
+        afterEach(() => {
+            allowQuota();
+        });
+
+        it('technical: 한도 초과 + 캐시 없음 → skipEnqueueIfMiss로 강등하고 rate_limited 이벤트로 끝낸다', async () => {
+            denyQuota();
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'miss_no_trigger',
+            });
+            const parsed = JSON.parse(TECHNICAL_BODY) as {
+                params: Record<string, unknown>;
+            };
+            const body = JSON.stringify({
+                ...parsed,
+                params: { ...parsed.params, reanalyze: true },
+            });
+
+            const events = await collectSseEvents(
+                await POST(makeRequest(undefined, body))
+            );
+
+            const opts = vi.mocked(runAnalysis).mock.calls[0]?.[5] as Record<
+                string,
+                unknown
+            >;
+            expect(opts.skipEnqueueIfMiss).toBe(true);
+            // 재분석 = 캐시 우회 = 새 생성이라 강등 중에는 쿨다운도 잡지 않는다.
+            expect(
+                vi.mocked(tryAcquireReanalyzeCooldown)
+            ).not.toHaveBeenCalled();
+            expect(vi.mocked(runAnalysis).mock.calls[0]?.[3]).toBe(false);
+            const limited = events.find(e => e.includes('event: rate_limited'));
+            expect(limited).toContain(
+                JSON.stringify({
+                    audience: 'guest',
+                    reason: 'quota',
+                    retryAt: RETRY_AT,
+                })
+            );
+            expect(events.some(e => e.includes('event: done'))).toBe(false);
+        });
+
+        it('technical: 한도 초과여도 캐시가 있으면 평소대로 done으로 내준다', async () => {
+            denyQuota('member');
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'cached',
+                result: { headlineKo: 'cached' },
+            } as never);
+
+            const events = await collectSseEvents(await POST(makeRequest()));
+
+            expect(events.some(e => e.includes('event: done'))).toBe(true);
+            expect(events.some(e => e.includes('rate_limited'))).toBe(false);
+        });
+
+        it('technical: 프롬프트가 조립되지 않은 결과(캐시 적중)는 예약을 환불한다', async () => {
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'cached',
+                result: {},
+            } as never);
+
+            await collectSseEvents(await POST(makeRequest()));
+
+            expect(mockQuotaRefund).toHaveBeenCalledOnce();
+        });
+
+        it('technical: 프롬프트가 조립됐으면(LLM 호출) 환불하지 않는다', async () => {
+            vi.mocked(runAnalysis).mockImplementation(
+                async (_s, _c, _t, _f, _fmp, options) => {
+                    options?.onPromptAssembled?.({} as never);
+                    return { status: 'done', result: {} } as never;
+                }
+            );
+
+            await collectSseEvents(await POST(makeRequest()));
+
+            expect(mockQuotaRefund).not.toHaveBeenCalled();
+        });
+
+        it('technical: 프로바이더 호출 전에 실패하면 환불한다', async () => {
+            vi.mocked(runAnalysis).mockRejectedValue(new Error('db down'));
+
+            await collectSseEvents(await POST(makeRequest()));
+
+            expect(mockQuotaRefund).toHaveBeenCalledOnce();
+        });
+
+        it('클라이언트가 cacheOnly를 보내면 예약하지 않는다', async () => {
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'miss_no_trigger',
+            });
+            const parsed = JSON.parse(TECHNICAL_BODY) as {
+                params: Record<string, unknown>;
+            };
+            const body = JSON.stringify({
+                ...parsed,
+                params: { ...parsed.params, cacheOnly: true },
+            });
+
+            const events = await collectSseEvents(
+                await POST(makeRequest(undefined, body))
+            );
+
+            expect(mockReserveAnalysisGeneration).not.toHaveBeenCalled();
+            // 강등이 아니라 클라이언트 요청이므로 기존처럼 miss_no_trigger가 나간다.
+            expect(events.find(e => e.includes('event: done'))).toContain(
+                'miss_no_trigger'
+            );
+        });
+
+        it('회원은 userId로, 비회원은 게스트 쿠키·IP로 예약한다', async () => {
+            vi.mocked(runAnalysis).mockResolvedValue({
+                status: 'cached',
+                result: {},
+            } as never);
+
+            await collectSseEvents(await POST(makeRequest()));
+            vi.mocked(getCurrentUser).mockResolvedValue({
+                id: 'user-7',
+            } as never);
+            await collectSseEvents(await POST(makeRequest()));
+
+            expect(mockReserveAnalysisGeneration.mock.calls[0]?.[0]).toEqual({
+                kind: 'guest',
+                guestId: null,
+                clientIp: '203.0.113.1',
+            });
+            expect(mockReserveAnalysisGeneration.mock.calls[1]?.[0]).toEqual({
+                kind: 'member',
+                userId: 'user-7',
+            });
+        });
+
+        it('technical: 예약 뒤 예기치 못한 예외(500)여도 예약을 돌려준다', async () => {
+            vi.spyOn(console, 'error').mockImplementation(() => {});
+            // 예약 뒤 단계(옵션 구성의 `resolveReasoning`)에서 던지게 한다.
+            vi.mocked(resolveReasoning).mockImplementationOnce(() => {
+                throw new Error('unexpected');
+            });
+
+            const response = await POST(makeRequest());
+
+            expect(response.status).toBe(500);
+            expect(mockQuotaRefund).toHaveBeenCalledOnce();
+        });
+
+        it('동시성 상한으로 503이면 예약을 돌려준다', async () => {
+            for (let i = 0; i < MAX_CONCURRENT_ANALYSIS_STREAMS; i++) {
+                incrementActiveStreams();
+            }
+
+            const response = await POST(makeRequest());
+
+            expect(response.status).toBe(503);
+            expect(mockQuotaRefund).toHaveBeenCalledOnce();
+            __resetActiveStreamsForTests();
+        });
+
+        it.each(['briefing', 'macroBriefing', 'marketNewsDigest'])(
+            '%s: 허브 콘텐츠는 한도를 걸지 않는다',
+            async type => {
+                vi.mocked(submitMarketBriefingAction).mockResolvedValue({
+                    status: 'cached',
+                } as never);
+                vi.mocked(submitMacroBriefingAction).mockResolvedValue({
+                    status: 'cached',
+                } as never);
+                vi.mocked(submitMarketNewsDigestAction).mockResolvedValue({
+                    status: 'cached',
+                } as never);
+                const body = JSON.stringify({
+                    type,
+                    params: { scope: 'us', category: 'general' },
+                });
+
+                await collectSseEvents(
+                    await POST(makeRequest(undefined, body))
+                );
+
+                expect(mockReserveAnalysisGeneration).not.toHaveBeenCalled();
+            }
+        );
+
+        /**
+         * 한도 면제는 "클라이언트 입력이 캐시 키를 늘릴 수 없다"는 전제 위에 있다.
+         * 면제 종류의 핸들러가 고정 도메인 값(scope·category) 외의 파라미터를
+         * 액션에 흘리기 시작하면 이 테스트가 깨진다 — 그때는 면제를 다시 따져야 한다.
+         */
+        it('면제 종류는 고정 도메인 파라미터(scope·category)만 액션에 넘긴다', async () => {
+            vi.mocked(submitMarketBriefingAction).mockResolvedValue({
+                status: 'cached',
+            } as never);
+            vi.mocked(submitMacroBriefingAction).mockResolvedValue({
+                status: 'cached',
+            } as never);
+            vi.mocked(submitMarketNewsDigestAction).mockResolvedValue({
+                status: 'cached',
+            } as never);
+            // 생성 비용을 키울 수 있는 값을 전부 실어 보낸다.
+            const hostile = {
+                scope: 'us',
+                category: 'general',
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                modelId: 'gemini-3.6-flash',
+                reasoning: true,
+                reanalyze: true,
+                force: true,
+                prompt: 'x'.repeat(64),
+            };
+
+            for (const type of [
+                'briefing',
+                'macroBriefing',
+                'marketNewsDigest',
+            ]) {
+                await collectSseEvents(
+                    await POST(
+                        makeRequest(
+                            undefined,
+                            JSON.stringify({ type, params: hostile })
+                        )
+                    )
+                );
+            }
+
+            expect(vi.mocked(submitMarketBriefingAction).mock.calls).toEqual([
+                ['us', expect.any(AbortSignal)],
+            ]);
+            expect(vi.mocked(submitMacroBriefingAction).mock.calls).toEqual([
+                [expect.any(AbortSignal)],
+            ]);
+            expect(vi.mocked(submitMarketNewsDigestAction).mock.calls).toEqual([
+                ['general', 'ko', expect.any(AbortSignal)],
+            ]);
+            expect(mockReserveAnalysisGeneration).not.toHaveBeenCalled();
+        });
+
+        it.each([
+            'overall',
+            'fundamental',
+            'financials',
+            'news',
+            'options',
+            'congress',
+        ])(
+            '%s: 면제 목록 밖의 종류는 모두 생성 한도를 예약한다',
+            async type => {
+                const cached = { status: 'cached' } as never;
+                vi.mocked(runOverallAnalysisAction).mockResolvedValue(cached);
+                vi.mocked(runFundamentalAnalysisAction).mockResolvedValue(
+                    cached
+                );
+                vi.mocked(runFinancialsAnalysisAction).mockResolvedValue(
+                    cached
+                );
+                vi.mocked(submitNewsAnalysisAction).mockResolvedValue(cached);
+                vi.mocked(submitOptionsAnalysisAction).mockResolvedValue(
+                    cached
+                );
+                vi.mocked(runCongressTrendAction).mockResolvedValue(cached);
+                const body = JSON.stringify({
+                    type,
+                    params: {
+                        symbol: 'AAPL',
+                        companyName: 'Apple',
+                        timeframe: '1Day',
+                        expirationDate: 'nearest',
+                    },
+                });
+
+                await collectSseEvents(
+                    await POST(makeRequest(undefined, body))
+                );
+
+                expect(mockReserveAnalysisGeneration).toHaveBeenCalledOnce();
+            }
+        );
+
+        it('DISPATCH(fundamental): 한도 초과면 cacheOnly로 강등하고, 미스면 rate_limited로 끝낸다', async () => {
+            denyQuota();
+            vi.mocked(runFundamentalAnalysisAction).mockResolvedValue({
+                status: 'miss_no_trigger',
+            } as never);
+            const body = JSON.stringify({
+                type: 'fundamental',
+                params: { symbol: 'AAPL', modelId: 'gemini-3.6-flash' },
+            });
+
+            const events = await collectSseEvents(
+                await POST(makeRequest(undefined, body))
+            );
+
+            expect(
+                vi.mocked(runFundamentalAnalysisAction).mock.calls[0]?.[5]
+            ).toBe(true);
+            expect(events.some(e => e.includes('event: rate_limited'))).toBe(
+                true
+            );
+        });
+
+        it('DISPATCH(fundamental): cached는 환불하고 done은 유지한다', async () => {
+            const body = JSON.stringify({
+                type: 'fundamental',
+                params: { symbol: 'AAPL', modelId: 'gemini-3.6-flash' },
+            });
+            vi.mocked(runFundamentalAnalysisAction).mockResolvedValueOnce({
+                status: 'cached',
+            } as never);
+            await collectSseEvents(await POST(makeRequest(undefined, body)));
+            expect(mockQuotaRefund).toHaveBeenCalledOnce();
+
+            mockQuotaRefund.mockClear();
+            vi.mocked(runFundamentalAnalysisAction).mockResolvedValueOnce({
+                status: 'done',
+            } as never);
+            await collectSseEvents(await POST(makeRequest(undefined, body)));
+            expect(mockQuotaRefund).not.toHaveBeenCalled();
+        });
+
+        it('DISPATCH(overall): 프롬프트 조립 콜백으로 생성 여부를 판정하고, 강등 중에는 재분석 쿨다운을 잡지 않는다', async () => {
+            denyQuota();
+            vi.mocked(runOverallAnalysisAction).mockResolvedValue({
+                status: 'miss_no_trigger',
+            } as never);
+            const body = JSON.stringify({
+                type: 'overall',
+                params: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple',
+                    timeframe: '1Day',
+                    reanalyze: true,
+                },
+            });
+
+            const events = await collectSseEvents(
+                await POST(makeRequest(undefined, body))
+            );
+
+            expect(
+                vi.mocked(tryAcquireReanalyzeCooldown)
+            ).not.toHaveBeenCalled();
+            const options = vi.mocked(runOverallAnalysisAction).mock
+                .calls[0]?.[5] as Record<string, unknown>;
+            expect(options.cacheOnly).toBe(true);
+            expect(options.onPromptAssembled).toEqual(expect.any(Function));
+            expect(events.some(e => e.includes('event: rate_limited'))).toBe(
+                true
+            );
         });
     });
 });

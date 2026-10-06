@@ -57,7 +57,9 @@
                 "timeout": "分析已超时，请重试。",
                 "unexpected": "发生意外错误。",
                 "unreadable": "无法读取分析结果，请重试。",
-                "unstable": "AI 服务器不稳定，未能完成分析。请通过右上角的齿轮图标更换模型。"
+                "unstable": "AI 服务器不稳定，未能完成分析。请通过右上角的齿轮图标更换模型。",
+                "rateLimited": "已达到新分析的请求上限。已保存的分析仍可查看，{v0}之后可以再次请求新的分析。",
+                "rateLimitUnavailable": "目前无法开始新的分析，请稍后再试。"
             }
         },
         "backtesting": {
@@ -825,6 +827,13 @@
                 "triggerLabel": "打开股票搜索",
                 "typeToSearch": "请输入搜索词"
             }
+        },
+        "analysis-rate-limit": {
+            "title": "已达到免费分析上限",
+            "description": "注册或登录即可获得更多新分析。访客额度将于{v0}重置。",
+            "signup": "免费注册",
+            "login": "登录",
+            "close": "关闭"
         }
     },
     "shared": {

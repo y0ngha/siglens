@@ -17,6 +17,7 @@ import { isBot } from '@/shared/api/isBot';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { getDatabaseClient } from '@/shared/db/client';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
+import { afterWithDrain } from '@/shared/lib/afterWithDrain';
 import { createDailyPruner, noContent } from '../_shared/dailyPruner';
 
 const { HTTP_STATUS_BAD_REQUEST } = constants;
@@ -52,9 +53,19 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     const today = kstDateKey(new Date());
+    afterWithDrain(() => recordSymbolView(today, symbol));
+    return noContent();
+}
 
-    // DB 클라이언트 생성까지 try 안에 둔다 — DATABASE_URL 부재로 던지면 프레임워크
-    // 기본 500이 나가 "집계 실패는 화면을 깨뜨리지 않는다"가 뚫린다.
+/**
+ * 조회 기록 + 하루 1회 정리. **응답을 보낸 뒤**(`afterWithDrain`) 돈다 — 비콘은 결과를 읽지
+ * 않으므로(늘 204) DB upsert 왕복을 응답 경로에 둘 이유가 없다(2026-10 서버 성능 감사 L8).
+ * 배포 중 SIGTERM drain은 이 작업을 기다린다.
+ *
+ * DB 클라이언트 생성까지 try 안에 둔다 — DATABASE_URL 부재로 던지면 이 작업이 통째로
+ * reject한다. 응답은 이미 나갔지만 로그 없이 사라지면 집계 누락을 알아챌 수 없다.
+ */
+async function recordSymbolView(today: string, symbol: string): Promise<void> {
     let repo: SymbolViewRepository;
     try {
         const { db } = getDatabaseClient();
@@ -63,9 +74,7 @@ export async function POST(request: Request): Promise<Response> {
     } catch (error) {
         console.error('[symbol-views] recordView failed:', error);
         // 정리도 건너뛴다 — 이유는 `createDailyPruner` 참조.
-        return noContent();
+        return;
     }
-
-    pruneOncePerDay(today, repo);
-    return noContent();
+    await pruneOncePerDay(today, repo);
 }

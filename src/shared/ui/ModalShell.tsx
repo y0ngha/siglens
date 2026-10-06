@@ -9,6 +9,8 @@ import { cn } from '@/shared/lib/cn';
 interface ModalShellProps {
     /** 패널을 이름 짓는 제목 요소의 id(`aria-labelledby`). 제목은 children 안에 둔다. */
     titleId: string;
+    /** 본문 설명 요소의 id(`aria-describedby`). 안내형 모달이 사정을 함께 읽히게 한다. */
+    descriptionId?: string;
     onClose: () => void;
     /**
      * 열릴 때 패널 자체에 포커스를 둔다. 안내만 담은 모달(가입 유도 등)은 첫 컨트롤(CTA)에
@@ -38,6 +40,7 @@ interface ModalShellProps {
  */
 export function ModalShell({
     titleId,
+    descriptionId,
     onClose,
     focusPanel = false,
     busy,
@@ -70,6 +73,7 @@ export function ModalShell({
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={titleId}
+                aria-describedby={descriptionId}
                 aria-busy={busy ? 'true' : undefined}
                 tabIndex={-1}
                 className={cn('w-full rounded-lg outline-none', className)}

@@ -36,6 +36,7 @@ import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilie
 import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
 import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
+import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 // `NewsList`와 이 페이지가 같은 정의 파일에서 가져와 같은 값을 보게 한다.
@@ -57,7 +58,7 @@ import { loadTabSnapshotMeta } from '@/app/[locale]/[symbol]/symbolSnapshotDescr
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { Suspense } from 'react';
+import { cache, Suspense } from 'react';
 import {
     getDescriptor,
     marketProfileOf,
@@ -152,26 +153,41 @@ interface NewsListSectionProps extends SymbolSectionProps {
     locale: Locale;
 }
 
+type NewsListItems = Awaited<ReturnType<typeof getNewsList>>;
+
+/**
+ * 이 탭의 뉴스 목록 — **요청당 한 번만** 읽는다.
+ *
+ * 페이지 본문(JSON-LD·AI 요약 시작 게이트)과 `NewsListSection`이 같은 목록을 쓴다. 각자
+ * `staticSymbolCache`를 부르면 키가 같아도 캐시 핸들러를 두 번 거친다 — `unstable_cache`는
+ * 요청 안에서 dedup하지 않고(`cacheComponents` 꺼짐 → resume data cache 없음), 목록 엔트리는
+ * 메모리 저장 상한(32KB)을 넘어 매번 S3 GET이다(2026-10 서버 성능 감사 M4). `React.cache`로
+ * 묶어 두 번째 호출은 같은 프라미스를 받는다. 두 호출 모두 이 페이지 렌더 안이라 첫 호출이
+ * 렌더 스토어에 남긴 태그(`news:SYM`)·revalidate가 그대로 이 라우트에 붙는다.
+ *
+ * ISR degrade guard: getNewsList(Postgres)가 throw하면 ISR 캐시에 0-byte 빈 결과가 굳는 것을
+ * 막으려면 여기서 흡수해야 한다. [] 로 degrade → NewsList는 빈 배열로 기존 empty-state UI를,
+ * 본문은 `newsListJsonLd` 없이 페이지 크롬(heading/AI summary/CrossLinks 등)을 렌더한다.
+ */
+const loadNewsList = cache(
+    (symbol: string, locale: Locale): Promise<NewsListItems> =>
+        staticSymbolCache(
+            [NEWS_LIST_CACHE_KEY, symbol, ...contentLocaleKeyPart(locale)],
+            symbol,
+            () => getNewsList(symbol, locale),
+            [newsCacheTag(symbol)],
+            SECONDS_PER_HALF_DAY
+        ).catch((e: unknown): NewsListItems => {
+            console.error('[NewsPage] getNewsList failed, degrading to []:', e);
+            return [];
+        })
+);
+
 export async function NewsListSection({
     symbol,
     locale,
 }: NewsListSectionProps) {
-    // ISR degrade guard: getNewsList(Postgres)가 throw하면 ISR 캐시에 0-byte 빈 결과가
-    // 굳는 것을 막으려면 여기서 흡수해야 한다. [] 로 degrade → NewsList는 빈 배열로
-    // 기존 empty-state UI를 렌더하고 페이지 크롬(heading/CrossLinks 등)은 유지된다.
-    const items = await staticSymbolCache(
-        [NEWS_LIST_CACHE_KEY, symbol, ...contentLocaleKeyPart(locale)],
-        symbol,
-        () => getNewsList(symbol, locale),
-        [newsCacheTag(symbol)],
-        SECONDS_PER_HALF_DAY
-    ).catch((e: unknown) => {
-        console.error(
-            '[NewsListSection] getNewsList failed, degrading to []:',
-            e
-        );
-        return [] as Awaited<ReturnType<typeof getNewsList>>;
-    });
+    const items = await loadNewsList(symbol, locale);
     // 그리지 않는 행까지 RSC 페이로드로 내보내지 않는다 — NEWS_ROW_SERIALIZATION_LIMIT 주석 참고.
     return (
         <NewsList
@@ -200,6 +216,8 @@ export async function EventCalendarSection({ symbol }: SymbolSectionProps) {
             '[EventCalendarSection] earnings load failed, degrading:',
             error
         );
+        // FMP 장애(렌더 예산 초과 포함) 안내가 라우트 revalidate 동안 굳지 않게 5분으로 낮춘다.
+        await shortenRevalidateForRuntimeDegrade();
         const message =
             translateFmpError(error, await getTranslations()) ??
             t('page.3c87a9');
@@ -226,6 +244,7 @@ export async function AnalystActionsSection({ symbol }: SymbolSectionProps) {
             '[AnalystActionsSection] grades load failed, degrading:',
             error
         );
+        await shortenRevalidateForRuntimeDegrade();
         const message =
             translateFmpError(error, await getTranslations()) ??
             t('page.5c38df');
@@ -312,22 +331,10 @@ export default async function NewsPage({ params }: Props) {
         locale
     );
 
-    // ISR degrade guard: getNewsList(Postgres)가 throw하면 ISR 캐시에 0-byte 빈 결과가
-    // 굳는 것을 막으려면 여기서 흡수해야 한다. [] 로 degrade → newsListJsonLd가 null이
-    // 되고 페이지 크롬(heading/AI summary/CrossLinks 등)은 유지된다.
-    //
+    // 목록 읽기·degrade는 `loadNewsList`(요청당 1회, 아래 `NewsListSection`과 공유).
     // Promise.all로 병렬화 — snapshots read는 서로 독립이라 직렬 await할 이유가 없다.
     const [newsItems, snapshots] = await Promise.all([
-        staticSymbolCache(
-            [NEWS_LIST_CACHE_KEY, upper, ...contentLocaleKeyPart(locale)],
-            upper,
-            () => getNewsList(upper, locale),
-            [newsCacheTag(upper)],
-            SECONDS_PER_HALF_DAY
-        ).catch((e: unknown) => {
-            console.error('[NewsPage] getNewsList failed, degrading to []:', e);
-            return [] as Awaited<ReturnType<typeof getNewsList>>;
-        }),
+        loadNewsList(upper, locale),
         // ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
         // getSeoSnapshotsStatic JSDoc. revalidateSeconds mirrors this page's
         // `export const revalidate` literal above.

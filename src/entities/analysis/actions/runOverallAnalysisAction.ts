@@ -100,6 +100,11 @@ export interface SubmitOverallAnalysisActionOptions {
      * 분석이 한 번 더 생성된다. 가공하지 않고 그대로 넘긴다.
      */
     marketEvents?: readonly MarketEvent[];
+    /**
+     * 캐시만 조회하고 미스면 생성하지 않는다(`miss_no_trigger`). SSE 라우트가
+     * 생성 한도를 넘긴 요청을 강등할 때 켠다. 생략·`false`면 기존 동작 그대로다.
+     */
+    cacheOnly?: boolean;
 }
 
 /** Server Action: tier + BYOK gate, then submit a 4-axis overall analysis job; loads enriched news + earnings from DB, options snapshot, injects FMP provider; returns `cached | done | error`. */
@@ -280,7 +285,8 @@ export async function runOverallAnalysisAction(
             reasoning: resolveReasoning(gate.tier, options.reasoning),
             // 2026-09-27: 더 이상 UA로 가르지 않는다 — 봇의 캐시 미스도 사람과
             // 같은 본문을 생성해야 한다(route.ts 상단 불변식과 동일 원칙).
-            skipEnqueueIfMiss: false,
+            // 켜지는 경우는 생성 한도 초과 강등뿐이다(`cacheOnly` JSDoc).
+            skipEnqueueIfMiss: options.cacheOnly === true,
             assetClass,
             // core는 통화를 심볼에서 추론하지 않는다 — 시장 프로필이 소유한 값을 넘긴다.
             currency: descriptor.priceFormat.currency,

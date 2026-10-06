@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as OpenAI from 'openai';
 import { LocalizedStreamError } from '../LocalizedStreamError';
+import { RateLimitedStreamError } from '../analysisRateLimit';
 import { heartbeatStream, HEARTBEAT_INTERVAL_MS } from '../heartbeatStream';
 import {
     __resetActiveStreamsForTests,
@@ -171,6 +172,42 @@ describe('heartbeatStream', () => {
 
             // The timer must be cleared before the interval can fire again.
             expect(clearIntervalSpy).toHaveBeenCalledWith(timerId);
+        });
+    });
+
+    describe('rate_limited 이벤트 — 생성 한도 거절', () => {
+        it('RateLimitedStreamError는 error가 아니라 rate_limited로 보내고, 실패 알람 마커를 남기지 않는다', async () => {
+            const errorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            __resetActiveStreamsForTests();
+
+            const { promise, reject } = deferred<never>();
+            const stream = heartbeatStream(promise, {
+                genericErrorMessage: GENERIC,
+            });
+            const reader = stream.getReader();
+            await reader.read(); // open
+            expect(__activeStreamCount()).toBe(1);
+
+            const payload = {
+                audience: 'guest',
+                reason: 'quota',
+                retryAt: 1_790_000_000_000,
+            };
+            reject(new RateLimitedStreamError(payload as never));
+
+            const { value } = await readString(reader);
+            expect(value).toBe(
+                `event: rate_limited\ndata: ${JSON.stringify(payload)}\n\n`
+            );
+            expect((await reader.read()).done).toBe(true);
+            expect(errorSpy).not.toHaveBeenCalledWith(
+                '[analysis-stream] failed:',
+                expect.anything()
+            );
+            // drain 카운터도 정상 종료처럼 돌려준다.
+            expect(__activeStreamCount()).toBe(0);
         });
     });
 

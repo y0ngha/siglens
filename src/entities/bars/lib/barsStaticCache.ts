@@ -12,6 +12,7 @@ import { loadBarsData } from './loadBarsData';
 import { SECONDS_PER_QUARTER_DAY } from '@/shared/config/time';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
+import { runWithRenderBudget } from '@/shared/lib/renderBudget';
 import { isCuratedSymbol } from '@/entities/symbol-indexability/lib/isCuratedSymbol';
 
 /**
@@ -82,7 +83,10 @@ export async function getBarsStatic(
     try {
         return await unstable_cache(
             async () => {
-                const data = await loadBarsData(ticker, timeframe, fmpSymbol);
+                // 렌더 예산: FMP가 느리면 짧게 실패해 degrade한다(`renderBudget.ts`).
+                const data = await runWithRenderBudget(() =>
+                    loadBarsData(ticker, timeframe, fmpSymbol)
+                );
                 if (data.bars.length === 0)
                     throw new EmptyBarsError(ticker, data);
                 return data;

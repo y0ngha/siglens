@@ -2,6 +2,12 @@
 
 import { ANALYSIS_LOCALE_HEADER, splitLocalePath } from '@/shared/i18n/locales';
 import { parseSseFrame, splitFrames } from '@/shared/lib/sse/parseSseFrames';
+import {
+    isAnalysisRateLimitPayload,
+    RATE_LIMITED_SSE_EVENT,
+    type AnalysisRateLimitPayload,
+} from '@/shared/lib/sse/analysisRateLimit';
+import { publishAnalysisRateLimited } from '@/shared/lib/sse/analysisRateLimitSignal';
 
 /**
  * 분석 SSE 스트림 소비 헬퍼.
@@ -92,6 +98,30 @@ export interface StreamErrorMessages {
     readonly congressFetchFailed: string;
     /** 재분석 쿨다운. `{v0}`에 남은 초가 들어간다. */
     readonly reanalyzeCooldown: (seconds: number) => string;
+    /**
+     * 새 생성 한도 초과(`rate_limited` 이벤트). 인자는 다시 시도할 수 있는 시각
+     * (epoch ms) — 훅이 로케일에 맞게 시각을 포맷한다.
+     */
+    readonly rateLimited: (retryAt: number) => string;
+    /**
+     * 한도 저장소 장애로 새 생성을 잠시 막았다(`reason: 'unavailable'`). 사용자가
+     * 한도를 쓴 게 아니므로 시각·가입 안내 없이 "잠시 후 다시"만 말한다.
+     */
+    readonly rateLimitUnavailable: string;
+}
+
+/**
+ * 생성 한도에 걸려 결과 없이 끝났다. `message`는 화면용(배너) 문구이고,
+ * 비회원 가입 유도 모달은 `publishAnalysisRateLimited`가 따로 띄운다.
+ */
+export class AnalysisRateLimitedError extends Error {
+    readonly payload: AnalysisRateLimitPayload;
+
+    constructor(message: string, payload: AnalysisRateLimitPayload) {
+        super(message);
+        this.name = 'AnalysisRateLimitedError';
+        this.payload = payload;
+    }
 }
 
 /**
@@ -165,6 +195,15 @@ export async function runAnalysisStream<T>({
                 const parsed = parseFrame<T>(frame, messages);
                 if (parsed.kind === 'done') return parsed.result;
                 if (parsed.kind === 'error') throw new Error(parsed.message);
+                if (parsed.kind === 'rate_limited') {
+                    publishAnalysisRateLimited(parsed.payload);
+                    throw new AnalysisRateLimitedError(
+                        parsed.payload.reason === 'unavailable'
+                            ? messages.rateLimitUnavailable
+                            : messages.rateLimited(parsed.payload.retryAt),
+                        parsed.payload
+                    );
+                }
             }
         }
     } finally {
@@ -178,6 +217,7 @@ export async function runAnalysisStream<T>({
 type ParsedFrame<T> =
     | { kind: 'done'; result: T }
     | { kind: 'error'; message: string }
+    | { kind: 'rate_limited'; payload: AnalysisRateLimitPayload }
     | { kind: 'other' };
 
 function parseFrame<T>(
@@ -204,6 +244,12 @@ function parseFrame<T>(
             // `done` 페이로드는 `{ result }` — `result`는 use-case별 결과 객체다.
             result: data.result as T,
         };
+    }
+    if (event === RATE_LIMITED_SSE_EVENT) {
+        // 모양이 깨진 프레임은 결과를 읽을 수 없는 것과 같다 — 모달을 띄울 근거가 없다.
+        return isAnalysisRateLimitPayload(data)
+            ? { kind: 'rate_limited', payload: data }
+            : { kind: 'error', message: messages.unreadable };
     }
     if (event === 'error') {
         const message = data?.message;

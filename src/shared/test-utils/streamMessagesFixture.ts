@@ -24,4 +24,6 @@ export const TEST_STREAM_MESSAGES: StreamErrorMessages = {
     congressFetchFailed: 'congressFetchFailed',
     digestUnavailable: 'digestUnavailable',
     reanalyzeCooldown: (seconds: number) => `reanalyzeCooldown ${seconds}`,
+    rateLimited: (retryAt: number) => `rateLimited ${retryAt}`,
+    rateLimitUnavailable: 'rateLimitUnavailable',
 };

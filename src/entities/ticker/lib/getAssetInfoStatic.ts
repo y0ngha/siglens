@@ -2,6 +2,7 @@ import { unstable_cache } from 'next/cache';
 import type { AssetInfo } from '@/shared/lib/types';
 import { getAssetInfoAction } from '../actions/getAssetInfoAction';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
+import { runWithRenderBudget } from '@/shared/lib/renderBudget';
 
 /**
  * ISR static-safe asset-info fetch. `getAssetInfoAction`(='use server' → getAssetInfo:
@@ -43,7 +44,8 @@ import { SECONDS_PER_DAY } from '@/shared/config/time';
 export function getAssetInfoStatic(ticker: string): Promise<AssetInfo | null> {
     const upper = ticker.toUpperCase();
     return unstable_cache(
-        () => getAssetInfoAction(upper),
+        // 렌더 예산: FMP 폴백이 느리면 짧게 실패해 resilient 래퍼가 degrade한다.
+        () => runWithRenderBudget(() => getAssetInfoAction(upper)),
         ['asset-info-static', upper],
         { revalidate: SECONDS_PER_DAY, tags: [`symbol:${upper}`] }
     )();
