@@ -70,9 +70,12 @@ test.describe('auth password reset', () => {
         //
         // Leave the post-signup landing page (/portfolio) FIRST. Its hydration-time
         // React Query fetches are server actions; one still in flight when the
-        // cookies vanish gets 307'd by the proxy auth guard to /login, which does
-        // not register that action → "Failed to find Server Action" → the client's
-        // version-skew full reload, which aborts the page.goto below (PR #981 e2e).
+        // cookies vanish used to be 307'd by the proxy auth guard to /login →
+        // "Failed to find Server Action" → the client's version-skew full reload,
+        // which aborted the page.goto below (PR #981 e2e). The proxy no longer
+        // redirects server-action POSTs (`isServerActionRequest` in proxy.ts),
+        // so that race is gone; leaving the page is kept as cheap hardening
+        // against any other late in-flight request from it.
         await page.goto('about:blank');
         await page.context().clearCookies();
 

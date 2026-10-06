@@ -287,6 +287,38 @@ async function handleAiHost(req: NextRequest): Promise<NextResponse> {
 }
 
 /**
+ * 서버 액션 POST(`Next-Action` 헤더)인지 본다. 이런 요청은 아래 두 인증 가드를
+ * 건너뛴다.
+ *
+ * 왜 건너뛰나: `/portfolio`·`/account`를 열어 둔 탭에서 세션이 만료되거나 쿠키가
+ * 지워지면, 그 페이지의 React Query 서버 액션 POST가 전방 가드에 걸려 `/login`으로
+ * 307된다. 브라우저는 POST를 `/login`에 그대로 다시 보내는데 그 라우트는 해당 액션을
+ * 등록하지 않아 Next가 "Failed to find Server Action"을 내고, 클라이언트는 이를 버전
+ * 스큐로 보고 페이지 전체를 새로고침한다(`providers.tsx`의 `reloadOnVersionSkew`).
+ * 로그인된 사용자가 `/login`에서 액션을 보내는 반대 방향도 같은 식으로 깨진다.
+ *
+ * 왜 안전한가: 이 가드는 처음부터 보안 경계가 아니었다.
+ *  - 가드는 세션 쿠키가 **있는지만** 본다(유효성은 안 본다). 아무 값이나 든 쿠키를
+ *    붙이면 통과한다.
+ *  - 액션 ID는 경로가 아니라 서버 액션 매니페스트로 찾는다. 회원 액션 대부분
+ *    (보유종목 조회·저장·삭제 등)은 가드 밖 페이지(`/[symbol]/*`) 워커에도 등록돼
+ *    있다(2026-10 빌드의 `.next/server/server-reference-manifest.json` 기준). Next
+ *    16.3.6은 현재 라우트 워커에 액션이 없으면 등록된 워커로 포워딩한다
+ *    (`next/dist/server/app-render/action-handler.js` `selectWorkerForForwarding`).
+ *  - 그래서 인증은 각 액션이 `getCurrentUser()`로 직접 한다. 사용자 데이터를 읽거나
+ *    쓰는 액션(portfolio·api-key·chat-conversation·account-delete)은 전부 세션이 없으면
+ *    빈 결과·`unauthenticated` 에러·`/login` 리다이렉트를 돌려주고 아무것도 바꾸지
+ *    않는다 — 2026-10 서버 액션 인증 감사에서 전수 확인했다. 새 회원
+ *    전용 액션도 이 규칙을 따라야 한다. 이 프록시에 기대면 안 된다.
+ *
+ * 페이지 내비게이션은 그대로 가드를 탄다. 액션은 항상 POST라 메서드도 함께 본다 —
+ * 헤더만 붙인 GET이 가드를 건너뛰지 않게 한다.
+ */
+function isServerActionRequest(req: NextRequest): boolean {
+    return req.method === 'POST' && req.headers.has('next-action');
+}
+
+/**
  * 두 가지 가드를 처리하는 미들웨어 함수.
  *
  * 역방향 가드: 로그인된 사용자가 guest-only 페이지(/login, /signup 등)에 진입하면 / 로 redirect.
@@ -541,6 +573,8 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
         );
         return NextResponse.redirect(canonicalUrl, 301);
     }
+
+    if (isServerActionRequest(req)) return intlMiddleware(req);
 
     if (GUEST_ONLY_PATHS.has(pathname) && hasSession) {
         // 이미 로그인된 사용자는 `next`(돌아갈 곳)를 따라 보낸다. 무시하고 홈으로
