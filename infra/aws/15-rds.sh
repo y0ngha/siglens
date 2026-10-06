@@ -187,7 +187,8 @@ esac
 #
 # 기본 VPC의 서브넷을 AZ별 하나씩 모두 넣는다. RDS는 서브넷 그룹이 **최소 2개 AZ**를
 # 덮어야 하고(Single-AZ여도), 나중에 Multi-AZ로 올리거나 다른 AZ로 복구할 여지를
-# 남겨 둔다. 인스턴스 자체는 아래에서 2a에 고정한다(앱 EC2가 2a에 있어 AZ 간 전송비 0).
+# 남겨 둔다. 인스턴스 자체는 아래에서 2a에 고정한다(앱 EC2도 06-asg.sh의 ASG_AZS 기본값으로
+# 2a에 고정돼 AZ 간 전송비 0 — 둘 중 하나의 AZ를 바꾸면 다른 쪽도 함께 바꿀 것).
 SUBNETS=$(aws ec2 describe-subnets \
   --filters Name=vpc-id,Values="$VPC_ID" Name=default-for-az,Values=true \
             "Name=availability-zone,Values=ap-northeast-2a,ap-northeast-2b,ap-northeast-2c" \
@@ -322,7 +323,7 @@ else
   fi
 
   # 각 설정의 이유:
-  # - db.t4g.small / Single-AZ(2a)   데이터 1.4GB·소규모 트래픽. 앱 EC2가 2a라 AZ 간 전송비 0.
+  # - db.t4g.small / Single-AZ(2a)   데이터 1.4GB·소규모 트래픽. 앱 EC2가 2a(06-asg.sh ASG_AZS)라 AZ 간 전송비 0.
   #                                  고가용성이 필요해지면 modify로 Multi-AZ 승격(다운타임 짧음).
   # - gp3 20GB, 자동확장 상한 50GB    gp3는 용량과 무관하게 3000 IOPS 기본. 확장은 되돌릴 수 없으니
   #                                  상한을 낮게 두고 FreeStorageSpace 알람으로 먼저 안다.

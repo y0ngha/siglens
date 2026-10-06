@@ -26,12 +26,15 @@
 set -euo pipefail
 
 source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/lib-cron.sh"
 source "$(dirname "$0")/.env"
 
 REGION="${AWS_REGION:-ap-northeast-2}"
 
 ROLE_NAME=siglens-kr-tickers-eventbridge
-CONNECTION_NAME=siglens-kr-tickers
+# 공유 Connection(`siglens-cron`)은 lib-cron.sh가 소유한다. 아래는 공유 이전의 전용
+# Connection 이름으로, 이관 후 삭제 대상이다(lib-cron.sh 머리말).
+LEGACY_CONNECTION_NAME=siglens-kr-tickers
 DESTINATION_NAME=siglens-kr-tickers
 RULE_NAME=siglens-kr-tickers-daily
 ENDPOINT="https://siglens.io/api/cron/kr-tickers"
@@ -64,56 +67,17 @@ aws iam put-role-policy --role-name "$ROLE_NAME" --policy-name siglens-kr-ticker
 ROLE_ARN="$(aws iam get-role --role-name "$ROLE_NAME" --query 'Role.Arn' --output text)"
 log "role $ROLE_NAME ready ($ROLE_ARN)"
 
-### 3) Connection — Authorization: Bearer <CRON_SECRET> 주입 ###
-if aws events describe-connection --name "$CONNECTION_NAME" --region "$REGION" >/dev/null 2>&1; then
-  aws events update-connection --name "$CONNECTION_NAME" --authorization-type API_KEY \
-    --auth-parameters "ApiKeyAuthParameters={ApiKeyName=Authorization,ApiKeyValue=Bearer ${CRON_SECRET}}" \
-    --region "$REGION" >/dev/null
-  log "connection $CONNECTION_NAME updated (secret refreshed)"
-else
-  aws events create-connection --name "$CONNECTION_NAME" --authorization-type API_KEY \
-    --auth-parameters "ApiKeyAuthParameters={ApiKeyName=Authorization,ApiKeyValue=Bearer ${CRON_SECRET}}" \
-    --region "$REGION" >/dev/null
-  log "connection $CONNECTION_NAME created"
-fi
-CONNECTION_ARN="$(aws events describe-connection --name "$CONNECTION_NAME" \
-  --query ConnectionArn --output text --region "$REGION")"
+### 3) Connection — Authorization: Bearer <CRON_SECRET> 주입 (13/14 공유, lib-cron.sh) ###
+ensure_cron_connection "$REGION" "$CRON_SECRET"
 
-# Connection은 비동기로 AUTHORIZED에 도달한다(관리형 시크릿 생성 포함). 그 전에
-# 스케줄이 돌면 초기 호출이 조용히 인증 실패한다 — 짧게 폴링해 눈으로 확인하고,
-# 도달하지 못해도 스크립트는 죽이지 않는다(나머지 리소스는 여전히 유용하다).
-CONN_POLL_ATTEMPTS=12
-CONN_POLL_INTERVAL_SECONDS=5
-conn_authorized=false
-for ((i = 1; i <= CONN_POLL_ATTEMPTS; i++)); do
-  CONN_STATE="$(aws events describe-connection --name "$CONNECTION_NAME" \
-    --query ConnectionState --output text --region "$REGION" 2>/dev/null || echo "UNKNOWN")"
-  if [ "$CONN_STATE" = "AUTHORIZED" ]; then
-    conn_authorized=true
-    log "connection $CONNECTION_NAME is AUTHORIZED (attempt $i/$CONN_POLL_ATTEMPTS)"
-    break
-  fi
-  log "connection $CONNECTION_NAME state=$CONN_STATE, waiting... (attempt $i/$CONN_POLL_ATTEMPTS)"
-  sleep "$CONN_POLL_INTERVAL_SECONDS"
-done
-if [ "$conn_authorized" != true ]; then
-  log "WARNING: connection $CONNECTION_NAME did not reach AUTHORIZED within $((CONN_POLL_ATTEMPTS * CONN_POLL_INTERVAL_SECONDS))s (state=$CONN_STATE) — verify manually before trusting the schedule"
+### 4) API Destination — 이미 있으면 공유 Connection으로 갈아 끼운 뒤 옛 전용 Connection 삭제 ###
+ensure_api_destination "$REGION" "$DESTINATION_NAME" "$ENDPOINT" "$CONNECTION_ARN"
+delete_legacy_connection "$REGION" "$LEGACY_CONNECTION_NAME"
+# 공유 Connection이 AUTHORIZED가 아니면 위 두 함수가 이관·삭제를 건너뛰었다(lib-cron.sh).
+# 스케줄은 아래에서 그대로 갱신되고, 기존 Destination은 옛 Connection으로 계속 동작한다.
+if [ "$CRON_CONNECTION_AUTHORIZED" != true ]; then
+  log "WARNING: cron connection migration incomplete — $CRON_RERUN_HINT"
 fi
-
-### 4) API Destination ###
-if ! aws events describe-api-destination --name "$DESTINATION_NAME" --region "$REGION" >/dev/null 2>&1; then
-  aws events create-api-destination --name "$DESTINATION_NAME" \
-    --connection-arn "$CONNECTION_ARN" \
-    --invocation-endpoint "$ENDPOINT" \
-    --http-method PATCH \
-    --invocation-rate-limit-per-second 1 \
-    --region "$REGION" >/dev/null
-  log "api destination $DESTINATION_NAME created"
-else
-  log "api destination $DESTINATION_NAME exists"
-fi
-DEST_ARN="$(aws events describe-api-destination --name "$DESTINATION_NAME" \
-  --query ApiDestinationArn --output text --region "$REGION")"
 
 ### 5) Rule + target — 하루 한 번 05:00 UTC(14:00 KST) ###
 aws events put-rule --name "$RULE_NAME" \

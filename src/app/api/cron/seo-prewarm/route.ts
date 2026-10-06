@@ -5,6 +5,7 @@ import { getDatabaseClient } from '@/shared/db/client';
 import { isAuthorizedCronRequest } from '@/shared/lib/auth/isAuthorizedCronRequest';
 import { afterWithDrain } from '@/shared/lib/afterWithDrain';
 import { acquirePrewarmLock, releasePrewarmLock } from './lock';
+import { pruneExpiredRows } from './pruneExpiredRows';
 import { BATCH_WALL_CLOCK_BUDGET_MS, runPrewarmBatch } from './runPrewarmBatch';
 
 const {
@@ -93,6 +94,13 @@ export async function PATCH(request: Request): Promise<Response> {
             console.log(
                 '[seo-prewarm] prune done:',
                 JSON.stringify(pruneCounts)
+            );
+            // 만료된 세션·공유 스냅샷 정리. 테이블별로 자체 격리돼 던지지 않는다
+            // (`pruneExpiredRows` JSDoc) — 위 이력 정리와 같은 상한·인덱스 규율을 따른다.
+            const expiryCounts = await pruneExpiredRows(db);
+            console.log(
+                '[seo-prewarm] expiry prune done:',
+                JSON.stringify(expiryCounts)
             );
         } catch (error) {
             console.error('[seo-prewarm] prune failed:', error);

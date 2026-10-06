@@ -1,6 +1,7 @@
 import 'server-only';
 
-import { eq } from 'drizzle-orm';
+import { and, eq, inArray, lt } from 'drizzle-orm';
+import { MS_PER_DAY } from '@/shared/config/time';
 import { DB_TRANSIENT_RETRY } from '@/shared/db/isTransientDbError';
 import { sharedAnalyses } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
@@ -40,6 +41,22 @@ export interface CreateRecord {
     /** 생성 시점의 로케일 — 저장된 본문이 그 언어로 만들어졌다. */
     locale: Locale;
 }
+
+/**
+ * 만료 후 이 일수가 지나야 행을 지운다.
+ *
+ * 만료 직후에 바로 지우지 않는 이유: 만료된 공유 링크는 "만료됨" 화면을 보여 준다
+ * (`getSharedAnalysisAction`의 `expired`). 행이 없으면 같은 링크가 "없는 공유"(not_found)로
+ * 바뀌어, 며칠 전 받은 링크를 연 사람이 링크가 깨졌다고 오해한다. 30일이면 메신저에
+ * 돌던 링크가 대부분 식는다.
+ */
+export const SHARED_ANALYSIS_PURGE_GRACE_DAYS = 30;
+
+/**
+ * {@link DrizzleSharedAnalysisRepository.pruneExpired} 한 번이 지우는 최대 행 수.
+ * `id IN (SELECT … LIMIT N)` 캡 — 남은 몫은 다음 seo-prewarm tick이 이어서 지운다.
+ */
+export const SHARED_ANALYSIS_PRUNE_BATCH_SIZE = 500;
 
 interface SharedAnalysisRepository {
     create(record: CreateRecord): Promise<string>;
@@ -98,6 +115,43 @@ export class DrizzleSharedAnalysisRepository implements SharedAnalysisRepository
             DB_TRANSIENT_RETRY
         );
         return row!.id;
+    }
+
+    /**
+     * 만료 후 {@link SHARED_ANALYSIS_PURGE_GRACE_DAYS}일이 지난 행을 최대
+     * {@link SHARED_ANALYSIS_PRUNE_BATCH_SIZE}개 지우고 지운 수를 반환한다.
+     * `WHERE expires_at < cutoff`는 `shared_analyses_expires_at_idx`를 탄다.
+     *
+     * 바깥 DELETE에도 만료 조건을 **다시** 건다. `create`의 dedupe 경로
+     * (`ON CONFLICT … SET expires_at`)가 서브쿼리와 DELETE 사이에 같은 행의 만료를
+     * 연장할 수 있는데, 조건 없이 id로만 지우면 방금 다시 공유된 행이 지워지고
+     * `create`가 돌려준 id가 not_found가 된다. Postgres는 READ COMMITTED에서 동시
+     * 갱신된 행의 WHERE를 재평가하므로 바깥 조건이 그 행을 건너뛴다.
+     */
+    async pruneExpired(now: Date = new Date()): Promise<number> {
+        const cutoff = new Date(
+            now.getTime() - SHARED_ANALYSIS_PURGE_GRACE_DAYS * MS_PER_DAY
+        );
+        const expiredIds = this.db
+            .select({ id: sharedAnalyses.id })
+            .from(sharedAnalyses)
+            .where(lt(sharedAnalyses.expiresAt, cutoff))
+            .limit(SHARED_ANALYSIS_PRUNE_BATCH_SIZE);
+
+        const deleted = await withRetry(
+            () =>
+                this.db
+                    .delete(sharedAnalyses)
+                    .where(
+                        and(
+                            inArray(sharedAnalyses.id, expiredIds),
+                            lt(sharedAnalyses.expiresAt, cutoff)
+                        )
+                    )
+                    .returning({ id: sharedAnalyses.id }),
+            DB_TRANSIENT_RETRY
+        );
+        return deleted.length;
     }
 
     async findById(id: string): Promise<SharedAnalysisRow | null> {

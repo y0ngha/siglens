@@ -8,7 +8,8 @@ Cloudflare IP 허용목록도 함께 사라졌다). 런타임은
 `docker run ... node server.js`(Next.js standalone)이고, `v*` 태그 push 시
 `.github/workflows/deploy.yml`이 이미지 빌드/푸시 후 ASG instance refresh로 롤한다.
 
-스크립트는 `00`~`10` 순번 + `deploy.sh` + `check-env.sh` + `user-data.sh` + `lib.sh`.
+스크립트는 `00`~`16` 순번 + `deploy.sh` + `check-env.sh` + `user-data.sh` + `lib.sh`
+(+ 13/14가 공유하는 `lib-cron.sh`).
 `.env` / `.ids` / `.ami`는 gitignore(로컬·account 종속). CI는 deploy.yml에서 재생성.
 
 ## 헬스 vs 레디니스 (liveness vs readiness)
@@ -100,6 +101,43 @@ AMI=$(aws ssm get-parameter \
 echo "export PINNED_AMI=$AMI" > infra/aws/.ami   # 로컬
 # CI는 vars.PINNED_AMI 도 함께 갱신
 ```
+
+### 골든 AMI 보존 정리 (16-prune-amis.sh)
+
+베이크마다 AMI와 8GB 스냅샷이 남는다. 새 AMI로 배포가 끝난 뒤 정리한다:
+
+```bash
+bash infra/aws/16-prune-amis.sh                 # dry-run (기본) — 지울 목록만 출력
+bash infra/aws/16-prune-amis.sh --apply         # 최근 3개 + 사용 중 AMI만 남기고 deregister + 스냅샷 삭제
+bash infra/aws/16-prune-amis.sh --adopt-legacy --apply   # 1회: 태그 도입 이전 베이크에 태그 부착
+```
+
+대상은 self 소유 + 태그 `siglens:role=golden-ami`뿐이다(09가 이미지·스냅샷에 붙인다).
+PINNED_AMI, 런치 템플릿 `$Latest`/`$Default`, 살아 있는 인스턴스의 AMI는 보존 수와 무관하게
+지우지 않는다. CI `vars.PINNED_AMI`가 `.ami`와 다르면 `PINNED_AMI=<값>`으로 넘겨 함께 보호한다.
+
+## AZ 배치 (2a 고정)
+
+ASG(`06-asg.sh`)와 RDS(`15-rds.sh`)는 둘 다 `ap-northeast-2a`다 — 앱↔DB 왕복이 AZ 간
+전송비·RTT를 타지 않게 한다. 2a 장애 시 ASG가 다른 AZ로 넘어가지 못하지만, RDS가
+Single-AZ 2a라 넘어가도 DB에 닿지 못한다. HA가 필요해지면 RDS Multi-AZ 승격과 **함께**
+`ASG_AZS=ap-northeast-2a,ap-northeast-2b bash infra/aws/06-asg.sh`로 2b를 다시 더한다.
+
+## EventBridge cron Connection (공유)
+
+`13-seo-prewarm.sh`와 `14-kr-tickers-cron.sh`의 API Destination은 Connection
+`siglens-cron` 하나를 공유한다(`lib-cron.sh`). 둘 다 `Authorization: Bearer <CRON_SECRET>`
+같은 헤더라 나눌 이유가 없고, Connection마다 Secrets Manager 시크릿($0.40/월)이 하나씩 생긴다.
+두 스크립트를 다시 돌리면 API Destination이 공유 Connection으로 옮겨지고 옛 전용
+Connection(`siglens-seo-prewarm`, `siglens-kr-tickers`)은 그 시크릿과 함께 삭제된다.
+CRON_SECRET을 바꾼 뒤엔 둘 중 하나만 돌려도 두 cron이 함께 갱신된다.
+
+## ISR 캐시 prefix 정리
+
+배포마다 ISR 캐시 prefix(`siglens-isr/<GIT_SHA>/`)가 바뀌어 직전 prefix는 죽는다. 이것은
+`12-isr-cache.sh`의 7일 lifecycle이 지운다 — `deploy.sh`는 지우지 않는다(직전 prefix는
+1단계 롤백의 웜 캐시이고, 수십만 객체 삭제는 CI를 분 단위로 잡아먹는다). 예전에 쓰던 SSM
+`/siglens/prev-isr-buildid`는 읽는 곳이 없어 폐기했다.
 
 ## env 완전성 게이트 (M5)
 
