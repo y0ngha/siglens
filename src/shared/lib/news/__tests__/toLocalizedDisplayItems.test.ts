@@ -1,6 +1,30 @@
-import { afterEach, beforeEach } from 'vitest';
-import { TRANSLATABLE_ENTITY } from '@/shared/db/contentTranslationFields';
+// vi.mock → imports 순서 (MISTAKES.md Tests §17)
+
+/** 사이드카 상태 — `@/shared/test-utils/contentTranslationSidecar` 참고. */
+const sidecar = vi.hoisted((): SidecarState => ({ cells: null }));
+
+vi.mock('@/shared/db/contentTranslationClient', async importOriginal => {
+    const { sidecarAwareClient } =
+        await import('@/shared/test-utils/contentTranslationSidecar');
+    return sidecarAwareClient(
+        await importOriginal<
+            typeof import('@/shared/db/contentTranslationClient')
+        >(),
+        sidecar
+    );
+});
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    CONTENT_FIELD,
+    TRANSLATABLE_ENTITY,
+} from '@/shared/db/contentTranslationFields';
 import type { NewsCardDbRow } from '@/shared/lib/news/toLocalizedDisplayItems';
+import { toLocalizedDisplayItems } from '@/shared/lib/news/toLocalizedDisplayItems';
+import type {
+    SidecarCell,
+    SidecarState,
+} from '@/shared/test-utils/contentTranslationSidecar';
 
 const ORIGINAL = process.env.DB_CONTENT_LOCALE;
 
@@ -19,19 +43,17 @@ const ROW: NewsCardDbRow = {
 };
 
 beforeEach(() => {
-    vi.resetModules();
     delete process.env.DB_CONTENT_LOCALE;
 });
 
 afterEach(() => {
     if (ORIGINAL === undefined) delete process.env.DB_CONTENT_LOCALE;
     else process.env.DB_CONTENT_LOCALE = ORIGINAL;
+    sidecar.cells = null;
 });
 
 describe('toLocalizedDisplayItems', () => {
     it('DB enum 값을 좁혀서 돌려준다', async () => {
-        const { toLocalizedDisplayItems } =
-            await import('@/shared/lib/news/toLocalizedDisplayItems');
         const [item] = await toLocalizedDisplayItems(
             [ROW],
             'ko',
@@ -46,8 +68,6 @@ describe('toLocalizedDisplayItems', () => {
     });
 
     it('알 수 없는 enum 값은 null로 떨어뜨린다', async () => {
-        const { toLocalizedDisplayItems } =
-            await import('@/shared/lib/news/toLocalizedDisplayItems');
         const [item] = await toLocalizedDisplayItems(
             [{ ...ROW, sentiment: 'sideways' }],
             'ko',
@@ -63,8 +83,6 @@ describe('toLocalizedDisplayItems', () => {
      * 줄여 온 이력이 있다.
      */
     it('ko에서는 원본과 같은 값을 중복해 싣지 않는다', async () => {
-        const { toLocalizedDisplayItems } =
-            await import('@/shared/lib/news/toLocalizedDisplayItems');
         const [item] = await toLocalizedDisplayItems(
             [ROW],
             'ko',
@@ -92,8 +110,6 @@ describe('toLocalizedDisplayItems', () => {
     it.each(['ko', 'en', 'ja', 'zh'] as const)(
         '스위치 OFF: %s 결과가 ko와 바이트 단위로 같다',
         async locale => {
-            const { toLocalizedDisplayItems } =
-                await import('@/shared/lib/news/toLocalizedDisplayItems');
             const [base] = await toLocalizedDisplayItems(
                 [ROW],
                 'ko',
@@ -117,40 +133,15 @@ describe('toLocalizedDisplayItems', () => {
      * 잡았다.
      */
     describe('스위치 ON', () => {
-        async function withSidecar(
-            cells: Array<{ field: string; locale: string; value: string }>
-        ) {
-            vi.doMock('@/shared/db/contentTranslationClient', () => ({
-                isContentLocaleEnabled: () => true,
-                getContentTranslationRepository: () => ({
-                    findForEntity: async () => {
-                        const { ContentTranslations } =
-                            await import('@/shared/db/contentTranslationRepository');
-                        const { TRANSLATION_SOURCE } =
-                            await import('@/shared/db/contentTranslationFields');
-                        const byField = new Map();
-                        for (const cell of cells) {
-                            const byLocale =
-                                byField.get(cell.field) ?? new Map();
-                            byLocale.set(cell.locale, {
-                                value: cell.value,
-                                source: TRANSLATION_SOURCE.ai,
-                            });
-                            byField.set(cell.field, byLocale);
-                        }
-                        return new ContentTranslations(
-                            new Map([[ROW.id, byField]])
-                        );
-                    },
-                }),
-            }));
-            return import('@/shared/lib/news/toLocalizedDisplayItems');
+        /** `ROW`의 사이드카 번역을 깐다. */
+        function withSidecar(
+            cells: ReadonlyArray<Omit<SidecarCell, 'id'>>
+        ): void {
+            sidecar.cells = cells.map(cell => ({ ...cell, id: ROW.id }));
         }
 
         it('사이드카 번역은 세 필드 모두 붙는다', async () => {
-            const { CONTENT_FIELD } =
-                await import('@/shared/db/contentTranslationFields');
-            const { toLocalizedDisplayItems } = await withSidecar([
+            withSidecar([
                 {
                     field: CONTENT_FIELD.news.title,
                     locale: 'ja',
@@ -187,9 +178,7 @@ describe('toLocalizedDisplayItems', () => {
          * 오염된 채 TTL까지 남는다.
          */
         it('사이드카에 없어 폴백한 값은 붙이지 않는다', async () => {
-            const { CONTENT_FIELD } =
-                await import('@/shared/db/contentTranslationFields');
-            const { toLocalizedDisplayItems } = await withSidecar([
+            withSidecar([
                 {
                     field: CONTENT_FIELD.news.title,
                     locale: 'zh',
@@ -210,8 +199,6 @@ describe('toLocalizedDisplayItems', () => {
 
     /** 레거시 컬럼만으로 갈리는 값은 붙지 않는다 — 캐시 불변식(위) 때문이다. */
     it('en에서도 레거시 title_en은 해석값으로 붙지 않는다', async () => {
-        const { toLocalizedDisplayItems } =
-            await import('@/shared/lib/news/toLocalizedDisplayItems');
         const [item] = await toLocalizedDisplayItems(
             [ROW],
             'en',

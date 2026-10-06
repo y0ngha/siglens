@@ -10,8 +10,12 @@ const {
     fmpCryptoMembershipMock: vi.fn(),
 }));
 
-vi.mock('@/shared/db/client', async importOriginal => ({
-    ...(await importOriginal<typeof import('@/shared/db/client')>()),
+// `importOriginal` 없이 필요한 export만 만든다. 실물을 펼치면 `cryptoAssetStore`가
+// 쓰지도 않는 export를 남기려고 DB 스택 전체(drizzle + Neon 드라이버 + 스키마)를
+// 적재한다 — 이 모듈이 import하는 건 `tryGetDatabaseClient` 하나뿐이다. 그 적재가
+// 이 파일 비용의 대부분이었고 병렬 워커 부하에서 기본 5초를 넘기게 했다
+// (여기선 `vi.resetModules()`가 재import 전에 팩토리를 다시 돌려 케이스마다 치렀다).
+vi.mock('@/shared/db/client', () => ({
     tryGetDatabaseClient: () => tryGetDatabaseClientMock(),
 }));
 vi.mock('../../api', () => ({

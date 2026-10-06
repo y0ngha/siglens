@@ -14,6 +14,19 @@ import {
 
 const hours = (h: number): number => h * SECONDS_PER_HOUR;
 
+/**
+ * 1년 표본 성질 테스트(한 달 분량 케이스)의 상한.
+ *
+ * 케이스마다 약 1,200개 시각 × `lastClosedSessionDate` 세 번(+ 롤 계산)을 돌리고,
+ * 각 호출이 `Intl.DateTimeFormat#formatToParts`를 여러 번 탄다(포맷터는 이미 캐시돼
+ * 있어 더 줄일 고정비가 없다). 단독으론 케이스당 0.3초 남짓, 병렬 전체 실행에선 최대
+ * 1.3초, 무거운 가드와 한꺼번에 돌린 최악 부하에선 5.3초를 쟀다(2026-10-06). 1년
+ * 한 덩어리일 땐 같은 부하에서 33.8초로 30초 상한을 넘겼다. 표본 밀도 자체가
+ * 경계(휴장일·반장·DST) 검출력이라 간격을 넓히지 않고, 최악 실측의 두 배 가까이로
+ * 상한을 둔다.
+ */
+const MONTH_SAMPLE_TIMEOUT_MS = 10_000;
+
 describe('secondsUntilSessionRoll — 세션-날짜 키가 넘어가기까지', () => {
     it('미국 평일 장중: 그날 마감 16:00 EDT + 4h(= 다음날 00:00Z)까지', () => {
         // 2026-06-30(화) 15:00Z = 11:00 EDT → 롤 2026-07-01T00:00Z
@@ -123,32 +136,47 @@ describe('secondsUntilSessionRoll — 세션-날짜 키가 넘어가기까지', 
         ['KR', KR_EQUITY_SESSION],
         ['crypto', CRYPTO_SESSION],
     ];
-    it.each(SPECS)(
-        '%s: 2026년 전체 표본에서 롤 1분 전엔 같은 날짜, 1분 후엔 다음 날짜',
-        (_name, spec) => {
-            const start = Date.parse('2026-01-01T00:00:00Z');
-            const end = Date.parse('2027-01-01T00:00:00Z');
-            // 37분 간격 — 시·분 경계에 정렬되지 않게 해 마감·버퍼 경계 주변도 고르게 찍는다.
-            for (let t = start; t < end; t += 37 * MS_PER_MINUTE) {
-                const now = new Date(t);
-                const current = lastClosedSessionDate(spec, now);
-                const rollMs =
-                    t + secondsUntilSessionRoll(spec, now) * MS_PER_SECOND;
-                expect(
-                    lastClosedSessionDate(
-                        spec,
-                        new Date(rollMs - MS_PER_MINUTE)
-                    )
-                ).toBe(current);
-                expect(
-                    lastClosedSessionDate(
-                        spec,
-                        new Date(rollMs + MS_PER_MINUTE)
-                    )
-                ).not.toBe(current);
-            }
-        },
-        // 1년치 표본(~1.4만 시각 × Intl 포맷)이라 병렬 실행 부하에서 기본 5초를 넘길 수 있다.
-        30_000
-    );
+    // 1년 표본을 달 단위로 나눠 돈다 — 표본 시각은 예전 1년 한 덩어리와 정확히 같다
+    // (1월 1일 00:00Z부터 37분 간격, 달 경계에서 끊기지 않고 이어진다). 한 덩어리일
+    // 때는 스펙 하나가 단독 3초, 병렬 부하에선 30초를 넘겨 실패했다(2026-10-06).
+    // 나누면 케이스당 일이 1/12이고, 실패도 어느 달인지 바로 보인다.
+    const YEAR_START = Date.parse('2026-01-01T00:00:00Z');
+    const SAMPLE_STEP_MS = 37 * MS_PER_MINUTE;
+    const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
+    const firstSampleAtOrAfter = (ms: number): number =>
+        YEAR_START +
+        Math.ceil((ms - YEAR_START) / SAMPLE_STEP_MS) * SAMPLE_STEP_MS;
+
+    describe.each(SPECS)('%s', (_name, spec) => {
+        it.each(MONTHS)(
+            '2026년 %i월 표본에서 롤 1분 전엔 같은 날짜, 1분 후엔 다음 날짜',
+            month => {
+                // `Date.UTC`의 월은 0-기준이라 `month - 1`이 그 달 1일, `month`가 다음 달 1일.
+                const start = firstSampleAtOrAfter(
+                    Date.UTC(2026, month - 1, 1)
+                );
+                const end = Date.UTC(2026, month, 1);
+                // 37분 간격 — 시·분 경계에 정렬되지 않게 해 마감·버퍼 경계 주변도 고르게 찍는다.
+                for (let t = start; t < end; t += SAMPLE_STEP_MS) {
+                    const now = new Date(t);
+                    const current = lastClosedSessionDate(spec, now);
+                    const rollMs =
+                        t + secondsUntilSessionRoll(spec, now) * MS_PER_SECOND;
+                    expect(
+                        lastClosedSessionDate(
+                            spec,
+                            new Date(rollMs - MS_PER_MINUTE)
+                        )
+                    ).toBe(current);
+                    expect(
+                        lastClosedSessionDate(
+                            spec,
+                            new Date(rollMs + MS_PER_MINUTE)
+                        )
+                    ).not.toBe(current);
+                }
+            },
+            MONTH_SAMPLE_TIMEOUT_MS
+        );
+    });
 });

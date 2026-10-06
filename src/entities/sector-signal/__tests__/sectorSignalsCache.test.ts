@@ -28,6 +28,7 @@ vi.mock('@upstash/redis', () => ({
 
 import type { SectorSignalsResult } from '@y0ngha/siglens-core';
 import { SECTOR_STOCKS } from '@/shared/config/dashboard-tickers';
+import { MODULE_LOAD_TIMEOUT_MS } from '@/shared/test-utils/testTimeouts';
 import {
     KR_DASHBOARD_SCOPE,
     US_DASHBOARD_SCOPE,
@@ -61,6 +62,12 @@ async function loadWithEnv(opts: { url?: string; token?: string }) {
 }
 
 describe('getCachedSectorSignals', () => {
+    // 케이스마다 리셋 뒤 다시 적재하지만, 첫 적재의 변환·외부 의존 로드는 리셋과
+    // 무관하게 남는다. 그 콜드 비용을 첫 케이스 본문이 아니라 여기서 치른다.
+    beforeAll(async () => {
+        await import('../api/sectorSignalsCache');
+    }, MODULE_LOAD_TIMEOUT_MS);
+
     beforeEach(() => vi.clearAllMocks());
 
     afterEach(() => {

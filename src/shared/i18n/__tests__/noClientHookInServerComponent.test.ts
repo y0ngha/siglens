@@ -41,13 +41,18 @@ describe('클라이언트 전용 훅은 서버 컴포넌트에서 호출되지 �
             rel => !rel.includes('__tests__') && !rel.includes('test-utils')
         );
 
+    // 파일마다 한 번만 읽는다 — 예전엔 판정·훅 수집·위반 검사가 같은 파일을
+    // 각각 다시 읽었다.
+    const contents = new Map(
+        sources.map(rel => [rel, readFileSync(`${ROOT}/${rel}`, 'utf8')])
+    );
     const isClientModule = (rel: string) =>
-        readFileSync(`${ROOT}/${rel}`, 'utf8').startsWith("'use client'");
+        contents.get(rel)!.startsWith("'use client'");
 
     /** `'use client'` 모듈이 내보내는 훅 이름 전부. */
     const clientOnlyHooks = new Map<string, string>();
     for (const rel of sources.filter(isClientModule)) {
-        for (const m of readFileSync(`${ROOT}/${rel}`, 'utf8').matchAll(
+        for (const m of contents.get(rel)!.matchAll(
             // `export function`만 보면 화살표 상수 훅을 놓친다 — 이 레포엔
             // `func-style` 규칙이 없어 그 형태가 린트를 통과한다. 즉 오늘 0건인
             // 건 우연이지, 구조가 막아 주는 게 아니다(감사 실증).
@@ -66,17 +71,23 @@ describe('클라이언트 전용 훅은 서버 컴포넌트에서 호출되지 �
     it('위반이 없다', () => {
         const names = [...clientOnlyHooks.keys()];
         const offenders: string[] = [];
+        // 훅마다 정규식을 새로 만들어 파일마다 돌리면 (파일 × 훅)번 컴파일·스캔이다
+        // — 병렬 실행 부하에서 기본 5초에 근접했다. 이름을 한 패턴으로 묶어 파일당
+        // 한 번만 훑는다. 훅 이름은 `\w`만으로 이뤄져 이스케이프가 필요 없다.
+        const callPattern = new RegExp(`\\b(${names.join('|')})\\(`, 'g');
 
         for (const rel of sources.filter(rel => !isClientModule(rel))) {
             // 주석 속 언급은 호출이 아니다 — 이 가드의 근거를 적어 둔 JSDoc이
             // 스스로를 위반으로 잡았다.
-            const code = readFileSync(`${ROOT}/${rel}`, 'utf8')
+            const code = contents
+                .get(rel)!
                 .replace(/\/\*[\s\S]*?\*\//g, '')
                 .replace(/(?<![:/])\/\/.*$/gm, '');
+            const called = new Set(
+                Array.from(code.matchAll(callPattern), m => m[1])
+            );
             for (const hook of names) {
-                if (new RegExp(`\\b${hook}\\(`).test(code)) {
-                    offenders.push(`${rel} → ${hook}`);
-                }
+                if (called.has(hook)) offenders.push(`${rel} → ${hook}`);
             }
         }
 
