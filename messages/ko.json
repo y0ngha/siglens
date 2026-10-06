@@ -2737,6 +2737,7 @@
                 "e6b008": "메시지 수정",
                 "followUpsLabel": "이어서 물어보기",
                 "generating": "답변 생성 중…",
+                "logLabel": "대화 내용",
                 "openOnSiglens": "SIGLENS에서 {symbol} 보기",
                 "redrafting": "더 확인할 데이터가 있어 답변을 다시 정리하고 있어요…",
                 "relatedPages": "SIGLENS에서 더 보기",
