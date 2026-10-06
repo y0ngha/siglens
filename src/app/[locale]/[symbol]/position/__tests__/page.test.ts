@@ -4,7 +4,7 @@
  * 2026-09-11 — the 2026-08-19 index flip was reverted by the SEO recovery
  * audit; the hook copy for share cards is kept), body guards (invalid ticker /
  * unresolvable-degraded / missing asset → notFound), the static-path server
- * data composition (getQuantizedBarsStatic → buildTechnicalFacts, never
+ * data composition (getSessionBarsStatic → buildTechnicalFacts, never
  * getBarsAction/cookies), the per-symbol current-price-position content block
  * (still rendered for users — it just no longer justifies indexing), and an SSR
  * crawl-safety check that no personalized marker (★/평단/수익률) ever appears
@@ -28,8 +28,10 @@ vi.mock('@/entities/ticker/lib/assetClassification', () => ({
 vi.mock('@/entities/ticker/api', () => ({
     isTabAllowedForSymbol: vi.fn().mockResolvedValue(true),
 }));
-vi.mock('@/entities/bars/lib/barsStaticCache', () => ({
-    getQuantizedBarsStatic: vi.fn(),
+// 이 탭(12h 선언)은 세션 키 축소 봉(revalidate 24h)을 읽는다 — 6h 봉 캐시
+// (`getSessionBarsStatic`)를 읽으면 Next 16.3이 라우트를 6h로 clamp한다.
+vi.mock('@/entities/bars/lib/sessionBarsStaticCache', () => ({
+    getSessionBarsStatic: vi.fn(),
 }));
 vi.mock('@/views/symbol/ui/SymbolPageHeading', () => ({
     SymbolPageHeading: ({ children }: { children: React.ReactNode }) =>
@@ -56,7 +58,7 @@ import {
 } from '@/app/[locale]/[symbol]/position/page';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
-import { getQuantizedBarsStatic } from '@/entities/bars/lib/barsStaticCache';
+import { getSessionBarsStatic } from '@/entities/bars/lib/sessionBarsStaticCache';
 import { PositionTabContent } from '@/widgets/portfolio-position/ui/PositionTabContent';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
@@ -69,8 +71,8 @@ const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
 const mockIsTabAllowedForSymbol = isTabAllowedForSymbol as MockedFunction<
     typeof isTabAllowedForSymbol
 >;
-const mockGetQuantizedBarsStatic = getQuantizedBarsStatic as MockedFunction<
-    typeof getQuantizedBarsStatic
+const mockGetSessionBarsStatic = getSessionBarsStatic as MockedFunction<
+    typeof getSessionBarsStatic
 >;
 
 const AAPL_ASSET_INFO = {
@@ -106,7 +108,7 @@ describe('generateMetadata', () => {
         mockIsTabAllowedForSymbol.mockResolvedValue(true);
         // 메타데이터 경로는 bars를 읽지 않는다(항상 noindex). 기본값은 "호출되지
         // 않는다"를 단언하는 케이스가 mock 상태에 좌우되지 않도록 둔 것이다.
-        mockGetQuantizedBarsStatic.mockResolvedValue(RAW_BARS as never);
+        mockGetSessionBarsStatic.mockResolvedValue(RAW_BARS as never);
     });
 
     it('returns noindex for an invalid ticker shape', async () => {
@@ -177,14 +179,14 @@ describe('generateMetadata', () => {
     });
 
     it('bars가 degrade돼도 같은 noindex — 메타데이터가 더 이상 가격 범위를 읽지 않는다', async () => {
-        mockGetQuantizedBarsStatic.mockRejectedValue(new Error('FMP down'));
+        mockGetSessionBarsStatic.mockRejectedValue(new Error('FMP down'));
         const metadata = await generateMetadata({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
         expect(metadata.robots).toEqual({ index: false, follow: true });
         // 메타데이터 경로는 bars를 호출하지 않는다 — noindex가 확정이라 본문과
         // "같은 조건"을 볼 이유가 사라졌고, 그 조회 한 번이 메타데이터 생성 지연이었다.
-        expect(mockGetQuantizedBarsStatic).not.toHaveBeenCalled();
+        expect(mockGetSessionBarsStatic).not.toHaveBeenCalled();
     });
 
     it('노출용 카피는 "평단 = 몇 층" 아파트 메타포로 후킹 강화 — title/description/OG/Twitter에 반영', async () => {
@@ -276,7 +278,7 @@ describe('PositionPage body guards', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockIsTabAllowedForSymbol.mockResolvedValue(true);
-        mockGetQuantizedBarsStatic.mockResolvedValue(RAW_BARS as never);
+        mockGetSessionBarsStatic.mockResolvedValue(RAW_BARS as never);
     });
 
     it('notFound() for an invalid ticker shape', async () => {
@@ -340,7 +342,7 @@ describe('PositionPage server data path (static, cookies-free)', () => {
      * 이 파일은 `@/shared/lib/seo`를 목킹하지 않으므로 렌더된 JSON-LD를 직접 읽는다.
      */
     it('BreadcrumbList가 티커가 아니라 displayName을 쓴다', async () => {
-        mockGetQuantizedBarsStatic.mockResolvedValue(RAW_BARS as never);
+        mockGetSessionBarsStatic.mockResolvedValue(RAW_BARS as never);
 
         const tree = await PositionPage({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
@@ -354,18 +356,17 @@ describe('PositionPage server data path (static, cookies-free)', () => {
         expect(trail[1].name).toBe('Apple Inc.');
     });
 
-    it('uses getQuantizedBarsStatic (never getBarsAction) → buildTechnicalFacts, and threads low/high/lastClose/volumeByBand into PositionTabContent', async () => {
-        mockGetQuantizedBarsStatic.mockResolvedValue(RAW_BARS as never);
+    it('uses getSessionBarsStatic (never getBarsAction) → buildTechnicalFacts, and threads low/high/lastClose/volumeByBand into PositionTabContent', async () => {
+        mockGetSessionBarsStatic.mockResolvedValue(RAW_BARS as never);
 
         const tree = await PositionPage({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        // quantize는 이제 헬퍼 내부에서 수행된다 — 여기서는 위임 인자만 고정한다
+        // 세션 날짜 자르기는 헬퍼 내부에서 수행된다 — 여기서는 위임 인자만 고정한다
         // (marketProfile까지 넘겨야 헬퍼가 세션 spec을 유도할 수 있다).
-        expect(mockGetQuantizedBarsStatic).toHaveBeenCalledWith(
+        expect(mockGetSessionBarsStatic).toHaveBeenCalledWith(
             'AAPL',
-            '1Day',
             'us-equity',
             'AAPL'
         );
@@ -389,8 +390,8 @@ describe('PositionPage server data path (static, cookies-free)', () => {
         expect(props.volumeByBand).toEqual([0, 50, 0, 50, 0]);
     });
 
-    it('degrades to null low/high/lastClose/volumeByBand (never throws) when getQuantizedBarsStatic fails', async () => {
-        mockGetQuantizedBarsStatic.mockRejectedValue(new Error('FMP down'));
+    it('degrades to null low/high/lastClose/volumeByBand (never throws) when getSessionBarsStatic fails', async () => {
+        mockGetSessionBarsStatic.mockRejectedValue(new Error('FMP down'));
 
         const tree = await PositionPage({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
@@ -410,7 +411,7 @@ describe('PositionPage server data path (static, cookies-free)', () => {
     });
 
     it('degrades to null when buildTechnicalFacts cannot compute (e.g. <2 bars)', async () => {
-        mockGetQuantizedBarsStatic.mockResolvedValue({
+        mockGetSessionBarsStatic.mockResolvedValue({
             bars: [{ time: 1, open: 1, high: 1, low: 1, close: 1, volume: 1 }],
             indicators: {},
         } as never);
@@ -425,7 +426,7 @@ describe('PositionPage server data path (static, cookies-free)', () => {
     });
 
     it('degrades volumeByBand to null (while low/high/lastClose still resolve) when the recent bars carry zero total volume', async () => {
-        mockGetQuantizedBarsStatic.mockResolvedValue({
+        mockGetSessionBarsStatic.mockResolvedValue({
             bars: [
                 { time: 1, open: 90, high: 95, low: 85, close: 90, volume: 0 },
                 {
@@ -462,7 +463,7 @@ describe('PositionPage — SSR crawl safety (no personalized data in the server 
             degraded: false,
         } as never);
         mockIsTabAllowedForSymbol.mockResolvedValue(true);
-        mockGetQuantizedBarsStatic.mockResolvedValue(RAW_BARS as never);
+        mockGetSessionBarsStatic.mockResolvedValue(RAW_BARS as never);
     });
 
     it('the server-rendered element tree never contains ★/평단/수익률 — those only ever render inside the client-only PositionTabContent', async () => {
@@ -488,7 +489,7 @@ describe('PositionPage — SSR crawl safety (no personalized data in the server 
 
     // ISR cold-gen-500 규약(§Task): getBarsAction은 cookies()를 읽어 request-scope
     // 밖(unstable_cache 내부/이 vitest 노드 환경)에서 호출되면 즉시 throw한다.
-    // 위 "server data path" describe 블록의 모든 케이스가 getQuantizedBarsStatic만 mock한
+    // 위 "server data path" describe 블록의 모든 케이스가 getSessionBarsStatic만 mock한
     // 채로(getBarsAction은 손대지 않은 채) 정상적으로 resolve/degrade하는 것 자체가
     // 이 셸이 cookies()/connection()을 요구하는 경로를 타지 않는다는 행동 증거다 —
     // 소스 grep 단언은 구현 세부 검사라 이 레포 컨벤션상 지양한다(financials 선례).
@@ -505,7 +506,7 @@ describe('PositionPage — per-symbol current-price-position content (Task 1; re
     });
 
     it('renders a visible (non sr-only) section with the real low/high/lastClose numbers and the computed percentile/floor', async () => {
-        mockGetQuantizedBarsStatic.mockResolvedValue(RAW_BARS as never);
+        mockGetSessionBarsStatic.mockResolvedValue(RAW_BARS as never);
 
         const tree = await PositionPage({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
@@ -557,7 +558,7 @@ describe('PositionPage — per-symbol current-price-position content (Task 1; re
             // lastClose가 곧 퍼센타일이 되게 한다. 봉을 새로 지어내면
             // buildTechnicalFacts가 거부해 섹션 자체가 사라진다.
             const close = pos * 100;
-            mockGetQuantizedBarsStatic.mockResolvedValue({
+            mockGetSessionBarsStatic.mockResolvedValue({
                 ...RAW_BARS,
                 bars: [
                     // close는 0이면 안 된다 — buildTechnicalFacts가
@@ -598,7 +599,7 @@ describe('PositionPage — per-symbol current-price-position content (Task 1; re
      */
     it('범위와 현재가의 소수 자릿수가 어긋나지 않는다', async () => {
         // low=85.00, high=110.00, lastClose=100.00 → 셋 다 후행 0을 갖는다.
-        mockGetQuantizedBarsStatic.mockResolvedValue(RAW_BARS as never);
+        mockGetSessionBarsStatic.mockResolvedValue(RAW_BARS as never);
 
         const tree = await PositionPage({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
@@ -613,8 +614,8 @@ describe('PositionPage — per-symbol current-price-position content (Task 1; re
         expect(serialized).not.toContain('"$110"');
     });
 
-    it('omits the section entirely (no crash, no empty shell) when getQuantizedBarsStatic fails and range degrades to null', async () => {
-        mockGetQuantizedBarsStatic.mockRejectedValue(new Error('FMP down'));
+    it('omits the section entirely (no crash, no empty shell) when getSessionBarsStatic fails and range degrades to null', async () => {
+        mockGetSessionBarsStatic.mockRejectedValue(new Error('FMP down'));
 
         const tree = await PositionPage({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
@@ -626,7 +627,7 @@ describe('PositionPage — per-symbol current-price-position content (Task 1; re
     it('omits the section when the range resolves but the 52-week span is degenerate (high52w <= low52w, division-by-zero guard)', async () => {
         // buildTechnicalFacts를 통과하려면 bars가 2개 이상 + prev.close != 0 이어야 하므로,
         // 두 봉 모두 high/low가 동일한(고저 폭이 0인) 값으로 만들어 high52w===low52w를 재현한다.
-        mockGetQuantizedBarsStatic.mockResolvedValue({
+        mockGetSessionBarsStatic.mockResolvedValue({
             bars: [
                 {
                     time: 1,
@@ -664,7 +665,7 @@ describe('PositionPage — <main> is a flex-item-safe full width (regression gua
             degraded: false,
         } as never);
         mockIsTabAllowedForSymbol.mockResolvedValue(true);
-        mockGetQuantizedBarsStatic.mockResolvedValue(RAW_BARS as never);
+        mockGetSessionBarsStatic.mockResolvedValue(RAW_BARS as never);
     });
 
     // <main> is a direct flex item of SymbolLayoutJail's `flex flex-col` container.

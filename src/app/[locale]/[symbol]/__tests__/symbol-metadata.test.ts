@@ -199,6 +199,16 @@ vi.mock('@/entities/bars/lib/barsStaticCache', () => {
         getSeedBarsStatic: vi.fn().mockResolvedValue(barsFixture),
     };
 });
+// fear-greed 탭의 `generateMetadata`는 세션 키 축소 봉(`getSessionBarsStatic`)을 읽는다.
+vi.mock('@/entities/bars/lib/sessionBarsStaticCache', () => ({
+    getSessionBarsStatic: vi.fn().mockResolvedValue({
+        bars: [
+            { time: 1, open: 1, high: 2, low: 1, close: 1, volume: 10 },
+            { time: 2, open: 1, high: 3, low: 1, close: 2, volume: 10 },
+        ],
+        indicators: { buySellVolume: [] },
+    }),
+}));
 
 vi.mock('@/entities/skill/api', () => ({
     countSkillFiles: vi.fn(() => Promise.resolve({ indicators: 13 })),

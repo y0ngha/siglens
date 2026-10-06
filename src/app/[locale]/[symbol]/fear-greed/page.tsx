@@ -16,14 +16,14 @@ import { symbolFactsSubject } from '@/views/symbol/utils/factsSubject';
 import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { DEFAULT_TIMEFRAME, SymbolRouteParams } from '@/shared/config/market';
+import { SymbolRouteParams } from '@/shared/config/market';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
 import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
-import { getQuantizedBarsStatic } from '@/entities/bars/lib/barsStaticCache';
+import { getSessionBarsStatic } from '@/entities/bars/lib/sessionBarsStaticCache';
 import {
     clientSymbolFearGreed,
     symbolFearGreedInputs,
@@ -116,7 +116,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // 존재하지 않는 심볼은 레이아웃과 같은 판정으로 여기서도 404다(`requireResolvableAsset`).
     const { assetInfo, degraded } = await requireResolvableAsset(ticker);
     // 콘텐츠 게이트 — 본문의 `FearGreedFactsSummary`와 **같은 입력·같은 술어**
-    // (`hasFearGreedScore`)로 판정한다(MISTAKES §2). 본문이 쓰는 `getQuantizedBarsStatic`과
+    // (`hasFearGreedScore`)로 판정한다(MISTAKES §2). 본문이 쓰는 `getSessionBarsStatic`과
     // 같은 인자라 요청 스코프 메모가 접혀 왕복이 늘지 않는다. 차트 라우트
     // (`[symbol]/page.tsx`)와 같은 모양이다:
     //   - 조회 **실패**(`null`) → degraded로 넘긴다. 이 탭에는 스냅샷이 없으므로
@@ -126,14 +126,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     //     상장 종목 등) 요약이 그려지지 않아 본문이 도입 문단뿐이다 → `no-price-data`로
     //     noindex. 예전에는 `buildTechnicalFacts`(봉 2개 이상)로 판정해 봉은 있으나
     //     점수가 없는 종목(`/TOSCF`·`/SLROF`, 2026-10-04)이 색인돼 있었다.
-    const metadataBars = await getQuantizedBarsStatic(
+    const metadataBars = await getSessionBarsStatic(
         ticker,
-        DEFAULT_TIMEFRAME,
         marketProfileOf(assetInfo),
         assetInfo.fmpSymbol
     ).catch((e: unknown) => {
         console.error(
-            '[SymbolFearGreedPage] generateMetadata getQuantizedBarsStatic failed:',
+            '[SymbolFearGreedPage] generateMetadata getSessionBarsStatic failed:',
             e
         );
         return null;
@@ -259,26 +258,28 @@ export default async function SymbolFearGreedPage({ params }: Props) {
     queryClient.setQueryData(QUERY_KEYS.assetInfo(symbol), assetInfo, {
         updatedAt: assetInfoSeedUpdatedAt(degraded),
     });
-    // **`getQuantizedBarsStatic`(원본)을 쓴다** — 공포·탐욕은 5년 일봉(`fearGreedBars`)으로
-    // 계산하는데 축소판(`getSeedBarsStatic`)은 그 필드를 버린다. layout(헤더 배지)·
-    // generateMetadata(색인 게이트)와 같은 헬퍼·같은 인자라 요청 스코프 메모가 접혀
-    // 조회도, 5년 계산(`symbolFearGreed`의 React.cache)도 한 번이다.
+    // **세션 키 축소 봉(`getSessionBarsStatic`)을 쓴다** — 5년 일봉(`fearGreedBars`)을 담고,
+    // 키가 마지막 마감 세션 날짜라 revalidate가 24h다. 예전 `getQuantizedBarsStatic`(6h)은
+    // 이 탭(24h 선언)을 6h로 clamp했다(`sessionBarsStaticCache.ts` JSDoc).
+    // generateMetadata(색인 게이트)와 같은 헬퍼·같은 인자라 요청 스코프 메모가 접혀 조회도,
+    // 5년 계산(`symbolFearGreed`의 React.cache)도 한 번이다. 헤더 칩(레이아웃)은 같은 세션
+    // 키의 스냅샷 캐시를 읽으므로 이 본문 요약과 같은 점수다.
     //
     // **봉을 seed하지 않는다.** 예전에는 클라이언트 게이지가 `useBars`의 일봉으로 직접
     // 계산해서 이 페이지가 `QUERY_KEYS.bars`를 seed했다. 이제 게이지는 서버가 계산한
     // 결과(`useFearGreedFromSymbol` → `getSymbolFearGreedAction`)를 쓰므로, 그 결과만
     // seed한다 — 일봉 500개+지표 대신 점수와 최근 2년 history라 이 탭의 RSC가 가벼워진다.
     //
-    // 시장 판독은 봉 조회와 독립이라 병렬로 받는다. 시장 허브와 같은 정적 캐시를 읽으며,
-    // 실패는 `getMarketFearGreedReading` 안에서 `null`로 삼킨다(보조 문장 하나뿐이다).
+    // 시장 판독은 봉 조회와 독립이라 병렬로 받는다. 시장 허브와 같은 로더를 세션 키 24h
+    // 캐시로 감싸 읽으며(허브의 1h 캐시를 직접 읽으면 이 탭이 1h로 clamp된다), 실패는
+    // `getMarketFearGreedReading` 안에서 `null`로 삼킨다(보조 문장 하나뿐이다).
     const [quantizedFgBars, marketReading] = await Promise.all([
-        getQuantizedBarsStatic(
+        getSessionBarsStatic(
             ticker,
-            DEFAULT_TIMEFRAME,
             marketProfileOf(assetInfo),
             assetInfo.fmpSymbol
         ).catch((e: unknown): BarsData | null => {
-            console.error('[FearGreedPage] getQuantizedBarsStatic failed:', e);
+            console.error('[FearGreedPage] getSessionBarsStatic failed:', e);
             return null;
         }),
         getMarketFearGreedReading(marketProfile),
