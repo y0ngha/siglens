@@ -60,7 +60,9 @@ next-env.d.ts
 # 관찰이 섞여 공개 레포에 올리지 않는다). 새 워크트리에선 post-checkout 훅이 메인의
 # 폴더로 심볼릭 링크를 걸어 메모가 워크트리와 함께 사라지지 않게 하고, pre-commit
 # 훅이 `git add -f`로 강제 추가된 메모의 커밋을 막는다.
-/.claude/agent-memory/
+# 끝에 `/`를 붙이지 않는다 — 워크트리의 그 심볼릭 링크는 git에게 디렉터리가 아니라
+# 파일이라, `/`가 붙은 패턴은 링크를 놓쳐 링크 자체가 커밋됐다(PR #987).
+/.claude/agent-memory
 # 마케팅 스킬이 읽는 제품 맥락 메모(로컬 전용, 공개 레포에 올리지 않는다).
 /.claude/product-marketing-context.md
 /worker/dist/
