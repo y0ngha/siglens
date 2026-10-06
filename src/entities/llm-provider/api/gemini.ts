@@ -1,5 +1,10 @@
 import 'server-only';
-import { GoogleGenAI, ThinkingLevel } from '@google/genai';
+import {
+    GoogleGenAI,
+    ThinkingLevel,
+    type GenerateContentConfig,
+    type HttpOptions,
+} from '@google/genai';
 import type { GeminiThinkingLevel } from '@y0ngha/siglens-core';
 
 /**
@@ -14,7 +19,8 @@ const THINKING_LEVEL_TO_SDK: Record<GeminiThinkingLevel, ThinkingLevel> = {
     high: ThinkingLevel.HIGH,
 };
 import type { AiContents, ConversationTurn } from '@y0ngha/siglens-core';
-import type { ProviderCallOptions } from '../model';
+import type { ProviderCallLimits, ProviderCallOptions } from '../model';
+import { findSpecByApiModelId, resolveMaxOutputTokens } from '../lib/utils';
 import { CHAT_JOB_ID, extractGeminiUsage, logUsage } from '../lib/usage';
 
 interface GeminiChatOptions extends ProviderCallOptions {
@@ -54,6 +60,50 @@ function toGeminiContents(contents: AiContents): string | GeminiTurn[] {
     }));
 }
 
+/**
+ * `generateContent`의 `config`. 넣을 것이 없으면 `undefined` — 예전처럼 `config` 키 자체를
+ * 빼서, 상한을 넘기지 않는 기존 호출자(번역기)의 요청 모양이 바뀌지 않게 한다.
+ *
+ * 재시도는 `retryOptions.attempts`(첫 시도 포함)로 옮긴다 — `maxRetries: 0`이면 1이다.
+ */
+function buildGeminiConfig(
+    model: string,
+    systemInstruction: string | undefined,
+    thinkingLevel: GeminiThinkingLevel | undefined,
+    limits: ProviderCallLimits | undefined
+): GenerateContentConfig | undefined {
+    // 스펙을 모르는 모델이면 호출자 값을 그대로 쓴다(`min(x, x) = x`).
+    const maxOutputTokens =
+        limits?.maxOutputTokens === undefined
+            ? undefined
+            : resolveMaxOutputTokens(
+                  findSpecByApiModelId(model)?.maxOutputTokens ??
+                      limits.maxOutputTokens,
+                  limits
+              );
+    const httpOptions: HttpOptions = {
+        ...(limits?.timeoutMs !== undefined
+            ? { timeout: limits.timeoutMs }
+            : {}),
+        ...(limits?.maxRetries !== undefined
+            ? { retryOptions: { attempts: limits.maxRetries + 1 } }
+            : {}),
+    };
+    const config: GenerateContentConfig = {
+        ...(systemInstruction !== undefined ? { systemInstruction } : {}),
+        ...(thinkingLevel !== undefined
+            ? {
+                  thinkingConfig: {
+                      thinkingLevel: THINKING_LEVEL_TO_SDK[thinkingLevel],
+                  },
+              }
+            : {}),
+        ...(maxOutputTokens !== undefined ? { maxOutputTokens } : {}),
+        ...(Object.keys(httpOptions).length > 0 ? { httpOptions } : {}),
+    };
+    return Object.keys(config).length > 0 ? config : undefined;
+}
+
 export async function callGeminiChat({
     apiKey,
     model,
@@ -61,31 +111,22 @@ export async function callGeminiChat({
     systemInstruction,
     thinkingLevel,
     jobId = CHAT_JOB_ID,
+    limits,
 }: GeminiChatOptions): Promise<string> {
     const startedAt = Date.now();
     const genai = new GoogleGenAI({ apiKey });
 
-    const hasSystemInstruction = systemInstruction !== undefined;
-    const hasThinkingLevel = thinkingLevel !== undefined;
+    const config = buildGeminiConfig(
+        model,
+        systemInstruction,
+        thinkingLevel,
+        limits
+    );
 
     const response = await genai.models.generateContent({
         model,
         contents: toGeminiContents(contents),
-        ...(hasSystemInstruction || hasThinkingLevel
-            ? {
-                  config: {
-                      ...(hasSystemInstruction ? { systemInstruction } : {}),
-                      ...(hasThinkingLevel
-                          ? {
-                                thinkingConfig: {
-                                    thinkingLevel:
-                                        THINKING_LEVEL_TO_SDK[thinkingLevel],
-                                },
-                            }
-                          : {}),
-                  },
-              }
-            : {}),
+        ...(config !== undefined ? { config } : {}),
     });
     logUsage({
         jobId,

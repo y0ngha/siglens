@@ -4,6 +4,7 @@ import type {
     ModelSpec,
 } from '@y0ngha/siglens-core';
 import { MODEL_SPECS } from '@y0ngha/siglens-core';
+import type { ProviderCallLimits } from '../model';
 
 export interface ProviderTurn {
     role: 'user' | 'assistant';
@@ -34,4 +35,35 @@ export function findSpecByApiModelId(
     return (Object.values(MODEL_SPECS) as ModelSpec[]).find(
         s => s.apiModelId === apiModelId
     );
+}
+
+/**
+ * 호출자 상한(`limits.maxOutputTokens`)과 스펙 상한 중 작은 값. 상한이 없으면 스펙 값 그대로다 —
+ * 호출자가 스펙보다 큰 값을 넘겨도 모델이 거부할 값을 보내지 않는다.
+ */
+export function resolveMaxOutputTokens(
+    specMax: number,
+    limits: ProviderCallLimits | undefined
+): number {
+    return limits?.maxOutputTokens === undefined
+        ? specMax
+        : Math.min(specMax, limits.maxOutputTokens);
+}
+
+/**
+ * OpenAI·Anthropic SDK 생성자에 넘길 전송 옵션. 지정한 필드만 싣는다 — 빈 객체면 SDK
+ * 기본값(10분 timeout, 재시도 2회)이 그대로 남아 기존 호출자의 동작이 바뀌지 않는다.
+ */
+export function toSdkTransportOptions(limits: ProviderCallLimits | undefined): {
+    timeout?: number;
+    maxRetries?: number;
+} {
+    return {
+        ...(limits?.timeoutMs !== undefined
+            ? { timeout: limits.timeoutMs }
+            : {}),
+        ...(limits?.maxRetries !== undefined
+            ? { maxRetries: limits.maxRetries }
+            : {}),
+    };
 }

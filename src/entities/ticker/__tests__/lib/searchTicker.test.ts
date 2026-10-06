@@ -46,7 +46,8 @@ vi.mock('../../lib/koreanNameStore', () => ({
     setKoreanTickers: (entries: unknown[]) => setKoreanTickersMock(entries),
 }));
 vi.mock('../../lib/koreanTranslator', () => ({
-    translateCompanyNames: () => translateCompanyNamesMock(),
+    translateCompanyNames: (entries: unknown) =>
+        translateCompanyNamesMock(entries),
 }));
 // Crypto results are tested separately in searchTicker.crypto.test.ts.
 // Equity test cases return [] so the existing equity path is unaffected.
@@ -60,6 +61,7 @@ vi.mock('../../lib/krEquitySearch', () => ({
 
 import {
     _resetInFlightTranslationsForTest,
+    MAX_SEARCH_RESULTS,
     searchTicker,
 } from '../../lib/searchTicker';
 
@@ -474,6 +476,35 @@ describe('searchTicker', () => {
 
         await searchTicker('AAPL');
         expect(translateCompanyNamesMock).toHaveBeenCalledTimes(1);
+    });
+
+    /**
+     * 2026-10 비용 감사 L2: 병합 결과 전체(최대 ~45건)를 번역해 화면에 안 나가는 이름에도
+     * LLM 토큰을 썼다. 반환되는 상위 `MAX_SEARCH_RESULTS`개 중 한국명이 없는 것만 번역한다.
+     */
+    it('번역은 반환되는 상위 결과 중 한국명이 없는 것만 대상으로 한다', async () => {
+        const many: FmpSearchResult[] = Array.from({ length: 15 }, (_, i) => ({
+            symbol: `ZZ${String.fromCharCode(65 + i)}`,
+            name: `Zeta Holdings ${i}`,
+            currency: 'USD',
+            exchange: 'NASDAQ',
+            exchangeFullName: 'NASDAQ Global Select',
+        }));
+        mockCache.get.mockResolvedValue(null);
+        searchBySymbolMock.mockResolvedValue(many);
+        searchByNameMock.mockResolvedValue([]);
+        getKoreanNamesMock.mockResolvedValue({ [many[0].symbol]: '제타' });
+
+        const result = await searchTicker('zeta');
+
+        expect(result).toHaveLength(MAX_SEARCH_RESULTS);
+        expect(translateCompanyNamesMock).toHaveBeenCalledTimes(1);
+        const entries = translateCompanyNamesMock.mock.calls[0][0] as {
+            symbol: string;
+        }[];
+        const shown = result.filter(r => !r.koreanName).map(r => r.symbol);
+        expect(entries.map(e => e.symbol).toSorted()).toEqual(shown.toSorted());
+        expect(entries.length).toBeLessThanOrEqual(MAX_SEARCH_RESULTS);
     });
 
     it('동시 요청 시 동일한 번역 작업은 single-flight 로 한 번만 호출된다', async () => {

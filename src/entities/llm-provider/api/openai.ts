@@ -1,6 +1,11 @@
 import 'server-only';
 import { resolveReasoningConfig } from '@y0ngha/siglens-core';
-import { toProviderTurns, findSpecByApiModelId } from '../lib/utils';
+import {
+    toProviderTurns,
+    findSpecByApiModelId,
+    resolveMaxOutputTokens,
+    toSdkTransportOptions,
+} from '../lib/utils';
 import type { AiContents } from '@y0ngha/siglens-core';
 import type { ProviderCallOptions } from '../model';
 import { CHAT_JOB_ID, extractOpenAIUsage, logUsage } from '../lib/usage';
@@ -23,6 +28,7 @@ export async function callOpenaiChat({
     contents,
     systemInstruction,
     jobId = CHAT_JOB_ID,
+    limits,
 }: ProviderCallOptions): Promise<string> {
     const spec = findSpecByApiModelId(model);
     if (!spec) {
@@ -39,7 +45,7 @@ export async function callOpenaiChat({
         undefined
     ).effort;
     const startedAt = Date.now();
-    const client = new OpenAI({ apiKey });
+    const client = new OpenAI({ apiKey, ...toSdkTransportOptions(limits) });
 
     const response = await client.responses.create({
         model,
@@ -47,7 +53,7 @@ export async function callOpenaiChat({
         ...(systemInstruction !== undefined
             ? { instructions: systemInstruction }
             : {}),
-        max_output_tokens: spec.maxOutputTokens,
+        max_output_tokens: resolveMaxOutputTokens(spec.maxOutputTokens, limits),
         // GPT 스펙은 전부 reasoning 기반이라 temperature 분기가 없다. 챗은 토글이
         // 없으므로 스펙 기본 상태를 그대로 쓴다 — Free·Member는 `effort: 'none'`.
         reasoning: { effort: resolvedEffort },

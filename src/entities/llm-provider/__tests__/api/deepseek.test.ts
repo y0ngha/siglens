@@ -185,6 +185,38 @@ describe('callDeepseekChat', () => {
             expect(call.max_tokens).toBe(393216);
         });
 
+        it('limits를 받으면 출력 상한·timeout·재시도를 그 값으로 건다', async () => {
+            mockCreate.mockResolvedValue(okResponse('ok'));
+
+            await callDeepseekChat({
+                ...FLASH_OPTIONS,
+                limits: {
+                    maxOutputTokens: 1500,
+                    timeoutMs: 30_000,
+                    maxRetries: 0,
+                },
+            });
+
+            expect(mockCreate.mock.calls[0][0].max_tokens).toBe(1500);
+            expect(MockOpenAI).toHaveBeenCalledWith({
+                apiKey: 'server-key',
+                baseURL: 'https://api.deepseek.com',
+                timeout: 30_000,
+                maxRetries: 0,
+            });
+        });
+
+        it('스펙보다 큰 출력 상한은 스펙 값으로 깎는다', async () => {
+            mockCreate.mockResolvedValue(okResponse('ok'));
+
+            await callDeepseekChat({
+                ...FLASH_OPTIONS,
+                limits: { maxOutputTokens: 10_000_000 },
+            });
+
+            expect(mockCreate.mock.calls[0][0].max_tokens).toBe(393216);
+        });
+
         it('systemInstruction을 system 메시지로 선두에 추가한다', async () => {
             mockCreate.mockResolvedValue(okResponse('ok'));
 
