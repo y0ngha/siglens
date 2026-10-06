@@ -12,9 +12,12 @@ import type {
  *   읽지 않는다(`clientOptionsSnapshot.test.ts`의 가드가 `src/widgets/options`를 훑어 고정).
  * - `inTheMoney`: 같은 스냅샷의 `strike`와 `underlyingPrice`로 정확히 다시 계산된다.
  *
- * 계약 수가 많은 종목(실측 `/MSFT/options` HTML 565KB)에서 이 셋이 계약당 바이트의 약
- * 3분의 1이었고, 같은 스냅샷이 RSC 페이로드에 한 번 더(죽은 `HydrationBoundary`) 실려
- * 있었다.
+ * 계약 수가 많은 종목(`/MSFT/options` HTML 565KB, 이 변경 직전 운영 측정)에서 이 셋이
+ * 계약당 바이트의 약 3분의 1이었고, 같은 스냅샷이 RSC 페이로드에 한 번 더(죽은
+ * `HydrationBoundary`) 실려 있었다. 재는 법: `curl -s --compressed
+ * https://siglens.io/MSFT/options | wc -c`로 압축을 푼 HTML 바이트를 재고, 같은 본문에서
+ * 계약 객체 하나를 골라 이 타입에서 뺀 필드가 차지하는 바이트 비율을 본다. 장중·만기 수에
+ * 따라 계약 수가 달라 값은 측정 시점마다 다르다.
  */
 export type ClientOptionsContract = Pick<
     OptionsContract,

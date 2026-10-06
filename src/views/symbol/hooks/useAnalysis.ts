@@ -184,7 +184,8 @@ export interface UseAnalysisResult {
      * 마지막 제출이 서버가 **새로 생성하지 않고 곧장 돌려준** 응답으로 끝났는지
      * (`cached` 히트, 또는 `reanalyze_cooldown` 거절로 직전 결과 복원).
      *
-     * 진행 화면의 마무리 애니메이션(`useAnalysisProgress`)은 응답이 온 뒤에도 약 9초를
+     * 진행 화면의 마무리 애니메이션(`useAnalysisProgress`의 `FINISHING_*` 상수 합)은 응답이
+     * 온 뒤에도 약 9초를
      * 더 도는데, 회원은 tier 확정 직후 마운트 재제출(§9 tier effect)을 매 방문마다 보내고
      * 그 응답은 대부분 캐시 히트다. 이미 화면에 있던 분석을 9초간 가짜 진행 화면으로
      * 덮을 근거가 없으므로 호출부는 이 값이 참이면 마무리 애니메이션을 건너뛴다.
@@ -547,6 +548,41 @@ export function useAnalysis({
         [analysisResult, initialAnalysis]
     );
 
+    /**
+     * 서버 쿨다운 진실값을 재분석 버튼에 다가갈 때 한 번 읽는다.
+     *
+     * 예전에는 마운트(그리고 symbol·timeframe 변경)마다 읽었다. 그 Server Action은 게스트와
+     * 크롤러 렌더를 포함해 **모든 차트 조회**마다 나갔고, Server Action은 한 번에 하나씩만
+     * 나가므로 같은 시점의 다른 액션을 한 왕복만큼 밀었다. 쿨다운 값이 쓰이는 곳은 재분석
+     * 버튼 하나뿐이고, 버튼을 그냥 눌러도 서버가 `reanalyze_cooldown`으로 남은 시간을 돌려준다
+     * (onSuccess) — 미리 읽는 것은 버튼에 카운트다운을 먼저 띄우기 위한 표시용이다.
+     *
+     * tier 확정 전에는 읽지 않는다: 그 구간에는 버튼이 동작하지 않고(`handleReanalyze`),
+     * 이 요청이 `currentUser`보다 먼저 줄을 서면 첫 분석 요청이 한 왕복 늦어진다.
+     *
+     * 대상 키는 아래 파생 변수 `cooldownKey`와 같은 `${symbol}|${timeframe}` 형식이다.
+     * 훅 순서(MISTAKES §17)상 useCallback이 파생 변수보다 먼저 와야 해서 안에서 직접 만든다.
+     */
+    const syncReanalyzeCooldown = useCallback((): void => {
+        if (isTierHydrated === false) return;
+        const syncKey = `${symbol}|${timeframe}`;
+        if (cooldownSyncedKeyRef.current === syncKey) return;
+        cooldownSyncedKeyRef.current = syncKey;
+        fetchReanalyzeCooldownMs(symbol, timeframe)
+            .then(remaining => {
+                // 응답이 오는 사이 보고 있는 종목·타임프레임이 바뀌었으면 버린다.
+                if (cooldownSyncedKeyRef.current !== syncKey) return;
+                setReanalyzeCooldownMs(remaining);
+            })
+            .catch(() => {
+                // 액션 자체가 실패(네트워크)하면 다음 접근 때 다시 읽게 한다.
+                // 표시용 값이라 사용자에게 알릴 것은 없다 — 버튼을 누르면 서버가 판정한다.
+                if (cooldownSyncedKeyRef.current === syncKey) {
+                    cooldownSyncedKeyRef.current = null;
+                }
+            });
+    }, [isTierHydrated, symbol, timeframe]);
+
     // 5. Derived variables
     // 캐시 전용 제출(게이트가 닫힌 마운트 재시도)은 생성이 아니라 캐시 조회라 "분석 중"
     // 진행 화면을 띄우지 않는다 — HIT이면 바로 결과, 미스면 대기 화면으로 넘어간다.
@@ -599,37 +635,6 @@ export function useAnalysis({
             reasoning: latestReasoningRef.current,
         });
     }, [isTierHydrated, reset, mutate]);
-
-    /**
-     * 서버 쿨다운 진실값을 재분석 버튼에 다가갈 때 한 번 읽는다.
-     *
-     * 예전에는 마운트(그리고 symbol·timeframe 변경)마다 읽었다. 그 Server Action은 게스트와
-     * 크롤러 렌더를 포함해 **모든 차트 조회**마다 나갔고, Server Action은 한 번에 하나씩만
-     * 나가므로 같은 시점의 다른 액션을 한 왕복만큼 밀었다. 쿨다운 값이 쓰이는 곳은 재분석
-     * 버튼 하나뿐이고, 버튼을 그냥 눌러도 서버가 `reanalyze_cooldown`으로 남은 시간을 돌려준다
-     * (onSuccess) — 미리 읽는 것은 버튼에 카운트다운을 먼저 띄우기 위한 표시용이다.
-     *
-     * tier 확정 전에는 읽지 않는다: 그 구간에는 버튼이 동작하지 않고(`handleReanalyze`),
-     * 이 요청이 `currentUser`보다 먼저 줄을 서면 첫 분석 요청이 한 왕복 늦어진다.
-     */
-    const syncReanalyzeCooldown = useCallback((): void => {
-        if (isTierHydrated === false) return;
-        if (cooldownSyncedKeyRef.current === cooldownKey) return;
-        cooldownSyncedKeyRef.current = cooldownKey;
-        fetchReanalyzeCooldownMs(symbol, timeframe)
-            .then(remaining => {
-                // 응답이 오는 사이 보고 있는 종목·타임프레임이 바뀌었으면 버린다.
-                if (cooldownSyncedKeyRef.current !== cooldownKey) return;
-                setReanalyzeCooldownMs(remaining);
-            })
-            .catch(() => {
-                // 액션 자체가 실패(네트워크)하면 다음 접근 때 다시 읽게 한다.
-                // 표시용 값이라 사용자에게 알릴 것은 없다 — 버튼을 누르면 서버가 판정한다.
-                if (cooldownSyncedKeyRef.current === cooldownKey) {
-                    cooldownSyncedKeyRef.current = null;
-                }
-            });
-    }, [isTierHydrated, cooldownKey, symbol, timeframe]);
 
     /**
      * 타임프레임 변경·모델 변경·reasoning 변경 세 effect에서 공유한다.

@@ -25,7 +25,6 @@ const WAIT_POLICY: CardWaitPollPolicy = {
     // 다이제스트는 5분을 넘기면 대기 실패 화면(재시도)으로 넘어간다 — FMP가 빈 결과를 주거나
     // LLM 작업이 조용히 전부 실패해도 끝없이 기다리지 않게.
     timeoutIsError: true,
-    logTag: 'useWaitForMarketNewsCards',
 };
 
 /**
@@ -63,6 +62,12 @@ export function useWaitForMarketNewsCards(
                 elapsedMs,
                 WAIT_POLICY
             );
+            if (step.failedPollError !== null) {
+                console.error(
+                    '[useWaitForMarketNewsCards] poll failed:',
+                    step.failedPollError
+                );
+            }
             countersRef.current = { category, counters: step.counters };
             if (step.error !== null) setWaitError(step.error);
             return step.stop ? 'stop' : 'continue';

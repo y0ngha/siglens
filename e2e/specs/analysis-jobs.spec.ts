@@ -141,9 +141,12 @@ test.describe('analysis jobs: bot parity + force re-analysis', () => {
                 timeout: ANALYSIS_RENDER_TIMEOUT_MS,
             });
 
-            // force 제출도 E2E 단락에서 cached fixture를 반환하므로, 재분석 진행
-            // 애니메이션이 끝난 뒤 fixture summary가 다시 렌더돼야 한다
-            // (blank/stuck-loading이 아니라). force 경로가 끝까지 동작했다는 증거.
+            // 재분석 의도 제출은 E2E 단락에서 운영과 같은 생성 결과(`status: 'done'`,
+            // `e2eGeneratedTechnical`)로 fixture를 반환한다. `cached`였다면 클라이언트가
+            // 즉시 응답으로 보고 진행 화면 마무리를 건너뛰어 위 toBeHidden 창이 요청
+            // 왕복 시간만큼으로 줄어든다. 진행 애니메이션이 끝난 뒤 fixture summary가
+            // 다시 렌더돼야 한다(blank/stuck-loading이 아니라). force 경로가 끝까지
+            // 동작했다는 증거.
             await expect(fixtureSummary).toBeVisible({
                 timeout: ANALYSIS_RENDER_TIMEOUT_MS,
             });

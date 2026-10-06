@@ -24,7 +24,6 @@ const LIST_POLICY: CardListPollPolicy = {
     completeMinPolls: 0,
     errorsCountAsPolls: false,
     completeOnTimeout: false,
-    logTag: 'useMarketNewsCardPolling',
 };
 
 const EMPTY_ITEMS: readonly MarketNewsCardItem[] = [];
@@ -76,6 +75,12 @@ export function useMarketNewsCardPolling(
                 EMPTY_ITEMS,
                 LIST_POLICY
             );
+            if (step.failedPollError !== null) {
+                console.error(
+                    '[useMarketNewsCardPolling] poll failed:',
+                    step.failedPollError
+                );
+            }
             countersRef.current = { category, counters: step.counters };
             if (step.stop) setIsPolling(false);
             if (step.error !== null) setPollError(step.error);

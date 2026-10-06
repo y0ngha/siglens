@@ -31,7 +31,6 @@ const LIST_POLICY: CardListPollPolicy = {
     completeMinPolls: REFRESH_SNAPSHOT_MIN_POLLS,
     errorsCountAsPolls: true,
     completeOnTimeout: true,
-    logTag: 'useNewsCardPolling',
 };
 
 export interface UseNewsCardPollingReturn {
@@ -92,6 +91,12 @@ export function useNewsCardPolling(
                 latestItemsRef.current,
                 LIST_POLICY
             );
+            if (step.failedPollError !== null) {
+                console.error(
+                    '[useNewsCardPolling] poll failed:',
+                    step.failedPollError
+                );
+            }
             countersRef.current = { symbol, counters: step.counters };
             if (step.settled) setIsPolling(false);
             if (step.error !== null) setPollError(step.error);

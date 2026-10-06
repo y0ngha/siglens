@@ -1,3 +1,6 @@
+const { mockGetClientIp } = vi.hoisted(() => ({ mockGetClientIp: vi.fn() }));
+vi.mock('@/shared/api/getClientIp', () => ({ getClientIp: mockGetClientIp }));
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/entities/ticker/lib/searchTickerQuery', async importOriginal => ({
@@ -13,6 +16,12 @@ import {
     searchTickerQuery,
 } from '@/entities/ticker/lib/searchTickerQuery';
 import type { TickerSearchResult } from '@/shared/lib/types';
+import {
+    SEARCH_REQUESTS_PER_IP_PER_MINUTE,
+    searchLimiter,
+} from '../searchLimiter';
+import { __resetFixedWindowLimiterForTests } from '@/shared/lib/fixedWindowLimiter';
+import { UNKNOWN_CLIENT_IP } from '@/shared/api/unknownClientIp';
 
 const mockedSearch = vi.mocked(searchTickerQuery);
 
@@ -33,6 +42,8 @@ describe('GET /api/search', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.spyOn(console, 'error').mockImplementation(() => {});
+        __resetFixedWindowLimiterForTests(searchLimiter);
+        mockGetClientIp.mockResolvedValue('203.0.113.1');
     });
 
     it('질의(q)를 다듬어 검색하고 결과를 JSON으로 낸다', async () => {
@@ -92,5 +103,66 @@ describe('GET /api/search', () => {
         expect(res.status).toBe(500);
         expect(res.headers.get('Cache-Control')).toBe('no-store');
         expect(await res.json()).not.toEqual([]);
+    });
+
+    describe('IP별 상한', () => {
+        async function exhaust(): Promise<void> {
+            for (let i = 0; i < SEARCH_REQUESTS_PER_IP_PER_MINUTE; i++) {
+                const res = await GET(request('?q=aapl'));
+                expect(res.status).toBe(200);
+            }
+        }
+
+        it('상한을 넘긴 요청은 검색하지 않고 429 no-store로 거절한다', async () => {
+            mockedSearch.mockResolvedValue(RESULTS);
+            await exhaust();
+            mockedSearch.mockClear();
+
+            const res = await GET(request('?q=aapl'));
+
+            expect(res.status).toBe(429);
+            expect(res.headers.get('Cache-Control')).toBe('no-store');
+            expect(res.headers.get('Retry-After')).toBe('60');
+            expect(mockedSearch).not.toHaveBeenCalled();
+        });
+
+        it('한도는 IP마다 따로 센다', async () => {
+            mockedSearch.mockResolvedValue(RESULTS);
+            await exhaust();
+
+            mockGetClientIp.mockResolvedValue('203.0.113.2');
+            const res = await GET(request('?q=aapl'));
+
+            expect(res.status).toBe(200);
+        });
+
+        it('창이 지나면 다시 받는다', async () => {
+            vi.useFakeTimers();
+            try {
+                mockedSearch.mockResolvedValue(RESULTS);
+                await exhaust();
+                expect((await GET(request('?q=aapl'))).status).toBe(429);
+
+                vi.advanceTimersByTime(60_000);
+
+                expect((await GET(request('?q=aapl'))).status).toBe(200);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('IP 해석이 실패하면 공용 버킷으로 세고 요청은 처리한다', async () => {
+            mockedSearch.mockResolvedValue(RESULTS);
+            mockGetClientIp.mockRejectedValue(new Error('headers unavailable'));
+
+            const res = await GET(request('?q=aapl'));
+
+            expect(res.status).toBe(200);
+            // 공용 버킷이 실제 키로 쓰였는지 — 같은 버킷을 채우면 막힌다.
+            for (let i = 1; i < SEARCH_REQUESTS_PER_IP_PER_MINUTE; i++) {
+                searchLimiter.admit(UNKNOWN_CLIENT_IP, Date.now());
+            }
+            expect((await GET(request('?q=aapl'))).status).toBe(429);
+        });
     });
 });

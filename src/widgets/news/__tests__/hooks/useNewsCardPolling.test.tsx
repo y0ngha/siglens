@@ -360,7 +360,7 @@ describe('useNewsCardPolling', () => {
 
     /**
      * 뉴스 탭은 카드 목록(이 훅)과 AI 요약 대기(`useWaitForNewsCards`)를 함께 마운트한다.
-     * 예전에는 둘이 따로 3초마다 같은 Server Action을 불렀다(감사 M5).
+     * 예전에는 둘이 따로 3초마다 같은 Server Action을 불렀다.
      */
     it('같은 화면의 AI 요약 대기 폴러와 요청을 나눠 써서 틱마다 한 번만 조회한다', async () => {
         mockGetNewsCardsAction.mockResolvedValue([PENDING_ITEM]);

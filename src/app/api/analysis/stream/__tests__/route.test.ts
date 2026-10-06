@@ -200,6 +200,10 @@ vi.mock('@/shared/api/e2eAnalysisStub', () => ({
         status: 'cached',
         result: { headlineKo: 'E2E fixture' },
     }),
+    e2eGeneratedTechnical: vi.fn().mockReturnValue({
+        status: 'done',
+        result: { headlineKo: 'E2E generated fixture' },
+    }),
 }));
 
 // runAnalysis is mocked via the bridge so we don't disturb the rest of @y0ngha/siglens-core.
@@ -286,7 +290,10 @@ import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import { DrizzleAnalysisHistoryRepository } from '@/entities/analysis/analysisHistoryRepository';
 import { isBot } from '@/shared/api/isBot';
 import { isE2E } from '@/shared/api/e2eEnv';
-import { e2eCachedTechnical } from '@/shared/api/e2eAnalysisStub';
+import {
+    e2eCachedTechnical,
+    e2eGeneratedTechnical,
+} from '@/shared/api/e2eAnalysisStub';
 import { runOverallAnalysisAction } from '@/entities/analysis/actions/runOverallAnalysisAction';
 import { runFundamentalAnalysisAction } from '@/entities/analysis/actions/runFundamentalAnalysisAction';
 import { runFinancialsAnalysisAction } from '@/entities/analysis/actions/runFinancialsAnalysisAction';
@@ -1344,6 +1351,41 @@ describe('POST /api/analysis/stream', () => {
             const doneEvent = events.find(e => e.includes('event: done'));
             expect(doneEvent).toContain('E2E fixture');
             expect(events.some(e => e.includes('miss_no_trigger'))).toBe(false);
+        });
+
+        // 운영의 재분석은 캐시를 건너뛴 새 생성(`done`)으로 끝난다. 스텁이 여기서도
+        // `cached`를 주면 클라이언트가 즉시 응답으로 보고 진행 화면 마무리를 건너뛰어,
+        // E2E만 운영에 없는 흐름을 탄다(analysis-jobs.spec의 force 재분석이 깨진 원인).
+        it('재분석 의도면 생성 결과(done) fixture를 준다', async () => {
+            const response = await POST(
+                makeRequest(
+                    undefined,
+                    JSON.stringify({
+                        type: 'technical',
+                        params: {
+                            symbol: 'AAPL',
+                            companyName: 'Apple Inc.',
+                            timeframe: '1Day',
+                            reanalyze: true,
+                        },
+                    })
+                )
+            );
+            const events = await collectSseEvents(response);
+
+            expect(vi.mocked(e2eGeneratedTechnical)).toHaveBeenCalledWith(
+                'free'
+            );
+            expect(vi.mocked(e2eCachedTechnical)).not.toHaveBeenCalled();
+            expect(vi.mocked(runAnalysis)).not.toHaveBeenCalled();
+            const doneEvent = events.find(e => e.includes('event: done'));
+            expect(doneEvent).toContain('E2E generated fixture');
+        });
+
+        it('재분석 의도가 없으면 생성 fixture를 쓰지 않는다', async () => {
+            await collectSseEvents(await POST(makeRequest()));
+
+            expect(vi.mocked(e2eGeneratedTechnical)).not.toHaveBeenCalled();
         });
 
         it('비봇 요청은 fixture를 반환하고 core를 부르지 않는다', async () => {

@@ -22,7 +22,6 @@ interface UseWaitForNewsCardsReturn {
 const WAIT_POLICY: CardWaitPollPolicy = {
     stopOnEmpty: true,
     timeoutIsError: false,
-    logTag: 'useWaitForNewsCards',
 };
 
 /**
@@ -77,6 +76,12 @@ export function useWaitForNewsCards(
                 elapsedMs,
                 WAIT_POLICY
             );
+            if (step.failedPollError !== null) {
+                console.error(
+                    '[useWaitForNewsCards] poll failed:',
+                    step.failedPollError
+                );
+            }
             countersRef.current = { symbol, counters: step.counters };
             if (step.error !== null) setPollError(step.error);
             return step.stop ? 'stop' : 'continue';

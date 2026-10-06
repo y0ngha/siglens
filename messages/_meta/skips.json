@@ -1033,19 +1033,19 @@
     },
     {
         "file": "src/shared/api/e2eAnalysisStub.ts",
-        "line": 114,
+        "line": 132,
         "reason": "e2e-stub",
         "text": "E2E 강제 분석 실패 (resilience 테스트용)"
     },
     {
         "file": "src/shared/api/e2eAnalysisStub.ts",
-        "line": 127,
+        "line": 145,
         "reason": "e2e-stub",
         "text": "E2E 강제 재무제표 분석 실패 (resilience 테스트용)"
     },
     {
         "file": "src/shared/api/e2eAnalysisStub.ts",
-        "line": 153,
+        "line": 171,
         "reason": "e2e-stub",
         "text": "E2E 강제 congress 동향 분석 실패 (resilience 테스트용)"
     },

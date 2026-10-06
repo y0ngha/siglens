@@ -12,6 +12,9 @@ import {
  * 폴링 자체는 `usePollingQuery`가 돌리고, 결과가 하나 올 때마다 여기 함수가 "다음 상태,
  * 이어갈지, 호출부가 할 일"을 순수하게 돌려준다. 예전에는 같은 종료 조건이 훅 네 개의
  * `setInterval` 콜백 안에 조금씩 다르게 복제돼 있었다.
+ *
+ * 로그도 남기지 않는다 — 실패한 폴의 오류는 `failedPollError`로 돌려주고, 기록은 호출부
+ * (`onSettled`)가 자기 태그를 붙여 한다.
  */
 
 /** `sentiment`·`priceImpact`가 `null`이면 아직 AI 보강 전이다. */
@@ -63,7 +66,6 @@ export interface CardListPollPolicy {
     errorsCountAsPolls: boolean;
     /** 5분 상한으로 끝날 때도 완료 알림(`completedItems`)을 보낸다(종목 뉴스). */
     completeOnTimeout: boolean;
-    logTag: string;
 }
 
 export interface CardListPollStep<T> {
@@ -72,6 +74,11 @@ export interface CardListPollStep<T> {
     /** "새 소식 확인 중" 표시를 끌지. 폴링이 이어져도 끌 수 있다. */
     settled: boolean;
     error: Error | null;
+    /**
+     * 이번 폴이 실패했으면 그 오류. 호출부가 로그로 남긴다. 5분 상한으로 끝나는 걸음은
+     * 실패 여부와 상관없이 `null`이다(상한 판정이 먼저라 실패로 세지 않는다).
+     */
+    failedPollError: Error | null;
     /** 정상 종료 때 호출부 완료 콜백에 넘길 최종 목록. 알릴 것이 없으면 `null`. */
     completedItems: readonly T[] | null;
 }
@@ -92,7 +99,7 @@ function recordEnriched(
  * - 빈 목록이 `EMPTY_SNAPSHOT_MAX_POLLS`번 이어짐
  * - 정체: 보강이 한 번이라도 진행된 뒤(`enrichedCount > 0`) `STAGNATION_FLOOR_POLLS`를 지나
  *   보강 수가 `STAGNANT_POLL_LIMIT`번 연속 그대로 — 영구히 보강되지 않는 카드 하나가 "전부
- *   보강" 조건을 영원히 거짓으로 만드는 것을 막는다(감사: 비용 라운드 15~16)
+ *   보강" 조건을 영원히 거짓으로 만드는 것을 막는다
  * - 전부 보강됨
  */
 export function decideCardListPoll<T extends EnrichableCard>(
@@ -110,6 +117,7 @@ export function decideCardListPoll<T extends EnrichableCard>(
         stop: true,
         settled: true,
         error: null,
+        failedPollError: null,
         completedItems: null,
         ...extra,
     });
@@ -128,22 +136,23 @@ export function decideCardListPoll<T extends EnrichableCard>(
             pollCount: counters.pollCount + (policy.errorsCountAsPolls ? 1 : 0),
             consecutiveFailures: counters.consecutiveFailures + 1,
         };
-        console.error(`[${policy.logTag}] poll failed:`, outcome.error);
+        const failedPollError = outcome.error;
         if (next.consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-            return stopWith(next, { error: outcome.error });
+            return stopWith(next, { error: outcome.error, failedPollError });
         }
         if (
             policy.errorsCountAsPolls &&
             next.pollCount >= EMPTY_SNAPSHOT_MAX_POLLS &&
             !hasPendingCard(latestItems)
         ) {
-            return stopWith(next);
+            return stopWith(next, { failedPollError });
         }
         return {
             counters: next,
             stop: false,
             settled: false,
             error: null,
+            failedPollError,
             completedItems: null,
         };
     }
@@ -179,6 +188,7 @@ export function decideCardListPoll<T extends EnrichableCard>(
         stop: false,
         settled: fresh.length > 0 && pastMinPolls,
         error: null,
+        failedPollError: null,
         completedItems: null,
     };
 }
@@ -189,13 +199,14 @@ export interface CardWaitPollPolicy {
     stopOnEmpty: boolean;
     /** 5분 상한을 실패로 알린다(마켓 뉴스 다이제스트는 대기 실패 화면으로 넘어간다). */
     timeoutIsError: boolean;
-    logTag: string;
 }
 
 export interface CardWaitPollStep {
     counters: CardPollCounters;
     stop: boolean;
     error: Error | null;
+    /** 이번 폴이 실패했으면 그 오류(호출부가 로그로 남긴다). 상한 종료 걸음은 `null`. */
+    failedPollError: Error | null;
 }
 
 /** 대기 시간 상한 초과를 알리는 오류 문구 — 호출부가 실패 화면 분기에 쓴다. */
@@ -218,6 +229,7 @@ export function decideCardWaitPoll<T extends Pick<EnrichableCard, 'sentiment'>>(
             error: policy.timeoutIsError
                 ? new Error(CARD_WAIT_TIMEOUT_MESSAGE)
                 : null,
+            failedPollError: null,
         };
     }
     if (!outcome.ok) {
@@ -225,10 +237,15 @@ export function decideCardWaitPoll<T extends Pick<EnrichableCard, 'sentiment'>>(
             ...counters,
             consecutiveFailures: counters.consecutiveFailures + 1,
         };
-        console.error(`[${policy.logTag}] poll failed:`, outcome.error);
+        const failedPollError = outcome.error;
         return next.consecutiveFailures >= MAX_CONSECUTIVE_FAILURES
-            ? { counters: next, stop: true, error: outcome.error }
-            : { counters: next, stop: false, error: null };
+            ? {
+                  counters: next,
+                  stop: true,
+                  error: outcome.error,
+                  failedPollError,
+              }
+            : { counters: next, stop: false, error: null, failedPollError };
     }
     const next = {
         ...counters,
@@ -240,5 +257,5 @@ export function decideCardWaitPoll<T extends Pick<EnrichableCard, 'sentiment'>>(
         (policy.stopOnEmpty &&
             outcome.data.length === 0 &&
             next.pollCount >= EMPTY_SNAPSHOT_MAX_POLLS);
-    return { counters: next, stop, error: null };
+    return { counters: next, stop, error: null, failedPollError: null };
 }

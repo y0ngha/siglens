@@ -44,31 +44,32 @@ const SYMBOL_LIST: CardListPollPolicy = {
     completeMinPolls: 5,
     errorsCountAsPolls: true,
     completeOnTimeout: true,
-    logTag: 'test-symbol',
 };
 const MARKET_LIST: CardListPollPolicy = {
     completeMinPolls: 0,
     errorsCountAsPolls: false,
     completeOnTimeout: false,
-    logTag: 'test-market',
 };
 const SYMBOL_WAIT: CardWaitPollPolicy = {
     stopOnEmpty: true,
     timeoutIsError: false,
-    logTag: 'test-symbol-wait',
 };
 const MARKET_WAIT: CardWaitPollPolicy = {
     stopOnEmpty: false,
     timeoutIsError: true,
-    logTag: 'test-market-wait',
 };
 
 function counters(overrides: Partial<CardPollCounters>): CardPollCounters {
     return { ...INITIAL_CARD_POLL_COUNTERS, ...overrides };
 }
 
+// 판정 함수는 순수해야 한다 — 실패 폴도 로그를 남기지 않고 오류를 돌려줄 뿐이다.
+let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
 beforeEach(() => {
-    vi.spyOn(console, 'error').mockImplementation(() => {});
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+});
+afterEach(() => {
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
 });
 
 describe('hasPendingCard / hasAnyEnrichedCard', () => {
@@ -228,6 +229,7 @@ describe('decideCardListPoll', () => {
         );
         expect(below.stop).toBe(false);
         expect(below.error).toBeNull();
+        expect(below.failedPollError?.message).toBe('db error');
 
         const atLimit = decideCardListPoll(
             below.counters,
@@ -238,6 +240,19 @@ describe('decideCardListPoll', () => {
         );
         expect(atLimit.stop).toBe(true);
         expect(atLimit.error?.message).toBe('db error');
+        expect(atLimit.failedPollError?.message).toBe('db error');
+    });
+
+    it('성공한 폴은 failedPollError가 null이다', () => {
+        const step = decideCardListPoll(
+            INITIAL_CARD_POLL_COUNTERS,
+            ok([pending('a')]),
+            0,
+            [],
+            MARKET_LIST
+        );
+
+        expect(step.failedPollError).toBeNull();
     });
 
     it('성공하면 연속 실패 수를 0으로 되돌린다', () => {
@@ -275,6 +290,7 @@ describe('decideCardListPoll', () => {
 
         expect(step.stop).toBe(true);
         expect(step.error).toBeNull();
+        expect(step.failedPollError).not.toBeNull();
     });
 
     it('5분 상한을 넘기면 멈추고, 종목 뉴스는 최신 목록으로 완료를 알린다', () => {
@@ -289,6 +305,8 @@ describe('decideCardListPoll', () => {
 
         expect(step.stop).toBe(true);
         expect(step.completedItems).toEqual(latest);
+        // 상한 판정이 먼저라 이 걸음의 실패는 실패로 세지도, 로그 대상으로 넘기지도 않는다.
+        expect(step.failedPollError).toBeNull();
     });
 
     it('5분 상한 종료라도 마켓 뉴스는 완료를 알리지 않는다', () => {
@@ -372,6 +390,20 @@ describe('decideCardWaitPoll', () => {
 
         expect(step.stop).toBe(true);
         expect(step.error?.message).toBe('db error');
+        expect(step.failedPollError?.message).toBe('db error');
+    });
+
+    it('상한 전 실패는 이어가면서 failedPollError로 오류를 넘긴다', () => {
+        const step = decideCardWaitPoll(
+            INITIAL_CARD_POLL_COUNTERS,
+            fail('flaky'),
+            0,
+            SYMBOL_WAIT
+        );
+
+        expect(step.stop).toBe(false);
+        expect(step.error).toBeNull();
+        expect(step.failedPollError?.message).toBe('flaky');
     });
 
     it('5분 상한: 마켓 뉴스는 timeout 오류로, 종목 뉴스는 조용히 멈춘다', () => {

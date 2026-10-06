@@ -1,4 +1,8 @@
 import { NextResponse } from 'next/server';
+import { constants } from 'node:http2';
+import { getClientIp } from '@/shared/api/getClientIp';
+import { UNKNOWN_CLIENT_IP } from '@/shared/api/unknownClientIp';
+import { searchLimiter } from './searchLimiter';
 import {
     MAX_SEARCH_QUERY_LENGTH,
     searchTickerQuery,
@@ -25,6 +29,20 @@ const SEARCH_CACHE_CONTROL =
 
 const NO_STORE = { 'Cache-Control': 'no-store' } as const;
 
+const { HTTP_STATUS_TOO_MANY_REQUESTS } = constants;
+
+/**
+ * 한도 키로 쓸 IP. 던지지 않는다 — IP 해석이 실패하면 공용 버킷 하나로 센다
+ * (`/api/client-error`의 `reporterKey`와 같은 처리).
+ */
+async function clientKey(): Promise<string> {
+    try {
+        return await getClientIp();
+    } catch {
+        return UNKNOWN_CLIENT_IP;
+    }
+}
+
 /**
  * 티커 검색 — `?q=`. 결과는 `TickerSearchResult[]`.
  *
@@ -34,8 +52,19 @@ const NO_STORE = { 'Cache-Control': 'no-store' } as const;
  *
  * 실패는 빈 배열이 아니라 **500**으로 답한다 — 클라이언트(`useTickerSearch`)가 "결과 없음"과
  * "조회 실패"를 구분해 보여 주고 `reportClientError`로 신호를 남긴다. 실패 응답은 캐시하지 않는다.
+ *
+ * IP별 상한(`searchLimiter`)을 넘으면 검색하지 않고 **429**(no-store)로 답한다.
  */
 export async function GET(request: Request): Promise<Response> {
+    if (!searchLimiter.admit(await clientKey(), Date.now())) {
+        return NextResponse.json(
+            { error: 'rate_limited' },
+            {
+                status: HTTP_STATUS_TOO_MANY_REQUESTS,
+                headers: { ...NO_STORE, 'Retry-After': '60' },
+            }
+        );
+    }
     const query = (new URL(request.url).searchParams.get('q') ?? '').trim();
     if (query.length > MAX_SEARCH_QUERY_LENGTH) {
         return NextResponse.json(

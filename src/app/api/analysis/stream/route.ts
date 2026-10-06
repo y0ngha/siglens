@@ -895,8 +895,15 @@ export async function POST(request: Request): Promise<Response> {
                 const tier = await resolveTierOnly(userId);
                 // Dynamic import keeps the E2E stub out of the prod bundle (dead code
                 // when E2E_TEST is unset).
-                const { e2eCachedTechnical } =
+                const { e2eCachedTechnical, e2eGeneratedTechnical } =
                     await import('@/shared/api/e2eAnalysisStub');
+                // 재분석 의도는 운영에서 캐시를 건너뛴 새 생성(`done`)으로 끝난다 — 스텁도
+                // 같은 status를 줘야 클라이언트가 운영과 같은 진행 화면 흐름을 탄다
+                // (`e2eGeneratedTechnical` JSDoc).
+                const stub =
+                    reanalyze === true
+                        ? e2eGeneratedTechnical(tier)
+                        : e2eCachedTechnical(tier);
                 // E2E 스텁은 버킷이 계산되기 **전에** fixture를 돌려주므로
                 // (`runAnalysis`/`resolveHoldingPositionBucket`이 이 분기에선
                 // 아예 돌지 않는다) `personalized`를 평소처럼 파생할 수 없다.
@@ -923,7 +930,7 @@ export async function POST(request: Request): Promise<Response> {
                 return new Response(
                     heartbeatStream(
                         Promise.resolve({
-                            ...e2eCachedTechnical(tier),
+                            ...stub,
                             personalized,
                         }),
                         { genericErrorMessage: t('generic') }

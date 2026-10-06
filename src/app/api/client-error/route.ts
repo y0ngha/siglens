@@ -3,12 +3,12 @@
  * 기준선 관찰은 Logs Insights(`[client-error]` 필터)로 한다.
  *
  * DB도 Redis도 타지 않는다. 사고 중에 이 경로가 실패하면 사고 자체가 안 보인다.
- * 그래서 IP별 한도도 인스턴스 메모리로 센다(아래 `admitReport`).
+ * 그래서 IP별 한도도 인스턴스 메모리로 센다(아래 `reportLimiter`).
  */
 import { constants } from 'node:http2';
 import { getClientIp } from '@/shared/api/getClientIp';
 import { UNKNOWN_CLIENT_IP } from '@/shared/api/unknownClientIp';
-import { createMemoryLru } from '@/shared/cache/memoryLru';
+import { createFixedWindowLimiter } from '@/shared/lib/fixedWindowLimiter';
 import { MS_PER_MINUTE } from '@/shared/config/time';
 
 const { HTTP_STATUS_NO_CONTENT } = constants;
@@ -24,38 +24,16 @@ const REPORT_WINDOW_MS = MS_PER_MINUTE;
 /** 추적할 IP 수 상한. IP를 돌려 가며 보내면 오래된 항목부터 밀려나는데, 그건 감수한다. */
 const MAX_TRACKED_IPS = 10_000;
 
-interface ReportWindow {
-    readonly count: number;
-    readonly windowEnd: number;
-}
-
-const reportWindows = createMemoryLru<ReportWindow>(MAX_TRACKED_IPS);
-
 /**
- * 이 IP의 이번 창 기록을 하나 늘리고, 상한 안이면 `true`.
- *
- * Redis가 아니라 메모리인 이유는 파일 상단 — 이 경로는 외부 의존 없이 살아 있어야 한다.
- * 인스턴스마다 따로 세므로 실효 상한은 인스턴스 수만큼 늘지만, 목적이 무한 루프 차단이라
- * 충분하다.
+ * IP별 기록 한도. Redis가 아니라 메모리인 이유는 파일 상단 — 이 경로는 외부 의존 없이 살아
+ * 있어야 한다. 인스턴스마다 따로 세므로 실효 상한은 인스턴스 수만큼 늘지만, 목적이 무한 루프
+ * 차단이라 충분하다.
  */
-function admitReport(ip: string, now: number): boolean {
-    const current = reportWindows.get(ip);
-    if (current === undefined) {
-        reportWindows.set(
-            ip,
-            { count: 1, windowEnd: now + REPORT_WINDOW_MS },
-            REPORT_WINDOW_MS
-        );
-        return true;
-    }
-    if (current.count >= REPORTS_PER_IP_PER_WINDOW) return false;
-    reportWindows.set(
-        ip,
-        { count: current.count + 1, windowEnd: current.windowEnd },
-        current.windowEnd - now
-    );
-    return true;
-}
+const reportLimiter = createFixedWindowLimiter({
+    limit: REPORTS_PER_IP_PER_WINDOW,
+    windowMs: REPORT_WINDOW_MS,
+    maxTrackedKeys: MAX_TRACKED_IPS,
+});
 
 /**
  * 사용자 본문을 로그 한 줄에 안전하게 싣는다 — 퍼센트 인코딩(`encodeURIComponent`).
@@ -129,7 +107,7 @@ async function reporterKey(): Promise<string> {
 
 export async function POST(request: Request): Promise<Response> {
     // 한도 초과면 본문을 읽지도 않는다 — 읽는 것 자체가 이 남용의 비용이다.
-    if (!admitReport(await reporterKey(), Date.now())) {
+    if (!reportLimiter.admit(await reporterKey(), Date.now())) {
         return new Response(null, { status: HTTP_STATUS_NO_CONTENT });
     }
 
