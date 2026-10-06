@@ -20,9 +20,10 @@ import { MOBILE_SHEET_PEEK_BAND_SVH } from './constants/mobileSheet';
  * ```
  *
  * 네트워크가 아니라 **요청 시작까지의 4.6초**가 병목이다. 이 컴포넌트는 그 구간을
- * 시각적으로 메운다. `SymbolPageClient`는 `useSearchParams`로 CSR-bailout되어
- * SSR HTML에 아무것도 남기지 않으므로(실증: `AI 분석 보기` 문자열이 SSR HTML에 0회),
- * 껍데기는 **반드시 서버 컴포넌트 쪽(app 라우트)에서** 렌더해야 한다.
+ * 시각적으로 메운다. 실제 시트는 `ssr: false`라 SSR HTML에 아무것도 남기지 않으므로
+ * 껍데기는 **반드시 서버 쪽(app 라우트)에서** 렌더해야 한다. (`SymbolPageClient`
+ * 자체는 이제 SSR되지만 — `useUrlSearchParam`, CSR bailout 없음 — 시트는 여전히
+ * 하이드레이션 뒤에 마운트된다.)
  *
  * ## 사라지는 방식
  *

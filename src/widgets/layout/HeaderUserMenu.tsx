@@ -74,6 +74,9 @@ export function HeaderUserMenu({
         return (
             <nav
                 aria-label={t('HeaderUserMenu.ce7156')}
+                // 회원 추정(`<html data-auth-hint="member">`)이면 첫 페인트부터 숨긴다 —
+                // 하이드레이션 뒤에는 어차피 스켈레톤이 이 자리를 차지한다(`globals.css`).
+                data-header-guest-cta=""
                 className="flex items-center gap-2"
             >
                 {/*

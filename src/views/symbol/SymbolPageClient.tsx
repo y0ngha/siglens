@@ -98,6 +98,15 @@ interface SymbolPageClientProps {
      * 입력 전에도 seed 복원 재조회를 열지 정하는 입력이다. 생략하면 `true`(옛 동작: 항상 연다).
      */
     seedHasFormingBarTrimmed?: boolean;
+    /**
+     * 서버가 기본 타임프레임 봉을 React Query에 seed했는가. 생략하면 `true`.
+     *
+     * 이 컴포넌트는 이제 서버에서도 렌더된다(`useUrlSearchParam` — CSR bailout 없음).
+     * seed가 없는 채로 `ChartContent`를 SSR하면 그 안의 `useSuspenseQuery`가 **서버
+     * 렌더 중에** 봉 Server Action을 부르게 된다. 그래서 seed가 없으면 하이드레이션이
+     * 끝날 때까지 `ChartSkeleton`만 그리고, 차트는 브라우저에서 처음 마운트한다.
+     */
+    hasBarsSeed?: boolean;
 }
 
 export function SymbolPageClient({
@@ -111,6 +120,7 @@ export function SymbolPageClient({
     skillCount,
     marketProfile,
     seedHasFormingBarTrimmed,
+    hasBarsSeed = true,
 }: SymbolPageClientProps) {
     const t = useTranslations('views.symbol');
     const { tier, isTierHydrated } = useSymbolModel();
@@ -135,6 +145,8 @@ export function SymbolPageClient({
     const locale = useResolvedLocale();
     const isHydrated = useHydrated();
     const isMobileViewport = useIsMobileViewport();
+    // seed가 없으면 서버·하이드레이션 렌더에서 차트를 그리지 않는다(`hasBarsSeed` JSDoc).
+    const canRenderChart = hasBarsSeed || isHydrated;
 
     return (
         <SymbolPageProvider
@@ -149,8 +161,7 @@ export function SymbolPageClient({
                 jail 형제로 push되어 스크롤 내려야 보인다. */}
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-secondary-900 text-secondary-200 md:flex-none md:overflow-visible">
                 {/* Chart-only timeframe controls live inside this chart container
-                    so the layout header can stay free of useSearchParams
-                    (which would force PPR to mark the whole route as dynamic). */}
+                    so the layout header stays free of URL reads. */}
                 {/* 이 바는 아래의 차트/AI 레일 2-pane에 정렬한다 — 자기가 제어하는
                     대상이 그쪽이기 때문이다. 한때 `symbol-container`(1024px 중앙)를
                     걸었더니 vw=1600에서 캔버스가 0~894인데 타임프레임 버튼이
@@ -165,10 +176,9 @@ export function SymbolPageClient({
                         {/* 차트 페이지 가시 h1: 차트+AI가 첫 뷰포트를 채우는 구성이라
                         본문에 별도 블록을 얹으면 chart 가시 영역이 침범된다. 그래서
                         timeframe bar 행에 짧은 한 줄로 둔다(truncate로 좁은 화면에서
-                        TimeframeSelector와 한 줄 공존). 단 이 컴포넌트는 useSearchParams로
-                        CSR-bailout되므로 이 가시 h1은 SSR HTML엔 박히지 않는다 — JS 미실행
-                        크롤러용 h1은 page.tsx의 Suspense fallback에 동일 텍스트 sr-only h1으로
-                        제공하고, hydration 후 이 가시 h1이 fallback을 대체한다. */}
+                        TimeframeSelector와 한 줄 공존). 이 컴포넌트는 서버에서도 렌더되므로
+                        (`useUrlSearchParam` — CSR bailout 없음) 이 가시 h1이 SSR HTML에
+                        그대로 박힌다 — 페이지의 유일한 h1이다. */}
                         <div className="flex min-w-0 items-center gap-2">
                             <h1 className="line-clamp-2 min-w-0 text-sm font-semibold text-secondary-50 sm:line-clamp-none sm:truncate sm:text-base">
                                 {t('chartPageHeading.heading', {
@@ -228,31 +238,39 @@ export function SymbolPageClient({
                         resetKeys={[timeframe, symbol]}
                     >
                         <Suspense fallback={<ChartSkeleton />}>
-                            <ChartContent
-                                symbol={symbol}
-                                companyName={companyName}
-                                factsSubject={symbolFactsSubject(
-                                    symbol,
-                                    assetInfo?.koreanName,
-                                    locale
-                                )}
-                                timeframe={timeframe}
-                                timeframeChangeCount={timeframeChangeCount}
-                                initialAnalysis={initialAnalysis}
-                                initialLockedInfoDepth={initialLockedInfoDepth}
-                                initialAnalysisFailed={initialAnalysisFailed}
-                                onMobileSheetContent={setMobileSheetContent}
-                                seedHasFormingBarTrimmed={
-                                    seedHasFormingBarTrimmed
-                                }
-                                fmpSymbol={assetInfo?.fmpSymbol}
-                                marketProfile={
-                                    marketProfile ??
-                                    (assetInfo
-                                        ? marketProfileOf(assetInfo)
-                                        : undefined)
-                                }
-                            />
+                            {canRenderChart ? (
+                                <ChartContent
+                                    symbol={symbol}
+                                    companyName={companyName}
+                                    factsSubject={symbolFactsSubject(
+                                        symbol,
+                                        assetInfo?.koreanName,
+                                        locale
+                                    )}
+                                    timeframe={timeframe}
+                                    timeframeChangeCount={timeframeChangeCount}
+                                    initialAnalysis={initialAnalysis}
+                                    initialLockedInfoDepth={
+                                        initialLockedInfoDepth
+                                    }
+                                    initialAnalysisFailed={
+                                        initialAnalysisFailed
+                                    }
+                                    onMobileSheetContent={setMobileSheetContent}
+                                    seedHasFormingBarTrimmed={
+                                        seedHasFormingBarTrimmed
+                                    }
+                                    fmpSymbol={assetInfo?.fmpSymbol}
+                                    marketProfile={
+                                        marketProfile ??
+                                        (assetInfo
+                                            ? marketProfileOf(assetInfo)
+                                            : undefined)
+                                    }
+                                />
+                            ) : (
+                                <ChartSkeleton />
+                            )}
                         </Suspense>
                     </ErrorBoundary>
                 </div>

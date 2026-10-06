@@ -344,11 +344,17 @@ describe('MarketSummaryPanel', () => {
         expect(screen.getByTestId('briefing')).toBeInTheDocument();
     });
 
-    it('briefing undefined면 BriefingRegion이 아무것도 렌더하지 않는다', () => {
+    /**
+     * 결과가 아직 없으면(서버 seed 없음) `null`이 아니라 자리를 잡은 로딩 카드를 그린다 —
+     * 서버 HTML에도 나가므로 브리핑이 도착할 때 아래 섹터 패널이 밀리지 않는다.
+     */
+    it('briefing undefined면 BriefingRegion이 로딩 카드를 렌더한다', () => {
         mockUseMarketBriefing.mockReturnValue({ input: undefined });
         mockUseMarketSummary.mockReturnValue(defaultSummaryReturn);
         render(<MarketSummaryPanel scope={TEST_SCOPE} />);
+        expect(screen.getByTestId('briefing-loading')).toBeInTheDocument();
         expect(screen.queryByTestId('briefing')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('briefing-error')).not.toBeInTheDocument();
     });
 
     it('grid-cols-3 when sector group has 3 items', () => {

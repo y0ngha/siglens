@@ -355,8 +355,8 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                     })}
                 </p>
                 {/* 게이지를 먼저 보여준다 — 사용자는 점수를 보러 왔고, 서버 계산 요약은
-                    그 아래에서 근거를 풀어 쓴다. 크롤러는 DOM 순서와 무관하게 요약만
-                    본다(게이지는 `useHydrated` 게이트). */}
+                    그 아래에서 근거를 풀어 쓴다. 게이지·칩·그룹도 아래 seed로 SSR된다
+                    (하이드레이션 게이트 없음 — `FearGreedPage` 본문 주석). */}
                 <HydrationBoundary state={dehydrate(queryClient)}>
                     <ErrorBoundary FallbackComponent={FearGreedPageError}>
                         <FearGreedPage
@@ -369,10 +369,9 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                         />
                     </ErrorBoundary>
                 </HydrationBoundary>
-                {/* 서버 계산 factor 요약 — crawler는 JS 미실행이라 위 클라 게이지
-                    (FearGreedPage)의 점수·factor 수치를 절대 못 본다. 여기서
-                    이미 로드된 5년 일봉(`symbolFearGreedInputs`)으로 동일 수치를
-                    SSR HTML에 박아 크롤 가능하게 한다(결정적, AI/pre-warm 무관).
+                {/* 서버 계산 factor 요약 — 위 게이지(FearGreedPage)는 점수·그룹 막대만
+                    그린다. 여기서 이미 로드된 5년 일봉(`symbolFearGreedInputs`)으로 factor
+                    수치와 근거 문장을 SSR HTML에 풀어 쓴다(결정적, AI/pre-warm 무관).
                     사용자에게도 동일하게 보이므로 클로킹 아님. */}
                 {fearGreedInput !== null && (
                     <FearGreedFactsSummary

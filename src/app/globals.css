@@ -681,6 +681,50 @@ body:has([data-vaul-drawer][data-sheet-expanded]) [data-pwa-banner] {
 }
 
 /*
+ * 차트 탭 기술적 사실 요약의 중복 정리.
+ *
+ * `[symbol]/page.tsx`는 같은 요약을 Suspense 경계 **밖**에 영구 서버 사본(`page`)으로 한 벌
+ * 더 싣는다 — AI 패널 사본(`panel`)은 차트 경계 안이라, 경계가 React progressive chunk를
+ * 넘으면 raw HTML의 숨김 청크로 아웃라인돼 JS 없는 크롤러가 못 본다. 사람에게는 패널 사본이
+ * DOM에 들어오는 순간(아웃라인 청크가 인라인 스크립트로 붙는 시점) 서버 사본을 여백 래퍼째
+ * 감춰 화면이 예전과 같다. 패널이 없으면(차트 오류) 서버 사본이 남는다. 서버 사본은 첫
+ * 뷰포트 아래라 감춰져도 CLS에 들지 않는다. `:has()` 미지원 브라우저에서는 두 벌이 보인다.
+ */
+body:has([data-technical-facts='panel']) [data-technical-facts-page-slot] {
+    display: none;
+}
+
+/*
+ * 헤더 인증 영역의 폭 예약(`Header`의 `[data-header-auth-slot]`).
+ *
+ * 헤더는 정적(ISR) 셸이라 서버 HTML은 늘 게스트 CTA를 그리고, 회원은 하이드레이션 뒤에야
+ * 아바타로 바뀐다 — 그 폭 차이만큼 검색 등 왼쪽 요소가 밀렸다(CLS). `<html data-auth-hint>`는
+ * 첫 페인트 전에 인라인 스크립트가 힌트 쿠키로 찍는다(`AUTH_HINT_INIT_SCRIPT`).
+ *
+ * - 게스트(기본, 속성 없음 포함): 가장 넓은 CTA(ja `ログイン`+`会員登録`, 실측 기준 약
+ *   10.5rem)를 담는 11rem. 폰트 교체로 CTA 폭이 흔들려도 상자는 그대로다.
+ * - 회원 추정: 아바타·스켈레톤과 같은 2.5rem. 게스트 CTA는 처음부터 그리지 않는다 —
+ *   하이드레이션 뒤에도 힌트가 있으면 CTA 대신 스켈레톤이 나오므로 같은 화면이다.
+ *
+ * **`min-width`만 쓴다.** `width`/`max-width`로 고정하면 예상보다 넓은 CTA(새 로케일, 큰
+ * 글꼴 설정)가 잘린다. 모자라면 상자가 자라는 편이 잘리는 것보다 낫다. 아래 폭은 모바일
+ * (CTA가 숨는 sm 미만)에는 걸지 않는다.
+ */
+@media (width >= 40rem) {
+    [data-header-auth-slot] {
+        min-width: 11rem;
+    }
+
+    :root[data-auth-hint='member'] [data-header-auth-slot] {
+        min-width: 2.5rem;
+    }
+}
+
+:root[data-auth-hint='member'] [data-header-guest-cta] {
+    display: none;
+}
+
+/*
  * 다른 라우트로 떠나는 중에는 모바일 분석 시트를 감춘다.
  *
  * 루트 pending 슬롯(`RoutePendingSlot`)은 떠나온 페이지를 `hidden`으로 가리고 목적지

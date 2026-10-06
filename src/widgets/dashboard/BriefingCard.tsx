@@ -165,7 +165,14 @@ export function BriefingCard({
 
             {/* peek seed는 generatedAt이 빈 문자열이라 new Date('') = Invalid Date.
                 BriefingCard는 action 응답으로 교체되기 전까지 타임스탬프 줄을
-                숨겨 "Invalid Date 기준"이 노출되는 것을 막는다. */}
+                숨겨 "Invalid Date 기준"이 노출되는 것을 막는다. 다만 줄 **자리**는
+                남긴다(보이지 않는 한 줄) — 비워 두면 응답이 도착해 줄이 생기는 순간
+                아래 섹터 신호 패널이 한 줄만큼 밀린다(CLS). */}
+            {validGeneratedDate === null && (
+                <p aria-hidden="true" className="invisible text-xs">
+                    &nbsp;
+                </p>
+            )}
             {validGeneratedDate !== null && (
                 <p className="text-xs text-secondary-500">
                     {/* timeZone은 'Asia/Seoul'로 **고정**한다 — SSR(Node)과
@@ -192,13 +199,21 @@ export function BriefingCard({
     );
 }
 
+/**
+ * 브리핑이 아직 없을 때의 자리 표시. 서버 seed가 없으면 **서버 HTML에도** 이 카드가
+ * 나간다(예전엔 `null`이라 브리핑이 도착하는 순간 아래 섹터 신호 패널 전체가 밀렸다).
+ *
+ * `min-h-64`는 **추정치**다 — 실제 브리핑 카드는 요약 길이·테마 수·섹터 줄 유무에 따라
+ * 높이가 달라 정확히 맞출 수 없다. 데스크톱 폭의 전형적인 카드(요약 3~4줄 + 테마 +
+ * 섹터 두 줄 + 변동성·심리·타임스탬프)에 가깝게 잡아 이동량을 줄이는 것이 목적이다.
+ */
 export function BriefingLoadingCard() {
     const t = useTranslations('widgets.dashboard');
     return (
         <div
             role="status"
             aria-live="polite"
-            className="rounded-lg border border-secondary-700/50 p-4"
+            className="min-h-64 rounded-lg border border-secondary-700/50 p-4"
         >
             <div className="flex items-center gap-2">
                 <div className="h-2 w-2 animate-pulse rounded-full bg-secondary-700/50" />

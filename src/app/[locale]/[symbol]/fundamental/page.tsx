@@ -1,4 +1,3 @@
-import { useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import {
     getAnalystEstimates,
@@ -10,12 +9,10 @@ import {
     getPriceTargetConsensus,
     getPriceTargetSummary,
     getProfile,
-    getProfileDescription,
     getRatiosTtm,
     getStockPeers,
 } from '@/app/[locale]/[symbol]/fundamental/fundamentalData';
 import { type Locale, resolveLocale } from '@/shared/i18n/locales';
-import { contentLocaleKeyPart } from '@/shared/cache/contentLocaleKeyPart';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 
@@ -33,9 +30,7 @@ import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
 import { FundamentalSnapshotProse } from '@/views/symbol/snapshot/renderers/FundamentalSnapshotProse';
 import { hasFundamentalProse } from '@/entities/seo-snapshot/lib/fundamentalContent';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
-import { SectionSkeleton } from '@/views/symbol/SectionSkeleton';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { Spinner } from '@/shared/ui/Spinner';
 import { SymbolRouteParams } from '@/shared/config/market';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
@@ -56,6 +51,7 @@ import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJ
 import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
 import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import { FundamentalDegraded } from './FundamentalDegraded';
+import { loadProfileDescription } from './profileDescription';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
@@ -66,10 +62,7 @@ import {
     profileIdForSymbol,
 } from '@/shared/config/marketProfile/registry';
 import { type MarketProfileId } from '@/shared/config/marketProfile/types';
-import { HEADING_SECTION } from '@/shared/lib/typographyStyles';
 import { enterLocale } from '@/shared/lib/enterLocale';
-import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
-import { cn } from '@/shared/lib/cn';
 
 // 종목당 SEO 콘텐츠는 고정이고 동적 데이터는 클라가 재hydrate한다. 엣지 캐시로
 // compute 호출을 줄인다. (일시 인프라 장애의 404 캐싱은 getAssetInfo strict로 차단)
@@ -137,113 +130,6 @@ interface LocalizedSectionProps extends SymbolSectionProps {
     locale: Locale;
 }
 
-function ProfileDescriptionSkeleton() {
-    const t = useTranslations('app.symbol');
-    return (
-        <div className="mt-4 space-y-2">
-            <div className="flex items-center gap-1.5">
-                <Spinner size="xs" tone="muted" />
-                <span className="text-xs text-secondary-500">
-                    {t('page.c6cf97')}
-                </span>
-            </div>
-            <div className="animate-pulse space-y-1.5">
-                <div className="h-3 w-full rounded bg-secondary-700" />
-                <div className="h-3 w-[92%] rounded bg-secondary-700" />
-                <div className="h-3 w-4/5 rounded bg-secondary-700" />
-                <div className="h-3 w-3/5 rounded bg-secondary-700" />
-            </div>
-        </div>
-    );
-}
-
-interface ProfileCardSkeletonProps {
-    symbol: string;
-}
-
-function ProfileCardSkeleton({ symbol }: ProfileCardSkeletonProps) {
-    const t = useTranslations('app.symbol');
-    return (
-        <section
-            aria-labelledby="profile-heading"
-            className={cn(SURFACE_CARD, 'p-6')}
-        >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                    <h2 id="profile-heading" className={HEADING_SECTION}>
-                        <span className="inline-block h-5 w-36 animate-pulse rounded bg-secondary-700 align-middle" />
-                        <span className="ml-2 text-base font-normal text-secondary-400">
-                            ({symbol})
-                        </span>
-                    </h2>
-                    <div className="mt-1 h-4 w-28 animate-pulse rounded bg-secondary-700" />
-                </div>
-                <div className="text-right">
-                    <span className="text-xs tracking-[0.01em] text-secondary-400">
-                        {t('page.cf643b')}
-                    </span>
-                    <div className="mt-0.5 h-6 w-20 animate-pulse rounded bg-secondary-700" />
-                </div>
-            </div>
-
-            <dl className="mt-4 grid grid-cols-1 gap-y-2 sm:grid-cols-2">
-                <div className="flex gap-2">
-                    <dt className="w-10 shrink-0 text-sm text-secondary-400">
-                        CEO
-                    </dt>
-                    <dd>
-                        <div className="h-4 w-32 animate-pulse rounded bg-secondary-700" />
-                    </dd>
-                </div>
-                <div className="flex gap-2">
-                    <dt className="w-10 shrink-0 text-sm text-secondary-400">
-                        {t('page.9f451a')}
-                    </dt>
-                    <dd>
-                        <div className="h-4 w-40 animate-pulse rounded bg-secondary-700" />
-                    </dd>
-                </div>
-            </dl>
-
-            <ProfileDescriptionSkeleton />
-        </section>
-    );
-}
-
-interface ProfileDescriptionSectionProps {
-    symbol: string;
-    locale: Locale;
-    fallback: string;
-}
-
-export async function ProfileDescriptionSection({
-    symbol,
-    locale,
-    fallback,
-}: ProfileDescriptionSectionProps) {
-    // ISR degrade guard: getProfileDescription(AI 번역)이 throw하더라도 ISR 캐시에
-    // 0-byte 빈 결과가 굳지 않도록 흡수한다. null 로 degrade → fallback(영어 원문)을 렌더.
-    const description = await staticSymbolCache(
-        // 로케일을 키에 넣지 않으면 먼저 생성된 로케일의 설명이 전 로케일에 굳는다.
-        ['fundamental:desc', symbol, ...contentLocaleKeyPart(locale)],
-        symbol,
-        () => getProfileDescription(symbol, locale),
-        [],
-        SECONDS_PER_DAY
-    ).catch((e: unknown) => {
-        console.error(
-            '[ProfileDescriptionSection] getProfileDescription failed, degrading to null:',
-            e
-        );
-        return null;
-    });
-    return (
-        <p className="mt-4 line-clamp-4 text-sm leading-relaxed text-secondary-400">
-            {description ?? fallback}
-        </p>
-    );
-}
-
 /**
  * FMP 섹션 로더 실패를 흡수하는 공통 degrade: 로그를 남기고, **이 렌더의 revalidate를 5분으로
  * 낮춘 뒤**(`shortenRevalidateForRuntimeDegrade`) 빈 상태 값을 돌려준다.
@@ -268,31 +154,34 @@ export async function ProfileSection({
     symbol,
     locale,
 }: LocalizedSectionProps) {
-    // Shares the same key as the notFound guard in the page body — cross-request ISR cache is shared.
-    // ISR degrade guard: getProfile(FMP)가 throw하면 null 로 degrade → ProfileCard(null)가
-    // 기존 empty-state UI를 렌더하고 페이지 크롬은 유지된다.
-    const profile = await staticSymbolCache(
-        ['fundamental:profile', symbol],
-        symbol,
-        () => getProfile(symbol),
-        [],
-        SECONDS_PER_DAY
-    ).catch((e: unknown) =>
-        degradeSection(
-            '[ProfileSection] getProfile failed, degrading to null:',
-            e,
-            null
-        )
-    );
+    // 프로필과 AI 번역 설명을 **함께 시작**한다 — 설명은 프로필 결과에 의존하지 않는다
+    // (원문 폴백만 프로필에서 온다). 예전엔 설명이 프로필 뒤의 별도 Suspense 경계라 직렬
+    // 왕복이었고 raw HTML에 숨김 청크를 남겼다. 설명은 `PROFILE_DESCRIPTION_TIMEOUT_MS`로
+    // 상한을 둔다(`loadProfileDescription`) — 늦으면 원문으로 렌더한다.
+    const [profile, description] = await Promise.all([
+        // Shares the same key as the notFound guard in the page body — cross-request ISR cache is shared.
+        // ISR degrade guard: getProfile(FMP)가 throw하면 null 로 degrade → ProfileCard(null)가
+        // 기존 empty-state UI를 렌더하고 페이지 크롬은 유지된다.
+        staticSymbolCache(
+            ['fundamental:profile', symbol],
+            symbol,
+            () => getProfile(symbol),
+            [],
+            SECONDS_PER_DAY
+        ).catch((e: unknown) =>
+            degradeSection(
+                '[ProfileSection] getProfile failed, degrading to null:',
+                e,
+                null
+            )
+        ),
+        loadProfileDescription(symbol, locale),
+    ]);
 
     const descriptionSlot = (
-        <Suspense fallback={<ProfileDescriptionSkeleton />}>
-            <ProfileDescriptionSection
-                symbol={symbol}
-                locale={locale}
-                fallback={profile?.description ?? ''}
-            />
-        </Suspense>
+        <p className="mt-4 line-clamp-4 text-sm leading-relaxed text-secondary-400">
+            {description ?? profile?.description ?? ''}
+        </p>
     );
 
     return <ProfileCard profile={profile} descriptionSlot={descriptionSlot} />;
@@ -639,9 +528,13 @@ export default async function FundamentalPage({ params }: Props) {
                 <SymbolPageHeading>
                     {t('page.9e0659', { v0: displayName })}
                 </SymbolPageHeading>
-                <Suspense fallback={<ProfileCardSkeleton symbol={upper} />}>
-                    <ProfileSection symbol={upper} locale={locale} />
-                </Suspense>
+                {/* 서버 데이터 섹션은 Suspense로 감싸지 않는다 — 서버 데이터 경계는 raw HTML에
+                    스켈레톤 + 숨김 `<template>` 청크를 남겨 JS 없는 크롤러에게 본문을 뒤로 밀고,
+                    교체 순간 레이아웃이 흔들린다. 형제 async 섹션은 서버에서 병렬로 렌더되고,
+                    각 섹션은 실패를 `degradeSection`으로 흡수한다(빈 카드 + 짧아진 revalidate).
+                    남는 경계는 클라 위젯 `FundamentalAiSummary`의 것 하나뿐이다
+                    (`src/__tests__/guards/serverDataSuspenseBoundaries.test.ts`). */}
+                <ProfileSection symbol={upper} locale={locale} />
 
                 {/* audit fix FIX 2: XOR — FundamentalAiSummary (client widget) and
                     FundamentalSnapshotProse (SSR prose) both render the same AI
@@ -681,29 +574,12 @@ export default async function FundamentalPage({ params }: Props) {
                     </Suspense>
                 </ErrorBoundary>
 
-                <Suspense fallback={<SectionSkeleton />}>
-                    <ValuationSection symbol={upper} />
-                </Suspense>
-
-                <Suspense fallback={<SectionSkeleton />}>
-                    <PeersSection symbol={upper} />
-                </Suspense>
-
-                <Suspense fallback={<SectionSkeleton />}>
-                    <ProfitabilitySection symbol={upper} />
-                </Suspense>
-
-                <Suspense fallback={<SectionSkeleton />}>
-                    <GrowthSection symbol={upper} />
-                </Suspense>
-
-                <Suspense fallback={<SectionSkeleton />}>
-                    <FinancialHealthSection symbol={upper} />
-                </Suspense>
-
-                <Suspense fallback={<SectionSkeleton />}>
-                    <FutureDirectionSection symbol={upper} />
-                </Suspense>
+                <ValuationSection symbol={upper} />
+                <PeersSection symbol={upper} />
+                <ProfitabilitySection symbol={upper} />
+                <GrowthSection symbol={upper} />
+                <FinancialHealthSection symbol={upper} />
+                <FutureDirectionSection symbol={upper} />
                 <CrossLinkCards
                     symbol={upper}
                     current="fundamental"

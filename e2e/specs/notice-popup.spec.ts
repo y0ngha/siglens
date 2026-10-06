@@ -61,17 +61,48 @@ const LONG_BODY = Array.from(
 const DISMISSED_KEY = 'siglens_dismissed_notices_v1';
 const LEGACY_DISMISSED_KEY = 'siglens_dismissed_notices';
 
+/** 하이드레이션 전에 쏜 이벤트는 리스너가 없어 사라진다 — 그 창을 덮을 만큼 반복한다. */
+const REVEAL_DISPATCH_ATTEMPTS = 15;
+const REVEAL_DISPATCH_INTERVAL_MS = 200;
+
 /**
- * 공지 팝업은 **첫 상호작용 또는 8초 뒤**에야 마운트된다(`useDeferredReveal`) —
- * 검색 유입의 첫 화면을 가리는 인터스티셜이 되지 않기 위해서다(2026-09 구글 정책
- * 감사 L21). E2E는 그 상호작용을 명시적으로 만들어 준다. 그냥 기다리면 테스트마다
- * 8초를 버리고, 더 나쁘게는 "표시되지 않는다" 단언이 지연 때문에 통과해 버린다.
+ * 공지 팝업은 **첫 상호작용**(pointerdown·keydown·scroll·pointermove·touchstart·wheel)
+ * 에야 마운트된다(`useDeferredReveal`) — 검색 유입의 첫 화면을 가리는 인터스티셜이 되지
+ * 않기 위해서다(2026-09 구글 정책 감사 L21). 상호작용이 전혀 없으면 30초 뒤 유휴 시점에
+ * 뜨는데(`NOTICE_IDLE_FALLBACK_MS`, Lighthouse 측정 창 밖), E2E가 그걸 기다리면
+ * 테스트마다 30초를 버리고 "표시되지 않는다" 단언은 지연 때문에 통과해 버린다.
+ * 그래서 상호작용을 명시적으로 만들어 준다.
+ *
+ * 한 번만 쏘면 안 된다 — 리스너는 하이드레이션 뒤 effect에서 붙으므로 `goto`가 끝난
+ * 직후에 쏜 이벤트는 사라질 수 있다. 예전엔 8초 폴백이 그 유실을 덮었지만 이제
+ * 폴백이 30초라, 리스너가 붙을 때까지 짧은 간격으로 반복한다(모달이 뜨면 즉시 멈춘다).
  */
 async function gotoAndReveal(page: Page, path: string): Promise<void> {
     await page.goto(path);
-    await page.evaluate(() => {
-        window.dispatchEvent(new Event('pointerdown'));
-    });
+    await reveal(page);
+}
+
+/** 새로고침 뒤처럼 이미 도착한 페이지에서 첫 상호작용을 만든다(`gotoAndReveal` JSDoc). */
+async function reveal(page: Page): Promise<void> {
+    await page.evaluate(
+        async ({ attempts, intervalMs }) => {
+            for (let i = 0; i < attempts; i += 1) {
+                window.dispatchEvent(new Event('pointerdown'));
+                if (
+                    document.querySelector(
+                        '[data-testid="notice-modal-content"]'
+                    ) !== null
+                ) {
+                    return;
+                }
+                await new Promise(resolve => setTimeout(resolve, intervalMs));
+            }
+        },
+        {
+            attempts: REVEAL_DISPATCH_ATTEMPTS,
+            intervalMs: REVEAL_DISPATCH_INTERVAL_MS,
+        }
+    );
 }
 
 test.describe('공지 팝업', () => {
@@ -216,8 +247,9 @@ test.describe('공지 팝업', () => {
             );
             expect(stored).toBeNull();
 
-            // 새로고침 후 모달이 다시 표시됨
+            // 새로고침 후 (첫 상호작용이 오면) 모달이 다시 표시됨
             await page.reload();
+            await reveal(page);
             await expect(
                 page.getByTestId('notice-modal-content')
             ).toBeVisible();

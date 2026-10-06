@@ -129,20 +129,66 @@ function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
     );
 }
 
+/** 요약 문단 자리의 줄 폭 — 마지막 줄이 짧아 실제 문단처럼 보인다. */
+const SUMMARY_LINE_WIDTHS = ['w-full', 'w-full', 'w-11/12', 'w-3/5'] as const;
+/** 하이라이트 목록 자리의 항목 폭. */
+const HIGHLIGHT_LINE_WIDTHS = ['w-4/5', 'w-2/3', 'w-3/4'] as const;
+
+/**
+ * 브리핑 로딩 자리. **최종 카드와 같은 골격**(헤더 행 + 요약 문단 + 하이라이트 목록 +
+ * 생성 시각 줄)으로 그리고, 줄 높이도 실제 글자의 line-height에 맞춘다 — 예전 세 줄짜리
+ * 스켈레톤은 브리핑이 도착하는 순간 카드가 두 배 넘게 자라 아래 지표 그리드를 밀었다.
+ *
+ * `min-h-72`는 **추정치**다. 요약 길이·하이라이트 수는 응답마다 다르므로 정확히 맞출 수
+ * 없고, 데스크톱 폭의 전형적인 카드(요약 4줄 + 하이라이트 3개)에 가깝게 잡았다.
+ */
 function MacroBriefingSkeleton() {
     const t = useTranslations('widgets.economy');
     return (
         <section
             className={cn(
                 SURFACE_CARD,
-                'animate-pulse p-6 motion-reduce:animate-none'
+                'min-h-72 animate-pulse p-6 motion-reduce:animate-none'
             )}
             aria-busy="true"
             aria-label={t('MacroBriefing.a0f763')}
         >
-            <div className="mb-3 h-6 w-32 rounded bg-secondary-700" />
-            <div className="mb-2 h-4 w-full rounded bg-secondary-700" />
-            <div className="h-4 w-4/5 rounded bg-secondary-700" />
+            {/* 헤더: 제목(text-lg 줄 높이) + 국면 배지 */}
+            <div className="mb-4 flex h-7 items-center gap-3">
+                <div className="h-5 w-32 rounded bg-secondary-700" />
+                <div className="h-6 w-14 rounded bg-secondary-700" />
+            </div>
+            {/* 요약 문단: text-base leading-relaxed(26px) 줄 */}
+            <div className="mb-4">
+                {SUMMARY_LINE_WIDTHS.map((width, i) => (
+                    <div key={i} className="flex h-6.5 items-center">
+                        <div
+                            className={cn(
+                                'h-4 rounded bg-secondary-700',
+                                width
+                            )}
+                        />
+                    </div>
+                ))}
+            </div>
+            {/* 하이라이트 목록: text-sm(20px) 줄, 항목 간 space-y-1 */}
+            <div className="space-y-1">
+                {HIGHLIGHT_LINE_WIDTHS.map((width, i) => (
+                    <div key={i} className="flex h-5 items-center gap-2">
+                        <div className="size-1.5 shrink-0 rounded-full bg-secondary-700" />
+                        <div
+                            className={cn(
+                                'h-3.5 rounded bg-secondary-700',
+                                width
+                            )}
+                        />
+                    </div>
+                ))}
+            </div>
+            {/* 생성 시각 줄: text-xs(16px) */}
+            <div className="mt-3 flex h-4 items-center">
+                <div className="h-3 w-28 rounded bg-secondary-700" />
+            </div>
         </section>
     );
 }

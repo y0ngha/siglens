@@ -456,10 +456,11 @@ describe('SymbolLayout — 관련 종목 칩 위치 (jail 밖, 푸터 위)', () 
 /**
  * 예전 자체 챗봇 플로팅 버튼(`SymbolLayoutFloatingChat`)의 후임인 `AskAiFab`
  * 배선 — 레이아웃이 실제로 해석한 종목명·로케일 접두 경로를 넘기는지 합성
- * 단계에서 고정한다. `SymbolFloatingChat`(레이아웃 내부, export 없음)이
- * `Suspense` 아래에서 이 값을 계산해 `AskAiFab`에 넘긴다.
+ * 단계에서 고정한다. 레이아웃은 이미 확정한 `assetInfo`·`locale`로 값을 바로
+ * 계산해 `AskAiFab`을 **인라인으로** 렌더한다 — 서버 데이터 Suspense 경계 뒤에
+ * 두면 링크가 raw HTML 끝의 숨김 청크로 밀린다.
  */
-describe('SymbolLayout — AskAiFab 배선 (Suspense 뒤 SymbolFloatingChat)', () => {
+describe('SymbolLayout — AskAiFab 배선 (인라인, Suspense 없음)', () => {
     beforeEach(() => {
         mockGetAssetInfoResilient.mockReset();
         mockGetAssetInfoResilient.mockResolvedValue({
@@ -468,12 +469,11 @@ describe('SymbolLayout — AskAiFab 배선 (Suspense 뒤 SymbolFloatingChat)', (
         });
     });
 
-    it('AskAiFab에 해석된 종목명과 로케일 접두 경로를 넘긴다', async () => {
+    async function renderSiblings(locale: string): Promise<unknown[]> {
         const tree = await SymbolLayout({
             children: null,
-            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+            params: Promise.resolve({ locale, symbol: 'aapl' }),
         });
-
         const providers = (tree as { props?: { children?: unknown } }).props
             ?.children;
         const siblings = (providers as { props?: { children?: unknown } })
@@ -481,29 +481,37 @@ describe('SymbolLayout — AskAiFab 배선 (Suspense 뒤 SymbolFloatingChat)', (
         if (!Array.isArray(siblings)) {
             throw new Error('providers children is not an array');
         }
+        return siblings;
+    }
 
-        const suspenseElement = siblings.find(
-            child => (child as { type?: unknown } | null)?.type === Suspense
-        ) as { props?: { children?: unknown } } | undefined;
-        expect(suspenseElement).toBeDefined();
+    it('AskAiFab에 해석된 종목명과 로케일 접두 경로를 넘긴다', async () => {
+        const siblings = await renderSiblings('ko');
+        const fabElement = siblings.find(
+            child => (child as { type?: unknown } | null)?.type === AskAiFab
+        ) as { props?: Record<string, unknown> } | undefined;
 
-        const floatingChatElement = suspenseElement?.props?.children as
-            | { type?: (props: unknown) => unknown; props?: unknown }
-            | undefined;
-        expect(floatingChatElement?.type?.name).toBe('SymbolFloatingChat');
-
-        // SymbolFloatingChat is an async RSC — invoke it directly (same
-        // pattern as SymbolLayoutChrome above) to get the AskAiFab element it
-        // returns, without rendering AskAiFab itself.
-        const fabElement = (await floatingChatElement?.type?.(
-            floatingChatElement.props
-        )) as { type?: unknown; props?: Record<string, unknown> };
-
-        expect(fabElement?.type).toBe(AskAiFab);
         expect(fabElement?.props).toEqual({
             name: 'Apple Inc.',
             localePrefix: '/',
         });
+    });
+
+    it('비기본 로케일이면 접두 경로가 그 로케일을 따른다', async () => {
+        const siblings = await renderSiblings('en');
+        const fabElement = siblings.find(
+            child => (child as { type?: unknown } | null)?.type === AskAiFab
+        ) as { props?: Record<string, unknown> } | undefined;
+
+        expect(fabElement?.props?.localePrefix).toBe('/en');
+    });
+
+    it('레이아웃 직속 형제에 Suspense 경계가 없다', async () => {
+        const siblings = await renderSiblings('ko');
+        expect(
+            siblings.some(
+                child => (child as { type?: unknown } | null)?.type === Suspense
+            )
+        ).toBe(false);
     });
 });
 

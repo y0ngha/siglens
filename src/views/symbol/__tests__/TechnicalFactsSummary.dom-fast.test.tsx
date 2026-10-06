@@ -45,6 +45,29 @@ const emptyIndicators = {
 } as unknown as IndicatorResult;
 
 describe('TechnicalFactsSummary', () => {
+    /** `globals.css`가 이 표식으로 패널 사본이 있을 때 page 사본을 감춘다. */
+    it.each([
+        [undefined, 'panel'],
+        ['panel', 'panel'],
+        ['page', 'page'],
+    ] as const)(
+        'placement=%s → data-technical-facts="%s"',
+        (placement, expected) => {
+            const { container } = render(
+                <TechnicalFactsSummary
+                    symbol="AAPL"
+                    bars={[bar(100), bar(110)]}
+                    indicators={emptyIndicators}
+                    {...(placement === undefined ? {} : { placement })}
+                />
+            );
+            expect(container.querySelector('section')).toHaveAttribute(
+                'data-technical-facts',
+                expected
+            );
+        }
+    );
+
     it('현재가와 RSI를 텍스트로 렌더한다', () => {
         render(
             <TechnicalFactsSummary

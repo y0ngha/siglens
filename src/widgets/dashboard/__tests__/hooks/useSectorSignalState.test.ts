@@ -1,16 +1,25 @@
 // @vitest-environment jsdom
 import { renderHook, act } from '@testing-library/react';
+import { createElement } from 'react';
+import { renderToString } from 'react-dom/server';
 import { useSectorSignalState } from '@/widgets/dashboard/hooks/useSectorSignalState';
 import type { SectorSignalsResult } from '@y0ngha/siglens-core';
 import { TEST_SCOPE } from '../helpers/testScope';
 
 const mockReplace = vi.fn();
-let mockSearchParamsString = '';
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ replace: mockReplace }),
     usePathname: () => '/dashboard',
-    useSearchParams: () => new URLSearchParams(mockSearchParamsString),
 }));
+
+/** 훅은 `useUrlSearchParam`(window.location)으로 읽으므로 실제 주소를 바꾼다. */
+function setUrl(search: string): void {
+    window.history.replaceState(
+        null,
+        '',
+        search === '' ? '/dashboard' : `/dashboard?${search}`
+    );
+}
 
 vi.mock('@/entities/analysis/lib/quadrants', () => ({
     EMPTY_QUADRANTS: {
@@ -79,7 +88,7 @@ vi.mock('@/widgets/dashboard/hooks/useSectorSignals', () => ({
 describe('useSectorSignalState', () => {
     afterEach(() => {
         mockReplace.mockClear();
-        mockSearchParamsString = '';
+        setUrl('');
     });
 
     it('returns initial sector and timeframe', () => {
@@ -170,7 +179,7 @@ describe('useSectorSignalState', () => {
     });
 
     it('(B6) restores sector and timeframe from URL on mount', async () => {
-        mockSearchParamsString = 'sector=XLF&timeframe=1Hour';
+        setUrl('sector=XLF&timeframe=1Hour');
 
         const { result } = renderHook(() =>
             useSectorSignalState({
@@ -188,7 +197,7 @@ describe('useSectorSignalState', () => {
     });
 
     it('(B6) falls back to prop defaults when URL timeframe is invalid', async () => {
-        mockSearchParamsString = 'sector=XLF&timeframe=1Week';
+        setUrl('sector=XLF&timeframe=1Week');
 
         const { result } = renderHook(() =>
             useSectorSignalState({
@@ -206,7 +215,7 @@ describe('useSectorSignalState', () => {
     });
 
     it('(B6) falls back to prop defaults when URL params are absent', async () => {
-        mockSearchParamsString = '';
+        setUrl('');
 
         const { result } = renderHook(() =>
             useSectorSignalState({
@@ -245,7 +254,7 @@ describe('useSectorSignalState', () => {
      * 상태로 남는다(오류 없음).
      */
     it('scope에 없는 sector 쿼리는 초기값으로 폴백한다', () => {
-        mockSearchParamsString = 'sector=XLE';
+        setUrl('sector=XLE');
 
         const { result } = renderHook(() =>
             useSectorSignalState({
@@ -256,5 +265,89 @@ describe('useSectorSignalState', () => {
         );
 
         expect(result.current.activeSector).toBe('XLK');
+    });
+
+    /**
+     * 서버 HTML은 모든 방문자에게 같아야 한다(ISR). 서버 렌더는 쿼리를 읽지 않고 서버
+     * seed와 같은 첫 섹터·기본 타임프레임을 그린다 — 딥링크는 하이드레이션 직후 반영된다.
+     */
+    it('서버 렌더에서는 URL을 읽지 않고 초기값을 쓴다', () => {
+        setUrl('sector=XLF&timeframe=1Hour');
+        const seen: [string, string][] = [];
+        function Probe() {
+            const state = useSectorSignalState({
+                scope: TEST_SCOPE,
+                initialSector: 'XLK',
+                initialTimeframe: '1Day',
+            });
+            seen.push([state.activeSector, state.activeTimeframe]);
+            return null;
+        }
+        renderToString(createElement(Probe));
+        expect(seen).toEqual([['XLK', '1Day']]);
+    });
+
+    describe('뒤로/앞으로 가기(popstate)', () => {
+        it('사용자가 고른 섹터보다 popstate 뒤의 URL을 따른다', () => {
+            const { result } = renderHook(() =>
+                useSectorSignalState({
+                    scope: TEST_SCOPE,
+                    initialSector: 'XLK',
+                    initialTimeframe: '1Day',
+                })
+            );
+
+            act(() => {
+                result.current.handleSectorChange('XLF');
+            });
+            expect(result.current.activeSector).toBe('XLF');
+
+            // 뒤로 가기로 섹터 쿼리가 없는 항목에 도착했다 — 화면도 첫 섹터로 돌아가야 한다.
+            act(() => {
+                setUrl('');
+                window.dispatchEvent(new PopStateEvent('popstate'));
+            });
+            expect(result.current.activeSector).toBe('XLK');
+        });
+
+        it('사용자가 고른 타임프레임보다 popstate 뒤의 URL을 따른다', () => {
+            const { result } = renderHook(() =>
+                useSectorSignalState({
+                    scope: TEST_SCOPE,
+                    initialSector: 'XLK',
+                    initialTimeframe: '1Day',
+                })
+            );
+
+            act(() => {
+                result.current.handleTimeframeChange('1Hour');
+            });
+            expect(result.current.activeTimeframe).toBe('1Hour');
+
+            act(() => {
+                setUrl('timeframe=15Min');
+                window.dispatchEvent(new PopStateEvent('popstate'));
+            });
+            expect(result.current.activeTimeframe).toBe('15Min');
+        });
+
+        it('popstate 뒤에 다시 고르면 그 선택이 URL보다 우선한다', () => {
+            const { result } = renderHook(() =>
+                useSectorSignalState({
+                    scope: TEST_SCOPE,
+                    initialSector: 'XLK',
+                    initialTimeframe: '1Day',
+                })
+            );
+
+            act(() => {
+                setUrl('sector=XLK');
+                window.dispatchEvent(new PopStateEvent('popstate'));
+            });
+            act(() => {
+                result.current.handleSectorChange('XLF');
+            });
+            expect(result.current.activeSector).toBe('XLF');
+        });
     });
 });

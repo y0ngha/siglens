@@ -76,11 +76,7 @@ import {
     type SkillShowcaseItem,
 } from '@y0ngha/siglens-core';
 
-import {
-    SkillCard,
-    SkillsShowcase,
-    SkillsShowcaseSkeleton,
-} from '../SkillsShowcase';
+import { SkillCard, SkillsShowcase } from '../SkillsShowcase';
 
 function makeSkill(
     name: string,
@@ -344,15 +340,6 @@ describe('ConfidenceInfoTooltip placement', () => {
         );
 
         expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
-    });
-});
-
-describe('SkillsShowcaseSkeleton', () => {
-    it('renders a loading section', () => {
-        render(<SkillsShowcaseSkeleton />);
-
-        const section = screen.getByLabelText(/AI 분석 스킬 불러오는 중/);
-        expect(section).toHaveAttribute('aria-busy', 'true');
     });
 });
 

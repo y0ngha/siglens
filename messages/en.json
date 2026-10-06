@@ -352,11 +352,8 @@
                 "69d338": "My Position",
                 "6cd32e": "{v0} Fear & Greed Index — 0–100 Score & Recent Trend",
                 "9e0659": "{v0} Financial Metrics and Analyst Opinions",
-                "9f451a": "Web",
                 "b2cd1a": "Analyst Rating Changes",
                 "ba2808": "{v0} Options Market Analysis",
-                "c6cf97": "Translating...",
-                "cf643b": "Market Cap",
                 "e607c1": "{v0} Congressional Trades",
                 "marketFearGreedLinkAll": "Market-wide Fear & Greed Index",
                 "marketFearGreedLinkKr": "Korean Market Fear & Greed Index",
@@ -2850,7 +2847,8 @@
                 "lockedCta": "Sign up to see everything",
                 "lockedNotice": "Entry, Stop Loss and target prices are shown to members only.",
                 "plain": "Simple",
-                "raw": "Original"
+                "raw": "Original",
+                "rawDisclosure": "Show the original expert analysis"
             }
         },
         "backtesting": {
@@ -3257,7 +3255,6 @@
                 "0506ae": "Detailed Scores by Flow and Trend Group",
                 "180c65": "Fear & Greed Index Trend (Last 1 Year)",
                 "29eed9": "Current Fear & Greed Index and Period Comparison",
-                "7da634": "Fear & Greed Index Loading",
                 "d6e558": "Insufficient data to calculate Fear & Greed Index.",
                 "ef5b22": "This stock may have been recently listed or has empty volume data.\n                    Please check again in a few days, or look at other stocks in the same sector."
             },
@@ -3539,7 +3536,6 @@
                 "158954": "AI Analysis Skills",
                 "0d2c24": "Collapse",
                 "7e6540": "Reliability Score Explanation",
-                "7f2565": "Loading AI Analysis Skills",
                 "c266ba": "{v0}% is normal, {v1}% or more is high.",
                 "c78b79": "Skill Categories Tab",
                 "e0f5c5": "Low scores are also considered for supplementary analysis.",

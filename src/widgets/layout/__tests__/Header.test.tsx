@@ -87,6 +87,15 @@ describe('Header', () => {
         expect(screen.getByTestId('user-menu')).toBeInTheDocument();
     });
 
+    /** 인증 영역 폭은 `globals.css`의 `[data-header-auth-slot]`이 첫 페인트 전부터 잡는다. */
+    it('wraps the user menu in the auth slot that reserves its width', () => {
+        render(<Header currentUser={null} />);
+
+        const slot = screen.getByTestId('user-menu').parentElement;
+        expect(slot).toHaveAttribute('data-header-auth-slot');
+        expect(slot?.children).toHaveLength(1);
+    });
+
     it('renders as a banner landmark', () => {
         render(<Header currentUser={null} />);
 

@@ -18,6 +18,7 @@ import { GoogleAdsTag } from '@/app/_components/GoogleAdsTag';
 import { GOOGLE_ADS_ID } from '@/shared/config/googleAds';
 import { SITE_URL } from '@/shared/lib/seo';
 import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
+import { AUTH_HINT_INIT_SCRIPT } from '@/shared/lib/auth/authHintAttribute';
 import { AI_CLIENT_PATHS } from './aiClientPaths';
 import { AI_PRODUCT_NAME } from './aiSeo';
 import { FONT_VARIABLE_CLASSES } from '../../fontVariables';
@@ -82,6 +83,15 @@ export default async function AiRootLayout({
                     id="ai-theme-init"
                     strategy="beforeInteractive"
                     dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
+                />
+                {/* 로그인 추정 표식(`<html data-auth-hint>`)을 첫 페인트 전에 찍는다 — 헤더 인증
+                    영역의 폭을 CSS가 처음부터 맞게 잡아 회원의 헤더가 하이드레이션 때 밀리지
+                    않게 한다(CLS). 테마 스크립트와 같은 이유로 `beforeInteractive`이고, 의도된
+                    `<html>` 속성 차이라 위의 `suppressHydrationWarning`이 함께 덮는다. */}
+                <Script
+                    id="ai-auth-hint-init"
+                    strategy="beforeInteractive"
+                    dangerouslySetInnerHTML={{ __html: AUTH_HINT_INIT_SCRIPT }}
                 />
                 <LocaleProvider locale={locale} hrefBase={SITE_URL}>
                     <NextIntlClientProvider

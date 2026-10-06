@@ -7,6 +7,8 @@ import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
 import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
+import { renderToString } from 'react-dom/server';
+import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
 
 // Mock MobileAnalysisSheet so the dynamic() factory's import resolves cheaply.
 vi.mock('@/views/symbol/MobileAnalysisSheet', () => ({
@@ -197,5 +199,63 @@ describe('SymbolPageClient', () => {
         vi.mocked(useIsMobileViewport).mockReturnValue(true);
         render(<SymbolPageClient {...defaultProps} />);
         expect(screen.queryByTestId('mobile-sheet')).toBeNull();
+    });
+
+    /**
+     * 이 컴포넌트는 이제 서버에서도 렌더된다(`useUrlSearchParam` — CSR bailout 없음).
+     * 봉 seed가 없는 채로 ChartContent를 서버 렌더하면 그 안의 `useSuspenseQuery`가
+     * 서버 렌더 중에 봉 Server Action을 부른다 — seed가 없으면 하이드레이션 전엔
+     * ChartSkeleton만 그린다.
+     */
+    describe('봉 seed 유무에 따른 차트 렌더', () => {
+        function serverHtml(hasBarsSeed?: boolean): string {
+            return renderToString(
+                <IntlTestProvider>
+                    <SymbolPageClient
+                        {...defaultProps}
+                        {...(hasBarsSeed === undefined ? {} : { hasBarsSeed })}
+                    />
+                </IntlTestProvider>
+            );
+        }
+
+        beforeEach(() => {
+            vi.mocked(useIsMobileViewport).mockReturnValue(false);
+        });
+
+        describe('서버·하이드레이션 렌더(useHydrated=false)', () => {
+            beforeEach(() => {
+                vi.mocked(useHydrated).mockReturnValue(false);
+            });
+
+            it('seed가 있으면 차트를 서버 HTML에 그린다', () => {
+                const html = serverHtml(true);
+                expect(html).toContain('data-testid="chart-content"');
+                expect(html).not.toContain('data-testid="chart-skeleton"');
+            });
+
+            it('hasBarsSeed를 생략하면 seed가 있는 것으로 본다', () => {
+                expect(serverHtml()).toContain('data-testid="chart-content"');
+            });
+
+            it('seed가 없으면 ChartSkeleton만 그리고 ChartContent를 렌더하지 않는다', () => {
+                const html = serverHtml(false);
+                expect(html).toContain('data-testid="chart-skeleton"');
+                expect(html).not.toContain('data-testid="chart-content"');
+            });
+
+            it('seed가 없어도 가시 h1·타임프레임 바는 서버 HTML에 나간다', () => {
+                const html = serverHtml(false);
+                expect(html).toContain('<h1');
+                expect(html).toContain('data-testid="timeframe-selector"');
+            });
+        });
+
+        it('seed가 없으면 하이드레이션 뒤 브라우저에서 차트를 마운트한다', () => {
+            vi.mocked(useHydrated).mockReturnValue(true);
+            render(<SymbolPageClient {...defaultProps} hasBarsSeed={false} />);
+            expect(screen.getByTestId('chart-content')).toBeInTheDocument();
+            expect(screen.queryByTestId('chart-skeleton')).toBeNull();
+        });
     });
 });
