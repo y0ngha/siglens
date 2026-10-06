@@ -571,7 +571,14 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
        /** Original docstring */
        export function documentedFunc() { ... }  // JSDoc stays directly above its declaration
-    → Recurring: claude/magical-sagan-56eoov Round 1, perf/analysis-plain-salvage-first R1, PR fix/proxy-server-action-auth review + 5 more occurrences in 2026-10 session — 8+ total violations in recent months
+    → **JSX variant (wrapping elements)**: When wrapping an existing JSX element that has preceding comment blocks, insert the wrapper ABOVE the comments, not between comments and element
+    ❌ {/* Description of what main does */}
+       <RouteMessages />  // wrapper inserted between comment and main
+       <main>...</main>   // comment now orphaned from element it documents
+    ✅ <RouteMessages />  // wrapper moved ABOVE the comment
+       {/* Description of what main does */}
+       <main>...</main>   // comment stays adjacent to its element
+    → Recurring: claude/magical-sagan-56eoov Round 1, perf/analysis-plain-salvage-first R1, PR fix/proxy-server-action-auth review + 5 more occurrences in 2026-10 session — 8+ total violations in recent months; JSX wrapper variant added perf/chart-only-i18n-keys R2
 
 26. i18n artifacts must be regenerated after code changes
     → When source code changes (shifting lines in files with skipped i18n literals, changing route import graph, adding/removing i18n references), regenerate i18n artifacts by running `yarn i18n:extract --write`
