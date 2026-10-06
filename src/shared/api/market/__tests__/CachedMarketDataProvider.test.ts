@@ -1305,7 +1305,8 @@ describe('CachedMarketDataProvider', () => {
                 intradayDateTimeZone: ET,
             });
             await p.getBars(intraOpts);
-            const histKey = 'bars:intrahist:AAPL:5Min:2026-06-20:2026-06-30';
+            const histKey =
+                'bars:intrahist:AAPL:5Min:2026-06-20:2026-06-30:288';
             const histSet = fakeRedis.set.mock.calls.find(
                 ([k]) => k === histKey
             );

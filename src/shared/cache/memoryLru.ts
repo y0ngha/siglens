@@ -8,6 +8,8 @@
  * 않았는데도 Upstash 왕복 대역폭이 요청 수만큼 나간다. 메모리에 한 벌 두면 그 왕복이
  * 사라진다. 인스턴스 간 공유는 안 되지만 목적이 정합성이 아니라 egress 절감이라 충분하다
  * (`getOrSetCache`의 in-flight 맵과 같은 논리).
+ * (재확인: 대수는 ASG in-service 수, 사양은 launch template의 인스턴스 타입 —
+ *  `aws autoscaling describe-auto-scaling-groups`로 본다.)
  *
  * ## 상한
  *

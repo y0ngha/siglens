@@ -18,6 +18,7 @@ import {
     zonedDate,
 } from '@/shared/lib/marketSessionDate';
 import {
+    ISO_DATE_LENGTH,
     MS_PER_SECOND,
     SECONDS_PER_DAY,
     SECONDS_PER_HOUR,
@@ -66,7 +67,9 @@ function isoDateDaysAgo(now: Date, days: number): string {
 
 /** YYYY-MM-DD(또는 ISO) 날짜를 UTC 자정 unix초로 변환(Bar.time과 동일 규약). */
 function utcMidnightSeconds(dateStr: string): number {
-    return Math.floor(Date.parse(dateStr.slice(0, 10) + 'T00:00:00Z') / 1000);
+    return Math.floor(
+        Date.parse(dateStr.slice(0, ISO_DATE_LENGTH) + 'T00:00:00Z') / 1000
+    );
 }
 
 /** `from` 이후(포함) 봉만 남긴다 — 단일 `getBars(from)`와 동일 집합 보장. */
@@ -95,6 +98,9 @@ const EMPTY_INTRADAY_TAIL_MAX_TTL_SECONDS = 15 * SECONDS_PER_MINUTE;
  * 5년 일봉 히스토리 한 벌이 힙에서 ~110KB(봉 ~1,360개)다. 128개면 ~14MB이고, provider
  * 싱글톤이 세션별로 셋(US·크립토·KR)이라 최악 ~42MB다. 섹터 스캔(미국 ~80종목)과
  * 종목 페이지의 뜨거운 종목을 함께 덮는 크기다.
+ *
+ * 재측정: `node --expose-gc`에서 5년 일봉 `Bar[]` N벌을 만들어 두기 전후에 `gc()` →
+ * `process.memoryUsage().heapUsed`를 재고, 증가분 ÷ N이 한 벌의 크기다.
  */
 const HISTORY_MEMORY_MAX_ENTRIES = 128;
 
@@ -191,7 +197,7 @@ export class CachedMarketDataProvider implements MarketDataProvider {
         // single-key path instead.
         if (from === undefined) return true;
         const recentFrom = isoDateDaysAgo(now, EOD_LONG_WINDOW_GATE_DAYS);
-        return from.slice(0, 10) < recentFrom;
+        return from.slice(0, ISO_DATE_LENGTH) < recentFrom;
     }
 
     getBars = (options: GetBarsOptions): Promise<Bar[]> => {
@@ -213,7 +219,8 @@ export class CachedMarketDataProvider implements MarketDataProvider {
             options.timeframe !== '1Day' &&
             options.before === undefined &&
             options.from !== undefined &&
-            options.from.slice(0, 10) < zonedDate(now, intradayTimeZone)
+            options.from.slice(0, ISO_DATE_LENGTH) <
+                zonedDate(now, intradayTimeZone)
         ) {
             return this.getCachedIntradayBars(
                 { ...options, from: options.from },
@@ -324,16 +331,21 @@ export class CachedMarketDataProvider implements MarketDataProvider {
      * 예전에는 `bars:raw:*` 단일 키(장중 60초)라 활성 (종목, timeframe)마다 **매분 FMP
      * `historical-chart` 전체 창**(5Min 10일 ≈ 780봉, 1Hour 60일 등)을 다시 받아 다시
      * SET했다. 지난 날짜의 봉은 바뀌지 않으므로:
-     * - history `bars:intrahist:<SYM>:<tf>:<fromDate>:<today>` — `before=today`로 받아
+     * - history `bars:intrahist:<SYM>:<tf>:<fromDate>:<today>:<limit>` — `before=today`로 받아
      *   `today` 이전 날짜(inner의 타임존 기준) 봉만 남긴다. 날짜가 키에 있어 하루 한 번만 받는다.
      *   FMP의 `to`가 포함/미포함 어느 쪽이어도 같은 결과가 되도록 받은 뒤 날짜로 다시 거른다.
+     *   `limit`은 inner에 그대로 넘기므로 `buildBarsRawKey`와 같은 규약으로 키에도 넣는다 —
+     *   지금 FMP는 limit을 쓰지 않지만, 결과에 영향을 주게 바뀌어도 서로 다른 limit 요청이
+     *   같은 키를 공유하지 않게 한다. 호출부의 limit은 timeframe별 상수라 키가 갈라지지 않는다.
      * - tail `bars:raw:<SYM>:<tf>:<today>::<limit>` — `from=today`(FMP `from`은 포함)로
      *   오늘 봉만, 세션 TTL(장중 60초)로.
      *
      * `today`는 inner가 날짜 인자를 해석하는 타임존의 오늘이다. 두 구간이 같은 날짜 경계를
      * 쓰므로 빈틈도 겹침도 없다(겹치더라도 `mergeBarsByTime`이 tail을 우선한다). `from`은
      * 날짜만 쓴다 — FMP가 원래 날짜로 잘라 쓰므로(`FmpMarketProvider.getBars`) 단일 호출과
-     * 같은 봉 집합이다. 이 분기는 `intradayDateTimeZone`을 준 provider(FMP)에서만 켜진다.
+     * 같은 봉 집합이다. 이 분기는 `intradayDateTimeZone`을 준 provider(FMP)에서만 켜진다 —
+     * 배선은 `getCachedMarketDataProvider`의 `FMP_PROVIDER_OPTIONS`(US·크립토)이고, 크립토가
+     * 미 동부 날짜 경계로 나뉘어도 결과가 같은 이유도 그곳에 적었다.
      */
     private async getCachedIntradayBars(
         options: GetBarsOptions & { from: string },
@@ -341,14 +353,14 @@ export class CachedMarketDataProvider implements MarketDataProvider {
         now: Date
     ): Promise<Bar[]> {
         const today = zonedDate(now, timeZone);
-        const fromDate = options.from.slice(0, 10);
+        const fromDate = options.from.slice(0, ISO_DATE_LENGTH);
         const symbolKey = options.symbol.toUpperCase();
         const tailOptions: GetBarsOptions = { ...options, from: today };
         const liveTtl = this.ttl(options.timeframe);
 
         const [history, tail] = await Promise.all([
             this.getHistory(
-                `bars:intrahist:${symbolKey}:${options.timeframe}:${fromDate}:${today}`,
+                `bars:intrahist:${symbolKey}:${options.timeframe}:${fromDate}:${today}:${options.limit ?? ''}`,
                 () => INTRADAY_HISTORY_TTL_SECONDS,
                 async () =>
                     (

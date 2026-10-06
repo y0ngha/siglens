@@ -16,6 +16,16 @@ import { isE2E } from '@/shared/api/e2eEnv';
  * FMP를 감싸는 캐시 provider의 옵션. FMP `historical-chart`는 `from`/`to`를 미 동부 날짜로
  * 해석하므로 인트라데이를 "어제까지 + 오늘 tail"로 나눠 캐시할 수 있다. KR(yahoo)은 날짜
  * 의미가 달라 이 옵션 없이 단일 키 경로를 쓴다.
+ *
+ * 인트라데이 분할이 켜지는 곳은 여기(US·크립토 두 싱글톤)뿐이다. 크립토도 같은 FMP
+ * provider라 미 동부 날짜 경계로 나뉜다 — 24/7 시장에 "ET 자정"은 의미 없는 경계지만 결과는
+ * 단일 키 경로와 같다. 히스토리는 `fmpIntradayDateToUtcSeconds`(FMP 시각 문자열을 ET로 읽음)를
+ * 거친 봉을 다시 ET 날짜로 걸러 "FMP 문자열 날짜 < today"만 남기고, tail은 FMP `from=today`
+ * (포함)다. 전제는 FMP가 `from`을 응답 시각 문자열과 같은 달력으로 해석한다는 것뿐이고, 그러면
+ * 두 구간이 FMP 날짜 기준으로 정확히 나뉜다. FMP가 크립토 `from`을 그보다 이른 경계(예: UTC
+ * 자정)로 해석해 tail이 전날 봉을 더 담더라도 겹침일 뿐이고
+ * `mergeBarsByTime`이 시각으로 중복을 지운다(tail 우선 — 같은 봉이라 값도 같다). 경계
+ * 위치는 캐시 키를 하루 단위로 정규화하는 데만 쓰인다.
  */
 const FMP_PROVIDER_OPTIONS = {
     intradayDateTimeZone: FMP_EXCHANGE_TIME_ZONE,

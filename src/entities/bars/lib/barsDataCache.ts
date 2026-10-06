@@ -26,6 +26,11 @@ import {
  * 1,357개; 봉 객체는 provider 히스토리 캐시와 공유되므로 대부분이 지표 배열이다).
  * 인트라데이 항목은 그보다 작다. 48개면 최악 ~55MB로 t4g.medium(4GB)에 부담이 없고,
  * 장중 동시에 뜨거운 종목(~30개 × 주 timeframe)을 덮는다.
+ *
+ * 재측정: `node --expose-gc`에서 서로 다른 종목 N개로 이 캐시를 채우기 전후에 `gc()` →
+ * `process.memoryUsage().heapUsed`를 재고, 증가분 ÷ N이 항목 하나의 크기다.
+ * (재확인: 대수는 ASG in-service 수, 사양은 launch template의 인스턴스 타입 —
+ *  `aws autoscaling describe-auto-scaling-groups`로 본다.)
  */
 export const BARS_MEMORY_MAX_ENTRIES = 48;
 
@@ -69,6 +74,8 @@ const barsInFlight = createSingleFlight<BarsData>();
  * 예전 Redis TTL과 같은 값을 메모리 TTL로 쓴다. 운영이 인스턴스 한 대라 교차 인스턴스
  * 공유를 잃는 비용은 롤링 배포 구간의 재계산 정도다. 옛 `bars:v2:*` 키는 TTL(최대
  * 24h)로 저절로 사라진다.
+ * (재확인: 대수는 ASG in-service 수, 사양은 launch template의 인스턴스 타입 —
+ *  `aws autoscaling describe-auto-scaling-groups`로 본다.)
  *
  * 에러는 캐시하지 않는다(provider throw → 저장 전에 전파). 빈 봉도 캐시하지 않는다 —
  * transient 장애를 TTL 동안 굳히지 않도록.
