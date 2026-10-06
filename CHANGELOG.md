@@ -1,5 +1,33 @@
 # Changelog
 
+# [0.102.0](https://github.com/y0ngha/siglens/compare/v0.101.1...v0.102.0) (2026-10-06)
+
+### Bug Fixes
+
+* 브랜드 표기 통일 및 차트 UX 개선 ([#987](https://github.com/y0ngha/siglens/issues/987)) ([4225219](https://github.com/y0ngha/siglens/commit/42252190428bb710ade5ae5e47b0eb67488eca52))
+* 세션이 만료된 탭의 서버 액션이 로그인 리다이렉트로 페이지를 새로고침시키지 않게 한다 ([#986](https://github.com/y0ngha/siglens/issues/986)) ([1cc35a9](https://github.com/y0ngha/siglens/commit/1cc35a98fa672d311a7a1621cc20b3af5811b010))
+* 쉬운 설명 생성의 중복·재과금·장시간 대기를 막는다 ([#980](https://github.com/y0ngha/siglens/issues/980)) ([e11db0f](https://github.com/y0ngha/siglens/commit/e11db0f4358edd8771233adcf24865106f891c45))
+* 장중 시세 변동으로 AI 생성 캐시 키가 갈리는 비용 누수를 막는다 ([#971](https://github.com/y0ngha/siglens/issues/971)) ([56a4199](https://github.com/y0ngha/siglens/commit/56a4199257c116e65a1c21a53606ef4300ae76fc))
+* AI 분석 생성 남용을 막는 한도와 뉴스·지표·클라이언트 오류 경로 보호를 추가한다 ([#982](https://github.com/y0ngha/siglens/issues/982)) ([8b5ebce](https://github.com/y0ngha/siglens/commit/8b5ebce31757ce681279a9fbdd52a74ea6cd766d))
+* **seo:** 차단·404 경로의 메타데이터와 시맨틱 마크업을 페이지 실제와 맞춘다 ([#976](https://github.com/y0ngha/siglens/issues/976)) ([b5357a1](https://github.com/y0ngha/siglens/commit/b5357a135ec89137563589cfe43973d5e72bd39c))
+
+### Features
+
+* 검증된 검색엔진 크롤러는 AI 분석 생성 한도에서 제외한다 ([#989](https://github.com/y0ngha/siglens/issues/989)) ([853874d](https://github.com/y0ngha/siglens/commit/853874d6ab5098ad0e5308fbe13583f4aebbff71))
+
+### Performance Improvements
+
+* 렌더 경로의 외부 호출 대기를 줄이고 캐시 키를 공유한다 ([#981](https://github.com/y0ngha/siglens/issues/981)) ([3abf9a4](https://github.com/y0ngha/siglens/commit/3abf9a4c2a2e10e2341e0efee397ee4a02408215))
+* 배포마다 CDN·데이터 캐시를 통째로 비우지 않는다 ([#979](https://github.com/y0ngha/siglens/issues/979)) ([46fbe6d](https://github.com/y0ngha/siglens/commit/46fbe6d6b25d3d3d8c5262a78ae9ac2e59ace53d))
+* 봉·옵션·섹터 시그널·공지 데이터 캐시의 반복 쓰기와 재조회를 줄인다 ([#975](https://github.com/y0ngha/siglens/issues/975)) ([e346625](https://github.com/y0ngha/siglens/commit/e346625c499aa2af9bc9e683206aa9884a6d509a))
+* 전역 셸의 서비스워커·폰트·PWA 배너·링크 리렌더를 정리한다 ([#974](https://github.com/y0ngha/siglens/issues/974)) ([eb259ef](https://github.com/y0ngha/siglens/commit/eb259efdf43b105ab10728c8ac1f8a9a3f880794))
+* 종목 탭의 ISR 주기가 짧은 캐시 읽기에 끌려 내려가지 않게 한다 ([#973](https://github.com/y0ngha/siglens/issues/973)) ([807b158](https://github.com/y0ngha/siglens/commit/807b158d68c7c1edb618ddf767bfb2fb04a8cd25))
+* 종목 페이지 클라이언트의 폴링·페이로드·하이드레이션 비용을 줄인다 ([#984](https://github.com/y0ngha/siglens/issues/984)) ([c374758](https://github.com/y0ngha/siglens/commit/c374758a78ff48f69a658e72fd2a082d106b2569))
+* 차트 탭 전용 i18n 메시지를 종목 레이아웃 페이로드에서 분리한다 ([#990](https://github.com/y0ngha/siglens/issues/990)) ([709a792](https://github.com/y0ngha/siglens/commit/709a792b1db85c53b89bd411ba43e2a12fd4adc3))
+* 차트·공포탐욕·섹터 패널을 서버에서 렌더하고 레이아웃 이동을 줄인다 ([#988](https://github.com/y0ngha/siglens/issues/988)) ([35dcf68](https://github.com/y0ngha/siglens/commit/35dcf68fe2a8691dff46b8fb679c0ca26aac7ec2))
+* **ai:** 채팅 첫 로드에서 core·마크다운·드로어를 빼고 스트리밍 렌더를 줄인다 ([#978](https://github.com/y0ngha/siglens/issues/978)) ([1b6c89f](https://github.com/y0ngha/siglens/commit/1b6c89fddb37db4f822cc3c00540c36da394eedf)), closes [#17](https://github.com/y0ngha/siglens/issues/17)
+* ISR 캐시 핸들러의 태그 무효화를 SWR로 바꾸고 응답 경로에서 S3 대기를 뺀다 ([#972](https://github.com/y0ngha/siglens/issues/972)) ([b0a339c](https://github.com/y0ngha/siglens/commit/b0a339cf7cc461c0e11c81689a129e664239e33b))
+
 ## [0.101.1](https://github.com/y0ngha/siglens/compare/v0.101.0...v0.101.1) (2026-10-06)
 
 ### Bug Fixes
