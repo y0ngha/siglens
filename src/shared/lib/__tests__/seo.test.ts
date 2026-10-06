@@ -22,7 +22,6 @@ import {
     SITE_URL,
     SITE_NAME,
     SITE_NAME_KO,
-    brandName,
     type SeoTranslator,
     resolveSymbolSeoContent,
     resolveSymbolNewsSeoContent,
@@ -1719,19 +1718,5 @@ describe('buildSnapshotMetaDescription — 원문 경로의 라벨·소제목 �
         );
 
         expect(result).toBe(`${PREFIX}${plain}`);
-    });
-});
-
-describe('brandName', () => {
-    it('ko는 한글 표기를 돌려준다', () => {
-        expect(brandName('ko')).toBe(SITE_NAME_KO);
-        expect(brandName('ko')).toBe('시그렌즈');
-    });
-
-    it('다른 로케일은 영문 표기를 돌려준다', () => {
-        for (const locale of ['en', 'ja', 'zh'] as const) {
-            expect(brandName(locale)).toBe(SITE_NAME);
-        }
-        expect(SITE_NAME).toBe('SIGLENS');
     });
 });

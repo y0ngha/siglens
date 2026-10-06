@@ -59,9 +59,11 @@ vi.mock('@/entities/skill/api', () => ({
     countSkillFiles: vi.fn(),
     loadShowcaseSkills: vi.fn(),
 }));
+vi.mock('@/shared/lib/brandName', () => ({
+    brandName: () => 'SIGLENS',
+}));
 vi.mock('@/shared/lib/seo', () => ({
     brandIntroName: () => 'SIGLENS',
-    brandName: () => 'SIGLENS',
     buildFaqJsonLd: () => ({}),
     buildWebPageJsonLd: () => ({}),
     GITHUB_URL: 'https://github.com/y0ngha/siglens',

@@ -1,8 +1,8 @@
 import type { Locale } from '@/shared/i18n/locales';
 import { SECTOR_ETFS, SIGNAL_SECTORS } from '@/shared/config/dashboard-tickers';
+import { brandName } from '@/shared/lib/brandName';
 import {
     brandIntroName,
-    brandName,
     type FaqItem,
     type SeoTranslator,
 } from '@/shared/lib/seo';

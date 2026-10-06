@@ -14,7 +14,8 @@ import {
     termsTitle,
 } from '@/shared/lib/legal';
 import { extractToc } from '@/shared/lib/legal-toc';
-import { brandName, SITE_NAME } from '@/shared/lib/seo';
+import { brandName } from '@/shared/lib/brandName';
+import { SITE_NAME } from '@/shared/lib/seo';
 import type { SeoTranslator } from '@/shared/lib/seo';
 import type { Locale } from '@/shared/i18n/locales';
 import type { TermsRecord } from '@/entities/terms/api';

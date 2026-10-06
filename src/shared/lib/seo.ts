@@ -151,11 +151,6 @@ export function brandIntroName(locale: Locale): string {
         : SITE_NAME;
 }
 
-/** 문장 속 브랜드 표기. ko는 한글 표기, 다른 로케일은 영문 표기. */
-export function brandName(locale: Locale): string {
-    return locale === DEFAULT_LOCALE ? SITE_NAME_KO : SITE_NAME;
-}
-
 /**
  * 종목 디렉터리 경로. 페이지·푸터·sitemap이 같은 상수를 본다 — 한 곳만 바뀌면
  * 푸터가 404로 가는데 빌드도 테스트도 조용하다.

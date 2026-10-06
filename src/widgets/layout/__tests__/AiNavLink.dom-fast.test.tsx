@@ -58,10 +58,10 @@ describe('AiNavLink', () => {
     });
 
     describe('text variant (footer sitemap row)', () => {
-        it('shows "SIGLENS AI" with no Beta badge and no aria-label override', () => {
+        it('shows "시그렌즈 AI" in ko with no Beta badge and no aria-label override', () => {
             render(<AiNavLink variant="text" />);
-            const link = screen.getByRole('link', { name: 'SIGLENS AI' });
-            expect(link).toHaveTextContent('SIGLENS AI');
+            const link = screen.getByRole('link', { name: '시그렌즈 AI' });
+            expect(link).toHaveTextContent('시그렌즈 AI');
             expect(link).not.toHaveAttribute('aria-label');
             expect(link).toHaveAttribute(
                 'href',
@@ -72,8 +72,19 @@ describe('AiNavLink', () => {
         it('applies the given className', () => {
             render(<AiNavLink variant="text" className="my-class" />);
             expect(
-                screen.getByRole('link', { name: 'SIGLENS AI' })
+                screen.getByRole('link', { name: '시그렌즈 AI' })
             ).toHaveClass('my-class');
+        });
+
+        it('shows "SIGLENS AI" outside ko', () => {
+            render(
+                <LocaleProvider locale="en">
+                    <AiNavLink variant="text" />
+                </LocaleProvider>
+            );
+            expect(
+                screen.getByRole('link', { name: 'SIGLENS AI' })
+            ).toHaveTextContent('SIGLENS AI');
         });
     });
 

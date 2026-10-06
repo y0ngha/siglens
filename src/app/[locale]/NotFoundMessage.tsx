@@ -3,7 +3,7 @@
 import { useAppPathname } from '@/shared/i18n/useAppPathname';
 import { useTranslations } from 'next-intl';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
-import { brandName } from '@/shared/lib/seo';
+import { brandName } from '@/shared/lib/brandName';
 
 /**
  * 만료·미존재 공유 스냅샷은 `share/[id]/page.tsx`가 `notFound()`로 보낸다

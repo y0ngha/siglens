@@ -2,7 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
-import { brandName, SITE_NAME } from '@/shared/lib/seo';
+import { brandName } from '@/shared/lib/brandName';
+import { SITE_NAME } from '@/shared/lib/seo';
 import { RouteErrorView } from '@/app/_components/RouteErrorView';
 
 interface ShareErrorProps {

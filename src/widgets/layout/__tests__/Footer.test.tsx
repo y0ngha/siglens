@@ -130,10 +130,10 @@ describe('Footer', () => {
         expect(link).toHaveAttribute('href', '/symbols');
     });
 
-    it('renders a link to ai.siglens.io named "SIGLENS AI"', () => {
+    it('renders a link to ai.siglens.io named "시그렌즈 AI" in ko', () => {
         render(<Footer />);
 
-        const link = screen.getByRole('link', { name: 'SIGLENS AI' });
+        const link = screen.getByRole('link', { name: '시그렌즈 AI' });
         expect(link).toHaveAttribute(
             'href',
             `${AI_SITE_URL}${localePath('ko', '/')}`
