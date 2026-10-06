@@ -1,6 +1,7 @@
-const { mockUpsert, isE2E } = vi.hoisted(() => ({
+const { mockUpsert, isE2E, mockListInRange } = vi.hoisted(() => ({
     mockUpsert: vi.fn().mockResolvedValue(undefined),
     isE2E: vi.fn(() => false),
+    mockListInRange: vi.fn(),
 }));
 
 vi.mock('server-only', () => ({}));
@@ -33,6 +34,11 @@ vi.mock('@/entities/economy/api/indicatorTranslationRepository', () => ({
         upsert = mockUpsert;
     },
 }));
+vi.mock('@/entities/economy/api/economicCalendarRepository', () => ({
+    DrizzleEconomicCalendarRepository: class {
+        listInRange = mockListInRange;
+    },
+}));
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: {} }),
 }));
@@ -46,12 +52,25 @@ import {
 } from '@/entities/economy/api/indicatorTranslationFlag';
 import { ensureIndicatorTranslatedAction } from '@/entities/economy/actions/ensureIndicatorTranslatedAction';
 import { INDICATOR_TRANSLATION_CACHE_TAG } from '@/entities/economy/lib/indicatorTranslationConstants';
+import {
+    __resetIndicatorWhitelistCacheForTests,
+    MAX_INDICATOR_NAME_LENGTH,
+} from '@/entities/economy/api/translateIndicators';
+
+/** 화면 캘린더 창에 실제로 걸린 이벤트 — 기간 접미사는 base 추출로 떨어진다. */
+const CALENDAR_EVENT = 'Some Obscure Index YoY (Sep)';
 
 describe('ensureIndicatorTranslatedAction', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockUpsert.mockClear();
         isE2E.mockReturnValue(false);
+        __resetIndicatorWhitelistCacheForTests();
+        // US 창에만 있다 — KR 창은 비어 있어도 한 나라에만 있으면 통과해야 한다.
+        mockListInRange.mockImplementation(
+            async (_from: string, _to: string, country: string) =>
+                country === 'US' ? [{ event: CALENDAR_EVENT }] : []
+        );
         vi.mocked(isIndicatorTranslationPending).mockResolvedValue(false);
         vi.mocked(markIndicatorTranslationPending).mockResolvedValue(undefined);
         // Default: cached result
@@ -72,6 +91,41 @@ describe('ensureIndicatorTranslatedAction', () => {
         await ensureIndicatorTranslatedAction('Nonfarm Payrolls');
         expect(runIndicatorTranslation).not.toHaveBeenCalled();
         expect(revalidateTag).not.toHaveBeenCalled();
+    });
+
+    describe('whitelist (public action input)', () => {
+        it('does not translate a name absent from the calendar window', async () => {
+            await ensureIndicatorTranslatedAction('Made Up Index For Billing');
+            expect(runIndicatorTranslation).not.toHaveBeenCalled();
+            expect(markIndicatorTranslationPending).not.toHaveBeenCalled();
+        });
+
+        it('rejects a non-string argument without touching the DB', async () => {
+            await ensureIndicatorTranslatedAction({ name: 'x' });
+            expect(mockListInRange).not.toHaveBeenCalled();
+            expect(runIndicatorTranslation).not.toHaveBeenCalled();
+        });
+
+        it('rejects an over-long name before querying the calendar', async () => {
+            await ensureIndicatorTranslatedAction(
+                'A'.repeat(MAX_INDICATOR_NAME_LENGTH + 1)
+            );
+            expect(mockListInRange).not.toHaveBeenCalled();
+            expect(runIndicatorTranslation).not.toHaveBeenCalled();
+        });
+
+        it('reuses the calendar whitelist for repeated calls (no repeated Neon reads)', async () => {
+            await ensureIndicatorTranslatedAction('Made Up Index A');
+            await ensureIndicatorTranslatedAction('Made Up Index B');
+            // 첫 호출이 두 나라 창을 한 번씩 읽고, 두 번째 호출은 캐시를 쓴다.
+            expect(mockListInRange).toHaveBeenCalledTimes(2);
+        });
+
+        it('checks both calendar countries', async () => {
+            await ensureIndicatorTranslatedAction('Some Obscure Index YoY');
+            const countries = mockListInRange.mock.calls.map(c => c[2]);
+            expect(countries.toSorted()).toEqual(['KR', 'US']);
+        });
     });
 
     it('skips when a translation is already pending', async () => {

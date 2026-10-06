@@ -50,6 +50,17 @@ import { findMarketEventsForPrompt } from '@/entities/news-article/marketEventsR
 // core에서 직접 import — 해제는 서버 전용이어야 한다(클라이언트가 호출할 수 있으면
 // 쿨다운을 지우고 재요청하는 루프로 무력화된다). 아래 `releaseOnFailure` 참고.
 import { releaseReanalyzeCooldown } from '@y0ngha/siglens-core';
+import {
+    createGenerationGateSlot,
+    createPromptAssemblyTracker,
+    DONE_STATUS_PROBE,
+    promptAssembledProbe,
+    releaseGenerationGate,
+    reserveGenerationGate,
+    settleGenerationGate,
+    shouldAttemptReanalyze,
+    type GenerationGate,
+} from './generationQuota';
 
 // Actions: gating + data-fetch already live in each entity's action file.
 // Calling them from the route (server-side) is safe — no browser connection means
@@ -316,6 +327,18 @@ function schedulePersistAnalysisHistory(input: {
 }
 
 /**
+ * 생성 한도가 디스패치 핸들러에 넘기는 값. 한도 초과면 `cacheOnly`가 켜져 캐시만
+ * 조회하고, 재분석(캐시 우회 = 새 생성) 의도도 무시한다.
+ */
+interface DispatchQuotaContext {
+    /** 클라이언트의 `cacheOnly` 요청 **또는** 한도 초과 강등. */
+    readonly cacheOnly: boolean;
+    readonly rateLimited: boolean;
+    /** core가 프롬프트를 조립했을 때 부른다 — 생성 여부 판정(`promptAssembledProbe`). */
+    readonly onPromptAssembled: () => void;
+}
+
+/**
  * Dispatch table: maps each non-technical analysis type to a function that
  * receives the raw `params` bag and an optional `AbortSignal`, and returns a
  * Promise. The returned promise is piped into `heartbeatStream`, keeping the
@@ -325,8 +348,7 @@ function schedulePersistAnalysisHistory(input: {
  * here. The `signal` each entry receives is the **deadline** controller owned by
  * `withDeadline` — never the client's `request.signal`. See the long comment above
  * `withDeadline` for why threading a per-client signal into core is forbidden.
- */
-/**
+ *
  * ⚠️ `locale`은 **반드시 여기로 흘러야 한다.** 액션이 돌려주는 게이트 오류
  * (`{ status: 'error', error: { code, message } }`)는 훅이 그대로 화면에 던지는
  * 사용자 문구인데, `/api/*`는 next-intl matcher에서 제외돼 있어 액션이 스스로
@@ -337,20 +359,23 @@ const DISPATCH: Record<
     (
         params: Record<string, unknown>,
         signal: AbortSignal | undefined,
-        locale: Locale
+        locale: Locale,
+        quota: DispatchQuotaContext
     ) => Promise<unknown>
 > = {
-    overall: async (params, signal, locale) => {
+    overall: async (params, signal, locale, quota) => {
         // technical과 같은 규칙 — 클라이언트는 의도만 보내고, 캐시 우회 여부는
         // 서버가 쿨다운 획득으로 판단한다. 키 namespace를 분리해(`<tf>:overall`)
         // 기술적 분석 재분석이 종합 분석 재분석을 막지 않게 한다.
-        const cooldown =
-            params.reanalyze === true
-                ? await tryAcquireReanalyzeCooldown(
-                      params.symbol as string,
-                      `${params.timeframe as Timeframe}:overall` as Timeframe
-                  )
-                : null;
+        const cooldown = shouldAttemptReanalyze(
+            params.reanalyze,
+            quota.rateLimited
+        )
+            ? await tryAcquireReanalyzeCooldown(
+                  params.symbol as string,
+                  `${params.timeframe as Timeframe}:overall` as Timeframe
+              )
+            : null;
         if (cooldown !== null && !cooldown.ok) {
             return {
                 status: 'reanalyze_cooldown' as const,
@@ -435,6 +460,8 @@ const DISPATCH: Record<
                 priorAnalyses: overallPriorAnalyses,
                 technicalPriorAnalyses,
                 marketEvents,
+                cacheOnly: quota.cacheOnly,
+                onPromptAssembled: quota.onPromptAssembled,
             },
             signal
         ).catch(async (err: unknown) => {
@@ -467,27 +494,27 @@ const DISPATCH: Record<
         return result;
     },
 
-    fundamental: (params, signal, locale) =>
+    fundamental: (params, signal, locale, quota) =>
         runFundamentalAnalysisAction(
             params.symbol as string,
             params.modelId as ModelId,
             locale,
             params.reasoning as boolean | undefined,
             signal,
-            params.cacheOnly as boolean | undefined
+            quota.cacheOnly
         ),
 
-    financials: (params, signal, locale) =>
+    financials: (params, signal, locale, quota) =>
         runFinancialsAnalysisAction(
             params.symbol as string,
             params.modelId as ModelId,
             locale,
             params.reasoning as boolean | undefined,
             signal,
-            params.cacheOnly as boolean | undefined
+            quota.cacheOnly
         ),
 
-    news: (params, signal, locale) =>
+    news: (params, signal, locale, quota) =>
         submitNewsAnalysisAction(
             params.symbol as string,
             params.companyName as string,
@@ -495,7 +522,7 @@ const DISPATCH: Record<
             locale,
             params.reasoning as boolean | undefined,
             signal,
-            params.cacheOnly as boolean | undefined
+            quota.cacheOnly
         ),
 
     marketNewsDigest: (params, signal, locale) =>
@@ -505,7 +532,7 @@ const DISPATCH: Record<
             signal
         ),
 
-    options: (params, signal, locale) =>
+    options: (params, signal, locale, quota) =>
         submitOptionsAnalysisAction(
             params.symbol as string,
             params.companyName as string,
@@ -514,17 +541,17 @@ const DISPATCH: Record<
             locale,
             params.reasoning as boolean | undefined,
             signal,
-            params.cacheOnly as boolean | undefined
+            quota.cacheOnly
         ),
 
-    congress: (params, signal, locale) =>
+    congress: (params, signal, locale, quota) =>
         runCongressTrendAction(
             params.symbol as string,
             params.modelId as ModelId,
             locale,
             params.reasoning as boolean | undefined,
             signal,
-            params.cacheOnly as boolean | undefined
+            quota.cacheOnly
         ),
 
     /**
@@ -541,6 +568,26 @@ const DISPATCH: Record<
     // 게이트를 쓰지 않아 사용자 문구를 만들지 않는다 — 로케일이 필요 없다.
     macroBriefing: (_params, signal) => submitMacroBriefingAction(signal),
 };
+
+/**
+ * 생성 한도를 걸지 않는 종류 — 종목과 무관한 허브 콘텐츠다.
+ *
+ * 캐시 키가 클라이언트 입력으로 늘어나지 않는다(브리핑 scope·다이제스트 카테고리는
+ * 액션이 고정 목록으로 검증하고, 매크로 브리핑은 입력이 없다). 그래서 이 경로로는
+ * 공격자가 생성 수를 키울 수 없고, 막으면 정상 방문자의 허브 화면만 비게 된다.
+ * 방문자 재생성 빈도 자체는 각 액션의 쿨다운이 담당한다.
+ */
+const QUOTA_EXEMPT_TYPES: ReadonlySet<AnalysisType> = new Set([
+    'briefing',
+    'macroBriefing',
+    'marketNewsDigest',
+]);
+
+/**
+ * core `onPromptAssembled`로 생성 여부를 정확히 아는 디스패치 종류. 나머지는
+ * 결과 상태로 근사한다(`DONE_STATUS_PROBE` JSDoc).
+ */
+const PROMPT_PROBED_TYPES: ReadonlySet<AnalysisType> = new Set(['overall']);
 
 /*
  * 의도적으로 여기 없는 것: `newsCard` / `economicEvent` / `indicatorTranslation`.
@@ -818,6 +865,10 @@ export async function POST(request: Request): Promise<Response> {
             cacheOnly,
         } = body.params;
 
+        // 예약은 try 안에서 하지만, 예기치 못한 예외(아래 catch)에서도 되돌릴 수 있게
+        // 칸을 바깥에 둔다. 환불은 멱등이라 정산 경로와 겹쳐도 두 번 빼지 않는다.
+        const quotaSlot = createGenerationGateSlot();
+
         try {
             // 번역자는 핸들러 진입부에서 한 번만 확보한다 — E2E 분기부터 마지막
             // 스트림까지 모든 `heartbeatStream` 호출이 로케일별 제네릭 문구를
@@ -944,6 +995,15 @@ export async function POST(request: Request): Promise<Response> {
                 logTag: '[streamAnalysisRoute] position bucket resolution failed, degrading to no-bucket:',
             });
 
+            // --- 2f'. Generation quota (reserve → refund on no-LLM) ---
+            //
+            // 한도 초과면 생성 대신 캐시 전용으로 강등한다(`skipEnqueueIfMiss`).
+            // 캐시가 있으면 평소대로 내주고, 없으면 `settleGenerationGate`가
+            // `rate_limited` 이벤트로 바꾼다. 재분석 의도도 함께 무시한다 — 캐시
+            // 우회는 곧 새 생성이다.
+            const quota = await quotaSlot.reserve(userId, cacheOnly === true);
+            const quotaLimited = quota.kind === 'rate_limited';
+
             // --- 2g. Build work promise and stream ---
             // core의 `onPromptAssembled`는 캐시 미스에서 정확히 한 번, 프로바이더
             // 호출 직전에 **동기로** 캡처만 한다 — 여기서 await하지 않는다(Task S2
@@ -962,7 +1022,7 @@ export async function POST(request: Request): Promise<Response> {
                 // 2026-09-27: 더 이상 UA로 갈라 넣지 않는다 — 파일 상단 불변식.
                 // 봇의 캐시 미스도 사람과 똑같이 core에 생성을 맡긴다. `cacheOnly`는
                 // UA가 아니라 클라이언트의 AI 자동 실행 게이트에서 온다.
-                skipEnqueueIfMiss: cacheOnly === true,
+                skipEnqueueIfMiss: cacheOnly === true || quotaLimited,
                 marketDataProvider,
                 // provider에 넘긴 세션과 **같은 값**을 core에 넘긴다 — 분석 캐시 TTL이
                 // 그 시장의 다음 정규장 마감 + 30분(크립토는 다음 00:00 UTC)에 맞춰진다.
@@ -1001,20 +1061,25 @@ export async function POST(request: Request): Promise<Response> {
              * 보장의 한계를 분명히 해 둔다 — 이건 **비용 상한이지 보안 경계가 아니다**:
              * `tryAcquireReanalyzeCooldown`은 Redis 장애 시 fail-open(`{ok:true}`)이라
              * Upstash가 죽으면 모든 reanalyze 요청이 force가 된다. 반대로 fail-closed로
-             * 두면 Redis 장애가 재분석 기능 전체를 막는다. 진짜 상한이 필요해지면
-             * 여기가 아니라 요청 단위 rate limit(IP/세션)으로 올려야 한다.
+             * 두면 Redis 장애가 재분석 기능 전체를 막는다. 진짜 상한은 이 쿨다운이
+             * 아니라 요청 단위 생성 한도(`generationQuota.ts`, 비회원 fail-closed)다 —
+             * 재분석도 새 생성이라 그 한도를 함께 소비한다.
              *
              * 획득은 **여기서만** 한다. 클라이언트가 미리 획득한 뒤 요청을 보내면
              * 여기서의 획득이 반드시 실패해 재분석이 영원히 캐시로 강등되고, 반대로
              * 의도 없는 일반 제출이 획득에 성공해 캐시를 우회하는 정반대 동작이 된다.
              */
-            const wantsReanalyze = reanalyze === true;
+            const wantsReanalyze = shouldAttemptReanalyze(
+                reanalyze,
+                quotaLimited
+            );
             const cooldown = wantsReanalyze
                 ? await tryAcquireReanalyzeCooldown(symbol, timeframe)
                 : null;
 
             if (cooldown !== null && !cooldown.ok) {
                 // 쿨다운 중 — 새 분석을 태우지 않고 남은 시간을 알려준다.
+                await releaseGenerationGate(quota);
                 return new Response(
                     heartbeatStream(
                         Promise.resolve({
@@ -1076,13 +1141,14 @@ export async function POST(request: Request): Promise<Response> {
                     '[analysis-stream] rejected: concurrency cap reached'
                 );
                 await releaseOnFailure();
+                await releaseGenerationGate(quota);
                 return Response.json(
                     { error: t('busy') },
                     { status: 503, headers: { 'Retry-After': '30' } }
                 );
             }
 
-            const work = withDeadline(async deadlineSignal => {
+            const generated = withDeadline(async deadlineSignal => {
                 // Task S3 (prior-analysis-context) — read here, i.e.
                 // AFTER the concurrency cap above and still BEFORE the
                 // `runAnalysis` call directly below. core folds a
@@ -1161,6 +1227,13 @@ export async function POST(request: Request): Promise<Response> {
                 await releaseOnFailure();
                 throw err;
             });
+            // 프롬프트가 조립됐다 = 이 요청이 LLM을 불렀다. 캐시 적중·동시 요청의
+            // 패자·프로바이더 호출 전 실패는 조립되지 않으므로 환불된다.
+            const work = settleGenerationGate(
+                generated,
+                quota,
+                promptAssembledProbe(() => capturedPrompt !== undefined)
+            );
 
             // Task S2 (prior-analysis-context) — persist newly-generated
             // ('done') results only; 'cached' rows already exist.
@@ -1219,6 +1292,7 @@ export async function POST(request: Request): Promise<Response> {
             );
         } catch (err) {
             console.error('[streamAnalysisRoute] unexpected error:', err);
+            await quotaSlot.release();
             return Response.json(
                 {
                     status: 'error',
@@ -1263,10 +1337,36 @@ export async function POST(request: Request): Promise<Response> {
     const locale = localeFromRequestHeader(request);
     const t = await streamMessages(locale);
 
+    // 생성 한도 예약도 동시성 검사 **이전**이다 — 같은 원자성 이유.
+    const params = body.params;
+    const clientCacheOnly = params.cacheOnly === true;
+    const quota: GenerationGate = QUOTA_EXEMPT_TYPES.has(body.type)
+        ? { kind: 'exempt' }
+        : await reserveGenerationGate(
+              // 세션 조회 실패는 비회원으로 본다 — 한도가 엄격해질 뿐 생성이 새지 않는다.
+              (
+                  await getCurrentUser().catch((error: unknown) => {
+                      console.error(
+                          '[streamAnalysisRoute] session lookup failed:',
+                          error
+                      );
+                      return null;
+                  })
+              )?.id ?? null,
+              clientCacheOnly
+          );
+    const promptTracker = createPromptAssemblyTracker();
+    const quotaContext: DispatchQuotaContext = {
+        cacheOnly: clientCacheOnly || quota.kind === 'rate_limited',
+        rateLimited: quota.kind === 'rate_limited',
+        onPromptAssembled: promptTracker.onPromptAssembled,
+    };
+
     // 동시 분석 상한 — 사람/봇 구분 없이 같은 값을 쓴다. 근거는
     // `canAcceptAnalysisStream` 주석 참고.
     if (!canAcceptAnalysisStream()) {
         console.warn('[analysis-stream] rejected: concurrency cap reached');
+        await releaseGenerationGate(quota);
         return Response.json(
             { error: t('busy') },
             { status: 503, headers: { 'Retry-After': '30' } }
@@ -1274,9 +1374,16 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     try {
-        const work = withDeadline(
-            deadlineSignal => handler(body.params, deadlineSignal, locale),
-            t('timeout')
+        const work = settleGenerationGate(
+            withDeadline(
+                deadlineSignal =>
+                    handler(params, deadlineSignal, locale, quotaContext),
+                t('timeout')
+            ),
+            quota,
+            PROMPT_PROBED_TYPES.has(body.type)
+                ? promptTracker.probe
+                : DONE_STATUS_PROBE
         );
         return new Response(
             heartbeatStream(
@@ -1287,6 +1394,7 @@ export async function POST(request: Request): Promise<Response> {
         );
     } catch (err) {
         console.error('[streamAnalysisRoute] unexpected error:', err);
+        await releaseGenerationGate(quota);
         return Response.json(
             {
                 status: 'error',

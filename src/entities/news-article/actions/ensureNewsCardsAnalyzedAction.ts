@@ -9,7 +9,12 @@ import {
     NewsIngestWriteError,
 } from '../lib/ingestNewsForSymbol';
 import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
-import { isRecentlyFetched } from '../lib/newsRefreshFlag';
+import {
+    shortenNewsRefreshClaim,
+    tryClaimNewsRefresh,
+} from '../lib/newsRefreshFlag';
+import { withNewsCardAnalysisLock } from '../lib/newsCardAnalysisLock';
+import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { revalidateTag } from 'next/cache';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { analyzeNewsCards } from '../lib/analyzeNewsCards';
@@ -28,11 +33,18 @@ import { VISITOR_NEWS_CARD_LIMIT } from '../lib/newsAnalysisConstants';
  *
  * @param options.skipAnalysis When true (bot traffic), FMP fetch + DB upsert
  *   still run but LLM card analysis is skipped to avoid unnecessary worker cost.
+ *
+ * 인증 없는 공개 액션이라 `symbol`은 임의 값이다. 종목 형상 검사를 통과한 값만
+ * 받는다 — 아무 문자열로 FMP 조회·Redis 키·LLM 분석을 만들 수 없게 한다.
  */
 export async function ensureNewsCardsAnalyzedAction(
-    symbol: string,
+    symbol: unknown,
     options?: { skipAnalysis?: boolean }
 ): Promise<void> {
+    if (typeof symbol !== 'string' || !isAdmissibleSymbolShape(symbol)) {
+        return;
+    }
+
     // 최근 TTL(10분) 내에 fetch했으면 FMP 재조회와 기사 수만큼의 DB upsert를 스킵한다.
     //
     // 원래 이 가드가 `skipAnalysis` 뒤에 걸려 있어 사실상 죽어 있었다 — 그 옵션을
@@ -53,7 +65,10 @@ export async function ensureNewsCardsAnalyzedAction(
     //
     // prewarm cron은 이 액션이 아니라 `ingestNewsForSymbol`을 직접 부르므로
     // 스냅샷·SEO 경로의 신선도는 이 가드와 무관하다.
-    if (await isRecentlyFetched(symbol)) {
+    //
+    // 확인과 표시를 **한 번에**(SET NX) 한다 — GET 뒤 SET이면 동시에 들어온
+    // 방문자들이 모두 "아직 안 함"을 읽고 같은 적재·분석을 중복으로 돌린다.
+    if (!(await tryClaimNewsRefresh(symbol))) {
         return;
     }
 
@@ -71,10 +86,15 @@ export async function ensureNewsCardsAnalyzedAction(
     // 반대로 이 throw를 그대로 위로 올려보내야 한다 — 배치의 유닛 단위 catch가
     // 빈 스냅샷을 굳히지 않고 다음 tick에 재시도하도록(감사 F2) — 그 경로는 여기서
     // 건드리지 않는다.
+    //
+    // 실패(FMP 실패 = `null`, DB 쓰기 실패, 그 밖의 예외)면 위에서 잡은 10분 선점을
+    // 짧은 재시도 간격으로 줄인다 — 실패 한 번이 10분 갱신 공백이 되지 않게 한다
+    // (`NEWS_REFRESH_RETRY_TTL_SECONDS` JSDoc).
     let ingestResult;
     try {
         ingestResult = await ingestNewsForSymbol(symbol, repo);
     } catch (err) {
+        await shortenNewsRefreshClaim(symbol);
         if (err instanceof NewsIngestWriteError) {
             console.error(
                 `[ensureNewsCardsAnalyzedAction] ingest failed for ${symbol}:`,
@@ -84,7 +104,10 @@ export async function ensureNewsCardsAnalyzedAction(
         }
         throw err;
     }
-    if (ingestResult === null) return;
+    if (ingestResult === null) {
+        await shortenNewsRefreshClaim(symbol);
+        return;
+    }
     const { fresh } = ingestResult;
 
     // FMP에서 새 뉴스가 하나도 없으면(fresh 빈) 무효화·분석 모두 불필요하다 — unanalyzed도
@@ -119,8 +142,13 @@ export async function ensureNewsCardsAnalyzedAction(
     // 마감이 없다는 것과 비용이 없다는 것은 다르다 — 이 경로의 적재 lookback은
     // 180일이고 FMP 상한이 1,000건이라, 백로그가 쌓인 종목의 첫 마운트 한 번이
     // 최악 1,000회 LLM 왕복이 된다(상한 도입 근거는 상수 JSDoc 참조).
-    await analyzeNewsCards(unanalyzed, repo, {
-        limit: VISITOR_NEWS_CARD_LIMIT,
-        logLabel: 'ensureNewsCardsAnalyzedAction',
-    });
+    //
+    // prewarm이 같은 심볼을 분석 중이면 건너뛴다 — 그쪽이 끝나면 행이 채워지고,
+    // 남은 기사는 다음 방문이 이어받는다.
+    await withNewsCardAnalysisLock(symbol, () =>
+        analyzeNewsCards(unanalyzed, repo, {
+            limit: VISITOR_NEWS_CARD_LIMIT,
+            logLabel: 'ensureNewsCardsAnalyzedAction',
+        })
+    );
 }

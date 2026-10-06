@@ -1,8 +1,9 @@
 import 'server-only';
 import { headers } from 'next/headers';
+import { UNKNOWN_CLIENT_IP } from '@/shared/api/unknownClientIp';
 
 /**
- * 클라이언트 IP를 반환한다. 없으면 `'unknown'`.
+ * 클라이언트 IP를 반환한다. 없으면 {@link UNKNOWN_CLIENT_IP}.
  *
  * **`cf-connecting-ip`를 먼저 본다.** Cloudflare가 매 요청 이 헤더를 직접
  * 덮어쓰므로 호출자가 위조할 수 없다.
@@ -28,6 +29,7 @@ export async function getClientIp(): Promise<string> {
     if (cloudflareIp) return cloudflareIp;
 
     return (
-        headersList.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown'
+        headersList.get('x-forwarded-for')?.split(',')[0].trim() ??
+        UNKNOWN_CLIENT_IP
     );
 }

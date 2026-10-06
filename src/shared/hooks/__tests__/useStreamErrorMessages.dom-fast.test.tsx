@@ -2,6 +2,7 @@ import { renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { IntlTestProvider } from '@/shared/test-utils/intlRenderWrapper';
 import { useStreamErrorMessages } from '@/shared/hooks/useStreamErrorMessages';
+import { formatRetryAt } from '@/shared/lib/formatRetryAt';
 import koMessages from '../../../../messages/ko.json';
 
 describe('useStreamErrorMessages', () => {
@@ -28,6 +29,9 @@ describe('useStreamErrorMessages', () => {
         expect(result.current.digestUnavailable).toBe(
             catalog.digestUnavailable
         );
+        expect(result.current.rateLimitUnavailable).toBe(
+            catalog.rateLimitUnavailable
+        );
     });
 
     it('interpolates the HTTP status into the failed() message', () => {
@@ -45,6 +49,19 @@ describe('useStreamErrorMessages', () => {
         });
         expect(result.current.reanalyzeCooldown(42)).toBe(
             koMessages.app.api.stream.reanalyzeCooldown.replace('{v0}', '42')
+        );
+    });
+
+    it('formats the retry time into rateLimited() for the current locale', () => {
+        const { result } = renderHook(() => useStreamErrorMessages(), {
+            wrapper: IntlTestProvider,
+        });
+        const retryAt = Date.parse('2026-10-07T00:00:00.000Z');
+        expect(result.current.rateLimited(retryAt)).toBe(
+            koMessages.app.api.stream.rateLimited.replace(
+                '{v0}',
+                formatRetryAt(retryAt, 'ko')
+            )
         );
     });
 });

@@ -4,6 +4,10 @@ import {
     LocalizedStreamError,
 } from './LocalizedStreamError';
 import { registerActiveStream } from './activeStreams';
+import {
+    RATE_LIMITED_SSE_EVENT,
+    RateLimitedStreamError,
+} from '@/shared/lib/sse/analysisRateLimit';
 
 /**
  * ALB `idle_timeout`이 60초다(실측: heartbeat 없이 61.1초에 끊김). 그 절반 이하로 잡아
@@ -21,6 +25,9 @@ export const HEARTBEAT_INTERVAL_MS = 25_000;
  *                Prevents the ALB idle-timeout (60 s, measured) from cutting the connection.
  * - `done`:      Fired with `{ result }` when the promise resolves. Stream closes after.
  * - `error`:     Fired with `{ message }` when the promise rejects. Stream closes after.
+ * - `rate_limited`: Fired with `{ audience, reason, retryAt }` when the promise
+ *                rejects with {@link RateLimitedStreamError}. Not logged as a
+ *                failure. Stream closes after.
  *
  * ## Timer-leak defense (mirrors the production-verified `sse-probe` pattern)
  *
@@ -168,6 +175,19 @@ export function heartbeatStream<T>(
                 },
                 (err: unknown) => {
                     clearTimer();
+                    // 생성 한도 거절은 실패가 아니다 — 전용 이벤트로 보내고, 실패
+                    // 알람 마커도 남기지 않는다(`RateLimitedStreamError` JSDoc).
+                    if (err instanceof RateLimitedStreamError) {
+                        send(
+                            `event: ${RATE_LIMITED_SSE_EVENT}\ndata: ${JSON.stringify(err.payload)}\n\n`
+                        );
+                        safely(() => {
+                            controller.close();
+                            closed = true;
+                        });
+                        release?.();
+                        return;
+                    }
                     // [analysis-stream] failed: 접두는 07-alarms.sh CloudWatch 메트릭
                     // 필터와 정합하는 안정 ASCII 마커다 — non-ASCII 변경 금지.
                     if (logFailures) {

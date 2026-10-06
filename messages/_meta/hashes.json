@@ -3092,5 +3092,12 @@
     "widgets.economy.DeltaBadge.changeSincePeriod": "58c098f342d8",
     "widgets.economy.DeltaBadge.changeSinceRelease": "9fc30a7f4758",
     "widgets.agent-chat.MessageList.followUpsLabel": "f8b1936b12ed",
-    "widgets.agent-chat.MessageList.logLabel": "f84413578532"
+    "widgets.agent-chat.MessageList.logLabel": "f84413578532",
+    "app.api.stream.rateLimited": "cd373806a990",
+    "features.analysis-rate-limit.title": "9351e4f41edd",
+    "features.analysis-rate-limit.description": "fe26c6e9f298",
+    "features.analysis-rate-limit.signup": "20b2185372cb",
+    "features.analysis-rate-limit.login": "e225a6fd754f",
+    "features.analysis-rate-limit.close": "94b7dba15907",
+    "app.api.stream.rateLimitUnavailable": "b7d63a9d0ce0"
 }

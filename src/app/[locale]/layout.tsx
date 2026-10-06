@@ -15,6 +15,7 @@ import { AuthSessionHeaderClient } from '@/app/_components/AuthSessionHeaderClie
 import { Footer } from '@/widgets/layout/Footer';
 import { SiteJsonLd } from '@/widgets/layout/SiteJsonLd';
 import { PwaBanner } from '@/features/pwa-install/ui/PwaBanner';
+import { AnalysisRateLimitModalHost } from '@/features/analysis-rate-limit/ui/AnalysisRateLimitModalHost';
 import { VisitorPing } from '@/features/visitor-ping/ui/VisitorPing';
 import { NoticePopupLoader } from '@/widgets/notice-popup/ui/NoticePopupLoader';
 import { ReactQueryProvider } from '@/app/providers';
@@ -233,6 +234,10 @@ export default async function RootLayout({
                                     <VisitorPing />
                                     <PwaBanner />
                                     <NoticePopupLoader />
+                                    {/* 분석 스트림이 비회원 생성 한도에 걸리면 가입 유도
+                                    모달을 띄운다. 분석은 여러 라우트(종목·허브)에서
+                                    나오므로 루트에 하나만 둔다. */}
+                                    <AnalysisRateLimitModalHost />
                                     {/* 인증 헤더는 클라이언트에서 렌더된다(cookies()를 static render
                         트리에서 제거 → 전 라우트 ISR 가능). 상세는 AuthSessionHeaderClient JSDoc. */}
                                     <AuthSessionHeaderClient />

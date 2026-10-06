@@ -11,6 +11,26 @@
 
 // --- Module mocks (hoisted before imports) ---
 
+// 생성 한도 — 기본은 항상 허락(예약·환불 관측은 개별 테스트가 덮어쓴다).
+// 신원 해석이 `cookies()`/`headers()`를 부르므로 그 둘도 막는다.
+const { mockReserveAnalysisGeneration } = vi.hoisted(() => ({
+    mockReserveAnalysisGeneration: vi.fn().mockResolvedValue({
+        ok: true,
+        audience: 'guest',
+        refund: vi.fn().mockResolvedValue(undefined),
+    }),
+}));
+vi.mock('@/entities/analysis/server/analysisGenerationQuota', () => ({
+    reserveAnalysisGeneration: mockReserveAnalysisGeneration,
+}));
+vi.mock('@/shared/api/guestId', () => ({
+    readGuestId: vi.fn().mockResolvedValue(null),
+    mintGuestIdOnResponse: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock('@/shared/api/getClientIp', () => ({
+    getClientIp: vi.fn().mockResolvedValue('203.0.113.1'),
+}));
+
 vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
     getCurrentUser: vi.fn().mockResolvedValue(null),
 }));
