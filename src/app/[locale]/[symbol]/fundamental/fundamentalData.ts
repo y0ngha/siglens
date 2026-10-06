@@ -1,5 +1,6 @@
 import { cache } from 'react';
 import { getDatabaseClient } from '@/shared/db/client';
+import type { ProfileDescriptionTranslationRepository } from '@/shared/db/types';
 import { localizeContentRow } from '@/shared/db/localizeContent';
 import {
     CONTENT_FIELD,
@@ -8,6 +9,12 @@ import {
 import { DEFAULT_LOCALE, type Locale } from '@/shared/i18n/locales';
 import { DrizzleProfileDescriptionTranslationRepository } from '@/entities/ticker/api';
 import { translateCompanyDescription } from '@/entities/ticker/lib/koreanTranslator';
+import { tryReadTranslatorConfig } from '@/entities/ticker/lib/config';
+import {
+    hasDescriptionTranslationFailed,
+    markDescriptionTranslationFailed,
+} from '@/entities/ticker/lib/descriptionTranslationFailure';
+import { createSingleFlight } from '@/shared/lib/singleFlight';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import type {
     FundamentalProfile,
@@ -41,7 +48,8 @@ export const getProfile = (
  * 렌더한다(FMP `profile.description`).
  *
  * 로케일별 동작:
- * - `ko`: DB 조회 → 없으면 AI 번역 후 upsert(심볼당 최초 1회).
+ * - `ko`: DB 조회 → 없으면 AI 번역 후 upsert(심볼당 최초 1회). 번역이 실패하면 하루 동안
+ *   다시 부르지 않는다(음성 캐시).
  * - 그 외: 사이드카에 **그 로케일 행이 있을 때만** 반환. 없으면 `null`을
  *   돌려 영어 원문이 나가게 한다. 한국어로 폴백하면 안 된다 — `/ja` 방문자에게
  *   영어 원문보다 나쁜 결과이고, 폴백 체인(ja→ja,en,ko)의 `en`이 바로 그 원문이다.
@@ -79,18 +87,47 @@ export const getProfileDescription = cache(
 
         if (existing !== null) return existing.descriptionKo;
 
-        const profile = await getProfile(symbol);
-        if (profile === null || profile.description === null) return null;
-
-        const translated = await translateCompanyDescription(
-            profile.description
+        return descriptionTranslationFlight.run(symbol, () =>
+            translateAndStoreDescription(symbol, repo)
         );
-        if (translated === null) return null;
-
-        await repo.upsert({ symbol, descriptionKo: translated });
-        return translated;
     }
 );
+
+/**
+ * 요청 사이 single-flight. `cache()`는 한 요청 안에서만 묶으므로, 같은 심볼의 `ko` 페이지가
+ * 동시에 콜드 렌더되면(배포 직후·데이터 캐시 만료) 각 렌더가 같은 설명을 따로 번역했다.
+ */
+const descriptionTranslationFlight = createSingleFlight<string | null>();
+
+/**
+ * `ko` 설명을 번역해 저장한다. 실제 호출 실패(번역기 오류·빈 출력)만 음성 캐시에 표시해, 그 표시가
+ * 있는 동안은 다시 부르지 않고 영어 원문을 내보낸다(`descriptionTranslationFailure.ts`).
+ * 원문 자체가 없는 경우(`profile`·`description` 부재)는 표시하지 않는다 — 번역을 부르지
+ * 않았으니 막을 비용이 없다.
+ */
+async function translateAndStoreDescription(
+    symbol: string,
+    repo: ProfileDescriptionTranslationRepository
+): Promise<string | null> {
+    if (await hasDescriptionTranslationFailed(symbol)) return null;
+
+    const profile = await getProfile(symbol);
+    if (profile === null || profile.description === null) return null;
+
+    // 번역기 미설정(`GEMINI_API_KEY` 없음)도 `translateCompanyDescription`은 `null`로 돌려준다.
+    // 그건 호출 실패가 아니라 설정 문제라 표시하지 않는다 — 표시하면 키를 넣은 뒤에도 하루 동안
+    // 이미 표시된 심볼은 번역되지 않는다. 미리 확인해 두 `null`을 가른다.
+    if (tryReadTranslatorConfig() === null) return null;
+
+    const translated = await translateCompanyDescription(profile.description);
+    if (translated === null) {
+        await markDescriptionTranslationFailed(symbol);
+        return null;
+    }
+
+    await repo.upsert({ symbol, descriptionKo: translated });
+    return translated;
+}
 
 export const getKeyMetricsTtm = (
     symbol: string

@@ -85,6 +85,29 @@ describe('callAnthropicChat', () => {
             expect(MockAnthropic).toHaveBeenCalledTimes(1);
         });
 
+        it('limits를 받으면 출력 상한·timeout·재시도를 그 값으로 건다', async () => {
+            mockFinalMessage.mockResolvedValue({
+                content: [{ type: 'text', text: 'Hello' }],
+                stop_reason: 'end_turn',
+            });
+
+            await callAnthropicChat({
+                ...BASE_OPTIONS,
+                limits: {
+                    maxOutputTokens: 1500,
+                    timeoutMs: 30_000,
+                    maxRetries: 0,
+                },
+            });
+
+            expect(MockAnthropic).toHaveBeenCalledWith({
+                apiKey: 'server-key',
+                timeout: 30_000,
+                maxRetries: 0,
+            });
+            expect(mockStream.mock.calls[0][0].max_tokens).toBe(1500);
+        });
+
         it('응답 usage로 [Usage] 라인을 남긴다', async () => {
             const info = vi.spyOn(console, 'info').mockImplementation(() => {});
             mockFinalMessage.mockResolvedValue({

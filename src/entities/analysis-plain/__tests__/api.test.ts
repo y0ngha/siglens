@@ -8,6 +8,13 @@ const tryGetDatabaseClient = vi.fn();
 const tryReadPlainModelConfig = vi.fn();
 const isE2E = vi.fn();
 const isOfflineBuild = vi.fn();
+const hasFailedRecently = vi.fn();
+const markFailed = vi.fn();
+const tryAcquireLock = vi.fn();
+const releaseLock = vi.fn();
+/** 실제로 잡은 락 — `release`는 소유자만 부른다(`releasePlainGenerationLock`에 그대로 넘어간다). */
+const ACQUIRED = { status: 'acquired', release: () => Promise.resolve() };
+const HELD = { status: 'held' };
 
 vi.mock('server-only', () => ({}));
 vi.mock('@/entities/llm-provider/api/router', () => ({
@@ -44,12 +51,24 @@ vi.mock('../plainTextRepository', () => ({
         insert = (...args: unknown[]) => repoInsert(...args);
     },
 }));
+vi.mock('../plainGenerationCoordination', () => ({
+    PLAIN_CALL_TIMEOUT_MS: 20_000,
+    hasPlainGenerationFailedRecently: (...args: unknown[]) =>
+        hasFailedRecently(...args),
+    markPlainGenerationFailed: (...args: unknown[]) => markFailed(...args),
+    tryAcquirePlainGenerationLock: (...args: unknown[]) =>
+        tryAcquireLock(...args),
+    releasePlainGenerationLock: (...args: unknown[]) => releaseLock(...args),
+}));
 vi.mock('../lib/plainModel', () => ({
     tryReadPlainModelConfig: () => tryReadPlainModelConfig(),
 }));
 
-const { rewriteToPlainLanguage, PLAIN_STORE_READ_TIMEOUT_MS } =
-    await import('../api');
+const {
+    rewriteToPlainLanguage,
+    PLAIN_STORE_READ_TIMEOUT_MS,
+    __resetPlainFlightsForTests,
+} = await import('../api');
 const { PLAIN_PROMPT_VERSION } = await import('../lib/buildPlainPrompt');
 
 /**
@@ -86,6 +105,12 @@ afterEach(() => {
 
 beforeEach(() => {
     vi.clearAllMocks();
+    // 마감 테스트는 끝나지 않은 생성을 남긴다 — 다음 테스트가 같은 키로 그 생성에 붙지 않게 비운다.
+    __resetPlainFlightsForTests();
+    hasFailedRecently.mockResolvedValue(false);
+    markFailed.mockResolvedValue(undefined);
+    tryAcquireLock.mockResolvedValue(ACQUIRED);
+    releaseLock.mockResolvedValue(undefined);
     isE2E.mockReturnValue(false);
     isOfflineBuild.mockReturnValue(false);
     tryReadPlainModelConfig.mockReturnValue({
@@ -1044,5 +1069,226 @@ describe('가격 기준 시점(asOf)과 stale_deixis 연성 가드', () => {
             await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'en', 'USD')
         ).toBe(english.trim());
         expect(callAiProviderRouter).toHaveBeenCalledOnce();
+    });
+});
+
+/**
+ * 2026-10 비용 감사 M3: 저장소 미스 → 생성 사이에 프로세스 안·인스턴스 사이 조율이 없어
+ * 같은 입력의 동시 요청이 각자 LLM을 불렀고, 실패한 입력은 조회마다 다시 과금됐다.
+ */
+describe('생성 조율 (single-flight · 락 · 음성 캐시 · 호출 상한)', () => {
+    /** 프롬프트 버전 · 로케일 · digest 좌표. digest는 값이 아니라 형태만 본다. */
+    const keyFor = (locale: string) =>
+        expect.objectContaining({
+            promptVersion: PLAIN_PROMPT_VERSION,
+            locale,
+            inputDigest: expect.stringMatching(/^[0-9a-f]{64}$/),
+        });
+
+    it('호출마다 출력 상한·timeout·재시도 0을 넘긴다', async () => {
+        await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
+        expect(callAiProviderRouter.mock.calls[0][0].limits).toEqual({
+            maxOutputTokens: 1_500,
+            timeoutMs: 20_000,
+            maxRetries: 0,
+        });
+    });
+
+    it('같은 입력의 동시 요청은 LLM을 한 번만 부르고 같은 글을 나눠 받는다', async () => {
+        let release: (text: string) => void = () => {};
+        callAiProviderRouter.mockReturnValue(
+            new Promise<string>(resolve => {
+                release = resolve;
+            })
+        );
+        const a = rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
+        const b = rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
+        await vi.waitFor(() =>
+            expect(callAiProviderRouter).toHaveBeenCalledOnce()
+        );
+        release(GOOD);
+        expect(await a).toBe(GOOD.trim());
+        expect(await b).toBe(GOOD.trim());
+        expect(callAiProviderRouter).toHaveBeenCalledOnce();
+        expect(tryAcquireLock).toHaveBeenCalledOnce();
+    });
+
+    it('생성이 끝나면 다음 요청은 새로 시작한다 (항목이 남지 않는다)', async () => {
+        await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
+        await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
+        // 저장소 목이 계속 미스라 두 번째도 생성한다 — 끝난 생성에 붙어 옛 값을 받지 않는다.
+        expect(callAiProviderRouter).toHaveBeenCalledTimes(2);
+    });
+
+    it('최근 실패 표시가 있으면 LLM을 부르지 않고 null이다', async () => {
+        hasFailedRecently.mockResolvedValue(true);
+        expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBeNull();
+        expect(callAiProviderRouter).not.toHaveBeenCalled();
+        expect(tryAcquireLock).not.toHaveBeenCalled();
+    });
+
+    it('생성이 실패하면 실패를 표시하고 락을 푼다', async () => {
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        callAiProviderRouter.mockRejectedValue(new Error('provider down'));
+        expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBeNull();
+        await vi.waitFor(() => expect(releaseLock).toHaveBeenCalledOnce());
+        expect(markFailed).toHaveBeenCalledWith(keyFor('ko'));
+        expect(releaseLock).toHaveBeenCalledWith(ACQUIRED);
+    });
+
+    it('생성이 성공하면 실패 표시 없이 락만 푼다', async () => {
+        await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
+        await vi.waitFor(() => expect(releaseLock).toHaveBeenCalledOnce());
+        expect(markFailed).not.toHaveBeenCalled();
+    });
+
+    it('저장소가 없으면 락을 잡지 않고 바로 생성한다 (기다려도 읽을 곳이 없다)', async () => {
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        tryGetDatabaseClient.mockReturnValue(null);
+        expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBe(
+            GOOD.trim()
+        );
+        expect(tryAcquireLock).not.toHaveBeenCalled();
+        expect(callAiProviderRouter).toHaveBeenCalledOnce();
+        expect(releaseLock).not.toHaveBeenCalled();
+    });
+
+    it('Redis를 쓸 수 없으면(fail-open) 생성하되 잡은 것이 없으니 풀지 않는다', async () => {
+        tryAcquireLock.mockResolvedValue({ status: 'unavailable' });
+        expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBe(
+            GOOD.trim()
+        );
+        expect(callAiProviderRouter).toHaveBeenCalledOnce();
+        // 정리 콜백이 돌 틈을 준 뒤에도 풀기는 없다.
+        await new Promise(resolve => setTimeout(resolve, 0));
+        expect(releaseLock).not.toHaveBeenCalled();
+    });
+
+    it('실패 표시가 던져도 락은 풀린다', async () => {
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        callAiProviderRouter.mockRejectedValue(new Error('provider down'));
+        markFailed.mockRejectedValue(new Error('redis down'));
+        expect(await rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko')).toBeNull();
+        await vi.waitFor(() =>
+            expect(releaseLock).toHaveBeenCalledWith(ACQUIRED)
+        );
+    });
+
+    describe('다른 인스턴스가 생성 중일 때 (락 획득 실패)', () => {
+        beforeEach(() => {
+            tryAcquireLock.mockResolvedValue(HELD);
+        });
+
+        it('LLM을 부르지 않고 저장소에 결과가 들어오기를 기다린다', async () => {
+            vi.useFakeTimers();
+            try {
+                repoFind
+                    .mockResolvedValueOnce(null) // 첫 조회(미스)
+                    .mockResolvedValueOnce(null) // 대기 1회차
+                    .mockResolvedValueOnce('다른 인스턴스가 쓴 글');
+                const promise = rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
+                await vi.advanceTimersByTimeAsync(2_000);
+                expect(await promise).toBe('다른 인스턴스가 쓴 글');
+                expect(callAiProviderRouter).not.toHaveBeenCalled();
+                expect(releaseLock).not.toHaveBeenCalled();
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('그쪽이 실패를 표시하면 곧바로 물러난다', async () => {
+            vi.useFakeTimers();
+            try {
+                hasFailedRecently
+                    .mockResolvedValueOnce(false) // 조율 진입 시
+                    .mockResolvedValueOnce(true); // 대기 1회차
+                const promise = rewriteToPlainLanguage(ANALYSIS, 'AAPL', 'ko');
+                await vi.advanceTimersByTimeAsync(1_000);
+                expect(await promise).toBeNull();
+                expect(callAiProviderRouter).not.toHaveBeenCalled();
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('끝내 들어오지 않고 락도 여전히 잡혀 있으면 직접 부르지 않고 null이다', async () => {
+            vi.useFakeTimers();
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
+            try {
+                const promise = rewriteToPlainLanguage(
+                    ANALYSIS,
+                    'AAPL',
+                    'ko',
+                    undefined,
+                    undefined,
+                    undefined,
+                    60_000
+                );
+                await vi.advanceTimersByTimeAsync(25_000);
+                expect(await promise).toBeNull();
+                expect(callAiProviderRouter).not.toHaveBeenCalled();
+                expect(warnSpy).toHaveBeenCalledWith(
+                    '[analysisPlain] gave up waiting for another instance',
+                    expect.objectContaining({ locale: 'ko' })
+                );
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('기다림이 시간 초과로 끝난 뒤 락이 풀려 있으면 넘겨받아 직접 생성한다', async () => {
+            vi.useFakeTimers();
+            try {
+                tryAcquireLock
+                    .mockResolvedValueOnce(HELD) // 처음: 다른 인스턴스가 보유
+                    .mockResolvedValueOnce(ACQUIRED); // 시간 초과 뒤 재시도
+                const promise = rewriteToPlainLanguage(
+                    ANALYSIS,
+                    'AAPL',
+                    'ko',
+                    undefined,
+                    undefined,
+                    undefined,
+                    60_000
+                );
+                await vi.advanceTimersByTimeAsync(25_000);
+                expect(await promise).toBe(GOOD.trim());
+                expect(tryAcquireLock).toHaveBeenCalledTimes(2);
+                expect(callAiProviderRouter).toHaveBeenCalledOnce();
+                await vi.waitFor(() =>
+                    expect(releaseLock).toHaveBeenCalledWith(ACQUIRED)
+                );
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('기다리는 호출자의 마감이 지나면 폴링을 멈추고 넘겨받지도 않는다', async () => {
+            vi.useFakeTimers();
+            try {
+                const promise = rewriteToPlainLanguage(
+                    ANALYSIS,
+                    'AAPL',
+                    'ko',
+                    undefined,
+                    undefined,
+                    undefined,
+                    3_000
+                );
+                await vi.advanceTimersByTimeAsync(3_000);
+                expect(await promise).toBeNull();
+                const pollsAtDeadline = repoFind.mock.calls.length;
+                await vi.advanceTimersByTimeAsync(30_000);
+                // 첫 조회 + 마감 전 폴링 몇 번뿐 — 마감 뒤로는 더 읽지 않는다.
+                expect(repoFind.mock.calls.length).toBe(pollsAtDeadline);
+                expect(pollsAtDeadline).toBeLessThanOrEqual(4);
+                expect(tryAcquireLock).toHaveBeenCalledOnce();
+                expect(callAiProviderRouter).not.toHaveBeenCalled();
+            } finally {
+                vi.useRealTimers();
+            }
+        });
     });
 });
