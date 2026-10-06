@@ -540,7 +540,6 @@
                 "volatility": "ボラティリティ"
             },
             "seo": {
-                "expiredTitle": "共有された分析",
                 "title": "{v0} AI分析結果"
             }
         }
@@ -1535,8 +1534,6 @@
                 "emptyDescriptionTemplate": "{label}の最新ニュースを読み込めませんでした。",
                 "emptyTitleTemplate": "{label}ニュース",
                 "itemListName": "{label}の最新ニュース",
-                "notFoundDescription": "リクエストされたニュースカテゴリーは存在しません。",
-                "notFoundTitle": "ニュースカテゴリーが見つかりません",
                 "titleTemplate": "{label}ニュース — 最新動向とAI要約"
             },
             "newsHub": {

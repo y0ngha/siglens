@@ -540,7 +540,6 @@
                 "volatility": "波动率"
             },
             "seo": {
-                "expiredTitle": "共享分析",
                 "title": "{v0} AI分析结果"
             }
         }
@@ -1535,8 +1534,6 @@
                 "emptyDescriptionTemplate": "无法加载{label}的最新新闻。",
                 "emptyTitleTemplate": "{label}新闻",
                 "itemListName": "{label}最新新闻",
-                "notFoundDescription": "您请求的新闻类别不存在。",
-                "notFoundTitle": "未找到该新闻类别",
                 "titleTemplate": "{label}新闻 — 最新动态与AI摘要"
             },
             "newsHub": {

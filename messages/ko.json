@@ -540,7 +540,6 @@
                 "volatility": "변동성"
             },
             "seo": {
-                "expiredTitle": "공유 분석",
                 "title": "{v0} AI 분석 결과"
             }
         }
@@ -1535,8 +1534,6 @@
                 "emptyDescriptionTemplate": "{label} 최신 뉴스를 불러오지 못했어요.",
                 "emptyTitleTemplate": "{label} 뉴스",
                 "itemListName": "{label} 최신 뉴스",
-                "notFoundDescription": "요청하신 뉴스 카테고리가 존재하지 않아요.",
-                "notFoundTitle": "뉴스 카테고리를 찾을 수 없어요",
                 "titleTemplate": "{label} 뉴스 — 최신 흐름과 AI 요약"
             },
             "newsHub": {

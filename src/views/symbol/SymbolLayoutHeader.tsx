@@ -186,9 +186,9 @@ export function SymbolLayoutHeader({
                     <nav aria-label={breadcrumbLabel} className="min-w-0">
                         <ol className="flex min-w-0 items-center gap-2">
                             {/* 모바일(sm 미만)에서는 "SIGLENS /" 브레드크럼과 영문명을 감춘다.
-                        375px에서 이 둘이 폭을 먹어 한국어 종목명이 "애플, App…"처럼
-                        잘렸다 — 모바일 헤더에서 사용자가 알아봐야 하는 건 종목명과
-                        티커뿐이고, 홈은 사이트 헤더 로고가 이미 가리킨다. */}
+                                375px에서 이 둘이 폭을 먹어 한국어 종목명이 "애플, App…"처럼
+                                잘렸다 — 모바일 헤더에서 사용자가 알아봐야 하는 건 종목명과
+                                티커뿐이고, 홈은 사이트 헤더 로고가 이미 가리킨다. */}
                             <li className="hidden sm:inline">
                                 <Link
                                     href="/"
@@ -196,7 +196,7 @@ export function SymbolLayoutHeader({
                                     // 진입 심볼마다 다른 `_rsc` 해시로 `/`의 캐시를 파편화시킨다
                                     // (docs/architecture/CDN_CACHING.md §1).
                                     prefetch={false}
-                                    className="hidden font-mono text-xs tracking-[0.2em] text-secondary-400 uppercase transition-colors hover:text-secondary-300 sm:inline"
+                                    className="font-mono text-xs tracking-[0.2em] text-secondary-400 uppercase transition-colors hover:text-secondary-300"
                                 >
                                     {SITE_NAME}
                                 </Link>
@@ -208,15 +208,15 @@ export function SymbolLayoutHeader({
                                 /
                             </li>
                             {/* 종목 브레드크럼은 5개 sibling 페이지(/[symbol], /news,
-                        /fundamental, /options, /overall, /fear-greed)에 공통으로
-                        렌더되므로 h1으로 두면 페이지별 sr-only h1과 충돌해 페이지당
-                        h1이 2개가 된다. 페이지마다 실제 주제가 다르므로 페이지 h1을
-                        살리고, 여기는 시각 스타일만 유지한 채 의미론적 위계에서는
-                        제외한다 — 브레드크럼 `<ol>`의 한 마디로만 둔다.
+                                /fundamental, /options, /overall, /fear-greed)에 공통으로
+                                렌더되므로 h1으로 두면 페이지별 sr-only h1과 충돌해 페이지당
+                                h1이 2개가 된다. 페이지마다 실제 주제가 다르므로 페이지 h1을
+                                살리고, 여기는 시각 스타일만 유지한 채 의미론적 위계에서는
+                                제외한다 — 브레드크럼 `<ol>`의 한 마디로만 둔다.
 
-                        모바일은 최대 2줄까지 줄바꿈한다(`line-clamp-2`, text-base) —
-                        2줄 높이(40px)가 컨트롤(size-11 = 44px)보다 작아 헤더 높이,
-                        곧 `--symbol-chrome-h`는 그대로다. sm 이상은 기존의 한 줄 말줄임. */}
+                                모바일은 최대 2줄까지 줄바꿈한다(`line-clamp-2`, text-base) —
+                                2줄 높이(40px)가 컨트롤(size-11 = 44px)보다 작아 헤더 높이,
+                                곧 `--symbol-chrome-h`는 그대로다. sm 이상은 기존의 한 줄 말줄임. */}
                             <li
                                 className="min-w-0"
                                 {...(isChartRoute
@@ -243,8 +243,8 @@ export function SymbolLayoutHeader({
                                 )}
                             </li>
                             {/* 셋째 마디(현재 탭)는 sm 이상에서만 보인다 — 모바일은 종목명이 폭을
-                        다 쓰고(위 SIGLENS 마디와 같은 이유), 바로 아래 탭 레일의 활성 탭이 같은
-                        정보를 이미 보여 준다. */}
+                                다 쓰고(위 SIGLENS 마디와 같은 이유), 바로 아래 탭 레일의 활성 탭이 같은
+                                정보를 이미 보여 준다. */}
                             {subTab !== null && (
                                 <>
                                     <li

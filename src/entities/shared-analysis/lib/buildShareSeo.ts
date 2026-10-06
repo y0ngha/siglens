@@ -1,22 +1,22 @@
+import type { Metadata } from 'next';
 import type { Locale } from '@/shared/i18n/locales';
 import { localeOpenGraph } from '@/shared/lib/seoAlternates';
+import { SITE_NAME, localizedAbsoluteUrl } from '@/shared/lib/seo';
+import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
+import type { SharedAnalysisLookup } from '../types';
+import { buildOgText, type OgTranslator } from '../server/buildOgText';
 
 /** `entities.shared-analysis.seo` 네임스페이스 번역자. */
 type ShareSeoTranslator = (
     key: string,
     values?: Record<string, string | number>
 ) => string;
-import type { Metadata } from 'next';
-import type { SharedAnalysisLookup } from '../types';
 
 /** 메타데이터를 만들 수 있는 유일한 상태 — 만료·미존재는 호출부가 `notFound()`로 끝낸다. */
 type FoundSharedAnalysisLookup = Extract<
     SharedAnalysisLookup,
     { status: 'found' }
 >;
-import { buildOgText, type OgTranslator } from '../server/buildOgText';
-import { SITE_NAME, localizedAbsoluteUrl } from '@/shared/lib/seo';
-import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 
 /**
  * 공유 페이지(`/share/[id]`) generateMetadata 반환값 빌더.
@@ -27,8 +27,7 @@ import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
  * found 상태만 받는다. expired / not_found는 `generateMetadata`가 `notFound()`를 던져
  * 404 경계의 메타를 쓴다 — 여기서 최소 메타를 돌려주면 404 응답이 그 title과 홈의
  * description·og·twitter를 단다(본문 notFound()보다 generateMetadata 결과가 이긴다).
- */
-/**
+ *
  * `id`는 선택 인자가 아니다. 선택으로 두면 호출부가 빠뜨려도 타입·린트·테스트가
  * 전부 통과하면서 og:url만 조용히 사라진다 — 이 브랜치에서 반복적으로 나온
  * "아무것도 붙들지 않는 수정" 형태다. 필수로 두면 컴파일러가 붙든다.

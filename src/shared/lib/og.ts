@@ -30,7 +30,9 @@ export const OG_SUBTITLE_FONT_SIZE = 40;
  * 기본값**으로 붙인다(`next/dist/server/og/image-response.js`). 라우트의
  * `export const revalidate`는 Next의 ISR 재생성 주기일 뿐 이 응답 헤더에 반영되지 않아,
  * CDN 입장에서는 "매번 재검증하라"는 지시가 되어 **엣지 캐시가 전혀 되지 않았다**
- * (2026-08-13 실측: `/[symbol]/opengraph-image`·`twitter-image` 221요청 히트율 0%).
+ * (2026-08-13 실측: `/[symbol]/opengraph-image`·`twitter-image` 221요청 히트율 0%). 종목 탭의
+ * `twitter-image` 라우트는 2026-10에 없앴고(`twitter:image`가 og URL을 쓴다), 남은 `twitter-image`는
+ * 뉴스 허브(`/news`·`/news/{category}`)의 og 재-export뿐이다.
  *
  * 같은 파일에서 `options.headers`가 기본값을 덮어쓰므로 여기서 명시한다.
  * - `max-age=0`: 브라우저는 종전대로 매번 재검증 — 사용자에게 낡은 이미지가 남지 않는다.

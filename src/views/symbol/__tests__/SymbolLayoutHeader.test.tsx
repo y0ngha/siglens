@@ -517,9 +517,13 @@ describe('SymbolLayoutHeader', () => {
                 />
             );
 
-            const link = screen.getByText('Siglens').closest('a');
-            expect(link?.className).toContain('hidden');
-            expect(link?.className).toContain('sm:inline');
+            // 반응형 감춤은 마디(`<li>`)가 맡는다 — 안의 링크에 같은 클래스를 겹쳐 두지 않는다.
+            const crumb = screen.getByText('Siglens').closest('li');
+            expect(crumb?.className).toContain('hidden');
+            expect(crumb?.className).toContain('sm:inline');
+            expect(screen.getByText('Siglens').className).not.toContain(
+                'hidden'
+            );
             const slash = screen.getByText('/');
             expect(slash.className).toContain('hidden');
             expect(slash.className).toContain('sm:inline');

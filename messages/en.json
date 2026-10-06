@@ -540,7 +540,6 @@
                 "volatility": "Volatility"
             },
             "seo": {
-                "expiredTitle": "Shared analysis",
                 "title": "{v0} AI analysis"
             }
         }
@@ -1535,8 +1534,6 @@
                 "emptyDescriptionTemplate": "We couldn't load the latest {label} news.",
                 "emptyTitleTemplate": "{label} News",
                 "itemListName": "Latest {label} news",
-                "notFoundDescription": "The news category you requested doesn't exist.",
-                "notFoundTitle": "News category not found",
                 "titleTemplate": "{label} News — Latest Updates & AI Summary"
             },
             "newsHub": {
