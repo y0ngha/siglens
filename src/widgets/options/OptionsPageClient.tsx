@@ -15,18 +15,16 @@ import { StrikeVolumeChart } from './StrikeVolumeChart';
 import { OptionsMetricsRow } from './OptionsMetricsRow';
 import { OptionsStaleDataBanner } from './OptionsStaleDataBanner';
 import { useOptionsChainMetrics } from './hooks/useOptionsChainMetrics';
-import {
-    isEtRegularSessionOpen,
-    type OptionsSnapshot,
-    type SlotMapping,
-} from '@y0ngha/siglens-core';
+import { isEtRegularSessionOpen, type SlotMapping } from '@y0ngha/siglens-core';
+import type { ClientOptionsSnapshot } from '@/entities/options-chain/lib/clientOptionsSnapshot';
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
 
 interface OptionsPageClientProps {
     symbol: string;
     companyName: string;
-    snapshot: OptionsSnapshot;
+    /** 클라이언트가 읽는 필드만 남긴 스냅샷(`toClientOptionsSnapshot`). */
+    snapshot: ClientOptionsSnapshot;
     slots: ReadonlyArray<SlotMapping | null>;
     /**
      * `true` when the SSR-persistent `<OptionsSnapshotProse>` (rendered by

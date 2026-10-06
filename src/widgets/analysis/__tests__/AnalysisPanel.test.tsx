@@ -428,6 +428,26 @@ describe('AnalysisPanel', () => {
         ).toBeInTheDocument();
     });
 
+    it('재분석 버튼에 포인터가 올라가거나 포커스가 가면 onReanalyzeIntent를 부른다', () => {
+        const onReanalyzeIntent = vi.fn();
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis()}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                onReanalyze={vi.fn()}
+                onReanalyzeIntent={onReanalyzeIntent}
+            />
+        );
+        const button = screen.getByRole('button', { name: /재분석/ });
+
+        fireEvent.pointerEnter(button);
+        fireEvent.focus(button);
+
+        expect(onReanalyzeIntent).toHaveBeenCalledTimes(2);
+    });
+
     it('does not render the reanalyze button when onReanalyze is not provided', () => {
         render(
             <AnalysisPanel

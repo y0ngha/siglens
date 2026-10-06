@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { startTransition, useEffect, useState } from 'react';
 import { THEME_CHANGE_EVENT } from '@/shared/lib/theme';
 
 /**
@@ -23,12 +23,23 @@ import { THEME_CHANGE_EVENT } from '@/shared/lib/theme';
  * 대가: 토글 순간 줌·스크롤 위치가 초기화된다. 로드 경로에서는 이 값이 0에서
  * 변하지 않으므로 remount가 없다. 위치가 한 번 초기화되는 것과 차트가 안
  * 보이는 것 중에는 전자가 낫다.
+ *
+ * **증가는 transition으로 한다.** 테마 이벤트는 토글 클릭 핸들러 안에서 동기로 발화한다
+ * (`useTheme.applyTheme`). 여기서 urgent 업데이트로 올리면 lightweight-charts 두 개의
+ * remount(캔버스 생성·`setData`·오버레이 훅 전부)가 **클릭 태스크 안에서** 돌아, 화면
+ * 색은 CSS 변수(`data-theme`)로 이미 바뀌었는데도 다음 페인트가 그만큼 밀린다(INP).
+ * transition이면 React가 먼저 페인트를 내보내고 remount는 그 뒤에 양보 가능한 작업으로
+ * 처리한다 — 차트 색이 한 프레임 늦게 따라오는 대신 클릭 응답이 즉시 보인다.
  */
 export function useThemeVersion(): number {
     const [version, setVersion] = useState(0);
 
     useEffect(() => {
-        const bump = () => setVersion(v => v + 1);
+        const bump = () => {
+            startTransition(() => {
+                setVersion(v => v + 1);
+            });
+        };
         window.addEventListener(THEME_CHANGE_EVENT, bump);
         return () => window.removeEventListener(THEME_CHANGE_EVENT, bump);
     }, []);

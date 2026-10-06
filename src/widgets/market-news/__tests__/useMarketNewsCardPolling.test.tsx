@@ -8,6 +8,8 @@ import {
     EMPTY_SNAPSHOT_MAX_POLLS,
 } from '@/shared/config/cardPollingConfig';
 import { useMarketNewsCardPolling } from '@/widgets/market-news/hooks/useMarketNewsCardPolling';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
 
 vi.mock('@/entities/market-news/actions/getMarketNewsCardsAction', () => ({
     getMarketNewsCardsAction: vi.fn(),
@@ -60,6 +62,20 @@ async function advancePolls(count: number) {
     }
 }
 
+/** 폴러가 `useQuery`로 돈다 — 테스트마다 새 QueryClient(캐시 공유 없음). */
+function makeQueryWrapper() {
+    const client = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+    });
+    return function QueryWrapper({ children }: { children: ReactNode }) {
+        return (
+            <QueryClientProvider client={client}>
+                {children}
+            </QueryClientProvider>
+        );
+    };
+}
+
 describe('useMarketNewsCardPolling', () => {
     beforeEach(() => {
         vi.useFakeTimers();
@@ -76,15 +92,18 @@ describe('useMarketNewsCardPolling', () => {
             .mockResolvedValueOnce({ ok: true, items: [PENDING_ITEM] })
             .mockResolvedValue({ ok: true, items: [ENRICHED_ITEM] });
 
-        const { result } = renderHook(() =>
-            useMarketNewsCardPolling('crypto', [PENDING_ITEM])
+        const { result } = renderHook(
+            () => useMarketNewsCardPolling('crypto', [PENDING_ITEM]),
+            { wrapper: makeQueryWrapper() }
         );
 
         expect(result.current.isPolling).toBe(true);
         expect(result.current.items).toEqual([PENDING_ITEM]);
 
-        // First poll — still pending
-        await advancePolls(1);
+        // 마운트 조회(useQuery는 마운트 때 바로 한 번 조회한다) — still pending
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(0);
+        });
         expect(result.current.items).toEqual([PENDING_ITEM]);
         expect(result.current.isPolling).toBe(true);
 
@@ -104,8 +123,9 @@ describe('useMarketNewsCardPolling', () => {
             .spyOn(console, 'error')
             .mockImplementation(() => {});
 
-        const { result } = renderHook(() =>
-            useMarketNewsCardPolling('stock', [ENRICHED_ITEM])
+        const { result } = renderHook(
+            () => useMarketNewsCardPolling('stock', [ENRICHED_ITEM]),
+            { wrapper: makeQueryWrapper() }
         );
 
         await advancePolls(MAX_CONSECUTIVE_FAILURES);
@@ -129,8 +149,9 @@ describe('useMarketNewsCardPolling', () => {
     it('빈 스냅샷 연속 20회 후 폴링을 멈춘다', async () => {
         mockGetMarketNewsCardsAction.mockResolvedValue({ ok: true, items: [] });
 
-        const { result } = renderHook(() =>
-            useMarketNewsCardPolling('general', [])
+        const { result } = renderHook(
+            () => useMarketNewsCardPolling('general', []),
+            { wrapper: makeQueryWrapper() }
         );
 
         await advancePolls(EMPTY_SNAPSHOT_MAX_POLLS);
@@ -143,7 +164,7 @@ describe('useMarketNewsCardPolling', () => {
     });
 
     /**
-     * [회귀] 정체 종료는 순수 함수(`pollMarketNewsCardsStep`)만 테스트돼 있었고
+     * [회귀] 정체 종료는 순수 판정(당시 `pollMarketNewsCardsStep`, 지금 `decideCardListPoll`)만 테스트돼 있었고
      * **훅의 배선**(`recordEnriched`/`getEnrichedCount`/`getStagnantPolls`)은
      * 무커버리지였다 — 훅에서 정체 카운터를 못 올리게 만들어도 전건 통과한다
      * (감사: 테스트 라운드 17). 그러면 기능이 통째로 죽은 채 초록이다.
@@ -156,7 +177,9 @@ describe('useMarketNewsCardPolling', () => {
             items: [ENRICHED_ITEM, PENDING_ITEM],
         });
 
-        renderHook(() => useMarketNewsCardPolling('general', []));
+        renderHook(() => useMarketNewsCardPolling('general', []), {
+            wrapper: makeQueryWrapper(),
+        });
 
         await advancePolls(20);
 
@@ -190,7 +213,9 @@ describe('useMarketNewsCardPolling', () => {
             });
         });
 
-        renderHook(() => useMarketNewsCardPolling('general', []));
+        renderHook(() => useMarketNewsCardPolling('general', []), {
+            wrapper: makeQueryWrapper(),
+        });
 
         await advancePolls(30);
 
@@ -207,7 +232,10 @@ describe('useMarketNewsCardPolling', () => {
         type Props = { category: 'crypto' | 'stock' };
         const { result, rerender } = renderHook(
             ({ category }: Props) => useMarketNewsCardPolling(category, []),
-            { initialProps: { category: 'crypto' } as Props }
+            {
+                wrapper: makeQueryWrapper(),
+                initialProps: { category: 'crypto' } as Props,
+            }
         );
 
         await advancePolls(1);

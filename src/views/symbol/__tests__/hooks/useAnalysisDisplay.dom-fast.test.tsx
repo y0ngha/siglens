@@ -36,6 +36,16 @@ describe('useAnalysisDisplay', () => {
         expect(result.current.displayAnalyzing).toBe(true);
     });
 
+    it('skipFinishing이면 isAnalyzing이 false가 되는 렌더에서 바로 내린다', () => {
+        const { result, rerender } = renderHook(
+            ({ isAnalyzing, skip }) => useAnalysisDisplay(isAnalyzing, skip),
+            { initialProps: { isAnalyzing: true, skip: false } }
+        );
+
+        rerender({ isAnalyzing: false, skip: true });
+        expect(result.current.displayAnalyzing).toBe(false);
+    });
+
     it('sets displayAnalyzing to false only via handleProgressFinished', () => {
         const { result, rerender } = renderHook(
             ({ isAnalyzing }) => useAnalysisDisplay(isAnalyzing),

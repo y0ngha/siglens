@@ -1,9 +1,9 @@
 import type { MockedFunction } from 'vitest';
-import { searchTickerAction } from '../../actions/searchTickerAction';
-import { searchTicker } from '../../lib/searchTicker';
+import { searchTickerQuery } from '../searchTickerQuery';
+import { searchTicker } from '../searchTicker';
 import type { TickerSearchResult } from '@/shared/lib/types';
 
-vi.mock('../../lib/searchTicker', () => ({
+vi.mock('../searchTicker', () => ({
     searchTicker: vi.fn(),
 }));
 
@@ -13,7 +13,7 @@ const results: TickerSearchResult[] = [
     { symbol: 'AAPL', name: 'Apple Inc.' } as TickerSearchResult,
 ];
 
-describe('searchTickerAction 함수는', () => {
+describe('searchTickerQuery 함수는', () => {
     const originalE2E = process.env.E2E_TEST;
 
     beforeEach(() => {
@@ -32,7 +32,7 @@ describe('searchTickerAction 함수는', () => {
     it('trim된 query를 use-case searchTicker에 전달한다', async () => {
         mockSearchTicker.mockResolvedValueOnce(results);
 
-        await searchTickerAction('  apple  ');
+        await searchTickerQuery('  apple  ');
 
         expect(mockSearchTicker).toHaveBeenCalledWith('apple');
     });
@@ -40,13 +40,13 @@ describe('searchTickerAction 함수는', () => {
     it('underlying 함수의 결과를 그대로 반환한다', async () => {
         mockSearchTicker.mockResolvedValueOnce(results);
 
-        const result = await searchTickerAction('apple');
+        const result = await searchTickerQuery('apple');
 
         expect(result).toBe(results);
     });
 
     it('빈 문자열 query는 searchTicker를 호출하지 않고 빈 배열을 반환한다', async () => {
-        const result = await searchTickerAction('   ');
+        const result = await searchTickerQuery('   ');
 
         expect(mockSearchTicker).not.toHaveBeenCalled();
         expect(result).toEqual([]);
@@ -55,7 +55,7 @@ describe('searchTickerAction 함수는', () => {
     it('E2E_TEST=1이면 FMP를 호출하지 않고 AAPL 패밀리 픽스처를 반환한다', async () => {
         process.env.E2E_TEST = '1';
 
-        const result = await searchTickerAction('aapl');
+        const result = await searchTickerQuery('aapl');
 
         expect(mockSearchTicker).not.toHaveBeenCalled();
         expect(result.some(r => r.symbol === 'AAPL')).toBe(true);
@@ -71,7 +71,7 @@ describe('searchTickerAction 함수는', () => {
     it('E2E_TEST=1이고 매칭이 없으면 전체 픽스처로 폴백한다', async () => {
         process.env.E2E_TEST = '1';
 
-        const result = await searchTickerAction('zzzz');
+        const result = await searchTickerQuery('zzzz');
 
         expect(mockSearchTicker).not.toHaveBeenCalled();
         expect(result.length).toBeGreaterThan(0);

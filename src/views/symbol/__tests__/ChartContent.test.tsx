@@ -46,20 +46,29 @@ vi.mock('@/widgets/chart/hooks/useChartSync', () => ({
 // The mock renders one paragraph per `analysis.paragraphCount` so the scroll
 // tests below can drive a genuinely long vs. short panel and assert where that
 // content lands (inside the scroll container, not the chart column).
+const { mockAnalysisPanelProps } = vi.hoisted(() => ({
+    mockAnalysisPanelProps: vi.fn(),
+}));
+
 vi.mock('@/widgets/analysis/AnalysisPanel', () => ({
-    AnalysisPanel: ({
-        analysis,
-    }: {
+    AnalysisPanel: (props: {
         analysis?: { paragraphCount?: number };
-    }) => (
-        <div data-testid="analysis-panel">
-            {Array.from({ length: analysis?.paragraphCount ?? 0 }, (_, i) => (
-                <p data-testid="analysis-paragraph" key={i}>
-                    분석 문단 {i}
-                </p>
-            ))}
-        </div>
-    ),
+        onReanalyzeIntent?: () => void;
+    }) => {
+        mockAnalysisPanelProps(props);
+        return (
+            <div data-testid="analysis-panel">
+                {Array.from(
+                    { length: props.analysis?.paragraphCount ?? 0 },
+                    (_, i) => (
+                        <p data-testid="analysis-paragraph" key={i}>
+                            분석 문단 {i}
+                        </p>
+                    )
+                )}
+            </div>
+        );
+    },
 }));
 
 vi.mock('@/entities/bars/hooks/useBars', () => ({
@@ -183,6 +192,44 @@ describe('ChartContent', () => {
     it('renders without crashing', () => {
         const { container } = render(<ChartContent {...defaultProps} />);
         expect(container.firstElementChild).toBeDefined();
+    });
+
+    it('즉시 응답(캐시 히트)이면 진행 화면의 마무리 애니메이션을 건너뛰도록 두 훅에 같은 신호를 넘긴다', async () => {
+        const { useAnalysis } =
+            await import('@/views/symbol/hooks/useAnalysis');
+        const { useAnalysisDisplay } =
+            await import('@/views/symbol/hooks/useAnalysisDisplay');
+        const { useAnalysisProgress } =
+            await import('@/widgets/analysis/hooks/useAnalysisProgress');
+        const syncReanalyzeCooldown = vi.fn();
+        vi.mocked(useAnalysis).mockReturnValue({
+            analysis: {} as AnalysisResponse,
+            analysisResult: null,
+            isAnalyzing: false,
+            analysisError: null,
+            handleReanalyze: vi.fn(),
+            reanalyzeCooldownMs: 0,
+            cooldownNotice: null,
+            isInstantResponse: true,
+            syncReanalyzeCooldown,
+        } as never);
+
+        render(<ChartContent {...defaultProps} />);
+
+        expect(vi.mocked(useAnalysisDisplay)).toHaveBeenLastCalledWith(
+            false,
+            true
+        );
+        expect(vi.mocked(useAnalysisProgress)).toHaveBeenLastCalledWith(
+            expect.objectContaining({ skipFinishing: true })
+        );
+        // 쿨다운 조회는 마운트가 아니라 재분석 버튼 의도 신호에 묶인다.
+        expect(mockAnalysisPanelProps).toHaveBeenLastCalledWith(
+            expect.objectContaining({
+                onReanalyzeIntent: syncReanalyzeCooldown,
+            })
+        );
+        vi.mocked(useAnalysis).mockReset();
     });
 
     it('does not render a fear-greed card in the analysis panel', () => {

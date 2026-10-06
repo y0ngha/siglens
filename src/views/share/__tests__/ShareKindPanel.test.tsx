@@ -20,7 +20,7 @@
  * any future regression where a panel import resolves to `undefined`.
  */
 
-import { render } from '@testing-library/react';
+import { render, waitFor } from '@testing-library/react';
 import type { ShareableKind } from '@/shared/db/constants';
 import { SHAREABLE_KIND_VALUES } from '@/shared/db/constants';
 import { ShareKindPanel } from '@/views/share/ShareKindPanel';
@@ -124,7 +124,7 @@ describe('ShareKindPanel (RSC boundary dispatcher)', () => {
             expect(queryByRole('radiogroup')).toBeNull();
         });
 
-        it('forwards plain to AnalysisPanel for the chart kind (no double switch)', () => {
+        it('forwards plain to AnalysisPanel for the chart kind (no double switch)', async () => {
             render(
                 <ShareKindPanel
                     kind="chart"
@@ -133,15 +133,17 @@ describe('ShareKindPanel (RSC boundary dispatcher)', () => {
                     plain="차트를 쉬운 말로 풀어 쓴 설명입니다."
                 />
             );
-            expect(mockAnalysisPanel).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    plain: '차트를 쉬운 말로 풀어 쓴 설명입니다.',
-                })
+            await waitFor(() =>
+                expect(mockAnalysisPanel).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        plain: '차트를 쉬운 말로 풀어 쓴 설명입니다.',
+                    })
+                )
             );
         });
     });
 
-    it('renders chart kind with chartBars prop without throwing', () => {
+    it('renders chart kind with chartBars prop without throwing', async () => {
         const stubBars = [
             {
                 time: 1700000000,
@@ -176,7 +178,7 @@ describe('ShareKindPanel (RSC boundary dispatcher)', () => {
             mockOverallView.mockClear();
         });
 
-        it('passes assetClass="crypto" to OverallView when specified', () => {
+        it('passes assetClass="crypto" to OverallView when specified', async () => {
             render(
                 <ShareKindPanel
                     kind="overall"
@@ -184,13 +186,17 @@ describe('ShareKindPanel (RSC boundary dispatcher)', () => {
                     assetClass="crypto"
                 />
             );
-            expect(mockOverallView).toHaveBeenCalledTimes(1);
-            expect(mockOverallView).toHaveBeenCalledWith(
-                expect.objectContaining({ assetClass: 'crypto' })
+            await waitFor(() =>
+                expect(mockOverallView).toHaveBeenCalledTimes(1)
+            );
+            await waitFor(() =>
+                expect(mockOverallView).toHaveBeenCalledWith(
+                    expect.objectContaining({ assetClass: 'crypto' })
+                )
             );
         });
 
-        it('passes assetClass="equity" to OverallView when specified', () => {
+        it('passes assetClass="equity" to OverallView when specified', async () => {
             render(
                 <ShareKindPanel
                     kind="overall"
@@ -198,20 +204,24 @@ describe('ShareKindPanel (RSC boundary dispatcher)', () => {
                     assetClass="equity"
                 />
             );
-            expect(mockOverallView).toHaveBeenCalledWith(
-                expect.objectContaining({ assetClass: 'equity' })
+            await waitFor(() =>
+                expect(mockOverallView).toHaveBeenCalledWith(
+                    expect.objectContaining({ assetClass: 'equity' })
+                )
             );
         });
 
-        it('passes assetClass=undefined to OverallView when omitted', () => {
+        it('passes assetClass=undefined to OverallView when omitted', async () => {
             render(
                 <ShareKindPanel
                     kind="overall"
                     result={stubResults.overall as never}
                 />
             );
-            expect(mockOverallView).toHaveBeenCalledWith(
-                expect.objectContaining({ assetClass: undefined })
+            await waitFor(() =>
+                expect(mockOverallView).toHaveBeenCalledWith(
+                    expect.objectContaining({ assetClass: undefined })
+                )
             );
         });
     });
@@ -234,7 +244,7 @@ describe('ShareKindPanel (RSC boundary dispatcher)', () => {
             mockOverallView.mockClear();
         });
 
-        it('passes hasOptions=false to OverallView for a kr-equity symbol', () => {
+        it('passes hasOptions=false to OverallView for a kr-equity symbol', async () => {
             render(
                 <ShareKindPanel
                     kind="overall"
@@ -243,12 +253,14 @@ describe('ShareKindPanel (RSC boundary dispatcher)', () => {
                     symbol="005930.KS"
                 />
             );
-            expect(mockOverallView).toHaveBeenCalledWith(
-                expect.objectContaining({ hasOptions: false })
+            await waitFor(() =>
+                expect(mockOverallView).toHaveBeenCalledWith(
+                    expect.objectContaining({ hasOptions: false })
+                )
             );
         });
 
-        it('passes hasOptions=true to OverallView for a us-equity symbol', () => {
+        it('passes hasOptions=true to OverallView for a us-equity symbol', async () => {
             render(
                 <ShareKindPanel
                     kind="overall"
@@ -257,14 +269,16 @@ describe('ShareKindPanel (RSC boundary dispatcher)', () => {
                     symbol="AAPL"
                 />
             );
-            expect(mockOverallView).toHaveBeenCalledWith(
-                expect.objectContaining({ hasOptions: true })
+            await waitFor(() =>
+                expect(mockOverallView).toHaveBeenCalledWith(
+                    expect.objectContaining({ hasOptions: true })
+                )
             );
         });
 
         // 모르는 상태를 `true`로 열면 존재하지 않는 옵션 섹션이 뜬다 — 이 감사가
         // 두 라운드 연속 잡아낸 실패 방향이다. 숨기는 쪽이 틀려도 대가가 작다.
-        it('symbol이 없으면 hasOptions=false — 모를 때는 숨긴다', () => {
+        it('symbol이 없으면 hasOptions=false — 모를 때는 숨긴다', async () => {
             render(
                 <ShareKindPanel
                     kind="overall"
@@ -272,8 +286,10 @@ describe('ShareKindPanel (RSC boundary dispatcher)', () => {
                     assetClass="equity"
                 />
             );
-            expect(mockOverallView).toHaveBeenCalledWith(
-                expect.objectContaining({ hasOptions: false })
+            await waitFor(() =>
+                expect(mockOverallView).toHaveBeenCalledWith(
+                    expect.objectContaining({ hasOptions: false })
+                )
             );
         });
 
@@ -283,7 +299,7 @@ describe('ShareKindPanel (RSC boundary dispatcher)', () => {
         // 열린다. 빈 문자열은 "심볼 없음"과 같은 실패 형태(모르는 상태)이므로
         // undefined와 동일하게 숨겨야 한다 — 위 "symbol이 없으면" 케이스와 같은
         // 결론을 빈 문자열에도 고정한다.
-        it('symbol이 빈 문자열이면 hasOptions=false — undefined와 동일하게 숨긴다', () => {
+        it('symbol이 빈 문자열이면 hasOptions=false — undefined와 동일하게 숨긴다', async () => {
             render(
                 <ShareKindPanel
                     kind="overall"
@@ -292,8 +308,10 @@ describe('ShareKindPanel (RSC boundary dispatcher)', () => {
                     symbol=""
                 />
             );
-            expect(mockOverallView).toHaveBeenCalledWith(
-                expect.objectContaining({ hasOptions: false })
+            await waitFor(() =>
+                expect(mockOverallView).toHaveBeenCalledWith(
+                    expect.objectContaining({ hasOptions: false })
+                )
             );
         });
     });

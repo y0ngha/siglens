@@ -1,6 +1,4 @@
-'use server';
-
-import { searchTicker } from '../lib/searchTicker';
+import { searchTicker } from './searchTicker';
 import { isE2E } from '@/shared/api/e2eEnv';
 import type { TickerSearchResult } from '@/shared/lib/types';
 
@@ -53,7 +51,21 @@ const E2E_TICKER_FIXTURE: ReadonlyArray<TickerSearchResult> = [
     },
 ];
 
-export async function searchTickerAction(
+/**
+ * 질의 길이 상한(`GET /api/search`가 400으로 거절한다). 티커·회사명·한국어 이름 어느 것도
+ * 이보다 길지 않다 — 그 이상은 FMP와 캐시 키에 의미 없는 부하만 준다.
+ */
+export const MAX_SEARCH_QUERY_LENGTH = 100;
+
+/**
+ * 티커 검색 한 건 — `GET /api/search`(라우트 핸들러)가 부른다.
+ *
+ * 예전에는 Server Action(`searchTickerAction`)이었다. Server Action은 POST라 브라우저도
+ * CDN도 캐시하지 못하고, 취소되지 않으며, 다른 액션과 한 줄로 한 번에 하나씩 나간다 —
+ * 타이핑 중 검색이 서로의 뒤에, 그리고 같은 화면의 다른 액션 뒤에 쌓였다. 로직은 그대로
+ * 두고 전송만 GET으로 옮겼다.
+ */
+export async function searchTickerQuery(
     query: string
 ): Promise<TickerSearchResult[]> {
     const trimmed = query.trim();

@@ -11,26 +11,8 @@ const ALL_TAB = 'all';
 const ALL_LABEL = koMessage('shared.ui.misc.filterAll');
 const withIntl = { wrapper: IntlTestProvider } as const;
 import { useBacktestFilter } from '@/features/backtest-filter/hooks/useBacktestFilter';
-import type { BacktestCase } from '@y0ngha/siglens-core';
-
-const mockReplace = vi.fn();
-
-vi.mock('next/navigation', () => ({
-    useRouter: () => ({ replace: mockReplace }),
-    usePathname: () => '/backtesting',
-}));
-
-function createCase(ticker: string): BacktestCase {
-    return { ticker } as BacktestCase;
-}
 
 describe('useBacktestFilter', () => {
-    const cases = [
-        createCase('AAPL'),
-        createCase('AAPL'),
-        createCase('MSFT'),
-        createCase('GOOGL'),
-    ];
     const tickers = ['AAPL', 'MSFT', 'GOOGL'];
 
     beforeEach(() => {
@@ -40,7 +22,7 @@ describe('useBacktestFilter', () => {
 
     it('returns tab items including the all-tab and each ticker', () => {
         const { result } = renderHook(
-            () => useBacktestFilter(cases, tickers),
+            () => useBacktestFilter(tickers),
             withIntl
         );
 
@@ -52,14 +34,13 @@ describe('useBacktestFilter', () => {
         ]);
     });
 
-    it('returns all cases when activeTab is the all-tab', () => {
+    it('starts on the all-tab and is not filtered', () => {
         const { result } = renderHook(
-            () => useBacktestFilter(cases, tickers),
+            () => useBacktestFilter(tickers),
             withIntl
         );
 
         expect(result.current.activeTab).toBe(ALL_TAB);
-        expect(result.current.filtered).toEqual(cases);
         expect(result.current.isFiltered).toBe(false);
     });
 
@@ -67,7 +48,7 @@ describe('useBacktestFilter', () => {
         window.history.pushState({}, '', '/backtesting?ticker=AAPL');
 
         const { result } = renderHook(
-            () => useBacktestFilter(cases, tickers),
+            () => useBacktestFilter(tickers),
             withIntl
         );
 
@@ -78,32 +59,28 @@ describe('useBacktestFilter', () => {
         window.history.pushState({}, '', '/backtesting?ticker=AAPL');
 
         const { result } = renderHook(
-            () => useBacktestFilter(cases, tickers),
+            () => useBacktestFilter(tickers),
             withIntl
         );
 
         expect(result.current.activeTab).toBe('AAPL');
-        expect(result.current.filtered).toEqual([
-            createCase('AAPL'),
-            createCase('AAPL'),
-        ]);
     });
 
     it('falls back to the all-tab when the URL ticker is not in the tickers list', () => {
         window.history.pushState({}, '', '/backtesting?ticker=INVALID');
 
         const { result } = renderHook(
-            () => useBacktestFilter(cases, tickers),
+            () => useBacktestFilter(tickers),
             withIntl
         );
 
         expect(result.current.activeTab).toBe(ALL_TAB);
-        expect(result.current.filtered).toEqual(cases);
     });
 
-    it('updates activeTab and replaces the URL when setActiveTab is called', () => {
+    it('updates activeTab and replaces the URL without router navigation', () => {
+        const replaceSpy = vi.spyOn(window.history, 'replaceState');
         const { result } = renderHook(
-            () => useBacktestFilter(cases, tickers),
+            () => useBacktestFilter(tickers),
             withIntl
         );
 
@@ -112,15 +89,19 @@ describe('useBacktestFilter', () => {
         });
 
         expect(result.current.activeTab).toBe('MSFT');
-        expect(mockReplace).toHaveBeenCalledWith('/backtesting?ticker=MSFT', {
-            scroll: false,
-        });
+        expect(replaceSpy).toHaveBeenCalledWith(
+            null,
+            '',
+            '/backtesting?ticker=MSFT'
+        );
+        expect(window.location.search).toBe('?ticker=MSFT');
+        replaceSpy.mockRestore();
     });
 
     it('removes the ticker param when setActiveTab is called with the all-tab', () => {
         window.history.pushState({}, '', '/backtesting?ticker=MSFT');
         const { result } = renderHook(
-            () => useBacktestFilter(cases, tickers),
+            () => useBacktestFilter(tickers),
             withIntl
         );
 
@@ -131,29 +112,25 @@ describe('useBacktestFilter', () => {
         // explicitTab(사용자가 방금 고른 값)이 urlTab보다 우선해야 한다 — 순서가
         // 뒤집히면 URL에 남은 옛 ?ticker=가 방금 고른 "전체"를 도로 덮어쓴다.
         expect(result.current.activeTab).toBe(ALL_TAB);
-        expect(mockReplace).toHaveBeenCalledWith('/backtesting', {
-            scroll: false,
+        expect(window.location.pathname + window.location.search).toBe(
+            '/backtesting'
+        );
+    });
+
+    it('keeps the locale prefix of the current path when replacing the URL', () => {
+        window.history.pushState({}, '', '/en/backtesting');
+        const { result } = renderHook(
+            () => useBacktestFilter(tickers),
+            withIntl
+        );
+
+        act(() => {
+            result.current.setActiveTab('AAPL');
         });
-    });
 
-    it('returns empty filtered array when no cases match the URL ticker', () => {
-        window.history.pushState({}, '', '/backtesting?ticker=GOOGL');
-        const casesWithoutGoogl = [createCase('AAPL'), createCase('MSFT')];
-        const { result } = renderHook(
-            () => useBacktestFilter(casesWithoutGoogl, tickers),
-            withIntl
+        expect(window.location.pathname + window.location.search).toBe(
+            '/en/backtesting?ticker=AAPL'
         );
-
-        expect(result.current.filtered).toEqual([]);
-    });
-
-    it('returns an empty filtered array when cases is empty', () => {
-        const { result } = renderHook(
-            () => useBacktestFilter([], tickers),
-            withIntl
-        );
-
-        expect(result.current.filtered).toEqual([]);
     });
 
     it('하이드레이션 렌더는 ?ticker=가 있어도 전체 탭(서버 스냅샷)을 먼저 쓰고, 그 다음 URL 값으로 전환한다', () => {
@@ -164,7 +141,7 @@ describe('useBacktestFilter', () => {
 
         renderHook(
             () => {
-                const r = useBacktestFilter(cases, tickers);
+                const r = useBacktestFilter(tickers);
                 seen.push(r.activeTab);
                 return r;
             },

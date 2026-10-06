@@ -1,4 +1,3 @@
-import type { OptionsChain, OptionsSnapshot } from '@y0ngha/siglens-core';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
 
 /**
@@ -12,11 +11,14 @@ import type { OptionsExpirationSelector } from '@/shared/lib/types';
  *
  * Returns `null` when the snapshot has no chains at all (caller renders
  * an empty-state).
+ *
+ * 체인 타입에 대해 제네릭이다 — 서버의 전체 `OptionsSnapshot`과 클라이언트로 투영된
+ * `ClientOptionsSnapshot`이 같은 규칙을 쓴다.
  */
-export function pickActiveChain(
-    snapshot: OptionsSnapshot,
+export function pickActiveChain<C extends { expirationDate: string }>(
+    snapshot: { chains: ReadonlyArray<C> },
     expirationDate: OptionsExpirationSelector
-): OptionsChain | null {
+): C | null {
     const chains = snapshot.chains;
     if (chains.length === 0) return null;
     const nearestChain = chains[0];

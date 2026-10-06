@@ -1,14 +1,10 @@
 import { useTranslations } from 'next-intl';
 import type { BacktestCase } from '@y0ngha/siglens-core';
 import { BacktestCaseCard } from './BacktestCaseCard';
+import { UNFILTERED_TOKEN, visibilityAttrs } from './lib/caseListVisibility';
 
 interface BacktestCaseListProps {
     cases: BacktestCase[];
-    /**
-     * 모든 월을 펼칠지. 종목 필터가 걸려 있으면 그 종목의 케이스가 몇 건 안 되고
-     * 사용자가 이미 좁혀서 보고 있으므로 접어 둘 이유가 없다.
-     */
-    openAll?: boolean;
 }
 
 /** 기본으로 펼쳐 두는 최신 월 개수. 나머지는 요약 줄만 보이고 눌러서 연다. */
@@ -29,6 +25,15 @@ interface MonthGroup {
     key: string;
     label: string;
     items: BacktestCase[];
+    /** 이 월에 케이스가 있는 종목별 건수(첫 등장 순). 종목 탭의 월 건수 표시에 쓴다. */
+    countByTicker: ReadonlyMap<string, number>;
+}
+
+function countByTicker(items: readonly BacktestCase[]): Map<string, number> {
+    return items.reduce(
+        (acc, c) => acc.set(c.ticker, (acc.get(c.ticker) ?? 0) + 1),
+        new Map<string, number>()
+    );
 }
 
 /**
@@ -36,13 +41,14 @@ interface MonthGroup {
  *
  * 예전에는 100건·17개월을 오래된 순으로 전부 펼쳐 놓아서, 사용자가 가장 궁금한 최근
  * 결과까지 한참 내려가야 했다. 지금은 월마다 네이티브 `<details>`로 접고 최신 3개월만
- * 펼친다(`openAll`이면 전부). 접힌 월의 카드도 DOM에는 그대로 있다 — 크롤러는 접힌
- * `<details>` 안의 텍스트도 읽으므로 색인 범위가 줄지 않는다.
+ * 펼친다. 접힌 월의 카드도 DOM에는 그대로 있다 — 크롤러는 접힌 `<details>` 안의 텍스트도
+ * 읽으므로 색인 범위가 줄지 않는다.
+ *
+ * **서버 컴포넌트로 한 번만 렌더된다.** 종목 탭은 목록을 다시 그리지 않고 요소마다 붙은
+ * 표기(`caseListVisibility`)로 보이는 범위만 고른다 — 종목을 고르면 그 종목 카드와 그
+ * 종목이 있는 월만 남기고, 월은 전부 펼치며, 월 건수도 그 종목 기준 표시로 바꾼다.
  */
-export function BacktestCaseList({
-    cases,
-    openAll = false,
-}: BacktestCaseListProps) {
+export function BacktestCaseList({ cases }: BacktestCaseListProps) {
     const t = useTranslations('widgets.backtesting');
     const tMisc = useTranslations('shared.ui.misc');
     if (cases.length === 0) {
@@ -70,6 +76,7 @@ export function BacktestCaseList({
             key,
             label: tMisc('backtestMonth', { v0: year, v1: month }),
             items,
+            countByTicker: countByTicker(items),
         };
     });
 
@@ -78,7 +85,11 @@ export function BacktestCaseList({
             {groups.map((group, index) => (
                 <details
                     key={group.key}
-                    open={openAll || index < OPEN_RECENT_MONTHS}
+                    open={index < OPEN_RECENT_MONTHS}
+                    {...visibilityAttrs([
+                        UNFILTERED_TOKEN,
+                        ...group.countByTicker.keys(),
+                    ])}
                     className="group"
                 >
                     {/* `<summary>` 안에 헤딩을 둔다(HTML이 허용하는 구성). 접힌 상태에서도
@@ -97,18 +108,38 @@ export function BacktestCaseList({
                         <h2 className="text-sm font-semibold text-secondary-300">
                             {group.label}
                         </h2>
-                        <span className="text-xs text-secondary-400 tabular-nums">
+                        {/* 건수는 탭마다 다르다 — "전체"는 월 합계, 종목 탭은 그 종목 건수.
+                            종목별 표시는 서버 HTML에서 숨겨 두고 탭이 바꿔 보인다. */}
+                        <span
+                            {...visibilityAttrs([UNFILTERED_TOKEN])}
+                            className="text-xs text-secondary-400 tabular-nums"
+                        >
                             {t('BacktestCaseList.caseCount', {
                                 v0: group.items.length,
                             })}
                         </span>
+                        {[...group.countByTicker].map(([ticker, count]) => (
+                            <span
+                                key={ticker}
+                                hidden
+                                {...visibilityAttrs([ticker])}
+                                className="text-xs text-secondary-400 tabular-nums"
+                            >
+                                {t('BacktestCaseList.caseCount', { v0: count })}
+                            </span>
+                        ))}
                     </summary>
                     <div className="flex flex-col gap-2 pt-1">
                         {group.items.map(c => (
-                            <BacktestCaseCard
+                            <div
                                 key={`${c.ticker}-${c.entryDate}`}
-                                case_={c}
-                            />
+                                {...visibilityAttrs([
+                                    UNFILTERED_TOKEN,
+                                    c.ticker,
+                                ])}
+                            >
+                                <BacktestCaseCard case_={c} />
+                            </div>
                         ))}
                     </div>
                 </details>

@@ -1,7 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BacktestTabs } from '@/widgets/backtesting/BacktestTabs';
-import type { BacktestCase } from '@y0ngha/siglens-core';
 
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ push: vi.fn(), prefetch: vi.fn() }),
@@ -43,13 +42,13 @@ vi.mock('@/features/backtest-filter/hooks/useBacktestFilter', () => ({
         ],
         activeTab: mockActiveTab,
         setActiveTab: mockSetActiveTab,
-        filtered: [],
+        isFiltered: mockActiveTab !== 'all',
     }),
 }));
 
-vi.mock('@/widgets/backtesting/BacktestCaseList', () => ({
-    BacktestCaseList: () => <div data-testid="case-list">Cases</div>,
-}));
+function CaseList() {
+    return <div data-testid="case-list">Cases</div>;
+}
 
 vi.mock('@/shared/ui/tabs/TabsUnderline', async () => {
     const { createTabsUnderlineMock } =
@@ -65,10 +64,9 @@ describe('Backtesting Filter Flow', () => {
 
     it('renders ticker filter tabs', () => {
         render(
-            <BacktestTabs
-                cases={[] as BacktestCase[]}
-                tickers={['AAPL', 'TSLA']}
-            />
+            <BacktestTabs tickers={['AAPL', 'TSLA']}>
+                <CaseList />
+            </BacktestTabs>
         );
         expect(screen.getByText('전체')).toBeInTheDocument();
         expect(screen.getByText('AAPL')).toBeInTheDocument();
@@ -77,10 +75,9 @@ describe('Backtesting Filter Flow', () => {
 
     it('calls setActiveTab when a filter tab is clicked', async () => {
         render(
-            <BacktestTabs
-                cases={[] as BacktestCase[]}
-                tickers={['AAPL', 'TSLA']}
-            />
+            <BacktestTabs tickers={['AAPL', 'TSLA']}>
+                <CaseList />
+            </BacktestTabs>
         );
         const user = userEvent.setup();
         await user.click(screen.getByText('AAPL'));
@@ -89,7 +86,9 @@ describe('Backtesting Filter Flow', () => {
 
     it('marks "all" tab as active by default', () => {
         render(
-            <BacktestTabs cases={[] as BacktestCase[]} tickers={['AAPL']} />
+            <BacktestTabs tickers={['AAPL']}>
+                <CaseList />
+            </BacktestTabs>
         );
         const allTab = screen.getByRole('tab', { name: '전체' });
         expect(allTab).toHaveAttribute('aria-selected', 'true');
@@ -97,7 +96,9 @@ describe('Backtesting Filter Flow', () => {
 
     it('renders tabpanel for filtered results', () => {
         render(
-            <BacktestTabs cases={[] as BacktestCase[]} tickers={['AAPL']} />
+            <BacktestTabs tickers={['AAPL']}>
+                <CaseList />
+            </BacktestTabs>
         );
         expect(screen.getByTestId('case-list')).toBeInTheDocument();
     });

@@ -57,6 +57,24 @@ export function e2eCachedTechnical(tier: Tier = 'free'): RunAnalysisResult {
     };
 }
 
+/**
+ * Fixed `{ status: 'done' }` technical analysis result for E2E runs — the shape a
+ * real force re-analysis (`reanalyze` intent) returns.
+ *
+ * 운영에서 재분석 의도가 쿨다운을 잡으면 `force=true`로 캐시를 건너뛰고 새로 생성하므로
+ * 응답은 언제나 `done`이다(못 잡으면 `reanalyze_cooldown`). E2E 단락이 이 경우에도
+ * `cached`를 돌려주면 클라이언트는 그것을 "생성 없이 즉시 온 응답"
+ * (`useAnalysis.isInstantResponse`)으로 보고 진행 화면의 마무리 시퀀스를 건너뛴다 —
+ * 운영에서 일어나지 않는 흐름을 E2E만 타게 된다.
+ */
+export function e2eGeneratedTechnical(tier: Tier = 'free'): RunAnalysisResult {
+    return {
+        status: 'done',
+        ...filterAnalysisResult(typedFixture.technical, tier),
+        unfilteredResult: typedFixture.technical,
+    };
+}
+
 /** Fixed `{ status: 'cached' }` overall analysis result for E2E runs. */
 export function e2eCachedOverall(): SubmitOverallAnalysisCached {
     return { status: 'cached', result: typedFixture.overall };

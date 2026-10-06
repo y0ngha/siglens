@@ -1,16 +1,17 @@
 'use client';
 
-import { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { getNewsCardsAction } from '@/entities/news-article/actions/getNewsCardsAction';
 import type { NewsDisplayItem } from '@/shared/lib/types';
+import { POLL_INTERVAL_MS } from '@/shared/config/cardPollingConfig';
+import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import { usePollingQuery } from '@/shared/hooks/usePollingQuery';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
 import {
-    POLL_INTERVAL_MS,
-    MAX_CONSECUTIVE_FAILURES,
-    EMPTY_SNAPSHOT_MAX_POLLS,
-    MAX_POLL_DURATION_MS,
-    STAGNANT_POLL_LIMIT,
-    STAGNATION_FLOOR_POLLS,
-} from '@/shared/config/cardPollingConfig';
+    type CardListPollPolicy,
+    decideCardListPoll,
+    INITIAL_CARD_POLL_COUNTERS,
+} from '@/entities/news-article/lib/cardPollDecision';
 
 /**
  * Called once when polling terminates normally (all cards enriched, or timeout
@@ -20,13 +21,17 @@ import {
  */
 export type OnPollingComplete = (finalItems: NewsDisplayItem[]) => void;
 
+/**
+ * SSR이 이미 보강된 행을 갖고 있어도 뉴스 탭은 뒤에서 FMP 새로고침을 돌린다. 그래서 이만큼은
+ * 확인한 뒤에야 "새 소식 확인 중" 표시를 끄고 "전부 보강됨"으로 끝낸다.
+ */
 const REFRESH_SNAPSHOT_MIN_POLLS = 5;
 
-function hasPendingAnalysis(items: NewsDisplayItem[]): boolean {
-    return items.some(
-        item => item.sentiment === null || item.priceImpact === null
-    );
-}
+const LIST_POLICY: CardListPollPolicy = {
+    completeMinPolls: REFRESH_SNAPSHOT_MIN_POLLS,
+    errorsCountAsPolls: true,
+    completeOnTimeout: true,
+};
 
 export interface UseNewsCardPollingReturn {
     items: NewsDisplayItem[];
@@ -37,190 +42,83 @@ export interface UseNewsCardPollingReturn {
 /**
  * Keeps the news card list up-to-date while background analysis is in progress.
  *
- * On mount, this hook polls `getNewsCardsAction` every 3 s and replaces the
- * local state with the fresh DB snapshot. Even when SSR already has analyzed
- * rows, the news page still runs a background FMP refresh, so the UI keeps a
- * short "checking latest news" state before treating the DB snapshot as final.
+ * 마운트하면 `usePollingQuery`(키 `newsCards`)가 3초마다 `getNewsCardsAction`을 불러
+ * DB 스냅샷을 받는다. 같은 탭의 AI 요약 대기(`useWaitForNewsCards`)와 쿼리를 나눠 써서 요청은
+ * 한 번만 나가고, 숨은 탭에서는 멈추며, 응답이 이전과 같으면 `items` 참조가 그대로라 목록이
+ * 다시 그려지지 않는다. 종료 조건은 `decideCardListPoll` 참고.
  *
  * `pollError` becomes non-null after `MAX_CONSECUTIVE_FAILURES` consecutive
  * polling errors so the consuming component can rethrow it for the surrounding
  * error boundary to catch.
  *
- * NOTE: `initialItems` is compared by reference for state-reset detection.
- * Callers must pass a stable reference (typically the SSR snapshot) — passing
- * a freshly-built array on every parent render will cause unnecessary state
- * resets mid-poll. If reference stability cannot be guaranteed, memoize at
- * the call site (`useMemo([initialItems])`) or remount with `key={symbol}`.
+ * 첫 응답 전에는 `initialItems`(SSR 스냅샷)를 보여 준다.
  */
 export function useNewsCardPolling(
     symbol: string,
     initialItems: NewsDisplayItem[],
     onPollingComplete?: OnPollingComplete
 ): UseNewsCardPollingReturn {
-    const [items, setItems] = useState(initialItems);
     const [isPolling, setIsPolling] = useState(true);
     const [pollError, setPollError] = useState<Error | null>(null);
     // Reset on symbol change in render (React-recommended "store information
-    // from previous renders" pattern). Avoids the
-    // `react-hooks/set-state-in-effect` warning and skips a redundant commit
-    // cycle vs. doing the reset from inside an effect.
+    // from previous renders" pattern).
     // https://react.dev/reference/react/useState#storing-information-from-previous-renders
-    //
-    // Only `symbol` is compared. `initialItems` is intentionally NOT in the
-    // reset key — array props in tests / unmemoized parents change identity on
-    // every render, which would re-fire setState during render and cause an
-    // infinite loop. Callers that need a state reset on a fresh `initialItems`
-    // (e.g., new SSR snapshot for the same symbol) should remount with `key={...}`.
     const [prevSymbol, setPrevSymbol] = useState(symbol);
-    const latestItemsRef = useRef(initialItems);
-    // Keep the latest callback in a ref so the interval closure never goes stale.
+    // 종목별 카운터. 종목이 바뀌면(같은 인스턴스가 남는 경우) 처음부터 센다.
+    const countersRef = useRef({
+        symbol,
+        counters: INITIAL_CARD_POLL_COUNTERS,
+    });
+    // 판정 콜백은 렌더 밖(쿼리 갱신 알림)에서 불리므로 최신 값은 ref로 읽는다.
     const onPollingCompleteRef = useRef(onPollingComplete);
+    const latestItemsRef = useRef(initialItems);
+
+    const locale = useCurrentLocale();
+    const data = usePollingQuery<NewsDisplayItem[]>({
+        queryKey: QUERY_KEYS.newsCards(symbol, locale),
+        queryFn: () => getNewsCardsAction(symbol),
+        intervalMs: POLL_INTERVAL_MS,
+        enabled: true,
+        // 서버 스냅샷으로 시작한다 — 이전 방문의 캐시가 이번 스냅샷을 덮지 않는다.
+        initialData: initialItems,
+        onSettled: (outcome, elapsedMs) => {
+            const step = decideCardListPoll(
+                countersRef.current.symbol === symbol
+                    ? countersRef.current.counters
+                    : INITIAL_CARD_POLL_COUNTERS,
+                outcome,
+                elapsedMs,
+                latestItemsRef.current,
+                LIST_POLICY
+            );
+            if (step.failedPollError !== null) {
+                console.error(
+                    '[useNewsCardPolling] poll failed:',
+                    step.failedPollError
+                );
+            }
+            countersRef.current = { symbol, counters: step.counters };
+            if (step.settled) setIsPolling(false);
+            if (step.error !== null) setPollError(step.error);
+            if (step.completedItems !== null) {
+                onPollingCompleteRef.current?.([...step.completedItems]);
+            }
+            return step.stop ? 'stop' : 'continue';
+        },
+    });
 
     if (prevSymbol !== symbol) {
         setPrevSymbol(symbol);
-        setItems(initialItems);
         setIsPolling(true);
         setPollError(null);
     }
 
-    // Mirror committed `items` into the ref so the polling error handler can
-    // read the latest snapshot without depending on stale closure values. Done
-    // in useLayoutEffect (not in render) to satisfy the no-ref-mutation-during-
-    // render rule while still landing before any concurrent reads from setInterval.
-    useLayoutEffect(() => {
-        latestItemsRef.current = items;
-    }, [items]);
+    const items = data ?? initialItems;
 
     useLayoutEffect(() => {
         onPollingCompleteRef.current = onPollingComplete;
-    }, [onPollingComplete]);
-
-    useEffect(() => {
-        let pollCount = 0;
-        let consecutiveFailures = 0;
-        // 진전이 멈추면 선다.
-        //
-        // 종료 조건이 `!hasPendingAnalysis(fresh)` — 즉 창 안의 **모든** 카드가
-        // 보강돼야 멈춘다 — 인데, 공급 쪽은 방문자 25건/10분(`VISITOR_NEWS_CARD_LIMIT`)
-        // + 크론 12건/밤이고 창은 180일이다. 기사가 25건을 넘는 종목은 그 조건이
-        // 구조적으로 참이 되지 않아 매 조회마다 100회 상한을 그대로 채운다. 게다가
-        // 5회째에 스피너만 꺼져서(`setIsPolling(false)`) 나머지 95회는 눈에도 안
-        // 보인다(감사: 비용 라운드 15).
-        let enrichedCount = 0;
-        let stagnantPolls = 0;
-        const startTime = Date.now();
-        // 언마운트 후 쓰기 방지 — `clearInterval`은 다음 tick만 막고, 이미 날아간
-        // 요청의 응답은 그대로 돌아온다. `setItems`/`latestItemsRef`/
-        // `onPollingComplete`가 전부 await 뒤에 있어 그대로 두면 떠난 종목의 카드로
-        // 상태를 쓰고, `useNewsPollingWithInvalidation`을 통해 그 종목의
-        // `invalidateQueries`까지 발화시킨다.
-        //
-        // 종목 전환 자체는 remount다(Next가 `[symbol]` 세그먼트를 param으로 keying).
-        // 자세한 경위는 형제 훅 `useWaitForNewsCards` 주석 참조.
-        let cancelled = false;
-
-        const intervalId = setInterval(async () => {
-            if (Date.now() - startTime > MAX_POLL_DURATION_MS) {
-                setIsPolling(false);
-                clearInterval(intervalId);
-                if (latestItemsRef.current.length > 0) {
-                    onPollingCompleteRef.current?.(latestItemsRef.current);
-                }
-                return;
-            }
-
-            try {
-                const fresh = await getNewsCardsAction(symbol);
-                if (cancelled) return;
-                pollCount += 1;
-                consecutiveFailures = 0;
-                latestItemsRef.current = fresh;
-                setItems(fresh);
-
-                if (
-                    fresh.length > 0 &&
-                    pollCount >= REFRESH_SNAPSHOT_MIN_POLLS
-                ) {
-                    setIsPolling(false);
-                }
-
-                // 보강된 카드 수가 STAGNANT_POLL_LIMIT 틱 연속 그대로면, 남은
-                // 미보강 카드는 이번 창에서 채워지지 않는다 — 상한까지 끌 이유가 없다.
-                const freshEnriched = fresh.filter(
-                    item => item.sentiment !== null
-                ).length;
-                if (freshEnriched > enrichedCount) {
-                    enrichedCount = freshEnriched;
-                    stagnantPolls = 0;
-                } else {
-                    stagnantPolls += 1;
-                }
-
-                if (
-                    fresh.length === 0 &&
-                    pollCount >= EMPTY_SNAPSHOT_MAX_POLLS
-                ) {
-                    setIsPolling(false);
-                    clearInterval(intervalId);
-                } else if (
-                    // 보강이 **한 번이라도** 진행된 뒤에만 정체로 본다. 아직 0건이면
-                    // 첫 카드가 도착하기 전(적재 + LLM 왕복)일 뿐이라 여기서 접으면
-                    // 콜드 종목이 시작도 못 하고 끝난다 — 그 케이스는 wall-clock
-                    // 상한이 맡는다.
-                    enrichedCount > 0 &&
-                    pollCount >= STAGNATION_FLOOR_POLLS &&
-                    stagnantPolls >= STAGNANT_POLL_LIMIT
-                ) {
-                    setIsPolling(false);
-                    clearInterval(intervalId);
-                    if (fresh.length > 0) {
-                        onPollingCompleteRef.current?.(fresh);
-                    }
-                } else if (
-                    fresh.length > 0 &&
-                    !hasPendingAnalysis(fresh) &&
-                    pollCount >= REFRESH_SNAPSHOT_MIN_POLLS
-                ) {
-                    setIsPolling(false);
-                    clearInterval(intervalId);
-                    onPollingCompleteRef.current?.(fresh);
-                }
-            } catch (err) {
-                if (cancelled) return;
-                pollCount += 1;
-                consecutiveFailures += 1;
-                console.error('[useNewsCardPolling] poll failed:', err);
-
-                if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-                    setPollError(
-                        err instanceof Error ? err : new Error(String(err))
-                    );
-                    setIsPolling(false);
-                    clearInterval(intervalId);
-                    return;
-                }
-
-                if (
-                    pollCount >= EMPTY_SNAPSHOT_MAX_POLLS &&
-                    !hasPendingAnalysis(latestItemsRef.current)
-                ) {
-                    setIsPolling(false);
-                    clearInterval(intervalId);
-                }
-            }
-        }, POLL_INTERVAL_MS);
-
-        return () => {
-            cancelled = true;
-            clearInterval(intervalId);
-        };
-        // Only `symbol` is in deps. `initialItems` is excluded on purpose —
-        // including it would restart the polling effect on every parent render
-        // with an unstable array prop, resetting `pollCount` and breaking the
-        // EMPTY_SNAPSHOT_MAX_POLLS / REFRESH_SNAPSHOT_MIN_POLLS thresholds.
-        // The reset-on-symbol-change branch above handles the only legitimate
-        // case where state needs to be cleared while the hook stays mounted.
-    }, [symbol]);
+        latestItemsRef.current = items;
+    });
 
     return { items, isPolling, pollError };
 }

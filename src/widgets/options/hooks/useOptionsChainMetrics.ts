@@ -2,17 +2,24 @@
 
 import { useMemo } from 'react';
 import {
-    type OptionsChain,
     type OptionsExpirationMetrics,
-    type OptionsSnapshot,
     summarizeChainForLlm,
 } from '@y0ngha/siglens-core';
 import { pickActiveChain } from '@/entities/options-chain/lib/pickActiveChain';
+import {
+    type ClientOptionsChain,
+    type ClientOptionsSnapshot,
+    toCoreOptionsChain,
+} from '@/entities/options-chain/lib/clientOptionsSnapshot';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
 
 export interface OptionsChainMetrics {
     /** Chain matching the selected expiration (or null when no chain exists). */
-    chain: OptionsChain | null;
+    /**
+     * 선택된 만기의 체인 — 클라이언트로 투영된 모양 그대로다. 자식 위젯은 이 타입만 받으므로
+     * 투영에서 뺀 필드(`contractSymbol`·`lastPrice`·`inTheMoney`)를 읽으면 타입 오류가 난다.
+     */
+    chain: ClientOptionsChain | null;
     /** Aggregated metrics for the chain, or null when the chain is absent. */
     metrics: OptionsExpirationMetrics | null;
 }
@@ -31,13 +38,17 @@ export interface OptionsChainMetrics {
  * altogether.
  */
 export function useOptionsChainMetrics(
-    snapshot: OptionsSnapshot,
+    snapshot: ClientOptionsSnapshot,
     expirationDate: OptionsExpirationSelector
 ): OptionsChainMetrics {
     return useMemo(() => {
         const chain = pickActiveChain(snapshot, expirationDate);
         if (!chain) return { chain: null, metrics: null };
-        const metrics = summarizeChainForLlm(chain, snapshot.underlyingPrice);
+        // core 계산만 전체 `OptionsChain`을 요구한다 — 그 호출 자리에서만 되돌린다.
+        const metrics = summarizeChainForLlm(
+            toCoreOptionsChain(chain, snapshot.underlyingPrice),
+            snapshot.underlyingPrice
+        );
         return { chain, metrics };
     }, [snapshot, expirationDate]);
 }
