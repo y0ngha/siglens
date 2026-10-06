@@ -34,8 +34,7 @@ describe('SymbolLayoutProviders', () => {
 // 지키는 지점이 jail이 아니라 차트 컬럼·AI 패널(각자 `--symbol-chart-h`, 패널은 내부
 // 스크롤)로 옮겨졌고, 그쪽 계약은 `views/symbol/__tests__/ChartContent.test.tsx`가 고정한다.
 describe('SymbolLayoutJail (jail은 클립·스크롤하지 않는다)', () => {
-    const MIN_HEIGHT =
-        'min-h-[calc(100dvh-var(--header-h,3.5rem)-var(--pwa-banner-h,0px))]';
+    const MIN_HEIGHT = 'min-h-[calc(100dvh-var(--header-h,3.5rem))]';
 
     // 긴 콘텐츠와 짧은 콘텐츠의 대역. 콘텐츠 길이는 의도적으로 단언 결과에 영향을
     // 주지 않는다 — 그 무관함(불변성)이 바로 이 테스트가 지키려는 핵심이다.

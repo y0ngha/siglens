@@ -768,6 +768,72 @@ describe('가격 기준 시점(asOf)과 stale_deixis 연성 가드', () => {
     });
 
     /**
+     * 회귀(2026-10 비용 감사): 현재가는 숫자 없는 분석에만 붙는 실시간 시세다. 프롬프트째
+     * 해시하던 때는 장중 시세가 움직일 때마다 같은 분석문이 새 키를 얻어 평이화를 다시 돌렸다.
+     */
+    it('현재가만 다르면 저장 키가 같고, 프롬프트에는 현재가가 그대로 실린다', async () => {
+        await rewriteToPlainLanguage(
+            ANALYSIS,
+            'AAPL',
+            'ko',
+            'USD',
+            101.5,
+            AS_OF
+        );
+        const first = findCallFor('ko')?.[2];
+        expect(promptOf(0)).toContain('101.5');
+        vi.clearAllMocks();
+        repoFind.mockResolvedValue(null);
+        repoInsert.mockResolvedValue(undefined);
+        tryReadPlainModelConfig.mockReturnValue({
+            serverApiKey: 'k',
+            model: 'deepseek-v4.1-flash',
+        });
+        tryGetDatabaseClient.mockReturnValue({ db: {} });
+        callAiProviderRouter.mockResolvedValue(GOOD);
+        await rewriteToPlainLanguage(
+            ANALYSIS,
+            'AAPL',
+            'ko',
+            'USD',
+            102.25,
+            AS_OF
+        );
+        expect(findCallFor('ko')?.[2]).toBe(first);
+        expect(promptOf(0)).toContain('102.25');
+    });
+
+    it('현재가가 있어도 키는 현재가 없는 프롬프트의 해시와 같다(기존 행 키 보존)', async () => {
+        await rewriteToPlainLanguage(
+            ANALYSIS,
+            'AAPL',
+            'ko',
+            'USD',
+            undefined,
+            AS_OF
+        );
+        const withoutPrice = findCallFor('ko')?.[2];
+        vi.clearAllMocks();
+        repoFind.mockResolvedValue(null);
+        repoInsert.mockResolvedValue(undefined);
+        tryReadPlainModelConfig.mockReturnValue({
+            serverApiKey: 'k',
+            model: 'deepseek-v4.1-flash',
+        });
+        tryGetDatabaseClient.mockReturnValue({ db: {} });
+        callAiProviderRouter.mockResolvedValue(GOOD);
+        await rewriteToPlainLanguage(
+            ANALYSIS,
+            'AAPL',
+            'ko',
+            'USD',
+            101.5,
+            AS_OF
+        );
+        expect(findCallFor('ko')?.[2]).toBe(withoutPrice);
+    });
+
+    /**
      * 실제 asOf 문구(`9월 29일`)의 숫자는 2자리라 가격형 토큰 검사에 걸리지 않는다. 그래서
      * 배선만 보려고 3자리 이상 숫자가 든 asOf를 일부러 쓴다 — `buildAllowedNumbers`에
      * `facts.asOf`를 넘기지 않으면 아래 글은 근거 없는 숫자로 재작성이 통째로 버려진다.

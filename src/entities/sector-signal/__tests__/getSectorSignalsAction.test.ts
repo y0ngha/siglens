@@ -6,7 +6,7 @@ import {
     KR_DASHBOARD_SCOPE,
     US_DASHBOARD_SCOPE,
 } from '@/shared/config/dashboardScope';
-import { marketDataProviderFor } from '@/shared/api/market/getMarketDataProvider';
+import { sectorSignalsProviderFor } from '../api/sectorSignalsProvider';
 
 vi.mock('server-only', () => ({}));
 
@@ -16,11 +16,10 @@ vi.mock('../api/sectorSignalsCache', () => ({
 
 const mockMarketProvider =
     {} as import('@y0ngha/siglens-core').MarketDataProvider;
-vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
-    getMarketDataProvider: vi.fn(() => mockMarketProvider),
-    // scope 인지 팩토리도 같은 모듈에 있다 — 목에서 빠지면 액션이 import 단계에서
-    // 실패해 `server_error`로 조용히 떨어진다.
-    marketDataProviderFor: vi.fn(() => mockMarketProvider),
+// provider 선택(캐시 vs raw)은 `sectorSignalsProvider.test.ts`가 고정한다 — 여기서는
+// 액션이 scope·timeframe을 그대로 넘기는지만 본다.
+vi.mock('../api/sectorSignalsProvider', () => ({
+    sectorSignalsProviderFor: vi.fn(() => mockMarketProvider),
 }));
 
 const mockGetCachedSectorSignals = getCachedSectorSignals as MockedFunction<
@@ -52,6 +51,10 @@ describe('getSectorSignalsAction 함수는', () => {
 
         await getSectorSignalsAction('us');
 
+        expect(vi.mocked(sectorSignalsProviderFor)).toHaveBeenCalledWith(
+            'us',
+            '1Day'
+        );
         expect(mockGetCachedSectorSignals).toHaveBeenCalledWith(
             mockMarketProvider,
             US_DASHBOARD_SCOPE,
@@ -94,7 +97,10 @@ describe('getSectorSignalsAction 함수는', () => {
 
         await getSectorSignalsAction('kr', '1Hour');
 
-        expect(vi.mocked(marketDataProviderFor)).toHaveBeenCalledWith('kr');
+        expect(vi.mocked(sectorSignalsProviderFor)).toHaveBeenCalledWith(
+            'kr',
+            '1Hour'
+        );
         expect(mockGetCachedSectorSignals).toHaveBeenCalledWith(
             mockMarketProvider,
             KR_DASHBOARD_SCOPE,

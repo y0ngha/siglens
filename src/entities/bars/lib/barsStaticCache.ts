@@ -34,11 +34,18 @@ export class EmptyBarsError extends Error {
  * cache로 감싸 static generate가 no-store fetch에 막히지 않게 한다. 종목당 캐시이며
  * revalidate=6h 상한으로 주기 갱신한다. 호출부는 본 함수만 쓴다.
  *
- * revalidate=6h 이유: 사용자 신선도는 클라이언트 `useBars` 30초 refetch가 담당한다.
- * 이 shared layout cache가 1h였을 때, Next 16의 route effective s-maxage를 "렌더 중
- * 읽힌 unstable_cache revalidate 최솟값"으로 clamp하는 규칙에 의해 `/[symbol]/*` 전
- * 서브페이지(6h·12h·24h 선언)가 1h로 의도치 않게 clamp되는 부작용이 있었다.
- * 6h로 맞춤으로써 `[symbol]`(6h) 페이지와 정렬하고 12h·24h 서브페이지의 clamp를 해소.
+ * revalidate=6h 이유: 사용자 신선도는 클라이언트 `useBars` 30초 refetch가 담당하고, 이 값은
+ * 차트 탭(`[symbol]/page.tsx`, 6h 선언)의 크롤러 SSR 신선도에 맞춘 것이다.
+ *
+ * ⚠️ **이 캐시를 읽는 라우트는 6h 이하로 clamp된다.** Next 16.3은 렌더 중 읽힌 모든
+ * `unstable_cache`(HIT·MISS 무관)의 revalidate 최솟값으로 라우트 revalidate를 낮춘다
+ * (`unstableCacheRevalidateLowering.test.ts`). 예전 JSDoc은 "6h로 올려 12h·24h 서브페이지의
+ * clamp를 해소했다"고 적었지만 사실이 아니었다 — 공유 레이아웃이 헤더 칩 때문에 이 캐시를
+ * 읽는 한 모든 탭이 6h로 내려가 있었다(2026-10 운영 실측: `/AAPL/fundamental`·`/AAPL/news`
+ * s-maxage 21600). 그래서 레이아웃·공포·탐욕 탭·포지션 탭은 이 캐시 대신 세션 키 캐시
+ * (`sessionBarsStaticCache.ts`, revalidate 24h)를 읽는다. 6h보다 긴 revalidate를 선언한 탭에서
+ * 이 함수(`getQuantizedBarsStatic`·`getSeedBarsStatic` 포함)를 부르지 않는다 —
+ * `src/__tests__/guards/symbolTabRevalidateClamp.test.ts`가 고정한다.
  * on-demand 무효화는 `revalidateTag('symbol:AAPL')`로 여전히 가능.
  *
  * 전제: 이 정적화는 root layout cookies() 제거(축 0)가 선결돼야 효과가 있다 — PoC에서
@@ -104,7 +111,8 @@ export async function getBarsStatic(
  * layout(`SymbolLayoutChrome`)과 page가 각각 같은 쿼리 키로 `setQueryData` → `dehydrate`
  * 한다. Flight 직렬화기는 **동일 객체 참조**일 때만 두 번째 등장을
  * `"$2d:props:state:queries:1:state:data:bars"` 같은 참조로 접는다. 접히지 않으면
- * 지표 한 벌(약 507KB)이 통째로 더 실린다.
+ * 지표 한 벌(약 507KB)이 통째로 더 실린다. (레이아웃은 이제 봉을 읽지 않는다 — 헤더 칩은
+ * 세션 키 캐시를 쓴다. 지금 이 메모가 접는 것은 차트 탭의 `generateMetadata`·본문·seed 호출이다.)
  *
  * 참조가 갈리는 지점이 둘이었다:
  * 1. `getBarsAction`이 `roundIndicators`로 매 호출 새 `indicators`를 만든다(v0.53.3).

@@ -159,6 +159,27 @@ function isTradingDate(spec: ScheduledSpec, isoDate: string): boolean {
 }
 
 /**
+ * 세션 날짜 `isoDate` **직전 거래일**(현지 `YYYY-MM-DD`). 24/7 시장은 전날이다.
+ *
+ * 세션 키 캐시(`sessionBarsStaticCache`, 종목 탭의 시장 공포·탐욕 판독)가 "한 세션 뒤처진 값"
+ * (provider EOD 발행 지연·허브 캐시 갱신 전)과 "여러 세션째 봉이 없는 종목"(거래 정지·상장폐지)을
+ * 가르는 경계다. 판정 규칙(주말·휴장일)은 `lastClosedSessionDate`와 같다. `MAX_REWIND_DAYS`
+ * 안에서 거래일을 못 찾으면(잘못된 스펙) 상한 지점의 날짜를 돌려준다.
+ */
+export function previousSessionDate(
+    spec: MarketSessionSpec,
+    isoDate: string
+): string {
+    let cursor = previousIsoDate(isoDate);
+    if (spec.kind === 'always-open') return cursor;
+    for (let i = 0; i < MAX_REWIND_DAYS; i++) {
+        if (isTradingDate(spec, cursor)) return cursor;
+        cursor = previousIsoDate(cursor);
+    }
+    return cursor;
+}
+
+/**
  * 마지막으로 **마감된** 정규 세션의 현지 날짜(YYYY-MM-DD)를 반환한다.
  *
  * 시장별로 다른 세 가지를 스펙 하나로 처리한다:

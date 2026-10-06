@@ -38,7 +38,7 @@ export function SymbolLayoutJail({ children }: SymbolLayoutJailProps) {
     // Class string written out in full (not interpolated) so Tailwind's JIT
     // content scanner can statically detect and generate it.
     return (
-        <div className="flex min-h-[calc(100dvh-var(--header-h,3.5rem)-var(--pwa-banner-h,0px))] flex-col">
+        <div className="flex min-h-[calc(100dvh-var(--header-h,3.5rem))] flex-col">
             {children}
         </div>
     );

@@ -19,10 +19,8 @@ import { RelatedSymbols } from '@/views/symbol/RelatedSymbols';
 import { SymbolViewPing } from '@/features/visitor-ping/ui/SymbolViewPing';
 import { SymbolTabPendingSlot } from '@/views/symbol/SymbolTabPendingContext';
 import { SymbolTabSkeleton } from './SymbolTabSkeleton';
-import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
-import { getQuantizedBarsStatic } from '@/entities/bars/lib/barsStaticCache';
-import { symbolFearGreedSnapshot } from '@/entities/bars/lib/symbolFearGreed';
+import { getSymbolFearGreedChipStatic } from '@/entities/bars/lib/sessionBarsStaticCache';
 import { pickAssetName } from '@/entities/ticker/lib/ticker';
 import { marketProfileOf } from '@/shared/config/marketProfile/registry';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
@@ -42,19 +40,18 @@ interface SymbolLayoutProps {
 //
 // Sticky-footer jail (SymbolLayoutJail): SymbolLayoutHeader + page main을 viewport
 // 잔여 영역에 맞춘 컨테이너로 감싼다. viewport에서 site Header(`var(--header-h)` = 3.5rem)
-// + PwaBanner(`var(--pwa-banner-h, 0px)`, banner 표시 중일 때만 3rem)를 빼면 jail이 첫
-// 화면의 잔여 영역을 정확히 차지하고, 그 안에서 layout header가 자기 자리 + page main이
-// 나머지를 차지한다. footer는 root layout에서 jail의 형제로 위치하므로 자연스럽게 jail
-// 아래로 push되어 스크롤해야 보인다.
+// 를 빼면 jail이 첫 화면의 잔여 영역을 정확히 차지하고, 그 안에서 layout header가
+// 자기 자리 + page main이 나머지를 차지한다. footer는 root layout에서 jail의 형제로
+// 위치하므로 자연스럽게 jail 아래로 push되어 스크롤해야 보인다.
 //
 // jail 높이는 라우트별로 다르다 (SymbolLayoutJail JSDoc 참조). 차트(index) 라우트는
 // definite `h-[calc(...)]` + overflow-hidden으로 chart+AI를 첫 viewport에 고정해 AI 패널이
 // 내부 스크롤되게 하고, sibling 탭은 `min-h-[calc(...)]`으로 콘텐츠 길이에 따라 자란다.
 //
 // `--header-h`는 globals.css의 @theme에서 3.5rem 기본값으로 정의되어 site Header h-14와
-// 동기화된다. `--pwa-banner-h`는 PwaBanner mount 시점에 3rem으로 set, dismiss/unmount
-// 시점에 remove돼 jail이 PwaBanner 토글에 일관되게 반응한다. 두 변수 모두 한 곳에서만
-// 관리되므로 chrome 높이 변경 시 jail 계산식을 수정할 필요가 없다.
+// 동기화된다. PWA 설치 배너는 하단 고정 오버레이라 흐름 높이를 차지하지 않으므로
+// 계산식에 들어가지 않는다(예전 `--pwa-banner-h`는 배너가 흐름 위쪽에 삽입되던 시절의
+// 보정값이다 — `PwaBanner` JSDoc).
 //
 // `params` is async (Next.js 16). The chrome's remaining async work (bars → 공포·탐욕
 // 스냅샷) is awaited by the shell — 크롬은 Suspense 뒤에 두지 않는다(아래 설명).
@@ -62,7 +59,7 @@ interface SymbolLayoutProps {
 // ⚠️ 이 레이아웃은 **의도적으로 blocking**이다 — `children`을 반환하기 전에 심볼 존재
 // 여부를 확정해야 하기 때문이다(바로 아래 soft 404 설명 참조). 예전 주석은 "children이
 // Suspense 밖이라 page LCP가 레이아웃 async 작업을 기다리지 않는다"고 했지만, 이제
-// `getAssetInfoResilient` **한 번**과 크롬의 `getQuantizedBarsStatic`까지 문서
+// `getAssetInfoResilient` **한 번**과 크롬의 `getSymbolFearGreedChipStatic`까지 문서
 // shell이 기다린다(2026-10-05부터 크롬을 감싸던 Suspense를 걷어냈다 — 서버 데이터 Suspense는
 // raw HTML에 `<template>` 숨김 청크를 남겨 JS 없는 크롤러에게 헤더·탭을 가린다).
 //
@@ -211,7 +208,7 @@ interface SymbolLayoutChromeProps extends SymbolLayoutSegmentProps {
  * S3로 외부화된 cache-handler에서는 그게 실제 네트워크 왕복이다. 게다가 "두 번째 호출이
  * 반드시 HIT"이라는 건 어떤 테스트도 고정하지 않는 암묵적 불변식이었다. prop으로 내리면
  * 의존 자체가 사라진다. 크롬은 더는 Suspense 뒤에 있지 않다 — 값은 크롬이 렌더되기 전에
- * 이미 확정돼 있고, 느린 `getQuantizedBarsStatic`은 문서 shell이 함께 기다린다.
+ * 이미 확정돼 있고, 칩 스냅샷 조회(`getSymbolFearGreedChipStatic`)는 문서 shell이 함께 기다린다.
  */
 export async function SymbolLayoutChrome({
     assetInfo,
@@ -225,9 +222,8 @@ export async function SymbolLayoutChrome({
     // 요구하던 것이 봉 seed의 유일한 이유였는데, 지금은 서버가 계산한 스냅샷을
     // prop으로 받으므로 그 의존이 사라졌다(아래 `fearGreedSnapshot` 주석에 실측 근거).
     //
-    // ISR static-safe: 봉 조회는 getQuantizedBarsStatic(=React.cache(unstable_cache(loadBarsData)))
-    // 으로 통일한다 — static gen 중 redis no-store fetch가 DYNAMIC_SERVER_USAGE를
-    // throw하지 않게.
+    // ISR static-safe: 칩 스냅샷 조회(`getSymbolFearGreedChipStatic`)는 `unstable_cache`로
+    // 감싸져 static gen 중 redis no-store fetch가 DYNAMIC_SERVER_USAGE를 throw하지 않는다.
     const queryClient = new QueryClient({
         defaultOptions: { queries: { staleTime: QUERY_STALE_TIME_MS } },
     });
@@ -241,26 +237,28 @@ export async function SymbolLayoutChrome({
         updatedAt: assetInfoSeedUpdatedAt(degraded),
     });
 
-    // ISR write churn 차단: quantize로 forming 봉을 제거 + setQueryData에 안정 updatedAt
-    // 명시. prefetchQuery는 dataUpdatedAt 옵션이 없어 매 ISR 재생성마다 다른 timestamp가
-    // dehydrate 상태에 박혀 HTML hash가 달라진다(2026-06-06 실측). setQueryData는
-    // 봉은 헤더 칩 계산에만 쓴다(서버 계산, seed하지 않음).
-    // page.tsx와 **같은 인자**(대문자 ticker)로 호출해야 요청 스코프 메모가 접혀 조회와
-    // 5년 공포·탐욕 계산(`symbolFearGreed`의 React.cache)이 한 번으로 끝난다.
-    // quantize도 이 헬퍼 안에서 수행된다(세션 spec은 marketProfile에서 유도).
-    // 축소판(`getSeedBarsStatic`)이 아니라 원본을 쓰는 이유: 공포·탐욕은 5년 일봉
-    // (`fearGreedBars`)으로 계산하는데 축소판은 그 필드를 버린다.
-    const quantized = await getQuantizedBarsStatic(
+    // ## 왜 봉 캐시가 아니라 세션 키 칩 캐시를 읽는가 — 9탭 revalidate clamp
+    //
+    // 예전에는 여기서 `getQuantizedBarsStatic`(원본 봉 엔트리 ~700KB, revalidate 6h)을 읽어
+    // 칩을 계산했다. 레이아웃이라 **9개 탭 전부**가 그 엔트리를 읽었고, Next 16.3은 렌더 중
+    // 읽힌 `unstable_cache` revalidate의 최솟값으로 라우트를 clamp하므로 12h·24h를 선언한
+    // 탭이 전부 6h로 재생성됐다(2026-10 운영 실측: `/AAPL/fundamental` s-maxage 21600).
+    //
+    // `getSymbolFearGreedChipStatic`은 스냅샷(수십 바이트)만 담고, 키에 시장의 마지막 마감
+    // 세션 날짜를 넣어 revalidate를 24h로 둔다 — 세션이 넘어가면 다음 재생성이 새 키를
+    // 읽으므로 칩이 세션 롤을 넘겨 묵지 않는다(`sessionBarsStaticCache.ts` JSDoc).
+    // 값은 공포·탐욕 탭 본문과 같은 축소 봉·같은 세션 키에서 계산한다.
+    // 이 탭들의 revalidate 관계는 `src/__tests__/guards/symbolTabRevalidateClamp.test.ts`가 고정한다.
+    const fearGreedSnapshot = await getSymbolFearGreedChipStatic(
         symbol.toUpperCase(),
-        DEFAULT_TIMEFRAME,
         marketProfileOf(assetInfo),
         assetInfo.fmpSymbol
     ).catch((e: unknown) => {
-        console.error('[SymbolLayout] getQuantizedBarsStatic failed:', e);
+        console.error('[SymbolLayout] getSymbolFearGreedChipStatic failed:', e);
         return null;
     });
-    // 공포·탐욕 칩 값을 **서버에서 확정**한다. 계산은 공용 입구 `symbolFearGreedSnapshot`
-    // (5년 일봉, AI 호출·I/O 없음)이고, 공포·탐욕 페이지·색인 게이트와 같은 값이다.
+    // 위에서 공포·탐욕 칩 값을 **서버에서 확정**했다. 계산은 공용 입구 `symbolFearGreedSnapshot`
+    // (5년 일봉, AI 호출 없음)이고, 공포·탐욕 페이지·색인 게이트와 같은 입력·같은 세션 키다.
     //
     // ## 왜 bars를 seed하지 않는가 — 9탭 × 76KB의 실측 낭비
     //
@@ -284,8 +282,9 @@ export async function SymbolLayoutChrome({
     // ## 신선도 — 장중에는 값이 덜 민감해진다 (의도된 트레이드오프)
     //
     // 예전 클라 경로는 30초마다 refetch했고 그 응답에는 **형성 중인 당일 봉**이
-    // 포함됐다. 서버 경로는 `getQuantizedBarsStatic`이 마지막 완료 봉까지만 quantize하고
-    // (ISR HTML 결정성 때문에 필수다), 그 위에 봉 캐시 6h + 페이지 ISR 6~24h가 얹힌다.
+    // 포함됐다. 서버 경로는 마지막 마감 세션(마감 + EOD 발행 버퍼)까지의 봉만 쓰고
+    // (ISR HTML 결정성 때문에 필수다), 그 위에 페이지 ISR 6~24h가 얹힌다(칩 캐시 자체는
+    // 세션 롤마다 새 키라 그 이상 묵지 않는다).
     // 즉 장이 열려 있는 동안 이 배지는 당일 거래량 흐름을 반영하지 않는다.
     //
     // 그래도 이 쪽을 택한 이유: (a) 공포·탐욕은 일봉 지표라 세션 중 갱신의 가치가
@@ -295,10 +294,8 @@ export async function SymbolLayoutChrome({
     // (`getSymbolFearGreedAction`, quantize 없는 봉 캐시)로 계속 refetch한다.
     // 배지는 그 페이지로 가는 입구일 뿐이다.
     //
-    // `quantized`가 null(FMP 키 없음·degrade)이면 스냅샷도 null → 칩이 기존
+    // 조회 실패(FMP 키 없음·degrade)나 점수 부족이면 스냅샷이 null → 칩이 기존
     // "데이터 부족" 문구로 폴백한다.
-    const fearGreedSnapshot =
-        quantized === null ? null : symbolFearGreedSnapshot(quantized);
     // 가시 브레드크럼 라벨은 서버에서 번역해 내린다. 셋째 마디(탭) 라벨은 각 탭 페이지의
     // `BreadcrumbList` JSON-LD와 같은 `shared.symbolTab` 키에서 나와야 둘이 글자까지 같다.
     const [tUi, tTab] = await Promise.all([

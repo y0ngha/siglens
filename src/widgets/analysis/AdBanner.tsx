@@ -48,8 +48,14 @@ export function AdBanner({ isFreeUser, slot }: AdBannerProps) {
             ref={containerRef}
             className="flex w-full flex-col items-center gap-2 overflow-hidden rounded-lg py-4"
         >
+            {/* 높이를 미리 잡는다(250px = `min-h-62.5`). 자동 크기 광고(`data-ad-format`
+                auto)는 채워지는 순간 높이가 정해져 그 아래(지원 문구·분석 본문)를
+                밀어낸다 — 광고가 늦게 오는 만큼 그대로 CLS다. 250px은 반응형 디스플레이
+                광고가 모바일 전폭에서 가장 흔히 받는 높이(300×250 계열)라 대부분 이동이
+                0이고, 더 큰 광고가 와도 밀리는 폭이 줄어든다. 광고가 안 채워지면(no-fill)
+                250px이 빈칸으로 남는데, CLS를 막는 대가로 의도한 트레이드오프다. */}
             <ins
-                className="adsbygoogle block w-full min-w-60"
+                className="adsbygoogle block min-h-62.5 w-full min-w-60"
                 data-ad-client={ADSENSE_PUBLISHER_ID}
                 data-ad-slot={slotId}
                 data-ad-format="auto"

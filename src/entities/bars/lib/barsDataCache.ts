@@ -1,6 +1,14 @@
 import 'server-only';
 import { cache } from 'react';
-import { getOrSetCache } from '@/shared/cache/getOrSetCache';
+import {
+    __resetMemoryLruForTests,
+    createMemoryLru,
+} from '@/shared/cache/memoryLru';
+import {
+    __resetSingleFlightForTests,
+    createSingleFlight,
+} from '@/shared/lib/singleFlight';
+import { MS_PER_SECOND } from '@/shared/config/time';
 import {
     type BarsData,
     type MarketDataProvider,
@@ -12,12 +20,19 @@ import {
 } from '@y0ngha/siglens-core';
 
 /**
- * 캐시 값의 모양 버전. core 2.10.0부터 일봉 결과에 공포·탐욕용 5년 일봉
- * (`fearGreedBars`)이 붙는다. 옛 항목에는 그 필드가 없어 `fearGreedInputs`가
- * 2년 봉으로 돌아가므로, 키를 올리지 않으면 캐시가 만료될 때까지 같은 종목의
- * 점수가 항목 나이에 따라 갈린다. 값의 모양이 바뀌면 이 숫자를 올린다.
+ * 메모리에 둘 파생 봉 데이터(봉+지표+공포·탐욕용 5년 일봉) 개수 상한.
+ *
+ * 일봉 항목 하나가 힙에서 약 1.1MB다(2026-10 실측: 봉 522개 + 지표 39종 + 5년 일봉
+ * 1,357개; 봉 객체는 provider 히스토리 캐시와 공유되므로 대부분이 지표 배열이다).
+ * 인트라데이 항목은 그보다 작다. 48개면 최악 ~55MB로 t4g.medium(4GB)에 부담이 없고,
+ * 장중 동시에 뜨거운 종목(~30개 × 주 timeframe)을 덮는다.
+ *
+ * 재측정: `node --expose-gc`에서 서로 다른 종목 N개로 이 캐시를 채우기 전후에 `gc()` →
+ * `process.memoryUsage().heapUsed`를 재고, 증가분 ÷ N이 항목 하나의 크기다.
+ * (재확인: 대수는 ASG in-service 수, 사양은 launch template의 인스턴스 타입 —
+ *  `aws autoscaling describe-auto-scaling-groups`로 본다.)
  */
-const BARS_CACHE_VERSION = 'v2';
+export const BARS_MEMORY_MAX_ENTRIES = 48;
 
 /** fmpSymbol이 OHLCV 결과를 바꾸므로(예: '^SPX' vs 'SPX') 키에 포함. */
 function buildBarsKey(
@@ -26,20 +41,44 @@ function buildBarsKey(
     fmpSymbol?: string
 ): string {
     const suffix = fmpSymbol ? `:${fmpSymbol.toUpperCase()}` : '';
-    return `bars:${BARS_CACHE_VERSION}:${symbol.toUpperCase()}:${timeframe}${suffix}`;
+    return `bars:${symbol.toUpperCase()}:${timeframe}${suffix}`;
 }
 
+const barsMemory = createMemoryLru<BarsData>(BARS_MEMORY_MAX_ENTRIES);
+const barsInFlight = createSingleFlight<BarsData>();
+
 /**
- * OHLCV+지표를 cache→FMP로 가져온다.
+ * OHLCV+지표를 메모리 → provider 순으로 가져온다.
  *
  * 캐시 레이어:
  *   1. React.cache — 요청 내 dedup(layout/page가 같은 TF prefetch 시 1회).
- *   2. Upstash Redis — cross-request, 시장 세션별 TTL(core `computeBarsEffectiveTtl`).
- *      봇이 한 종목의 여러 탭을 연속 크롤링해도 fetch가 1회로 수렴. getOrSetCache가
- *      get→fetch→set과 Redis 미설정/장애 시 graceful fallback을 담당한다.
+ *   2. 인스턴스 메모리 LRU(`BARS_MEMORY_MAX_ENTRIES`) — 시장 세션별 TTL(core
+ *      `computeBarsEffectiveTtl`: 장중 60초, 장외는 다음 개장까지). 같은 키의 동시
+ *      miss는 `createSingleFlight`로 한 번의 계산에 접힌다.
+ *   3. provider(`CachedMarketDataProvider`)의 Redis 캐시 — 원재료 봉만 담는다. 일봉은
+ *      세션 날짜로 롤되는 히스토리(`bars:eodhist`) + 60초 오늘 봉(`bars:today`),
+ *      인트라데이도 같은 모양(`bars:intrahist` + 오늘 tail)이라 장중 1분마다 다시
+ *      받는 것은 작은 live 부분뿐이다.
  *
- * 에러는 캐시하지 않는다(provider의 fmpGet이 throw → set 이전에 전파). 빈 봉도
- * 캐시하지 않는다(`shouldCache` 가드 — transient 장애를 TTL 동안 굳히지 않도록).
+ * ## 왜 파생 값을 더는 Redis에 두지 않는가 (2026-10)
+ *
+ * 예전에는 결과 전체(`bars:v2:<SYM>:<tf>`)를 Redis에 60초 TTL로 썼다. 값이 봉 + 지표
+ * 39종 + 5년 일봉이라 원본 ~658KB / zstd+base64 ~216KB였고, 장중에는 활성 종목마다
+ * **매분 다시 계산해 다시 SET**했다(뜨거운 종목 ~30개면 하루 ~2.5GB egress). 클라이언트
+ * `getBarsAction` 재조회도 같은 값을 매번 GET했다. 그런데 이 값은 원재료 봉의 순수
+ * 함수이고, 원재료는 이미 provider 계층에서 "무거운 과거(세션 롤 TTL) + 가벼운 오늘
+ * (60초)"로 나뉘어 Redis에 있다. 그래서 파생 값은 인스턴스 메모리에만 두고, 매분 다시
+ * 받는 것은 오늘 봉 하나로 줄였다. 지표 재계산은 일봉 기준 ~20ms다.
+ *
+ * 돌려주는 데이터는 같다: 같은 core 함수를 같은 provider로 부르고, 신선도 상한도
+ * 예전 Redis TTL과 같은 값을 메모리 TTL로 쓴다. 운영이 인스턴스 한 대라 교차 인스턴스
+ * 공유를 잃는 비용은 롤링 배포 구간의 재계산 정도다. 옛 `bars:v2:*` 키는 TTL(최대
+ * 24h)로 저절로 사라진다.
+ * (재확인: 대수는 ASG in-service 수, 사양은 launch template의 인스턴스 타입 —
+ *  `aws autoscaling describe-auto-scaling-groups`로 본다.)
+ *
+ * 에러는 캐시하지 않는다(provider throw → 저장 전에 전파). 빈 봉도 캐시하지 않는다 —
+ * transient 장애를 TTL 동안 굳히지 않도록.
  */
 export const getCachedBarsWithIndicators = cache(
     async (
@@ -48,13 +87,30 @@ export const getCachedBarsWithIndicators = cache(
         timeframe: Timeframe,
         fmpSymbol?: string,
         session: MarketSessionSpec = US_EQUITY_SESSION
-    ): Promise<BarsData> =>
-        getOrSetCache(
-            buildBarsKey(symbol, timeframe, fmpSymbol),
-            computeBarsEffectiveTtl(timeframe, new Date(), session),
+    ): Promise<BarsData> => {
+        const key = buildBarsKey(symbol, timeframe, fmpSymbol);
+        const hit = barsMemory.get(key);
+        if (hit !== undefined) return hit;
+        return barsInFlight.run(key, async () => {
+            // TTL은 계산을 시작한 시각 기준 — 예전 Redis 경로가 set 직전에 재던 것과 같은 정책.
+            const ttlMs =
+                computeBarsEffectiveTtl(timeframe, new Date(), session) *
+                MS_PER_SECOND;
             // Retry(429/5xx + network)는 provider의 fmpGet(FMP_TRANSIENT_RETRY)에서 처리.
-            () =>
-                fetchBarsWithIndicators(provider, symbol, timeframe, fmpSymbol),
-            fresh => fresh.bars.length > 0
-        )
+            const fresh = await fetchBarsWithIndicators(
+                provider,
+                symbol,
+                timeframe,
+                fmpSymbol
+            );
+            if (fresh.bars.length > 0) barsMemory.set(key, fresh, ttlMs);
+            return fresh;
+        });
+    }
 );
+
+/** 테스트 전용 — 메모리 LRU와 in-flight 맵을 비운다. */
+export function __resetBarsMemoryForTests(): void {
+    __resetMemoryLruForTests(barsMemory);
+    __resetSingleFlightForTests(barsInFlight);
+}

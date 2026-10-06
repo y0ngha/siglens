@@ -4,11 +4,11 @@ import {
     MARKET_CLOSE_HOUR,
     MARKET_CLOSE_MINUTE,
 } from '@y0ngha/siglens-core';
+import { HOURS_PER_DAY } from '@/shared/config/time';
 
 // UTC offset gap from ET to KST: EDT(-4) → KST(+9) = 13h, EST(-5) → KST(+9) = 14h.
 const EDT_TO_KST_OFFSET_HOURS = 13;
 const EST_TO_KST_OFFSET_HOURS = 14;
-const HOURS_PER_DAY = 24;
 
 function pad2(n: number): string {
     return String(n).padStart(2, '0');

@@ -29,7 +29,7 @@ vi.mock('../config.mjs', () => ({
 }));
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { getEntry, setEntry, s3KeyForTest } from '../s3Store.mjs';
+import { getEntry, lookupEntry, setEntry, s3KeyForTest } from '../s3Store.mjs';
 import { serialize } from '../serialize.mjs';
 
 beforeEach(() => send.mockReset());
@@ -100,6 +100,55 @@ describe('getEntry', () => {
             Body: { transformToByteArray: async () => body },
         });
         expect(await getEntry('/AAPL', 'APP_PAGE')).toEqual(entry);
+    });
+});
+
+// 네거티브 캐시(index.mjs)는 'not-found'만 기억한다 — 일시 오류를 404로 굳히면
+// 그동안 S3에 있는 값을 못 보고 재생성만 반복한다.
+describe('lookupEntry status', () => {
+    it('NoSuchKey는 not-found', async () => {
+        send.mockRejectedValueOnce(
+            Object.assign(new Error('nope'), { name: 'NoSuchKey' })
+        );
+        expect(await lookupEntry('/AAPL', 'FETCH')).toEqual({
+            status: 'not-found',
+            entry: null,
+        });
+    });
+
+    it('$metadata 404도 not-found', async () => {
+        send.mockRejectedValueOnce(
+            Object.assign(new Error('x'), {
+                $metadata: { httpStatusCode: 404 },
+            })
+        );
+        expect((await lookupEntry('/AAPL', 'FETCH')).status).toBe('not-found');
+    });
+
+    it('기타 실패는 error', async () => {
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        send.mockRejectedValueOnce(
+            Object.assign(new Error('timeout'), { name: 'TimeoutError' })
+        );
+        expect((await lookupEntry('/AAPL', 'FETCH')).status).toBe('error');
+        spy.mockRestore();
+    });
+
+    it('zero-byte 객체는 error(404가 아니다)', async () => {
+        send.mockResolvedValueOnce({ Body: undefined });
+        expect((await lookupEntry('/AAPL', 'FETCH')).status).toBe('error');
+    });
+
+    it('hit은 엔트리와 함께', async () => {
+        const entry = { value: 1, lastModified: 2, tags: [] };
+        const body = await serialize(entry);
+        send.mockResolvedValueOnce({
+            Body: { transformToByteArray: async () => body },
+        });
+        expect(await lookupEntry('/AAPL', 'FETCH')).toEqual({
+            status: 'hit',
+            entry,
+        });
     });
 });
 

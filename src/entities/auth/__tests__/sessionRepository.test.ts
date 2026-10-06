@@ -1,4 +1,8 @@
-import { DrizzleSessionRepository } from '@/entities/auth/api';
+import {
+    DrizzleSessionRepository,
+    EXPIRED_SESSION_PRUNE_BATCH_SIZE,
+} from '@/entities/auth/api';
+import { createSqlCaptureDb } from '@/__tests__/utils/drizzleSqlCapture';
 import { sessions } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 
@@ -144,5 +148,38 @@ describe('DrizzleSessionRepository', () => {
         const result = await repository.deleteSession('missing-session');
 
         expect(result).toBe(false);
+    });
+
+    describe('pruneExpiredSessions', () => {
+        const NOW = new Date('2026-10-06T00:00:00.000Z');
+
+        it('expires_at < now 인 행만, 배치 상한을 건 id 서브쿼리로 지운다', async () => {
+            const { db, captured } = createSqlCaptureDb([
+                { id: 's1' },
+                { id: 's2' },
+            ]);
+            const repository = new DrizzleSessionRepository(db);
+
+            const deleted = await repository.pruneExpiredSessions(NOW);
+
+            expect(deleted).toBe(2);
+            expect(captured).toHaveLength(1);
+            const { sql: text, params } = captured[0]!;
+            const lower = text.toLowerCase();
+            expect(lower).toMatch(/^delete from "sessions"/);
+            // 바깥 DELETE는 id IN (서브쿼리), 서브쿼리가 인덱스 컬럼(expires_at)으로 만료를 거른다.
+            expect(lower).toContain('"id" in (select "id" from "sessions"');
+            expect(lower).toContain('"sessions"."expires_at" < $1');
+            expect(lower).toContain('limit $2');
+            expect(params[0]).toBe(NOW.toISOString());
+            expect(params[1]).toBe(EXPIRED_SESSION_PRUNE_BATCH_SIZE);
+        });
+
+        it('지울 행이 없으면 0을 반환한다', async () => {
+            const { db } = createSqlCaptureDb([]);
+            const repository = new DrizzleSessionRepository(db);
+
+            await expect(repository.pruneExpiredSessions(NOW)).resolves.toBe(0);
+        });
     });
 });

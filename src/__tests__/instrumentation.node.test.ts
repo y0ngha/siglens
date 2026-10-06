@@ -268,4 +268,69 @@ describe('registerShutdownHandlers()', () => {
         await vi.advanceTimersByTimeAsync(1_000);
         expect(exitSpy).toHaveBeenCalledTimes(1);
     });
+
+    describe('ISR 캐시 백그라운드 업로드 drain', () => {
+        const DRAIN_KEY = Symbol.for('siglens.isrCache.drainUploads');
+        const registry = globalThis as Record<symbol, unknown>;
+
+        afterEach(() => {
+            delete registry[DRAIN_KEY];
+        });
+
+        it('핸들러가 등록한 drain 함수를 같은 deadline으로 기다린 뒤에야 exit한다', async () => {
+            let finishUploads: (remaining: number) => void = () => undefined;
+            const drainUploads = vi.fn(
+                () =>
+                    new Promise<number>(resolve => {
+                        finishUploads = resolve;
+                    })
+            );
+            registry[DRAIN_KEY] = new Set([drainUploads]);
+
+            const { registerShutdownHandlers } =
+                await import('@/instrumentation.node');
+            registerShutdownHandlers();
+            process.emit('SIGTERM');
+
+            expect(drainUploads).toHaveBeenCalledWith(180_000);
+            // 업로드가 끝나지 않았으면 유예가 지나도 exit하지 않는다.
+            await vi.advanceTimersByTimeAsync(5_000);
+            expect(exitSpy).not.toHaveBeenCalled();
+
+            finishUploads(0);
+            await vi.advanceTimersByTimeAsync(1_000);
+            expect(exitSpy).toHaveBeenCalledWith(0);
+        });
+
+        it('마감에 남은 업로드가 있으면 경고만 남기고 exit(0)한다', async () => {
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => undefined);
+            registry[DRAIN_KEY] = new Set([
+                vi.fn(async () => 1),
+                vi.fn(async () => 2),
+            ]);
+
+            const { registerShutdownHandlers } =
+                await import('@/instrumentation.node');
+            registerShutdownHandlers();
+            process.emit('SIGTERM');
+            await vi.advanceTimersByTimeAsync(1_000);
+
+            expect(warnSpy).toHaveBeenCalledWith(
+                expect.stringContaining('3 ISR cache upload(s)')
+            );
+            expect(exitSpy).toHaveBeenCalledWith(0);
+            warnSpy.mockRestore();
+        });
+
+        it('핸들러가 등록되지 않은 환경(dev/E2E)에서는 건너뛴다', async () => {
+            const { registerShutdownHandlers } =
+                await import('@/instrumentation.node');
+            registerShutdownHandlers();
+            process.emit('SIGTERM');
+            await vi.advanceTimersByTimeAsync(1_000);
+            expect(exitSpy).toHaveBeenCalledWith(0);
+        });
+    });
 });

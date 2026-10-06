@@ -86,9 +86,15 @@ vi.mock('@/entities/news-article/api', () => ({
     }),
 }));
 
-// `marketEventsLookback`(lib/marketEventsLookback)은 모킹하지 않는다 — DB 의존이
-// 없는 순수 함수라 실제 구현을 쓴다. 스텁으로 갈아 끼우면 스트림 경로와 같은 창을
-// 쓰는지가 검증되지 않는다.
+// 조회 창 계산은 `marketEventsLookback.test.ts`가 실제 세션 스펙으로 검증한다. 여기서는
+// 이 파일의 세션 목(태그 객체)이 실제 스펙이 아니므로 스텁으로 두고, 호출부가 core에
+// 넘기는 것과 **같은 세션**을 창 계산에 넘기는지(캐시 키 일치의 전제)만 본다.
+vi.mock('@/entities/news-article/lib/marketEventsLookback', () => ({
+    marketEventsLookback: vi.fn(() => ({
+        from: new Date('2026-06-01T00:00:00Z'),
+        to: new Date('2026-08-01T00:00:00Z'),
+    })),
+}));
 vi.mock('@/entities/news-article/lib/newsLookback', async importOriginal => ({
     ...(await importOriginal<
         typeof import('@/entities/news-article/lib/newsLookback')
@@ -180,6 +186,7 @@ import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialSta
 import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
 import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
+import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
 import { getNextEarningsReport } from '@/entities/earnings-report/api';
 import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
@@ -334,6 +341,12 @@ describe('prewarmTechnical', () => {
                 expectedSession
             );
             expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(
+                expectedSession
+            );
+            // 이벤트 창도 같은 세션으로 — 1Day 창이 core 만료 경계(세션 마감 + 30분)와
+            // 맞아야 프리웜이 쓴 키를 방문자 경로가 그대로 맞힌다.
+            expect(vi.mocked(marketEventsLookback)).toHaveBeenCalledWith(
+                '1Day',
                 expectedSession
             );
         }
@@ -726,6 +739,16 @@ describe('prewarmOverall', () => {
         }
     );
 
+    it('kr-equity → 이벤트 창을 core에 넘기는 것과 같은 KR 세션으로 계산한다', async () => {
+        mockResolveMarketProfile.mockResolvedValue('kr-equity');
+
+        await prewarmOverall('005930.KS', 'Samsung', false);
+
+        expect(vi.mocked(marketEventsLookback)).toHaveBeenCalledWith(
+            '1Day',
+            MOCK_KR_SESSION
+        );
+    });
     it('calls runOverallAnalysis with the anonymous-free branch shape', async () => {
         await prewarmOverall('AAPL', 'Apple Inc.', false);
 

@@ -2,8 +2,9 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { usePathname } from 'next/navigation';
 import {
     NavigationPendingProvider,
-    useNavigationPending,
+    usePendingHref,
     usePendingRouteEntry,
+    useStartNavigation,
 } from '@/shared/model/NavigationPendingContext';
 import { AUTH_HINT_COOKIE_NAME } from '@/shared/config/cookieNames';
 
@@ -24,7 +25,8 @@ const TARGETS = {
 } as const;
 
 function Probe() {
-    const { pendingHref, startNavigation } = useNavigationPending();
+    const pendingHref = usePendingHref();
+    const startNavigation = useStartNavigation();
     const entry = usePendingRouteEntry();
     return (
         <>
@@ -37,6 +39,10 @@ function Probe() {
             ))}
         </>
     );
+}
+
+interface ActionProbeProps {
+    onRender: (start: (href: string) => void) => void;
 }
 
 function Tree() {
@@ -260,5 +266,51 @@ describe('NavigationPendingContext', () => {
 
         expect(pending()).toBe('none');
         expect(scrollTo).not.toHaveBeenCalled();
+    });
+
+    /**
+     * 링크(`LocaleLink`)는 동작만 구독한다. 예전에는 한 컨텍스트 값에 상태까지 담겨
+     * 클릭 한 번에 페이지의 모든 링크가 그 클릭 태스크 안에서 다시 렌더됐다(INP).
+     */
+    describe('동작/상태 컨텍스트 분리', () => {
+        function ActionOnly({ onRender }: ActionProbeProps) {
+            const startNavigation = useStartNavigation();
+            onRender(startNavigation);
+            return null;
+        }
+
+        function SplitTree({ onRender }: ActionProbeProps) {
+            return (
+                <NavigationPendingProvider>
+                    <Probe />
+                    <ActionOnly onRender={onRender} />
+                </NavigationPendingProvider>
+            );
+        }
+
+        it('pending이 바뀌어도 동작만 쓰는 소비처는 다시 렌더되지 않는다', () => {
+            const onRender = vi.fn();
+            render(<SplitTree onRender={onRender} />);
+            expect(onRender).toHaveBeenCalledTimes(1);
+
+            click('news');
+            expect(pending()).toBe('/news');
+            expect(onRender).toHaveBeenCalledTimes(1);
+        });
+
+        it('경로가 바뀌어도 startNavigation 참조는 그대로이고 새 경로 기준으로 판정한다', () => {
+            const onRender = vi.fn();
+            const { rerender } = render(<SplitTree onRender={onRender} />);
+            const first = onRender.mock.calls[0][0];
+
+            mockPathname.mockReturnValue('/ja/news');
+            rerender(<SplitTree onRender={onRender} />);
+            const latest = onRender.mock.lastCall?.[0];
+            expect(latest).toBe(first);
+
+            // 지금 경로(/news)로 가는 클릭 — 옛 경로(/market)로 판정했다면 pending이 섰다.
+            click('news');
+            expect(pending()).toBe('none');
+        });
     });
 });

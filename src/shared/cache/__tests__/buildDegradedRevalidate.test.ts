@@ -6,7 +6,9 @@ vi.mock('next/cache', () => ({
 import { unstable_cache } from 'next/cache';
 import {
     BUILD_DEGRADED_REVALIDATE_SECONDS,
+    INCOMPLETE_SESSION_REVALIDATE_SECONDS,
     RUNTIME_DEGRADED_REVALIDATE_SECONDS,
+    shortenRevalidateForIncompleteSession,
     shortenRevalidateForRuntimeDegrade,
     shortenRevalidateForBuildDegrade,
     shortenRevalidateIfDatabaseMissingAtBuild,
@@ -158,6 +160,37 @@ describe('shortenRevalidateForRuntimeDegrade', () => {
 
         await expect(
             shortenRevalidateForRuntimeDegrade()
+        ).resolves.toBeUndefined();
+        expect(warnSpy).toHaveBeenCalledOnce();
+        warnSpy.mockRestore();
+    });
+});
+
+describe('shortenRevalidateForIncompleteSession', () => {
+    beforeEach(() => {
+        pinMock.mockClear();
+    });
+
+    // `lagging`은 장애가 아니라 흔한 상태라(저유동 종목은 한 세션 내내) 5분이면 재생성이 폭증한다.
+    // 그래도 세션 키 캐시의 24h보다는 훨씬 짧아야 직전 세션 HTML이 굳지 않는다.
+    it('1h 래퍼다 — 런타임 degrade(300초)보다 길고 세션 키 캐시(24h)보다 짧다', () => {
+        expect(INCOMPLETE_SESSION_REVALIDATE_SECONDS).toBe(3600);
+        expect(WRAPPER_OPTIONS.some(o => o?.revalidate === 3600)).toBe(true);
+    });
+
+    it('래퍼를 호출한다', async () => {
+        await shortenRevalidateForIncompleteSession();
+        expect(pinMock).toHaveBeenCalledOnce();
+    });
+
+    it('렌더 컨텍스트 밖이라 래퍼가 던져도 삼킨다', async () => {
+        const warnSpy = vi
+            .spyOn(console, 'warn')
+            .mockImplementation(() => undefined);
+        pinMock.mockRejectedValueOnce(new Error('incrementalCache missing'));
+
+        await expect(
+            shortenRevalidateForIncompleteSession()
         ).resolves.toBeUndefined();
         expect(warnSpy).toHaveBeenCalledOnce();
         warnSpy.mockRestore();

@@ -4,7 +4,7 @@ import NextLink from 'next/link';
 import type { ComponentProps } from 'react';
 import { useCurrentLocale, useHrefBase } from '@/shared/i18n/LocaleContext';
 import { localePath, splitLocalePath } from '@/shared/i18n/locales';
-import { useNavigationPending } from '@/shared/model/NavigationPendingContext';
+import { useStartNavigation } from '@/shared/model/NavigationPendingContext';
 
 type NextLinkProps = ComponentProps<typeof NextLink>;
 type OnNavigate = NonNullable<NextLinkProps['onNavigate']>;
@@ -51,7 +51,9 @@ function callerCancelled(
 export function LocaleLink({ href, onNavigate, ...rest }: NextLinkProps) {
     const locale = useCurrentLocale();
     const base = useHrefBase();
-    const { startNavigation } = useNavigationPending();
+    // 동작 컨텍스트만 구독한다 — pending 상태가 바뀌어도 링크는 리렌더되지 않는다
+    // (페이지의 링크 수백 개가 클릭 태스크 안에서 다시 그려지던 INP 비용).
+    const startNavigation = useStartNavigation();
     const localized =
         typeof href === 'string' && href.startsWith('/')
             ? `${base}${localePath(locale, splitLocalePath(href).path)}`

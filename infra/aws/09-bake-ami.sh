@@ -132,9 +132,14 @@ aws ec2 wait instance-stopped --region "$REGION" --instance-ids "$BUILDER_ID"
 
 IMAGE_NAME="siglens-golden-$(date -u +%Y%m%d-%H%M%S)"
 log "creating AMI $IMAGE_NAME..."
+# `siglens:role=golden-ami` 태그는 16-prune-amis.sh의 **유일한** 선정 기준이다(이미지와
+# 스냅샷 양쪽). 빠지면 이 AMI는 보존 정리 대상에서 영영 빠져 스냅샷이 다시 쌓인다.
 GOLDEN_AMI=$(aws ec2 create-image --region "$REGION" \
   --instance-id "$BUILDER_ID" --name "$IMAGE_NAME" \
   --description "siglens golden AMI (docker+jq+cwagent baked)" \
+  --tag-specifications \
+    "ResourceType=image,Tags=[{Key=siglens:role,Value=golden-ami},{Key=Name,Value=$IMAGE_NAME}]" \
+    "ResourceType=snapshot,Tags=[{Key=siglens:role,Value=golden-ami},{Key=Name,Value=$IMAGE_NAME}]" \
   --query 'ImageId' --output text)
 log "AMI creating: $GOLDEN_AMI — waiting until available..."
 aws ec2 wait image-available --region "$REGION" --image-ids "$GOLDEN_AMI"
@@ -144,3 +149,6 @@ echo "export PINNED_AMI=$GOLDEN_AMI" > "$AMI_FILE"
 log "golden AMI ready: $GOLDEN_AMI"
 log "pinned to $AMI_FILE (PINNED_AMI=$GOLDEN_AMI)"
 log "NEXT: update repo variable vars.PINNED_AMI=$GOLDEN_AMI for CI deploys, then push a v* tag."
+# 옛 골든 AMI는 여기서 지우지 않는다 — CI 변수와 배포가 아직 직전 AMI를 쓰고 있을 수 있다.
+# 새 AMI로 배포가 끝난 뒤 16-prune-amis.sh(기본 dry-run, 최근 3개 + 사용 중 AMI 보존)를 돌린다.
+log "THEN (after the deploy rolls): bash infra/aws/16-prune-amis.sh  # dry-run; add --apply to deregister old bakes"

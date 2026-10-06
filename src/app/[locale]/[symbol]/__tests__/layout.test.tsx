@@ -13,7 +13,9 @@
  * - assetInfo seed는 유지 (updatedAt 0으로 ISR HTML 결정성)
  * - 헤더에 전달되는 `fearGreedSnapshot` (이 PR의 핵심 — 사용자와 JS 미실행
  *   크롤러가 보는 값이다)
- * - 봉 조회 인자가 page.tsx와 동일 (React.cache 메모가 접히는 조건)
+ * - 칩은 세션 키 스냅샷 캐시(`getSymbolFearGreedChipStatic`)에서 읽고 **6h 봉 캐시는 읽지
+ *   않는다** — 레이아웃은 9탭 공유라, 6h 봉 캐시를 읽으면 12h·24h 탭이 전부 6h로 clamp된다
+ *   (Next 16.3 `unstable_cache` revalidate lowering, 2026-10 운영 실측)
  * - 조회 실패 시 throw 없이 스냅샷만 null
  */
 
@@ -27,15 +29,11 @@ const {
     mockNotFound,
     mockGetQuantizedBarsStatic,
     mockGetSeedBarsStatic,
-    mockComputeFearGreedIndex,
+    mockGetSymbolFearGreedChipStatic,
 } = vi.hoisted(() => ({
     MOCK_EMPTY_INDICATOR_RESULT: { ma: {}, ema: {} } as never,
     mockSetQueryData: vi.fn(),
-    mockComputeFearGreedIndex: vi.fn(() => ({
-        score: 42,
-        label: 'NEUTRAL' as const,
-        confidence: 'full' as const,
-    })),
+    mockGetSymbolFearGreedChipStatic: vi.fn(),
     mockPrefetchQuery: vi.fn(),
     mockGetAssetInfoResilient: vi.fn(),
     // 실제 next/navigation.notFound()와 동일하게 throw해야, 가드 이후 코드가 실행되지
@@ -80,23 +78,6 @@ vi.mock('@y0ngha/siglens-core', () => ({
         weekendDays: [0, 6],
     },
     CRYPTO_SESSION: { kind: 'always-open' as const },
-    // 칩 값을 서버에서 확정하는 순수 함수. 이 파일의 관심사는 seed 부재와 조회
-    // 인자이지 지수 계산이 아니므로 결정적 스텁으로 고정한다.
-    computeFearGreedIndex: mockComputeFearGreedIndex,
-    // `symbolFearGreed`(공용 입구)가 쓰는 core 함수. 입력 고르기는 실제와 같은 규칙으로
-    // 둔다 — 5년 봉이 있으면 그것, 없으면 표준 봉.
-    computeFearGreedHistory: () => [],
-    fearGreedInputs: (d: {
-        bars: unknown[];
-        indicators: { buySellVolume: unknown[] };
-        fearGreedBars?: unknown[];
-    }) =>
-        d.fearGreedBars !== undefined && d.fearGreedBars.length > 0
-            ? {
-                  bars: d.fearGreedBars,
-                  buySellVolume: d.fearGreedBars.map(() => ({})),
-              }
-            : { bars: d.bars, buySellVolume: d.indicators.buySellVolume },
 }));
 
 vi.mock('@tanstack/react-query', () => ({
@@ -155,11 +136,15 @@ vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
         mockGetAssetInfoResilient(ticker),
 }));
 
-// layout은 칩 계산에 원본(getQuantizedBarsStatic)을 쓴다 — 축소판은 공포·탐욕용
-// 5년 일봉(`fearGreedBars`)을 버린다. 둘을 분리해 두어 어느 쪽을 불렀는지 검증한다.
+// 레이아웃은 6h 봉 캐시(barsStaticCache)를 **읽지 않아야** 한다 — 스파이로 두어 호출 부재를
+// 단언한다. 칩은 세션 키 스냅샷 캐시에서 읽는다(스냅샷 계산 자체는
+// `sessionBarsStaticCache.test.ts`가 검증한다).
 vi.mock('@/entities/bars/lib/barsStaticCache', () => ({
     getQuantizedBarsStatic: mockGetQuantizedBarsStatic,
     getSeedBarsStatic: mockGetSeedBarsStatic,
+}));
+vi.mock('@/entities/bars/lib/sessionBarsStaticCache', () => ({
+    getSymbolFearGreedChipStatic: mockGetSymbolFearGreedChipStatic,
 }));
 
 import { Suspense } from 'react';
@@ -182,10 +167,10 @@ const ASSET_INFO = {
     name: 'Apple Inc.',
     fmpSymbol: 'AAPL',
 };
-const LAST_BAR_TIME = 1717718400; // 2024-06-07T00:00:00Z (epoch seconds)
-const QUANTIZED = {
-    bars: [{ time: LAST_BAR_TIME }],
-    indicators: { buySellVolume: [{ buy: 10, sell: 5 }] },
+const CHIP_SNAPSHOT = {
+    score: 42,
+    label: 'NEUTRAL' as const,
+    confidence: 'full' as const,
 };
 
 /**
@@ -202,13 +187,15 @@ describe('SymbolLayoutChrome — 봉 seed 없이 공포·탐욕 스냅샷만 내
     beforeEach(() => {
         mockSetQueryData.mockClear();
         mockPrefetchQuery.mockClear();
-        mockComputeFearGreedIndex.mockClear();
+        mockGetQuantizedBarsStatic.mockClear();
+        mockGetSeedBarsStatic.mockClear();
+        mockGetSymbolFearGreedChipStatic.mockReset();
         mockGetAssetInfoResilient.mockReset();
         mockGetAssetInfoResilient.mockResolvedValue({
             assetInfo: ASSET_INFO,
             degraded: false,
         });
-        mockGetQuantizedBarsStatic.mockResolvedValue(QUANTIZED);
+        mockGetSymbolFearGreedChipStatic.mockResolvedValue(CHIP_SNAPSHOT);
     });
 
     /**
@@ -260,45 +247,29 @@ describe('SymbolLayoutChrome — 봉 seed 없이 공포·탐욕 스냅샷만 내
     });
 
     /**
-     * 인자 순서 회귀 가드 — `computeFearGreedIndex(bars, buySellVolume)`이다.
-     * 5년 일봉이 없는 데이터(옛 캐시 항목 등)는 표준 봉과 그 `buySellVolume`으로 계산한다.
+     * **clamp 회귀 가드.** 레이아웃은 9개 탭 전부가 공유한다. 여기서 6h 봉 캐시
+     * (`getQuantizedBarsStatic`/`getSeedBarsStatic` → `getBarsStatic`)를 읽으면 Next 16.3이
+     * 12h·24h를 선언한 탭까지 6h로 clamp한다(2026-10 운영 실측: `/AAPL/fundamental`
+     * s-maxage 21600). 칩은 세션 키 스냅샷 캐시(revalidate 24h)만 읽어야 한다.
      */
-    it('봉과 buySellVolume을 그 순서로 넘겨 계산한다', async () => {
+    it('6h 봉 캐시를 읽지 않는다 (9탭 revalidate clamp 회귀 가드)', async () => {
         await SymbolLayoutChrome({
             assetInfo: ASSET_INFO,
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        expect(mockComputeFearGreedIndex).toHaveBeenCalledWith(
-            QUANTIZED.bars,
-            QUANTIZED.indicators.buySellVolume
-        );
+        expect(mockGetQuantizedBarsStatic).not.toHaveBeenCalled();
+        expect(mockGetSeedBarsStatic).not.toHaveBeenCalled();
+        expect(mockGetSymbolFearGreedChipStatic).toHaveBeenCalledTimes(1);
     });
 
-    /**
-     * 배지 점수는 공포·탐욕 페이지·색인 게이트와 같은 5년 일봉으로 계산해야 한다.
-     * 표준(2년) 봉으로 계산하면 같은 날 배지와 페이지 점수가 달라진다.
-     */
-    it('5년 일봉(fearGreedBars)이 있으면 그 봉으로 배지 점수를 계산한다', async () => {
-        const longBars = [...QUANTIZED.bars, ...QUANTIZED.bars];
-        mockGetQuantizedBarsStatic.mockResolvedValue({
-            ...QUANTIZED,
-            fearGreedBars: longBars,
-        });
-
-        await SymbolLayoutChrome({
-            assetInfo: ASSET_INFO,
-            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
-        });
-
-        expect(mockComputeFearGreedIndex).toHaveBeenCalledWith(
-            longBars,
-            expect.any(Array)
+    it('칩 조회 실패 시 스냅샷은 null (칩이 "데이터 부족"으로 폴백)', async () => {
+        mockGetSymbolFearGreedChipStatic.mockRejectedValue(
+            new Error('FMP down')
         );
-    });
-
-    it('봉 조회 실패 시 스냅샷은 null (칩이 "데이터 부족"으로 폴백)', async () => {
-        mockGetQuantizedBarsStatic.mockRejectedValue(new Error('FMP down'));
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
 
         const tree = await SymbolLayoutChrome({
             assetInfo: ASSET_INFO,
@@ -308,7 +279,7 @@ describe('SymbolLayoutChrome — 봉 seed 없이 공포·탐욕 스냅샷만 내
         expect(headerPropsOf(tree)).toEqual(
             expect.objectContaining({ fearGreedSnapshot: null })
         );
-        expect(mockComputeFearGreedIndex).not.toHaveBeenCalled();
+        errorSpy.mockRestore();
     });
 
     it('assetInfo는 여전히 seed한다 (updatedAt 0으로 ISR 결정성 유지)', async () => {
@@ -344,19 +315,18 @@ describe('SymbolLayoutChrome — 봉 seed 없이 공포·탐욕 스냅샷만 내
     });
 
     /**
-     * 봉 조회 인자는 그대로 유지해야 한다 — page.tsx와 같은 인자여야 `React.cache`
-     * 메모가 접혀 quantize가 요청당 한 번만 돈다. seed를 없앴다고 이 호출까지
-     * 없앨 수는 없다(스냅샷 계산에 봉이 필요하다).
+     * 칩 조회 인자 — 대문자 ticker·시장 프로필·FMP 심볼. 공포·탐욕 탭 본문
+     * (`getSessionBarsStatic`)과 같은 세션 키 규칙(시장 프로필의 세션 스펙)을 타야
+     * 그 탭에서 칩과 본문 요약이 같은 점수다.
      */
-    it('page.tsx와 같은 인자로 봉을 조회한다 (요청 스코프 메모 유지)', async () => {
+    it('대문자 ticker·시장 프로필·FMP 심볼로 칩을 조회한다', async () => {
         await SymbolLayoutChrome({
             assetInfo: ASSET_INFO,
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        expect(mockGetQuantizedBarsStatic).toHaveBeenCalledWith(
+        expect(mockGetSymbolFearGreedChipStatic).toHaveBeenCalledWith(
             'AAPL',
-            '1Day',
             'us-equity',
             'AAPL'
         );
@@ -378,9 +348,8 @@ describe('SymbolLayoutChrome — 봉 seed 없이 공포·탐욕 스냅샷만 내
             params: Promise.resolve({ locale: 'ko', symbol: 'btcusd' }),
         });
 
-        expect(mockGetQuantizedBarsStatic).toHaveBeenCalledWith(
+        expect(mockGetSymbolFearGreedChipStatic).toHaveBeenCalledWith(
             'BTCUSD',
-            '1Day',
             'crypto',
             undefined
         );
@@ -390,8 +359,11 @@ describe('SymbolLayoutChrome — 봉 seed 없이 공포·탐욕 스냅샷만 내
      * 봉 조회가 실패해도(FMP 키 없음·degrade) throw하지 않고 스냅샷만 비운다.
      * 칩은 null 스냅샷에서 "데이터 부족" 문구로 폴백한다.
      */
-    it('봉 조회 실패 시 throw하지 않는다', async () => {
-        mockGetQuantizedBarsStatic.mockRejectedValue(new Error('FMP down'));
+    it('칩 조회 실패 시 throw하지 않는다', async () => {
+        mockGetSymbolFearGreedChipStatic.mockRejectedValue(
+            new Error('FMP down')
+        );
+        vi.spyOn(console, 'error').mockImplementation(() => {});
 
         await expect(
             SymbolLayoutChrome({

@@ -29,13 +29,17 @@ vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
     scopeUsesFmp: (scope: string) => scope !== 'kr',
 }));
 
+vi.mock('../api/sectorSignalsProvider', () => ({
+    sectorSignalsProviderFor: vi.fn(() => ({})),
+}));
+
 import { getSectorSignalsStatic } from '../api/sectorSignalsStaticCache';
 import { getCachedSectorSignals } from '../api/sectorSignalsCache';
 import {
     KR_DASHBOARD_SCOPE,
     US_DASHBOARD_SCOPE,
 } from '@/shared/config/dashboardScope';
-import { marketDataProviderFor } from '@/shared/api/market/getMarketDataProvider';
+import { sectorSignalsProviderFor } from '../api/sectorSignalsProvider';
 
 const mockGetCachedSectorSignals = vi.mocked(getCachedSectorSignals);
 
@@ -130,7 +134,10 @@ describe('getSectorSignalsStatic', () => {
             revalidate: SECONDS_PER_HOUR,
             tags: ['sector:signals:kr'],
         });
-        expect(vi.mocked(marketDataProviderFor)).toHaveBeenCalledWith('kr');
+        expect(vi.mocked(sectorSignalsProviderFor)).toHaveBeenCalledWith(
+            'kr',
+            '1Day'
+        );
         expect(mockGetCachedSectorSignals).toHaveBeenCalledWith(
             expect.anything(),
             KR_DASHBOARD_SCOPE,

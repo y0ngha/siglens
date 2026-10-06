@@ -13,7 +13,7 @@ import { PositionTabContent } from '@/widgets/portfolio-position/ui/PositionTabC
 import { resolveLocale } from '@/shared/i18n/locales';
 import { getBlockedSymbolMetadata } from '@/app/[locale]/[symbol]/symbolIndexabilityMetadata';
 import { SymbolPageHeading } from '@/views/symbol/ui/SymbolPageHeading';
-import { DEFAULT_TIMEFRAME, SymbolRouteParams } from '@/shared/config/market';
+import { SymbolRouteParams } from '@/shared/config/market';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { buildAssetAboutNode } from '@/entities/ticker/lib/assetClassification';
@@ -21,7 +21,7 @@ import { buildDisplayName } from '@/entities/ticker/lib/ticker';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
-import { getQuantizedBarsStatic } from '@/entities/bars/lib/barsStaticCache';
+import { getSessionBarsStatic } from '@/entities/bars/lib/sessionBarsStaticCache';
 import {
     getDescriptor,
     marketProfileOf,
@@ -127,14 +127,17 @@ interface PriceRange {
 }
 
 /**
- * 최근 가격 범위(공개 데이터)만 서버에서 계산한다. `getQuantizedBarsStatic`은
+ * 최근 가격 범위(공개 데이터)만 서버에서 계산한다. `getSessionBarsStatic`은
  * cookies()를 읽지 않는 정적 캐시 경로라 ISR cold-gen에서 안전하다.
  *
  * ⚠️ 반드시 이 헬퍼를 거친다. 이유가 둘이다:
  * 1. `getBarsAction`을 직접 부르면 cookies() → DYNAMIC_SERVER_USAGE로 ISR
  *    cold-gen이 500을 낸다.
- * 2. `getBarsStatic` + quantize를 따로 부르면 요청 스코프 dedup을 건너뛰어
- *    지표가 RSC 페이로드에 두 벌 실린다(barsStaticCache.ts JSDoc).
+ * 2. `getQuantizedBarsStatic`(봉 캐시 revalidate 6h)을 읽으면 Next 16.3이 이 라우트
+ *    (12h 선언)를 6h로 clamp한다 — 렌더 중 읽힌 `unstable_cache` revalidate의 최솟값이
+ *    라우트 revalidate가 된다. `getSessionBarsStatic`은 마지막 마감 세션 날짜를 키로 둬
+ *    revalidate 24h로도 세션 롤마다 갱신된다(`sessionBarsStaticCache.ts` JSDoc).
+ *    이 탭이 쓰는 건 봉(52주 범위·종가·거래량)뿐이라 지표가 빈 축소판으로 충분하다.
  * 실패는 null로 degrade해 페이지 자체가 throw하지 않게 한다 — client의
  * PositionTabContent는 low/high/lastClose가 null이어도 CTA/데이터 부족
  * 안내로 graceful 폴백한다.
@@ -145,12 +148,10 @@ async function resolvePriceRange(
     marketProfile: ReturnType<typeof marketProfileOf>
 ): Promise<PriceRange | null> {
     try {
-        // layout/page와 같은 헬퍼를 쓴다 — 이 라우트는 bars를 query 캐시에 seed하지
-        // 않아 RSC 중복 직렬화와는 무관하지만, 같은 요청 안에서 layout이 이미 부른
-        // 동일 인자 호출을 재사용해 unstable_cache 조회와 quantize 계산을 아낀다.
-        const quantized = await getQuantizedBarsStatic(
+        // 마지막 마감 세션까지의 봉이다(장중 형성 봉 제외 — ISR HTML 결정성). 지표는
+        // 비어 있으므로 `buildTechnicalFacts`의 rsi·macd는 null이고, 이 탭은 그 둘을 읽지 않는다.
+        const quantized = await getSessionBarsStatic(
             ticker,
-            DEFAULT_TIMEFRAME,
             marketProfile,
             fmpSymbol
         );

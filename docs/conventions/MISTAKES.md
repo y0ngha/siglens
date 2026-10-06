@@ -1732,6 +1732,18 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → All user-controlled payload logging must limit length or escape special characters
     ❌ logger "${JSON.stringify(request.body)}"  // newline in body → double log line → metric filter fires
     ✅ logger "${JSON.stringify(request.body).substring(0, 500)}"  // truncate before logging
+
+14. Defensive checks must explicitly validate nil/empty/undefined values; comparison operators alone are insufficient
+    → Guard logic protecting critical operations (cache validity, resource deletion, authorization gates) must check for nil/empty/undefined before relying on comparison operators
+    → Comparison operators (>, <, ===) on undefined/null values silently pass or produce misleading results without an explicit nil check first
+    → Both cache validity checks and infrastructure safety gates must validate input existence and type before any transformations or comparisons
+    ❌ if (staleLastModified < currentTime) { ... }  // does not check staleLastModified !== undefined before comparison
+       → undefined < number → false, so condition passes and stale logic runs unchecked
+    ❌ if (protectedAmiId) { execute delete } // truthy check on string 'None' passes; should validate against nil/empty explicitly
+       → protected.id = 'None'; if (protected) { delete } executes despite symbolic 'None' value
+    ✅ if (staleLastModified !== undefined && staleLastModified < currentTime) { ... }  // explicit nil check before operator
+    ✅ const isValidId = protectedAmiId && protectedAmiId !== 'None' && protectedAmiId.length > 0; if (isValidId) { execute delete }  // explicit nil/empty/sentinel checks
+    → Recurring: perf/isr-cache-handler (staleLastModified guard), chore/infra-cleanup (AMI safety guard) — 2 occurrences
 ```
 
 ---

@@ -80,7 +80,14 @@ for i in $(seq 1 "$MAX_ITERATIONS"); do
     case "$STATUS" in
         Successful)
             log "instance refresh completed successfully for $TAG"
-            aws ssm put-parameter --name /siglens/prev-isr-buildid --value "$TAG" --type String --overwrite >/dev/null 2>&1 || true
+            # 직전 빌드의 ISR prefix(`siglens-isr/<GIT_SHA>/`)는 여기서 지우지 않는다 —
+            # 12-isr-cache.sh의 7일 lifecycle이 정리한다. 예전엔 이 자리에서
+            # SSM `/siglens/prev-isr-buildid`에 태그를 썼지만 그 값을 읽는 곳이 없었고,
+            # `/siglens/*`는 user-data가 통째로 컨테이너 env로 퍼 넣으므로 쓸모없는 키가
+            # 런타임 env에 새고 있었다. 즉시 삭제를 택하지 않은 이유:
+            #   - 직전 prefix는 1단계 롤백의 웜 캐시다. 지우면 롤백이 전 라우트 cold-gen이 된다.
+            #   - 수십만 객체 삭제는 CI 시간을 분 단위로 잡아먹고, 반쯤 지운 채 실패할 수 있다.
+            #   - 7일 lifecycle 아래 죽은 prefix의 저장비는 월 $1 안팎이다.
             exit 0
             ;;
         RollbackSuccessful)

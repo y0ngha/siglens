@@ -2,6 +2,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { usePwaInstall } from '@/features/pwa-install/hooks/usePwaInstall';
 import { _resetRegisterServiceWorkerForTests } from '@/features/pwa-install/lib/registerServiceWorker';
+import { PWA_BANNER_DISMISSED_STORAGE_KEY } from '@/features/pwa-install/lib/bannerDismissal';
 
 describe('usePwaInstall', () => {
     beforeAll(() => {
@@ -32,6 +33,7 @@ describe('usePwaInstall', () => {
 
     beforeEach(() => {
         _resetRegisterServiceWorkerForTests();
+        localStorage.clear();
         Object.defineProperty(navigator, 'userAgent', {
             value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
             configurable: true,
@@ -126,6 +128,10 @@ describe('usePwaInstall', () => {
 
         expect(mockPrompt).toHaveBeenCalledTimes(1);
         expect(result.current.showBanner).toBe(false);
+        // 설치 후 브라우저 탭으로 다시 와도 권유하지 않는다.
+        expect(localStorage.getItem(PWA_BANNER_DISMISSED_STORAGE_KEY)).toBe(
+            '1'
+        );
     });
 
     it('Android: beforeinstallprompt → handleInstall → dismissed 시 showBanner 유지', async () => {
@@ -214,5 +220,51 @@ describe('usePwaInstall', () => {
             window.dispatchEvent(new Event('pointerdown'));
         });
         expect(result.current.showBanner).toBe(false);
+    });
+
+    describe('닫기 기억(localStorage)', () => {
+        it('닫으면 저장소에 남기고, 다음 마운트에서는 첫 입력에도 배너를 띄우지 않는다', () => {
+            const first = renderHook(() => usePwaInstall());
+            act(() => {
+                window.dispatchEvent(new Event('pointerdown'));
+            });
+            act(() => {
+                first.result.current.handleDismiss();
+            });
+            expect(localStorage.getItem(PWA_BANNER_DISMISSED_STORAGE_KEY)).toBe(
+                '1'
+            );
+            first.unmount();
+
+            const second = renderHook(() => usePwaInstall());
+            act(() => {
+                window.dispatchEvent(new Event('pointerdown'));
+            });
+            expect(second.result.current.showBanner).toBe(false);
+        });
+
+        it('저장소 접근이 throw해도(프라이빗 모드) 배너는 뜨고 닫힌다', () => {
+            const getItem = vi
+                .spyOn(Storage.prototype, 'getItem')
+                .mockImplementation(() => {
+                    throw new Error('SecurityError');
+                });
+            const setItem = vi
+                .spyOn(Storage.prototype, 'setItem')
+                .mockImplementation(() => {
+                    throw new Error('QuotaExceededError');
+                });
+            const { result } = renderHook(() => usePwaInstall());
+            act(() => {
+                window.dispatchEvent(new Event('pointerdown'));
+            });
+            expect(result.current.showBanner).toBe(true);
+            act(() => {
+                result.current.handleDismiss();
+            });
+            expect(result.current.showBanner).toBe(false);
+            getItem.mockRestore();
+            setItem.mockRestore();
+        });
     });
 });

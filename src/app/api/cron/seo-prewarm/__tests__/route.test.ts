@@ -28,6 +28,14 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: mockGetDatabaseClient,
 }));
 
+// 만료 행 정리는 자체 테스트(pruneExpiredRows.test.ts)가 덮는다 — 여기선 호출 순서만 본다.
+vi.mock('../pruneExpiredRows', () => ({
+    pruneExpiredRows: vi.fn().mockResolvedValue({
+        sessionsDeleted: 0,
+        sharedAnalysesDeleted: 0,
+    }),
+}));
+
 // Task S4 — DrizzleAnalysisHistoryRepository is stubbed so route tests only
 // verify the cron's own isolation contract (prune never blocks lock
 // release), not the repository's own retention logic (covered by
@@ -49,6 +57,7 @@ import {
 } from '@/app/api/cron/seo-prewarm/lock';
 import { runPrewarmBatch } from '@/app/api/cron/seo-prewarm/runPrewarmBatch';
 import { warmOptionsLastGood } from '@/entities/options-chain/lib/warmOptionsLastGood';
+import { pruneExpiredRows } from '@/app/api/cron/seo-prewarm/pruneExpiredRows';
 
 const {
     HTTP_STATUS_UNAUTHORIZED,
@@ -201,6 +210,39 @@ describe('PATCH /api/cron/seo-prewarm', () => {
         );
         expect(releasePrewarmLock).toHaveBeenCalledTimes(1);
         expect(releasePrewarmLock).toHaveBeenCalledWith('token-1');
+
+        logSpy.mockRestore();
+    });
+
+    it('이력 정리 뒤 만료 행(세션·공유) 정리를 같은 db로 돌리고 결과를 로그한 뒤 락을 해제한다', async () => {
+        vi.mocked(acquirePrewarmLock).mockResolvedValue('token-1');
+        const db = { marker: 'db' };
+        mockGetDatabaseClient.mockReturnValue({ db });
+        vi.mocked(pruneExpiredRows).mockResolvedValue({
+            sessionsDeleted: 5,
+            sharedAnalysesDeleted: 1,
+        });
+        const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+        await PATCH(makeRequest('Bearer test-secret'));
+        const callback = mockAfter.mock.calls[0][0] as () => Promise<void>;
+        await callback();
+
+        expect(pruneExpiredRows).toHaveBeenCalledWith(db);
+        expect(
+            mockPruneAnalysisHistory.mock.invocationCallOrder[0]
+        ).toBeLessThan(
+            vi.mocked(pruneExpiredRows).mock.invocationCallOrder[0]!
+        );
+        expect(
+            vi.mocked(pruneExpiredRows).mock.invocationCallOrder[0]
+        ).toBeLessThan(
+            vi.mocked(releasePrewarmLock).mock.invocationCallOrder[0]!
+        );
+        expect(logSpy).toHaveBeenCalledWith(
+            '[seo-prewarm] expiry prune done:',
+            JSON.stringify({ sessionsDeleted: 5, sharedAnalysesDeleted: 1 })
+        );
 
         logSpy.mockRestore();
     });

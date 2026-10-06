@@ -4,8 +4,8 @@ import type {
     DashboardTimeframe,
     SectorSignalsResult,
 } from '@y0ngha/siglens-core';
-import { marketDataProviderFor } from '@/shared/api/market/getMarketDataProvider';
 import { getCachedSectorSignals } from '../api/sectorSignalsCache';
+import { sectorSignalsProviderFor } from '../api/sectorSignalsProvider';
 import {
     DEFAULT_DASHBOARD_TIMEFRAME,
     isDashboardTimeframe,
@@ -49,10 +49,11 @@ export async function getSectorSignalsAction(
             return { computedAt: new Date().toISOString(), stocks: [] };
         }
         const resolved = dashboardScopeOf(resolvedScopeId);
+        const timeframeToUse = resolvedTimeframe ?? DEFAULT_DASHBOARD_TIMEFRAME;
         return await getCachedSectorSignals(
-            marketDataProviderFor(resolved.id),
+            sectorSignalsProviderFor(resolved.id, timeframeToUse),
             resolved,
-            resolvedTimeframe ?? DEFAULT_DASHBOARD_TIMEFRAME
+            timeframeToUse
         );
     } catch (error) {
         console.error('[getSectorSignalsAction] failed:', error);

@@ -1,10 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/shared/db/client', () => ({
     tryGetDatabaseClient: vi.fn(),
 }));
 
 import { GET } from '../route';
+import { __resetActiveNoticesMemoForTests } from '@/entities/notice/lib/activeNoticesMemo';
 import { tryGetDatabaseClient } from '@/shared/db/client';
 import type { SiglensDatabase } from '@/shared/db/types';
 
@@ -35,6 +36,8 @@ function request(query = ''): Request {
 describe('GET /api/notices', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // 로케일별 60초 메모가 케이스 사이에 남지 않게 한다.
+        __resetActiveNoticesMemoForTests();
     });
 
     it('활성 공지를 JSON으로 내고 createdAt은 ISO 문자열이다', async () => {
@@ -96,5 +99,73 @@ describe('GET /api/notices', () => {
         const res = await GET(request('?locale=xx'));
         expect(res.status).toBe(200);
         expect(await res.json()).toEqual([]);
+    });
+
+    describe('로케일별 60초 메모', () => {
+        function countingDb(rows: unknown[]) {
+            const select = vi.fn(() => {
+                const builder = {
+                    from: () => builder,
+                    where: () => ({ orderBy: () => Promise.resolve(rows) }),
+                };
+                return builder;
+            });
+            return { db: { select } as unknown as SiglensDatabase, select };
+        }
+
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it('같은 로케일은 60초 안에 DB를 다시 조회하지 않는다', async () => {
+            vi.useFakeTimers({ toFake: ['Date'] });
+            vi.setSystemTime(new Date('2026-10-06T00:00:00Z'));
+            const { db, select } = countingDb([ROW]);
+            mockedTryGet.mockReturnValue({ db, sql: {} as never });
+
+            await GET(request('?locale=ko'));
+            const second = await GET(request('?locale=ko'));
+            expect(select).toHaveBeenCalledTimes(1);
+            expect(await second.json()).toHaveLength(1);
+            expect(second.headers.get('Cache-Control')).toContain(
+                's-maxage=60'
+            );
+
+            vi.setSystemTime(new Date('2026-10-06T00:01:00Z'));
+            await GET(request('?locale=ko'));
+            expect(select).toHaveBeenCalledTimes(2);
+        });
+
+        it('로케일마다 따로 메모한다(번역이 섞이지 않게)', async () => {
+            const { db, select } = countingDb([ROW]);
+            mockedTryGet.mockReturnValue({ db, sql: {} as never });
+
+            await GET(request('?locale=ko'));
+            await GET(request('?locale=en'));
+            await GET(request('?locale=en'));
+            expect(select).toHaveBeenCalledTimes(2);
+        });
+
+        it('조회 실패는 메모하지 않는다 — 다음 요청이 다시 조회한다', async () => {
+            const errSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            mockedTryGet.mockReturnValueOnce({
+                db: {
+                    select: () => {
+                        throw new Error('db down');
+                    },
+                } as unknown as SiglensDatabase,
+                sql: {} as never,
+            });
+            await GET(request('?locale=ko'));
+
+            const { db, select } = countingDb([ROW]);
+            mockedTryGet.mockReturnValue({ db, sql: {} as never });
+            const res = await GET(request('?locale=ko'));
+            expect(select).toHaveBeenCalledTimes(1);
+            expect(await res.json()).toHaveLength(1);
+            errSpy.mockRestore();
+        });
     });
 });

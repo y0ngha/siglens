@@ -19,6 +19,9 @@ vi.mock('next/image', () => ({
             role="img"
             aria-label={props.alt as string}
             data-src={props.src as string}
+            data-priority={String(props.priority ?? false)}
+            data-preload={String(props.preload ?? false)}
+            data-loading={props.loading as string | undefined}
         />
     ),
 }));
@@ -55,6 +58,19 @@ describe('Header', () => {
         render(<Header currentUser={null} />);
 
         expect(screen.getByLabelText('SIGLENS 로고')).toBeInTheDocument();
+    });
+
+    /**
+     * 24px 로고는 LCP 요소가 아니다. `priority`/`preload`를 걸면 모든 페이지 `<head>`에
+     * 고우선 preload가 박혀 실제 LCP 후보와 대역을 다툰다.
+     */
+    it('logo image is not preloaded at high priority but loads eagerly', () => {
+        render(<Header currentUser={null} />);
+
+        const logo = screen.getByLabelText('SIGLENS 로고');
+        expect(logo).toHaveAttribute('data-priority', 'false');
+        expect(logo).toHaveAttribute('data-preload', 'false');
+        expect(logo).toHaveAttribute('data-loading', 'eager');
     });
 
     it('renders the home link', () => {

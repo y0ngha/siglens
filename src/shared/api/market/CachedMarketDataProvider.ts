@@ -10,12 +10,20 @@ import {
     computeBarsEffectiveTtl,
 } from '@y0ngha/siglens-core';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
+import { createMemoryLru, type MemoryLru } from '@/shared/cache/memoryLru';
 import {
     EOD_PUBLISH_BUFFER_HOURS,
     lastClosedSessionDate,
     secondsUntilSessionRoll,
+    zonedDate,
 } from '@/shared/lib/marketSessionDate';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import {
+    ISO_DATE_LENGTH,
+    MS_PER_SECOND,
+    SECONDS_PER_DAY,
+    SECONDS_PER_HOUR,
+    SECONDS_PER_MINUTE,
+} from '@/shared/config/time';
 import { mergeBarsByTime } from './mergeBarsByTime';
 import type { SiglensMarketProvider } from './marketProvider.types';
 import { toUtcIsoDate } from '@/shared/lib/isoDate';
@@ -59,7 +67,9 @@ function isoDateDaysAgo(now: Date, days: number): string {
 
 /** YYYY-MM-DD(또는 ISO) 날짜를 UTC 자정 unix초로 변환(Bar.time과 동일 규약). */
 function utcMidnightSeconds(dateStr: string): number {
-    return Math.floor(Date.parse(dateStr.slice(0, 10) + 'T00:00:00Z') / 1000);
+    return Math.floor(
+        Date.parse(dateStr.slice(0, ISO_DATE_LENGTH) + 'T00:00:00Z') / 1000
+    );
 }
 
 /** `from` 이후(포함) 봉만 남긴다 — 단일 `getBars(from)`와 동일 집합 보장. */
@@ -67,6 +77,49 @@ function sliceFrom(bars: Bar[], from: string | undefined): Bar[] {
     if (from === undefined) return bars;
     const threshold = utcMidnightSeconds(from);
     return bars.filter(b => b.time >= threshold);
+}
+
+/**
+ * 인트라데이 히스토리 키(`bars:intrahist:...:<오늘>`)의 TTL. 키에 "오늘" 날짜가 들어가
+ * 날짜가 넘어가면 다시 읽히지 않으므로, TTL은 하루를 넘지 않게 두는 정리용 상한일 뿐이다.
+ */
+const INTRADAY_HISTORY_TTL_SECONDS = SECONDS_PER_DAY;
+
+/**
+ * 비어 있는 인트라데이 오늘 tail의 TTL 상한. 개장 전·주말에는 정상적으로 비지만, 장 마감
+ * 뒤 FMP가 일시적으로 빈 배열을 준 것일 수도 있다 — 그 값을 다음 개장까지(최대 24h) 굳히면
+ * 오늘 봉이 통째로 사라지므로 길게 두지 않는다. 장중 TTL(60초)보다 길어지는 일은 없다.
+ */
+const EMPTY_INTRADAY_TAIL_MAX_TTL_SECONDS = 15 * SECONDS_PER_MINUTE;
+
+/**
+ * 히스토리(`bars:eodhist`·`bars:intrahist`) L1 메모리 상한(provider 인스턴스당).
+ *
+ * 5년 일봉 히스토리 한 벌이 힙에서 ~110KB(봉 ~1,360개)다. 128개면 ~14MB이고, provider
+ * 싱글톤이 세션별로 셋(US·크립토·KR)이라 최악 ~42MB다. 섹터 스캔(미국 ~80종목)과
+ * 종목 페이지의 뜨거운 종목을 함께 덮는 크기다.
+ *
+ * 재측정: `node --expose-gc`에서 5년 일봉 `Bar[]` N벌을 만들어 두기 전후에 `gc()` →
+ * `process.memoryUsage().heapUsed`를 재고, 증가분 ÷ N이 한 벌의 크기다.
+ */
+const HISTORY_MEMORY_MAX_ENTRIES = 128;
+
+/**
+ * 히스토리 L1의 TTL 상한. 완성된 히스토리는 세션 날짜 키 안에서 바뀌지 않지만, 미완성
+ * (FMP 발행 지연 → 쿨다운 TTL) 값은 Redis 쪽이 먼저 갱신될 수 있다. 메모리 쪽이 그보다
+ * 오래 낡은 값을 쥐지 않도록 30분마다 Redis를 다시 본다 — 그 비용은 키당 GET 한 번이다.
+ */
+const HISTORY_MEMORY_TTL_CAP_SECONDS = 30 * SECONDS_PER_MINUTE;
+
+/** 생성 옵션 — 세션과 별개로 inner provider의 특성을 기술한다. */
+export interface CachedMarketDataProviderOptions {
+    /**
+     * inner provider가 인트라데이 `from`/`before` 날짜를 해석하는 타임존(FMP는
+     * `America/New_York`). 지정하면 인트라데이 라이브 뷰를 "어제까지의 히스토리(하루 1회)
+     * + 오늘 tail(장중 60초)"로 나눠 캐시한다. 지정하지 않으면(Yahoo 등 날짜 의미가 다른
+     * provider) 예전처럼 전체 창을 단일 키로 캐시한다.
+     */
+    intradayDateTimeZone?: string;
 }
 
 /** quote TTL은 bars 일봉 개장-경계 정책을 재사용 — timeframe과 무관한 placeholder. */
@@ -97,17 +150,28 @@ function buildBarsRawKey(o: GetBarsOptions): string {
  * transient 결과를 TTL 동안 굳히지 않는다. Redis 미설정/장애 시 getOrSetCache가
  * graceful fallback(inner 직접 호출)한다.
  *
- * market summary/sector signals 경로는 이 데코레이터를 쓰지 않는다(getMarketDataProvider
- * raw 사용 — market-isr 전담). 적용은 getCachedMarketDataProvider 팩토리가 담당.
+ * market summary 경로는 이 데코레이터를 쓰지 않는다(getMarketDataProvider raw 사용 —
+ * market-isr 전담). sector signals는 일봉(및 FMP scope의 인트라데이) 스캔에 이 데코레이터를
+ * 쓴다(`sectorSignalsProviderFor`). 적용은 getCachedMarketDataProvider 팩토리가 담당.
  *
  * `session`은 core의 `MarketSessionSpec`으로 시장 세션 특성(개폐장 시간, 24/7 여부)을
  * 기술한다. `computeBarsEffectiveTtl`이 세션을 참고해 적절한 Redis TTL을 결정한다.
  * crypto는 `CRYPTO_SESSION`(always-open), us-equity는 `US_EQUITY_SESSION`(ET 정규장).
  */
 export class CachedMarketDataProvider implements MarketDataProvider {
+    /**
+     * 히스토리 L1. Redis 히스토리 키는 세션 날짜로만 바뀌는데, 장중에는 종목 페이지·섹터
+     * 스캔이 그 키(5년 일봉 ~41KB 압축)를 분마다 다시 GET했다. 같은 인스턴스가 이미 들고
+     * 있는 값이라 메모리에서 낸다.
+     */
+    private readonly historyMemory: MemoryLru<Bar[]> = createMemoryLru<Bar[]>(
+        HISTORY_MEMORY_MAX_ENTRIES
+    );
+
     constructor(
         private readonly inner: SiglensMarketProvider,
-        private readonly session: MarketSessionSpec = US_EQUITY_SESSION
+        private readonly session: MarketSessionSpec = US_EQUITY_SESSION,
+        private readonly options: CachedMarketDataProviderOptions = {}
     ) {}
 
     private ttl(timeframe: Timeframe): number {
@@ -133,7 +197,7 @@ export class CachedMarketDataProvider implements MarketDataProvider {
         // single-key path instead.
         if (from === undefined) return true;
         const recentFrom = isoDateDaysAgo(now, EOD_LONG_WINDOW_GATE_DAYS);
-        return from.slice(0, 10) < recentFrom;
+        return from.slice(0, ISO_DATE_LENGTH) < recentFrom;
     }
 
     getBars = (options: GetBarsOptions): Promise<Bar[]> => {
@@ -148,6 +212,21 @@ export class CachedMarketDataProvider implements MarketDataProvider {
             this.isLongDailyWindow(options.from, now)
         ) {
             return this.getCachedDailyBars(options, now);
+        }
+        const intradayTimeZone = this.options.intradayDateTimeZone;
+        if (
+            intradayTimeZone !== undefined &&
+            options.timeframe !== '1Day' &&
+            options.before === undefined &&
+            options.from !== undefined &&
+            options.from.slice(0, ISO_DATE_LENGTH) <
+                zonedDate(now, intradayTimeZone)
+        ) {
+            return this.getCachedIntradayBars(
+                { ...options, from: options.from },
+                intradayTimeZone,
+                now
+            );
         }
         return getOrSetCache(
             buildBarsRawKey(options),
@@ -205,7 +284,7 @@ export class CachedMarketDataProvider implements MarketDataProvider {
             EOD_HIST_ROLL_MARGIN_SECONDS;
 
         const [history, todayBars] = await Promise.all([
-            getOrSetCache<Bar[]>(
+            this.getHistory(
                 `bars:eodhist:${symbolKey}:${lastClosed}`,
                 bars =>
                     bars.length > 0 &&
@@ -216,7 +295,6 @@ export class CachedMarketDataProvider implements MarketDataProvider {
                               rollTtlSeconds
                           ),
                 () => this.inner.getBars({ ...options, before: lastClosed }),
-                bars => bars.length > 0,
                 bars =>
                     bars.length > 0 &&
                     (fromThreshold === null || bars[0]!.time <= fromThreshold)
@@ -245,6 +323,105 @@ export class CachedMarketDataProvider implements MarketDataProvider {
                 ? todayBars
                 : todayBars.filter(b => b.time > lastHistoryTime);
         return sliceFrom(mergeBarsByTime(history, liveTail), options.from);
+    }
+
+    /**
+     * 인트라데이 라이브 뷰를 어제까지의 히스토리와 오늘 tail로 나눠 가져와 병합한다.
+     *
+     * 예전에는 `bars:raw:*` 단일 키(장중 60초)라 활성 (종목, timeframe)마다 **매분 FMP
+     * `historical-chart` 전체 창**(5Min 10일 ≈ 780봉, 1Hour 60일 등)을 다시 받아 다시
+     * SET했다. 지난 날짜의 봉은 바뀌지 않으므로:
+     * - history `bars:intrahist:<SYM>:<tf>:<fromDate>:<today>:<limit>` — `before=today`로 받아
+     *   `today` 이전 날짜(inner의 타임존 기준) 봉만 남긴다. 날짜가 키에 있어 하루 한 번만 받는다.
+     *   FMP의 `to`가 포함/미포함 어느 쪽이어도 같은 결과가 되도록 받은 뒤 날짜로 다시 거른다.
+     *   `limit`은 inner에 그대로 넘기므로 `buildBarsRawKey`와 같은 규약으로 키에도 넣는다 —
+     *   지금 FMP는 limit을 쓰지 않지만, 결과에 영향을 주게 바뀌어도 서로 다른 limit 요청이
+     *   같은 키를 공유하지 않게 한다. 호출부의 limit은 timeframe별 상수라 키가 갈라지지 않는다.
+     * - tail `bars:raw:<SYM>:<tf>:<today>::<limit>` — `from=today`(FMP `from`은 포함)로
+     *   오늘 봉만, 세션 TTL(장중 60초)로.
+     *
+     * `today`는 inner가 날짜 인자를 해석하는 타임존의 오늘이다. 두 구간이 같은 날짜 경계를
+     * 쓰므로 빈틈도 겹침도 없다(겹치더라도 `mergeBarsByTime`이 tail을 우선한다). `from`은
+     * 날짜만 쓴다 — FMP가 원래 날짜로 잘라 쓰므로(`FmpMarketProvider.getBars`) 단일 호출과
+     * 같은 봉 집합이다. 이 분기는 `intradayDateTimeZone`을 준 provider(FMP)에서만 켜진다 —
+     * 배선은 `getCachedMarketDataProvider`의 `FMP_PROVIDER_OPTIONS`(US·크립토)이고, 크립토가
+     * 미 동부 날짜 경계로 나뉘어도 결과가 같은 이유도 그곳에 적었다.
+     */
+    private async getCachedIntradayBars(
+        options: GetBarsOptions & { from: string },
+        timeZone: string,
+        now: Date
+    ): Promise<Bar[]> {
+        const today = zonedDate(now, timeZone);
+        const fromDate = options.from.slice(0, ISO_DATE_LENGTH);
+        const symbolKey = options.symbol.toUpperCase();
+        const tailOptions: GetBarsOptions = { ...options, from: today };
+        const liveTtl = this.ttl(options.timeframe);
+
+        const [history, tail] = await Promise.all([
+            this.getHistory(
+                `bars:intrahist:${symbolKey}:${options.timeframe}:${fromDate}:${today}:${options.limit ?? ''}`,
+                () => INTRADAY_HISTORY_TTL_SECONDS,
+                async () =>
+                    (
+                        await this.inner.getBars({
+                            ...options,
+                            from: fromDate,
+                            before: today,
+                        })
+                    ).filter(
+                        b =>
+                            zonedDate(
+                                new Date(b.time * MS_PER_SECOND),
+                                timeZone
+                            ) < today
+                    ),
+                bars => bars.length > 0
+            ),
+            getOrSetCache<Bar[]>(
+                buildBarsRawKey(tailOptions),
+                bars =>
+                    bars.length > 0
+                        ? liveTtl
+                        : Math.min(
+                              liveTtl,
+                              EMPTY_INTRADAY_TAIL_MAX_TTL_SECONDS
+                          ),
+                () => this.inner.getBars(tailOptions)
+            ),
+        ]);
+        return mergeBarsByTime(history, tail);
+    }
+
+    /**
+     * 히스토리 키 읽기: L1 메모리 → `getOrSetCache`(Redis + in-flight dedup) 순. 빈 결과는
+     * 어느 쪽에도 두지 않는다. `isFresh`는 L1 hit에도 똑같이 적용한다 — 넓은 기준으로 저장된
+     * 값만 좁은 요청을 덮는다(`getOrSetCache`의 isFresh 규약과 같다).
+     */
+    private async getHistory(
+        key: string,
+        ttlSeconds: (bars: Bar[]) => number,
+        fetcher: () => Promise<Bar[]>,
+        isFresh: (bars: Bar[]) => boolean
+    ): Promise<Bar[]> {
+        const memo = this.historyMemory.get(key);
+        if (memo !== undefined && isFresh(memo)) return memo;
+        const bars = await getOrSetCache<Bar[]>(
+            key,
+            ttlSeconds,
+            fetcher,
+            fetched => fetched.length > 0,
+            isFresh
+        );
+        if (bars.length > 0 && isFresh(bars)) {
+            this.historyMemory.set(
+                key,
+                bars,
+                Math.min(ttlSeconds(bars), HISTORY_MEMORY_TTL_CAP_SECONDS) *
+                    MS_PER_SECOND
+            );
+        }
+        return bars;
     }
 
     getQuote = (symbol: string): Promise<MarketQuote | null> =>
