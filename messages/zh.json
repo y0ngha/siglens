@@ -4180,6 +4180,7 @@
                 "e6b008": "编辑消息",
                 "followUpsLabel": "继续提问",
                 "generating": "正在生成回答…",
+                "logLabel": "对话内容",
                 "openOnSiglens": "在 SIGLENS 查看 {symbol}",
                 "redrafting": "正在查看更多数据并重新整理回答…",
                 "relatedPages": "在 SIGLENS 查看更多",
