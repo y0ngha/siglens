@@ -136,6 +136,16 @@ vi.mock('@/entities/news-article/marketEventsRepository', () => ({
     findMarketEventsForPrompt: mockFindMarketEventsForPrompt,
 }));
 
+// 조회 창 계산은 `marketEventsLookback.test.ts`가 실제 세션 스펙으로 검증한다. 여기서는
+// 이 파일의 세션 목(태그 객체)이 실제 스펙이 아니므로 스텁으로 두고, 호출부가 core에
+// 넘기는 것과 **같은 세션**을 창 계산에 넘기는지(캐시 키 일치의 전제)만 본다.
+vi.mock('@/entities/news-article/lib/marketEventsLookback', () => ({
+    marketEventsLookback: vi.fn(() => ({
+        from: new Date('2026-06-01T00:00:00Z'),
+        to: new Date('2026-08-01T00:00:00Z'),
+    })),
+}));
+
 vi.mock('@/entities/analysis/analysisHistoryRepository', async () => {
     // `resolveGeneratedAt` now lives in this module (shared with the SEO
     // prewarm seams — see its own JSDoc) — keep the REAL implementation
@@ -272,6 +282,7 @@ import {
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
 import { getDescriptor } from '@/shared/config/marketProfile/registry';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
+import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { QUOTE_LOOKUP_TIMEOUT_MS } from '@/shared/api/market/quoteTimeout';
 import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
@@ -1742,6 +1753,14 @@ describe('POST /api/analysis/stream', () => {
             expect(query).toEqual(expect.objectContaining({ symbol: 'AAPL' }));
             // 조회 창은 벽시계 근사값이고 정확한 절단은 core가 한다.
             expect(query.from.getTime()).toBeLessThan(query.to.getTime());
+            // 창 계산에 core `runAnalysis`와 같은 세션을 넘긴다.
+            const opts0 = vi.mocked(runAnalysis).mock.calls[0]?.[5] as {
+                session?: unknown;
+            };
+            expect(vi.mocked(marketEventsLookback)).toHaveBeenCalledWith(
+                '1Day',
+                opts0.session
+            );
 
             const opts = vi.mocked(runAnalysis).mock.calls[0]?.[5] as Record<
                 string,
@@ -1977,6 +1996,13 @@ describe('POST /api/analysis/stream', () => {
             const [, query] = mockFindMarketEventsForPrompt.mock.calls[0] ?? [];
             expect(query).toEqual(expect.objectContaining({ symbol: 'AAPL' }));
             expect(query.from.getTime()).toBeLessThan(query.to.getTime());
+            // 창은 심볼의 시장 세션으로 — `runOverallAnalysisAction`이 technical 축에
+            // 넘기는 세션과 같은 프로필(`resolveMarketProfile` → `sessionSpecFor`)이다.
+            expect(vi.mocked(sessionSpecFor)).toHaveBeenCalledWith('us-equity');
+            expect(vi.mocked(marketEventsLookback)).toHaveBeenCalledWith(
+                '1Day',
+                vi.mocked(sessionSpecFor).mock.results.at(-1)?.value
+            );
             expect(vi.mocked(runOverallAnalysisAction)).toHaveBeenCalledWith(
                 'AAPL',
                 'Apple',

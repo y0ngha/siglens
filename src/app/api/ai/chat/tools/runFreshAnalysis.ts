@@ -418,7 +418,10 @@ export const runFreshAnalysisTool: ToolExecutor = async (
                         }),
                         findMarketEventsForPrompt(historyDb, {
                             symbol,
-                            ...marketEventsLookback(timeframe),
+                            ...marketEventsLookback(
+                                timeframe,
+                                sessionSpecFor(profile)
+                            ),
                         }),
                         positionBucketFor(
                             ctx.userId,
@@ -488,7 +491,10 @@ export const runFreshAnalysisTool: ToolExecutor = async (
                     }),
                     findMarketEventsForPrompt(overallDb, {
                         symbol,
-                        ...marketEventsLookback(timeframe),
+                        ...marketEventsLookback(
+                            timeframe,
+                            sessionSpecFor(profile)
+                        ),
                     }),
                 ]);
                 return unwrap(
