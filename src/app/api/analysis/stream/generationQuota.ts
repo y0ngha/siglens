@@ -149,6 +149,18 @@ export function promptAssembledProbe(
 }
 
 /**
+ * 재분석(캐시 우회)을 시도할지. 재분석은 곧 새 생성이라, 한도 초과로 캐시 전용
+ * 강등된 요청은 의도가 있어도 쿨다운을 잡지 않고 캐시만 본다. technical 경로와
+ * overall 디스패치가 같은 규칙을 쓰도록 여기 한 곳에 둔다.
+ */
+export function shouldAttemptReanalyze(
+    requested: unknown,
+    rateLimited: boolean
+): boolean {
+    return requested === true && !rateLimited;
+}
+
+/**
  * 프롬프트 조립 여부를 기억하는 추적기. core에 넘길 콜백과 그 결과를 읽는 판정을
  * 한 쌍으로 돌려준다 — 호출부가 플래그 변수를 직접 바꾸지 않게 한다.
  */
@@ -156,6 +168,7 @@ export function createPromptAssemblyTracker(): {
     readonly onPromptAssembled: () => void;
     readonly probe: GenerationProbe<unknown>;
 } {
+    /** core 콜백이 쓰고 판정이 읽는 공유 칸 — 둘이 다른 시점에 불려서 클로저로 묶는다. */
     const state = { assembled: false };
     return {
         onPromptAssembled: () => {
@@ -179,13 +192,19 @@ export interface GenerationGateSlot {
 }
 
 export function createGenerationGateSlot(): GenerationGateSlot {
+    /** 예약(try 안)과 해제(바깥 catch)가 다른 스코프라 결과를 클로저 칸으로 넘긴다. */
     const slot: { gate: GenerationGate } = { gate: EXEMPT };
     return {
         reserve: async (userId, clientCacheOnly) => {
             slot.gate = await reserveGenerationGate(userId, clientCacheOnly);
             return slot.gate;
         },
-        release: () => releaseGenerationGate(slot.gate),
+        // 한 번 되돌린 칸은 비운다 — 바깥 catch가 여러 번 불려도 refund는 한 번이다.
+        release: () => {
+            const gate = slot.gate;
+            slot.gate = EXEMPT;
+            return releaseGenerationGate(gate);
+        },
     };
 }
 

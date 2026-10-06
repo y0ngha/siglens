@@ -15,10 +15,8 @@ import type {
     AnalysisRateLimitAudience,
     AnalysisRateLimitReason,
 } from '@/shared/lib/sse/analysisRateLimit';
-import {
-    normalizeQuotaIp,
-    UNKNOWN_QUOTA_IP,
-} from '@/entities/analysis/lib/normalizeQuotaIp';
+import { normalizeQuotaIp } from '@/entities/analysis/lib/normalizeQuotaIp';
+import { UNKNOWN_CLIENT_IP } from '@/shared/api/unknownClientIp';
 
 /**
  * `/api/analysis/stream`의 **새 LLM 생성** 한도. 캐시 적중은 세지 않는다
@@ -206,7 +204,7 @@ function guestClaims(
 ): readonly WindowClaim[] {
     const { guestHour, guestDay, guestIpHour, guestIpDay } = quotaStores();
     const ip = normalizeQuotaIp(identity.clientIp);
-    const unknownIp = ip === UNKNOWN_QUOTA_IP;
+    const unknownIp = ip === UNKNOWN_CLIENT_IP;
     if (unknownIp) {
         warnThrottled(
             'unknown-ip',
@@ -214,7 +212,7 @@ function guestClaims(
         );
     }
     // 일 단위 소금이라 원시 IP를 키에 남기지 않는다. 버킷도 UTC 일이라 어긋나지 않는다.
-    const ipSubject = unknownIp ? UNKNOWN_QUOTA_IP : hashUsageIp(ip, now);
+    const ipSubject = unknownIp ? UNKNOWN_CLIENT_IP : hashUsageIp(ip, now);
     const hour = now.toISOString().slice(ISO_HOUR_START, ISO_HOUR_END);
     const hourEnd = nextUtcHourStart(now);
     const dayEnd = nextUtcDayStart(now);
@@ -398,7 +396,17 @@ export async function reserveAnalysisGeneration(
             'timeout',
             '[analysis-quota] reserve timed out, treating as unavailable'
         );
-        void attempt.then(late => (late.ok ? late.refund() : undefined));
+        // 늦게 성공한 예약은 대응하는 생성이 없으니 되돌린다. 실패해도 응답은 이미
+        // 나갔으므로 로그만 남긴다 — 처리되지 않은 rejection이 되면 안 된다.
+        void attempt
+            .then(late => (late.ok ? late.refund() : undefined))
+            .catch((error: unknown) => {
+                warnThrottled(
+                    'late-refund',
+                    '[analysis-quota] late refund failed',
+                    error
+                );
+            });
         return outage(audience, now);
     } catch (error) {
         warnThrottled(

@@ -30,9 +30,12 @@ vi.mock(
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+    createGenerationGateSlot,
+    createPromptAssemblyTracker,
     DONE_STATUS_PROBE,
     reserveGenerationGate,
     settleGenerationGate,
+    shouldAttemptReanalyze,
 } from '@/app/api/analysis/stream/generationQuota';
 import { GUEST_ID_COOKIE_NAME } from '@/shared/config/cookieNames';
 import { LocalizedStreamError } from '@/shared/lib/sse/LocalizedStreamError';
@@ -166,5 +169,82 @@ describe('settleGenerationGate', () => {
         ).catch(() => {});
 
         expect(refund).toHaveBeenCalledTimes(refunds);
+    });
+});
+
+describe('createGenerationGateSlot', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockGetClientIp.mockResolvedValue('203.0.113.9');
+    });
+
+    it('release before reserve is a safe no-op', async () => {
+        const slot = createGenerationGateSlot();
+        await expect(slot.release()).resolves.toBeUndefined();
+        expect(mockReserve).not.toHaveBeenCalled();
+    });
+
+    it('release refunds the reservation once even if called repeatedly', async () => {
+        const refund = vi.fn().mockResolvedValue(undefined);
+        mockReserve.mockResolvedValue({ ok: true, audience: 'member', refund });
+        const slot = createGenerationGateSlot();
+
+        const gate = await slot.reserve('user-1', false);
+        await slot.release();
+        await slot.release();
+
+        expect(gate.kind).toBe('allowed');
+        expect(refund).toHaveBeenCalledOnce();
+    });
+
+    it('release after a denial or exempt reservation never refunds', async () => {
+        mockReserve.mockResolvedValue({
+            ok: false,
+            audience: 'guest',
+            reason: 'quota',
+            retryAt: 1,
+        });
+        const denied = createGenerationGateSlot();
+        await denied.reserve(null, false);
+        await expect(denied.release()).resolves.toBeUndefined();
+
+        const exempt = createGenerationGateSlot();
+        expect(await exempt.reserve(null, true)).toEqual({ kind: 'exempt' });
+        await expect(exempt.release()).resolves.toBeUndefined();
+    });
+});
+
+describe('createPromptAssemblyTracker', () => {
+    it('reports no generation until core assembles a prompt', () => {
+        const tracker = createPromptAssemblyTracker();
+        expect(tracker.probe.onResolved({ status: 'cached' })).toBe(false);
+        expect(tracker.probe.onRejected(new Error('x'))).toBe(false);
+    });
+
+    it('reports a generation after the callback fires, idempotently', () => {
+        const tracker = createPromptAssemblyTracker();
+        tracker.onPromptAssembled();
+        tracker.onPromptAssembled();
+        expect(tracker.probe.onResolved({ status: 'done' })).toBe(true);
+        expect(tracker.probe.onRejected(new Error('x'))).toBe(true);
+    });
+
+    it('keeps separate state per request', () => {
+        const first = createPromptAssemblyTracker();
+        const second = createPromptAssemblyTracker();
+        first.onPromptAssembled();
+        expect(second.probe.onResolved({})).toBe(false);
+    });
+});
+
+describe('shouldAttemptReanalyze', () => {
+    it.each([
+        [true, false, true],
+        [true, true, false],
+        [false, false, false],
+        ['true', false, false],
+        [undefined, false, false],
+    ])('requested=%j rateLimited=%j → %j', (requested, limited, expected) => {
+        expect(shouldAttemptReanalyze(requested, limited)).toBe(expected);
     });
 });

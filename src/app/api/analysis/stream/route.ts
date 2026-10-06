@@ -57,6 +57,7 @@ import {
     releaseGenerationGate,
     reserveGenerationGate,
     settleGenerationGate,
+    shouldAttemptReanalyze,
     type GenerationGate,
 } from './generationQuota';
 
@@ -365,13 +366,15 @@ const DISPATCH: Record<
         // technical과 같은 규칙 — 클라이언트는 의도만 보내고, 캐시 우회 여부는
         // 서버가 쿨다운 획득으로 판단한다. 키 namespace를 분리해(`<tf>:overall`)
         // 기술적 분석 재분석이 종합 분석 재분석을 막지 않게 한다.
-        const cooldown =
-            params.reanalyze === true && !quota.rateLimited
-                ? await tryAcquireReanalyzeCooldown(
-                      params.symbol as string,
-                      `${params.timeframe as Timeframe}:overall` as Timeframe
-                  )
-                : null;
+        const cooldown = shouldAttemptReanalyze(
+            params.reanalyze,
+            quota.rateLimited
+        )
+            ? await tryAcquireReanalyzeCooldown(
+                  params.symbol as string,
+                  `${params.timeframe as Timeframe}:overall` as Timeframe
+              )
+            : null;
         if (cooldown !== null && !cooldown.ok) {
             return {
                 status: 'reanalyze_cooldown' as const,
@@ -1067,7 +1070,10 @@ export async function POST(request: Request): Promise<Response> {
              * 여기서의 획득이 반드시 실패해 재분석이 영원히 캐시로 강등되고, 반대로
              * 의도 없는 일반 제출이 획득에 성공해 캐시를 우회하는 정반대 동작이 된다.
              */
-            const wantsReanalyze = reanalyze === true && !quotaLimited;
+            const wantsReanalyze = shouldAttemptReanalyze(
+                reanalyze,
+                quotaLimited
+            );
             const cooldown = wantsReanalyze
                 ? await tryAcquireReanalyzeCooldown(symbol, timeframe)
                 : null;

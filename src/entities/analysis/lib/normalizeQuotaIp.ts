@@ -1,5 +1,4 @@
-/** IP를 알 수 없거나 해석하지 못한 요청이 모이는 공용 버킷 키. */
-export const UNKNOWN_QUOTA_IP = 'unknown';
+import { UNKNOWN_CLIENT_IP } from '@/shared/api/unknownClientIp';
 
 const IPV4_RE = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
 const HEXTET_RE = /^[0-9a-f]{1,4}$/;
@@ -60,18 +59,18 @@ function expandIpv6(value: string): string[] | null {
  *   축 한도가 사실상 무의미하다.
  * - **IPv4-mapped IPv6(`::ffff:1.2.3.4`)는 IPv4로 되돌린다.** 같은 클라이언트가 스택에
  *   따라 두 모양으로 와도 같은 버킷에 들어가야 한다.
- * - 알 수 없는 값(`'unknown'`, 빈 문자열, 파싱 불가)은 {@link UNKNOWN_QUOTA_IP}로
+ * - 알 수 없는 값(`'unknown'`, 빈 문자열, 파싱 불가)은 {@link UNKNOWN_CLIENT_IP}로
  *   모은다 — 호출자가 그 버킷에 엄격한 한도를 건다.
  */
 export function normalizeQuotaIp(raw: string): string {
     const value = raw.trim().toLowerCase();
-    if (value === '' || value === UNKNOWN_QUOTA_IP) return UNKNOWN_QUOTA_IP;
+    if (value === '' || value === UNKNOWN_CLIENT_IP) return UNKNOWN_CLIENT_IP;
     if (isIpv4(value)) return value;
-    if (!value.includes(':')) return UNKNOWN_QUOTA_IP;
+    if (!value.includes(':')) return UNKNOWN_CLIENT_IP;
 
     // 존 식별자(`fe80::1%eth0`)는 주소의 일부가 아니다.
     const hextets = expandIpv6(value.split('%')[0]);
-    if (hextets === null) return UNKNOWN_QUOTA_IP;
+    if (hextets === null) return UNKNOWN_CLIENT_IP;
 
     if (IPV4_MAPPED_PREFIX.every((h, i) => hextets[i] === h)) {
         const [high, low] = hextets

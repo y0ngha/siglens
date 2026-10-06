@@ -7,6 +7,7 @@
  */
 import { constants } from 'node:http2';
 import { getClientIp } from '@/shared/api/getClientIp';
+import { UNKNOWN_CLIENT_IP } from '@/shared/api/unknownClientIp';
 import { createMemoryLru } from '@/shared/cache/memoryLru';
 import { MS_PER_MINUTE } from '@/shared/config/time';
 
@@ -113,9 +114,6 @@ async function readCapped(
     }
 }
 
-/** IP를 못 읽은 요청이 모이는 공용 버킷 키. */
-const UNKNOWN_REPORTER = 'unknown';
-
 /**
  * 한도 키로 쓸 IP. **던지지 않는다** — IP 해석(`headers()`)이 실패해도 이 엔드포인트는
  * 살아 있어야 한다(파일 상단: 사고 중에 이 경로가 죽으면 사고가 안 보인다). 실패하면
@@ -125,7 +123,7 @@ async function reporterKey(): Promise<string> {
     try {
         return await getClientIp();
     } catch {
-        return UNKNOWN_REPORTER;
+        return UNKNOWN_CLIENT_IP;
     }
 }
 

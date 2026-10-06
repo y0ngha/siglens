@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-    normalizeQuotaIp,
-    UNKNOWN_QUOTA_IP,
-} from '@/entities/analysis/lib/normalizeQuotaIp';
+import { normalizeQuotaIp } from '@/entities/analysis/lib/normalizeQuotaIp';
+import { UNKNOWN_CLIENT_IP } from '@/shared/api/unknownClientIp';
 
 describe('normalizeQuotaIp', () => {
     it('keeps IPv4 as-is', () => {
@@ -41,6 +39,6 @@ describe('normalizeQuotaIp', () => {
         '999.1.1.1',
         '1::2::3',
     ])('maps %j to the shared unknown bucket', raw => {
-        expect(normalizeQuotaIp(raw)).toBe(UNKNOWN_QUOTA_IP);
+        expect(normalizeQuotaIp(raw)).toBe(UNKNOWN_CLIENT_IP);
     });
 });
