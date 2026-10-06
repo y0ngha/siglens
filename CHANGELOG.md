@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.101.1](https://github.com/y0ngha/siglens/compare/v0.101.0...v0.101.1) (2026-10-06)
+
+### Bug Fixes
+
+* 장중 한국 종목 페이지의 "최근 종가"가 두 세션 전 값으로 나오던 문제를 고친다 ([#970](https://github.com/y0ngha/siglens/issues/970)) ([930d113](https://github.com/y0ngha/siglens/commit/930d113eb01f13a83818be2e5c253c2ca7346167))
+* **seo:** 크립토 스냅샷 기준일 판정이 자정 직후 완료 일봉을 stale로 보지 않게 한다 ([#969](https://github.com/y0ngha/siglens/issues/969)) ([3d882a4](https://github.com/y0ngha/siglens/commit/3d882a40a2a1bf9f5b7181645c475344c4475ca8))
+
 # [0.101.0](https://github.com/y0ngha/siglens/compare/v0.100.0...v0.101.0) (2026-10-06)
 
 ### Bug Fixes
