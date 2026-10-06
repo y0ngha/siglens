@@ -318,9 +318,9 @@ function marketBriefingTargets(now: () => number): HubTarget[] {
                 );
                 // 여기부터는 슬롯을 돌려주지 않는다 — 되읽기 실패(`keyMismatch`)여도 LLM
                 // 비용은 이미 나갔으므로, 다음 tick에 같은 호출을 반복하지 않게 한다.
-                // 쿨다운에 막힌 방문자가 받을 마지막 생성본. 되읽기와 무관하게 손에 있는
-                // 값이다(`keyMismatch`여도 본문 자체는 정상이다).
                 if (generated.status === 'done') {
+                    // 쿨다운에 막힌 방문자가 받을 마지막 생성본. 되읽기와 무관하게 손에 있는
+                    // 값이다(`keyMismatch`여도 본문 자체는 정상이다).
                     await writeLatestMarketBriefing(scope, {
                         briefing: generated.briefing,
                         generatedAt: generated.generatedAt,

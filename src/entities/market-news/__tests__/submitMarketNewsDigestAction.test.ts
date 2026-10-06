@@ -310,6 +310,46 @@ describe('submitMarketNewsDigestAction은', () => {
             );
         });
 
+        // core `RunMarketNewsDigestResult`는 던지지 않고도 LLM을 부르지 않은 상태를
+        // 돌려줄 수 있다 — 잡은 슬롯을 쥐고 있으면 비용 없이 1시간 동안 생성이 막힌다.
+        it.each(['miss_no_trigger', 'no_news'] as const)(
+            '슬롯을 잡았는데 core가 %s를 돌려주면(LLM 미호출) 슬롯을 돌려준다',
+            async status => {
+                vi.mocked(core.runMarketNewsDigest).mockResolvedValue({
+                    status,
+                });
+
+                const { submitMarketNewsDigestAction } =
+                    await import('../actions/submitMarketNewsDigestAction');
+                const r = await submitMarketNewsDigestAction('crypto', 'ko');
+
+                expect(r.status).toBe(status);
+                expect(releaseMarketNewsDigestSlot).toHaveBeenCalledWith(
+                    'crypto',
+                    'ko'
+                );
+                expect(writeLatestMarketNewsDigest).not.toHaveBeenCalled();
+            }
+        );
+
+        it.each([
+            { status: 'done', result: DIGEST },
+            { status: 'cached', result: DIGEST },
+        ] as const)(
+            '슬롯을 잡은 호출이 $status로 끝나면 슬롯을 유지한다',
+            async result => {
+                vi.mocked(core.runMarketNewsDigest).mockResolvedValue(
+                    result as never
+                );
+
+                const { submitMarketNewsDigestAction } =
+                    await import('../actions/submitMarketNewsDigestAction');
+                await submitMarketNewsDigestAction('crypto', 'ko');
+
+                expect(releaseMarketNewsDigestSlot).not.toHaveBeenCalled();
+            }
+        );
+
         it('남이 잡은 슬롯(콜드 스타트 생성)은 실패해도 돌려주지 않는다', async () => {
             vi.mocked(tryAcquireMarketNewsDigestSlot).mockResolvedValue(false);
             vi.mocked(core.runMarketNewsDigest).mockRejectedValue(

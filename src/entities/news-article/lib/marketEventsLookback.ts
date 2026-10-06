@@ -1,6 +1,7 @@
 import type { MarketSessionSpec, Timeframe } from '@y0ngha/siglens-core';
 import { lastClosedSessionCloseUtc } from '@/shared/lib/marketSessionDate';
 import {
+    HOURS_PER_DAY,
     KST_OFFSET_HOURS,
     MS_PER_DAY,
     MS_PER_HOUR,
@@ -60,7 +61,9 @@ const ANALYSIS_CACHE_BUCKET_MS: Record<Exclude<Timeframe, '1Day'>, number> = {
 const CACHE_EXPIRY_HOUR_KST = 5;
 
 const BUCKET_OFFSET_MS =
-    ((CACHE_EXPIRY_HOUR_KST - KST_OFFSET_HOURS + 24) % 24) * MS_PER_HOUR;
+    ((CACHE_EXPIRY_HOUR_KST - KST_OFFSET_HOURS + HOURS_PER_DAY) %
+        HOURS_PER_DAY) *
+    MS_PER_HOUR;
 
 /**
  * 마감 뒤 분석 캐시가 만료되기까지의 대기 — core `ANALYSIS_CACHE_SETTLE_BUFFER_MINUTES`

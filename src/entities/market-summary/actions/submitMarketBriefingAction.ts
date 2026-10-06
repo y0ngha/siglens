@@ -109,17 +109,20 @@ async function readFallbackBriefing(
  * 둘 다 없을 때(배포 직후 같은 콜드 스타트)만 슬롯 없이 생성한다 — 빈 카드보다 낫고,
  * 생성되는 순간 마지막 생성본이 채워져 다음 방문자부터는 막힌다. 이 경로는 JS를
  * 실행하는 렌더러만 부르고, UA로 가르지 않으므로 봇 차단이 막아 주던 남용도 없다.
- */
-/**
- * 롤링 배포 호환 기본값.
  *
- * ASG 갱신은 구·신 인스턴스를 최대 30분 함께 띄우고, Next의 Server Action id는
- * 파일 경로 + export 이름에서 나오므로 **옛 번들이 보낸 인자 없는 호출이 새 구현에
- * 그대로 도달한다.** 기본값이 없으면 그 호출이 `server_error`가 되어 `/market`에
- * 빨간 오류 배너가 뜬다 — 배포 중 30분 동안, 사이트에서 가장 트래픽이 많은 페이지에서.
- * 한 릴리스 뒤에 기본값을 떼고 필수 인자로 좁힌다.
+ * runBriefing 결과는 `cached`|`done`뿐이라(core `RunBriefingResult`) 다이제스트처럼
+ * "던지지 않았지만 생성도 안 한" 상태를 따로 슬롯 반환할 필요가 없다.
  */
 export async function submitMarketBriefingAction(
+    /**
+     * 롤링 배포 호환 기본값.
+     *
+     * ASG 갱신은 구·신 인스턴스를 최대 30분 함께 띄우고, Next의 Server Action id는
+     * 파일 경로 + export 이름에서 나오므로 **옛 번들이 보낸 인자 없는 호출이 새 구현에
+     * 그대로 도달한다.** 기본값이 없으면 그 호출이 `server_error`가 되어 `/market`에
+     * 빨간 오류 배너가 뜬다 — 배포 중 30분 동안, 사이트에서 가장 트래픽이 많은 페이지에서.
+     * 한 릴리스 뒤에 기본값을 떼고 필수 인자로 좁힌다.
+     */
     scope: string = 'us',
     signal?: AbortSignal
 ): Promise<MarketBriefingActionResult> {

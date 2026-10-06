@@ -30,6 +30,45 @@ import {
 } from '../api/marketNewsDigestCooldown';
 
 /**
+ * runMarketNewsDigest를 부르고, 실제로 생성됐으면(`done`) 마지막 생성본으로 남긴다.
+ *
+ * `ownsSlot`은 이 호출이 생성 슬롯을 잡았는지다. 잡은 호출이 실패하면 슬롯을 돌려줘
+ * 다음 방문자가 다시 시도하게 한다 — 남이 잡은 슬롯은 건드리지 않는다. 예외는 그대로
+ * 올려 액션의 catch가 `error` 상태로 바꾸게 한다.
+ *
+ * 예외 없이 끝나도 LLM을 부르지 않은 결과면 슬롯을 돌려준다. core
+ * `RunMarketNewsDigestResult`는 `done`·`cached` 말고도 `miss_no_trigger`·`no_news`를
+ * 던지지 않고 돌려준다 — 그때 슬롯을 쥐고 있으면 비용 없이 1시간 동안 생성이 막힌다.
+ * `cached`도 생성이 아니지만(peek 직후 다른 호출이 채운 경우) 그 본문이 곧 최신이라
+ * 슬롯을 그대로 둔다 — 돌려주면 다음 키 miss가 곧바로 또 생성한다.
+ */
+async function runAndRecordDigest(
+    options: SubmitMarketNewsDigestOptions,
+    category: NewsFeedCategoryId,
+    locale: Locale,
+    ownsSlot: boolean
+): Promise<RunMarketNewsDigestResult> {
+    try {
+        const result = await runMarketNewsDigest(options);
+        if (result.status === 'done') {
+            await writeLatestMarketNewsDigest(category, locale, result.result);
+        } else if (ownsSlot && result.status !== 'cached') {
+            await releaseMarketNewsDigestSlot(category, locale);
+        }
+        return result;
+    } catch (error) {
+        if (ownsSlot) await releaseMarketNewsDigestSlot(category, locale);
+        throw error;
+    }
+}
+
+/** 사용자에게 그대로 보이는 실패 문구. 영어 리터럴이 전 로케일에 나가고 있었다. */
+async function digestErrorMessage(locale: Locale): Promise<string> {
+    const t = await getTranslations({ locale, namespace: 'app.api.stream' });
+    return t('digestFailed');
+}
+
+/**
  * Server Action: submit a market-news category digest job.
  *
  * No tier/BYOK gate — the category digest is public and uses a fixed shared
@@ -47,37 +86,6 @@ import {
  * `cached`로 돌려준다. 마지막 생성본도 없으면(배포 직후·만료 뒤) 슬롯 없이 생성한다 —
  * 빈 화면보다 낫고, 그 생성이 마지막 생성본을 채운다.
  */
-/**
- * runMarketNewsDigest를 부르고, 실제로 생성됐으면(`done`) 마지막 생성본으로 남긴다.
- *
- * `ownsSlot`은 이 호출이 생성 슬롯을 잡았는지다. 잡은 호출이 실패하면 슬롯을 돌려줘
- * 다음 방문자가 다시 시도하게 한다 — 남이 잡은 슬롯은 건드리지 않는다. 예외는 그대로
- * 올려 액션의 catch가 `error` 상태로 바꾸게 한다.
- */
-async function runAndRecordDigest(
-    options: SubmitMarketNewsDigestOptions,
-    category: NewsFeedCategoryId,
-    locale: Locale,
-    ownsSlot: boolean
-): Promise<RunMarketNewsDigestResult> {
-    try {
-        const result = await runMarketNewsDigest(options);
-        if (result.status === 'done') {
-            await writeLatestMarketNewsDigest(category, locale, result.result);
-        }
-        return result;
-    } catch (error) {
-        if (ownsSlot) await releaseMarketNewsDigestSlot(category, locale);
-        throw error;
-    }
-}
-
-/** 사용자에게 그대로 보이는 실패 문구. 영어 리터럴이 전 로케일에 나가고 있었다. */
-async function digestErrorMessage(locale: Locale): Promise<string> {
-    const t = await getTranslations({ locale, namespace: 'app.api.stream' });
-    return t('digestFailed');
-}
-
 export async function submitMarketNewsDigestAction(
     category: NewsFeedCategoryId,
     /**
