@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import koMessages from '../../../../messages/ko.json';
+import manualKeys from '../../../../messages/_meta/manualKeys.json';
 import { pickMessages } from '../loadMessages';
 import type { AbstractIntlMessages } from 'next-intl';
 
@@ -11,7 +12,11 @@ import type { AbstractIntlMessages } from 'next-intl';
  * 그래서 여기서만 좁힌다(프로덕션 로더는 동적 import라 이 문제가 없다).
  */
 const messages = koMessages as unknown as AbstractIntlMessages;
-import { CHROME_CLIENT_PATHS, routeClientPaths } from '../clientNamespaces';
+import {
+    ancestorClientPaths,
+    CHROME_CLIENT_PATHS,
+    routeClientPaths,
+} from '../clientNamespaces';
 
 const ROOT = process.cwd();
 const SRC = join(ROOT, 'src');
@@ -136,7 +141,26 @@ function referencedKeys(file: string): string[] {
     return out;
 }
 
-/** `[locale]` 아래의 모든 라우트 파일(page + 경계). */
+/**
+ * `manualKeys.routeWide`에 등록된 네임스페이스 — 키를 변수로 받거나 번역자를 헬퍼에 넘겨
+ * 추출기가 못 보는 것들이라, 그 네임스페이스는 **서브트리 전체가** 소비 라우트에 실려야 한다.
+ *
+ * 리터럴 키만 보는 `referencedKeys`로는 이 경우를 못 잡는다. `TechnicalFactsSummary`가
+ * `tFacts`를 헬퍼에 넘기는 `views.symbol.technicalFacts`가 그렇다 — 등록이 엉뚱한 라우트
+ * id를 가리키면(차트 탭 키를 `[symbol]/(page)`로 옮긴 뒤에도 `[symbol]`에 남겨 두는 식)
+ * 리터럴 검사는 통과한 채 화면에서만 키 문자열이 나오거나, 형제 탭이 쓰지 않는 키를 받는다.
+ */
+const ROUTE_WIDE_NAMESPACES = Object.keys(manualKeys.routeWide);
+
+/** 파일이 `useTranslations('<ns>')`로 읽는 `routeWide` 네임스페이스. */
+function routeWideNamespacesUsedBy(file: string): string[] {
+    const code = SOURCE.get(file) ?? '';
+    return ROUTE_WIDE_NAMESPACES.filter(ns =>
+        code.includes(`useTranslations('${ns}')`)
+    );
+}
+
+/** `[locale]` 아래의 모든 라우트 파일(page + 레이아웃 + 경계). */
 function routeFiles(dir: string, acc: string[] = []): string[] {
     for (const name of readdirSync(dir)) {
         const full = join(dir, name);
@@ -144,7 +168,7 @@ function routeFiles(dir: string, acc: string[] = []): string[] {
             if (name === '__tests__') continue;
             routeFiles(full, acc);
         } else if (
-            /^(page|error|loading|not-found|template)\.tsx$/.test(name)
+            /^(page|layout|error|loading|not-found|template)\.tsx$/.test(name)
         ) {
             acc.push(full);
         }
@@ -155,18 +179,22 @@ function routeFiles(dir: string, acc: string[] = []): string[] {
 /**
  * 이 파일이 **실제로 렌더될 때** 위에 있는 프로바이더의 라우트 id.
  *
- * 가장 가까운 조상 `layout.tsx`를 찾아 그 라우트 id를 읽는다. `[locale]`까지
- * 올라가면 크롬(`null`)이다. 추출기의 모델을 그대로 베끼면 추출기가 자기 자신과
- * 일치한다는 것만 확인하게 되므로, 여기서는 **소스 트리에서 직접** 판정한다.
+ * 파일 **자신이** `RouteMessages`를 렌더하면 그 라우트 id다 — 레이아웃과, 자기 몫을 따로
+ * 싣는 페이지(`[symbol]/page.tsx`의 `[symbol]/(page)`)가 그렇다. 아니면 가장 가까운 조상
+ * `layout.tsx`를 찾아 그 라우트 id를 읽는다. `[locale]`까지 올라가면 크롬(`null`)이다.
+ * 추출기의 모델을 그대로 베끼면 추출기가 자기 자신과 일치한다는 것만 확인하게 되므로,
+ * 여기서는 **소스 트리에서 직접** 판정한다.
  */
 function providerRouteFor(file: string): string | null {
+    const own = SOURCE.get(file)?.match(/<RouteMessages\s+route="([^"]+)"/);
+    if (own) return own[1]!;
     let dir = join(file, '..');
     while (dir.length > APP.length) {
         const layout = join(dir, 'layout.tsx');
         if (SOURCE.has(layout)) {
             const source = SOURCE.get(layout)!;
             // 대부분은 `routeLayout('market')` 팩토리 한 줄이고,
-            // `[symbol]/layout.tsx`만 손으로 쓴 `route="[symbol]"` JSX다.
+            // `[symbol]/layout.tsx`만 손으로 쓴 `route="[symbol]"` JSX다(위에서 걸린다).
             const m =
                 source.match(/routeLayout\(\s*'([^']+)'\s*\)/) ??
                 source.match(/route="([^"]+)"/);
@@ -180,6 +208,11 @@ function providerRouteFor(file: string): string | null {
 /**
  * 라우트 파일의 클라이언트 서브트리가 참조하는 키가 **그 파일 위에 실제로 있는
  * 프로바이더에** 전부 들어 있는지 검증한다.
+ *
+ * 프로바이더의 메시지 = 자기 라우트 엔트리 + 상위 프로바이더(크롬·접두사 라우트)가 실은 것.
+ * `RouteMessages`는 상위에 이미 있는 키를 빼고 보내고 `MergedIntlProvider`가 부모와
+ * 합치므로, 실제로 보이는 집합은 둘의 합이다(`ancestorClientPaths`). 접두사 라우트가
+ * 정말 메시지 레이아웃을 렌더하는지는 `clientNamespaces.test.ts`가 따로 잠근다.
  *
  * 중첩 `NextIntlClientProvider`는 부모 메시지를 상속하지 않고 교체하므로,
  * 없는 키는 화면에 키 문자열로 나온다 — 빌드·타입체크·다른 테스트는 전부 통과한
@@ -205,13 +238,23 @@ describe('라우트별 클라이언트 메시지 커버리지', () => {
         const route = providerRouteFor(file);
         const picked = pickMessages(
             messages,
-            route === null ? CHROME_CLIENT_PATHS : routeClientPaths(route)
+            route === null
+                ? CHROME_CLIENT_PATHS
+                : [...ancestorClientPaths(route), ...routeClientPaths(route)]
         );
         const missing: string[] = [];
         for (const f of clientClosure([file])) {
             for (const key of referencedKeys(f)) {
                 if (resolve(picked, key) === undefined) {
                     missing.push(`${relative(ROOT, f)}: ${key}`);
+                }
+            }
+            for (const ns of routeWideNamespacesUsedBy(f)) {
+                const sent = JSON.stringify(resolve(picked, ns));
+                if (sent !== JSON.stringify(resolve(koMessages, ns))) {
+                    missing.push(
+                        `${relative(ROOT, f)}: ${ns} (namespace 전체)`
+                    );
                 }
             }
         }
@@ -263,7 +306,7 @@ describe('동적 조회 테이블이 소비 라우트에만 실린다', () => {
     it.each([
         ['market', 'assetName'],
         ['market/kr', 'assetName'],
-        ['[symbol]', 'skillName'],
+        ['[symbol]/(page)', 'skillName'],
         ['share/[id]', 'skillName'],
     ] as const)('%s 는 %s 표를 받는다', (routeId, name) => {
         expect(table(routeClientPaths(routeId), name)).toBeGreaterThan(20);
@@ -273,12 +316,14 @@ describe('동적 조회 테이블이 소비 라우트에만 실린다', () => {
         ['login', 'assetName'],
         ['terms', 'assetName'],
         ['[symbol]', 'assetName'],
+        // 스킬 이름표는 차트 탭(AI 패널)만 쓴다 — `[symbol]` 레이아웃에 실으면 형제 탭 전부가 받는다.
+        ['[symbol]', 'skillName'],
     ] as const)('%s 는 %s 표를 받지 않는다', (routeId, name) => {
         expect(table(routeClientPaths(routeId), name)).toBe(0);
     });
 
     /**
-     * 스킬 카탈로그는 **홈과 종목 라우트에만** 실린다.
+     * 스킬 카탈로그는 **홈과 종목 차트 탭에만** 실린다.
      *
      * 한때 크롬에 있었다 — 홈이 자기 세그먼트 레이아웃이 없어 크롬 프로바이더를
      * 썼기 때문이다. 그 결과 스킬 설명 카탈로그(옛 `shared.skillDescription`, 8.4KB)가 `/login`·
@@ -289,7 +334,7 @@ describe('동적 조회 테이블이 소비 라우트에만 실린다', () => {
     it.each([
         ['(home)', 'skillName'],
         ['(home)', 'skillSummary'],
-        ['[symbol]', 'skillName'],
+        ['[symbol]/(page)', 'skillName'],
     ] as const)('%s 는 shared.%s 을 받는다', (routeId, table) => {
         const picked = pickMessages(messages, routeClientPaths(routeId)) as {
             shared?: Record<string, object>;

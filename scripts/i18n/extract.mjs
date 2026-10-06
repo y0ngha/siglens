@@ -767,30 +767,26 @@ if (WRITE) {
      * 정렬이 빠져도 아무도 모른다 — 아래 `sortedRoutes`가 그 의존을 끊는다.
      */
     const routes = {};
-    for (const rel of candidateSourceFiles(ROOT)) {
-        if (!/^src\/app\/\[locale\]\/.*page\.tsx$/.test(rel)) continue;
-        const routeId =
-            rel.replace(`${APP}/`, '').replace(/\/?page\.tsx$/, '') || '.';
-        // 홈은 크롬 프로바이더를 쓰므로 별도 엔트리가 필요 없다.
-        if (routeId === '.') continue;
-        const entries = [
-            rel,
-            `${rel.slice(0, rel.lastIndexOf('/'))}/layout.tsx`,
-            ...boundaryFiles.filter(f => nearestLayoutRoute(f) === routeId),
-        ].filter(candidate => graph.sources.has(candidate));
+    /**
+     * 진입 파일 집합 → 라우트 엔트리. 크롬 키를 빼지 않는다 — 각 엔트리는 그 프로바이더
+     * 서브트리가 쓰는 전부이고, 상위가 이미 실은 키를 빼는 일은 런타임(`RouteMessages`의
+     * `omitMessages`)이 한다.
+     */
+    const routeEntry = (routeId, entries) => {
         const entry = serialize(
-            keysForFiles(graph, clientClosure(graph, entries))
+            keysForFiles(
+                graph,
+                clientClosure(
+                    graph,
+                    entries.filter(candidate => graph.sources.has(candidate))
+                )
+            )
         );
-        /**
-         * 크롬 키를 빼지 않는다. 중첩 `NextIntlClientProvider`는 부모 메시지를
-         * **상속하지 않고 교체**한다(`use-intl/react.js`의
-         * `messages === undefined ? prevContext?.messages : messages`).
-         */
         // 이 라우트에만 싣기로 등록된 네임스페이스.
         const routeWide = Object.entries(manualKeys.routeWide)
             .filter(([, routeIds]) => routeIds.includes(routeId))
             .map(([ns]) => ns);
-        routes[routeId] = {
+        return {
             keys: [...new Set([...chrome.keys, ...entry.keys])].sort(),
             wideNamespaces: [
                 ...new Set([
@@ -800,6 +796,43 @@ if (WRITE) {
                 ]),
             ].sort(),
         };
+    };
+    for (const rel of candidateSourceFiles(ROOT)) {
+        if (!/^src\/app\/\[locale\]\/.*page\.tsx$/.test(rel)) continue;
+        const routeId =
+            rel.replace(`${APP}/`, '').replace(/\/?page\.tsx$/, '') || '.';
+        // 홈은 크롬 프로바이더를 쓰므로 별도 엔트리가 필요 없다.
+        if (routeId === '.') continue;
+        const layoutEntries = [
+            `${rel.slice(0, rel.lastIndexOf('/'))}/layout.tsx`,
+            ...boundaryFiles.filter(f => nearestLayoutRoute(f) === routeId),
+        ];
+        /**
+         * **페이지가 자기 `RouteMessages`를 렌더하면** 페이지 키를 레이아웃 엔트리에서
+         * 떼어 낸다.
+         *
+         * 레이아웃의 `RouteMessages`는 그 세그먼트의 **하위 라우트 전부**에 상속된다
+         * (`ancestorClientPaths`). 그래서 페이지 키가 레이아웃 엔트리에 섞여 있으면 형제
+         * 라우트가 쓰지도 않는 키를 받는다 — `[symbol]` 차트 탭 전용인 차트·AI 패널 키가
+         * 뉴스·재무·옵션 탭에도 실리던 것이 이 경우다. 페이지는 `${routeId}/(page)`라는
+         * 가상 라우트 id로 자기 몫을 싣는다. 괄호 세그먼트라 URL과 겹치지 않고, 접두사가
+         * `routeId`라 `ancestorClientPaths`가 레이아웃 엔트리를 상위로 인식해 차이만 보낸다.
+         */
+        const pageProvider = (graph.sources.get(rel) ?? '').match(
+            /<RouteMessages\s+route="([^"]+)"/
+        );
+        if (pageProvider !== null) {
+            const pageRouteId = `${routeId}/(page)`;
+            if (pageProvider[1] !== pageRouteId) {
+                throw new Error(
+                    `${rel}: 페이지 RouteMessages의 route는 "${pageRouteId}"여야 한다(실제 "${pageProvider[1]}").`
+                );
+            }
+            routes[routeId] = routeEntry(routeId, layoutEntries);
+            routes[pageRouteId] = routeEntry(pageRouteId, [rel]);
+            continue;
+        }
+        routes[routeId] = routeEntry(routeId, [rel, ...layoutEntries]);
     }
 
     // 파일 순회 순서와 무관하게 키 순서를 고정한다 — 위 `routes` 주석 참고.
