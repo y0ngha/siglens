@@ -14,6 +14,11 @@ vi.mock('../lock', () => ({
 
 vi.mock('../runPrewarmBatch', () => ({
     runPrewarmBatch: vi.fn(),
+    BATCH_WALL_CLOCK_BUDGET_MS: 840_000,
+}));
+
+vi.mock('@/entities/options-chain/lib/warmOptionsLastGood', () => ({
+    warmOptionsLastGood: vi.fn(),
 }));
 
 vi.mock('@/shared/db/client', () => ({
@@ -40,6 +45,7 @@ import {
     releasePrewarmLock,
 } from '@/app/api/cron/seo-prewarm/lock';
 import { runPrewarmBatch } from '@/app/api/cron/seo-prewarm/runPrewarmBatch';
+import { warmOptionsLastGood } from '@/entities/options-chain/lib/warmOptionsLastGood';
 
 const {
     HTTP_STATUS_UNAUTHORIZED,
@@ -62,6 +68,9 @@ describe('PATCH /api/cron/seo-prewarm', () => {
         mockPruneAnalysisHistory.mockResolvedValue({
             rowsDeleted: 0,
             promptsCleared: 0,
+        });
+        vi.mocked(warmOptionsLastGood).mockResolvedValue({
+            status: 'out_of_window',
         });
     });
 
@@ -221,5 +230,119 @@ describe('PATCH /api/cron/seo-prewarm', () => {
         expect(releasePrewarmLock).toHaveBeenCalledWith('token-1');
 
         errSpy.mockRestore();
+    });
+    describe('옵션 last-good 워밍 단계', () => {
+        const batchCounts = {
+            harvested: 2,
+            revalidated: 3,
+            remaining: 4,
+            staleTotal: 10,
+            durationMs: 1234,
+            fmpBudgetUsed: 5,
+            indexNowSubmitted: 0,
+            indexNowOk: 0,
+            indexNowFailed: 0,
+        };
+
+        async function runCallback(): Promise<void> {
+            vi.mocked(acquirePrewarmLock).mockResolvedValue('token-1');
+            await PATCH(makeRequest('Bearer test-secret'));
+            const callback = mockAfter.mock.calls[0][0] as () => Promise<void>;
+            await callback();
+        }
+
+        function order(fn: unknown): number {
+            const mock = fn as { mock: { invocationCallOrder: number[] } };
+            return mock.mock.invocationCallOrder[0];
+        }
+
+        it('runPrewarmBatch 뒤, prune·락 해제 앞에서 실행된다', async () => {
+            vi.mocked(runPrewarmBatch).mockResolvedValue(batchCounts);
+
+            await runCallback();
+
+            expect(warmOptionsLastGood).toHaveBeenCalledTimes(1);
+            expect(order(runPrewarmBatch)).toBeLessThan(
+                order(warmOptionsLastGood)
+            );
+            expect(order(warmOptionsLastGood)).toBeLessThan(
+                order(mockPruneAnalysisHistory)
+            );
+            expect(order(mockPruneAnalysisHistory)).toBeLessThan(
+                order(releasePrewarmLock)
+            );
+        });
+
+        it('배치와 같은 락 예산(획득 시각 + BATCH_WALL_CLOCK_BUDGET_MS)을 마감으로 넘긴다', async () => {
+            vi.mocked(runPrewarmBatch).mockResolvedValue(batchCounts);
+            const before = Date.now();
+
+            await runCallback();
+
+            const after = Date.now();
+            const options = vi.mocked(warmOptionsLastGood).mock.calls[0][1];
+            expect(options?.budgetEndMs).toBeGreaterThanOrEqual(
+                before + 840_000
+            );
+            expect(options?.budgetEndMs).toBeLessThanOrEqual(after + 840_000);
+        });
+
+        it('결과 카운트를 로그한다', async () => {
+            vi.mocked(runPrewarmBatch).mockResolvedValue(batchCounts);
+            const outcome = {
+                status: 'ran',
+                written: 4,
+                stale: 1,
+                none: 1,
+                skipped: 0,
+                deferred: 0,
+            } as const;
+            vi.mocked(warmOptionsLastGood).mockResolvedValue(outcome);
+            const logSpy = vi
+                .spyOn(console, 'log')
+                .mockImplementation(() => {});
+
+            await runCallback();
+
+            expect(logSpy).toHaveBeenCalledWith(
+                '[seo-prewarm] options warm done:',
+                JSON.stringify(outcome)
+            );
+            logSpy.mockRestore();
+        });
+
+        it('워밍이 throw해도 prune이 돌고 락이 해제된다', async () => {
+            vi.mocked(runPrewarmBatch).mockResolvedValue(batchCounts);
+            vi.mocked(warmOptionsLastGood).mockRejectedValue(
+                new Error('warm boom')
+            );
+            const errSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+
+            await expect(runCallback()).resolves.toBeUndefined();
+
+            expect(errSpy).toHaveBeenCalledWith(
+                '[seo-prewarm] options warm failed:',
+                expect.any(Error)
+            );
+            expect(mockPruneAnalysisHistory).toHaveBeenCalledTimes(1);
+            expect(releasePrewarmLock).toHaveBeenCalledTimes(1);
+            expect(releasePrewarmLock).toHaveBeenCalledWith('token-1');
+            errSpy.mockRestore();
+        });
+
+        it('배치가 throw해도 워밍은 여전히 실행된다', async () => {
+            vi.mocked(runPrewarmBatch).mockRejectedValue(new Error('boom'));
+            const errSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+
+            await runCallback();
+
+            expect(warmOptionsLastGood).toHaveBeenCalledTimes(1);
+            expect(releasePrewarmLock).toHaveBeenCalledWith('token-1');
+            errSpy.mockRestore();
+        });
     });
 });

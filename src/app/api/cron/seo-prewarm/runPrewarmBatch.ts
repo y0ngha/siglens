@@ -146,7 +146,7 @@ const UNIT_TIMEOUT_MS = 120_000; // 2min
  * 바뀌어도 아무도 모르게 오버랩이 열린다.
  */
 const LOCK_SAFETY_MARGIN_MS = 60_000; // 1min
-const BATCH_WALL_CLOCK_BUDGET_MS =
+export const BATCH_WALL_CLOCK_BUDGET_MS =
     LOCK_TTL_SECONDS * 1000 - LOCK_SAFETY_MARGIN_MS;
 // overall을 마지막에 둬 bars/scorecard 등 다른 축이 이미 채운 Redis 캐시를 HIT로 재활용한다.
 const TAB_ORDER: readonly SeoSnapshotTab[] = [
