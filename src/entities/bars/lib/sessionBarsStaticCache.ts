@@ -17,6 +17,7 @@ import {
     type SessionCoverage,
 } from '@/shared/lib/sessionCoverage';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
+import { runWithRenderBudget } from '@/shared/lib/renderBudget';
 import { isCuratedSymbol } from '@/entities/symbol-indexability/lib/isCuratedSymbol';
 import { loadBarsData } from './loadBarsData';
 import { lastBarSessionDate, toSessionBarsData } from './sessionBars';
@@ -118,7 +119,8 @@ async function cacheSessionValue<T>(
     try {
         return await unstable_cache(
             async () => {
-                const result = await compute();
+                // 렌더 예산: FMP가 느리면 짧게 실패해 degrade한다(`renderBudget.ts`).
+                const result = await runWithRenderBudget(compute);
                 if (!isStorableCoverage(result.coverage)) {
                     holder.unstored = result;
                     throw new UncachedSessionValueError(ticker);

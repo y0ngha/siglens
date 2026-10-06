@@ -10,6 +10,16 @@ const BOT_UA =
 const recordVisit = vi.fn().mockResolvedValue(undefined);
 const pruneOlderThan = vi.fn().mockResolvedValue(undefined);
 let requestHeaders = new Headers();
+const { afterTasks } = vi.hoisted(() => ({
+    afterTasks: [] as Promise<unknown>[],
+}));
+
+/** 응답 뒤로 미룬 작업(`after()`)을 모두 끝낸다. */
+async function flushAfter(): Promise<void> {
+    while (afterTasks.length > 0) {
+        await Promise.all(afterTasks.splice(0));
+    }
+}
 
 vi.mock('next/headers', () => ({
     headers: () => Promise.resolve(requestHeaders),
@@ -23,9 +33,10 @@ vi.mock('next/server', async importOriginal => {
     const actual = await importOriginal<typeof import('next/server')>();
     return {
         ...actual,
-        // 콜백을 즉시 실행해 prune 경로를 테스트에서 관찰 가능하게 만든다.
+        // 콜백을 즉시 시작하되 프라미스를 모아 둔다 — 기록·정리는 응답 뒤에 돌므로
+        // 테스트는 `flushAfter()`로 끝까지 기다린 뒤 단언한다.
         after: (fn: () => unknown) => {
-            void fn();
+            afterTasks.push(Promise.resolve(fn()));
         },
     };
 });
@@ -59,6 +70,7 @@ async function importRoute() {
 describe('POST /api/presence', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        afterTasks.length = 0;
         // `Date.now()`를 고정한다 — 정리 기준일 케이스가 오늘로부터 400일 전을
         // 단언하므로 실제 시각으로 돌면 날짜가 매일 어긋난다.
         vi.useFakeTimers({ shouldAdvanceTime: true });
@@ -82,6 +94,7 @@ describe('POST /api/presence', () => {
     it('사람 요청을 하루 1행으로 기록하고 204를 준다', async () => {
         const { POST } = await importRoute();
         const res = await POST();
+        await flushAfter();
 
         expect(res.status).toBe(HTTP_STATUS_NO_CONTENT);
         // x-forwarded-for의 첫 값만 쓴다(체인의 뒤쪽은 우리 인프라다).
@@ -102,6 +115,7 @@ describe('POST /api/presence', () => {
         });
         const { POST } = await importRoute();
         await POST();
+        await flushAfter();
 
         expect(recordVisit).toHaveBeenCalledWith(
             expect.objectContaining({ country: null, landingPath: null })
@@ -117,6 +131,7 @@ describe('POST /api/presence', () => {
         const { POST } = await importRoute();
 
         expect((await POST()).status).toBe(HTTP_STATUS_NO_CONTENT);
+        await flushAfter();
         expect(recordVisit).not.toHaveBeenCalled();
     });
 
@@ -124,6 +139,7 @@ describe('POST /api/presence', () => {
         requestHeaders.set('user-agent', BOT_UA);
         const { POST } = await importRoute();
         const res = await POST();
+        await flushAfter();
 
         expect(res.status).toBe(HTTP_STATUS_NO_CONTENT);
         expect(recordVisit).not.toHaveBeenCalled();
@@ -133,6 +149,7 @@ describe('POST /api/presence', () => {
         vi.stubEnv('NODE_ENV', 'development');
         const { POST } = await importRoute();
         const res = await POST();
+        await flushAfter();
 
         expect(res.status).toBe(HTTP_STATUS_NO_CONTENT);
         expect(recordVisit).not.toHaveBeenCalled();
@@ -144,6 +161,7 @@ describe('POST /api/presence', () => {
 
         const { POST } = await importRoute();
         const res = await POST();
+        await flushAfter();
 
         // 조용히 0이 찍히는 것이 최악이다. 프로덕션 로그에 남아야 한다.
         expect(res.status).toBe(HTTP_STATUS_INTERNAL_SERVER_ERROR);
@@ -160,6 +178,7 @@ describe('POST /api/presence', () => {
 
         const { POST } = await importRoute();
         const res = await POST();
+        await flushAfter();
 
         // 집계 실패가 사용자 화면을 깨뜨리면 안 된다.
         expect(res.status).toBe(HTTP_STATUS_NO_CONTENT);
@@ -170,7 +189,9 @@ describe('POST /api/presence', () => {
     it('보존 기간을 넘긴 행을 하루 한 번만 지운다', async () => {
         const { POST } = await importRoute();
         await POST();
+        await flushAfter();
         await POST();
+        await flushAfter();
 
         // 같은 날 두 번째 요청은 prune을 다시 돌리지 않는다.
         expect(pruneOlderThan).toHaveBeenCalledTimes(1);
@@ -181,6 +202,7 @@ describe('POST /api/presence', () => {
 
         const { POST } = await importRoute();
         await POST();
+        await flushAfter();
 
         // KST 2026-09-02 기준 400일 전 = 2025-07-29
         expect(pruneOlderThan).toHaveBeenCalledWith('2025-07-29');
@@ -195,13 +217,35 @@ describe('POST /api/presence', () => {
         const { POST } = await importRoute();
         // 첫 요청은 DB 클라이언트 단계에서 실패한다.
         expect((await POST()).status).toBe(HTTP_STATUS_NO_CONTENT);
+        await flushAfter();
         expect(spy).toHaveBeenCalled();
         expect(pruneOlderThan).not.toHaveBeenCalled();
 
         // 실패가 `lastPrunedDate`를 소진하지 않았으므로 다음 성공 요청이
         // 그날의 정리를 여전히 돌린다.
         expect((await POST()).status).toBe(HTTP_STATUS_NO_CONTENT);
+        await flushAfter();
         expect(pruneOlderThan).toHaveBeenCalledTimes(1);
         spy.mockRestore();
+    });
+
+    it('응답은 DB 기록을 기다리지 않는다 — 기록은 after()로 응답 뒤에 돈다', async () => {
+        let release!: () => void;
+        recordVisit.mockImplementationOnce(
+            () =>
+                new Promise<void>(resolve => {
+                    release = resolve;
+                })
+        );
+        const { POST } = await importRoute();
+
+        const res = await POST();
+        expect(res.status).toBe(HTTP_STATUS_NO_CONTENT);
+        expect(recordVisit).toHaveBeenCalledTimes(1);
+        expect(pruneOlderThan).not.toHaveBeenCalled();
+
+        release();
+        await flushAfter();
+        expect(pruneOlderThan).toHaveBeenCalledTimes(1);
     });
 });

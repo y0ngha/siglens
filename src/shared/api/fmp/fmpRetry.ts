@@ -64,3 +64,28 @@ export const FMP_TRANSIENT_RETRY: WithRetryOptions = {
     backoffBudgetMs: 60_000,
     getRetryDelayMs: getFmpRetryDelayMs,
 };
+
+/** 렌더 경로 FMP 시도 1회의 timeout(ms). `fmpGet`이 {@link FMP_RENDER_RETRY}와 함께 쓴다. */
+export const FMP_RENDER_FETCH_TIMEOUT_MS = 3_000;
+
+/**
+ * 페이지 렌더 경로(`runWithRenderBudget` 안)의 FMP 재시도 정책. 배치용
+ * {@link FMP_TRANSIENT_RETRY}와 판정(`isFmpTransientError`)·대기 계산
+ * (`getFmpRetryDelayMs`)은 같고 **예산만 짧다**:
+ *
+ *  - 재시도 1회(총 2회 시도), 시도당 timeout {@link FMP_RENDER_FETCH_TIMEOUT_MS}.
+ *  - 백오프 예산이 timeout과 같다. 첫 시도가 timeout까지 갔다면 예산이 이미 소진돼
+ *    재시도 없이 바로 던진다. 빨리 실패한 경우(5xx 등)에만 짧게 쉬고 한 번 더 시도한다.
+ *  - 429의 10/15/20초 대기나 그보다 긴 `Retry-After`는 예산을 넘으므로 기다리지 않고
+ *    던진다. 렌더는 degrade하고, 레이트 리밋이 풀린 뒤 다음 재생성이 다시 채운다.
+ *
+ * 최악의 경우 한 호출이 약 3초 + 짧은 백오프 + 3초 안에 끝난다. 예전에는 같은 경로가
+ * 45~70초를 붙잡을 수 있었다(`renderBudget.ts` 참고).
+ */
+export const FMP_RENDER_RETRY: WithRetryOptions = {
+    maxRetries: 1,
+    baseDelayMs: 250,
+    isRetryable: isFmpTransientError,
+    backoffBudgetMs: FMP_RENDER_FETCH_TIMEOUT_MS,
+    getRetryDelayMs: getFmpRetryDelayMs,
+};

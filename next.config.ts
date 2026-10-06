@@ -149,12 +149,23 @@ const nextConfig: NextConfig = {
     reactCompiler: true,
 
     // streaming metadata 비활성화. Next.js 16은 generateMetadata가 async이고 layout/page에
-    // async work(getAssetInfoCached, prefetchQuery(bars) 등)가 있으면 shell을 먼저 flush한 뒤
-    // metadata를 body 끝에 streaming inject한다. Googlebot 등 default htmlLimitedBots 매치
-    // UA는 head로 받지만 Naver Yeti, KakaoTalk 등 매치되지 않는 봇은 body에서 OG/canonical을
-    // 못 읽어 SNS 미리보기·검색 시그널이 깨진다. /.*/로 모든 UA를 blocking 경로로 강제해
-    // metadata가 항상 head에 박히도록 보장. TTFB가 generateMetadata 완료 시점까지 늦춰지지만,
-    // 우리 generateMetadata는 cached getAssetInfoCached + 문자열 빌드뿐이라 영향은 미미하다.
+    // async work(자산 정보·봉 읽기 등)가 있으면 shell을 먼저 flush한 뒤 metadata를 body 끝에
+    // streaming inject한다. Googlebot 등 default htmlLimitedBots 매치 UA는 head로 받지만
+    // Naver Yeti, KakaoTalk 등 매치되지 않는 봇은 body에서 OG/canonical을 못 읽어 SNS
+    // 미리보기·검색 시그널이 깨진다. /.*/로 모든 UA를 blocking 경로로 강제해 metadata가 항상
+    // head에 박히도록 보장한다 — 의도된 설정이고 바꾸지 않는다.
+    //
+    // 비용(2026-10 서버 성능 감사로 재확인): generateMetadata는 더 이상 "캐시된 자산 정보 +
+    // 문자열 빌드"만이 아니다. 차트(`/[symbol]`)·공포탐욕 탭 메타는 봉 캐시(`bars-static`/세션 봉)를,
+    // options 탭 메타는 Yahoo 옵션 시장 여부(`options:has`)를, 뉴스 카테고리 메타는 목록을 기다린다.
+    // 그래도 이 플래그 때문에 늘어나는 지연은 사실상 없다:
+    //   - ISR 캐시 hit은 저장된 HTML을 그대로 서빙한다(메타 재계산 없음).
+    //   - 캐시 miss 렌더는 prerender 경로라 어차피 전체를 버퍼링한 뒤 보낸다 — 스트리밍으로
+    //     shell을 먼저 보내는 이득이 원래 없다.
+    //   - 메타와 본문은 같은 캐시 엔트리(`unstable_cache`·`React.cache`)를 공유해 같은 읽기를
+    //     두 번 하지 않는다.
+    // 다시 볼 때: cacheComponents/PPR을 켜서 miss 렌더가 실제로 스트리밍되게 되면, 그때는 메타의
+    // 느린 읽기가 TTFB에 그대로 얹히므로 이 값을 재검토한다.
     htmlLimitedBots: /.*/,
 
     // skills/ 디렉토리는 fs.readdir로 동적 접근하므로 Vercel이 자동 추적하지 못한다.

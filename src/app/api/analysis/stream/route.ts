@@ -30,6 +30,7 @@ import type { NewsFeedCategoryId } from '@/entities/market-news/lib/categoryConf
 import { getDatabaseClient } from '@/shared/db/client';
 import {
     buildGateError,
+    type ByokOutcome,
     resolveTierAndByok,
     resolveTierOnly,
     resolveReasoning,
@@ -822,11 +823,15 @@ export async function POST(request: Request): Promise<Response> {
             // 스트림까지 모든 `heartbeatStream` 호출이 로케일별 제네릭 문구를
             // 필요로 하고, 동시성 검사와 스트림 생성 사이에 `await`가 들어가면
             // 원자성이 깨지기 때문이다.
+            //
+            // 번역자 로드와 인증(2a)은 서로 독립이라 함께 기다린다 — 첫 바이트 전에 쌓이는
+            // 직렬 await를 줄인다(2026-10 서버 성능 감사 L5).
             const requestLocale = localeFromRequestHeader(request);
-            const t = await streamMessages(requestLocale);
-
-            // --- 2a. Auth ---
-            const user = await getCurrentUser();
+            const [t, user] = await Promise.all([
+                streamMessages(requestLocale),
+                // --- 2a. Auth ---
+                getCurrentUser(),
+            ]);
             const userId = user?.id ?? null;
 
             // --- 2b. E2E short-circuit ---
@@ -876,64 +881,58 @@ export async function POST(request: Request): Promise<Response> {
                 );
             }
 
-            // --- 2d. Market profile → assetClass + session-aware data provider ---
-            const marketProfile = await resolveMarketProfile(symbol);
+            // --- 2d. Market profile (2e와 병렬) ---
+            // --- 2e. Tier + BYOK gate ---
+            // 둘은 서로의 결과를 쓰지 않는다(심볼 vs userId) — 함께 기다려 DB 왕복 한 단을
+            // 줄인다(감사 L5). 게이트가 막히면 프로필 결과는 버려진다(읽기 전용 조회라 부작용 없음).
+            const [marketProfile, gate] = await Promise.all([
+                resolveMarketProfile(symbol),
+                modelId === undefined
+                    ? resolveTierOnly(userId).then((tier): ByokOutcome => ({
+                          kind: 'allowed',
+                          tier,
+                      }))
+                    : resolveTierAndByok(userId, modelId, requestLocale),
+            ]);
             const descriptor = getDescriptor(marketProfile);
             const { assetClass } = descriptor;
             const session = sessionSpecFor(marketProfile);
             const marketDataProvider = getCachedMarketDataProvider(session);
 
-            // --- 2e. Tier + BYOK gate ---
-            let tier: 'free' | 'member' | 'pro';
-            let userApiKey: string | undefined;
-
-            if (modelId === undefined) {
-                tier = await resolveTierOnly(userId);
-            } else {
-                const gate = await resolveTierAndByok(
-                    userId,
-                    modelId,
-                    requestLocale
-                );
-                if (gate.kind === 'blocked') {
-                    /**
-                     * Stream the gate error as an SSE `error` event so the client
-                     * receives the localized message. A 403 HTTP response would cause
-                     * `runAnalysisStream` to throw a generic "분석 요청이 실패했습니다 (403)"
-                     * instead of the gate-specific message.
-                     */
-                    // 게이트 거부는 **가용성 장애가 아니다**(사용자가 허용되지 않은
-                    // 모델을 고른 정상 동작). `[analysis-stream] failed` 알람이 이걸
-                    // 세면 프리티어 사용자 몇 명이 프리미엄 모델을 눌렀다는 이유로
-                    // 페이지가 울리고, 그 알람은 SSE가 항상 200이라 진짜 분석 장애를
-                    // 잡는 **유일한** 신호다. 따로 로깅해 구분한다.
-                    console.warn(
-                        '[analysis-stream] gate-denied:',
-                        gate.error.code
-                    );
-                    return new Response(
-                        heartbeatStream(
-                            // 게이트 문구는 사용자에게 보여줄 목적으로 만들어진
-                            // 것이라 그대로 통과해야 한다.
-                            Promise.reject(
-                                new LocalizedStreamError(
-                                    await gateMessage(
-                                        requestLocale,
-                                        gate.error.code
-                                    )
+            if (gate.kind === 'blocked') {
+                /**
+                 * Stream the gate error as an SSE `error` event so the client
+                 * receives the localized message. A 403 HTTP response would cause
+                 * `runAnalysisStream` to throw a generic "분석 요청이 실패했습니다 (403)"
+                 * instead of the gate-specific message.
+                 */
+                // 게이트 거부는 **가용성 장애가 아니다**(사용자가 허용되지 않은
+                // 모델을 고른 정상 동작). `[analysis-stream] failed` 알람이 이걸
+                // 세면 프리티어 사용자 몇 명이 프리미엄 모델을 눌렀다는 이유로
+                // 페이지가 울리고, 그 알람은 SSE가 항상 200이라 진짜 분석 장애를
+                // 잡는 **유일한** 신호다. 따로 로깅해 구분한다.
+                console.warn('[analysis-stream] gate-denied:', gate.error.code);
+                return new Response(
+                    heartbeatStream(
+                        // 게이트 문구는 사용자에게 보여줄 목적으로 만들어진
+                        // 것이라 그대로 통과해야 한다.
+                        Promise.reject(
+                            new LocalizedStreamError(
+                                await gateMessage(
+                                    requestLocale,
+                                    gate.error.code
                                 )
-                            ),
-                            {
-                                logFailures: false,
-                                genericErrorMessage: t('generic'),
-                            }
+                            )
                         ),
-                        { headers: SSE_HEADERS }
-                    );
-                }
-                tier = gate.tier;
-                userApiKey = gate.userApiKey;
+                        {
+                            logFailures: false,
+                            genericErrorMessage: t('generic'),
+                        }
+                    ),
+                    { headers: SSE_HEADERS }
+                );
             }
+            const { tier, userApiKey } = gate;
 
             // --- 2f. Position bucket for personalized analysis ---
             const positionBucket = await resolveHoldingPositionBucket({

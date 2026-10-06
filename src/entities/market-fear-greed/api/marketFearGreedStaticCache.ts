@@ -2,6 +2,7 @@ import 'server-only';
 import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import { runWithRenderBudget } from '@/shared/lib/renderBudget';
 import {
     getCachedMarketFearGreed,
     MARKET_FEAR_GREED_CONFIG_FINGERPRINT,
@@ -36,7 +37,8 @@ import type { MarketFearGreedView } from '../model';
 export const getMarketFearGreedStatic = cache(
     (): Promise<MarketFearGreedView> =>
         unstable_cache(
-            () => getCachedMarketFearGreed(),
+            // 렌더 예산: FMP가 느리면 짧게 실패해 degrade한다(`renderBudget.ts`).
+            () => runWithRenderBudget(() => getCachedMarketFearGreed()),
             ['market-fear-greed-static', MARKET_FEAR_GREED_CONFIG_FINGERPRINT],
             { revalidate: SECONDS_PER_HOUR, tags: ['market:fear-greed'] }
         )()
