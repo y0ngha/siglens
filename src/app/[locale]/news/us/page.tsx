@@ -88,7 +88,7 @@ export async function generateMetadata({
             '시장 뉴스 한국어',
             '미국 주식 뉴스 요약',
             'AI 뉴스 다이제스트',
-            'Siglens 뉴스',
+            '시그렌즈 뉴스',
         ],
         // canonical은 넘기지 않는다 — `localeAlternatesFrom`이 로케일별 자기참조 URL을
         // 만든다. ko 절대 URL을 넘기면 `/en/…`이 ko를 canonical로 가리켜 hreflang 상호참조가

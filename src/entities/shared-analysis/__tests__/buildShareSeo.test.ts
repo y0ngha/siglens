@@ -97,7 +97,7 @@ describe('buildShareMetadata', () => {
 
         it('openGraph.siteName is SITE_NAME', () => {
             expect((meta.openGraph as { siteName?: string })?.siteName).toBe(
-                'Siglens'
+                'SIGLENS'
             );
         });
     });

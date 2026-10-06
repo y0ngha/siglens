@@ -84,7 +84,7 @@ export async function generateMetadata({
     // 루트 메타데이터도 카탈로그를 쓴다 — 예전에는 `ROOT_TITLE`·`SITE_DESCRIPTION`
     // 한국어 상수라 `/en`·`/ja`·`/zh`의 탭 제목과 공유 카드가 통째로 한국어였다.
     const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
-    // 브랜드가 제목에 들어간다(2026-10-05 감사: 홈 제목에 브랜드가 없어 "시그렌즈"·"Siglens"
+    // 브랜드가 제목에 들어간다(2026-10-05 감사: 홈 제목에 브랜드가 없어 "시그렌즈"·"SIGLENS"
     // 검색이 홈으로 귀결되지 않았다). 한글 표기는 인자로 넘긴다 — 카탈로그에 직접 적으면
     // ko 문장만 길어져 번역 검증의 길이 게이트가 다른 로케일을 잘린 번역으로 본다.
     const rootTitle = tSeo('root.title', { v0: brandIntroName(locale) });

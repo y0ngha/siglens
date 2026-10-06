@@ -1,6 +1,6 @@
 vi.mock('@/shared/lib/seo', () => ({
     SITE_BUILD_DATE: new Date('2025-01-01T00:00:00.000Z'),
-    SITE_NAME: 'Siglens',
+    SITE_NAME: 'SIGLENS',
     SITE_URL: 'https://siglens.io',
 }));
 

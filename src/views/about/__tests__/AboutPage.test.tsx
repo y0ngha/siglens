@@ -26,7 +26,7 @@ async function renderPage() {
     renderWithIntl(
         await AboutPage({
             locale: 'ko',
-            title: 'Siglens 소개',
+            title: 'SIGLENS 소개',
             counts: COUNTS,
             faq: await getAboutFaq('ko'),
             updatedAt: '2026년 9월 24일',

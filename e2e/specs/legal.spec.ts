@@ -10,7 +10,7 @@ import { test, expect } from '../support/fixtures';
  * relation.
  *
  * `/about` no longer uses the legal shell: it is an intro page (`views/about`)
- * whose h1 is the action headline and whose title leads with "시그렌즈(Siglens) 소개".
+ * whose h1 is the action headline and whose title leads with "시그렌즈(SIGLENS) 소개".
  * It has no DB read, so it only needs its own render check below.
  *
  * `/methodology` is the sibling trust page (data sources, rules, what the AI
@@ -49,9 +49,9 @@ test('/about renders the intro page with its example report and FAQ', async ({
             name: '종목 하나만 입력하면, AI가 한 번에 분석해 드려요',
         })
     ).toBeVisible();
-    await expect(page).toHaveTitle(/^시그렌즈\(Siglens\) 소개: /);
+    await expect(page).toHaveTitle(/^시그렌즈\(SIGLENS\) 소개: /);
     await expect(
-        page.getByRole('region', { name: 'Siglens 분석 과정 예시' })
+        page.getByRole('region', { name: '시그렌즈 분석 과정 예시' })
     ).toBeVisible();
     await expect(
         page.getByRole('heading', { level: 2, name: '자주 묻는 질문' })
@@ -79,7 +79,7 @@ test('/methodology renders the methodology page: one h1, anchors, indexable', as
             name: '분석이 어떻게 만들어지는지 밝혀요',
         })
     ).toBeVisible();
-    await expect(page).toHaveTitle(/^Siglens 분석 방법: /);
+    await expect(page).toHaveTitle(/^시그렌즈 분석 방법: /);
 
     // The stable section ids the symbol-page provenance note links to.
     for (const id of ['data', 'ai', 'fear-greed', 'corrections', 'changelog']) {

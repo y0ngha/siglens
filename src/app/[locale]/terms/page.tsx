@@ -14,7 +14,7 @@ import {
     termsTitle,
 } from '@/shared/lib/legal';
 import { extractToc } from '@/shared/lib/legal-toc';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { brandName, SITE_NAME } from '@/shared/lib/seo';
 import type { SeoTranslator } from '@/shared/lib/seo';
 import type { Locale } from '@/shared/i18n/locales';
 import type { TermsRecord } from '@/entities/terms/api';
@@ -67,7 +67,11 @@ export async function generateMetadata({
     return legalPolicyMetadata(params, POLICY);
 }
 
-const topNoticeFor = (t: SeoTranslator, tLegal: SeoTranslator) => (
+const topNoticeFor = (
+    t: SeoTranslator,
+    tLegal: SeoTranslator,
+    locale: Locale
+) => (
     <div
         role="note"
         aria-label={t('a11y.investmentDisclaimerSummary')}
@@ -80,7 +84,7 @@ const topNoticeFor = (t: SeoTranslator, tLegal: SeoTranslator) => (
             {tLegal(INVESTMENT_DISCLAIMER_KEY)}
         </p>
         <p className="mt-2 text-xs leading-relaxed text-secondary-400 sm:text-sm">
-            {tLegal('termsNoticeBody', { v0: SITE_NAME })}
+            {tLegal('termsNoticeBody', { v0: brandName(locale) })}
         </p>
     </div>
 );
@@ -116,7 +120,7 @@ async function TermsContent({ locale, terms }: TermsContentProps) {
                             served={terms.bodyLocale}
                         />
                     )}
-                    {topNoticeFor(tSeo, tLegal)}
+                    {topNoticeFor(tSeo, tLegal, locale)}
                 </>
             }
         >

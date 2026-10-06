@@ -93,7 +93,7 @@ export async function generateMetadata({
     });
     const ogLocale = localeOpenGraph(locale);
     return {
-        // 메타 타이틀이 이미 `Siglens`로 시작한다 — 레이아웃 템플릿(`%s | Siglens`)을
+        // 메타 타이틀이 이미 `SIGLENS`로 시작한다 — 레이아웃 템플릿(`%s | SIGLENS`)을
         // 타면 브랜드가 두 번 붙으므로 `absolute`로 끊는다(`/about`과 같다).
         title: { absolute: methodologyFullTitle(tSeo) },
         description: methodologyDescription(tSeo),

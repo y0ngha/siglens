@@ -447,7 +447,7 @@
         "file": "src/app/[locale]/news/page.tsx",
         "line": 111,
         "reason": "seo-keywords-ko-only",
-        "text": "Siglens 뉴스"
+        "text": "시그렌즈 뉴스"
     },
     {
         "file": "src/app/[locale]/news/us/page.tsx",
@@ -495,7 +495,7 @@
         "file": "src/app/[locale]/news/us/page.tsx",
         "line": 91,
         "reason": "seo-keywords-ko-only",
-        "text": "Siglens 뉴스"
+        "text": "시그렌즈 뉴스"
     },
     {
         "file": "src/entities/analysis/lib/reanalyzeCooldown.ts",

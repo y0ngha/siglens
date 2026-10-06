@@ -80,12 +80,12 @@ describe('Methodology page', () => {
         expect(revalidate).toBe(86400);
     });
 
-    it('메타 타이틀은 레이아웃 템플릿을 타지 않는다 — 이미 Siglens로 시작한다', async () => {
+    it('메타 타이틀은 레이아웃 템플릿을 타지 않는다 — 이미 시그렌즈로 시작한다', async () => {
         const metadata = await metadataFor();
         expect(metadata.title).toEqual({
             absolute: ko.shared.seo.methodology.metaTitle,
         });
-        expect(ko.shared.seo.methodology.metaTitle).toMatch(/^Siglens/);
+        expect(ko.shared.seo.methodology.metaTitle).toMatch(/^시그렌즈/);
     });
 
     it('설명은 카탈로그의 shared.seo.methodology.description이다', async () => {

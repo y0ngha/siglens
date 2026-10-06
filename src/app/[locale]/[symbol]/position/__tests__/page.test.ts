@@ -198,7 +198,7 @@ describe('generateMetadata', () => {
         // 후킹 title: 메타포 훅이 displayName **앞**에 front-load — title/OG
         // truncation(브라우저 탭·메신저 프리뷰)에서도 훅이 먼저 살아남는다.
         // symbolMetadataFromSeo는 title을 `{ absolute }`로 감싸 root layout의
-        // title.template("%s | Siglens")을 무시한다(sibling 인덱서블 탭과 동일).
+        // title.template("%s | SIGLENS")을 무시한다(sibling 인덱서블 탭과 동일).
         expect(metadata.title).toEqual({
             absolute: '내 평단은 몇 층? — Apple Inc. 내 위치',
         });
@@ -215,16 +215,16 @@ describe('generateMetadata', () => {
         );
         // keywords: position 탭 전용 buildPositionKeywords가 ticker 기반 키워드를 낸다.
         expect(metadata.keywords).toContain('AAPL 평단');
-        // OG/Twitter 카드는 root layout의 title.template("| Siglens" suffix)이
+        // OG/Twitter 카드는 root layout의 title.template("| SIGLENS" suffix)이
         // 페이지 레벨 openGraph/twitter를 replace(merge 아님)하며 무력화되므로,
         // sibling 심볼 페이지(symbolMetadataFromSeo의 fullTitle 패턴)와 동일하게
         // 브랜드 suffix가 직접 실려야 한다 — metadata.title과 달라야 정상이다.
         expect(metadata.openGraph?.title).toBe(
-            '내 평단은 몇 층? — Apple Inc. 내 위치 | Siglens'
+            '내 평단은 몇 층? — Apple Inc. 내 위치 | SIGLENS'
         );
         expect(metadata.openGraph?.description).toBe(metadata.description);
         expect(metadata.twitter?.title).toBe(
-            '내 평단은 몇 층? — Apple Inc. 내 위치 | Siglens'
+            '내 평단은 몇 층? — Apple Inc. 내 위치 | SIGLENS'
         );
         expect(metadata.twitter?.description).toBe(metadata.description);
         // OG url은 self-canonical과 일치해야 공유 카드가 올바른 페이지를 가리킨다.
@@ -243,7 +243,7 @@ describe('generateMetadata', () => {
             | undefined;
         expect(og?.url).toBe('https://siglens.io/AAPL/position');
         // 페이지 openGraph가 root layout을 replace하므로 브랜딩 필드가 유실되면 안 된다.
-        expect(og?.siteName).toBe('Siglens');
+        expect(og?.siteName).toBe('SIGLENS');
         expect(og?.type).toBe('website');
         expect(og?.locale).toBe('ko_KR');
     });
@@ -354,7 +354,7 @@ describe('PositionPage server data path (static, cookies-free)', () => {
             d => d['@type'] === 'BreadcrumbList'
         );
         const trail = breadcrumb?.itemListElement as { name: string }[];
-        // [0]은 buildBreadcrumbJsonLd가 자동으로 붙이는 홈(Siglens).
+        // [0]은 buildBreadcrumbJsonLd가 자동으로 붙이는 홈(SIGLENS).
         expect(trail[1].name).toBe('Apple Inc.');
     });
 

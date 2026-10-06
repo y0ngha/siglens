@@ -16,7 +16,7 @@ export const contentType = 'image/png';
 // `alt`는 Next가 **모듈 스코프 상수**로 요구해 로케일별로 낼 수 없다(이미지
 // 본문은 아래에서 로케일별로 그린다). 네 로케일이 한 값을 공유해야 하므로
 // 한국어 대신 영어로 둔다 — 예전엔 한국어라 `/en/…` 공유 카드의 alt만 한국어였다.
-export const alt = 'Siglens — financial statements';
+export const alt = 'SIGLENS — financial statements';
 
 export default function Image({ params }: SymbolTabOgImageProps) {
     return renderSymbolTabOgImage(params, t => t('opengraph-image.128c11'));

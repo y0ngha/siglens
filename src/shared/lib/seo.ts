@@ -121,12 +121,12 @@ function resolveSiteUrl(): string {
 
 export const SITE_URL = resolveSiteUrl();
 
-export const SITE_NAME = 'Siglens';
+export const SITE_NAME = 'SIGLENS';
 
 /**
  * 브랜드의 한글 표기. 번역 대상이 아니라 고유명사라 카탈로그가 아닌 상수다.
  *
- * 영문 `Siglens`는 로그 관리 프로젝트 SigLens(siglens.com)와 이름이 겹쳐,
+ * 영문 `SIGLENS`는 로그 관리 프로젝트 SigLens(siglens.com)와 이름이 겹쳐,
  * 검색엔진과 AI 답변 엔진이 두 주체를 구분할 단서가 없었다(2026-10-04 조사:
  * 브랜드 검색 상위가 전부 그쪽이고, 한글 표기는 사이트 어디에도 없었다).
  * `WebSite`·`Organization`의 `alternateName`과 ko 화면(푸터·소개·홈 FAQ)에
@@ -149,6 +149,11 @@ export function brandIntroName(locale: Locale): string {
     return locale === DEFAULT_LOCALE
         ? `${SITE_NAME_KO}(${SITE_NAME})`
         : SITE_NAME;
+}
+
+/** 문장 속 브랜드 표기. ko는 한글 표기, 다른 로케일은 영문 표기. */
+export function brandName(locale: Locale): string {
+    return locale === DEFAULT_LOCALE ? SITE_NAME_KO : SITE_NAME;
 }
 
 /**
@@ -523,7 +528,7 @@ export function clampSeoDescription(text: string): string {
  * SERP에서 차지하는 시각적 폭을 근사한다 — 한글·전각 2, 그 외 1.
  *
  * Google 데스크톱 title 예산은 약 58~60 폭단위다. 글자 수로 재면 한글 제목의
- * 잘림을 예측할 수 없다: `AAPL 주가 분석 — 차트와 기술적 신호, 지지선·저항선 | Siglens`은
+ * 잘림을 예측할 수 없다: `AAPL 주가 분석 — 차트와 기술적 신호, 지지선·저항선 | SIGLENS`은
  * 42글자지만 58 폭단위로 이미 경계에 있다(2026-07-26 실측 — 이 함수로 직접 측정).
  *
  * 코드포인트 기준으로 순회해 서로게이트 페어를 쪼개지 않는다
@@ -1080,7 +1085,7 @@ export function buildSnapshotMetaDescription(
 
 // 한글 SERP는 80~120자가 안전권이라 키워드는 핵심 검색의도 위주로 추렸다.
 export const ROOT_KEYWORDS = [
-    'Siglens',
+    'SIGLENS',
     '미국 주식 AI 분석',
     '미국 주식 차트 분석',
     '미국 주식 펀더멘털',
@@ -1266,7 +1271,7 @@ export function buildWebPageJsonLd(params: {
  * Next.js Metadata 형태로 매핑한다. 동일한 구조가 8 곳에 중복됐던 것을 제거.
  *
  * `title`은 `{ absolute: title }`로 반환해 루트 레이아웃의 `title.template`
- * (`%s | Siglens` 자동 접미사)을 무시한다 — `| Siglens` 8글자(폭단위 8)를
+ * (`%s | SIGLENS` 자동 접미사)을 무시한다 — `| SIGLENS` 8글자(폭단위 8)를
  * 2,247개 URL 전부에서 검색 의도 카피에 되돌려준다. 브랜드 검색어("siglens")는
  * 이미 자연 순위 2.0위라 title 폭을 추가로 쓸 이유가 없다. `/backtesting`이
  * 같은 `absolute` 메커니즘을 쓰지만 그쪽은 반대로 `fullTitle`(브랜드 포함)을
@@ -1332,7 +1337,7 @@ export function symbolMetadataFromSeo(
     };
 }
 
-// 홈(Siglens → SITE_URL)이 첫 항목으로 자동 삽입된다.
+// 홈(SIGLENS → SITE_URL)이 첫 항목으로 자동 삽입된다.
 // schema.org BreadcrumbList의 `item`은 절대 URL이어야 하므로
 // 상대 경로로 들어온 trail은 SITE_URL prefix를 붙여 절대화한다.
 //
@@ -1393,7 +1398,7 @@ export function buildFaqJsonLd(
 
 export const BACKTESTING_PATH = '/backtesting';
 export const BACKTESTING_URL = `${SITE_URL}${BACKTESTING_PATH}`;
-// Root layout template appends "| Siglens" — exclude brand name to prevent duplication
+// Root layout template appends "| SIGLENS" — exclude brand name to prevent duplication
 export function backtestingTitle(t: SeoTranslator): string {
     return t('backtesting.title');
 }

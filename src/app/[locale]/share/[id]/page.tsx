@@ -8,7 +8,7 @@ import { kindLabelKey } from '@/entities/shared-analysis/lib/kindLabel';
 import { buildShareMetadata } from '@/entities/shared-analysis/lib/buildShareSeo';
 import { ShareKindPanel } from '@/views/share/ShareKindPanel';
 import { formatKoreanDateTime } from '@/shared/lib/formatKoreanDateTime';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { brandName, SITE_NAME } from '@/shared/lib/seo';
 import { INVESTMENT_DISCLAIMER_KEY } from '@/shared/lib/legal';
 import { resolveLocale } from '@/shared/i18n/locales';
 import { enterLocale } from '@/shared/lib/enterLocale';
@@ -123,7 +123,7 @@ export default async function SharePage({ params }: Props) {
                     prefetch={false}
                     className="inline-flex items-center rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
-                    {t('page.69aebc', { v0: SITE_NAME, v1: ticker })}
+                    {t('page.69aebc', { v0: brandName(locale), v1: ticker })}
                 </Link>
             </div>
         </main>

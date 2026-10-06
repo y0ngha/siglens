@@ -90,7 +90,7 @@ describe('StockAnalysisLanding', () => {
     it('shows the example report replay, complete on first render', () => {
         render(<StockAnalysisLanding />);
         const replay = screen.getByRole('region', {
-            name: 'SIGLENS 분석 과정 예시',
+            name: '시그렌즈 분석 과정 예시',
         });
         expect(replay).toHaveTextContent('siglens.io/AAPL');
         expect(replay).toHaveTextContent('50일 이동평균선');
@@ -127,7 +127,7 @@ describe('StockChatLanding', () => {
     it('shows the example chat replay, complete on first render', () => {
         render(<StockChatLanding />);
         const replay = screen.getByRole('region', {
-            name: 'SIGLENS AI 예시 대화',
+            name: '시그렌즈 AI 예시 대화',
         });
         expect(replay).toHaveTextContent('삼성전자 요즘 흐름 어때?');
         expect(replay).toHaveTextContent('71,800원');

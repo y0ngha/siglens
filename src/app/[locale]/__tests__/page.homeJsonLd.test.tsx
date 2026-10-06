@@ -98,7 +98,7 @@ describe('홈 메타데이터·H1·WebPage — 브랜드', () => {
         expect(metadata.twitter).toMatchObject({ site: '@siglens_io' });
     });
 
-    it('H1이 시그렌즈(Siglens)를 담고 마케팅 문구("새로운 기준")는 없다', async () => {
+    it('H1이 시그렌즈(SIGLENS)를 담고 마케팅 문구("새로운 기준")는 없다', async () => {
         const { container } = render(await renderHome());
         const h1 = container.querySelector('h1')!;
 
@@ -238,7 +238,7 @@ describe('홈 Organization 노드', () => {
     });
 
     /**
-     * 영문 `Siglens`는 동명 프로젝트와 겹쳐 발행 주체를 식별하지 못한다. 한글
+     * 영문 `SIGLENS`는 동명 프로젝트와 겹쳐 발행 주체를 식별하지 못한다. 한글
      * 표기가 Organization에 없으면 "시그렌즈"가 가리키는 노드가 그래프에 없다.
      */
     it('alternateName으로 한글 표기를 싣는다', async () => {
@@ -259,7 +259,7 @@ describe('홈 Organization 노드', () => {
         ) as { mainEntity: { name: string }[] } | undefined;
 
         expect(faqPage?.mainEntity[0]?.name).toBe(
-            '시그렌즈(Siglens)는 어떤 서비스인가요?'
+            '시그렌즈(SIGLENS)는 어떤 서비스인가요?'
         );
     });
 
@@ -275,7 +275,7 @@ describe('홈 Organization 노드', () => {
                 locale
             );
 
-            expect(faq[0]?.question).toBe('faq.q0.question|Siglens');
+            expect(faq[0]?.question).toBe('faq.q0.question|SIGLENS');
         }
     );
 });

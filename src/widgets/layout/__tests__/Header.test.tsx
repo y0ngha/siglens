@@ -43,7 +43,7 @@ vi.mock('@/features/ticker-search/ui/HeaderSearch', () => ({
     HeaderSearch: () => <div data-testid="ticker-search" />,
 }));
 vi.mock('@/shared/lib/seo', () => ({
-    SITE_NAME: 'Siglens',
+    SITE_NAME: 'SIGLENS',
 }));
 
 import React from 'react';
@@ -156,7 +156,7 @@ describe('Header', () => {
                 logo.getAttribute('data-href') ?? logo.getAttribute('href')
             ).toBe('https://siglens.io/');
             expect(logo).toHaveAttribute('aria-label', 'SIGLENS 홈');
-            expect(screen.getByText('Siglens').className).toMatch(/\binline\b/);
+            expect(screen.getByText('SIGLENS').className).toMatch(/\binline\b/);
         });
     });
 });

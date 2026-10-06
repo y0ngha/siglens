@@ -50,7 +50,7 @@ describe('root SEO copy is multi-asset (US + KR stocks + crypto)', () => {
     });
 
     /**
-     * 회귀 가드(SEO 감사 라운드 2 finding 3): `ROOT_TITLE`이 " | Siglens" 접미사를
+     * 회귀 가드(SEO 감사 라운드 2 finding 3): `ROOT_TITLE`이 " | SIGLENS" 접미사를
      * 직접 갖고 있어(layout.tsx의 `title.default`는 `title.template`을 거치지
      * 않는다) 65 폭단위로 SEO_TITLE_MAX_WIDTH(55)를 넘고 있었다. 브랜드 접미사를
      * 빼서 symbolMetadataFromSeo가 2,247개 URL에 적용하는 것과 같은 근거를
@@ -64,9 +64,9 @@ describe('root SEO copy is multi-asset (US + KR stocks + crypto)', () => {
 
     it('ROOT_TITLE에 한글 브랜드(시그렌즈)와 영문 표기가 함께 들어간다', () => {
         expect(ROOT_TITLE).toContain(SITE_NAME_KO);
-        expect(ROOT_TITLE).toContain('Siglens');
-        // 접미사 형태(`… | Siglens`)가 아니라 제목 앞머리다.
-        expect(ROOT_TITLE.startsWith(`${SITE_NAME_KO}(Siglens)`)).toBe(true);
+        expect(ROOT_TITLE).toContain('SIGLENS');
+        // 접미사 형태(`… | SIGLENS`)가 아니라 제목 앞머리다.
+        expect(ROOT_TITLE.startsWith(`${SITE_NAME_KO}(SIGLENS)`)).toBe(true);
     });
 
     /**

@@ -1,7 +1,8 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { useCurrentLocale } from '@/shared/i18n/LocaleContext';
+import { brandName, SITE_NAME } from '@/shared/lib/seo';
 import { RouteErrorView } from '@/app/_components/RouteErrorView';
 
 interface ShareErrorProps {
@@ -18,6 +19,7 @@ interface ShareErrorProps {
  */
 export default function ShareError({ error, reset }: ShareErrorProps) {
     const t = useTranslations('app.share');
+    const locale = useCurrentLocale();
     return (
         <RouteErrorView
             error={error}
@@ -25,7 +27,7 @@ export default function ShareError({ error, reset }: ShareErrorProps) {
             logTag="ShareRoute"
             eyebrow={t('error.729779')}
             title={t('error.3cf233')}
-            body={t('error.1dedc8', { v0: SITE_NAME })}
+            body={t('error.1dedc8', { v0: brandName(locale) })}
             retryLabel={t('error.0c767c')}
             homeLabel={t('error.eb2523', { v0: SITE_NAME })}
         />

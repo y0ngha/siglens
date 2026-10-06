@@ -1,5 +1,6 @@
 vi.mock('@/shared/lib/seo', () => ({
-    SITE_NAME: 'Siglens',
+    SITE_NAME: 'SIGLENS',
+    brandName: () => 'SIGLENS',
 }));
 vi.mock('@/widgets/layout/ContactDialog', () => ({
     ContactDialog: () => <div data-testid="contact-dialog" />,

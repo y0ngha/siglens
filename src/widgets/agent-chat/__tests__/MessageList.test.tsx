@@ -119,7 +119,7 @@ describe('MessageList', () => {
         expect(screen.queryByText(/get_quote/)).toBeNull();
         // The symbol the answer read links back to its siglens.io page.
         expect(
-            screen.getByRole('link', { name: /SIGLENS에서 AAPL 보기/ })
+            screen.getByRole('link', { name: /시그렌즈에서 AAPL 보기/ })
         ).toHaveAttribute('href', 'https://siglens.io/AAPL');
         expect(
             screen.getByRole('button', { name: /다시 생성/ })
@@ -157,7 +157,7 @@ describe('MessageList', () => {
         );
         expect(
             await screen.findByRole('link', {
-                name: /SIGLENS에서 삼성전자 보기/,
+                name: /시그렌즈에서 삼성전자 보기/,
             })
         ).toHaveAttribute('href', 'https://siglens.io/005930.KS/overall');
         expect(labels).toHaveBeenCalledWith(['005930.KS']);
@@ -1386,7 +1386,7 @@ describe('MessageList', () => {
 
             expect(
                 await screen.findAllByRole('link', {
-                    name: /SIGLENS에서 삼성전자 보기/,
+                    name: /시그렌즈에서 삼성전자 보기/,
                 })
             ).toHaveLength(2);
             expect(labels).toHaveBeenCalledTimes(1);
@@ -1419,7 +1419,7 @@ describe('MessageList', () => {
                 providers(client, listFor([done, streamingTurn('가')]))
             );
             await screen.findByRole('link', {
-                name: /SIGLENS에서 삼성전자 보기/,
+                name: /시그렌즈에서 삼성전자 보기/,
             });
             relatedCalls.mockClear();
             for (const text of ['가나', '가나다', '가나다라'])
@@ -1437,7 +1437,7 @@ describe('MessageList', () => {
             const first = [answer('a1', '005930.KS')];
             const { rerender } = render(providers(client, listFor(first)));
             await screen.findByRole('link', {
-                name: /SIGLENS에서 삼성전자 보기/,
+                name: /시그렌즈에서 삼성전자 보기/,
             });
 
             rerender(
@@ -1448,7 +1448,7 @@ describe('MessageList', () => {
             expect(labels.mock.calls[1]![0]).toEqual(['AAPL']);
             // 갱신 중에도 이미 받은 이름은 유지된다(심볼로 깜빡이지 않음).
             expect(
-                screen.getByRole('link', { name: /SIGLENS에서 삼성전자 보기/ })
+                screen.getByRole('link', { name: /시그렌즈에서 삼성전자 보기/ })
             ).toBeInTheDocument();
         });
     });

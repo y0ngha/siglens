@@ -112,7 +112,7 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
     buildSymbolSeoContent: vi.fn().mockReturnValue({
         title: 'AAPL 차트',
-        fullTitle: 'AAPL 차트 | Siglens',
+        fullTitle: 'AAPL 차트 | SIGLENS',
         description: 'desc',
         url: 'https://siglens.io/AAPL',
         keywords: ['AAPL'],
@@ -122,12 +122,12 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     // at module-scope, bypassing the mock above when spread via importOriginal).
     resolveSymbolSeoContent: vi.fn().mockReturnValue({
         title: 'AAPL 차트',
-        fullTitle: 'AAPL 차트 | Siglens',
+        fullTitle: 'AAPL 차트 | SIGLENS',
         description: 'desc',
         url: 'https://siglens.io/AAPL',
         keywords: ['AAPL'],
     }),
-    SITE_NAME: 'Siglens',
+    SITE_NAME: 'SIGLENS',
     SITE_URL: 'https://siglens.io',
 }));
 vi.mock('@tanstack/react-query', () => ({
@@ -253,7 +253,7 @@ describe('Symbol page', () => {
             });
 
             // symbolMetadataFromSeo가 title을 { absolute }로 감싸 루트 레이아웃의
-            // title.template("%s | Siglens" 자동 접미사)을 무시한다(Task 6).
+            // title.template("%s | SIGLENS" 자동 접미사)을 무시한다(Task 6).
             expect(metadata.title).toEqual({ absolute: 'AAPL 차트' });
         });
 

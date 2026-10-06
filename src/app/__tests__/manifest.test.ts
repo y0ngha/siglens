@@ -1,5 +1,5 @@
 vi.mock('@/shared/lib/seo', () => ({
-    SITE_NAME: 'Siglens',
+    SITE_NAME: 'SIGLENS',
 }));
 
 import manifest from '@/app/manifest';
@@ -14,8 +14,8 @@ describe('manifest (기본 로케일)', () => {
         const result = await manifest();
 
         expect(result).toBeDefined();
-        expect(result.name).toContain('Siglens');
-        expect(result.short_name).toBe('Siglens');
+        expect(result.name).toContain('SIGLENS');
+        expect(result.short_name).toBe('SIGLENS');
     });
 
     it('sets display to standalone', async () => {

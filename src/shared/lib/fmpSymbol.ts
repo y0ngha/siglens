@@ -8,7 +8,7 @@ const FMP_SYMBOL_ALIASES: Readonly<Record<string, string>> = {
 };
 
 /**
- * Converts a SigLens ticker to FMP's provider-specific notation.
+ * Converts a SIGLENS ticker to FMP's provider-specific notation.
  *
  * US dual-class shares use a hyphen on FMP (`BRK.B` → `BRK-B`), but a raw
  * dot→hyphen replacement would corrupt FMP's international/exchange-suffixed
@@ -20,7 +20,7 @@ const FMP_SYMBOL_ALIASES: Readonly<Record<string, string>> = {
  * FMP notation against the live FMP API (e.g. a profile/quote call returns data
  * for the hyphenated form but not the dotted one). Do not infer aliases by
  * pattern — a blanket dot→hyphen rule is exactly what this map avoids. Each
- * entry should be a SigLens-ticker → verified-FMP-ticker pair.
+ * entry should be a SIGLENS-ticker → verified-FMP-ticker pair.
  */
 export function toFmpSymbol(symbol: string): string {
     return FMP_SYMBOL_ALIASES[symbol] ?? symbol;
