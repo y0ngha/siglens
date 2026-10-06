@@ -54,7 +54,9 @@ export function LogoLockup() {
 
                     `priority`(Next 16에서는 `preload`)를 걸지 않는다. 24px 로고는 어느
                     페이지에서도 LCP 요소가 아닌데, 모든 페이지 `<head>`에 고우선
-                    preload를 박아 LCP 후보(히어로 텍스트·차트)와 대역을 다퉜다.
+                    preload를 박아 LCP 후보(히어로 텍스트·차트)와 대역을 다퉜다
+                    (재현: 아무 페이지 view-source의 `<head>`에서
+                    `<link rel="preload" as="image">` 중 icon96을 찾는다 — 지금은 없어야 한다).
                     크기가 고정이라 늦게 도착해도 레이아웃이 밀리지 않는다. 다만 늘
                     첫 화면(헤더)에 있으므로 `loading="eager"`로 lazy 판정 지연만 없앤다 —
                     preload 링크 없이 보통 우선순위로 받는다.

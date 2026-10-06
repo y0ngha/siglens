@@ -14,6 +14,8 @@ import localFont from 'next/font/local';
 // 남지 않은 채 **모든 페이지에서 woff2를 preload**하고 있었다(2026-10 CWV 감사) —
 // 쓰지 않는 폰트가 첫 로드 대역을 Pretendard·JS와 다퉜다. 모노(`font-mono`)는
 // 헤더 로고·티커·가격이 쓰므로 Geist_Mono만 남긴다.
+// 재현: 아무 페이지 view-source의 `<head>`에서 `<link rel="preload" as="font">`를
+// 세면 된다 — 지금은 Geist Mono·Pretendard 두 개만 나와야 한다.
 const geistMono = Geist_Mono({
     variable: '--font-geist-mono',
     subsets: ['latin'],
@@ -39,8 +41,9 @@ const geistMono = Geist_Mono({
 // preload(기본값 true)를 유지하는 이유 (2026-10 CWV 감사에서 재평가):
 //  • 로케일별로 끌 수 없다. next/font의 preload 링크는 **로더를 import한 레이아웃
 //    모듈 단위**로 빌드 타임에 붙는다 — `[locale]/layout.tsx` 하나가 네 로케일을
-//    모두 렌더하므로 런타임 locale로 분기할 자리가 없다(preload 다른 로더 두 개를
-//    두어도 둘 다 import되는 순간 둘 다 preload된다).
+//    모두 렌더하므로 런타임 locale로 분기할 자리가 없다(preload 설정이 다른 로더를
+//    두 개 만들어 골라 쓰려 해도, 레이아웃이 둘 다 import하는 순간 둘 다
+//    preload된다).
 //  • 비-ko 로케일에서도 쓰인다. `--font-sans`의 1순위라 라틴 본문도 Pretendard다.
 //  • 끄면 CLS 위험이 커진다. 자동 생성되는 fallback(`adjustFontFallback` 기본값
 //    'Arial')은 **라틴 글리프만** 메트릭을 맞춘다 — Arial에 한글이 없어 한글은 그

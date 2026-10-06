@@ -104,7 +104,6 @@ export function usePwaInstall(): UsePwaInstallReturn {
     useEffect(() => {
         const canShow =
             env.isMobile && !env.isStandalone && !env.isInAppBrowser;
-        // 한 번 닫았거나 설치를 수락한 브라우저에는 다시 띄우지 않는다.
         if (!canShow || readBannerDismissed()) return;
 
         const handlePrompt = (e: Event) => {

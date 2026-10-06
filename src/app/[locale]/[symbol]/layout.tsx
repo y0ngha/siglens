@@ -37,9 +37,9 @@ interface SymbolLayoutProps {
 //
 // Sticky-footer jail (SymbolLayoutJail): SymbolLayoutHeader + page main을 viewport
 // 잔여 영역에 맞춘 컨테이너로 감싼다. viewport에서 site Header(`var(--header-h)` = 3.5rem)
-// 를 빼면 jail이 첫 화면의 잔여 영역을 정확히 차지하고, 그 안에서 layout header가 자기 자리 + page main이
-// 나머지를 차지한다. footer는 root layout에서 jail의 형제로 위치하므로 자연스럽게 jail
-// 아래로 push되어 스크롤해야 보인다.
+// 를 빼면 jail이 첫 화면의 잔여 영역을 정확히 차지하고, 그 안에서 layout header가
+// 자기 자리 + page main이 나머지를 차지한다. footer는 root layout에서 jail의 형제로
+// 위치하므로 자연스럽게 jail 아래로 push되어 스크롤해야 보인다.
 //
 // jail 높이는 라우트별로 다르다 (SymbolLayoutJail JSDoc 참조). 차트(index) 라우트는
 // definite `h-[calc(...)]` + overflow-hidden으로 chart+AI를 첫 viewport에 고정해 AI 패널이

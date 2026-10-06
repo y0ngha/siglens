@@ -50,6 +50,10 @@ export function PwaBanner() {
             <div
                 data-testid="pwa-banner-shell"
                 data-pwa-banner
+                // 화면에 떠 있는 고정 오버레이라 랜드마크로 노출해 스크린리더가 이름으로
+                // 찾아가거나 건너뛸 수 있게 한다.
+                role="region"
+                aria-label={t('PwaBanner.31ff7b')}
                 className={cn(
                     SURFACE_CARD,
                     'fixed right-[max(0.75rem,env(safe-area-inset-right))] bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-[max(0.75rem,env(safe-area-inset-left))] z-65 flex h-12 items-center gap-2 pr-1.5 pl-3 shadow-lg sm:right-auto sm:left-4 sm:w-96'

@@ -26,6 +26,9 @@ const PRECACHE_URLS = [OFFLINE_URL];
 // 그대로 남으므로, 상한을 넘으면 **가장 먼저 넣은 항목부터** 지운다(Cache API의
 // keys()는 삽입 순서를 보장한다). 한 배포의 첫 로드에 필요한 청크는 수십 개
 // 수준이라 몇 배포치를 담기에 충분하다.
+// 이 FIFO는 "배포당 청크 수 ≪ MAX_STATIC_ENTRIES"를 가정한다 — 한 배포 몫이 상한에
+// 가까워지면 현재 배포의 청크까지 밀려나 재요청된다. 확인: `yarn build` 뒤
+// `find .next/static/chunks -name '*.js' | wc -l`로 청크 수를 세어 상한과 비교한다.
 const MAX_STATIC_ENTRIES = 150;
 
 const STATIC_PREFIX = '/_next/static/';

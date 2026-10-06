@@ -25,6 +25,10 @@ describe('PwaBanner', () => {
         );
         // globals.css의 FAB 들어올림·시트 펼침 숨김 규칙이 이 속성을 본다.
         expect(shell).toHaveAttribute('data-pwa-banner');
+        // 고정 오버레이는 이름 있는 region 랜드마크로 노출된다.
+        expect(screen.getByRole('region', { name: '앱 설치 안내' })).toBe(
+            shell
+        );
         expect(
             screen.getByRole('button', { name: '설치하기' })
         ).toBeInTheDocument();
