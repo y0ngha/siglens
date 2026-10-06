@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { usePathname } from 'next/navigation';
 import {
     NavigationPendingProvider,
-    useNavigationPending,
+    useStartNavigation,
 } from '@/shared/model/NavigationPendingContext';
 import { RoutePendingSlot } from '../RoutePendingSlot';
 
@@ -17,7 +17,7 @@ vi.mock('@/app/[locale]/[symbol]/SymbolEntrySkeleton', () => ({
 const mockPathname = usePathname as ReturnType<typeof vi.fn>;
 
 function Go({ to }: { to: string }) {
-    const { startNavigation } = useNavigationPending();
+    const startNavigation = useStartNavigation();
     return <button onClick={() => startNavigation(to)}>{to}</button>;
 }
 

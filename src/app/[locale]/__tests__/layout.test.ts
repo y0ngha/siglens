@@ -1,13 +1,16 @@
 // layout.tsx는 컴포넌트 트리 전체를 끌고 오므로, `metadata`만 검증하기 위해
 // 폰트 로더와 하위 위젯/기능 모듈을 전부 stub으로 대체한다.
 vi.mock('next/font/google', () => ({
-    Geist: () => ({ variable: '--font-geist-sans' }),
     Geist_Mono: () => ({ variable: '--font-geist-mono' }),
 }));
 vi.mock('next/font/local', () => ({
     default: () => ({ variable: '--font-pretendard' }),
 }));
-vi.mock('next/script', () => ({ default: () => null }));
+vi.mock('next/script', () => ({
+    default: function Script() {
+        return null;
+    },
+}));
 vi.mock('@/app/_components/AuthSessionHeaderClient', () => ({
     AuthSessionHeaderClient: () => null,
 }));
@@ -27,7 +30,13 @@ vi.mock('@/shared/lib/og', () => ({
     OG_IMAGE_HEIGHT: 630,
 }));
 
-import { generateMetadata, generateStaticParams } from '@/app/[locale]/layout';
+import RootLayout, {
+    generateMetadata,
+    generateStaticParams,
+} from '@/app/[locale]/layout';
+import Script from 'next/script';
+import { isValidElement, type ReactElement, type ReactNode } from 'react';
+import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
 import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 import { brandIntroName, SITE_NAME, SITE_NAME_KO } from '@/shared/lib/seo';
 import koMessages from '@/../messages/ko.json';
@@ -121,5 +130,50 @@ describe('RootLayout 로케일', () => {
     it('레이아웃은 alternates를 선언하지 않는다 — 페이지가 교체해 버린다', async () => {
         const metadata = await metadataFor('ko');
         expect(metadata.alternates).toBeUndefined();
+    });
+});
+
+interface ElementProps {
+    children?: ReactNode;
+    [key: string]: unknown;
+}
+
+/** 서버 컴포넌트가 돌려준 엘리먼트 트리를 깊이 우선으로 펼친다(렌더 없이). */
+function collectElements(node: ReactNode): ReactElement<ElementProps>[] {
+    if (Array.isArray(node)) return node.flatMap(collectElements);
+    if (!isValidElement<ElementProps>(node)) return [];
+    return [node, ...collectElements(node.props.children)];
+}
+
+/**
+ * 헤더가 테마 토글을 그리는데 이 호스트에만 페인트 전 부트스트랩이 없어서, 라이트를
+ * 고른 사용자도 새로고침마다 다크로 돌아왔다. ai·lp 레이아웃과 같은 방식으로 싣는다.
+ */
+describe('RootLayout 테마 부트스트랩', () => {
+    async function renderTree() {
+        return (await RootLayout({
+            children: null,
+            params: Promise.resolve({ locale: 'ko' }),
+        })) as ReactElement<ElementProps>;
+    }
+
+    it('THEME_INIT_SCRIPT를 beforeInteractive로 싣는다', async () => {
+        const scripts = collectElements(await renderTree()).filter(
+            element => element.type === Script
+        );
+        expect(scripts).toContainEqual(
+            expect.objectContaining({
+                props: expect.objectContaining({
+                    strategy: 'beforeInteractive',
+                    dangerouslySetInnerHTML: { __html: THEME_INIT_SCRIPT },
+                }),
+            })
+        );
+    });
+
+    it('<html>은 스크립트가 찍는 속성 차이로 인한 하이드레이션 경고만 억제한다', async () => {
+        const html = await renderTree();
+        expect(html.type).toBe('html');
+        expect(html.props.suppressHydrationWarning).toBe(true);
     });
 });

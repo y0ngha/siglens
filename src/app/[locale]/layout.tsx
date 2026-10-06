@@ -22,6 +22,7 @@ import { NavigationPendingProvider } from '@/shared/model/NavigationPendingConte
 import { RoutePendingSlot } from '@/app/_components/RoutePendingSlot';
 import { ADSENSE_ENABLED } from '@/shared/lib/adsense';
 import { CF_BEACON_TOKEN } from '@/shared/lib/cloudflareAnalytics';
+import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
 import { GoogleAdsTag } from '@/app/_components/GoogleAdsTag';
 import { GOOGLE_ADS_ID } from '@/shared/config/googleAds';
 import {
@@ -185,10 +186,26 @@ export default async function RootLayout({
         <html
             lang={LOCALE_HREFLANG[locale]}
             className={`${FONT_VARIABLE_CLASSES} h-full overflow-x-hidden antialiased scheme-dark`}
+            // `THEME_INIT_SCRIPT`가 첫 페인트 전에 `<html>`에 `data-theme`과 인라인
+            // `color-scheme`을 찍는다. 서버 HTML에는 둘 다 없으므로 React가 불일치로
+            // 경고한다 — 의도된 차이라 이 요소에서만 억제한다(자식 트리에는 영향 없음).
+            // `scheme-dark` 클래스는 스크립트가 못 도는 환경의 기본값으로 남는다 —
+            // 인라인 style이 클래스보다 우선하므로 라이트 사용자에게서 둘이 다투지 않는다.
+            suppressHydrationWarning
         >
             {/* overflow-x-hidden on both html and body prevents fixed/transformed elements (mobile drawer)
                 from extending the document scrollWidth past the viewport edge. */}
             <body className="flex min-h-full flex-col overflow-x-hidden">
+                {/* 헤더가 테마 토글을 렌더하는데 이 호스트에만 부트스트랩이 없어서, 라이트를
+                    고른 사용자도 새로고침마다 다크로 돌아왔다(ai·lp·not-found 레이아웃은
+                    이미 같은 스크립트를 싣는다). `next/script`의 beforeInteractive는
+                    하이드레이션 전에 실행돼 테마 깜빡임도 막는다 — 근거는
+                    `ai/[locale]/layout.tsx`와 `shared/lib/theme.ts`. */}
+                <Script
+                    id="theme-init"
+                    strategy="beforeInteractive"
+                    dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
+                />
                 <SiteJsonLd />
                 {/* 루트에 마운트되는 클라이언트 컴포넌트(헤더·푸터·배너·모달)가 쓰는
                     네임스페이스만 주입한다. 전체 카탈로그를 넘기면 first-load JS가

@@ -204,11 +204,9 @@
        깨지므로 별도 토큰으로 고정한다. */
     --color-vaul-handle: #e2e2e4;
 
-    /* Layout chrome heights — site Header(h-14) 고정값. PwaBanner처럼 dynamic하게
-       변하는 chrome은 자체 컴포넌트가 mount/unmount 시 root에 CSS variable을 토글한다
-       (예: PwaBanner의 --pwa-banner-h). 차트 페이지의 sticky-footer jail은 이 변수들을
-       조합해 `calc(100dvh - var(--header-h) - var(--pwa-banner-h, 0px))`로 viewport
-       잔여 영역을 정확히 계산한다. */
+    /* Layout chrome heights — site Header(h-14) 고정값. 차트 페이지의 sticky-footer
+       jail은 `calc(100dvh - var(--header-h))`로 viewport 잔여 영역을 계산한다.
+       PWA 설치 배너는 하단 고정 오버레이라 흐름 높이에 들어가지 않는다. */
     --header-h: 3.5rem;
 
     /* `/[symbol]` 크롬(브레드크럼 행 + 탭 행) 높이. site Header와 달리 jail
@@ -476,15 +474,14 @@
      * 있는데, 이 변수는 `h-(--symbol-chart-h)` 형태로만 참조된다.
      */
     --symbol-chart-h: calc(
-        100dvh - var(--header-h, 3.5rem) - var(--pwa-banner-h, 0px) -
-            var(--symbol-chrome-h, 7.75rem)
+        100dvh - var(--header-h, 3.5rem) - var(--symbol-chrome-h, 7.75rem)
     );
 }
 
 body {
     /* Tailwind v4 preflight가 --font-sans를 자동 매핑하지만, 한글 폰트 fallback이
        실제로 발동되는지 시각 확인이 어려워 명시적으로 한 번 더 박는다. var() 체인
-       자체는 globals.css 상단 @theme에서 정의된 Geist→Pretendard→OS 순서. */
+       자체는 globals.css 상단 @theme에서 정의된 Pretendard→OS 순서. */
     font-family: var(--font-sans);
     color: var(--color-secondary-50);
 
@@ -655,15 +652,32 @@ body:has([data-vaul-drawer]) [data-mobile-sheet-placeholder] {
 }
 
 /*
- * 모바일 분석 시트가 PEEK 밖(HALF/FULL)으로 펼쳐지면 Ask-AI FAB을 숨긴다.
+ * 모바일 분석 시트가 PEEK 밖(HALF/FULL)으로 펼쳐지면 Ask-AI FAB과 PWA 설치 배너를 숨긴다.
  *
- * FAB은 z-60, 시트는 z-50이라 펼친 시트 위로 떠서 분석 본문 오른쪽 아래 글자를
+ * FAB(z-60)·배너(z-65)는 시트(z-50)보다 위라 펼친 시트 위로 떠서 분석 본문 아래쪽 글자를
  * 가린다. `MobileAnalysisSheet`가 PEEK가 아닐 때만 `data-sheet-expanded`를 붙이므로,
  * PEEK(띠만 보임)에서는 FAB이 그대로 남는다. 데스크톱은 시트(`md:hidden`)가 없어
  * 이 규칙이 매칭되지 않는다.
  */
-body:has([data-vaul-drawer][data-sheet-expanded]) [data-ask-ai-fab] {
+body:has([data-vaul-drawer][data-sheet-expanded]) [data-ask-ai-fab],
+body:has([data-vaul-drawer][data-sheet-expanded]) [data-pwa-banner] {
     display: none;
+}
+
+/*
+ * PWA 설치 배너(`features/pwa-install/ui/PwaBanner`)가 떠 있는 동안 모바일에서
+ * Ask-AI FAB을 배너 위로 올린다.
+ *
+ * 둘 다 화면 오른쪽 아래(0.75rem + safe-area)에 고정된다. 배너는 모바일에서 전폭
+ * 카드(h-12 = 3rem)라 FAB을 그 높이 + 간격(0.5rem)만큼 띄운다. sm 이상에서는
+ * 배너가 왼쪽 아래 `w-96`이라 겹치지 않으므로 FAB 자리는 그대로 둔다
+ * (`AskAiFab` JSDoc의 위치 계약). 배너가 닫히면 `:has()`가 풀려 원위치로 돌아온다.
+ * 펼친 시트에서는 위 규칙이 둘 다 숨긴다.
+ */
+@media (width < 40rem) {
+    body:has([data-pwa-banner]) [data-ask-ai-fab] {
+        bottom: calc(0.75rem + env(safe-area-inset-bottom) + 3.5rem);
+    }
 }
 
 /*

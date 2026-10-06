@@ -46,4 +46,18 @@ describe('AdBanner', () => {
         expect(ins).toHaveAttribute('data-ad-client', 'ca-pub-1234567890');
         expect(ins).toHaveAttribute('data-ad-slot', 'slot-progress');
     });
+
+    /**
+     * 자동 크기 광고는 채워질 때 높이가 정해져 아래 콘텐츠를 민다. 높이를 미리
+     * 잡지 않으면 광고 도착이 그대로 CLS가 된다.
+     */
+    it('reserves a min-height on the ad slot to avoid layout shift', () => {
+        const { container } = render(
+            <AdBanner isFreeUser={true} slot="analysis-progress" />
+        );
+
+        expect(container.querySelector('ins.adsbygoogle')?.className).toContain(
+            'min-h-62.5'
+        );
+    });
 });

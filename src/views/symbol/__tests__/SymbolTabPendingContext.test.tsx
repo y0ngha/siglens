@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { usePathname } from 'next/navigation';
 import {
     NavigationPendingProvider,
-    useNavigationPending,
+    useStartNavigation,
 } from '@/shared/model/NavigationPendingContext';
 import {
     SymbolTabPendingSlot,
@@ -16,7 +16,7 @@ vi.mock('next/navigation', () => ({
 const mockPathname = usePathname as ReturnType<typeof vi.fn>;
 
 function Probe() {
-    const { startNavigation } = useNavigationPending();
+    const startNavigation = useStartNavigation();
     const pendingTab = usePendingSymbolTab();
     return (
         <>
