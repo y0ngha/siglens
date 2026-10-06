@@ -1,5 +1,20 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import type { Options } from 'react-markdown';
+import { describe, expect, it, vi } from 'vitest';
+
+/** 블록별 파싱 횟수를 세려고 react-markdown을 그대로 감싼다(동작은 원본 그대로). */
+const { parsed } = vi.hoisted(() => ({ parsed: vi.fn() }));
+vi.mock('react-markdown', async importOriginal => {
+    const actual = await importOriginal<typeof import('react-markdown')>();
+    return {
+        ...actual,
+        default: (props: Options) => {
+            parsed(props.children);
+            return actual.default(props);
+        },
+    };
+});
+
 import { AgentMarkdown } from '@/widgets/agent-chat/AgentMarkdown';
 
 describe('AgentMarkdown', () => {
@@ -111,5 +126,58 @@ describe('AgentMarkdown', () => {
         const pre = container.querySelector('pre');
         expect(pre).not.toBeNull();
         expect(pre!.querySelector('code')?.textContent).toBe('block code\n');
+    });
+
+    describe('블록 단위 파싱 (스트리밍 O(n²) 방지)', () => {
+        it('답변이 끝에서 자라면 끝난 블록은 다시 파싱하지 않는다', () => {
+            const { rerender } = render(
+                <AgentMarkdown>{'첫 문단\n\n둘째 문단'}</AgentMarkdown>
+            );
+            parsed.mockClear();
+            rerender(
+                <AgentMarkdown>{'첫 문단\n\n둘째 문단 계속'}</AgentMarkdown>
+            );
+            expect(parsed.mock.calls.map(([source]) => source)).toEqual([
+                '둘째 문단 계속',
+            ]);
+        });
+
+        it('블록들은 감싸는 요소 없이 한 컨테이너의 형제로 놓인다 (first:/last: 여백 유지)', () => {
+            const { container } = render(
+                <AgentMarkdown>{'하나\n\n둘\n\n셋'}</AgentMarkdown>
+            );
+            const wrapper = container.firstElementChild!;
+            expect([...wrapper.children].map(child => child.tagName)).toEqual([
+                'P',
+                'P',
+                'P',
+            ]);
+        });
+
+        it('느슨한 번호 목록은 하나의 <ol>로 남는다', () => {
+            const { container } = render(
+                <AgentMarkdown>{'1. 하나\n\n2. 둘\n\n3. 셋'}</AgentMarkdown>
+            );
+            expect(container.querySelectorAll('ol')).toHaveLength(1);
+            expect(container.querySelectorAll('li')).toHaveLength(3);
+        });
+
+        it('게으른 이어 쓰기 뒤에 이어지는 항목도 하나의 <ul>로 남는다', () => {
+            const { container } = render(
+                <AgentMarkdown>{'- a\nlazy\n\n- b'}</AgentMarkdown>
+            );
+            expect(container.querySelectorAll('ul')).toHaveLength(1);
+            expect(container.querySelectorAll('li')).toHaveLength(2);
+        });
+
+        it('빈 줄을 품은 펜스 코드는 하나의 <pre>로 남는다', () => {
+            const { container } = render(
+                <AgentMarkdown>{'```\n하나\n\n둘\n```'}</AgentMarkdown>
+            );
+            expect(container.querySelectorAll('pre')).toHaveLength(1);
+            expect(container.querySelector('pre code')?.textContent).toBe(
+                '하나\n\n둘\n'
+            );
+        });
     });
 });

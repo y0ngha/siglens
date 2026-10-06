@@ -19,6 +19,7 @@ import {
     vi,
 } from 'vitest';
 import { AGENT_ERROR_CODES } from '@/features/agent-chat/lib/errorCodes';
+import { BELOW_LG_MEDIA_QUERY } from '@/shared/config/viewport';
 import ko from '../../../../messages/ko.json';
 
 const router = vi.hoisted(() => ({ refresh: vi.fn(), push: vi.fn() }));
@@ -49,6 +50,7 @@ interface MockStreamMessage {
     id: string;
     role: 'user' | 'assistant';
     content: string;
+    followUps?: readonly string[];
     seq?: number;
     tools: unknown[];
     status: 'complete' | 'streaming' | 'aborted' | 'error';
@@ -141,6 +143,43 @@ const originalScrollIntoView = Element.prototype.scrollIntoView;
 afterAll(() => {
     Element.prototype.scrollIntoView = originalScrollIntoView;
 });
+
+/**
+ * `MessageList`는 `next/dynamic` 지연 청크다(빈 랜딩의 first-load JS에서 빼려고).
+ * 파일의 첫 테스트 전에 한 번 받아 두면 — React.lazy가 풀린 결과를 기억한다 — 이후
+ * 렌더는 동기라 각 테스트가 본문을 곧바로 찾을 수 있다. 테스트 순서에 기대지 않으려고
+ * 여기서 명시적으로 데운다.
+ */
+beforeAll(async () => {
+    Element.prototype.scrollIntoView = vi.fn();
+    const { unmount } = renderShell();
+    // 첫 로드는 테스트 변환(react-markdown 포함)까지 겹쳐 기본 1초를 넘길 수 있다.
+    await screen.findByRole('log', {}, { timeout: 10_000 });
+    unmount();
+}, 15_000);
+
+/** `lg` 미만으로 보이게 한다 — 모바일 서랍(vaul)은 그때만 불러온다. */
+const originalMatchMedia = Object.getOwnPropertyDescriptor(
+    window,
+    'matchMedia'
+);
+function stubBelowLg(belowLg: boolean): void {
+    Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        writable: true,
+        value: (query: string) => ({
+            matches: query === BELOW_LG_MEDIA_QUERY ? belowLg : false,
+            media: query,
+            addEventListener: () => {},
+            removeEventListener: () => {},
+        }),
+    });
+}
+function restoreMatchMedia(): void {
+    if (originalMatchMedia)
+        Object.defineProperty(window, 'matchMedia', originalMatchMedia);
+    else Reflect.deleteProperty(window, 'matchMedia');
+}
 
 describe('ChatShell error banner', () => {
     beforeAll(() => {
@@ -315,14 +354,26 @@ describe('ChatShell chrome', () => {
     beforeEach(() => {
         mockStream.error = null;
         mockStream.status = 'idle';
+        stubBelowLg(true);
     });
+    afterEach(() => {
+        restoreMatchMedia();
+    });
+
+    /** vaul 서랍은 지연 청크라 열린 뒤 한 박자 늦게 붙는다. */
+    const findDrawer = (): Promise<HTMLElement> =>
+        waitFor(() => {
+            const drawer = document.getElementById('agent-chat-sidebar-drawer');
+            expect(drawer).not.toBeNull();
+            return drawer!;
+        });
 
     it('renders no header landmark of its own (the shared Header owns that)', () => {
         renderShell();
         expect(screen.queryByRole('banner')).toBeNull();
     });
 
-    it('the mobile bar opens the sidebar drawer', () => {
+    it('the mobile bar opens the sidebar drawer', async () => {
         renderShell();
         const trigger = screen.getByRole('button', {
             name: /대화 목록/,
@@ -333,13 +384,61 @@ describe('ChatShell chrome', () => {
         // vaul renders `Drawer.Content` into a portal once open; assert the
         // drawer's own (sr-only) title becomes reachable rather than relying
         // on any particular internal vaul DOM structure.
-        expect(screen.getAllByText('대화 목록').length).toBeGreaterThanOrEqual(
-            2
+        await waitFor(() =>
+            expect(
+                screen.getAllByText('대화 목록').length
+            ).toBeGreaterThanOrEqual(2)
         ); // mobile-bar button label + drawer title
     });
 
+    it('데스크톱(lg 이상)에서는 vaul 서랍을 불러오지도 그리지도 않는다', async () => {
+        stubBelowLg(false);
+        renderShell();
+        fireEvent.click(screen.getByRole('button', { name: /대화 목록/ }));
+        // 지연 청크가 붙을 틈을 준 뒤에도 서랍이 없어야 한다.
+        await act(async () => {
+            await new Promise(resolve => setTimeout(resolve, 0));
+        });
+        expect(document.getElementById('agent-chat-sidebar-drawer')).toBeNull();
+    });
+
+    it('서랍이 열린 채 lg 이상으로 넓어지면 닫힌다 (다시 좁혀도 저절로 열리지 않는다)', async () => {
+        const listeners = new Set<() => void>();
+        let belowLg = true;
+        Object.defineProperty(window, 'matchMedia', {
+            configurable: true,
+            writable: true,
+            value: (query: string) => ({
+                get matches() {
+                    return query === BELOW_LG_MEDIA_QUERY ? belowLg : false;
+                },
+                media: query,
+                addEventListener: (_: string, fn: () => void) =>
+                    listeners.add(fn),
+                removeEventListener: (_: string, fn: () => void) =>
+                    listeners.delete(fn),
+            }),
+        });
+        const resize = (next: boolean): void => {
+            belowLg = next;
+            for (const fn of listeners) fn();
+        };
+        renderShell();
+        const trigger = screen.getByRole('button', { name: /대화 목록/ });
+        fireEvent.click(trigger);
+        await findDrawer();
+
+        act(() => resize(false));
+        expect(trigger).toHaveAttribute('aria-expanded', 'false');
+        expect(document.getElementById('agent-chat-sidebar-drawer')).toBeNull();
+
+        act(() => resize(true));
+        expect(trigger).toHaveAttribute('aria-expanded', 'false');
+        expect(document.getElementById('agent-chat-sidebar-drawer')).toBeNull();
+    });
+
     /** The drawer is non-modal, so vaul itself ignores outside presses (2026-09-15 사용자 요청). */
-    it('closes the mobile drawer when the user presses outside it', () => {
+    it('closes the mobile drawer when the user presses outside it', async () => {
         wrap(
             <ChatShell
                 conversationId="c1"
@@ -356,7 +455,7 @@ describe('ChatShell chrome', () => {
         fireEvent.click(trigger);
         expect(trigger).toHaveAttribute('aria-expanded', 'true');
 
-        const drawer = document.getElementById('agent-chat-sidebar-drawer')!;
+        const drawer = await findDrawer();
         // vaul starts a drag on pointerdown inside the drawer and captures the
         // pointer; jsdom has no pointer capture API.
         drawer.setPointerCapture = vi.fn();
@@ -368,7 +467,7 @@ describe('ChatShell chrome', () => {
         expect(trigger).toHaveAttribute('aria-expanded', 'false');
     });
 
-    it('clicking a conversation link in the mobile drawer navigates and closes the drawer', () => {
+    it('clicking a conversation link in the mobile drawer navigates and closes the drawer', async () => {
         router.push.mockClear();
         wrap(
             <ChatShell
@@ -389,7 +488,7 @@ describe('ChatShell chrome', () => {
         // Scope to the drawer's own content, not the desktop `aside` copy of
         // the same rail — both render the link, but only the drawer's is the
         // one under test here.
-        const drawer = document.getElementById('agent-chat-sidebar-drawer')!;
+        const drawer = await findDrawer();
         const link = within(drawer).getByRole('link', { name: '대화 아홉' });
         fireEvent.click(link, { button: 0 });
         expect(router.push).toHaveBeenCalledWith('/c/c9');
@@ -534,6 +633,36 @@ describe('ChatShell suggestions passthrough (Task S4)', () => {
         mockStream.messages = originalMessages;
     });
 
+    /** `requestIdleCallback`/`cancelIdleCallback`을 갈아 끼우고 예약 호출을 돌려준다. */
+    function withIdleStub(run: (idle: ReturnType<typeof vi.fn>) => void): void {
+        const originalIdle = window.requestIdleCallback;
+        const originalCancel = window.cancelIdleCallback;
+        const idle = vi.fn(() => 1);
+        window.requestIdleCallback = idle as unknown as typeof originalIdle;
+        window.cancelIdleCallback = vi.fn();
+        try {
+            run(idle);
+        } finally {
+            window.requestIdleCallback = originalIdle;
+            window.cancelIdleCallback = originalCancel;
+        }
+    }
+
+    it('빈 랜딩은 본문 청크를 유휴 시간에 미리 받아 둔다 (첫 전송 때 빈 자리 없음)', () => {
+        withIdleStub(idle => {
+            renderShell();
+            expect(idle).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    it('대화가 이미 있으면 미리 받기를 예약하지 않는다', () => {
+        mockStream.messages = originalMessages;
+        withIdleStub(idle => {
+            renderShell();
+            expect(idle).not.toHaveBeenCalled();
+        });
+    });
+
     it('renders the AI-generated suggestions as buttons', async () => {
         await act(async () => {
             wrap(
@@ -657,8 +786,9 @@ describe('ChatShell — MessageList key (spec §3.9)', () => {
             {
                 id: '2',
                 role: 'assistant' as const,
-                content:
-                    '답변입니다.\n[[followups]] 실적은 어때? | 뉴스도 알려줘',
+                // 서버가 마커 줄을 떼어 `followUps`로 넘긴 모양(`useAgentStream`).
+                content: '답변입니다.',
+                followUps: ['실적은 어때?', '뉴스도 알려줘'],
                 tools: [],
                 status: 'complete' as const,
             },

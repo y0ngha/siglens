@@ -1,6 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+    startTransition,
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
 import type { ChatMessageView } from '@/entities/chat-conversation/model';
 import {
     AGENT_TIME_ZONE_HEADER,
@@ -64,6 +70,33 @@ class HttpError extends Error {
  * scratch every chunk. 1MB is far past any real turn's frame size.
  */
 const MAX_BUFFER_CHARS = 1_000_000;
+
+/**
+ * 텍스트 조각을 한 프레임에 한 번만 화면에 반영한다(rAF). `requestAnimationFrame`이
+ * 없는 환경(일부 테스트·워커)에서는 한 프레임 남짓한 타이머로 대신한다.
+ */
+const FRAME_FALLBACK_MS = 16;
+type FrameHandle =
+    | { kind: 'raf'; id: number }
+    | { kind: 'timeout'; id: ReturnType<typeof setTimeout> };
+
+function scheduleFrame(callback: () => void): FrameHandle {
+    if (typeof requestAnimationFrame === 'function')
+        return { kind: 'raf', id: requestAnimationFrame(callback) };
+    return { kind: 'timeout', id: setTimeout(callback, FRAME_FALLBACK_MS) };
+}
+
+function cancelFrame(handle: FrameHandle): void {
+    if (handle.kind === 'raf') cancelAnimationFrame(handle.id);
+    else clearTimeout(handle.id);
+}
+
+/** `done` 프레임의 `followUps` — 문자열 배열만 받는다(그 밖의 값은 칩 없음). */
+function followUpsOf(raw: unknown): string[] {
+    return Array.isArray(raw)
+        ? raw.filter((item): item is string => typeof item === 'string')
+        : [];
+}
 
 /** DB rows → UI messages: tool rows fold into the preceding assistant bubble. */
 export function fromViews(views: ChatMessageView[]): AgentUiMessage[] {
@@ -133,6 +166,7 @@ export function fromViews(views: ChatMessageView[]): AgentUiMessage[] {
             prev.seq = v.seq;
             prev.content = v.content;
             prev.status = v.status === 'aborted' ? 'aborted' : 'complete';
+            if (v.followUps) prev.followUps = v.followUps;
             continue;
         }
         out.push({
@@ -142,6 +176,7 @@ export function fromViews(views: ChatMessageView[]): AgentUiMessage[] {
             content: v.content,
             tools: [],
             status: v.status === 'aborted' ? 'aborted' : 'complete',
+            ...(v.followUps ? { followUps: v.followUps } : {}),
         });
     }
     return out;
@@ -225,6 +260,42 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
             const controller = new AbortController();
             controllerRef.current = controller;
             let reader: ReadableStreamDefaultReader<string> | undefined;
+            /**
+             * `text` 조각 모으기. 조각마다 `setMessages`를 부르면 기본 우선순위 렌더가
+             * 조각 수만큼 돌고, 그때마다 마크다운이 자라는 답변 전체를 다시 파싱해
+             * Composer 타이핑과 경쟁했다. 프레임당 한 번만, 그것도 transition으로
+             * 반영해 입력이 먼저 처리되게 한다.
+             */
+            let pendingText = '';
+            let frame: FrameHandle | null = null;
+            /**
+             * 모아 둔 조각을 반영한다. `urgent`는 구조가 바뀌는 프레임(도구 시작·끝,
+             * done, 오류·중단) 직전의 동기 반영이다 — 그 처리가 지금까지의 글을 읽으므로
+             * (예: 도구 시작 시 `draft` 판정) transition으로 미뤄지면 안 된다.
+             */
+            const flushText = (urgent: boolean): void => {
+                if (frame !== null) {
+                    cancelFrame(frame);
+                    frame = null;
+                }
+                if (pendingText === '') return;
+                const delta = pendingText;
+                pendingText = '';
+                // 더 새 호출이 이미 자리를 차지했으면 그쪽 말풍선에 붙이지 않고 버린다.
+                if (controllerRef.current !== controller) return;
+                const apply = (): void =>
+                    patchLast(m => ({ ...m, content: m.content + delta }));
+                if (urgent) apply();
+                else startTransition(apply);
+            };
+            const queueText = (delta: string): void => {
+                pendingText += delta;
+                if (frame === null)
+                    frame = scheduleFrame(() => {
+                        frame = null;
+                        flushText(false);
+                    });
+            };
             setStatus('streaming');
             setError(null);
             setMessages(prev => [
@@ -274,6 +345,11 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
                     for (const raw of frames) {
                         const { event, data } = parseSseFrame(raw);
                         if (data === null) continue;
+                        if (event === 'text') {
+                            queueText(String(data.delta ?? ''));
+                            continue;
+                        }
+                        flushText(true);
                         if (event === 'meta') {
                             if (
                                 typeof data.conversationId === 'string' &&
@@ -309,11 +385,6 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
                                     return next;
                                 });
                             }
-                        } else if (event === 'text') {
-                            patchLast(m => ({
-                                ...m,
-                                content: m.content + String(data.delta ?? ''),
-                            }));
                         } else if (event === 'tool_start') {
                             // Text streamed before a tool call is narration, not the
                             // answer (see `fromViews`) — drop it so the bubble shows
@@ -376,6 +447,13 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
                                     data.assistantMessageId !== ''
                                         ? data.assistantMessageId
                                         : m.id,
+                                // 서버가 후속 질문 마커 줄을 뗀 최종 본문. 스트리밍 중엔
+                                // 마커일 수 있는 끝줄을 보류했으므로, 여기서 확정값으로 맞춘다.
+                                content:
+                                    typeof data.body === 'string'
+                                        ? data.body
+                                        : m.content,
+                                followUps: followUpsOf(data.followUps),
                                 draft: undefined,
                                 status: 'complete',
                                 truncated: data.stopReason === 'max_tokens',
@@ -389,6 +467,7 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
                         }
                     }
                 }
+                flushText(true);
                 setStatus('idle');
             } catch (e) {
                 // A newer call already replaced this one (double submit, fast retry):
@@ -396,6 +475,8 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
                 // restore a stale transcript over the newer turn. The `finally` below still
                 // releases THIS call's stream (local `controller`, never the newer one).
                 if (controllerRef.current !== controller) return;
+                // 중단·오류여도 이미 받은 글은 남긴다(아래 상태 표시보다 먼저 반영).
+                flushText(true);
                 if (e instanceof TurnFrameError) {
                     // The turn reported a failure after already streaming (partial
                     // text may exist, and a partial assistant row may already be
@@ -446,6 +527,8 @@ export function useAgentStream(options: Options): UseAgentStreamResult {
                 // already have replaced) never cross-cancels a different call.
                 controller.abort();
                 void reader?.cancel().catch(() => {});
+                // 반영되지 않은 프레임 예약이 남았으면 거둔다(언마운트 뒤 setState 방지).
+                if (frame !== null) cancelFrame(frame);
             }
         },
         [conversationId, patchLast]

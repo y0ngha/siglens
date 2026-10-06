@@ -311,12 +311,42 @@ describe('proxy — ai host', () => {
         expect(mockNext).toHaveBeenCalledTimes(1);
         expect(mockIntlMiddleware).not.toHaveBeenCalled();
     });
-    it('메인 호스트 /ai/* → ai 호스트 301', async () => {
+    it('메인 호스트 /ai/* → ai 호스트 301 (내부 라우트 모양의 기본 로케일은 떼어 한 홉에 끝낸다)', async () => {
         await proxy(makeRequest('siglens.io', '/ai/ko/c/abc'));
         expect(mockRedirect).toHaveBeenCalledTimes(1);
         const [url, status] = mockRedirect.mock.calls[0]!;
-        expect((url as URL).toString()).toBe('https://ai.siglens.io/ko/c/abc');
+        expect((url as URL).toString()).toBe('https://ai.siglens.io/c/abc');
         expect(status).toBe(301);
+    });
+    it('메인 호스트 /ai/en/* → ai 호스트 /en/* 301', async () => {
+        await proxy(makeRequest('siglens.io', '/ai/en/c/abc'));
+        const [url] = mockRedirect.mock.calls[0]!;
+        expect((url as URL).toString()).toBe('https://ai.siglens.io/en/c/abc');
+    });
+
+    describe('ai 호스트 /ko/* — 기본 로케일 접두사는 메인 호스트처럼 301로 뗀다', () => {
+        it.each([
+            ['/ko', 'https://ai.siglens.io/'],
+            ['/ko/about', 'https://ai.siglens.io/about'],
+            ['/ko/c/abc', 'https://ai.siglens.io/c/abc'],
+            ['/ko/?q=hi&gclid=g1', 'https://ai.siglens.io/?q=hi&gclid=g1'],
+        ])('%s → %s', async (path, expected) => {
+            await proxy(makeRequest('ai.siglens.io', path));
+            expect(mockRewrite).not.toHaveBeenCalled();
+            expect(mockRedirect).toHaveBeenCalledTimes(1);
+            const [url, status] = mockRedirect.mock.calls[0]!;
+            expect((url as URL).toString()).toBe(expected);
+            expect(status).toBe(301);
+        });
+
+        it('다른 로케일 접두사(/en)와 접두사 없는 경로는 리다이렉트 없이 rewrite한다', async () => {
+            await proxy(makeRequest('ai.siglens.io', '/en/about'));
+            await proxy(makeRequest('ai.siglens.io', '/about'));
+            expect(mockRedirect).not.toHaveBeenCalled();
+            expect(
+                mockRewrite.mock.calls.map(([u]) => (u as URL).pathname)
+            ).toEqual(['/ai/en/about', '/ai/ko/about']);
+        });
     });
 
     /**

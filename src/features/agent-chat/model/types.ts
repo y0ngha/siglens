@@ -26,4 +26,9 @@ export interface AgentUiMessage {
      * silently vanishing. Streaming-only; never persisted.
      */
     draft?: string;
+    /**
+     * 답변 끝줄에서 서버가 떼어 낸 후속 질문 칩 항목(SSE `done`의 `followUps`,
+     * 저장된 대화는 `ChatMessageView.followUps`). `content`에는 그 마커 줄이 없다.
+     */
+    followUps?: readonly string[];
 }

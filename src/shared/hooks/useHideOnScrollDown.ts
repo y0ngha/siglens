@@ -1,6 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
+import { BELOW_LG_MEDIA_QUERY } from '@/shared/config/viewport';
 
 /** Pixels of travel in one direction before the chrome flips — ignores jitter. */
 const SCROLL_DIRECTION_THRESHOLD_PX = 8;
@@ -18,11 +19,11 @@ const USER_INPUT_EVENTS = [
     'keydown',
 ] as const;
 
-/**
- * Matches the `lg` breakpoint the callers already hide their chrome at
- * (`Header.tsx`'s `max-lg:-translate-y-full`, `ChatShell.tsx`'s `lg:hidden`
- * bar). Callers apply `inert` to the whole element when this hook reports
- * `true`, and `inert` cannot be scoped to a media query the way those
+/*
+ * `BELOW_LG_MEDIA_QUERY` matches the `lg` breakpoint the callers already hide
+ * their chrome at (`Header.tsx`'s `max-lg:-translate-y-full`, `ChatShell.tsx`'s
+ * `lg:hidden` bar). Callers apply `inert` to the whole element when this hook
+ * reports `true`, and `inert` cannot be scoped to a media query the way those
  * translate/display classes are — so the hook itself must never report
  * "hidden" on a viewport where the CSS keeps the chrome pinned in place.
  * Without this, a desktop user scrolling down on the ai host would get a
@@ -32,7 +33,6 @@ const USER_INPUT_EVENTS = [
  * is the Tailwind `md` (768px) boundary used elsewhere; this hook needs `lg`
  * (1024px) to match the breakpoint its own callers hide at.
  */
-const BELOW_LG_MEDIA_QUERY = '(max-width: 1023.98px)';
 
 interface ScrollChromeState {
     readonly hidden: boolean;
