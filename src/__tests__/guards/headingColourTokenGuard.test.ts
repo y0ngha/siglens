@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 
+import { SCAN_TIMEOUT_MS } from './support/controlUsage';
 import { blankComments } from './support/sourceScan';
 
 /**
@@ -286,7 +287,7 @@ function findColourlessHeadings(): {
     };
 }
 
-describe('heading colour token guard', () => {
+describe('heading colour token guard', { timeout: SCAN_TIMEOUT_MS }, () => {
     it('직접 텍스트를 가진 heading은 색 토큰을 명시한다', () => {
         expect(findColourlessHeadings().offenders).toEqual([]);
     });

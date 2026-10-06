@@ -1,10 +1,24 @@
-import { afterEach, beforeEach } from 'vitest';
+import { afterEach, beforeAll, beforeEach } from 'vitest';
+import { MODULE_LOAD_TIMEOUT_MS } from '@/shared/test-utils/testTimeouts';
 
 const ORIGINAL = process.env.DB_CONTENT_LOCALE;
 
-beforeEach(() => {
-    vi.resetModules();
-});
+const SWITCH_STATES = ['off', 'on'] as const;
+type SwitchState = (typeof SWITCH_STATES)[number];
+
+/*
+ * 스위치 상태마다 모듈을 **한 번** 새로 적재한다(아래 `beforeAll`).
+ *
+ * 예전엔 케이스마다 `vi.resetModules()` 뒤 drizzle과 리포지터리(→ DB 스키마 전체)를
+ * 다시 import했고, 병렬 전체 실행에서 첫 케이스가 기본 5초를 넘겨 실패했다
+ * (2026-10-06). 적재를 상태별 훅으로 올리되 "그 env로 막 뜬 프로세스"라는 조건은
+ * 그대로 둔다 — 스위치가 언젠가 모듈 평가 시점에 읽히게 바뀌어도 이 파일이 잡는다.
+ */
+
+function setSwitch(state: SwitchState): void {
+    if (state === 'on') process.env.DB_CONTENT_LOCALE = '1';
+    else delete process.env.DB_CONTENT_LOCALE;
+}
 
 afterEach(() => {
     if (ORIGINAL === undefined) delete process.env.DB_CONTENT_LOCALE;
@@ -24,10 +38,18 @@ afterEach(() => {
  * 함께 틀린다. 지금은 진짜 `DrizzleSeoSnapshotRepository.upsert`를 부르고,
  * 그것이 만든 쿼리를 가로채 SQL을 뽑는다.
  */
-async function upsertSql(): Promise<string> {
-    const { drizzle } = await import('drizzle-orm/postgres-js');
-    const { DrizzleSeoSnapshotRepository } =
-        await import('@/entities/seo-snapshot/api');
+async function loadModules() {
+    const [{ drizzle }, { DrizzleSeoSnapshotRepository }] = await Promise.all([
+        import('drizzle-orm/postgres-js'),
+        import('@/entities/seo-snapshot/api'),
+    ]);
+    return { drizzle, DrizzleSeoSnapshotRepository };
+}
+
+async function upsertSql({
+    drizzle,
+    DrizzleSeoSnapshotRepository,
+}: Awaited<ReturnType<typeof loadModules>>): Promise<string> {
     // 세션 없는 drizzle — 쿼리 빌드는 되지만 실행하면 던진다. 실행 직전에
     // 가로채므로 DB가 필요 없다.
     const real = drizzle({} as never, { schema: {} });
@@ -64,56 +86,60 @@ async function upsertSql(): Promise<string> {
     return captured;
 }
 
-describe('seo_analysis_snapshots upsert SQL', () => {
-    /**
-     * **스위치와 무관하게 3열이다.**
-     *
-     * 예전엔 꺼져 있으면 `(symbol, tab)`으로 돌아갔다. 그러면 0030(구 unique
-     * 제거)을 적용할 수 있는 시점이 "스위치가 전 인스턴스에서 켜진 뒤"로
-     * 밀리는데, 스위치가 켜지면 비-ko 스냅샷이 쓰이기 시작하고 구 unique가
-     * 아직 있으면 그 쓰기가 23505로 죽는다(로컬 Postgres 17 실측). 어느
-     * 순서로도 창이 남는 설계였다.
-     */
-    it.each(['off', 'on'])(
-        '스위치 %s: ON CONFLICT 대상이 (symbol, tab, locale)',
-        async state => {
-            if (state === 'on') process.env.DB_CONTENT_LOCALE = '1';
-            else delete process.env.DB_CONTENT_LOCALE;
+describe.each(SWITCH_STATES)(
+    'seo_analysis_snapshots upsert SQL — 스위치 %s',
+    state => {
+        let modules: Awaited<ReturnType<typeof loadModules>>;
 
-            const sql = await upsertSql();
+        beforeAll(async () => {
+            setSwitch(state);
+            vi.resetModules();
+            modules = await loadModules();
+        }, MODULE_LOAD_TIMEOUT_MS);
+
+        beforeEach(() => {
+            setSwitch(state);
+        });
+
+        /**
+         * **스위치와 무관하게 3열이다.**
+         *
+         * 예전엔 꺼져 있으면 `(symbol, tab)`으로 돌아갔다. 그러면 0030(구 unique
+         * 제거)을 적용할 수 있는 시점이 "스위치가 전 인스턴스에서 켜진 뒤"로
+         * 밀리는데, 스위치가 켜지면 비-ko 스냅샷이 쓰이기 시작하고 구 unique가
+         * 아직 있으면 그 쓰기가 23505로 죽는다(로컬 Postgres 17 실측). 어느
+         * 순서로도 창이 남는 설계였다.
+         */
+        it('ON CONFLICT 대상이 (symbol, tab, locale)', async () => {
+            const sql = await upsertSql(modules);
             expect(sql).toContain(
                 'on conflict ("symbol","tab","locale") do update'
             );
-        }
-    );
+        });
 
-    /**
-     * 스위치와 무관하게 `locale`은 항상 INSERT에 들어간다 — 값에서 빼도
-     * Drizzle이 `default`로 넣기 때문이다. 이 사실이 배포 순서를
-     * "스키마 먼저, 코드 나중"으로 강제한다.
-     */
-    it.each(['off', 'on'])(
-        '스위치 %s: locale이 INSERT 컬럼에 있다',
-        async state => {
-            if (state === 'on') process.env.DB_CONTENT_LOCALE = '1';
-            else delete process.env.DB_CONTENT_LOCALE;
-            expect(await upsertSql()).toContain('"locale"');
-        }
-    );
+        /**
+         * 스위치와 무관하게 `locale`은 항상 INSERT에 들어간다 — 값에서 빼도
+         * Drizzle이 `default`로 넣기 때문이다. 이 사실이 배포 순서를
+         * "스키마 먼저, 코드 나중"으로 강제한다.
+         */
+        it('locale이 INSERT 컬럼에 있다', async () => {
+            expect(await upsertSql(modules)).toContain('"locale"');
+        });
 
-    /**
-     * `first_generated_at`은 INSERT에만 들어가고 `DO UPDATE SET`에는 없어야 한다.
-     *
-     * `set`에 끼면 매 프리웜이 "처음"을 덮어써 `generated_at`과 같은 값이 되고,
-     * 뉴스 탭 `Article`의 `datePublished`가 "매일 새로 발행됨"이라는 거짓 신선도
-     * 신호로 바뀐다. 컬럼 하나 추가로 조용히 깨질 수 있는 불변식이라 SQL로 고정한다.
-     */
-    it('first_generated_at은 INSERT에만 있고 DO UPDATE SET에는 없다', async () => {
-        const sql = await upsertSql();
-        const [insertPart, updatePart] = sql.split('do update set');
+        /**
+         * `first_generated_at`은 INSERT에만 들어가고 `DO UPDATE SET`에는 없어야 한다.
+         *
+         * `set`에 끼면 매 프리웜이 "처음"을 덮어써 `generated_at`과 같은 값이 되고,
+         * 뉴스 탭 `Article`의 `datePublished`가 "매일 새로 발행됨"이라는 거짓 신선도
+         * 신호로 바뀐다. 컬럼 하나 추가로 조용히 깨질 수 있는 불변식이라 SQL로 고정한다.
+         */
+        it('first_generated_at은 INSERT에만 있고 DO UPDATE SET에는 없다', async () => {
+            const sql = await upsertSql(modules);
+            const [insertPart, updatePart] = sql.split('do update set');
 
-        expect(insertPart).toContain('"first_generated_at"');
-        expect(updatePart).toBeDefined();
-        expect(updatePart).not.toContain('first_generated_at');
-    });
-});
+            expect(insertPart).toContain('"first_generated_at"');
+            expect(updatePart).toBeDefined();
+            expect(updatePart).not.toContain('first_generated_at');
+        });
+    }
+);

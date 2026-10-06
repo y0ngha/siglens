@@ -21,6 +21,7 @@ import {
 import { AGENT_ERROR_CODES } from '@/features/agent-chat/lib/errorCodes';
 import { BELOW_LG_MEDIA_QUERY } from '@/shared/config/viewport';
 import ko from '../../../../messages/ko.json';
+import { MODULE_LOAD_TIMEOUT_MS } from '@/shared/test-utils/testTimeouts';
 
 const router = vi.hoisted(() => ({ refresh: vi.fn(), push: vi.fn() }));
 vi.mock('next/navigation', () => ({ useRouter: () => router }));
@@ -145,18 +146,30 @@ afterAll(() => {
 });
 
 /**
+ * 렌더 → lazy 해소 대기. 모듈을 미리 적재해 보통은 짧지만, 병렬 부하에서의 값을
+ * 따로 재지 않았으므로 예전 대기(10초)를 그대로 유지한다.
+ */
+const LAZY_RESOLVE_WAIT_MS = 10_000;
+
+/**
  * `MessageList`는 `next/dynamic` 지연 청크다(빈 랜딩의 first-load JS에서 빼려고).
  * 파일의 첫 테스트 전에 한 번 받아 두면 — React.lazy가 풀린 결과를 기억한다 — 이후
  * 렌더는 동기라 각 테스트가 본문을 곧바로 찾을 수 있다. 테스트 순서에 기대지 않으려고
  * 여기서 명시적으로 데운다.
+ *
+ * 무거운 모듈 적재는 `findByRole` 폴링 밖에서 먼저 끝낸다 — 같은 모듈 캐시라
+ * `dynamic()`의 `import('./MessageList')`는 이미 평가된 모듈을 받는다. 예전엔
+ * `MessageList` 그래프(react-markdown 포함)의 첫 변환·평가를 `findByRole`의 10초
+ * 대기 안에서 치렀고, 병렬 전체 실행에서 그걸 넘겨 파일 전체가 실패했다(이후
+ * 케이스 34개가 통째로 skip, 2026-10-06).
  */
 beforeAll(async () => {
     Element.prototype.scrollIntoView = vi.fn();
+    await import('../MessageList');
     const { unmount } = renderShell();
-    // 첫 로드는 테스트 변환(react-markdown 포함)까지 겹쳐 기본 1초를 넘길 수 있다.
-    await screen.findByRole('log', {}, { timeout: 10_000 });
+    await screen.findByRole('log', {}, { timeout: LAZY_RESOLVE_WAIT_MS });
     unmount();
-}, 15_000);
+}, MODULE_LOAD_TIMEOUT_MS);
 
 /** `lg` 미만으로 보이게 한다 — 모바일 서랍(vaul)은 그때만 불러온다. */
 const originalMatchMedia = Object.getOwnPropertyDescriptor(

@@ -1,9 +1,19 @@
 // vi.mock → imports 순서 (MISTAKES.md Tests §17)
 vi.mock('@/shared/api/e2eEnv', () => ({ isE2E: () => false }));
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { MODULE_LOAD_TIMEOUT_MS } from '@/shared/test-utils/testTimeouts';
 
 describe('getCongressTradesProvider (prod)', () => {
+    // 첫 케이스가 콜드 적재(변환 + 외부 의존 로드)를 본문에서 치르지 않게 미리 받는다.
+    // 첫 케이스는 이 레지스트리를 그대로 쓰고, 이후 리셋 뒤 재평가는 변환 결과를 재사용한다.
+    beforeAll(async () => {
+        await Promise.all([
+            import('@/shared/api/fmp/getCongressTradesProvider'),
+            import('@/shared/api/fmp/CachedCongressTradesProvider'),
+        ]);
+    }, MODULE_LOAD_TIMEOUT_MS);
+
     afterEach(() => {
         vi.resetModules();
     });

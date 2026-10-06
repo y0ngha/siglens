@@ -1,5 +1,19 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import type { Locale } from '@/shared/i18n/locales';
+import { MODULE_LOAD_TIMEOUT_MS } from '@/shared/test-utils/testTimeouts';
+
+type Catalog = {
+    shared: { lib: { byokGate: Record<string, string> } };
+    app: { api: { stream: Record<string, string> } };
+};
+
+const CATALOG_LOCALES = [
+    'ko',
+    'en',
+    'ja',
+    'zh',
+] as const satisfies readonly Locale[];
 
 /**
  * 로케일 배선의 **판별 테스트**.
@@ -19,30 +33,43 @@ import { join } from 'node:path';
  * 그래서 여기서는 **비-기본 로케일로만** 단언한다.
  */
 describe('로케일 배선 판별', () => {
+    let buildGateError: typeof import('@/shared/lib/byokGate').buildGateError;
+    const catalogs = {} as Record<Locale, Catalog>;
+
+    /**
+     * `byokGate`는 DB 클라이언트·drizzle·auth 리포지토리·siglens-core까지 끌고 오고,
+     * 첫 `getTranslations`는 테스트용 `next-intl/config`가 네 로케일 카탈로그(각
+     * 240~290KB JSON)를 한꺼번에 변환·적재한다. 예전에는 이 비용을 첫 케이스("ja")가
+     * 본문 안에서 치러 단독 실행에서도 기본 5초를 넘겼다. 적재는 검증 대상이 아니므로
+     * 훅으로 뺀다.
+     */
+    beforeAll(async () => {
+        ({ buildGateError } = await import('@/shared/lib/byokGate'));
+        // `getTranslations`가 처음 부를 때 동적으로 읽는 설정 모듈(= 네 카탈로그)을
+        // 미리 적재해 둔다. vitest가 `next-intl/config`를 이 파일로 alias하므로 같은
+        // 모듈 캐시 항목이고, 본문에서는 재적재가 없다.
+        await import('@/shared/test-utils/nextIntlTestConfig');
+        await Promise.all(
+            CATALOG_LOCALES.map(async locale => {
+                catalogs[locale] = (
+                    await import(`../../../../../../messages/${locale}.json`)
+                ).default as Catalog;
+            })
+        );
+    }, MODULE_LOAD_TIMEOUT_MS);
+
     /**
      * 헤더 → 액션 인자 배선 자체는 `route.test.ts`의
      * "x-siglens-locale: %s가 액션 인자로 전달된다"(+ 알 수 없는 값 폴백)가
      * **행동으로** 단언한다. 소스 문자열 grep은 포맷 변경에 취약해 걷어냈다.
      * 여기서는 그 아래 계층(게이트 문구 카탈로그)만 본다.
      */
-    it.each([
-        ['ja', 'ja'],
-        ['en', 'en'],
-        ['zh', 'zh'],
-    ])(
+    it.each(['ja', 'en', 'zh'] as const)(
         '%s: 게이트 문구가 그 로케일 카탈로그에서 나온다',
-        async (locale, catalogName) => {
-            const { buildGateError } = await import('@/shared/lib/byokGate');
-            const catalog = (
-                await import(`../../../../../../messages/${catalogName}.json`)
-            ).default as {
-                shared: { lib: { byokGate: Record<string, string> } };
-            };
+        async locale => {
+            const catalog = catalogs[locale];
 
-            const err = await buildGateError(
-                'tier_premium_blocked',
-                locale as 'ja' | 'en' | 'zh'
-            );
+            const err = await buildGateError('tier_premium_blocked', locale);
 
             expect(err.code).toBe('tier_premium_blocked');
             expect(err.message).toBe(
@@ -60,14 +87,9 @@ describe('로케일 배선 판별', () => {
      * 나갔다. 에러 봉투는 번역 LLM에 보내지 않으므로(비용·오역 방지) 라우트가
      * 코드로 카탈로그 문구를 갈아끼운다.
      */
-    it('timeframe_not_allowed 문구가 4개 로케일에 모두 있다', async () => {
-        for (const locale of ['ko', 'en', 'ja', 'zh']) {
-            const catalog = (
-                await import(`../../../../../../messages/${locale}.json`)
-            ).default as {
-                app: { api: { stream: Record<string, string> } };
-            };
-            const message = catalog.app.api.stream.timeframeNotAllowed;
+    it('timeframe_not_allowed 문구가 4개 로케일에 모두 있다', () => {
+        for (const locale of CATALOG_LOCALES) {
+            const message = catalogs[locale].app.api.stream.timeframeNotAllowed;
             expect(message).toBeTruthy();
             // ko를 제외한 로케일에 한국어가 섞이면 안 된다.
             if (locale !== 'ko') expect(message).not.toMatch(/[가-힣]/);

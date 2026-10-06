@@ -10,8 +10,13 @@ const {
     fmpCryptoMembershipMock: vi.fn(),
 }));
 
-vi.mock('@/shared/db/client', async importOriginal => ({
-    ...(await importOriginal<typeof import('@/shared/db/client')>()),
+// Plain factory, NOT `importOriginal`: spreading the real module loads the
+// whole DB stack (drizzle + Neon driver + schema) just to keep exports that
+// `cryptoAssetStore` never touches — it imports only `tryGetDatabaseClient`.
+// That load was the dominant cost of this file and pushed it past the 5s
+// default under parallel workers (here it was paid on every test, because
+// `vi.resetModules()` re-runs the factory before each re-import).
+vi.mock('@/shared/db/client', () => ({
     tryGetDatabaseClient: () => tryGetDatabaseClientMock(),
 }));
 vi.mock('../../api', () => ({

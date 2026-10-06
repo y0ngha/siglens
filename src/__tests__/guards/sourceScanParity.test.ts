@@ -59,18 +59,51 @@ function blankedIndices(original: string, blanked: string): Set<number> {
     return out;
 }
 
+interface FileScan {
+    file: string;
+    source: string;
+    spans: Span[];
+    /** 스캐너 출력 원문. 인덱스 집합은 메모리가 커서 케이스 안에서 파일별로 만든다. */
+    blankedSource: string;
+}
+
+let scans: FileScan[] | null = null;
+
+/**
+ * 파일마다 babel 파스(정답지) + 스캐너 실행(대조 대상)을 **한 번만** 한다.
+ *
+ * 아래 두 케이스는 같은 쌍을 서로 반대 방향으로 대조할 뿐인데, 예전엔 각자
+ * 트리 전체를 다시 파스했다 — 2,300개가 넘는 파일을 두 번씩. 병렬 실행
+ * 부하에서 첫 케이스가 21초로 `SCAN_TIMEOUT_MS`(30초)에 근접했다(2026-10-06, 공유 전).
+ * 파싱 불가 파일은 이 테스트의 대상이 아니므로 여기서 걸러 낸다.
+ */
+function fileScans(): FileScan[] {
+    if (scans !== null) return scans;
+    const out: FileScan[] = [];
+    for (const file of sourceFiles(SRC_DIR)) {
+        const source = readFileSync(file, 'utf8');
+        let spans: Span[];
+        try {
+            spans = babelCommentSpans(source, file);
+        } catch {
+            continue; // 파싱 불가 파일은 이 테스트의 대상이 아니다
+        }
+        out.push({
+            file,
+            source,
+            spans,
+            blankedSource: blankComments(source),
+        });
+    }
+    scans = out;
+    return out;
+}
+
 describe('source scanner parity', { timeout: SCAN_TIMEOUT_MS }, () => {
     it('babel이 주석이라고 본 구간을 빠짐없이 비운다', () => {
         const missed: string[] = [];
-        for (const file of sourceFiles(SRC_DIR)) {
-            const source = readFileSync(file, 'utf8');
-            let spans: Span[];
-            try {
-                spans = babelCommentSpans(source, file);
-            } catch {
-                continue; // 파싱 불가 파일은 이 테스트의 대상이 아니다
-            }
-            const blanked = blankedIndices(source, blankComments(source));
+        for (const { file, source, spans, blankedSource } of fileScans()) {
+            const blanked = blankedIndices(source, blankedSource);
             for (const span of spans) {
                 for (let i = span.start; i < span.end; i += 1) {
                     if (source[i] === '\n' || /\s/.test(source[i])) continue;
@@ -88,19 +121,12 @@ describe('source scanner parity', { timeout: SCAN_TIMEOUT_MS }, () => {
 
     it('주석이 아닌 코드는 비우지 않는다', () => {
         const overreach: string[] = [];
-        for (const file of sourceFiles(SRC_DIR)) {
-            const source = readFileSync(file, 'utf8');
-            let spans: Span[];
-            try {
-                spans = babelCommentSpans(source, file);
-            } catch {
-                continue;
-            }
+        for (const { file, source, spans, blankedSource } of fileScans()) {
             const inComment = new Set<number>();
             for (const span of spans) {
                 for (let i = span.start; i < span.end; i += 1) inComment.add(i);
             }
-            for (const i of blankedIndices(source, blankComments(source))) {
+            for (const i of blankedIndices(source, blankedSource)) {
                 if (!inComment.has(i)) {
                     overreach.push(
                         `${path.relative(SRC_DIR, file)}:${source.slice(0, i).split('\n').length}`

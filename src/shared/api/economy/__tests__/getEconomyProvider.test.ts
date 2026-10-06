@@ -1,6 +1,7 @@
 vi.mock('@/shared/api/e2eEnv');
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach, beforeAll } from 'vitest';
+import { MODULE_LOAD_TIMEOUT_MS } from '@/shared/test-utils/testTimeouts';
 
 import { isE2E } from '@/shared/api/e2eEnv';
 
@@ -26,6 +27,15 @@ async function freshFactory() {
 }
 
 describe('getEconomyProvider', () => {
+    // 케이스마다 리셋 뒤 다시 적재하지만, 첫 적재의 변환·외부 의존 로드는 리셋과
+    // 무관하게 남는다. 그 콜드 비용을 첫 케이스 본문이 아니라 여기서 치른다.
+    beforeAll(async () => {
+        await Promise.all([
+            import('@/shared/api/economy/getEconomyProvider'),
+            import('@/shared/api/fmp/FmpEconomyProvider'),
+        ]);
+    }, MODULE_LOAD_TIMEOUT_MS);
+
     beforeEach(() => {
         vi.clearAllMocks();
     });
