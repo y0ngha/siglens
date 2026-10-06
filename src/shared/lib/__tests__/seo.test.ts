@@ -18,6 +18,7 @@ import {
     symbolMetadataFromSeo,
     clampSeoDescription,
     SEO_DESCRIPTION_MAX_LENGTH,
+    SEO_SNAPSHOT_DESCRIPTION_MAX_LENGTH,
     SITE_URL,
     SITE_NAME,
     type SeoTranslator,
@@ -814,7 +815,7 @@ describe('buildSnapshotMetaDescription', () => {
 
         expect(result).not.toBeNull();
         expect([...(result as string)].length).toBeLessThanOrEqual(
-            SEO_DESCRIPTION_MAX_LENGTH
+            SEO_SNAPSHOT_DESCRIPTION_MAX_LENGTH
         );
         expect(result?.startsWith(`AAPL ${TAB_LABEL} — `)).toBe(true);
         // A sentence boundary exists well within the search window (every
@@ -824,8 +825,8 @@ describe('buildSnapshotMetaDescription', () => {
         expect(result?.endsWith('…')).toBe(false);
     });
 
-    it('clamps an over-length single-line result with no sentence boundary to SEO_DESCRIPTION_MAX_LENGTH with an ellipsis', () => {
-        const long = 'a'.repeat(SEO_DESCRIPTION_MAX_LENGTH + 50);
+    it('clamps an over-length single-line result with no sentence boundary to SEO_SNAPSHOT_DESCRIPTION_MAX_LENGTH with an ellipsis', () => {
+        const long = 'a'.repeat(SEO_SNAPSHOT_DESCRIPTION_MAX_LENGTH + 50);
         const content = { summary: long };
         const result = buildSnapshotMetaDescription(
             'technical',
@@ -837,7 +838,7 @@ describe('buildSnapshotMetaDescription', () => {
         );
         expect(result).not.toBeNull();
         expect([...(result as string)].length).toBeLessThanOrEqual(
-            SEO_DESCRIPTION_MAX_LENGTH
+            SEO_SNAPSHOT_DESCRIPTION_MAX_LENGTH
         );
         expect(result?.endsWith('…')).toBe(true);
     });

@@ -29,13 +29,15 @@ vi.mock('@/shared/lib/og', () => ({
 
 import { generateMetadata, generateStaticParams } from '@/app/[locale]/layout';
 import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
-import { SITE_NAME } from '@/shared/lib/seo';
+import { brandIntroName, SITE_NAME, SITE_NAME_KO } from '@/shared/lib/seo';
 import koMessages from '@/../messages/ko.json';
 
 // 홈 제목은 `shared.seo.root` 카탈로그가 소유한다. 브랜드 접미사는 레이아웃이
 // 붙이므로 여기서 같은 방식으로 조립해 대조한다.
-const ROOT_TITLE = koMessages.shared.seo.root.title;
-const ROOT_FULL_TITLE = `${ROOT_TITLE} | ${SITE_NAME}`;
+const ROOT_TITLE = koMessages.shared.seo.root.title.replace(
+    '{v0}',
+    brandIntroName('ko')
+);
 import { LOCALES, LOCALE_OG } from '@/shared/i18n/locales';
 
 async function metadataFor(locale: string) {
@@ -43,29 +45,31 @@ async function metadataFor(locale: string) {
 }
 
 /**
- * 리뷰 회귀 가드(round 2 fix 1): ROOT_TITLE에서 브랜드 접미사를 뺀 라운드에서
- * openGraph.title/twitter.title도 같이 브랜드를 잃었다 — title.default는
- * SERP 폭 예산 때문에 브랜드를 빼야 맞지만, 소셜 언퍼널(Kakao/Slack/Twitter/
- * Facebook)은 폭 제약이 없어 브랜드를 유지해야 한다. 이 두 필드만 별도로
- * ROOT_FULL_TITLE(브랜드 포함)을 쓰는지 고정한다.
+ * 브랜드는 제목 자체에 들어 있다(`시그렌즈(Siglens) — …`) — 2026-10-05 감사에서 홈 제목에
+ * 브랜드가 없어 "시그렌즈"·"Siglens" 검색이 홈으로 귀결되지 않았다. 그래서 og/twitter도
+ * 접미사(`| Siglens`)를 따로 붙이지 않고 같은 제목을 쓴다(둘 다 한글 표기를 담는다).
  */
 describe('RootLayout metadata', () => {
-    it('title.default는 브랜드 접미사 없는 ROOT_TITLE 그대로다', async () => {
+    it('title.default는 브랜드가 들어간 ROOT_TITLE 그대로다(폭 ≤ 55)', async () => {
         const metadata = await metadataFor('ko');
         expect(metadata.title).toEqual(
             expect.objectContaining({ default: ROOT_TITLE })
         );
+        expect(ROOT_TITLE).toContain(SITE_NAME_KO);
+        expect(ROOT_TITLE).toContain(SITE_NAME);
     });
 
-    it('openGraph.title은 브랜드가 붙은 ROOT_FULL_TITLE을 쓴다', async () => {
+    it('openGraph.title은 ROOT_TITLE이고 한글 브랜드를 담는다', async () => {
         const metadata = await metadataFor('ko');
-        expect(metadata.openGraph?.title).toBe(ROOT_FULL_TITLE);
-        expect(ROOT_FULL_TITLE).toContain(SITE_NAME);
+        expect(metadata.openGraph?.title).toBe(ROOT_TITLE);
+        expect(metadata.openGraph?.title).toContain(SITE_NAME_KO);
     });
 
-    it('twitter.title은 브랜드가 붙은 ROOT_FULL_TITLE을 쓴다', async () => {
+    it('twitter.title은 ROOT_TITLE이고 twitter:site가 서비스 계정이다', async () => {
         const metadata = await metadataFor('ko');
-        expect(metadata.twitter?.title).toBe(ROOT_FULL_TITLE);
+        expect(metadata.twitter?.title).toBe(ROOT_TITLE);
+        expect(metadata.twitter?.title).toContain(SITE_NAME_KO);
+        expect(metadata.twitter).toMatchObject({ site: '@siglens_io' });
     });
 });
 

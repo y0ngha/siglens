@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { ROOT_KEYWORDS, seoTitleWidth, SEO_TITLE_MAX_WIDTH } from '../seo';
+import {
+    brandIntroName,
+    ROOT_KEYWORDS,
+    seoTitleWidth,
+    SEO_TITLE_MAX_WIDTH,
+    SITE_NAME_KO,
+} from '../seo';
 import koMessages from '../../../../messages/ko.json';
 import enMessages from '../../../../messages/en.json';
 import jaMessages from '../../../../messages/ja.json';
@@ -8,7 +14,11 @@ import zhMessages from '../../../../messages/zh.json';
 // 홈 카피는 `shared.seo.root` 카탈로그가 소유한다 — 예전엔 `seo.ts`의 한국어
 // 상수라 `/en` 홈이 영어 제목 아래 한국어 JSON-LD 설명을 내보냈다. 자산군
 // 커버리지 계약은 **ko 원문**에 대해 그대로 유지한다.
-const ROOT_TITLE = koMessages.shared.seo.root.title;
+// 제목은 브랜드를 인자(`{v0}`)로 받는다 — 레이아웃·홈이 `brandIntroName`을 넘긴다.
+const ROOT_TITLE = koMessages.shared.seo.root.title.replace(
+    '{v0}',
+    brandIntroName('ko')
+);
 const SITE_DESCRIPTION = koMessages.shared.seo.root.description;
 
 /**
@@ -21,7 +31,8 @@ describe('root SEO copy is multi-asset (US + KR stocks + crypto)', () => {
     it('mentions 미국·한국 주식 and 암호화폐 in the title', () => {
         expect(ROOT_TITLE).toContain('미국');
         expect(ROOT_TITLE).toContain('한국');
-        expect(ROOT_TITLE).toContain('암호화폐');
+        // 제목은 검색어 형태인 `코인`을 쓴다(2026-10-05 SERP 문구 정비). 설명은 `암호화폐`.
+        expect(ROOT_TITLE).toContain('코인');
     });
     it('description references both equity markets and crypto', () => {
         expect(SITE_DESCRIPTION).toContain('미국');
@@ -51,8 +62,11 @@ describe('root SEO copy is multi-asset (US + KR stocks + crypto)', () => {
         );
     });
 
-    it('ROOT_TITLE이 "| Siglens" 브랜드 접미사를 포함하지 않는다', () => {
-        expect(ROOT_TITLE).not.toContain('Siglens');
+    it('ROOT_TITLE에 한글 브랜드(시그렌즈)와 영문 표기가 함께 들어간다', () => {
+        expect(ROOT_TITLE).toContain(SITE_NAME_KO);
+        expect(ROOT_TITLE).toContain('Siglens');
+        // 접미사 형태(`… | Siglens`)가 아니라 제목 앞머리다.
+        expect(ROOT_TITLE.startsWith(`${SITE_NAME_KO}(Siglens)`)).toBe(true);
     });
 
     /**
@@ -69,7 +83,12 @@ describe('root SEO copy is multi-asset (US + KR stocks + crypto)', () => {
         '%s root.title / backtesting.title 폭이 SEO_TITLE_MAX_WIDTH를 넘지 않는다',
         (_locale, messages) => {
             expect(
-                seoTitleWidth(messages.shared.seo.root.title)
+                seoTitleWidth(
+                    messages.shared.seo.root.title.replace(
+                        '{v0}',
+                        brandIntroName(_locale)
+                    )
+                )
             ).toBeLessThanOrEqual(SEO_TITLE_MAX_WIDTH);
             expect(
                 seoTitleWidth(messages.shared.seo.backtesting.title)

@@ -261,14 +261,13 @@ describe('SymbolFearGreedPage — SSR factor summary wiring', () => {
             screen.getByText(/AAPL 공포 탐욕 지수 요약/)
         ).toBeInTheDocument();
         expect(screen.getByText(/71 \/ 100/)).toBeInTheDocument();
+        // 5개 지표는 표 하나로 — 행 머리글이 일반어 라벨이다.
         expect(
-            screen.getByText(/거래량 급증도\(방향 반영\)/)
+            screen.getByRole('rowheader', { name: /평소 대비 거래량 이탈/ })
         ).toBeInTheDocument();
-        // FIX 6's factor-ranking narrative sentence can also mention "최근
-        // 252봉 위치" when it's the most extreme factor — anchor on the
-        // per-factor line's "라벨: 값" shape so this assertion targets only
-        // that line.
-        expect(screen.getByText(/최근 252봉 위치: /)).toBeInTheDocument();
+        expect(
+            screen.getByRole('rowheader', { name: /최근 252봉 위치/ })
+        ).toBeInTheDocument();
     });
 
     it('게이지(FearGreedPage)가 서버 계산 요약(FearGreedFactsSummary)보다 DOM에서 앞선다', async () => {
@@ -404,7 +403,7 @@ describe('SymbolFearGreedPage — 시장 지수 링크', () => {
             name: '암호화폐 시장 공포탐욕지수',
         });
         expect(link.getAttribute('href')).toMatch(/\/fear-greed\/crypto$/);
-        expect(link.closest('p')).toHaveTextContent('암호화폐 시장 전반');
+        expect(link.closest('p')).toHaveTextContent('암호화폐 시장 전체 흐름');
     });
 
     it('미국 종목은 여전히 /fear-greed로 링크한다', async () => {

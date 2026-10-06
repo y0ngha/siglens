@@ -26,6 +26,8 @@ import {
 import { NewsCategoryTabs } from '@/widgets/news-hub/NewsCategoryTabs';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
+import { stripUtmParams } from '@/shared/lib/stripUtmParams';
+import { rssAlternateTypes } from '@/shared/config/rssFeed';
 import { RegionTabs } from '@/shared/ui/RegionTabs';
 import { regionsOf, type NavRegionId } from '@/shared/config/assetClassNav';
 import { cacheNonEmptyOrNull } from '@/shared/cache/cacheNonEmpty';
@@ -37,6 +39,7 @@ import {
     SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
+import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import { resolveNewsTitle } from '@/shared/lib/news/resolveNewsTitle';
 import { buildCategoryPageTitle, buildCategoryPageDescription } from './seo';
 import { enterLocale } from '@/shared/lib/enterLocale';
@@ -218,11 +221,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
                 url: emptyUrl,
                 ...localeOpenGraph(locale),
             },
-            twitter: {
-                card: 'summary_large_image',
+            twitter: buildTwitterMetadata({
                 title: emptyTitle,
                 description: emptyDescription,
-            },
+            }),
         };
     }
 
@@ -250,7 +252,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         // canonical을 넘기지 않는다 — `localeAlternates`가 로케일별 자기참조
         // URL을 만든다. 로케일 무관 경로를 넘기면 `/en/news/…`이 ko를 canonical로
         // 가리켜 hreflang 상호참조가 깨진다.
-        alternates: localeAlternates(locale, canonicalPath),
+        alternates: localeAlternates(locale, canonicalPath, {
+            types: rssAlternateTypes(locale),
+        }),
         openGraph: {
             type: 'website',
             siteName: SITE_NAME,
@@ -259,11 +263,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             url: `${SITE_URL}${localePath(locale, canonicalPath)}`,
             ...localeOpenGraph(locale),
         },
-        twitter: {
-            card: 'summary_large_image',
-            title: fullTitle,
-            description,
-        },
+        twitter: buildTwitterMetadata({ title: fullTitle, description }),
     };
 }
 
@@ -341,35 +341,13 @@ export default async function CategoryNewsPage({ params }: Props) {
                       .map((item, idx) => ({
                           '@type': 'ListItem',
                           position: idx + 1,
-                          item: {
-                              /*
-                               * Article (not NewsArticle): FMP does not provide per-article
-                               * dateModified, which NewsArticle's stricter recency requirements
-                               * would misrepresent. Article is the correct type here.
-                               *
-                               * publisher.name = item.source (e.g. "Reuters") because we are
-                               * aggregating third-party articles — Siglens is the aggregator,
-                               * not the original publisher. No logo is set per-Article since
-                               * we don't hold each source's logo asset.
-                               */
-                              '@type': 'Article',
-                              headline: resolveNewsTitle(item, locale),
-                              url: item.url,
-                              datePublished: item.publishedAt,
-                              // D5 (M-10): FMP category news carries no per-article image, so
-                              // the field is omitted rather than backfilled with the shared
-                              // per-category OG image on every article (misrepresents distinct
-                              // articles as sharing one image). Add back only when a source
-                              // supplies a genuine per-article image URL.
-                              author: {
-                                  '@type': 'Organization',
-                                  name: item.source,
-                              },
-                              publisher: {
-                                  '@type': 'Organization',
-                                  name: item.source,
-                              },
-                          },
+                          // 제3자 기사를 `Article`로 선언하지 않는다(2026-10-05 감사):
+                          // `url`은 외부 매체가 발행한 기사인데 `Article`에 `datePublished`·
+                          // `author`·`publisher`를 달면 이 페이지가 호스팅하지 않는 콘텐츠의
+                          // 저작을 주장하게 된다. 종목 뉴스 탭의 ItemList와 같이 목록 항목
+                          // (위치·URL·이름)까지만 말한다. URL에서 `utm_*` 추적 파라미터는 뗀다.
+                          url: stripUtmParams(item.url),
+                          name: resolveNewsTitle(item, locale),
                       })),
               }
             : null;

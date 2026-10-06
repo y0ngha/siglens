@@ -18,7 +18,11 @@ interface TabSnapshotInput {
     /** 이 라우트의 `revalidate` — 본문의 `getSeoSnapshotsStatic` 호출과 같은 값이어야 캐시를 공유한다. */
     readonly revalidate: number;
     readonly locale: Locale;
-    readonly displayName: string;
+    /**
+     * description 접두의 주어 — `buildTitleSubject`가 만든 짧은 표기(`애플(AAPL)`).
+     * 긴 표시명(`애플, Apple Inc. (AAPL)`)을 넘기면 문장 예산을 먼저 먹는다.
+     */
+    readonly subject: string;
     readonly assetClass: AssetClass;
     readonly tSeo: SeoTranslator;
     /**
@@ -48,7 +52,7 @@ export async function loadTabSnapshotMeta({
     tab,
     revalidate,
     locale,
-    displayName,
+    subject,
     assetClass,
     tSeo,
     preferPlain = false,
@@ -62,7 +66,7 @@ export async function loadTabSnapshotMeta({
         ? buildSnapshotMetaDescription(
               tab,
               snap.content,
-              displayName,
+              subject,
               preferPlain ? snap.plain : null,
               locale,
               symbolTabDescriptionLabel(tab, assetClass, tSeo)

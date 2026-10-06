@@ -29,11 +29,13 @@ import type { Locale } from '@/shared/i18n/locales';
 import {
     buildBreadcrumbJsonLd,
     buildWebPageJsonLd,
+    localizedAbsoluteUrl,
     SITE_NAME,
     SITE_URL,
     SYMBOLS_PATH,
 } from '@/shared/lib/seo';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
+import { isPopularSymbol } from '@/entities/ticker/lib/searchRelevance';
 import { marketCopyFor } from './copy';
 import {
     loadMarketSignals,
@@ -210,10 +212,9 @@ export async function MarketRouteBody({
         locale
     );
 
-    // ItemList 항목에는 url을 두지 않는다 — 모든 항목이 동일 페이지를 가리키면
-    // (변형 ?sector=는 비-canonical) 구조화데이터로서 가치가 낮고 sitelink 후보에서
-    // 불리하다. 섹터/심볼 식별은 ListItem name(괄호 안 symbol)으로 표기하며,
-    // 실제 크롤 가능 딥링크(→ /{symbol})는 MarketSummaryPanel 섹터 카드가 제공한다.
+    // ItemList 항목의 url은 그 종목 페이지(`/{symbol}`)다 — 이 허브 자신(`?sector=` 변형은
+    // 비-canonical)을 모든 항목이 가리키게 하지 않는다. 색인되는 큐레이션 종목에만 싣고,
+    // 나머지는 ListItem name(괄호 안 symbol)으로만 식별한다.
     // name도 개수를 표기하지 않는다(설정이 바뀌면 고정 개수는 쉽게 낡는다).
     //
     // **`signalSectors`가 아니라 `sectorEtfs`를 싣는다.** 전자는 스캐너 탭 목록이라
@@ -228,6 +229,15 @@ export async function MarketRouteBody({
             '@type': 'ListItem',
             position: idx + 1,
             name: `${sector.koreanName} (${sector.sectorName} · ${sector.symbol})`,
+            // 색인되는 종목(`isPopularSymbol`)에만 `url`을 단다. sitemap에 없는 종목 페이지는
+            // 큐레이션 밖이라 noindex다 — 색인 안 되는 URL을 ListItem 대상으로 선언하면
+            // 구조화데이터가 크롤 예산만 그쪽으로 보낸다.
+            ...(isPopularSymbol(sector.symbol) && {
+                url: localizedAbsoluteUrl(
+                    `${SITE_URL}/${sector.symbol}`,
+                    locale
+                ),
+            }),
         })),
     };
 

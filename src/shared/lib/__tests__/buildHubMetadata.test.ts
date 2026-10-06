@@ -53,6 +53,7 @@ async function legacyHubMetadata(
         },
         twitter: {
             card: 'summary_large_image',
+            site: '@siglens_io',
             title: fullTitle,
             description,
             images: ['/og-image.png'],
@@ -108,5 +109,29 @@ describe('buildHubMetadata', () => {
         });
         expect(actual.alternates?.canonical).toBeNull();
         expect(actual.robots).toEqual({ index: false, follow: true });
+    });
+
+    it('alternateTypes를 넘기면 발견 링크로 싣고, 안 넘기면 키 자체가 없다', async () => {
+        const base = {
+            params: Promise.resolve({ locale: 'ko' }),
+            locale: 'ko',
+            path: '/market',
+            title: 't',
+            description: 'd',
+            keywords: [],
+            degraded: false,
+        } as const;
+        const withTypes = await buildHubMetadata({
+            ...base,
+            alternateTypes: {
+                'application/rss+xml': 'https://siglens.io/rss.xml',
+            },
+        });
+        const without = await buildHubMetadata(base);
+
+        expect(withTypes.alternates?.types).toEqual({
+            'application/rss+xml': 'https://siglens.io/rss.xml',
+        });
+        expect(without.alternates).not.toHaveProperty('types');
     });
 });

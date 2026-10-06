@@ -1,5 +1,6 @@
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { SITE_NAME } from '@/shared/lib/seo';
+import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import type { Metadata } from 'next';
 import {
     DEFAULT_LOCALE,
@@ -278,12 +279,11 @@ export function localePageSocial(
                 },
             ],
         },
-        twitter: {
-            card: 'summary_large_image',
+        twitter: buildTwitterMetadata({
             title,
             description,
             images: ['/og-image.png'],
-        },
+        }),
     };
 }
 
@@ -303,6 +303,12 @@ export interface HubMetadataInput {
      * 넘겨야 degrade와 noindex가 어긋나지 않는다.
      */
     readonly degraded: boolean;
+    /**
+     * `<link rel="alternate" type=…>` 발견 링크(RSS 등). 호출부가 `rssAlternateTypes(locale)`를
+     * 넘긴다 — 여기서 `rssFeed`를 import하면 `seo` ↔ `seoAlternates` 순환에 `SITE_URL`을
+     * 모듈 평가 시점에 읽는 모듈이 끼어 로드 순서에 따라 TDZ 오류가 난다.
+     */
+    readonly alternateTypes?: LocaleAlternatesOptions['types'];
 }
 
 /**
@@ -326,6 +332,7 @@ export async function buildHubMetadata({
     description,
     keywords,
     degraded,
+    alternateTypes,
 }: HubMetadataInput): Promise<Metadata> {
     return {
         title,
@@ -333,6 +340,7 @@ export async function buildHubMetadata({
         keywords: [...keywords],
         alternates: await localeAlternatesFrom(params, path, {
             canonical: degraded ? null : undefined,
+            types: alternateTypes,
         }),
         robots: degraded
             ? { index: false, follow: true }
