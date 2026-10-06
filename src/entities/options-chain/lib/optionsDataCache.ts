@@ -70,43 +70,97 @@ function buildLastGoodSnapshotKey(symbol: string): string {
 }
 
 /**
+ * last-good의 `capturedAt`만 담은 작은 보조 키. 워밍이 "오늘 마감 이후 이미 확보됐나"를
+ * 판정할 때 스냅샷 전체(수백 KB)를 읽지 않고 MGET 한 번으로 후보 전체를 훑게 한다.
+ * last-good과 같은 TTL로 함께 쓴다.
+ */
+function buildLastGoodCapturedAtKey(symbol: string): string {
+    return `options:snapshot:last-good-at:${symbol.toUpperCase()}`;
+}
+
+/**
  * 미결제약정이 비어 있지 않은 스냅샷만 last-good으로 저장한다 — 호출자가 걸러서 넘긴다.
- * 저장 실패는 흡수한다(없어도 기존 동작과 같다).
+ * 저장 실패는 흡수한다(없어도 기존 동작과 같다). 저장됐는지를 돌려줘 워밍이 결과를
+ * 정직하게 보고하게 한다.
  */
 async function writeLastGoodSnapshot(
     redis: NonNullable<ReturnType<typeof getRedisClient>>,
     symbol: string,
     snapshot: OptionsSnapshot
-): Promise<void> {
+): Promise<boolean> {
     const key = buildLastGoodSnapshotKey(symbol);
     try {
         await redis.set(key, snapshot, { ex: LAST_GOOD_SNAPSHOT_TTL_SECONDS });
     } catch (error) {
         console.error('[optionsDataCache] Redis set failed for', key, error);
+        return false;
+    }
+    // 보조 키 실패는 흡수한다 — 없으면 워밍이 그 종목을 "미확보"로 보고 한 번 더 돌 뿐이다.
+    const capturedAtKey = buildLastGoodCapturedAtKey(symbol);
+    try {
+        await redis.set(capturedAtKey, snapshot.capturedAt, {
+            ex: LAST_GOOD_SNAPSHOT_TTL_SECONDS,
+        });
+    } catch (error) {
+        console.error(
+            '[optionsDataCache] Redis set failed for',
+            capturedAtKey,
+            error
+        );
+    }
+    return true;
+}
+
+/** 일반 스냅샷 캐시 키(`options:snapshot:SYM`)에 저장한다. 실패는 흡수하고 저장 여부를 돌려준다. */
+async function writeSnapshotCache(
+    redis: NonNullable<ReturnType<typeof getRedisClient>>,
+    symbol: string,
+    snapshot: OptionsSnapshot,
+    ttlSeconds: number
+): Promise<boolean> {
+    const key = buildSnapshotKey(symbol);
+    try {
+        await redis.set(key, snapshot, { ex: ttlSeconds });
+        return true;
+    } catch (error) {
+        console.error('[optionsDataCache] Redis set failed for', key, error);
+        return false;
     }
 }
 
+/** last-good을 못 쓴 이유 — 로그가 "정말 없다"와 "있는데 못 쓴다"를 구분하게 한다. */
+type LastGoodUnavailableReason =
+    | 'absent'
+    | 'no_expiry_after_rebase'
+    | 'stale_after_rebase'
+    | 'read_error';
+
+type LastGoodRead =
+    | { snapshot: OptionsSnapshot }
+    | { reason: LastGoodUnavailableReason };
+
 /**
  * 저장해 둔 last-good을 오늘 기준으로 맞춰 꺼낸다. 없거나, 맞추고 나면 남는 만기가
- * 없거나, 맞춘 결과가 다시 stale로 판정되면 `null`(되살릴 가치가 없다).
+ * 없거나, 맞춘 결과가 다시 stale로 판정되면(되살릴 가치가 없다) 그 이유를 돌려준다.
  */
 async function readLastGoodSnapshot(
     redis: NonNullable<ReturnType<typeof getRedisClient>>,
     symbol: string,
     now: Date
-): Promise<OptionsSnapshot | null> {
+): Promise<LastGoodRead> {
     const key = buildLastGoodSnapshotKey(symbol);
     try {
         const stored = await redis.get<OptionsSnapshot>(key);
-        if (stored === null) return null;
+        if (stored === null) return { reason: 'absent' };
         const rebased = rebaseOptionsSnapshot(stored, now);
-        if (rebased === null || isOpenInterestSnapshotStale(rebased)) {
-            return null;
+        if (rebased === null) return { reason: 'no_expiry_after_rebase' };
+        if (isOpenInterestSnapshotStale(rebased)) {
+            return { reason: 'stale_after_rebase' };
         }
-        return rebased;
+        return { snapshot: rebased };
     } catch (error) {
         console.error('[optionsDataCache] Redis get failed for', key, error);
-        return null;
+        return { reason: 'read_error' };
     }
 }
 
@@ -137,9 +191,15 @@ async function resolveWithLastGood(
         return { snapshot: fresh, substituted: false } as const;
     }
     const lastGood = await readLastGoodSnapshot(redis, symbol, now);
-    return lastGood === null
-        ? ({ snapshot: fresh, substituted: false } as const)
-        : ({ snapshot: lastGood, substituted: true } as const);
+    if ('reason' in lastGood) {
+        // 커버리지 측정용 — 한국 낮에 stale을 받았는데 되살릴 last-good을 못 쓴 횟수.
+        // reason=absent만 "저장된 값이 정말 없다"이고 나머지는 있는데 못 쓴 경우다.
+        console.warn(
+            `[optionsDataCache] last-good unavailable for ${symbol.toUpperCase()} reason=${lastGood.reason} — serving stale snapshot`
+        );
+        return { snapshot: fresh, substituted: false } as const;
+    }
+    return { snapshot: lastGood.snapshot, substituted: true } as const;
 }
 
 /**
@@ -270,17 +330,92 @@ export const fetchOptionsSnapshot = cache(
                       Math.min(profileTtl, secondsUntilNextRegularOpen(now))
                   )
                 : profileTtl;
-            try {
-                await redis.set(key, result, { ex: ttl });
-            } catch (error) {
-                console.error(
-                    '[optionsDataCache] Redis set failed for',
-                    key,
-                    error
-                );
-            }
+            await writeSnapshotCache(redis, symbol, result, ttl);
             return result;
         }
         return fresh;
     }
 );
+
+/** 워밍 한 건의 결과 — `written`은 last-good을 실제로 갱신했다는 뜻이다. */
+export type LastGoodRefreshResult = 'written' | 'stale' | 'none';
+
+/**
+ * 여러 종목의 last-good `capturedAt`(ISO 문자열)을 보조 키 MGET 한 번으로 읽는다. 값이
+ * 없는 종목(보조 키 도입 전에 저장됐거나 만료·미저장)은 결과 맵에 없다 — 호출자는 "없음 =
+ * 미확보"로 다룬다. Redis가 없거나 오류면 빈 맵이다(워밍이 전부 미확보로 보고 진행한다).
+ *
+ * 오늘 기준으로 맞추는 `readLastGoodSnapshot`과 달리 저장 당시 값 그대로다.
+ */
+export async function readLastGoodCapturedAtBatch(
+    symbols: readonly string[]
+): Promise<ReadonlyMap<string, string>> {
+    const redis = getRedisClient();
+    if (redis === null || symbols.length === 0) return new Map();
+    try {
+        const values = await redis.mget<unknown[]>(
+            ...symbols.map(buildLastGoodCapturedAtKey)
+        );
+        return new Map(
+            symbols.flatMap((symbol, index) => {
+                const value = values[index];
+                return typeof value === 'string'
+                    ? [[symbol, value] as const]
+                    : [];
+            })
+        );
+    } catch (error) {
+        console.error(
+            '[optionsDataCache] Redis mget failed for last-good captured-at',
+            error
+        );
+        return new Map();
+    }
+}
+
+/**
+ * 일반 캐시(`options:snapshot:SYM`)의 hit 경로를 **우회**해 Yahoo를 직접 치고, OI가 채워진
+ * (stale 아님) 스냅샷이면 last-good과 일반 캐시 키를 함께 갱신한다.
+ *
+ * `fetchOptionsSnapshot`은 캐시 hit 시 last-good을 갱신하지 않고, miss 때도 Yahoo가 OI를
+ * 비우는 한국 낮에는 갱신 기회가 없다. 정규장 마감 직후 ~19:45 ET 사이(Yahoo가 아직 OI를
+ * 들고 있는 구간)에 이 함수를 돌려 last-good 커버리지를 채운다.
+ *
+ * 일반 캐시 키는 지금 시각의 프로파일 TTL로 쓴다 — 방금 받은 fresh 값이라 대체 값
+ * 상한(`secondsUntilNextRegularOpen`)이 필요 없다. Redis 미구성·Yahoo/Redis 오류는
+ * 흡수하고 `'none'`을 돌려준다(워밍은 베스트 에포트다).
+ *
+ * @returns `written` — last-good 갱신됨 / `stale` — Yahoo가 OI를 비워 줌(저장 안 함) /
+ *   `none` — 스냅샷 없음·Redis 미구성·오류.
+ */
+export async function refreshLastGoodSnapshot(
+    symbol: string,
+    now: Date = new Date()
+): Promise<LastGoodRefreshResult> {
+    const redis = getRedisClient();
+    if (redis === null) return 'none';
+
+    let fresh: OptionsSnapshot | null;
+    try {
+        fresh = await adapter.fetchSnapshot(symbol);
+    } catch (error) {
+        console.error(
+            '[optionsDataCache] adapter.fetchSnapshot failed for',
+            symbol.toUpperCase(),
+            error
+        );
+        return 'none';
+    }
+    if (fresh === null) return 'none';
+    if (isOpenInterestSnapshotStale(fresh)) return 'stale';
+
+    const wroteLastGood = await writeLastGoodSnapshot(redis, symbol, fresh);
+    if (!wroteLastGood) return 'none';
+    await writeSnapshotCache(
+        redis,
+        symbol,
+        fresh,
+        OPTIONS_SNAPSHOT_TTL_SECONDS[getOptionsCacheLifeProfile(now)]
+    );
+    return 'written';
+}

@@ -1,10 +1,11 @@
 import { constants } from 'node:http2';
 import { DrizzleAnalysisHistoryRepository } from '@/entities/analysis/analysisHistoryRepository';
+import { warmOptionsLastGood } from '@/entities/options-chain/lib/warmOptionsLastGood';
 import { getDatabaseClient } from '@/shared/db/client';
 import { isAuthorizedCronRequest } from '@/shared/lib/auth/isAuthorizedCronRequest';
 import { afterWithDrain } from '@/shared/lib/afterWithDrain';
 import { acquirePrewarmLock, releasePrewarmLock } from './lock';
-import { runPrewarmBatch } from './runPrewarmBatch';
+import { BATCH_WALL_CLOCK_BUDGET_MS, runPrewarmBatch } from './runPrewarmBatch';
 
 const {
     HTTP_STATUS_UNAUTHORIZED,
@@ -48,6 +49,8 @@ export async function PATCH(request: Request): Promise<Response> {
     if (token === null) {
         return new Response(null, { status: HTTP_STATUS_NO_CONTENT });
     }
+    // 락 획득 시각 — 배치 뒤에 도는 옵션 워밍이 같은 락 예산 안에 끝나도록 마감을 계산하는 기준.
+    const lockAcquiredAtMs = Date.now();
     // SIGTERM 시 Redis 락 해제가 완료될 때까지 drain이 대기하도록 배치를
     // afterWithDrain으로 등록한다. after()만 사용하면 SIGTERM이 process.exit를 호출한
     // 직후 after() 콜백이 고아가 되어 락이 TTL까지 잠긴다 — 다음 invocation이 최대
@@ -58,6 +61,21 @@ export async function PATCH(request: Request): Promise<Response> {
             console.log('[seo-prewarm] batch done:', JSON.stringify(counts));
         } catch (error) {
             console.error('[seo-prewarm] batch failed:', error);
+        }
+        // 옵션 last-good 워밍 — 같은 락 안에서 배치 직후에 돈다(별도 EventBridge 규칙 없음).
+        // 마감은 배치와 같은 예산(락 TTL − 안전 여유)이라 prune·락 해제 몫은 건드리지 않는다.
+        // 미국 마감+15분 ~ 19:45 ET 구간 밖이면 즉시 반환한다. LLM은 쓰지 않는다.
+        // 자체 try/catch로 격리해 어떤 실패도 아래 prune·락 해제를 막지 못한다.
+        try {
+            const outcome = await warmOptionsLastGood(new Date(), {
+                budgetEndMs: lockAcquiredAtMs + BATCH_WALL_CLOCK_BUDGET_MS,
+            });
+            console.log(
+                '[seo-prewarm] options warm done:',
+                JSON.stringify(outcome)
+            );
+        } catch (error) {
+            console.error('[seo-prewarm] options warm failed:', error);
         }
         // Task S4 (retention) — piggybacks on this cron rather than getting
         // its own endpoint/schedule. Isolated in its own try/catch and run
