@@ -183,6 +183,50 @@ describe('isSnapshotBasisStale — 크립토', () => {
         ).toBe(true);
     });
 
+    it('어제 일봉이라도 분석이 오늘 00:00Z 이후면(완료 봉 기준) 현재로 센다', () => {
+        // 2026-10-06 운영: FMP가 자정 직후 오늘 봉을 내지 않아 강제 재생성 결과가 어제
+        // 완료 봉을 썼다 — 페이지 상단 "최근 종가"와 같은 가격이라 stale이 아니다.
+        expect(
+            isSnapshotBasisStale(
+                'BTCUSD',
+                {
+                    barTimeMs: Date.parse('2026-10-04T00:00:00Z'),
+                    analyzedAtMs: Date.parse('2026-10-05T00:55:00Z'),
+                    close: null,
+                },
+                now
+            )
+        ).toBe(false);
+    });
+
+    it('어제 일봉인데 실행 시각을 모르면 stale', () => {
+        expect(
+            isSnapshotBasisStale(
+                'BTCUSD',
+                {
+                    barTimeMs: Date.parse('2026-10-04T00:00:00Z'),
+                    analyzedAtMs: null,
+                    close: null,
+                },
+                now
+            )
+        ).toBe(true);
+    });
+
+    it('이틀 전 일봉은 오늘 실행됐어도 stale', () => {
+        expect(
+            isSnapshotBasisStale(
+                'BTCUSD',
+                {
+                    barTimeMs: Date.parse('2026-10-03T00:00:00Z'),
+                    analyzedAtMs: Date.parse('2026-10-05T01:00:00Z'),
+                    close: null,
+                },
+                now
+            )
+        ).toBe(true);
+    });
+
     it('barTime이 없으면 analyzedAt이 경계(00:30Z) 이전이면 stale', () => {
         expect(
             isSnapshotBasisStale(
@@ -220,5 +264,57 @@ describe('isSnapshotBasisStale — 크립토', () => {
                 new Date('2026-10-05T00:10:00Z')
             )
         ).toBe(false);
+    });
+
+    it('경계 롤 전(00:10Z)에는 "오늘 00:00Z"가 전날 00:00Z다 — 10-03 봉도 그 뒤 실행분이면 fresh', () => {
+        const preRoll = new Date('2026-10-05T00:10:00Z'); // 경계 = 10-04 00:30Z
+        expect(
+            isSnapshotBasisStale(
+                'BTCUSD',
+                {
+                    barTimeMs: Date.parse('2026-10-03T00:00:00Z'),
+                    analyzedAtMs: Date.parse('2026-10-04T18:00:00Z'),
+                    close: null,
+                },
+                preRoll
+            )
+        ).toBe(false);
+        expect(
+            isSnapshotBasisStale(
+                'BTCUSD',
+                {
+                    barTimeMs: Date.parse('2026-10-03T00:00:00Z'),
+                    analyzedAtMs: Date.parse('2026-10-03T20:00:00Z'),
+                    close: null,
+                },
+                preRoll
+            )
+        ).toBe(true);
+    });
+
+    it('analyzedAt 경계는 포함이다: 오늘 00:00:00.000Z면 fresh, 1ms 전이면 stale', () => {
+        const yesterdayBar = Date.parse('2026-10-04T00:00:00Z');
+        expect(
+            isSnapshotBasisStale(
+                'BTCUSD',
+                {
+                    barTimeMs: yesterdayBar,
+                    analyzedAtMs: Date.parse('2026-10-05T00:00:00.000Z'),
+                    close: null,
+                },
+                now
+            )
+        ).toBe(false);
+        expect(
+            isSnapshotBasisStale(
+                'BTCUSD',
+                {
+                    barTimeMs: yesterdayBar,
+                    analyzedAtMs: Date.parse('2026-10-04T23:59:59.999Z'),
+                    close: null,
+                },
+                now
+            )
+        ).toBe(true);
     });
 });

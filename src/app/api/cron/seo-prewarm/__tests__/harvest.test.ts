@@ -1080,6 +1080,81 @@ describe('resolveHarvest — 기준일 검사(technical)', () => {
         expect(mockPrewarmTechnical).not.toHaveBeenCalled();
     });
 
+    // 2026-10-06 운영 재현: FMP가 자정 직후 오늘 봉을 내지 않아 강제 재생성 결과가 "어제 완료 봉
+    // + 오늘 00:00Z 이후 실행"으로 돌아온다. 이걸 stale로 보면 크립토 전 종목이 매일 강제 재생성되고도
+    // 일시적 backoff에 묶였다(29/29).
+    it.each([
+        [
+            '이틀 전 봉을 쓴 옛 분석',
+            {
+                analyzedAt: '2026-10-05T10:00:00.000Z',
+                barTime: '2026-10-04T00:00:00Z',
+            },
+        ],
+        [
+            '어제 봉을 어제 장중에 쓴 옛 분석',
+            {
+                analyzedAt: '2026-10-05T14:00:00.000Z',
+                barTime: '2026-10-05T00:00:00Z',
+            },
+        ],
+    ])(
+        '크립토: stale cached(%s) → 강제 재생성이 어제 완료 봉(오늘 실행)을 쓰면 저장하고 backoff를 걸지 않는다',
+        async (_label, stale) => {
+            const cryptoNow = new Date('2026-10-06T03:00:00Z'); // 경계 = 10-06 00:30Z
+            const cryptoCtx = {
+                seam: { ...seam, symbol: 'BTCUSD', companyName: 'Bitcoin' },
+                now: cryptoNow,
+            };
+            const forced = {
+                ...PROSE,
+                analyzedAt: '2026-10-06T00:55:00.000Z',
+                dataAsOf: {
+                    barTime: Date.parse('2026-10-05T00:00:00Z') / 1000,
+                    close: 60_000,
+                },
+            };
+            mockPrewarmTechnical.mockResolvedValue({
+                status: 'done',
+                result: forced,
+            });
+
+            const ok = await resolveHarvest(
+                'BTCUSD',
+                'technical',
+                {
+                    status: 'cached',
+                    result: {
+                        ...PROSE,
+                        analyzedAt: stale.analyzedAt,
+                        dataAsOf: {
+                            barTime: Date.parse(stale.barTime) / 1000,
+                            close: 59_000,
+                        },
+                    },
+                },
+                repo as never,
+                counts,
+                cryptoCtx
+            );
+
+            expect(ok).toBe(true);
+            const claim = mockClaimBasisForce.mock.calls.find(
+                ([symbol, tab]) => symbol === 'BTCUSD' && tab === 'technical'
+            );
+            expect(claim).toBeDefined();
+            expect(mockPrewarmTechnical).toHaveBeenCalledWith(
+                'BTCUSD',
+                'Bitcoin',
+                undefined,
+                true
+            );
+            expect(upsertedContent('BTCUSD', 'technical')).toEqual(forced);
+            expect(mockMarkSkipped).not.toHaveBeenCalled();
+            expect(counts.harvested).toBe(1);
+        }
+    );
+
     it('technical이 아닌 탭은 검사하지 않는다', async () => {
         await resolveHarvest(
             'AAPL',
