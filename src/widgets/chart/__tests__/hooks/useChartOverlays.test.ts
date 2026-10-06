@@ -48,7 +48,7 @@ const timeScale = {
 const chartElement = document.createElement('div');
 const frames: FrameRequestCallback[] = [];
 /** 예약된 프레임을 실행한다 — 브라우저처럼 예약 호출이 끝난 뒤에 돈다. */
-function flushFrames() {
+function flushFrames(): void {
     for (const cb of frames.splice(0)) cb(0);
 }
 

@@ -6,6 +6,7 @@ import {
     HIGHLIGHT_LINE_WIDTH_MULT,
     type OverlayColorTable,
 } from '../model/chartOverlayCategories';
+import { LABEL_PRIORITY } from './levelLabelCulling';
 
 const PRICE_PANE_INDEX = 0;
 
@@ -33,8 +34,7 @@ export interface OverlayLineSpec {
     /** 레벨 라벨(가격축 옆 title). */
     title: string;
     /**
-     * 라벨끼리 겹칠 때 누가 남는가 — 클수록 우선(`visibleLevelLabels`).
-     * 강조한 작도 > 돌파선 > 그 밖의 레벨. 제목이 없는 선분은 0.
+     * 라벨끼리 겹칠 때 누가 남는가 — 클수록 우선(`LABEL_PRIORITY`).
      */
     labelPriority: number;
     markers: OverlayMarker[];
@@ -170,8 +170,10 @@ const toMarker = (l: OverlayLabel): OverlayMarker => ({
 });
 
 function levelLabelPriority(label: string, highlighted: boolean): number {
-    if (highlighted) return 3;
-    return label === BREAKOUT_LEVEL_LABEL ? 2 : 1;
+    if (highlighted) return LABEL_PRIORITY.highlighted;
+    return label === BREAKOUT_LEVEL_LABEL
+        ? LABEL_PRIORITY.breakout
+        : LABEL_PRIORITY.level;
 }
 
 export function buildOverlayLineSpecs(
@@ -217,7 +219,7 @@ export function buildOverlayLineSpecs(
                         opacity,
                         lineWidthMult,
                         title: '',
-                        labelPriority: 0,
+                        labelPriority: LABEL_PRIORITY.untitled,
                         markers: [],
                         extendRight: false,
                     },

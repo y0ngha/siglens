@@ -70,7 +70,19 @@ export function useChartSync(): ChartSyncHandlers {
     const releaseScaleWidthFloor = useCallback(
         (survivor: IChartApi | null): void => {
             appliedScaleWidthRef.current.clear();
-            survivor?.priceScale('right').applyOptions({ minimumWidth: 0 });
+            if (survivor === null) {
+                // 둘 다 사라졌다 — 예약된 측정은 할 일이 없다.
+                if (scaleFrameRef.current !== null) {
+                    cancelAnimationFrame(scaleFrameRef.current);
+                    scaleFrameRef.current = null;
+                }
+                return;
+            }
+            try {
+                survivor.priceScale('right').applyOptions({ minimumWidth: 0 });
+            } catch {
+                // 남은 차트도 이미 제거됐다(언마운트 순서) — 풀 하한이 없다.
+            }
         },
         []
     );
@@ -87,6 +99,32 @@ export function useChartSync(): ChartSyncHandlers {
             syncPriceScaleWidths([stock, volume], appliedScaleWidthRef.current);
         });
     }, []);
+
+    /**
+     * 사라지는 차트의 구독을 푼다. 차트가 먼저 dispose된 경우(언마운트 순서)에
+     * 구독 해제가 throw해도 나머지 정리(ref 비우기·하한 풀기)는 계속돼야 한다.
+     */
+    const detachChart = useCallback(
+        (
+            chart: IChartApi | null,
+            handler: ((range: LogicalRange | null) => void) | null
+        ): void => {
+            if (chart === null) return;
+            try {
+                const timeScale = chart.timeScale();
+                if (handler !== null) {
+                    timeScale.unsubscribeVisibleLogicalRangeChange(handler);
+                }
+                timeScale.unsubscribeVisibleLogicalRangeChange(
+                    scheduleScaleWidthSync
+                );
+                timeScale.unsubscribeSizeChange(scheduleScaleWidthSync);
+            } catch {
+                // 이미 제거된 차트 — 풀 구독이 없다.
+            }
+        },
+        [scheduleScaleWidthSync]
+    );
 
     const handleStockChartReady = useCallback(
         (chart: IChartApi): void => {
@@ -113,21 +151,11 @@ export function useChartSync(): ChartSyncHandlers {
     );
 
     const handleStockChartRemove = useCallback((): void => {
-        const chart = stockChartRef.current;
-        const handler = stockHandlerRef.current;
-        if (chart && handler) {
-            chart.timeScale().unsubscribeVisibleLogicalRangeChange(handler);
-        }
-        if (chart) {
-            chart
-                .timeScale()
-                .unsubscribeVisibleLogicalRangeChange(scheduleScaleWidthSync);
-            chart.timeScale().unsubscribeSizeChange(scheduleScaleWidthSync);
-        }
-        releaseScaleWidthFloor(volumeChartRef.current);
+        detachChart(stockChartRef.current, stockHandlerRef.current);
         stockChartRef.current = null;
         stockHandlerRef.current = null;
-    }, [scheduleScaleWidthSync, releaseScaleWidthFloor]);
+        releaseScaleWidthFloor(volumeChartRef.current);
+    }, [detachChart, releaseScaleWidthFloor]);
 
     const handleVolumeChartReady = useCallback(
         (chart: IChartApi): void => {
@@ -154,21 +182,11 @@ export function useChartSync(): ChartSyncHandlers {
     );
 
     const handleVolumeChartRemove = useCallback((): void => {
-        const chart = volumeChartRef.current;
-        const handler = volumeHandlerRef.current;
-        if (chart && handler) {
-            chart.timeScale().unsubscribeVisibleLogicalRangeChange(handler);
-        }
-        if (chart) {
-            chart
-                .timeScale()
-                .unsubscribeVisibleLogicalRangeChange(scheduleScaleWidthSync);
-            chart.timeScale().unsubscribeSizeChange(scheduleScaleWidthSync);
-        }
-        releaseScaleWidthFloor(stockChartRef.current);
+        detachChart(volumeChartRef.current, volumeHandlerRef.current);
         volumeChartRef.current = null;
         volumeHandlerRef.current = null;
-    }, [scheduleScaleWidthSync, releaseScaleWidthFloor]);
+        releaseScaleWidthFloor(stockChartRef.current);
+    }, [detachChart, releaseScaleWidthFloor]);
 
     const setRightOffsetPixels = useCallback((pixels: number): void => {
         if (rightOffsetPixelsRef.current === pixels) return;

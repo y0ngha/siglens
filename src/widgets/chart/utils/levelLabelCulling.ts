@@ -1,3 +1,14 @@
+/**
+ * 레벨 라벨 우선순위 — 겹칠 때 큰 쪽이 남는다(`visibleLevelLabels`).
+ * 강조한 작도 > 돌파선 > 그 밖의 레벨. 제목이 없는 선분은 겨룰 일이 없어 최하.
+ */
+export const LABEL_PRIORITY = {
+    untitled: 0,
+    level: 1,
+    breakout: 2,
+    highlighted: 3,
+} as const;
+
 /** 가격축 옆 레벨 라벨 하나 — 화면 y좌표와 우선순위. */
 export interface LevelLabelSlot {
     /** 라벨 중심의 y(px). 좌표를 아직 못 구했으면(`null`) 숨기지 않는다. */

@@ -31,6 +31,8 @@ const OVERLAY_SERIES_OPTIONS = {
  * lightweight-charts의 축 라벨 높이(글자 + 상하 패딩)와 맞춘 값이다.
  */
 const LABEL_VERTICAL_PADDING_PX = 8;
+/** 차트 옵션에 글자 크기가 없을 때 — lightweight-charts `layout.fontSize` 기본값. */
+const DEFAULT_AXIS_FONT_SIZE_PX = 12;
 
 interface TitledSeries {
     series: ISeriesApi<'Line'>;
@@ -56,7 +58,8 @@ function attachLabelCulling(
 
     const apply = () => {
         const minGap =
-            (chart.options().layout.fontSize ?? 12) + LABEL_VERTICAL_PADDING_PX;
+            (chart.options().layout.fontSize ?? DEFAULT_AXIS_FONT_SIZE_PX) +
+            LABEL_VERTICAL_PADDING_PX;
         const visible = visibleLevelLabels(
             titled.map(t => ({
                 y: t.series.priceToCoordinate(t.price),
