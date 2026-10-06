@@ -97,6 +97,7 @@ import { NOINDEX_SYMBOL_METADATA } from '@/shared/lib/seo';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
+import { getFinancialsPageData } from '@/app/[locale]/[symbol]/financials/financialData';
 import { notFound } from 'next/navigation';
 import FinancialsPage, {
     generateMetadata,
@@ -175,6 +176,72 @@ describe('Financials page tab guard', () => {
 
         // getProfileResilient must NOT have been called — the guard prevented it.
         expect(mockGetProfileResilient).not.toHaveBeenCalled();
+        // 재무 fetch도 가드 뒤에 있다 — 크립토에는 FMP를 부르지 않는다.
+        expect(getFinancialsPageData).not.toHaveBeenCalled();
+    });
+
+    it('게이트가 notFound()로 끝나는 동안 병렬로 시작한 재무 fetch가 reject해도 unhandledRejection이 없다', async () => {
+        const onUnhandled = vi.fn();
+        process.on('unhandledRejection', onUnhandled);
+        try {
+            mockIsTabAllowed.mockResolvedValue(true);
+            mockGetAssetInfoResilient.mockResolvedValue({
+                assetInfo: { symbol: 'AAPL', name: 'Apple Inc.' },
+                degraded: false,
+            } as Awaited<ReturnType<typeof getAssetInfoResilient>>);
+            vi.mocked(getFinancialsPageData).mockRejectedValueOnce(
+                new Error('fmp down')
+            );
+            // profile === null → 게이트가 notFound()로 끝난다.
+            mockGetProfileResilient.mockResolvedValue({
+                profile: null,
+                degraded: false,
+            } as Awaited<ReturnType<typeof getProfileResilient>>);
+
+            await expect(
+                FinancialsPage({
+                    params: Promise.resolve({ locale: 'ko', symbol: 'AAPL' }),
+                })
+            ).rejects.toThrow('NEXT_NOT_FOUND');
+            await new Promise(resolve => setTimeout(resolve, 10));
+
+            expect(getFinancialsPageData).toHaveBeenCalledWith('AAPL');
+            expect(onUnhandled).not.toHaveBeenCalled();
+        } finally {
+            process.off('unhandledRejection', onUnhandled);
+        }
+    });
+
+    it('재무 fetch를 profile 게이트와 병렬로 시작한다 — profile을 기다리지 않는다', async () => {
+        mockIsTabAllowed.mockResolvedValue(true);
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: { symbol: 'AAPL', name: 'Apple Inc.' },
+            degraded: false,
+        } as Awaited<ReturnType<typeof getAssetInfoResilient>>);
+        let resolveProfile!: (
+            v: Awaited<ReturnType<typeof getProfileResilient>>
+        ) => void;
+        mockGetProfileResilient.mockReturnValue(
+            new Promise(resolve => {
+                resolveProfile = resolve;
+            })
+        );
+
+        const pending = FinancialsPage({
+            params: Promise.resolve({ locale: 'ko', symbol: 'AAPL' }),
+        });
+        await vi.waitFor(() =>
+            expect(mockGetProfileResilient).toHaveBeenCalled()
+        );
+        // profile이 아직 끝나지 않았는데 재무 fetch는 이미 시작됐다.
+        expect(getFinancialsPageData).toHaveBeenCalledWith('AAPL');
+
+        resolveProfile({
+            profile: { sector: 'Technology', description: '' },
+            degraded: false,
+        } as Awaited<ReturnType<typeof getProfileResilient>>);
+        await pending;
+        expect(getFinancialsPageData).toHaveBeenCalledTimes(1);
     });
 });
 

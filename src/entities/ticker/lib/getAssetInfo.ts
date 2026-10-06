@@ -311,6 +311,18 @@ export function _resetInFlightTranslationsForTest(): void {
  * 해석은 `resolveAssetInfo`(DB → 임시 Redis 항목 → yahoo/FMP, 백그라운드 한글명 번역 포함)가
  * 하고, 이 래퍼는 마지막에 정본 한글명을 덮는다 —
  * `withCanonicalKoreanName` JSDoc에 출구에 둬야 하는 이유가 있다.
+ *
+ * **이 함수는 캐시하지 않는다(의도).** 요청 간 캐시도, 요청 내 `React.cache`도 없어서 부를
+ * 때마다 `asset_translations`를 읽는다(그 행이 없을 때만 Redis 임시 항목·yahoo/FMP로 간다).
+ * 캐시는 호출 경로가 고른다:
+ *   - 페이지 렌더(ISR): `getAssetInfoStatic`(Next data cache 24h, `symbol:` 태그) 또는 그걸
+ *     감싼 `getAssetInfoResilient`(요청 내 `React.cache` + degrade). 렌더 중 이 함수를 직접
+ *     부르면 DB 읽기가 `unstable_cache` 밖이라 정적 생성이 동적으로 떨어진다.
+ *   - 방문자 상호작용마다 도는 서버 액션·라우트(예: `getBarsAction`): 캐시된 경로
+ *     (`resolveMarketProfileStatic` 등)를 쓴다. 차트 조회마다 DB를 치던 것이
+ *     2026-10 서버 성능 감사 L4였다.
+ *   - 그 밖의 호출부(포트폴리오 저장·라벨 조회·분석 스트림 등)는 이 함수를 그대로 쓴다 —
+ *     호출 빈도가 낮거나, 24h 캐시가 막 추가된 종목을 "모름"으로 굳히면 안 되는 경로다.
  */
 export async function getAssetInfo(symbol: string): Promise<AssetInfo | null> {
     return withCanonicalKoreanName(await resolveAssetInfo(symbol));

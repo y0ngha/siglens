@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import {
     CATEGORY_CONFIG,
     type NewsFeedCategoryId,
@@ -28,8 +29,12 @@ import type { Locale } from '@/shared/i18n/locales';
  * `cacheNonEmpty`가 흡수해 `[]`로 degrade한다 — 카드가 "최신 뉴스를 불러오고 있어요"로
  * 렌더되고 허브 전체 크롬은 유지된다. 카테고리별로 catch하므로 하나가 실패해도
  * 나머지 카드는 정상이다.
+ *
+ * **요청당 한 번**: `React.cache`로 감싼다. 허브는 `generateMetadata`(ItemList JSON-LD 등)와
+ * 본문이 같은 카테고리를 각각 읽는데, `unstable_cache`는 요청 안에서 dedup하지 않아 매번
+ * 캐시 핸들러(큰 엔트리는 S3 GET)를 다시 거쳤다(2026-10 서버 성능 감사 L7).
  */
-export async function fetchCategoryPreviews(
+export const fetchCategoryPreviews = cache(async function fetchCategoryPreviews(
     category: NewsFeedCategoryId,
     locale: Locale
 ): Promise<string[]> {
@@ -44,4 +49,4 @@ export async function fetchCategoryPreviews(
     return rows
         .slice(0, PREVIEW_HEADLINE_LIMIT)
         .map(row => resolveNewsTitle(row, locale));
-}
+});

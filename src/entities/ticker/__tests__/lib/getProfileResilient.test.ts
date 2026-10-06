@@ -3,6 +3,7 @@ import type { FundamentalProfile } from '@y0ngha/siglens-core';
 import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
+import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 
 // getProfileResilient wraps staticSymbolCache(getProfile); mock the cache to
 // drive the three outcomes (profile / null / throw) without FMP or Redis.
@@ -11,6 +12,9 @@ vi.mock('@/shared/cache/staticSymbolCache', () => ({
 }));
 // The provider factory pulls in the FMP/yahoo clients; stub it so the import
 // graph stays light (the fetcher closure is never invoked under the cache mock).
+vi.mock('@/shared/cache/buildDegradedRevalidate', () => ({
+    shortenRevalidateForRuntimeDegrade: vi.fn().mockResolvedValue(undefined),
+}));
 vi.mock('@/shared/api/fmp/getFundamentalDataProvider', () => ({
     getFundamentalDataProvider: vi.fn(),
 }));
@@ -109,5 +113,22 @@ describe('getProfileResilient', () => {
         expect(errorSpy).not.toHaveBeenCalled();
 
         errorSpy.mockRestore();
+    });
+
+    it('degrade 렌더는 revalidate를 5분으로 낮춘다 — 렌더 예산 초과 실패가 24h 굳지 않는다', async () => {
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        mockCache.mockRejectedValue(new Error('timeout'));
+
+        await getProfileResilient('AAPL');
+        expect(shortenRevalidateForRuntimeDegrade).toHaveBeenCalledOnce();
+        errorSpy.mockRestore();
+    });
+
+    it('정상·null 결과는 revalidate를 건드리지 않는다', async () => {
+        mockCache.mockResolvedValue(null);
+        await getProfileResilient('ZZZZ');
+        expect(shortenRevalidateForRuntimeDegrade).not.toHaveBeenCalled();
     });
 });

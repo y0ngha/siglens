@@ -79,10 +79,23 @@ export async function acquirePrewarmLock(): Promise<string | null> {
         return null;
     }
     const token = randomUUID();
-    const result = await redis.set(LOCK_KEY, token, {
-        nx: true,
-        ex: LOCK_TTL_SECONDS,
-    });
+    let result: string | null;
+    try {
+        result = await redis.set(LOCK_KEY, token, {
+            nx: true,
+            ex: LOCK_TTL_SECONDS,
+        });
+    } catch (error) {
+        // 명령 timeout은 서버가 SET을 반영한 뒤에도 날 수 있다 — 그러면 아무도 모르는 토큰의 락이
+        // TTL(15분) 동안 남아 그 사이 cron이 전부 건너뛴다. 같은 토큰으로 compare-and-delete를 한 번
+        // 시도해 둔다(반영 안 됐으면 no-op, 멱등). 원래 에러는 호출부(라우트의 204 흡수)로 그대로 던진다.
+        await redis
+            .eval(RELEASE_LOCK_SCRIPT, [LOCK_KEY], [token])
+            .catch((cleanupError: unknown) =>
+                console.warn('[seo-prewarm] lock cleanup failed', cleanupError)
+            );
+        throw error;
+    }
     return result === 'OK' ? token : null;
 }
 
