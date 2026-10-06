@@ -7,6 +7,7 @@ import {
 } from '@/shared/i18n/locales';
 import { SYMBOL_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 import { localeAlternates, localeOpenGraph } from '@/shared/lib/seoAlternates';
+import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { type AssetClass } from '@/shared/config/marketProfile/types';
 import { KR_EXCHANGE_SUFFIX_RE } from '@/shared/config/ticker';
@@ -432,8 +433,22 @@ export const SITE_BUILD_DATE = parseBuildDate();
  * 데스크톱은 ~120자 안팎에서 절단되므로 120자를 상한으로 둔다.
  * 현재 모든 빌더는 이미 90~115자 범위로 짧지만, 입력(displayName/sector)
  * 변화로 인한 회귀를 막기 위해 출력단에서 한 번 더 강제한다.
+ *
+ * **템플릿 description에만 적용한다.** 스냅샷 본문 발췌(`buildSnapshotMetaDescription`)와
+ * 그 계열(공포·탐욕 사실 설명)은 문장 단위로만 자르므로 더 넉넉한
+ * {@link SEO_SNAPSHOT_DESCRIPTION_MAX_LENGTH}(160)를 쓴다.
  */
 export const SEO_DESCRIPTION_MAX_LENGTH = 120;
+
+/**
+ * 스냅샷 본문에서 만든 description의 상한(code point).
+ *
+ * 템플릿 description은 위 120자 안에서 끝나지만, 본문 발췌는 **문장 단위로만** 자르므로
+ * 문장 하나가 더 들어갈 여유가 있어야 한다. 120자에서는 첫 문장이 예산을 넘겨 `…`로
+ * 잘리는 일이 잦았다(2026-10-05 운영 크롤: 구분자 접두 `{displayName} {label} — `만 최대
+ * 86자를 먹었다). 접두를 짧은 주어로 바꾸고 상한을 160자로 둔다.
+ */
+export const SEO_SNAPSHOT_DESCRIPTION_MAX_LENGTH = 160;
 
 /**
  * 입력이 SEO_DESCRIPTION_MAX_LENGTH 이하면 그대로, 초과 시 잘라내고 말줄임표(…)를 붙인다.
@@ -581,6 +596,9 @@ export function buildTitleSubject(ticker: string, koreanName?: string): string {
     if (!kr) return upper;
     if (!upper) return kr;
     if (kr.toUpperCase() === upper) return upper;
+    // 이름이 이미 `)`로 끝나면(`삼성전자우(보통주)` 류) 괄호가 겹쳐 `이름(보통주)(CODE)`가
+    // 된다 — 공백으로 이어 괄호 한 쌍만 남긴다.
+    if (kr.endsWith(')')) return `${kr} ${upper}`;
     return `${kr}(${upper})`;
 }
 
@@ -904,9 +922,10 @@ export function clampAtSentenceBoundary(
  * `buildSymbol*SeoContent(...).description` in that case (spec 2026-07-24
  * Task 8; unchanged by FIX 5).
  *
- * `subject` (ticker or `"${koreanName}, ${name} (${ticker})"` display name,
- * matching the value each of the 7 `generateMetadata` call sites already
- * resolves), followed by the tab `label`, is prefixed BEFORE clamping —
+ * `subject` is the short {@link buildTitleSubject} form (`애플(AAPL)`, `삼성전자(005930)`),
+ * not the long display name (`애플, Apple Inc. (AAPL)`, up to 86 code points longer —
+ * it ate the sentence budget and the first sentence no longer fit). It is followed by
+ * the tab `label` and prefixed BEFORE clamping —
  * every templated builder
  * (`buildSymbol*SeoContent`) leads with the subject, and the target queries
  * ("AAPL 주가 분석") need it for the bolded query-term match in the SERP
@@ -968,7 +987,7 @@ export function buildSnapshotMetaDescription(
     if (typeof content !== 'object' || content === null) return null;
 
     const prefix = `${subject} ${label} — `;
-    const budget = SEO_DESCRIPTION_MAX_LENGTH - [...prefix].length;
+    const budget = SEO_SNAPSHOT_DESCRIPTION_MAX_LENGTH - [...prefix].length;
 
     if (typeof plain === 'string' && plain.trim().length > 0) {
         const whole = takeWholeSentences(collapseToSingleLine(plain), budget);
@@ -984,9 +1003,14 @@ export function buildSnapshotMetaDescription(
     const singleLine = collapseRawToSingleLine(raw);
     if (singleLine.length === 0) return null;
 
+    // 평이화 경로와 같은 규칙: 문장 단위로만 담는다. 첫 문장조차 예산에 안 들어갈 때만
+    // 잘라 `…`를 붙인다 — 예전에는 하드 컷 지점에서 40자만 뒤로 훑어 종결부호를 찾았고,
+    // 못 찾으면 문장 중간에서 끊겼다.
+    const whole = takeWholeSentences(singleLine, budget);
+    if (whole !== null) return `${prefix}${whole}`;
     return clampAtSentenceBoundary(
         `${prefix}${singleLine}`,
-        SEO_DESCRIPTION_MAX_LENGTH
+        SEO_SNAPSHOT_DESCRIPTION_MAX_LENGTH
     );
 }
 
@@ -1225,11 +1249,7 @@ export function symbolMetadataFromSeo(
             url: localizedUrl,
             ...localeOpenGraph(locale),
         },
-        twitter: {
-            card: 'summary_large_image',
-            title: fullTitle,
-            description,
-        },
+        twitter: buildTwitterMetadata({ title: fullTitle, description }),
         /**
          * 준비되지 않은 로케일은 **제목·설명은 그대로 두고 robots만** 덮는다.
          *

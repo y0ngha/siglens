@@ -157,6 +157,20 @@ describe('Market page', () => {
             });
         });
 
+        it('ko는 RSS 발견 링크를, 비-ko는 걸지 않는다(시장 브리핑이 피드에 실린다)', async () => {
+            const ko = await generateMetadata({
+                params: Promise.resolve({ locale: 'ko' }),
+            });
+            const en = await generateMetadata({
+                params: Promise.resolve({ locale: 'en' }),
+            });
+
+            expect(ko.alternates?.types).toEqual({
+                'application/rss+xml': 'https://siglens.io/rss.xml',
+            });
+            expect(en.alternates?.types).toBeUndefined();
+        });
+
         it('returns metadata with market title', async () => {
             const metadata = await generateMetadata({
                 params: Promise.resolve({ locale: 'ko' }),
@@ -599,6 +613,65 @@ describe('/market 구조화데이터 degrade 게이트', () => {
                 itemList.itemListElement.some(i => i.name.includes(virtual))
             ).toBe(false);
         }
+    });
+});
+
+/**
+ * ItemList 항목의 `url`은 **색인되는 큐레이션 종목**(`isPopularSymbol`)에만 단다. 색인되지 않는
+ * 종목 페이지를 ListItem 대상으로 선언하면 크롤 예산만 그쪽으로 간다.
+ */
+describe('/market ItemList — 큐레이션 종목에만 url', () => {
+    async function itemListFor(
+        scope: typeof US_DASHBOARD_SCOPE | typeof KR_DASHBOARD_SCOPE
+    ) {
+        mockGetMarketSummaryStatic.mockResolvedValue({
+            indices: [{ symbol: 'GSPC' }],
+            sectors: [{ symbol: 'XLK' }],
+        });
+        mockGetSectorSignalsStatic.mockResolvedValue({
+            computedAt: '2026-06-04T14',
+            stocks: [{ symbol: 'AAPL' }],
+        });
+        const { MarketRouteBody } = await import('../MarketRouteBody');
+        const { collectJsonLdData } =
+            await import('@/__tests__/utils/collectJsonLdData');
+        return (
+            collectJsonLdData(
+                await MarketRouteBody({ locale: 'ko', scope })
+            ).find(d => d['@type'] === 'ItemList') as {
+                itemListElement: Array<{ name: string; url?: string }>;
+            }
+        ).itemListElement;
+    }
+
+    it.each([
+        ['us', US_DASHBOARD_SCOPE],
+        ['kr', KR_DASHBOARD_SCOPE],
+    ])(
+        '%s: 큐레이션 항목만 /{symbol} url을 갖고 나머지는 url이 없다',
+        async (_id, scope) => {
+            const { isPopularSymbol } =
+                await import('@/entities/ticker/lib/searchRelevance');
+            const items = await itemListFor(scope);
+
+            expect(items).toHaveLength(scope.sectorEtfs.length);
+            scope.sectorEtfs.forEach((sector, i) => {
+                const url = items[i]?.url;
+                if (isPopularSymbol(sector.symbol)) {
+                    expect(url).toBe(`https://siglens.io/${sector.symbol}`);
+                } else {
+                    expect(items[i]).not.toHaveProperty('url');
+                }
+            });
+        }
+    );
+
+    it('us: XLK는 큐레이션이라 url을 갖는다', async () => {
+        const items = await itemListFor(US_DASHBOARD_SCOPE);
+
+        expect(items.find(i => i.name.includes('XLK'))?.url).toBe(
+            'https://siglens.io/XLK'
+        );
     });
 });
 

@@ -33,7 +33,7 @@ describe('loadTabSnapshotMeta', () => {
             tab: 'overall',
             revalidate: 43200,
             locale: 'ko',
-            displayName: 'Apple',
+            subject: 'Apple',
             assetClass: 'equity',
             tSeo,
         });
@@ -52,7 +52,7 @@ describe('loadTabSnapshotMeta', () => {
             tab: 'overall',
             revalidate: 43200,
             locale: 'ko',
-            displayName: 'Apple',
+            subject: 'Apple',
             assetClass: 'equity',
             tSeo,
         } as const;
@@ -93,7 +93,7 @@ describe('loadTabSnapshotMeta', () => {
                 tab: 'news',
                 revalidate: 43200,
                 locale: 'en',
-                displayName: 'Apple',
+                subject: 'Apple',
                 assetClass: 'equity',
                 tSeo,
             })

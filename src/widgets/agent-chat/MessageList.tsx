@@ -25,8 +25,30 @@ import { ArrowDownIcon, ArrowUpRightIcon } from '@/shared/ui/StrokeIcons';
 import { SiglensMark } from './SiglensMark';
 import { ToolActivity } from './ToolActivity';
 
-/** "Near the bottom" cutoff (px) for both the scroll-to-bottom button (spec §3.9) and the removed auto-follow it replaces. */
+/**
+ * "Near the bottom" cutoff (px) for the scroll-to-bottom button (spec §3.9).
+ * Auto-follow while streaming is NOT the default (the reader keeps their place;
+ * the question anchors to the viewport top on send) — it exists only as the
+ * opt-in a click on that button starts, see `followingRef` in `MessageList`.
+ */
 const SCROLL_BOTTOM_THRESHOLD_PX = 80;
+
+/**
+ * How far `scrollTop` must fall below the highest point the follow reached
+ * (px) before it counts as the user scrolling up and ends the opt-in follow.
+ * It is also the "still at the bottom" band: a drop that lands within it is a
+ * layout clamp or an iOS rubber-band return, not the user leaving. Our own
+ * pinning only ever moves `scrollTop` down the page, never up.
+ */
+const USER_SCROLL_UP_TOLERANCE_PX = 4;
+
+/**
+ * Sub-pixel slack (px) for the check in the content-growth observer. There the
+ * bar is lower than `USER_SCROLL_UP_TOLERANCE_PX`: a slow upward scroll moves a
+ * few px per frame, and every growth tick would otherwise pin the view back
+ * before the cumulative drop could ever reach the scroll handler's tolerance.
+ */
+const PIN_DRIFT_TOLERANCE_PX = 1;
 
 /** Shared by the scroll handler and the content-growth observer below — one formula, not two copies that can drift. */
 function isAwayFromBottom(el: HTMLElement): boolean {
@@ -246,6 +268,23 @@ export function MessageList({
     const userNodeRefs = useRef(new Map<string, HTMLElement>());
     const seenLastUserIdRef = useRef<string | null>(null);
     const isFirstRenderRef = useRef(true);
+    /**
+     * Opt-in follow (spec §3.9): set when the user clicks the scroll-to-bottom
+     * button WHILE an answer is streaming, so the view stays pinned to the
+     * bottom as the content grows. Cleared on an upward user scroll or when the
+     * stream ends. A ref, not state — it only steers an imperative scroll in
+     * the ResizeObserver callback and never changes what renders. The default
+     * (no click) is no follow at all.
+     */
+    const followingRef = useRef(false);
+    /**
+     * Highest `scrollTop` reached while following — raised by our own pins and
+     * by downward scrolls (the smooth scroll to the bottom). Measuring the user's
+     * upward scroll against this peak, not against the previous scroll event,
+     * is what lets a slow 1-3px/frame scroll-up (trackpad, momentum) add up to
+     * "left the bottom" instead of slipping under the tolerance every frame.
+     */
+    const followPeakTopRef = useRef(0);
 
     const lastAssistant = messages.findLast(m => m.role === 'assistant');
     const lastUser = messages.findLast(m => m.role === 'user');
@@ -261,17 +300,56 @@ export function MessageList({
         );
     };
 
+    /**
+     * The user (wheel/touch/keyboard) has scrolled up since the follow's peak:
+     * `scrollTop` sits more than `tolerance` below it AND the view is off the
+     * bottom band. The second condition keeps a layout clamp (content shrank)
+     * and an iOS rubber-band return — both land at the bottom — from reading
+     * as the user leaving.
+     */
+    const userScrolledUpFromPeak = (
+        el: HTMLElement,
+        tolerance: number
+    ): boolean =>
+        followPeakTopRef.current - el.scrollTop > tolerance &&
+        el.scrollHeight - el.scrollTop - el.clientHeight >
+            USER_SCROLL_UP_TOLERANCE_PX;
+
     const handleScroll = (e: UIEvent<HTMLDivElement>): void => {
-        setShowScrollButton(isAwayFromBottom(e.currentTarget));
+        const el = e.currentTarget;
+        if (followingRef.current) {
+            const nearBottom =
+                el.scrollHeight - el.scrollTop - el.clientHeight <=
+                USER_SCROLL_UP_TOLERANCE_PX;
+            // Within the bottom band the peak simply tracks `scrollTop` — up
+            // for a downward scroll, and also DOWN after a layout clamp or an
+            // iOS rubber-band return, so a later real scroll-up is measured
+            // from where the bottom actually is.
+            if (nearBottom || el.scrollTop > followPeakTopRef.current)
+                followPeakTopRef.current = el.scrollTop;
+            else if (userScrolledUpFromPeak(el, USER_SCROLL_UP_TOLERANCE_PX))
+                followingRef.current = false;
+        }
+        setShowScrollButton(isAwayFromBottom(el));
     };
 
     const scrollToBottom = (): void => {
         const el = containerRef.current;
         if (!el) return;
+        // Clicking mid-stream opts into following the growing answer.
+        if (streaming) {
+            followingRef.current = true;
+            followPeakTopRef.current = el.scrollTop;
+        }
         el.scrollTo({
             top: el.scrollHeight,
             behavior: prefersReducedMotion() ? 'auto' : 'smooth',
         });
+        // The button unmounts once the view reaches the bottom, which would
+        // drop keyboard focus to <body>. Park it on the log instead (not the
+        // composer: focusing a textarea pops the on-screen keyboard on touch
+        // devices) so arrow/PageUp keys keep scrolling the transcript.
+        el.focus({ preventScroll: true });
     };
 
     // Anchor-on-send, scroll half: the effect below writes the target id to
@@ -298,17 +376,36 @@ export function MessageList({
         endRef.current?.scrollIntoView({ block: 'end' });
     }, []);
 
+    // The opt-in follow ends with the stream.
+    useEffect(() => {
+        if (!streaming) followingRef.current = false;
+    }, [streaming]);
+
     // `showScrollButton` otherwise only updates from the `onScroll` handler
     // above — but a streaming answer grows `scrollHeight` with no scroll
     // event at all, so a user who scrolled up would never see the ↓ button
     // appear (spec §3.9). Observing the content wrapper's size catches that
     // growth directly; the callback (not the effect body) sets state, since
     // this is an external subscription, not a render-time computation.
+    // The same callback is where the opt-in follow pins the view: after a
+    // click on the button mid-stream, each growth jumps to the new bottom
+    // (instant — a smooth animation per token would lag behind the text).
     useEffect(() => {
         const content = contentRef.current;
         const container = containerRef.current;
         if (!content || !container) return;
         const observer = new ResizeObserver(() => {
+            // A scroll-up the scroll handler has not yet seen enough of must win
+            // over the pin, or the user could never get out of the follow.
+            if (
+                followingRef.current &&
+                userScrolledUpFromPeak(container, PIN_DRIFT_TOLERANCE_PX)
+            )
+                followingRef.current = false;
+            if (followingRef.current) {
+                container.scrollTop = container.scrollHeight;
+                followPeakTopRef.current = container.scrollTop;
+            }
             setShowScrollButton(isAwayFromBottom(container));
         });
         observer.observe(content);
@@ -331,6 +428,9 @@ export function MessageList({
         }
         if (!lastUser || lastUser.id === seenLastUserIdRef.current) return;
         seenLastUserIdRef.current = lastUser.id;
+        // A new turn anchors to the viewport top (spec §3.9); never keep
+        // pinning the previous answer's follow across it.
+        followingRef.current = false;
         if (containerRef.current)
             setActiveMinHeight({ px: containerRef.current.clientHeight });
         pendingAnchorIdRef.current = lastUser.id;
@@ -341,7 +441,13 @@ export function MessageList({
             <div
                 ref={containerRef}
                 role="log"
-                className="absolute inset-0 overflow-y-auto"
+                // Programmatic focus target after the scroll-to-bottom click
+                // (see `scrollToBottom`); not in the tab order, no ring —
+                // `outline-hidden` (not `outline-none`) keeps the
+                // forced-colors fallback outline.
+                tabIndex={-1}
+                aria-label={t('MessageList.logLabel')}
+                className="absolute inset-0 overflow-y-auto focus:outline-hidden"
                 onScroll={handleScroll}
             >
                 <div
@@ -584,7 +690,7 @@ export function MessageList({
                     aria-label={t('MessageList.scrollToBottom')}
                     // 44px-ish touch target, matching the Composer's send/stop
                     // button (`size-11`, see Composer.tsx's `ACTION_SIZE`).
-                    className="absolute bottom-4 left-1/2 flex size-11 -translate-x-1/2 items-center justify-center rounded-full border border-border-control bg-secondary-800 text-secondary-200 shadow-lg hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                    className="absolute bottom-4 left-1/2 z-10 flex size-11 -translate-x-1/2 items-center justify-center rounded-full border border-border-control bg-secondary-800 text-secondary-200 shadow-lg hover:bg-secondary-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                     <ArrowDownIcon className="size-5" />
                 </button>

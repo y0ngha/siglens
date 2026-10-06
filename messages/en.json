@@ -185,9 +185,8 @@
             },
             "page": {
                 "167f34": "See how technical analysis and AI scenarios held up when checked against past data for 10 major stocks.",
-                "1d43d2": "SIGLENS: Analyzed and Completed by AI",
                 "24e60c": "Skip to Search",
-                "2f20c8": "A new standard for investing in stocks and crypto",
+                "2f20c8": "Stock and crypto analysis",
                 "79bd8f": "Easily check AI reports analyzing news, Fundamentals, and the Fear & Greed Index.",
                 "c26658": "AI Analysis for Greater Investment Confidence",
                 "dfbacd": "Verified Against Historical Data",
@@ -348,11 +347,11 @@
                 "2ab959": "which floor of this building is the price on?",
                 "3c87a9": "Could not load Earnings schedule.",
                 "465a63": "{v0} Financial Statements",
-                "4e7e6f": "While <link>{v1}</link> blends many assets to show sentiment across {v0}, this page scores {v2} alone by mapping its volume flow, order flow and price position against that stock’s own distribution.",
+                "4e7e6f": "{v2}'s Fear & Greed Index scores volume flow, order flow and price position from 0 to 100 against the stock's own history. For the wider picture, see <link>{v1}</link> for {v0}.",
                 "5c38df": "Could not load analyst trends.",
                 "6723ea": "Earnings Schedule",
                 "69d338": "My Position",
-                "6cd32e": "{v0} Fear & Greed Index and Short-Term Buying Sentiment",
+                "6cd32e": "{v0} Fear & Greed Index — 0–100 Score & Recent Trend",
                 "7b06ac": "Congressional Trades",
                 "8b7ae7": "AI Overall Analysis",
                 "9e0659": "{v0} Financial Metrics and Analyst Opinions",
@@ -1086,7 +1085,7 @@
             "description": {
                 "chart": "Technical indicators plus an AI overall report",
                 "congress": "Senate and House trade disclosures with AI trend reading",
-                "fear-greed": "Short-term trading sentiment on a 0–100 scale",
+                "fear-greed": "0–100 score from volume and price position",
                 "financials": "Income statement, balance sheet and cash flow",
                 "fundamental": "Financials, valuation and analyst outlook",
                 "news": "Real-time news plus analyst opinion analysis",
@@ -1362,7 +1361,7 @@
                     "ma200_distance": "Distance from 200-day Moving Average",
                     "poc_distance": "Distance from Point of Control of last {v0} bars",
                     "range_position": "Position in last 252 bars",
-                    "volume_z": "Volume Surge (directional)"
+                    "volume_z": "Volume vs. its norm (signed by price direction)"
                 },
                 "descriptionCrypto": {
                     "momentum": "The further Bitcoin sits above its 125-day moving average, the greedier",
@@ -1578,7 +1577,7 @@
                 "description": "Analyze US and Korean stocks and crypto from one ticker. Charts, technical signals, fundamentals, news and a Fear & Greed read in one AI Overall Analysis.",
                 "headline": "AI Analysis for US & Korean Stocks and Crypto",
                 "ogImageAlt": "{v0} — chart, fundamentals, news, options, Fear & Greed and an overall analysis",
-                "title": "US, Korean Stocks & Crypto AI Analysis — Charts & News"
+                "title": "{v0} — US & Korean Stocks and Crypto AI Analysis"
             },
             "signup": {
                 "description": "Sign up for extra Siglens benefits. Membership is optional — non-members can still use all core features.",
@@ -1601,7 +1600,7 @@
                     "titleCore": "Price Analysis"
                 },
                 "cryptoNews": {
-                    "description": "See the bullish and bearish catalysts moving {subject}'s price in the latest news. AI summarizes crypto market mood and key issues.",
+                    "description": "Latest {subject} news with bullish and bearish catalysts and the crypto market mood. AI summarizes the key issues.",
                     "titleCore": "Crypto News",
                     "titleTail": "Catalysts & Market Mood"
                 },
@@ -1613,7 +1612,19 @@
                 "fearGreed": {
                     "description": "See whether buying pressure in {subject} is strong or weak with a 0–100 score derived from volume flow and price position. Includes a 5-level mood from extreme fear to extreme greed and a 1-year history.",
                     "titleCore": "Fear & Greed Index",
-                    "titleTail": "0–100 Score, 5 Levels"
+                    "titleTail": "0–100 Score & Recent Trend",
+                    "factsDate": "{month, select, 1 {Jan} 2 {Feb} 3 {Mar} 4 {Apr} 5 {May} 6 {Jun} 7 {Jul} 8 {Aug} 9 {Sep} 10 {Oct} 11 {Nov} 12 {Dec} other {{month}}} {day}",
+                    "factsLead": "{subject} Fear & Greed Index: {score} ({label}) at the {date} close.",
+                    "factsPeriodWeek": "1 week ago",
+                    "factsPeriodMonth": "1 month ago",
+                    "factsPeriodYear": "1 year ago",
+                    "factsPast": "{period} {score}",
+                    "factsPastJoin": ", ",
+                    "factsPastRange": "Past scores: {past}. Range over {span}: {min} to {max}.",
+                    "factsPastOnly": "Past scores: {past}.",
+                    "factsRangeOnly": "Range over {span}: {min} to {max}.",
+                    "factsSpanYear": "the past year",
+                    "factsSpanDays": "the last {days} trading days"
                 },
                 "financials": {
                     "description": "See {subject}'s income statement, balance sheet, and cash flow at a glance, with scores for growth, profitability, stability, and cash generation.",
@@ -1627,9 +1638,9 @@
                     "titleTail": "PER, ROE & Consensus"
                 },
                 "news": {
-                    "description": "See why {subject}'s stock moved in the latest news. Each article is tagged bullish/bearish sentiment with key takeaways, plus the next earnings date and analyst price target/rating changes.",
+                    "description": "Latest {subject} news tagged bullish or bearish, with key issues, the next earnings date and analyst ratings.",
                     "titleCore": "News",
-                    "titleTail": "Sentiment & Analyst Ratings"
+                    "titleTail": "Key Issues & Price Targets"
                 },
                 "options": {
                     "description": "AI reads {subject}'s options market. See Max Pain, Put/Call ratio, ATM IV, and Implied Move by expiration, plus Open Interest by strike, to gauge where the market is betting.",
@@ -2026,7 +2037,7 @@
             "fearGreed": {
                 "crypto": "Cryptocurrency",
                 "cryptoBody": "Six factors are considered: whether Bitcoin is above its 125-day average, whether Bitcoin's downside Volatility over the past 30 days is low, whether Bitcoin's 20-day return outperforms gold, whether a large proportion of the top 20 large-cap coins are above their 50-day average, whether a large proportion of altcoins have outperformed Bitcoin over the past 90 days, and whether a large proportion of the trading Volume over the past 30 days occurred on days when Bitcoin rose.",
-                "how": "Each component is ranked against its own values over roughly the past five years, and the ranks are combined into the score. If there is not enough history to compare against, no score is produced.",
+                "how": "Each component is ranked against its own past values (up to roughly five years), and the ranks are combined into the score. If there is not enough history to compare against, no score is produced.",
                 "kr": "Overall Korean Market",
                 "krBody": "Five factors are considered: whether the ETF tracking KOSPI 200 (KODEX 200) is above its 125-trading day average, whether the KOSPI index's 20-trading day realized Volatility is lower than its 50-trading day average, whether stocks have outperformed the 30-year Korean Treasury bond ETF in 20-trading day returns, whether the corporate bond ETF has outperformed the 3-year Korean Treasury bond ETF, and whether the KOSPI 200 equal-weighted ETF has outperformed the Market Cap-weighted ETF. Since there is no way to obtain a VIX-equivalent index (VKOSPI) in Korea, realized Volatility calculated directly from the KOSPI closing price is used instead.",
                 "labels": "Scores are divided into five levels: below 25 is Extreme Fear, 25 to below 45 is Fear, 45 to below 55 is Neutral, 55 to below 75 is Greed, and 75 or above is Extreme Greed.",
@@ -2038,7 +2049,8 @@
                 "symbolBody": "Five factors are considered using daily candles. For supply and demand, we look at Volume compared to the average of the last 20 candles (reflecting direction with positive for up days and negative for down days), the imbalance between buy and sell Volume, and the distance from the price where trading was most concentrated over the last 60 candles. For Trendline, we look at the distance from the 200-candle average and the price position within the last 252 candles.",
                 "title": "Fear & Greed Index",
                 "us": "Overall US Market",
-                "usBody": "Five factors are considered: whether the ETF tracking S&P 500 (SPY) is above its 125-trading day average, whether VIX is lower than its 50-trading day average, whether stocks have outperformed the long-term Treasury bond ETF (TLT) in 20-trading day returns, whether the high-yield corporate bond ETF (HYG) has outperformed the investment-grade corporate bond ETF (LQD), and whether the equal-weighted ETF (RSP) has outperformed the Market Cap-weighted ETF (SPY)."
+                "usBody": "Five factors are considered: whether the ETF tracking S&P 500 (SPY) is above its 125-trading day average, whether VIX is lower than its 50-trading day average, whether stocks have outperformed the long-term Treasury bond ETF (TLT) in 20-trading day returns, whether the high-yield corporate bond ETF (HYG) has outperformed the investment-grade corporate bond ETF (LQD), and whether the equal-weighted ETF (RSP) has outperformed the Market Cap-weighted ETF (SPY).",
+                "episodes": "In the extreme-zone record, a return to the same zone within {v0} trading days counts as part of the same stay. This keeps a brief exit and re-entry from being counted as a new entry."
             },
             "hero": {
                 "eyebrow": "Siglens Analysis Methodology",
@@ -2102,7 +2114,7 @@
                 },
                 "methodLink": "Analysis Method",
                 "reportLink": "Report Error",
-                "ruleBody": "This score is calculated solely by rules, without AI narration. It reflects sentiment only and does not predict future prices. Data: {source}."
+                "ruleBody": "This score is calculated solely by rules, without AI narration. Data: {source}."
             },
             "ChartContent": {
                 "93c3a3": "The chart does not reflect Pre-market, After-market prices. | ",
@@ -2234,14 +2246,10 @@
                 "extremeZoneNotice": "This is a record of the past. It does not predict future prices or recommend buying or selling.",
                 "extremeZoneOmitted": "{v0} earlier stays are not shown.",
                 "extremeZoneOngoing": "{v0} (ongoing)",
-                "extremeZonePeriod": "Period: {v0} to {v1} (trading days with a score for this symbol). A return to the same zone within {v2} trading days is counted as part of the same stay.",
+                "extremeZonePeriod": "Period: {v0} to {v1} (trading days with a score for this symbol).",
                 "extremeZoneSessions": "{v0}",
                 "extremeZoneSummary": "{v0}: {v1} entries, median stay {v2} trading days",
                 "extremeZoneTitle": "Extreme zone record",
-                "factorHigh": "high against the last 200 trading days",
-                "factorLine": "{v0}: {v1} ({v2}th percentile) — {v3}.",
-                "factorLow": "low against the last 200 trading days",
-                "factorMid": "within the average range of the last 200 trading days",
                 "groupBalanced": "The {v0} and {v1} groups both sit at {v2}, a balanced reading.",
                 "groupFlow": "Flow",
                 "groupLead": "The {v0} group scores {v1}, {v4} points above the {v2} group at {v3} — {v0} is leading.",
@@ -2267,7 +2275,17 @@
                 "regimeTransitionItem": "{v1} → {v2} on {v0}",
                 "regimeTransitions": "Recent zone changes: {v0}.",
                 "topFactor": "Of {v0} factors, {v1} stands out most at the {v2}th percentile — {v3} than usual.",
-                "vsAnchor": "{v1} points versus {v0} "
+                "vsAnchor": "{v1} points versus {v0} ",
+                "factorColName": "Factor",
+                "factorColValue": "Current value",
+                "factorColPercentile": "Percentile",
+                "factorTableCaption": "Each factor's current value and its percentile (0–100) against this symbol's own past values (up to ~5 years)",
+                "factorOutliers": "Factors outside the usual range (25th–75th percentile): {v0}.",
+                "factorOutlierItem": "{v0} ({v1})",
+                "factorHighShort": "high",
+                "factorLowShort": "low",
+                "factorAllInRange": "All factors are within the usual range (25th–75th percentile).",
+                "extremeZoneMethodLink": "How records are grouped"
             },
             "mobileSheet": {
                 "aiAnalysis": "AI analysis"
@@ -2306,9 +2324,8 @@
                 }
             },
             "technicalFacts": {
-                "closeSummary": "{v0} {v3} {v2}% from the previous bar, at a last close of {v1}.",
+                "closeSummary": "{v0}'s last close was {v1}, and it {v3} {v2}% from the previous bar.",
                 "directionDown": "fell",
-                "directionFlat": "was flat",
                 "directionUp": "rose",
                 "macdDown": "the MACD histogram is negative, so short-term momentum leans down",
                 "macdFlat": "the MACD histogram is at zero, so short-term momentum is close to neutral",
@@ -2319,7 +2336,8 @@
                 "rsiNeutral": "neutral",
                 "rsiOverbought": "overbought",
                 "rsiOversold": "oversold",
-                "rsiZone": "RSI at {v0}, in {v1} territory"
+                "rsiZone": "RSI is {v0} ({v1} zone)",
+                "closeSummaryFlat": "{v0}'s last close was {v1}, unchanged from the previous bar."
             }
         },
         "ai-about": {
@@ -4162,6 +4180,7 @@
                 "e6b008": "Edit message",
                 "followUpsLabel": "Ask a follow-up",
                 "generating": "Generating a reply…",
+                "logLabel": "Conversation Log",
                 "openOnSiglens": "View {symbol} on SIGLENS",
                 "redrafting": "Checking a bit more data and rewriting the answer…",
                 "relatedPages": "More on SIGLENS",

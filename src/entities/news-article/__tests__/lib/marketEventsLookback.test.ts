@@ -3,7 +3,7 @@ import type { Timeframe } from '@y0ngha/siglens-core';
 import { marketEventsLookback } from '@/entities/news-article/lib/marketEventsLookback';
 import { MS_PER_DAY } from '@/shared/config/time';
 
-const NOW = new Date('2026-09-05T00:00:00Z');
+const NOW = new Date('2026-09-05T13:45:12.345Z');
 
 /** 창 길이를 일 단위로 환산한다. */
 function spanDays(timeframe: Timeframe): number {
@@ -16,13 +16,50 @@ describe('marketEventsLookback', () => {
         expect(marketEventsLookback('1Day', NOW).to).toEqual(NOW);
     });
 
-    it('타임프레임별 창 길이', () => {
-        expect(spanDays('5Min')).toBe(2);
-        expect(spanDays('15Min')).toBe(3);
-        expect(spanDays('30Min')).toBe(4);
-        expect(spanDays('1Hour')).toBe(5);
-        expect(spanDays('4Hour')).toBe(14);
-        expect(spanDays('1Day')).toBe(60);
+    it('타임프레임별 창 길이는 [N, N+1)일이다 — 하한을 UTC 자정으로 내리므로', () => {
+        const expected: Array<[Timeframe, number]> = [
+            ['5Min', 2],
+            ['15Min', 3],
+            ['30Min', 4],
+            ['1Hour', 5],
+            ['4Hour', 14],
+            ['1Day', 60],
+        ];
+        for (const [timeframe, days] of expected) {
+            expect(spanDays(timeframe)).toBeGreaterThanOrEqual(days);
+            expect(spanDays(timeframe)).toBeLessThan(days + 1);
+        }
+    });
+
+    it('`from`은 UTC 자정이다', () => {
+        const { from } = marketEventsLookback('15Min', NOW);
+
+        expect(from.getUTCHours()).toBe(0);
+        expect(from.getUTCMinutes()).toBe(0);
+        expect(from.getUTCSeconds()).toBe(0);
+        expect(from.getUTCMilliseconds()).toBe(0);
+        expect(from.toISOString()).toBe('2026-09-02T00:00:00.000Z');
+    });
+
+    it('같은 UTC 날짜 안의 서로 다른 `now`는 같은 `from`을 낸다 — 캐시 키 안정성', () => {
+        const early = new Date('2026-09-05T00:00:00.000Z');
+        const late = new Date('2026-09-05T23:59:59.999Z');
+
+        for (const tf of ['5Min', '1Hour', '1Day'] as const) {
+            expect(marketEventsLookback(tf, early).from).toEqual(
+                marketEventsLookback(tf, late).from
+            );
+        }
+    });
+
+    it('UTC 자정을 넘기면 `from`이 정확히 하루 이동한다', () => {
+        const before = new Date('2026-09-05T23:59:59.999Z');
+        const after = new Date('2026-09-06T00:00:00.000Z');
+        const shift =
+            marketEventsLookback('1Day', after).from.getTime() -
+            marketEventsLookback('1Day', before).from.getTime();
+
+        expect(shift).toBe(MS_PER_DAY);
     });
 
     it('짧은 타임프레임일수록 창이 좁다', () => {
@@ -49,7 +86,8 @@ describe('marketEventsLookback', () => {
         const barSpanDays = (bars: number, barMinutes: number) =>
             (bars * barMinutes) / 60 / TRADING_HOURS_PER_DAY;
 
-        // recentBarsCount: 5Min 48, 15Min 40, 1Day 30
+        // 봉 개수는 예시값(5Min 48, 15Min 40, 1Day 30)이다. 창은 core 봉 범위의
+        // 근사가 아니라 프롬프트에 실리는 이벤트의 실질 하한이다.
         expect(spanDays('5Min')).toBeGreaterThan(barSpanDays(48, 5));
         expect(spanDays('15Min')).toBeGreaterThan(barSpanDays(40, 15));
         expect(spanDays('1Day')).toBeGreaterThan(30);

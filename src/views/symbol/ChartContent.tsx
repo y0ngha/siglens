@@ -110,6 +110,8 @@ function AnalysisStatusBanner({
 interface ChartContentProps {
     symbol: string;
     companyName: string;
+    /** 지표 요약 서술의 주어(`애플(AAPL)`). 생략하면 티커. */
+    factsSubject?: string;
     timeframe: Timeframe;
     /** 타임프레임이 변경된 누적 횟수. Suspense remount 시 초기 마운트와 타임프레임 변경을 구분한다. */
     timeframeChangeCount: number;
@@ -136,6 +138,7 @@ interface ChartContentProps {
 export function ChartContent({
     symbol,
     companyName,
+    factsSubject,
     timeframe,
     timeframeChangeCount,
     initialAnalysis,
@@ -429,6 +432,7 @@ export function ChartContent({
                 )}
                 <TechnicalFactsSummary
                     symbol={symbol}
+                    subject={factsSubject}
                     bars={bars}
                     indicators={indicators}
                     marketProfile={marketProfile}
@@ -439,6 +443,7 @@ export function ChartContent({
                 <AnalysisStatusBanner status={analysisStatus} />
                 <TechnicalFactsSummary
                     symbol={symbol}
+                    subject={factsSubject}
                     bars={bars}
                     indicators={indicators}
                     marketProfile={marketProfile}
@@ -488,6 +493,7 @@ export function ChartContent({
         indicators,
         isAnalyzing,
         symbol,
+        factsSubject,
         analysisStatus,
         analysis,
         fallbackSummary,

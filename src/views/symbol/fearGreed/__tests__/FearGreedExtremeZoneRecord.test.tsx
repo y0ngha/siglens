@@ -134,14 +134,18 @@ describe('FearGreedExtremeZoneRecord', () => {
         expect(within(row).getByText('—')).toBeInTheDocument();
     });
 
-    it('집계 기간과 core의 재진입 간격을 기간 문장에 싣고, 수익률은 보이지 않는다', () => {
+    it('집계 기간을 싣고 묶는 기준은 분석 방법 링크로 넘기며, 수익률은 보이지 않는다', () => {
         render(<FearGreedExtremeZoneRecord record={RECORD} />);
 
         const block = screen.getByRole('group', { name: GROUP_NAME });
         expect(block).toHaveTextContent('2021년 11월 29일 ~ 2026년 10월 2일');
-        expect(block).toHaveTextContent(
-            `${EXTREME_ZONE_REENTRY_GAP}거래일 안에 다시 들어온 날은 같은 기록으로 묶었습니다`
+        // 20거래일 묶음 규칙 설명은 `/methodology`로 옮겼다 — 모든 종목 페이지에 반복하지 않는다.
+        expect(block).not.toHaveTextContent(
+            `${EXTREME_ZONE_REENTRY_GAP}거래일 안에 다시 들어온 날`
         );
+        expect(
+            within(block).getByRole('link', { name: '기록을 묶는 기준 보기' })
+        ).toHaveAttribute('href', '/methodology#fear-greed');
         expect(block).not.toHaveTextContent('%');
     });
 

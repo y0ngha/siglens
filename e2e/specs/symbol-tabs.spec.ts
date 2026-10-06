@@ -77,7 +77,7 @@ const TABS = [
         label: '공포 탐욕 지수',
         path: '/AAPL/fear-greed',
         urlRe: /\/AAPL\/fear-greed$/,
-        heading: /공포 탐욕 지수와 단기 매수 분위기/,
+        heading: /공포 탐욕 지수 — 0~100 점수와 최근 흐름/,
     },
     {
         key: 'overall',

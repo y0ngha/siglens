@@ -17,6 +17,7 @@ import {
     type SeoTranslator,
     localizedAbsoluteUrl,
 } from '@/shared/lib/seo';
+import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { TERMS_PATH } from '@/shared/lib/legal';
 import { BacktestHero } from '@/widgets/backtesting/BacktestHero';
@@ -98,12 +99,11 @@ export async function generateMetadata({
                 },
             ],
         },
-        twitter: {
-            card: 'summary_large_image',
+        twitter: buildTwitterMetadata({
             title: fullTitle,
             description,
             images: ['/og-image.png'],
-        },
+        }),
     };
 }
 

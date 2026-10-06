@@ -16,6 +16,7 @@ import {
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { localePageRobots } from '@/shared/lib/seoAlternates';
 import { ORGANIZATION_JSON_LD_ID, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
+import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 
 /** Product name as it appears in titles, cards and structured data. */
 export const AI_PRODUCT_NAME = 'SIGLENS AI';
@@ -95,12 +96,11 @@ function buildAiPageMetadata(
             locale: LOCALE_OG[locale],
             images: [image],
         },
-        twitter: {
-            card: 'summary_large_image',
+        twitter: buildTwitterMetadata({
             title: copy.title,
             description: copy.description,
             images: [image.url],
-        },
+        }),
     };
 }
 

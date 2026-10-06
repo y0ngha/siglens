@@ -1,5 +1,24 @@
 # Changelog
 
+# [0.100.0](https://github.com/y0ngha/siglens/compare/v0.99.0...v0.100.0) (2026-10-06)
+
+### Bug Fixes
+
+* 404·약관·SiglensAI·스킬 쇼케이스 등 전역 UX 개선 ([#961](https://github.com/y0ngha/siglens/issues/961)) ([5e27f90](https://github.com/y0ngha/siglens/commit/5e27f903dc4defbaa132609f67e1c48307b7b808))
+* 루트 404 제목·광고 랜딩 리다이렉트가 e2e에서 깨지는 문제를 고친다 ([#964](https://github.com/y0ngha/siglens/issues/964)) ([9fefb6c](https://github.com/y0ngha/siglens/commit/9fefb6caedd36f2943f9d75c8ad71501ed6fb40e)), closes [#961](https://github.com/y0ngha/siglens/issues/961)
+* 시장·경제·뉴스·백테스트 허브 UX 개선 ([#959](https://github.com/y0ngha/siglens/issues/959)) ([040ee46](https://github.com/y0ngha/siglens/commit/040ee466192728259b13aa72c60b5cb95c3cc808))
+* 종목 탭 문구·데이터 UX 개선(공포탐욕·옵션·스킬 수·지연 안내) ([#962](https://github.com/y0ngha/siglens/issues/962)) ([7c78500](https://github.com/y0ngha/siglens/commit/7c78500b7e802af0a4d4dc06857a9163b4b62ee6))
+* 종목 페이지 레이아웃 UX 개선 ([#956](https://github.com/y0ngha/siglens/issues/956)) ([325f54a](https://github.com/y0ngha/siglens/commit/325f54a954f4123eaf7ea363008c363eb1e65699))
+* **seo:** 검색 결과 문구·구조화 데이터·RSS를 페이지 실제와 맞춘다 ([#955](https://github.com/y0ngha/siglens/issues/955)) ([7ef8a73](https://github.com/y0ngha/siglens/commit/7ef8a731399809be5a1fe0695d08ff7841672c40))
+* **seo:** 스냅샷 기준일을 데이터 기준으로 바로잡고, IndexNow 제출을 큐로 보강한다 ([#954](https://github.com/y0ngha/siglens/issues/954)) ([2ece952](https://github.com/y0ngha/siglens/commit/2ece952ba7c843cffd45d35ce3a89feed45f9911))
+* **seo:** 일시 장애가 noindex로 굳지 않게 하고, 산문 없는 종목 탭은 색인하지 않는다 ([#958](https://github.com/y0ngha/siglens/issues/958)) ([b6e0a25](https://github.com/y0ngha/siglens/commit/b6e0a2587c7112a00a10307792f1da13db3b7412))
+* **seo:** 크롤 경로를 색인 페이지 쪽으로 모으고, 종목 탭을 숨김 청크 없이 렌더한다 ([#957](https://github.com/y0ngha/siglens/issues/957)) ([c715f08](https://github.com/y0ngha/siglens/commit/c715f08b5349607c8421717b55cf00e1978f24c1))
+* siglens-core 2.12.0 — 분석 캐시가 종목의 시장 세션 마감에 맞춰 만료되도록 session을 넘긴다 ([#960](https://github.com/y0ngha/siglens/issues/960)) ([95d8a28](https://github.com/y0ngha/siglens/commit/95d8a28b89e29c7026ecd64b148f00a32f04c854))
+
+### Features
+
+* 브리핑 생성 시각·쉬운 설명 기준 시각·후속 질문 칩(core 2.13.0 반영) ([#963](https://github.com/y0ngha/siglens/issues/963)) ([a5e65d6](https://github.com/y0ngha/siglens/commit/a5e65d6ceb448b305379f1c51a94f49ff122c7c7))
+
 # [0.99.0](https://github.com/y0ngha/siglens/compare/v0.98.0...v0.99.0) (2026-10-05)
 
 ### Bug Fixes

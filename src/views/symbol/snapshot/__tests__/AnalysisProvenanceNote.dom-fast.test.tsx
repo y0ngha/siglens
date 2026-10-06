@@ -83,7 +83,7 @@ describe('AnalysisProvenanceNote', () => {
                 );
                 expect(
                     screen.getByText(
-                        `AI 서술 없이 규칙으로만 계산한 점수예요. 심리를 보여 줄 뿐 앞으로의 가격을 말하지 않아요. 데이터: ${source}.`
+                        `AI 서술 없이 규칙으로만 계산한 점수예요. 데이터: ${source}.`
                     )
                 ).toBeInTheDocument();
                 expect(document.body.textContent).not.toMatch(/뉴스/);

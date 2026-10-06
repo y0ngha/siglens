@@ -1,4 +1,7 @@
-import type { SkillCounts } from '@y0ngha/siglens-core';
+import {
+    EXTREME_ZONE_REENTRY_GAP,
+    type SkillCounts,
+} from '@y0ngha/siglens-core';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import type { Locale } from '@/shared/i18n/locales';
@@ -364,6 +367,11 @@ export async function MethodologyPage({
                 >
                     <p className={cn(BODY, 'mt-4')}>{t('fearGreed.how')}</p>
                     <p className={cn(BODY, 'mt-3')}>{t('fearGreed.labels')}</p>
+                    <p className={cn(BODY, 'mt-3')}>
+                        {t('fearGreed.episodes', {
+                            v0: EXTREME_ZONE_REENTRY_GAP,
+                        })}
+                    </p>
                     <ul className="mt-6 flex flex-col gap-3">
                         <Variant
                             title={t('fearGreed.symbol')}
