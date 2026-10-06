@@ -100,23 +100,22 @@ function rsiNarrativePart(rsi: number, t: SeoTranslator): string {
 }
 
 function changeNarrativePart(
-    symbol: string,
+    subject: string,
     price: string,
     changePercent: number,
     t: SeoTranslator
 ): string {
     const direction = changeDirection(changePercent);
-    const directionKo =
-        direction === 'up'
-            ? t('directionUp')
-            : direction === 'down'
-              ? t('directionDown')
-              : t('directionFlat');
+    // 보합은 `0.00% 보합했습니다` 대신 "같은 가격입니다"로 끝나는 별도 문장이다 —
+    // 방향 동사를 억지로 붙이면 비문이 된다.
+    if (direction === 'flat') {
+        return t('closeSummaryFlat', { v0: subject, v1: price });
+    }
     return t('closeSummary', {
-        v0: symbol,
+        v0: subject,
         v1: price,
         v2: Math.abs(changePercent).toFixed(2),
-        v3: directionKo,
+        v3: direction === 'up' ? t('directionUp') : t('directionDown'),
     });
 }
 
@@ -131,8 +130,13 @@ function recentRangeNarrativePart(
     });
 }
 
+/**
+ * 차트 탭 서술 문장. 첫 문장이 네이버 스니펫으로 쓰인다(2026-10-04) — 그래서 티커 대신
+ * 검색어와 같은 주어(`애플(AAPL)`, `buildTitleSubject`)로 시작하고, 조사가 주어에 의존하지
+ * 않게 `{주어}의 …` 꼴로 쓴다(받침에 따라 `은/는`이 갈리는 문장은 한국어 이름에서 깨진다).
+ */
 export function buildTechnicalFactsNarrative(
-    symbol: string,
+    subject: string,
     facts: TechnicalFacts,
     marketProfile: MarketProfileId,
     t: SeoTranslator
@@ -141,7 +145,7 @@ export function buildTechnicalFactsNarrative(
         facts.lastClose,
         getDescriptor(marketProfile).priceFormat
     );
-    const lines = [changeNarrativePart(symbol, price, facts.changePercent, t)];
+    const lines = [changeNarrativePart(subject, price, facts.changePercent, t)];
 
     const momentumParts: string[] = [];
     if (facts.rsi !== null) {

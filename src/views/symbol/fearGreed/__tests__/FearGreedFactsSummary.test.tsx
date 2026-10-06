@@ -56,7 +56,7 @@ describe('FearGreedFactsSummary', () => {
     it('정상 snapshot이면 점수·라벨·5개 factor를 크롤 가능한 텍스트로 렌더한다', () => {
         (computeFearGreedIndex as Mock).mockReturnValue(FIXTURE_SNAPSHOT);
 
-        const { container, getByText } = render(
+        const { container, getByText, getByRole } = render(
             <FearGreedFactsSummary
                 symbol="AAPL"
                 marketProfile="us-equity"
@@ -69,16 +69,21 @@ describe('FearGreedFactsSummary', () => {
         // 점수 + 5단계 라벨.
         expect(getByText(/62 \/ 100/)).toBeInTheDocument();
         expect(getByText(/\(탐욕\)/)).toBeInTheDocument();
-        // 5개 factor 라벨 전부 노출.
-        expect(getByText(/거래량 급증도\(방향 반영\)/)).toBeInTheDocument();
-        expect(getByText(/매수·매도 거래량 불균형/)).toBeInTheDocument();
-        expect(getByText(/매물대 중심과의 거리/)).toBeInTheDocument();
-        expect(getByText(/200일 이동평균과의 거리/)).toBeInTheDocument();
-        // FIX 6's factor-ranking narrative sentence also mentions "최근
-        // 252봉 위치" (it's this fixture's most extreme factor) — anchor on
-        // the per-factor line's "라벨: 값" shape so this assertion targets
-        // only that line, not both.
-        expect(getByText(/최근 252봉 위치: /)).toBeInTheDocument();
+        // 5개 지표는 표 하나 — 행 머리글이 일반어 라벨이다(약어 `MA200`·`POC`·`z` 없음).
+        expect(getByRole('table')).toBeInTheDocument();
+        for (const label of [
+            /평소 대비 거래량 이탈/,
+            /매수·매도 거래량 불균형/,
+            /매물대 중심과의 거리/,
+            /200일 이동평균과의 거리/,
+            /최근 252봉 위치/,
+        ]) {
+            expect(getByRole('rowheader', { name: label })).toBeInTheDocument();
+        }
+        // 기준은 캡션에 한 번만 적는다 — 행마다 반복하지 않는다.
+        expect(
+            getByText(/과거 값\(최대 약 5년\)과 견준 퍼센타일/)
+        ).toBeInTheDocument();
         // sample-size footer.
         expect(
             getByText('지난 220거래일과 비교해 매긴 점수예요.')
@@ -167,9 +172,10 @@ describe('FearGreedFactsSummary', () => {
                 '추세 그룹 점수(66점)가 수급 그룹(58점)보다 8점 높아 추세 우위 흐름입니다.'
             )
         ).toBeInTheDocument();
-        expect(getByText(/가장 두드러진 지표는/)).toBeInTheDocument();
         expect(
-            getByText(/최근 252봉 위치로, 95번째 퍼센타일/)
+            getByText(
+                /평소 범위에서 가장 멀리 벗어난 것은 최근 252봉 위치입니다\. 95번째 퍼센타일/
+            )
         ).toBeInTheDocument();
     });
 
@@ -407,5 +413,51 @@ describe('FearGreedFactsSummary — DOM 순서', () => {
             footnote.compareDocumentPosition(section.lastElementChild!) &
                 following
         ).toBe(following);
+    });
+
+    /** 평소 범위(25~75 퍼센타일) 밖 지표만 해석한다 — 지표마다 같은 해석 문구를 반복하지 않는다. */
+    it('평소 범위 밖 지표만 한 문장으로 해석한다', () => {
+        (computeFearGreedIndex as Mock).mockReturnValue(FIXTURE_SNAPSHOT);
+
+        const { getByText } = render(
+            <FearGreedFactsSummary
+                symbol="AAPL"
+                marketProfile="us-equity"
+                bars={fakeBars}
+                buySellVolume={fakeBsv}
+            />
+        );
+
+        // FIXTURE: 80·90·95는 범위 밖(높은 편), 65·55는 범위 안.
+        expect(
+            getByText(
+                /평소 범위\(25~75번째 퍼센타일\)를 벗어난 지표는 평소 대비 거래량 이탈\(등락 방향 반영\)\(높은 편\), 200일 이동평균과의 거리\(높은 편\), 최근 252봉 위치\(높은 편\)입니다\./
+            )
+        ).toBeInTheDocument();
+    });
+
+    it('모든 지표가 평소 범위 안이면 그 사실을 한 문장으로 말한다', () => {
+        (computeFearGreedIndex as Mock).mockReturnValue({
+            ...FIXTURE_SNAPSHOT,
+            groups: FIXTURE_SNAPSHOT.groups.map(g => ({
+                ...g,
+                factors: g.factors.map(f => ({ ...f, percentile: 50 })),
+            })),
+        });
+
+        const { getByText } = render(
+            <FearGreedFactsSummary
+                symbol="AAPL"
+                marketProfile="us-equity"
+                bars={fakeBars}
+                buySellVolume={fakeBsv}
+            />
+        );
+
+        expect(
+            getByText(
+                '모든 지표가 평소 범위(25~75번째 퍼센타일) 안에 있습니다.'
+            )
+        ).toBeInTheDocument();
     });
 });

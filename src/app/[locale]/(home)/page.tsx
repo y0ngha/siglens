@@ -13,6 +13,7 @@ import {
 } from '@/shared/lib/legal';
 import { SymbolSearchPanel } from '@/features/ticker-search/ui/SymbolSearchPanel';
 import {
+    brandIntroName,
     buildFaqJsonLd,
     buildWebPageJsonLd,
     GITHUB_URL,
@@ -23,6 +24,7 @@ import {
     SITE_URL,
     X_URL,
 } from '@/shared/lib/seo';
+import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import {
     DEFAULT_LOCALE,
     LOCALE_HREFLANG,
@@ -67,7 +69,9 @@ export async function generateMetadata({
         locale,
         namespace: 'shared.seo',
     });
-    const title = tSeo('root.title');
+    // 브랜드는 인자로 넘긴다 — 한글 표기를 카탈로그 문구에 직접 적으면 ko 문장만 길어져
+    // 번역 검증의 길이 게이트가 다른 로케일을 잘린 번역으로 본다(`brandIntroName` 주석).
+    const title = tSeo('root.title', { v0: brandIntroName(locale) });
     const description = tSeo('root.description');
     /**
      * `openGraph`/`twitter`를 **완전히** 선언한다.
@@ -108,12 +112,11 @@ export async function generateMetadata({
                 },
             ],
         },
-        twitter: {
-            card: 'summary_large_image',
+        twitter: buildTwitterMetadata({
             title,
             description,
             images: ['/og-image.png'],
-        },
+        }),
     };
 }
 
@@ -212,7 +215,7 @@ export default async function Home({
             url: SITE_URL,
             // 카탈로그를 쓴다 — `SITE_DESCRIPTION`은 한국어 상수라
             // `inLanguage: "en"`을 달고 한국어 산문을 내보내고 있었다.
-            name: `${SITE_NAME} — ${tSeo('root.description')}`,
+            name: tSeo('root.title', { v0: brandIntroName(locale) }),
             description: tSeo('root.description'),
             locale,
         }),
@@ -241,16 +244,10 @@ export default async function Home({
         url: SITE_URL,
         logo: `${SITE_URL}/icon512.png`,
         description: tSeo('root.description'),
-        // 운영자 개인 저장소와 서비스 저장소 둘 다 — `founder.sameAs`가 이미
-        // 전자를 가리키는데 Organization이 후자만 주장하면 두 프로필이 같은
-        // 주체로 묶이지 않는다. velog(운영자 블로그)와 서비스 X 계정도 같은
-        // 이유로 함께 선언한다(2026-10-04 SEO 업그레이드 A1).
-        sameAs: [
-            SITE_OPERATOR.githubUrl,
-            GITHUB_URL,
-            SITE_OPERATOR.velogUrl,
-            X_URL,
-        ],
+        // 조직의 외부 프로필만 싣는다 — 서비스 저장소와 서비스 X 계정. 운영자 개인
+        // GitHub·velog는 사람의 프로필이라 `founder.sameAs`에만 둔다. 개인 계정을 조직
+        // 노드에 섞으면 파서가 조직과 운영자를 같은 주체로 읽는다(2026-10-05 감사).
+        sameAs: [GITHUB_URL, X_URL],
         // 운영 주체를 그래프에 붙인다 — `/about`의 `Person` 노드와 같은 `@id`라
         // 두 페이지의 사람이 하나로 합쳐진다. 값은 `SITE_OPERATOR` 단일 소스.
         founder: {
@@ -338,16 +335,19 @@ export default async function Home({
 
                                 단, 두 구절의 분리는 `sm:` 이상이 아니라 **모든
                                 폭**에서 유지한다. 처음엔 `sm:block`이었는데,
-                                그러면 모바일에서만 두 문장이 한 줄로 붙어
-                                "새로운 기준 AI가 분석하고"처럼 읽힌다 — 대시를
+                                그러면 모바일에서만 두 구절이 한 줄로 붙어
+                                "분석 서비스 시그렌즈"가 한 덩어리로 읽힌다 — 대시를
                                 걷어낸 자리를 색상만으로는 못 메운다. 모바일이
                                 주 트래픽이므로 여기서 어긋나면 안 된다.
+
+                                둘째 구절은 브랜드명(`brandIntroName`)이다 — H1에
+                                한글 표기가 들어가야 "시그렌즈" 검색이 홈으로 온다.
                             */}
                             <div className="@container mx-auto max-w-sm sm:max-w-2xl lg:mx-0">
                                 <h1 className="text-[clamp(2.1rem,7.4cqw,3.25rem)] leading-[1.12] font-bold tracking-tight text-balance text-secondary-50">
                                     {t('page.2f20c8')}{' '}
                                     <span className="block text-primary-300">
-                                        {t('page.1d43d2')}
+                                        {brandIntroName(locale)}
                                     </span>
                                 </h1>
                             </div>
