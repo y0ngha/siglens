@@ -226,6 +226,44 @@ describe('getCachedSectorSignals', () => {
         );
     });
 
+    it('일봉 스캔은 장중 60초 TTL에 5분 하한을 둔다', async () => {
+        mockRedisGet.mockResolvedValue(null);
+        mockGetSectorSignals.mockResolvedValue(sampleResult);
+        mockRedisSet.mockResolvedValue('OK');
+        const mod = await loadWithEnv({
+            url: 'https://x.upstash.io',
+            token: 't',
+        });
+        await mod.getCachedSectorSignals(
+            mockProvider,
+            US_DASHBOARD_SCOPE,
+            '1Day'
+        );
+        expect(mockRedisSet).toHaveBeenCalledWith(
+            expect.stringMatching(/^sector-signals:us:1Day:/),
+            { data: sampleResult },
+            { ex: mod.SECTOR_SIGNALS_DAILY_MIN_TTL_SECONDS }
+        );
+        expect(mod.SECTOR_SIGNALS_DAILY_MIN_TTL_SECONDS).toBe(300);
+    });
+
+    it('sectorSignalsTtlSeconds: 인트라데이는 하한 없이 세션 TTL, 일봉은 더 긴 세션 TTL을 그대로 쓴다', async () => {
+        const mod = await loadWithEnv({});
+        const now = new Date('2026-06-30T15:00:00Z');
+        // computeBarsEffectiveTtl은 이 파일에서 60초로 목 처리돼 있다.
+        expect(
+            mod.sectorSignalsTtlSeconds(US_DASHBOARD_SCOPE, '1Hour', now)
+        ).toBe(60);
+        expect(
+            mod.sectorSignalsTtlSeconds(US_DASHBOARD_SCOPE, '1Day', now)
+        ).toBe(300);
+        const core = await import('@y0ngha/siglens-core');
+        vi.mocked(core.computeBarsEffectiveTtl).mockReturnValueOnce(3600);
+        expect(
+            mod.sectorSignalsTtlSeconds(US_DASHBOARD_SCOPE, '1Day', now)
+        ).toBe(3600);
+    });
+
     /** scope.id가 키에 들어가는 것이 두 시장을 가르는 유일한 장치다. */
     it('kr scope는 kr 접두 키를 쓴다', async () => {
         mockRedisGet.mockResolvedValue(null);

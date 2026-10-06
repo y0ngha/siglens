@@ -5,6 +5,7 @@ vi.mock('@/shared/cache/redisClient', () => ({
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
     getOrSetCache,
+    setCacheValue,
     __resetInFlightForTests,
 } from '@/shared/cache/getOrSetCache';
 import { getRedisClient } from '@/shared/cache/redisClient';
@@ -416,5 +417,63 @@ describe('getOrSetCache의 in-flight 중복 제거는', () => {
         expect(fetcher).toHaveBeenCalledTimes(2);
         // 대기자의 폴백은 캐시를 덮어쓰지 않는다 — 소유자의 set 1회뿐.
         expect(redis.set).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('setCacheValue 함수는', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        __resetInFlightForTests();
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('getOrSetCache가 hit으로 읽는 포맷(envelope)으로 쓴다', async () => {
+        const redis = createRedisStub();
+        mockedGetRedisClient.mockReturnValue(redis as never);
+
+        await expect(setCacheValue('k', { v: 1 }, 90)).resolves.toBe(true);
+        expect(redis.set).toHaveBeenCalledWith(
+            'k',
+            { data: { v: 1 } },
+            { ex: 90 }
+        );
+
+        const fetcher = vi.fn();
+        await expect(getOrSetCache('k', 60, fetcher)).resolves.toEqual({
+            v: 1,
+        });
+        expect(fetcher).not.toHaveBeenCalled();
+    });
+
+    it('1KB 이상 값은 압축해 쓰고 getOrSetCache가 그대로 풀어 읽는다', async () => {
+        const redis = createRedisStub();
+        mockedGetRedisClient.mockReturnValue(redis as never);
+        const big = { rows: Array.from({ length: 200 }, (_, i) => `row-${i}`) };
+
+        await setCacheValue('big', big, 60);
+        const stored = redis.store.get('big');
+        expect(typeof stored).toBe('string');
+        expect((stored as string).startsWith(COMPRESSED_VALUE_PREFIX)).toBe(
+            true
+        );
+        await expect(decodeCacheValue(stored)).resolves.toEqual({ data: big });
+        await expect(getOrSetCache('big', 60, vi.fn())).resolves.toEqual(big);
+    });
+
+    it('Redis 미설정이면 쓰지 않고 false', async () => {
+        mockedGetRedisClient.mockReturnValue(null);
+        await expect(setCacheValue('k', 1, 60)).resolves.toBe(false);
+    });
+
+    it('쓰기 실패는 흡수하고 false', async () => {
+        const redis = createRedisStub();
+        redis.set.mockRejectedValue(new Error('down'));
+        mockedGetRedisClient.mockReturnValue(redis as never);
+        await expect(setCacheValue('k', 1, 60)).resolves.toBe(false);
+        expect(console.error).toHaveBeenCalled();
     });
 });

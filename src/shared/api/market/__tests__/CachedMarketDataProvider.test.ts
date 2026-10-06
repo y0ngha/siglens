@@ -1186,4 +1186,200 @@ describe('CachedMarketDataProvider', () => {
             expect(typeof lastSetTtl.value).toBe('number');
         });
     });
+    describe('history L1 (instance memory)', () => {
+        beforeEach(() => {
+            resetSharedState();
+            vi.useFakeTimers({ toFake: ['Date'] });
+            // Tue 2026-06-30 15:00Z = 11:00 EDT, lastClosed = 2026-06-29
+            vi.setSystemTime(new Date('2026-06-30T15:00:00Z'));
+        });
+        afterEach(() => vi.useRealTimers());
+
+        const longOpts: GetBarsOptions = {
+            symbol: 'AAPL',
+            timeframe: '1Day',
+            from: '2024-06-30',
+        };
+        const completeHistory = [
+            bar(Math.floor(Date.parse('2024-06-30T00:00:00Z') / 1000)),
+            bar(Math.floor(Date.parse('2026-06-29T00:00:00Z') / 1000)),
+        ];
+
+        it('같은 인스턴스의 반복 호출은 eodhist를 Redis에서 다시 GET하지 않는다', async () => {
+            const getBars = vi.fn(async () => completeHistory);
+            const p = new CachedMarketDataProvider(makeInner({ getBars }));
+            await p.getBars(longOpts);
+            fakeRedis.get.mockClear();
+
+            await p.getBars(longOpts);
+            const keys = fakeRedis.get.mock.calls.map(([k]) => k);
+            expect(keys).not.toContain('bars:eodhist:AAPL:2026-06-29');
+            // 오늘 봉(작은 live 부분)은 여전히 Redis TTL을 따른다.
+            expect(keys).toContain('bars:today:AAPL');
+            expect(getBars).toHaveBeenCalledTimes(1);
+        });
+
+        it('L1 값이 요청 from을 덮지 못하면(isFresh 실패) Redis/inner로 내려간다', async () => {
+            const getBars = vi.fn(async () => completeHistory);
+            const p = new CachedMarketDataProvider(makeInner({ getBars }));
+            await p.getBars(longOpts);
+            const older = [
+                bar(Math.floor(Date.parse('2021-07-01T00:00:00Z') / 1000)),
+                ...completeHistory,
+            ];
+            getBars.mockResolvedValueOnce(older);
+            const r = await p.getBars({ ...longOpts, from: '2021-07-01' });
+            expect(getBars).toHaveBeenCalledTimes(2);
+            expect(r[0]!.time).toBe(older[0]!.time);
+        });
+
+        it('L1은 최대 30분만 쥔다 — 그 뒤엔 Redis를 다시 본다', async () => {
+            const getBars = vi.fn(async () => completeHistory);
+            const p = new CachedMarketDataProvider(makeInner({ getBars }));
+            await p.getBars(longOpts);
+            vi.setSystemTime(new Date('2026-06-30T15:31:00Z'));
+            fakeRedis.get.mockClear();
+            await p.getBars(longOpts);
+            expect(fakeRedis.get.mock.calls.map(([k]) => k)).toContain(
+                'bars:eodhist:AAPL:2026-06-29'
+            );
+            // Redis hit이라 inner는 다시 부르지 않는다.
+            expect(getBars).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('intraday history/tail split (intradayDateTimeZone)', () => {
+        const ET = 'America/New_York';
+        beforeEach(() => {
+            resetSharedState();
+            vi.useFakeTimers({ toFake: ['Date'] });
+            // Tue 2026-06-30 15:00Z = 11:00 EDT — 정규장 중
+            vi.setSystemTime(new Date('2026-06-30T15:00:00Z'));
+        });
+        afterEach(() => vi.useRealTimers());
+
+        const utc = (iso: string) => Math.floor(Date.parse(iso) / 1000);
+        // 월요일 15:55 EDT 봉과 화요일 09:30·10:55 EDT 봉
+        const monBar = bar(utc('2026-06-29T19:55:00Z'));
+        const tueOpen = bar(utc('2026-06-30T13:30:00Z'));
+        const tueLate = { ...bar(utc('2026-06-30T14:55:00Z')), close: 9 };
+        const intraOpts: GetBarsOptions = {
+            symbol: 'aapl',
+            timeframe: '5Min',
+            from: '2026-06-20T00:00:00Z',
+            limit: 288,
+        };
+
+        function splitInner() {
+            const getBars = vi.fn(async (o: GetBarsOptions) =>
+                o.before !== undefined
+                    ? // FMP `to`가 포함이어도 결과가 같아야 한다 — 오늘 봉까지 돌려준다.
+                      [monBar, tueOpen]
+                    : [tueOpen, tueLate]
+            );
+            return { getBars, inner: makeInner({ getBars }) };
+        }
+
+        it('history(before=오늘)와 tail(from=오늘)을 따로 받아 병합한다', async () => {
+            const { getBars, inner } = splitInner();
+            const p = new CachedMarketDataProvider(inner, undefined, {
+                intradayDateTimeZone: ET,
+            });
+            const r = await p.getBars(intraOpts);
+
+            expect(getBars).toHaveBeenCalledWith({
+                ...intraOpts,
+                from: '2026-06-20',
+                before: '2026-06-30',
+            });
+            expect(getBars).toHaveBeenCalledWith({
+                ...intraOpts,
+                from: '2026-06-30',
+            });
+            expect(r).toEqual([monBar, tueOpen, tueLate]);
+        });
+
+        it('history 키에는 어제까지의 봉만 저장된다(오늘 봉은 tail 몫)', async () => {
+            const { inner } = splitInner();
+            const p = new CachedMarketDataProvider(inner, undefined, {
+                intradayDateTimeZone: ET,
+            });
+            await p.getBars(intraOpts);
+            const histKey = 'bars:intrahist:AAPL:5Min:2026-06-20:2026-06-30';
+            const histSet = fakeRedis.set.mock.calls.find(
+                ([k]) => k === histKey
+            );
+            expect(histSet).toBeDefined();
+            expect(histSet![1]).toEqual({ data: [monBar] });
+            expect(histSet![2]?.ex).toBe(SECONDS_PER_HOUR * 24);
+            const tailSet = fakeRedis.set.mock.calls.find(
+                ([k]) => k === 'bars:raw:AAPL:5Min:2026-06-30::288'
+            );
+            expect(tailSet).toBeDefined();
+            expect(tailSet![2]?.ex).toBe(60);
+        });
+
+        it('같은 날 재호출은 tail만 다시 받는다(tail TTL 만료 뒤)', async () => {
+            const { getBars, inner } = splitInner();
+            const p = new CachedMarketDataProvider(inner, undefined, {
+                intradayDateTimeZone: ET,
+            });
+            await p.getBars(intraOpts);
+            vi.setSystemTime(new Date('2026-06-30T15:02:00Z'));
+            store.delete('bars:raw:AAPL:5Min:2026-06-30::288'); // TTL 만료 흉내
+            await p.getBars(intraOpts);
+            const historyCalls = getBars.mock.calls.filter(
+                ([o]) => o.before !== undefined
+            );
+            const tailCalls = getBars.mock.calls.filter(
+                ([o]) => o.before === undefined
+            );
+            expect(historyCalls).toHaveLength(1);
+            expect(tailCalls).toHaveLength(2);
+        });
+
+        it('빈 tail(개장 전)은 짧게만 캐시한다', async () => {
+            // 토요일 — 장외 TTL은 수십 시간이지만 빈 tail은 15분 상한
+            vi.setSystemTime(new Date('2026-07-04T15:00:00Z'));
+            const getBars = vi.fn(async (o: GetBarsOptions) =>
+                o.before !== undefined ? [monBar] : []
+            );
+            const p = new CachedMarketDataProvider(
+                makeInner({ getBars }),
+                undefined,
+                { intradayDateTimeZone: ET }
+            );
+            await p.getBars(intraOpts);
+            const tailSet = fakeRedis.set.mock.calls.find(
+                ([k]) => k === 'bars:raw:AAPL:5Min:2026-07-04::288'
+            );
+            expect(tailSet![2]?.ex).toBe(15 * 60);
+        });
+
+        it('옵션이 없으면(Yahoo 등) 예전 단일 키 경로를 쓴다', async () => {
+            const { getBars, inner } = splitInner();
+            const p = new CachedMarketDataProvider(inner);
+            await p.getBars(intraOpts);
+            expect(getBars).toHaveBeenCalledTimes(1);
+            expect(getBars).toHaveBeenCalledWith(intraOpts);
+        });
+
+        it('before 지정(과거 페이지)·from이 오늘인 요청은 단일 키 경로', async () => {
+            const { getBars, inner } = splitInner();
+            const p = new CachedMarketDataProvider(inner, undefined, {
+                intradayDateTimeZone: ET,
+            });
+            await p.getBars({ ...intraOpts, before: '2026-06-25' });
+            await p.getBars({ ...intraOpts, from: '2026-06-30' });
+            expect(getBars).toHaveBeenCalledTimes(2);
+            expect(getBars).toHaveBeenNthCalledWith(1, {
+                ...intraOpts,
+                before: '2026-06-25',
+            });
+            expect(getBars).toHaveBeenNthCalledWith(2, {
+                ...intraOpts,
+                from: '2026-06-30',
+            });
+        });
+    });
 });

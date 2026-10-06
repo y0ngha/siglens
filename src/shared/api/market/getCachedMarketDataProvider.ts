@@ -9,7 +9,17 @@ import { getMarketDataProvider } from './getMarketDataProvider';
 import { CachedMarketDataProvider } from './CachedMarketDataProvider';
 import { KR_EQUITY_SESSION } from './sessionSpecFor';
 import { YahooMarketProvider } from '@/shared/api/yahoo/YahooMarketProvider';
+import { FMP_EXCHANGE_TIME_ZONE } from '@/shared/api/fmp/FmpMarketProvider';
 import { isE2E } from '@/shared/api/e2eEnv';
+
+/**
+ * FMP를 감싸는 캐시 provider의 옵션. FMP `historical-chart`는 `from`/`to`를 미 동부 날짜로
+ * 해석하므로 인트라데이를 "어제까지 + 오늘 tail"로 나눠 캐시할 수 있다. KR(yahoo)은 날짜
+ * 의미가 달라 이 옵션 없이 단일 키 경로를 쓴다.
+ */
+const FMP_PROVIDER_OPTIONS = {
+    intradayDateTimeZone: FMP_EXCHANGE_TIME_ZONE,
+} as const;
 
 let cached: MarketDataProvider | null = null;
 let cachedCrypto: MarketDataProvider | null = null;
@@ -45,7 +55,8 @@ export function getCachedMarketDataProvider(
         if (cachedCrypto !== null) return cachedCrypto;
         cachedCrypto = new CachedMarketDataProvider(
             getMarketDataProvider(),
-            CRYPTO_SESSION
+            CRYPTO_SESSION,
+            FMP_PROVIDER_OPTIONS
         );
         return cachedCrypto;
     }
@@ -54,7 +65,8 @@ export function getCachedMarketDataProvider(
     // 쓰이는지 밖에서 관측할 수 없어 배선이 테스트로 고정되지 않는다(감사 라운드 13).
     cached = new CachedMarketDataProvider(
         getMarketDataProvider(),
-        US_EQUITY_SESSION
+        US_EQUITY_SESSION,
+        FMP_PROVIDER_OPTIONS
     );
     return cached;
 }

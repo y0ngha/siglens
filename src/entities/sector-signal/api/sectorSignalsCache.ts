@@ -11,9 +11,33 @@ import {
 import type { DashboardScope } from '@/shared/config/dashboardScope';
 import { dashboardCacheTtlSeconds } from '@/shared/api/market/sessionSpecFor';
 import { createCacheConfigFingerprint } from '@/shared/cache/configFingerprint';
+import { SECONDS_PER_MINUTE } from '@/shared/config/time';
 
 /** sector signals도 bars 일봉 TTL 정책을 재사용 — timeframe과 무관한 placeholder. */
 const SIGNALS_TTL_TIMEFRAME = '1Day' as const satisfies Timeframe;
+
+/**
+ * 일봉 스캔 캐시 TTL의 하한(초).
+ *
+ * `dashboardCacheTtlSeconds`는 장중 60초를 주지만, 일봉 신호는 분 단위로 바뀌지 않는다.
+ * 게다가 core `getSectorSignals`가 안에서 일봉 결과를 날짜 버킷·1시간 TTL로 따로 캐시하므로
+ * (`SECTOR_SIGNALS_TTL_BY_TIMEFRAME['1Day']`), 이 키가 60초마다 만료돼도 대개 그 내부 캐시를
+ * 다시 읽어 같은 값을 SET할 뿐이다. 5분 하한이 그 왕복을 1/5로 줄인다(한국 하한과 같은 값).
+ * 인트라데이(15Min·1Hour)는 봉이 그보다 자주 닫혀 하한을 두지 않는다.
+ */
+export const SECTOR_SIGNALS_DAILY_MIN_TTL_SECONDS = 5 * SECONDS_PER_MINUTE;
+
+/** 스캔 결과 캐시 TTL — scope 세션 TTL에 일봉 하한을 적용한다. */
+export function sectorSignalsTtlSeconds(
+    scope: DashboardScope,
+    timeframe: DashboardTimeframe,
+    now: Date
+): number {
+    const ttl = dashboardCacheTtlSeconds(scope.id, SIGNALS_TTL_TIMEFRAME, now);
+    return timeframe === '1Day'
+        ? Math.max(ttl, SECTOR_SIGNALS_DAILY_MIN_TTL_SECONDS)
+        : ttl;
+}
 
 /**
  * 종목 목록 fingerprint — cache 키에 박아 config 변경 시 자동 무효화. static
@@ -27,7 +51,8 @@ export function sectorStocksConfigFingerprint(scope: DashboardScope): string {
 /**
  * 섹터 신호를 cache→provider로 가져온다. marketSummaryCache와 동일 3계층:
  *   1. React.cache — 요청 내 dedup.
- *   2. Upstash Redis — cross-request, dashboardCacheTtlSeconds(장중 1분 / 장외 동적, 한국은 하한 5분).
+ *   2. Upstash Redis — cross-request, `sectorSignalsTtlSeconds`(장중 1분 / 장외 동적, 한국과
+ *      일봉 스캔은 하한 5분).
  * stocks가 빈 결과(전면 실패)는 캐시하지 않는다 — transient 장애를 TTL 동안 굳히지 않도록.
  *
  * **부분 실패는 이 계층에서 구분할 수 없다.** `result.stocks`는 "성공적으로 조회된
@@ -48,11 +73,7 @@ export const getCachedSectorSignals = cache(
     ): Promise<SectorSignalsResult> =>
         getOrSetCache(
             `sector-signals:${scope.id}:${timeframe}:${sectorStocksConfigFingerprint(scope)}`,
-            dashboardCacheTtlSeconds(
-                scope.id,
-                SIGNALS_TTL_TIMEFRAME,
-                new Date()
-            ),
+            sectorSignalsTtlSeconds(scope, timeframe, new Date()),
             () =>
                 getSectorSignals(provider, [...scope.sectorStocks], timeframe),
             result => result.stocks.length > 0

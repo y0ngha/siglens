@@ -73,14 +73,44 @@ async function fetchAndStore<T>(
     if (redis !== null && shouldCache(fresh)) {
         const ex =
             typeof ttlSeconds === 'function' ? ttlSeconds(fresh) : ttlSeconds;
-        try {
-            const stored = await encodeCacheValue({ data: fresh });
-            await redis.set(key, stored, { ex });
-        } catch (error) {
-            console.error(`[getOrSetCache] set failed: ${key}`, error);
-        }
+        await writeEnvelope(redis, key, fresh, ex);
     }
     return fresh;
+}
+
+/** envelope + 압축 포맷으로 쓴다. 실패는 로그만 남기고 삼키며, 저장 여부를 돌려준다. */
+async function writeEnvelope<T>(
+    redis: Redis,
+    key: string,
+    value: T,
+    ex: number
+): Promise<boolean> {
+    try {
+        const stored = await encodeCacheValue({ data: value });
+        await redis.set(key, stored, { ex });
+        return true;
+    } catch (error) {
+        console.error(`[getOrSetCache] set failed: ${key}`, error);
+        return false;
+    }
+}
+
+/**
+ * `getOrSetCache`가 읽는 것과 같은 포맷(`{ data }` envelope + 1KB 이상 zstd)으로 값을
+ * 직접 쓴다. 캐시 hit 경로를 우회해 키를 갱신해야 하는 호출부(예: 장 마감 뒤 옵션 워밍이
+ * 방금 받은 스냅샷으로 일반 캐시를 덮는 경우)용이다 — 포맷을 호출부가 따로 흉내 내면
+ * 읽기 쪽과 어긋날 때 조용히 miss가 된다.
+ *
+ * Redis 미설정·쓰기 실패는 흡수하고 `false`를 돌려준다.
+ */
+export async function setCacheValue<T>(
+    key: string,
+    value: T,
+    ttlSeconds: number
+): Promise<boolean> {
+    const redis = getRedisClient();
+    if (redis === null) return false;
+    return writeEnvelope(redis, key, value, ttlSeconds);
 }
 
 /**

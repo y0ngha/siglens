@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { DrizzleNoticeRepository } from '@/entities/notice/api';
+import { getActiveNoticesMemoized } from '@/entities/notice/lib/activeNoticesMemo';
 import type { NoticeWireRecord } from '@/entities/notice/model/types';
 import { tryGetDatabaseClient } from '@/shared/db/client';
 import { resolveLocale } from '@/shared/i18n/locales';
@@ -14,7 +15,8 @@ export const dynamic = 'force-dynamic';
  *
  * ⚠️ 현재 Cloudflare 캐시 규칙은 `/api`를 제외한다(`docs/architecture/CDN_CACHING.md` §3).
  * 그래서 `s-maxage`는 **지금은 엣지에서 효과가 없다** — `/api/notices`용 CDN 규칙이 나중에
- * 추가될 때 비로소 동작하도록 헤더만 올바르게 둔 것이다. 오리진 비용은 예전 서버 액션과 같다.
+ * 추가될 때 비로소 동작하도록 헤더만 올바르게 둔 것이다. 그 사이 오리진 DB 부하는 같은 60초
+ * 창의 인스턴스 메모(`getActiveNoticesMemoized`)가 막는다.
  */
 const NOTICES_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=300';
 
@@ -30,7 +32,8 @@ const NO_STORE = { 'Cache-Control': 'no-store' } as const;
  * 공지를 읽었다. 크롤러 렌더도 그 POST를 매 페이지 한 번씩 쏘았다. 이 라우트로 옮기면 그
  * 요청이 **`/api/`로 가고, `/api/`는 robots.txt에서 Googlebot에 Disallow**라 크롤러 렌더러는
  * 요청 자체를 가져가지 않는다 — 렌더마다 나가던 서버 액션 POST가 사라지는 것이 이 변경의
- * 목적이다(크롤 예산). CDN 캐시로 오리진 부하를 줄이는 효과는 현재 없다(아래 헤더 주석).
+ * 목적이다(크롤 예산). CDN 캐시로 오리진 부하를 줄이는 효과는 현재 없다(아래 헤더 주석) —
+ * 그래서 DB 조회 결과를 로케일별로 60초 메모한다(페이지 뷰마다 돌던 `findActive` + 번역 조회).
  *
  * 로케일은 요청 헤더가 아니라 `?locale=`로 받는다 — 나중에 CDN 규칙이 붙어도 캐시 키에
  * 로케일이 들어가 먼저 캐시된 언어가 다른 언어 방문자에게 가지 않는다. 알 수 없는 값은 기본
@@ -46,14 +49,19 @@ export async function GET(request: Request): Promise<Response> {
         const client = tryGetDatabaseClient();
         if (client === null)
             return NextResponse.json([], { headers: NO_STORE });
-        const notices = await new DrizzleNoticeRepository(client.db).findActive(
-            locale
+        const body: NoticeWireRecord[] = await getActiveNoticesMemoized(
+            locale,
+            async () => {
+                const notices = await new DrizzleNoticeRepository(
+                    client.db
+                ).findActive(locale);
+                // `Date`는 JSON에서 ISO 문자열이 된다 — 클라이언트 훅이 되돌린다.
+                return notices.map(notice => ({
+                    ...notice,
+                    createdAt: notice.createdAt.toISOString(),
+                }));
+            }
         );
-        // `Date`는 JSON에서 ISO 문자열이 된다 — 클라이언트 훅이 되돌린다.
-        const body: NoticeWireRecord[] = notices.map(notice => ({
-            ...notice,
-            createdAt: notice.createdAt.toISOString(),
-        }));
         return NextResponse.json(body, {
             headers: { 'Cache-Control': NOTICES_CACHE_CONTROL },
         });

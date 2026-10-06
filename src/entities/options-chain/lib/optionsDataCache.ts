@@ -3,6 +3,12 @@ import { cache } from 'react';
 import { isEtRegularSessionOpen } from '@y0ngha/siglens-core';
 import { getRedisClient } from '@/shared/cache/redisClient';
 import {
+    decodeCacheValue,
+    encodeCacheValue,
+} from '@/shared/cache/cacheValueCodec';
+import { getOrSetCache, setCacheValue } from '@/shared/cache/getOrSetCache';
+import {
+    MS_PER_MINUTE,
     SECONDS_PER_DAY,
     SECONDS_PER_HOUR,
     SECONDS_PER_MINUTE,
@@ -57,12 +63,28 @@ export const LAST_GOOD_SNAPSHOT_TTL_SECONDS = 5 * SECONDS_PER_DAY;
 /** 대체 값(last-good)을 일반 캐시 키에 둘 때의 TTL 하한 — 개장 직전에도 재조회 폭주를 막는다. */
 export const SUBSTITUTED_SNAPSHOT_MIN_TTL_SECONDS = SECONDS_PER_MINUTE;
 
+/**
+ * 정규장 중 last-good 재기록 최소 간격. 장중에는 OI가 거의 늘 채워져 와서, 예전에는
+ * 일반 캐시가 빗나갈 때마다(인기 종목은 분마다) 수백 KB짜리 last-good을 5일 TTL로 다시
+ * 썼다. last-good은 "한국 낮에 내보낼 직전 정규장 값"이라 장중 30분 단위면 충분하고,
+ * 정규장 밖(마감 뒤 OI가 확정되는 구간 포함)에는 이 간격 없이 매번 쓴다.
+ */
+export const LAST_GOOD_MIN_REWRITE_INTERVAL_MS = 30 * MS_PER_MINUTE;
+
 function buildHasOptionsKey(symbol: string): string {
     return `options:has-market:${symbol.toUpperCase()}`;
 }
 
+/**
+ * 일반 스냅샷 캐시 키의 포맷 버전. v2부터 `getOrSetCache` 포맷(`{ data }` envelope +
+ * zstd 압축)으로 저장한다. 키를 올린 이유는 롤링 배포다 — 옛 빌드는 이 키의 값을 곧바로
+ * `OptionsSnapshot`으로 쓰므로, 같은 키에 envelope·압축 문자열을 쓰면 옛 인스턴스의 옵션
+ * 페이지가 깨진다. 옛 `options:snapshot:SYM` 키는 TTL(최대 4h)로 사라진다.
+ */
+const SNAPSHOT_CACHE_VERSION = 'v2';
+
 function buildSnapshotKey(symbol: string): string {
-    return `options:snapshot:${symbol.toUpperCase()}`;
+    return `options:snapshot:${SNAPSHOT_CACHE_VERSION}:${symbol.toUpperCase()}`;
 }
 
 function buildLastGoodSnapshotKey(symbol: string): string {
@@ -82,6 +104,11 @@ function buildLastGoodCapturedAtKey(symbol: string): string {
  * 미결제약정이 비어 있지 않은 스냅샷만 last-good으로 저장한다 — 호출자가 걸러서 넘긴다.
  * 저장 실패는 흡수한다(없어도 기존 동작과 같다). 저장됐는지를 돌려줘 워밍이 결과를
  * 정직하게 보고하게 한다.
+ *
+ * 값은 `encodeCacheValue`로 압축해 쓴다(스냅샷은 수백 KB라 zstd로 크게 준다). 키는 그대로
+ * 둔다 — 5일짜리 값이라 키를 바꾸면 배포 직후 한국 낮 방문자가 last-good 없이 stale을
+ * 받는다. 읽기(`readLastGoodSnapshot`)는 압축 전 값도 그대로 읽고, 옛 빌드가 압축 값을
+ * 읽으면 `rebaseOptionsSnapshot`이 문자열에서 throw → `read_error`로 흡수된다.
  */
 async function writeLastGoodSnapshot(
     redis: NonNullable<ReturnType<typeof getRedisClient>>,
@@ -90,7 +117,9 @@ async function writeLastGoodSnapshot(
 ): Promise<boolean> {
     const key = buildLastGoodSnapshotKey(symbol);
     try {
-        await redis.set(key, snapshot, { ex: LAST_GOOD_SNAPSHOT_TTL_SECONDS });
+        await redis.set(key, await encodeCacheValue(snapshot), {
+            ex: LAST_GOOD_SNAPSHOT_TTL_SECONDS,
+        });
     } catch (error) {
         console.error('[optionsDataCache] Redis set failed for', key, error);
         return false;
@@ -111,20 +140,30 @@ async function writeLastGoodSnapshot(
     return true;
 }
 
-/** 일반 스냅샷 캐시 키(`options:snapshot:SYM`)에 저장한다. 실패는 흡수하고 저장 여부를 돌려준다. */
-async function writeSnapshotCache(
+/**
+ * 이번 miss에서 last-good을 다시 쓸지. 정규장 밖이면 늘 쓴다(마감 뒤 확정 OI가 가장 값진
+ * last-good이다). 정규장 중에는 저장된 last-good의 `capturedAt`(작은 보조 키)이
+ * `LAST_GOOD_MIN_REWRITE_INTERVAL_MS`보다 오래됐을 때만 쓴다. 보조 키가 없거나 읽기에
+ * 실패하면 쓴다 — 아끼는 쪽보다 last-good을 잃는 쪽이 더 비싸다.
+ */
+async function shouldRewriteLastGood(
     redis: NonNullable<ReturnType<typeof getRedisClient>>,
     symbol: string,
-    snapshot: OptionsSnapshot,
-    ttlSeconds: number
+    now: Date
 ): Promise<boolean> {
-    const key = buildSnapshotKey(symbol);
+    if (!isEtRegularSessionOpen(now)) return true;
+    const key = buildLastGoodCapturedAtKey(symbol);
     try {
-        await redis.set(key, snapshot, { ex: ttlSeconds });
-        return true;
+        const capturedAt = await redis.get<unknown>(key);
+        if (typeof capturedAt !== 'string') return true;
+        const capturedMs = Date.parse(capturedAt);
+        return (
+            !Number.isFinite(capturedMs) ||
+            now.getTime() - capturedMs >= LAST_GOOD_MIN_REWRITE_INTERVAL_MS
+        );
     } catch (error) {
-        console.error('[optionsDataCache] Redis set failed for', key, error);
-        return false;
+        console.error('[optionsDataCache] Redis get failed for', key, error);
+        return true;
     }
 }
 
@@ -150,7 +189,11 @@ async function readLastGoodSnapshot(
 ): Promise<LastGoodRead> {
     const key = buildLastGoodSnapshotKey(symbol);
     try {
-        const stored = await redis.get<OptionsSnapshot>(key);
+        // 압축 값(이 빌드 이후)과 압축 전 값(이전 빌드가 쓴 것) 모두 같은 객체로 돌아온다.
+        // `as` 근거: 이 키에는 `writeLastGoodSnapshot`만 쓰며, 그 값은 언제나 `OptionsSnapshot`이다.
+        const stored = (await decodeCacheValue(
+            await redis.get<unknown>(key)
+        )) as OptionsSnapshot | null;
         if (stored === null) return { reason: 'absent' };
         const rebased = rebaseOptionsSnapshot(stored, now);
         if (rebased === null) return { reason: 'no_expiry_after_rebase' };
@@ -173,7 +216,8 @@ interface ResolvedSnapshot {
 /**
  * Yahoo가 돌려준 `fresh`를 낼 값으로 확정한다.
  *
- * - 정상(OI 채워진) 스냅샷이면 last-good을 갱신하고 그대로 낸다.
+ * - 정상(OI 채워진) 스냅샷이면 last-good을 갱신하고(장중은 30분에 한 번 —
+ *   `shouldRewriteLastGood`) 그대로 낸다.
  * - stale이고 정규장 밖이면 last-good(오늘 기준으로 맞춘 것)로 대체한다. 없으면 fresh.
  * - stale이어도 정규장 중이면 대체하지 않는다.
  */
@@ -184,7 +228,9 @@ async function resolveWithLastGood(
     now: Date
 ): Promise<ResolvedSnapshot> {
     if (!isOpenInterestSnapshotStale(fresh)) {
-        await writeLastGoodSnapshot(redis, symbol, fresh);
+        if (await shouldRewriteLastGood(redis, symbol, now)) {
+            await writeLastGoodSnapshot(redis, symbol, fresh);
+        }
         return { snapshot: fresh, substituted: false } as const;
     }
     if (isEtRegularSessionOpen(now)) {
@@ -268,9 +314,12 @@ export const hasOptionsMarket = cache(
  * 캐시 레이어:
  *   1. React.cache — request 내 dedup (page.tsx + Server Action 같은 요청
  *      안에서 여러 번 호출돼도 한 번만 Yahoo를 친다).
- *   2. Upstash Redis — cross-request 캐시. 시장 시간대별 TTL(`OPTIONS_SNAPSHOT_TTL_SECONDS`)
- *      을 적용해 활성 트레이딩 중에는 짧게, 주말은 길게 캐시한다. Redis 미설정 시
- *      graceful fallback으로 Yahoo 직접 호출.
+ *   2. Upstash Redis(`getOrSetCache`) — cross-request 캐시. 시장 시간대별
+ *      TTL(`OPTIONS_SNAPSHOT_TTL_SECONDS`)을 적용해 활성 트레이딩 중에는 짧게, 주말은 길게
+ *      캐시한다. 값은 수백 KB라 zstd로 압축해 저장하고, 같은 키의 동시 miss는 프로세스
+ *      안에서 Yahoo 호출 한 번으로 접힌다(요청을 넘는 in-flight dedup — 예전에는
+ *      React.cache뿐이라 동시 방문자마다 Yahoo를 쳤다). Redis 미설정 시 graceful
+ *      fallback으로 Yahoo 직접 호출.
  *
  * **한국 시간 낮(미국 정규장 밖)에는 Yahoo가 대부분의 미결제약정을 0으로 비워 돌려준다**
  * (`isOpenInterestSnapshotStale`). 그 값을 그대로 쓰면 옵션 탭이 통째로 "—"가 된다.
@@ -287,55 +336,49 @@ export const hasOptionsMarket = cache(
  */
 export const fetchOptionsSnapshot = cache(
     async (symbol: string): Promise<OptionsSnapshot | null> => {
-        const key = buildSnapshotKey(symbol);
-        const redis = getRedisClient();
-        if (redis !== null) {
-            try {
-                const cached = await redis.get<OptionsSnapshot>(key);
-                if (cached !== null) return cached;
-            } catch (error) {
-                console.error(
-                    '[optionsDataCache] Redis get failed for',
-                    key,
-                    error
-                );
-            }
-        }
-
-        const fresh = await adapter.fetchSnapshot(symbol);
-
-        // null은 캐시하지 않음 — 위 docstring 참고.
-        if (fresh === null) return null;
-
-        // 정상(OI 채워진) 스냅샷이면 last-good을 갱신하고, 정규장 밖의 stale이면
-        // last-good으로 대체한다. 대체 결과도 아래에서 같은 key·TTL로 저장해, 같은
-        // 시간대의 다음 요청이 Yahoo를 다시 치지 않게 한다.
-        const now = new Date();
-        if (redis !== null) {
-            const { snapshot: result, substituted } = await resolveWithLastGood(
-                redis,
-                symbol,
-                fresh,
-                now
-            );
-
-            const profileTtl =
-                OPTIONS_SNAPSHOT_TTL_SECONDS[getOptionsCacheLifeProfile(now)];
-            // 대체 값은 "정규장이 닫혀 있는 동안"만 유효하다. 주말 프로파일(4h)이나 닫힘
-            // 프로파일(30분)의 TTL을 그대로 쓰면 개장 직전에 저장된 값이 개장 뒤에도 남아,
-            // 장중에 어제 값이 나간다. 다음 개장까지의 시간으로 상한을 둔다(최소 60초).
-            const ttl = substituted
-                ? Math.max(
-                      SUBSTITUTED_SNAPSHOT_MIN_TTL_SECONDS,
-                      Math.min(profileTtl, secondsUntilNextRegularOpen(now))
-                  )
-                : profileTtl;
-            await writeSnapshotCache(redis, symbol, result, ttl);
-            return result;
-        }
-        return fresh;
+        const resolved = await getOrSetCache<ResolvedSnapshot | null>(
+            buildSnapshotKey(symbol),
+            value => snapshotCacheTtlSeconds(value, new Date()),
+            () => fetchAndResolveSnapshot(symbol),
+            // null은 캐시하지 않음 — 위 docstring 참고.
+            value => value !== null
+        );
+        return resolved?.snapshot ?? null;
     }
 );
+
+/**
+ * miss 경로: Yahoo에서 받고, 정상(OI 채워진) 스냅샷이면 last-good을 갱신하고, 정규장
+ * 밖의 stale이면 last-good으로 대체한다. 대체 결과도 같은 키에 저장해, 같은 시간대의
+ * 다음 요청이 Yahoo를 다시 치지 않게 한다. Redis가 없으면 보관할 곳이 없으므로 대체도 없다.
+ */
+async function fetchAndResolveSnapshot(
+    symbol: string
+): Promise<ResolvedSnapshot | null> {
+    const fresh = await adapter.fetchSnapshot(symbol);
+    if (fresh === null) return null;
+    const redis = getRedisClient();
+    if (redis === null) return { snapshot: fresh, substituted: false };
+    return resolveWithLastGood(redis, symbol, fresh, new Date());
+}
+
+/**
+ * 일반 캐시 키의 TTL. 대체 값은 "정규장이 닫혀 있는 동안"만 유효하다. 주말 프로파일(4h)이나
+ * 닫힘 프로파일(30분)의 TTL을 그대로 쓰면 개장 직전에 저장된 값이 개장 뒤에도 남아, 장중에
+ * 어제 값이 나간다. 다음 개장까지의 시간으로 상한을 둔다(최소 60초).
+ */
+function snapshotCacheTtlSeconds(
+    resolved: ResolvedSnapshot | null,
+    now: Date
+): number {
+    const profileTtl =
+        OPTIONS_SNAPSHOT_TTL_SECONDS[getOptionsCacheLifeProfile(now)];
+    if (resolved === null || !resolved.substituted) return profileTtl;
+    return Math.max(
+        SUBSTITUTED_SNAPSHOT_MIN_TTL_SECONDS,
+        Math.min(profileTtl, secondsUntilNextRegularOpen(now))
+    );
+}
 
 /** 워밍 한 건의 결과 — `written`은 last-good을 실제로 갱신했다는 뜻이다. */
 export type LastGoodRefreshResult = 'written' | 'stale' | 'none';
@@ -374,7 +417,7 @@ export async function readLastGoodCapturedAtBatch(
 }
 
 /**
- * 일반 캐시(`options:snapshot:SYM`)의 hit 경로를 **우회**해 Yahoo를 직접 치고, OI가 채워진
+ * 일반 캐시(`options:snapshot:v2:SYM`)의 hit 경로를 **우회**해 Yahoo를 직접 치고, OI가 채워진
  * (stale 아님) 스냅샷이면 last-good과 일반 캐시 키를 함께 갱신한다.
  *
  * `fetchOptionsSnapshot`은 캐시 hit 시 last-good을 갱신하지 않고, miss 때도 Yahoo가 OI를
@@ -411,10 +454,10 @@ export async function refreshLastGoodSnapshot(
 
     const wroteLastGood = await writeLastGoodSnapshot(redis, symbol, fresh);
     if (!wroteLastGood) return 'none';
-    await writeSnapshotCache(
-        redis,
-        symbol,
-        fresh,
+    // `fetchOptionsSnapshot`이 읽는 포맷(envelope + 압축) 그대로 쓴다.
+    await setCacheValue<ResolvedSnapshot>(
+        buildSnapshotKey(symbol),
+        { snapshot: fresh, substituted: false },
         OPTIONS_SNAPSHOT_TTL_SECONDS[getOptionsCacheLifeProfile(now)]
     );
     return 'written';
