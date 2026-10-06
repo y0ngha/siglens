@@ -1,5 +1,5 @@
-import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { findCoreInClientGraph, SRC } from './support/coreClientGraph';
 
 /**
  * 루트 레이아웃이 모든 페이지에 싣는 클라이언트 JS에 `@y0ngha/siglens-core`가 들어가지 않는다.
@@ -11,88 +11,10 @@ import path from 'node:path';
  *
  * 이 가드는 루트 레이아웃에서 시작해 **정적 import만** 따라가며(`next/dynamic`의 지연
  * import는 별도 청크라 제외) 클라이언트 경계(`'use client'`) 안쪽 파일이 core에서 값을
- * import하는지 본다. 서버 컴포넌트와 Server Action(`'use server'`)은 클라이언트 번들에
- * 코드가 실리지 않으므로 대상이 아니다. 실제 번들 대신 소스를 보는 이유는 단위 테스트
- * 단계에서 빌드 없이 잡기 위해서다.
+ * import하는지 본다. 판정 워커는 ai 채팅 가드와 공유한다(`support/coreClientGraph.ts`).
  */
 
-const SRC = path.resolve(__dirname, '../..');
 const ROOT_LAYOUT = path.join(SRC, 'app/[locale]/layout.tsx');
-
-// `import … from`, 부수효과 import, 그리고 재노출(`export … from`)까지 의존으로 본다 —
-// 재노출 한 단계를 거쳐 core가 들어오는 경로도 같은 무게를 싣는다.
-const IMPORT_RE =
-    /(?:import|export)\s+(type\s+)?([^'";]*?)\s*from\s*'([^']+)'|import\s*'([^']+)'/g;
-
-function resolveSpecifier(spec: string, from: string): string | null {
-    let base: string;
-    if (spec.startsWith('@/')) base = path.join(SRC, spec.slice(2));
-    else if (spec.startsWith('.'))
-        base = path.resolve(path.dirname(from), spec);
-    else return null;
-    const candidates = ['', '.ts', '.tsx', '/index.ts', '/index.tsx'].map(
-        ext => base + ext
-    );
-    return (
-        candidates.find(file => existsSync(file) && /\.(ts|tsx)$/.test(file)) ??
-        null
-    );
-}
-
-/** `import { type A, type B }`처럼 전부 타입이면 값 import가 아니다. */
-function isTypeOnly(typeKeyword: string | undefined, clause: string): boolean {
-    if (typeKeyword) return true;
-    const trimmed = clause.trim();
-    if (!trimmed.startsWith('{')) return false;
-    return trimmed
-        .replace(/[{}]/g, '')
-        .split(',')
-        .map(part => part.trim())
-        .filter(Boolean)
-        .every(part => part.startsWith('type '));
-}
-
-function directive(source: string): 'client' | 'server' | null {
-    // 지시문 앞의 주석은 건너뛴다(지시문은 첫 문장이어야 하지만 주석은 앞에 올 수 있다).
-    const head = source
-        .replace(/^(?:\s*(?:\/\/[^\n]*\n|\/\*[\s\S]*?\*\/))*/, '')
-        .trimStart()
-        .slice(0, 20);
-    if (head.startsWith("'use client'")) return 'client';
-    if (head.startsWith("'use server'")) return 'server';
-    return null;
-}
-
-interface Offender {
-    file: string;
-    chain: string[];
-}
-
-function findCoreInClientGraph(entry: string): Offender[] {
-    const offenders: Offender[] = [];
-    const visited = new Set<string>();
-    const walk = (file: string, inClient: boolean, chain: string[]): void => {
-        const key = `${file}|${inClient}`;
-        if (visited.has(key)) return;
-        visited.add(key);
-        const source = readFileSync(file, 'utf8');
-        const kind = directive(source);
-        if (kind === 'server') return;
-        const client = inClient || kind === 'client';
-        for (const match of source.matchAll(IMPORT_RE)) {
-            const spec = match[3] ?? match[4];
-            if (!spec || isTypeOnly(match[1], match[2] ?? '')) continue;
-            if (spec === '@y0ngha/siglens-core') {
-                if (client) offenders.push({ file, chain });
-                continue;
-            }
-            const next = resolveSpecifier(spec, file);
-            if (next) walk(next, client, [...chain, path.relative(SRC, next)]);
-        }
-    };
-    walk(entry, false, [path.relative(SRC, entry)]);
-    return offenders;
-}
 
 describe('루트 레이아웃 클라이언트 번들', () => {
     it('@y0ngha/siglens-core를 정적으로 끌어오지 않는다', () => {

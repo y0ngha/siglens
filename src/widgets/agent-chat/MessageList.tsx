@@ -1,6 +1,5 @@
 'use client';
 
-import { splitAgentFollowUps } from '@y0ngha/siglens-core';
 import { useTranslations } from 'next-intl';
 import {
     useEffect,
@@ -10,16 +9,13 @@ import {
     useState,
     type UIEvent,
 } from 'react';
-import {
-    relatedSymbolPages,
-    type RelatedSymbolPage,
-} from '@/features/agent-chat/lib/relatedSymbolPages';
+import type { RelatedSymbolPage } from '@/features/agent-chat/lib/relatedSymbolPages';
 import type { AgentUiMessage } from '@/features/agent-chat/model/types';
 import { cn } from '@/shared/lib/cn';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { BUTTON_GHOST, BUTTON_PRIMARY } from '@/shared/lib/buttonStyles';
 import { useCopyToClipboard } from '@/shared/hooks/useCopyToClipboard';
-import { useSymbolLabels } from './hooks/useSymbolLabels';
+import { useRelatedPages } from './hooks/useRelatedPages';
 import { AgentMarkdown } from './AgentMarkdown';
 import { ArrowDownIcon, ArrowUpRightIcon } from '@/shared/ui/StrokeIcons';
 import { SiglensMark } from './SiglensMark';
@@ -137,6 +133,8 @@ function FollowUps({ items, onPick }: FollowUpsProps) {
 
 interface RelatedPagesProps {
     readonly pages: RelatedSymbolPage[];
+    /** 대화 전체에서 한 번에 받은 표시 이름(`MessageList`의 `useSymbolLabels`). */
+    readonly labels: Readonly<Record<string, string>>;
     readonly siteUrl: string;
     readonly localePrefix: string;
 }
@@ -146,9 +144,13 @@ interface RelatedPagesProps {
  * as quiet links under the text. A hook, not a banner — it only appears when
  * the answer was about a symbol, and only for symbols actually looked up.
  */
-function RelatedPages({ pages, siteUrl, localePrefix }: RelatedPagesProps) {
+function RelatedPages({
+    pages,
+    labels,
+    siteUrl,
+    localePrefix,
+}: RelatedPagesProps) {
     const t = useTranslations('widgets.agent-chat');
-    const labels = useSymbolLabels(pages.map(page => page.symbol));
     if (pages.length === 0) return null;
     return (
         <nav
@@ -286,18 +288,18 @@ export function MessageList({
      */
     const followPeakTopRef = useRef(0);
 
+    // 끝난 답변의 링크·표시 이름 — 프레임마다 다시 계산하지 않는다(`useRelatedPages`).
+    const { pagesById: relatedPagesById, labels: symbolLabels } =
+        useRelatedPages(messages);
+
     const lastAssistant = messages.findLast(m => m.role === 'assistant');
     const lastUser = messages.findLast(m => m.role === 'user');
 
     const copyMessage = (m: AgentUiMessage): void => {
         setCopiedId(m.id);
-        // Copy what the reader saw — the follow-up marker line is UI, not
-        // answer text. A user turn is the user's own words, never split.
-        void copy(
-            m.role === 'assistant'
-                ? splitAgentFollowUps(m.content).body
-                : m.content
-        );
+        // Copy what the reader saw. The follow-up marker line never reaches the
+        // client — the server already split it off into `followUps`.
+        void copy(m.content);
     };
 
     /**
@@ -591,12 +593,12 @@ export function MessageList({
                         }
 
                         const isStreaming = m.status === 'streaming';
-                        // Split on every render, streaming included: the body is
-                        // safe to show chunk by chunk (a half-typed marker line
-                        // is hidden), but the items can still grow mid-stream.
-                        const { body, followUps } = splitAgentFollowUps(
-                            m.content
-                        );
+                        // The server already split the follow-up marker line off
+                        // (it holds back a possible marker line while streaming
+                        // and sends the chips with `done`), so `content` is the
+                        // visible body as-is.
+                        const body = m.content;
+                        const followUps = m.followUps ?? [];
                         const showFollowUps =
                             m === lastAssistant &&
                             m.status === 'complete' &&
@@ -661,9 +663,12 @@ export function MessageList({
                                         ) : null}
                                         {!isStreaming && body ? (
                                             <RelatedPages
-                                                pages={relatedSymbolPages(
-                                                    m.tools
-                                                )}
+                                                pages={
+                                                    relatedPagesById.get(
+                                                        m.id
+                                                    ) ?? []
+                                                }
+                                                labels={symbolLabels}
                                                 siteUrl={siteUrl}
                                                 localePrefix={localePrefix}
                                             />

@@ -112,10 +112,14 @@ test.describe('SiglensAI agent chat', () => {
         await context.close();
     });
 
-    test('메인 호스트 /ai 는 ai 호스트로 301', async ({ request }) => {
+    // `/ai/ko`는 내부 라우트 모양이다. 기본 로케일은 ai 호스트에서도 접두사 없는 URL이
+    // 정본이고(`/ko/*`는 301로 뗀다), 메인 호스트 프록시가 한 홉에 그 정본으로 보낸다.
+    test('메인 호스트 /ai 는 ai 호스트로 301 (기본 로케일은 접두사 없이 한 홉)', async ({
+        request,
+    }) => {
         const res = await request.get(`${MAIN}/ai/ko`, { maxRedirects: 0 });
         expect(res.status()).toBe(301);
-        expect(res.headers().location).toBe(`${AI}/ko`);
+        expect(res.headers().location).toBe(`${AI}/`);
     });
 
     // Task S3: the shared `Header`'s `AiNavLink` is a plain cross-origin `<a>`
@@ -237,7 +241,8 @@ test.describe('SiglensAI SEO', () => {
         expect(html).toMatch(
             new RegExp(`<link rel="canonical" href="${AI}/?"`)
         );
-        expect(html).toContain(`${AI}/api/ai/og?locale=ko`);
+        // 정적·엣지 캐시되는 경로 형태(`/api/ai/og/<locale>.png`).
+        expect(html).toContain(`${AI}/api/ai/og/ko.png`);
         expect(html).toContain('"@type":"WebApplication"');
         expect(html).toMatch(/<h1[^>]*>/);
     });
@@ -279,8 +284,13 @@ test.describe('SiglensAI SEO', () => {
             { maxRedirects: 0 }
         );
         expect(conv.headers()['x-robots-tag']).toBe('noindex, nofollow');
-        const og = await request.get(`${AI}/api/ai/og?locale=ko`);
+        // 메타데이터가 가리키는 정적 경로.
+        const og = await request.get(`${AI}/api/ai/og/ko.png`);
         expect(og.status()).toBe(200);
         expect(og.headers()['content-type']).toBe('image/png');
+        // 이미 공유된 카드가 들고 있는 예전 쿼리스트링 경로도 계속 열려 있다.
+        const legacyOg = await request.get(`${AI}/api/ai/og?locale=ko`);
+        expect(legacyOg.status()).toBe(200);
+        expect(legacyOg.headers()['content-type']).toBe('image/png');
     });
 });

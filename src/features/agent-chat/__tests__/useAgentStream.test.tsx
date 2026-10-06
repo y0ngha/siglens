@@ -1215,4 +1215,179 @@ describe('useAgentStream', () => {
         expect(result.current.status).toBe('idle');
         expect(result.current.messages.at(-1)!.content).toBe('second');
     });
+
+    /**
+     * 후속 질문 마커 줄은 서버가 뗀다 — `done`이 최종 본문(`body`)과 칩 항목
+     * (`followUps`)을 싣고, 클라이언트는 core 없이 그대로 쓴다.
+     */
+    it('done의 body·followUps로 최종 본문과 칩 항목을 맞춘다', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            sse([
+                'event: meta\ndata: {"conversationId":"c1"}',
+                'event: text\ndata: {"delta":"본문입니다.\\n\\n"}',
+                'event: done\ndata: {"assistantMessageId":"m2","body":"본문입니다.","followUps":["실적은?",3,"뉴스는?"]}',
+            ])
+        );
+        const { result } = renderHook(() =>
+            useAgentStream({ conversationId: null, initialMessages: [] })
+        );
+        act(() => {
+            void result.current.send('q');
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+        const answer = result.current.messages.at(-1)!;
+        expect(answer.content).toBe('본문입니다.');
+        // 문자열이 아닌 항목은 버린다.
+        expect(answer.followUps).toEqual(['실적은?', '뉴스는?']);
+    });
+
+    it('done에 body가 없으면(구버전 서버) 스트리밍된 본문을 그대로 두고 칩은 없다', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            sse([
+                'event: text\ndata: {"delta":"그대로"}',
+                'event: done\ndata: {"assistantMessageId":"m2"}',
+            ])
+        );
+        const { result } = renderHook(() =>
+            useAgentStream({ conversationId: 'c1', initialMessages: [] })
+        );
+        act(() => {
+            void result.current.send('q');
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+        expect(result.current.messages.at(-1)!.content).toBe('그대로');
+        expect(result.current.messages.at(-1)!.followUps).toEqual([]);
+    });
+
+    it('저장된 대화의 followUps(서버가 나눈 값)를 메시지에 싣는다', () => {
+        const answer = {
+            ...view(2, 'assistant', '본문'),
+            followUps: ['A', 'B'],
+        };
+        expect(fromViews([view(1, 'user', 'q'), answer])[1]).toMatchObject({
+            content: '본문',
+            followUps: ['A', 'B'],
+        });
+    });
+
+    /**
+     * `text` 조각마다 `setMessages`를 부르지 않는다 — 프레임당 한 번 모아 반영한다
+     * (마크다운 재파싱이 조각 수만큼 돌며 입력과 경쟁하던 문제).
+     */
+    it('따로 도착한 text 조각들도 다음 프레임에 한 번만 반영한다', async () => {
+        let push!: (text: string) => void;
+        vi.spyOn(globalThis, 'fetch').mockImplementation(
+            async () =>
+                new Response(
+                    new ReadableStream<Uint8Array>({
+                        start(c) {
+                            push = text =>
+                                c.enqueue(new TextEncoder().encode(text));
+                        },
+                    }),
+                    { status: 200 }
+                )
+        );
+        // 프레임을 테스트가 직접 넘긴다.
+        const frames: FrameRequestCallback[] = [];
+        const raf = vi
+            .spyOn(globalThis, 'requestAnimationFrame')
+            .mockImplementation(callback => {
+                frames.push(callback);
+                return frames.length;
+            });
+        let renders = 0;
+        const { result } = renderHook(() => {
+            renders += 1;
+            return useAgentStream({
+                conversationId: 'c1',
+                initialMessages: [],
+            });
+        });
+        act(() => {
+            void result.current.send('q');
+        });
+        await waitFor(() => expect(push).toBeDefined());
+        const deltas = Array.from({ length: 20 }, (_, i) => `${i},`);
+        const before = renders;
+        for (const delta of deltas) {
+            // 조각마다 별도의 매크로태스크 — 예전 구현이면 조각마다 렌더가 돌았다.
+            await act(async () => {
+                push(`event: text\ndata: ${JSON.stringify({ delta })}\n\n`);
+                await new Promise(resolve => setTimeout(resolve, 0));
+            });
+        }
+        // 프레임이 오기 전에는 화면에 반영하지 않는다 — 프레임 예약은 한 번뿐.
+        expect(result.current.messages.at(-1)!.content).toBe('');
+        expect(raf).toHaveBeenCalledTimes(1);
+        expect(renders - before).toBeLessThan(3);
+        await act(async () => {
+            frames.shift()!(0);
+        });
+        expect(result.current.messages.at(-1)!.content).toBe(deltas.join(''));
+        act(() => result.current.stop());
+    });
+
+    it('도구 시작 직전에는 모아 둔 조각을 먼저 반영한다 — 초안(draft) 판정이 전체 글을 본다', async () => {
+        const long = '가'.repeat(150);
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            sse([
+                `event: text\ndata: ${JSON.stringify({ delta: long.slice(0, 100) })}`,
+                `event: text\ndata: ${JSON.stringify({ delta: long.slice(100) })}`,
+                'event: tool_start\ndata: {"id":"t1","name":"get_quote","args":{}}',
+            ])
+        );
+        const { result } = renderHook(() =>
+            useAgentStream({ conversationId: 'c1', initialMessages: [] })
+        );
+        act(() => {
+            void result.current.send('q');
+        });
+        await waitFor(() => expect(result.current.status).toBe('idle'));
+        const answer = result.current.messages.at(-1)!;
+        expect(answer.draft).toBe(long);
+        expect(answer.content).toBe('');
+    });
+
+    it('중단(stop)해도 아직 반영되지 않은 조각까지 남긴다', async () => {
+        let push!: (text: string) => void;
+        vi.spyOn(globalThis, 'fetch').mockImplementation(
+            async (_url, init) =>
+                new Response(
+                    new ReadableStream<Uint8Array>({
+                        start(c) {
+                            push = text =>
+                                c.enqueue(new TextEncoder().encode(text));
+                            (init as RequestInit).signal?.addEventListener(
+                                'abort',
+                                () =>
+                                    c.error(new DOMException('', 'AbortError'))
+                            );
+                        },
+                    }),
+                    { status: 200 }
+                )
+        );
+        const raf = vi
+            .spyOn(globalThis, 'requestAnimationFrame')
+            // 프레임이 오지 않는 상태(백그라운드 탭)를 흉내 낸다.
+            .mockImplementation(() => 0);
+        const { result } = renderHook(() =>
+            useAgentStream({ conversationId: 'c1', initialMessages: [] })
+        );
+        act(() => {
+            void result.current.send('q');
+        });
+        await waitFor(() => expect(push).toBeDefined());
+        await act(async () => {
+            push('event: text\ndata: {"delta":"부분 답변"}\n\n');
+            await new Promise(resolve => setTimeout(resolve, 0));
+        });
+        expect(raf).toHaveBeenCalled();
+        act(() => result.current.stop());
+        await waitFor(() =>
+            expect(result.current.messages.at(-1)!.status).toBe('aborted')
+        );
+        expect(result.current.messages.at(-1)!.content).toBe('부분 답변');
+    });
 });

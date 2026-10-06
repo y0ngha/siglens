@@ -997,6 +997,172 @@ describe('POST /api/ai/chat/stream', () => {
         expect(toolEndFrame).toContain('tool_failed');
     });
 
+    /**
+     * 후속 질문 마커 줄은 서버에서 뗀다 — 클라이언트가 core를 싣지 않게 하려는 것
+     * (`followUps.ts`). 스트리밍 중에는 마커일 수 있는 끝줄을 보내지 않고, `done`이 최종
+     * 본문과 칩 항목을 싣는다. 저장은 원문 그대로(모델이 다시 읽는 기록).
+     */
+    describe('후속 질문 마커 줄', () => {
+        const ANSWER =
+            '삼성전자는 약세입니다.\n\n[[followups]] 실적은? | 뉴스는?';
+        const textOf = (f: string[]): string =>
+            f
+                .filter(x => x.startsWith('event: text'))
+                .map(x => JSON.parse(x.split('data: ')[1]!).delta as string)
+                .join('');
+        const doneOf = (f: string[]): Record<string, unknown> =>
+            JSON.parse(f.at(-1)!.split('data: ')[1]!);
+
+        beforeEach(() => {
+            m.runTurn.mockImplementation(
+                async (
+                    _p: unknown,
+                    deps: { onEvent: (e: unknown) => void }
+                ) => {
+                    // 마커 줄이 여러 조각으로 쪼개져 오는 실제 스트림 모양.
+                    for (const delta of [
+                        '삼성전자는 ',
+                        '약세입니다.\n\n',
+                        '[',
+                        '[follo',
+                        'wups]] 실적은? |',
+                        ' 뉴스는?',
+                    ])
+                        deps.onEvent({ type: 'text', delta });
+                    return {
+                        ...OK_TURN,
+                        assistant: { role: 'assistant', content: ANSWER },
+                    };
+                }
+            );
+        });
+
+        it('text 프레임에는 마커 줄이 한 글자도 실리지 않는다', async () => {
+            const f = await frames(
+                await POST(post({ conversationId: 'c1', message: 'x' }))
+            );
+            const streamed = textOf(f);
+            expect(streamed).not.toContain('[');
+            expect(streamed.trimEnd()).toBe('삼성전자는 약세입니다.');
+        });
+
+        it('done이 최종 본문과 칩 항목을 싣는다', async () => {
+            const f = await frames(
+                await POST(post({ conversationId: 'c1', message: 'x' }))
+            );
+            expect(doneOf(f)).toMatchObject({
+                body: '삼성전자는 약세입니다.',
+                followUps: ['실적은?', '뉴스는?'],
+            });
+        });
+
+        it('DB에는 원문(마커 줄 포함)을 저장한다', async () => {
+            await frames(
+                await POST(post({ conversationId: 'c1', message: 'x' }))
+            );
+            const saved = m.repo.appendMessages.mock.calls
+                .flatMap(([, rows]) => rows as { content: string }[])
+                .map(r => r.content);
+            expect(saved).toContain(ANSWER);
+        });
+
+        it('도구 호출이 시작되면 보류 상태도 비운다 — 다음 답변은 처음부터 다시 판정한다', async () => {
+            m.runTurn.mockImplementation(
+                async (
+                    _p: unknown,
+                    deps: { onEvent: (e: unknown) => void }
+                ) => {
+                    deps.onEvent({ type: 'text', delta: '확인해 볼게요\n[' });
+                    deps.onEvent({
+                        type: 'tool_start',
+                        id: 't',
+                        name: 'get_quote',
+                        args: {},
+                    });
+                    deps.onEvent({ type: 'text', delta: '답변' });
+                    return OK_TURN;
+                }
+            );
+            const f = await frames(
+                await POST(post({ conversationId: 'c1', message: 'x' }))
+            );
+            const texts = f
+                .filter(x => x.startsWith('event: text'))
+                .map(x => JSON.parse(x.split('data: ')[1]!).delta);
+            expect(texts).toEqual(['확인해 볼게요', '답변']);
+        });
+
+        it('게스트 기록의 답변에 followUps가 오면 마커 줄을 되붙여 모델에 넘긴다', async () => {
+            // 앞선 테스트가 소비하지 않고 남긴 `…Once` 큐를 비운다(clearAllMocks는 못 비운다).
+            m.guestId.mockReset();
+            m.guestId.mockResolvedValue('g-uuid-1');
+            m.user.mockReset();
+            m.user.mockResolvedValueOnce(null);
+            m.runTurn.mockResolvedValue(OK_TURN);
+            const res = await POST(
+                post({
+                    message: '다음 질문',
+                    history: [
+                        { role: 'user', content: '질문' },
+                        {
+                            role: 'assistant',
+                            content: '답변',
+                            followUps: ['실적은?', 'A | B\n줄'],
+                        },
+                    ],
+                })
+            );
+            await frames(res);
+            expect(m.runTurn.mock.lastCall![0].history).toEqual([
+                { role: 'user', content: '질문' },
+                {
+                    role: 'assistant',
+                    content: '답변\n\n[[followups]] 실적은? | A B 줄',
+                },
+            ]);
+        });
+
+        it('게스트 답변이 길이 상한에 걸려도 본문을 먼저 잘라 마커 줄은 온전히 남는다', async () => {
+            m.guestId.mockReset();
+            m.guestId.mockResolvedValue('g-uuid-1');
+            m.user.mockReset();
+            m.user.mockResolvedValueOnce(null);
+            m.runTurn.mockResolvedValue(OK_TURN);
+            const res = await POST(
+                post({
+                    message: '다음',
+                    history: [
+                        {
+                            role: 'assistant',
+                            content: 'a'.repeat(9_000),
+                            followUps: ['실적은?'],
+                        },
+                    ],
+                })
+            );
+            await frames(res);
+            const [answer] = m.runTurn.mock.lastCall![0].history;
+            expect(answer.content.length).toBe(8_000);
+            expect(answer.content.endsWith('\n\n[[followups]] 실적은?')).toBe(
+                true
+            );
+        });
+
+        it('게스트 기록의 followUps가 문자열 배열이 아니면 400', async () => {
+            m.user.mockReset();
+            m.user.mockResolvedValueOnce(null);
+            const res = await POST(
+                post({
+                    message: 'x',
+                    history: [
+                        { role: 'assistant', content: 'a', followUps: [1] },
+                    ],
+                })
+            );
+            expect(res.status).toBe(400);
+        });
+    });
+
     describe('그라운딩 로그', () => {
         it('답변에 어떤 tool 결과에도 없는 숫자가 있으면 경고만 남기고 답변은 그대로 저장된다', async () => {
             const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});

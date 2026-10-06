@@ -8,6 +8,7 @@ import {
     findUngroundedNumbers,
     hashClientIp,
     runAgentTurn,
+    splitAgentFollowUps,
     type Tier,
 } from '@y0ngha/siglens-core';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
@@ -43,6 +44,7 @@ import {
     createToolExecutor,
 } from '@/app/api/ai/chat/tools/chatTools';
 import { AGENT_BUSY_LOG } from '../busyLog';
+import { createFollowUpTextFilter, followUpLine } from '../followUps';
 import { guestSubject } from '../guestSubject';
 import { acquireTurnLock } from '../turnLock';
 
@@ -104,13 +106,26 @@ interface Body {
 const GUEST_HISTORY_MAX_MESSAGES = 20;
 const GUEST_HISTORY_MESSAGE_MAX_CHARS = 8_000;
 
-function isGuestHistoryItem(
-    x: unknown
-): x is { role: 'user' | 'assistant'; content: string } {
+interface GuestHistoryItem {
+    role: 'user' | 'assistant';
+    content: string;
+    /** 답변의 후속 질문 칩 — 클라이언트는 마커 줄이 빠진 본문만 들고 있다(`followUps.ts`). */
+    followUps?: string[];
+}
+
+function isGuestHistoryItem(x: unknown): x is GuestHistoryItem {
     if (typeof x !== 'object' || x === null) return false;
-    const { role, content } = x as { role?: unknown; content?: unknown };
+    const { role, content, followUps } = x as {
+        role?: unknown;
+        content?: unknown;
+        followUps?: unknown;
+    };
     return (
-        (role === 'user' || role === 'assistant') && typeof content === 'string'
+        (role === 'user' || role === 'assistant') &&
+        typeof content === 'string' &&
+        (followUps === undefined ||
+            (Array.isArray(followUps) &&
+                followUps.every(item => typeof item === 'string')))
     );
 }
 
@@ -120,12 +135,25 @@ function parseGuestHistory(raw: unknown): AgentMessage[] | null {
     const recent = raw.slice(-GUEST_HISTORY_MAX_MESSAGES);
     if (!recent.every(isGuestHistoryItem)) return null;
     return recent
-        .map(m => ({ role: m.role, content: m.content.trim() }))
+        .map(m => ({ ...m, content: m.content.trim() }))
         .filter(m => m.content !== '')
-        .map(m => ({
-            ...m,
-            content: m.content.slice(0, GUEST_HISTORY_MESSAGE_MAX_CHARS),
-        }));
+        .map(m => {
+            // 회원 기록(DB 원문)과 같은 모양이 되도록 답변에만 마커 줄을 되붙인다. 본문을
+            // 먼저 줄 길이만큼 덜 자르고 줄을 붙인다 — 그래야 상한에 걸려도 마커 줄은
+            // 잘리지 않는다(줄 길이는 `followUpLine`이 묶어 둔다).
+            const line =
+                m.role === 'assistant' && m.followUps
+                    ? followUpLine(m.followUps)
+                    : '';
+            return {
+                role: m.role,
+                content:
+                    m.content.slice(
+                        0,
+                        GUEST_HISTORY_MESSAGE_MAX_CHARS - line.length
+                    ) + line,
+            };
+        });
 }
 
 /** Pilot: `model`/`analysisModel` from the client are ignored (spec R12). */
@@ -505,6 +533,8 @@ export async function POST(request: Request): Promise<Response> {
         // Shared across every provider call this turn makes; the router flips
         // `fallbackUsed` if/when DeepSeek fails and Gemini answers instead.
         const providerState: AgentProviderState = { fallbackUsed: false };
+        // 후속 질문 마커 줄은 클라이언트로 보내지 않는다 — 칩 항목은 `done`이 싣는다.
+        const followUpFilter = createFollowUpTextFilter();
 
         const stream = agentEventStream({
             meta: {
@@ -547,6 +577,15 @@ export async function POST(request: Request): Promise<Response> {
                                         ms: event.ms,
                                         status: event.status,
                                     });
+                                if (event.type === 'text') {
+                                    const delta = followUpFilter.push(
+                                        event.delta
+                                    );
+                                    if (delta) emit({ ...event, delta });
+                                    return;
+                                }
+                                if (event.type === 'tool_start')
+                                    followUpFilter.reset();
                                 emit(event);
                             },
                         }
@@ -659,8 +698,15 @@ export async function POST(request: Request): Promise<Response> {
                         })
                     );
                     emit({ type: 'usage', usage: result.usage });
+                    // 최종 본문과 칩 항목. 저장은 원문 그대로(모델이 읽을 기록), 화면용
+                    // 나누기는 여기서 한 번 — 클라이언트는 core를 싣지 않는다.
+                    const { body: answerBody, followUps } = splitAgentFollowUps(
+                        result.assistant.content
+                    );
                     return {
                         assistantMessageId,
+                        body: answerBody,
+                        followUps,
                         remaining: result.remaining,
                         stopReason: result.stopReason,
                         ...(title !== undefined ? { title } : {}),

@@ -9,6 +9,7 @@ import {
     getTranslations,
 } from 'next-intl/server';
 import Script from 'next/script';
+import { SITE_VIEWPORT } from '@/shared/config/viewport';
 import { FONT_VARIABLE_CLASSES } from '../fontVariables';
 import { AuthSessionHeaderClient } from '@/app/_components/AuthSessionHeaderClient';
 import { Footer } from '@/widgets/layout/Footer';
@@ -152,12 +153,8 @@ export async function generateMetadata({
     };
 }
 
-export const viewport: Viewport = {
-    /* 리디자인 다크(secondary-900). 예전 값(#0f172a)은 헤더와 달라
-       iOS 주소창 띠만 다른 색으로 떠 있었다(manifest와 같은 근거). */
-    themeColor: '#09090b',
-    viewportFit: 'cover',
-};
+// 값과 근거는 `SITE_VIEWPORT` — ai 호스트 루트 레이아웃과 같은 값을 쓴다.
+export const viewport: Viewport = SITE_VIEWPORT;
 
 interface RootLayoutProps {
     readonly children: ReactNode;

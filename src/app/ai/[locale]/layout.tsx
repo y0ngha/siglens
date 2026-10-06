@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
@@ -9,6 +9,7 @@ import { ReactQueryProvider } from '@/app/providers';
 import { SearchOverlayProvider } from '@/features/ticker-search/model/SearchOverlayContext';
 import { VisitorPing } from '@/features/visitor-ping/ui/VisitorPing';
 import { AI_SITE_URL } from '@/shared/config/aiHost';
+import { SITE_VIEWPORT } from '@/shared/config/viewport';
 import { LocaleProvider } from '@/shared/i18n/LocaleContext';
 import { pickMessages } from '@/shared/i18n/loadMessages';
 import { isLocale, LOCALE_HREFLANG } from '@/shared/i18n/locales';
@@ -23,6 +24,13 @@ import { FONT_VARIABLE_CLASSES } from '../../fontVariables';
 import '../../globals.css';
 
 export const dynamic = 'force-dynamic';
+
+/**
+ * 이 레이아웃은 ai 서브트리의 **루트**라 메인 호스트 `[locale]/layout.tsx`의 `viewport`를
+ * 상속하지 않는다. 없으면 모바일 주소창 띠가 브라우저 기본색으로 떠 헤더와 갈라지고,
+ * `viewport-fit=cover`가 빠져 노치 영역이 비었다. 메인과 같은 값을 쓴다.
+ */
+export const viewport: Viewport = SITE_VIEWPORT;
 
 export const metadata: Metadata = {
     metadataBase: new URL(AI_SITE_URL),

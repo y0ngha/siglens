@@ -47,4 +47,26 @@ describe('guestHistory', () => {
         expect(out).toEqual([{ role: 'user', content: 'q' }]);
         expect(Object.keys(out[0]!)).toEqual(['role', 'content']);
     });
+
+    it('답변의 후속 질문 항목은 함께 보낸다 (서버가 마커 줄을 되붙인다)', () => {
+        expect(
+            guestHistory([
+                msg({ role: 'user', content: 'q' }),
+                msg({
+                    role: 'assistant',
+                    content: 'a',
+                    followUps: ['실적은?', '뉴스는?'],
+                }),
+                msg({ role: 'assistant', content: 'b', followUps: [] }),
+            ])
+        ).toEqual([
+            { role: 'user', content: 'q' },
+            {
+                role: 'assistant',
+                content: 'a',
+                followUps: ['실적은?', '뉴스는?'],
+            },
+            { role: 'assistant', content: 'b' },
+        ]);
+    });
 });
