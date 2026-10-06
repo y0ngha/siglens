@@ -24,6 +24,7 @@ import {
     analysisHistoryQuery,
     type AnalysisHistoryAxis,
     type AssembledPromptRecord,
+    type MarketSessionSpec,
     type PriorAnalysis,
     type RiskLevel,
     type Timeframe,
@@ -370,8 +371,9 @@ export class DrizzleAnalysisHistoryRepository {
      * `WHERE model_id = ...` or `WHERE locale = ...` clause, don't — that is
      * the specific mistake this comment exists to head off.**
      *
-     * The query is sized via core's `analysisHistoryQuery(timeframe, axis)`
-     * (`limit` + `sinceMs`) rather than hand-picked constants — it is a
+     * The query is sized via core's `analysisHistoryQuery(timeframe, axis,
+     * now, session)` (`limit` + `sinceMs` + `generatedBeforeMs`) rather than
+     * hand-picked constants — it is a
      * deliberately coarse pre-filter core re-narrows twice downstream, and
      * under-fetching here silently disables the feature. Never tighten this
      * query below what `analysisHistoryQuery` returns.
@@ -416,13 +418,24 @@ export class DrizzleAnalysisHistoryRepository {
          */
         includeCurrentWindow?: boolean;
         now?: Date;
+        /**
+         * The market-session spec the caller hands core for this same
+         * analysis (`runAnalysis`'s `session` / overall's `technical.session`).
+         * Forwarded to `analysisHistoryQuery` so `generatedBeforeMs` lands on
+         * the same session-close boundary core uses to cut the cache-key
+         * history (e.g. KRX 1Day rolls at the session close, not 05:00 KST).
+         * A mismatch here re-opens the eviction loop described above. Omit it
+         * only when the caller also omits it from core.
+         */
+        session?: MarketSessionSpec;
     }): Promise<PriorAnalysis[]> {
         try {
             const now = input.now ?? new Date();
             const { limit, sinceMs, generatedBeforeMs } = analysisHistoryQuery(
                 input.timeframe as Timeframe,
                 input.axis ?? 'technical',
-                now
+                now,
+                input.session
             );
             const since = new Date(now.getTime() - sinceMs);
 
