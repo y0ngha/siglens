@@ -1,5 +1,17 @@
 # Changelog
 
+# [0.101.0](https://github.com/y0ngha/siglens/compare/v0.100.0...v0.101.0) (2026-10-06)
+
+### Bug Fixes
+
+* 시장 이벤트 조회 창을 UTC 일 단위로 고정하고 core 2.13.1을 반영해 분석 캐시 키를 안정시킨다 ([#968](https://github.com/y0ngha/siglens/issues/968)) ([01cb95b](https://github.com/y0ngha/siglens/commit/01cb95beade333e46fb71128bf6209d1f4eee007)), closes [#260](https://github.com/y0ngha/siglens/issues/260)
+* 현행 개인정보처리방침·이용약관 본문의 조사 표기 오타를 바로잡는다 ([#965](https://github.com/y0ngha/siglens/issues/965)) ([693d54b](https://github.com/y0ngha/siglens/commit/693d54b410ad7f89d62e796fb9f76e4871b10beb)), closes [#964](https://github.com/y0ngha/siglens/issues/964)
+* SiglensAI 채팅의 "최신 메시지로 이동" 버튼이 스트리밍 중엔 계속 따라가고 포커스를 잃지 않게 한다 ([#966](https://github.com/y0ngha/siglens/issues/966)) ([11f74fd](https://github.com/y0ngha/siglens/commit/11f74fd5a235bbb22601782c688c96aaafd51168))
+
+### Features
+
+* 미국 장 마감 뒤 인기 종목의 옵션 직전 정규장 스냅샷을 미리 확보한다 ([#967](https://github.com/y0ngha/siglens/issues/967)) ([e3badd4](https://github.com/y0ngha/siglens/commit/e3badd43cb47ebaf673e4fc3aba4e84e2000a1cf))
+
 # [0.100.0](https://github.com/y0ngha/siglens/compare/v0.99.0...v0.100.0) (2026-10-06)
 
 ### Bug Fixes
