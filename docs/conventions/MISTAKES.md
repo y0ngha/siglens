@@ -375,11 +375,14 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → When a documentation field contains a factual claim (measurement, size, count, deadline, behavior) or numeric value (sizes, multipliers, delays), it must either: 1) point to the evidence (test, link, measurement record, script), or 2) state explicitly how to re-measure/verify it
     → Undocumented facts create maintenance risk — if the actual value drifts, the documentation claim stays stale forever because there's no method to detect drift
     → Even dated measurements must carry context: date recorded, measurement method, and conditions under which it may change
+    → This applies to all documentation: code comments, runbooks, architecture docs, docstrings. Claims about system behavior (cron schedules, SSM keys, AWS config) must be verified against the actual source (live system, config file, cron table), not inferred from earlier comments or assumptions.
     ❌ "Cloudflare respects strong ETags, keeping 304 responses compressed" (no measurement, no verification method)
     ❌ "an edge Compression Rule raises origin egress 11x" (a figure with no record anywhere in the repo and no way to re-measure)
+    ❌ "주말이나 KST 오전~오후" (operating window inferred from business hours, not from actual cron schedule)
     ✅ "strong ETags block Cloudflare compression — `/NRICX` origin gzip 39KB → edge HIT 209KB" (names the URL and both measured sizes, so the probe can be repeated)
     ✅ "no separate measurement record exists; to re-check, read `content-encoding` on a `cf-cache-status: MISS` response and measure origin transfer bytes" (states the reproduction path when no record exists)
-    → Recurring: perf/cdn-compression (strong ETag claim without measurement), docs/architecture/CDN_CACHING (measured figure without source record) — 2 occurrences
+    ✅ "trader crons run 13–21 UTC Mon–Fri" (cite the actual source: `server/app.ts CRON_JOBS`)
+    → Recurring: perf/cdn-compression (strong ETag claim without measurement), docs/architecture/CDN_CACHING (measured figure without source record), docs/rds-runbook-siglens-first (operating window inferred not measured), PR fix/proxy-server-action-auth review — 4+ occurrences
 
 15.4. Visual section separator comments (`// ─── Title ───────────`) inside source files
     → Box-drawing characters used to "organize" sections in code are WHAT-comments in disguise (they label what's below).
@@ -548,6 +551,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → When inserting new functions, constants, or exports above existing code, insert them ABOVE any JSDoc blocks that document the existing code, never between a JSDoc and its declaration
     → A JSDoc block inserted between a JSDoc and the declaration it documents orphans the original documentation
     → This applies to all code insertions: adding exports, constants, helper functions, or other declarations
+    → **Pre-submit check (required before pushing):** Before adding a helper, constant, or export above existing code, look at the lines directly above your insertion point. If they end with `*/`, you are about to insert between a JSDoc block and its declaration — insert your code ABOVE the `/**` line instead.
     ❌ // existing JSDoc comment for function
        /** New export docstring */
        export const NEW_CONST = ...;
@@ -567,7 +571,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
        /** Original docstring */
        export function documentedFunc() { ... }  // JSDoc stays directly above its declaration
-    → Recurring: claude/magical-sagan-56eoov Round 1, perf/analysis-plain-salvage-first R1 — 2 occurrences
+    → Recurring: claude/magical-sagan-56eoov Round 1, perf/analysis-plain-salvage-first R1, PR fix/proxy-server-action-auth review + 5 more occurrences in 2026-10 session — 8+ total violations in recent months
 
 26. i18n artifacts must be regenerated after code changes
     → When source code changes (shifting lines in files with skipped i18n literals, changing route import graph, adding/removing i18n references), regenerate i18n artifacts by running `yarn i18n:extract --write`
