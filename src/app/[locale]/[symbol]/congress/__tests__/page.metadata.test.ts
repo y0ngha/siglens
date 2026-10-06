@@ -77,6 +77,7 @@ vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
 }));
 
 import { describe, expect, it, beforeEach, vi } from 'vitest';
+import { notFound } from 'next/navigation';
 import {
     generateMetadata,
     revalidate,
@@ -136,15 +137,13 @@ describe('generateMetadata', () => {
         vi.mocked(getSeoSnapshotsStatic).mockResolvedValue([]);
     });
 
-    it('returns noindex for invalid ticker format', async () => {
-        const metadata = await generateMetadata({
+    it('형식이 잘못된 ticker는 notFound()를 부른다 — 404에 홈 상속 메타가 얹히지 않는다', async () => {
+        // `notFound`가 이 파일에선 던지지 않는 목이라 이후 흐름은 의미가 없다 — 호출만 본다.
+        await generateMetadata({
             params: Promise.resolve({ locale: 'ko', symbol: '!!!invalid' }),
-        });
+        }).catch(() => undefined);
 
-        expect(metadata.robots).toEqual({ index: false, follow: true });
-        expect(metadata.alternates?.canonical).toBe(
-            'https://siglens.io/!!!invalid/congress'
-        );
+        expect(vi.mocked(notFound)).toHaveBeenCalled();
     });
 
     it('returns noindex when assetInfo is degraded', async () => {

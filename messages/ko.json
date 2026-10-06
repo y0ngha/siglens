@@ -341,9 +341,6 @@
                 "f9482c": "공포 탐욕 지수"
             },
             "page": {
-                "412646": "펀더멘털 분석",
-                "128c11": "재무제표",
-                "2141f2": "뉴스 분석",
                 "2ab959": "지금 가격은 이 아파트 몇 층?",
                 "3c87a9": "실적 일정을 불러오지 못했어요.",
                 "465a63": "{v0} 재무제표",
@@ -352,8 +349,6 @@
                 "6723ea": "실적 일정",
                 "69d338": "내 위치",
                 "6cd32e": "{v0} 공포 탐욕 지수 — 0~100 점수와 최근 흐름",
-                "7b06ac": "의회 거래",
-                "8b7ae7": "AI 종합 분석",
                 "9e0659": "{v0} 재무지표와 애널리스트 의견",
                 "9f451a": "웹",
                 "b2cd1a": "애널리스트 등급 변경",
@@ -361,8 +356,6 @@
                 "c6cf97": "번역 중...",
                 "cf643b": "시가총액",
                 "e607c1": "{v0} 의회 거래",
-                "f1b01b": "옵션 분석",
-                "f9482c": "공포 탐욕 지수",
                 "marketFearGreedLinkAll": "시장 전체 공포·탐욕 지수",
                 "marketFearGreedLinkCrypto": "암호화폐 시장 공포탐욕지수",
                 "marketFearGreedLinkKr": "한국 시장 공포·탐욕 지수",
@@ -547,7 +540,6 @@
                 "volatility": "변동성"
             },
             "seo": {
-                "expiredTitle": "공유 분석",
                 "title": "{v0} AI 분석 결과"
             }
         }
@@ -1543,8 +1535,6 @@
                 "emptyDescriptionTemplate": "{label} 최신 뉴스를 불러오지 못했어요.",
                 "emptyTitleTemplate": "{label} 뉴스",
                 "itemListName": "{label} 최신 뉴스",
-                "notFoundDescription": "요청하신 뉴스 카테고리가 존재하지 않아요.",
-                "notFoundTitle": "뉴스 카테고리를 찾을 수 없어요",
                 "titleTemplate": "{label} 뉴스 — 최신 흐름과 AI 요약"
             },
             "newsHub": {

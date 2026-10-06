@@ -1,6 +1,8 @@
-import type { Components } from 'react-markdown';
+import { memo } from 'react';
+import type { Components, Options } from 'react-markdown';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { splitMarkdownBlocks } from './utils/markdownBlocks';
 
 /**
  * Output hygiene (spec §8): model text goes through `react-markdown`, which
@@ -126,19 +128,50 @@ const AGENT_COMPONENTS: Components = {
     ),
 };
 
-export function AgentMarkdown({ children }: { readonly children: string }) {
+/**
+ * `singleTilde: false`: answers write price ranges as `266,500~270,666원`, and
+ * GFM's default reads two single tildes on one line as ~strikethrough~
+ * (2026-09-13 사용자 제보). Only `~~double~~` strikes now.
+ */
+const REMARK_PLUGINS: Options['remarkPlugins'] = [
+    [remarkGfm, { singleTilde: false }],
+];
+
+interface MarkdownBlockProps {
+    readonly source: string;
+}
+
+/**
+ * 블록 하나. `memo`라 입력 문자열이 그대로면 다시 파싱하지 않는다 — 스트리밍 중에는
+ * 끝 블록만 바뀌므로 그것만 다시 파싱된다(`splitMarkdownBlocks` 참조). react-markdown은
+ * 감싸는 요소 없이 Fragment를 돌려주므로 블록들이 한 컨테이너의 형제로 놓여,
+ * `first:`/`last:` 여백 규칙은 통째로 그리던 때와 같다.
+ */
+const MarkdownBlock = memo(function MarkdownBlock({
+    source,
+}: MarkdownBlockProps) {
+    return (
+        <ReactMarkdown
+            remarkPlugins={REMARK_PLUGINS}
+            components={AGENT_COMPONENTS}
+        >
+            {source}
+        </ReactMarkdown>
+    );
+});
+
+interface AgentMarkdownProps {
+    readonly children: string;
+}
+
+export function AgentMarkdown({ children }: AgentMarkdownProps) {
     return (
         <div className="leading-7 break-words">
-            <ReactMarkdown
-                // `singleTilde: false`: answers write price ranges as
-                // `266,500~270,666원`, and GFM's default reads two single
-                // tildes on one line as ~strikethrough~ (2026-09-13 사용자 제보).
-                // Only `~~double~~` strikes now.
-                remarkPlugins={[[remarkGfm, { singleTilde: false }]]}
-                components={AGENT_COMPONENTS}
-            >
-                {children}
-            </ReactMarkdown>
+            {splitMarkdownBlocks(children).map((block, index) => (
+                // 위치가 곧 정체성이다 — 답변은 끝에서만 자라므로 앞 블록의 인덱스는
+                // 변하지 않고, 그래야 memo가 그 블록의 재파싱을 건너뛴다.
+                <MarkdownBlock key={index} source={block} />
+            ))}
         </div>
     );
 }

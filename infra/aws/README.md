@@ -134,7 +134,9 @@ CRON_SECRET을 바꾼 뒤엔 둘 중 하나만 돌려도 두 cron이 함께 갱�
 
 ## ISR 캐시 prefix 정리
 
-배포마다 ISR 캐시 prefix(`siglens-isr/<GIT_SHA>/`)가 바뀌어 직전 prefix는 죽는다. 이것은
+배포마다 ISR 페이지 캐시 prefix(`siglens-isr/<GIT_SHA>/pages/`)가 바뀌어 직전 prefix는 죽는다.
+데이터 캐시(`siglens-isr/data-v<N>-next<ver>/fetch/`)는 배포를 넘어 공유되며, 형식이 바뀔 때만
+`cache-handler/config.mjs`의 `DATA_CACHE_VERSION`을 손으로 올린다(규칙은 그 파일 주석). 죽은 prefix는
 `12-isr-cache.sh`의 7일 lifecycle이 지운다 — `deploy.sh`는 지우지 않는다(직전 prefix는
 1단계 롤백의 웜 캐시이고, 수십만 객체 삭제는 CI를 분 단위로 잡아먹는다). 예전에 쓰던 SSM
 `/siglens/prev-isr-buildid`는 읽는 곳이 없어 폐기했다.

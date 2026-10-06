@@ -73,6 +73,12 @@ export function BriefingCard({
     // 그 숫자를 그대로 인용하므로 둘을 따로 살릴 수 없다.
     const volatility =
         scope.volatilityIndexSymbol === null ? null : volatilityAnalysis;
+    // peek seed는 generatedAt이 빈 문자열이라 new Date('') = Invalid Date — 그때는 null.
+    const generatedDate = generatedAt ? new Date(generatedAt) : null;
+    const validGeneratedDate =
+        generatedDate !== null && !Number.isNaN(generatedDate.getTime())
+            ? generatedDate
+            : null;
 
     return (
         <div className="flex flex-col gap-3 rounded-lg border border-secondary-700/50 p-4">
@@ -160,20 +166,25 @@ export function BriefingCard({
             {/* peek seed는 generatedAt이 빈 문자열이라 new Date('') = Invalid Date.
                 BriefingCard는 action 응답으로 교체되기 전까지 타임스탬프 줄을
                 숨겨 "Invalid Date 기준"이 노출되는 것을 막는다. */}
-            {generatedAt && !Number.isNaN(new Date(generatedAt).getTime()) && (
+            {validGeneratedDate !== null && (
                 <p className="text-xs text-secondary-500">
                     {/* timeZone은 'Asia/Seoul'로 **고정**한다 — SSR(Node)과
                         CSR(브라우저) 사이 timezone mismatch로 인한 hydration
                         오류를 막기 위해서다. 반면 **로케일은 고정하면 안 된다**:
                         `'ko-KR'`로 박혀 있어서 `/en/market`이 번역된 문장 안에
                         `8월 20일 오전 02:39`를 찍었다. */}
-                    {new Date(generatedAt).toLocaleString(INTL_LOCALE[locale], {
-                        timeZone: 'Asia/Seoul',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                    })}{' '}
+                    <time dateTime={validGeneratedDate.toISOString()}>
+                        {validGeneratedDate.toLocaleString(
+                            INTL_LOCALE[locale],
+                            {
+                                timeZone: 'Asia/Seoul',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                            }
+                        )}
+                    </time>{' '}
                     {t('BriefingCard.39b300')}
                 </p>
             )}

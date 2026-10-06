@@ -1,12 +1,13 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import dynamic from 'next/dynamic';
 import { useEffect, useRef, useState } from 'react';
-import { Drawer } from 'vaul';
 import type { ChatMessageView } from '@/entities/chat-conversation/model';
 import type { ConversationListItem } from '@/entities/chat-conversation/actions/listConversationsAction';
 import { useAgentStream } from '@/features/agent-chat/hooks/useAgentStream';
 import { type AgentClientErrorCode } from '@/features/agent-chat/lib/errorCodes';
+import { BELOW_LG_MEDIA_QUERY } from '@/shared/config/viewport';
 import { useHideOnScrollDown } from '@/shared/hooks/useHideOnScrollDown';
 import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import { cn } from '@/shared/lib/cn';
@@ -14,12 +15,56 @@ import { Composer } from './Composer';
 import { AGENT_ERROR_RETRYABLE } from './errorCopy';
 import { EmptyState, type PendingSuggestions } from './EmptyState';
 import { GUEST_TURNS_PER_DAY } from './guestTurnLimit';
+import { useMediaQuery } from './hooks/useMediaQuery';
 import { MenuIcon } from '@/shared/ui/StrokeIcons';
 import { loginHref } from './loginHref';
-import { MessageList } from './MessageList';
 import { withoutSsoParam } from './utils/withoutSsoParam';
 import { ConversationSkeleton } from './ConversationSkeleton';
 import { Sidebar } from './Sidebar';
+
+/** `MessageList`의 바깥 상자와 같은 크기 — 청크가 오는 동안 Composer가 튀지 않게 자리를 잡는다. */
+const MESSAGE_LIST_SLOT = 'relative min-h-0 flex-1';
+
+/**
+ * 대화 본문은 메시지가 생긴 뒤에만 필요하다. `MessageList`는 마크다운
+ * 렌더러(react-markdown + remark-gfm)와 도구 칩·스크롤 로직을 끌고 오므로, 빈 랜딩에서는
+ * 첫 로드 JS에서 뺀다. SSR은 켜 둔다 — 저장된 대화(`/c/<id>`)는 서버 HTML에 본문이
+ * 그대로 실리고 하이드레이션이 그 청크를 기다리는 동안 화면이 바뀌지 않는다.
+ */
+// `import()`를 이 자리에 그대로 둔다 — Next가 정적으로 읽어 SSR 때 청크 preload를 심는다.
+const MessageList = dynamic(
+    () => import('./MessageList').then(mod => mod.MessageList),
+    { loading: () => <div className={MESSAGE_LIST_SLOT} /> }
+);
+
+/** 모바일 서랍(vaul). 데스크톱은 레일(`aside`)을 쓰므로 `lg` 미만에서만 불러온다. */
+const SidebarDrawer = dynamic(
+    () => import('./SidebarDrawer').then(mod => mod.SidebarDrawer),
+    { ssr: false }
+);
+
+/** `requestIdleCallback`이 없는 브라우저(Safari)에서 첫 페인트 뒤로 미루는 지연. */
+const PRELOAD_FALLBACK_MS = 2_000;
+
+/** 위 `dynamic`과 같은 청크 — 번들러가 하나로 합친다. */
+function loadMessageList(): Promise<unknown> {
+    return import('./MessageList');
+}
+
+/** 빈 랜딩에서 첫 전송 전에 본문 청크를 미리 받아 둔다 — 브라우저가 한가할 때. */
+function preloadMessageListWhenIdle(): () => void {
+    if (
+        typeof window.requestIdleCallback === 'function' &&
+        typeof window.cancelIdleCallback === 'function'
+    ) {
+        // 예약한 쪽의 취소 함수를 잡아 둔다 — 정리 시점에 전역이 바뀌어도 짝이 맞는다.
+        const cancel = window.cancelIdleCallback.bind(window);
+        const id = window.requestIdleCallback(() => void loadMessageList());
+        return () => cancel(id);
+    }
+    const id = setTimeout(() => void loadMessageList(), PRELOAD_FALLBACK_MS);
+    return () => clearTimeout(id);
+}
 
 interface Props {
     readonly conversationId: string | null;
@@ -94,6 +139,11 @@ export function ChatShell({
     // Same hook as the site header (AuthSessionHeaderClient) so the header and
     // this bar leave and return together on a phone.
     const chromeHidden = useHideOnScrollDown();
+    const isBelowLg = useMediaQuery(BELOW_LG_MEDIA_QUERY);
+    // 서랍이 열린 채 `lg` 이상으로 넓어지면 서랍은 언마운트되지만(레일이 대신한다)
+    // `drawerOpen`이 남아 버튼의 `aria-expanded`가 거짓말을 하고, 다시 좁히면 서랍이
+    // 저절로 열린다. 렌더 중에 바로 닫는다(이번 렌더의 값에서 나온 상태 조정 — effect 불필요).
+    if (!isBelowLg && drawerOpen) setDrawerOpen(false);
     const stream = useAgentStream({
         conversationId,
         initialMessages,
@@ -117,6 +167,14 @@ export function ChatShell({
             window.history.replaceState(window.history.state, '', cleaned);
         }
     }, []);
+
+    // 빈 랜딩: 첫 전송 때 본문 청크를 기다리며 빈 자리가 보이지 않도록 미리 받아 둔다.
+    // 첫 로드(파싱·실행) 경로에서는 빠지고, 내려받기만 유휴 시간으로 미룬다.
+    const hasMessages = stream.messages.length > 0;
+    useEffect(() => {
+        if (hasMessages) return;
+        return preloadMessageListWhenIdle();
+    }, [hasMessages]);
 
     // A session that expired mid-visit surfaces as a 401 on the stream route —
     // bounce through the same handoff flow the login CTA uses instead of
@@ -214,25 +272,16 @@ export function ChatShell({
             <aside className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-64 shrink-0 self-start border-r border-secondary-700 bg-secondary-950 lg:block">
                 {sidebar}
             </aside>
-            <Drawer.Root
-                open={drawerOpen}
-                onOpenChange={setDrawerOpen}
-                direction="left"
-                modal={false}
-            >
-                <Drawer.Portal>
-                    <Drawer.Content
-                        ref={drawerRef}
-                        id="agent-chat-sidebar-drawer"
-                        className="fixed inset-y-0 left-0 z-[60] w-72 border-r border-secondary-700 bg-secondary-950"
-                    >
-                        <Drawer.Title className="sr-only">
-                            {t('ChatShell.9a7569')}
-                        </Drawer.Title>
-                        {sidebar}
-                    </Drawer.Content>
-                </Drawer.Portal>
-            </Drawer.Root>
+            {isBelowLg ? (
+                <SidebarDrawer
+                    open={drawerOpen}
+                    onOpenChange={setDrawerOpen}
+                    contentRef={drawerRef}
+                    title={t('ChatShell.9a7569')}
+                >
+                    {sidebar}
+                </SidebarDrawer>
+            ) : null}
             <div className="flex min-w-0 flex-1 flex-col">
                 {/* Sidebar is desktop-only (`aside` above); mobile opens it in the
                     vaul drawer instead. The shared main `Header` above this shell
@@ -275,7 +324,7 @@ export function ChatShell({
                 </div>
                 {switchingConversation ? (
                     <ConversationSkeleton />
-                ) : stream.messages.length === 0 ? (
+                ) : !hasMessages ? (
                     <EmptyState
                         localePrefix={localePrefix}
                         signedIn={signedIn}
@@ -335,7 +384,7 @@ export function ChatShell({
                         </p>
                     </div>
                 ) : null}
-                {!signedIn && stream.messages.length > 0 ? (
+                {!signedIn && hasMessages ? (
                     // Guests can ask, but the transcript lives only in this tab —
                     // say so once, next to the one action that keeps it.
                     <p className="mx-auto w-full max-w-3xl px-4 pb-1 text-center text-xs text-secondary-400">

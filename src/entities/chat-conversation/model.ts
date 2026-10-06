@@ -1,4 +1,4 @@
-import type { AgentMessage } from '@y0ngha/siglens-core';
+import { splitAgentFollowUps, type AgentMessage } from '@y0ngha/siglens-core';
 import type { Locale } from '@/shared/i18n/locales';
 
 /** Max stored length of a conversation title (matches `chat_conversations.title` varchar(120) minus headroom; the derived title itself is capped shorter — see {@link deriveTitle}). */
@@ -70,6 +70,12 @@ export interface ChatMessageView {
     toolName: string | null;
     status: ChatMessageStatus;
     createdAt: string;
+    /**
+     * 답변 끝줄의 후속 질문 칩 항목. 있으면 `content`에서는 그 마커 줄이 빠져 있다 —
+     * 나누기는 서버(`toMessageView`)에서 한다. 클라이언트가 core를 싣지 않게 하려는
+     * 것이다(core는 CommonJS 한 덩어리라 함수 하나에 번들 전체가 따라온다).
+     */
+    followUps?: string[];
 }
 
 /**
@@ -128,16 +134,26 @@ export function toAgentHistory(
         }));
 }
 
-/** Record → client view, dropping server-internal fields (`usage`, `toolCallId`, `modelId`). */
+/**
+ * Record → client view, dropping server-internal fields (`usage`, `toolCallId`, `modelId`).
+ * An assistant row's follow-up marker line is split off here (server side) into
+ * `followUps`; the stored `content` keeps it, since the model reads it back as history.
+ */
 export function toMessageView(r: ChatMessageRecord): ChatMessageView {
+    const { body, followUps } =
+        r.role === 'assistant'
+            ? splitAgentFollowUps(r.content)
+            : { body: r.content, followUps: [] };
     return {
         id: r.id,
         seq: r.seq,
         role: r.role,
-        content: r.content,
+        content: body,
         toolCalls: r.toolCalls,
         toolName: r.toolName,
         status: r.status,
         createdAt: r.createdAt.toISOString(),
+        // 빈 배열은 싣지 않는다 — RSC 페이로드에 메시지마다 `[]`가 붙을 이유가 없다.
+        ...(followUps.length > 0 ? { followUps } : {}),
     };
 }

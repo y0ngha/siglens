@@ -111,11 +111,12 @@ describe('generateMetadata', () => {
         mockGetSessionBarsStatic.mockResolvedValue(RAW_BARS as never);
     });
 
-    it('returns noindex for an invalid ticker shape', async () => {
-        const metadata = await generateMetadata({
-            params: Promise.resolve({ locale: 'ko', symbol: '!!!invalid' }),
-        });
-        expect(metadata.robots).toEqual({ index: false, follow: true });
+    it('404s (notFound) for an invalid ticker shape — 404에 홈 상속 메타가 얹히지 않는다', async () => {
+        await expect(
+            generateMetadata({
+                params: Promise.resolve({ locale: 'ko', symbol: '!!!invalid' }),
+            })
+        ).rejects.toThrow('NEXT_NOT_FOUND');
     });
 
     it('404s (notFound) when the asset does not exist — never a ticker-titled noindex page', async () => {
@@ -153,12 +154,13 @@ describe('generateMetadata', () => {
         expect(metadata.robots).toEqual({ index: false, follow: true });
     });
 
-    it('returns noindex when the tab is not allowed for this market profile', async () => {
+    it('404s (notFound) when the tab is not allowed for this market profile', async () => {
         mockIsTabAllowedForSymbol.mockResolvedValue(false);
-        const metadata = await generateMetadata({
-            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
-        });
-        expect(metadata.robots).toEqual({ index: false, follow: true });
+        await expect(
+            generateMetadata({
+                params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+            })
+        ).rejects.toThrow('NEXT_NOT_FOUND');
     });
 
     /**

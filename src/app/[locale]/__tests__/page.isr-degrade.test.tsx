@@ -71,6 +71,12 @@ vi.mock('@/shared/lib/seo', () => ({
     SITE_NAME_KO: '시그렌즈',
     SITE_URL: 'https://siglens.io',
     ORGANIZATION_JSON_LD_ID: 'https://siglens.io#organization',
+    buildOrganizationCoreJsonLd: () => ({
+        '@type': 'Organization',
+        '@id': 'https://siglens.io#organization',
+        name: 'Siglens',
+        url: 'https://siglens.io',
+    }),
 }));
 // `() => null` 로 두면 홈의 모든 내부 링크가 사라진 상태를 테스트하게 된다.
 vi.mock('next/link', () => ({

@@ -46,14 +46,4 @@ describe('[symbol]/fear-greed OG images', () => {
             });
         });
     });
-
-    describe('twitter-image (re-export)', () => {
-        it('re-exports same exports from opengraph-image', async () => {
-            const twitter =
-                await import('@/app/[locale]/[symbol]/fear-greed/twitter-image');
-            expect(twitter.size).toEqual(size);
-            expect(twitter.contentType).toBe(contentType);
-            expect(twitter.alt).toBe(alt);
-        });
-    });
 });

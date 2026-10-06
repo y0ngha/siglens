@@ -13,6 +13,8 @@ import type { Locale } from '@/shared/i18n/locales';
 /**
  * 헬퍼 도입 전 허브 라우트(economy·market·fear-greed)가 손으로 만들던 모양 그대로.
  * 이 기대값과 **완전히 같아야** 메타데이터·OG 출력이 바뀌지 않는다.
+ *
+ * 단 degraded의 canonical만은 의도적으로 바꿨다 — `null`이 아니라 self-canonical(hreflang 없음).
  */
 async function legacyHubMetadata(
     locale: Locale,
@@ -27,11 +29,9 @@ async function legacyHubMetadata(
         title,
         description,
         keywords,
-        alternates: await localeAlternatesFrom(
-            Promise.resolve({ locale }),
-            path,
-            { canonical: degraded ? null : undefined }
-        ),
+        alternates: degraded
+            ? { canonical: localeCanonical(locale, path) }
+            : await localeAlternatesFrom(Promise.resolve({ locale }), path),
         robots: degraded
             ? { index: false, follow: true }
             : localePageRobots(locale),
@@ -97,7 +97,7 @@ describe('buildHubMetadata', () => {
         }
     );
 
-    it('degraded면 canonical을 비우고 noindex·follow', async () => {
+    it('degraded면 noindex·follow + self-canonical만 — hreflang·발견 링크는 싣지 않는다', async () => {
         const actual = await buildHubMetadata({
             params: Promise.resolve({ locale: 'ko' }),
             locale: 'ko',
@@ -106,8 +106,13 @@ describe('buildHubMetadata', () => {
             description: 'd',
             keywords: [],
             degraded: true,
+            alternateTypes: {
+                'application/rss+xml': 'https://siglens.io/rss.xml',
+            },
         });
-        expect(actual.alternates?.canonical).toBeNull();
+        expect(actual.alternates).toEqual({
+            canonical: 'https://siglens.io/economy',
+        });
         expect(actual.robots).toEqual({ index: false, follow: true });
     });
 

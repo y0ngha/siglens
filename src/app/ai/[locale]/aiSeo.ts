@@ -71,7 +71,8 @@ function buildAiPageMetadata(
         languages['x-default'] = aiUrl(DEFAULT_LOCALE, path);
     }
     const image = {
-        url: `${AI_SITE_URL}/api/ai/og?locale=${locale}`,
+        // 경로 세그먼트 + `.png` — 정적화·엣지 캐시되는 형태(`api/ai/og/[file]/route.tsx`).
+        url: `${AI_SITE_URL}/api/ai/og/${locale}.png`,
         width: OG_IMAGE_WIDTH,
         height: OG_IMAGE_HEIGHT,
         alt: copy.ogLabel,

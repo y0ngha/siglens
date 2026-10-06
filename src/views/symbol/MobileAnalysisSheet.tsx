@@ -81,7 +81,8 @@ export function MobileAnalysisSheet({
                     // max-h로 두면 콘텐츠가 줄어들 때 드로어가 함께 축소되어 PEEK 위치에서
                     // 완전히 뷰포트 밖으로 밀려나는 "사라짐" 버그가 발생한다.
                     className="fixed inset-x-0 bottom-0 z-50 flex h-[97svh] flex-col overflow-hidden overscroll-contain rounded-t-lg border-t border-secondary-700 bg-secondary-900 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-8px_rgba(0,0,0,0.6)] md:hidden"
-                    aria-live="polite"
+                    // 시트 전체에 `aria-live`를 걸지 않는다 — 분석 본문이 바뀔 때마다 통째로
+                    // 낭독된다. 진행 상태는 `AnalysisProgress`·`AnalysisToast`의 `role="status"`가 알린다.
                     // PEEK 밖(HALF/FULL)에서만 붙는다 — globals.css가 이 속성으로
                     // AskAiFab(z-60)을 숨긴다. 시트(z-50) 위로 떠서 분석 본문의
                     // 오른쪽 아래 글자를 가리는 걸 막기 위해서다. PEEK는 띠만

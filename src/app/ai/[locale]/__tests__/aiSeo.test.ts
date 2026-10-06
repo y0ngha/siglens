@@ -23,7 +23,7 @@ describe('buildAiHomeMetadata', () => {
         expect(m.openGraph).toMatchObject({
             siteName: 'SIGLENS AI',
             url: `${AI_SITE_URL}/`,
-            images: [{ url: `${AI_SITE_URL}/api/ai/og?locale=ko` }],
+            images: [{ url: `${AI_SITE_URL}/api/ai/og/ko.png` }],
         });
         expect(m.twitter).toMatchObject({ card: 'summary_large_image' });
     });

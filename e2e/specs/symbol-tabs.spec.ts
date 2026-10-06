@@ -28,8 +28,8 @@ import { freezeClock } from '../support/clock';
  *     E2E) — they render from the seeded asset row alone.
  *
  *   - We deliberately AVOID asserting the analysis body (which on webkit lives
- *     in the `MobileAnalysisSheet` bottom sheet, not the desktop `<aside>`
- *     `role="complementary"` that is hidden below `md`) and FMP/Yahoo-backed
+ *     in the `MobileAnalysisSheet` bottom sheet, not the desktop panel
+ *     `role="region"` named "AI 차트 분석" that is hidden below `md`) and FMP/Yahoo-backed
  *     section content (fundamental cards, options metrics) for the navigation
  *     test, since their presence is data-dependent under E2E. The page h1 +
  *     active-tab state are the stable, always-present outcomes.

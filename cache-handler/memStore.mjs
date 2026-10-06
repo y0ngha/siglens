@@ -29,9 +29,10 @@
 // `sitemap-entry/server.ts`, `resolveIndicatorLabels`, `getKrIndicatorCards`,
 // `getAssetInfoStatic`). 이것들은 Redis가 막아주지 않으므로 메모리로 강등하면
 // 재시작·스케일아웃마다 DB 쿼리가 늘어난다 — 크기 게이트가 그 위험을 큰 엔트리에서
-// 걷어내고, 남는 작은 엔트리는 재생성이 싸다. (S3 키에 빌드 ID가 들어가 배포를 넘어
-// 공유된 적은 원래 없으므로, 메모리로 옮겨 잃는 건 같은 빌드 안의 인스턴스 간 공유뿐이다 —
-// 스케일아웃·교체 때 인스턴스당 DB 조회 1회로, 대신 나가던 S3 GET 1회와 비용이 비슷하다.)
+// 걷어내고, 남는 작은 엔트리는 재생성이 싸다. (메모리로 옮겨 잃는 건 인스턴스 간·배포 간
+// 공유다 — S3 `fetch/` prefix는 이제 배포를 넘어 공유되지만(config.mjs `DATA_CACHE_VERSION`)
+// 작은 엔트리는 거기 쓰이지 않는다. 스케일아웃·교체·배포 때 인스턴스당 재생성 1회로,
+// 대신 나가던 S3 GET 1회와 비용이 비슷하다.)
 //
 // ## next.config.ts의 `cacheMaxMemorySize: 0`과 무관
 //

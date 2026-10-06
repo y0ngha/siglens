@@ -25,6 +25,26 @@ const { labels } = vi.hoisted(() => ({
 vi.mock('@/entities/ticker/actions/getAssetLabelsAction', () => ({
     getAssetLabelsAction: labels,
 }));
+/** 링크 계산 횟수를 세려고 감싼다(동작은 원본 그대로). */
+const { relatedCalls } = vi.hoisted(() => ({ relatedCalls: vi.fn() }));
+vi.mock(
+    '@/features/agent-chat/lib/relatedSymbolPages',
+    async importOriginal => {
+        const actual =
+            await importOriginal<
+                typeof import('@/features/agent-chat/lib/relatedSymbolPages')
+            >();
+        return {
+            ...actual,
+            relatedSymbolPages: (
+                ...args: Parameters<typeof actual.relatedSymbolPages>
+            ) => {
+                relatedCalls(...args);
+                return actual.relatedSymbolPages(...args);
+            },
+        };
+    }
+);
 
 import { MessageList } from '@/widgets/agent-chat/MessageList';
 
@@ -1099,14 +1119,15 @@ describe('MessageList', () => {
     });
 
     /**
-     * 에이전트는 답변 마지막 줄에 `[[followups]] A | B | C`를 덧붙인다. 그 줄은 화면에서
-     * 빼고 칩으로 바꾼다 — 단 마지막으로 **끝난** 답변 밑에서만. 스트리밍 중에는 항목이
-     * 자라는 중이라 칩을 그리면 깜빡이고, 지난 답변 밑의 칩은 이미 지나간 대화에 대한
-     * 질문을 보낸다.
+     * 에이전트는 답변 마지막 줄에 `[[followups]] A | B | C`를 덧붙인다. 그 줄은 **서버가**
+     * 떼어 `followUps`로 넘기고(SSE `done`·`toMessageView`), 클라이언트는 받은 항목을 칩으로
+     * 그리기만 한다 — 단 마지막으로 **끝난** 답변 밑에서만. 스트리밍 중에는 항목이 자라는
+     * 중이라 칩을 그리면 깜빡이고, 지난 답변 밑의 칩은 이미 지나간 대화에 대한 질문을 보낸다.
+     * (마커 줄 파싱·보류 규칙은 서버 테스트 `api/ai/chat/__tests__/followUps.test.ts`.)
      */
     describe('follow-up chips', () => {
-        const MARKER_ANSWER =
-            '삼성전자는 약세입니다.\n\n[[followups]] 실적은 어때? | 뉴스도 알려줘';
+        const BODY = '삼성전자는 약세입니다.';
+        const FOLLOW_UPS = ['실적은 어때?', '뉴스도 알려줘'];
 
         const userMsg = (id: string, content: string, seq: number) =>
             ({
@@ -1120,15 +1141,16 @@ describe('MessageList', () => {
         const assistantMsg = (
             id: string,
             content: string,
-            status: AgentUiMessage['status'] = 'complete'
-        ) =>
-            ({
-                id,
-                role: 'assistant',
-                content,
-                tools: [],
-                status,
-            }) satisfies AgentUiMessage;
+            status: AgentUiMessage['status'] = 'complete',
+            followUps?: readonly string[]
+        ): AgentUiMessage => ({
+            id,
+            role: 'assistant',
+            content,
+            tools: [],
+            status,
+            ...(followUps ? { followUps } : {}),
+        });
 
         const renderList = (
             messages: AgentUiMessage[],
@@ -1146,32 +1168,27 @@ describe('MessageList', () => {
                 />
             );
 
-        it('마커 줄은 본문에서 빼고 항목을 칩으로 그린다 (min-h-11)', () => {
+        it('서버가 넘긴 항목을 본문 밑에 칩으로 그린다 (min-h-11)', () => {
             renderList([
                 userMsg('1', 'q', 1),
-                assistantMsg('2', MARKER_ANSWER),
+                assistantMsg('2', BODY, 'complete', FOLLOW_UPS),
             ]);
 
-            expect(
-                screen.getByText('삼성전자는 약세입니다.')
-            ).toBeInTheDocument();
-            expect(screen.queryByText(/\[\[followups\]\]/)).toBeNull();
+            expect(screen.getByText(BODY)).toBeInTheDocument();
             const group = screen.getByRole('list', { name: '이어서 물어보기' });
             const chips = within(group).getAllByRole('button');
-            expect(chips.map(c => c.textContent)).toEqual([
-                '실적은 어때?',
-                '뉴스도 알려줘',
-            ]);
+            expect(chips.map(c => c.textContent)).toEqual(FOLLOW_UPS);
             for (const chip of chips) expect(chip).toHaveClass('min-h-11');
         });
 
         it('칩을 누르면 그 문구를 onSend로 보낸다', () => {
             const onSend = vi.fn();
             renderList(
-                [userMsg('1', 'q', 1), assistantMsg('2', MARKER_ANSWER)],
-                {
-                    onSend,
-                }
+                [
+                    userMsg('1', 'q', 1),
+                    assistantMsg('2', BODY, 'complete', FOLLOW_UPS),
+                ],
+                { onSend }
             );
 
             fireEvent.click(
@@ -1182,18 +1199,17 @@ describe('MessageList', () => {
             expect(onSend).toHaveBeenCalledWith('뉴스도 알려줘');
         });
 
-        it('마지막 끝난 답변에만 칩을 그린다 — 지난 답변의 마커는 줄만 빼고 칩은 없다', () => {
+        it('마지막 끝난 답변에만 칩을 그린다 — 지난 답변의 항목은 그리지 않는다', () => {
             renderList([
                 userMsg('1', 'q1', 1),
-                assistantMsg('2', '첫 답변입니다.\n[[followups]] 지난 질문'),
+                assistantMsg('2', '첫 답변입니다.', 'complete', ['지난 질문']),
                 userMsg('3', 'q2', 2),
-                assistantMsg('4', MARKER_ANSWER),
+                assistantMsg('4', BODY, 'complete', FOLLOW_UPS),
             ]);
 
             expect(
                 screen.queryByRole('button', { name: '지난 질문' })
             ).toBeNull();
-            expect(screen.queryByText(/\[\[followups\]\]/)).toBeNull();
             expect(screen.getByText('첫 답변입니다.')).toBeInTheDocument();
             expect(
                 screen.getByRole('button', { name: '실적은 어때?' })
@@ -1203,41 +1219,28 @@ describe('MessageList', () => {
             ).toHaveLength(1);
         });
 
-        it('스트리밍 중에는 칩을 그리지 않고 마커 줄도 보이지 않는다', () => {
+        it('스트리밍 중인 답변에는 칩을 그리지 않는다', () => {
             renderList(
                 [
                     userMsg('1', 'q', 1),
-                    assistantMsg('2', MARKER_ANSWER, 'streaming'),
+                    assistantMsg('2', BODY, 'streaming', FOLLOW_UPS),
                 ],
                 { streaming: true }
             );
 
-            expect(
-                screen.getByText('삼성전자는 약세입니다.')
-            ).toBeInTheDocument();
+            expect(screen.getByText(BODY)).toBeInTheDocument();
             expect(
                 screen.queryByRole('button', { name: '실적은 어때?' })
             ).toBeNull();
             expect(screen.queryByText('이어서 물어보기')).toBeNull();
-            expect(screen.queryByText(/\[\[followups\]\]/)).toBeNull();
-        });
-
-        it('스트리밍 중 반쯤 쓰인 마커 줄(`[[foll`)은 화면에 비치지 않는다', () => {
-            renderList(
-                [
-                    userMsg('1', 'q', 1),
-                    assistantMsg('2', '답변 본문입니다.\n[[foll', 'streaming'),
-                ],
-                { streaming: true }
-            );
-
-            expect(screen.getByText('답변 본문입니다.')).toBeInTheDocument();
-            expect(screen.queryByText(/\[\[/)).toBeNull();
         });
 
         it('답변이 끝났어도 스트림이 아직 진행 중이면(streaming prop) 칩을 그리지 않는다', () => {
             renderList(
-                [userMsg('1', 'q', 1), assistantMsg('2', MARKER_ANSWER)],
+                [
+                    userMsg('1', 'q', 1),
+                    assistantMsg('2', BODY, 'complete', FOLLOW_UPS),
+                ],
                 { streaming: true }
             );
 
@@ -1249,7 +1252,7 @@ describe('MessageList', () => {
         it('중단되거나 실패한 답변에는 칩을 그리지 않는다', () => {
             renderList([
                 userMsg('1', 'q', 1),
-                assistantMsg('2', MARKER_ANSWER, 'aborted'),
+                assistantMsg('2', BODY, 'aborted', FOLLOW_UPS),
             ]);
 
             expect(
@@ -1257,7 +1260,7 @@ describe('MessageList', () => {
             ).toBeNull();
         });
 
-        it('복사는 마커 줄을 뺀 본문만 복사한다', async () => {
+        it('복사는 화면에 보이는 본문 그대로다', async () => {
             const writeText = vi.fn().mockResolvedValue(undefined);
             const original = navigator.clipboard;
             Object.defineProperty(navigator, 'clipboard', {
@@ -1267,10 +1270,10 @@ describe('MessageList', () => {
             try {
                 renderList([
                     userMsg('1', 'q', 1),
-                    assistantMsg('2', MARKER_ANSWER),
+                    assistantMsg('2', BODY, 'complete', FOLLOW_UPS),
                 ]);
                 const assistant = screen
-                    .getByText('삼성전자는 약세입니다.')
+                    .getByText(BODY)
                     .closest('article') as HTMLElement;
 
                 await act(async () => {
@@ -1279,9 +1282,7 @@ describe('MessageList', () => {
                     );
                 });
 
-                expect(writeText).toHaveBeenCalledWith(
-                    '삼성전자는 약세입니다.'
-                );
+                expect(writeText).toHaveBeenCalledWith(BODY);
             } finally {
                 Object.defineProperty(navigator, 'clipboard', {
                     value: original,
@@ -1290,7 +1291,7 @@ describe('MessageList', () => {
             }
         });
 
-        it('사용자 메시지는 마커가 있어도 나누지 않고 그대로 복사한다', async () => {
+        it('사용자 메시지는 마커처럼 보여도 그대로 보여 주고 그대로 복사한다', async () => {
             const writeText = vi.fn().mockResolvedValue(undefined);
             const original = navigator.clipboard;
             Object.defineProperty(navigator, 'clipboard', {
@@ -1319,37 +1320,136 @@ describe('MessageList', () => {
             }
         });
 
-        it('형식이 어긋난 마커는 원문을 그대로 보여 주고 칩은 그리지 않는다', () => {
-            // 마지막 줄이 아니라 중간에 있는 마커 — 일반 텍스트다.
-            const malformed =
-                '앞부분\n[[followups]] 중간 항목\n뒷부분이 이어집니다.';
-            renderList([userMsg('1', 'q', 1), assistantMsg('2', malformed)]);
-
-            expect(
-                screen.getByText(/\[\[followups\]\] 중간 항목/)
-            ).toBeInTheDocument();
-            expect(screen.queryByText('이어서 물어보기')).toBeNull();
-            expect(
-                screen.queryByRole('list', { name: '이어서 물어보기' })
-            ).toBeNull();
-        });
-
-        it('항목이 하나도 없는 마커 줄은 원문 그대로 두고 칩 영역을 만들지 않는다', () => {
-            renderList([
-                userMsg('1', 'q', 1),
-                assistantMsg('2', '본문입니다.\n[[followups]] | | '),
-            ]);
-
-            expect(screen.queryByText('이어서 물어보기')).toBeNull();
-        });
-
-        it('마커가 없는 답변에는 칩 영역이 없다', () => {
+        it('항목이 없거나 빈 배열이면 칩 영역이 없다', () => {
             renderList([
                 userMsg('1', 'q', 1),
                 assistantMsg('2', '평범한 답변입니다.'),
+                userMsg('3', 'q2', 2),
+                assistantMsg('4', '또 평범한 답변.', 'complete', []),
             ]);
 
             expect(screen.queryByText('이어서 물어보기')).toBeNull();
+        });
+    });
+
+    /**
+     * "siglens에서 보기" 표시 이름은 답변마다가 아니라 대화 전체에서 **한 번에** 묻는다 —
+     * 서버 액션은 클라이언트에서 직렬화되므로 답변마다 물으면 긴 대화를 열 때 POST가 줄 선다.
+     */
+    describe('related page labels', () => {
+        const answer = (id: string, symbol: string): AgentUiMessage => ({
+            id,
+            role: 'assistant',
+            content: `${symbol} 답변`,
+            tools: [
+                {
+                    id: `t-${id}`,
+                    name: 'get_quote',
+                    args: { symbol },
+                    status: 'ok',
+                },
+            ],
+            status: 'complete',
+        });
+        const listFor = (messages: AgentUiMessage[]) => (
+            <MessageList
+                siteUrl="https://siglens.io"
+                localePrefix=""
+                messages={messages}
+                streaming={false}
+                onRegenerate={vi.fn()}
+                onEdit={vi.fn()}
+                onSend={vi.fn()}
+            />
+        );
+        /** rerender에도 같은 QueryClient를 쓰도록 클라이언트를 밖에서 받는다. */
+        const providers = (client: QueryClient, ui: React.ReactElement) => (
+            <QueryClientProvider client={client}>
+                <NextIntlClientProvider locale="ko" messages={ko}>
+                    {ui}
+                </NextIntlClientProvider>
+            </QueryClientProvider>
+        );
+
+        beforeEach(() => {
+            labels.mockClear();
+        });
+
+        it('여러 답변의 심볼을 모아 한 번만 묻는다', async () => {
+            wrap(
+                listFor([
+                    answer('a1', '005930.KS'),
+                    answer('a2', 'AAPL'),
+                    answer('a3', '005930.KS'),
+                ])
+            );
+
+            expect(
+                await screen.findAllByRole('link', {
+                    name: /SIGLENS에서 삼성전자 보기/,
+                })
+            ).toHaveLength(2);
+            expect(labels).toHaveBeenCalledTimes(1);
+            expect(labels).toHaveBeenCalledWith(['005930.KS', 'AAPL']);
+        });
+
+        it('액션 상한(7개)을 넘으면 나눠 묻는다', async () => {
+            const symbols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
+            wrap(listFor(symbols.map((s, i) => answer(`a${i}`, s))));
+
+            await vi.waitFor(() => expect(labels).toHaveBeenCalledTimes(2));
+            expect(labels.mock.calls.map(([batch]) => batch.length)).toEqual([
+                7, 2,
+            ]);
+        });
+
+        it('스트리밍 프레임마다 끝난 답변의 링크를 다시 계산하지 않는다', async () => {
+            const client = new QueryClient({
+                defaultOptions: { queries: { retry: false } },
+            });
+            const done = answer('a1', '005930.KS');
+            const streamingTurn = (content: string): AgentUiMessage => ({
+                id: 'pending',
+                role: 'assistant',
+                content,
+                tools: [],
+                status: 'streaming',
+            });
+            const { rerender } = render(
+                providers(client, listFor([done, streamingTurn('가')]))
+            );
+            await screen.findByRole('link', {
+                name: /SIGLENS에서 삼성전자 보기/,
+            });
+            relatedCalls.mockClear();
+            for (const text of ['가나', '가나다', '가나다라'])
+                rerender(
+                    providers(client, listFor([done, streamingTurn(text)]))
+                );
+            expect(relatedCalls).not.toHaveBeenCalled();
+            expect(labels).toHaveBeenCalledTimes(1);
+        });
+
+        it('새 답변이 심볼을 더하면 아직 모르는 심볼만 더 묻는다', async () => {
+            const client = new QueryClient({
+                defaultOptions: { queries: { retry: false } },
+            });
+            const first = [answer('a1', '005930.KS')];
+            const { rerender } = render(providers(client, listFor(first)));
+            await screen.findByRole('link', {
+                name: /SIGLENS에서 삼성전자 보기/,
+            });
+
+            rerender(
+                providers(client, listFor([...first, answer('a2', 'AAPL')]))
+            );
+
+            await vi.waitFor(() => expect(labels).toHaveBeenCalledTimes(2));
+            expect(labels.mock.calls[1]![0]).toEqual(['AAPL']);
+            // 갱신 중에도 이미 받은 이름은 유지된다(심볼로 깜빡이지 않음).
+            expect(
+                screen.getByRole('link', { name: /SIGLENS에서 삼성전자 보기/ })
+            ).toBeInTheDocument();
         });
     });
 });

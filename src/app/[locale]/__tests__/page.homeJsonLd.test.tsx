@@ -68,6 +68,7 @@ import { expectFaqSingleSource } from '@/__tests__/utils/expectFaqSingleSource';
 import { collectJsonLdData } from '@/__tests__/utils/collectJsonLdData';
 import {
     brandIntroName,
+    buildOrganizationCoreJsonLd,
     GITHUB_URL,
     SEO_TITLE_MAX_WIDTH,
     seoTitleWidth,
@@ -191,6 +192,20 @@ describe('홈 FAQ', () => {
 });
 
 describe('홈 Organization 노드', () => {
+    /**
+     * 전역 `SiteJsonLd`가 같은 `@id`로 최소 Organization 노드를 싣는다. 파서는 같은 `@id`를
+     * 하나로 합치므로 겹치는 속성(@type·@id·name·url)이 두 정의에서 같아야 충돌이 없다.
+     */
+    it('핵심 속성이 전역 최소 노드(buildOrganizationCoreJsonLd)와 같다', async () => {
+        const organization = collectJsonLdData(await renderHome()).find(
+            d => d['@type'] === 'Organization'
+        );
+
+        expect(organization).toMatchObject({
+            ...buildOrganizationCoreJsonLd(),
+        });
+    });
+
     /**
      * `Organization.sameAs`는 **조직**의 외부 프로필(서비스 저장소·서비스 X 계정)만 싣는다.
      * 운영자 개인 GitHub·velog는 사람의 프로필이라 `founder.sameAs`에만 둔다 — 개인 계정이

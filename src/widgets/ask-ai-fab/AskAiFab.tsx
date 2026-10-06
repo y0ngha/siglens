@@ -30,7 +30,9 @@ export async function AskAiFab({ name, localePrefix }: AskAiFabProps) {
         <a
             href={href}
             target="_blank"
-            rel="noopener"
+            // nofollow: 종목마다 질문 문구가 다른 `ai.siglens.io/?q=…` URL이 수천 개 생긴다.
+            // 크롤러가 따라가면 색인 가치 없는 쿼리 URL에 크롤 예산을 쓴다.
+            rel="nofollow noopener"
             aria-label={t('ariaLabel')}
             // 모바일 분석 시트가 HALF/FULL로 펼쳐지면 globals.css가 이 속성으로
             // 버튼을 숨긴다(`MobileAnalysisSheet`의 data-sheet-expanded 참고).

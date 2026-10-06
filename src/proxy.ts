@@ -211,6 +211,18 @@ async function handleAiHost(req: NextRequest): Promise<NextResponse> {
         });
     }
     const { locale, path } = splitLocalePath(url.pathname);
+    /**
+     * `/ko/*` → `/*` **영구** 정규화 — 메인 호스트(`proxy` 본문의 같은 규칙)와 맞춘다.
+     * 기본 로케일은 접두사 없는 URL이 정본인데(`localePath`, ai sitemap·hreflang), 이게
+     * 없으면 `/ko/about`이 200으로 같은 페이지를 한 벌 더 내놓아 중복 URL이 된다.
+     * 쿼리(`q`, 광고 클릭 id 등)는 보존한다. `/api/*`는 matcher 밖이라 POST 스트림은
+     * 여기를 지나지 않는다.
+     */
+    if (locale === DEFAULT_LOCALE && url.pathname !== path) {
+        const canonicalUrl = new URL(url);
+        canonicalUrl.pathname = path;
+        return NextResponse.redirect(canonicalUrl, 301);
+    }
     const rewriteUrl = new URL(url);
     rewriteUrl.pathname = `/ai/${locale}${path === '/' ? '' : path}`;
     const headers = new Headers(req.headers);
@@ -330,8 +342,15 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
      */
     if (pathname.split('/').filter(Boolean)[0] === 'ai') {
         const rest = pathname.replace(/^\/ai(?=\/|$)/, '') || '/';
+        // 내부 라우트 모양(`/ai/ko/c/x`)으로 들어오면 그 로케일을 쓴다 — 그대로 붙이면
+        // ai 호스트의 `/ko/*` 301을 한 번 더 타 2홉이 된다.
+        const inner = splitLocalePath(rest);
+        const target =
+            inner.path !== rest
+                ? localePath(inner.locale, inner.path)
+                : localePath(locale, rest);
         return NextResponse.redirect(
-            new URL(`${localePath(locale, rest)}${reqUrl.search}`, AI_SITE_URL),
+            new URL(`${target}${reqUrl.search}`, AI_SITE_URL),
             301
         );
     }

@@ -11,6 +11,10 @@ import type { SnapshotProseState } from '@/entities/symbol-indexability/model';
 import { hasProseForTab } from '@/entities/seo-snapshot/lib/hasProseForTab';
 import { noindexSymbolMetadata, type SymbolSeoTab } from '@/shared/lib/seo';
 import { buildDisplayName } from '@/entities/ticker/lib/ticker';
+import {
+    getDescriptor,
+    marketProfileOf,
+} from '@/shared/config/marketProfile/registry';
 import type { AssetInfo } from '@/shared/lib/types';
 import type { Locale } from '@/shared/i18n/locales';
 import { SYMBOL_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
@@ -149,6 +153,12 @@ export async function getBlockedSymbolMetadata({
             ? buildDisplayName(assetInfo, symbol, locale)
             : undefined,
         koreanName: assetInfo?.koreanName,
+        // 비-기본 로케일 title은 한국어명 대신 영문 법인명을 쓴다(`composeSymbolTitle`).
+        englishName: assetInfo?.name,
+        // 크립토 탭은 `시세`/`Price` 카피 빌더를 쓴다 — 생략하면 equity(`주가`/`Stock`)다.
+        assetClass: assetInfo
+            ? getDescriptor(marketProfileOf(assetInfo)).assetClass
+            : undefined,
         // 탭별 카피를 쓴다 — 없으면 한 심볼의 차단된 탭들이 차트 페이지와 같은
         // title/description을 반복해 중복 문서로 잡힌다(2026-09-17 네이버 리포트).
         tab,

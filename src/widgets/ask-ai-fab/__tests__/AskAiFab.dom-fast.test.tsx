@@ -29,12 +29,13 @@ describe('AskAiFab', () => {
         expect(screen.getByRole('link')).toHaveAttribute('data-ask-ai-fab');
     });
 
-    it('새 탭으로 열린다 (target=_blank, rel=noopener)', async () => {
+    it('새 탭으로 열린다 (target=_blank, rel=nofollow noopener)', async () => {
         await renderFab('애플', '/');
 
         const link = screen.getByRole('link');
         expect(link).toHaveAttribute('target', '_blank');
-        expect(link).toHaveAttribute('rel', 'noopener');
+        // nofollow — 종목별 고유 `?q=` URL로 크롤 예산이 새지 않게 한다.
+        expect(link).toHaveAttribute('rel', 'nofollow noopener');
     });
 
     it('모바일은 짧은 라벨(sm:hidden), 데스크톱은 전체 라벨(hidden sm:inline)을 렌더한다', async () => {

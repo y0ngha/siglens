@@ -75,6 +75,12 @@ function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
     const t = useTranslations('widgets.economy');
     const tLabel = useTranslations('shared.enumLabel');
     const locale = useResolvedLocale();
+    const generatedDate = generatedAt === null ? null : new Date(generatedAt);
+    // 파싱이 안 되는 값이면 `toISOString()`이 던진다 — 그때는 `dateTime` 없이 문구만 낸다.
+    const generatedIso =
+        generatedDate !== null && !Number.isNaN(generatedDate.getTime())
+            ? generatedDate.toISOString()
+            : undefined;
     return (
         <section
             className={cn(SURFACE_CARD, 'p-6')}
@@ -110,9 +116,13 @@ function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
             )}
             {generatedAt !== null && (
                 <p className="mt-3 text-xs text-secondary-400">
-                    {t('MacroBriefing.62f15d', {
-                        v0: formatKoreanDateTime(generatedAt, locale),
-                    })}
+                    {/* `dateTime`이 기계가 읽는 생성 시각이다 — `<time>`은 날짜가 아닌 말이
+                        섞인 문구도 담을 수 있다(`dateTime`이 있으면 내용은 자유 텍스트). */}
+                    <time dateTime={generatedIso}>
+                        {t('MacroBriefing.62f15d', {
+                            v0: formatKoreanDateTime(generatedAt, locale),
+                        })}
+                    </time>
                 </p>
             )}
         </section>

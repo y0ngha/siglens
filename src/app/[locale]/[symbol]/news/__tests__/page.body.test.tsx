@@ -518,7 +518,7 @@ describe('NewsPage — Article JSON-LD 게이트와 dateModified', () => {
         expect(findArticle(tree)).toBeUndefined();
     });
 
-    it('Article.author는 /about(운영 주체·방법 페이지)을 가리키고 publisher는 그대로다', async () => {
+    it('Article.author는 /about(운영 주체·방법 페이지)을 가리키고, author·publisher 모두 사이트 Organization @id를 단다', async () => {
         vi.mocked(getSeoSnapshotsStatic).mockResolvedValue(PROSE_SNAPSHOT);
 
         const tree = await NewsPage({
@@ -528,11 +528,13 @@ describe('NewsPage — Article JSON-LD 게이트와 dateModified', () => {
         const article = findArticle(tree);
         expect(article?.author).toEqual({
             '@type': 'Organization',
+            '@id': ORGANIZATION_JSON_LD_ID,
             name: 'Siglens',
             url: 'https://siglens.io/about',
         });
         expect(article?.publisher).toEqual({
             '@type': 'Organization',
+            '@id': ORGANIZATION_JSON_LD_ID,
             name: 'Siglens',
             url: 'https://siglens.io',
             logo: {

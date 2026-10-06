@@ -5,6 +5,7 @@ import type { Metadata } from 'next';
 import { resolveLocale } from '@/shared/i18n/locales';
 import {
     localeAlternatesFrom,
+    selfCanonicalAlternates,
     localeCanonical,
     localeOpenGraph,
     localePageRobots,
@@ -77,7 +78,7 @@ export async function generateMetadata({
     // og:url도 로케일별이어야 한다 — 소셜 언퍼널이 ko URL로 되돌린다.
     const url = localeCanonical(locale, NEWS_HUB_PATH);
     // 지역 카드 미리보기가 전부 비면 본문이 제목·설명뿐이라 thin으로 판정될 분량이다.
-    // 자매 라우트와 같은 규약: canonical을 비우고 noindex, follow는 유지.
+    // 자매 라우트와 같은 규약: noindex + self-canonical(hreflang 없음), follow는 유지.
     const previews = await Promise.all(
         regionsOf('news').map(region =>
             fetchCategoryPreviews(previewCategoryOf(region.region), locale)
@@ -109,12 +110,12 @@ export async function generateMetadata({
             'AI 뉴스 다이제스트',
             'Siglens 뉴스',
         ],
-        alternates: await localeAlternatesFrom(params, NEWS_HUB_PATH, {
-            // canonical은 넘기지 않는다 — `localeAlternatesFrom`이 로케일별
-            // 자기참조 URL을 만든다. ko 절대 URL을 넘기면 `/en/…`이 ko를
-            // canonical로 가리켜 hreflang 상호참조가 깨진다.
-            canonical: degraded ? null : undefined,
-        }),
+        // canonical은 넘기지 않는다 — `localeAlternatesFrom`이 로케일별 자기참조 URL을
+        // 만든다. ko 절대 URL을 넘기면 `/en/…`이 ko를 canonical로 가리켜 hreflang 상호참조가
+        // 깨진다. degraded(noindex)는 self-canonical만 내고 hreflang 군집은 싣지 않는다.
+        alternates: degraded
+            ? selfCanonicalAlternates(locale, NEWS_HUB_PATH)
+            : await localeAlternatesFrom(params, NEWS_HUB_PATH),
         robots: degraded
             ? { index: false, follow: true }
             : localePageRobots(locale),
@@ -273,7 +274,9 @@ export default async function NewsHubPage({
                                     prefetch={false}
                                     className="text-sm text-primary-400 transition-colors hover:text-primary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                                 >
-                                    {CATEGORY_CONFIG[cat].koLabel}
+                                    {/* `koLabel`은 AI 프롬프트 입력이라 전 로케일 한국어다 — 화면
+                                        라벨은 로케일 카탈로그(`labelKey`)에서 읽는다. */}
+                                    {tNav(CATEGORY_CONFIG[cat].labelKey)}
                                 </Link>
                             </li>
                         ))}

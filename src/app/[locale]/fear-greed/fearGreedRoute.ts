@@ -48,7 +48,7 @@ export interface FearGreedRouteSource {
  * 라우트 `generateMetadata` 본체.
  *
  * 외부 I/O(Redis/FMP/yahoo) 오류는 graceful 처리 — 판독값이 없으면(로더 실패 또는
- * 표본 부족) canonical을 비우고 noindex로 설명문만 남는 화면을 색인시키지 않는다.
+ * 표본 부족) noindex + self-canonical(hreflang 없음)로 설명문만 남는 화면을 색인시키지 않는다.
  */
 export async function fearGreedMetadata(
     params: Promise<{ locale: string }>,

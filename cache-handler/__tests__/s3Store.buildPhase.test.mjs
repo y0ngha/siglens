@@ -16,6 +16,7 @@ vi.mock('../config.mjs', () => ({
         region: 'ap-northeast-2',
         keyPrefix: 'siglens-isr',
         buildId: 'sha123',
+        dataScope: 'data-v1-next16.3.6',
         buildPhase: true,
     },
 }));

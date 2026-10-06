@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
     deriveTitle,
     toAgentHistory,
+    toMessageView,
+    type ChatMessageRecord,
 } from '@/entities/chat-conversation/model';
 
 describe('deriveTitle', () => {
@@ -122,5 +124,56 @@ describe('toAgentHistory', () => {
         expect(toAgentHistory(rows as never)).toEqual([
             { role: 'assistant', content: '중간까지' },
         ]);
+    });
+});
+
+describe('toMessageView', () => {
+    const record = (
+        overrides: Partial<ChatMessageRecord>
+    ): ChatMessageRecord => ({
+        id: 'm1',
+        conversationId: 'c1',
+        seq: 2,
+        role: 'assistant',
+        content: '',
+        toolCalls: null,
+        toolCallId: null,
+        toolName: null,
+        modelId: 'deepseek',
+        usage: { inputTokens: 1 },
+        status: 'complete',
+        createdAt: new Date('2026-10-01T00:00:00.000Z'),
+        ...overrides,
+    });
+
+    it('답변의 후속 질문 마커 줄은 서버에서 떼어 followUps로 싣는다', () => {
+        const view = toMessageView(
+            record({
+                content: '본문입니다.\n\n[[followups]] 실적은? | 뉴스는?',
+            })
+        );
+        expect(view.content).toBe('본문입니다.');
+        expect(view.followUps).toEqual(['실적은?', '뉴스는?']);
+    });
+
+    it('마커가 없으면 followUps 키 자체가 없다 (RSC 페이로드 절약)', () => {
+        const view = toMessageView(record({ content: '그냥 답변' }));
+        expect(view.content).toBe('그냥 답변');
+        expect('followUps' in view).toBe(false);
+    });
+
+    it('사용자 메시지는 마커처럼 보여도 나누지 않는다', () => {
+        const typed = '이렇게 써 줘\n[[followups]] A | B';
+        const view = toMessageView(record({ role: 'user', content: typed }));
+        expect(view.content).toBe(typed);
+        expect('followUps' in view).toBe(false);
+    });
+
+    it('서버 내부 필드(usage·toolCallId·modelId)는 싣지 않는다', () => {
+        const view = toMessageView(record({ content: 'a' }));
+        expect(view).not.toHaveProperty('usage');
+        expect(view).not.toHaveProperty('modelId');
+        expect(view).not.toHaveProperty('toolCallId');
+        expect(view.createdAt).toBe('2026-10-01T00:00:00.000Z');
     });
 });

@@ -109,9 +109,9 @@ test.describe('analysis jobs: bot parity + force re-analysis', () => {
 
             // 초기 캐시 fixture가 렌더될 때까지 대기(진행 애니메이션 ~9s 포함).
             // 오프스크린 모바일 시트 사본과의 strict-mode 충돌을 피하려고 데스크톱
-            // 분석 aside(role="complementary")로 좁힌다.
+            // 분석 패널(이름 붙은 section — role="region", "AI 차트 분석")로 좁힌다.
             const fixtureSummary = page
-                .getByRole('complementary')
+                .getByRole('region', { name: 'AI 차트 분석' })
                 .getByText(ANALYSIS_FIXTURE_SUMMARY_PREFIX, { exact: false });
             await expect(fixtureSummary).toBeVisible({
                 timeout: ANALYSIS_RENDER_TIMEOUT_MS,
