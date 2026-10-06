@@ -154,6 +154,8 @@ export default async function OptionsPage({ params }: Props) {
     const [tabAllowed, { assetInfo, degraded }, hasOptions, snapshots] =
         await Promise.all([
             tabAllowedPromise,
+            // 크립토도 가드 결과 전에 읽는다 — 의도된 동작이다. 레이아웃이 이미 읽은 캐시 엔트리
+            // (`getAssetInfoStatic` + `React.cache`)라 FMP·DB 왕복이 추가되지 않는다.
             getAssetInfoResilient(upper),
             tabAllowedPromise.then(allowed =>
                 allowed ? loadHasOptionsForBody(upper) : false

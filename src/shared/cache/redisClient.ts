@@ -32,6 +32,14 @@ interface UpstashEnv {
  *
  * timeout이 나면 명령이 던지고, 호출부의 기존 장애 처리가 그대로 받는다:
  * `getOrSetCache`는 읽기 실패를 miss로 보고 원본을 직접 부르며 쓰기 실패는 삼킨다.
+ *
+ * 요청 경로 호출부별 timeout 동작(2026-10 PR #981 점검 — 모두 Redis 장애 때와 같은 분기다):
+ * 공유 rate limit(`checkShareRateLimit`)·`createRedisSlot` 획득은 fail-open(통과), 플래그·마커·허브
+ * 캐시는 "없음/no-op", handoff·OAuth 대기 가입·이메일 토큰의 발급/소비는 fail-closed(던져 사용자가
+ * 재시도 — GETDEL이 서버에선 반영된 경우 코드가 소모돼 재발급이 필요하지만 재사용은 불가라 안전),
+ * 챗 턴 락(`turnLock`)·prewarm 락은 fail-closed(server_busy / 이번 cron 건너뜀). 해로운 경우는 하나 —
+ * 락 SET이 서버엔 반영됐는데 응답만 timeout이면 모르는 토큰의 락이 TTL 동안 남는다 — 그래서 두 락은
+ * 획득 실패 시 같은 토큰으로 compare-and-delete를 한 번 시도한다(멱등).
  */
 export const REDIS_COMMAND_TIMEOUT_MS = 2_000;
 
