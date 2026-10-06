@@ -572,6 +572,67 @@ describe('POST /api/analysis/stream', () => {
             expect(errorEvent).toBeDefined();
             expect(errorEvent).toContain('프리미엄');
         });
+
+        /**
+         * 게이트와 시장 프로필 해석은 병렬로 돈다(감사 L5). 게이트가 막히면 프로필 결과는
+         * 버려지고, 분석·재분석 쿨다운에는 닿지 않아야 한다 — 순서가 바뀌어도 부작용은 같다.
+         */
+        it('게이트가 막히면 프로필 해석과 병렬이어도 쿨다운·분석에 닿지 않는다', async () => {
+            vi.mocked(resolveTierAndByok).mockResolvedValue({
+                kind: 'blocked',
+                error: { code: 'tier_premium_blocked', message: 'blocked' },
+            });
+
+            const body = JSON.stringify({
+                type: 'technical',
+                params: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple Inc.',
+                    timeframe: '1Day',
+                    modelId: 'claude-opus-4-5',
+                    reanalyze: true,
+                },
+            });
+            const response = await POST(makeRequest(undefined, body));
+            const events = await collectSseEvents(response);
+
+            expect(events.some(e => e.includes('event: error'))).toBe(true);
+            expect(vi.mocked(resolveMarketProfile)).toHaveBeenCalledWith(
+                'AAPL'
+            );
+            expect(
+                vi.mocked(tryAcquireReanalyzeCooldown)
+            ).not.toHaveBeenCalled();
+            expect(vi.mocked(runAnalysis)).not.toHaveBeenCalled();
+        });
+
+        it('프로필 해석이 실패하면 게이트 결과와 무관하게 기존처럼 500 unexpected_error다', async () => {
+            const errorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            vi.mocked(resolveTierAndByok).mockResolvedValue({
+                kind: 'blocked',
+                error: { code: 'tier_premium_blocked', message: 'blocked' },
+            });
+            vi.mocked(resolveMarketProfile).mockRejectedValueOnce(
+                new Error('db down')
+            );
+
+            const body = JSON.stringify({
+                type: 'technical',
+                params: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple Inc.',
+                    timeframe: '1Day',
+                    modelId: 'claude-opus-4-5',
+                },
+            });
+            const response = await POST(makeRequest(undefined, body));
+
+            expect(response.status).toBe(500);
+            expect(vi.mocked(runAnalysis)).not.toHaveBeenCalled();
+            errorSpy.mockRestore();
+        });
     });
 
     describe('DISPATCH — 각 타입이 올바른 액션으로 위임된다', () => {

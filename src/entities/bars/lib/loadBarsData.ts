@@ -6,6 +6,7 @@ import { roundIndicators } from './roundIndicators';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 import {
     logFmpPaymentRequiredError,
     translateFmpError,
@@ -21,16 +22,24 @@ import {
  *
  * 'use server' 파일에서 export하면 그 함수가 곧 클라이언트가 호출할 수 있는 서버
  * 액션이 되므로, 이 로더는 일반 서버 모듈에 둔다.
+ *
+ * `resolveProfile`: 시장 프로필 해석기. 기본값은 캐시 없는 `resolveMarketProfile`
+ * (`asset_translations` 조회) — 정적 경로(`getBarsStatic`)는 바깥 `unstable_cache`가 결과를
+ * 통째로 캐시하므로 이 조회도 재생성 때만 돈다. 매 차트 조회마다 도는 서버 액션
+ * (`getBarsAction`)은 캐시된 `resolveMarketProfileStatic`을 넘긴다.
  */
 export async function loadBarsData(
     symbol: string,
     timeframe: Timeframe,
-    fmpSymbol?: string
+    fmpSymbol?: string,
+    resolveProfile: (
+        symbol: string
+    ) => Promise<MarketProfileId> = resolveMarketProfile
 ): Promise<BarsData> {
     try {
-        // Resolve profile once via cached getAssetInfo (DB-first → FMP); derive the
-        // session spec directly from it — no assetClass→profileId round-trip.
-        const marketProfile = await resolveMarketProfile(symbol);
+        // Resolve the profile once (DB-first → FMP); derive the session spec
+        // directly from it — no assetClass→profileId round-trip.
+        const marketProfile = await resolveProfile(symbol);
         const session = sessionSpecFor(marketProfile);
         const data = await getCachedBarsWithIndicators(
             getCachedMarketDataProvider(session),

@@ -11,11 +11,15 @@
 import { constants } from 'node:http2';
 import { headers } from 'next/headers';
 import { buildVisitorHash } from '@/entities/visitor/lib/visitorHash';
-import { DrizzleVisitorRepository } from '@/entities/visitor/api';
+import {
+    DrizzleVisitorRepository,
+    type VisitorDayRecord,
+} from '@/entities/visitor/api';
 import { getClientIp } from '@/shared/api/getClientIp';
 import { isBot } from '@/shared/api/isBot';
 import { getDatabaseClient } from '@/shared/db/client';
 import { kstDateKey } from '@/shared/lib/etTimeUtils';
+import { afterWithDrain } from '@/shared/lib/afterWithDrain';
 import { createDailyPruner, noContent } from './_shared/dailyPruner';
 
 const { HTTP_STATUS_INTERNAL_SERVER_ERROR } = constants;
@@ -73,30 +77,38 @@ export async function POST(): Promise<Response> {
         userAgentHeader ?? ''
     );
 
-    /**
-     * DB 클라이언트 생성까지 try 안에 둔다. `getDatabaseClient()`는
-     * `DATABASE_URL`이 없으면 던지는데, 그게 밖에 있으면 이 핸들러가 통째로
-     * reject해 프레임워크 기본 500이 나간다 — 아래 catch가 지키는 "집계 실패는
-     * 화면을 깨뜨리지 않는다"는 불변식이 거기서만 뚫린다.
-     */
+    const visit: VisitorDayRecord = {
+        visitorHash,
+        date: today,
+        userAgent: userAgentHeader,
+        country: headerList.get('cf-ipcountry'),
+        landingPath: landingPathOf(headerList.get('referer')),
+    };
+    // 헤더는 위에서 다 읽었다 — 기록은 응답 뒤로 미룬다(`recordVisitAndPrune`).
+    afterWithDrain(() => recordVisitAndPrune(visit));
+    return noContent();
+}
+
+/**
+ * 방문 기록 + 하루 1회 정리. **응답을 보낸 뒤**(`afterWithDrain`) 돈다 — 비콘은 결과를 읽지
+ * 않으므로(늘 204) DB upsert 왕복을 응답 경로에 둘 이유가 없다(2026-10 서버 성능 감사 L8).
+ * 배포 중 SIGTERM drain은 이 작업을 기다린다.
+ *
+ * DB 클라이언트 생성까지 try 안에 둔다. `getDatabaseClient()`는 `DATABASE_URL`이 없으면
+ * 던지는데, 그게 밖에 있으면 작업이 통째로 reject해 로그 없이 사라진다 — "집계 실패는
+ * 로그로 남기고 화면은 깨뜨리지 않는다"는 불변식이 거기서만 뚫린다.
+ */
+async function recordVisitAndPrune(visit: VisitorDayRecord): Promise<void> {
     let repo: DrizzleVisitorRepository;
     try {
         const { db } = getDatabaseClient();
         repo = new DrizzleVisitorRepository(db);
-        await repo.recordVisit({
-            visitorHash,
-            date: today,
-            userAgent: userAgentHeader,
-            country: headerList.get('cf-ipcountry'),
-            landingPath: landingPathOf(headerList.get('referer')),
-        });
+        await repo.recordVisit(visit);
     } catch (error) {
         // 집계 실패가 사용자 화면을 깨뜨리면 안 된다.
         console.error('[visitor-metrics] recordVisit failed:', error);
         // 정리도 건너뛴다 — 이유는 `createDailyPruner` 참조.
-        return noContent();
+        return;
     }
-
-    pruneOncePerDay(today, repo);
-    return noContent();
+    await pruneOncePerDay(visit.date, repo);
 }

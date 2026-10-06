@@ -54,6 +54,7 @@ import {
 } from '@/shared/lib/seo';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import { getProfileResilient } from '@/entities/ticker/lib/getProfileResilient';
+import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import { FundamentalDegraded } from './FundamentalDegraded';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -243,6 +244,26 @@ export async function ProfileDescriptionSection({
     );
 }
 
+/**
+ * FMP 섹션 로더 실패를 흡수하는 공통 degrade: 로그를 남기고, **이 렌더의 revalidate를 5분으로
+ * 낮춘 뒤**(`shortenRevalidateForRuntimeDegrade`) 빈 상태 값을 돌려준다.
+ *
+ * 왜 낮추나: 렌더 경로의 FMP 호출은 짧은 예산(시도당 3초·재시도 1회·429 대기 없음 —
+ * `renderBudget.ts`)으로 돈다. 일시적인 지연·레이트 리밋만으로도 섹션이 빈 카드로 렌더될 수 있는데,
+ * 그 HTML이 라우트 revalidate(24h) 동안 굳으면 안 된다. ISR은 요청이 와야만 재생성하므로, 짧아진
+ * revalidate의 비용은 "장애가 이어지는 동안 그 페이지 방문당 최대 5분에 한 번 재렌더"뿐이다 —
+ * 그래서 봉 캐시와 달리 큐레이션 종목으로 한정하지 않는다.
+ */
+async function degradeSection<T>(
+    label: string,
+    error: unknown,
+    fallback: T
+): Promise<T> {
+    console.error(label, error);
+    await shortenRevalidateForRuntimeDegrade();
+    return fallback;
+}
+
 export async function ProfileSection({
     symbol,
     locale,
@@ -256,13 +277,13 @@ export async function ProfileSection({
         () => getProfile(symbol),
         [],
         SECONDS_PER_DAY
-    ).catch((e: unknown) => {
-        console.error(
+    ).catch((e: unknown) =>
+        degradeSection(
             '[ProfileSection] getProfile failed, degrading to null:',
-            e
-        );
-        return null;
-    });
+            e,
+            null
+        )
+    );
 
     const descriptionSlot = (
         <Suspense fallback={<ProfileDescriptionSkeleton />}>
@@ -286,13 +307,13 @@ export async function ValuationSection({ symbol }: SymbolSectionProps) {
         () => getKeyMetricsTtm(symbol),
         [],
         SECONDS_PER_DAY
-    ).catch((e: unknown) => {
-        console.error(
+    ).catch((e: unknown) =>
+        degradeSection(
             '[ValuationSection] getKeyMetricsTtm failed, degrading to null:',
-            e
-        );
-        return null;
-    });
+            e,
+            null
+        )
+    );
     return <ValuationCard metrics={metrics} />;
 }
 
@@ -305,13 +326,13 @@ export async function PeersSection({ symbol }: SymbolSectionProps) {
         () => getStockPeers(symbol),
         [],
         SECONDS_PER_DAY
-    ).catch((e: unknown) => {
-        console.error(
+    ).catch((e: unknown) =>
+        degradeSection(
             '[PeersSection] getStockPeers failed, degrading to []:',
-            e
-        );
-        return [] as Awaited<ReturnType<typeof getStockPeers>>;
-    });
+            e,
+            [] as Awaited<ReturnType<typeof getStockPeers>>
+        )
+    );
     return <PeersTable peers={peers} />;
 }
 
@@ -324,13 +345,13 @@ export async function ProfitabilitySection({ symbol }: SymbolSectionProps) {
         () => getRatiosTtm(symbol),
         [],
         SECONDS_PER_DAY
-    ).catch((e: unknown) => {
-        console.error(
+    ).catch((e: unknown) =>
+        degradeSection(
             '[ProfitabilitySection] getRatiosTtm failed, degrading to null:',
-            e
-        );
-        return null;
-    });
+            e,
+            null
+        )
+    );
     return <ProfitabilityCard ratios={ratios} />;
 }
 
@@ -343,13 +364,13 @@ export async function GrowthSection({ symbol }: SymbolSectionProps) {
         () => getIncomeStatementGrowth(symbol),
         [],
         SECONDS_PER_DAY
-    ).catch((e: unknown) => {
-        console.error(
+    ).catch((e: unknown) =>
+        degradeSection(
             '[GrowthSection] getIncomeStatementGrowth failed, degrading to null:',
-            e
-        );
-        return null;
-    });
+            e,
+            null
+        )
+    );
     return <GrowthChart growth={growth} />;
 }
 
@@ -363,39 +384,39 @@ export async function FinancialHealthSection({ symbol }: SymbolSectionProps) {
             () => getRatiosTtm(symbol),
             [],
             SECONDS_PER_DAY
-        ).catch((e: unknown) => {
-            console.error(
+        ).catch((e: unknown) =>
+            degradeSection(
                 '[FinancialHealthSection] getRatiosTtm failed, degrading to null:',
-                e
-            );
-            return null;
-        }),
+                e,
+                null
+            )
+        ),
         staticSymbolCache(
             ['fundamental:scores', symbol],
             symbol,
             () => getFinancialScores(symbol),
             [],
             SECONDS_PER_DAY
-        ).catch((e: unknown) => {
-            console.error(
+        ).catch((e: unknown) =>
+            degradeSection(
                 '[FinancialHealthSection] getFinancialScores failed, degrading to null:',
-                e
-            );
-            return null;
-        }),
+                e,
+                null
+            )
+        ),
         staticSymbolCache(
             ['fundamental:cashflow', symbol],
             symbol,
             () => getCashFlowStatement(symbol),
             [],
             SECONDS_PER_DAY
-        ).catch((e: unknown) => {
-            console.error(
+        ).catch((e: unknown) =>
+            degradeSection(
                 '[FinancialHealthSection] getCashFlowStatement failed, degrading to null:',
-                e
-            );
-            return null;
-        }),
+                e,
+                null
+            )
+        ),
     ]);
     return (
         <FinancialHealthCard
@@ -417,52 +438,52 @@ export async function FutureDirectionSection({ symbol }: SymbolSectionProps) {
             () => getAnalystEstimates(symbol),
             [],
             SECONDS_PER_DAY
-        ).catch((e: unknown) => {
-            console.error(
+        ).catch((e: unknown) =>
+            degradeSection(
                 '[FutureDirectionSection] getAnalystEstimates failed, degrading to null:',
-                e
-            );
-            return null;
-        }),
+                e,
+                null
+            )
+        ),
         staticSymbolCache(
             ['fundamental:grades-consensus', symbol],
             symbol,
             () => getGradesConsensus(symbol),
             [],
             SECONDS_PER_DAY
-        ).catch((e: unknown) => {
-            console.error(
+        ).catch((e: unknown) =>
+            degradeSection(
                 '[FutureDirectionSection] getGradesConsensus failed, degrading to null:',
-                e
-            );
-            return null;
-        }),
+                e,
+                null
+            )
+        ),
         staticSymbolCache(
             ['fundamental:pt-consensus', symbol],
             symbol,
             () => getPriceTargetConsensus(symbol),
             [],
             SECONDS_PER_DAY
-        ).catch((e: unknown) => {
-            console.error(
+        ).catch((e: unknown) =>
+            degradeSection(
                 '[FutureDirectionSection] getPriceTargetConsensus failed, degrading to null:',
-                e
-            );
-            return null;
-        }),
+                e,
+                null
+            )
+        ),
         staticSymbolCache(
             ['fundamental:pt-summary', symbol],
             symbol,
             () => getPriceTargetSummary(symbol),
             [],
             SECONDS_PER_DAY
-        ).catch((e: unknown) => {
-            console.error(
+        ).catch((e: unknown) =>
+            degradeSection(
                 '[FutureDirectionSection] getPriceTargetSummary failed, degrading to null:',
-                e
-            );
-            return null;
-        }),
+                e,
+                null
+            )
+        ),
     ]);
     return (
         <FutureDirectionCard

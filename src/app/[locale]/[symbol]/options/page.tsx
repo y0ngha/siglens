@@ -117,6 +117,27 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
 }
 
+/**
+ * 본문용 옵션 시장 여부. ISR degrade guard: hasOptionsMarket는 Yahoo 인프라 실패 시 throw한다.
+ * throw가 ISR 캐시에 0-byte 빈 결과를 굳히는 것을 막으려면 여기서 흡수해야 한다. false로
+ * degrade → 이미 존재하는 OptionsEmptyState 분기로 자연스럽게 빠진다.
+ */
+function loadHasOptionsForBody(upper: string): Promise<boolean> {
+    return staticSymbolCache(
+        ['options:has', upper],
+        upper,
+        () => hasOptionsMarket(upper),
+        [],
+        SECONDS_PER_HALF_DAY
+    ).catch((e: unknown) => {
+        console.error(
+            '[OptionsPage] hasOptionsMarket failed, degrading to false:',
+            e
+        );
+        return false;
+    });
+}
+
 export default async function OptionsPage({ params }: Props) {
     const { locale: rawLocale, symbol } = await params;
     const locale = enterLocale(rawLocale);
@@ -126,32 +147,24 @@ export default async function OptionsPage({ params }: Props) {
 
     if (!isAdmissibleSymbolShape(upper)) notFound();
 
-    // Hard-404 crypto symbols before the hasOptionsMarket call — this tab is equity-only.
-    if (!(await isTabAllowedForSymbol(upper, 'options'))) notFound();
-
-    const [{ assetInfo, degraded }, hasOptions, snapshots] = await Promise.all([
-        getAssetInfoResilient(upper),
-        // ISR degrade guard: hasOptionsMarket는 Yahoo 인프라 실패 시 throw한다.
-        // throw가 ISR 캐시에 0-byte 빈 결과를 굳히는 것을 막으려면 여기서 흡수해야 한다.
-        // false로 degrade → 이미 존재하는 OptionsEmptyState 분기로 자연스럽게 빠진다.
-        staticSymbolCache(
-            ['options:has', upper],
-            upper,
-            () => hasOptionsMarket(upper),
-            [],
-            SECONDS_PER_HALF_DAY
-        ).catch((e: unknown) => {
-            console.error(
-                '[OptionsPage] hasOptionsMarket failed, degrading to false:',
-                e
-            );
-            return false;
-        }),
-        // ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
-        // getSeoSnapshotsStatic JSDoc. revalidateSeconds mirrors this page's
-        // `export const revalidate` literal above.
-        getSeoSnapshotsStatic(upper, revalidate, locale),
-    ]);
+    // 탭 가드(크립토 hard-404)를 asset·snapshots 읽기와 **같이** 시작한다 — 예전에는 가드를
+    // 먼저 기다린 뒤 Promise.all을 시작해 한 단이 더 직렬이었다(2026-10 서버 성능 감사 L2).
+    // Yahoo를 부르는 hasOptionsMarket만 가드 결과에 묶어, 크립토 심볼에는 여전히 부르지 않는다.
+    const tabAllowedPromise = isTabAllowedForSymbol(upper, 'options');
+    const [tabAllowed, { assetInfo, degraded }, hasOptions, snapshots] =
+        await Promise.all([
+            tabAllowedPromise,
+            getAssetInfoResilient(upper),
+            tabAllowedPromise.then(allowed =>
+                allowed ? loadHasOptionsForBody(upper) : false
+            ),
+            // ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
+            // getSeoSnapshotsStatic JSDoc. revalidateSeconds mirrors this page's
+            // `export const revalidate` literal above.
+            getSeoSnapshotsStatic(upper, revalidate, locale),
+        ]);
+    // Hard-404 crypto symbols — this tab is equity-only.
+    if (!tabAllowed) notFound();
     const optionsSnapshot = (snapshots ?? []).find(s => s.tab === 'options');
     // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasOptionsProse)
     // 그것만 보여주고, 클라이언트 AI 위젯(OptionsAiAnalysis, OptionsPageClient

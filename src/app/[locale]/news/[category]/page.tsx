@@ -5,7 +5,7 @@ import { localePath, resolveLocale } from '@/shared/i18n/locales';
 import type { Locale } from '@/shared/i18n/locales';
 import { localeAlternates, localeOpenGraph } from '@/shared/lib/seoAlternates';
 import { notFound } from 'next/navigation';
-import { Suspense } from 'react';
+import { cache, Suspense } from 'react';
 import {
     CATEGORY_CONFIG,
     NEWS_CATEGORY_SLUGS,
@@ -135,11 +135,16 @@ interface CategorySnapshot {
  * DYNAMIC_SERVER_USAGE from the DB call during ISR cold-gen, without pinning an
  * empty list for the TTL.
  *
+ * **요청당 한 번**: `React.cache`로 감싼다. 메타데이터와 본문이 각각 부르는데
+ * `unstable_cache`는 요청 안에서 dedup하지 않아, 예전에는 같은 목록을 캐시 핸들러(큰 엔트리는
+ * S3 GET)에서 두 번 읽었다(2026-10 서버 성능 감사 L7). 장애 시 revalidate 하향
+ * (`shortenRevalidateForRuntimeDegrade`)은 첫 호출에서 한 번 일어나고 같은 렌더에 그대로 남는다.
+ *
  * 읽기(`getMarketNewsCards`) 자체가 카드 투영이라 DB 내부 컬럼(bodyEn, symbol,
  * analyzedAt)은 애초에 SELECT되지 않는다 — 받은 뒤 거르면 Neon 전송과 S3 ISR
  * 블롭에는 그대로 남는다(감사: 비용 라운드 15).
  */
-async function loadCategorySnapshot(
+const loadCategorySnapshot = cache(async function loadCategorySnapshot(
     category: NewsFeedCategoryId,
     locale: Locale
 ): Promise<CategorySnapshot> {
@@ -165,7 +170,7 @@ async function loadCategorySnapshot(
     // 읽기 자체가 카드 투영이라 여기서 다시 거를 것이 없다 — 서버 전용 컬럼
     // (bodyEn/symbol/analyzedAt)은 애초에 select되지 않는다.
     return { items: rows, isEmpty: rows.length === 0 };
-}
+});
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { locale: rawLocale, category: slug } = await params;

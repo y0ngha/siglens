@@ -14,8 +14,11 @@ import {
     getRedisReaderWriter,
     __resetRedisClientForTests,
     getUpstashWriterCredentials,
+    REDIS_COMMAND_TIMEOUT_MS,
+    REDIS_LONG_COMMAND_TIMEOUT_MS,
 } from '@/shared/cache/redisClient';
 import { __resetOfflineBuildWarningsForTests } from '@/shared/api/offlineBuild';
+import { runAsBatchWork } from '@/shared/lib/renderBudget';
 
 const URL = 'https://test.upstash.io';
 const TOKEN = 'writer-token';
@@ -44,10 +47,59 @@ describe('redisClient', () => {
             expect(a).not.toBeNull();
             expect(a).toBe(b);
             expect(mockRedisConstructor).toHaveBeenCalledTimes(1);
-            expect(mockRedisConstructor).toHaveBeenCalledWith({
-                url: URL,
-                token: TOKEN,
-            });
+            expect(mockRedisConstructor).toHaveBeenCalledWith(
+                expect.objectContaining({ url: URL, token: TOKEN })
+            );
+        });
+    });
+
+    describe('timeout·재시도 옵션', () => {
+        it('writer·reader 모두 재시도 1회와 명령마다 새 timeout signal을 받는다', () => {
+            process.env.UPSTASH_REDIS_REST_URL = URL;
+            process.env.UPSTASH_REDIS_REST_TOKEN = TOKEN;
+            process.env.UPSTASH_REDIS_REST_READONLY_TOKEN = RO;
+            getRedisReaderWriter();
+
+            expect(mockRedisConstructor).toHaveBeenCalledTimes(2);
+            for (const [opts] of mockRedisConstructor.mock.calls) {
+                const { retry, signal } = opts as {
+                    retry: { retries: number };
+                    signal: () => AbortSignal;
+                };
+                expect(retry).toEqual({ retries: 1 });
+                // 함수여야 한다 — signal 하나를 공유하면 첫 timeout 뒤 모든 명령이 abort된다.
+                expect(typeof signal).toBe('function');
+                expect(signal()).not.toBe(signal());
+            }
+        });
+    });
+
+    describe('배치 컨텍스트(runAsBatchWork)', () => {
+        it('배치는 긴 timeout의 별도 클라이언트를 받는다 — 요청 경로 클라이언트와 섞이지 않는다', async () => {
+            process.env.UPSTASH_REDIS_REST_URL = URL;
+            process.env.UPSTASH_REDIS_REST_TOKEN = TOKEN;
+            const timeoutSpy = vi.spyOn(AbortSignal, 'timeout');
+
+            const request = getRedisClient();
+            const batch = await runAsBatchWork(async () => getRedisClient());
+            expect(batch).not.toBe(request);
+            // 배치 안의 반복 호출은 같은 싱글턴이다.
+            await expect(
+                runAsBatchWork(async () => getRedisClient())
+            ).resolves.toBe(batch);
+
+            const [[requestOpts], [batchOpts]] = mockRedisConstructor.mock
+                .calls as [
+                [{ signal: () => AbortSignal }],
+                [{ signal: () => AbortSignal }],
+            ];
+            requestOpts.signal();
+            batchOpts.signal();
+            expect(timeoutSpy.mock.calls.map(([ms]) => ms)).toEqual([
+                REDIS_COMMAND_TIMEOUT_MS,
+                REDIS_LONG_COMMAND_TIMEOUT_MS,
+            ]);
+            timeoutSpy.mockRestore();
         });
     });
 
@@ -91,14 +143,14 @@ describe('redisClient', () => {
             expect(pair!.reader).not.toBe(pair!.writer);
             expect(pair!.writer).toBe(getRedisClient());
             expect(mockRedisConstructor).toHaveBeenCalledTimes(2);
-            expect(mockRedisConstructor).toHaveBeenNthCalledWith(1, {
-                url: URL,
-                token: TOKEN,
-            });
-            expect(mockRedisConstructor).toHaveBeenNthCalledWith(2, {
-                url: URL,
-                token: RO,
-            });
+            expect(mockRedisConstructor).toHaveBeenNthCalledWith(
+                1,
+                expect.objectContaining({ url: URL, token: TOKEN })
+            );
+            expect(mockRedisConstructor).toHaveBeenNthCalledWith(
+                2,
+                expect.objectContaining({ url: URL, token: RO })
+            );
         });
 
         it('빈 문자열 readonly token은 미설정으로 취급한다(reader === writer)', () => {

@@ -4,6 +4,7 @@ import { warmOptionsLastGood } from '@/entities/options-chain/lib/warmOptionsLas
 import { getDatabaseClient } from '@/shared/db/client';
 import { isAuthorizedCronRequest } from '@/shared/lib/auth/isAuthorizedCronRequest';
 import { afterWithDrain } from '@/shared/lib/afterWithDrain';
+import { runAsBatchWork } from '@/shared/lib/renderBudget';
 import { acquirePrewarmLock, releasePrewarmLock } from './lock';
 import { pruneExpiredRows } from './pruneExpiredRows';
 import { BATCH_WALL_CLOCK_BUDGET_MS, runPrewarmBatch } from './runPrewarmBatch';
@@ -39,7 +40,8 @@ export async function PATCH(request: Request): Promise<Response> {
     // 필터 하나로 잡는다.
     let token: string | null;
     try {
-        token = await acquirePrewarmLock();
+        // 배치 표식: 락 명령도 배치용 Redis 클라이언트(긴 timeout)로 보낸다(아래 본문과 같다).
+        token = await runAsBatchWork(() => acquirePrewarmLock());
     } catch (error) {
         console.error(
             '[seo-prewarm] redis unavailable — lock acquire threw:',
@@ -56,57 +58,66 @@ export async function PATCH(request: Request): Promise<Response> {
     // afterWithDrain으로 등록한다. after()만 사용하면 SIGTERM이 process.exit를 호출한
     // 직후 after() 콜백이 고아가 되어 락이 TTL까지 잠긴다 — 다음 invocation이 최대
     // LOCK_TTL(900s)을 기다렸다가 실행된다.
-    afterWithDrain(async () => {
-        try {
-            const counts = await runPrewarmBatch();
-            console.log('[seo-prewarm] batch done:', JSON.stringify(counts));
-        } catch (error) {
-            console.error('[seo-prewarm] batch failed:', error);
-        }
-        // 옵션 last-good 워밍 — 같은 락 안에서 배치 직후에 돈다(별도 EventBridge 규칙 없음).
-        // 마감은 배치와 같은 예산(락 TTL − 안전 여유)이라 prune·락 해제 몫은 건드리지 않는다.
-        // 미국 마감+15분 ~ 19:45 ET 구간 밖이면 즉시 반환한다. LLM은 쓰지 않는다.
-        // 자체 try/catch로 격리해 어떤 실패도 아래 prune·락 해제를 막지 못한다.
-        try {
-            const outcome = await warmOptionsLastGood(new Date(), {
-                budgetEndMs: lockAcquiredAtMs + BATCH_WALL_CLOCK_BUDGET_MS,
-            });
-            console.log(
-                '[seo-prewarm] options warm done:',
-                JSON.stringify(outcome)
-            );
-        } catch (error) {
-            console.error('[seo-prewarm] options warm failed:', error);
-        }
-        // Task S4 (retention) — piggybacks on this cron rather than getting
-        // its own endpoint/schedule. Isolated in its own try/catch and run
-        // AFTER the prewarm work above so a prune failure (or even a throw
-        // from client/repo construction) can never affect prewarm's result
-        // or delay lock release beyond one extra bounded query round-trip.
-        // `pruneAnalysisHistory` itself is already best-effort (never
-        // throws) — this try/catch is defense in depth for the surrounding
-        // client lookup.
-        try {
-            const { db } = getDatabaseClient();
-            const pruneCounts = await new DrizzleAnalysisHistoryRepository(
-                db
-            ).pruneAnalysisHistory();
-            console.log(
-                '[seo-prewarm] prune done:',
-                JSON.stringify(pruneCounts)
-            );
-            // 만료된 세션·공유 스냅샷 정리. 테이블별로 자체 격리돼 던지지 않는다
-            // (`pruneExpiredRows` JSDoc) — 위 이력 정리와 같은 상한·인덱스 규율을 따른다.
-            const expiryCounts = await pruneExpiredRows(db);
-            console.log(
-                '[seo-prewarm] expiry prune done:',
-                JSON.stringify(expiryCounts)
-            );
-        } catch (error) {
-            console.error('[seo-prewarm] prune failed:', error);
-        } finally {
-            await releasePrewarmLock(token);
-        }
-    });
+    //
+    // `runAsBatchWork`: 배치 안의 FMP·Redis 호출은 렌더 예산(3초·429 대기 없음)이 아니라
+    // 배치 정책(긴 timeout·429 대기)을 쓴다 — 배치가 렌더 래퍼(`getAssetInfoResilient` 등)를
+    // 거쳐도 마찬가지다(`renderBudget.ts`).
+    afterWithDrain(() =>
+        runAsBatchWork(async () => {
+            try {
+                const counts = await runPrewarmBatch();
+                console.log(
+                    '[seo-prewarm] batch done:',
+                    JSON.stringify(counts)
+                );
+            } catch (error) {
+                console.error('[seo-prewarm] batch failed:', error);
+            }
+            // 옵션 last-good 워밍 — 같은 락 안에서 배치 직후에 돈다(별도 EventBridge 규칙 없음).
+            // 마감은 배치와 같은 예산(락 TTL − 안전 여유)이라 prune·락 해제 몫은 건드리지 않는다.
+            // 미국 마감+15분 ~ 19:45 ET 구간 밖이면 즉시 반환한다. LLM은 쓰지 않는다.
+            // 자체 try/catch로 격리해 어떤 실패도 아래 prune·락 해제를 막지 못한다.
+            try {
+                const outcome = await warmOptionsLastGood(new Date(), {
+                    budgetEndMs: lockAcquiredAtMs + BATCH_WALL_CLOCK_BUDGET_MS,
+                });
+                console.log(
+                    '[seo-prewarm] options warm done:',
+                    JSON.stringify(outcome)
+                );
+            } catch (error) {
+                console.error('[seo-prewarm] options warm failed:', error);
+            }
+            // Task S4 (retention) — piggybacks on this cron rather than getting
+            // its own endpoint/schedule. Isolated in its own try/catch and run
+            // AFTER the prewarm work above so a prune failure (or even a throw
+            // from client/repo construction) can never affect prewarm's result
+            // or delay lock release beyond one extra bounded query round-trip.
+            // `pruneAnalysisHistory` itself is already best-effort (never
+            // throws) — this try/catch is defense in depth for the surrounding
+            // client lookup.
+            try {
+                const { db } = getDatabaseClient();
+                const pruneCounts = await new DrizzleAnalysisHistoryRepository(
+                    db
+                ).pruneAnalysisHistory();
+                console.log(
+                    '[seo-prewarm] prune done:',
+                    JSON.stringify(pruneCounts)
+                );
+                // 만료된 세션·공유 스냅샷 정리. 테이블별로 자체 격리돼 던지지 않는다
+                // (`pruneExpiredRows` JSDoc) — 위 이력 정리와 같은 상한·인덱스 규율을 따른다.
+                const expiryCounts = await pruneExpiredRows(db);
+                console.log(
+                    '[seo-prewarm] expiry prune done:',
+                    JSON.stringify(expiryCounts)
+                );
+            } catch (error) {
+                console.error('[seo-prewarm] prune failed:', error);
+            } finally {
+                await releasePrewarmLock(token);
+            }
+        })
+    );
     return new Response(null, { status: HTTP_STATUS_ACCEPTED });
 }

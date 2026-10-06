@@ -58,6 +58,7 @@ import {
 import { runPrewarmBatch } from '@/app/api/cron/seo-prewarm/runPrewarmBatch';
 import { warmOptionsLastGood } from '@/entities/options-chain/lib/warmOptionsLastGood';
 import { pruneExpiredRows } from '@/app/api/cron/seo-prewarm/pruneExpiredRows';
+import { isBatchWork } from '@/shared/lib/renderBudget';
 
 const {
     HTTP_STATUS_UNAUTHORIZED,
@@ -126,6 +127,26 @@ describe('PATCH /api/cron/seo-prewarm', () => {
         expect(res.status).toBe(HTTP_STATUS_ACCEPTED);
         expect(mockAfter).toHaveBeenCalledTimes(1);
         expect(runPrewarmBatch).not.toHaveBeenCalled();
+    });
+
+    it('락 획득과 배치 본문은 배치 표식(runAsBatchWork) 안에서 돈다 — 렌더 예산을 물려받지 않는다', async () => {
+        const seen: Record<string, boolean> = {};
+        vi.mocked(acquirePrewarmLock).mockImplementation(async () => {
+            seen.lock = isBatchWork();
+            return 'token-1';
+        });
+        vi.mocked(runPrewarmBatch).mockImplementation(async () => {
+            seen.batch = isBatchWork();
+            return {} as Awaited<ReturnType<typeof runPrewarmBatch>>;
+        });
+        vi.mocked(releasePrewarmLock).mockImplementation(async () => {
+            seen.release = isBatchWork();
+        });
+
+        await PATCH(makeRequest('Bearer test-secret'));
+        await (mockAfter.mock.calls[0]![0] as () => Promise<void>)();
+
+        expect(seen).toEqual({ lock: true, batch: true, release: true });
     });
 
     it('예약된 after 콜백을 실행하면 runPrewarmBatch 후 releasePrewarmLock을 획득한 토큰으로 호출한다', async () => {

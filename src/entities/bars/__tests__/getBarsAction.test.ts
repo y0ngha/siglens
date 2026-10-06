@@ -34,6 +34,10 @@ vi.mock('@/entities/ticker/lib/resolveMarketProfile', () => ({
     resolveMarketProfile: vi.fn().mockResolvedValue('us-equity'),
 }));
 
+vi.mock('@/entities/ticker/lib/resolveMarketProfileStatic', () => ({
+    resolveMarketProfileStatic: vi.fn().mockResolvedValue('us-equity'),
+}));
+
 vi.mock('@/shared/api/market/sessionSpecFor', async () => {
     const { US_EQUITY_SESSION, CRYPTO_SESSION } = await vi.importActual<
         typeof import('@y0ngha/siglens-core')
@@ -68,6 +72,7 @@ const FMP_UNAVAILABLE_TEXT = koMessages.shared.api.fmpUnavailable;
 const FMP_BUSY_TEXT = koMessages.shared.api.fmpBusy;
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveMarketProfile';
+import { resolveMarketProfileStatic } from '@/entities/ticker/lib/resolveMarketProfileStatic';
 
 const mockMarketProvider =
     {} as import('@y0ngha/siglens-core').MarketDataProvider;
@@ -79,6 +84,10 @@ const sleepMock = sleep as MockedFunction<typeof sleep>;
 const mockGetCachedMarketDataProvider =
     getCachedMarketDataProvider as MockedFunction<
         typeof getCachedMarketDataProvider
+    >;
+const mockResolveMarketProfileStatic =
+    resolveMarketProfileStatic as MockedFunction<
+        typeof resolveMarketProfileStatic
     >;
 const mockResolveMarketProfile = resolveMarketProfile as MockedFunction<
     typeof resolveMarketProfile
@@ -274,8 +283,17 @@ describe('getBarsAction 함수는', () => {
     });
 
     describe('crypto symbol — session spec routing', () => {
-        it('resolveMarketProfile가 "crypto"이면 getCachedMarketDataProvider를 CRYPTO_SESSION으로 호출한다', async () => {
-            mockResolveMarketProfile.mockResolvedValueOnce('crypto');
+        it('캐시된 resolveMarketProfileStatic으로 프로필을 해석한다 — 캐시 없는 조회를 부르지 않는다', async () => {
+            mockFetchBarsWithIndicators.mockResolvedValueOnce(mockBarsData);
+
+            await getBarsAction('AAPL', '1Day');
+
+            expect(mockResolveMarketProfileStatic).toHaveBeenCalledWith('AAPL');
+            expect(mockResolveMarketProfile).not.toHaveBeenCalled();
+        });
+
+        it('resolveMarketProfileStatic가 "crypto"이면 getCachedMarketDataProvider를 CRYPTO_SESSION으로 호출한다', async () => {
+            mockResolveMarketProfileStatic.mockResolvedValueOnce('crypto');
             mockFetchBarsWithIndicators.mockResolvedValueOnce(mockBarsData);
 
             await getBarsAction('BTCUSD', '1Day');
@@ -285,8 +303,8 @@ describe('getBarsAction 함수는', () => {
             );
         });
 
-        it('resolveMarketProfile가 "us-equity"이면 getCachedMarketDataProvider를 US_EQUITY_SESSION으로 호출한다', async () => {
-            mockResolveMarketProfile.mockResolvedValueOnce('us-equity');
+        it('resolveMarketProfileStatic가 "us-equity"이면 getCachedMarketDataProvider를 US_EQUITY_SESSION으로 호출한다', async () => {
+            mockResolveMarketProfileStatic.mockResolvedValueOnce('us-equity');
             mockFetchBarsWithIndicators.mockResolvedValueOnce(mockBarsData);
 
             await getBarsAction('AAPL', '1Day');

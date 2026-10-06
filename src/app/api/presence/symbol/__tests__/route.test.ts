@@ -10,6 +10,16 @@ const BOT_UA =
 const recordView = vi.fn().mockResolvedValue(undefined);
 const pruneOlderThan = vi.fn().mockResolvedValue(undefined);
 let requestHeaders = new Headers();
+const { afterTasks } = vi.hoisted(() => ({
+    afterTasks: [] as Promise<unknown>[],
+}));
+
+/** 응답 뒤로 미룬 작업(`after()`)을 모두 끝낸다. */
+async function flushAfter(): Promise<void> {
+    while (afterTasks.length > 0) {
+        await Promise.all(afterTasks.splice(0));
+    }
+}
 
 vi.mock('next/headers', () => ({
     headers: () => Promise.resolve(requestHeaders),
@@ -20,8 +30,10 @@ vi.mock('next/server', async importOriginal => {
     const actual = await importOriginal<typeof import('next/server')>();
     return {
         ...actual,
+        // 콜백을 즉시 시작하되 프라미스를 모아 둔다 — 기록·정리는 응답 뒤에 돌므로
+        // 테스트는 `flushAfter()`로 끝까지 기다린 뒤 단언한다.
         after: (fn: () => unknown) => {
-            void fn();
+            afterTasks.push(Promise.resolve(fn()));
         },
     };
 });
@@ -55,6 +67,7 @@ function post(body: unknown): Request {
 describe('POST /api/presence/symbol', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        afterTasks.length = 0;
         getDatabaseClient.mockReturnValue({ db: {} });
         vi.stubEnv('NODE_ENV', 'production');
         requestHeaders = new Headers({ 'user-agent': HUMAN_UA });
@@ -67,6 +80,7 @@ describe('POST /api/presence/symbol', () => {
     it('정상 요청은 대문자 심볼로 기록하고 204를 준다', async () => {
         const { POST } = await importRoute();
         const res = await POST(post({ symbol: 'aapl' }));
+        await flushAfter();
 
         expect(res.status).toBe(HTTP_STATUS_NO_CONTENT);
         expect(recordView).toHaveBeenCalledWith(
@@ -80,6 +94,7 @@ describe('POST /api/presence/symbol', () => {
         async symbol => {
             const { POST } = await importRoute();
             await POST(post({ symbol }));
+            await flushAfter();
             expect(recordView).toHaveBeenCalledWith(expect.any(String), symbol);
         }
     );
@@ -88,6 +103,7 @@ describe('POST /api/presence/symbol', () => {
         requestHeaders = new Headers({ 'user-agent': BOT_UA });
         const { POST } = await importRoute();
         const res = await POST(post({ symbol: 'AAPL' }));
+        await flushAfter();
         expect(res.status).toBe(HTTP_STATUS_NO_CONTENT);
         expect(recordView).not.toHaveBeenCalled();
     });
@@ -96,6 +112,7 @@ describe('POST /api/presence/symbol', () => {
         vi.stubEnv('NODE_ENV', 'development');
         const { POST } = await importRoute();
         await POST(post({ symbol: 'AAPL' }));
+        await flushAfter();
         expect(recordView).not.toHaveBeenCalled();
     });
 
@@ -108,6 +125,7 @@ describe('POST /api/presence/symbol', () => {
     ])('%s → 400', async (_label, body) => {
         const { POST } = await importRoute();
         const res = await POST(post(body));
+        await flushAfter();
         expect(res.status).toBe(HTTP_STATUS_BAD_REQUEST);
         expect(recordView).not.toHaveBeenCalled();
     });
@@ -119,6 +137,7 @@ describe('POST /api/presence/symbol', () => {
             .mockImplementation(() => {});
         const { POST } = await importRoute();
         const res = await POST(post({ symbol: 'AAPL' }));
+        await flushAfter();
 
         expect(res.status).toBe(HTTP_STATUS_NO_CONTENT);
         expect(pruneOlderThan).not.toHaveBeenCalled();
@@ -128,11 +147,33 @@ describe('POST /api/presence/symbol', () => {
     it('인스턴스당 하루 한 번 90일 이전 행을 정리한다', async () => {
         const { POST } = await importRoute();
         await POST(post({ symbol: 'AAPL' }));
+        await flushAfter();
         await POST(post({ symbol: 'NVDA' }));
+        await flushAfter();
 
         expect(pruneOlderThan).toHaveBeenCalledTimes(1);
         expect(pruneOlderThan).toHaveBeenCalledWith(
             expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/)
         );
+    });
+
+    it('응답은 DB 기록을 기다리지 않는다 — 기록은 after()로 응답 뒤에 돈다', async () => {
+        let release!: () => void;
+        recordView.mockImplementationOnce(
+            () =>
+                new Promise<void>(resolve => {
+                    release = resolve;
+                })
+        );
+        const { POST } = await importRoute();
+
+        const res = await POST(post({ symbol: 'AAPL' }));
+        expect(res.status).toBe(HTTP_STATUS_NO_CONTENT);
+        expect(recordView).toHaveBeenCalledTimes(1);
+        expect(pruneOlderThan).not.toHaveBeenCalled();
+
+        release();
+        await flushAfter();
+        expect(pruneOlderThan).toHaveBeenCalledTimes(1);
     });
 });

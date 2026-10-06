@@ -944,6 +944,18 @@ unstable_cache(load, ['bars-static-v3', ticker, timeframe], { revalidate, tags }
 unstable_cache(load, ['bars-static-v2', ticker, timeframe], { revalidate, tags });
 ```
 
+**`staticSymbolCache` / `cacheNonEmpty*` keys** are keyParts only: the wrapper passes a fixed
+callback and prepends `STATIC_SYMBOL_CACHE_VERSION` (`'ssc-v1'`), so two call sites with the same
+keyParts read **the same entry**. That makes key stability the call site's job:
+
+- Build keyParts only from inputs that decide the result, so every build produces the same strings.
+- When a fetcher's return shape or meaning changes, add or bump a `-vN` keyPart for that call site in the
+  same PR (`'fundamental:profile'` → `'fundamental:profile-v2'`).
+- Never let two call sites share keyParts unless they return the same data. Check with
+  `rg "staticSymbolCache|cacheNonEmpty"` before adding a key.
+- Bump `STATIC_SYMBOL_CACHE_VERSION` only when the wrapper itself changes meaning; that retires every
+  entry it owns at once.
+
 The old prefix/keys are not deleted by hand; the bucket's 7-day lifecycle removes them.
 
 ---

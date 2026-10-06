@@ -109,8 +109,16 @@ describe('Options page ISR route config', () => {
 });
 
 describe('Options page tab guard', () => {
-    beforeEach(() => {
+    beforeEach(async () => {
         vi.clearAllMocks();
+        // 가드는 asset·snapshots 읽기와 병렬로 돈다 — 크립토 케이스도 asset 읽기가
+        // 끝나야 notFound()에 닿으므로 안전한 기본값을 둔다.
+        const { getAssetInfoResilient } =
+            await import('@/entities/ticker/lib/getAssetInfoResilient');
+        vi.mocked(getAssetInfoResilient).mockResolvedValue({
+            assetInfo: { symbol: 'BTCUSD', name: 'Bitcoin USD' },
+            degraded: false,
+        } as Awaited<ReturnType<typeof getAssetInfoResilient>>);
     });
 
     it('calls notFound() for a crypto symbol (isTabAllowedForSymbol → false)', async () => {
@@ -178,7 +186,8 @@ describe('Options page tab guard', () => {
         ).rejects.toThrow('NEXT_NOT_FOUND');
 
         // The cache (which wraps hasOptionsMarket) must NOT have been called —
-        // the guard ran first and threw notFound, preventing further execution.
+        // the Yahoo lookup is chained on the guard result, so a crypto symbol
+        // never reaches it even though asset/snapshot reads run in parallel.
         expect(mockCache).not.toHaveBeenCalled();
     });
 });
