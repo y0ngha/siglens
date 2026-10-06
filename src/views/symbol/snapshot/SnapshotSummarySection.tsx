@@ -199,7 +199,18 @@ export function SnapshotSummarySection({
                         </span>
                     )}
                 </div>
-                <p className="text-xs text-secondary-400">{caption}</p>
+                {/* 기준일 캡션은 `<time dateTime>`으로 감싼다 — 사람이 읽는 날짜(시장 타임존·로케일
+                    포맷)와 별개로 기계가 읽는 기준 시각을 함께 준다. `dateTime`이 있으면 `<time>`의
+                    내용은 자유 텍스트라 캡션 문장을 통째로 담는다(문장을 쪼개지 않는다). */}
+                <p className="text-xs text-secondary-400">
+                    {resolvedAsOf === null || formattedAsOf === null ? (
+                        caption
+                    ) : (
+                        <time dateTime={resolvedAsOf.instant.toISOString()}>
+                            {caption}
+                        </time>
+                    )}
+                </p>
             </div>
             {/*
                 `renderToggle`을 넘기지 않는다 — 이 컴포넌트는 서버 컴포넌트라

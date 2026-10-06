@@ -41,13 +41,16 @@ export function PeersTable({ peers }: PeersTableProps) {
                 <table className="w-full text-sm">
                     <thead>
                         <tr className="border-b border-secondary-700 text-left text-xs tracking-[0.01em] text-secondary-400">
-                            <th className="pb-2 font-medium">
+                            <th scope="col" className="pb-2 font-medium">
                                 {t('PeersTable.c141c2')}
                             </th>
-                            <th className="pb-2 font-medium">
+                            <th scope="col" className="pb-2 font-medium">
                                 {t('PeersTable.5e86bf')}
                             </th>
-                            <th className="pb-2 text-right font-medium">
+                            <th
+                                scope="col"
+                                className="pb-2 text-right font-medium"
+                            >
                                 {t('PeersTable.cf643b')}
                             </th>
                         </tr>

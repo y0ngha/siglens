@@ -64,6 +64,14 @@ import CategoryNewsPage from '../page';
 import { koMessage } from '@/shared/test-utils/koMessage';
 
 describe('/news/[category] generateMetadata는', () => {
+    it('유효하지 않은 slug이면 notFound()를 던진다 — 404 응답에 홈 상속 메타가 얹히지 않는다', async () => {
+        await expect(
+            generateMetadata({
+                params: Promise.resolve({ locale: 'ko', category: 'bogus' }),
+            })
+        ).rejects.toThrow('NEXT_NOT_FOUND');
+    });
+
     it('유효 카테고리면 canonical /news/<slug>를 설정한다', async () => {
         const meta = await generateMetadata({
             params: Promise.resolve({ locale: 'ko', category: 'crypto' }),
@@ -88,15 +96,6 @@ describe('/news/[category] generateMetadata는', () => {
             'application/rss+xml': 'https://siglens.io/rss.xml',
         });
         expect(en.alternates?.types).toBeUndefined();
-    });
-
-    it('유효하지 않은 카테고리면 robots 없이 title/description만 반환한다 (noindex는 not-found.tsx가 담당)', async () => {
-        const meta = await generateMetadata({
-            params: Promise.resolve({ locale: 'ko', category: 'bogus' }),
-        });
-        // robots/alternates는 not-found.tsx가 단독 책임 — 이중 robots 태그 방지.
-        expect(meta.robots).toBeUndefined();
-        expect(String(meta.title)).toBeTruthy();
     });
 
     it('건강한 빈 상태(기사 0건)는 noindex·follow + self-canonical + 자기 og/twitter이고 revalidate는 낮추지 않는다', async () => {

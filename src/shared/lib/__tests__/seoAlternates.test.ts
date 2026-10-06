@@ -5,6 +5,7 @@ import {
     localeCanonical,
     localeOpenGraph,
     localePageRobots,
+    selfCanonicalAlternates,
 } from '../seoAlternates';
 import { SITE_URL } from '../seo';
 import { LOCALES } from '@/shared/i18n/locales';
@@ -217,5 +218,21 @@ describe('localePageRobots', () => {
         }) as { index: boolean; googleBot: { index: boolean } };
         expect(robots.index).toBe(false);
         expect(robots.googleBot.index).toBe(false);
+    });
+});
+
+describe('selfCanonicalAlternates', () => {
+    /**
+     * noindex 렌더(degraded 허브·빌드 fallback 약관)의 alternates. `canonical: null`은 신호를
+     * 비워 크롤러가 군집을 추정하게 두므로 자기 URL을 가리키되, 색인되지 않는 URL을 대체
+     * 언어로 광고하지는 않는다.
+     */
+    it('로케일 접두사가 붙은 자기 URL만 canonical로 내고 languages·types는 없다', () => {
+        expect(selfCanonicalAlternates('ko', '/market')).toEqual({
+            canonical: `${SITE_URL}/market`,
+        });
+        expect(selfCanonicalAlternates('en', '/news/us')).toEqual({
+            canonical: `${SITE_URL}/en/news/us`,
+        });
     });
 });

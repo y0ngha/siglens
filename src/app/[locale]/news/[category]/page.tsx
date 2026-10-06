@@ -177,14 +177,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const tRoot = await getTranslations({ locale });
     const cat = categoryFromSlug(slug);
 
-    if (!cat) {
-        // 잘못된 slug — not-found.tsx가 404와 robots 메타데이터를 담당하므로
-        // 여기서 robots/alternates를 중복 설정하지 않는다(이중 robots 태그 방지).
-        return {
-            title: tSeo('newsCategory.notFoundTitle'),
-            description: tSeo('newsCategory.notFoundDescription'),
-        };
-    }
+    // 잘못된 slug — 본문과 같은 판정으로 메타데이터 단계에서도 404다. 본문이 notFound()를
+    // 던져도 generateMetadata 결과가 이기므로, 여기서 title/description만 돌려주면 404 응답이
+    // 홈 description·og·twitter를 상속한다. 던지면 404 경계(`[locale]/not-found.tsx`)의 메타가 쓰인다.
+    if (!cat) notFound();
 
     const cfg = CATEGORY_CONFIG[cat];
     const { isEmpty } = await loadCategorySnapshot(cat, locale);
@@ -207,8 +203,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             // 직후의 빈 상태를 `nofollow`로 두면 사이트 전역에서 링크 주스가 끊기는
             // 막다른 길이 된다. 자매 KR 라우트(`/market/kr` 등)도 전부 follow다.
             robots: { index: false, follow: true },
-            // self-canonical — `canonical: null`이면 루트의 홈 canonical을 상속하지 않는 대신
-            // 신호가 비어 크롤러가 군집을 추정한다. 항상-noindex 탭과 같은 방식으로 자기
+            // self-canonical — `canonical: null`(또는 생략)이면 신호가 비어 크롤러가 군집을
+            // 추정한다. 항상-noindex 탭과 같은 방식으로 자기
             // URL을 가리킨다. hreflang 군집(`languages`)은 noindex라 싣지 않는다.
             alternates: { canonical: emptyUrl },
             // og/twitter를 비우면 루트 레이아웃의 홈 값을 상속해 이 URL이 `og:url`로 홈을
@@ -333,7 +329,7 @@ export default async function CategoryNewsPage({ params }: Props) {
             ? {
                   '@context': 'https://schema.org',
                   '@type': 'ItemList',
-                  name: tSeo('faq.newsListName', { v0: cfg.koLabel }),
+                  name: tSeo('faq.newsListName', { v0: tNav(cfg.labelKey) }),
                   // 초기 DOM에 실제로 그려지는 카드 수와 같은 상수로 자른다 — 근거는
                   // `MARKET_NEWS_LIST_PAGE_SIZE`(shared/config/newsSerialization) 주석.
                   itemListElement: items
@@ -379,7 +375,9 @@ export default async function CategoryNewsPage({ params }: Props) {
                     }))}
                 />
                 <h1 className="text-2xl font-bold tracking-tight text-balance text-secondary-50 sm:text-3xl">
-                    {cfg.koLabel} {t('page.3a465d')}
+                    {/* `koLabel`(AI 프롬프트용 한국어)이 아니라 로케일 라벨 — 예전에는 `/en/news/crypto`
+                        h1이 `암호화폐 News`였다. */}
+                    {tNav(cfg.labelKey)} {t('page.3a465d')}
                 </h1>
                 <p className="text-sm text-secondary-400">
                     {tNav(cfg.descriptionKey)}

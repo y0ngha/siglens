@@ -119,7 +119,10 @@ describe('/economy page.tsx integration', () => {
             });
 
             expect(meta.robots).toEqual({ index: false, follow: true });
-            expect(meta.alternates?.canonical).toBeNull();
+            // degraded(noindex)도 self-canonical — null로 비우면 신호가 사라진다. hreflang은 없다.
+            expect(meta.alternates).toEqual({
+                canonical: 'https://siglens.io/economy',
+            });
         });
 
         it('ko는 RSS 발견 링크를 단다(거시 브리핑이 피드에 실린다)', async () => {
@@ -161,7 +164,10 @@ describe('/economy page.tsx integration', () => {
             });
 
             expect(meta.robots).toEqual({ index: false, follow: true });
-            expect(meta.alternates?.canonical).toBeNull();
+            // degraded(noindex)도 self-canonical — null로 비우면 신호가 사라진다. hreflang은 없다.
+            expect(meta.alternates).toEqual({
+                canonical: 'https://siglens.io/economy',
+            });
             expect(consoleSpy).toHaveBeenCalledWith(
                 expect.stringContaining(
                     '[economy.generateMetadata] snapshot failed:'

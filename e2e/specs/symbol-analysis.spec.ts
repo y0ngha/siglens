@@ -52,11 +52,11 @@ test.describe('symbol analysis: cached-fixture short-circuit renders', () => {
         // progress-finishing animation has elapsed — its presence proves the
         // submit short-circuit fired and the deterministic fixture (not a
         // placeholder / real LLM output) drove the render. Scope to the desktop
-        // analysis aside (role="complementary") so the off-screen mobile-sheet
+        // analysis panel (named `<section>` → role="region", "AI 차트 분석") so the off-screen mobile-sheet
         // copy of the same text never triggers a strict-mode violation.
         await expect(
             page
-                .getByRole('complementary')
+                .getByRole('region', { name: 'AI 차트 분석' })
                 .getByText(ANALYSIS_FIXTURE_SUMMARY_PREFIX, { exact: false })
         ).toBeVisible({ timeout: ANALYSIS_RENDER_TIMEOUT_MS });
     });
@@ -76,7 +76,7 @@ test.describe('symbol analysis: cached-fixture short-circuit renders', () => {
         // free 분석 패널에는 단일 업셀 카드의 회원가입 CTA 하나만 노출된다.
         await expect(
             page
-                .getByRole('complementary')
+                .getByRole('region', { name: 'AI 차트 분석' })
                 .getByRole('link', { name: '회원가입' })
         ).toBeVisible({ timeout: ANALYSIS_RENDER_TIMEOUT_MS });
     });
@@ -106,7 +106,7 @@ test.describe('symbol analysis: cached-fixture short-circuit renders', () => {
         // `lockedInfoDepth` for this tier, so the signup nudge must not render.
         await expect(
             page
-                .getByRole('complementary')
+                .getByRole('region', { name: 'AI 차트 분석' })
                 .getByRole('link', { name: '회원가입' })
         ).not.toBeVisible();
     });

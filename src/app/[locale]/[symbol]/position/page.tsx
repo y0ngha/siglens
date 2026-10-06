@@ -32,16 +32,10 @@ import {
 } from '@/entities/bars/lib/technicalFacts';
 import {
     buildBreadcrumbJsonLd,
+    buildSymbolPositionSeoContent,
     buildSymbolSeoContent,
-    clampSeoDescription,
     NOINDEX_SYMBOL_METADATA,
-    noindexInvalidSymbolMetadata,
-    noindexSymbolMetadata,
-    SITE_NAME,
-    SITE_URL,
     symbolMetadataFromSeo,
-    type SeoTranslator,
-    type SymbolSeoContent,
 } from '@/shared/lib/seo';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import { JsonLd } from '@/shared/ui/JsonLd';
@@ -71,34 +65,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const locale = resolveLocale(rawLocale);
     const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     const upper = symbol.toUpperCase();
-    // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
-    if (!isAdmissibleSymbolShape(upper)) {
-        return noindexInvalidSymbolMetadata(symbol, locale, 'position');
-    }
+    // 본문·레이아웃 notFound()와 일관: 형식이 잘못된 세그먼트는 메타데이터 단계에서도 404다.
+    // 레이아웃이 notFound()를 던져도 이 페이지의 generateMetadata 결과가 이기므로, 여기서
+    // 메타를 돌려주면 404 응답에 홈 상속 title·og가 얹힌다(e2e `not-found.spec.ts`).
+    if (!isAdmissibleSymbolShape(upper)) notFound();
     // 존재하지 않는 심볼은 레이아웃과 같은 판정으로 여기서도 404다(`requireResolvableAsset`).
     const { assetInfo, degraded } = await requireResolvableAsset(upper);
+    // 본문 notFound와 같은 판정: 탭이 없는 종목은 메타데이터 단계에서도(차단 메타보다 먼저) 404다. 현재는 모든
+    // market profile이 'position'을 지원하지만, 미래에 탭 미지원 프로필이 추가돼도 404 응답에
+    // 탭 카피 + self-canonical이 얹히지 않도록 유지한다.
+    if (!(await isTabAllowedForSymbol(upper, 'position'))) notFound();
     const blockedMetadata = await getBlockedSymbolMetadata({
         locale,
         symbol: upper,
         assetInfo,
         degraded,
         revalidateSeconds: revalidate,
+        // 탭 카피를 쓴다 — 없으면 차단된 position 페이지가 차트 탭과 같은 title·description을
+        // 내 한 종목에 중복 문서가 둘 생긴다(네이버 중복 감지, #949와 같은 부류).
+        tab: 'position',
     });
     if (blockedMetadata) return blockedMetadata;
-    // fundamental 선례와 동일: 탭 허용 여부가 본문 notFound와 어긋나면 soft-404
-    // (index:true인데 body는 404)가 생긴다. 현재는 모든 market profile이
-    // 'position'을 지원하지만, 이 가드는 미래에 탭 미지원 프로필이 추가돼도
-    // notFound()/noindex가 함께 어긋나지 않도록 유지한다.
-    // `displayName`을 가드보다 위에서 계산한다 — `requireResolvableAsset`이 non-null을
-    // 보장하므로, 아래 noindex 분기도 사명까지 담은 title/description을 가질 수 있다.
     const displayName = buildDisplayName(assetInfo, upper, locale);
-
-    if (!(await isTabAllowedForSymbol(upper, 'position'))) {
-        return noindexSymbolMetadata(upper, tSeo, locale, {
-            displayName,
-            koreanName: assetInfo.koreanName,
-        });
-    }
 
     /*
      * `/position`은 **항상 noindex**다 (2026-09-11 SEO 회복 감사, 2026-08-19의
@@ -119,103 +107,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
      */
     return {
         ...symbolMetadataFromSeo(
-            buildPositionSeo(upper, displayName, assetInfo.koreanName, tSeo),
+            buildSymbolPositionSeoContent(upper, tSeo, {
+                displayName,
+                koreanName: assetInfo.koreanName,
+            }),
             locale
         ),
         ...NOINDEX_SYMBOL_METADATA,
     };
-}
-
-/**
- * position 탭의 SEO 콘텐츠 — `generateMetadata`와 본문 JSON-LD의 **단일 소스**다.
- *
- * 둘로 갈라 두면 `<title>`과 `WebPage.name`이 조용히 어긋난다(MISTAKES §2).
- * 순수 함수라 본문에서 다시 호출해도 비용이 없다.
- */
-function buildPositionSeo(
-    upper: string,
-    displayName: string,
-    koreanName: string | undefined,
-    tSeo: SeoTranslator
-): SymbolSeoContent {
-    const url = `${SITE_URL}/${upper}/position`;
-    // --- 색인 방침 히스토리 ---
-    // 이 탭은 원래 /account·/portfolio와 같은 개인화 surface로 취급해 항상
-    // noindex였다(2026-07 seo-audit 재검토에서 재확인). 근거: 익명 방문자에게
-    // SSR로 실리는 유일한 공개 콘텐츠가 low52w/high52w/lastClose 세 숫자뿐이고
-    // (당시 sr-only 섹션 + PositionCta), 그 숫자조차 동일한
-    // `buildTechnicalFacts`/`getQuantizedBarsStatic` 파생값이 이미 인덱싱된
-    // `[symbol]`(차트)·`overall`(기술적 요약) 페이지에 노출돼 있어 새 콘텐츠가
-    // 아니라 중복이었다 — 수천 심볼 × 이 얇은 템플릿은 전형적인 thin/doorway
-    // 패턴이었다.
-    //
-    // **2026-08-19, 사용자 결정으로 index,follow로 전환했다.** 색인 근거로 삼기
-    // 위해 본문에 심볼별로 달라지는 콘텐츠를 추가했다 — 현재가가 최근 52주 범위
-    // 안에서 몇 %/몇 층에 있는지를 서술하는 문단(`resolveCurrentPricePosition`,
-    // PositionPage 본문 참고)이다. 세 숫자를 그대로 반복하던 이전과 달리, 이
-    // 문단은 그 숫자를 해석한 결과(퍼센트·층수·상단부/하단부 톤)라 chart/overall
-    // 페이지의 원자료 노출과는 다른 층위의 콘텐츠였다. 다만 근본 데이터는 여전히
-    // 동일한 low52w/high52w/lastClose에서 파생되므로(새 데이터 소스를 추가하지
-    // 않았다), thin-content 우려가 완전히 해소된 것은 아니었다 — 이 탭이 계속
-    // sibling 탭들(fundamental/overall/news 등, 서로 다른 AI 생성 콘텐츠를
-    // 가짐) 대비 가장 얇은 콘텐츠라는 사실은 sitemap 판단(아래, `buildPopularEntries`
-    // 관련 논의는 커밋 설명 참고)에도 반영했다.
-    //
-    // **2026-09-11, SEO 회복 감사로 noindex로 되돌렸다.** 인기 종목 8종 실측에서
-    // SSR 고유 텍스트가 868~1,222자로 sibling 탭(2~8천자)의 1/3 이하였고, GSC
-    // 16개월 실적에 `/position` 노출이 0건이었다 — 자세한 근거는 위
-    // `generateMetadata`의 noindex 분기 주석 참고. 이 함수와 아래
-    // `resolveCurrentPricePosition`이 만드는 문단은 계속 렌더된다(방문자에게는
-    // 여전히 유용한 콘텐츠라 유지) — 더 이상 색인 근거로 쓰이지 않을 뿐이다.
-    //
-    // 아래 두 가지는 색인 여부와 무관하게 여전히 참이다:
-    // 1. 회원의 실제 ★평단·수익률(이 탭의 핵심 개인화 가치)은 client-only라
-    //    크롤러는 절대 보지 못한다 — 대신 "보유종목 등록하기" CTA(PositionCta)만
-    //    SSR HTML에 실린다.
-    // 2. 후킹 키워드(아파트/옥상/지하)는 반드시 displayName **앞**에 온다.
-    //    displayName은 koreanName+name+ticker 조합(buildDisplayName)이라
-    //    종목마다 길이가 크게 달라지고(예: IBM처럼 긴 조합은 70자+), 뒤에
-    //    붙이면 title/OG의 truncation(브라우저 탭·메신저 프리뷰) 또는
-    //    SEO_DESCRIPTION_MAX_LENGTH(120) clamp에 잘려나가 메타포 자체가
-    //    사라진다 — front-load해야 어떤 displayName 길이에서도 세 키워드가
-    //    살아남는다.
-    const positionTitle = tSeo('position.title', { v0: displayName });
-    const positionDescription = clampSeoDescription(
-        tSeo('position.description', { v0: displayName })
-    );
-    // sibling 인덱서블 탭(overall/fear-greed 등)과 동일 패턴 — SymbolSeoContent를
-    // 만들어 symbolMetadataFromSeo에 넘긴다. title/fullTitle 분리는 그 헬퍼가
-    // title을 `{ absolute }`로 감싸 root layout의 title.template("%s | Siglens")을
-    // 무시하는 것과, OG/Twitter가 페이지 레벨에서 root layout을 통째로 replace하는
-    // 것(브랜드 suffix가 fullTitle에만 있어야 og:title/twitter:title에서 브랜딩이
-    // 유실되지 않음) 둘 다를 이미 처리한다 — 이 페이지가 그 로직을 다시 구현할
-    // 필요가 없다.
-    return {
-        ticker: upper,
-        title: positionTitle,
-        fullTitle: `${positionTitle} | ${SITE_NAME}`,
-        description: positionDescription,
-        url,
-        keywords: buildPositionKeywords(upper, koreanName),
-    };
-}
-
-/**
- * position 탭 전용 키워드. 다른 8개 심볼 탭은 `shared/lib/seo.ts`의
- * `buildSymbolXxxKeywords`로 공용화돼 있지만, 이 탭은 개인화 surface라는 특성이
- * 강해(★평단/수익률은 client-only) 다른 탭이 재사용할 이유가 없다 — 공용
- * 모듈로 옮기지 않고 이 페이지에만 둔다.
- */
-function buildPositionKeywords(ticker: string, koreanName?: string): string[] {
-    return [
-        `${ticker} 평단`,
-        `${ticker} 평단 계산`,
-        `${ticker} 내 위치`,
-        `${ticker} 52주 범위`,
-        ...(koreanName ? [`${koreanName} 평단`, `${koreanName} 내 위치`] : []),
-        '평단 확인',
-        '52주 최고가 최저가',
-    ];
 }
 
 interface PriceRange {
@@ -393,12 +292,10 @@ export default async function PositionPage({ params }: Props) {
     // 결과를 중단해 표시 이득이 없고, 402개 종목에 같은 문답을 복제하면 이
     // 탭이 이미 가장 얇다는 문제(아래 색인 방침 히스토리)를 키우기만 한다.
     const tSeo = await getTranslations('shared.seo');
-    const seo = buildPositionSeo(
-        upper,
+    const seo = buildSymbolPositionSeoContent(upper, tSeo, {
         displayName,
-        assetInfo.koreanName,
-        tSeo
-    );
+        koreanName: assetInfo.koreanName,
+    });
     const webPageJsonLd = buildSymbolWebPageJsonLd({
         url: seo.url,
         name: seo.fullTitle,
@@ -412,10 +309,13 @@ export default async function PositionPage({ params }: Props) {
         locale,
     });
     // sibling 탭과 동일한 3단계 — buildBreadcrumbJsonLd가 Siglens를 자동 prepend한다.
+    // 셋째 마디 이름은 헤더 가시 브레드크럼(`SymbolLayoutHeader`)과 같은 `shared.symbolTab` 키다 —
+    // 구글은 마크업과 화면 텍스트가 다르면 breadcrumb 마크업을 무시한다.
+    const tTab = await getTranslations('shared.symbolTab');
     const breadcrumbJsonLd = buildBreadcrumbJsonLd(
         [
             { name: displayName, url: buildSymbolSeoContent(upper, tSeo).url },
-            { name: tSeo('position.breadcrumb'), url: seo.url },
+            { name: tTab('position'), url: seo.url },
         ],
         locale
     );

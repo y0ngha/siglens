@@ -373,9 +373,14 @@ describe('ChartContent', () => {
         );
     });
 
-    it('renders analysis panel in aside', () => {
-        render(<ChartContent {...defaultProps} />);
-        expect(screen.getByTestId('analysis-panel')).toBeDefined();
+    it('분석 패널은 이름 붙은 section(region)이고 aside·aria-live가 아니다', () => {
+        const { container } = render(<ChartContent {...defaultProps} />);
+        const panel = screen.getByTestId('analysis-panel');
+        const region = panel.closest('section');
+        expect(region).not.toBeNull();
+        expect(region).toHaveAttribute('aria-label');
+        expect(region).not.toHaveAttribute('aria-live');
+        expect(container.querySelector('aside')).toBeNull();
     });
 
     describe('anonymous signup nudge (member-reasoning-toggle spec Part B)', () => {
@@ -459,7 +464,7 @@ describe('ChartContent', () => {
         };
 
         const asideOf = (container: HTMLElement) => {
-            const aside = container.querySelector('aside');
+            const aside = container.querySelector('section[aria-label]');
             expect(aside).not.toBeNull();
             return aside as HTMLElement;
         };

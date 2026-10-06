@@ -34,6 +34,12 @@ function deepFreeze<T>(value: T): T {
 }
 
 const DAY_SECONDS = 86_400;
+/**
+ * 5년치 일봉으로 core 지표 전체 + 공포·탐욕을 여러 번 계산한다 — 로컬에선 1~2초지만
+ * CI 러너(병렬 워커)에선 기본 5초에 걸려 실패한 적이 있다. 계산량 자체가 검증 대상이라
+ * 봉 수를 줄이지 않고 상한만 넉넉히 둔다.
+ */
+const HEAVY_COMPUTE_TIMEOUT_MS = 30_000;
 const NOW = new Date('2026-10-06T15:00:00Z'); // 화요일 11:00 ET — 정규장 중
 const LAST_DAY = Math.floor(Date.parse('2026-10-06T00:00:00Z') / 1000);
 
@@ -66,40 +72,44 @@ function frozenProvider(bars: Bar[]): MarketDataProvider {
     } as MarketDataProvider;
 }
 
-describe('공유되는 봉 값은 서버 소비 경로에서 변경되지 않는다', () => {
-    it('core 계산이 provider의 얼린 봉을 고치지 않는다', async () => {
-        await expect(
-            fetchBarsWithIndicators(
-                frozenProvider(dailyBars(1900)),
-                'AAPL',
-                '1Day',
-                undefined,
-                NOW
-            )
-        ).resolves.toMatchObject({ bars: expect.any(Array) });
-    });
+describe(
+    '공유되는 봉 값은 서버 소비 경로에서 변경되지 않는다',
+    { timeout: HEAVY_COMPUTE_TIMEOUT_MS },
+    () => {
+        it('core 계산이 provider의 얼린 봉을 고치지 않는다', async () => {
+            await expect(
+                fetchBarsWithIndicators(
+                    frozenProvider(dailyBars(1900)),
+                    'AAPL',
+                    '1Day',
+                    undefined,
+                    NOW
+                )
+            ).resolves.toMatchObject({ bars: expect.any(Array) });
+        });
 
-    it('얼린 BarsData로 quantize·공포탐욕 계산이 돈다', async () => {
-        const data: BarsData = deepFreeze(
-            await fetchBarsWithIndicators(
-                frozenProvider(dailyBars(1900)),
-                'AAPL',
-                '1Day',
-                undefined,
-                NOW
-            )
-        );
-        expect(data.bars.length).toBeGreaterThan(0);
+        it('얼린 BarsData로 quantize·공포탐욕 계산이 돈다', async () => {
+            const data: BarsData = deepFreeze(
+                await fetchBarsWithIndicators(
+                    frozenProvider(dailyBars(1900)),
+                    'AAPL',
+                    '1Day',
+                    undefined,
+                    NOW
+                )
+            );
+            expect(data.bars.length).toBeGreaterThan(0);
 
-        const quantized = quantizeBarsDataToLastClosed(
-            data,
-            NOW,
-            US_EQUITY_SESSION
-        );
-        expect(quantized.bars.length).toBe(data.bars.length - 1);
+            const quantized = quantizeBarsDataToLastClosed(
+                data,
+                NOW,
+                US_EQUITY_SESSION
+            );
+            expect(quantized.bars.length).toBe(data.bars.length - 1);
 
-        expect(() => symbolFearGreedSnapshot(data)).not.toThrow();
-        expect(() => clientSymbolFearGreed(data)).not.toThrow();
-        expect(() => clientSymbolFearGreed(quantized)).not.toThrow();
-    });
-});
+            expect(() => symbolFearGreedSnapshot(data)).not.toThrow();
+            expect(() => clientSymbolFearGreed(data)).not.toThrow();
+            expect(() => clientSymbolFearGreed(quantized)).not.toThrow();
+        });
+    }
+);

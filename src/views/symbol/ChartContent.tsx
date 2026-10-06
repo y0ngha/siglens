@@ -735,8 +735,14 @@ export function ChartContent({
                 깔린다. 게다가 `--symbol-chrome-h`가 시간 단위 줄을 세지 않아 문서 스크롤
                 0에서 패널 아래 끝이 첫 뷰포트보다 약 44px 아래에 있다(1512×823 실측:
                 패널 bottom 867px). 44 + 68 + 여유 12 = 124px → 128px(pb-32)로 스크롤
-                끝에서 마지막 줄이 FAB 위로 올라오게 한다. */}
-            <aside
+                끝에서 마지막 줄이 FAB 위로 올라오게 한다.
+
+                `<aside>`가 아니라 이름 붙은 `<section>`이다 — AI 분석은 이 페이지의 주 콘텐츠라
+                complementary(보조) 랜드마크가 아니다. 패널 전체에 `aria-live`를 걸지 않는다:
+                분석 본문이 바뀔 때마다 수백 자가 통째로 낭독됐다. 진행 상태는 작은 상태 영역
+                (`AnalysisProgress`·`AnalysisToast`의 `role="status"`)이 알린다. */}
+            <section
+                aria-label={t('ChartContent.f69071')}
                 className="relative hidden flex-none border-l border-secondary-700 p-4 md:flex md:h-(--symbol-chart-h) md:w-(--panel-width) md:flex-col md:overflow-y-auto md:pb-32"
                 style={
                     {
@@ -744,10 +750,9 @@ export function ChartContent({
                         '--panel-width': `${panelWidth}px`,
                     } as React.CSSProperties
                 }
-                aria-live="polite"
             >
                 {analysisContent}
-            </aside>
+            </section>
 
             {/* 드래그 중 전체 화면 오버레이 — 텍스트 선택 방지 */}
             {isDragging && (

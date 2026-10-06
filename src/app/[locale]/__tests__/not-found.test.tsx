@@ -160,6 +160,26 @@ describe('NotFound page', () => {
         }
     );
 
+    /**
+     * `twitter`를 비우면 루트 레이아웃의 홈 제목·설명·OG 이미지가 그대로 상속돼, 404 URL을
+     * X에 붙여 넣으면 홈 카드가 뜬다. 404 자기 제목·설명만 싣고 이미지는 싣지 않는다.
+     */
+    it.each(['ko', 'en'])(
+        '%s: twitter 카드가 404 제목·설명을 싣고 홈 이미지를 상속하지 않는다',
+        async locale => {
+            const metadata = await generateMetadata({
+                params: Promise.resolve({ locale }),
+            });
+
+            expect(metadata.twitter).toMatchObject({
+                card: 'summary',
+                title: metadata.title,
+                description: metadata.description,
+            });
+            expect(metadata.twitter).not.toHaveProperty('images');
+        }
+    );
+
     /*
      * 테마 적용은 `ContactDialog`가 한다(그 파일의 주석 참고 — 전용 컴포넌트를
      * 두면 홈 first-load가 17.3KB 늘어난다). 여기서는 그 컴포넌트가 렌더되는지만

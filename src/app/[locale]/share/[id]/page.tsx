@@ -39,6 +39,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             namespace: 'entities.shared-analysis.og',
         }),
     ]);
+    // 본문과 같은 판정으로 메타데이터 단계에서도 404다. 본문이 notFound()를 던져도
+    // generateMetadata 결과가 이기므로, 여기서 최소 메타를 돌려주면 404 응답이 그 title과
+    // 루트 레이아웃의 홈 description·og·twitter를 단다. 던지면 404 경계
+    // (`[locale]/not-found.tsx`)의 메타가 쓰인다.
+    if (lookup.status !== 'found') notFound();
     return buildShareMetadata(lookup, id, tSeo, resolved, tOg);
 }
 

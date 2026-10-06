@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { getActiveTerms, type TermsRecord } from '@/entities/terms/api';
 import type { TermsKind } from '@/shared/db/constants';
@@ -17,6 +18,7 @@ import {
 import { buildTwitterMetadata } from '@/shared/lib/twitterMetadata';
 import {
     localeAlternatesFrom,
+    selfCanonicalAlternates,
     localeOpenGraph,
     localePageRobots,
 } from '@/shared/lib/seoAlternates';
@@ -71,9 +73,13 @@ export const loadLegalTerms = cache(
 /**
  * 약관·방침 라우트의 `generateMetadata` 본체.
  *
- * 활성 버전이 없으면 이 URL은 404다(페이지가 `notFound()`를 던진다). 본문을 못 읽은
- * 빌드 fallback도 마찬가지다. 그 상태를 색인 후보로 광고하지 않는다 — canonical을
- * 비우고 noindex.
+ * 활성 버전이 없으면(`missing`) 이 URL은 404다 — 페이지와 같은 판정으로 여기서도
+ * `notFound()`를 던진다. 페이지가 notFound()를 던져도 generateMetadata 결과가 이기므로,
+ * 메타를 돌려주면 404 응답에 정상 문서의 title·og가 얹힌다.
+ *
+ * 본문을 못 읽은 빌드 fallback(`unavailable`)은 200 안내문이라 메타를 내되 색인 후보로
+ * 광고하지 않는다 — noindex에 self-canonical만 내고 hreflang 군집은 싣지 않는다
+ * (`selfCanonicalAlternates`).
  */
 export async function legalPolicyMetadata(
     params: Promise<{ locale: string }>,
@@ -82,6 +88,7 @@ export async function legalPolicyMetadata(
     const locale = resolveLocale((await params).locale);
     const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     const { status } = await loadLegalTerms(policy.kind, locale);
+    if (status === 'missing') notFound();
     const indexable = status === 'ready';
     const fullTitle = policy.fullTitle(tSeo);
     const description = policy.description(tSeo);
@@ -91,9 +98,9 @@ export async function legalPolicyMetadata(
         robots: indexable
             ? localePageRobots(locale)
             : { index: false, follow: true },
-        alternates: await localeAlternatesFrom(params, policy.path, {
-            canonical: indexable ? undefined : null,
-        }),
+        alternates: indexable
+            ? await localeAlternatesFrom(params, policy.path)
+            : selfCanonicalAlternates(locale, policy.path),
         openGraph: {
             type: 'article',
             siteName: SITE_NAME,

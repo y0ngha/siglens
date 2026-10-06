@@ -21,7 +21,7 @@ vi.mock('next-intl/server', () => ({
     getTranslations: vi.fn(async () => (key: string) => key),
 }));
 
-import SharePage from '@/app/[locale]/share/[id]/page';
+import SharePage, { generateMetadata } from '@/app/[locale]/share/[id]/page';
 
 describe('SharePage', () => {
     beforeEach(() => vi.clearAllMocks());
@@ -33,6 +33,20 @@ describe('SharePage', () => {
 
             await expect(
                 SharePage({
+                    params: Promise.resolve({ locale: 'ko', id: 'abc' }),
+                })
+            ).rejects.toThrow('NEXT_NOT_FOUND');
+            expect(mockNotFound).toHaveBeenCalled();
+        }
+    );
+
+    it.each(['expired', 'not_found'])(
+        'lookup.status가 %s면 generateMetadata도 notFound()를 던진다 — 404에 최소 메타·홈 og가 얹히지 않는다',
+        async status => {
+            mockLookup.mockResolvedValue({ status });
+
+            await expect(
+                generateMetadata({
                     params: Promise.resolve({ locale: 'ko', id: 'abc' }),
                 })
             ).rejects.toThrow('NEXT_NOT_FOUND');

@@ -179,8 +179,10 @@ const HUB_SOCIAL_IMAGE_ALLOW = LOCALES.flatMap(locale =>
  *   congress, 그리고 position) → `NOINDEX_TAB_OG_DISALLOW`
  * - 공유 카드(`/ko/share/{id}/opengraph-image`, 사용자 생성 URL) → `SHARE_OG_DISALLOW`
  *
- * `twitter-image`와 비-ko 로케일은 계속 막힌다(Allow가 `/ko/`에서 시작하고 `opengraph-image`만
- * 가리킨다). 탭 목록은 `seo.ts`를 import하지 않고 적는다 — 이 파일은 `SITE_URL`만 의존하도록
+ * 비-ko 로케일은 계속 막힌다(Allow가 `/ko/`에서 시작하고 `opengraph-image`만 가리킨다).
+ * 종목 탭에는 `twitter-image` 라우트가 더 이상 없다(2026-10 PR-9 — Next가 `twitter:image`를
+ * 탭의 `opengraph-image` URL로 채운다). 남은 `twitter-image`는 뉴스 허브(`/news`,
+ * `/news/{category}`)뿐이고, 아래 Googlebot 그룹의 `twitter-image` Disallow는 그 경로들 때문에 둔다. 탭 목록은 `seo.ts`를 import하지 않고 적는다 — 이 파일은 `SITE_URL`만 의존하도록
  * 두었고(`robots.test.ts`가 그것만 목한다), 탭을 다시 열 때 `ALWAYS_NOINDEX_TAB_ROBOTS`와 함께
  * 여기를 고친다. `robots.test.ts`의 허용/차단 행렬이 두 방향을 고정한다.
  */
@@ -228,8 +230,9 @@ export default function robots(): MetadataRoute.Robots {
                 disallow: BASELINE_DISALLOW,
             },
             {
-                // Googlebot 전용 그룹. `/[symbol]/**/opengraph-image`, `/[symbol]/**/twitter-image`는
-                // 종목 페이지마다 동적 생성되는 PNG로, Search Console 크롤 통계 기준 크롤
+                // Googlebot 전용 그룹. `/[symbol]/**/opengraph-image`는 종목 페이지마다 동적
+                // 생성되는 PNG로(종목 탭의 `twitter-image` 라우트는 2026-10에 없앴다 —
+                // `twitter:image`가 같은 og URL을 쓴다), Search Console 크롤 통계 기준 크롤
                 // 예산의 상당 부분(61GB)을 여기서 소모하고 있었다 — 실제 콘텐츠 페이지 대신
                 // 이 이미지 URL을 반복 크롤하느라 예산이 낭비되는 구조. Disallow로 회수해
                 // 실제 종목 콘텐츠 페이지 크롤에 예산을 재배분한다.
@@ -266,6 +269,8 @@ export default function robots(): MetadataRoute.Robots {
                 disallow: [
                     ...BASELINE_DISALLOW,
                     '/*/opengraph-image',
+                    // 종목 탭의 twitter-image는 없어졌지만 뉴스 허브(`/news`·`/news/{category}`)의
+                    // twitter-image 라우트가 남아 있어 유지한다.
                     '/*/twitter-image',
                     ...NOINDEX_TAB_OG_DISALLOW,
                     ...SHARE_OG_DISALLOW,

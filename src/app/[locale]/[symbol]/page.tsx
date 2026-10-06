@@ -43,7 +43,6 @@ import {
     buildTitleSubject,
     resolveSymbolSeoContent,
     symbolMetadataFromSeo,
-    noindexInvalidSymbolMetadata,
 } from '@/shared/lib/seo';
 import {
     dehydrate,
@@ -73,10 +72,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const locale = resolveLocale(rawLocale);
     const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     const ticker = symbol.toUpperCase();
-    // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
-    if (!isAdmissibleSymbolShape(ticker)) {
-        return noindexInvalidSymbolMetadata(symbol, locale);
-    }
+    // 본문·레이아웃 notFound()와 일관: 형식이 잘못된 세그먼트는 메타데이터 단계에서도 404다.
+    // 레이아웃이 notFound()를 던져도 이 페이지의 generateMetadata 결과가 이기므로, 여기서
+    // 메타를 돌려주면 404 응답에 홈 상속 title·og가 얹힌다(e2e `not-found.spec.ts`).
+    if (!isAdmissibleSymbolShape(ticker)) notFound();
     // 존재하지 않는 심볼은 레이아웃과 같은 판정으로 여기서도 404다 — 티커를 단
     // noindex 메타데이터를 돌려주면 404 응답에 정상 페이지 제목이 얹힌다.
     const { assetInfo, degraded } = await requireResolvableAsset(ticker);

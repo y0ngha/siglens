@@ -102,7 +102,10 @@ describe('/fear-greed/crypto page', () => {
         it('noindexes without canonical when the sample is insufficient', async () => {
             const meta = await generateMetadata(PARAMS);
 
-            expect(meta.alternates?.canonical).toBeNull();
+            // degraded(noindex)도 self-canonical — null로 비우면 신호가 사라진다. hreflang은 없다.
+            expect(meta.alternates).toEqual({
+                canonical: 'https://siglens.io/fear-greed/crypto',
+            });
             expect(meta.robots).toEqual({ index: false, follow: true });
         });
 

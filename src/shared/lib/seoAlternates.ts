@@ -59,6 +59,21 @@ export function localeCanonical(locale: Locale, path: string): string {
 }
 
 /**
+ * 색인하지 않는(noindex) 렌더의 alternates — **자기 URL canonical만** 내고 hreflang 군집
+ * (`languages`)·발견 링크(`types`)는 싣지 않는다.
+ *
+ * `canonical: null`로 비우면 신호가 사라져 크롤러가 URL 군집을 스스로 추정한다. 종목 탭의
+ * noindex 분기(`noindexSymbolMetadata`)·항상-noindex 탭과 같은 self-canonical 정책이다.
+ * 색인되지 않는 URL을 대체 언어로 광고할 이유는 없으므로 `languages`는 뺀다.
+ */
+export function selfCanonicalAlternates(
+    locale: Locale,
+    path: string
+): LocaleAlternatesResult {
+    return { canonical: localeCanonical(locale, path) };
+}
+
+/**
  * 페이지 `metadata.alternates`를 통째로 만든다.
  *
  * ⚠️ **hreflang은 반드시 페이지마다 선언해야 한다.** Next.js는 세그먼트 간
@@ -316,8 +331,9 @@ export interface HubMetadataInput {
  *
  * 일곱 라우트가 같은 골격을 손으로 반복하고 있었다:
  *
- * - degraded면 canonical을 `null`로 비우고 `noindex, follow` — 임시 상태를
- *   색인시키지 않되 링크 주스는 내부 링크로 계속 흐르게 한다.
+ * - degraded면 `noindex, follow` + self-canonical(hreflang 없음, `selfCanonicalAlternates`) —
+ *   임시 상태를 색인시키지 않되 링크 주스는 내부 링크로 계속 흐르게 한다. canonical을
+ *   `null`로 비우면 신호가 사라져 크롤러가 군집을 추정한다.
  * - 정상이면 canonical은 **넘기지 않는다** — `localeAlternatesFrom`이 로케일별
  *   자기참조 URL을 만든다. ko 절대 URL을 넘기면 `/en/…`이 ko를 canonical로
  *   가리켜 hreflang 상호참조가 깨진다.
@@ -338,10 +354,11 @@ export async function buildHubMetadata({
         title,
         description,
         keywords: [...keywords],
-        alternates: await localeAlternatesFrom(params, path, {
-            canonical: degraded ? null : undefined,
-            types: alternateTypes,
-        }),
+        alternates: degraded
+            ? selfCanonicalAlternates(locale, path)
+            : await localeAlternatesFrom(params, path, {
+                  types: alternateTypes,
+              }),
         robots: degraded
             ? { index: false, follow: true }
             : localePageRobots(locale),

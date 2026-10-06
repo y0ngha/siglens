@@ -29,7 +29,7 @@ vi.mock('../server/buildOgText', () => ({
 
 function foundLookup(
     kind: SharedAnalysisSnapshot['kind'] = 'chart'
-): SharedAnalysisLookup {
+): Extract<SharedAnalysisLookup, { status: 'found' }> {
     return {
         status: 'found',
         createdAt: '2024-01-15T09:00:00.000Z',
@@ -143,38 +143,6 @@ describe('buildShareMetadata', () => {
                 // @ts-expect-error 뒤 인자를 빠뜨리면 컴파일이 막힌다.
                 buildShareMetadata(foundLookup());
             expect(call).toBeTypeOf('function');
-        });
-    });
-
-    describe('expired state', () => {
-        const meta = buildShareMetadata(
-            { status: 'expired' },
-            'abc123',
-            tSeo,
-            'ko',
-            tOg
-        );
-
-        it('[C-8] robots.index === false', () => {
-            expect((meta.robots as { index?: boolean })?.index).toBe(false);
-        });
-
-        it('has a generic title', () => {
-            expect(meta.title).toBeTruthy();
-        });
-    });
-
-    describe('not_found state', () => {
-        const meta = buildShareMetadata(
-            { status: 'not_found' },
-            'abc123',
-            tSeo,
-            'ko',
-            tOg
-        );
-
-        it('[C-8] robots.index === false', () => {
-            expect((meta.robots as { index?: boolean })?.index).toBe(false);
         });
     });
 });

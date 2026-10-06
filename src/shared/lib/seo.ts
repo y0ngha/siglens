@@ -164,6 +164,31 @@ export const SYMBOLS_PATH = '/symbols';
  */
 export const ORGANIZATION_JSON_LD_ID = `${SITE_URL}#organization`;
 
+/** 사이트 발행 주체 `Organization`의 핵심 속성 — `buildOrganizationCoreJsonLd` 반환형. */
+export interface OrganizationCoreJsonLd {
+    readonly '@type': 'Organization';
+    readonly '@id': string;
+    readonly name: string;
+    readonly url: string;
+}
+
+/**
+ * 발행 주체 `Organization` 노드의 **핵심 속성**(`@id`·`name`·`url`).
+ *
+ * 전 페이지에 깔리는 `SiteJsonLd`가 `WebSite.publisher`의 참조 대상을 같은 문서 안에 두려고
+ * 이 최소 노드를 싣고, 홈(`(home)/page.tsx`)은 이 위에 로고·설명·sameAs 등을 얹은 풍부한 노드를
+ * 낸다. 같은 `@id`의 두 정의는 파서가 하나로 합치는데, 겹치는 속성 값이 다르면 충돌한다 —
+ * 두 곳이 이 함수 하나에서 핵심 속성을 받아야 값이 갈릴 수 없다.
+ */
+export function buildOrganizationCoreJsonLd(): OrganizationCoreJsonLd {
+    return {
+        '@type': 'Organization',
+        '@id': ORGANIZATION_JSON_LD_ID,
+        name: SITE_NAME,
+        url: SITE_URL,
+    };
+}
+
 /**
  * 공개 소스 저장소. 푸터와 홈 `Organization.sameAs`가 소비자다.
  *
@@ -210,72 +235,18 @@ export const ALWAYS_NOINDEX_TAB_ROBOTS = {
  * **canonical은 이 상수의 몫이 아니다 (2026-10-05).** 예전에는 `alternates: { canonical: null }`을
  * 함께 담아 루트 레이아웃의 홈 canonical 상속을 막았는데, canonical이 없는 noindex 페이지는
  * 신호가 비어 크롤러가 URL 군집을 스스로 추정하게 둔다. 항상-noindex 탭(`ALWAYS_NOINDEX_TAB_ROBOTS`)
- * 과 같은 방식 — **자기 URL을 가리키는 self-canonical** — 으로 통일했다. 그래서:
- *  - 심볼을 아는 분기는 `noindexSymbolMetadata`가 `symbolMetadataFromSeo`의 self-canonical을 낸다.
- *  - 심볼이라 믿을 수 없는 세그먼트(`!isAdmissibleSymbolShape`)는 `noindexInvalidSymbolMetadata`가
- *    **실제 요청 URL**을 canonical로 낸다.
- * 이 상수를 그대로 반환하면 루트 레이아웃의 홈 canonical을 상속하므로 라우트에서 직접
- * 반환하지 않는다 — robots가 필요한 곳(스프레드·테스트)에서만 쓴다.
+ * 과 같은 방식 — **자기 URL을 가리키는 self-canonical** — 으로 통일했다. 심볼을 아는 분기는
+ * `noindexSymbolMetadata`가 `symbolMetadataFromSeo`의 self-canonical을 낸다. 심볼이라 믿을 수 없는
+ * 세그먼트(`!isAdmissibleSymbolShape`)는 메타를 내지 않고 `generateMetadata`에서 `notFound()`를
+ * 던져 404 경계(`[locale]/not-found.tsx`)의 메타를 쓴다.
+ * 이 상수를 그대로 반환하면 canonical 없이 루트 레이아웃의 홈 title·og·twitter를 상속하므로
+ * 라우트에서 직접 반환하지 않는다 — robots가 필요한 곳(스프레드·테스트)에서만 쓴다.
+ * (루트 레이아웃 자체는 canonical을 깔지 않는다 — `[locale]/layout.tsx` 참고.)
  */
 export const NOINDEX_SYMBOL_METADATA: Metadata = {
     robots: { index: false, follow: true },
 };
 
-/**
- * 심볼 형식이 아닌 `[symbol]` 세그먼트의 noindex 메타데이터. 세그먼트가 심볼이라고 신뢰할 수
- * 없어(임의 문자열이 title에 박힌다) 카피는 루트 레이아웃 것을 상속하고, canonical만
- * **실제 요청 URL**로 못 박는다 — 홈 canonical을 상속하면 존재하지 않는 경로가 홈을
- * 가리킨다. 본문은 `notFound()`라 404가 나가는 경로다.
- *
- * `tabSegment`는 탭 라우트(`/{symbol}/news` 등)가 자기 경로 꼬리를 넘기는 자리다 — 생략하면
- * 심볼 루트(`/{symbol}`)다. 탭 라우트가 루트 URL을 canonical로 내면 "실제 요청 URL"이 아니다
- * (`/!!!/news` → `/%21%21%21/news`가 아니라 `/!!!`로 나간다). 심볼 조각은 `encodeURIComponent`로
- * 인코딩하고, 탭 조각은 코드 상수(`news`·`fear-greed`…)라 그대로 붙인다.
- */
-export function noindexInvalidSymbolMetadata(
-    rawSymbol: string,
-    locale: Locale,
-    tabSegment?: string
-): Metadata {
-    const path = localePath(
-        locale,
-        `/${encodeURIComponent(rawSymbol)}${tabSegment ? `/${tabSegment}` : ''}`
-    );
-    return {
-        ...NOINDEX_SYMBOL_METADATA,
-        alternates: { canonical: `${SITE_URL}${path}` },
-    };
-}
-
-/**
- * noindex인 `[symbol]` 라우트의 메타데이터 — **심볼을 알 때** 쓴다.
- *
- * **왜 필요한가 (2026-08-24 프로덕션 실측)**: `title`/`description`/`openGraph`를
- * 비워 두면 Next가 루트 레이아웃 값을 그대로 상속시킨다. 그 결과 차단된 심볼
- * URL 전부(`/SOXX`, `/QQQM`, `/TLT`, `/XLK`, `/SOXX/fundamental` …)가
- *   - 홈페이지와 **똑같은** `<title>`·`<meta name="description">`을 쓰고,
- *   - `og:url`을 `https://siglens.io`로 선언한다.
- * 두 번째가 특히 나쁘다 — og:url을 정규 URL 힌트로 쓰는 크롤러에게 수만 개
- * 심볼 URL이 자기를 홈페이지라고 말하는 셈이다. noindex는 색인을 막을 뿐
- * 이 잘못된 동일성 선언까지 막아 주지는 않는다.
- *
- * **`[symbol]/**\/page.tsx`의 noindex 분기는 하나의 예외만 빼고 전부 이걸 쓴다.**
- * 예외는 `!isAdmissibleSymbolShape` 가드뿐이다 — 거기서는 세그먼트가 심볼이라고
- * 신뢰할 수 없으므로(임의 문자열이 title에 그대로 박힌다) 카피 없이
- * `noindexInvalidSymbolMetadata`(robots + 실제 URL canonical)로 남긴다. 나머지
- * (tab-not-allowed, FMP profile degrade, 빈 재무 스냅샷, congress trades degrade,
- * overall 캐시 미스)는 전부 심볼이 확정된 뒤라 자기 정체성을 가질 수 있고, 그중
- * degrade 계열은 **실존 티커가 200을 반환하는 경로**라 홈 메타 상속이 실제로
- * 크롤된다. (assetInfo 없음·장애 중 형상 불합격은 더 이상 여기로 오지 않는다 —
- * `requireResolvableAsset`이 `notFound()`로 404 경계에 넘긴다.)
- *
- * 탭 단위가 아니라 **심볼 단위**로만 구분한다(`og:url`이 탭이 아니라 심볼 루트를
- * 가리킨다). 어차피 noindex라 탭별 정밀도는 측정 가능한 이득이 없고, 목표는
- * "홈페이지의 정체성을 참칭하지 않는 것"이다.
- *
- * `opts`는 호출부가 이미 `assetInfo`를 들고 있을 때만 넘긴다 — 안 넘겨도
- * displayName이 티커로 폴백해 동작은 같고, 있으면 description이 사명까지 담는다.
- */
 /**
  * Tabs that have their own SEO copy builder. The seven snapshot tabs mirror
  * `SeoSnapshotTab` (`entities/seo-snapshot`), which `shared` may not import —
@@ -287,6 +258,9 @@ export function noindexInvalidSymbolMetadata(
  * noindex로 막힌 공포·탐욕 페이지가 차트 탭 제목을 그대로 써 한 종목에 같은 title이
  * 두 개가 된다(2026-10-05 운영 재크롤: TOSCF·SLROF). 스냅샷 탭과 갈라야 하는 곳은
  * `isSeoSnapshotTab`(entities/seo-snapshot)으로 거른다.
+ *
+ * `position`도 같은 이유로 들어 있다 — 차단 메타가 차트 탭 카피를 쓰면 `/{symbol}`과
+ * `/{symbol}/position`이 같은 title·description을 낸다(네이버 중복 감지, #949와 같은 부류).
  */
 export type SymbolSeoTab =
     | 'technical'
@@ -296,7 +270,8 @@ export type SymbolSeoTab =
     | 'congress'
     | 'news'
     | 'options'
-    | 'fear-greed';
+    | 'fear-greed'
+    | 'position';
 
 /**
  * 색인되는 `[symbol]` 탭(= `ALWAYS_NOINDEX_TAB_ROBOTS`를 쓰지 않는 탭). 차트(`technical`)·뉴스·
@@ -342,6 +317,8 @@ const SYMBOL_TAB_LABEL_KEYS: Record<
     options: { equity: 'symbol.options.titleCore' },
     // 크립토 빌더도 같은 키를 쓴다(`buildCryptoSymbolFearGreedSeoContent`).
     'fear-greed': { equity: 'symbol.fearGreed.titleCore' },
+    // position 제목은 `{훅} — {주어} {라벨}` 꼴이라 titleCore 대신 브레드크럼 라벨이 그 자리다.
+    position: { equity: 'position.breadcrumb' },
 };
 
 /**
@@ -365,47 +342,126 @@ export function symbolTabDescriptionLabel(
     );
 }
 
+type SymbolSeoBuilder = (
+    symbol: string,
+    t: SeoTranslator,
+    opts: BuildSymbolSeoOptions
+) => SymbolSeoContent;
+
+/**
+ * 탭×자산군 → SEO 카피 빌더. `SYMBOL_TAB_LABEL_KEYS`와 같은 모양(크립토 변형이 있는
+ * 탭만 `crypto`)이라 두 테이블의 분기가 한눈에 대응된다.
+ *
+ * `resolveSymbol*SeoContent`와 `noindexSymbolMetadata`가 **이 테이블 하나로** 자산군을
+ * 고른다. 예전에는 차단 메타 경로만 equity 빌더를 고정으로 써서, 크립토의 차단된 탭이
+ * `시세` 대신 `주가`/`Stock` 카피를 냈다(MISTAKES §6.7 — 같은 규칙을 형제 경로 하나에만 적용).
+ */
 const SYMBOL_SEO_TAB_BUILDERS: Record<
     SymbolSeoTab,
-    (
-        symbol: string,
-        t: SeoTranslator,
-        opts: BuildSymbolSeoOptions
-    ) => SymbolSeoContent
+    { readonly equity: SymbolSeoBuilder; readonly crypto?: SymbolSeoBuilder }
 > = {
-    technical: buildSymbolSeoContent,
-    overall: buildSymbolOverallSeoContent,
-    fundamental: buildSymbolFundamentalSeoContent,
-    financials: buildSymbolFinancialsSeoContent,
-    congress: buildSymbolCongressSeoContent,
-    news: buildSymbolNewsSeoContent,
-    options: buildSymbolOptionsSeoContent,
-    'fear-greed': buildSymbolFearGreedSeoContent,
+    technical: {
+        equity: buildSymbolSeoContent,
+        crypto: buildCryptoSymbolSeoContent,
+    },
+    overall: {
+        equity: buildSymbolOverallSeoContent,
+        crypto: buildCryptoSymbolOverallSeoContent,
+    },
+    fundamental: { equity: buildSymbolFundamentalSeoContent },
+    financials: { equity: buildSymbolFinancialsSeoContent },
+    congress: { equity: buildSymbolCongressSeoContent },
+    news: {
+        equity: buildSymbolNewsSeoContent,
+        crypto: buildCryptoSymbolNewsSeoContent,
+    },
+    options: { equity: buildSymbolOptionsSeoContent },
+    'fear-greed': {
+        equity: buildSymbolFearGreedSeoContent,
+        crypto: buildCryptoSymbolFearGreedSeoContent,
+    },
+    position: { equity: buildSymbolPositionSeoContent },
 };
 
-export interface NoindexSymbolMetadataOptions extends BuildSymbolSeoOptions {
+/** 탭·자산군에 맞는 빌더로 SEO 카피를 만든다 — 크립토 변형이 없는 탭은 equity 빌더를 쓴다. */
+export function buildSymbolTabSeoContent(
+    tab: SymbolSeoTab,
+    symbol: string,
+    assetClass: AssetClass,
+    t: SeoTranslator,
+    opts: BuildSymbolSeoOptions = {}
+): SymbolSeoContent {
+    const builders = SYMBOL_SEO_TAB_BUILDERS[tab];
+    const build =
+        assetClass === 'crypto' && builders.crypto
+            ? builders.crypto
+            : builders.equity;
+    return build(symbol, t, opts);
+}
+
+export interface NoindexSymbolMetadataOptions extends Omit<
+    BuildSymbolSeoOptions,
+    'locale'
+> {
     /**
      * The tab this route renders. Without it every blocked tab of one symbol
      * repeats the chart page's title and description, which Naver Search
      * Advisor reports as duplicate `<title>`/`<meta name="description">`
      * documents (2026-09-17: `/QQQ/financials` carried the `/QQQ` title).
-     * Omit on routes with no tab copy (`position`) — they keep the base
-     * symbol copy.
+     * Omitted means the chart tab (`technical`).
      */
     tab?: SymbolSeoTab;
+    /**
+     * 자산군. 크립토면 `시세`/`Price` 카피 빌더를 쓴다 — 생략하면 equity다. 호출부가
+     * `assetInfo`를 들고 있으면 `getDescriptor(marketProfileOf(assetInfo)).assetClass`를 넘긴다.
+     */
+    assetClass?: AssetClass;
 }
 
+/**
+ * noindex인 `[symbol]` 라우트의 메타데이터 — **심볼을 알 때** 쓴다.
+ *
+ * **왜 필요한가 (2026-08-24 프로덕션 실측)**: `title`/`description`/`openGraph`를
+ * 비워 두면 Next가 루트 레이아웃 값을 그대로 상속시킨다. 그 결과 차단된 심볼
+ * URL 전부(`/SOXX`, `/QQQM`, `/TLT`, `/XLK`, `/SOXX/fundamental` …)가
+ *   - 홈페이지와 **똑같은** `<title>`·`<meta name="description">`을 쓰고,
+ *   - `og:url`을 `https://siglens.io`로 선언한다.
+ * 두 번째가 특히 나쁘다 — og:url을 정규 URL 힌트로 쓰는 크롤러에게 수만 개
+ * 심볼 URL이 자기를 홈페이지라고 말하는 셈이다. noindex는 색인을 막을 뿐
+ * 이 잘못된 동일성 선언까지 막아 주지는 않는다.
+ *
+ * **`[symbol]/**\/page.tsx`의 200 + noindex 분기는 전부 이걸 쓴다**(FMP profile degrade,
+ * 빈 재무 스냅샷, congress trades degrade, overall 캐시 미스 …). 전부 심볼이 확정된 뒤라
+ * 자기 정체성을 가질 수 있고, **실존 티커가 200을 반환하는 경로**라 홈 메타 상속이 실제로
+ * 크롤된다. 404로 끝나는 경로(형식 불합격 `!isAdmissibleSymbolShape`, tab-not-allowed,
+ * assetInfo 없음·장애 중 형상 불합격)는 여기로 오지 않는다 — `generateMetadata`가
+ * `notFound()`를 던져 404 경계의 메타를 쓴다. 레이아웃이 먼저 `notFound()`를 던져도 페이지의
+ * `generateMetadata` 결과가 이기므로, 그 경로에서 메타를 돌려주면 404 응답에 정상 페이지
+ * title·canonical이 얹힌다.
+ *
+ * `opts.tab`이 있으면 그 탭의 카피·URL을 쓴다 — 없으면 차트 탭(`technical`)이다.
+ *
+ * `opts`는 호출부가 이미 `assetInfo`를 들고 있을 때만 넘긴다 — 안 넘겨도
+ * displayName이 티커로 폴백해 동작은 같고, 있으면 description이 사명까지 담는다.
+ *
+ * URL 로케일은 세 번째 인자 하나로만 받아 빌더에도 그대로 넘긴다(`opts`에는 `locale`이 없다).
+ * 예전에는 빌더에 로케일을 넘기지 않아 `composeSymbolTitle`이 기본 로케일로 동작했고,
+ * `/en/AAPL`의 차단 메타 title이 `애플(AAPL) Stock Analysis`처럼 한국어명을 달고 나갔다.
+ */
 export function noindexSymbolMetadata(
     symbol: string,
     t: SeoTranslator,
     locale: Locale,
     opts: NoindexSymbolMetadataOptions = {}
 ): Metadata {
-    const build =
-        opts.tab === undefined
-            ? buildSymbolSeoContent
-            : SYMBOL_SEO_TAB_BUILDERS[opts.tab];
-    const base = symbolMetadataFromSeo(build(symbol, t, opts), locale);
+    const { tab = 'technical', assetClass = 'equity', ...buildOpts } = opts;
+    const base = symbolMetadataFromSeo(
+        buildSymbolTabSeoContent(tab, symbol, assetClass, t, {
+            ...buildOpts,
+            locale,
+        }),
+        locale
+    );
     return {
         ...base,
         // self-canonical은 유지하고 hreflang 군집(`languages`)만 뺀다 — noindex 페이지가
@@ -1249,6 +1305,13 @@ export function symbolMetadataFromSeo(
             url: localizedUrl,
             ...localeOpenGraph(locale),
         },
+        /**
+         * `images`를 **싣지 않는다** — Next는 `twitter.images`가 없으면 최종 `openGraph.images`
+         * (= 탭의 `opengraph-image.tsx`)로 `twitter:image`를 채운다(`resolve-metadata`의
+         * `postProcessMetadata`). 예전에는 탭마다 `twitter-image.tsx`가 og 이미지를 re-export해
+         * 같은 이미지가 다른 URL로 두 번 렌더·저장됐다(2026-10 감사). 여기에 `images`를 넣으면
+         * 그 자동 채움이 꺼진다.
+         */
         twitter: buildTwitterMetadata({ title: fullTitle, description }),
         /**
          * 준비되지 않은 로케일은 **제목·설명은 그대로 두고 robots만** 덮는다.
@@ -1862,15 +1925,7 @@ export function resolveSymbolSeoContent(
     t: SeoTranslator,
     opts: ResolveSymbolSeoOpts
 ): SymbolSeoContent {
-    if (assetClass === 'crypto') {
-        return buildCryptoSymbolSeoContent(ticker, t, {
-            displayName: opts.displayName,
-            koreanName: opts.koreanName ?? undefined,
-            englishName: opts.englishName ?? undefined,
-            locale: opts.locale,
-        });
-    }
-    return buildSymbolSeoContent(ticker, t, {
+    return buildSymbolTabSeoContent('technical', ticker, assetClass, t, {
         displayName: opts.displayName,
         koreanName: opts.koreanName ?? undefined,
         englishName: opts.englishName ?? undefined,
@@ -1939,15 +1994,7 @@ export function resolveSymbolNewsSeoContent(
     t: SeoTranslator,
     opts: ResolveSymbolSeoOpts
 ): SymbolSeoContent {
-    if (assetClass === 'crypto') {
-        return buildCryptoSymbolNewsSeoContent(ticker, t, {
-            displayName: opts.displayName,
-            koreanName: opts.koreanName ?? undefined,
-            englishName: opts.englishName ?? undefined,
-            locale: opts.locale,
-        });
-    }
-    return buildSymbolNewsSeoContent(ticker, t, {
+    return buildSymbolTabSeoContent('news', ticker, assetClass, t, {
         displayName: opts.displayName,
         koreanName: opts.koreanName ?? undefined,
         englishName: opts.englishName ?? undefined,
@@ -2012,15 +2059,7 @@ export function resolveSymbolOverallSeoContent(
     t: SeoTranslator,
     opts: ResolveSymbolSeoOpts
 ): SymbolSeoContent {
-    if (assetClass === 'crypto') {
-        return buildCryptoSymbolOverallSeoContent(ticker, t, {
-            displayName: opts.displayName,
-            koreanName: opts.koreanName ?? undefined,
-            englishName: opts.englishName ?? undefined,
-            locale: opts.locale,
-        });
-    }
-    return buildSymbolOverallSeoContent(ticker, t, {
+    return buildSymbolTabSeoContent('overall', ticker, assetClass, t, {
         displayName: opts.displayName,
         koreanName: opts.koreanName ?? undefined,
         englishName: opts.englishName ?? undefined,
@@ -2091,21 +2130,11 @@ export function resolveSymbolFearGreedSeoContent(
     t: SeoTranslator,
     opts: ResolveSymbolSeoOpts
 ): SymbolSeoContent {
-    if (assetClass === 'crypto') {
-        return buildCryptoSymbolFearGreedSeoContent(ticker, t, {
-            displayName: opts.displayName,
-            koreanName: opts.koreanName ?? undefined,
-            englishName: opts.englishName ?? undefined,
-            locale: opts.locale,
-        });
-    }
-    return buildSymbolFearGreedSeoContent(ticker, t, {
+    return buildSymbolTabSeoContent('fear-greed', ticker, assetClass, t, {
         displayName: opts.displayName,
         koreanName: opts.koreanName ?? undefined,
         englishName: opts.englishName ?? undefined,
         locale: opts.locale,
-        // sector is not forwarded — none of the fear-greed callers resolve a sector
-        // (it's equity-tab metadata context, not tracked at this page level).
     });
 }
 
@@ -2174,5 +2203,52 @@ function buildSymbolFearGreedKeywords(
         'Fear Greed Index',
         '주식 매수 분위기',
         '단기 매매 심리',
+    ];
+}
+
+/**
+ * `/[symbol]/position` 탭의 SEO 콘텐츠 — `generateMetadata`(정상·차단 분기 모두)와 본문
+ * JSON-LD의 **단일 소스**다. 둘로 갈라 두면 `<title>`과 `WebPage.name`이 조용히
+ * 어긋난다(MISTAKES §2).
+ *
+ * 다른 탭과 달리 `composeSymbolTitle`을 쓰지 않는다 — 후킹 키워드(아파트/옥상/지하)가
+ * displayName **앞**에 와야 한다. displayName은 종목마다 길이가 크게 달라(70자+도 있다)
+ * 뒤에 붙이면 title/OG truncation과 description clamp에 메타포가 잘려 나간다.
+ * displayName은 호출부가 `buildDisplayName(assetInfo, symbol, locale)`로 로케일에 맞게
+ * 만들어 넘긴다 — 생략하면 티커다.
+ */
+export function buildSymbolPositionSeoContent(
+    symbol: string,
+    t: SeoTranslator,
+    opts: BuildSymbolSeoOptions = {}
+): SymbolSeoContent {
+    const upper = symbol.toUpperCase();
+    const displayName = opts.displayName ?? upper;
+    const title = t('position.title', { v0: displayName });
+    return {
+        ticker: upper,
+        title,
+        fullTitle: `${title} | ${SITE_NAME}`,
+        description: clampSeoDescription(
+            t('position.description', { v0: displayName })
+        ),
+        url: `${SITE_URL}/${upper}/position`,
+        keywords: buildSymbolPositionKeywords(upper, opts.koreanName),
+    };
+}
+
+/** position 탭 키워드 — ★평단/수익률이 client-only인 개인화 surface라 다른 탭과 공유하지 않는다. */
+function buildSymbolPositionKeywords(
+    ticker: string,
+    koreanName?: string
+): string[] {
+    return [
+        `${ticker} 평단`,
+        `${ticker} 평단 계산`,
+        `${ticker} 내 위치`,
+        `${ticker} 52주 범위`,
+        ...(koreanName ? [`${koreanName} 평단`, `${koreanName} 내 위치`] : []),
+        '평단 확인',
+        '52주 최고가 최저가',
     ];
 }

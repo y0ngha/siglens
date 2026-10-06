@@ -8,7 +8,6 @@
 import { getTranslations } from 'next-intl/server';
 import {
     NOINDEX_SYMBOL_METADATA,
-    noindexInvalidSymbolMetadata,
     noindexSymbolMetadata,
     SITE_URL,
     type SeoTranslator,
@@ -52,39 +51,74 @@ describe('noindexSymbolMetadata', () => {
     });
 });
 
-describe('noindexInvalidSymbolMetadata', () => {
-    it('심볼이 아닌 세그먼트도 canonical은 실제 요청 URL이다(홈 상속 아님)', () => {
-        const meta = noindexInvalidSymbolMetadata('!!!invalid', 'ko');
-
-        expect(meta.robots).toEqual({ index: false, follow: true });
-        expect(meta.alternates).toEqual({
-            canonical: `${SITE_URL}/!!!invalid`,
+describe('noindexSymbolMetadata — 카피 라우팅', () => {
+    it('비-기본 로케일 title은 한국어명 대신 영문 법인명을 쓴다(로케일을 빌더로 넘긴다)', async () => {
+        const tEn = await getTranslations({
+            locale: 'en',
+            namespace: 'shared.seo',
         });
+        const meta = noindexSymbolMetadata('aapl', tEn, 'en', {
+            displayName: 'Apple Inc. (AAPL)',
+            koreanName: '애플',
+            englishName: 'Apple Inc.',
+        });
+        const title = (meta.title as { absolute: string }).absolute;
+
+        expect(title).not.toContain('애플');
+        expect(title).toContain('Apple');
     });
 
-    it('탭 라우트는 탭 꼬리까지 실제 요청 경로를 canonical로 낸다(루트 URL이 아니다)', () => {
-        const news = noindexInvalidSymbolMetadata('!!!', 'ko', 'news');
-        const fearGreed = noindexInvalidSymbolMetadata(
-            'a b',
-            'en',
-            'fear-greed'
+    it('크립토는 시세 카피 빌더를 쓴다 — 주가 카피가 아니다', () => {
+        const crypto = noindexSymbolMetadata('btcusd', t, 'ko', {
+            assetClass: 'crypto',
+        });
+        const equity = noindexSymbolMetadata('btcusd', t, 'ko');
+        const cryptoTitle = (crypto.title as { absolute: string }).absolute;
+
+        expect(cryptoTitle).toContain(t('symbol.crypto.titleCore'));
+        expect(cryptoTitle).not.toBe(
+            (equity.title as { absolute: string }).absolute
         );
-
-        expect(news.alternates).toEqual({ canonical: `${SITE_URL}/!!!/news` });
-        expect(fearGreed.alternates).toEqual({
-            canonical: `${SITE_URL}/en/a%20b/fear-greed`,
-        });
     });
 
-    it('탭 꼬리를 생략하면 심볼 루트다', () => {
-        expect(noindexInvalidSymbolMetadata('!!!', 'ko').alternates).toEqual({
-            canonical: `${SITE_URL}/!!!`,
+    it('크립토 변형이 없는 탭은 equity 빌더로 폴백한다', () => {
+        const meta = noindexSymbolMetadata('btcusd', t, 'ko', {
+            assetClass: 'crypto',
+            tab: 'options',
         });
+
+        expect((meta.title as { absolute: string }).absolute).toContain(
+            t('symbol.options.titleCore')
+        );
     });
 
-    it('경로를 깨는 문자는 인코딩하고 로케일 접두사를 붙인다', () => {
-        const meta = noindexInvalidSymbolMetadata('a/b?c', 'en');
+    it('position 탭은 자기 카피·URL을 쓴다 — 차트 탭과 title·description이 다르다', () => {
+        const opts = { displayName: '애플, Apple Inc. (AAPL)' } as const;
+        const position = noindexSymbolMetadata('aapl', t, 'ko', {
+            ...opts,
+            tab: 'position',
+        });
+        const chart = noindexSymbolMetadata('aapl', t, 'ko', opts);
 
-        expect(meta.alternates?.canonical).toBe(`${SITE_URL}/en/a%2Fb%3Fc`);
+        expect(position.alternates).toEqual({
+            canonical: `${SITE_URL}/AAPL/position`,
+        });
+        expect(position.title).not.toEqual(chart.title);
+        expect(position.description).not.toBe(chart.description);
+        expect(position.robots).toEqual({ index: false, follow: true });
+    });
+});
+
+/**
+ * 종목 탭은 `twitter-image.tsx`를 두지 않는다 — Next가 `twitter.images`가 없을 때 최종
+ * `openGraph.images`(탭의 `opengraph-image.tsx`)로 `twitter:image`를 채운다. 메타데이터가
+ * `twitter.images`를 선언하는 순간 그 자동 채움이 꺼져 홈 이미지나 빈 카드가 나간다.
+ */
+describe('symbolMetadataFromSeo twitter', () => {
+    it('twitter에 images 키를 싣지 않는다 — og 이미지 자동 채움에 맡긴다', () => {
+        const meta = noindexSymbolMetadata('aapl', t, 'ko', { tab: 'news' });
+
+        expect(meta.twitter).toBeDefined();
+        expect(meta.twitter).not.toHaveProperty('images');
     });
 });

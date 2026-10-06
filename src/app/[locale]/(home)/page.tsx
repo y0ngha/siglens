@@ -18,6 +18,7 @@ import {
     buildWebPageJsonLd,
     GITHUB_URL,
     localizedAbsoluteUrl,
+    buildOrganizationCoreJsonLd,
     ORGANIZATION_JSON_LD_ID,
     SITE_NAME,
     SITE_NAME_KO,
@@ -235,13 +236,12 @@ export default async function Home({
      */
     const organizationJsonLd = {
         '@context': 'https://schema.org',
-        '@type': 'Organization',
-        '@id': ORGANIZATION_JSON_LD_ID,
-        name: SITE_NAME,
+        // 핵심 속성(@type·@id·name·url)은 전역 `SiteJsonLd`의 최소 노드와 같은 단일 소스다 —
+        // 같은 `@id`의 두 정의가 겹치는 속성에서 다른 값을 말하지 않게 한다.
+        ...buildOrganizationCoreJsonLd(),
         // `WebSite.alternateName`과 같은 한글 표기 — 발행 주체 노드에도 실어
         // "시그렌즈"가 이 Organization을 가리키게 한다.
         alternateName: SITE_NAME_KO,
-        url: SITE_URL,
         logo: `${SITE_URL}/icon512.png`,
         description: tSeo('root.description'),
         // 조직의 외부 프로필만 싣는다 — 서비스 저장소와 서비스 X 계정. 운영자 개인

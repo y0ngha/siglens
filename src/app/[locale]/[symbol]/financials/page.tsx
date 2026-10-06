@@ -28,8 +28,6 @@ import {
     buildSymbolFinancialsSeoContent,
     buildSymbolSeoContent,
     symbolMetadataFromSeo,
-    noindexInvalidSymbolMetadata,
-    noindexSymbolMetadata,
 } from '@/shared/lib/seo';
 import { buildSymbolWebPageJsonLd } from '@/app/[locale]/[symbol]/symbolWebPageJsonLd';
 import { notFound } from 'next/navigation';
@@ -62,20 +60,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const locale = resolveLocale(rawLocale);
     const tSeo = await getTranslations({ locale, namespace: 'shared.seo' });
     const upper = symbol.toUpperCase();
-    // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
-    if (!isAdmissibleSymbolShape(upper)) {
-        return noindexInvalidSymbolMetadata(symbol, locale, 'financials');
-    }
+    // 본문·레이아웃 notFound()와 일관: 형식이 잘못된 세그먼트는 메타데이터 단계에서도 404다.
+    // 레이아웃이 notFound()를 던져도 이 페이지의 generateMetadata 결과가 이기므로, 여기서
+    // 메타를 돌려주면 404 응답에 홈 상속 title·og가 얹힌다(e2e `not-found.spec.ts`).
+    if (!isAdmissibleSymbolShape(upper)) notFound();
     // 존재하지 않는 심볼은 레이아웃과 같은 판정으로 여기서도 404다(`requireResolvableAsset`).
     const { assetInfo, degraded } = await requireResolvableAsset(upper);
-    // 본문 `isTabAllowedForSymbol` 가드와 일관: 크립토 심볼은 financials 탭이 없으므로
-    // generateMetadata도 동일 조건에서 NOINDEX로 반환한다. 가드 없이 계속 진행하면
-    // 본문은 notFound()(noindex)인데 메타데이터는 canonical + index:true인 soft-404가 만들어진다.
-    if (!(await isTabAllowedForSymbol(upper, 'financials'))) {
-        return noindexSymbolMetadata(upper, tSeo, locale, {
-            tab: 'financials',
-        });
-    }
+    // 본문 `isTabAllowedForSymbol` 가드와 같은 판정으로 메타데이터 단계에서도 404다(크립토엔
+    // 이 탭이 없다). 레이아웃·본문이 notFound()를 던져도 generateMetadata 결과가 이기므로,
+    // 여기서 탭 카피 + self-canonical을 돌려주면 404 응답이 정상 페이지 메타를 단다.
+    if (!(await isTabAllowedForSymbol(upper, 'financials'))) notFound();
     const blockedMetadata = await getBlockedSymbolMetadata({
         locale,
         symbol: upper,
@@ -237,10 +231,13 @@ export default async function FinancialsPage({ params }: Props) {
             : null,
     });
 
+    // 셋째 마디 이름은 헤더 가시 브레드크럼(`SymbolLayoutHeader`)과 같은 `shared.symbolTab` 키다 —
+    // 구글은 마크업과 화면 텍스트가 다르면 breadcrumb 마크업을 무시한다.
+    const tTab = await getTranslations('shared.symbolTab');
     const breadcrumbJsonLd = buildBreadcrumbJsonLd(
         [
             { name: displayName, url: buildSymbolSeoContent(upper, tSeo).url },
-            { name: t('page.128c11'), url },
+            { name: tTab('financials'), url },
         ],
         locale
     );

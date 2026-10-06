@@ -115,7 +115,7 @@ export async function generateMetadata({
     ]);
     const degraded = cards.length === 0 && calendarEvents.length === 0;
 
-    // degraded 시 canonical을 비우고 noindex — 지표가 하나도 없는 임시 상태를
+    // degraded 시 noindex + self-canonical(hreflang 없음) — 지표가 하나도 없는 임시 상태를
     // 색인시키지 않는다. follow는 유지해 내부 링크로 주스가 계속 흐르게 한다.
     return buildHubMetadata({
         params,
@@ -192,8 +192,8 @@ async function KrEconomyContent() {
     /*
      * 구조화데이터를 **여기서** 낸다.
      *
-     * 지표도 캘린더도 없는 상태에서는 `generateMetadata`가 canonical을 비우고
-     * noindex를 건다. 그때 WebPage를 그대로 내보내면 "색인하지 말라"면서
+     * 지표도 캘린더도 없는 상태에서는 `generateMetadata`가 noindex를 건다(canonical은
+     * self, hreflang 없음). 그때 WebPage를 그대로 내보내면 "색인하지 말라"면서
      * "이 URL이 정식 문서"라고 주장하는 모순이 된다.
      * `/news/[category]`가 같은 상태에서 JSON-LD를 빼는 규칙을 이미 쓴다.
      *

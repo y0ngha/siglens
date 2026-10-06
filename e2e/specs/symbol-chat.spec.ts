@@ -24,7 +24,7 @@ test.describe('symbol page → SIGLENS AI floating link', () => {
         });
         await expect(link).toBeVisible();
         await expect(link).toHaveAttribute('target', '_blank');
-        await expect(link).toHaveAttribute('rel', 'noopener');
+        await expect(link).toHaveAttribute('rel', 'nofollow noopener');
 
         const href = await link.getAttribute('href');
         expect(href).not.toBeNull();

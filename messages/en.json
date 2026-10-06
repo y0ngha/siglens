@@ -341,9 +341,6 @@
                 "f9482c": "Fear & Greed Index"
             },
             "page": {
-                "412646": "Fundamentals Analysis",
-                "128c11": "Financial Statements",
-                "2141f2": "News Analysis",
                 "2ab959": "which floor of this building is the price on?",
                 "3c87a9": "Could not load Earnings schedule.",
                 "465a63": "{v0} Financial Statements",
@@ -352,8 +349,6 @@
                 "6723ea": "Earnings Schedule",
                 "69d338": "My Position",
                 "6cd32e": "{v0} Fear & Greed Index — 0–100 Score & Recent Trend",
-                "7b06ac": "Congressional Trades",
-                "8b7ae7": "AI Overall Analysis",
                 "9e0659": "{v0} Financial Metrics and Analyst Opinions",
                 "9f451a": "Web",
                 "b2cd1a": "Analyst Rating Changes",
@@ -361,8 +356,6 @@
                 "c6cf97": "Translating...",
                 "cf643b": "Market Cap",
                 "e607c1": "{v0} Congressional Trades",
-                "f1b01b": "Options Analysis",
-                "f9482c": "Fear & Greed Index",
                 "marketFearGreedLinkAll": "Market-wide Fear & Greed Index",
                 "marketFearGreedLinkKr": "Korean Market Fear & Greed Index",
                 "marketLabelKr": "the Korean stock market",
@@ -547,7 +540,6 @@
                 "volatility": "Volatility"
             },
             "seo": {
-                "expiredTitle": "Shared analysis",
                 "title": "{v0} AI analysis"
             }
         }
@@ -1543,8 +1535,6 @@
                 "emptyDescriptionTemplate": "We couldn't load the latest {label} news.",
                 "emptyTitleTemplate": "{label} News",
                 "itemListName": "Latest {label} news",
-                "notFoundDescription": "The news category you requested doesn't exist.",
-                "notFoundTitle": "News category not found",
                 "titleTemplate": "{label} News — Latest Updates & AI Summary"
             },
             "newsHub": {
@@ -1562,7 +1552,7 @@
                 "title": "Portfolio"
             },
             "position": {
-                "breadcrumb": "My position",
+                "breadcrumb": "My Position",
                 "description": "Is your cost basis near the roof (the high) or the basement (the low)? See where it sits inside the 52-week range of {v0}.",
                 "title": "Where does my cost basis sit? — {v0} My Position"
             },

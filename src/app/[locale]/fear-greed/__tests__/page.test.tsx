@@ -117,11 +117,14 @@ describe('/fear-greed page', () => {
                 });
             });
 
-            it('omits canonical instead of self-referencing', async () => {
+            it('self-canonical만 내고 hreflang 군집은 싣지 않는다', async () => {
                 const metadata = await generateMetadata({
                     params: Promise.resolve({ locale: 'ko' }),
                 });
-                expect(metadata.alternates?.canonical).toBeFalsy();
+                // degraded(noindex)도 self-canonical — null로 비우면 신호가 사라진다. hreflang은 없다.
+                expect(metadata.alternates).toEqual({
+                    canonical: 'https://siglens.io/fear-greed',
+                });
             });
 
             it('sets noindex, follow', async () => {
@@ -148,7 +151,10 @@ describe('/fear-greed page', () => {
             });
 
             expect(metadata.robots).toEqual({ index: false, follow: true });
-            expect(metadata.alternates?.canonical).toBeFalsy();
+            // degraded(noindex)도 self-canonical — null로 비우면 신호가 사라진다. hreflang은 없다.
+            expect(metadata.alternates).toEqual({
+                canonical: 'https://siglens.io/fear-greed',
+            });
             expect(consoleSpy).toHaveBeenCalledWith(
                 expect.stringContaining(
                     '[FearGreedRoute] getMarketFearGreedStatic failed (metadata):'
@@ -292,7 +298,7 @@ describe('/fear-greed page', () => {
         });
 
         /**
-         * 표본이 부족하면 `generateMetadata`가 canonical을 비우고 noindex를 건다.
+         * 표본이 부족하면 `generateMetadata`가 noindex를 건다(canonical은 self, hreflang 없음).
          * 그 상태에서 WebPage/Breadcrumb을 그대로 내면 "색인하지 말라"면서
          * "이 URL이 정식 WebPage"라고 주장하는 모순이 된다. FAQ는 질문·답변이
          * 화면에 그대로 있으므로 예외다.

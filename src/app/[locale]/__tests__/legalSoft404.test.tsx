@@ -72,13 +72,12 @@ describe('legal 라우트의 활성 버전이 없을 때', () => {
     );
 
     it.each(ROUTES)(
-        '$name: generateMetadata가 noindex + canonical 없음을 낸다',
+        '$name: generateMetadata도 notFound()를 던진다 — 404에 정상 문서 메타가 얹히지 않는다',
         async ({ metadata }) => {
-            const result = await metadata({
-                params: Promise.resolve({ locale: 'ko' }),
-            });
-            expect(result.robots).toEqual({ index: false, follow: true });
-            expect(canonicalOf(result)).toBeNull();
+            await expect(
+                metadata({ params: Promise.resolve({ locale: 'ko' }) })
+            ).rejects.toThrow('NEXT_NOT_FOUND');
+            expect(mockNotFound).toHaveBeenCalled();
         }
     );
 });

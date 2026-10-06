@@ -6,6 +6,7 @@ import {
     buildSymbolFinancialsSeoContent,
     buildSymbolFundamentalSeoContent,
     buildSymbolOptionsSeoContent,
+    buildSymbolPositionSeoContent,
     resolveSymbolFearGreedSeoContent,
     resolveSymbolNewsSeoContent,
     resolveSymbolOverallSeoContent,
@@ -92,9 +93,33 @@ const CASES: ReadonlyArray<
         'crypto',
         tr => resolveSymbolFearGreedSeoContent('BTCUSD', 'crypto', tr, opts),
     ],
+    [
+        'position',
+        'equity',
+        tr => buildSymbolPositionSeoContent('AAPL', tr, opts),
+    ],
 ];
 
+const LOCALES = ['ko', 'en', 'ja', 'zh'] as const;
+
 describe('symbolTabDescriptionLabel', () => {
+    // position 제목은 `titleCore`가 아니라 브레드크럼 라벨을 담는다 — 카탈로그가 로케일마다
+    // 따로 번역되므로 대소문자·표기 드리프트를 네 로케일 전부에서 본다.
+    it.each(LOCALES)(
+        'position/%s — 라벨이 제목 안에 그대로 들어 있다',
+        async locale => {
+            const tr = await getTranslations({
+                locale,
+                namespace: 'shared.seo',
+            });
+            const label = symbolTabDescriptionLabel('position', 'equity', tr);
+
+            expect(
+                buildSymbolPositionSeoContent('AAPL', tr, { locale }).title
+            ).toContain(label);
+        }
+    );
+
     it.each(CASES)(
         '%s/%s — 라벨이 그 탭 제목 안에 그대로 들어 있다',
         (tab, assetClass, build) => {
@@ -112,6 +137,7 @@ describe('symbolTabDescriptionLabel', () => {
             'congress',
             'options',
             'fear-greed',
+            'position',
         ] as const) {
             expect(symbolTabDescriptionLabel(tab, 'crypto', t)).toBe(
                 symbolTabDescriptionLabel(tab, 'equity', t)
