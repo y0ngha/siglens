@@ -62,8 +62,7 @@ function subTabOf(
  * and the shared "분석 설정" gear (model selector + reasoning toggle) so all
  * analysis tabs use the same model/reasoning state.
  * Chart-specific controls (TimeframeSelector) live inside the chart page's own
- * scroll-locked container so the layout stays free of `useSearchParams` (which
- * would force the whole route to be dynamic under Next.js Cache Components).
+ * scroll-locked container so the layout header stays free of URL reads.
  */
 export function SymbolLayoutHeader({
     symbol,

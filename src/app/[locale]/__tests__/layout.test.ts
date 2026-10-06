@@ -37,6 +37,7 @@ import RootLayout, {
 import Script from 'next/script';
 import { isValidElement, type ReactElement, type ReactNode } from 'react';
 import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
+import { AUTH_HINT_INIT_SCRIPT } from '@/shared/lib/auth/authHintAttribute';
 import { STATIC_INDEXABLE_LOCALES } from '@/shared/i18n/indexableLocales';
 import { brandIntroName, SITE_NAME, SITE_NAME_KO } from '@/shared/lib/seo';
 import koMessages from '@/../messages/ko.json';
@@ -166,6 +167,21 @@ describe('RootLayout 테마 부트스트랩', () => {
                 props: expect.objectContaining({
                     strategy: 'beforeInteractive',
                     dangerouslySetInnerHTML: { __html: THEME_INIT_SCRIPT },
+                }),
+            })
+        );
+    });
+
+    /** 로그인 추정 표식을 첫 페인트 전에 찍어 헤더 인증 영역의 폭을 미리 잡는다(CLS). */
+    it('AUTH_HINT_INIT_SCRIPT를 beforeInteractive로 싣는다', async () => {
+        const scripts = collectElements(await renderTree()).filter(
+            element => element.type === Script
+        );
+        expect(scripts).toContainEqual(
+            expect.objectContaining({
+                props: expect.objectContaining({
+                    strategy: 'beforeInteractive',
+                    dangerouslySetInnerHTML: { __html: AUTH_HINT_INIT_SCRIPT },
                 }),
             })
         );

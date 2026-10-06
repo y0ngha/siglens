@@ -51,7 +51,6 @@ import {
 } from '@tanstack/react-query';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { Suspense } from 'react';
 import { enterLocale } from '@/shared/lib/enterLocale';
 
 export const revalidate = 21600; // 6h — ISR. 사용자 신선도는 클라 refetch(useBars 30s)가 보장하므로 상한만 길게
@@ -195,14 +194,14 @@ export default async function SymbolPage({ params }: Props) {
     if (isUnresolvableDegraded(ticker, degraded)) notFound();
     if (!assetInfo) return notFound();
 
-    // Compute marketProfile once here so both TechnicalFactsSummary (Suspense fallback)
-    // and SymbolPageClient receive the same value without recomputing on the client.
+    // Compute marketProfile once here so SymbolPageClient receives it without
+    // recomputing on the client.
     const marketProfile = marketProfileOf(assetInfo);
     const { assetClass } = getDescriptor(marketProfile);
 
     // default-tf bars를 정적화로 가져온다. 실패(인프라 다운 등)는 null로 degrade해
-    // 페이지가 깨지지 않도록 한다. 이 bars는 Suspense fallback의 FactLayer SSR에만 쓰이며,
-    // 클라이언트 hydration 후에는 SymbolPageClient가 인터랙티브 상태로 교체된다.
+    // 페이지가 깨지지 않도록 한다. 이 bars는 클라이언트 React Query seed(아래)의 원천이고,
+    // seed가 있어야 `SymbolPageClient`가 차트·사실 요약을 서버에서 렌더한다(`hasBarsSeed`).
     //
     // SSR seed에 forming 봉을 박으면 ISR write churn 유발 — quantize로 마지막 완료 봉까지만.
     // new Date()는 ISR-safe: quantize는 isRegularSessionOpen(session, now) boolean으로만
@@ -300,13 +299,16 @@ export default async function SymbolPage({ params }: Props) {
     // prefetchQuery(bars 재호출)는 제거 — forming 봉이 포함된 라이브 bars가
     // dehydrate seed로 박히면 ISR write churn이 발생하므로, quantize 후 동기 주입으로 대체.
     // 차트 페이지는 ISR로 캐시되므로 기본 timeframe만 seed한다.
-    // ?tf= 딥링크는 클라(useTimeframeChange→useSearchParams)가 마운트 시 읽어
+    // ?tf= 딥링크는 클라(useTimeframeChange→useUrlSearchParam)가 하이드레이션 직후 읽어
     // 해당 timeframe bars를 fetch한다.
     //
     // null guard: getQuantizedBarsStatic 실패 시 quantizedFactBars는 null이다. null을 setQueryData에
     // 넘기면 null "success" 값이 dehydrate 캐시에 박혀 클라 useSuspenseQuery가 data.bars를
     // null에서 읽으려다 crash하고, null은 stale 트리거가 아니므로 재fetch도 안 된다.
     // null인 경우는 seed를 생략해 클라 useBars/getBarsAction이 라이브로 fetch하게 한다.
+    // seed를 실제로 넣었는지는 `SymbolPageClient`에 넘긴다(`hasBarsSeed`) — 이제 차트가
+    // 서버에서도 렌더되므로, seed 없이 SSR하면 서버 렌더가 봉 Server Action을 부른다.
+    let hasBarsSeed = false;
     if (quantizedFactBars !== null) {
         // updatedAt 명시: RQ dehydrate 기본은 Date.now()라 매 ISR 재생성마다 다른 timestamp가
         // HTML에 박혀 ISR write churn 발생(2026-06-06 실측). 마지막 완료 봉의 time으로 고정해
@@ -336,6 +338,7 @@ export default async function SymbolPage({ params }: Props) {
                 seedBars,
                 { updatedAt: stableUpdatedAt }
             );
+            hasBarsSeed = true;
         }
     }
 
@@ -367,7 +370,7 @@ export default async function SymbolPage({ params }: Props) {
                 스크롤바가 셋이 됐다 — main, AI 패널, body(사용자 제보, v0.79.0).
                 이제 jail도 main도 스크롤 컨테이너가 아니다. 차트 높이만 차트 컬럼이
                 `--symbol-chart-h`로 직접 잡고(ChartContent), 그 위 모든 단은 콘텐츠만큼
-                자란다. h1(SymbolPageClient 또는 아래 fallback 안)이 프로즈보다 DOM에서
+                자란다. h1(SymbolPageClient 안)이 프로즈보다 DOM에서
                 먼저 오므로 heading 위계(WCAG 1.3.1)는 그대로 유지된다. */}
             <main className="flex flex-1 flex-col">
                 {/* 모바일에서는 이 wrapper가 첫 뷰포트 높이를 확정하고 안쪽 flex
@@ -376,88 +379,79 @@ export default async function SymbolPage({ params }: Props) {
                     각자 `--symbol-chart-h`로 확정 높이를 스스로 들고 있다. */}
                 <div className="flex h-(--symbol-chart-h) shrink-0 flex-col md:h-auto">
                     <HydrationBoundary state={dehydrate(queryClient)}>
-                        {/* fallback은 두 역할을 겸한다:
-                            1. CLS 방지 — 차트 영역(flex-1)을 미리 차지해 useSearchParams
-                               CSR-bailout 서브트리가 hydration 전 비어 보이는 flash를 막는다.
-                            2. FactLayer SSR — bars가 있으면 TechnicalFactsSummary를 fallback으로
-                               렌더해 크롤러(JS 미실행)가 기술적 지표 요약 텍스트를 SSR HTML로
-                               받는다. 사용자는 hydration 후 인터랙티브 SymbolPageClient로 교체된다. */}
-                        <Suspense
-                            fallback={
-                                <>
-                                    {/* SSR 크롤용 h1: 가시 h1은 SymbolPageClient(useSearchParams
-                                        CSR-bailout)에 있어 SSR HTML에 박히지 않는다. hydration 후
-                                        그 가시 h1으로 교체되는 이 fallback에 동일 텍스트의 sr-only
-                                        h1을 둬, JS 미실행 크롤러(Naver Yeti 등)가 메인 페이지 h1을
-                                        받게 한다(나머지 5라우트의 SymbolPageHeading h1과 정합). fallback이
-                                        hydration 시 교체되므로 가시 클라 h1과 동시 존재하지 않아 h1 중복은
-                                        없고, 텍스트가 동일해 cloaking도 아니다. */}
-                                    <h1 className="sr-only">
-                                        {tViews('chartPageHeading.heading', {
-                                            v0: displayName,
-                                        })}
-                                    </h1>
-                                    {/* md+에서는 바깥 wrapper가 높이를 놓았으므로(md:h-auto)
-                                        이 래퍼가 두 분기(사실 요약 / 자리표시자) 공통으로
-                                        차트 높이를 예약한다 — 분기 하나만 예약하면 다른
-                                        분기가 0으로 접혀 CLS가 난다(둘 다 같은 래퍼를
-                                        쓰게 해 재발을 구조적으로 막는다). */}
-                                    <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:h-(--symbol-chart-h) md:flex-none">
-                                        {quantizedFactBars &&
-                                        quantizedFactBars.bars.length > 0 ? (
-                                            <TechnicalFactsSummary
-                                                symbol={ticker}
-                                                subject={symbolFactsSubject(
-                                                    ticker,
-                                                    assetInfo.koreanName,
-                                                    locale
-                                                )}
-                                                bars={quantizedFactBars.bars}
-                                                indicators={
-                                                    quantizedFactBars.indicators
-                                                }
-                                                marketProfile={marketProfile}
-                                            />
-                                        ) : (
-                                            <div
-                                                className="h-full bg-secondary-900"
-                                                aria-hidden="true"
-                                            />
-                                        )}
-                                    </div>
-                                </>
+                        {/* `SymbolPageClient`를 Suspense로 감싸지 않는다. URL `tf`를
+                            `useSearchParams`가 아니라 `useUrlSearchParam`으로 읽어 CSR bailout이
+                            없으므로, 차트·AI 패널(사실 요약 포함)·가시 h1이 SSR HTML에 바로 박힌다.
+                            예전의 경계(fallback = sr-only h1 + 사실 요약)는 그 bailout 때문에 있던
+                            것인데, 남겨 두면 RSC 스트림 타이밍에 따라 경계가 `$?`(대기)로 플러시돼
+                            raw HTML에 fallback h1 + 숨김 청크의 진짜 h1이 **둘 다** 남았다(e2e
+                            `symbol-seo` "exactly one h1" 실측). 경계가 없으면 문서 셸이 이 내용을
+                            기다려 인라인으로 싣는다 — ISR이라 그 대기는 생성 때 한 번뿐이다.
+                            차트 내부의 클라이언트 전환용 경계(`SymbolPageClient`의 ChartSkeleton)는
+                            그대로다. */}
+                        <SymbolPageClient
+                            symbol={symbol}
+                            companyName={assetInfo.name}
+                            displayName={displayName}
+                            initialAnalysis={initialAnalysis}
+                            initialLockedInfoDepth={
+                                cachedAnalysis?.lockedInfoDepth ?? []
                             }
-                        >
-                            <SymbolPageClient
-                                symbol={symbol}
-                                companyName={assetInfo.name}
-                                displayName={displayName}
-                                initialAnalysis={initialAnalysis}
-                                initialLockedInfoDepth={
-                                    cachedAnalysis?.lockedInfoDepth ?? []
-                                }
-                                // 순수 additive: 캐시 seed 여부와 무관하게 클라이언트는
-                                // 마운트 시 useAnalysis가 자동으로 재분석을 트리거하도록
-                                // 항상 true를 유지한다(봇은 enqueue가 skip되어 생성 안 됨).
-                                initialAnalysisFailed={true}
-                                indicatorCount={skillCounts.indicators}
-                                skillCount={chartSkillTotal(skillCounts)}
-                                marketProfile={marketProfile}
-                                // 이 HTML을 만든 시점에 정규장이 열려 있었는가(= 형성 중 봉이 있을 수
-                                // 있었는가). 클라이언트의 seed 복원 재조회만 게이트한다: 장중에 만든
-                                // ISR HTML을 장 마감 뒤에 열면 분석 작도가 그날 봉을 참조하는데 seed에는
-                                // 없을 수 있어, 입력을 기다리지 않고 라이브 봉을 받아야 한다
-                                // (`shouldRefetchBarsSeed`, PR #957). 실제로 봉을 뗐는지가 아니라 세션
-                                // 기준이다 — 좁히면 그 회귀 경로가 다시 열린다(오늘 봉이 없으면 quantize는
-                                // 아무것도 안 떼지만, 그 시각 뒤 생긴 오늘 봉을 분석이 참조할 수 있다).
-                                seedHasFormingBarTrimmed={hasFormingBar(
-                                    sessionSpecFor(marketProfile),
-                                    new Date()
-                                )}
-                            />
-                        </Suspense>
+                            // 순수 additive: 캐시 seed 여부와 무관하게 클라이언트는
+                            // 마운트 시 useAnalysis가 자동으로 재분석을 트리거하도록
+                            // 항상 true를 유지한다(봇은 enqueue가 skip되어 생성 안 됨).
+                            initialAnalysisFailed={true}
+                            indicatorCount={skillCounts.indicators}
+                            skillCount={chartSkillTotal(skillCounts)}
+                            marketProfile={marketProfile}
+                            hasBarsSeed={hasBarsSeed}
+                            // 이 HTML을 만든 시점에 정규장이 열려 있었는가(= 형성 중 봉이 있을 수
+                            // 있었는가). 클라이언트의 seed 복원 재조회만 게이트한다: 장중에 만든
+                            // ISR HTML을 장 마감 뒤에 열면 분석 작도가 그날 봉을 참조하는데 seed에는
+                            // 없을 수 있어, 입력을 기다리지 않고 라이브 봉을 받아야 한다
+                            // (`shouldRefetchBarsSeed`, PR #957). 실제로 봉을 뗐는지가 아니라 세션
+                            // 기준이다 — 좁히면 그 회귀 경로가 다시 열린다(오늘 봉이 없으면 quantize는
+                            // 아무것도 안 떼지만, 그 시각 뒤 생긴 오늘 봉을 분석이 참조할 수 있다).
+                            seedHasFormingBarTrimmed={hasFormingBar(
+                                sessionSpecFor(marketProfile),
+                                new Date()
+                            )}
+                        />
                     </HydrationBoundary>
                 </div>
+                {/* 크롤용 기술적 사실 요약 — PERSISTENT server sibling. 같은 요약을 AI 패널
+                    (`ChartContent`)도 그리지만, 그건 차트의 Suspense 경계 안이라 경계가 React의
+                    progressive chunk(약 12.8KB)를 넘으면 raw HTML의 `<div hidden id="S:n">`
+                    숨김 청크로 아웃라인된다 — JS를 실행하지 않는 크롤러(Naver Yeti·Daumoa)는
+                    그 안을 보지 않는다. 그래서 경계 **밖**에 인라인으로 한 벌 더 둔다.
+                    게이트는 메타데이터 `hasPriceData`와 같은 술어(`buildTechnicalFacts`)이고,
+                    주어도 패널과 같은 `symbolFactsSubject`다. 사람에게는 패널 사본이 DOM에
+                    있는 순간 `globals.css`의 `body:has([data-technical-facts='panel'])` 규칙이
+                    이 사본(여백 래퍼째)을 감춰 화면이 예전과 같다(첫 뷰포트 아래라 CLS에 들지 않는다).
+                    차트가 실패해 패널이 없으면 이 사본이 그대로 남는다. */}
+                {quantizedFactBars !== null &&
+                    buildTechnicalFacts(
+                        quantizedFactBars.bars,
+                        quantizedFactBars.indicators
+                    ) !== null && (
+                        <div
+                            data-technical-facts-page-slot=""
+                            className="mt-6 px-4"
+                        >
+                            <TechnicalFactsSummary
+                                symbol={ticker}
+                                subject={symbolFactsSubject(
+                                    ticker,
+                                    assetInfo.koreanName,
+                                    locale
+                                )}
+                                bars={quantizedFactBars.bars}
+                                indicators={quantizedFactBars.indicators}
+                                marketProfile={marketProfile}
+                                placement="page"
+                            />
+                        </div>
+                    )}
                 {/* 모바일 바텀시트 SSR 껍데기 — 바로 아래 TechnicalSnapshotProse와 같은
                     이유로 PERSISTENT server sibling이다. Suspense fallback에 두면 boundary가
                     resolve되는 순간(하이드레이션 ≈4.1초) React가 이 서브트리를 파괴하는데,
@@ -476,8 +470,8 @@ export default async function SymbolPage({ params }: Props) {
                     렌더러 포함)에게는 사라진다). 나머지 5개 sibling 탭(fundamental/
                     financials/congress/options/news)과 동일하게 plain SSR sibling
                     패턴을 따른다. peekAnalysisStatic 결과(cachedAnalysis)는 SSR
-                    프로즈로 렌더되지 않고 initialAnalysis로 CSR-bailout
-                    클라이언트에만 seed되므로(위 SymbolPageClient) 여기엔 중복
+                    프로즈로 렌더되지 않고 initialAnalysis로 클라이언트
+                    위젯에만 seed되므로(위 SymbolPageClient) 여기엔 중복
                     위험이 없다. 스냅샷이 없으면 TechnicalSnapshotProse가 null을
                     반환한다 — 아래 여백 래퍼는 남지만 `empty:hidden`으로 접혀
                     빈 카드나 여백이 보이지 않는다.

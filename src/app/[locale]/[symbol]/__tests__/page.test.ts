@@ -198,6 +198,7 @@ interface ClientSeedProps {
     initialAnalysisFailed: unknown;
     initialLockedInfoDepth: unknown;
     seedHasFormingBarTrimmed: unknown;
+    hasBarsSeed: unknown;
 }
 
 describe('Symbol page', () => {
@@ -605,6 +606,30 @@ describe('Symbol page', () => {
             );
         });
 
+        /**
+         * 차트는 이제 서버에서 렌더된다 — seed 없이 SSR하면 서버 렌더가 봉 Server Action을
+         * 부른다. 그래서 seed를 실제로 넣었는지를 클라이언트에 알린다(`hasBarsSeed`).
+         */
+        describe('hasBarsSeed', () => {
+            beforeEach(() => {
+                mockPeekAnalysisCache.mockResolvedValue(null);
+            });
+
+            it('봉 seed를 넣었으면 true', async () => {
+                mockGetBarsAction.mockResolvedValue(DEFAULT_BARS as never);
+                expect((await getClientProps()).hasBarsSeed).toBe(true);
+            });
+
+            it('봉 조회가 실패해 seed를 못 넣었으면 false', async () => {
+                mockGetBarsAction.mockRejectedValue(new Error('FMP down'));
+                try {
+                    expect((await getClientProps()).hasBarsSeed).toBe(false);
+                } finally {
+                    mockGetBarsAction.mockResolvedValue(DEFAULT_BARS as never);
+                }
+            });
+        });
+
         it('peek HIT 시 캐시된 분석을 initialAnalysis로 전달한다', async () => {
             const cached = { result: { summary: 'cached analysis' } };
             mockPeekAnalysisCache.mockResolvedValue(cached as never);
@@ -915,72 +940,20 @@ describe('Symbol page', () => {
             ).toEqual([]);
         });
 
-        // FIX (PR #837 review): the two Suspense-fallback branches (fact
-        // summary vs. empty placeholder) must both reserve the same desktop
-        // chart height, or whichever branch is taken pre-hydration causes a
-        // layout jump once SymbolPageClient (definite --symbol-chart-h)
-        // replaces it. A shared wrapper carries the height classes so a
-        // future edit cannot apply them to only one branch again (MISTAKES
-        // §6.7) — these two tests exercise both branches and both must find
-        // the same wrapper.
-        function findChartHeightWrapper(node: ReactNode): unknown {
-            if (Array.isArray(node)) {
-                for (const child of node) {
-                    const found = findChartHeightWrapper(child);
-                    if (found !== null) return found;
-                }
-                return null;
-            }
-            if (!isValidElement(node)) return null;
-            const props = node.props as {
-                className?: unknown;
-                children?: ReactNode;
-                fallback?: ReactNode;
-            };
-            if (
-                typeof props.className === 'string' &&
-                props.className.includes('md:h-(--symbol-chart-h)') &&
-                props.className.includes('md:flex-none')
-            ) {
-                return node;
-            }
-            return (
-                findChartHeightWrapper(props.children) ??
-                findChartHeightWrapper(props.fallback)
+        // The page no longer has a Suspense fallback branch to reserve height for —
+        // `SymbolPageClient` server-renders and its chart row carries
+        // `md:min-h-(--symbol-chart-h)` itself. The page's outer wrapper still fixes the
+        // first-viewport height on mobile.
+        it('keeps the chart wrapper that fixes the mobile first-viewport height', async () => {
+            mockPeekAnalysisCache.mockResolvedValue(null);
+
+            const tree = await SymbolPage({
+                params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+            });
+
+            expect(JSON.stringify(tree)).toContain(
+                'flex h-(--symbol-chart-h) shrink-0 flex-col md:h-auto'
             );
-        }
-
-        it('reserves --symbol-chart-h on desktop for the empty-bars placeholder branch', async () => {
-            mockPeekAnalysisCache.mockResolvedValue(null);
-            mockGetBarsAction.mockResolvedValueOnce({
-                bars: [],
-                indicators: { ma: {}, ema: {} },
-            } as never);
-
-            const tree = await SymbolPage({
-                params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
-            });
-
-            expect(findChartHeightWrapper(tree)).not.toBeNull();
-        });
-
-        it('reserves --symbol-chart-h on desktop for the TechnicalFactsSummary branch too (regression: this branch used to lose it)', async () => {
-            mockPeekAnalysisCache.mockResolvedValue(null);
-            // 2봉 — buildTechnicalFacts가 등락률을 내려면 직전 봉이 필요하다
-            // (hasPriceData 게이트 테스트와 동일 shape).
-            mockGetBarsAction.mockResolvedValueOnce({
-                bars: [
-                    { time: 1, open: 1, high: 1, low: 1, close: 1, volume: 1 },
-                    { time: 2, open: 1, high: 2, low: 1, close: 2, volume: 1 },
-                ],
-                indicators: { ma: {}, ema: {}, rsi: [], macd: [] },
-            } as never);
-
-            const tree = await SymbolPage({
-                params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
-            });
-
-            expect(findChartHeightWrapper(tree)).not.toBeNull();
         });
 
         it('does not render hidden keyword stuffing copy', async () => {

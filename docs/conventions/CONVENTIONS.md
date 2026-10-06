@@ -969,27 +969,40 @@ UI state that should survive page refresh or be shareable via link must be refle
 The selected timeframe is synchronized to the `tf` query parameter.
 
 **Reading (client):** to keep `[symbol]` routes ISR-cacheable, `tf` is read on the **client**, never on the
-server (a server `searchParams` read forces dynamic rendering and disables ISR). The chart page uses
-`useTimeframeChange` (`useSearchParams().get('tf')`); `OverallContent` reads it inline the same way. Server
-components seed `DEFAULT_TIMEFRAME` and let the client reconcile to the URL value on mount. The canonical URL
-excludes `tf`, so the client-only read does not affect SEO/indexing.
+server (a server `searchParams` read forces dynamic rendering and disables ISR). Read it with
+`useUrlSearchParam` (`shared/hooks/useUrlSearchParam.ts`), **not** `useSearchParams` — Next's
+`useSearchParams` CSR-bails-out the subtree up to the nearest Suspense boundary, so the widget ships as a
+skeleton in the server HTML. `useUrlSearchParam` is a `useSyncExternalStore` reader whose server snapshot is
+`null`: the server and hydration renders use the default (`DEFAULT_TIMEFRAME`), and the URL value applies
+right after hydration. The chart page uses `useTimeframeChange`, `OverallContent` uses `useTimeframeFromUrl`,
+the `/market` sector panel uses `useSectorSignalState`. The canonical URL excludes `tf`, so the client-only read
+does not affect SEO/indexing.
 
-**Writing (client):** `useTimeframeChange` calls `router.replace(...?tf=<value>, { scroll: false })`
-inside `startTransition` whenever the user changes the timeframe.
+**User picks vs. URL:** a pick lives in local state (`usePickUntilPopstate`) and wins over the URL, because
+the URL write (`history.replaceState`) does not notify subscribers. The pick is dropped on the next
+`popstate`, so Back/Forward follows the URL again. On the chart, URL-driven changes (deep link, tier hydration,
+popstate) go through `useDeferredValue` so the previous chart stays up instead of flashing the Suspense
+skeleton; user picks go through `startTransition`.
+
+**Writing (client):** `useTimeframeChange` calls `window.history.replaceState(...?tf=<value>)` inside
+`startTransition` whenever the user changes the timeframe (no RSC round trip — the server ignores `tf`).
 
 **Validation:** `isValidTimeframe()` is exported by `@y0ngha/siglens-core` and uses the `TIMEFRAMES` constant
 as the source of truth for valid values. Never validate against hardcoded string literals at the call site.
 
 ```typescript
-// ✅ Client reads timeframe from URL (keeps the route static/ISR)
-const tfParam = useSearchParams().get('tf');
+// ✅ Client reads timeframe from URL (keeps the route static/ISR, no CSR bailout)
+const tfParam = useUrlSearchParam('tf');
 const timeframe = isValidTimeframe(tfParam) ? tfParam : DEFAULT_TIMEFRAME;
+
+// ❌ useSearchParams — CSR-bails-out the subtree; the server HTML gets only the Suspense fallback
+// const tfParam = useSearchParams().get('tf');
 
 // ❌ Server reading searchParams.tf — forces dynamic rendering, breaks ISR
 // const { tf } = await searchParams;
 
 // ✅ Client updates URL on change (inside startTransition)
-router.replace(`/${symbol}?tf=${nextTimeframe}`, { scroll: false });
+window.history.replaceState(null, '', toLocalePath(`/${symbol}?tf=${nextTimeframe}`));
 
 // ❌ Hardcoded default ignoring URL param
 const [timeframe, setTimeframe] = useState<Timeframe>(DEFAULT_TIMEFRAME);

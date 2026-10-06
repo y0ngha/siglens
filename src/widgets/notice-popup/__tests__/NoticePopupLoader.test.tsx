@@ -13,7 +13,7 @@ vi.mock('@/widgets/notice-popup/ui/NoticePopup', () => {
 
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { NoticePopupLoader } from '@/widgets/notice-popup/ui/NoticePopupLoader';
-import { NOTICE_REVEAL_DELAY_MS } from '@/widgets/notice-popup/hooks/useDeferredReveal';
+import { NOTICE_IDLE_FALLBACK_MS } from '@/widgets/notice-popup/hooks/useDeferredReveal';
 
 describe('NoticePopupLoader', () => {
     it('마운트 직후에는 팝업도 그 청크도 가져오지 않는다', () => {
@@ -32,12 +32,12 @@ describe('NoticePopupLoader', () => {
         );
     });
 
-    it('상호작용이 없어도 지연 시간이 지나면 마운트한다', async () => {
+    it('상호작용이 없어도 유휴 폴백 시간이 지나면 마운트한다', async () => {
         vi.useFakeTimers();
         try {
             render(<NoticePopupLoader />);
             act(() => {
-                vi.advanceTimersByTime(NOTICE_REVEAL_DELAY_MS);
+                vi.advanceTimersByTime(NOTICE_IDLE_FALLBACK_MS);
             });
         } finally {
             vi.useRealTimers();

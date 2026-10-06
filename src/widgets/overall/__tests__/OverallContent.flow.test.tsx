@@ -61,12 +61,7 @@ vi.mock(
         useWaitForNewsCards: vi.fn(() => ({ isReady: true, pollError: null })),
     })
 );
-// useSearchParams를 테스트별로 바꿀 수 있도록 mutable ref로 모킹한다(고정 빈 값 X).
-const { searchParamsRef } = vi.hoisted(() => ({
-    searchParamsRef: { value: new URLSearchParams() },
-}));
 vi.mock('next/navigation', () => ({
-    useSearchParams: () => searchParamsRef.value,
     useRouter: () => ({ replace: vi.fn() }),
 }));
 // react-markdown은 ESM-only라 테스트 환경에서 직접 로드하면 실패한다. 본 테스트는
@@ -80,6 +75,18 @@ vi.mock('@/shared/ui/MarkdownText', () => ({
 import { OverallContent } from '@/widgets/overall/OverallContent';
 import { runAnalysisStream } from '@/shared/lib/sse/runAnalysisStream';
 import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
+
+/**
+ * `OverallContent`는 `tf`를 `useUrlSearchParam`(window.location)으로 읽는다 —
+ * 테스트별 쿼리는 실제 주소로 세팅한다.
+ */
+function setSearch(search: string): void {
+    window.history.replaceState(
+        null,
+        '',
+        search === '' ? '/AAPL/overall' : `/AAPL/overall?${search}`
+    );
+}
 
 const mockSubmit = runAnalysisStream as MockedFunction<
     typeof runAnalysisStream
@@ -117,18 +124,18 @@ function renderOverall() {
 describe('OverallContent 사용자 분석 플로우 (userEvent)', () => {
     beforeEach(() => {
         mockSubmit.mockReset();
-        searchParamsRef.value = new URLSearchParams();
+        setSearch('');
     });
 
     afterEach(() => {
-        searchParamsRef.value = new URLSearchParams();
+        setSearch('');
     });
 
     // tf 분기의 단위 검증(참/거짓 양쪽)은 OverallContent.test.tsx에 있고, 여기서는
     // 실제 useOverallAnalysis를 통해 유효 tf가 submit까지 전파되는지(참 분기)를 확인한다.
     it('유효한 tf 쿼리가 있으면 그 timeframe으로 submit한다 (§18 참 분기)', async () => {
         const user = userEvent.setup();
-        searchParamsRef.value = new URLSearchParams('tf=1Hour');
+        setSearch('tf=1Hour');
         mockSubmit.mockResolvedValue({
             status: 'done',
             result: DONE_RESULT,

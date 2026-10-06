@@ -56,6 +56,32 @@ import { formatAnalyzedAt } from '@/shared/lib/formatAnalyzedAt';
 import { isAnalysisStale } from '@/entities/analysis/lib/staleThreshold';
 import { StaleAnalysisBanner } from './StaleAnalysisBanner';
 import { PlanCheckBlock } from './PlanCheckBlock';
+import { useResolvedLocale } from '@/shared/i18n/useResolvedLocale';
+import { INTL_LOCALE, type Locale } from '@/shared/i18n/locales';
+import { formatFixed } from '@/shared/lib/formatNum';
+import { cachedNumberFormat } from '@/shared/lib/intlFormatCache';
+
+/** 패널이 가격을 내는 소수 자릿수. */
+const PRICE_FRACTION_DIGITS = 2;
+
+/** 가격 소수 둘째 자리 고정(`12.30`). 로케일을 고정하는 이유는 `formatPriceUpTo2` JSDoc. */
+function formatPrice2(price: number, locale: Locale): string {
+    return formatFixed(price, PRICE_FRACTION_DIGITS, locale);
+}
+
+/**
+ * 가격 소수 최대 둘째 자리(`12.3`).
+ *
+ * 로케일을 **페이지 로케일로 고정**한다 — 예전엔 실행 환경의 기본 로케일(`undefined`)을
+ * 탔다. 이 패널은 이제 서버에서도 렌더되므로(차트 탭 SSR), 서버(Node ICU 기본 로케일)와
+ * 브라우저(사용자 OS 로케일)의 구분자가 다르면 같은 가격이 `1,234.5` / `1.234,5`로 갈려
+ * 하이드레이션 불일치(React #418)가 난다.
+ */
+function formatPriceUpTo2(price: number, locale: Locale): string {
+    return cachedNumberFormat(INTL_LOCALE[locale], {
+        maximumFractionDigits: PRICE_FRACTION_DIGITS,
+    }).format(price);
+}
 
 function formatCooldown(ms: number): string {
     const totalSec = Math.ceil(ms / MS_PER_SECOND);
@@ -557,6 +583,7 @@ interface ConfluenceInfoProps {
 }
 
 function ConfluenceInfo({ level }: ConfluenceInfoProps) {
+    const locale = useResolvedLocale();
     if (level.count < 2) return null;
 
     return (
@@ -568,10 +595,7 @@ function ConfluenceInfo({ level }: ConfluenceInfoProps) {
                         className="flex items-baseline gap-2 whitespace-nowrap"
                     >
                         <span className="shrink-0 text-secondary-300">
-                            {source.price.toLocaleString(undefined, {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                            })}
+                            {formatPrice2(source.price, locale)}
                         </span>
                         <span className="text-secondary-400">
                             {source.reason}
@@ -614,6 +638,7 @@ function PatternAccordionItem({
 }: PatternAccordionItemProps) {
     const t = useTranslations('widgets.analysis');
     const skillLabel = useSkillLabel();
+    const locale = useResolvedLocale();
     const [isOpen, setIsOpen] = useState(false);
 
     const handleToggleOpen = (): void => {
@@ -680,13 +705,7 @@ function PatternAccordionItem({
                                                 : kp.label}
                                         </span>
                                         <span className="text-xs font-medium text-secondary-200 tabular-nums">
-                                            {kp.price.toLocaleString(
-                                                undefined,
-                                                {
-                                                    minimumFractionDigits: 2,
-                                                    maximumFractionDigits: 2,
-                                                }
-                                            )}
+                                            {formatPrice2(kp.price, locale)}
                                         </span>
                                     </div>
                                 ))}
@@ -811,6 +830,7 @@ interface TrendlineItemProps {
 
 function TrendlineItem({ trendline }: TrendlineItemProps) {
     const tTrendline = useTranslations('shared.lib.trendline');
+    const locale = useResolvedLocale();
     const label = tTrendline(
         TRENDLINE_DIRECTION_LABEL_KEY[trendline.direction] ?? 'fallback'
     );
@@ -826,13 +846,9 @@ function TrendlineItem({ trendline }: TrendlineItemProps) {
                 {label}
             </span>
             <span className="ml-auto text-xs text-secondary-500 tabular-nums">
-                {trendline.start.price.toLocaleString(undefined, {
-                    maximumFractionDigits: 2,
-                })}
+                {formatPriceUpTo2(trendline.start.price, locale)}
                 {' → '}
-                {trendline.end.price.toLocaleString(undefined, {
-                    maximumFractionDigits: 2,
-                })}
+                {formatPriceUpTo2(trendline.end.price, locale)}
             </span>
         </div>
     );
@@ -849,6 +865,7 @@ function PriceScenarioSection({
     scenario,
     colorClass,
 }: PriceScenarioSectionProps) {
+    const locale = useResolvedLocale();
     if (!scenario || scenario.targets.length === 0) return null;
     return (
         <div className="flex flex-col gap-1.5">
@@ -869,10 +886,7 @@ function PriceScenarioSection({
                             colorClass
                         )}
                     >
-                        {target.price.toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                        })}
+                        {formatPrice2(target.price, locale)}
                     </span>
                     <MarkdownText className="text-xs text-secondary-500">
                         {target.basis}
@@ -1040,6 +1054,7 @@ export function AnalysisPanel({
     const tLabel = useTranslations('shared.enumLabel');
     const tReport = useTranslations('widgets.analysis.expertReport');
     const skillLabel = useSkillLabel();
+    const locale = useResolvedLocale();
     const overlayControls = toOverlayCardControls(
         hiddenOverlayKeys,
         onToggleOverlay,
@@ -1378,12 +1393,9 @@ export function AnalysisPanel({
                                                         className="flex flex-col"
                                                     >
                                                         <span className="text-sm font-medium text-ui-danger-text">
-                                                            {level.price.toLocaleString(
-                                                                undefined,
-                                                                {
-                                                                    minimumFractionDigits: 2,
-                                                                    maximumFractionDigits: 2,
-                                                                }
+                                                            {formatPrice2(
+                                                                level.price,
+                                                                locale
                                                             )}
                                                         </span>
                                                         <span className="inline-flex items-center text-xs text-secondary-500">
@@ -1407,12 +1419,9 @@ export function AnalysisPanel({
                                                         className="flex flex-col"
                                                     >
                                                         <span className="text-sm font-medium text-ui-success-text">
-                                                            {level.price.toLocaleString(
-                                                                undefined,
-                                                                {
-                                                                    minimumFractionDigits: 2,
-                                                                    maximumFractionDigits: 2,
-                                                                }
+                                                            {formatPrice2(
+                                                                level.price,
+                                                                locale
                                                             )}
                                                         </span>
                                                         <span className="inline-flex items-center text-xs text-secondary-500">
@@ -1432,12 +1441,9 @@ export function AnalysisPanel({
                                                 PoC
                                             </span>
                                             <span className="text-sm font-medium">
-                                                {keyLevels.poc.price.toLocaleString(
-                                                    undefined,
-                                                    {
-                                                        minimumFractionDigits: 2,
-                                                        maximumFractionDigits: 2,
-                                                    }
+                                                {formatPrice2(
+                                                    keyLevels.poc.price,
+                                                    locale
                                                 )}
                                             </span>
                                             <span className="text-xs text-secondary-500">

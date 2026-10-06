@@ -77,14 +77,16 @@ function buildDehydratedSeed(
 }
 
 /**
- * ISR-safe market content. No searchParams — timeframe/sector are purely
- * client-side via useSearchParams in SectorSignalPanel (CSR).
+ * ISR-safe market content. No server searchParams — timeframe/sector are read on
+ * the client via `useUrlSearchParam` in SectorSignalPanel. That hook's server
+ * snapshot is `null`, so the panel server-renders the default sector/timeframe from
+ * the seed below (no CSR bailout) and applies a deep link right after hydration.
  *
  * Static data flow:
  *   1. getMarketSummaryStatic / getSectorSignalsStatic — unstable_cache (1h)
  *   2. peekBriefingStatic — read cached briefing for SSR seed (no side effects)
  *   3. QueryClient.setQueryData — seeds React Query for instant hydration
- *   4. SectorFactsSummary — 영구 서버 sibling(패널 아래), SSR crawl text (axis 2: useSearchParams bailout workaround)
+ *   4. SectorFactsSummary — 영구 서버 sibling(패널 아래), 전 섹터 요약 crawl text
  */
 interface MarketScopeProps {
     readonly scope: DashboardScope;
@@ -145,9 +147,11 @@ export async function MarketContent({
                     />
                 </Suspense>
             </HydrationBoundary>
-            {/* `useSearchParams` 경계 — fallback은 **스켈레톤만** 둔다. 크롤 텍스트(섹터 신호
-                요약)는 fallback이 아니라 아래 영구 sibling이 맡는다(fallback은 경계가 resolve
-                되면 클라에서 파괴되고 raw HTML에서는 숨김 청크 뒤로 밀린다). */}
+            {/* 패널은 이제 서버에서 렌더된다(`useUrlSearchParam` — CSR bailout 없음). 이 경계는
+                **안전망**으로만 남긴다: 서버 렌더가 예외적으로 suspend하면 같은 높이의
+                스켈레톤이 자리를 지킨다. fallback엔 스켈레톤만 둔다 — 크롤 텍스트는 fallback이
+                아니라 아래 영구 sibling이 맡는다(fallback은 경계가 resolve되면 클라에서 파괴되고
+                raw HTML에서는 숨김 청크 뒤로 밀린다). */}
             <Suspense
                 fallback={<SectorSignalPanelSkeleton scope={clientScope} />}
             >
@@ -158,11 +162,10 @@ export async function MarketContent({
                     initialData={sectorDataSeed}
                 />
             </Suspense>
-            {/* Axis 2: SSR crawl text. SectorSignalPanel uses useSearchParams → CSR bailout →
-                empty SSR HTML. SectorFactsSummary renders the same data as static
-                server-rendered text (with `이름 (TICKER)` anchors) so crawlers see actual
-                signal content and `/{symbol}` links without JS. Not cloaking — users see the
-                same data in the panel above. */}
+            {/* SSR crawl text for **every** sector. The panel above is server-rendered too,
+                but it shows only the active sector; SectorFactsSummary lists all sectors as
+                static text (with `이름 (TICKER)` anchors) so crawlers see the whole snapshot and
+                its `/{symbol}` links without JS. Not cloaking — users see the same data. */}
             <SectorFactsSummary data={sectorDataSeed} />
             <SignalTypeGuide />
         </>

@@ -132,7 +132,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
 }
 
-// `?tf=` is read by the client component (useSearchParams); canonical URL excludes it so search engines see one URL per page.
+// `?tf=` is read by the client component (useUrlSearchParam — no CSR bailout); canonical URL excludes it so search engines see one URL per page.
 export default async function OverallPage({ params }: Props) {
     const { locale: rawLocale, symbol } = await params;
     const locale = enterLocale(rawLocale);
@@ -313,13 +313,13 @@ export default async function OverallPage({ params }: Props) {
                         plain={overallSnapshot?.plain}
                     />
                 )}
-                {/* fallback은 두 역할을 겸한다: (1) useSearchParams CSR-bailout 서브트리가
-                    hydration 전 비어 보이는 flash/CLS 방지, (2) 분석 텍스트를 크롤러가
-                    JS 없이도 읽을 수 있도록 SSR HTML에 박는다. snapshot-first, 기존 peek
-                    fallback 유지(spec §7) — 스냅샷이 렌더 가능하면 위에서 이미 프로즈를
-                    보여줬으므로 이 fallback은 peek(cachedOverall) 결과로, 그것도 없으면
-                    기존 placeholder로 내려간다. `showSnapshotProse` 게이트로 스냅샷
-                    프로즈와 peek을 동시에 렌더하지 않아 중복이 없다. */}
+                {/* `OverallContent`는 이제 서버에서 렌더된다 — `tf`를 `useUrlSearchParam`으로
+                    읽어 CSR bailout이 없다(`useTimeframeFromUrl`). 그래서 이 fallback은
+                    서버 렌더가 예외적으로 suspend할 때만 HTML에 남는 **안전망**이다.
+                    내용은 그대로 둔다: snapshot-first, peek(cachedOverall) 결과, 그것도 없으면
+                    placeholder(spec §7). `showSnapshotProse` 게이트로 스냅샷 프로즈와 peek을
+                    동시에 렌더하지 않아 중복이 없다. 이 탭은 항상 noindex라 크롤 텍스트가
+                    fallback에서 위젯 본문으로 옮겨 가도 색인에는 영향이 없다. */}
                 <Suspense
                     fallback={
                         showSnapshotProse ? null : cachedOverall ? (

@@ -9,6 +9,7 @@ import { type HeaderUserMenuUser } from '@/widgets/layout/HeaderUserMenu';
 import { useCurrentUser } from '@/entities/auth/hooks/useCurrentUser';
 import { useAuthHint } from '@/entities/auth/hooks/useAuthHint';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import { setAuthHintAttribute } from '@/shared/lib/auth/authHintAttribute';
 
 /**
  * Root layout 헤더를 클라이언트에서 렌더한다.
@@ -59,6 +60,10 @@ export function AuthSessionHeaderClient({
         authReturn === 'ai'
             ? `/api/auth/handoff?to=ai&next=${encodeURIComponent(pathname)}`
             : undefined;
+    // 세션이 확정됐는가. 전송 실패(`isError` + 데이터 없음)는 "로그아웃"이 아니다 — 아래
+    // 렌더와 같은 기준으로 힌트 기반 셸을 유지한다.
+    const isSessionResolved = !isPending && !(isError && user === undefined);
+    const isMember = user !== null && user !== undefined;
 
     // 정적 ISR 셸 헤더 자가치유: login/signup/oauth/delete는 서버 redirect()로 끝나
     // (soft navigation) 클라 currentUser 쿼리가 갱신되지 않으면 헤더가 직전 상태로 남는다.
@@ -76,11 +81,20 @@ export function AuthSessionHeaderClient({
         });
     }, [pathname, queryClient]);
 
+    // 세션이 확정되면 `<html data-auth-hint>`를 실제 상태로 다시 찍는다. 첫 페인트 전
+    // 스크립트(`AUTH_HINT_INIT_SCRIPT`)는 힌트 쿠키만 보므로, 세션이 죽었는데 쿠키가 남았거나
+    // (회원 → 게스트) 이 페이지에서 로그인·로그아웃한 경우 헤더 폭 예약이 실제 렌더와
+    // 어긋난다. DOM 속성 쓰기라 effect다.
+    useEffect(() => {
+        if (!isSessionResolved) return;
+        setAuthHintAttribute(isMember ? 'member' : 'guest');
+    }, [isSessionResolved, isMember]);
+
     // A failed lookup is not "logged out": `currentUserAction` already turns a missing
     // or dead session into `null`, so an error here is transport-level (network, or a
     // tab on an older build during a deploy). Drawing guest CTAs would tell a signed-in
     // member they were logged out; keep the hint-based shell until a real answer lands.
-    if (isPending || (isError && user === undefined)) {
+    if (!isSessionResolved) {
         // server action 확정 전: hint로 skeleton(로그인 추정) 또는 게스트 셸.
         return (
             <Header

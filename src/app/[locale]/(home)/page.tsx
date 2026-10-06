@@ -41,15 +41,12 @@ import { buildHomeFaq } from '../homeJsonLd';
 import { CryptoShowcase } from '@/widgets/home/CryptoShowcase';
 import { HeroIllustration } from '@/widgets/home/HeroIllustration';
 import { HERO_QUICK_LINKS } from '@/widgets/home/heroQuickLinks';
-import {
-    SkillsShowcase,
-    SkillsShowcaseSkeleton,
-} from '@/widgets/home/SkillsShowcase';
+import { SkillsShowcase } from '@/widgets/home/SkillsShowcase';
 import { StatsBar } from '@/widgets/home/StatsBar';
 import { TickerCategories } from '@/widgets/home/TickerCategories';
 import { LocaleLink as Link } from '@/shared/ui/LocaleLink';
 import type { Metadata } from 'next';
-import { cache, Suspense } from 'react';
+import { cache } from 'react';
 import { toSkillShowcaseItems } from '@/widgets/home/toSkillShowcaseItems';
 import { enterLocale } from '@/shared/lib/enterLocale';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
@@ -139,12 +136,6 @@ const loadShowcase = cache(async () => {
     }
 });
 
-async function SkillsShowcaseServer() {
-    const skills = await loadShowcase();
-    // 프로젝션이 **필수**다 — 왜인지는 `toSkillShowcaseItems`의 JSDoc에 있다.
-    return <SkillsShowcase skills={toSkillShowcaseItems(skills)} />;
-}
-
 // `?q=` 딥링크(티커를 아는 사용자가 `/?q=AAPL`로 바로 들어오는 경로) 처리는 proxy.ts가
 // 담당한다. page.tsx에서 searchParams를 소비하면 라우트가 dynamic으로 바뀌어 ISR 캐싱이
 // 불가능하기 때문이다.
@@ -169,18 +160,27 @@ export default async function Home({
     ]);
     // countSkillFiles 오류(fs 접근 실패 등)는 graceful 처리 — 0 폴백으로 페이지를 계속 렌더한다.
     // throw가 전파되면 ISR 빈 캐시(0-byte body)가 동결된다.
-    const skillCounts = await countSkillFiles().catch(e => {
-        console.error('[Home] countSkillFiles failed:', e);
-        return {
-            indicators: 0,
-            candlesticks: 0,
-            patterns: 0,
-            strategies: 0,
-            supportResistance: 0,
-            fundamental: 0,
-            news: 0,
-        };
-    });
+    //
+    // 쇼케이스 스킬 목록도 **여기서 함께** 읽는다(둘은 독립이라 병렬). 예전엔 별도 async
+    // 서버 컴포넌트를 `<Suspense>`로 감쌌는데, 서버 데이터 경계는 raw HTML에 스켈레톤 +
+    // 숨김 `<template>` 청크를 남겨 JS 없는 크롤러에게 본문을 뒤로 밀고, 하이드레이션 때
+    // 스켈레톤→실제 목록 교체로 레이아웃이 흔들렸다. 로드는 파일시스템 읽기(+ 요청 스코프
+    // `cache`)라 짧고 ISR이므로 문서 셸이 기다려도 비용이 없다.
+    const [skillCounts, showcaseSkills] = await Promise.all([
+        countSkillFiles().catch(e => {
+            console.error('[Home] countSkillFiles failed:', e);
+            return {
+                indicators: 0,
+                candlesticks: 0,
+                patterns: 0,
+                strategies: 0,
+                supportResistance: 0,
+                fundamental: 0,
+                news: 0,
+            };
+        }),
+        loadShowcase(),
+    ]);
 
     // `@id`와 `inLanguage`가 로케일을 따른다 — 예전에는 네 로케일이 같은
     // `@id`를 쓰면서 전부 `ko`를 자처했고, 형제 `WebPage`는 `inLanguage: en`을
@@ -433,9 +433,8 @@ export default async function Home({
                         </Link>
                     </div>
                 </section>
-                <Suspense fallback={<SkillsShowcaseSkeleton />}>
-                    <SkillsShowcaseServer />
-                </Suspense>
+                {/* 프로젝션이 **필수**다 — 왜인지는 `toSkillShowcaseItems`의 JSDoc에 있다. */}
+                <SkillsShowcase skills={toSkillShowcaseItems(showcaseSkills)} />
                 <TickerCategories />
                 <CryptoShowcase />
                 {/* FAQPage 구조화데이터의 가시 표면. `/economy`·`/fear-greed`가

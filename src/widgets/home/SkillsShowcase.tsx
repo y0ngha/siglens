@@ -17,8 +17,6 @@ import {
 import { useIsClamped } from './hooks/useIsClamped';
 
 const INITIAL_VISIBLE_COUNT = 12;
-const SKELETON_TAB_WIDTHS_PX = [48, 56, 64, 52, 60, 72] as const;
-const SKELETON_CARD_COUNT = 12;
 
 /**
  * `HIGH_CONFIDENCE_WEIGHT` 로컬 미러 — `@y0ngha/siglens-core`의
@@ -284,52 +282,6 @@ export function SkillCard({
                 </span>
             </div>
         </div>
-    );
-}
-
-export function SkillsShowcaseSkeleton() {
-    const t = useTranslations('widgets.home');
-    return (
-        <section
-            aria-label={t('SkillsShowcase.7f2565')}
-            aria-busy="true"
-            className="page-container py-10"
-        >
-            <div aria-hidden="true">
-                <div className="mb-6 h-3.5 w-20 animate-pulse rounded bg-secondary-700/50" />
-                <div className="mb-6 flex flex-wrap gap-2">
-                    {SKELETON_TAB_WIDTHS_PX.map((w, i) => (
-                        <div
-                            key={i}
-                            className="h-7 w-(--skeleton-w) animate-pulse rounded-full bg-secondary-700/50"
-                            style={
-                                {
-                                    '--skeleton-w': `${w}px`,
-                                } as React.CSSProperties
-                            }
-                        />
-                    ))}
-                </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {Array.from({ length: SKELETON_CARD_COUNT }).map((_, i) => (
-                        <div
-                            key={i}
-                            className="rounded-lg border border-secondary-700 bg-secondary-800/50 p-4"
-                        >
-                            <div className="mb-2 flex items-center gap-2">
-                                <div className="h-4 w-28 animate-pulse rounded bg-secondary-700/50" />
-                                <div className="h-4 w-12 animate-pulse rounded bg-secondary-700/50" />
-                            </div>
-                            <div className="mb-3 space-y-1.5">
-                                <div className="h-3 w-full animate-pulse rounded bg-secondary-700/50" />
-                                <div className="h-3 w-4/5 animate-pulse rounded bg-secondary-700/50" />
-                            </div>
-                            <div className="h-1.5 animate-pulse rounded-full bg-secondary-700/50" />
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </section>
     );
 }
 

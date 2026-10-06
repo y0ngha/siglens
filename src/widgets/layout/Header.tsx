@@ -104,11 +104,17 @@ export function Header({
                         더 든다. 검색·언어·테마 세 아이콘이 같은 줄에 선다. */}
                     <LocaleSwitcher />
                     <ThemeToggle />
-                    <HeaderUserMenu
-                        currentUser={currentUser}
-                        loading={loadingUserMenu}
-                        authNext={authNext}
-                    />
+                    {/* 인증 영역의 폭은 `globals.css`의 `[data-header-auth-slot]`이 첫 페인트
+                        전부터 잡는다(게스트 CTA 11rem / 회원 추정 2.5rem, `<html
+                        data-auth-hint>`). 하이드레이션 때 CTA↔아바타 교체로 헤더가 밀리지
+                        않게 한다. 내용은 오른쪽에 붙인다. */}
+                    <div data-header-auth-slot="" className="flex justify-end">
+                        <HeaderUserMenu
+                            currentUser={currentUser}
+                            loading={loadingUserMenu}
+                            authNext={authNext}
+                        />
+                    </div>
                 </div>
                 {/* Mobile hamburger — hidden on desktop */}
                 <HeaderMobileMenu

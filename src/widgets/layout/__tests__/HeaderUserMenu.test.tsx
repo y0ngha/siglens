@@ -16,6 +16,14 @@ describe('HeaderUserMenu', () => {
         ).toBeInTheDocument();
     });
 
+    /** 회원 추정(`<html data-auth-hint="member">`)이면 CSS가 첫 페인트부터 이 묶음을 숨긴다. */
+    it('게스트 CTA 묶음에 data-header-guest-cta 표식을 단다', () => {
+        render(<HeaderUserMenu currentUser={null} />);
+        expect(
+            screen.getByRole('link', { name: '로그인' }).closest('nav')
+        ).toHaveAttribute('data-header-guest-cta');
+    });
+
     it('authNext가 없으면 로그인/회원가입 href에 ?next=가 없다', () => {
         render(<HeaderUserMenu currentUser={null} />);
         expect(screen.getByRole('link', { name: '로그인' })).toHaveAttribute(

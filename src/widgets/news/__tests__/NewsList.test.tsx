@@ -306,6 +306,22 @@ describe('NewsList', () => {
             ).toHaveLength(3);
         });
 
+        it('로딩 카드는 본문 섹션 골격(구분선 + 라벨 + 문단 3줄)을 장식으로만 그린다', () => {
+            mockUseNewsPollingWithInvalidation.mockReturnValue({
+                items: [],
+                isPolling: true,
+                pollError: null,
+            });
+
+            renderWithClient(<NewsList items={[]} symbol="AAPL" />);
+
+            const card = document.querySelector('article[aria-hidden="true"]');
+            const body = card?.querySelector('.border-t');
+            expect(body).not.toBeNull();
+            expect(body?.querySelectorAll('.h-5\\.5')).toHaveLength(3);
+            expect(card?.textContent).toBe('');
+        });
+
         it('폴링이 끝났고 뉴스가 없으면 빈 상태 안내 문구를 그린다', () => {
             mockUseNewsPollingWithInvalidation.mockReturnValue({
                 items: [],
@@ -352,6 +368,12 @@ describe('NewsList', () => {
         expect(screen.getByText('AI 분석 중…')).toBeInTheDocument();
         // Ready-state badges/body must not render while pending.
         expect(screen.queryByText('본문')).not.toBeInTheDocument();
+        // 본문 자리는 도착할 본문 섹션과 같은 골격으로 잡아 둔다(구분선 + 라벨 + 문단 3줄) —
+        // 도착 순간 카드가 섹션 하나만큼 자라 아래 카드들을 미는 것을 줄인다.
+        const card = screen.getByRole('article');
+        const bodySkeleton = card.querySelector('.border-t');
+        expect(bodySkeleton).not.toBeNull();
+        expect(bodySkeleton?.querySelectorAll('.h-5\\.5')).toHaveLength(3);
         // 하단 "원문 보기 →" 단서는 ready 카드에만 그린다. 하지만 제목은 분석 중에도
         // 원문으로 가는 링크다(예전에는 하단 링크가 통째로 없어 눌러도 반응이 없었다).
         expect(screen.queryByText('원문 보기 →')).not.toBeInTheDocument();

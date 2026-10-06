@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import type {
     DashboardTimeframe,
     QuadrantKey,
@@ -19,6 +18,10 @@ import {
     groupStockIntoQuadrants,
 } from '@/entities/analysis/lib/quadrants';
 import { resolveConflicts } from '@/entities/analysis/lib/resolveConflicts';
+import {
+    usePickUntilPopstate,
+    useUrlSearchParam,
+} from '@/shared/hooks/useUrlSearchParam';
 import { useSectorSignals } from './useSectorSignals';
 
 interface UseSectorSignalStateOptions {
@@ -50,29 +53,34 @@ export function useSectorSignalState({
 }: UseSectorSignalStateOptions): UseSectorSignalStateReturn {
     const router = useRouter();
     const pathname = usePathname();
-    const searchParams = useSearchParams();
-
     /**
-     * 딥링크 복원: URL 쿼리를 **첫 렌더에서 바로** 초기값으로 쓴다.
-     * 예전에는 마운트 effect에서 setState로 복원해 렌더가 한 번 더 돌았다(잘못된 섹터가
-     * 한 프레임 보였다). 이 패널은 `useSearchParams` 때문에 CSR bailout이라 서버가
-     * 이 서브트리를 렌더하지 않으므로(page.tsx의 Suspense fallback이 대신 나간다)
-     * 렌더 중 쿼리를 읽어도 하이드레이션 불일치가 없다.
+     * 딥링크 복원은 `useSearchParams`가 아니라 `useUrlSearchParam`으로 읽는다 — 전자는 이
+     * 패널을 CSR bailout시켜 서버 HTML에 스켈레톤만 남겼다. 서버·하이드레이션 렌더는
+     * 쿼리 없음(= 첫 섹터·기본 타임프레임, 서버 seed와 같은 화면)이고, 그 직후 URL 값으로
+     * 다시 렌더된다. 하이드레이션 불일치는 없다.
      */
-    const [activeSector, setActiveSector] = useState(() => {
-        const fromUrl = searchParams.get('sector');
-        return fromUrl !== null &&
-            scope.signalSectors.some(sector => sector.symbol === fromUrl)
-            ? fromUrl
-            : initialSector;
-    });
-    const [activeTimeframe, setActiveTimeframe] = useState<DashboardTimeframe>(
-        () => {
-            const fromUrl = searchParams.get('timeframe');
-            return isDashboardTimeframe(fromUrl) ? fromUrl : initialTimeframe;
-        }
-    );
+    const sectorParam = useUrlSearchParam('sector');
+    const timeframeParam = useUrlSearchParam('timeframe');
+    /**
+     * 사용자가 탭/셀렉터로 고른 값. URL보다 우선한다(URL 쓰기는 구독자에게 알려지지
+     * 않는다). 뒤로/앞으로 가기(popstate)가 오면 무효가 돼 화면이 URL을 다시 따른다.
+     */
+    const [pickedSector, pickSector] = usePickUntilPopstate<string>();
+    const [pickedTimeframe, pickTimeframe] =
+        usePickUntilPopstate<DashboardTimeframe>();
 
+    const urlSector =
+        sectorParam !== null &&
+        scope.signalSectors.some(sector => sector.symbol === sectorParam)
+            ? sectorParam
+            : initialSector;
+    const urlTimeframe = isDashboardTimeframe(timeframeParam)
+        ? timeframeParam
+        : initialTimeframe;
+    const activeSector = pickedSector ?? urlSector;
+    const activeTimeframe = pickedTimeframe ?? urlTimeframe;
+
+    // 훅 선언 순서 예외(MISTAKES.md #17): 조회 키가 위 파생값(activeTimeframe)이다.
     const data = useSectorSignals(scope.id, activeTimeframe, initialData);
 
     /*
@@ -93,7 +101,8 @@ export function useSectorSignalState({
         nextSector: string,
         nextTimeframe: DashboardTimeframe
     ) => {
-        const params = new URLSearchParams(searchParams.toString());
+        // 이벤트 핸들러에서만 불린다 — 다른 쿼리(utm 등)를 보존하려고 현재 주소를 읽는다.
+        const params = new URLSearchParams(window.location.search);
         if (nextSector === scope.signalSectors[0]?.symbol)
             params.delete('sector');
         else params.set('sector', nextSector);
@@ -107,12 +116,12 @@ export function useSectorSignalState({
     };
 
     const handleSectorChange = (sector: string) => {
-        setActiveSector(sector);
+        pickSector(sector);
         updateUrl(sector, activeTimeframe);
     };
 
     const handleTimeframeChange = (next: DashboardTimeframe) => {
-        setActiveTimeframe(next);
+        pickTimeframe(next);
         updateUrl(activeSector, next);
     };
 

@@ -381,7 +381,11 @@ describe('평이화 연동', () => {
         expect(
             screen.getByText('애플 주가는 지금 오르는 흐름입니다.')
         ).toBeInTheDocument();
-        expect(screen.queryByText('전문 원문')).toBeNull();
+        // 원문은 지우지 않고 닫힌 `<details>` 안에 남긴다(SSR HTML에 실리는 크롤 본문).
+        const raw = screen.getByText('전문 원문');
+        const disclosure = raw.closest('details');
+        expect(disclosure).not.toBeNull();
+        expect(disclosure?.open).toBe(false);
     });
 
     it('평이화가 없으면 원문을 렌더한다', () => {
@@ -529,7 +533,7 @@ describe('평이화 연동', () => {
             expect(summary).toHaveTextContent('미국 장마감 기준');
         });
 
-        it('일반 탭은 접기 자체를 두지 않는다 — 접을 라이브 위젯이 없다', () => {
+        it('일반 탭은 라이브 위젯용 접기를 두지 않는다 — 원문 접기 하나만 있다', () => {
             const { container } = render(
                 <SnapshotSummarySection
                     displayName="Apple Inc."
@@ -540,7 +544,12 @@ describe('평이화 연동', () => {
                 </SnapshotSummarySection>
             );
 
-            expect(container.querySelector('details')).toBeNull();
+            expect(container.querySelector('[data-snapshot-prose]')).toBeNull();
+            const disclosures = container.querySelectorAll('details');
+            expect(disclosures).toHaveLength(1);
+            expect(disclosures[0]?.querySelector('summary')).toHaveTextContent(
+                '전문가 분석 원문 펼쳐 보기'
+            );
         });
     });
 

@@ -25,6 +25,7 @@ import { RoutePendingSlot } from '@/app/_components/RoutePendingSlot';
 import { ADSENSE_ENABLED } from '@/shared/lib/adsense';
 import { CF_BEACON_TOKEN } from '@/shared/lib/cloudflareAnalytics';
 import { THEME_INIT_SCRIPT } from '@/shared/lib/theme';
+import { AUTH_HINT_INIT_SCRIPT } from '@/shared/lib/auth/authHintAttribute';
 import { GoogleAdsTag } from '@/app/_components/GoogleAdsTag';
 import { GOOGLE_ADS_ID } from '@/shared/config/googleAds';
 import {
@@ -203,6 +204,15 @@ export default async function RootLayout({
                     id="theme-init"
                     strategy="beforeInteractive"
                     dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
+                />
+                {/* 로그인 추정 표식(`<html data-auth-hint>`)을 첫 페인트 전에 찍는다 — 헤더 인증
+                    영역의 폭을 CSS가 처음부터 맞게 잡아 회원의 헤더가 하이드레이션 때 밀리지
+                    않게 한다(CLS). 테마 스크립트와 같은 이유로 `beforeInteractive`이고, 의도된
+                    `<html>` 속성 차이라 위의 `suppressHydrationWarning`이 함께 덮는다. */}
+                <Script
+                    id="auth-hint-init"
+                    strategy="beforeInteractive"
+                    dangerouslySetInnerHTML={{ __html: AUTH_HINT_INIT_SCRIPT }}
                 />
                 <SiteJsonLd />
                 {/* 루트에 마운트되는 클라이언트 컴포넌트(헤더·푸터·배너·모달)가 쓰는

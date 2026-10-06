@@ -128,6 +128,37 @@ describe('BriefingCard', () => {
         expect(screen.queryByText(/기준/)).not.toBeInTheDocument();
     });
 
+    /** 시각이 도착하는 순간 줄이 새로 생기면 아래 패널이 밀린다(CLS) — 자리는 남긴다. */
+    it('keeps an invisible, aria-hidden placeholder line until the time arrives', () => {
+        const { container } = render(
+            <BriefingCard
+                scope={TEST_SCOPE}
+                briefing={BRIEFING}
+                generatedAt=""
+            />
+        );
+        const placeholder = container.querySelector('p.invisible');
+        expect(placeholder).not.toBeNull();
+        expect(placeholder).toHaveAttribute('aria-hidden', 'true');
+        expect(placeholder).toHaveClass('text-xs');
+        expect(container.querySelector('time')).toBeNull();
+    });
+
+    it('drops the placeholder once a valid time renders in <time>', () => {
+        const { container } = render(
+            <BriefingCard
+                scope={TEST_SCOPE}
+                briefing={BRIEFING}
+                generatedAt="2025-01-15T10:00:00Z"
+            />
+        );
+        expect(container.querySelector('p.invisible')).toBeNull();
+        expect(container.querySelector('time')).toHaveAttribute(
+            'dateTime',
+            '2025-01-15T10:00:00.000Z'
+        );
+    });
+
     it('hides timestamp when generatedAt is invalid date string', () => {
         render(
             <BriefingCard
@@ -162,6 +193,11 @@ describe('BriefingLoadingCard', () => {
         render(<BriefingLoadingCard />);
         expect(screen.getByRole('status')).toBeInTheDocument();
         expect(screen.getByText(/브리핑 생성 중/)).toBeInTheDocument();
+    });
+
+    it('reserves the estimated card height (min-h-64) so the panel below does not shift', () => {
+        render(<BriefingLoadingCard />);
+        expect(screen.getByRole('status')).toHaveClass('min-h-64');
     });
 });
 

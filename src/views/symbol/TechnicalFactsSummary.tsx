@@ -40,6 +40,9 @@ function formatVisibleChange(changePercent: number): ChangeDisplay {
     };
 }
 
+/** `TechnicalFactsSummary`가 그려지는 자리(`placement` JSDoc). */
+export type TechnicalFactsPlacement = 'panel' | 'page';
+
 interface TechnicalFactsSummaryProps {
     symbol: string;
     /**
@@ -55,6 +58,19 @@ interface TechnicalFactsSummaryProps {
      * Pass 'crypto' to enable dynamic-by-magnitude precision for sub-cent tokens.
      */
     marketProfile?: MarketProfileId;
+    /**
+     * 어디에 그려지는 사본인가(기본 `panel`). `data-technical-facts`로 나가며,
+     * `globals.css`가 이 값으로 중복을 정리한다.
+     *
+     * - `panel`: 차트 탭 AI 패널(`ChartContent`) 안의 라이브 사본. 사용자가 보는 자리다.
+     * - `page`: `[symbol]/page.tsx`의 영구 서버 sibling. 패널 사본은 차트의 Suspense
+     *   경계 안이라, 그 경계가 React의 progressive chunk(약 12.8KB)를 넘으면 raw HTML의
+     *   `<div hidden id="S:n">` 숨김 청크로 밀린다 — JS를 실행하지 않는 크롤러(Naver
+     *   Yeti·Daumoa)는 거기 든 사실 요약을 못 본다. 이 사본은 경계 밖에 인라인으로 남아
+     *   그 크롤러들의 몫이고, 패널 사본이 DOM에 있으면 CSS로 감춘다(`body:has(...)`) —
+     *   사람이 보는 화면은 예전과 같다.
+     */
+    placement?: TechnicalFactsPlacement;
 }
 
 /**
@@ -68,6 +84,7 @@ export function TechnicalFactsSummary({
     bars,
     indicators,
     marketProfile = 'us-equity',
+    placement = 'panel',
 }: TechnicalFactsSummaryProps) {
     const t = useTranslations('views.symbol');
     // extract.mjs의 동적 키 탐지는 "이 파일 안에서 번역자를 직접 호출하는 패턴"만
@@ -95,6 +112,7 @@ export function TechnicalFactsSummary({
     return (
         <section
             aria-labelledby={headingId}
+            data-technical-facts={placement}
             className="flex flex-col gap-3 rounded-lg bg-secondary-800 p-4"
         >
             <h2

@@ -2,13 +2,17 @@
  * FactLayer SSR integration tests for the chart [symbol]/page.tsx.
  *
  * These tests invoke the RSC directly (no render) and traverse the returned
- * element tree to assert that:
- * - Happy: bars present → TechnicalFactsSummary appears in Suspense fallback
- * - Worst: empty bars → TechnicalFactsSummary absent, page still resolves
- * - Worst: getQuantizedBarsStatic throws → page resolves (null degrade, no crash)
+ * element tree.
  *
- * NOTE: TechnicalFactsSummary lives in the Suspense `fallback` prop, not in
- * `children`, so we first locate the Suspense element then inspect its fallback.
+ * The page no longer wraps `SymbolPageClient` in a Suspense boundary: the client
+ * reads `?tf=` via `useUrlSearchParam` (no CSR bailout), so the chart, the AI
+ * panel (with `TechnicalFactsSummary`) and the visible h1 server-render inside
+ * `SymbolPageClient` itself. The old fallback (sr-only h1 + facts summary) left
+ * two h1s in the raw HTML whenever the boundary flushed as pending. These tests
+ * pin that the page tree has no Suspense and no fallback h1, that the crawlable
+ * facts summary is a permanent server sibling (the panel copy sits inside the
+ * chart's own boundary, which React outlines into a hidden chunk), and that the
+ * degrade paths still resolve.
  */
 
 // spy → vi.mock → imports order (MISTAKES.md Tests §17).
@@ -146,10 +150,12 @@ vi.mock('@/entities/analysis/lib/peekAnalysisStaticCache', () => ({
     peekAnalysisStatic: vi.fn().mockResolvedValue(null),
 }));
 
-import { Suspense, type ReactNode } from 'react';
+import { Suspense, isValidElement, type ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { default as SymbolPage } from '@/app/[locale]/[symbol]/page';
 import { TechnicalFactsSummary } from '@/views/symbol/TechnicalFactsSummary';
+import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
+import { symbolFactsSubject } from '@/views/symbol/utils/factsSubject';
 import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
 import { getQuantizedBarsStatic } from '@/entities/bars/lib/barsStaticCache';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
@@ -169,19 +175,36 @@ const DEFAULT_ASSET_INFO = {
     degraded: false,
 } as never;
 
-/**
- * Finds the `fallback` ReactNode inside the first Suspense element in `tree`.
- * TechnicalFactsSummary is placed in fallback (not children), so a standard
- * children-only traversal would miss it.
- */
-function findSuspenseFallback(tree: ReactNode): ReactNode {
-    const suspenseEl = findElementByType(tree, Suspense);
-    if (!suspenseEl) return null;
-    // 보장: suspenseEl은 findElementByType(tree, Suspense)가 반환한 Suspense 엘리먼트이므로
-    // props는 SuspenseProps이고 fallback?: ReactNode를 가진다. ReactElement.props가 unknown(React 19)
-    // 이라 좁히기 위한 cast이며, 키는 실재한다.
-    return (suspenseEl.props as { fallback?: ReactNode }).fallback ?? null;
+/** Does any element in `tree` (children or `fallback` props) have type `type`? */
+function containsType(node: ReactNode, type: unknown): boolean {
+    if (Array.isArray(node))
+        return node.some(child => containsType(child, type));
+    if (!isValidElement(node)) return false;
+    if (node.type === type) return true;
+    const props = node.props as { children?: ReactNode; fallback?: ReactNode };
+    return (
+        containsType(props.children, type) || containsType(props.fallback, type)
+    );
 }
+
+const TWO_BARS = {
+    bars: [
+        { time: 1, open: 1, high: 2, low: 0.5, close: 1.5, volume: 100 },
+        { time: 2, open: 1.5, high: 2.5, low: 1, close: 2, volume: 120 },
+    ],
+    indicators: {
+        ma: {},
+        ema: {},
+        rsi: [50],
+        macd: [{ macd: 1, signal: 1, histogram: 1 }],
+        buySellVolume: [],
+    },
+} as never;
+
+const ONE_BAR = {
+    bars: [{ time: 1, open: 1, high: 2, low: 0.5, close: 1.5, volume: 100 }],
+    indicators: {},
+} as never;
 
 describe('SymbolPage — FactLayer SSR integration', () => {
     beforeEach(() => {
@@ -196,111 +219,85 @@ describe('SymbolPage — FactLayer SSR integration', () => {
         mockGetSeedBarsStatic.mockResolvedValue(null);
     });
 
-    it('Happy: bars 있으면 Suspense fallback에 TechnicalFactsSummary(SSR)를 렌더한다', async () => {
-        mockBarsStatic.mockResolvedValue({
-            bars: [
-                {
-                    time: 1,
-                    open: 1,
-                    high: 2,
-                    low: 0.5,
-                    close: 1.5,
-                    volume: 100,
-                },
-            ],
-            indicators: {},
-        } as never);
+    it('SymbolPageClient를 Suspense로 감싸지 않는다(트리 어디에도 경계가 없다)', async () => {
+        mockBarsStatic.mockResolvedValue(ONE_BAR);
 
         const tree = await SymbolPage({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
-        const fallback = findSuspenseFallback(tree);
-        const fact = findElementByType(fallback, TechnicalFactsSummary);
 
-        expect(fact).not.toBeNull();
-        // Verify the component receives the expected props.
-        expect((fact?.props as { symbol: string }).symbol).toBe('AAPL');
-    });
-
-    it('SSR 크롤용 h1: fallback에 sr-only h1(회사명 + 차트 분석)이 있어 JS 미실행 크롤러가 메인 h1을 받는다', async () => {
-        mockBarsStatic.mockResolvedValue({
-            bars: [
-                {
-                    time: 1,
-                    open: 1,
-                    high: 2,
-                    low: 0.5,
-                    close: 1.5,
-                    volume: 100,
-                },
-            ],
-            indicators: {},
-        } as never);
-
-        const tree = await SymbolPage({
-            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
-        });
-        const fallback = findSuspenseFallback(tree);
-        const h1 = findElementByType(fallback, 'h1');
-
-        expect(h1).not.toBeNull();
-        // 보장: findElementByType이 host element 'h1'을 반환했으므로 props.children은
-        // buildChartPageHeading(displayName) 결과 문자열이다. displayName mock = 'Apple Inc.'
-        // → 결정적 값이므로 toBe로 정밀 검증.
-        const children = (h1?.props as { children?: ReactNode }).children;
-        const text = Array.isArray(children)
-            ? children.join('')
-            : String(children);
-        expect(text).toBe('Apple Inc. 차트 분석');
-        // sr-only라 가시 레이아웃(jail) 영향 없음 — 크롤 전용.
-        expect((h1?.props as { className?: string }).className).toContain(
-            'sr-only'
-        );
+        expect(findElementByType(tree, SymbolPageClient)).not.toBeNull();
+        expect(containsType(tree, Suspense)).toBe(false);
     });
 
     /**
-     * 크롤러 전용 `sr-only` **개요 문단**은 제거했다(2026-09-17 정책 감사 M3 —
-     * Google "숨겨진 텍스트"). 같은 내용은 가시 h1·`TechnicalFactsSummary`·FAQ가
-     * 이미 말한다. 반면 위 `sr-only` **h1**은 접근성 폴백이라 남는다 — 가시 h1과
-     * 텍스트가 동일하고 하이드레이션 후 교체되므로 정책 예외에 해당한다.
+     * h1은 `SymbolPageClient`가 서버에서 그린다. 페이지가 sr-only h1을 따로 두면 raw HTML에
+     * h1이 둘이 된다(e2e `symbol-seo` "exactly one h1").
      */
-    it('sr-only 개요 섹션은 없고, sr-only는 h1 하나뿐이다', async () => {
-        mockBarsStatic.mockResolvedValue({ bars: [], indicators: {} } as never);
+    it('페이지 트리에 별도 h1(sr-only 폴백)을 두지 않는다', async () => {
+        mockBarsStatic.mockResolvedValue(ONE_BAR);
 
         const tree = await SymbolPage({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
 
-        expect(findElementByType(tree, 'section')).toBeNull();
-        const srOnlyCount = (JSON.stringify(tree).match(/sr-only/g) ?? [])
-            .length;
-        expect(srOnlyCount).toBe(1);
+        expect(containsType(tree, 'h1')).toBe(false);
+        expect(JSON.stringify(tree)).not.toContain('sr-only');
     });
 
-    it('SSR 크롤용 h1: bars 빈 결과(cold)에서도 fallback h1은 존재한다(데이터 유무와 무관)', async () => {
-        mockBarsStatic.mockResolvedValue({ bars: [], indicators: {} } as never);
+    /**
+     * 패널 사본(`ChartContent`)은 차트의 Suspense 경계 안이라 progressive chunk를 넘으면 raw
+     * HTML의 숨김 청크로 아웃라인된다 — JS 없는 크롤러용으로 경계 **밖**에 영구 사본을 둔다.
+     */
+    describe('크롤용 사실 요약(영구 서버 사본)', () => {
+        it('봉이 2개 이상이면 page 사본을 SymbolPageClient 바깥 sibling으로 렌더한다', async () => {
+            mockBarsStatic.mockResolvedValue(TWO_BARS);
 
-        const tree = await SymbolPage({
-            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+            const tree = await SymbolPage({
+                params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+            });
+
+            const fact = findElementByType(tree, TechnicalFactsSummary);
+            expect(fact).not.toBeNull();
+            expect(fact?.props).toMatchObject({
+                symbol: 'AAPL',
+                subject: symbolFactsSubject('AAPL', '애플', 'ko'),
+                placement: 'page',
+            });
+            // 경계 밖이어야 한다 — 트리에 Suspense가 없고, 클라이언트 안에도 있지 않다.
+            expect(containsType(tree, Suspense)).toBe(false);
         });
-        const fallback = findSuspenseFallback(tree);
 
-        expect(findElementByType(fallback, 'h1')).not.toBeNull();
+        it('봉이 1개면(등락률 분모 없음 — 메타데이터 hasPriceData와 같은 술어) 렌더하지 않는다', async () => {
+            mockBarsStatic.mockResolvedValue(ONE_BAR);
+
+            const tree = await SymbolPage({
+                params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+            });
+
+            expect(containsType(tree, TechnicalFactsSummary)).toBe(false);
+        });
+
+        it('봉 조회가 실패하면 렌더하지 않는다', async () => {
+            mockBarsStatic.mockRejectedValue(new Error('bars infra down'));
+
+            const tree = await SymbolPage({
+                params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+            });
+
+            expect(containsType(tree, TechnicalFactsSummary)).toBe(false);
+        });
     });
 
-    it('Worst: bars 빈 결과면 FactLayer 대신 빈 fallback(div) — 크래시 없이 페이지 정상', async () => {
+    it('Worst: bars 빈 결과여도 크래시 없이 페이지가 resolve된다', async () => {
         mockBarsStatic.mockResolvedValue({ bars: [], indicators: {} } as never);
 
         const tree = await SymbolPage({
             params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
         });
-        const fallback = findSuspenseFallback(tree);
-        const fact = findElementByType(fallback, TechnicalFactsSummary);
 
-        // Page must still resolve with a truthy element tree.
         expect(tree).toBeTruthy();
-        // FactLayer must NOT appear when bars are empty (degrade to empty div).
-        expect(fact).toBeNull();
+        expect(findElementByType(tree, SymbolPageClient)).not.toBeNull();
     });
 
     it('Worst: getQuantizedBarsStatic 실패(throw)해도 페이지가 깨지지 않는다(null degrade)', async () => {
@@ -312,18 +309,6 @@ describe('SymbolPage — FactLayer SSR integration', () => {
                 params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
             })
         ).resolves.toBeTruthy();
-    });
-
-    it('Worst: getQuantizedBarsStatic 실패 시 fallback은 빈 div (FactLayer 없음)', async () => {
-        mockBarsStatic.mockRejectedValue(new Error('bars infra down'));
-
-        const tree = await SymbolPage({
-            params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
-        });
-        const fallback = findSuspenseFallback(tree);
-        const fact = findElementByType(fallback, TechnicalFactsSummary);
-
-        expect(fact).toBeNull();
     });
 
     it('Worst: getSeedBarsStatic이 reject해도 페이지가 resolve된다(seed 생략)', async () => {
@@ -369,12 +354,10 @@ describe('SymbolPage — FactLayer SSR integration', () => {
             } as never);
         });
 
-        // audit fix FIX 1: TechnicalSnapshotProse moved OUT of the Suspense
-        // fallback to a persistent server sibling (React destroys the
-        // fallback subtree on hydration, so JS-executing crawlers never saw
-        // it there). It is now found via a plain children-only traversal of
-        // `tree`, not via `findSuspenseFallback`.
-        it('스냅샷 있으면 Suspense fallback 밖 persistent sibling으로 TechnicalSnapshotProse를 렌더한다(FactsSummary는 fallback 안에서 공존)', async () => {
+        // audit fix FIX 1: TechnicalSnapshotProse is a persistent server sibling
+        // (it once lived in a Suspense fallback, which React destroys on
+        // hydration, so JS-executing crawlers never saw it there).
+        it('스냅샷 있으면 persistent sibling으로 TechnicalSnapshotProse를 렌더한다', async () => {
             mockGetSeoSnapshotsStatic.mockResolvedValue([
                 {
                     symbol: 'AAPL',
@@ -395,12 +378,6 @@ describe('SymbolPage — FactLayer SSR integration', () => {
                 summary: '단기 상승 모멘텀',
                 trend: 'bullish',
             });
-            // Complementary, not exclusive — deterministic facts still render
-            // inside the Suspense fallback.
-            const fallback = findSuspenseFallback(tree);
-            expect(
-                findElementByType(fallback, TechnicalFactsSummary)
-            ).not.toBeNull();
         });
 
         it('스냅샷 없으면(getSeoSnapshotsStatic → []) TechnicalSnapshotProse에 undefined content를 전달한다(렌더러가 자체적으로 null 반환)', async () => {
@@ -415,11 +392,6 @@ describe('SymbolPage — FactLayer SSR integration', () => {
             expect(
                 (prose?.props as { content: unknown }).content
             ).toBeUndefined();
-            // Existing FactLayer behavior is unchanged (still in fallback).
-            const fallback = findSuspenseFallback(tree);
-            expect(
-                findElementByType(fallback, TechnicalFactsSummary)
-            ).not.toBeNull();
         });
 
         it('다른 탭(overall)의 스냅샷은 technical 슬롯에 전달되지 않는다', async () => {
