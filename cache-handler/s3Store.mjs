@@ -11,8 +11,8 @@ let client;
 function s3() {
     // EC2 instance role 자격증명 자동 사용. region만 지정.
     //
-    // cacheMaxMemorySize:0이라 L1 메모리 캐시가 없다 — 모든 read가 렌더 경로에서 S3를
-    // 대기한다. S3가 행(hang)하면 요청 전체가 멈추므로 connection/request 타임아웃과
+    // cacheMaxMemorySize:0이라 Next 쪽 L1이 없다 — 핸들러 메모리 계층(memStore /
+    // pageMemStore)을 놓친 read는 렌더 경로에서 S3를 대기한다. S3가 행(hang)하면 요청 전체가 멈추므로 connection/request 타임아웃과
     // 제한된 재시도로 경계를 둔다(SDK가 config-object form을 NodeHttpHandler로 해석).
     //
     // throwOnRequestTimeout:true가 핵심이다. @smithy/node-http-handler(4.8.2)는
@@ -29,7 +29,7 @@ function s3() {
     // setSocketTimeout(0<t<6000)은 request.socket.setTimeout(t, onTimeout)으로 네이티브
     // 소켓 비활성 타임아웃을 걸고 0을 반환하므로 clearTimeouts()가 취소하지 못한다 —
     // 본문 read 중 S3 stall이 나면 onTimeout이 request.destroy()+reject(TimeoutError)로
-    // 끊는다. cacheMaxMemorySize:0(L1 없음)이라 이 경계가 없으면 mid-stream stall이
+    // 끊는다. 메모리 계층을 놓친 read는 S3를 기다리므로 이 경계가 없으면 mid-stream stall이
     // 렌더 경로를 무한정 멈춘다.
     client ??= new S3Client({
         region: config.region,
@@ -58,9 +58,21 @@ function s3Key(key, kind) {
     return `${config.keyPrefix}/${config.buildId}/${sub}/${id}.cache`;
 }
 
-export async function getEntry(key, kind) {
+/**
+ * S3 조회 결과를 상태와 함께 돌려준다.
+ *
+ * `status`:
+ *   - `'hit'`       — 엔트리 있음
+ *   - `'not-found'` — NoSuchKey/404. **이 경우만** 호출부가 네거티브 캐시에 넣는다.
+ *   - `'error'`     — 그 밖의 실패(타임아웃·권한·역직렬화·zero-byte). 일시적일 수 있어
+ *                     네거티브 캐시하지 않는다(fail-open: 재생성).
+ *   - `'skipped'`   — 빌드 단계라 조회하지 않음.
+ *
+ * @returns {Promise<{ status: 'hit' | 'not-found' | 'error' | 'skipped', entry: any }>}
+ */
+export async function lookupEntry(key, kind) {
     // 빌드(prerender) 중에는 자격증명이 없어 모든 호출이 실패한다 — config.buildPhase 참고.
-    if (config.buildPhase) return null;
+    if (config.buildPhase) return { status: 'skipped', entry: null };
     try {
         const res = await s3().send(
             new GetObjectCommand({
@@ -69,15 +81,19 @@ export async function getEntry(key, kind) {
             })
         );
         // zero-byte 객체(Body 없음)는 throw가 아니라 miss로 취급한다.
-        if (!res.Body) return null;
+        if (!res.Body) return { status: 'error', entry: null };
         const buf = Buffer.from(await res.Body.transformToByteArray());
-        return await deserialize(buf);
+        return { status: 'hit', entry: await deserialize(buf) };
     } catch (e) {
         if (e.name === 'NoSuchKey' || e.$metadata?.httpStatusCode === 404)
-            return null;
+            return { status: 'not-found', entry: null };
         console.error('[isr-cache] s3 get failed', key, e.name, e.message);
-        return null; // fail-open: 재생성
+        return { status: 'error', entry: null }; // fail-open: 재생성
     }
+}
+
+export async function getEntry(key, kind) {
+    return (await lookupEntry(key, kind)).entry;
 }
 
 export async function setEntry(key, kind, entry) {
@@ -91,7 +107,8 @@ export async function setEntry(key, kind, entry) {
             })
         );
     } catch (e) {
-        console.error('[isr-cache] s3 set failed', key, e.name, e.message); // 응답 flush 후라 삼킴
+        // 업로드는 백그라운드(index.mjs `uploads`)라 여기서 삼켜도 응답과 무관하다.
+        console.error('[isr-cache] s3 set failed', key, e.name, e.message);
     }
 }
 

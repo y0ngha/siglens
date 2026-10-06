@@ -14,6 +14,38 @@ import {
 import { waitForActiveStreams } from '@/shared/lib/sse/activeStreams';
 
 /**
+ * ISR 캐시 핸들러(`cache-handler/uploadQueue.mjs`)가 업로드 drain 함수를 등록하는 전역 키.
+ * 값은 drain 함수들의 `Set`이다(핸들러 모듈 사본이 여럿이어도 서로 덮어쓰지 않게).
+ *
+ * 핸들러는 Next가 `next.config.ts`의 절대 경로로 동적 import하는 번들 밖 모듈이라 여기서
+ * import하면 **다른 모듈 인스턴스**(빈 큐)를 받는다. 그래서 핸들러가 `Symbol.for`로 걸어 둔
+ * 레지스트리를 꺼내 쓴다. 핸들러가 등록되지 않은 환경(dev/E2E, offline build)에서는 없다.
+ * 문자열은 `DRAIN_UPLOADS_SYMBOL`과 반드시 같아야 한다.
+ */
+const ISR_DRAIN_UPLOADS_SYMBOL = Symbol.for('siglens.isrCache.drainUploads');
+
+type DrainUploads = (deadlineMs: number) => Promise<number>;
+
+/** 백그라운드 S3 업로드(캐시 miss 응답에서 떼어낸 PUT)를 마감 안에서 전부 기다린다. */
+async function drainIsrCacheUploads(deadlineMs: number): Promise<void> {
+    const registry = (globalThis as Record<symbol, unknown>)[
+        ISR_DRAIN_UPLOADS_SYMBOL
+    ];
+    if (!(registry instanceof Set) || registry.size === 0) return;
+    const drains = [...registry].filter(
+        (drain): drain is DrainUploads => typeof drain === 'function'
+    );
+    const remaining = (
+        await Promise.all(drains.map(drain => drain(deadlineMs)))
+    ).reduce((sum, count) => sum + count, 0);
+    if (remaining > 0) {
+        console.warn(
+            `[instrumentation] ${remaining} ISR cache upload(s) still in flight at deadline`
+        );
+    }
+}
+
+/**
  * Drain deadline(ms).
  *
  * 분석 SSE 스트림의 최대 지속 시간(`STREAM_DEADLINE_MS` = 10분)보다 **의도적으로 짧다.**
@@ -74,11 +106,12 @@ export function registerShutdownHandlers(): void {
         );
         stopAcceptingBackgroundTasks();
 
-        // 백그라운드 작업(캐시 쓰기, 번역 잡)과 in-flight SSE 스트림(LLM 분석)을
-        // 병렬로 drain한다 — 양쪽 모두 같은 deadline 안에서 완료를 기다린다.
+        // 백그라운드 작업(캐시 쓰기, 번역 잡), in-flight SSE 스트림(LLM 분석), ISR 캐시의
+        // 백그라운드 S3 업로드를 병렬로 drain한다 — 모두 같은 deadline 안에서 완료를 기다린다.
         void Promise.all([
             drainBackgroundTasks(SHUTDOWN_DRAIN_DEADLINE_MS),
             waitForActiveStreams(SHUTDOWN_DRAIN_DEADLINE_MS),
+            drainIsrCacheUploads(SHUTDOWN_DRAIN_DEADLINE_MS),
         ])
             .catch(err => {
                 console.error('[instrumentation] drain error:', err);
