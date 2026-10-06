@@ -11,7 +11,7 @@ vi.mock('@/shared/cache/redisClient', () => ({
 }));
 
 vi.mock('../optionsDataCache', () => ({
-    readLastGoodCapturedAt: vi.fn(),
+    readLastGoodCapturedAtBatch: vi.fn(),
     refreshLastGoodSnapshot: vi.fn(),
 }));
 
@@ -23,7 +23,7 @@ import {
     warmOptionsLastGood,
 } from '../warmOptionsLastGood';
 import {
-    readLastGoodCapturedAt,
+    readLastGoodCapturedAtBatch,
     refreshLastGoodSnapshot,
 } from '../optionsDataCache';
 import {
@@ -40,10 +40,19 @@ const AFTER_CLOSE = '2026-10-05T20:20:00.000Z';
 const BEFORE_CLOSE = '2026-10-05T19:00:00.000Z';
 
 const mockRefresh = vi.mocked(refreshLastGoodSnapshot);
-const mockCapturedAt = vi.mocked(readLastGoodCapturedAt);
+const mockCapturedAt = vi.mocked(readLastGoodCapturedAtBatch);
 
 function refreshedSymbols(): string[] {
     return mockRefresh.mock.calls.map(([symbol]) => symbol);
+}
+
+/** 보조 키 MGET 결과를 목 처리한다 — 맵에 없는 종목은 "미확보"다. */
+function capturedAt(bySymbol: Record<string, string>): void {
+    mockCapturedAt.mockResolvedValue(new Map(Object.entries(bySymbol)));
+}
+
+function capturedAtForAll(value: string): void {
+    capturedAt(Object.fromEntries(universe.map(symbol => [symbol, value])));
 }
 
 /** key별로 다른 값을 돌려주는 Redis get — 커서와 완료 표식이 같은 목을 쓰므로 키로 가른다. */
@@ -70,7 +79,7 @@ describe('warmOptionsLastGood', () => {
         });
         mockRedisGet.mockResolvedValue(null);
         mockRedisSet.mockResolvedValue('OK');
-        mockCapturedAt.mockResolvedValue(null);
+        capturedAt({});
         mockRefresh.mockResolvedValue('written');
     });
 
@@ -154,20 +163,25 @@ describe('warmOptionsLastGood', () => {
 
     it('오늘 마감 이후 last-good이 이미 있는 종목은 Yahoo를 치지 않고 건너뛴다', async () => {
         const captured = new Set(universe.slice(0, 2));
-        mockCapturedAt.mockImplementation(async symbol =>
-            captured.has(symbol) ? AFTER_CLOSE : null
+        capturedAt(
+            Object.fromEntries(
+                [...captured].map(symbol => [symbol, AFTER_CLOSE])
+            )
         );
 
         const result = await warmOptionsLastGood(IN_WINDOW);
 
         expect(refreshedSymbols()).toEqual(universe.slice(2, 8));
+        // capturedAt은 후보 전체를 한 번에 읽는다(종목별 순차 GET이 아니다).
+        expect(mockCapturedAt).toHaveBeenCalledTimes(1);
+        expect(mockCapturedAt).toHaveBeenCalledWith(universe);
         expect(result).toMatchObject({ skipped: 2, written: 6 });
         // 건너뛴 2개도 걸음에 센다.
         expect(cursorWrites()).toEqual([8]);
     });
 
     it('마감 이전에 저장된 last-good(어제·오늘 장중)은 확보로 보지 않는다', async () => {
-        mockCapturedAt.mockResolvedValue(BEFORE_CLOSE);
+        capturedAtForAll(BEFORE_CLOSE);
 
         const result = await warmOptionsLastGood(IN_WINDOW);
 
@@ -176,7 +190,7 @@ describe('warmOptionsLastGood', () => {
     });
 
     it('마감 시각과 정확히 같은 capturedAt은 확보로 보지 않는다(엄격히 이후만)', async () => {
-        mockCapturedAt.mockResolvedValue(new Date(CLOSE_MS).toISOString());
+        capturedAtForAll(new Date(CLOSE_MS).toISOString());
 
         const result = await warmOptionsLastGood(IN_WINDOW);
 
@@ -185,7 +199,7 @@ describe('warmOptionsLastGood', () => {
     });
 
     it('해석할 수 없는 capturedAt은 확보로 보지 않는다', async () => {
-        mockCapturedAt.mockResolvedValue('garbage');
+        capturedAtForAll('garbage');
 
         const result = await warmOptionsLastGood(IN_WINDOW);
 
@@ -194,7 +208,7 @@ describe('warmOptionsLastGood', () => {
     });
 
     it('전부 확보된 날에는 Yahoo를 치지 않고 완료 표식을 창 끝까지의 TTL로 남긴다', async () => {
-        mockCapturedAt.mockResolvedValue(AFTER_CLOSE);
+        capturedAtForAll(AFTER_CLOSE);
 
         const result = await warmOptionsLastGood(IN_WINDOW);
 
@@ -213,8 +227,10 @@ describe('warmOptionsLastGood', () => {
 
     it('일부만 확보된 날에는 완료 표식을 남기지 않는다', async () => {
         const captured = new Set(universe.slice(0, 2));
-        mockCapturedAt.mockImplementation(async symbol =>
-            captured.has(symbol) ? AFTER_CLOSE : null
+        capturedAt(
+            Object.fromEntries(
+                [...captured].map(symbol => [symbol, AFTER_CLOSE])
+            )
         );
 
         await warmOptionsLastGood(IN_WINDOW);
@@ -289,7 +305,7 @@ describe('warmOptionsLastGood', () => {
     it('시간 예산을 넘기면 남은 종목을 미루고 커서를 그 종목 앞에 둔다', async () => {
         // 첫 두 건(동시 시작)이 끝나는 순간 예산이 소진된다.
         mockRefresh.mockImplementation(async () => {
-            // 두 번째 워커가 시작할 틈을 준 뒤에 예산을 소진시킨다.
+            // 두 레인이 첫 종목을 시작한 뒤 예산이 바닥나도록 한 틱 양보한다.
             await Promise.resolve();
             vi.setSystemTime(
                 new Date(Date.now() + OPTIONS_WARM_DEADLINE_MS + 1)
@@ -306,11 +322,13 @@ describe('warmOptionsLastGood', () => {
 
     it('미룬 종목 앞에 건너뛴 종목이 있으면 그 걸음까지는 전진한다', async () => {
         const captured = new Set([universe[0]]);
-        mockCapturedAt.mockImplementation(async symbol =>
-            captured.has(symbol) ? AFTER_CLOSE : null
+        capturedAt(
+            Object.fromEntries(
+                [...captured].map(symbol => [symbol, AFTER_CLOSE])
+            )
         );
         mockRefresh.mockImplementation(async () => {
-            // 두 번째 워커가 시작할 틈을 준 뒤에 예산을 소진시킨다.
+            // 두 레인이 첫 종목을 시작한 뒤 예산이 바닥나도록 한 틱 양보한다.
             await Promise.resolve();
             vi.setSystemTime(
                 new Date(Date.now() + OPTIONS_WARM_DEADLINE_MS + 1)
@@ -323,6 +341,94 @@ describe('warmOptionsLastGood', () => {
         // 시작한 건 universe[1], [2] — 다음 후보는 [3]이므로 커서는 3.
         expect(refreshedSymbols()).toEqual(universe.slice(1, 3));
         expect(cursorWrites()).toEqual([3]);
+    });
+
+    describe('레인이 서로 다른 시점에 마감을 만날 때', () => {
+        // 선택 순서(걸음) 1..6 = universe[0..5]. 레인 0 = 걸음 1·3·5, 레인 1 = 걸음 2·4·6.
+        // 레인 1의 첫 종목(universe[1])을 수동으로 붙잡아 두고, 그동안 레인 0이 먼저 달리게 한다.
+        function holdLaneOneFirstSymbol(onSymbol?: (symbol: string) => void): {
+            release: () => void;
+        } {
+            let release: () => void = () => {};
+            const held = new Promise<'written'>(resolve => {
+                release = () => resolve('written');
+            });
+            mockRefresh.mockImplementation(symbol => {
+                onSymbol?.(symbol);
+                return symbol === universe[1]
+                    ? held
+                    : Promise.resolve('written');
+            });
+            return { release };
+        }
+
+        /** 마감을 넘긴 시각으로 시계를 옮긴다 — 이후 새로 시작하려는 종목은 전부 미뤄진다. */
+        function exhaustBudget(): void {
+            vi.setSystemTime(
+                new Date(Date.now() + OPTIONS_WARM_DEADLINE_MS + 1)
+            );
+        }
+
+        /** 보류 중인 마이크로태스크를 모두 비운다(Date만 가짜라 setImmediate는 진짜다). */
+        function flushMicrotasks(): Promise<void> {
+            return new Promise(resolve => setImmediate(resolve));
+        }
+
+        it('커서는 미룬 종목 중 가장 앞 걸음(레인 순서상 첫 번째가 아니라 최소) 직전까지만 전진한다', async () => {
+            // 레인 0: universe[0]은 바로 끝나고, universe[2](걸음 3)가 시작되는 순간 예산이
+            // 바닥나도록 해 그 뒤 universe[4](걸음 5)가 미뤄진다. 레인 1은 아직 universe[1]에
+            // 묶여 있다가 풀려난 뒤 universe[3](걸음 4)·[5](걸음 6)를 미룬다.
+            const lane1 = holdLaneOneFirstSymbol(symbol => {
+                if (symbol === universe[2]) exhaustBudget();
+            });
+
+            const running = warmOptionsLastGood(IN_WINDOW);
+            await flushMicrotasks();
+            lane1.release();
+            const result = await running;
+
+            expect(refreshedSymbols().sort()).toEqual(
+                [universe[0], universe[1], universe[2]].sort()
+            );
+            expect(result).toMatchObject({ written: 3, deferred: 3 });
+            // 레인 순서상 첫 미룸은 레인 0의 걸음 5(→ 커서 4)지만, 가장 앞은 레인 1의 걸음 4다.
+            expect(cursorWrites()).toEqual([3]);
+        });
+
+        it('미룬 걸음 뒤에 이미 처리된 종목은 다음 tick에 한 번 더 선택된다', async () => {
+            const lane1 = holdLaneOneFirstSymbol();
+
+            const first = warmOptionsLastGood(IN_WINDOW);
+            await flushMicrotasks();
+            // 레인 0은 걸음 1·3·5를 모두 처리했고, 레인 1만 universe[1]에 묶여 있다.
+            expect(refreshedSymbols()).toEqual(
+                expect.arrayContaining([
+                    universe[0],
+                    universe[1],
+                    universe[2],
+                    universe[4],
+                ])
+            );
+            exhaustBudget();
+            lane1.release();
+            const result = await first;
+
+            // 레인 1의 걸음 4·6이 미뤄졌다 → 커서는 걸음 4 직전(3).
+            expect(result).toMatchObject({ written: 4, deferred: 2 });
+            expect(cursorWrites()).toEqual([3]);
+
+            // 다음 tick: 저장된 커서 3에서 시작하므로 이미 처리된 universe[4]가 다시 뽑힌다.
+            vi.clearAllMocks();
+            vi.setSystemTime(IN_WINDOW);
+            redisHolds({ [OPTIONS_WARM_CURSOR_KEY]: 3 });
+            capturedAt({});
+            mockRefresh.mockResolvedValue('written');
+
+            await warmOptionsLastGood(IN_WINDOW);
+
+            expect(refreshedSymbols()).toEqual(universe.slice(3, 9));
+            expect(refreshedSymbols()).toContain(universe[4]);
+        });
     });
 
     it('커서 쓰기 실패는 흡수하고 결과는 그대로 돌려준다', async () => {
@@ -401,7 +507,7 @@ describe('warmOptionsLastGood — 멈춘 호출 (가짜 타이머)', () => {
         });
         mockRedisGet.mockResolvedValue(null);
         mockRedisSet.mockResolvedValue('OK');
-        mockCapturedAt.mockResolvedValue(null);
+        capturedAt({});
     });
 
     afterEach(() => {

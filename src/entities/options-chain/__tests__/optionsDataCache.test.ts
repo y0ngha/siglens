@@ -23,12 +23,14 @@ const {
     mockFetchSnapshot,
     mockRedisGet,
     mockRedisSet,
+    mockRedisMget,
     mockRedisConstructor,
 } = vi.hoisted(() => ({
     mockHasOptionsMarket: vi.fn(),
     mockFetchSnapshot: vi.fn(),
     mockRedisGet: vi.fn(),
     mockRedisSet: vi.fn(),
+    mockRedisMget: vi.fn(),
     mockRedisConstructor: vi.fn(),
 }));
 
@@ -44,7 +46,7 @@ vi.mock('../lib/YahooOptionsAdapter', () => ({
 vi.mock('@upstash/redis', () => ({
     Redis: vi.fn().mockImplementation(function (opts: unknown) {
         mockRedisConstructor(opts);
-        return { get: mockRedisGet, set: mockRedisSet };
+        return { get: mockRedisGet, set: mockRedisSet, mget: mockRedisMget };
     }),
 }));
 
@@ -825,6 +827,50 @@ describe('refreshLastGoodSnapshot', () => {
         );
     });
 
+    it('last-good과 같은 TTL로 capturedAt 보조 키를 함께 쓴다', async () => {
+        mockFetchSnapshot.mockResolvedValue(healthy);
+
+        const mod = await loadWithEnv(REDIS_ENV);
+        await mod.refreshLastGoodSnapshot('AAPL', WARM_NOW);
+
+        expect(setCallsFor('options:snapshot:last-good-at:AAPL')).toEqual([
+            [
+                'options:snapshot:last-good-at:AAPL',
+                healthy.capturedAt,
+                { ex: LAST_GOOD_SNAPSHOT_TTL_SECONDS },
+            ],
+        ]);
+    });
+
+    it('보조 키 쓰기만 실패해도 last-good은 갱신됐으므로 written이다', async () => {
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        mockFetchSnapshot.mockResolvedValue(healthy);
+        mockRedisSet.mockImplementation(async (key: string) => {
+            if (key === 'options:snapshot:last-good-at:AAPL') {
+                throw new Error('redis write fail');
+            }
+            return 'OK';
+        });
+
+        const mod = await loadWithEnv(REDIS_ENV);
+        const result = await mod.refreshLastGoodSnapshot('AAPL', WARM_NOW);
+
+        expect(result).toBe('written');
+        expect(setCallsFor(MAIN_KEY)).toHaveLength(1);
+        errSpy.mockRestore();
+    });
+
+    it('stale이면 보조 키도 쓰지 않는다', async () => {
+        mockFetchSnapshot.mockResolvedValue(stale);
+
+        const mod = await loadWithEnv(REDIS_ENV);
+        await mod.refreshLastGoodSnapshot('AAPL', WARM_NOW);
+
+        expect(setCallsFor('options:snapshot:last-good-at:AAPL')).toHaveLength(
+            0
+        );
+    });
+
     it('일반 캐시에 값이 있어도 hit 경로를 우회해 Yahoo를 직접 친다', async () => {
         mockRedisGet.mockImplementation(async (key: string) =>
             key === MAIN_KEY ? stale : null
@@ -916,49 +962,76 @@ describe('refreshLastGoodSnapshot', () => {
     });
 });
 
-describe('readLastGoodCapturedAt', () => {
+describe('readLastGoodCapturedAtBatch', () => {
     const REDIS_ENV = { url: 'https://example.upstash.io', token: 'tok' };
-    const LAST_GOOD_KEY = 'options:snapshot:last-good:AAPL';
 
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
-    it('저장된 last-good의 capturedAt을 저장 당시 값 그대로 돌려준다', async () => {
-        mockRedisGet.mockResolvedValue({
-            symbol: 'AAPL',
-            capturedAt: '2026-10-05T20:30:00.000Z',
-            chains: [],
-        });
+    it('보조 키를 MGET 한 번으로 읽고 값이 있는 종목만 맵에 담는다', async () => {
+        mockRedisMget.mockResolvedValue([
+            '2026-10-05T20:30:00.000Z',
+            null,
+            '2026-10-05T20:40:00.000Z',
+        ]);
 
         const mod = await loadWithEnv(REDIS_ENV);
-        await expect(mod.readLastGoodCapturedAt('aapl')).resolves.toBe(
-            '2026-10-05T20:30:00.000Z'
+        const result = await mod.readLastGoodCapturedAtBatch([
+            'AAPL',
+            'msft',
+            'NVDA',
+        ]);
+
+        expect(mockRedisMget).toHaveBeenCalledTimes(1);
+        expect(mockRedisMget).toHaveBeenCalledWith(
+            'options:snapshot:last-good-at:AAPL',
+            'options:snapshot:last-good-at:MSFT',
+            'options:snapshot:last-good-at:NVDA'
         );
-        expect(mockRedisGet).toHaveBeenCalledWith(LAST_GOOD_KEY);
+        expect(Object.fromEntries(result)).toEqual({
+            AAPL: '2026-10-05T20:30:00.000Z',
+            NVDA: '2026-10-05T20:40:00.000Z',
+        });
+        // 스냅샷 전체 키는 읽지 않는다.
+        expect(mockRedisGet).not.toHaveBeenCalled();
     });
 
-    it('last-good이 없으면 null이다', async () => {
-        mockRedisGet.mockResolvedValue(null);
+    it('문자열이 아닌 값(깨진 데이터)은 미확보로 본다', async () => {
+        mockRedisMget.mockResolvedValue([123, { a: 1 }]);
 
         const mod = await loadWithEnv(REDIS_ENV);
-        await expect(mod.readLastGoodCapturedAt('AAPL')).resolves.toBeNull();
+        const result = await mod.readLastGoodCapturedAtBatch(['AAPL', 'MSFT']);
+
+        expect(result.size).toBe(0);
     });
 
-    it('Redis 오류는 흡수하고 null이다', async () => {
+    it('종목이 없으면 Redis를 부르지 않는다', async () => {
+        const mod = await loadWithEnv(REDIS_ENV);
+        const result = await mod.readLastGoodCapturedAtBatch([]);
+
+        expect(result.size).toBe(0);
+        expect(mockRedisMget).not.toHaveBeenCalled();
+    });
+
+    it('Redis 오류는 흡수하고 빈 맵이다', async () => {
         const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-        mockRedisGet.mockRejectedValue(new Error('redis down'));
+        mockRedisMget.mockRejectedValue(new Error('redis down'));
 
         const mod = await loadWithEnv(REDIS_ENV);
-        await expect(mod.readLastGoodCapturedAt('AAPL')).resolves.toBeNull();
+        const result = await mod.readLastGoodCapturedAtBatch(['AAPL']);
+
+        expect(result.size).toBe(0);
         expect(errSpy).toHaveBeenCalled();
         errSpy.mockRestore();
     });
 
-    it('Redis가 없으면 null이다', async () => {
+    it('Redis가 없으면 빈 맵이다', async () => {
         const mod = await loadWithEnv({});
-        await expect(mod.readLastGoodCapturedAt('AAPL')).resolves.toBeNull();
-        expect(mockRedisGet).not.toHaveBeenCalled();
+        const result = await mod.readLastGoodCapturedAtBatch(['AAPL']);
+
+        expect(result.size).toBe(0);
+        expect(mockRedisMget).not.toHaveBeenCalled();
     });
 });
 

@@ -6,12 +6,15 @@
 vi.mock('server-only', () => ({}));
 
 const {
+    BUDGET_MS,
     mockAfter,
     mockPruneAnalysisHistory,
     mockGetDatabaseClient,
     mockRedisGet,
     mockRedisSet,
 } = vi.hoisted(() => ({
+    // route가 가져다 쓰는 배치 예산(= LOCK_TTL 900s − 안전 여유 60s)의 목 값. mock과 단언이 공유한다.
+    BUDGET_MS: 840_000,
     mockAfter: vi.fn(),
     mockPruneAnalysisHistory: vi.fn(),
     mockGetDatabaseClient: vi.fn(),
@@ -26,10 +29,9 @@ vi.mock('../lock', () => ({
     releasePrewarmLock: vi.fn(),
 }));
 
-// route는 BATCH_WALL_CLOCK_BUDGET_MS(= LOCK_TTL 900s − 안전 여유 60s)만 가져다 쓴다.
 vi.mock('../runPrewarmBatch', () => ({
     runPrewarmBatch: vi.fn(),
-    BATCH_WALL_CLOCK_BUDGET_MS: 840_000,
+    BATCH_WALL_CLOCK_BUDGET_MS: BUDGET_MS,
 }));
 
 vi.mock('@/shared/db/client', () => ({
@@ -47,7 +49,7 @@ vi.mock('@/shared/cache/redisClient', () => ({
 }));
 
 vi.mock('@/entities/options-chain/lib/optionsDataCache', () => ({
-    readLastGoodCapturedAt: vi.fn(),
+    readLastGoodCapturedAtBatch: vi.fn(),
     refreshLastGoodSnapshot: vi.fn(),
 }));
 
@@ -58,12 +60,11 @@ import {
 } from '@/app/api/cron/seo-prewarm/lock';
 import { runPrewarmBatch } from '@/app/api/cron/seo-prewarm/runPrewarmBatch';
 import {
-    readLastGoodCapturedAt,
+    readLastGoodCapturedAtBatch,
     refreshLastGoodSnapshot,
 } from '@/entities/options-chain/lib/optionsDataCache';
 import { OPTIONS_WARM_REFRESH_TIMEOUT_MS } from '@/entities/options-chain/lib/warmOptionsLastGood';
 
-const BUDGET_MS = 840_000;
 // 2026-10-05(월) 16:30 EDT — 옵션 워밍 구간 안.
 const IN_WINDOW = new Date('2026-10-05T20:30:00.000Z');
 
@@ -104,7 +105,7 @@ describe('PATCH /api/cron/seo-prewarm — 옵션 워밍 시간 경계', () => {
         mockRedisGet.mockResolvedValue(null);
         mockRedisSet.mockResolvedValue('OK');
         vi.mocked(runPrewarmBatch).mockResolvedValue(batchCounts);
-        vi.mocked(readLastGoodCapturedAt).mockResolvedValue(null);
+        vi.mocked(readLastGoodCapturedAtBatch).mockResolvedValue(new Map());
         vi.spyOn(console, 'log').mockImplementation(() => {});
     });
 
@@ -128,7 +129,7 @@ describe('PATCH /api/cron/seo-prewarm — 옵션 워밍 시간 경계', () => {
         expect(releasePrewarmLock).toHaveBeenCalledWith('token-1');
     });
 
-    it('워밍은 락 예산 끝(획득 + 840s)을 넘기지 않는다', async () => {
+    it('워밍은 락 예산 끝(획득 + BATCH_WALL_CLOCK_BUDGET_MS)을 넘기지 않는다', async () => {
         vi.mocked(refreshLastGoodSnapshot).mockImplementation(
             () => new Promise(() => {})
         );
@@ -169,7 +170,7 @@ describe('PATCH /api/cron/seo-prewarm — 옵션 워밍 시간 경계', () => {
         await callback();
 
         expect(refreshLastGoodSnapshot).not.toHaveBeenCalled();
-        expect(readLastGoodCapturedAt).not.toHaveBeenCalled();
+        expect(readLastGoodCapturedAtBatch).not.toHaveBeenCalled();
         expect(console.log).toHaveBeenCalledWith(
             '[seo-prewarm] options warm done:',
             JSON.stringify({ status: 'no_budget' })

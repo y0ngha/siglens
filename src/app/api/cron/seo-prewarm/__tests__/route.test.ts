@@ -12,9 +12,12 @@ vi.mock('../lock', () => ({
     releasePrewarmLock: vi.fn(),
 }));
 
+// mock과 단언이 같은 값을 보도록 한 곳에서 정한다.
+const { BATCH_BUDGET_MS } = vi.hoisted(() => ({ BATCH_BUDGET_MS: 840_000 }));
+
 vi.mock('../runPrewarmBatch', () => ({
     runPrewarmBatch: vi.fn(),
-    BATCH_WALL_CLOCK_BUDGET_MS: 840_000,
+    BATCH_WALL_CLOCK_BUDGET_MS: BATCH_BUDGET_MS,
 }));
 
 vi.mock('@/entities/options-chain/lib/warmOptionsLastGood', () => ({
@@ -282,9 +285,11 @@ describe('PATCH /api/cron/seo-prewarm', () => {
             const after = Date.now();
             const options = vi.mocked(warmOptionsLastGood).mock.calls[0][1];
             expect(options?.budgetEndMs).toBeGreaterThanOrEqual(
-                before + 840_000
+                before + BATCH_BUDGET_MS
             );
-            expect(options?.budgetEndMs).toBeLessThanOrEqual(after + 840_000);
+            expect(options?.budgetEndMs).toBeLessThanOrEqual(
+                after + BATCH_BUDGET_MS
+            );
         });
 
         it('결과 카운트를 로그한다', async () => {

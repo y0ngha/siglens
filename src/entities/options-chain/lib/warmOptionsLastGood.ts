@@ -2,12 +2,13 @@ import 'server-only';
 import { getRedisClient } from '@/shared/cache/redisClient';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import {
-    readLastGoodCapturedAt,
+    readLastGoodCapturedAtBatch,
     refreshLastGoodSnapshot,
     type LastGoodRefreshResult,
 } from './optionsDataCache';
 import { getOptionsWarmWindow } from './optionsWarmWindow';
 import {
+    type OptionsWarmPick,
     OPTIONS_WARM_SYMBOLS_PER_TICK,
     buildOptionsWarmUniverse,
     selectOptionsWarmSymbols,
@@ -21,10 +22,16 @@ import {
 export const OPTIONS_WARM_CURSOR_KEY = 'options-warm:last-good-cursor';
 
 /**
- * 동시에 처리하는 종목 수. `YahooOptionsAdapter.fetchSnapshot`은 종목당 첫 호출 1건 +
- * 슬롯 매핑으로 모자란 만기 추가 호출을 병렬로 낸다. 슬롯은 1W/2W/1M/2M/3M/6M 6개라 종목당
- * 최대 7건(순간 동시 최대 6건)이다. 동시성 2면 순간 동시 요청 ≤ 12건, tick당 최대
- * 6종목 × 7건 = 42건이다 — 20건 안쪽이라 종목 간 지연이나 백오프는 두지 않는다.
+ * 동시에 처리하는 종목 수(레인 수). `YahooOptionsAdapter.fetchSnapshot`은 종목당 첫 호출 1건
+ * + 슬롯 매핑으로 모자란 만기 추가 호출을 병렬로 낸다. 슬롯은 1W/2W/1M/2M/3M/6M 6개라
+ * 종목당 최대 7건이고 그중 순간 동시 최대 6건이다. 따라서
+ * - **순간 동시 요청**: 레인 2 × 6 = 최대 12건 — 20건 안팎의 가이드 안이다.
+ * - **tick당 총 요청**: 6종목 × 7건 = 최대 42건(시간에 걸쳐 분산, 가이드와 무관).
+ * 순간 동시 수가 가이드 안이라 종목 간 지연이나 백오프는 두지 않는다.
+ *
+ * 레포의 공용 청크 헬퍼(`fetchInChunks`)는 존재하지 않아 재사용하지 않는다(이 레포에
+ * `FETCH_CONCURRENCY`·`fetchInChunks`는 없다). 필요한 건 "종목별 타임아웃 + 시작 마감"을
+ * 가진 아주 작은 레인 풀이라 `runLane`으로 직접 둔다.
  */
 export const OPTIONS_WARM_CONCURRENCY = 2;
 
@@ -39,6 +46,10 @@ export const OPTIONS_WARM_DEADLINE_MS = 45 * MS_PER_SECOND;
  * 종목 한 건(`refreshLastGoodSnapshot`)의 최대 대기. 어댑터 호출에는 자체 타임아웃이 없어
  * 멈춘 Yahoo 요청이 워커와 락 해제를 영원히 붙잡을 수 있다. 타임아웃이 나도 요청은
  * 취소되지 않고(orphan) 그 종목은 `none`으로 센다 — 목적은 락 보호이지 취소가 아니다.
+ *
+ * 타임아웃 난 종목은 **소비된 것으로 보고 커서가 지나간다**(다음 tick에 바로 재시도하지
+ * 않는다). 계속 멈추는 종목 하나가 회전 전체를 붙잡으면 안 되기 때문이다. 그 종목은
+ * last-good이 여전히 없으므로 다음 바퀴(유니버스를 한 바퀴 돈 뒤)에 다시 후보가 된다.
  */
 export const OPTIONS_WARM_REFRESH_TIMEOUT_MS = 15 * MS_PER_SECOND;
 
@@ -149,6 +160,38 @@ interface WarmStepContext {
     completeTtlSeconds: number;
 }
 
+/** 한 종목의 처리 결과. `result`가 null이면 시작 마감을 넘겨 미뤘다는 뜻이다. */
+interface PickOutcome {
+    pick: OptionsWarmPick;
+    result: LastGoodRefreshResult | null;
+}
+
+/**
+ * 한 레인이 맡은 종목을 순서대로 처리한다. 종목마다 시작 마감을 확인하고(넘기면 그 종목
+ * 부터 전부 미룬다), 시작한 종목은 `OPTIONS_WARM_REFRESH_TIMEOUT_MS`로 끊는다.
+ */
+function runLane(
+    lane: readonly OptionsWarmPick[],
+    now: Date,
+    startDeadlineMs: number
+): Promise<readonly PickOutcome[]> {
+    return lane.reduce<Promise<readonly PickOutcome[]>>(
+        async (previous, pick) => {
+            const done = await previous;
+            if (Date.now() >= startDeadlineMs) {
+                return [...done, { pick, result: null }];
+            }
+            const result = await withTimeout<LastGoodRefreshResult>(
+                refreshLastGoodSnapshot(pick.symbol, now),
+                OPTIONS_WARM_REFRESH_TIMEOUT_MS,
+                'none'
+            );
+            return [...done, { pick, result }];
+        },
+        Promise.resolve([])
+    );
+}
+
 async function runWarmStep({
     redis,
     now,
@@ -163,50 +206,55 @@ async function runWarmStep({
 
     const universe = buildOptionsWarmUniverse();
     const cursor = await readCursor(redis);
+    // 후보 전체의 capturedAt을 MGET 한 번으로 읽는다. 값이 없으면 미확보로 본다.
+    const capturedAtBySymbol = await readLastGoodCapturedAtBatch(universe);
 
-    const selection = await selectOptionsWarmSymbols({
+    const selection = selectOptionsWarmSymbols({
         universe,
         cursor,
         batchSize: OPTIONS_WARM_SYMBOLS_PER_TICK,
-        shouldStop: () => Date.now() >= startDeadlineMs,
-        isCaptured: async symbol => {
-            const capturedAt = await readLastGoodCapturedAt(symbol);
-            if (capturedAt === null) return false;
-            const capturedMs = Date.parse(capturedAt);
+        isCaptured: symbol => {
+            const capturedMs = Date.parse(capturedAtBySymbol.get(symbol) ?? '');
             return Number.isFinite(capturedMs) && capturedMs > closeMs;
         },
     });
 
-    const counts: OptionsWarmCounts = {
-        written: 0,
-        stale: 0,
-        none: 0,
-        skipped: selection.skipped,
-        deferred: 0,
-    };
-    const queue = [...selection.picks];
-    let started = 0;
-    const worker = async (): Promise<void> => {
-        while (queue.length > 0 && Date.now() < startDeadlineMs) {
-            const pick = queue.shift();
-            if (pick === undefined) return;
-            started += 1;
-            const result: LastGoodRefreshResult = await withTimeout(
-                refreshLastGoodSnapshot(pick.symbol, now),
-                OPTIONS_WARM_REFRESH_TIMEOUT_MS,
-                'none'
-            );
-            counts[result] += 1;
-        }
-    };
-    await Promise.all(Array.from({ length: OPTIONS_WARM_CONCURRENCY }, worker));
-    counts.deferred = selection.picks.length - started;
+    // 선택 순서대로 레인에 번갈아 나눈다.
+    const lanes = Array.from(
+        { length: OPTIONS_WARM_CONCURRENCY },
+        (_, laneIndex) =>
+            selection.picks.filter(
+                (_pick, index) => index % OPTIONS_WARM_CONCURRENCY === laneIndex
+            )
+    );
+    const outcomes = (
+        await Promise.all(
+            lanes.map(lane => runLane(lane, now, startDeadlineMs))
+        )
+    ).flat();
 
-    // 시작하지 못한 첫 종목 앞까지만 전진한다 — 미룬 종목이 다음 tick의 첫 후보가 된다.
+    const counts = outcomes.reduce<OptionsWarmCounts>(
+        (acc, { result }) =>
+            result === null
+                ? { ...acc, deferred: acc.deferred + 1 }
+                : { ...acc, [result]: acc[result] + 1 },
+        {
+            written: 0,
+            stale: 0,
+            none: 0,
+            skipped: selection.skipped,
+            deferred: 0,
+        }
+    );
+
+    // 미룬 종목 중 가장 앞 걸음 직전까지만 전진한다 — 미룬 종목이 다음 tick의 첫 후보가
+    // 된다. 레인이 서로 다른 시각에 마감을 만나면 미룬 종목 뒤의 종목이 이미 처리됐을 수
+    // 있는데, 그건 다음 tick에 한 번 더 처리될 뿐(멱등 쓰기)이라 빈틈보다 낫다.
+    const firstDeferredStep = Math.min(
+        ...outcomes.filter(o => o.result === null).map(o => o.pick.step)
+    );
     const consumed =
-        counts.deferred === 0
-            ? selection.examined
-            : selection.picks[started].step - 1;
+        counts.deferred === 0 ? selection.examined : firstDeferredStep - 1;
     const universeLength = universe.length;
     if (universeLength > 0) {
         try {

@@ -70,6 +70,15 @@ function buildLastGoodSnapshotKey(symbol: string): string {
 }
 
 /**
+ * last-good의 `capturedAt`만 담은 작은 보조 키. 워밍이 "오늘 마감 이후 이미 확보됐나"를
+ * 판정할 때 스냅샷 전체(수백 KB)를 읽지 않고 MGET 한 번으로 후보 전체를 훑게 한다.
+ * last-good과 같은 TTL로 함께 쓴다.
+ */
+function buildLastGoodCapturedAtKey(symbol: string): string {
+    return `options:snapshot:last-good-at:${symbol.toUpperCase()}`;
+}
+
+/**
  * 미결제약정이 비어 있지 않은 스냅샷만 last-good으로 저장한다 — 호출자가 걸러서 넘긴다.
  * 저장 실패는 흡수한다(없어도 기존 동작과 같다). 저장됐는지를 돌려줘 워밍이 결과를
  * 정직하게 보고하게 한다.
@@ -82,11 +91,24 @@ async function writeLastGoodSnapshot(
     const key = buildLastGoodSnapshotKey(symbol);
     try {
         await redis.set(key, snapshot, { ex: LAST_GOOD_SNAPSHOT_TTL_SECONDS });
-        return true;
     } catch (error) {
         console.error('[optionsDataCache] Redis set failed for', key, error);
         return false;
     }
+    // 보조 키 실패는 흡수한다 — 없으면 워밍이 그 종목을 "미확보"로 보고 한 번 더 돌 뿐이다.
+    const capturedAtKey = buildLastGoodCapturedAtKey(symbol);
+    try {
+        await redis.set(capturedAtKey, snapshot.capturedAt, {
+            ex: LAST_GOOD_SNAPSHOT_TTL_SECONDS,
+        });
+    } catch (error) {
+        console.error(
+            '[optionsDataCache] Redis set failed for',
+            capturedAtKey,
+            error
+        );
+    }
+    return true;
 }
 
 /** 일반 스냅샷 캐시 키(`options:snapshot:SYM`)에 저장한다. 실패는 흡수하고 저장 여부를 돌려준다. */
@@ -319,22 +341,35 @@ export const fetchOptionsSnapshot = cache(
 export type LastGoodRefreshResult = 'written' | 'stale' | 'none';
 
 /**
- * 저장된 last-good의 `capturedAt`(ISO 문자열)을 돌려준다. 없거나 Redis를 못 쓰면 `null`.
- * 워밍이 "오늘 정규장 마감 이후에 이미 확보된 종목"을 건너뛰는 데 쓴다 — 오늘 기준으로
- * 맞추는 `readLastGoodSnapshot`과 달리 저장 당시 값 그대로다.
+ * 여러 종목의 last-good `capturedAt`(ISO 문자열)을 보조 키 MGET 한 번으로 읽는다. 값이
+ * 없는 종목(보조 키 도입 전에 저장됐거나 만료·미저장)은 결과 맵에 없다 — 호출자는 "없음 =
+ * 미확보"로 다룬다. Redis가 없거나 오류면 빈 맵이다(워밍이 전부 미확보로 보고 진행한다).
+ *
+ * 오늘 기준으로 맞추는 `readLastGoodSnapshot`과 달리 저장 당시 값 그대로다.
  */
-export async function readLastGoodCapturedAt(
-    symbol: string
-): Promise<string | null> {
+export async function readLastGoodCapturedAtBatch(
+    symbols: readonly string[]
+): Promise<ReadonlyMap<string, string>> {
     const redis = getRedisClient();
-    if (redis === null) return null;
-    const key = buildLastGoodSnapshotKey(symbol);
+    if (redis === null || symbols.length === 0) return new Map();
     try {
-        const stored = await redis.get<OptionsSnapshot>(key);
-        return stored?.capturedAt ?? null;
+        const values = await redis.mget<unknown[]>(
+            ...symbols.map(buildLastGoodCapturedAtKey)
+        );
+        return new Map(
+            symbols.flatMap((symbol, index) => {
+                const value = values[index];
+                return typeof value === 'string'
+                    ? [[symbol, value] as const]
+                    : [];
+            })
+        );
     } catch (error) {
-        console.error('[optionsDataCache] Redis get failed for', key, error);
-        return null;
+        console.error(
+            '[optionsDataCache] Redis mget failed for last-good captured-at',
+            error
+        );
+        return new Map();
     }
 }
 

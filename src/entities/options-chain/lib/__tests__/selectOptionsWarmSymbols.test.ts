@@ -7,7 +7,7 @@ import {
 } from '../selectOptionsWarmSymbols';
 
 const UNIVERSE = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
-const never = async (): Promise<boolean> => false;
+const never = (): boolean => false;
 
 describe('buildOptionsWarmUniverse', () => {
     it('상위 100개로 자른다', () => {
@@ -45,8 +45,8 @@ describe('buildOptionsWarmUniverse', () => {
 });
 
 describe('selectOptionsWarmSymbols', () => {
-    it('커서 위치부터 batchSize개를 순서대로 고른다', async () => {
-        const result = await selectOptionsWarmSymbols({
+    it('커서 위치부터 batchSize개를 순서대로 고른다', () => {
+        const result = selectOptionsWarmSymbols({
             universe: UNIVERSE,
             cursor: 2,
             batchSize: 3,
@@ -57,13 +57,13 @@ describe('selectOptionsWarmSymbols', () => {
         expect(result.skipped).toBe(0);
     });
 
-    it('이미 확보된 종목은 건너뛰되 걸음 수에는 센다', async () => {
+    it('이미 확보된 종목은 건너뛰되 걸음 수에는 센다', () => {
         const captured = new Set(['C', 'D']);
-        const result = await selectOptionsWarmSymbols({
+        const result = selectOptionsWarmSymbols({
             universe: UNIVERSE,
             cursor: 2,
             batchSize: 3,
-            isCaptured: async s => captured.has(s),
+            isCaptured: s => captured.has(s),
         });
         expect(result.picks.map(p => p.symbol)).toEqual(['E', 'F', 'G']);
         expect(result.skipped).toBe(2);
@@ -71,8 +71,8 @@ describe('selectOptionsWarmSymbols', () => {
         expect(result.picks.map(p => p.step)).toEqual([3, 4, 5]);
     });
 
-    it('끝에서 처음으로 감싸 돈다(cursor wraparound)', async () => {
-        const result = await selectOptionsWarmSymbols({
+    it('끝에서 처음으로 감싸 돈다(cursor wraparound)', () => {
+        const result = selectOptionsWarmSymbols({
             universe: UNIVERSE,
             cursor: 6,
             batchSize: 4,
@@ -81,8 +81,8 @@ describe('selectOptionsWarmSymbols', () => {
         expect(result.picks.map(p => p.symbol)).toEqual(['G', 'H', 'A', 'B']);
     });
 
-    it('커서가 유니버스 길이를 넘어도 모듈로로 처리한다', async () => {
-        const result = await selectOptionsWarmSymbols({
+    it('커서가 유니버스 길이를 넘어도 모듈로로 처리한다', () => {
+        const result = selectOptionsWarmSymbols({
             universe: UNIVERSE,
             cursor: 8 * 5 + 1,
             batchSize: 2,
@@ -91,9 +91,9 @@ describe('selectOptionsWarmSymbols', () => {
         expect(result.picks.map(p => p.symbol)).toEqual(['B', 'C']);
     });
 
-    it('전부 확보됐으면 한 바퀴만 훑고 끝낸다', async () => {
-        const isCaptured = vi.fn(async () => true);
-        const result = await selectOptionsWarmSymbols({
+    it('전부 확보됐으면 한 바퀴만 훑고 끝낸다', () => {
+        const isCaptured = vi.fn(() => true);
+        const result = selectOptionsWarmSymbols({
             universe: UNIVERSE,
             cursor: 3,
             batchSize: 6,
@@ -105,8 +105,8 @@ describe('selectOptionsWarmSymbols', () => {
         expect(isCaptured).toHaveBeenCalledTimes(UNIVERSE.length);
     });
 
-    it('남은 종목이 batchSize보다 적으면 한 바퀴를 넘지 않고 같은 종목을 두 번 고르지 않는다', async () => {
-        const result = await selectOptionsWarmSymbols({
+    it('남은 종목이 batchSize보다 적으면 한 바퀴를 넘지 않고 같은 종목을 두 번 고르지 않는다', () => {
+        const result = selectOptionsWarmSymbols({
             universe: ['A', 'B', 'C'],
             cursor: 1,
             batchSize: 6,
@@ -115,25 +115,9 @@ describe('selectOptionsWarmSymbols', () => {
         expect(result.picks.map(p => p.symbol)).toEqual(['B', 'C', 'A']);
     });
 
-    it('shouldStop이 true가 되면 더 훑지 않는다', async () => {
-        let calls = 0;
-        const result = await selectOptionsWarmSymbols({
-            universe: UNIVERSE,
-            cursor: 0,
-            batchSize: 6,
-            isCaptured: never,
-            shouldStop: () => {
-                calls += 1;
-                return calls > 2;
-            },
-        });
-        expect(result.picks.map(p => p.symbol)).toEqual(['A', 'B']);
-        expect(result.examined).toBe(2);
-    });
-
-    it('빈 유니버스·0 batchSize는 아무것도 고르지 않는다', async () => {
+    it('빈 유니버스·0 batchSize는 아무것도 고르지 않는다', () => {
         expect(
-            await selectOptionsWarmSymbols({
+            selectOptionsWarmSymbols({
                 universe: [],
                 cursor: 0,
                 batchSize: 6,
@@ -141,7 +125,7 @@ describe('selectOptionsWarmSymbols', () => {
             })
         ).toEqual({ picks: [], skipped: 0, examined: 0 });
         expect(
-            await selectOptionsWarmSymbols({
+            selectOptionsWarmSymbols({
                 universe: UNIVERSE,
                 cursor: 0,
                 batchSize: 0,
