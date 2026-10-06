@@ -23,6 +23,7 @@ import { TERMS_PATH } from '@/shared/lib/legal';
 import { BacktestHero } from '@/widgets/backtesting/BacktestHero';
 import { BacktestMethodology } from '@/widgets/backtesting/BacktestMethodology';
 import { BacktestTabs } from '@/widgets/backtesting/BacktestTabs';
+import { BacktestCaseList } from '@/widgets/backtesting/BacktestCaseList';
 import { Breadcrumb } from '@/shared/ui/Breadcrumb';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import backtestData from '@/entities/backtest-case/data/data.json';
@@ -36,28 +37,6 @@ const data = validateBacktestData(backtestData as unknown);
 // only by the (local, gitignored) generator script, never at request time.
 const STATS = deriveBacktestStats(data.cases);
 
-/**
- * 클라이언트로 넘길 케이스의 프로젝션.
- *
- * `BacktestTabs`는 `'use client'`라 이 배열이 통째로 RSC flight에 실린다. 두 필드가
- * 읽히지 않은 채 실려 있었다:
- * - `bullishTargets`의 2번째 이후 원소 — `BacktestCaseCard`는 `[0]`과 `.length > 0`만
- *   본다. `slice(0, 1)`은 두 접근의 결과를 모두 보존한다(빈 배열도 빈 채로 남는다).
- *
- * `aiResult`(853B)도 렌더되지 않지만 남겨뒀다 — 떼려면 `BacktestTabs` →
- * `BacktestCaseList` → `BacktestCaseCard`의 prop 타입을 `Omit`으로 좁혀야 하고,
- * 그 값어치가 안 된다.
- *
- * `data.json` 자체는 건드리지 않는다 — `/backtesting/data.json`으로 공개되는 Dataset이고
- * `datasetJsonLd`의 `distribution`이 그 파일을 가리킨다.
- */
-const CLIENT_CASES = data.cases.map(c => ({
-    ...c,
-    aiAnalysis: {
-        ...c.aiAnalysis,
-        bullishTargets: c.aiAnalysis.bullishTargets.slice(0, 1),
-    },
-}));
 // Derived once at module load — intentionally static, data.json is replaced by the script
 const TICKERS = [...new Set(data.cases.map(c => c.ticker))];
 
@@ -234,10 +213,14 @@ export default async function BacktestingPage({
                 </div>
                 <BacktestHero stats={STATS} />
                 <BacktestMethodology />
-                {/* BacktestTabs는 더 이상 useSearchParams()를 렌더 중 호출하지
-                    않으므로(useBacktestFilter 참고) Suspense 경계가 필요 없다 —
-                    전체 케이스 목록이 그대로 SSR 정적 HTML에 포함된다. */}
-                <BacktestTabs cases={CLIENT_CASES} tickers={TICKERS} />
+                {/* 케이스 목록은 서버 컴포넌트로 렌더해 탭(클라이언트)에 children으로
+                    넘긴다 — 케이스 데이터가 RSC 페이로드로 넘어가 카드 트리가 하이드레이션되지
+                    않는다. 탭은 보이는 범위만 고른다(BacktestTabs JSDoc). BacktestTabs는
+                    useSearchParams()를 렌더 중 호출하지 않으므로(useBacktestFilter 참고)
+                    Suspense 경계가 필요 없다. */}
+                <BacktestTabs tickers={TICKERS}>
+                    <BacktestCaseList cases={data.cases} />
+                </BacktestTabs>
                 <div
                     role="note"
                     aria-label={t('page.693b62')}

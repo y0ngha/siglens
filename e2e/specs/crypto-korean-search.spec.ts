@@ -10,7 +10,7 @@ import { test, expect } from '../support/fixtures';
  * How this works end-to-end:
  *   - seed.ts populates crypto_assets with koreanName='비트코인' for BTCUSD
  *     (and '이더리움' for ETHUSD) so the DB is consistent with the fixture.
- *   - searchTickerAction short-circuits under E2E_TEST=1 and returns a
+ *   - searchTickerQuery (GET /api/search) short-circuits under E2E_TEST=1 and returns a
  *     deterministic fixture that includes BTCUSD/ETHUSD with koreanName and
  *     marketProfile:'crypto'. The filter checks koreanName so "비트코" matches.
  *   - TickerAutocomplete renders a role="option" button per result, each with a

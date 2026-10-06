@@ -29,7 +29,8 @@ export function usePanelResize(): UsePanelResizeResult {
                     panelWidthAtDragStartRef.current - deltaX
                 )
             );
-            setPanelWidth(nextWidth);
+            // 최소·최대에 걸린 채 계속 끌면 같은 폭이 반복된다 — 그때는 렌더를 걸지 않는다.
+            if (nextWidth !== panelWidth) setPanelWidth(nextWidth);
         },
     });
 

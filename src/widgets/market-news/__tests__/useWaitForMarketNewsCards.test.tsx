@@ -11,6 +11,8 @@ import type { NewsFeedCategory } from '@y0ngha/siglens-core';
 import type { MarketNewsCardItem } from '@/entities/market-news/lib/toCardItem';
 import { getMarketNewsCardsAction } from '@/entities/market-news/actions/getMarketNewsCardsAction';
 import { useWaitForMarketNewsCards } from '../hooks/useWaitForMarketNewsCards';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
 
 vi.mock('@/entities/market-news/actions/getMarketNewsCardsAction', () => ({
     getMarketNewsCardsAction: vi.fn(),
@@ -44,6 +46,20 @@ const ENRICHED_ITEM: MarketNewsCardItem = {
     tickers: [],
 };
 
+/** 폴러가 `useQuery`로 돈다 — 테스트마다 새 QueryClient(캐시 공유 없음). */
+function makeQueryWrapper() {
+    const client = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+    });
+    return function QueryWrapper({ children }: { children: ReactNode }) {
+        return (
+            <QueryClientProvider client={client}>
+                {children}
+            </QueryClientProvider>
+        );
+    };
+}
+
 describe('useWaitForMarketNewsCards', () => {
     beforeEach(() => {
         vi.useFakeTimers();
@@ -55,8 +71,9 @@ describe('useWaitForMarketNewsCards', () => {
     });
 
     it('initiallyReady=true이면 isReady=true를 즉시 반환하고 polling을 하지 않는다', () => {
-        const { result } = renderHook(() =>
-            useWaitForMarketNewsCards('general', true)
+        const { result } = renderHook(
+            () => useWaitForMarketNewsCards('general', true),
+            { wrapper: makeQueryWrapper() }
         );
 
         expect(result.current.isReady).toBe(true);
@@ -67,8 +84,9 @@ describe('useWaitForMarketNewsCards', () => {
     it('initiallyReady=false이면 polling을 시작하고 enriched 아이템 감지 시 isReady=true가 된다', async () => {
         mockGetCards.mockResolvedValue({ ok: true, items: [ENRICHED_ITEM] });
 
-        const { result } = renderHook(() =>
-            useWaitForMarketNewsCards('crypto', false)
+        const { result } = renderHook(
+            () => useWaitForMarketNewsCards('crypto', false),
+            { wrapper: makeQueryWrapper() }
         );
 
         // Initially not ready
@@ -76,8 +94,7 @@ describe('useWaitForMarketNewsCards', () => {
 
         // Advance past the poll interval
         await act(async () => {
-            vi.advanceTimersByTime(4000);
-            await Promise.resolve();
+            await vi.advanceTimersByTimeAsync(4000);
         });
 
         expect(result.current.isReady).toBe(true);
@@ -89,8 +106,9 @@ describe('useWaitForMarketNewsCards', () => {
 
         const clearIntervalSpy = vi.spyOn(global, 'clearInterval');
 
-        const { unmount } = renderHook(() =>
-            useWaitForMarketNewsCards('general', false)
+        const { unmount } = renderHook(
+            () => useWaitForMarketNewsCards('general', false),
+            { wrapper: makeQueryWrapper() }
         );
 
         unmount();
@@ -111,6 +129,7 @@ describe('useWaitForMarketNewsCards', () => {
                 initiallyReady: boolean;
             }) => useWaitForMarketNewsCards(category, initiallyReady),
             {
+                wrapper: makeQueryWrapper(),
                 initialProps: {
                     category: 'crypto' as NewsFeedCategory,
                     initiallyReady: true,
@@ -127,8 +146,7 @@ describe('useWaitForMarketNewsCards', () => {
 
         // Advance timers so the new poll interval fires
         await act(async () => {
-            vi.advanceTimersByTime(4000);
-            await Promise.resolve();
+            await vi.advanceTimersByTimeAsync(4000);
         });
 
         // getMarketNewsCardsAction should now be called with the new category

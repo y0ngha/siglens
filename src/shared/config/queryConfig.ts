@@ -83,6 +83,16 @@ export const QUERY_KEYS = {
      */
     marketNewsDigest: (category: string, locale: Locale) =>
         ['market-news-digest', category, locale] as const,
+    /**
+     * 뉴스 카드 보강 폴링(`usePollingQuery`). 카드 목록과 AI 요약 대기가 **같은 키**를 써서
+     * 요청 하나를 나눠 쓴다. 로케일이 키에 들어가는 이유: 액션이 요청 로케일로 카드 문구를
+     * 고른다(`getNewsCardsAction`의 `resolveRequestLocale`).
+     */
+    newsCards: (symbol: string, locale: Locale) =>
+        ['news-cards', upper(symbol), locale] as const,
+    /** 마켓 뉴스 카드 보강 폴링 — `newsCards`와 같은 이유로 목록·다이제스트 대기가 공유한다. */
+    marketNewsCards: (category: string, locale: Locale) =>
+        ['market-news-cards', category, locale] as const,
     currentUser: () => ['current-user'] as const,
     remainingTokens: () => ['chat', 'remaining-tokens'] as const,
     registeredProviders: () => ['llm', 'registered-providers'] as const,
@@ -172,8 +182,6 @@ export const QUERY_KEYS = {
         ] as const,
     sectorSignals: (scope: DashboardScopeId, timeframe: DashboardTimeframe) =>
         ['sector-signals', scope, timeframe] as const,
-    optionsSnapshot: (symbol: string) =>
-        ['options-snapshot', upper(symbol)] as const,
     /**
      * Options analysis cache scope. Expiration date is part of the key because
      * the AI analysis output differs per expiration — the chip selector should

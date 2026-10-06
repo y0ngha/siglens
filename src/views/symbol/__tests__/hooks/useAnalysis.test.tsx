@@ -112,51 +112,182 @@ describe('useAnalysis', () => {
     });
 
     /**
-     * 쿨다운 조회는 Server Action이라 다른 액션과 한 줄로 나간다. tier 확정(`currentUser`)보다
-     * 먼저 줄을 서면 첫 분석 요청이 한 번의 왕복만큼 늦어지므로 tier 확정 뒤에 보낸다.
+     * 쿨다운 조회는 Server Action이라 모든 차트 조회마다 보내면 다른 액션을 한 왕복씩
+     * 민다. 값이 쓰이는 곳은 재분석 버튼뿐이므로 버튼에 다가갈 때(`syncReanalyzeCooldown`)
+     * 한 번 읽는다. tier 확정 전에는 `currentUser`보다 먼저 줄을 서지 않도록 읽지 않는다.
      */
     describe('쿨다운 동기화 시점', () => {
-        it('tier가 아직 확정되지 않았으면 쿨다운을 조회하지 않는다', async () => {
-            (getReanalyzeCooldownMs as Mock).mockClear();
-
-            renderHook(
-                () => useAnalysis(makeOptions({ isTierHydrated: false })),
-                { wrapper: makeWrapper() }
-            );
-            await act(async () => {});
-
-            expect(getReanalyzeCooldownMs).not.toHaveBeenCalled();
-        });
-
-        it('tier가 확정되면 그때 조회한다', async () => {
-            (getReanalyzeCooldownMs as Mock).mockClear();
-            (getReanalyzeCooldownMs as Mock).mockResolvedValue(42_000);
-
-            const { result, rerender } = renderHook(
-                ({ hydrated }: { hydrated: boolean }) =>
-                    useAnalysis(makeOptions({ isTierHydrated: hydrated })),
-                { wrapper: makeWrapper(), initialProps: { hydrated: false } }
-            );
-            await act(async () => {});
-            expect(getReanalyzeCooldownMs).not.toHaveBeenCalled();
-
-            rerender({ hydrated: true });
-
-            await waitFor(() =>
-                expect(result.current.reanalyzeCooldownMs).toBe(42_000)
-            );
-            expect(getReanalyzeCooldownMs).toHaveBeenCalledTimes(1);
-        });
-
-        it('tier 게이트를 쓰지 않는 호출부(undefined)는 지금처럼 마운트 때 조회한다', async () => {
+        it('마운트만으로는 쿨다운을 조회하지 않는다', async () => {
             (getReanalyzeCooldownMs as Mock).mockClear();
 
             renderHook(() => useAnalysis(makeOptions()), {
                 wrapper: makeWrapper(),
             });
+            await act(async () => {});
+
+            expect(getReanalyzeCooldownMs).not.toHaveBeenCalled();
+        });
+
+        it('재분석 의도 신호가 오면 조회해 카운트다운에 반영한다', async () => {
+            (getReanalyzeCooldownMs as Mock).mockClear();
+            (getReanalyzeCooldownMs as Mock).mockResolvedValue(42_000);
+
+            const { result } = renderHook(() => useAnalysis(makeOptions()), {
+                wrapper: makeWrapper(),
+            });
+            act(() => {
+                result.current.syncReanalyzeCooldown();
+            });
 
             await waitFor(() =>
-                expect(getReanalyzeCooldownMs).toHaveBeenCalledTimes(1)
+                expect(result.current.reanalyzeCooldownMs).toBe(42_000)
+            );
+            expect(getReanalyzeCooldownMs).toHaveBeenCalledWith('AAPL', '1Day');
+        });
+
+        it('같은 종목·타임프레임으로는 한 번만 조회한다', async () => {
+            (getReanalyzeCooldownMs as Mock).mockClear();
+
+            const { result } = renderHook(() => useAnalysis(makeOptions()), {
+                wrapper: makeWrapper(),
+            });
+            act(() => {
+                result.current.syncReanalyzeCooldown();
+            });
+            await act(async () => {});
+            act(() => {
+                result.current.syncReanalyzeCooldown();
+            });
+            await act(async () => {});
+
+            expect(getReanalyzeCooldownMs).toHaveBeenCalledTimes(1);
+        });
+
+        it('tier가 아직 확정되지 않았으면 의도 신호가 와도 조회하지 않는다', async () => {
+            (getReanalyzeCooldownMs as Mock).mockClear();
+
+            const { result } = renderHook(
+                () => useAnalysis(makeOptions({ isTierHydrated: false })),
+                { wrapper: makeWrapper() }
+            );
+            act(() => {
+                result.current.syncReanalyzeCooldown();
+            });
+            await act(async () => {});
+
+            expect(getReanalyzeCooldownMs).not.toHaveBeenCalled();
+        });
+
+        it('종목이 바뀌면 이전 종목의 카운트다운을 비우고 새 종목은 다시 조회한다', async () => {
+            (getReanalyzeCooldownMs as Mock).mockClear();
+            (getReanalyzeCooldownMs as Mock).mockResolvedValue(42_000);
+
+            const { result, rerender } = renderHook(
+                ({ symbol }: { symbol: string }) =>
+                    useAnalysis(makeOptions({ symbol })),
+                { wrapper: makeWrapper(), initialProps: { symbol: 'AAPL' } }
+            );
+            act(() => {
+                result.current.syncReanalyzeCooldown();
+            });
+            await waitFor(() =>
+                expect(result.current.reanalyzeCooldownMs).toBe(42_000)
+            );
+
+            rerender({ symbol: 'MSFT' });
+            expect(result.current.reanalyzeCooldownMs).toBe(0);
+
+            act(() => {
+                result.current.syncReanalyzeCooldown();
+            });
+            await act(async () => {});
+            expect(getReanalyzeCooldownMs).toHaveBeenLastCalledWith(
+                'MSFT',
+                '1Day'
+            );
+        });
+
+        it('조회 응답이 오기 전에 종목이 바뀌면 늦게 온 값은 버린다', async () => {
+            (getReanalyzeCooldownMs as Mock).mockClear();
+            let resolveAapl: (ms: number) => void = () => {};
+            (getReanalyzeCooldownMs as Mock).mockImplementationOnce(
+                () =>
+                    new Promise<number>(resolve => {
+                        resolveAapl = resolve;
+                    })
+            );
+
+            const { result, rerender } = renderHook(
+                ({ symbol }: { symbol: string }) =>
+                    useAnalysis(makeOptions({ symbol })),
+                { wrapper: makeWrapper(), initialProps: { symbol: 'AAPL' } }
+            );
+            act(() => {
+                result.current.syncReanalyzeCooldown();
+            });
+            rerender({ symbol: 'MSFT' });
+            act(() => {
+                result.current.syncReanalyzeCooldown();
+            });
+            await act(async () => {
+                resolveAapl(99_000);
+            });
+
+            expect(result.current.reanalyzeCooldownMs).not.toBe(99_000);
+        });
+    });
+
+    describe('isInstantResponse — 마무리 애니메이션 생략 신호', () => {
+        it('캐시 히트(cached)로 끝난 제출이면 true다', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
+            });
+
+            const { result } = renderHook(
+                () => useAnalysis(makeOptions({ initialAnalysisFailed: true })),
+                { wrapper: makeWrapper() }
+            );
+
+            await waitFor(() =>
+                expect(result.current.isInstantResponse).toBe(true)
+            );
+            expect(result.current.isAnalyzing).toBe(false);
+        });
+
+        it('새로 생성된 결과(done)면 false다', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'done',
+                result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
+            });
+
+            const { result } = renderHook(
+                () => useAnalysis(makeOptions({ initialAnalysisFailed: true })),
+                { wrapper: makeWrapper() }
+            );
+
+            await waitFor(() => expect(result.current.isAnalyzing).toBe(false));
+            expect(mockSubmit).toHaveBeenCalled();
+            expect(result.current.isInstantResponse).toBe(false);
+        });
+
+        it('쿨다운 거절(reanalyze_cooldown)로 직전 결과를 되돌린 경우도 true다', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'reanalyze_cooldown',
+                remainingMs: 60_000,
+            });
+
+            const { result } = renderHook(() => useAnalysis(makeOptions()), {
+                wrapper: makeWrapper(),
+            });
+            act(() => {
+                result.current.handleReanalyze();
+            });
+
+            await waitFor(() =>
+                expect(result.current.isInstantResponse).toBe(true)
             );
         });
     });

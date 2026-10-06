@@ -54,3 +54,31 @@ export function routeClientPaths(routeId: string): readonly string[] {
     const set = ROUTES[routeId];
     return set ? flatten(set) : CHROME_CLIENT_PATHS;
 }
+
+/**
+ * `routeId`보다 **위에서** 이미 클라이언트에 실린 경로 — 크롬과, 경로상 상위 라우트(세그먼트
+ * 접두사)의 경로 전부.
+ *
+ * 상위 라우트는 자기 `layout.tsx`에서 `RouteMessages`를 렌더하므로(`routeLayout`·`[symbol]`
+ * 레이아웃) 그 메시지는 하위 서브트리의 `MergedIntlProvider`가 이어받는다. 이 전제는
+ * `clientNamespaces.test.ts`가 "접두사 라우트마다 메시지 레이아웃이 있다"로 고정한다.
+ */
+export function ancestorClientPaths(routeId: string): readonly string[] {
+    const segments = routeId.split('/');
+    const ancestors = segments
+        .slice(0, -1)
+        .map((_, i) => segments.slice(0, i + 1).join('/'))
+        .filter(prefix => prefix in ROUTES);
+    return [
+        ...new Set([
+            ...CHROME_CLIENT_PATHS,
+            ...ancestors.flatMap(prefix => flatten(ROUTES[prefix]!)),
+        ]),
+    ];
+}
+
+/** 메시지 레이아웃이 있어야 하는(하위 라우트를 가진) 라우트 id. 가드 테스트용. */
+export function routesWithDescendants(): readonly string[] {
+    const ids = Object.keys(ROUTES);
+    return ids.filter(id => ids.some(other => other.startsWith(`${id}/`)));
+}

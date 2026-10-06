@@ -38,8 +38,8 @@ const CATALOG = [
     },
 ];
 
-vi.mock('@/entities/ticker/actions/searchTickerAction', () => ({
-    searchTickerAction: vi.fn(async (query: string) => {
+vi.mock('@/entities/ticker/lib/fetchTickerSearch', () => ({
+    fetchTickerSearch: vi.fn(async (query: string) => {
         const needle = query.trim().toLowerCase();
         return CATALOG.filter(
             t =>

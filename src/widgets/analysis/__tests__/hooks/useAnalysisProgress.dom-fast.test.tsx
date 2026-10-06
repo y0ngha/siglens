@@ -71,6 +71,23 @@ describe('useAnalysisProgress', () => {
         expect(result.current.phaseIndex).toBe(ANALYSIS_PHASE_COUNT - 1);
     });
 
+    it('skipFinishing이면 응답이 와도 마무리 시퀀스를 돌리지 않고 onFinished도 부르지 않는다', () => {
+        const onFinished = vi.fn();
+        const { result, rerender } = renderHook(
+            ({ isAnalyzing, skipFinishing }) =>
+                useAnalysisProgress({ isAnalyzing, skipFinishing, onFinished }),
+            { initialProps: { isAnalyzing: true, skipFinishing: false } }
+        );
+
+        rerender({ isAnalyzing: false, skipFinishing: true });
+        act(() => {
+            vi.advanceTimersByTime(60_000);
+        });
+
+        expect(onFinished).not.toHaveBeenCalled();
+        expect(result.current.phaseIndex).toBe(0);
+    });
+
     it('calls onFinished after finishing sequence completes', () => {
         const onFinished = vi.fn();
         const { rerender } = renderHook(

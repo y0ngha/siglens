@@ -56,9 +56,12 @@ import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { findNearestStrikeIndex } from '@/entities/options-chain/lib/findNearestStrike';
 import {
     aggregateOpenInterest,
-    type OptionsChain,
     type OptionsExpirationMetrics,
 } from '@y0ngha/siglens-core';
+import {
+    type ClientOptionsChain,
+    toCoreOptionsChain,
+} from '@/entities/options-chain/lib/clientOptionsSnapshot';
 import { useMemo } from 'react';
 import { SURFACE_CARD } from '@/shared/lib/surfaceStyles';
 import { cn } from '@/shared/lib/cn';
@@ -67,7 +70,7 @@ interface OpenInterestChartProps {
     /** Spot price used to anchor the current-price guide line. */
     underlyingPrice: number;
     /** Chain matching the parent's selected expiration; null when absent. */
-    chain: OptionsChain | null;
+    chain: ClientOptionsChain | null;
     /** Pre-computed metrics — `maxPain` drives the dashed guide line. */
     metrics: OptionsExpirationMetrics | null;
 }
@@ -99,7 +102,9 @@ export function OpenInterestChart({
 
     const derived = useMemo(() => {
         if (!chain) return null;
-        const oiByStrike = aggregateOpenInterest(chain);
+        const oiByStrike = aggregateOpenInterest(
+            toCoreOptionsChain(chain, underlyingPrice)
+        );
         if (oiByStrike.length === 0) return null;
 
         // 모든 strike의 OI가 0이면 차트를 그려도 막대가 안 나오므로 빈

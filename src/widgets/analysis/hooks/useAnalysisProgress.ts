@@ -26,6 +26,12 @@ const FINISHING_TAIL_MS = 600;
 interface UseAnalysisProgressOptions {
     /** 부모의 실제 분석 진행 상태. true → 진행 중, false → 응답 도착. */
     isAnalyzing: boolean;
+    /**
+     * 참이면 응답이 와도 마무리 시퀀스를 돌리지 않는다(그 경우 `onFinished`도 부르지 않는다).
+     * 서버가 생성 없이 즉시 돌려준 캐시 응답에 약 9초짜리 가짜 진행을 덧붙이지 않기
+     * 위해서다 — 호출부가 표시 상태를 직접 내린다(`useAnalysisDisplay`).
+     */
+    skipFinishing?: boolean;
     /** 마무리 애니메이션까지 모두 끝난 시점에 호출된다. */
     onFinished?: () => void;
 }
@@ -44,6 +50,7 @@ interface UseAnalysisProgressResult {
  */
 export function useAnalysisProgress({
     isAnalyzing,
+    skipFinishing = false,
     onFinished,
 }: UseAnalysisProgressOptions): UseAnalysisProgressResult {
     const [phaseIndex, setPhaseIndex] = useState(0);
@@ -76,7 +83,7 @@ export function useAnalysisProgress({
             setPhaseIndex(0);
             setTipIndex(0);
             setFinishing(false);
-        } else if (!finishing) {
+        } else if (!finishing && !skipFinishing) {
             // 분석 완료 — 마무리 애니메이션 시작.
             setFinishing(true);
         }

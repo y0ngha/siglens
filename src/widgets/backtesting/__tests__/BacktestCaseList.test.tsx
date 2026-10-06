@@ -160,10 +160,36 @@ describe('BacktestCaseList — 월별 접이식', () => {
         ).not.toHaveAttribute('open');
     });
 
-    it('openAll이면(종목 필터 활성) 모든 월을 펼친다', () => {
-        render(<BacktestCaseList cases={FIVE_MONTHS} openAll />);
+    it('카드·월·건수에 어느 탭에서 보이는지 표기한다(전체 토큰 + 종목)', () => {
+        render(
+            <BacktestCaseList
+                cases={[
+                    makeCase('AAPL', '2024-06-15'),
+                    makeCase('NVDA', '2024-06-20'),
+                    makeCase('AAPL', '2024-06-22'),
+                ]}
+            />
+        );
 
-        expect(months().every(m => m.open)).toBe(true);
+        const month = document.querySelector('details');
+        expect(month?.getAttribute('data-backtest-show')).toBe('* AAPL NVDA');
+        expect(
+            screen
+                .getAllByTestId('case-AAPL')[0]
+                ?.parentElement?.getAttribute('data-backtest-show')
+        ).toBe('* AAPL');
+        const counts = Array.from(
+            month?.querySelectorAll('summary span[data-backtest-show]') ?? []
+        ).map(el => [
+            el.getAttribute('data-backtest-show'),
+            el.textContent,
+            el.hasAttribute('hidden'),
+        ]);
+        expect(counts).toEqual([
+            ['*', '3건', false],
+            ['AAPL', '2건', true],
+            ['NVDA', '1건', true],
+        ]);
     });
 
     it('월이 3개 이하면 전부 펼쳐진다', () => {
@@ -184,7 +210,12 @@ describe('BacktestCaseList — 월별 접이식', () => {
         );
 
         const summaries = Array.from(document.querySelectorAll('summary'));
-        expect(summaries.map(s => s.textContent)).toEqual([
+        // 종목별 건수 표시는 서버 HTML에서 숨겨져 있다 — 보이는 텍스트만 본다.
+        const visibleText = (summary: Element) =>
+            Array.from(summary.querySelectorAll('h2, span:not([hidden])'))
+                .map(el => el.textContent)
+                .join('');
+        expect(summaries.map(visibleText)).toEqual([
             '2024년 7월1건',
             '2024년 6월2건',
         ]);

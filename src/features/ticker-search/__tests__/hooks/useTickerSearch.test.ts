@@ -15,6 +15,12 @@ const mockResults: TickerSearchResult[] = [
 
 let lastQueryKey: readonly string[] = [];
 let lastNetworkMode: string | undefined;
+let lastQueryFn:
+    | ((ctx: {
+          queryKey: readonly string[];
+          signal: AbortSignal;
+      }) => Promise<unknown>)
+    | undefined;
 /** 훅이 파생하는 `isSearching`을 검사하려면 쿼리 상태를 케이스마다 바꿀 수 있어야 한다. */
 const queryState = {
     status: 'success' as 'success' | 'pending' | 'error',
@@ -25,14 +31,17 @@ const queryState = {
 vi.mock('@tanstack/react-query', () => ({
     useQuery: ({
         queryKey,
+        queryFn,
         enabled,
         networkMode,
     }: {
         queryKey: readonly string[];
+        queryFn: typeof lastQueryFn;
         enabled: boolean;
         networkMode?: string;
     }) => {
         lastQueryKey = queryKey;
+        lastQueryFn = queryFn;
         lastNetworkMode = networkMode;
         return {
             data:
@@ -47,8 +56,11 @@ vi.mock('@tanstack/react-query', () => ({
     },
 }));
 
-vi.mock('@/entities/ticker/actions/searchTickerAction', () => ({
-    searchTickerAction: vi.fn(),
+const { mockFetchTickerSearch } = vi.hoisted(() => ({
+    mockFetchTickerSearch: vi.fn(),
+}));
+vi.mock('@/entities/ticker/lib/fetchTickerSearch', () => ({
+    fetchTickerSearch: mockFetchTickerSearch,
 }));
 
 const mockReportClientError = vi.fn();
@@ -69,6 +81,25 @@ describe('useTickerSearch', () => {
 
     afterEach(() => {
         vi.useRealTimers();
+    });
+
+    it('질의 키의 값과 TanStack이 준 signal로 GET 검색을 부른다(지난 요청 취소)', async () => {
+        mockFetchTickerSearch.mockResolvedValue(mockResults);
+        renderHook(() => useTickerSearch('AAPL'));
+        act(() => {
+            vi.advanceTimersByTime(300);
+        });
+        const controller = new AbortController();
+
+        await lastQueryFn?.({
+            queryKey: lastQueryKey,
+            signal: controller.signal,
+        });
+
+        expect(mockFetchTickerSearch).toHaveBeenCalledWith(
+            'AAPL',
+            controller.signal
+        );
     });
 
     it('returns empty results and isSearching: false for an empty query', () => {

@@ -1,4 +1,4 @@
-import type { OptionsChain } from '@y0ngha/siglens-core';
+import type { ClientOptionsChain } from '@/entities/options-chain/lib/clientOptionsSnapshot';
 
 /**
  * Per-strike aggregated trade volume across the call and put sides of a
@@ -53,7 +53,9 @@ function bumpStrikeVolume(
  * @returns Strike-grouped volume totals sorted ascending by strike;
  *   readonly so downstream consumers must not mutate.
  */
-export function aggregateStrikeVolume(chain: OptionsChain): StrikeVolume[] {
+export function aggregateStrikeVolume(
+    chain: ClientOptionsChain
+): StrikeVolume[] {
     // 두 reduce를 직렬로 연결해 같은 Map accumulator를 calls → puts
     // 순으로 통과시킨다. 이전의 `tagged` 중간 배열(spread + 두 map +
     // 객체 alloc)을 제거해 컨트랙트 개수에 비례하던 임시 할당을 없앴다.

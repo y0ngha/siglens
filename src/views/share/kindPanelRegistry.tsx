@@ -23,15 +23,55 @@ import {
 } from '@/shared/config/marketProfile/registry';
 import type { Bar } from '@y0ngha/siglens-core';
 import { clusterKeyLevels, validateKeyLevels } from '@y0ngha/siglens-core';
-import { AnalysisPanel } from '@/widgets/analysis/AnalysisPanel';
-import { ShareCandlestickChart } from '@/widgets/chart/ShareCandlestickChart';
-import { OverallView } from '@/widgets/overall/OverallView';
-import { NewsAiSummaryView } from '@/widgets/news/NewsAiSummary';
-import { FundamentalAiSummaryView } from '@/widgets/fundamental/FundamentalAiSummary';
-import { FinancialsAiSummaryView } from '@/widgets/financials/FinancialsAiSummary';
-import { CongressTrendSummaryView } from '@/widgets/congress/CongressTrendSummaryView';
-import { OptionsAiAnalysisView } from '@/widgets/options/OptionsAiAnalysis';
-import { FearGreedShareView } from '@/widgets/fear-greed/FearGreedShareView';
+import dynamic from 'next/dynamic';
+
+/*
+ * 패널 위젯은 kind별로 **따로 받는다**(`next/dynamic`).
+ *
+ * 공유 링크 하나는 kind 하나만 보여 주는데, 정적 import면 8개 패널 전부와
+ * `lightweight-charts`(차트 kind의 캔들 차트)가 모든 공유 페이지의 first-load에 실렸다.
+ * SSR은 그대로라(`ssr` 기본값) 서버 HTML에는 패널 본문이 들어가고, 클라이언트는
+ * 렌더된 kind의 청크만 받는다.
+ */
+const AnalysisPanel = dynamic(() =>
+    import('@/widgets/analysis/AnalysisPanel').then(m => m.AnalysisPanel)
+);
+const ShareCandlestickChart = dynamic(() =>
+    import('@/widgets/chart/ShareCandlestickChart').then(
+        m => m.ShareCandlestickChart
+    )
+);
+const OverallView = dynamic(() =>
+    import('@/widgets/overall/OverallView').then(m => m.OverallView)
+);
+const NewsAiSummaryView = dynamic(() =>
+    import('@/widgets/news/NewsAiSummary').then(m => m.NewsAiSummaryView)
+);
+const FundamentalAiSummaryView = dynamic(() =>
+    import('@/widgets/fundamental/FundamentalAiSummary').then(
+        m => m.FundamentalAiSummaryView
+    )
+);
+const FinancialsAiSummaryView = dynamic(() =>
+    import('@/widgets/financials/FinancialsAiSummary').then(
+        m => m.FinancialsAiSummaryView
+    )
+);
+const CongressTrendSummaryView = dynamic(() =>
+    import('@/widgets/congress/CongressTrendSummaryView').then(
+        m => m.CongressTrendSummaryView
+    )
+);
+const OptionsAiAnalysisView = dynamic(() =>
+    import('@/widgets/options/OptionsAiAnalysis').then(
+        m => m.OptionsAiAnalysisView
+    )
+);
+const FearGreedShareView = dynamic(() =>
+    import('@/widgets/fear-greed/FearGreedShareView').then(
+        m => m.FearGreedShareView
+    )
+);
 
 /**
  * AnalysisPanel has several required props that are interaction/live-data

@@ -1,4 +1,13 @@
-import type { OptionsSnapshot } from '@y0ngha/siglens-core';
+/**
+ * 판정에 필요한 모양만 받는다 — 서버의 전체 `OptionsSnapshot`과 클라이언트로 투영된
+ * 스냅샷(`ClientOptionsSnapshot`, 계약 필드 일부만 남김)이 둘 다 들어온다.
+ */
+interface OpenInterestSnapshot {
+    chains: ReadonlyArray<{
+        calls: ReadonlyArray<{ openInterest: number }>;
+        puts: ReadonlyArray<{ openInterest: number }>;
+    }>;
+}
 
 /**
  * 전체 contract 중 OI=0 비율이 이 임계값 이상이면 stale로 판정.
@@ -24,7 +33,7 @@ export const OI_STALE_FRACTION_THRESHOLD = 0.95;
  * `isEtRegularSessionOpen`이 false일 때(정규장 외)에만 이 휴리스틱을 적용한다.
  */
 export function isOpenInterestSnapshotStale(
-    snapshot: OptionsSnapshot
+    snapshot: OpenInterestSnapshot
 ): boolean {
     const allContracts = snapshot.chains.flatMap(c => [...c.calls, ...c.puts]);
     const totalCount = allContracts.length;

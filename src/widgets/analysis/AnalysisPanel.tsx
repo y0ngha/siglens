@@ -898,12 +898,15 @@ interface ReanalyzeButtonProps {
     isAnalyzing: boolean;
     reanalyzeCooldownMs: number;
     onReanalyze: () => void;
+    /** 포인터가 올라가거나 포커스가 갈 때 — 누르기 직전의 의도 신호. */
+    onIntent?: () => void;
 }
 
 function ReanalyzeButton({
     isAnalyzing,
     reanalyzeCooldownMs,
     onReanalyze,
+    onIntent,
 }: ReanalyzeButtonProps) {
     const t = useTranslations('widgets.analysis');
     const tPanel = useTranslations('widgets.analysis.panel');
@@ -914,6 +917,8 @@ function ReanalyzeButton({
         <button
             type="button"
             onClick={onReanalyze}
+            onPointerEnter={onIntent}
+            onFocus={onIntent}
             disabled={isDisabled}
             aria-disabled={isDisabled}
             title={isCoolingDown ? t('AnalysisPanel.550fe5') : undefined}
@@ -939,6 +944,12 @@ interface AnalysisPanelProps {
     /** useAnalysisProgress 훅에서 관리되는 현재 팁 인덱스. */
     progressTipIndex?: number;
     onReanalyze?: () => void;
+    /**
+     * 재분석 버튼에 포인터가 올라가거나 포커스가 갈 때 부른다. 호출부는 이때 서버
+     * 쿨다운을 읽어 버튼에 카운트다운을 띄운다(`useAnalysis.syncReanalyzeCooldown`) —
+     * 마운트마다 읽지 않기 위해서다.
+     */
+    onReanalyzeIntent?: () => void;
     /** 다음 재분석까지 남은 ms. 0이면 즉시 가능. */
     reanalyzeCooldownMs?: number;
     /** 쿨다운 중 재분석 시도를 토스트로 알리기 위한 알림. */
@@ -1007,6 +1018,7 @@ export function AnalysisPanel({
     progressPhaseIndex = 0,
     progressTipIndex = 0,
     onReanalyze,
+    onReanalyzeIntent,
     reanalyzeCooldownMs = 0,
     cooldownNotice = null,
     actionPricesVisible = true,
@@ -1160,6 +1172,7 @@ export function AnalysisPanel({
             {showStaleBanner && (
                 <StaleAnalysisBanner
                     onReanalyze={onReanalyze}
+                    onReanalyzeIntent={onReanalyzeIntent}
                     reanalyzeCooldownMs={reanalyzeCooldownMs ?? 0}
                 />
             )}
@@ -1596,6 +1609,7 @@ export function AnalysisPanel({
                         isAnalyzing={isAnalyzing || showProgress}
                         reanalyzeCooldownMs={reanalyzeCooldownMs}
                         onReanalyze={onReanalyze}
+                        onIntent={onReanalyzeIntent}
                     />
                 </div>
             )}

@@ -139,6 +139,8 @@ function analysisReturn(
         cooldownNotice: null,
         isPersonalized: false,
         isAwaitingInteraction: false,
+        isInstantResponse: false,
+        syncReanalyzeCooldown: vi.fn(),
         plain: null,
         ...overrides,
     };
