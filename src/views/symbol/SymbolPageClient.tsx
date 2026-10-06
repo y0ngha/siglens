@@ -93,7 +93,8 @@ interface SymbolPageClientProps {
      */
     marketProfile?: MarketProfileId;
     /**
-     * 서버 seed가 형성 중 봉을 뺀 채로 만들어졌는가(`hasFormingBar` — 생성 시점). `ChartContent`가
+     * 서버가 seed를 만든 시점에 정규장이 열려 있었는가(`hasFormingBar` — 세션 기준이며 quantize가
+     * 실제로 봉을 뗐는지가 아니다). 장중 생성 seed는 그날 봉이 빠졌을 수 있어 `ChartContent`가
      * 입력 전에도 seed 복원 재조회를 열지 정하는 입력이다. 생략하면 `true`(옛 동작: 항상 연다).
      */
     seedHasFormingBarTrimmed?: boolean;

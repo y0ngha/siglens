@@ -178,6 +178,20 @@ const mockEvaluateSymbolIndexability =
 // 콘텐츠 게이트(hasPriceData) 배선 검증용 — page.tsx는 getQuantizedBarsStatic을
 // 거치지만 그 안쪽이 결국 이 액션을 부른다.
 const mockGetBarsAction = loadBarsData as MockedFunction<typeof loadBarsData>;
+// 위 `vi.mock('loadBarsData')` 기본 픽스처의 사본 — 케이스가 바꾼 뒤 되돌릴 때 쓴다.
+const DEFAULT_BARS = {
+    bars: [
+        { time: 1, open: 1, high: 2, low: 0.5, close: 1.5, volume: 100 },
+        { time: 2, open: 1.5, high: 2.5, low: 1, close: 2, volume: 120 },
+    ],
+    indicators: {
+        ma: {},
+        ema: {},
+        rsi: [50],
+        macd: [{ macd: 1, signal: 1, histogram: 1 }],
+        buySellVolume: [],
+    },
+};
 
 interface ClientSeedProps {
     initialAnalysis: unknown;
@@ -515,26 +529,80 @@ describe('Symbol page', () => {
         }
 
         /**
-         * 장중에 생성된 seed는 형성 중 봉을 뺀 채라, 클라이언트가 입력 없이 라이브 봉을 받아야
-         * 분석 작도가 맞는다(PR #957 `chart-overlays` e2e 회귀). 그 신호를 서버가 quantize와
-         * 같은 술어로 넘긴다.
+         * 서버가 넘기는 값은 **생성 시점에 정규장이 열려 있었는가**(세션 기준)다 — quantize가 실제로
+         * 봉을 뗐는지가 아니다. 장중에 만든 ISR HTML을 장 마감 뒤에 열면 seed에 그날 봉이 없을 수 있고
+         * 분석 작도는 그 봉을 참조하므로(PR #957 `chart-overlays` e2e 회귀) 클라이언트가 입력 없이
+         * 라이브 봉을 받아야 한다. 오늘 봉이 아직 없어 quantize가 아무것도 안 떼는 장중에도 참이다.
          */
-        it.each([
-            [true, true],
-            [false, false],
-        ])(
-            '정규장 %s이면 seedHasFormingBarTrimmed=%s를 클라이언트에 넘긴다',
-            async (open, expected) => {
+        describe('seedHasFormingBarTrimmed (세션 기준)', () => {
+            const NOW = new Date('2026-10-06T03:00:00.000Z');
+            const barAt = (iso: string, close: number) => ({
+                time: Date.parse(`${iso}T00:00:00Z`) / 1000,
+                open: close,
+                high: close,
+                low: close,
+                close,
+                volume: 1,
+            });
+            const dataOf = (...bars: ReturnType<typeof barAt>[]) => ({
+                bars,
+                indicators: {
+                    ma: {},
+                    ema: {},
+                    rsi: [],
+                    macd: [],
+                    buySellVolume: [],
+                },
+            });
+
+            beforeEach(() => {
+                vi.useFakeTimers({ toFake: ['Date'] });
+                vi.setSystemTime(NOW);
                 mockPeekAnalysisCache.mockResolvedValue(null as never);
-                vi.mocked(isRegularSessionOpen).mockReturnValue(open);
-                try {
+            });
+            afterEach(() => {
+                vi.useRealTimers();
+                vi.mocked(isRegularSessionOpen).mockReturnValue(false);
+                mockGetBarsAction.mockResolvedValue(DEFAULT_BARS as never);
+            });
+
+            it.each([
+                [
+                    '정규장 중 + 오늘 봉이 있어 quantize가 뗐다',
+                    true,
+                    ['2026-10-05', '2026-10-06'],
+                    true,
+                ],
+                [
+                    '정규장 중 + 오늘 봉이 아직 없어 quantize가 안 뗐다',
+                    true,
+                    ['2026-10-02', '2026-10-05'],
+                    true,
+                ],
+                [
+                    '장 마감 + 오늘 봉이 있어도',
+                    false,
+                    ['2026-10-05', '2026-10-06'],
+                    false,
+                ],
+                [
+                    '장 마감 + 오늘 봉 없음',
+                    false,
+                    ['2026-10-02', '2026-10-05'],
+                    false,
+                ],
+            ])(
+                '%s → seedHasFormingBarTrimmed=%s',
+                async (_label, open, dates, expected) => {
+                    vi.mocked(isRegularSessionOpen).mockReturnValue(open);
+                    mockGetBarsAction.mockResolvedValue(
+                        dataOf(...dates.map((d, i) => barAt(d, i + 1))) as never
+                    );
                     const props = await getClientProps();
                     expect(props.seedHasFormingBarTrimmed).toBe(expected);
-                } finally {
-                    vi.mocked(isRegularSessionOpen).mockReturnValue(false);
                 }
-            }
-        );
+            );
+        });
 
         it('peek HIT 시 캐시된 분석을 initialAnalysis로 전달한다', async () => {
             const cached = { result: { summary: 'cached analysis' } };

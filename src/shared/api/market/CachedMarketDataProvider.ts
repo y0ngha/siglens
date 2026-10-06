@@ -232,11 +232,19 @@ export class CachedMarketDataProvider implements MarketDataProvider {
             ),
         ]);
 
-        // quote-derived today bar wins on same-time overlap (intended: live tail takes
-        // precedence over any same-dated EOD history bar). Note: a stale pre-market
-        // /quote timestamp could momentarily overwrite an authoritative EOD bar with
-        // quote-approximated OHLCV until a fresh trade updates the quote; self-heals.
-        return sliceFrom(mergeBarsByTime(history, todayBars), options.from);
+        // 확정된 EOD 봉은 quote 파생 봉이 덮어쓰지 못한다 — quote 봉은 **EOD 히스토리의
+        // 마지막 봉보다 엄격히 뒤**일 때만 live tail로 붙인다. 옛 구현은 같은 날짜에서
+        // quote 봉이 이겼는데, 마감 뒤·휴장 직후 Yahoo quote는 open/high/low=0 이거나
+        // 지연된 시각의 값을 줘 확정 EOD 봉(2026-10-02 373220.KS)을 0봉으로 갈아치웠다.
+        // 기준을 `lastClosedThreshold`가 아니라 히스토리 실제 마지막 봉으로 잡는 이유:
+        // FMP 발행 지연으로 히스토리가 lastClosed까지 못 채워졌을 때(쿨다운 TTL 경로)
+        // quote 봉이 그 빈 날을 메워야 하기 때문이다. 히스토리가 비면 quote 봉을 그대로 쓴다.
+        const lastHistoryTime = history.at(-1)?.time;
+        const liveTail =
+            lastHistoryTime === undefined
+                ? todayBars
+                : todayBars.filter(b => b.time > lastHistoryTime);
+        return sliceFrom(mergeBarsByTime(history, liveTail), options.from);
     }
 
     getQuote = (symbol: string): Promise<MarketQuote | null> =>

@@ -108,8 +108,9 @@ export async function getBarsStatic(
  *
  * 참조가 갈리는 지점이 둘이었다:
  * 1. `getBarsAction`이 `roundIndicators`로 매 호출 새 `indicators`를 만든다(v0.53.3).
- * 2. `quantizeBarsDataToLastClosed`가 **정규장 중일 때** 새 객체를 할당한다
- *    (`quantizeBars.ts` — 장 마감엔 입력을 그대로 통과시킨다). 크립토는 24/7이라 상시 해당.
+ * 2. `quantizeBarsDataToLastClosed`가 **정규장 중이고 마지막 봉이 현재 세션 날짜의 봉일 때**
+ *    새 객체를 할당한다(`quantizeBars.ts` — 장 마감이거나 오늘 봉이 아직 없으면 입력을 그대로
+ *    통과시킨다). 크립토는 24/7이라 오늘 봉이 있는 한 상시 해당.
  *
  * 그래서 v0.53.3 이전에도 **장중·크립토에서는 이미 두 벌**이었고, 장 마감에만 한 벌이었다.
  * 이 함수가 두 단계를 함께 감싸 요청 스코프에서 접으므로, 세션 상태·자산군과 무관하게

@@ -129,7 +129,7 @@ interface ChartContentProps {
      */
     marketProfile?: MarketProfileId;
     /**
-     * 서버 seed가 형성 중 봉을 뺀 채로 만들어졌는가(생성 시점). 참이면 입력을 기다리지 않고 seed
+     * 서버가 seed를 만든 시점에 정규장이 열려 있었는가(세션 기준). 참이면 입력을 기다리지 않고 seed
      * 복원 재조회를 연다(`shouldRefetchBarsSeed`). 생략하면 참 — 옛 동작(항상 연다)을 유지한다.
      */
     seedHasFormingBarTrimmed?: boolean;
