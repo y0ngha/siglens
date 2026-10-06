@@ -4,9 +4,9 @@
  * Verifies two call sites added during the crypto audit:
  *   (a) buildAssetAboutNode receives assetClass 'crypto' for a crypto asset,
  *       causing the about node to be omitted from the JSON-LD output.
- *   (b) getSeedBarsStatic receives the right marketProfile string
+ *   (b) getSessionBarsStatic receives the right marketProfile string
  *       ('crypto' / 'us-equity'). 세션 spec 매핑 자체는 그 헬퍼 내부 책임이라
- *       src/entities/bars/__tests__/lib/barsStaticCache.test.ts가 검증한다.
+ *       src/entities/bars/__tests__/lib/sessionBarsStaticCache.test.ts가 검증한다.
  *
  * Mirrors the mocking style of src/app/[symbol]/__tests__/layout.test.tsx.
  */
@@ -85,11 +85,12 @@ vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
 vi.mock('@/entities/market-fear-greed/api/marketFearGreedReading', () => ({
     getMarketFearGreedReading: vi.fn(async () => null),
 }));
-vi.mock('@/entities/bars/lib/barsStaticCache', () => ({
-    // 세션 spec 유도는 이제 헬퍼 내부 책임이라 여기서는 위임 인자
-    // (ticker, timeframe, marketProfile, fmpSymbol)만 포착한다.
-    // 페이지는 공포·탐욕 5년 일봉이 필요해 원본(getQuantizedBarsStatic)을 쓴다.
-    getQuantizedBarsStatic: mockGetSeedBarsStatic,
+vi.mock('@/entities/bars/lib/sessionBarsStaticCache', () => ({
+    // 세션 spec 유도는 헬퍼 내부 책임이라 여기서는 위임 인자
+    // (ticker, marketProfile, fmpSymbol)만 포착한다. 페이지는 5년 일봉이 담긴
+    // 세션 키 축소 봉(getSessionBarsStatic, revalidate 24h)을 쓴다 — 6h 봉 캐시를 읽으면
+    // 이 탭(24h 선언)이 6h로 clamp된다.
+    getSessionBarsStatic: mockGetSeedBarsStatic,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -215,12 +216,11 @@ describe('SymbolFearGreedPage — crypto branching', () => {
             params: Promise.resolve({ locale: 'ko', symbol: 'BTCUSD' }),
         });
 
-        // 세션 매핑(crypto → always-open)은 `getSeedBarsStatic` 내부 책임으로
-        // 옮겨졌다(barsStaticCache.test.ts가 검증). 여기서는 페이지가 crypto
+        // 세션 매핑(crypto → always-open)은 `getSessionBarsStatic` 내부 책임이다
+        // (sessionBarsStaticCache.test.ts가 검증). 여기서는 페이지가 crypto
         // marketProfile을 헬퍼에 정확히 넘기는지만 본다.
         expect(mockGetSeedBarsStatic).toHaveBeenCalledWith(
             'BTCUSD',
-            '1Day',
             'crypto',
             expect.anything()
         );
@@ -238,7 +238,6 @@ describe('SymbolFearGreedPage — crypto branching', () => {
 
         expect(mockGetSeedBarsStatic).toHaveBeenCalledWith(
             'AAPL',
-            '1Day',
             'us-equity',
             expect.anything()
         );

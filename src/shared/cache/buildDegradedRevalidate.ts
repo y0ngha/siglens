@@ -16,6 +16,7 @@
 import 'server-only';
 import { unstable_cache } from 'next/cache';
 import { isFmpUnavailableAtBuild } from '@/shared/api/offlineBuild';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import { isDatabaseMissingAtBuild } from '@/shared/db/config';
 
 /** FMP 실패·DB 부재로 degrade된 빌드타임 prerender의 revalidate(초). */
@@ -29,6 +30,20 @@ export const BUILD_DEGRADED_REVALIDATE_SECONDS = 60;
  * 여전히 옛 6~24시간에 비해 무시할 만하고 재호출 부하는 1/5이다.
  */
 export const RUNTIME_DEGRADED_REVALIDATE_SECONDS = 300;
+
+/**
+ * 세션 키 캐시가 **한 세션 뒤처진 값**(`sessionCoverage` = `lagging`)을 받은 렌더의 revalidate(초).
+ *
+ * 그 값은 캐시에 저장하지 않지만, 렌더된 ISR HTML은 라우트 revalidate(12~24h) 동안 남는다 — 그대로
+ * 두면 직전 세션 데이터가 그만큼 굳는다(예전 6h 봉 캐시 시절보다 나쁘다). 그래서 이 렌더만 짧게 한다.
+ *
+ * 300초(`RUNTIME_DEGRADED_REVALIDATE_SECONDS`)가 아니라 1h인 이유: `lagging`은 장애가 아니라
+ * 흔한 상태다 — 그날 체결이 없던 저유동 종목은 다음 세션 롤까지 내내 `lagging`이고, 롱테일까지
+ * 포함한 전 종목이 대상이다. 5분이면 그런 종목의 탭마다 하루 수백 번 재생성한다. provider EOD
+ * 발행 지연·허브 Redis(1h) 갱신 대기는 대부분 1h 안에 풀리므로, 1h면 옛 6h 봉 캐시보다 빠르게
+ * 따라잡으면서 재생성 비용은 탭당 하루 최대 24회로 묶인다.
+ */
+export const INCOMPLETE_SESSION_REVALIDATE_SECONDS = SECONDS_PER_HOUR;
 
 /*
  * 렌더 중 호출된 `unstable_cache`는 자기 `revalidate`가 더 짧으면 렌더 스토어의
@@ -52,6 +67,12 @@ const pinRuntimeDegradedRevalidate = unstable_cache(
     async () => true,
     ['runtime-degraded-revalidate'],
     { revalidate: RUNTIME_DEGRADED_REVALIDATE_SECONDS }
+);
+
+const pinIncompleteSessionRevalidate = unstable_cache(
+    async () => true,
+    ['incomplete-session-revalidate'],
+    { revalidate: INCOMPLETE_SESSION_REVALIDATE_SECONDS }
 );
 
 /**
@@ -134,6 +155,25 @@ export async function shortenRevalidateForRuntimeDegrade(): Promise<void> {
     } catch (error) {
         console.warn(
             '[shortenRevalidateForRuntimeDegrade] pin skipped (outside a Next render?):',
+            error
+        );
+    }
+}
+
+/**
+ * 세션 키 캐시가 한 세션 뒤처진 값을 받은 렌더의 revalidate를 1h로 낮춘다
+ * (`INCOMPLETE_SESSION_REVALIDATE_SECONDS`) — 큐레이션 여부와 무관하게 모든 종목에 쓴다.
+ *
+ * 쓰는 곳: `sessionBarsStaticCache`(헤더 칩·공포·탐욕·포지션 탭의 봉)와 종목 탭의 시장 공포·탐욕
+ * 판독(`marketFearGreedReading`). 제약은 다른 핀과 같다 — 렌더 경로에서 불러야 하고, 다른
+ * `unstable_cache` 콜백 안에서는 효과가 없다. 실패는 삼킨다(호출부 렌더를 깨뜨리지 않는다).
+ */
+export async function shortenRevalidateForIncompleteSession(): Promise<void> {
+    try {
+        await pinIncompleteSessionRevalidate();
+    } catch (error) {
+        console.warn(
+            '[shortenRevalidateForIncompleteSession] pin skipped (outside a Next render?):',
             error
         );
     }

@@ -20,6 +20,7 @@ const {
     mockGetAssetInfoResilient,
     mockGetQuantizedBarsStatic,
     mockGetSeedBarsStatic,
+    mockGetQuantizedBarsSixHour,
     mockComputeFearGreedIndex,
     mockSetQueryData,
     FIXED_SNAPSHOT,
@@ -69,10 +70,13 @@ const {
         warning: null,
     },
     mockGetAssetInfoResilient: vi.fn(),
-    // 원본(`getQuantizedBarsStatic`). 페이지가 공포·탐욕 5년 일봉을 읽는 경로다.
+    // 세션 키 축소 봉(`getSessionBarsStatic`). 페이지가 공포·탐욕 5년 일봉을 읽는 경로다.
+    // (이름은 옛 헬퍼 이름을 유지한다 — 테스트 본문 수십 곳이 이 이름을 쓴다.)
     mockGetQuantizedBarsStatic: vi.fn(),
     // 축소판(`getSeedBarsStatic`). 5년 일봉을 버리므로 이 페이지는 부르면 안 된다.
     mockGetSeedBarsStatic: vi.fn(),
+    // 6h 봉 캐시 원본. 이 탭에서는 부르면 안 된다(clamp).
+    mockGetQuantizedBarsSixHour: vi.fn(),
 }));
 
 vi.mock('@y0ngha/siglens-core', async () => {
@@ -107,9 +111,14 @@ vi.mock('@/entities/ticker/lib/getAssetInfoResilient', () => ({
         mockGetAssetInfoResilient(ticker),
 }));
 
+// 페이지는 5년 일봉이 담긴 세션 키 축소 봉(getSessionBarsStatic, revalidate 24h)을 쓴다.
+// 6h 봉 캐시(barsStaticCache)는 읽으면 이 탭(24h 선언)이 6h로 clamp되므로 둘 다 부르면 안 된다 —
+// 그 부재를 단언하려고 스파이로 남겨 둔다.
+vi.mock('@/entities/bars/lib/sessionBarsStaticCache', () => ({
+    getSessionBarsStatic: mockGetQuantizedBarsStatic,
+}));
 vi.mock('@/entities/bars/lib/barsStaticCache', () => ({
-    // 페이지는 공포·탐욕 5년 일봉이 필요해 원본(getQuantizedBarsStatic)을 쓴다.
-    getQuantizedBarsStatic: mockGetQuantizedBarsStatic,
+    getQuantizedBarsStatic: mockGetQuantizedBarsSixHour,
     getSeedBarsStatic: mockGetSeedBarsStatic,
 }));
 
@@ -212,6 +221,7 @@ describe('SymbolFearGreedPage — SSR factor summary wiring', () => {
         // 테스트가 실제로는 성공 경로를 타면서 통과한다(리뷰 R2에서 적발).
         mockGetQuantizedBarsStatic.mockReset();
         mockGetSeedBarsStatic.mockReset();
+        mockGetQuantizedBarsSixHour.mockReset();
         mockGetAssetInfoResilient.mockResolvedValue({
             assetInfo: EQUITY_ASSET_INFO,
             degraded: false,
@@ -222,7 +232,8 @@ describe('SymbolFearGreedPage — SSR factor summary wiring', () => {
         // 클라이언트 게이지는 서버 계산 결과(`useFearGreedFromSymbol`)를 쓴다. 예전처럼
         // `QUERY_KEYS.bars`를 seed하면 일봉 500개+지표가 RSC에 다시 실린다 — 이 탭은
         // 한때 flight 630KB로 사이트 최대 페이지였다(2026-08 실측).
-        // 축소판(`getSeedBarsStatic`)은 5년 일봉을 버리므로 부르지 않는다.
+        // 6h 봉 캐시(`getQuantizedBarsStatic`·`getSeedBarsStatic`)는 부르지 않는다 —
+        // 24h 탭이 6h로 clamp된다.
         mockGetQuantizedBarsStatic.mockResolvedValue(BARS_WITH_DATA);
 
         await SymbolFearGreedPage({
@@ -233,6 +244,7 @@ describe('SymbolFearGreedPage — SSR factor summary wiring', () => {
         expect(seededKeys).toContain('symbol-fear-greed');
         expect(seededKeys).not.toContain('bars');
         expect(mockGetSeedBarsStatic).not.toHaveBeenCalled();
+        expect(mockGetQuantizedBarsSixHour).not.toHaveBeenCalled();
     });
 
     /**

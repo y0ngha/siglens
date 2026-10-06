@@ -19,8 +19,20 @@ export const SETTLE_BUFFER_MINUTES = 30;
 
 /** 12h — 뉴스/옵션/종합 페이지 캐시 TTL(페이지 revalidate와 맞춰 s-maxage clamp 방지). */
 export const SECONDS_PER_HALF_DAY = SECONDS_PER_HOUR * 12;
-/** 6h — 종목 차트(bars/analysis peek) 캐시 TTL = 공유 layout이 만드는 symbol 라우트 floor. */
+/** 6h — 종목 차트 탭(bars/analysis peek) 캐시 TTL. 이 값을 읽는 라우트는 6h 이하로 clamp된다. */
 export const SECONDS_PER_QUARTER_DAY = SECONDS_PER_HOUR * 6;
+
+/**
+ * 24h — **세션 날짜를 키에 넣은** 정적 캐시(`sessionBarsStaticCache`, 종목 탭의 시장 공포·탐욕
+ * 판독)의 revalidate.
+ *
+ * 신선도는 이 값이 아니라 키가 책임진다 — 키의 세션 날짜(`lastClosedSessionDate`)가 넘어가면
+ * 다음 렌더는 새 키를 읽는다. 그래서 revalidate를 `[symbol]` 탭 중 가장 긴 선언값(24h) 이상으로
+ * 둘 수 있고, Next 16의 "렌더 중 읽힌 `unstable_cache` revalidate 최솟값으로 라우트를 clamp"
+ * 규칙에 걸리지 않는다. 탭 선언값과의 관계는 `src/__tests__/guards/symbolTabRevalidateClamp.test.ts`가
+ * 고정한다 — 탭 revalidate를 24h보다 길게 올리면 이 값도 함께 올려야 한다.
+ */
+export const SESSION_KEYED_CACHE_REVALIDATE_SECONDS = SECONDS_PER_DAY;
 
 /**
  * 재무제표는 분기(~45일) 단위라 길게. fmpGet revalidate + Redis TTL이 이 상수를 공유.
