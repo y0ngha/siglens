@@ -85,12 +85,21 @@ import { submitMacroBriefingAction } from '@/entities/economy/actions/submitMacr
  * 즉시 `miss_no_trigger`를 돌려줬는데, 그게 Googlebot이 색인하는 DOM을
  * "봇 트래픽으로 보여 표시하지 않았어요" 안내문으로 만드는 원인이었다.
  *
- * **이 라우트는 이제 User-Agent를 아예 읽지 않는다.** 마지막까지 남아 있던
- * UA 분기(동시성 상한의 봇 배수)도 제거했다 — `isBot`은 순수 UA 문자열
- * 매칭이라 curl/python-requests/axios 같은 일반 스크립트 클라이언트까지
- * "봇"으로 잡히는데, 거기에 더 높은 동시성 천장을 얹는 건 판별 불가능한
- * 신호에 의존하는 남용 경로였다. 상한 근거는
- * `shared/lib/sse/activeStreams.ts`의 `canAcceptAnalysisStream` 주석 참고.
+ * **UA만으로는 이 라우트의 어떤 동작도 바뀌지 않는다.** 예전 UA 분기(동시성
+ * 상한의 봇 배수)는 제거했다 — `isBot`은 순수 UA 문자열 매칭이라
+ * curl/python-requests/axios 같은 일반 스크립트 클라이언트까지 "봇"으로 잡히는데,
+ * 거기에 더 높은 동시성 천장을 얹는 건 판별 불가능한 신호에 의존하는 남용
+ * 경로였다. 상한 근거는 `shared/lib/sse/activeStreams.ts`의
+ * `canAcceptAnalysisStream` 주석 참고.
+ *
+ * **지금 UA를 읽는 곳은 하나다(2026-10-07): 생성 한도의 크롤러 면제.** UA는
+ * 검색 크롤러(Googlebot·Bingbot·Yeti·Daumoa)를 *주장할 때* DNS 검증을 **시도할지**만
+ * 정한다. 면제는 역방향(PTR) → 크롤러 도메인 접미사 → 순방향 조회가 원래 IP와
+ * 맞물릴 때만 주어진다(`shared/api/verifiedCrawler.ts`). 검증하는 IP는 Cloudflare가
+ * 덮어쓰는 `cf-connecting-ip`뿐이다(위조 가능한 `X-Forwarded-For` 폴백은 면제에 안
+ * 쓴다 — `generationQuota.ts`의 `isVerifiedCrawlerRequest`). 위조 UA는 DNS에서 떨어져
+ * 평소 한도를 그대로 받고, 크롤러를 주장하지 않는 UA는 DNS 조회조차 하지 않는다.
+ * 면제는 생성 한도에만 적용된다 — 동시성 상한·본문·생성 트리거는 그대로다.
  */
 export const dynamic = 'force-dynamic';
 
@@ -785,9 +794,9 @@ async function withPlainLanguage<T>(
  *   `seo_analysis_snapshots.plain`이 이미 채워져 있다.
  *
  * 생성 트리거도 UA로 가르지 않는다 — 2026-09-27부터 `skipEnqueueIfMiss`도
- * 본문과 마찬가지로 봇/사람이 같은 값(`false`)을 받는다. 이 라우트는 이제
- * User-Agent를 아예 읽지 않는다(파일 상단 불변식 참고) — 남아 있던 동시성
- * 상한의 봇 배수도 제거했다.
+ * 본문과 마찬가지로 봇/사람이 같은 값(`false`)을 받는다. UA만으로는 이 라우트의
+ * 동작이 바뀌지 않는다(파일 상단 불변식 참고) — 남아 있던 동시성 상한의 봇
+ * 배수도 제거했고, 남은 UA 읽기는 생성 한도의 크롤러 DNS 검증 시도뿐이다.
  */
 function withReaderViews<T>(
     work: Promise<T>,
@@ -1013,7 +1022,12 @@ export async function POST(request: Request): Promise<Response> {
             // 캐시가 있으면 평소대로 내주고, 없으면 `settleGenerationGate`가
             // `rate_limited` 이벤트로 바꾼다. 재분석 의도도 함께 무시한다 — 캐시
             // 우회는 곧 새 생성이다.
-            const quota = await quotaSlot.reserve(userId, cacheOnly === true);
+            // 헤더는 크롤러 DNS 검증에만 쓴다 — UA는 *시도할지*만 정한다(파일 상단 불변식).
+            const quota = await quotaSlot.reserve(
+                userId,
+                cacheOnly === true,
+                request.headers
+            );
             const quotaLimited = quota.kind === 'rate_limited';
 
             // --- 2g. Build work promise and stream ---
@@ -1140,8 +1154,8 @@ export async function POST(request: Request): Promise<Response> {
              * JSON 503으로 거절한다 — SSE로 error를 흘리면 클라이언트가 "분석 실패"로
              * 표시하지만, 이건 실패가 아니라 "지금 말고 나중에"다.
              *
-             * 사람/봇 구분 없이 같은 상한을 쓴다(2026-09-27) — 이 라우트는
-             * User-Agent를 아예 읽지 않는다(파일 상단 불변식 참고).
+             * 사람/봇 구분 없이 같은 상한을 쓴다(2026-09-27) — DNS로 검증된
+             * 크롤러도 예외가 아니다(파일 상단 불변식 참고).
              */
             // ⚠️ 번역자는 **동시성 검사 이전에** 확보한다. 검사와
             // `heartbeatStream` 사이에 `await`가 들어가면 위 주석이 설명한
@@ -1367,7 +1381,8 @@ export async function POST(request: Request): Promise<Response> {
                       return null;
                   })
               )?.id ?? null,
-              clientCacheOnly
+              clientCacheOnly,
+              request.headers
           );
     const promptTracker = createPromptAssemblyTracker();
     const quotaContext: DispatchQuotaContext = {

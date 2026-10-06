@@ -37,6 +37,9 @@ import { UNKNOWN_CLIENT_IP } from '@/shared/api/unknownClientIp';
  *   터널로만 들어와 `cf-connecting-ip`가 항상 있으므로, 이 버킷이 차면 그 자체가
  *   설정 이상 신호다.
  * - **회원**: userId당 `ANALYSIS_MEMBER_GENERATIONS_PER_DAY`.
+ * - **면제**: DNS로 검증된 검색 크롤러(`shared/api/verifiedCrawler.ts`)는 이 모듈까지
+ *   오지 않는다 — 호출부(`app/api/analysis/stream/generationQuota.ts`)가 예약 없이
+ *   통과시킨다. UA만 크롤러인 요청은 검증에서 떨어져 위 비회원 축을 그대로 받는다.
  */
 export const ANALYSIS_GUEST_GENERATIONS_PER_HOUR = 20;
 export const ANALYSIS_GUEST_GENERATIONS_PER_DAY = 60;
