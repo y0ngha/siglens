@@ -107,10 +107,15 @@ export async function callDeepseekChat({
     // the superset our extractor understands.
     let text = '';
     let usage: OpenAiCompatibleUsageLike | undefined;
+    let finishReason: string | null | undefined;
     for await (const chunk of stream) {
-        const delta = chunk.choices[0]?.delta?.content;
+        const choice = chunk.choices[0];
+        const delta = choice?.delta?.content;
         if (delta) {
             text += delta;
+        }
+        if (choice?.finish_reason) {
+            finishReason = choice.finish_reason;
         }
         if (chunk.usage) {
             usage = chunk.usage as OpenAiCompatibleUsageLike;
@@ -126,6 +131,17 @@ export async function callDeepseekChat({
 
     if (text === '') {
         console.warn('[deepseek] Provider returned empty string');
+    }
+    // 잘린 글도 그대로 돌려준다 — 호출자(챗·번역·평이화)마다 부분 응답의 가치가 달라
+    // 여기서 일괄로 실패시키지 않는다. 대신 로그로 남겨, 출력 상한이 실제 산출물보다
+    // 낮게 잡혀 있는지를 운영 로그에서 셀 수 있게 한다(2026-10-07 평이화 절단 사례).
+    if (finishReason === 'length') {
+        console.warn('[deepseek] Output truncated at max_tokens', {
+            jobId,
+            model,
+            maxTokens: params.max_tokens,
+            chars: text.length,
+        });
     }
     return text;
 }

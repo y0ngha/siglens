@@ -28,7 +28,10 @@ const PRO_OPTIONS = {
 // DeepSeek chat is called in STREAMING mode, so `create` resolves to an async
 // iterable of chunks. These helpers build fresh streams (single-use).
 interface Chunk {
-    choices: Array<{ delta?: { content?: string | null } }>;
+    choices: Array<{
+        delta?: { content?: string | null };
+        finish_reason?: string | null;
+    }>;
     usage?: unknown;
 }
 
@@ -370,6 +373,48 @@ describe('callDeepseekChat', () => {
             const result = await callDeepseekChat(FLASH_OPTIONS);
 
             expect(result).toBe('real answer');
+        });
+
+        it('finish_reason이 length면 잘린 글을 그대로 돌려주고 경고를 남긴다', async () => {
+            mockCreate.mockResolvedValue(
+                toStream([
+                    { choices: [{ delta: { content: '회복되기 전' } }] },
+                    { choices: [{ delta: {}, finish_reason: 'length' }] },
+                    { choices: [], usage: { prompt_tokens: 1 } },
+                ])
+            );
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
+
+            const result = await callDeepseekChat(FLASH_OPTIONS);
+
+            expect(result).toBe('회복되기 전');
+            expect(warnSpy).toHaveBeenCalledWith(
+                '[deepseek] Output truncated at max_tokens',
+                expect.objectContaining({ chars: '회복되기 전'.length })
+            );
+            warnSpy.mockRestore();
+        });
+
+        it('finish_reason이 stop이면 절단 경고를 남기지 않는다', async () => {
+            mockCreate.mockResolvedValue(
+                toStream([
+                    { choices: [{ delta: { content: '완결' } }] },
+                    { choices: [{ delta: {}, finish_reason: 'stop' }] },
+                ])
+            );
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
+
+            await callDeepseekChat(FLASH_OPTIONS);
+
+            expect(warnSpy).not.toHaveBeenCalledWith(
+                '[deepseek] Output truncated at max_tokens',
+                expect.anything()
+            );
+            warnSpy.mockRestore();
         });
 
         it('여러 델타를 하나의 응답으로 집계한다', async () => {
