@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.102.1](https://github.com/y0ngha/siglens/compare/v0.102.0...v0.102.1) (2026-10-07)
+
+### Bug Fixes
+
+* 봉 조회가 실패한 공포·탐욕 탭이 서버 렌더에서 500이 나지 않게 한다 ([#992](https://github.com/y0ngha/siglens/issues/992)) ([a6d39d8](https://github.com/y0ngha/siglens/commit/a6d39d81eeb3661e1ee0452fab9efcc9c2d9d864))
+
 # [0.102.0](https://github.com/y0ngha/siglens/compare/v0.101.1...v0.102.0) (2026-10-06)
 
 ### Bug Fixes
