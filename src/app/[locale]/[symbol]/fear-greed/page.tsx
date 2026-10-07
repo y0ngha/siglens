@@ -24,6 +24,7 @@ import { buildDisplayName, pickAssetName } from '@/entities/ticker/lib/ticker';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { requireResolvableAsset } from '@/app/[locale]/[symbol]/requireResolvableAsset';
 import { getSessionBarsStatic } from '@/entities/bars/lib/sessionBarsStaticCache';
+import { shortenRevalidateForRuntimeDegrade } from '@/shared/cache/buildDegradedRevalidate';
 import {
     clientSymbolFearGreed,
     symbolFearGreedInputs,
@@ -290,7 +291,13 @@ export default async function SymbolFearGreedPage({ params }: Props) {
         quantizedFgBars === null
             ? null
             : symbolFearGreedInputs(quantizedFgBars);
-    if (quantizedFgBars !== null) {
+    if (quantizedFgBars === null) {
+        // 봉 조회 실패 — 게이지는 seed 없이 브라우저에서 조회하고(`hasSeed`), 요약 문단도
+        // 빠진다. 이 degraded 렌더가 라우트 revalidate(24h) 동안 굳지 않게 5분으로 낮춘다.
+        // `getSessionBarsStatic`은 큐레이션 종목에서만 낮추므로(롱테일 noindex 비용 절약)
+        // 롱테일의 빈 게이지가 하루 동안 남는 것을 여기서 막는다.
+        await shortenRevalidateForRuntimeDegrade();
+    } else {
         // updatedAt 명시: RQ dehydrate 기본은 Date.now()라 매 ISR 재생성마다 다른
         // timestamp가 HTML에 박혀 ISR write churn이 생긴다. 마지막 완료 봉의 time으로
         // 고정한다(Bar.time은 초, dataUpdatedAt은 밀리초).
@@ -362,6 +369,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                         <FearGreedPage
                             symbol={ticker}
                             fmpSymbol={assetInfo.fmpSymbol}
+                            hasSeed={quantizedFgBars !== null}
                             // 아래 `FearGreedFactsSummary`가 같은 경고 문구와 표본 수
                             // 안내를 이미 서버 렌더한다 — 둘 다 그리면 중복이다.
                             hideSelfNormWarning

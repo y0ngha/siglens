@@ -54,7 +54,13 @@ export async function loadBarsData(
     } catch (error) {
         logFmpPaymentRequiredError(error);
         // 훅이 없는 서버 코드라 루트 번역자를 직접 만든다.
-        const message = translateFmpError(error, await getTranslations());
+        //
+        // 번역자를 못 만들면 원래 에러를 그대로 던진다. 이 로더는 `unstable_cache` 콜백 안에서도
+        // 돈다(`getSessionBarsStatic` 등). 로케일이 그 스코프에 보이지 않으면 next-intl이
+        // `headers()`로 물러나는데, 캐시 스코프 안의 `headers()`는 Next가 거부한다(E838). 그때
+        // 번역 실패가 원래 FMP 에러를 덮어 로그·degrade 판정이 엉뚱한 에러를 보게 된다.
+        const t = await getTranslations().catch(() => null);
+        const message = t === null ? null : translateFmpError(error, t);
         if (message !== null) {
             throw new Error(message, { cause: error });
         }

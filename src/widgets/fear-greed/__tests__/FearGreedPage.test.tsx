@@ -74,6 +74,43 @@ describe('FearGreedPage', () => {
         });
     });
 
+    /**
+     * 서버 봉 조회가 실패해 seed가 없으면(`hasSeed={false}`) 서버 렌더에서 쿼리 훅을 부르지
+     * 않는다 — 훅의 `useSuspenseQuery`가 Server Function을 서버 렌더 중에 불러 페이지가 500이
+     * 되던 경로다(2026-10-07 운영 `/[symbol]/fear-greed`).
+     */
+    describe('without server seed (hasSeed=false)', () => {
+        beforeEach(() => {
+            mockUseFearGreedFromSymbol.mockClear();
+            mockUseFearGreedFromSymbol.mockReturnValue({
+                snapshot: baseSnapshot,
+                history: [],
+            });
+        });
+
+        it('서버 렌더는 쿼리 훅을 부르지 않고 스켈레톤만 낸다', () => {
+            const html = renderToString(
+                <IntlTestProvider>
+                    <FearGreedPage symbol="ATGSF" hasSeed={false} />
+                </IntlTestProvider>
+            );
+            expect(mockUseFearGreedFromSymbol).not.toHaveBeenCalled();
+            expect(html).toContain('role="status"');
+            expect(html).toContain('aria-busy="true"');
+            expect(html).not.toContain('>50<');
+        });
+
+        it('브라우저 렌더에서는 쿼리를 마운트해 점수를 그린다', () => {
+            const { getAllByText } = render(
+                <FearGreedPage symbol="ATGSF" hasSeed={false} />
+            );
+            expect(mockUseFearGreedFromSymbol).toHaveBeenCalledWith(
+                expect.objectContaining({ symbol: 'ATGSF' })
+            );
+            expect(getAllByText('50').length).toBeGreaterThan(0);
+        });
+    });
+
     describe('client render', () => {
         describe('with snapshot', () => {
             beforeEach(() => {
