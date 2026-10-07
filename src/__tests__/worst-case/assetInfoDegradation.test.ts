@@ -21,6 +21,7 @@ vi.mock('@y0ngha/siglens-core', () => ({
 
 vi.mock('@/entities/ticker/api', () => ({
     DrizzleAssetTranslationRepository: vi.fn(),
+    fetchCryptoAssetList: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock('@/shared/db/client', async importOriginal => ({
@@ -47,6 +48,7 @@ vi.mock('@/entities/ticker/lib/koreanNameStore', () => ({
     getKoreanNames: vi.fn().mockResolvedValue({}),
     setKoreanTickers: vi.fn().mockResolvedValue(undefined),
     getTickerDisplayNames: vi.fn().mockResolvedValue({}),
+    lookupTickerDisplayNames: vi.fn().mockResolvedValue({}),
 }));
 
 vi.mock('@/entities/ticker/lib/koreanTranslator', () => ({

@@ -126,16 +126,20 @@ async function loadAllEntries(): Promise<KoreanTickerEntry[]> {
  * 심볼로 이름을 찾는다 — DB `findBySymbols`(PK `IN`)를 직접 읽는다. `findBySymbols`는
  * 상폐 행까지 돌려주므로(`KoreanTickerRepository.findBySymbols` JSDoc) 상폐 종목의 한글명도
  * 별도 보충 없이 나온다.
+ *
+ * **조회 실패(`null`)와 "행 없음"(`[]`)을 구분한다**(SERVER.md#DC-8). 예전 Redis 사본은 DB
+ * 장애를 흡수하는 층이기도 했다 — 장애를 `[]`로 뭉개면 호출부가 이미 번역된 심볼을 "번역이
+ * 없다"고 읽어 장애 동안 심볼마다 Gemini 번역을 돌린다. DB 클라이언트가 아예 없는 구성은
+ * 장애가 아니라 "저장소 없음"이라 `[]`다.
  */
 async function loadEntriesBySymbols(
     symbols: readonly string[]
-): Promise<KoreanTickerEntry[]> {
+): Promise<KoreanTickerEntry[] | null> {
     const repository = tryGetRepository();
     if (!repository) return [];
 
-    return (await readBySymbolsFromDatabase(repository, symbols)).map(
-        withCanonical
-    );
+    const entries = await readBySymbolsFromDatabase(repository, symbols);
+    return entries === null ? null : entries.map(withCanonical);
 }
 
 async function readAllFromDatabase(
@@ -152,12 +156,12 @@ async function readAllFromDatabase(
 async function readBySymbolsFromDatabase(
     repository: KoreanTickerRepository,
     symbols: readonly string[]
-): Promise<KoreanTickerEntry[]> {
+): Promise<KoreanTickerEntry[] | null> {
     try {
         return await repository.findBySymbols(symbols);
     } catch (e) {
         console.warn('[koreanNameStore] DB read failed', e);
-        return [];
+        return null;
     }
 }
 
@@ -244,9 +248,23 @@ export interface TickerDisplayName {
 export async function getTickerDisplayNames(
     symbols: readonly string[]
 ): Promise<Record<string, TickerDisplayName>> {
+    return (await lookupTickerDisplayNames(symbols)) ?? {};
+}
+
+/**
+ * {@link getTickerDisplayNames}와 같은 조회지만 **DB 조회 실패를 `null`로 알린다.**
+ *
+ * 대부분의 호출부(뉴스·검색 보강·디렉터리)는 실패를 "이름 없음"으로 읽어 영문명으로
+ * degrade해도 되므로 `getTickerDisplayNames`를 쓴다. 실패와 "행 없음"을 구분해야 하는
+ * 호출부 — 행이 없으면 번역을 시작하는 `getAssetInfo`의 FMP 경로 — 만 이 함수를 쓴다.
+ */
+export async function lookupTickerDisplayNames(
+    symbols: readonly string[]
+): Promise<Record<string, TickerDisplayName> | null> {
     if (symbols.length === 0) return {};
 
     const entries = await loadEntriesBySymbols(symbols);
+    if (entries === null) return null;
     const bySymbol = new Map(entries.map(e => [e.symbol, e]));
 
     return Object.fromEntries(
@@ -274,7 +292,7 @@ export async function getKoreanNames(
 ): Promise<Record<string, string>> {
     if (symbols.length === 0) return {};
 
-    const entries = await loadEntriesBySymbols(symbols);
+    const entries = (await loadEntriesBySymbols(symbols)) ?? [];
     const symbolMap = new Map(entries.map(e => [e.symbol, e.koreanName]));
 
     const pairs = symbols.flatMap<readonly [string, string]>(symbol => {

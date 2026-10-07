@@ -1,6 +1,5 @@
 const {
     mockFmpGet,
-    mockTryGetClient,
     mockTranslate,
     mockRevalidateTag,
     mockInvalidate,
@@ -10,7 +9,6 @@ const {
     events,
 } = vi.hoisted(() => ({
     mockFmpGet: vi.fn(),
-    mockTryGetClient: vi.fn(),
     mockTranslate: vi.fn(),
     mockRevalidateTag: vi.fn(),
     mockInvalidate: vi.fn(),
@@ -29,36 +27,12 @@ const {
     events: [] as string[],
 }));
 
-vi.mock('server-only', () => ({}));
-vi.mock('next/cache', () => ({ revalidateTag: mockRevalidateTag }));
-vi.mock('@/shared/api/fmp/httpClient', () => ({ fmpGet: mockFmpGet }));
-vi.mock('@/shared/db/client', async importOriginal => ({
-    ...(await importOriginal<typeof import('@/shared/db/client')>()),
-    tryGetDatabaseClient: mockTryGetClient,
-}));
-vi.mock('../../lib/koreanNameStore', () => ({
-    invalidateKoreanTickerCache: mockInvalidate,
-}));
-vi.mock('../../lib/koreanTranslator', () => ({
-    translateCompanyNames: mockTranslate,
-}));
-vi.mock('../../api', () => ({
-    DrizzleKoreanTickerRepository: class {
-        findAllNonKr = mockTickerRepo.findAllNonKr;
-        upsertMany = mockTickerRepo.upsertMany;
-    },
-    DrizzleAssetTranslationRepository: class {
-        findAll = mockAssetRepo.findAll;
-        upsert = mockAssetRepo.upsert;
-    },
-    DrizzleProfileDescriptionTranslationRepository: class {
-        deleteBySymbols = mockDescriptionRepo.deleteBySymbols;
-    },
-}));
-
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { KoreanTickerEntry } from '@/shared/lib/types';
-import { reconcileUsTickerNames } from '../../lib/reconcileUsTickerNames';
+import {
+    reconcileUsTickerNames,
+    type ReconcileUsTickerNamesDeps,
+} from '../../lib/reconcileUsTickerNames';
 import {
     RENAME_BATCH_MAX,
     RENAME_GUARD_MAX,
@@ -82,6 +56,19 @@ function assetRow(symbol: string, name: string, koreanName = '옛이름') {
     return { symbol, name, koreanName, fmpSymbol: symbol };
 }
 
+/** 호출마다 새 deps를 만든다 — 모듈 목 없이 fake를 주입한다. */
+function makeDeps(): ReconcileUsTickerNamesDeps {
+    return {
+        koreanTickerRepo: mockTickerRepo,
+        assetTranslationRepo: mockAssetRepo,
+        descriptionRepo: mockDescriptionRepo,
+        fetchStockList: mockFmpGet,
+        translate: mockTranslate,
+        revalidateSymbol: mockRevalidateTag,
+        invalidateSearchSnapshot: mockInvalidate,
+    };
+}
+
 function loggedLines(spy: { mock: { calls: unknown[][] } }): string[] {
     return spy.mock.calls.map(call => String(call[0]));
 }
@@ -90,7 +77,6 @@ describe('reconcileUsTickerNames', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         events.length = 0;
-        mockTryGetClient.mockReturnValue({ db: {} });
         mockFmpGet.mockResolvedValue([
             { symbol: 'LAZR', companyName: 'Luminar Technologies' },
             { symbol: 'AAPL', companyName: 'Apple Inc.' },
@@ -130,15 +116,14 @@ describe('reconcileUsTickerNames', () => {
         vi.spyOn(console, 'error').mockImplementation(() => {});
     });
 
-    it('stock-list는 FMP에서 한 번만 받는다', async () => {
-        await reconcileUsTickerNames();
+    it('stock-list는 한 번만 받는다', async () => {
+        await reconcileUsTickerNames(makeDeps());
 
         expect(mockFmpGet).toHaveBeenCalledTimes(1);
-        expect(mockFmpGet.mock.calls[0][0]).toBe('stock-list');
     });
 
     it('번역 → 설명 삭제 → 두 테이블 upsert → revalidateTag → 검색 스냅샷 무효화 순서로 처리한다', async () => {
-        const counts = await reconcileUsTickerNames();
+        const counts = await reconcileUsTickerNames(makeDeps());
 
         expect(events).toEqual([
             'translate',
@@ -159,7 +144,7 @@ describe('reconcileUsTickerNames', () => {
     });
 
     it('korean_tickers는 exchange를 유지한 채 name·koreanName만 갈아 쓴다', async () => {
-        await reconcileUsTickerNames();
+        await reconcileUsTickerNames(makeDeps());
 
         expect(mockTickerRepo.upsertMany).toHaveBeenCalledWith([
             {
@@ -173,7 +158,7 @@ describe('reconcileUsTickerNames', () => {
     });
 
     it('asset_translations는 fmpSymbol을 유지한 채 갈아 쓴다', async () => {
-        await reconcileUsTickerNames();
+        await reconcileUsTickerNames(makeDeps());
 
         expect(mockAssetRepo.upsert).toHaveBeenCalledWith({
             symbol: 'LAZR',
@@ -186,7 +171,7 @@ describe('reconcileUsTickerNames', () => {
     it('asset_translations에 행이 없으면 만들지 않는다', async () => {
         mockAssetRepo.findAll.mockResolvedValue([]);
 
-        await reconcileUsTickerNames();
+        await reconcileUsTickerNames(makeDeps());
 
         expect(mockAssetRepo.upsert).not.toHaveBeenCalled();
         expect(mockTickerRepo.upsertMany).toHaveBeenCalledTimes(1);
@@ -195,7 +180,7 @@ describe('reconcileUsTickerNames', () => {
     it('korean_tickers에 행이 없으면 거래소를 지어내지 않고 건너뛴다', async () => {
         mockTickerRepo.findAllNonKr.mockResolvedValue([]);
 
-        await reconcileUsTickerNames();
+        await reconcileUsTickerNames(makeDeps());
 
         expect(mockTickerRepo.upsertMany).not.toHaveBeenCalled();
         expect(mockAssetRepo.upsert).toHaveBeenCalledTimes(1);
@@ -207,7 +192,7 @@ describe('reconcileUsTickerNames', () => {
             { ...assetRow('LAZR', 'Old Lidar Corp'), fmpSymbol: 'LAZR.MX' },
         ]);
 
-        const counts = await reconcileUsTickerNames();
+        const counts = await reconcileUsTickerNames(makeDeps());
 
         expect(counts.renamed).toBe(0);
         expect(mockTranslate).not.toHaveBeenCalled();
@@ -216,7 +201,7 @@ describe('reconcileUsTickerNames', () => {
     it('upsert가 던져도 설명 삭제는 이미 끝났고 그 심볼은 태그를 무효화하지 않는다', async () => {
         mockTickerRepo.upsertMany.mockRejectedValue(new Error('db down'));
 
-        const counts = await reconcileUsTickerNames();
+        const counts = await reconcileUsTickerNames(makeDeps());
 
         expect(events).toContain('delete:description');
         expect(events).not.toContain('revalidate');
@@ -245,19 +230,19 @@ describe('reconcileUsTickerNames', () => {
             }
         );
 
-        const counts = await reconcileUsTickerNames();
+        const counts = await reconcileUsTickerNames(makeDeps());
 
         expect(counts.renamed).toBe(1);
         expect(counts.failed).toBe(1);
         expect(mockRevalidateTag).toHaveBeenCalledTimes(1);
-        expect(mockRevalidateTag).toHaveBeenCalledWith('symbol:LAZR', 'max');
+        expect(mockRevalidateTag).toHaveBeenCalledWith('LAZR');
         expect(mockInvalidate).toHaveBeenCalledTimes(1);
     });
 
     it('asset_translations 쓰기가 실패하면 그 심볼은 태그를 무효화하지 않는다', async () => {
         mockAssetRepo.upsert.mockRejectedValue(new Error('db down'));
 
-        const counts = await reconcileUsTickerNames();
+        const counts = await reconcileUsTickerNames(makeDeps());
 
         expect(counts.failed).toBe(1);
         expect(mockRevalidateTag).not.toHaveBeenCalled();
@@ -277,7 +262,7 @@ describe('reconcileUsTickerNames', () => {
             },
         ]);
 
-        const counts = await reconcileUsTickerNames();
+        const counts = await reconcileUsTickerNames(makeDeps());
 
         expect(counts.compared).toBe(1);
         expect(counts.renamed).toBe(1);
@@ -287,7 +272,7 @@ describe('reconcileUsTickerNames', () => {
             koreanName: '루미나',
             fmpSymbol: 'BRK-B',
         });
-        expect(mockRevalidateTag).toHaveBeenCalledWith('symbol:BRK.B', 'max');
+        expect(mockRevalidateTag).toHaveBeenCalledWith('BRK.B');
     });
 
     it('별칭 맵에 없는 dual-class korean_tickers 심볼(HEI.A)도 하이픈 표기로 대조한다', async () => {
@@ -299,26 +284,26 @@ describe('reconcileUsTickerNames', () => {
         ]);
         mockAssetRepo.findAll.mockResolvedValue([]);
 
-        const counts = await reconcileUsTickerNames();
+        const counts = await reconcileUsTickerNames(makeDeps());
 
         expect(counts.compared).toBe(1);
         expect(counts.renamed).toBe(1);
     });
 
     it('회사 설명 번역을 지우고 symbol 태그를 무효화한다', async () => {
-        await reconcileUsTickerNames();
+        await reconcileUsTickerNames(makeDeps());
 
         expect(mockDescriptionRepo.deleteBySymbols).toHaveBeenCalledWith([
             'LAZR',
         ]);
         expect(mockRevalidateTag).toHaveBeenCalledTimes(1);
-        expect(mockRevalidateTag).toHaveBeenCalledWith('symbol:LAZR', 'max');
+        expect(mockRevalidateTag).toHaveBeenCalledWith('LAZR');
     });
 
     it('변경 로그를 정해진 형식으로 남긴다', async () => {
         const logSpy = vi.mocked(console.log);
 
-        await reconcileUsTickerNames();
+        await reconcileUsTickerNames(makeDeps());
 
         expect(loggedLines(logSpy)).toContain(
             '[ticker-names] renamed LAZR: "Old Lidar Corp" → "Luminar Technologies" (한글: 옛이름 → 루미나)'
@@ -328,7 +313,7 @@ describe('reconcileUsTickerNames', () => {
     it('번역에 실패한 심볼은 아무것도 쓰지 않는다', async () => {
         mockTranslate.mockResolvedValue({});
 
-        const counts = await reconcileUsTickerNames();
+        const counts = await reconcileUsTickerNames(makeDeps());
 
         expect(counts.renamed).toBe(0);
         expect(mockTickerRepo.upsertMany).not.toHaveBeenCalled();
@@ -349,18 +334,15 @@ describe('reconcileUsTickerNames', () => {
         mockAssetRepo.findAll.mockResolvedValue([]);
         mockTranslate.mockResolvedValue({ NEWC: '뉴코' });
 
-        const counts = await reconcileUsTickerNames();
+        const counts = await reconcileUsTickerNames(makeDeps());
 
         expect(counts.renamed).toBe(1);
         const written = mockTickerRepo.upsertMany.mock.calls.flatMap(
             call => call[0] as KoreanTickerEntry[]
         );
         expect(written.map(e => e.symbol)).toEqual(['NEWC']);
-        expect(mockRevalidateTag).toHaveBeenCalledWith('symbol:NEWC', 'max');
-        expect(mockRevalidateTag).not.toHaveBeenCalledWith(
-            'symbol:LAZR',
-            'max'
-        );
+        expect(mockRevalidateTag).toHaveBeenCalledWith('NEWC');
+        expect(mockRevalidateTag).not.toHaveBeenCalledWith('LAZR');
     });
 
     it('정본 심볼은 쓰지 않고 검토 로그만 남긴다', async () => {
@@ -373,7 +355,7 @@ describe('reconcileUsTickerNames', () => {
         mockAssetRepo.findAll.mockResolvedValue([]);
         const warnSpy = vi.mocked(console.warn);
 
-        const counts = await reconcileUsTickerNames();
+        const counts = await reconcileUsTickerNames(makeDeps());
 
         expect(counts.renamed).toBe(0);
         expect(mockTranslate).not.toHaveBeenCalled();
@@ -396,7 +378,7 @@ describe('reconcileUsTickerNames', () => {
         mockAssetRepo.findAll.mockResolvedValue([]);
         const errorSpy = vi.mocked(console.error);
 
-        const counts = await reconcileUsTickerNames();
+        const counts = await reconcileUsTickerNames(makeDeps());
 
         expect(counts.guardTrip).toBe(`${count} candidates`);
         expect(counts.renamed).toBe(0);
@@ -423,7 +405,7 @@ describe('reconcileUsTickerNames', () => {
                 Object.fromEntries(entries.map(e => [e.symbol, '번역']))
         );
 
-        const counts = await reconcileUsTickerNames();
+        const counts = await reconcileUsTickerNames(makeDeps());
 
         expect(counts.renamed).toBe(RENAME_BATCH_MAX);
         expect(counts.deferred).toBe(3);
@@ -436,7 +418,7 @@ describe('reconcileUsTickerNames', () => {
         ]);
         mockAssetRepo.findAll.mockResolvedValue([]);
 
-        const counts = await reconcileUsTickerNames();
+        const counts = await reconcileUsTickerNames(makeDeps());
 
         expect(counts.renamed).toBe(0);
         expect(mockTranslate).not.toHaveBeenCalled();
@@ -446,7 +428,9 @@ describe('reconcileUsTickerNames', () => {
     it('FMP 실패는 던져서 cron 로그에 남게 하고 아무것도 쓰지 않는다', async () => {
         mockFmpGet.mockRejectedValue(new Error('FMP 503'));
 
-        await expect(reconcileUsTickerNames()).rejects.toThrow('FMP 503');
+        await expect(reconcileUsTickerNames(makeDeps())).rejects.toThrow(
+            'FMP 503'
+        );
 
         expect(mockTickerRepo.upsertMany).not.toHaveBeenCalled();
         expect(mockRevalidateTag).not.toHaveBeenCalled();
@@ -455,18 +439,9 @@ describe('reconcileUsTickerNames', () => {
     it('stock-list 응답이 배열이 아니면 던진다 (빈 목록으로 흘려 성공처럼 보이지 않게)', async () => {
         mockFmpGet.mockResolvedValue({ error: 'oops' });
 
-        await expect(reconcileUsTickerNames()).rejects.toThrow(
+        await expect(reconcileUsTickerNames(makeDeps())).rejects.toThrow(
             'stock-list response is not an array'
         );
-    });
-
-    it('DB 클라이언트가 없으면 던진다', async () => {
-        mockTryGetClient.mockReturnValue(null);
-
-        await expect(reconcileUsTickerNames()).rejects.toThrow(
-            'database unavailable'
-        );
-        expect(mockFmpGet).not.toHaveBeenCalled();
     });
 
     it('모양이 깨진 stock-list 행은 버리고 나머지로 진행한다', async () => {
@@ -476,7 +451,7 @@ describe('reconcileUsTickerNames', () => {
             { symbol: 'LAZR', companyName: 'Luminar Technologies' },
         ]);
 
-        const counts = await reconcileUsTickerNames();
+        const counts = await reconcileUsTickerNames(makeDeps());
 
         expect(counts.renamed).toBe(1);
     });

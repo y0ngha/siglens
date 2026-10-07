@@ -50,6 +50,7 @@ import {
     getKoreanNames,
     getTickerDisplayNames,
     invalidateKoreanTickerCache,
+    lookupTickerDisplayNames,
     searchByKoreanName,
     setKoreanTickers,
 } from '../../lib/koreanNameStore';
@@ -445,6 +446,32 @@ describe('getTickerDisplayNames', () => {
         mockRepository.findBySymbols.mockRejectedValue(new Error('db down'));
 
         await expect(getTickerDisplayNames(['MSFT'])).resolves.toEqual({});
+    });
+});
+
+describe('lookupTickerDisplayNames — 조회 실패와 행 없음의 구분', () => {
+    beforeEach(resetMocks);
+    afterEach(() => vi.clearAllMocks());
+
+    it('DB 조회가 던지면 null이다 (행 없음의 {}와 다르다)', async () => {
+        mockRepository.findBySymbols.mockRejectedValue(new Error('db down'));
+        await expect(lookupTickerDisplayNames(['AAPL'])).resolves.toBeNull();
+    });
+
+    it('조회가 성공했지만 행이 없으면 빈 객체다', async () => {
+        mockRepository.findBySymbols.mockResolvedValue([]);
+        await expect(lookupTickerDisplayNames(['TSLA'])).resolves.toEqual({});
+    });
+
+    it('DB 클라이언트가 없으면 장애가 아니라 빈 객체다', async () => {
+        tryGetDatabaseClientMock.mockReturnValue(null);
+        await expect(lookupTickerDisplayNames(['AAPL'])).resolves.toEqual({});
+    });
+
+    it('다른 호출부는 같은 실패를 던지지 않고 빈 값으로 degrade한다', async () => {
+        mockRepository.findBySymbols.mockRejectedValue(new Error('db down'));
+        await expect(getTickerDisplayNames(['AAPL'])).resolves.toEqual({});
+        await expect(getKoreanNames(['AAPL'])).resolves.toEqual({});
     });
 });
 

@@ -14,6 +14,9 @@ vi.mock('@/shared/lib/backgroundTask', () => ({
 vi.mock('@/entities/ticker/lib/syncKrListedTickers', () => ({
     syncKrListedTickers: mockSync,
 }));
+vi.mock('../reconcileDeps', () => ({
+    createReconcileDeps: () => ({}),
+}));
 vi.mock('@/entities/ticker/lib/reconcileUsTickerNames', () => ({
     reconcileUsTickerNames: mockReconcile,
 }));

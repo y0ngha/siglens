@@ -1,17 +1,12 @@
-import 'server-only';
-import { revalidateTag } from 'next/cache';
-import { fmpGet } from '@/shared/api/fmp/httpClient';
-import { tryGetDatabaseClient } from '@/shared/db/client';
 import { toFmpSearchSymbol } from '@/shared/lib/fmpSymbol';
 import { isKrEquitySymbol } from '@/shared/config/marketProfile/registry';
 import { CANONICAL_KOREAN_NAMES } from '@/shared/config/canonical-korean-names';
-import {
-    DrizzleAssetTranslationRepository,
-    DrizzleKoreanTickerRepository,
-    DrizzleProfileDescriptionTranslationRepository,
-} from '../api';
-import { translateCompanyNames } from './koreanTranslator';
-import { invalidateKoreanTickerCache } from './koreanNameStore';
+import type {
+    AssetTranslationRepository,
+    KoreanTickerRepository,
+    ProfileDescriptionTranslationRepository,
+} from '@/shared/db/types';
+import type { TranslatorEntry } from '../model';
 import {
     planTickerNameReconcile,
     type RenameCandidate,
@@ -40,16 +35,44 @@ function isStockListEntry(value: unknown): value is StockListEntry {
 }
 
 /**
- * `/stable/stock-list`(약 4만 행)를 한 번 받는다. 배열이 아니면 던진다 — 빈 목록으로
+ * `/stable/stock-list`(약 4만 행) 응답을 검증한다. 배열이 아니면 던진다 — 빈 목록으로
  * 흘리면 "stock-list에 없는 심볼은 건너뛴다" 규칙 때문에 조용히 아무것도 안 하고
  * 성공으로 보인다. 모양이 깨진 개별 행은 버린다.
  */
-async function fetchStockList(): Promise<StockListEntry[]> {
-    const raw = await fmpGet<unknown>('stock-list');
+function parseStockList(raw: unknown): StockListEntry[] {
     if (!Array.isArray(raw)) {
         throw new Error('[ticker-names] stock-list response is not an array');
     }
     return raw.filter(isStockListEntry);
+}
+
+/**
+ * `reconcileUsTickerNames`가 쓰는 외부 의존 — I/O를 만드는 일은 호출자(cron route의
+ * `createReconcileDeps`)가 맡고 이 파일은 주입받은 것만 부른다(EN-1: `lib/`는 I/O를 직접
+ * 구성하지 않는다).
+ */
+export interface ReconcileUsTickerNamesDeps {
+    koreanTickerRepo: Pick<
+        KoreanTickerRepository,
+        'findAllNonKr' | 'upsertMany'
+    >;
+    assetTranslationRepo: Pick<
+        AssetTranslationRepository,
+        'findAll' | 'upsert'
+    >;
+    descriptionRepo: Pick<
+        ProfileDescriptionTranslationRepository,
+        'deleteBySymbols'
+    >;
+    /** FMP `/stable/stock-list` 원본 응답 — 형태 검증은 이 파일이 한다. */
+    fetchStockList: () => Promise<unknown>;
+    translate: (
+        entries: readonly TranslatorEntry[]
+    ) => Promise<Record<string, string>>;
+    /** `symbol:<SYM>` 태그 무효화. */
+    revalidateSymbol: (symbol: string) => void;
+    /** `setKoreanTickers`를 거치지 않는 쓰기 뒤 이 인스턴스의 한글 검색 스냅샷을 비운다. */
+    invalidateSearchSnapshot: () => Promise<void>;
 }
 
 /**
@@ -71,25 +94,19 @@ async function fetchStockList(): Promise<StockListEntry[]> {
  * 검토용 로그만 남긴다. 가드·상한은 `tickerNameReconcile.ts`.
  *
  * FMP·DB 실패는 던진다 — 호출부(cron)가 독립된 try로 로그를 남긴다.
- *
- * **EN-1 예외(`syncKrListedTickers`와 같은 지역 패턴):** 이 파일은 `lib/`에 있지만 I/O(FMP·DB)를
- * 직접 한다. 같은 cron이 앞서 부르는 `syncKrListedTickers`가 repository를 내부에서 만들고
- * 호출자(cron route) 하나만 쓰는 구조라, 이 파이프라인 단계도 같은 모양을 따른다 — 새로운
- * 주입 방식을 이 슬라이스에 하나 더 두지 않는다. 순수 판정(정규화·후보 계산·가드)은
- * `normalizeCompanyName.ts`·`tickerNameReconcile.ts`에 분리돼 있어 I/O 없이 테스트된다.
  */
-export async function reconcileUsTickerNames(): Promise<TickerNameReconcileCounts> {
-    const client = tryGetDatabaseClient();
-    if (!client) throw new Error('[ticker-names] database unavailable');
-    const koreanTickerRepo = new DrizzleKoreanTickerRepository(client.db);
-    const assetTranslationRepo = new DrizzleAssetTranslationRepository(
-        client.db
-    );
-    const descriptionRepo = new DrizzleProfileDescriptionTranslationRepository(
-        client.db
-    );
+export async function reconcileUsTickerNames(
+    deps: ReconcileUsTickerNamesDeps
+): Promise<TickerNameReconcileCounts> {
+    const {
+        koreanTickerRepo,
+        assetTranslationRepo,
+        descriptionRepo,
+        translate,
+        revalidateSymbol,
+    } = deps;
 
-    const listed = await fetchStockList();
+    const listed = parseStockList(await deps.fetchStockList());
     const [koreanTickerRows, assetRows] = await Promise.all([
         koreanTickerRepo.findAllNonKr(),
         assetTranslationRepo.findAll(),
@@ -147,7 +164,7 @@ export async function reconcileUsTickerNames(): Promise<TickerNameReconcileCount
 
     if (plan.candidates.length === 0) return counts;
 
-    const translated = await translateCompanyNames(
+    const translated = await translate(
         plan.candidates.map(c => ({ symbol: c.symbol, name: c.newName }))
     );
     // 번역 응답에 키가 없는 심볼은 건너뛴다 — 쓰지 않으면 다음 날 다시 후보가 된다.
@@ -185,7 +202,7 @@ export async function reconcileUsTickerNames(): Promise<TickerNameReconcileCount
                     koreanName,
                 });
             }
-            revalidateTag(`symbol:${c.symbol.toUpperCase()}`, 'max');
+            revalidateSymbol(c.symbol);
             const oldKorean =
                 existing?.koreanName ?? assetRecord?.koreanName ?? '-';
             console.log(
@@ -209,7 +226,7 @@ export async function reconcileUsTickerNames(): Promise<TickerNameReconcileCount
 
     // `setKoreanTickers`를 거치지 않고 repository에 직접 썼으므로 이 인스턴스의 한글 검색
     // 스냅샷을 직접 비운다.
-    if (renamed > 0) await invalidateKoreanTickerCache();
+    if (renamed > 0) await deps.invalidateSearchSnapshot();
 
     return { ...counts, renamed, failed };
 }

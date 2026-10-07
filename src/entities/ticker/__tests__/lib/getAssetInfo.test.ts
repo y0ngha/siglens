@@ -70,7 +70,7 @@ vi.mock('../../lib/fmpTickerApi', async () => {
 });
 vi.mock('../../lib/koreanNameStore', () => ({
     getKoreanNames: (symbols: string[]) => getKoreanNamesMock(symbols),
-    getTickerDisplayNames: (symbols: string[]) =>
+    lookupTickerDisplayNames: (symbols: string[]) =>
         getTickerDisplayNamesMock(symbols),
     setKoreanTickers: (entries: unknown[]) => setKoreanTickersMock(entries),
 }));
@@ -419,6 +419,36 @@ describe('getAssetInfo', () => {
         expect(mockRepository.upsert).toHaveBeenCalledWith(
             expect.objectContaining({ koreanName: '애플', name: 'Apple Inc.' })
         );
+    });
+
+    it('korean_tickers 조회가 실패하면 번역·저장 없이 영문명 정보만 돌려준다 (DB 장애 중 Gemini 폭주 방지)', async () => {
+        mockCache.get.mockResolvedValue(null);
+        mockRepository.findBySymbol.mockResolvedValue(null);
+        searchBySymbolMock.mockResolvedValue([apple]);
+        // null = 조회 실패. `{}`(행 없음)와 구분되어야 한다.
+        getTickerDisplayNamesMock.mockResolvedValue(null);
+
+        const result = await getAssetInfo('AAPL');
+        await new Promise(resolve => setImmediate(resolve));
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(result).toEqual({ symbol: 'AAPL', name: 'Apple Inc.' });
+        expect(translateCompanyNamesMock).not.toHaveBeenCalled();
+        expect(setKoreanTickersMock).not.toHaveBeenCalled();
+        expect(mockRepository.upsert).not.toHaveBeenCalled();
+        expect(mockCache.set).not.toHaveBeenCalled();
+    });
+
+    it('조회가 성공했지만 행이 없으면(`{}`) 번역 경로로 간다 — 실패와 구분된다', async () => {
+        mockCache.get.mockResolvedValue(null);
+        mockRepository.findBySymbol.mockResolvedValue(null);
+        searchBySymbolMock.mockResolvedValue([apple]);
+        getTickerDisplayNamesMock.mockResolvedValue({});
+        translateCompanyNamesMock.mockResolvedValue({ AAPL: '애플' });
+
+        await getAssetInfo('AAPL');
+
+        expect(translateCompanyNamesMock).toHaveBeenCalledTimes(1);
     });
 
     it('정본 심볼은 저장된 영문명이 달라도 한글명을 재사용한다', async () => {

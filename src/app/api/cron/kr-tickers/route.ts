@@ -4,6 +4,7 @@ import { afterWithDrain } from '@/shared/lib/afterWithDrain';
 import { runAsBatchWork } from '@/shared/lib/renderBudget';
 import { syncKrListedTickers } from '@/entities/ticker/lib/syncKrListedTickers';
 import { reconcileUsTickerNames } from '@/entities/ticker/lib/reconcileUsTickerNames';
+import { createReconcileDeps } from './reconcileDeps';
 
 const { HTTP_STATUS_UNAUTHORIZED, HTTP_STATUS_ACCEPTED } = constants;
 
@@ -50,7 +51,9 @@ export async function PATCH(request: Request): Promise<Response> {
             // 독립된 try — 두 작업은 서로의 입력이 아니다. KR 동기화(data.go.kr)가
             // 죽어도 미국 종목 이름 재대조(FMP)는 돌아야 하고, 그 반대도 같다.
             try {
-                const counts = await reconcileUsTickerNames();
+                const counts = await reconcileUsTickerNames(
+                    createReconcileDeps()
+                );
                 console.log(
                     '[ticker-names] reconcile done:',
                     JSON.stringify(counts)

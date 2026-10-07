@@ -25,7 +25,7 @@ import {
 import { translateCompanyNames } from './koreanTranslator';
 import {
     getKoreanNames,
-    getTickerDisplayNames,
+    lookupTickerDisplayNames,
     setKoreanTickers,
     type TickerDisplayName,
 } from './koreanNameStore';
@@ -459,11 +459,19 @@ async function resolveAssetInfo(symbol: string): Promise<AssetInfo | null> {
 
     const { symbol: fmpSymbol, name, exchange, exchangeFullName } = match;
 
-    const koreanName = reusableKoreanName(
-        upper,
-        name,
-        (await getTickerDisplayNames([upper]))[upper]
-    );
+    const displayNames = await lookupTickerDisplayNames([upper]);
+    // DB 조회가 **실패**했으면(행 없음과 다르다) 번역도 저장도 하지 않고 영문명 정보만
+    // 돌려준다 — 이미 번역된 심볼일 수 있는데 "번역 없음"으로 읽으면 장애 동안 심볼마다
+    // Gemini 번역이 돈다(SERVER.md#DC-8). 임시 항목도 쓰지 않아, DB가 돌아오면 다음 요청이
+    // 정상 경로를 탄다. 이 응답은 `unstable_cache` 안에서 굳을 수 있으나 영문명 degrade다.
+    if (displayNames === null) {
+        return {
+            symbol: upper,
+            name,
+            ...(fmpSymbol !== upper && { fmpSymbol }),
+        };
+    }
+    const koreanName = reusableKoreanName(upper, name, displayNames[upper]);
 
     const info: AssetInfo = {
         symbol: upper,

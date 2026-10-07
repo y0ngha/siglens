@@ -36,14 +36,15 @@ const TRAILING_TOKEN_SEQUENCES: readonly (readonly string[])[] = [
 const PUNCTUATION_RE = /[.,'"()/-]/g;
 
 function matchingTailLength(tokens: readonly string[]): number {
-    for (const sequence of TRAILING_TOKEN_SEQUENCES) {
-        if (sequence.length > tokens.length) continue;
-        const start = tokens.length - sequence.length;
-        if (sequence.every((token, i) => tokens[start + i] === token)) {
-            return sequence.length;
-        }
-    }
-    return 0;
+    const matched = TRAILING_TOKEN_SEQUENCES.find(
+        sequence =>
+            sequence.length <= tokens.length &&
+            sequence.every(
+                (token, i) =>
+                    tokens[tokens.length - sequence.length + i] === token
+            )
+    );
+    return matched?.length ?? 0;
 }
 
 /**
