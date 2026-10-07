@@ -84,6 +84,7 @@ describe('PATCH /api/cron/kr-tickers', () => {
             listed: 40_000,
             compared: 30_000,
             renamed: 2,
+            failed: 0,
             deferred: 0,
             guardTrip: null,
         });
@@ -144,6 +145,7 @@ describe('PATCH /api/cron/kr-tickers', () => {
         // resolveSync()를 둔 회귀를 여기서 잡는다.
         await expect(settlesPromptly(drainPromise)).resolves.toBe('settled');
     });
+
     it('KR 동기화가 끝난 뒤 이름 재대조를 실행한다', async () => {
         await PATCH(makeRequest('Bearer test-secret'));
         await runAfterCallback();

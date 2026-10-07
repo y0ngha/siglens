@@ -50,6 +50,11 @@ function parseStockList(raw: unknown): StockListEntry[] {
  * `reconcileUsTickerNames`가 쓰는 외부 의존 — I/O를 만드는 일은 호출자(cron route의
  * `createReconcileDeps`)가 맡고 이 파일은 주입받은 것만 부른다(EN-1: `lib/`는 I/O를 직접
  * 구성하지 않는다).
+ *
+ * 그래도 이 파일이 저장소를 부르고 로그를 남기는 것은 EN-1의 허용 예외다: 인접 파이프라인
+ * 단계(`syncKrListedTickers` 뒤 같은 cron)이고, 저장소는 모두 주입받으며, 호출자가 cron
+ * 라우트 하나뿐이다. 판정 로직은 순수 모듈(`tickerNameReconcile.ts`,
+ * `normalizeCompanyName.ts`)에 있다.
  */
 export interface ReconcileUsTickerNamesDeps {
     koreanTickerRepo: Pick<
@@ -156,11 +161,11 @@ export async function reconcileUsTickerNames(
         return counts;
     }
 
-    for (const c of plan.canonicalRenamed) {
+    plan.canonicalRenamed.forEach(c =>
         console.warn(
             `[ticker-names] canonical symbol renamed — review: ${c.symbol} ${c.oldName}→${c.newName}`
-        );
-    }
+        )
+    );
 
     if (plan.candidates.length === 0) return counts;
 
@@ -215,12 +220,12 @@ export async function reconcileUsTickerNames(
         }
     };
 
-    // 순차로 처리한다(DB 연결 하나를 60개 upsert가 한꺼번에 두드리지 않게). 결과는 심볼별
-    // 성공 여부 배열로 모아 개수만 센다.
-    const outcomes = await translatable.reduce<Promise<readonly boolean[]>>(
-        async (previous, c) => [...(await previous), await renameOne(c)],
-        Promise.resolve([])
-    );
+    // 순차로 처리한다(DB 연결 하나를 60개 upsert가 한꺼번에 두드리지 않게). 순차 await라
+    // 지역 누적을 쓰는 예외 지점이다 — `reduce` 안에서 프라미스를 이어 붙이면 의도가 가려진다.
+    const outcomes: boolean[] = [];
+    for (const c of translatable) {
+        outcomes.push(await renameOne(c));
+    }
     const renamed = outcomes.filter(Boolean).length;
     const failed = outcomes.length - renamed;
 

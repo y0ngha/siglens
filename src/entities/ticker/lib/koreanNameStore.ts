@@ -93,8 +93,11 @@ async function loadSnapshotFromDatabase(): Promise<KoreanTickerEntry[]> {
     // 정본은 **로드 지점**에서 입힌다 — 매칭 술어와 반환값 모두 자동으로 정본을 본다
     // (`withCanonical` JSDoc).
     const entries = (await readAllFromDatabase(repository)).map(withCanonical);
-    // 빈 결과(DB 장애)는 새 스냅샷으로 삼지 않는다. 무효화가 로드 중에 끼었으면 `snapshot`이
-    // 이미 비어 있어 `[]`로 떨어진다(낡은 목록을 되살리지 않는다).
+    // 빈 결과(DB 장애)는 새 스냅샷으로 삼지 않고 직전 스냅샷으로 답한다. 무효화가 로드 중에
+    // 끼었으면 `snapshot`이 이미 비어 있어 `[]`로 떨어진다(낡은 목록을 되살리지 않는다).
+    // 결과가 비지 않았는데 세대가 어긋난 경우(아래)는 저장하지 않을 뿐, 이 로드에 합류했던
+    // 호출자에게는 그 결과를 그대로 돌려준다 — 무효화 직전에 시작한 읽기라 잠깐 낡을 수
+    // 있지만, 무효화 뒤에 들어온 호출자는 새 로드를 탄다(`clearSnapshot`).
     if (entries.length === 0) return snapshot?.entries ?? [];
     if (generation === snapshotGeneration) {
         snapshot = { entries, loadedAt: Date.now() };
