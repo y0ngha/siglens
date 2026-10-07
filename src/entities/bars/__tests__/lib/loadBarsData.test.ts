@@ -1,4 +1,4 @@
-// MISTAKES §17: all vi.mock + vi.hoisted declarations must come before imports.
+// TESTING.md#TE-1: all vi.mock + vi.hoisted declarations must come before imports.
 const { mockGetCachedBarsWithIndicators, mockGetTranslations } = vi.hoisted(
     () => ({
         mockGetCachedBarsWithIndicators: vi.fn(),

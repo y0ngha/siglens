@@ -1,4 +1,4 @@
-// vi.mock → imports 순서 (MISTAKES.md Tests §17)
+// vi.mock → imports 순서 (TESTING.md#TE-1)
 
 /** 사이드카 상태 — `@/shared/test-utils/contentTranslationSidecar` 참고. */
 const sidecar = vi.hoisted((): SidecarState => ({ cells: null }));

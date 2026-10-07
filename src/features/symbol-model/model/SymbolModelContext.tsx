@@ -98,7 +98,7 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
     // the provider reads it (to render the modal), so keeping it out of the
     // memoized value means open/close never churns `useSymbolModel()` consumers.
     // (Declared first per the useState → custom-hooks → derived → handlers
-    // hook-ordering convention — CONVENTIONS.md "Custom Hook Declaration Order".)
+    // hook-ordering convention — REACT.md "Custom Hook Declaration Order".)
     const [isSignupNudgeOpen, setIsSignupNudgeOpen] = useState(false);
 
     const { tier, isLoading: isTierLoading } = useUserTier();

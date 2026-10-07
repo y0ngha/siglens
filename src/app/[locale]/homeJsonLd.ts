@@ -13,7 +13,7 @@ import {
  * **왜 page.tsx 밖으로 뺐는가**: 이 블록은 사이트가 어떤 자산군을 다루는지
  * 프로즈로 선언하는 표면이고, 같은 선언이 `ROOT_TITLE`·`SITE_DESCRIPTION`·
  * `ROOT_KEYWORDS`·OG alt에도 각각 흩어져 있다. 한국 상장 종목을 추가하면서 그중
- * 일부만 고치는 일이 세 라운드 연속 반복됐다(MISTAKES.md §6.6). 컴포넌트 본문
+ * 일부만 고치는 일이 세 라운드 연속 반복됐다(CONVENTIONS.md#CS-4). 컴포넌트 본문
  * 안에 있으면 렌더 없이는 검사할 수 없어 테스트로 동기화를 강제할 수가 없다 —
  * 모듈로 빼서 `supportedAssets.test.ts`가 모든 표면을 한 번에 검사한다.
  *

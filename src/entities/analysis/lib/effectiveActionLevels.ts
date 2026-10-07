@@ -80,7 +80,7 @@ export function resolveEffectiveActionLevels(
         ? takeProfitSource.filter(isPositivePrice)
         : undefined;
 
-    // 후보를 우선순위 순으로 늘어놓고 첫 유효값을 취한다. `let`+`if`(MISTAKES §14)도,
+    // 후보를 우선순위 순으로 늘어놓고 첫 유효값을 취한다. `let`+`if`(CONVENTIONS.md#CP-4)도,
     // 중첩 삼항(FF 1-E)도 쓰지 않으면서 "보정값 우선"이 배열 순서로 드러난다.
     const stopLoss = [reconciled?.stopLoss, action?.stopLoss].find(
         isPositivePrice

@@ -1,5 +1,25 @@
 # Conventions
 
+General coding rules. Client-side rules (hooks, components, effects, charts, Tailwind, React Query, URL state) live in [`REACT.md`](REACT.md); server-side rules (Server Actions, I/O, concurrency, data cache, database) in [`SERVER.md`](SERVER.md); test rules in [`TESTING.md`](TESTING.md).
+
+## Rule IDs
+
+Rules that are cited from code comments, reviews, or other docs carry a stable ID in the form `PREFIX-N`,
+with an explicit anchor line directly above the heading (`<a id="CP-2"></a>`).
+Cite them as `CONVENTIONS.md#CP-2`. IDs are never renumbered or reused; a new rule takes the highest existing number of its prefix + 1; if a rule is deleted, delete its references in the same change.
+`src/__tests__/guards/ruleReferences.test.ts` fails on any reference that does not resolve to an anchor.
+
+| Prefix | Topic |
+|---|---|
+| `CP` | Coding paradigm (declarative, functional, exhaustive branching, compute once) |
+| `TS` | TypeScript rules |
+| `NC` | Constants & literals, numeric and nil guards |
+| `CM` | Comments & documentation |
+| `CS` | Change synchronization |
+| `I18` | i18n |
+
+Prefixes `HK` `CR` `AX` `EF` `LW` `TW` `RQ` live in [`REACT.md`](REACT.md); `SA` `CC` `DC` `DB` in [`SERVER.md`](SERVER.md); `TE` in [`TESTING.md`](TESTING.md).
+
 ## Coding Paradigm
 
 Siglens follows **Declarative** and **Functional Programming** paradigms.
@@ -65,6 +85,44 @@ const TREND_LABEL: Record<Trend, string> = {
 const label = TREND_LABEL[trend];
 ```
 
+<a id="CP-4"></a>
+
+#### CP-4 — Prefer `const` expressions over `let` + `if`
+
+Conditional assignment is a ternary or a small named function feeding a `const`, not a `let` that is reassigned. A `let` that is reassigned invites partial updates and hides the value's single definition.
+
+```typescript
+// ❌
+let result = value;
+if (condition) result = newValue;
+return result;
+
+// ✅
+const result = condition ? newValue : value;
+```
+
+<a id="CP-5"></a>
+
+#### CP-5 — Name complex inline expressions; turn repeated JSX into data + map
+
+Extract to a named helper (or a data array rendered with `.map()`) when an expression would otherwise be hard to read or repeat:
+
+- The same `className` ternary three or more times: one helper.
+- IIFEs and multi-statement ternaries: a named function.
+- The same JSX structure twice or more: a data array plus `.map()`.
+- Combining Tailwind classes always goes through `cn()` (see Tailwind CSS Rules), never template literals or `+`.
+
+Why: named helpers can be tested and renamed; anonymous expressions drift independently when copied.
+
+```typescript
+// ❌ same ternary repeated
+<div className={isActive ? 'bg-primary-600 text-white' : 'bg-secondary-800'} />
+<span className={isActive ? 'bg-primary-600 text-white' : 'bg-secondary-800'} />
+
+// ✅
+const tabClassName = (isActive: boolean) => cn(isActive ? 'bg-primary-600 text-white' : 'bg-secondary-800');
+```
+
 ### Functional Programming
 
 ```typescript
@@ -111,6 +169,98 @@ for (let i = 0; i < bars.length; i++) {
     state = next;
 }
 return results;
+```
+
+These rules apply to test helpers too: do not reassign a closure `let` inside a helper (for example a seeded pseudo-random generator); derive the sequence with `reduce` over the previous value instead.
+
+Also: use the callback parameter itself rather than re-reading the source by index.
+
+```typescript
+// ❌ discards the callback parameter and re-accesses by index
+lines.reduce((acc, _line, idx) => { const line = lines[idx]; ... }, init);
+
+// ✅
+lines.reduce((acc, line) => { ... }, init);
+```
+
+<a id="CP-6"></a>
+
+#### CP-6 — No `push` accumulation in pure calculations or functional contexts
+
+Pure calculation functions and anything inside `useMemo`/`reduce`/`map` build their result with `map`, `filter`, `flatMap`, `reduce`, or spread — never a `for` loop that `push`es into an outer array. This also covers object mutation: derive `{ ...source, property }` instead of assigning a property on an object you just created. The sliding-window / O(N) state-machine exception above is the only sanctioned local mutation.
+
+```typescript
+// ❌
+const lines = [];
+for (const rec of reconciled) { lines.push(...extractLines(rec)); }
+
+// ✅
+const lines = reconciled.flatMap(extractLines);
+```
+
+<a id="CP-7"></a>
+
+#### CP-7 — Extracted nested functions take explicit parameters
+
+When a function is lifted out of a parent function, every parent variable it used becomes an explicit parameter. An extracted function that still needs "something from above" was not really extracted — it is a closure at module scope waiting to break.
+
+```typescript
+// ❌
+function searchAction() { function toResult(x) { /* uses parentVar */ } }
+
+// ✅
+function toResult(x, parentVar) { /* ... */ }
+function searchAction() { toResult(x, parentVar); }
+```
+
+### Exhaustive Branching
+
+<a id="CP-1"></a>
+
+#### CP-1 — Branch exhaustively over domains with 3+ members
+
+A binary ternary or an `if/else` chain over a union with three or more members silently misclassifies the unhandled case. Use an exhaustive `switch` over the discriminated union, or delegate to the existing exhaustive mapping function instead of rebuilding it with a ternary. The same applies to lookup maps: type them with required keys (`Record<Union, T>`) instead of keeping a defensive `throw` that can never run.
+
+```typescript
+// ❌ three asset classes, the third falls through to US
+const spec = isKrEquitySymbol(s) ? KR : US;
+
+// ✅ delegate to the authoritative exhaustive switch
+const spec = sessionSpecFor(assetClassOf(s));
+```
+
+### Compute Once, Remove Dead Work
+
+<a id="CP-2"></a>
+
+#### CP-2 — Compute once, derive once
+
+An identical value that is queried or computed more than once in a function is computed once and reused: a map lookup, a loop bound, a ratio used in both a helper and a log line, a repeated filter across several `useMemo`/effects, the same parameter object passed to several calls (a `const`, or `useMemo` in hooks), or the same resource (client, connection) created twice when one instance would do.
+
+- When a predicate decides both a gate and the body of the code it gates, derive it once and share it between the two; two copies drift.
+- Track values independently instead of back-deriving them from code that may move. A duration computed as `now - (deadline - BUDGET)` breaks silently the day `deadline` is computed elsewhere.
+
+```typescript
+// ❌
+if (map.get(key)) { use(map.get(key)); }
+
+// ✅
+const value = map.get(key);
+if (value) { use(value); }
+```
+
+<a id="CP-3"></a>
+
+#### CP-3 — Remove logic that has no effect
+
+Delete filters/maps that do not change the result, catch-all branches that never execute, and guards that restate what the type system already guarantees. When a refactor removes the last reason for an operation, remove the operation in the same change.
+
+```typescript
+// ❌ uniqueId is guaranteed by flatMap
+data.flatMap(...).filter(x => x.id === uniqueId)
+
+// ✅
+data.flatMap(...)
 ```
 
 ### Priority by Layer
@@ -204,198 +354,110 @@ interface Signal { strength: SignalStrength; }
 // ✅ interface B extends A { extra: string }
 ```
 
----
+<a id="TS-3"></a>
 
-## Custom Hook Declaration Order
+#### TS-3 — Explicit return types on logic-bearing functions
 
-Declare items inside a custom hook in the following order.
-Include `useState` only when local state is needed; omit otherwise.
-
-1. `useState` — local state (if needed)
-2. `useRef` — ref declarations
-3. `useQuery` / `useMutation` etc. — server state and async operations
-4. Derived variables — values computed from `mutation.data` etc.
-5. Event handlers and functions — `handle*`, internal utilities
-6. `useLayoutEffect` — runs before `useEffect`, place immediately before it (if needed)
-7. `useEffect` — group all effects here, separated by responsibility, listed in order
-8. `return`
+Pure functions, business-logic functions, domain/infra helpers, custom hooks, Server Actions, and Route Handlers (`GET`/`POST`/…) declare their return type explicitly: it prevents inference drift and states the API contract.
 
 ```typescript
-export function useExample(props: ExampleOptions): ExampleResult {
-    const ref = useRef<HTMLDivElement>(null);
+// ❌
+async function loginAction(data: FormData) { ... }
+export async function GET(req: Request) { ... }
 
-    const mutation = useMutation({ mutationFn: postSomething });
-
-    const value = mutation.data ?? initialValue;
-    const error = mutation.error?.message ?? null;
-
-    const handleSubmit = (): void => {
-        mutation.mutate(ref.current);
-    };
-
-    useLayoutEffect(() => {
-        ref.current = someValue;
-    });
-
-    useEffect(() => {
-        mutation.reset();
-    }, [dep, mutation]);
-
-    return { value, error, handleSubmit };
-}
+// ✅
+async function loginAction(data: FormData): Promise<LoginResult> { ... }
+export async function GET(req: Request): Promise<NextResponse> { ... }
 ```
 
----
+Exempt (Next.js file conventions — the framework fixes the signature and the return is self-evident): `page.tsx`, `layout.tsx`, `loading.tsx`, `error.tsx`, `not-found.tsx`, `template.tsx`, `opengraph-image.tsx`, `twitter-image.tsx`, `icon.tsx`, `apple-icon.tsx`, `sitemap.ts`, `robots.ts`, `manifest.ts` under `app/**`. React components also stay unannotated (see above).
 
-## Widget / Feature / Entity Folder Structure
+<a id="TS-1"></a>
 
-Custom hooks must always be placed in a `hooks/` subfolder.
-Pure utility functions (non-hook helpers) must always be placed in a `utils/` subfolder.
-Never mix component files, hook files, or utility files at the same directory level.
+#### TS-1 — `as` assertions: guards first, documented safe-casts only
 
-```
-# ✅ Correct structure
-src/widgets/
-├── chart/
-│   ├── hooks/
-│   │   ├── useBollingerOverlay.ts
-│   │   └── useChartData.ts
-│   ├── utils/
-│   │   └── seriesDataUtils.ts
-│   └── ui/
-│       └── StockChart.tsx
-└── symbol-page/
-    ├── hooks/
-    │   ├── useAnalysis.ts
-    │   └── useBars.ts
-    └── ui/
-        └── SymbolPageClient.tsx
+Prefer a type guard, a narrowing helper, `satisfies`, or (when null is logically impossible) the `!` operator over `as`. A cast that hides a value which can really be `null`/`undefined`/another shape is the bug being avoided.
 
-# ❌ Incorrect — hooks or utils at the same level as components
-src/widgets/chart/
-├── StockChart.tsx
-├── useChartData.ts     ← prohibited (must be in hooks/)
-└── seriesDataUtils.ts  ← prohibited (must be in utils/)
+A cast is acceptable only when TypeScript cannot express a constraint the runtime provably satisfies, and then it **must carry a comment stating the guarantee**:
+
+- `Object.fromEntries(pairs) as Record<K, V>` and `Object.keys(record) as T[]` (keys widen to `string`, but `Record<T, …>` guarantees them) are the sanctioned safe-casts.
+- Test files are exempt from the comment for self-documenting mock casts such as `fn as MockedFunction<typeof fn>`.
+- Replace a post-check `value!` that repeats across call sites with a helper that returns the narrowed type (or throws), e.g. `requireDatabaseUrl()`.
+
+```typescript
+// ❌ hides a possible null / wrong shape
+const value = fetchData() as MyType;
+const x = someString as SpecificLiteral;
+
+// ✅ TS limitation, not runtime risk — comment says why
+// Object.keys widens to string[]; SKILL_STAT_CONFIG is Record<SkillType, …>, so every key is a SkillType.
+const SKILL_TYPES = Object.keys(SKILL_STAT_CONFIG) as SkillType[];
 ```
 
-**`hooks/` vs `utils/`**
-- `hooks/`: files that call React hooks (`useState`, `useEffect`, `useQuery`, etc.)
-- `utils/`: pure functions with no React hook calls — helper transformations, mappers, formatters
+<a id="TS-2"></a>
+
+#### TS-2 — A local mirror of an upstream union must contain every member
+
+When you keep a local `readonly T[]` to back a `value is T` guard (for example `isSkillCategory`), it must list every member of the upstream union, and a `@y0ngha/siglens-core` bump that adds union members is a sync trigger. TypeScript cannot detect a strict subset — the failure shows up at runtime as silently filtered data.
+
+Prefer deriving the list so it cannot drift: `Object.keys(map) as T[]` from an upstream `Record<T, …>`, a compile-time exhaustiveness check paired with `satisfies`, or exporting the list from core itself.
+
+#### Other TypeScript rules
+
+- **Add parsed fields to the owning interface immediately.** When an adapter starts reading a new field from its data source, add it to the domain interface in the same change.
+- **Interface optionality must match runtime behavior.** If the implementation does `bars ?? []`, the field is `bars?: BarData[]`; a field that is always present is not marked `?`.
+- **Define each type once** in its canonical module and import it everywhere else. A duplicated declaration drifts the first time one copy changes.
+- **No aliases without a distinct role.** `type SaveState = ApiKeyActionState; type DeleteState = ApiKeyActionState` adds indirection only; use the original. Extract a named alias when a role is genuinely distinct or a union repeats.
+- **Named types over inline shapes**, for props, constants, and especially return types such as `Promise<{ a; b }>` in Server Actions and adapters: declare an `interface`/`type` and reuse it.
+- **No checks that duplicate type guarantees.** If `AssetInfo.name` is required, `!!assetInfo?.name` should be `!!assetInfo`.
 
 ---
 
-## Custom Hook Rules
+## Constants & Literals
+
+<a id="NC-1"></a>
+
+#### NC-1 — Named constants for magic numbers, strings, and time units
+
+Extract every magic number and constant value to a module-level constant, and let function names stay true when the constant changes.
+
+- String literals (event names, storage keys, magic strings) shared across files are one exported constant.
+- Time math uses the shared constants (`MS_PER_HOUR`, `MS_PER_SECOND`, KST offset …) from `shared/config` or `@y0ngha/siglens-core`, not `hours * 60 * 60 * 1000`.
+- **Drift trap:** once a constant exists in a file, every literal use of the same value in that file (JSX text, error messages, JSDoc, tests) references it. A tests file converted halfway keeps the old literal and passes for the wrong reason.
+- A rounding factor and its `toFixed` digits are one constant, not two literals.
+- Exception: Next.js route segment config (`revalidate`, `dynamic`, …) must stay a literal — see `src/app/CLAUDE.md#AP-1`.
 
 ```typescript
-// ✅ 'use client' — required at the top of every custom hook file
-// Custom hooks in widgets/ always run on the client; declare 'use client' unconditionally.
-'use client';
+// ❌
+const SPARKLINE_DAYS = 30;
+<p>최근 30거래일 섹터 수익률</p>   // drifts when the constant changes
 
-import { useState, useEffect } from 'react';
+// ✅
+<p>{`최근 ${SPARKLINE_DAYS}거래일 섹터 수익률`}</p>
 ```
 
----
+## Numeric & Nil Guards
 
-## Component Rules
+<a id="NC-2"></a>
 
-### 'use client' Declaration
+#### NC-2 — Guard numeric, financial, and sentinel values explicitly
 
-Add `'use client'` **only** when the component meets at least one of the following conditions:
-
-| Condition | Examples |
-|---|---|
-| Uses React state or lifecycle hooks | `useState`, `useReducer`, `useContext`, `useEffect`, `useLayoutEffect` |
-| Uses custom hooks from `widgets/*/hooks/` or `features/*/hooks/` | `useBars`, `useAnalysis`, `useTimeframeChange` |
-| Registers event handlers | `onClick`, `onChange`, `onSubmit` |
-| Accesses browser APIs | `window`, `document`, `localStorage` |
-| Is a `FallbackComponent` for `ErrorBoundary` | receives `resetErrorBoundary` and calls it |
-
-Do **not** add `'use client'` to components that only render static JSX with no interactivity.
-Keeping components as Server Components by default minimizes the client bundle.
+- **Financial values need range guards**, not just `Number.isFinite`: entry, take-profit, and stop-loss must be `> 0` and sensible relative to each other. A meaningless result (negative R:R) is suppressed, not displayed.
+- **Money rounds to the currency minor unit** (USD 2 decimals, KRW 0), never with significant-figure rounding that changes digits with magnitude. Do not use `toFixed` for money: it is off by a cent at binary-float boundaries (`150.005`); apply a relative epsilon correction and `Math.round`, and avoid exponent-string round trips that turn float noise into `NaN`.
+- **Prices keep precision**: format prices by significant figures so sub-penny assets do not collapse to `0`, and preserve the sign of calculated values such as a MACD histogram through serialization.
+- **Sentinels propagate unchanged.** `Math.max(0, sentinel)` turns `-1` into `0`; guard the sentinel explicitly before wrapping.
+- **Explicit nil/empty checks before comparisons.** `undefined < now` is `false`, so a stale-check without `x !== undefined` silently passes; a truthy check on the string `'None'` passes too.
+- **NaN-aware guards** where a value can be `NaN`: `Number.isFinite` / `Number.isNaN`, not truthiness.
+- Write defensive assertions so they cover every expected valid state, not only the degenerate case.
 
 ```typescript
-// ✅ Required — uses useState and event handler
-'use client';
-export function TimeframeSelector({ onChange }: TimeframeSelectorProps) {
-    const [selected, setSelected] = useState<Timeframe>('1Day');
-    // ...
-}
+// ❌
+if (staleLastModified < currentTime) { ... }          // undefined passes silently
+const reward = tp - entryPrice;                        // no tp > entryPrice guard
 
-// ✅ Required — FallbackComponent receives resetErrorBoundary (client-only callback)
-'use client';
-export function ChartErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
-    return <button onClick={resetErrorBoundary}>다시 시도</button>;
-}
-
-// ✅ Not required — pure static JSX, no hooks or handlers
-// ChartSkeleton renders a loading placeholder with no interactivity
-export function ChartSkeleton() {
-    return <div className="animate-pulse bg-gray-800 rounded" />;
-}
-```
-
-> **알려진 오탐: Next.js 경고 71007 ("Props must be serializable … `resetErrorBoundary` is a function")**
->
-> `FallbackComponent`-형태 컴포넌트(`FallbackProps`를 받아 `onClick={resetErrorBoundary}`를 등록하는 컴포넌트)에 `'use client'`를 붙이면 Next.js 개발 서버 / TS 플러그인이 **71007** 경고를 낼 수 있다.
-> 이는 **알려진 정적 분석 오탐**이다. `resetErrorBoundary`는 클라이언트 부모(예: `FinancialsAiSummary`, `CongressTrendSummary`)에서 생성되어 클라이언트 렌더 트리 안에서만 전달되므로, 실제 Server→Client 직렬화 경계를 넘지 않는다. 프로덕션 빌드·CI·런타임에는 영향이 없다.
->
-> **경고를 없애기 위해 `'use client'`를 제거해서는 안 된다.** 제거하면 위 표의 두 가지 조건("이벤트 핸들러 등록", "FallbackComponent")을 동시에 위반하며, 해당 컴포넌트가 Server Component 컨텍스트에서 import될 경우 런타임 오류로 이어질 수 있다. `'use client'`를 유지하고 71007은 예상된 오탐으로 무시한다.
-
-### RSC → Client Boundary: Minimize Serialized Data
-
-When a Server Component passes data to a `'use client'` component, only the props cross the boundary as serialized JSON embedded in the HTML response. Pass only the fields the client component actually uses.
-
-```typescript
-// ❌ Serializes all 50 fields of User
-async function Page() {
-    const user = await fetchUser();
-    return <Profile user={user} />;
-}
-'use client'
-function Profile({ user }: { user: User }) {
-    return <div>{user.name}</div>;
-}
-
-// ✅ Serializes only the one field used
-async function Page() {
-    const user = await fetchUser();
-    return <Profile name={user.name} />;
-}
-'use client'
-function Profile({ name }: { name: string }) {
-    return <div>{name}</div>;
-}
-```
-
-### Other Component Rules
-
-```typescript
-// ✅ Define Props interface directly above the component
-interface StockChartProps { initialBars: Bar[]; symbol: string; }
-export function StockChart({ initialBars, symbol }: StockChartProps) { ... }
-
-// ❌ No inline prop types
-export function StockChart({ initialBars, symbol }: { initialBars: Bar[]; symbol: string }) { ... }
-
-// ✅ Named exports (only page/layout use default export)
-export function StockChart() {}
-export default function Page() {}
-
-// ✅ new Date() in Server Component → hydration mismatch
-// Extract into a 'use client' component or add suppressHydrationWarning
-
-// ✅ No side effects inside setState updater functions
-// Updaters run twice in React Strict Mode; side effects must be placed outside
-// ❌ setState(prev => { doSideEffect(); return newValue; })
-// ✅ doSideEffect(); setState(prev => newValue);
-
-// ✅ Use functional setState to avoid stale closures
-// ❌ const next = new Set(visiblePatterns); setVisiblePatterns(next);
-// ✅ setVisiblePatterns(prev => { const next = new Set(prev); ...; return next; });
-
-// ✅ Never nest interactive elements (HTML spec)
-// ❌ <button><button>inner</button></button>
-// ❌ <a href="..."><button>click</button></a>
+// ✅
+if (staleLastModified !== undefined && staleLastModified < currentTime) { ... }
+if (!(Number.isFinite(tp) && tp > 0 && tp > entryPrice)) return '';
 ```
 
 ---
@@ -410,113 +472,13 @@ function calculateRSI(closes: number[], period = RSI_DEFAULT_PERIOD): (number | 
 }
 ```
 
+Where pure-only applies to `entities/*/lib/` and the sanctioned exception for injected-repository pipeline steps, see `src/entities/CLAUDE.md#EN-1`.
+
 ---
 
 ## Test Rules
 
-### File Locations
-
-```
-# FSD 슬라이스 colocated
-src/entities/user/__tests__/lib/loginUser.test.ts
-src/features/auth-login/__tests__/actions/loginAction.test.ts
-src/shared/lib/__tests__/cn.test.ts
-
-# 공유 fixture/utility (여러 테스트에서 사용)
-src/__tests__/fixtures/jsonResponse.ts
-src/__tests__/utils/makeFormData.ts
-```
-
-### Coverage Targets
-
-```
-entities/       90%
-features/       90%
-shared/         90%
-widgets/        90%
-views/          90%
-app/            90%
-src/proxy.ts    90%
-cache-handler/  90%
-```
-
-The project target is 90% coverage across all measured FSD layers.
-Current Vitest coverage includes `src/entities/**`, `src/features/**`, `src/shared/**`,
-`src/widgets/**`, `src/views/**`, `src/app/**`, `src/proxy.ts`, and `cache-handler/**`,
-excluding declaration files, type/model-only files, and test utilities.
-
-`src/views/**` is the FSD `pages` layer — it lives under `views/` because creating
-`src/pages/` would activate Next's legacy Pages Router. `cache-handler/**` sits outside
-`src/` but is production code (the S3-backed ISR cache handler); leaving it out of
-`include` would silently exempt it from the threshold.
-
-UI layers are part of the coverage target. Prefer unit tests for pure view utilities,
-hook tests for stateful UI behavior, component tests for user-visible states, and
-integration tests for critical cross-layer flows.
-
-### Test Structure
-
-```typescript
-// ✅ 2 levels: describe → it (simple cases)
-describe('formatVolume', () => {
-    it('returns "1.2M" for 1200000', () => { ... });
-    it('returns "0" for 0', () => { ... });
-});
-
-// ✅ 3 levels: describe → describe(context) → it
-describe('calculateRSI', () => {
-    describe('when input length is less than period', () => {
-        it('returns an all-null array', () => {
-            expect(calculateRSI([100, 101], 14)).toEqual([null, null]);
-        });
-    });
-    describe('when input is valid', () => {
-        it('returns null for the first period - 1 values', () => { ... });
-        it('returns values between 0 and 100', () => { ... });
-    });
-});
-
-// ✅ 4 levels: describe(module) → describe(function) → describe(context) → it
-describe('prompt', () => {
-    describe('buildAnalysisPrompt', () => {
-        describe('current market section', () => {
-            it('includes "No data available" when bars is empty', () => { ... });
-        });
-    });
-});
-
-// ✅ 5 levels: for complex modules requiring fine-grained context separation
-describe('candle-detection', () => {
-    describe('detectCandlePatternEntries', () => {
-        describe('multi-candle pattern detection', () => {
-            describe('when a 3-bar pattern exists', () => {
-                it('excludes single patterns on involved bars', () => { ... });
-            });
-        });
-    });
-});
-```
-
-Test structure allows **2 to 5 levels**. Choose the appropriate depth based on module complexity.
-6+ levels are prohibited — merge context into describe text to reduce nesting.
-
-### Required Test Cases for Period-Based Indicators
-
-| Case | it description |
-|------|----------------|
-| Empty array | 빈 배열을 반환한다 |
-| Input shorter than period | 전부 null인 배열을 반환한다 |
-| Initial null range | 처음 period - 1개의 값은 null이다 |
-| Valid value range | period번째 이후 값은 null이 아닌 숫자다 |
-| Calculation accuracy | 첫 번째 값이 명세와 일치한다 |
-
-### External API Mocking
-
-```typescript
-vi.mock('@/shared/api/fmp/httpClient');
-
-const mockFmpBarsResponse = [{ date: '2026-05-25', open: 100, high: 101, low: 99, close: 100.5, volume: 1000 }];
-```
+Test rules live in [TESTING.md](./TESTING.md) (rule IDs `TE-N`).
 
 ---
 
@@ -529,6 +491,17 @@ import { useBars } from '@/widgets/symbol-page/hooks/useBars';
 
 // ❌ No relative paths
 import { cn } from '../../../shared/lib/cn';
+```
+
+Consolidate imports from the same module into one statement (oxlint has no `no-duplicates` rule here, so review catches it):
+
+```typescript
+// ❌
+import { formatUsdPrice } from '@/shared/lib/priceFormat';
+import { formatPriceChange } from '@/shared/lib/priceFormat';
+
+// ✅
+import { formatUsdPrice, formatPriceChange } from '@/shared/lib/priceFormat';
 ```
 
 ### No Barrels — Import from the Defining File
@@ -555,110 +528,10 @@ import { useSymbolModel } from '@/features/symbol-model';
 
 ---
 
-## useEffect Side Effect Isolation
+## Lint Rules (oxlint)
 
-Separate side effects inside `useEffect` by responsibility.
-Never mix initialization logic and data synchronization logic in a single `useEffect`.
-
-```typescript
-// ❌ Initialization + data setup mixed in one useEffect
-useEffect(() => {
-    const chart = createChart(containerRef.current, { ... });
-    const series = chart.addSeries(CandlestickSeries, { ... });
-    series.setData(bars); // recreates the entire chart on every data change
-    return () => { chart.remove(); };
-}, [bars]);
-
-// ✅ Initialization ([]): runs once on mount, stores instance in ref
-useEffect(() => {
-    const chart = createChart(containerRef.current, { ... });
-    chartRef.current = chart;
-    seriesRef.current = chart.addSeries(CandlestickSeries, { ... });
-    return () => {
-        chart.remove();
-        chartRef.current = null;
-        seriesRef.current = null;
-    };
-}, []);
-
-// ✅ Data sync ([deps]): reuses instance on data change
-useEffect(() => {
-    if (!seriesRef.current || !chartRef.current) return;
-    seriesRef.current.setData(mappedBars);
-    chartRef.current.timeScale().fitContent();
-}, [bars]);
-```
-
-**Principles**
-- Separate instance creation/destruction (`[]`) from data synchronization (`[deps]`) into distinct `useEffect` calls
-- Reset refs to `null` in the initialization cleanup to prevent the data effect from accessing a stale instance
-
----
-
-## Lightweight Charts Rules
-
-Official docs: https://tradingview.github.io/lightweight-charts/docs
-
-```
-✅ Use only inside widgets/chart/
-❌ No imports from app/ or entities/api/
-```
-
-```typescript
-// ✅ Chart initialization + cleanup required
-useEffect(() => {
-    const chart = createChart(containerRef.current, { ... });
-    const series = chart.addSeries(CandlestickSeries);
-    series.setData(data);
-    return () => { chart.remove(); };
-}, []);
-
-// ✅ Volume, RSI etc. go in separate panes
-chart.addSeries(HistogramSeries, { priceFormat: { type: 'volume' } }, 1);
-chart.addSeries(LineSeries, {}, 2);
-
-// ✅ Convert null values to WhitespaceData
-// ❌ { time: '2024-01-01', value: null }
-// ✅ { time: '2024-01-01' }
-
-// ✅ Prepend historical data
-candleSeries.setData([...newOlderBars, ...existingBars]);
-```
-
----
-
-## Tailwind CSS Rules
-
-```typescript
-// ✅ Use Tailwind classes
-<div className="flex items-center gap-4 p-4 bg-gray-900">
-
-// ❌ No inline styles
-<div style={{ display: 'flex', padding: '16px' }}>
-
-// ✅ Use cn utility for conditional classes
-<div className={cn('base-class', isActive && 'active-class')}>
-
-// ✅ Tailwind v4 supports numeric flex utilities directly — no arbitrary value needed
-<div className="flex-3">     // ✅ correct — Tailwind v4 generates flex: 3
-<div className="flex-[3]">   // ❌ unnecessary arbitrary syntax
-
-// ✅ Tailwind v4 utility for color scheme — use the built-in utility class
-<html className="scheme-dark">          // ✅ correct — Tailwind v4 utility
-<html className="[color-scheme:dark]">  // ❌ unnecessary arbitrary syntax in Tailwind v4
-<html style={{ colorScheme: 'dark' }}>  // ❌ inline style (prohibited)
-
-// ✅ Dynamic runtime values → CSS custom properties
-// ❌ style={{ width: `${px}px` }}
-// ✅ style={{ '--w': `${px}px` }} className="md:w-[var(--w)]"
-```
-
----
-
-## ESLint Rules
-
-Never use `eslint-disable` or `eslint-disable-next-line` comments.
-When a rule produces a warning, fix the root cause in the code rather than suppressing the rule.
+Never use `eslint-disable`, `eslint-disable-next-line`, or `oxlint-disable` comments — not in production code and not in test helpers.
+When a rule produces a warning, fix the root cause in the code rather than suppressing the rule (restructure deps, use `useEffectEvent` or a ref for stable references; see `REACT.md#EF-1` / `#EF-2`).
 
 ```typescript
 // ✅ import/first — imports must be at the top of the file
@@ -677,19 +550,230 @@ EOF newline: every file must end with `\n`. Auto-fixed by `yarn format`.
 
 ---
 
-## HTTP Status Codes
+## Comments & Documentation
+
+The repo allows multi-line JSDoc and comment blocks when the WHY is non-obvious; see the "Documentation Policy" in
+the root `CLAUDE.md`. The rules below target comments that restate the code or state things that are not true.
+
+<a id="CM-1"></a>
+
+#### CM-1 — Comments explain WHY, not WHAT
+
+A comment earns its place by recording a reason, constraint or tradeoff the code cannot show. Delete comments that
+label a section, narrate a state transition, restate a name or a type narrowing the compiler already proves,
+`// ─── Title ───` separators and JSX `{/* Lock icon */}` labels, JSDoc that only repeats a component's name, and
+structural enumerations ("Profile + Valuation + Peers") that drift as the code changes. This is not a ban on
+multi-line WHY blocks.
 
 ```typescript
-// ✅ Use built-in node:http2 constants — no external packages needed
-import { constants } from 'node:http2';
-const { HTTP_STATUS_BAD_REQUEST, HTTP_STATUS_NOT_FOUND } = constants;
+// ❌ WHAT
+// Existing OAuth account → immediate login
+if (oauthRecord) return redirect('/dashboard');
 
-// ❌ No local constant redefinition — node:http2 already provides standard constants
-const HTTP_STATUS = { BAD_REQUEST: 400 };
-
-// ❌ No hardcoded literals
-return NextResponse.json({ error: '...' }, { status: 400 });
+// ✅ WHY
+// Guard: a negative value breaks the log calculation downstream.
+if (value < 0) return null;
 ```
+
+<a id="CM-2"></a>
+
+#### CM-2 — Comments must be factually accurate and stay in step with the code
+
+Every claim in a comment (behavior, callers, narrowing target, browser or accessibility semantics, geometry, time
+conversions) must match reality, and a false WHY is worse than none. Re-verify the claim whenever the code, the
+file or the rule it describes changes:
+
+- "Only X uses this" claims go stale when a second caller appears; name callers explicitly or drop the claim.
+- When a function's input, data source or location changes, or a file or function is deleted, grep for comments,
+  JSDoc and test names that mention it and update them in the same change (see CS-8).
+- After reversing a layout contract, grep the whole repo (`src/`, `e2e/`, `docs/`) for the old wording, including
+  test names.
+- A time-zone comment must match the literal exactly; check DST dates with
+  `new Date(...).toLocaleString('en-US', { timeZone })`.
+- After splitting a function or JSDoc, check that each paragraph stays on the half it describes and that no
+  sentence is cut in the middle or loses a field the next paragraph relies on.
+- Claims about other files or live systems (a boot option, a deployed setting) are verified at their source.
+
+<a id="CM-3"></a>
+
+#### CM-3 — Factual and numeric claims cite their evidence
+
+A measurement, size, count, deadline or behavioral claim in a comment, runbook or doc must point to its evidence
+(test, script, link, record) or say how to re-measure it; an unsourced figure can never be detected as stale. State
+the conditions and units (a size measured as gzip S3 object size is not the uncompressed body length a gate
+compares; two residency figures with different binding conditions say so), and for version-dependent claims give the
+version, the check date and the command to re-check. Schedules and windows come from the schedule source, cited by
+file, not from assumptions about business hours. When there is no measurement, say so ("no baseline yet").
+
+```typescript
+// ❌ unverifiable
+// strong ETags block Cloudflare compression
+
+// ✅ repeatable
+// Strong ETags block Cloudflare compression: /NRICX origin gzip 39KB -> edge HIT 209KB.
+// To re-check: read content-encoding on a cf-cache-status: MISS response.
+```
+
+<a id="CM-4"></a>
+
+#### CM-4 — A JSDoc block stays directly above its declaration
+
+When inserting a helper, constant or export above existing code, insert it above the `/**` of the existing block,
+never between the JSDoc and its declaration. If the line above your insertion point ends with `*/`, move up. The
+same applies to JSX: when wrapping an element that has a preceding comment block, put the wrapper above the comment.
+
+<a id="CM-5"></a>
+
+#### CM-5 — Re-wrap a comment you lengthened
+
+If an edit pushes a comment or JSDoc line past the file's existing wrap width, re-wrap the whole block to match the
+surrounding style.
+
+<a id="CM-6"></a>
+
+#### CM-6 — Document deliberate deviations at the decision point
+
+If behavior intentionally differs from nearby code or from what a reader expects, say why where the decision is made;
+otherwise a later sweep "fixes" it. Examples: a call site that skips a new parameter, a literal left untranslated, a
+deliberate omission from a title, a status code that differs from its siblings, shared state with
+last-event-wins semantics, work started early for parallelism (state its discard cost on early return). A temporary
+workaround names its removal condition and the tracking link.
+
+<a id="CM-7"></a>
+
+#### CM-7 — Cross-file invariants are enforced by guard tests, not "audited once" comments
+
+A premise that holds across many files (every member-only Server Action authenticates itself, every route registers
+in an allowlist) is enforced by a guard test that fails when a new file breaks it. A comment saying "audited on
+<date>" does not keep the next file honest.
+
+<a id="CM-8"></a>
+
+#### CM-8 — `@internal` only on exports that are truly internal
+
+Do not put `@internal` on a symbol that is not exported (it is internal by definition), and remove it from exported
+functions that tests or other modules legitimately import.
+
+---
+
+## Change Synchronization
+
+<a id="CS-1"></a>
+
+#### CS-1 — Reuse existing helpers before writing a new one
+
+Search for an existing implementation before writing a new algorithm. Keep `number[]`-based helpers separate from
+`Bar[]` wrappers so both callers can reuse them, and extract logic shared by provider pairs to
+`entities/llm-provider/lib/` or `shared/lib/`.
+
+<a id="CS-2"></a>
+
+#### CS-2 — One source for duplicated logic and values
+
+When the same guard, configuration value or literal appears in two or more places (build stages, scripts, config
+files, one page's metadata and JSON-LD, coupled layout values such as a panel width and the axis offset that depends
+on it), extract it to one shared source and import it everywhere. If a duplicate is unavoidable, see CS-3. Where a
+second site is meant to import rather than redeclare a list, pin that with a source guard.
+
+<a id="CS-3"></a>
+
+#### CS-3 — Mirrored constants are documented and parity-tested
+
+When a module cannot import a shared constant (a runtime constraint, a partially mocked module that is read at load
+time), keep the literal and put a comment on every copy naming the original and the sync requirement, plus a parity
+test that parses every copy (TypeScript, shell, config) and compares it with the source. Schemas duplicated across
+files (Redis key layouts) get a block comment naming their origin.
+
+```typescript
+// ✅ shared/config/marketProfile/usEquity.ts
+/** Mirrors `US_EXCHANGES` in `entities/ticker/lib/fmpTickerApi.ts`; change both together. */
+const US_EXCHANGES: ReadonlySet<string> = new Set(['NYSE', 'NASDAQ' /* ... */]);
+```
+
+<a id="CS-4"></a>
+
+#### CS-4 — Product capability claims derive from one constant
+
+Statements about what the product supports (asset classes, features per asset) that appear in titles, descriptions,
+keywords, FAQ text and OpenGraph copy come from one exported constant or helper, never restated by hand. Add a test
+asserting each consuming file's output covers every member, so adding or removing a capability fails immediately.
+
+<a id="CS-5"></a>
+
+#### CS-5 — Apply a rule to every sibling
+
+A fix, guard or normalization applied to one of N siblings (two methods wrapping one upstream, a chart route and its
+sibling routes, a register and a login action, provider A and provider B, a toggle's predicate and the hidden keys it
+governs, the same business condition on server and client) must be applied to all of them. Hoist it into a helper
+every sibling calls, and when the same user input flows through several functions normalize it identically (trim on
+both register and login, or on neither). When fixing a pattern, grep for the other instances first.
+
+<a id="CS-6"></a>
+
+#### CS-6 — A spec lists only what its executor returns
+
+Tool descriptions, schemas and JSDoc that list output fields must match what the executor actually returns, and a
+documented null or edge case needs a test. Before writing "the provider does not expose this field", grep the
+existing loaders for it.
+
+<a id="CS-7"></a>
+
+#### CS-7 — Register new items in every guard list in the same change
+
+A new route, agent, i18n surface, feature flag or external service must be added to every allowlist or enumeration
+that covers its siblings (`RESERVED_FIRST_SEGMENTS`, `SURFACES`, `KNOWN_AGENTS`, ...) in the same commit, with a test
+that fails when it is removed. Allowlists stay explicit and fixed; do not widen one with a dynamically built union.
+
+<a id="CS-8"></a>
+
+#### CS-8 — Grep the repo after moving, deleting or changing a constant
+
+After a move, delete, constant change or merge-conflict resolution, grep the whole repo (`src/`, `e2e/`, `scripts/`,
+`docs/`) for the old path, name or literal and update every hit in the same commit. Scoped test runs and editor
+refactors miss e2e specs, hard-coded test literals and branch-only additions. When a data source starts feeding a
+config list, check every test-enforced invariant over that list; a script's output should be dry-run against the
+suite before it is committed. Rules that exist in several restatements (prompt body, digest, output directives)
+are updated in all of them when one changes.
+
+<a id="CS-9"></a>
+
+#### CS-9 — Related state, functions and docs change together
+
+When requirements change, update everything that depends on the same decision: `reset()` clears all related state
+(`useState` and `useMutation`), sibling functions in a module use the same approach (a recursive collector and its
+counter), and every field list in an instruction block gains the new field.
+
+<a id="CS-10"></a>
+
+#### CS-10 — Docs describing behavior change in the same PR
+
+Reference docs, runbooks and architecture docs that describe an API, type, setting, default or example are updated
+in the same change as the code. Examples and folder trees must exist in the code (no illustrative edges or
+directories that are not real). A documented default must work at merge time (do not make a local DB the default if
+the runtime driver cannot reach it) and, when PR order matters, the order is stated. Reference docs (for example a
+local `docs/reference/API.md`) list every provider, path and parameter enum.
+
+<a id="CS-11"></a>
+
+#### CS-11 — Parsers of another package's format name their owner
+
+Code that parses an identifier or payload format produced by another package (an id with a suffix grammar) states which
+package owns the format, defines a fallback for unknown shapes and has a test for every emitted shape, including the
+plain suffix.
+
+<a id="CS-12"></a>
+
+#### CS-12 — No adapter methods without a production caller
+
+New repository or adapter methods land in the PR that consumes them. Pre-emptive methods accumulate tests, mocks and
+type churn for a design that may change before use.
+
+<a id="CS-13"></a>
+
+#### CS-13 — Update references before deleting TODO-marked code
+
+Code kept under a TODO is referenced by other comments or commented-out code. Update or restore every reference
+before deleting it.
 
 ---
 
@@ -878,132 +962,89 @@ widgets/        Do not define lazy pipelines directly
 
 ---
 
-## React Query and Server State Rules
+## i18n Rules
 
-Manage server state on the client using React Query.
-Fetch logic must live in entity/feature slices (api.ts or actions/).
-Widget hooks are responsible only for connecting Server Actions or entity fetch functions
-to `useQuery`/`useMutation` as `queryFn`/`mutationFn`.
+<a id="I18-1"></a>
+
+#### I18-1 — Regenerate i18n artifacts after source changes
+
+Run `yarn i18n:extract --write` after editing source that has skipped i18n literals (line shifts move the skip
+markers in `messages/_meta/skips.json`) or after changing a route's import graph (its client key manifest,
+`messages/_meta/clientKeys.json`). Plain `yarn i18n:extract` only scans; commit the regenerated artifacts in the
+same change.
+
+<a id="I18-2"></a>
+
+#### I18-2 — Keep all locale catalogs in step
+
+Adding, renaming, changing or removing a catalog key applies to every locale file (`ko`, `en`, `ja`, `zh`) in the
+same change, then `yarn i18n:verify` must pass. Translations for en/ja/zh come from `yarn i18n:translate`. A key
+added to one locale makes the others fall back to raw text. Skill cards are keyed by the skill `name`
+(`shared.skillName.<name>`, `shared.skillSummary.<name>`); see `skills/CLAUDE.md` for what a skill change requires.
+
+<a id="I18-3"></a>
+
+#### I18-3 — Hand-written catalog keys also get a `hashes.json` entry
+
+Keys written by hand add an entry to `messages/_meta/hashes.json` (`sha1(ko value).slice(0, 12)`) in the same
+change. Without it the next `yarn i18n:translate` treats the translations as stale and overwrites them, and
+`i18n:verify` does not catch the omission.
+
+<a id="I18-4"></a>
+
+#### I18-4 — Server-only namespaces stay out of client components
+
+A key consumed by a client component belongs in a namespace that is allowed in the client payload. Reading a key
+from a server-only namespace (such as `shared.seo`) in a client component leaks that namespace into every page.
+
+<a id="I18-5"></a>
+
+#### I18-5 — The import graph decides a route's client keys
+
+A server view importing a module that reaches many client components adds all of
+their message keys to that route's client payload. Import the narrow module, and move leaf utilities shared by
+products to `shared/`.
+
+<a id="I18-6"></a>
+
+#### I18-6 — Inject core or config numbers as ICU arguments
+
+A number owned by core or config (a re-entry gap, a limit) is passed into the message as an ICU argument from the
+exported constant, never typed into the catalog strings, where it silently drifts.
+
+<a id="I18-7"></a>
+
+#### I18-7 — Compare against `DEFAULT_LOCALE`, not the `'ko'` literal
+
+Branches that mean "the default locale" use `locale === DEFAULT_LOCALE`. Leave a literal `'ko'` only where the code
+really means Korean regardless of the default.
+
+<a id="I18-8"></a>
+
+#### I18-8 — Use `useAppPathname` for path matching
+
+`usePathname()` returns the locale-prefixed path, so comparisons against locale-less constants fail for non-default
+locales. Use `useAppPathname` (`shared/i18n/useAppPathname.ts`); raw `usePathname` imports are rejected by
+`src/shared/i18n/__tests__/useAppPathname.test.ts`. A scoped test run can miss that guard, so include
+`src/__tests__/guards` and the guard directories when you add a client component.
+
+<a id="I18-9"></a>
+
+#### I18-9 — Market and region text comes from context, and failure modes differ
+
+Market and region names ('미국 증시'), and region-specific error text, are derived from a scope object or props, never
+hardcoded in a component, or the component cannot serve another market. Messages also distinguish failure modes: a
+"some data failed" message is not shown on the branch where no data rendered. Test fixtures carry a different scope
+per market so reverting to a hardcoded string fails a test.
 
 ```typescript
-// ✅ entity action — Server Action
-// src/entities/bars/actions/getBarsAction.ts
-'use server';
-export async function getBarsAction(
-    symbol: string,
-    timeframe: Timeframe
-): Promise<BarsData> {
-    // FMP 호출 + @y0ngha/siglens-core indicator 계산
-    // ...
-}
+// ❌
+<div>미국 증시 데이터를 불러오지 못했습니다</div>
 
-// ✅ widget hook — connects queryFn only
-// src/widgets/symbol-page/hooks/useBars.ts
-const { data } = useQuery({
-    queryKey: QUERY_KEYS.bars(symbol, timeframe),
-    queryFn: () => getBarsAction(symbol, timeframe),
-});
-
-// ❌ No inline fetch logic inside widget hooks
-const { data: barsData } = useQuery({
-    queryKey: QUERY_KEYS.bars(symbol, timeframe),
-    queryFn: async ({ signal }) => {
-        const res = await fetch(`/api/bars?symbol=${symbol}`); // prohibited
-        return res.json();
-    },
-});
+// ✅
+<MarketDataErrorNotice variant={isTotalFailure ? 'total' : 'partial'} marketLabel={scope.marketLabel} />
 ```
+
+A deliberately untranslated literal gets a comment saying why (see CM-6).
 
 ---
-
-## Server Data Cache Rules (`unstable_cache` / `fetch`)
-
-In production the Next data cache (every `unstable_cache` entry and every cached `fetch()`)
-lives in S3 under a prefix that is **shared across deploys**:
-`siglens-isr/data-v<DATA_CACHE_VERSION>-next<next version>/fetch/`
-(`cache-handler/config.mjs`). Page/HTML entries stay build-scoped. A deploy therefore does
-**not** clear cached data, and during a rolling deploy old and new builds read each other's
-entries. If you change what a cached function returns without changing its key, the new code
-reads values in the old shape (and the old code reads the new shape).
-
-When you change the **shape or meaning** of a cached value, change its key in the same PR:
-
-| Change | Do this |
-|---|---|
-| One cache entry's return shape (fields added/removed/renamed, units, enum values) | Bump that call site's versioned keyPart: `['bars-static-v2', …]` → `'bars-static-v3'`. If the key has no version yet, add `-v1` now. |
-| A helper shared by many cached call sites changes shape, or the entry wrapper/serialization changes (`cache-handler/serialize.mjs`, `index.mjs` entry) | Bump `DATA_CACHE_VERSION` in `cache-handler/config.mjs` (the whole data cache restarts cold once). |
-| The data must be re-read on every deploy (e.g. legal terms published "effective on deploy") | Put the release id (`process.env.GIT_SHA`) in the keyParts — see `TERMS_RELEASE_ID` in `entities/terms/api.ts`. Use sparingly: that entry goes cold every deploy. |
-| A Next.js upgrade | Nothing — the Next version is part of the prefix. |
-| Only the request changes (`fetch()` URL, headers, body) or the TTL/tags | Nothing — the key or the read-time check already changes. |
-
-```typescript
-// ✅ shape changed (added `vwap`) → key version bumped in the same PR
-unstable_cache(load, ['bars-static-v3', ticker, timeframe], { revalidate, tags });
-
-// ❌ shape changed but key kept → old/new builds share incompatible entries
-unstable_cache(load, ['bars-static-v2', ticker, timeframe], { revalidate, tags });
-```
-
-**`staticSymbolCache` / `cacheNonEmpty*` keys** are keyParts only: the wrapper passes a fixed
-callback and prepends `STATIC_SYMBOL_CACHE_VERSION` (`'ssc-v1'`), so two call sites with the same
-keyParts read **the same entry**. That makes key stability the call site's job:
-
-- Build keyParts only from inputs that decide the result, so every build produces the same strings.
-- When a fetcher's return shape or meaning changes, add or bump a `-vN` keyPart for that call site in the
-  same PR (`'fundamental:profile'` → `'fundamental:profile-v2'`).
-- Never let two call sites share keyParts unless they return the same data. Check with
-  `rg "staticSymbolCache|cacheNonEmpty"` before adding a key.
-- Bump `STATIC_SYMBOL_CACHE_VERSION` only when the wrapper itself changes meaning; that retires every
-  entry it owns at once.
-
-The old prefix/keys are not deleted by hand; the bucket's 7-day lifecycle removes them.
-
----
-
-## URL State Rules
-
-UI state that should survive page refresh or be shareable via link must be reflected in the URL.
-
-### Query Parameter — Timeframe
-
-The selected timeframe is synchronized to the `tf` query parameter.
-
-**Reading (client):** to keep `[symbol]` routes ISR-cacheable, `tf` is read on the **client**, never on the
-server (a server `searchParams` read forces dynamic rendering and disables ISR). Read it with
-`useUrlSearchParam` (`shared/hooks/useUrlSearchParam.ts`), **not** `useSearchParams` — Next's
-`useSearchParams` CSR-bails-out the subtree up to the nearest Suspense boundary, so the widget ships as a
-skeleton in the server HTML. `useUrlSearchParam` is a `useSyncExternalStore` reader whose server snapshot is
-`null`: the server and hydration renders use the default (`DEFAULT_TIMEFRAME`), and the URL value applies
-right after hydration. The chart page uses `useTimeframeChange`, `OverallContent` uses `useTimeframeFromUrl`,
-the `/market` sector panel uses `useSectorSignalState`. The canonical URL excludes `tf`, so the client-only read
-does not affect SEO/indexing.
-
-**User picks vs. URL:** a pick lives in local state (`usePickUntilPopstate`) and wins over the URL, because
-the URL write (`history.replaceState`) does not notify subscribers. The pick is dropped on the next
-`popstate`, so Back/Forward follows the URL again. On the chart, URL-driven changes (deep link, tier hydration,
-popstate) go through `useDeferredValue` so the previous chart stays up instead of flashing the Suspense
-skeleton; user picks go through `startTransition`.
-
-**Writing (client):** `useTimeframeChange` calls `window.history.replaceState(...?tf=<value>)` inside
-`startTransition` whenever the user changes the timeframe (no RSC round trip — the server ignores `tf`).
-
-**Validation:** `isValidTimeframe()` is exported by `@y0ngha/siglens-core` and uses the `TIMEFRAMES` constant
-as the source of truth for valid values. Never validate against hardcoded string literals at the call site.
-
-```typescript
-// ✅ Client reads timeframe from URL (keeps the route static/ISR, no CSR bailout)
-const tfParam = useUrlSearchParam('tf');
-const timeframe = isValidTimeframe(tfParam) ? tfParam : DEFAULT_TIMEFRAME;
-
-// ❌ useSearchParams — CSR-bails-out the subtree; the server HTML gets only the Suspense fallback
-// const tfParam = useSearchParams().get('tf');
-
-// ❌ Server reading searchParams.tf — forces dynamic rendering, breaks ISR
-// const { tf } = await searchParams;
-
-// ✅ Client updates URL on change (inside startTransition)
-window.history.replaceState(null, '', toLocalePath(`/${symbol}?tf=${nextTimeframe}`));
-
-// ❌ Hardcoded default ignoring URL param
-const [timeframe, setTimeframe] = useState<Timeframe>(DEFAULT_TIMEFRAME);
-```

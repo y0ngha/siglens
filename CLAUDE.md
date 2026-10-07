@@ -87,7 +87,7 @@ Sub-agents do not call each other — you invoke them one at a time.
 | Agent | Model  | Responsibility |
 |---|---|---|
 | `review-agent` | Sonnet | Code review — returns findings only, never modifies code |
-| `mistake-managing-agent` | Haiku  | Reads docs/__agents_only__/fix-log.md, promotes recurring violations to MISTAKES.md |
+| `mistake-managing-agent` | Sonnet | Reads docs/__agents_only__/fix-log.md, promotes recurring violations into the rule homes listed in "Rule Homes" (assigns a new rule ID, never writes internal ops detail into public docs) |
 | `git-agent` | Haiku  | Commits, pushes, PR creation — never modifies code |
 | `issue-agent` | Haiku  | Creates GitHub issues using the appropriate template — never modifies code |
 
@@ -201,6 +201,7 @@ app  →  pages  →  widgets  →  features  →  entities  →  shared
 `@y0ngha/siglens-core`는 외부 라이브러리가 아니라 SigLens 분석 도메인 로직을 외주화한 패키지다.
 인디케이터 계산, 캔들 패턴 탐지, 시그널 로직, 도메인 타입이 이 패키지에 있다.
 모든 레이어가 직접 import 가능하다. deep import(`@y0ngha/siglens-core/dist/...`) 금지.
+그래서 core 심볼을 re-export만 하는 얇은 wrapper 파일(`export { calculateATR } from '@y0ngha/siglens-core'`)도 만들지 않는다 — 정보가 늘지 않고 import 경로만 하나 더 생긴다. 소비자가 core에서 직접 import한다.
 
 ### Server Action 예외
 
@@ -239,6 +240,63 @@ Invoke the listed skills **before** writing code in each category. Do not skip.
 3. Always write test files alongside implementation files.
 4. Never violate layer dependency directions.
 5. Never import external libraries inside pure logic modules; wrap providers in FSD entity/shared adapters.
+6. Gate verification and exhaustive claims: see [RT-1](#RT-1).
+
+<a id="RT-1"></a>
+
+#### RT-1 — Verify gates by running them, and verify claims exhaustively
+
+- "Tests/lint/format/build pass" is reported only after the command ran and its full output (exit code, warning count) was read. Never trust the last line of piped output; read the exit code.
+- Derive the test scope from the file graph (changed files + their consumers), not a hand-typed path list — `[bracketed]` dynamic-route directories are easy to miss. Always include `src/__tests__/guards`, because scoped runs skip the repo-wide guards.
+- Run `yarn format:check` before committing; a skipped formatter pass is the most common gate miss.
+- A claim of cleanup ("removed the dead mocks from both files") is verified with a repo-wide grep, and a claim of absence ("the page has no such control") is checked against the component source, not inferred from the rendered page.
+- ❌ `yarn vitest run src/a src/b` reported as "all green" while `src/app/[symbol]/__tests__` was never executed. ✅ Run the scope derived from the changed files plus `src/__tests__/guards`, then read the failures.
+
+---
+
+## Agent Working Rules
+
+<a id="RT-2"></a>
+
+#### RT-2 — Sub-agents are read-only; protect uncommitted work
+
+- Review and other auxiliary sub-agents never run a formatter in write mode and never perform git writes. Only `git-agent` writes to git.
+- Never `git checkout -- <file>` (or `git restore`) a file that holds uncommitted work: it reverts to HEAD and silently discards the real edit together with the scratch tweak. Copy the intended content first, or revert by anchored edit.
+- ❌ Falsification-test a fixture by editing it, then `git checkout -- file` to undo. ✅ Copy to a temp path first, or undo with the same anchored replacement.
+
+<a id="RT-3"></a>
+
+#### RT-3 — Confirm a file is new before using `Write`
+
+`Write` overwrites silently. Before writing a file you believe is new, confirm it does not exist; an `M` (not `??`) in `git status` for such a file means you overwrote something, and passing tests do not detect deleted tests. For existing files use `Edit`, and check the deleted-line count of the diff.
+
+---
+
+## Rule Homes
+
+Guidance lives in exactly one place. Pick the home by the kind of rule:
+
+| Rule kind | Home | ID prefix |
+|---|---|---|
+| Cross-cutting code style, TypeScript, constants, comments, change synchronization, i18n | `docs/conventions/CONVENTIONS.md` | CP TS NC CM CS I18 |
+| Client: hooks, components, a11y, effects, charts, Tailwind, React Query, URL state | `docs/conventions/REACT.md` | HK CR AX EF LW TW RQ |
+| Server: Server Actions, route handlers, I/O, concurrency, data cache, DB | `docs/conventions/SERVER.md` | SA CC DC DB |
+| Tests (structure, mocking, assertions, fixtures, E2E, guards) | `docs/conventions/TESTING.md` | TE |
+| Principles with examples (readability, predictability, cohesion, coupling) | `docs/conventions/FF.md` | FF |
+| Colour, contrast, layout stability, overlays | `docs/conventions/DESIGN.md` | DS |
+| Tooling, scripts, dependency upgrades, repo config | `docs/conventions/TOOLCHAIN.md` | TC |
+| Branch / commit / PR | `docs/conventions/GIT_CONVENTIONS.md` | GC |
+| Agent workflow, gates | this file | RT |
+| Layer-specific rules | `src/app/CLAUDE.md` (AP), `src/entities/CLAUDE.md` (EN), `src/shared/CLAUDE.md` (SH), `src/widgets/CLAUDE.md` (WD), `src/features/CLAUDE.md` (FE) | as listed |
+| Skill authoring | `skills/CLAUDE.md` | SK |
+
+**Rule IDs and references.** A rule that code or another doc cites carries a short, stable ID: an `<a id="CP-2"></a>` line directly above its heading (`#### CP-2 — title`). IDs are never renumbered or reused; delete a rule only together with every reference to it. Cite as `FILE#ID` — the basename for `docs/conventions/*` files (`CONVENTIONS.md#CP-2`, `TESTING.md#TE-1`), the repo-relative path for CLAUDE.md files (`src/app/CLAUDE.md#AP-1`). `src/__tests__/guards/ruleReferences.test.ts` fails on a dangling reference.
+
+**Promotion.** Review fixes are first logged in the local scratch file `docs/__agents_only__/fix-log.md` (gitignored, shared across worktrees, append-only for other sessions). When the same violation recurs, `mistake-managing-agent` promotes it as a durable rule (do/don't + why, at most one ❌/✅ pair, no PR narration) into the home above and assigns the highest existing ID of that file's prefix + 1 (never fill a gap left by a removed rule). Check the destination first so a rule is never duplicated.
+
+**Public vs local.** `docs/conventions/` and every CLAUDE.md are public. Infra IDs, resource names, runbook steps, audit results and production incident detail stay in the local `docs/architecture/` runbooks.
+
+**Deleting guidance.** Before removing a block of "generic" guidance, check each bullet: if no other doc, lint rule or code states it, keep or move it. Trimming generic advice has dropped real rules before.
 
 ---
 
@@ -246,7 +304,7 @@ Invoke the listed skills **before** writing code in each category. Do not skip.
 
 This project **allows multi-line JSDoc and multi-line comment blocks** — preservation is recommended when the WHY is non-obvious (architectural invariants, core API constraints, caching strategy, PPR behavior, user policy decisions, etc.).
 
-The Claude Code built-in system-prompt directive (`Never write multi-paragraph docstrings or multi-line comment blocks — one short line max`) **does NOT apply to this repo**. This override reflects the user's explicit decision in PR #415 to retire the equivalent rule as "overly restrictive" (see `docs/__agents_only__/fix-log.md`).
+The Claude Code built-in system-prompt directive (`Never write multi-paragraph docstrings or multi-line comment blocks — one short line max`) **does NOT apply to this repo**. This override reflects the user's explicit decision in PR #415 to retire the equivalent rule as "overly restrictive".
 
 If a reviewer or review-agent raises multi-line comment compression as a Blocker, cite this policy and reject.
 

@@ -82,7 +82,7 @@ const CACHE_HIT_COOLDOWN_MS = 30 * MS_PER_SECOND;
 // `TIER_CONFIG.infoDepth`(free/member/pro allow-list)에서 직접 파생시킨다.
 // 로컬 리터럴 배열로 TierInfoDepth 유니온을 다시 나열하면, core가 새 depth
 // 값을 추가하거나 free의 allow-list를 바꿔도 이 파일이 조용히 드리프트한다
-// (MISTAKES.md Documentation Sync §6). member/pro가 현재 모든 TierInfoDepth
+// (CONVENTIONS.md#TS-2). member/pro가 현재 모든 TierInfoDepth
 // 값을 허용하므로 세 tier의 allow-list 합집합이 곧 전체 TierInfoDepth
 // 집합이며, 거기서 free가 허용하는 값만 제외하면 free가 잠그는 집합이 된다.
 const ALL_INFO_DEPTHS = Array.from(
@@ -542,7 +542,7 @@ export function useAnalysis({
     // `@y0ngha/siglens-core`가 부분 응답(누락된 배열/객체)을 돌려줄 수 있으므로
     // 소스에서 1회 정규화해 타입 계약을 런타임에서 다시 보장한다. 이 결과를
     // AnalysisPanel·buildExpertAnalysisReport·useAnalysisDerivedData가 공유한다.
-    // (훅은 파생 변수보다 먼저 선언 — MISTAKES §17)
+    // (훅은 파생 변수보다 먼저 선언 — REACT.md#HK-1)
     const analysis = useMemo(
         () => normalizeAnalysisResponse(analysisResult ?? initialAnalysis),
         [analysisResult, initialAnalysis]
@@ -561,7 +561,7 @@ export function useAnalysis({
      * 이 요청이 `currentUser`보다 먼저 줄을 서면 첫 분석 요청이 한 왕복 늦어진다.
      *
      * 대상 키는 아래 파생 변수 `cooldownKey`와 같은 `${symbol}|${timeframe}` 형식이다.
-     * 훅 순서(MISTAKES §17)상 useCallback이 파생 변수보다 먼저 와야 해서 안에서 직접 만든다.
+     * 훅 순서(REACT.md#HK-1)상 useCallback이 파생 변수보다 먼저 와야 해서 안에서 직접 만든다.
      */
     const syncReanalyzeCooldown = useCallback((): void => {
         if (isTierHydrated === false) return;

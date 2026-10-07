@@ -190,7 +190,7 @@ describe('TechnicalSnapshotProse', () => {
         expect(screen.getByText(/trend-following/)).toBeInTheDocument();
     });
 
-    // MISTAKES Accessibility 1.7 — 목록의 aria-label은 보이는 헤딩과 같은
+    // REACT.md#AX-1 — 목록의 aria-label은 보이는 헤딩과 같은
     // 용어("기술적 신호")를 써야 한다. 헤딩이 "전략"에서 "기술적 신호"로
     // 바뀌었는데 aria-label만 "전략 시그널"로 남으면 스크린리더 사용자에게
     // 같은 섹션이 두 개의 다른 이름으로 들린다.

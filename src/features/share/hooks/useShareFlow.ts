@@ -244,7 +244,7 @@ export function useShareFlow(): UseShareFlowResult {
         mutateRef.current();
     }, []);
 
-    // Placed after useMemo/useCallback per MISTAKES #17 strict hook order:
+    // Placed after useMemo/useCallback per REACT.md#HK-1 strict hook order:
     // useState/useRef → hooks/useMutation → useCallback/useMemo → derived → handlers → useEffect.
     const effectiveStatus = reg?.status ?? 'unavailable';
     const isMutating = mutation.isPending;

@@ -21,8 +21,7 @@ import { logToolDegrade } from './logToolDegrade';
 import { pctVs, ratioPct } from './percent';
 
 /**
- * Max concurrent quote lookups per `getMyPortfolioTool` call (MISTAKES.md
- * §0.8) — `fetchRawHolding` does one external quote lookup per holding and
+ * Max concurrent quote lookups per `getMyPortfolioTool` call (SERVER.md#CC-1) — `fetchRawHolding` does one external quote lookup per holding and
  * `findByUser` has no holdings cap, so an unbounded fan-out would send one
  * request per row at once. Each lookup goes through `getCachedMarketDataProvider`'s
  * Redis cache, so most calls are cache hits and this only bounds the worst

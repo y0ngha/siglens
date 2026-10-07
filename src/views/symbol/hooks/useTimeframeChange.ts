@@ -72,7 +72,7 @@ export function useTimeframeChange(
         requestedTimeframe !== DEFAULT_TIMEFRAME
             ? DEFAULT_TIMEFRAME
             : requestedTimeframe;
-    // 훅 선언 순서 예외(MISTAKES.md #17): 아래 두 훅은 파생 변수 gatedTimeframe/
+    // 훅 선언 순서 예외(REACT.md#HK-1): 아래 두 훅은 파생 변수 gatedTimeframe/
     // timeframe을 입력으로 받으므로 그 계산 직후에 둔다.
     //
     // URL에서 온 변화(`?tf=` 딥링크의 하이드레이션 직후 재렌더, tier 하이드레이션,

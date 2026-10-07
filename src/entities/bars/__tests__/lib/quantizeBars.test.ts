@@ -1,5 +1,5 @@
 // vi.mock은 Vitest transform이 모든 static import 위로 호이스트하므로 import 블록 위에 둔다.
-// import 사이에 끼우면 import/first 위반(MISTAKES §17).
+// import 사이에 끼우면 import/first 위반(TESTING.md#TE-1).
 vi.mock('@y0ngha/siglens-core', async () => ({
     ...(await vi.importActual('@y0ngha/siglens-core')),
     isRegularSessionOpen: vi.fn(),

@@ -18,7 +18,7 @@ import {
 } from '@/entities/seo-snapshot/lib/hasProseForTab';
 
 // PROSE_PREDICATE_BY_TAB is a 7-tab dispatch map with no dedicated tests
-// before this file (MISTAKES.md §Tests 22) — the renderer suites only
+// before this file (TESTING.md#TE-5) — the renderer suites only
 // exercise `technical`/`congress` indirectly. A copy-paste mapping error
 // (e.g. `options: hasFinancialsProse`) would ship undetected because the
 // wrong predicate often still returns a plausible boolean for unrelated

@@ -25,18 +25,41 @@ In FSD, `app/` is the **composition root**: it wires together widgets, features,
 ### Data Flow (Initial Page Load)
 
 서버(RSC)에서 클라이언트로 초기 데이터를 주입할 때는 props 드릴링 대신
-`queryClient.prefetchQuery()` + `dehydrate()` + `HydrationBoundary` 패턴을 사용한다.
+`queryClient.setQueryData()` + `dehydrate()` + `HydrationBoundary` 패턴을 사용한다.
+`prefetchQuery`는 쓰지 않는다 — 아래 AP-2 참조.
 
 ```
 /AAPL request
-  → app/[symbol]/page.tsx (RSC)
+  → app/[locale]/[symbol]/layout.tsx · page.tsx (RSC)
     → QueryClient (per-request, server-only) 생성
-    → queryClient.prefetchQuery(bars) → entities/bars getBarsAction
+    → 정적 캐시 로더(getAssetInfoResilient, getQuantizedBarsStatic …)로 데이터 조회
+    → queryClient.setQueryData(key, data, { updatedAt: 고정값 })
     → dehydrate(queryClient) → HydrationBoundary로 클라이언트에 전달
   → SymbolPageClient (HydrationBoundary 안)
     → useBars: hydrated 캐시에서 즉시 읽기
     → useAnalysis: 마운트 시 자동 AI 분석 트리거
 ```
+
+<a id="AP-2"></a>
+
+#### AP-2 — ISR 시드는 결정적이어야 한다 (`setQueryData` + 고정 `updatedAt`)
+
+`prefetchQuery` + `dehydrate`는 `dataUpdatedAt: Date.now()`를 자동으로 박아, 데이터가 같아도 재생성마다
+HTML 해시가 달라진다 → 서버 재시작·ISR 재생성마다 불필요한 ISR write가 생긴다. 시드는 데이터를 직접 넣고
+`updatedAt`을 데이터에서 유도한 고정값으로 명시한다.
+
+- 봉 차트: `lastBar.time * MS_PER_SECOND` — `Bar.time`은 초 단위 epoch이고 RQ `updatedAt`은 밀리초다.
+  `* 1000`을 빠뜨리면 1970년대로 해석돼 stale 판정이 틀어진다.
+- 자산 정보: 고정 `0`(변하지 않는 스냅샷) 또는 `assetInfoSeedUpdatedAt(degraded)`.
+- 시장 데이터: 시간 단위로 내림한 값(`dateHour.getTime()`), 옵션: `snapshot.capturedAt`.
+- layout과 page가 같은 봉을 시드할 때는 **동일한 quantize 변환**을 적용한다. 한쪽이 forming 봉을 담으면
+  중첩 `HydrationBoundary`의 시드가 달라져 HTML이 매번 바뀐다.
+- 실패한 로더의 `null`을 `setQueryData`에 넘기지 않는다 — null "success"가 캐시에 박혀 클라 훅이 깨진다.
+- RSC 함수에 quantize + `updatedAt` 로직의 단위 테스트(정상·degraded·빈 케이스)를 둔다. 빌드 후 두 서버
+  인스턴스의 HTML 바이트 비교로 결정성을 최종 확인한다.
+
+❌ `prefetchQuery(getBarsStatic)` → HTML에 `dataUpdatedAt:1780617600`(초 단위 10자리)
+✅ `setQueryData(key, quantizedBars, { updatedAt: lastBar.time * 1000 })`
 
 ### Caching
 
@@ -45,12 +68,14 @@ In FSD, `app/` is the **composition root**: it wires together widgets, features,
 > 임시로 꺼 둔 상태이며, 추후 재활성화 시 `'use cache'` / `cacheLife` / `cacheTag` 패턴과
 > dynamic metadata 처리 방식을 함께 재설계해야 한다.
 
-### ISR / Route Segment Config (⚠️ 리터럴 강제)
+<a id="AP-1"></a>
+
+### AP-1 — ISR / Route Segment Config (⚠️ 리터럴 강제)
 
 `export const revalidate` / `dynamic` 등 route segment config는 **반드시 정적 분석 가능한
 리터럴**이어야 한다. import한 상수나 식(`SECONDS_PER_HOUR`, `60 * 60`)으로 추출하면 Next.js가
 값을 정적 분석하지 못해 `⨯ Invalid segment configuration export detected ... configs not being
-applied`로 **config를 조용히 무시 → ISR이 깨진다**. 따라서 **`docs/conventions/MISTAKES.md` §15(매직넘버
+applied`로 **config를 조용히 무시 → ISR이 깨진다**. 따라서 **`CONVENTIONS.md#NC-1`(매직넘버
 상수 추출)은 route segment config에 적용하지 않는다** — 리터럴을 유지하고 `// 1h` / `// 30d`
 인라인 코멘트로 의미만 표기한다. (`app/page.tsx`는 `revalidate = 86400` 리터럴.)
 
@@ -59,6 +84,8 @@ applied`로 **config를 조용히 무시 → ISR이 깨진다**. 따라서 **`do
 on-demand ISR)를 함께 export해야 빌드에서 `● (SSG)`로 전환된다. 메타데이터 이미지
 (opengraph/twitter)는 `export const dynamic = 'force-static'`로 정적화한다 — `force-static`은
 `cookies()/headers()/searchParams`만 비우고 `params`는 유지하므로 종목별로 정상 렌더된다.
+
+일시적으로 degraded된 값(예: 번역 누락으로 원문을 대신 보여 준 설명)이 전체 ISR 창 동안 캐시되면 실제 값이 준비된 뒤에도 갱신되지 않는다. degraded 결과는 전체 revalidate가 아니라 **짧은 degrade revalidate**를 쓴다.
 
 #### 페이지별 revalidate (값·근거는 [`docs/architecture/ISR_REVALIDATE.md`](../../docs/architecture/ISR_REVALIDATE.md))
 
@@ -116,10 +143,65 @@ PPR(`cacheComponents`) 비활성 상태에서 동적 세그먼트를 ISR로 정�
 4. **(축 3) `generateStaticParams=[]` + `revalidate`(리터럴) 유지.** revalidate 값은 페이지마다 다르다 —
    [`docs/architecture/ISR_REVALIDATE.md`](../../docs/architecture/ISR_REVALIDATE.md) 참조.
 
+5. **(축 4) `unstable_cache` 안에서 locale 없이 `getTranslations()`를 부르지 않는다.** locale 인자가 없으면
+   next-intl이 `headers()`로 폴백하는데 Next는 캐시 스코프 안의 `headers()`를 거부(E838)해 원래 오류를
+   "Accessing Headers in cached context"로 가린다. locale은 캐시 스코프 밖에서 뽑아 인자로 넘기거나, 번역
+   실패를 치명적이지 않게 만든다.
+
 > ⚠️ 빌드 output의 `●`(SSG) 표시 ≠ 런타임 동작. 반드시 `prod build && start` 후
 > 런타임 로그의 `DYNAMIC_SERVER_USAGE` 0 + `x-nextjs-cache` HIT로 실측 검증한다.
 > (설계: `docs/superpowers/specs/2026-06-02-symbol-isr-seo-design.md`,
 > 플랜: `docs/superpowers/plans/2026-06-02-symbol-isr-seo-phase0-1.md` · `…-phase2-4.md`)
+
+---
+
+## SEO / Metadata
+
+<a id="AP-4"></a>
+
+#### AP-4 — 새 top-level 페이지 라우트는 머지 전에 발견 가능하고 완결돼야 한다
+
+`app/*`에 새 페이지(`/economy`, `/[symbol]/holdings` 등)를 추가하면 다음을 한 번에 갖춘다. review-agent의
+무결점 승인만으로는 부족하므로 머지 전 `seo-audit`로 고아 라우트를 확인한다.
+
+1. 정적 sitemap 항목(`buildStaticEntries.ts`)
+2. 내부 링크(Footer·내비 메뉴·본문 맥락) — 고아 페이지 금지
+3. SSR 텍스트 — 클라 전용 컴포넌트 브리지만 있으면 크롤러는 빈 skeleton을 본다. SSR 텍스트 사본을 둔다
+4. 메타데이터 — JSON-LD `dateModified`, robots, canonical, keywords가 본문과 일치. degraded 상태는 robots·canonical이 함께 맞아야 한다
+5. e2e — 봇 UA로 본문 텍스트(skeleton 아님)·메타·degrade 경로를 검증
+
+schema.org 타입은 의미가 맞는 것만 쓴다. `FinancialProduct`는 대출·카드·보험용이지 분석 서비스가 아니고,
+이미 `WebPage`·`about.Corporation`이 덮는 내용을 다른 타입으로 중복하지 않는다. `Article.datePublished`는
+최초 발행 시각이며 요청 시각이 아니다(갱신 시각은 `dateModified`).
+
+<a id="AP-3"></a>
+
+#### AP-3 — `generateMetadata`는 모든 필드를 명시한다
+
+route의 `generateMetadata`가 필드(description, robots, canonical …)를 빼면 Next가 root layout 값을 상속해
+서로 다른 URL이 같은 메타를 갖게 된다. 라우트별로 달라야 하는 필드는 전부 명시한다.
+
+- not-found·에러 경계도 description을 명시한다(생략하면 모든 존재하지 않는 URL이 홈 description을 낸다).
+- 동적 콘텐츠에서 유도한 description은 접두에 라우트/뷰 구분자(탭 이름 등)를 넣는다. 같은 긴 문장으로
+  시작하는 두 탭이 길이 제한(`SEO_DESCRIPTION_MAX_LENGTH`)에서 잘리면 바이트 동일한 description이 된다.
+- "Next가 `robots`를 병합하지 않고 교체한다"를 고칠 때는 모든 호스트의 `robots:` 생산자(`src/app/ai/**` 포함)를
+  grep해 색인 가능한 분기를 `localePageRobots`로 통일한다. 한 호스트만 고치면 preview 지시자가 다른 호스트에서 빠진다.
+
+❌ `not-found.tsx`: `{ title, robots }`만 반환 → home description 상속
+✅ `{ title, description: '…', robots: 'noindex' }`
+
+---
+
+## proxy.ts
+
+- **인증 리다이렉트는 쿼리를 보존한다.** `AUTH_REQUIRED_PATHS` 가드는 페이지 가드보다 먼저 실행돼 놓치기 쉽다.
+  `next`에는 경로와 쿼리를 함께 넣고(`localePath(locale, pathname) + reqUrl.search`), sanitizer는 ①대상이
+  guest-only 경로가 아닌지 ②쿼리가 끝까지 보존되는지를 모두 검증한다.
+  ❌ `loginUrl = localePath(locale, pathname)` — `/portfolio?symbol=AAPL`이 로그인 뒤 `/portfolio`가 된다.
+- **호스트 비교는 양쪽을 소문자로 정규화하고 실제 `Host` 헤더를 읽는다.** `req.url.host`는 `next start`가
+  바인드 주소로 다시 만든 값이라 Host 헤더와 다를 수 있다. URL 파서가 소문자화한 `target.host`를 원본
+  헤더와 비교하면 대소문자 불일치에서 루프 가드가 깨진다.
+- 경로 가드 목록(`AUTH_REQUIRED_PATHS` 등)은 한 곳을 단일 소스로 두고 다른 가드가 공유한다.
 
 ---
 
@@ -129,6 +211,9 @@ PPR(`cacheComponents`) 비활성 상태에서 동적 세그먼트를 ISR로 정�
 - `cacheComponents` (PPR)는 현재 비활성화 — 활성화 시 dynamic route의 `generateMetadata`가
   fake-params로 prerender되어 canonical에 `[SYMBOL]` placeholder가 박히는 문제를 다시
   검토해야 한다.
+- `cacheComponents`를 다시 켤 때의 체크리스트: provider·클라 컴포넌트에서 prerender 중 `Date.now()` /
+  `new Date()`를 부르지 않는다(필요하면 `<Suspense>`로 요청 시점까지 미룬다). 캐시 대상 서버 함수에는
+  `'use cache'`를 명시한다. 지금(꺼진 상태)은 적용되지 않는다.
 
 ---
 

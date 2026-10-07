@@ -12,7 +12,7 @@
  * element tree with findElementByType, mirroring page.body.test.tsx.
  */
 
-// MISTAKES §17: all vi.mock + vi.hoisted above imports.
+// TESTING.md#TE-1: all vi.mock + vi.hoisted above imports.
 const { mockGetSeoSnapshotsStatic } = vi.hoisted(() => ({
     mockGetSeoSnapshotsStatic: vi.fn(),
 }));

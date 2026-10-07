@@ -388,8 +388,8 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             expect(mockMarkFetched).toHaveBeenCalledWith('AAPL');
         });
 
-        // fire-and-forget 계약(파일 docstring, MISTAKES.md "Fire-and-Forget
-        // Operations §2") — NewsIngestWriteError는 throw하지 않고 삼킨다(PR #700 리뷰).
+        // fire-and-forget 계약(파일 docstring, SERVER.md#SA-6) —
+        // NewsIngestWriteError는 throw하지 않고 삼킨다(PR #700 리뷰).
         it('majority-failure: 과반 reject → throw하지 않고 삼키며, revalidateTag 미도달', async () => {
             const errorSpy = vi
                 .spyOn(console, 'error')

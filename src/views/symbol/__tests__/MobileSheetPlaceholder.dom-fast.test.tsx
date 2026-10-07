@@ -34,7 +34,7 @@ describe('MobileSheetPlaceholder', () => {
 
     it('실제 PEEK 띠와 같은 높이를 갖는다', () => {
         // 높이가 어긋나면 껍데기→실제 시트 교체 시 띠 높이가 튄다.
-        // 값은 MISTAKES.md #19에 따라 커스텀 프로퍼티로 전달되고, 클래스가 그것을 읽는다.
+        // 값은 REACT.md#TW-1에 따라 커스텀 프로퍼티로 전달되고, 클래스가 그것을 읽는다.
         const el = renderPlaceholder();
         expect(el.style.getPropertyValue('--peek-band')).toBe(
             `${MOBILE_SHEET_PEEK_BAND_SVH}svh`

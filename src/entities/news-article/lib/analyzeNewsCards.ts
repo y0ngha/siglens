@@ -87,7 +87,7 @@ export interface AnalyzeNewsCardsOptions {
  * 실패는 건별로 로깅하고 삼킨다 — 한 기사의 LLM 실패가 나머지 기사와 상위
  * 배치를 죽이지 않는다.
  *
- * **`lib/`에 두는 것은 의도된 예외다**(MISTAKES.md §0.7은 `entities/{slice}/lib/`를
+ * **`lib/`에 두는 것은 의도된 예외다**(src/entities/CLAUDE.md#EN-1은 `entities/{slice}/lib/`를
  * 순수 함수로 제한한다). 같은 슬라이스의 `ingestNewsForSymbol.ts`가 이미 같은 형태다 —
  * 파이프라인의 인접 단계(적재 → 보강)이고, 저장소를 주입받아 부수효과를 호출자가
  * 통제하며, 두 호출자(방문자 액션 / prewarm cron)가 공유해야 한다. `api.ts`로 옮기면

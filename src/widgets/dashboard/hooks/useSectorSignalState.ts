@@ -80,7 +80,7 @@ export function useSectorSignalState({
     const activeSector = pickedSector ?? urlSector;
     const activeTimeframe = pickedTimeframe ?? urlTimeframe;
 
-    // 훅 선언 순서 예외(MISTAKES.md #17): 조회 키가 위 파생값(activeTimeframe)이다.
+    // 훅 선언 순서 예외(REACT.md#HK-1): 조회 키가 위 파생값(activeTimeframe)이다.
     const data = useSectorSignals(scope.id, activeTimeframe, initialData);
 
     /*

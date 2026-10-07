@@ -7,7 +7,7 @@ interface GearIconProps {
  * the app (chart toolbar's `IndicatorSettingsModal` trigger, symbol-page
  * header's `AnalysisSettingsMenu` trigger) so they read as the same icon
  * language. Extracted here because both call sites previously declared
- * byte-identical inline `GearIcon` components (MISTAKES #1 — don't
+ * byte-identical inline `GearIcon` components (CONVENTIONS.md#CS-1 — don't
  * reimplement).
  */
 export function GearIcon({ className = 'h-5 w-5' }: GearIconProps) {

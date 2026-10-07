@@ -24,7 +24,7 @@ const keyOf = (tag: string): string => `ssr-miss:${tag}`;
  * 방문자 생성 경로는 아예 털지 않았다 — 그래서 "값은 캐시에 있는데 페이지는 비어
  * 있는" 상태가 생겼다(2026-10-01 허브 감사 B3).
  *
- * 매 tick 무조건 털면 ISR 쓰기가 폭증한다(MISTAKES.md "ISR & Caching #1"). 그래서
+ * 매 tick 무조건 털면 ISR 쓰기가 폭증한다(src/app/CLAUDE.md#AP-2). 그래서
  * **빈 렌더가 실제로 있었을 때만** 표시를 남기고, 크론이 값이 있음을 확인한 순간
  * {@link consumeSsrMiss}로 표시를 소비하며 한 번만 턴다.
  *

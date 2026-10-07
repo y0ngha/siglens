@@ -220,7 +220,7 @@ function rangeToneKey(currentPos: number): string {
  * 회원 전용 `PositionBuilding`이 쓰는 것과 같은 어휘(저층/중층/고층/펜트하우스,
  * 옥상 위/지하 세대)를 내기 위해 `widgets/portfolio-position`의
  * `computePosition`·`describeFloor`를 그대로 재사용한다 — 두 표현이 따로
- * 갈라지면(MISTAKES #2) 이 페이지와 로그인 후 빌딩 시각화가 같은 위치를 다른
+ * 갈라지면(CONVENTIONS.md#CP-2) 이 페이지와 로그인 후 빌딩 시각화가 같은 위치를 다른
  * 말로 설명하게 된다.
  *
  * `computePosition`은 `avg`(회원 평단)를 필수 인자로 받지만, 이 SSR 콘텐츠는

@@ -34,7 +34,7 @@ export function marketCopyFor(
               path: '/market/kr',
               title: t('market.kr.title'),
               // clampSeoDescription으로 SEO_DESCRIPTION_MAX_LENGTH(120자)를 출력단에서
-              // 강제 — SERP 절단 방지 + 번역 텍스트 길이 drift 차단(MISTAKES §15).
+              // 강제 — SERP 절단 방지 + 번역 텍스트 길이 drift 차단(CONVENTIONS.md#NC-1).
               description: clampSeoDescription(t('market.kr.description')),
               keywords: [
                   '코스피 오늘',

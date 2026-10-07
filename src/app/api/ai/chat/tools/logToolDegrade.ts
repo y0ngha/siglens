@@ -22,7 +22,7 @@ export function safeErrorFields(error: unknown): {
 /**
  * Logs an internal tool STEP degrading to a fallback (null/undefined/a
  * stale-by-age result) instead of failing the whole tool call —
- * MISTAKES.md §0.5: a catch block that swallows an error with no logging
+ * SERVER.md#SA-4: a catch block that swallows an error with no logging
  * removes any way to see why a result silently went missing. Same privacy
  * rule as `logToolError`: never the error object, `.message`, or `.stack`.
  */

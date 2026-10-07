@@ -33,7 +33,7 @@ export const ECONOMY_CONFIG_FINGERPRINT = createCacheConfigFingerprint(
 );
 const CACHE_KEY = `economy:snapshot:${ECONOMY_CONFIG_FINGERPRINT}`;
 
-/** 캘린더 윈도(다가오는 ~2주) 일수 — 매직넘버 상수화(MISTAKES §15). */
+/** 캘린더 윈도(다가오는 ~2주) 일수 — 매직넘버 상수화(CONVENTIONS.md#NC-1). */
 const CALENDAR_WINDOW_DAYS = 14;
 
 /** core EconomicIndicatorSeries의 빈 placeholder — Provider 실패 시 fallback. */
@@ -50,11 +50,11 @@ function emptyIndicator(name: string): EconomicIndicatorSeries {
  * 동시 호출 수 = 11(9 indicators + treasury + calendar). 결과는 24h Redis 캐시로
  * 묶이므로 실 호출은 페이지 cold-gen 시점에만 발생한다 — 페이지당 11회/24h 수준.
  *
- * MISTAKES §0.8 검토: 본 레포에는 `FETCH_CONCURRENCY` 상수 자체가 존재하지 않는다.
- * 가장 가까운 동시성 정책은 peer page들의 Promise.all 패턴이며, market(`getMarketSummary`
+ * SERVER.md#CC-1 검토: 호출 수가 고정이라 별도 동시성 상수를 두지 않는다.
+ * 동시성 정책은 peer page들의 Promise.all 패턴이며, market(`getMarketSummary`
  * — 지수 N + 섹터 ETF M, 통상 11+개), financials(6 endpoint)이 모두 동일 패턴으로
  * production에서 안정적으로 운영 중이다. FMP starter 플랜 기준 분당 300 req(초당 5)
- * 한도 대비 11 calls / 24h cold-gen은 무시 가능 수준 — `fetchInChunks` 분할 이득이
+ * 한도 대비 11 calls / 24h cold-gen은 무시 가능 수준 — 청크 분할 이득이
  * 없다. 향후 지표 수가 50+로 늘거나 페이지가 hot-path가 되면 그때 재검토한다.
  */
 async function fetchSnapshot(

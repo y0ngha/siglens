@@ -38,7 +38,7 @@ function resolve(node: unknown, path: string): unknown {
 /**
  * 실제 카탈로그를 읽는 번역자를 만든다 — 키 오타나 로케일 누락이 곧바로
  * 던지므로, 문구를 테스트에 복제했을 때처럼 카탈로그와 갈라진 채로 통과하지
- * 않는다(MISTAKES #13.5).
+ * 않는다(TESTING.md#TE-10).
  *
  * 값 치환은 `{v0}` 형태만 다룬다. ICU 복수형·select는 재현하지 않는다 —
  * 그게 필요한 지점은 실제 `next-intl` 렌더를 거치는 컴포넌트 테스트다.

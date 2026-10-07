@@ -545,7 +545,7 @@ describe('getMyPortfolioTool', () => {
         }
     });
 
-    it('시세 조회는 QUOTE_CONCURRENCY(5)를 넘지 않게 청크로 제한되고, 순서와 값은 그대로 유지된다 (MISTAKES.md §0.8)', async () => {
+    it('시세 조회는 QUOTE_CONCURRENCY(5)를 넘지 않게 청크로 제한되고, 순서와 값은 그대로 유지된다 (SERVER.md#CC-1)', async () => {
         const holdings = Array.from({ length: 12 }, (_, i) => ({
             symbol: `SYM${i}`,
             companyName: `Company ${i}`,

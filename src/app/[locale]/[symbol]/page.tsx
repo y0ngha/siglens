@@ -121,7 +121,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         // 으로 두었더니 CTK(상장폐지, 봉 1개)가 새어 나갔다 — 그 헬퍼는 등락률 분모로
         // 직전 봉이 필요해 2개 미만이면 null을 반환하고, 그러면 본문의 지표 요약
         // 블록이 통째로 렌더되지 않아 페이지가 제목만 남은 껍데기가 된다.
-        // 게이트와 본문이 서로 다른 조건을 쓰면 조용히 어긋난다(MISTAKES §2).
+        // 게이트와 본문이 서로 다른 조건을 쓰면 조용히 어긋난다(CONVENTIONS.md#CP-2).
         hasPriceData:
             metadataBars === null
                 ? undefined

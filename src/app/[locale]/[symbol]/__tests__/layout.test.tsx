@@ -19,7 +19,7 @@
  * - 조회 실패 시 throw 없이 스냅샷만 null
  */
 
-// MISTAKES §17: 모든 vi.mock + 변수 선언은 import 위로(import/first 규칙).
+// TESTING.md#TE-1: 모든 vi.mock + 변수 선언은 import 위로(import/first 규칙).
 // vi.hoisted로 mock 변수를 호이스트해 vi.mock 콜백에서 참조 가능하게 한다.
 const {
     MOCK_EMPTY_INDICATOR_RESULT,

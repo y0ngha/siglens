@@ -5,7 +5,7 @@ import { runWithRenderBudget } from '@/shared/lib/renderBudget';
 /**
  * 모든 `staticSymbolCache` 키 앞에 붙는 버전 keyPart.
  *
- * 데이터 캐시는 배포를 넘어 공유되는 S3 prefix에 산다(CONVENTIONS "Server Data Cache Rules").
+ * 데이터 캐시는 배포를 넘어 공유되는 S3 prefix에 산다(SERVER.md "Server Data Cache Rules").
  * 그래서 키는 빌드마다 같아야 하고, 바꿀 때는 의도적으로 바꿔야 한다. 이 값이 그 두 가지를 맡는다:
  *  - 키의 고정 부분을 **명시적인 문자열**로 둔다. `unstable_cache` 키에는 콜백 텍스트도 들어가지만
  *    (아래 JSDoc), 그건 번들러 출력이라 코드로 고정할 수 없다 — 의미 있는 식별은 이 값과 keyParts가 한다.
@@ -36,7 +36,7 @@ export const STATIC_SYMBOL_CACHE_VERSION = 'ssc-v1';
  * 부르든 같은 데이터여야 한다** — 다른 데이터를 같은 키 접두사로 캐시하면 서로 덮는다.
  * 새 키를 만들 때 `rg "staticSymbolCache|cacheNonEmpty"`로 접두사 충돌을 확인할 것.
  *
- * **키 안정성은 호출부 책임이다**(데이터 캐시가 배포를 넘어 공유되므로 — CONVENTIONS
+ * **키 안정성은 호출부 책임이다**(데이터 캐시가 배포를 넘어 공유되므로 — SERVER.md
  * "Server Data Cache Rules"):
  *  (a) keyParts는 결과를 결정하는 입력만으로, 빌드와 무관하게 같은 문자열이 나오게 만든다
  *      (`process.env.GIT_SHA` 같은 빌드 값은 매 배포 cold를 의도할 때만).

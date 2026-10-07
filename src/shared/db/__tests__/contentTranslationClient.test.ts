@@ -1,4 +1,4 @@
-// vi.mock → imports 순서 (MISTAKES.md Tests §17)
+// vi.mock → imports 순서 (TESTING.md#TE-1)
 /**
  * `getDatabaseClient`를 파일 전체에서 대역한다. 예전엔 케이스마다
  * `vi.resetModules()` 뒤 이 모듈을 다시 import했는데, 그때마다 DB 스키마·drizzle

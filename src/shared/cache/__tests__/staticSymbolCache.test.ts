@@ -1,4 +1,4 @@
-// spy → vi.mock → imports 순서 (MISTAKES.md Tests §17: vi.mock을 import 사이에 끼우지
+// spy → vi.mock → imports 순서 (TESTING.md#TE-1: vi.mock을 import 사이에 끼우지
 // 않고, 팩토리가 참조하는 spy는 vi.hoisted로 끌어올린다).
 const unstableCacheSpy = vi.hoisted(() => vi.fn());
 vi.mock('next/cache', () => ({

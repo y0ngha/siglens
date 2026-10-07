@@ -44,7 +44,7 @@ export function useNewsPollingWithInvalidation(
     );
     const [prevSymbol, setPrevSymbol] = useState(symbol);
     // Stable holder so useNewsCardPolling (data-fetch hook) is declared before
-    // useCallback per MISTAKES.md #17. Kept current via useLayoutEffect below.
+    // useCallback per REACT.md#HK-1. Kept current via useLayoutEffect below.
     const onCompleteRef = useRef<OnPollingComplete | undefined>(undefined);
 
     // Reset baseline on symbol change — React "store information from previous

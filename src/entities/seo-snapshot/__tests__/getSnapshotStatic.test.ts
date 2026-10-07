@@ -1,4 +1,4 @@
-// spy → vi.mock → imports 순서 (MISTAKES.md Tests §17: vi.mock을 import 사이에 끼우지
+// spy → vi.mock → imports 순서 (TESTING.md#TE-1: vi.mock을 import 사이에 끼우지
 // 않고, 팩토리가 참조하는 spy는 vi.hoisted로 끌어올린다).
 const {
     mockFindBySymbol,
@@ -59,7 +59,7 @@ import {
 } from '@/entities/seo-snapshot/model';
 
 // FIX D(감사) — max-age 필터는 Date.now() 기준이라 실제 wall-clock에 기대면
-// 테스트가 시간 의존 flaky가 된다(docs/conventions/MISTAKES.md 사례). fake
+// 테스트가 시간 의존 flaky가 된다(TESTING.md#TE-7). fake
 // timers로 고정한다.
 const FIXED_NOW = new Date('2026-07-25T12:00:00.000Z');
 

@@ -91,7 +91,7 @@ import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getF
 import type { MockedFunction } from 'vitest';
 
 // resolved 반환 타입 별칭 — mock fixture를 as never(bottom type) 대신 명시 타입으로
-// 캐스팅하기 위함(MISTAKES §7). 부분 객체는 as unknown as <Result>로 통과시킨다.
+// 캐스팅하기 위함(CONVENTIONS.md#TS-1). 부분 객체는 as unknown as <Result>로 통과시킨다.
 type AssetInfoResult = Awaited<ReturnType<typeof getAssetInfoResilient>>;
 
 const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
@@ -99,7 +99,7 @@ const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
 >;
 describe('Financials page ISR route config', () => {
     it('exports revalidate = 86400 (literal — required for Next.js static analysis)', () => {
-        // MISTAKES §15: route segment config must be a literal, not an imported constant
+        // src/app/CLAUDE.md#AP-1: route segment config must be a literal, not an imported constant
         expect(revalidate).toBe(86400);
     });
 });

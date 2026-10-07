@@ -26,7 +26,7 @@ import {
     DrizzleKoreanTickerRepository,
     DrizzleProfileDescriptionTranslationRepository,
     // 경계 테스트(500/501)는 구현이 실제로 쓰는 상수여야 의미가 있다 — 값을 여기
-    // 다시 적으면 상수가 바뀌는 순간 조용히 경계를 벗어난다(MISTAKES.md Tests §4).
+    // 다시 적으면 상수가 바뀌는 순간 조용히 경계를 벗어난다(TESTING.md#TE-6).
     KOREAN_TICKER_UPSERT_BATCH_SIZE,
 } from '@/entities/ticker/api';
 import { fmpGet } from '@/shared/api/fmp/httpClient';

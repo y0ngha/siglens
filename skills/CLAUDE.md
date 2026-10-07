@@ -188,6 +188,13 @@ exactly one of, appended once at the very end of the file, after the body:
   then refreshed with `yarn skills:digest-update`.
 - `token_cost` is `Math.ceil(digestText.length / 4)` — recomputed the same way,
   from the digest text alone.
+- **Editing only the digest leaves `digest_hash` unchanged**, so
+  `digest-verify` still passes even if the digest now contradicts the body.
+  Re-read the body section the digest summarizes and update both in the same
+  change. The digest is the only skill text the prompt sees, so every case it
+  covers (setup / near / below / non-daily) must steer the consumer correctly;
+  after a digest edit that changes a verdict, run an A/B on the real LLM to
+  confirm the output still follows the rule.
 
 **Tooling** (`scripts/skills-digest.ts`):
 
@@ -199,6 +206,42 @@ exactly one of, appended once at the very end of the file, after the body:
   section; files with no digest, or a malformed one, are left untouched (that's
   `verify`'s job to flag, not this command's to fix). Idempotent — running it
   twice in a row makes zero changes the second time.
+
+## Keeping a skill consistent
+
+<a id="SK-1"></a>
+
+### SK-1 — Frontmatter, body, digest and examples describe the same behavior
+
+- Frontmatter `indicators` lists every indicator the body references; the body states the capabilities the system
+  really has (e.g. the actual recent-bar count), not an idealized one.
+- Claims about gating ("always available" vs "injected when the signal fires"), category (neutral vs continuation),
+  and numeric evidence match the implementation, the prompt injection and the cited design doc or measurement.
+  When a rule, category or gating changes, update the body, the digest and the index grouping together.
+- Examples match the condition they illustrate: a "support holds, enter long" example must not use a price below the
+  support; a pattern's description must match what it signals (a UTAD signals completed distribution, not buying).
+- Adding a skill or changing its display name/summary also updates the skill-card catalog keys in every locale; the
+  catalog and hash rules live in the "i18n Rules" section of `CONVENTIONS.md`.
+
+<a id="SK-2"></a>
+
+### SK-2 — Reference only what the pinned core emits
+
+A skill may only refer to prompt sections and fields that the consumed `@y0ngha/siglens-core` version renders. Check
+the core prompt builder before writing "if the X line is included" or "interpret only if listed in Y". When a new core
+version adds a field, write a fallback ("use the computed line when present, otherwise the old comparison") so the
+skill still works on the previous version.
+
+- ❌ Instructing the model to compare a "Gap" line the pinned core does not yet emit — the instruction fails silently.
+
+<a id="SK-3"></a>
+
+### SK-3 — When an exclusive rule changes, update every restatement
+
+An exclusive rule (allowed sources, permitted values) is usually restated in the skill body, the digest, the output
+rules and injected directives. Grep the rule name and its synonyms across skills, prompt and directive files, update
+all restatements in the same change, and A/B on the real LLM when the rule affects instruction following.
+(General version: `CONVENTIONS.md#CS-8`.)
 
 ## How to add a new skill / strategy
 

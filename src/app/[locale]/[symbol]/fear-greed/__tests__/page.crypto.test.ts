@@ -11,7 +11,7 @@
  * Mirrors the mocking style of src/app/[symbol]/__tests__/layout.test.tsx.
  */
 
-// MISTAKES §17: all vi.mock + vi.hoisted declarations must come before imports.
+// TESTING.md#TE-1: all vi.mock + vi.hoisted declarations must come before imports.
 const {
     mockSetQueryData,
     mockGetAssetInfoResilient,

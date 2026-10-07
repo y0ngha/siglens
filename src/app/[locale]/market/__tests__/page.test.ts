@@ -98,7 +98,7 @@ vi.mock('@/shared/config/queryConfig', () => ({
 /**
  * **부분 목이다.** 전체 목이면 이 모듈에 export가 하나 생길 때마다 이 파일이
  * `No "x" export is defined on the mock`으로 깨진다 — 실제로 `SYMBOLS_PATH`를
- * 추가했을 때 이 파일의 테스트 5건이 그렇게 깨졌다(MISTAKES.md §18.5).
+ * 추가했을 때 이 파일의 테스트 5건이 그렇게 깨졌다(TESTING.md#TE-3).
  */
 vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
@@ -131,7 +131,7 @@ import { INDEXABLE_PAGE_ROBOTS } from '@/shared/test-utils/indexablePageRobots';
 describe('Market page', () => {
     describe('ISR route config', () => {
         it('exports revalidate = 3600 (literal — required for Next.js static analysis)', () => {
-            // MISTAKES §15: route segment config must be a literal, not an imported constant
+            // src/app/CLAUDE.md#AP-1: route segment config must be a literal, not an imported constant
             expect(pageModule.revalidate).toBe(3600);
         });
 

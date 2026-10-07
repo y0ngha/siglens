@@ -8,7 +8,7 @@
  * 회복되면 다음 ISR 재생성에서 자가치유된다.
  */
 
-// MISTAKES §17: all vi.mock + vi.hoisted declarations must come before imports.
+// TESTING.md#TE-1: all vi.mock + vi.hoisted declarations must come before imports.
 const { mockGetAssetInfoResilient, mockGetQuantizedBarsStatic } = vi.hoisted(
     () => ({
         mockGetAssetInfoResilient: vi.fn(),

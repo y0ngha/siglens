@@ -333,7 +333,7 @@ export class DrizzleMarketNewsRepository {
  * `unstable_cache` at the page layer. Scope: `MARKET_NEWS_LOOKBACK_MS` (7 days).
  *
  * Placed in `api.ts` rather than `lib/` because it has a DB side effect and
- * is not a pure function (MISTAKES.md Architecture §0.7).
+ * is not a pure function (src/entities/CLAUDE.md#EN-1).
  */
 /**
  * 카드 표시용 목록.

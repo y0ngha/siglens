@@ -1,4 +1,4 @@
-// spy → vi.mock → imports 순서 (MISTAKES.md Tests §17)
+// spy → vi.mock → imports 순서 (TESTING.md#TE-1)
 const { mockGetFinancialsSnapshot } = vi.hoisted(() => ({
     mockGetFinancialsSnapshot: vi.fn(),
 }));

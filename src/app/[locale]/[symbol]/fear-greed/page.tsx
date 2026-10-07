@@ -116,7 +116,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // 존재하지 않는 심볼은 레이아웃과 같은 판정으로 여기서도 404다(`requireResolvableAsset`).
     const { assetInfo, degraded } = await requireResolvableAsset(ticker);
     // 콘텐츠 게이트 — 본문의 `FearGreedFactsSummary`와 **같은 입력·같은 술어**
-    // (`hasFearGreedScore`)로 판정한다(MISTAKES §2). 본문이 쓰는 `getSessionBarsStatic`과
+    // (`hasFearGreedScore`)로 판정한다(CONVENTIONS.md#CP-2). 본문이 쓰는 `getSessionBarsStatic`과
     // 같은 인자라 요청 스코프 메모가 접혀 왕복이 늘지 않는다. 차트 라우트
     // (`[symbol]/page.tsx`)와 같은 모양이다:
     //   - 조회 **실패**(`null`) → degraded로 넘긴다. 이 탭에는 스냅샷이 없으므로

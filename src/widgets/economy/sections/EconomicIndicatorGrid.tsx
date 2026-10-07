@@ -33,7 +33,7 @@ import { DeltaBadge } from './DeltaBadge';
 /**
  * 국채 수익률·2s10s 스프레드 카드의 표시 소수 자리수.
  * 레지스트리 지표는 `meta.precision`을 따르지만, 국채 카드는 레지스트리 외 도메인이라
- * 모듈 상수로 별도 관리한다(MISTAKES §15 매직 넘버 추출).
+ * 모듈 상수로 별도 관리한다(CONVENTIONS.md#NC-1 매직 넘버 추출).
  */
 const TREASURY_YIELD_PRECISION = 2;
 

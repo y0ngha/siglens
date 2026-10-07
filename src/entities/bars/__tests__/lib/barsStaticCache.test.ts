@@ -371,7 +371,7 @@ describe('getSeedBarsStatic (RSC seed 축소)', () => {
 
     it('rsi·macd를 접어도 buildTechnicalFacts 출력이 원본과 동일하다', async () => {
         // **실제 소비자를 호출한다.** 로컬에 lastNonNull을 재구현하면 tautological이 된다
-        // (MISTAKES.md §13.5). 이 단언이 이 변경의 안전성 근거 전부다.
+        // (TESTING.md#TE-10). 이 단언이 이 변경의 안전성 근거 전부다.
         mockBars.mockResolvedValue(FULL);
         mockQuantize.mockImplementation((d: unknown) => d);
 

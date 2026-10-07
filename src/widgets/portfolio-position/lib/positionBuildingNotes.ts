@@ -300,7 +300,7 @@ export interface FloorPointer {
  * 층(band) 전체(0..bandCount-1)의 툴팁 콘텐츠를 한 번에 계산한다 — 활성 층
  * 파생(컴포넌트 상단, floating 툴팁/below-building 리드아웃용)과 렌더 루프
  * (층별 isInteractive/isActive 판정용) 둘 다 이 하나의 배열에서 파생해 같은
- * band index가 두 곳에서 따로 계산되지 않게 한다(단일 source, MISTAKES #2).
+ * band index가 두 곳에서 따로 계산되지 않게 한다(단일 source, CONVENTIONS.md#CP-2).
  * volumePct가 없거나 유한하지 않은 밴드(비인터랙티브)는 null.
  */
 export function buildFloorTooltips(
@@ -349,7 +349,7 @@ export function computeActiveFloorTooltipContent(
  * SVG viewBox 가로폭 및 파생 상수 — label-width budget(SVG_LABEL_AVAILABLE_WIDTH)과
  * 컴포넌트의 아이소메트릭 드로잉(PositionBuilding.tsx의 ROOF_POLYGON,
  * computeFloorFaces, 마커/라벨 좌표 등)이 공유하는 값이라 여기 lib에 단일
- * source로 둔다(두 파일에 흩어지면 드리프트 위험, MISTAKES #2). 280 → 360:
+ * source로 둔다(두 파일에 흩어지면 드리프트 위험, CONVENTIONS.md#CP-2). 280 → 360:
  * widened horizontally(audit finding #1) so the avg/current marker labels
  * never clip for realistic per-share prices (up to ~$99,999 before
  * IN_SVG_COMPACT_THRESHOLD kicks in). Building geometry in the component

@@ -140,7 +140,7 @@ describe('PositionStatusSummary', () => {
                 quantityRaw="10"
             />
         );
-        // 접근명은 시각 헤딩과 동기화(MISTAKES a11y #1.7, 형제 PositionCard와 동일 패턴).
+        // 접근명은 시각 헤딩과 동기화(REACT.md#AX-1, 형제 PositionCard와 동일 패턴).
         const section = getByRole('region', { name: '내 포지션' });
         expect(section).toBeInTheDocument();
         // 수치(평가손익 등)는 region의 내용으로 읽힌다 — 접근명이 아니라 dl 콘텐츠.

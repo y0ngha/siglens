@@ -253,7 +253,7 @@ describe('Footer', () => {
         const link = screen.getByRole('link', { name: /GitHub 저장소/ });
         // 배선은 상수로 검증한다 — 기대값을 하드코딩하면 상수가 정상적으로
         // 바뀌었을 때도 실패해, 진짜 회귀인지 낡은 기대값인지 구분이 안 된다
-        // (MISTAKES.md #13.5).
+        // (TESTING.md#TE-10).
         expect(link).toHaveAttribute('href', GITHUB_URL);
         expect(link).toHaveAttribute('target', '_blank');
         expect(link.getAttribute('rel')).toContain('noopener');

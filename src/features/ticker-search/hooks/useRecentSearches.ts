@@ -154,7 +154,7 @@ export function useRecentSearches(): UseRecentSearchesResult {
         notify();
     }, []);
 
-    // 이펙트는 핸들러 뒤, `return` 직전에 둔다(CONVENTIONS.md Custom Hook
+    // 이펙트는 핸들러 뒤, `return` 직전에 둔다(REACT.md Custom Hook
     // Declaration Order).
     useCompanyNameBackfill(recentSearches);
 

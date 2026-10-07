@@ -46,7 +46,7 @@ function getServerUrlTicker(): null {
 // activeTab의 초기값은 useSearchParams()가 아니라 고정된 ALL_TAB이다.
 // Next.js는 정적 렌더링 중 useSearchParams()를 호출하는 컴포넌트를 감싼
 // Suspense 경계의 실제 자식 전체를 정적 HTML에서 제외하고 fallback만 굽는다
-// (docs/conventions/CONVENTIONS.md "URL State Rules" 참고). 이 훅은 그 대신
+// (docs/conventions/REACT.md "URL State Rules" 참고). 이 훅은 그 대신
 // `useSyncExternalStore`로 `?ticker=`를 읽어 ?ticker= 딥링크를 동기화하므로,
 // 초기 렌더(=SSR 정적 셸/하이드레이션 렌더)는 항상 전체 케이스 목록과 일치하고
 // (`getServerUrlTicker`가 `null`), 실제 값은 하이드레이션 이후에만 반영된다.

@@ -20,6 +20,12 @@ features는 `entities/`와 `shared/`만 import 가능. **상위 레이어(widget
 
 이 예외는 oxlint `no-restricted-imports`의 `from: 'features', allow: ['features', ...]`로 관리됨. Phase 7 cleanup 시 해소 가능.
 
+## 데이터 접근
+
+`.tsx` UI 파일은 entity의 `lib/`·`api/`를 직접 부르지 않는다. 훅(`hooks/*.ts`)이 `entities/*/actions/`의 Server Action을
+`queryFn`/`mutationFn`/`useActionState`로 연결하고 UI는 훅만 쓴다 — 자세한 기준은 `REACT.md`의
+"React Query and Server State Rules" 참조.
+
 ## import 규칙
 
 barrel(`index.ts`)은 금지다. 다른 슬라이스의 심볼은 정의 파일(`ui/<file>.tsx`, `hooks/<file>.ts`, `lib/<file>.ts` 등)에서 직접 import한다(테스트·`vi.mock` 포함).

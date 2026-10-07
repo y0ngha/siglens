@@ -110,7 +110,7 @@ describe('Chart Indicator Flow (settings modal, real useDialog)', () => {
         await user.click(screen.getByRole('button', { name: '보조지표 설정' }));
         // 네이티브 <dialog>는 showModal()이 effect에서 호출된 뒤에야 열린다. dialog가
         // 접근성 트리에 뜰 때까지 기다린 다음 Escape를 발화한다 — 열리기 전에 쏘면
-        // CI(vmThreads)에서 이벤트 유실 flake가 난다(MISTAKES.md §19).
+        // CI(vmThreads)에서 이벤트 유실 flake가 난다(TESTING.md#TE-9).
         // 포커스는 브라우저가 dialog 내부 첫 포커서블로 옮기므로 dialog 자신을
         // 단언하지 않는다(jsdom 폴리필도 포커스를 옮기지 않는다).
         await waitFor(() => expect(screen.getByRole('dialog')).toBeVisible());

@@ -1,4 +1,4 @@
-// vi.mock → imports 순서 (MISTAKES.md Tests §17)
+// vi.mock → imports 순서 (TESTING.md#TE-1)
 const { mockUseAiAutoRunAllowed } = vi.hoisted(() => ({
     mockUseAiAutoRunAllowed: vi.fn(() => ({ allowed: true, grant: vi.fn() })),
 }));

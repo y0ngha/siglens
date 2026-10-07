@@ -19,7 +19,7 @@ const require = createRequire(import.meta.url);
 //
 // ## DATA_CACHE_VERSION 올리는 규칙
 //
-// 기여자용 요약은 docs/conventions/CONVENTIONS.md "Server Data Cache Rules"에 있다 — 바꾸면 함께.
+// 기여자용 요약은 docs/conventions/SERVER.md "Server Data Cache Rules"에 있다 — 바꾸면 함께.
 //
 // 올린다(정수 +1) — 캐시된 값 전체의 형식이 바뀔 때:
 //   - 엔트리 직렬화 형식(serialize.mjs)이나 핸들러가 감싸는 모양(index.mjs의

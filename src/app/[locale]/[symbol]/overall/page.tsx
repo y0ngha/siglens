@@ -50,7 +50,7 @@ import { enterLocale } from '@/shared/lib/enterLocale';
  * 종합 분석 페이지의 H1은 market profile별로 세 갈래로 갈린다 — 미국 개별주식·한국
  * 개별주식·크립토. `MarketProfileId`(이미 3개 값으로 exhaustive)를 판별식 삼아 한 번에
  * 고른다 — 새 market profile이 추가되면 `_exhaustive: never` 가드에서 컴파일 에러가 난다
- * (MISTAKES.md §0.9, `sessionSpecFor`와 같은 패턴).
+ * (CONVENTIONS.md#CP-1, `sessionSpecFor`와 같은 패턴).
  *
  * 예전에는 FAQ 3문항도 같은 번들로 갈라 썼다. 종목명만 바뀌는 템플릿이라 2026-10-01에
  * 걷어냈다(`SEO_RECOVERY_2026_09.md` §10).
