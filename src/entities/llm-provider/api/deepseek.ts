@@ -109,12 +109,13 @@ export async function callDeepseekChat({
     let usage: OpenAiCompatibleUsageLike | undefined;
     let finishReason: string | null | undefined;
     for await (const chunk of stream) {
-        const delta = chunk.choices[0]?.delta?.content;
+        const choice = chunk.choices[0];
+        const delta = choice?.delta?.content;
         if (delta) {
             text += delta;
         }
-        if (chunk.choices[0]?.finish_reason) {
-            finishReason = chunk.choices[0].finish_reason;
+        if (choice?.finish_reason) {
+            finishReason = choice.finish_reason;
         }
         if (chunk.usage) {
             usage = chunk.usage as OpenAiCompatibleUsageLike;
