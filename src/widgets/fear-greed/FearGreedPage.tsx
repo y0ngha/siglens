@@ -1,10 +1,12 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useTranslations } from 'next-intl';
 import { SampleFooterText } from '@/shared/ui/SampleFooterText';
 import { useThemeVersion } from '@/shared/hooks/useThemeVersion';
 import { useFearGreedFromSymbol } from './hooks/useFearGreedFromSymbol';
 import { useHumanInteracted } from '@/shared/hooks/useHumanInteracted';
+import { useHydrated } from '@/shared/hooks/useHydrated';
 import { FearGreedHero } from './FearGreedHero';
 import { FearGreedComparisonGauges } from './FearGreedComparisonGauges';
 import { FearGreedGroupBar } from './FearGreedGroupBar';
@@ -59,14 +61,70 @@ interface FearGreedPageProps {
      * 게이지가 먼저 보이도록 순서를 바꾼 뒤에도 두 문장이 한 화면에 남으면 중복이다.
      */
     hideSampleFooter?: boolean;
+    /**
+     * 페이지가 서버에서 이 쿼리(`QUERY_KEYS.symbolFearGreed`)를 seed했는가(기본 true).
+     *
+     * seed가 없으면(서버의 봉 조회 실패 — FMP 429·렌더 예산 초과) `useSuspenseQuery`가
+     * 서버 렌더 중에 `getSymbolFearGreedAction`(Server Function)을 부르고, React가 그 호출을
+     * 던진다("Server Functions cannot be called during initial render"). 위에 Suspense 경계가
+     * 없어 페이지 전체가 500이 된다. 그래서 seed가 없으면 서버와 첫 클라 렌더는 스켈레톤만
+     * 그리고, 쿼리는 하이드레이션 뒤 브라우저에서만 마운트한다 — 차트 라우트의 `hasBarsSeed`와
+     * 같은 처리다.
+     */
+    hasSeed?: boolean;
+}
+
+/** seed가 없을 때 서버·첫 클라 렌더와, 브라우저 조회가 끝나기 전의 Suspense fallback. */
+function FearGreedPageSkeleton() {
+    const t = useTranslations('widgets.fear-greed');
+    return (
+        <div
+            role="status"
+            className="flex flex-col gap-6 p-4 md:p-6"
+            aria-busy="true"
+            aria-label={t('FearGreedPage.7da634')}
+        >
+            <div className="grid gap-6 md:grid-cols-2">
+                <section className="flex flex-col gap-3">
+                    <div className="h-4 w-40 animate-pulse rounded bg-secondary-700/40 motion-reduce:animate-none" />
+                    <div className="h-48 w-full animate-pulse rounded bg-secondary-700/40 motion-reduce:animate-none" />
+                    <div className="h-16 w-full animate-pulse rounded bg-secondary-700/40 motion-reduce:animate-none" />
+                </section>
+                <section className="flex flex-col gap-3">
+                    <div className="h-20 w-full animate-pulse rounded bg-secondary-700/40 motion-reduce:animate-none" />
+                    <div className="h-20 w-full animate-pulse rounded bg-secondary-700/40 motion-reduce:animate-none" />
+                </section>
+            </div>
+            <section className="flex flex-col gap-2">
+                <div className="h-4 w-32 animate-pulse rounded bg-secondary-700/40 motion-reduce:animate-none" />
+                <div className="h-40 w-full animate-pulse rounded bg-secondary-700/40 motion-reduce:animate-none" />
+            </section>
+        </div>
+    );
 }
 
 export function FearGreedPage({
+    hasSeed = true,
+    ...bodyProps
+}: FearGreedPageProps) {
+    const isHydrated = useHydrated();
+    if (hasSeed) return <FearGreedPageBody {...bodyProps} />;
+    // seed 없음 — 서버 렌더에서 Server Function이 불리지 않게 하이드레이션 전에는 쿼리를
+    // 마운트하지 않는다(`hasSeed` JSDoc). 브라우저에서는 조회가 suspend하므로 경계를 둔다.
+    if (!isHydrated) return <FearGreedPageSkeleton />;
+    return (
+        <Suspense fallback={<FearGreedPageSkeleton />}>
+            <FearGreedPageBody {...bodyProps} />
+        </Suspense>
+    );
+}
+
+function FearGreedPageBody({
     symbol,
     fmpSymbol,
     hideSelfNormWarning = false,
     hideSampleFooter = false,
-}: FearGreedPageProps) {
+}: Omit<FearGreedPageProps, 'hasSeed'>) {
     const t = useTranslations('widgets.fear-greed');
     const themeVersion = useThemeVersion();
     // seed 재조회는 사람 입력 이후로 미룬다 — 크롤러 렌더마다 나가던 Server Action을 없앤다.

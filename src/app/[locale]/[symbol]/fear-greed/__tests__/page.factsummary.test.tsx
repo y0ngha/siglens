@@ -23,8 +23,10 @@ const {
     mockGetQuantizedBarsSixHour,
     mockComputeFearGreedIndex,
     mockSetQueryData,
+    mockShortenRevalidate,
     FIXED_SNAPSHOT,
 } = vi.hoisted(() => ({
+    mockShortenRevalidate: vi.fn(),
     mockSetQueryData: vi.fn(),
     mockComputeFearGreedIndex: vi.fn(),
     FIXED_SNAPSHOT: {
@@ -129,13 +131,22 @@ vi.mock('next/navigation', () => ({
 }));
 
 // 순서·중복 억제 prop을 보려고 표식만 그린다. 게이지 자체는 FearGreedPage.test.tsx 소관.
+// degraded 렌더의 revalidate 단축 호출만 본다(실제 핀은 Next 렌더 컨텍스트가 필요하다).
+vi.mock('@/shared/cache/buildDegradedRevalidate', async importOriginal => ({
+    ...(await importOriginal<
+        typeof import('@/shared/cache/buildDegradedRevalidate')
+    >()),
+    shortenRevalidateForRuntimeDegrade: mockShortenRevalidate,
+}));
 vi.mock('@/widgets/fear-greed/FearGreedPage', () => ({
     FearGreedPage: (props: {
         hideSelfNormWarning?: boolean;
         hideSampleFooter?: boolean;
+        hasSeed?: boolean;
     }) => (
         <div
             data-testid="fear-greed-gauge"
+            data-has-seed={String(props.hasSeed)}
             data-hide-self-norm={String(props.hideSelfNormWarning === true)}
             data-hide-sample-footer={String(props.hideSampleFooter === true)}
         />
@@ -349,6 +360,45 @@ describe('SymbolFearGreedPage — SSR factor summary wiring', () => {
             screen.queryByText(/공포 탐욕 지수 요약/)
         ).not.toBeInTheDocument();
         expect(mockComputeFearGreedIndex).toHaveBeenCalled();
+    });
+
+    /**
+     * 봉 조회가 실패하면 게이지에 seed가 없다고 알린다(`hasSeed={false}`). 그래야 게이지가 서버
+     * 렌더에서 쿼리(Server Function)를 부르지 않는다 — 부르면 페이지 전체가 500이 됐다
+     * (2026-10-07 운영). 그 degraded 렌더는 revalidate를 낮춰 24h 굳지 않게 한다.
+     */
+    it('봉 조회 실패 시 게이지에 hasSeed=false를 넘기고 revalidate를 낮춘다', async () => {
+        mockShortenRevalidate.mockClear();
+        mockGetQuantizedBarsStatic.mockRejectedValue(new Error('FMP 429'));
+
+        render(
+            await SymbolFearGreedPage({
+                params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+            })
+        );
+
+        expect(screen.getByTestId('fear-greed-gauge')).toHaveAttribute(
+            'data-has-seed',
+            'false'
+        );
+        expect(mockShortenRevalidate).toHaveBeenCalled();
+    });
+
+    it('봉 조회 성공 시 게이지에 hasSeed=true를 넘기고 revalidate를 낮추지 않는다', async () => {
+        mockShortenRevalidate.mockClear();
+        mockGetQuantizedBarsStatic.mockResolvedValue(BARS_WITH_DATA);
+
+        render(
+            await SymbolFearGreedPage({
+                params: Promise.resolve({ locale: 'ko', symbol: 'aapl' }),
+            })
+        );
+
+        expect(screen.getByTestId('fear-greed-gauge')).toHaveAttribute(
+            'data-has-seed',
+            'true'
+        );
+        expect(mockShortenRevalidate).not.toHaveBeenCalled();
     });
 
     it('Worst: getSeedBarsStatic 실패(throw)해도 페이지가 깨지지 않고 factor summary는 생략된다', async () => {
